@@ -148,7 +148,8 @@ A800_MAIN="-Dmain=atari_main"
 OBJ="win32/atari_win32.o \
 win32/screen.o \
 win32/main.o \
-win32/keyboard.o"
+win32/keyboard.o \
+win32/atari.ro"
 ;;
 x11-*)
 AC_PATH_X
@@ -238,6 +239,7 @@ ac_cv_a800_$1=$a800_ans
 
 
 ASK_FEATURE(VERY_SLOW, Is your computer very slow (disables generating screen completely))
+ASK_FEATURE(NO_CYCLE_EXACT, Enable color changes inside a scanline (cycle exact), y, n)
 ASK_FEATURE(CRASH_MENU, Show crash menu after CIM instruction, y)
 ASK_FEATURE(MONITOR_BREAK, Enable BREAK command in monitor (slows CPU a little bit), y)
 ASK_FEATURE(MONITOR_HINTS, Enable hints in disassembler (addresses get human readable labels), y)
