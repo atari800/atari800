@@ -1,23 +1,26 @@
 atari800 (1.3.1-1) unstable; urgency=low
 
-  * new upstream source.
-  * SVGALIB target dropped
+  * new upstream source
+  *        updated configure files.  Closes: #193397
+  * removed svgalib version, security fix installed upstream. Closes 203707
 
- -- Petr Stehlik <pstehlik@sophics.cz>  Thu, 04 Sep 2003 23:02:25 +0100
+ -- Dale Scheetz (Dwarf #1) <dwarf@polaris.net>  Sat,  6 Sep 2003 17:14:56 -0400
+
+atari800 (1.3.0-2) unstable; urgency=low
+
+  * changed build depends from xlib6g-dev to xlibs-dev and libncurses-dev
+  *     to libncurses5-dev. Closes: #188777
+  * new system wide config file example in /usr/share/doc/atari800/atari800.cfg
+  *     for details see /usr/share/doc/atari800/README.Debian
+
+ -- Dale Scheetz (Dwarf #1) <dwarf@polaris.net>  Tue, 13 May 2003 19:00:50 -0400
 
 atari800 (1.3.0-1) unstable; urgency=low
-
-  * new upstream source.
-  * URLs updated to sourceforge.net
-
- -- Petr Stehlik <pstehlik@sophics.cz>  Mon, 17 Feb 2003 11:37:40 +0100
-
-atari800 (1.2.5-1) unstable; urgency=low
 
   * new upstream source. (error in last entry ;-)
   * modified config and added sdl target to the build
 
- -- Dale Scheetz (Dwarf #1) <dwarf@polaris.net>  Sat, 14 Dec 2002 10:32:40 -0500
+ -- Dale Scheetz (Dwarf #1) <dwarf@polaris.net>  Sat, 12 Apr 2003 14:56:16 -0400
 
 atari800 (1.2.2-1) unstable; urgency=low
 
