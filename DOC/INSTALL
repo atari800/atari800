@@ -41,13 +41,16 @@ many others with a little work):-
 
 1. X Window Version (Including SUN OpenWindows) on a Unix Platform
 2. SVGALIB Version on Linux
-3. CURSES version for UNIX
+3. CURSES version
 4. Graphical Version for the Amiga
 5. Graphical version for the Atari TT/Falcon and compatible computers
 6. BASIC version (No Graphics). Should be straightforward to configure
    for any 32 bit environment supporting ANSI C.
 7. VGA Version for DOS
 8. DirectX Version for Microsoft Windows
+
+Installed zlib (compression library) enables building the emulator with
+compressed statesave images support.
 
    Note: I don't say 32 bit computer because certain operating systems
    enforce a 16 bit memory model. No prizes are offered for correctly
@@ -129,6 +132,16 @@ open the DJGPP.ENV file in editor and change the LFN= line to LFN=y
 3. If everything went good you should have atari800.exe and joycfg.exe -
    copy them to destination directory.
    
+Building the Emulator for Windows
+-----------------------------
+
+Atari800 for Windows can be built using Cygwin environment:
+http://cygwin.com/
+
+1. Type "./configure dx". ("./configure" for list of available targets)
+2. Type "make".
+3. Copy atari800.exe to destination directory.
+
 Building the Emulator for Falcon
 --------------------------------
 
