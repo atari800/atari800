@@ -1,3 +1,24 @@
+2003-08-31  Petr Stehlik  <pstehlik@sophics.cz>
+* rdevice.c: GPL header added (hope that it actually was free source before 
+  Chris brought it to Atari800 project)
+
+* rt-config.c: R: patch is not enabled by default. It can be enabled in the UI
+
+* ui.c: R: patch named as "Atari850 emulation via network" (better description
+  welcome)
+
+* DOC/sockets.txt: this is the explanation of R: - couple of excerpts from
+  Atari800 mailing list mails.
+
+
+2003-08-31  Ed Cogburn  <ecogburn@xtn.net>
+* Makefile.in, configure.ac: rdevice.o compiled and linked in only on linux
+  or Unix and unless --disable-riodevice was used when configuring.
+
+* devices.c, atari.h: R: is compiled in only if R_IO_DEVICE is defined (see
+  configure --enable-riodevice, note that it is defined by default)
+
+
 2003-08-05  Petr Stehlik  <pstehlik@sophics.cz>
 * atari.c: tried to fix a recent security issue (atari800 got famous "thanks"
   to that). In order to provide a complex fix I wrote code that is not looking

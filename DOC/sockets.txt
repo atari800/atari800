@@ -24,3 +24,96 @@ connections on port 9000 now for in coming calls...)
 Best regards,
 Chris
 
+===
+
+The basic use of the R: emulation is that it emulates an Atari 850.  If
+you use the bobterm.atr or the icet.atr disk image to run these terminal
+programs, you can telnet to any telnetable Atari BBS in the terminal
+screen by typing:
+
+ATDL
+ATDI <address> <port>
+
+
+So, basically these two commands have been added on top of the 850
+emulation.  The ATDL toggles Line feeds on/off.  the ATDI allow you to
+telnet out to an atari machine.
+
+For example, to telnet to my atari BBS to this in Bobterm:
+
+ATDL
+ATDI jybolac.homelinux.com 800
+
+You could also to the following, if you are running on your linux/unix box
+and want to telnet from atari800:
+
+ATDL
+ATDI localhost
+
+(Of course, be sure to turn on ASCII translation in the terminal program).
+
+You can also telnet to atari800 by doing the following at any linux
+prompt:
+
+telnet <machinename> 9000
+
+Also, everything that can be done in the 850 manual as far as XIO commands
+are concerned can be done as well.
+
+
+
+
+To sum up,  the R: emulation can be used with terminal programs like
+Bobterm and Ice-T, as well as BBS programs like carina and bbs express.
+
+I have tested it with bobterm, Ice-T and Carina, but not Express, yet.
+
+
+
+
+Again, feel free to email with any questions, until I can write a full
+document/web-page on it.
+
+Cheers,
+Chris
+
+===
+
+> > The basic use of the R: emulation is that it emulates an Atari 850.
+> 
+> What is it? A printer? I never heard about it.
+
+The 850 interface is an RS232 device, for connecting non-Atari-specific
+modems (unlike the SX212, which had an SIO port, so didn't need an 850),
+and other 'serial port' devices.  (Think COM1, COM2, etc. under MSDOS,
+or /dev/ttyS0, /dev/ttyS1, etc. under Linux)
+
+-bill!
+
+===
+
+It was called an "Interface module".  It provided 4 RS-232 serial ports,
+one was fully functionaly, the others were stripped down.  It also
+provided a parallel port.
+
+> Do you think this can be misused by hackers? Again not joking. We need
+> to keep an eye on this.
+>
+
+Anything can be exploited by hackers!  :^)  However, port 9000 only is
+enabled if you run a terminal program, so normal game operation wouldn't
+be a problem.  Also, I put this at port 9000 so that normally it would be
+found, but there are always port sniffers.  I would think it would be a
+problem only if there was a bug in a buffer overflow and you were running
+atari800 as root.  But, I know of no problem currently....not saying that
+there is no problem.
+
+So, yes, it could be misused, but only if you are running a terminal
+program or a bbs program.  ( I cannot say that my code is foolproof :)
+
+However, the R: device it is normally not on, and can only be turned on
+(thus, enabling port 9000), after run a program that calls the XIO
+commands for the R: device or you write a basic program that reads/writes
+to the R: device.  So, normally I would say that it is safe.
+
+--Chris

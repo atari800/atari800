@@ -176,7 +176,7 @@ Rich Lawrence <rich@kesmai.com>
     - DCM and ZLIB compressed files support
 
 Chris Martin <cmartin@ti.com>
-    - R: device in Atari800
+    - R: device as Atari850 emulation via network
 
 Cyrus Malek <Cyrus.Malek@amd.com>
     - Patch to make the X11 Backspace key work the same as the Delete key
