@@ -2,7 +2,7 @@
 /* Original Author:                                 */
 /*              David Firth                         */
 /* Correct timing, internal memory and other fixes: */
-/*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
+/*              Piotr Fusik <fox@scene.pl>          */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -208,15 +208,11 @@ These are all cases:
 
   -------------------------------------------------------------------------- */
 
-#define VSCON_C	5
-#define NMIST_C	10
-#define	NMI_C	16
-#define	SCR_C	32
-#define WSYNC_C	110	/* defined also in atari.h */
-#define LINE_C	114	/* defined also in atari.h */
-#define VSCOF_C	116
-
-#define DMAR	9	/* defined also in atari.h */
+#define VSCON_C	1
+#define NMIST_C	6
+#define NMI_C	12
+#define SCR_C	28
+#define VSCOF_C	112
 
 unsigned int screenline_cpu_clock = 0;
 #define GOEOL	GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; ypos++
@@ -234,7 +230,7 @@ possible that SCR_C + cycles_taken > WSYNC_C. To avoid this we must take some
 cycles before SCR_C. before_cycles contains number of them, while extra_cycles
 contains difference between bytes taken and cycles taken plus before_cycles. */
 
-#define BEFORE_CYCLES (SCR_C - 32)
+#define BEFORE_CYCLES (SCR_C - 28)
 /* It's number of cycles taken before SCR_C for not scrolled, narrow playfield.
    It wasn't tested, but should be ok. ;) */
 
@@ -2095,7 +2091,11 @@ UBYTE ANTIC_GetByte(UWORD addr)
 {
 	switch (addr & 0xf) {
 	case _VCOUNT:
-		return ypos >> 1;
+		if (xpos < LINE_C)
+			return ypos >> 1;
+		if (ypos + 1 < max_ypos)
+			return (ypos + 1) >> 1;
+		return 0;
 	case _PENH:
 		return PENH;
 	case _PENV:
@@ -2250,7 +2250,7 @@ void set_prior(UBYTE byte)
 	}
 	pm_lookup_ptr = pm_lookup_table[prior_to_pm_lookup[byte & 0x3f]];
 	draw_antic_0_ptr = byte < 0x80 ? draw_antic_0 : byte < 0xc0 ? draw_antic_0_gtia10 : draw_antic_0_gtia11;
-	if (byte < 0x40 && PRIOR >= 0x40 && anticmode == 0xf && xpos >= ((DMACTL & 3) == 3 ? 20 : 22))
+	if (byte < 0x40 && PRIOR >= 0x40 && anticmode == 0xf && xpos >= ((DMACTL & 3) == 3 ? 16 : 18))
 		draw_antic_ptr = draw_antic_f_gtia_bug;
 	else
 		draw_antic_ptr = draw_antic_table[(byte & 0xc0) >> 6][anticmode];
