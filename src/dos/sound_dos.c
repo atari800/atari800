@@ -23,6 +23,7 @@
 */
 
 #include <stdio.h>		/* for sscanf */
+#include <string.h>		/* for strcmp */
 #include "config.h"
 
 #ifdef SOUND
