@@ -1,8 +1,8 @@
 %define name	atari800
-%define ver	1.2.3
-%define rel	1
+%define ver	1.2.4
+%define rel	0
 %define copy	GPL
-%define ich friedel <friedel@nomaden.org>
+%define ich joy <joy@sophics.cz>
 %define group	Console/Emulators
 %define realname atari800-%{ver}
 %define src atari800-%{ver}.tar.gz
@@ -10,7 +10,7 @@
 ## If you change the targets, you'll have to change the files list at the
 ## bottom of this file as well
 %define maintarget sdl
-Summary:	An emulator for 8-bit Atari personal computers.
+Summary:	An emulator of 8-bit Atari personal computers.
 Name:		%{name}
 Version:	%{ver}
 Release:	%{rel}
@@ -86,6 +86,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/atari800.1.bz2
 
 %changelog
+* Wed Aug 7 2002 Petr Stehlik <pstehlik@sophics.cz>
+Version increased, packager changed, slight change to description.
 * Tue Jul 9 2002 Petr Stehlik <pstehlik@sophics.cz>
 Main target is SDL. Manual is installed to /usr/share/man (FHS).
 * Mon Jul 8 2002 Petr Stehlik <pstehlik@sophics.cz>
