@@ -79,7 +79,6 @@ static int initsound_dx(void)
 
   wfx.wFormatTag = WAVE_FORMAT_PCM;
   wfx.nChannels = stereo ? 2 : 1;
-  wfx.nChannels = 1;
   wfx.nSamplesPerSec = dsprate;
   wfx.nAvgBytesPerSec = dsprate * wfx.nChannels;
   wfx.nBlockAlign = stereo ? 2 : 1;
@@ -454,6 +453,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.6  2001/12/04 13:09:06  joy
+DirectSound buffer creation error fixed by Nathan
+
 Revision 1.5  2001/07/22 06:46:08  knik
 waveout default sound delay 100ms, buffer size 0x200
 
