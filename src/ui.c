@@ -43,10 +43,10 @@ static int initialised = FALSE;
 int ui_is_active = FALSE;
 
 static int current_disk_directory = 0;
-static char curr_disk_dir[MAX_FILENAME_LEN] = "";
-static char curr_cart_dir[MAX_FILENAME_LEN] = "";
-static char curr_exe_dir[MAX_FILENAME_LEN] = "";
-static char curr_state_dir[MAX_FILENAME_LEN] = "";
+static char curr_disk_dir[FILENAME_MAX] = "";
+static char curr_cart_dir[FILENAME_MAX] = "";
+static char curr_exe_dir[FILENAME_MAX] = "";
+static char curr_state_dir[FILENAME_MAX] = "";
 static char charset[1024];
 
 #ifdef STEREO
@@ -319,7 +319,7 @@ void SelectItem(UBYTE * screen,
 	int x;
 	int y;
 	int iMaxXsize = ((40 - xoffset) / ncolumns) - 1;
-	char szOrig[MAX_FILENAME_LEN];
+	char szOrig[FILENAME_MAX];
 	char szString[41];
 
 	x = index / nrows;
@@ -546,7 +546,7 @@ List *GetDirectory(char *directory)
 	DIR *dp = NULL;
 	List *list = NULL;
 	struct stat st;
-	char fullfilename[MAX_FILENAME_LEN];
+	char fullfilename[FILENAME_MAX];
 	char *filepart;
 #ifdef DOS_DRIVES
         /* strdup to avoid writing to string constants */
@@ -642,12 +642,12 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 
 	do {
 #ifdef __DJGPP__
-		char helpdir[MAX_FILENAME_LEN];
+		char helpdir[FILENAME_MAX];
 		_fixpath(directory, helpdir);
 		strcpy(directory, helpdir);
 #else
 		if (strcmp(directory, ".") == 0)
-			getcwd(directory, MAX_FILENAME_LEN);
+			getcwd(directory, FILENAME_MAX);
 #endif
 		next_dir = FALSE;
 		list = GetDirectory(directory);
@@ -722,7 +722,7 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 				else if (item != -1) {
 					if (files[item][0] == '[') {	/*directory selected */
 						DIR *dr;
-						char help[MAX_FILENAME_LEN];	/*new directory */
+						char help[FILENAME_MAX];	/*new directory */
 
 						if (strcmp(files[item], "[..]") == 0) {		/*go up */
 							char *pos, *pos2;
@@ -1139,7 +1139,7 @@ void AboutEmulator(UBYTE * screen)
 
 int RunExe(UBYTE *screen)
 {
-	char exename[MAX_FILENAME_LEN];
+	char exename[FILENAME_MAX];
 	int ret = FALSE;
 
 	if (!curr_exe_dir[0])
@@ -1211,7 +1211,7 @@ void AtariSettings(UBYTE *screen)
 
 int SaveState(UBYTE *screen)
 {
-	char statename[MAX_FILENAME_LEN];
+	char statename[FILENAME_MAX];
 	char fname[FILENAME_SIZE+1];
 
 	if (!EditFilename(screen, fname))
@@ -1234,7 +1234,7 @@ int SaveState(UBYTE *screen)
 
 int LoadState(UBYTE *screen)
 {
-	char statename[MAX_FILENAME_LEN];
+	char statename[FILENAME_MAX];
 	int ret = FALSE;
 
 	if (!curr_state_dir[0])
@@ -1503,6 +1503,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.11  2001/09/08 07:52:30  knik
+used FILENAME_MAX instead of MAX_FILENAME_LEN
+
 Revision 1.10  2001/09/04 20:37:01  fox
 hold_option, enable_c000_ram and rtime_enabled available in menu
 

@@ -23,19 +23,19 @@
 	extern void Atari_ConfigInit(void);
 #endif
 
-char atari_osa_filename[MAX_FILENAME_LEN];
-char atari_osb_filename[MAX_FILENAME_LEN];
-char atari_xlxe_filename[MAX_FILENAME_LEN];
-char atari_basic_filename[MAX_FILENAME_LEN];
-char atari_5200_filename[MAX_FILENAME_LEN];
-char atari_disk_dirs[MAX_DIRECTORIES][MAX_FILENAME_LEN];
-char atari_rom_dir[MAX_FILENAME_LEN];
-char atari_h1_dir[MAX_FILENAME_LEN];
-char atari_h2_dir[MAX_FILENAME_LEN];
-char atari_h3_dir[MAX_FILENAME_LEN];
-char atari_h4_dir[MAX_FILENAME_LEN];
-char atari_exe_dir[MAX_FILENAME_LEN];
-char atari_state_dir[MAX_FILENAME_LEN];
+char atari_osa_filename[FILENAME_MAX];
+char atari_osb_filename[FILENAME_MAX];
+char atari_xlxe_filename[FILENAME_MAX];
+char atari_basic_filename[FILENAME_MAX];
+char atari_5200_filename[FILENAME_MAX];
+char atari_disk_dirs[MAX_DIRECTORIES][FILENAME_MAX];
+char atari_rom_dir[FILENAME_MAX];
+char atari_h1_dir[FILENAME_MAX];
+char atari_h2_dir[FILENAME_MAX];
+char atari_h3_dir[FILENAME_MAX];
+char atari_h4_dir[FILENAME_MAX];
+char atari_exe_dir[FILENAME_MAX];
+char atari_state_dir[FILENAME_MAX];
 char print_command[256];
 int hd_read_only;
 int refresh_rate;
@@ -398,6 +398,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.6  2001/09/08 07:52:30  knik
+used FILENAME_MAX instead of MAX_FILENAME_LEN
+
 Revision 1.5  2001/07/20 20:03:15  fox
 removed #define TRUE/FALSE and extern int Ram256 (it's in atari.h)
 

@@ -1,22 +1,23 @@
 #ifndef __RT_CONFIG
 #define	__RT_CONFIG
 
-#define MAX_FILENAME_LEN 256
+#include <stdio.h>
+
 #define MAX_DIRECTORIES 8
 
-extern char atari_osa_filename[MAX_FILENAME_LEN];
-extern char atari_osb_filename[MAX_FILENAME_LEN];
-extern char atari_xlxe_filename[MAX_FILENAME_LEN];
-extern char atari_basic_filename[MAX_FILENAME_LEN];
-extern char atari_5200_filename[MAX_FILENAME_LEN];
-extern char atari_disk_dirs[MAX_DIRECTORIES][MAX_FILENAME_LEN];
-extern char atari_rom_dir[MAX_FILENAME_LEN];
-extern char atari_h1_dir[MAX_FILENAME_LEN];
-extern char atari_h2_dir[MAX_FILENAME_LEN];
-extern char atari_h3_dir[MAX_FILENAME_LEN];
-extern char atari_h4_dir[MAX_FILENAME_LEN];
-extern char atari_exe_dir[MAX_FILENAME_LEN];
-extern char atari_state_dir[MAX_FILENAME_LEN];
+extern char atari_osa_filename[FILENAME_MAX];
+extern char atari_osb_filename[FILENAME_MAX];
+extern char atari_xlxe_filename[FILENAME_MAX];
+extern char atari_basic_filename[FILENAME_MAX];
+extern char atari_5200_filename[FILENAME_MAX];
+extern char atari_disk_dirs[MAX_DIRECTORIES][FILENAME_MAX];
+extern char atari_rom_dir[FILENAME_MAX];
+extern char atari_h1_dir[FILENAME_MAX];
+extern char atari_h2_dir[FILENAME_MAX];
+extern char atari_h3_dir[FILENAME_MAX];
+extern char atari_h4_dir[FILENAME_MAX];
+extern char atari_exe_dir[FILENAME_MAX];
+extern char atari_state_dir[FILENAME_MAX];
 extern char print_command[256];
 extern int hd_read_only;
 extern int refresh_rate;
