@@ -1,3 +1,13 @@
+2002-08-07  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c:
+  - added atexit(SDL_Quit) to clean up after unsuccessful initialization.
+  - fixed "-help" so that it doesn't initialize graphics mode. 
+  - added "-sound" and "-nosound" support so you can disable sound if
+    your sound card is not plugged in :)
+  - added support for the configure option --disable-SOUND
+  - added Aflushlog() to Atari_Exit() thus debug info is displayed now
+* atari_sdl.c, atari_falcon.c, cassette.c, atari.c: fixed "-help" formatting
+
 2002-07-24  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c, DOC/cart.txt, DOC/README: 256K and 512K XEGS carts
   (thanks to Nir Dary)
