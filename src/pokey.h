@@ -43,6 +43,7 @@ extern int stereo_enabled;
 extern UBYTE KBCODE;
 extern UBYTE IRQST;
 extern UBYTE IRQEN;
+extern UBYTE SKSTAT;
 extern int DELAYED_SERIN_IRQ;
 extern int DELAYED_SEROUT_IRQ;
 extern int DELAYED_XMTDONE_IRQ;
