@@ -113,19 +113,22 @@ Building the Emulator for DOS
 -----------------------------
 
 To compile, use DJGPP the DOS port of gcc, which can be get from
-http://www.delorie.com/djgpp/. You don't need any contrib libraries.
-A basic setup will do. (I haven't tested the EZ-DJGPP distribution,
-but I suppose that's all you need).
-
-If you have GCC, the second thing to do is rename Makefile to Makefile.org
-and Makefile.dos to Makefile. Now type "make vga", answer the questions
-required by "configure" and wait for gcc to build atari800.exe.
+http://www.delorie.com/djgpp/. You will need complete environment
+in order to configure and build the executables.
+You may need zlib (compression library) to use compressed statesave images.
+To build curses (text mode) version install curses library (e.g. PDCurses).
 
 Since the source code contains files with long file names, you must unpack
 and compile the source on a filesystem supporting long file names (for example
 VFAT of Windows95). An additional change of DJGPP setting is required:
 open the DJGPP.ENV file in editor and change the LFN= line to LFN=y
 
+1. Run "./configure vga" or "configure.bat vga".
+	("./configure" to get list of available targets)
+2. Run "make" and "make joycfg".
+3. If everything went good you should have atari800.exe and joycfg.exe -
+   copy them to destination directory.
+   
 Building the Emulator for Falcon
 --------------------------------
 
