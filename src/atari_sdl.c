@@ -2,6 +2,9 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   04-11-2001 - split Atari_DisplayScreen (DisplayWithoutScaling and
+                DisplayWithScaling)
+	      - put Aflushlog everywhere	
    03-11-2001 - 32 bit support
    	      - rewrited Atari_DisplayScreen function a little
 	      - LALT+j swaps only keyboard emulated joysticks now
@@ -230,6 +233,7 @@ void ModeInfo()
 	Aprint
 		("[%c] FULLSCREEN  [%c] BW  [%c] SHORTER MODE  [%c] JOYSTICKS SWAPPED",
 		 fullflag, bwflag, shorterflag, joyflag);
+	Aflushlog();
 }
 
 void SetVideoMode(int w, int h, int bpp)
@@ -355,10 +359,13 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 		// mono
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
 		Aprint("sound initialized");
+		Aflushlog();
 	}
-	else
+	else {
 		Aprint
 			("Audio is off, you can turn it on by setting sound_enabled=1");
+		Aflushlog();
+	}
 }
 
 int Atari_Keyboard(void)
@@ -719,6 +726,7 @@ void Init_Joysticks()
 		Aprint("joystick 1 found!");
 		joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
 	}
+	Aflushlog();
 }
 
 void Atari_Initialise(int *argc, char *argv[])
@@ -756,7 +764,71 @@ int Atari_Exit(int run_monitor)
 	return restart;
 }
 
-void Atari_DisplayScreen(UBYTE * screen)
+void DisplayWithoutScaling(Uint8 * screen, int jumped, int width)
+{
+	register Uint32 quad;
+	register Uint32 *start32;
+	register Uint8 c;
+	register int pos;
+	register int pitch4;
+	int i;
+
+	pitch4 = MainScreen->pitch / 4;
+	start32 = (Uint32 *) MainScreen->pixels;
+
+	screen = screen + jumped;
+	i = MainScreen->h;
+	switch (MainScreen->format->BitsPerPixel) {
+	case 8:
+		while (i > 0) {
+			memcpy(start32, screen, width);
+			screen += ATARI_WIDTH;
+			start32 += pitch4;
+			i--;
+		}
+		break;
+	case 16:
+		while (i > 0) {
+			pos = width - 1;
+			while (pos > 0) {
+				c = screen[pos];
+				quad = Palette16[c] << 16;
+				pos--;
+				c = screen[pos];
+				quad += Palette16[c];
+				start32[pos >> 1] = quad;
+				pos--;
+			}
+			screen += ATARI_WIDTH;
+			start32 += pitch4;
+			i--;
+		}
+		break;
+	case 32:
+		while (i > 0) {
+			pos = width - 1;
+			while (pos > 0) {
+				c = screen[pos];
+				quad = Palette32[c];
+				start32[pos] = quad;
+				pos--;
+			}
+			screen += ATARI_WIDTH;
+			start32 += pitch4;
+			i--;
+		}
+		break;
+	default:
+		Aprint("unsupported color depth %i",
+			   MainScreen->format->BitsPerPixel);
+		Aprint
+			("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+		Aflushlog();
+		exit(-1);
+	}
+}
+
+void DisplayWithScaling(Uint8 * screen, int jumped, int width)
 {
 	register Uint32 quad;
 	register int x;
@@ -764,18 +836,107 @@ void Atari_DisplayScreen(UBYTE * screen)
 	register int yy;
 	register Uint8 *ss;
 	register Uint32 *start32;
-	int width, jumped;
 	int i;
 	int y;
-	int dy;
-	int w, h;
 	int w2, w4;
+	int w, h;
 	int pos;
 	int pitch4;
+	int dy;
 	Uint8 c;
-
 	pitch4 = MainScreen->pitch / 4;
 	start32 = (Uint32 *) MainScreen->pixels;
+
+	w = (width) << 16;
+	h = (ATARI_HEIGHT) << 16;
+	dx = w / MainScreen->w;
+	dy = h / MainScreen->h;
+	w2 = MainScreen->w / 2 - 1;
+	w4 = MainScreen->w / 4 - 1;
+	ss = screen;
+	y = (0) << 16;
+	i = MainScreen->h;
+
+	switch (MainScreen->format->BitsPerPixel) {
+	case 8:
+		while (i > 0) {
+			x = (width + jumped) << 16;
+			pos = w4;
+			yy = ATARI_WIDTH * (y >> 16);
+			while (pos >= 0) {
+				quad = (ss[yy + (x >> 16)] << 24);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 16);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 8);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 0);
+				x = x - dx;
+
+				start32[pos] = quad;
+				pos--;
+
+			}
+			start32 += pitch4;
+			y = y + dy;
+			i--;
+		}
+		break;
+	case 16:
+		while (i > 0) {
+			x = (width + jumped) << 16;
+			pos = w2;
+			yy = ATARI_WIDTH * (y >> 16);
+			while (pos >= 0) {
+
+				c = ss[yy + (x >> 16)];
+				quad = Palette16[c] << 16;
+				x = x - dx;
+				c = ss[yy + (x >> 16)];
+				quad += Palette16[c];
+				x = x - dx;
+				start32[pos] = quad;
+				pos--;
+
+			}
+			start32 += pitch4;
+			y = y + dy;
+			i--;
+		}
+		break;
+	case 32:
+		while (i > 0) {
+			x = (width + jumped) << 16;
+			pos = w2;
+			yy = ATARI_WIDTH * (y >> 16);
+			while (pos >= 0) {
+
+				c = ss[yy + (x >> 16)];
+				quad = Palette32[c];
+				x = x - dx;
+				start32[pos] = quad;
+				pos--;
+
+			}
+			start32 += pitch4;
+			y = y + dy;
+			i--;
+		}
+
+		break;
+	default:
+		Aprint("unsupported color depth %i",
+			   MainScreen->format->BitsPerPixel);
+		Aprint
+			("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+		Aflushlog();
+		exit(-1);
+	}
+}
+
+void Atari_DisplayScreen(UBYTE * screen)
+{
+	int width, jumped;
 
 	if (SHORTER_MODE) {
 		width = ATARI_WIDTH - 2 * 24 - 2 * 8;
@@ -788,144 +949,11 @@ void Atari_DisplayScreen(UBYTE * screen)
 
 	if ((MainScreen->w == width)
 		&& (MainScreen->h == ATARI_HEIGHT)) {
-		screen = screen + jumped;
-		i = MainScreen->h;
-		switch (MainScreen->format->BitsPerPixel) {
-		case 8:
-			while (i > 0) {
-				memcpy(start32, screen, width);
-				screen += ATARI_WIDTH;
-				start32 += pitch4;
-				i--;
-			}
-			break;
-		case 16:
-			while (i > 0) {
-				pos = width - 1;
-				while (pos > 0) {
-					c = screen[pos];
-					quad = Palette16[c] << 16;
-					pos--;
-					c = screen[pos];
-					quad += Palette16[c];
-					start32[pos >> 1] = quad;
-					pos--;
-				}
-				screen += ATARI_WIDTH;
-				start32 += pitch4;
-				i--;
-			}
-			break;
-		case 32:
-			while (i > 0) {
-				pos = width - 1;
-				while (pos > 0) {
-					c = screen[pos];
-					quad = Palette32[c];
-					start32[pos] = quad;
-					pos--;
-				}
-				screen += ATARI_WIDTH;
-				start32 += pitch4;
-				i--;
-			}
-			break;
-		default:
-			Aprint("unsupported color depth %i",
-				   MainScreen->format->BitsPerPixel);
-			Aprint
-				("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
-			Aflushlog();
-			exit(-1);
-		}
+		DisplayWithoutScaling(screen, jumped, width);
 	}
 
 	else {
-		w = (width) << 16;
-		h = (ATARI_HEIGHT) << 16;
-		dx = w / MainScreen->w;
-		dy = h / MainScreen->h;
-		w2 = MainScreen->w / 2 - 1;
-		w4 = MainScreen->w / 4 - 1;
-		ss = screen;
-		y = (0) << 16;
-		i = MainScreen->h;
-
-		switch (MainScreen->format->BitsPerPixel) {
-		case 8:
-			while (i > 0) {
-				x = (width + jumped) << 16;
-				pos = w4;
-				yy = ATARI_WIDTH * (y >> 16);
-				while (pos >= 0) {
-					quad = (ss[yy + (x >> 16)] << 24);
-					x = x - dx;
-					quad += (ss[yy + (x >> 16)] << 16);
-					x = x - dx;
-					quad += (ss[yy + (x >> 16)] << 8);
-					x = x - dx;
-					quad += (ss[yy + (x >> 16)] << 0);
-					x = x - dx;
-
-					start32[pos] = quad;
-					pos--;
-
-				}
-				start32 += pitch4;
-				y = y + dy;
-				i--;
-			}
-			break;
-		case 16:
-			while (i > 0) {
-				x = (width + jumped) << 16;
-				pos = w2;
-				yy = ATARI_WIDTH * (y >> 16);
-				while (pos >= 0) {
-
-					c = ss[yy + (x >> 16)];
-					quad = Palette16[c] << 16;
-					x = x - dx;
-					c = ss[yy + (x >> 16)];
-					quad += Palette16[c];
-					x = x - dx;
-					start32[pos] = quad;
-					pos--;
-
-				}
-				start32 += pitch4;
-				y = y + dy;
-				i--;
-			}
-			break;
-		case 32:
-			while (i > 0) {
-				x = (width + jumped) << 16;
-				pos = w2;
-				yy = ATARI_WIDTH * (y >> 16);
-				while (pos >= 0) {
-
-					c = ss[yy + (x >> 16)];
-					quad = Palette32[c];
-					x = x - dx;
-					start32[pos] = quad;
-					pos--;
-
-				}
-				start32 += pitch4;
-				y = y + dy;
-				i--;
-			}
-
-			break;
-		default:
-			Aprint("unsupported color depth %i",
-				   MainScreen->format->BitsPerPixel);
-			Aprint
-				("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
-			Aflushlog();
-			exit(-1);
-		}
+		DisplayWithScaling(screen, jumped, width);
 	}
 	SDL_Flip(MainScreen);
 }
@@ -1201,6 +1229,7 @@ int main(int argc, char **argv)
 		if (ticks2 - ticks1 > 1000) {
 			ticks1 = ticks2;
 			Aprint("%i fps", shortframes);
+			Aflushlog();
 			shortframes = 0;
 		}
 #endif
