@@ -32,6 +32,7 @@ UBYTE KBCODE;
 UBYTE SERIN;
 UBYTE IRQST;
 UBYTE IRQEN;
+UBYTE SKSTAT;
 UBYTE SKCTLS;
 int SHIFT_KEY = FALSE, KEYPRESSED = FALSE;
 int DELAYED_SERIN_IRQ;
@@ -106,6 +107,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		byte = IRQST;
 		break;
 	case _SKSTAT:
+		byte = SKSTAT;
 		if (SHIFT_KEY)
 			byte &= ~8;
 		if (KEYPRESSED)
@@ -189,6 +191,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		IRQST |= ~byte & 0xf7;	/* Reset disabled IRQs except XMTDONE */
 		if ((~IRQST & IRQEN) == 0)
 			IRQ = 0;
+		break;
+	case _SKRES:
+		SKSTAT |= 0xe0;
 		break;
 	case _POTGO:
 		if (!(SKCTLS & 4))
@@ -280,8 +285,11 @@ void POKEY_Initialise(int *argc, char *argv[])
 	DELAYED_XMTDONE_IRQ = 0;
 
 	KBCODE = 0xff;
+	SERIN = 0x00;	/* or 0xff ? */
 	IRQST = 0xff;
 	IRQEN = 0x00;
+	SKSTAT = 0xff;
+	SKCTLS = 0x00;
 
 	for (i = 0; i < (MAXPOKEYS * 4); i++) {
 		AUDC[i] = 0;
@@ -349,8 +357,12 @@ void POKEY_Scanline(void)
 #ifdef DEBUG2
 				printf("SERIO: SERIN Interrupt triggered\n");
 #endif
-				IRQST &= 0xdf;
-				SERIN = SIO_GetByte();
+				if (IRQST & 0x20) {
+					IRQST &= 0xdf;
+					SERIN = SIO_GetByte();
+				}
+				else
+					SKSTAT &= 0xdf;
 				GenerateIRQ();
 			}
 #ifdef DEBUG2
