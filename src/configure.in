@@ -315,7 +315,7 @@ fi	dnl digitized effects enabled
 DEF_FEATURE(NOSNDINTER, sndinter, disable, Sound Interpolation, n)
 DEF_FEATURE(CLIP, sndclip, enable, Sound Clipping, n)
 if test "$a800_target" != falcon; then
-DEF_FEATURE(STEREO, stereo, enable, Stereo Sound, n)
+DEF_FEATURE(STEREO, stereo, enable, Stereo Sound, y)
 fi
 fi	dnl sound enabled
 
