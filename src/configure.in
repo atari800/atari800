@@ -9,17 +9,15 @@ AC_INIT(amiga/amiga_asm.h)
 AC_CONFIG_HEADER(config.h)
 
 a800_target=none
-for a800_option
-do
-  case "$a800_option" in
-    basic|curses|ncurses|svgalib|vga|dx) 
-      a800_target="$a800_option" ;;
-    x11|x11-shm|xview|xview-shm|motif)
-      a800_target=x11-"$a800_option" ;;
-  esac
-done
+case "$target" in
+	basic|curses|ncurses|svgalib|vga|dx) 
+	a800_target="$target" ;;
+	x11|x11-shm|xview|xview-shm|motif)
+	a800_target=x11-"$target" ;;
+esac
+
 if test "$a800_target" = none; then
-	echo "to configure atari800 use: configure <target>"
+	echo "to configure atari800 use: configure --target=<target>"
 	echo "available atari800 targets are:"
 	echo " basic"
 	echo " curses ncurses"
@@ -34,8 +32,13 @@ if test "$a800_target" = none; then
         exit 1;
 fi        
 
+if test "${LDFLAGS+set}" != set; then
 LDFLAGS=-s
+fi
+if test "${CFLAGS+set}" != set; then
 CFLAGS='-O2 -Wall'
+fi
+
 AC_PROG_CC
 
 a800_host=none
@@ -65,14 +68,14 @@ if test "$ac_cv_linux" = yes; then a800_host=linux; fi
 
 echo "$a800_host environment found"
 
-EXE=
+AC_EXEEXT
+
 case "$a800_host" in
-  dos) EXE=.exe; AC_DEFINE(DOS_DRIVES)
+  dos)	AC_DEFINE(DOS_DRIVES)
 ;;  
-  win)	EXE=.exe; 
-	AC_DEFINE(WIN32,) 
-        AC_DEFINE(BACK_SLASH)
-        AC_DEFINE(DOS_DRIVES)
+  win)	AC_DEFINE(WIN32,) 
+	AC_DEFINE(BACK_SLASH)
+	AC_DEFINE(DOS_DRIVES)
 ;;  
 esac
 
@@ -144,7 +147,6 @@ dnl Replace `main' with a function in -ldxguid:
 NEED_LIB(dxguid, main)
 
 AC_DEFINE(DIRECTX)
-A800_MAIN="-Dmain=atari_main"
 OBJ="win32/atari_win32.o \
 win32/screen.o \
 win32/main.o \
@@ -333,8 +335,6 @@ AC_CHECK_SIZEOF(long, 4)
 
 AC_C_BIGENDIAN
 
-AC_SUBST(EXE)
 AC_SUBST(OBJ)
-AC_SUBST(A800_MAIN)
 
 AC_OUTPUT(Makefile)
