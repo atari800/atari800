@@ -201,32 +201,45 @@ void Atari800_PatchOS(void)
 {
 	int patched = Device_PatchOS();
 	if (enable_sio_patch) {
-                UWORD addr_l,addr_s;
-                //patch Open() of C: so we know when a leader is processed
-                switch (machine_type) {
-                case MACHINE_OSA:
-                case MACHINE_OSB:
-                        addr_l = 0xef74;
-                        addr_s = 0xefbc;
-                        break;
-                case MACHINE_XLXE:
-                        addr_l = 0xfd13;
-                        addr_s = 0xfd60;
-                        break;
-                default:
-                        Aprint("Fatal Error in Atari800_PatchOS(): Unknown machine");
-                        return;
-                }
-                Atari800_AddEsc(addr_l, ESC_COPENLOAD, CASSETTE_LeaderLoad);
-                Atari800_AddEsc(addr_s, ESC_COPENSAVE, CASSETTE_LeaderSave);
-
+		UWORD addr_l;
+		UWORD addr_s;
+		UBYTE save_check_bytes[2];
+		/* patch Open() of C: so we know when a leader is processed */
+		switch (machine_type) {
+		case MACHINE_OSA:
+		case MACHINE_OSB:
+			addr_l = 0xef74;
+			addr_s = 0xefbc;
+			save_check_bytes[0] = 0xa0;
+			save_check_bytes[1] = 0x80;
+			break;
+		case MACHINE_XLXE:
+			addr_l = 0xfd13;
+			addr_s = 0xfd60;
+			save_check_bytes[0] = 0xa9;
+			save_check_bytes[1] = 0x03;
+			break;
+		default:
+			Aprint("Fatal Error in Atari800_PatchOS(): Unknown machine");
+			return;
+		}
+		/* don't hurt non-standard OSes that may not support cassette at all  */
+		if (dGetByte(addr_l)     == 0xa9 && dGetByte(addr_l + 1) == 0x03
+		 && dGetByte(addr_l + 2) == 0x8d && dGetByte(addr_l + 3) == 0x2a
+		 && dGetByte(addr_l + 4) == 0x02
+		 && dGetByte(addr_s)     == save_check_bytes[0]
+		 && dGetByte(addr_s + 1) == save_check_bytes[1]
+		 && dGetByte(addr_s + 2) == 0x20 && dGetByte(addr_s + 3) == 0x5c
+		 && dGetByte(addr_s + 4) == 0xe4) {
+			Atari800_AddEsc(addr_l, ESC_COPENLOAD, CASSETTE_LeaderLoad);
+			Atari800_AddEsc(addr_s, ESC_COPENSAVE, CASSETTE_LeaderSave);
+		}
 		Atari800_AddEscRts(0xe459, ESC_SIOV, SIO);
 		patched = TRUE;
 	}
-	else
-	{
-                Atari800_RemoveEsc(ESC_COPENLOAD);
-                Atari800_RemoveEsc(ESC_COPENSAVE);
+	else {
+		Atari800_RemoveEsc(ESC_COPENLOAD);
+		Atari800_RemoveEsc(ESC_COPENSAVE);
 		Atari800_RemoveEsc(ESC_SIOV);
 	};
 	if (patched && machine_type == MACHINE_XLXE) {
@@ -1055,6 +1068,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.53  2003/12/16 18:30:34  pfusik
+check OS before applying C: patches
+
 Revision 1.52  2003/11/22 23:26:19  joy
 cassette support improved
 
