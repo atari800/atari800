@@ -1,3 +1,15 @@
+Version 1.3.1-rc1 (2003/09/04)
+
+ Highlights since last 1.3.0 release:
+ ------------------------------------
+ * rewritten and much improved configure script
+ * new cartridge types supported (38 types now!) - see DOC/cart.txt
+ * Disk Sets - loading and saving of D1-D8 set is possible in the UI
+ * R: as the Atari850 serial port emulation added - mapped to TCP port 9000
+ * updated and improved m68k assembler emulation of the CPU
+ * XF551 HighSpeed transfer emulation added 
+
+
 Version 1.3.0 (2003/02/10)
 
  Highlights since last 1.2.5 release:

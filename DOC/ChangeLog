@@ -1,3 +1,12 @@
+** tagged as ATARI800_1_3_1_RC1
+
+2003-09-03  Petr Stehlik  <pstehlik@sophics.cz>
+* dos/vga_gfx.h: wrong #endif fixed
+* dos/atari_vga.c: cleaned up a bit, added #ifdef SHOW_DISK_LED
+* configure_dos.bat: default target and bufferedlog pre-set
+* atari.h: version increased to 1.3.1-rc1
+
+
 2003-08-31  Petr Stehlik  <pstehlik@sophics.cz>
 * rdevice.c: GPL header added (hope that it actually was free source before 
   Chris brought it to Atari800 project)

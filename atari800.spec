@@ -1,5 +1,5 @@
 %define name	atari800
-%define ver	1.3.0
+%define ver	1.3.1-rc1
 %define rel	1
 %define copy	GPL
 %define ich Petr Stehlik <pstehlik@sophics.cz>
@@ -41,16 +41,7 @@ rm -rf %{realname}
 %build
 for target in %{targets}
 do
-	./configure --target=$target --disable-VERY_SLOW \
-	--disable-NO_CYCLE_EXACT \
-	--enable-CRASH_MENU --enable-MONITOR_BREAK \
-	--enable-MONITOR_HINTS --enable-MONITOR_ASSEMBLER \
-	--enable-COMPILED_PALETTE --enable-SNAILMETER \
-	--enable-USE_CURSORBLOCK --enable-LINUX_JOYSTICK \
-	--enable-SOUND  --disable-NO_VOL_ONLY --disable-NO_CONSOL_SOUND \
-	--disable-SERIO_SOUND --disable-NOSNDINTER --enable-CLIP \
-	--enable-BUFFERED_LOG --enable-SET_LED \
-	--disable-NO_LED_ON_SCREEN --disable-SVGA_SPEEDUP --disable-JOYMOUSE
+	./configure --target=$target
 	make
 	mv atari800 atari800-$target
 	make clean
@@ -86,6 +77,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/atari800.1.bz2
 
 %changelog
+* Thu Sep 04 2003 Petr Stehlik <pstehlik@sophics.cz>
+Version increased. Configure options removed.
 * Mon Feb 10 2003 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. STEREO enabled by default. Description updated.
 * Mon Dec 2 2002 Petr Stehlik <pstehlik@sophics.cz>
