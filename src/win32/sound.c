@@ -19,7 +19,8 @@
 #include "log.h"
 
 #define MIXBUFSIZE	0x800
-#define WAVSIZE		0x100
+#define WAVSHIFT	9
+#define WAVSIZE		(1 << WAVSHIFT)
 int buffers = 0;
 
 enum {SOUND_NONE, SOUND_DX, SOUND_WAV};
@@ -27,6 +28,7 @@ enum {SOUND_NONE, SOUND_DX, SOUND_WAV};
 static int issound = SOUND_NONE;
 static int dsprate = 22050;
 static int snddelay = 40;	/* delay in milliseconds */
+static int snddelaywav = 100;
 #ifdef STEREO
 static int stereo = TRUE;
 #else
@@ -285,7 +287,7 @@ static int initsound_wav(void)
       exit(1);
     }
 
-  buffers = ((wf.nAvgBytesPerSec * snddelay / 1000) >> 8) + 1;
+  buffers = ((wf.nAvgBytesPerSec * snddelaywav / 1000) >> WAVSHIFT) + 1;
   waves = malloc(buffers * sizeof(*waves));
   for (i = 0; i < buffers; i++)
     {
@@ -328,7 +330,10 @@ void Sound_Initialise(int *argc, char *argv[])
       else if (strcmp(argv[i], "-dsprate") == 0)
 	sscanf(argv[++i], "%d", &dsprate);
       else if (strcmp(argv[i], "-snddelay") == 0)
+      {
 	sscanf(argv[++i], "%d", &snddelay);
+        snddelaywav = snddelay;
+      }
 #ifdef DIRECTX
       else if (strcmp(argv[i], "-wavonly") == 0)
 	wavonly = TRUE;
@@ -449,6 +454,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.5  2001/07/22 06:46:08  knik
+waveout default sound delay 100ms, buffer size 0x200
+
 Revision 1.4  2001/04/17 05:32:33  knik
 sound_continue moved outside dx conditional
 
