@@ -23,8 +23,8 @@ The format is:
  next 4 bytes containing cartridge type in MSB format (see the table below).
  next 4 bytes containing cartridge checksum in MSB format (ROM only).
  next 4 bytes are currently unused (zero).
- followed immediately with the ROM data: 4, 8, 16, 32, 40, 64
- or 128 kilobytes.
+ followed immediately with the ROM data: 4, 8, 16, 32, 40, 64, 128, 256, 512
+ or 1024 kilobytes.
 
 The recommended file name extension for CART files is CAR.
 
@@ -70,6 +70,7 @@ Currently supported cartridge types:
 | 35 | 800/XL/XE |  128 | Switchable XEGS 128 KB cartridge                  |
 | 36 | 800/XL/XE |  256 | Switchable XEGS 256 KB cartridge                  |
 | 37 | 800/XL/XE |  512 | Switchable XEGS 512 KB cartridge                  |
+| 38 | 800/XL/XE | 1024 | Switchable XEGS 1 MB cartridge                    |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -414,6 +415,16 @@ stands for the first bank in the image, bank B is the second, etc.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
  The last bank is always mapped to $A000-$BFFF. Six lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 38: Switchable XEGS 1 MB cartridge                                   |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
+ The last bank is always mapped to $A000-$BFFF. Seven lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 

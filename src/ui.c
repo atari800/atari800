@@ -280,6 +280,7 @@ int SelectCartType(UBYTE* screen, int k)
 		{ "CRTZ", ITEM_ACTION, NULL, "Switchable XEGS 128 KB cartridge",NULL, 35 },
 		{ "CRU0", ITEM_ACTION, NULL, "Switchable XEGS 256 KB cartridge",NULL, 36 },
 		{ "CRU1", ITEM_ACTION, NULL, "Switchable XEGS 512 KB cartridge",NULL, 37 },
+		{ "CRU2", ITEM_ACTION, NULL, "Switchable XEGS 1 MB cartridge",  NULL, 38 },
 		MENU_END
 	};
 
@@ -895,6 +896,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.44  2003/02/27 17:42:08  pfusik
+new cartridge type
+
 Revision 1.43  2003/02/24 09:33:12  joy
 header cleanup
 

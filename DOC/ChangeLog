@@ -1,3 +1,8 @@
+2003-02-27  Piotr Fusik  <fox@scene.pl>
+* cartridge.[ch], ui.c, DOC/cart.txt, DOC/CREDITS, DOC/README:
+  new cartridge type
+
+
 2003-02-24  Ed Cogburn  <ecogburn@xtn.net>
 * added copyright headers to all *.c and *.asm files. Tried to collect
   as much info as possible from the various ChangeLogs but if the author
