@@ -53,6 +53,7 @@ Currently supported cartridge types:
 | 18 | 800/XL/XE |   40 | Bounty Bob Strikes Back 40 KB cartridge           |
 | 19 |   5200    |    8 | Standard 8 KB 5200 cartridge                      |
 | 20 |   5200    |    4 | Standard 4 KB 5200 cartridge                      |
+| 21 |    800    |    8 | Right slot 8 KB cartridge                         |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -250,3 +251,11 @@ stands for the first bank in the image, bank B is the second, etc.
 
  Standard 4 KB cartridge for Atari 5200, mapped into $8000-$8FFF,
  $9000-$9FFF, $A000-$AFFF and $B000-$BFFF.
+
++---------------------------------------------------------------------------+
+| Type 21: Right slot 8 KB cartridge                                        |
++---------------------------------------------------------------------------+
+
+ 8 KB cartridge for Atari 800, mapped into $8000-$9FFF. Atari 800 was
+ the only 8-bit Atari with a Right Cartridge slot, in addition
+ to the Left Cartridge slot as present on all 8-bit Ataris.

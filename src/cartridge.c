@@ -29,7 +29,8 @@ int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	128,/* CART_ATRAX_128 */
 	40,	/* CART_BBSB_40 */
 	8,	/* CART_5200_8 */
-	4	/* CART_5200_4 */
+	4,	/* CART_5200_4 */
+	8	/* CART_RIGHT_8 */
 };
 
 int CART_IsFor5200(int type)
@@ -459,6 +460,22 @@ void CART_Start(void) {
 			CopyROM(0xa000, 0xbfff, cart_image + 0x8000);
 			SetHARDWARE(0x8ff6, 0x8ff9);
 			SetHARDWARE(0x9ff6, 0x9ff9);
+			break;
+		case CART_RIGHT_8:
+			if (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB) {
+				Cart809F_Enable();
+				CopyROM(0x8000, 0x9fff, cart_image);
+				if (!disable_basic && have_basic) {
+					CartA0BF_Enable();
+					CopyROM(0xa000, 0xbfff, atari_basic);
+					break;
+				}
+				CartA0BF_Disable();
+				break;
+			}
+			/* there's no right slot in XL/XE */
+			Cart809F_Disable();
+			CartA0BF_Disable();
 			break;
 		default:
 			Cart809F_Disable();

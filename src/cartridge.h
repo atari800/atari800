@@ -21,7 +21,8 @@
 #define CART_BBSB_40	18
 #define CART_5200_8		19
 #define CART_5200_4		20
-#define CART_LAST_SUPPORTED 20
+#define CART_RIGHT_8	21
+#define CART_LAST_SUPPORTED 21
 
 #define CART_MAX_SIZE	131072
 extern int cart_kb[CART_LAST_SUPPORTED + 1];
