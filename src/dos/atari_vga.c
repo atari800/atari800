@@ -80,6 +80,7 @@ static int use_vret=0;           /*control vertical retrace?*/
   static int vesa_selector;  /*selector for accessing LFB*/
 
 static int vga_started = 0;             /*AAA needed for DOS to see text */
+static int keyboard_handler_replaced = FALSE;
 
 extern int SHIFT;
 extern int ATKEYPRESSED;
@@ -400,20 +401,23 @@ void key_init(void)
         _go32_dpmi_get_protected_mode_interrupt_vector(0x9, &old_key_handler);
         _go32_dpmi_allocate_iret_wrapper(&new_key_handler);
         _go32_dpmi_set_protected_mode_interrupt_vector(0x9, &new_key_handler);
+        keyboard_handler_replaced = TRUE;
 }
 
 void key_delete(void)
 {
-        int kflags;
-        _go32_dpmi_set_protected_mode_interrupt_vector(0x9, &old_key_handler);
-        /*set the original keyboard LED settings*/
-        kflags=_farpeekb(_dos_ds,0x417);
-        outportb(0x60,0xed);
-        asm("   jmp 0f
-             0: jmp 1f
-             1:
-             ");
-        outportb(0x60,((kflags>>4)&0x7));
+        if (keyboard_handler_replaced) {
+                int kflags;
+                _go32_dpmi_set_protected_mode_interrupt_vector(0x9, &old_key_handler);
+                /*set the original keyboard LED settings*/
+                kflags=_farpeekb(_dos_ds,0x417);
+                outportb(0x60,0xed);
+                asm("   jmp 0f
+                     0: jmp 1f
+                     1:
+                     ");
+                outportb(0x60,((kflags>>4)&0x7));
+        }
 }
 
 
@@ -484,7 +488,7 @@ void SetupVgaEnvironment()
 		rg.x.ax = 0;
 		int86(0x33, &rg, &rg);
 		if (rg.x.ax != 0xffff) {
-			printf("Can't find mouse!\n");
+			Aprint("Can't find mouse!");
 			mouse_mode = MOUSE_OFF;
 		}
 	}
@@ -588,6 +592,7 @@ void Atari_Initialise(int *argc, char *argv[])
         int i;
         int j;
         int use_lpt1=0,use_lpt2=0,use_lpt3=0;
+        int help_only = FALSE;
 
         for (i = j = 1; i < *argc; i++) {
                 if (strcmp(argv[i], "-interlace") == 0) {
@@ -611,8 +616,7 @@ void Atari_Initialise(int *argc, char *argv[])
                   video_mode=atoi(argv[i]);
                   if (video_mode<0 || video_mode>3)
                   {
-                    printf("Invalid video mode, using default.\n");
-                    getchar();
+                    Aprint("Invalid video mode, using default.");
                     video_mode=0;
                   }
                 }
@@ -634,22 +638,20 @@ void Atari_Initialise(int *argc, char *argv[])
 		}
                 else {
                         if (strcmp(argv[i], "-help") == 0) {
-                                printf("\t-interlace    Generate screen with interlace\n");
-                                printf("\t-LPTjoy1      Read joystick connected to LPT1\n");
-                                printf("\t-LPTjoy2      Read joystick connected to LPT2\n");
-                                printf("\t-LPTjoy3      Read joystick connected to LPT3\n");
-                                printf("\t-joyswap      Swap joysticks\n");
-                                printf("\t-video x      Set video mode:\n");
-                                printf("\t\t0 - 320x200\n\t\t1 - 320x240\n");
-                                printf("\t\t2 - 320x240, interlaced with black lines\n");
-                                printf("\t\t3 - 320x240, interlaced with darker lines (slower!)\n");
-                                printf("\t-novesa       Do not use vesa2 videomodes\n");
-                                printf("\t-vretrace     Use vertical retrace control\n");
-				printf("\t-keyboard 0   PC keyboard layout\n");
-				printf("\t-keyboard 1   Atari keyboard layout\n");
-                                printf("\nPress Return/Enter to continue...");
-                                getchar();
-                                printf("\r                                 \n");
+                                help_only = TRUE;
+                                Aprint("\t-interlace       Generate screen with interlace");
+                                Aprint("\t-LPTjoy1         Read joystick connected to LPT1");
+                                Aprint("\t-LPTjoy2         Read joystick connected to LPT2");
+                                Aprint("\t-LPTjoy3         Read joystick connected to LPT3");
+                                Aprint("\t-joyswap         Swap joysticks");
+                                Aprint("\t-video x         Set video mode:");
+                                Aprint("\t\t0 - 320x200\n\t\t1 - 320x240");
+                                Aprint("\t\t2 - 320x240, interlaced with black lines");
+                                Aprint("\t\t3 - 320x240, interlaced with darker lines (slower!)");
+                                Aprint("\t-novesa          Do not use vesa2 videomodes");
+                                Aprint("\t-vretrace        Use vertical retrace control");
+                                Aprint("\t-keyboard 0      PC keyboard layout");
+                                Aprint("\t-keyboard 1      Atari keyboard layout");
                         }
                         argv[j++] = argv[i];
                 }
@@ -662,18 +664,19 @@ void Atari_Initialise(int *argc, char *argv[])
         Sound_Initialise(argc, argv);
 #endif
 
+        if (help_only)
+                return;
+
         /* check if joystick is connected */
-        printf("Joystick is checked...");
+        printf("Joystick is checked...\n");
         fflush(stdout);
         outportb(0x201, 0xff);
         usleep(100000UL);
         joy_in = ((inportb(0x201) & 3) == 0);
         if (joy_in)
                 joystick0(&js0_centre_x, &js0_centre_y);
-        if (joy_in)
-                printf(" found!\n");
-        else
-                printf("\n\nSorry, I see no joystick. Use numeric pad\n");
+        if (! joy_in)
+                Aprint("Sorry, I see no joystick. Use numeric pad");
 
         /*find number of VESA2 video mode*/
         if (use_vesa)
@@ -848,29 +851,25 @@ int Atari_Exit(int run_monitor)
 
         if (run_monitor) {
 #ifdef SOUND
-		Sound_Pause();
+                Sound_Pause();
 #endif
                 if (monitor()) {
 #ifdef MONITOR_BREAK
                         if (!break_step)       /*do not enter videomode when stepping through the code*/
-                          SetupVgaEnvironment();
-#else
-                        SetupVgaEnvironment();
 #endif
+                        SetupVgaEnvironment();
 #ifdef SOUND
-			Sound_Continue();
+                        Sound_Continue();
 #endif
                         return 1;                       /* return to emulation */
                 }
-	}
+        }
 
 #ifdef SOUND
         Sound_Exit();
 #endif
 
-#ifdef BUFFERED_LOG
         Aflushlog();
-#endif
 
         return 0;
 }
