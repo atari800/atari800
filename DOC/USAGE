@@ -186,14 +186,14 @@ At the moment it is not possible to use a Paddle with the SVGALIB version.
 CURSES Keyboard + Joystick & Paddle Controllers
 ===============================================
 
-F1	Warm Reset (This doesn't work under Open Windows)
+F1	Built in User Interface
 F2	Option
 F3	Select
 F4	Start
-F5	Cold Reset
+F5	Warm Reset
 F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
 F7	Break Key
-F8	---
+F8	Cold Reset
 F9	Exit Emulator
 F10	---
 F11	---
