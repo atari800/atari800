@@ -15,18 +15,18 @@ P65C02 ; we emulate this version of processor (6502 has a bug in jump code,
   OPT    P=68040,L1,O+,W-
   output cpu_m68k.o
 
-  xref _bounty_bob2
-  xref _bounty_bob1
+  xref _CART_BountyBob2
+  xref _CART_BountyBob1
   xref _GTIA_GetByte
   xref _POKEY_GetByte
   xref _PIA_GetByte
   xref _ANTIC_GetByte
-  xref _SuperCart_GetByte
+  xref _CART_GetByte
   xref _GTIA_PutByte
   xref _POKEY_PutByte
   xref _PIA_PutByte
   xref _ANTIC_PutByte
-  xref _SuperCart_PutByte
+  xref _CART_PutByte
   xref _AtariEscape
   xref _break_addr
   xref _wsync_halt ;CPU is stopped
@@ -190,14 +190,14 @@ CouldBeBob:
 ItsBob2:
   move.w d7,-(a7)
   clr.w  -(a7)
-  jsr    _bounty_bob2
+  jsr    _CART_BountyBob2
   addq.l #4,a7
   clr.l  d0
   rts
 ItsBob1:
   move.w d7,-(a7)
   clr.w  -(a7)
-  jsr    _bounty_bob1
+  jsr    _CART_BountyBob1
   addq.l #4,a7
   clr.l  d0
   rts
@@ -228,7 +228,7 @@ GetANTIC8:
   rts
 GetRTIME8:
   move.l d0,-(a7)
-  jsr    _SuperCart_GetByte
+  jsr    _CART_GetByte
   addq.l #4,a7
   rts
 
@@ -267,14 +267,14 @@ CouldBeBobP:
 ItsBob2P:
   move.w d7,-(a7)
   clr.w  -(a7)
-  jsr    _bounty_bob2
+  jsr    _CART_BountyBob2
   addq.l #4,a7
   clr.l  d0
   rts
 ItsBob1P:
   move.w d7,-(a7)
   clr.w  -(a7)
-  jsr    _bounty_bob1
+  jsr    _CART_BountyBob1
   addq.l #4,a7
   clr.l  d0
   rts
@@ -322,7 +322,7 @@ PutSCart:
   move.b d0,3(a7)
   clr.l  -(a7)
   move.b d7,3(a7)
-  jsr    _SuperCart_PutByte
+  jsr    _CART_PutByte
   addq.l #8,a7
   rts
 
@@ -671,7 +671,7 @@ _GO: ;cycles (d0)
 ;*/
 
   move.l  4(a7),d0
-  tst.l   _wsync_halt
+  tst.b   _wsync_halt
   beq.s   NO_WS_HALT
   moveq.l #WSYNC_C-1,d1  ; TEST : no -1 if bpl.s
   cmp.l   d0,d1
@@ -679,7 +679,7 @@ _GO: ;cycles (d0)
   bge     TERM_GO        ; TEST
   subq.l  #1,d1          ; TEST : not necessary if bpl.s
   move.l  d1,_xpos
-  clr.l   _wsync_halt
+  clr.b   _wsync_halt
 NO_WS_HALT:
   move.l  d0,_xpos_limit ;  needed for WSYNC store inside ANTIC
   movem.l d2-d7/a2-a5,-(a7)
