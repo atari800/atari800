@@ -94,6 +94,15 @@ UBYTE M0PL_T;
 UBYTE M1PL_T;
 UBYTE M2PL_T;
 UBYTE M3PL_T;
+/*If partial collisions have been generated during a scanline, this
+ * is the position of the up-to-date collision point , otherwise it is 0
+ */
+int collision_curpos;
+/*if hitclr has been written to during a scanline, this is the position
+ * within pm_scaline at which it was written to, and collisions should 
+ * only be generated from this point on, otherwise it is 0
+ */
+int hitclr_pos;
 #else
 #define P1PL_T P1PL
 #define P2PL_T P2PL
@@ -230,16 +239,70 @@ void GTIA_Initialise(int *argc, char *argv[])
 }
 
 #ifdef NEW_CYCLE_EXACT
-/* update pm-> pl collisions */
-void update_pmpl_colls(void){
-	P1PL |= P1PL_T;
-	P2PL |= P2PL_T;
-	P3PL |= P3PL_T;
-	M0PL |= M0PL_T;
-	M1PL |= M1PL_T;
-	M2PL |= M2PL_T;
-	M3PL |= M3PL_T;
+
+/*generate updated PxPL and MxPL for part of a scanline*/
+/*slow, but should be called rarely*/
+void generate_partial_pmpl_colls(int l,int r){
+	int i;
+	if(r<0 || l>=sizeof(pm_scanline)/sizeof(pm_scanline[0])) return;
+	if(r>=sizeof(pm_scanline)/sizeof(pm_scanline[0])) {
+		r=sizeof(pm_scanline)/sizeof(pm_scanline[0]);
+	}
+	if(l<0) l=0;
+	
+	for(i=l;i<=r;i++){
+		UBYTE p=pm_scanline[i];
+/* It is possible that some bits are set in PxPL/MxPL here, which would
+ * not otherwise be set ever in new_pm_scanline.  This is because the 
+ * player collisions are always generated in order in new_pm_scanline.
+ * However this does not cause any problem because we never use those bits
+ * of PxPL/MxPL in the collision reading code.
+ */
+		P1PL |= (p&(1<<1)) ?  p : 0;
+		P2PL |= (p&(1<<2)) ?  p : 0;
+		P3PL |= (p&(1<<3)) ?  p : 0;
+		M0PL |= (p&(0x10<<0)) ?  p : 0;
+		M1PL |= (p&(0x10<<1)) ?  p : 0;
+		M2PL |= (p&(0x10<<2)) ?  p : 0;
+		M3PL |= (p&(0x10<<3)) ?  p : 0;
+	}
+	
 }
+
+/*update pm->pl collisions for a partial scanline*/
+void update_partial_pmpl_colls(void){
+	int l=collision_curpos;
+	int r=XPOS*2-37;
+	generate_partial_pmpl_colls(l,r);
+	collision_curpos=r;
+}
+
+/* update pm-> pl collisions at the end of a scanline*/
+void update_pmpl_colls(void){
+	if (hitclr_pos != 0){
+		generate_partial_pmpl_colls(hitclr_pos,\
+				sizeof(pm_scanline)/sizeof(pm_scanline[0])-1);
+/* If hitclr was written to, then only part of pm_scanline should be used
+ * for collisions*/
+
+	}else{
+/* otherwise the whole of pm_scaline can be used for collisions.  This will
+ * update the collision registers based on the generated collisions for the
+ * current line*/
+		P1PL |= P1PL_T;
+		P2PL |= P2PL_T;
+		P3PL |= P3PL_T;
+		M0PL |= M0PL_T;
+		M1PL |= M1PL_T;
+		M2PL |= M2PL_T;
+		M3PL |= M3PL_T;
+	}
+	collision_curpos=0;
+	hitclr_pos=0;
+}
+
+#else
+#define update_partial_pmpl_colls(a) do{}while(0)
 #endif /*NEW_CYCLE_EXACT*/
 /* Prepare PMG scanline ---------------------------------------------------- */
 
@@ -394,32 +457,40 @@ UBYTE GTIA_GetByte(UWORD addr)
 		byte |= (PF3PM & 0x08);
 		break;
 	case _M0PL:
-		byte = M0PL & 0x0f;		/* AAA fix for galaxian. easier to do it here. */
+		update_partial_pmpl_colls();
+		byte = M0PL & 0x0f;
 		break;
 	case _M1PL:
+		update_partial_pmpl_colls();
 		byte = M1PL & 0x0f;
 		break;
 	case _M2PL:
+		update_partial_pmpl_colls();
 		byte = M2PL & 0x0f;
 		break;
 	case _M3PL:
+		update_partial_pmpl_colls();
 		byte = M3PL & 0x0f;
 		break;
 	case _P0PL:
+		update_partial_pmpl_colls();
 		byte = (P1PL & 0x01) << 1;	/* mask in player 1 */
 		byte |= (P2PL & 0x01) << 2;	/* mask in player 2 */
 		byte |= (P3PL & 0x01) << 3;	/* mask in player 3 */
 		break;
 	case _P1PL:
+		update_partial_pmpl_colls();
 		byte = (P1PL & 0x01);		/* mask in player 0 */
 		byte |= (P2PL & 0x02) << 1;	/* mask in player 2 */
 		byte |= (P3PL & 0x02) << 2;	/* mask in player 3 */
 		break;
 	case _P2PL:
+		update_partial_pmpl_colls();
 		byte = (P2PL & 0x03);		/* mask in player 0 and 1 */
 		byte |= (P3PL & 0x04) << 1;	/* mask in player 3 */
 		break;
 	case _P3PL:
+		update_partial_pmpl_colls();
 		byte = P3PL & 0x07;			/* mask in player 0,1, and 2 */
 		break;
 	case _TRIG0:
@@ -922,6 +993,10 @@ if(HPOSP##n >= x) {\
 		M0PL = M1PL = M2PL = M3PL = 0;
 		P0PL = P1PL = P2PL = P3PL = 0;
 		PF0PM = PF1PM = PF2PM = PF3PM = 0;
+#ifdef NEW_CYCLE_EXACT
+		hitclr_pos=XPOS*2-37;
+		collision_curpos=hitclr_pos;
+#endif
 		break;
 /*TODO: cycle-exact missile HPOS, GRAF, SIZE*/
 /*this is only an approximation*/
