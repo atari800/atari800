@@ -309,8 +309,15 @@ void INPUT_Frame(void)
 			last_key_code = key_code;
 			KBCODE = (UBYTE) key_code;
 			if (IRQEN & 0x40) {
-				IRQST &= ~0x40;
-				GenerateIRQ();
+				if (IRQST & 0x40) {
+					IRQST &= ~0x40;
+					GenerateIRQ();
+				}
+				else {
+					/* keyboard over-run */
+					SKSTAT &= ~0x40;
+					/* assert(IRQ != 0); */
+				}
 			}
 		}
 	}
