@@ -66,9 +66,6 @@ int pil_on = FALSE;
 
 int	os = 2;
 
-extern int xe_bank;
-extern int selftest_enabled;
-
 double deltatime;
 int draw_display=1;		/* Draw actualy generated screen */
 
@@ -124,7 +121,7 @@ void Coldstart(void)
 
 	consol_index = 2;
 	consol_table[2] = 0x0f;
-	if (hold_option)
+	if (disable_basic)
 		consol_table[2] &= ~4;	/* hold Option during reboot */
 	if (hold_start)
 		consol_table[2] &= ~1;	/* hold Start during reboot */
@@ -265,9 +262,9 @@ int main(int argc, char **argv)
 		else if (strcmp(argv[i], "-5200") == 0)
 			machine = Atari5200;
 		else if (strcmp(argv[i], "-nobasic") == 0)
-			hold_option = TRUE;
+			disable_basic = TRUE;
 		else if (strcmp(argv[i], "-basic") == 0)
-			hold_option = FALSE;
+			disable_basic = FALSE;
 		else if (strcmp(argv[i], "-nopatch") == 0)
 			enable_sio_patch = FALSE;
 		else if (strcmp(argv[i], "-nopatchall") == 0)
@@ -914,6 +911,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.15  2001/09/09 08:34:13  fox
+hold_option -> disable_basic
+
 Revision 1.14  2001/08/16 23:24:25  fox
 selecting cartridge type didn't worked in 5200 mode
 

@@ -23,7 +23,7 @@ extern int hd_read_only;
 extern int refresh_rate;
 extern int default_system;
 extern int default_tv_mode;
-extern int hold_option;
+extern int disable_basic;
 extern int enable_c000_ram;
 extern int enable_sio_patch;
 extern int enable_h_patch;

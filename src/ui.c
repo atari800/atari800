@@ -1174,7 +1174,7 @@ void AtariSettings(UBYTE *screen)
 	Box(screen, 0x9a, 0x94, 1, 12, 39, 19);
 
 	do {
-		sprintf(menu[0] + 34, hold_option ? "Yes" : "No ");
+		sprintf(menu[0] + 34, disable_basic ? "Yes" : "No ");
 		sprintf(menu[1] + 34, enable_c000_ram ? "Yes" : "No ");
 		sprintf(menu[2] + 34, rtime_enabled ? "Yes" : "No ");
 		sprintf(menu[3] + 34, enable_sio_patch ? "Yes" : "No ");
@@ -1187,7 +1187,7 @@ void AtariSettings(UBYTE *screen)
 						2, 13, FALSE, &ascii);
 		switch (option) {
 		case 0:
-			hold_option = !hold_option;
+			disable_basic = !disable_basic;
 			break;
 		case 1:
 			enable_c000_ram = !enable_c000_ram;
@@ -1503,6 +1503,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.12  2001/09/09 08:38:02  fox
+hold_option -> disable_basic
+
 Revision 1.11  2001/09/08 07:52:30  knik
 used FILENAME_MAX instead of MAX_FILENAME_LEN
 

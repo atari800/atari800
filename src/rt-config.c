@@ -41,7 +41,7 @@ int hd_read_only;
 int refresh_rate;
 int default_system;
 int default_tv_mode;
-int hold_option;
+int disable_basic;
 int enable_c000_ram;
 int enable_sio_patch;
 int enable_h_patch;
@@ -92,7 +92,7 @@ int RtConfigLoad(char *rtconfig_filename)
 	refresh_rate = 1;
 	default_system = 3;
 	default_tv_mode = 1;
-	hold_option = 1;
+	disable_basic = 1;
 	enable_c000_ram = 0;
 	enable_sio_patch = 1;
 	enable_h_patch = 1;
@@ -161,8 +161,9 @@ int RtConfigLoad(char *rtconfig_filename)
 					strcpy(print_command, ptr);
 				else if (strcmp(string, "SCREEN_REFRESH_RATIO") == 0)
 					sscanf(ptr, "%d", &refresh_rate);
-				else if (strcmp(string, "HOLD_OPTION") == 0)
-					sscanf(ptr, "%d", &hold_option);
+				/* HOLD_OPTION supported for compatibility with previous Atari800 versions */
+				else if (strcmp(string, "DISABLE_BASIC") == 0 || strcmp(string, "HOLD_OPTION") == 0)
+					sscanf(ptr, "%d", &disable_basic);
 				else if (strcmp(string, "ENABLE_C000_RAM") == 0)
 					sscanf(ptr, "%d", &enable_c000_ram);
 				else if (strcmp(string, "ENABLE_ROM_PATCH") == 0) {
@@ -293,7 +294,7 @@ void RtConfigSave(void)
 	else
 		fprintf(fp, "DEFAULT_TV_MODE=NTSC\n");
 
-	fprintf(fp, "HOLD_OPTION=%d\n", hold_option);
+	fprintf(fp, "DISABLE_BASIC=%d\n", disable_basic);
 	fprintf(fp, "ENABLE_C000_RAM=%d\n", enable_c000_ram);
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", enable_sio_patch);
 	fprintf(fp, "ENABLE_H_PATCH=%d\n", enable_h_patch);
@@ -362,9 +363,9 @@ void RtConfigUpdate(void)
 	} while ((default_tv_mode < 1) || (default_tv_mode > 2));
 
 	do {
-		GetNumber("Hold OPTION during Coldstart [%d] ",
-				  &hold_option);
-	} while ((hold_option < 0) || (hold_option > 1));
+		GetNumber("Disable BASIC when booting Atari [%d] ",
+				  &disable_basic);
+	} while ((disable_basic < 0) || (disable_basic > 1));
 
 	do {
 		GetNumber("Enable C000-CFFF RAM in Atari800 mode [%d] ",
@@ -398,6 +399,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.7  2001/09/09 08:33:17  fox
+hold_option -> disable_basic
+
 Revision 1.6  2001/09/08 07:52:30  knik
 used FILENAME_MAX instead of MAX_FILENAME_LEN
 
