@@ -310,31 +310,27 @@ void NMI(void)
 
 /* check pending IRQ, helps in (not only) Lucasfilm games */
 #ifdef MONITOR_BREAK
-#define CPUCHECKIRQ							\
-{									\
-	if (IRQ) {							\
-		if (!(regP & I_FLAG)) {					\
-			PHW(PC);					\
-			PHPB0;						\
-			SetI;						\
-			PC = dGetWordAligned(0xfffe);				\
-			xpos += 7;					\
-			ret_nesting+=1;					\
-		}							\
-	}								\
+#define CPUCHECKIRQ \
+{ \
+	if (IRQ && !(regP & I_FLAG) && xpos < xpos_limit) { \
+		PHW(PC); \
+		PHPB0; \
+		SetI; \
+		PC = dGetWordAligned(0xfffe); \
+		xpos += 7; \
+		ret_nesting+=1; \
+	} \
 }
 #else
-#define CPUCHECKIRQ							\
-{									\
-	if (IRQ) {							\
-		if (!(regP & I_FLAG)) {					\
-			PHW(PC);					\
-			PHPB0;						\
-			SetI;						\
-			PC = dGetWordAligned(0xfffe);				\
-			xpos += 7;					\
-		}							\
-	}								\
+#define CPUCHECKIRQ \
+{ \
+	if (IRQ && !(regP & I_FLAG) && xpos < xpos_limit) { \
+		PHW(PC); \
+		PHPB0; \
+		SetI; \
+		PC = dGetWordAligned(0xfffe); \
+		xpos += 7; \
+	} \
 }
 #endif
 
