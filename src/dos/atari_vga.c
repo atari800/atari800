@@ -1045,10 +1045,7 @@ int Atari_Keyboard(void)
                 keycode = key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
                 break;
         case 0x40:                                      /* F6 */
-                if (machine_type != MACHINE_XLXE)
-                        keycode = AKEY_PIL;
-                else
-                        keycode = AKEY_HELP;
+                keycode = AKEY_HELP;
                 break;
         case 0x42:                                      /* F8 */
                 if (!norepkey && !ui_is_active) {
@@ -1398,7 +1395,7 @@ int Atari_Keyboard(void)
 
 
         case 0xc7:                                      /* HOME key */
-                keycode |= 118;                 /* clear screen */
+                keycode |= AKEY_CLEAR;
                 break;
         case 0xd2:                                      /* INSERT key */
                 if (key_shift)
@@ -1460,42 +1457,7 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	while (TRUE) {
-		int refresh_counter = 0;
-		int keycode = Atari_Keyboard();
-
-		switch (keycode) {
-		case AKEY_COLDSTART:
-			Coldstart();
-			break;
-		case AKEY_WARMSTART:
-			Warmstart();
-			break;
-		case AKEY_EXIT:
-			Atari800_Exit(FALSE);
-			exit(1);
-		case AKEY_UI:
-#ifdef SOUND
-			Sound_Pause();
-#endif
-			ui((UBYTE *)atari_screen);
-#ifdef SOUND
-			Sound_Continue();
-#endif
-			break;
-		case AKEY_SCREENSHOT:
-			Screen_SaveNextScreenshot(FALSE);
-			break;
-		case AKEY_SCREENSHOT_INTERLACE:
-			Screen_SaveNextScreenshot(TRUE);
-			break;
-		case AKEY_BREAK:
-			key_break = 1;
-			break;
-		default:
-			key_break = 0;
-			key_code = keycode;
-			break;
-		}
+		key_code = Atari_Keyboard();
 
 		if (mouse_mode != MOUSE_OFF) {
 			union REGS rg;
@@ -1508,23 +1470,8 @@ int main(int argc, char **argv)
 			mouse_buttons = rg.x.bx;
 		}
 
-		if (++refresh_counter == refresh_rate) {
-			Atari800_Frame(EMULATE_FULL);
-#ifndef DONT_SYNC_WITH_HOST
-			atari_sync(); /* here seems to be the best place to sync */
-#endif
+		Atari800_Frame();
+		if (display_screen)
 			Atari_DisplayScreen((UBYTE *) atari_screen);
-			refresh_counter = 0;
-		}
-		else {
-#ifdef VERY_SLOW
-			Atari800_Frame(EMULATE_BASIC);
-#else	/* VERY_SLOW */
-			Atari800_Frame(EMULATE_NO_SCREEN);
-#ifndef DONT_SYNC_WITH_HOST
-			atari_sync();
-#endif
-#endif	/* VERY_SLOW */
-		}
 	}
 }

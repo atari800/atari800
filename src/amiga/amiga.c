@@ -2,7 +2,7 @@
  * amiga.c - Amiga specific port code
  *
  * Copyright (c) 2000 Sebastian Bauer
- * Copyright (c) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -2360,7 +2360,6 @@ char program_name[256];
 **************************************************************************/
 int main(int argc, char **argv)
 {
-	int keycode;
 	struct WBStartup *wbs = NULL;
 
 	if (!argc)
@@ -2393,9 +2392,7 @@ int main(int argc, char **argv)
 	{
 		LONG LastDisplayType = DisplayType;
 
-		keycode = Atari_Keyboard();
-
-		if (keycode == AKEY_EXIT) break;
+		key_code = Atari_Keyboard();
 
 		if (LastDisplayType != DisplayType)
 		{
@@ -2404,30 +2401,9 @@ int main(int argc, char **argv)
 				break;
 		}
 
-		switch (keycode)
-		{
-				case AKEY_UI:
-					Sound_Pause();
-					ui((UBYTE *)atari_screen);
-					Sound_Continue();
-					break;
+		Atari800_Frame();
 
-				case AKEY_COLDSTART:
-					Coldstart();
-					break;
-
-				case AKEY_WARMSTART:
-					Warmstart();
-					break;
-
-		}
-		key_code = keycode;
-
-		Atari800_Frame(EMULATE_FULL);
-
-		atari_sync(); /* here seems to be the best place to sync */
-
-		if (!SizeVerify)
+		if (display_screen && !SizeVerify)
 			Atari_DisplayScreen((UBYTE *) atari_screen);
 	}
 

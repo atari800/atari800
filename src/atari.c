@@ -2,7 +2,7 @@
  * atari.c - main high-level routines
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -77,6 +77,8 @@ int tv_mode = TV_PAL;
 
 int verbose = FALSE;
 
+int sprite_collisions_in_skipped_frames = FALSE;
+int display_screen = FALSE;
 int nframes = 0;
 
 static double frametime = 0.1;	/* measure time between two Antic runs */
@@ -834,8 +836,37 @@ void atari_sync(void)
 #endif /* USE_CLOCK */
 }
 
-void Atari800_Frame(int mode)
+void Atari800_Frame(void)
 {
+	static int refresh_counter = 0;
+	switch (key_code) {
+	case AKEY_COLDSTART:
+		Coldstart();
+		break;
+	case AKEY_WARMSTART:
+		Warmstart();
+		break;
+	case AKEY_EXIT:
+		Atari800_Exit(FALSE);
+		exit(0);
+		return;
+	case AKEY_UI:
+#ifdef SOUND
+		Sound_Pause();
+#endif
+		ui((UBYTE *) atari_screen);
+#ifdef SOUND
+		Sound_Continue();
+#endif
+		frametime = deltatime;
+		break;
+	case AKEY_SCREENSHOT:
+		Screen_SaveNextScreenshot(FALSE);
+		break;
+	case AKEY_SCREENSHOT_INTERLACE:
+		Screen_SaveNextScreenshot(TRUE);
+		break;
+	}
 	Device_Frame();
 	INPUT_Frame();
 	GTIA_Frame();
@@ -844,25 +875,37 @@ void Atari800_Frame(int mode)
 	Sound_Update();
 #endif
 
-	switch (mode) {
-	case EMULATE_BASIC:
-		for (ypos = 0; ypos < max_ypos; ypos++) {
-			GO(LINE_C);
-			xpos -= LINE_C - DMAR;
-		}
-		break;
-	case EMULATE_NO_SCREEN:
-		ANTIC_Frame(FALSE);
-		break;
-	case EMULATE_FULL:
+#ifdef BASIC
+	for (ypos = 0; ypos < max_ypos; ypos++) {
+		GO(LINE_C);
+		xpos -= LINE_C - DMAR;
+	}
+#else /* BASIC */
+	if (++refresh_counter >= refresh_rate) {
+		refresh_counter = 0;
 		ANTIC_Frame(TRUE);
 		INPUT_DrawMousePointer();
 		Screen_DrawAtariSpeed();
 		Screen_DrawDiskLED();
-		break;
+		display_screen = TRUE;
 	}
+	else {
+#ifdef VERY_SLOW
+		for (ypos = 0; ypos < max_ypos; ypos++) {
+			GO(LINE_C);
+			xpos -= LINE_C - DMAR;
+		}
+#else /* VERY_SLOW */
+		ANTIC_Frame(sprite_collisions_in_skipped_frames);
+#endif /* VERY_SLOW */
+		display_screen = FALSE;
+	}
+#endif /* BASIC */
 	POKEY_Frame();
 	nframes++;
+#ifndef DONT_SYNC_WITH_HOST
+	atari_sync();
+#endif
 }
 
 int zlib_capable(void)
@@ -1024,6 +1067,10 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.56  2005/03/05 12:28:24  pfusik
+support for special AKEY_*, refresh rate control and atari_sync()
+moved to Atari800_Frame()
+
 Revision 1.55  2005/03/03 09:36:26  pfusik
 moved screen-related variables to the new "screen" module
 

@@ -2,7 +2,7 @@
  * main.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -161,8 +161,6 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 
   /* main loop */
   while (TRUE) {
-    static int test_val = 0;
-    int keycode;
 
   start:
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -177,41 +175,7 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
     if (!bActive)
       goto start;
 
-    keycode = Atari_Keyboard();
-
-    switch (keycode) {
-    case AKEY_COLDSTART:
-      Coldstart();
-      break;
-    case AKEY_WARMSTART:
-      Warmstart();
-      break;
-    case AKEY_EXIT:
-      Atari800_Exit(FALSE);
-      exit(1);
-    case AKEY_UI:
-#ifdef SOUND
-      Sound_Pause();
-#endif
-      ui((UBYTE *)atari_screen);
-#ifdef SOUND
-      Sound_Continue();
-#endif
-      break;
-    case AKEY_SCREENSHOT:
-      Screen_SaveNextScreenshot(FALSE);
-      break;
-    case AKEY_SCREENSHOT_INTERLACE:
-      Screen_SaveNextScreenshot(TRUE);
-      break;
-    case AKEY_BREAK:
-      key_break = 1;
-      break;
-    default:
-      key_break = 0;
-      key_code = keycode;
-      break;
-    }
+    key_code = Atari_Keyboard();
 
     GetCursorPos(&mouse);
     mouse_delta_x = mouse.x - mouse_center_x;
@@ -219,24 +183,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
     if (mouse_delta_x | mouse_delta_y)
       SetCursorPos(mouse_center_x, mouse_center_y);
 
-    if (++test_val == refresh_rate) {
-      Atari800_Frame(EMULATE_FULL);
-#ifndef DONT_SYNC_WITH_HOST
-      atari_sync(); /* here seems to be the best place to sync */
-#endif
+    Atari800_Frame();
+    if (display_screen)
       Atari_DisplayScreen((UBYTE *) atari_screen);
-      test_val = 0;
-    }
-    else {
-#ifdef VERY_SLOW
-      Atari800_Frame(EMULATE_BASIC);
-#else	/* VERY_SLOW */
-      Atari800_Frame(EMULATE_NO_SCREEN);
-#ifndef DONT_SYNC_WITH_HOST
-      atari_sync();
-#endif
-#endif	/* VERY_SLOW */
-    }
   }
 
   return msg.wParam;
@@ -244,6 +193,10 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 
 /*
 $Log$
+Revision 1.12  2005/03/05 12:31:26  pfusik
+support for special AKEY_*, refresh rate control and atari_sync()
+moved to Atari800_Frame()
+
 Revision 1.11  2005/03/03 09:15:43  pfusik
 renamed win32/screen.[ch] to win32/screen_win32.[ch]
 

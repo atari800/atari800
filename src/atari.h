@@ -39,7 +39,10 @@ extern int ram_size;
 #define TV_NTSC 262
 extern int tv_mode;				/* now it is simply number of scanlines */
 
+extern int sprite_collisions_in_skipped_frames;
+extern int display_screen;
 extern int nframes;
+
 extern double deltatime;
 extern int percent_atari_speed;
 
@@ -172,7 +175,7 @@ struct ATR_Header {
 #define AKEY_COLDSTART -3
 #define AKEY_EXIT -4
 #define AKEY_BREAK -5
-#define AKEY_PIL -6
+/* #define AKEY_PIL -6 */
 #define AKEY_UI -7
 #define AKEY_SCREENSHOT -8
 #define AKEY_SCREENSHOT_INTERLACE -9
@@ -205,10 +208,7 @@ struct ATR_Header {
 
 int Atari800_Initialise(int *argc, char *argv[]);
 
-#define EMULATE_BASIC		0	/* no screen, no interrupts */
-#define EMULATE_NO_SCREEN	1	/* don't draw screen */
-#define EMULATE_FULL		2	/* normal mode */
-void Atari800_Frame(int mode);
+void Atari800_Frame(void);
 
 void EnablePILL(void);
 void Coldstart(void);
@@ -222,6 +222,10 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.48  2005/03/05 12:28:24  pfusik
+support for special AKEY_*, refresh rate control and atari_sync()
+moved to Atari800_Frame()
+
 Revision 1.47  2005/03/03 09:36:26  pfusik
 moved screen-related variables to the new "screen" module
 
