@@ -1,3 +1,31 @@
+2003-02-19  Ed Cogburn  <ecogburn@xtn.net>
+* configure process: cleans up some things, fixes a few little things,
+  rewrote the message screen when nothing is typed, and reorganizes/changes
+  the --enable options and the symbol names (defines) for those options.
+
+  First, all options are now --enable-xxx, because I flipped all the inverse
+  options. In other words, all symbol names declared for options here in
+  configure now mean the feature is enabled if the symbol is defined, for
+  consistancy, and to make it easier to figure out what options need to be
+  set. The display when you use '--help' also puts those features which
+  default to on at the top of the list, so its easy to look down the list
+  and understand whats going on now. 
+
+  For those options that I flipped, I made the necessary fixes to the other
+  source files, mainly changing #ifdef to #ifndef or vice-versa.
+  I also changed symbol names where I thought it made sense. So for examples:
+  'NOSNDINTER' is flipped to "INTERPOLATE_SOUND".
+  'NO_VOL_ONLY' is flipped to 'VOL_ONLY_SOUND'. 
+  'CLIP' is now 'CLIP_SOUND'.
+  'STEREO' is now 'STEREO_SOUND'.
+  'JOYMOUSE' is now 'SVGA_JOYMOUSE'
+  'USE_CURSORBLOCK' is now'SVGA_CURSORBLOCK' because these two options are
+  only valid with the svgalib target, just like 'SVGA_SPEEDUP'. 'CPUASS'
+  is now 'FALCON_CPUASM' since its only valid with the falcon target.
+  Symbols that started with 'NO_' have been flipped, mostly to their original
+  name without 'NO_'.  'SET_LED' is gone, and 'NO_LED_ON_SCREEN' has been
+  flipped to 'SHOW_DISK_LED'.
+
 2003-02-18  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c: sends more Atari keys: SETTAB/CLRTAB, HELP, CAPSLOCK,
   INSERT_LINE/CHAR, DELETE_LINE/CHAR. Thanks to Mark for updating the file.
