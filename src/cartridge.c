@@ -102,7 +102,7 @@ static int bank;
 
 /* DB_32, XEGS_32, XEGS_64, XEGS_128, XEGS_256, XEGS_512, XEGS_1024 */
 /* SWXEGS_32, SWXEGS_64, SWXEGS_128, SWXEGS_256, SWXEGS_512, SWXEGS_1024 */
-static void set_bank_809F(int b)
+static void set_bank_809F(int b, int main)
 {
 	if (b != bank) {
 		if (b & 0x80) {
@@ -113,6 +113,8 @@ static void set_bank_809F(int b)
 			Cart809F_Enable();
 			CartA0BF_Enable();
 			CopyROM(0x8000, 0x9fff, cart_image + b * 0x2000);
+			if (bank & 0x80)
+				CopyROM(0xa000, 0xbfff, cart_image + main);
 		}
 		bank = b;
 	}
@@ -218,7 +220,7 @@ static void CART_Access(UWORD addr)
 		set_bank_A0AF(b, 0x3000);
 		break;
 	case CART_DB_32:
-		set_bank_809F(addr & 0x03);
+		set_bank_809F(addr & 0x03, 0x6000);
 		break;
 	case CART_WILL_64:
 		set_bank_A0BF_WILL64(addr);
@@ -285,22 +287,22 @@ void CART_PutByte(UWORD addr, UBYTE byte)
 	}
 	switch (cart_type) {
 	case CART_XEGS_32:
-		set_bank_809F(byte & 0x03);
+		set_bank_809F(byte & 0x03, 0x6000);
 		break;
 	case CART_XEGS_64:
-		set_bank_809F(byte & 0x07);
+		set_bank_809F(byte & 0x07, 0xe000);
 		break;
 	case CART_XEGS_128:
-		set_bank_809F(byte & 0x0f);
+		set_bank_809F(byte & 0x0f, 0x1e000);
 		break;
 	case CART_XEGS_256:
-		set_bank_809F(byte & 0x1f);
+		set_bank_809F(byte & 0x1f, 0x3e000);
 		break;
 	case CART_XEGS_512:
-		set_bank_809F(byte & 0x3f);
+		set_bank_809F(byte & 0x3f, 0x7e000);
 		break;
 	case CART_XEGS_1024:
-		set_bank_809F(byte & 0x7f);
+		set_bank_809F(byte & 0x7f, 0xfe000);
 		break;
 	case CART_ATRAX_128:
 		if (byte & 0x80) {
@@ -340,22 +342,22 @@ void CART_PutByte(UWORD addr, UBYTE byte)
 		set_bank_80BF(byte & 0xbf);
 		break;
 	case CART_SWXEGS_32:
-		set_bank_809F(byte & 0x83);
+		set_bank_809F(byte & 0x83, 0x6000);
 		break;
 	case CART_SWXEGS_64:
-		set_bank_809F(byte & 0x87);
+		set_bank_809F(byte & 0x87, 0xe000);
 		break;
 	case CART_SWXEGS_128:
-		set_bank_809F(byte & 0x8f);
+		set_bank_809F(byte & 0x8f, 0x1e000);
 		break;
 	case CART_SWXEGS_256:
-		set_bank_809F(byte & 0x9f);
+		set_bank_809F(byte & 0x9f, 0x3e000);
 		break;
 	case CART_SWXEGS_512:
-		set_bank_809F(byte & 0xbf);
+		set_bank_809F(byte & 0xbf, 0x7e000);
 		break;
 	case CART_SWXEGS_1024:
-		set_bank_809F(byte);
+		set_bank_809F(byte, 0xfe000);
 		break;
 	default:
 		CART_Access(addr);
