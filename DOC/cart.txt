@@ -12,33 +12,35 @@ Recommended file name extension: CRT
 
 Cartridge types:
 
-/------------------- BASIC INFO -----------------\ /------------------------- ADVANCED ------------------------------------------------------\
-Id| Machine |Size|Description                     |Signature | Unit | Memory      | Banks
---+---------+----+--------------------------------+----------+------+-------------+-----------------------------------------------------------
- 1|800/XL/XE|  8 |Standard 8 KB cartridge         |STD_8     | 2000 | A0          | A
- 2|800/XL/XE| 16 |Standard 16 KB cartridge        |STD_16    | 4000 | 80          | A
- 3|800/XL/XE| 16 |OSS 16 KB cartridge (091X)      |OSS_16    | 1000 | A0,B0       | AD, a&FF0F: D500:AD D504,D509:BD D501,D503,D507:CD D508:RR
- 4|  5200   | 32 |Standard 32 KB 5200 cartridge   |5200_32   | 8000 | 40          | A
- 5|800/XL/XE| 32 |DB 32 KB cartridge              |DB_32     | 2000 | 80,A0       | AD, a&FF03: D500..D503:AD..DD
- 6|  5200   | 16 |2*8 KB ROM 16 KB 5200 cartridge |5200_EE_16| 2000 | 40,60,80,A0 | AABB
- 7}  5200   | 40 |Bounty Bob 40 KB 5200 cartridge |5200_40   | 1000 | 40,50,80,90 | AEIJ, a4FF6..4FF9: A-IJ..D-IJ, a5FF6..5FF9: -EIJ..-HIJ
- 8|800/XL/XE| 64 |Express 64 KB cartridge         |EXP_64    | 2000 | A0          | A, aD570..D577: A..H, wD578..D57F: R
- 9|800/XL/XE| 64 |Diamond 64 KB cartridge         |DIAMOND_64| 2000 | A0          | A, aD5D0..D5D7: A..H, rD5D8..D5DF: R
-10|800/XL/XE| 64 |SDX 64 KB cartridge             |SDX_64    | 2000 | A0          | A, aD5E0..D5E7: A..H, wD5E8..D5EF: R
-11|800/XL/XE| 32 |XEGS 32 KB cartridge            |XEGS_32   | 2000 | 80,A0       | AD, b&03: 00..03: AD..DD
-12|800/XL/XE| 64 |XEGS 64 KB cartridge            |XEGS_64   | 2000 | 80,A0       | AH, b&07: 00..07: AH..HH
-13|800/XL/XE|128 |XEGS 128 KB cartridge           |XEGS_128  | 2000 | 80,A0       | AP, b&0F: 00..0F: AP..PP
-14|800/XL/XE| 16 |OSS 16 KB cartridge (X091)      |OSS2_16   | 1000 | A0,B0       | BA, a&FF0F: D500:BA D504,D509:CA D501,D503,D507:DA D508:RR
-15|  5200   | 16 |Single ROM 16 KB 5200 cartridge |5200_NS_16| 4000 | 80          | A
---+---------+----+--------------------------------+----------+------+-------------+-----------------------------------------------------------
+/------------------- BASIC INFO -----------------\ /---------------------------- ADVANCED ------------------------------------------------------\
+Id| Machine |Size|Description                     |Signature    | Unit | Memory      | Banks
+--+---------+----+--------------------------------+-------------+------+-------------+-----------------------------------------------------------
+ 1|800/XL/XE|  8 |Standard 8 KB cartridge         |STD_8        | 2000 | A0          | A
+ 2|800/XL/XE| 16 |Standard 16 KB cartridge        |STD_16       | 4000 | 80          | A
+ 3|800/XL/XE| 16 |MAC/65 16 KB cartridge          |OSS_16       | 1000 | A0,B0       | AD, a&FF0F: D50x: yz (1)
+ 4|  5200   | 32 |Standard 32 KB 5200 cartridge   |5200_32      | 8000 | 40          | A
+ 5|800/XL/XE| 32 |DB 32 KB cartridge              |DB_32        | 2000 | 80,A0       | AD, a&FF03: D500..D503:AD..DD
+ 6|  5200   | 16 |2*8 KB ROM 16 KB 5200 cartridge |5200_EE_16(2)| 2000 | 40,60,80,A0 | AABB
+ 7|  5200   | 40 |Bounty Bob 40 KB 5200 cartridge |5200_40      | 1000 | 40,50,80,90 | AEIJ, a4FF6..4FF9: A-IJ..D-IJ, a5FF6..5FF9: -EIJ..-HIJ
+ 8|800/XL/XE| 64 |8*8 KB D50x 64 KB cartridge     |D50X_64      | 2000 | A0          | A, aD500..D507: A..H, aD508..D50F: R
+ 9|800/XL/XE| 64 |Express 64 KB cartridge         |EXP_64       | 2000 | A0          | A, aD570..D577: A..H, aD578..D57F: R
+10|800/XL/XE| 64 |Diamond 64 KB cartridge         |DIAMOND_64   | 2000 | A0          | A, aD5D0..D5D7: A..H, aD5D8..D5DF: R
+11|800/XL/XE| 64 |SDX 64 KB cartridge             |SDX_64       | 2000 | A0          | A, aD5E0..D5E7: A..H, aD5E8..D5EF: R
+12|800/XL/XE| 32 |XEGS 32 KB cartridge            |XEGS_32      | 2000 | 80,A0       | AD, b&03: 00..03: AD..DD
+13|800/XL/XE| 64 |XEGS 64 KB cartridge            |XEGS_64      | 2000 | 80,A0       | AH, b&07: 00..07: AH..HH
+14|800/XL/XE|128 |XEGS 128 KB cartridge           |XEGS_128     | 2000 | 80,A0       | AP, b&0F: 00..0F: AP..PP
+15|800/XL/XE| 16 |Action! 16 KB cartridge (3)     |OSS2_16      | 1000 | A0,B0       | BA, a&FF09: D500:BA D501:DA D508:RR D509:CA
+16|  5200   | 16 |Single ROM 16 KB 5200 cartridge |5200_NS_16(2)| 4000 | 80          | A
+--+---------+----+--------------------------------+-------------+------+-------------+-----------------------------------------------------------
 
 Notes:
-1) 14 is same as 3, except that the units are put in the image in different order
-   (14 is real EPROM's order, 3 is traditional Atari800 emulator order).
-
-2) The Atari 5200 has two cartridge areas, 16 KB each: 4000-7FFF and 8000-BFFF.
-   6 is one 8 KB in each area, 15 is one 16 KB in the upper area
-   (in the signature: N = nothing, E = eight, S = sixteen)
+(1) x=0123456789ABCDEF
+    y=AAXBCCXBRRRRRRRR
+    z=DDDDDDDDDRRRRRRR
+(2) The Atari 5200 has two cartridge areas, 16 KB each: 4000-7FFF and 8000-BFFF.
+    6 is one 8 KB in each area, 15 is one 16 KB in the upper area
+    (in the signature: N = nothing, E = eight, S = sixteen)
+(3) Action!, Basic XL and Basic XE
 
 Key:
 Id - the number in CART header
