@@ -4,7 +4,7 @@
 %define copy	GPL
 %define ich friedel <friedel@nomaden.org>
 %define group	Console/Emulators
-%define realname Atari800
+%define realname Atari800-%{ver}
 %define src a800s121.tar.gz
 %define targets ncurses svgalib x11 sdl
 ## If you change the targets, you'll have to change the files list at the
@@ -86,5 +86,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/local/man/man1/atari800.1
 
 %changelog
+* Fre Dec 21 2001 Friedrich Delgado Friedrichs <friedel@nomaden.org>
+Pathname correction (tarfile now unpacks to Atari800-<version>, instead
+of Atari800).
 * Sun Dec 2 2001 Friedrich Delgado Friedrichs <friedel@nomaden.org>
 First (working) version
