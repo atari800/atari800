@@ -1,17 +1,17 @@
-#ifndef __XCB
-#define __XCB
+#ifndef _XCB_H_
+#define _XCB_H_
+
 #include "res.h"
 
-/******************************************************************/
-/* Es folge eine Beschreibung der XCB-Struktur. Diese Struktur		*/
-/* wird vom EMULATOR.PRG angelegt, wenn dieses eine NOVA-Karte		*/
-/* im Rechner findet.															*/
-/* Zu diesem Zweck legt EMULATOR.PRG einen Cookie mit der Kennung	*/
-/* 'NOVA' an. Der Wert dieses Cookies zeigt auf die XCB-Struktur.	*/
-/* Alle Werte dieser Struktur sind, wenn nicht anders angegeben,	*/
-/* nur zum Lesen gedacht.														*/
-/******************************************************************/
-
+/******************************************************************
+ * Es folge eine Beschreibung der XCB-Struktur. Diese Struktur
+ * wird vom EMULATOR.PRG angelegt, wenn dieses eine NOVA-Karte
+ * im Rechner findet.
+ * Zu diesem Zweck legt EMULATOR.PRG einen Cookie mit der Kennung
+ * 'NOVA' an. Der Wert dieses Cookies zeigt auf die XCB-Struktur.
+ * Alle Werte dieser Struktur sind, wenn nicht anders angegeben,
+ * nur zum Lesen gedacht.
+ ******************************************************************/
 
 typedef struct
 {
@@ -107,4 +107,4 @@ typedef struct
 	unsigned long	mem_size;						/* Gr”že des Bildschirmspeichers in Byte */
 } XCB;
 
-#endif
+#endif /* _XCB_H_ */

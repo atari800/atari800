@@ -1,5 +1,5 @@
-#ifndef __RES
-#define __RES
+#ifndef _RES_H_
+#define _RES_H_
 
 /* Aufl”sungsstruktur */
 /* L„nge der Struktur: 86 Bytes */
@@ -27,4 +27,4 @@ typedef struct
 	unsigned char	extended[3];			/* Register 3d4, Index $33 bis $35 */
 } RESOLUTION;
 
-#endif
+#endif /* _RES_H_ */

@@ -1,10 +1,25 @@
-dnl $Id$
+dnl   configure.ac - Autoconf script for building configure
 dnl
 dnl Copyright (C) 2001 Krzysztof Nikiel
+dnl   Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
 dnl
+dnl   This file is part of the Atari800 emulator project which emulates
+dnl   the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
 dnl
+dnl   Atari800 is free software; you can redistribute it and/or modify
+dnl   it under the terms of the GNU General Public License as published by
+dnl   the Free Software Foundation; either version 2 of the License, or
+dnl   (at your option) any later version.
 dnl
-dnl Process this file with autoconf to produce a configure script.
+dnl   Atari800 is distributed in the hope that it will be useful,
+dnl   but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl   GNU General Public License for more details.
+dnl  
+dnl   You should have received a copy of the GNU General Public License
+dnl   along with Atari800; if not, write to the Free Software
+dnl   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 AC_INIT
 AC_CONFIG_HEADER(config.h)
 

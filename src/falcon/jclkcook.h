@@ -1,3 +1,6 @@
+#ifndef _JCLKCOOK_H_
+#define _JCLKCOOK_H_
+
 /* Joy Clocky CookieJar public interface header file */
 
 #define CLOCKY_IDENT		'JCLK'
@@ -114,3 +117,5 @@ else
 }
 
 */
+
+#endif /* _JCLKCOOK_H_ */

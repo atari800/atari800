@@ -1,4 +1,5 @@
-/* Keyboard ------------------------------------------------------------ */
+#ifndef _INPUT_H_
+#define _INPUT_H_
 
 /* key_code values */
 #define AKEY_NONE -1
@@ -290,3 +291,5 @@ void INPUT_Scanline(void);
 void INPUT_SelectMultiJoy(int no);
 void INPUT_CenterMousePointer(void);
 void INPUT_DrawMousePointer(void);
+
+#endif /* _INPUT_H_ */

@@ -1,5 +1,5 @@
-#ifndef __DEVICES__
-#define __DEVICES__
+#ifndef _DEVICES_H_
+#define _DEVICES_H_
 
 #include "atari.h"	/* for UWORD */
 
@@ -56,4 +56,4 @@ void Device_HHINIT(void);
 UWORD Device_UpdateHATABSEntry(char device, UWORD entry_address, UWORD table_address);
 void Device_RemoveHATABSEntry(char device, UWORD entry_address, UWORD table_address);
 
-#endif
+#endif /* _DEVICES_H_ */

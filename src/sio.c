@@ -1,4 +1,27 @@
-/* $Id$ */
+/*
+ * sio.c - Serial I/O emulation
+ *
+ * Copyright (C) 1995-1998 David Firth
+ * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ *
+ * This file is part of the Atari800 emulator project which emulates
+ * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
+ *
+ * Atari800 is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Atari800 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Atari800; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -989,6 +1012,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.15  2003/02/24 09:33:10  joy
+header cleanup
+
 Revision 1.14  2001/10/03 16:46:09  fox
 SET_LED and Atari_Set_LED are no longer used
 

@@ -1,5 +1,5 @@
-#ifndef LIST_INCLUDED
-#define	LIST_INCLUDED
+#ifndef _LIST_H_
+#define _LIST_H_
 
 typedef struct list_entry {
 	struct list_entry *prev;	/*+ Pointer to previous entry + */
@@ -29,4 +29,4 @@ int ListInsertBefore(List * list, void *data);
 int ListInsertAfter(List * list, void *data);
 int ListSwapEntry(List * list);
 
-#endif
+#endif /* _LIST_H_ */

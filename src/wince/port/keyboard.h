@@ -1,6 +1,5 @@
-/* (C) 2001  Vasyl Tsvirkunov */
-#ifndef A800_KEYBOARD_H
-#define A800_KEYBOARD_H
+#ifndef _KEYBOARD_H_
+#define _KEYBOARD_H_
 
 int prockb(void);
 int initinput(void);
@@ -31,4 +30,4 @@ extern unsigned long* kbd_image;
 /* Use virtual joystick */
 extern int virtual_joystick;
 
-#endif
+#endif /* _KEYBOARD_H_ */

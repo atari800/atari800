@@ -1,5 +1,5 @@
-#ifndef __GTIA__
-#define __GTIA__
+#ifndef _GTIA_H_
+#define _GTIA_H_
 
 #include "atari.h"
 
@@ -121,4 +121,4 @@ void new_pm_scanline(void);
 UBYTE GTIA_GetByte(UWORD addr);
 void GTIA_PutByte(UWORD addr, UBYTE byte);
 
-#endif
+#endif /* _GTIA_H_ */

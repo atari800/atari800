@@ -1,29 +1,30 @@
 /*
-** Nofrendo (c) 1998-2000 Matthew Conte (matt@conte.com)
-**
-**
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of version 2 of the GNU Library General 
-** Public License as published by the Free Software Foundation.
-**
-** This program is distributed in the hope that it will be useful, 
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
-** Library General Public License for more details.  To obtain a 
-** copy of the GNU Library General Public License, write to the Free 
-** Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-**
-** Any permitted reproduction of these routines, in whole or in part,
-** must bear this legend.
-**
-**
-** dos_sb.c
-**
-** DOS Sound Blaster routines
-**
-** Note: the information in this file has been gathered from many
-**  Internet documents, and from source code written by Ethan Brodsky.
-** $Id$
+ * atari_sb.c - DOS Sound Blaster sound port code
+ *
+ * Copyright (c) 1998-2000 Matthew Conte
+ * Copyright (c) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ *
+ * This file is part of the Atari800 emulator project which emulates
+ * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
+ *
+ * Atari800 is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Atari800 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Atari800; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/*
+ * Note: the information in this file has been gathered from many
+ * Internet documents, and from source code written by Ethan Brodsky.
 */
 
 #include "config.h"
@@ -1125,6 +1126,9 @@ int sb_startoutput(sbmix_t fillbuf)
 
 /*
 ** $Log$
+** Revision 1.3  2003/02/24 09:33:21  joy
+** header cleanup
+**
 ** Revision 1.2  2001/04/08 06:02:13  knik
 ** SOUND ifdef
 **

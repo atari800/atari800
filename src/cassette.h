@@ -1,3 +1,6 @@
+#ifndef _CASSETTE_H_
+#define _CASSETTE_H_
+
 #include <stdio.h>		/* for FILE and FILENAME_MAX */
 
 #include "atari.h"		/* for UBYTE */
@@ -21,3 +24,5 @@ extern int press_space;
 
 UBYTE CASSETTE_Sio(void);
 extern UBYTE cassette_buffer[4096];
+
+#endif /* _CASSETTE_H_ */

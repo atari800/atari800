@@ -1,9 +1,7 @@
-#ifndef __ANTIC__
-#define __ANTIC__
+#ifndef _ANTIC_H_
+#define _ANTIC_H_
 
 #include "atari.h"
-
-
 
 /*
  * Offset to registers in custom relative to start of antic memory addresses.
@@ -77,4 +75,5 @@ extern int prior_pos_buf[PRIOR_BUF_SIZE];
 #else
 #define XPOS xpos
 #endif /*NEW_CYCLE_EXACT*/
-#endif 
+
+#endif /* _ANTIC_H_ */

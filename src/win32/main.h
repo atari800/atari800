@@ -1,10 +1,8 @@
-/* (C) 2000  Krzysztof Nikiel */
-/* $Id$ */
-#ifndef A800_WIN_MAIN_H
-#define A800_WIN_MAIN_H
+#ifndef _MAIN_H_
+#define _MAIN_H_
 
 extern char *myname;
 extern HWND hWndMain;
 extern HINSTANCE myInstance;
 
-#endif
+#endif /* _MAIN_H_ */

@@ -1,7 +1,5 @@
-/* (C) 2001  Vasyl Tsvirkunov */
-/* Based on Win32 port by  Krzysztof Nikiel */
-#ifndef A800_SCREEN_H
-#define A800_SCREEN_H
+#ifndef _SCREEN_H_
+#define _SCREEN_H_
 
 #include "atari.h"
 
@@ -26,4 +24,4 @@ void translate_kbd(short* px, short* py);
 extern int smooth_filter;
 extern int filter_available;
 
-#endif
+#endif /* _SCREEN_H_ */

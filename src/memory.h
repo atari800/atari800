@@ -1,3 +1,6 @@
+#ifndef _MEMORY_H_
+#define	_MEMORY_H_
+
 #include <string.h>	/* memcpy, memset */
 
 #include "config.h"
@@ -82,3 +85,5 @@ void CartA0BF_Disable(void);
 void CartA0BF_Enable(void);
 #define CopyROM(addr1,addr2,src) memcpy(memory+addr1,src,addr2-addr1+1)
 void get_charset(char * cs);
+
+#endif /* _MEMORY_H_ */

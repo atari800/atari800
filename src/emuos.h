@@ -1,5 +1,5 @@
-#ifndef __emuos_h__
-#define __emuos_h__
+#ifndef _EMUOS_H_
+#define _EMUOS_H_
 
 static char emuos_h[] =
 {
@@ -2053,4 +2053,4 @@ static char emuos_h[] =
 	0x00,0x00,0xfb,0xfc,0x00,0xf8,0xbc,0xfd
 };
 
-#endif
+#endif /* _EMUOS_H_ */

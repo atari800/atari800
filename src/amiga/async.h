@@ -1,3 +1,6 @@
+#ifndef _ASYNC_H_
+#define _ASYNC_H_
+
 #include <exec/types.h>
 #include <exec/memory.h>
 #include <dos/dos.h>
@@ -88,3 +91,4 @@ LONG AS_WaitPacket( AsyncFile *file );
 VOID AS_RequeuePacket( AsyncFile *file );
 VOID AS_RecordSyncFailure( AsyncFile *file );
 
+#endif /* _ASYNC_H_ */

@@ -1,7 +1,5 @@
-/* (C) 2001  Vasyl Tsvirkunov */
-/* Based on Win32 port by  Krzysztof Nikiel */
-#ifndef A800_WCE_MAIN_H
-#define A800_WCE_MAIN_H
+#ifndef _MAIN_H_
+#define _MAIN_H_
 
 extern LPTSTR myname;
 extern HWND hWndMain;
@@ -15,4 +13,4 @@ extern HINSTANCE myInstance;
 void MsgPump();
 #endif
 
-#endif
+#endif /* _MAIN_H_ */

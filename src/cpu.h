@@ -1,5 +1,5 @@
-#ifndef __CPU_INCLUDED__
-#define __CPU_INCLUDED__
+#ifndef _CPU_H_
+#define _CPU_H_
 
 #include "atari.h"
 
@@ -61,4 +61,5 @@ extern int remember_xpos_curpos;
 #define REMEMBER_JMP_STEPS 16
 extern UWORD remember_JMP[REMEMBER_JMP_STEPS];
 extern int remember_jmp_curpos;
-#endif
+
+#endif /* _CPU_H_ */

@@ -1,5 +1,5 @@
-#ifndef __PIA__
-#define __PIA__
+#ifndef _PIA_H_
+#define _PIA_H_
 
 #include "atari.h"
 
@@ -25,4 +25,4 @@ void PIA_Initialise(int *argc, char *argv[]);
 UBYTE PIA_GetByte(UWORD addr);
 void PIA_PutByte(UWORD addr, UBYTE byte);
 
-#endif
+#endif /* _PIA_H_ */

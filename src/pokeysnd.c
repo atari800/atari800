@@ -1,90 +1,86 @@
-/* $Id$ */
-/*****************************************************************************/
-/*                                                                           */
-/* Module:  POKEY Chip Emulator, V2.4                                        */
-/* Purpose: To emulate the sound generation hardware of the Atari POKEY chip. */
-/* Author:  Ron Fries                                                        */
-/*                                                                           */
-/* Revision History:                                                         */
-/*                                                                           */
-/* 09/22/96 - Ron Fries - Initial Release                                    */
-/* 01/14/97 - Ron Fries - Corrected a minor problem to improve sound quality */
-/*                        Also changed names from POKEY11.x to POKEY.x       */
-/* 01/17/97 - Ron Fries - Added support for multiple POKEY chips.            */
-/* 03/31/97 - Ron Fries - Made some minor mods for MAME (changed to signed   */
-/*                        8-bit sample, increased gain range, removed        */
-/*                        _disable() and _enable().)                         */
-/* 04/06/97 - Brad Oliver - Some cross-platform modifications. Added         */
-/*                          big/little endian #defines, removed <dos.h>,     */
-/*                          conditional defines for TRUE/FALSE               */
-/* 01/19/98 - Ron Fries - Changed signed/unsigned sample support to a        */
-/*                        compile-time option.  Defaults to unsigned -       */
-/*                        define SIGNED_SAMPLES to create signed.            */
-/* 03/22/98 - Ron Fries - Added 'filter' support to channels 1 & 2.          */
-/* 09/29/99 - Krzysztof Nikiel - Changed Pokey_process main loop;            */
-/*                               added output interpolation to reduce        */
-/*                               DSP interference                            */
-/*                                                                           */
-/* V2.0 Detailed Changes                                                     */
-/* ---------------------                                                     */
-/*                                                                           */
-/* Now maintains both a POLY9 and POLY17 counter.  Though this slows the     */
-/* emulator in general, it was required to support mutiple POKEYs since      */
-/* each chip can individually select POLY9 or POLY17 operation.  Also,       */
-/* eliminated the Poly17_size variable.                                      */
-/*                                                                           */
-/* Changed address of POKEY chip.  In the original, the chip was fixed at    */
-/* location D200 for compatibility with the Atari 800 line of 8-bit          */
-/* computers. The update function now only examines the lower four bits, so  */
-/* the location for all emulated chips is effectively xxx0 - xxx8.           */
-/*                                                                           */
-/* The Update_pokey_sound function has two additional parameters which       */
-/* selects the desired chip and selects the desired gain.                    */
-/*                                                                           */
-/* Added clipping to reduce distortion, configurable at compile-time.        */
-/*                                                                           */
-/* The Pokey_sound_init function has an additional parameter which selects   */
-/* the number of pokey chips to emulate.                                     */
-/*                                                                           */
-/* The output will be amplified by gain/16.  If the output exceeds the       */
-/* maximum value after the gain, it will be limited to reduce distortion.    */
-/* The best value for the gain depends on the number of POKEYs emulated      */
-/* and the maximum volume used.  The maximum possible output for each        */
-/* channel is 15, making the maximum possible output for a single chip to    */
-/* be 60.  Assuming all four channels on the chip are used at full volume,   */
-/* a gain of 64 can be used without distortion.  If 4 POKEY chips are        */
-/* emulated and all 16 channels are used at full volume, the gain must be    */
-/* no more than 16 to prevent distortion.  Of course, if only a few of the   */
-/* 16 channels are used or not all channels are used at full volume, a       */
-/* larger gain can be used.                                                  */
-/*                                                                           */
-/* The Pokey_process routine automatically processes and mixes all selected  */
-/* chips/channels.  No additional calls or functions are required.           */
-/*                                                                           */
-/* The unoptimized Pokey_process2() function has been removed.               */
-/*                                                                           */
-/*****************************************************************************/
-/*                                                                           */
-/*                 License Information and Copyright Notice                  */
-/*                 ========================================                  */
-/*                                                                           */
-/* PokeySound is Copyright(c) 1996-1998 by Ron Fries                         */
-/*                                                                           */
-/* This library is free software; you can redistribute it and/or modify it   */
-/* under the terms of version 2 of the GNU Library General Public License    */
-/* as published by the Free Software Foundation.                             */
-/*                                                                           */
-/* This library is distributed in the hope that it will be useful, but       */
-/* WITHOUT ANY WARRANTY; without even the implied warranty of                */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library */
-/* General Public License for more details.                                  */
-/* To obtain a copy of the GNU Library General Public License, write to the  */
-/* Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.   */
-/*                                                                           */
-/* Any permitted reproduction of these routines, in whole or in part, must   */
-/* bear this legend.                                                         */
-/*                                                                           */
-/*****************************************************************************/
+/*
+ * pokeysnd.c - POKEY sound chip emulation, v2.4
+ *
+ * Copyright (C) 1996-1998 Ron Fries
+ * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ *
+ * This file is part of the Atari800 emulator project which emulates
+ * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
+ *
+ * Atari800 is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Atari800 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Atari800; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/*
+   Revision History:
+
+   09/22/96 - Ron Fries - Initial Release
+   01/14/97 - Ron Fries - Corrected a minor problem to improve sound quality
+                          Also changed names from POKEY11.x to POKEY.x
+   01/17/97 - Ron Fries - Added support for multiple POKEY chips.
+   03/31/97 - Ron Fries - Made some minor mods for MAME (changed to signed
+                          8-bit sample, increased gain range, removed
+                          _disable() and _enable().)
+   04/06/97 - Brad Oliver - Some cross-platform modifications. Added
+                            big/little endian #defines, removed <dos.h>,
+                            conditional defines for TRUE/FALSE
+   01/19/98 - Ron Fries - Changed signed/unsigned sample support to a
+                          compile-time option.  Defaults to unsigned -
+                          define SIGNED_SAMPLES to create signed.
+   03/22/98 - Ron Fries - Added 'filter' support to channels 1 & 2.
+   09/29/99 - Krzysztof Nikiel - Changed Pokey_process main loop;
+                                 added output interpolation to reduce
+                                 DSP interference
+
+   V2.0 Detailed Changes
+   ---------------------
+
+   Now maintains both a POLY9 and POLY17 counter.  Though this slows the
+   emulator in general, it was required to support mutiple POKEYs since
+   each chip can individually select POLY9 or POLY17 operation.  Also,
+   eliminated the Poly17_size variable.
+
+   Changed address of POKEY chip.  In the original, the chip was fixed at
+   location D200 for compatibility with the Atari 800 line of 8-bit
+   computers. The update function now only examines the lower four bits, so
+   the location for all emulated chips is effectively xxx0 - xxx8.
+
+   The Update_pokey_sound function has two additional parameters which
+   selects the desired chip and selects the desired gain.
+
+   Added clipping to reduce distortion, configurable at compile-time.
+
+   The Pokey_sound_init function has an additional parameter which selects
+   the number of pokey chips to emulate.
+
+   The output will be amplified by gain/16.  If the output exceeds the
+   maximum value after the gain, it will be limited to reduce distortion.
+   The best value for the gain depends on the number of POKEYs emulated
+   and the maximum volume used.  The maximum possible output for each
+   channel is 15, making the maximum possible output for a single chip to
+   be 60.  Assuming all four channels on the chip are used at full volume,
+   a gain of 64 can be used without distortion.  If 4 POKEY chips are
+   emulated and all 16 channels are used at full volume, the gain must be
+   no more than 16 to prevent distortion.  Of course, if only a few of the
+   16 channels are used or not all channels are used at full volume, a
+   larger gain can be used.
+
+   The Pokey_process routine automatically processes and mixes all selected
+   chips/channels.  No additional calls or functions are required.
+
+   The unoptimized Pokey_process2() function has been removed.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1168,6 +1164,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.17  2003/02/24 09:33:09  joy
+header cleanup
+
 Revision 1.16  2003/02/19 14:07:47  joy
 configure stuff cleanup
 

@@ -1,6 +1,6 @@
-#ifndef __MONITOR__
-#define __MONITOR__
+#ifndef _MONITOR_H_
+#define _MONITOR_H_
 
 int monitor(void);
 
-#endif
+#endif /* _MONITOR_H_ */

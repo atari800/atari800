@@ -1,3 +1,13 @@
+2003-02-24  Ed Cogburn  <ecogburn@xtn.net>
+* added copyright headers to all *.c and *.asm files. Tried to collect
+  as much info as possible from the various ChangeLogs but if the author
+  in the header is incorrect please don't hesitate to send me a correction.
+
+* fixed all *.h files to use the same consistent format (#ifndef _FILE_H_ )
+
+* reformatted DOC/CREDITS
+
+
 2003-02-19  Ed Cogburn  <ecogburn@xtn.net>
 * configure process: cleans up some things, fixes a few little things,
   rewrote the message screen when nothing is typed, and reorganizes/changes

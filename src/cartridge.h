@@ -1,3 +1,6 @@
+#ifndef _CARTRIDGE_H_
+#define _CARTRIDGE_H_
+
 #include "atari.h"
 
 #define CART_NONE		0
@@ -59,3 +62,5 @@ UBYTE CART_GetByte(UWORD addr);
 void CART_PutByte(UWORD addr, UBYTE byte);
 void CART_BountyBob1(UWORD addr);
 void CART_BountyBob2(UWORD addr);
+
+#endif /* _CARTRIDGE_H_ */

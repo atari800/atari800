@@ -1,3 +1,6 @@
+#ifndef _DISKLED_H_
+#define _DISKLED_H_
+
 /* 0 = off, 1..9 = read leds, 10..18 = write leds */
 extern int led_status;
 
@@ -10,3 +13,5 @@ extern int led_off_delay;
 #define LED_SetWrite(unit, delay) (led_status = 10 + (unit), led_off_delay = delay)
 
 void LED_Frame(void);
+
+#endif /* _DISKLED_H_ */

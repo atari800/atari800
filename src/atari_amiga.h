@@ -1,4 +1,5 @@
-#ifndef ATARI_AMIGA_H
+#ifndef _ATARI_AMIGA_H_
+#define _ATARI_AMIGA_H_
 
 LONG DisplayYesNoWindow(void);
 
@@ -66,4 +67,4 @@ enum{
 	MEN_SETTINGS_FRAMERATE
 };
 
-#endif
+#endif /* _ATARI_AMIGA_H_ */

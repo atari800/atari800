@@ -1,37 +1,26 @@
-/* $Id$ */
-/*****************************************************************************
- *                                                                           *
- *  Atari800  Atari 800XL, etc. emulator                                     *
- *  ----------------------------------------------------------------------   *
- *  POKEY Chip Emulator, V1.6                                                *
- *  by Michael Borisov                                                       *
- *                                                                           *
- *****************************************************************************/
-
-/*****************************************************************************
- *                                                                           *
- *                 License Information and Copyright Notice                  *
- *                 ========================================                  *
- *                                                                           *
- *  POKEY Chip Emulator is Copyright(c) 2002 by Michael Borisov              *
- *                                                                           *
- *  This program is free software; you can redistribute it and/or modify     *
- *  it under the terms of the GNU General Public License as published by     *
- *  the Free Software Foundation; either version 2 of the License, or        *
- *  (at your option) any later version.                                      *
- *                                                                           *
- *  This program is distributed in the hope that it will be useful,          *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *
- *  GNU General Public License for more details.                             *
- *                                                                           *
- *  You should have received a copy of the GNU General Public License        *
- *  along with this program; if not, write to the Free Software              *
- *  Foundation, Inc., 59 Temple Place - Suite 330,                           *
- *                Boston, MA 02111-1307, USA.                                *
- *                                                                           *
- *****************************************************************************/
-
+/*
+ * mzpokeysnd.c - POKEY sound chip emulation, v1.6
+ *
+ * Copyright (C) 2002 Michael Borisov
+ * Copyright (C) 2002-2003 Atari800 development team (see DOC/CREDITS)
+ *
+ * This file is part of the Atari800 emulator project which emulates
+ * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
+ *
+ * Atari800 is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Atari800 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Atari800; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
 
 #include <stdlib.h>
 #include <math.h>
@@ -2122,6 +2111,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.11  2003/02/24 09:33:05  joy
+header cleanup
+
 Revision 1.10  2003/02/19 14:07:47  joy
 configure stuff cleanup
 

@@ -1,7 +1,5 @@
-/* (C) 2000  Krzysztof Nikiel */
-/* $Id$ */
-#ifndef A800_SCREEN_H
-#define A800_SCREEN_H
+#ifndef _SCREEN_H_
+#define _SCREEN_H_
 
 #include "atari.h"
 
@@ -13,4 +11,4 @@ void palupd(int beg, int cnt);
 void palette(int ent, UBYTE r, UBYTE g, UBYTE b);
 void refreshv(UBYTE * scr_ptr);
 
-#endif
+#endif /* _SCREEN_H_ */

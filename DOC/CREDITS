@@ -1,258 +1,259 @@
-This is the list of people who have contributed to project
+Current active members of the Atari800 development team:
+--------------------------------------------------------
 
-Thanks go to :-
+    Petr Stehlik     (maintainer)
+    Krzysztof Nikiel (Win32)
+    Mark Grebe       (Mac OSX)
+    Vasyl Tsvirkunov (Pocket PC)
+    Piotr Fusik
 
-Ron Fries
 
-- For releasing a library of routines providing Pokey Sound
-  Emulation.
 
-Alex Hornby <alex@zetnet.co.uk>
-- Wrote the Virtual 2600 Emulator from which I took some code
-  to access the /dev/dsp device.
-
-Dave Bennett <bennett@halcyon.com>
-
-- Code enabling the use of OSS super cartridges
-- Correction to display list jump instruction
-- Tidied cartridge code up
-
-Chris Lam <lamcw@sun.aston.ac.uk>
-
-- Lookup table containing RGB values for each Atari Colour
-
-Ivo van Poorten <ipoorten@cs.vu.nl>
-
-- Added X11 window Expose Event
-- Made hardware registers repeat within their page.
-- Control Characters in CURSES version
-- Makefile targets for freebsd systems
-- Modification to Curses character attributes handling (for freebsd)
-- Ported Emulator to DOS using DJGPP.
-
-Stephen Firth <stephen@signus.demon.co.uk>
-
-- Graphical Support for Amiga
-
-Rob Funk <rfunk@magnus.acs.ohio-state.edu>
-
-- Tidied up emulator abort code.
-- Case insensitive monitor commands.
-
-Preston F. Crow <preston.crow@dancer.dartmouth.edu>
-
-- Corrected calculation of ATR sectror count
-
-Cyrus Malek <Cyrus.Malek@amd.com>
-
-- Patch allowing the X11 Backspace key to work the same as the Delete
-  key.
-
-Chris F Chiesa <xetwnk@shell.portal.com>
-
-- Added code allowing emulator to run under DEC Windows.
-
-Neil Ship <nlshipp@dictator.uwaterloo.ca>
-
-- Correction to new cartridge code introduced in 0.4.0
-
-Chris Palmer <crpalmer@solo.uwaterloo.ca>
-
-- Spotted incorrect declaration of atari_basic[8129] in "pia.c". It
-  should of course be [8192].
-
-Maximum Entropy <entropy@zippy.bernstein.com>
-
-- Various corrections to MOTIF code.
-- MOTIF callbacks for Insert Disk, Eject Disk and Insert ROM
-- Bug Fixes in sio.c
-- Bug Fix to devices.c allowing DOS 2.5 to get a directory of H:
-- Bug Fix to monitor.c (EOF on INPUT + Blank Lines)
-- Undocumented commands added to monitors HELP command.
-- Implementation of Disable Drive menu item for Motif.
-- Fixed scrolling problem for machines that can't access longwords on word
-  boundaries (e.g. SGI and SPARC).
-- Added FPS Monitor to X11 and Motif versions.
-- Changes to pattern matching for H: device.
-- Motif fileselector retains state from one invocation tothe next
-- Fixed an unitialized pointer
-- Tidied up declaration of various functions.
-- Removed Warning messages when compiled with -Wall
-- Configuration program detects if longwords need to be aligned.
-- Modification to X11 Paddle Emulation.
-- Removed annoying flicker present under some X11 platforms.
-- Removed hardcoded paths in MOTIF code.
-- Various fixes for curses mode.
-
-Ed Kaminski <ekamins@ibm.net>
-- Correction of Antic 4&5 Bug affecting Galactic Chase & Mr. Do
-- Improved speed of MS-DOS version by synchronising with a high resolution
-  timer.
-- PORTB duplicated special handling of PORTA.
-
-Nathan Monson <nathan@polaristel.net>
-- Supplied correction for handling of 6502 V flag during ADC and SBC
-  operations.
-
-Petr Stehlik <pstehlik@sophics.cz>
-- "Project coordinator/manager" since v0.8.2 (spring of the 1998)
-- Added support for Atari Falcon (port itself, sound, kbd, joy)
-- Added sound, keyboard and joystick support for DOS version
-- Snailmeter
-- Various fixes in the SDL version
-- Atari800 project web pages at http://atari800.sourceforge.net/
-- RT-Config fixes (per-user and system wide config, Y/N questions)
-
-Karel Rous <Empty Head>
-- rewrote CPU.C to optimized MC68030 assembler
-
-Radek Sterba <raster@infos.cz>
-- Added all missing CPU 6502 instructions
-- Implemented precise timing into Antic and CPU
-- Fixed PMG registers and implemented PMG flickering
-- Added full 256 opcodes support to dissasembler
-- Various DOS enhancements
-- Added emulation of 320 kB memory (Atari320XE)
-
-Perry McFarlane <ce596@freenet.toronto.on.ca>
-- Antic fix in vertical scroll
-- Complete Antic rewrite (DIRECT_VIDEO approach, but better)
-- GTIA enhancements (based on Thomas' code, but using DIRECT_VIDEO)
-- Allegro library in DOS port
-- Colour Artifacting
-- 'digital sound' emulation in DOS port
-- complete cycle-exact ANTIC/GTIA emulation
-
-Thomas Richter <thor@math.tu-berlin.de>
-- GTIA collisions and third colour of players
-- new SIO code with formatting support
-- POKEY timers
-- ADC/SBC "V" bit bug found and fixed using Frodo 6502 emu source
-
-Rich Lawrence <rich@kesmai.com>
-- Win32 port (using DirectX)
-- DCM and ZLIB compressed files support
-
-Petr Sumbera <xsumbe00@stud.fee.vutbr.cz>
-- LPTjoy idea and design of the interface
-
-Robert Golias <golias@informatics.muni.cz>
-- UI enhancements and DJGPP fixes
-- Monitor enhancements (esp. line assembler)
-- fullscreen in DOS port - 320x240 and 320x480 interlaced graphics
-- VESA2 support in DOS
-- keyboard and joystick handling, joystick emulated on keyboard
-
-Robert W. Brewer <rbrewer@Op.Net>
-- Voxware sound driver updated for POKEY v2.4
+All contributors, past and present:
+-----------------------------------
 
 Michael Beck <beck@dresearch.de>
-- SIO2PC ATR patch
-- SIO Config patches (tested on real XF551)
-- monitor continues last command
+    - SIO2PC ATR patch
+    - SIO Config patches (tested on real XF551)
+    - monitor continues last command
 
-Preston Crow
-- UI enhancement (folders in disk management)
+Dave Bennett <bennett@halcyon.com>
+    - Code enabling the use of OSS super cartridges
+    - Correction to display list jump instruction
+    - Tidied cartridge code up
 
-Jason Duerstock <jason@sdi.cluephone.com>
-- R-Time 8 cartridge support (real date and time from host machine)
-- page based memory access
-- PAGED_ATTRIB support
+Adam Bienias
 
-Kuba <kubad@zeus.polsl.gliwice.pl>
-- vertical retrace control in DOS port
-
-Gerhard Janka <gerhard.janka@siemens.at>
-- cpu_m68k.s corrections and improvements
-- double buffering of screen output
-
-Jindroush <kubecj@asw.cz>
-- various corrections and refinements (SIO)
-- hours of testing on real Atari800XL
-- research on real cartridges
-
-Ken Sider
-- his binary loader has been used by Rich for developing our EXE LOADER
-
-Cameron Heide <cheide@home.com>
-- 16,32-bit X11 SHM support
-
-Marek Zelem <marek@formax.elf.stuba.sk>
-- little improvements in SIO and main sync loop for Unix
-- X11 keyboard
-- X11 screen (background => faster emulation)
-- digital (volume only) sound
-- console sound emulation
-- disk drive sound emulation
-- various fixes
-
-Petr Mojzisek <mojzisek@bimbo.fjfi.cvut.cz>
-- rawkey support for svgalib
-
-Krzysztof Nikiel (knik) <krzych00@priv.onet.pl>
-- SaveINT() fix in state save code
-- Linux improvements (new svgalib keyboard input and screen output)
-- sound improvements (sound interpolation, configurable sound delay, 4 buffers)
-- autoconf stuff
-- Windows code clean up and DirectX version
-
-Jari Karppinen <jakarppi@mail.student.oulu.fi>
-- killed some warnings and bugs in source (like e.g. void main() in joycfg ;-)
-
-ERU (Marcin Zukowski) <eru@ibb.waw.pl>
-- fix in ANTIC, GTIA
-- slight monitor improvement
-
-Christian Groessler <cpg@aladdin.de>
-- SVGAlib patch for joystick
-- BRKHERE command
-
-Piotr Fusik <fox@scene.pl>
-- general rewrite of ANTIC and GTIA (accuracy and speed improvements)
-- changed ANTIC/CPU synchronization
-- corrected undocumented 6502 opcodes
-- corrected PCX screenshots and added interlaced screenshots
-- improved IRQ accuracy
-- ATR write protection
-- monitor improvements
-- loading of .act palette files
-- improved disk LEDs
-- rewritten executable loader
-- UI enhancements
-- read-only mode for H: devices
-- exact 17-bit and 9-bit polys for sound and RANDOM
-- improved potentiometers emulation
-- support for Express, Diamond, SpartaDOS X, XEGS, Action!, Basic XL
-  and other cartridges
-- corrected disk formatting
-- cassette recorder emulation
-- emulation of paddles, Touch Tablet, Koala Pad, Light Pen/Gun,
-  Amiga/ST mice
-- util/act2html
-
-Matthew Conte <matt@conte.com>
-- new SoundBlaster driver for DOS
-
-Nir Dary
-- 8*8 KB D50x and OSS 'M091' cartridges
-
-Vasyl Tsvirkunov <vasyl@pacbell.net>
-- WinCE port of Atari800
-- refactored UI (introduced UI_BASIC)
-
-Jacek Poplawski <jpopl@interia.pl>
-- SDL port of Atari800
-
-Nathan Hartwell <mage@magelair.com>
-- win32 fixes
-- sethdr perl script
-
-Friedrich Delgado Friedrichs <friedel@nomaden.org>
-- RPM .spec file
-
-Mark Grebe <markgrebe@yahoo.com>
-- initial Mac OSX support
-- new complete H: device support (subdirectories added recently)
+Jakub Bogusz <qboosh@pld.org.pl>
 
 Michael Borisov <borata@brain.uni-bremen.de>
-- completely new, high quality Pokey emulation
+    - completely new, high quality Pokey emulation
+
+Robert Brewer <rbrewer@Op.Net>
+    - Voxware sound driver updated for POKEY v2.4
+
+Chris Chiesa <xetwnk@shell.portal.com>
+    - Added code allowing emulator to run under DEC Windows.
+
+Ed Cogburn <ecogburn@xtn.net>
+    - updated configure.ac
+    - miscellaneous cleanups
+
+Matthew Conte <matt@conte.com>
+    - new SoundBlaster driver for DOS
+
+Preston Crow <preston.crow@dancer.dartmouth.edu>
+    - Corrected calculation of ATR sectror count
+    - UI enhancement (folders in disk management)
+
+Nir Dary
+    - 8*8 KB D50x and OSS 'M091' cartridges
+
+Jason Duerstock <jason@cluephone.com>
+    - R-Time 8 cartridge support (real date and time from host machine)
+    - page based memory access
+    - PAGED_ATTRIB support
+
+Maximum Entropy <entropy@zippy.bernstein.com>
+    - Various corrections to MOTIF code.
+    - MOTIF callbacks for Insert Disk, Eject Disk and Insert ROM
+    - Bug Fixes in sio.c
+    - Bug Fix to devices.c allowing DOS 2.5 to get a directory of H:
+    - Bug Fix to monitor.c (EOF on INPUT + Blank Lines)
+    - Undocumented commands added to monitors HELP command.
+    - Implementation of Disable Drive menu item for Motif.
+    - Fixed scrolling problem for SGI and SPARC machines
+    - Added FPS Monitor to X11 and Motif versions.
+    - Changes to pattern matching for H: device.
+    - Motif fileselector retains state from one invocation to the next
+    - Fixed an unitialized pointer
+    - Tidied up declaration of various functions.
+    - Removed Warning messages when compiled with -Wall
+    - Configuration program detects if longwords need to be aligned.
+    - Modification to X11 Paddle Emulation.
+    - Removed annoying flicker present under some X11 platforms.
+    - Removed hardcoded paths in MOTIF code.
+    - Various fixes for curses mode.
+
+David Firth <david@signus.demon.co.uk>
+    - Original author of Atari800
+
+Stephen Firth <stephen@signus.demon.co.uk>
+    - Graphical Support for Amiga
+
+Friedrich Friedrichs <friedel@nomaden.org>
+    - RPM .spec file
+
+Ron Fries
+    - Pokey Sound Emulation library
+
+Rob Funk <rfunk@magnus.acs.ohio-state.edu>
+    - Tidied up emulator abort code.
+    - Case insensitive monitor commands.
+
+Piotr Fusik <fox@scene.pl>
+    - general rewrite of ANTIC and GTIA (accuracy and speed improvements)
+    - changed ANTIC/CPU synchronization
+    - corrected undocumented 6502 opcodes
+    - corrected PCX screenshots and added interlaced screenshots
+    - improved IRQ accuracy
+    - ATR write protection
+    - monitor improvements
+    - loading of .act palette files
+    - improved disk LEDs
+    - rewritten executable loader
+    - UI enhancements
+    - read-only mode for H: devices
+    - exact 17-bit and 9-bit polys for sound and RANDOM
+    - improved potentiometers emulation
+    - support for Express, Diamond, SpartaDOS X, XEGS, and other cartridges
+    - corrected disk formatting
+    - cassette recorder emulation
+    - emulation of paddles, Touch Tablet, & Koala Pad
+    - emulation of Light Pen/Gun & Amiga/ST mice
+    - util/act2html
+
+Robert Golias <golias@informatics.muni.cz>
+    - UI enhancements and DJGPP fixes
+    - Monitor enhancements (esp. line assembler)
+    - fullscreen in DOS port - 320x240 and 320x480 interlaced graphics
+    - VESA2 support in DOS
+    - keyboard and joystick handling, joystick emulated on keyboard
+
+Mark Grebe <markgrebe@yahoo.com>
+    - initial Mac OSX support
+    - new complete H: device support (subdirectories added recently)
+
+Christian Groessler <cpg@aladdin.de>
+    - SVGAlib patch for joystick
+    - BRKHERE command
+
+Nathan Hartwell <mage@magelair.com>
+    - win32 fixes
+    - sethdr perl script
+
+Cameron Heide <cheide@home.com>
+    - 16,32-bit X11 SHM support
+
+Alex Hornby <alex@zetnet.co.uk>
+    - Virtual 2600 Emulator from which I took /dev/dsp device code
+
+Gerhard Janka <gerhard.janka@siemens.at>
+    - cpu_m68k.s corrections and improvements
+    - double buffering of screen output
+
+Ed Kaminski <ekamins@ibm.net>
+    - Correction of Antic 4&5 Bug affecting Galactic Chase & Mr. Do
+    - Improved speed of DOS version by syncing with a high resolution timer
+    - PORTB duplicated special handling of PORTA.
+
+Jari Karppinen <jakarppi@mail.student.oulu.fi>
+    - fixed some warnings and bugs (like e.g. void main() in joycfg ;-)
+
+Kuba <kubad@zeus.polsl.gliwice.pl>
+    - vertical retrace control in DOS port
+
+Jindroush <kubecj@asw.cz>
+    - various corrections and refinements (SIO)
+    - hours of testing on real Atari800XL
+    - research on real cartridges
+
+Jindrich Kubec <kubecj@asw.cz>
+
+Chris Lam <lamcw@sun.aston.ac.uk>
+    - Lookup table containing RGB values for each Atari Colour
+
+Rich Lawrence <rich@kesmai.com>
+    - Win32 port (using DirectX)
+    - DCM and ZLIB compressed files support
+
+Cyrus Malek <Cyrus.Malek@amd.com>
+    - Patch to make the X11 Backspace key work the same as the Delete key
+
+Perry McFarlane <ce596@freenet.toronto.on.ca>
+    - Antic fix in vertical scroll
+    - Complete Antic rewrite (DIRECT_VIDEO approach, but better)
+    - GTIA enhancements (based on Thomas' code, but using DIRECT_VIDEO)
+    - Allegro library in DOS port
+    - Colour Artifacting
+    - 'digital sound' emulation in DOS port
+    - complete cycle-exact ANTIC/GTIA emulation
+
+Petr Mojzisek <mojzisek@bimbo.fjfi.cvut.cz>
+    - rawkey support for svgalib
+
+Nathan Monson <nathan@polaristel.net>
+    - Fix for handling 6502 V flag during ADC and SBC operations
+
+Krzysztof Nikiel <krzych00@priv.onet.pl>
+    - SaveINT() fix in state save code
+    - Linux improvements (new svgalib keyboard input and screen output)
+    - Sound improvements (interpolation, configurable delay, 4 buffers)
+    - autoconf stuff
+    - Windows code clean up and DirectX version
+
+Chris Palmer <crpalmer@solo.uwaterloo.ca>
+    - Spotted incorrect declaration of atari_basic[8129] in "pia.c"
+
+Ivo van Poorten <ipoorten@cs.vu.nl>
+    - Added X11 window Expose Event
+    - Made hardware registers repeat within their page.
+    - Control Characters in CURSES version
+    - Makefile targets for freebsd systems
+    - Modification to Curses character attributes handling (for freebsd)
+    - Ported Emulator to DOS using DJGPP.
+
+Jacek Poplawski <jpopl@interia.pl>
+    - SDL port of Atari800
+
+Thomas Richter <thor@math.tu-berlin.de>
+    - GTIA collisions and third colour of players
+    - new SIO code with formatting support
+    - POKEY timers
+    - ADC/SBC "V" bit bug found and fixed using Frodo 6502 emu source
+
+Karel Rous <Empty Head>
+    - rewrote CPU.C to optimized MC68030 assembler
+
+Neil Ship <nlshipp@dictator.uwaterloo.ca>
+    - Correction to new cartridge code introduced in 0.4.0
+
+Ken Sider
+    - his binary loader has been used by Rich for developing our EXE LOADER
+
+Petr Stehlik <pstehlik@sophics.cz>
+    - Project coordinator/manager since v0.8.2 (spring of the 1998)
+    - Added support for Atari Falcon (port itself, sound, kbd, joy)
+    - Added sound, keyboard and joystick support for DOS version
+    - Snailmeter
+    - Various fixes in the SDL version
+    - Atari800 project web pages at http://atari800.sourceforge.net/
+    - RT-Config fixes (per-user and system wide config, Y/N questions)
+
+Radek Sterba <raster@infos.cz>
+    - Added all missing CPU 6502 instructions
+    - Implemented precise timing into Antic and CPU
+    - Fixed PMG registers and implemented PMG flickering
+    - Added full 256 opcodes support to dissasembler
+    - Various DOS enhancements
+    - Added emulation of 320 kB memory (Atari320XE)
+
+Petr Sumbera <xsumbe00@stud.fee.vutbr.cz>
+    - LPTjoy idea and design of the interface
+
+Vasyl Tsvirkunov <vasyl@pacbell.net>
+    - WinCE port of Atari800
+    - refactored UI (introduced UI_BASIC)
+
+Marek Zelem <marek@formax.elf.stuba.sk>
+    - little improvements in SIO and main sync loop for Unix
+    - X11 keyboard
+    - X11 screen (background => faster emulation)
+    - digital (volume only) sound
+    - console sound emulation
+    - disk drive sound emulation
+    - various fixes
+
+Marcin Zukowski <eru@ibb.waw.pl>
+    - fix in ANTIC, GTIA
+    - slight monitor improvement

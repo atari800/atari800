@@ -1,9 +1,7 @@
-/* graphics routines for Atari800 emulator
-   1.6.98 Robert Golias    golias@fi.muni.cz
-*/
+#ifndef _VGA_GFX_H_
+#define _VGA_GFX_H_
 
 #include "atari.h"
-
 
 #ifndef AT_USE_ALLEGRO
 
@@ -19,8 +17,6 @@ extern UBYTE VESA_close(ULONG *linear,int *selector);
 extern void VESA_blit(void *mem,ULONG width,ULONG height,ULONG bitmapline,ULONG videoline,UWORD selector);
 /*draw atari screen interlaced with darker lines*/
 extern void VESA_i_blit(void *mem,ULONG width,ULONG height,ULONG bitmapline,ULONG videoline,UWORD selector);
-
-
 
 /****************************** XMODE **********************************/
 
@@ -42,7 +38,9 @@ extern void Map_i_bitmap(BITMAP *bitmap,void *memory,void *memory2,int width,int
 /*make darker copy of buffer 'source'*/
 extern void make_darker(void *target,void *source,int bytes);
 
+#endif AT_USE_ALLEGRO
 
-#endif
 /*vertical retrace control*/
 extern void v_ret();
+
+#endif /* _VGA_GFX_H_ */

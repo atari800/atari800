@@ -1,28 +1,3 @@
-/*
-** Nofrendo (c) 1998-2000 Matthew Conte (matt@conte.com)
-**
-**
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of version 2 of the GNU Library General 
-** Public License as published by the Free Software Foundation.
-**
-** This program is distributed in the hope that it will be useful, 
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
-** Library General Public License for more details.  To obtain a 
-** copy of the GNU Library General Public License, write to the Free 
-** Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-**
-** Any permitted reproduction of these routines, in whole or in part,
-** must bear this legend.
-**
-**
-** dos_ints.h
-**
-** General DOS interrupt defines
-** $Id$
-*/
-
 #ifndef _DOS_INTS_H_
 #define _DOS_INTS_H_
 
@@ -40,8 +15,11 @@
 
 /*
 ** $Log$
-** Revision 1.1  2000/10/10 13:27:18  joy
-** Initial revision
+** Revision 1.2  2003/02/24 09:33:20  joy
+** header cleanup
+**
+** Revision 1.1.1.1  2000/10/10 13:27:18  joy
+** Imported using TkCVS
 **
 ** Revision 1.6  2000/08/11 01:40:07  matt
 ** cleanups
