@@ -701,20 +701,21 @@ UBYTE SIO_ChkSum(UBYTE * buffer, UWORD length)
 	return checksum;
 }
 
-static void Command_Frame(void)
+static UBYTE Command_Frame(void)
 {
 	int unit;
-	int result = 'A';
 	int sector;
 	int realsize;
 
 	sector = CommandFrame[2] | (((UWORD) (CommandFrame[3])) << 8);
 	unit = CommandFrame[0] - '1';
 	if (unit < 0 || unit >= MAX_DRIVES) {
+		/* Unknown device */
 		Aprint("Unknown command frame: %02x %02x %02x %02x %02x",
 			   CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			   CommandFrame[3], CommandFrame[4]);
-		result = 0;
+		TransferStatus = SIO_NoFrame;
+		return 0;
 	}
 	else
 		switch (CommandFrame[1]) {
@@ -725,12 +726,12 @@ static void Command_Frame(void)
 			ExpectedBytes = 14;
 			TransferStatus = SIO_ReadFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
-			break;
+			return 'A';
 		case 0x4f:
 			ExpectedBytes = 13;
 			DataIndex = 0;
 			TransferStatus = SIO_WriteFrame;
-			break;
+			return 'A';
 		case 0x50:				/* Write */
 		case 0x57:
 			SizeOfSector((UBYTE)unit, sector, &realsize, NULL);
@@ -738,7 +739,7 @@ static void Command_Frame(void)
 			DataIndex = 0;
 			TransferStatus = SIO_WriteFrame;
 			Set_LED_Write(unit);
-			break;
+			return 'A';
 		case 0x52:				/* Read */
 			SizeOfSector((UBYTE)unit, sector, &realsize, NULL);
 			DataBuffer[0] = ReadSector(unit, sector, DataBuffer + 1);
@@ -752,7 +753,7 @@ static void Command_Frame(void)
 				DELAYED_SERIN_IRQ += SECTOR_DELAY;
 #endif
 			Set_LED_Read(unit);
-			break;
+			return 'A';
 		case 0x53:				/* Status */
 			DataBuffer[0] = DriveStatus(unit, DataBuffer + 1);
 			DataBuffer[1 + 4] = SIO_ChkSum(DataBuffer + 1, 4);
@@ -760,7 +761,7 @@ static void Command_Frame(void)
 			ExpectedBytes = 6;
 			TransferStatus = SIO_ReadFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
-			break;
+			return 'A';
 		/*case 0x66:*/			/* US Doubler Format - I think! */
 		case 0x21:				/* Format Disk */
 			realsize = format_sectorsize[unit];
@@ -770,7 +771,7 @@ static void Command_Frame(void)
 			ExpectedBytes = 2 + realsize;
 			TransferStatus = SIO_FormatFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
-			break;
+			return 'A';
 		case 0x22:				/* Duel Density Format */
 			DataBuffer[0] = FormatDisk(unit, DataBuffer + 1, 128, 1040);
 			DataBuffer[1 + 128] = SIO_ChkSum(DataBuffer + 1, 128);
@@ -778,17 +779,17 @@ static void Command_Frame(void)
 			ExpectedBytes = 2 + 128;
 			TransferStatus = SIO_FormatFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
-			break;
+			return 'A';
 		default:
+			/* Unknown command for a disk drive */
+#ifdef DEBUG
 			Aprint("Command frame: %02x %02x %02x %02x %02x",
 				   CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				   CommandFrame[3], CommandFrame[4]);
-			result = 0;
-			break;
+#endif
+			TransferStatus = SIO_NoFrame;
+			return 'E';
 		}
-
-	if (result == 0)
-		TransferStatus = SIO_NoFrame;
 }
 
 /* Enable/disable the command frame */
@@ -907,8 +908,7 @@ int SIO_GetByte(void)
 
 	switch (TransferStatus) {
 	case SIO_StatusRead:
-		byte = 'A';				/* Command acknoledged */
-		Command_Frame();		/* Handle now the command */
+		byte = Command_Frame();		/* Handle now the command */
 		break;
 	case SIO_FormatFrame:
 		TransferStatus = SIO_ReadFrame;
@@ -997,6 +997,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.11  2001/09/03 11:32:58  fox
+Disk drive answers 'E' to an unknown command.
+
 Revision 1.10  2001/08/03 12:27:52  fox
 cassette support
 
