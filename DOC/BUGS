@@ -30,6 +30,10 @@ o POKEY interrupts are scanline-, not cycle-exact.
   - Saturday Demo (demo)
   - The Last Guardian (game)
 
+o sound emulation is not enough accurate
+  This causes sound bugs in following programs:
+  - Numen (demo)
+
 o sound emulation uses VOL_ONLY hack.
   This causes sound bugs in following programs:
   - Digital Trash (demo)
