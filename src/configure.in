@@ -5,7 +5,7 @@ dnl
 dnl
 dnl
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(amiga/amiga_asm.h)
+AC_INIT
 AC_CONFIG_HEADER(config.h)
 
 a800_target=none
@@ -41,8 +41,6 @@ if test "${CFLAGS+set}" != set; then
 CFLAGS='-O2 -Wall'
 fi
 
-AC_PROG_CC
-
 a800_host=none
 AC_CANONICAL_HOST
 case $host_os in
@@ -62,18 +60,15 @@ esac
 
 echo "$a800_host environment found"
 
-AC_EXEEXT
-
 case "$a800_host" in
-  dos)	AC_DEFINE(DOS_DRIVES)
+  dos)	AC_DEFINE(DOS_DRIVES,, [define to enable dos style drives support])
 ;;  
-  win)	AC_DEFINE(WIN32,) 
-	AC_DEFINE(BACK_SLASH)
-	AC_DEFINE(DOS_DRIVES)
+  win)	AC_DEFINE(BACK_SLASH,, [define to use back slash])
+	AC_DEFINE(DOS_DRIVES,, [define to enable dos style drives support])
 ;;  
-  falcon) AC_DEFINE(DOS_DRIVES)
-	AC_DEFINE(BACK_SLASH)
-  	AC_DEFINE(USE_CLOCK)
+  falcon) AC_DEFINE(DOS_DRIVES,, [define to enable dos style drives support])
+	AC_DEFINE(BACK_SLASH,, [define to use back slash])
+  	AC_DEFINE(USE_CLOCK,, [define to use clock() instead of gettimeofday()])
 ;;
 esac
 
@@ -104,7 +99,7 @@ fi
 dnl set OBJ depending on target
 case "$a800_target" in
 basic)
-AC_DEFINE(BASIC)
+AC_DEFINE(BASIC,, [ ])
 OBJ=atari_basic.o
 ;;
 vga) 
@@ -112,26 +107,26 @@ vga)
 		echo "cannot build vga outside dos"
 		exit 1
 	fi
-	AC_DEFINE(VGA)
+	AC_DEFINE(VGA,, [dos vga support])
 	OBJ="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
 ;;
 svgalib)
 dnl Replace `main' with a function in -lvga:
 NEED_LIB(vga, main)
-AC_DEFINE(SVGALIB)
+AC_DEFINE(SVGALIB,, [ ])
 OBJ="atari_svgalib.o"
 ;;
 curses)
 dnl Replace `main' with a function in -lcurses:
 NEED_LIB(curses, main)
-AC_DEFINE(CURSES)
+AC_DEFINE(CURSES,, [ ])
 OBJ=atari_curses.o
 ;;
 ncurses)
 dnl Replace `main' with a function in -lncurses:
 NEED_LIB(ncurses, main)
-AC_DEFINE(NCURSES)
-AC_DEFINE(CURSES)
+AC_DEFINE(NCURSES,, [ ])
+AC_DEFINE(CURSES,, [ ])
 OBJ=atari_curses.o
 ;;
 dx)
@@ -144,7 +139,7 @@ NEED_LIB(dsound, main)
 dnl Replace `main' with a function in -ldxguid:
 NEED_LIB(dxguid, main)
 
-AC_DEFINE(DIRECTX)
+AC_DEFINE(DIRECTX,, [ ])
 OBJ="win32/atari_win32.o \
 win32/screen.o \
 win32/main.o \
@@ -176,13 +171,13 @@ LDFLAGS="$LDFLAGS -L$x_libraries"
 fi
 dnl Replace `main' with a function in -lX11:
 NEED_LIB(X11, main)
-AC_DEFINE(X11)
+AC_DEFINE(X11,, [ ])
 
 case "$a800_target" in
 *-shm)
 dnl Replace `main' with a function in -lXext:
 AC_CHECK_LIB(Xext, main)
-AC_DEFINE(SHM)
+AC_DEFINE(SHM,, [ ])
 ;;
 esac
 
@@ -192,7 +187,7 @@ dnl Replace `main' with a function in -lxview:
 NEED_LIB(xview, main)
 dnl Replace `main' with a function in -lolgx:
 NEED_LIB(olgx, main)
-AC_DEFINE(XVIEW)
+AC_DEFINE(XVIEW,, [ ])
 ;;
 x11-motif)
 dnl Replace `main' with a function in -lXm:
@@ -203,7 +198,7 @@ dnl Replace `main' with a function in -lgen:
 NEED_LIB(gen, main)
 dnl Replace `main' with a function in -lsocket:
 NEED_LIB(socket, main)
-AC_DEFINE(MOTIF)
+AC_DEFINE(MOTIF,, [ ])
 ;;
 esac
 
@@ -254,7 +249,7 @@ $5, y, yes, $5, n, no,
   fi
 ])
 if test "$a800_ans" = y ; then
-	AC_DEFINE($1)
+	AC_DEFINE($1,, define to $3 $4)
 	AC_MSG_RESULT([$4 $3]d)
 else
 	AC_MSG_RESULT([$4 not $3]d)
@@ -367,7 +362,7 @@ int main(void)
 }], ac_cv_unaligned_long_ok=yes, ac_cv_unaligned_long_ok=no,
 ac_cv_unaligned_long_ok=no)])
 if test "$ac_cv_unaligned_long_ok" = yes; then 
-AC_DEFINE(UNALIGNED_LONG_OK)
+AC_DEFINE(UNALIGNED_LONG_OK,, [define if unaligned long access is ok])
 fi
 
 AC_CHECK_SIZEOF(long, 4)
