@@ -46,8 +46,9 @@ int default_system;
 int default_tv_mode;
 int hold_option;
 int enable_c000_ram;
-int enable_rom_patches;
 int enable_sio_patch;
+int enable_h_patch;
+int enable_p_patch;
 int disk_directories;
 
 extern int Ram256;
@@ -98,8 +99,9 @@ int RtConfigLoad(char *rtconfig_filename)
 	default_tv_mode = 1;
 	hold_option = 1;
 	enable_c000_ram = 0;
-	enable_rom_patches = 1;
 	enable_sio_patch = 1;
+	enable_h_patch = 1;
+	enable_p_patch = 1;
 
 	if (rtconfig_filename) {
 		fp = fopen(rtconfig_filename, "rt");
@@ -168,13 +170,20 @@ int RtConfigLoad(char *rtconfig_filename)
 					sscanf(ptr, "%d", &hold_option);
 				else if (strcmp(string, "ENABLE_C000_RAM") == 0)
 					sscanf(ptr, "%d", &enable_c000_ram);
-				else if (strcmp(string, "ENABLE_ROM_PATCH") == 0)
+				else if (strcmp(string, "ENABLE_ROM_PATCH") == 0) {
+					/* Supported for compatibility with previous Atari800 versions */
+					int enable_rom_patches;
 					sscanf(ptr, "%d", &enable_rom_patches);
+					enable_h_patch = enable_p_patch = enable_rom_patches;
+				}
 				else if (strcmp(string, "ENABLE_SIO_PATCH") == 0) {
-					if (enable_rom_patches)
-						sscanf(ptr, "%d", &enable_sio_patch);
-					else
-						enable_sio_patch = 0;
+					sscanf(ptr, "%d", &enable_sio_patch);
+				}
+				else if (strcmp(string, "ENABLE_H_PATCH") == 0) {
+					sscanf(ptr, "%d", &enable_h_patch);
+				}
+				else if (strcmp(string, "ENABLE_P_PATCH") == 0) {
+					sscanf(ptr, "%d", &enable_p_patch);
 				}
 				else if (strcmp(string, "DEFAULT_SYSTEM") == 0) {
 					if (strcmp(ptr, "Atari OS/A") == 0)
@@ -291,8 +300,9 @@ void RtConfigSave(void)
 
 	fprintf(fp, "HOLD_OPTION=%d\n", hold_option);
 	fprintf(fp, "ENABLE_C000_RAM=%d\n", enable_c000_ram);
-	fprintf(fp, "ENABLE_ROM_PATCH=%d\n", enable_rom_patches);
-	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", enable_rom_patches ? enable_sio_patch : 0);
+	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", enable_sio_patch);
+	fprintf(fp, "ENABLE_H_PATCH=%d\n", enable_h_patch);
+	fprintf(fp, "ENABLE_P_PATCH=%d\n", enable_p_patch);
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
 	Atari_ConfigSave(fp);
@@ -367,18 +377,19 @@ void RtConfigUpdate(void)
 	} while ((enable_c000_ram < 0) || (enable_c000_ram > 1));
 
 	do {
-		GetNumber("Enable ROM PATCH (for H: device and SIO PATCH) [%d] ",
-				  &enable_rom_patches);
-	} while ((enable_rom_patches < 0) || (enable_rom_patches > 1));
+		GetNumber("Enable SIO patch (Recommended for speed) [%d] ",
+			  	&enable_sio_patch);
+	} while ((enable_sio_patch < 0) || (enable_sio_patch > 1));
 
-	if (enable_rom_patches) {
-		do {
-			GetNumber("Enable SIO PATCH (Recommended for speed) [%d] ",
-				  	&enable_sio_patch);
-		} while ((enable_sio_patch < 0) || (enable_sio_patch > 1));
-	}
-	else
-		enable_sio_patch = 0;	/* sio_patch only if rom_patches */
+	do {
+		GetNumber("Enable H: (Hard disk) patch [%d] ",
+				  &enable_h_patch);
+	} while ((enable_h_patch < 0) || (enable_h_patch > 1));
+
+	do {
+		GetNumber("Enable P: (Printer) patch [%d] ",
+				  &enable_p_patch);
+	} while ((enable_p_patch < 0) || (enable_p_patch > 1));
 
 #ifdef VGA
 	printf("Standard joysticks configuration selected.\n"
@@ -392,6 +403,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.4  2001/07/20 00:25:10  fox
+removed enable_rom_patches, added enable_h_patch and enable_p_patch
+
 Revision 1.3  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 

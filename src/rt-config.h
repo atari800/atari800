@@ -24,8 +24,9 @@ extern int default_system;
 extern int default_tv_mode;
 extern int hold_option;
 extern int enable_c000_ram;
-extern int enable_rom_patches;
 extern int enable_sio_patch;
+extern int enable_h_patch;
+extern int enable_p_patch;
 extern int disk_directories;
 
 int RtConfigLoad(char *rtconfig_filename);
