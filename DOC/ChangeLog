@@ -1,3 +1,36 @@
+** tagged as 1.2.7
+
+2003-01-27  Mark Grebe  <markgrebe@yahoo.com>
+* devices.c:
+  I've finally got around to finishing the upgrade to
+  the hard disk emulation.  It now fully support
+  subdirectories.  It supports CREDIR, RMDIR, CWD, ?DIR
+  in SpartaDos and BW-DOS.  It also supports their XIO
+  equivelents, and subdirectories work in all the other
+  DOS commands as well.  It uses '>' and '>>' as
+  directory seperators like SpartaDOS and BW-DOS.  I've
+  also added support for the binary load commands, and
+  added a path string for use with the H: devices, as
+  the standard path won't work for them.
+
+  It really needs a documentation writeup, but I've
+  been gettting swamped at work, so that will come as I
+  get time, but thought I would get this to everyone
+  now, as I released it in the last release of
+  Atari800MacX.  I've tested it on the Mac, as well as
+  Windows and the Linux SDL port.
+
+  The only other change that  is needed, is that
+  Device_HHINIT should be called during Coldstart(), so
+  that the working directories get reset to the root
+  directory.
+
+  joy> Note that it may needs the same patches that were applied
+  to devices.c in version 1.14. But I don't have an Amiga handy
+  so I'll let someone else do it.
+
+** tagged as 1.2.6
+
 2003-01-27  Piotr Fusik  <fox@scene.pl>
 * antic.c: swapped GTIA and CTIA artifacting modes
   (swapped by mistake in 0.9.9j)
