@@ -29,7 +29,7 @@
 #include "monitor.h"
 #include "pcjoy.h"
 #include "diskled.h"	/* for LED_lastline */
-#include "antic.h"		/* for light_pen_enabled */
+#include "antic.h"		/* for PENH_input and PENV_input */
 #include "ataripcx.h"
 #include "rt-config.h"	/* for refresh_rate */
 
@@ -37,18 +37,11 @@
 
 /* -------------------------------------------------------------------------- */
 
-#define FALSE 0
-#define TRUE 1
-
 /* note: if KEYBOARD_EXCLUSIVE is defined, then F7 switches between
     joysticks and keyboard (ie with joy_keyboard off joysticks do not work)
 #define KEYBOARD_EXCLUSIVE
 */
 
-#define MOUSE_OFF 0
-#define MOUSE_PAD 1
-#define MOUSE_PEN 2
-static int mouse_mode=MOUSE_OFF;
 #define MOUSE_SHL 3
 static int mouse_x = 0;
 static int mouse_y = 0;
@@ -510,8 +503,6 @@ void SetupVgaEnvironment()
 			printf("Can't find mouse!\n");
 			mouse_mode = MOUSE_OFF;
 		}
-		if (mouse_mode == MOUSE_PEN)
-			light_pen_enabled = TRUE;		/* enable emulation in antic.c */
 	}
 
         key_init(); /*initialize keyboard handler*/
@@ -1557,16 +1548,6 @@ int Atari_POT(int num)
 
 /* -------------------------------------------------------------------------- */
 
-int Atari_PEN(int vertical)
-{
-	if (mouse_mode == MOUSE_PEN)
-		return vertical ? 4 + mouse_y : 44 + mouse_x;
-	else
-		return vertical ? 0xff : 0;
-}
-
-/* -------------------------------------------------------------------------- */
-
 int main(int argc, char **argv)
 {
 	/* initialise Atari800 core */
@@ -1612,6 +1593,15 @@ int main(int argc, char **argv)
 			key_break = 0;
 			key_code = keycode;
 			break;
+		}
+
+		if (mouse_mode == MOUSE_PEN) {
+			PENH_input = 44 + mouse_x;
+			PENV_input = 4 + mouse_y;
+		}
+		else {
+			PENH_input = 0x00;
+			PENV_input = 0xff;
 		}
 
 		if (++test_val == refresh_rate) {
