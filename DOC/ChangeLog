@@ -1,6 +1,7 @@
 2003-02-17  Petr Stehlik  <pstehlik@sophics.cz>
 * debian/ folder with deb scripts added (taken from official Atari800
   debian package created by Dale Scheetz)
+* atari_sdl.c: window gets a title (thanks to Jozef for suggestion)
 
 2003-02-11  Vasyl Tsvirkunov  <vasyl@pacbell.net>
 * antic.c: added missing guard around extern reference
