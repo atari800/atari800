@@ -61,8 +61,8 @@ all: $(TARGET)
 	$(CC) -c -o $@ $(DEFS) $(INCLUDE) $(CFLAGS) $<
 
 %.o: %.s
-	cd falcon; xgen -L1 $@ $<
-	cd falcon; gst2gcc gcc $@
+	cd $(<D); xgen -L1 $(@F) $(<F)
+	cd $(<D); gst2gcc gcc $(@F)
 
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
