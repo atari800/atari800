@@ -233,8 +233,8 @@ static XPoint points[NPOINTS];
 static XRectangle rectangles[NRECTS];
 #endif
 
-static int keyboard_consol = 7;
-static int menu_consol = 7;
+static int keyboard_consol = CONSOL_NONE;
+static int menu_consol = CONSOL_NONE;
 static int screen_dump = 0;
 
 /*
@@ -275,16 +275,15 @@ void segmentationfault(int x)
 	Atari_Exit(0);
 	exit(0);
 }
+
 int GetKeyCode(XEvent * event)
 {
 	KeySym keysym;
 	char buffer[128];
-	int keycode = AKEY_NONE;
-
-	keyboard_consol = 7;
+	static int keycode = AKEY_NONE;
 
 	if (event->type == KeyPress || event->type == KeyRelease) {
-		XLookupString((XKeyEvent *) event, buffer, 128, &keysym, NULL);
+		XLookupString((XKeyEvent *) event, buffer, sizeof(buffer), &keysym, NULL);
 	}
 
 	switch (event->type) {
@@ -310,7 +309,6 @@ int GetKeyCode(XEvent * event)
 		if( ((XVisibilityEvent*)event)->state==VisibilityFullyObscured )
 			invisible=1;
 		else	invisible=0;
-		return AKEY_NONE;
 		break;
 	case KeyPress:
 		key_shift = 0;
@@ -343,15 +341,15 @@ int GetKeyCode(XEvent * event)
 			keycode = AKEY_UI;
 			break;
 		case XK_F2:
-			keyboard_consol &= 0x03;
+			keyboard_consol &= (~CONSOL_OPTION);
 			keycode = AKEY_NONE;
 			break;
 		case XK_F3:
-			keyboard_consol &= 0x05;
+			keyboard_consol &= (~CONSOL_SELECT);
 			keycode = AKEY_NONE;
 			break;
 		case XK_F4:
-			keyboard_consol &= 0x6;
+			keyboard_consol &= (~CONSOL_START);
 			keycode = AKEY_NONE;
 			break;
 		case XK_F5:
@@ -707,6 +705,7 @@ int GetKeyCode(XEvent * event)
 		}
 		break;
 	case KeyRelease:
+		keycode = AKEY_NONE;
 		switch (keysym) {
 		case XK_Shift_L:
 		case XK_Shift_R:
@@ -728,10 +727,13 @@ int GetKeyCode(XEvent * event)
 				printf("XK_Shift_Lock\n");
 			break;
 		case XK_F2:
+			keyboard_consol |= CONSOL_OPTION;
+			break;
 		case XK_F3:
+			keyboard_consol |= CONSOL_SELECT;
+			break;
 		case XK_F4:
-			keyboard_consol = 0x07;
-			keycode = AKEY_NONE;
+			keyboard_consol |= CONSOL_START;
 			break;
 		case XK_space:
 		case XK_KP_0:
@@ -988,17 +990,17 @@ void exit_callback(void)
 
 void option_callback(void)
 {
-	menu_consol &= 0x03;
+	menu_consol &= (~CONSOL_OPTION);
 }
 
 void select_callback(void)
 {
-	menu_consol &= 0x05;
+	menu_consol &= (~CONSOL_SELECT);
 }
 
 void start_callback(void)
 {
-	menu_consol &= 0x6;
+	menu_consol &= (~CONSOL_START);
 }
 
 void help_callback(void)
@@ -1496,13 +1498,13 @@ void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
 {
 	switch ((int) item_no) {
 	case 0:
-		menu_consol &= 0x03;	/* Option Pressed */
+		menu_consol &= (~CONSOL_OPTION);
 		break;
 	case 1:
-		menu_consol &= 0x05;	/* Select Pressed */
+		menu_consol &= (~CONSOL_SELECT);
 		break;
 	case 2:
-		menu_consol &= 0x06;	/* Start Pressed */
+		menu_consol &= (~CONSOL_START);
 		break;
 	case 3:
 		xview_keycode = AKEY_HELP;
@@ -2526,7 +2528,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		exit(1);
 	}
 
-	keyboard_consol = 7;
+	keyboard_consol = CONSOL_NONE;
 
 	if (x11bug) {
 		printf("Initial X11 controller configuration\n");
@@ -3227,13 +3229,9 @@ after_screen_update:
 
 int Atari_Keyboard(void)
 {
-	int keycode = AKEY_NONE;
+	static int keycode = AKEY_NONE;
 
-#ifdef XVIEW
-	keycode = xview_keycode;
-	xview_keycode = AKEY_NONE;
-#else
-#ifdef MOTIF
+#if defined(XVIEW) || defined(MOTIF)
 	keycode = xview_keycode;
 	xview_keycode = AKEY_NONE;
 #else
@@ -3243,7 +3241,6 @@ int Atari_Keyboard(void)
 		XNextEvent(display, &event);
 		keycode = GetKeyCode(&event);
 	}
-#endif
 #endif
 
 	return keycode;
@@ -3650,9 +3647,9 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		if (menu_consol != 7) {
+		if (menu_consol != CONSOL_NONE) {
 			key_consol = menu_consol;
-			menu_consol = 0x07;
+			menu_consol = CONSOL_NONE;
 		}
 		else
 			key_consol = keyboard_consol;
