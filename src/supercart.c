@@ -93,6 +93,7 @@ int SuperCart_PutByte(UWORD addr, UBYTE byte)
 	if (addr == 0xd5b8 || addr == 0xd5b9) {
 		switch (rtime_state) {
 		case 0:
+			byte &= 0x0f;
 			if (byte > 5)
 			Aprint("setting active register to %d", byte);
 			rtime_tmp = byte;
