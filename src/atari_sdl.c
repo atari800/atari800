@@ -119,6 +119,7 @@ static int FULLSCREEN = 1;
 static int BW = 0;
 static int SWAP_JOYSTICKS = 0;
 static int WIDTH_MODE = 1;
+static int ROTATE90 =0;
 #define SHORT_WIDTH_MODE 0
 #define DEFAULT_WIDTH_MODE 1
 #define FULL_WIDTH_MODE 2
@@ -280,6 +281,15 @@ void SetVideoMode(int w, int h, int bpp)
 void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
+
+	if (ROTATE90)
+	{
+		SetVideoMode(w,h,bpp);
+	}
+	else
+	{
+	
+
 	if ((h < ATARI_HEIGHT) || (w < ATARI_WIDTH)) {
 		h = ATARI_HEIGHT;
 		w = ATARI_WIDTH;
@@ -326,6 +336,7 @@ void SetNewVideoMode(int w, int h, int bpp)
 				("it's unsupported, so setting 8bit mode (slow conversion)");
 			SetVideoMode(w, h, 8);
 		}
+	}
 	}
 
 	SetPalette();
@@ -784,9 +795,20 @@ void Atari_Initialise(int *argc, char *argv[])
 	bpp = SDL_ATARI_BPP;
 
 	for (i = j = 1; i < *argc; i++) {
+		if (strcmp(argv[i], "--rotate90") == 0) {
+			ROTATE90 = 1;
+			width=240;
+			height=320;
+			bpp=16;
+			no_joystick = 1;
+			printf("rotate90 mode\n");
+			i++;
+		}
+		else
 		if (strcmp(argv[i], "--nojoystick") == 0) {
 			no_joystick = 1;
 			printf("no joystick\n");
+			i++;
 		}
 		else if (strcmp(argv[i], "--width") == 0) {
 			sscanf(argv[i + 1], "%i", &width);
@@ -838,6 +860,31 @@ int Atari_Exit(int run_monitor)
 	SDL_Quit();
 
 	return restart;
+}
+
+void DisplayRotated240x320(Uint8 * screen)
+{
+	int i,j;
+	Uint8 c;
+	register Uint32 *start32;
+	Uint32 quad;
+	if (MainScreen->format->BitsPerPixel!=16) 
+	{
+		Aprint("rotated display works only for bpp=16 right now");
+		Aflushlog();
+		exit(-1);
+	};
+	start32 = (Uint32 *) MainScreen->pixels;
+	for (j=0;j<MainScreen->h;j++)
+	  for (i=0;i<MainScreen->w/2;i++)
+	  {
+		c=screen[ATARI_WIDTH*(i*2)+32+320-j];
+		quad=Palette16[c]<<16;
+		c=screen[ATARI_WIDTH*(i*2+1)+32+320-j];
+		quad+=Palette16[c];
+	  	*start32=quad;
+		start32++;
+	  }	
 }
 
 void DisplayWithoutScaling(Uint8 * screen, int jumped, int width)
@@ -1035,6 +1082,11 @@ void Atari_DisplayScreen(UBYTE * screen)
 		break;
 	}
 
+	if (ROTATE90)
+	{
+		DisplayRotated240x320(screen);
+	}
+	else
 	if ((MainScreen->w == width)
 		&& (MainScreen->h == ATARI_HEIGHT)) {
 		DisplayWithoutScaling(screen, jumped, width);
@@ -1345,6 +1397,10 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.22  2002/04/23 00:26:54  jacek_poplawski
+
+ added command line "--rotate90" for Sharp PDA
+
  Revision 1.21  2002/04/22 23:37:17  jacek_poplawski
 
  added command line options to SDL port
