@@ -208,6 +208,7 @@ case "$a8_target" in
         A8_NEED_LIB(dinput)
         A8_NEED_LIB(dsound)
         A8_NEED_LIB(dxguid)
+        A8_NEED_LIB(ws2_32)
         OBJS="win32/atari_win32.o win32/screen.o win32/main.o win32/keyboard.o win32/atari.ro"
         ;;
     x11*)
@@ -254,7 +255,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([atexit floor getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa memset mkdir modf rmdir select socket strcasecmp strchr strdup strerror strrchr strstr strtol])
+AC_CHECK_FUNCS([atexit floor getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa memset mkdir modf rmdir select socket strcasecmp strchr strdup strerror strrchr strstr strtol mkstemp])
 
 
 

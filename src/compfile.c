@@ -31,7 +31,10 @@
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
-
+#include <fcntl.h>
+#ifndef HAVE_MKSTEMP
+#define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
+#endif
 /* Size of memory buffer ZLIB should use when decompressing files */
 #define ZLIB_BUFFER_SIZE	32767
 
@@ -324,9 +327,10 @@ FILE *opendcm( int diskno, const char *infilename, char *outfilename )
 
     strcpy(curptr,"TMP_XXXXXX\0");
 	outfile = fdopen(mkstemp(curptr), "wb");
-	if( !outfile )
+	if( !outfile ){
+		Aprint("mkstemp failed\n");
 		return NULL;
-	
+	}	
 	infile = fopen( infilename, "rb" );
 	if( !infile )
 	{
@@ -652,6 +656,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.12  2003/09/14 19:30:31  joy
+mkstemp emulated if unavailable
+
 Revision 1.11  2003/06/15 07:32:35  joy
 GZOPEN for non HAVE_LIBZ platforms
 

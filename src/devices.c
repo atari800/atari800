@@ -28,6 +28,9 @@
 #include    <ctype.h>
 #include    <time.h>
 #include    <errno.h>
+#ifndef HAVE_MKSTEMP
+#define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
+#endif
 
 #include    "config.h"
 #include    "ui.h"
@@ -2212,6 +2215,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.21  2003/09/14 19:30:32  joy
+mkstemp emulated if unavailable
+
 Revision 1.20  2003/08/31 21:57:44  joy
 rdevice module compiled in conditionally
 
