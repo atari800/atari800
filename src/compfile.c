@@ -249,10 +249,10 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output )
 		}
 		
 		if (working) {
-			if (((((long)cursec - 1) * (int)secsize) + 16) != ftell(fout)) 
+			if (soffset() != ftell(fout)) 
 			{
 				Aprint("Output desyncronized, possibly corrupt dcm file. fin=%lu fout=%lu != %lu cursec=%u secsize=%u", 
-					ftell(fin),ftell(fout),(((long)cursec - 1) * secsize) + 16,cursec,secsize);
+					ftell(fin),ftell(fout),soffset(),cursec,secsize);
 				return 0;
 			}
 		}
@@ -323,6 +323,8 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output )
 			else 
 			{
 				cursec++;
+				if(cursec==4 && secsize!=128)
+					fseek(fout,(secsize-128)*3,SEEK_CUR);
 			}
 		}
 	} 	
@@ -377,7 +379,7 @@ static int decode_C1(void)
 {
 	int	secoff,tmpoff,c;
 
-	tmpoff = read_offset(fin);
+	tmpoff = fgetc(fin);
 	c = fgetc(fin);
 	if( tmpoff == EOF || c == EOF )
 	{
@@ -669,5 +671,5 @@ static int write_sector(FILE *fout)
 static long soffset()
 {
 	return (long)atr + (cursec < 4 ? ((long)cursec - 1) * 128 :
-			 ((long)cursec - 4) * secsize + 384);
+			 ((long)cursec - 1) * secsize);
 }
