@@ -4,9 +4,17 @@
   - fixed "-help" so that it doesn't initialize graphics mode. 
   - added "-sound" and "-nosound" support so you can disable sound if
     your sound card is not plugged in :)
+  - added "-dsprate" support
   - added support for the configure option --disable-SOUND
   - added Aflushlog() to Atari_Exit() thus debug info is displayed now
+  - when sound card init failed the application continues to run with sound
+    disabled (previously it was exiting immediately)
 * atari_sdl.c, atari_falcon.c, cassette.c, atari.c: fixed "-help" formatting
+* atari_curses.c: added "-help"
+* atari.c, atari_curses.c, atari_x11.c: added Aflushlog() to Atari_Exit()
+* atari_x11.c: fixed the clean up code in Atari_Exit(), added help_only mode
+* sound.c: all printf's changed to Aprintf().
+* atari.c: "-v" or "-version" displays the version correctly now
 
 2002-07-24  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c, DOC/cart.txt, DOC/README: 256K and 512K XEGS carts
