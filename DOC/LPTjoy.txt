@@ -1,0 +1,14 @@
+LPTjoy interface (designed by Petr Sumbera)
+
+       [ CANON 25 MALE ]                   [ CANON 9 M ]
+
+(acknowledge)  10 ........................... 4  (right)
+(busy)         11 ........................... 3  (left)
+(out of paper) 12 ........................... 2  (down)
+(select)       13 ........................... 1  (up)
+
+(error)        15 ........................... 6  (button)
+
+(strobe)        1 ........................... 7  (Ucc)
+(ground)       25 ........................... 8  (ground)
+

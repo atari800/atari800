@@ -1,0 +1,54 @@
+                                                                      May 2000
+
+    Hi,
+
+this is the Atari 800XL/130XE emulator for Atari TT/Falcon range of computers.
+It should run on any computer with 68030 or higher CPU and a graphics
+capable of resolution 320x240 (or higher) in 256 colors.
+Atari800 contains special routines for direct VIDEL programming (for achieving
+336x240 resolution on VGA monitors) and also NOVA graphics card support.
+
+Atari800 has been developed by David Firth. Falcon port was done by me.
+Empty Head (= Karel Rous) and Gerhard Janka wrote the 65C02 emulation
+in pure MC68030 assembler. Douglas Little's assembler routines for VIDEL
+were used for achieving maximal possible speed and compatibility.
+
+ATARI800.TTP      - atari800 (full C source, GNU C -m68020-40 -O3)
+ATARICPU.TTP      - atari800 (cpu.c rewritten in optimized MC68030 asm)
+
+Keyboard emulation works well:
+
+F1 = configuration menu
+F2 = OPTION key of Atari 800XL
+F3 = SELECT key
+F4 = START key
+F5 = PowerON RESET (warm start)
+Shift + F5 = PowerOFF RESET (cold start)
+F6 = BREAK key
+F8 = Invoke Monitor
+F9 = Exit Emulator
+Help = Help key
+
+Joystick emulation works fine. Both real joysticks (CX-40 type) can be
+connected.
+
+Several special command line parameters were introduced in this Falcon port:
+
+-interlace <number>     the <number> is a number of skipped Falcon screens.
+                        Normally the Falcon screen is updated every time
+                        when it's build, i.e. <number> is 0 by default. Higher
+                        <number> should cause faster emulation (because of
+                        less time spent by updating slow Falcon screen).
+
+-joyswap                swap Joysticks
+
+-videl                  on Falcon use direct VIDEL programing (allows you
+                        to switch res on-the-fly and achieve special 336x240
+                        resolution on VGA)
+
+-double                 double the screen size on NOVA cards
+
+For bugreports of Falcon port please write to me (Petr Stehlik)
+
+e-mail    joy@sophics.cz
+WWW       http://joy.atari.org/

@@ -1,0 +1,306 @@
+CC		= gcc
+CPPFLAGS	= $(OTHER)
+CFLAGS		= -c -g -O6 -DGNU_C -Wall -fomit-frame-pointer
+LD		= gcc
+LDFLAGS		=
+LDLIBS		= -lm
+
+PREFIX		= /usr/local
+BIN_PATH	= ${PREFIX}/bin
+LIB_PATH	= ${PREFIX}/lib
+MAN_PATH	= ${PREFIX}/man
+
+ifeq (.atari800,$(wildcard .atari800))
+include .atari800
+endif
+
+ifdef ZLIB_CAPABLE
+LDLIBS		+= -lz
+endif
+
+default :
+	@echo "To build the Atari 800 Emulator, type:"
+	@echo "make <version>"
+	@echo ""
+	@echo "where <version> is one of"
+	@echo "  basic"
+	@echo "  freebsd-x11 freebsd-x11-shm"
+	@echo "  freebsd-xview freebsd-xview-shm"
+	@echo "  linux-svgalib"
+	@echo "  x11 x11-shm"
+	@echo "  xview xview-shm"
+	@echo "  motif"
+	@echo "  hp9000-ansic-x11"
+	@echo "  curses sunos-curses linux-ncurses freebsd-ncurses"
+	@echo ""
+	@echo "To reconfigure options, type: make config"
+	@echo "To clean directory, type: make clean"
+	@echo "To install the Emulator, type:"
+	@echo ""
+	@echo "make install-svgalib"
+	@echo "make install"
+
+basic :
+	$(MAKE) atari800 \
+		CPPFLAGS="-DBASIC" \
+		OBJ="atari_basic.o"
+
+linux-svgalib :
+	$(MAKE) atari800 \
+		OTHER="-DSVGALIB" \
+		LDLIBS="$(LDLIBS) -lvga" \
+		OBJ="atari_svgalib.o"
+
+x11 :
+	$(MAKE) atari800 \
+		CPPFLAGS="-DX11 -I/usr/openwin/include" \
+		LDFLAGS="-L/usr/X11/lib -L/usr/openwin/lib" \
+		LDLIBS="$(LDLIBS) -lX11" \
+		OBJ="atari_x11.o"
+
+x11-shm :
+	$(MAKE) atari800 \
+		CPPFLAGS="-DX11 -I/usr/openwin/include -DSHM" \
+		LDFLAGS="-L/usr/X11/lib -L/usr/openwin/lib" \
+		LDLIBS="$(LDLIBS) -lX11 -lXext" \
+		OBJ="atari_x11.o"
+
+hp9000-ansic-x11 :
+	$(MAKE) atari800 \
+		CC="cc" \
+		CPPFLAGS="-DX11 -D_POSIX_SOURCE" \
+		CFLAGS="-c -O -Aa -I/usr/include/X11R5" \
+		LD="cc" \
+		LDFLAGS="-L/usr/lib/X11R5" \
+		LDLIBS="$(LDLIBS) -lX11" \
+		OBJ="atari_x11.o"
+
+xview :
+	$(MAKE) atari800 \
+		OTHER="-DX11 -I/usr/openwin/include -DXVIEW" \
+		LDFLAGS="-L/usr/openwin/lib -L/usr/X11/lib" \
+		LDLIBS="$(LDLIBS) -lxview -lolgx -lX11" \
+		OBJ="atari_x11.o"
+
+xview-shm :
+	$(MAKE) atari800 \
+		OTHER="-DX11 -I/usr/openwin/include -DXVIEW -DSHM" \
+		LDFLAGS="-L/usr/openwin/lib -L/usr/X11/lib" \
+		LDLIBS="$(LDLIBS) -lxview -lolgx -lX11 -lXext" \
+		OBJ="atari_x11.o"
+
+motif :
+	$(MAKE) atari800 \
+		OTHER="-DX11 -I/opt/IXImd12s/include -DMOTIF" \
+		LDFLAGS="-L/opt/IXImd12s/lib" \
+		LDLIBS="$(LDLIBS) -lXm -lXt -lX11 -lgen -lsocket" \
+		OBJ="atari_x11.o"
+
+curses :
+	$(MAKE) atari800 \
+		CPPFLAGS="-DCURSES" \
+		LDLIBS="$(LDLIBS) -lcurses" \
+		OBJ="atari_curses.o"
+
+sunos-curses :
+	$(MAKE) atari800 \
+		CPPFLAGS="-I/usr/5include -DCURSES" \
+		LDLIBS="$(LDLIBS) -lcurses" \
+		LDFLAGS="-L/usr/5lib" \
+		OBJ="atari_curses.o"
+
+linux-ncurses :
+	$(MAKE) atari800 \
+		CPPFLAGS="-I/usr/include/ncurses -DCURSES -DNCURSES" \
+		LDLIBS="$(LDLIBS) -lncurses" \
+		OBJ="atari_curses.o"
+
+freebsd-ncurses :
+	$(MAKE) atari800 \
+		CPPFLAGS="-I/usr/include/ncurses -DCURSES -DNCURSES" \
+		LDLIBS="$(LDLIBS) -lncurses" \
+		OBJ="atari_curses.o"
+
+freebsd-x11 :
+	$(MAKE) atari800 \
+		CPPFLAGS="-DX11 -I/usr/X11R6/include" \
+		LDFLAGS="-L/usr/X11R6/lib" \
+		LDLIBS="$(LDLIBS) -lX11" \
+		OBJ="atari_x11.o"
+
+freebsd-x11-shm :
+	$(MAKE) atari800 \
+		CPPFLAGS="-DX11 -I/usr/X11R6/include -DSHM" \
+		LDFLAGS="-L/usr/X11R6/lib" \
+		LDLIBS="$(LDLIBS) -lX11 -lXext" \
+		OBJ="atari_x11.o"
+
+freebsd-xview : 
+	$(MAKE) atari800 \
+		OTHER="-DX11 -I/usr/X11R6/include -DXVIEW" \
+		LDFLAGS="-L/usr/X11R6/lib" \
+		LDLIBS="$(LDLIBS) -lxview -lolgx -lX11" \
+		OBJ="atari_x11.o"
+
+freebsd-xview-shm :
+	$(MAKE) atari800 \
+		OTHER="-DX11 -I/usr/X11R6/include -DXVIEW -DSHM" \
+		LDFLAGS="-L/usr/X11R6/lib" \
+		LDLIBS="$(LDLIBS) -lxview -lolgx -lX11 -lXext" \
+		OBJ="atari_x11.o"
+
+#
+# ======================================================
+# You should not need to modify anything below this here
+# ======================================================
+#
+
+INCLUDES	=	Makefile \
+			config.h \
+			rt-config.h \
+			cpu.h \
+			atari.h \
+			colours.h \
+			antic.h \
+			gtia.h \
+			pokey.h \
+			pia.h \
+			devices.h \
+			monitor.h \
+			sio.h \
+			supercart.h \
+			platform.h
+
+config config.h	:	configure config.in
+	./configure
+
+configure	:	configure.o prompts.o
+	$(LD) $(LDFLAGS) configure.o prompts.o $(LDLIBS) -o configure
+
+configure.o	:	configure.c prompts.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) configure.c
+
+OBJECTS	=	atari.o \
+		cpu.o \
+		monitor.o \
+		sio.o \
+		devices.o \
+		antic.o \
+		gtia.o \
+		pokey.o \
+		pia.o \
+		supercart.o \
+		prompts.o \
+		rt-config.o \
+		ui.o \
+		binload.o \
+		list.o \
+		sound.o \
+		pokeysnd.o \
+		ataripcx.o \
+		log.o \
+		compfile.o \
+		memory.o \
+		pbi.o \
+		statesav.o \
+		diskled.o \
+		colours.o
+
+atari800	:	$(OBJECTS) $(OBJ)
+	$(LD) $(LDFLAGS) $(OBJECTS) $(OBJ) $(LDLIBS) -o atari800
+
+atari.o		:	atari.c $(INCLUDES) prompts.h config.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) atari.c
+
+cpu.o		:	cpu.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) cpu.c
+
+monitor.o	:	monitor.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) monitor.c
+
+sio.o		:	sio.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) sio.c
+
+devices.o	:	devices.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) devices.c
+
+antic.o		:	antic.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) antic.c
+
+gtia.o		:	gtia.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) gtia.c
+
+pokey.o		:	pokey.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) pokey.c
+
+pia.o		:	pia.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) pia.c
+
+pbi.o		:	pbi.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) pbi.c
+
+supercart.o	:	supercart.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) supercart.c
+
+ui.o		:	ui.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) ui.c
+
+binload.o       :       binload.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) binload.c
+
+list.o		:	list.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) list.c
+
+atari_x11.o	:	atari_x11.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) atari_x11.c
+
+atari_svgalib.o	:	atari_svgalib.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) atari_svgalib.c
+
+atari_curses.o	:	atari_curses.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) atari_curses.c
+
+atari_amiga.o	:	atari_amiga.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) atari_amiga.c
+
+prompts.o	:	prompts.c prompts.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) prompts.c
+
+rt-config.o	:	rt-config.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) rt-config.c
+
+sound.o		:	sound.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) sound.c
+
+pokeysnd.o	:	pokeysnd.c pokeysnd.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) pokeysnd.c
+
+compfile.o	:	compfile.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) compfile.c
+
+log.o		:	log.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) log.c
+
+ataripcx.o	:	ataripcx.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) ataripcx.c
+
+statesav.o	:	statesav.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) statesav.c
+
+memory.o	:	memory.c memory.h memory-d.c memory-d.h \
+			memory-p.h memory-p.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) memory.c
+
+clean	:
+	rm -f configure
+	rm -f config.h
+	rm -f core
+	rm -f *.o
+
+install-svgalib : install
+	chown root.root ${BIN_PATH}/atari800
+	chmod 4755 ${BIN_PATH}/atari800
+
+install :
+	cp atari800 ${BIN_PATH}/atari800
+	cp atari800.man ${MAN_PATH}/man1/atari800.1

@@ -1,0 +1,139 @@
+Installation of the Atari 800 Emulator
+--------------------------------------
+
+Irrespective of whether you are going to compile the emulator yourself
+or install a pre-compiled binary version you must obtain a copy of the
+Operating System ROMs.
+
+The ROM images are distributed within the PC Xformer 2.5 package (other
+versions of this program do not contain the ROMs in a suitable format)
+which can be downloaded from:-
+
+http://www.signus.demon.co.uk/david/atari/atari.html
+
+If you are creating the ROM images yourself they should be copied from
+the following locations:-
+
+1. Atari Basic (8192 bytes between $a000 and $bfff)
+2. Atari OS/A (10240 bytes between $d800 and $ffff)
+3. Atari OS/B (10240 bytes between $d800 and $ffff)
+4. Atari XL/XE (16384 bytes between $c000 and $ffff)
+5. Atari 5200 (2048 bytes between $f800 and $ffff)
+
+Note: If you are extracting the atarixl.rom you will find that the
+      ROM area under the custom chip ($d000 to $d7ff) are mapped
+      between $5000 and $57ff when bit 7 of PORTB is set to 1.
+
+      i.e. You should set bit 7 of PORTB and then dump the memory
+           out in the following order:- $c000 to $cfff, $5000 to $57ff
+           and finally $d800 to $ffff.
+
+The first time you run the emulator you will be prompted for the
+location of the ROMs and various other defaults. If you want to
+change any of these in the future simply start the emulator with
+the "-configure" command line option.
+
+Compiling the Emulator
+----------------------
+
+The emulator can be compiled for the following systems (and probably
+many others with a little work):-
+
+1. X Window Version (Including SUN OpenWindows) on a Unix Platform
+2. SVGALIB Version on Linux
+3. CURSES version for UNIX
+4. Graphical Version for the Amiga
+5. BASIC version (No Graphics). Should be straightforward to configure
+   for any 32 bit environment supporting ANSI C.
+6. VGA Version for DOS
+
+   Note: I don't say 32 bit computer because certain operating systems
+   enforce a 16 bit memory model. No prizes are offered for correctly
+   identifing the OS in question.
+
+Building the Emulator on a Unix Platform
+----------------------------------------
+
+1. Type "make" for a list of supported platforms.
+2. Select the most appropriate platform and type "make <platform>"
+   for instance if you want the linux svgalib version you would type
+   "make linux-svgalib"
+3. Install the emulator by typing "make install". If you are building
+   one of the linux svgalib versions then you should login as root
+   and type "make install-svgalib" this is because svgalib programs
+   need to be run setuid root.
+
+Building the Emulator for Curses
+--------------------------------
+
+Follow the instruction for Unix but note that you must be using the
+System V Curses Library. BSD Curses is lacking a few functions and
+will not work (nodelay, attron, attroff, keypad and curs_set).
+
+Building the Emulator for VAX/VMS
+---------------------------------
+
+This version only support the BASIC text only mode. You will be
+able to run programs such as:- DOS 2.5, DOS XL, MAC65 (disk version),
+Atari Basic and similar programs. I have had reports that you can
+make the X11 version run under DEC-Windows with a little work.
+
+Note: I have not built this version for a while. Modifications may be
+      required to vmsbuild.
+
+To build type @vmsbuild at the command line. I have compiled it with
+GNU C 2.6.1 but I don't expect problems with other versions. It
+will probably compile OK on VAX C but it will require the appropriate
+compilation options to be inserted into vmsbuild.com
+
+atari800 :== $DISK$xxxx:[yyyy]atari800.exe
+
+	where xxxx is the disk the software is on.
+	      yyyy is the directory the software is in.
+
+Building the Emulator for the CBM Amiga
+---------------------------------------
+
+Compiler: GNU C + DICE C (Lattice C Untried)
+
+There is a separate makefile provided for the Amiga - Makefile.amiga
+By default it is setup for use with GCC. If you are using Dice C you
+will need to comment out the GCC section and remove the comments from
+the Dice section. Unfortunately I don't use DICE C very often so if
+it no longer compiles please let me know.
+
+GNU C is available on AMINET under dev/gcc but needs about 6MB to
+compile the emulator.
+
+For GCC be sure that the C_INCLUDE_PATH environment variable is
+pointing to the location of the official Commodore include files
+prior to compiling the emulator.
+
+For example:
+	setenv C_INCLUDE_PATH /path/of/cbm/includes
+
+Building the Emulator for DOS
+-----------------------------
+
+To compile, use DJGPP the DOS port of gcc, which can be get from
+http://www.delorie.com/djgpp/. You don't need any contrib libraries.
+A basic setup will do. (I haven't tested the EZ-DJGPP distribution,
+but I suppose that's all you need).
+
+If you have GCC, the second thing to do is rename Makefile to Makefile.org
+and Makefile.dos to Makefile. Now type "make vga", answer the questions
+required by "configure" and wait for gcc to build atari800.exe.
+
+Since the source code contains files with long file names, you must unpack
+and compile the source on a filesystem supporting long file names (for example
+VFAT of Windows95). An additional change of DJGPP setting is required:
+open the DJGPP.ENV file in editor and change the LFN= line to LFN=y
+
+Building the Emulator for Falcon
+--------------------------------
+
+You need a recent GCC, for example 2.7.2, running on a filesystem with long
+file names (either minix-fs of MiNT, or VFAT of MagiC). Unpack the source
+archive and copy all files from falcon/ subdirectory to the main source
+files directory. Then just rename Makefile.falcon to Makefile and type
+"make videl" or just "make" to see the list of possible versions.

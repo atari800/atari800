@@ -1,0 +1,52 @@
+Short:     V1.1 of the Atari 8-bit emulator
+Uploader:  sebauer@t-online.de (Sebastian Bauer)
+Author:    sebauer@t-online.de (Sebastian Bauer), Atari800 Emulator Development Team
+Type:      misc/emu
+Kurz:      V1.1 des Atari 8-bit Emulator
+Requires:  OS 3.0, MUI 3.8, 
+Version:   1.1
+
+This is the amiga port of the Atari800 Emulator. It requires at
+least a 68020 processor, OS 3.0 and MUI 3.8.
+For more information like please look into the included
+Atari800.guide (not really written yet)
+
+History
+~~~~~~~
+Version 1.1 (12.06.2000)
+ - console keys and sound should work better now
+
+Version 1.0 (31.05.2000)
+ - initial public release
+
+How can you reach me?
+~~~~~~~~~~~~~~~~~~~~~
+My e-mail address is:
+  sebauer@t-online.de or
+  Sebastian.Bauer@in.stud.tu-ilmenau.de
+
+Address:
+  Sebastian Bauer
+  Neustädter Str. 50
+  07768 Kahla
+  Germany
+
+Visit my homepage at
+  http://home.t-online.de/home/sebauer/
+  (german version)
+
+  http://home.t-online.de/home/sebauer/english.html
+  (english version)
+
+Here you can find the latest version of the Atari800 emulator for
+Amiga but also other things for Amiga, for example SimpleFind3,
+SimpleHTML, SimplePac and the Freeciv Port.
+
+Also look at the offical Atari800 Emulator homepage at
+  http://cas3.zlin.vutbr.cz/~stehlik/a800.htm
+         __
+        / /
+   __  / /   Only Amiga makes it possible...
+   \ \/ /
+    \__/
+

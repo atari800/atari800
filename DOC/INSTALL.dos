@@ -1,0 +1,35 @@
+Atari 800, 800/XL, 130/XE and 5200 Emulator for MS-DOS
+------------------------------------------------------
+
+Irrespective of whether you are going to compile the emulator yourself
+or install a pre-compiled binary version you must obtain a copy of the
+Operating System ROMs.
+
+The ROM images are distributed within the PC Xformer 2.5 package (other
+versions of this program do not contain the ROMs in a suitable format)
+which can be downloaded from:-
+
+http://www.signus.demon.co.uk/david/atari/atari.html
+
+PC-Xformer contains "ataribas.rom", "atariosb.rom" and "atarixl.rom".
+If have the original OS it should be called "atariosa.rom" and if
+you have the ROM for the 5200 Games System it should be called
+"atari5200.rom".
+
+Installation of the Emulator
+----------------------------
+
+1. Create a toplevel directory called "atari800"
+
+   mkdir c:\atari800
+
+2. Copy the Atari800 ZIP file into the newly create "atari800"
+   directory and unzip.
+
+   copy *.zip c:\atari800
+   cd c:\atari800
+   pkunzip *.zip
+
+3. Copy the Operating System ROMS into "c:\atari800"
+
+4. Start the emulator by typing "atari800".

@@ -1,0 +1,185 @@
+.TH ATARI800 1 "22 June 1997"
+.SH NAME
+atari800 \- Atari 800 Emulator, Version 0.8.1
+.SH SYNOPSIS
+\fBatari800\fP [options] [diskfiles...]
+.SH DESCRIPTION
+\fIatari800\fP emulates the Atari 800, Atari 800 XL, Atari 130 XE and
+Atari 5200 Games System.
+.SS Options
+.TP
+\fB-a
+Use Atari OS/A.
+.TP
+\fB-b
+Use Atari OS/B.
+.TP
+\fB-xl
+Emulate Atari 800 XL.
+.TP
+\fB-xe
+Emulate Atari 130 XE - but Antic accesses the same bank the CPU is using.
+.TP
+\fB-5200
+Emulate Atari 5200 - Games controller emulation has not been implemented yet!
+.TP
+\fB-config filename
+Specify an alternative configuration filename.
+.TP
+\fB-configure
+Starts emulator in run-time configuration mode.
+.TP
+\fB-nobasic
+Used to disable Basic when starting the emulator in XL/XE mode.
+Simulates the Option key being held down during system boot.
+.TP
+\fB-nopatch
+Normally the OS is patched giving very fast I/O. This options prevents
+the patch from being applied so that the OS accesses the serial port
+hardware directly. This option will probably never be needed since
+programs that access the serial hardware should work even if the OS
+has been patched.
+.TP
+\fB-xcolpf1
+Enables Extended Use of COLPF1 register as used by Antic Modes 2, 3 and
+f. This option allows two different colours to be displayed in these
+modes - i.e. Not one colour and two luminances.
+.TP
+\fB-rom filename
+Path to file containing a standard 8K ROM cartridge.
+.TP
+\fB-rom16 filename
+Path to file containing a standard 16K ROM cartridge.
+.TP
+\fB-ags32 filename
+Path to file containing 32K ROM cartridge for the Atari 5200 Games System.
+.TP
+\fB-oss filename
+Path to file containing OSS super-cartridge.
+.TP
+\fB-db filename
+Path to file containing DB super-cartridge.
+.TP
+\fB-osa_rom filename
+Path to file containing Atari Rev.A Operating System.
+Used to override paths defined at compile time.
+.TP
+\fB-osb_rom filename
+Path to file containing Atari Rev.B Operating System.
+Used to override paths defined at compile time.
+.TP
+\fB-xlxe_rom
+Path to file containing Atari XL/XE Operating System.
+Used to override paths defined at compile time.
+.TP
+\fB-5200_rom
+Path to file containing Atari 5200 Games System ROM.
+Used to override paths defined at compile time.
+.TP
+\fB-basic_rom
+Path to file containing Atari BASIC ROM.
+Used to override paths defined at compile time.
+.TP
+\fB-c
+Enable RAM between $c000 and $d000.
+.TP
+\fB-v
+Print emulator version.
+.TP
+\fB-refresh
+Controls screen refresh rate. A numerical value follows this option
+which specifies how many emulated screen updates are required before
+the actual screen is updated. This value effects the speed of the
+emulation: A higher value results in faster CPU emulation but a
+less frequently updated screen.
+.SS SVGALIB Options
+.TP
+\fB-sound
+Enable sound using the Network Audio System.
+.TP
+\fB-interlace
+Enable screen interlace option
+.SS X Window Options
+.TP
+\fB-private_cmap
+Tells the Emulator to use its own private colormap.
+.TP
+\fB-small
+Runs the emulator in a small window where each Atari 800 pixel is
+represented by one X Window pixel.
+.TP
+\fB-large
+Runs the emulator in a large window where each Atari 800 pixel is
+represented by a 2x2 X Window rectange. This mode is selected by
+default.
+.TP
+\fB-huge
+Runs the emulator in a huge window where each Atari 800 pixel is
+represented by a 3x3 X Window rectange.
+.TP
+\fB-sound
+Enable sound using the Network Audio System.
+.SS Amiga Options
+.TP
+\fB-ocs
+Used for OCS based Amigas. It has not been tested on a real OCS
+based computer and there could be problems with regard to Workbench
+versions.
+.TP
+\fB-ecs
+Used for ECS based Amigas. It has not been tested on a real ECS
+based computer and there could be problems with regard to Workbench
+versions.
+.TP
+\fB-aga
+Used for AGA based Amigas. It has been tested on an Amiga 1200 with
+68030 + 4Mb Fast RAM.
+.TP
+\fB-grey
+Produce a grey scale display.
+.TP
+\fB-colour
+Produce a full colour on AGA machines and up to 32 simultaneous
+colours on OCS and ECS machines.
+.TP
+\fB-wb
+Runs the emulator in a Workbench Window. Use a screen mode with
+a minimum of 16 colours for best results.
+.SS Curses Options
+.TP
+\fB-left
+Use columns 0 to 39.
+.TP
+\fB-central
+Use columns 20 to 59.
+.TP
+\fB-right
+Use columns 40 to 79.
+.TP
+\fB-wide1
+Use columns 0 to 79. In this mode only the even character positions
+are used. The odd locations are filled with spaces.
+.TP
+\fB-wide2
+Use columns 0 to 79. This mode is similar to \fB-wide1\fP except that
+the spaces are in reverse video if the previous character was also
+in reverse video.
+.SH FILES
+.TP
+\fI/usr/local/lib/atari/atariosa.rom\fR
+Atari O/S A
+.TP
+\fI/usr/local/lib/atari/atariosb.rom\fR
+Atari O/S B
+.TP
+\fI/usr/local/lib/atari/atarixl.rom\fR
+Atari 800 XL O/S
+.TP
+\fI/usr/local/lib/atari/atari5200.rom\fR
+Atari 5200 O/S
+.TP
+\fI/usr/local/lib/atari/ataribas.rom\fR
+Atari Basic
+.SH BUGS
+A few programs cause the emulator to enter its built in debugger. The
+reason for this is unknown at the moment.

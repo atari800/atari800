@@ -1,0 +1,109 @@
+@DATABASE "Atari800.guide"
+@$VER: Atari800.guide 1.0 (23.03.00)
+@AUTHOR Sebastian Bauer
+@(C) ©2000
+
+@NODE MAIN "Atari800 - Guide"
+@SMARTWRAP
+@{b}Atari800 1.0 @{AMIGAGUIDE}@{ub}
+
+
+Note that the @{" guide author's " link CONTACTING} native language is German. So please
+forgive any spelling and gramer mistakes. Or better correct them and send them
+to @{" me " link CONTACTING}.
+
+@{b}Attention!@{ub} This guide is designed for use with version 40 of the
+amigaguide.datatype which is supplied with AmigaOS 3.1. Under other versions
+this guide may look @{b}"less than optimal"@{ub}.  Note further that if you
+are presently running Kickstart 3.0, you may @{b}still@{ub} use Workbench
+3.1 with it, including the newer amigaguide.datatype.
+@{CODE}
+
+@{" Copyright       " link COPYRIGHT}           Copyright and disclaimer
+@{" Introduction    " link INTRO}           What does it do ?
+@{" Requirements    " link REQUIRE}           What does it need ?
+@{" Installation    " link INSTALL}           How to install (and remove) ?
+
+@{" Usage           " link USAGE}           How to use it?
+
+@{" Contacting      " link CONTACTING }           Where to send bug reports ?
+
+@ENDNODE
+
+
+@NODE COPYRIGHT "Atari800 - Copyright and disclamer"
+@SMARTWRAP
+@{b}Copyright@{ub}
+
+Copyright (C) 1995 David Firth. E-Mail: david@signus.demon.co.uk
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
+
+
+@{" GNU General Public License " link COPYING/main}
+
+@ENDNODE
+
+@NODE INTRO "Atari800 - Introduction"
+@SMARTWRAP
+@{b}Introduction@{ub}
+
+@ENDNODE
+
+@NODE REQUIRE "Atari800 - Requirements"
+@SMARTWRAP
+@{b}Requirements@{ub}
+
+
+The Amiga port of the Emulator requires a 68020 processor, OS3.0 and
+MUI3.8. For sound support AHI is needed.
+
+
+It also requires the Atari ROMs.
+
+@ENDNODE
+
+@NODE INSTALL "Atari800 - Installation"
+@SMARTWRAP
+@{b}How to install Atari800@{ub}
+
+
+To install Atari800 simply copy the whole Atari800 drawer to the destination of your
+choice. The ROM files must be in the copied in the same directory (but this can
+be also changed).
+
+@ENDNODE
+
+
+@NODE USAGE "Atari800 - Usage"
+@SMARTWRAP
+@{b}Usage@{ub}
+
+
+Sorry, but not written yet.
+
+@ENDNODE
+
+@NODE CONTACTING "Atari800 - Contacting"
+@SMARTWRAP
+@{b}Contacting@{ub}
+
+
+The Amiga port of the Atari800 emulator was created by Sebastian Bauer.
+
+Any comments which are related to the Amiga version should be sent to@{LINE}
+@{" sebauer@t-online.de " system "YAM:YAM MAILTO sebauer@t-online.de NOCHECK"} or @{" Sebastian.Bauer@in.stud.tu-ilmenau.de " system "YAM:YAM MAILTO Sebastian.Bauer@in.stud.tu-ilmenau.de NOCHECK"}@{LINE}
+
+The latest version of the emulator can be obtained from my homepage:@{LINE}
+@{" http://home.t-online.de/home/sebauer/english.html " system "C:OpenURL http://home.t-online.de/home/sebauer/english.html"}
+
+
+Also look on the official Atari800 Emulator support page at:
+
+@{" http://cas3.zlin.vutbr.cz/~stehlik/a800.htm " system "C:OpenURL http://cas3.zlin.vutbr.cz/~stehlik/a800.htm"}
+
+@ENDNODE
+

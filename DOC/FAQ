@@ -1,0 +1,11 @@
+Frequently asked questions (with answers)
+-----------------------------------------
+
+1. Q: The Atari800Win does not do this or that.
+   A: Contact Rich Lawrence <rich@kesmai.com>, the Atari800Win author
+
+2. Q: If I use keyboard as the emulated joystick in the DOS version
+      it often stops some games (e.g. Bruce Lee). What should I do?
+   A: Press F7 to switch the keyboard into joy-only mode. Or better,
+      use a real joystick (either PC or the old CX-40 Atari one).
+

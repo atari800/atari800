@@ -1,0 +1,37 @@
+crlf.c by entropy@terminator.rs.itd.umich.edu
+
+PUBLIC DOMAIN -- NO RIGHTS RESERVED
+
+usage:  crlf -s [file [...]] (to strip carriage returns)
+        crlf -a [file [...]] (to add carriage returns)
+
+crlf converts text files between TOS (MS-DOS) and UNIX style line
+terminators.
+
+With the -s option, it strips all carriage returns from the specified files.
+
+With the -a option, it adds carriage returns before each line feed in a
+file.  Be careful that you do not run this twice on the same file (or at all
+on a file that already has carriage returns) as you will end up with really
+strange line terminators that way (recover by stripping and re-adding
+returns).
+
+If no file is specified the input is read from `stdin' and put to `stdout'.
+So you can use it as filter in a pipe.
+
+If any errors/warnings occur while trying to convert a file, an error status
+will be returned to the OS when the program exits.  If you are running from
+a Makefile and know there will be errors (e.g. "crlf -s *" in a directory
+that contains subdirectories) you should ignore the return status (e.g.
+"-crlf -s *" in a Makefile).
+
+The program attempts to preserve the timestamp of the original file.  If it
+is unable to do so it will continue to convert the file but will return an
+error status to the OS.
+
+crlf does NOT recursively convert subdirectories as of yet.
+
+The program is 16/32 bit clean.
+
+Enjoy,
+entropy

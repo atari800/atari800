@@ -1,0 +1,204 @@
+CC		= gcc
+CPPFLAGS	= $(OTHER)
+CFLAGS		= -c -O2 -fomit-frame-pointer -Wall -DGNU_C -DDOS_DRIVES -I .
+LD		= gcc
+LDFLAGS		= -s
+LDLIBS		=
+AS		= gcc
+ASFLAGS		= -c
+
+ifeq (atari800.djgpp,$(wildcard atari800.djgpp))
+include atari800.djgpp
+endif
+
+ifdef ZLIB_CAPABLE
+LDLIBS		+= -lz
+endif
+
+default :
+	@echo To build the Atari 800 Emulator, type:
+	@echo make version
+	@echo .
+	@echo where version is one of
+	@echo   basic
+	@echo   pdcurses
+	@echo   vga
+	@echo . 
+	@echo To reconfigure options, type: make config
+	@echo To clean directory, type: make clean
+
+basic :
+	@make atari800.exe CPPFLAGS="-DBASIC" OBJ="atari_basic.o sound.o"
+	@echo Finished.
+
+pdcurses :
+	@make atari800.exe CPPFLAGS="-DCURSES" LDLIBS="$(LDLIBS) -lcurso" OBJ="atari_curses.o sound.o"
+	@echo Finished.
+
+vga :
+	@make atari800.exe CPPFLAGS="-DVGA" OBJ="atari_vga.o sound_dos.o dos_sb.o vga_gfx.o vga_asm.o"
+	@echo Finished.
+
+#
+# ======================================================
+# You should not need to modify anything below this here
+# ======================================================
+#
+
+INCLUDES        =       Makefile \
+			config.h \
+			rt-config.h \
+			cpu.h \
+			atari.h \
+			colours.h \
+			antic.h \
+			gtia.h \
+			pokey.h \
+			pia.h \
+			devices.h \
+			monitor.h \
+			sio.h \
+			supercart.h \
+			platform.h
+
+config config.h	:	configure.exe config.in
+	configure.exe
+
+configure.exe	:	configure.o prompts.o
+	$(LD) $(LDFLAGS) configure.o prompts.o $(LDLIBS) -o configure.exe
+
+configure.o	:	configure.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) configure.c
+
+OBJECTS =	atari.o \
+		cpu.o \
+		monitor.o \
+		sio.o \
+		devices.o \
+		antic.o \
+		gtia.o \
+		pokey.o \
+		pia.o \
+		supercart.o \
+		prompts.o \
+		rt-config.o \
+		ui.o \
+		binload.o \
+		list.o \
+		pokeysnd.o \
+		ataripcx.o \
+		log.o \
+		compfile.o \
+		memory.o \
+		pbi.o \
+		statesav.o \
+		diskled.o \
+		colours.o
+
+atari800.exe	:       $(OBJECTS) $(OBJ) joycfg.exe
+	$(LD) $(LDFLAGS) $(OBJECTS) $(OBJ) $(LDLIBS) -o atari800.exe
+
+atari.o         :       atari.c $(INCLUDES) config.h ataripcx.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) atari.c
+
+cpu.o           :       cpu.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) cpu.c
+
+monitor.o       :       monitor.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) monitor.c
+
+sio.o           :       sio.c $(INCLUDES) diskled.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) sio.c
+
+devices.o       :       devices.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) devices.c
+
+antic.o         :       antic.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) antic.c
+
+gtia.o          :       gtia.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) gtia.c
+
+pokey.o         :       pokey.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) pokey.c
+
+pia.o           :       pia.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) pia.c
+
+supercart.o     :       supercart.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) supercart.c
+
+prompts.o       :       prompts.c prompts.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) prompts.c
+
+rt-config.o     :       rt-config.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) rt-config.c
+
+ui.o            :       ui.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) ui.c
+
+binload.o       :       binload.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) binload.c
+
+list.o          :       list.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) list.c
+
+pokeysnd.o	:       pokeysnd.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) pokeysnd.c
+
+ataripcx.o	:	ataripcx.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) ataripcx.c
+
+log.o	:	log.c log.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) log.c
+
+compfile.o	:	compfile.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) compfile.c
+
+joycfg.exe	:	joycfg.o pcjoy.h
+	$(LD) $(LDFLAGS) joycfg.o -o joycfg.exe
+
+joycfg.o	:	joycfg.c pcjoy.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) joycfg.c	
+
+memory.o	:	memory.c memory.h memory-d.c memory-d.h emuos.h $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) memory.c
+
+pbi.o		:	pbi.c pbi.h $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) pbi.c
+
+statesav.o	:	statesav.c statesav.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) statesav.c
+
+diskled.o	:	diskled.c diskled.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) diskled.c
+
+colours.o	:	colours.c colours.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) colours.c
+
+sound.o		:       sound.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) sound.c
+
+sound_dos.o	:       dos/sound_dos.c $(INCLUDES) dos/dos_sb.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) dos/sound_dos.c
+
+dos_sb.o	:	dos/dos_sb.c dos/dos_sb.h dos/dos_ints.h log.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) dos/dos_sb.c
+
+atari_curses.o  :       atari_curses.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) atari_curses.c
+
+atari_vga.o     :       atari_vga.c $(INCLUDES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) atari_vga.c
+
+vga_gfx.o	:	dos/vga_gfx.c dos/vga_gfx.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) dos/vga_gfx.c
+
+vga_asm.o	:	dos/vga_asm.s
+	$(AS) $(ASFLAGS) dos/vga_asm.s
+
+clean   :
+	del configure.exe
+	del config.h
+	del core
+	del *.o

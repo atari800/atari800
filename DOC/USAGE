@@ -1,0 +1,266 @@
+Usage
+-----
+
+Usage: atari800 [-atari] [-xl] [-xe] [-5200] [-b] [-c] [-d]
+		[disk1.xfd ... disk8.xfd]
+                [-xcolpf1]
+		[-rom filename]
+                [-rom16 filename]
+                [-ags32 filename]
+		[-oss filename]
+		[-nopatch]
+		{-small|-large|-huge}
+		{-sound}
+		{-left|-central|-right|-wide1|-wide2}
+
+-atari  Enable Atari 800 Emulation Mode [default]
+-xl     Enable Atari 800XL Emulation Mode
+-xe     Enable Atari 130XE Emulation Mode (but Antic accesses the bank that
+        the CPU is using)
+-320xe  Enable Atari 130XE with 320 kB memory Emulation Mode. Default is
+        CompyShop mode, compatible with Q-meg.
+-rambo  Use Rambo mode of 320 kB memory.
+-5200   Enable Atari 5200 Games System Emulation Mode.
+
+-artif   enables Colour Artifacting
+
+-nobasic Disables BASIC (just like when you hold down OPTION while booting)
+
+-basic   Enables BASIC (even if disabled in atari800.cfg by HoldOption)
+
+-nopatch Normally the OS is patched giving very fast I/O. This option
+         prevents the patch from being applied so that the OS works
+         using the serial port hardware directly. This option will
+         probably never be needed since programs that access the
+         serial hardware directly will work even if the OS has been
+         patched.
+
+-rom     Loads the following 8K ROM Cartridge
+-rom16   Loads the following 16K ROM Cartridge
+-ags32   Loads the following Atari 5200 Games System 32K ROM Cartridge.
+-oss     Loads the following OSS Super Cartridge
+-db      Loads the following DB Super Cartridge
+         (Private 32K Cartridge Format - not for general use)
+
+-a       Use Atari OS/A ROM (atariosa.rom)
+-b       Use Atari OS/B ROM (atariosb.rom) [default]
+-c       Enable RAM between $C000 and $CFFF
+-d       Enable DEBUG Mode. Monitor is entered straight away. Only
+         useful for basic version.
+
+X Window Options
+----------------
+
+-small	Creates a small window where one Atari 800 pixel is represented
+	by a single X Window pixel.
+-large	Creates a large window where one Atari 800 pixel is represented
+	by a 2x2 X Window rectangle.
+-huge	Creates a huge window where one Atari 800 pixel is represented
+	by a 3x3 X Window rectangle.
+
+SVGALIB Options
+---------------
+
+-sound	Select this if you want to try the test sound implementation.
+	You must have the piano1.sbi file in your current directory.
+	The piano1.sbi file can be obtained from snd-data-0.1.tar.Z
+	in the kernel/sound directory on sunsite.
+
+-interlace	Select this to display only half the scanlines at a
+		time. Gives a performance increase of about 10%.
+
+Amiga Options
+-------------
+
+Please look into the supplied Atari800.guide
+
+Curses Options
+--------------
+
+-left		Use columns 0 to 39
+-central	Use columns 20 to 59
+-right		Use columns 40 to 79
+-wide1		Use columns 0 to 79 (Spaces between characters)
+-wide2		Use columns 0 to 79 (as above but Normal/Reverse spaces)
+
+Dos VGA Options
+---------------
+
+-interlace	Select this to display only half the scanlines at a
+            time. Gives a performance increase of about 10%.
+-nosound	Use this for disabling sound
+-joyswap	Use this for swapping joy0 and joy1
+-LPTjoy1    Use this when you have connected joy to LPT1
+-video <n>  Select video mode: 0 = 320x200, 1 = 320x240
+
+
+Falcon Options
+--------------
+
+-interlace <n>	Select this to update the Falcon screen less times
+-joyswap	Use this for swapping joy0 and joy1
+-resolution <n>	Choose between 320x240, 352x240 and 384x240 graphics.
+                See INSTALL.falcon for details, please.
+
+Keyboard + Joystick & Paddle Controllers
+========================================
+
+Unlike PC Xformer, I have not tried to emulate the exact keyboard layout,
+instead, I have tried to make your native keyboard work as normal.
+
+Note: The function keys will eventually be changed to a more logical
+      order.
+
+X11 Keyboard + Joystick & Paddle Controllers
+============================================
+
+F1	Built in User Interface
+F2	Option
+F3	Select
+F4	Start
+F5	Warm Reset
+Shft+F5	Cold Reset
+F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+F7	Break Key
+F8	---
+F9	Exit Emulator
+F10	---
+F11	Vertical Positioning: Scroll Screen Downwards
+F12	Vertical Positioning: Scroll Screen Upwards
+
+ALT	Atari Key (Either ALT Key will work)
+
+Joystick 0 is operated by the mouse position relative to the center of the
+screen. The mouse button acts as the trigger.
+
+Paddle 0 is operated by moving the mouse pointer across the window.
+
+SVGALIB Keyboard + Joystick & Paddle Controllers
+================================================
+
+F1	Built in User Interface
+F2	Option
+F3	Select
+F4	Start
+F5	Warm Reset
+Shft+F5	Cold Reset
+F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+F7	Break Key
+F8	---
+F9	Exit Emulator
+F10	---
+F11	---
+F12	---
+
+`	This character replaces the CAPS lock key because I have not
+	found a way of detecting it. A future solution maybe to
+	automatically issue a CAPS lock key when a transition is
+	made between lower and upper case keys. i.e. If svgalib
+	return 'a' followed by 'A' it could send 'a' 'CAPS' 'A' to
+	the Atari.
+
+The CTRL+SHIFT keyboard combinations are implemented using the left
+ALT key.
+
+Joystick 0 is operated by the numeric keypad (make sure that the numeric
+keypad has been enabled).
+
+	7 8 9
+	 \|/
+	4 5 6
+	 /|\
+	1 2 3
+
+	And 0 is the fire key.
+
+At the moment it is not possible to use a Paddle with the SVGALIB version.
+
+CURSES Keyboard + Joystick & Paddle Controllers
+===============================================
+
+F1	Warm Reset (This doesn't work under Open Windows)
+F2	Option
+F3	Select
+F4	Start
+F5	Cold Reset
+F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+F7	Break Key
+F8	---
+F9	Exit Emulator
+F10	---
+F11	---
+F12	---
+
+Some control have special meaning within curses and should not be used.
+
+	Avoid Control + C, J, M, Q, S and Z
+
+The remaining control characters can be typed. Control characters are
+displayed on the screen with the associated upper case character in bold.
+
+No Joystick or Paddle support in this version.
+
+AMIGA Keyboard + Joystick & Paddle Controllers
+==============================================
+
+Please look into the supplied Atari800.guide
+
+BASIC Keyboard + Joystick & Paddle Controllers
+==============================================
+
+No Frills text. Upper and Lower case letters, 0-9, !"$% etc.
+No Reset, Option, Select, Start, etc.
+No Joystick or Paddle support in this version.
+
+DOS VGA Keyboard + Joystick & Paddle Controllers
+================================================
+
+F1	Built in User Interface
+F2	Option Key
+F3	Select Key
+F4	Start Key
+F5	Warm Reset
+Shft+F5	Cold Reset
+F6	PIL Mode (Atari800) / Help Key (XL/XE)
+F7	Switch between Emulated joysticks mode and Normal keyboard
+F8	Enter monitor
+F9	EXIT Emulator
+F10	Save Screenshot
+
+Control-C terminates the program; to type Control-c, type ALT-c instead.
+` is used as the Atari-Invers key
+
+Joysticks can be either real one connected to game port, or old 8-bit
+digital CX-40 joysticks connected to parallel port or keyboard joysticks
+(try out JOYCFG.EXE).
+ 
+At the moment it is not possible to use a Paddle with this version.
+
+Falcon Keyboard + Joystick & Paddle Controllers
+===============================================
+
+F1	Built in User Interface
+F2	Option
+F3	Select
+F4	Start
+F5	Warm Reset
+Shft+F5	Cold Reset
+F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+F7	Break Key
+F8	Enter monitor
+F9	EXIT Emulator
+Help	HELP key (800XL/130XE)
+
+Joystick 0 is operated by the numeric keypad (make sure that the numeric
+keypad has been enabled).
+ 
+        7 8 9
+         \|/
+        4 5 6
+         /|\
+        1 2 3
+ 
+        And 0 is the fire key.
+ 
+At the moment it is not possible to use a Paddle with this version.
+

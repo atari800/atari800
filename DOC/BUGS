@@ -1,0 +1,38 @@
+Bugs and Known Problems
+-----------------------
+
+o disk formatting doesn't work properly
+
+o few keyboard-related bugs: e.g. pressing SHIFT+1 and then
+  releasing SHIFT should still give '!' characters
+
+o ANTIC emulation is scanline-, not pixel-exact.
+  This is ABC list of related display bugs:
+  - Bitter Reality (demo)
+  - Darkness Warrior (picture)
+  - Extract (graphics collection)
+  - GED (graphics editor)
+  - Joyride (demo)
+  - Orneta '95 invitro (demo)
+  - Power Graph (graphics editor)
+  - Studio Dream (demo)
+  - Sweet Illusion (demo)
+  - Temod (demo)
+
+o POKEY interrupts are scanline-, not cycle-exact.
+  This is ABC list of related sound bugs:
+  - Saturday Demo (demo)
+
+o sound emulation uses VOL_ONLY hack.
+  This is ABC list of related sound bugs:
+  - Digital Trash (demo)
+  - Ghostbusters (game)
+  - Overmind (demo)
+
+o intensive 130xe-banks switching slows down emulation
+  much.
+  This is ABC list of related speed bugs:
+  - Impossible but Real (demo)
+  - Sheol (demo)
+  - Total Daze (demo)
+  - Ultra (demo)

@@ -1,0 +1,70 @@
+up-to-date list of accepted command line parameters
+===================================================
+-help
+-configure
+-config <filename>
+-v
+-verbose
+
+-atari
+-xl
+-xe
+-320xe
+-rambo
+-5200
+
+-nobasic
+-basic
+-nopatch
+-nopatchall
+-pal
+-ntsc
+-osa_rom <filename>
+-osb_rom <filename>
+-xlxe_rom <filename>
+-5200_rom <filename>
+-basic_rom <filename>
+-cart <filename>
+-rom <filename> "normal 8 cart"
+-rom16 <filename> "normal 16 cart"
+-ags32 <filename> "ags 32 cart"
+-oss <filename> "oss supercart"
+-db <filename> "db 16/32 superduper cart"
+-run <filename> "run direct"
+-refresh <rate>
+-palette <filename>
+
+-a
+-b
+-monty
+-emuos
+-c
+
+-sound
+-nosound
+-dsprate <freq>
+
+Falcon
+======
+-interlace "copy only some generated screens to Falcon videoram"
+-joyswap   "joystick 0 plays as joystick 1 (useful if other player plays
+            on keyboard"
+-videl     "direct videl programming for switching to desired res"
+-delta     "update diferences on the creen only"
+-double    "double the screen size on NOVA"
+
+
+SVGA
+====
+-interlace
+
+DOS
+===
+-interlace
+-LPTjoy[123]
+-joyswap
+-video <0-3> "0=320x200, 1=320x240, 2,3=320x480 interlaced (3=darker lines)"
+-novesa      "don't use VESA gfx modes"
+-vretrace    "sync with gfx card vertical retrace"
+-mouse [off|pad|pen]
+-keyboard <0,1> "0 = PC keyboard layout, 1 = Atari keyboard layout"
