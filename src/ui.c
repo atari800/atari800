@@ -2,7 +2,7 @@
  * ui.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -37,7 +37,6 @@
 #include "prompts.h"
 #include "gtia.h"
 #include "sio.h"
-#include "list.h"
 #include "ui.h"
 #include "log.h"
 #include "statesav.h"
@@ -303,7 +302,7 @@ void DiskManagement()
 	}
 }
 
-int SelectCartType(UBYTE* screen, int k)
+int SelectCartType(int k)
 {
 	static tMenuItem menu_array[] =
 	{
@@ -422,7 +421,7 @@ void CartManagement()
 				nbytes = fread(image, 1, CART_MAX_SIZE + 1, f);
 				fclose(f);
 				if ((nbytes & 0x3ff) == 0) {
-					int type = SelectCartType(NULL, nbytes / 1024);
+					int type = SelectCartType(nbytes / 1024);
 					if (type != CART_NONE) {
 						Header header;
 
@@ -468,10 +467,20 @@ void CartManagement()
 
 				f = fopen(filename, "rb");
 				if (f) {
+					Header header;
 					UBYTE* image;
 					char fname[FILENAME_SIZE+1];
 					int nbytes;
 
+					fread(&header, 1, sizeof(header), f);
+					if (header.id[0] != 'C'
+					 || header.id[1] != 'A'
+					 || header.id[2] != 'R'
+					 || header.id[3] != 'T') {
+					 	fclose(f);
+					 	ui_driver->fMessage("Not a CART file");
+					 	break;
+					}
 					image = malloc(CART_MAX_SIZE+1);
 					if (image == NULL) {
 						fclose(f);
@@ -500,7 +509,7 @@ void CartManagement()
 			if (ui_driver->fGetLoadFilename(curr_cart_dir, filename)) {
 				int r = CART_Insert(filename);
 				if (r > 0)
-					cart_type = SelectCartType(NULL, r);
+					cart_type = SelectCartType(r);
 				if (cart_type != CART_NONE) {
 					int for5200 = CART_IsFor5200(cart_type);
 					if (for5200 && machine_type != MACHINE_5200) {
@@ -549,7 +558,7 @@ void SoundRecording()
 	}
 	else
 	{	CloseSoundFile();
-		sprintf(msg, "Recording is stoped");
+		sprintf(msg, "Recording stopped");
 		record_num++;
 	}
 
@@ -815,7 +824,7 @@ void Screenshot(int interlaced)
 	}
 }
 
-void ui(UBYTE* screen)
+void ui(void)
 {
 	static tMenuItem menu_array[] =
 	{
@@ -1004,6 +1013,11 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.53  2005/03/10 04:42:35  pfusik
+"Extract ROM image from Cartridge" should skip the CART header,
+not just copy the whole file;
+removed the unused "screen" parameter from ui() and SelectCartType()
+
 Revision 1.52  2005/02/23 16:45:35  pfusik
 PNG screenshots
 
