@@ -232,3 +232,6 @@ Nir Dary
 Vasyl Tsvirkunov <vasyl@pacbell.net>
 - WinCE port of Atari800
 - refactored UI (introduced UI_BASIC)
+
+Jacek Poplawski <jpopl@interia.pl>
+- SDL port of Atari800
