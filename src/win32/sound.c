@@ -64,6 +64,9 @@ int initsound(int *argc, char *argv[])
     }
   *argc = j;
 
+  if (!usesound)
+    return 1;
+
   if ((err = DirectSoundCreate(NULL, &lpDS, NULL)) < 0)
     return err;
   if ((err = IDirectSound_SetCooperativeLevel(lpDS, hWndMain,
@@ -244,6 +247,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.2  2001/03/24 10:13:43  knik
+-nosound option fixed
+
 Revision 1.1  2001/03/18 07:56:48  knik
 win32 port
 
