@@ -933,11 +933,14 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 
 				for (addr = addr1; addr <= addr2; addr++) {
 					int i;
-					for (i = 0; i < n; i++)
+					int found = 1;
+					for (i = 0; i < n; i++) {
 						if (dGetByte(addr + i) != tab[i])
-							goto not_found;
-					printf("Found at %04x\n", addr);
-					not_found:
+							found = 0;
+							break;
+					}
+					if (found)
+						printf("Found at %04x\n", addr);
 				}
 			}
 		}
@@ -1356,6 +1359,9 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.4  2001/07/11 10:03:52  joy
+label without semicolon is non-portable. Besides that, goto should be used for error recovery only.
+
 Revision 1.3  2001/03/25 06:57:36  knik
 open() replaced by fopen()
 
