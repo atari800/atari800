@@ -2,6 +2,7 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   23-02-2002 - it's time for back to coding
    06-12-2001 - replaced SHORTER_MODE with WIDTH_MODE, now there are 3 states:
 		DEFAULT_WIDTH_MODE (ATARI_WIDTH-2*24), SHORTER_WIDTH_MODE
 		(ATARI_WIDTH-2*24-2*8), and FULL_WIDTH_MODE (ATARI_WIDTH)
@@ -1314,6 +1315,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.20  2002/02/23 05:12:36  jacek_poplawski
+ *** empty log message ***
+
  Revision 1.19  2002/02/13 08:38:39  joy
  fixed sound init (should have beeen unsigned = _U8)
  screen offset in 32bpp fixed
