@@ -1,70 +1,137 @@
-up-to-date list of accepted command line parameters
+Up-to-date list of accepted command line parameters
 ===================================================
--help
--configure
--config <filename>
--v
--verbose
 
--atari
--xl
--xe
--320xe
--rambo
--5200
+Usage:
+atari800 [options] [disk1 ... disk8]
 
--nobasic
--basic
--nopatch
--nopatchall
--pal
--ntsc
--osa_rom <filename>
--osb_rom <filename>
--xlxe_rom <filename>
--5200_rom <filename>
--basic_rom <filename>
--cart <filename>
--rom <filename> "normal 8 cart"
--rom16 <filename> "normal 16 cart"
--ags32 <filename> "ags 32 cart"
--oss <filename> "oss supercart"
--db <filename> "db 16/32 superduper cart"
--run <filename> "run direct"
--refresh <rate>
--palette <filename>
+where:
+disk1 ... disk8 are file names of the disk images mounted to Atari drives 1-8
+(the first file is mounted to the drive 1, next one to the drive 2, etc.).
+Supported types of disk images are: ATR, XFD and DCM. If the emulator has been
+compiled with ZLIB support, additionally ATR.GZ and XFD.GZ are supported.
 
--a
--b
--monty
--emuos
--c
+Options
+-------
 
--sound
--nosound
--dsprate <freq>
+-help                 Display list of options and terminate
+-v                    Display version number and terminate
+-verbose              Display framerate when exiting
 
-Falcon
-======
--interlace "copy only some generated screens to Falcon videoram"
--joyswap   "joystick 0 plays as joystick 1 (useful if other player plays
-            on keyboard"
--videl     "direct videl programming for switching to desired res"
--delta     "update diferences on the creen only"
--double    "double the screen size on NOVA"
+-configure            Update configuration file (this is default
+                      if the configuration file has not been found)
+-config <filename>    Use specified configuration file instead of default
+-osa_rom <filename>   Use specified OS/A ROM image
+-osb_rom <filename>   Use specified OS/B ROM image
+-xlxe_rom <filename>  Use specified XL/XE OS ROM image
+-5200_rom <filename>  Use specified 5200 OS ROM image
+-basic_rom <filename> Use specified Atari BASIC ROM image
 
+-atari                Emulate Atari 800
+-xl                   Emulate Atari 800 XL
+-xe                   Emulate Atari 130 XE
+-320xe                Emulate Atari 320 XE (Compy Shop)
+-rambo                Emulate Atari 320 XE (Rambo)
+-5200                 Emulate Atari 5200
+-emuos                Emulate Atari 800 with EmuOS
 
-SVGA
-====
--interlace
+-a                    Use OS/A for Atari 800
+-b                    Use OS/B for Atari 800
+-c                    Enable RAM between 0xc000 and 0xcfff in Atari 800
 
-DOS
-===
--interlace
--LPTjoy[123]
--joyswap
--video <0-3> "0=320x200, 1=320x240, 2,3=320x480 interlaced (3=darker lines)"
--novesa      "don't use VESA gfx modes"
--vretrace    "sync with gfx card vertical retrace"
--mouse [off|pad|pen]
--keyboard <0,1> "0 = PC keyboard layout, 1 = Atari keyboard layout"
+-pal                  Emulate PAL TV mode
+-ntsc                 Emulate NTSC TV mode
+
+-nobasic              Turn off Atari BASIC ROM
+-basic                Turn on Atari BASIC ROM
+
+-cart <filename>      Insert cartridge (CART or raw format)
+-run <filename>       Run Atari executable file (EXE, COM, XEX)
+
+-nopatch              Don't patch SIO routine in OS
+-nopatchall           Don't patch OS at all, H: and P: devices won't work
+-H1 <path>            Set path for H1: device
+-H2 <path>            Set path for H2: device
+-H3 <path>            Set path for H3: device
+-H4 <path>            Set path for H4: device
+-hdreadonly <onoff>   Enable (1) or disable (0) read-only mode for H: device
+-devbug               Put debugging messages for H: and P: devices in log file
+
+-rtime <onoff>        Enable (1) or disable (0) R-Time 8 emulation
+
+-refresh <rate>       Set screen refresh rate
+-artif <mode>         Set artifacting mode 0-4 (0 = disable)
+-palette <filename>   Read Atari colors from ACT file
+-black <num>          Set black level 0-255
+-while <num>          Set white level 0-255
+-colors <num>         Set color intensity
+-colshift <num>       Set color shift
+-realpal              Use palette created by Zdenek Eisenhammer
+-oldpal               Use old Atari800 palette
+-foxpal               Use palette created by Piotr Fusik
+
+-sound                Enable sound
+-nosound              Disable sound
+-dsprate <freq>       Set mixing frequency (Hz)
+-snddelay <time>      Set sound delay (milliseconds)
+
+Curses version options
+----------------------
+-left                 Use columns 0 to 39
+-central              Use columns 20 to 59
+-right                Use columns 40 to 79
+-wide1                Use columns 0 to 79 (spaces between characters)
+-wide2                Use columns 0 to 79 (as above but normal/reverse spaces)
+
+Falcon version options
+----------------------
+
+-interlace <x>        Generate Falcon screen only every x frame
+-videl                Direct VIDEL programming (Falcon/VGA only)
+-double               Double the screen size on NOVA
+-delta                Delta screen output (differences only)
+
+-joyswap              Swap joysticks
+
+SVGALIB version options
+-----------------------
+
+-interlace            Generate screen with interlace
+
+DOS/VGA version options
+-----------------------
+
+-interlace            Generate screen with interlace
+-video <mode>         0=320x200, 1=320x240, 2=320x480 interlaced with black
+                      lines, 3=320x480 interlaced with darker lines
+-novesa               Do not use VESA 2 video modes
+-vretrace             Use vertical retrace control
+
+-LPTjoy1              Read joystick connected to LPT1
+-LPTjoy2              Read joystick connected to LPT2
+-LPTjoy3              Read joystick connected to LPT3
+-joyswap              Swap joysticks
+
+-mouse off            Do not use mouse
+-mouse pad            Use mouse as paddles/touch pad
+-mouse pen            Use mouse as light pen
+
+-keyboard 0           PC keyboard layout
+-keyboard 1           Atari keyboard layout
+
+X11 options
+-----------
+
+-small                Single size window
+-large                Double size window
+-huge                 Triple size window
+-clip_x <n>           Left offset for clipping
+-clip_y <n>           Top offset for clipping
+-clip_width           Width of the clipping area
+-clip_height          Height of the clipping area
+-private_cmap         Use private colormap
+
+-fps                  Show framerate
+-sio                  Show SIO monitor
+-x11bug               Enable debug code in atari_x11.c
+
+-keypad               Keypad mode
