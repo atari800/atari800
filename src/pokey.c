@@ -38,16 +38,15 @@ int DELAYED_SEROUT_IRQ;
 int DELAYED_XMTDONE_IRQ;
 
 /* structures to hold the 9 pokey control bytes */ 
-UBYTE AUDF[8];    /* AUDFx (D200, D202, D204, D206) */
-UBYTE AUDC[8];    /* AUDCx (D201, D203, D205, D207) */
-UBYTE AUDCTL;     /* AUDCTL (D208) */   
+UBYTE AUDF[4 * MAXPOKEYS];	/* AUDFx (D200, D202, D204, D206) */
+UBYTE AUDC[4 * MAXPOKEYS];	/* AUDCx (D201, D203, D205, D207) */
+UBYTE AUDCTL[MAXPOKEYS];	/* AUDCTL (D208) */
 int DivNIRQ[4], DivNMax[4];
-int TimeBase = DIV_64;
+ULONG Base_mult[MAXPOKEYS];		/* selects either 64Khz or 15Khz clock mult */
 
 static int pot_scanline;
 
 #ifdef STEREO
-int pokey_select;
 int stereo_enabled = TRUE;
 #endif
 
@@ -56,6 +55,10 @@ UBYTE POKEY_GetByte(UWORD addr)
 	UBYTE byte = 0xff;
 	static int rand_init = 0;
 
+#ifdef STEREO
+	if (addr & 0x0010 && stereo_enabled)
+		return 0;
+#endif
 	addr &= 0x0f;
 	if (addr < 8) {
 		byte = Atari_POT(addr);
@@ -106,7 +109,7 @@ void Update_Counter(int chan_mask);
 
 int POKEY_siocheck(void)
 {
-	return ((AUDF[CHAN3] == 0x28) && (AUDF[CHAN4] == 0x00) && (AUDCTL & 0x28) == 0x28);
+	return ((AUDF[CHAN3] == 0x28) && (AUDF[CHAN4] == 0x00) && (AUDCTL[0] & 0x28) == 0x28);
 }
 
 #define SOUND_GAIN 4
@@ -114,85 +117,58 @@ int POKEY_siocheck(void)
 void POKEY_PutByte(UWORD addr, UBYTE byte)
 {
 #ifdef STEREO
-	pokey_select= ((addr>>4))&0x01;
-
-#endif
+	addr &= stereo_enabled ? 0x1f : 0x0f;
+#else
 	addr &= 0x0f;
+#endif
 	switch (addr) {
 	case _AUDC1:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
 		AUDC[CHAN1] = byte;
-		Update_pokey_sound(1, byte, 0, SOUND_GAIN);
+		Update_pokey_sound(_AUDC1, byte, 0, SOUND_GAIN);
 		break;
 	case _AUDC2:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
 		AUDC[CHAN2] = byte;
-		Update_pokey_sound(3, byte, 0, SOUND_GAIN);
+		Update_pokey_sound(_AUDC2, byte, 0, SOUND_GAIN);
 		break;
 	case _AUDC3:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
 		AUDC[CHAN3] = byte;
-		Update_pokey_sound(5, byte, 0, SOUND_GAIN);
+		Update_pokey_sound(_AUDC3, byte, 0, SOUND_GAIN);
 		break;
 	case _AUDC4:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
 		AUDC[CHAN4] = byte;
-		Update_pokey_sound(7, byte, 0, SOUND_GAIN);
+		Update_pokey_sound(_AUDC4, byte, 0, SOUND_GAIN);
 		break;
 	case _AUDCTL:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
-		AUDCTL = byte;
+		AUDCTL[0] = byte;
 
 		/* determine the base multiplier for the 'div by n' calculations */
-		if (AUDCTL & CLOCK_15)
-			TimeBase = DIV_15;
+		if (byte & CLOCK_15)
+			Base_mult[0] = DIV_15;
 		else
-			TimeBase = DIV_64;
+			Base_mult[0] = DIV_64;
 
 		Update_Counter((1 << CHAN1) | (1 << CHAN2) | (1 << CHAN3) | (1 << CHAN4));
-		Update_pokey_sound(8, byte, 0, SOUND_GAIN);
+		Update_pokey_sound(_AUDCTL, byte, 0, SOUND_GAIN);
 		break;
 	case _AUDF1:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
 		AUDF[CHAN1] = byte;
-		Update_Counter((AUDCTL & CH1_CH2) ? ((1 << CHAN2) | (1 << CHAN1)) : (1 << CHAN1));
-		Update_pokey_sound(0, byte, 0, SOUND_GAIN);
+		Update_Counter((AUDCTL[0] & CH1_CH2) ? ((1 << CHAN2) | (1 << CHAN1)) : (1 << CHAN1));
+		Update_pokey_sound(_AUDF1, byte, 0, SOUND_GAIN);
 		break;
 	case _AUDF2:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
 		AUDF[CHAN2] = byte;
 		Update_Counter(1 << CHAN2);
-		Update_pokey_sound(2, byte, 0, SOUND_GAIN);
+		Update_pokey_sound(_AUDF2, byte, 0, SOUND_GAIN);
 		break;
 	case _AUDF3:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
 		AUDF[CHAN3] = byte;
-		Update_Counter((AUDCTL & CH3_CH4) ? ((1 << CHAN4) | (1 << CHAN3)) : (1 << CHAN3));
-		Update_pokey_sound(4, byte, 0, SOUND_GAIN);
+		Update_Counter((AUDCTL[0] & CH3_CH4) ? ((1 << CHAN4) | (1 << CHAN3)) : (1 << CHAN3));
+		Update_pokey_sound(_AUDF3, byte, 0, SOUND_GAIN);
 		break;
 	case _AUDF4:
-#ifdef STEREO
-		if( pokey_select==0 )
-#endif
 		AUDF[CHAN4] = byte;
 		Update_Counter(1 << CHAN4);
-		Update_pokey_sound(6, byte, 0, SOUND_GAIN);
+		Update_pokey_sound(_AUDF4, byte, 0, SOUND_GAIN);
 		break;
 	case _IRQEN:
 		IRQEN = byte;
@@ -230,6 +206,49 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		if (byte & 4)
 			pot_scanline = 228;	/* fast pot mode - return results immediately */
 		break;
+#ifdef STEREO
+	case _AUDC1 + _POKEY2:
+		Update_pokey_sound(_AUDC1, byte, 1, SOUND_GAIN);
+		break;
+	case _AUDC2 + _POKEY2:
+		AUDC[CHAN2 + CHIP2] = byte;
+		Update_pokey_sound(_AUDC2, byte, 1, SOUND_GAIN);
+		break;
+	case _AUDC3 + _POKEY2:
+		AUDC[CHAN3 + CHIP2] = byte;
+		Update_pokey_sound(_AUDC3, byte, 1, SOUND_GAIN);
+		break;
+	case _AUDC4 + _POKEY2:
+		AUDC[CHAN4 + CHIP2] = byte;
+		Update_pokey_sound(_AUDC4, byte, 1, SOUND_GAIN);
+		break;
+	case _AUDCTL + _POKEY2:
+		AUDCTL[1] = byte;
+		/* determine the base multiplier for the 'div by n' calculations */
+		if (byte & CLOCK_15)
+			Base_mult[1] = DIV_15;
+		else
+			Base_mult[1] = DIV_64;
+
+		Update_pokey_sound(_AUDCTL, byte, 1, SOUND_GAIN);
+		break;
+	case _AUDF1 + _POKEY2:
+		AUDF[CHAN1 + CHIP2] = byte;
+		Update_pokey_sound(_AUDF1, byte, 1, SOUND_GAIN);
+		break;
+	case _AUDF2 + _POKEY2:
+		AUDF[CHAN2 + CHIP2] = byte;
+		Update_pokey_sound(_AUDF2, byte, 1, SOUND_GAIN);
+		break;
+	case _AUDF3 + _POKEY2:
+		AUDF[CHAN3 + CHIP2] = byte;
+		Update_pokey_sound(_AUDF3, byte, 1, SOUND_GAIN);
+		break;
+	case _AUDF4 + _POKEY2:
+		AUDF[CHAN4 + CHIP2] = byte;
+		Update_pokey_sound(_AUDF4, byte, 1, SOUND_GAIN);
+		break;
+#endif
 	}
 }
 
@@ -245,10 +264,18 @@ void POKEY_Initialise(int *argc, char *argv[])
 	DELAYED_SEROUT_IRQ = 0;
 	DELAYED_XMTDONE_IRQ = 0;
 
-	AUDCTL = 0;
 	IRQST = 0xff;
 	IRQEN = 0x00;
-	TimeBase = DIV_64;
+
+	for (i = 0; i < (MAXPOKEYS * 4); i++) {
+		AUDC[i] = 0;
+		AUDF[i] = 0;
+	}
+
+	for (i = 0; i < MAXPOKEYS; i++) {
+		AUDCTL[i] = 0;
+		Base_mult[i] = DIV_64;
+	}
 
 	for (i = 0; i < 4; i++)
 		DivNIRQ[i] = DivNMax[i] = 0;
@@ -384,38 +411,38 @@ void Update_Counter(int chan_mask)
 
 	if (chan_mask & (1 << CHAN1)) {
 		/* process channel 1 frequency */
-		if (AUDCTL & CH1_179)
+		if (AUDCTL[0] & CH1_179)
 			DivNMax[CHAN1] = AUDF[CHAN1] + 4;
 		else
-			DivNMax[CHAN1] = (AUDF[CHAN1] + 1) * TimeBase;
+			DivNMax[CHAN1] = (AUDF[CHAN1] + 1) * Base_mult[0];
 		if (DivNMax[CHAN1] < LINE_C)
 			DivNMax[CHAN1] = LINE_C;
 	}
 
 	if (chan_mask & (1 << CHAN2)) {
 		/* process channel 2 frequency */
-		if (AUDCTL & CH1_CH2) {
-			if (AUDCTL & CH1_179)
+		if (AUDCTL[0] & CH1_CH2) {
+			if (AUDCTL[0] & CH1_179)
 				DivNMax[CHAN2] = AUDF[CHAN2] * 256 + AUDF[CHAN1] + 7;
 			else
-				DivNMax[CHAN2] = (AUDF[CHAN2] * 256 + AUDF[CHAN1] + 1) * TimeBase;
+				DivNMax[CHAN2] = (AUDF[CHAN2] * 256 + AUDF[CHAN1] + 1) * Base_mult[0];
 		}
 		else
-			DivNMax[CHAN2] = (AUDF[CHAN2] + 1) * TimeBase;
+			DivNMax[CHAN2] = (AUDF[CHAN2] + 1) * Base_mult[0];
 		if (DivNMax[CHAN2] < LINE_C)
 			DivNMax[CHAN2] = LINE_C;
 	}
 
 	if (chan_mask & (1 << CHAN4)) {
 		/* process channel 4 frequency */
-		if (AUDCTL & CH3_CH4) {
-			if (AUDCTL & CH3_179)
+		if (AUDCTL[0] & CH3_CH4) {
+			if (AUDCTL[0] & CH3_179)
 				DivNMax[CHAN4] = AUDF[CHAN4] * 256 + AUDF[CHAN3] + 7;
 			else
-				DivNMax[CHAN4] = (AUDF[CHAN4] * 256 + AUDF[CHAN3] + 1) * TimeBase;
+				DivNMax[CHAN4] = (AUDF[CHAN4] * 256 + AUDF[CHAN3] + 1) * Base_mult[0];
 		}
 		else
-			DivNMax[CHAN4] = (AUDF[CHAN4] + 1) * TimeBase;
+			DivNMax[CHAN4] = (AUDF[CHAN4] + 1) * Base_mult[0];
 		if (DivNMax[CHAN4] < LINE_C)
 			DivNMax[CHAN4] = LINE_C;
 	}
@@ -436,11 +463,11 @@ void POKEYStateSave( void )
 
 	SaveUBYTE( &AUDF[0], 4 );
 	SaveUBYTE( &AUDC[0], 4 );
-	SaveUBYTE( &AUDCTL, 1 );
+	SaveUBYTE( &AUDCTL[0], 1 );
 
 	SaveINT((int *)&DivNIRQ[0], 4);
 	SaveINT((int *)&DivNMax[0], 4);
-	SaveINT((int *)&TimeBase, 1 );
+	SaveINT((int *)&Base_mult[0], 1 );
 }
 
 void POKEYStateRead( void )
@@ -460,15 +487,15 @@ void POKEYStateRead( void )
 
 	ReadUBYTE( &AUDF[0], 4 );
 	ReadUBYTE( &AUDC[0], 4 );
-	ReadUBYTE( &AUDCTL, 1 );
+	ReadUBYTE( &AUDCTL[0], 1 );
         for (i = 0; i < 4; i++)
         {
                 POKEY_PutByte(_AUDF1 + i * 2, AUDF[i]);
                 POKEY_PutByte(_AUDC1 + i * 2, AUDC[i]);
         }
-        POKEY_PutByte(_AUDCTL, AUDCTL);
+        POKEY_PutByte(_AUDCTL, AUDCTL[0]);
 
 	ReadINT((int *)&DivNIRQ[0], 4);
 	ReadINT((int *)&DivNMax[0], 4);
-	ReadINT((int *)&TimeBase, 1 );
+	ReadINT((int *)&Base_mult[0], 1 );
 }
