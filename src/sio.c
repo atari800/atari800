@@ -47,9 +47,9 @@ static int format_sectorcount[MAX_DRIVES];
 static int format_sectorsize[MAX_DRIVES];
 
 UnitStatus drive_status[MAX_DRIVES];
-char sio_filename[MAX_DRIVES][FILENAME_LEN];
+char sio_filename[MAX_DRIVES][FILENAME_MAX];
 
-static char	tmp_filename[MAX_DRIVES][FILENAME_LEN];
+static char	tmp_filename[MAX_DRIVES][FILENAME_MAX];
 static UBYTE istmpfile[MAX_DRIVES] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 /* Serial I/O emulation support */
@@ -72,7 +72,7 @@ void SIO_Initialise(int *argc, char *argv[])
 
 	for (i = 0; i < MAX_DRIVES; i++) {
 		strcpy(sio_filename[i], "Empty");
-		memset(tmp_filename[i], 0, FILENAME_LEN );
+		memset(tmp_filename[i], 0, FILENAME_MAX );
 		drive_status[i] = Off;
 		istmpfile[i] = 0;
 		format_sectorsize[i] = 128;
@@ -93,13 +93,13 @@ void SIO_Exit(void)
 
 int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 {
-	char upperfile[FILENAME_LEN];
+	char upperfile[FILENAME_MAX];
 	struct ATR_Header header;
 	int fname_len;
 	int i;
 	FILE *f = NULL;
 
-	memset(upperfile, 0, FILENAME_LEN);
+	memset(upperfile, 0, FILENAME_MAX);
 	fname_len = (int) strlen(filename);
 	for (i = 0; i < fname_len; i++)
 		upperfile[i] = toupper(filename[i]);
@@ -239,7 +239,7 @@ void SIO_Dismount(int diskno)
 		if( istmpfile[diskno - 1])
 		{
 			remove(tmp_filename[diskno - 1] );
-			memset(tmp_filename[diskno - 1], 0, FILENAME_LEN);
+			memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
 			istmpfile[diskno - 1] = 0;
 		}
 	}
@@ -357,7 +357,7 @@ static int FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
-				char fname[FILENAME_LEN];
+				char fname[FILENAME_MAX];
 				int is_atr;
 				int save_boot_sectors_type;
 				int bootsectsize;
@@ -369,7 +369,7 @@ static int FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 				   We have to close the "r+b" opened file and open it in "wb" mode.
 				   First get the information about the disk image, because we are going
 				   to umount it. */
-				memcpy(fname, sio_filename[unit], FILENAME_LEN);
+				memcpy(fname, sio_filename[unit], FILENAME_MAX);
 				is_atr = (format[unit] == ATR);
 				save_boot_sectors_type = boot_sectors_type[unit];
 				bootsectsize = 128;
@@ -957,7 +957,7 @@ int SIO_GetByte(void)
 
 int Rotate_Disks( void )
 {
-	char	tmp_filenames[MAX_DRIVES][ FILENAME_LEN ];
+	char	tmp_filenames[MAX_DRIVES][ FILENAME_MAX ];
 	int		i;
 	int		bSuccess = TRUE;
 
@@ -997,6 +997,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.12  2001/09/08 07:54:48  knik
+used FILENAME_MAX instead of FILENAME_LEN
+
 Revision 1.11  2001/09/03 11:32:58  fox
 Disk drive answers 'E' to an unknown command.
 

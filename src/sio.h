@@ -2,19 +2,11 @@
 #ifndef __SIO__
 #define __SIO__
 
+#include <stdio.h>
+
 #include "config.h"
 
 #define MAX_DRIVES 8
-
-#ifdef WIN32
-# include <stdlib.h>
-# ifdef MAX_PATH
-#  define FILENAME_LEN MAX_PATH
-# endif
-#endif
-#ifndef FILENAME_LEN
-# define FILENAME_LEN 256
-#endif
 
 #include "atari.h"
 
@@ -27,7 +19,7 @@ typedef enum tagUnitStatus {
 
 extern char sio_status[256];
 extern UnitStatus drive_status[MAX_DRIVES];
-extern char sio_filename[MAX_DRIVES][FILENAME_LEN];
+extern char sio_filename[MAX_DRIVES][FILENAME_MAX];
 
 int SIO_Mount(int diskno, const char *filename, int b_open_readonly);
 void SIO_Dismount(int diskno);
