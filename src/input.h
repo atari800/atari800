@@ -259,7 +259,13 @@ extern int joy_autofire[4];		/* autofire mode for each Atari port */
 
 extern int mouse_mode;		/* device emulated with mouse */
 extern int mouse_port;		/* Atari port, to which the emulated device is attached */
+extern int mouse_delta_x;	/* x motion since last frame */
+extern int mouse_delta_y;	/* y motion since last frame */
+extern int mouse_buttons;	/* buttons (b0=1: first button pressed, b1=1: 2nd pressed, etc. */
+extern int mouse_pen_ofs_h;	/* light pen/gun horizontal offset (for calibration) */
+extern int mouse_pen_ofs_v;	/* light pen/gun vertical offset (for calibration) */
 
 /* Functions ----------------------------------------------------------- */
 
+void INPUT_Initialise(int *argc, char *argv[]);
 void INPUT_Frame(void);
