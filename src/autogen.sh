@@ -4,6 +4,7 @@ autoheader
 autoconf
 
 echo
-echo Your configure may need install-sh, config.guess and config.sub.
-echo These files can be found in autoconf source package.
+echo "Now run ./configure --target (see below) and then type make"
 echo
+
+./configure --target help
