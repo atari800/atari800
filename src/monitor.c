@@ -11,6 +11,7 @@
 #include "antic.h"
 #include "pia.h"
 #include "gtia.h"
+#include "pokey.h"
 #include "prompts.h"
 
 #ifdef PROFILE
@@ -338,6 +339,15 @@ int get_hex(char *string, UWORD * hexval)
 	return 0;
 }
 
+static UBYTE get_dlist_byte(UWORD *addr)
+{
+	UBYTE result = dGetByte(*addr);
+	(*addr)++;
+	if ((*addr & 0x03ff) == 0)
+		(*addr) -= 0x0400;
+	return result;
+}
+
 UWORD break_addr;
 UBYTE break_step=0;
 UBYTE break_cim=0;
@@ -566,7 +576,7 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 
 				printf("%04x: ", tdlist);
 
-				IR = dGetByte(tdlist++);
+				IR = get_dlist_byte(&tdlist);
 
 				if (IR & 0x80)
 					printf("DLI ");
@@ -576,10 +586,10 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 					printf("%d BLANK", ((IR >> 4) & 0x07) + 1);
 					break;
 				case 0x01:
-					addr = dGetByte(tdlist) | (dGetByte(tdlist + 1) << 8);
+					addr = get_dlist_byte(&tdlist);
+					addr |= get_dlist_byte(&tdlist) << 8;
 					if (IR & 0x40) {
 						printf("JVB %04x ", addr);
-						tdlist += 2;
 						done = TRUE;
 					}
 					else {
@@ -589,8 +599,8 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 					break;
 				default:
 					if (IR & 0x40) {
-						addr = dGetByte(tdlist) | (dGetByte(tdlist + 1) << 8);
-						tdlist += 2;
+						addr = get_dlist_byte(&tdlist);
+						addr |= get_dlist_byte(&tdlist) << 8;
 						printf("LMS %04x ", addr);
 					}
 					if (IR & 0x20)
@@ -913,18 +923,19 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 		}
 #endif
 		else if (strcmp(t, "S") == 0) {
-			int n = 0;
-			UWORD xaddr1;
-			UWORD xaddr2;
+			static int n = 0;
+			static UWORD xaddr1;
+			static UWORD xaddr2;
 			UWORD hexval;
-			UBYTE tab[64];
+			static UBYTE tab[64];
 
-			get_hex(NULL, &xaddr1);
-			get_hex(NULL, &xaddr2);
-			while (get_hex(NULL, &hexval)) {
-				tab[n++] = (UBYTE) hexval;
-				if (hexval & 0xff00)
-					tab[n++] = (UBYTE) (hexval >> 8);
+			if (get_hex(NULL, &xaddr1) && get_hex(NULL, &xaddr2) && get_hex(NULL, &hexval)) {
+				n = 0;
+				do {
+					tab[n++] = (UBYTE) hexval;
+					if (hexval & 0xff00)
+						tab[n++] = (UBYTE) (hexval >> 8);
+				} while (get_hex(NULL, &hexval));
 			}
 			if (n) {
 				int addr;
@@ -932,15 +943,14 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 				int addr2 = xaddr2;
 
 				for (addr = addr1; addr <= addr2; addr++) {
-					int i;
-					int found = 1;
-					for (i = 0; i < n; i++) {
-						if (dGetByte(addr + i) != tab[i])
-							found = 0;
+					int i = 0;
+					while (dGetByte(addr + i) == tab[i]) {
+						i++;
+						if (i >= n) {
+							printf("Found at %04x\n", addr);
 							break;
+						}
 					}
-					if (found)
-						printf("Found at %04x\n", addr);
 				}
 			}
 		}
@@ -956,6 +966,8 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 			while (get_hex(NULL, &temp)) {
 				memory[addr] = (UBYTE) temp;
 				addr++;
+				if (temp & 0xff00)
+					memory[addr++] = (UBYTE) (temp >> 8);
 			}
 		}
 #endif
@@ -1026,6 +1038,14 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 				   "PRIOR= %02x    VDELAY=%02x    GRACTL=%02x\n",
 				   COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL);
 		}
+		else if (strcmp(t, "POKEY") == 0) {
+			printf("AUDF1= %02x    AUDF2= %02x    AUDF3= %02x    "
+				   "AUDF4= %02x    AUDCTL=%02x    KBCODE=%02x\n",
+				   AUDF[CHAN1], AUDF[CHAN2], AUDF[CHAN3], AUDF[CHAN4], AUDCTL, KBCODE);
+			printf("AUDC1= %02x    AUDC2= %02x    AUDC3= %02x    "
+				   "AUDC4= %02x    IRQEN= %02x    IRQST= %02x\n",
+				   AUDC[CHAN1], AUDC[CHAN2], AUDC[CHAN3], AUDC[CHAN4], IRQEN, IRQST);
+		}
 #ifdef MONITOR_ASSEMBLER
                 else if (strcmp(t,"A") == 0)
                 {
@@ -1072,7 +1092,7 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 #ifdef MONITOR_ASSEMBLER
                         printf("A [startaddr]                  - Start simple assembler\n");
 #endif
-			printf("ANTIC, GTIA, PIA               - Display hardware registers\n");
+			printf("ANTIC, GTIA, PIA, POKEY        - Display hardware registers\n");
 			printf("DLIST                          - Display current display list\n");
 #ifdef PROFILE
 			printf("PROFILE                        - Display profiling statistics\n");
@@ -1359,6 +1379,13 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.5  2001/07/20 00:21:28  fox
+- "C 600 ABCD" does the same as "C 600 CD AB"
+- "DLIST" - 1 KB boundary respected
+- "POKEY" command
+- "S" without parameters repeats last search
+- corrected Petr's mistake in rev.1.4
+
 Revision 1.4  2001/07/11 10:03:52  joy
 label without semicolon is non-portable. Besides that, goto should be used for error recovery only.
 
