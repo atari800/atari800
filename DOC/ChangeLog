@@ -1,3 +1,9 @@
+2001-12-08  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* acconfig.h: unused symbol COMPILED_PALETTE removed
+* win32/atari1.ico: new windows icon (actually an old one but modified)
+* win32/atari.rc: new icon included
+
 2001-12-07  Piotr Fusik  <fox@scene.pl>
 
 * cpu.c: #include <stdlib.h> for exit()
