@@ -842,7 +842,7 @@ void MainStateSave( void )
 			default_system = 3;
 			break;
 		case 128:
-			temp = 5;	/* don't use 2, because old versions wrote 272 KB of atarixe_memory */
+			temp = 2;
 			default_system = 4;
 			break;
 		case RAM_320_RAMBO:
@@ -891,7 +891,7 @@ void MainStateRead( void )
 		break;
 	case 2:
 		machine_type = MACHINE_XLXE;
-		ram_size = RAM_320_COMPY_SHOP;	/* 2 is meant for 128, but there's 272 KB of extended memory */
+		ram_size = 128;
 		break;
 	case 3:
 		machine_type = MACHINE_XLXE;
@@ -900,10 +900,6 @@ void MainStateRead( void )
 	case 4:
 		machine_type = MACHINE_5200;
 		ram_size = 16;
-		break;
-	case 5:
-		machine_type = MACHINE_XLXE;
-		ram_size = 128;
 		break;
 	default:
 		machine_type = MACHINE_XLXE;
@@ -919,6 +915,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.30  2001/10/26 05:42:44  fox
+made 130 XE state files compatible with previous versions
+
 Revision 1.29  2001/10/05 16:46:45  fox
 H: didn't worked until a patch was toggled
 

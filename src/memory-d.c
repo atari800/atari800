@@ -124,8 +124,18 @@ void MemStateSave( UBYTE SaveVerbose )
 		SaveUBYTE( &under_atarixl_os[0], 16384 );
 	}
 
-	if (ram_size > 64)
+	if (ram_size > 64) {
 		SaveUBYTE( &atarixe_memory[0], atarixe_memory_size );
+		/* a hack that makes state files compatible with previous versions:
+           for 130 XE there's written 192 KB of unused data */
+		if (ram_size == 128) {
+			UBYTE buffer[256];
+			int i;
+			memset(buffer, 0, 256);
+			for (i = 0; i < 192 * 4; i++)
+				SaveUBYTE(&buffer[0], 256);
+		}
+	}
 
 }
 
@@ -145,8 +155,17 @@ void MemStateRead( UBYTE SaveVerbose )
 	}
 
 	AllocXEMemory();
-	if (ram_size > 64)
+	if (ram_size > 64) {
 		ReadUBYTE( &atarixe_memory[0], atarixe_memory_size );
+		/* a hack that makes state files compatible with previous versions:
+           for 130 XE there's written 192 KB of unused data */
+		if (ram_size == 128) {
+			UBYTE buffer[256];
+			int i;
+			for (i = 0; i < 192 * 4; i++)
+				ReadUBYTE(&buffer[0], 256);
+		}
+	}
 
 }
 
@@ -352,6 +371,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.15  2001/10/26 05:43:00  fox
+made 130 XE state files compatible with previous versions
+
 Revision 1.14  2001/10/08 11:40:48  joy
 neccessary include for compiling with DEBUG defined (see line 200)
 
