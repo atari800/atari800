@@ -12,7 +12,8 @@ extern UBYTE PACTL;
 extern UBYTE PBCTL;
 extern UBYTE PORTA;
 extern UBYTE PORTB;
-
+extern UBYTE PORTA_mask;
+extern UBYTE PORTB_mask;
 extern UBYTE PORT_input[2];
 
 extern int xe_bank;
@@ -22,6 +23,7 @@ extern UBYTE atari_basic[8192];
 extern UBYTE atari_os[16384];
 
 void PIA_Initialise(int *argc, char *argv[]);
+void PIA_Reset(void);
 UBYTE PIA_GetByte(UWORD addr);
 void PIA_PutByte(UWORD addr, UBYTE byte);
 
