@@ -1,0 +1,338 @@
+dnl $Id$
+dnl
+dnl Copyright (C) 2001 Krzysztof Nikiel
+dnl
+dnl
+dnl
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(amiga/amiga_asm.h)
+AC_CONFIG_HEADER(config.h)
+
+a800_target=none
+for a800_option
+do
+  case "$a800_option" in
+    basic|curses|ncurses|svgalib|vga|dx) 
+      a800_target="$a800_option" ;;
+    x11|x11-shm|xview|xview-shm|motif)
+      a800_target=x11-"$a800_option" ;;
+  esac
+done
+if test "$a800_target" = none; then
+	echo "to configute atari800 use: configure <target>"
+	echo "available atari800 targets are:"
+	echo " basic"
+	echo " curses ncurses"
+	echo " svgalib"
+	echo " vga  (dos only)"
+	echo " dx   (directx)"
+	echo " x11 x11-shm"
+	echo " xview xview-shm"
+	echo " motif"
+	echo " "
+	echo " "
+        exit 1;
+fi        
+
+LDFLAGS=-s
+CFLAGS='-O2 -Wall'
+AC_PROG_CC
+
+a800_host=none
+AC_CYGWIN
+if test "$CYGWIN" = yes; then
+a800_host=win
+if test "$a800_target" = dx; then 
+CC="gcc -mno-cygwin"
+ac_cv_prog_CC=$CC
+echo "using CC=$CC to disable cygwin library";
+fi
+fi
+AC_MINGW32
+if test "$MINGW32" = yes; then a800_host=win; fi
+
+AC_CACHE_CHECK(for DJGPP environment, ac_cv_djgpp,
+[AC_TRY_COMPILE(,[
+return __DJGPP__;],
+ac_cv_djgpp=yes, ac_cv_djgpp=no)])
+if test "$ac_cv_djgpp" = yes; then a800_host=dos; fi
+
+AC_CACHE_CHECK(for linux environment, ac_cv_linux,
+[AC_TRY_COMPILE(,[
+return linux;],
+ac_cv_linux=yes, ac_cv_linux=no)])
+if test "$ac_cv_linux" = yes; then a800_host=linux; fi
+
+echo "$a800_host environment found"
+
+EXE=
+case "$a800_host" in
+  dos) EXE=.exe; AC_DEFINE(DOS_DRIVES)
+;;  
+  win)	EXE=.exe; 
+	AC_DEFINE(WIN32,) 
+        AC_DEFINE(BACK_SLASH)
+        AC_DEFINE(DOS_DRIVES)
+;;  
+esac
+
+dnl Checks for programs.
+dnl AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+
+dnl Checks for libraries.
+
+AC_DEFUN(NEED_LIB,
+[AC_CHECK_LIB($1, main,, echo $1 library not found; exit 1)])
+
+AC_CHECK_LIB(z, gzopen)
+
+if test "$a800_host" != win; then
+dnl Replace `main' with a function in -lm:
+AC_CHECK_LIB(m, main)
+fi
+
+OBJ=
+
+if test "$a800_host" = win; then
+NEED_LIB(gdi32, main)
+NEED_LIB(winmm, main)
+OBJ=win32/atari.ro
+fi
+
+dnl set OBJ depending on target
+case "$a800_target" in
+basic)
+AC_DEFINE(BASIC)
+OBJ=atari_basic.o
+;;
+vga) 
+	if test "$a800_host" != dos; then
+		echo "cannot build vga outside dos"
+		exit 1
+	fi
+	AC_DEFINE(VGA)
+	OBJ="atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
+;;
+svgalib)
+dnl Replace `main' with a function in -lvga:
+NEED_LIB(vga, main)
+AC_DEFINE(SVGALIB)
+OBJ="atari_svgalib.o"
+;;
+curses)
+dnl Replace `main' with a function in -lcurses:
+NEED_LIB(curses, main)
+AC_DEFINE(CURSES)
+OBJ=atari_curses.o
+;;
+ncurses)
+dnl Replace `main' with a function in -lncurses:
+NEED_LIB(ncurses, main)
+AC_DEFINE(NCURSES)
+AC_DEFINE(CURSES)
+OBJ=atari_curses.o
+;;
+dx)
+dnl Replace `main' with a function in -lddraw:
+NEED_LIB(ddraw, main)
+dnl Replace `main' with a function in -ldinput:
+NEED_LIB(dinput, main)
+dnl Replace `main' with a function in -ldsound:
+NEED_LIB(dsound, main)
+dnl Replace `main' with a function in -ldxguid:
+NEED_LIB(dxguid, main)
+
+AC_DEFINE(DIRECTX)
+A800_MAIN="-Dmain=atari_main"
+OBJ="win32/atari_win32.o \
+win32/screen.o \
+win32/main.o \
+win32/keyboard.o"
+;;
+x11-*)
+AC_PATH_X
+if test -n "$x_includes"; then
+CFLAGS="$CFALGS -I$x_includes"
+fi
+if test -n "$x_libraries"; then
+LDFLAGS="$LDFLAGS -L$x_libraries"
+fi
+dnl Replace `main' with a function in -lX11:
+NEED_LIB(X11, main)
+AC_DEFINE(X11)
+
+case "$a800_target" in
+*-shm)
+dnl Replace `main' with a function in -lXext:
+AC_CHECK_LIB(Xext, main)
+AC_DEFINE(SHM)
+;;
+esac
+
+case "$a800_target" in
+x11-xview*)
+dnl Replace `main' with a function in -lxview:
+NEED_LIB(xview, main)
+dnl Replace `main' with a function in -lolgx:
+NEED_LIB(olgx, main)
+AC_DEFINE(XVIEW)
+;;
+x11-motif)
+dnl Replace `main' with a function in -lXm:
+NEED_LIB(Xm, main)
+dnl Replace `main' with a function in -lXt:
+NEED_LIB(Xt, main)
+dnl Replace `main' with a function in -lgen:
+NEED_LIB(gen, main)
+dnl Replace `main' with a function in -lsocket:
+NEED_LIB(socket, main)
+AC_DEFINE(MOTIF)
+;;
+esac
+
+OBJ="$OBJ atari_x11.o"
+;;
+esac
+
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h strings.h sys/ioctl.h sys/time.h unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+dnl Checks for library functions.
+AC_PROG_GCC_TRADITIONAL
+AC_TYPE_SIGNAL
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(getcwd gettimeofday select strdup strerror strstr strtol)
+
+dnl user defined part of configuration
+echo
+
+dnl ASK_FEATURE(define_name, prompt text, default answer, test)
+dnl ask user about configure option
+AC_DEFUN(ASK_FEATURE,
+[
+if test -n "$ac_cv_a800_$1"; then
+a800_defans=$ac_cv_a800_$1
+else
+a800_defans=ifelse($3,, n, $3)
+fi
+echo -n "$2? [[$a800_defans]]"
+read a800_ans
+if test -z "$a800_ans"; then
+a800_ans=$a800_defans
+fi
+if test "$a800_ans" = ifelse($4,, y, $4); then
+  AC_DEFINE($1)
+fi
+ac_cv_a800_$1=$a800_ans
+])
+
+
+ASK_FEATURE(VERY_SLOW, Is your computer very slow (disables generating screen completely))
+ASK_FEATURE(CRASH_MENU, Show crash menu after CIM instruction, y)
+ASK_FEATURE(MONITOR_BREAK, Enable BREAK command in monitor (slows CPU a little bit), y)
+ASK_FEATURE(MONITOR_HINTS, Enable hints in disassembler (addresses get human readable labels), y)
+ASK_FEATURE(MONITOR_ASSEMBLER, Enable assembler in monitor (you can enter ASM insns directly), y)
+ASK_FEATURE(COMPILED_PALETTE, Compile internal palettes)
+ASK_FEATURE(SNAILMETER, Enable Snailmeter (shows how much is the emulator slower than original))
+
+if test "$a800_target" = svgalib; then dnl svgalib specific
+ASK_FEATURE(SVGA_SPEEDUP, Draw every 1/50 sec only 1/refresh of screen)
+ASK_FEATURE(USE_CURSORBLOCK, Use cursor keys/Ctrl for keyboard joystick)
+ASK_FEATURE(JOYMOUSE, Support for Toshiba Joystick Mouse (Linux SVGALIB Only))
+fi
+
+if test "$a800_host" = linux; then dnl linux specific
+ASK_FEATURE(REALTIME, Run atari800 as Linux realtime process)
+ASK_FEATURE(LINUX_JOYSTICK, Enable LINUX Joystick)
+fi
+
+dnl sound support
+ASK_FEATURE(SOUND, Enable Sound Support, y)
+if test "$a800_ans" = y; then
+
+case "$a800_host" in
+dos)
+OBJ="$OBJ dos/sound_dos.o dos/dos_sb.o"
+;;
+win)
+OBJ="$OBJ win32/sound.o"
+;;
+*)
+OBJ="$OBJ sound.o"
+esac
+
+ASK_FEATURE(NO_VOL_ONLY, Enable volume only sound (digitized sound effects), y, n)
+if test "$a800_ans" = y; then
+ASK_FEATURE(NO_CONSOL_SOUND, Enable console sound (keyboard clicks), y, n)
+ASK_FEATURE(SERIO_SOUND, Enable serial in/out sound)
+fi	dnl digitized effects enabled
+ASK_FEATURE(NOSNDINTER, Enable Sound Interpolation, y, n)
+ASK_FEATURE(CLIP, Enable Sound Clipping)
+ASK_FEATURE(STEREO, Enable Stereo Sound)
+fi	dnl sound enabled
+
+case "$a800_target" in
+x11-*) ;;
+*)
+ASK_FEATURE(BUFFERED_LOG, Buffer debug output (until the graphics mode switches back to text mode))
+ASK_FEATURE(SET_LED, Emulate disk LED diode)
+if test "$a800_ans" = y; then
+ASK_FEATURE(NO_LED_ON_SCREEN, Display LED on screen, y, n)
+fi
+;;
+esac
+
+
+AC_CACHE_CHECK(unaligned long accesses, ac_cv_unaligned_long_ok,
+[AC_TRY_RUN([
+#include <stdlib.h>
+#include <signal.h>
+#include <setjmp.h>
+jmp_buf jmpbuf;
+void bus_err()
+{
+	longjmp(jmpbuf, 1);
+}
+int main(void)
+{
+#ifndef SIGBUS
+	return 0;
+#else
+	long l[2];
+
+	if (setjmp(jmpbuf) == 0) {
+		signal(SIGBUS, bus_err);
+		*((long *) ((char *) l + 1)) = 1;
+		signal(SIGBUS, SIG_DFL);
+		return 0;
+	}
+	else {
+		signal(SIGBUS, SIG_DFL);
+		return 1;
+	}
+#endif
+}], ac_cv_unaligned_long_ok=yes, ac_cv_unaligned_long_ok=no,
+ac_cv_unaligned_long_ok=no)])
+if test "$ac_cv_unaligned_long_ok" = yes; then 
+AC_DEFINE(UNALIGNED_LONG_OK)
+fi
+
+AC_CHECK_SIZEOF(long, 4)
+
+AC_C_BIGENDIAN
+
+AC_SUBST(EXE)
+AC_SUBST(OBJ)
+AC_SUBST(A800_MAIN)
+
+AC_OUTPUT(Makefile)
