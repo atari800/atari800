@@ -84,4 +84,9 @@ install :
 	cp atari800 ${BIN_PATH}/$(TARGET)
 	cp atari800.man ${MAN_PATH}/man1/atari800.1
 
-        
+doc: readme.html
+
+readme.html: $(TARGET)
+	./$(TARGET) -help </dev/null | ../util/usage2html.pl \
+		../DOC/readme.html.in ../DOC/USAGE ./atari.h > $@
+
