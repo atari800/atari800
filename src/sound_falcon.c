@@ -151,7 +151,7 @@ void Sound_Initialise(int *argc, char *argv[])
 			exit(1);
 		}
 
-		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, 0, 0);
+		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, 0);
 		Supexec(MFP_IRQ_on);
 	}
 }

@@ -50,9 +50,9 @@ void Sound_Initialise(int *argc, char *argv[])
 		else {
 
 #ifdef STEREO
-			Pokey_sound_init(FREQ_17_APPROX, playback_freq, 2);
+			Pokey_sound_init(FREQ_17_APPROX, playback_freq, 2, 0);
 #else
-			Pokey_sound_init(FREQ_17_APPROX, playback_freq, 1);
+			Pokey_sound_init(FREQ_17_APPROX, playback_freq, 1, 0);
 #endif
 			sb_startoutput((sbmix_t) Pokey_process);
 		}
