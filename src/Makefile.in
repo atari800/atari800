@@ -2,8 +2,8 @@
 
 CC = @CC@
 RC = windres
-EXE=@EXE@
-TARGET=atari800$(EXE)
+EXEEXT=@EXEEXT@
+TARGET=atari800$(EXEEXT)
 CFLAGS=@CPPFLAGS@ @CFLAGS@
 DEFS=@DEFS@
 
@@ -65,8 +65,8 @@ $(TARGET): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
 
 dep:
-	find . -name '*.c' -printf "%P\n" \
-		| xargs makedepend -f Makefile.in $(DEFS) -Y
+	@if ! makedepend -Y $(DEFS) $(INCLUDE) ${OBJ:.o=.c} 2>/dev/null; \
+	then echo warning: makedepend failed; fi
 
 clean:
 	rm -f $(OBJ) $(TARGET)
@@ -80,82 +80,3 @@ install :
 	cp atari800.man ${MAN_PATH}/man1/atari800.1
 
         
-# DO NOT DELETE
-
-amiga/async.o: amiga/async.h
-antic.o: antic.h atari.h config.h cpu.h gtia.h input.h log.h memory.h
-antic.o: memory-d.h pokey.h rt-config.h statesav.h
-atari.o: config.h atari.h cpu.h memory.h memory-d.h antic.h gtia.h pia.h
-atari.o: pokey.h cartridge.h devices.h sio.h monitor.h platform.h prompts.h
-atari.o: rt-config.h ui.h ataripcx.h log.h statesav.h diskled.h colours.h
-atari.o: binload.h rtime.h cassette.h input.h sound.h emuos.h
-atari_amiga.o: config.h atari.h binload.h colours.h monitor.h pokeysnd.h
-atari_amiga.o: pokey.h sio.h statesav.h rt-config.h atari_amiga.h
-atari_amiga.o: amiga/amiga_asm.h amiga/support.h
-atari_basic.o: atari.h config.h input.h monitor.h
-atari_curses.o: atari.h config.h cpu.h monitor.h memory.h memory-d.h sound.h
-atari_falcon.o: falcon/xcb.h falcon/res.h config.h cpu.h atari.h colours.h
-atari_falcon.o: ui.h antic.h platform.h monitor.h log.h
-atari_svgalib.o: config.h atari.h ataripcx.h colours.h monitor.h sound.h
-atari_svgalib.o: platform.h log.h
-atari_vga.o: config.h cpu.h atari.h colours.h input.h ui.h log.h
-atari_vga.o: dos/sound_dos.h monitor.h pcjoy.h diskled.h ataripcx.h
-atari_vga.o: rt-config.h dos/vga_gfx.h
-atari_x11.o: config.h atari.h colours.h monitor.h sio.h sound.h platform.h
-atari_x11.o: rt-config.h
-ataripcx.o: antic.h atari.h config.h colours.h
-binload.o: atari.h config.h cpu.h log.h memory.h memory-d.h
-cartridge.o: atari.h config.h cartridge.h memory.h memory-d.h pia.h
-cartridge.o: rt-config.h rtime.h
-cassette.o: atari.h config.h cassette.h log.h memory.h memory-d.h sio.h
-colours.o: atari.h config.h log.h
-compfile.o: atari.h config.h log.h
-configure.o: prompts.h
-cpu.o: antic.h atari.h config.h cpu.h memory.h memory-d.h statesav.h ui.h
-devices.o: config.h ui.h atari.h cpu.h memory.h memory-d.h devices.h
-devices.o: rt-config.h log.h binload.h sio.h
-diskled.o: atari.h config.h diskled.h
-gtia.o: antic.h atari.h config.h cassette.h gtia.h input.h statesav.h
-input.o: antic.h atari.h config.h cassette.h cpu.h gtia.h input.h log.h
-input.o: memory.h memory-d.h pia.h platform.h pokey.h
-joycfg.o: config.h pcjoy.h
-list.o: config.h list.h
-log.o: config.h log.h
-memory-d.o: atari.h config.h antic.h cartridge.h gtia.h log.h memory.h
-memory-d.o: memory-d.h pia.h rt-config.h statesav.h
-memory-p.o: atari.h config.h log.h rt-config.h antic.h cpu.h gtia.h pbi.h
-memory-p.o: pia.h pokey.h memory.h memory-d.h
-memory.o: config.h memory-d.c atari.h antic.h cartridge.h gtia.h log.h
-memory.o: memory.h memory-d.h pia.h rt-config.h statesav.h
-mkimg.o: config.h
-monitor.o: atari.h config.h cpu.h memory.h memory-d.h antic.h pia.h gtia.h
-monitor.o: pokey.h prompts.h
-pbi.o: atari.h config.h
-pia.o: atari.h config.h cpu.h memory.h memory-d.h pia.h sio.h log.h
-pia.o: statesav.h
-pokey.o: atari.h config.h cpu.h pia.h pokey.h gtia.h sio.h statesav.h
-pokey.o: pokeysnd.h input.h
-pokeysnd.o: pokeysnd.h config.h pokey.h atari.h sndsave.h
-prompts.o: prompts.h
-rt-config.o: atari.h config.h prompts.h rt-config.h
-rtime.o: atari.h config.h log.h
-sio.o: atari.h config.h cpu.h memory.h memory-d.h sio.h pokey.h pokeysnd.h
-sio.o: platform.h log.h diskled.h binload.h cassette.h
-sndsave.o: sndsave.h atari.h config.h
-sound.o: config.h pokeysnd.h pokey.h atari.h sndsave.h
-sound_falcon.o: config.h
-statesav.o: atari.h config.h log.h
-ui.o: rt-config.h atari.h config.h cpu.h memory.h memory-d.h platform.h
-ui.o: prompts.h gtia.h sio.h list.h ui.h log.h statesav.h antic.h ataripcx.h
-ui.o: binload.h sndsave.h cartridge.h rtime.h input.h
-dos/dos_sb.o: config.h dos/dos_sb.h dos/dos_ints.h log.h
-dos/sound_dos.o: config.h pokeysnd.h pokey.h atari.h dos/dos_sb.h log.h
-dos/vga_gfx.o: atari.h config.h
-win32/atari_win32.o: config.h platform.h atari.h input.h win32/screen.h
-win32/atari_win32.o: win32/keyboard.h win32/main.h sound.h monitor.h
-win32/atari_win32.o: diskled.h
-win32/keyboard.o: atari.h config.h win32/main.h win32/keyboard.h
-win32/main.o: config.h win32/main.h win32/screen.h atari.h win32/keyboard.h
-win32/main.o: sound.h input.h ataripcx.h ui.h rt-config.h platform.h
-win32/screen.o: win32/screen.h atari.h config.h win32/main.h colours.h log.h
-win32/sound.o: config.h sound.h win32/main.h pokeysnd.h pokey.h atari.h log.h
