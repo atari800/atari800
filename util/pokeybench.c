@@ -3,7 +3,7 @@
  *  Atari800  Atari 800XL, etc. emulator                                     *
  *  ----------------------------------------------------------------------   *
  *  POKEY Chip Emulator,                                                     *
- *  "POKEYBENCH" Test and benchmark program for developers, V1.1             *
+ *  "POKEYBENCH" Test and benchmark program for developers, V1.2             *
  *  by Michael Borisov                                                       *
  *                                                                           *
  *****************************************************************************/
@@ -42,15 +42,17 @@
 #include <math.h>
 
 /* How many seconds of sound to generate per each test trial */
-/* and how many runs buffer is regenerated */
-#define MZM_BUF_TIME 1
-#define MZM_BUF_RUNS 500
+#define MZM_TRIAL_TIME 2
 
-#define TEST_SAMPLE_RATE 44100
-
+/* How many samples per each buffer run */
+#define MZM_BUF_SAMPLES 100
 
 /* How many test trials to run for statistics */
 #define TEST_TRIALS 5
+
+/* How many seconds of sound to save in the outfile */
+#define MZM_SAVE_TIME 10
+
 
 /* Wrapper for fgets, removes trailing whitespace */
 char* fgetl(char* s, int len, FILE* fs)
@@ -67,27 +69,28 @@ char* fgetl(char* s, int len, FILE* fs)
     return s2;
 }
 
-int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const char* ofn)
+int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const char* ofn,
+           unsigned short samplerate)
 {
     unsigned char* buf;
-    double tim;
     double rate;
     double rasum;
     double rasum2;
     double varian;
     double stddev;
-    int i,j;
+    unsigned long samremain, samproc;
+    int i;
     time_t start,finish;
     FILE* ft;
 
-    buf = malloc(TEST_SAMPLE_RATE * MZM_BUF_TIME);
+    buf = malloc(MZM_BUF_SAMPLES);
     if(buf == NULL)
     {
         printf("Out of memory\n");
         return 1;
     }
 
-    Pokey_sound_init(1790000,TEST_SAMPLE_RATE,1);
+    Pokey_sound_init(1790000,samplerate,1);
     Update_pokey_sound(_AUDF1,audf[0],0,1);
     Update_pokey_sound(_AUDC1,audc[0],0,1);
     Update_pokey_sound(_AUDF2,audf[1],0,1);
@@ -104,17 +107,28 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
 
     for(i=0; i<TEST_TRIALS; i++)
     {
+        rate = 0.0;
+        /* Wait for a change in system time (seconds)
+            to ensure start when a full second begins */
         time(&start);
-        for(j=0; j<MZM_BUF_RUNS; j++)
+        do
         {
-            Pokey_process(buf,MZM_BUF_TIME * TEST_SAMPLE_RATE);
-        }
-        time(&finish);
-        tim = difftime(finish,start);
-        rate = 1.0/tim*MZM_BUF_TIME*TEST_SAMPLE_RATE*MZM_BUF_RUNS;
+            time(&finish);
+        } while(difftime(finish,start) == 0.0);
 
-        printf("Trial %2d: %9d samples, %10.0f samples/sec, total %2.0f seconds\n",
-            i+1,MZM_BUF_TIME * TEST_SAMPLE_RATE * MZM_BUF_RUNS, rate, tim);
+        start = finish; /* Test start time */
+        /* Generate until test time elapses */
+        do
+        {
+            Pokey_process(buf,MZM_BUF_SAMPLES);
+            rate += MZM_BUF_SAMPLES;
+            time(&finish);
+        } while(difftime(finish,start) < MZM_TRIAL_TIME);
+
+        rate /= MZM_TRIAL_TIME;
+
+        printf("Trial %2d:  %10.0f samples/sec\n",
+            i+1, rate);
         rasum += rate;
         rasum2 += rate*rate;
     }
@@ -126,6 +140,8 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
 
     printf("Standard deviation: %10.0f samples/sec\n",stddev);
 
+    printf("Gen/play ratio = %3.1f\n",rasum/TEST_TRIALS/samplerate);
+
     if(!(ft=fopen(ofn,"wb")))
     {
         perror(ofn);
@@ -133,17 +149,30 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
         return 2;
     }
 
-    i = fwrite(buf,1,MZM_BUF_TIME*TEST_SAMPLE_RATE,ft);
-
-    free(buf);
-
-    if(i<MZM_BUF_TIME*TEST_SAMPLE_RATE)
+    samremain = samplerate*MZM_SAVE_TIME;
+    while(samremain>0)
     {
-        perror(ofn);
-        fclose(ft);
-        return 2;
+        if(samremain>=MZM_BUF_SAMPLES)
+        {
+            samproc = MZM_BUF_SAMPLES;
+        }
+        else
+        {
+            samproc = samremain;
+        }
+        Pokey_process(buf,(unsigned short)samproc);
+        i = fwrite(buf,1,samproc,ft);
+        if(i<MZM_BUF_SAMPLES)
+        {
+            perror(ofn);
+            free(buf);
+            fclose(ft);
+            return 2;
+        }
+        samremain -= samproc;
     }
 
+    free(buf);
     fclose(ft);
 
     return 0;
@@ -154,7 +183,7 @@ int main(int argc, char* argv[])
     char paramfn[256];
     char ofn[256];
     FILE* fs;
-    unsigned char params[9];
+    unsigned int params[10];
     unsigned char audf[4];
     unsigned char audc[4];
     unsigned int tmp;
@@ -202,7 +231,7 @@ int main(int argc, char* argv[])
         return 2;
     }
     
-    for(i=0; i<9; i++)
+    for(i=0; i<10; i++)
     {
         ecode = fscanf(fs,"%u",&tmp);
         if(ecode == EOF)
@@ -226,7 +255,7 @@ int main(int argc, char* argv[])
             fclose(fs);
             return 2;
         }
-        params[i] = (unsigned char)tmp;
+        params[i] = tmp;
     }
     fclose(fs);
 
@@ -236,5 +265,5 @@ int main(int argc, char* argv[])
         audc[i] = params[i*2+1];
     }
     
-    return pktest(audf,audc,params[8],ofn);
+    return pktest(audf,audc,(unsigned char)params[8],ofn,(unsigned short)params[9]);
 }
