@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Clean ups and optimizations:                     */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 27th July 2000                     */
+/* Last changes: 13th July 2001                     */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -404,6 +404,22 @@ UBYTE GTIA_GetByte(UWORD addr)
 	return byte;
 }
 
+#ifndef NO_CYCLE_EXACT
+extern UBYTE *scrn_ptr;	/* in antic.c */
+extern int scrn_ofs;	/* in antic.c */
+
+static int xpos_to_offset_blank[121] = {
+	 24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,
+	 24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,
+	 24,  24,  24,  24,  24,  24,  26,  30,  34,  42,  46,  50,  58,  62,  66,  74,
+	 78,  82,  90,  94,  98, 106, 110, 114, 122, 126, 130, 138, 142, 146, 154, 158,
+	162, 170, 174, 178, 182, 186, 190, 194, 198, 202, 206, 210, 214, 218, 222, 226,
+	230, 234, 238, 242, 246, 250, 254, 258, 262, 266, 270, 274, 278, 282, 286, 290,
+	294, 298, 302, 306, 310, 314, 318, 322, 326, 330, 334, 338, 342, 346, 350, 354,
+	358, 360, 360, 360, 360, 360, 360, 360, 360
+};
+#endif
+
 void GTIA_PutByte(UWORD addr, UBYTE byte)
 {
 	UWORD cword;
@@ -630,6 +646,13 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		break;
 #else /* USE_COLOUR_TRANSLATION_TABLE */
 	case _COLBK:
+#ifndef NO_CYCLE_EXACT
+		if (scrn_ofs >= 0) {
+			int next_ofs = xpos_to_offset_blank[xpos];
+			memset(((UBYTE *) scrn_ptr) + scrn_ofs, COLBK, next_ofs - scrn_ofs);
+			scrn_ofs = next_ofs;
+		}
+#endif
 		COLBK = byte &= 0xfe;
 		COLOUR_TO_WORD(cword,byte);
 		cl_lookup[C_BAK] = cword;

@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Correct timing, internal memory and other fixes: */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 11th July 2001                     */
+/* Last changes: 13th July 2001                     */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -49,7 +49,7 @@ UBYTE ANTIC_memory[52];
    This allows special optimisations under certain conditions.
    ------------------------------------------------------------------------ */
 
-static UWORD *scrn_ptr;
+UWORD *scrn_ptr;
 
 /* ANTIC Timing --------------------------------------------------------------
 
@@ -1769,6 +1769,10 @@ void ANTIC_load(void) {
 		*ANTIC_memptr++ = dGetByte(screenaddr++);
 }
 
+#ifndef NO_CYCLE_EXACT
+int scrn_ofs = -1;
+#endif
+
 /* This function emulates one frame drawing screen at atari_screen */
 void ANTIC_RunDisplayList(void)
 {
@@ -1797,6 +1801,9 @@ void ANTIC_RunDisplayList(void)
 	} while (ypos < 8);
 
 	scrn_ptr = (UWORD *) atari_screen;
+#ifndef NO_CYCLE_EXACT
+	scrn_ofs = -1;
+#endif
 	need_dl = TRUE;
 	do {
 		if (light_pen_enabled && ypos >> 1 == PEN_Y) {
@@ -1923,6 +1930,28 @@ void ANTIC_RunDisplayList(void)
 
 		if (need_load && anticmode <= 5 && DMACTL & 3)
 			xpos += before_cycles[md];
+
+#ifndef NO_CYCLE_EXACT
+		if ((anticmode < 2 || (DMACTL & 3) == 0)
+			 && (GRAFP0 == 0 || HPOSP0 <= 0x0c || HPOSP0 >= 0xd4)
+			 && (GRAFP1 == 0 || HPOSP1 <= 0x0c || HPOSP1 >= 0xd4)
+			 && (GRAFP2 == 0 || HPOSP2 <= 0x0c || HPOSP2 >= 0xd4)
+			 && (GRAFP3 == 0 || HPOSP3 <= 0x0c || HPOSP3 >= 0xd4)
+			 && GRAFM == 0
+			 && PRIOR < 0x80) {
+			xpos += DMAR;
+			scrn_ofs = 8 * LCHOP;
+			GOEOL;
+			memset(((UBYTE *) scrn_ptr) + scrn_ofs, COLBK, (48 - RCHOP) * 8 - scrn_ofs);
+			scrn_ofs = -1;
+			scrn_ptr += ATARI_WIDTH / 2;
+			if (no_jvb) {
+				dctr++;
+				dctr &= 0xf;
+			}
+			continue;
+		}
+#endif
 
 		GO(SCR_C);
 		new_pm_scanline();
