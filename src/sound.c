@@ -3,12 +3,14 @@
 
 #include "config.h"
 
-#ifdef VOXWARE
+#ifdef SOUND
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 
 #include "pokeysnd.h"
+
+#include "sndsave.h"
 
 #define FRAGSIZE	7
 
@@ -24,9 +26,8 @@ static int snddelay = 40;		/* delay in milliseconds */
 
 static int sound_enabled = TRUE;
 static int dsp_fd;
-int sound_record=-1;
 
-void Voxware_Initialise(int *argc, char *argv[])
+void Sound_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	struct audio_buf_info abi;
@@ -133,13 +134,13 @@ void Sound_Continue(void)
 	}
 }
 
-void Voxware_Exit(void)
+void Sound_Exit(void)
 {
 	if (sound_enabled)
 		close(dsp_fd);
 }
 
-void Voxware_UpdateSound(void)
+void Sound_Update(void)
 {
 	int i;
 	struct audio_buf_info abi;
@@ -161,8 +162,6 @@ void Voxware_UpdateSound(void)
 #endif
 		Pokey_process(dsp_buffer, sizeof(dsp_buffer));
 		write(dsp_fd, dsp_buffer, sizeof(dsp_buffer));
-		if( sound_record>=0 )
-			write(sound_record, dsp_buffer, sizeof(dsp_buffer));
 	}
 }
 
@@ -175,4 +174,4 @@ void Sound_Continue(void)
 {
 }
 
-#endif
+#endif	/* SOUND */

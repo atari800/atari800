@@ -43,6 +43,7 @@ default :
 basic :
 	$(MAKE) atari800 \
 		CPPFLAGS="-DBASIC" \
+		LDLIBS="$(LDLIBS) -lncurses" \
 		OBJ="atari_basic.o"
 
 linux-svgalib :
@@ -54,7 +55,7 @@ linux-svgalib :
 x11 :
 	$(MAKE) atari800 \
 		CPPFLAGS="-DX11 -I/usr/openwin/include" \
-		LDFLAGS="-L/usr/X11/lib -L/usr/openwin/lib" \
+		LDFLAGS="-L/usr/X11/lib -L/usr/X11R6/lib -L/usr/openwin/lib" \
 		LDLIBS="$(LDLIBS) -lX11" \
 		OBJ="atari_x11.o"
 
@@ -196,6 +197,7 @@ OBJECTS	=	atari.o \
 		binload.o \
 		list.o \
 		sound.o \
+		sndsave.o \
 		pokeysnd.o \
 		ataripcx.o \
 		log.o \

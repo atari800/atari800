@@ -208,6 +208,8 @@ int Atari_Keyboard(void)
 				alt_function = MENU_SYSTEM;		/* ALT+Y .. Select system */
 			else if (kbcode == SCANCODE_O)
 				alt_function = MENU_SOUND;		/* ALT+O .. mono/stereo sound */
+			else if (kbcode == SCANCODE_W)
+				alt_function = MENU_SOUND_RECORDING;	/* ALT+W .. record sound */
 			else if (kbcode == SCANCODE_A)
 				alt_function = MENU_ABOUT;		/* ALT+A .. About */
 			else if (kbcode == SCANCODE_S)
@@ -432,8 +434,8 @@ void Atari_Initialise(int *argc, char *argv[])
 	int i;
 	int j;
 
-#ifdef VOXWARE
-	Voxware_Initialise(argc, argv);
+#ifdef SOUND
+	Sound_Initialise(argc, argv);
 #endif
 
 	for (i = j = 1; i < *argc; i++) {
@@ -581,8 +583,8 @@ int Atari_Exit(int run_monitor)
 			close(js1);
 #endif
 
-#ifdef VOXWARE
-		Voxware_Exit();
+#ifdef SOUND
+		Sound_Exit();
 #endif
 
 #ifdef BUFFERED_LOG
@@ -647,8 +649,8 @@ void Atari_DisplayScreen(UBYTE * screen)
 #endif
 after_screen_update:
 
-#ifdef VOXWARE
-	Voxware_UpdateSound();
+#ifdef SOUND
+	Sound_Update();
 #endif
 }
 

@@ -37,6 +37,7 @@ OBJECTS	=	atari.o \
 		binload.o \
 		list.o \
 		sound.o \
+		sndsave.o \
 		pokeysnd.o \
 		ataripcx.o \
 		log.o \

@@ -7,9 +7,12 @@
 extern FILE		*sndoutput;
 extern int		iSoundRate;
 
+typedef int BOOL;
+
 BOOL IsSoundFileOpen( void );
 BOOL CloseSoundFile( void );
-BOOL OpenSoundFile( char *szFileName );
-int WriteToSoundFile( unsigned char *ucBuffer, unsigned int uiSize );
+BOOL OpenSoundFile( const char *szFileName );
+int WriteToSoundFile( const unsigned char *ucBuffer, const unsigned int uiSize );
 
 #endif
+

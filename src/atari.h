@@ -410,17 +410,18 @@ struct ATR_Header {
 #define MENU_RUN		2
 #define MENU_SYSTEM		3
 #define MENU_SOUND		4
-#define MENU_ARTIF		5
-#define MENU_SAVESTATE	6
-#define MENU_LOADSTATE	7
-#define MENU_PCX		8
-#define MENU_PCXI		9
-#define MENU_BACK		10
-#define MENU_RESETW		11
-#define MENU_RESETC		12
-#define MENU_MONITOR	13
-#define MENU_ABOUT		14
-#define MENU_EXIT		15
+#define MENU_SOUND_RECORDING	5
+#define MENU_ARTIF		6
+#define MENU_SAVESTATE	7
+#define MENU_LOADSTATE	8
+#define MENU_PCX		9
+#define MENU_PCXI		10
+#define MENU_BACK		11
+#define MENU_RESETW		12
+#define MENU_RESETC		13
+#define MENU_MONITOR	14
+#define MENU_ABOUT		15
+#define MENU_EXIT		16
 
 
 

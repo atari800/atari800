@@ -86,11 +86,6 @@ extern int colour_translation_table[256];
 #include <unistd.h>
 #include <fcntl.h>
 
-#ifdef VOXWARE
-extern int sound_record;
-#endif
-void Sound_Record( void );
-
 static int invisible=0;
 
 #ifdef LINUX_JOYSTICK
@@ -327,8 +322,9 @@ int GetKeyCode(XEvent * event)
 			keycode = AKEY_NONE;
 			break;
 		case XK_F8:
-			if(CONTROL)
-				Sound_Record();
+			if(CONTROL) {
+				SoundRecording(NULL);
+			}
 			else
 				screen_dump = 2;
 			keycode = AKEY_NONE;
@@ -1554,8 +1550,8 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
-#ifdef VOXWARE
-	Voxware_Initialise(argc, argv);
+#ifdef SOUND
+	Sound_Initialise(argc, argv);
 #endif
 
 #ifdef SHM
@@ -2503,8 +2499,8 @@ int Atari_Exit(int run_monitor)
 			close(js1);
 #endif
 
-#ifdef VOXWARE
-		Voxware_Exit();
+#ifdef SOUND
+		Sound_Exit();
 #endif
 	}
 	return restart;
@@ -2707,8 +2703,8 @@ after_screen_update:
 	}
 #endif
 
-#ifdef VOXWARE
-	Voxware_UpdateSound();
+#ifdef SOUND
+	Sound_Update();
 #endif
 
 	if (screen_dump) {
@@ -3107,28 +3103,6 @@ int Atari_CONSOL(void)
 		temp = keyboard_consol;
 	}
 	return temp;
-}
-
-void Sound_Record( void )
-{
-#ifdef VOXWARE
-	static int record_num=0;
-	char buf[128];
-
-	if( sound_record<0 )
-	{	sprintf(buf,"%d.raw",record_num);
-		if( (sound_record=open(buf,O_RDWR|O_CREAT|O_TRUNC,0666))<0 )
-			printf("Can't write to file \"%s\"\n",buf);
-		else
-			printf("Recording sound to file \"%s\"\n",buf);
-	}
-	else
-	{	close( sound_record );
-		printf("Recording is stoped\n");
-		sound_record=-1;
-		record_num++;
-	}
-#endif /* VOXWARE */
 }
 
 int Atari_PEN(int vertical)

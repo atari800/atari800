@@ -25,6 +25,7 @@
 #include "antic.h"
 #include "ataripcx.h"
 #include "binload.h"
+#include "sndsave.h"
 
 extern int refresh_rate;
 
@@ -1119,6 +1120,30 @@ void CartManagement(UBYTE * screen)
 	}
 }
 
+void SoundRecording(UBYTE *screen)
+{
+	static int record_num=0;
+	char buf[128];
+	char msg[256];
+
+	if (! IsSoundFileOpen())
+	{	sprintf(buf,"%d.raw",record_num);
+		if (OpenSoundFile(buf))
+			sprintf(msg, "Recording sound to file \"%s\"",buf);
+		else
+			sprintf(msg, "Can't write to file \"%s\"",buf);
+	}
+	else
+	{	CloseSoundFile();
+		sprintf(msg, "Recording is stoped");
+		record_num++;
+	}
+	if (screen != NULL) {
+		CenterPrint(screen, 0x94, 0x9a, msg, 22);
+		GetKeyPress(screen);
+	}
+}
+
 void AboutEmulator(UBYTE * screen)
 {
 	ClearScreen(screen);
@@ -1209,6 +1234,7 @@ void ui(UBYTE *screen)
 		"Run BIN file directly            Alt+R",
 		"Select System                    Alt+Y",
 		"Sound Mono/Stereo                Alt+O",
+		"Sound Recording start/stop       Alt+W",
 		"Artifacting mode                      ",
 		"Save State                       Alt+S",
 		"Load State                       Alt+L",
@@ -1323,6 +1349,9 @@ void ui(UBYTE *screen)
 				CenterPrint(screen, 0x94, 0x9a, msg, 22);
 				GetKeyPress(screen);
 			}
+			break;
+		case MENU_SOUND_RECORDING:
+			SoundRecording(screen);
 			break;
 		case MENU_SAVESTATE:
 			SaveState(screen);

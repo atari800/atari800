@@ -91,6 +91,7 @@
 
 #include "pokeysnd.h"
 #include "atari.h"
+#include "sndsave.h"
 
 #ifndef WIN32
 #include "config.h"
@@ -652,11 +653,15 @@ void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 /*          num_pokeys - number of currently active pokeys to process        */
 /*                                                                           */
 /* Outputs: the buffer will be filled with n bytes of audio - no return val  */
+/*          Also the buffer will be written to disk if Sound recording is ON */
 /*                                                                           */
 /*****************************************************************************/
 
-void Pokey_process(register uint8 * buffer, register uint16 n)
+void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
 {
+	register uint8 *buffer = sndbuffer;
+	register uint16 n = sndn;
+
 	register uint32 *div_n_ptr;
 	register uint8 *samp_cnt_w_ptr;
 	register uint32 event_min;
@@ -1057,6 +1062,9 @@ void Pokey_process(register uint8 * buffer, register uint16 n)
 		sampbuf_last2=cpu_clock;
 #endif
 #endif	/* NO_VOL_ONLY */
+
+	if( IsSoundFileOpen())
+		WriteToSoundFile(sndbuffer, sndn);
 }
 
 #ifdef SERIO_SOUND

@@ -1,4 +1,4 @@
-#include "SndSave.h"
+#include "sndsave.h"
 
 #define WAVE_CHUNK_HEADER	"RIFF\000\000\000\000WAVEfmt\040\020\000\000\000\001\000\001\000"
 #define WAVE_CHUNK_HEADER_LENGTH	24
@@ -79,7 +79,7 @@ BOOL CloseSoundFile( void )
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open */
 
-BOOL OpenSoundFile( char *szFileName )
+BOOL OpenSoundFile( const char *szFileName )
 {
 	if( sndoutput )
 	{
@@ -150,7 +150,7 @@ BOOL OpenSoundFile( char *szFileName )
 
    RETURNS: the number of bytes written to the file (should be equivalent to the input uiSize parm) */
    
-int WriteToSoundFile( unsigned char *ucBuffer, unsigned int uiSize )
+int WriteToSoundFile( const unsigned char *ucBuffer, const unsigned int uiSize )
 {
 	unsigned int uiWriteLength = 0;
 

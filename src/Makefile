@@ -1,10 +1,172 @@
-all:
-	@echo There are several different Makefiles for all supported architectures:
-	@echo
-	@echo For UNIX type \"cp Makefile.unix Makefile\"
-	@echo For Linux-ia32 type \"cp Makefile.linux Makefile\"
-	@echo For Amiga copy Makefile.amiga to Makefile
-	@echo For MS-DOS/DJGPP type \"copy Makefile.dos Makefile\"
-	@echo For Atari Falcon/TT/clones type \"cp Makefile.falcon Makefile\"
-	@echo
-	@echo After that you can type \"make\" again.
+PREFIX		= /usr/local
+BIN_PATH	= ${PREFIX}/bin
+LIB_PATH	= ${PREFIX}/lib
+MAN_PATH	= ${PREFIX}/man
+
+CC		= gcc
+CFLAGS		= -c -O2 -Wall
+#CFLAGS		= -c -O3 -Wall -march=pentium -fschedule-insns2 -fomit-frame-pointer -ffast-math -funroll-loops -funroll-all-loops -fexpensive-optimizations
+CPPFLAGS	= -c -O2 -Wall
+LD		= gcc
+LDFLAGS		= -s $(LIBDIRS)
+DEFS		= -DGNU_C
+LDLIBS		= -lm -L/usr/lib
+INCLUDE		= -I/usr/X11R6/include
+
+ifeq (.atari800,$(wildcard .atari800))
+include .atari800
+endif
+
+ifdef ZLIB_CAPABLE
+LDLIBS		+= -lz
+endif
+
+OBJECTS	=	atari.o \
+		cpu.o \
+		monitor.o \
+		sio.o \
+		devices.o \
+		antic.o \
+		gtia.o \
+		pokey.o \
+		pia.o \
+		supercart.o \
+		prompts.o \
+		rt-config.o \
+		ui.o \
+		binload.o \
+		list.o \
+		sound.o \
+		sndsave.o \
+		pokeysnd.o \
+		ataripcx.o \
+		log.o \
+		compfile.o \
+		memory.o \
+		pbi.o \
+		statesav.o \
+		diskled.o \
+		colours.o
+
+all :
+	@echo "To build the Atari 800 Emulator, type:"
+	@echo "make <version>"
+	@echo ""
+	@echo "where <version> is one of"
+	@echo "  svga"
+	@echo "  x11"
+	@echo "  x11-shm"
+	@echo ""
+	@echo "To reconfigure options, type: make config"
+	@echo "To clean directory, type: make clean"
+	@echo "To install the Emulator, type:"
+	@echo ""
+	@echo "make install-svga"
+	@echo "make install"
+
+svga:
+	make atari800 \
+	OBJECTS="$(OBJECTS) atari_svgalib.o" \
+	LDLIBS="$(LDLIBS) -lvga" \
+	DEFS="$(DEFS) -DSVGALIB" \
+	INCLUDE="$(INCLUDE)"
+
+x11:
+	make atari800 \
+	OBJECTS="$(OBJECTS) atari_x11.o" \
+	LDLIBS="$(LDLIBS) -L/usr/X11R6/lib -lX11" \
+	DEFS="$(DEFS) -DX11" \
+	INCLUDE="$(INCLUDE)"
+
+x11-shm:
+	make atari800 \
+	OBJECTS="$(OBJECTS) atari_x11.o" \
+	LDLIBS="$(LDLIBS) -L/usr/X11R6/lib -lX11 -lXext -lXau" \
+	DEFS="$(DEFS) -DX11 -DSHM" \
+	INCLUDE="$(INCLUDE)"
+
+atari800: $(OBJECTS)
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LDLIBS) -o $@
+
+%.o: %.c
+	${CC} -c $(DEFS) $(INCLUDE) ${CFLAGS} $<
+
+%.o: %.cpp
+	${CC} -c $(DEFS) $(INCLUDE) ${CPPFLAGS} $<
+
+config config.h	:	configure config.in
+	./configure
+
+configure	:	configure.o prompts.o
+	$(LD) $(LDFLAGS) configure.o prompts.o $(LDLIBS) -o configure
+
+install-svga : install
+	chown root.root ${BIN_PATH}/atari800
+	chmod 4755 ${BIN_PATH}/atari800
+
+install :
+	cp atari800 ${BIN_PATH}/atari800
+	cp atari800.man ${MAN_PATH}/man1/atari800.1
+
+clean	:
+	rm -f configure
+	rm -f config.h
+	rm -f core
+	rm -f *.o
+
+dep:
+	makedepend -Y *.c
+        
+# DO NOT DELETE
+
+antic.o: config.h atari.h rt-config.h cpu.h memory.h memory-d.h gtia.h
+antic.o: antic.h pokey.h sio.h log.h statesav.h
+atari.o: atari.h cpu.h memory.h memory-d.h antic.h gtia.h pia.h pokey.h
+atari.o: supercart.h devices.h sio.h monitor.h platform.h prompts.h
+atari.o: rt-config.h ui.h ataripcx.h log.h statesav.h config.h
+atari_amiga.o: atari.h colours.h
+atari_basic.o: atari.h monitor.h
+atari_curses.o: atari.h cpu.h monitor.h
+atari_falcon.o: cpu.h atari.h colours.h ui.h config.h antic.h platform.h
+atari_falcon.o: monitor.h log.h
+atari_svgalib.o: config.h atari.h colours.h monitor.h platform.h
+atari_vga.o: cpu.h atari.h colours.h ui.h pcjoy.h vga_gfx.h
+atari_x11.o: config.h atari.h colours.h monitor.h sio.h platform.h
+atari_x11.o: rt-config.h
+ataripcx.o: atari.h colours.h
+compfile.o: atari.h log.h
+configure.o: atari.h prompts.h
+cpu.o: atari.h cpu.h memory.h memory-d.h statesav.h
+cpu_nogoto.o: atari.h cpu.h
+devices.o: atari.h cpu.h memory.h memory-d.h devices.h rt-config.h log.h
+dossound.o: config.h atari.h pokeysnd.h
+gtia.o: config.h atari.h cpu.h pia.h pokey.h gtia.h antic.h platform.h sio.h
+gtia.o: statesav.h
+joycfg.o: pcjoy.h
+list.o: list.h
+log.o: log.h
+memory-d.o: atari.h antic.h cpu.h gtia.h log.h memory.h memory-d.h pia.h
+memory-d.o: rt-config.h statesav.h emuos.h
+memory-p.o: atari.h log.h rt-config.h antic.h cpu.h gtia.h pbi.h pia.h
+memory-p.o: pokey.h supercart.h memory.h memory-d.h
+memory.o: memory-d.c atari.h antic.h cpu.h gtia.h log.h memory.h memory-d.h
+memory.o: pia.h rt-config.h statesav.h emuos.h
+monitor.o: atari.h cpu.h memory.h memory-d.h antic.h pia.h gtia.h
+pbi.o: atari.h
+pia.o: atari.h cpu.h memory.h memory-d.h pia.h platform.h sio.h log.h
+pia.o: statesav.h
+pokey.o: atari.h cpu.h pia.h pokey.h gtia.h sio.h platform.h statesav.h
+pokeysnd.o: pokeysnd.h
+prompts.o: prompts.h
+rt-config.o: atari.h prompts.h rt-config.h
+sbdrv.o: sbdrv.h
+sio.o: atari.h cpu.h memory.h memory-d.h sio.h pokeysnd.h platform.h log.h
+sound.o: config.h pokeysnd.h
+sound_dos.o: config.h pokeysnd.h sbdrv.h
+sound_falcon.o: config.h
+statesav.o: atari.h log.h
+supercart.o: atari.h cpu.h memory.h memory-d.h log.h
+ui.o: rt-config.h atari.h cpu.h memory.h memory-d.h platform.h prompts.h
+ui.o: gtia.h sio.h list.h ui.h log.h statesav.h
+binload.o: atari.h cpu.h memory-d.h pia.h
+vga_gfx.o: atari.h

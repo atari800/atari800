@@ -1436,7 +1436,13 @@ int Atari_Keyboard(void)
                 keycode |= AKEY_q;
                 break;
         case 0x11:
-                keycode |= AKEY_w;
+				if (alt_key)
+				{
+					keycode = AKEY_UI;
+					alt_function = MENU_SOUND_RECORDING;	/* ALT+W .. Select system */
+				}
+				else
+                	keycode |= AKEY_w;
                 break;
         case 0x12:
                 keycode |= AKEY_e;
