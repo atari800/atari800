@@ -16,10 +16,13 @@
 /*#define SET_LED*/
 
 #define SOUND
+#define VOL_ONLY_SOUND
+#define INTERPOLATE_SOUND
 #define CONSOLE_SOUND
+#define SERIO_SOUND
 
 #define USE_NEW_BINLOAD
-#define NO_GOTO
+/*#define NO_GOTO*/
 
 #define DO_DIR
 #define NEW_CYCLE_EXACT
