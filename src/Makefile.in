@@ -51,13 +51,13 @@ OBJS = \
 all: $(TARGET)
 
 %.o: %.c
-	$(CC) -c -o $@ $(DEFS) $(CFLAGS) $<
+	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
 
 %.ro: %.rc
 	$(RC) --define WIN32 --define __MINGW32__ --include-dir . $< $@
 
 %.o: %.cpp
-	$(CC) -c -o $@ $(DEFS) $(CFLAGS) $<
+	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
 
 %.o: %.asm
 	cd $(<D); xgen -L1 $(@F) $(<F)
@@ -67,7 +67,7 @@ $(TARGET): $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
 
 dep:
-	@if ! makedepend -Y $(DEFS) ${OBJS:.o=.c} 2>/dev/null; \
+	@if ! makedepend -Y $(DEFS) -I. ${OBJS:.o=.c} 2>/dev/null; \
 	then echo warning: makedepend failed; fi
 
 clean:
