@@ -966,8 +966,8 @@ static int remez_filter_table(double resamp_rate, // output_rate/input_rate
                               double *cutoff, int quality)
 {
   int i;
-  int orders[] = {600, 800, 1000, 1200};
-  const static struct {
+  static const int orders[] = {600, 800, 1000, 1200};
+  static const struct {
     int stop;		// stopband ripple
     double weight;	// stopband weight
     double twidth[sizeof(orders)/sizeof(orders[0])];
@@ -978,12 +978,12 @@ static int remez_filter_table(double resamp_rate, // output_rate/input_rate
     {40, 6.0, {2.6e-3, 1.8e-3, 1.5e-3, 1.2e-3}},
     {-1}
   };
-  double passtab[] = {0.5, 0.6, 0.7};
+  static const double passtab[] = {0.5, 0.6, 0.7};
   int ripple = 0, order = 0;
   int size;
   double weights[2], desired[2], bands[4];
-  static const int step = 5;
-  static const double step_1 = 1.0 / 5 /*step*/;
+  static const int interlevel = 5;
+  double step = 1.0 / interlevel;
 
   *cutoff = 0.95 * 0.5 * resamp_rate;
 
@@ -1032,19 +1032,19 @@ found:
   bands[1] = bands[2] - paramtab[ripple].twidth[order];
   bands[3] = 0.5;
 
-  bands[1] *= (double)step;
-  bands[2] *= (double)step;
-  remez(filter_data, (size / step) + 1, 2, bands, desired, weights, BANDPASS);
-  for (i = size - step; i >= 0; i -= step)
+  bands[1] *= (double)interlevel;
+  bands[2] *= (double)interlevel;
+  remez(filter_data, (size / interlevel) + 1, 2, bands, desired, weights, BANDPASS);
+  for (i = size - interlevel; i >= 0; i -= interlevel)
   {
     int s;
-    double h1 = filter_data[i/step];
-    double h2 = filter_data[i/step+1];
+    double h1 = filter_data[i/interlevel];
+    double h2 = filter_data[i/interlevel+1];
 
-    for (s = 0; s < step; s++)
+    for (s = 0; s < interlevel; s++)
     {
-      double d = (double)s * step_1;
-      filter_data[i+s] = (h1*(1.0 - d) + h2 * d) * step_1;
+      double d = (double)s * step;
+      filter_data[i+s] = (h1*(1.0 - d) + h2 * d) * step;
     }
   }
 
@@ -2123,6 +2123,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.9  2003/02/17 17:11:17  knik
+remez_filter_table(): fixed static constants and variables
+
 Revision 1.8  2003/02/12 05:13:18  vasyl
 Corrected minor deviation from standard C
 
