@@ -45,6 +45,8 @@
 
  *****************************************************************************/
 
+#include <math.h>
+
 #include "pokeysnd.h"
 #include "atari.h"
 #ifndef __PLUS
@@ -56,8 +58,14 @@
 #include "sound_win.h"
 #endif /*__PLUS*/
 
-#include "pokey_resample.h"
-#include <math.h>
+#ifndef CONSTANT_SOUND_FILTER
+# define CONSTANT_SOUND_FILTER 1
+#endif
+
+#if CONSTANT_SOUND_FILTER
+# include "pokey_resample.h"
+# include "pokey_resample.c"
+#endif
 
 #define NPOKEYS 2
 
@@ -87,6 +95,8 @@ static unsigned char poly5tbl[31];
 static unsigned char poly17tbl[131071];
 static unsigned char poly9tbl[511];
 
+static int snd_flags = 0;
+static int snd_quality = 0;
 
 struct stPokeyState;
 
@@ -231,6 +241,14 @@ typedef struct stPokeyState
 
 PokeyState pokey_states[NPOKEYS];
 
+
+static void Pokey_process_8(void* sndbuffer, unsigned sndn);
+static void Pokey_process_16(void* sndbuffer, unsigned sndn);
+static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain);
+static void Update_serio_sound_mz(int out, UBYTE data);
+static void Update_consol_sound_mz(int set);
+static void Update_vol_only_sound_mz(void);
+
 /* Forward declarations for ResetPokeyState */
 
 static unsigned char readout0_normal(PokeyState* ps);
@@ -245,10 +263,7 @@ static void event2_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 static unsigned char readout3_normal(PokeyState* ps);
 static void event3_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
-
-
-
-void ResetPokeyState(PokeyState* ps)
+static void ResetPokeyState(PokeyState* ps)
 {
     /* Poly positions */
     ps->poly4pos = 0;
@@ -374,7 +389,7 @@ void ResetPokeyState(PokeyState* ps)
 }
 
 
-double read_resam_all(PokeyState* ps)
+static double read_resam_all(PokeyState* ps)
 {
     int i = ps->qebeg;
     unsigned char avol,bvol;
@@ -414,7 +429,7 @@ double read_resam_all(PokeyState* ps)
     return sum;
 }
 
-void add_change(PokeyState* ps, unsigned char a)
+static void add_change(PokeyState* ps, unsigned char a)
 {
     ps->qev[ps->qeend] = a;
     ps->qet[ps->qeend] = 0;
@@ -423,7 +438,7 @@ void add_change(PokeyState* ps, unsigned char a)
         ps->qeend = 0;
 }
 
-void bump_qe_subticks(PokeyState* ps, int subticks)
+static void bump_qe_subticks(PokeyState* ps, int subticks)
 {
     /* Remove too old events from the queue while bumping */
     int i = ps->qebeg;
@@ -457,15 +472,6 @@ void bump_qe_subticks(PokeyState* ps, int subticks)
         ++i;
     }
 }
-
-unsigned char readout_resam(PokeyState* ps)
-{
-    return (unsigned char)floor((read_resam_all(ps)-64.0)*master_gain + 0.5) + 128;
-}
-
-
-
-
 
 static void build_poly4(void)
 {
@@ -951,18 +957,14 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
     }
 }
 
-static unsigned char generate_sample(PokeyState* ps)
+static double generate_sample(PokeyState* ps)
 {
     /*unsigned long ta = (subticks+pokey_frq)/sample_rate;
     subticks = (subticks+pokey_frq)%sample_rate;*/
 
     advance_ticks(ps, pokey_frq/sample_rate);
-    return readout_resam(ps);
+    return (read_resam_all(ps)-64.0)*master_gain;
 }
-
-
-
-
 
 
 
@@ -981,8 +983,29 @@ static unsigned char generate_sample(PokeyState* ps)
 /*                                                                           */
 /*****************************************************************************/
 
-void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
+int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
+			int flags, int quality)
 {
+    snd_flags = flags;
+    snd_quality = quality;
+
+    Update_pokey_sound = Update_pokey_sound_mz;
+#ifdef SERIO_SOUND
+    Update_serio_sound = Update_serio_sound_mz;
+#endif
+#ifndef NO_CONSOL_SOUND
+    Update_consol_sound = Update_consol_sound_mz;
+#endif
+#ifndef	NO_VOL_ONLY
+    Update_vol_only_sound = Update_vol_only_sound_mz;
+#endif
+
+    if (flags & SND_BIT16)
+      Pokey_process = Pokey_process_16;
+    else
+      Pokey_process = Pokey_process_8;
+
+
     sample_rate = playback_freq;
 
     switch(playback_freq)
@@ -1027,6 +1050,8 @@ void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
     ResetPokeyState(pokey_states);
     ResetPokeyState(pokey_states+1);
     num_cur_pokeys = num_pokeys;
+
+    return 0; // OK
 }
 
 /*****************************************************************************/
@@ -1556,7 +1581,7 @@ static void Update_c3stop(PokeyState* ps)
         ps->outvol_3 = ps->vol3;
 }
 
-void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
+void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 {
     PokeyState* ps = pokey_states+chip;
     master_gain2 = gain;
@@ -1697,10 +1722,11 @@ void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 /*                                                                           */
 /*****************************************************************************/
 
-void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
+static void Pokey_process_8(void* sndbuffer, unsigned sndn)
 {
     unsigned short i;
     int nsam = sndn;
+    unsigned char *buffer = sndbuffer;
 
     if(num_cur_pokeys<1)
         return; /* module was not initialized */
@@ -1711,17 +1737,44 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
     {
         for(i=0; i<num_cur_pokeys; i++)
         {
-            sndbuffer[i] = generate_sample(pokey_states+i);
+            buffer[i] = floor(generate_sample(pokey_states+i) + 0.5) + 128;
         }
-        sndbuffer += num_cur_pokeys;
+        buffer += num_cur_pokeys;
+        nsam -= num_cur_pokeys;
+    }
+}
+
+static void Pokey_process_16(void* sndbuffer, unsigned sndn)
+{
+    unsigned short i;
+    int nsam = sndn;
+    signed short *buffer = sndbuffer;
+
+    if(num_cur_pokeys<1)
+        return; /* module was not initialized */
+
+    /* if there are two pokeys, then the signal is stereo
+       we assume even sndn */
+    while(nsam>=num_cur_pokeys)
+    {
+        for(i=0; i<num_cur_pokeys; i++)
+        {
+            buffer[i] = floor(generate_sample(pokey_states+i) + 0.5) * 255;
+        }
+        buffer += num_cur_pokeys;
         nsam -= num_cur_pokeys;
     }
 }
 
 
+#ifdef SERIO_SOUND
+static void Update_serio_sound_mz(int out, UBYTE data)
+{ 
+}
+#endif
 
 #ifndef NO_CONSOL_SOUND
-void Update_consol_sound( int set )
+static void Update_consol_sound_mz( int set )
 { 
 }
 #endif
@@ -1729,8 +1782,7 @@ void Update_consol_sound( int set )
 
 
 #ifndef	NO_VOL_ONLY
-void Update_vol_only_sound( void )
+static void Update_vol_only_sound_mz( void )
 {
 }
-
 #endif

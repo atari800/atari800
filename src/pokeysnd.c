@@ -89,8 +89,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 
 #include "pokeysnd.h"
+#include "mzpokeysnd.h"
 #include "atari.h"
 #include "sndsave.h"
 
@@ -205,6 +207,31 @@ int	sampout2;			/* last out volume */
 #endif
 #endif	/* NO_VOL_ONLY */
 
+static int snd_flags = 0;
+static int snd_quality = 0;
+const static int mymaxquality = 1;
+
+static int func_null(void) {return 0;}
+
+// multiple sound engine interface
+static void Pokey_process_8(void * sndbuffer, unsigned sndn);
+static void Pokey_process_16(void * sndbuffer, unsigned sndn);
+void (* Pokey_process)(void * sndbuffer, unsigned int sndn) = func_null;
+
+static void Update_pokey_sound_rf(uint16, uint8, uint8, uint8);
+void (*Update_pokey_sound) (uint16 addr, uint8 val, uint8 chip, uint8 gain)
+  = func_null;
+
+static void Update_serio_sound_rf(int out, UBYTE data);
+void (*Update_serio_sound)(int out, UBYTE data) = func_null;
+
+static void Update_consol_sound_rf(int set);
+void (*Update_consol_sound)(int set) = func_null;
+
+static void Update_vol_only_sound_rf(void);
+void (*Update_vol_only_sound)(void) = func_null;
+
+
 /*****************************************************************************/
 /* In my routines, I treat the sample output as another divide by N counter  */
 /* For better accuracy, the Samp_n_cnt has a fixed binary decimal point      */
@@ -248,9 +275,33 @@ int	sampout2;			/* last out volume */
 /*                                                                           */
 /*****************************************************************************/
 
-void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
+int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
+		     unsigned int flags, unsigned int quality)
 {
 	uint8 chan;
+
+        snd_flags = flags;
+	snd_quality = quality;
+
+        if (quality >= mymaxquality)
+	  return Pokey_sound_init_mz(freq17, playback_freq, num_pokeys, flags,
+				     quality - mymaxquality);
+
+	Update_pokey_sound = Update_pokey_sound_rf;
+#ifdef SERIO_SOUND
+	Update_serio_sound = Update_serio_sound_rf;
+#endif
+#ifndef NO_CONSOL_SOUND
+	Update_consol_sound = Update_consol_sound_rf;
+#endif
+#ifndef	NO_VOL_ONLY
+	Update_vol_only_sound = Update_vol_only_sound_rf;
+#endif
+
+	if (flags & SND_BIT16)
+	  Pokey_process = Pokey_process_16;
+        else
+	  Pokey_process = Pokey_process_8;
 
 #ifndef	NO_VOL_ONLY
 	samp_freq=playback_freq;
@@ -286,6 +337,8 @@ void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
 	Num_pokeys = num_pokeys;
 
 	/*    _enable(); */ /* RSF - removed for portability 31-MAR-97 */
+
+	return 0; // OK
 }
 
 
@@ -308,7 +361,8 @@ void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
 /*                                                                           */
 /*****************************************************************************/
 
-void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
+static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
+				  uint8 gain)
 {
 	uint32 new_val = 0;
 	uint8 chan;
@@ -574,7 +628,7 @@ void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 /*                                                                           */
 /*****************************************************************************/
 
-void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
+void Pokey_process_8(void * sndbuffer, unsigned sndn)
 {
 	register uint8 *buffer = sndbuffer;
 	register uint16 n = sndn;
@@ -981,7 +1035,7 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
 }
 
 #ifdef SERIO_SOUND
-void Update_serio_sound( int out, UBYTE data )
+static void Update_serio_sound_rf( int out, UBYTE data )
 {
 #ifndef	NO_VOL_ONLY
    int bits,pv,future;
@@ -1015,8 +1069,28 @@ void Update_serio_sound( int out, UBYTE data )
 }
 #endif /* SERIO_SOUND */
 
+void Pokey_process_16(void * sndbuffer, unsigned sndn)
+{
+  uint16 *buffer = sndbuffer;
+  int i;
+
+  Pokey_process_8(buffer, sndn);
+
+  for (i = sndn - 1; i >= 0; i--)
+  {
+    int smp = ((int)(((uint8 *)buffer)[i]) - 0x80) * 0x100;
+
+    if (smp > SHRT_MAX)
+      smp = SHRT_MAX;
+    if (smp < SHRT_MIN)
+      smp = SHRT_MIN;
+
+    buffer[i] = smp;
+  }
+}
+
 #ifndef NO_CONSOL_SOUND
-void Update_consol_sound( int set )
+static void Update_consol_sound_rf(int set)
 { 
 #ifndef	NO_VOL_ONLY
   static int prev_atari_speaker=0;
@@ -1058,7 +1132,7 @@ void Update_consol_sound( int set )
 #endif /* NO_CONSOL_SOUND */
 
 #ifndef	NO_VOL_ONLY
-void Update_vol_only_sound( void )
+static void Update_vol_only_sound_rf(void)
 {
 #ifndef NO_CONSOL_SOUND
 	Update_consol_sound(0);	/* mmm */
@@ -1068,6 +1142,10 @@ void Update_vol_only_sound( void )
 
 /*
 $Log$
+Revision 1.10  2002/12/08 20:32:02  knik
+added 16bit and quality sound setting support
+added multiple sound engines support
+
 Revision 1.9  2002/08/26 05:44:22  pfusik
 Adam Bienias's fix for better sound quality
 
