@@ -150,7 +150,6 @@
 #include "pokeysnd.h"
 #include "gtia.h"
 #include "antic.h"
-#include "diskled.h"
 #include "devices.h"
 #include "cpu.h"
 #include "memory.h"
@@ -1864,9 +1863,8 @@ int main(int argc, char **argv)
 		Device_Frame();
 		GTIA_Frame();
 		ANTIC_Frame(TRUE);
-#ifdef SHOW_DISK_LED
-		LED_Frame();
-#endif
+		Screen_DrawAtariSpeed();
+		Screen_DrawDiskLED();
 		POKEY_Frame();
 		nframes++;
 		atari_sync();
@@ -1882,6 +1880,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.45  2005/03/03 09:35:00  pfusik
+ diskled -> screen
+
  Revision 1.44  2005/02/23 16:45:32  pfusik
  PNG screenshots
 
