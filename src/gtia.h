@@ -119,6 +119,9 @@ extern UWORD colour_translation_table[256];
 
 #endif /* USE_COLOUR_TRANSLATION_TABLE */
 
+extern UBYTE TRIG[4];
+extern UBYTE TRIG_latch[4];
+
 extern int next_console_value;
 
 void GTIA_Initialise(int *argc, char *argv[]);
