@@ -1,14 +1,16 @@
-Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.2.0
+Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.2.1
 --------------------------------------------------------------------
 
     Copyright (C) 1995 David Firth. E-Mail: david@signus.demon.co.uk
+    Copyright (C) 1998-2001 Atari800 Development Team.
+                            E-mail: atari800-users@lists.sourceforge.net
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 1, or (at your option)
     any later version.
 
-This is the version 1.2.0 of my Atari 800, 800XL, 130XE and 5200 emulator
+This is the version 1.2.1 of my Atari 800, 800XL, 130XE and 5200 emulator
 for Unix, Amiga, MS-DOS and Atari TT/Falcon. My main objective
 is to create a freely distributable portable emulator (i.e. with source
 code available). It can be configured to run in the following ways :-
@@ -22,6 +24,7 @@ code available). It can be configured to run in the following ways :-
 	7. Atari Falcon/TT and compatible machines
 	8. MS Windows 9x
 	9. SDL
+	10. WinCE
 
 The basic mode is only useful for running programs such as MAC65,
 Atari Basic etc. I have had this version running on Linux,
@@ -50,14 +53,14 @@ The Atari Falcon030/040 version supports 320x240 and 336x240 Falcon/TT
 8-bit planes graphics modes, NOVA graphics cards, DMA sound and both
 joysticks (old CX-40, Atari800 compatible - not the new paddle-like ones).
 
+The SDL version should compile on Unix, Win32, BeOS, etc... It's optimized for
+8, 16 and 32 color depth. Of course it will work fastest in 8bit. If you use it
+in XFree86 - please set "Depth=8" in XF86Config to gain maximum speed. 
+
 From version 0.7.0 all versions supporting bitmapped graphics have
 a User Interface implemented on the emulators "screen". The User
 Interface is enter by pressing F1 at any time. ESC is used to return
 to the previous screen.
-
-The SDL version should compile on Unix, Win32, BeOS, etc... It's optimized for
-8, 16 and 32 color depth. Of course it will work fastest in 8bit. If you use it
-in XFree86 - please set "Depth=8" in XF86Config to gain maximum speed. 
 
 ---------------------------------------------------------------------------
 

@@ -1,5 +1,8 @@
 This is a list of things that need to be done
 ---------------------------------------------
+o update documentation (README, USAGE, INSTALL) to cover all the
+  new ports.
+
 o sound recording: make use of new sndsave.[ch] module (replace the
   code in X11)
 
@@ -10,11 +13,7 @@ o merge common parts of VGA, SVGALIB and AtariFalcon keyboard stuff
 
 o similarly create common sound.[ch] routines
 
-o finally merge sound_dos and dossound (the goal is to remove dossound)
-
 o rewrite joycfg to use curses so it will be usable on all platforms.
 
 o simplify and correct synchronization code in main emulator loop - some
   people still complain that the emulator is slower than the original Atari.
-
-o clean up the source and start using GNU autoconfig stuff
