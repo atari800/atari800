@@ -14,7 +14,9 @@ extern UBYTE PORTA;
 extern UBYTE PORTB;
 
 extern int xe_bank;
+extern int selftest_enabled;
 
+extern UBYTE atari_basic[8192];
 extern UBYTE atari_os[16384];
 
 void PIA_Initialise(int *argc, char *argv[]);
