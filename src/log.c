@@ -46,7 +46,11 @@ void Aprint(char *format, ... )
 #endif
 
 	va_start(args, format);
+#ifdef HAVE_VSNPRINTF
 	vsnprintf(buffer, sizeof(buffer)-1 /* -1 for the strcat(\n) */, format, args);
+#else
+	vsprintf(buffer, format, args);
+#endif
 	va_end(args);
 
 	strcat(buffer, "\n");
@@ -75,6 +79,9 @@ void Aflushlog(void)
 
 /*
 $Log$
+Revision 1.8  2005/02/23 16:40:00  pfusik
+use vsnprintf only if available
+
 Revision 1.7  2003/11/13 13:09:02  joy
 buffer overflow fixed
 
