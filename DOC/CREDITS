@@ -272,5 +272,10 @@ Marcin Zukowski <eru@ibb.waw.pl>
     - fix in ANTIC, GTIA
     - slight monitor improvement
 
-Benjamin Schreiber <fishy_PKAT151@gmx.de> and Alexander Martinez <kubus3561@gmx.de>
-	- SDL keyboard joystick emulation stored in the Atari800 config file
+Benjamin Schreiber <fishy_PKAT151@gmx.de>
+and Alexander Martinez <kubus3561@gmx.de>
+    - SDL keyboard joystick emulation stored in the Atari800 config file
+
+Daniel Serpell <daniel_serpell@yahoo.com>
+    - SDL keyboard based on Unicode values, more keys emulated correctly
+
