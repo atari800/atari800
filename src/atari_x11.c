@@ -2605,7 +2605,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 	first_y = ATARI_HEIGHT;
 	last_y = -1000;
 
-	if( invisible || !draw_display )   goto after_screen_update;  /* mmm */
+	if( invisible )   goto after_screen_update;  /* mmm */
         if(image->bits_per_pixel == 32)
         {
                 ULONG *ptr = (ULONG *) image->data;
