@@ -191,11 +191,11 @@ F3	Select
 F4	Start
 F5	Warm Reset
 Shft+F5	Cold Reset
-F6	---
+F6	Help Key (XL/XE)
 F7	Break Key
-F8	Enter Monitor
+F8	GIF Screenshot
 F9	Exit Emulator
-F10	---
+F10	Toggle Fullspeed
 F11	Vertical Positioning: Scroll Screen Downwards
 F12	Vertical Positioning: Scroll Screen Upwards
 
@@ -252,7 +252,7 @@ F2	Option
 F3	Select
 F4	Start
 F5	Warm Reset
-F6	---
+F6	Help Key (XL/XE)
 F7	Break Key
 F8	Cold Reset
 F9	Exit Emulator
@@ -312,7 +312,7 @@ F3	Select
 F4	Start
 F5	Warm Reset
 Shft+F5	Cold Reset
-F6	Save Screenshot
+F6	Help Key (XL/XE)
 F7	Break Key
 F8	Enter monitor
 F9	Exit Emulator
