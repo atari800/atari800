@@ -405,10 +405,10 @@ UWORD cl_lookup[128];
 		ptr += 4;\
 	}
 #define DRAW_ARTIF {\
-		*ptr++ = ((UWORD *) art_curtable)[(screendata_tally & 0x04fc00) >> 9];\
-		*ptr++ = ((UWORD *) art_curtable)[((screendata_tally & 0x04fc00) >> 9) + 1];\
-		*ptr++ = ((UWORD *) art_curtable)[(screendata_tally & 0x004fc0) >> 5];\
-		*ptr++ = ((UWORD *) art_curtable)[((screendata_tally & 0x004fc0) >> 5) + 1];\
+		*ptr++ = ((UWORD *) art_curtable)[(screendata_tally & 0x03fc00) >> 9];\
+		*ptr++ = ((UWORD *) art_curtable)[((screendata_tally & 0x03fc00) >> 9) + 1];\
+		*ptr++ = ((UWORD *) art_curtable)[(screendata_tally & 0x003fc0) >> 5];\
+		*ptr++ = ((UWORD *) art_curtable)[((screendata_tally & 0x003fc0) >> 5) + 1];\
 	}
 
 #endif /* UNALIGNED_LONG_OK */
