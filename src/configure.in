@@ -119,14 +119,14 @@ OBJ="atari_svgalib.o"
 curses)
 dnl Replace `main' with a function in -lcurses:
 NEED_LIB(curses, main)
-AC_DEFINE(CURSES,, [ ])
+AC_DEFINE(USE_CURSES,, [ ])
 OBJ=atari_curses.o
 ;;
 ncurses)
 dnl Replace `main' with a function in -lncurses:
 NEED_LIB(ncurses, main)
 AC_DEFINE(NCURSES,, [ ])
-AC_DEFINE(CURSES,, [ ])
+AC_DEFINE(USE_CURSES,, [ ])
 OBJ=atari_curses.o
 ;;
 dx)

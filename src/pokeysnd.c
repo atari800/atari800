@@ -211,25 +211,30 @@ static int snd_flags = 0;
 static int snd_quality = 0;
 const static int mymaxquality = 1;
 
-static int func_null(void) {return 0;}
-
 // multiple sound engine interface
 static void Pokey_process_8(void * sndbuffer, unsigned sndn);
 static void Pokey_process_16(void * sndbuffer, unsigned sndn);
-void (* Pokey_process)(void * sndbuffer, unsigned int sndn) = func_null;
+static void null_pokey_process(void *sndbuffer, unsigned int sndn) {}
+void (* Pokey_process)(void * sndbuffer, unsigned int sndn) = null_pokey_process;
 
 static void Update_pokey_sound_rf(uint16, uint8, uint8, uint8);
+static void null_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain) {}
 void (*Update_pokey_sound) (uint16 addr, uint8 val, uint8 chip, uint8 gain)
-  = func_null;
+  = null_pokey_sound;
 
+#ifdef SERIO_SOUND
 static void Update_serio_sound_rf(int out, UBYTE data);
-void (*Update_serio_sound)(int out, UBYTE data) = func_null;
+static void null_serio_sound(int out, UBYTE data) {}
+void (*Update_serio_sound)(int out, UBYTE data) = null_serio_sound;
+#endif
 
 static void Update_consol_sound_rf(int set);
-void (*Update_consol_sound)(int set) = func_null;
+static void null_consol_sound(int set) {}
+void (*Update_consol_sound)(int set) = null_consol_sound;
 
 static void Update_vol_only_sound_rf(void);
-void (*Update_vol_only_sound)(void) = func_null;
+static void null_vol_only_sound(void) {}
+void (*Update_vol_only_sound)(void) = null_vol_only_sound;
 
 
 /*****************************************************************************/
@@ -1142,6 +1147,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.11  2003/02/08 23:52:17  joy
+little cleanup
+
 Revision 1.10  2002/12/08 20:32:02  knik
 added 16bit and quality sound setting support
 added multiple sound engines support

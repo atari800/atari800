@@ -643,7 +643,7 @@ int main(int argc, char **argv)
 			break;
 		case AKEY_EXIT:
 			Atari800_Exit(FALSE);
-			exit(1);
+			return 0;
 		case AKEY_UI:
 #ifdef SOUND
 			Sound_Pause();
@@ -690,6 +690,9 @@ int main(int argc, char **argv)
 }
 /*
 $Log$
+Revision 1.9  2003/02/08 23:52:17  joy
+little cleanup
+
 Revision 1.8  2002/08/07 08:59:06  joy
 last EOL is not necessary
 

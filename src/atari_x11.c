@@ -198,6 +198,7 @@ static int mouse_stick;			/* Mouse Joystick Position */
 static int js0_mode = -1;
 static int js1_mode = -1;
 
+#ifndef SHM
 static int last_colour = -1;
 
 #define	NPOINTS	(4096/4)
@@ -208,6 +209,7 @@ static int npoints = 0;
 
 static XPoint points[NPOINTS];
 static XRectangle rectangles[NRECTS];
+#endif
 
 static int keyboard_consol = 7;
 static int menu_consol = 7;

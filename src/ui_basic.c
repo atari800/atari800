@@ -28,7 +28,7 @@
 #endif
 */
 
-#ifdef CURSES
+#ifdef USE_CURSES
 extern UBYTE curses_screen[24][40];
 #endif
 
@@ -142,7 +142,7 @@ int GetKeyPress(UBYTE * screen)
 
 void Plot(UBYTE * screen, int fg, int bg, int ch, int x, int y)
 {
-#ifndef CURSES
+#ifndef USE_CURSES
 	int offset = ascii_to_screen[(ch & 0x07f)] * 8;
 	int i;
 	int j;
@@ -288,7 +288,7 @@ void Box(UBYTE * screen, int fg, int bg, int x1, int y1, int x2, int y2)
 
 void ClearScreen(UBYTE * screen)
 {
-#ifndef CURSES
+#ifndef USE_CURSES
 	UBYTE *ptr;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	video_memset(screen, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
@@ -818,7 +818,7 @@ void AboutEmulator(UBYTE * screen)
 	CenterPrint(screen, 0x9a, 0x94, ATARI_TITLE, 1);
 	CenterPrint(screen, 0x9a, 0x94, "Copyright (c) 1995-1998 David Firth", 2);
 	CenterPrint(screen, 0x9a, 0x94, "and", 3);
-	CenterPrint(screen, 0x9a, 0x94, "(c)1998-2001 Atari800 Development Team", 4);
+	CenterPrint(screen, 0x9a, 0x94, "(c)1998-2003 Atari800 Development Team", 4);
 	CenterPrint(screen, 0x9a, 0x94, "See CREDITS file for details.", 5);
 	CenterPrint(screen, 0x9a, 0x94, "http://atari800.atari.org/", 7);
 
@@ -995,6 +995,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.9  2003/02/08 23:52:17  joy
+little cleanup
+
 Revision 1.8  2003/01/27 13:14:51  joy
 Jason's changes: either PAGED_ATTRIB support (mostly), or just clean up.
 

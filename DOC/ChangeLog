@@ -1,9 +1,22 @@
+2003-02-08  Petr Stehlik  <pstehlik@sophics.cz>
+
+* atari_sdl.c: signal keyboard interrupt only when it's enabled
+  (bugfix copied from input.c where it was fixed by Piotr)
+* configure.in, acconfig.h: autoconf 2.5x required again. OS/2 and other
+  platforms with old autoconf can use the pre-generated configure script
+  found in released versions.
+* atari_curses.c: exit() was not defined so I replaced it by return.
+* atari_x11.c: some variables are used only if SHM is not defined
+* configure.in, ui_basic.c: "CURSES" replaced by "USE_CURSES" so that
+  compiler doesn't complain about a redefined stuff
+* pokeysnd.c: null functions defined properly to avoid compiler warnings
+
+
 2003-02-04  Petr Stehlik  <pstehlik@sophics.cz>
 
-configure.in, acconfig.h: after few days of autoconf 2.5x support I
-   rolled back the changes since Ken Ames had a problem with upgrading
-   autoconf on OS/2.
-
+* configure.in, acconfig.h: after few days of autoconf 2.5x support I
+  rolled back the changes since Ken Ames had a problem with upgrading
+  autoconf on OS/2.
 
 ** tagged as 1.2.9
 
