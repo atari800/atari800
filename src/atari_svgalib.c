@@ -7,12 +7,14 @@
 #include <vga.h>
 
 #include "config.h"
-#include "atari.h"
+#include "input.h"
 #include "colours.h"
 #include "monitor.h"
 #include "sound.h"
 #include "platform.h"
 #include "log.h"
+#include "ui.h"
+#include "ataripcx.h"
 
 extern int refresh_rate;
 
@@ -44,7 +46,6 @@ static struct JS_DATA_TYPE js_data;
 #include <linux/keyboard.h>
 #include <vgakeyboard.h>
 
-extern int SHIFT_KEY, KEYPRESSED;
 extern int alt_function;
 static int pause_hit = 0;
 static UBYTE kbhits[NR_KEYS];
@@ -201,7 +202,7 @@ int Atari_Keyboard(void)
           return AKEY_BREAK;
         }
     
-        SHIFT_KEY = (kbhits[SCANCODE_LEFTSHIFT]
+        key_shift = (kbhits[SCANCODE_LEFTSHIFT]
                    | kbhits[SCANCODE_RIGHTSHIFT]) ? 1 : 0;
 
 		alt_function = -1;		/* no alt function */
@@ -229,7 +230,7 @@ int Atari_Keyboard(void)
 			return AKEY_UI;
 
         /* need to set shift mask here to avoid conflict with PC layout */
-        keycode = (SHIFT_KEY ? 0x40 : 0)
+        keycode = (key_shift ? 0x40 : 0)
         	| ((kbhits[SCANCODE_LEFTCONTROL]
                    | kbhits[SCANCODE_RIGHTCONTROL]) ? 0x80 : 0);
                 
@@ -251,7 +252,7 @@ int Atari_Keyboard(void)
             break;
           case SCANCODE_PRINTSCREEN:
           case SCANCODE_F10:
-			keycode = SHIFT_KEY ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
+			keycode = key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
 			kbcode = 0;
 			break;
 
@@ -259,7 +260,7 @@ int Atari_Keyboard(void)
             return AKEY_UI;
             break;
           case SCANCODE_F5:
-            return SHIFT_KEY ? AKEY_COLDSTART : AKEY_WARMSTART;
+            return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
             break;
           case SCANCODE_F11:
             for(i = 0; i < 4; i++)
@@ -277,7 +278,7 @@ int Atari_Keyboard(void)
 	  KBSCAN(ESCAPE)
 	  KBSCAN(1)
 	  case SCANCODE_2:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_AT;
             else
               keycode |= AKEY_2;
@@ -286,19 +287,19 @@ int Atari_Keyboard(void)
 	  KBSCAN(4)
 	  KBSCAN(5)
 	  case SCANCODE_6:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_CARET;
             else
               keycode |= AKEY_6;
             break;
 	  case SCANCODE_7:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_AMPERSAND;
             else
               keycode |= AKEY_7;
             break;
 	  case SCANCODE_8:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_ASTERISK;
             else
               keycode |= AKEY_8;
@@ -307,7 +308,7 @@ int Atari_Keyboard(void)
 	  KBSCAN(0)
           KBSCAN(MINUS)
           case SCANCODE_EQUAL:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_PLUS;
             else
               keycode |= AKEY_EQUAL;
@@ -344,7 +345,7 @@ int Atari_Keyboard(void)
 	  KBSCAN(L)
 	  KBSCAN(SEMICOLON)
 	  case SCANCODE_APOSTROPHE:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_DBLQUOTE;
             else
               keycode |= AKEY_QUOTE;
@@ -353,7 +354,7 @@ int Atari_Keyboard(void)
             keycode |= AKEY_ATARI;
             break;
 	  case SCANCODE_BACKSLASH:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_EQUAL | AKEY_SHFT;
             else
               keycode |= AKEY_BACKSLASH;
@@ -366,13 +367,13 @@ int Atari_Keyboard(void)
 	  KBSCAN(N)
 	  KBSCAN(M)
 	  case SCANCODE_COMMA:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_LESS;
             else
               keycode |= AKEY_COMMA;
             break;
 	  case SCANCODE_PERIOD:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_GREATER;
             else
               keycode |= AKEY_FULLSTOP;
@@ -393,13 +394,13 @@ int Atari_Keyboard(void)
             keycode = AKEY_RIGHT;
             break;
           case SCANCODE_REMOVE:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_DELETE_LINE;
             else
               keycode |= AKEY_DELETE_CHAR;
             break;
           case SCANCODE_INSERT:
-            if (SHIFT_KEY)
+            if (key_shift)
               keycode = AKEY_INSERT_LINE;
             else
               keycode |= AKEY_INSERT_CHAR;
@@ -414,7 +415,6 @@ int Atari_Keyboard(void)
             keycode = AKEY_NONE;
         }
 
-        KEYPRESSED = (keycode != AKEY_NONE);
 	return keycode;
 }
 /****************************************************************************/
@@ -604,7 +604,8 @@ void Atari_DisplayScreen(UBYTE * screen)
   static int writepage = 0;
   UBYTE *vbuf = screen + first_lno * ATARI_WIDTH + 32;
  
-  if( invisible || !draw_display )	goto after_screen_update; 
+  if (invisible)
+    goto after_screen_update;
 #ifdef SVGA_SPEEDUP
   vga_copytoplanar256(vbuf+ATARI_WIDTH*(240/refresh_rate)*writepage, ATARI_WIDTH,
 		      ((320 * (240/refresh_rate)) >> 2) * writepage
@@ -757,15 +758,80 @@ int Atari_PEN(int vertical)
 {
 	return vertical ? 0xff : 0;
 }
-/*
-void LeaveVGAMode(void)
+
+int main(int argc, char **argv)
 {
-  printf("Leaving VGA mode\n");
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
+
+	/* main loop */
+	while (TRUE) {
+		static int test_val = 0;
+		int keycode;
+
+		keycode = Atari_Keyboard();
+
+		switch (keycode) {
+		case AKEY_COLDSTART:
+			Coldstart();
+			break;
+		case AKEY_WARMSTART:
+			Warmstart();
+			break;
+		case AKEY_EXIT:
+			Atari800_Exit(FALSE);
+			exit(1);
+		case AKEY_UI:
+#ifdef SOUND
+			Sound_Pause();
+#endif
+			ui((UBYTE *)atari_screen);
+#ifdef SOUND
+			Sound_Continue();
+#endif
+			break;
+		case AKEY_SCREENSHOT:
+			Save_PCX_file(FALSE, Find_PCX_name());
+			break;
+		case AKEY_SCREENSHOT_INTERLACE:
+			Save_PCX_file(TRUE, Find_PCX_name());
+			break;
+		case AKEY_BREAK:
+			key_break = 1;
+			break;
+		default:
+			key_break = 0;
+			key_code = keycode;
+			break;
+		}
+
+		if (++test_val == refresh_rate) {
+			Atari800_Frame(EMULATE_FULL);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync(); /* here seems to be the best place to sync */
+#endif
+			Atari_DisplayScreen((UBYTE *) atari_screen);
+			test_val = 0;
+		}
+		else {
+#ifdef VERY_SLOW
+			Atari800_Frame(EMULATE_BASIC);
+#else	/* VERY_SLOW */
+			Atari800_Frame(EMULATE_NO_SCREEN);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync();
+#endif
+#endif	/* VERY_SLOW */
+		}
+	}
 }
-*/
 
 /*
 $Log$
+Revision 1.6  2001/09/25 17:41:49  knik
+added main loop; updated keyboard and display
+
 Revision 1.5  2001/04/08 05:54:48  knik
 sound_update call removed (moved to atari.c)
 
