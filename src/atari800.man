@@ -117,6 +117,18 @@ default.
 Runs the emulator in a huge window where each Atari 800 pixel is
 represented by a 3x3 X Window rectange.
 .TP
+\fB-clip_x number-of-pixels
+Sets left offset for clipping.
+.TP
+\fB-clip_width number-of-pixels
+Sets the width of the clipping-area.
+.TP
+\fB-clip_y number-of-pixels
+Sets top offset for clipping.
+.TP
+\fB-clip_height number-of-pixels
+Sets the height of the clipping-area.
+.TP
 \fB-sound
 Enable sound using the Network Audio System.
 .SS Amiga Options
