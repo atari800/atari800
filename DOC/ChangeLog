@@ -1,3 +1,9 @@
+2005-01-06  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c: F8 (enter monitor) was not implemented. Fixed. Also
+  entering monitor now switches off the fullscreen mode which makes 
+  the monitor usable in X-Windows (not sure about framebuffer but
+  I'd guess for that one we'd have to turn off the graphics completely).
+
 
 ** 1.3.5 released on 2004-12-30
 

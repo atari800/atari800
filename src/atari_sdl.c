@@ -143,6 +143,7 @@
 #include "config.h"
 #include "input.h"
 #include "colours.h"
+#include "monitor.h"
 #include "platform.h"
 #include "ui.h"
 #include "ataripcx.h"
@@ -731,7 +732,7 @@ int Atari_Keyboard(void)
 	}
 
 	// Handle movement and special keys.
-	if (key_shift)
+	if (key_shift) {
 		switch (lastkey) {
 		case SDLK_F5:
 			return AKEY_COLDSTART;
@@ -741,7 +742,8 @@ int Atari_Keyboard(void)
 		case SDLK_INSERT:
 			return AKEY_INSERT_LINE;
 		}
-	else
+	}
+	else {
 		switch (lastkey) {
 		case SDLK_F5:
 			return AKEY_WARMSTART;
@@ -751,6 +753,7 @@ int Atari_Keyboard(void)
 		case SDLK_INSERT:
 			return AKEY_INSERT_CHAR;
 		}
+	}
 	
 	switch (lastkey) {
 	case SDLK_LSUPER:
@@ -785,6 +788,8 @@ int Atari_Keyboard(void)
 		return AKEY_RETURN;
 	case SDLK_F9:
 		return AKEY_EXIT;
+	case SDLK_F8:
+		return (Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT);
 	case SDLK_F1:
 		return AKEY_UI;
 	case SDLK_LEFT:
@@ -1258,17 +1263,24 @@ void Atari_Initialise(int *argc, char *argv[])
 int Atari_Exit(int run_monitor)
 {
 	int restart;
+	int original_fullscreen = FULLSCREEN;
 
-#if 0
-	if (run_monitor)
+	if (run_monitor) {
 		/* disable graphics, set alpha mode */
+		if (FULLSCREEN) {
+			SwitchFullscreen();
+		}
 		restart = monitor();
-	else
-#endif
+	}
+	else {
 		restart = FALSE;
+	}
 
 	if (restart) {
 		/* set up graphics and all the stuff */
+		if (original_fullscreen != FULLSCREEN) {
+			SwitchFullscreen();
+		}
 		return 1;
 	}
 
@@ -1864,6 +1876,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.41  2005/01/06 08:39:13  joy
+ quick hack to get monitor in SDL working
+
  Revision 1.40  2004/12/28 21:32:31  joy
  unicode based keyboard handling
 
