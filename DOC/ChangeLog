@@ -1,3 +1,6 @@
+2002-02-04  Piotr Fusik  <fox@scene.pl>
+* DOC/BUGS: updated list of games
+
 2002-01-10  Jindrich Kubec <kubecj@asw.cz>
 * new cartridge type added
 * last #include "zlib.h" found and fixed.
