@@ -34,16 +34,6 @@ int Atari_POT(int num)
 	return 228;
 }
 
-int Atari_CONSOL(void)
-{
-	return 7;
-}
-
-int Atari_PEN(int vertical)
-{
-	return vertical ? 0xff : 0;
-}
-
 int main(int argc, char **argv)
 {
 	/* initialise Atari800 core */
