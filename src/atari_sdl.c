@@ -2,11 +2,14 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   20-11-2001 - ui shortcuts 
+   	      - fix small problem with LALT+b
+	      - removed global variable "done" 
    19-11-2001 - I still don't have any testers, so I started to experiment a
 		little. Changed Atari_PORT/TRIG to SDL_Atari_PORT/TRIG, don't
 		use Atari800_Frame, don't use INPUT_Frame, copied some code
-		from there. Result? Fixed kikstart and starquake behaviour! 
-	        Warning! Only 2 joysticks support and much reduced input.		
+		from there. Result? Fixed kikstart and starquake behaviour!
+		Warning! Only 2 joysticks support and much reduced input.
 	      - swapping joysticks with LALT+j
    18-11-2001 - couldn't work with code last few days, but I am back and alive!
  	      - I found memory related bug in ui.c, searching for more	
@@ -33,12 +36,9 @@
               - joystick emulation
    
    TODO:
-   - fix memory related bugs (probably not in my code)
    - implement all Atari800 parameters
-   - fix audio
    - use mouse and real joystick
    - turn off fullscreen when error happen
-   - rewrite keyboard stuff, switch/case is bad(slow) idea
    - Atari_Exit - monitor stuff (debugger?)
    
    USAGE:
@@ -110,8 +110,9 @@ int SDL_JOY_1_RIGHTUP = SDLK_e;
 int SDL_JOY_1_LEFTDOWN = SDLK_z;
 int SDL_JOY_1_RIGHTDOWN = SDLK_c;
 
-// I still don't know when it's not 1
 extern int refresh_rate;
+
+extern int alt_function;
 
 // SOUND 
 #define FRAGSIZE        10		// 1<<FRAGSIZE is size of sound buffer
@@ -127,8 +128,6 @@ Uint8 *kbhits;
 static int last_key_break = 0;
 static int last_key_code = AKEY_NONE;
 
-// main loop variable (TODO: kill all that global variables!) 
-int done = 0;
 
 void SetPalette()
 {
@@ -212,7 +211,7 @@ void SwitchBW()
 {
 	BW = 1 - BW;
 	CalcPalette();
-	SetVideoMode(MainScreen->w, MainScreen->h);
+	SetPalette();
 }
 
 void SwapJoysticks()
@@ -257,39 +256,87 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 int Atari_Keyboard(void)
 {
 	static int lastkey = AKEY_NONE, key_pressed = 0;
+	static int LeftAlt = 0;
 
 	SDL_Event event;
-	kbhits = SDL_GetKeyState(NULL);
-	if (kbhits == NULL) {
-		printf("oops, kbhits is NULL!\n");
-		exit(-1);
-	}
-	while (SDL_PollEvent(&event)) {
+	if (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			lastkey = event.key.keysym.sym;
 			key_pressed = 1;
-			if ((lastkey == SDLK_f) && (kbhits[SDLK_LALT])) {
-				SwitchFullscreen();
-			}
-			if ((lastkey == SDLK_b) && (kbhits[SDLK_LALT])) {
-				SwitchBW();
-			}
-			if ((lastkey == SDLK_j) && (kbhits[SDLK_LALT])) {
-				SwapJoysticks();
-			}
+			if (lastkey == SDLK_LALT)
+				LeftAlt = 1;
 			break;
 		case SDL_KEYUP:
+			lastkey = event.key.keysym.sym;
 			key_pressed = 0;
+			if (lastkey == SDLK_LALT)
+				LeftAlt = 0;
 			break;
 		case SDL_VIDEORESIZE:
 			SetNewVideoMode(event.resize.w, event.resize.h);
 			break;
 		case SDL_QUIT:
-			done = 1;
+			return AKEY_EXIT;
 			break;
 		}
 	}
+	kbhits = SDL_GetKeyState(NULL);
+
+	if (kbhits == NULL) {
+		printf("oops, kbhits is NULL!\n");
+		exit(-1);
+	}
+
+	alt_function = -1;
+	if (LeftAlt) {
+		if (key_pressed) {
+			switch (lastkey) {
+			case SDLK_f:
+				SwitchFullscreen();
+				break;
+			case SDLK_b:
+				SwitchBW();
+				break;
+			case SDLK_j:
+				SwapJoysticks();
+				break;
+			case SDLK_r:
+				alt_function = MENU_RUN;
+				break;
+			case SDLK_y:
+				alt_function = MENU_SYSTEM;
+				break;
+			case SDLK_o:
+				alt_function = MENU_SOUND;
+				break;
+			case SDLK_w:
+				alt_function = MENU_SOUND_RECORDING;
+				break;
+			case SDLK_a:
+				alt_function = MENU_ABOUT;
+				break;
+			case SDLK_s:
+				alt_function = MENU_SAVESTATE;
+				break;
+			case SDLK_d:
+				alt_function = MENU_DISK;
+				break;
+			case SDLK_l:
+				alt_function = MENU_LOADSTATE;
+				break;
+			case SDLK_c:
+				alt_function = MENU_CARTRIDGE;
+				break;
+			}
+		}
+		key_pressed = 0;
+		if (alt_function != -1)
+			return AKEY_UI;
+		else
+			return AKEY_NONE;
+	}
+
 
 	// SHIFT STATE
 	if ((kbhits[SDLK_LSHIFT]) || (kbhits[SDLK_RSHIFT]))
@@ -545,9 +592,8 @@ int Atari_Keyboard(void)
 		return AKEY_ESCAPE;
 	case SDLK_TAB:
 		return AKEY_TAB;
-	default:
-		return AKEY_NONE;
 	}
+	return AKEY_NONE;
 }
 
 void Atari_Initialise(int *argc, char *argv[])
@@ -752,6 +798,7 @@ int main(int argc, char **argv)
 {
 	int keycode;
 	static UBYTE STICK[4];
+	int done = 0;
 
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
@@ -765,8 +812,7 @@ int main(int argc, char **argv)
 
 		switch (keycode) {
 		case AKEY_EXIT:
-			Atari800_Exit(FALSE);
-			return 0;
+			done = 1;
 			break;
 		case AKEY_COLDSTART:
 			Coldstart();
@@ -836,5 +882,6 @@ int main(int argc, char **argv)
 		Atari_DisplayScreen((UBYTE *) atari_screen);
 
 	}
+	Atari800_Exit(FALSE);
 	return 0;
 }
