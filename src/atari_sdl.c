@@ -2,7 +2,7 @@
  * atari_sdl.c - SDL library specific port code
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
- * Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2004 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -24,6 +24,10 @@
 
 /*
    Changelog:
+   05-20-2004 - dynamic SDL key binding over config file.
+   		So the code needs no recompile for key rebinding
+		within the SDL version.
+   		Authors: B.Schreiber, A.Martinez
 
    09-02-2002 - "-mzpokey", "-oldpokey" and "-stereo" removed
 
@@ -175,7 +179,8 @@ static int ROTATE90 =0;
 // #define FPS_COUNTER = 1
 
 // joystick emulation
-// keys should be loaded from config file
+// keys are loaded from config file
+// Here the defaults if there is no keymap in the config file...
 
 int SDL_TRIG_0 = SDLK_LCTRL;
 int SDL_TRIG_0_B = SDLK_KP0;
@@ -229,6 +234,107 @@ Uint32 Palette32[256];			// 32-bit palette
 Uint8 *kbhits;
 static int last_key_break = 0;
 static int last_key_code = AKEY_NONE;
+
+// For better handling of the Atari_Configure-recognition...
+// Takes a keySym as integer-string and fills the value
+// into the retval referentially.
+// Authors: B.Schreiber, A.Martinez
+// fixed and cleaned up by joy
+int SDLKeyBind(int * retval, char* sdlKeySymIntStr)
+{
+	int ksym;
+
+	if (retval == NULL || sdlKeySymIntStr == NULL) {
+		return FALSE;
+	}
+
+	// make an int out of the keySymIntStr...
+	sscanf(sdlKeySymIntStr,"%d",&ksym);
+
+	if (ksym>SDLK_FIRST && ksym<SDLK_LAST) {
+		*retval=ksym;
+		return TRUE;
+	}
+	else {
+		return FALSE;
+	}
+}
+
+// For getting sdl key map out of the config...
+// Authors: B.Schreiber, A.Martinez
+// cleaned up by joy
+int Atari_Configure(char* option, char* parameters) 
+{
+	if (strcmp(option,"SDL_TRIG_0")==0)
+		return SDLKeyBind(&SDL_TRIG_0,parameters);
+	else if (strcmp(option,"SDL_TRIG_0_B")==0)
+		return SDLKeyBind(&SDL_TRIG_0_B,parameters);
+	else if (strcmp(option,"SDL_JOY_0_LEFT")==0)
+		return SDLKeyBind(&SDL_JOY_0_LEFT,parameters);
+	else if (strcmp(option,"SDL_JOY_0_RIGHT")==0)
+		return SDLKeyBind(&SDL_JOY_0_RIGHT,parameters);
+	else if (strcmp(option,"SDL_JOY_0_DOWN")==0)
+		return SDLKeyBind(&SDL_JOY_0_DOWN,parameters);
+	else if (strcmp(option,"SDL_JOY_0_UP")==0)
+		return SDLKeyBind(&SDL_JOY_0_UP,parameters);
+	else if (strcmp(option,"SDL_JOY_0_LEFTUP")==0)
+		return SDLKeyBind(&SDL_JOY_0_LEFTUP,parameters);
+	else if (strcmp(option,"SDL_JOY_0_RIGHTUP")==0)
+		return SDLKeyBind(&SDL_JOY_0_RIGHTUP,parameters);
+	else if (strcmp(option,"SDL_JOY_0_LEFTDOWN")==0)
+		return SDLKeyBind(&SDL_JOY_0_LEFTDOWN,parameters);
+	else if (strcmp(option,"SDL_JOY_0_RIGHTDOWN")==0)
+		return SDLKeyBind(&SDL_JOY_0_RIGHTDOWN,parameters);
+	else if (strcmp(option,"SDL_TRIG_1")==0)
+		return SDLKeyBind(&SDL_TRIG_1,parameters);
+	else if (strcmp(option,"SDL_TRIG_1_B")==0)
+		return SDLKeyBind(&SDL_TRIG_1_B,parameters);
+	else if (strcmp(option,"SDL_JOY_1_LEFT")==0)
+		return SDLKeyBind(&SDL_JOY_1_LEFT,parameters);
+	else if (strcmp(option,"SDL_JOY_1_RIGHT")==0)
+		return SDLKeyBind(&SDL_JOY_1_RIGHT,parameters);
+	else if (strcmp(option,"SDL_JOY_1_DOWN")==0)
+		return SDLKeyBind(&SDL_JOY_1_DOWN,parameters);
+	else if (strcmp(option,"SDL_JOY_1_UP")==0)
+		return SDLKeyBind(&SDL_JOY_1_UP,parameters);
+	else if (strcmp(option,"SDL_JOY_1_LEFTUP")==0)
+		return SDLKeyBind(&SDL_JOY_1_LEFTUP,parameters);
+	else if (strcmp(option,"SDL_JOY_1_RIGHTUP")==0)
+		return SDLKeyBind(&SDL_JOY_1_RIGHTUP,parameters);
+	else if (strcmp(option,"SDL_JOY_1_LEFTDOWN")==0)
+		return SDLKeyBind(&SDL_JOY_1_LEFTDOWN,parameters);
+	else if (strcmp(option,"SDL_JOY_1_RIGHTDOWN")==0)
+		return SDLKeyBind(&SDL_JOY_1_RIGHTDOWN,parameters);
+	else
+		return FALSE;
+}
+
+// Save the keybindings and the keybindapp options to the config file...
+// Authors: B.Schreiber, A.Martinez
+// cleaned up by joy
+void Atari_ConfigSave(FILE *fp)
+{
+	fprintf(fp,"SDL_TRIG_0=%d\n",SDL_TRIG_0);
+	fprintf(fp,"SDL_TRIG_0_B=%d\n",SDL_TRIG_0_B);
+	fprintf(fp,"SDL_JOY_0_LEFT=%d\n",SDL_JOY_0_LEFT);
+	fprintf(fp,"SDL_JOY_0_RIGHT=%d\n",SDL_JOY_0_RIGHT);
+	fprintf(fp,"SDL_JOY_0_UP=%d\n",SDL_JOY_0_UP);
+	fprintf(fp,"SDL_JOY_0_DOWN=%d\n",SDL_JOY_0_DOWN);
+	fprintf(fp,"SDL_JOY_0_LEFTUP=%d\n",SDL_JOY_0_LEFTUP);
+	fprintf(fp,"SDL_JOY_0_RIGHTUP=%d\n",SDL_JOY_0_RIGHTUP);
+	fprintf(fp,"SDL_JOY_0_LEFTDOWN=%d\n",SDL_JOY_0_LEFTDOWN);
+	fprintf(fp,"SDL_JOY_0_RIGHTDOWN=%d\n",SDL_JOY_0_RIGHTDOWN);
+	fprintf(fp,"SDL_TRIG_1=%d\n",SDL_TRIG_1);
+	fprintf(fp,"SDL_TRIG_1_B=%d\n",SDL_TRIG_1_B);
+	fprintf(fp,"SDL_JOY_1_LEFT=%d\n",SDL_JOY_1_LEFT);
+	fprintf(fp,"SDL_JOY_1_RIGHT=%d\n",SDL_JOY_1_RIGHT);
+	fprintf(fp,"SDL_JOY_1_UP=%d\n",SDL_JOY_1_UP);
+	fprintf(fp,"SDL_JOY_1_DOWN=%d\n",SDL_JOY_1_DOWN);
+	fprintf(fp,"SDL_JOY_1_LEFTUP=%d\n",SDL_JOY_1_LEFTUP);
+	fprintf(fp,"SDL_JOY_1_RIGHTUP=%d\n",SDL_JOY_1_RIGHTUP);
+	fprintf(fp,"SDL_JOY_1_LEFTDOWN=%d\n",SDL_JOY_1_LEFTDOWN);
+	fprintf(fp,"SDL_JOY_1_RIGHTDOWN=%d\n",SDL_JOY_1_RIGHTDOWN);
+}
 
 #ifdef SOUND
 int Sound_Update(void)
@@ -311,8 +417,7 @@ void ModeInfo()
 		joyflag = ' ';
 	Aprint("Video Mode: %ix%ix%i", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel);
-	Aprint
-		("[%c] FULLSCREEN  [%c] BW  [%c] WIDTH MODE  [%c] JOYSTICKS SWAPPED",
+	Aprint("[%c] FULLSCREEN  [%c] BW  [%c] WIDTH MODE  [%c] JOYSTICKS SWAPPED",
 		 fullflag, bwflag, width, joyflag);
 }
 
@@ -383,8 +488,7 @@ void SetNewVideoMode(int w, int h, int bpp)
 		Aprint("detected %ibpp", SDL_ATARI_BPP);
 		if ((SDL_ATARI_BPP != 8) && (SDL_ATARI_BPP != 16)
 			&& (SDL_ATARI_BPP != 32)) {
-			Aprint
-				("it's unsupported, so setting 8bit mode (slow conversion)");
+			Aprint("it's unsupported, so setting 8bit mode (slow conversion)");
 			SetVideoMode(w, h, 8);
 		}
 	}
@@ -463,10 +567,9 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 			sscanf(argv[++i], "%d", &dsprate);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-sound           Enable sound\n"
-				       "\t-nosound         Disable sound\n"
-				       "\t-dsprate <rate>  Set DSP rate in Hz\n"
-				      );
+				Aprint("\t-sound           Enable sound");
+				Aprint("\t-nosound         Disable sound");
+				Aprint("\t-dsprate <rate>  Set DSP rate in Hz");
 			}
 			argv[j++] = argv[i];
 		}
@@ -482,7 +585,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 				desired.format = AUDIO_U16;
 		else
 		{
-			Aprint ("unknown sound_bits");
+			Aprint("unknown sound_bits");
 			Atari800_Exit(FALSE);
 			Aflushlog();
 		};	
@@ -502,8 +605,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, sound_flags);
 	}
 	else {
-		Aprint
-			("Audio is off, you can turn it by -sound");
+		Aprint("Audio is off, you can turn it by -sound");
 	}
 }
 #endif
@@ -1028,8 +1130,6 @@ void Atari_Initialise(int *argc, char *argv[])
 	CalcPalette();
 	SetPalette();
 
-	Aprint
-		("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>");
 	Aprint("video initialized");
 
 	if (no_joystick == 0)
@@ -1141,10 +1241,8 @@ void DisplayWithoutScaling(Uint8 * screen, int jumped, int width)
 		}
 		break;
 	default:
-		Aprint("unsupported color depth %i",
-			   MainScreen->format->BitsPerPixel);
-		Aprint
-			("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+		Aprint("unsupported color depth %i", MainScreen->format->BitsPerPixel);
+		Aprint("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
 		Aflushlog();
 		exit(-1);
 	}
@@ -1248,10 +1346,8 @@ void DisplayWithScaling(Uint8 * screen, int jumped, int width)
 
 		break;
 	default:
-		Aprint("unsupported color depth %i",
-			   MainScreen->format->BitsPerPixel);
-		Aprint
-			("please set SDL_ATARI_BPP to 8 or 16 or 32 and recompile atari_sdl");
+		Aprint("unsupported color depth %i", MainScreen->format->BitsPerPixel);
+		Aprint("please set SDL_ATARI_BPP to 8 or 16 or 32 and recompile atari_sdl");
 		Aflushlog();
 		exit(-1);
 	}
@@ -1648,6 +1744,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.39  2004/06/06 12:14:26  joy
+ keyboard joysticks loaded from config file
+
  Revision 1.38  2003/10/25 19:07:48  joy
  keyboard overrun fix in SDL
 
@@ -1731,3 +1830,5 @@ int main(int argc, char **argv)
  dates in changelog fixed (it was December for sure)
 
  */
+
+
