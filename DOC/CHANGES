@@ -73,6 +73,11 @@ o pokeysnd: added exact poly9_lookup and poly17_lookup, removed bit17 (which
 
 o sio: made double density ATR images compatible with SIO2PC
 
+o sio: corrected and added checks if drive number is in range 1-8
+
+o sio: Format Disk rewritten. Now it can resize both ATR and XFD images.
+  The ATR header is being updated. Double density formatting works.
+
 o supercart: added "byte &= 0x0f" to prevent out of bounds accesses
   to regset[]
 
