@@ -18,11 +18,11 @@ UBYTE memory[65536];
 UBYTE attrib[65536];
 static UBYTE under_atarixl_os[16384];
 static UBYTE under_atari_basic[8192];
-static UBYTE atarixe_memory[278528];	/* 16384 (for RAM under BankRAM buffer) + 65536 (for 130XE) * 4 (for Atari320) */
+static UBYTE *atarixe_memory = NULL;
+static ULONG atarixe_memory_size = 0;
 
 int have_basic;	/* Atari BASIC image has been successfully read (Atari 800 only) */
 
-extern int os;
 extern int pil_on;
 
 void add_esc(UWORD address, UBYTE esc_code)
@@ -153,6 +153,35 @@ void PatchOS(void)
 	}
 }
 
+static void AllocXEMemory(void)
+{
+	if (ram_size > 64) {
+		/* don't count 64 KB of base memory */
+		/* count number of 16 KB banks, add 1 for saving base memory 0x4000-0x7fff */
+		ULONG size = (1 + (ram_size - 64) / 16) * 16384;
+		if (size != atarixe_memory_size) {
+			if (atarixe_memory != NULL)
+				free(atarixe_memory);
+			atarixe_memory = malloc(size);
+			if (atarixe_memory == NULL) {
+				Aprint("MEMORY_InitialiseMachine: Out of memory! Switching to 64 KB mode");
+				atarixe_memory_size = 0;
+				ram_size = 64;
+			}
+			else {
+				atarixe_memory_size = size;
+				memset(atarixe_memory, 0, size);
+			}
+		}
+	}
+	/* atarixe_memory not needed, free it */
+	else if (atarixe_memory != NULL) {
+		free(atarixe_memory);
+		atarixe_memory = NULL;
+		atarixe_memory_size = 0;
+	}
+}
+
 void MEMORY_InitialiseMachine(void)
 {
 	switch (machine_type) {
@@ -161,13 +190,12 @@ void MEMORY_InitialiseMachine(void)
 		memcpy(memory + 0xd800, atari_os, 0x2800);
 		PatchOS();
 		SetRAM(0x0000, 0xbfff);
-		if (enable_c000_ram)
+		if (ram_size == 52)
 			SetRAM(0xc000, 0xcfff);
 		else
 			SetROM(0xc000, 0xcfff);
 		SetHARDWARE(0xd000, 0xd7ff);
 		SetROM(0xd800, 0xffff);
-		Coldstart();
 		break;
 	case MACHINE_XLXE:
 		memcpy(memory + 0xc000, atari_os, 0x4000);
@@ -176,7 +204,6 @@ void MEMORY_InitialiseMachine(void)
 		SetROM(0xc000, 0xcfff);
 		SetHARDWARE(0xd000, 0xd7ff);
 		SetROM(0xd800, 0xffff);
-		Coldstart();
 		break;
 	case MACHINE_5200:
 		memset(memory, 0, 0xf800);
@@ -187,9 +214,10 @@ void MEMORY_InitialiseMachine(void)
 		SetHARDWARE(0xd400, 0xd4ff);	/* 5200 ANTIC Chip */
 		SetHARDWARE(0xe800, 0xe8ff);	/* 5200 POKEY Chip */
 		SetHARDWARE(0xeb00, 0xebff);	/* 5200 POKEY Chip */
-		Coldstart();
 		break;
 	}
+	AllocXEMemory();
+	Coldstart();
 }
 
 void ClearRAM(void)
@@ -225,7 +253,7 @@ void MemStateSave( UBYTE SaveVerbose )
 	}
 
 	if (ram_size > 64)
-		SaveUBYTE( &atarixe_memory[0], 278528 );
+		SaveUBYTE( &atarixe_memory[0], atarixe_memory_size );
 
 }
 
@@ -244,8 +272,9 @@ void MemStateRead( UBYTE SaveVerbose )
 		ReadUBYTE( &under_atarixl_os[0], 16384 );
 	}
 
+	AllocXEMemory();
 	if (ram_size > 64)
-		ReadUBYTE( &atarixe_memory[0], 278528 );
+		ReadUBYTE( &atarixe_memory[0], atarixe_memory_size );
 
 }
 
@@ -253,8 +282,6 @@ void CopyFromMem(ATPtr from, UBYTE * to, int size)
 {
 	memcpy(to, from + memory, size);
 }
-
-extern UBYTE attrib[65536];
 
 void CopyToMem(UBYTE * from, ATPtr to, int size)
 {
@@ -453,6 +480,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.11  2001/09/17 18:19:50  fox
+malloc/free atarixe_memory, enable_c000_ram -> ram_size = 52
+
 Revision 1.10  2001/09/17 18:12:08  fox
 machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
 
