@@ -3,15 +3,32 @@
 
 #include "atari.h"
 #include "cassette.h"
+#include "log.h"
 #include "memory.h"
 #include "sio.h"
 
+#define MAX_BLOCKS 2048
+
 static FILE *cassette_file = NULL;
+static int cassette_isCAS;
 UBYTE cassette_buffer[4096];
+static ULONG cassette_block_offset[MAX_BLOCKS];
 
 char cassette_filename[FILENAME_LEN];
+char cassette_description[CASSETTE_DESCRIPTION_MAX];
 int cassette_current_block;
 int cassette_max_block;
+
+int hold_start = 0;
+int press_space = 0;
+
+typedef struct {
+	char identifier[4];
+	UBYTE length_lo;
+	UBYTE length_hi;
+	UBYTE aux_lo;
+	UBYTE aux_hi;
+} CAS_Header;
 
 void CASSETTE_Initialise(int *argc, char *argv[])
 {
@@ -21,26 +38,107 @@ void CASSETTE_Initialise(int *argc, char *argv[])
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-tape") == 0)
 			CASSETTE_Insert(argv[++i]);
-		else
+		else if (strcmp(argv[i], "-boottape") == 0) {
+			CASSETTE_Insert(argv[++i]);
+			hold_start = 1;
+		}
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-tape fnm     Insert cassette image");
+				Aprint("\t-boottape fnm Insert cassette image and boot it");
+			}
 			argv[j++] = argv[i];
+		}
 	}
 
 	*argc = j;
 }
 
+/* Gets information about the cassette image. Returns TRUE if ok.
+   To get information without attaching file, use:
+   char description[CASSETTE_DESCRIPTION_MAX];
+   int last_block;
+   int isCAS;
+   CASSETTE_CheckFile(filename, NULL, description, &last_block, &isCAS);
+*/
+int CASSETTE_CheckFile(char *filename, FILE **fp, char *description, int *last_block, int *isCAS)
+{
+	FILE *f;
+	CAS_Header header;
+	int blocks;
+
+	f = fopen(filename, "rb");
+	if (f == NULL)
+		return FALSE;
+	if (description)
+		memset(description, 0, CASSETTE_DESCRIPTION_MAX);
+	if (fread(&header, 1, 6, f) == 6
+		&& header.identifier[0] == 'F'
+		&& header.identifier[1] == 'U'
+		&& header.identifier[2] == 'J'
+		&& header.identifier[3] == 'I') {
+		/* CAS file */
+		UWORD length;
+		UWORD skip;
+		if (isCAS)
+			*isCAS = TRUE;
+		fseek(f, 2L, SEEK_CUR);	/* ignore the aux bytes */
+
+		/* read or skip file description */
+		skip = length = header.length_lo + (header.length_hi << 8);
+		if (description) {
+			if (length < CASSETTE_DESCRIPTION_MAX)
+				skip = 0;
+			else
+				skip -= CASSETTE_DESCRIPTION_MAX - 1;
+			fread(description, 1, length - skip, f);
+		}
+		fseek(f, skip, SEEK_CUR);
+
+		/* count number of blocks */
+		blocks = 0;
+		do {
+			if (fread(&header, 1, 4, f) != 4)
+				break;
+			if (header.identifier[0] == 'd'
+				&& header.identifier[1] == 'a'
+				&& header.identifier[2] == 't'
+				&& header.identifier[3] == 'a') {
+				blocks++;
+				if (fp)
+					cassette_block_offset[blocks] = ftell(f);
+			}
+			if (fread(&header.length_lo, 1, 2, f) != 2)
+				break;
+			length = header.length_lo + (header.length_hi << 8);
+			/* skip two aux bytes and the data block */
+			fseek(f, 2 + length, SEEK_CUR);
+		} while (blocks < MAX_BLOCKS);
+	}
+	else {
+		/* raw file */
+		ULONG file_length;
+		if (isCAS)
+			*isCAS = FALSE;
+		fseek(f, 0L, SEEK_END);
+		file_length = ftell(f);
+		blocks = (file_length + 127) / 128 + 1;
+	}
+	if (last_block)
+		*last_block = blocks;
+	if (fp)
+		*fp = f;
+	else
+		fclose(f);
+	return TRUE;
+}
+
 int CASSETTE_Insert(char *filename)
 {
-	ULONG file_length;
-	cassette_file = fopen(filename, "rb");
-	if (cassette_file == NULL)
-		return FALSE;
 	strcpy(cassette_filename, filename);
-	fseek(cassette_file, 0L, SEEK_END);
-	file_length = ftell(cassette_file);
-	fseek(cassette_file, 0L, SEEK_SET);
 	cassette_current_block = 1;
-	cassette_max_block = (file_length + 127) / 128 + 1;
-	return TRUE;
+	return CASSETTE_CheckFile(filename, &cassette_file, cassette_description,
+		 &cassette_max_block, &cassette_isCAS);
 }
 
 void CASSETTE_Remove(void)
@@ -50,35 +148,50 @@ void CASSETTE_Remove(void)
 		cassette_file = NULL;
 	}
 	strcpy(cassette_filename, "None");
+	memset(cassette_description, 0, sizeof(cassette_description));
 }
 
-static void ReadRecord(void)
+/* returns block length (with checksum) */
+static UWORD ReadRecord(void)
 {
-	cassette_buffer[0] = 0x55;
-	cassette_buffer[1] = 0x55;
-	if (cassette_current_block == cassette_max_block) {
-		/* EOF record */
-		cassette_buffer[2] = 0xfe;
-		memset(cassette_buffer + 3, 0, 128);
+	UWORD length;
+	if (cassette_isCAS) {
+		CAS_Header header;
+		fseek(cassette_file, cassette_block_offset[cassette_current_block], SEEK_SET);
+		fread(&header.length_lo, 1, 4, cassette_file);
+		length = header.length_lo + (header.length_hi << 8);
+		fread(cassette_buffer, 1, length, cassette_file);
 	}
 	else {
-		int bytes;
-		fseek(cassette_file, (cassette_current_block - 1) * 128, SEEK_SET);
-		bytes = fread(cassette_buffer + 3, 1, 128, cassette_file);
-		if (bytes < 128) {
-			cassette_buffer[2] = 0xfa;	/* non-full record */
-			memset(cassette_buffer + 3 + bytes, 0, 127 - bytes);
-			cassette_buffer[0x82] = bytes;
+		length = 132;
+		cassette_buffer[0] = 0x55;
+		cassette_buffer[1] = 0x55;
+		if (cassette_current_block == cassette_max_block) {
+			/* EOF record */
+			cassette_buffer[2] = 0xfe;
+			memset(cassette_buffer + 3, 0, 128);
 		}
-		else
-			cassette_buffer[2] = 0xfc;	/* full record */
+		else {
+			int bytes;
+			fseek(cassette_file, (cassette_current_block - 1) * 128, SEEK_SET);
+			bytes = fread(cassette_buffer + 3, 1, 128, cassette_file);
+			if (bytes < 128) {
+				cassette_buffer[2] = 0xfa;	/* non-full record */
+				memset(cassette_buffer + 3 + bytes, 0, 127 - bytes);
+				cassette_buffer[0x82] = bytes;
+			}
+			else
+				cassette_buffer[2] = 0xfc;	/* full record */
+		}
+		cassette_buffer[0x83] = SIO_ChkSum(cassette_buffer, 0x84);
 	}
-	cassette_buffer[0x83] = SIO_ChkSum(cassette_buffer, 0x84);
 	cassette_current_block++;
+	return length;
 }
 
 UBYTE CASSETTE_Sio(void)
 {
+	int length = dGetByte(0x0308) + (dGetByte(0x0309) << 8);
 	/* Only 0x52 (Read) command is supported */
 	if (dGetByte(0x302) != 0x52)
 		return 'N';
@@ -86,6 +199,7 @@ UBYTE CASSETTE_Sio(void)
 		return 'E';
 	if (cassette_current_block > cassette_max_block)
 		return 'E';	/* EOF */
-	ReadRecord();
+	if (ReadRecord() - 1 != length)
+		return 'E';
 	return 'C';
 }
