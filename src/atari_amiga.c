@@ -535,9 +535,9 @@ BOOL SetupSound(void)
 				ahi_samplepos = 0;
 
 #ifdef STEREO
-				Pokey_sound_init(FREQ_17_EXACT, ahi_streamfreq, 2);
+				Pokey_sound_init(FREQ_17_EXACT, ahi_streamfreq, 2, 0, 0);
 #else
-				Pokey_sound_init(FREQ_17_EXACT, ahi_streamfreq, 1);
+				Pokey_sound_init(FREQ_17_EXACT, ahi_streamfreq, 1, 0, 0);
 #endif
 
 				if((ahi_streambuf[0] = (STRPTR)AllocVec(ahi_streamlen*3, MEMF_PUBLIC|MEMF_CLEAR)))
