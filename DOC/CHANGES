@@ -1,3 +1,12 @@
+2001/11/14:
+
+o WinCE: Fixed a few keyboard issues. Linear filter applied to screen image
+         in portrait mode (looks much better). <Vasyl>
+
+o new SDL port of Atari800 (atari_sdl.c) by Jacek Poplawski.
+
+----
+
 o the configure process can be silent now - use --enable-FEATURE or --disable-FEATURE
   (e.g. --disable-SOUND). Sent by Dale Scheetz (the original author is Alan Shutko).
 
