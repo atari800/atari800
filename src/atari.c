@@ -670,6 +670,36 @@ void atari_sync(void)
 #endif /* USE_CLOCK */
 }
 
+void Atari800_Frame(int mode)
+{
+#ifdef SOUND
+	Sound_Update();
+#endif
+
+	switch (mode) {
+	case EMULATE_BASIC:
+		draw_display = 0;
+		for (ypos = 0; ypos < max_ypos; ypos++) {
+			GO(LINE_C);
+			xpos -= LINE_C - DMAR;
+		}
+		break;
+	case EMULATE_NO_SCREEN:
+		draw_display = 0;
+		ANTIC_RunDisplayList();
+		break;
+	case EMULATE_FULL:
+		draw_display = 1;
+		ANTIC_RunDisplayList();
+		Update_LED();
+#ifdef SNAILMETER
+		if (!emu_too_fast)
+			ShowRealSpeed(atari_screen);
+#endif
+		break;
+	}
+}
+
 void Atari800_Hardware(void)
 {
 	nframes = 0;
@@ -743,10 +773,6 @@ void Atari800_Hardware(void)
 		}
 #endif	/* !BASIC */
 
-#ifdef SOUND
-		Sound_Update();
-#endif
-
 		/*
 		 * Generate Screen
 		 */
@@ -755,12 +781,7 @@ void Atari800_Hardware(void)
 #ifndef SVGA_SPEEDUP
 		if (++test_val == refresh_rate) {
 #endif
-			ANTIC_RunDisplayList();			/* generate screen */
-			Update_LED();
-#ifdef SNAILMETER
-			if (!emu_too_fast)
-			  ShowRealSpeed(atari_screen);
-#endif
+			Atari800_Frame(EMULATE_FULL);
 #ifndef DONT_SYNC_WITH_HOST
 			atari_sync(); /* here seems to be the best place to sync */
 #endif
@@ -770,13 +791,9 @@ void Atari800_Hardware(void)
 		}
 		else {
 #ifdef VERY_SLOW
-			for (ypos = 0; ypos < max_ypos; ypos++) {
-				GO(LINE_C);
-				xpos -= LINE_C - DMAR;
-			}
+			Atari800_Frame(EMULATE_BASIC);
 #else	/* VERY_SLOW */
-			draw_display=0;
-			ANTIC_RunDisplayList();
+			Atari800_Frame(EMULATE_NO_SCREEN);
 #ifndef DONT_SYNC_WITH_HOST
 			atari_sync();
 #endif
@@ -785,10 +802,7 @@ void Atari800_Hardware(void)
 		}
 #endif	/* !SVGA_SPEEDUP */
 #else	/* !BASIC */
-		for (ypos = 0; ypos < max_ypos; ypos++) {
-			GO(LINE_C);
-			xpos -= LINE_C - DMAR;
-		}
+		Atari800_Frame(EMULATE_BASIC);
 #ifndef	DONT_SYNC_WITH_HOST
 		atari_sync();
 #endif
@@ -933,6 +947,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.20  2001/09/21 16:54:56  fox
+Atari800_Frame()
+
 Revision 1.19  2001/09/17 19:30:27  fox
 shortened state file of 130 XE, enable_c000_ram -> ram_size = 52
 

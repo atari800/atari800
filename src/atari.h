@@ -397,7 +397,10 @@ struct ATR_Header {
 #define MENU_ABOUT		16
 #define MENU_EXIT		17
 
-
+#define EMULATE_BASIC		0	/* no screen, no interrupts */
+#define EMULATE_NO_SCREEN	1	/* don't draw screen */
+#define EMULATE_FULL		2	/* normal mode */
+void Atari800_Frame(int mode);
 
 void EnablePILL(void);
 void Coldstart(void);
@@ -414,6 +417,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.16  2001/09/21 16:54:38  fox
+Atari800_Frame()
+
 Revision 1.15  2001/09/17 18:10:37  fox
 machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
 
