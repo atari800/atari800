@@ -10,6 +10,7 @@
 #include <windows.h>
 #else
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 
 #include "atari.h"
@@ -918,6 +919,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.35  2002/06/20 20:59:37  joy
+missing header file included
+
 Revision 1.34  2002/03/30 06:19:28  vasyl
 Dirty rectangle scheme implementation part 2.
 All video memory accesses everywhere are going through the same macros
