@@ -7,6 +7,9 @@ o ANTIC.C is no longer LONG_ALIGNMENT dependent. Macros READ_U32/WRITE_U32
 
 o WinCE (PDA) port of Atari800 by Vasyl Tsvirkunov.
 
+o a fix in antic.c (lines 408-411) for artefacting on systems requiring
+  aligned memory access. <Vasyl>
+
 -- Piotr:
 
 o support for Express, Diamond, SpartaDOS X, XEGS, Action!, BASIC XL
