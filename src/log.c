@@ -32,18 +32,21 @@ void Aprint(char *format, ... )
 #endif
 }
 
-#ifdef BUFFERED_LOG
 void Aflushlog(void)
 {
+#ifdef BUFFERED_LOG
 	if (*memory_log) {
 		printf(memory_log);
 		*memory_log = 0;
 	}
-}
 #endif
+}
 
 /*
 $Log$
+Revision 1.3  2001/12/04 14:17:52  joy
+Aflushlog() should be always available though it does nothing when BUFFERED_LOG is undefined
+
 Revision 1.2  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
