@@ -25,6 +25,7 @@
 #include "atari.h"
 #include "ui.h"
 #include "rt-config.h"
+#include "screen.h"
 
 #undef FILENAME_SIZE
 #undef UBYTE
@@ -1701,7 +1702,7 @@ int Atari_Configure(char* option, char *parameters)
 {
 	int i;
 
-	if(!strcmp(option,"AMIGA_GFX_DISPLAYID")) sscanf(parameters, "%x",&DisplayID);
+	if(!strcmp(option,"AMIGA_GFX_DISPLAYID")) sscanf(parameters, "%lx",&DisplayID);
 	else if(!strcmp(option, "AMIGA_GFX_DISPLAYTYPE"))
 	{
 		for (i=0;display_text[i];i++)
@@ -1732,7 +1733,7 @@ void Atari_ConfigSave(FILE *fp)
 {
 	int i;
 
-	fprintf(fp,"AMIGA_GFX_DISPLAYID=0x%x\n",DisplayID);
+	fprintf(fp,"AMIGA_GFX_DISPLAYID=0x%lx\n",DisplayID);
 	fprintf(fp,"AMIGA_GFX_DISPLAYTYPE=%s\n",display_text[DisplayType]);
 
 	fputs("AMIGA_SOUND=",fp);
