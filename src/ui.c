@@ -594,7 +594,7 @@ void AtariSettings()
 		{ "SIOP", ITEM_ENABLED|ITEM_CHECK, NULL, "SIO patch (fast disk access):",     NULL, 3 },
 		{ "HDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "H: device (hard disk):",            NULL, 4 },
 		{ "PDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "P: device (printer):",              NULL, 5 },
-		{ "RDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "R: device (network?):",              NULL, 6 },
+		{ "RDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "R: device (Atari850 via net):",              NULL, 6 },
 		MENU_END
 	};
 
@@ -964,6 +964,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.47  2003/08/31 22:00:06  joy
+R: patch named as Atari850 emulation
+
 Revision 1.46  2003/05/28 19:54:58  joy
 R: device support (networking?)
 
