@@ -73,13 +73,20 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/atari800-x11
 /usr/bin/atari800-ncurses
 /usr/bin/atari800-sdl
-/usr/share/man/man1/atari800.1
+/usr/share/man/man1/atari800.1.gz
+/usr/share/doc/atari800/COPYING
+/usr/share/doc/atari800/README.1ST
+/usr/share/doc/atari800/README
+/usr/share/doc/atari800/INSTALL
+/usr/share/doc/atari800/USAGE
+/usr/share/doc/atari800/NEWS
 
 %changelog
 * Thu Sep 04 2003 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Configure options removed.
 SVGAlib target dropped.
 configure uses --prefix and make install uses DESTDIR now.
+More documentation installed.
 * Mon Feb 10 2003 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. STEREO enabled by default. Description updated.
 * Mon Dec 2 2002 Petr Stehlik <pstehlik@sophics.cz>
