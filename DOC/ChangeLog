@@ -1,3 +1,9 @@
+2003-01-27  Piotr Fusik  <fox@scene.pl>
+* antic.c: swapped GTIA and CTIA artifacting modes
+  (swapped by mistake in 0.9.9j)
+* input.c: signal keyboard interrupt only when it's enabled
+  (fixes Atari crash after SHIFT and * in Super Pacman 5200)
+
 2002-12-16  Krzysztof Nikiel  <knik@poczta.onet.pl>
 * colours.c: corrected color/BW conversion (Vasyl was right)
 
