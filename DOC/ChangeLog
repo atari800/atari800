@@ -1,3 +1,53 @@
+** tagged as 1.2.8
+
+2003-01-27  Jason Duerstock  <jason@cluephone.com>
+
+* PAGED_ATTRIB support, removing the attrib[] array and replacing it with 
+  a map of 256 pointers (one for each page of memory.  If the pointer is 
+  NULL, then the  memory[] array will be accessed directly.
+
+  This change is activated through './configure --enable-paged'.
+
+  In my estimation, this should improve the performance of the emulator,
+  removing 64K of cache usage, and short-circuiting some switch {} 
+  statements.
+
+  Note that this will render old saved-state files incompatible.
+
+  There are a few short bits not finished yet, one of which being the
+  "H:" device patch, which is mapped into 0xd1xx (parallel bus space),
+  the other being state saving.
+
+  My idea on how to do this is through the following struct:
+
+	map_save save_map[2] = {
+	        {0,     NULL,   NULL},          /* RAM */
+	        {1,     NULL,   ROM_PutByte}    /* ROM */
+	};
+
+  The readmap and writemap will be compared with the pair of pointers
+  in the struct, and a byte (the first column) will be saved for each
+  page.
+
+  On restore, the byte will be used to reconstruct the readmap and 
+  writemap.
+
+* Several warnings have been cleaned up through inclusion of the proper 
+  headers.
+
+* 'make distclean' has been added, to remove all the files generated
+  from autoconf and ./configure
+
+  In the process, I removed the (admittedly ugly) memory.[ch] redirection
+  to memory-[pd].[ch].  If the general consensus is that PAGED_ATTRIB
+  is a step in the right direction, then I will look at tacking PAGED_MEM
+  back on through PAGED_ATTRIB.
+
+  Any comments, suggestions, critiques, etc are appreciated.
+
+joy> something has to be done regarding the saved-state files. Backward
+     compatibility is a key thing in this area.
+
 ** tagged as 1.2.7
 
 2003-01-27  Mark Grebe  <markgrebe@yahoo.com>
@@ -25,9 +75,9 @@
   that the working directories get reset to the root
   directory.
 
-  joy> Note that it may needs the same patches that were applied
-  to devices.c in version 1.14. But I don't have an Amiga handy
-  so I'll let someone else do it.
+joy> Note that it may needs the same patches that were applied
+     to devices.c in version 1.14. But I don't have an Amiga handy
+     so I'll let someone else do it.
 
 ** tagged as 1.2.6
 

@@ -152,6 +152,7 @@ Preston Crow
 Jason Duerstock <jason@sdi.cluephone.com>
 - R-Time 8 cartridge support (real date and time from host machine)
 - page based memory access
+- PAGED_ATTRIB support
 
 Kuba <kubad@zeus.polsl.gliwice.pl>
 - vertical retrace control in DOS port
@@ -246,7 +247,7 @@ Friedrich Delgado Friedrichs <friedel@nomaden.org>
 
 Mark Grebe <markgrebe@yahoo.com>
 - initial Mac OSX support
-- new complete H: device support
+- new complete H: device support (subdirectories added recently)
 
 Michael Borisov <borata@brain.uni-bremen.de>
 - completely new, high quality Pokey emulation
