@@ -1,9 +1,13 @@
+2004-07-05  Petr Stehlik  <pstehlik@sophics.cz>
+* configure.ac: Ken Ames sent a patch that supports OS/2
+
+
 2004-06-06  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_x11.c: Christian Groessler's patch adds missing keyboard autorepeat
   when in the internal Atari800 debugger.
 
 * prompts.c: fixed RemoveSpaces() - should not remove space from within
-  the string, only leading and tailing space chars should be removed.
+  the string, only leading and trailing space chars should be removed.
 
 * rt-config.c, configure.ac: SUPPORTS_ATARI_CONFIG* now set in configure.ac
   for DOSVGA and SDL. This also fixes joystick definition not loaded in

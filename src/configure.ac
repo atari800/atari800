@@ -15,7 +15,7 @@ dnl   Atari800 is distributed in the hope that it will be useful,
 dnl   but WITHOUT ANY WARRANTY; without even the implied warranty of
 dnl   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 dnl   GNU General Public License for more details.
-dnl  
+dnl
 dnl   You should have received a copy of the GNU General Public License
 dnl   along with Atari800; if not, write to the Free Software
 dnl   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -65,6 +65,9 @@ fi
 dnl Set a8_host
 AC_CANONICAL_HOST
 case $host_os in
+  i386-pc-os2-emx)
+        a8_host="os/2"
+        ;;
   cygwin)
         a8_host="win"
         AC_DEFINE(BACK_SLASH,,[define to use back slash])
@@ -142,10 +145,11 @@ AC_STRUCT_TM
 AC_C_VOLATILE
 
 
-
 dnl Checks for libraries.
+if [[ "$a8_host" != "os2-emx" ]]; then
 AC_CHECK_LIB(z,gzopen,,AC_MSG_ERROR("z compression library not found!"))
 AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
+fi
 
 dnl set OBJS depending on target (and host)
 
@@ -157,7 +161,9 @@ if [[ "$a8_host" == "win" ]]; then
         A8_NEED_LIB(winmm)
         OBJS="win32/atari.ro"
 else
+if [[ "$a8_host" != "os2-emx" ]]; then
         A8_NEED_LIB(m)
+        fi
 fi
 case "$a8_target" in
     basic)
