@@ -54,6 +54,9 @@ static int i_love_bill = TRUE;	/* Perry, why this? */
 #include "diskled.h"
 #include "colours.h"
 #include "binload.h"
+#ifdef SOUND
+#include "sound.h"
+#endif
 
 #ifdef CRASH_MENU
 extern int crash_code;
@@ -897,6 +900,9 @@ void Atari800_Hardware(void)
 			GO(LINE_C);
 			xpos -= LINE_C - DMAR;
 		}
+#ifdef SOUND
+       	Sound_Update();
+#endif
 #endif	/* !BASIC */
 
 		nframes++;
