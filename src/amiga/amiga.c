@@ -23,6 +23,10 @@
 */
 
 #include "atari.h"
+#include "ui.h"
+#include "rt-config.h"
+
+#undef FILENAME_SIZE
 #undef UBYTE
 #undef UWORD
 #undef ULONG
@@ -75,7 +79,6 @@
 #include "rt-config.h"
 
 #include "amiga.h"
-#include "gui.h"
 #include "support.h"
 
 
@@ -111,91 +114,53 @@ struct KeymapIFace *IKeymap;
 struct UtilityIFace *IUtility;
 
 /* Gameport */
-struct InputEvent gameport_data;
-struct MsgPort *gameport_msg_port;
-struct IOStdReq *gameport_io_msg;
-BOOL gameport_error;
+static struct InputEvent gameport_data;
+static struct MsgPort *gameport_msg_port;
+static struct IOStdReq *gameport_io_msg;
+static BOOL gameport_error;
 
 /* Timer */
-struct MsgPort *timer_msg_port;
-struct timerequest *timer_request;
-BOOL timer_error;
+static struct MsgPort *timer_msg_port;
+static struct timerequest *timer_request;
+static BOOL timer_error;
 
 /* Sound */
-struct MsgPort *ahi_msg_port;
-struct AHIRequest *ahi_request;
-struct AHIRequest *ahi_soundreq[2];
-STRPTR ahi_soundpath;
-BPTR ahi_soundhandle;			/* FileHandle for Soundoutput */
-BOOL ahi_error;
-BOOL ahi_current;
+static struct MsgPort *ahi_msg_port;
+static struct AHIRequest *ahi_request;
+static struct AHIRequest *ahi_soundreq[2];
+static STRPTR ahi_soundpath;
+static BPTR ahi_soundhandle;			/* FileHandle for Soundoutput */
+static BOOL ahi_current;
 
-UWORD ahi_fps;                  /* frames per second */
-UWORD ahi_rupf;                 /* real updates per frame */
-BYTE *ahi_streambuf[2];
-ULONG ahi_streamfreq = 44100;   /* playing frequence */
-ULONG ahi_streamlen;
+static UWORD ahi_fps;                  /* frames per second */
+static UWORD ahi_rupf;                 /* real updates per frame */
+static BYTE *ahi_streambuf[2];
+static ULONG ahi_streamfreq = 44100;   /* playing frequence */
+static ULONG ahi_streamlen;
 
-/* MUI GUI */
-#if 0
-Object *app;
-
-Object *settings_wnd;
-Object *settings_model_cycle;
-Object *settings_ram_check;
-Object *settings_patch_check;
-Object *settings_holdoption_check;
-Object *settings_sound_check;
-Object *settings_skipframe_slider;
-Object *settings_screentype_cycle;
-Object *settings_screenmode_text;
-Object *settings_screenmode_popup;
-Object *settings_best_check;
-Object *settings_overlay_check;
-Object *settings_scalable_check;
-Object *settings_save_button;
-Object *settings_use_button;
-Object *settings_cancel_button;
-Object *settings_osa_string;
-Object *settings_osb_string;
-Object *settings_xlxe_string;
-Object *settings_basic_string;
-Object *settings_cartriges_string;
-Object *settings_disks_string;
-Object *settings_exes_string;
-Object *settings_states_string;
-		
-struct Hook settings_screentype_hook;
-struct Hook settings_screenmode_starthook;
-struct Hook settings_screenmode_stophook;
-#endif
 /* Emulation */
-
 static int menu_consol;
 static int keyboard_consol;
 static int trig0;
 static int stick0;
 
-static LONG ScreenType;
 static LONG Overlay;
 static LONG Scalable;
-static LONG UseBestID=TRUE;
-static LONG SoundEnabled=TRUE;
+static LONG UseCustomScreen = TRUE;
+static LONG UseBestID = TRUE;
+static LONG SoundEnabled = TRUE;
 static LONG ShowFPS;
-static ULONG DisplayID=INVALID_ID;
-static STRPTR DiskPath;
-static LONG DiskPathSet;
+static ULONG DisplayID = INVALID_ID;
 
-struct Screen *ScreenMain;
-APTR VisualInfoMain;
-struct Window *WindowMain = NULL;
-struct Menu *MenuMain;
-APTR VLHandle;
-BOOL VLAttached;
+/* Emulator GUI */
+static LONG ScreenIsCustom;
+static struct Screen *ScreenMain;
+static APTR VisualInfoMain;
+static struct Window *WindowMain = NULL;
+static struct Menu *MenuMain;
 
-UWORD *colortable15;
-UBYTE *colortable8;
-UBYTE *tempscreendata;
+static UBYTE colortable8[256];
+static UBYTE *tempscreendata;
 
 struct FileRequester *DiskFileReq;
 struct FileRequester *CartFileReq;
@@ -210,8 +175,7 @@ static int PaddlePos;
 #define controller_Paddle 2
 
 /**************************************************************************
- usleep() function. (because select() is too slow and not needed to be
- emulated for the client). Complete.
+ usleep() function
 **************************************************************************/
 void usleep(unsigned long usec)
 {
@@ -293,18 +257,12 @@ static struct NewMenu MenuEntries[] =
 	{NM_ITEM, "Reset", "F5", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_RESET},
 	{NM_ITEM, "Coldstart", "Shift F5", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_COLDSTART},
 	{NM_TITLE, "Settings", NULL, 0, 0L, (APTR)MEN_SETTINGS},
+	{NM_ITEM, "Use Custom Screen?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_SETTINGS_CUSTOMSCREEN},
 	{NM_ITEM, "Show Framerate?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_SETTINGS_FRAMERATE},
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Edit Settings...", NULL, 0, 0L, NULL},
-	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Save Settings", NULL, 0, 0L, NULL},
+	{NM_ITEM, "Save Settings", NULL, 0, 0L, (APTR)MEN_SETTINGS_SAVE},
 	{NM_END, NULL, NULL, 0, 0L, NULL}
 };
-
-#define GUI_SAVE		1
-#define GUI_USE		2
-#define GUI_CANCEL	MUIV_Application_ReturnID_Quit
-
 
 /**************************************************************************
  Close all previously opened libraries
@@ -647,365 +605,6 @@ BOOL SetupTimer(void)
 	return FALSE;
 }
 
-#if 0
-ASM LONG Settings_ScreenType_Func(REG(a1, ULONG *active))
-{
-	if(*active)
-	{
-		set(settings_screenmode_popup,MUIA_Disabled, TRUE);
-		set(settings_best_check,MUIA_Disabled, TRUE);
-		set(settings_overlay_check,MUIA_Disabled, FALSE);
-		set(settings_scalable_check,MUIA_Disabled, FALSE);
-	}	else
-	{
-		set(settings_screenmode_popup,MUIA_Disabled, getbool(settings_best_check));
-		set(settings_best_check,MUIA_Disabled, FALSE);
-		set(settings_overlay_check,MUIA_Disabled, TRUE);
-		set(settings_scalable_check,MUIA_Disabled, TRUE);
-	}
-	return 0;
-}
-
-ASM ULONG Settings_ScreenMode_StartFunc(REG(a0, struct Hook *hook), REG(a2, Object *popasl), REG(a1, struct TagItem *taglist))
-{
-	static struct TagItem tl[]=
-	{
-		ASLSM_InitialDisplayID,0,
-		ASLSM_InitialDisplayDepth,8,
-		ASLSM_MinDepth,8,
-		ASLSM_MaxDepth,8,
-		TAG_DONE
-	};
-
-	LONG	i;
-
-	for(i = 0; taglist[i].ti_Tag != TAG_DONE; i++);
-
-	taglist[i].ti_Tag	= TAG_MORE;
-	taglist[i].ti_Data	= (ULONG)tl;
-
-	tl[0].ti_Data = DisplayID;
-
-	return(TRUE);
-}
-
-ASM ULONG Settings_ScreenMode_StopFunc(REG(a0, struct Hook *hook), REG(a2, Object *popasl), REG(a1, struct ScreenModeRequester *smreq))
-{
-	DisplayID = smreq->sm_DisplayID;
-	set(settings_screenmode_text, MUIA_Text_Contents,GetDisplayName(DisplayID));
-
-	return(0);
-}
-
-/**************************************************************************
- Free Start GUI
-**************************************************************************/
-VOID FreeMUI(void)
-{
-	if(app) MUI_DisposeObject(app);
-	if(MUIMasterBase) CloseLibraryInterface(MUIMasterBase,IMUIMaster);
-	app = NULL;
-	MUIMasterBase = NULL;
-}
-
-/**************************************************************************
- Setup Start GUI
-**************************************************************************/
-BOOL SetupMUI(void)
-{
-	static STRPTR SettingsPages[] = {"General","Paths","Graphics","Sound",NULL};
-	static STRPTR ScreenTypeEntries[] = {"Custom","Workbench",NULL};
-	static STRPTR AtariTypesEntries[] = {"Atari OS/A","Atari OS/B","Atari XL/XE","Atari 5200",NULL};
-
-	if((MUIMasterBase = OpenLibraryInterface(MUIMASTER_NAME,MUIMASTER_VMIN,&IMUIMaster)))
-	{
-		settings_screenmode_starthook.h_Entry = (HOOKFUNC)Settings_ScreenMode_StartFunc;
-		settings_screenmode_stophook.h_Entry = (HOOKFUNC)Settings_ScreenMode_StopFunc;
-
-		app = ApplicationObject,
-				MUIA_Application_Title      , "Atari800",
-				MUIA_Application_Version    , "$VER: Atari800 1.1 (1.6.2004)",
-				MUIA_Application_Copyright  , "©2000 by Sebastian Bauer",
-				MUIA_Application_Author     , "Sebastian Bauer",
-				MUIA_Application_Description, "Emulates an Atari 8 bit Computer",
-				MUIA_Application_Base       , "Atari800",
-
-				SubWindow, settings_wnd = WindowObject,
-						MUIA_Window_Title, "Atari 800 - Settings",
-						MUIA_Window_ID, 'SETT',
-						MUIA_Window_ScreenTitle, "Atari 800 - ©1999 by Sebastian Bauer",
-
-						WindowContents, VGroup,
-								Child, RegisterGroup(SettingsPages),
-										MUIA_Register_Frame,TRUE,
-
-										Child, VGroup,
-												Child, HGroup,
-														Child, MakeLabel("Model"),
-														Child, settings_model_cycle = MakeCycle(AtariTypesEntries),
-												End,
-
-												Child, ColGroup(3),
-														Child, HSpace(0),
-														Child, MakeLabel1("Enable RAM between $C000 and $CFFF"),
-														Child, settings_ram_check = MakeCheck(TRUE),
-
-														Child, HSpace(0),
-														Child, MakeLabel1("Patch OS for faster IO"),
-														Child, settings_patch_check = MakeCheck(TRUE),
-
-														Child, HSpace(0),
-														Child, MakeLabel1("Hold Option while booting"),
-														Child, settings_holdoption_check = MakeCheck(TRUE), 
-														End,
-												End,
-
-										Child, VGroup,
-												Child, ColGroup(2),
-
-														Child, MakeLabel("Atari 800 OS/A"),
-														Child, PopaslObject,
-																MUIA_Popstring_String, settings_osa_string = MakeString("",256),
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopFile),
-																End,
-		
-														Child, MakeLabel("Atari 800 OS/B"),
-														Child, PopaslObject,
-																MUIA_Popstring_String, settings_osb_string = MakeString("",256),
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopFile),
-																End,
-		
-														Child, MakeLabel("Atari 800XL"),
-														Child, PopaslObject,
-																MUIA_Popstring_String, settings_xlxe_string = MakeString("",256),
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopFile),
-																End,
-		
-														Child, MakeLabel("Atari Basic"),
-														Child, PopaslObject,
-																MUIA_Popstring_String, settings_basic_string = MakeString("",256),
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopFile),
-																End,
-														End,
-												Child, VSpace(2),
-												Child, ColGroup(2),
-
-														Child, MakeLabel("Cartriges"),
-														Child, PopaslObject,
-																MUIA_Popstring_String, settings_cartriges_string = MakeString("",256),
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopDrawer),
-																ASLFR_DrawersOnly, TRUE,
-																End,
-
-														Child, MakeLabel("Disks"),
-														Child, PopaslObject,
-																MUIA_Popstring_String, settings_disks_string = MakeString("",256),
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopDrawer),
-																ASLFR_DrawersOnly, TRUE,
-																End,
-
-														Child, MakeLabel("EXEs"),
-														Child, PopaslObject,
-																MUIA_Popstring_String, settings_exes_string = MakeString("",256),
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopDrawer),
-																ASLFR_DrawersOnly, TRUE,
-																End,
-
-														Child, MakeLabel("States"),
-														Child, PopaslObject,
-																MUIA_Popstring_String, settings_states_string = MakeString("",256),
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopDrawer),
-																ASLFR_DrawersOnly, TRUE,
-																End,
-														End,
-												End,
-
-										Child, VGroup,
-												Child, ColGroup(2),
-														Child, MakeLabel("Frames to Skip"),
-														Child, settings_skipframe_slider = SliderObject,
-																MUIA_Numeric_Max,7,
-																End,
-														End,
-
-												Child, ColGroup(2),
-														Child, MakeLabel("Screentype"),
-														Child, settings_screentype_cycle = MakeCycle(ScreenTypeEntries),
-		
-														Child, MakeLabel("Screenmode"),
-														Child, settings_screenmode_popup = PopaslObject,
-																MUIA_Popstring_String, settings_screenmode_text = TextObject,
-																		TextFrame,
-																		MUIA_Text_SetMin, FALSE,
-																		End,
-																MUIA_Popstring_Button, MakeImageButton(MUII_PopUp),
-																MUIA_Popasl_Type, ASL_ScreenModeRequest,
-																MUIA_Popasl_StartHook,	(ULONG)&settings_screenmode_starthook,
-																MUIA_Popasl_StopHook,	(ULONG)&settings_screenmode_stophook,
-																End,
-														End,
-
-												Child, ColGroup(3),
-														Child, HSpace(0),
-														Child, MakeLabel1("Use best screenmode"),
-														Child, settings_best_check = MakeCheck(FALSE),
-
-														Child, HSpace(0),
-														Child, MakeLabel1("Use Overlay if possible"),
-														Child, settings_overlay_check = MakeCheck(FALSE),
-
-														Child, HSpace(0),
-														Child, MakeLabel1("Scalable Window"),
-														Child, settings_scalable_check = MakeCheck(FALSE),
-														End,
-												End,
-
-										Child, ColGroup(2),
-												Child, MakeLabel1("Enable Sound"),
-												Child, settings_sound_check = MakeCheck(TRUE),
-												End,
-
-										End,
-								Child, HGroup,
-										Child, settings_save_button = MakeButton("Save"),
-										Child, settings_use_button = MakeButton("Use"),
-										Child, settings_cancel_button = MakeButton("Cancel"),
-										End,
-								End,
-						End,
-				End;
-
-		if(app)
-		{
-			settings_screentype_hook.h_Entry = (HOOKFUNC)Settings_ScreenType_Func;
-
-			DoMethod(settings_screentype_cycle, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, settings_screentype_cycle, 3, MUIM_CallHook,&settings_screentype_hook,MUIV_TriggerValue);
-			DoMethod(settings_best_check, MUIM_Notify, MUIA_Selected, MUIV_EveryTime, settings_screenmode_popup, 3, MUIM_Set, MUIA_Disabled, MUIV_TriggerValue);
-
-			DoMethod(settings_wnd,MUIM_Notify,MUIA_Window_CloseRequest,TRUE, app,2,MUIM_Application_ReturnID,MUIV_Application_ReturnID_Quit);
-
-			DoMethod(settings_save_button,MUIM_Notify,MUIA_Pressed, FALSE, app,2,MUIM_Application_ReturnID,GUI_SAVE);
-			DoMethod(settings_use_button,MUIM_Notify,MUIA_Pressed, FALSE, app,2,MUIM_Application_ReturnID,GUI_USE);
-			DoMethod(settings_cancel_button,MUIM_Notify,MUIA_Pressed, FALSE, app,2,MUIM_Application_ReturnID,GUI_CANCEL);
-
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-/**************************************************************************
- Set gadgets to the current values
-**************************************************************************/
-VOID SetGadgets(void)
-{
-//	extern Machine machine;
-//	extern int hold_option;
-//	extern int enable_sio_patch;
-//	extern int enable_c000_ram;
-
-	LONG modelAct=0;
-
-	setcycle(settings_screentype_cycle,1);
-	setcycle(settings_screentype_cycle,0);
-
-	set(settings_model_cycle, MUIA_Cycle_Active, machine_type);
-//	set(settings_holdoption_check, MUIA_Selected, hold_option);
-//	set(settings_patch_check, MUIA_Selected, enable_sio_patch);
-//	set(settings_ram_check, MUIA_Selected, enable_c000_ram);
-
-	if (DisplayID == INVALID_ID) DisplayID = GetBestID(ATARI_WIDTH-64,ATARI_HEIGHT,8);
-
-	set(settings_sound_check, MUIA_Selected, SoundEnabled);
-	set(settings_best_check, MUIA_Selected, UseBestID);
-	set(settings_screenmode_text, MUIA_Text_Contents,GetDisplayName(DisplayID));
-
-	setstring(settings_osa_string,atari_osa_filename);
-	setstring(settings_osb_string,atari_osb_filename);
-	setstring(settings_xlxe_string,atari_xlxe_filename);
-	setstring(settings_basic_string,atari_basic_filename);
-	setstring(settings_cartriges_string,atari_rom_dir);
-	setstring(settings_disks_string,atari_disk_dirs[0]);
-	setstring(settings_exes_string,atari_exe_dir);
-	setstring(settings_states_string,atari_state_dir);
-}
-
-/**************************************************************************
- Set the values
-**************************************************************************/
-VOID SetAtari(void)
-{
-#if 0
-	IMPORT Machine machine;
-	IMPORT int hold_option;
-	IMPORT int enable_sio_patch;
-	IMPORT int enable_c000_ram;
-	int i;
-
-	switch(xget(settings_model_cycle, MUIA_Cycle_Active))
-	{
-		case	0:
-					machine = Atari;
-					break;
-
-		case	1:
-					machine = Atari;
-					break;
-
-		case	2:
-					machine = AtariXL;
-					break;
-
-		case	3:
-					machine = AtariXE;
-					break;
-
-		case	4:
-					machine = Atari320XE;
-					break;
-
-		case	5:
-					machine = Atari320XE;
-					break;
-
-		case	6:
-					machine = Atari5200;
-					break;
-	}
-
-	enable_c000_ram = getbool(settings_ram_check);
-	hold_option = getbool(settings_holdoption_check);
-	enable_sio_patch = getbool(settings_patch_check);
-
-  refresh_rate = xget(settings_skipframe_slider, MUIA_Numeric_Value) + 1;
-#endif
-	if( !xget(settings_screentype_cycle,MUIA_Cycle_Active))
-	{
-		ScreenType = CUSTOMSCREEN;
-	}	else ScreenType = WBENCHSCREEN;
-
-	Overlay = getbool(settings_overlay_check);
-	Scalable = getbool(settings_scalable_check);
-	UseBestID = getbool(settings_best_check);
-	SoundEnabled = getbool(settings_sound_check);
-#if 0
-
-	strcpy(atari_osa_filename,getstr(settings_osa_string));
-	strcpy(atari_osb_filename,getstr(settings_osb_string));
-	strcpy(atari_xlxe_filename,getstr(settings_xlxe_string));
-	strcpy(atari_basic_filename,getstr(settings_basic_string));
-	strcpy(atari_rom_dir,getstr(settings_cartriges_string));
-	strcpy(atari_exe_dir,getstr(settings_exes_string));
-	strcpy(atari_state_dir,getstr(settings_states_string));
-
-	if(DiskPath) FreeVec(DiskPath);
-	DiskPath = StrCopy(getstr(settings_disks_string));
-  strcpy(atari_disk_dirs[0], DiskPath);
-#endif
-}
-#endif
-
-
 BOOL IsSoundFileOpen(void)
 {
 	return FALSE;
@@ -1022,60 +621,6 @@ void OpenSoundFile(void)
 void CloseSoundFile(void)
 {
 }
-
-
-
-#if 0
-
-/**************************************************************************
- Configure the Atari800 Emulator
- This opens the GUI and waits until the new settings are accepted
- or canceled
-**************************************************************************/
-VOID Configure(void)
-{
-	ULONG sigs=0;
-	ULONG retID=GUI_CANCEL;
-	BOOL ready = FALSE;
-
-	SetGadgets();
-	set(settings_wnd, MUIA_Window_Open, TRUE);
-
-	while (ready==FALSE)
-	{
-		switch(retID = DoMethod(app,MUIM_Application_NewInput,&sigs))
-		{
-			case	GUI_CANCEL:
-						ready = TRUE;
-						break;
-
-			case	GUI_USE:
-						ready = TRUE;
-						break;
-
-			case	GUI_SAVE:
-						ready = TRUE;
-						break;
-		}
-
-		if(!ready)
-		{
-			sigs = Wait(sigs | SIGBREAKF_CTRL_C );
-			if(sigs & SIGBREAKF_CTRL_C)
-			{
-				ready = TRUE;
-				break;
-			}
-		}
-	}
-
-	SetAtari();
-
-	set(settings_wnd, MUIA_Window_Open, FALSE);
-
-	if(retID == GUI_SAVE) RtConfigSave();
-}
-#endif
 
 /**************************************************************************
  Record Sound menu entry selected
@@ -1125,17 +670,17 @@ int HandleMenu(UWORD code)
 			switch(udata)
 			{
 				case	MEN_PROJECT_ABOUT:
-              {
-                struct EasyStruct easy;
-                easy.es_StructSize = sizeof(struct EasyStruct);
-                easy.es_Flags = 0;
-                easy.es_Title = "Atari800";
-                easy.es_TextFormat = "Atari800 version 1.3.2\n\nCopyright (C) 2000-2004\nAtari800 development team\nAmiga port done by Sebastian Bauer";
-                easy.es_GadgetFormat = "Ok";
-
-                EasyRequestArgs( WindowMain, &easy, NULL, NULL );
-              }
-							break;
+						{
+							struct EasyStruct easy;
+							easy.es_StructSize = sizeof(struct EasyStruct);
+							easy.es_Flags = 0;
+							easy.es_Title = "Atari800";
+							easy.es_TextFormat = ATARI_TITLE "\n\nCopyright (C) 2000-2004\nAtari800 development team\nAmiga port done by Sebastian Bauer";
+							easy.es_GadgetFormat = "Ok";
+							
+							EasyRequestArgs( WindowMain, &easy, NULL, NULL );
+						}
+						break;
 
 				case	MEN_PROJECT_LOADSTATE:
 							if(AslRequestTags(StateFileReq,
@@ -1197,13 +742,7 @@ int HandleMenu(UWORD code)
 				case	MEN_PROJECT_SOUNDPATH: Project_SelectSoundPath(); break;
 				case	MEN_PROJECT_ICONIFY: Iconify(); return -1;
 				case	MEN_PROJECT_HELP: break;
-
-				case	MEN_PROJECT_QUIT:
-							if(DisplayYesNoWindow())
-							{
-								keycode = AKEY_EXIT;
-							}
-							break;
+				case	MEN_PROJECT_QUIT: keycode = AKEY_EXIT; break;
 
 				case	MEN_SYSTEM_BOOT:
 							if(InsertDisk (1))
@@ -1368,13 +907,17 @@ int HandleMenu(UWORD code)
 							menu_consol = 7;
 							break;
 
-				case	MEN_SETTINGS_FRAMERATE:
-							{
-								if (mi->Flags & CHECKED) ShowFPS = TRUE;
-								else ShowFPS = FALSE;
-							}
-							break;
+				case	MEN_SETTINGS_CUSTOMSCREEN:
+						UseCustomScreen = !!(mi->Flags & CHECKED);
+						break;
 
+				case	MEN_SETTINGS_FRAMERATE:
+						ShowFPS = !!(mi->Flags & CHECKED);
+						break;
+
+				case	MEN_SETTINGS_SAVE:
+						RtConfigSave();
+						break;
 			}
 
 /*	if (key_buf[0x3c])	// F2
@@ -1434,194 +977,89 @@ int HandleVanillakey(int code)
 								keycode = AKEY_CTRL_M;
 								break;
 		*/
-		case	0x0e: keycode = AKEY_CTRL_N; break;
-		case	0x0f: keycode = AKEY_CTRL_O; break;
-		case	0x10: keycode = AKEY_CTRL_P; break;
-		case	0x11: keycode = AKEY_CTRL_Q; break;
-		case	0x12: keycode = AKEY_CTRL_R; break;
-		case	0x13: keycode = AKEY_CTRL_S; break;
-		case	0x14: keycode = AKEY_CTRL_T; break;
-		case	0x15: keycode = AKEY_CTRL_U; break;
-		case	0x16: keycode = AKEY_CTRL_V; break;
-		case	0x17: keycode = AKEY_CTRL_W; break;
-		case	0x18: keycode = AKEY_CTRL_X; break;
-		case	0x19: keycode = AKEY_CTRL_Y; break;
-		case	0x1a: keycode = AKEY_CTRL_Z; break;
-		case	8:    keycode = AKEY_BACKSPACE; break;
-		case	13:   keycode = AKEY_RETURN; break;
-		case	0x1b: keycode = AKEY_ESCAPE; break;
-		case	'0':  keycode = AKEY_0; break;
-		case	'1':  keycode = AKEY_1; break;
-		case	'2':  keycode = AKEY_2; break;
-		case	'3':  keycode = AKEY_3; break;
-		case	'4':  keycode = AKEY_4; break;
-		case	'5':  keycode = AKEY_5; break;
-		case	'6':  keycode = AKEY_6; break;
-		case	'7':  keycode = AKEY_7; break;
-		case	'8':  keycode = AKEY_8; break;
-		case	'9':  keycode = AKEY_9; break;
-		case	'A': case	'a': keycode = AKEY_a; break;
-		case	'B' : case 'b' : keycode = AKEY_b; break;
-		case	'C' : case 'c' : keycode = AKEY_c; break;
-		case	'D' : case 'd' : keycode = AKEY_d; break;
-		case	'E' : case 'e' : keycode = AKEY_e; break;
-		case	'F' : case 'f' : keycode = AKEY_f; break;
-		case	'G' : case 'g' :
-					keycode = AKEY_g;
-					break;
-		case	'H' : case 'h' :
-					keycode = AKEY_h;
-					break;
-		case	'I' : case 'i' :
-					keycode = AKEY_i;
-					break;
-		case	'J' : case 'j' :
-					keycode = AKEY_j;
-					break;
-		case	'K' : case 'k' :
-					keycode = AKEY_k;
-					break;
-		case	'L' : case 'l' :
-					keycode = AKEY_l;
-					break;
-		case	'M' : case 'm' :
-					keycode = AKEY_m;
-					break;
-		case	'N' : case 'n' :
-					keycode = AKEY_n;
-					break;
-		case 'O' : case 'o' :
-					keycode = AKEY_o;
-					break;
-		case 'P' : case 'p' :
-					keycode = AKEY_p;
-					break;
-		case 'Q' : case 'q' :
-					keycode = AKEY_q;
-					break;
-		case 'R' : case 'r' :
-					keycode = AKEY_r;
-					break;
-		case 'S' : case 's' :
-					keycode = AKEY_s;
-					break;
-		case 'T' : case 't' :
-					keycode = AKEY_t;
-					break;
-		case 'U' : case 'u' :
-					keycode = AKEY_u;
-					break;
-		case 'V' : case 'v' :
-					keycode = AKEY_v;
-					break;
-		case 'W' : case 'w' :
-					keycode = AKEY_w;
-					break;
-		case 'X' : case 'x' :
-					keycode = AKEY_x;
-					break;
-		case 'Y' : case 'y' :
-					keycode = AKEY_y;
-					break;
-		case 'Z' : case 'z' :
-					keycode = AKEY_z;
-					break;
-		case ' ' :
-					keycode = AKEY_SPACE;
-					break;
-		case '\t' :
-					keycode = AKEY_TAB;
-					break;
-		case '!' :
-					keycode = AKEY_EXCLAMATION;
-					break;
-		case '"' :
-					keycode = AKEY_DBLQUOTE;
-					break;
-		case '#' :
-					keycode = AKEY_HASH;
-					break;
-		case '$' :
-					keycode = AKEY_DOLLAR;
-					break;
-		case '%' :
-					keycode = AKEY_PERCENT;
-					break;
-		case '&' :
-					keycode = AKEY_AMPERSAND;
-					break;
-		case '\'' :
-					keycode = AKEY_QUOTE;
-					break;
-		case '@' :
-					keycode = AKEY_AT;
-					break;
-		case '(' :
-					keycode = AKEY_PARENLEFT;
-					break;
-		case ')' :
-					keycode = AKEY_PARENRIGHT;
-					break;
-		case '<' :
-					keycode = AKEY_LESS;
-					break;
-		case '>' :
-					keycode = AKEY_GREATER;
-					break;
-		case '=' :
-					keycode = AKEY_EQUAL;
-					break;
-		case '?' :
-					keycode = AKEY_QUESTION;
-					break;
-		case '-' :
-					keycode = AKEY_MINUS;
-					break;
-		case '+' :
-					keycode = AKEY_PLUS;
-					break;
-		case	'*' :
-					keycode = AKEY_ASTERISK;
-					break;
-		case	'/' :
-					keycode = AKEY_SLASH;
-					break;
-		case	':' :
-					keycode = AKEY_COLON;
-					break;
-		case	';' :
-					keycode = AKEY_SEMICOLON;
-					break;
-		case	',' :
-					keycode = AKEY_COMMA;
-					break;
-		case	'.' :
-					keycode = AKEY_FULLSTOP;
-					break;
-		case	'_' :
-					keycode = AKEY_UNDERSCORE;
-					break;
-		case	'[' :
-					keycode = AKEY_BRACKETLEFT;
-					break;
-		case	']' :
-					keycode = AKEY_BRACKETRIGHT;
-					break;
-		case	'^' :
-					keycode = AKEY_CIRCUMFLEX;
-					break;
-
-		case	'\\' :
-					keycode = AKEY_BACKSLASH;
-					break;
-
-		case	'|' :
-					keycode = AKEY_BAR;
-					break;
-
-		default :
-					keycode = AKEY_NONE;
-					break;
+		case 0x0e: keycode = AKEY_CTRL_N; break;
+		case 0x0f: keycode = AKEY_CTRL_O; break;
+		case 0x10: keycode = AKEY_CTRL_P; break;
+		case 0x11: keycode = AKEY_CTRL_Q; break;
+		case 0x12: keycode = AKEY_CTRL_R; break;
+		case 0x13: keycode = AKEY_CTRL_S; break;
+		case 0x14: keycode = AKEY_CTRL_T; break;
+		case 0x15: keycode = AKEY_CTRL_U; break;
+		case 0x16: keycode = AKEY_CTRL_V; break;
+		case 0x17: keycode = AKEY_CTRL_W; break;
+		case 0x18: keycode = AKEY_CTRL_X; break;
+		case 0x19: keycode = AKEY_CTRL_Y; break;
+		case 0x1a: keycode = AKEY_CTRL_Z; break;
+		case 8:    keycode = AKEY_BACKSPACE; break;
+		case 13:   keycode = AKEY_RETURN; break;
+		case 0x1b: keycode = AKEY_ESCAPE; break;
+		case '0':  keycode = AKEY_0; break;
+		case '1':  keycode = AKEY_1; break;
+		case '2':  keycode = AKEY_2; break;
+		case '3':  keycode = AKEY_3; break;
+		case '4':  keycode = AKEY_4; break;
+		case '5':  keycode = AKEY_5; break;
+		case '6':  keycode = AKEY_6; break;
+		case '7':  keycode = AKEY_7; break;
+		case '8':  keycode = AKEY_8; break;
+		case '9':  keycode = AKEY_9; break;
+		case 'A': case	'a': keycode = AKEY_a; break;
+		case 'B' : case 'b' : keycode = AKEY_b; break;
+		case 'C' : case 'c' : keycode = AKEY_c; break;
+		case 'D' : case 'd' : keycode = AKEY_d; break;
+		case 'E' : case 'e' : keycode = AKEY_e; break;
+		case 'F' : case 'f' : keycode = AKEY_f; break;
+		case 'G' : case 'g' : keycode = AKEY_g; break;
+		case 'H' : case 'h' : keycode = AKEY_h; break;
+		case 'I' : case 'i' : keycode = AKEY_i; break;
+		case 'J' : case 'j' : keycode = AKEY_j; break;
+		case 'K' : case 'k' : keycode = AKEY_k; break;
+		case 'L' : case 'l' : keycode = AKEY_l; break;
+		case 'M' : case 'm' : keycode = AKEY_m; break;
+		case 'N' : case 'n' : keycode = AKEY_n; break;
+		case 'O' : case 'o' : keycode = AKEY_o; break;
+		case 'P' : case 'p' : keycode = AKEY_p; break;
+		case 'Q' : case 'q' : keycode = AKEY_q; break;
+		case 'R' : case 'r' : keycode = AKEY_r; break;
+		case 'S' : case 's' : keycode = AKEY_s; break;
+		case 'T' : case 't' : keycode = AKEY_t; break;
+		case 'U' : case 'u' : keycode = AKEY_u; break;
+		case 'V' : case 'v' : keycode = AKEY_v; break;
+		case 'W' : case 'w' : keycode = AKEY_w; break;
+		case 'X' : case 'x' : keycode = AKEY_x; break;
+		case 'Y' : case 'y' : keycode = AKEY_y; break;
+		case 'Z' : case 'z' : keycode = AKEY_z; break;
+		case ' ' : keycode = AKEY_SPACE; break;
+		case '\t' : keycode = AKEY_TAB; break;
+		case '!' : keycode = AKEY_EXCLAMATION; break;
+		case '"' : keycode = AKEY_DBLQUOTE; break;
+		case '#' : keycode = AKEY_HASH; break;
+		case '$' : keycode = AKEY_DOLLAR; break;
+		case '%' : keycode = AKEY_PERCENT; break;
+		case '&' : keycode = AKEY_AMPERSAND; break;
+		case '\'' : keycode = AKEY_QUOTE; break;
+		case '@' : keycode = AKEY_AT; break;
+		case '(' : keycode = AKEY_PARENLEFT; break;
+		case ')' : keycode = AKEY_PARENRIGHT; break;
+		case '<' : keycode = AKEY_LESS; break;
+		case '>' : keycode = AKEY_GREATER; break;
+		case '=' : keycode = AKEY_EQUAL; break;
+		case '?' : keycode = AKEY_QUESTION; break;
+		case '-' : keycode = AKEY_MINUS; break;
+		case '+' : keycode = AKEY_PLUS; break;
+		case '*' : keycode = AKEY_ASTERISK; break;
+		case '/' : keycode = AKEY_SLASH; break;
+		case ':' : keycode = AKEY_COLON; break;
+		case ';' : keycode = AKEY_SEMICOLON; break;
+		case ',' : keycode = AKEY_COMMA; break;
+		case '.' : keycode = AKEY_FULLSTOP; break;
+		case '_' : keycode = AKEY_UNDERSCORE; break;
+		case '[' : keycode = AKEY_BRACKETLEFT; break;
+		case ']' : keycode = AKEY_BRACKETRIGHT; 	break;
+		case '^' : keycode = AKEY_CIRCUMFLEX; break;
+ 		case '\\' : keycode = AKEY_BACKSLASH; break;
+ 		case '|' : keycode = AKEY_BAR; break;
+		default : keycode = AKEY_NONE; break;
 	}
 
 	return keycode;
@@ -1746,12 +1184,17 @@ void Sound_Update(void)
 **************************************************************************/
 void Atari_ConfigInit(void)
 {
+	int i;
+
 	strcpy(atari_osa_filename, "PROGDIR:atariosa.rom");
 	strcpy(atari_osb_filename, "PROGDIR:atariosb.rom");
 	strcpy(atari_xlxe_filename, "PROGDIR:atarixl.rom");
 	strcpy(atari_basic_filename, "PROGDIR:ataribas.rom");
 	atari_5200_filename[0] = '\0';
-	strcpy(atari_disk_dirs[0], "PROGDIR:Disks");
+
+	for (i=0;i<MAX_DIRECTORIES;i++)
+		strcpy(atari_disk_dirs[i], "PROGDIR:Disks");
+
 	disk_directories = 1;
 	strcpy(atari_rom_dir,"PROGDIR:Cartriges");
 	atari_h1_dir[0] = '\0';
@@ -1765,22 +1208,13 @@ void Atari_ConfigInit(void)
 /**************************************************************************
  Set additional Amiga config parameters
 **************************************************************************/
-int Atari_Configure(char* option,char *parameters)
+int Atari_Configure(char* option, char *parameters)
 {
-	if(!strcmp(option,"AMIGA_GFX_USEBESTMODE")) StrToLong(parameters,&UseBestID);
-	else if(!strcmp(option,"AMIGA_GFX_USEOVERLAY")) StrToLong(parameters,&Overlay);
-	else if(!strcmp(option,"AMIGA_GFX_SCALABLE")) StrToLong(parameters, &Scalable);
-	else if(!strcmp(option,"AMIGA_GFX_DISPLAYID")) HexToLong(parameters, &DisplayID);
-	else if(!strcmp(option,"AMIGA_GFX_SCREENTYPE"))
-	{
-		if(!strcmp(parameters,"CUSTOM")) ScreenType = CUSTOMSCREEN;
-		else ScreenType = WBENCHSCREEN;
-	}
-	else if(!strcmp(option,"AMIGA_PATHS_DISKS"))
-	{
-		DiskPath = StrCopy(parameters);
-		DiskPathSet = TRUE;
-	}
+	if(!strcmp(option,"AMIGA_GFX_USEBESTMODE")) sscanf(parameters,"%d",&UseBestID);
+	else if(!strcmp(option,"AMIGA_GFX_USEOVERLAY")) sscanf(parameters,"%d",&Overlay);
+	else if(!strcmp(option,"AMIGA_GFX_USECUSTOMSCREEN")) sscanf(parameters,"%d",&UseCustomScreen);
+	else if(!strcmp(option,"AMIGA_GFX_SCALABLE")) sscanf(parameters, "%d",&Scalable);
+	else if(!strcmp(option,"AMIGA_GFX_DISPLAYID")) sscanf(parameters, "%x",&DisplayID);
 	else if(!strcmp(option,"AMIGA_SOUND"))
 	{
 		if(!strcmp(parameters,"AHI")) SoundEnabled=TRUE;
@@ -1794,14 +1228,9 @@ int Atari_Configure(char* option,char *parameters)
 **************************************************************************/
 void Atari_ConfigSave(FILE *fp)
 {
-	fprintf(fp,"AMIGA_PATHS_DISKS=%s\n",DiskPath);
-
-	fputs("AMIGA_GFX_SCREENTYPE=",fp);
-	if(ScreenType == CUSTOMSCREEN) fputs("CUSTOM\n",fp);
-	else fputs("WORKBENCH\n",fp);
-
 	fprintf(fp,"AMIGA_GFX_DISPLAYID=0x%x\n",DisplayID);
 	fprintf(fp,"AMIGA_GFX_USEBESTMODE=%d\n",UseBestID);
+	fprintf(fp,"AMIGA_GFX_USECUSTOMSCREEN=%d\n",UseCustomScreen);
 	fprintf(fp,"AMIGA_GFX_USEOVERLAY=%d\n",Overlay);
 	fprintf(fp,"AMIGA_GFX_SCALABLE=%d\n",Scalable);
 
@@ -1823,8 +1252,6 @@ int Atari_Exit (int run_monitor)
 			return TRUE;
 		}
 	}
-
-	if(DiskPath) FreeVec(DiskPath);
 
 	FreeDisplay();
 	FreeTimer();
@@ -1848,36 +1275,12 @@ void Atari_Initialise (int *argc, unsigned char **argv)
 	Controller = controller_Joystick;
 	PaddlePos = 228;
 
-	if (!DiskPathSet)
-	{
-		DiskPathSet = TRUE;
-		DiskPath = StrCopy("PROGDIR:Disks");
-	}
-
 	if (OpenLibraries())
 	{
-		struct AtariConfig config;
-
-		memset(&config,0,sizeof(config));
-
-		config.UseBestID = UseBestID;
-
-		if (!Configure(&config))
-			Atari_Exit(0);
-
-		UseBestID = config.UseBestID;
-
-		switch (config.DisplayType)
-		{
-			case	0: ScreenType = CUSTOMSCREEN; break;
-			case	2:
-			case 	1: ScreenType = WBENCHSCREEN; break;
-		}
-
 		if((DiskFileReq = AllocAslRequestTags( ASL_FileRequest,
 											ASLFR_DoPatterns, TRUE,
 											ASLFR_InitialPattern,"#?.(atr|xfd)",
-											ASLFR_InitialDrawer,DiskPath?(ULONG)DiskPath:(ULONG)"",
+											ASLFR_InitialDrawer,atari_disk_dirs[0],
 											TAG_DONE )))
 		{
 			if((StateFileReq = AllocAslRequestTags( ASL_FileRequest,
@@ -1897,17 +1300,32 @@ void Atari_Initialise (int *argc, unsigned char **argv)
 
 					if (SetupTimer())
 					{
-						SetupDisplay();
-
-						SetMenuStrip (WindowMain, MenuMain);
-
-						trig0 = 1;
-						stick0 = 15;
-						menu_consol = 7;
-						keyboard_consol = 7;
+						if (SetupDisplay())
+						{
+							trig0 = 1;
+							stick0 = 15;
+							menu_consol = 7;
+							keyboard_consol = 7;
+						}
 					}
 				}
 			}
+		}
+	}
+}
+
+/**************************************************************************
+ Convert src to dest with colortable
+**************************************************************************/
+static void ScreenData28bit(UBYTE *src, UBYTE *dest, UBYTE *colortable8, ULONG width, ULONG height)
+{
+	int x,y;
+
+	for (y=0;y<height;y++)
+	{
+		for (x=0;x<width;x++)
+		{
+			*dest++ = colortable8[*src++];
 		}
 	}
 }
@@ -1924,15 +1342,32 @@ void Atari_DisplayScreen(UBYTE *screen)
 		double fpsv;
 		double fpsn = modf(fps, &fpsv);
 
-		snprintf(fpsbuf,sizeof(fpsbuf),"%d.%d/%ld (%d%%)",(LONG)fpsv,(LONG)(fpsn*10),ahi_fps,(LONG)(100*fps/ahi_fps));
+		snprintf(fpsbuf,sizeof(fpsbuf),"%d.%d/%d (%d%%)",(int)fpsv,(int)(fpsn*10),ahi_fps,(int)(100*fps/ahi_fps));
 	}
 
-	if (ScreenType == WBENCHSCREEN)
+	if (UseCustomScreen)
+	{
+		LONG x = -32;
+		LONG y = 0;
+
+		WriteChunkyPixels(WindowMain->RPort, x, y, x + ATARI_WIDTH - 1, y + ATARI_HEIGHT - 1,
+						  screen, ATARI_WIDTH);
+
+		if (ShowFPS)
+		{
+			LONG len;
+
+			SetABPenDrMd(WindowMain->RPort,15,0,JAM2);
+			len = TextLength(WindowMain->RPort,fpsbuf,strlen(fpsbuf));
+			Move(WindowMain->RPort, WindowMain->Width - 20 - len, 4 + WindowMain->RPort->TxBaseline);
+			Text(WindowMain->RPort, fpsbuf,strlen(fpsbuf));
+		}
+	} else
 	{
 		LONG offx = WindowMain->BorderLeft;
 		LONG offy = WindowMain->BorderTop;
 
-//			ScreenData28bit(screen, tempscreendata,colortable8,ATARI_WIDTH,ATARI_HEIGHT);
+		ScreenData28bit(screen, tempscreendata,colortable8,ATARI_WIDTH,ATARI_HEIGHT);
 
 		if(Scalable && (InnerWidth(WindowMain)!=ATARI_WIDTH || InnerHeight(WindowMain) != ATARI_HEIGHT))
 		{
@@ -1952,23 +1387,6 @@ void Atari_DisplayScreen(UBYTE *screen)
 			SetABPenDrMd(WindowMain->RPort,colortable8[15],colortable8[0],JAM2);
 			len = TextLength(WindowMain->RPort,fpsbuf,strlen(fpsbuf));
 			Move(WindowMain->RPort, offx + WindowMain->Width - 20 - len, offy + 4 + WindowMain->RPort->TxBaseline);
-			Text(WindowMain->RPort, fpsbuf,strlen(fpsbuf));
-		}
-	} else
-	{
-		LONG x = -32;
-		LONG y = 0;
-
-		WriteChunkyPixels(WindowMain->RPort, x, y, x + ATARI_WIDTH - 1, y + ATARI_HEIGHT - 1,
-						  screen, ATARI_WIDTH);
-
-		if (ShowFPS)
-		{
-			LONG len;
-
-			SetABPenDrMd(WindowMain->RPort,15,0,JAM2);
-			len = TextLength(WindowMain->RPort,fpsbuf,strlen(fpsbuf));
-			Move(WindowMain->RPort, WindowMain->Width - 20 - len, 4 + WindowMain->RPort->TxBaseline);
 			Text(WindowMain->RPort, fpsbuf,strlen(fpsbuf));
 		}
 	}
@@ -2002,65 +1420,38 @@ int Atari_Keyboard (void)
 
 		switch (cl)
 		{
-			case	IDCMP_RAWKEY:
-						keycode = HandleRawkey(code,qual,iaddress);
-						break;
+			case	IDCMP_RAWKEY: keycode = HandleRawkey(code,qual,iaddress); break;
+			case	IDCMP_CLOSEWINDOW: keycode = AKEY_EXIT; break;
+			case	IDCMP_MENUPICK: keycode = HandleMenu(code); break;
 
 			case	IDCMP_MOUSEBUTTONS :
-						if (Controller == controller_Paddle)
+					if (Controller == controller_Paddle)
+					{
+						switch (code)
 						{
-							switch (code)
-							{
-								case	SELECTDOWN :
-											stick0 = 251;
-											break;
-
-								case	SELECTUP :
-											stick0 = 255;
-											break;
-
-								default:
-											break;
-							}
+							case	SELECTDOWN : stick0 = 251; break;
+							case	SELECTUP : stick0 = 255; break;
+							default: break;
 						}
-						break;
+					}
+					break;
 
 			case	IDCMP_MOUSEMOVE :
-						if (Controller == controller_Paddle)
+					if (Controller == controller_Paddle)
+					{
+						if (mx > 57)
 						{
-							if (mx > 57)
-							{
-								if (mx < 287)
-								{
-									PaddlePos = 228 - (mx - 58);
-								}
-								else
-								{
-									PaddlePos = 0;
-								}
-							}
-							else
-							{
-								PaddlePos = 228;
-							}
+							if (mx < 287) PaddlePos = 228 - (mx - 58);
+							else PaddlePos = 0;
 						}
-						break;
-
-			case	IDCMP_CLOSEWINDOW:
-						if(DisplayYesNoWindow())
+						else
 						{
-							keycode = AKEY_EXIT;
+							PaddlePos = 228;
 						}
-						break;
+					}
+					break;
 
-			case	IDCMP_MENUPICK:
-						{
-							keycode = HandleMenu(code);
-						}
-						break;
-
-			default:
-						break;
+			default: break;
 		}
 	}
 
@@ -2164,19 +1555,13 @@ int Atari_TRIG (int num)
 		return 1;
 }
 
+/**************************************************************************
+ ...
+**************************************************************************/
 int Atari_POT (int num)
 {
 	return PaddlePos;
 }
-
-/**************************************************************************
- Handle the Console Keys. Note that all the work is done
- in Atari_Keyboard
-**************************************************************************/
-/*static int Atari_CONSOL (void)
-{
-	return consol;
-}*/
 
 /**************************************************************************
  ...
@@ -2186,6 +1571,9 @@ int Atari_PEN(int vertical)
 	return vertical?0xff:0;
 }
 
+/**************************************************************************
+ ...
+**************************************************************************/
 void Sound_Pause(void)
 {
 	if (SoundEnabled)
@@ -2193,6 +1581,9 @@ void Sound_Pause(void)
 	}
 }
 
+/**************************************************************************
+ ...
+**************************************************************************/
 void Sound_Continue(void)
 {
 	if (SoundEnabled)
@@ -2224,7 +1615,7 @@ LONG InsertDisk( LONG Drive )
 	char Filename[256];
 	int Success = FALSE;
 
-	if( AslRequestTags( DiskFileReq,
+	if (AslRequestTags( DiskFileReq,
 					ASLFR_Screen, ScreenMain,
 					TAG_DONE))
 	{
@@ -2233,10 +1624,10 @@ LONG InsertDisk( LONG Drive )
 		strcpy( Filename, DiskFileReq->rf_Dir );
 		if (AddPart( Filename, DiskFileReq->rf_File,255) != DOSFALSE )
 		{
-/*			if (SIO_Mount (Drive, Filename))
+			if (SIO_Mount (Drive, Filename, 0)) /* last parameter is read only */
 			{
 				Success = TRUE;
-			}*/
+			}
 		}
 	}
 
@@ -2309,51 +1700,41 @@ LONG InsertROM(LONG CartType)
 **************************************************************************/
 VOID FreeDisplay(void)
 {
-	if( MenuMain )
+	int i;
+
+	if (MenuMain)
 	{
-		if( WindowMain ) ClearMenuStrip( WindowMain );
-		FreeMenus( MenuMain );
+		if (WindowMain) ClearMenuStrip(WindowMain);
+		FreeMenus(MenuMain);
 		MenuMain = NULL;
 	}
 
-	if( WindowMain )
+	if (WindowMain)
 	{
 		CloseWindow( WindowMain );
 		WindowMain = NULL;
 	}
 
-	if( VisualInfoMain )
+	if (VisualInfoMain)
 	{
 		FreeVisualInfo( VisualInfoMain );
 		VisualInfoMain = NULL;
 	}
 
-	if(colortable15)
-	{
-		FreeVec(colortable15);
-		colortable15 = NULL;
-	}
-
-	if(colortable8)
-	{
-		LONG i;
-		for(i=0;i<256;i++) ReleasePen(ScreenMain->ViewPort.ColorMap,colortable8[i]);
-		FreeVec(colortable8);
-		colortable8 = NULL;
-	}
-
-	if(tempscreendata)
+	if (tempscreendata)
 	{
 		FreeVec(tempscreendata);
 		tempscreendata=NULL;
 	}
 
-	if( ScreenMain )
+	if (ScreenMain)
 	{
-		if(ScreenType == WBENCHSCREEN)
+		if (ScreenIsCustom) CloseScreen(ScreenMain);
+		else
 		{
+			for(i=0;i<256;i++) ReleasePen(ScreenMain->ViewPort.ColorMap,colortable8[i]);
 			UnlockPubScreen(NULL,ScreenMain);
-		}	else CloseScreen( ScreenMain );
+		}
 		ScreenMain = NULL;
 	}
 }
@@ -2362,9 +1743,10 @@ VOID FreeDisplay(void)
  Allocate everything which is assoicated with the Atari Screen while
  Emulating
 **************************************************************************/
-VOID SetupDisplay(void)
+LONG SetupDisplay(void)
 {
 	UWORD ScreenWidth, ScreenHeight, ScrDepth;
+	struct MenuItem *mi;
 	int i;
 
 	STATIC WORD ScreenPens[] =
@@ -2384,12 +1766,12 @@ VOID SetupDisplay(void)
 		-1
 	};
 
-	if( ScreenType == CUSTOMSCREEN)
+	if (UseCustomScreen)
 	{
 		ULONG ScreenDisplayID;
 		static ULONG colors32[3*256+1];
 
-		ScreenType = CUSTOMSCREEN;
+		ScreenIsCustom = TRUE;
 
 		ScreenWidth = ATARI_WIDTH - 64;
 		ScreenHeight = ATARI_HEIGHT;
@@ -2431,30 +1813,33 @@ VOID SetupDisplay(void)
 									TAG_DONE);
 	}	else
 	{
+		ScreenIsCustom = FALSE;
+
 		ScreenWidth = ATARI_WIDTH;
 		ScreenHeight = ATARI_HEIGHT;
 
 		if ((ScreenMain = LockPubScreen(NULL)))
 		{
-			if ((colortable8 = (UBYTE*)AllocVec(256*sizeof(UBYTE),0)))
+			int i;
+
+			for(i=0;i<256;i++)
 			{
-				LONG i;
-				for(i=0;i<256;i++)
-				{
-					ULONG rgb = colortable[i];
-					ULONG red = (rgb & 0x00ff0000) >> 16;
-					ULONG green = (rgb & 0x0000ff00) >> 8;
-					ULONG blue = (rgb & 0x000000ff);
+				ULONG rgb = colortable[i];
+				ULONG red = (rgb & 0x00ff0000) >> 16;
+				ULONG green = (rgb & 0x0000ff00) >> 8;
+				ULONG blue = (rgb & 0x000000ff);
 
-					red |= (red<<24)|(red<<16)|(red<<8);
-					green |= (green<<24)|(green<<16)|(green<<8);
-					blue |= (blue<<24)|(blue<<16)|(blue<<8);
+				red |= (red<<24)|(red<<16)|(red<<8);
+				green |= (green<<24)|(green<<16)|(green<<8);
+				blue |= (blue<<24)|(blue<<16)|(blue<<8);
 
-					colortable8[i] = ObtainBestPenA(ScreenMain->ViewPort.ColorMap,red,green,blue,NULL);
-				}
-				if ((tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),0)))
-				{
-				}
+				colortable8[i] = ObtainBestPenA(ScreenMain->ViewPort.ColorMap,red,green,blue,NULL);
+			}
+
+			if (!(tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),MEMF_CLEAR)))
+			{
+				UnlockPubScreen(NULL,ScreenMain);
+				ScreenMain = NULL;
 			}
 		}
 	}
@@ -2463,44 +1848,46 @@ VOID SetupDisplay(void)
 	{
 		if ((VisualInfoMain = GetVisualInfoA( ScreenMain, NULL )))
 		{
-			MenuMain = CreateMenus( MenuEntries,
-											GTMN_NewLookMenus, TRUE,
-											TAG_DONE);
-
-			if( MenuMain )
+			if ((MenuMain = CreateMenus(MenuEntries, GTMN_NewLookMenus, TRUE, TAG_DONE)))
 			{
 				LayoutMenus( MenuMain, VisualInfoMain, GTMN_NewLookMenus, TRUE, TAG_DONE);
+
+				if ((WindowMain = OpenWindowTags( NULL,
+					WA_Activate, TRUE,
+					WA_NewLookMenus, TRUE,
+					WA_MenuHelp, TRUE,
+					WA_InnerWidth, ScreenWidth,
+					WA_InnerHeight, ScreenHeight,
+					WA_IDCMP, IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE | IDCMP_MENUPICK | IDCMP_CLOSEWINDOW |
+									IDCMP_RAWKEY,
+					WA_ReportMouse, TRUE,
+					WA_CustomScreen, ScreenMain,
+					WA_Borderless, UseCustomScreen,
+					WA_CloseGadget, !UseCustomScreen,
+					WA_DragBar, !UseCustomScreen,
+					WA_DepthGadget, !UseCustomScreen,
+					UseCustomScreen?TAG_IGNORE:WA_Title, "Atari 800",
+					UseCustomScreen?TAG_IGNORE:WA_ScreenTitle, ATARI_TITLE,
+					WA_SizeGadget, Scalable,
+					Scalable?WA_SizeBBottom:TAG_IGNORE, TRUE,
+					Scalable?WA_MaxWidth:TAG_IGNORE,-1,
+					Scalable?WA_MaxHeight:TAG_IGNORE,-1,
+					TAG_DONE)))
+				{
+					if ((mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_CUSTOMSCREEN)))
+						mi->Flags |= UseCustomScreen?CHECKED:0;
+
+					if ((mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_FRAMERATE)))
+						mi->Flags |= ShowFPS?CHECKED:0;
+					
+					SetMenuStrip(WindowMain, MenuMain);
+					return 1;
+				}
 			}
 		}
 	}
-
-	WindowMain = OpenWindowTags( NULL,
-				WA_Activate, TRUE,
-				WA_NewLookMenus, TRUE,
-				WA_MenuHelp, TRUE,
-				WA_InnerWidth, ScreenWidth,
-				WA_InnerHeight, ScreenHeight,
-				WA_IDCMP, IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE | IDCMP_MENUPICK | IDCMP_CLOSEWINDOW |
-									IDCMP_RAWKEY | (VLHandle?IDCMP_MENUVERIFY:0),
-				WA_ReportMouse, TRUE,
-				WA_CustomScreen, ScreenMain,
-				ScreenType==WBENCHSCREEN?TAG_IGNORE:WA_Borderless, TRUE,
-				ScreenType==WBENCHSCREEN?WA_CloseGadget:TAG_IGNORE, TRUE,
-				ScreenType==WBENCHSCREEN?WA_DragBar:TAG_IGNORE, TRUE,
-				ScreenType==WBENCHSCREEN?WA_DepthGadget:TAG_IGNORE,TRUE,
-				ScreenType==WBENCHSCREEN?WA_Title:TAG_IGNORE, "Atari 800",
-				ScreenType==WBENCHSCREEN?WA_ScreenTitle:TAG_IGNORE, ATARI_TITLE,
-				WA_SizeGadget, Scalable,
-				Scalable?WA_SizeBBottom:TAG_IGNORE, TRUE,
-				Scalable?WA_MaxWidth:TAG_IGNORE,-1,
-				Scalable?WA_MaxHeight:TAG_IGNORE,-1,
-				TAG_DONE);
-
-	if (!WindowMain)
-	{
-		printf ("Failed to create window\n");
-		Atari_Exit (0);
-	}
+	FreeDisplay();
+	return 0;
 }
 
 /**************************************************************************
@@ -2528,8 +1915,8 @@ VOID Iconify(void)
 		CloseWindow( iconifyWnd );
 	}
 
-	SetupDisplay();
-	SetMenuStrip (WindowMain, MenuMain );
+	if (!SetupDisplay())
+		Atari_Exit(0);
 }
 
 /**************************************************************************
@@ -2547,6 +1934,14 @@ int main(int argc, char **argv)
 	{
 		keycode = Atari_Keyboard();
 		if (keycode == AKEY_EXIT) break;
+
+		if (ScreenIsCustom != UseCustomScreen)
+		{
+			FreeDisplay();
+			if (!(SetupDisplay()))
+				break;
+		}
+
 		switch (keycode)
 		{
 				case AKEY_UI:

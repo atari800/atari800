@@ -7,7 +7,7 @@ LONG InsertROM(LONG CartType);
 LONG InsertDisk( LONG Drive );
 
 VOID FreeDisplay(void);
-VOID SetupDisplay(void);
+LONG SetupDisplay(void);
 VOID Iconify(void);
 
 enum{
@@ -64,7 +64,9 @@ enum{
 	MEN_CONSOLE_COLDSTART,
 
 	MEN_SETTINGS,
-	MEN_SETTINGS_FRAMERATE
+	MEN_SETTINGS_FRAMERATE,
+	MEN_SETTINGS_CUSTOMSCREEN,
+	MEN_SETTINGS_SAVE,
 };
 
 #endif /* _ATARI_AMIGA_H_ */
