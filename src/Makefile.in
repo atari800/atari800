@@ -32,6 +32,7 @@ OBJ = \
 	prompts.o \
 	rt-config.o \
 	ui.o \
+	ui_basic.o \
 	binload.o \
 	list.o \
 	ataripcx.o \
