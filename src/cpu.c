@@ -1152,8 +1152,8 @@ void GO(int limit)
 		data = A & dGetByte(PC++);
 		if (regP & D_FLAG)
 		{
-			UWORD temp;
-			Z = N = temp = (data >> 1) | (C << 7);
+			UWORD temp = (data >> 1) | (C << 7);
+			Z = N = (UBYTE) temp;
 			V = ((temp ^ data) & 0x40) >> 6;
 			if (((data & 0x0F) + (data & 0x01)) > 5)
 				temp = (temp & 0xF0) | ((temp + 0x6) & 0x0F);
@@ -1880,7 +1880,7 @@ void GO(int limit)
 		data = dGetByte(PC++);
 		UPDATE_GLOBAL_REGS;
 		CPU_GetStatus();
-		AtariEscape(data);
+		Atari800_RunEsc(data);
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;
 		data = PL;
@@ -1897,7 +1897,7 @@ void GO(int limit)
 		data = dGetByte(PC++);
 		UPDATE_GLOBAL_REGS;
 		CPU_GetStatus();
-		AtariEscape(data);
+		Atari800_RunEsc(data);
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;
 		DONE
@@ -1944,7 +1944,7 @@ void GO(int limit)
 			tmp = A + data + (UWORD)C;
 			C = tmp > 0xff;
 			V = !((A ^ data) & 0x80) && ((A ^ tmp) & 0x80);
-			Z = N = A = tmp;
+			Z = N = A = (UBYTE) tmp;
 	    }
 		else {
 			UWORD tmp;		/* Decimal mode */
@@ -1954,13 +1954,13 @@ void GO(int limit)
 			tmp += (A & 0xf0) + (data & 0xf0);
 
 			Z = A + data + (UWORD)C;
-			N = tmp;
+			N = (UBYTE) tmp;
 			V = !((A ^ data) & 0x80) && ((A ^ tmp) & 0x80);
 
 			if (tmp > 0x9f)
 				tmp += 0x60;
 			C = tmp > 0xff;
-			A = tmp;
+			A = (UBYTE) tmp;
 		}
 		DONE
 
@@ -1970,7 +1970,7 @@ void GO(int limit)
 			tmp = A - data - !C;
 			C = tmp < 0x100;
 			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
-			Z = N = A = tmp;
+			Z = N = A = (UBYTE) tmp;
 		}
 		else {
 			UWORD al, ah, tmp;	/* Decimal mode */
@@ -1985,7 +1985,7 @@ void GO(int limit)
 
 			C = tmp < 0x100;			/* Set flags */
 			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
-			Z = N = tmp;
+			Z = N = (UBYTE) tmp;
 
 			A = (ah << 4) | (al & 0x0f);	/* Compose result */
 		}
