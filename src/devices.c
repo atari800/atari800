@@ -4,6 +4,7 @@
 #include	<ctype.h>
 
 #include	"config.h"
+#include	"ui.h"
 
 #ifdef VMS
 #include	<unixio.h>
