@@ -1,6 +1,7 @@
 /* $Id$ */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #ifdef VMS
 #include <stat.h>
 #else

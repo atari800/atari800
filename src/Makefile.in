@@ -27,6 +27,7 @@ OBJ = \
 	gtia.o \
 	pokey.o \
 	pia.o \
+	pbi.o \
 	cartridge.o \
 	rtime.o \
 	prompts.o \
@@ -75,6 +76,10 @@ dep:
 
 clean:
 	rm -f $(OBJ) $(TARGET)
+
+distclean: clean
+	-rm -f Makefile configure config.log config.status config.h
+	-rm -rf autom4te.cache
 
 install-svgalib : install
 	chown root.root ${BIN_PATH}/$(TARGET)

@@ -116,11 +116,25 @@ void CPU_PutStatus(void)
 #define PH(x) dPutByte(0x0100 + S--, x)
 
 #ifndef NO_CYCLE_EXACT
-#ifdef PAGED_MEM
-#define RMW_GetByte(x,addr) x = GetByte(addr); if ((addr & 0xef1f) == 0xc01a) { xpos--; PutByte(addr,x); xpos++; }
+#ifndef PAGED_ATTRIB
+#define RMW_GetByte(x,addr) \
+		if (attrib[addr] == HARDWARE) { \
+			x = Atari800_GetByte(addr); \
+			if ((addr & 0xef1f) == 0xc01a) { \
+				 xpos--; \
+				 Atari800_PutByte(addr, x); \
+				 xpos++; \
+			} \
+		} else x = memory[addr];
 #else
-#define RMW_GetByte(x,addr)	if (attrib[addr] == HARDWARE) { x = Atari800_GetByte(addr); if ((addr & 0xef1f) == 0xc01a) { xpos--; Atari800_PutByte(addr, x); xpos++; }} else x = memory[addr];
-#endif /* PAGED_MEM */
+#define RMW_GetByte(x,addr) \
+		x = GetByte(addr); \
+		if ((addr & 0xef1f) == 0xc01a) { \
+			xpos--; \
+			PutByte(addr,x); \
+			xpos++; \
+		}
+#endif /* PAGED_ATTRIB */
 #else
 #define RMW_GetByte(x,addr) x = GetByte(addr);
 #endif /* NO_CYCLE_EXACT */

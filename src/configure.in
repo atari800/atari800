@@ -275,6 +275,7 @@ DEF_FEATURE(MONITOR_BREAK, break, enable, BREAK command in monitor (slows CPU a 
 DEF_FEATURE(MONITOR_HINTS, hints, enable, hints in disassembler (addresses get human readable labels), y)
 DEF_FEATURE(MONITOR_ASSEMBLER, asm, enable, assembler in monitor (you can enter ASM insns directly), y)
 DEF_FEATURE(SNAILMETER, meter, enable, Snailmeter (shows how much is the emulator slower than original), n)
+DEF_FEATURE(PAGED_ATTRIB, paged, enable, page-based attribute array, n)
 
 if test "$a800_target" = svgalib; then dnl svgalib specific
 DEF_FEATURE(SVGA_SPEEDUP, svgaspeed, enable, drawing every 1/50 sec only 1/refresh of screen (svgalib only), n)

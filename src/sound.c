@@ -1,6 +1,7 @@
 /* $Id$ */
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "config.h"
 
@@ -167,6 +168,9 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.10  2003/01/27 13:14:53  joy
+ Jason's changes: either PAGED_ATTRIB support (mostly), or just clean up.
+
  Revision 1.9  2002/12/08 20:33:27  knik
  new arguments in Pokey_sound_init call
 

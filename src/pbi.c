@@ -1,5 +1,5 @@
-/* Emulate ICD R-Time 8 cartridge
-   Copyright 2000 Jason Duerstock <jason@cluephone.com>
+/* Emulate Parallel Bus Interface
+   Copyright 2002 Jason Duerstock <jason@cluephone.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,8 +17,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
 #include "atari.h"
 
-extern int rtime_enabled;
+void PBI_Initialise(int *argc, char *argv[])
+{
+}
 
-void RTIME_Initialise(int *argc, char *argv[]);
-UBYTE RTIME_GetByte(void);
-void RTIME_PutByte(UBYTE byte);
+UBYTE PBI_GetByte(UWORD addr)
+{
+	return 0;
+}
+
+void PBI_PutByte(UWORD addr, UBYTE byte)
+{
+}
+
+UBYTE PBIM1_GetByte(UWORD addr)
+{
+	return 0;
+}
+
+void PBIM1_PutByte(UWORD addr, UBYTE byte)
+{
+}
+
+UBYTE PBIM2_GetByte(UWORD addr)
+{
+	return 0;
+}
+
+void PBIM2_PutByte(UWORD addr, UBYTE byte)
+{
+}

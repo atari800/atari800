@@ -331,8 +331,7 @@ void CART_BountyBob1(UWORD addr)
 			addr -= 0x4ff6;
 			CopyROM(0x4000, 0x4fff, cart_image + addr * 0x1000);
 		}
-	}
-	else {
+	} else {
 		if (addr >= 0x8ff6 && addr <= 0x8ff9) {
 			addr -= 0x8ff6;
 			CopyROM(0x8000, 0x8fff, cart_image + addr * 0x1000);
@@ -355,6 +354,66 @@ void CART_BountyBob2(UWORD addr)
 		}
 	}
 }
+
+#ifdef PAGED_ATTRIB
+UBYTE BountyBob1_GetByte(UWORD addr)
+{
+	if (machine_type == MACHINE_5200) {
+		if (addr >= 0x4ff6 && addr <= 0x4ff9) {
+			CART_BountyBob1(addr);
+			return 0;
+		}
+	} else {
+		if (addr >= 0x8ff6 && addr <= 0x8ff9) {
+			CART_BountyBob1(addr);
+			return 0;
+		}
+	}
+	return memory[addr];
+}
+
+UBYTE BountyBob2_GetByte(UWORD addr)
+{
+	if (machine_type == MACHINE_5200) {
+		if (addr >= 0x5ff6 && addr <= 0x5ff9) {
+			CART_BountyBob2(addr);
+			return 0;
+		}
+	} else {
+		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
+			CART_BountyBob2(addr);
+			return 0;
+		}
+	}
+	return memory[addr];
+}
+
+void BountyBob1_PutByte(UWORD addr, UBYTE value)
+{
+	if (machine_type == MACHINE_5200) {
+		if (addr >= 0x4ff6 && addr <= 0x4ff9) {
+			CART_BountyBob1(addr);
+		}
+	} else {
+		if (addr >= 0x8ff6 && addr <= 0x8ff9) {
+			CART_BountyBob1(addr);
+		}
+	}
+}
+
+void BountyBob2_PutByte(UWORD addr, UBYTE value)
+{
+	if (machine_type == MACHINE_5200) {
+		if (addr >= 0x5ff6 && addr <= 0x5ff9) {
+			CART_BountyBob2(addr);
+		}
+	} else {
+		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
+			CART_BountyBob2(addr);
+		}
+	}
+}
+#endif
 
 int CART_Checksum(UBYTE *image, int nbytes)
 {
@@ -459,8 +518,15 @@ void CART_Remove(void)
 
 void CART_Start(void) {
 	if (machine_type == MACHINE_5200) {
+#ifndef PAGED_ATTRIB
 		SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
 		SetROM(0x5ff6, 0x5ff9);
+#else
+		readmap[0x4f] = NULL;
+		readmap[0x5f] = NULL;
+		writemap[0x4f] = ROM_PutByte;
+		writemap[0x5f] = ROM_PutByte;
+#endif
 		switch (cart_type) {
 		case CART_5200_32:
 			CopyROM(0x4000, 0xbfff, cart_image);
@@ -475,8 +541,15 @@ void CART_Start(void) {
 			CopyROM(0x5000, 0x5fff, cart_image + 0x4000);
 			CopyROM(0x8000, 0x9fff, cart_image + 0x8000);
 			CopyROM(0xa000, 0xbfff, cart_image + 0x8000);
+#ifndef PAGED_ATTRIB
 			SetHARDWARE(0x4ff6, 0x4ff9);
 			SetHARDWARE(0x5ff6, 0x5ff9);
+#else
+			readmap[0x4f] = BountyBob1_GetByte;
+			readmap[0x5f] = BountyBob2_GetByte;
+			writemap[0x4f] = BountyBob1_PutByte;
+			writemap[0x5f] = BountyBob2_PutByte;
+#endif
 			break;
 		case CART_5200_NS_16:
 			CopyROM(0x8000, 0xbfff, cart_image);
@@ -599,8 +672,15 @@ void CART_Start(void) {
 			CopyROM(0x8000, 0x8fff, cart_image);
 			CopyROM(0x9000, 0x9fff, cart_image + 0x4000);
 			CopyROM(0xa000, 0xbfff, cart_image + 0x8000);
+#ifndef PAGED_ATTRIB
 			SetHARDWARE(0x8ff6, 0x8ff9);
 			SetHARDWARE(0x9ff6, 0x9ff9);
+#else
+			readmap[0x8f] = BountyBob1_GetByte;
+			readmap[0x9f] = BountyBob2_GetByte;
+			writemap[0x8f] = BountyBob1_PutByte;
+			writemap[0x9f] = BountyBob2_PutByte;
+#endif
 			break;
 		case CART_RIGHT_8:
 			if (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB) {
