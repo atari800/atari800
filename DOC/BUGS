@@ -6,18 +6,17 @@ o a few keyboard-related bugs: e.g. pressing SHIFT+1 and then
 
 o The cycle-exact ANTIC/GTIA/CPU timing is not 100%.
   This causes display bugs in following programs:
-  - Surf's up (game) (The horizon)
-  - Dimension X (game) (aligment problem? not tested on acutal machine)
+  - Surf's up (game) (the horizon)
+  - Dimension X (game) (alignment problem)
   - Te.mod (demo) (small glitched pixel in the final credits on the bottom left)
-  - The break(demo) (bug may exist in the original, check)
-  - Our 5oft Unity Part (demo) (cycle-aligment, probably WSYNC)
-  - Isolation (demo) (vector animations) (seems HSCROL related)
+  - Our 5oft Unity Part (demo) (cycle-alignment, probably WSYNC)
+  - Isolation (demo) (vector animations)
 
 o Non-bugs:
+  - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
   - Mail Order Monsters (game)
 	 (some colour changes do not align with text, occurs on a real Atari) 
-  - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
-         (This bug exists in the code of the demo)
+  - The Break (demo) (bugs on the left side of photo)
 
 o The following programs are improved by using the new cycle-exact code:
   - 8 Players Demo (demo)
