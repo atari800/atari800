@@ -1,6 +1,17 @@
+2003-08-05  Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
+* sio.c: fixed random timeout while sectorread at datatransfer with
+         command frames.
+  - added: xf551 hispeed commands (0xA1, 0xA2, 0xD0, 0xD2, 0xD7)
+  - added: status command reports errors in last read/write operation
+
+  caveat: the only commandframe which transfers in hispeed is sectorread,
+  all other use normal speed in the emu
+
+* pokey.c: xf551 hispeed transfer uses SIO speed 0x10
+
+
 2003-07-04  Piotr Fusik  <fox@scene.pl>
 * mzpokeysnd.c: added key click
-
 
 * cpu.c: a fix for "CMC Demo" crashing NEW_CYCLE_EXACT emulator
   (the problem could probably exist in many other demos

@@ -131,6 +131,9 @@ Christian Groessler <cpg@aladdin.de>
     - SVGAlib patch for joystick
     - BRKHERE command
 
+Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
+    - XF551 highspeed transfer emulation
+
 Nathan Hartwell <mage@magelair.com>
     - win32 fixes
     - sethdr perl script

@@ -112,8 +112,11 @@ UBYTE POKEY_GetByte(UWORD addr)
 		break;
 	case _SERIN:
 		byte = SERIN;
+#ifdef DEBUG3
+		printf("SERIO: SERIN read, bytevalue %02x\n",SERIN);
+#endif
 #ifdef SERIO_SOUND
-			Update_serio_sound(0,byte);
+		Update_serio_sound(0,byte);
 #endif
 		break;
 	case _IRQST:
@@ -131,7 +134,7 @@ void Update_Counter(int chan_mask);
 
 int POKEY_siocheck(void)
 {
-	return (AUDF[CHAN3] == 0x28 || AUDF[CHAN3] == 0x08 || AUDF[CHAN3] == 0x0a)
+	return (AUDF[CHAN3] == 0x28 || AUDF[CHAN3] == 0x10 || AUDF[CHAN3] == 0x08 || AUDF[CHAN3] == 0x0a)
 		&& AUDF[CHAN4] == 0x00 && (AUDCTL[0] & 0x28) == 0x28;
 }
 
@@ -372,15 +375,19 @@ void POKEY_Scanline(void)
 	if (DELAYED_SERIN_IRQ > 0) {
 		if (--DELAYED_SERIN_IRQ == 0) {
 			if (IRQEN & 0x20) {
-#ifdef DEBUG2
-				printf("SERIO: SERIN Interrupt triggered\n");
-#endif
 				if (IRQST & 0x20) {
 					IRQST &= 0xdf;
 					SERIN = SIO_GetByte();
+#ifdef DEBUG2
+					printf("SERIO: SERIN Interrupt triggered, bytevalue %02x\n",SERIN);
+#endif
 				}
-				else
+				else {
 					SKSTAT &= 0xdf;
+#ifdef DEBUG2
+					printf("SERIO: SERIN Interrupt triggered\n");
+#endif
+				}
 				GenerateIRQ();
 			}
 #ifdef DEBUG2

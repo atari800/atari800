@@ -26,6 +26,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef DEBUG
+#include <time.h>
+#include <sys/time.h>
+#endif
 
 #include "atari.h"
 #include "config.h"
@@ -68,6 +72,10 @@ static int sectorcount[MAX_DRIVES];
 static int sectorsize[MAX_DRIVES];
 static int format_sectorcount[MAX_DRIVES];
 static int format_sectorsize[MAX_DRIVES];
+static int io_success[MAX_DRIVES];
+#ifdef DEBUG
+static struct timeval tv;
+#endif
 
 UnitStatus drive_status[MAX_DRIVES];
 char sio_filename[MAX_DRIVES][FILENAME_MAX];
@@ -331,6 +339,7 @@ static int ReadSector(int unit, int sector, UBYTE * buffer)
 	if (start_binloading)
 		return BIN_loade_start(buffer);
 
+	io_success[unit]=-1;
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (sector > 0 && sector <= sectorcount[unit]) {
@@ -339,6 +348,7 @@ static int ReadSector(int unit, int sector, UBYTE * buffer)
 #endif
 				size = SeekSector(unit, sector);
 				fread(buffer, 1, size, disk[unit]);
+				io_success[unit]=0;
 				return 'C';
 			}
 			else
@@ -355,6 +365,7 @@ static int WriteSector(int unit, int sector, UBYTE * buffer)
 {
 	int size;
 
+	io_success[unit]=-1;
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
@@ -364,6 +375,7 @@ static int WriteSector(int unit, int sector, UBYTE * buffer)
 				if (sector > 0 && sector <= sectorcount[unit]) {
 					size = SeekSector(unit, sector);
 					fwrite(buffer, 1, size, disk[unit]);
+					io_success[unit]=0;
 					return 'C';
 				}
 				else
@@ -381,6 +393,7 @@ static int WriteSector(int unit, int sector, UBYTE * buffer)
 
 static int FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 {
+	io_success[unit]=-1;
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
@@ -441,6 +454,7 @@ static int FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 					boot_sectors_type[unit] = save_boot_sectors_type;
 				/* Return information for Atari (buffer filled with ff's - no bad sectors) */
 				memset(buffer, 0xff, sectsize);
+				io_success[unit]=0;
 				return 'C';
 			}
 			else
@@ -463,6 +477,12 @@ static int WriteStatusBlock(int unit, UBYTE * buffer)
 {
 	int size;
 
+#ifdef DEBUG
+	Aprint("Write Status-Block: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+		buffer[0], buffer[1], buffer[2], buffer[3],
+		buffer[4], buffer[5], buffer[6], buffer[7],
+		buffer[8], buffer[9], buffer[10], buffer[11]);
+#endif
 	if (drive_status[unit] != Off) {
 		/*
 		 * We only care about the density and the sector count
@@ -470,7 +490,7 @@ static int WriteStatusBlock(int unit, UBYTE * buffer)
 		 * be non-sense
 		 */
 		/* I'm not sure about this density settings, my XF551
-		 * honnors only the sector size and ignore the density
+		 * honors only the sector size and ignores the density
 		 */
 		size = buffer[6] * 256 + buffer[7];
 		if (size == 128 || size == 256)
@@ -545,14 +565,14 @@ static int ReadStatusBlock(int unit, UBYTE * buffer)
 
    Bit 0 = 1 indicates an invalid command frame was received
    Bit 1 = 1 indicates an invalid data frame was received
-   Bit 2 = 1 indicates that a PUT operation was unsuccessful
-   Bit 3 = 1 indicates that the diskete is write protected
+   Bit 2 = 1 indicates that last read/write operation was unsuccessful
+   Bit 3 = 1 indicates that the diskette is write protected
    Bit 4 = 1 indicates active/standby
 
    plus
 
    Bit 5 = 1 indicates double density
-   Bit 7 = 1 indicates duel density disk (1050 format)
+   Bit 7 = 1 indicates dual density disk (1050 format)
  */
 static int DriveStatus(int unit, UBYTE * buffer)
 {
@@ -567,6 +587,8 @@ static int DriveStatus(int unit, UBYTE * buffer)
 	if (drive_status[unit] != Off) {
 		buffer[0] = 16;			/* drive active */
 		buffer[1] = 255;		/* WD 177x OK */
+		if (io_success[unit]!=0)
+			buffer[0] |= 4;         /* failed RW-operation */
 		if (drive_status[unit] == ReadOnly)
 			buffer[0] |= 8;		/* write protection */
 		if (sectorsize[unit] == 256)
@@ -597,7 +619,15 @@ void SIO(void)
 	static int delay_counter = 1;	/* no delay on first read */
 #endif
 
-	if (dGetByte(0x300) == 0x31 && unit < MAX_DRIVES)	/* UBYTE range ! */
+	if (dGetByte(0x300) == 0x31 && unit < MAX_DRIVES) {	/* UBYTE range ! */
+#ifdef DEBUG
+		gettimeofday(&tv,NULL);
+		Aprint("%04lu.%03lu SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
+			tv.tv_sec%10000,tv.tv_usec/1000,
+			cmd,dGetByte(0x303),dGetByte(0x304),dGetByte(0x305),dGetByte(0x306),
+			dGetByte(0x308),dGetByte(0x309),dGetByte(0x30A),dGetByte(0x30B),
+			dGetByte(0x30C),dGetByte(0x30D));
+#endif
 		switch (cmd) {
 		case 0x4e:				/* Read Status Block */
 			if (12 == length) {
@@ -618,6 +648,8 @@ void SIO(void)
 			break;
 		case 0x50:				/* Write */
 		case 0x57:
+		case 0xD0:				/* xf551 hispeed */
+		case 0xD7:
 			SizeOfSector(unit, sector, &realsize, NULL);
 			if (realsize == length) {
 				CopyFromMem(data, DataBuffer, realsize);
@@ -627,6 +659,7 @@ void SIO(void)
 				result = 'E';
 			break;
 		case 0x52:				/* Read */
+		case 0xD2:				/* xf551 hispeed */
 #ifndef NO_SECTOR_DELAY
 			if (sector == 2) {
 				if ((xpos = xpos_limit) == LINE_C)
@@ -658,28 +691,36 @@ void SIO(void)
 			break;
 		/*case 0x66:*/			/* US Doubler Format - I think! */
 		case 0x21:				/* Format Disk */
+		case 0xA1:				/* xf551 hispeed */
 			realsize = format_sectorsize[unit];
 			if (realsize == length) {
 				result = FormatDisk(unit, DataBuffer, realsize, format_sectorcount[unit]);
 				if (result == 'C')
 					CopyToMem(DataBuffer, data, realsize);
 			}
-			else
+			else {
+				//there are programs which send the format-command but dont wait for the result (eg xf-tools)
+				FormatDisk(unit, DataBuffer, realsize, format_sectorcount[unit]);
 				result = 'E';
+			}
 			break;
 		case 0x22:				/* Enhanced Density Format */
+		case 0xA2:				/* xf551 hispeed */
 			realsize = 128;
 			if (realsize == length) {
 				result = FormatDisk(unit, DataBuffer, 128, 1040);
 				if (result == 'C')
 					CopyToMem(DataBuffer, data, realsize);
 			}
-			else
+			else {
+				FormatDisk(unit, DataBuffer, 128, 1040);
 				result = 'E';
+			}
 			break;
 		default:
 			result = 'N';
 		}
+	}
 	else if (dGetByte(0x300) == 0x60) {
 		result = CASSETTE_Sio();
 		if (result == 'C')
@@ -734,6 +775,9 @@ static UBYTE Command_Frame(void)
 
 	sector = CommandFrame[2] | (((UWORD) (CommandFrame[3])) << 8);
 	unit = CommandFrame[0] - '1';
+#ifdef DEBUG
+	gettimeofday(&tv,NULL);
+#endif
 	if (unit < 0 || unit >= MAX_DRIVES) {
 		/* Unknown device */
 		Aprint("Unknown command frame: %02x %02x %02x %02x %02x",
@@ -745,6 +789,12 @@ static UBYTE Command_Frame(void)
 	else
 		switch (CommandFrame[1]) {
 		case 0x4e:				/* Read Status */
+#ifdef DEBUG
+			Aprint("%04lu.%03lu Read-status frame: %02x %02x %02x %02x %02x",
+				tv.tv_sec%10000, tv.tv_usec/1000,
+				CommandFrame[0], CommandFrame[1], CommandFrame[2],
+				CommandFrame[3], CommandFrame[4]);
+#endif
 			DataBuffer[0] = ReadStatusBlock(unit, DataBuffer + 1);
 			DataBuffer[13] = SIO_ChkSum(DataBuffer + 1, 12);
 			DataIndex = 0;
@@ -752,13 +802,27 @@ static UBYTE Command_Frame(void)
 			TransferStatus = SIO_ReadFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
 			return 'A';
-		case 0x4f:
+		case 0x4f:				/* Write status */
+#ifdef DEBUG
+			Aprint("%04lu.%03lu Write-status frame: %02x %02x %02x %02x %02x",
+				tv.tv_sec%10000, tv.tv_usec/1000,
+				CommandFrame[0], CommandFrame[1], CommandFrame[2],
+				CommandFrame[3], CommandFrame[4]);
+#endif
 			ExpectedBytes = 13;
 			DataIndex = 0;
 			TransferStatus = SIO_WriteFrame;
 			return 'A';
 		case 0x50:				/* Write */
 		case 0x57:
+		case 0xD0:				/* xf551 hispeed */
+		case 0xD7:
+#ifdef DEBUG
+			Aprint("%04lu.%03lu Write-sector frame: %02x %02x %02x %02x %02x",
+				tv.tv_sec%10000, tv.tv_usec/1000,
+				CommandFrame[0], CommandFrame[1], CommandFrame[2],
+				CommandFrame[3], CommandFrame[4]);
+#endif
 			SizeOfSector((UBYTE)unit, sector, &realsize, NULL);
 			ExpectedBytes = realsize + 1;
 			DataIndex = 0;
@@ -768,13 +832,21 @@ static UBYTE Command_Frame(void)
 #endif
 			return 'A';
 		case 0x52:				/* Read */
+		case 0xD2:				/* xf551 hispeed */
+#ifdef DEBUG
+			Aprint("%04lu.%03lu Read-sector frame: %02x %02x %02x %02x %02x",
+				tv.tv_sec%10000, tv.tv_usec/1000,
+				CommandFrame[0], CommandFrame[1], CommandFrame[2],
+				CommandFrame[3], CommandFrame[4]);
+#endif
 			SizeOfSector((UBYTE)unit, sector, &realsize, NULL);
 			DataBuffer[0] = ReadSector(unit, sector, DataBuffer + 1);
 			DataBuffer[1 + realsize] = SIO_ChkSum(DataBuffer + 1, (UWORD)realsize);
 			DataIndex = 0;
 			ExpectedBytes = 2 + realsize;
 			TransferStatus = SIO_ReadFrame;
-			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
+			//wait longer before confirmation because bytes could be lost before the buffer was set (see $E9FB & $EA37 in XL-OS)
+			DELAYED_SERIN_IRQ = SERIN_INTERVAL << 2;
 #ifndef NO_SECTOR_DELAY
 			if (sector == 2)
 				DELAYED_SERIN_IRQ += SECTOR_DELAY;
@@ -784,6 +856,12 @@ static UBYTE Command_Frame(void)
 #endif
 			return 'A';
 		case 0x53:				/* Status */
+#ifdef DEBUG
+			Aprint("%04lu.%03lu Status frame: %02x %02x %02x %02x %02x",
+				tv.tv_sec%10000, tv.tv_usec/1000,
+				CommandFrame[0], CommandFrame[1], CommandFrame[2],
+				CommandFrame[3], CommandFrame[4]);
+#endif
 			DataBuffer[0] = DriveStatus(unit, DataBuffer + 1);
 			DataBuffer[1 + 4] = SIO_ChkSum(DataBuffer + 1, 4);
 			DataIndex = 0;
@@ -793,6 +871,13 @@ static UBYTE Command_Frame(void)
 			return 'A';
 		/*case 0x66:*/			/* US Doubler Format - I think! */
 		case 0x21:				/* Format Disk */
+		case 0xa1:				/* xf551 hispeed */
+#ifdef DEBUG
+			Aprint("%04lu.%03lu Format-disk frame: %02x %02x %02x %02x %02x",
+				tv.tv_sec%10000, tv.tv_usec/1000,
+				CommandFrame[0], CommandFrame[1], CommandFrame[2],
+				CommandFrame[3], CommandFrame[4]);
+#endif
 			realsize = format_sectorsize[unit];
 			DataBuffer[0] = FormatDisk(unit, DataBuffer + 1, realsize, format_sectorcount[unit]);
 			DataBuffer[1 + realsize] = SIO_ChkSum(DataBuffer + 1, realsize);
@@ -801,7 +886,14 @@ static UBYTE Command_Frame(void)
 			TransferStatus = SIO_FormatFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
 			return 'A';
-		case 0x22:				/* Duel Density Format */
+		case 0x22:				/* Dual Density Format */
+		case 0xa2:				/* xf551 hispeed */
+#ifdef DEBUG
+			Aprint("%04lu.%03lu Format-Medium frame: %02x %02x %02x %02x %02x",
+				tv.tv_sec%10000, tv.tv_usec/1000,
+				CommandFrame[0], CommandFrame[1], CommandFrame[2],
+				CommandFrame[3], CommandFrame[4]);
+#endif
 			DataBuffer[0] = FormatDisk(unit, DataBuffer + 1, 128, 1040);
 			DataBuffer[1 + 128] = SIO_ChkSum(DataBuffer + 1, 128);
 			DataIndex = 0;
@@ -812,9 +904,10 @@ static UBYTE Command_Frame(void)
 		default:
 			/* Unknown command for a disk drive */
 #ifdef DEBUG
-			Aprint("Command frame: %02x %02x %02x %02x %02x",
-				   CommandFrame[0], CommandFrame[1], CommandFrame[2],
-				   CommandFrame[3], CommandFrame[4]);
+			Aprint("%04lu.%03lu Command frame: %02x %02x %02x %02x %02x",
+				tv.tv_sec%10000, tv.tv_usec/1000,
+				CommandFrame[0], CommandFrame[1], CommandFrame[2],
+				CommandFrame[3], CommandFrame[4]);
 #endif
 			TransferStatus = SIO_NoFrame;
 			return 'E';
@@ -827,7 +920,7 @@ void SwitchCommandFrame(int onoff)
 
 	if (onoff) {				/* Enabled */
 		if (TransferStatus != SIO_NoFrame)
-			Aprint("Unexpected command frame %x.", TransferStatus);
+			Aprint("Unexpected command frame at state %x.", TransferStatus);
 		CommandIndex = 0;
 		DataIndex = 0;
 		ExpectedBytes = 5;
@@ -862,6 +955,8 @@ static UBYTE WriteSectorBack(void)
 			break;
 		case 0x50:				/* Write */
 		case 0x57:
+		case 0xD0:				/* xf551 hispeed */
+		case 0xD7:
 			result = WriteSector(unit, sector, DataBuffer);
 			break;
 		default:
@@ -949,7 +1044,8 @@ int SIO_GetByte(void)
 				TransferStatus = SIO_NoFrame;
 			}
 			else {
-				DELAYED_SERIN_IRQ = SERIN_INTERVAL;
+				//set delay using the expected transfer speed
+				DELAYED_SERIN_IRQ = (DataIndex==1) ? SERIN_INTERVAL : ((SERIN_INTERVAL*AUDF[CHAN3]-1)/0x28+1);
 			}
 		}
 		else {
@@ -1023,6 +1119,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.17  2003/08/05 11:29:04  joy
+XF551 highspeed transfer
+
 Revision 1.16  2003/03/03 09:57:33  joy
 Ed improved autoconf again plus fixed some little things
 
