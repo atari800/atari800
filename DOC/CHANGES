@@ -14,12 +14,27 @@ o support for Express, Diamond, SpartaDOS X, XEGS, Action!, BASIC XL
   The "-cart" option runs CART files and all types of raw images.
   Added cartridge.[ch] and rtime.[ch], removed supercart.[ch].
   "-rtime 0" disables emulation of R-Time 8.
+  Thanks to Jindroush and Nir Dary for their help!
 
 o removed enable_rom_patches, added enable_h_patch and enable_p_patch.
   SIO, H: and P: patches are now independent and can be toggled at run-time
   (original OS is saved in atari_os). Removed SetSIOEsc() and RestoreSIO().
   After changing enable_*_patch call Atari800_UpdatePatches().
   Added UI menu for enabling/disabling patches.
+
+o cassette recorder emulation! (experimental)
+  Currently only reading works and only with SIO patch.
+  Note: You have to disable the H: patch and enable the SIO patch.
+  Supported are:
+  - CAS files - the digital cassette image format by Ernest Schreurs.
+    The format handles different lengths of blocks, gaps, non-standard blocks,
+    baud rates and more. See http://home.planet.nl/~ernest/home.html
+    for the excellent WAV2CAS converter, which includes detailed description
+    of the format. Atari800 supports the format only partially at the moment.
+  - raw files - any file can be attached, as if it has been written
+    to the C: device (standard Atari OS format).
+  No UI available yet. Attach a file with "-tape filename"
+  or "-boottape filename" (emulator presses Start and Space to boot the tape).
 
 o antic,gtia: the background color can be changed inside a scanline.
   Currently implemented only for blank lines without PMG.
