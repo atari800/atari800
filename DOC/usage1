@@ -70,6 +70,7 @@ Options
 -mouse gun            Emulate Light Gun
 -mouse amiga          Emulate Amiga mouse
 -mouse st             Emulate Atari ST mouse
+-mouse trak           Emulate Atari Trak-Ball
 -mouse joy            Emulate joystick using mouse
 -mouseport <num>      Set mouse port 1-4 (default 1)
 -mousespeed <num>     Set mouse speed 1-9 (default 3)
