@@ -1,3 +1,4 @@
+/* $Id$ */
 #include <stdio.h>
 #include <string.h>	/* for strcmp() */
 #include <math.h>
@@ -11,13 +12,20 @@
 #endif
 
 static int palette_loaded = FALSE;
-static int min_y = 0, max_y = 0xe0;
+static int min_y = 0, max_y = 0xf0;
 static int colintens = COLINTENS;
 static int colshift = 40;
 
+static int basicpal[256];
 int colortable[256];
 
-#ifdef COMPILED_PALETTE
+#define CLIP_VAR(x) \
+  if (x > 0xff) \
+    x = 0xff; \
+  if (x < 0) \
+    x = 0
+
+#if 0
 static int old_pal[256] =
 {
 	0x0, 0x1c1c1c, 0x393939, 0x595959,
@@ -85,6 +93,8 @@ static int old_pal[256] =
 	0xe19344, 0xeda04e, 0xf9ad58, 0xfcb75c,
 	0xffc160, 0xffc671, 0xffcb83, 0xffcb83,
 };
+#endif
+
 static int real_pal[256] =
 {
   0x323132, 0x3f3e3f, 0x4d4c4d, 0x5b5b5b,
@@ -152,6 +162,8 @@ static int real_pal[256] =
   0xcb9d44, 0xdaac53, 0xe8ba62, 0xf8cb73,
   0xffd77f, 0xffe791, 0xfff69f, 0xffffaf,
 };
+
+#if 0
 static int fox_pal[256] =
 {
   0x000000, 0x101010, 0x1c1c1c, 0x2c2c2c,
@@ -221,10 +233,67 @@ static int fox_pal[256] =
 };
 #endif
 
+void Palette_Format(int black, int white, int colors)
+/* format loaded palette */
+{
+  float white_in, black_in, brightfix;
+  UBYTE rgb[0x100][3];
+  int i, j;
+
+  for (i = 0; i < 0x100; i++)
+  {
+    int c = basicpal[i];
+
+    rgb[i][0] = (c >> 16) & 0xff;
+    rgb[i][1] = (c >> 8) & 0xff;
+    rgb[i][2] = c & 0xff;
+  }
+
+  black_in = (float)(rgb[0][0] + rgb[0][1] + rgb[0][2]) * 0.33;
+  white_in = (float)(rgb[15][0] + rgb[15][1] + rgb[15][2]) * 0.33;
+  brightfix = (float)white / white_in;
+
+  for (i = 0; i < 0x10; i++)
+  {
+    for (j = 0; j < 0x10; j++)
+    {
+      float y, r, b;
+      int r1, g1, b1;
+
+      y = (float)(rgb[i * 16 + j][0]
+		  + rgb[i * 16 + j][1]
+		  + rgb[i * 16 + j][2]) * (1.0 / 3);
+      r = (float)rgb[i * 16 + j][0] - y;
+      b = (float)rgb[i * 16 + j][2] - y;
+      y = ((y - black_in) * brightfix) + black;
+      r *= (float)colors * brightfix / (float)COLINTENS;
+      b *= (float)colors * brightfix / (float)COLINTENS;
+      r1 = y + r;
+      g1 = y - r - b;
+      b1 = y + b;
+      CLIP_VAR(r1);
+      CLIP_VAR(g1);
+      CLIP_VAR(b1);
+      rgb[i * 16 + j][0] = r1;
+      rgb[i * 16 + j][1] = g1;
+      rgb[i * 16 + j][2] = b1;
+    }
+  }
+  for (i = 0; i < 0x100; i++)
+  {
+    colortable[i] = (rgb[i][0] << 16)
+      + (rgb[i][1] << 8)
+      + (rgb[i][2] << 0);
+  }
+}
+
 void Palette_Initialise(int *argc, char *argv[])
 {
   int i, j;
-  UBYTE rgb[0x100][3];
+
+  // use real palette by default
+  memcpy(basicpal, real_pal, sizeof(basicpal));
+  palette_loaded = TRUE;
 
   for (i = j = 1; i < *argc; i++)
     {
@@ -236,34 +305,15 @@ void Palette_Initialise(int *argc, char *argv[])
 	sscanf(argv[++i], "%d", &colintens);
       else if (strcmp(argv[i], "-colshift") == 0)
 	sscanf(argv[++i], "%d", &colshift);
-#ifdef COMPILED_PALETTE
-      else if (strcmp(argv[i], "-realpal") == 0)
-	{
-	  memcpy(colortable, real_pal, sizeof(colortable));
-	  palette_loaded = TRUE;
-	}
-      else if (strcmp(argv[i], "-oldpal") == 0)
-	{
-	  memcpy(colortable, old_pal, sizeof(colortable));
-	  palette_loaded = TRUE;
-	}
-      else if (strcmp(argv[i], "-foxpal") == 0)
-	{
-	  memcpy(colortable, fox_pal, sizeof(colortable));
-	  palette_loaded = TRUE;
-	}
-#endif
+      else if (strcmp(argv[i], "-genpal") == 0)
+	palette_loaded = FALSE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Aprint("\t-black <0-255>   set black level");
 				Aprint("\t-white <0-255>   set white level");
 				Aprint("\t-colors <num>    set color intensity");
-				Aprint("\t-colshift <num>  set color shift");
-#ifdef COMPILED_PALETTE
-				Aprint("\t-realpal <num>   use real palette");
-				Aprint("\t-oldpal <num>    use old palette");
-				Aprint("\t-foxpal <num>    use Fox's palette");
-#endif
+				Aprint("\t-genpal <num>    generate artificial palette");
+				Aprint("\t-colshift <num>  set color shift (-genpal only)");
 			}
 			argv[j++] = argv[i];
 		}
@@ -273,6 +323,8 @@ void Palette_Initialise(int *argc, char *argv[])
   if (!palette_loaded)
     /* generate a fresh palette */
     {
+      UBYTE rgb[0x100][3];
+
       for (i = 0; i < 0x10; i++)
 	{
 	  int r, b;
@@ -285,78 +337,34 @@ void Palette_Initialise(int *argc, char *argv[])
 	  else
 	    {
 	      angle = M_PI * ((double) i * (1.0 / 7) - (double) colshift * 0.01);
-	      r = cos(angle) * (double) colintens;
-	      b = cos(angle - M_PI * (2.0 / 3)) * (double) colintens;
+	      r = cos(angle) * (double) colintens * (max_y - min_y) / 256.0;
+	      b = cos(angle - M_PI * (2.0 / 3)) * (double) colintens  * (max_y - min_y) / 256.0;
 	    }
 	  for (j = 0; j < 0x10; j++)
 	    {
 	      int y, r1, g1, b1;
 
-	      y = (max_y * j + min_y * (0xf - j)) / 0xf;
+	      y = (min_y * 0xf + max_y * j) / 0xf;
 	      r1 = y + r;
 	      g1 = y - r - b;
 	      b1 = y + b;
-#define CLIP_VAR(x) \
-  if (x > 0xff) \
-    x = 0xff; \
-  if (x < 0) \
-    x = 0;
-	      CLIP_VAR(r1)
-	      CLIP_VAR(g1)
-	      CLIP_VAR(b1)
+	      CLIP_VAR(r1);
+	      CLIP_VAR(g1);
+	      CLIP_VAR(b1);
 	      rgb[i * 16 + j][0] = r1;
 	      rgb[i * 16 + j][1] = g1;
 	      rgb[i * 16 + j][2] = b1;
 	    }
 	}
-    }
-  else
-    /* format loaded palette */
-    {
-      float max_y2, min_y2;
-
       for (i = 0; i < 0x100; i++)
       {
-	j = colortable[i];
-	rgb[i][0] = (j >> 16) & 0xff;
-	rgb[i][1] = (j >> 8) & 0xff;
-	rgb[i][2] = j & 0xff;
+	basicpal[i] = (rgb[i][0] << 16)
+	  + (rgb[i][1] << 8)
+	  + (rgb[i][2] << 0);
       }
-      min_y2 = (float)(rgb[0][0] + rgb[0][1] + rgb[0][2]) * 0.3;
-      max_y2 = (float)(rgb[15][0] + rgb[15][1] + rgb[15][2]) * 0.3;
-      for (i = 0; i < 0x10; i++)
-	{
-	  for (j = 0; j < 0x10; j++)
-	    {
-	      float y, r, b;
-	      int r1, g1, b1;
-
-	      y = (float)(rgb[i * 16 + j][0]
-		+ rgb[i * 16 + j][1]
-		+ rgb[i * 16 + j][2]) * (1.0 / 3);
-	      r = (float)rgb[i * 16 + j][0] - y;
-	      b = (float)rgb[i * 16 + j][2] - y;
-	      y = ((y - min_y2) * ((float)max_y / max_y2)) + min_y;
-	      r *= (float)colintens / (float)COLINTENS;
-	      b *= (float)colintens / (float)COLINTENS;
-	      r1 = y + r;
-	      g1 = y - r - b;
-	      b1 = y + b;
-	      CLIP_VAR(r1)
-	      CLIP_VAR(g1)
-	      CLIP_VAR(b1)
-	      rgb[i * 16 + j][0] = r1;
-	      rgb[i * 16 + j][1] = g1;
-	      rgb[i * 16 + j][2] = b1;
-	    }
-	}
+      palette_loaded = TRUE;
     }
-  for (i = 0; i < 0x100; i++)
-  {
-    colortable[i] = (rgb[i][0] << 16)
-		  + (rgb[i][1] << 8)
-		  + (rgb[i][2] << 0);
-  }
+  Palette_Format(min_y, max_y, colintens);
 }
 
 /* returns TRUE if successful */
@@ -381,3 +389,11 @@ int read_palette(char *filename) {
 	palette_loaded = TRUE;
 	return TRUE;
 }
+
+/*
+$Log$
+Revision 1.6  2001/11/27 19:11:21  knik
+real palette used by default so COMPILED_PALETTE conditional not needed
+palette adjusting code improved and moved to Palette_Format function
+
+*/
