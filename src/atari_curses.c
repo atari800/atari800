@@ -52,7 +52,7 @@ void Atari_Initialise(int *argc, char *argv[])
 				       "\t-left            Align left\n"
 				       "\t-right           Align right (on 80 columns)\n"
 				       "\t-wide1           Use 80 columns\n"
-				       "\t-wide2           Use 80 columns, display twice\n"
+				       "\t-wide2           Use 80 columns, display twice"
 				      );
 			}
 			argv[j++] = argv[i];
@@ -690,6 +690,9 @@ int main(int argc, char **argv)
 }
 /*
 $Log$
+Revision 1.8  2002/08/07 08:59:06  joy
+last EOL is not necessary
+
 Revision 1.7  2002/08/07 08:40:37  joy
 Aflushlog added, -help added
 
