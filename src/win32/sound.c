@@ -332,6 +332,7 @@ void Sound_Initialise(int *argc, char *argv[])
 {
   int i, j;
   int usesound = TRUE;
+  int help = FALSE;
 
   if (issound != SOUND_NONE)
     return;
@@ -355,6 +356,7 @@ void Sound_Initialise(int *argc, char *argv[])
 #endif
       else
       {
+        help = TRUE;
 	if (strcmp(argv[i], "-help") == 0)
 	{
 	  Aprint("\t-sound			enable sound\n"
@@ -370,6 +372,9 @@ void Sound_Initialise(int *argc, char *argv[])
       }
     }
   *argc = j;
+
+  if (help)
+    return;
 
   if (!usesound)
     return;
@@ -469,6 +474,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.8  2002/12/30 17:37:23  knik
+don't initialise engine when printing help
+
 Revision 1.7  2002/12/08 20:34:24  knik
 default dac rate changed to more reasonable value of 44100
 preliminary 16bit and mono/stereo switch support

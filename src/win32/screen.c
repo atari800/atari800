@@ -60,6 +60,7 @@ int gron(int *argc, char *argv[])
   HRESULT ddrval;
   int i, j;
   int mode = 0;
+  int help = FALSE;
 
   for (i = j = 1; i < *argc; i++)
     {
@@ -70,6 +71,7 @@ int gron(int *argc, char *argv[])
       }
       else
       {
+        help = TRUE;
         if (strcmp(argv[i], "-help") == 0)
         {
           Aprint("\t-video <num>   set video mode #num");
@@ -78,6 +80,9 @@ int gron(int *argc, char *argv[])
       }
     }
   *argc = j;
+
+  if (help)
+    return 0;
 
   switch (mode)
   {
@@ -238,6 +243,9 @@ void refreshv(UBYTE * scr_ptr)
 
 /*
 $Log$
+Revision 1.3  2002/12/30 17:36:59  knik
+don't initialise engine when printing help
+
 Revision 1.2  2001/07/22 06:47:20  knik
 DDSURFACEDESC u1 name removed
 
