@@ -24,6 +24,7 @@
 #include "binload.h"
 #include "sndsave.h"
 #include "cartridge.h"
+#include "rtime.h"
 
 extern int refresh_rate;
 
@@ -1153,56 +1154,54 @@ int RunExe(UBYTE *screen)
 	return ret;
 }
 
-void AtariOSPatches(UBYTE *screen)
+void AtariSettings(UBYTE *screen)
 {
-	const int nitems = 3;
-	static char menu[3][28] =
+	const int nitems = 6;
+	static char menu[6][38] =
 	{
-		"SIO (fast disk access): ON ",
-		"H: device (hard disk) : ON ",
-		"P: device (printer)   : ON "
+		"Disable BASIC when booting Atari: Yes",
+		"RAM between $C000 and $CFFF:      Yes",
+		"Enable R-Time 8:                  Yes",
+		"SIO patch (fast disk access):     Yes",
+		"H: device (hard disk):            Yes",
+		"P: device (printer):              Yes"
 	};
-	static char *menu_ptr[3] = { menu[0], menu[1], menu[2] };
+	static char *menu_ptr[6] = { menu[0], menu[1], menu[2], menu[3], menu[4], menu[5] };
 
 	int option = 0;
 	int ascii;
 
-	Box(screen, 0x9a, 0x94, 4, 12, 32, 16);
+	Box(screen, 0x9a, 0x94, 1, 12, 39, 19);
 
 	do {
-		if (enable_sio_patch) {
-			menu[0][25] = 'N';
-			menu[0][26] = ' ';
-		}
-		else
-			menu[0][25] = menu[0][26] = 'F';
-
-		if (enable_h_patch) {
-			menu[1][25] = 'N';
-			menu[1][26] = ' ';
-		}
-		else
-			menu[1][25] = menu[1][26] = 'F';
-
-		if (enable_p_patch) {
-			menu[2][25] = 'N';
-			menu[2][26] = ' ';
-		}
-		else
-			menu[2][25] = menu[2][26] = 'F';
+		sprintf(menu[0] + 34, hold_option ? "Yes" : "No ");
+		sprintf(menu[1] + 34, enable_c000_ram ? "Yes" : "No ");
+		sprintf(menu[2] + 34, rtime_enabled ? "Yes" : "No ");
+		sprintf(menu[3] + 34, enable_sio_patch ? "Yes" : "No ");
+		sprintf(menu[4] + 34, enable_h_patch ? "Yes" : "No ");
+		sprintf(menu[5] + 34, enable_p_patch ? "Yes" : "No ");
 
 		option = Select(screen, option,
 						nitems, menu_ptr,
 						nitems, 1,
-						5, 13, FALSE, &ascii);
+						2, 13, FALSE, &ascii);
 		switch (option) {
 		case 0:
-			enable_sio_patch = !enable_sio_patch;
+			hold_option = !hold_option;
 			break;
 		case 1:
-			enable_h_patch = !enable_h_patch;
+			enable_c000_ram = !enable_c000_ram;
 			break;
 		case 2:
+			rtime_enabled = !rtime_enabled;
+			break;
+		case 3:
+			enable_sio_patch = !enable_sio_patch;
+			break;
+		case 4:
+			enable_h_patch = !enable_h_patch;
+			break;
+		case 5:
 			enable_p_patch = !enable_p_patch;
 			break;
 		}
@@ -1260,7 +1259,7 @@ void ui(UBYTE *screen)
 		"Sound Mono/Stereo                Alt+O",
 		"Sound Recording start/stop       Alt+W",
 		"Artifacting mode                      ",
-		"Atari OS patches                      ",
+		"Atari Settings                        ",
 		"Save State                       Alt+S",
 		"Load State                       Alt+L",
 		"PCX screenshot                     F10",
@@ -1357,8 +1356,8 @@ void ui(UBYTE *screen)
 			}
 			artif_init();
 			break;
-		case MENU_PATCHES:
-			AtariOSPatches(screen);
+		case MENU_SETTINGS:
+			AtariSettings(screen);
 			break;
 		case MENU_SOUND:
 			{
@@ -1504,6 +1503,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.10  2001/09/04 20:37:01  fox
+hold_option, enable_c000_ram and rtime_enabled available in menu
+
 Revision 1.9  2001/07/20 20:14:47  fox
 inserting, removing and converting of new cartridge types
 
