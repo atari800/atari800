@@ -2,6 +2,8 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   09-02-2002 - "-mzpokey", "-oldpokey" and "-stereo" removed
+
    14-12-2002 - added support for new audio stuff:
    		"-mzpokey" - enable new (better) pokey code
 		"-oldpokey" - disable new pokey code (default)
@@ -133,7 +135,6 @@
 // emulator, probably we need two variables or command line argument)
 #ifdef SOUND
 static int sound_enabled = TRUE;
-static int mz_pokey = 0;
 static int sound_flags = 0;
 static int sound_bits = 8;
 #endif
@@ -432,28 +433,11 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 			sound_enabled = TRUE;
 		else if (strcmp(argv[i], "-nosound") == 0)
 			sound_enabled = FALSE;
-		else if (strcmp(argv[i], "-mzpokey") == 0)
-		{
-			Aprint("mzpokey enabled");
-			mz_pokey = 1;
-		}	
-		else if (strcmp(argv[i], "-oldpokey") == 0)
-		{	
-			Aprint("mzpokey disabled");
-			mz_pokey = 0;
-		}	
-		else if (strcmp(argv[i], "-stereo") == 0)
-		{	
-			Aprint("stereo enabled");
-			sound_flags|=SND_STEREO;
-			mz_pokey = 0;
-		}	
 		else if (strcmp(argv[i], "-audio16") == 0)
 		{	
 			Aprint("audio 16bit enabled");
 			sound_flags|=SND_BIT16;
 			sound_bits=16;
-			mz_pokey = 0;
 		}	
 		else if (strcmp(argv[i], "-dsprate") == 0)
 			sscanf(argv[++i], "%d", &dsprate);
@@ -495,7 +479,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 			return;
 		}
 
-		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1,sound_flags,mz_pokey);
+		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, sound_flags);
 	}
 	else {
 		Aprint
@@ -1609,6 +1593,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.32  2003/02/09 21:22:39  joy
+ removed obsolete and unnecessary cmdline switches
+
  Revision 1.31  2003/02/08 20:06:09  joy
  input.c had a bug that Piotr fixed, I just copied the bugfix here.
 
