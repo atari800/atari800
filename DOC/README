@@ -16,7 +16,7 @@ code available). It can be configured to run in the following ways :-
 	1. BASIC mode
 	2. CURSES Mode
 	3. SVGALIB for Linux Systems
-	4. X-Windows + Optional XVIEW or MOTIF User Interface
+	4. X Window + Optional XVIEW or MOTIF User Interface
 	5. CBM Amiga
  	6. MS-DOS
 	7. Atari Falcon/TT and compatible machines
@@ -35,7 +35,7 @@ fully - SunOS 4.1.3, VAX/VMS, LINUX (but ncurses is OK).
 The SVGALIB version runs at a reasonable speed. The screen dimensions
 are limited to 320x240.
 
-The X-Windows version supports graphics and has an optional XVIEW
+The X Window version supports graphics and has an optional XVIEW
 user interface. The Linux X Window version can be built with
 joystick support (If joystick module is installed in the kernel).
 
@@ -116,7 +116,7 @@ o Joystick controller using numeric keypad.
 
 o Real joystick support.
 
-o Paddle controller using X-Windows mouse position.
+o Paddle controller using X Window mouse position.
 
 o User Interface on all version supporting bitmapped graphics.
   i.e. X11, SVGALIB, MS-DOS, Amiga and Falcon/TT.
