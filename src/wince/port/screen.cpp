@@ -23,6 +23,8 @@ static UBYTE palRed[MAX_CLR];
 static UBYTE palGreen[MAX_CLR];
 static UBYTE palBlue[MAX_CLR];
 static unsigned short pal[MAX_CLR];
+/* First 10 and last 10 colors on palettized devices require special treatment */
+static UBYTE staticTranslate[20];
 
 static UBYTE invert = 0;
 static int colorscale = 0;
@@ -236,14 +238,35 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 		pal[ent] = COLORCONVMONO(r,g,b);
 }
 
+/* Find the best color match in the palette (limited to 'limit' entries) */
+UBYTE best_match(UBYTE r, UBYTE g, UBYTE b, int limit)
+{
+	UBYTE best = 0;
+	int distance = 768;
+	int i, d;
+	for(i=0; i<limit; i++)
+	{
+	/* Manhattan distance for now. Not the best but rather fast */
+		d = abs(r-palRed[i])+abs(g-palGreen[i])+abs(b-palBlue[i]);
+		if(d < distance)
+		{
+			distance = d;
+			best = i;
+		}
+	}
+
+	return (UBYTE)best;
+}
+
 void palette_update()
 {
+	int i;
 	if(gxdp.ffFormat & kfPalette)
 	{
 		LOGPALETTE* ple = (LOGPALETTE*)malloc(sizeof(LOGPALETTE)+sizeof(PALETTEENTRY)*255);
 		ple->palVersion = 0x300;
 		ple->palNumEntries = 256;
-		for(int i=0; i<236; i++) // first 10 and last ten belong to the system!
+		for(i=0; i<236; i++) // first 10 and last 10 belong to the system!
 		{
 			ple->palPalEntry[i+10].peBlue =  palBlue[i];
 			ple->palPalEntry[i+10].peGreen = palGreen[i];
@@ -259,6 +282,9 @@ void palette_update()
 		DeleteObject((HGDIOBJ)hpal);
 		ReleaseDC(hWndMain, hDC);
 		free((void*)ple);
+
+		for(i=0; i<20; i++)
+			staticTranslate[i] = best_match(palRed[i+236], palGreen[i+236], palBlue[i+236], 236)+10;
 	}
 }
 
@@ -713,7 +739,10 @@ void palette_Refresh(UBYTE * scr_ptr)
 				{
 					if((long)src & skipmask)
 					{
-						*dst = *src; // YES!!!
+						if(*src < 236)
+							*dst = *src+10;
+						else
+							*dst = staticTranslate[*src-236];
 						dst += pixelstep;
 					}
 					src ++;
@@ -731,7 +760,10 @@ void palette_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
-					*dst = *src; // YES!!!
+					if(*src < 236)
+						*dst = *src+10;
+					else
+						*dst = staticTranslate[*src-236];
 					dst += pixelstep;
 					src ++;
 				}
