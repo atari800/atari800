@@ -16,6 +16,9 @@ int key_shift = 0;
 int key_consol = CONSOL_NONE;
 
 int joy_autofire[4] = {AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF};
+
+int joy_block_opposite_directions = 1;
+
 int joy_5200_min = 6;
 int joy_5200_center = 114;
 int joy_5200_max = 220;
@@ -91,6 +94,8 @@ void INPUT_Initialise(int *argc, char *argv[])
 				mouse_mode = MOUSE_AMIGA;
 			else if (strcmp(mode, "st") == 0)
 				mouse_mode = MOUSE_ST;
+			else if (strcmp(mode, "trak") == 0)
+				mouse_mode = MOUSE_TRAK;
 			else if (strcmp(mode, "joy") == 0)
 				mouse_mode = MOUSE_JOY;
 		}
@@ -117,7 +122,7 @@ void INPUT_Initialise(int *argc, char *argv[])
 	*argc = j;
 }
 
-/* mouse_step is used in Amiga, ST and joystick modes.
+/* mouse_step is used in Amiga, ST, trak-ball and joystick modes.
    It moves mouse_x and mouse_y in the direction given by
    mouse_move_x and mouse_move_y.
    Bresenham's algorithm is used:
@@ -225,6 +230,7 @@ void INPUT_Frame(void)
 	int i;
 	static int last_key_code = AKEY_NONE;
 	static int last_key_break = 0;
+	static UBYTE last_stick[4] = {STICK_CENTRE, STICK_CENTRE, STICK_CENTRE, STICK_CENTRE};
 	static int last_mouse_buttons = 0;
 
 	scanline_counter = 10000;	/* do nothing in INPUT_Scanline() */
@@ -273,7 +279,31 @@ void INPUT_Frame(void)
 	STICK[2] = i & 0x0f;
 	STICK[3] = (i >> 4) & 0x0f;
 
+	if (joy_block_opposite_directions) {
+		if ((STICK[i] & 0x0c) == 0) {	/* right and left simultaneously */
+			if (last_stick[i] & 0x04)	/* if wasn't left before, move left */
+				STICK[i] |= 0x08;
+			else						/* else move right */
+				STICK[i] |= 0x04;
+		}
+		else {
+			last_stick[i] &= 0x03;
+			last_stick[i] |= STICK[i] & 0x0c;
+		}
+		if ((STICK[i] & 0x03) == 0) {	/* up and down simultaneously */
+			if (last_stick[i] & 0x01)	/* if wasn't up before, move up */
+				STICK[i] |= 0x02;
+			else						/* else move down */
+				STICK[i] |= 0x01;
+		}
+		else {
+			last_stick[i] &= 0x0c;
+			last_stick[i] |= STICK[i] & 0x03;
+		}
+	}
+
 	for (i = 0; i < 4; i++) {
+		last_stick[i] = STICK[i];
 		TRIG[i] = Atari_TRIG(i);
 		if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
 			TRIG[i] = (nframes & 2) ? 1 : 0;
@@ -354,6 +384,7 @@ void INPUT_Frame(void)
 		break;
 	case MOUSE_AMIGA:
 	case MOUSE_ST:
+	case MOUSE_TRAK:
 		mouse_move_x += (mouse_delta_x * mouse_speed) >> 1;
 		mouse_move_y += (mouse_delta_y * mouse_speed) >> 1;
 
@@ -364,17 +395,28 @@ void INPUT_Frame(void)
 		else if (-mouse_move_y > i)
 			i = -mouse_move_y;
 
-		if (i > 0) {
-			i += (1 << MOUSE_SHIFT) - 1;
-			i >>= MOUSE_SHIFT;
-			if (i > 50)
-				max_scanline_counter = scanline_counter = 5;
-			else
-				max_scanline_counter = scanline_counter = max_ypos / i;
-			mouse_step();
+		{
+			UBYTE stick = STICK_CENTRE;
+			if (i > 0) {
+				i += (1 << MOUSE_SHIFT) - 1;
+				i >>= MOUSE_SHIFT;
+				if (i > 50)
+					max_scanline_counter = scanline_counter = 5;
+				else
+					max_scanline_counter = scanline_counter = max_ypos / i;
+				stick = mouse_step();
+			}
+			if (mouse_mode == MOUSE_TRAK) {
+				/* bit 3 toggles - vertical movement, bit 2 = 0 - up */
+				/* bit 1 toggles - horizontal movement, bit 0 = 0 - left */
+				STICK[mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
+									| ((mouse_x & 1) << 1) | ((stick & 4) >> 2);
+			}
+			else {
+				STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
+									[(mouse_y & 3) * 4 + (mouse_x & 3)];
+			}
 		}
-		STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
-							[(mouse_y & 3) * 4 + (mouse_x & 3)];
 
 		if (mouse_buttons & 1)
 			TRIG[mouse_port] = 0;
@@ -429,9 +471,17 @@ void INPUT_Frame(void)
 void INPUT_Scanline(void)
 {
 	if (--scanline_counter == 0) {
-		mouse_step();
-		STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
-							[(mouse_y & 3) * 4 + (mouse_x & 3)];
+		UBYTE stick = mouse_step();
+		if (mouse_mode == MOUSE_TRAK) {
+			/* bit 3 toggles - vertical movement, bit 2 = 0 - up */
+			/* bit 1 toggles - horizontal movement, bit 0 = 0 - left */
+			STICK[mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
+								| ((mouse_x & 1) << 1) | ((stick & 4) >> 2);
+		}
+		else {
+			STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
+								[(mouse_y & 3) * 4 + (mouse_x & 3)];
+		}
 		PORT_input[0] = (STICK[1] << 4) | STICK[0];
 		PORT_input[1] = (STICK[3] << 4) | STICK[2];
 		scanline_counter = max_scanline_counter;
@@ -454,6 +504,7 @@ void INPUT_CenterMousePointer(void)
 		break;
 	case MOUSE_AMIGA:
 	case MOUSE_ST:
+	case MOUSE_TRAK:
 	case MOUSE_JOY:
 		mouse_move_x = 0;
 		mouse_move_y = 0;

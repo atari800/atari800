@@ -245,6 +245,9 @@ extern int key_consol;	/* Start, Select and Option keys */
 
 extern int joy_autofire[4];		/* autofire mode for each Atari port */
 
+extern int joy_block_opposite_directions;	/* can't move joystick left
+											   and right simultaneously */
+
 /* 5200 joysticks values */
 extern int joy_5200_min;
 extern int joy_5200_center;
@@ -261,7 +264,8 @@ extern int joy_5200_max;
 #define MOUSE_GUN		5	/* Light gun */
 #define MOUSE_AMIGA		6	/* Amiga mouse */
 #define MOUSE_ST		7	/* Atari ST mouse */
-#define MOUSE_JOY		8	/* Joystick */
+#define MOUSE_TRAK		8	/* Atari CX22 Trak-Ball */
+#define MOUSE_JOY		9	/* Joystick */
 
 extern int mouse_mode;			/* device emulated with mouse */
 extern int mouse_port;			/* Atari port, to which the emulated device is attached */
