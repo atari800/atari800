@@ -32,7 +32,7 @@ Options
 -320xe                Emulate Atari 320 XE (Compy Shop)
 -rambo                Emulate Atari 320 XE (Rambo)
 -5200                 Emulate Atari 5200
--emuos                Emulate Atari 800 with EmuOS
+-emuos                Use EmuOS
 
 -a                    Use OS/A for Atari 800
 -b                    Use OS/B for Atari 800
@@ -61,6 +61,17 @@ Options
 -devbug               Put debugging messages for H: and P: devices in log file
 
 -rtime <onoff>        Enable (1) or disable (0) R-Time 8 emulation
+
+-mouse off            Do not use mouse
+-mouse pad            Emulate paddles
+-mouse touch          Emulate Atari Touch Tablet
+-mouse koala          Emulate Koala Pad
+-mouse pen            Emulate light pen/light gun
+-mouse amiga          Emulate Amiga mouse
+-mouse st             Emulate Atari ST mouse
+-mouse joy            Emulate joystick using mouse
+-mouseport <num>      Set mouse port 1-4 (default 1)
+-mousespeed <num>     Set mouse speed 1-9 (default 3)
 
 -refresh <rate>       Set screen refresh rate
 -artif <mode>         Set artifacting mode 0-4 (0 = disable)
@@ -114,10 +125,6 @@ DOS/VGA version options
 -LPTjoy2              Read joystick connected to LPT2
 -LPTjoy3              Read joystick connected to LPT3
 -joyswap              Swap joysticks
-
--mouse off            Do not use mouse
--mouse pad            Use mouse as paddles/touch pad
--mouse pen            Use mouse as light pen
 
 -keyboard 0           PC keyboard layout
 -keyboard 1           Atari keyboard layout
