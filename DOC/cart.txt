@@ -9,7 +9,7 @@ There are:
 For raw images you usually have to select the cartridge type each time
 you insert an image. To make it easier, you only select from types of same
 image size. If there's only one supported type that matches file's length
-(like there's for 8 KB cartridges), that type is selected automatically.
+(like there's for 4 KB cartridges), that type is selected automatically.
 
 The advantage of using CART files is that you don't have to select
 the cartridge type, because it is stored inside the file.
@@ -23,7 +23,8 @@ The format is:
  next 4 bytes containing cartridge type in MSB format (see the table below).
  next 4 bytes containing cartridge checksum in MSB format (ROM only).
  next 4 bytes are currently unused (zero).
- followed immediately with the ROM data: 8, 16, 32, 40, 64 or 128 kilobytes.
+ followed immediately with the ROM data: 4, 8, 16, 32, 40, 64
+ or 128 kilobytes.
 
 The recommended file name extension for CART files is CAR.
 
@@ -50,6 +51,8 @@ Currently supported cartridge types:
 | 16 |   5200    |   16 | One chip 16 KB 5200 cartridge                     |
 | 17 | 800/XL/XE |  128 | Atrax 128 KB cartridge                            |
 | 18 | 800/XL/XE |   40 | Bounty Bob Strikes Back 40 KB cartridge           |
+| 19 |   5200    |    8 | Standard 8 KB 5200 cartridge                      |
+| 20 |   5200    |    4 | Standard 4 KB 5200 cartridge                      |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -233,3 +236,17 @@ stands for the first bank in the image, bank B is the second, etc.
  - Four 4 KB banks (E,F,G,H) are mapped into $9000-$9FFF. An access to $9FF6
    selects bank E, $9FF7 - bank F, $9FF8 - bank G, $9FF9 - bank H.
  - The remaining 8 KB is mapped to $A000-$BFFF.
+
++---------------------------------------------------------------------------+
+| Type 19: Standard 8 KB 5200 cartridge                                     |
++---------------------------------------------------------------------------+
+
+ Standard 8 KB cartridge for Atari 5200, mapped into $8000-$9FFF
+ and $A000-$BFFF.
+
++---------------------------------------------------------------------------+
+| Type 20: Standard 4 KB 5200 cartridge                                     |
++---------------------------------------------------------------------------+
+
+ Standard 4 KB cartridge for Atari 5200, mapped into $8000-$8FFF,
+ $9000-$9FFF, $A000-$AFFF and $B000-$BFFF.

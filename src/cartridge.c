@@ -27,7 +27,9 @@ int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	16, /* CART_OSS2_16 */
 	16,	/* CART_5200_NS_16 */
 	128,/* CART_ATRAX_128 */
-	40	/* CART_BBSB_40 */
+	40,	/* CART_BBSB_40 */
+	8,	/* CART_5200_8 */
+	4	/* CART_5200_4 */
 };
 
 int CART_IsFor5200(int type)
@@ -37,6 +39,8 @@ int CART_IsFor5200(int type)
 		case CART_5200_EE_16:
 		case CART_5200_40:
 		case CART_5200_NS_16:
+		case CART_5200_8:
+		case CART_5200_4:
 			return TRUE;
 		default:
 			break;
@@ -362,11 +366,19 @@ void CART_Start(void) {
 		case CART_5200_NS_16:
 			CopyROM(0x8000, 0xbfff, cart_image);
 			break;
+		case CART_5200_8:
+			CopyROM(0x8000, 0x9fff, cart_image);
+			CopyROM(0xa000, 0xbfff, cart_image);
+			break;
+		case CART_5200_4:
+			CopyROM(0x8000, 0x8fff, cart_image);
+			CopyROM(0x9000, 0x9fff, cart_image);
+			CopyROM(0xa000, 0xafff, cart_image);
+			CopyROM(0xb000, 0xbfff, cart_image);
+			break;
 		default:
 			/* clear cartridge area so the 5200 will crash */
-#ifndef PAGED_MEM
-			memset(memory + 0x4000, 0, 0x8000);
-#endif
+			dFillMem(0x4000, 0, 0x8000);
 			break;
 		}
 	}

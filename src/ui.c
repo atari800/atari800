@@ -196,7 +196,7 @@ int SelectCartType(UBYTE* screen, int k)
 	{
 		{ "NONE", 0,           NULL, NULL,                              NULL, 0 },
 		{ "CRT1", ITEM_ACTION, NULL, "Standard 8 KB cartridge",         NULL, 1 },
-		{ "CRT2", ITEM_ACTION, NULL, "Standard 16 KB cartridge",        NULL, 2 }, 
+		{ "CRT2", ITEM_ACTION, NULL, "Standard 16 KB cartridge",        NULL, 2 },
 		{ "CRT3", ITEM_ACTION, NULL, "OSS '034M' 16 KB cartridge",      NULL, 3 },
 		{ "CRT4", ITEM_ACTION, NULL, "Standard 32 KB 5200 cartridge",   NULL, 4 },
 		{ "CRT5", ITEM_ACTION, NULL, "DB 32 KB cartridge",              NULL, 5 },
@@ -213,6 +213,8 @@ int SelectCartType(UBYTE* screen, int k)
 		{ "CRTG", ITEM_ACTION, NULL, "One chip 16 KB 5200 cartridge",   NULL, 16 },
 		{ "CRTH", ITEM_ACTION, NULL, "Atrax 128 KB cartridge",          NULL, 17 },
 		{ "CRTI", ITEM_ACTION, NULL, "Bounty Bob 40 KB cartridge",      NULL, 18 },
+		{ "CRTJ", ITEM_ACTION, NULL, "Standard 8 KB 5200 cartridge",    NULL, 19 },
+		{ "CRTK", ITEM_ACTION, NULL, "Standard 4 KB 5200 cartridge",    NULL, 20 },
 		MENU_END
 	};
 
@@ -759,6 +761,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.24  2001/10/12 07:56:15  fox
+added 8 KB and 4 KB cartridges for 5200
+
 Revision 1.23  2001/10/11 08:40:29  fox
 removed CURSES-specific code
 
