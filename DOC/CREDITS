@@ -2,10 +2,11 @@ Current active members of the Atari800 development team:
 --------------------------------------------------------
 
     Petr Stehlik     (maintainer)
+    Piotr Fusik
+    Jacek Poplawski  (SDL)
     Krzysztof Nikiel (Win32)
     Mark Grebe       (Mac OSX)
     Vasyl Tsvirkunov (Pocket PC)
-    Piotr Fusik
 
 
 
@@ -37,6 +38,7 @@ Chris Chiesa <xetwnk@shell.portal.com>
 
 Ed Cogburn <ecogburn@xtn.net>
     - updated configure.ac
+    - added copyright headers to all source files
     - miscellaneous cleanups
 
 Matthew Conte <matt@conte.com>
