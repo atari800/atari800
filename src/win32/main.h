@@ -6,7 +6,5 @@
 extern char *myname;
 extern HWND hWndMain;
 extern HINSTANCE myInstance;
-extern int bActive;
-extern int vloopexit;
 
 #endif
