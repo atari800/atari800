@@ -29,6 +29,7 @@ void Update_vol_only_sound( void );
 #endif  /* NO_VOL_ONLY */
 
 UBYTE KBCODE;
+UBYTE SERIN;
 UBYTE IRQST;
 UBYTE IRQEN;
 UBYTE SKCTLS;
@@ -96,7 +97,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		}
 		break;
 	case _SERIN:
-		byte = SIO_GetByte();
+		byte = SERIN;
 #ifdef SERIO_SOUND
 			Update_serio_sound(0,byte);
 #endif
@@ -349,6 +350,7 @@ void POKEY_Scanline(void)
 				printf("SERIO: SERIN Interrupt triggered\n");
 #endif
 				IRQST &= 0xdf;
+				SERIN = SIO_GetByte();
 				GenerateIRQ();
 			}
 #ifdef DEBUG2
