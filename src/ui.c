@@ -889,20 +889,20 @@ int SelectCartType(UBYTE * screen, int k)
 		NULL,
 		"Standard 8 KB cartridge",
 		"Standard 16 KB cartridge",
-		"MAC/65 16 KB cartridge",
+		"OSS '034M' 16 KB cartridge",
 		"Standard 32 KB 5200 cartridge",
 		"DB 32 KB cartridge",
-		"2*8 KB ROM 16 KB 5200 cartridge",
+		"Two chip 16 KB 5200 cartridge",
 		"Bounty Bob 40 KB 5200 cartridge",
 		"8*8 KB D50x 64 KB cartridge",
 		"Express 64 KB cartridge",
 		"Diamond 64 KB cartridge",
-		"SDX 64 KB cartridge",
+		"SpartaDOS X 64 KB cartridge",
 		"XEGS 32 KB cartridge",
 		"XEGS 64 KB cartridge",
 		"XEGS 128 KB cartridge",
-		"Action! 16 KB cartridge",
-		"Single ROM 16 KB 5200 cartridge",
+		"OSS 'M019' 16 KB cartridge",
+		"One chip 16 KB 5200 cartridge",
 		"Atrax 128 KB cartridge",
 		"Bounty Bob 40 KB cartridge"
 	};
@@ -976,7 +976,7 @@ void CartManagement(UBYTE * screen)
 		switch (option) {
 		case 0:
 			if (FileSelector(screen, curr_cart_dir, filename)) {
-				UBYTE image[CART_MAX_SIZE + 1];
+				UBYTE *image;
 				int nbytes;
 				FILE *f;
 
@@ -985,7 +985,13 @@ void CartManagement(UBYTE * screen)
 					perror(filename);
 					exit(1);
 				}
-				nbytes = fread(image, 1, sizeof(image), f);
+				image = malloc(CART_MAX_SIZE + 1);
+				if (image == NULL) {
+					fclose(f);
+					Aprint("CartManagement: out of memory");
+					break;
+				}
+				nbytes = fread(image, 1, CART_MAX_SIZE + 1, f);
 				fclose(f);
 				if ((nbytes & 0x3ff) == 0) {
 					int type = SelectCartType(screen, nbytes / 1024);
@@ -1025,6 +1031,7 @@ void CartManagement(UBYTE * screen)
 						}
 					}
 				}
+				free(image);
 			}
 			break;
 		case 1:
@@ -1034,12 +1041,18 @@ void CartManagement(UBYTE * screen)
 				f = fopen(filename, "rb");
 				if (f) {
 					Header header;
-					UBYTE image[CART_MAX_SIZE + 1];
+					UBYTE *image;
 					char fname[FILENAME_SIZE+1];
 					int nbytes;
 
 					fread(&header, 1, sizeof(header), f);
-					nbytes = fread(image, 1, sizeof(image), f);
+					image = malloc(CART_MAX_SIZE + 1);
+					if (image == NULL) {
+						fclose(f);
+						Aprint("CartManagement: out of memory");
+						break;
+					}
+					nbytes = fread(image, 1, CART_MAX_SIZE + 1, f);
 
 					fclose(f);
 
@@ -1053,6 +1066,7 @@ void CartManagement(UBYTE * screen)
 						fwrite(image, 1, nbytes, f);
 						fclose(f);
 					}
+					free(image);
 				}
 			}
 			break;
@@ -1504,6 +1518,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.19  2001/10/08 21:03:10  fox
+corrected stack bug (thanks Vasyl) and renamed some cartridge types
+
 Revision 1.18  2001/10/05 10:21:52  fox
 added Bounty Bob Strikes Back cartridge for 800/XL/XE
 
