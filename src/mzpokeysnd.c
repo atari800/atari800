@@ -2,7 +2,7 @@
  *                                                                           *
  *  Atari800  Atari 800XL, etc. emulator                                     *
  *  ----------------------------------------------------------------------   *
- *  POKEY Chip Emulator, V1.3                                                *
+ *  POKEY Chip Emulator, V1.6                                                *
  *  by Michael Borisov                                                       *
  *                                                                           *
  *****************************************************************************/
@@ -42,11 +42,11 @@
                       to save memory
                      copyright info removed from static code
                       also to save some memory - M.B.
+  V1.5  11.12.2002   improved gain and dc offset values
+                     corrected STIMER bug and 16-bit bug
+                     added dithering
 
  *****************************************************************************/
-
-#include <stdlib.h>
-#include <math.h>
 
 #include "pokeysnd.h"
 #include "atari.h"
@@ -59,40 +59,41 @@
 #include "sound_win.h"
 #endif /*__PLUS*/
 
-#ifndef CONSTANT_SOUND_FILTER
-# define CONSTANT_SOUND_FILTER 0
-#endif
-
-#if CONSTANT_SOUND_FILTER
-# include "pokey_resample.h"
-# include "pokey_resample.c"
-#endif
+#include "pokey_resample.h"
+#include <stdlib.h>
+#include <math.h>
 
 #define NPOKEYS 2
 
-static const double master_gain = 3.5/2;
-static unsigned int master_gain2 = 2;
+
+/* M_PI was not defined in MSVC headers */
+#define M_PI 3.141592653589793
 
 static unsigned int num_cur_pokeys = 0;
 
 /* Filter */
-static const unsigned long pokey_frq_ideal =  1789790; /* Hz - True */
 static unsigned long sample_rate = 44100; /* Hz */
 static unsigned long pokey_frq = 1808100 ; /* Hz - for easier resampling */
 static int filter_size = 1274;
+static double* filter_data = filter_44;
+static char filter_data_allocated = 0; /* flag whether filter data was malloc'ed */
 static unsigned long audible_frq = 20000;
-#if CONSTANT_SOUND_FILTER
-static const double* filter_data = filter_44;
 
+static const unsigned long pokey_frq_ideal =  1789790; /* Hz - True */
 static const int filter_size_44 = 1274;
+static const int filter_size_44_8 = 884;
 static const int filter_size_22 = 1239;
+static const int filter_size_22_8 = 893;
 static const int filter_size_11 = 1305;
+static const int filter_size_11_8 = 937;
 static const int filter_size_48 = 898;
+static const int filter_size_48_8 = 626;
 static const int filter_size_8  = 1322;
-#else
-static double* filter_data = NULL;
-#endif
+static const int filter_size_8_8 = 1214;
 
+/* Flags and quality */
+static int snd_flags = 0;
+static int snd_quality = 0;
 
 /* Poly tables */
 static unsigned char poly4tbl[15];
@@ -100,8 +101,6 @@ static unsigned char poly5tbl[31];
 static unsigned char poly17tbl[131071];
 static unsigned char poly9tbl[511];
 
-static int snd_flags = 0;
-static int snd_quality = 0;
 
 struct stPokeyState;
 
@@ -246,14 +245,6 @@ typedef struct stPokeyState
 
 PokeyState pokey_states[NPOKEYS];
 
-
-static void Pokey_process_8(void* sndbuffer, unsigned sndn);
-static void Pokey_process_16(void* sndbuffer, unsigned sndn);
-static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain);
-static void Update_serio_sound_mz(int out, UBYTE data);
-static void Update_consol_sound_mz(int set);
-static void Update_vol_only_sound_mz(void);
-
 /* Forward declarations for ResetPokeyState */
 
 static unsigned char readout0_normal(PokeyState* ps);
@@ -268,7 +259,10 @@ static void event2_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 static unsigned char readout3_normal(PokeyState* ps);
 static void event3_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
-static void ResetPokeyState(PokeyState* ps)
+
+
+
+void ResetPokeyState(PokeyState* ps)
 {
     /* Poly positions */
     ps->poly4pos = 0;
@@ -394,7 +388,7 @@ static void ResetPokeyState(PokeyState* ps)
 }
 
 
-static double read_resam_all(PokeyState* ps)
+double read_resam_all(PokeyState* ps)
 {
     int i = ps->qebeg;
     unsigned char avol,bvol;
@@ -477,6 +471,8 @@ static void bump_qe_subticks(PokeyState* ps, int subticks)
         ++i;
     }
 }
+
+
 
 static void build_poly4(void)
 {
@@ -968,11 +964,8 @@ static double generate_sample(PokeyState* ps)
     subticks = (subticks+pokey_frq)%sample_rate;*/
 
     advance_ticks(ps, pokey_frq/sample_rate);
-    return (read_resam_all(ps)-64.0)*master_gain;
+    return read_resam_all(ps);
 }
-
-
-#if !CONSTANT_SOUND_FILTER
 
 /******************************************
  filter table generator by Krzysztof Nikiel
@@ -1094,7 +1087,8 @@ find:
 
   return winwidth;
 }
-#endif
+
+
 
 
 /*****************************************************************************/
@@ -1102,7 +1096,7 @@ find:
 /* Purpose: to handle the power-up initialization functions                  */
 /*          these functions should only be executed on a cold-restart        */
 /*                                                                           */
-/* Author:  Michael Borisov                                                  */
+/* Authors: Michael Borisov, Krzystof Nikiel                                 */
 /*                                                                           */
 /* Inputs:  freq17 - the value for the '1.79MHz' Pokey audio clock           */
 /*          playback_freq - the playback frequency in samples per second     */
@@ -1112,9 +1106,23 @@ find:
 /*                                                                           */
 /*****************************************************************************/
 
+static void Pokey_process_8(void* sndbuffer, unsigned sndn);
+static void Pokey_process_16(void* sndbuffer, unsigned sndn);
+static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain);
+#ifdef SERIO_SOUND
+    Update_serio_sound = Update_serio_sound_mz;
+#endif
+#ifndef NO_CONSOL_SOUND
+static void Update_consol_sound_mz( int set );
+#endif
+#ifndef	NO_VOL_ONLY
+static void Update_vol_only_sound_mz( void );
+#endif
+
 int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 			int flags, int quality)
 {
+    sample_rate = playback_freq;
     snd_flags = flags;
     snd_quality = quality;
 
@@ -1134,56 +1142,93 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
     else
       Pokey_process = Pokey_process_8;
 
+    if(filter_data_allocated)
+    {
+        free(filter_data);
+        filter_data_allocated = 0;
+    }
 
-    sample_rate = playback_freq;
-
-
-#if CONSTANT_SOUND_FILTER
     switch(playback_freq)
     {
     case 44100:
-        filter_data = filter_44;
-        filter_size = filter_size_44;
+        if(flags & SND_BIT16)
+        {
+            filter_data = filter_44;
+            filter_size = filter_size_44;
+        }
+        else
+        {
+            filter_data = filter_44_8;
+            filter_size = filter_size_44_8;
+        }
         pokey_frq = 1808100; /* 1.02% off ideal */
         audible_frq = 20000; /* ultrasound */
         break;
     case 22050:
-        filter_data = filter_22;
-        filter_size = filter_size_22;
+        if(flags & SND_BIT16)
+        {
+            filter_data = filter_22;
+            filter_size = filter_size_22;
+        }
+        else
+        {
+            filter_data = filter_22_8;
+            filter_size = filter_size_22_8;
+        }
         pokey_frq = 1786050; /* 0.2% off ideal */
         audible_frq = 10000; /* 30db filter attenuation */
         break;
     case 11025:
-        filter_data = filter_11;
-        filter_size = filter_size_11;
+        if(flags & SND_BIT16)
+        {
+            filter_data = filter_11;
+            filter_size = filter_size_11;
+        }
+        else
+        {
+            filter_data = filter_11_8;
+            filter_size = filter_size_11_8;
+        }
         pokey_frq = 1786050; /* 0.2% off ideal */
         audible_frq = 4500; /* 30db filter attenuation */
         break;
     case 48000:
-        filter_data = filter_48;
-        filter_size = filter_size_48;
+        if(flags & SND_BIT16)
+        {
+            filter_data = filter_48;
+            filter_size = filter_size_48;
+        }
+        else
+        {
+            filter_data = filter_48_8;
+            filter_size = filter_size_48_8;
+        }
         pokey_frq = 1776000; /* 0.7% off ideal */
         audible_frq = 20000; /* ultrasound */
         break;
     case 8000:
-        filter_data = filter_8;
-        filter_size = filter_size_8;
+        if(flags & SND_BIT16)
+        {
+            filter_data = filter_8;
+            filter_size = filter_size_8;
+        }
+        else
+        {
+            filter_data = filter_8_8;
+            filter_size = filter_size_8_8;
+        }
         pokey_frq = 1792000; /* 0.1% off ideal */
         audible_frq = 4000; /* Nyquist, also 30db attn, should be 50 */
         break;
-    }
-#else
-    if (filter_data)
-      free(filter_data);
-
-    pokey_frq = (int)(((double)pokey_frq_ideal/sample_rate) + 0.5)
-      * sample_rate;
-
-    filter_size = kaiser_filter_table(&filter_data,
+    default:
+        /* - by Krzystof Nikiel - Select Kaiser Filter */
+        pokey_frq = (int)(((double)pokey_frq_ideal/sample_rate) + 0.5)
+          * sample_rate;
+        filter_size = kaiser_filter_table(&filter_data,
 				      (double)sample_rate/pokey_frq, 0);
-
-    audible_frq = 0.45 * sample_rate; // not very good estimate
-#endif
+        filter_data_allocated = 1;
+        audible_frq = 0.45 * sample_rate; /* not very good estimate */
+    }
 
     build_poly4();
     build_poly5();
@@ -1194,7 +1239,7 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
     ResetPokeyState(pokey_states+1);
     num_cur_pokeys = num_pokeys;
 
-    return 0; // OK
+    return 0; /* OK */
 }
 
 /*****************************************************************************/
@@ -1724,10 +1769,9 @@ static void Update_c3stop(PokeyState* ps)
         ps->outvol_3 = ps->vol3;
 }
 
-void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain)
+static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 {
     PokeyState* ps = pokey_states+chip;
-    master_gain2 = gain;
 
     switch(addr & 0x0f)
     {
@@ -1837,9 +1881,16 @@ void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain)
         ps->forcero = 1;
         break;
     case _STIMER:
-        ps->c0divpos = ps->c0divstart;
+        if(ps->c1_f0)
+            ps->c0divpos = ps->c0divstart_p;
+        else
+            ps->c0divpos = ps->c0divstart;
         ps->c1divpos = ps->c1divstart;
-        ps->c2divpos = ps->c2divstart;
+        if(ps->c3_f2)
+            ps->c2divpos = ps->c2divstart_p;
+        else
+            ps->c2divpos = ps->c2divstart;
+
         ps->c3divpos = ps->c3divstart;
         ps->c0t2 = 1;
         ps->c1t2 = 1;
@@ -1849,6 +1900,26 @@ void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain)
     }
 }
 
+void Pokey_debugreset(uint8 chip)
+{
+    PokeyState* ps = pokey_states+chip;
+    
+    if(ps->c1_f0)
+        ps->c0divpos = ps->c0divstart_p;
+    else
+        ps->c0divpos = ps->c0divstart;
+    ps->c1divpos = ps->c1divstart;
+    if(ps->c3_f2)
+        ps->c2divpos = ps->c2divstart_p;
+    else
+        ps->c2divpos = ps->c2divstart;
+    ps->c3divpos = ps->c3divstart;
+
+    ps->c0t2 = 1;
+    ps->c1t2 = 1;
+    ps->c2t2 = 1;
+    ps->c3t2 = 1;
+}
 
 /*****************************************************************************/
 /* Module:  Pokey_process()                                                  */
@@ -1865,11 +1936,166 @@ void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 /*                                                                           */
 /*****************************************************************************/
 
+/**************************************************************
+
+           Master gain and DC offset calculation
+                 by Michael Borisov
+
+ In order to use the available 8-bit or 16-bit dynamic range
+ to full extent, reducing the influence of quantization
+ noise while simultaneously avoiding overflows, gain
+ and DC offset should be set to appropriate value.
+
+ All Pokey-generated sounds have maximal amplitude of 15.
+ When all four channels sound simultaneously and in the
+ same phase, amplidudes would add up to 60.
+
+ If Pokey is generating a 'pure tone', it always has a DC
+ offset of half its amplitude. For other signals (produced
+ by poly generators) DC offset varies, but it is always near
+ to half amplitude and never exceeds this value.
+
+ In case that pure tone base frequency is outside of audible
+ range (ultrasound frequency for high sample rates and above-
+ Nyquist frequency for low sample rates), to speed up the engine,
+ the generator is stopped while having only DC offset on the
+ output (half of corresponding AUDV value). In order that this
+ DC offset can be always represented as integer, AUDV values
+ are multiplied by 2 when the generator works.
+
+ Therefore maximum integer value before resampling filters
+ would be 60*2 = 120 while having maximum DC offset of 60.
+ Resampling does not change the DC offset, therefore we may
+ subtract it from the signal either before or after resampling.
+ In mzpokeysnd, DC offset is subtracted after resampling, however
+ for better understanding in further measurements I assume
+ subtracting DC before. So, input range for the resampler
+ becomes [-60 .. 60].
+
+ Resampling filter removes some harmonics from the signal as if
+ the rectangular wave was Fourier transformed forth-and-back,
+ while zeroing all harmonics above cutoff frequency. In case
+ of high-frequency pure tone (above samplerate/8), only first
+ harmonic of the Fourier transofm will remain. As it
+ is known, Fourier-transform of the rectangular function of
+ amplitude 1 has first oscillation component of amplitude 4/M_PI.
+ Therefore, maximum sample values for filtered rectangular
+ signal may exceed the amplitude  of rectangular signal
+ by up to 4/M_PI times.
+
+ Since our range before resampler is -60 .. 60, taking into
+ account mentioned effect with band limiting, range of values
+ on the resampler output appears to be in the following bounds:
+ [-60*4/M_PI .. 60*4/M_PI]
+
+ In order to map this into signed 8-bit range [-128 .. 127], we
+ should multiply the resampler output by 127/60/4*M_PI.
+
+ As it is common for sound hardware to have 8-bit sound unsigned,
+ additional DC offset of 128 must be added.
+
+ For 16-bit case the output range is [-32768 .. 32767], and
+ we should multiply the resampler output by 32767/60/4*M_PI
+
+ To make some room for numerical errors, filter ripples and
+ quantization noise, so that they do not cause overflows in
+ quantization, dynamic range is reduced in mzpokeysnd by
+ multiplying the output amplitude with 0.95, reserving 5%
+ of the total range for such effects, which is about 0.51db.
+
+ Mentioned gain and DC values were tested with 17kHz audio
+ playing synchronously on 4 channels, which showed to be
+ utilizing 95% of the sample values range.
+
+ Since any other gain value will be not optimal, I removed
+ user gain setting and hard-coded the gain into mzpokeysnd
+
+ ******************************************************************/
+
+
+/******************************************************************
+
+          Quantization effects and dithering
+              by Michael Borisov
+
+ Quantization error in the signal has an expectation value of half
+ the LSB, when the rounding is performed properly. Sometimes they
+ express quantization error as a random function with even
+ distribution over the range [-0.5 to 0.5]. Spectrum of this function
+ is flat, because it's a white noise.
+
+ Power of a discrete signal (including noise) is calculated as
+ mean square of its samples. For the mentioned above noise
+ this is approximately 0.33. Therefore, in decibels for 8-bit case,
+ our noise will have power of 10*log10(0.33/256/256) = -53dB
+
+ Because noise is white, this power of -53dB will be evenly
+ distributed over the whole signal band upto Nyquist frequency.
+ The larger the band is (higher sampling frequency), less
+ is the quantisation noise floor. For 8000Hz noise floor is
+ 10*log10(0.33/256/256/4000) = -89dB/Hz, and for 44100Hz noise
+ floor is 10*log10(0.33/256/256/22050) = -96.4dB/Hz.
+ This shows that higher sampling rates are better in sense of
+ quantization noise. Moreover, as large part of quantization noise
+ in case of 44100Hz will fall into ultrasound and hi-frequency
+ area 10-20kHz where human ear is less sensitive, this will
+ show up as great improvement in quantization noise performance
+ compared to 8000Hz.
+
+ I was plotting spectral analysis for sounds produced by mzpokeysnd
+ to check these measures. And it showed up that in 8-bit case
+ there is no expected flat noise floor of -89db/Hz for 8000Hz,
+ but some distortion spectral peaks had higher amplitude than
+ the aliasing peaks in 16-bit case. This was a proof to another
+ statement which says that quantization noise tends to become
+ correlated with the signal. Correlation is especially strong
+ for simple signals generated by Pokey. Correlation means that
+ the noise power of -53db is no longer evenly distributed
+ across the whole frequency range, but concentrates in larger
+ peaks at locations which depend on the Pokey signal.
+
+ To decorrelate quantization distortion and make it again
+ white noise, which would improve the sound spectrum, since
+ the maximum distortion peaks will have less amplitude,
+ dithering is used. Another white noise is added to the signal
+ before quantization. Since this added noise is not correlated
+ with the signal, it shows itself as a flat noise floor.
+ Quantization noise now tries to correlate with the dithering
+ noise, but this does not lead to appearance of sharp
+ spectral peaks any more :)
+
+ Another thing is that for listening, white noise is better than
+ distortion. This is because human hearing has some 'noise
+ reduction' system which makes it easier to percept sounds
+ on the white noise background.
+
+ From the other point of view, if a signal has high and low
+ spectral peaks, it is desirable that there is no distortion
+ component with peaks of amplitude comparable to those of
+ the true signal. Otherwise, perception of background low-
+ amplitude signals will be disrupted. That's why they say
+ that dithering extends dynamic range.
+
+ Dithering does not eliminate correlation of quantization noise
+ completely. Degree of reduction of this effect depends on
+ the dithering noise power. The higher is dithering noise,
+ the more quantization noise is decorrelated. But this also
+ leads to increase of noise percepted by the listener. So, an
+ optimum value should be selected. My experiments show that
+ unbiased rand() noise of amplitude 0.25 LSB is doing well.
+
+ Test spectral pictures for 8-bit sound, 8kHz sampling rate,
+ dithered, show a noise floor of approx. -87dB/Hz.
+
+ ******************************************************************/
+
+
+
 static void Pokey_process_8(void* sndbuffer, unsigned sndn)
 {
     unsigned short i;
     int nsam = sndn;
-    unsigned char *buffer = sndbuffer;
+    uint8 *buffer = sndbuffer;
 
     if(num_cur_pokeys<1)
         return; /* module was not initialized */
@@ -1880,7 +2106,7 @@ static void Pokey_process_8(void* sndbuffer, unsigned sndn)
     {
         for(i=0; i<num_cur_pokeys; i++)
         {
-            buffer[i] = floor(generate_sample(pokey_states+i) + 0.5) + 128;
+            buffer[i] = (uint8)floor((generate_sample(pokey_states+i)-60.0)*127/60/4*M_PI*0.95 + 128 + 0.5 + 0.5*rand()/RAND_MAX - 0.25);
         }
         buffer += num_cur_pokeys;
         nsam -= num_cur_pokeys;
@@ -1891,7 +2117,7 @@ static void Pokey_process_16(void* sndbuffer, unsigned sndn)
 {
     unsigned short i;
     int nsam = sndn;
-    signed short *buffer = sndbuffer;
+    int16 *buffer = sndbuffer;
 
     if(num_cur_pokeys<1)
         return; /* module was not initialized */
@@ -1902,19 +2128,12 @@ static void Pokey_process_16(void* sndbuffer, unsigned sndn)
     {
         for(i=0; i<num_cur_pokeys; i++)
         {
-            buffer[i] = floor(generate_sample(pokey_states+i) + 0.5) * 255;
+            buffer[i] = (int16)floor((generate_sample(pokey_states+i)-60.0)*32767.0/60/4*M_PI*0.95 + 0.5 + 0.5*rand()/RAND_MAX - 0.25);
         }
         buffer += num_cur_pokeys;
         nsam -= num_cur_pokeys;
     }
 }
-
-
-#ifdef SERIO_SOUND
-static void Update_serio_sound_mz(int out, UBYTE data)
-{ 
-}
-#endif
 
 #ifndef NO_CONSOL_SOUND
 static void Update_consol_sound_mz( int set )
@@ -1922,10 +2141,9 @@ static void Update_consol_sound_mz( int set )
 }
 #endif
 
-
-
 #ifndef	NO_VOL_ONLY
 static void Update_vol_only_sound_mz( void )
 {
 }
+
 #endif
