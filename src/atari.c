@@ -35,6 +35,7 @@
 #include "binload.h"
 #include "rtime.h"
 #include "cassette.h"
+#include "input.h"
 #ifdef SOUND
 #include "sound.h"
 #endif
@@ -672,6 +673,8 @@ void atari_sync(void)
 
 void Atari800_Frame(int mode)
 {
+	INPUT_Frame();
+
 #ifdef SOUND
 	Sound_Update();
 #endif
@@ -707,7 +710,6 @@ void Atari800_Hardware(void)
 	while (TRUE) {
 #ifndef BASIC
 		static int test_val = 0;
-		static int last_key = -1;	/* no key is pressed */
 		int keycode;
 
 		draw_display=1;
@@ -725,10 +727,7 @@ void Atari800_Hardware(void)
 			Atari800_Exit(FALSE);
 			exit(1);
 		case AKEY_BREAK:
-			IRQST &= ~0x80;
-			if (IRQEN & 0x80) {
-				GenerateIRQ();
-			}
+			key_break = 1;
 			break;
 		case AKEY_UI:
 #ifdef SOUND
@@ -752,23 +751,11 @@ void Atari800_Hardware(void)
 			Save_PCX_interlaced();
 			break;
 		case AKEY_NONE:
-			if (press_space) {
-				keycode = AKEY_SPACE;
-				press_space = 0;
-			}
-			else {
-				last_key = -1;
-				break;
-			}
+			key_break = 0;
+			key_code = AKEY_NONE;
+			break;
 		default:
-			if (keycode == last_key)
-				break;	
-			last_key = keycode;
-			KBCODE = keycode;
-			IRQST &= ~0x40;
-			if (IRQEN & 0x40) {
-				GenerateIRQ();
-			}
+			key_code = keycode;
 			break;
 		}
 #endif	/* !BASIC */
@@ -947,6 +934,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.21  2001/09/21 17:00:57  fox
+part of keyboard handling moved to INPUT_Frame()
+
 Revision 1.20  2001/09/21 16:54:56  fox
 Atari800_Frame()
 
