@@ -1,3 +1,5 @@
+** released as 1.2.4
+
 2002-08-07  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c:
   - added atexit(SDL_Quit) to clean up after unsuccessful initialization.
@@ -9,12 +11,15 @@
   - added Aflushlog() to Atari_Exit() thus debug info is displayed now
   - when sound card init failed the application continues to run with sound
     disabled (previously it was exiting immediately)
-* atari_sdl.c, atari_falcon.c, cassette.c, atari.c: fixed "-help" formatting
+* atari_sdl.c, atari_falcon.c, cassette.c, atari.c, atari_vga.c:
+  fixed "-help" formatting
 * atari_curses.c: added "-help"
 * atari.c, atari_curses.c, atari_x11.c: added Aflushlog() to Atari_Exit()
 * atari_x11.c: fixed the clean up code in Atari_Exit(), added help_only mode
 * sound.c: all printf's changed to Aprintf().
 * atari.c: "-v" or "-version" displays the version correctly now
+* atari_vga.c: added help_only mode and made sure Atari_Exit is aware of that
+* sound_dos.c: removed EOL ("\n") from Aprint() (it adds the \n automatically)
 
 2002-07-24  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c, DOC/cart.txt, DOC/README: 256K and 512K XEGS carts
