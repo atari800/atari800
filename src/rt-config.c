@@ -31,7 +31,7 @@
 #include "rt-config.h"
 #include "log.h"
 
-#if defined(VGA) || defined(SUPPORTS_ATARI_CONFIGURE)
+#ifdef SUPPORTS_ATARI_CONFIGURE
 	/* This procedure processes lines not recognized by RtConfigLoad. */
 	extern int Atari_Configure(char* option,char *parameters);
 #endif
@@ -295,9 +295,10 @@ int RtConfigLoad(const char *alternate_config_filename)
 					printf("Invalid TV Mode: %s\n", ptr);
 			}
 			else {
-#if defined(VGA) || defined(SUPPORTS_ATARI_CONFIGURE)
-				if (!Atari_Configure(string,ptr))
+#ifdef SUPPORTS_ATARI_CONFIGURE
+				if (!Atari_Configure(string,ptr)) {
 					Aprint("Unrecognized variable or bad parameters: %s=%s\n", string,ptr);
+				}
 #else
 				Aprint("Unrecognized Variable: %s\n", string);
 #endif
@@ -490,19 +491,15 @@ void RtConfigUpdate(void)
 	GetYesNoAsInt("Enable STEREO POKEY Sound [%c] ", &stereo_enabled);
 	GetYesNoAsInt("Enable SPEAKER Sound [%c] ", &console_sound_enabled);
 	GetYesNoAsInt("Enable SERIO Sound [%c] ", &serio_sound_enabled);
-
-#ifdef VGA
-	printf("Standard joysticks configuration selected.\n"
-			"Use joycfg.exe to change it. Press RETURN to continue ");
-	fflush(stdout);
-	getchar();
-#endif
 }
 
 #endif /* DONT_USE_RTCONFIGUPDATE */
 
 /*
 $Log$
+Revision 1.19  2004/06/04 22:15:30  joy
+SUPPORTS_ATARI_CONFIG* is enough, other platforms define it if needed
+
 Revision 1.18  2003/12/12 00:24:16  markgrebe
 Added enable for console and sio sound
 
