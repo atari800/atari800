@@ -155,11 +155,13 @@ static ULONG DisplayID = INVALID_ID;
 /* Emulator GUI */
 static LONG ScreenIsCustom;
 static struct Screen *ScreenMain;
+static ULONG ScreenDepth;
 static APTR VisualInfoMain;
 static struct Window *WindowMain = NULL;
 static struct Menu *MenuMain;
 
-static UBYTE colortable8[256];
+static UBYTE pentable[256];
+static BOOL pensallocated;
 static UBYTE *tempscreendata;
 
 struct FileRequester *DiskFileReq;
@@ -1154,7 +1156,7 @@ void Atari_Initialise (int *argc, unsigned char **argv)
 /**************************************************************************
  Convert src to dest with colortable
 **************************************************************************/
-static void ScreenData28bit(UBYTE *src, UBYTE *dest, UBYTE *colortable8, ULONG width, ULONG height)
+static void ScreenData28bit(UBYTE *src, UBYTE *dest, UBYTE *pentable, ULONG width, ULONG height)
 {
 	int x,y;
 
@@ -1162,7 +1164,7 @@ static void ScreenData28bit(UBYTE *src, UBYTE *dest, UBYTE *colortable8, ULONG w
 	{
 		for (x=0;x<width;x++)
 		{
-			*dest++ = colortable8[*src++];
+			*dest++ = pentable[*src++];
 		}
 	}
 }
@@ -1184,19 +1186,26 @@ void Atari_DisplayScreen(UBYTE *screen)
 		LONG offx = WindowMain->BorderLeft;
 		LONG offy = WindowMain->BorderTop;
 
-		ScreenData28bit(screen, tempscreendata,colortable8,ATARI_WIDTH,ATARI_HEIGHT);
-
-		if(Scalable && (InnerWidth(WindowMain)!=ATARI_WIDTH || InnerHeight(WindowMain) != ATARI_HEIGHT))
+		if (Scalable && (InnerWidth(WindowMain)!=ATARI_WIDTH || InnerHeight(WindowMain) != ATARI_HEIGHT))
 		{
+			ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
+
 			ScalePixelArray( tempscreendata, ATARI_WIDTH, ATARI_HEIGHT, ATARI_WIDTH, WindowMain->RPort, offx, offy,
 										InnerWidth(WindowMain), InnerHeight(WindowMain), RECTFMT_LUT8);
 		}	else
 		{
-			WriteChunkyPixels(WindowMain->RPort, offx, offy, offx + ATARI_WIDTH - 1 - 56, offy + ATARI_HEIGHT - 1,
-						  tempscreendata + 28, ATARI_WIDTH);
+			if (pensallocated)
+			{
+				ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
+				WriteChunkyPixels(WindowMain->RPort, offx, offy, offx + ATARI_WIDTH - 1 - 56, offy + ATARI_HEIGHT - 1,
+							  tempscreendata + 28, ATARI_WIDTH);
+			} else
+			{
+				WriteLUTPixelArray(screen, 28, 0, ATARI_WIDTH, WindowMain->RPort, colortable, offx, offy, ATARI_WIDTH-56, ATARI_HEIGHT, CTABFMT_XRGB8);
+			}
 		}
-		fgpen = colortable8[fgpen];
-		bgpen = colortable8[bgpen];
+		fgpen = pentable[fgpen];
+		bgpen = pentable[bgpen];
 	}
 
 	if (ShowFPS)
@@ -1562,7 +1571,11 @@ VOID FreeDisplay(void)
 		if (ScreenIsCustom) CloseScreen(ScreenMain);
 		else
 		{
-			for(i=0;i<256;i++) ReleasePen(ScreenMain->ViewPort.ColorMap,colortable8[i]);
+			if (pensallocated)
+			{
+				for(i=0;i<256;i++) ReleasePen(ScreenMain->ViewPort.ColorMap,pentable[i]);
+				pensallocated = 0;
+			}
 			UnlockPubScreen(NULL,ScreenMain);
 		}
 		ScreenMain = NULL;
@@ -1575,7 +1588,7 @@ VOID FreeDisplay(void)
 **************************************************************************/
 LONG SetupDisplay(void)
 {
-	UWORD ScreenWidth, ScreenHeight, ScrDepth;
+	UWORD ScreenWidth, ScreenHeight;
 	struct MenuItem *mi;
 	int i;
 
@@ -1606,14 +1619,12 @@ LONG SetupDisplay(void)
 		static ULONG colors32[3*256+1];
 
 		ScreenIsCustom = TRUE;
-
 		ScreenWidth = ATARI_WIDTH - 64;
 		ScreenHeight = ATARI_HEIGHT;
-
-		ScrDepth = 8;
+		ScreenDepth = 8;
 
 		ScreenDisplayID = DisplayID;
-		if (UseBestID) ScreenDisplayID = GetBestID(ScreenWidth,ScreenHeight,ScrDepth);
+		if (UseBestID) ScreenDisplayID = GetBestID(ScreenWidth,ScreenHeight,ScreenDepth);
 
 		colors32[0] = 256 << 16;
 		for (i=0;i<256;i++)
@@ -1635,7 +1646,7 @@ LONG SetupDisplay(void)
 									SA_Top, 0,
 									SA_Width, ScreenWidth,
 									SA_Height, ScreenHeight,
-									SA_Depth, ScrDepth,
+									SA_Depth, ScreenDepth,
 									SA_Pens, ScreenPens,
 									SA_Quiet, TRUE,
 									SA_Type, CUSTOMSCREEN,
@@ -1647,27 +1658,31 @@ LONG SetupDisplay(void)
 									TAG_DONE);
 	}	else
 	{
-		ScreenIsCustom = FALSE;
-
-		ScreenWidth = ATARI_WIDTH - 56;
-		ScreenHeight = ATARI_HEIGHT;
-
 		if ((ScreenMain = LockPubScreen(NULL)))
 		{
-			int i;
+			ScreenIsCustom = FALSE;
+			ScreenWidth = ATARI_WIDTH - 56;
+			ScreenHeight = ATARI_HEIGHT;
+			ScreenDepth = GetBitMapAttr(ScreenMain->RastPort.BitMap,BMA_DEPTH);
 
-			for(i=0;i<256;i++)
+			if (ScreenDepth <= 8 || !CyberGfxBase)
 			{
-				ULONG rgb = colortable[i];
-				ULONG red = (rgb & 0x00ff0000) >> 16;
-				ULONG green = (rgb & 0x0000ff00) >> 8;
-				ULONG blue = (rgb & 0x000000ff);
+				int i;
 
-				red |= (red<<24)|(red<<16)|(red<<8);
-				green |= (green<<24)|(green<<16)|(green<<8);
-				blue |= (blue<<24)|(blue<<16)|(blue<<8);
+				for(i=0;i<256;i++)
+				{
+					ULONG rgb = colortable[i];
+					ULONG red = (rgb & 0x00ff0000) >> 16;
+					ULONG green = (rgb & 0x0000ff00) >> 8;
+					ULONG blue = (rgb & 0x000000ff);
 
-				colortable8[i] = ObtainBestPenA(ScreenMain->ViewPort.ColorMap,red,green,blue,NULL);
+					red |= (red<<24)|(red<<16)|(red<<8);
+					green |= (green<<24)|(green<<16)|(green<<8);
+					blue |= (blue<<24)|(blue<<16)|(blue<<8);
+
+					pentable[i] = ObtainBestPenA(ScreenMain->ViewPort.ColorMap,red,green,blue,NULL);
+				}
+				pensallocated = 1;
 			}
 
 			if (!(tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),MEMF_CLEAR)))
