@@ -180,8 +180,6 @@ static GC gc;
 static GC gc_colour[256];
 static int colours[256];
 
-static XComposeStatus keyboard_status;
-
 #ifdef XVIEW
 static Frame frame;
 static Panel panel;
@@ -285,8 +283,9 @@ int GetKeyCode(XEvent * event)
 
 	keyboard_consol = 7;
 
-	XLookupString((XKeyEvent *) event, buffer, 128,
-				  &keysym, &keyboard_status);
+	if (event->type == KeyPress || event->type == KeyRelease) {
+		XLookupString((XKeyEvent *) event, buffer, 128, &keysym, NULL);
+	}
 
 	switch (event->type) {
 	case Expose:
