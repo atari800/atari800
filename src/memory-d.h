@@ -1,3 +1,5 @@
+#include <string.h>	/* memset */
+
 #include "config.h"
 
 #ifdef PAGED_MEM
@@ -21,22 +23,15 @@ extern UBYTE attrib[65536];
 #endif
 #define Poke(x,y) (dPutByte((x),(y)))
 
+extern int cartA0BF_enabled;
+
 typedef int ATPtr;
 
-int Insert_8K_ROM(char *filename);
-int Insert_16K_ROM(char *filename);
-int Insert_OSS_ROM(char *filename);
-int Insert_DB_ROM(char *filename);
-int Insert_32K_5200ROM(char *filename);
-int Remove_ROM(void);
-int Insert_Cartridge(char *filename);
 void PatchOS(void);
 int Initialise_AtariXL(void);
 int Initialise_Atari5200(void);
 int Initialise_EmuOS(void);
 void ClearRAM(void);
-int bounty_bob1(UWORD addr);
-int bounty_bob2(UWORD addr);
 void DisablePILL(void);
 void EnablePILL(void);
 int Initialise_AtariOSA(void);
@@ -46,5 +41,9 @@ void MemStateRead(UBYTE SaveVerbose);
 void CopyFromMem(ATPtr from, UBYTE * to, int size);
 void CopyToMem(UBYTE * from, ATPtr to, int size);
 void PORTB_handler(UBYTE byte);
-void supercart_handler(UWORD addr, UBYTE byte);
+void Cart809F_Disable(void);
+void Cart809F_Enable(void);
+void CartA0BF_Disable(void);
+void CartA0BF_Enable(void);
+#define CopyROM(addr1,addr2,src) memcpy(memory+addr1,src,addr2-addr1+1)
 void get_charset(char * cs);
