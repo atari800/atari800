@@ -26,7 +26,8 @@ int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	128,/* CART_XEGS_128 */
 	16, /* CART_OSS2_16 */
 	16,	/* CART_5200_NS_16 */
-	128	/* CART_ATRAX_128 */
+	128,/* CART_ATRAX_128 */
+	40	/* CART_BBSB_40 */
 };
 
 int CART_IsFor5200(int type)
@@ -206,17 +207,33 @@ void CART_PutByte(UWORD addr, UBYTE byte)
 /* special support of Bounty Bob on Atari5200 */
 void CART_BountyBob1(UWORD addr)
 {
-	if (addr >= 0x4ff6 && addr <= 0x4ff9) {
-		addr -= 0x4ff6;
-		CopyROM(0x4000, 0x4fff, cart_image + addr * 0x1000);
+	if (machine_type == MACHINE_5200) {
+		if (addr >= 0x4ff6 && addr <= 0x4ff9) {
+			addr -= 0x4ff6;
+			CopyROM(0x4000, 0x4fff, cart_image + addr * 0x1000);
+		}
+	}
+	else {
+		if (addr >= 0x8ff6 && addr <= 0x8ff9) {
+			addr -= 0x8ff6;
+			CopyROM(0x8000, 0x8fff, cart_image + addr * 0x1000);
+		}
 	}
 }
 
 void CART_BountyBob2(UWORD addr)
 {
-	if (addr >= 0x5ff6 && addr <= 0x5ff9) {
-		addr -= 0x5ff6;
-		CopyROM(0x5000, 0x5fff, cart_image + 0x4000 + addr * 0x1000);
+	if (machine_type == MACHINE_5200) {
+		if (addr >= 0x5ff6 && addr <= 0x5ff9) {
+			addr -= 0x5ff6;
+			CopyROM(0x5000, 0x5fff, cart_image + 0x4000 + addr * 0x1000);
+		}
+	}
+	else {
+		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
+			addr -= 0x9ff6;
+			CopyROM(0x9000, 0x9fff, cart_image + 0x4000 + addr * 0x1000);
+		}
 	}
 }
 
@@ -421,6 +438,15 @@ void CART_Start(void) {
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xbfff, cart_image);
 			bank = 0;
+			break;
+		case CART_BBSB_40:
+			Cart809F_Enable();
+			CartA0BF_Enable();
+			CopyROM(0x8000, 0x8fff, cart_image);
+			CopyROM(0x9000, 0x9fff, cart_image + 0x4000);
+			CopyROM(0xa000, 0xbfff, cart_image + 0x8000);
+			SetHARDWARE(0x8ff6, 0x8ff9);
+			SetHARDWARE(0x9ff6, 0x9ff9);
 			break;
 		default:
 			Cart809F_Disable();

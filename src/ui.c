@@ -903,7 +903,8 @@ int SelectCartType(UBYTE * screen, int k)
 		"XEGS 128 KB cartridge",
 		"Action! 16 KB cartridge",
 		"Single ROM 16 KB 5200 cartridge",
-		"Atrax 128 KB cartridge"
+		"Atrax 128 KB cartridge",
+		"Bounty Bob 40 KB cartridge"
 	};
 
 	int i;
@@ -1503,6 +1504,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.18  2001/10/05 10:21:52  fox
+added Bounty Bob Strikes Back cartridge for 800/XL/XE
+
 Revision 1.17  2001/10/01 17:30:27  fox
 Atrax 128 KB cartridge, artif_init -> ANTIC_UpdateArtifacting;
 CURSES code cleanup (spaces, memory[], goto)
