@@ -12,9 +12,6 @@
 #include <sys/time.h>
 #endif
 
-#define FALSE   0
-#define TRUE    1
-
 #include "atari.h"
 #include "cpu.h"
 #include "memory.h"
@@ -22,7 +19,7 @@
 #include "gtia.h"
 #include "pia.h"
 #include "pokey.h"
-#include "supercart.h"
+#include "cartridge.h"
 #include "devices.h"
 #include "sio.h"
 #include "monitor.h"
@@ -36,6 +33,7 @@
 #include "diskled.h"
 #include "colours.h"
 #include "binload.h"
+#include "rtime.h"
 #ifdef SOUND
 #include "sound.h"
 #endif
@@ -56,6 +54,7 @@ ULONG *atari_screen2 = NULL;
 int tv_mode = TV_PAL;
 Machine machine = Atari;
 int mach_xlxe = FALSE;
+int Ram256 = 0;
 int verbose = FALSE;
 double fps;
 int nframes;
@@ -71,19 +70,12 @@ extern UBYTE PORTB;
 
 extern int xe_bank;
 extern int selftest_enabled;
-extern int Ram256;
-extern int rom_inserted;
-
-UBYTE *cart_image = NULL;		/* For cartridge memory */
-int cart_type = NO_CART;
 
 double deltatime;
 int draw_display=1;		/* Draw actualy generated screen */
 
 int Atari800_Exit(int run_monitor);
 void Atari800_Hardware(void);
-
-int load_cart(char *filename, int type);
 
 static char *rom_filename = NULL;
 
@@ -123,12 +115,15 @@ void Coldstart(void)
 {
 	PORTA = 0x00;
 	if (mach_xlxe) {
+#if 0	/* to make "-cart" working */
 		selftest_enabled = TRUE;	/* necessary for init RAM */
 		PORTB = 0x00;			/* necessary for init RAM */
+#endif
 		PIA_PutByte(_PORTB, 0xff);	/* turn on operating system */
 	}
 	else
 		PORTB = 0xff;
+	CART_Start();
 	Poke(0x244, 1);
 	ANTIC_Reset();
 	CPU_Reset();
@@ -294,27 +289,6 @@ int main(int argc, char **argv)
 			strcpy(atari_basic_filename, argv[++i]);
 		else if (strcmp(argv[i], "-cart") == 0) {
 			rom_filename = argv[++i];
-			cart_type = CARTRIDGE;
-		}
-		else if (strcmp(argv[i], "-rom") == 0) {
-			rom_filename = argv[++i];
-			cart_type = NORMAL8_CART;
-		}
-		else if (strcmp(argv[i], "-rom16") == 0) {
-			rom_filename = argv[++i];
-			cart_type = NORMAL16_CART;
-		}
-		else if (strcmp(argv[i], "-ags32") == 0) {
-			rom_filename = argv[++i];
-			cart_type = AGS32_CART;
-		}
-		else if (strcmp(argv[i], "-oss") == 0) {
-			rom_filename = argv[++i];
-			cart_type = OSS_SUPERCART;
-		}
-		else if (strcmp(argv[i], "-db") == 0) {		/* db 16/32 superduper cart */
-			rom_filename = argv[++i];
-			cart_type = DB_SUPERCART;
 		}
 		else if (strcmp(argv[i], "-run") == 0) {
 			run_direct = argv[++i];
@@ -339,10 +313,7 @@ int main(int argc, char **argv)
 			Aprint("\t-5200         Atari 5200 Games System");
 			Aprint("\t-pal          Enable PAL TV mode");
 			Aprint("\t-ntsc         Enable NTSC TV mode");
-			Aprint("\t-rom fnm      Install standard 8K Cartridge");
-			Aprint("\t-rom16 fnm    Install standard 16K Cartridge");
-			Aprint("\t-oss fnm      Install OSS Super Cartridge");
-			Aprint("\t-db fnm       Install DB's 16/32K Cartridge (not for normal use)");
+			Aprint("\t-cart fnm     Install cartridge (raw or CART format)");
 			Aprint("\t-run fnm      Run file directly");
 			Aprint("\t-refresh num  Specify screen refresh rate");
 			Aprint("\t-nopatch      Don't patch SIO routine in OS");
@@ -386,6 +357,7 @@ int main(int argc, char **argv)
 
 	Palette_Initialise(&argc, argv);
 	Device_Initialise(&argc, argv);
+	RTIME_Initialise(&argc, argv);
 	SIO_Initialise (&argc, argv);
 	Atari_Initialise(&argc, argv);	/* Platform Specific Initialisation */
 
@@ -484,36 +456,29 @@ int main(int argc, char **argv)
  * ================================
  */
 	if (rom_filename) {
-		switch (cart_type) {
-		case CARTRIDGE:
-			status = Insert_Cartridge(rom_filename);
-			break;
-		case OSS_SUPERCART:
-			status = Insert_OSS_ROM(rom_filename);
-			break;
-		case DB_SUPERCART:
-			status = Insert_DB_ROM(rom_filename);
-			break;
-		case NORMAL8_CART:
-			status = Insert_8K_ROM(rom_filename);
-			break;
-		case NORMAL16_CART:
-			status = Insert_16K_ROM(rom_filename);
-			break;
-		case AGS32_CART:
-			status = Insert_32K_5200ROM(rom_filename);
-			break;
+		int r = CART_Insert(rom_filename);
+		if (r < 0) {
+			Aprint("Error inserting cartridge %s: %s", rom_filename,
+			r == CART_CANT_OPEN ? "Can't open file" :
+			r == CART_BAD_FORMAT ? "Bad format" :
+			r == CART_BAD_CHECKSUM ? "Bad checksum" :
+			"Unknown error");
 		}
-
-		if (status) {
-			rom_inserted = TRUE;
+		if (r > 0) {
+			cart_type = SelectCartType((UBYTE *) atari_screen, r);
+			CART_Start();
 		}
-		else {
-			rom_inserted = FALSE;
+		if (cart_type != CART_NONE) {
+			int for5200 = CART_IsFor5200(cart_type);
+			if (for5200 && machine != Atari5200) {
+				Ram256 = 0;
+				Initialise_Atari5200();
+			}
+			else if (!for5200 && machine == Atari5200) {
+				Ram256 = 0;
+				Initialise_AtariXL();
+			}
 		}
-	}
-	else {
-		rom_inserted = FALSE;
 	}
 /*
  * ======================================
@@ -543,11 +508,11 @@ UBYTE Atari800_GetByte(UWORD addr)
 	UBYTE byte = 0xff;
 	switch (addr & 0xff00) {
 	case 0x4f00:
-		bounty_bob1(addr);
+		CART_BountyBob1(addr);
 		byte = 0;
 		break;
 	case 0x5f00:
-		bounty_bob2(addr);
+		CART_BountyBob2(addr);
 		byte = 0;
 		break;
 	case 0xd000:				/* GTIA */
@@ -566,7 +531,7 @@ UBYTE Atari800_GetByte(UWORD addr)
 		byte = ANTIC_GetByte(addr);
 		break;
 	case 0xd500:				/* RTIME-8 */
-		byte = SuperCart_GetByte(addr);
+		byte = CART_GetByte(addr);
 		break;
 	default:
 		break;
@@ -579,10 +544,10 @@ void Atari800_PutByte(UWORD addr, UBYTE byte)
 {
 	switch (addr & 0xff00) {
 	case 0x4f00:
-		bounty_bob1(addr);
+		CART_BountyBob1(addr);
 		break;
 	case 0x5f00:
-		bounty_bob2(addr);
+		CART_BountyBob2(addr);
 		break;
 	case 0xd000:				/* GTIA */
 	case 0xc000:				/* GTIA - 5200 */
@@ -600,7 +565,7 @@ void Atari800_PutByte(UWORD addr, UBYTE byte)
 		ANTIC_PutByte(addr, byte);
 		break;
 	case 0xd500:				/* Super Cartridges */
-		SuperCart_PutByte(addr, byte);
+		CART_PutByte(addr, byte);
 		break;
 	default:
 		break;
@@ -947,9 +912,8 @@ void MainStateRead( void )
 
 /*
 $Log$
-Revision 1.9  2001/07/20 00:26:16  fox
-removed enable_rom_patches, added enable_h_patch and enable_p_patch.
-Added Atari800_UpdatePatches()
+Revision 1.10  2001/07/20 20:14:14  fox
+support for new rtime and cartridge modules
 
 Revision 1.8  2001/04/15 09:14:33  knik
 zlib_capable -> have_libz (autoconf compatibility)
