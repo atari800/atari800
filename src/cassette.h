@@ -16,6 +16,7 @@ extern int cassette_current_block;
 extern int cassette_max_block;
 
 extern int hold_start;
+extern int hold_start_on_reboot; /* preserve hold_start after reboot */
 extern int press_space;
 
 UBYTE CASSETTE_Sio(void);

@@ -24,6 +24,7 @@
 #include "binload.h"
 #include "sndsave.h"
 #include "cartridge.h"
+#include "cassette.h"
 #include "rtime.h"
 #include "input.h"
 
@@ -32,6 +33,7 @@ tUIDriver* ui_driver = &basic_ui_driver;
 int ui_is_active = FALSE;
 int alt_function = -1;		/* alt function init */
 int current_disk_directory = 0;
+int hold_start_on_reboot = 0;
 
 #ifdef STEREO
 extern int stereo_enabled;
@@ -41,6 +43,7 @@ static char curr_disk_dir[FILENAME_MAX] = "";
 static char curr_cart_dir[FILENAME_MAX] = "";
 static char curr_exe_dir[FILENAME_MAX] = "";
 static char curr_state_dir[FILENAME_MAX] = "";
+static char curr_tape_dir[FILENAME_MAX] = "";
 
 #ifdef CRASH_MENU
 int crash_code=-1;
@@ -53,6 +56,7 @@ int CrashMenu();
 void DiskManagement();
 void CartManagement();
 int RunExe();
+int LoadTape();
 void SelectSystem();
 void SetSoundType();
 void SelectArtifacting();
@@ -457,15 +461,33 @@ int RunExe()
 	return ret;
 }
 
+int LoadTape()
+{
+	char tapename[FILENAME_MAX+1];
+	int ret = FALSE;
+
+	if (!curr_tape_dir[0])
+	  strcpy(curr_tape_dir, atari_exe_dir);
+	if (ui_driver->fGetLoadFilename(curr_tape_dir, tapename)) {
+		ret = CASSETTE_Insert(tapename);
+		if (! ret) {
+			/* display log to a window */
+		}
+	}
+
+	return ret;
+}
+
 void AtariSettings()
 {
 	static tMenuItem menu_array[] =
 	{
 		{ "NBAS", ITEM_ENABLED|ITEM_CHECK, NULL, "Disable BASIC when booting Atari:", NULL, 0 },
-		{ "RTM8", ITEM_ENABLED|ITEM_CHECK, NULL, "Enable R-Time 8:",                  NULL, 1 },
-		{ "SIOP", ITEM_ENABLED|ITEM_CHECK, NULL, "SIO patch (fast disk access):",     NULL, 2 },
-		{ "HDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "H: device (hard disk):",            NULL, 3 },
-		{ "PDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "P: device (printer):",              NULL, 4 },
+		{ "STRT", ITEM_ENABLED|ITEM_CHECK, NULL, "Boot from tape (hold Start):",      NULL, 1 },
+		{ "RTM8", ITEM_ENABLED|ITEM_CHECK, NULL, "Enable R-Time 8:",                  NULL, 2 },
+		{ "SIOP", ITEM_ENABLED|ITEM_CHECK, NULL, "SIO patch (fast disk access):",     NULL, 3 },
+		{ "HDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "H: device (hard disk):",            NULL, 4 },
+		{ "PDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "P: device (printer):",              NULL, 5 },
 		MENU_END
 	};
 
@@ -476,22 +498,26 @@ void AtariSettings()
 			menu_array[0].flags |= ITEM_CHECKED;
 		else
 			menu_array[0].flags &= ~ITEM_CHECKED;
-		if(rtime_enabled)
+		if(hold_start_on_reboot)
 			menu_array[1].flags |= ITEM_CHECKED;
 		else
 			menu_array[1].flags &= ~ITEM_CHECKED;
-		if(enable_sio_patch)
+		if(rtime_enabled)
 			menu_array[2].flags |= ITEM_CHECKED;
 		else
 			menu_array[2].flags &= ~ITEM_CHECKED;
-		if(enable_h_patch)
+		if(enable_sio_patch)
 			menu_array[3].flags |= ITEM_CHECKED;
 		else
 			menu_array[3].flags &= ~ITEM_CHECKED;
-		if(enable_p_patch)
+		if(enable_h_patch)
 			menu_array[4].flags |= ITEM_CHECKED;
 		else
 			menu_array[4].flags &= ~ITEM_CHECKED;
+		if(enable_p_patch)
+			menu_array[5].flags |= ITEM_CHECKED;
+		else
+			menu_array[5].flags &= ~ITEM_CHECKED;
 
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 
@@ -500,15 +526,19 @@ void AtariSettings()
 			disable_basic = !disable_basic;
 			break;
 		case 1:
-			rtime_enabled = !rtime_enabled;
+			hold_start_on_reboot = !hold_start_on_reboot;
+			hold_start = hold_start_on_reboot;
 			break;
 		case 2:
-			enable_sio_patch = !enable_sio_patch;
+			rtime_enabled = !rtime_enabled;
 			break;
 		case 3:
-			enable_h_patch = !enable_h_patch;
+			enable_sio_patch = !enable_sio_patch;
 			break;
 		case 4:
+			enable_h_patch = !enable_h_patch;
+			break;
+		case 5:
 			enable_p_patch = !enable_p_patch;
 			break;
 		}
@@ -606,6 +636,7 @@ void ui(UBYTE* screen)
 		{ "DISK", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Disk Management",            "Alt+D",    MENU_DISK },
 		{ "CART", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Cartridge Management",       "Alt+C",    MENU_CARTRIDGE },
 		{ "XBIN", ITEM_ENABLED|ITEM_FILESEL, NULL, "Run BIN file directly",      "Alt+R",    MENU_RUN },
+		{ "CASS", ITEM_ENABLED|ITEM_FILESEL, NULL, "Load tape image",            NULL,       MENU_CASSETTE },
 		{ "SYST", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Select System",              "Alt+Y",    MENU_SYSTEM },
 		{ "STER", ITEM_ENABLED|ITEM_ACTION,  NULL, "Sound Mono/Stereo",          "Alt+O",    MENU_SOUND },
 		{ "SREC", ITEM_ENABLED|ITEM_ACTION,  NULL, "Sound Recording start/stop", "Alt+W",    MENU_SOUND_RECORDING },
@@ -614,7 +645,7 @@ void ui(UBYTE* screen)
 		{ "SAVE", ITEM_ENABLED|ITEM_FILESEL, NULL, "Save State",                 "Alt+S",    MENU_SAVESTATE },
 		{ "LOAD", ITEM_ENABLED|ITEM_FILESEL, NULL, "Load State",                 "Alt+L",    MENU_LOADSTATE },
 		{ "PCXN", ITEM_ENABLED|ITEM_FILESEL, NULL, "PCX screenshot",             "F10",      MENU_PCX },
-		{ "PCXI", ITEM_ENABLED|ITEM_FILESEL, NULL, "PCX interlaced screenshot",  "Shift+F10",MENU_PCXI },
+/*		{ "PCXI", ITEM_ENABLED|ITEM_FILESEL, NULL, "PCX interlaced screenshot",  "Shift+F10",MENU_PCXI }, */
 		{ "CONT", ITEM_ENABLED|ITEM_ACTION,  NULL, "Back to emulated Atari",     "Esc",      MENU_BACK },
 		{ "REST", ITEM_ENABLED|ITEM_ACTION,  NULL, "Reset (Warm Start)",         "F5",       MENU_RESETW },
 		{ "REBT", ITEM_ENABLED|ITEM_ACTION,  NULL, "Reboot (Cold Start)",        "Shift+F5", MENU_RESETC },
@@ -667,6 +698,9 @@ void ui(UBYTE* screen)
 		case MENU_RUN:
 			if (RunExe())
 				done = TRUE;	/* reboot immediately */
+			break;
+		case MENU_CASSETTE:
+			LoadTape();
 			break;
 		case MENU_SYSTEM:
 			SelectSystem();
@@ -777,6 +811,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.33  2002/07/04 22:35:07  vasyl
+Added cassette support in main menu
+
 Revision 1.32  2002/07/04 12:41:38  pfusik
 emulation of 16K RAM machines: 400 and 600XL
 
