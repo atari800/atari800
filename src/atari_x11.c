@@ -72,6 +72,7 @@ static int motif_rom_sel = 1;
 #include "platform.h"
 #include "rt-config.h"
 #include "ui.h"
+#include "log.h"
 
 /*
 static struct timeval tp;	warning: 'tp' defined but not used
@@ -84,7 +85,7 @@ static struct timezone tzp;	warning: 'tzp' defined but not used
 #include <X11/extensions/XShm.h>
 
 static XShmSegmentInfo shminfo;
-static XImage *image;
+static XImage *image = NULL;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 extern int colour_translation_table[256];
 #endif
@@ -141,13 +142,13 @@ static int clipping_width=ATARI_WIDTH;
 static int clipping_height=ATARI_HEIGHT;
 
 
-static Display *display;
-static Screen *screen;
+static Display *display = NULL;
+static Screen *screen = NULL;
 static Window window;
 #ifndef SHM
 static Pixmap pixmap;
 #endif
-static Visual *visual;
+static Visual *visual = NULL;
 static Colormap cmap;
 
 static GC gc;
@@ -183,7 +184,7 @@ static Panel_item refresh_slider;
 
 static int SHIFT = 0x00;
 static int CONTROL = 0x00;
-static UBYTE *image_data;
+static UBYTE *image_data = NULL;
 static int modified;
 
 static int keypad_mode = -1;	/* Joystick */
@@ -238,7 +239,8 @@ void autorepeat_restore( ovid )
 {
 	if( autorepeat )
 		XAutoRepeatOn(display);
-	else	XAutoRepeatOff(display);
+	else
+		XAutoRepeatOff(display);
 }
 
 void segmentationfault(int x)
@@ -1520,6 +1522,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	int colorstep;
 	int i, j;
 	int mode = 0;
+	int help_only = FALSE;
 
 #ifdef XVIEW
 	int ypos;
@@ -1564,17 +1567,18 @@ void Atari_Initialise(int *argc, char *argv[])
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				printf("\t-small        Small window (%dx%d)\n",
+				help_only = TRUE;
+				printf("\t-small           Small window (%dx%d)\n",
 					   ATARI_WIDTH, ATARI_HEIGHT);
-				printf("\t-large        Large window (%dx%d)\n",
+				printf("\t-large           Large window (%dx%d)\n",
 					   ATARI_WIDTH * 2, ATARI_HEIGHT * 2);
-				printf("\t-huge         Huge window (%dx%d)\n",
+				printf("\t-huge            Huge window (%dx%d)\n",
 					   ATARI_WIDTH * 3, ATARI_HEIGHT * 3);
-				printf("\t-x11bug       Enable debug code in atari_x11.c\n");
-				printf("\t-clip_x <nuber_of_pixels>       Set left offset for clipping\n");
-				printf("\t-clip_width <nuber_of_pixels>   Set window clip-width\n");
-				printf("\t-clip_y <nuber_of_pixels>       Set top offset for clipping\n");
-				printf("\t-clip_height <nuber_of_pixels>  Set window clip-height\n");
+				printf("\t-x11bug          Enable debug code in atari_x11.c\n");
+				printf("\t-clip_x <n>      Set left offset in pixels for clipping\n");
+				printf("\t-clip_width <n>  Set window clip-width\n");
+				printf("\t-clip_y <n>      Set top offset for clipping\n");
+				printf("\t-clip_height <n> Set window clip-height\n");
 			}
 			argv[j++] = argv[i];
 		}
@@ -1585,6 +1589,9 @@ void Atari_Initialise(int *argc, char *argv[])
 #ifdef SOUND
 	Sound_Initialise(argc, argv);
 #endif
+
+	if (help_only)
+		return;
 
 	if ((clipping_x < 0) || (clipping_x >= ATARI_WIDTH))
 	{
@@ -2520,22 +2527,26 @@ int Atari_Exit(int run_monitor)
 		restart = FALSE;
 
 	if (!restart) {
-		free(image_data);
+		if (image_data != NULL)
+			free(image_data);
 
-		XSync(display, True);
+		if (display != NULL) {
+			XSync(display, True);
 
-		if (private_cmap)
-			XFreeColormap(display, cmap);
+			if (private_cmap)
+				XFreeColormap(display, cmap);
 
 #ifdef SHM
-		XDestroyImage(image);
+			if (image != NULL)
+				XDestroyImage(image);
 #else
-		XFreePixmap(display, pixmap);
+			XFreePixmap(display, pixmap);
 #endif
-		XUnmapWindow(display, window);
-		XDestroyWindow(display, window);
-		autorepeat_restore();
-		XCloseDisplay(display);
+			XUnmapWindow(display, window);
+			XDestroyWindow(display, window);
+			autorepeat_restore();
+			XCloseDisplay(display);
+		}
 
 #ifdef LINUX_JOYSTICK
 		if (js0 != -1)
@@ -2548,6 +2559,7 @@ int Atari_Exit(int run_monitor)
 #ifdef SOUND
 		Sound_Exit();
 #endif
+		Aflushlog();
 	}
 	return restart;
 }
