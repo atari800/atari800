@@ -523,7 +523,6 @@ else
 fi
 echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
 echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
-echo "Using the disk LED emulation?.........: $WANT_SHOW_DISK_LED"
 echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
 if [[ "$a8_target" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
