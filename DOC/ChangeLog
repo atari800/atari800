@@ -1,3 +1,12 @@
+2002-04-07  Petr Stehlik and Christian Groessler <cpg@aladdin.de>
+* non-ANSI "t" parameter in fopen ("rt" and "wt" used for CR/LF files
+  in DOS-like operating systems) removed since it was causing problems
+  with KallistiOS Dreamcast library. Linux glibc could also be affected
+  as it aborts scanning the mode parameter when it encounters an unknown
+  char (consider "wt+"). Code was updated to take care of the possible
+  extra \r before \n at end of fgets string. fputs() should be OK as
+  the text mode is most probably the default mode.
+
 2002-03-18  Piotr Fusik  <fox@scene.pl>
 * antic.c: NMIST bit 5 is external NMI (not reset) status in Antic,
   unused in Atari
