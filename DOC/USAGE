@@ -93,10 +93,8 @@ Command line Options
 -black <num>          Set black level 0-255
 -while <num>          Set white level 0-255
 -colors <num>         Set color intensity
--colshift <num>       Set color shift
--realpal              Use palette created by Zdenek Eisenhammer
--oldpal               Use old Atari800 palette
--foxpal               Use palette created by Piotr Fusik
+-genpal               Generate artifical palette
+-colshift <num>       Set color shift (-genpal only)
 
 -sound                Enable sound
 -nosound              Disable sound
@@ -167,7 +165,7 @@ SDL version options
 -nojoystick 	      joysticks will not be initialized
 -joy0 </dev/lp0>      define the device for LPTjoy
 -joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
--rotate90             useful for devices with 240x320 screen (hanhelds)
+-rotate90             useful for devices with 240x320 screen (handhelds)
 -width x              set mode width
 -height y             set mode height
 -bpp b                set mode bits per pixel
@@ -193,9 +191,9 @@ F3	Select
 F4	Start
 F5	Warm Reset
 Shft+F5	Cold Reset
-F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+F6	---
 F7	Break Key
-F8	---
+F8	Enter Monitor
 F9	Exit Emulator
 F10	---
 F11	Vertical Positioning: Scroll Screen Downwards
@@ -206,8 +204,6 @@ ALT	Atari Key (Either ALT Key will work)
 Joystick 0 is operated by the mouse position relative to the center of the
 screen. The mouse button acts as the trigger.
 
-Paddle 0 is operated by moving the mouse pointer across the window.
-
 SVGALIB Keyboard + Joystick & Paddle Controllers
 ================================================
 
@@ -217,7 +213,7 @@ F3	Select
 F4	Start
 F5	Warm Reset
 Shft+F5	Cold Reset
-F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+F6	---
 F7	Break Key
 F8	Enter monitor
 F9	Exit Emulator
@@ -256,7 +252,7 @@ F2	Option
 F3	Select
 F4	Start
 F5	Warm Reset
-F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+F6	---
 F7	Break Key
 F8	Cold Reset
 F9	Exit Emulator
@@ -294,10 +290,10 @@ F3	Select Key
 F4	Start Key
 F5	Warm Reset
 Shft+F5	Cold Reset
-F6	PIL Mode (Atari800) / Help Key (XL/XE)
+F6	Help Key (XL/XE)
 F7	Switch between Emulated joysticks mode and Normal keyboard
 F8	Enter monitor
-F9	EXIT Emulator
+F9	Exit Emulator
 F10	Save Screenshot (+Shift=interlaced screenshot)
 
 Control-C terminates the program; to type Control-c, type ALT-c instead.
@@ -307,8 +303,6 @@ Joysticks can be either real one connected to game port, or old 8-bit
 digital CX-40 joysticks connected to parallel port or keyboard joysticks
 (try out JOYCFG.EXE).
  
-At the moment it is not possible to use a Paddle with this version.
-
 Falcon Keyboard + Joystick & Paddle Controllers
 ===============================================
 
@@ -318,11 +312,12 @@ F3	Select
 F4	Start
 F5	Warm Reset
 Shft+F5	Cold Reset
-F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+F6	Save Screenshot
 F7	Break Key
 F8	Enter monitor
-F9	EXIT Emulator
-Help	HELP key (800XL/130XE)
+F9	Exit Emulator
+F10	Save Screenshot (+Shift=interlaced screenshot)
+Help	Help key (XL/XE)
 
 Joystick 0 is operated by the numeric keypad (make sure that the numeric
 keypad has been enabled).
