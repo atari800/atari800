@@ -274,12 +274,14 @@ BOOL Configure(struct AtariConfig *config)
 							LAYOUT_AddChild, screenmode_getscreenmode = GetScreenModeObject,
 							End,
 							MemberLabel("Screenmode"),
+							CHILD_WeightedHeight, 0,
 
 							LAYOUT_AddChild, CheckBoxObject,
 								CHECKBOX_Checked, config->UseBestID,
 							End,
 							MemberLabel("Use best screen mode"),
 						EndGroup,
+						CHILD_WeightedHeight, 0,
 
 						PAGE_Add, VGroupObject,
 							LAYOUT_AddChild, CheckBoxObject,
@@ -308,6 +310,7 @@ BOOL Configure(struct AtariConfig *config)
 	Loop(config);
 
 	IIntuition->DisposeObject(main_wnd);
+	CloseGUILibs();
 	return quitting?FALSE:TRUE;
 
 out:
