@@ -10,7 +10,7 @@ AC_CONFIG_HEADER(config.h)
 
 a800_target=none
 case "$target" in
-	basic|curses|ncurses|svgalib|vga|dx) 
+	basic|curses|ncurses|svgalib|vga|dx|sdl) 
 	a800_target="$target" ;;
 	x11|x11-shm|xview|xview-shm|motif)
 	a800_target=x11-"$target" ;;
@@ -27,6 +27,7 @@ if test "$a800_target" = none; then
 	echo " x11 x11-shm"
 	echo " xview xview-shm"
 	echo " motif"
+	echo " sdl"
 	echo " "
 	echo " "
 	exit 1;
@@ -42,20 +43,29 @@ fi
 AC_PROG_CC
 
 a800_host=none
-AC_CANONICAL_HOST
-case $host_os in
-  cygwin )
-	a800_host=win
-	if test "$a800_target" = dx; then 
-		CC="gcc -mno-cygwin"
-		ac_cv_prog_CC=$CC
-		echo "using CC=$CC to disable cygwin library";
-	fi
-	;;
-  mingw32 ) a800_host=win;;
-  msdosdjgpp ) a800_host=dos;;
-  linux ) a800_host=linux;;
-esac
+AC_CYGWIN
+if test "$CYGWIN" = yes; then
+a800_host=win
+if test "$a800_target" = dx; then 
+CC="gcc -mno-cygwin"
+ac_cv_prog_CC=$CC
+echo "using CC=$CC to disable cygwin library";
+fi
+fi
+AC_MINGW32
+if test "$MINGW32" = yes; then a800_host=win; fi
+
+AC_CACHE_CHECK(for DJGPP environment, ac_cv_djgpp,
+[AC_TRY_COMPILE(,[
+return __DJGPP__;],
+ac_cv_djgpp=yes, ac_cv_djgpp=no)])
+if test "$ac_cv_djgpp" = yes; then a800_host=dos; fi
+
+AC_CACHE_CHECK(for linux environment, ac_cv_linux,
+[AC_TRY_COMPILE(,[
+return linux;],
+ac_cv_linux=yes, ac_cv_linux=no)])
+if test "$ac_cv_linux" = yes; then a800_host=linux; fi
 
 echo "$a800_host environment found"
 
@@ -144,10 +154,16 @@ win32/main.o \
 win32/keyboard.o \
 win32/atari.ro"
 ;;
+sdl)
+CFLAGS="$CFLAGS `sdl-config --cflags`"
+LIBS="$LIBS `sdl-config --libs`"
+OBJ="$OBJ \
+atari_sdl.o"
+;;
 x11-*)
 AC_PATH_X
 if test -n "$x_includes"; then
-CFLAGS="$CFALGS -I$x_includes"
+CFLAGS="$CFLAGS -I$x_includes"
 fi
 if test -n "$x_libraries"; then
 LDFLAGS="$LDFLAGS -L$x_libraries"
@@ -267,16 +283,14 @@ if test "$a800_ans" = y; then
 
 case "$a800_host" in
 dos)
-OBJ_SND="dos/sound_dos.o dos/dos_sb.o"
+OBJ="$OBJ dos/sound_dos.o dos/dos_sb.o"
 ;;
 win)
-OBJ_SND="win32/sound.o"
+OBJ="$OBJ win32/sound.o"
 ;;
 *)
-OBJ_SND="sound.o"
+OBJ="$OBJ sound.o"
 esac
-
-OBJ="$OBJ $OBJ_SND"
 
 ASK_FEATURE(NO_VOL_ONLY, Enable volume only sound (digitized sound effects), y, n)
 if test "$a800_ans" = y; then
