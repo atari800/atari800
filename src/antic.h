@@ -40,7 +40,7 @@ extern int light_pen_enabled;
 
 void ANTIC_Initialise(int *argc, char *argv[]);
 void ANTIC_Reset(void);
-void ANTIC_RunDisplayList(void);
+void ANTIC_Frame(int draw_display);
 UBYTE ANTIC_GetByte(UWORD addr);
 void ANTIC_PutByte(UWORD addr, UBYTE byte);
 

@@ -257,7 +257,6 @@ static UBYTE PEN_Y;
 static UBYTE light_pen_x;
 static UBYTE light_pen_y;
 extern UBYTE TRIG_latch[4];	/* in gtia.c */
-void GTIA_Triggers(void);		/* in gtia.c */
 
 /* Pre-computed values for improved performance ---------------------------- */
 
@@ -1853,7 +1852,7 @@ int scrn_ofs = -1;
 #endif
 
 /* This function emulates one frame drawing screen at atari_screen */
-void ANTIC_RunDisplayList(void)
+void ANTIC_Frame(int draw_display)
 {
 	static UBYTE mode_type[32] = {
 	NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL1, NORMAL1,
@@ -1869,7 +1868,6 @@ void ANTIC_RunDisplayList(void)
 	int delayed_gtia11 = 250;
 #endif
 
-	GTIA_Triggers();
 	PEN_X = Atari_PEN(0);
 	PEN_Y = Atari_PEN(1);
 
@@ -2093,7 +2091,6 @@ void ANTIC_RunDisplayList(void)
 		OVERSCREEN_LINE;
 	} while (ypos < max_ypos);
 
-	POKEY_Frame();				/* update random_frame_counter */
 }
 
 /* ANTIC registers --------------------------------------------------------- */

@@ -70,7 +70,7 @@ UBYTE Save_PCX_file(int interlace, char *filename)
 	if (interlace) {	/* make current screen temp_screen and draw second screen */
 		atari_screen = (ULONG *) malloc( (ATARI_HEIGHT + 16) * ATARI_WIDTH );
 		ptr2 = (UBYTE *)atari_screen + (ATARI_WIDTH - bytesPerLine) / 2;
-		ANTIC_RunDisplayList();
+		ANTIC_Frame(TRUE);
 	}
 
 	for (ypos = 0; ypos <= YMax; ) {

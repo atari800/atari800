@@ -1380,7 +1380,7 @@ void ui(UBYTE *screen)
 			{
 				char fname[FILENAME_SIZE + 1];
 				if (EditFilename(screen, fname)) {
-					ANTIC_RunDisplayList();
+					ANTIC_Frame(TRUE);
 					Save_PCX_file(0, fname);
 				}
 			}
@@ -1389,7 +1389,7 @@ void ui(UBYTE *screen)
 			{
 				char fname[FILENAME_SIZE + 1];
 				if (EditFilename(screen, fname)) {
-					ANTIC_RunDisplayList();
+					ANTIC_Frame(TRUE);
 					Save_PCX_file(1, fname);
 				}
 			}
@@ -1495,6 +1495,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.16  2001/09/21 17:04:57  fox
+ANTIC_RunDisplayList -> ANTIC_Frame
+
 Revision 1.15  2001/09/21 16:58:03  fox
 included input.h
 
