@@ -2,6 +2,9 @@
 * rt-config.c: fixed many possible buffer overflows that were dangerous if
   atari800 was installed suid root. Thanks for analysis go to Adam Zabrocki.
 
+* svgalib.c: fixes a compilation error when compiling with GCC 3.4.x
+  (compiler chokes on label at end of block). Thank for patch to Andrew Church
+
 2004-11-17  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: Fix for Timeslip game.  Newcycleexact dmactl change bug.
 

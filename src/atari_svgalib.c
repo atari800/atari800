@@ -669,7 +669,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 	else
 		vgamouse_strig = 1;
 #endif
-after_screen_update:
+after_screen_update:;
 
 }
 
@@ -836,6 +836,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.12  2004/11/26 18:26:09  joy
+gcc 3.4.x compilation fix
+
 Revision 1.11  2003/03/03 09:57:32  joy
 Ed improved autoconf again plus fixed some little things
 
