@@ -222,6 +222,7 @@ Piotr Fusik <fox@scene.pl>
 - cassette recorder emulation
 - emulation of paddles, Touch Tablet, Koala Pad, Light Pen/Gun,
   Amiga/ST mice
+- util/act2html
 
 Matthew Conte <matt@conte.com>
 - new SoundBlaster driver for DOS
@@ -235,3 +236,7 @@ Vasyl Tsvirkunov <vasyl@pacbell.net>
 
 Jacek Poplawski <jpopl@interia.pl>
 - SDL port of Atari800
+
+Nathan Hartwell <mage@magelair.com>
+- win32 fixes
+- sethdr perl script
