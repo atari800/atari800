@@ -73,9 +73,7 @@ static int initsound_dx(void)
     goto end;
 
   dsBD.dwSize = sizeof(dsBD);
-  dsBD.dwFlags =
-    DSBCAPS_GETCURRENTPOSITION2
-    | DSBCAPS_LOCSOFTWARE;
+  dsBD.dwFlags = DSBCAPS_GETCURRENTPOSITION2;
   dsBD.dwBufferBytes = 0x4000;
   dsBD.lpwfxFormat = &wfx;
 
@@ -343,6 +341,8 @@ void Sound_Initialise(int *argc, char *argv[])
 	usesound = TRUE;
       else if (strcmp(argv[i], "-nosound") == 0)
 	usesound = FALSE;
+      else if (strcmp(argv[i], "-bit16") == 0)
+	bit16 = TRUE;
       else if (strcmp(argv[i], "-dsprate") == 0)
 	sscanf(argv[++i], "%d", &dsprate);
       else if (strcmp(argv[i], "-snddelay") == 0)
@@ -350,6 +350,8 @@ void Sound_Initialise(int *argc, char *argv[])
 	sscanf(argv[++i], "%d", &snddelay);
         snddelaywav = snddelay;
       }
+      else if (strcmp(argv[i], "-quality") == 0)
+	sscanf(argv[++i], "%d", &quality);
 #ifdef DIRECTX
       else if (strcmp(argv[i], "-wavonly") == 0)
 	wavonly = TRUE;
@@ -366,6 +368,8 @@ void Sound_Initialise(int *argc, char *argv[])
 #endif
 		 "\t-dsprate <rate>		set dsp rate\n"
 		 "\t-snddelay <milliseconds>	set sound delay\n"
+		 "\t-bit16			use 16 bit mixing\n"
+		 "\t-quality <quality level>	set sound quality\n"
 		);
 	}
 	argv[j++] = argv[i];
@@ -429,7 +433,7 @@ void Sound_Update(void)
   case SOUND_WAV:
     while ((wh = getwave()))
     {
-      Pokey_process(wh->lpData, wh->dwBufferLength);
+      Pokey_process(wh->lpData, wh->dwBufferLength >> (bit16 ? 1 : 0));
       err = waveOutWrite(wout, wh, sizeof(*wh));
       if (err != MMSYSERR_NOERROR)
       {
@@ -474,6 +478,11 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.9  2003/01/06 17:12:31  knik
+added 16 bit and quality options
+fixed wave output buffer size
+better direct sound buffer creation flags
+
 Revision 1.8  2002/12/30 17:37:23  knik
 don't initialise engine when printing help
 
