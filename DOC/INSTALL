@@ -1,8 +1,8 @@
 Installation of the Atari 800 Emulator
 --------------------------------------
 
-If you downloaded this package from CVS install autoconf and run autogen.sh
-before configuring.
+If you downloaded this package from CVS install autoconf > 2.5x and
+run atari800/src/autogen.sh before configuring.
 
 Irrespective of whether you are going to compile the emulator yourself
 or install a pre-compiled binary version you must obtain a copy of the

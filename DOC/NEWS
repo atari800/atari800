@@ -1,3 +1,54 @@
+Unreleased version 1.2.11 (2003/02/09)
+
+* configuration file ("atari800.cfg") related changes: 
+
+  1) configuration file is named ".atari800.cfg" by default (note
+     the leading zero in the name, similar to most other configuration
+     files of programs on Unix platforms)
+
+  2) RT-Config (the module in Atari800) tries to search the configuration
+     file in user's home folder first (environment variable HOME should
+     point there). If it's found then it's used. If it's not there then
+     RT-Config tries to open system wide configuration file (by default
+     it's "/etc/atari800.cfg"). Please note that the system wide file is
+     not updated by Save function of RT-Config because it's expected
+     that this file is read-only for regular user.
+
+  3) RT-Config can also be told where your configuration file is by
+     using the "-config <filepath>" command line parameter. If the file
+     is not there yet it's created. So it's quite easy to let Atari800
+     create a test config file and compare it with your current config.
+
+  4) Some config file options were renamed or otherwise changed some
+     time ago already but they were still recognized. This is no longer
+     true so better create a new config file from scratch.
+
+  5) There are two new important switches - "ENABLE_NEW_POKEY" and
+     "STEREO_POKEY" so better create new config file so you get these
+     options configured properly.
+
+* new Sound:
+
+  The new MZ POKEY emulation is now enabled by default on all ports.
+  Also the STEREO sound (Dual POKEY) is enabled by default now.
+  Both can be disabled in the configuration file (call atari800 with the
+  "-configure" parameter to reconfigure these and other options).
+
+
+Unreleased version 1.2.10 (2003/02/09)
+
+* autoconf 2.5x required for building the source fetched from CVS.
+  However, released source code comes with prebuilt configure script
+  so you shouldn't even notice this change.
+
+* SDL version contains the same keyboard IRQ fix that was recently
+  done in the general input core. In human language: Super Pacman 5200
+  will not crash after SHIFT and * keypress.
+
+* On-the-fly change of POKEY emulation core (old Ron Fries' or new
+  Michael Borisov's). Compare the new HiFi sound with the previous one.
+
+
 Unreleased version 1.2.9 (2003/01/27)
 
 * New cycle-exact ANTIC/GTIA emulation. Enabled by default, disable by

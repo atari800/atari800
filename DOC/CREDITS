@@ -95,9 +95,13 @@ Nathan Monson <nathan@polaristel.net>
   operations.
 
 Petr Stehlik <pstehlik@sophics.cz>
+- "Project coordinator/manager" since v0.8.2 (spring of the 1998)
 - Added support for Atari Falcon (port itself, sound, kbd, joy)
 - Added sound, keyboard and joystick support for DOS version
-- "Project coordinator" since v0.8.2 (http://users.zln.cz/~pstehlik)
+- Snailmeter
+- Various fixes in the SDL version
+- Atari800 project web pages at http://atari800.sourceforge.net/
+- RT-Config fixes (per-user and system wide config, Y/N questions)
 
 Karel Rous <Empty Head>
 - rewrote CPU.C to optimized MC68030 assembler

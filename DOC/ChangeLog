@@ -1,3 +1,42 @@
+2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
+
+* pokey.[ch]: 'stereo_enabled' variable moved to rt-config.c
+* prompts.[ch]: YesNo() renamed to GetYesNo() and added GetYesNoAsInt()
+  that allows user to enter Y/N in the RtConfigUpdate process
+* rt-config.c: added 'enable_new_pokey'
+  * added "ENABLE_NEW_POKEY" and "STEREO_POKEY" config options
+  * removed all the code for backward compatibility since it could cause
+    confusion if both old and new option existed in one config file
+  * updated for GetYesNoAsInt() prompt
+  * completely reworked the way the config file is searched for on disk:
+    now it first tries in user's $HOME folder file named ".atari800.cfg"
+    (which is configurable at compile-time) and later it falls back
+    to system wide "/etc/atari800.cfg" (also configurable at compile-time).
+  * also saving to user defined config file (-config <fname>) should work
+    now (contrary to previous state where it saved to default file).
+  * actual config filename is printed so users are sure which file was
+    used (if their configured, or $HOME, or the system wide one)
+* ui.c: updated for 'enable_new_pokey'
+* pokeysnd.c: it wasn't clear to me how important the 'quality' parameter
+  was so I added a function Pokey_set_quality(int). If it wasn't that
+  important (was for testing only?) then let's remove this function.
+* pokeysnd.c: a new function "Pokey_DoInit()" does the actual initialization
+  of the Pokey emulation. It's been separated from Pokey_sound_init to 
+  allow calling from UI.
+* atari_amiga.c, sound.c, sound_falcon.c, dos/sound_dos.c, win32/sound.c,
+  wince/sound.c: updated for Pokey_sound_init()'s number of parameters.
+* atari_sdl.c: removed "-mzpokey", "-oldpokey" and "-stereo" command line
+  switches. This job (cleaning up the bloated command line options) was
+  actually one of the main reasons for all my today's changes.
+* configure.in: STEREO sound enabled by default. Shouldn't hurt since
+  at the same time the 'enabled_stereo' is FALSE by default. So basically
+  released binaries will be able to turn on stereo anytime users'll wish.
+  Slower machines might want to disable this (as well as pixel-exact
+  Antic emulation and a few more things) before building. Configure script
+  could even take care of that if it knew which targets are running on
+  slow machines.
+* atari.h, DOC/NEWS, DOC/INSTALL updated with info from above.
+
 ** tagged as 1.2.10
 
 2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
