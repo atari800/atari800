@@ -2,7 +2,7 @@
  * colours.c - colour palette emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -29,257 +29,100 @@
 #include "colours.h"
 #include "log.h"
 
-#define COLINTENS	100
-
 #ifndef M_PI
 #define M_PI		3.14159265358979323846
 #endif
 
-typedef struct {
-  UBYTE r;
-  UBYTE g;
-  UBYTE b;
-} pal_t[0x100];
-
-static int read_palette(char *filename);
-
-static int palette_loaded = FALSE;
-static int min_y = 0, max_y = 0xf0;
-static int colintens = COLINTENS;
-static int colshift = 30;
-static const double redf = 0.30;
-static const double greenf = 0.59;
-static const double bluef = 0.11;
-
-static int basicpal[256];
-int colortable[256];
-
-#define CLIP_VAR(x) \
-  if (x > 0xff) \
-    x = 0xff; \
-  if (x < 0) \
-    x = 0
-
-
-static int real_pal[256] =
-{
-  0x323132, 0x3f3e3f, 0x4d4c4d, 0x5b5b5b,
-  0x6a696a, 0x797879, 0x888788, 0x979797,
-  0xa1a0a1, 0xafafaf, 0xbebebe, 0xcecdce,
-  0xdbdbdb, 0xebeaeb, 0xfafafa, 0xffffff,
-  0x612e00, 0x6c3b00, 0x7a4a00, 0x885800,
-  0x94670c, 0xa5761b, 0xb2842a, 0xc1943a,
-  0xca9d43, 0xdaad53, 0xe8bb62, 0xf8cb72,
-  0xffd87f, 0xffe88f, 0xfff79f, 0xffffae,
-  0x6c2400, 0x773000, 0x844003, 0x924e11,
-  0x9e5d22, 0xaf6c31, 0xbc7b41, 0xcc8a50,
-  0xd5935b, 0xe4a369, 0xf2b179, 0xffc289,
-  0xffcf97, 0xffdfa6, 0xffedb5, 0xfffdc4,
-  0x751618, 0x812324, 0x8f3134, 0x9d4043,
-  0xaa4e50, 0xb85e60, 0xc66d6f, 0xd57d7f,
-  0xde8787, 0xed9596, 0xfca4a5, 0xffb4b5,
-  0xffc2c4, 0xffd1d3, 0xffe0e1, 0xffeff0,
-  0x620e71, 0x6e1b7c, 0x7b2a8a, 0x8a3998,
-  0x9647a5, 0xa557b5, 0xb365c3, 0xc375d1,
-  0xcd7eda, 0xdc8de9, 0xea97f7, 0xf9acff,
-  0xffbaff, 0xffc9ff, 0xffd9ff, 0xffe8ff,
-  0x560f87, 0x611d90, 0x712c9e, 0x7f3aac,
-  0x8d48ba, 0x9b58c7, 0xa967d5, 0xb877e5,
-  0xc280ed, 0xd090fc, 0xdf9fff, 0xeeafff,
-  0xfcbdff, 0xffccff, 0xffdbff, 0xffeaff,
-  0x461695, 0x5122a0, 0x6032ac, 0x6e41bb,
-  0x7c4fc8, 0x8a5ed6, 0x996de3, 0xa87cf2,
-  0xb185fb, 0xc095ff, 0xcfa3ff, 0xdfb3ff,
-  0xeec1ff, 0xfcd0ff, 0xffdfff, 0xffefff,
-  0x212994, 0x2d359f, 0x3d44ad, 0x4b53ba,
-  0x5961c7, 0x686fd5, 0x777ee2, 0x878ef2,
-  0x9097fa, 0x96a6ff, 0xaeb5ff, 0xbfc4ff,
-  0xcdd2ff, 0xdae3ff, 0xeaf1ff, 0xfafeff,
-  0x0f3584, 0x1c418d, 0x2c509b, 0x3a5eaa,
-  0x486cb7, 0x587bc5, 0x678ad2, 0x7699e2,
-  0x80a2eb, 0x8fb2f9, 0x9ec0ff, 0xadd0ff,
-  0xbdddff, 0xcbecff, 0xdbfcff, 0xeaffff,
-  0x043f70, 0x114b79, 0x215988, 0x2f6896,
-  0x3e75a4, 0x4d83b2, 0x5c92c1, 0x6ca1d2,
-  0x74abd9, 0x83bae7, 0x93c9f6, 0xa2d8ff,
-  0xb1e6ff, 0xc0f5ff, 0xd0ffff, 0xdeffff,
-  0x005918, 0x006526, 0x0f7235, 0x1d8144,
-  0x2c8e50, 0x3b9d60, 0x4aac6f, 0x59bb7e,
-  0x63c487, 0x72d396, 0x82e2a5, 0x92f1b5,
-  0x9ffec3, 0xaeffd2, 0xbeffe2, 0xcefff1,
-  0x075c00, 0x146800, 0x227500, 0x328300,
-  0x3f910b, 0x4fa01b, 0x5eae2a, 0x6ebd3b,
-  0x77c644, 0x87d553, 0x96e363, 0xa7f373,
-  0xb3fe80, 0xc3ff8f, 0xd3ffa0, 0xe3ffb0,
-  0x1a5600, 0x286200, 0x367000, 0x457e00,
-  0x538c00, 0x629b07, 0x70a916, 0x80b926,
-  0x89c22f, 0x99d13e, 0xa8df4d, 0xb7ef5c,
-  0xc5fc6b, 0xd5ff7b, 0xe3ff8b, 0xf3ff99,
-  0x334b00, 0x405700, 0x4d6500, 0x5d7300,
-  0x6a8200, 0x7a9100, 0x889e0f, 0x98ae1f,
-  0xa1b728, 0xbac638, 0xbfd548, 0xcee458,
-  0xdcf266, 0xebff75, 0xfaff85, 0xffff95,
-  0x4b3c00, 0x584900, 0x655700, 0x746500,
-  0x817400, 0x908307, 0x9f9116, 0xaea126,
-  0xb7aa2e, 0xc7ba3e, 0xd5c74d, 0xe5d75d,
-  0xf2e56b, 0xfef47a, 0xffff8b, 0xffff9a,
-  0x602e00, 0x6d3a00, 0x7a4900, 0x895800,
-  0x95670a, 0xa4761b, 0xb2832a, 0xc2943a,
-  0xcb9d44, 0xdaac53, 0xe8ba62, 0xf8cb73,
-  0xffd77f, 0xffe791, 0xfff69f, 0xffffaf,
+int colortable[256] = {
+ 0x2d2d2d, 0x3b3b3b, 0x494949, 0x575757,
+ 0x656565, 0x737373, 0x818181, 0x8f8f8f,
+ 0x9d9d9d, 0xababab, 0xb9b9b9, 0xc7c7c7,
+ 0xd5d5d5, 0xe3e3e3, 0xf1f1f1, 0xffffff,
+ 0x5c2300, 0x6a3100, 0x783f00, 0x864d0a,
+ 0x945b18, 0xa26926, 0xb07734, 0xbe8542,
+ 0xcc9350, 0xdaa15e, 0xe8af6c, 0xf6bd7a,
+ 0xffcb88, 0xffd996, 0xffe7a4, 0xfff5b2,
+ 0x691409, 0x772217, 0x853025, 0x933e33,
+ 0xa14c41, 0xaf5a4f, 0xbd685d, 0xcb766b,
+ 0xd98479, 0xe79287, 0xf5a095, 0xffaea3,
+ 0xffbcb1, 0xffcabf, 0xffd8cd, 0xffe6db,
+ 0x6c0a38, 0x7a1846, 0x882654, 0x963462,
+ 0xa44270, 0xb2507e, 0xc05e8c, 0xce6c9a,
+ 0xdc7aa8, 0xea88b6, 0xf896c4, 0xffa4d2,
+ 0xffb2e0, 0xffc0ee, 0xffcefc, 0xffdcff,
+ 0x640565, 0x721373, 0x802181, 0x8e2f8f,
+ 0x9c3d9d, 0xaa4bab, 0xb859b9, 0xc667c7,
+ 0xd475d5, 0xe283e3, 0xf091f1, 0xfe9fff,
+ 0xffadff, 0xffbbff, 0xffc9ff, 0xffd7ff,
+ 0x520789, 0x601597, 0x6e23a5, 0x7c31b3,
+ 0x8a3fc1, 0x984dcf, 0xa65bdd, 0xb469eb,
+ 0xc277f9, 0xd085ff, 0xde93ff, 0xeca1ff,
+ 0xfaafff, 0xffbdff, 0xffcbff, 0xffd9ff,
+ 0x3a109c, 0x481eaa, 0x562cb8, 0x643ac6,
+ 0x7248d4, 0x8056e2, 0x8e64f0, 0x9c72fe,
+ 0xaa80ff, 0xb88eff, 0xc69cff, 0xd4aaff,
+ 0xe2b8ff, 0xf0c6ff, 0xfed4ff, 0xffe2ff,
+ 0x1f1e9c, 0x2d2caa, 0x3b3ab8, 0x4948c6,
+ 0x5756d4, 0x6564e2, 0x7372f0, 0x8180fe,
+ 0x8f8eff, 0x9d9cff, 0xabaaff, 0xb9b8ff,
+ 0xc7c6ff, 0xd5d4ff, 0xe3e2ff, 0xf1f0ff,
+ 0x072e89, 0x153c97, 0x234aa5, 0x3158b3,
+ 0x3f66c1, 0x4d74cf, 0x5b82dd, 0x6990eb,
+ 0x779ef9, 0x85acff, 0x93baff, 0xa1c8ff,
+ 0xafd6ff, 0xbde4ff, 0xcbf2ff, 0xd9ffff,
+ 0x003e65, 0x034c73, 0x115a81, 0x1f688f,
+ 0x2d769d, 0x3b84ab, 0x4992b9, 0x57a0c7,
+ 0x65aed5, 0x73bce3, 0x81caf1, 0x8fd8ff,
+ 0x9de6ff, 0xabf4ff, 0xb9ffff, 0xc7ffff,
+ 0x004b38, 0x005946, 0x096754, 0x177562,
+ 0x258370, 0x33917e, 0x419f8c, 0x4fad9a,
+ 0x5dbba8, 0x6bc9b6, 0x79d7c4, 0x87e5d2,
+ 0x95f3e0, 0xa3ffee, 0xb1fffc, 0xbfffff,
+ 0x005209, 0x006017, 0x0c6e25, 0x1a7c33,
+ 0x288a41, 0x36984f, 0x44a65d, 0x52b46b,
+ 0x60c279, 0x6ed087, 0x7cde95, 0x8aeca3,
+ 0x98fab1, 0xa6ffbf, 0xb4ffcd, 0xc2ffdb,
+ 0x005300, 0x0b6100, 0x196f00, 0x277d0a,
+ 0x358b18, 0x439926, 0x51a734, 0x5fb542,
+ 0x6dc350, 0x7bd15e, 0x89df6c, 0x97ed7a,
+ 0xa5fb88, 0xb3ff96, 0xc1ffa4, 0xcfffb2,
+ 0x134e00, 0x215c00, 0x2f6a00, 0x3d7800,
+ 0x4b8600, 0x59940b, 0x67a219, 0x75b027,
+ 0x83be35, 0x91cc43, 0x9fda51, 0xade85f,
+ 0xbbf66d, 0xc9ff7b, 0xd7ff89, 0xe5ff97,
+ 0x2d4300, 0x3b5100, 0x495f00, 0x576d00,
+ 0x657b00, 0x738901, 0x81970f, 0x8fa51d,
+ 0x9db32b, 0xabc139, 0xb9cf47, 0xc7dd55,
+ 0xd5eb63, 0xe3f971, 0xf1ff7f, 0xffff8d,
+ 0x463300, 0x544100, 0x624f00, 0x705d00,
+ 0x7e6b00, 0x8c790b, 0x9a8719, 0xa89527,
+ 0xb6a335, 0xc4b143, 0xd2bf51, 0xe0cd5f,
+ 0xeedb6d, 0xfce97b, 0xfff789, 0xffff97
 };
 
-
-static void Palette_Format(int black, int white, int colors)
-/* format loaded palette */
+void Palette_SetRGB(int i, int r, int g, int b)
 {
-  double white_in, black_in, brightfix;
-  pal_t rgb;
-  int i, j;
-
-  for (i = 0; i < 0x100; i++)
-  {
-    int c = basicpal[i];
-
-    rgb[i].r = (c >> 16) & 0xff;
-    rgb[i].g = (c >> 8) & 0xff;
-    rgb[i].b = c & 0xff;
-  }
-
-  black_in = redf * rgb[0].r + greenf * rgb[0].g + bluef * rgb[0].b;
-  white_in = redf * rgb[15].r + greenf * rgb[15].g + bluef * rgb[15].b;
-  brightfix = (double)(white - black) / (white_in - black_in);
-
-  for (i = 0; i < 0x10; i++)
-  {
-    for (j = 0; j < 0x10; j++)
-    {
-      double y, r, g, b;
-      int r1, g1, b1;
-
-      y = redf * rgb[i * 16 + j].r
-	+ greenf * rgb[i * 16 + j].g
-	+ bluef * rgb[i * 16 + j].b;
-      r = (double)rgb[i * 16 + j].r - y;
-      g = (double)rgb[i * 16 + j].g - y;
-      b = (double)rgb[i * 16 + j].b - y;
-
-      y = ((y - black_in) * brightfix) + black;
-      r *= (double)colors * brightfix / (double)COLINTENS;
-      g *= (double)colors * brightfix / (double)COLINTENS;
-      b *= (double)colors * brightfix / (double)COLINTENS;
-
-      r1 = y + r;
-      g1 = y + g;
-      b1 = y + b;
-
-      CLIP_VAR(r1);
-      CLIP_VAR(g1);
-      CLIP_VAR(b1);
-
-      rgb[i * 16 + j].r = r1;
-      rgb[i * 16 + j].g = g1;
-      rgb[i * 16 + j].b = b1;
-    }
-  }
-  for (i = 0; i < 0x100; i++)
-  {
-    colortable[i] = (rgb[i].r << 16) + (rgb[i].g << 8) + (rgb[i].b << 0);
-  }
+	if (r < 0)
+		r = 0;
+	else if (r > 255)
+		r = 255;
+	if (g < 0)
+		g = 0;
+	else if (g > 255)
+		g = 255;
+	if (b < 0)
+		b = 0;
+	else if (b > 255)
+		b = 255;
+	colortable[i] = r << 16 | g << 8 | b;
 }
 
-static void makepal(int *pal)
+int Palette_Read(const char *filename)
 {
-  pal_t rgb;
-  int i, j;
-  const double colf = 0.08;
-
-  for (i = 0; i < 0x10; i++)
-  {
-    int r, g, b;
-    double angle;
-
-    if (i == 0)
-    {
-      r = g = b = 0;
-    }
-    else
-    {
-      angle = M_PI * ((double) i * (1.0 / 7) - (double) colshift * 0.01);
-      r = (colf / redf) * cos(angle) * (max_y - min_y);
-      g = (colf / greenf) * cos(angle + M_PI * (2.0 / 3)) * (max_y - min_y);
-      b = (colf / bluef) * cos(angle + M_PI * (4.0 / 3)) * (max_y - min_y);
-    }
-    for (j = 0; j < 0x10; j++)
-    {
-      int y, r1, g1, b1;
-
-      y = (min_y * 0xf + max_y * j) / 0xf;
-      r1 = y + r;
-      g1 = y + g;
-      b1 = y + b;
-      CLIP_VAR(r1);
-      CLIP_VAR(g1);
-      CLIP_VAR(b1);
-      rgb[i * 16 + j].r = r1;
-      rgb[i * 16 + j].g = g1;
-      rgb[i * 16 + j].b = b1;
-    }
-  }
-  for (i = 0; i < 0x100; i++)
-  {
-    pal[i] = (rgb[i].r << 16) + (rgb[i].g << 8) + (rgb[i].b << 0);
-  }
-}
-
-void Palette_Initialise(int *argc, char *argv[])
-{
-	int i, j;
-	int generate_palette = FALSE;
-
-	/* use real palette by default */
-	memcpy(basicpal, real_pal, sizeof(basicpal));
-
-	for (i = j = 1; i < *argc; i++)
-	{
-		if (strcmp(argv[i], "-black") == 0)
-			sscanf(argv[++i], "%d", &min_y);
-		else if (strcmp(argv[i], "-white") == 0)
-			sscanf(argv[++i], "%d", &max_y);
-		else if (strcmp(argv[i], "-colors") == 0)
-			sscanf(argv[++i], "%d", &colintens);
-		else if (strcmp(argv[i], "-colshift") == 0)
-			sscanf(argv[++i], "%d", &colshift);
-		else if (strcmp(argv[i], "-genpal") == 0)
-			generate_palette = TRUE;
-		else if (strcmp(argv[i], "-palette") == 0)
-			read_palette(argv[++i]);
-		else {
-			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-palette <file>  Use external palette");
-				Aprint("\t-black <0-255>   Set black level");
-				Aprint("\t-white <0-255>   Set white level");
-				Aprint("\t-colors <num>    Set color intensity");
-				Aprint("\t-genpal <num>    Generate artificial palette");
-				Aprint("\t-colshift <num>  Set color shift (-genpal only)");
-			}
-			argv[j++] = argv[i];
-		}
-	}
-	*argc = j;
-
-	if (generate_palette)
-		makepal(basicpal);
-
-	if (! palette_loaded)
-		Palette_Format(min_y, max_y, colintens);
-}
-
-/* returns TRUE if successful */
-static int read_palette(char *filename) {
 	FILE *fp;
 	int i;
-	if ((fp = fopen(filename,"rb")) == NULL)
+	fp = fopen(filename, "rb");
+	if (fp == NULL)
 		return FALSE;
 	for (i = 0; i < 256; i++) {
 		int j;
@@ -294,12 +137,119 @@ static int read_palette(char *filename) {
 		}
 	}
 	fclose(fp);
-	palette_loaded = TRUE;
 	return TRUE;
+}
+
+void Palette_Generate(int black, int white, int colshift)
+{
+	int i;
+	int j;
+	for (i = 0; i < 16; i++) {
+		double angle;
+		int r;
+		int g;
+		int b;
+		if (i == 0) {
+			r = g = b = 0;
+		}
+		else {
+			angle = M_PI * (i / 7.0 - colshift * 0.01);
+			r = (int) (0.08 / 0.30 * cos(angle) * (white - black));
+			g = (int) (0.08 / 0.59 * cos(angle + M_PI * 2 / 3) * (white - black));
+			b = (int) (0.08 / 0.11 * cos(angle + M_PI * 4 / 3) * (white - black));
+		}
+		for (j = 0; j < 16; j++) {
+			int y;
+			y = black + white * j / 15;
+			Palette_SetRGB(i * 16 + j, y + r, y + g, y + b);
+		}
+	}
+}
+
+void Palette_Adjust(int black, int white, int colintens)
+{
+	double black_in;
+	double white_in;
+	double brightfix;
+	double colorfix;
+	int i;
+	black_in = Palette_GetY(0);
+	white_in = Palette_GetY(15);
+	brightfix = (white - black) / (white_in - black_in);
+	colorfix = brightfix * colintens / 100;
+	for (i = 0; i < 256; i++) {
+		double y;
+		double r;
+		double g;
+		double b;
+		y = Palette_GetY(i);
+		r = Palette_GetR(i) - y;
+		g = Palette_GetG(i) - y;
+		b = Palette_GetB(i) - y;
+		y = (y - black_in) * brightfix + black;
+		r = y + r * colorfix;
+		g = y + g * colorfix;
+		b = y + b * colorfix;
+		Palette_SetRGB(i, (int) r, (int) g, (int) b);
+	}
+}
+
+void Palette_Initialise(int *argc, char *argv[])
+{
+	int i;
+	int j;
+	int black = 0;
+	int white = 255;
+	int colintens = 100;
+	int colshift = 30;
+	int generate = FALSE;
+	int adjust = FALSE;
+
+	for (i = j = 1; i < *argc; i++) {
+		if (strcmp(argv[i], "-black") == 0) {
+			sscanf(argv[++i], "%d", &black);
+			adjust = TRUE;
+		}
+		else if (strcmp(argv[i], "-white") == 0) {
+			sscanf(argv[++i], "%d", &white);
+			adjust = TRUE;
+		}
+		else if (strcmp(argv[i], "-colors") == 0) {
+			sscanf(argv[++i], "%d", &colintens);
+			adjust = TRUE;
+		}
+		else if (strcmp(argv[i], "-colshift") == 0)
+			sscanf(argv[++i], "%d", &colshift);
+		else if (strcmp(argv[i], "-genpal") == 0)
+			generate = TRUE;
+		else if (strcmp(argv[i], "-palette") == 0)
+			Palette_Read(argv[++i]);
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-palette <file>  Use external palette");
+				Aprint("\t-black <0-255>   Set black level");
+				Aprint("\t-white <0-255>   Set white level");
+				Aprint("\t-colors <num>    Set colors saturation");
+				Aprint("\t-genpal          Generate artificial palette");
+				Aprint("\t-colshift <num>  Set color shift (-genpal only)");
+			}
+			argv[j++] = argv[i];
+		}
+	}
+	*argc = j;
+
+	if (generate)
+		Palette_Generate(black, white, colshift);
+
+	if (adjust)
+		Palette_Adjust(black, white, colintens);
 }
 
 /*
 $Log$
+Revision 1.11  2005/02/23 16:35:30  pfusik
+*** empty log message ***
+
 Revision 1.10  2003/02/24 09:32:49  joy
 header cleanup
 
