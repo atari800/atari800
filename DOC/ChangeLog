@@ -1,3 +1,10 @@
+2002-06-20  Petr Stehlik  <pstehlik@sophics.cz>
+* atari.c: "unistd" header included - it should fix a start problem on FreeBSD
+           4.5 according to an anonymous patch on sf.net.
+* colours.c: loaded color palettes were ignored. Andrew Church posted a patch
+             on sf.net that fixes it.
+* atari800.man: manual page updated by Rob McMullen
+
 2002-04-11  Piotr Fusik  <fox@scene.pl>
 * pokey.c: allow high-speed disk i/o (Alpha-Load works)
 
