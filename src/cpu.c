@@ -1,6 +1,6 @@
 /*	CPU.C
  *	Original Author : David Firth
- *	Last changes    : 6th July 2001, Piotr Fusik (Fox)
+ *	Last changes    : 14th July 2001, Piotr Fusik (Fox)
  */
 /*
 	Compilation options
@@ -122,6 +122,16 @@ void CPU_PutStatus(void)
 #define dGetWord(x) (memory[x] | (memory[x+1] << 8))
 #define dPutByte(x,y) (memory[x] = y)
 #endif
+
+#ifndef NO_CYCLE_EXACT
+#ifdef PAGED_MEM
+#define RMW_GetByte(x,addr) x = GetByte(addr); if ((addr & 0xef1f) == 0xc01a) { xpos--; PutByte(addr,x); xpos++; }
+#else
+#define RMW_GetByte(x,addr)	if (attrib[addr] == HARDWARE) { x = Atari800_GetByte(addr); if ((addr & 0xef1f) == 0xc01a) { xpos--; Atari800_PutByte(addr, x); xpos++; }} else x = memory[addr];
+#endif /* PAGED_MEM */
+#else
+#define RMW_GetByte(x,addr) x = GetByte(addr);
+#endif /* NO_CYCLE_EXACT */
 
 #define PHW(x) PH((x)>>8); PH((x) & 0xff)
 
@@ -584,7 +594,7 @@ void GO(int limit)
 		INDIRECT_X;
 
 	aso:
-		data = GetByte(addr);
+		RMW_GetByte(data, addr);
 		C = (data & 0x80) ? 1 : 0;
 		data <<= 1;
 		PutByte(addr, data); 
@@ -662,7 +672,7 @@ void GO(int limit)
 
 	OPCODE(0e)				/* ASL abcd */
 		ABSOLUTE;
-		data = GetByte(addr);
+		RMW_GetByte(data, addr);
 		C = (data & 0x80) ? 1 : 0;
 		Z = N = data << 1;
 		PutByte(addr, Z);
@@ -735,7 +745,7 @@ void GO(int limit)
 
 	OPCODE(1e)				/* ASL abcd,x */
 		ABSOLUTE_X;
-		data = GetByte(addr);
+		RMW_GetByte(data, addr);
 		C = (data & 0x80) ? 1 : 0;
 		Z = N = data << 1;
 		PutByte(addr, Z);
@@ -767,7 +777,7 @@ void GO(int limit)
 		INDIRECT_X;
 
 	rla:
-		data = GetByte(addr);
+		RMW_GetByte(data, addr);
 		if (C) {
 			C = (data & 0x80) ? 1 : 0;
 			data = (data << 1) | 1;
@@ -795,14 +805,8 @@ void GO(int limit)
 	OPCODE(26)				/* ROL ab */
 		ZPAGE;
 		data = dGetByte(addr);
-		if (C) {
-			C = (data & 0x80) ? 1 : 0;
-			Z = N = (data << 1) | 1;
-		}
-		else {
-			C = (data & 0x80) ? 1 : 0;
-			Z = N = (data << 1);
-		}
+		Z = N = (data << 1) | C;
+		C = (data & 0x80) ? 1 : 0;
 		dPutByte(addr, Z);
 		DONE
 
@@ -833,14 +837,9 @@ void GO(int limit)
 		DONE
 
 	OPCODE(2a)				/* ROL */
-		if (C) {
-			C = (A & 0x80) ? 1 : 0;
-			Z = N = A = (A << 1) | 1;
-		}
-		else {
-			C = (A & 0x80) ? 1 : 0;
-			Z = N = A = (A << 1);
-		}
+		Z = N = (A << 1) | C;
+		C = (A & 0x80) ? 1 : 0;
+		A = Z;
 		DONE
 
 	OPCODE(2c)				/* BIT abcd */
@@ -857,15 +856,9 @@ void GO(int limit)
 
 	OPCODE(2e)				/* ROL abcd */
 		ABSOLUTE;
-		data = GetByte(addr);
-		if (C) {
-			C = (data & 0x80) ? 1 : 0;
-			Z = N = (data << 1) | 1;
-		}
-		else {
-			C = (data & 0x80) ? 1 : 0;
-			Z = N = (data << 1);
-		}
+		RMW_GetByte(data, addr);
+		Z = N = (data << 1) | C;
+		C = (data & 0x80) ? 1 : 0;
 		PutByte(addr, Z);
 		DONE
 
@@ -894,14 +887,8 @@ void GO(int limit)
 	OPCODE(36)				/* ROL ab,x */
 		ZPAGE_X;
 		data = dGetByte(addr);
-		if (C) {
-			C = (data & 0x80) ? 1 : 0;
-			Z = N = (data << 1) | 1;
-		}
-		else {
-			C = (data & 0x80) ? 1 : 0;
-			Z = N = (data << 1);
-		}
+		Z = N = (data << 1) | C;
+		C = (data & 0x80) ? 1 : 0;
 		dPutByte(addr, Z);
 		DONE
 
@@ -931,15 +918,9 @@ void GO(int limit)
 
 	OPCODE(3e)				/* ROL abcd,x */
 		ABSOLUTE_X;
-		data = GetByte(addr);
-		if (C) {
-			C = (data & 0x80) ? 1 : 0;
-			Z = N = (data << 1) | 1;
-		}
-		else {
-			C = (data & 0x80) ? 1 : 0;
-			Z = N = (data << 1);
-		}
+		RMW_GetByte(data, addr);
+		Z = N = (data << 1) | C;
+		C = (data & 0x80) ? 1 : 0;
 		PutByte(addr, Z);
 		DONE
 
@@ -968,7 +949,7 @@ void GO(int limit)
 		INDIRECT_X;
 
 	lse:
-		data = GetByte(addr);
+		RMW_GetByte(data, addr);
 		C = data & 1;
 		data >>= 1;
 		PutByte(addr, data);
@@ -1099,7 +1080,7 @@ void GO(int limit)
 
 	OPCODE(5e)				/* LSR abcd,x */
 		ABSOLUTE_X;
-		data = GetByte(addr);
+		RMW_GetByte(data, addr);
 		C = data & 1;
 		Z = data >> 1;
 		N = 0;
@@ -1129,7 +1110,7 @@ void GO(int limit)
 		INDIRECT_X;
 
 	rra:
-		data = GetByte(addr);
+		RMW_GetByte(data, addr);
 		if (C) {
 			C = data & 1;
 			data = (data >> 1) | 0x80;
@@ -1149,14 +1130,8 @@ void GO(int limit)
 	OPCODE(66)				/* ROR ab */
 		ZPAGE;
 		data = dGetByte(addr);
-		if (C) {
-			C = data & 1;
-			Z = N = (data >> 1) | 0x80;
-		}
-		else {
-			C = data & 1;
-			Z = N = (data >> 1);
-		}
+		Z = N = (C << 7) | (data >> 1);
+		C = data & 1;
 		dPutByte(addr, Z);
 		DONE
 
@@ -1185,18 +1160,13 @@ void GO(int limit)
 		goto adc;
 
 	OPCODE(6a)				/* ROR */
-		if (C) {
-			C = A & 1;
-			Z = N = A = (A >> 1) | 0x80;
-		}
-		else {
-			C = A & 1;
-			Z = N = A >>= 1;
-		}
+		Z = N = (C << 7) | (A >> 1);
+		C = A & 1;
+		A = Z;
 		DONE
 
 	OPCODE(6b)				/* ARR #ab [unofficial - Acc AND Data, ROR result] */
-		/* It does some 'BCD fixup' if D flag is set - should be fixed (Fox) */
+		/* It does some 'BCD fixup' if D flag is set */
 		/* MPC 05/24/00 */
 		data = A & dGetByte(PC++);
 		if (regP & D_FLAG)
@@ -1246,15 +1216,9 @@ void GO(int limit)
 
 	OPCODE(6e)				/* ROR abcd */
 		ABSOLUTE;
-		data = GetByte(addr);
-		if (C) {
-			C = data & 1;
-			Z = N = (data >> 1) | 0x80;
-		}
-		else {
-			C = data & 1;
-			Z = N = (data >> 1);
-		}
+		RMW_GetByte(data, addr);
+		Z = N = (C << 7) | (data >> 1);
+		C = data & 1;
 		PutByte(addr, Z);
 		DONE
 
@@ -1283,14 +1247,8 @@ void GO(int limit)
 	OPCODE(76)				/* ROR ab,x */
 		ZPAGE_X;
 		data = dGetByte(addr);
-		if (C) {
-			C = data & 1;
-			Z = N = (data >> 1) | 0x80;
-		}
-		else {
-			C = data & 1;
-			Z = N = (data >> 1);
-		}
+		Z = N = (C << 7) | (data >> 1);
+		C = data & 1;
 		dPutByte(addr, Z);
 		DONE
 
@@ -1320,15 +1278,9 @@ void GO(int limit)
 
 	OPCODE(7e)				/* ROR abcd,x */
 		ABSOLUTE_X;
-		data = GetByte(addr);
-		if (C) {
-			C = data & 1;
-			Z = N = (data >> 1) | 0x80;
-		}
-		else {
-			C = data & 1;
-			Z = N = (data >> 1);
-		}
+		RMW_GetByte(data, addr);
+		Z = N = (C << 7) | (data >> 1);
+		C = data & 1;
 		PutByte(addr, Z);
 		DONE
 
@@ -1670,7 +1622,8 @@ void GO(int limit)
 		INDIRECT_X;
 
 	dcm:
-		data = GetByte(addr) - 1;
+		RMW_GetByte(data, addr);
+		data--;
 		PutByte(addr, data);
 		CMP(data);
 		DONE
@@ -1732,7 +1685,8 @@ void GO(int limit)
 
 	OPCODE(ce)				/* DEC abcd */
 		ABSOLUTE;
-		Z = N = GetByte(addr) - 1;
+		RMW_GetByte(Z, addr);
+		N = --Z;
 		PutByte(addr, Z);
 		DONE
 
@@ -1792,7 +1746,8 @@ void GO(int limit)
 
 	OPCODE(de)				/* DEC abcd,x */
 		ABSOLUTE_X;
-		Z = N = GetByte(addr) - 1;
+		RMW_GetByte(Z, addr);
+		N = --Z;
 		PutByte(addr, Z);
 		DONE
 
@@ -1813,7 +1768,8 @@ void GO(int limit)
 		INDIRECT_X;
 
 	ins:
-		data = Z = N = GetByte(addr) + 1;
+		RMW_GetByte(data, addr);
+		N = Z = ++data;
 		PutByte(addr, data);
 		goto sbc;
 
@@ -1871,7 +1827,8 @@ void GO(int limit)
 
 	OPCODE(ee)				/* INC abcd */
 		ABSOLUTE;
-		Z = N = GetByte(addr) + 1;
+		RMW_GetByte(Z, addr);
+		N = ++Z;
 		PutByte(addr, Z);
 		DONE
 
@@ -1929,7 +1886,8 @@ void GO(int limit)
 
 	OPCODE(fe)				/* INC abcd,x */
 		ABSOLUTE_X;
-		Z = N = GetByte(addr) + 1;
+		RMW_GetByte(Z, addr);
+		N = ++Z;
 		PutByte(addr, Z);
 		DONE
 
