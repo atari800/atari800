@@ -211,7 +211,7 @@ int SelectCartType(UBYTE* screen, int k)
 		{ "CRT5", ITEM_ACTION, NULL, "DB 32 KB cartridge",              NULL, 5 },
 		{ "CRT6", ITEM_ACTION, NULL, "Two chip 16 KB 5200 cartridge",   NULL, 6 },
 		{ "CRT7", ITEM_ACTION, NULL, "Bounty Bob 40 KB 5200 cartridge", NULL, 7 },
-		{ "CRT8", ITEM_ACTION, NULL, "8*8 KB D50x 64 KB cartridge",     NULL, 8 },
+		{ "CRT8", ITEM_ACTION, NULL, "64 KB Williams cartridge",     	NULL, 8 },
 		{ "CRT9", ITEM_ACTION, NULL, "Express 64 KB cartridge",         NULL, 9 },
 		{ "CRTA", ITEM_ACTION, NULL, "Diamond 64 KB cartridge",         NULL, 10 },
 		{ "CRTB", ITEM_ACTION, NULL, "SpartaDOS X 64 KB cartridge",     NULL, 11 },
@@ -225,6 +225,7 @@ int SelectCartType(UBYTE* screen, int k)
 		{ "CRTJ", ITEM_ACTION, NULL, "Standard 8 KB 5200 cartridge",    NULL, 19 },
 		{ "CRTK", ITEM_ACTION, NULL, "Standard 4 KB 5200 cartridge",    NULL, 20 },
 		{ "CRTL", ITEM_ACTION, NULL, "Right slot 8 KB cartridge",       NULL, 21 },
+		{ "CRTM", ITEM_ACTION, NULL, "32 KB Williams cartridge",     	NULL, 22 },
 		MENU_END
 	};
 
@@ -771,6 +772,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.28  2002/01/10 16:46:42  joy
+new cartridge type added
+
 Revision 1.27  2001/11/18 19:35:59  fox
 fixed a bug: modification of string literals
 

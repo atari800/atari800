@@ -8,7 +8,7 @@
 #define CART_DB_32		5
 #define CART_5200_EE_16	6
 #define CART_5200_40	7
-#define CART_D50X_64	8
+#define CART_WILL_64	8
 #define CART_EXP_64		9
 #define CART_DIAMOND_64	10
 #define CART_SDX_64		11
@@ -22,7 +22,8 @@
 #define CART_5200_8		19
 #define CART_5200_4		20
 #define CART_RIGHT_8	21
-#define CART_LAST_SUPPORTED 21
+#define CART_WILL_32	22
+#define CART_LAST_SUPPORTED 22
 
 #define CART_MAX_SIZE	131072
 extern int cart_kb[CART_LAST_SUPPORTED + 1];

@@ -40,7 +40,7 @@ Currently supported cartridge types:
 |  5 | 800/XL/XE |   32 | DB 32 KB cartridge                                |
 |  6 |   5200    |   16 | Two chip 16 KB 5200 cartridge                     |
 |  7 |   5200    |   40 | Bounty Bob Strikes Back 40 KB 5200 cartridge      |
-|  8 | 800/XL/XE |   64 | 8*8 KB D50x 64 KB cartridge                       |
+|  8 | 800/XL/XE |   64 | 64 KB Williams cartridge                          |
 |  9 | 800/XL/XE |   64 | Express 64 KB cartridge                           |
 | 10 | 800/XL/XE |   64 | Diamond 64 KB cartridge                           |
 | 11 | 800/XL/XE |   64 | SpartaDos X 64 KB cartridge                       |
@@ -54,6 +54,7 @@ Currently supported cartridge types:
 | 19 |   5200    |    8 | Standard 8 KB 5200 cartridge                      |
 | 20 |   5200    |    4 | Standard 4 KB 5200 cartridge                      |
 | 21 |    800    |    8 | Right slot 8 KB cartridge                         |
+| 22 | 800/XL/XE |   32 | 32 KB Williams cartridge                          |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -141,11 +142,11 @@ stands for the first bank in the image, bank B is the second, etc.
    in Atari 5200. That is, $8000-$9FFF and $A000-$BFFF contain same data.
 
 +---------------------------------------------------------------------------+
-| Type 8: 8*8 KB D50x 64 KB cartridge                                       |
+| Type 8: 64 KB Williams cartridge                                          |
 +---------------------------------------------------------------------------+
 
- The cartidge has 8 banks mapped to $A000-$BFFF. An acces to $D507 selects
- bank A, $D506 - bank B, etc. An access to $D508-$D50F disables
+ The cartidge has 8 banks mapped to $A000-$BFFF. An acces to $D500 selects
+ bank A, $D501 - bank B, etc. An access to $D508-$D50F disables
  the cartridge.
 
 +---------------------------------------------------------------------------+
@@ -259,3 +260,12 @@ stands for the first bank in the image, bank B is the second, etc.
  8 KB cartridge for Atari 800, mapped into $8000-$9FFF. Atari 800 was
  the only 8-bit Atari with a Right Cartridge slot, in addition
  to the Left Cartridge slot as present on all 8-bit Ataris.
+
++---------------------------------------------------------------------------+
+| Type 22: 32 KB Williams cartridge                                          |
++---------------------------------------------------------------------------+
+
+ The cartidge has 4 banks mapped to $A000-$BFFF. An acces to $D500 selects
+ bank A, $D501 - bank B, etc. An access to $D508-$D50F disables
+ the cartridge.
+

@@ -17,7 +17,7 @@ int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	32, /* CART_DB_32 */
 	16, /* CART_5200_EE_16 */
 	40, /* CART_5200_40 */
-	64, /* CART_D50X_64 */
+	64, /* CART_WILL_64 */
 	64, /* CART_EXP_64 */
 	64, /* CART_DIAMOND_64 */
 	64, /* CART_SDX */
@@ -30,7 +30,8 @@ int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	40,	/* CART_BBSB_40 */
 	8,	/* CART_5200_8 */
 	4,	/* CART_5200_4 */
-	8	/* CART_RIGHT_8 */
+	8,	/* CART_RIGHT_8 */
+	32, /* CART_WILL32 */
 };
 
 int CART_IsFor5200(int type)
@@ -79,7 +80,7 @@ static void set_bank_A0AF(int b, int main)
 	}
 }
 
-/* D50X_64, EXP_64, DIAMOND_64, SDX_64 */
+/* EXP_64, DIAMOND_64, SDX_64 */
 static void set_bank_A0BF(int b)
 {
 	if (b != bank) {
@@ -88,6 +89,32 @@ static void set_bank_A0BF(int b)
 		else {
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xbfff, cart_image + (~b & 0x0007) * 0x2000);
+		}
+		bank = b;
+	}
+}
+
+static void set_bank_A0BF_WILL64(int b)
+{
+	if (b != bank) {
+		if (b & 0x0008)
+			CartA0BF_Disable();
+		else {
+			CartA0BF_Enable();
+			CopyROM(0xa000, 0xbfff, cart_image + ( b & 7 ) * 0x2000);
+		}
+		bank = b;
+	}
+}
+
+static void set_bank_A0BF_WILL32(int b)
+{
+	if (b != bank) {
+		if (b & 0x0008)
+			CartA0BF_Disable();
+		else {
+			CartA0BF_Enable();
+			CopyROM(0xa000, 0xbfff, cart_image + ( b & 3 ) * 0x2000);
 		}
 		bank = b;
 	}
@@ -123,9 +150,11 @@ static void CART_Access(UWORD addr)
 	case CART_DB_32:
 		set_bank_809F(addr & 0x03);
 		break;
-	case CART_D50X_64:
-		if ((addr & 0xf0) == 0x00)
-			set_bank_A0BF(addr);
+	case CART_WILL_64:
+		set_bank_A0BF_WILL64(addr);
+		break;
+	case CART_WILL_32:
+		set_bank_A0BF_WILL32(addr);
 		break;
 	case CART_EXP_64:
 		if ((addr & 0xf0) == 0x70)
@@ -409,7 +438,8 @@ void CART_Start(void) {
 			CopyROM(0xa000, 0xbfff, cart_image + 0x6000);
 			bank = 0;
 			break;
-		case CART_D50X_64:
+		case CART_WILL_64:
+		case CART_WILL_32:
 		case CART_EXP_64:
 		case CART_DIAMOND_64:
 		case CART_SDX_64:
