@@ -386,7 +386,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 	SDL_AudioSpec desired, obtained;
 	if (sound_enabled) {
 		desired.freq = dsprate;
-		desired.format = AUDIO_S8;
+		desired.format = AUDIO_U8;
 		desired.samples = 1 << FRAGSIZE;
 		desired.callback = SDL_Sound_Update;
 		desired.userdata = NULL;
@@ -881,7 +881,7 @@ void DisplayWithScaling(Uint8 * screen, int jumped, int width)
 	register Uint32 *start32;
 	int i;
 	int y;
-	int w2, w4;
+	int w1, w2, w4;
 	int w, h;
 	int pos;
 	int pitch4;
@@ -894,6 +894,7 @@ void DisplayWithScaling(Uint8 * screen, int jumped, int width)
 	h = (ATARI_HEIGHT) << 16;
 	dx = w / MainScreen->w;
 	dy = h / MainScreen->h;
+	w1 = MainScreen->w - 1;
 	w2 = MainScreen->w / 2 - 1;
 	w4 = MainScreen->w / 4 - 1;
 	ss = screen;
@@ -950,7 +951,7 @@ void DisplayWithScaling(Uint8 * screen, int jumped, int width)
 	case 32:
 		while (i > 0) {
 			x = (width + jumped) << 16;
-			pos = w2;
+			pos = w1;
 			yy = ATARI_WIDTH * (y >> 16);
 			while (pos >= 0) {
 
@@ -1313,6 +1314,10 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.19  2002/02/13 08:38:39  joy
+ fixed sound init (should have beeen unsigned = _U8)
+ screen offset in 32bpp fixed
+
  Revision 1.18  2001/12/31 08:44:53  joy
  updated
 
