@@ -1,3 +1,7 @@
+2002-07-11  Krzysztof Nikiel  <knik@poczta.onet.pl>
+* configure.in: freature processing redesigned to be more consistent. Correct
+  enable/disable info is printed in help.
+
 ** released as 1.2.3
 
 2002-07-04  Vasyl Tsvirkunov  <vasyl@pacbell.net>
