@@ -190,13 +190,14 @@ void CopyToMem(UBYTE * from, ATPtr to, int size)
 	}
 }
 
+/* Note: this function is only for XL/XE! */
 void PORTB_handler(UBYTE byte)
 {
+	/* Switch XE memory bank in 0x4000-0x7fff */
 	if (ram_size > 64) {
 		int bank = 0;
-		/* bank = 0 ...normal RAM */
-		/* bank = 1..4 (..16) ...extended RAM */
-
+		/* bank = 0 : base RAM */
+		/* bank = 1..64 : extended RAM */
 		if ((byte & 0x10) == 0)
 			switch (ram_size) {
 			case 128:
@@ -208,11 +209,16 @@ void PORTB_handler(UBYTE byte)
 			case RAM_320_COMPY_SHOP:
 				bank = (((byte & 0x0c) | ((byte & 0xc0) >> 2)) >> 2) + 1;
 				break;
+			case 576:
+				bank = (((byte & 0x0e) | ((byte & 0x60) >> 1)) >> 1) + 1;
+				break;
+			case 1088:
+				bank = (((byte & 0x0e) | ((byte & 0xe0) >> 1)) >> 1) + 1;
+				break;
 			}
-
 		if (bank != xe_bank) {
 			if (selftest_enabled) {
-				/* SelfTestROM Disable */
+				/* Disable Self Test ROM */
 				memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
 				SetRAM(0x5000, 0x57ff);
 				selftest_enabled = FALSE;
@@ -222,15 +228,15 @@ void PORTB_handler(UBYTE byte)
 			xe_bank = bank;
 		}
 	}
+
 #ifdef DEBUG
 	printf("Storing %x to PORTB, PC = %x\n", byte, regPC);
 #endif
-/*
- * Enable/Disable OS ROM 0xc000-0xcfff and 0xd800-0xffff
- */
-	if ((PORTB ^ byte) & 0x01) {	/* Only when is changed this bit !RS! */
+
+	/* Enable/disable OS ROM in 0xc000-0xcfff and 0xd800-0xffff */
+	if ((PORTB ^ byte) & 0x01) {
 		if (byte & 0x01) {
-			/* OS ROM Enable */
+			/* Enable OS ROM */
 			if (ram_size > 48) {
 				memcpy(under_atarixl_os, memory + 0xc000, 0x1000);
 				memcpy(under_atarixl_os + 0x1800, memory + 0xd800, 0x2800);
@@ -242,7 +248,7 @@ void PORTB_handler(UBYTE byte)
 			Atari800_PatchOS();
 		}
 		else {
-			/* OS ROM Disable */
+			/* Disable OS ROM */
 			if (ram_size > 48) {
 				memcpy(memory + 0xc000, under_atarixl_os, 0x1000);
 				memcpy(memory + 0xd800, under_atarixl_os + 0x1800, 0x2800);
@@ -253,9 +259,7 @@ void PORTB_handler(UBYTE byte)
 				dFillMem(0xc000, 0xff, 0x1000);
 				dFillMem(0xd800, 0xff, 0x2800);
 			}
-
-/* when OS ROM is disabled we also have to disable SelfTest - Jindroush */
-			/* SelfTestROM Disable */
+			/* When OS ROM is disabled we also have to disable Self Test - Jindroush */
 			if (selftest_enabled) {
 				if (ram_size > 20) {
 					memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
@@ -268,17 +272,14 @@ void PORTB_handler(UBYTE byte)
 		}
 	}
 
-/*
-   =====================================
-   Enable/Disable BASIC ROM
-   An Atari XL/XE can only disable Basic
-   Other cartridge cannot be disable
-   =====================================
- */
+	/* Enable/disable BASIC ROM in 0xa000-0xbfff */
 	if (!cartA0BF_enabled) {
-		if ((PORTB ^ byte) & 0x02) {	/* Only when change this bit !RS! */
-			if (byte & 0x02) {
-				/* BASIC Disable */
+		/* BASIC is disabled if bit 1 set or accessing extended 576K or 1088K memory */
+		int was_disabled = (PORTB & 0x02) || ((PORTB & 0x10) == 0 && (ram_size == 576 || ram_size == 1088));
+		int now_disabled = (byte & 0x02) || ((byte & 0x10) == 0 && (ram_size == 576 || ram_size == 1088));
+		if (was_disabled != now_disabled) {
+			if (now_disabled) {
+				/* Disable BASIC ROM */
 				if (ram_size > 40) {
 					memcpy(memory + 0xa000, under_atari_basic, 0x2000);
 					SetRAM(0xa000, 0xbfff);
@@ -287,7 +288,7 @@ void PORTB_handler(UBYTE byte)
 					dFillMem(0xa000, 0xff, 0x2000);
 			}
 			else {
-				/* BASIC Enable */
+				/* Enable BASIC ROM */
 				if (ram_size > 40) {
 					memcpy(under_atari_basic, memory + 0xa000, 0x2000);
 					SetROM(0xa000, 0xbfff);
@@ -296,12 +297,11 @@ void PORTB_handler(UBYTE byte)
 			}
 		}
 	}
-/*
- * Enable/Disable Self Test ROM
- */
+
+	/* Enable/disable Self Test ROM in 0x5000-0x57ff */
 	if (byte & 0x80) {
-		/* SelfTestROM Disable */
 		if (selftest_enabled) {
+			/* Disable Self Test ROM */
 			if (ram_size > 20) {
 				memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
 				SetRAM(0x5000, 0x57ff);
@@ -312,10 +312,11 @@ void PORTB_handler(UBYTE byte)
 		}
 	}
 	else {
-/* we can enable Selftest only if the OS ROM is enabled */
-		/* SELFTEST ROM enable */
-		if (!selftest_enabled && (byte & 0x01) && ((byte & 0x10) || (ram_size != RAM_320_COMPY_SHOP))) {
-			/* Only when CPU access to normal RAM or isn't 256Kb RAM or RAMBO mode is set */
+		/* We can enable Self Test only if the OS ROM is enabled */
+		/* and we're not accessing extended 320K Compy Shop or 1088K memory */
+		if (!selftest_enabled && (byte & 0x01)
+		&& ((byte & 0x10) || (ram_size != RAM_320_COMPY_SHOP && ram_size != 1088))) {
+			/* Enable Self Test ROM */
 			if (ram_size > 20) {
 				memcpy(under_atarixl_os + 0x1000, memory + 0x5000, 0x800);
 				SetROM(0x5000, 0x57ff);
@@ -360,7 +361,10 @@ void Cart809F_Enable(void)
 void CartA0BF_Disable(void)
 {
 	if (cartA0BF_enabled) {
-		if ((machine_type != MACHINE_XLXE) || (PORTB & 0x02)) {
+		/* No BASIC if not XL/XE or bit 1 of PORTB set */
+		/* or accessing extended 576K or 1088K memory */
+		if ((machine_type != MACHINE_XLXE) || (PORTB & 0x02)
+		|| ((PORTB & 0x10) == 0 && (ram_size == 576 || ram_size == 1088))) {
 			if (ram_size > 40) {
 				memcpy(memory + 0xa000, under_cartA0BF, 0x2000);
 				SetRAM(0xa000, 0xbfff);
@@ -382,7 +386,11 @@ void CartA0BF_Disable(void)
 void CartA0BF_Enable(void)
 {
 	if (!cartA0BF_enabled) {
-		if (((machine_type != MACHINE_XLXE) || (PORTB & 0x02)) && ram_size > 40) {
+		/* No BASIC if not XL/XE or bit 1 of PORTB set */
+		/* or accessing extended 576K or 1088K memory */
+		if (ram_size > 40 && ((machine_type != MACHINE_XLXE) || (PORTB & 0x02)
+		|| ((PORTB & 0x10) == 0 && (ram_size == 576 || ram_size == 1088)))) {
+			/* Back-up 0xa000-0xbfff RAM */
 			memcpy(under_cartA0BF, memory + 0xa000, 0x2000);
 			SetROM(0xa000, 0xbfff);
 		}
@@ -410,6 +418,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.17  2002/07/14 13:25:07  pfusik
+emulation of 576K and 1088K RAM machines
+
 Revision 1.16  2002/07/04 12:40:57  pfusik
 emulation of 16K RAM machines: 400 and 600XL
 

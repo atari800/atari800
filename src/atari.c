@@ -853,6 +853,14 @@ void MainStateSave( void )
 			temp = 3;
 			default_system = 5;
 			break;
+		case 576:
+			temp = 7;
+			default_system = 6;
+			break;
+		case 1088:
+			temp = 8;
+			default_system = 7;
+			break;
 		}
 		break;
 	case MACHINE_5200:
@@ -912,6 +920,14 @@ void MainStateRead( void )
 		machine_type = MACHINE_XLXE;
 		ram_size = 16;
 		break;
+	case 7:
+		machine_type = MACHINE_XLXE;
+		ram_size = 576;
+		break;
+	case 8:
+		machine_type = MACHINE_XLXE;
+		ram_size = 1088;
+		break;
 	default:
 		machine_type = MACHINE_XLXE;
 		ram_size = 64;
@@ -926,6 +942,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.38  2002/07/14 13:25:24  pfusik
+emulation of 576K and 1088K RAM machines
+
 Revision 1.37  2002/07/04 12:41:21  pfusik
 emulation of 16K RAM machines: 400 and 600XL
 

@@ -87,7 +87,9 @@ void SelectSystem()
 		{ "SYXE", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 130XE (128 KB)",            NULL, 8 },
 		{ "SYRM", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 320XE (320 KB RAMBO)",      NULL, 9 },
 		{ "SYCS", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 320XE (320 KB COMPY SHOP)", NULL, 10 },
-		{ "SY52", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 5200 (16 KB)",              NULL, 11 },
+		{ "SY05", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 576XE (576 KB)",            NULL, 11 },
+		{ "SY1M", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 1088XE (1088 KB)",          NULL, 12 },
+		{ "SY52", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 5200 (16 KB)",              NULL, 13 },
 		MENU_END
 	};
 
@@ -104,6 +106,8 @@ void SelectSystem()
 		{ MACHINE_XLXE, 128 },
 		{ MACHINE_XLXE, RAM_320_RAMBO },
 		{ MACHINE_XLXE, RAM_320_COMPY_SHOP },
+		{ MACHINE_XLXE, 576 },
+		{ MACHINE_XLXE, 1088 },
 		{ MACHINE_5200, 16 }
 	};
 
@@ -811,6 +815,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.34  2002/07/14 13:25:36  pfusik
+emulation of 576K and 1088K RAM machines
+
 Revision 1.33  2002/07/04 22:35:07  vasyl
 Added cassette support in main menu
 
