@@ -5,7 +5,7 @@
  *                                                                           *
  * Module: POKEY Chip Emulator Filter package                                *
  * Author: Michael Borisov                                                   *
- * Version: 1.0                                                              *
+ * Version: 1.2                                                              *
  *                                                                           *
  *****************************************************************************/
 
@@ -33,12 +33,16 @@
  *                                                                           *
  *****************************************************************************/
 
-
-extern const double filter_44[];
-extern const double filter_22[];
-extern const double filter_11[];
-extern const double filter_48[];
-extern const double filter_8[];
+extern double filter_44_8[];
+extern double filter_44[];
+extern double filter_22_8[];
+extern double filter_22[];
+extern double filter_11_8[];
+extern double filter_11[];
+extern double filter_48_8[];
+extern double filter_48[];
+extern double filter_8_8[];
+extern double filter_8[];
 
 
 
