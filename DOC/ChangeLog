@@ -1,3 +1,7 @@
+2003-09-23  Piotr Fusik  <fox@scene.pl>
+* ui.c, sio.h: added Rotate_Disks() to UI
+
+
 2003-09-22  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: got sprite collisions working with NEW_CYCLE_EXACT
   (broken by mistake)

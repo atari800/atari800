@@ -24,6 +24,7 @@ extern char sio_filename[MAX_DRIVES][FILENAME_MAX];
 int SIO_Mount(int diskno, const char *filename, int b_open_readonly);
 void SIO_Dismount(int diskno);
 void SIO_DisableDrive(int diskno);
+int Rotate_Disks(void);
 void SIO(void);
 
 #define SIO_NoFrame         (0x00)

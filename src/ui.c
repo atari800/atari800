@@ -168,6 +168,7 @@ void DiskManagement()
 		{ "DKS8", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[7], sio_filename[7], NULL, 7 },
         { "SSET", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, NULL, "Save Disk Set", NULL, 8 },
         { "LSET", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, NULL, "Load Disk Set", NULL, 9 },
+		{ "RDSK", ITEM_ENABLED|ITEM_ACTION, NULL, "Rotate Disks", NULL, 10 },
 		MENU_END
 	};
 
@@ -196,7 +197,10 @@ void DiskManagement()
 		dsknum = ui_driver->fSelect("Disk Management", FALSE, dsknum, menu_array, &seltype);
 
 		if (dsknum > -1) {
-			if (seltype == USER_SELECT) {	/* User pressed "Enter" to select a disk image */
+			if (dsknum == 10) {
+				Rotate_Disks();
+			}
+			else if (seltype == USER_SELECT) {	/* User pressed "Enter" to select a disk image */
 				char *pathname;
 
 /*              pathname=atari_disk_dirs[current_disk_directory]; */
@@ -964,6 +968,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.48  2003/09/23 15:39:07  pfusik
+Rotate_Disks()
+
 Revision 1.47  2003/08/31 22:00:06  joy
 R: patch named as Atari850 emulation
 
