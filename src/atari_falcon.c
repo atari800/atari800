@@ -20,10 +20,13 @@
 #include "cpu.h"
 #include "colours.h"
 #include "ui.h"         /* for ui_is_active */
+#include "input.h"
+#include "ataripcx.h"
 #include "config.h"
 #include "antic.h"		/* for BITPL_SCR */
 #include "platform.h"
 #include "monitor.h"
+#include "sound.h"
 #include "log.h"
 
 #include "gemfast.h"
@@ -34,6 +37,8 @@
 
 #define FALSE 0
 #define TRUE 1
+
+extern int refresh_rate;
 
 int get_cookie(long cookie, long *value)
 {
@@ -485,9 +490,10 @@ void Atari_DisplayScreen(UBYTE *screen)
 {
 	static int i = 0;
 
+/*
 	if (! draw_display)
 		return;
-
+*/
 #if defined(SET_LED) && defined(NO_LED_ON_SCREEN)
 	if (LED_timeout)
 		if (--LED_timeout == 0)
@@ -620,22 +626,22 @@ void Atari_Set_LED(int how)
 
 /* -------------------------------------------------------------------------- */
 
-extern int SHIFT_KEY, KEYPRESSED;
+// extern int KEYPRESSED;
 extern int alt_function;
 
 int Atari_Keyboard(void)
 {
-	UBYTE control_key;
+	UBYTE shift_key, control_key;
 	int scancode, keycode;
 	int i;
 
 	trig0 = 1;
 	stick0 = STICK_CENTRE;
 
-	SHIFT_KEY = (key_buf[0x2a] || key_buf[0x36]);
+	shift_key = (key_buf[0x2a] || key_buf[0x36]);
 	control_key = key_buf[0x1d];
 
-	if (!SHIFT_KEY && !control_key) {
+	if (!shift_key && !control_key) {
 		if (key_buf[0x70])
 			trig0 = 0;
 		if (key_buf[0x6d] || key_buf[0x6e] || key_buf[0x6f])
@@ -715,7 +721,7 @@ int Atari_Keyboard(void)
 
 	if (scancode) {
 		/* read ASCII code of pressed key */
-		if (SHIFT_KEY)
+		if (shift_key)
 			keycode = *(UBYTE *) (key_tab->shift + scancode);
 		else
 			keycode = *(UBYTE *) (key_tab->unshift + scancode);
@@ -753,7 +759,7 @@ int Atari_Keyboard(void)
 			break;
 		case 0x09:
 			if (scancode == 0x0f) {
-				if (SHIFT_KEY)
+				if (shift_key)
 					keycode = AKEY_SETTAB;
 				else if (control_key)
 					keycode = AKEY_CLRTAB;
@@ -1106,7 +1112,7 @@ int Atari_Keyboard(void)
 				keycode = AKEY_HELP;
 				break;
 			case 0x3f:			/* F5 */
-				keycode = SHIFT_KEY ? AKEY_COLDSTART : AKEY_WARMSTART;
+				keycode = shift_key ? AKEY_COLDSTART : AKEY_WARMSTART;
 				break;
 			case 0x40:			/* F6 - used to be PILL mode switch */
 				/* keycode = AKEY_PIL; */
@@ -1122,7 +1128,7 @@ int Atari_Keyboard(void)
 				keycode = AKEY_EXIT;
 				break;
 			case 0x44:			/* F10*/
-				keycode = SHIFT_KEY ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
+				keycode = shift_key ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
 				break;
 			case 0x50:
 				keycode = AKEY_DOWN;
@@ -1149,7 +1155,7 @@ int Atari_Keyboard(void)
 	else
 		keycode = AKEY_NONE;
 
-	KEYPRESSED = (keycode != AKEY_NONE);
+	// KEYPRESSED = (keycode != AKEY_NONE);
 
 	return keycode;
 }
@@ -1206,4 +1212,70 @@ int Atari_CONSOL(void)
 int Atari_PEN(int vertical)
 {
 	return vertical ? 0xff : 0;
+}
+
+int main(int argc, char **argv)
+{
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
+
+	/* main loop */
+	while (TRUE) {
+		static int test_val = 0;
+		int keycode = Atari_Keyboard();
+
+		switch (keycode) {
+		case AKEY_COLDSTART:
+			Coldstart();
+			break;
+		case AKEY_WARMSTART:
+			Warmstart();
+			break;
+		case AKEY_EXIT:
+			Atari800_Exit(FALSE);
+			exit(1);
+		case AKEY_UI:
+#ifdef SOUND
+			Sound_Pause();
+#endif
+			ui((UBYTE *)atari_screen);
+#ifdef SOUND
+			Sound_Continue();
+#endif
+			break;
+		case AKEY_SCREENSHOT:
+			Save_PCX_file(FALSE, Find_PCX_name());
+			break;
+		case AKEY_SCREENSHOT_INTERLACE:
+			Save_PCX_file(TRUE, Find_PCX_name());
+			break;
+		case AKEY_BREAK:
+			key_break = 1;
+			break;
+		default:
+			key_break = 0;
+			key_code = keycode;
+			break;
+		}
+
+		if (++test_val == refresh_rate) {
+			Atari800_Frame(EMULATE_FULL);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync(); /* here seems to be the best place to sync */
+#endif
+			Atari_DisplayScreen((UBYTE *) atari_screen);
+			test_val = 0;
+		}
+		else {
+#ifdef VERY_SLOW
+			Atari800_Frame(EMULATE_BASIC);
+#else	/* VERY_SLOW */
+			Atari800_Frame(EMULATE_NO_SCREEN);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync();
+#endif
+#endif	/* VERY_SLOW */
+		}
+	}
 }
