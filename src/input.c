@@ -237,13 +237,25 @@ void INPUT_Frame(void)
 
 	/* handle keyboard */
 
-	if (key_break && !last_key_break) {
+	/* In Atari 5200 joystick there's a second fire button, which acts
+	   like the Shift key in 800/XL/XE (bit 3 in SKSTAT) and generates IRQ
+	   like the Break key (bit 7 in IRQST and IRQEN).
+	   Note that in 5200 the joystick position and first fire button are
+	   separate for each port, but the keypad and 2nd button are common.
+	   That is, if you press a key in the emulator, it's like you really pressed
+	   it in all the controllers simultaneously. Normally the port to read
+	   keypad & 2nd button is selected with the CONSOL register in GTIA
+	   (this is simply not emulated).
+	   key_code is used for keypad keys and key_shift is used for 2nd button.
+	*/
+	i = machine_type == MACHINE_5200 ? key_shift : key_break;
+	if (i && !last_key_break) {
 		IRQST &= ~0x80;
 		if (IRQEN & 0x80) {
 			GenerateIRQ();
 		}
 	}
-	last_key_break = key_break;
+	last_key_break = i;
 
 	SKSTAT |= 0xc;
 	if (key_shift)

@@ -1,3 +1,9 @@
+2002-03-18  Piotr Fusik  <fox@scene.pl>
+* antic.c: NMIST bit 5 is external NMI (not reset) status in Antic,
+  unused in Atari
+* input.c: second button in 5200 joystick generates "Break key" IRQ
+* monitor.c: "DLIST" now accepts address as an argument
+
 2002-02-13  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c: fixed screen offset in 32bpp (thanks to Suzanne Archibald)
 * atari_sdl.c: fixed sound initialisation (thanks to Tomas Mraz)

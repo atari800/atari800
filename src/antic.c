@@ -722,7 +722,7 @@ void ANTIC_Initialise(int *argc, char *argv[])
 void ANTIC_Reset(void)
 {
 	NMIEN = 0x00;
-	NMIST = 0x3f;	/* Probably bit 5 is Reset flag */
+	NMIST = 0x1f;
 	ANTIC_PutByte(_DMACTL, 0);
 }
 

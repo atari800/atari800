@@ -1,3 +1,11 @@
+* antic: NMIST bit 5 fixed (is always zero)
+
+* input: second button in 5200 joystick generates "Break key" IRQ
+  (you can now jump in "Moon Patrol" - use Shift)
+
+* monitor: "DLIST" now accepts address as an argument
+
+
 Version 1.2.2 (2001/12/31)
 
 * Falcon .s files had to be renamed to .asm, otherwise the vga

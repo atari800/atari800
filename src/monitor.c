@@ -569,7 +569,7 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 			UWORD addr;
 			int done = FALSE;
 			int nlines = 0;
-
+			get_hex(NULL, &tdlist);
 			while (!done) {
 				UBYTE IR;
 
@@ -1103,7 +1103,7 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
                         printf("A [startaddr]                  - Start simple assembler\n");
 #endif
 			printf("ANTIC, GTIA, PIA, POKEY        - Display hardware registers\n");
-			printf("DLIST                          - Display current display list\n");
+			printf("DLIST [startaddr]              - Show Display List\n");
 #ifdef PROFILE
 			printf("PROFILE                        - Display profiling statistics\n");
 #endif
@@ -1389,6 +1389,9 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.9  2002/03/19 13:17:02  joy
+Piotrs changes
+
 Revision 1.8  2001/10/29 17:56:05  fox
 "DLIST" didn't stopped on JVB if Display List had multiple of 15 instructions
 
