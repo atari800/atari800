@@ -718,7 +718,6 @@ void ui(UBYTE* screen)
 	/* Sound_Active(TRUE); */
 	ui_is_active = FALSE;
 	while (Atari_Keyboard() != AKEY_NONE);	/* flush keypresses */
-	entire_screen_dirty();
 }
 
 
@@ -744,7 +743,6 @@ int CrashMenu()
 		sprintf(bf,"!!! The Atari computer has crashed !!!\nCode $%02X (CIM) at address $%04X", crash_code, crash_address);
 
 		option = ui_driver->fSelect(bf, FALSE, option, menu_array, NULL);
-		entire_screen_dirty();
 
 		switch (option) {
 		case 0:			/* Power On Reset */
@@ -774,11 +772,11 @@ int CrashMenu()
 
 /*
 $Log$
-Revision 1.29  2002/03/29 10:39:09  vasyl
-Dirty rectangle scheme implementation. All accesses to video memory (except
-those in UI_BASIC.C) are converted to macros. Define symbol DIRTYRECT
-to enable dirty rectangle tracking. Global array screen_dirty contains dirty
-flags (per 8 horizontal pixels).
+Revision 1.30  2002/03/30 06:19:28  vasyl
+Dirty rectangle scheme implementation part 2.
+All video memory accesses everywhere are going through the same macros
+in ANTIC.C. UI_BASIC does not require special handling anymore. Two new
+functions are exposed in ANTIC.H for writing to video memory.
 
 Revision 1.28  2002/01/10 16:46:42  joy
 new cartridge type added

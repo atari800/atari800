@@ -49,4 +49,8 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte);
 /* always call ANTIC_UpdateArtifacting after changing global_artif_mode */
 void ANTIC_UpdateArtifacting(void);
 
+/* Video memory access */
+void video_memset(UBYTE* ptr, UBYTE val, ULONG size);
+void video_putbyte(UBYTE* ptr, UBYTE val);
+
 #endif

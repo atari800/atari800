@@ -668,23 +668,15 @@ void Atari800_UpdatePatches(void)
 static void ShowRealSpeed(ULONG * atari_screen)
 {
   UBYTE *ptr;
-  int i;
   int speed = (int) (100.0 * deltatime / frametime + 0.5);
 
   if (speed > 200)
     speed = 200;
 
   ptr = (UBYTE *) atari_screen + screen_visible_x1 + ATARI_WIDTH * (screen_visible_y2 - 1);
-
-  for (i = 0; i < speed; i++)
-    ptr[i] = 0xc8;
-  for (; i < 100; i++)
-    ptr[i] = 0x02;
-  ptr[100] = 0x38;
-
-#ifdef DIRTYRECT
-  memset(screen_dirty + (screen_visible_x1 + ATARI_WIDTH * (screen_visible_y2 - 1))/8, 1, 13);
-#endif
+  video_memset(ptr, 0xc8, speed);
+  video_memset(ptr+speed, 0x02, 100-speed);
+  video_putbyte(ptr+100, 0x38);
 }
 #endif
 
@@ -926,11 +918,11 @@ void MainStateRead( void )
 
 /*
 $Log$
-Revision 1.33  2002/03/29 10:39:09  vasyl
-Dirty rectangle scheme implementation. All accesses to video memory (except
-those in UI_BASIC.C) are converted to macros. Define symbol DIRTYRECT
-to enable dirty rectangle tracking. Global array screen_dirty contains dirty
-flags (per 8 horizontal pixels).
+Revision 1.34  2002/03/30 06:19:28  vasyl
+Dirty rectangle scheme implementation part 2.
+All video memory accesses everywhere are going through the same macros
+in ANTIC.C. UI_BASIC does not require special handling anymore. Two new
+functions are exposed in ANTIC.H for writing to video memory.
 
 Revision 1.32  2001/12/04 22:28:16  joy
 the speed regulation when -DUSE_CLOCK is enabled so that key autorepeat in UI works.

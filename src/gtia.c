@@ -405,7 +405,6 @@ UBYTE GTIA_GetByte(UWORD addr)
 #ifndef NO_CYCLE_EXACT
 extern UBYTE *scrn_ptr;	/* in antic.c */
 extern int scrn_ofs;	/* in antic.c */
-void video_memset(UBYTE* ptr, UBYTE val, UWORD size); /* in antic.c */
 
 static int xpos_to_offset_blank[121] = {
 	 24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,

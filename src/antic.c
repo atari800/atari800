@@ -44,12 +44,18 @@
 				screen_dirty[((ULONG)scratchULongPtr-(ULONG)atari_screen)>>3] = 1; \
 				*scratchULongPtr = (val); \
 			}
+		#define WRITE_VIDEO_BYTE(ptr, val) \
+			{ \
+				scratchUBytePtr = (ptr); \
+				screen_dirty[((ULONG)scratchUBytePtr-(ULONG)atari_screen)>>3] = 1; \
+				*scratchUBytePtr = (val); \
+			}
 		#define FILL_VIDEO(ptr, val, size) \
 			{ \
 				scratchUBytePtr = (UBYTE*)(ptr); \
-				scratchUWord = (UWORD)(size); \
-				memset(screen_dirty+(((ULONG)scratchUBytePtr-(ULONG)atari_screen)>>3), 1, scratchUWord>>3); \
-				memset(scratchUBytePtr, (val), scratchUWord); \
+				scratchULong = (ULONG)(size); \
+				memset(screen_dirty+(((ULONG)scratchUBytePtr-(ULONG)atari_screen)>>3), 1, scratchULong>>3); \
+				memset(scratchUBytePtr, (val), scratchULong); \
 			}
 	#else
 		#define WRITE_VIDEO(ptr, val) \
@@ -70,6 +76,16 @@
 				{ \
 					screen_dirty[((ULONG)scratchULongPtr-(ULONG)atari_screen)>>3] = 1; \
 					*scratchULongPtr = scratchULong; \
+				} \
+			}
+		#define WRITE_VIDEO_BYTE(ptr, val) \
+			{ \
+				scratchUBytePtr = (ptr); \
+				scratchUByte = (val); \
+				if(*scratchUBytePtr != scratchUByte) \
+				{ \
+					screen_dirty[((ULONG)scratchUBytePtr-(ULONG)atari_screen)>>3] = 1; \
+					*scratchUBytePtr = scratchUByte; \
 				} \
 			}
 		static UBYTE* scratchFillLimit;
@@ -93,14 +109,20 @@
 #else
 	#define WRITE_VIDEO(ptr, val) (*(ptr) = val);
 	#define WRITE_VIDEO_LONG(ptr, val) (*(ptr) = val);
+	#define WRITE_VIDEO_BYTE(ptr, val) (*(ptr) = val);
 	#define FILL_VIDEO(ptr, val, size) memset(ptr, val, size);
 	void entire_screen_dirty() {}
 #endif
 #define READ_VIDEO_LONG(ptr) (*(ptr))
 
-void video_memset(UBYTE* ptr, UBYTE val, UWORD size)
+void video_memset(UBYTE* ptr, UBYTE val, ULONG size)
 {
 	FILL_VIDEO(ptr, val, size);
+}
+
+void video_putbyte(UBYTE* ptr, UBYTE val)
+{
+	WRITE_VIDEO_BYTE(ptr, val, size);
 }
 
 
@@ -809,7 +831,7 @@ void ANTIC_Initialise(int *argc, char *argv[])
 void ANTIC_Reset(void)
 {
 	NMIEN = 0x00;
-	NMIST = 0x1f;
+	NMIST = 0x3f;	/* Probably bit 5 is Reset flag */
 	ANTIC_PutByte(_DMACTL, 0);
 }
 

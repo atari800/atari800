@@ -157,9 +157,9 @@ void Plot(UBYTE * screen, int fg, int bg, int ch, int x, int y)
 
 		for (j = 0; j < 8; j++) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-			*ptr++ = colour_translation_table[data & 0x80 ? fg : bg];
+			video_putbyte(ptr++, colour_translation_table[data & 0x80 ? fg : bg]);
 #else
-			*ptr++ = data & 0x80 ? fg : bg;
+			video_putbyte(ptr++, data & 0x80 ? fg : bg);
 #endif
 			data <<= 1;
 		}
@@ -290,13 +290,13 @@ void ClearScreen(UBYTE * screen)
 #ifndef CURSES
 	UBYTE *ptr;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-	memset(screen, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
+	video_memset(screen, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
 	for (ptr = screen + ATARI_WIDTH * 24 + 32; ptr < screen + ATARI_WIDTH * (24 + 192); ptr += ATARI_WIDTH)
-		memset(ptr, colour_translation_table[0x94], 320);
+		video_memset(ptr, colour_translation_table[0x94], 320);
 #else
-	memset(screen, 0x00, ATARI_HEIGHT * ATARI_WIDTH);
+	video_memset(screen, 0x00, ATARI_HEIGHT * ATARI_WIDTH);
 	for (ptr = screen + ATARI_WIDTH * 24 + 32; ptr < screen + ATARI_WIDTH * (24 + 192); ptr += ATARI_WIDTH)
-		memset(ptr, 0x94, 320);
+		video_memset(ptr, 0x94, 320);
 #endif
 #else
 	int x;
@@ -990,6 +990,12 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.6  2002/03/30 06:19:28  vasyl
+Dirty rectangle scheme implementation part 2.
+All video memory accesses everywhere are going through the same macros
+in ANTIC.C. UI_BASIC does not require special handling anymore. Two new
+functions are exposed in ANTIC.H for writing to video memory.
+
 Revision 1.5  2001/11/29 12:36:42  joy
 copyright notice updated
 
