@@ -696,6 +696,13 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 			while (ListTraverse(list, (void *) &filename))
 				nfiles++;
 
+			if (!nfiles)
+			{
+				ListFree(list, (void *) free);
+				BasicUIMessage("No files inside directory");
+				break;
+			}
+
 			while (!done) {
 				int ascii;
 
@@ -1020,6 +1027,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.13  2004/09/24 15:28:40  sba
+Fixed NULL pointer access in filedialog, which happened if no files are within the directory.
+
 Revision 1.12  2004/08/08 08:41:47  joy
 copyright year increased
 
