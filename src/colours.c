@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "atari.h"
+#include "log.h"
 
 #define FALSE	0
 #define TRUE	1
@@ -254,8 +255,7 @@ void Palette_Initialise(int *argc, char *argv[])
 	  palette_loaded = TRUE;
 	}
 #endif
-      else
-	if (strcmp(argv[i], "-help") == 0)
+      else if (strcmp(argv[i], "-help") == 0)
 	{
 	  Aprint("\t-black <0-255>   set black level");
 	  Aprint("\t-white <0-255>   set white level");
@@ -267,6 +267,7 @@ void Palette_Initialise(int *argc, char *argv[])
 	  Aprint("\t-foxpal <num>    use Fox's palette");
 #endif
 	}
+      else
 	argv[j++] = argv[i];
     }
   *argc = j;
