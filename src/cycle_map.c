@@ -49,7 +49,7 @@ void cpu_cycle_map(char *antic_cycles_orig,int *cpu_cycles, int *actual_cycles){
   for(i=0;i<=113;i++){
     antic_cycles[i]=antic_cycles_orig[i];
   } 
-  for(i=114;i<=120;i++){
+  for(i=114;i<CPU2ANTIC_SIZE;i++){
     antic_cycles[i]='.';
   } 
   for(i=0;i<CPU2ANTIC_SIZE;i++){
