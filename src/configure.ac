@@ -161,7 +161,7 @@ if [[ "$a8_host" == "win" ]]; then
         A8_NEED_LIB(winmm)
         OBJS="win32/atari.ro"
 else
-if [[ "$a8_host" != "os2-emx" ]]; then
+if [[ "$a8_host" != "os2-emx" -a "$a8_host" != "beos" ]]; then
         A8_NEED_LIB(m)
         fi
 fi
