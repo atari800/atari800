@@ -9,7 +9,7 @@ The ROM images are distributed within the PC Xformer 2.5 package (other
 versions of this program do not contain the ROMs in a suitable format)
 which can be downloaded from:-
 
-http://www.signus.demon.co.uk/david/atari/atari.html
+http://joy.sophics.cz/www/xf25.zip
 
 PC-Xformer contains "ataribas.rom", "atariosb.rom" and "atarixl.rom".
 If have the original OS it should be called "atariosa.rom" and if
@@ -23,13 +23,13 @@ Installation of the Emulator
 
    mkdir c:\atari800
 
-2. Copy the Atari800 ZIP file into the newly create "atari800"
+2. Copy the Atari800 ZIP file into the newly created "atari800"
    directory and unzip.
 
    copy *.zip c:\atari800
    cd c:\atari800
    pkunzip *.zip
 
-3. Copy the Operating System ROMS into "c:\atari800"
+3. Copy the Operating System ROMS into the same newly created "atari800"
 
 4. Start the emulator by typing "atari800".
