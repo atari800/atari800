@@ -10,7 +10,7 @@ AC_CONFIG_HEADER(config.h)
 
 a800_target=none
 case "$target" in
-	basic|curses|ncurses|svgalib|vga|dx|sdl) 
+	basic|curses|ncurses|svgalib|vga|dx|sdl|falcon)
 	a800_target="$target" ;;
 	x11|x11-shm|xview|xview-shm|motif)
 	a800_target=x11-"$target" ;;
@@ -28,6 +28,7 @@ if test "$a800_target" = none; then
 	echo " xview xview-shm"
 	echo " motif"
 	echo " sdl"
+	echo " falcon"
 	echo " "
 	echo " "
 	exit 1;
@@ -150,6 +151,16 @@ CFLAGS="$CFLAGS `sdl-config --cflags`"
 LIBS="$LIBS `sdl-config --libs`"
 OBJ="$OBJ \
 atari_sdl.o"
+;;
+falcon)
+AC_DEFINE(DOS_DRIVES)
+LIBS="$LIBS -lgem"
+OBJ="$OBJ \
+atari_falcon.o \
+c2p_uni.o \
+c2p_unid.o \
+videl.o \
+ikbd.o"
 ;;
 x11-*)
 AC_PATH_X
