@@ -5,6 +5,8 @@ o nonblocking open of sound device on linux <Rudolf>
 o ANTIC.C is no longer LONG_ALIGNMENT dependent. Macros READ_U32/WRITE_U32
   take care of the memory access. <Vasyl Tsvirkunov>
 
+o WinCE (PDA) port of Atari800 by Vasyl Tsvirkunov.
+
 -- Piotr:
 
 o support for Express, Diamond, SpartaDOS X, XEGS, Action!, BASIC XL
@@ -80,6 +82,7 @@ o sio: Format Disk rewritten. Now it can resize both ATR and XFD images.
 
 o supercart: added "byte &= 0x0f" to prevent out of bounds accesses
   to regset[]
+
 
 Changes in 1.0.7
 ----------------
