@@ -1,7 +1,7 @@
 
 #include "config.h"
 
-#ifdef DMASOUND
+#ifdef SOUND
 #include <stdio.h>
 #include <osbind.h>
 #include "pokeysnd.h"
@@ -167,7 +167,7 @@ void Sound_Exit(void)
 #endif
 void Sound_Pause(void)
 {
-#ifdef DMASOUND
+#ifdef SOUND
 	if (sound_enabled)
 		Supexec(MFP_IRQ_off);
 #endif
@@ -175,7 +175,7 @@ void Sound_Pause(void)
 
 void Sound_Continue(void)
 {
-#ifdef DMASOUND
+#ifdef SOUND
 	if (sound_enabled)
 		Supexec(MFP_IRQ_on);
 #endif

@@ -421,7 +421,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	CPU_Initialise();
 
-#ifdef DMASOUND
+#ifdef SOUND
 	Sound_Initialise(argc, argv);
 #endif
 
@@ -446,7 +446,7 @@ int Atari_Exit(int run_monitor)
 		}
 	}
 
-#ifdef DMASOUND
+#ifdef SOUND
 	Sound_Exit();
 #endif
 
