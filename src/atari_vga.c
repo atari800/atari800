@@ -29,7 +29,6 @@
 #include "monitor.h"
 #include "pcjoy.h"
 #include "diskled.h"	/* for LED_lastline */
-#include "antic.h"		/* for PENH_input and PENV_input */
 #include "ataripcx.h"
 #include "rt-config.h"	/* for refresh_rate */
 
@@ -41,11 +40,6 @@
     joysticks and keyboard (ie with joy_keyboard off joysticks do not work)
 #define KEYBOARD_EXCLUSIVE
 */
-
-#define MOUSE_SHL 3
-static int mouse_x = 0;
-static int mouse_y = 0;
-static int mouse_buttons = 0;
 
 static int trig0;
 static int stick0;
@@ -485,21 +479,7 @@ void SetupVgaEnvironment()
 		union REGS rg;
 		rg.x.ax = 0;
 		int86(0x33, &rg, &rg);
-		if (rg.x.ax == 0xffff) {
-			rg.x.ax = 7;
-			rg.x.cx = 0;
-			rg.x.dx = mouse_mode == MOUSE_PAD ? 228 << MOUSE_SHL : 167 << MOUSE_SHL;
-			int86(0x33, &rg, &rg);
-			rg.x.ax = 8;
-			rg.x.cx = 0;
-			rg.x.dx = mouse_mode == MOUSE_PAD ? 228 << MOUSE_SHL : 119 << MOUSE_SHL;
-			int86(0x33, &rg, &rg);
-			rg.x.ax = 4;
-			rg.x.cx = mouse_mode == MOUSE_PAD ? 114 << MOUSE_SHL : 84 << MOUSE_SHL;
-			rg.x.dx = mouse_mode == MOUSE_PAD ? 114 << MOUSE_SHL : 60 << MOUSE_SHL;
-			int86(0x33, &rg, &rg);
-		}
-		else {
+		if (rg.x.ax != 0xffff) {
 			printf("Can't find mouse!\n");
 			mouse_mode = MOUSE_OFF;
 		}
@@ -531,20 +511,6 @@ void Atari_DisplayScreen(UBYTE * ascreen)
 
         UBYTE *scr_ptr;
         int ypos;
-
-	if (mouse_mode != MOUSE_OFF) {
-		union REGS rg;
-		rg.x.ax = 3;
-		int86(0x33, &rg, &rg);
-		mouse_x = rg.x.cx >> MOUSE_SHL;
-		mouse_y = rg.x.dx >> MOUSE_SHL;
-		mouse_buttons = rg.x.bx;
-		if (mouse_mode == MOUSE_PEN && rg.x.bx & 2) {	/* draw light pen cursor if right mouse button pressed */
-			UWORD *ptr = & ((UWORD *) ascreen)[12 + mouse_x + ATARI_WIDTH * mouse_y];
-			*ptr ^= 0xffff;
-			ptr[ATARI_WIDTH / 2] ^= 0xffff;
-		}
-	}
 
         vga_ptr = 0xa0000;
         scr_ptr = &ascreen[first_lno * ATARI_WIDTH + first_col];
@@ -665,16 +631,6 @@ void Atari_Initialise(int *argc, char *argv[])
                 {
                   use_vret=TRUE;
                 }
-                else if (strcmp(argv[i],"-mouse") == 0)
-                {
-                  i++;
-                  if (strcmp(argv[i],"off") == 0)
-			mouse_mode=MOUSE_OFF;
-                  if (strcmp(argv[i],"pad") == 0)
-			mouse_mode=MOUSE_PAD;
-                  if (strcmp(argv[i],"pen") == 0)
-			mouse_mode=MOUSE_PEN;
-                }
 		else if (strcmp(argv[i],"-keyboard") == 0)
 		{
 			i++;
@@ -696,9 +652,6 @@ void Atari_Initialise(int *argc, char *argv[])
                                 printf("\t\t3 - 320x240, interlaced with darker lines (slower!)\n");
                                 printf("\t-novesa       Do not use vesa2 videomodes\n");
                                 printf("\t-vretrace     Use vertical retrace control\n");
-                                printf("\t-mouse pad    Use mouse as paddles / touch pad\n");
-                                printf("\t-mouse pen    Use mouse as light pen\n");
-                                printf("\t-mouse off    Do not use mouse\n");
 				printf("\t-keyboard 0   PC keyboard layout\n");
 				printf("\t-keyboard 1   Atari keyboard layout\n");
                                 printf("\nPress Return/Enter to continue...");
@@ -872,21 +825,6 @@ int Atari_Configure(char* option,char* parameters)
         keysets[no][i]=255;
     if (help!=9) return 0;  /*not enough parameters*/
     return 1;
-  }
-  else if (strcmp(option,"MOUSE")==0)
-  {
-    if (strcmp(parameters,"OFF")==0) {
-      mouse_mode=MOUSE_OFF;
-      return 1;
-    }
-    if (strcmp(parameters,"PAD")==0) {
-      mouse_mode=MOUSE_PAD;
-      return 1;
-    }
-    if (strcmp(parameters,"PEN")==0) {
-      mouse_mode=MOUSE_PEN;
-      return 1;
-    }
   }
   else if (strcmp(option,"KEYBOARD")==0)
   {
@@ -1503,17 +1441,8 @@ int Atari_Keyboard(void)
 
 int Atari_PORT(int num)
 {
-	if (num == 0) {
-		int val = (stick1 << 4) | stick0;
-		switch (mouse_mode) {
-		case MOUSE_PAD:
-			return val & ~((mouse_buttons & 3) << 2);
-		case MOUSE_PEN:
-			return val & ~(mouse_buttons & 1);
-		default:
-			return val;
-		}
-	}
+	if (num == 0)
+		return (stick1 << 4) | stick0;
 	else
 		return (stick3 << 4) | stick2;
 }
@@ -1541,8 +1470,6 @@ int Atari_POT(int num)
 {
 	if (machine_type == MACHINE_5200 && num >= 0 && num < 2)
 		return POT[num];
-	if (mouse_mode == MOUSE_PAD && num < 2)
-		return num == 1 ? 228 - mouse_y : 228 - mouse_x;
 	return 228;
 }
 
@@ -1595,13 +1522,15 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		if (mouse_mode == MOUSE_PEN) {
-			PENH_input = 44 + mouse_x;
-			PENV_input = 4 + mouse_y;
-		}
-		else {
-			PENH_input = 0x00;
-			PENV_input = 0xff;
+		if (mouse_mode != MOUSE_OFF) {
+			union REGS rg;
+			rg.x.ax = 0x0b;
+			int86(0x33, &rg, &rg);
+			mouse_delta_x = (short) rg.x.cx;	/* signed! */
+			mouse_delta_y = (short) rg.x.dx;	/* signed! */
+			rg.x.ax = 0x03;
+			int86(0x33, &rg, &rg);
+			mouse_buttons = rg.x.bx;
 		}
 
 		if (++test_val == refresh_rate) {
