@@ -15,15 +15,14 @@ void Atari_DisplayScreen (UBYTE *screen);
 
 int Atari_PORT(int num);
 int Atari_TRIG(int num);
-int Atari_POT(int num);
-#if defined(SET_LED) && defined(NO_LED_ON_SCREEN)
-void Atari_Set_LED(int how);
-#endif
 
 #endif
 
 /*
 $Log$
+Revision 1.5  2001/10/03 16:52:38  fox
+removed Atari_POT and Atari_Set_LED
+
 Revision 1.4  2001/09/26 10:48:13  fox
 removed Atari_PEN
 
