@@ -16,6 +16,7 @@
 #include "pokeysnd.h"
 #include "input.h"
 #include "antic.h"
+#include "rt-config.h"
 
 #ifdef POKEY_UPDATE
 extern void pokey_update(void);
