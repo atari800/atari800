@@ -60,7 +60,7 @@ all: $(TARGET)
 %.o: %.cpp
 	$(CC) -c -o $@ $(DEFS) $(INCLUDE) $(CFLAGS) $<
 
-%.o: %.s
+%.o: %.asm
 	cd $(<D); xgen -L1 $(@F) $(<F)
 	cd $(<D); gst2gcc gcc $(@F)
 
