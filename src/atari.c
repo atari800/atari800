@@ -217,28 +217,33 @@ void Atari800_PatchOS(void)
 
 void Warmstart(void)
 {
-	PORTA = 0x00;
-/* After reset must by actived rom os */
-	PIA_PutByte(_PORTB, 0xff);	/* turn on operating system */
+	PIA_Reset();
 	ANTIC_Reset();
+	/* CPU_Reset() must be after PIA_Reset(),
+	   because Reset routine vector must be read from OS ROM */
 	CPU_Reset();
+	/* note: POKEY and GTIA have no Reset pin */
 }
 
 void Coldstart(void)
 {
-	PORTA = 0x00;
-	PIA_PutByte(_PORTB, 0xff);	/* turn on operating system in XL/XE */
+	Warmstart();
+	/* reset cartridge to power-up state */
 	CART_Start();
+	/* set Atari OS Coldstart flag */
 	dPutByte(0x244, 1);
-	ANTIC_Reset();
-	CPU_Reset();
-
+	/* handle Option key (disable BASIC in XL/XE)
+	   and Start key (boot from cassette) */
 	consol_index = 2;
 	consol_table[2] = 0x0f;
-	if (disable_basic)
-		consol_table[2] &= ~4;	/* hold Option during reboot */
-	if (hold_start)
-		consol_table[2] &= ~1;	/* hold Start during reboot */
+	if (disable_basic) {
+		/* hold Option during reboot */
+		consol_table[2] &= ~4;
+	}
+	if (hold_start) {
+		/* hold Start during reboot */
+		consol_table[2] &= ~1;
+	}
 	consol_table[1] = consol_table[2];
 }
 
@@ -823,9 +828,7 @@ void Atari800_Frame(int mode)
 		break;
 	case EMULATE_FULL:
 		ANTIC_Frame(TRUE);
-#ifdef SHOW_DISK_LED
 		LED_Frame();
-#endif
 #ifdef SNAILMETER
 		if (!emu_too_fast)
 			ShowRealSpeed(atari_screen);
@@ -996,8 +999,8 @@ void MainStateRead( void )
 
 /*
 $Log$
-Revision 1.45  2003/03/03 09:57:32  joy
-Ed improved autoconf again plus fixed some little things
+Revision 1.46  2003/03/07 11:24:09  pfusik
+Warmstart() and Coldstart() cleanup
 
 Revision 1.44  2003/02/24 09:32:32  joy
 header cleanup
