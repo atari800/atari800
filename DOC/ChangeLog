@@ -1,3 +1,18 @@
+2003-10-25  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_falcon.c: disable compiling with stereo sound enabled
+
+* log.c: do MacOSX a favor and generally allow platform specific Aprint
+  output
+
+* atari.c: wrong path to disk image is not a reason to quit with an error
+  message
+
+* mzpokeysnd.c: simple fix for SERIO_SOUND
+
+* pokey.c: some platforms (MacOSX) might need different SOUND_GAIN
+  so it's possible to define it in configure/Makefile now.
+
+
 2003-10-24  Piotr Fusik  <fox@scene.pl>
 * sio.c: "Overmind" runs with NEW_CYCLE_EXACT and SIO patch enabled.
   I implemented NO_SECTOR_DELAY in 0.9.9i to allow running the "Overmind"

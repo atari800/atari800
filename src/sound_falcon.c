@@ -174,7 +174,11 @@ void Sound_Initialise(int *argc, char *argv[])
 			exit(1);
 		}
 
+#ifdef STEREO_SOUND
+#  error "Unsupported Stereo Sound"
+#else
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, 0);
+#endif
 		Supexec(MFP_IRQ_on);
 	}
 }

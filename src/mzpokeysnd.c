@@ -1073,7 +1073,7 @@ static void Pokey_process_8(void* sndbuffer, unsigned sndn);
 static void Pokey_process_16(void* sndbuffer, unsigned sndn);
 static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain);
 #ifdef SERIO_SOUND
-    Update_serio_sound = Update_serio_sound_mz;
+static void Update_serio_sound_mz(int out, UBYTE data) {}
 #endif
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set );
@@ -2131,6 +2131,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.14  2003/10/25 18:40:54  joy
+various little updates for better MacOSX support
+
 Revision 1.13  2003/07/04 19:12:17  pfusik
 added key click
 

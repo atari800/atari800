@@ -138,7 +138,9 @@ int POKEY_siocheck(void)
 		&& AUDF[CHAN4] == 0x00 && (AUDCTL[0] & 0x28) == 0x28;
 }
 
+#ifndef SOUND_GAIN /* sound gain can be pre-defined in the configure/Makefile */
 #define SOUND_GAIN 4
+#endif
 
 void POKEY_PutByte(UWORD addr, UBYTE byte)
 {
