@@ -3,6 +3,8 @@
 #include	<string.h>
 #include	<ctype.h>
 
+#include	"config.h"
+
 #ifdef VMS
 #include	<unixio.h>
 #include	<file.h>
@@ -34,6 +36,63 @@
 #ifdef DO_DIR
 #ifndef WIN32
 #include	<dirent.h>
+#endif
+#endif
+
+#ifdef BASIC
+#ifdef SOUND
+#include "sound.h"
+#endif
+static int current_column = 0;
+static int row_offset = 0;
+static int escape_char = 0;
+
+#ifndef NO_TEXT_MODES
+#include <term.h>
+typedef enum { ATNORMAL=0, ATREVERSE=1, ATBOLD=2 } ATMode;
+static ATMode current_mode = ATNORMAL;
+void enter_mode(ATMode mode)
+{
+   char *str = NULL;
+   switch(mode)
+   {
+      case ATNORMAL: break;
+      case ATREVERSE: str = enter_reverse_mode; break;
+      case ATBOLD: str = enter_bold_mode; break;
+   }
+   if(str) printf(str);
+}
+void exit_mode(ATMode mode)
+{
+   if(mode != ATNORMAL)
+      printf(exit_attribute_mode);
+}
+
+void set_text_mode(ATMode new_mode)
+{
+   if(current_mode != new_mode)
+   {
+      exit_mode(current_mode);
+      enter_mode(new_mode);
+      current_mode = new_mode;
+   }
+}
+#endif
+
+#ifdef USE_GETCHAR
+#define getkey getchar
+#else
+#ifdef DOS
+/* include something for getch in DOS/Windows ??? */
+#define getkey getch
+#else
+int getkey()
+{
+   char ch;
+   return (read(STDIN_FILENO, &ch, 1) < 0)?-1:
+      ch;
+}
+#endif
 #endif
 #endif
 
@@ -627,6 +686,9 @@ void Device_PHINIT(void)
 void K_Device(UBYTE esc_code)
 {
 	char ch;
+#ifdef SOUND
+	Sound_Update();
+#endif
 
 	switch (esc_code) {
 	case ESC_K_OPEN:
@@ -645,7 +707,8 @@ void K_Device(UBYTE esc_code)
 			Atari800_Exit(FALSE);
 			exit(0);
 		}
-		ch = getchar();
+                ch = getkey();
+
 		switch (ch) {
 		case '\n':
 			ch = (char)0x9b;
@@ -658,15 +721,21 @@ void K_Device(UBYTE esc_code)
 		ClrN;
 		break;
 	}
+#ifdef SOUND
+	Sound_Update();
+#endif
 }
 
 void E_Device(UBYTE esc_code)
 {
 	UBYTE ch;
+#ifdef SOUND
+	Sound_Update();
+#endif
 
 	switch (esc_code) {
 	case ESC_E_OPEN:
-		Aprint( "Editor device open" );
+		Aprint("Editor device open" );
 		regY = 1;
 		ClrN;
 		break;
@@ -675,11 +744,12 @@ void E_Device(UBYTE esc_code)
 			Atari800_Exit(FALSE);
 			exit(0);
 		}
-		ch = getchar();
+                ch = getkey();
 		switch (ch) {
 		case '\n':
 			ch = 0x9b;
 			break;
+
 		default:
 			break;
 		}
@@ -688,23 +758,104 @@ void E_Device(UBYTE esc_code)
 		ClrN;
 		break;
 	case ESC_E_WRITE:
+
 		ch = regA;
-		switch (ch) {
+
+              if(escape_char && ch > 0x20)
+              {
+                 escape_char = 0;
+              }
+              else if(escape_char && ch <= 0x20)
+              {
+                 ch = '*';
+                 escape_char = 0;
+              }
+              else switch (ch)
+              {
 		case 0x7d:
-			putchar('*');
+                    ch='\0';
+/*                    ch='*'; whatisthis */
+                    break;
+                 case 0xfc:
 			break;
 		case 0x9b:
-			putchar('\n');
+                    ch='\n';
+                    current_column=0;
+                    break;
+                 case 0x9c: /* delete line */
+                    ch='\0';
+                    row_offset++;
+                    break;
+                 case 0x9d: /* insert line */
+                 case 0x9e: /* CTRL-Tab */
+                 case 0x9f:
+                    ch='\0';
+                    break;
+                 case 0x1b:
+                    escape_char = 1;
+                    ch='\0';
+                    break;
+                 case 0x1c: /* up arrow */
+                    row_offset--;
+                    ch='\0';
+                    break;
+                 case 0x1d: /* down arrow */
+                    row_offset++;
+                    ch='\0';
+                    break;
+                    /* this is not the correct way to handle l+r arrows, but...*/
+                 case 0x1e: /* left arrow */
+                    current_column--;
+                    ch='\0';
 			break;
+                 case 0x1f: /* right arrow */
+                    ch = ' ';
+                    break;
+
 		default:
 			if ((ch >= 0x20) && (ch <= 0x7e))	/* for DJGPP */
-				putchar(ch & 0x7f);
+                    {
+                       set_text_mode(ATNORMAL);
+                       ch= ch & 0x7f;
+                    }
+                    else if(ch >= 0x9f && ch <= 0xef )
+                    {
+                       set_text_mode(ATREVERSE);
+                       ch = ch & 0x7f;
+                    }
+                    else
+                    {
+                       set_text_mode(ATNORMAL);
+                       ch='?';
+                    }
 			break;
 		}
+              if(ch)
+              {
+                 for(;row_offset > 0;row_offset--)
+                 {
+                    putchar('\n');
+                    current_column=1;
+                 }
+
+                 putchar(ch);
+                 if(ch != '\n') current_column++;
+                 /* if column is greater than right margin, wrap */
+                 if(current_column /*1-38*/ >
+                    (memory[83]/* right(39) */ - memory[82]/*left(2)*/))
+                 {
+                    putchar('\n');
+                    current_column = 0;
+                 }
+                 fflush(stdout);
+              }
 		regY = 1;
 		ClrN;
 		break;
 	}
+#ifdef SOUND
+	Sound_Update();
+#endif
 }
 
 #endif /* BASIC */
