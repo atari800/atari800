@@ -14,6 +14,9 @@ int key_consol = CONSOL_NONE;
 
 int joy_autofire[4] = {AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF};
 
+int mouse_mode = MOUSE_OFF;
+int mouse_port = 0;
+
 void INPUT_Frame(void)
 {
 	int i;
