@@ -40,12 +40,6 @@
 #include "sound.h"
 #endif
 
-#ifdef CRASH_MENU
-extern int crash_code;
-extern UWORD crash_address;
-extern UWORD crash_afterCIM;
-#endif
-
 ULONG *atari_screen = NULL;
 #ifdef BITPL_SCR
 ULONG *atari_screen_b = NULL;
@@ -67,8 +61,6 @@ int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not availab
 int pil_on = FALSE;
 
 double deltatime;
-
-void Atari800_Hardware(void);
 
 static char *rom_filename = NULL;
 
@@ -101,7 +93,7 @@ void Coldstart(void)
 	PORTA = 0x00;
 	PIA_PutByte(_PORTB, 0xff);	/* turn on operating system in XL/XE */
 	CART_Start();
-	Poke(0x244, 1);
+	dPutByte(0x244, 1);
 	ANTIC_Reset();
 	CPU_Reset();
 
@@ -539,7 +531,7 @@ void Atari800_UpdatePatches(void)
 	case MACHINE_OSA:
 	case MACHINE_OSB:
 		/* Restore unpatched OS */
-		memcpy(memory + 0xd800, atari_os, 0x2800);
+		dCopyToMem(atari_os, 0xd800, 0x2800);
 		/* Set patches */
 		PatchOS();
 		break;
@@ -548,8 +540,8 @@ void Atari800_UpdatePatches(void)
 		if ((PORTB & 1) == 0)
 			break;
 		/* Restore unpatched OS */
-		memcpy(memory + 0xc000, atari_os, 0x1000);
-		memcpy(memory + 0xd800, atari_os + 0x1800, 0x2800);
+		dCopyToMem(atari_os, 0xc000, 0x1000);
+		dCopyToMem(atari_os + 0x1800, 0xd800, 0x2800);
 		/* Set patches */
 		PatchOS();
 		break;
@@ -817,6 +809,10 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.25  2001/10/01 17:22:16  fox
+unused CRASH_MENU externs removed; Poke -> dPutByte;
+memcpy(memory + ...) -> dCopyToMem
+
 Revision 1.24  2001/09/27 22:36:39  fox
 called INPUT_DrawMousePointer
 
