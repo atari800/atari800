@@ -56,7 +56,7 @@ extern int draw_display;		/* Draw actualy generated screen */
 #define ATARI_WIDTH  384
 #define ATARI_HEIGHT 240
 
-#define ATARI_TITLE  "Atari 800 Emulator, Version 1.0.6"
+#define ATARI_TITLE  "Atari 800 Emulator, Version 1.0.7"
 
 extern int xpos;
 extern int xpos_limit;
@@ -437,6 +437,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.9  2001/05/04 15:38:34  joy
+version++
+
 Revision 1.8  2001/04/24 10:22:36  joy
 COLOUR TRANSLATION TABLE defined out for SHM under X11 - Rudolf says "it produced funny results"
 
