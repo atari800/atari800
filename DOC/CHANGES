@@ -67,6 +67,8 @@ o pokeysnd: added exact poly9_lookup and poly17_lookup, removed bit17 (which
   was initialised with rand()) saving ca. 100 KB of memory.
   Do you hear any difference?
 
+o sio: made double density ATR images compatible with SIO2PC
+
 o supercart: added "byte &= 0x0f" to prevent out of bounds accesses
   to regset[]
 
