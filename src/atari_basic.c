@@ -2,7 +2,7 @@
  * atari_basic.c - Text-only specific port code
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -64,9 +64,6 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	while (TRUE) {
-		Atari800_Frame(EMULATE_BASIC);
-#ifndef	DONT_SYNC_WITH_HOST
-		atari_sync();
-#endif
+		Atari800_Frame();
 	}
 }
