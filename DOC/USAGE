@@ -272,3 +272,16 @@ keypad has been enabled).
  
 At the moment it is not possible to use a Paddle with this version.
 
+SDL port keys and options
+=========================
+
+LALT+f - switching FULLSCREEN (probably doesn't work in Windows)
+LALT+g - switching WIDTH_MODE (so you can set 320x240)
+LALT+b - switching BLACK-AND-WHITE (feel to power of BW monitor!)
+LALT+j - swapping _keyboard_emulated_ joysticks
+LALT+e - switching bpp (for debug only, will be removed soon)
+
+To redefine keys for joystick emulation you must modify SDL_TRIG_* and
+SDL_JOY_* in atari_sdl.c, then recompile Atari800. In source you can also turn
+off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
+

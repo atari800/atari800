@@ -59,18 +59,6 @@ The SDL version should compile on Unix, Win32, BeOS, etc... It's optimized for
 8, 16 and 32 color depth. Of course it will work fastest in 8bit. If you use it
 in XFree86 - please set "Depth=8" in XF86Config to gain maximum speed. 
 
-SDL port keys:
-
-LALT+f - switching FULLSCREEN (probably doesn't work in Windows)
-LALT+g - switching WIDTH_MODE (so you can set 320x240)
-LALT+b - switching BLACK-AND-WHITE (feel to power of BW monitor!)
-LALT+j - swapping _keyboard_emulated_ joysticks
-LALT+e - switching bpp (for debug only, will be removed soon)
-
-To redefine keys for joystick emulation you must modify SDL_TRIG_* and
-SDL_JOY_* in atari_sdl.c, then recompile Atari800. In source you can also turn
-off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
-
 ---------------------------------------------------------------------------
 
 Features
