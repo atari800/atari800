@@ -37,6 +37,11 @@
 
 * colours.c: #include <string.h> for strcmp()
 
+2001-11-22  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* DOC/INSTALL: added autoconf instructions
+* acconfig.h: added SVGALIB symbol
+
 2001-11-18  Piotr Fusik  <fox@scene.pl>
 
 * ui.c: fixed a bug: modification of string literals
@@ -74,6 +79,13 @@
 * input.c: set default light pen/gun offsets to (42, 2) - good for light gun
   games; a bigger light pen/gun cursor
 
+2001-10-16  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* ui_basic.c: better keyboard autorepeat rate
+* configure.in: added AC_EXEEXT; removed A800_MAIN; used $target variable
+* Makefile.in: improved dep target; added EXEEXT
+* autogen.sh: new script to create 'configure'
+
 2001-10-12  Piotr Fusik  <fox@scene.pl>
 
 * cartridge.h, cartridge.c, ui.c: added 8 KB and 4 KB cartridges for 5200
@@ -83,10 +95,20 @@
 * atari_curses.c, ui_basic.c, ui.c: removed CURSES-specific code from ui.c,
   added curses_screen for UI
 
+2001-10-11  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* ui_basic: added atari_sync() call in keyboard loop--keyboard is sampled
+  at reasonable rate
+
 2001-10-10  Piotr Fusik  <fox@scene.pl>
 
 * atari_x11.c, atari_curses.c: compilable now
 * configure.in, ui.c: corrected typos
+
+2001-10-10  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* sound.c: improved output space calculation--can work much better
+  with some drivers
 
 2001-10-09  Piotr Fusik  <fox@scene.pl>
 
@@ -125,6 +147,11 @@
 * input.c, atari_vga.c, platform.h: removed Atari_POT: special handling
   of 5200 joysticks is in input.c
 * Makefile.in: updated
+
+2001-10-03  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* win32/atari_win32.c, atari_svgalib.c: keyboard interface updated
+* win32/main.c: added mouse input
 
 2001-10-01  Piotr Fusik  <fox@scene.pl>
 
@@ -234,6 +261,13 @@
 * memory-d.h, memory-d.c, cartridge.c:o "-basic" and "-nobasic" work
   for Atari 800 (Atari BASIC is attached as a cartridge in Atari 800)
 
+2001-09-08  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* compfile.c: unused definitions and inclusions removed
+* ui.c, rt-config.h, rt-config.c: used FILENAME_MAX instead of
+  MAX_FILENAME_LEN
+* sio.c, sio.h: used FILENAME_MAX instead of FILENAME_LEN
+
 2001-09-06  Piotr Fusik  <fox@scene.pl>
 
 * atari.h: MENU_PATCHES -> MENU_SETTINGS
@@ -259,10 +293,19 @@
 * pokey.c: RANDOM is 0xff if (SKCTLS&0x03)==0 (for stereo detection in
   "Sheol")
 
+2001-08-27  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* acconfig.h, config.h.in: safer 'win32' definition
+* win32/main.c: used _endthread() call without parameter
+
 2001-08-24  Piotr Fusik  <fox@scene.pl>
 
 * pokey.h: declared stereo_enabled (for monitor.c)
 * pokey.c: initialize KBCODE to 0xff - for a stereo detection routine
+
+2001-08-19  Krzysztof Nikiel  <knik@poczta.onet.pl>
+
+* DOC/INSTALL: windows instructions
 
 2001-08-16  Piotr Fusik  <fox@scene.pl>
 
