@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>	/* for toupper() */
+#include <ctype.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -26,8 +26,8 @@
 #else
 #include <fcntl.h>
 #include <unistd.h>
-#endif
-#endif
+#endif	/* VMS */
+#endif	/* WIN32 */
 
 extern int DELAYED_SERIN_IRQ;
 extern int DELAYED_SEROUT_IRQ;
@@ -142,7 +142,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 	if( !strcmp( &upperfile[ strlen( upperfile )-3 ], "DCM" ) )
 	{
 		istmpfile[ diskno -1 ] = 1;
-		drive_status[ diskno -1 ] = ReadOnly;
+		drive_status[ diskno -1 ] = b_open_readonly ? ReadOnly : ReadWrite;	/* this is a fake but some games need it */
 		fd = opendcm( diskno, filename, tmp_filename[diskno - 1] );
 		if( fd == -1 )
 			istmpfile[ diskno - 1] = 0;
@@ -154,7 +154,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			 !strcmp( &upperfile[strlen( upperfile )-6], "XFD.GZ") )
 	{
 		istmpfile[ diskno -1 ] = 1;
-		drive_status[ diskno -1 ] = ReadOnly;
+		drive_status[ diskno -1 ] = b_open_readonly ? ReadOnly : ReadWrite;	/* this is a fake but some games need it */
 		fd = openzlib( diskno, filename, tmp_filename[ diskno - 1] );
 		if( fd == -1 )
 		{
