@@ -95,6 +95,17 @@ static char *port_source_text[] =
 
 /******************************/
 
+#define DISPLAY_WINDOW				0
+#define DISPLAY_SCALABLEWINDOW		1
+#define DISPLAY_CUSTOMSCREEN		2
+
+static char *display_text[] =
+{
+	"WINDOW","SCALBALEWINDOW","CUSTOMSCREEN",NULL
+};
+
+/***"***************************/
+
 struct timezone;
 
 /******************************/
@@ -137,8 +148,6 @@ static BOOL timer_error;
 static struct MsgPort *ahi_msg_port;
 static struct AHIRequest *ahi_request;
 static struct AHIRequest *ahi_soundreq[2];
-static STRPTR ahi_soundpath;
-static BPTR ahi_soundhandle;			/* FileHandle for Soundoutput */
 static BOOL ahi_current;
 
 static UWORD ahi_fps;                  /* frames per second */
@@ -153,9 +162,8 @@ static int keyboard_consol;
 static int trig[2];
 static int stick[2];
 
-static LONG Overlay;
-static LONG Scalable;
-static LONG UseCustomScreen = TRUE;
+/* Settings */
+static LONG DisplayType;
 static LONG UseBestID = TRUE;
 static LONG SoundEnabled = TRUE;
 static LONG ShowFPS;
@@ -173,6 +181,8 @@ static struct Menu *MenuMain;
 static UBYTE pentable[256];
 static BOOL pensallocated;
 static UBYTE *tempscreendata;
+static ULONG scaledscreendatasize;
+static UBYTE *scaledscreendata;
 
 struct FileRequester *DiskFileReq;
 struct FileRequester *CartFileReq;
@@ -250,9 +260,12 @@ static struct NewMenu MenuEntries[] =
 	{NM_ITEM, "Reset", "F5", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_RESET},
 	{NM_ITEM, "Coldstart", "Shift F5", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_COLDSTART},
 	{NM_TITLE, "Settings", NULL, 0, 0L, (APTR)MEN_SETTINGS},
-	{NM_ITEM, "Use Custom Screen?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_SETTINGS_CUSTOMSCREEN},
 	{NM_ITEM, "Show Framerate?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_SETTINGS_FRAMERATE},
 	{NM_ITEM, NM_BARLABEL, NULL, 0, 0L, NULL},
+	{NM_ITEM, "Display in", NULL, 0, 0L, NULL},
+	{NM_SUB, "Window?", NULL, CHECKIT, 2+4, (APTR)MEN_SETTINGS_WINDOW},
+	{NM_SUB, "Scalable Window?", NULL, CHECKIT, 1+4, (APTR)MEN_SETTINGS_SCALABLEWINDOW},
+	{NM_SUB, "Custom Screen?", NULL, CHECKIT, 1+2, (APTR)MEN_SETTINGS_CUSTOMSCREEN},
 	{NM_ITEM, "Atari Gameport 0", NULL, 0, 0L, NULL},
 	{NM_SUB, "Gameport 1", NULL, CHECKIT, 2+4+8, (APTR)MEN_SETTINGS_PORT0_GAMEPORT},
 	{NM_SUB, "Numeric Pad", NULL, CHECKIT, 1+4+8, (APTR)MEN_SETTINGS_PORT0_NUMERICPAD},
@@ -543,28 +556,252 @@ BOOL SetupSound(void)
 }
 
 /**************************************************************************
- Closes RecordSoundfile handle
+ Free everything which is assoicated with the Atari Screen while
+ Emulating
 **************************************************************************/
-VOID FreeSoundFile(void)
+VOID FreeDisplay(void)
 {
-	if (ahi_soundhandle)
+	int i;
+
+	if (MenuMain)
 	{
-		Close(ahi_soundhandle);
-		ahi_soundhandle = ZERO;
+		if (WindowMain) ClearMenuStrip(WindowMain);
+		FreeMenus(MenuMain);
+		MenuMain = NULL;
+	}
+
+	if (WindowMain)
+	{
+		CloseWindow( WindowMain );
+		WindowMain = NULL;
+	}
+
+	if (VisualInfoMain)
+	{
+		FreeVisualInfo( VisualInfoMain );
+		VisualInfoMain = NULL;
+	}
+	
+	if (scaledscreendata)
+	{
+		FreeVec(scaledscreendata);
+		scaledscreendata = NULL;
+	}
+
+	if (tempscreendata)
+	{
+		FreeVec(tempscreendata);
+		tempscreendata=NULL;
+	}
+
+	if (ScreenMain)
+	{
+		if (ScreenIsCustom) CloseScreen(ScreenMain);
+		else
+		{
+			if (pensallocated)
+			{
+				for(i=0;i<256;i++) ReleasePen(ScreenMain->ViewPort.ColorMap,pentable[i]);
+				pensallocated = 0;
+			}
+			UnlockPubScreen(NULL,ScreenMain);
+		}
+		ScreenMain = NULL;
 	}
 }
 
 /**************************************************************************
- Opens the Recordsoundfile handle
+ Ensures that the scaledscreendata is big enough
 **************************************************************************/
-VOID SetupSoundFile(void)
+LONG EnsureScaledDisplay(WORD Width, WORD Height)
 {
-	FreeSoundFile();
-
-	if (ahi_soundpath)
+	if (!scaledscreendata || (((LONG)Width * (LONG)Height) > scaledscreendatasize))
 	{
-		ahi_soundhandle = Open(ahi_soundpath, MODE_NEWFILE);
+		scaledscreendatasize = (LONG)Width * (LONG)Height;
+		if (scaledscreendata) FreeVec(scaledscreendata);
+		scaledscreendata = (UBYTE*)AllocVec(scaledscreendatasize,MEMF_CLEAR);
 	}
+	return !!scaledscreendata;
+}
+
+/**************************************************************************
+ Allocate everything which is assoicated with the Atari Screen while
+ Emulating
+**************************************************************************/
+LONG SetupDisplay(void)
+{
+	UWORD ScreenWidth, ScreenHeight;
+	struct MenuItem *mi;
+	int i;
+
+	STATIC WORD ScreenPens[NUMDRIPENS+1];
+
+	ScreenPens[DETAILPEN] = 0;
+	ScreenPens[BLOCKPEN] = 15;
+	ScreenPens[TEXTPEN] = 0;
+	ScreenPens[SHINEPEN] = 15;
+	ScreenPens[SHADOWPEN] = 0;
+	ScreenPens[FILLPEN] = 120;
+	ScreenPens[FILLTEXTPEN] = 0;
+	ScreenPens[BACKGROUNDPEN] = 9;
+	ScreenPens[HIGHLIGHTTEXTPEN] = 15;
+	ScreenPens[BARDETAILPEN] = 0;
+	ScreenPens[BARBLOCKPEN] = 15;
+	ScreenPens[BARTRIMPEN] = 0;
+	ScreenPens[NUMDRIPENS] = -1;
+
+#if DRI_VERSION > 2
+	ScreenPens[MENUBACKGROUNDPEN] = 13;
+	ScreenPens[SELECTPEN] = 120;
+#endif
+
+	if (DisplayType == DISPLAY_CUSTOMSCREEN)
+	{
+		ULONG ScreenDisplayID;
+		static ULONG colors32[3*256+1];
+
+		ScreenIsCustom = TRUE;
+		ScreenWidth = ATARI_WIDTH - 64;
+		ScreenHeight = ATARI_HEIGHT;
+		ScreenDepth = 8;
+
+		ScreenDisplayID = DisplayID;
+		if (UseBestID) ScreenDisplayID = GetBestID(ScreenWidth,ScreenHeight,ScreenDepth);
+
+		colors32[0] = 256 << 16;
+		for (i=0;i<256;i++)
+		{
+			int rgb = colortable[i];
+			int red,green,blue;
+			
+			red = rgb & 0x00ff0000;
+			green = rgb & 0x0000ff00;
+			blue = rgb & 0x000000ff;
+
+			colors32[1+i*3] = red | (red << 8) | (red << 16) | (red << 24);
+			colors32[2+i*3] = green | (green << 8) | (green << 16) | (green << 24);
+			colors32[3+i*3] = blue | (blue << 8) | (blue << 16) | (blue << 24);
+		}
+
+		ScreenMain = OpenScreenTags( NULL,
+									SA_Left, 0,
+									SA_Top, 0,
+									SA_Width, ScreenWidth,
+									SA_Height, ScreenHeight,
+									SA_Depth, ScreenDepth,
+									SA_Pens, ScreenPens,
+									SA_Quiet, TRUE,
+									SA_Type, CUSTOMSCREEN,
+									SA_AutoScroll, TRUE,
+									SA_DisplayID, ScreenDisplayID,
+									SA_Colors32, colors32,
+									SA_Exclusive, TRUE,
+									SA_OffScreenDragging, TRUE,
+									TAG_DONE);
+	}	else
+	{
+		if ((ScreenMain = LockPubScreen(NULL)))
+		{
+			ScreenIsCustom = FALSE;
+			ScreenWidth = ATARI_WIDTH - 56;
+			ScreenHeight = ATARI_HEIGHT;
+			ScreenDepth = GetBitMapAttr(ScreenMain->RastPort.BitMap,BMA_DEPTH);
+
+			if (ScreenDepth <= 8 || !CyberGfxBase)
+			{
+				int i;
+
+				for(i=0;i<256;i++)
+				{
+					ULONG rgb = colortable[i];
+					ULONG red = (rgb & 0x00ff0000) >> 16;
+					ULONG green = (rgb & 0x0000ff00) >> 8;
+					ULONG blue = (rgb & 0x000000ff);
+
+					red |= (red<<24)|(red<<16)|(red<<8);
+					green |= (green<<24)|(green<<16)|(green<<8);
+					blue |= (blue<<24)|(blue<<16)|(blue<<8);
+
+					pentable[i] = ObtainBestPenA(ScreenMain->ViewPort.ColorMap,red,green,blue,NULL);
+				}
+				pensallocated = 1;
+			}
+
+			if (!(tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),MEMF_CLEAR)))
+			{
+				UnlockPubScreen(NULL,ScreenMain);
+				ScreenMain = NULL;
+			}
+		}
+	}
+
+	if (ScreenMain)
+	{
+		if ((VisualInfoMain = GetVisualInfoA( ScreenMain, NULL )))
+		{
+			if ((MenuMain = CreateMenus(MenuEntries, GTMN_NewLookMenus, TRUE, TAG_DONE)))
+			{
+				LayoutMenus( MenuMain, VisualInfoMain, GTMN_NewLookMenus, TRUE, TAG_DONE);
+
+				if ((WindowMain = OpenWindowTags( NULL,
+					WA_Activate, TRUE,
+					WA_NewLookMenus, TRUE,
+					WA_MenuHelp, TRUE,
+					WA_InnerWidth, ScreenWidth,
+					WA_InnerHeight, ScreenHeight,
+					WA_IDCMP, IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE | IDCMP_MENUPICK | IDCMP_CLOSEWINDOW |
+									IDCMP_RAWKEY,
+					WA_ReportMouse, TRUE,
+					WA_CustomScreen, ScreenMain,
+					WA_Borderless, ScreenIsCustom,
+					WA_CloseGadget, !ScreenIsCustom,
+					WA_DragBar, !ScreenIsCustom,
+					WA_DepthGadget, !ScreenIsCustom,
+					ScreenIsCustom?TAG_IGNORE:WA_Title, "Atari 800",
+					ScreenIsCustom?TAG_IGNORE:WA_ScreenTitle, ATARI_TITLE,
+					WA_SizeGadget, DisplayType == DISPLAY_SCALABLEWINDOW,
+					DisplayType == DISPLAY_SCALABLEWINDOW?WA_SizeBBottom:TAG_IGNORE, TRUE,
+					DisplayType == DISPLAY_SCALABLEWINDOW?WA_MaxWidth:TAG_IGNORE,-1,
+					DisplayType == DISPLAY_SCALABLEWINDOW?WA_MaxHeight:TAG_IGNORE,-1,
+					TAG_DONE)))
+				{
+					if ((mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_FRAMERATE)))
+						mi->Flags |= ShowFPS?CHECKED:0;
+
+					switch (DisplayType)
+					{
+						case	DISPLAY_SCALABLEWINDOW: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_SCALABLEWINDOW); break;
+						case	DISPLAY_CUSTOMSCREEN: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_CUSTOMSCREEN); break;
+						default: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_WINDOW); break;
+					}
+					if (mi) mi->Flags |= CHECKED;
+
+					switch (PortSource[0])
+					{
+						case PORT_SOURCE_GAMEPORT:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_GAMEPORT);break;
+						case PORT_SOURCE_NUMERIC:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_NUMERICPAD);break;
+						case PORT_SOURCE_CURSOR:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_CURSORKEYS);break;
+						default: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_UNASSIGNED);break;
+					}
+					if (mi) mi->Flags |= CHECKED;
+
+					switch (PortSource[1])
+					{
+						case PORT_SOURCE_GAMEPORT:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_GAMEPORT);break;
+						case PORT_SOURCE_NUMERIC:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_NUMERICPAD);break;
+						case PORT_SOURCE_CURSOR:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_CURSORKEYS);break;
+						default: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_UNASSIGNED);break;
+					}
+					if (mi) mi->Flags |= CHECKED;
+
+					SetMenuStrip(WindowMain, MenuMain);
+					return 1;
+				}
+			}
+		}
+	}
+	FreeDisplay();
+	return 0;
 }
 
 /**************************************************************************
@@ -757,10 +994,6 @@ int HandleMenu(UWORD code)
 							menu_consol = 7;
 							break;
 
-				case	MEN_SETTINGS_CUSTOMSCREEN:
-						UseCustomScreen = !!(mi->Flags & CHECKED);
-						break;
-
 				case	MEN_SETTINGS_FRAMERATE:
 						ShowFPS = !!(mi->Flags & CHECKED);
 						break;
@@ -775,6 +1008,9 @@ int HandleMenu(UWORD code)
 				case	MEN_SETTINGS_PORT1_CURSORKEYS: PortSource[1] = PORT_SOURCE_CURSOR; break;
 				case	MEN_SETTINGS_PORT1_UNASSIGNED: PortSource[1] = PORT_SOURCE_UNASSIGNED; break;
 
+				case	MEN_SETTINGS_WINDOW: DisplayType = DISPLAY_WINDOW; break;
+				case	MEN_SETTINGS_SCALABLEWINDOW: DisplayType = DISPLAY_SCALABLEWINDOW; break;
+				case	MEN_SETTINGS_CUSTOMSCREEN: DisplayType = DISPLAY_CUSTOMSCREEN; break;
 
 				case	MEN_SETTINGS_SAVE:
 						RtConfigSave();
@@ -1165,12 +1401,6 @@ void Sound_Update(void)
 
 		SendIO((struct IORequest*)ahi_soundreq[ahi_current]);
 		sent[ahi_current] = 1;
-	
-		if (ahi_soundhandle)
-		{
-			Write(ahi_soundhandle, ahi_streambuf[ahi_current], ahi_streamlen);
-		}
-	
 		ahi_current = !ahi_current;
 	}
 }
@@ -1209,11 +1439,12 @@ int Atari_Configure(char* option, char *parameters)
 {
 	int i;
 
-	if(!strcmp(option,"AMIGA_GFX_USEBESTMODE")) sscanf(parameters,"%d",&UseBestID);
-	else if(!strcmp(option,"AMIGA_GFX_USEOVERLAY")) sscanf(parameters,"%d",&Overlay);
-	else if(!strcmp(option,"AMIGA_GFX_USECUSTOMSCREEN")) sscanf(parameters,"%d",&UseCustomScreen);
-	else if(!strcmp(option,"AMIGA_GFX_SCALABLE")) sscanf(parameters, "%d",&Scalable);
-	else if(!strcmp(option,"AMIGA_GFX_DISPLAYID")) sscanf(parameters, "%x",&DisplayID);
+	if(!strcmp(option,"AMIGA_GFX_DISPLAYID")) sscanf(parameters, "%x",&DisplayID);
+	else if(!strcmp(option, "AMIGA_GFX_DISPLAYTYPE"))
+	{
+		for (i=0;display_text[i];i++)
+			if (!strcmp(display_text[i],parameters)) DisplayType = i;
+	}
 	else if(!strcmp(option,"AMIGA_CONTROLLER0_SOURCE"))
 	{
 		for (i=0;port_source_text[i];i++)
@@ -1240,10 +1471,7 @@ void Atari_ConfigSave(FILE *fp)
 	int i;
 
 	fprintf(fp,"AMIGA_GFX_DISPLAYID=0x%x\n",DisplayID);
-	fprintf(fp,"AMIGA_GFX_USEBESTMODE=%d\n",UseBestID);
-	fprintf(fp,"AMIGA_GFX_USECUSTOMSCREEN=%d\n",UseCustomScreen);
-	fprintf(fp,"AMIGA_GFX_USEOVERLAY=%d\n",Overlay);
-	fprintf(fp,"AMIGA_GFX_SCALABLE=%d\n",Scalable);
+	fprintf(fp,"AMIGA_GFX_DISPLAYTYPE=%s\n",display_text[DisplayType]);
 
 	fputs("AMIGA_SOUND=",fp);
 	if(SoundEnabled) fputs("AHI\n",fp);
@@ -1271,7 +1499,6 @@ int Atari_Exit (int run_monitor)
 
 	FreeDisplay();
 	FreeTimer();
-	FreeSoundFile();
 	FreeSound();
 	FreeJoystick();
 
@@ -1346,6 +1573,63 @@ static void ScreenData28bit(UBYTE *src, UBYTE *dest, UBYTE *pentable, ULONG widt
 }
 
 /**************************************************************************
+
+**************************************************************************/
+static void Scale8Bit(UBYTE *src, LONG srcwidth, LONG srcheight, LONG srcmod,
+					  UBYTE *dest, LONG destwidth, LONG destheight, LONG destmod)
+{
+	int x;
+	int dx;
+	int i;
+	int y;
+	int w4;
+	int w, h;
+	int count;
+	int dy;
+	UBYTE *ss;
+	ULONG quad;
+	ULONG *dest32;
+
+	if ((srcwidth % 4) || (destmod % 4) || (srcwidth > destwidth) || srcheight > destheight)
+		return;
+
+	w = (srcwidth) << 16;
+	h = (srcheight) << 16;
+	dx = w / destwidth;
+	dy = h / destheight;
+	w4 = destmod / 4 - 1;
+	ss = src;
+	y = (0) << 16;
+	i = destheight;
+
+	dest32 = (ULONG*)dest;
+
+	while (i > 0)
+	{
+		ss = src + srcmod * (y >> 16);
+
+		count = w4;
+		x = 0 << 16;
+		while (count >= 0)
+		{
+			quad = (ss[x >> 16] << 24);
+			x = x + dx;
+			quad += (ss[x >> 16] << 16);
+			x = x + dx;
+			quad += (ss[x >> 16] << 8);
+			x = x + dx;
+			quad += (ss[x >> 16] << 0);
+			x = x + dx;
+
+			*dest32++ = quad;
+			count--;
+		}
+		y = y + dy;
+		i--;
+	}
+}
+
+/**************************************************************************
  Do the graphical output (also call the sound play routine)
 **************************************************************************/
 void Atari_DisplayScreen(UBYTE *screen)
@@ -1353,31 +1637,45 @@ void Atari_DisplayScreen(UBYTE *screen)
 	static char fpsbuf[32];
 	int fgpen = 15,bgpen = 0;
 
-	if (UseCustomScreen)
+	if (DisplayType == DISPLAY_CUSTOMSCREEN)
 	{
 		WriteChunkyPixels(WindowMain->RPort, 0, 0, ATARI_WIDTH - 1 - 64, ATARI_HEIGHT - 1,
 						  screen + 32, ATARI_WIDTH);
 	} else
 	{
+		LONG atariWidth = ATARI_WIDTH - 56;
+		LONG atariHeight = ATARI_HEIGHT;
+		LONG atariX = 28;
+		LONG atariY = 0;
 		LONG offx = WindowMain->BorderLeft;
 		LONG offy = WindowMain->BorderTop;
 
-		if (Scalable && (InnerWidth(WindowMain)!=ATARI_WIDTH || InnerHeight(WindowMain) != ATARI_HEIGHT))
+		if (InnerWidth(WindowMain) != atariWidth || InnerHeight(WindowMain) != atariHeight)
 		{
-			ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
-
-			ScalePixelArray( tempscreendata, ATARI_WIDTH, ATARI_HEIGHT, ATARI_WIDTH, WindowMain->RPort, offx, offy,
+			if (pensallocated)
+			{
+				ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
+				ScalePixelArray( tempscreendata + atariX, atariWidth, atariHeight, ATARI_WIDTH, WindowMain->RPort, offx, offy,
 										InnerWidth(WindowMain), InnerHeight(WindowMain), RECTFMT_LUT8);
+			} else
+			{
+				if (EnsureScaledDisplay((InnerWidth(WindowMain) + 3)&0xfffffff7,InnerHeight(WindowMain)))
+				{
+					Scale8Bit(screen + atariX, atariWidth, atariHeight, ATARI_WIDTH,
+					  scaledscreendata, InnerWidth(WindowMain), InnerHeight(WindowMain), (InnerWidth(WindowMain) + 3)&0xffffffc);
+					WriteLUTPixelArray(scaledscreendata, 0, 0, (InnerWidth(WindowMain) + 3)&0xffffffc, WindowMain->RPort, colortable, offx, offy, InnerWidth(WindowMain), InnerHeight(WindowMain), CTABFMT_XRGB8);
+				}
+			}
 		}	else
 		{
 			if (pensallocated)
 			{
 				ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
-				WriteChunkyPixels(WindowMain->RPort, offx, offy, offx + ATARI_WIDTH - 1 - 56, offy + ATARI_HEIGHT - 1,
-							  tempscreendata + 28, ATARI_WIDTH);
+				WriteChunkyPixels(WindowMain->RPort, offx, offy, offx + atariWidth - 1, offy + atariHeight - 1,
+							  tempscreendata + atariX, ATARI_WIDTH);
 			} else
 			{
-				WriteLUTPixelArray(screen, 28, 0, ATARI_WIDTH, WindowMain->RPort, colortable, offx, offy, ATARI_WIDTH-56, ATARI_HEIGHT, CTABFMT_XRGB8);
+				WriteLUTPixelArray(screen, atariX, atariY, ATARI_WIDTH, WindowMain->RPort, colortable, offx, offy, atariWidth, atariHeight, CTABFMT_XRGB8);
 			}
 		}
 		fgpen = pentable[fgpen];
@@ -1723,230 +2021,6 @@ LONG InsertROM(LONG CartType)
 }
 
 /**************************************************************************
- Free everything which is assoicated with the Atari Screen while
- Emulating
-**************************************************************************/
-VOID FreeDisplay(void)
-{
-	int i;
-
-	if (MenuMain)
-	{
-		if (WindowMain) ClearMenuStrip(WindowMain);
-		FreeMenus(MenuMain);
-		MenuMain = NULL;
-	}
-
-	if (WindowMain)
-	{
-		CloseWindow( WindowMain );
-		WindowMain = NULL;
-	}
-
-	if (VisualInfoMain)
-	{
-		FreeVisualInfo( VisualInfoMain );
-		VisualInfoMain = NULL;
-	}
-
-	if (tempscreendata)
-	{
-		FreeVec(tempscreendata);
-		tempscreendata=NULL;
-	}
-
-	if (ScreenMain)
-	{
-		if (ScreenIsCustom) CloseScreen(ScreenMain);
-		else
-		{
-			if (pensallocated)
-			{
-				for(i=0;i<256;i++) ReleasePen(ScreenMain->ViewPort.ColorMap,pentable[i]);
-				pensallocated = 0;
-			}
-			UnlockPubScreen(NULL,ScreenMain);
-		}
-		ScreenMain = NULL;
-	}
-}
-
-/**************************************************************************
- Allocate everything which is assoicated with the Atari Screen while
- Emulating
-**************************************************************************/
-LONG SetupDisplay(void)
-{
-	UWORD ScreenWidth, ScreenHeight;
-	struct MenuItem *mi;
-	int i;
-
-	STATIC WORD ScreenPens[NUMDRIPENS+1];
-
-	ScreenPens[DETAILPEN] = 0;
-	ScreenPens[BLOCKPEN] = 15;
-	ScreenPens[TEXTPEN] = 0;
-	ScreenPens[SHINEPEN] = 15;
-	ScreenPens[SHADOWPEN] = 0;
-	ScreenPens[FILLPEN] = 120;
-	ScreenPens[FILLTEXTPEN] = 0;
-	ScreenPens[BACKGROUNDPEN] = 9;
-	ScreenPens[HIGHLIGHTTEXTPEN] = 15;
-	ScreenPens[BARDETAILPEN] = 0;
-	ScreenPens[BARBLOCKPEN] = 15;
-	ScreenPens[BARTRIMPEN] = 0;
-	ScreenPens[NUMDRIPENS] = -1;
-
-#if DRI_VERSION > 2
-	ScreenPens[MENUBACKGROUNDPEN] = 13;
-	ScreenPens[SELECTPEN] = 120;
-#endif
-
-	if (UseCustomScreen)
-	{
-		ULONG ScreenDisplayID;
-		static ULONG colors32[3*256+1];
-
-		ScreenIsCustom = TRUE;
-		ScreenWidth = ATARI_WIDTH - 64;
-		ScreenHeight = ATARI_HEIGHT;
-		ScreenDepth = 8;
-
-		ScreenDisplayID = DisplayID;
-		if (UseBestID) ScreenDisplayID = GetBestID(ScreenWidth,ScreenHeight,ScreenDepth);
-
-		colors32[0] = 256 << 16;
-		for (i=0;i<256;i++)
-		{
-			int rgb = colortable[i];
-			int red,green,blue;
-			
-			red = rgb & 0x00ff0000;
-			green = rgb & 0x0000ff00;
-			blue = rgb & 0x000000ff;
-
-			colors32[1+i*3] = red | (red << 8) | (red << 16) | (red << 24);
-			colors32[2+i*3] = green | (green << 8) | (green << 16) | (green << 24);
-			colors32[3+i*3] = blue | (blue << 8) | (blue << 16) | (blue << 24);
-		}
-
-		ScreenMain = OpenScreenTags( NULL,
-									SA_Left, 0,
-									SA_Top, 0,
-									SA_Width, ScreenWidth,
-									SA_Height, ScreenHeight,
-									SA_Depth, ScreenDepth,
-									SA_Pens, ScreenPens,
-									SA_Quiet, TRUE,
-									SA_Type, CUSTOMSCREEN,
-									SA_AutoScroll, TRUE,
-									SA_DisplayID, ScreenDisplayID,
-									SA_Colors32, colors32,
-									SA_Exclusive, TRUE,
-									SA_OffScreenDragging, TRUE,
-									TAG_DONE);
-	}	else
-	{
-		if ((ScreenMain = LockPubScreen(NULL)))
-		{
-			ScreenIsCustom = FALSE;
-			ScreenWidth = ATARI_WIDTH - 56;
-			ScreenHeight = ATARI_HEIGHT;
-			ScreenDepth = GetBitMapAttr(ScreenMain->RastPort.BitMap,BMA_DEPTH);
-
-			if (ScreenDepth <= 8 || !CyberGfxBase)
-			{
-				int i;
-
-				for(i=0;i<256;i++)
-				{
-					ULONG rgb = colortable[i];
-					ULONG red = (rgb & 0x00ff0000) >> 16;
-					ULONG green = (rgb & 0x0000ff00) >> 8;
-					ULONG blue = (rgb & 0x000000ff);
-
-					red |= (red<<24)|(red<<16)|(red<<8);
-					green |= (green<<24)|(green<<16)|(green<<8);
-					blue |= (blue<<24)|(blue<<16)|(blue<<8);
-
-					pentable[i] = ObtainBestPenA(ScreenMain->ViewPort.ColorMap,red,green,blue,NULL);
-				}
-				pensallocated = 1;
-			}
-
-			if (!(tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),MEMF_CLEAR)))
-			{
-				UnlockPubScreen(NULL,ScreenMain);
-				ScreenMain = NULL;
-			}
-		}
-	}
-
-	if (ScreenMain)
-	{
-		if ((VisualInfoMain = GetVisualInfoA( ScreenMain, NULL )))
-		{
-			if ((MenuMain = CreateMenus(MenuEntries, GTMN_NewLookMenus, TRUE, TAG_DONE)))
-			{
-				LayoutMenus( MenuMain, VisualInfoMain, GTMN_NewLookMenus, TRUE, TAG_DONE);
-
-				if ((WindowMain = OpenWindowTags( NULL,
-					WA_Activate, TRUE,
-					WA_NewLookMenus, TRUE,
-					WA_MenuHelp, TRUE,
-					WA_InnerWidth, ScreenWidth,
-					WA_InnerHeight, ScreenHeight,
-					WA_IDCMP, IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE | IDCMP_MENUPICK | IDCMP_CLOSEWINDOW |
-									IDCMP_RAWKEY,
-					WA_ReportMouse, TRUE,
-					WA_CustomScreen, ScreenMain,
-					WA_Borderless, UseCustomScreen,
-					WA_CloseGadget, !UseCustomScreen,
-					WA_DragBar, !UseCustomScreen,
-					WA_DepthGadget, !UseCustomScreen,
-					UseCustomScreen?TAG_IGNORE:WA_Title, "Atari 800",
-					UseCustomScreen?TAG_IGNORE:WA_ScreenTitle, ATARI_TITLE,
-					WA_SizeGadget, Scalable,
-					Scalable?WA_SizeBBottom:TAG_IGNORE, TRUE,
-					Scalable?WA_MaxWidth:TAG_IGNORE,-1,
-					Scalable?WA_MaxHeight:TAG_IGNORE,-1,
-					TAG_DONE)))
-				{
-					if ((mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_CUSTOMSCREEN)))
-						mi->Flags |= UseCustomScreen?CHECKED:0;
-
-					if ((mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_FRAMERATE)))
-						mi->Flags |= ShowFPS?CHECKED:0;
-
-					switch (PortSource[0])
-					{
-						case PORT_SOURCE_GAMEPORT:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_GAMEPORT);break;
-						case PORT_SOURCE_NUMERIC:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_NUMERICPAD);break;
-						case PORT_SOURCE_CURSOR:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_CURSORKEYS);break;
-						default: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_UNASSIGNED);break;
-					}
-					if (mi) mi->Flags |= CHECKED;
-
-					switch (PortSource[1])
-					{
-						case PORT_SOURCE_GAMEPORT:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_GAMEPORT);break;
-						case PORT_SOURCE_NUMERIC:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_NUMERICPAD);break;
-						case PORT_SOURCE_CURSOR:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_CURSORKEYS);break;
-						default: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_UNASSIGNED);break;
-					}
-					if (mi) mi->Flags |= CHECKED;
-
-					SetMenuStrip(WindowMain, MenuMain);
-					return 1;
-				}
-			}
-		}
-	}
-	FreeDisplay();
-	return 0;
-}
-
-/**************************************************************************
  Iconify the emulator
 **************************************************************************/
 VOID Iconify(void)
@@ -1988,11 +2062,13 @@ int main(int argc, char **argv)
 
 	while (1)
 	{
+		LONG LastDisplayType = DisplayType;
+
 		keycode = Atari_Keyboard();
 
 		if (keycode == AKEY_EXIT) break;
 
-		if (ScreenIsCustom != UseCustomScreen)
+		if (LastDisplayType != DisplayType)
 		{
 			FreeDisplay();
 			if (!(SetupDisplay()))
