@@ -34,6 +34,9 @@
 /* define if unaligned long access is ok */
 #undef UNALIGNED_LONG_OK
 
+/* Use m68k assembler optimized CPU core */
+#undef CPUASS
+
 /* Is your computer very slow (disables generating screen completely) */
 #undef VERY_SLOW
 
