@@ -2,6 +2,9 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   03-11-2001 - 32 bit support
+   	      - rewrited Atari_DisplayScreen function a little
+	      - LALT+j swaps only keyboard emulated joysticks now
    29-11-2001 - real joystick(s) support
    	      - fixed bug with triggers, when joysticks was swapped
    23-11-2001 - 16bpp support - it's faster, becouse SDL doesn't need to
@@ -97,7 +100,7 @@
 // I am not sure what to do with sound_enabled (can't turn it on inside
 // emulator, probably we need two variables or command line argument)
 static int sound_enabled = 1;
-static int SDL_ATARI_BPP = 0; // 0 - autodetect
+static int SDL_ATARI_BPP = 0;	// 0 - autodetect
 static int FULLSCREEN = 0;
 static int BW = 0;
 static int SWAP_JOYSTICKS = 0;
@@ -137,7 +140,7 @@ int SDL_JOY_1_RIGHTDOWN = SDLK_c;
 SDL_Joystick *joystick0, *joystick1;
 int joystick0_nbuttons, joystick1_nbuttons;
 
-#define minjoy 10000 // real joystick tolerancy 
+#define minjoy 10000			// real joystick tolerancy
 
 extern int refresh_rate;
 
@@ -152,6 +155,7 @@ static int SOUND_VOLUME = SDL_MIX_MAXVOLUME / 4;
 SDL_Surface *MainScreen = NULL;
 SDL_Color colors[256];			// palette
 Uint16 Palette16[256];			// 16-bit palette
+Uint32 Palette32[256];			// 32-bit palette
 #define CurrentBPP -1
 
 // keyboard
@@ -193,6 +197,9 @@ void CalcPalette()
 		switch (MainScreen->format->BitsPerPixel) {
 		case 16:
 			Palette16[i] = (Uint16) c;
+			break;
+		case 32:
+			Palette32[i] = (Uint32) c;
 			break;
 		}
 	}
@@ -295,14 +302,9 @@ void SwitchShorter()
 
 void SwitchBPP()
 {
-	switch (SDL_ATARI_BPP) {
-	case 16:
+	SDL_ATARI_BPP *= 2;
+	if (SDL_ATARI_BPP > 32)
 		SDL_ATARI_BPP = 8;
-		break;
-	case 8:
-		SDL_ATARI_BPP = 16;
-		break;
-	}
 	SetNewVideoMode(MainScreen->w, MainScreen->h, SDL_ATARI_BPP);
 	Atari_DisplayScreen((UBYTE *) atari_screen);
 	ModeInfo();
@@ -780,29 +782,72 @@ void Atari_DisplayScreen(UBYTE * screen)
 		jumped = 24;
 	}
 
-	switch (MainScreen->format->BitsPerPixel) {
-	case 8:
-		if ((MainScreen->w == width)
-			&& (MainScreen->h == ATARI_HEIGHT)) {
-			screen = screen + jumped;
-			i = MainScreen->h;
+	if ((MainScreen->w == width)
+		&& (MainScreen->h == ATARI_HEIGHT)) {
+		screen = screen + jumped;
+		i = MainScreen->h;
+		switch (MainScreen->format->BitsPerPixel) {
+		case 8:
 			while (i > 0) {
 				memcpy(start32, screen, width);
 				screen += ATARI_WIDTH;
 				start32 += pitch4;
 				i--;
 			}
+			break;
+		case 16:
+			while (i > 0) {
+				pos = width - 1;
+				while (pos > 0) {
+					c = screen[pos];
+					quad = Palette16[c] << 16;
+					pos--;
+					c = screen[pos];
+					quad += Palette16[c];
+					start32[pos >> 1] = quad;
+					pos--;
+				}
+				screen += ATARI_WIDTH;
+				start32 += pitch4;
+				i--;
+			}
+			break;
+		case 32:
+			while (i > 0) {
+				pos = width - 1;
+				while (pos > 0) {
+					c = screen[pos];
+					quad = Palette32[c];
+					start32[pos] = quad;
+					pos--;
+				}
+				screen += ATARI_WIDTH;
+				start32 += pitch4;
+				i--;
+			}
+			break;
+		default:
+			Aprint("unsupported color depth %i",
+				   MainScreen->format->BitsPerPixel);
+			Aprint
+				("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+			exit(-1);
 		}
-		else {
-			w = (width) << 16;
-			h = (ATARI_HEIGHT) << 16;
-			dx = w / MainScreen->w;
-			dy = h / MainScreen->h;
-			w4 = MainScreen->w / 4 - 1;
-			ss = screen;
+	}
 
-			y = (0) << 16;
-			i = MainScreen->h;
+	else {
+		w = (width) << 16;
+		h = (ATARI_HEIGHT) << 16;
+		dx = w / MainScreen->w;
+		dy = h / MainScreen->h;
+		w2 = MainScreen->w / 2 - 1;
+		w4 = MainScreen->w / 4 - 1;
+		ss = screen;
+		y = (0) << 16;
+		i = MainScreen->h;
+
+		switch (MainScreen->format->BitsPerPixel) {
+		case 8:
 			while (i > 0) {
 				x = (width + jumped) << 16;
 				pos = w4;
@@ -825,40 +870,8 @@ void Atari_DisplayScreen(UBYTE * screen)
 				y = y + dy;
 				i--;
 			}
-
-		}
-		break;
-	case 16:
-		if ((MainScreen->w == width)
-			&& (MainScreen->h == ATARI_HEIGHT)) {
-			screen = screen + jumped;
-			i = MainScreen->h;
-			while (i > 0) {
-				pos = width - 1;
-				while (pos > 0) {
-					c = screen[pos];
-					quad = Palette16[c] << 16;
-					pos--;
-					c = screen[pos];
-					quad += Palette16[c];
-					start32[pos >> 1] = quad;
-					pos--;
-				}
-				screen += ATARI_WIDTH;
-				start32 += pitch4;
-				i--;
-			}
-		}
-		else {
-			w = (width) << 16;
-			h = (ATARI_HEIGHT) << 16;
-			dx = w / MainScreen->w;
-			dy = h / MainScreen->h;
-			w2 = MainScreen->w / 2 - 1;
-			ss = screen;
-
-			y = (0) << 16;
-			i = MainScreen->h;
+			break;
+		case 16:
 			while (i > 0) {
 				x = (width + jumped) << 16;
 				pos = w2;
@@ -879,15 +892,34 @@ void Atari_DisplayScreen(UBYTE * screen)
 				y = y + dy;
 				i--;
 			}
+			break;
+		case 32:
+			while (i > 0) {
+				x = (width + jumped) << 16;
+				pos = w2;
+				yy = ATARI_WIDTH * (y >> 16);
+				while (pos >= 0) {
 
+					c = ss[yy + (x >> 16)];
+					quad = Palette32[c];
+					x = x - dx;
+					start32[pos] = quad;
+					pos--;
+
+				}
+				start32 += pitch4;
+				y = y + dy;
+				i--;
+			}
+
+			break;
+		default:
+			Aprint("unsupported color depth %i",
+				   MainScreen->format->BitsPerPixel);
+			Aprint
+				("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+			exit(-1);
 		}
-		break;
-	default:
-		Aprint("unsupported color depth %i",
-			   MainScreen->format->BitsPerPixel);
-		Aprint
-			("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
-		exit(-1);
 	}
 	SDL_Flip(MainScreen);
 }
@@ -952,6 +984,15 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 		|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_DOWN])))
 		stick1 = STICK_LR;
 
+	if (SWAP_JOYSTICKS) {
+		*s1 = stick0;
+		*s0 = stick1;
+	}
+	else {
+		*s0 = stick0;
+		*s1 = stick1;
+	}
+
 	if ((joystick0 != NULL) || (joystick1 != NULL))	// can only joystick1!=NULL ?
 	{
 		SDL_JoystickUpdate();
@@ -983,6 +1024,7 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 			else
 				stick0 = STICK_CENTRE;
 		}
+		*s0 = stick0;
 	}
 	if (joystick1 != NULL) {
 		x = SDL_JoystickGetAxis(joystick1, 0);
@@ -1011,16 +1053,9 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 			else
 				stick0 = STICK_CENTRE;
 		}
-	}
-
-	if (SWAP_JOYSTICKS) {
-		*s1 = stick0;
-		*s0 = stick1;
-	}
-	else {
-		*s0 = stick0;
 		*s1 = stick1;
 	}
+
 }
 
 void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
