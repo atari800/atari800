@@ -19,7 +19,9 @@ o ANTIC emulation is scanline-, not pixel-exact.
 
 o POKEY interrupts are scanline-, not cycle-exact.
   This causes sound bugs in following programs:
+  - Mirax Force (game)
   - Saturday Demo (demo)
+  - The Last Guardian (game)
 
 o sound emulation uses VOL_ONLY hack.
   This causes sound bugs in following programs:
