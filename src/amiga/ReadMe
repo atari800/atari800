@@ -1,10 +1,10 @@
-Short:     V2.3 of the Atari 8-bit emulator
+Short:     V2.4 of the Atari 8-bit emulator
 Uploader:  mail@sebastianbauer.info (Sebastian Bauer)
 Author:    mail@sebastianbauer.info (Sebastian Bauer), Atari800 Emulator Development Team
 Type:      misc/emu
-Kurz:      V2.3 des Atari 8-bit Emulator
+Kurz:      V2.4 des Atari 8-bit Emulator
 Requires:  OS4
-Version:   2.3
+Version:   2.4
 
 This is the Amiga port of the Atari800 Emulator. It requires at
 least OS4 (e.g. the prerelease CD).
@@ -20,6 +20,9 @@ source code which is released under the GPL.
 
 History
 ~~~~~~~
+Version 2.4 (16.3.2005)
+ - matches version 1.3.6 of original sources
+
 Version 2.3 (29.12.2004)
  - matches version 1.3.4 of original sources
  
