@@ -1,5 +1,6 @@
 /* $Id$ */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,24 +10,10 @@
 #include <windows.h>
 #else
 #include <sys/time.h>
-#include <unistd.h>
-#include "config.h"
-#endif
-
-#ifdef VMS
-#include <unixio.h>
-#include <file.h>
-#else
-#include <fcntl.h>
 #endif
 
 #define FALSE   0
 #define TRUE    1
-
-#ifdef AT_USE_ALLEGRO
-#include <allegro.h>
-static int i_love_bill = TRUE;	/* Perry, why this? */
-#endif
 
 #include "atari.h"
 #include "cpu.h"
@@ -75,7 +62,8 @@ int mach_xlxe = FALSE;
 int verbose = FALSE;
 double fps;
 int nframes;
-ULONG lastspeed;				/* measure time between two Antic runs */
+static double frametime = 0.1;	/* measure time between two Antic runs */
+static int emu_too_fast = 0;
 
 int pil_on = FALSE;
 
@@ -623,103 +611,101 @@ void Atari800_PutByte(UWORD addr, UBYTE byte)
 }
 
 #ifdef SNAILMETER
-void ShowRealSpeed(ULONG * atari_screen, int refresh_rate)
+static void ShowRealSpeed(ULONG * atari_screen)
 {
-	UWORD *ptr, *ptr2;
-	int i = (clock() - lastspeed) * (tv_mode == TV_PAL ? 50 : 60) / CLK_TCK / refresh_rate;
-	lastspeed = clock();
+  UBYTE *ptr;
+  int i;
+  int speed = (100.0 * deltatime / frametime + 0.5);
 
-	if (i > ATARI_WIDTH / 4)
-		return;
+  if (speed > 200)
+    speed = 200;
 
-	ptr = (UWORD *) atari_screen;
-	ptr += (ATARI_WIDTH / 2) * (ATARI_HEIGHT - 2) + ATARI_WIDTH / 4;	/* begin in middle of line */
-	ptr2 = ptr + ATARI_WIDTH / 2;
+  ptr = (UBYTE *) atari_screen + 32 + ATARI_WIDTH * LED_lastline;
 
-	while (--i > 0) {			/* number of blocks = times slower */
-		int j = i << 1;
-		ptr[j] = ptr2[j] = 0x0707;
-		j++;
-		ptr[j] = ptr2[j] = 0;
-	}
+  for (i = 0; i < speed; i++)
+    ptr[i] = 0xc8;
+  for (; i < 100; i++)
+    ptr[i] = 0x02;
+  ptr[100] = 0x38;
 }
 #endif
 
+static double Atari_time(void)
+{
+#ifdef WIN32
+  return GetTickCount() * 1e-3;
+#elif defined(DJGPP)
+  return uclock() * (1.0 / UCLOCKS_PER_SEC);
+#else
+  struct timeval tp;
+
+  gettimeofday(&tp, NULL);
+  return tp.tv_sec + 1e-6 * tp.tv_usec;
+#endif
+}
+
+static void Atari_sleep(double s)
+{
+  emu_too_fast = 0;
+  if (s > 0)
+  {
+#ifdef linux
+    struct timeval tp;
+
+    tp.tv_sec = 0;
+    tp.tv_usec = 1e6 * s;
+    select(1,NULL,NULL,NULL,&tp);
+#elif defined(WIN32)
+    Sleep(s * 1e3);
+#elif defined(DJGPP)
+    double curtime = Atari_time();
+    while ((curtime + s) > Atari_time());
+#else
+    usleep(s * 1e6);
+#endif
+    emu_too_fast = 1;
+  }
+}
+
 void atari_sync(void)
 {
-#ifdef SNAILMETER
-	static long emu_too_fast = 0;	/* automatically enable/disable snailmeter */
-#endif
 #ifdef USE_CLOCK
 	static ULONG nextclock = 0;	/* put here a non-zero value to enable speed regulator */
 	/* on Atari Falcon CLK_TCK = 200 (i.e. 5 ms granularity) */
 	/* on DOS (DJGPP) CLK_TCK = 91 (not too precise, but should work anyway)*/
 	if (nextclock) {
 		ULONG curclock;
-#ifdef SNAILMETER
-		emu_too_fast = -1;
-#endif
 		do {
 			curclock = clock();
-#ifdef SNAILMETER
-			emu_too_fast++;
-#endif
 		} while (curclock < nextclock);
 
 		nextclock = curclock + (CLK_TCK / (tv_mode == TV_PAL ? 50 : 60));
 	}
-#else	/* USE_CLOCK */
-#if !defined(WIN32) && !defined(DJGPP)
-	static struct timeval tp;
-	static struct timezone tzp;
-#endif
-	static double lasttime = 0;
+#else /* USE_CLOCK */
+	static double lasttime = 0, lastcurtime = 0;
+	double curtime;
 
-	if (deltatime > 0.0) {
-		double curtime;
-#ifdef linux
-		gettimeofday(&tp, NULL);
-		curtime = (lasttime + deltatime)
-			- tp.tv_sec - (tp.tv_usec * 0.000001);
-		if( curtime>0 )
-		{	tp.tv_sec=  (int)(curtime);
-			tp.tv_usec= (int)((curtime-tp.tv_sec)*1000000);
-/* printf("delta=%f sec=%d usec=%d\n",curtime,tp.tv_sec,tp.tv_usec); */
-			select(1,NULL,NULL,NULL,&tp);
-		}
-		gettimeofday(&tp, NULL);
-		curtime = tp.tv_sec + (tp.tv_usec * 0.000001);
-#else	/* linux */
+	if (deltatime > 0.0)
+	{
+	  curtime = Atari_time();
+	  Atari_sleep(lasttime + deltatime - curtime);
+	  curtime = Atari_time();
 
-#ifdef SNAILMETER
-		emu_too_fast = -1;
-#endif
-		do {
-#ifdef WIN32
-			curtime = GetTickCount() * 0.001;
-#elif defined(DJGPP)
-	      curtime = uclock() * ((double)1 / UCLOCKS_PER_SEC);
-#else
-			gettimeofday(&tp, &tzp);
-			curtime = tp.tv_sec + (tp.tv_usec * 0.000001);
-#endif
-#ifdef SNAILMETER
-			emu_too_fast++;
-#endif
-		} while (curtime < (lasttime + deltatime));
-#endif	/* linux */
-		fps = 1.0 / (curtime - lasttime);
-		lasttime += deltatime;
-		if ((lasttime + deltatime) < curtime)
-		  lasttime = curtime;
+	  /* make average time */
+	  frametime = (frametime * 4.0 + curtime - lastcurtime) * 0.2;
+	  fps = 1.0 / frametime;
+	  lastcurtime = curtime;
+
+	  lasttime += deltatime;
+	  if ((lasttime + deltatime) < curtime)
+	    lasttime = curtime;
 	}
-#endif	/* DJGPP */
+#endif /* USE_CLOCK */
 }
 
 void Atari800_Hardware(void)
 {
 	nframes = 0;
-	fps = 0.0;
 
 	while (TRUE) {
 #ifndef BASIC
@@ -800,8 +786,8 @@ void Atari800_Hardware(void)
 			ANTIC_RunDisplayList();			/* generate screen */
 			Update_LED();
 #ifdef SNAILMETER
-			if (emu_too_fast == 0)
-				ShowRealSpeed(atari_screen, refresh_rate);
+			if (!emu_too_fast)
+			  ShowRealSpeed(atari_screen);
 #endif
 #ifndef DONT_SYNC_WITH_HOST
 			atari_sync(); /* here seems to be the best place to sync */
@@ -942,6 +928,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.6  2001/04/03 05:43:36  knik
+reorganized sync code; new snailmeter
+
 Revision 1.5  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
