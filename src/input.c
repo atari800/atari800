@@ -33,6 +33,7 @@
 #include "pia.h"
 #include "platform.h"
 #include "pokey.h"
+#include "screen.h" /* for atari_screen */
 
 int key_code = AKEY_NONE;
 int key_break = 0;

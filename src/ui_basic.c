@@ -40,6 +40,7 @@
 #include "prompts.h"
 #include "platform.h"
 #include "memory.h"
+#include "screen.h" /* for atari_screen */
 
 /* not needed anymore?
 #ifdef __DJGPP__
@@ -1027,6 +1028,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.14  2005/03/03 09:27:46  pfusik
+moved atari_screen to screen.h
+
 Revision 1.13  2004/09/24 15:28:40  sba
 Fixed NULL pointer access in filedialog, which happened if no files are within the directory.
 

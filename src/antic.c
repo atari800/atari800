@@ -37,6 +37,7 @@
 #include "memory.h"
 #include "pokey.h"
 #include "rt-config.h"
+#include "screen.h"
 #include "statesav.h"
 #include "cycle_map.h"
 
