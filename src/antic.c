@@ -3139,8 +3139,8 @@ glitch*/
 			}
 		/*DMACTL width has changed and not to 0 and not from 0*/
 		} else if((byte&3)!=(DMACTL&3) ){
-			/* DMACTL width has increased */
-			if ( (byte&3) > (DMACTL&3) ){
+			/* DMACTL width has increased and no HSCROL*/
+			if ( ((byte&3) > (DMACTL&3)) && !(IR&0x10) ){
 				int x; /* the change cycle*/
 				int left_glitch_cycle=0;
 				int right_glitch_cycle=0;
@@ -3174,7 +3174,7 @@ glitch*/
 					}		
 				}
 			}else{
-			/* DMACTL width has decreased */
+			/* DMACTL width has decreased or HSCROL*/
 			/*TODO: this is not 100% correct*/
 				if(DRAWING_SCREEN){
 					update_scanline();
