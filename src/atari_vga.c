@@ -81,7 +81,6 @@ static int use_vret=0;           /*control vertical retrace?*/
 
 static int vga_started = 0;             /*AAA needed for DOS to see text */
 
-UBYTE POT[2];
 extern int SHIFT;
 extern int ATKEYPRESSED;
 
@@ -922,17 +921,6 @@ int Atari_Keyboard(void)
  */
 /* Atari5200 stuff */
         if (machine_type == MACHINE_5200 && !ui_is_active) {
-                POT[0] = 120;
-                POT[1] = 120;
-                if (!(stick0 & 0x04))
-                        POT[0] = 15;
-                if (!(stick0 & 0x01))
-                        POT[1] = 15;
-                if (!(stick0 & 0x08))
-                        POT[0] = 220;
-                if (!(stick0 & 0x02))
-                        POT[1] = 220;
-
                 switch (raw_key) {
                 case 0x3b:
                         keycode = AKEY_UI;
@@ -1456,15 +1444,6 @@ int Atari_TRIG(int num)
                 return trig3;
         }
         return 0;
-}
-
-/* -------------------------------------------------------------------------- */
-
-int Atari_POT(int num)
-{
-	if (machine_type == MACHINE_5200 && num >= 0 && num < 2)
-		return POT[num];
-	return 228;
 }
 
 /* -------------------------------------------------------------------------- */
