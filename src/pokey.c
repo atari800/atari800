@@ -206,7 +206,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		}
 		break;
 	case _STIMER:
-		DivNIRQ[CHAN1] = DivNIRQ[CHAN2] = DivNIRQ[CHAN4] = 0;
+		DivNIRQ[CHAN1] = DivNMax[CHAN1];
+		DivNIRQ[CHAN2] = DivNMax[CHAN2];
+		DivNIRQ[CHAN4] = DivNMax[CHAN4];
 #ifdef DEBUG1
 		printf("WR: STIMER = %x\n", byte);
 #endif
