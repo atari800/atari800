@@ -172,6 +172,8 @@ UBYTE VESA_getmode(int width,int height,UWORD *videomode,ULONG *memaddress,ULONG
   struct modeInfo mInfo;
   UWORD modesAddr;
   UWORD mode;
+  UWORD modes[0x1000]; /* modes list needs to be saved (K.N.) */
+  int i;
 
   *videomode=0;
 
@@ -191,7 +193,8 @@ UBYTE VESA_getmode(int width,int height,UWORD *videomode,ULONG *memaddress,ULONG
 
   /*now we must search the videomode list for desired screen resolutin*/
   modesAddr=( (vInfo.videomodes>>12)&0xffff0)+(vInfo.videomodes&0xffff);
-  while ((mode=_farpeekw(_dos_ds,modesAddr))!=0xffff)
+  dosmemget(__tb&0xfffff, sizeof(modes), modes); /* save modes list (K.N.) */
+  for (i = 0; (mode = modes[i]) != 0xffff; i++)
   {
     modesAddr+=2;
 
@@ -225,33 +228,9 @@ UBYTE VESA_getmode(int width,int height,UWORD *videomode,ULONG *memaddress,ULONG
 UBYTE VESA_open(UWORD mode,ULONG memaddress,ULONG memsize,ULONG *linear,int *selector)
 {
   __dpmi_regs rg;
-  struct CRTCInfoBlock{
-    UWORD HorizontalTotal;	/* Horizontal total in pixels */
-    UWORD HorizontalSyncStart;	/* Horizontal sync start in pixels */
-    UWORD HorizontalSyncEnd;	/* Horizontal sync end in pixels */
-    UWORD VerticalTotal;	/* Vertical total in lines */
-    UWORD VerticalSyncStart;	/* Vertical sync start in lines */
-    UWORD VerticalSyncEnd;	/* Vertical sync end in lines */
-    UBYTE Flags;		/* Flags (Interlaced, Double Scan etc) */
-    ULONG PixelClock;		/* Pixel clock in units of Hz */
-    UWORD RefreshRate;		/* Refresh rate in units of 0.01 Hz */
-  } __attribute__((packed)) CRTCinfo =
-  {
-    400,
-    318,
-    376,
-    520,
-    490,
-    498,
-    1, /* double scaned */
-    20800000,
-    10000
-  };
+
   rg.x.ax=0x4f02;
-  rg.x.bx=mode | (1 << 11); /* use defined CRTC */
-  rg.x.di=__tb & 0xf;
-  rg.x.es=(__tb >>4 )&0xffff;
-  dosmemput(&CRTCinfo,sizeof(CRTCinfo),__tb&0xfffff);
+  rg.x.bx=mode;
   __dpmi_int(0x10,&rg);
   if (rg.x.ax!=0x004f) return FALSE;
 
