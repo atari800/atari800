@@ -64,10 +64,11 @@ compressed statesave images support.
 Building the Emulator on most platforms
 ---------------------------------------
 
-0. Type "./configure --target=" for a list of supported platforms.
-1. Type "./configure --target=your_target" (choose from the list above)
-2. Type "make"
-3. Install the emulator by typing "make install".
+1. Change your working dir to the atari800/src path (type "cd src")
+2. Type "./configure --target=" for a list of supported platforms.
+3. Type "./configure --target=your_target" (choose from the list above)
+4. Type "make"
+5. Install the emulator by typing "make install".
 
 Building the Emulator for Curses
 --------------------------------

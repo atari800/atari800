@@ -115,7 +115,7 @@ int Pokey_sound_init(uint32 freq17,
 			     unsigned int flags
 			    );
 int Pokey_DoInit();
-void Pokey_set_quality(int quality);	/* specially for win32, perhaps not needed? */
+void Pokey_set_mzquality(int quality);
 
 #ifdef __cplusplus
 }

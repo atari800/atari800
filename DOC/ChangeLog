@@ -10,6 +10,7 @@
 * configure.in: alternate user and system-wide config file names for DOS
   and TOS ($HOME/atari800.cfg and C:\atari800.cfg) since their filesystem
   is still limited to 8+3 filenames.
+* win32/sound.c: restored original behaviour of "-quality" switch.
 
 2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
 

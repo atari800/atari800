@@ -17,6 +17,7 @@
 #include "pokeysnd.h"
 #include "atari.h"
 #include "log.h"
+#include "rt-config.h"	/* 'enable_new_pokey' defined there */
 
 #define MIXBUFSIZE	0x1000
 #define WAVSHIFT	9
@@ -35,7 +36,6 @@ static int stereo = TRUE;
 static int stereo = FALSE;
 #endif
 static int bit16 = FALSE;
-static int quality = 0;
 
 static HANDLE event;
 static HWAVEOUT wout;
@@ -105,7 +105,6 @@ static int initsound_dx(void)
 
   IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
 
-  Pokey_set_quality(quality);	/* is this really needed? */
   Pokey_sound_init(FREQ_17_EXACT, dsprate, 1,
 		   (stereo ? SND_STEREO : 0) | (bit16 ? SND_BIT16 : 0));
 
@@ -318,7 +317,6 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  Pokey_set_quality(quality);	/* is this really needed? */
   Pokey_sound_init(FREQ_17_EXACT, dsprate, 1,
 		   (stereo ? SND_STEREO : 0) | (bit16 ? SND_BIT16 : 0));
 
@@ -350,8 +348,16 @@ void Sound_Initialise(int *argc, char *argv[])
 	sscanf(argv[++i], "%d", &snddelay);
         snddelaywav = snddelay;
       }
-      else if (strcmp(argv[i], "-quality") == 0)
+      else if (strcmp(argv[i], "-quality") == 0) {
+	int quality;
 	sscanf(argv[++i], "%d", &quality);
+	if (quality > 1) {
+	  Pokey_set_mzquality(quality - 1);
+	  enable_new_pokey = 1;
+	}
+	else
+	  enable_new_pokey = 0;
+      }
 #ifdef DIRECTX
       else if (strcmp(argv[i], "-wavonly") == 0)
 	wavonly = TRUE;
@@ -478,6 +484,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.12  2003/02/10 19:27:55  joy
+minor fixes
+
 Revision 1.11  2003/02/09 21:24:13  joy
 updated for different number of Pokey_sound_init parameters
 
