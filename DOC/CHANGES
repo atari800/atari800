@@ -10,9 +10,8 @@ o bug causing vesa modes not to be detected correctly fixed. <Krzysztof>
 
 o cpu_m68k.s is 100% compatible with the cpu.c now <Gerhard>
 
-o Don Mahurin improved atari_console for redirected in/out and added
-  sound support to curses version. See DOC/Redirect.txt for examples.
-  Also vox_ routines were renamed.
+o Don Mahurin added sound support to curses version.
+  Also Voxware_ routines were renamed.
 
 o it seems that zero in first byte of block 41/C1 should be interpreted
    as 00, not 0x100 [eg. 1st disk of Big Demo couldn't be read because of

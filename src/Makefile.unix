@@ -43,7 +43,6 @@ default :
 basic :
 	$(MAKE) atari800 \
 		CPPFLAGS="-DBASIC" \
-		LDLIBS="$(LDLIBS) -lncurses" \
 		OBJ="atari_basic.o"
 
 linux-svgalib :
