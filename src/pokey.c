@@ -278,6 +278,7 @@ void POKEY_Initialise(int *argc, char *argv[])
 	DELAYED_SEROUT_IRQ = 0;
 	DELAYED_XMTDONE_IRQ = 0;
 
+	KBCODE = 0xff;
 	IRQST = 0xff;
 	IRQEN = 0x00;
 
