@@ -780,6 +780,61 @@ void Atari_Initialise(int *argc, char *argv[])
 	int i, j;
 	int no_joystick;
 	int width, height, bpp;
+
+	no_joystick = 0;
+	width = ATARI_WIDTH;
+	height = ATARI_HEIGHT;
+	bpp = SDL_ATARI_BPP;
+
+	for (i = j = 1; i < *argc; i++) {
+		if (strcmp(argv[i], "-rotate90") == 0) {
+			ROTATE90 = 1;
+			width=240;
+			height=320;
+			bpp=16;
+			no_joystick = 1;
+			Aprint("rotate90 mode");
+			i++;
+		}
+		else if (strcmp(argv[i], "-nojoystick") == 0) {
+			no_joystick = 1;
+			Aprint("no joystick");
+			i++;
+		}
+		else if (strcmp(argv[i], "-width") == 0) {
+			sscanf(argv[++i], "%i", &width);
+			Aprint("width set", width);
+		}
+		else if (strcmp(argv[i], "-height") == 0) {
+			sscanf(argv[++i], "%i", &height);
+			Aprint("height set");
+		}
+		else if (strcmp(argv[i], "-bpp") == 0) {
+			sscanf(argv[++i], "%i", &bpp);
+			Aprint("bpp set");
+		}
+		else if (strcmp(argv[i], "-fullscreen") == 0) {
+			FULLSCREEN = 1;
+		}
+		else if (strcmp(argv[i], "-windowed") == 0) {
+			FULLSCREEN = 0;
+		}
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-rotate90     Display 240x320 screen");
+				Aprint("\t-nojoystick   Disable joystick");
+				Aprint("\t-width <num>  Host screen width");
+				Aprint("\t-height <num> Host screen height");
+				Aprint("\t-bpp <num>    Host color depth");
+				Aprint("\t-fullscreen   Run fullscreen");
+				Aprint("\t-windowed     Run in window");
+				return;	/* return early */
+			}
+			argv[j++] = argv[i];
+		}
+	}
+	*argc = j;
+
 	Aprint
 		("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>");
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) != 0) {
@@ -788,56 +843,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		Aflushlog();
 		exit(-1);
 	}
-
-	no_joystick = 0;
-	width = ATARI_WIDTH;
-	height = ATARI_HEIGHT;
-	bpp = SDL_ATARI_BPP;
-
-	for (i = j = 1; i < *argc; i++) {
-		if (strcmp(argv[i], "--rotate90") == 0) {
-			ROTATE90 = 1;
-			width=240;
-			height=320;
-			bpp=16;
-			no_joystick = 1;
-			printf("rotate90 mode\n");
-			i++;
-		}
-		else
-		if (strcmp(argv[i], "--nojoystick") == 0) {
-			no_joystick = 1;
-			printf("no joystick\n");
-			i++;
-		}
-		else if (strcmp(argv[i], "--width") == 0) {
-			sscanf(argv[i + 1], "%i", &width);
-			i++;
-			printf("width set\n");
-		}
-		else if (strcmp(argv[i], "--height") == 0) {
-			sscanf(argv[i + 1], "%i", &height);
-			i++;
-			printf("height set\n");
-		}
-		else if (strcmp(argv[i], "--bpp") == 0) {
-			sscanf(argv[i + 1], "%i", &bpp);
-			i++;
-			printf("bpp set\n");
-		}
-		else if (strcmp(argv[i], "--fullscreen") == 0) {
-			FULLSCREEN = 1;
-			i++;
-		}
-		else if (strcmp(argv[i], "--windowed") == 0) {
-			FULLSCREEN = 0;
-			i++;
-		}
-		else {
-			argv[j++] = argv[i];
-		}
-	}
-	*argc = j;
 
 	SetNewVideoMode(width, height, bpp);
 	CalcPalette();
@@ -1397,6 +1402,11 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.23  2002/06/23 21:52:49  joy
+ "-help" added
+ options handling fixed.
+ "--option" converted to "-option" to conform to the rest of application
+
  Revision 1.22  2002/04/23 00:26:54  jacek_poplawski
 
  added command line "--rotate90" for Sharp PDA
