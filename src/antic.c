@@ -22,6 +22,88 @@
 #include "rt-config.h"
 #include "statesav.h"
 
+/* Video memory access is hidden behind these macros. It allows to track dirty video memory
+   to improve video system performance */
+#ifdef DIRTYRECT
+	static UWORD* scratchUWordPtr;
+	static UWORD  scratchUWord;
+	static ULONG* scratchULongPtr;
+	static ULONG  scratchULong;
+	static UBYTE* scratchUBytePtr;
+	static UBYTE  scratchUByte;
+	#ifdef NODIRTYCOMPARE
+		#define WRITE_VIDEO(ptr, val) \
+			{ \
+				scratchUWordPtr = (ptr); \
+				screen_dirty[((ULONG)scratchUWordPtr-(ULONG)atari_screen)>>3] = 1; \
+				*scratchUWordPtr = (val); \
+			}
+		#define WRITE_VIDEO_LONG(ptr, val) \
+			{ \
+				scratchULongPtr = (ptr); \
+				screen_dirty[((ULONG)scratchULongPtr-(ULONG)atari_screen)>>3] = 1; \
+				*scratchULongPtr = (val); \
+			}
+		#define FILL_VIDEO(ptr, val, size) \
+			{ \
+				scratchUBytePtr = (UBYTE*)(ptr); \
+				scratchUWord = (UWORD)(size); \
+				memset(screen_dirty+(((ULONG)scratchUBytePtr-(ULONG)atari_screen)>>3), 1, scratchUWord>>3); \
+				memset(scratchUBytePtr, (val), scratchUWord); \
+			}
+	#else
+		#define WRITE_VIDEO(ptr, val) \
+			{ \
+				scratchUWordPtr = (ptr); \
+				scratchUWord = (val); \
+				if(*scratchUWordPtr != scratchUWord) \
+				{ \
+					screen_dirty[((ULONG)scratchUWordPtr-(ULONG)atari_screen)>>3] = 1; \
+					*scratchUWordPtr = scratchUWord; \
+				} \
+			}
+		#define WRITE_VIDEO_LONG(ptr, val) \
+			{ \
+				scratchULongPtr = (ptr); \
+				scratchULong = (val); \
+				if(*scratchULongPtr != scratchULong) \
+				{ \
+					screen_dirty[((ULONG)scratchULongPtr-(ULONG)atari_screen)>>3] = 1; \
+					*scratchULongPtr = scratchULong; \
+				} \
+			}
+		static UBYTE* scratchFillLimit;
+		#define FILL_VIDEO(ptr, val, size) \
+			{ \
+				scratchUBytePtr = (UBYTE*)(ptr); \
+				scratchUByte = (UBYTE)(val); \
+				scratchFillLimit = scratchUBytePtr + (size); \
+				for(; scratchUBytePtr<scratchFillLimit; scratchUBytePtr++) \
+				{ \
+					if(*scratchUBytePtr != scratchUByte) \
+					{ \
+						screen_dirty[((ULONG)scratchUBytePtr-(ULONG)atari_screen)>>3] = 1; \
+						*scratchUBytePtr = scratchUByte; \
+					} \
+				} \
+			}
+	#endif
+
+	void entire_screen_dirty() { memset(screen_dirty, 1, ATARI_WIDTH*ATARI_HEIGHT/8); }
+#else
+	#define WRITE_VIDEO(ptr, val) (*(ptr) = val);
+	#define WRITE_VIDEO_LONG(ptr, val) (*(ptr) = val);
+	#define FILL_VIDEO(ptr, val, size) memset(ptr, val, size);
+	void entire_screen_dirty() {}
+#endif
+#define READ_VIDEO_LONG(ptr) (*(ptr))
+
+void video_memset(UBYTE* ptr, UBYTE val, UWORD size)
+{
+	FILL_VIDEO(ptr, val, size);
+}
+
+
 /* Memory access helpers----------------------------------------------------- */
 /* Some optimizations result in unaligned 32-bit accesses. These macros have
    been introduced for machines that don't allow unaligned memory accesses. */
@@ -29,14 +111,16 @@
 #ifdef UNALIGNED_LONG_OK
 #define IS_ZERO_ULONG(x) (! *(ULONG *)(x))
 #define DO_GTIA_BYTE(p,l,x) {\
-		((ULONG *)(p))[0] = (l)[(x) >> 4];\
-		((ULONG *)(p))[1] = (l)[(x) & 0xf];\
+		WRITE_VIDEO_LONG((ULONG*)(p),   (l)[(x) >> 4]); \
+		WRITE_VIDEO_LONG((ULONG*)(p)+1, (l)[(x) & 0xf]); \
 	}
 #else
 #define IS_ZERO_ULONG(x) (!((UBYTE *)(x))[0] && !((UBYTE *)(x))[1] && !((UBYTE *)(x))[2] && !((UBYTE *)(x))[3])
 #define DO_GTIA_BYTE(p,l,x) {\
-		((UWORD *)(p))[1] = ((UWORD *)(p))[0] = (UWORD) ((l)[(x) >> 4]);\
-		((UWORD *)(p))[3] = ((UWORD *)(p))[2] = (UWORD) ((l)[(x) & 0xf]);\
+		WRITE_VIDEO((UWORD *)(p),   (UWORD) ((l)[(x) >> 4])); \
+		WRITE_VIDEO((UWORD *)(p)+1, (UWORD) ((l)[(x) >> 4])); \
+		WRITE_VIDEO((UWORD *)(p)+2, (UWORD) ((l)[(x) & 0xf])); \
+		WRITE_VIDEO((UWORD *)(p)+3, (UWORD) ((l)[(x) & 0xf])); \
 	}
 #endif
 
@@ -378,13 +462,13 @@ UWORD cl_lookup[128];
 #define INIT_BACKGROUND_8 ULONG background = lookup_gtia9[0];
 #define DRAW_BACKGROUND(colreg) {\
 		ULONG *l_ptr = (ULONG *) ptr;\
-		*l_ptr++ = background;\
-		*l_ptr++ = background;\
+		WRITE_VIDEO_LONG(l_ptr++, background); \
+		WRITE_VIDEO_LONG(l_ptr++, background); \
 		ptr = (UWORD *) l_ptr;\
 	}
 #define DRAW_ARTIF {\
-		*(ULONG *) ptr = art_curtable[(UBYTE) (screendata_tally >> 10)];\
-		((ULONG *) ptr)[1] = art_curtable[(UBYTE) (screendata_tally >> 6)];\
+		WRITE_VIDEO_LONG((ULONG*)ptr, art_curtable[(UBYTE) (screendata_tally >> 10)]); \
+		WRITE_VIDEO_LONG(((ULONG*)ptr)+1, art_curtable[(UBYTE) (screendata_tally >> 6)]);\
 		ptr += 4;\
 	}
 
@@ -393,14 +477,17 @@ UWORD cl_lookup[128];
 #define INIT_BACKGROUND_6
 #define INIT_BACKGROUND_8
 #define DRAW_BACKGROUND(colreg) {\
-		ptr[3] = ptr[2] = ptr[1] = ptr[0] = cl_lookup[colreg];\
+		WRITE_VIDEO(ptr,   cl_lookup[colreg]); \
+		WRITE_VIDEO(ptr+1, cl_lookup[colreg]); \
+		WRITE_VIDEO(ptr+2, cl_lookup[colreg]); \
+		WRITE_VIDEO(ptr+3, cl_lookup[colreg]); \
 		ptr += 4;\
 	}
 #define DRAW_ARTIF {\
-		*ptr++ = ((UWORD *) art_curtable)[(screendata_tally & 0x03fc00) >> 9];\
-		*ptr++ = ((UWORD *) art_curtable)[((screendata_tally & 0x03fc00) >> 9) + 1];\
-		*ptr++ = ((UWORD *) art_curtable)[(screendata_tally & 0x003fc0) >> 5];\
-		*ptr++ = ((UWORD *) art_curtable)[((screendata_tally & 0x003fc0) >> 5) + 1];\
+		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[(screendata_tally & 0x03fc00) >> 9]); \
+		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[((screendata_tally & 0x03fc00) >> 9) + 1]);\
+		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[(screendata_tally & 0x003fc0) >> 5]);\
+		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[((screendata_tally & 0x003fc0) >> 5) + 1]);\
 	}
 
 #endif /* UNALIGNED_LONG_OK */
@@ -731,8 +818,8 @@ void ANTIC_Reset(void)
 #define DO_BORDER_1 {\
 	if (!(*(ULONG *) pm_scanline_ptr)) {\
 		ULONG *l_ptr = (ULONG *) ptr;\
-		*l_ptr++ = background;\
-		*l_ptr++ = background;\
+		WRITE_VIDEO_LONG(l_ptr++, background); \
+		WRITE_VIDEO_LONG(l_ptr++, background); \
 		ptr = (UWORD *) l_ptr;\
 		pm_scanline_ptr += 4;\
 	} else {\
@@ -740,13 +827,13 @@ void ANTIC_Reset(void)
 		do
 
 #define DO_BORDER DO_BORDER_1\
-			*ptr++ = COLOUR(pm_lookup_ptr[*pm_scanline_ptr++]);\
+			WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[*pm_scanline_ptr++]))\
 		while (--k);\
 	}\
 }
 
 #define DO_GTIA10_BORDER DO_BORDER_1\
-			*ptr++ = COLOUR(pm_lookup_ptr[*pm_scanline_ptr++ | 1]);\
+			WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[*pm_scanline_ptr++ | 1]))\
 		while (--k);\
 	}\
 }
@@ -776,14 +863,14 @@ void do_border_gtia10(void)
 	/* left border */
 	for (kk = left_border_chars; kk; kk--)
 		DO_GTIA10_BORDER
-	*ptr = COLOUR(pm_lookup_ptr[*pm_scanline_ptr | 1]);
+	WRITE_VIDEO(ptr, COLOUR(pm_lookup_ptr[*pm_scanline_ptr | 1]));
 	/* right border */
 	pm_scanline_ptr = &pm_scanline[right_border_start + 1];
 	if (pm_scanline_ptr < &pm_scanline[(48 - RCHOP) * 4]) {
 		ptr = &scrn_ptr[right_border_start + 1];
-		*ptr++ = COLOUR(pm_lookup_ptr[pm_scanline_ptr[1] | 1]);
-		*ptr++ = COLOUR(pm_lookup_ptr[pm_scanline_ptr[2] | 1]);
-		*ptr++ = COLOUR(pm_lookup_ptr[pm_scanline_ptr[3] | 1]);
+		WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_scanline_ptr[1] | 1]));
+		WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_scanline_ptr[2] | 1]));
+		WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_scanline_ptr[3] | 1]));
 		pm_scanline_ptr += 4;
 		while (pm_scanline_ptr < &pm_scanline[(48 - RCHOP) * 4])
 			DO_GTIA10_BORDER
@@ -825,7 +912,7 @@ void draw_antic_0(void)
 		while (pm_scanline_ptr < &pm_scanline[(48 - RCHOP) * 4]);
 	}
 	else
-		memset(ptr, cl_lookup[C_BAK], (48 - LCHOP - RCHOP) * 8);
+		FILL_VIDEO(ptr, cl_lookup[C_BAK], (48 - LCHOP - RCHOP) * 8);
 }
 
 void draw_antic_0_gtia10(void)
@@ -839,7 +926,7 @@ void draw_antic_0_gtia10(void)
 		while (pm_scanline_ptr < &pm_scanline[(48 - RCHOP) * 4]);
 	}
 	else
-		memset(ptr, cl_lookup[C_PM0], (48 - LCHOP - RCHOP) * 8);
+		FILL_VIDEO(ptr, cl_lookup[C_PM0], (48 - LCHOP - RCHOP) * 8);
 }
 
 void draw_antic_0_gtia11(void)
@@ -861,7 +948,7 @@ void draw_antic_0_gtia11(void)
 		COLOUR_TO_WORD(cl_lookup[C_BAK],COLBK)
 	}
 	else
-		memset(ptr, lookup_gtia11[0], (48 - LCHOP - RCHOP) * 8);
+		FILL_VIDEO(ptr, lookup_gtia11[0], (48 - LCHOP - RCHOP) * 8);
 }
 
 /* ANTIC modes ------------------------------------------------------------- */
@@ -876,7 +963,7 @@ static UBYTE gtia_10_pm[] =
 #define CHAR_LOOP_END } while (--nchars);
 
 #define DO_PMG_LORES PF_COLLS(colreg) |= pm_pixel = *c_pm_scanline_ptr++;\
-	*ptr++ = COLOUR(pm_lookup_ptr[pm_pixel] | colreg);
+	WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_pixel] | colreg));
 
 #ifdef ALTERNATE_LOOP_COUNTERS 	/* speeds-up pmg in hires a bit or not? try it :) */
 #define FOUR_LOOP_BEGIN(data) data |= 0x800000; do {	/* data becomes negative after four data <<= 2 */
@@ -903,7 +990,7 @@ static UBYTE gtia_10_pm[] =
 			PF2PM |= pm_pixel;\
 		mask = hires_mask(data & 0xc0);\
 		pm_pixel = pm_lookup_ptr[pm_pixel] | L_PF2;\
-		*ptr++ = (COLOUR(pm_pixel) & mask) | (COLOUR(pm_pixel + (L_HI2 - L_PF2)) & ~mask);\
+		WRITE_VIDEO(ptr++, (COLOUR(pm_pixel) & mask) | (COLOUR(pm_pixel + (L_HI2 - L_PF2)) & ~mask));\
 		data <<= 2;\
 	FOUR_LOOP_END(data)\
 }
@@ -922,7 +1009,7 @@ static UBYTE gtia_10_pm[] =
 		pm_pixel = *c_pm_scanline_ptr++;\
 		if (data & 0xc0)\
 			PF2PM |= pm_pixel;\
-		*ptr++ = (COLOUR(pm_lookup_ptr[pm_pixel] | L_PF2) & hires_mask(data & 0xc0)) | hires_lum(data & 0xc0);\
+		WRITE_VIDEO(ptr++, (COLOUR(pm_lookup_ptr[pm_pixel] | L_PF2) & hires_mask(data & 0xc0)) | hires_lum(data & 0xc0));\
 		data <<= 2;\
 	FOUR_LOOP_END(data)\
 }
@@ -966,10 +1053,10 @@ void draw_antic_2(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		GET_CHDATA_ANTIC_2
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 			if (chdata) {
-				*ptr++ = hires_norm(chdata & 0xc0);
-				*ptr++ = hires_norm(chdata & 0x30);
-				*ptr++ = hires_norm(chdata & 0x0c);
-				*ptr++ = hires_norm((chdata & 0x03) << 2);
+				WRITE_VIDEO(ptr++, hires_norm(chdata & 0xc0));
+				WRITE_VIDEO(ptr++, hires_norm(chdata & 0x30));
+				WRITE_VIDEO(ptr++, hires_norm(chdata & 0x0c));
+				WRITE_VIDEO(ptr++, hires_norm((chdata & 0x03) << 2));
 			}
 			else
 				DRAW_BACKGROUND(C_PF2)
@@ -1031,13 +1118,15 @@ void draw_antic_2_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? chdata >> 4 : chdata & 0xf;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-						*ptr = colour_translation_table[tmp | COLPF3];
+						WRITE_VIDEO(ptr, colour_translation_table[tmp | COLPF3]);
 #else
-						*ptr = tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3];
+						WRITE_VIDEO(ptr, tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3]);
 #endif
 					}
 					else
-						*ptr = COLOUR(pm_reg);
+					{
+						WRITE_VIDEO(ptr, COLOUR(pm_reg));
+					}
 				}
 				ptr++;
 			} while (--k);
@@ -1097,7 +1186,7 @@ void draw_antic_2_gtia10(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				colreg = gtia_10_lookup[t_screendata];
 				PF_COLLS(colreg) |= pm_pixel = *c_pm_scanline_ptr++;
 				pm_pixel |= gtia_10_pm[t_screendata];
-				*ptr++ = COLOUR(pm_lookup_ptr[pm_pixel] | colreg);
+				WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_pixel] | colreg));
 				if (k == 3)
 					t_screendata = chdata & 0x0f;
 			} while (--k);
@@ -1129,13 +1218,15 @@ void draw_antic_2_gtia11(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? chdata & 0xf0 : chdata << 4;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-						*ptr = colour_translation_table[tmp ? tmp | COLPF3 : COLPF3 & 0xf0];
+						WRITE_VIDEO(ptr, colour_translation_table[tmp ? tmp | COLPF3 : COLPF3 & 0xf0]);
 #else
-						*ptr = tmp ? tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0;
+						WRITE_VIDEO(ptr, tmp ? tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
 #endif
 					}
 					else
-						*ptr = COLOUR(pm_reg);
+					{
+						WRITE_VIDEO(ptr, COLOUR(pm_reg));
+					}
 				}
 				ptr++;
 			} while (--k);
@@ -1178,10 +1269,10 @@ void draw_antic_4(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 #endif
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 			if (chdata) {
-				*ptr++ = lookup[chdata & 0xc0];
-				*ptr++ = lookup[chdata & 0x30];
-				*ptr++ = lookup[chdata & 0x0c];
-				*ptr++ = lookup[chdata & 0x03];
+				WRITE_VIDEO(ptr++, lookup[chdata & 0xc0]);
+				WRITE_VIDEO(ptr++, lookup[chdata & 0x30]);
+				WRITE_VIDEO(ptr++, lookup[chdata & 0x0c]);
+				WRITE_VIDEO(ptr++, lookup[chdata & 0x03]);
 			}
 			else
 				DRAW_BACKGROUND(C_BAK)
@@ -1228,25 +1319,43 @@ void draw_antic_6(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 			if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 				if (chdata & 0xf0) {
 					if (chdata & 0x80)
-						*ptr++ = colour;
+					{
+						WRITE_VIDEO(ptr++, colour);
+					}
 					else
-						*ptr++ = cl_lookup[C_BAK];
+					{
+						WRITE_VIDEO(ptr++, cl_lookup[C_BAK]);
+					}
 					if (chdata & 0x40)
-						*ptr++ = colour;
+					{
+						WRITE_VIDEO(ptr++, colour);
+					}
 					else
-						*ptr++ = cl_lookup[C_BAK];
+					{
+						WRITE_VIDEO(ptr++, cl_lookup[C_BAK]);
+					}
 					if (chdata & 0x20)
-						*ptr++ = colour;
+					{
+						WRITE_VIDEO(ptr++, colour);
+					}
 					else
-						*ptr++ = cl_lookup[C_BAK];
+					{
+						WRITE_VIDEO(ptr++, cl_lookup[C_BAK]);
+					}
 					if (chdata & 0x10)
-						*ptr++ = colour;
+					{
+						WRITE_VIDEO(ptr++, colour);
+					}
 					else
-						*ptr++ = cl_lookup[C_BAK];
+					{
+						WRITE_VIDEO(ptr++, cl_lookup[C_BAK]);
+					}
 				}
 				else {
-					ptr[3] = ptr[2] = ptr[1] = ptr[0] = cl_lookup[C_BAK];
-					ptr += 4;
+					WRITE_VIDEO(ptr++, cl_lookup[C_BAK]);
+					WRITE_VIDEO(ptr++, cl_lookup[C_BAK]);
+					WRITE_VIDEO(ptr++, cl_lookup[C_BAK]);
+					WRITE_VIDEO(ptr++, cl_lookup[C_BAK]);
 				}
 				chdata <<= 4;
 			}
@@ -1282,8 +1391,10 @@ void draw_antic_8(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 			if ((UBYTE *) t_pm_scanline_ptr >= pm_scanline + 4 * (48 - RCHOP))
 				break;
 			if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
-				ptr[3] = ptr[2] = ptr[1] = ptr[0] = lookup2[screendata & 0xc0];
-				ptr += 4;
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0xc0]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0xc0]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0xc0]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0xc0]);
 			}
 			else {
 				UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
@@ -1312,9 +1423,10 @@ void draw_antic_9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 			if ((UBYTE *) t_pm_scanline_ptr >= pm_scanline + 4 * (48 - RCHOP))
 				break;
 			if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
-				ptr[1] = ptr[0] = lookup2[screendata & 0x80];
-				ptr[3] = ptr[2] = lookup2[screendata & 0x40];
-				ptr += 4;
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x80]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x80]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x40]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x40]);
 				screendata <<= 2;
 			}
 			else {
@@ -1363,9 +1475,10 @@ void draw_antic_a(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		int kk = 2;
 		do {
 			if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
-				ptr[1] = ptr[0] = lookup2[screendata & 0xc0];
-				ptr[3] = ptr[2] = lookup2[screendata & 0x30];
-				ptr += 4;
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0xc0]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0xc0]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x30]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x30]);
 				screendata <<= 4;
 			}
 			else {
@@ -1395,10 +1508,10 @@ void draw_antic_c(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		int kk = 2;
 		do {
 			if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
-				*ptr++ = lookup2[screendata & 0x80];
-				*ptr++ = lookup2[screendata & 0x40];
-				*ptr++ = lookup2[screendata & 0x20];
-				*ptr++ = lookup2[screendata & 0x10];
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x80]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x40]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x20]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x10]);
 				screendata <<= 4;
 			}
 			else {
@@ -1430,10 +1543,10 @@ void draw_antic_e(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		UBYTE screendata = *ANTIC_memptr++;
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 			if (screendata) {
-				*ptr++ = lookup2[screendata & 0xc0];
-				*ptr++ = lookup2[screendata & 0x30];
-				*ptr++ = lookup2[screendata & 0x0c];
-				*ptr++ = lookup2[screendata & 0x03];
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0xc0]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x30]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x0c]);
+				WRITE_VIDEO(ptr++, lookup2[screendata & 0x03]);
 			}
 			else
 				DRAW_BACKGROUND(C_BAK)
@@ -1464,10 +1577,10 @@ void draw_antic_f(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		int screendata = *ANTIC_memptr++;
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 			if (screendata) {
-				*ptr++ = hires_norm(screendata & 0xc0);
-				*ptr++ = hires_norm(screendata & 0x30);
-				*ptr++ = hires_norm(screendata & 0x0c);
-				*ptr++ = hires_norm((screendata & 0x03) << 2);
+				WRITE_VIDEO(ptr++, hires_norm(screendata & 0xc0));
+				WRITE_VIDEO(ptr++, hires_norm(screendata & 0x30));
+				WRITE_VIDEO(ptr++, hires_norm(screendata & 0x0c));
+				WRITE_VIDEO(ptr++, hires_norm((screendata & 0x03) << 2));
 			}
 			else
 				DRAW_BACKGROUND(C_PF2)
@@ -1516,13 +1629,15 @@ void draw_antic_f_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? screendata >> 4 : screendata & 0xf;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-						*ptr = colour_translation_table[tmp | COLPF3];
+						WRITE_VIDEO(ptr, colour_translation_table[tmp | COLPF3]);
 #else
-						*ptr = tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3];
+						WRITE_VIDEO(ptr, tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3]);
 #endif
 					}
 					else
-						*ptr = COLOUR(pm_reg);
+					{
+						WRITE_VIDEO(ptr, COLOUR(pm_reg));
+					}
 				}
 				ptr++;
 			} while (--k);
@@ -1575,7 +1690,7 @@ void draw_antic_f_gtia10(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				colreg = gtia_10_lookup[t_screendata];
 				PF_COLLS(colreg) |= pm_pixel = *c_pm_scanline_ptr++;
 				pm_pixel |= gtia_10_pm[t_screendata];
-				*ptr++ = COLOUR(pm_lookup_ptr[pm_pixel] | colreg);
+				WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_pixel] | colreg));
 				if (k == 3)
 					t_screendata = screendata & 0x0f;
 			} while (--k);
@@ -1602,13 +1717,15 @@ void draw_antic_f_gtia11(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? screendata & 0xf0 : screendata << 4;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-						*ptr = colour_translation_table[tmp ? tmp | COLPF3 : COLPF3 & 0xf0];
+						WRITE_VIDEO(ptr, colour_translation_table[tmp ? tmp | COLPF3 : COLPF3 & 0xf0]);
 #else
-						*ptr = tmp ? tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0;
+						WRITE_VIDEO(ptr, tmp ? tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
 #endif
 					}
 					else
-						*ptr = COLOUR(pm_reg);
+					{
+						WRITE_VIDEO(ptr, COLOUR(pm_reg));
+					}
 				}
 				ptr++;
 			} while (--k);
@@ -1633,10 +1750,10 @@ void draw_antic_f_gtia_bug(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t
 	CHAR_LOOP_BEGIN
 		UBYTE screendata = *ANTIC_memptr++;
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
-			*ptr++ = lookup2[screendata & 0xc0];
-			*ptr++ = lookup2[screendata & 0x30];
-			*ptr++ = lookup2[screendata & 0x0c];
-			*ptr++ = lookup2[screendata & 0x03];
+			WRITE_VIDEO(ptr++, lookup2[screendata & 0xc0]);
+			WRITE_VIDEO(ptr++, lookup2[screendata & 0x30]);
+			WRITE_VIDEO(ptr++, lookup2[screendata & 0x0c]);
+			WRITE_VIDEO(ptr++, lookup2[screendata & 0x03]);
 		}
 		else {
 			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
@@ -1996,7 +2113,6 @@ void ANTIC_Frame(int draw_display)
 			dctr &= 0xf;
 			continue;
 		}
-
 		if (need_load && anticmode <= 5 && DMACTL & 3)
 			xpos += before_cycles[md];
 
@@ -2011,7 +2127,7 @@ void ANTIC_Frame(int draw_display)
 			xpos += DMAR;
 			scrn_ofs = 8 * LCHOP;
 			GOEOL;
-			memset(((UBYTE *) scrn_ptr) + scrn_ofs, COLBK, (48 - RCHOP) * 8 - scrn_ofs);
+			FILL_VIDEO(((UBYTE *) scrn_ptr) + scrn_ofs, COLBK, (48 - RCHOP) * 8 - scrn_ofs);
 			scrn_ofs = -1;
 			scrn_ptr += ATARI_WIDTH / 2;
 			if (no_jvb) {
@@ -2057,7 +2173,7 @@ void ANTIC_Frame(int draw_display)
 				ULONG *ptr = (ULONG *) (scrn_ptr + 4 * LCHOP);
 				int k = 2 * (48 - LCHOP - RCHOP);
 				do {
-					*ptr |= ptr[-ATARI_WIDTH / 4];
+					WRITE_VIDEO_LONG(ptr, READ_VIDEO_LONG(ptr)|READ_VIDEO_LONG(ptr-ATARI_WIDTH/4));
 					ptr++;
 				} while (--k);
 			}
@@ -2082,7 +2198,6 @@ void ANTIC_Frame(int draw_display)
 		POKEY_Scanline();		/* check and generate IRQ */
 		OVERSCREEN_LINE;
 	} while (ypos < max_ypos);
-
 }
 
 /* ANTIC registers --------------------------------------------------------- */

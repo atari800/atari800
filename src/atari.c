@@ -41,6 +41,9 @@
 #endif
 
 ULONG *atari_screen = NULL;
+#ifdef DIRTYRECT
+UBYTE *screen_dirty = NULL;
+#endif
 #ifdef BITPL_SCR
 ULONG *atari_screen_b = NULL;
 ULONG *atari_screen1 = NULL;
@@ -453,6 +456,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	if (!atari_screen) {
 		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
+#ifdef DIRTYRECT
+		screen_dirty = (UBYTE *) malloc(ATARI_HEIGHT * ATARI_WIDTH/8);
+		entire_screen_dirty();
+#endif
 #ifdef BITPL_SCR
 		atari_screen_b = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
 		atari_screen1 = atari_screen;
@@ -674,6 +681,10 @@ static void ShowRealSpeed(ULONG * atari_screen)
   for (; i < 100; i++)
     ptr[i] = 0x02;
   ptr[100] = 0x38;
+
+#ifdef DIRTYRECT
+  memset(screen_dirty + (screen_visible_x1 + ATARI_WIDTH * (screen_visible_y2 - 1))/8, 1, 13);
+#endif
 }
 #endif
 
@@ -915,6 +926,12 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.33  2002/03/29 10:39:09  vasyl
+Dirty rectangle scheme implementation. All accesses to video memory (except
+those in UI_BASIC.C) are converted to macros. Define symbol DIRTYRECT
+to enable dirty rectangle tracking. Global array screen_dirty contains dirty
+flags (per 8 horizontal pixels).
+
 Revision 1.32  2001/12/04 22:28:16  joy
 the speed regulation when -DUSE_CLOCK is enabled so that key autorepeat in UI works.
 

@@ -405,6 +405,7 @@ UBYTE GTIA_GetByte(UWORD addr)
 #ifndef NO_CYCLE_EXACT
 extern UBYTE *scrn_ptr;	/* in antic.c */
 extern int scrn_ofs;	/* in antic.c */
+void video_memset(UBYTE* ptr, UBYTE val, UWORD size); /* in antic.c */
 
 static int xpos_to_offset_blank[121] = {
 	 24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,  24,
@@ -647,7 +648,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #ifndef NO_CYCLE_EXACT
 		if (scrn_ofs >= 0) {
 			int next_ofs = xpos_to_offset_blank[xpos];
-			memset(((UBYTE *) scrn_ptr) + scrn_ofs, COLBK, next_ofs - scrn_ofs);
+			video_memset(((UBYTE *) scrn_ptr) + scrn_ofs, COLBK, next_ofs - scrn_ofs);
 			scrn_ofs = next_ofs;
 		}
 #endif
