@@ -125,7 +125,9 @@
 // you can set that variables in code, or change it when emulator is running
 // I am not sure what to do with sound_enabled (can't turn it on inside
 // emulator, probably we need two variables or command line argument)
-static int sound_enabled = 1;
+#ifdef SOUND
+static int sound_enabled = TRUE;
+#endif
 static int SDL_ATARI_BPP = 0;	// 0 - autodetect
 static int FULLSCREEN = 1;
 static int BW = 0;
@@ -180,10 +182,12 @@ extern int refresh_rate;
 
 extern int alt_function;
 
+#ifdef SOUND
 // sound 
 #define FRAGSIZE        10		// 1<<FRAGSIZE is size of sound buffer
 static int SOUND_VOLUME = SDL_MIX_MAXVOLUME / 4;
-#define dsprate 44100
+static int dsprate = 44100;
+#endif
 
 // video
 SDL_Surface *MainScreen = NULL;
@@ -196,10 +200,12 @@ Uint8 *kbhits;
 static int last_key_break = 0;
 static int last_key_code = AKEY_NONE;
 
+#ifdef SOUND
 int Sound_Update(void)
 {
 	return 0;
 }								// fake function
+#endif
 
 void SetPalette()
 {
@@ -394,6 +400,7 @@ void SwapJoysticks()
 	ModeInfo();
 }
 
+#ifdef SOUND
 void SDL_Sound_Update(void *userdata, Uint8 * stream, int len)
 {
 	Uint8 dsp_buffer[1 << FRAGSIZE];
@@ -405,7 +412,28 @@ void SDL_Sound_Update(void *userdata, Uint8 * stream, int len)
 
 void SDL_Sound_Initialise(int *argc, char *argv[])
 {
+	int i, j;
 	SDL_AudioSpec desired, obtained;
+
+	for (i = j = 1; i < *argc; i++) {
+		if (strcmp(argv[i], "-sound") == 0)
+			sound_enabled = TRUE;
+		else if (strcmp(argv[i], "-nosound") == 0)
+			sound_enabled = FALSE;
+		else if (strcmp(argv[i], "-dsprate") == 0)
+			sscanf(argv[++i], "%d", &dsprate);
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-sound           Enable sound\n"
+				       "\t-nosound         Disable sound\n"
+				       "\t-dsprate <rate>  Set DSP rate in Hz\n"
+				      );
+			}
+			argv[j++] = argv[i];
+		}
+	}
+	*argc = j;
+
 	if (sound_enabled) {
 		desired.freq = dsprate;
 		desired.format = AUDIO_U8;
@@ -416,20 +444,20 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 		if (SDL_OpenAudio(&desired, &obtained) < 0) {
 			Aprint("Problem with audio: %s", SDL_GetError());
-			Aprint("You can disable sound by setting sound_enabled=0");
+			Aprint("You can disable sound by -nosound");
 			Aflushlog();
 			exit(-1);
 		}
 
 		// mono
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
-		Aprint("sound initialized");
 	}
 	else {
 		Aprint
-			("Audio is off, you can turn it on by setting sound_enabled=1");
+			("Audio is off, you can turn it on -sound");
 	}
 }
+#endif
 
 int Atari_Keyboard(void)
 {
@@ -840,6 +868,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	int i, j;
 	int no_joystick;
 	int width, height, bpp;
+	int help_only = FALSE;
 
 	no_joystick = 0;
 	width = ATARI_WIDTH;
@@ -881,6 +910,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
 				Aprint("\t-rotate90        Display 240x320 screen");
 				Aprint("\t-nojoystick      Disable joystick");
 #ifdef LPTJOY
@@ -892,29 +922,38 @@ void Atari_Initialise(int *argc, char *argv[])
 				Aprint("\t-bpp <num>       Host color depth");
 				Aprint("\t-fullscreen      Run fullscreen");
 				Aprint("\t-windowed        Run in window");
-				return;	/* return early */
 			}
 			argv[j++] = argv[i];
 		}
 	}
 	*argc = j;
 
-	Aprint
-		("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>");
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) != 0) {
+	i = SDL_INIT_VIDEO | SDL_INIT_JOYSTICK;
+#ifdef SOUND
+	i |= SDL_INIT_AUDIO;
+#endif
+	if (SDL_Init(i) != 0) {
 		Aprint("SDL_Init FAILED");
 		Aprint(SDL_GetError());
 		Aflushlog();
 		exit(-1);
 	}
+	atexit(SDL_Quit);
+
+#ifdef SOUND
+	SDL_Sound_Initialise(argc, argv);
+#endif
+
+	if (help_only)
+		return;		/* return before changing the gfx mode */
 
 	SetNewVideoMode(width, height, bpp);
 	CalcPalette();
 	SetPalette();
 
+	Aprint
+		("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>");
 	Aprint("video initialized");
-
-	SDL_Sound_Initialise(argc, argv);
 
 	if (no_joystick == 0)
 		Init_Joysticks(argc, argv);
@@ -924,9 +963,23 @@ void Atari_Initialise(int *argc, char *argv[])
 int Atari_Exit(int run_monitor)
 {
 	int restart;
-	restart = FALSE;
+
+#if 0
+	if (run_monitor)
+		/* disable graphics, set alpha mode */
+		restart = monitor();
+	else
+#endif
+		restart = FALSE;
+
+	if (restart) {
+		/* set up graphics and all the stuff */
+		return 1;
+	}
 
 	SDL_Quit();
+
+	Aflushlog();
 
 	return restart;
 }
@@ -1410,8 +1463,10 @@ int main(int argc, char **argv)
 
 	refresh_rate = 1;			// ;-)  
 
+#ifdef SOUND
 	if (sound_enabled)
 		SDL_PauseAudio(0);
+#endif
 	while (!done) {
 		keycode = Atari_Keyboard();
 
@@ -1426,11 +1481,15 @@ int main(int argc, char **argv)
 			Warmstart();
 			break;
 		case AKEY_UI:
+#ifdef SOUND
 			if (sound_enabled)
 				SDL_PauseAudio(1);
+#endif
 			ui((UBYTE *) atari_screen);
+#ifdef SOUND
 			if (sound_enabled)
 				SDL_PauseAudio(0);
+#endif
 			break;
 		case AKEY_SCREENSHOT:
 			Save_PCX_file(FALSE, Find_PCX_name());
@@ -1505,6 +1564,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.26  2002/08/07 07:26:58  joy
+ SDL cleanup thanks to atexit, -nosound supported, -disable-SOUND supported, -dsprate added, -help fixed
+
  Revision 1.25  2002/06/27 21:50:25  joy
  LPTjoy in SDL works under Linux only
 
