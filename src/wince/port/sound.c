@@ -79,7 +79,6 @@ static int initsound_dx(void)
 
   wfx.wFormatTag = WAVE_FORMAT_PCM;
   wfx.nChannels = stereo ? 2 : 1;
-  wfx.nChannels = 1;
   wfx.nSamplesPerSec = dsprate;
   wfx.nAvgBytesPerSec = dsprate * wfx.nChannels;
   wfx.nBlockAlign = stereo ? 2 : 1;
@@ -454,8 +453,15 @@ void Sound_Continue(void)
 
 /*
 $Log$
-Revision 1.1  2001/07/30 09:47:05  joy
-WinCE port-specific files added by Vasyl Tsvirkunov <vasyl@pacbell.net>
+Revision 1.2  2002/01/22 00:17:21  vasyl
+Updating WinCE port. A lot of changes, the most important are:
+fixed more keyboard bugs;
+support for monochrome and paletted devices;
+speedups in graphics code;
+port-specific UI driver (pass-through).
+
+Revision 1.6  2001/12/04 13:09:06  joy
+DirectSound buffer creation error fixed by Nathan
 
 Revision 1.5  2001/07/22 06:46:08  knik
 waveout default sound delay 100ms, buffer size 0x200

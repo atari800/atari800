@@ -14,6 +14,8 @@
 #include "sound.h"
 #include "diskled.h"
 #include "rt-config.h"
+#include "ui.h"
+#include "ataripcx.h"
 
 static int usesnd = 1;
 
@@ -27,6 +29,7 @@ int Atari_Keyboard(void)
 
 	keycode = get_last_key();
 
+/*
 	if(keycode == AKEY_TAB)
 	{
 		gr_suspend();
@@ -34,6 +37,7 @@ int Atari_Keyboard(void)
 		gr_resume();
 		clearkb();
 	}
+*/
 	return keycode;
 }
 

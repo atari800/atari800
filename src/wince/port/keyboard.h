@@ -12,6 +12,7 @@ void releasebutton(short);
 
 void tapscreen(short x, short y);
 void untapscreen(short x, short y);
+void dragscreen(short x, short y);
 
 extern int console;
 extern int trig0;
@@ -26,5 +27,8 @@ extern int currentKeyboardColor;
 
 /* Packed bitmap 240x80 - five rows of buttons */
 extern unsigned long* kbd_image;
+
+/* Use virtual joystick */
+extern int virtual_joystick;
 
 #endif

@@ -10,10 +10,14 @@ extern "C"
 #include "keyboard.h"
 #include "screen.h"
 #include "ui.h"
+
+int virtual_joystick = 0;
 };
 
 int currentKeyboardMode = 4;
 int currentKeyboardColor = 0;
+
+int stylus_down = 0;
 
 unsigned long* kbd_image;
 
@@ -186,90 +190,6 @@ unsigned long kbd_image_5200[] =
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
 };
 
-unsigned long kbd_image_about[] =
-{
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x000f8000, 0x06000180, 0x00060600, 0x00000600, 0x00001980, 0x00000600, 0x0f000600, 0x00000000, 
-	0x0f198000, 0x1f8f018f, 0x8f1f8f00, 0x0000000f, 0x0f8f1980, 0x0f8f001f, 0x19800700, 0x00000000, 
-	0x99998000, 0x06198d81, 0x98061980, 0x00000719, 0x99999980, 0x19998701, 0x1d800600, 0x00000000, 
-	0x998f8000, 0x061f8781, 0x9f061980, 0x00000601, 0x019f9980, 0x1999860f, 0x1b800600, 0x00000000, 
-	0x99818000, 0x06018d81, 0x99861f80, 0x00000601, 0x01818f00, 0x19998618, 0x19860600, 0x00000000, 
-	0x0f018000, 0x1c0f198f, 0x9f1c1980, 0x00000f01, 0x818f0600, 0x198f0f0f, 0x0f061f80, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x000003e0, 0x00000600, 0x01818000, 0xc3c18000, 0x07e003c3, 0x8001c000, 0x00000001, 0x00000000, 
-	0xc7c3c660, 0xe3c00603, 0xc7e3c003, 0x666003e3, 0x60600666, 0xe3c18666, 0x0003e3c7, 0x00000000, 
-	0x606603e0, 0x666007c6, 0x01866006, 0x63c1c666, 0xe3e00767, 0x8601866f, 0x00066661, 0x00000000, 
-	0xe3c7c660, 0x66600667, 0xc1866006, 0xe6618067, 0xe06006e6, 0x87c1866f, 0x00006661, 0x00000000, 
-	0x66066660, 0x66600660, 0x6187e006, 0x66618066, 0x60600666, 0x8661866d, 0x00006661, 0x00000000, 
-	0xc3e7c3e0, 0x63c007c3, 0xc7066006, 0xc3c3c067, 0x67e003c3, 0x07c3c7cc, 0x000063c7, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x80600000, 0x00000181, 0x00060606, 0x00000000, 0x00018060, 0x00000000, 0xc3c3c006, 0x00000603, 
-	0xe0600000, 0x0183e7e7, 0x63c00303, 0xe3c7c006, 0xc3c00063, 0x07e3c007, 0x666663c3, 0x00000306, 
-	0x83e00000, 0x81866181, 0x66660181, 0x66606006, 0x6061c3e6, 0x83006000, 0x6763c601, 0x00000187, 
-	0x86600000, 0xc0066181, 0x666600c0, 0x6663c006, 0xc0618666, 0xc1806003, 0xe6e667c0, 0x000000c6, 
-	0x86600000, 0x6183e181, 0xc6660060, 0xe6660187, 0x00618663, 0x60c06186, 0x66666660, 0x00000066, 
-	0x06600000, 0x21806707, 0x03c60020, 0x63c3e183, 0xe3c3c660, 0x27e3c183, 0xc3c3c7c0, 0x00000023, 
-	0x00000000, 0x00006000, 0xe003c000, 0x60000001, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x800003e0, 0x80060001, 0x03e00001, 0x80006000, 0x03c3e001, 0x00000060, 0x00000000, 0x00000000, 
-	0xe3e3c660, 0xe00603c7, 0xc66003c7, 0xe3c063c3, 0x06666007, 0x00066060, 0x00000000, 0x00000000, 
-	0x86666660, 0x8007c661, 0x66600661, 0x86636066, 0x00666001, 0x000663e0, 0x00000000, 0x00000000, 
-	0x806663e0, 0x800667e1, 0x63e00661, 0x87e1e066, 0x0063e001, 0x00066660, 0x00000000, 0x00000000, 
-	0x80666060, 0x80066061, 0x60600661, 0x80636066, 0x06606001, 0x0007c660, 0x00000000, 0x00000000, 
-	0x0063c060, 0x0007c3c7, 0xc06003c7, 0x03c663c3, 0x03c06007, 0x000303e0, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x0001e000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00066000, 0xe001c000, 0x01800007, 0x00000060, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0xc3c66000, 0x80018667, 0xe00667c1, 0xc3e66063, 0x00000663, 
-	0x00000000, 0x00000000, 0x00000000, 0x66066000, 0x80018660, 0x61c66061, 0x66666366, 0x00000666, 
-	0x00000000, 0x00000000, 0x00000000, 0xc7c66000, 0x80018663, 0x618663c1, 0x666661e0, 0x00000666, 
-	0x00000000, 0x00000000, 0x00000000, 0x0663c000, 0x800187c6, 0x6183c601, 0x66666360, 0x000003c6, 
-	0x00000000, 0x00000000, 0x00000000, 0xe7c18000, 0x8003c303, 0x63c183e1, 0xc667c660, 0x00000183, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x000001e0, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x018067e0, 0x00000000, 0x00000000, 0x00018000, 0x00000700, 0x000001c0, 0x00000000, 0x00000000, 
-	0xc0006180, 0xc3e3e007, 0x63c3e7c3, 0x07c00006, 0xc3c3e180, 0x00066183, 0x00000000, 0x00000000, 
-	0x61c3e180, 0x66666000, 0xe6066666, 0x0061c00f, 0x666667c0, 0x00066186, 0x00000000, 0x00000000, 
-	0xc1866180, 0x60666003, 0xe7c06666, 0x03c1800f, 0xe7e06180, 0x00066187, 0x00000000, 0x00000000, 
-	0x01866180, 0x6063e006, 0x666067c6, 0x0601800d, 0x60606180, 0x0007c180, 0x00000000, 0x00000000, 
-	0xe3c66180, 0xc0606003, 0x67c06603, 0x03e3c00c, 0xc3c06180, 0x000303c3, 0x00000000, 0x00000000, 
-	0x00000000, 0x00006000, 0x000003e0, 0x00000000, 0x00000000, 0x0001e000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x80018600, 0x00618001, 0xc0600180, 0x00000001, 0x00000600, 0x00006180, 0x00000180, 0x00000000, 
-	0xe7c00600, 0x606003e7, 0x8063c7e6, 0xe66003c1, 0x03e3c603, 0x03c067e0, 0x63e3c7e0, 0x000007c6, 
-	0x8061c7c0, 0x63e1c661, 0x83e60186, 0x66600661, 0x066667c6, 0x0663e180, 0xe6666180, 0x0000006f, 
-	0x83c18660, 0x66618061, 0x8667c186, 0x666007e1, 0x0067e666, 0x07e66180, 0xe067e180, 0x000003cf, 
-	0x86018660, 0x66618061, 0x86666186, 0x66600061, 0x00606666, 0x00666180, 0x60606180, 0x0000060d, 
-	0x03e3c7c0, 0xc3e3c067, 0xc3e7c707, 0x67c003c3, 0x0063c7c6, 0x03c66700, 0x6063c700, 0x000003ec, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-	0xc0070000, 0xc0066667, 0x00000007, 0xe001c000, 0x81c06003, 0x80600001, 0x00000001, 0x00000000, 
-	0x600183c0, 0x600666e0, 0xe3c3e3c0, 0x600183c3, 0x01806666, 0x006003c0, 0xc3e3c3c0, 0x000003c7, 
-	0x6007c660, 0x600667e0, 0x66666660, 0x60018606, 0xc183e666, 0xc0600061, 0x66666061, 0x00000660, 
-	0x60018660, 0x600667e7, 0x67e667e7, 0xe00187c0, 0x81866663, 0x80600061, 0xc667e061, 0x000007e3, 
-	0x60018660, 0x60066766, 0x60666066, 0x60018660, 0x81866660, 0x80600061, 0x06606061, 0x00000066, 
-	0xc00183c0, 0xc007e667, 0x63c663c7, 0x6003c7c0, 0xc3c3e7c0, 0xc7e003c3, 0xe663c3c3, 0x000003c3, 
-	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
-};
-
 struct sKeydata
 {
 	short offset;
@@ -279,7 +199,6 @@ struct sKeydata
 #define KBD_ROTATE -100
 #define KBD_NEGATE -101
 #define KBD_HIDE   -102
-#define KBD_ABOUT  -103
 
 sKeydata* kbd_struct;
 int keys;
@@ -307,7 +226,7 @@ sKeydata kbd_struct_800[] =
 	{848,AKEY_COMMA},{862,AKEY_FULLSTOP},{876,AKEY_SLASH},{890,AKEY_SHFT},
 	{916,AKEY_ATARI},{930,AKEY_F2},
 	/* fifth row */
-	{960,KBD_ABOUT},{975,AKEY_NONE},{1002,AKEY_SPACE},{1126,AKEY_NONE},
+	{960,AKEY_NONE},{975,AKEY_NONE},{1002,AKEY_SPACE},{1126,AKEY_NONE},
 	{1140,AKEY_UI},{1155,KBD_ROTATE},{1169,KBD_NEGATE},{1184,KBD_HIDE},
 	{1200, AKEY_NONE}
 };
@@ -319,7 +238,7 @@ sKeydata kbd_struct_5200[] =
 	{240,AKEY_NONE},{270,0x37},{284,0x35},{298,0x33},{312,AKEY_NONE},
 	{480,AKEY_NONE},{510,0x2f},{524,0x2d},{538,0x2b},{552,AKEY_NONE},
 	{720,AKEY_NONE},{750,0x27},{764,0x25},{778,0x23},{792,AKEY_NONE},
-	{960,KBD_ABOUT},{975,AKEY_NONE},{1140,AKEY_UI},{1155,KBD_ROTATE},
+	{960,AKEY_NONE},{975,AKEY_NONE},{1140,AKEY_UI},{1155,KBD_ROTATE},
 	{1169,KBD_NEGATE},{1184,KBD_HIDE},
 	{1200,AKEY_NONE}
 };
@@ -515,18 +434,10 @@ void hitbutton(short code)
 			stick0 &= ~4;
 		else if(code == joykey_map[get_screen_mode()][3])
 			stick0 &= ~8;
-		else if(code == klist.vkStart)
+		else if(code == klist.vkA || code == klist.vkB)
 			trig0 = 0;
-/*
-		else if(code == klist.vkA)
-			kbcode = AKEY_F3;
-		else if(code == klist.vkB)
-			kbcode = AKEY_F2;
 		else if(code == klist.vkC)
-			kbcode = AKEY_F4;
-		else
 			kbcode = AKEY_UI;
-*/
 		else
 		for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
 			if(code == kbd_translation[i].winKey)
@@ -581,18 +492,10 @@ void releasebutton(short code)
 			stick0 |= 4;
 		else if(code == joykey_map[get_screen_mode()][3])
 			stick0 |= 8;
-		else if(code == klist.vkStart)
+		else if(code == klist.vkA || code == klist.vkB)
 			trig0 = 1;
-/*
-		else if(code == klist.vkA)
-			kbcode = AKEY_F3;
-		else if(code == klist.vkB)
-			kbcode = AKEY_F2;
 		else if(code == klist.vkC)
-			kbcode = AKEY_F4;
-		else
 			kbcode = AKEY_UI;
-*/
 		else
 		for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
 			if(code == kbd_translation[i].winKey)
@@ -612,6 +515,26 @@ void tapscreen(short x, short y)
 {
 	short kbcode;
 	
+	stylus_down = 1;
+
+	/* On-screen joystick */
+	if(virtual_joystick && !ui_is_active && currentKeyboardMode == 4 && y < 240)
+	{
+		stick0 = 0xff;
+		trig0 = 1;
+		if(y < 90) /* up */
+			stick0 &= ~1;
+		if(y >= 150) /* down */
+			stick0 &= ~2;
+		if(x < 120) /* left */
+			stick0 &= ~4;
+		if(x >= 200) /* right */
+			stick0 &= ~8;
+		if(x >= 60 && x < 260 && y >= 45 && y < 195)
+			trig0 = 0;
+		return;
+	}
+
 	translate_kbd(&x, &y);
 	
 	/* In landscape - show keyboard if clicked bottom right corner */
@@ -620,23 +543,12 @@ void tapscreen(short x, short y)
 	
 	kbcode = get_keypress(x, y);
 	
-	/* On-screen joystick trigger (in portrait or in landscape if no keyboard */
-	if(kbcode == AKEY_NONE && currentKeyboardMode == 4)
-	{
-//		joyhits[0] = 1;
-		trig0 = 0;
-		return;
-	}
-	
 	/* Special keys */
 	switch(kbcode)
 	{
 	case KBD_ROTATE:
 	case KBD_NEGATE:
 	case KBD_HIDE:
-		return;
-	case KBD_ABOUT:
-		kbd_image = kbd_image_about;
 		return;
 	}
 	
@@ -707,6 +619,16 @@ void tapscreen(short x, short y)
 void untapscreen(short x, short y)
 {
 	int kbcode;
+
+	stylus_down = 0;
+
+	/* On-screen joystick */
+	if(virtual_joystick && !ui_is_active && currentKeyboardMode == 4 && y < 240)
+	{
+		stick0 = 0xff;
+		trig0 = 1;
+		return;
+	}
 	
 	translate_kbd(&x, &y);
 	
@@ -738,14 +660,6 @@ void untapscreen(short x, short y)
 	
 	kbcode = get_keypress(x, y);
 	
-	/* On-screen joystick trigger (in portrait or in landscape if no keyboard */
-	if(kbcode == AKEY_NONE && currentKeyboardMode == 4)
-	{
-//		joyhits[0] = 0;
-		trig0 = 1;
-		return;
-	}
-	
 	/* Special keys */
 	switch(kbcode)
 	{
@@ -759,9 +673,6 @@ void untapscreen(short x, short y)
 	case KBD_HIDE:
 		if(get_screen_mode())
 			currentKeyboardMode = 4;
-		return;
-	case KBD_ABOUT:
-		reset_kbd();
 		return;
 	}
 	
@@ -823,6 +734,33 @@ void untapscreen(short x, short y)
 	
 	release_key(kbcode);
 }
+
+void dragscreen(short x, short y)
+{
+	if(stylus_down && virtual_joystick && !ui_is_active && currentKeyboardMode == 4 && y < 240)
+	{
+		translate_kbd(&x, &y);
+		
+		/* On-screen joystick trigger (in portrait or in landscape if no keyboard */
+		if(virtual_joystick && currentKeyboardMode == 4)
+		{
+			stick0 = 0xff;
+			trig0 = 1;
+			if(y < 90) /* up */
+				stick0 &= ~1;
+			if(y >= 150) /* down */
+				stick0 &= ~2;
+			if(x < 120) /* left */
+				stick0 &= ~4;
+			if(x >= 200) /* right */
+				stick0 &= ~8;
+			if(x >= 60 && x < 260 && y >= 45 && y < 195)
+				trig0 = 0;
+			return;
+		}
+	}
+}
+
 
 void push_key(short akey)
 {
@@ -928,6 +866,8 @@ int initinput(void)
 	keys = sizeof(kbd_struct_800)/sizeof(kbd_struct_800[0]);
 
 	clearkb();
+
+	stylus_down = 0;
 
 	return 0;
 }

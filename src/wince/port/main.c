@@ -9,11 +9,14 @@
 #include "screen.h"
 #include "keyboard.h"
 #include "sound.h"
+#include "ui.h"
 
 LPTSTR myname = TEXT("Pocket Atari");
 char* mynameb = "Pocket Atari";
 HWND hWndMain;
 HINSTANCE myInstance;
+
+extern tUIDriver wince_ui_driver;
 
 extern int wince_main(int argc, char **argv);
 
@@ -42,6 +45,7 @@ void wce_perror(char* s)
 DWORD WINAPI vloop(LPVOID p)
 {
 	srand(time(0));
+	ui_driver = &wince_ui_driver;
 	wince_main(gargc, gargv);
 	atari_exit(0);
 	return 0;
@@ -71,6 +75,12 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 	case WM_LBUTTONUP:
 		untapscreen((short)lastClick.x, (short)lastClick.y);
 		ReleaseCapture();
+		return 0;
+	case WM_MOUSEMOVE:
+		lastClick.x = LOWORD(lParam);
+		lastClick.y = HIWORD(lParam);
+		ClientToScreen(hWnd, &lastClick);
+		dragscreen((short)lastClick.x, (short)lastClick.y);
 		return 0;
 	case WM_PAINT:
 		BeginPaint(hWnd, &ps);

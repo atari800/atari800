@@ -246,6 +246,7 @@
 #define strcasecmp _stricmp
 
 #define perror(s) wce_perror(s)
+void wce_perror(char* s);
 
 #ifndef _FILE_DEFINED
    typedef void FILE;
