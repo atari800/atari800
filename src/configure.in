@@ -232,65 +232,62 @@ AC_CHECK_FUNCS(getcwd gettimeofday select strdup strerror strstr strtol)
 dnl user defined part of configuration
 echo
 
-dnl DEF_FEATURE(define_name, prompt text, default answer, test)
-dnl ask user about configure option
+dnl DEF_FEATURE(symbol name, feature name, enable/disable,
+dnl feature description, default action)
+dnl 'enable/disable' means defining symbol enables/disables feature
+dnl default action: y - define symbol, n - don't define
 AC_DEFUN(DEF_FEATURE,
 [
-AC_ARG_ENABLE($1, [  --enable-$1 $2 ],
-[ if test "$enableval" = "yes" ; then
-   AC_MSG_RESULT([Enabling $1])
+a800_ans=$5
+AC_ARG_ENABLE($2, 
+[  --$3-$2	ifelse($3, enable, Enable, Disable) $4 (default is ifelse(
+$5, y, yes, $5, n, no,
+[errprint(__file__ __line__: bad default action '$5')m4_exit(1)]
+))],
+[ if test "$enableval" = ifelse($3, enable, yes, $3, disable, no,
+[errprint(__file__ __line__: bad enable/disable word '$3')m4_exit(1)]
+) ; dnl syntax checking
+  then
    a800_ans=y
-   ac_cv_a800_$1=y
-   AC_DEFINE($1)	    
   else
-     AC_MSG_RESULT([Disabling $1])
+   a800_ans=n
   fi
-],[
-if test -n "$ac_cv_a800_$1"; then
-  a800_defans=$ac_cv_a800_$1
-else
-  a800_defans=ifelse($3,, n, $3)
-fi
-if test "$a800_defans" = "y"; then
-  echo "$2? yes"
-else
-  echo "$2? no"
-fi
-a800_ans=$a800_defans
-if test "$a800_ans" = ifelse($4,, y, $4); then
-  AC_DEFINE($1)
-fi
-ac_cv_a800_$1=$a800_ans
 ])
+if test "$a800_ans" = y ; then
+	AC_DEFINE($1)
+	AC_MSG_RESULT([$4 $3]d)
+else
+	AC_MSG_RESULT([$4 not $3]d)
+fi
 ])
 
 
 if test "$a800_host" = falcon; then dnl falcon host specific
-DEF_FEATURE(CPUASS, Use m68k assembler CPU core)
+DEF_FEATURE(CPUASS, cpuass, enable, using m68k assembler CPU core (falcon only), n)
 if test "$a800_ans" = y; then
 OBJ="$OBJ cpu_m68k.o"
 fi
 fi
-DEF_FEATURE(VERY_SLOW, Is your computer very slow (disables generating screen completely))
-DEF_FEATURE(NO_CYCLE_EXACT, Enable color changes inside a scanline (cycle exact), y, n)
-DEF_FEATURE(CRASH_MENU, Show crash menu after CIM instruction, y)
-DEF_FEATURE(MONITOR_BREAK, Enable BREAK command in monitor (slows CPU a little bit))
-DEF_FEATURE(MONITOR_HINTS, Enable hints in disassembler (addresses get human readable labels), y)
-DEF_FEATURE(MONITOR_ASSEMBLER, Enable assembler in monitor (you can enter ASM insns directly))
-DEF_FEATURE(SNAILMETER, Enable Snailmeter (shows how much is the emulator slower than original))
+DEF_FEATURE(VERY_SLOW, slow, enable, very slow computer support (disables generating screen completely), n)
+DEF_FEATURE(NO_CYCLE_EXACT, scancolor, disable, color changes inside a scanline (cycle exact), n)
+DEF_FEATURE(CRASH_MENU, crashmenu, enable, crash menu after CIM instruction, y)
+DEF_FEATURE(MONITOR_BREAK, break, enable, BREAK command in monitor (slows CPU a little bit), y)
+DEF_FEATURE(MONITOR_HINTS, hints, enable, hints in disassembler (addresses get human readable labels), y)
+DEF_FEATURE(MONITOR_ASSEMBLER, asm, enable, assembler in monitor (you can enter ASM insns directly), y)
+DEF_FEATURE(SNAILMETER, meter, enable, Snailmeter (shows how much is the emulator slower than original), n)
 
 if test "$a800_target" = svgalib; then dnl svgalib specific
-DEF_FEATURE(SVGA_SPEEDUP, Draw every 1/50 sec only 1/refresh of screen)
-DEF_FEATURE(USE_CURSORBLOCK, Use cursor keys/Ctrl for keyboard joystick)
-DEF_FEATURE(JOYMOUSE, Support for Toshiba Joystick Mouse (Linux SVGALIB Only))
+DEF_FEATURE(SVGA_SPEEDUP, svgaspeed, enable, drawing every 1/50 sec only 1/refresh of screen (svgalib only), n)
+DEF_FEATURE(USE_CURSORBLOCK, cursorblk, enable, using cursor keys/Ctrl for keyboard joystick (svgalib only), n)
+DEF_FEATURE(JOYMOUSE, joymouse, enable, support for Toshiba Joystick Mouse (svgalib only), n)
 fi
 
 if test "$a800_host" = linux; then dnl linux specific
-DEF_FEATURE(LINUX_JOYSTICK, Enable LINUX Joystick)
+DEF_FEATURE(LINUX_JOYSTICK, linuxjoy, enable, LINUX Joystick (linux only), n)
 fi
 
 dnl sound support
-DEF_FEATURE(SOUND, Enable Sound Support, y)
+DEF_FEATURE(SOUND, sound, enable, Sound Support, y)
 if test "$a800_ans" = y; then
 
 case "$a800_host" in
@@ -313,25 +310,25 @@ fi
 
 OBJ="$OBJ $OBJ_SND"
 
-DEF_FEATURE(NO_VOL_ONLY, Enable volume only sound (digitized sound effects), y, n)
+DEF_FEATURE(NO_VOL_ONLY, volsound, disable, volume only sound (digitized sound effects), n)
 if test "$a800_ans" = y; then
-DEF_FEATURE(NO_CONSOL_SOUND, Enable console sound (keyboard clicks), y, n)
-DEF_FEATURE(SERIO_SOUND, Enable serial in/out sound)
+DEF_FEATURE(NO_CONSOL_SOUND, consound, disable, console sound (keyboard clicks), n)
+DEF_FEATURE(SERIO_SOUND, sersound, enable, serial in/out sound, n)
 fi	dnl digitized effects enabled
-DEF_FEATURE(NOSNDINTER, Enable Sound Interpolation, y, n)
-DEF_FEATURE(CLIP, Enable Sound Clipping)
+DEF_FEATURE(NOSNDINTER, sndinter, disable, Sound Interpolation, n)
+DEF_FEATURE(CLIP, sndclip, enable, Sound Clipping, n)
 if test "$a800_target" != falcon; then
-DEF_FEATURE(STEREO, Enable Stereo Sound)
+DEF_FEATURE(STEREO, stereo, enable, Stereo Sound, n)
 fi
 fi	dnl sound enabled
 
 case "$a800_target" in
 x11-*) ;;
 *)
-DEF_FEATURE(BUFFERED_LOG, Buffer debug output (until the graphics mode switches back to text mode), y)
-DEF_FEATURE(SET_LED, Emulate disk LED diode)
+DEF_FEATURE(BUFFERED_LOG, bufferlog, enable, buffered debug output (until the graphics mode switches back to text mode), n)
+DEF_FEATURE(SET_LED, led, enable, disk LED diode emulation, n)
 if test "$a800_ans" = y; then
-DEF_FEATURE(NO_LED_ON_SCREEN, Display LED on screen, y, n)
+DEF_FEATURE(NO_LED_ON_SCREEN, displayled, disable, LED on screen display, y)
 fi
 ;;
 esac
