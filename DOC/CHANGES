@@ -1,3 +1,5 @@
+o completely refactored UI by Vasyl. Now allows different (port specific) GUIs.
+
 o Basic XE (OSS Supercart) should work now <Shamus>
 
 o nonblocking open of sound device on linux <Rudolf>

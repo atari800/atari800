@@ -230,3 +230,4 @@ Matthew Conte <matt@conte.com>
 
 Vasyl Tsvirkunov <vasyl@pacbell.net>
 - WinCE port of Atari800
+- refactored UI (introduced UI_BASIC)
