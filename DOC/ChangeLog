@@ -1,3 +1,7 @@
+2003-11-13  Petr Stehlik  <pstehlik@sophics.cz>
+* log.c: corrected buffer overflow found by Laios Mircea
+
+
 2003-10-26  Mark Grebe  <markgrebe@yahoo.com>
 * cartridge.c, sio.c, statesav.c: saving disk and cartridge info
   in the state file. Bumped the state file version number, and then added
