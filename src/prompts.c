@@ -74,6 +74,8 @@ void RemoveLF(char *string)
 	int len;
 
 	len = strlen(string);
-	if (string[len - 1] == '\n')
+	if (len >= 2 && string[len - 1] == '\n' && string[len - 2] == '\r')
+		string[len - 2] = '\0';
+	else if (len >= 1 && (string[len - 1] == '\n' || string[len - 1] == '\r'))
 		string[len - 1] = '\0';
 }

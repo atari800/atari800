@@ -433,7 +433,7 @@ void read_config()
   int i,no;
   int bad=0;
 
-  if ((fr=fopen("atari800.cfg","rt"))==NULL)
+  if ((fr=fopen("atari800.cfg","r"))==NULL)
   {
     printf("Error opening configuration file.\n"
            "Execute this utility from atari800 dir after configuring it!\n");
@@ -442,7 +442,8 @@ void read_config()
   while (fgets(string,sizeof(string),fr))
   {
     i=strlen(string);
-    if (string[i-1]=='\n') string[i-1]='\0';
+    if (i >= 2 && string[i-2]=='\r' && string[i-1]=='\n') string[i-2]='\0';
+    else if (i >= 1 && (string[i-1]=='\n' || string[i-1]=='\r')) string[i-1]='\0';
     ptr=strchr(string,'=');
     if (ptr)
     {
@@ -492,12 +493,12 @@ void save_config()
   char string[256];
   int i;
 
-  if ((fr=fopen("atari800.cfg","rt"))==NULL)
+  if ((fr=fopen("atari800.cfg","r"))==NULL)
   {
     printf("Error opening atari800.cfg!\n");
     return;
   }
-  if ((fw=fopen("atari800.tmp","wt"))==NULL)
+  if ((fw=fopen("atari800.tmp","w"))==NULL)
   {
     printf("Error creating temporary file atari800.tmp!\n");
     fclose(fr);

@@ -96,16 +96,16 @@ int RtConfigLoad(char *rtconfig_filename)
 	enable_p_patch = 1;
 
 	if (rtconfig_filename) {
-		fp = fopen(rtconfig_filename, "rt");
+		fp = fopen(rtconfig_filename, "r");
 		if (!fp) {
 			perror(rtconfig_filename);
 			exit(1);
 		}
 	}
 	else {
-		fp = fopen(rtconfig_filename1, "rt");
+		fp = fopen(rtconfig_filename1, "r");
 		if (!fp)
-			fp = fopen(rtconfig_filename2, "rt");
+			fp = fopen(rtconfig_filename2, "r");
 	}
 
 	if (fp) {
@@ -281,7 +281,7 @@ void RtConfigSave(void)
 	FILE *fp;
 	int i;
 
-	fp = fopen(rtconfig_filename1, "wt");
+	fp = fopen(rtconfig_filename1, "w");
 	if (!fp) {
 		perror(rtconfig_filename1);
 		exit(1);
@@ -474,6 +474,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.12  2002/04/07 19:35:40  joy
+remove non ANSI t parameter in fopen
+
 Revision 1.11  2001/10/03 16:32:07  fox
 fixed default TV mode in RtConfigUpdate
 
