@@ -261,7 +261,7 @@ void ModeInfo()
 void SetVideoMode(int w, int h, int bpp)
 {
 	if (FULLSCREEN)
-		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN | SDL_HWSURFACE);
+		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
 	else
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_RESIZABLE);
 	if (MainScreen == NULL) {
@@ -1313,6 +1313,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.17  2001/12/29 21:48:05  joy
+ HWSURFACE removed (I just tried something and forgot to remove it before commit)
+
  Revision 1.16  2001/12/29 21:34:08  joy
  fullscreen by default
  define NVIDIA if you have nVIDIA card that can't set 336x240 fullscreen
