@@ -222,6 +222,8 @@ Piotr Fusik <fox@scene.pl>
   and other cartridges
 - corrected disk formatting
 - cassette recorder emulation
+- emulation of paddles, Touch Tablet, Koala Pad, Light Pen/Gun,
+  Amiga/ST mice
 
 Matthew Conte <matt@conte.com>
 - new SoundBlaster driver for DOS
