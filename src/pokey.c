@@ -220,6 +220,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		break;
 #ifdef STEREO
 	case _AUDC1 + _POKEY2:
+		AUDC[CHAN1 + CHIP2] = byte;
 		Update_pokey_sound(_AUDC1, byte, 1, SOUND_GAIN);
 		break;
 	case _AUDC2 + _POKEY2:
