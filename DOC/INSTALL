@@ -61,10 +61,11 @@ compressed statesave images support.
    enforce a 16 bit memory model. No prizes are offered for correctly
    identifing the OS in question.
 
-Building the Emulator on a Unix Platform
-----------------------------------------
+Building the Emulator on most platforms
+---------------------------------------
 
-1. Type "./configure --target=" for a list of supported platforms.
+0. Type "./configure --target=" for a list of supported platforms.
+1. Type "./configure --target=your_target" (choose from the list above)
 2. Type "make"
 3. Install the emulator by typing "make install".
 
@@ -131,8 +132,7 @@ and compile the source on a filesystem supporting long file names (for example
 VFAT of Windows95). An additional change of DJGPP setting is required:
 open the DJGPP.ENV file in editor and change the LFN= line to LFN=y
 
-1. Run "./configure --target=vga".
-   "./configure --target=" to get list of available targets)
+1. Run "configure_dos.bat --target=vga".
 2. Run "make" and "make joycfg".
 3. If everything went good you should have atari800.exe and joycfg.exe -
    copy them to destination directory.
@@ -144,7 +144,6 @@ Atari800 for Windows can be built using Cygwin environment:
 http://cygwin.com/
 
 1. Type "./configure --target=dx".
-   "./configure --target=" to get list of available targets)
 2. Type "make".
 3. Copy atari800.exe to destination directory.
 

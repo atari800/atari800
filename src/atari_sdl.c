@@ -13,7 +13,7 @@
    04-12-2001 - split Atari_DisplayScreen (DisplayWithoutScaling and
                 DisplayWithScaling)
 	      - put Aflushlog everywhere	
-   03-11-2001 - 32 bit support
+   03-12-2001 - 32 bit support
    	      - rewrited Atari_DisplayScreen function a little
 	      - LALT+j swaps only keyboard emulated joysticks now
    29-11-2001 - real joystick(s) support
@@ -1313,6 +1313,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.18  2001/12/31 08:44:53  joy
+ updated
+
  Revision 1.17  2001/12/29 21:48:05  joy
  HWSURFACE removed (I just tried something and forgot to remove it before commit)
 

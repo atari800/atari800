@@ -1,11 +1,11 @@
 %define name	atari800
-%define ver	1.2.1
+%define ver	1.2.2
 %define rel	3
 %define copy	GPL
 %define ich friedel <friedel@nomaden.org>
 %define group	Console/Emulators
-%define realname Atari800-%{ver}
-%define src a800s121.tar.gz
+%define realname atari800-%{ver}
+%define src atari800-%{ver}.tar.gz
 %define targets ncurses svgalib x11 sdl
 ## If you change the targets, you'll have to change the files list at the
 ## bottom of this file as well

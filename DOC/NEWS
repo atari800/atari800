@@ -1,3 +1,9 @@
+Version 1.2.2 (2001/12/31)
+
+* Falcon .s files had to be renamed to .asm, otherwise the vga
+  port could not be built.
+
+
 Version 1.2.1 (2001/12/31)
 
 * serious memory overflow bug fixed (caused crashing of X11 port

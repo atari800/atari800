@@ -1,3 +1,8 @@
+2001-12-31  Petr Stehlik  <pstehlik@sophics.cz>
+* renamed cpu_m68k.s to cpu_m68k.asm because it's not in gas format
+* renamed *.s files in falcon/ to *.asm (same as above)
+* updated Makefile.in to run xgen on *.asm files only
+
 2001-12-29  Petr Stehlik  <pstehlik@sophics.cz>
 * joysticks (both real and keyboard) in SDL port fixed.
 * configure now allows to --enable-CPUASS for m68k assembler CPU core.
