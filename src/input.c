@@ -1,3 +1,5 @@
+/* $Id */
+
 #include "antic.h"
 #include "atari.h"
 #include "cassette.h"
@@ -108,37 +110,107 @@ void INPUT_Initialise(int *argc, char *argv[])
 	*argc = j;
 }
 
-/* Updates position of Amiga/ST mouse and returns mouse output.
-   The mouse is moved one step in the direction given by mouse_move_x
-   and mouse_move_y, these variables are decreased towards zero */
-UBYTE mouse_step(void)
+/* mouse_step is used in Amiga, ST and joystick modes.
+   It moves mouse_x and mouse_y in the direction given by
+   mouse_move_x and mouse_move_y.
+   Bresenham's algorithm is used:
+   if (abs(deltaX) >= abs(deltaY)) {
+     if (deltaX == 0)
+       return;
+     MoveHorizontally();
+     e -= abs(deltaY);
+     if (e < 0) {
+       e += abs(deltaX);
+       MoveVertically();
+     }
+   }
+   else {
+     MoveVertically();
+     e -= abs(deltaX);
+     if (e < 0) {
+       e += abs(deltaY);
+       MoveHorizontally();
+     }
+   }
+   Returned is stick code for the movement direction.
+*/
+static UBYTE mouse_step(void)
 {
-	if (mouse_move_x < 0) {
-		mouse_x--;
-		mouse_move_x += 1 << MOUSE_SHIFT;
-		if (mouse_move_x > 0)
-			mouse_move_x = 0;
+	static int e = 0;
+	UBYTE r = STICK_CENTRE;
+	int dx = mouse_move_x >= 0 ? mouse_move_x : -mouse_move_x;
+	int dy = mouse_move_y >= 0 ? mouse_move_y : -mouse_move_y;
+	if (dx >= dy) {
+		if (mouse_move_x == 0)
+			return r;
+		if (mouse_move_x < 0) {
+			r &= STICK_LEFT;
+			mouse_x--;
+			mouse_move_x += 1 << MOUSE_SHIFT;
+			if (mouse_move_x > 0)
+				mouse_move_x = 0;
+		}
+		else {
+			r &= STICK_RIGHT;
+			mouse_x++;
+			mouse_move_x -= 1 << MOUSE_SHIFT;
+			if (mouse_move_x < 0)
+				mouse_move_x = 0;
+		}
+		e -= dy;
+		if (e < 0) {
+			e += dx;
+			if (mouse_move_y < 0) {
+				r &= STICK_FORWARD;
+				mouse_y--;
+				mouse_move_y += 1 << MOUSE_SHIFT;
+				if (mouse_move_y > 0)
+					mouse_move_y = 0;
+			}
+			else {
+				r &= STICK_BACK;
+				mouse_y++;
+				mouse_move_y -= 1 << MOUSE_SHIFT;
+				if (mouse_move_y < 0)
+					mouse_move_y = 0;
+			}
+		}
 	}
-	else if (mouse_move_x > 0) {
-		mouse_x++;
-		mouse_move_x -= 1 << MOUSE_SHIFT;
-		if (mouse_move_x < 0)
-			mouse_move_x = 0;
+	else {
+		if (mouse_move_y < 0) {
+			r &= STICK_FORWARD;
+			mouse_y--;
+			mouse_move_y += 1 << MOUSE_SHIFT;
+			if (mouse_move_y > 0)
+				mouse_move_y = 0;
+		}
+		else {
+			r &= STICK_BACK;
+			mouse_y++;
+			mouse_move_y -= 1 << MOUSE_SHIFT;
+			if (mouse_move_y < 0)
+				mouse_move_y = 0;
+		}
+		e -= dx;
+		if (e < 0) {
+			e += dy;
+			if (mouse_move_x < 0) {
+				r &= STICK_LEFT;
+				mouse_x--;
+				mouse_move_x += 1 << MOUSE_SHIFT;
+				if (mouse_move_x > 0)
+					mouse_move_x = 0;
+			}
+			else {
+				r &= STICK_RIGHT;
+				mouse_x++;
+				mouse_move_x -= 1 << MOUSE_SHIFT;
+				if (mouse_move_x < 0)
+					mouse_move_x = 0;
+			}
+		}
 	}
-	if (mouse_move_y < 0) {
-		mouse_y--;
-		mouse_move_y += 1 << MOUSE_SHIFT;
-		if (mouse_move_y > 0)
-			mouse_move_y = 0;
-	}
-	else if (mouse_move_y > 0) {
-		mouse_y++;
-		mouse_move_y -= 1 << MOUSE_SHIFT;
-		if (mouse_move_y < 0)
-			mouse_move_y = 0;
-	}
-	return (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
-			[(mouse_y & 3) * 4 + (mouse_x & 3)];
+	return r;
 }
 
 void INPUT_Frame(void)
@@ -291,11 +363,10 @@ void INPUT_Frame(void)
 				max_scanline_counter = scanline_counter = 5;
 			else
 				max_scanline_counter = scanline_counter = max_ypos / i;
-			STICK[mouse_port] = mouse_step();
+			mouse_step();
 		}
-		else
-			STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
-								[(mouse_y & 3) * 4 + (mouse_x & 3)];
+		STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
+							[(mouse_y & 3) * 4 + (mouse_x & 3)];
 
 		if (mouse_buttons & 1)
 			TRIG[mouse_port] = 0;
@@ -320,39 +391,15 @@ void INPUT_Frame(void)
 		}
 		else {
 			mouse_move_x += mouse_delta_x * mouse_speed;
-			if (mouse_move_x < 0) {
-				if (mouse_move_x < -mouse_joy_inertia << MOUSE_SHIFT)
-					mouse_move_x = -mouse_joy_inertia << MOUSE_SHIFT;
-				STICK[mouse_port] &= STICK_LEFT;
-				mouse_move_x += 1 << MOUSE_SHIFT;
-				if (mouse_move_x > 0)
-					mouse_move_x = 0;
-			}
-			else if (mouse_move_x > 0) {
-				if (mouse_move_x > mouse_joy_inertia << MOUSE_SHIFT)
-					mouse_move_x = mouse_joy_inertia << MOUSE_SHIFT;
-				STICK[mouse_port] &= STICK_RIGHT;
-				mouse_move_x -= 1 << MOUSE_SHIFT;
-				if (mouse_move_x < 0)
-					mouse_move_x = 0;
-			}
 			mouse_move_y += mouse_delta_y * mouse_speed;
-			if (mouse_move_y < 0) {
-				if (mouse_move_y < -mouse_joy_inertia << MOUSE_SHIFT)
-					mouse_move_y = -mouse_joy_inertia << MOUSE_SHIFT;
-				STICK[mouse_port] &= STICK_FORWARD;
-				mouse_move_y += 1 << MOUSE_SHIFT;
-				if (mouse_move_y > 0)
-					mouse_move_y = 0;
+			if (mouse_move_x < -mouse_joy_inertia << MOUSE_SHIFT ||
+				mouse_move_x > mouse_joy_inertia << MOUSE_SHIFT ||
+				mouse_move_y < -mouse_joy_inertia << MOUSE_SHIFT ||
+				mouse_move_y > mouse_joy_inertia << MOUSE_SHIFT) {
+				mouse_move_x >>= 1;
+				mouse_move_y >>= 1;
 			}
-			else if (mouse_move_y > 0) {
-				if (mouse_move_y > mouse_joy_inertia << MOUSE_SHIFT)
-					mouse_move_y = mouse_joy_inertia << MOUSE_SHIFT;
-				STICK[mouse_port] &= STICK_BACK;
-				mouse_move_y -= 1 << MOUSE_SHIFT;
-				if (mouse_move_y < 0)
-					mouse_move_y = 0;
-			}
+			STICK[mouse_port] &= mouse_step();
 		}
 		if (mouse_buttons & 1)
 			TRIG[mouse_port] = 0;
@@ -374,7 +421,9 @@ void INPUT_Frame(void)
 void INPUT_Scanline(void)
 {
 	if (--scanline_counter == 0) {
-		STICK[mouse_port] = mouse_step();
+		mouse_step();
+		STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
+							[(mouse_y & 3) * 4 + (mouse_x & 3)];
 		PORT_input[0] = (STICK[1] << 4) | STICK[0];
 		PORT_input[1] = (STICK[3] << 4) | STICK[2];
 		scanline_counter = max_scanline_counter;
@@ -415,3 +464,10 @@ void INPUT_DrawMousePointer(void)
 		ptr[ATARI_WIDTH / 2] ^= 0xffff;
 	}
 }
+
+/*
+$Log$
+Revision 1.9  2001/10/07 14:10:41  fox
+smoother movement in Amiga/ST/joy modes
+
+*/
