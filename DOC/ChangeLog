@@ -1,3 +1,15 @@
+2005-02-23  Piotr Fusik  <fox@scene.pl>
+* colours.[ch]: refactored, using jakub.act by default
+
+* log.c, configure.ac: use vsnprintf only if available
+
+* screen.[ch]: renamed from ataripcx.[ch] and added PNG screenshots
+
+* atari.c, atari_curses.c, atari_sdl.c, atari_svgalib.c, atari_x11.c, ui.c,
+  Makefile.in, amiga/makefile, dos/atari_vga.c, win32/main.c,
+  wince/port/atari_wince.c, wince/PocketAtari.vcp:
+  PNG screenshots
+
 2005-02-22  Piotr Fusik  <fox@scene.pl>
 * cartridge.c: switch back on the main bank of switchable XEGS cartridges
   (bug found by Chris Hutt)
