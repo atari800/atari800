@@ -11,7 +11,9 @@ o The cycle-exact ANTIC/GTIA/CPU timing is not 100%.
   - Te.mod (demo) (small glitched pixel in the final credits on the bottom left)
   - Our 5oft Unity Part (demo) (cycle-alignment, probably WSYNC)
   - Isolation (demo) (vector animations)
-
+  - 80 Random Moving Rectangles (demo) (top left of rectangles, screen data
+         is modified while drawing a scanline)
+ 
 o Non-bugs:
   - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
   - Mail Order Monsters (game)
