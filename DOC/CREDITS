@@ -132,6 +132,7 @@ Mark Grebe <markgrebe@yahoo.com>
 Christian Groessler <cpg@aladdin.de>
     - SVGAlib patch for joystick
     - BRKHERE command
+    - missing autorepeat in Atari800 debugger under X11 fixed
 
 Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
     - XF551 highspeed transfer emulation
@@ -270,3 +271,6 @@ Marek Zelem <marek@formax.elf.stuba.sk>
 Marcin Zukowski <eru@ibb.waw.pl>
     - fix in ANTIC, GTIA
     - slight monitor improvement
+
+Benjamin Schreiber <fishy_PKAT151@gmx.de> and Alexander Martinez <kubus3561@gmx.de>
+	- SDL keyboard joystick emulation stored in the Atari800 config file

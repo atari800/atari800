@@ -1,13 +1,37 @@
+2004-06-06  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_x11.c: Christian Groessler's patch adds missing keyboard autorepeat
+  when in the internal Atari800 debugger.
+
+* prompts.c: fixed RemoveSpaces() - should not remove space from within
+  the string, only leading and tailing space chars should be removed.
+
+* rt-config.c, configure.ac: SUPPORTS_ATARI_CONFIG* now set in configure.ac
+  for DOSVGA and SDL. This also fixes joystick definition not loaded in
+  the DOSVGA port since the #ifdef VGA was changed to #ifdef DOSVGA.
+
+* atari_sdl.c: emulated joysticks configured in the atari800.cfg file
+  thanks to patch from Benny (Fishy_PKAT151). This is incompatible
+  with the DOS VGA port configuration so I expect this to change
+  before 1.3.3 release.
+
+* rt-config.c: RemoveSpaces() called on both keyword and its value.
+
+* rt-config.c, atari_sdl.c: bunch of Aprint() cleaned up
+
+
 2004-06-04  Petr Stehlik  <pstehlik@sophics.cz>
 * config.{sub,guess}, debian/*: updated by the atari800 debian diff file
+
 
 2004-06-03  Piotr Fusik  <fox@scene.pl>
 * antic.c: ANTIC mode 2 + GTIA mode 10 should be shifted right by a half
   of a pixel [a fix for the upcoming demo :-) ]
 
+
 2004-06-02  Petr Stehlik  <pstehlik@sophics.cz>
-* atari_x11.c: Chris suggests to add XK_Break to generate the AKEY_BREAK
-  so that Ctrl+Pause on linux machine generates the AKEY_BREAK keypress
+* atari_x11.c: Christian Groessler suggested to add XK_Break key check
+  so that Ctrl+Pause on linux machine generates the AKEY_BREAK keypress.
+
 
 2004-02-21  Petr Stehlik  <pstehlik@sophics.cz>
 * rdevice.c: Martin Albert, our new Debian package maintainer, suggested
