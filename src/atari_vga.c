@@ -1,3 +1,4 @@
+/* $Id$ */
 /* -------------------------------------------------------------------------- */
 
 /*
@@ -29,9 +30,6 @@
 #include "diskled.h"	/* for LED_lastline */
 #include "antic.h"		/* for light_pen_enabled */
 
-#ifdef AT_USE_ALLEGRO
-#include <allegro.h>
-#endif
 #include "dos/vga_gfx.h"
 
 /* -------------------------------------------------------------------------- */
@@ -89,18 +87,12 @@ static UBYTE LEDstatus=0; /*status of disk LED*/
 static int video_mode=1;       /*video mode (0-3)*/
 static int use_vesa=1;         /*use vesa mode?*/
 static int use_vret=0;           /*control vertical retrace?*/
-#ifdef AT_USE_ALLEGRO
-  static BITMAP *scr_bitmap;   /*allegro BITMAP*/
-  static UBYTE *dark_memory;   /*buffer with darker lines*/
-  static void *scr_data=NULL;  /*pointer to bitmap allocated by allegro (must be restored before freeing BITMAP*/
-#else
   static UWORD vesa_mode; /*number of vesa2 videomode*/
   static ULONG vesa_memptr; /*physical address of VESA2 Linear Frame Buffer*/
   static ULONG vesa_memsize; /*size of LFB*/
   static ULONG vesa_linelenght; /*size of line (in bytes)*/
   static ULONG vesa_linear;  /*linear address of mapped LFB*/
   static int vesa_selector;  /*selector for accessing LFB*/
-#endif
 
 static int vga_started = 0;             /*AAA needed for DOS to see text */
 
@@ -137,7 +129,6 @@ static int joycfg=0;       /* 1 if joystick configuration found in atari800.cfg 
 
 static int joy_in = FALSE;
 
-#ifndef AT_USE_ALLEGRO_JOY
 static int js0_centre_x;
 static int js0_centre_y;
 
@@ -169,7 +160,6 @@ void read_joystick(int centre_x, int centre_y)
         if (jsy > (centre_y + threshold))
                 astick &= 0xfd;
 }
-#endif                                                  /* AT_USE_ALLEGRO_JOY */
 
 /*find port for given LPT joystick*/
 int test_LPTjoy(int portno,int *port)
@@ -456,35 +446,6 @@ void SetupVgaEnvironment()
         __dpmi_regs d_rg;
         UBYTE ctab[768];
 
-#ifdef AT_USE_ALLEGRO
-        int allegro_mode;
-
-        if (use_vesa) allegro_mode=GFX_AUTODETECT; else allegro_mode=GFX_MODEX;
-        switch(video_mode)
-        {
-          case 0:
-            set_gfx_mode(GFX_VGA, 320, 200, 0, 0);
-            break;
-          case 1:
-            set_gfx_mode(allegro_mode,320,240,0,0);
-            scr_bitmap=create_bitmap(ATARI_WIDTH,ATARI_HEIGHT);
-            scr_data=scr_bitmap->dat;
-            break;
-          case 2:
-            set_gfx_mode(allegro_mode,320,480,0,0);
-            scr_bitmap=create_bitmap(ATARI_WIDTH,ATARI_HEIGHT*2);
-            scr_data=scr_bitmap->dat;
-            dark_memory=(UBYTE*)malloc(ATARI_WIDTH*ATARI_HEIGHT);
-            memset(dark_memory,0,ATARI_WIDTH*ATARI_HEIGHT);
-            break;
-          case 3:
-            set_gfx_mode(allegro_mode,320,480,0,0);
-            scr_bitmap=create_bitmap(ATARI_WIDTH,ATARI_HEIGHT*2);
-            scr_data=scr_bitmap->dat;
-            dark_memory=(UBYTE*)malloc(ATARI_WIDTH*ATARI_HEIGHT);
-            break;
-        }
-#else
         if (use_vesa)
         {
           /*try to open VESA mode*/
@@ -505,7 +466,7 @@ void SetupVgaEnvironment()
               x_open(5);             /*xmode 320x480*/
               break;
           }
-#endif
+
 #if defined(SET_LED) && !defined(NO_LED_ON_SCREEN)
 	LED_lastline = video_mode == 0 ? 219 : 239;
 #endif
@@ -562,7 +523,6 @@ void ShutdownVgaEnvironment()
         union REGS rg;
 
         if (vga_started) {
-#ifndef AT_USE_ALLEGRO
                 if (use_vesa)
                   VESA_close(&vesa_linear,&vesa_selector);
                 else
@@ -570,24 +530,6 @@ void ShutdownVgaEnvironment()
                   rg.x.ax = 0x0003;
                   int86(0x10, &rg, &rg);
                 }
-#else
-                /*when closing Allegro video mode, we must free the allocated BITMAP structure*/
-                switch(video_mode)
-                {
-                  case 1:
-                    Map_bitmap(scr_bitmap,scr_data,ATARI_WIDTH,ATARI_HEIGHT);
-                    destroy_bitmap(scr_bitmap);
-                    break;
-                  case 2:
-                  case 3:
-                    Map_bitmap(scr_bitmap,scr_data,ATARI_WIDTH,ATARI_HEIGHT*2);
-                    destroy_bitmap(scr_bitmap);
-                    free(dark_memory);
-                    break;
-                }
-                rg.x.ax = 0x0003;
-                int86(0x10, &rg, &rg);
-#endif
         }
    vga_started=FALSE;
 }
@@ -599,10 +541,6 @@ void Atari_DisplayScreen(UBYTE * ascreen)
 
         UBYTE *scr_ptr;
         int ypos;
-#ifdef AT_USE_ALLEGRO_COUNTER
-        static char speedmessage[200];
-        extern int speed_count;
-#endif
 
 	if (mouse_mode != MOUSE_OFF) {
 		union REGS rg;
@@ -632,37 +570,9 @@ void Atari_DisplayScreen(UBYTE * ascreen)
       if (vga_started) /*draw screen only in graphics mode*/
       {
 
-      if(use_vret) v_ret(); /*vertical retrace control */
-#if AT_USE_ALLEGRO
-        /*draw screen using Allegro*/
-        switch(video_mode)
-        {
-          case 0:
-            for (ypos = 0; ypos < 200; ypos += ypos_inc) {
-                _dosmemputl(scr_ptr, 320 / 4, vga_ptr);
+	if(use_vret)
+	  v_ret(); /*vertical retrace control */
 
-                vga_ptr += vga_ptr_inc;
-                scr_ptr += scr_ptr_inc;
-            }
-            break;
-          case 1:
-            if (screen!=scr_bitmap->dat)
-              Map_bitmap(scr_bitmap,ascreen,ATARI_WIDTH,ATARI_HEIGHT);
-            blit(scr_bitmap,screen,first_col,0,0,0,320,240);
-            break;
-          case 2:
-            if (screen!=scr_bitmap->dat)
-            Map_i_bitmap(scr_bitmap,ascreen,dark_memory,ATARI_WIDTH,ATARI_HEIGHT*2);
-            blit(scr_bitmap,screen,first_col,0,0,0,320,480);
-            break;
-          case 3:
-            if (screen!=scr_bitmap->dat)
-              Map_i_bitmap(scr_bitmap,ascreen,dark_memory,ATARI_WIDTH,ATARI_HEIGHT*2);
-            make_darker(dark_memory,ascreen,ATARI_WIDTH*ATARI_HEIGHT);
-            blit(scr_bitmap,screen,first_col,0,0,0,320,480);
-            break;
-        }
-#else
         if (use_vesa)
             /*draw screen using VESA2*/
             switch(video_mode)
@@ -706,18 +616,7 @@ void Atari_DisplayScreen(UBYTE * ascreen)
                 x_blit_i2(ascreen+first_col,240,ATARI_WIDTH,160);
                 break;
             }
-#endif
-
-
-#ifdef AT_USE_ALLEGRO_COUNTER
-        sprintf(speedmessage, "%d", speed_count);
-        textout((BITMAP *) screen, font, speedmessage, 1, 1, 10);
-        speed_count = 0;
-#endif
       } /* if (vga_started) */
-#ifdef USE_DOSSOUND
-        dossound_UpdateSound();
-#endif
 }
 
 /* -------------------------------------------------------------------------- */
@@ -822,36 +721,24 @@ void Atari_Initialise(int *argc, char *argv[])
 
         *argc = j;
 
-#ifdef AT_USE_ALLEGRO
-        allegro_init();
-#endif
-
+#ifdef SOUND
         /* initialise sound routines */
-#ifndef USE_DOSSOUND
         Sound_Initialise(argc, argv);
-#else
-        if (dossound_Initialise(argc, argv))
-                exit(1);
 #endif
 
         /* check if joystick is connected */
         printf("Joystick is checked...");
         fflush(stdout);
-#ifndef AT_USE_ALLEGRO_JOY
         outportb(0x201, 0xff);
         usleep(100000UL);
         joy_in = ((inportb(0x201) & 3) == 0);
         if (joy_in)
                 joystick0(&js0_centre_x, &js0_centre_y);
-#else
-        joy_in = (initialise_joystick() == 0 ? TRUE : FALSE);
-#endif
         if (joy_in)
                 printf(" found!\n");
         else
                 printf("\n\nSorry, I see no joystick. Use numeric pad\n");
 
-#ifndef AT_USE_ALLEGRO
         /*find number of VESA2 video mode*/
         if (use_vesa)
         {
@@ -869,7 +756,6 @@ void Atari_Initialise(int *argc, char *argv[])
               break;
           }
         }
-#endif
 
         /* setup joystick */
         stick0 = stick1 = stick2 = stick3 = STICK_CENTRE;
@@ -1042,7 +928,9 @@ int Atari_Exit(int run_monitor)
         key_delete();                           /* enable keyboard in monitor */
 
         if (run_monitor) {
+#ifdef SOUND
 		Sound_Pause();
+#endif
                 if (monitor()) {
 #ifdef MONITOR_BREAK
                         if (!break_step)       /*do not enter videomode when stepping through the code*/
@@ -1050,12 +938,14 @@ int Atari_Exit(int run_monitor)
 #else
                         SetupVgaEnvironment();
 #endif
+#ifdef SOUND
 			Sound_Continue();
+#endif
                         return 1;                       /* return to emulation */
                 }
 	}
 
-#ifndef USE_DOSSOUND
+#ifdef SOUND
         Sound_Exit();
 #endif
 
@@ -1083,13 +973,7 @@ int Atari_Keyboard(void)
         int i;
         int keycode;
         int shift_mask;
-#ifdef AT_USE_ALLEGRO_JOY
-        static int stillpressed;        /* is 5200 button 2 still pressed */
-#ifndef NEW_ALLEGRO312
-        extern volatile int joy_left, joy_right, joy_up, joy_down;
-        extern volatile int joy_b1, joy_b2, joy_b3, joy_b4;
-#endif
-#endif
+
         last_raw_key=raw_key;
 /*
  * Trigger and Joystick handling should
@@ -1097,13 +981,7 @@ int Atari_Keyboard(void)
  */
 
         if (joy_in) {
-#ifndef AT_USE_ALLEGRO_JOY
                 read_joystick(js0_centre_x, js0_centre_y);      /* read real PC joystick */
-#else
-                poll_joystick();
-                astick = ((joy_right << 3) | (joy_left << 2) | (joy_down << 1) | joy_up) ^ 0x0f;
-                atrig = !joy_b1;
-#endif
            if (joytypes[0]==joy_analog)
            {  stick0=astick; trig0=atrig; }
            if (joytypes[1]==joy_analog)
@@ -1217,23 +1095,6 @@ int Atari_Keyboard(void)
                         break;
                 }
                 KEYPRESSED = (keycode != AKEY_NONE);    /* for POKEY */
-#ifdef AT_USE_ALLEGRO_JOY
-                if (joy_b2) {
-                        if (stillpressed) {
-                                SHIFT_KEY = 1;
-                        }
-                        else {
-                                keycode = AKEY_BREAK;
-                                stillpressed = 1;
-                                SHIFT_KEY = 1;
-                                return keycode;
-                        }
-                }
-                else {
-                        stillpressed = 0;
-                        SHIFT_KEY = 0;
-                }
-#endif
                 if (raw_key_r!=0) {raw_key=raw_key_r;raw_key_r=0;}
                 return keycode;
         }
