@@ -45,7 +45,11 @@ Options
 -basic                Turn on Atari BASIC ROM
 
 -cart <filename>      Insert cartridge (CART or raw format)
+
 -run <filename>       Run Atari executable file (EXE, COM, XEX)
+
+-tape <filename>      Attach cassette image (CAS format or raw file)
+-boottape <filename>  Attach cassette image and boot it
 
 -nopatch              Don't patch SIO routine in OS
 -nopatchall           Don't patch OS at all, H: and P: devices won't work
