@@ -5,7 +5,7 @@
 
 #include "atari.h"
 #include "antic.h"
-#include "atari.h"
+#include "cartridge.h"
 #include "cpu.h"
 #include "gtia.h"
 #include "log.h"
@@ -13,7 +13,6 @@
 #include "pia.h"
 #include "rt-config.h"
 #include "statesav.h"
-#include "memory.h"
 
 UBYTE memory[65536];
 UBYTE attrib[65536];
@@ -21,11 +20,7 @@ static UBYTE under_atarixl_os[16384];
 static UBYTE under_atari_basic[8192];
 static UBYTE atarixe_memory[278528];	/* 16384 (for RAM under BankRAM buffer) + 65536 (for 130XE) * 4 (for Atari320) */
 
-extern int cart_type;
-extern int rom_inserted;
-extern UBYTE *cart_image;
 extern int os;
-extern int mach_xlxe;
 extern int selftest_enabled;
 extern UBYTE atari_basic[8192];
 extern int pil_on;
@@ -51,267 +46,6 @@ int load_image(char *filename, int addr, int nbytes)
 	else
 		Aprint("Error loading rom: %s", filename);
 
-	return status;
-}
-
-/*
- * Load a standard 8K ROM from the specified file
- */
-
-int Insert_8K_ROM(char *filename)
-{
-	int status = FALSE;
-	FILE *f;
-
-	f = fopen(filename, "rb");
-	if (f) {
-		fread(&memory[0xa000], 1, 0x2000, f);
-		fclose(f);
-		SetRAM(0x8000, 0x9fff);
-		SetROM(0xa000, 0xbfff);
-		cart_type = NORMAL8_CART;
-		rom_inserted = TRUE;
-		status = TRUE;
-	}
-	return status;
-}
-
-/*
- * Load a standard 16K ROM from the specified file
- */
-
-int Insert_16K_ROM(char *filename)
-{
-	int status = FALSE;
-	FILE *f;
-
-	f = fopen(filename, "rb");
-	if (f) {
-		fread(&memory[0x8000], 1, 0x4000, f);
-		fclose(f);
-		SetROM(0x8000, 0xbfff);
-		cart_type = NORMAL16_CART;
-		rom_inserted = TRUE;
-		status = TRUE;
-	}
-	return status;
-}
-
-/*
- * Load an OSS Supercartridge from the specified file
- * The OSS cartridge is a 16K bank switched cartridge
- * that occupies 8K of address space between $a000
- * and $bfff
- */
-
-int Insert_OSS_ROM(char *filename)
-{
-	int status = FALSE;
-	FILE *f;
-
-	f = fopen(filename, "rb");
-	if (f) {
-		cart_image = (UBYTE *) malloc(0x4000);
-		if (cart_image) {
-			fread(cart_image, 1, 0x4000, f);
-			memcpy(&memory[0xa000], cart_image, 0x1000);
-			memcpy(&memory[0xb000], cart_image + 0x3000, 0x1000);
-			SetRAM(0x8000, 0x9fff);
-			SetROM(0xa000, 0xbfff);
-			cart_type = OSS_SUPERCART;
-			rom_inserted = TRUE;
-			status = TRUE;
-		}
-		fclose(f);
-	}
-	return status;
-}
-
-/*
- * Load a DB Supercartridge from the specified file
- * The DB cartridge is a 32K bank switched cartridge
- * that occupies 16K of address space between $8000
- * and $bfff
- */
-
-int Insert_DB_ROM(char *filename)
-{
-	int status = FALSE;
-	FILE *f;
-
-	f = fopen(filename, "rb");
-	if (f) {
-		cart_image = (UBYTE *) malloc(0x8000);
-		if (cart_image) {
-			fread(cart_image, 1, 0x8000, f);
-			memcpy(&memory[0x8000], cart_image, 0x2000);
-			memcpy(&memory[0xa000], cart_image + 0x6000, 0x2000);
-			SetROM(0x8000, 0xbfff);
-			cart_type = DB_SUPERCART;
-			rom_inserted = TRUE;
-			status = TRUE;
-		}
-		fclose(f);
-	}
-	return status;
-}
-
-/*
- * Load a 32K 5200 ROM from the specified file
- */
-
-int Insert_32K_5200ROM(char *filename)
-{
-	int status = FALSE;
-	FILE *f;
-
-	f = fopen(filename, "rb");
-	if (f) {
-		/* read the first 16k */
-		if (fread(&memory[0x4000], 1, 0x4000, f) != 0x4000) {
-			fclose(f);
-			return FALSE;
-		}
-		/* try and read next 16k */
-		cart_type = AGS32_CART;
-		if ((status = fread(&memory[0x8000], 1, 0x4000, f)) == 0) {
-			/* note: AB__ ABB_ ABBB AABB */
-			memcpy(&memory[0x8000], &memory[0x6000], 0x2000);
-			memcpy(&memory[0xA000], &memory[0x6000], 0x2000);
-			memcpy(&memory[0x6000], &memory[0x4000], 0x2000);
-		}
-		else if (status != 0x4000) {
-			fclose(f);
-			Aprint("Error reading 32K 5200 rom, %X", status);
-			return FALSE;
-		}
-		else {
-			UBYTE temp_byte;
-			if (fread(&temp_byte, 1, 1, f) == 1) {
-				/* ABCD EFGH IJ */
-				if (!(cart_image = (UBYTE *) malloc(0x8000)))
-					return FALSE;
-				*cart_image = temp_byte;
-				if (fread(&cart_image[1], 1, 0x1fff, f) != 0x1fff)
-					return FALSE;
-				memcpy(&cart_image[0x2000], &memory[0x6000], 0x6000);	/* IJ CD EF GH :CI */
-
-				memcpy(&memory[0xa000], &cart_image[0x0000], 0x2000);	/* AB CD EF IJ :MEM */
-
-				memcpy(&memory[0x8000], &cart_image[0x0000], 0x2000);	/* AB CD IJ IJ :MEM?ij copy */
-
-				memcpy(&cart_image[0x0000], &memory[0x4000], 0x2000);	/* AB CD EF GH :CI */
-
-				memcpy(&memory[0x5000], &cart_image[0x4000], 0x1000);	/* AE CD IJ IJ :MEM CD dont care? */
-
-				SetHARDWARE(0x4ff6, 0x4ff9);
-				SetHARDWARE(0x5ff6, 0x5ff9);
-			}
-		}
-		fclose(f);
-		/* SetROM (0x4000, 0xbfff); */
-		/* cart_type = AGS32_CART; */
-		rom_inserted = TRUE;
-		status = TRUE;
-	}
-	return status;
-}
-
-/*
- * This removes any loaded cartridge ROM files from the emulator
- * It doesn't remove either the OS, FFP or character set ROMS.
- */
-
-int Remove_ROM(void)
-{
-	if (cart_image) {			/* Release memory allocated for Super Cartridges */
-		free(cart_image);
-		cart_image = NULL;
-	}
-	SetRAM(0x8000, 0xbfff);		/* Ensure cartridge area is RAM */
-	cart_type = NO_CART;
-	rom_inserted = FALSE;
-
-	return TRUE;
-}
-
-int Insert_Cartridge(char *filename)
-{
-	int status = FALSE;
-	FILE *f;
-
-	f = fopen(filename, "rb");
-	if (f) {
-		UBYTE header[16];
-
-		fread(header, 1, sizeof(header), f);
-		if ((header[0] == 'C') &&
-			(header[1] == 'A') &&
-			(header[2] == 'R') &&
-			(header[3] == 'T')) {
-			int type;
-			int checksum;
-
-			type = (header[4] << 24) |
-				(header[5] << 16) |
-				(header[6] << 8) |
-				header[7];
-
-			checksum = (header[4] << 24) |
-				(header[5] << 16) |
-				(header[6] << 8) |
-				header[7];
-
-			switch (type) {
-#define STD_8K 1
-#define STD_16K 2
-#define OSS 3
-#define AGS 4
-			case STD_8K:
-				fread(&memory[0xa000], 1, 0x2000, f);
-				SetRAM(0x8000, 0x9fff);
-				SetROM(0xa000, 0xbfff);
-				cart_type = NORMAL8_CART;
-				rom_inserted = TRUE;
-				status = TRUE;
-				break;
-			case STD_16K:
-				fread(&memory[0x8000], 1, 0x4000, f);
-				SetROM(0x8000, 0xbfff);
-				cart_type = NORMAL16_CART;
-				rom_inserted = TRUE;
-				status = TRUE;
-				break;
-			case OSS:
-				cart_image = (UBYTE *) malloc(0x4000);
-				if (cart_image) {
-					fread(cart_image, 1, 0x4000, f);
-					memcpy(&memory[0xa000], cart_image, 0x1000);
-					memcpy(&memory[0xb000], cart_image + 0x3000, 0x1000);
-					SetRAM(0x8000, 0x9fff);
-					SetROM(0xa000, 0xbfff);
-					cart_type = OSS_SUPERCART;
-					rom_inserted = TRUE;
-					status = TRUE;
-				}
-				break;
-			case AGS:
-				fread(&memory[0x4000], 1, 0x8000, f);
-				SetROM(0x4000, 0xbfff);
-				cart_type = AGS32_CART;
-				rom_inserted = TRUE;
-				status = TRUE;
-				break;
-			default:
-				Aprint("%s is in unsupported cartridge format %d", filename, type);
-				break;
-			}
-		}
-		else {
-			Aprint("%s is not a cartridge", filename);
-		}
-		fclose(f);
-	}
 	return status;
 }
 
@@ -457,6 +191,7 @@ void PatchOS(void)
 int Initialise_AtariXL(void)
 {
 	int status;
+	CART_Remove();
 	mach_xlxe = TRUE;
 	status = load_image(atari_xlxe_filename, 0xc000, 0x4000);
 	if (status) {
@@ -464,29 +199,12 @@ int Initialise_AtariXL(void)
 		machine = AtariXL;
 		PatchOS();
 
-		if (cart_type == NO_CART) {
-			status = Insert_8K_ROM(atari_basic_filename);
-			if (status) {
-				memcpy(atari_basic, memory + 0xa000, 0x2000);
-				SetRAM(0x0000, 0x9fff);
-				SetROM(0xc000, 0xffff);
-				SetHARDWARE(0xd000, 0xd7ff);
-				rom_inserted = FALSE;
-				Coldstart();
-			}
-			else {
-				Aprint("Unable to load %s", atari_basic_filename);
-				Atari800_Exit(FALSE);
-		  		return FALSE;
-			}
-		}
-		else {
-			SetRAM(0x0000, 0xbfff);
-			SetROM(0xc000, 0xffff);
-			SetHARDWARE(0xd000, 0xd7ff);
-			rom_inserted = FALSE;
-			Coldstart();
-		}
+		status = load_image(atari_basic_filename, 0xa000, 0x2000);
+		memcpy(atari_basic, memory + 0xa000, 0x2000);
+		SetRAM(0x0000, 0xbfff);
+		SetROM(0xc000, 0xffff);
+		SetHARDWARE(0xd000, 0xd7ff);
+		Coldstart();
 	}
 	return status;
 }
@@ -494,13 +212,14 @@ int Initialise_AtariXL(void)
 int Initialise_Atari5200(void)
 {
 	int status;
+	CART_Remove();
 	mach_xlxe = FALSE;
 	memset(memory, 0, 0xf800);
 	status = load_image(atari_5200_filename, 0xf800, 0x800);
 	if (status) {
 		machine = Atari5200;
 		SetRAM(0x0000, 0x3fff);
-		SetROM(0xf800, 0xffff);
+		/*SetROM(0xf800, 0xffff);*/
 		SetROM(0x4000, 0xffff);
 		SetHARDWARE(0xc000, 0xc0ff);	/* 5200 GTIA Chip */
 		SetHARDWARE(0xd400, 0xd4ff);	/* 5200 ANTIC Chip */
@@ -522,6 +241,7 @@ int Initialise_EmuOS(void)
 {
 	int status;
 
+	CART_Remove();
 	status = load_image("emuos.img", 0xc000, 0x4000);
 	if (!status)
 		memcpy(&memory[0xc000], emuos_h, 0x4000);
@@ -548,27 +268,6 @@ void ClearRAM(void)
 	memset(memory, 0, 65536);	/* Optimalize by Raster */
 }
 
-/* special support of Bounty Bob on Atari5200 */
-int bounty_bob1(UWORD addr)
-{
-	if (addr >= 0x4ff6 && addr <= 0x4ff9) {
-		addr -= 0x4ff6;
-		memcpy(&memory[0x4000], &cart_image[addr << 12], 0x1000);
-		return FALSE;
-	}
-	return TRUE;
-}
-
-int bounty_bob2(UWORD addr)
-{
-	if (addr >= 0x5ff6 && addr <= 0x5ff9) {
-		addr -= 0x5ff6;
-		memcpy(&memory[0x5000], &cart_image[(addr << 12) + 0x4000], 0x1000);
-		return FALSE;
-	}
-	return TRUE;
-}
-
 void EnablePILL(void)
 {
 	SetROM(0x8000, 0xbfff);
@@ -584,6 +283,7 @@ void DisablePILL(void)
 int Initialise_AtariOSA(void)
 {
 	int status;
+	CART_Remove();
 	mach_xlxe = FALSE;
 	status = load_image(atari_osa_filename, 0xd800, 0x2800);
 	if (status) {
@@ -605,6 +305,7 @@ int Initialise_AtariOSA(void)
 int Initialise_AtariOSB(void)
 {
 	int status;
+	CART_Remove();
 	mach_xlxe = FALSE;
 	status = load_image(atari_osb_filename, 0xd800, 0x2800);
 	if (status) {
@@ -763,7 +464,7 @@ void PORTB_handler(UBYTE byte)
    Other cartridge cannot be disable
    =====================================
  */
-		if (!rom_inserted) {
+		if (!cartA0BF_enabled) {
 			if ((PORTB ^ byte) & 0x02) {	/* Only when change this bit !RS! */
 				if (byte & 0x02) {
 					/* BASIC Disable */
@@ -811,41 +512,57 @@ void PORTB_handler(UBYTE byte)
 	}
 }
 
-void supercart_handler(UWORD addr, UBYTE byte)
+static int cart809F_enabled = FALSE;
+int cartA0BF_enabled = FALSE;
+static UBYTE under_cart809F[8192];
+static UBYTE under_cartA0BF[8192];
+
+void Cart809F_Disable(void)
 {
-	if (!cart_image) return;
-	switch (cart_type) {
-	case OSS_SUPERCART:
-		switch (addr & 0xff0f) {
-		case 0xd500:
-			memcpy(memory + 0xa000, cart_image, 0x1000);
-			break;
-		case 0xd504:
-		case 0xd509:
-			memcpy(memory + 0xa000, cart_image + 0x1000, 0x1000);
-			break;
-		case 0xd501:
-		case 0xd503:
-		case 0xd507:
-			memcpy(memory + 0xa000, cart_image + 0x2000, 0x1000);
-			break;
+	if (cart809F_enabled) {
+		memcpy(memory + 0x8000, under_cart809F, 0x2000);
+		SetRAM(0x8000, 0x9fff);
+		cart809F_enabled = FALSE;
+	}
+}
+
+void Cart809F_Enable(void)
+{
+	if (!cart809F_enabled) {
+		memcpy(under_cart809F, memory + 0x8000, 0x2000);
+		SetROM(0x8000, 0x9fff);
+		cart809F_enabled = TRUE;
+	}
+}
+
+void CartA0BF_Disable(void)
+{
+	if (cartA0BF_enabled) {
+		if (!mach_xlxe || (PORTB & 0x02)) {
+			memcpy(memory + 0xa000, under_cartA0BF, 0x2000);
+			SetRAM(0xa000, 0xbfff);
 		}
-		break;
-	case DB_SUPERCART:
-		switch (addr & 0xff07) {
-		case 0xd500:
-			memcpy(memory + 0x8000, cart_image, 0x2000);
-			break;
-		case 0xd501:
-			memcpy(memory + 0x8000, cart_image + 0x2000, 0x2000);
-			break;
-		case 0xd506:
-			memcpy(memory + 0x8000, cart_image + 0x4000, 0x2000);
-			break;
+		else
+			memcpy(memory + 0xa000, atari_basic, 0x2000);
+		cartA0BF_enabled = FALSE;
+		if (mach_xlxe) {
+			TRIG[3] = 0;
+			if (GRACTL & 4)
+				TRIG_latch[3] = 0;
 		}
-		break;
-	default:
-		break;
+	}
+}
+
+void CartA0BF_Enable(void)
+{
+	if (!cartA0BF_enabled) {
+		if (!mach_xlxe || (PORTB & 0x02)) {
+			memcpy(under_cartA0BF, memory + 0xa000, 0x2000);
+			SetROM(0xa000, 0xbfff);
+		}
+		cartA0BF_enabled = TRUE;
+		if (mach_xlxe)
+			TRIG[3] = 1;
 	}
 }
 
@@ -861,13 +578,8 @@ void get_charset(char * cs)
 
 /*
 $Log$
-Revision 1.5  2001/07/20 00:28:13  fox
-removed enable_rom_patches, added enable_h_patch and enable_p_patch.
-SIO, H: and P: patches are now independent and can be toggled at run-time
-(original OS is saved in atari_os). Removed SetSIOEsc() and RestoreSIO().
-
-Revision 1.4  2001/07/10 12:35:13  joy
-Basic XE (OSS Supercart) should work now. Thanks for this patch to Shamus (<jihamm@pacificnet.net>)
+Revision 1.6  2001/07/20 20:15:35  fox
+rewritten to support the new cartridge module
 
 Revision 1.3  2001/03/25 06:57:35  knik
 open() replaced by fopen()
