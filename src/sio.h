@@ -47,8 +47,5 @@ void SIO_Exit(void);
 #define SERIN_INTERVAL 8
 #define SEROUT_INTERVAL 8
 #define ACK_INTERVAL 36
-#ifndef NO_SECTOR_DELAY
-#define SECTOR_DELAY 3200
-#endif	/* NO_SECTOR_DELAY */
 
 #endif	/* __SIO__ */
