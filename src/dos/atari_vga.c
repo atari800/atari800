@@ -42,7 +42,6 @@
 #include "pcjoy.h"
 #include "screen.h"
 #include "rt-config.h"	/* for refresh_rate */
-#include "diskled.h"	/* for led_status */
 
 #include "dos/vga_gfx.h"
 
@@ -218,22 +217,7 @@ static void update_leds(void)
 	outportb(0x60,0xed);
 	asm("nop; nop");
 	outportb(0x60,	(PC_keyboard ? 0 : 2)
-#ifdef SHOW_DISK_LED
-			|(led_status ? 4 : 0)
-#endif
 			|(joy_keyboard ? 1 : 0));
-}
-
-static void update_disk_led()
-{
-#ifdef SHOW_DISK_LED
-	static int last_led_status = 0;
-
-	if (led_status != last_led_status) {
-		update_leds();
-		last_led_status = led_status;
-	}
-#endif
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1529,7 +1513,6 @@ int main(int argc, char **argv)
 #ifndef DONT_SYNC_WITH_HOST
 			atari_sync(); /* here seems to be the best place to sync */
 #endif
-			update_disk_led();
 			Atari_DisplayScreen((UBYTE *) atari_screen);
 			refresh_counter = 0;
 		}
