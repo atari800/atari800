@@ -1,5 +1,3 @@
-// comment it, to have scaling
-#define FULLSCREEN 1
 
 /* 
    SDL port of Atari800
@@ -7,19 +5,28 @@
 
    history:
    
-   15-11-2001 - scaling with any ratio supported
-   14-11-2001 - audio and better keyboard 
-   13-11-2001 - video and joystick emulation
+   14-11-2001 - scaling with any ratio supported, keyboard updates, aspect ratio
+   13-11-2001 - audio and better keyboard 
+   12-11-2001 - video and joystick emulation
    
    TODO:
-   - fix keyboard stuff, ui keys doesn't work for now
+   - fix segfault after loading exe in ui
    - implement all Atari800 parameters
    - fix audio
    - define joystick(s) emulation keys, use mouse and real joystick
    - turn off fullscreen when error happen
    - Atari_Exit - monitor stuff (debugger?)
    
+   USAGE:
+   - for now you need makefile, please download:
+     ftp://ftp.sophics.cz/pub/Atari800/src/Makefile.SDL
+     then "make -f Makefile.SDL"
+   - if you define FULLSCREEN 0 you can resize window anytime you want  
+
 */
+
+//#define FULLSCREEN 0
+#define FULLSCREEN 1
 
 #include <SDL.h>
 
@@ -43,12 +50,53 @@ static int sound_enabled = TRUE;
 static int dsprate = 44100;
 
 // VIDEO
-SDL_Surface *MainScreen;
+SDL_Surface *MainScreen = NULL;
 
 // KEYBOARD
 Uint8 *kbhits;
-int lastkey, key_pressed;
 
+int done = 0;
+
+void SetVideoMode(int w, int h)
+{
+	int i, rgb;
+	SDL_Color colors[256];		// palette
+	if (MainScreen != NULL) {
+		if ((h == MainScreen->h) && (w == MainScreen->w))
+			return;
+	}
+	w = w / 8;
+	w = w * 8;
+	if (w / 1.4 < h)
+		h = w / 1.4;
+	else
+		w = h * 1.4;
+
+	printf("Setting Video Mode: %ix%ix8  ", w, h);
+	if (FULLSCREEN)
+		MainScreen =
+			SDL_SetVideoMode(w, h, 8, SDL_FULLSCREEN | SDL_HWPALETTE);
+	else
+		MainScreen =
+			SDL_SetVideoMode(w, h, 8, SDL_RESIZABLE | SDL_HWPALETTE);
+
+	if (MainScreen == NULL) {
+		printf("[failed]\n");
+		exit(-1);
+	}
+	printf("[OK]\n");
+
+	for (i = 0; i < 256; i++) {
+		rgb = colortable[i];
+		colors[i].r = (rgb & 0x00ff0000) >> 16;
+		colors[i].g = (rgb & 0x0000ff00) >> 8;
+		colors[i].b = (rgb & 0x000000ff) >> 0;
+	}
+
+	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
+
+	SDL_ShowCursor(SDL_DISABLE);	// hide mouse cursor 
+}
 
 void SDL_Sound_Update(void *userdata, Uint8 * stream, int len)
 {
@@ -61,13 +109,6 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 {
 	SDL_AudioSpec *desired, *obtained = NULL;
 	printf("SDL_Sound_Initialise           ");
-/* for (i=1;i<*argc;i++)
- {
-  if (strcmp(argv[i], "-sound") == 0)
-    sound_enabled = TRUE;
-  else if (strcmp(argv[i], "-nosound") == 0)
-    sound_enabled = FALSE;
- }*/
 	if (sound_enabled) {
 		desired = (SDL_AudioSpec *) malloc(sizeof(SDL_AudioSpec));
 		desired->freq = dsprate;
@@ -90,22 +131,24 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 int Atari_Keyboard(void)
 {
-	int w, h;
+	static int lastkey, key_pressed = 0;
+
 	SDL_Event event;
 	if (SDL_PollEvent(&event)) {
 		switch (event.type) {
-			case SDL_KEYDOWN:
-				lastkey = event.key.keysym.sym;
-				key_pressed = 1;
-				break;
-			case SDL_KEYUP:
-				key_pressed = 0;
-				break;
-			case SDL_VIDEORESIZE:
-				w = event.resize.w;
-				h = event.resize.h;
-				SetVideoMode(w, h);
-				break;
+		case SDL_KEYDOWN:
+			lastkey = event.key.keysym.sym;
+			key_pressed = 1;
+			break;
+		case SDL_KEYUP:
+			key_pressed = 0;
+			break;
+		case SDL_VIDEORESIZE:
+			SetVideoMode(event.resize.w, event.resize.h);
+			break;
+		case SDL_QUIT:
+			done = 1;
+			break;
 		}
 	}
 
@@ -188,6 +231,38 @@ int Atari_Keyboard(void)
 			return AKEY_COLON;
 		case SDLK_F5:
 			return AKEY_COLDSTART;
+		case SDLK_1:
+			return AKEY_EXCLAMATION;
+		case SDLK_2:
+			return AKEY_AT;
+		case SDLK_3:
+			return AKEY_HASH;
+		case SDLK_4:
+			return AKEY_DOLLAR;
+		case SDLK_5:
+			return AKEY_PERCENT;
+//      case SDLK_6:
+//          return AKEY_;    <-- what is that?
+		case SDLK_7:
+			return AKEY_AMPERSAND;
+		case SDLK_8:
+			return AKEY_ASTERISK;
+		case SDLK_9:
+			return AKEY_PARENLEFT;
+		case SDLK_0:
+			return AKEY_PARENRIGHT;
+		case SDLK_EQUALS:
+			return AKEY_PLUS;
+		case SDLK_MINUS:
+			return AKEY_UNDERSCORE;
+		case SDLK_QUOTE:
+			return AKEY_DBLQUOTE;
+		case SDLK_SLASH:
+			return AKEY_QUESTION;
+		case SDLK_COMMA:
+			return AKEY_LESS;
+		case SDLK_PERIOD:
+			return AKEY_GREATER;
 		}
 	else
 		switch (lastkey) {
@@ -269,6 +344,22 @@ int Atari_Keyboard(void)
 			return AKEY_9;
 		case SDLK_COMMA:
 			return AKEY_COMMA;
+		case SDLK_PERIOD:
+			return AKEY_FULLSTOP;
+		case SDLK_EQUALS:
+			return AKEY_EQUAL;
+		case SDLK_MINUS:
+			return AKEY_MINUS;
+		case SDLK_QUOTE:
+			return AKEY_QUOTE;
+		case SDLK_SLASH:
+			return AKEY_SLASH;
+		case SDLK_BACKSLASH:
+			return AKEY_BACKSLASH;
+		case SDLK_LEFTBRACKET:
+			return AKEY_BRACKETLEFT;
+		case SDLK_RIGHTBRACKET:
+			return AKEY_BRACKETRIGHT;
 		}
 
 	// don't care about shift
@@ -279,10 +370,6 @@ int Atari_Keyboard(void)
 		return AKEY_SPACE;
 	case SDLK_BACKSPACE:
 		return AKEY_BACKSPACE;
-	case SDLK_LEFTPAREN:
-		return AKEY_PARENLEFT;
-	case SDLK_RIGHTPAREN:
-		return AKEY_PARENRIGHT;
 	case SDLK_RETURN:
 		return AKEY_RETURN;
 	case SDLK_F9:
@@ -297,41 +384,13 @@ int Atari_Keyboard(void)
 		return AKEY_UP;
 	case SDLK_DOWN:
 		return AKEY_DOWN;
+	case SDLK_ESCAPE:
+		return AKEY_ESCAPE;
+	case SDLK_TAB:
+		return AKEY_TAB;
 	default:
 		return AKEY_NONE;
 	}
-}
-
-void SetVideoMode(int w, int h)
-{
-	int i, rgb;
-	SDL_Color colors[256];		// palette
-	// SetVideoMode - what about scaling and higher bpp? fullscreen should be
-	// only an option
-	printf("Setting Video Mode: %ix%ix8  ", w, h);
-	if (FULLSCREEN)
-		MainScreen =
-			SDL_SetVideoMode(w, h, 8, SDL_FULLSCREEN | SDL_HWPALETTE);
-	else
-		MainScreen =
-			SDL_SetVideoMode(w, h, 8, SDL_RESIZABLE | SDL_HWPALETTE);
-
-	if (MainScreen == NULL) {
-		printf("[failed]\n");
-		exit(-1);
-	}
-	printf("[OK]\n");
-
-	for (i = 0; i < 256; i++) {
-		rgb = colortable[i];
-		colors[i].r = (rgb & 0x00ff0000) >> 16;
-		colors[i].g = (rgb & 0x0000ff00) >> 8;
-		colors[i].b = (rgb & 0x000000ff) >> 0;
-	}
-
-	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
-
-	SDL_ShowCursor(SDL_DISABLE);	// hide mouse cursor 
 }
 
 void Atari_Initialise(int *argc, char *argv[])
@@ -344,6 +403,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		printf("[failed]\n");
 		exit(-1);
 	}
+	atexit(SDL_Quit);
 
 	SetVideoMode(ATARI_WIDTH - 2 * 24, ATARI_HEIGHT);
 
@@ -354,9 +414,11 @@ void Atari_Initialise(int *argc, char *argv[])
 int Atari_Exit(int run_monitor)
 {
 	int restart;
-	restart = FALSE;			// TODO
+	restart = FALSE;
 
+	printf("SDL_Quit              ");
 	SDL_Quit();
+	printf("[OK]\n");
 
 	return restart;
 }
@@ -403,13 +465,17 @@ int Atari_PORT(int num)
 		// arrows only for now
 		// TODO: array with joystick emulation keys
 		if ((kbhits[SDLK_KP7])
-			|| ((kbhits[SDLK_KP4]) && (kbhits[SDLK_KP8]))) return ~1 & ~4;
+			|| ((kbhits[SDLK_KP4]) && (kbhits[SDLK_KP8])))
+			return ~1 & ~4;
 		if ((kbhits[SDLK_KP9])
-			|| ((kbhits[SDLK_KP8]) && (kbhits[SDLK_KP6]))) return ~1 & ~8;
+			|| ((kbhits[SDLK_KP8]) && (kbhits[SDLK_KP6])))
+			return ~1 & ~8;
 		if ((kbhits[SDLK_KP1])
-			|| ((kbhits[SDLK_KP4]) && (kbhits[SDLK_KP2]))) return ~2 & ~4;
+			|| ((kbhits[SDLK_KP4]) && (kbhits[SDLK_KP2])))
+			return ~2 & ~4;
 		if ((kbhits[SDLK_KP3])
-			|| ((kbhits[SDLK_KP2]) && (kbhits[SDLK_KP6]))) return ~2 & ~8;
+			|| ((kbhits[SDLK_KP2]) && (kbhits[SDLK_KP6])))
+			return ~2 & ~8;
 		if (kbhits[SDLK_KP4])
 			return ~4;
 		if (kbhits[SDLK_KP8])
@@ -448,8 +514,7 @@ int main(int argc, char **argv)
 	// be 1?
 	frametimer = 0;
 	SDL_PauseAudio(0);
-	key_pressed = 0;
-	while (TRUE) {
+	while (!done) {
 		int keycode = Atari_Keyboard();
 
 		switch (keycode) {
@@ -486,4 +551,5 @@ int main(int argc, char **argv)
 			atari_sync();
 		}
 	}
+	return 0;
 }
