@@ -210,8 +210,6 @@ int joystick0_nbuttons, joystick1_nbuttons;
 
 #define minjoy 10000			// real joystick tolerancy
 
-extern int refresh_rate;
-
 extern int alt_function;
 
 #ifdef SOUND
@@ -1540,8 +1538,6 @@ int main(int argc, char **argv)
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
-	refresh_rate = 1;			// ;-)  
-
 #ifdef SOUND
 	if (sound_enabled)
 		SDL_PauseAudio(0);
@@ -1645,6 +1641,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.37  2003/08/05 13:22:37  joy
+ removed unused stuff
+
  Revision 1.36  2003/03/03 09:57:32  joy
  Ed improved autoconf again plus fixed some little things
 
