@@ -68,6 +68,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>	/* for exit() */
 #include <string.h>	/* for memmove() */
 
 #include "antic.h"
