@@ -55,7 +55,6 @@ void CartManagement();
 int RunExe();
 void SelectSystem();
 void SetSoundType();
-void SoundRecording();
 void SelectArtifacting();
 void AtariSettings();
 int SaveState();
@@ -772,6 +771,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.31  2002/06/23 21:42:09  joy
+SoundRecording() accessible from outside (atari_x11.c needs it)
+
 Revision 1.30  2002/03/30 06:19:28  vasyl
 Dirty rectangle scheme implementation part 2.
 All video memory accesses everywhere are going through the same macros

@@ -7,6 +7,9 @@
 int SelectCartType(UBYTE *screen, int k);
 void ui(UBYTE *screen);
 
+/* this entry is used by atari_x11.c which implements its own GUI */
+void SoundRecording();
+
 extern int ui_is_active;
 
 extern unsigned char ascii_to_screen[128];
