@@ -21,7 +21,7 @@ dnl   along with Atari800; if not, write to the Free Software
 dnl   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 AC_PREREQ(2.57)
-AC_INIT(Atari800, 1.3.5, pstehlik@sophics.cz)
+AC_INIT(Atari800, 1.3.6, pstehlik@sophics.cz)
 AC_CONFIG_SRCDIR(atari.c)
 AC_CONFIG_HEADER(config.h)
 
@@ -148,6 +148,7 @@ AC_C_VOLATILE
 dnl Checks for libraries.
 if [[ "$a8_host" != "os2-emx" ]]; then
 AC_CHECK_LIB(z,gzopen,,AC_MSG_ERROR("z compression library not found!"))
+AC_CHECK_LIB(png,png_get_libpng_ver)
 AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
 fi
 
@@ -264,7 +265,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([atexit floor getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa memset mkdir modf rmdir select socket strcasecmp strchr strdup strerror strrchr strstr strtol mkstemp])
+AC_CHECK_FUNCS([atexit floor getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa memset mkdir modf rmdir select socket strcasecmp strchr strdup strerror strrchr strstr strtol mkstemp vsnprintf])
 
 
 
