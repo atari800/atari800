@@ -45,6 +45,7 @@
 
  *****************************************************************************/
 
+#include <stdlib.h>
 #include <math.h>
 
 #include "pokeysnd.h"
@@ -59,7 +60,7 @@
 #endif /*__PLUS*/
 
 #ifndef CONSTANT_SOUND_FILTER
-# define CONSTANT_SOUND_FILTER 1
+# define CONSTANT_SOUND_FILTER 0
 #endif
 
 #if CONSTANT_SOUND_FILTER
@@ -75,18 +76,22 @@ static unsigned int master_gain2 = 2;
 static unsigned int num_cur_pokeys = 0;
 
 /* Filter */
+static const unsigned long pokey_frq_ideal =  1789790; /* Hz - True */
 static unsigned long sample_rate = 44100; /* Hz */
 static unsigned long pokey_frq = 1808100 ; /* Hz - for easier resampling */
 static int filter_size = 1274;
-static const double* filter_data = filter_44;
 static unsigned long audible_frq = 20000;
+#if CONSTANT_SOUND_FILTER
+static const double* filter_data = filter_44;
 
-static const unsigned long pokey_frq_ideal =  1789790; /* Hz - True */
 static const int filter_size_44 = 1274;
 static const int filter_size_22 = 1239;
 static const int filter_size_11 = 1305;
 static const int filter_size_48 = 898;
 static const int filter_size_8  = 1322;
+#else
+static double* filter_data = NULL;
+#endif
 
 
 /* Poly tables */
@@ -967,6 +972,130 @@ static double generate_sample(PokeyState* ps)
 }
 
 
+#if !CONSTANT_SOUND_FILTER
+
+/******************************************
+ filter table generator by Krzysztof Nikiel
+ ******************************************/
+
+static double Izero(double x)
+{
+  const double IzeroEPSILON = 1e-50;	/* Max error acceptable in Izero */
+  double sum, u, halfx, temp;
+  int n;
+
+  sum = u = n = 1;
+  halfx = x / 2.0;
+  do
+  {
+    temp = halfx / (double) n;
+    n += 1;
+    temp *= temp;
+    u *= temp;
+    sum += u;
+  }
+  while (u >= IzeroEPSILON * sum);
+
+  return (sum);
+}
+
+static int kaiser_filter_table(double **filter_data,
+			       double rate_ratio, // output_rate/input_rate
+			       int quality)
+{
+  int desired_width = 800; // should be quality dependent
+  int i;
+  const static struct {
+    double beta;
+    double widthfac;	// = (out_nyquist-best_cutoff)*window_size/in_rate
+    int stop;	// stopband ripple
+  } paramtab[] =
+  {
+    {6.7, 4.3, 70},
+    {4.5, 3.0, 50},
+    {2.1, 1.7, 30},
+  };
+  const int maxparam = sizeof(paramtab) / sizeof(paramtab[0]);
+  int bestparam = 0;
+  double Beta;
+  double IBeta;
+  double *data;
+  double tmp, tmp2;
+  int size = desired_width / 2;
+  int winwidth;
+  double cutoff;
+
+
+find:
+  winwidth = size * 2 - 1;
+  Beta = paramtab[bestparam].beta;
+  IBeta = 1.0 / Izero(Beta);
+
+  // make transition band end equal to nyquist
+  cutoff = rate_ratio - (paramtab[bestparam].widthfac / winwidth);
+
+  cutoff *= 0.8; // make narrower bandwidth to limit aliasing
+
+  //printf("cut: %g\n", cutoff/rate_ratio);
+#if 1
+  if (cutoff < (0.4 * rate_ratio))
+  {
+    bestparam++;
+    if (bestparam >= maxparam)
+    {
+      bestparam = 0;
+      if (winwidth < (2.0 * desired_width))
+      {
+	size *= 1.1;
+        goto find;
+      }
+      else
+	return 0;
+    }
+    goto find;
+  }
+#endif
+
+#if 0
+  printf("cutoff: %g\tstopband:%d\twinwidth:%d\n", 0.5*1789790 * cutoff,
+	 paramtab[bestparam].stop, winwidth);
+#endif
+
+  *filter_data = malloc(winwidth * sizeof(**filter_data));
+
+  data = *filter_data;
+
+  data[size - 1] = 1.0;
+
+  for (i = 1; i < size; i++)
+  {
+    tmp = (double)i / size;
+    tmp2 = M_PI * i * cutoff;
+
+    data[size - 1 + i] = data[size - 1 - i] = // Kaiser windowed sinc
+      sin(tmp2) / tmp2 * Izero(Beta * sqrt(1.0 - tmp * tmp)) * IBeta;
+  }
+
+  // compute reversed cumulative sum table
+  for (i = winwidth - 2; i >= 0; i--)
+    data[i] += data[i + 1];
+
+  // normalize the table
+  tmp = 1.0 / data[0];
+  for (i = 0; i < winwidth; i++)
+    data[i] *= tmp;
+
+#if 0
+  for (i = 0; i < winwidth; i++)
+    printf("%.10f\t%.10f\n", data[i], data[i] - data[i + 1]);
+  fflush(stdout);
+  exit(1);
+#endif
+
+  return winwidth;
+}
+#endif
+
 
 /*****************************************************************************/
 /* Module:  Pokey_sound_init()                                               */
@@ -1008,6 +1137,8 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 
     sample_rate = playback_freq;
 
+
+#if CONSTANT_SOUND_FILTER
     switch(playback_freq)
     {
     case 44100:
@@ -1041,6 +1172,18 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
         audible_frq = 4000; /* Nyquist, also 30db attn, should be 50 */
         break;
     }
+#else
+    if (filter_data)
+      free(filter_data);
+
+    pokey_frq = (int)(((double)pokey_frq_ideal/sample_rate) + 0.5)
+      * sample_rate;
+
+    filter_size = kaiser_filter_table(&filter_data,
+				      (double)sample_rate/pokey_frq, 0);
+
+    audible_frq = 0.45 * sample_rate; // not very good estimate
+#endif
 
     build_poly4();
     build_poly5();
