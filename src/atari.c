@@ -13,6 +13,11 @@
 #include <unistd.h>
 #endif
 
+#ifdef __EMX__
+#define INCL_DOS
+#include <os2.h>
+#endif
+
 #include "atari.h"
 #include "cpu.h"
 #include "memory.h"
@@ -701,11 +706,17 @@ static void Atari_sleep(double s)
     tp.tv_sec = 0;
     tp.tv_usec = 1e6 * s;
     select(1,NULL,NULL,NULL,&tp);
+
 #elif defined(WIN32)
     Sleep(s * 1e3);
+    
 #elif defined(DJGPP)
     double curtime = Atari_time();
     while ((curtime + s) > Atari_time());
+
+#elif defined __EMX__
+    DosSleep(s); /* added by Brian Smith for os/2 */
+
 #else
     usleep(s * 1e6);
 #endif
@@ -942,6 +953,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.41  2002/11/05 23:01:21  joy
+OS/2 compatibility
+
 Revision 1.40  2002/08/07 07:59:24  joy
 displaying version (-v) fixed
 

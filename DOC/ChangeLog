@@ -8,6 +8,10 @@
     override this flag so you actually can't mount a writeprotected ATR
     image read/write using this Space Bar toggle.
 
+* atari.c: Ken Ames sent me a very simple patch that is supposed to allow
+    compiling the Atari800 on OS/2 "using Hob X11, XFree86, or IBM's X11
+    server".
+
 2002-09-16  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c, DOC/cart.txt: five new cartridge types (Nir Dary)
 
