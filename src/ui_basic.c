@@ -16,13 +16,17 @@
 #include "platform.h"
 #include "memory.h"
 
-extern int refresh_rate;
-
+/* not needed anymore?
 #ifdef __DJGPP__
 #include <dos.h>
 #endif
 #ifdef linux
 #include <time.h>
+#endif
+*/
+
+#ifdef CURSES
+extern UBYTE curses_screen[24][40];
 #endif
 
 extern int current_disk_directory;
@@ -160,30 +164,29 @@ void Plot(UBYTE * screen, int fg, int bg, int ch, int x, int y)
 		ptr += ATARI_WIDTH - 8;
 	}
 #else
-	UWORD addr = dGetWordAligned(88) + y * 40 + x;
 	UBYTE mask = fg == 0x94 ? 0x80 : 0;
 
 	/* handle line drawing chars */
 	switch (ch) {
 	case 18:
-		dPutByte(addr, '-' - 32 + mask);
+		curses_screen[y][x] = '-' - 32 + mask;
 		break;
 	case 17:
 	case 3:
-		dPutByte(addr, '/' - 32 + mask);
+		curses_screen[y][x] = '/' - 32 + mask;
 		break;
 	case 26:
 	case 5:
-		dPutByte(addr, '\\' - 32 + mask);
+		curses_screen[y][x] = '\\' - 32 + mask;
 		break;
 	case 124:
-		dPutByte(addr, '|' + mask);
+		curses_screen[y][x] = '|' + mask;
 		break;
 	default:
 		if (ch >= 'a' && ch <= 'z')
-			dPutByte(addr, ch + mask);
+			curses_screen[y][x] = ch + mask;
 		else
-			dPutByte(addr, ch - 32 + mask);
+			curses_screen[y][x] = ch - 32 + mask;
 		break;
 	}
 #endif
@@ -281,6 +284,7 @@ void Box(UBYTE * screen, int fg, int bg, int x1, int y1, int x2, int y2)
 
 void ClearScreen(UBYTE * screen)
 {
+#ifndef CURSES
 	UBYTE *ptr;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	memset(screen, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
@@ -290,6 +294,13 @@ void ClearScreen(UBYTE * screen)
 	memset(screen, 0x00, ATARI_HEIGHT * ATARI_WIDTH);
 	for (ptr = screen + ATARI_WIDTH * 24 + 32; ptr < screen + ATARI_WIDTH * (24 + 192); ptr += ATARI_WIDTH)
 		memset(ptr, 0x94, 320);
+#endif
+#else
+	int x;
+	int y;
+	for (y = 0; y < 24; y++)
+		for (x = 0; x < 40; x++)
+			curses_screen[y][x] = 0;
 #endif
 }
 
