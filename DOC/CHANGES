@@ -1,5 +1,10 @@
-Changes in 1.0.7
+Changes in pre1.0.7
 ----------------
+o atari_sleep_ms() replaced by new function atari_sync() with better
+  synchronization code (lasttime is increased by constant interval
+  and previously could differ depending on gettime call delay) <Krzysiek>
+
+o bug causing vesa modes not to be detected correctly fixed. <Krzysiek>
 
 o cpu_m68k.s is 100% compatible with the cpu.c now <Gerhard>
 
