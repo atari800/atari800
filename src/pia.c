@@ -39,7 +39,7 @@ UBYTE PACTL;
 UBYTE PBCTL;
 UBYTE PORTA;
 UBYTE PORTB;
-UBYTE PORT_input[2] = {0xff, 0xff};
+UBYTE PORT_input[2];
 
 int xe_bank = 0;
 int selftest_enabled = 0;
@@ -47,96 +47,112 @@ int selftest_enabled = 0;
 UBYTE atari_basic[8192];
 UBYTE atari_os[16384];
 
-static UBYTE PORTA_mask = 0xff;
-static UBYTE PORTB_mask = 0xff;
+UBYTE PORTA_mask;
+UBYTE PORTB_mask;
 
 void PIA_Initialise(int *argc, char *argv[])
 {
-	PORTA = 0x00;
+	PACTL = 0x3f;
+	PBCTL = 0x3f;
+	PORTA = 0xff;
+	PORTB = 0xff;
+	PORTA_mask = 0xff;
+	PORTB_mask = 0xff;
+	PORT_input[0] = 0xff;
+	PORT_input[1] = 0xff;
+}
+
+void PIA_Reset(void)
+{
+	PORTA = 0xff;
+	if (machine_type == MACHINE_XLXE) {
+		MEMORY_HandlePORTB(0xff, PORTB | PORTB_mask);
+	}
 	PORTB = 0xff;
 }
 
 UBYTE PIA_GetByte(UWORD addr)
 {
-	UBYTE byte = 0xff;
-
-	addr &= 0x03;		/* HW registers are mirrored */
-	switch (addr) {
+	switch (addr & 0x03) {
 	case _PACTL:
-		byte = PACTL & 0x3f;
-		break;
+		return PACTL & 0x3f;
 	case _PBCTL:
-		byte = PBCTL & 0x3f;
-#ifdef DEBUG1
-		printf("RD: PBCTL = %x, PC = %x\n", PBCTL, PC);
-#endif
-		break;
+		return PBCTL & 0x3f;
 	case _PORTA:
-		if (!(PACTL & 0x04))
- 			byte = ~PORTA_mask;
-		else
-			byte = PORT_input[0] & (PORTA | PORTA_mask);
-		break;
+		if ((PACTL & 0x04) == 0) {
+			/* direction register */
+			return ~PORTA_mask;
+		}
+		else {
+			/* port state */
+			return PORT_input[0] & (PORTA | PORTA_mask);
+		}
 	case _PORTB:
-		if (machine_type == MACHINE_XLXE)
-			byte = (PORTB & (~PORTB_mask)) | PORTB_mask;
-		else
-			byte = PORT_input[1] & (PORTB | PORTB_mask);
-		break;
+		if ((PBCTL & 0x04) == 0) {
+			/* direction register */
+			return ~PORTB_mask;
+		}
+		else {
+			/* port state */
+			if (machine_type == MACHINE_XLXE) {
+				return PORTB | PORTB_mask;
+			}
+			else {
+				return PORT_input[1] & (PORTB | PORTB_mask);
+			}
+		}
 	}
-
-	return byte;
+	/* for stupid compilers */
+	return 0xff;
 }
 
 void PIA_PutByte(UWORD addr, UBYTE byte)
 {
-	addr &= 0x03;		/* HW registers are mirrored */
-	switch (addr) {
+	switch (addr & 0x03) {
 	case _PACTL:
 		PACTL = byte;
 		break;
 	case _PBCTL:
 		/* This code is part of the serial I/O emulation */
-		if ((PBCTL ^ byte) & 0x08) {	/* The command line status has changed */
-			SwitchCommandFrame((byte & 0x08) ? (0) : (1));
+		if ((PBCTL ^ byte) & 0x08) {
+			/* The command line status has changed */
+			SwitchCommandFrame(byte & 0x08 ? 0 : 1);
 		}
 		PBCTL = byte;
-#ifdef DEBUG1
-		printf("WR: PBCTL = %x, PC = %x\n", PBCTL, PC);
-#endif
 		break;
 	case _PORTA:
-		if (!(PACTL & 0x04))
+		if ((PACTL & 0x04) == 0) {
+			/* set direction register */
  			PORTA_mask = ~byte;
-		else {
-			PORTA = byte;		/* change from thor */
-			INPUT_SelectMultiJoy(byte >> 4);
 		}
-
+		else {
+			/* set output register */
+			PORTA = byte;		/* change from thor */
+		}
+		INPUT_SelectMultiJoy((PORTA | PORTA_mask) >> 4);
 		break;
 	case _PORTB:
-		if (!(PBCTL & 0x04)) {	/* change from thor */
-			PORTB_mask = ~byte;
-			byte = PORTB;
-			break;
-		}
-
 		if (machine_type == MACHINE_XLXE) {
-#if 0
-/* We don't want any hacks. This one blocked usage of a memory bank */
-/* with OS ROM disabled in 1088 XE. If a game doesn't work in XL/XE */
-/* because it doesn't in original, just switch to 400/800. */
-			if ((byte | PORTB_mask) == 0)
-				break;				/* special hack for old Atari800 games like is Tapper, for example */
-#endif
-			PORTB_handler(byte);
+			if ((PBCTL & 0x04) == 0) {
+				/* direction register */
+				MEMORY_HandlePORTB(PORTB | ~byte, PORTB | PORTB_mask);
+				PORTB_mask = ~byte;
+			}
+			else {
+				/* output register */
+				MEMORY_HandlePORTB(byte | PORTB_mask, PORTB | PORTB_mask);
+				PORTB = byte;
+			}
 		}
 		else {
-		/*
-			if (!(PBCTL & 0x04))
+			if ((PBCTL & 0x04) == 0) {
+				/* direction register */
 				PORTB_mask = ~byte;
-		*/
-			PORTB = byte;
+			}
+			else {
+				/* output register */
+				PORTB = byte;
+			}
 		}
 		break;
 	}
@@ -189,6 +205,9 @@ void PIAStateRead(void)
 
 /*
 $Log$
+Revision 1.11  2003/03/07 11:23:47  pfusik
+fixed MultiJoy and PORTB
+
 Revision 1.10  2003/02/24 09:33:06  joy
 header cleanup
 
