@@ -1,3 +1,7 @@
+2002-07-24  Piotr Fusik  <fox@scene.pl>
+* cartridge.[ch], ui.c, DOC/cart.txt, DOC/README: 256K and 512K XEGS carts
+  (thanks to Nir Dary)
+
 2002-07-14  Piotr Fusik  <fox@scene.pl>
 * atari.c, memory-d.c, ui.c: emulation of 576K and 1088K RAM machines
 * pia.c: removed a hack that affected 1088 XE
