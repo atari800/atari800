@@ -57,12 +57,6 @@
 #define _HITCLR 0x1e
 #define _CONSOL 0x1f
 
-#define PF_COLPF0 0x04
-#define PF_COLPF1 0x05
-#define PF_COLPF2 0x06
-#define PF_COLPF3 0x07
-#define PF_COLBK 0x08
-
 extern UBYTE GRAFM;
 extern UBYTE GRAFP0;
 extern UBYTE GRAFP1;
@@ -126,6 +120,7 @@ extern int consol_index;
 extern UBYTE consol_table[3];
 
 void GTIA_Initialise(int *argc, char *argv[]);
+void GTIA_Frame(void);
 void new_pm_scanline(void);
 UBYTE GTIA_GetByte(UWORD addr);
 void GTIA_PutByte(UWORD addr, UBYTE byte);

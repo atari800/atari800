@@ -280,7 +280,7 @@ void new_pm_scanline(void)
 
 /* GTIA registers ---------------------------------------------------------- */
 
-void GTIA_Triggers(void)
+void GTIA_Frame(void)
 {
 	int i;
 	int consol = Atari_CONSOL() | 0x08;
