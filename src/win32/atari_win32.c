@@ -329,9 +329,6 @@ void Atari_Initialise(int *argc, char *argv[])
   if (gron(argc, argv))
     exit(1);
 
-#if defined(SET_LED) && !defined(NO_LED_ON_SCREEN)
-  LED_lastline = 239;
-#endif
   clearkb();
 
   trig0 = 1;
@@ -398,6 +395,9 @@ int Atari_POT(int num)
 
 /*
 $Log$
+Revision 1.6  2001/12/04 13:07:22  joy
+LED_lastline apparently disappeared from the Atari800 core so remove it here, too (suggested by Nathan)
+
 Revision 1.5  2001/10/03 16:16:42  knik
 keyboard update
 
