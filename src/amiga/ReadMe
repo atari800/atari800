@@ -1,18 +1,29 @@
-Short:     V1.1 of the Atari 8-bit emulator
-Uploader:  sebauer@t-online.de (Sebastian Bauer)
-Author:    sebauer@t-online.de (Sebastian Bauer), Atari800 Emulator Development Team
+Short:     V2.1 of the Atari 8-bit emulator
+Uploader:  mail@sebastianbauer.info (Sebastian Bauer)
+Author:    mail@sebastianbauer.info (Sebastian Bauer), Atari800 Emulator Development Team
 Type:      misc/emu
-Kurz:      V1.1 des Atari 8-bit Emulator
-Requires:  OS 3.0, MUI 3.8, 
-Version:   1.1
+Kurz:      V2.1 des Atari 8-bit Emulator
+Requires:  OS4
+Version:   2.1
 
-This is the amiga port of the Atari800 Emulator. It requires at
-least a 68020 processor, OS 3.0 and MUI 3.8.
-For more information like please look into the included
-Atari800.guide (not really written yet)
+This is the Amiga port of the Atari800 Emulator. It requires at
+OS4.
 
 History
 ~~~~~~~
+Version 2.1 (xx.09.2004)
+ - major changes within the Amiga front end, including
+    o) ported to OS4
+    o) dropped MUI GUI, GUI is now menu driven
+    o) dropped overlay support for now
+    o) Atari joystick can be mapped to the keyboard
+    o) sound fixes
+ - matches 1.3.3 of original sources
+
+Version 1.2 (15.10.2000)
+ - compiled the latest source
+ - a special 68060 version has been added
+
 Version 1.1 (12.06.2000)
  - console keys and sound should work better now
 
@@ -22,8 +33,7 @@ Version 1.0 (31.05.2000)
 How can you reach me?
 ~~~~~~~~~~~~~~~~~~~~~
 My e-mail address is:
-  sebauer@t-online.de or
-  Sebastian.Bauer@in.stud.tu-ilmenau.de
+  mail@sebastianbauer.info
 
 Address:
   Sebastian Bauer
@@ -32,18 +42,14 @@ Address:
   Germany
 
 Visit my homepage at
-  http://home.t-online.de/home/sebauer/
-  (german version)
-
-  http://home.t-online.de/home/sebauer/english.html
-  (english version)
+  http://www.sebastianbauer.info/
 
 Here you can find the latest version of the Atari800 emulator for
 Amiga but also other things for Amiga, for example SimpleFind3,
 SimpleHTML, SimplePac and the Freeciv Port.
 
 Also look at the offical Atari800 Emulator homepage at
-  http://cas3.zlin.vutbr.cz/~stehlik/a800.htm
+  http://atari800.sourceforce.net/
          __
         / /
    __  / /   Only Amiga makes it possible...
