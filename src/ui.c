@@ -23,6 +23,7 @@
 #include "ataripcx.h"
 #include "binload.h"
 #include "sndsave.h"
+#include "cartridge.h"
 
 extern int refresh_rate;
 
@@ -37,6 +38,7 @@ int alt_function = -1;		/* alt function init */
 #include <time.h>
 #endif
 
+static int initialised = FALSE;
 int ui_is_active = FALSE;
 
 static int current_disk_directory = 0;
@@ -878,6 +880,60 @@ void DiskManagement(UBYTE * screen)
 	}
 }
 
+int SelectCartType(UBYTE * screen, int k)
+{
+	static char *types[CART_LAST_SUPPORTED + 1] =
+	{
+		NULL,
+		"Standard 8 KB cartridge",
+		"Standard 16 KB cartridge",
+		"MAC/65 16 KB cartridge",
+		"Standard 32 KB 5200 cartridge",
+		"DB 32 KB cartridge",
+		"2*8 KB ROM 16 KB 5200 cartridge",
+		"Bounty Bob 40 KB 5200 cartridge",
+		"8*8 KB D50x 64 KB cartridge",
+		"Express 64 KB cartridge",
+		"Diamond 64 KB cartridge",
+		"SDX 64 KB cartridge",
+		"XEGS 32 KB cartridge",
+		"XEGS 64 KB cartridge",
+		"XEGS 128 KB cartridge",
+		"Action! 16 KB cartridge",
+		"Single ROM 16 KB 5200 cartridge"
+	};
+
+	int i;
+	int nitems = 0;
+	char *menu[CART_LAST_SUPPORTED];
+	int id[CART_LAST_SUPPORTED];
+	int option = 0;
+	int ascii;
+
+	if (!initialised) {
+		get_charset(charset);
+		initialised = TRUE;
+	}
+	for (i = 1; i <= CART_LAST_SUPPORTED; i++)
+		if (cart_kb[i] == k) {
+			menu[nitems] = types[i];
+			id[nitems] = i;
+			nitems++;
+		}
+
+	if (nitems == 0)
+		return CART_NONE;
+
+	ClearScreen(screen);
+	TitleScreen(screen, "Select Cartridge Type");
+	Box(screen, 0x9a, 0x94, 0, 3, 39, 23);
+
+	option = Select(screen, 0, nitems, menu, nitems, 1, 1, 4, FALSE, &ascii);
+	if (option >= 0 && option < nitems)
+		return id[option];
+	return CART_NONE;
+}
+
 void CartManagement(UBYTE * screen)
 {
 	typedef struct {
@@ -886,12 +942,6 @@ void CartManagement(UBYTE * screen)
 		UBYTE checksum[4];
 		UBYTE gash[4];
 	} Header;
-
-	const int CART_UNKNOWN = 0;
-	const int CART_STD_8K = 1;
-	const int CART_STD_16K = 2;
-	const int CART_OSS = 3;
-	const int CART_AGS = 4;
 
 	const int nitems = 5;
 
@@ -922,8 +972,7 @@ void CartManagement(UBYTE * screen)
 		switch (option) {
 		case 0:
 			if (FileSelector(screen, curr_cart_dir, filename)) {
-				UBYTE image[32769];
-				int type = CART_UNKNOWN;
+				UBYTE image[CART_MAX_SIZE + 1];
 				int nbytes;
 				FILE *f;
 
@@ -933,82 +982,43 @@ void CartManagement(UBYTE * screen)
 					exit(1);
 				}
 				nbytes = fread(image, 1, sizeof(image), f);
-				switch (nbytes) {
-				case 8192:
-					type = CART_STD_8K;
-					break;
-				case 16384:
-					{
-						const int nitems = 2;
-						static char *menu[2] =
-						{
-							"Standard 16K Cartridge",
-							"OSS Super Cartridge"
-						};
-
-						int option = 0;
-
-						Box(screen, 0x9a, 0x94, 8, 10, 31, 13);
-
-						option = Select(screen, option,
-										nitems, menu,
-										nitems, 1,
-										9, 11, FALSE, &ascii);
-						switch (option) {
-						case 0:
-							type = CART_STD_16K;
-							break;
-						case 1:
-							type = CART_OSS;
-							break;
-						default:
-							continue;
-						}
-					}
-					break;
-				case 32768:
-					type = CART_AGS;
-				}
-
 				fclose(f);
+				if ((nbytes & 0x3ff) == 0) {
+					int type = SelectCartType(screen, nbytes / 1024);
+					if (type != CART_NONE) {
+						Header header;
 
-				if (type != CART_UNKNOWN) {
-					Header header;
+						int checksum = CART_Checksum(image, nbytes);
 
-					int checksum = 0;
-					int i;
+						char fname[FILENAME_SIZE+1];
 
-					char fname[FILENAME_SIZE+1];
+						if (!EditFilename(screen, fname))
+							break;
 
-					if (!EditFilename(screen, fname))
-						break;
+						header.id[0] = 'C';
+						header.id[1] = 'A';
+						header.id[2] = 'R';
+						header.id[3] = 'T';
+						header.type[0] = (type >> 24) & 0xff;
+						header.type[1] = (type >> 16) & 0xff;
+						header.type[2] = (type >> 8) & 0xff;
+						header.type[3] = type & 0xff;
+						header.checksum[0] = (checksum >> 24) & 0xff;
+						header.checksum[1] = (checksum >> 16) & 0xff;
+						header.checksum[2] = (checksum >> 8) & 0xff;
+						header.checksum[3] = checksum & 0xff;
+						header.gash[0] = '\0';
+						header.gash[1] = '\0';
+						header.gash[2] = '\0';
+						header.gash[3] = '\0';
 
-					for (i = 0; i < nbytes; i++)
-						checksum += image[i];
-
-					header.id[0] = 'C';
-					header.id[1] = 'A';
-					header.id[2] = 'R';
-					header.id[3] = 'T';
-					header.type[0] = (type >> 24) & 0xff;
-					header.type[1] = (type >> 16) & 0xff;
-					header.type[2] = (type >> 8) & 0xff;
-					header.type[3] = type & 0xff;
-					header.checksum[0] = (checksum >> 24) & 0xff;
-					header.checksum[1] = (checksum >> 16) & 0xff;
-					header.checksum[2] = (checksum >> 8) & 0xff;
-					header.checksum[3] = checksum & 0xff;
-					header.gash[0] = '\0';
-					header.gash[1] = '\0';
-					header.gash[2] = '\0';
-					header.gash[3] = '\0';
-
-					sprintf(filename, "%s/%s", atari_rom_dir, fname);
-					f = fopen(filename, "wb");
-					if (f) {
-					  fwrite(&header, 1, sizeof(header), f);
-					  fwrite(image, 1, nbytes, f);
-					  fclose(f);
+						sprintf(filename, "%s/%s", atari_rom_dir, fname);
+						f = fopen(filename, "wb");
+						if (f) {
+							fwrite(&header, 1, sizeof(header), f);
+							fwrite(image, 1, nbytes, f);
+							fclose(f);
+						}
 					}
 				}
 			}
@@ -1020,7 +1030,7 @@ void CartManagement(UBYTE * screen)
 				f = fopen(filename, "rb");
 				if (f) {
 					Header header;
-					UBYTE image[32769];
+					UBYTE image[CART_MAX_SIZE + 1];
 					char fname[FILENAME_SIZE+1];
 					int nbytes;
 
@@ -1036,53 +1046,36 @@ void CartManagement(UBYTE * screen)
 
 					f = fopen(filename, "wb");
 					if (f) {
-					  fwrite(image, 1, nbytes, f);
-					  fclose(f);
+						fwrite(image, 1, nbytes, f);
+						fclose(f);
 					}
 				}
 			}
 			break;
 		case 2:
 			if (FileSelector(screen, curr_cart_dir, filename)) {
-				if (!Insert_Cartridge(filename)) {
-					const int nitems = 4;
-					static char *menu[4] =
-					{
-						"Standard 8K Cartridge",
-						"Standard 16K Cartridge",
-						"OSS Super Cartridge",
-						"Atari 5200 Cartridge"
-					};
-
-					int option = 0;
-
-					Box(screen, 0x9a, 0x94, 8, 10, 31, 15);
-
-					option = Select(screen, option,
-									nitems, menu,
-									nitems, 1,
-									9, 11, FALSE, &ascii);
-					switch (option) {
-					case 0:
-						Insert_8K_ROM(filename);
-						break;
-					case 1:
-						Insert_16K_ROM(filename);
-						break;
-					case 2:
-						Insert_OSS_ROM(filename);
-						break;
-					case 3:
-						Insert_32K_5200ROM(filename);
-						break;
+				int r = CART_Insert(filename);
+				if (r > 0)
+					cart_type = SelectCartType(screen, r);
+				if (cart_type != CART_NONE) {
+					int for5200 = CART_IsFor5200(cart_type);
+					if (for5200 && machine != Atari5200) {
+						Ram256 = 0;
+						Initialise_Atari5200();
+					}
+					else if (!for5200 && machine == Atari5200) {
+						Ram256 = 0;
+						Initialise_AtariXL();
 					}
 				}
 				Coldstart();
+				done = TRUE;
 			}
 			break;
 		case 3:
-			Remove_ROM();
+			CART_Remove();
 			Coldstart();
+			done = TRUE;
 			break;
 		case 4:
 			EnablePILL();
@@ -1255,7 +1248,6 @@ int LoadState(UBYTE *screen)
 
 void ui(UBYTE *screen)
 {
-	static int initialised = FALSE;
 	int option = 0;
 	int done = FALSE;
 
@@ -1512,8 +1504,8 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
-Revision 1.8  2001/07/20 00:29:04  fox
-added "Atari OS patches" menu item
+Revision 1.9  2001/07/20 20:14:47  fox
+inserting, removing and converting of new cartridge types
 
 Revision 1.7  2001/03/25 06:57:36  knik
 open() replaced by fopen()
