@@ -149,6 +149,15 @@ X11 options
 
 -keypad               Keypad mode
 
+SDL version options
+-------------------
+
+--nojoystick 	      joysticks will not be initialized
+--width x 	      set mode width
+--height y            set mode height
+--bpp b               set mode bits per pixel
+--fullscreen          start in fullscreen mode
+--windowed            start in windowed mode
 
 Keyboard + Joystick & Paddle Controllers
 ========================================
