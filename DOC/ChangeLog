@@ -1,3 +1,6 @@
+2002-12-16  Krzysztof Nikiel  <knik@poczta.onet.pl>
+* colours.c: corrected color/BW conversion (Vasyl was right)
+
 2002-12-08  Krzysztof Nikiel  <knik@poczta.onet.pl>
 * pokeysnd.c mzpokeysnd.c: Added 16bit and quality sound setting support.
   Added multiple sound engines support.
