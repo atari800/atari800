@@ -1879,7 +1879,7 @@ void ANTIC_Frame(int draw_display)
 #endif
 	need_dl = TRUE;
 	do {
-		if ((mouse_mode == MOUSE_PEN) && (ypos >> 1 == PENV_input)) {
+		if ((mouse_mode == MOUSE_PEN || mouse_mode == MOUSE_GUN) && (ypos >> 1 == PENV_input)) {
 			PENH = PENH_input;
 			PENV = PENV_input;
 			if (GRACTL & 4)

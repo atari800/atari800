@@ -257,10 +257,11 @@ extern int joy_5200_max;
 #define MOUSE_PAD		1	/* Paddles */
 #define MOUSE_TOUCH		2	/* Atari touch tablet */
 #define MOUSE_KOALA		3	/* Koala pad */
-#define MOUSE_PEN		4	/* Light pen/light gun */
-#define MOUSE_AMIGA		5	/* Amiga mouse */
-#define MOUSE_ST		6	/* Atari ST mouse */
-#define MOUSE_JOY		7	/* Joystick */
+#define MOUSE_PEN		4	/* Light pen */
+#define MOUSE_GUN		5	/* Light gun */
+#define MOUSE_AMIGA		6	/* Amiga mouse */
+#define MOUSE_ST		7	/* Atari ST mouse */
+#define MOUSE_JOY		8	/* Joystick */
 
 extern int mouse_mode;			/* device emulated with mouse */
 extern int mouse_port;			/* Atari port, to which the emulated device is attached */
