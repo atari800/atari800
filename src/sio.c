@@ -31,6 +31,7 @@
 #include <sys/time.h>
 #endif
 
+#include "antic.h"  /* ypos */
 #include "atari.h"
 #include "config.h"
 #include "cpu.h"
@@ -605,6 +606,14 @@ static int DriveStatus(int unit, UBYTE * buffer)
 		return 0;
 }
 
+#ifndef NO_SECTOR_DELAY
+/* A hack for the "Overmind" demo.  This demo verifies if sectors aren't read
+   faster than with a typical disk drive.  We introduce a delay
+   of SECTOR_DELAY scanlines between successive reads of sector 1. */
+#define SECTOR_DELAY 3200
+static int delay_counter = 0;
+static int last_ypos = 0;
+#endif
 
 void SIO(void)
 {
@@ -615,9 +624,6 @@ void SIO(void)
 	int length = dGetWordAligned(0x308);
 	int realsize = 0;
 	int cmd = dGetByte(0x302);
-#ifndef NO_SECTOR_DELAY
-	static int delay_counter = 1;	/* no delay on first read */
-#endif
 
 	if (dGetByte(0x300) == 0x31 && unit < MAX_DRIVES) {	/* UBYTE range ! */
 #ifdef DEBUG
@@ -661,15 +667,19 @@ void SIO(void)
 		case 0x52:				/* Read */
 		case 0xD2:				/* xf551 hispeed */
 #ifndef NO_SECTOR_DELAY
-			if (sector == 2) {
-				if ((xpos = xpos_limit) == LINE_C)
-					delay_counter--;
-				if (delay_counter) {
-					regPC = 0xe459;	/* stay in SIO */
+			if (sector == 1) {
+				if (delay_counter > 0) {
+					if (last_ypos != ypos) {
+						last_ypos = ypos;
+						delay_counter--;
+					}
+					regPC = 0xe459;	/* stay at SIO patch */
 					return;
 				}
-				else
-					delay_counter = SECTOR_DELAY;
+				delay_counter = SECTOR_DELAY;
+			}
+			else {
+				delay_counter = 0;
 			}
 #endif
 			SizeOfSector(unit, sector, &realsize, NULL);
@@ -848,8 +858,13 @@ static UBYTE Command_Frame(void)
 			//wait longer before confirmation because bytes could be lost before the buffer was set (see $E9FB & $EA37 in XL-OS)
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL << 2;
 #ifndef NO_SECTOR_DELAY
-			if (sector == 2)
-				DELAYED_SERIN_IRQ += SECTOR_DELAY;
+			if (sector == 1) {
+				DELAYED_SERIN_IRQ += delay_counter;
+				delay_counter = SECTOR_DELAY;
+			}
+			else {
+				delay_counter = 0;
+			}
 #endif
 #ifdef SHOW_DISK_LED
 			LED_SetRead(unit, 10);
@@ -1119,6 +1134,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.18  2003/10/24 14:13:14  pfusik
+"Overmind" runs with NEW_CYCLE_EXACT and SIO patch enabled
+
 Revision 1.17  2003/08/05 11:29:04  joy
 XF551 highspeed transfer
 
