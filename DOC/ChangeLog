@@ -14,4 +14,11 @@
   * updated configure.in to support the Atari Falcon port
   * Falcon port' proprietary -DDMASOUND changed to general -DSOUND
 
+--- 2001-11-27	Krzysztof (knik)
+
+  * colours.c: default palette changed to the real palette created by
+    Zdenek Eisenhammer.
+  * colours.c: code to adjust palette properties improved and moved
+    to separate function Palette_Format.
+
 -- Piotr please fill this from the old CHANGES file, at least approximately
