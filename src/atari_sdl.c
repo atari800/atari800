@@ -2,7 +2,7 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
-   06-11-2001 - replaced SHORTER_MODE with WIDTH_MODE, now there are 3 states:
+   06-12-2001 - replaced SHORTER_MODE with WIDTH_MODE, now there are 3 states:
 		DEFAULT_WIDTH_MODE (ATARI_WIDTH-2*24), SHORTER_WIDTH_MODE
 		(ATARI_WIDTH-2*24-2*8), and FULL_WIDTH_MODE (ATARI_WIDTH)
 	      - checking if bpp is supported (8,16,32 only), if not - switching
@@ -10,7 +10,7 @@
 	      - moved fps stuff to CountFPS		
 	      - moved "bug reports" message up, so user could see that when
 		init fails
-   04-11-2001 - split Atari_DisplayScreen (DisplayWithoutScaling and
+   04-12-2001 - split Atari_DisplayScreen (DisplayWithoutScaling and
                 DisplayWithScaling)
 	      - put Aflushlog everywhere	
    03-11-2001 - 32 bit support
@@ -112,7 +112,7 @@
 // emulator, probably we need two variables or command line argument)
 static int sound_enabled = 1;
 static int SDL_ATARI_BPP = 0;	// 0 - autodetect
-static int FULLSCREEN = 0;
+static int FULLSCREEN = 1;
 static int BW = 0;
 static int SWAP_JOYSTICKS = 0;
 static int WIDTH_MODE = 1;
@@ -256,13 +256,12 @@ void ModeInfo()
 	Aprint
 		("[%c] FULLSCREEN  [%c] BW  [%c] WIDTH MODE  [%c] JOYSTICKS SWAPPED",
 		 fullflag, bwflag, width, joyflag);
-	Aflushlog();
 }
 
 void SetVideoMode(int w, int h, int bpp)
 {
 	if (FULLSCREEN)
-		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
+		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN | SDL_HWSURFACE);
 	else
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_RESIZABLE);
 	if (MainScreen == NULL) {
@@ -324,7 +323,6 @@ void SetNewVideoMode(int w, int h, int bpp)
 				("it's unsupported, so setting 8bit mode (slow conversion)");
 			SetVideoMode(w, h, 8);
 		}
-		Aflushlog();
 	}
 
 	SetPalette();
@@ -404,12 +402,10 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 		// mono
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
 		Aprint("sound initialized");
-		Aflushlog();
 	}
 	else {
 		Aprint
 			("Audio is off, you can turn it on by setting sound_enabled=1");
-		Aflushlog();
 	}
 }
 
@@ -763,6 +759,7 @@ void Init_Joysticks()
 	else {
 		Aprint("joystick 0 found!");
 		joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
+		SWAP_JOYSTICKS = 1;	// real joy is STICK(0) and numblock is STICK(1)
 	}
 	joystick1 = SDL_JoystickOpen(1);
 	if (joystick1 == NULL)
@@ -771,7 +768,6 @@ void Init_Joysticks()
 		Aprint("joystick 1 found!");
 		joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
 	}
-	Aflushlog();
 }
 
 void Atari_Initialise(int *argc, char *argv[])
@@ -785,7 +781,11 @@ void Atari_Initialise(int *argc, char *argv[])
 		exit(-1);
 	}
 
+#if NVIDIA	/* can't set < 640x480 resolution */
+	SetNewVideoMode(672, 480, SDL_ATARI_BPP);
+#else
 	SetNewVideoMode(ATARI_WIDTH - 2 * 24, ATARI_HEIGHT, SDL_ATARI_BPP);
+#endif
 	CalcPalette();
 	SetPalette();
 
@@ -1119,27 +1119,27 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 		y = SDL_JoystickGetAxis(joystick1, 1);
 		if (x > minjoy) {
 			if (y < -minjoy)
-				stick0 = STICK_UR;
+				stick1 = STICK_UR;
 			else if (y > minjoy)
-				stick0 = STICK_LR;
+				stick1 = STICK_LR;
 			else
-				stick0 = STICK_RIGHT;
+				stick1 = STICK_RIGHT;
 		}
 		else if (x < -minjoy) {
 			if (y < -minjoy)
-				stick0 = STICK_UL;
+				stick1 = STICK_UL;
 			else if (y > minjoy)
-				stick0 = STICK_LL;
+				stick1 = STICK_LL;
 			else
-				stick0 = STICK_LEFT;
+				stick1 = STICK_LEFT;
 		}
 		else {
 			if (y < -minjoy)
-				stick0 = STICK_FORWARD;
+				stick1 = STICK_FORWARD;
 			else if (y > minjoy)
-				stick0 = STICK_BACK;
+				stick1 = STICK_BACK;
 			else
-				stick0 = STICK_CENTRE;
+				stick1 = STICK_CENTRE;
 		}
 		*s1 = stick1;
 	}
@@ -1150,33 +1150,15 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 {
 	int trig0, trig1, i;
 
-	if (joystick0 == NULL) {
-		if ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B]))
-			trig0 = 0;
-		else
-			trig0 = 1;
-	}
-	else {
+	if ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B]))
+		trig0 = 0;
+	else
 		trig0 = 1;
-		for (i = 0; i < joystick0_nbuttons; i++) {
-			if (SDL_JoystickGetButton(joystick0, i))
-				trig0 = 0;
-		}
-	}
-	if (joystick1 == NULL) {
-		if ((kbhits[SDL_TRIG_1]) || (kbhits[SDL_TRIG_1_B]))
-			trig1 = 0;
-		else
-			trig1 = 1;
-	}
-	else {
-		trig1 = 1;
-		for (i = 0; i < joystick1_nbuttons; i++) {
-			if (SDL_JoystickGetButton(joystick1, i))
-				trig1 = 0;
-		}
-	}
 
+	if ((kbhits[SDL_TRIG_1]) || (kbhits[SDL_TRIG_1_B]))
+		trig1 = 0;
+	else
+		trig1 = 1;
 
 	if (SWAP_JOYSTICKS) {
 		*t1 = trig0;
@@ -1184,6 +1166,27 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 	}
 	else {
 		*t0 = trig0;
+		*t1 = trig1;
+	}
+
+	if (joystick0 != NULL) {
+		trig0 = 1;
+		for (i = 0; i < joystick0_nbuttons; i++) {
+			if (SDL_JoystickGetButton(joystick0, i)) {
+				trig0 = 0;
+				break;
+			}
+		}
+		*t0 = trig0;
+	}
+	if (joystick1 != NULL) {
+		trig1 = 1;
+		for (i = 0; i < joystick1_nbuttons; i++) {
+			if (SDL_JoystickGetButton(joystick1, i)) {
+				trig1 = 0;
+				break;
+			}
+		}
 		*t1 = trig1;
 	}
 }
@@ -1198,7 +1201,6 @@ void CountFPS()
 	if (ticks2 - ticks1 > 1000) {
 		ticks1 = ticks2;
 		Aprint("%i fps", shortframes);
-		Aflushlog();
 		shortframes = 0;
 	}
 }
@@ -1252,7 +1254,18 @@ int main(int argc, char **argv)
 				break;
 		default:
 				key_break = 0;
-				key_code = keycode;
+				if (keycode != SDL_JOY_0_LEFT		// plain hack
+					&& keycode != SDL_JOY_0_RIGHT	// see atari_vga.c
+					&& keycode != SDL_JOY_0_UP		// for better way
+					&& keycode != SDL_JOY_0_DOWN
+					&& keycode != SDL_JOY_0_LEFTDOWN
+					&& keycode != SDL_JOY_0_RIGHTDOWN
+					&& keycode != SDL_JOY_0_LEFTUP
+					&& keycode != SDL_JOY_0_RIGHTUP
+					&& keycode != SDL_TRIG_0
+					&& keycode != SDL_TRIG_0_B
+					)
+					key_code = keycode;
 				break;
 			}
 		}
@@ -1294,5 +1307,20 @@ int main(int argc, char **argv)
 #endif
 	}
 	Atari800_Exit(FALSE);
+	Aflushlog();
 	return 0;
 }
+
+/*
+ $Log$
+ Revision 1.16  2001/12/29 21:34:08  joy
+ fullscreen by default
+ define NVIDIA if you have nVIDIA card that can't set 336x240 fullscreen
+ Aflushlog() calls removed - it should be called only after the screen is back to text mode. For X11 compile it with BUFFERED_LOG disabled.
+ If there's just one real joystick then SWAP_JOYSTICK is enabled automatically so that the other player can use numeric block for playing.
+ STICK1 fixed.
+ TRIG0 and TRIG1 fixed. Swapping of TRIGs fixed.
+ joy keys must not be passed to the emulator otherwise some games will stop (RallySpeedway and others)
+ dates in changelog fixed (it was December for sure)
+
+ */
