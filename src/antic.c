@@ -1629,6 +1629,51 @@ void draw_antic_e(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 	do_border();
 }
 
+void draw_antic_e_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr)
+{
+	ULONG lookup[16];
+	lookup[0] = lookup[1] = lookup[4] = lookup[5] = lookup_gtia9[0];
+	lookup[2] = lookup[6] = lookup_gtia9[1];
+	lookup[3] = lookup[7] = lookup_gtia9[2];
+	lookup[8] = lookup[9] = lookup_gtia9[4];
+	lookup[10] = lookup_gtia9[5];
+	lookup[11] = lookup_gtia9[6];
+	lookup[12] = lookup[13] = lookup_gtia9[8];
+	lookup[14] = lookup_gtia9[9];
+	lookup[15] = lookup_gtia9[10];
+	CHAR_LOOP_BEGIN
+		UBYTE screendata = *ANTIC_memptr++;
+		DO_GTIA_BYTE(ptr, lookup, screendata)
+		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
+			ptr += 4;
+		else {
+			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			int k = 4;
+			UBYTE pm_reg;
+			do {
+				pm_reg = pm_lookup_ptr[*c_pm_scanline_ptr++];
+				if (pm_reg) {
+					if (pm_reg == L_PF3) {
+						UBYTE tmp = k > 2 ? screendata >> 4 : screendata & 0xf;
+#ifdef USE_COLOUR_TRANSLATION_TABLE
+						WRITE_VIDEO(ptr, colour_translation_table[tmp | COLPF3]);
+#else
+						WRITE_VIDEO(ptr, tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3]);
+#endif
+					}
+					else
+					{
+						WRITE_VIDEO(ptr, COLOUR(pm_reg));
+					}
+				}
+				ptr++;
+			} while (--k);
+		}
+		t_pm_scanline_ptr++;
+	CHAR_LOOP_END
+	do_border();
+}
+
 void draw_antic_f(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr)
 {
 	INIT_BACKGROUND_6
@@ -1847,7 +1892,7 @@ draw_antic_function draw_antic_table[4][16] = {
 /* Only few of below are right... A lot of proper functions must be implemented */
 		draw_antic_4,	draw_antic_4,	draw_antic_6,	draw_antic_6,
 		draw_antic_8,	draw_antic_9_gtia9,	draw_antic_a,	draw_antic_9_gtia9,
-		draw_antic_9_gtia9, draw_antic_e,	draw_antic_e,	draw_antic_f_gtia9},
+		draw_antic_9_gtia9, draw_antic_e_gtia9,	draw_antic_e_gtia9,	draw_antic_f_gtia9},
 /* GTIA 10 */
 		{ NULL,			NULL,			draw_antic_2_gtia10,	draw_antic_2_gtia10,
 		draw_antic_4,	draw_antic_4,	draw_antic_6,	draw_antic_6,
