@@ -46,9 +46,6 @@ extern UWORD crash_address;
 extern UWORD crash_afterCIM;
 #endif
 
-void Sound_Pause(void);	/* cross-platform sound.h would be better :) */
-void Sound_Continue(void);
-
 ULONG *atari_screen = NULL;
 #ifdef BITPL_SCR
 ULONG *atari_screen_b = NULL;
@@ -740,9 +737,13 @@ void Atari800_Hardware(void)
 			}
 			break;
 		case AKEY_UI:
+#ifdef SOUND
 			Sound_Pause();
+#endif
 			ui((UBYTE *)atari_screen);
+#ifdef SOUND
 			Sound_Continue();
+#endif
 			break;
 		case AKEY_PIL:
 			if (pil_on)
@@ -770,10 +771,11 @@ void Atari800_Hardware(void)
 			}
 			break;
 		}
-#ifdef SOUND
-       	Sound_Update();
-#endif
 #endif	/* !BASIC */
+
+#ifdef SOUND
+		Sound_Update();
+#endif
 
 		/*
 		 * Generate Screen
@@ -928,6 +930,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.7  2001/04/08 05:57:12  knik
+sound calls update
+
 Revision 1.6  2001/04/03 05:43:36  knik
 reorganized sync code; new snailmeter
 
