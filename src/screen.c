@@ -31,6 +31,7 @@
 #include "config.h"
 #include "colours.h"
 #include "screen.h"
+#include "sio.h"
 
 #ifdef HAVE_LIBPNG
 #include <png.h>
@@ -38,6 +39,196 @@
 
 #define ATARI_VISIBLE_WIDTH 336
 #define ATARI_LEFT_MARGIN 24
+
+ULONG *atari_screen = NULL;
+#ifdef DIRTYRECT
+UBYTE *screen_dirty = NULL;
+#endif
+#ifdef BITPL_SCR
+ULONG *atari_screen_b = NULL;
+ULONG *atari_screen1 = NULL;
+ULONG *atari_screen2 = NULL;
+#endif
+
+/* The area that can been seen is screen_visible_x1 <= x < screen_visible_x2,
+   screen_visible_y1 <= y < screen_visible_y2.
+   Full Atari screen is 336x240. ATARI_WIDTH is 384 only because
+   the code in antic.c sometimes draws more than 336 bytes in a line.
+   Currently screen_visible variables are used only to place
+   disk led and snailmeter in the corners of the screen.
+*/
+int screen_visible_x1 = 24;				/* 0 .. ATARI_WIDTH */
+int screen_visible_y1 = 0;				/* 0 .. ATARI_HEIGHT */
+int screen_visible_x2 = 360;			/* 0 .. ATARI_WIDTH */
+int screen_visible_y2 = ATARI_HEIGHT;	/* 0 .. ATARI_HEIGHT */
+
+int show_atari_speed = 1;
+int show_disk_led = 1;
+int show_sector_counter = 0;
+
+#define SMALLFONT_WIDTH    5
+#define SMALLFONT_HEIGHT   7
+#define SMALLFONT_PERCENT  10
+#define SMALLFONT_____ 0x00
+#define SMALLFONT___X_ 0x02
+#define SMALLFONT__X__ 0x04
+#define SMALLFONT__XX_ 0x06
+#define SMALLFONT_X___ 0x08
+#define SMALLFONT_X_X_ 0x0A
+#define SMALLFONT_XX__ 0x0C
+#define SMALLFONT_XXX_ 0x0E
+
+static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2)
+{
+	static UBYTE font[11][SMALLFONT_HEIGHT] = {
+		{
+			SMALLFONT_____,
+			SMALLFONT__X__,
+			SMALLFONT_X_X_,
+			SMALLFONT_X_X_,
+			SMALLFONT_X_X_,
+			SMALLFONT__X__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT__X__,
+			SMALLFONT_XX__,
+			SMALLFONT__X__,
+			SMALLFONT__X__,
+			SMALLFONT__X__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_XX__,
+			SMALLFONT___X_,
+			SMALLFONT__X__,
+			SMALLFONT_X___,
+			SMALLFONT_XXX_,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_XX__,
+			SMALLFONT___X_,
+			SMALLFONT__X__,
+			SMALLFONT___X_,
+			SMALLFONT_XX__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT___X_,
+			SMALLFONT__XX_,
+			SMALLFONT_X_X_,
+			SMALLFONT_XXX_,
+			SMALLFONT___X_,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_XXX_,
+			SMALLFONT_X___,
+			SMALLFONT_XXX_,
+			SMALLFONT___X_,
+			SMALLFONT_XX__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT__X__,
+			SMALLFONT_X___,
+			SMALLFONT_XX__,
+			SMALLFONT_X_X_,
+			SMALLFONT__X__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_XXX_,
+			SMALLFONT___X_,
+			SMALLFONT__X__,
+			SMALLFONT__X__,
+			SMALLFONT__X__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT__X__,
+			SMALLFONT_X_X_,
+			SMALLFONT__X__,
+			SMALLFONT_X_X_,
+			SMALLFONT__X__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT__X__,
+			SMALLFONT_X_X_,
+			SMALLFONT__XX_,
+			SMALLFONT___X_,
+			SMALLFONT__X__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_X_X_,
+			SMALLFONT___X_,
+			SMALLFONT__X__,
+			SMALLFONT_X___,
+			SMALLFONT_X_X_,
+			SMALLFONT_____
+		}
+	};
+	int y;
+	for (y = 0; y < SMALLFONT_HEIGHT; y++) {
+		int src;
+		int mask;
+		src = font[ch][y];
+		for (mask = 1 << (SMALLFONT_WIDTH - 1); mask != 0; mask >>= 1) {
+			video_putbyte(screen, (src & mask) != 0 ? color1 : color2);
+			screen++;
+		}
+		screen += ATARI_WIDTH - SMALLFONT_WIDTH;
+	}
+}
+
+static void SmallFont_DrawInt(UBYTE *screen, int n, UBYTE color1, UBYTE color2)
+{
+	do {
+		SmallFont_DrawChar(screen, n % 10, color1, color2);
+		screen -= SMALLFONT_WIDTH;
+		n /= 10;
+	} while (n > 0);
+}
+
+void Screen_DrawAtariSpeed(void)
+{
+	/* don't show if 99-101% */
+	if (show_atari_speed && (percent_atari_speed < 99 || percent_atari_speed > 101)) {
+		UBYTE *screen;
+		/* space for 5 digits - up to 99999% Atari speed */
+		screen = (UBYTE *) atari_screen + screen_visible_x1 + 5 * SMALLFONT_WIDTH
+			+ (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
+		SmallFont_DrawChar(screen, SMALLFONT_PERCENT, 0x0c, 0x00);
+		SmallFont_DrawInt(screen - SMALLFONT_WIDTH, percent_atari_speed, 0x0c, 0x00);
+	}
+}
+
+void Screen_DrawDiskLED(void)
+{
+	if (sio_last_op_time > 0) {
+		UBYTE *screen;
+		sio_last_op_time--;
+		screen = (UBYTE *) atari_screen + screen_visible_x2 - SMALLFONT_WIDTH
+			+ (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
+		if (show_disk_led)
+			SmallFont_DrawChar(screen, sio_last_drive, 0x00, sio_last_op == SIO_LAST_READ ? 0xac : 0x2b);
+		if (show_sector_counter)
+			SmallFont_DrawInt(screen - SMALLFONT_WIDTH, sio_last_sector, 0x00, 0x88);
+	}
+}
 
 void Screen_FindScreenshotFilename(char *buffer)
 {
