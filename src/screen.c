@@ -62,9 +62,9 @@ int screen_visible_y1 = 0;				/* 0 .. ATARI_HEIGHT */
 int screen_visible_x2 = 360;			/* 0 .. ATARI_WIDTH */
 int screen_visible_y2 = ATARI_HEIGHT;	/* 0 .. ATARI_HEIGHT */
 
-int show_atari_speed = 1;
-int show_disk_led = 1;
-int show_sector_counter = 0;
+int show_atari_speed = FALSE;
+int show_disk_led = TRUE;
+int show_sector_counter = FALSE;
 
 #define SMALLFONT_WIDTH    5
 #define SMALLFONT_HEIGHT   7
