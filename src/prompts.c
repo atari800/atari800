@@ -2,7 +2,7 @@
  * prompts.c - Routines which prompt for input
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2004 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -61,12 +61,10 @@ void GetYesNo(char *message, char *yn)
 		RemoveLF(gash);
 
 		if (strlen(gash) > 0)
-			t_yn = gash[0];
+			t_yn = toupper(gash[0]);
 		else
 			t_yn = ' ';
 
-		if (islower(t_yn))
-			t_yn = toupper(t_yn);
 	} while ((t_yn != ' ') && (t_yn != 'Y') && (t_yn != 'N'));
 
 	if (t_yn != ' ')
@@ -82,22 +80,30 @@ void GetYesNoAsInt(char *message, int *num)
 
 void RemoveSpaces(char *string)
 {
-	char *ptr = string;
+	static char SPACES_TO_REMOVE[] = " \t\r\n";
+	int len = strlen(string);
 
-	while (*string) {
-		switch (*string) {
-		case ' ':
-		case '\n':
-		case '\t':
-			string++;
-			break;
-		default:
-			*ptr++ = *string++;
+	// head
+/*
+	int skiphead = 0;
+	while(skiphead < len && strchr(SPACES_TO_REMOVE, string[skiphead])) {
+		skiphead++;
+	}
+*/
+	int skiphead = strspn(string, SPACES_TO_REMOVE);
+	if (skiphead > 0) {
+		memmove(string, string+skiphead, len-skiphead+1);
+		len -= skiphead;
+	}
+	// tail
+	while(--len > 0) {
+		if (strchr(SPACES_TO_REMOVE, string[len]) != NULL) {
+			string[len] = '\0';
+		}
+		else {
 			break;
 		}
 	}
-
-	*ptr = '\0';
 }
 
 void RemoveLF(char *string)
