@@ -169,6 +169,7 @@ case "$a8_target" in
             AC_MSG_ERROR("the dosvga target is only valid on a DOS system!")
         fi
         AC_DEFINE(DOSVGA,,[DOS vga])
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,,[Additional config file options])
         OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
         ;;
     curses)
@@ -188,12 +189,14 @@ case "$a8_target" in
         ;;
     sdl)
         AC_DEFINE(SDL,,[System with SDL library])
-	sdlcheck="X_`sdl-config --cflags`"
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,,[Additional config file options])
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,,[Save additional config file options])
+        sdlcheck="X_`sdl-config --cflags`"
         if [[ "$sdlcheck" != "X_" ]]; then
             CFLAGS="$CFLAGS `sdl-config --cflags`"
-	    LIBS="$LIBS `sdl-config --libs`"
+            LIBS="$LIBS `sdl-config --libs`"
             OBJS="atari_sdl.o"
-	else
+        else
             AC_MSG_ERROR("No output from sdl-config!  Is sdl-config installed?")
         fi
         ;;
