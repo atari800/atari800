@@ -48,6 +48,7 @@ extern UWORD ypos_break_addr;
 void draw_partial_scanline(int l,int r);
 void update_scanline();
 void update_scanline_prior(UBYTE byte);
+void update_scanline_chbase();
 int *cpu2antic_ptr;
 int *antic2cpu_ptr;
 int delayed_wsync=0;
@@ -2676,6 +2677,30 @@ void update_scanline_prior(UBYTE byte){
 	cur_screen_pos=newpos;
 }
 
+/* chbase needs a different adjusment */
+void update_scanline_chbase(){
+	int antic_xpos=cpu2antic_ptr[xpos];
+	int hscrollsb_adj=(HSCROL&1);
+	int newpos;
+	int fontfetch_adj;
+/* antic fetches character font data every 2 or 4 cycles */
+	/* we want to delay the change until the next fetch */
+	/* empirically determinted: */
+	if(anticmode>=2 && anticmode<=5){
+		fontfetch_adj=(((HSCROL>>1)-antic_xpos+0)&1)*2+9; 
+	}else if(anticmode==6 || anticmode==7){
+		fontfetch_adj=(((HSCROL>>1)-antic_xpos+2)&3)*2+9; 
+	}else{
+		fontfetch_adj=0;
+	}
+	
+	newpos=antic_xpos*2-37+hscrollsb_adj+fontfetch_adj;
+	draw_partial_scanline(cur_screen_pos,newpos);
+	cur_screen_pos=newpos;
+}
+
+
+
 /*draw a partial scanline between point l and point r */
 void draw_partial_scanline(int l,int r){
 /*l is the left hand word, r is the point one past the right-most word to draw*/
@@ -3323,10 +3348,9 @@ glitch*/
 		pmbase_s = pmbase_d & 0xf8ff;
 		break;
 	case _CHBASE:
-/*TODO: cycle-exact timing*/
 #ifdef NEW_CYCLE_EXACT
 	if(DRAWING_SCREEN){
-		update_scanline();
+		update_scanline_chbase();
 	}
 #endif
 		CHBASE = byte;
