@@ -71,14 +71,13 @@ typedef int ATPtr;
 
 void PatchOS(void);
 void MEMORY_InitialiseMachine(void);
-void ClearRAM(void);
 void DisablePILL(void);
 void EnablePILL(void);
 void MemStateSave(UBYTE SaveVerbose);
 void MemStateRead(UBYTE SaveVerbose);
 void CopyFromMem(ATPtr from, UBYTE * to, int size);
 void CopyToMem(UBYTE * from, ATPtr to, int size);
-void PORTB_handler(UBYTE byte);
+void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval);
 void Cart809F_Disable(void);
 void Cart809F_Enable(void);
 void CartA0BF_Disable(void);
