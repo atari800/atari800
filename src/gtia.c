@@ -8,10 +8,7 @@
 #include "gtia.h"
 #include "input.h"
 #include "statesav.h"
-
-#ifndef NO_CONSOL_SOUND
-void Update_consol_sound(int set);
-#endif
+#include "pokeysnd.h"
 
 /* GTIA Registers ---------------------------------------------------------- */
 
