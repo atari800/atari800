@@ -65,16 +65,12 @@ int pil_on = FALSE;
 
 int	os = 2;
 
-extern UBYTE PORTA;
-extern UBYTE PORTB;
-
 extern int xe_bank;
 extern int selftest_enabled;
 
 double deltatime;
 int draw_display=1;		/* Draw actualy generated screen */
 
-int Atari800_Exit(int run_monitor);
 void Atari800_Hardware(void);
 
 static char *rom_filename = NULL;
@@ -82,15 +78,12 @@ static char *rom_filename = NULL;
 void sigint_handler(int num)
 {
 	int restart;
-	int diskno;
 
 	restart = Atari800_Exit(TRUE);
 	if (restart) {
 		signal(SIGINT, sigint_handler);
 		return;
 	}
-	for (diskno = 1; diskno < 8; diskno++)
-		SIO_Dismount(diskno);
 
 	exit(0);
 }
@@ -361,10 +354,6 @@ int main(int argc, char **argv)
 	SIO_Initialise (&argc, argv);
 	Atari_Initialise(&argc, argv);	/* Platform Specific Initialisation */
 
-	if(hold_option)
-		next_console_value = 0x03; /* Hold Option During Reboot */
-
-
 	if (!atari_screen) {
 		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
 #ifdef BITPL_SCR
@@ -400,7 +389,7 @@ int main(int argc, char **argv)
 	}
 
 	if (error) {
-		Aprint("Usage: %s [-rom filename] [-oss filename] [diskfile1...diskfile8]", argv[0]);
+		Aprint("Usage: %s [options] [diskfile1...diskfile8]", argv[0]);
 		Aprint("\t-help         Extended Help");
 		Atari800_Exit(FALSE);
 		return FALSE;
@@ -497,10 +486,14 @@ int main(int argc, char **argv)
 
 int Atari800_Exit(int run_monitor)
 {
+	int restart;
 	if (verbose) {
 		Aprint("Current Frames per Secound = %f", fps);
 	}
-	return Atari_Exit(run_monitor);
+	restart = Atari_Exit(run_monitor);
+	if (!restart)
+		SIO_Exit();	/* umount disks, so temporary files are deleted */
+	return restart;
 }
 
 UBYTE Atari800_GetByte(UWORD addr)
@@ -705,12 +698,6 @@ void Atari800_Hardware(void)
 			break;
 		case AKEY_EXIT:
 			Atari800_Exit(FALSE);
-			/* unmount disk drives so the temporary ones are deleted */
-			{
-				int diskno;
-				for (diskno = 1; diskno < 8; diskno++)
-					SIO_Dismount(diskno);
-			}
 			exit(1);
 		case AKEY_BREAK:
 			IRQST &= ~0x80;
@@ -912,6 +899,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.11  2001/07/25 12:58:25  fox
+added SIO_Exit(), slight clean up
+
 Revision 1.10  2001/07/20 20:14:14  fox
 support for new rtime and cartridge modules
 
