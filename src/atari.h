@@ -76,6 +76,11 @@ extern ULONG *atari_screen1;
 extern ULONG *atari_screen2;
 #endif
 
+extern int screen_visible_x1;
+extern int screen_visible_y1;
+extern int screen_visible_x2;
+extern int screen_visible_y2;
+
 extern unsigned int screenline_cpu_clock;
 #define cpu_clock (screenline_cpu_clock + xpos)
 
@@ -216,6 +221,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.21  2001/10/03 16:49:04  fox
+added screen_visible_* variables
+
 Revision 1.20  2001/10/03 16:39:54  fox
 rewritten escape codes handling
 
