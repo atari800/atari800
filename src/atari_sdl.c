@@ -1,15 +1,23 @@
-
 /* 
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
-   history:
-   
-   15-11-2001 - fullscreen switching, scaling only with ratio >= 1.0, more
-                keyboard updates  
-   14-11-2001 - scaling with any ratio supported, keyboard updates, aspect ratio
-   13-11-2001 - audio and better keyboard 
-   12-11-2001 - video and joystick emulation
+   15-11-2001 - fullscreen switching
+              - scaling only with ratio >= 1.0
+	      - more keyboard updates 
+	      - scaling should be LIGHTSPEED now, but please compile emulator
+		with optimization CFLAGS like "-O2 -march=your_cpu_type" and
+		"-fomit-frame-pointer" - so compiler can use pentium
+		instructions and one additional register 
+	      - fantastic new feature "Black-and-White video", you can switch
+		BW mode with ALT+b	
+   14-11-2001 - scaling with any ratio supported
+   	      - keyboard updates
+	      - aspect ratio
+   13-11-2001 - audio
+              - better keyboard support
+   12-11-2001 - video
+              - joystick emulation
    
    TODO:
    - fix very strange segfaults (when adding/removing code)
@@ -17,6 +25,7 @@
    - fix audio
    - define joystick(s) emulation keys, use mouse and real joystick
    - turn off fullscreen when error happen
+   - rewrite keyboard stuff, switch/case is bad(slow) idea
    - Atari_Exit - monitor stuff (debugger?)
    
    USAGE:
@@ -28,10 +37,13 @@
    - fullscreen switching probably doesn't work in Windows, you need to set
      variable in source code
 
+   Thanks to David Olofson for scaling tips!  
+
 */
 
-static int sound_enabled = 1;
+static int sound_enabled = 0;
 int FULLSCREEN = 0;
+int BW = 0;
 
 #include <SDL.h>
 
@@ -55,6 +67,7 @@ static int dsprate = 44100;
 
 // VIDEO
 SDL_Surface *MainScreen = NULL;
+SDL_Color colors[256];		// palette
 
 // KEYBOARD
 Uint8 *kbhits;
@@ -62,33 +75,52 @@ extern int alt_function;
 
 int done = 0;
 
-void SetVideoMode(int w, int h)
+void SetPalette()
 {
-	int i, rgb;
-	SDL_Color colors[256];		// palette
-	printf("Setting Video Mode: %ix%ix8  ", w, h);
-	if (FULLSCREEN)
-		MainScreen =
-			SDL_SetVideoMode(w, h, 8, SDL_FULLSCREEN | SDL_HWPALETTE);
-	else
-		MainScreen =
-			SDL_SetVideoMode(w, h, 8, SDL_RESIZABLE | SDL_HWPALETTE);
+	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
+}	
 
-	if (MainScreen == NULL) {
-		printf("[failed]\n");
-		exit(-1);
-	}
-	printf("[OK]\n");
-
+void CalcPalette()
+{
+ int i, rgb,y;
+ if (BW==0)
 	for (i = 0; i < 256; i++) {
 		rgb = colortable[i];
 		colors[i].r = (rgb & 0x00ff0000) >> 16;
 		colors[i].g = (rgb & 0x0000ff00) >> 8;
 		colors[i].b = (rgb & 0x000000ff) >> 0;
 	}
+ else
+	for (i = 0; i < 256; i++) {
+		rgb = colortable[i];
+		y=((rgb & 0x00ff0000) >> 16)+
+		  ((rgb & 0x0000ff00) >> 8)+
+		  ((rgb & 0x000000ff) >> 0);
+		y=y/3;  
+		colors[i].r=y;  
+		colors[i].g=y;  
+		colors[i].b=y;  
+	}
 
-	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
+}
 
+
+void SetVideoMode(int w, int h)
+{
+	if (FULLSCREEN)
+		MainScreen =
+			SDL_SetVideoMode(w, h, 8, SDL_FULLSCREEN);
+	else
+		MainScreen =
+			SDL_SetVideoMode(w, h, 8, SDL_RESIZABLE);
+
+	if (MainScreen == NULL) {
+ 	        printf("Setting Video Mode: %ix%ix8 FAILED", w, h);
+		exit(-1);
+	}
+
+	SetPalette();
+	
 	SDL_ShowCursor(SDL_DISABLE);	// hide mouse cursor 
 }
 
@@ -103,12 +135,14 @@ void SetNewVideoMode(int w, int h)
 		w = ATARI_WIDTH - 2 * 24;
 	}
 
-	w = w / 8;
-	w = w * 8;
 	if (w / 1.4 < h)
 		h = w / 1.4;
 	else
 		w = h * 1.4;
+	w = w / 8;
+	w = w * 8;
+	h = h / 8;
+	h = h * 8;
 
 	SetVideoMode(w, h);
 
@@ -117,6 +151,14 @@ void SetNewVideoMode(int w, int h)
 void SwitchFullscreen()
 {
 	FULLSCREEN = 1 - FULLSCREEN;
+	SetVideoMode(MainScreen->w, MainScreen->h);
+}
+
+void SwitchBW()
+{
+	BW = 1 - BW;
+	CalcPalette();
+	SetPalette();
 	SetVideoMode(MainScreen->w, MainScreen->h);
 }
 
@@ -129,29 +171,25 @@ void SDL_Sound_Update(void *userdata, Uint8 * stream, int len)
 
 void SDL_Sound_Initialise(int *argc, char *argv[])
 {
-	SDL_AudioSpec *desired, *obtained;
-	obtained = NULL;
-	printf("SDL_Sound_Initialise           ");
+	SDL_AudioSpec desired, obtained;
 	if (sound_enabled) {
-		desired = (SDL_AudioSpec *) malloc(sizeof(SDL_AudioSpec));
-		desired->freq = dsprate;
-		desired->format = AUDIO_S8;
-		desired->samples = 1 << FRAGSIZE;
-		desired->callback = SDL_Sound_Update;
-		desired->userdata = NULL;
-		desired->channels = 1;
+		desired.freq = dsprate;
+		desired.format = AUDIO_S8;
+		desired.samples = 1 << FRAGSIZE;
+		desired.callback = SDL_Sound_Update;
+		desired.userdata = NULL;
+		desired.channels = 1;
 
-		if (SDL_OpenAudio(desired, obtained) < 0) {
-			printf("[failed] \nCouldn't open audio: %s\n", SDL_GetError());
+		if (SDL_OpenAudio(&desired, &obtained) < 0) {
+			printf("Problem with audio: %s\n", SDL_GetError());
 			exit(-1);
 		}
 
 		// mono
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
-		printf("[OK]\n");
 	}
 	else
-		printf("[skipped]\n");
+	printf("Audio is off, you can turn it on by setting sound_enabled=1\n");
 }
 
 int Atari_Keyboard(void)
@@ -159,6 +197,12 @@ int Atari_Keyboard(void)
 	static int lastkey, key_pressed = 0;
 
 	SDL_Event event;
+	kbhits = SDL_GetKeyState(NULL);
+	if (kbhits==NULL)
+	{
+	 printf("oops, kbhits is NULL!\n");
+	 exit(-1);
+	} 
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_KEYDOWN:
@@ -166,6 +210,9 @@ int Atari_Keyboard(void)
 			key_pressed = 1;
 			if ((lastkey == SDLK_f) && (kbhits[SDLK_LALT])) {
 				SwitchFullscreen();
+			}
+			if ((lastkey == SDLK_b) && (kbhits[SDLK_LALT])) {
+				SwitchBW();
 			}
 			break;
 		case SDL_KEYUP:
@@ -180,7 +227,6 @@ int Atari_Keyboard(void)
 		}
 	}
 
-	kbhits = SDL_GetKeyState(NULL);
 	// SHIFT STATE
 	if ((kbhits[SDLK_LSHIFT]) || (kbhits[SDLK_RSHIFT]))
 		key_shift = 1;
@@ -299,6 +345,8 @@ int Atari_Keyboard(void)
 		case SDLK_F10:
 			key_pressed = 0;
 			return AKEY_SCREENSHOT_INTERLACE;
+		case SDLK_INSERT:
+			return AKEY_INSERT_LINE;
 		}
 	else
 		switch (lastkey) {
@@ -399,10 +447,16 @@ int Atari_Keyboard(void)
 		case SDLK_F10:
 			key_pressed = 0;
 			return AKEY_SCREENSHOT;
+		case SDLK_INSERT:
+			return AKEY_INSERT_CHAR;
 		}
 
 	// don't care about shift
 	switch (lastkey) {
+	case SDLK_END:
+		return AKEY_HELP;
+	case SDLK_HOME:
+		return AKEY_CLEAR;
 	case SDLK_PAUSE:
 		return AKEY_BREAK;
 	case SDLK_CAPSLOCK:
@@ -433,21 +487,21 @@ int Atari_Keyboard(void)
 		return AKEY_NONE;
 	}
 }
-
 void Atari_Initialise(int *argc, char *argv[])
 {
-
-	printf("SDL_Init                       ");
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == 0)
-		printf("[OK]\n");
-	else {
-		printf("[failed]\n");
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
+	{
+		printf("SDL_Init FAILED\n");
 		exit(-1);
 	}
-
+	
+	CalcPalette();
+	
 	SetVideoMode(ATARI_WIDTH - 2 * 24, ATARI_HEIGHT);
 
 	SDL_Sound_Initialise(argc, argv);
+	
+	printf("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>\n");
 
 }
 
@@ -456,7 +510,6 @@ int Atari_Exit(int run_monitor)
 	int restart;
 	restart = FALSE;
 
-	printf("bye bye\n");
 	SDL_Quit();
 
 	return restart;
@@ -464,49 +517,85 @@ int Atari_Exit(int run_monitor)
 
 void Atari_DisplayScreen(UBYTE * screen)
 {
-	int i, j;
-	int x, y;
-	int dx, dy;
-	int w = 0, h = 0;
-	char c;
+	register Uint32 quad;
+	register int x;
+	register int dx;
+	register int yy;
+	register Uint8 *ss;
+	int i;
+	int y;
+	int dy;
+	int w , h ;
+	int w4;
+	int pos;
+	int pitch4;
+	Uint32 *start32;
 
-	Uint8 *pos, *start;
+	pitch4=MainScreen->pitch/4;
+	start32=(Uint32 *)MainScreen->pixels;
 
-	start = MainScreen->pixels;
 	SDL_LockSurface(MainScreen);
-
-	if ((w == MainScreen->w) && (h == MainScreen->h)) {
+	if ((MainScreen->w==ATARI_WIDTH-2*24) && (MainScreen->h==ATARI_HEIGHT)) {
 		// no scaling
 		screen = screen + 24;
-		for (j = 0; j < MainScreen->h; j++) {
-			memcpy(start, screen, ATARI_WIDTH - 2 * 24);
-			screen = screen + 2 * 24;
-			start = start + ATARI_WIDTH;
+		i=MainScreen->h;
+		while (i>0)
+		{
+			memcpy(start32, screen, ATARI_WIDTH - 2 * 24);
+			screen+=ATARI_WIDTH;
+			start32+=pitch4;
+			i--;
 		}
 	}
 	else
-		// with scaling 
 	{
+		// scaling 
 
 		w = (ATARI_WIDTH - 2 * 24) << 16;
 		h = (ATARI_HEIGHT) << 16;
 		dx = w / MainScreen->w;
 		dy = h / MainScreen->h;
+		w4= MainScreen->w/4-1;
+		ss=screen;
 
 		y = (0) << 16;
-		for (j = 0; j < MainScreen->h; j++) {
-			x = (24) << 16;
-			pos = start;
-			for (i = 0; i < MainScreen->w; i++) {
-				c = screen[ATARI_WIDTH * (y >> 16) + (x >> 16)];
-				*pos = c;
-				x = x + dx;
-				pos = pos + 1;
+		i=MainScreen->h;
+		while (i>0)
+		{
+			x = (ATARI_WIDTH-24) << 16;
+			pos = w4;
+			yy=ATARI_WIDTH * (y >> 16);
+			while (pos>=0)
+			{
+				quad=(ss[yy+(x>>16)]<<24);
+				x=x-dx;
+				quad+=(ss[yy+(x>>16)]<<16);
+				x=x-dx;
+				quad+=(ss[yy+(x>>16)]<<8);
+				x=x-dx;
+				quad+=(ss[yy+(x>>16)]<<0);
+				x=x-dx;
+				    
+				start32[pos] = quad;
+				pos--;
+				
+				quad=(ss[yy+(x>>16)]<<24);
+				x=x-dx;
+				quad+=(ss[yy+(x>>16)]<<16);
+				x=x-dx;
+				quad+=(ss[yy+(x>>16)]<<8);
+				x=x-dx;
+				quad+=(ss[yy+(x>>16)]<<0);
+				x=x-dx;
+				    
+				start32[pos] = quad;
+				pos--;
 			}
-			start = start + MainScreen->pitch;
+			start32+= pitch4;
 			y = y + dy;
+			i--;
 		}
-
+	
 	}
 
 	SDL_UnlockSurface(MainScreen);
@@ -607,7 +696,7 @@ int main(int argc, char **argv)
 		frametimer++;
 		if (frametimer == refresh_rate) {
 			Atari800_Frame(EMULATE_FULL);
-			atari_sync();		// TODO: slow computers -> no sync
+			atari_sync();		
 			Atari_DisplayScreen((UBYTE *) atari_screen);
 			frametimer = 0;
 		}
