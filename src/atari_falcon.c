@@ -42,9 +42,7 @@
 #include "sound.h"
 #include "log.h"
 
-#include "gemfast.h"
-#include "aesbind.h"
-#include "vdibind.h"
+#include "gem.h"
 
 /* -------------------------------------------------------------------------- */
 
