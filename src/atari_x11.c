@@ -670,33 +670,43 @@ int GetKeyCode(XEvent * event)
 			break;
 		case XK_KP_0:
 			keypad_trig = 0;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_1:
 			keypad_stick = STICK_LL;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_2:
 			keypad_stick &= STICK_BACK;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_3:
 			keypad_stick = STICK_LR;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_4:
 			keypad_stick &= STICK_LEFT;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_5:
 			keypad_stick = STICK_CENTRE;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_6:
 			keypad_stick &= STICK_RIGHT;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_7:
 			keypad_stick = STICK_UL;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_8:
 			keypad_stick &= STICK_FORWARD;
+			keycode = AKEY_NONE;
 			break;
 		case XK_KP_9:
 			keypad_stick = STICK_UR;
+			keycode = AKEY_NONE;
 			break;
 		default:
 			if (x11bug)
