@@ -46,7 +46,7 @@ Currently supported cartridge types:
 | 12 | 800/XL/XE |   32 | XEGS 32 KB cartridge                              |
 | 13 | 800/XL/XE |   64 | XEGS 64 KB cartridge                              |
 | 14 | 800/XL/XE |  128 | XEGS 128 KB cartridge                             |
-| 15 | 800/XL/XE |   16 | OSS 'M019' 16 KB cartridge                        |
+| 15 | 800/XL/XE |   16 | OSS 'M091' 16 KB cartridge                        |
 | 16 |   5200    |   16 | One chip 16 KB 5200 cartridge                     |
 | 17 | 800/XL/XE |  128 | Atrax 128 KB cartridge                            |
 | 18 | 800/XL/XE |   40 | Bounty Bob Strikes Back 40 KB cartridge           |
@@ -196,15 +196,15 @@ stands for the first bank in the image, bank B is the second, etc.
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
-| Type 15: OSS 'M019' 16 KB cartridge                                       |
+| Type 15: OSS 'M091' 16 KB cartridge                                       |
 +---------------------------------------------------------------------------+
 
  This is the simpler one of OSS schemes. It uses only A0 and A3 address
  lines:
  A3=0, A0=0 - $A000-$AFFF: bank B, $B000-$BFFF: bank A
- A3=0, A0=1 - $A000-$AFFF: bank C, $B000-$BFFF: bank A
+ A3=0, A0=1 - $A000-$AFFF: bank D, $B000-$BFFF: bank A
  A3=1, A0=0 - disable cartridge
- A3=1, A0=1 - $A000-$AFFF: bank D, $B000-$BFFF: bank A
+ A3=1, A0=1 - $A000-$AFFF: bank C, $B000-$BFFF: bank A
 
 +---------------------------------------------------------------------------+
 | Type 16: One chip 16 KB 5200 cartridge                                    |
