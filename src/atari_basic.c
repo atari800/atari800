@@ -2,6 +2,7 @@
 #include "config.h"
 #include "input.h"
 #include "monitor.h"
+#include "log.h"
 
 void Atari_Initialise(int *argc, char *argv[])
 {
@@ -11,6 +12,8 @@ int Atari_Exit(int run_monitor)
 {
 	if (run_monitor)
 		return monitor();
+
+	Aflushlog();
 	return FALSE;
 }
 
