@@ -27,6 +27,7 @@
 #include "cassette.h"
 #include "rtime.h"
 #include "input.h"
+#include "pokeysnd.h"
 
 tUIDriver* ui_driver = &basic_ui_driver;
 
@@ -58,7 +59,7 @@ void CartManagement();
 int RunExe();
 int LoadTape();
 void SelectSystem();
-void SetSoundType();
+int SoundSettings();
 void SelectArtifacting();
 void AtariSettings();
 int SaveState();
@@ -629,19 +630,54 @@ void SelectArtifacting()
 	}
 }
 
-void SetSoundType()
+int SoundSettings()
 {
-	char *msg;
+	int reboot_required = FALSE;
+
+	static tMenuItem menu_array[] =
+	{
+		{ "HFPO", ITEM_ENABLED|ITEM_CHECK, NULL, "High Fidelity POKEY:", NULL, 0 },
+		{ "STER", ITEM_ENABLED|ITEM_CHECK, NULL, "Dual POKEY (Stereo):", NULL, 1 },
+		MENU_END
+	};
+
+	int option = 0;
+
+	do {
+		if(Pokey_get_quality())
+			menu_array[0].flags |= ITEM_CHECKED;
+		else
+			menu_array[0].flags &= ~ITEM_CHECKED;
+
 #ifdef STEREO
-	stereo_enabled = !stereo_enabled;
-	if (stereo_enabled)
-		msg = "Stereo sound output";
-	else
-		msg = " Mono sound output ";
-#else
-	msg = "Stereo sound was not compiled in";
+		if(stereo_enabled)
+			menu_array[1].flags |= ITEM_CHECKED;
+		else
 #endif
-	ui_driver->fMessage(msg);
+			menu_array[1].flags &= ~ITEM_CHECKED;
+
+		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
+
+		switch (option) {
+		case 0:
+            Pokey_set_quality(Pokey_get_quality() ? 0 : 1 /* default hifi */);
+            /* According the PokeySnd doc the POKEY switch can occur on
+               a cold-restart only */
+			reboot_required = TRUE;
+			ui_driver->fMessage("Will reboot to apply the change");
+			option = -1;	/* immediate exit from the while loop */
+			break;
+		case 1:
+#ifdef STEREO
+			stereo_enabled = !stereo_enabled;
+#else
+			ui_driver->fMessage("Stereo sound support not compiled in");
+#endif
+			break;
+		}
+	} while (option >= 0);
+
+	return reboot_required;
 }
 
 void Screenshot(int interlaced)
@@ -662,7 +698,7 @@ void ui(UBYTE* screen)
 		{ "XBIN", ITEM_ENABLED|ITEM_FILESEL, NULL, "Run BIN file directly",      "Alt+R",    MENU_RUN },
 		{ "CASS", ITEM_ENABLED|ITEM_FILESEL, NULL, "Load tape image",            NULL,       MENU_CASSETTE },
 		{ "SYST", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Select System",              "Alt+Y",    MENU_SYSTEM },
-		{ "STER", ITEM_ENABLED|ITEM_ACTION,  NULL, "Sound Mono/Stereo",          "Alt+O",    MENU_SOUND },
+		{ "SNDS", ITEM_ENABLED|ITEM_ACTION,  NULL, "Sound Settings", "Alt+O",    MENU_SOUND },
 		{ "SREC", ITEM_ENABLED|ITEM_ACTION,  NULL, "Sound Recording start/stop", "Alt+W",    MENU_SOUND_RECORDING },
 		{ "ARTF", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Artifacting mode",           NULL,       MENU_ARTIF },
 		{ "SETT", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Atari Settings",             NULL,       MENU_SETTINGS },
@@ -736,7 +772,10 @@ void ui(UBYTE* screen)
 			AtariSettings();
 			break;
 		case MENU_SOUND:
-			SetSoundType();
+			if (SoundSettings()) {
+				Coldstart();
+				done = TRUE;	/* reboot immediately */
+			}
 			break;
 		case MENU_SOUND_RECORDING:
 			SoundRecording();
@@ -835,6 +874,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.40  2003/02/09 13:17:29  joy
+switch Pokey cores on-the-fly
+
 Revision 1.39  2002/11/05 22:40:56  joy
 UI disk mounting fixes
 

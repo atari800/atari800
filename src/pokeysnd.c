@@ -207,11 +207,14 @@ int	sampout2;			/* last out volume */
 #endif
 #endif	/* NO_VOL_ONLY */
 
+static uint32 snd_freq17 = FREQ_17_EXACT;
+static uint16 snd_playback_freq = 44100;
+static uint8 snd_num_pokeys = 1;
 static int snd_flags = 0;
 static int snd_quality = 0;
 const static int mymaxquality = 1;
 
-// multiple sound engine interface
+/* multiple sound engine interface */
 static void Pokey_process_8(void * sndbuffer, unsigned sndn);
 static void Pokey_process_16(void * sndbuffer, unsigned sndn);
 static void null_pokey_process(void *sndbuffer, unsigned int sndn) {}
@@ -235,7 +238,6 @@ void (*Update_consol_sound)(int set) = null_consol_sound;
 static void Update_vol_only_sound_rf(void);
 static void null_vol_only_sound(void) {}
 void (*Update_vol_only_sound)(void) = null_vol_only_sound;
-
 
 /*****************************************************************************/
 /* In my routines, I treat the sample output as another divide by N counter  */
@@ -280,17 +282,41 @@ void (*Update_vol_only_sound)(void) = null_vol_only_sound;
 /*                                                                           */
 /*****************************************************************************/
 
+static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
+           uint8 num_pokeys, unsigned int flags, unsigned int quality);
+
+int Pokey_set_quality(int quality)
+{
+	snd_quality = quality;
+
+	if (quality >= mymaxquality)
+		return Pokey_sound_init_mz(snd_freq17, snd_playback_freq, snd_num_pokeys, snd_flags,
+				     quality - mymaxquality);
+	else
+		return Pokey_sound_init_rf(snd_freq17, snd_playback_freq, snd_num_pokeys, snd_flags,
+				     quality - mymaxquality);
+}
+
+int Pokey_get_quality(void)
+{
+	return snd_quality;
+}
+
 int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 		     unsigned int flags, unsigned int quality)
 {
+	snd_freq17 = freq17;
+	snd_playback_freq = playback_freq;
+	snd_num_pokeys = num_pokeys;
+	snd_flags = flags;
+
+	return Pokey_set_quality(quality);
+}
+
+static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
+           uint8 num_pokeys, unsigned int flags, unsigned int quality)
+{
 	uint8 chan;
-
-        snd_flags = flags;
-	snd_quality = quality;
-
-        if (quality >= mymaxquality)
-	  return Pokey_sound_init_mz(freq17, playback_freq, num_pokeys, flags,
-				     quality - mymaxquality);
 
 	Update_pokey_sound = Update_pokey_sound_rf;
 #ifdef SERIO_SOUND
@@ -1147,6 +1173,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.12  2003/02/09 13:17:29  joy
+switch Pokey cores on-the-fly
+
 Revision 1.11  2003/02/08 23:52:17  joy
 little cleanup
 

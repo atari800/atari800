@@ -1,3 +1,10 @@
+2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
+
+* pokeysnd.[ch]: added Pokey_set/get_quality() that allows me to switch
+  the Pokey routines (Ron Fries/Michael Borisov) on-the-fly from UI.
+* ui.c: Sound Settings submenu added. Allows changing the Pokey routines
+  on-the-fly (automatically reboots) and also Mono/Stereo (if compiled in).
+
 2003-02-08  Petr Stehlik  <pstehlik@sophics.cz>
 
 * atari_sdl.c: signal keyboard interrupt only when it's enabled
