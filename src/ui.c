@@ -120,16 +120,18 @@ void SelectSystem()
 
 void DiskManagement()
 {
+	static char drive_array[8][7];
+
 	static tMenuItem menu_array[] =
 	{
-		{ "DKS1", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, "<R>D1:", sio_filename[0], NULL, 0 },
-		{ "DKS2", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, "<R>D2:", sio_filename[1], NULL, 1 },
-		{ "DKS3", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, "<R>D3:", sio_filename[2], NULL, 2 },
-		{ "DKS4", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, "<R>D4:", sio_filename[3], NULL, 3 },
-		{ "DKS5", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, "<R>D5:", sio_filename[4], NULL, 4 },
-		{ "DKS6", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, "<R>D6:", sio_filename[5], NULL, 5 },
-		{ "DKS7", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, "<R>D7:", sio_filename[6], NULL, 6 },
-		{ "DKS8", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, "<R>D8:", sio_filename[7], NULL, 7 },
+		{ "DKS1", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[0], sio_filename[0], NULL, 0 },
+		{ "DKS2", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[1], sio_filename[1], NULL, 1 },
+		{ "DKS3", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[2], sio_filename[2], NULL, 2 },
+		{ "DKS4", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[3], sio_filename[3], NULL, 3 },
+		{ "DKS5", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[4], sio_filename[4], NULL, 4 },
+		{ "DKS6", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[5], sio_filename[5], NULL, 5 },
+		{ "DKS7", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[6], sio_filename[6], NULL, 6 },
+		{ "DKS8", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[7], sio_filename[7], NULL, 7 },
 		MENU_END
 	};
 
@@ -149,7 +151,7 @@ void DiskManagement()
 
 		for(i = 0; i < 8; i++)
 		{
-			menu_array[i].prefix[1] = rwflags[i] ? 'R' : 'W';
+			sprintf(menu_array[i].prefix, "<%c>D%d:", rwflags[i] ? 'R' : 'W', i + 1);
 		}
 
 		dsknum = ui_driver->fSelect("Disk Management", FALSE, dsknum, menu_array, &seltype);
@@ -769,6 +771,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.27  2001/11/18 19:35:59  fox
+fixed a bug: modification of string literals
+
 Revision 1.26  2001/11/04 23:31:39  fox
 right slot cartridge
 
