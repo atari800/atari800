@@ -47,6 +47,18 @@ ULONG *atari_screen1 = NULL;
 ULONG *atari_screen2 = NULL;
 #endif
 
+/* The area that can been seen on screen is x1 <= x < x2, y1 <= y < y2.
+   Full Atari screen is 336x240. ATARI_WIDTH is 384 only because
+   the code in antic.c sometimes draws more than 336 bytes in a line.
+   Currently screen_visible variables are used only to place
+   disk led and snailmeter in corners of screen, but they might be
+   also used for optimisations in antic.c.
+*/
+int screen_visible_x1 = 24;				/* 0 .. ATARI_WIDTH */
+int screen_visible_y1 = 0;				/* 0 .. ATARI_HEIGHT */
+int screen_visible_x2 = 360;			/* 0 .. ATARI_WIDTH */
+int screen_visible_y2 = ATARI_WIDTH;	/* 0 .. ATARI_HEIGHT */
+
 int machine_type = MACHINE_OSB;
 int ram_size = 48;
 int tv_mode = TV_PAL;
@@ -645,12 +657,12 @@ static void ShowRealSpeed(ULONG * atari_screen)
 {
   UBYTE *ptr;
   int i;
-  int speed = (100.0 * deltatime / frametime + 0.5);
+  int speed = (int) (100.0 * deltatime / frametime + 0.5);
 
   if (speed > 200)
     speed = 200;
 
-  ptr = (UBYTE *) atari_screen + 32 + ATARI_WIDTH * LED_lastline;
+  ptr = (UBYTE *) atari_screen + screen_visible_x1 + ATARI_WIDTH * (screen_visible_y2 - 1);
 
   for (i = 0; i < speed; i++)
     ptr[i] = 0xc8;
@@ -755,7 +767,7 @@ void Atari800_Frame(int mode)
 		break;
 	case EMULATE_FULL:
 		ANTIC_Frame(TRUE);
-		Update_LED();
+		LED_Frame();
 #ifdef SNAILMETER
 		if (!emu_too_fast)
 			ShowRealSpeed(atari_screen);
@@ -902,6 +914,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.27  2001/10/03 16:49:24  fox
+added screen_visible_* variables, Update_LED -> LED_Frame
+
 Revision 1.26  2001/10/03 16:40:17  fox
 rewritten escape codes handling
 
