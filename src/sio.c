@@ -1,7 +1,4 @@
 /* $Id$ */
-#define Peek(a) (dGetByte((a)))
-#define DPeek(a) ( dGetByte((a))+( dGetByte((a)+1)<<8 ) )
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -559,18 +556,18 @@ static int DriveStatus(int unit, UBYTE * buffer)
 
 void SIO(void)
 {
-	int sector = DPeek(0x30a);
-	UBYTE unit = Peek(0x301) - 1;
+	int sector = dGetWordAligned(0x30a);
+	UBYTE unit = dGetByte(0x301) - 1;
 	UBYTE result = 0x00;
-	ATPtr data = DPeek(0x304);
-	int length = DPeek(0x308);
+	ATPtr data = dGetWordAligned(0x304);
+	int length = dGetWordAligned(0x308);
 	int realsize = 0;
-	int cmd = Peek(0x302);
+	int cmd = dGetByte(0x302);
 #ifndef NO_SECTOR_DELAY
 	static int delay_counter = 1;	/* no delay on first read */
 #endif
 
-	if (Peek(0x300) == 0x31 && unit < MAX_DRIVES)	/* UBYTE range ! */
+	if (dGetByte(0x300) == 0x31 && unit < MAX_DRIVES)	/* UBYTE range ! */
 		switch (cmd) {
 		case 0x4e:				/* Read Status Block */
 			if (12 == length) {
@@ -653,7 +650,7 @@ void SIO(void)
 		default:
 			result = 'N';
 		}
-	else if (Peek(0x300) == 0x60) {
+	else if (dGetByte(0x300) == 0x60) {
 		result = CASSETTE_Sio();
 		if (result == 'C')
 			CopyToMem(cassette_buffer, data, length);
@@ -680,8 +677,8 @@ void SIO(void)
 		break;
 	}
 	regA = 0;	/* MMM */
-	Poke(0x0303, regY);
-	Poke(0x42,0);
+	dPutByte(0x0303, regY);
+	dPutByte(0x42,0);
 	SetC;
 	Set_LED_Off();
 
@@ -997,6 +994,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.13  2001/10/01 17:21:11  fox
+updated for new macros in memory-d.h
+
 Revision 1.12  2001/09/08 07:54:48  knik
 used FILENAME_MAX instead of FILENAME_LEN
 
