@@ -6,10 +6,14 @@
 #endif
 
 #include "atari.h"
+#include "ataripcx.h"
 #include "config.h"
 #include "cpu.h"
+#include "input.h"
 #include "monitor.h"
 #include "memory.h"
+#include "rt-config.h"	/* refresh_rate */
+#include "ui.h"
 
 #ifdef SOUND
 #include "sound.h"
@@ -22,7 +26,6 @@
 #define CURSES_WIDE_2 4
 
 static int curses_mode;
-static int consol;
 
 void Atari_Initialise(int *argc, char *argv[])
 {
@@ -53,7 +56,6 @@ void Atari_Initialise(int *argc, char *argv[])
 	curs_set(0);				/* Disable Cursor */
 	nodelay(stdscr, 1);			/* Don't block for keypress */
 
-	consol = 7;
 #ifdef SOUND
    Sound_Initialise(argc, argv);
 #endif
@@ -538,15 +540,15 @@ int Atari_Keyboard(void)
                 keycode = AKEY_UI;
 		break;
 	case KEY_F0 + 2:
-		consol &= 0x03;
+		key_consol &= 0x03;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 3:
-		consol &= 0x05;
+		key_consol &= 0x05;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 4:
-		consol &= 0x06;
+		key_consol &= 0x06;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 5:
@@ -606,23 +608,78 @@ int Atari_TRIG(int num)
 	return 1;
 }
 
-int Atari_POT(int num)
+int main(int argc, char **argv)
 {
-	return 228;
-}
+	int test_val = 0;
+	int keycode = AKEY_NONE;
 
-int Atari_CONSOL(void)
-{
-	return consol;
-}
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
 
-int Atari_PEN(int vertical)
-{
-	return 0;
-}
+	/* main loop */
+	while (TRUE) {
+		keycode = Atari_Keyboard();
 
+		switch (keycode) {
+		case AKEY_COLDSTART:
+			Coldstart();
+			break;
+		case AKEY_WARMSTART:
+			Warmstart();
+			break;
+		case AKEY_EXIT:
+			Atari800_Exit(FALSE);
+			exit(1);
+		case AKEY_UI:
+#ifdef SOUND
+			Sound_Pause();
+#endif
+			ui((UBYTE *)atari_screen);
+#ifdef SOUND
+			Sound_Continue();
+#endif
+			break;
+		case AKEY_SCREENSHOT:
+			Save_PCX_file(FALSE, Find_PCX_name());
+			break;
+		case AKEY_SCREENSHOT_INTERLACE:
+			Save_PCX_file(TRUE, Find_PCX_name());
+			break;
+		case AKEY_BREAK:
+			key_break = 1;
+			break;
+		default:
+			key_break = 0;
+			key_code = keycode;
+			break;
+		}
+
+		if (++test_val == refresh_rate) {
+			Atari800_Frame(EMULATE_FULL);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync(); /* here seems to be the best place to sync */
+#endif
+			Atari_DisplayScreen((UBYTE *) atari_screen);
+			test_val = 0;
+		}
+		else {
+#ifdef VERY_SLOW
+			Atari800_Frame(EMULATE_BASIC);
+#else	/* VERY_SLOW */
+			Atari800_Frame(EMULATE_NO_SCREEN);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync();
+#endif
+#endif	/* VERY_SLOW */
+		}
+	}
+}
 /*
 $Log$
+Revision 1.4  2001/10/10 12:14:10  fox
+compilable now
+
 Revision 1.3  2001/04/08 05:54:48  knik
 sound_update call removed (moved to atari.c)
 
