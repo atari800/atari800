@@ -2,17 +2,15 @@
 #include <stdio.h>
 
 #include "atari.h"
-#include "config.h"
-#include "log.h"
 #include "cpu.h"
-#include "memory-d.h"
-#include "pia.h"
+#include "log.h"
+#include "memory.h"
 
 int start_binloading = 0;
 static FILE *binf = NULL;
 
 /* Read a word from file */
-static int BIN_read_word(void)
+static SLONG BIN_read_word(void)
 {
 	UBYTE buf[2];
 	if (fread(buf, 1, 2, binf) != 2) {
@@ -23,7 +21,7 @@ static int BIN_read_word(void)
 			Aprint("binload: not valid BIN file");
 			return -1;
 		}
-		regPC = dGetByte(0x2e0) | (dGetByte(0x2e1) << 8);
+		regPC = dGetWord(0x2e0);
 		return -1;
 	}
 	return buf[0] | (buf[1] << 8);
@@ -32,14 +30,14 @@ static int BIN_read_word(void)
 /* Start or continue loading */
 void BIN_loader_cont(void)
 {
-	int from;
-	int to;
+	SLONG temp;
+	UWORD from;
+	UWORD to;
 	UBYTE byte;
 
 	if (!binf)
 		return;
-	if (start_binloading)
-	{
+	if (start_binloading) {
 		dPutByte(0x244, 0);
 		dPutByte(0x09, 1);
 	}
@@ -49,48 +47,48 @@ void BIN_loader_cont(void)
 	dPutByte(0x2e3, 0xd7);
 	do {
 		do
-			from = BIN_read_word();
-		while (from == 0xffff);
-		if (from < 0)
+			temp = BIN_read_word();
+		while (temp == 0xffff);
+		if (temp < 0)
 			return;
+		from = (UWORD) temp;
 
-		to = BIN_read_word();
-		if (to < 0)
+		temp = BIN_read_word();
+		if (temp < 0)
 			return;
+		to = (UWORD) temp;
 
 		if (start_binloading) {
-			dPutByte(0x2e0, from & 0xff);
-			dPutByte(0x2e1, from >> 8);
+			dPutWord(0x2e0, from);
 			start_binloading = 0;
 		}
 
 		to++;
-		to &= 0xffff;
 		do {
 			if (fread(&byte, 1, 1, binf) == 0) {
 				fclose(binf);
 				binf = 0;
-				regPC = dGetByte(0x2e0) | (dGetByte(0x2e1) << 8);
+				regPC = dGetWord(0x2e0);
 				if (dGetByte(0x2e3) != 0xd7) {
 					regPC--;
 					dPutByte(0x0100 + regS--, regPC >> 8);		/* high */
 					dPutByte(0x0100 + regS--, regPC & 0xff);	/* low */
-					regPC = dGetByte(0x2e2) | (dGetByte(0x2e3) << 8);
+					regPC = dGetWord(0x2e2);
 				}
 				return;
 			}
 			PutByte(from, byte);
 			from++;
-			from &= 0xffff;
 		} while (from != to);
 	} while (dGetByte(0x2e3) == 0xd7);
 
-	dPutByte(0x0100 + regS--, ESC_BINLOADER_CONT);
-	dPutByte(0x0100 + regS--, 0xf2);	/* ESC */
+	regS--;
+	Atari800_AddEsc(0x100 + regS, ESC_BINLOADER_CONT, BIN_loader_cont);
+	regS--;
 	dPutByte(0x0100 + regS--, 0x01);	/* high */
 	dPutByte(0x0100 + regS, regS + 1);	/* low */
 	regS--;
-	regPC = dGetByte(0x2e2) | (dGetByte(0x2e3) << 8);
+	regPC = dGetWord(0x2e2);
 	SetC;
 
 	dPutByte(0x0300, 0x31);	/* for "Studio Dream" */
@@ -107,6 +105,7 @@ int BIN_loade_start(UBYTE *buffer)
 	buffer[5] = 0xe4;
 	buffer[6] = 0xf2;	/* ESC */
 	buffer[7] = ESC_BINLOADER_CONT;
+	Atari800_AddEsc(0x706, ESC_BINLOADER_CONT, BIN_loader_cont);
 	return 'C';
 }
 
@@ -115,7 +114,7 @@ int BIN_loader(char *filename)
 {
 	UBYTE buf[2];
 	if (binf)		/* close previously open file */
-	  fclose(binf);
+		fclose(binf);
 	if (!(binf = fopen(filename, "rb"))) {	/* open */
 		Aprint("binload: can't open %s", filename);
 		return FALSE;
