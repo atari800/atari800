@@ -245,6 +245,10 @@
 #define DIRTYRECT
 //#define NODIRTYCOMPARE
 
+#define NO_YPOS_BREAK_FLICKER
+
+#define DONT_USE_RTCONFIGUPDATE
+
 /* Some port-specific workarounds */
 #define strcasecmp _stricmp
 
@@ -258,5 +262,24 @@ void wce_perror(char* s);
 FILE* __cdecl wce_fopen(const char* fname, const char* fmode);
 #define fopen wce_fopen
 
-extern unsigned short regPC;
+/* Those are somewhat Unix-specific... */
+#define S_IRUSR 1
+#define S_IWUSR 2
+#define S_IXUSR 2
+#define S_IRGRP 1
+#define S_IWGRP 2
+#define S_IXGRP 2
+#define S_IROTH 1
+#define S_IWOTH 2
+#define S_IXOTH 2
 
+char* getenv(const char* varname);
+int rename(const char* oldname, const char* newname);
+int chmod(const char* name, int mode);
+int fstat(int handle, struct stat* buffer);
+int mkdir(const char* name);
+int rmdir(const char* name);
+int umask(int pmode);
+
+/* truncation from int to char */
+#pragma warning(disable:4305)

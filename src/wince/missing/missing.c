@@ -6,6 +6,7 @@
 #include "time.h"
 #include "dirent.h"
 #include "config.h"
+#include "errno.h"
 
 /* forward declaration */
 char *strdup(const char *strSource);
@@ -314,4 +315,111 @@ FILE* __cdecl wce_fopen(const char* fname, const char* fmode)
 unsigned int clock()
 {
 	return GetTickCount();
+}
+
+/* The only environment variable used by Atari800 at this point is HOME */
+char* getenv(const char* varname)
+{
+	if(strcmp(varname, "HOME") == 0)
+		return getcwd(NULL, 0);
+	else
+		return NULL;
+}
+
+int errno = 0;
+
+/* Should be good enough for now */
+int rename(const char* oldname, const char* newname)
+{
+	TCHAR fnameUnc1[MAX_PATH+1];
+	TCHAR fnameUnc2[MAX_PATH+1];
+
+	MultiByteToWideChar(CP_ACP, 0, oldname, -1, fnameUnc1, MAX_PATH);
+	MultiByteToWideChar(CP_ACP, 0, newname, -1, fnameUnc2, MAX_PATH);
+
+	if(MoveFile(fnameUnc1, fnameUnc2))
+	{
+		errno = 0;
+		return 0;
+	}
+	else
+	{
+		errno = ENOENT;
+		return -1;
+	}
+}
+
+/* PocketPC does not have Unix-like protection modes so
+   this controls read-only flag only */
+int chmod(const char* name, int mode)
+{
+	TCHAR fnameUnc[MAX_PATH+1];
+	DWORD attr;
+
+	MultiByteToWideChar(CP_ACP, 0, name, -1, fnameUnc, MAX_PATH);
+
+	attr = GetFileAttributes(fnameUnc);
+	if(attr == 0xffffffff)
+	{
+		errno = ENOENT;
+		return -1;
+	}
+	if((mode & S_IWUSR) == 0)
+		SetFileAttributes(fnameUnc, attr | FILE_ATTRIBUTE_READONLY);
+	else
+		SetFileAttributes(fnameUnc, attr & ~FILE_ATTRIBUTE_READONLY);
+	return 0;
+}
+
+/* Extremely limited implementation of fstat */
+int fstat(int handle, struct stat* buffer)
+{
+	memset(buffer, 0, sizeof(struct stat));
+	buffer->st_size = GetFileSize((HANDLE)handle, NULL);
+	return 0;
+}
+
+/* Simplified error code implementation */
+int mkdir(const char* name)
+{
+	TCHAR fnameUnc[MAX_PATH+1];
+
+	MultiByteToWideChar(CP_ACP, 0, name, -1, fnameUnc, MAX_PATH);
+
+	if(CreateDirectory(fnameUnc, NULL))
+	{
+		errno = 0;
+		return 0;
+	}
+	else
+	{
+		errno = ENOENT;
+		return -1;
+	}
+}
+
+/* Besides simplistic error code implementation, this is complete */
+int rmdir(const char* name)
+{
+	TCHAR fnameUnc[MAX_PATH+1];
+	
+	MultiByteToWideChar(CP_ACP, 0, name, -1, fnameUnc, MAX_PATH);
+
+	if(RemoveDirectory(fnameUnc))
+	{
+		errno = 0;
+		return 0;
+	}
+	else
+	{
+		errno = ENOTEMPTY;
+		return -1;
+	}
+}
+
+/* The only instance of umask does not do much at this point */
+int umask(int pmode)
+{
+	errno = 0;
+	return 0;
 }
