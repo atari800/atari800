@@ -4,7 +4,8 @@ o put all possible configuration to RT-CONFIG. Reduce the scary number
   of command line parameters. Teach users (and also contributors/programmers)
   about RT-CONFIG and the Atari800 config file.
 
-o extend the configuration options in UI to cover all RT-CONFIG options.
+o extend the configuration options in UI to cover more RT-CONFIG options
+  and possibly allow for runtime configuration of all RT-CONFIG options.
 
 o add "Save Config" to UI.
 

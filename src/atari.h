@@ -113,6 +113,12 @@ enum ESCAPE {
 	ESC_BINLOADER_CONT,
 
 /*
+ * Escape codes for cassette stuff
+*/
+	ESC_COPENLOAD = 0xa8,
+	ESC_COPENSAVE = 0xa9,
+
+/*
  * These are Escape codes for the normal device handlers.
  * Some are never used and some are only sometimes used.
  */
@@ -238,6 +244,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.42  2003/11/22 23:26:19  joy
+cassette support improved
+
 Revision 1.41  2003/09/04 21:15:59  joy
 ver++
 

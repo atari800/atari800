@@ -735,10 +735,45 @@ void SIO(void)
 			result = 'N';
 		}
 	}
+	//cassette i/o
 	else if (dGetByte(0x300) == 0x60) {
-		result = CASSETTE_Sio();
-		if (result == 'C')
-			CopyToMem(cassette_buffer, data, length);
+		int storagelength=0;
+		UBYTE gaps=dGetByte(0x30b);
+		switch(cmd){
+		case 0x52:	//read
+			//set expected Gap
+			CASSETTE_AddGap(gaps==0?2000:160);
+			//get record from storage medium
+			storagelength = CASSETTE_Read();
+			if(storagelength-1!=length)	//includes -1 as error
+				result = 'E';
+			else
+				result = 'C';
+			//check checksum
+			if(cassette_buffer[length]!=SIO_ChkSum(cassette_buffer,length)){
+				result = 'E';
+			};
+			//if all went ok, copy to Atari
+			if (result == 'C')
+				CopyToMem(cassette_buffer, data, length);
+			break;
+		case 0x57:	//write
+			//put record into buffer
+			CopyFromMem(data, cassette_buffer, length);
+			//eval checksum over buffer data
+			cassette_buffer[length]=SIO_ChkSum(cassette_buffer,length);
+			//add pregap length
+			CASSETTE_AddGap(gaps==0?3000:260);
+			//write full record to storage medium
+			storagelength = CASSETTE_Write(length+1);
+			if(storagelength-1!=length)	//includes -1 as error
+				result = 'E';
+			else
+				result = 'C';
+			break;
+		default:
+			result = 'N';
+		};
 	}
 
 	switch (result) {
@@ -1200,6 +1235,9 @@ void SIOStateRead( void )
 
 /*
 $Log$
+Revision 1.20  2003/11/22 23:26:19  joy
+cassette support improved
+
 Revision 1.19  2003/10/26 18:49:40  joy
 new state file format for bankswitching
 

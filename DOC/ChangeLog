@@ -1,3 +1,30 @@
+2003-11-22  Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
+* atari.c: when the snailmeter is enabled and the speed grown beyond 100%
+  a negative amount of memory was tried to be filled.
+
+
+2003-11-14  Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
+ Cassette handling greatly improved:
+
+* atari.[ch]: OS patched for tape leader recognition
+
+* cassette.[ch]: Loading improved, skips now blocks which pass on tape while
+  the OS waits for a leader. Writing implemented. Some bugfixes (CAS format
+  chunk header size is always 8, record checksum for raw files).
+
+* sio.c: Evaluates i/o-commands for cassette
+
+* ui.c: "Load tape image" renamed to "Select tape image"
+
+ The remaining open points are:
+ - State of cassette operation is not saved in state file - is the expense
+   necessary?
+
+ - Tape file selector (and disk too) would need 2 additional points at top:
+   <Eject> and <New> (atm tape save is only possible if you create a file
+   with 0 length and insert that).
+
+
 2003-11-13  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: DMACTL NEW_CYCLE_EXACT width decrease fix for SERIOUS diskmag #8
 

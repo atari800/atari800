@@ -10,8 +10,21 @@ disk1 ... disk8 are file names of the disk images mounted to Atari drives 1-8
 Supported types of disk images are: ATR, XFD and DCM. If the emulator has been
 compiled with ZLIB support, additionally ATR.GZ and XFD.GZ are supported.
 
-Options
--------
+Cassette operation
+------------------
+Tape operation should work fully now, as long as the particular program
+relies on operating system routines (means e.g. the program may not patch
+loading interrupt vectors and do custom things there). As there is no
+possibility to create a new tape from the UI yet, create a file of zero
+size (e.g. with 'touch' command or a text editor) and Select that as tape
+if you want to save to tape.
+Appending to existing tapes is not allowed. You have to re-insert (select
+again in the tape dialog) a just saved tape when you want to load from it
+in order to rewind it. Please note that Atari800 currently only supports
+tape operation in "Patched SIO" mode.
+
+Command line Options
+--------------------
 
 -help                 Display list of options and terminate
 -v                    Display version number and terminate

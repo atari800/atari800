@@ -790,7 +790,7 @@ void ui(UBYTE* screen)
 		{ "DISK", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Disk Management",            "Alt+D",    MENU_DISK },
 		{ "CART", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Cartridge Management",       "Alt+C",    MENU_CARTRIDGE },
 		{ "XBIN", ITEM_ENABLED|ITEM_FILESEL, NULL, "Run BIN file directly",      "Alt+R",    MENU_RUN },
-		{ "CASS", ITEM_ENABLED|ITEM_FILESEL, NULL, "Load tape image",            NULL,       MENU_CASSETTE },
+		{ "CASS", ITEM_ENABLED|ITEM_FILESEL, NULL, "Select tape image",          NULL,       MENU_CASSETTE },
 		{ "SYST", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Select System",              "Alt+Y",    MENU_SYSTEM },
 		{ "SNDS", ITEM_ENABLED|ITEM_ACTION,  NULL, "Sound Settings", "Alt+O",    MENU_SOUND },
 		{ "SREC", ITEM_ENABLED|ITEM_ACTION,  NULL, "Sound Recording start/stop", "Alt+W",    MENU_SOUND_RECORDING },
@@ -968,6 +968,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.49  2003/11/22 23:26:19  joy
+cassette support improved
+
 Revision 1.48  2003/09/23 15:39:07  pfusik
 Rotate_Disks()
 

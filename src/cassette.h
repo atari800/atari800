@@ -22,7 +22,11 @@ extern int hold_start;
 extern int hold_start_on_reboot; /* preserve hold_start after reboot */
 extern int press_space;
 
-UBYTE CASSETTE_Sio(void);
+int CASSETTE_AddGap(int gaptime);
+void CASSETTE_LeaderLoad();
+void CASSETTE_LeaderSave();
+int CASSETTE_Read(void);
+int CASSETTE_Write(int length);
 extern UBYTE cassette_buffer[4096];
 
 #endif /* _CASSETTE_H_ */

@@ -1,9 +1,6 @@
 Installation of the Atari 800 Emulator
 --------------------------------------
 
-If you downloaded this package from CVS install autoconf > 2.5x and
-run atari800/src/autogen.sh before configuring.
-
 Irrespective of whether you are going to compile the emulator yourself
 or install a pre-compiled binary version you must obtain a copy of the
 Operating System ROMs.
@@ -64,11 +61,13 @@ compressed statesave images support.
 Building the Emulator on most platforms
 ---------------------------------------
 
-1. Change your working dir to the atari800/src path (type "cd src")
-2. Type "./configure --target=" for a list of supported platforms.
-3. Type "./configure --target=your_target" (choose from the list above)
-4. Type "make"
-5. Install the emulator by typing "make install".
+1. Change your working dir to the atari800/src path
+2. Check if "configure" script is there. If it is skip to step 4.
+3. Run "./autogen.sh" (make sure you have autoconf >= 2.5x installed).
+4. Type "./configure --target=" for a list of supported platforms.
+5. Type "./configure --target=<YourTarget>" (choose from the list above)
+6. Type "make"
+7. Install the emulator by typing "make install".
 
 Building the Emulator for Curses
 --------------------------------

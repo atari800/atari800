@@ -201,11 +201,34 @@ void Atari800_PatchOS(void)
 {
 	int patched = Device_PatchOS();
 	if (enable_sio_patch) {
+                UWORD addr_l,addr_s;
+                //patch Open() of C: so we know when a leader is processed
+                switch (machine_type) {
+                case MACHINE_OSA:
+                case MACHINE_OSB:
+                        addr_l = 0xef74;
+                        addr_s = 0xefbc;
+                        break;
+                case MACHINE_XLXE:
+                        addr_l = 0xfd13;
+                        addr_s = 0xfd60;
+                        break;
+                default:
+                        Aprint("Fatal Error in Atari800_PatchOS(): Unknown machine");
+                        return;
+                }
+                Atari800_AddEsc(addr_l, ESC_COPENLOAD, CASSETTE_LeaderLoad);
+                Atari800_AddEsc(addr_s, ESC_COPENSAVE, CASSETTE_LeaderSave);
+
 		Atari800_AddEscRts(0xe459, ESC_SIOV, SIO);
 		patched = TRUE;
 	}
 	else
+	{
+                Atari800_RemoveEsc(ESC_COPENLOAD);
+                Atari800_RemoveEsc(ESC_COPENSAVE);
 		Atari800_RemoveEsc(ESC_SIOV);
+	};
 	if (patched && machine_type == MACHINE_XLXE) {
 		/* Disable Checksum Test */
 		dPutByte(0xc314, 0x8e);
@@ -741,15 +764,16 @@ void Atari800_UpdatePatches(void)
 #ifdef SNAILMETER
 static void ShowRealSpeed(ULONG * atari_screen)
 {
+#define MAXSPEED	200
   UBYTE *ptr;
   int speed = (int) (100.0 * deltatime / frametime + 0.5);
 
-  if (speed > 200)
-    speed = 200;
+  if (speed > MAXSPEED)
+    speed = MAXSPEED;
 
   ptr = (UBYTE *) atari_screen + screen_visible_x1 + ATARI_WIDTH * (screen_visible_y2 - 1);
   video_memset(ptr, 0xc8, speed);
-  video_memset(ptr+speed, 0x02, 100-speed);
+  video_memset(ptr+speed, 0x02, MAXSPEED-speed);
   video_putbyte(ptr+100, 0x38);
 }
 #endif
@@ -1031,6 +1055,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.52  2003/11/22 23:26:19  joy
+cassette support improved
+
 Revision 1.51  2003/10/25 18:40:54  joy
 various little updates for better MacOSX support
 
