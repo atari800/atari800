@@ -1,3 +1,4 @@
+/* $Id$ */
 /*****************************************************************************
  *                                                                           *
  *  Atari800  Atari 800XL, etc. emulator                                     *
@@ -31,22 +32,9 @@
  *                                                                           *
  *****************************************************************************/
 
-/*****************************************************************************
 
-  REVISION HISTORY
-
-  V1.2  02.12.2002   Added STIMER feature - M.B.
-  V1.3  04.12.2002   All C++ style comments changed to C style for
-                      portability
-                     poly17tbl and poly9tbl converted to unsigned char
-                      to save memory
-                     copyright info removed from static code
-                      also to save some memory - M.B.
-  V1.5  11.12.2002   improved gain and dc offset values
-                     corrected STIMER bug and 16-bit bug
-                     added dithering
-
- *****************************************************************************/
+#include <stdlib.h>
+#include <math.h>
 
 #include "pokeysnd.h"
 #include "atari.h"
@@ -59,27 +47,29 @@
 #include "sound_win.h"
 #endif /*__PLUS*/
 
-#include "pokey_resample.h"
-#include <stdlib.h>
-#include <math.h>
+#include "remez.h"
+
+#define SND_FILTER_SIZE  2048
 
 #define NPOKEYS 2
 
 
 /* M_PI was not defined in MSVC headers */
-#define M_PI 3.141592653589793
+#ifndef M_PI
+# define M_PI 3.141592653589793
+#endif
 
 static unsigned int num_cur_pokeys = 0;
 
 /* Filter */
-static unsigned long sample_rate = 44100; /* Hz */
-static unsigned long pokey_frq = 1808100 ; /* Hz - for easier resampling */
-static int filter_size = 1274;
-static double* filter_data = filter_44;
-static char filter_data_allocated = 0; /* flag whether filter data was malloc'ed */
-static unsigned long audible_frq = 20000;
+static unsigned sample_rate; /* Hz */
+static unsigned pokey_frq; /* Hz - for easier resampling */
+static int filter_size;
+static double filter_data[SND_FILTER_SIZE];
+static unsigned audible_frq;
 
 static const unsigned long pokey_frq_ideal =  1789790; /* Hz - True */
+#if 0
 static const int filter_size_44 = 1274;
 static const int filter_size_44_8 = 884;
 static const int filter_size_22 = 1239;
@@ -90,6 +80,7 @@ static const int filter_size_48 = 898;
 static const int filter_size_48_8 = 626;
 static const int filter_size_8  = 1322;
 static const int filter_size_8_8 = 1214;
+#endif
 
 /* Flags and quality */
 static int snd_flags = 0;
@@ -971,121 +962,104 @@ static double generate_sample(PokeyState* ps)
  filter table generator by Krzysztof Nikiel
  ******************************************/
 
-static double Izero(double x)
+static int remez_filter_table(double resamp_rate, // output_rate/input_rate
+                              double *cutoff, int quality)
 {
-  const double IzeroEPSILON = 1e-50;	/* Max error acceptable in Izero */
-  double sum, u, halfx, temp;
-  int n;
-
-  sum = u = n = 1;
-  halfx = x / 2.0;
-  do
-  {
-    temp = halfx / (double) n;
-    n += 1;
-    temp *= temp;
-    u *= temp;
-    sum += u;
-  }
-  while (u >= IzeroEPSILON * sum);
-
-  return (sum);
-}
-
-static int kaiser_filter_table(double **filter_data,
-			       double rate_ratio, // output_rate/input_rate
-			       int quality)
-{
-  int desired_width = 800; // should be quality dependent
   int i;
+  int orders[] = {600, 800, 1000, 1200};
   const static struct {
-    double beta;
-    double widthfac;	// = (out_nyquist-best_cutoff)*window_size/in_rate
-    int stop;	// stopband ripple
+    int stop;		// stopband ripple
+    double weight;	// stopband weight
+    double twidth[sizeof(orders)/sizeof(orders[0])];
   } paramtab[] =
   {
-    {6.7, 4.3, 70},
-    {4.5, 3.0, 50},
-    {2.1, 1.7, 30},
+    {70, 90, {4.9e-3, 3.45e-3, 2.65e-3, 2.2e-3}},
+    {55, 25, {3.4e-3, 2.7e-3, 2.05e-3, 1.7e-3}},
+    {40, 6.0, {2.6e-3, 1.8e-3, 1.5e-3, 1.2e-3}},
+    {-1}
   };
-  const int maxparam = sizeof(paramtab) / sizeof(paramtab[0]);
-  int bestparam = 0;
-  double Beta;
-  double IBeta;
-  double *data;
-  double tmp, tmp2;
-  int size = desired_width / 2;
-  int winwidth;
-  double cutoff;
+  double passtab[] = {0.5, 0.6, 0.7};
+  int ripple = 0, order = 0;
+  int size;
+  double weights[2], desired[2], bands[4];
+  static const int step = 5;
+  static const double step_1 = 1.0 / step;
 
+  *cutoff = 0.95 * 0.5 * resamp_rate;
 
-find:
-  winwidth = size * 2 - 1;
-  Beta = paramtab[bestparam].beta;
-  IBeta = 1.0 / Izero(Beta);
+  if (quality >= sizeof(passtab)/sizeof(passtab[0]))
+    quality = sizeof(passtab)/sizeof(passtab[0]) - 1;
 
-  // make transition band end equal to nyquist
-  cutoff = rate_ratio - (paramtab[bestparam].widthfac / winwidth);
-
-  cutoff *= 0.8; // make narrower bandwidth to limit aliasing
-
-  //printf("cut: %g\n", cutoff/rate_ratio);
-#if 1
-  if (cutoff < (0.4 * rate_ratio))
+  for (ripple = 0; paramtab[ripple].stop > 0; ripple++)
   {
-    bestparam++;
-    if (bestparam >= maxparam)
+    for (order = 0; order < (sizeof(orders)/sizeof(orders[0])); order++)
     {
-      bestparam = 0;
-      if (winwidth < (2.0 * desired_width))
-      {
-	size *= 1.1;
-        goto find;
-      }
-      else
-	return 0;
+      if ((*cutoff - paramtab[ripple].twidth[order])
+	  > passtab[quality] * 0.5 * resamp_rate)
+	// transition width OK
+	goto found;
     }
-    goto find;
   }
-#endif
+
+  // not found -- use shortest trasition
+  ripple--;
+  order--;
+
+found:
 
 #if 0
-  printf("cutoff: %g\tstopband:%d\twinwidth:%d\n", 0.5*1789790 * cutoff,
-	 paramtab[bestparam].stop, winwidth);
+  printf("order: %d, cutoff: %g\tstopband:%d\ttranswidth:%f\n",
+         orders[order],
+	 1789790 * *cutoff,
+	 paramtab[ripple].stop,
+	 1789790 * paramtab[ripple].twidth[order]);
+  exit(1);
 #endif
 
-  *filter_data = malloc(winwidth * sizeof(**filter_data));
+  size = orders[order] + 1;
 
-  data = *filter_data;
+  if (size > SND_FILTER_SIZE) // static table too short
+    return 0;
 
-  data[size - 1] = 1.0;
+  desired[0] = 1;
+  desired[1] = 0;
 
-  for (i = 1; i < size; i++)
+  weights[0] = 1;
+  weights[1] = paramtab[ripple].weight;
+
+  bands[0] = 0;
+  bands[2] = *cutoff;
+  bands[1] = bands[2] - paramtab[ripple].twidth[order];
+  bands[3] = 0.5;
+
+  bands[1] *= (double)step;
+  bands[2] *= (double)step;
+  remez(filter_data, (size / step) + 1, 2, bands, desired, weights, BANDPASS);
+  for (i = size - step; i >= 0; i -= step)
   {
-    tmp = (double)i / size;
-    tmp2 = M_PI * i * cutoff;
+    int s;
+    double h1 = filter_data[i/step];
+    double h2 = filter_data[i/step+1];
 
-    data[size - 1 + i] = data[size - 1 - i] = // Kaiser windowed sinc
-      sin(tmp2) / tmp2 * Izero(Beta * sqrt(1.0 - tmp * tmp)) * IBeta;
+    for (s = 0; s < step; s++)
+    {
+      double d = (double)s * step_1;
+      filter_data[i+s] = (h1*(1.0 - d) + h2 * d) * step_1;
+    }
   }
 
   // compute reversed cumulative sum table
-  for (i = winwidth - 2; i >= 0; i--)
-    data[i] += data[i + 1];
-
-  // normalize the table
-  tmp = 1.0 / data[0];
-  for (i = 0; i < winwidth; i++)
-    data[i] *= tmp;
+  for (i = size - 2; i >= 0; i--)
+    filter_data[i] += filter_data[i + 1];
 
 #if 0
-  for (i = 0; i < winwidth; i++)
-    printf("%.10f\t%.10f\n", data[i], data[i] - data[i + 1]);
+  for (i = 0; i < size; i++)
+    printf("%.15f,\n", filter_data[i]);
   fflush(stdout);
   exit(1);
 #endif
 
-  return winwidth;
+  return size;
 }
 
 
@@ -1122,6 +1096,8 @@ static void Update_vol_only_sound_mz( void );
 int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 			int flags, int quality)
 {
+    double cutoff;
+
     sample_rate = playback_freq;
     snd_flags = flags;
     snd_quality = quality;
@@ -1142,14 +1118,9 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
     else
       Pokey_process = Pokey_process_8;
 
-    if(filter_data_allocated)
-    {
-        free(filter_data);
-        filter_data_allocated = 0;
-    }
-
     switch(playback_freq)
     {
+#if 0
     case 44100:
         if(flags & SND_BIT16)
         {
@@ -1220,14 +1191,13 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
         pokey_frq = 1792000; /* 0.1% off ideal */
         audible_frq = 4000; /* Nyquist, also 30db attn, should be 50 */
         break;
+#endif
     default:
-        /* - by Krzystof Nikiel - Select Kaiser Filter */
         pokey_frq = (int)(((double)pokey_frq_ideal/sample_rate) + 0.5)
           * sample_rate;
-        filter_size = kaiser_filter_table(&filter_data,
-				      (double)sample_rate/pokey_frq, 0);
-        filter_data_allocated = 1;
-        audible_frq = 0.45 * sample_rate; /* not very good estimate */
+	filter_size = remez_filter_table((double)sample_rate/pokey_frq,
+					 &cutoff, quality);
+	audible_frq = cutoff * pokey_frq;
     }
 
     build_poly4();
@@ -2147,3 +2117,26 @@ static void Update_vol_only_sound_mz( void )
 }
 
 #endif
+
+/*****************************************************************************
+
+  REVISION HISTORY
+
+$Log$
+Revision 1.7  2003/01/06 17:11:09  knik
+used new equiripple filter design algorithm (remez.c)
+
+
+
+  V1.5  11.12.2002   improved gain and dc offset values
+                     corrected STIMER bug and 16-bit bug
+                     added dithering
+  V1.3  04.12.2002   All C++ style comments changed to C style for
+                      portability
+                     poly17tbl and poly9tbl converted to unsigned char
+                      to save memory
+                     copyright info removed from static code
+                      also to save some memory - M.B.
+  V1.2  02.12.2002   Added STIMER feature - M.B.
+
+ *****************************************************************************/
