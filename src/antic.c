@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Correct timing, internal memory and other fixes: */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 26th July 2000                     */
+/* Last changes: 6th July 2001                      */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -39,7 +39,7 @@ UBYTE NMIST;
 
 UBYTE ANTIC_memory[52];
 #define ANTIC_margin 4
-/* It's number of bytes in ANTIC_memory, which are newer loaded, but may be
+/* It's number of bytes in ANTIC_memory, which are never loaded, but may be
    read in wide playfield mode. These bytes are uninitialized, because on
    real computer there's some kind of 'garbage'. Possibly 1 is enough, but
    4 bytes surely won't cause negative indexes. :) */
@@ -66,7 +66,7 @@ cycles.
 Now emulation is really screenline-oriented. We do ypos++ after a line,
 not inside it.
 
-This diagram shows when what is done in a line:
+This simplified diagram shows when what is done in a line:
 
 MDPPPPDD..............(------R/S/F------)..........
 ^  ^     ^      ^     ^                     ^    ^ ^        ---> time/xpos
@@ -82,22 +82,42 @@ R - refresh Memory (DMAR cycles)
 
 Only Memory Refresh happens in every line, other tasks are optional.
 
-I think some simplifications can be made:
+Below are exact diagrams for some non-scrolled modes:
+                                                                                                    11111111111111
+          11111111112222222222333333333344444444445555555555666666666677777777778888888888999999999900000000001111
+012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123
+                            /--------------------------narrow------------------------------\
+                    /----------------------------------normal--------------------------------------\
+            /-------------------------------------------wide--------------------------------------------\
 
-* There's no need to emulate exact cycle in which a byte of screen/font is
-  taken. Actually I haven't even tested it.
-  That's why I've drawn (--R/S/F--). :)
-  It represents a range, when refresh and Screen/Font fetches are done.
+blank line:
+MDPPPPDD.................R...R...R...R...R...R...R...R...R........................................................
 
-* I've tested exact moments when DL and P/MG are fetched. As you see it is:
+mode 8,9:
+MDPPPPDD....S.......S....R..SR...R..SR...R..SR...R..SR...R..S.......S.......S.......S.......S.......S.............
+
+mode a,b,c:
+MDPPPPDD....S...S...S...SR..SR..SR..SR..SR..SR..SR..SR..SR..S...S...S...S...S...S...S...S...S...S...S...S.........
+
+mode d,e,f:
+MDPPPPDD....S.S.S.S.S.S.SRS.SRS.SRS.SRS.SRS.SRS.SRS.SRS.SRS.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.S.........
+
+Notes:
+* At the beginning of a line fetched are:
   - a byte of Missiles
   - a byte of DL (instruction)
   - four bytes of Players
   - two bytes of DL argument (jump or screen address)
-  I think it is not necessary to emulate it 100%, we can fetch things we
-  need continuosly at the beginning of the line.
+  The emulator, however, fetches them all continuously.
 
-There are few constants representing following events:
+* Refresh cycles and Screen/Font fetches have been tested for some modes (see above).
+  This is for making the emulator more accurate, able to change colour registers,
+  sprite positions or GTIA modes during scanline. These modes are the most commonly used
+  with those effects.
+  Currently this isn't implemented, and all R/S/F cycles are fetched continuously in *all* modes
+  (however, right number of cycles is taken in every mode, basing on screen width and HSCROL).
+
+There are a few constants representing following events:
 
 * VSCON_C - in first VSC line dctr is loaded with VSCROL
 
