@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FALSE   0
-#define TRUE    1
-
 #include "atari.h"
 #include "prompts.h"
 #include "rt-config.h"
@@ -50,8 +47,6 @@ int enable_sio_patch;
 int enable_h_patch;
 int enable_p_patch;
 int disk_directories;
-
-extern int Ram256;
 
 /* If another default path config path is defined use it
    otherwise use the default one */
@@ -403,8 +398,8 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
-Revision 1.4  2001/07/20 00:25:10  fox
-removed enable_rom_patches, added enable_h_patch and enable_p_patch
+Revision 1.5  2001/07/20 20:03:15  fox
+removed #define TRUE/FALSE and extern int Ram256 (it's in atari.h)
 
 Revision 1.3  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
