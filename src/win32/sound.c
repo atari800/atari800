@@ -172,6 +172,11 @@ static void sound_update_dx(void)
   int err;
   int i;
   int samplesize = bit16 ? 2 : 1;
+#ifdef STEREO_SOUND
+  int samplepairsize = 2*samplesize; 
+#else
+  int samplepairsize = samplesize; 
+#endif
 
   if (issound != SOUND_DX)
     return;
@@ -190,6 +195,8 @@ static void sound_update_dx(void)
     return;
 
   d1 = (samples * samplesize) + d1; // bytes to fill
+  d1 = (d1 / samplepairsize) * samplepairsize; //round to a sample pair
+
   if (d1 > (sizeof(mixbuf) / sizeof(mixbuf[0])))
     {
       d1 = (sizeof(mixbuf) / sizeof(mixbuf[0]));
@@ -505,6 +512,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.15  2003/09/14 19:13:41  joy
+round to a sample pair
+
 Revision 1.14  2003/02/24 09:33:34  joy
 header cleanup
 
