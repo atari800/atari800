@@ -3,7 +3,7 @@
  *  Atari800  Atari 800XL, etc. emulator                                     *
  *  ----------------------------------------------------------------------   *
  *  POKEY Chip Emulator,                                                     *
- *  "POKEYBENCH" Test and benchmark program for developers, V1.2             *
+ *  "POKEYBENCH" Test and benchmark program for developers, V1.3             *
  *  by Michael Borisov                                                       *
  *                                                                           *
  *****************************************************************************/
@@ -33,6 +33,7 @@
  *****************************************************************************/
 
 #include "pokeysnd.h"
+#include "mzpokeysnd.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,10 +70,12 @@ char* fgetl(char* s, int len, FILE* fs)
     return s2;
 }
 
-int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const char* ofn,
+int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl,
+           const char* ofn8, const char* ofn16,
            unsigned short samplerate)
 {
     unsigned char* buf;
+    short* buf16;
     double rate;
     double rasum;
     double rasum2;
@@ -90,7 +93,12 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
         return 1;
     }
 
-    Pokey_sound_init(1790000,samplerate,1);
+    if(i=Pokey_sound_init(1790000,samplerate,1,0,1))
+    {
+        printf("Error initializing Pokey sound: %d\n",i);
+        return 1;
+    }
+
     Update_pokey_sound(_AUDF1,audf[0],0,1);
     Update_pokey_sound(_AUDC1,audc[0],0,1);
     Update_pokey_sound(_AUDF2,audf[1],0,1);
@@ -100,7 +108,8 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
     Update_pokey_sound(_AUDF4,audf[3],0,1);
     Update_pokey_sound(_AUDC4,audc[3],0,1);
     Update_pokey_sound(_AUDCTL,audctl,0,1);
-    Update_pokey_sound(_STIMER,0,0,1);
+    Pokey_debugreset(0);
+    
 
     rasum = 0.0;
     rasum2 = 0.0;
@@ -129,6 +138,7 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
 
         printf("Trial %2d:  %10.0f samples/sec\n",
             i+1, rate);
+        fflush(stdout);
         rasum += rate;
         rasum2 += rate*rate;
     }
@@ -142,9 +152,28 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
 
     printf("Gen/play ratio = %3.1f\n",rasum/TEST_TRIALS/samplerate);
 
-    if(!(ft=fopen(ofn,"wb")))
+    /* And now, write 8-bit output file */
+
+    if(i=Pokey_sound_init(1790000,samplerate,1,0,1))
     {
-        perror(ofn);
+        printf("Error initializing Pokey sound: %d\n",i);
+        free(buf);
+        return 1;
+    }
+    Update_pokey_sound(_AUDF1,audf[0],0,1);
+    Update_pokey_sound(_AUDC1,audc[0],0,1);
+    Update_pokey_sound(_AUDF2,audf[1],0,1);
+    Update_pokey_sound(_AUDC2,audc[1],0,1);
+    Update_pokey_sound(_AUDF3,audf[2],0,1);
+    Update_pokey_sound(_AUDC3,audc[2],0,1);
+    Update_pokey_sound(_AUDF4,audf[3],0,1);
+    Update_pokey_sound(_AUDC4,audc[3],0,1);
+    Update_pokey_sound(_AUDCTL,audctl,0,1);
+    Pokey_debugreset(0);
+
+    if(!(ft=fopen(ofn8,"wb")))
+    {
+        perror(ofn8);
         free(buf);
         return 2;
     }
@@ -162,9 +191,9 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
         }
         Pokey_process(buf,(unsigned short)samproc);
         i = fwrite(buf,1,samproc,ft);
-        if(i<MZM_BUF_SAMPLES)
+        if(i<samproc)
         {
-            perror(ofn);
+            perror(ofn8);
             free(buf);
             fclose(ft);
             return 2;
@@ -175,13 +204,73 @@ int pktest(unsigned char *audf, unsigned char *audc, unsigned char audctl, const
     free(buf);
     fclose(ft);
 
+    /* Write 16-bit output file */
+
+    if(i=Pokey_sound_init(1790000,samplerate,1,SND_BIT16,1))
+    {
+        printf("Error initializing Pokey sound: %d\n",i);
+        return 1;
+    }
+    Update_pokey_sound(_AUDF1,audf[0],0,1);
+    Update_pokey_sound(_AUDC1,audc[0],0,1);
+    Update_pokey_sound(_AUDF2,audf[1],0,1);
+    Update_pokey_sound(_AUDC2,audc[1],0,1);
+    Update_pokey_sound(_AUDF3,audf[2],0,1);
+    Update_pokey_sound(_AUDC3,audc[2],0,1);
+    Update_pokey_sound(_AUDF4,audf[3],0,1);
+    Update_pokey_sound(_AUDC4,audc[3],0,1);
+    Update_pokey_sound(_AUDCTL,audctl,0,1);
+    Pokey_debugreset(0);
+
+
+    buf16 = malloc(2*MZM_BUF_SAMPLES);
+    if(buf16 == NULL)
+    {
+        printf("Out of memory\n");
+        return 1;
+    }
+
+    if(!(ft=fopen(ofn16,"wb")))
+    {
+        perror(ofn16);
+        free(buf16);
+        return 2;
+    }
+
+    samremain = samplerate*MZM_SAVE_TIME;
+    while(samremain>0)
+    {
+        if(samremain>=MZM_BUF_SAMPLES)
+        {
+            samproc = MZM_BUF_SAMPLES;
+        }
+        else
+        {
+            samproc = samremain;
+        }
+        Pokey_process(buf16,(unsigned short)samproc);
+        i = fwrite(buf16,2,samproc,ft);
+        if(i<samproc)
+        {
+            perror(ofn16);
+            free(buf16);
+            fclose(ft);
+            return 2;
+        }
+        samremain -= samproc;
+    }
+
+    free(buf16);
+    fclose(ft);
+
     return 0;
 }
 
 int main(int argc, char* argv[])
 {
     char paramfn[256];
-    char ofn[256];
+    char ofn8[256];
+    char ofn16[256];
     FILE* fs;
     unsigned int params[10];
     unsigned char audf[4];
@@ -196,6 +285,7 @@ int main(int argc, char* argv[])
     if(argc<2)
     {
         printf("Enter parameter file name: ");
+        fflush(stdout);
         if(fgetl(paramfn,256,stdin) == NULL)
         {
             printf("Bad input\n");
@@ -210,8 +300,9 @@ int main(int argc, char* argv[])
 
     if(argc<3)
     {
-        printf("Enter output file name: ");
-        if(fgetl(ofn,256,stdin) == NULL)
+        printf("Enter output file name (8-bit): ");
+        fflush(stdout);
+        if(fgetl(ofn8,256,stdin) == NULL)
         {
             printf("Bad input\n");
             return 1;
@@ -219,8 +310,24 @@ int main(int argc, char* argv[])
     }
     else
     {
-        strncpy(ofn,argv[2],255);
-        ofn[255] = '\0';
+        strncpy(ofn8,argv[2],255);
+        ofn8[255] = '\0';
+    }
+
+    if(argc<4)
+    {
+        printf("Enter output file name (16-bit): ");
+        fflush(stdout);
+        if(fgetl(ofn16,256,stdin) == NULL)
+        {
+            printf("Bad input\n");
+            return 1;
+        }
+    }
+    else
+    {
+        strncpy(ofn16,argv[3],255);
+        ofn16[255] = '\0';
     }
 
 
@@ -265,5 +372,5 @@ int main(int argc, char* argv[])
         audc[i] = params[i*2+1];
     }
     
-    return pktest(audf,audc,(unsigned char)params[8],ofn,(unsigned short)params[9]);
+    return pktest(audf,audc,(unsigned char)params[8],ofn8, ofn16, (unsigned short)params[9]);
 }
