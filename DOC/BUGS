@@ -11,12 +11,17 @@ o The cycle-exact ANTIC/GTIA/CPU timing is not 100%.
   - Te.mod (demo) (small glitched pixel in the final credits on the bottom left)
   - The break(demo) (bug may exist in the original, check)
   - Our 5oft Unity Part (demo) (cycle-aligment, probably WSYNC)
+  - Endless Dream (demo) (credits in the intro)
+  - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
+  - Isolation (demo) (vector animations)
+  - Sweet Illusions (demo)
+     (sprites highlighting the scroll below wireframe vectors)
 
 o Non-bugs:
   - Mail Order Monsters (game)
 	 (some colour changes do not align with text, occurs on a real Atari) 
 
-o The following programs are improved by using the new cycle-exact code
+o The following programs are improved by using the new cycle-exact code:
   - 8 Players Demo (demo)
   - Bewesoft's Demo (demo)
   - Bitter Reality (demo)
@@ -35,18 +40,15 @@ o The following programs are improved by using the new cycle-exact code
   - Miner 2049'er (game) (rotating 5's)
   - Dimension X (game) (title screen upper and lower bars) 
   - Graphics impossible (demo) (Antic magazine)
-(not tested:)
   - Power Graph (graphics editor)
   - Darkness Warrior (picture)
-o POKEY interrupts are scanline-, not cycle-exact.
-  This causes sound bugs in following programs:
-  - Mirax Force (game)
-  - Saturday Demo (demo)
-  - The Last Guardian (game)
 
-o sound emulation is not enough accurate
-  This causes sound bugs in following programs:
-  - Numen (demo)
+o POKEY interrupts are scanline-, not cycle-exact.
+  This causes display or sound bugs in following programs:
+  - Joyride (demo) (white lines on title picture)
+  - Mirax Force (game) (speech)
+  - Saturday Demo (demo) (music)
+  - The Last Guardian (game) (speech)
 
 o sound emulation uses VOL_ONLY hack.
   This causes sound bugs in following programs:
