@@ -10,17 +10,19 @@
 #include "screen.h"
 #include "keyboard.h"
 #include "sound.h"
+#include "input.h"
+#include "ataripcx.h"
+#include "ui.h"
+#include "rt-config.h"
+#include "platform.h"
 
 char *myname = "Atari800";
 HWND hWndMain;
 HINSTANCE myInstance;
 
-int bActive = 0;		/* activity indicator */
-static ULONG hth = -1;		/* thread handle */
-int vloopexit = 0;		/* exit vloop */
-static char **gargv = NULL;
-static int gargc = 0;
+static int bActive = 0;		/* activity indicator */
 
+#if 0
 void exit(int code)
 {
   groff();
@@ -28,18 +30,10 @@ void exit(int code)
   Sound_Exit();
 #endif
   uninitinput();
-  vloopexit |= 2;
   PostMessage(hWndMain, WM_CLOSE, 0, 0);
   _endthread();
 }
-
-extern int atari_main(int argc, char **argv);
-
-static void vloop(void *p)
-{
-  atari_main(gargc, gargv);
-  exit(0);
-}
+#endif
 
 static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -59,9 +53,6 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
       SetCursor(NULL);
       return TRUE;
     case WM_CREATE:
-      break;
-    case WM_CLOSE:
-      vloopexit |= 1;
       break;
     case WM_DESTROY:
       PostQuitMessage(10);
@@ -105,9 +96,6 @@ static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
       return 1;
     }
 
-  ShowWindow(hWndMain, nCmdShow);
-  UpdateWindow(hWndMain);
-
   return 0;
 }
 
@@ -115,10 +103,6 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 		   lpCmdLine, int nCmdShow)
 {
   MSG msg;
-  int i;
-  static int argc = 0;
-  static char args[0x400];
-  static char *argv[100];
 
   myInstance = hInstance;
   if (initwin(hInstance, nCmdShow))
@@ -126,49 +110,96 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
       return 1;
     }
 
-  if (lpCmdLine)
-    strncpy(args, lpCmdLine, sizeof(args));
-  else
-    args[0] = 0;
-  argv[argc++] = myname;
-  for (i = 0; i < (sizeof(args) - 1) && args[i]; i++)
-    {
-      while (args[i] == ' ' && i < (sizeof(args) - 1))
-	i++;
-      if (args[i] && i < (sizeof(args) - 1))
+  /* initialise Atari800 core */
+  if (!Atari800_Initialise(&_argc, _argv))
+    return 3;
+
+  msg.message = WM_NULL;
+
+  /* main loop */
+  while (TRUE) {
+    static int test_val = 0;
+    int keycode;
+
+  start:
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	{
-	  argv[argc++] = &args[i];
-	  if ((argc + 1) >= (sizeof(argv) / sizeof(argv[0])))
-	    break;
-	}
-      while (args[i] != ' ' && args[i] && i < (sizeof(args) - 1))
-	i++;
-      args[i] = 0;
-    }
-  argv[argc] = NULL;
-
-  gargv = argv;
-  gargc = argc;
-
-  if ((hth = _beginthread(vloop, 0x10000, NULL)) == -1)
-    return 1;
-
-  while (GetMessage(&msg, NULL, 0, 0))
-    {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     }
 
-  /* wait for the other thread to exit */
-  WaitForSingleObject((HANDLE)hth, INFINITE);
+    if (msg.message == WM_QUIT)
+      break;
+
+    if (!bActive)
+      goto start;
+
+    keycode = Atari_Keyboard();
+
+    switch (keycode) {
+    case AKEY_COLDSTART:
+      Coldstart();
+      break;
+    case AKEY_WARMSTART:
+      Warmstart();
+      break;
+    case AKEY_EXIT:
+      Atari800_Exit(FALSE);
+      exit(1);
+    case AKEY_UI:
+#ifdef SOUND
+      Sound_Pause();
+#endif
+      ui((UBYTE *)atari_screen);
+#ifdef SOUND
+      Sound_Continue();
+#endif
+      break;
+    case AKEY_SCREENSHOT:
+      Save_PCX_file(FALSE, Find_PCX_name());
+      break;
+    case AKEY_SCREENSHOT_INTERLACE:
+      Save_PCX_file(TRUE, Find_PCX_name());
+      break;
+    case AKEY_BREAK:
+      key_break = 1;
+      break;
+    default:
+      key_break = 0;
+      key_code = keycode;
+      break;
+    }
+
+    if (++test_val == refresh_rate) {
+      Atari800_Frame(EMULATE_FULL);
+#ifndef DONT_SYNC_WITH_HOST
+      atari_sync(); /* here seems to be the best place to sync */
+#endif
+      Atari_DisplayScreen((UBYTE *) atari_screen);
+      test_val = 0;
+    }
+    else {
+#ifdef VERY_SLOW
+      Atari800_Frame(EMULATE_BASIC);
+#else	/* VERY_SLOW */
+      Atari800_Frame(EMULATE_NO_SCREEN);
+#ifndef DONT_SYNC_WITH_HOST
+      atari_sync();
+#endif
+#endif	/* VERY_SLOW */
+    }
+  }
 
   return msg.wParam;
 }
 
 /*
 $Log$
+Revision 1.5  2001/09/25 17:38:27  knik
+added main loop; threading removed
+
 Revision 1.4  2001/08/27 04:48:28  knik
-_sndthread() called without parameter
+_endthread() called without parameter
 
 Revision 1.3  2001/05/19 06:12:05  knik
 show window before display change
