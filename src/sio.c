@@ -18,6 +18,7 @@
 #include "log.h"
 #include "diskled.h"
 #include "binload.h"
+#include "cassette.h"
 
 /* If ATR image is in double density (256 bytes per sector),
    then the boot sectors (sectors 1-3) can be:
@@ -652,6 +653,11 @@ void SIO(void)
 		default:
 			result = 'N';
 		}
+	else if (Peek(0x300) == 0x60) {
+		result = CASSETTE_Sio();
+		if (result == 'C')
+			CopyToMem(cassette_buffer, data, length);
+	}
 
 	switch (result) {
 	case 0x00:					/* Device disabled, generate timeout */
@@ -681,7 +687,7 @@ void SIO(void)
 
 }
 
-static UBYTE ChkSum(UBYTE * buffer, UWORD length)
+UBYTE SIO_ChkSum(UBYTE * buffer, UWORD length)
 {
 	int i;
 	int checksum = 0;
@@ -714,7 +720,7 @@ static void Command_Frame(void)
 		switch (CommandFrame[1]) {
 		case 0x4e:				/* Read Status */
 			DataBuffer[0] = ReadStatusBlock(unit, DataBuffer + 1);
-			DataBuffer[13] = ChkSum(DataBuffer + 1, 12);
+			DataBuffer[13] = SIO_ChkSum(DataBuffer + 1, 12);
 			DataIndex = 0;
 			ExpectedBytes = 14;
 			TransferStatus = SIO_ReadFrame;
@@ -736,7 +742,7 @@ static void Command_Frame(void)
 		case 0x52:				/* Read */
 			SizeOfSector((UBYTE)unit, sector, &realsize, NULL);
 			DataBuffer[0] = ReadSector(unit, sector, DataBuffer + 1);
-			DataBuffer[1 + realsize] = ChkSum(DataBuffer + 1, (UWORD)realsize);
+			DataBuffer[1 + realsize] = SIO_ChkSum(DataBuffer + 1, (UWORD)realsize);
 			DataIndex = 0;
 			ExpectedBytes = 2 + realsize;
 			TransferStatus = SIO_ReadFrame;
@@ -749,7 +755,7 @@ static void Command_Frame(void)
 			break;
 		case 0x53:				/* Status */
 			DataBuffer[0] = DriveStatus(unit, DataBuffer + 1);
-			DataBuffer[1 + 4] = ChkSum(DataBuffer + 1, 4);
+			DataBuffer[1 + 4] = SIO_ChkSum(DataBuffer + 1, 4);
 			DataIndex = 0;
 			ExpectedBytes = 6;
 			TransferStatus = SIO_ReadFrame;
@@ -759,7 +765,7 @@ static void Command_Frame(void)
 		case 0x21:				/* Format Disk */
 			realsize = format_sectorsize[unit];
 			DataBuffer[0] = FormatDisk(unit, DataBuffer + 1, realsize, format_sectorcount[unit]);
-			DataBuffer[1 + realsize] = ChkSum(DataBuffer + 1, realsize);
+			DataBuffer[1 + realsize] = SIO_ChkSum(DataBuffer + 1, realsize);
 			DataIndex = 0;
 			ExpectedBytes = 2 + realsize;
 			TransferStatus = SIO_FormatFrame;
@@ -767,7 +773,7 @@ static void Command_Frame(void)
 			break;
 		case 0x22:				/* Duel Density Format */
 			DataBuffer[0] = FormatDisk(unit, DataBuffer + 1, 128, 1040);
-			DataBuffer[1 + 128] = ChkSum(DataBuffer + 1, 128);
+			DataBuffer[1 + 128] = SIO_ChkSum(DataBuffer + 1, 128);
 			DataIndex = 0;
 			ExpectedBytes = 2 + 128;
 			TransferStatus = SIO_FormatFrame;
@@ -862,7 +868,7 @@ void SIO_PutByte(int byte)
 		if (DataIndex < ExpectedBytes) {
 			DataBuffer[DataIndex++] = byte;
 			if (DataIndex >= ExpectedBytes) {
-				sum = ChkSum(DataBuffer, (UWORD)(ExpectedBytes - 1));
+				sum = SIO_ChkSum(DataBuffer, (UWORD)(ExpectedBytes - 1));
 				if (sum == DataBuffer[ExpectedBytes - 1]) {
 					result = WriteSectorBack();
 					if (result) {
@@ -991,6 +997,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.10  2001/08/03 12:27:52  fox
+cassette support
+
 Revision 1.9  2001/07/25 18:07:07  fox
 Format Disk rewritten. Now it can resize both ATR and XFD images.
 The ATR header is being updated. Double density formatting works.
