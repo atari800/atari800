@@ -41,7 +41,7 @@ rm -rf %{realname}
 %build
 for target in %{targets}
 do
-	./configure --target=$target
+	./configure --prefix=/usr --target=$target
 	make
 	mv atari800 atari800-$target
 	make clean
@@ -50,9 +50,9 @@ touch atari800
 
 %install
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/usr/bin
-mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
-make install PREFIX=$RPM_BUILD_ROOT/usr
+#mkdir -p $RPM_BUILD_ROOT/usr/bin
+#mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
+make install DESTDIR=$RPM_BUILD_ROOT
 for target in %{targets}
 do
 	install atari800-$target $RPM_BUILD_ROOT/usr/bin
@@ -73,12 +73,13 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/atari800-x11
 /usr/bin/atari800-ncurses
 /usr/bin/atari800-sdl
-/usr/share/man/man1/atari800.1.bz2
+/usr/share/man/man1/atari800.1
 
 %changelog
 * Thu Sep 04 2003 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Configure options removed.
-SVGALib target dropped.
+SVGAlib target dropped.
+configure uses --prefix and make install uses DESTDIR now.
 * Mon Feb 10 2003 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. STEREO enabled by default. Description updated.
 * Mon Dec 2 2002 Petr Stehlik <pstehlik@sophics.cz>

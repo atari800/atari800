@@ -8,9 +8,15 @@ TARGET = atari800@EXEEXT@
 CFLAGS = @CFLAGS@
 LDFLAGS = @LDFLAGS@
 
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ -s
+INSTALL_DATA = @INSTALL_DATA@
+
 BIN_DIR = @prefix@/bin
-LIB_DIR = @prefix@/lib
 MAN_DIR = @prefix@/share/man/man1
+DOC_DIR = @prefix@/share/doc/atari800
+
+DESTDIR =
 
 OBJS = \
 	atari.o \
@@ -77,16 +83,21 @@ distclean: clean
 	-rm -f Makefile configure config.log config.status config.h
 	-rm -rf autom4te.cache
 
-install:
-	cp $(TARGET) ${BIN_DIR}/$(TARGET)
-	cp atari800.man ${MAN_DIR}/atari800.1
+install: $(TARGET) installdirs
+	$(INSTALL_PROGRAM) $(TARGET) ${DESTDIR}${BIN_DIR}/$(TARGET)
+	$(INSTALL_DATA) atari800.man ${DESTDIR}${MAN_DIR}/atari800.1
+# install also the documentation
+	$(INSTALL_DATA) ../DOC/NEWS  ${DESTDIR}${DOC_DIR}/NEWS
 
 install-svgalib: install
-	chown root.root ${BIN_DIR}/$(TARGET)
-	chmod 4755 ${BIN_DIR}/$(TARGET)
+	chown root.root ${DESTDIR}${BIN_DIR}/$(TARGET)
+	chmod 4755 ${DESTDIR}${BIN_DIR}/$(TARGET)
 
 readme.html: $(TARGET)
 	./$(TARGET) -help </dev/null | ../util/usage2html.pl \
 		../DOC/readme.html.in ../DOC/USAGE ./atari.h > $@
 
 doc: readme.html
+
+installdirs:
+	mkdir -p $(DESTDIR)$(BIN_DIR) $(DESTDIR)$(MAN_DIR) $(DESTDIR)$(DOC_DIR)

@@ -2,9 +2,20 @@
 
 2003-09-04  Petr Stehlik  <pstehlik@sophics.cz>
 * configure.ac: svgalib target added
+
 * SVGAlib target dropped from Debian and RPM build scripts
+
 * -rc1 removed from everywhere, it was causing pain for the build scripts
+
 * sockets.txt renamed to r_device.txt
+
+* Makefile.in: rewritten a bit the install process. Now actually becoming
+  usable - for example "make install DESTDIR=/tmp" now does something
+  useful. There's a bit more work to do - install the rest of documentation
+  and write 'uninstall' target.
+
+* atari800.spec: builds on the Makefile.in improvement. Now should finally
+  install the man page everytime.
 
 
 ** tagged as ATARI800_1_3_1-RC1
