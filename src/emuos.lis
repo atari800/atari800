@@ -418,13 +418,13 @@ DLIST
 ;
 HALTMSG
     .SBYTE "      Atari800/OS Emulation Halted      "
-    .SBYTE "    Copright (c) 1997 David J. Firth    "
+    .SBYTE "   Copyright (c) 1997 David J. Firth    "
+    .SBYTE "(c) 1998-2003 Atari800 Development Team "
     .SBYTE "                                        "
-    .SBYTE "    E-Mail: david@signus.demon.co.uk    "
-    .SBYTE "  http://www.signus.demon.co.uk/david/  "
+    .SBYTE "       http://atari800.atari.org/       "
     .SBYTE "                                        "
     .SBYTE "Sorry this program needs a real Atari/OS"
-    .SBYTE "                                        "
+    .SBYTE "  Visit the Web pages to find out more  "
     .SBYTE "                                        "
     .SBYTE "                                        "
     .SBYTE "                                        "
