@@ -4458,7 +4458,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Debug"
@@ -4472,7 +4472,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Release"
@@ -4481,7 +4481,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_ATARI_=\
 	".\port\atari.h"\
@@ -4497,7 +4497,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_ATARI_=\
 	".\port\atari.h"\
@@ -4518,7 +4518,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Debug"
@@ -4532,7 +4532,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Release"
@@ -4549,7 +4549,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
@@ -4566,7 +4566,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -4581,7 +4581,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Debug"
@@ -4598,7 +4598,7 @@ DEP_CPP_ATARI_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ENDIF 
@@ -4617,7 +4617,7 @@ DEP_CPP_KEYBO=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Debug"
@@ -4629,7 +4629,7 @@ DEP_CPP_KEYBO=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Release"
@@ -4637,7 +4637,7 @@ DEP_CPP_KEYBO=\
 DEP_CPP_KEYBO=\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_KEYBO=\
 	".\port\atari.h"\
@@ -4650,7 +4650,7 @@ NODEP_CPP_KEYBO=\
 DEP_CPP_KEYBO=\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_KEYBO=\
 	".\port\atari.h"\
@@ -4667,7 +4667,7 @@ DEP_CPP_KEYBO=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Debug"
@@ -4679,7 +4679,7 @@ DEP_CPP_KEYBO=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Release"
@@ -4692,7 +4692,7 @@ DEP_CPP_KEYBO=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
@@ -4705,7 +4705,7 @@ DEP_CPP_KEYBO=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -4718,7 +4718,7 @@ DEP_CPP_KEYBO=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Debug"
@@ -4731,7 +4731,7 @@ DEP_CPP_KEYBO=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ENDIF 
@@ -4750,7 +4750,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_MAIN_=\
 	".\port\dyngapi.h"\
@@ -4765,7 +4765,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_MAIN_=\
 	".\port\dyngapi.h"\
@@ -4780,7 +4780,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_MAIN_=\
 	".\port\dyngapi.h"\
@@ -4795,7 +4795,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_MAIN_=\
 	".\port\dyngapi.h"\
@@ -4810,7 +4810,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_MAIN_=\
 	".\port\dyngapi.h"\
@@ -4825,7 +4825,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_MAIN_=\
 	".\port\dyngapi.h"\
@@ -4840,7 +4840,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
@@ -4852,7 +4852,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -4863,7 +4863,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Debug"
@@ -4875,7 +4875,7 @@ DEP_CPP_MAIN_=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ENDIF 
@@ -4883,7 +4883,7 @@ DEP_CPP_MAIN_=\
 # End Source File
 # Begin Source File
 
-SOURCE=.\port\screen.cpp
+SOURCE=.\port\screen_wince.cpp
 
 !IF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Release"
 
@@ -4895,7 +4895,7 @@ DEP_CPP_SCREE=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Debug"
@@ -4908,7 +4908,7 @@ DEP_CPP_SCREE=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Release"
@@ -4916,7 +4916,7 @@ DEP_CPP_SCREE=\
 DEP_CPP_SCREE=\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_SCREE=\
 	".\port\atari.h"\
@@ -4930,7 +4930,7 @@ NODEP_CPP_SCREE=\
 DEP_CPP_SCREE=\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 NODEP_CPP_SCREE=\
 	".\port\atari.h"\
@@ -4949,7 +4949,7 @@ DEP_CPP_SCREE=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Debug"
@@ -4962,7 +4962,7 @@ DEP_CPP_SCREE=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Release"
@@ -4975,7 +4975,7 @@ DEP_CPP_SCREE=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
@@ -4988,7 +4988,7 @@ DEP_CPP_SCREE=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -5001,7 +5001,7 @@ DEP_CPP_SCREE=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Debug"
@@ -5014,7 +5014,7 @@ DEP_CPP_SCREE=\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\main.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 
 !ENDIF 
@@ -5215,7 +5215,7 @@ DEP_CPP_UI_WI=\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\keyboard.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 # ADD CPP /W4
 
@@ -5227,7 +5227,7 @@ DEP_CPP_UI_WI=\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\keyboard.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 # ADD CPP /W4
 
@@ -5249,7 +5249,7 @@ DEP_CPP_UI_WI=\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\keyboard.h"\
-	".\port\screen.h"\
+	".\port\screen_wince.h"\
 	
 # ADD CPP /W4
 
@@ -5274,7 +5274,7 @@ SOURCE=.\port\main.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\port\screen.h
+SOURCE=.\port\screen_wince.h
 # End Source File
 # End Group
 # Begin Group "WinCE Missing"
