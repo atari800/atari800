@@ -20,9 +20,11 @@ source code which is released under the GPL.
 
 History
 ~~~~~~~
-Version 2.2 (xx)
- - the window is now an appwindow. Drop in a file to boot/run
-   its contents
+Version 2.2 (8.10.2004)
+ - the workbench window is now an appwindow. Drop in a file to
+   boot/run its contents
+ - tries to start a given workbench argument
+ - added an iconify option (menu entry and title gadget)
 
 Version 2.1 (24.09.2004)
  - major changes within the Amiga front end, including
