@@ -41,10 +41,10 @@ include common.mak
 
 dx:
 	$(MAKE) $(CONFDEPS) DEFS="$(DEFS)"
-	$(MAKE) $(TARGET) DEFS="$(DEFS) -Dmain=atari_main -DDIRECTX" \        
+	$(MAKE) $(TARGET) DEFS="$(DEFS) -Dmain=atari_main -DDIRECTX" \
 		OBJ="$(OBJ) $(DXOBJ)" \
 		LIBS="$(LIBS) -lgdi32 -lddraw -ldinput -ldsound -ldxguid"
-        
+
 basic:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DBASIC" OBJ="$(OBJ) $(BASICOBJ)"
 
