@@ -298,6 +298,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	char *run_direct=NULL;
 	char *rtconfig_filename = NULL;
 	int config = FALSE;
+	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-configure") == 0)
@@ -388,36 +389,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 			if (refresh_rate < 1)
 				refresh_rate = 1;
 		}
-		else if (strcmp(argv[i], "-palette") == 0)
-			read_palette(argv[++i]);
-		else if (strcmp(argv[i], "-help") == 0) {
-			Aprint("\t-configure    Update Configuration File");
-			Aprint("\t-config fnm   Specify Alternate Configuration File");
-			Aprint("\t-atari        Standard Atari 800 mode");
-			Aprint("\t-xl           Atari 800XL mode");
-			Aprint("\t-xe           Atari 130XE mode");
-			Aprint("\t-320xe        Atari 320XE mode (COMPY SHOP)");
-			Aprint("\t-rambo        Atari 320XE mode (RAMBO)");
-			Aprint("\t-nobasic      Turn off Atari BASIC ROM");
-			Aprint("\t-basic        Turn on Atari BASIC ROM");
-			Aprint("\t-5200         Atari 5200 Games System");
-			Aprint("\t-pal          Enable PAL TV mode");
-			Aprint("\t-ntsc         Enable NTSC TV mode");
-			Aprint("\t-cart fnm     Install cartridge (raw or CART format)");
-			Aprint("\t-run fnm      Run file directly");
-			Aprint("\t-refresh num  Specify screen refresh rate");
-			Aprint("\t-nopatch      Don't patch SIO routine in OS");
-			Aprint("\t-nopatchall   Don't patch OS at all, H: device won't work");
-			Aprint("\t-palette fnm  Use external palette");
-			Aprint("\t-a            Use A OS");
-			Aprint("\t-b            Use B OS");
-			Aprint("\t-c            Enable RAM between 0xc000 and 0xd000");
-			Aprint("\t-v            Show version/release number");
-			argv[j++] = argv[i];
-			Aprint("\nPress Return/Enter to continue...");
-			getchar();
-			Aprint("\r                                 \n");
-		}
 		else if (strcmp(argv[i], "-a") == 0) {
 			machine_type = MACHINE_OSA;
 			ram_size = 48;
@@ -432,8 +403,33 @@ int Atari800_Initialise(int *argc, char *argv[])
 			if (ram_size == 48)
 				ram_size = 52;
 		}
-		else
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
+				Aprint("\t-configure    Update Configuration File");
+				Aprint("\t-config fnm   Specify Alternate Configuration File");
+				Aprint("\t-atari        Standard Atari 800 mode");
+				Aprint("\t-xl           Atari 800XL mode");
+				Aprint("\t-xe           Atari 130XE mode");
+				Aprint("\t-320xe        Atari 320XE mode (COMPY SHOP)");
+				Aprint("\t-rambo        Atari 320XE mode (RAMBO)");
+				Aprint("\t-nobasic      Turn off Atari BASIC ROM");
+				Aprint("\t-basic        Turn on Atari BASIC ROM");
+				Aprint("\t-5200         Atari 5200 Games System");
+				Aprint("\t-pal          Enable PAL TV mode");
+				Aprint("\t-ntsc         Enable NTSC TV mode");
+				Aprint("\t-cart fnm     Install cartridge (raw or CART format)");
+				Aprint("\t-run fnm      Run file directly");
+				Aprint("\t-refresh num  Specify screen refresh rate");
+				Aprint("\t-nopatch      Don't patch SIO routine in OS");
+				Aprint("\t-nopatchall   Don't patch OS at all, H: device won't work");
+				Aprint("\t-a            Use A OS");
+				Aprint("\t-b            Use B OS");
+				Aprint("\t-c            Enable RAM between 0xc000 and 0xd000");
+				Aprint("\t-v            Show version/release number");
+			}
 			argv[j++] = argv[i];
+		}
 	}
 
 	*argc = j;
@@ -481,6 +477,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 	GTIA_Initialise(argc, argv);
 	PIA_Initialise(argc, argv);
 	POKEY_Initialise(argc, argv);
+
+	if (help_only) {
+		Atari800_Exit(FALSE);
+		return FALSE;
+	}
 
 	/*
 	 * Any parameters left on the command line must be disk images.
@@ -919,6 +920,10 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.36  2002/06/23 21:48:58  joy
+Atari800 does quit immediately when started with "-help" option.
+"-palette" moved to colours.c
+
 Revision 1.35  2002/06/20 20:59:37  joy
 missing header file included
 
