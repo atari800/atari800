@@ -348,8 +348,10 @@ int main(int argc, char **argv)
 		}
 		else if (strcmp(argv[i], "-emuos") == 0)
 			emuos_mode = 2;
-		else if (strcmp(argv[i], "-c") == 0)
-			enable_c000_ram = TRUE;
+		else if (strcmp(argv[i], "-c") == 0) {
+			if (ram_size == 48)
+				ram_size = 52;
+		}
 		else
 			argv[j++] = argv[i];
 	}
@@ -854,7 +856,7 @@ void MainStateSave( void )
 			default_system = 3;
 			break;
 		case 128:
-			temp = 2;
+			temp = 5;	/* don't use 2, because old versions wrote 272 KB of atarixe_memory */
 			default_system = 4;
 			break;
 		case RAM_320_RAMBO:
@@ -892,38 +894,36 @@ void MainStateRead( void )
 
 	ReadUBYTE( &temp, 1 );
 	ReadINT( &os, 1 );
-	switch( temp )
-	{
-		case	0:
-			machine_type = os == 1 ? MACHINE_OSA : MACHINE_OSB;
-			ram_size = 48;
-			break;
-
-		case	1:
-			machine_type = MACHINE_XLXE;
-			ram_size = 64;
-			break;
-
-		case	2:
-			machine_type = MACHINE_XLXE;
-			ram_size = 128;
-			break;
-
-		case	3:
-			machine_type = MACHINE_XLXE;
-			ram_size = RAM_320_COMPY_SHOP;
-			break;
-
-		case	4:
-			machine_type = MACHINE_5200;
-			ram_size = 16;
-			break;
-
-		default:
-			machine_type = MACHINE_XLXE;
-			ram_size = 64;
-			Aprint( "Warning: Bad machine type read in from state save, defaulting to XL" );
-			break;
+	switch (temp) {
+	case 0:
+		machine_type = os == 1 ? MACHINE_OSA : MACHINE_OSB;
+		ram_size = 48;
+		break;
+	case 1:
+		machine_type = MACHINE_XLXE;
+		ram_size = 64;
+		break;
+	case 2:
+		machine_type = MACHINE_XLXE;
+		ram_size = RAM_320_COMPY_SHOP;	/* 2 is meant for 128, but there's 272 KB of extended memory */
+		break;
+	case 3:
+		machine_type = MACHINE_XLXE;
+		ram_size = RAM_320_COMPY_SHOP;
+		break;
+	case 4:
+		machine_type = MACHINE_5200;
+		ram_size = 16;
+		break;
+	case 5:
+		machine_type = MACHINE_XLXE;
+		ram_size = 128;
+		break;
+	default:
+		machine_type = MACHINE_XLXE;
+		ram_size = 64;
+		Aprint( "Warning: Bad machine type read in from state save, defaulting to XL" );
+		break;
 	}
 
 	ReadINT( &pil_on, 1 );
@@ -933,6 +933,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.19  2001/09/17 19:30:27  fox
+shortened state file of 130 XE, enable_c000_ram -> ram_size = 52
+
 Revision 1.18  2001/09/17 18:09:40  fox
 machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
 
