@@ -983,7 +983,7 @@ static int remez_filter_table(double resamp_rate, // output_rate/input_rate
   int size;
   double weights[2], desired[2], bands[4];
   static const int step = 5;
-  static const double step_1 = 1.0 / step;
+  static const double step_1 = 1.0 / 5 /*step*/;
 
   *cutoff = 0.95 * 0.5 * resamp_rate;
 
@@ -2123,6 +2123,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.8  2003/02/12 05:13:18  vasyl
+Corrected minor deviation from standard C
+
 Revision 1.7  2003/01/06 17:11:09  knik
 used new equiripple filter design algorithm (remez.c)
 
