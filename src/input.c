@@ -200,9 +200,27 @@ void INPUT_Frame(void)
 			TRIG[i] = (nframes & 2) ? 1 : 0;
 	}
 
-	/* handle paddles */
-	for (i = 0; i < 8; i++)
-		POT_input[i] = Atari_POT(i);
+	/* handle analog joysticks in Atari 5200 */
+	if (machine_type != MACHINE_5200) {
+		for (i = 0; i < 8; i++)
+			POT_input[i] = 228;
+	}
+	else {
+		for (i = 0; i < 4; i++) {
+			if ((STICK[i] & (STICK_CENTRE ^ STICK_LEFT)) == 0)
+				POT_input[2 * i] = joy_5200_min;
+			else if ((STICK[i] & (STICK_CENTRE ^ STICK_RIGHT)) == 0)
+				POT_input[2 * i] = joy_5200_max;
+			else
+				POT_input[2 * i] = joy_5200_center;
+			if ((STICK[i] & (STICK_CENTRE ^ STICK_FORWARD)) == 0)
+				POT_input[2 * i + 1] = joy_5200_min;
+			else if ((STICK[i] & (STICK_CENTRE ^ STICK_BACK)) == 0)
+				POT_input[2 * i + 1] = joy_5200_max;
+			else
+				POT_input[2 * i + 1] = joy_5200_center;
+		}
+	}
 
 	/* handle mouse */
 	switch (mouse_mode) {
