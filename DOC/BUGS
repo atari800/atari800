@@ -11,12 +11,13 @@ o The cycle-exact ANTIC/GTIA/CPU timing is not 100%.
   - Te.mod (demo) (small glitched pixel in the final credits on the bottom left)
   - The break(demo) (bug may exist in the original, check)
   - Our 5oft Unity Part (demo) (cycle-aligment, probably WSYNC)
-  - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
-  - Isolation (demo) (vector animations)
+  - Isolation (demo) (vector animations) (seems HSCROL related)
 
 o Non-bugs:
   - Mail Order Monsters (game)
 	 (some colour changes do not align with text, occurs on a real Atari) 
+  - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
+         (This bug exists in the code of the demo)
 
 o The following programs are improved by using the new cycle-exact code:
   - 8 Players Demo (demo)
