@@ -28,7 +28,7 @@
 #include "dos/sound_dos.h"
 #include "monitor.h"
 #include "pcjoy.h"
-#include "diskled.h"	/* for LED_lastline */
+#include "diskled.h"	/* for led_status */
 #include "ataripcx.h"
 #include "rt-config.h"	/* for refresh_rate */
 
@@ -68,8 +68,6 @@ static int scr_ptr_inc = ATARI_WIDTH;
 #ifdef MONITOR_BREAK
 extern UBYTE break_step;  /* used to prevent switching to gfx mode while doing monitor 'step' command*/
 #endif
-
-static UBYTE LEDstatus=0; /*status of disk LED*/
 
 static int video_mode=1;       /*video mode (0-3)*/
 static int use_vesa=1;         /*use vesa mode?*/
@@ -210,7 +208,7 @@ void update_leds(void)
 		1:
 	");
 	outportb(0x60,	(PC_keyboard ? 0 : 2)
-			|(LEDstatus ? 4 : 0)
+			|(led_status ? 4 : 0)
 			|(joy_keyboard ? 1 : 0));
 }
 
@@ -453,9 +451,16 @@ void SetupVgaEnvironment()
               break;
           }
 
-#if defined(SET_LED) && !defined(NO_LED_ON_SCREEN)
-	LED_lastline = video_mode == 0 ? 219 : 239;
-#endif
+	screen_visible_x1 = first_col;
+	screen_visible_x2 = first_col + 320;
+	if (video_mode == 0) {
+		screen_visible_y1 = first_lno;
+		screen_visible_y2 = first_lno + 200;
+	}
+	else {
+		screen_visible_y1 = 0;
+		screen_visible_y2 = 240;
+	}
 
         vga_started = 1;
 
@@ -574,17 +579,6 @@ void Atari_DisplayScreen(UBYTE * ascreen)
             }
       } /* if (vga_started) */
 }
-
-/* -------------------------------------------------------------------------- */
-#if defined(SET_LED) && defined(NO_LED_ON_SCREEN)
-void Atari_Set_LED(int how)
-{
-	LEDstatus=how;
-	update_leds();
-}
-#endif
-
-
 
 /* -------------------------------------------------------------------------- */
 /* CONFIG & INITIALISATION                                                    */
@@ -1477,15 +1471,16 @@ int Atari_POT(int num)
 
 int main(int argc, char **argv)
 {
+	int test_val = 0;
+	int last_led_status = 0;
+	int keycode;
+
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
 	/* main loop */
 	while (TRUE) {
-		static int test_val = 0;
-		int keycode;
-
 		keycode = Atari_Keyboard();
 
 		switch (keycode) {
@@ -1538,6 +1533,10 @@ int main(int argc, char **argv)
 #ifndef DONT_SYNC_WITH_HOST
 			atari_sync(); /* here seems to be the best place to sync */
 #endif
+			if (led_status != last_led_status) {
+				update_leds();
+				last_led_status = led_status;
+			}
 			Atari_DisplayScreen((UBYTE *) atari_screen);
 			test_val = 0;
 		}

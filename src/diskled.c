@@ -1,31 +1,8 @@
-/* platform-independent drawing LED on screen */
-
-#include "config.h"
-
-#ifdef SET_LED
-
+#include "atari.h"
 #include "diskled.h"
 
-int LED_status = 0;
-int LED_off_delay = 0;
-
-#ifdef NO_LED_ON_SCREEN
-
-#include "platform.h"
-
-void Update_LED(void) {
-	static int last_LED_status = 0;
-	if (LED_status != last_LED_status)
-		Atari_Set_LED(last_LED_status = LED_status);
-	if (--LED_off_delay == 0)
-		LED_status = 0;
-}
-
-#else /* NO_LED_ON_SCREEN */
-
-#include "antic.h"	/* for atari_screen */
-
-int LED_lastline = ATARI_HEIGHT - 1;
+int led_status = 0;
+int led_off_delay = -1;
 
 #define DISKLED_FONT_WIDTH		5
 #define DISKLED_FONT_HEIGHT		7
@@ -178,24 +155,24 @@ static unsigned char DiskLED[]= {
 053,053,053,053,053	/* End of write LEDs	*/
 };
 
-void Update_LED(void)
+void LED_Frame(void)
 {
-	if (LED_status) {
-		UBYTE *shape = DiskLED + (LED_status - 1) * DISKLED_FONT_CHARSIZE;
-		UBYTE *scrn = (UBYTE *)atari_screen
-					  + (LED_lastline + 1 - DISKLED_FONT_HEIGHT) * ATARI_WIDTH
-					  + 352 - DISKLED_FONT_WIDTH;
-		int x,y;
+	if (led_off_delay >= 0)
+		if (--led_off_delay < 0)
+			led_status = 0;
+#ifndef NO_LED_ON_SCREEN
+	if (led_status) {
+		UBYTE *shape = DiskLED + (led_status - 1) * DISKLED_FONT_CHARSIZE;
+		UBYTE *scrn = (UBYTE *) atari_screen
+					  + (screen_visible_y2 - DISKLED_FONT_HEIGHT) * ATARI_WIDTH
+					  + screen_visible_x2 - DISKLED_FONT_WIDTH;
+		int x;
+		int y;
 		for (y = 0; y < DISKLED_FONT_HEIGHT; y++) {
-			for( x = 0; x < DISKLED_FONT_WIDTH; x++)
+			for (x = 0; x < DISKLED_FONT_WIDTH; x++)
 				*scrn++ = *shape++;
 			scrn += ATARI_WIDTH - DISKLED_FONT_WIDTH;
 		}
-		if (--LED_off_delay == 0)
-			LED_status = 0;
 	}
-}
-
 #endif /* NO_LED_ON_SCREEN */
-
-#endif /* SET_LED */
+}

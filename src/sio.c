@@ -308,7 +308,7 @@ static int ReadSector(int unit, int sector, UBYTE * buffer)
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (sector > 0 && sector <= sectorcount[unit]) {
-				Set_LED_Read(unit);
+				LED_SetRead(unit, 1);
 				size = SeekSector(unit, sector);
 				fread(buffer, 1, size, disk[unit]);
 				return 'C';
@@ -330,7 +330,7 @@ static int WriteSector(int unit, int sector, UBYTE * buffer)
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
-				Set_LED_Write(unit);
+				LED_SetWrite(unit, 1);
 				if (sector > 0 && sector <= sectorcount[unit]) {
 					size = SeekSector(unit, sector);
 					fwrite(buffer, 1, size, disk[unit]);
@@ -680,8 +680,6 @@ void SIO(void)
 	dPutByte(0x0303, regY);
 	dPutByte(0x42,0);
 	SetC;
-	Set_LED_Off();
-
 }
 
 UBYTE SIO_ChkSum(UBYTE * buffer, UWORD length)
@@ -735,7 +733,7 @@ static UBYTE Command_Frame(void)
 			ExpectedBytes = realsize + 1;
 			DataIndex = 0;
 			TransferStatus = SIO_WriteFrame;
-			Set_LED_Write(unit);
+			LED_SetWrite(unit, 10);
 			return 'A';
 		case 0x52:				/* Read */
 			SizeOfSector((UBYTE)unit, sector, &realsize, NULL);
@@ -749,7 +747,7 @@ static UBYTE Command_Frame(void)
 			if (sector == 2)
 				DELAYED_SERIN_IRQ += SECTOR_DELAY;
 #endif
-			Set_LED_Read(unit);
+			LED_SetRead(unit, 10);
 			return 'A';
 		case 0x53:				/* Status */
 			DataBuffer[0] = DriveStatus(unit, DataBuffer + 1);
@@ -915,7 +913,6 @@ int SIO_GetByte(void)
 			byte = DataBuffer[DataIndex++];
 			if (DataIndex >= ExpectedBytes) {
 				TransferStatus = SIO_NoFrame;
-				Set_LED_Off();
 			}
 			else {
 				DELAYED_SERIN_IRQ = SERIN_INTERVAL;
@@ -931,7 +928,6 @@ int SIO_GetByte(void)
 			byte = DataBuffer[DataIndex++];
 			if (DataIndex >= ExpectedBytes) {
 				TransferStatus = SIO_NoFrame;
-				Set_LED_Off();
 			}
 			else {
 				if (DataIndex == 0)
@@ -942,7 +938,6 @@ int SIO_GetByte(void)
 		}
 		else {
 			Aprint("Invalid read frame!");
-			Set_LED_Off();
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -994,6 +989,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.14  2001/10/03 16:46:09  fox
+SET_LED and Atari_Set_LED are no longer used
+
 Revision 1.13  2001/10/01 17:21:11  fox
 updated for new macros in memory-d.h
 
