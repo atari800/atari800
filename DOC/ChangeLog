@@ -1,3 +1,8 @@
+2005-03-11  Piotr Fusik  <fox@scene.pl>
+* atari_x11.c: "-mouse" works. Set default clipping area to 336x240.
+  x11-motif is now compilable, possibly also x11-xview.
+
+
 2005-03-10  Piotr Fusik  <fox@scene.pl>
 * atari_basic.c: updated for new Atari800_Frame()
 
@@ -10,6 +15,7 @@
 
 * ui.[ch], atari.c, cpu.c: removed the unused "screen" parameter from ui()
   and SelectCartType()
+
 
 2005-03-09  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c: switched back to Atari800_Frame like all other ports do.
@@ -25,6 +31,7 @@
 * configure.ac: enables linux joystick by default. The atari_x11.c needs
   a lot of cleanup: move the mouse emulation to input.c and make sure
   the keyboard joystick, mouse joystick and real joysticks do cope together.
+
 
 2005-03-08  Piotr Fusik  <fox@scene.pl>
 * antic.c: added missing combinations of ANTIC modes with GTIA modes.
