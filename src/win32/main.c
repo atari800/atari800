@@ -27,11 +27,6 @@ void exit(int code)
 {
   MSG msg;
 
-  groff();
-#ifdef SOUND
-  Sound_Exit();
-#endif
-  uninitinput();
   PostMessage(hWndMain, WM_CLOSE, 0, 0);
 
   while (GetMessage(&msg, NULL, 0, 0))
@@ -39,7 +34,8 @@ void exit(int code)
     TranslateMessage(&msg);
     DispatchMessage(&msg);
   }
-  ExitProcess(msg.wParam);
+
+  ExitProcess(code);
 }
 #endif
 
@@ -68,6 +64,13 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
       SetCursor(NULL);
       return TRUE;
     case WM_CREATE:
+      break;
+    case WM_CLOSE:
+      groff();
+#ifdef SOUND
+      Sound_Exit();
+#endif
+      uninitinput();
       break;
     case WM_DESTROY:
       PostQuitMessage(10);
@@ -219,6 +222,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 
 /*
 $Log$
+Revision 1.8  2002/07/11 16:23:21  knik
+shutdown code moved from exit() to WindowProc()
+
 Revision 1.7  2002/07/10 16:59:54  knik
 Enabled and updated exit(). Atari exited without closing graphics and sound.
 Now should exit more nicely.
