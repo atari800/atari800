@@ -258,8 +258,8 @@ void INPUT_Frame(void)
 	*/
 	i = machine_type == MACHINE_5200 ? key_shift : key_break;
 	if (i && !last_key_break) {
-		IRQST &= ~0x80;
 		if (IRQEN & 0x80) {
+			IRQST &= ~0x80;
 			GenerateIRQ();
 		}
 	}
@@ -284,8 +284,8 @@ void INPUT_Frame(void)
 		/* ignore if only shift or control has changed its state */
 			last_key_code = key_code;
 			KBCODE = (UBYTE) key_code;
-			IRQST &= ~0x40;
 			if (IRQEN & 0x40) {
+				IRQST &= ~0x40;
 				GenerateIRQ();
 			}
 		}
