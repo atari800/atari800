@@ -207,28 +207,31 @@ STRPTR AddSuffix(const STRPTR name, const STRPTR suf)
 
 ULONG GetBestID( ULONG width, ULONG height, ULONG depth )
 {
-	struct Screen *defscr = LockPubScreen( NULL );
-	struct ViewPort *vp = NULL;
+	struct Screen *defscr;
 	ULONG displayID;
-	if( defscr ) vp = &defscr->ViewPort;
 
-	displayID = BestModeID( BIDTAG_Depth,depth,
+	if ((defscr = LockPubScreen(NULL)))
+	{
+		struct ViewPort *vp;
+
+		vp = &defscr->ViewPort;
+
+		displayID = BestModeID( BIDTAG_Depth,depth,
 									BIDTAG_NominalWidth, width,
 									BIDTAG_NominalHeight, height,
 									BIDTAG_MonitorID, GetVPModeID( vp ) & MONITOR_ID_MASK,
 									TAG_DONE);
 
-	if( displayID == INVALID_ID )
+		UnlockPubScreen( NULL, defscr );
+	} else displayID = INVALID_ID;
+
+	if (displayID == INVALID_ID)
 	{
 		displayID = BestModeID( BIDTAG_Depth,depth,
 									BIDTAG_NominalWidth, width,
 									BIDTAG_NominalHeight, height,
 									TAG_DONE);
 	}
-
-	
-
-	if( defscr ) UnlockPubScreen( NULL, defscr );
 	return displayID;
 }
 
