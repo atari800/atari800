@@ -4,6 +4,8 @@ VER_MICRO=1-rc1
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO
 TAG="ATARI800_"$VER_MAJOR"_"$VER_MINOR"_"$VER_MICRO
+#upper case the tag
+TAG=`echo $TAG | tr [:lower:] [:upper:]`
 FOLDER="atari800-"$VERSION
 FNAME=$FOLDER".tar.gz"
 #

@@ -12,7 +12,8 @@
 %define maintarget sdl
 Summary:	An emulator of 8-bit Atari personal computers.
 Name:		%{name}
-Version:	%{ver}
+#Version:	%{ver}
+Version:	1.3.1rc1
 Release:	%{rel}
 Copyright:	%{copy}
 Packager: %{ich}
