@@ -105,15 +105,7 @@ void Warmstart(void)
 void Coldstart(void)
 {
 	PORTA = 0x00;
-	if (mach_xlxe) {
-#if 0	/* to make "-cart" working */
-		selftest_enabled = TRUE;	/* necessary for init RAM */
-		PORTB = 0x00;			/* necessary for init RAM */
-#endif
-		PIA_PutByte(_PORTB, 0xff);	/* turn on operating system */
-	}
-	else
-		PORTB = 0xff;
+	PIA_PutByte(_PORTB, 0xff);	/* turn on operating system in XL/XE */
 	CART_Start();
 	Poke(0x244, 1);
 	ANTIC_Reset();
@@ -128,23 +120,109 @@ void Coldstart(void)
 	consol_table[1] = consol_table[2];
 }
 
+static int load_image(char *filename, UBYTE *buffer, int nbytes)
+{
+	int status = FALSE;
+	FILE *f;
+
+	f = fopen(filename, "rb");
+	if (f) {
+		status = fread(buffer, 1, nbytes, f);
+		fclose(f);
+		if (status != nbytes) {
+			Aprint("Error reading %s", filename);
+			return FALSE;
+		}
+
+		status = TRUE;
+	}
+	else
+		Aprint("Error loading rom: %s", filename);
+
+	return status;
+}
+
+int Initialise_AtariOSA(void)
+{
+	if (!load_image(atari_osa_filename, atari_os, 0x2800))
+		return FALSE;
+	have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
+	machine = Atari;
+	mach_xlxe = FALSE;
+	MEMORY_InitialiseMachine();
+	return TRUE;
+}
+
+int Initialise_AtariOSB(void)
+{
+	if (!load_image(atari_osb_filename, atari_os, 0x2800))
+		return FALSE;
+	have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
+	machine = Atari;
+	mach_xlxe = FALSE;
+	MEMORY_InitialiseMachine();
+	return TRUE;
+}
+
+int Initialise_AtariXL(void)
+{
+	if (!load_image(atari_xlxe_filename, atari_os, 0x4000))
+		return FALSE;
+	if (!load_image(atari_basic_filename, atari_basic, 0x2000))
+		return FALSE;
+	machine = AtariXL;
+	mach_xlxe = TRUE;
+	MEMORY_InitialiseMachine();
+	return TRUE;
+}
+
 int Initialise_AtariXE(void)
 {
-	int status;
-	mach_xlxe = TRUE;
-	status = Initialise_AtariXL();
+	if (!Initialise_AtariXL())
+		return FALSE;
 	machine = AtariXE;
 	xe_bank = 0;
-	return status;
+	return TRUE;
 }
 
 int Initialise_Atari320XE(void)
 {
-	int status;
-	mach_xlxe = TRUE;
-	status = Initialise_AtariXE();
+	if (!Initialise_AtariXL())
+		return FALSE;
 	machine = Atari320XE;
-	return status;
+	xe_bank = 0;
+	return TRUE;
+}
+
+int Initialise_Atari5200(void)
+{
+	if (!load_image(atari_5200_filename, atari_os, 0x800))
+		return FALSE;
+	machine = Atari5200;
+	mach_xlxe = FALSE;
+	MEMORY_InitialiseMachine();
+	return TRUE;
+}
+
+/*
+ * Initialise System with an replacement OS. It has just
+ * enough functionality to run Defender and Star Raider.
+ */
+
+#include "emuos.h"
+
+int Initialise_EmuOS(void)
+{
+	if (load_image("emuos.img", atari_os, 0x4000))
+		Aprint("EmuOS: Using external emulated OS");
+	else
+		memcpy(atari_os, emuos_h, 0x4000);
+	/* skip 6 KB, because OS in 800 is 10 KB, not 16 KB */
+	memmove(atari_os, atari_os + 0x1800, 0x2800);
+	machine = Atari;
+	mach_xlxe = FALSE;
+	MEMORY_InitialiseMachine();
+	return TRUE;
 }
 
 #ifdef linux
@@ -903,6 +981,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.17  2001/09/17 07:39:50  fox
+Initialise_Atari... functions moved to atari.c
+
 Revision 1.16  2001/09/16 11:22:56  fox
 removed default_tv_mode
 
