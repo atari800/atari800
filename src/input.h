@@ -202,6 +202,7 @@
 
 extern int key_code;	/* regular Atari key code */
 extern int key_break;	/* Break key pressed */
+extern int key_shift;	/* Shift key pressed */
 
 /* functions */
 void INPUT_Frame(void);

@@ -4,8 +4,9 @@
 #include "input.h"
 #include "pokey.h"
 
-int key_code = 0xff;
+int key_code = AKEY_NONE;
 int key_break = 0;
+int key_shift = 0;
 
 void INPUT_Frame(void)
 {
@@ -18,13 +19,16 @@ void INPUT_Frame(void)
 		}
 	}
 
+	SKSTAT |= 0xc;
+	if (key_shift)
+		SKSTAT &= ~8;
+
 	if (key_code == AKEY_NONE) {
 		if (press_space) {
 			key_code = AKEY_SPACE;
 			press_space = 0;
 		}
 		else {
-			SKSTAT |= 4;
 			last_key = AKEY_NONE;
 		}
 	}
