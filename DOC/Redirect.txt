@@ -1,0 +1,33 @@
+From: Don Mahurin <dmahurin@berkeley.innomedia.com>
+
+I'm new to the list and I have a contibution for you.
+
+atari_console is a new UI that aims to make atari800 act like a command
+stream.
+
+ - Command line feal
+ - Scriptable atari800.
+ - Get logs or listings from atari.
+ - Use expect like scripts to run atari tasks.
+
+Example:
+   spawn atari800 -xl
+   expect READY
+   send "load \"d1:myprog.bas\""
+   expect READY
+   SEND list
+
+Example: - script to start SAM and say things typed in:
+    #!/usr/bin/expect -f
+    spawn atari800 -xl sam.atr
+    expect READY
+    send "run \"d1:sayit.sam\"\n"
+    expect "SPEAK FROM SAM OR RECITER"
+    send "RECITER\n"
+    interact
+
+Also, I changes some of the Error prints in the code to use fprintf, so
+you can redirect atari_console and still see error messages.
+Also, I put sound support in atari_curses and atari_command, and renamed
+the functions to more generic names ( The OS may not be Linux, and/or
+the sound driver may not be Voxware/OSS).
