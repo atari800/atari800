@@ -1,5 +1,9 @@
 o Basic XE (OSS Supercart) should work now <Shamus>
+
 o nonblocking open of sound device on linux <Rudolf>
+
+o ANTIC.C is no longer LONG_ALIGNMENT dependent. Macros READ_U32/WRITE_U32
+  take care of the memory access. <Vasyl Tsvirkunov>
 
 -- Piotr:
 
