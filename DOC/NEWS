@@ -1,3 +1,13 @@
+Version 1.2.1 (2001/12/31)
+
+* serious memory overflow bug fixed (caused crashing of X11 port
+  and probably also other unexpected bugs or problems)
+
+* joysticks in SDL port fixed and improved.
+
+* RPM's .spec file fixed.
+
+
 Version 1.2.1pre0 (2001/12/17)
 
 * Falcon port configurable and buildable again

@@ -9,3 +9,5 @@ o merge common parts of VGA, SVGALIB and AtariFalcon keyboard stuff
   into one source file named like atari_keyboard.c.
 
 o rewrite joycfg to use curses so it would be usable on all platforms.
+
+o update Amiga and X11 ports, find and name maintainer for each port.

@@ -40,3 +40,6 @@ o intensive 130xe-banks switching slows down emulation much.
   - Sheol (demo)
   - Total Daze (demo)
   - Ultra (demo)
+
+o SDL port uses call back system for filling sound buffer.
+  This causes wrong sound effects (noise) in some games.
