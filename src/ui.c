@@ -184,7 +184,10 @@ void DiskManagement()
 					subdir = opendir(filename);
 					if (!subdir) {	/* A file was selected */
 						SIO_Dismount(dsknum + 1);
-						SIO_Mount(dsknum + 1, filename, rwflags[dsknum]);
+						/* try to mount read/write */
+						SIO_Mount(dsknum + 1, filename, FALSE);
+						/* update rwflags with the real mount status */
+						rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
 						break;
 					}
 					else {		/* A directory was selected */
@@ -193,12 +196,14 @@ void DiskManagement()
 					}
 				}
 			}
-			else if (seltype == USER_TOGGLE) {	/* User pressed "SpaceBar" to change read/write flag of this drive */
-				rwflags[dsknum] = !rwflags[dsknum];
-				/* now the drive should probably be remounted
-				   and the rwflag should be read from the drive_status again */
-				/* TODO remount drive */
-				menu_array[dsknum].prefix[1] = rwflags[dsknum] ? 'R' : 'W';
+			else if (seltype == USER_TOGGLE) {
+				/* User pressed "SpaceBar" to change R/W status of this drive */
+				/* unmount */
+				SIO_Dismount(dsknum + 1);
+				/* try to remount with changed R/W status (!rwflags) */
+				SIO_Mount(dsknum + 1, filename, !rwflags[dsknum]);
+				/* update rwflags with the real mount status */
+				rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
 			}
 			else {
 				if (strcmp(sio_filename[dsknum], "Empty") == 0)
@@ -830,6 +835,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.39  2002/11/05 22:40:56  joy
+UI disk mounting fixes
+
 Revision 1.38  2002/09/16 11:22:06  pfusik
 five new cartridge types (Nir Dary)
 

@@ -1,3 +1,13 @@
+2002-11-06  Petr Stehlik  <pstehlik@sophics.cz>
+* ui.c:
+  - applied patch from Ed Cogburn that fixes subsequent mounting
+    of R/W disks in slot that was mounted R/O previously.
+  - finally implemented the R/W <-> R/O mode switching using the Space Bar.
+    Please note that this R/W <-> R/O switch is just temporary and does
+    not change the writeprotect flag of ATR images. Besides, it cannot
+    override this flag so you actually can't mount a writeprotected ATR
+    image read/write using this Space Bar toggle.
+
 2002-09-16  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c, DOC/cart.txt: five new cartridge types (Nir Dary)
 
