@@ -496,14 +496,14 @@ int Atari800_Initialise(int *argc, char *argv[])
 					help_only = TRUE;
 					Aprint("\t-configure       Update Configuration File");
 					Aprint("\t-config <file>   Specify Alternate Configuration File");
-					Aprint("\t-atari           Standard Atari 800 mode");
-					Aprint("\t-xl              Atari 800XL mode");
-					Aprint("\t-xe              Atari 130XE mode");
-					Aprint("\t-320xe           Atari 320XE mode (COMPY SHOP)");
-					Aprint("\t-rambo           Atari 320XE mode (RAMBO)");
+					Aprint("\t-atari           Emulate Atari 800");
+					Aprint("\t-xl              Emulate Atari 800XL");
+					Aprint("\t-xe              Emulate Atari 130XE");
+					Aprint("\t-320xe           Emulate Atari 320XE (COMPY SHOP)");
+					Aprint("\t-rambo           Emulate Atari 320XE (RAMBO)");
+					Aprint("\t-5200            Emulate Atari 5200 Games System");
 					Aprint("\t-nobasic         Turn off Atari BASIC ROM");
 					Aprint("\t-basic           Turn on Atari BASIC ROM");
-					Aprint("\t-5200            Atari 5200 Games System");
 					Aprint("\t-pal             Enable PAL TV mode");
 					Aprint("\t-ntsc            Enable NTSC TV mode");
 					Aprint("\t-osa_rom <file>  Load OS A ROM from file");
@@ -512,13 +512,13 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Aprint("\t-5200_rom <file> Load 5200 ROM from file");
 					Aprint("\t-basic_rom <fil> Load BASIC ROM from file");
 					Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
-					Aprint("\t-run <file>      Run file directly");
+					Aprint("\t-run <file>      Run Atari executable file (COM, EXE, XEX)");
 					Aprint("\t-refresh <rate>  Specify screen refresh rate");
 					Aprint("\t-nopatch         Don't patch SIO routine in OS");
 					Aprint("\t-nopatchall      Don't patch OS at all, H: device won't work");
 					Aprint("\t-a               Use OS A");
 					Aprint("\t-b               Use OS B");
-					Aprint("\t-c               Enable RAM between 0xc000 and 0xd000");
+					Aprint("\t-c               Enable RAM between 0xc000 and 0xcfff in Atari 800");
 					Aprint("\t-v               Show version/release number");
 				}
 
@@ -536,12 +536,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
-	if (tv_mode == TV_PAL)
-	{
+	if (tv_mode == TV_PAL) {
 		deltatime = (1.0 / 50.0);
 	}
-	else
-	{
+	else {
 		deltatime = (1.0 / 60.0);
 	}
 
@@ -565,10 +563,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 		atari_screen2 = atari_screen_b;
 #endif
 	}
-	/*
-	 * Initialise Custom Chips
-	 */
 
+	/* Initialise Custom Chips */
 	ANTIC_Initialise(argc, argv);
 	GTIA_Initialise(argc, argv);
 	PIA_Initialise(argc, argv);
@@ -579,31 +575,20 @@ int Atari800_Initialise(int *argc, char *argv[])
 		return FALSE;
 	}
 
-	/*
-	 * Any parameters left on the command line must be disk images.
-	 */
-
+	/* Any parameters left on the command line must be disk images. */
 	for (i = 1; i < *argc; i++) {
 		if (!SIO_Mount(diskno++, argv[i], FALSE)) {
 			Aprint("Disk File %s not found", argv[i]);
 		}
 	}
 
-	/*
-	 * Install CTRL-C Handler
-	 */
+	/* Install CTRL-C Handler */
 	signal(SIGINT, sigint_handler);
-	/*
-	 * Configure Atari System
-	 */
 
+	/* Configure Atari System */
 	Atari800_InitialiseMachine();
 
-/*
- * ================================
- * Install requested ROM cartridges
- * ================================
- */
+	/* Install requested ROM cartridge */
 	if (rom_filename) {
 		int r = CART_Insert(rom_filename);
 		if (r < 0) {
@@ -633,12 +618,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 			}
 		}
 	}
-/*
- * ======================================
- * Reset CPU and start hardware emulation
- * ======================================
- */
 
+	/* Load Atari executable, if any */
 	if (run_direct != NULL)
 		BIN_loader(run_direct);
 
@@ -1067,6 +1048,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.57  2005/03/08 04:48:19  pfusik
+tidied up a little
+
 Revision 1.56  2005/03/05 12:28:24  pfusik
 support for special AKEY_*, refresh rate control and atari_sync()
 moved to Atari800_Frame()
