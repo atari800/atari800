@@ -40,8 +40,8 @@
 
 /*
 ** $Log$
-** Revision 1.1  2000/10/10 13:27:18  joy
-** Initial revision
+** Revision 1.1.1.1  2000/10/10 13:27:18  joy
+** Imported using TkCVS
 **
 ** Revision 1.6  2000/08/11 01:40:07  matt
 ** cleanups
