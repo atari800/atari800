@@ -95,6 +95,7 @@
 #include "mzpokeysnd.h"
 #include "atari.h"
 #include "sndsave.h"
+#include "rt-config.h"	/* extern for stereo_enabled and enable_new_pokey */
 
 #include "config.h"
 
@@ -174,14 +175,10 @@ extern int atari_speaker;
 
 #ifndef NOSNDINTER
 static uint16 last_val = 0;		/* last output value */
-#endif
 #ifdef STEREO
-#ifndef NOSNDINTER
 static uint16 last_val2 = 0;	/* last output value */
 #endif
-extern int stereo_enabled;
 #endif
-extern int enable_new_pokey;	/* declared in rt-config.c */
 
 /* Volume only emulations declarations */
 #ifndef	NO_VOL_ONLY
@@ -1171,6 +1168,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.14  2003/02/10 13:29:16  joy
+extern removed
+
 Revision 1.13  2003/02/09 21:20:43  joy
 updated for global enable_new_pokey
 
