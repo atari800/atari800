@@ -121,4 +121,7 @@ void new_pm_scanline(void);
 UBYTE GTIA_GetByte(UWORD addr);
 void GTIA_PutByte(UWORD addr, UBYTE byte);
 
+#ifdef NEW_CYCLE_EXACT
+void update_pmpl_colls(void);
+#endif
 #endif /* _GTIA_H_ */

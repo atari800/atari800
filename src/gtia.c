@@ -85,6 +85,24 @@ void set_prior(UBYTE byte);			/* in antic.c */
 
 /* Player/Missile stuff ---------------------------------------------------- */
 
+#ifdef NEW_CYCLE_EXACT
+/* temporary collision registers for the current scanline only */
+UBYTE P1PL_T;
+UBYTE P2PL_T;
+UBYTE P3PL_T;
+UBYTE M0PL_T;
+UBYTE M1PL_T;
+UBYTE M2PL_T;
+UBYTE M3PL_T;
+#else
+#define P1PL_T P1PL
+#define P2PL_T P2PL
+#define P3PL_T P3PL
+#define M0PL_T M0PL
+#define M1PL_T M1PL
+#define M2PL_T M2PL
+#define M3PL_T M3PL
+#endif /*NEW_CYCLE_EXACT*/
 extern UBYTE player_dma_enabled;
 extern UBYTE missile_dma_enabled;
 extern UBYTE player_gra_enabled;
@@ -211,10 +229,27 @@ void GTIA_Initialise(int *argc, char *argv[])
 		GTIA_PutByte((UWORD) i, 0);
 }
 
+#ifdef NEW_CYCLE_EXACT
+/* update pm-> pl collisions */
+void update_pmpl_colls(void){
+	P1PL |= P1PL_T;
+	P2PL |= P2PL_T;
+	P3PL |= P3PL_T;
+	M0PL |= M0PL_T;
+	M1PL |= M1PL_T;
+	M2PL |= M2PL_T;
+	M3PL |= M3PL_T;
+}
+#endif /*NEW_CYCLE_EXACT*/
 /* Prepare PMG scanline ---------------------------------------------------- */
 
 void new_pm_scanline(void)
 {
+#ifdef NEW_CYCLE_EXACT
+/* reset temporary pm->pl collisions*/
+P1PL_T=P2PL_T=P3PL_T=0;
+M0PL_T=M1PL_T=M2PL_T=M3PL_T=0;
+#endif /*NEW_CYCLE_EXACT*/
 /* Clear if necessary */
 	if (pm_dirty) {
 		memset(pm_scanline, 0, ATARI_WIDTH / 2);
@@ -230,7 +265,7 @@ void new_pm_scanline(void)
 		pm_dirty = TRUE;									\
 		do {												\
 			if (grafp & 1)									\
-				P##n##PL |= *ptr |= 1 << n;					\
+				P##n##PL_T |= *ptr |= 1 << n;					\
 			ptr++;											\
 			grafp >>= 1;									\
 		} while (grafp);									\
@@ -275,7 +310,7 @@ void new_pm_scanline(void)
 		j = pm_scanline + ATARI_WIDTH / 2 - 2 - ptr;		\
 	if (j > 0)										\
 		do											\
-			M##n##PL |= *ptr++ |= p;				\
+			M##n##PL_T |= *ptr++ |= p;				\
 		while (--j);								\
 }
 
