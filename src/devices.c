@@ -28,8 +28,12 @@
 #include    <ctype.h>
 #include    <time.h>
 #include    <errno.h>
+#include	"config.h"
 #ifndef HAVE_MKSTEMP
-#define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
+# ifndef O_BINARY
+#  define O_BINARY	0
+# endif
+# define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
 #endif
 
 #include    "config.h"
@@ -2215,6 +2219,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.22  2003/09/14 20:07:30  joy
+O_BINARY defined
+
 Revision 1.21  2003/09/14 19:30:32  joy
 mkstemp emulated if unavailable
 

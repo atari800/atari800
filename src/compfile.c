@@ -33,7 +33,10 @@
 #endif
 #include <fcntl.h>
 #ifndef HAVE_MKSTEMP
-#define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
+# ifndef O_BINARY
+#  define O_BINARY	0
+# endif
+# define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
 #endif
 /* Size of memory buffer ZLIB should use when decompressing files */
 #define ZLIB_BUFFER_SIZE	32767
@@ -656,6 +659,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.13  2003/09/14 20:07:28  joy
+O_BINARY defined
+
 Revision 1.12  2003/09/14 19:30:31  joy
 mkstemp emulated if unavailable
 
