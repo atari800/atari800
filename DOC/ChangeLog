@@ -1,3 +1,7 @@
+2004-06-02  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_x11.c: Chris suggests to add XK_Break to generate the AKEY_BREAK
+  so that Ctrl+Pause on linux machine generates the AKEY_BREAK keypress
+
 2004-02-21  Petr Stehlik  <pstehlik@sophics.cz>
 * rdevice.c: Martin Albert, our new Debian package maintainer, suggested
   to allow /dev/ttyS0 for all Linux archs, which is a good idea.

@@ -362,6 +362,7 @@ int GetKeyCode(XEvent * event)
 		case XK_F6:
 			keycode = AKEY_PIL;
 			break;
+		case XK_Break:
 		case XK_F7:
 			keycode = AKEY_BREAK;
 			break;
