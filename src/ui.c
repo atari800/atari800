@@ -242,6 +242,13 @@ int SelectCartType(UBYTE* screen, int k)
 		{ "CRTN", ITEM_ACTION, NULL, "XEGS 256 KB cartridge",           NULL, 23 },
 		{ "CRTO", ITEM_ACTION, NULL, "XEGS 512 KB cartridge",           NULL, 24 },
 		{ "CRTP", ITEM_ACTION, NULL, "XEGS 1 MB cartridge",             NULL, 25 },
+		{ "CRTQ", ITEM_ACTION, NULL, "MegaCart 16 KB cartridge",        NULL, 26 },
+		{ "CRTR", ITEM_ACTION, NULL, "MegaCart 32 KB cartridge",        NULL, 27 },
+		{ "CRTS", ITEM_ACTION, NULL, "MegaCart 64 KB cartridge",        NULL, 28 },
+		{ "CRTT", ITEM_ACTION, NULL, "MegaCart 128 KB cartridge",       NULL, 29 },
+		{ "CRTU", ITEM_ACTION, NULL, "MegaCart 256 KB cartridge",       NULL, 30 },
+		{ "CRTV", ITEM_ACTION, NULL, "MegaCart 512 KB cartridge",       NULL, 31 },
+		{ "CRTW", ITEM_ACTION, NULL, "MegaCart 1 MB cartridge",         NULL, 32 },
 		MENU_END
 	};
 
@@ -818,6 +825,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.37  2002/09/05 08:35:11  pfusik
+seven new cartridge types (by Nir Dary)
+
 Revision 1.36  2002/08/15 16:57:20  pfusik
 1 MB XEGS cart
 

@@ -58,6 +58,13 @@ Currently supported cartridge types:
 | 23 | 800/XL/XE |  256 | XEGS 256 KB cartridge                             |
 | 24 | 800/XL/XE |  512 | XEGS 512 KB cartridge                             |
 | 25 | 800/XL/XE | 1024 | XEGS 1 MB cartridge                               |
+| 26 | 800/XL/XE |   16 | MegaCart 16 KB cartridge                          |
+| 27 | 800/XL/XE |   32 | MegaCart 32 KB cartridge                          |
+| 28 | 800/XL/XE |   64 | MegaCart 64 KB cartridge                          |
+| 29 | 800/XL/XE |  128 | MegaCart 128 KB cartridge                         |
+| 30 | 800/XL/XE |  256 | MegaCart 256 KB cartridge                         |
+| 31 | 800/XL/XE |  512 | MegaCart 512 KB cartridge                         |
+| 32 | 800/XL/XE | 1024 | MegaCart 1 MB cartridge                           |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -299,3 +306,58 @@ stands for the first bank in the image, bank B is the second, etc.
  The last bank is always mapped to $A000-BFFF. Seven lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
++---------------------------------------------------------------------------+
+| Type 26: MegaCart 16 KB cartridge                                         |
++---------------------------------------------------------------------------+
+
+ A 16 KB cartridge, that occupies 16 KB of address space between $8000
+ and $BFFF, and can be disabled by writing a byte with bit 7 set to
+ $D500-$D5FF.
+
++---------------------------------------------------------------------------+
+| Type 27: MegaCart 32 KB cartridge                                         |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bit 0
+ selects one of two available banks, bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 28: MegaCart 64 KB cartridge                                         |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bits 0
+ and 1 select one of four available banks, bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 29: MegaCart 128 KB cartridge                                        |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF.
+ Bits 0,1,2 select one of 8 available banks, bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 30: MegaCart 256 KB cartridge                                        |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Four
+ lowest bits select one of 16 available banks, bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 31: MegaCart 512 KB cartridge                                        |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Five
+ lowest bits select one of 32 available banks, bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 32: MegaCart 1 MB cartridge                                          |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Six
+ lowest bits select one of 64 available banks, bit 7 disables the cartridge.

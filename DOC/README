@@ -92,7 +92,7 @@ o ATR, XFD, DCM, ATR.GZ and XFD.GZ disk images.
 
 o Direct loading of Atari executable files.
 
-o 24 cartridge types, raw and CART format.
+o 32 cartridge types, raw and CART format.
 
 o Cassette player, raw and CAS images.
 

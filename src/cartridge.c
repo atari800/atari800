@@ -34,7 +34,14 @@ int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	32, /* CART_WILL_32 */
 	256,/* CART_XEGS_256 */
 	512,/* CART_XEGS_512 */
-	1024/* CART_XEGS_1024 */
+	1024,/* CART_XEGS_1024 */
+	16, /* CART_MEGA_16 */
+	32, /* CART_MEGA_32 */
+	64, /* CART_MEGA_64 */
+	128,/* CART_MEGA_128 */
+	256,/* CART_MEGA_256 */
+	512,/* CART_MEGA_512 */
+	1024/* CART_MEGA_1024 */
 };
 
 int CART_IsFor5200(int type)
@@ -118,6 +125,22 @@ static void set_bank_A0BF_WILL32(int b)
 		else {
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xbfff, cart_image + ( b & 3 ) * 0x2000);
+		}
+		bank = b;
+	}
+}
+
+static void set_bank_80BF(int b)
+{
+	if (b != bank) {
+		if (b & 0x80) {
+			Cart809F_Disable();
+			CartA0BF_Disable();
+		}
+		else {
+			Cart809F_Enable();
+			CartA0BF_Enable();
+			CopyROM(0x8000, 0xbfff, cart_image + b * 0x4000);
 		}
 		bank = b;
 	}
@@ -243,6 +266,27 @@ void CART_PutByte(UWORD addr, UBYTE byte)
 				bank = b;
 			}
 		}
+		break;
+	case CART_MEGA_16:
+		set_bank_80BF(byte & 0x80);
+		break;
+	case CART_MEGA_32:
+		set_bank_80BF(byte & 0x81);
+		break;
+	case CART_MEGA_64:
+		set_bank_80BF(byte & 0x83);
+		break;
+	case CART_MEGA_128:
+		set_bank_80BF(byte & 0x87);
+		break;
+	case CART_MEGA_256:
+		set_bank_80BF(byte & 0x8f);
+		break;
+	case CART_MEGA_512:
+		set_bank_80BF(byte & 0x9f);
+		break;
+	case CART_MEGA_1024:
+		set_bank_80BF(byte & 0xbf);
 		break;
 	default:
 		CART_Access(addr);
@@ -539,6 +583,18 @@ void CART_Start(void) {
 			/* there's no right slot in XL/XE */
 			Cart809F_Disable();
 			CartA0BF_Disable();
+			break;
+		case CART_MEGA_16:
+		case CART_MEGA_32:
+		case CART_MEGA_64:
+		case CART_MEGA_128:
+		case CART_MEGA_256:
+		case CART_MEGA_512:
+		case CART_MEGA_1024:
+			Cart809F_Enable();
+			CartA0BF_Enable();
+			CopyROM(0x8000, 0xbfff, cart_image);
+			bank = 0;
 			break;
 		default:
 			Cart809F_Disable();
