@@ -43,6 +43,8 @@ typedef enum {
 
 extern int tv_mode;				/* now it is simply number of scanlines */
 extern Machine machine;
+extern int mach_xlxe;
+extern int Ram256;
 extern int verbose;
 extern int draw_display;		/* Draw actualy generated screen */
 
@@ -75,14 +77,6 @@ extern ULONG *atari_screen2;
 
 extern unsigned int screenline_cpu_clock;
 #define cpu_clock (screenline_cpu_clock + xpos)
-
-#define NO_CART 0
-#define NORMAL8_CART 1
-#define NORMAL16_CART 2
-#define AGS32_CART 3
-#define OSS_SUPERCART 4
-#define DB_SUPERCART 5
-#define CARTRIDGE 6
 
 enum ESCAPE {
 	ESC_SIOV,
@@ -407,12 +401,6 @@ struct ATR_Header {
 
 
 void EnablePILL(void);
-int Insert_8K_ROM(char *filename);
-int Insert_16K_ROM(char *filename);
-int Insert_OSS_ROM(char *filename);
-int Insert_DB_ROM(char *filename);
-int Insert_32K_5200ROM(char *filename);
-int Remove_ROM(void);
 void Coldstart(void);
 void Warmstart(void);
 int Initialise_AtariOSA(void);
@@ -427,15 +415,15 @@ void Atari800_PutByte(UWORD addr, UBYTE byte);
 void Atari800_UpdatePatches(void);
 void AtariEscape(UBYTE esc_code);
 int Initialise_EmuOS(void);
-int Insert_Cartridge(char *filename);
 void atari_sync(void);
 
 #endif
 
 /*
 $Log$
-Revision 1.12  2001/07/20 00:30:46  fox
-removed ESC_BREAK
+Revision 1.13  2001/07/20 20:01:54  fox
+added declarations of mach_xlxe and Ram256,
+removed cartridge types and Insert/Remove functions for cartridges
 
 Revision 1.9  2001/05/04 15:38:34  joy
 version++
