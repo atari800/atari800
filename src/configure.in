@@ -19,7 +19,7 @@ do
   esac
 done
 if test "$a800_target" = none; then
-	echo "to configute atari800 use: configure <target>"
+	echo "to configure atari800 use: configure <target>"
 	echo "available atari800 targets are:"
 	echo " basic"
 	echo " curses ncurses"
