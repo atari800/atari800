@@ -1,3 +1,14 @@
+2003-03-07  Piotr Fusik  <fox@scene.pl>
+* pia.[ch], memory.[ch], atari.c: fixed MultiJoy and PORTB:
+  PORTA must be configured as output to select MultiJoy port.
+  PORTB direction register can be read.
+  PORTB lines stay high if configured as inputs
+  ("Road Race" works in XL/XE mode - didn't since 1.2.4).
+  Reset sets PORTB output (not 0xD301, which may be direction register
+  at the moment) to 0xFF.
+* cartridge.c, cassette.c, input.c: copyright fix (I created these files)
+
+
 2003-03-03  Mark Grebe  <markgrebe@yahoo.com>
 * ui.c: Save/Load Disk Set implemented. Result of Save is a text file
   containing names of the disk images that are currently in the drives.
