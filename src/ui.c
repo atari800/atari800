@@ -171,26 +171,32 @@ void Plot(UBYTE * screen, int fg, int bg, int ch, int x, int y)
 		ptr += ATARI_WIDTH - 8;
 	}
 #else
-	UWORD screenaddr;
-      	screenaddr = (memory[89] << 8) | memory[88];
+	UWORD addr = dGetWordAligned(88) + y * 40 + x;
+	UBYTE mask = fg == 0x94 ? 0x80 : 0;
 
-        /* handle line drawiong chars */
-        switch (ch) {
-        case 18:  ch='-'; break;
-        case 17:
-        case 3:   ch='/'; break;
-        case 26:
-        case 5:   ch='\\'; break;
-        case 124: ch='|';
-        no32:
-          memory[screenaddr + y * 40 + x] = (ch ) + (fg == 0x94 ? 0x80 : 0);
-          return;
-          break;
-        }
-
-        if (ch >= 'a' && ch <='z') goto no32;
-
-        memory[screenaddr + y * 40 + x] = (ch - 32) + (fg == 0x94 ? 0x80 : 0);
+	/* handle line drawing chars */
+	switch (ch) {
+	case 18:
+		dPutByte(addr, '-' - 32 + mask);
+		break;
+	case 17:
+	case 3:
+		dPutByte(addr, '/' - 32 + mask);
+		break;
+	case 26:
+	case 5:
+		dPutByte(addr, '\\' - 32 + mask);
+		break;
+	case 124:
+		dPutByte(addr, '|' + mask);
+		break;
+	default:
+		if (ch >= 'a' && ch <= 'z')
+			dPutByte(addr, ch + mask);
+		else
+			dPutByte(addr, ch - 32 + mask);
+		break;
+	}
 #endif
 }
 
@@ -896,7 +902,8 @@ int SelectCartType(UBYTE * screen, int k)
 		"XEGS 64 KB cartridge",
 		"XEGS 128 KB cartridge",
 		"Action! 16 KB cartridge",
-		"Single ROM 16 KB 5200 cartridge"
+		"Single ROM 16 KB 5200 cartridge",
+		"Atrax 128 KB cartridge"
 	};
 
 	int i;
@@ -1265,8 +1272,9 @@ void ui(UBYTE *screen)
 	};
 	const int nitems = sizeof(menu) / sizeof(menu[0]);
 #ifdef CURSES
-        char *screenbackup = malloc(40*24);
-        if (screenbackup) memcpy(screenbackup,&memory[(memory[89] << 8) | memory[88]],40*24);  /* backup of textmode screen */
+	char *screenbackup = malloc(40 * 24);
+	if (screenbackup)
+		dCopyFromMem(dGetWordAligned(88), screenbackup, 40 * 24);	/* backup of textmode screen */
 #endif
 
 	ui_is_active = TRUE;
@@ -1346,7 +1354,7 @@ void ui(UBYTE *screen)
 				if (option >= 0)
 					global_artif_mode = option;
 			}
-			artif_init();
+			ANTIC_UpdateArtifacting();
 			break;
 		case MENU_SETTINGS:
 			AtariSettings(screen);
@@ -1420,10 +1428,10 @@ void ui(UBYTE *screen)
 		}
 	}
 #ifdef CURSES
-        if (screenbackup) {
-          memcpy(&memory[(memory[89] << 8) | memory[88]],screenbackup,40*24);  /* restore textmode screen */
-          free(screenbackup);
-        }
+	if (screenbackup) {
+		dCopyToMem(screenbackup, dGetWordAligned(88), 40 * 24);	/* restore textmode screen */
+		free(screenbackup);
+	}
 #endif
 	/* Sound_Active(TRUE); */
 	ui_is_active = FALSE;
@@ -1495,6 +1503,10 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.17  2001/10/01 17:30:27  fox
+Atrax 128 KB cartridge, artif_init -> ANTIC_UpdateArtifacting;
+CURSES code cleanup (spaces, memory[], goto)
+
 Revision 1.16  2001/09/21 17:04:57  fox
 ANTIC_RunDisplayList -> ANTIC_Frame
 
