@@ -1,3 +1,32 @@
+2003-05-28  Chris Martin <cmartin@ti.com>
+* rdevice.c: fixed several bugs with the sockets version, and it now includes
+  a serial port mode as well.  The R: device can now be emulated by network
+  sockets or you can connect directly to the host serial ports (/dev/ttyS0,
+  etc.) in order to talk to a real modem.
+
+  There is a variable near the top of the rdevice.c file called 'r_serial'.
+  When this is 0, network sockets are used; when it is 1, the RS232 port on
+  the host is used. This variable should be moved to rt-config.h and the
+  atari800 config file could have a line that says:
+
+  R_SERIAL=1
+
+
+2003-09-04  Petr Stehlik  <pstehlik@sophics.cz>
+* compfile.c, devices.c: small fix for possibly undefined O_BINARY in the
+  mkstemp emulation from Perry. This could help me compiling Atari800
+  on Falcon where I have an older version of MiNTlib.
+  Also make sure "config.h" is included wherever you rely on configure
+  defines..
+
+* DOC/BUGS: some bugs removed as direct response on Perry's newest patches.
+  Possibly many more bugs from this list could be removed now.
+
+* DOC/TODO: added three very important things to do at the top of this 
+  TO-DO list. Also added an item about configuring the R: device, this
+  time at the bottom of the list.
+
+
 2003-09-14  Perry McFarlane  <perry_m@fastmail.fm>
 * win32/sound.c: round buffer to a sample pair if STEREO sound configured
 

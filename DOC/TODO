@@ -1,5 +1,13 @@
 This is a list of things that need to be done
 ---------------------------------------------
+o put all possible configuration to RT-CONFIG. Reduce the scary number
+  of command line parameters. Teach users (and also contributors/programmers)
+  about RT-CONFIG and the Atari800 config file.
+
+o extend the configuration options in UI to cover all RT-CONFIG options.
+
+o add "Save Config" to UI.
+
 o make the new function Rotate_Disks in sio.c available from UI
 
 o merge common parts of VGA, SVGALIB and AtariFalcon keyboard stuff
@@ -9,8 +17,6 @@ o rewrite joycfg to use curses so it would be usable on all platforms.
 
 o before the SVGAlib is removed move the special features to the SDL port
   (speedup, joystick, cursorblock, recongnized keys)
-
-o update RPM spec file and debian rules for new configure options
 
 o if midlevel keyboard abstract layer can't find volunteers then perhaps
   configurable keyboard layout (in text file?) would do?
@@ -27,3 +33,11 @@ o further clean up in the directory structure - port specific files should
 o try to find out a common interface for setting host sound parameters from
   the command line - freq (11050 - 44100), bits (8/16) and then remove 
   the port specific command line parsing and make use of RtConfig file.
+
+o R: device configuration: TCP port should be configurable (currently
+  hardwired to 9000). Put it to RT-CONFIG struct. Also the switch
+  between real serial port and TCP port should be put there. Something
+  along the following lines:
+  R_SERIAL = 1
+  R_SERPORT = /dev/ttyS0
+  R_NETPORT = 9000
