@@ -52,7 +52,7 @@ int build_in_test(char *t)
 			return (0);
 		}
 	}
-	else if (!strcmp("ATARI800_BIG_ENDIAN", t)) {
+	else if (!strcmp("WORDS_BIGENDIAN", t)) {
 		int i = 1;
 		printf("Checking endianess... ");
 		/* if first byte of i is 1, then it's little endian */
@@ -65,8 +65,6 @@ int build_in_test(char *t)
 			return 1;
 		}
 	}
-	else if (!strcmp("ATARI800_64_BIT", t))
-		return sizeof(long) != 4;
 	else
 		return 0;
 }
@@ -261,6 +259,12 @@ int main(void)
 			confyn[j] = 'Y' + 'N' - confyn[j];
 		if (yes) {
 			if (buf[i] == 0) {
+			  if (!strcmp("SIZEOF_LONG", t))
+			  {
+			    fprintf(fp, "#define SIZEOF_LONG %d\n", sizeof(long));
+			    yes = 0;
+			  }
+			  else
 				if (!build_in_test(t))
 					yes = 0;
 			}
@@ -307,6 +311,9 @@ int main(void)
 
 /*
 $Log$
+Revision 1.4  2001/04/15 09:16:05  knik
+autoconf compatible patch
+
 Revision 1.3  2001/03/25 07:05:55  knik
 use common name .atari800 in dos
 
