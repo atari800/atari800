@@ -1,28 +1,38 @@
 /*****************************************************************************
+ *                                                                           *
+ *  Atari800  Atari 800XL, etc. emulator                                     *
+ *  ----------------------------------------------------------------------   *
+ *  POKEY Chip Emulator, V1.2                                                *
+ *  by Michael Borisov                                                       *
+ *                                                                           *
+ *****************************************************************************/
 
-    Atari800  Atari 800XL, etc. emulator
-    ----------------------------------------------------------------------
-    POKEY Chip Emulator, V1.0
-    Copyright (C) 2002  Michael Borisov
+/*****************************************************************************
+ *                                                                           *
+ *                 License Information and Copyright Notice                  *
+ *                 ========================================                  *
+ *                                                                           *
+ *  POKEY Chip Emulator is Copyright(c) 2002 by Michael Borisov              *
+ *                                                                           *
+ *  This program is free software; you can redistribute it and/or modify     *
+ *  it under the terms of the GNU General Public License as published by     *
+ *  the Free Software Foundation; either version 2 of the License, or        *
+ *  (at your option) any later version.                                      *
+ *                                                                           *
+ *  This program is distributed in the hope that it will be useful,          *
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *
+ *  GNU General Public License for more details.                             *
+ *                                                                           *
+ *  You should have received a copy of the GNU General Public License        *
+ *  along with this program; if not, write to the Free Software              *
+ *  Foundation, Inc., 59 Temple Place - Suite 330,                           *
+ *                Boston, MA 02111-1307, USA.                                *
+ *                                                                           *
+ *****************************************************************************/
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-
-*****************************************************************************/
-
-#include <stdlib.h>
-#include <math.h>
 
 #include "pokeysnd.h"
 #include "atari.h"
@@ -35,6 +45,9 @@
 #include "sound_win.h"
 #endif /*__PLUS*/
 
+#include "pokey_resample.h"
+#include <math.h>
+
 #define NPOKEYS 2
 
 static const double master_gain = 3.5/2;
@@ -43,12 +56,18 @@ static unsigned int master_gain2 = 2;
 static unsigned int num_cur_pokeys = 0;
 
 /* Filter */
-static const unsigned long pokey_frq_ideal =  1789790; //Hz - True
 static unsigned long sample_rate = 44100; // Hz
-static unsigned long pokey_frq;
-static int filter_size;
-static double* filter_data = NULL;
-static unsigned long audible_frq;
+static unsigned long pokey_frq = 1808100 ; //Hz - for easier resampling
+static int filter_size = 1274;
+static const double* filter_data = filter_44;
+static unsigned long audible_frq = 20000;
+
+static const unsigned long pokey_frq_ideal =  1789790; //Hz - True
+static const int filter_size_44 = 1274;
+static const int filter_size_22 = 1239;
+static const int filter_size_11 = 1305;
+static const int filter_size_48 = 898;
+static const int filter_size_8  = 1322;
 
 
 // Copyright info
@@ -943,98 +962,9 @@ static unsigned char generate_sample(PokeyState* ps)
 }
 
 
-/******************************************
- filter table generator by Krzysztof Nikiel
- ******************************************/
 
-static double Izero(double x)
-{
-  const double IzeroEPSILON = 1e-50;	/* Max error acceptable in Izero */
-  double sum, u, halfx, temp;
-  int n;
 
-  sum = u = n = 1;
-  halfx = x / 2.0;
-  do
-  {
-    temp = halfx / (double) n;
-    n += 1;
-    temp *= temp;
-    u *= temp;
-    sum += u;
-  }
-  while (u >= IzeroEPSILON * sum);
 
-  return (sum);
-}
-
-static int generate_filter_table(double **filter_data, double cutoff_rate)
-{
-  int size;
-  const int desired_size = 600;
-  int i;
-  // 7.0 gives a bit more than 70dB stopband ripple
-  static const double Beta = 7.0;
-  double IBeta = 1.0 / Izero(Beta);
-  double *data;
-  double tmp, tmp2;
-
-  size = (int)(cutoff_rate * desired_size) / (double)cutoff_rate;
-
-  if (!(*filter_data = malloc((size * 2 - 1) * sizeof(**filter_data))))
-  {
-    fprintf(stderr, "out of memory\n"); // fixme: create safe malloc function
-    exit(1);
-  }
-
-  data = *filter_data;
-
-  data[0] = 1.0;
-
-  for (i = 1; i < size; i++)
-  {
-    tmp = (double)i / size;
-    tmp2 = M_PI * i * cutoff_rate;
-
-    // sinc and kaiser window in single expression
-    data[i] = sin(tmp2) / tmp2 * Izero(Beta * sqrt(1.0 - tmp * tmp)) * IBeta;
-  }
-
-  // unfortunately the cumulative table is twice longer than the half table of
-  // symmetric impulse response
-
-  // complete second half of table
-  for (i = size - 1; i >= 0; i--)
-    data[i + size - 1] = data[i];
-  for (i = 0; i < size; i++)
-    data[i] = data[size * 2 - 2 - i];
-
-  size = size * 2 - 1; // nasty but works
-
-  // compute reversed cumulative sum table
-  for (i = 1; i < size; i++)
-    data[i] += data[i - 1];
-
-  // inverse the table
-  tmp = 1.0 / data[size - 1];
-  for (i = 0; i < (size / 2); i++)
-  {
-    double tmp2 = tmp * data[i];
-    data[i] = tmp * data[size - 1 - i];
-    data[size - 1 - i] = tmp2;
-  }
-  if (size & 1)
-    data[size / 2] *= tmp;
-
-#if 0
-  for (i = 0; i < size; i++)
-    printf("%.10f\n", data[i]);
-  fflush(stdout);
-  exit(1);
-#endif
-
-  return size;
-}
 
 
 /*****************************************************************************/
@@ -1056,16 +986,39 @@ void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
 {
     sample_rate = playback_freq;
 
-    if (filter_data)
-      free(filter_data);
-
-    pokey_frq = (int)(((double)pokey_frq_ideal/sample_rate) + 0.5)
-      * sample_rate;
-
-    filter_size = generate_filter_table(&filter_data,
-					0.7*(double)sample_rate/pokey_frq);
-
-    audible_frq = 0.4 * sample_rate; // not very good estimate
+    switch(playback_freq)
+    {
+    case 44100:
+        filter_data = filter_44;
+        filter_size = filter_size_44;
+        pokey_frq = 1808100; // 1.02% off ideal
+        audible_frq = 20000; // ultrasound
+        break;
+    case 22050:
+        filter_data = filter_22;
+        filter_size = filter_size_22;
+        pokey_frq = 1786050; // 0.2% off ideal
+        audible_frq = 10000; // 30db filter attenuation
+        break;
+    case 11025:
+        filter_data = filter_11;
+        filter_size = filter_size_11;
+        pokey_frq = 1786050; // 0.2% off ideal
+        audible_frq = 4500; // 30db filter attenuation
+        break;
+    case 48000:
+        filter_data = filter_48;
+        filter_size = filter_size_48;
+        pokey_frq = 1776000; // 0.7% off ideal
+        audible_frq = 20000; // ultrasound
+        break;
+    case 8000:
+        filter_data = filter_8;
+        filter_size = filter_size_8;
+        pokey_frq = 1792000; // 0.1% off ideal
+        audible_frq = 4000; // Nyquist, also 30db attn, should be 50
+        break;
+    }
 
     build_poly4();
     build_poly5();
@@ -1715,6 +1668,16 @@ void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
         Update_c2stop(ps);
         Update_c3stop(ps);
         ps->forcero = 1;
+        break;
+    case _STIMER:
+        ps->c0divpos = ps->c0divstart;
+        ps->c1divpos = ps->c1divstart;
+        ps->c2divpos = ps->c2divstart;
+        ps->c3divpos = ps->c3divstart;
+        ps->c0t2 = 1;
+        ps->c1t2 = 1;
+        ps->c2t2 = 0;
+        ps->c3t2 = 0;
         break;
     }
 }
