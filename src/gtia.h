@@ -105,11 +105,7 @@ extern UWORD colour_translation_table[256];
 #else
 
 #define COLOUR_BLACK 0
-#ifdef __i386__
-#define COLOUR_TO_WORD(dest,src) asm("movb %%bl, %%bh" : "=b" (dest) : "b" (src));
-#else
 #define COLOUR_TO_WORD(dest,src) dest = (((UWORD) (src)) << 8) | (src);
-#endif
 
 #endif /* USE_COLOUR_TRANSLATION_TABLE */
 
