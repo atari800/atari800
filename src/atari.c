@@ -231,18 +231,6 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	switch (default_tv_mode) {
-	case 1:
-		tv_mode = TV_PAL;
-		break;
-	case 2:
-		tv_mode = TV_NTSC;
-		break;
-	default:
-		tv_mode = TV_PAL;
-		break;
-	}
-
 	for (i = j = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-atari") == 0)
 			machine = Atari;
@@ -343,12 +331,10 @@ int main(int argc, char **argv)
 	if (tv_mode == TV_PAL)
 	{
 		deltatime = (1.0 / 50.0);
-		default_tv_mode = 1;
 	}
 	else
 	{
 		deltatime = (1.0 / 60.0);
-		default_tv_mode = 2;
 	}
 
 	Palette_Initialise(&argc, argv);
@@ -833,13 +819,18 @@ int ReadDisabledROMs(void)
 void MainStateSave( void )
 {
 	UBYTE	temp;
+	int default_tv_mode;	/* for compatibility with previous versions */
 
 	/* Possibly some compilers would handle an enumerated type differently,
 	   so convert these into unsigned bytes and save them out that way */
-	if( tv_mode == TV_PAL )
+	if( tv_mode == TV_PAL ) {
 		temp = 0;
-	else
+		default_tv_mode = 1;
+	}
+	else {
 		temp = 1;
+		default_tv_mode = 2;
+	}
 	SaveUBYTE( &temp, 1 );
 
 	if( machine == Atari )
@@ -863,6 +854,7 @@ void MainStateSave( void )
 void MainStateRead( void )
 {
 	UBYTE	temp;
+	int default_tv_mode;	/* for compatibility with previous versions */
 
 	ReadUBYTE( &temp, 1 );
 	if( temp == 0 )
@@ -911,6 +903,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.16  2001/09/16 11:22:56  fox
+removed default_tv_mode
+
 Revision 1.15  2001/09/09 08:34:13  fox
 hold_option -> disable_basic
 

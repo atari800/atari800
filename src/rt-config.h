@@ -22,7 +22,6 @@ extern char print_command[256];
 extern int hd_read_only;
 extern int refresh_rate;
 extern int default_system;
-extern int default_tv_mode;
 extern int disable_basic;
 extern int enable_c000_ram;
 extern int enable_sio_patch;

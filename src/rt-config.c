@@ -40,7 +40,6 @@ char print_command[256];
 int hd_read_only;
 int refresh_rate;
 int default_system;
-int default_tv_mode;
 int disable_basic;
 int enable_c000_ram;
 int enable_sio_patch;
@@ -91,7 +90,7 @@ int RtConfigLoad(char *rtconfig_filename)
 	hd_read_only = 1;
 	refresh_rate = 1;
 	default_system = 3;
-	default_tv_mode = 1;
+	tv_mode = TV_PAL;
 	disable_basic = 1;
 	enable_c000_ram = 0;
 	enable_sio_patch = 1;
@@ -205,9 +204,9 @@ int RtConfigLoad(char *rtconfig_filename)
 				}
 				else if (strcmp(string, "DEFAULT_TV_MODE") == 0) {
 					if (strcmp(ptr, "PAL") == 0)
-						default_tv_mode = 1;
+						tv_mode = TV_PAL;
 					else if (strcmp(ptr, "NTSC") == 0)
-						default_tv_mode = 2;
+						tv_mode = TV_NTSC;
 					else
 						printf("Invalid TV Mode: %s\n", ptr);
 				}
@@ -289,7 +288,7 @@ void RtConfigSave(void)
 		break;
 	}
 
-	if (default_tv_mode == 1)
+	if (tv_mode == TV_PAL)
 		fprintf(fp, "DEFAULT_TV_MODE=PAL\n");
 	else
 		fprintf(fp, "DEFAULT_TV_MODE=NTSC\n");
@@ -357,10 +356,14 @@ void RtConfigUpdate(void)
 		} while ((Ram256 < 1) || (Ram256 > 2));
 	}
 
-	do {
-		GetNumber("Default TV mode 1=PAL 2=NTSC [%d] ",
-				  &default_tv_mode);
-	} while ((default_tv_mode < 1) || (default_tv_mode > 2));
+	{
+		int default_tv_mode;
+		do {
+			GetNumber("Default TV mode 1=PAL 2=NTSC [%d] ",
+					  &default_tv_mode);
+		} while ((default_tv_mode < 1) || (default_tv_mode > 2));
+		tv_mode = default_tv_mode == 1 ? TV_PAL : TV_NTSC;
+	}
 
 	do {
 		GetNumber("Disable BASIC when booting Atari [%d] ",
@@ -399,6 +402,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.8  2001/09/16 11:24:26  fox
+removed default_tv_mode
+
 Revision 1.7  2001/09/09 08:33:17  fox
 hold_option -> disable_basic
 
