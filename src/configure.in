@@ -62,6 +62,7 @@ echo "$a800_host environment found"
 
 case "$a800_host" in
   dos)	AC_DEFINE(DOS_DRIVES,, [define to enable dos style drives support])
+	AC_DEFINE(BACK_SLASH,, [define to use back slash])
 	AC_DEFINE(DEFAULT_CFG_NAME, "atari800.cfg", [alternate config filename due to 8+3 fs limit])
 	AC_DEFINE(SYSTEM_WIDE_CFG_FILE, "c:\\atari800.cfg", [alternate system-wide config file for non-Unix OS])
 ;;  
