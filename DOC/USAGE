@@ -44,8 +44,8 @@ Command line Options
 -320xe                Emulate Atari 320 XE (Compy Shop)
 -rambo                Emulate Atari 320 XE (Rambo)
 -5200                 Emulate Atari 5200
--emuos                Use EmuOS
 
+-emuos                Use EmuOS
 -a                    Use OS/A for Atari 800
 -b                    Use OS/B for Atari 800
 -c                    Enable RAM between 0xc000 and 0xcfff in Atari 800
@@ -86,6 +86,7 @@ Command line Options
 -mouse joy            Emulate joystick using mouse
 -mouseport <num>      Set mouse port 1-4 (default 1)
 -mousespeed <num>     Set mouse speed 1-9 (default 3)
+-multijoy             Emulate MultiJoy4 interface
 
 -refresh <rate>       Set screen refresh rate
 -artif <mode>         Set artifacting mode 0-4 (0 = disable)
