@@ -151,12 +151,12 @@ int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
 #endif
 		}
-		else if(strcmp(pNewMenu[i].sig, "SREC") == 0)
+		else if(strcmp(pNewMenu[i].sig, "PCXI") == 0)
 		{
-		/* Sound recording is disabled */
+		/* Interlaced PCX screenshot is disabled */
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
 		}
-		else if(strcmp(pNewMenu[i].sig, "PCXI") == 0)
+		else if(strcmp(pNewMenu[i].sig, "SREC") == 0)
 		{
 		/* Interlaced PCX replaced by Emulator Settings (old feature was too esoteric) */
 			pNewMenu[i].sig = "EMUX";
