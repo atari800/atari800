@@ -100,6 +100,9 @@
 #include "memory.h"
 #include "statesav.h"
 #include "ui.h"
+#ifdef CRASH_MENU
+#include "screen.h" /* for atari_screen */
+#endif
 
 #ifdef FALCON_CPUASM
 extern UBYTE IRQ;
