@@ -44,7 +44,7 @@ void Sound_Initialise(int *argc, char *argv[])
 
 	if (sound_enabled) {
 		if (sb_init(&playback_freq, &bps, &buffersize, &stereo) < 0) {
-			Aprint("Cannot init sound card\n");
+			Aprint("Cannot init sound card");
 			sound_enabled = FALSE;
 		}
 		else {
