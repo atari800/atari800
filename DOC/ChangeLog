@@ -1,3 +1,16 @@
+2003-09-14  Perry McFarlane  <perry_m@fastmail.fm>
+* win32/sound.c: round buffer to a sample pair if STEREO sound configured
+
+* compfile.c, devices.c, configure.ac: make sure mkstemp() is defined and
+  if it's not, emulate it using mktemp(). Helps compiling in mingw32.
+
+* antic.c: CHBASE timing is cycle-exact now. Fixes Endless Dream (credits
+  in the intro), among others.
+
+* gtia.c: DMACTL timing is now improved. Fixes Sweet Illusions (sprites
+  highlighting the scroll) and surely also other games and demos.
+
+
 2003-09-04  Petr Stehlik  <pstehlik@sophics.cz>
 * configure.ac: forgot to increase version
 

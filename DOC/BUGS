@@ -11,11 +11,8 @@ o The cycle-exact ANTIC/GTIA/CPU timing is not 100%.
   - Te.mod (demo) (small glitched pixel in the final credits on the bottom left)
   - The break(demo) (bug may exist in the original, check)
   - Our 5oft Unity Part (demo) (cycle-aligment, probably WSYNC)
-  - Endless Dream (demo) (credits in the intro)
   - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
   - Isolation (demo) (vector animations)
-  - Sweet Illusions (demo)
-     (sprites highlighting the scroll below wireframe vectors)
 
 o Non-bugs:
   - Mail Order Monsters (game)
