@@ -10,6 +10,7 @@ MKDIR = mkdir -p
 # -------------------------------------------------------------
 
 TARGET = Atari800
+VERSION = 2
 CFLAGS = -O2 -I. -I.. -I"$(SDK_INCLUDE)" -I"$(AHI_INCLUDE)" -Wall
 LIBS = -lm
 
