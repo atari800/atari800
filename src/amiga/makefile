@@ -11,7 +11,7 @@ MKDIR = mkdir -p
 
 TARGET = Atari800
 VERSION = 2
-CFLAGS = -O2 -I. -I.. -I"$(SDK_INCLUDE)" -I"$(AHI_INCLUDE)" -Wall
+CFLAGS = -O3 -I. -I.. -I"$(SDK_INCLUDE)" -I"$(AHI_INCLUDE)" -Wall
 LIBS = -lm
 
 AMIGASRCS=\
@@ -67,8 +67,8 @@ dirs:
 # Rules for building
 $(TARGET): $(OBJS) $(AOBJS)
 	$(CC) $(LINK) -o $@.debug $(OBJS) $(AOBJS) $(LIBS)
-	$(STRIP) --strip-all -o $@ $@.debug
-	cp Atari800.debug "/cygdrive/c/Dokumente und Einstellungen/sba/Eigene Dateien/AmigaOne/Atari800/Atari800"
+	$(STRIP) -R.comment -o $@ $@.debug
+	cp Atari800 "/cygdrive/c/Dokumente und Einstellungen/sba/Eigene Dateien/AmigaOne/Atari800/Atari800"
 
 ppc-amigaos-objs/amiga/%.o: %.S
 	$(CC) -Wa,-mregnames $(AFLAGS) -I$/home/sba/amigaos4/include -c $< -o $@
