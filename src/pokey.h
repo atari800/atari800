@@ -76,12 +76,7 @@ void POKEY_Scanline(void);
 #define POLY4_SIZE  0x000f
 #define POLY5_SIZE  0x001f
 #define POLY9_SIZE  0x01ff
-
-#ifdef COMP16					/* if 16-bit compiler */
-#define POLY17_SIZE 0x00007fffL	/* reduce to 15 bits for simplicity */
-#else
-#define POLY17_SIZE 0x0001ffffL	/* else use the full 17 bits */
-#endif
+#define POLY17_SIZE 0x0001ffffL
 
 #define MAXPOKEYS         2		/* max number of emulated chips */
 
@@ -103,5 +98,8 @@ extern UBYTE AUDCTL[MAXPOKEYS];	/* AUDCTL (D208) */
 
 extern int DivNIRQ[4],DivNMax[4];
 extern ULONG Base_mult[MAXPOKEYS];		/* selects either 64Khz or 15Khz clock mult */
+
+extern UBYTE poly9_lookup[511];
+extern UBYTE poly17_lookup[16385];
 
 #endif
