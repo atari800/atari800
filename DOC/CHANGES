@@ -23,7 +23,9 @@ o support for Express, Diamond, SpartaDOS X, XEGS, Action!, BASIC XL
   and other cartridge types (see cart.txt for complete list).
   The "-cart" option runs CART files and all types of raw images.
   "-rtime 0" disables emulation of R-Time 8.
-  Thanks to Jindroush and Nir Dary for their help!
+  Thanks to:
+  - Jindroush, who described most of the cartridge types
+  - Nir Dary, for information on 8*8 KB D50x and OSS 'M091' cartridges
 
 o mouse can emulate following devices
   (in parentheses the option that enables emulation):
@@ -34,6 +36,7 @@ o mouse can emulate following devices
   - Light Gun (-mouse gun)
   - Amiga mouse (-mouse amiga)
   - Atari ST mouse (-mouse st)
+  - Atari Trak-Ball (-mouse trak)
   - joystick (-mouse joy)
   For Atari 5200 you can use "-mouse pad" (good for Gorf and Kaboom)
   or "-mouse joy" (good for Missile Command and Super Breakout).
@@ -63,6 +66,9 @@ o "-basic" and "-nobasic" work for Atari 800 (Atari BASIC is attached
   as a cartridge in Atari 800)
 
 o devices: added open mode 9 (append) for H: device
+
+o input: the illegal joystick positions (e.g. left+right) are not passed
+  to the emulated Atari (good for "Mario Bros.")
 
 o monitor:
   - "C 600 ABCD" does the same as "C 600 CD AB"
