@@ -533,8 +533,8 @@ void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 			/* or the channel is off (volume == 0) */
 			/* or the channel freq is greater than the playback freq */
 			if ( (AUDC[chan + chip_offs] & VOL_ONLY) ||
-				((AUDC[chan + chip_offs] & VOLUME_MASK) == 0) ||
-				(Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))) {
+				((AUDC[chan + chip_offs] & VOLUME_MASK) == 0)
+				/* || (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))*/) {
 				/* indicate the channel is 'on' */
 				Outvol[chan + chip_offs] = 1;
 
@@ -542,8 +542,8 @@ void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 				if ((chan == CHAN3 && !(AUDCTL[chip] & CH1_FILTER)) ||
 					(chan == CHAN4 && !(AUDCTL[chip] & CH2_FILTER)) ||
 					(chan == CHAN1) ||
-					(chan == CHAN2) ||
-					(Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))) {
+					(chan == CHAN2)
+					/* || (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))*/) {
 					/* and set channel freq to max to reduce processing */
 					Div_n_max[chan + chip_offs] = 0x7fffffffL;
 					Div_n_cnt[chan + chip_offs] = 0x7fffffffL;
@@ -1068,6 +1068,9 @@ void Update_vol_only_sound( void )
 
 /*
 $Log$
+Revision 1.9  2002/08/26 05:44:22  pfusik
+Adam Bienias's fix for better sound quality
+
 Revision 1.8  2001/07/22 08:24:47  knik
 PURE -> PURETONE to avoid windows headers interference
 
