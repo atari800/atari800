@@ -12,22 +12,30 @@ o a fix in antic.c (lines 408-411) for artefacting on systems requiring
 
 -- Piotr:
 
+*** New features:
+
 o support for Express, Diamond, SpartaDOS X, XEGS, Action!, BASIC XL
   and other cartridge types (see cart.txt for complete list).
   The "-cart" option runs CART files and all types of raw images.
-  Added cartridge.[ch] and rtime.[ch], removed supercart.[ch].
   "-rtime 0" disables emulation of R-Time 8.
   Thanks to Jindroush and Nir Dary for their help!
 
-o removed enable_rom_patches, added enable_h_patch and enable_p_patch.
-  SIO, H: and P: patches are now independent and can be toggled at run-time
-  (original OS is saved in atari_os). Removed SetSIOEsc() and RestoreSIO().
-  After changing enable_*_patch call Atari800_UpdatePatches().
-  Added UI menu for enabling/disabling patches.
+o mouse can emulate following devices
+  (in parentheses the option that enables emulation):
+  - paddles (-mouse pad)
+  - Atari Touch Tablet (-mouse touch)
+  - Koala Pad (-mouse koala)
+  - Light Pen, Light Gun (-mouse pen)
+  - Amiga mouse (-mouse amiga)
+  - Atari ST mouse (-mouse st)
+  - joystick (-mouse joy)
+  For Atari 5200 you can use "-mouse pad" (good for Gorf and Kaboom)
+  or "-mouse joy" (good for Missile Command and Super Breakout).
+  Use "-mouseport <1-4>" to select the Atari port.
+  Use "-mousespeed <1-9>" to select speed (default is 3).
 
 o cassette recorder emulation! (experimental)
   Currently only reading works and only with SIO patch.
-  Note: You have to disable the H: patch and enable the SIO patch.
   Supported are:
   - CAS files - the digital cassette image format by Ernest Schreurs.
     The format handles different lengths of blocks, gaps, non-standard blocks,
@@ -39,72 +47,116 @@ o cassette recorder emulation! (experimental)
   No UI available yet. Attach a file with "-tape filename"
   or "-boottape filename" (emulator presses Start and Space to boot the tape).
 
+o SIO, H: and P: patches are now independent and can be toggled at run-time
+
+o the H: device no longer replaces C:.
+  The H: device is now added to HATABS in RAM, and the escape codes
+  are put in 0xd100-0xd1ff, so H: doesn't modify Atari OS at all.
+
 o "-basic" and "-nobasic" work for Atari 800 (Atari BASIC is attached
   as a cartridge in Atari 800)
+
+o devices: added open mode 9 (append) for H: device
+
+o monitor:
+  - "C 600 ABCD" does the same as "C 600 CD AB"
+  - 1 KB boundary is respected by "DLIST"
+  - "POKEY" command
+  - "S" without parameters repeats last search
+
+o ui: added Atari Settings (enable/disable BASIC, R-Time 8, SIO patch, H:, P:)
+
+*** Compatibility improvements:
 
 o antic,gtia: the background color can be changed inside a scanline.
   Currently implemented only for blank lines without PMG.
   Try the "Partyland" part of the "Bitter Reality" demo.
-  The feature can be disabled by defining NO_CYCLE_EXACT.
 
 o binload: 0x31 stored at 0x300 ("Studio Dream" loads now)
-
-o cpu: on reset, the I flag is set (now reset works if stuck in interrupts)
-
-o cpu: slight optimization of ROL and ROR
 
 o cpu: Read-Modify-Write (RMW) instructions (ASL, INC, etc.) store
   the unmodified value of $D01A before they store the modified value.
   Now you can see the white dots made with INC $D01A.
 
+o cpu: on reset, the I flag is set (now reset works if stuck in interrupts)
+
 o devices: replaced "dGetByte(0x2e)" with "regX" in H: handler routines
   (fixes problems with Atari BASIC's GET/PUT/INPUT/PRINT)
 
-o devices: added open mode 9 (append) for H: device
-
-o monitor: "C 600 ABCD" does the same as "C 600 CD AB"
-
-o monitor: "DLIST" - 1 KB boundary respected
-
-o monitor: "POKEY" command
-
-o monitor: "S" without parameters repeats last search
-
 o pia: & 0x3f on read PACTL and PBCTL
-
-o pokey: SKSTAT variable renamed to SKCTLS to avoid confusions
-  (it's the write-only, not the read-only Pokey register)
 
 o pokey: potentiometers emulation improved: POTGO and ALLPOT registers
   and bit 2 of SKCTLS implemented, "Tree Surgeon" no longer hangs
 
-o pokey: blocked POTs, SERIN, SEROUT, KBCODE, IRQ, SKSTAT, SKCTLS
-  in the second Pokey chip, second Pokey unaccesible until stereo_enabled set
-
 o pokey: true RANDOM emulation (both 9- and 17-bit poly) !
-  Not using rand() anymore. POKEY_Frame() and cpu_clock are needed for it.
-  Try the "Bank Bang!" game.
+  Not using rand() anymore. Try the "Bank Bang!" game.
 
-o pokey: STIMER fixed
+o pokey: fixed STIMER (speech in "Mirax Force" is better, but still
+  not perfect)
 
-o pokeysnd: removed duplicates of Pokey constant definitions
-  and AUDC/AUDF/AUDCTL variables, included pokey.h
+o pokey: a few fixes for stereo detection routines (helps "Sheol",
+  "Total Daze", "Crockett's Theme"...)
 
-o pokeysnd: added exact poly9_lookup and poly17_lookup, removed bit17 (which
-  was initialised with rand()) saving ca. 100 KB of memory.
+o pokey: fixed SERIN ("Timeless Announcement" loads now)
+
+o pokeysnd: added exact poly9_lookup and poly17_lookup, removed bit17
+  (which was initialised with rand()) saving ca. 100 KB of memory.
   Do you hear any difference?
 
 o sio: made double density ATR images compatible with SIO2PC
 
+*** Bug fixes:
+
+o cpu: fixed wrong extern
+
+o devices: fixed Device_isvalid (problems with trailing 0x9b)
+
+o rtime: added "byte &= 0x0f" to prevent out of bounds accesses
+  to regset[]
+
 o sio: corrected and added checks if drive number is in range 1-8
 
 o sio: Format Disk rewritten. Now it can resize both ATR and XFD images.
-  The ATR header is being updated. Double density formatting works.
+  The ATR header is being updated. Double density format works.
 
-o supercart: added "byte &= 0x0f" to prevent out of bounds accesses
-  to regset[]
+*** Optimizations:
 
-o ui: added Atari Settings
+o antic: optimized ANTIC_Load and character modes
+
+o atari_vga: no unnecessary Atari_DisplayScreen() calls if "-refresh" is used
+
+o cpu: slight optimization of ROL and ROR
+
+o gtia: optimized players in new_pm_scanline
+
+*** Clean-ups in sources (for programmers):
+
+o created cartridge.[ch] and rtime.[ch], removed supercart.[ch]
+
+o created input.[ch] to handle keyboard, joysticks and mouse
+
+o removed enable_rom_patches, added enable_h_patch and enable_p_patch.
+  Original OS is saved in atari_os. Removed SetSIOEsc() and RestoreSIO().
+  After changing enable_*_patch call Atari800_UpdatePatches().
+
+o replaced following variables: machine, mach_xlxe, Ram256, os,
+  default_system and enable_c000_ram with only two: machine_type and ram_size
+  (ram_size is in kilobytes, and there're #define's for 320 Rambo/Compy).
+  There are no more Initialise_Atari... routines. Instead, set machine_type
+  and ram_size and call Atari800_InitialiseMachine().
+
+o moved main() to platform-dependent code,
+  created Atari800_Initialise and Atari800_Frame
+
+o diskled: rewritten to be cleaner and more flexible
+
+o pokey: SKSTAT variable renamed to SKCTLS to avoid confusions
+  (it's the write-only, not the read-only Pokey register)
+
+o pokeysnd: removed duplicates of Pokey constant definitions
+  and AUDC/AUDF/AUDCTL variables, included pokey.h
+
+
 
 Changes in 1.0.7
 ----------------
