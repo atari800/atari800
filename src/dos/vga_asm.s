@@ -385,6 +385,7 @@ esp+12:	target
 esp+16:	source
 esp+20:	bytes
  */
+/* ALLEGRO support has been removed
 .globl _make_darker
 _make_darker:
 	pushl %edi
@@ -396,7 +397,7 @@ _make_darker:
 	shr $2, %ecx
 0:
 	movl (%esi), %eax
-	movl %eax, %ebx
+	movl %eax, %edx
 	andl $0xf0f0f0f0, %eax
 	shrl $1, %edx
 	addl $4, %esi
@@ -409,6 +410,7 @@ _make_darker:
 	popl %esi
 	popl %edi
 	ret
+*/
 
 /* Vertical retrace control */
 /* void v_ret(void) */
