@@ -6,6 +6,10 @@
   home hasn't complained but the gcc-3.2.2 here at work was uncompromising.
 * atari.c: "--help", "--usage" and "--version" recognized now, though the
   former two just ask user to type "-help" again.
+* pokeysnd.[ch]: fixed typo errors
+* configure.in: alternate user and system-wide config file names for DOS
+  and TOS ($HOME/atari800.cfg and C:\atari800.cfg) since their filesystem
+  is still limited to 8+3 filenames.
 
 2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
 
