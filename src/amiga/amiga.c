@@ -2361,13 +2361,12 @@ char program_name[256];
 int main(int argc, char **argv)
 {
 	int keycode;
+	struct WBStartup *wbs = NULL;
 
 	if (!argc)
 	{
 		/* started from workbench */
-		
-		struct WBStartup *wbs = (struct WBStartup*)argv;
-		if (wbs)
+		if ((wbs = (struct WBStartup*)argv))
 		{
 			strncpy(program_name, wbs->sm_ArgList->wa_Name, sizeof(program_name)-1);
 			program_name[sizeof(program_name)-1]= 0;	
@@ -2382,6 +2381,13 @@ int main(int argc, char **argv)
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 20;
+
+	if (wbs && wbs->sm_NumArgs > 1)
+	{
+		BPTR odir = CurrentDir(wbs->sm_ArgList[1].wa_Lock);
+		Atari_LoadAnyFile(wbs->sm_ArgList[1].wa_Name);
+		CurrentDir(odir);
+	}
 
 	while (1)
 	{
