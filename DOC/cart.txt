@@ -160,7 +160,7 @@ stands for the first bank in the image, bank B is the second, etc.
 | Type 8: 64 KB Williams cartridge                                          |
 +---------------------------------------------------------------------------+
 
- The cartidge has 8 banks mapped to $A000-$BFFF. An acces to $D500 selects
+ The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D500 selects
  bank A, $D501 - bank B, etc. An access to $D508-$D50F disables
  the cartridge.
 
@@ -168,7 +168,7 @@ stands for the first bank in the image, bank B is the second, etc.
 | Type 9: Express 64 KB cartridge                                           |
 +---------------------------------------------------------------------------+
 
- The cartidge has 8 banks mapped to $A000-$BFFF. An acces to $D577 selects
+ The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D577 selects
  bank A, $D576 - bank B, etc. An access to $D578-$D57F disables
  the cartridge.
 
@@ -176,7 +176,7 @@ stands for the first bank in the image, bank B is the second, etc.
 | Type 10: Diamond 64 KB cartridge                                          |
 +---------------------------------------------------------------------------+
 
- The cartidge has 8 banks mapped to $A000-$BFFF. An acces to $D5D7 selects
+ The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D5D7 selects
  bank A, $D5D6 - bank B, etc. An access to $D5D8-$D5DF disables
  the cartridge.
 
@@ -184,7 +184,7 @@ stands for the first bank in the image, bank B is the second, etc.
 | Type 11: SpartaDOS X 64 KB cartridge                                      |
 +---------------------------------------------------------------------------+
 
- The cartidge has 8 banks mapped to $A000-$BFFF. An acces to $D5E7 selects
+ The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D5E7 selects
  bank A, $D5E6 - bank B, etc. An access to $D5E8-$D5EF disables
  the cartridge.
 
@@ -194,7 +194,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each.
- Bank D (the last one) is always mapped to $A000-BFFF. Two lowest bits of
+ Bank D (the last one) is always mapped to $A000-$BFFF. Two lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -203,7 +203,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
- Bank H (the last one) is always mapped to $A000-BFFF. Three lowest bits of
+ Bank H (the last one) is always mapped to $A000-$BFFF. Three lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -212,7 +212,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
- Bank P (the last one) is always mapped to $A000-BFFF. Four lowest bits of
+ Bank P (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -277,10 +277,10 @@ stands for the first bank in the image, bank B is the second, etc.
  to the Left Cartridge slot as present on all 8-bit Ataris.
 
 +---------------------------------------------------------------------------+
-| Type 22: 32 KB Williams cartridge                                          |
+| Type 22: 32 KB Williams cartridge                                         |
 +---------------------------------------------------------------------------+
 
- The cartidge has 4 banks mapped to $A000-$BFFF. An acces to $D500 selects
+ The cartridge has 4 banks mapped to $A000-$BFFF. An access to $D500 selects
  bank A, $D501 - bank B, etc. An access to $D508-$D50F disables
  the cartridge.
 
@@ -299,7 +299,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
- The last bank is always mapped to $A000-BFFF. Six lowest bits of
+ The last bank is always mapped to $A000-$BFFF. Six lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -308,7 +308,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
- The last bank is always mapped to $A000-BFFF. Seven lowest bits of
+ The last bank is always mapped to $A000-$BFFF. Seven lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -373,7 +373,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each.
- Bank D (the last one) is always mapped to $A000-BFFF. Two lowest bits of
+ Bank D (the last one) is always mapped to $A000-$BFFF. Two lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 
@@ -383,7 +383,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
- Bank H (the last one) is always mapped to $A000-BFFF. Three lowest bits of
+ Bank H (the last one) is always mapped to $A000-$BFFF. Three lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 
@@ -393,7 +393,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
- Bank P (the last one) is always mapped to $A000-BFFF. Four lowest bits of
+ Bank P (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 
@@ -403,7 +403,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 32 banks, 8 KB each.
- The last bank is always mapped to $A000-BFFF. Five lowest bits of
+ The last bank is always mapped to $A000-$BFFF. Five lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 
@@ -413,7 +413,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
- The last bank is always mapped to $A000-BFFF. Six lowest bits of
+ The last bank is always mapped to $A000-$BFFF. Six lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 
