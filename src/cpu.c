@@ -2,7 +2,7 @@
  * cpu.c - 6502 CPU emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -100,9 +100,6 @@
 #include "memory.h"
 #include "statesav.h"
 #include "ui.h"
-#ifdef CRASH_MENU
-#include "screen.h" /* for atari_screen */
-#endif
 
 #ifdef FALCON_CPUASM
 extern UBYTE IRQ;
@@ -1968,7 +1965,7 @@ void GO(int limit)
 		crash_address = PC;
 		crash_afterCIM = PC+1;
 		crash_code = insn;
-		ui((UBYTE*)atari_screen);
+		ui();
 #else
 #ifdef MONITOR_BREAK
 		break_cim = 1;

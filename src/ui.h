@@ -2,10 +2,9 @@
 #define _UI_H
 #include "atari.h"	/* for UBYTE */
 
-/* Two legitimate entries to UI module. The first
-   parameter is legacy artefact, not used anymore */
-int SelectCartType(UBYTE *screen, int k);
-void ui(UBYTE *screen);
+/* Two legitimate entries to UI module. */
+int SelectCartType(int k);
+void ui(void);
 
 /* this entry is used by atari_x11.c which implements its own GUI */
 void SoundRecording();
