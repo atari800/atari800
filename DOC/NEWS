@@ -2,7 +2,9 @@ Version 1.2.1 (unreleased yet)
 
 * Falcon port configurable and buildable again
 
-* SDL supports all host color depths (8/16/24/32 bpp) ??
+* SDL support for 32-bit display, screen width switching (LALT+g)
+
+* documentation updated
 
 
 Version 1.2.0 (2001/11/29)
@@ -166,3 +168,6 @@ Version 1.2.0 (2001/11/29)
 
 * pokeysnd: removed duplicates of Pokey constant definitions
   and AUDC/AUDF/AUDCTL variables, included pokey.h
+
+
+Previous changes (pre 1.2.0) are in the CHANGES file.
