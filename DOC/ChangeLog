@@ -1,3 +1,8 @@
+--- 2001/12/04 - Jacek
+
+  * fixed undefined Aflushlog in log.[ch]
+  * cleanups for readability in atari_sdl.c
+
 --- 2001/12/04 - joy
 
   * added Nathan's sethdr perl script and Piotr's act2html C code to util/
@@ -8,3 +13,5 @@
 
   * updated configure.in to support the Atari Falcon port
   * Falcon port' proprietary -DDMASOUND changed to general -DSOUND
+
+-- Piotr please fill this from the old CHANGES file, at least approximately

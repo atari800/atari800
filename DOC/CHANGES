@@ -1,3 +1,7 @@
+/***********************************************************************\
+|* This file is obsolete now. Update ChangeLog and NEWS files instead. *|
+\***********************************************************************/
+
 2001/11/14:
 
 o WinCE: Fixed a few keyboard issues. Linear filter applied to screen image
