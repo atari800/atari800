@@ -255,6 +255,18 @@ void Palette_Initialise(int *argc, char *argv[])
 	}
 #endif
       else
+	if (strcmp(argv[i], "-help") == 0)
+	{
+	  Aprint("\t-black <0-255>   set black level");
+	  Aprint("\t-white <0-255>   set white level");
+	  Aprint("\t-colors <num>    set color intensity");
+	  Aprint("\t-colshift <num>  set color shift");
+#ifdef COMPILED_PALETTE
+	  Aprint("\t-realpal <num>   use real palette");
+	  Aprint("\t-oldpal <num>    use old palette");
+	  Aprint("\t-foxpal <num>    use Fox's palette");
+#endif
+	}
 	argv[j++] = argv[i];
     }
   *argc = j;
