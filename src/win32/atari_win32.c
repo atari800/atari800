@@ -13,6 +13,7 @@
 #include "main.h"
 #include "sound.h"
 #include "monitor.h"
+#include "diskled.h"
 
 void Sound_Pause(void);
 void Sound_Continue(void);
@@ -420,6 +421,9 @@ int Atari_PEN(int vertical)
 
 /*
 $Log$
+Revision 1.2  2001/03/24 10:15:13  knik
+included missing header
+
 Revision 1.1  2001/03/18 07:56:48  knik
 win32 port
 
