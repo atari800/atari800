@@ -66,7 +66,8 @@ Options
 -mouse pad            Emulate paddles
 -mouse touch          Emulate Atari Touch Tablet
 -mouse koala          Emulate Koala Pad
--mouse pen            Emulate light pen/light gun
+-mouse pen            Emulate Light Pen
+-mouse gun            Emulate Light Gun
 -mouse amiga          Emulate Amiga mouse
 -mouse st             Emulate Atari ST mouse
 -mouse joy            Emulate joystick using mouse
