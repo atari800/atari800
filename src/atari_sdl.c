@@ -2,6 +2,19 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   19-11-2001 - I still don't have any testers, so I started to experiment a
+		little. Changed Atari_PORT/TRIG to SDL_Atari_PORT/TRIG, don't
+		use Atari800_Frame, don't use INPUT_Frame, copied some code
+		from there. Result? Fixed kikstart and starquake behaviour! 
+	        Warning! Only 2 joysticks support and much reduced input.		
+	      - swapping joysticks with LALT+j
+   18-11-2001 - couldn't work with code last few days, but I am back and alive!
+ 	      - I found memory related bug in ui.c, searching for more	
+	      - fixed problem with switching fullscreen when in ui
+	      - fully configurable two joysticks emulation (I checked it in
+		basic and zybex, second trig work bad in kikstart, don't know
+		why, yet)
+	      - now using len in SDL_Sound_Update	
    15-11-2001 - fullscreen switching
               - scaling only with ratio >= 1.0
 	      - more keyboard updates 
@@ -20,10 +33,10 @@
               - joystick emulation
    
    TODO:
-   - fix very strange segfaults (when adding/removing code)
+   - fix memory related bugs (probably not in my code)
    - implement all Atari800 parameters
    - fix audio
-   - define joystick(s) emulation keys, use mouse and real joystick
+   - use mouse and real joystick
    - turn off fullscreen when error happen
    - rewrite keyboard stuff, switch/case is bad(slow) idea
    - Atari_Exit - monitor stuff (debugger?)
@@ -33,7 +46,10 @@
      ftp://ftp.sophics.cz/pub/Atari800/src/Makefile.SDL
      then "make -f Makefile.SDL"
    - you can turn off sound by changing sound_enabled to 0  
-   - you can switch between fullscree/window mode with LALT+f
+   - you can switch between fullscreen/window mode with LALT+f
+   - you can switch between color/bw mode with LALT+b - FEEL THE POWER OF BW
+     MONITOR!
+   - you can swap joysticks with LALT+j  
    - fullscreen switching probably doesn't work in Windows, you need to set
      variable in source code
 
@@ -41,15 +57,11 @@
 
 */
 
-static int sound_enabled = 0;
-int FULLSCREEN = 0;
-int BW = 0;
-
 #include <SDL.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 
+// Atari800 includes
 #include "config.h"
 #include "input.h"
 #include "colours.h"
@@ -57,50 +69,92 @@ int BW = 0;
 #include "ui.h"
 #include "ataripcx.h"
 #include "pokeysnd.h"
+#include "gtia.h"
+#include "antic.h"
+#include "diskled.h"
+#include "devices.h"
+#include "cpu.h"
+#include "memory-d.h"
+#include "pia.h"
 
+// you can set that variables in code, or change it when emulator is running
+// I am not sure what to do with sound_enabled (can't turn it on inside
+// emulator, probably we need two variables or command line argument)
+static int sound_enabled = 1;
+static int FULLSCREEN = 0;
+static int BW = 0;
+static int SWAP_JOYSTICKS = 0;
+
+// joystick emulation
+// keys should be loaded from config file
+
+int SDL_TRIG_0 = SDLK_LCTRL;
+int SDL_TRIG_0_B = SDLK_KP0;
+int SDL_JOY_0_LEFT = SDLK_KP4;
+int SDL_JOY_0_RIGHT = SDLK_KP6;
+int SDL_JOY_0_DOWN = SDLK_KP2;
+int SDL_JOY_0_UP = SDLK_KP8;
+int SDL_JOY_0_LEFTUP = SDLK_KP7;
+int SDL_JOY_0_RIGHTUP = SDLK_KP9;
+int SDL_JOY_0_LEFTDOWN = SDLK_KP1;
+int SDL_JOY_0_RIGHTDOWN = SDLK_KP3;
+
+int SDL_TRIG_1 = SDLK_TAB;
+int SDL_TRIG_1_B = SDLK_LSHIFT;
+int SDL_JOY_1_LEFT = SDLK_a;
+int SDL_JOY_1_RIGHT = SDLK_d;
+int SDL_JOY_1_DOWN = SDLK_x;
+int SDL_JOY_1_UP = SDLK_w;
+int SDL_JOY_1_LEFTUP = SDLK_q;
+int SDL_JOY_1_RIGHTUP = SDLK_e;
+int SDL_JOY_1_LEFTDOWN = SDLK_z;
+int SDL_JOY_1_RIGHTDOWN = SDLK_c;
+
+// I still don't know when it's not 1
 extern int refresh_rate;
 
 // SOUND 
-#define FRAGSIZE        10
-#define SOUND_VOLUME SDL_MIX_MAXVOLUME/4
-static int dsprate = 44100;
+#define FRAGSIZE        10		// 1<<FRAGSIZE is size of sound buffer
+static int SOUND_VOLUME = SDL_MIX_MAXVOLUME / 4;
+#define dsprate 44100
 
 // VIDEO
 SDL_Surface *MainScreen = NULL;
-SDL_Color colors[256];		// palette
+SDL_Color colors[256];			// palette
 
 // KEYBOARD
 Uint8 *kbhits;
-extern int alt_function;
+static int last_key_break = 0;
+static int last_key_code = AKEY_NONE;
 
+// main loop variable (TODO: kill all that global variables!) 
 int done = 0;
 
 void SetPalette()
 {
 	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
-}	
+}
 
 void CalcPalette()
 {
- int i, rgb,y;
- if (BW==0)
-	for (i = 0; i < 256; i++) {
-		rgb = colortable[i];
-		colors[i].r = (rgb & 0x00ff0000) >> 16;
-		colors[i].g = (rgb & 0x0000ff00) >> 8;
-		colors[i].b = (rgb & 0x000000ff) >> 0;
-	}
- else
-	for (i = 0; i < 256; i++) {
-		rgb = colortable[i];
-		y=((rgb & 0x00ff0000) >> 16)+
-		  ((rgb & 0x0000ff00) >> 8)+
-		  ((rgb & 0x000000ff) >> 0);
-		y=y/3;  
-		colors[i].r=y;  
-		colors[i].g=y;  
-		colors[i].b=y;  
-	}
+	int i, rgb;
+	float y;
+	if (BW == 0)
+		for (i = 0; i < 256; i++) {
+			rgb = colortable[i];
+			colors[i].r = (rgb & 0x00ff0000) >> 16;
+			colors[i].g = (rgb & 0x0000ff00) >> 8;
+			colors[i].b = (rgb & 0x000000ff) >> 0;
+		}
+	else
+		for (i = 0; i < 256; i++) {
+			rgb = colortable[i];
+			y = 0.299*((rgb & 0x00ff0000) >> 16) +
+				0.587*((rgb & 0x0000ff00) >> 8) + 0.114*((rgb & 0x000000ff) >> 0);
+			colors[i].r = y;
+			colors[i].g = y;
+			colors[i].b = y;
+		}
 
 }
 
@@ -108,33 +162,28 @@ void CalcPalette()
 void SetVideoMode(int w, int h)
 {
 	if (FULLSCREEN)
-		MainScreen =
-			SDL_SetVideoMode(w, h, 8, SDL_FULLSCREEN);
+		MainScreen = SDL_SetVideoMode(w, h, 8, SDL_FULLSCREEN);
 	else
-		MainScreen =
-			SDL_SetVideoMode(w, h, 8, SDL_RESIZABLE);
+		MainScreen = SDL_SetVideoMode(w, h, 8, SDL_RESIZABLE);
 
 	if (MainScreen == NULL) {
- 	        printf("Setting Video Mode: %ix%ix8 FAILED", w, h);
+		printf("Setting Video Mode: %ix%ix8 FAILED", w, h);
 		exit(-1);
 	}
 
 	SetPalette();
-	
+
 	SDL_ShowCursor(SDL_DISABLE);	// hide mouse cursor 
 }
 
 void SetNewVideoMode(int w, int h)
 {
-	if (MainScreen != NULL) {
-		if ((h == MainScreen->h) && (w == MainScreen->w))
-			return;
-	}
 	if ((h < ATARI_HEIGHT) || (w < ATARI_WIDTH - 2 * 24)) {
 		h = ATARI_HEIGHT;
 		w = ATARI_WIDTH - 2 * 24;
 	}
 
+	// aspect ratio
 	if (w / 1.4 < h)
 		h = w / 1.4;
 	else
@@ -143,30 +192,40 @@ void SetNewVideoMode(int w, int h)
 	w = w * 8;
 	h = h / 8;
 	h = h * 8;
+	if (MainScreen != NULL) {
+		if ((h == MainScreen->h) && (w == MainScreen->w))
+			return;
+	};
 
 	SetVideoMode(w, h);
-
 }
 
 void SwitchFullscreen()
 {
 	FULLSCREEN = 1 - FULLSCREEN;
 	SetVideoMode(MainScreen->w, MainScreen->h);
+	Atari_DisplayScreen((UBYTE *) atari_screen);
 }
 
 void SwitchBW()
 {
 	BW = 1 - BW;
 	CalcPalette();
-	SetPalette();
 	SetVideoMode(MainScreen->w, MainScreen->h);
 }
 
+void SwapJoysticks()
+{
+	SWAP_JOYSTICKS=1-SWAP_JOYSTICKS;
+}	
+
 void SDL_Sound_Update(void *userdata, Uint8 * stream, int len)
 {
-	unsigned char dsp_buffer[1 << FRAGSIZE];
-	Pokey_process(dsp_buffer, sizeof(dsp_buffer));
-	SDL_MixAudio(stream, dsp_buffer, sizeof(dsp_buffer), SOUND_VOLUME);
+	Uint8 dsp_buffer[1 << FRAGSIZE];
+	if (len > 1 << FRAGSIZE)
+		len = 1 << FRAGSIZE;
+	Pokey_process(dsp_buffer, len);
+	SDL_MixAudio(stream, dsp_buffer, len, SOUND_VOLUME);
 }
 
 void SDL_Sound_Initialise(int *argc, char *argv[])
@@ -182,6 +241,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 		if (SDL_OpenAudio(&desired, &obtained) < 0) {
 			printf("Problem with audio: %s\n", SDL_GetError());
+			printf("You can disable sound by setting sound_enabled=0\n");
 			exit(-1);
 		}
 
@@ -189,20 +249,20 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
 	}
 	else
-	printf("Audio is off, you can turn it on by setting sound_enabled=1\n");
+		printf
+			("Audio is off, you can turn it on by setting sound_enabled=1\n");
 }
 
 int Atari_Keyboard(void)
 {
-	static int lastkey, key_pressed = 0;
+	static int lastkey=AKEY_NONE, key_pressed = 0;
 
 	SDL_Event event;
 	kbhits = SDL_GetKeyState(NULL);
-	if (kbhits==NULL)
-	{
-	 printf("oops, kbhits is NULL!\n");
-	 exit(-1);
-	} 
+	if (kbhits == NULL) {
+		printf("oops, kbhits is NULL!\n");
+		exit(-1);
+	}
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_KEYDOWN:
@@ -213,6 +273,9 @@ int Atari_Keyboard(void)
 			}
 			if ((lastkey == SDLK_b) && (kbhits[SDLK_LALT])) {
 				SwitchBW();
+			}
+			if ((lastkey == SDLK_j) && (kbhits[SDLK_LALT])) {
+				SwapJoysticks();
 			}
 			break;
 		case SDL_KEYUP:
@@ -242,16 +305,14 @@ int Atari_Keyboard(void)
 	if (kbhits[SDLK_F4])
 		key_consol &= (~CONSOL_START);
 
+	// TODO: when you push two keys, and release one - key_pressed will be
+	// 0, so it will return AKEY_NONE, but key will be pressed!
 	if (key_pressed == 0) {
 		return AKEY_NONE;
 	}
 
-	alt_function = -1;
-	if (kbhits[SDLK_LALT]) {
-		return AKEY_NONE;
-	}
-
 	// really stupid piece of code, I think it should be an array, not switch/case
+	// IDEA: it will be nice to define keyboard, like joystick emulation keys
 	if (key_shift)
 		switch (lastkey) {
 		case SDLK_a:
@@ -487,21 +548,22 @@ int Atari_Keyboard(void)
 		return AKEY_NONE;
 	}
 }
+
 void Atari_Initialise(int *argc, char *argv[])
 {
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
-	{
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
 		printf("SDL_Init FAILED\n");
 		exit(-1);
 	}
-	
+
 	CalcPalette();
-	
+
 	SetVideoMode(ATARI_WIDTH - 2 * 24, ATARI_HEIGHT);
 
 	SDL_Sound_Initialise(argc, argv);
-	
-	printf("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>\n");
+
+	printf
+		("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>\n");
 
 }
 
@@ -525,136 +587,178 @@ void Atari_DisplayScreen(UBYTE * screen)
 	int i;
 	int y;
 	int dy;
-	int w , h ;
+	int w, h;
 	int w4;
 	int pos;
 	int pitch4;
 	Uint32 *start32;
 
-	pitch4=MainScreen->pitch/4;
-	start32=(Uint32 *)MainScreen->pixels;
+	pitch4 = MainScreen->pitch / 4;
+	start32 = (Uint32 *) MainScreen->pixels;
 
-	SDL_LockSurface(MainScreen);
-	if ((MainScreen->w==ATARI_WIDTH-2*24) && (MainScreen->h==ATARI_HEIGHT)) {
+	if ((MainScreen->w == ATARI_WIDTH - 2 * 24)
+		&& (MainScreen->h == ATARI_HEIGHT)) {
 		// no scaling
 		screen = screen + 24;
-		i=MainScreen->h;
-		while (i>0)
-		{
+		i = MainScreen->h;
+		while (i > 0) {
 			memcpy(start32, screen, ATARI_WIDTH - 2 * 24);
-			screen+=ATARI_WIDTH;
-			start32+=pitch4;
+			screen += ATARI_WIDTH;
+			start32 += pitch4;
 			i--;
 		}
 	}
-	else
-	{
-		// scaling 
+	else {
+		// optimized scaling (I analized gcc -S output, please remember
+		// about gcc options, I use:
+		// " -O2 -march=k6 -fomit-frame-pointer ")
+		// it works only for 8bit surfaces, I am not sure - maybe it's
+		// worth to have 16bit? SDL converts it anyway
 
 		w = (ATARI_WIDTH - 2 * 24) << 16;
 		h = (ATARI_HEIGHT) << 16;
 		dx = w / MainScreen->w;
 		dy = h / MainScreen->h;
-		w4= MainScreen->w/4-1;
-		ss=screen;
+		w4 = MainScreen->w / 4 - 1;
+		ss = screen;
 
 		y = (0) << 16;
-		i=MainScreen->h;
-		while (i>0)
-		{
-			x = (ATARI_WIDTH-24) << 16;
+		i = MainScreen->h;
+		while (i > 0) {
+			x = (ATARI_WIDTH - 24) << 16;
 			pos = w4;
-			yy=ATARI_WIDTH * (y >> 16);
-			while (pos>=0)
-			{
-				quad=(ss[yy+(x>>16)]<<24);
-				x=x-dx;
-				quad+=(ss[yy+(x>>16)]<<16);
-				x=x-dx;
-				quad+=(ss[yy+(x>>16)]<<8);
-				x=x-dx;
-				quad+=(ss[yy+(x>>16)]<<0);
-				x=x-dx;
-				    
+			yy = ATARI_WIDTH * (y >> 16);
+			while (pos >= 0) {
+				quad = (ss[yy + (x >> 16)] << 24);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 16);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 8);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 0);
+				x = x - dx;
+
 				start32[pos] = quad;
 				pos--;
-				
-				quad=(ss[yy+(x>>16)]<<24);
-				x=x-dx;
-				quad+=(ss[yy+(x>>16)]<<16);
-				x=x-dx;
-				quad+=(ss[yy+(x>>16)]<<8);
-				x=x-dx;
-				quad+=(ss[yy+(x>>16)]<<0);
-				x=x-dx;
-				    
+
+				quad = (ss[yy + (x >> 16)] << 24);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 16);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 8);
+				x = x - dx;
+				quad += (ss[yy + (x >> 16)] << 0);
+				x = x - dx;
+
 				start32[pos] = quad;
 				pos--;
 			}
-			start32+= pitch4;
+			start32 += pitch4;
 			y = y + dy;
 			i--;
 		}
-	
+
 	}
 
-	SDL_UnlockSurface(MainScreen);
 	SDL_Flip(MainScreen);
 }
 
+// two empty functions, needed by input.c and platform.h
+
 int Atari_PORT(int num)
 {
-	// only joystick 0 for now
-	if (num == 0) {
-		// arrows only for now
-		// TODO: array with joystick emulation keys
-		if ((kbhits[SDLK_KP7])
-			|| ((kbhits[SDLK_KP4]) && (kbhits[SDLK_KP8])))
-			return ~1 & ~4;
-		if ((kbhits[SDLK_KP9])
-			|| ((kbhits[SDLK_KP8]) && (kbhits[SDLK_KP6])))
-			return ~1 & ~8;
-		if ((kbhits[SDLK_KP1])
-			|| ((kbhits[SDLK_KP4]) && (kbhits[SDLK_KP2])))
-			return ~2 & ~4;
-		if ((kbhits[SDLK_KP3])
-			|| ((kbhits[SDLK_KP2]) && (kbhits[SDLK_KP6])))
-			return ~2 & ~8;
-		if (kbhits[SDLK_KP4])
-			return ~4;
-		if (kbhits[SDLK_KP8])
-			return ~1;
-		if (kbhits[SDLK_KP6])
-			return ~8;
-		if (kbhits[SDLK_KP2])
-			return ~2;
-		return 15;
-	}
-
-	return 0xff;
+ return 0;
 }
 
 int Atari_TRIG(int num)
 {
-	// only joystick 0 and left ctrl as fire
-	if (num == 0) {
-		if (kbhits[SDLK_LCTRL])
-			return 0;
-		else
-			return 1;
+ return 0;
+}
+
+// two joysticks at once, it's just for testing, should be written better (more
+// joysticks, mouse/real joystick support, etc)
+
+void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
+{
+	int stick0, stick1;
+	stick0 = STICK_CENTRE;
+	stick1 = STICK_CENTRE;
+
+	if (kbhits[SDL_JOY_0_LEFT])
+		stick0 = STICK_LEFT;
+	if (kbhits[SDL_JOY_0_RIGHT])
+		stick0 = STICK_RIGHT;
+	if (kbhits[SDL_JOY_0_UP])
+		stick0 = STICK_FORWARD;
+	if (kbhits[SDL_JOY_0_DOWN])
+		stick0 = STICK_BACK;
+	if ((kbhits[SDL_JOY_0_LEFTUP])
+		|| ((kbhits[SDL_JOY_0_LEFT]) && (kbhits[SDL_JOY_0_UP])))
+		stick0 = STICK_UL;
+	if ((kbhits[SDL_JOY_0_LEFTDOWN])
+		|| ((kbhits[SDL_JOY_0_LEFT]) && (kbhits[SDL_JOY_0_DOWN])))
+		stick0 = STICK_LL;
+	if ((kbhits[SDL_JOY_0_RIGHTUP])
+		|| ((kbhits[SDL_JOY_0_RIGHT]) && (kbhits[SDL_JOY_0_UP])))
+		stick0 = STICK_UR;
+	if ((kbhits[SDL_JOY_0_RIGHTDOWN])
+		|| ((kbhits[SDL_JOY_0_RIGHT]) && (kbhits[SDL_JOY_0_DOWN])))
+		stick0 = STICK_LR;
+	if (kbhits[SDL_JOY_1_LEFT])
+		stick1 = STICK_LEFT;
+	if (kbhits[SDL_JOY_1_RIGHT])
+		stick1 = STICK_RIGHT;
+	if (kbhits[SDL_JOY_1_UP])
+		stick1 = STICK_FORWARD;
+	if (kbhits[SDL_JOY_1_DOWN])
+		stick1 = STICK_BACK;
+	if ((kbhits[SDL_JOY_1_LEFTUP])
+		|| ((kbhits[SDL_JOY_1_LEFT]) && (kbhits[SDL_JOY_1_UP])))
+		stick1 = STICK_UL;
+	if ((kbhits[SDL_JOY_1_LEFTDOWN])
+		|| ((kbhits[SDL_JOY_1_LEFT]) && (kbhits[SDL_JOY_1_DOWN])))
+		stick1 = STICK_LL;
+	if ((kbhits[SDL_JOY_1_RIGHTUP])
+		|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_UP])))
+		stick1 = STICK_UR;
+	if ((kbhits[SDL_JOY_1_RIGHTDOWN])
+		|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_DOWN])))
+		stick1 = STICK_LR;
+
+	if (SWAP_JOYSTICKS)
+	{
+	*s1 = stick0;
+	*s0 = stick1;
 	}
-	return 1;
+	else
+	{
+	*s0 = stick0;
+	*s1 = stick1;
+	}
+}
+
+void SDL_Atari_TRIG(Uint8 * t1, Uint8 * t2)
+{
+	if ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B]))
+		*t1 = 0;
+	else
+		*t1 = 1;
+	if ((kbhits[SDL_TRIG_1]) || (kbhits[SDL_TRIG_1_B]))
+		*t2 = 0;
+	else
+		*t2 = 1;
 }
 
 int main(int argc, char **argv)
 {
-	int frametimer;
 	int keycode;
+	static UBYTE STICK[4];
 
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
-	frametimer = 0;
+	refresh_rate=1; // ;-)	
+
 	if (sound_enabled)
 		SDL_PauseAudio(0);
 	while (!done) {
@@ -686,24 +790,52 @@ int main(int argc, char **argv)
 			break;
 		case AKEY_BREAK:
 			key_break = 1;
-			break;
+			if (!last_key_break) {
+				IRQST &= ~0x80;
+				if (IRQEN & 0x80) {
+					GenerateIRQ();
+				}
+				break;
 		default:
-			key_break = 0;
-			key_code = keycode;
-			break;
+				key_break = 0;
+				key_code = keycode;
+				break;
+			}
 		}
 
-		frametimer++;
-		if (frametimer == refresh_rate) {
-			Atari800_Frame(EMULATE_FULL);
-			atari_sync();		
-			Atari_DisplayScreen((UBYTE *) atari_screen);
-			frametimer = 0;
+		last_key_break = key_break;
+
+		SKSTAT |= 0xc;
+		if (key_shift)
+			SKSTAT &= ~8;
+		if (key_code==AKEY_NONE)	
+			last_key_code=AKEY_NONE;
+		if (key_code != AKEY_NONE) {
+			SKSTAT &= ~4;
+			if ((key_code ^ last_key_code) & ~AKEY_SHFTCTRL) {
+				last_key_code = key_code;
+				KBCODE = (UBYTE) key_code;
+				IRQST &= ~0x40;
+				if (IRQEN & 0x40) {
+					GenerateIRQ();
+				}
+			}
 		}
-		else {
-			Atari800_Frame(EMULATE_BASIC);
-			atari_sync();
-		}
+
+		SDL_Atari_PORT(&STICK[0], &STICK[1]);
+		SDL_Atari_TRIG(&TRIG[0], &TRIG[1]);
+
+		PORT_input[0] = (STICK[1] << 4) | STICK[0];
+
+		Device_Frame();
+		GTIA_Frame();
+		ANTIC_Frame(TRUE);
+		LED_Frame();
+		POKEY_Frame();
+		nframes++;
+		atari_sync();
+		Atari_DisplayScreen((UBYTE *) atari_screen);
+
 	}
 	return 0;
 }
