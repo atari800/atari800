@@ -292,10 +292,10 @@ void Atari_Initialise(int *argc, char *argv[])
 			delta_screen = TRUE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				printf("\t-interlace x  Generate Falcon screen only every X frame\n");
-				printf("\t-joyswap      Exchange joysticks\n");
-				printf("\t-videl        direct VIDEL programming (Falcon/VGA only)\n");
-				printf("\t-delta        delta screen output (differences only)\n");
+				Aprint("\t-interlace x  Generate Falcon screen only every X frame\n");
+				Aprint("\t-joyswap      Exchange joysticks\n");
+				Aprint("\t-videl        direct VIDEL programming (Falcon/VGA only)\n");
+				Aprint("\t-delta        delta screen output (differences only)\n");
 			}
 
 			argv[j++] = argv[i];

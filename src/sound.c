@@ -44,10 +44,10 @@ void Sound_Initialise(int *argc, char *argv[])
 			sscanf(argv[++i], "%d", &snddelay);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				printf("\t-sound                    enable sound\n"
-				       "\t-nosound                  disable sound\n"
-				       "\t-dsprate <rate>           set dsp rate\n"
-				       "\t-snddelay <milliseconds>  set sound delay\n"
+				Aprint("\t-sound           Enable sound\n"
+				       "\t-nosound         Disable sound\n"
+				       "\t-dsprate <rate>  Set DSP rate in Hz\n"
+				       "\t-snddelay <ms>   Set sound delay in milliseconds\n"
 				      );
 			}
 			argv[j++] = argv[i];
@@ -163,6 +163,9 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.7  2002/08/07 06:16:50  joy
+ printf->Aprint
+
  Revision 1.6  2001/10/10 16:15:03  knik
  improved output space calculation--can work much better with some drivers
 
