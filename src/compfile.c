@@ -55,10 +55,15 @@ static unsigned short	cursec ,maxsec;
 static unsigned char	createdisk ,working ,last ,density, buf[256], atr;
 static FILE *fin = NULL, *fout = NULL;
 
-
+#ifdef HAVE_LIBZ
 #define GZOPEN( X, Y ) gzopen( X, Y )
 #define GZCLOSE( X ) gzclose( X )
 #define GZREAD( X, Y, Z ) gzread( X, Y, Z )
+#else	/* HAVE_LIBZ */
+#define GZOPEN( X, Y ) (-1)
+#define GZCLOSE( X ) (-1)
+#define GZREAD( X, Y, Z ) (-1)
+#endif	/* HAVE_LIBZ */
 
 /* This is a port-specific function that should return -1 if the port is unable to
    use zlib, any other value if it can. For instance, Windows might return -1 if the
@@ -647,6 +652,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.11  2003/06/15 07:32:35  joy
+GZOPEN for non HAVE_LIBZ platforms
+
 Revision 1.10  2003/03/03 09:57:32  joy
 Ed improved autoconf again plus fixed some little things
 
