@@ -63,6 +63,7 @@
 #include <proto/timer.h>
 #include <proto/keymap.h>
 #include <proto/utility.h>
+#include <proto/wb.h>
 
 #include <proto/ahi.h>
 #include <proto/cybergraphics.h>
@@ -127,6 +128,7 @@ struct Library *GadToolsBase;
 struct Library *CyberGfxBase;
 struct Library *KeymapBase;
 struct Library *UtilityBase;
+struct Library *WorkbenchBase;
 
 struct IntuitionIFace *IIntuition;
 struct GraphicsIFace *IGraphics;
@@ -137,6 +139,7 @@ struct GadToolsIFace *IGadTools;
 struct CyberGfxIFace *ICyberGfx;
 struct KeymapIFace *IKeymap;
 struct UtilityIFace *IUtility;
+struct WorkbenchIFace *IWorkbench;
 
 /* Gameport */
 static struct InputEvent gameport_data;
@@ -161,6 +164,10 @@ static UWORD ahi_rupf;                 /* real updates per frame */
 static BYTE *ahi_streambuf[2];
 static ULONG ahi_streamfreq = 44100;   /* playing frequence */
 static ULONG ahi_streamlen;
+
+/* App Window */
+static struct MsgPort *app_port; /* initialized within Atari_Initialise() */
+static struct AppWindow *app_window; /* initialized during SetupDisplay() */
 
 /* Emulation */
 static int menu_consol;
@@ -217,6 +224,77 @@ int gettimeofday(struct timeval *tp, struct timezone *tzp)
 {
 	if (TimerBase)
 		GetSysTime(tp);
+	return 0;
+}
+
+/**************************************************************************
+ Load any file. Returns 1 on success and 2 if machine needs to be reseted
+ additionally.
+**************************************************************************/
+int Atari_LoadAnyFile(STRPTR name)
+{
+	unsigned char buf[16];
+	BPTR fh = Open(name,MODE_OLDFILE);
+	ULONG size;
+	STRPTR delim;
+	if (!fh) return 0;
+
+	Seek(fh,0,OFFSET_END);
+	size = Seek(fh,0,OFFSET_BEGINNING);
+
+	if (Read(fh,buf,16) != 16)
+	{
+		Close(fh);
+		return 0;
+	}
+
+	Close(fh);
+
+	/* check if file is an exe */
+	if (buf[0] == 0xff && buf[1] == 0xff)
+	{
+		LONG start =  buf[3] | (buf[2] << 8);
+		LONG end = buf[5] | (buf[4] << 8);
+
+		if (start <= end)
+		{
+			BIN_loader(name);
+			ActivateWindow(WindowMain);
+			return 1;
+		}
+	}
+
+	/* an save state? */
+	if (!strncmp(buf,"ATARI800",8))
+	{	
+		ReadAtariState(name,"rb");
+		return 1;
+	}
+
+	/* an ATR file? */
+	if (buf[0] == MAGIC1 && buf[1] == 0x02)
+	{
+		if (SIO_Mount (1, name, 0)); /* last parameter is read only */
+		{
+			return 2; /* machine needs to be reseted */	
+		}
+	}
+
+	/* an XFD file? */
+	if ((delim = strrchr(name,'.')))
+	{
+		delim++;
+
+		/* That's all we can do atm about xfd files, as they have no header */
+		if (!Stricmp(delim,"xfd") && !(size % 128))
+		{
+			if (SIO_Mount (1, name, 0)); /* last parameter is read only */
+			{
+				return 2; /* machine needs to be reseted */
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -293,6 +371,7 @@ static struct NewMenu MenuEntries[] =
 **************************************************************************/
 VOID CloseLibraries(void)
 {
+	if (WorkbenchBase) CloseLibraryInterface(WorkbenchBase, IWorkbench);
 	if (CyberGfxBase) CloseLibraryInterface(CyberGfxBase, ICyberGfx);
 	if (KeymapBase) CloseLibraryInterface(KeymapBase,IKeymap);
 	if (GadToolsBase) CloseLibraryInterface(GadToolsBase,IGadTools);
@@ -324,7 +403,10 @@ BOOL OpenLibraries(void)
 							{
 								CyberGfxBase = OpenLibraryInterface("cybergraphics.library",41, &ICyberGfx);
 
-								return TRUE;
+								if ((WorkbenchBase = OpenLibraryInterface("workbench.library",36, &IWorkbench)))
+								{
+									return TRUE;
+								}
 							}
 						}
 					}
@@ -587,6 +669,11 @@ VOID FreeDisplay(void)
 
 	if (WindowMain)
 	{
+		if (app_window)
+		{
+			RemoveAppWindow(app_window);
+		}
+
 		CloseWindow( WindowMain );
 		WindowMain = NULL;
 	}
@@ -832,6 +919,10 @@ LONG SetupDisplay(void)
 					}
 
 					SetMenuStrip(WindowMain, MenuMain);
+
+					/* An AppWindow is not required */
+					app_window = AddAppWindowA(1 /* id */, 0, WindowMain, app_port, NULL);;
+
 					return 1;
 				}
 			}
@@ -1535,6 +1626,7 @@ int Atari_Exit (int run_monitor)
 	}
 
 	FreeDisplay();
+	if (app_port) DeleteMsgPort(app_port);
 	FreeTimer();
 	FreeSound();
 	FreeJoystick();
@@ -1579,18 +1671,23 @@ void Atari_Initialise (int *argc, unsigned char **argv)
 
 					if (SetupTimer())
 					{
-						if (SetupDisplay())
+						if ((app_port = CreateMsgPort()))
 						{
-							trig[0] = trig[1] = 1;
-							stick[0] = stick[1] = 15;
-							menu_consol = 7;
-							keyboard_consol = 7;
+							if (SetupDisplay())
+							{
+								trig[0] = trig[1] = 1;
+								stick[0] = stick[1] = 15;
+								menu_consol = 7;
+								keyboard_consol = 7;
+								return;
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+	Atari_Exit(0);
 }
 
 /**************************************************************************
@@ -1850,6 +1947,36 @@ int Atari_Keyboard (void)
 		key_consol = menu_consol;
 		menu_consol = 7;
 	} else key_consol = keyboard_consol;
+
+	if (app_window)
+	{
+		/* handle application messages (e.g. icons drops on window */
+		struct AppMessage *amsg;
+
+		while ((amsg = (struct AppMessage *)GetMsg(app_port)))
+		{
+			if (amsg->am_Type == AMTYPE_APPWINDOW && amsg->am_ID == 1 && amsg->am_NumArgs > 0)
+			{
+				BPTR olddir;
+				int rc;
+
+				olddir = CurrentDir(amsg->am_ArgList[0].wa_Lock);
+
+				if ((rc = Atari_LoadAnyFile(amsg->am_ArgList[0].wa_Name)))
+				{
+					ActivateWindow(WindowMain);
+
+					if (rc == 2)
+					{
+						keycode = AKEY_COLDSTART;
+						menu_consol = 7;
+					}
+				}
+				CurrentDir(olddir);
+			}
+			ReplyMsg((struct Message*)amsg);
+		}
+	}
 
 	return keycode;
 }
