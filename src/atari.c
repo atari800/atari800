@@ -34,6 +34,7 @@
 #include "colours.h"
 #include "binload.h"
 #include "rtime.h"
+#include "cassette.h"
 #ifdef SOUND
 #include "sound.h"
 #endif
@@ -352,6 +353,7 @@ int main(int argc, char **argv)
 	Device_Initialise(&argc, argv);
 	RTIME_Initialise(&argc, argv);
 	SIO_Initialise (&argc, argv);
+	CASSETTE_Initialise(&argc, argv);
 	Atari_Initialise(&argc, argv);	/* Platform Specific Initialisation */
 
 	if (!atari_screen) {
@@ -899,6 +901,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.12  2001/08/03 12:48:55  fox
+cassette support
+
 Revision 1.11  2001/07/25 12:58:25  fox
 added SIO_Exit(), slight clean up
 
