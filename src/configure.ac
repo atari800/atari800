@@ -219,7 +219,7 @@ case "$a8_target" in
         A8_NEED_LIB(dsound)
         A8_NEED_LIB(dxguid)
         A8_NEED_LIB(ws2_32)
-        OBJS="win32/atari_win32.o win32/screen.o win32/main.o win32/keyboard.o win32/atari.ro"
+        OBJS="win32/atari_win32.o win32/screen_win32.o win32/main.o win32/keyboard.o win32/atari.ro"
         ;;
     x11*)
         AC_PATH_X
@@ -436,14 +436,6 @@ A8_OPTION(bufferedlog,no,
           [Use buffered debug output (until the graphics mode switches back to text mode) (default=OFF)],
           BUFFERED_LOG,[define to use buffered debug output]
          )
-
-A8_OPTION(diskled,no,
-          [Show disk LED emulation on screen display (default=OFF)],
-          SHOW_DISK_LED,[define to show disk LED emulation on screen display]
-         )
-if [[ "$WANT_SHOW_DISK_LED" = "yes" ]]; then
-    OBJS="$OBJS diskled.o"
-fi
 
 A8_OPTION(veryslow,no,
           [Use very slow computer support (disables generating screen completely) (default=OFF)],
