@@ -15,7 +15,14 @@
 /*#define VERY_SLOW*/
 /*#define SET_LED*/
 
+#define SOUND
+
 #define USE_NEW_BINLOAD
 #define NO_GOTO
+
+#define DO_DIR
+#define NEW_CYCLE_EXACT
+
+void usleep(unsigned long usec);
 
 #endif

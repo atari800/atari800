@@ -22,6 +22,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#define __USE_INLINE__
+#define DoSuperMethod IDoSuperMethod
+#define DoSuperMethodA IDoSuperMethodA
+#define DoMethod IDoMethod
+#define DoMethodA IDoMethodA
+
 #include <string.h>
 
 #include <libraries/gadtools.h>
@@ -32,8 +38,9 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/graphics.h>
-#include <proto/muimaster.h>
+#include <proto/intuition.h>
 
+#if 0
 /**************************************************************************
  Some MUI support functions
 **************************************************************************/
@@ -53,27 +60,6 @@ BOOL getbool(Object *obj)
 {
 	return((BOOL)xget(obj,MUIA_Selected));
 }
-
-Object *MUI_NewObject          (char *classname,Tag tag1,...)
-{
-	return MUI_NewObjectA(classname, (struct TagItem*)&tag1);
-}
-
-BOOL MUI_AslRequestTags(APTR requester, Tag Tag1, ...)
-{
-	return MUI_AslRequest(requester, (struct TagItem*)&Tag1);
-}
-
-Object *MUI_MakeObject         (LONG type,...)
-{
-	return MUI_MakeObjectA(type, ((ULONG*)&type)+1);
-}
-
-LONG    MUI_Request            (APTR app,APTR win,LONGBITS flags,char *title,char *gadgets,char *format,...)
-{
-	return MUI_RequestA(app,win,flags,title,gadgets,format,((ULONG*)&format)+1);
-}
-
 
 Object *MakeLabel(STRPTR str)  { return(MUI_MakeObject(MUIO_Label,str,0)); }
 Object *MakeLabel1(STRPTR str)  { return(MUI_MakeObject(MUIO_Label,str,MUIO_Label_SingleFrame)); }
@@ -164,6 +150,7 @@ ULONG DoSuperNew(struct IClass *cl,Object *obj,ULONG tag1,...)
 {
 	return(DoSuperMethod(cl,obj,OM_NEW,&tag1,NULL));
 }
+#endif
 
 /**************************************************************************
  Some general supports
@@ -322,3 +309,31 @@ APTR FindUserData( struct Menu *menu, APTR userdata)
 	return NULL;
 }
 
+
+/**************************************************************************
+ ...
+**************************************************************************/
+struct Library *OpenLibraryInterface(STRPTR name, int version, void *interface_ptr)
+{
+	struct Library *lib = OpenLibrary(name,version);
+	struct Interface *iface;
+	if (!lib) return NULL;
+
+	iface = GetInterface(lib,"main",1,NULL);
+	if (!iface)
+	{
+		CloseLibrary(lib);
+		return NULL;
+	}
+	*((struct Interface**)interface_ptr) = iface;
+	return lib;
+}
+
+/**************************************************************************
+ ...
+**************************************************************************/
+void CloseLibraryInterface(struct Library *lib, void *interface)
+{
+	DropInterface(interface);
+	CloseLibrary(lib);
+}

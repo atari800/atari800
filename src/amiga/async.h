@@ -7,16 +7,9 @@
 #include <dos/dosextens.h>
 
 #include <clib/asyncio_protos.h>
-#include <clib/exec_protos.h>
-#include <clib/dos_protos.h>
 
-#ifdef __MAXON__
-#include <pragma/exec_lib.h>
-#include <pragma/dos_lib.h>
-#else
-#include <pragmas/exec_sysbase_pragmas.h>
-#include <pragmas/dos_pragmas.h>
-#endif
+#include <proto/exec.h>
+#include <proto/dos.h>
 
 #include <string.h>
 
