@@ -57,6 +57,7 @@ case $host_os in
   mingw32 ) a800_host=win;;
   msdosdjgpp ) a800_host=dos;;
   linux ) a800_host=linux;;
+  falcon ) a800_host=falcon;;
 esac
 
 echo "$a800_host environment found"
@@ -157,10 +158,11 @@ AC_DEFINE(DOS_DRIVES)
 LIBS="$LIBS -lgem"
 OBJ="$OBJ \
 atari_falcon.o \
-c2p_uni.o \
-c2p_unid.o \
-videl.o \
-ikbd.o"
+falcon/c2p_uni.o \
+falcon/c2p_unid.o \
+falcon/videl.o \
+falcon/ikbd.o"
+a800_host="falcon"
 ;;
 x11-*)
 AC_PATH_X
@@ -290,6 +292,9 @@ OBJ="$OBJ dos/sound_dos.o dos/dos_sb.o"
 win)
 OBJ="$OBJ win32/sound.o"
 ;;
+falcon)
+OBJ="$OBJ sound_falcon.o falcon/sound_dma.o"
+;;
 *)
 OBJ="$OBJ sound.o"
 esac
@@ -301,7 +306,9 @@ ASK_FEATURE(SERIO_SOUND, Enable serial in/out sound)
 fi	dnl digitized effects enabled
 ASK_FEATURE(NOSNDINTER, Enable Sound Interpolation, y, n)
 ASK_FEATURE(CLIP, Enable Sound Clipping)
+if test "$a800_target" != falcon; then
 ASK_FEATURE(STEREO, Enable Stereo Sound)
+fi
 fi	dnl sound enabled
 
 case "$a800_target" in
