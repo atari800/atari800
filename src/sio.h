@@ -42,6 +42,7 @@ void SIO(void);
 #define SIO_FinalStatus     (0x05)
 #define SIO_FormatFrame     (0x06)
 
+UBYTE SIO_ChkSum(UBYTE * buffer, UWORD length);
 void SwitchCommandFrame(int onoff);
 void SIO_PutByte(int byte);
 int SIO_GetByte(void);
