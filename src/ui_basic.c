@@ -2,7 +2,7 @@
  * ui_basic.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2004 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -574,9 +574,8 @@ List *GetDirectory(char *directory)
 	char fullfilename[FILENAME_MAX];
 	char *filepart;
 #ifdef DOS_DRIVES
-        /* strdup to avoid writing to string constants */
-	char *letter = strdup("C:");
-	char *letter2 = strdup("[C:]");
+	static char letter[3] = { 'C', ':', '\0' };
+	static char letter2[5] = { '[', 'C', ':', ']', '\0' };
 #ifdef __DJGPP__
 	unsigned short s_backup = _djstat_flags;
 	_djstat_flags = _STAT_INODE | _STAT_EXEC_EXT | _STAT_EXEC_MAGIC | _STAT_DIRSIZE |
@@ -1028,6 +1027,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.17  2005/03/10 04:41:26  pfusik
+fixed a memory leak
+
 Revision 1.16  2005/03/08 04:32:46  pfusik
 killed gcc -W warnings
 
