@@ -4,40 +4,15 @@
 #include	<string.h>
 #include	<ctype.h>
 #include 	<errno.h>
-
-#include	"config.h"
-#include	"ui.h"
-
-#ifdef VMS
-#include	<unixio.h>
-#include	<file.h>
-#else
 #include	<fcntl.h>
 #ifndef	AMIGA
 #include	<unistd.h>
-#endif
-#endif
-
-#define	DO_DIR
-#define DO_SPECIAL
-
-#ifdef AMIGA
-#undef	DO_DIR
-#undef  DO_SPECIAL
-#endif
-
-#ifdef VMS
-#undef	DO_DIR
-#undef  DO_SPECIAL
-#endif
-
-#ifdef DO_DIR
 #include	<dirent.h>
-#endif
-
-#ifdef DO_SPECIAL
 #include        <sys/stat.h>
 #endif
+
+#include	"config.h"
+#include	"ui.h"
 
 #include "atari.h"
 #include "cpu.h"
@@ -66,11 +41,8 @@ static int flag[8];
 
 static int fid;
 static char filename[64];
-#ifdef DO_SPECIAL
+#ifndef AMIGA
 static char newfilename[64];
-#endif
-
-#ifdef DO_DIR
 static DIR	*dp = NULL;
 #endif
 
@@ -157,7 +129,7 @@ void Device_GetFilename(void)
 	filename[offset++] = '\0';
 }
 
-#ifdef DO_SPECIAL
+#ifndef	AMIGA
 void Device_GetFilenames(void)
 {
 	int bufadr;
@@ -241,7 +213,7 @@ int match(char *pattern, char *filename)
 	return status;
 }
 
-#ifdef DO_SPECIAL
+#ifndef	AMIGA
 void fillin(char *pattern, char *filename)
 {
 	while (*pattern) {
@@ -272,7 +244,7 @@ void Device_HHOPEN(void)
 	char fname[FILENAME_MAX];
 	int devnum;
 	int temp;
-#ifdef DO_SPECIAL
+#ifndef	AMIGA
 	struct stat status;
 	char entryname[FILENAME_MAX];
 	char *ext;
@@ -304,16 +276,10 @@ void Device_HHOPEN(void)
 		flag[fid] = FALSE;
 	}
 
-#ifdef VMS
-/* Assumes H[devnum] is a directory _logical_, not an explicit directory
-   specification! */
-	sprintf(fname, "%s:%s", H[devnum], filename);
-#else
 #ifdef BACK_SLASH
 	sprintf (fname, "%s\\%s", H[devnum], filename);
 #else
 	sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
 #endif
 
 	temp = dGetByte(ICAX1Z);
@@ -332,7 +298,7 @@ void Device_HHOPEN(void)
 		break;
 	case 6:
 	case 7:
-#ifdef DO_DIR
+#ifndef	AMIGA
 		fp[fid] = tmpfile();
 		if (fp[fid]) {
 			dp = opendir(H[devnum]);
@@ -341,9 +307,6 @@ void Device_HHOPEN(void)
 
 				while ((entry = readdir(dp))) {
 					if (match(filename,entry->d_name))
-#ifndef DO_SPECIAL
-                                            fprintf(fp[fid], "%s\n", strtoupper(entry->d_name));
-#else
                                             if (entry->d_name[0] != '.') {
                                                 sprintf(fname, "%s/%s", H[devnum], entry->d_name);
                                                 stat(fname,&status);
@@ -364,7 +327,6 @@ void Device_HHOPEN(void)
                                                             ext,
                                                             size);
                                                 }
-#endif
 				}
 
 				closedir(dp);
@@ -384,7 +346,7 @@ void Device_HHOPEN(void)
 			}
 		}
           else
-#endif /* DO_DIR */
+#endif /* AMIGA */
 		{
 			regY = 163;
 			SetN;
@@ -411,7 +373,7 @@ void Device_HHOPEN(void)
 			SetN;
 		}
 		break;
-#ifdef DO_SPECIAL                
+#ifndef	AMIGA
 	case 12:		/* read and write  (update) */
 		if (hd_read_only) {
 			regY = 135;	/* device is read only */
@@ -536,7 +498,7 @@ void Device_HHSPEC(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
-#ifdef DO_SPECIAL        
+#ifndef	AMIGA
 	char newfname[FILENAME_MAX];
 	char renamefname[FILENAME_MAX];
 	unsigned long pos;
@@ -556,7 +518,7 @@ void Device_HHSPEC(void)
 	case 0x20:
 		if (devbug)
 			Aprint("RENAME Command");
-#ifdef DO_SPECIAL                        
+#ifndef	AMIGA
 		if (hd_read_only) {
 			regY = 135;	/* device is read only */
 			SetN;
@@ -622,7 +584,7 @@ void Device_HHSPEC(void)
 	case 0x21:
 		if (devbug)
 			Aprint("DELETE Command");
-#ifdef DO_SPECIAL                        
+#ifndef	AMIGA
 		if (hd_read_only) {
 			regY = 135;	/* device is read only */
 			SetN;
@@ -681,7 +643,7 @@ void Device_HHSPEC(void)
 	case 0x23:
 		if (devbug)
                     Aprint("LOCK Command");
-#ifdef DO_SPECIAL
+#ifndef	AMIGA
 		if (hd_read_only) {
 			regY = 135;	/* device is read only */
 			SetN;
@@ -707,7 +669,7 @@ void Device_HHSPEC(void)
                         while ((entry = readdir(dp))) {
                                 if (match(filename, entry->d_name)) {
                                     sprintf(fname, "%s/%s", H[devnum], entry->d_name);
-                                    if (chmod(fname, S_IROTH | S_IRGRP | S_IRUSR) != 0)
+                                    if (chmod(fname, S_IRUSR) != 0)
                                         status = -1;
                                     else
                                         num_changed++;
@@ -734,7 +696,7 @@ void Device_HHSPEC(void)
 	case 0x24:
 		if (devbug)
                     Aprint("UNLOCK Command");
-#ifdef DO_SPECIAL
+#ifndef	AMIGA
 		if (hd_read_only) {
 			regY = 135;	/* device is read only */
 			SetN;
@@ -760,7 +722,7 @@ void Device_HHSPEC(void)
                         while ((entry = readdir(dp))) {
                                 if (match(filename, entry->d_name)) {
                                     sprintf(fname, "%s/%s", H[devnum], entry->d_name);
-                                    if (chmod(fname, S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR) != 0)
+                                    if (chmod(fname, S_IRUSR | S_IWUSR) != 0)
                                         status = -1;
                                     else
                                         num_changed++;
@@ -787,7 +749,7 @@ void Device_HHSPEC(void)
 	case 0x26:
 		if (devbug)
 			Aprint("NOTE Command");
-#ifdef DO_SPECIAL                        
+#ifndef	AMIGA
 		if (fp[fid]) {
 			iocb = IOCB0 + ((fid) * 16);
 			pos = ftell(fp[fid]);
@@ -815,7 +777,7 @@ void Device_HHSPEC(void)
 	case 0x25:
 		if (devbug)
 			Aprint("POINT Command");
-#ifdef DO_SPECIAL
+#ifndef	AMIGA
 		if (fp[fid]) {
 			iocb = IOCB0 + ((fid) * 16);
 			pos = (dGetByte(iocb + ICAX4) << 16) +
@@ -894,7 +856,7 @@ void Device_PHCLOS(void)
 
 		sprintf(command, print_command, spool_file);
 		system(command);
-#if !defined(VMS) && !defined(MACOSX)
+#if !defined(MACOSX)
 		status = unlink(spool_file);
 		if (status == -1) {
 			perror(spool_file);
@@ -1225,6 +1187,10 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.14  2002/12/08 20:29:29  knik
+removed S_IROTH and S_IRGRP permissions
+VMS support removed and DO_* symbols replaced by AMIGA
+
 Revision 1.13  2002/12/04 10:09:21  joy
 H device supports all DOS functions
 
