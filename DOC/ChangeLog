@@ -49,11 +49,13 @@
 
 
 2003-08-05  Petr Stehlik  <pstehlik@sophics.cz>
-* atari.c: tried to fix a recent security issue (atari800 got famous "thanks"
-  to that). In order to provide a complex fix I wrote code that is not looking
-  very well but works correctly, hopefully. Nevertheless this fixes only
-  the main module arguments parsing - the various ports do it on their own
-  and that should be fixed as well. Best by going for GNU getopt!
+* atari.c: tried to fix a recent security issue known as CAN-2003-0630, 
+  found by Debian Security Audit Project, Debian BTS #203707.
+  In order to provide a complex fix (better than the one suggested in BTS)
+  I wrote code that is not looking very well but works correctly, hopefully.
+  Nevertheless this fixes only the core module arguments parsing - the
+  sound module and port specific modules do it on their own and that
+  should be fixed as well. Best by going for GNU getopt!
 
   Also the osa/osb/xlxe/5200/basic rom loading options were not documented
   in the "-help" list. Fixed.
@@ -84,6 +86,12 @@
 2003-06-27  Perry McFarlane  <ce596@torfree.net>
 * cycle_map.[ch]: a fix that prevents "Cool Emotion" demo from crashing
   NEW_CYCLE_EXACT emulator if P: patch is disabled
+
+
+2003-06-18  Petr Stehlik  <pstehlik@sophics.cz>
+* config.{sub,guess}: upgraded to latest versions from autotools-dev package
+  in order to fix the Debian BTS #193397 (problem supporting the Debian mips
+  and mipsel architectures).
 
 
 2003-06-15  Petr Stehlik  <pstehlik@sophics.cz>
