@@ -1,38 +1,23 @@
 /* $Id$ */
-/*
-
- * All Input is assumed to be going to RAM (no longer, ROM works, too.)
- * All Output is assumed to be coming from either RAM or ROM
- *
- */
 #define Peek(a) (dGetByte((a)))
 #define DPeek(a) ( dGetByte((a))+( dGetByte((a)+1)<<8 ) )
-/* PM Notes:
-   note the versions in Thors emu are able to deal with ROM better than
-   these ones.  These are only used for the 'fake' fast SIO replacement
-*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
-
-extern int DELAYED_SERIN_IRQ;
-extern int DELAYED_SEROUT_IRQ;
 
 #include "atari.h"
 #include "config.h"
 #include "cpu.h"
 #include "memory.h"
 #include "sio.h"
+#include "pokey.h"
 #include "pokeysnd.h"
 #include "platform.h"
 #include "log.h"
 #include "diskled.h"
 #include "binload.h"
-
-void CopyFromMem(int to, UBYTE *, int size);
-void CopyToMem(UBYTE *, ATPtr from, int size);
 
 /* If ATR image is in double density (256 bytes per sector),
    then the boot sectors (sectors 1-3) can be:
@@ -61,7 +46,7 @@ static int sectorsize[MAX_DRIVES];
 UnitStatus drive_status[MAX_DRIVES];
 char sio_filename[MAX_DRIVES][FILENAME_LEN];
 
-static char	 tmp_filename[MAX_DRIVES][FILENAME_LEN];
+static char	tmp_filename[MAX_DRIVES][FILENAME_LEN];
 static UBYTE istmpfile[MAX_DRIVES] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 /* Serial I/O emulation support */
@@ -82,96 +67,69 @@ void SIO_Initialise(int *argc, char *argv[])
 {
 	int i;
 
-	for (i = 0; i < MAX_DRIVES; i++)
-	{
+	for (i = 0; i < MAX_DRIVES; i++) {
 		strcpy(sio_filename[i], "Empty");
 		memset(tmp_filename[i], 0, FILENAME_LEN );
+		drive_status[i] = Off;
 		istmpfile[i] = 0;
 	}
 
 	TransferStatus = SIO_NoFrame;
 }
 
-/* This is to clean temp files that were not caught with a dismount. 
-   It should be called from Atari_Exit() */
-void Clear_Temp_Files( void )
+/* umount disks so temporary files are deleted */
+void SIO_Exit(void)
 {
 	int i;
 
-	for( i = 0; i < MAX_DRIVES; i++ )
-	{
-		if( istmpfile[i] != 0 )
-		{
-			if(disk[i])
-			{
-				fclose(disk[i]);
-				disk[i] = 0;
-			}
-			remove( tmp_filename[i] );
-			memset( tmp_filename[i], 0, FILENAME_LEN );
-			istmpfile[i] = 0;
-		}
-	}
-}
-
-/* This will take an existing mounted file and set it as temp so it will be deleted 
-   when dismounted. Primarily for mounted images that have been made on-the-fly to
-   load an executable without having it be on an Atari disk */
-void Set_Temp_File( int diskno )
-{
-	diskno--;
-	if(!disk[ diskno ])
-		return;
-	istmpfile[ diskno ] = 1;
-	strcpy( tmp_filename[ diskno ], sio_filename[ diskno ] );
+	for (i = 1; i <= MAX_DRIVES; i++)
+		SIO_Dismount(i);
 }
 
 int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 {
-	char	upperfile[ FILENAME_LEN ];
+	char upperfile[FILENAME_LEN];
 	struct ATR_Header header;
+	int fname_len;
 	int i;
 	FILE *f = NULL;
 
-	memset( upperfile, 0, FILENAME_LEN );
-	for( i=0; i < (int)strlen( filename ); i++ )
-		upperfile[i] = toupper( filename[i] );
+	memset(upperfile, 0, FILENAME_LEN);
+	fname_len = (int) strlen(filename);
+	for (i = 0; i < fname_len; i++)
+		upperfile[i] = toupper(filename[i]);
 
 	/* If file is DCM, open it with opendcm to create a temp file */
-	if( !strcmp( &upperfile[ strlen( upperfile )-3 ], "DCM" ) )
-	{
-		istmpfile[ diskno -1 ] = 1;
-		drive_status[ diskno -1 ] = b_open_readonly ? ReadOnly : ReadWrite;	/* this is a fake but some games need it */
-		f = opendcm( diskno, filename, tmp_filename[diskno - 1] );
-		if(!f)
-			istmpfile[ diskno - 1] = 0;
+	if (fname_len > 4 && !strcmp(&upperfile[fname_len - 4], ".DCM")) {
+		istmpfile[diskno - 1] = 1;
+		drive_status[diskno - 1] = b_open_readonly ? ReadOnly : ReadWrite;	/* this is a fake but some games need it */
+		f = opendcm(diskno, filename, tmp_filename[diskno - 1]);
+		if (!f)
+			istmpfile[diskno - 1] = 0;
 	}
 #ifdef HAVE_LIBZ
-	else if( !strcmp( &upperfile[ strlen( upperfile )-3], "ATZ" ) || 
-		     !strcmp( &upperfile[strlen( upperfile )-6], "ATR.GZ" ) ||
-			 !strcmp( &upperfile[ strlen( upperfile )-3], "XFZ" ) || 
-			 !strcmp( &upperfile[strlen( upperfile )-6], "XFD.GZ") )
-	{
-		istmpfile[ diskno -1 ] = 1;
-		drive_status[ diskno -1 ] = b_open_readonly ? ReadOnly : ReadWrite;	/* this is a fake but some games need it */
-		f = openzlib( diskno, filename, tmp_filename[ diskno - 1] );
-		if(!f)
-		{
-			istmpfile[ diskno - 1] = 0;
-			drive_status[ diskno - 1] = NoDisk;
+	else if ((fname_len > 4 && !strcmp(&upperfile[fname_len - 4], ".ATZ")) ||
+			 (fname_len > 7 && !strcmp(&upperfile[fname_len - 7], ".ATR.GZ")) ||
+			 (fname_len > 4 && !strcmp(&upperfile[fname_len - 4], ".XFZ")) ||
+			 (fname_len > 7 && !strcmp(&upperfile[fname_len - 7], ".XFD.GZ"))) {
+		istmpfile[diskno - 1] = 1;
+		drive_status[diskno - 1] = b_open_readonly ? ReadOnly : ReadWrite;	/* this is a fake but some games need it */
+		f = openzlib(diskno, filename, tmp_filename[diskno - 1]);
+		if (!f) {
+			istmpfile[diskno - 1] = 0;
+			drive_status[diskno - 1] = NoDisk;
 		}
 	}	
 #endif /* HAVE_LIBZ */
-	else /* Normal ATR, XFD disk */
-	{
+	else { /* Normal ATR, XFD disk */
 		drive_status[diskno - 1] = ReadWrite;
 		strcpy(sio_filename[diskno - 1], "Empty");
 
-		if( b_open_readonly == FALSE )
+		if (b_open_readonly == FALSE)
 		{
 		  f = fopen(filename, "rb+");
 		}
-		if ( b_open_readonly == TRUE || !f)
+		if (b_open_readonly == TRUE || !f)
 		{
 			f = fopen(filename, "rb");
 			drive_status[diskno - 1] = ReadOnly;
@@ -179,15 +137,13 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 	}
 
 	if (f) {
-		int status;
 		ULONG file_length;
 
 		fseek(f, 0L, SEEK_END);
 		file_length = ftell(f);
 		fseek(f, 0L, SEEK_SET);
 
-		status = fread(&header, 1, sizeof(struct ATR_Header), f);
-		if (status == -1) {
+		if (fread(&header, 1, sizeof(struct ATR_Header), f) < sizeof(struct ATR_Header)) {
 			fclose(f);
 			disk[diskno - 1] = 0;
 			return FALSE;
@@ -273,11 +229,11 @@ void SIO_Dismount(int diskno)
 		disk[diskno - 1] = 0;
 		drive_status[diskno - 1] = NoDisk;
 		strcpy(sio_filename[diskno - 1], "Empty");
-		if( istmpfile[ diskno - 1] )
+		if( istmpfile[diskno - 1])
 		{
-			remove( tmp_filename[ diskno - 1] );
-			memset( tmp_filename[ diskno - 1], 0, FILENAME_LEN );
-			istmpfile[ diskno - 1] = 0;
+			remove(tmp_filename[diskno - 1] );
+			memset(tmp_filename[diskno - 1], 0, FILENAME_LEN);
+			istmpfile[diskno - 1] = 0;
 		}
 	}
 }
@@ -288,7 +244,7 @@ void SIO_DisableDrive(int diskno)
 	strcpy(sio_filename[diskno - 1], "Off");
 }
 
-void SizeOfSector(UBYTE unit, int sector, int *sz, ULONG * ofs)
+static void SizeOfSector(UBYTE unit, int sector, int *sz, ULONG * ofs)
 {
 	int size;
 	ULONG offset;
@@ -318,7 +274,7 @@ void SizeOfSector(UBYTE unit, int sector, int *sz, ULONG * ofs)
 		*ofs = offset;
 }
 
-int SeekSector(int unit, int sector)
+static int SeekSector(int unit, int sector)
 {
 	ULONG offset;
 	int size;
@@ -338,12 +294,12 @@ int SeekSector(int unit, int sector)
 }
 
 /* Unit counts from zero up */
-int ReadSector(int unit, int sector, UBYTE * buffer)
+static int ReadSector(int unit, int sector, UBYTE * buffer)
 {
 	int size;
 
 	if (start_binloading)
-		return(BIN_loade_start(buffer));
+		return BIN_loade_start(buffer);
 
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
@@ -363,7 +319,7 @@ int ReadSector(int unit, int sector, UBYTE * buffer)
 		return 0;
 }
 
-int WriteSector(int unit, int sector, UBYTE * buffer)
+static int WriteSector(int unit, int sector, UBYTE * buffer)
 {
 	int size;
 
@@ -394,21 +350,18 @@ int WriteSector(int unit, int sector, UBYTE * buffer)
  * attention to the ATR header information, and in fact overwriting it!
  */
 
-int ATRFormat( int unit, UBYTE * buffer )
+static int ATRFormat( int unit, UBYTE * buffer )
 {
 	int i;
 
-	if( drive_status[unit] != Off )
-	{
-		if(disk[unit])
-		{
-			if( drive_status[unit] == ReadWrite )
-			{
-				SeekSector( unit, 1 );
-				memset( buffer, 0, sectorsize[unit] );
-				for( i = 1; i <= sectorcount[unit]; i++ )
-				  fwrite(buffer, 1, sectorsize[unit], disk[unit]);
-				memset( buffer, 0xff, sectorsize[unit] );
+	if (drive_status[unit] != Off) {
+		if (disk[unit]) {
+			if (drive_status[unit] == ReadWrite) {
+				SeekSector(unit, 1);
+				memset(buffer, 0, sectorsize[unit]);
+				for (i = 1; i <= sectorcount[unit]; i++)
+					fwrite(buffer, 1, sectorsize[unit], disk[unit]);
+				memset(buffer, 0xff, sectorsize[unit]);
 				return 'C';
 			}
 			else
@@ -426,22 +379,22 @@ int ATRFormat( int unit, UBYTE * buffer )
  * however, I have to check if they expect a 256 byte buffer or if 128
  * is ok either
  */
-int FormatSingle(int unit, UBYTE * buffer)
+static int FormatSingle(int unit, UBYTE * buffer)
 {
 	int i;
 
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
-				if( format[unit] == ATR )
-					return ATRFormat( unit, buffer );
+				if (format[unit] == ATR)
+					return ATRFormat(unit, buffer);
 				sectorcount[unit] = 720;
 				sectorsize[unit] = 128;
 				format[unit] = XFD;
 				SeekSector(unit, 1);
 				memset(buffer, 0, 128);
 				for (i = 1; i <= 720; i++)
-				  fwrite(buffer, 1, 128, disk[unit]);
+					fwrite(buffer, 1, 128, disk[unit]);
 				memset(buffer, 0xff, 128);
 				return 'C';
 			}
@@ -455,22 +408,22 @@ int FormatSingle(int unit, UBYTE * buffer)
 		return 0;
 }
 
-int FormatEnhanced(int unit, UBYTE * buffer)
+static int FormatEnhanced(int unit, UBYTE * buffer)
 {
 	int i;
 
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
-				if( format[unit] == ATR )
-					return ATRFormat( unit, buffer );
+				if (format[unit] == ATR)
+					return ATRFormat(unit, buffer);
 				sectorcount[unit] = 1040;
 				sectorsize[unit] = 128;
 				format[unit] = XFD;
 				SeekSector(unit, 1);
 				memset(buffer, 0, 128);
 				for (i = 1; i <= 1040; i++)
-				  fwrite(buffer, 1, 128, disk[unit]);
+					fwrite(buffer, 1, 128, disk[unit]);
 				memset(buffer, 0xff, 128);
 				return 'C';
 			}
@@ -484,7 +437,7 @@ int FormatEnhanced(int unit, UBYTE * buffer)
 		return 0;
 }
 
-int WriteStatusBlock(int unit, UBYTE * buffer)
+static int WriteStatusBlock(int unit, UBYTE * buffer)
 {
 	int size;
 
@@ -524,21 +477,20 @@ int WriteStatusBlock(int unit, UBYTE * buffer)
  *
  * ???
  */
-int ReadStatusBlock(int unit, UBYTE * buffer)
+static int ReadStatusBlock(int unit, UBYTE * buffer)
 {
-	int size, spt, heads;
+	int spt, heads;
 
 	if (drive_status[unit] != Off) {
 		spt = sectorcount[unit] / 40;
-		heads =  (spt > 26) ? 2 : 1;
-		SizeOfSector((UBYTE)unit, 0x168, &size, NULL);
+		heads = (spt > 26) ? 2 : 1;
 
 		buffer[0] = 40;			/* # of tracks */
 		buffer[1] = 1;			/* step rate. No idea what this means */
 		buffer[2] = spt >> 8;	/* sectors per track. HI byte */
 		buffer[3] = spt & 0xFF;	/* sectors per track. LO byte */
-		buffer[4] = heads-1;	/* # of heads */
-		if (size == 128) {
+		buffer[4] = heads - 1;	/* # of heads */
+		if (sectorsize[unit] == 128) {
 			buffer[5] = 4;		/* density */
 			buffer[6] = 0;		/* HI bytes per sector */
 			buffer[7] = 128;	/* LO bytes per sector */
@@ -577,28 +529,27 @@ int ReadStatusBlock(int unit, UBYTE * buffer)
    Bit 5 = 1 indicates double density
    Bit 7 = 1 indicates duel density disk (1050 format)
  */
-int DriveStatus(int unit, UBYTE * buffer)
+static int DriveStatus(int unit, UBYTE * buffer)
 {
 	if (start_binloading) {
-		buffer[0] = 0;
-		buffer[1] = 64;
+		buffer[0] = 16 + 8;
+		buffer[1] = 255;
 		buffer[2] = 1;
 		buffer[3] = 0 ;
 		return 'C';
 	}
 		
 	if (drive_status[unit] != Off) {
-		if (drive_status[unit] == ReadWrite) {
-			buffer[0] = (sectorsize[unit] == 256) ? (32 + 16) : (16);
-			/* buffer[1] = (disk[unit]) ? (128) : (0); */
-			buffer[1] = (disk[unit]) ? (255) : (0);	/* for StripPoker */
-		}
-		else {
-			buffer[0] = (sectorsize[unit] == 256) ? (32 + 8) : (8);
-			buffer[1] = (disk[unit]) ? (192) : (64);
-		}
+		buffer[0] = 16;			/* drive active */
+		buffer[1] = 255;		/* WD 177x OK */
+		if (drive_status[unit] == ReadOnly)
+			buffer[0] |= 8;		/* write protection */
+		if (sectorsize[unit] == 256)
+			buffer[0] |= 32;	/* double density */
 		if (sectorcount[unit] == 1040)
-			buffer[0] |= 128;
+			buffer[0] |= 128;	/* 1050 enhanced density */
+		if (!disk[unit])
+			buffer[1] &= (UBYTE) ~128;	/* no disk */
 		buffer[2] = 1;
 		buffer[3] = 0;
 		return 'C';
@@ -701,8 +652,8 @@ void SIO(void)
 				result = 'E';
 			break;
 		case 0x66:				/* US Doubler Format - I think! */
-			if( format[unit] == ATR )
-				result = ATRFormat( unit, DataBuffer );
+			if (format[unit] == ATR)
+				result = ATRFormat(unit, DataBuffer);
 			result = 'A';		/* Not yet supported... to be done later... */
 			break;
 		default:
@@ -737,13 +688,7 @@ void SIO(void)
 
 }
 
-void SIO_Initialize(void)
-{
-	TransferStatus = SIO_NoFrame;
-}
-
-
-UBYTE ChkSum(UBYTE * buffer, UWORD length)
+static UBYTE ChkSum(UBYTE * buffer, UWORD length)
 {
 	int i;
 	int checksum = 0;
@@ -757,17 +702,16 @@ UBYTE ChkSum(UBYTE * buffer, UWORD length)
 	return checksum;
 }
 
-void Command_Frame(void)
+static void Command_Frame(void)
 {
 	int unit;
 	int result = 'A';
 	int sector;
 	int realsize;
 
-
 	sector = CommandFrame[2] | (((UWORD) (CommandFrame[3])) << 8);
 	unit = CommandFrame[0] - '1';
-	if (unit >= MAX_DRIVES) {				/* UBYTE - range ! */
+	if (unit < 0 || unit >= MAX_DRIVES) {
 		Aprint("Unknown command frame: %02x %02x %02x %02x %02x",
 			   CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			   CommandFrame[3], CommandFrame[4]);
@@ -849,7 +793,6 @@ void Command_Frame(void)
 		TransferStatus = SIO_NoFrame;
 }
 
-
 /* Enable/disable the command frame */
 void SwitchCommandFrame(int onoff)
 {
@@ -873,7 +816,7 @@ void SwitchCommandFrame(int onoff)
 	}
 }
 
-UBYTE WriteSectorBack(void)
+static UBYTE WriteSectorBack(void)
 {
 	UWORD sector;
 	UBYTE unit;
@@ -956,7 +899,6 @@ void SIO_PutByte(int byte)
 		break;
 	}
 	DELAYED_SEROUT_IRQ = SEROUT_INTERVAL;
-
 }
 
 /* Get a byte from the floppy to the pokey. */
@@ -1057,6 +999,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.8  2001/07/25 12:57:07  fox
+removed unused functions, added SIO_Exit(), corrected coding style
+
 Revision 1.7  2001/07/23 09:11:30  fox
 corrected and added checks if drive number is in range 1-8
 
