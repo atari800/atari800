@@ -122,7 +122,7 @@ void video_memset(UBYTE* ptr, UBYTE val, ULONG size)
 
 void video_putbyte(UBYTE* ptr, UBYTE val)
 {
-	WRITE_VIDEO_BYTE(ptr, val, size);
+	WRITE_VIDEO_BYTE(ptr, val);
 }
 
 
