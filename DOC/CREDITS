@@ -202,9 +202,26 @@ Christian Groessler <cpg@aladdin.de>
 - SVGAlib patch for joystick
 - BRKHERE command
 
-Piotr Fusik <P.Fusik@elka.pw.edu.pl>
-- many bugfixes in all parts of emulator
-- general rewrite of Antic/GTIA
+Piotr Fusik <fox@scene.pl>
+- general rewrite of ANTIC and GTIA (accuracy and speed improvements)
+- changed ANTIC/CPU synchronization
+- corrected undocumented 6502 opcodes
+- corrected PCX screenshots and added interlaced screenshots
+- improved IRQ accuracy
+- ATR write protection
+- monitor improvements
+- paddles and light pen emulation
+- loading of .act palette files
+- improved disk LEDs
+- rewritten executable loader
+- UI enhancements
+- read-only mode for H: devices
+- exact 17-bit and 9-bit polys for sound and RANDOM
+- improved potentiometers emulation
+- support for Express, Diamond, SpartaDOS X, XEGS, Action!, Basic XL
+  and other cartridges
+- corrected disk formatting
+- cassette recorder emulation
 
 Matthew Conte <matt@conte.com>
 - new SoundBlaster driver for DOS
