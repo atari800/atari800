@@ -19,6 +19,8 @@ int joy_autofire[4] = {AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF};
 
 int joy_block_opposite_directions = 1;
 
+int joy_multijoy = 0;
+
 int joy_5200_min = 6;
 int joy_5200_center = 114;
 int joy_5200_max = 220;
@@ -66,6 +68,9 @@ static UBYTE mouse_st_codes[16] = {
 };
 
 static UBYTE STICK[4];
+static UBYTE TRIG_input[4];
+
+static int joy_multijoy_no = 0;	/* number of selected joy */
 
 static int max_scanline_counter;
 static int scanline_counter;
@@ -112,6 +117,9 @@ void INPUT_Initialise(int *argc, char *argv[])
 				Aprint("Invalid mouse speed, using 3");
 				mouse_speed = 3;
 			}
+		}
+		else if (strcmp(argv[i], "-multijoy") == 0) {
+			joy_multijoy = 1;
 		}
 		else {
 			argv[j++] = argv[i];
@@ -316,9 +324,9 @@ void INPUT_Frame(void)
 		}
 		else
 			last_stick[i] = STICK[i];
-		TRIG[i] = Atari_TRIG(i);
-		if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
-			TRIG[i] = (nframes & 2) ? 1 : 0;
+		TRIG_input[i] = Atari_TRIG(i);
+		if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG_input[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
+			TRIG_input[i] = (nframes & 2) ? 1 : 0;
 	}
 
 	/* handle analog joysticks in Atari 5200 */
@@ -368,7 +376,7 @@ void INPUT_Frame(void)
 		POT_input[(mouse_port << 1) + 1] = mouse_y >> MOUSE_SHIFT;
 		if (machine_type == MACHINE_5200) {
 			if (mouse_buttons & 1)
-				TRIG[mouse_port] = 0;
+				TRIG_input[mouse_port] = 0;
 			if (mouse_buttons & 2)
 				SKSTAT &= ~8;
 		}
@@ -431,7 +439,9 @@ void INPUT_Frame(void)
 		}
 
 		if (mouse_buttons & 1)
-			TRIG[mouse_port] = 0;
+			TRIG_input[mouse_port] = 0;
+		if (mouse_buttons & 2)
+			POT_input[mouse_port << 1] = 1;
 		break;
 	case MOUSE_JOY:
 		if (machine_type == MACHINE_5200) {
@@ -464,20 +474,34 @@ void INPUT_Frame(void)
 			STICK[mouse_port] &= mouse_step();
 		}
 		if (mouse_buttons & 1)
-			TRIG[mouse_port] = 0;
+			TRIG_input[mouse_port] = 0;
 		break;
 	default:
 		break;
 	}
 	last_mouse_buttons = mouse_buttons;
 
-	if (machine_type == MACHINE_XLXE) {
-		TRIG[2] = 1;
-		TRIG[3] = cartA0BF_enabled;
+	if (joy_multijoy && machine_type != MACHINE_5200) {
+		PORT_input[0] = 0xf0 | STICK[joy_multijoy_no];
+		PORT_input[1] = 0xff;
+		TRIG[0] = TRIG_input[joy_multijoy_no];
+		TRIG[2] = TRIG[1] = 1;
+		TRIG[3] = machine_type == MACHINE_XLXE ? cartA0BF_enabled : 1;
 	}
-
-	PORT_input[0] = (STICK[1] << 4) | STICK[0];
-	PORT_input[1] = (STICK[3] << 4) | STICK[2];
+	else {
+		TRIG[0] = TRIG_input[0];
+		TRIG[1] = TRIG_input[1];
+		if (machine_type == MACHINE_XLXE) {
+			TRIG[2] = 1;
+			TRIG[3] = cartA0BF_enabled;
+		}
+		else {
+			TRIG[2] = TRIG_input[2];
+			TRIG[3] = TRIG_input[3];
+		}
+		PORT_input[0] = (STICK[1] << 4) | STICK[0];
+		PORT_input[1] = (STICK[3] << 4) | STICK[2];
+	}
 }
 
 void INPUT_Scanline(void)
@@ -497,6 +521,16 @@ void INPUT_Scanline(void)
 		PORT_input[0] = (STICK[1] << 4) | STICK[0];
 		PORT_input[1] = (STICK[3] << 4) | STICK[2];
 		scanline_counter = max_scanline_counter;
+	}
+}
+
+void INPUT_SelectMultiJoy(int no)
+{
+	no &= 3;
+	joy_multijoy_no = no;
+	if (joy_multijoy && machine_type != MACHINE_5200) {
+		PORT_input[0] = 0xf0 | STICK[no];
+		TRIG[0] = TRIG_input[no];
 	}
 }
 
