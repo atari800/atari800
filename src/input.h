@@ -194,6 +194,23 @@
 /* Following keys cannot be read with both shift and control pressed:
    J K L ; + * Z X C V B F1 F2 F3 F4 HELP	 */
 
+/* 5200 key codes */
+#define AKEY_5200_START 0x39
+#define AKEY_5200_PAUSE 0x31
+#define AKEY_5200_RESET 0x29
+#define AKEY_5200_0 0x25
+#define AKEY_5200_1 0x3f
+#define AKEY_5200_2 0x3d
+#define AKEY_5200_3 0x3b
+#define AKEY_5200_4 0x37
+#define AKEY_5200_5 0x35
+#define AKEY_5200_6 0x33
+#define AKEY_5200_7 0x2f
+#define AKEY_5200_8 0x2d
+#define AKEY_5200_9 0x2b
+#define AKEY_5200_HASH 0x23
+#define AKEY_5200_ASTERISK 0x27
+
 /* key_consol masks */
 /* Note: key_consol should be CONSOL_NONE if no consol key is pressed.
    When a consol key is pressed, corresponding bit should be cleared.
@@ -227,6 +244,21 @@ extern int key_consol;	/* Start, Select and Option keys */
 #define AUTOFIRE_CONT	2	/* Continuous */
 
 extern int joy_autofire[4];		/* autofire mode for each Atari port */
+
+/* Mouse --------------------------------------------------------------- */
+
+/* mouse_mode values */
+#define MOUSE_OFF		0
+#define MOUSE_PAD		1	/* Paddles */
+#define MOUSE_TOUCH		2	/* Atari touch tablet */
+#define MOUSE_KOALA		3	/* Koala pad */
+#define MOUSE_PEN		4	/* Light pen/light gun */
+#define MOUSE_AMIGA		5	/* Amiga mouse */
+#define MOUSE_ST		6	/* Atari ST mouse */
+#define MOUSE_JOY		7	/* Joystick */
+
+extern int mouse_mode;		/* device emulated with mouse */
+extern int mouse_port;		/* Atari port, to which the emulated device is attached */
 
 /* Functions ----------------------------------------------------------- */
 
