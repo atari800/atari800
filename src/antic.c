@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Correct timing, internal memory and other fixes: */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 24th July 2001                     */
+/* Last changes: 27th September 2001                */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -1797,6 +1797,7 @@ UWORD get_DL_word(void)
 /* Real ANTIC doesn't fetch beginning bytes in HSC
    nor screen+47 in wide playfield. This function does. */
 void ANTIC_load(void) {
+#ifdef PAGED_MEM
 	UBYTE *ANTIC_memptr = ANTIC_memory + ANTIC_margin;
 	UWORD new_screenaddr = screenaddr + chars_read[md];
 	if ((screenaddr ^ new_screenaddr) & 0xf000) {
@@ -1808,6 +1809,20 @@ void ANTIC_load(void) {
 	}
 	while (screenaddr < new_screenaddr)
 		*ANTIC_memptr++ = dGetByte(screenaddr++);
+#else
+	UWORD new_screenaddr = screenaddr + chars_read[md];
+	if ((screenaddr ^ new_screenaddr) & 0xf000) {
+		int bytes = (-screenaddr) & 0xfff;
+		memcpy(ANTIC_memory + ANTIC_margin, memory + screenaddr, bytes);
+		if (new_screenaddr & 0xfff)
+			memcpy(ANTIC_memory + ANTIC_margin + bytes, memory + screenaddr + bytes - 0x1000, new_screenaddr & 0xfff);
+		screenaddr = new_screenaddr - 0x1000;
+	}
+	else {
+		memcpy(ANTIC_memory + ANTIC_margin, memory + screenaddr, chars_read[md]);
+		screenaddr = new_screenaddr;
+	}
+#endif
 }
 
 #ifndef NO_CYCLE_EXACT
