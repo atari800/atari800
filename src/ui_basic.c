@@ -1,3 +1,5 @@
+/* $Id$ */
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
@@ -130,6 +132,7 @@ int GetKeyPress(UBYTE * screen)
 	}
 
 	do {
+		atari_sync();
 		keycode = Atari_Keyboard();
 	} while (keycode == AKEY_NONE);
 
@@ -985,3 +988,10 @@ void BasicUIInit()
 }
 
 
+/*
+$Log$
+Revision 1.3  2001/10/11 17:27:22  knik
+added atari_sync() call in keyboard loop--keyboard is sampled
+at reasonable rate
+
+*/
