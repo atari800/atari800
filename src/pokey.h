@@ -46,6 +46,7 @@ extern int DELAYED_XMTDONE_IRQ;
 UBYTE POKEY_GetByte(UWORD addr);
 void POKEY_PutByte(UWORD addr, UBYTE byte);
 void POKEY_Initialise(int *argc, char *argv[]);
+void POKEY_Frame(void);
 void POKEY_Scanline(void);
 
 /* CONSTANT DEFINITIONS */
