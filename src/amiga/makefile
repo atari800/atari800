@@ -11,7 +11,7 @@ MKDIR = mkdir -p
 
 TARGET = Atari800
 VERSION = 2
-CFLAGS = -O3 -I. -I.. -I"$(SDK_INCLUDE)" -I"$(AHI_INCLUDE)" -Wall
+CFLAGS = -O3 -I. -I.. -I"$(SDK_INCLUDE)" -I"$(AHI_INCLUDE)" -Wall -D__USE_CLIB2_TIMEVAL
 LIBS = -lm
 
 AMIGASRCS=\
