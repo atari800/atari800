@@ -1,13 +1,11 @@
 Bugs and Known Problems
 -----------------------
 
-o disk formatting doesn't work properly
-
-o few keyboard-related bugs: e.g. pressing SHIFT+1 and then
+o a few keyboard-related bugs: e.g. pressing SHIFT+1 and then
   releasing SHIFT should still give '!' characters
 
 o ANTIC emulation is scanline-, not pixel-exact.
-  This is ABC list of related display bugs:
+  This causes display bugs in following programs:
   - Bitter Reality (demo)
   - Darkness Warrior (picture)
   - Extract (graphics collection)
@@ -20,19 +18,23 @@ o ANTIC emulation is scanline-, not pixel-exact.
   - Temod (demo)
 
 o POKEY interrupts are scanline-, not cycle-exact.
-  This is ABC list of related sound bugs:
+  This causes sound bugs in following programs:
   - Saturday Demo (demo)
 
 o sound emulation uses VOL_ONLY hack.
-  This is ABC list of related sound bugs:
+  This causes sound bugs in following programs:
   - Digital Trash (demo)
   - Ghostbusters (game)
   - Overmind (demo)
 
 o intensive 130xe-banks switching slows down emulation
   much.
-  This is ABC list of related speed bugs:
+  This causes performance problems in following programs:
   - Impossible but Real (demo)
   - Sheol (demo)
   - Total Daze (demo)
   - Ultra (demo)
+
+o ANTIC timing isn't 100% accurate.
+  This causes major display bugs in following programs:
+  - Spelunker (game)
