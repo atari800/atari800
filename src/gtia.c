@@ -2,7 +2,7 @@
  * gtia.c - GTIA chip emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -244,9 +244,10 @@ void GTIA_Initialise(int *argc, char *argv[])
 /*slow, but should be called rarely*/
 void generate_partial_pmpl_colls(int l,int r){
 	int i;
-	if(r<0 || l>=sizeof(pm_scanline)/sizeof(pm_scanline[0])) return;
-	if(r>=sizeof(pm_scanline)/sizeof(pm_scanline[0])) {
-		r=sizeof(pm_scanline)/sizeof(pm_scanline[0]);
+	if(r < 0 || l >= (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0]))
+		return;
+	if(r >= (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0])) {
+		r = (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0]);
 	}
 	if(l<0) l=0;
 	
