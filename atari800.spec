@@ -1,6 +1,6 @@
 %define name	atari800
-%define ver	1.2.4
-%define rel	0
+%define ver	1.2.5
+%define rel	1
 %define copy	GPL
 %define ich joy <joy@sophics.cz>
 %define group	Console/Emulators
@@ -86,6 +86,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/atari800.1.bz2
 
 %changelog
+* Mon Dec 2 2002 Petr Stehlik <pstehlik@sophics.cz>
+Version increased.
 * Wed Aug 7 2002 Petr Stehlik <pstehlik@sophics.cz>
 Version increased, packager changed, slight change to description.
 * Tue Jul 9 2002 Petr Stehlik <pstehlik@sophics.cz>
