@@ -1,0 +1,116 @@
+USING DIRTY UPDATE SCHEME
+
+1. Why dirty updates?
+Most Atari 800 games and applications update only very small part of
+the screen every frame. Typical numbers range from 1% to 5%. On the
+other hand many ports have to convert screen image from internal
+emulator format to port native format and copy it to platform video
+memory. Both conversion and copy (or blit) are typically slow.
+
+2. How to enable it?
+To enable dirty update tracking the symbol DIRTYRECT must be #defined
+globally (in CONFIG.H or in project settings). When it is defined the
+array screen_dirty[] gets allocated. This is UBYTE array of the size
+ATARI_HEIGHT*ATARI_WIDTH/8. In current implementation every element
+is either 0 or 1. Initially the entire array is initialized with 0.
+Each element in this array corresponds to eight consequtive pixels in
+atari_screen[]. When any of this pixels is being changed the element
+in screen_dirty[] is getting set to 1. Port's implementation of
+Atari_DisplayScreen() can use this information and draw only those
+pixels belonging to "changed" octets. Port must reset screen_dirty[]
+at the end of its Atari_DisplayScreen(). Emulator core _never_ resets
+screen_dirty[] elements.
+
+3. How to use it?
+The simplest implementation would be this: every time your code is
+attempting to process pixel at pointer src (which must point somewhere
+_inside_ atari_screen[]) do a check:
+
+    if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8]) ...
+
+If the condition succeeds, update the pixel. Otherwise, skip it. More
+advanced implementation would do a check only once per eight pixels
+but the check basically remains the same. The best use is to redesign
+the entire update loop so it moves through the array screen_dirty[]
+instead of typical loop through atari_screen[] or double loop through
+screen coordinates x and y. Essentially, if screen_dirty[m]==1 then
+eight pixels starting at atari_screen[m*8] needs to be refreshed. Or,
+if you want these in screen coordinates: y=m/ATARI_WIDTH, eight pixels
+starting at m%ATARI_WIDTH. Note that pixels are guaranteed to be at
+the same scanline. Properly written loop would not even use division
+there:
+
+    for(m=0, x=0, y=0; m<ATARI_HEIGHT*ATARI_WIDTH/8; m++)
+    {
+        if(screen_dirty[m])
+        {
+            /* Draw eight pixels (x,y), (x+1,y),...,(x+7,y) here */
+            ...
+            screen_dirty[m] = 0;
+        }
+        x += 8;
+        if(x >= ATARI_WIDTH)
+        {
+            x = 0;
+            y ++;
+        }
+    }
+
+The code in that last example also resets screen_dirty[] as it goes
+and does it in very efficient way. If your code does not do that you
+can just use:
+
+    memset(screen_dirty, 0, ATARI_HEIGHT * ATARI_WIDTH/8);
+
+at the end of Atari_DisplayScreen().
+
+4. Is it worth a trouble?
+Believe me, yes, unless your target platform is so fast that you don't
+care about the performance. I tested this implementation on PocketPC
+(WinCE) port on iPaq. Old implementation was too slow even with
+frameskip of 3 (anything higher tends to break PM graphics). With the
+new implementation I am getting better speed at frameskip 1 than I had
+with the old implementation at frameskip 3, and I finally got 100%
+speed at frameskip 2! At the same time I am using linear filtering
+with the new implemenation, something that was too expensive with the
+old one. On the top of this, I am not using the most efficient
+(described above) way to use the scheme.
+There are only a few little catches there. First, you should use
+compiler with at least semi-decent optimizer. Otherwise you will get
+a few extra memory moves every time you access video memory. It's not
+a big problem but it is something to be aware of. Second, there is
+slight performance hit in ANTIC.C: changed pixels are slightly more
+expensive (unchanged pixels stay the same, may be even cheaper than
+before depending on platform memory controller). That only means that
+if you #define DIRTYRECT you should definitely implement proper dirty
+update support in your port or you'll burn CPU cycles. Then again, the
+impact is not that big.
+
+5. Changing core emulator code.
+If you need to draw anything on the screen from the emulator core you
+need to follow certain protocol. First of all, you cannot use
+atari_screen[] directly anymore. If your code resides in ANTIC.C you
+should use macros WRITE_VIDEO_BYTE(), WRITE_VIDEO() (writes a word),
+WRITE_VIDEO_LONG(), and FILL_VIDEO(). There is one case when code
+reads from atari_screen[], that one uses macro READ_VIDEO_LONG() but
+I would strongly discourage everybody from doing tricks like that.
+For code outside of ANTIC.C there are two simple functions:
+video_putbyte() and video_memset(). Those should suffice in most
+situations.
+
+6. Other notes.
+With current set of macros the emulator core is shielded from actual
+atari_screen[] implementation. By all means, atari_screen can be fake
+pointer now. It is possible to create set of macros that will cause
+port code (outside of emulator core) to draw pixels directly to the
+screen as emulator generates them, potentially saving some CPU clocks
+(just replace screen_dirty[] changes with calls to client functions).
+It is also possible to move atari_screen[] allocation completely to
+the client side. Not sure if anybody needs these features, but they
+come free. Another interesting use of dirty update implementation
+would be very efficient way to record movies straight from the
+emulator: no need to calculate diff frames anymore. This is rather
+fancy feature but you never know.
+
+Vasyl
+04/07/2002
