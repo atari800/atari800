@@ -1,3 +1,8 @@
+2003-02-10  Petr Stehlik  <pstehlik@sophics.cz>
+
+* pokey.c, monitor.c: added include. Interesting is that my compiler at
+  home hasn't complained but the gcc-3.2.2 here at work was uncompromising.
+
 2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
 
 * pokey.[ch]: 'stereo_enabled' variable moved to rt-config.c
