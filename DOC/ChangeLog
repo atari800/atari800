@@ -11,6 +11,8 @@
   and TOS ($HOME/atari800.cfg and C:\atari800.cfg) since their filesystem
   is still limited to 8+3 filenames.
 * win32/sound.c: restored original behaviour of "-quality" switch.
+* atari800.man: version increased, SDL option "-audio16" added.
+* most files in DOC folder updated with minor fixes
 
 2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
 
