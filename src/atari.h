@@ -32,10 +32,6 @@
 #define	ULONG unsigned int
 #endif
 
-#ifndef O_BINARY				/* flag for binary files on MS-DOS */
-#define O_BINARY	0			/* this won't cause any trouble */
-#endif
-
 #ifdef SHM
 #define USE_COLOUR_TRANSLATION_TABLE
 #endif
@@ -447,6 +443,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.6  2001/03/25 07:00:05  knik
+removed o_binary define
+
 Revision 1.5  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
