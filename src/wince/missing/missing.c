@@ -152,9 +152,6 @@ int stat(const char *fname, struct stat *ss)
 	return 0;
 }
 
-/* Stub for perror. Used in at least five modules for error messages. */
-void perror(const char* string) {}
-
 /* Remove file by name */
 int remove(const char* path)
 {
@@ -203,11 +200,6 @@ void rewind(FILE *stream)
 	fseek(stream, 0, SEEK_SET);
 }
 
-/* aka stricmp */
-//int strcasecmp(const char *string1, const char *string2)
-//{
-//	 return _stricmp(string1, string2);
-//}
 
 char *strdup(const char *strSource)
 {
@@ -316,4 +308,10 @@ FILE* __cdecl wce_fopen(const char* fname, const char* fmode)
 	}
 	else
 		return fopen(fname, fmode);
+}
+
+/* This may provide for better sync mechanism */
+unsigned int clock()
+{
+	return GetTickCount();
 }

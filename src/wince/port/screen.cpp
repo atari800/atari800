@@ -14,8 +14,16 @@ extern "C"
 #include "keyboard.h"
 };
 
+#define SMOOTH
+
 #define MAX_CLR         0x100
+#ifdef SMOOTH
+static UBYTE palRed[MAX_CLR];
+static UBYTE palGreen[MAX_CLR];
+static UBYTE palBlue[MAX_CLR];
+#endif
 static unsigned short pal[MAX_CLR];
+
 
 GXDisplayProperties gxdp;
 int active;
@@ -38,11 +46,12 @@ tScreenGeometry geom[3];
 
 int currentScreenMode = 0;
 int useMode = 0;
+int maxMode = 2;
 
 void set_screen_mode(int mode)
 {
 	currentScreenMode = mode;
-	if(currentScreenMode > 2)
+	if(currentScreenMode > maxMode)
 		currentScreenMode = 0;
 	
 	if(currentScreenMode == 0)
@@ -86,7 +95,7 @@ int gron(int *argc, char *argv[])
 	GXOpenDisplay(hWndMain, GX_FULLSCREEN);
 	
 	gxdp = GXGetDisplayProperties();
-	if((gxdp.ffFormat & (kfDirect555 | kfDirect565)) == 0 || gxdp.cxWidth != 240 || gxdp.cyHeight != 320)
+	if((gxdp.ffFormat & (kfDirect555 | kfDirect565)) == 0 || gxdp.cxWidth < 240 || gxdp.cyHeight < 240)
 	{
 		groff();
 		return 1;
@@ -99,7 +108,7 @@ int gron(int *argc, char *argv[])
 	geom[0].sourceoffset = 8;
 	geom[0].linestep = gxdp.cbyPitch;
 	geom[0].pixelstep = gxdp.cbxPitch;
-	geom[0].xSkipMask = 0x00000003;
+	geom[0].xSkipMask = gxdp.cxWidth < 320 ? 0x00000003 : 0xffffffff;
 	geom[0].xLimit = 320; // skip 1/4
 	geom[0].lineLimit = ATARI_WIDTH*240;
 	
@@ -125,7 +134,9 @@ int gron(int *argc, char *argv[])
 	geom[2].xLimit = 320; // no skip
 	geom[2].lineLimit = ATARI_WIDTH*240;
 	
-	
+	if(gxdp.cyHeight < 320)
+		maxMode = 0; // portrait only!
+
 	for(int i = 0; i < MAX_CLR; i++)
 	{
 		palette(i,  (colortable[i] >> 16) & 0xff,
@@ -142,6 +153,11 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 {
 	if (ent >= MAX_CLR)
 		return;
+#ifdef SMOOTH
+	palRed[ent] = r;
+	palGreen[ent] = g;
+	palBlue[ent] = b;
+#endif
 	if(gxdp.ffFormat & kfDirect565)
 		pal[ent] = ((r&0xf8)<<(11-3))|((g&0xfc)<<(5-2))|((b&0xf8)>>3);
 	else if(gxdp.ffFormat & kfDirect555)
@@ -185,6 +201,10 @@ void refreshv(UBYTE * scr_ptr)
 	static long pixelstep;
 	static long linestep;
 	static long skipmask;
+
+#ifdef SMOOTH
+	static bool b565 = (gxdp.ffFormat & kfDirect565);
+#endif
 	
 	if(!active)
 	{
@@ -225,6 +245,55 @@ void refreshv(UBYTE * scr_ptr)
 		skipmask = geom[useMode].xSkipMask;
 		
 		/* Internal pixel loops */
+#ifdef SMOOTH
+		if(skipmask == 3)
+		{
+			while(scr_ptr < scr_ptr_limit)
+			{
+				src = scr_ptr;
+				dst = scraddr;
+				while(src < src_limit)
+				{
+					UBYTE r, g, b;
+					r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
+					g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
+					b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
+
+					if(b565)
+						*(unsigned short*)dst = ((r&0xf8)<<(11-3))|((g&0xfc)<<(5-2))|((b&0xf8)>>3);
+					else
+						*(unsigned short*)dst = ((r&0xf8)<<(10-3))|((g&0xf8)<<(5-2))|((b&0xf8)>>3);
+					dst += pixelstep;
+
+					r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
+					g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
+					b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
+
+					if(b565)
+						*(unsigned short*)dst = ((r&0xf8)<<(11-3))|((g&0xfc)<<(5-2))|((b&0xf8)>>3);
+					else
+						*(unsigned short*)dst = ((r&0xf8)<<(10-3))|((g&0xf8)<<(5-2))|((b&0xf8)>>3);
+					dst += pixelstep;
+
+					r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
+					g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
+					b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
+
+					if(b565)
+						*(unsigned short*)dst = ((r&0xf8)<<(11-3))|((g&0xfc)<<(5-2))|((b&0xf8)>>3);
+					else
+						*(unsigned short*)dst = ((r&0xf8)<<(10-3))|((g&0xf8)<<(5-2))|((b&0xf8)>>3);
+					dst += pixelstep;
+
+					src += 4;
+				}
+				scraddr += linestep;
+				scr_ptr += ATARI_WIDTH;
+				src_limit += ATARI_WIDTH;
+			}
+		}
+		else
+#endif
 		if(skipmask != 0xffffffff)
 		{
 			while(scr_ptr < scr_ptr_limit)

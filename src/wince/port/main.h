@@ -7,12 +7,9 @@ extern LPTSTR myname;
 extern HWND hWndMain;
 extern HINSTANCE myInstance;
 
-/* Due to imperfection in Windows CE emulation we have to test
-   different codepath on emulator.
-*/
-#ifdef _WIN32_WCE_EMULATION
-#define MULTITHREADED
-#endif
+// Multi-threaded implementation has no benefit over single threaded and it
+// has very odd codepath. I will leave code in place anyway */
+//#define MULTITHREADED
 
 #ifndef MULTITHREADED
 void MsgPump();

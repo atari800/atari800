@@ -19,4 +19,6 @@ struct tm
 time_t time(time_t* dummy);
 struct tm* localtime(time_t* dummy);
 
+unsigned int clock();
+
 #endif

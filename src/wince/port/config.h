@@ -232,15 +232,20 @@
 #undef SET_LED
 
 /* Display LED on screen */
-#undef NO_LED_ON_SCREEN
+#define NO_LED_ON_SCREEN
 
 /* This one is particularly ugly */
 #define NO_GOTO
 
-/* Some port-specific workarounds */
-#define main(argc,argv) atari_main(argc,argv)
+/* Trying to get better synchronization */
+//#define USE_CLOCK
+#define CLK_TCK 1000
+//#define DONT_SYNC_WITH_HOST
 
+/* Some port-specific workarounds */
 #define strcasecmp _stricmp
+
+#define perror(s) wce_perror(s)
 
 #ifndef _FILE_DEFINED
    typedef void FILE;
@@ -248,4 +253,6 @@
 #endif
 FILE* __cdecl wce_fopen(const char* fname, const char* fmode);
 #define fopen wce_fopen
+
+extern unsigned short regPC;
 

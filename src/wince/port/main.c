@@ -10,12 +10,12 @@
 #include "keyboard.h"
 #include "sound.h"
 
-extern int atari_main(int argc, char **argv);
-
 LPTSTR myname = TEXT("Pocket Atari");
 char* mynameb = "Pocket Atari";
 HWND hWndMain;
 HINSTANCE myInstance;
+
+extern int wince_main(int argc, char **argv);
 
 static char **gargv = NULL;
 static int gargc = 0;
@@ -30,10 +30,19 @@ void __cdecl atari_exit(int code)
 	exit(code);
 }
 
+void wce_perror(char* s)
+{
+	TCHAR sUnc[100];
+	gr_suspend();
+	MultiByteToWideChar(CP_ACP, 0, s, -1, sUnc, 100);
+	MessageBox(hWndMain, sUnc, TEXT("Error"), MB_OK|MB_ICONERROR);
+	gr_resume();
+}
+
 DWORD WINAPI vloop(LPVOID p)
 {
 	srand(time(0));
-	atari_main(gargc, gargv);
+	wince_main(gargc, gargv);
 	atari_exit(0);
 	return 0;
 }
@@ -42,16 +51,15 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 {
 	static POINT lastClick;
 	static PAINTSTRUCT ps;
-	
 	switch (message)
 	{
 	case WM_KEYDOWN:
-	case WM_SYSKEYDOWN:
-		hitbutton((short)wParam);
+		if(wParam != VK_LWIN) // huh?
+			hitbutton((short)wParam);
 		return 0;
 	case WM_KEYUP:
-	case WM_SYSKEYUP:
-		releasebutton((short)wParam);
+		if(wParam != VK_LWIN) // huh?
+			releasebutton((short)wParam);
 		return 0;
 	case WM_LBUTTONDOWN:
 		lastClick.x = LOWORD(lParam);
@@ -81,11 +89,11 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 		gr_suspend();
 		return 0;
 	}
-#ifdef MULTITHREADED
+/* In the first version all other events were merrily dropped on floor in singlethreaded
+   model. That caused some troubles with debugging and suspected to cause spurious key up
+   messages. Nevertheless, this call does not affect performance in any noticeable way and
+   it is much nicer to the OS. */
 	return DefWindowProc(hWnd, message, wParam, lParam);
-#else
-	return 0;
-#endif
 }
 
 #ifndef MULTITHREADED
@@ -93,7 +101,9 @@ void MsgPump()
 {
 	MSG msg;
 	while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	{
 		WindowProc(msg.hwnd, msg.message, msg.wParam, msg.lParam);
+	}
 }
 #endif
 
@@ -109,7 +119,7 @@ static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 	wc.hInstance = hInstance;
 	wc.hIcon = NULL; //LoadIcon(hInstance, IDI_APPLICATION);
 	wc.hCursor = NULL;
-	wc.hbrBackground = GetStockObject(BLACK_BRUSH);
+	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	wc.lpszMenuName = NULL;
 	wc.lpszClassName = myname;
 	RegisterClass(&wc);
@@ -144,7 +154,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	static int argc = 0;
 	static char args[0x400];
 	static char *argv[100];
-	
+
 	myInstance = hInstance;
 	if(initwin(hInstance, nCmdShow))
 	{

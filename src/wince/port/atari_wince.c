@@ -7,65 +7,33 @@
 #include "config.h"
 #include "platform.h"
 #include "atari.h"
+#include "input.h"
 #include "screen.h"
 #include "keyboard.h"
 #include "main.h"
 #include "sound.h"
-#include "monitor.h"
 #include "diskled.h"
 #include "rt-config.h"
 
 static int usesnd = 1;
 
-extern int refresh_rate;
-
-extern int SHIFT_KEY, KEYPRESSED;
 static int kbjoy = 1;
-
-static UBYTE joymask[] =
-{
-	0,				/* not used */
-	~1 & ~4,			/* up/left */
-	~1,				/* up */
-	~1 & ~8,			/* up/right */
-	~4,				/* left */
-	~8,				/* right */
-	~2 & ~4,			/* down/left */
-	~2,				/* down */
-	~2 & ~8,			/* down/right */
-};
-
-static int trig0;
-static int stick0;
-static int console;
 
 int Atari_Keyboard(void)
 {
 	int keycode;
-	int i;
 	
 	prockb();
-	
-	if (kbjoy)
-	{
-		trig0 = joyhits[0] ? 0 : 1;
-		
-		stick0 |= 0xf;
-		for(i = 1; i < JOYCODES; i++)
-			if(joyhits[i])
-				stick0 &= joymask[i];
-	}
-	
+
 	keycode = get_last_key();
-	
-	SHIFT_KEY = kbhits[AKEY_SHFT];
-	
-	if(keycode != AKEY_NONE && keycode != AKEY_UI)
-		keycode |= (SHIFT_KEY ? 0x40 : 0) | (kbhits[AKEY_CTRL] ? 0x80 : 0);
-	
-	console = (console & ~7) | (kbhits[AKEY_F2] ? 0 : 4) | (kbhits[AKEY_F3] ? 0 : 2) | (kbhits[AKEY_F4] ? 0 : 1);
-	
-	KEYPRESSED = (keycode != AKEY_NONE);
+
+	if(keycode == AKEY_TAB)
+	{
+		gr_suspend();
+		MessageBox(hWndMain, TEXT("Test"), TEXT("Test"), MB_APPLMODAL|MB_OK);
+		gr_resume();
+		clearkb();
+	}
 	return keycode;
 }
 
@@ -76,18 +44,17 @@ void Atari_Initialise(int *argc, char *argv[])
 		Sound_Initialise(argc, argv);
 #endif
 	if(initinput())
+	{
+		perror("Input initialization failed");
 		exit(1);
+	}
 	if (gron(argc, argv))
+	{
+		perror("Graphics initialization failed");
 		exit(1);
+	}
 	
-#if defined(SET_LED) && !defined(NO_LED_ON_SCREEN)
-	LED_lastline = 239;
-#endif
 	clearkb();
-	
-	trig0 = 1;
-	stick0 = 15;
-	console = 7;
 	
 	/* Port tweaks */
 	if(refresh_rate < 2)
@@ -122,7 +89,7 @@ void Atari_DisplayScreen(UBYTE * ascreen)
 int Atari_PORT(int num)
 {
 	if (num == 0)
-		return 0xf0 | stick0;
+		return stick0;
 	else
 		return 0xff;
 }
@@ -138,35 +105,110 @@ int Atari_TRIG(int num)
 
 int Atari_POT(int num)
 {
+	if(machine_type == MACHINE_5200)
+	{
 	/* The most primitive implementation for the first version */
-	if(num == 0) /* first stick hor */
-	{
-		if(joyhits[4])
-			return 1;
-		else if(joyhits[5])
-			return 228;
-		else
-			return 113;
+		if(num == 0) /* first stick hor */
+		{
+			if(!(stick0 & 4))
+				return 1;
+			else if(!(stick0 & 8))
+				return 228;
+			else
+				return 113;
+		}
+		else if(num == 1) /* first stick vert */
+		{
+			if(!(stick0 & 1))
+				return 1;
+			else if(!(stick0 & 2))
+				return 228;
+			else
+				return 113;
+		}
 	}
-	else if(num == 1) /* first stick vert */
-	{
-		if(joyhits[2])
-			return 1;
-		else if(joyhits[7])
-			return 228;
-		else
-			return 113;
-	}
-	else
-		return 113;
+	return 228;
 }
 
+/*
 int Atari_CONSOL(void)
 {
 	return console;
 }
-
+*/
 int Atari_PEN(int vertical)
 {
 	return vertical ? 0xff : 0;
+}
+
+
+int wince_main(int argc, char **argv)
+{
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
+
+	/* main loop */
+	while(1)
+	{
+		static int test_val = 0;
+		int keycode;
+
+		keycode = Atari_Keyboard();
+
+		switch (keycode) {
+		case AKEY_COLDSTART:
+			Coldstart();
+			break;
+		case AKEY_WARMSTART:
+			Warmstart();
+			break;
+		case AKEY_EXIT:
+			Atari800_Exit(FALSE);
+			exit(1);
+		case AKEY_UI:
+#ifdef SOUND
+			Sound_Pause();
+#endif
+			ui((UBYTE *)atari_screen);
+#ifdef SOUND
+			Sound_Continue();
+#endif
+			break;
+		case AKEY_SCREENSHOT:
+			Save_PCX_file(FALSE, Find_PCX_name());
+			break;
+		case AKEY_SCREENSHOT_INTERLACE:
+			Save_PCX_file(TRUE, Find_PCX_name());
+			break;
+		case AKEY_BREAK:
+			key_break = 1;
+			break;
+		default:
+			key_break = 0;
+			key_code = keycode;
+			break;
+		}
+
+		if (++test_val == refresh_rate)
+		{
+			Atari800_Frame(EMULATE_FULL);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync(); /* here seems to be the best place to sync */
+#endif
+			Atari_DisplayScreen((UBYTE *) atari_screen);
+			test_val = 0;
+		}
+		else
+		{
+#ifdef VERY_SLOW
+			Atari800_Frame(EMULATE_BASIC);
+#else	/* VERY_SLOW */
+			Atari800_Frame(EMULATE_NO_SCREEN);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync();
+#endif
+#endif	/* VERY_SLOW */
+		}
+	}
 }

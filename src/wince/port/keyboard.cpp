@@ -1,12 +1,11 @@
 /* (C) 2001  Vasyl Tsvirkunov */
-/* Based on Win32 port by  Krzysztof Nikiel */
 
 #include <windows.h>
 #include "gx.h"
 
 extern "C"
 {
-#include "atari.h"
+#include "input.h"
 #include "main.h"
 #include "keyboard.h"
 #include "screen.h"
@@ -325,9 +324,112 @@ sKeydata kbd_struct_5200[] =
 	{1200,AKEY_NONE}
 };
 
+// Keyboard translation table
+struct sKeyTranslation
+{
+	short winKey;
+	short aKey;
+};
+
+sKeyTranslation kbd_translation[] =
+{
+// Mappable entries
+	{0, AKEY_NONE}, // 5 joystick entries
+	{0, AKEY_NONE},
+	{0, AKEY_NONE},
+	{0, AKEY_NONE},
+	{0, AKEY_NONE},
+	{0, AKEY_UI},
+	{0, AKEY_F1},
+	{0, AKEY_F2},
+	{0, AKEY_F3},
+	{0, AKEY_F4},
+	{0, AKEY_HELP},
+	{0, AKEY_WARMSTART},
+	{0, AKEY_COLDSTART},
+	{0, AKEY_BREAK},
+// Non-mappable entries
+	{VK_SHIFT, AKEY_SHFT},
+	{VK_CONTROL, AKEY_CTRL},
+	{'0', AKEY_0},
+	{'1', AKEY_1},
+	{'2', AKEY_2},
+	{'3', AKEY_3},
+	{'4', AKEY_4},
+	{'5', AKEY_5},
+	{'6', AKEY_6},
+	{'7', AKEY_7},
+	{'8', AKEY_8},
+	{'9', AKEY_9},
+	{'A', AKEY_a},
+	{'B', AKEY_b},
+	{'C', AKEY_c},
+	{'D', AKEY_d},
+	{'E', AKEY_e},
+	{'F', AKEY_f},
+	{'G', AKEY_g},
+	{'H', AKEY_h},
+	{'I', AKEY_i},
+	{'J', AKEY_j},
+	{'K', AKEY_k},
+	{'L', AKEY_l},
+	{'M', AKEY_m},
+	{'N', AKEY_n},
+	{'O', AKEY_o},
+	{'P', AKEY_p},
+	{'Q', AKEY_q},
+	{'R', AKEY_r},
+	{'S', AKEY_s},
+	{'T', AKEY_t},
+	{'U', AKEY_u},
+	{'V', AKEY_v},
+	{'W', AKEY_w},
+	{'X', AKEY_x},
+	{'Y', AKEY_y},
+	{'Z', AKEY_z},
+	{VK_LWIN, AKEY_HELP},
+	{VK_BACK, AKEY_BACKSPACE},
+	{VK_ESCAPE, AKEY_ESCAPE},
+	{VK_BACKQUOTE, AKEY_ATARI},
+	{VK_CAPITAL, AKEY_CAPSTOGGLE},
+	{VK_TAB, AKEY_TAB},
+	{VK_RETURN, AKEY_RETURN},
+	{VK_SPACE, AKEY_SPACE},
+	{VK_LBRACKET, AKEY_LESS},
+	{VK_RBRACKET, AKEY_GREATER},
+	{VK_EQUAL, AKEY_EQUAL},
+	{VK_SUBTRACT, AKEY_MINUS},
+	{VK_ADD, AKEY_PLUS},
+	{VK_MULTIPLY, AKEY_ASTERISK},
+	{VK_DIVIDE, AKEY_SLASH},
+	{VK_SEMICOLON, AKEY_SEMICOLON},
+	{VK_COMMA, AKEY_COMMA},
+	{VK_PERIOD, AKEY_FULLSTOP},
+	{VK_UP, AKEY_UP},
+	{VK_DOWN, AKEY_DOWN},
+	{VK_LEFT, AKEY_LEFT},
+	{VK_RIGHT, AKEY_RIGHT},
+};
+
+#define KBDT_TRIGGER	0
+#define KBDT_JOYUP		1
+#define KBDT_JOYDOWN	2
+#define KBDT_JOYLEFT	3
+#define KBDT_JOYRIGHT	4
+#define KBDT_UI			5
+#define KBDT_F1			6
+#define KBDT_F2			7
+#define KBDT_F3			8
+#define KBDT_F4			9
+#define KBDT_HELP		10
+#define KBDT_WARMSTART	11
+#define KBDT_COLDSTART	12
+#define KBDT_BREAK		13
+
+
 void reset_kbd()
 {
-	if(machine == Atari5200)
+	if(machine_type == MACHINE_5200)
 	{
 		kbd_image = kbd_image_5200;
 		kbd_struct = kbd_struct_5200;
@@ -362,23 +464,26 @@ short get_keypress(short x, short y)
 
 static GXKeyList klist;
 
-#define KEYBUFSIZE 0x40
-
-int pause_hit;
-
-UBYTE kbhits[KBCODES];
-UBYTE joyhits[JOYCODES];
-
 /* map joystick direction to expected key code by screen orientation */
 short joykey_map[3][4];
+
+int activeKey;
+int activeMod;
+int stick0;
+int trig0;
+
+void push_key(short akey);
+void release_key(short akey);
 
 void hitbutton(short code)
 {
 	int kbcode;
-	int joycode;
 	
 	if(ui_is_active)
 	{
+		trig0 = 1;
+		stick0 = 0xff;
+
 		kbcode = AKEY_NONE;
 		if(code == joykey_map[get_screen_mode()][0])
 			kbcode = AKEY_UP;
@@ -402,17 +507,17 @@ void hitbutton(short code)
 	else
 	{
 		kbcode = AKEY_NONE;
-		joycode = -1;
 		if(code == joykey_map[get_screen_mode()][0])
-			joycode = 2;
+			stick0 &= ~1;
 		else if(code == joykey_map[get_screen_mode()][1])
-			joycode = 7;
+			stick0 &= ~2;
 		else if(code == joykey_map[get_screen_mode()][2])
-			joycode = 4;
+			stick0 &= ~4;
 		else if(code == joykey_map[get_screen_mode()][3])
-			joycode = 5;
+			stick0 &= ~8;
 		else if(code == klist.vkStart)
-			joycode = 0;
+			trig0 = 0;
+/*
 		else if(code == klist.vkA)
 			kbcode = AKEY_F3;
 		else if(code == klist.vkB)
@@ -421,10 +526,15 @@ void hitbutton(short code)
 			kbcode = AKEY_F4;
 		else
 			kbcode = AKEY_UI;
-		
-		if(joycode != -1)
-			joyhits[joycode] = 1;
-		
+*/
+		else
+		for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
+			if(code == kbd_translation[i].winKey)
+			{
+				kbcode = kbd_translation[i].aKey;
+				break;
+			}
+
 		if(kbcode != AKEY_NONE)
 			push_key(kbcode);
 	}
@@ -438,7 +548,6 @@ void hitbutton(short code)
 void releasebutton(short code)
 {
 	int kbcode;
-	int joycode;
 	
 	if(ui_is_active)
 	{
@@ -464,17 +573,17 @@ void releasebutton(short code)
 	}
 	else
 	{
-		joycode = -1;
 		if(code == joykey_map[get_screen_mode()][0])
-			joycode = 2;
+			stick0 |= 1;
 		else if(code == joykey_map[get_screen_mode()][1])
-			joycode = 7;
+			stick0 |= 2;
 		else if(code == joykey_map[get_screen_mode()][2])
-			joycode = 4;
+			stick0 |= 4;
 		else if(code == joykey_map[get_screen_mode()][3])
-			joycode = 5;
+			stick0 |= 8;
 		else if(code == klist.vkStart)
-			joycode = 0;
+			trig0 = 1;
+/*
 		else if(code == klist.vkA)
 			kbcode = AKEY_F3;
 		else if(code == klist.vkB)
@@ -483,9 +592,15 @@ void releasebutton(short code)
 			kbcode = AKEY_F4;
 		else
 			kbcode = AKEY_UI;
-		
-		if(joycode != -1)
-			joyhits[joycode] = 0;
+*/
+		else
+		for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
+			if(code == kbd_translation[i].winKey)
+			{
+				kbcode = kbd_translation[i].aKey;
+				break;
+			}
+
 		
 		if(kbcode != AKEY_NONE)
 			release_key(kbcode);
@@ -508,7 +623,8 @@ void tapscreen(short x, short y)
 	/* On-screen joystick trigger (in portrait or in landscape if no keyboard */
 	if(kbcode == AKEY_NONE && currentKeyboardMode == 4)
 	{
-		joyhits[0] = 1;
+//		joyhits[0] = 1;
+		trig0 = 0;
 		return;
 	}
 	
@@ -532,7 +648,7 @@ void tapscreen(short x, short y)
 	/* Special translation to make on-screen UI easier to use */
 	if(ui_is_active)
 	{
-		if(machine == Atari5200)
+		if(machine_type == MACHINE_5200)
 		{
 			switch(kbcode)
 			{
@@ -581,7 +697,10 @@ void tapscreen(short x, short y)
 			}
 		}
 	}
-	
+
+	if(kbcode == AKEY_BREAK)
+		key_break = 1;
+
 	push_key(kbcode);
 }
 
@@ -622,7 +741,8 @@ void untapscreen(short x, short y)
 	/* On-screen joystick trigger (in portrait or in landscape if no keyboard */
 	if(kbcode == AKEY_NONE && currentKeyboardMode == 4)
 	{
-		joyhits[0] = 0;
+//		joyhits[0] = 0;
+		trig0 = 1;
 		return;
 	}
 	
@@ -648,7 +768,7 @@ void untapscreen(short x, short y)
 	/* Special translation to make on-screen UI easier to use */
 	if(ui_is_active)
 	{
-		if(machine == Atari5200)
+		if(machine_type == MACHINE_5200)
 		{
 			switch(kbcode)
 			{
@@ -697,77 +817,53 @@ void untapscreen(short x, short y)
 			}
 		}
 	}
+
+	if(kbcode == AKEY_BREAK)
+		key_break = 0;
 	
 	release_key(kbcode);
 }
 
-short lastkey = AKEY_NONE;
-
 void push_key(short akey)
 {
-	if(lastkey != AKEY_NONE)
-		clearkb(); /* inconsistent state */
-	
-	if(akey == AKEY_UI)
-		lastkey = AKEY_UI;
-	else if(akey != AKEY_NONE)
+	switch(akey)
 	{
-		if(akey == AKEY_SHFT || akey == AKEY_CTRL)
-		{
-			/* Sticky modifiers */
-			kbhits[akey] = 1-kbhits[akey];
-			lastkey = AKEY_NONE;
-		}
-		else if(akey == AKEY_F3 || akey == AKEY_F2 || akey == AKEY_F4)
-		{
-			/* Console keys */
-			kbhits[akey] = 1;
-			lastkey = AKEY_NONE;
-		}
-		else
-		{
-			/* Normal keys */
-			kbhits[akey] ++; /* Fake modifiers may get 2 here */
-			lastkey = akey;
-		}
+	case AKEY_NONE:
+	case AKEY_UI:
+		activeKey = akey;
+		activeMod = 0;
+		break;
+	case AKEY_SHFT:
+		activeMod ^= 0x40;
+		break;
+	case AKEY_CTRL:
+		activeMod ^= 0x80;
+		break;
+	case AKEY_F2:
+		key_consol &= ~CONSOL_OPTION;
+		break;
+	case AKEY_F3:
+		key_consol &= ~CONSOL_SELECT;
+		break;
+	case AKEY_F4:
+		key_consol &= ~CONSOL_START;
+		break;
+	default:
+		activeKey = akey|activeMod;
+		activeMod = 0;
 	}
 }
 
 void release_key(short akey)
 {
-	if(akey == AKEY_UI)
-		lastkey = AKEY_NONE;
-	else if(akey != AKEY_NONE)
-	{
-		if(akey == AKEY_SHFT || akey == AKEY_CTRL)
-		{
-		/* Nothing here, these keys are sticky. To release one of them,
-		click on it for the second time or click on any other key
-            (which will get modifier) */
-		}
-		else if(akey == AKEY_F3 || akey == AKEY_F2 || akey == AKEY_F4)
-		{
-			/* Console keys */
-			kbhits[akey] = 0;
-			lastkey = AKEY_NONE;
-		}
-		else
-		{
-			/* Release key and all modifiers */
-			kbhits[akey] = 0;
-			kbhits[AKEY_SHFT] = kbhits[AKEY_CTRL] = kbhits[AKEY_F2] = kbhits[AKEY_F3] = 0;
-		}
-		
-		lastkey = AKEY_NONE; /* all keys released */
-	}
-	
-	reset_kbd();
+	activeKey = AKEY_NONE;
+	key_consol = CONSOL_NONE;
 }
 
-short get_last_key()
+int get_last_key()
 {
-	if(lastkey != AKEY_BREAK)
-		return lastkey;
+	if(activeKey != AKEY_BREAK)
+		return activeKey;
 	else
 	{
 		/* There is special case */
@@ -798,7 +894,7 @@ void uninitinput(void)
 #ifndef MULTITHREADED
 		MsgPump();
 #else
-	Sleep(10);
+		Sleep(10);
 #endif
 	GXCloseInput();
 }
@@ -822,21 +918,25 @@ int initinput(void)
 	joykey_map[2][1] = klist.vkLeft;
 	joykey_map[2][2] = klist.vkUp;
 	joykey_map[2][3] = klist.vkDown;
-	
+
+	kbd_translation[KBDT_F3].winKey = klist.vkA;
+	kbd_translation[KBDT_F2].winKey = klist.vkB;
+	kbd_translation[KBDT_UI].winKey = klist.vkC;
+
 	kbd_image = kbd_image_800;
 	kbd_struct = kbd_struct_800;
 	keys = sizeof(kbd_struct_800)/sizeof(kbd_struct_800[0]);
-	
+
+	clearkb();
+
 	return 0;
 }
 
 void clearkb(void)
 {
-	int i;
-	for (i = 0; i < KBCODES; i++)
-		kbhits[i] = 0;
-	for (i = 0; i < JOYCODES; i++)
-		joyhits[i] = 0;
-	pause_hit = 0;
-	lastkey = AKEY_NONE;
+	activeKey = AKEY_NONE;
+	activeMod = 0;
+	key_consol = CONSOL_NONE;
+	stick0 = 0xff;
+	trig0 = 1;
 }
