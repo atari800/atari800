@@ -4,6 +4,8 @@
 #include "atari.h"
 #include "cartridge.h"
 #include "memory.h"
+#include "pia.h"
+#include "rt-config.h"
 #include "rtime.h"
 
 int cart_kb[CART_LAST_SUPPORTED + 1] = {
@@ -398,6 +400,11 @@ void CART_Start(void) {
 			break;
 		default:
 			Cart809F_Disable();
+			if (machine == Atari && !disable_basic && have_basic) {
+				CartA0BF_Enable();
+				CopyROM(0xa000, 0xbfff, atari_basic);
+				break;
+			}
 			CartA0BF_Disable();
 			break;
 		}
