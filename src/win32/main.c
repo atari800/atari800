@@ -49,6 +49,13 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 #endif
 	}
       break;
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+      mouse_buttons = ((wParam & MK_LBUTTON) ? 1 : 0)
+	| ((wParam & MK_RBUTTON) ? 2 : 0);
+      break;
     case WM_SETCURSOR:
       SetCursor(NULL);
       return TRUE;
@@ -103,6 +110,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 		   lpCmdLine, int nCmdShow)
 {
   MSG msg;
+  POINT mouse;
+  static int mouse_center_x = 100;
+  static int mouse_center_y = 100;
 
   myInstance = hInstance;
   if (initwin(hInstance, nCmdShow))
@@ -170,6 +180,12 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
       break;
     }
 
+    GetCursorPos(&mouse);
+    mouse_delta_x = mouse.x - mouse_center_x;
+    mouse_delta_y = mouse.y - mouse_center_y;
+    if (mouse_delta_x | mouse_delta_y)
+      SetCursorPos(mouse_center_x, mouse_center_y);
+
     if (++test_val == refresh_rate) {
       Atari800_Frame(EMULATE_FULL);
 #ifndef DONT_SYNC_WITH_HOST
@@ -195,6 +211,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 
 /*
 $Log$
+Revision 1.6  2001/10/03 16:17:20  knik
+mouse input
+
 Revision 1.5  2001/09/25 17:38:27  knik
 added main loop; threading removed
 
