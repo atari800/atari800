@@ -1,3 +1,18 @@
+Version 1.2.3 (2002/07/08)
+
+* 16 kB RAM machines (Atari 400/600XL) emulated
+
+* LPTjoy support added to the SDL port
+
+* SDL port is generally much improved. To get list of SDL specific options
+  start the SDL version of Atari800 with -help.
+
+* casette image loading accessible from UI
+
+* -palette option (for loading an alternate ACT color palette file) fixed.
+
+* channel 1 in stereo mode fixed
+
 * antic: NMIST bit 5 fixed (is always zero)
 
 * input: second button in 5200 joystick generates "Break key" IRQ

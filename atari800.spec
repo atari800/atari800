@@ -1,5 +1,5 @@
 %define name	atari800
-%define ver	1.2.2
+%define ver	1.2.3
 %define rel	3
 %define copy	GPL
 %define ich friedel <friedel@nomaden.org>
@@ -59,15 +59,15 @@ touch atari800
 
 %install
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/usr/local/bin
-mkdir -p $RPM_BUILD_ROOT/usr/local/man/man1
-make install PREFIX=$RPM_BUILD_ROOT/usr/local
+mkdir -p $RPM_BUILD_ROOT/usr/bin
+mkdir -p $RPM_BUILD_ROOT/usr/man/man1
+make install PREFIX=$RPM_BUILD_ROOT/usr
 for target in %{targets}
 do
-	install atari800-$target $RPM_BUILD_ROOT/usr/local/bin
+	install atari800-$target $RPM_BUILD_ROOT/usr/bin
 done
 (
-	cd $RPM_BUILD_ROOT/usr/local/bin
+	cd $RPM_BUILD_ROOT/usr/bin
 	ln -sf atari800-%{maintarget} atari800
 )
 
@@ -78,15 +78,17 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %doc ../DOC ../README.1ST ../COPYING
-%attr(4755,root,root) /usr/local/bin/atari800-svgalib
-/usr/local/bin/atari800
-/usr/local/bin/atari800-x11
-/usr/local/bin/atari800-ncurses
-/usr/local/bin/atari800-sdl
-/usr/local/man/man1/atari800.1
+%attr(4755,root,root) /usr/bin/atari800-svgalib
+/usr/bin/atari800
+/usr/bin/atari800-x11
+/usr/bin/atari800-ncurses
+/usr/bin/atari800-sdl
+/usr/man/man1/atari800.1
 
 %changelog
-* Fre Dec 21 2001 Friedrich Delgado Friedrichs <friedel@nomaden.org>
+* Mon Jul 8 2002 Petr Stehlik <pstehlik@sophics.cz>
+Atari800 now installs to /usr/bin
+* Fri Dec 21 2001 Friedrich Delgado Friedrichs <friedel@nomaden.org>
 Pathname correction (tarfile now unpacks to Atari800-<version>, instead
 of Atari800).
 * Sun Dec 2 2001 Friedrich Delgado Friedrichs <friedel@nomaden.org>

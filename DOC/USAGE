@@ -152,12 +152,15 @@ X11 options
 SDL version options
 -------------------
 
---nojoystick 	      joysticks will not be initialized
---width x 	      set mode width
---height y            set mode height
---bpp b               set mode bits per pixel
---fullscreen          start in fullscreen mode
---windowed            start in windowed mode
+-nojoystick 	      joysticks will not be initialized
+-joy0 </dev/lp0>      define the device for LPTjoy
+-joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
+-rotate90             useful for devices with 240x320 screen (hanhelds)
+-width x              set mode width
+-height y             set mode height
+-bpp b                set mode bits per pixel
+-fullscreen           start in fullscreen mode
+-windowed             start in windowed mode
 
 Keyboard + Joystick & Paddle Controllers
 ========================================

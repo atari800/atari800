@@ -1,3 +1,5 @@
+** released as 1.2.3
+
 2002-07-04  Vasyl Tsvirkunov  <vasyl@pacbell.net>
 * ui.c,gtia.c,atari.h,cassette.h: cassette image loading is available from
   main menu. Also, main menu allows to persist "Hold Start" setting.
