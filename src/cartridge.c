@@ -319,6 +319,7 @@ void CART_Start(void) {
 			CopyROM(0x4000, 0x4fff, cart_image);
 			CopyROM(0x5000, 0x5fff, cart_image + 0x4000);
 			CopyROM(0x8000, 0x9fff, cart_image + 0x8000);
+			CopyROM(0xa000, 0xbfff, cart_image + 0x8000);
 			SetHARDWARE(0x4ff6, 0x4ff9);
 			SetHARDWARE(0x5ff6, 0x5ff9);
 			break;
