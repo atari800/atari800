@@ -1,3 +1,7 @@
+2003-11-13  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: DMACTL NEW_CYCLE_EXACT width decrease fix for SERIOUS diskmag #8
+
+
 2003-11-13  Petr Stehlik  <pstehlik@sophics.cz>
 * log.c: corrected buffer overflow found by Laios Mircea
 
