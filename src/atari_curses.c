@@ -27,6 +27,8 @@
 
 static int curses_mode;
 
+UBYTE curses_screen[24][40];
+
 void Atari_Initialise(int *argc, char *argv[])
 {
 	int i;
@@ -91,13 +93,13 @@ void Atari_DisplayScreen(UBYTE * screen)
 	int xpos;
 	int ypos;
 
-	screenaddr = (memory[89] << 8) | memory[88];
+	screenaddr = dGetWordAligned(88);
 
 	for (ypos = 0; ypos < 24; ypos++) {
 		for (xpos = 0; xpos < 40; xpos++) {
 			int ch;
 
-			ch = memory[screenaddr];
+			ch = ui_is_active ? curses_screen[ypos][xpos] : dGetByte(screenaddr);
 
 			switch (ch & 0xe0) {
 			case 0x00:			/* Numbers + !"$% etc. */
@@ -677,6 +679,9 @@ int main(int argc, char **argv)
 }
 /*
 $Log$
+Revision 1.5  2001/10/11 08:39:55  fox
+added curses_screen for UI
+
 Revision 1.4  2001/10/10 12:14:10  fox
 compilable now
 
