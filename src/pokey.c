@@ -118,7 +118,8 @@ void Update_Counter(int chan_mask);
 
 int POKEY_siocheck(void)
 {
-	return ((AUDF[CHAN3] == 0x28) && (AUDF[CHAN4] == 0x00) && (AUDCTL[0] & 0x28) == 0x28);
+	return (AUDF[CHAN3] == 0x28 || AUDF[CHAN3] == 0x08 || AUDF[CHAN3] == 0x0a)
+		&& AUDF[CHAN4] == 0x00 && (AUDCTL[0] & 0x28) == 0x28;
 }
 
 #define SOUND_GAIN 4

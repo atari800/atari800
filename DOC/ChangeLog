@@ -1,4 +1,7 @@
-2002-04-07  Petr Stehlik and Christian Groessler <cpg@aladdin.de>
+2002-04-11  Piotr Fusik  <fox@scene.pl>
+* pokey.c: allow high-speed disk i/o (Alpha-Load works)
+
+2002-04-07  Christian Groessler <cpg@aladdin.de> and Petr Stehlik
 * non-ANSI "t" parameter in fopen ("rt" and "wt" used for CR/LF files
   in DOS-like operating systems) removed since it was causing problems
   with KallistiOS Dreamcast library. Linux glibc could also be affected

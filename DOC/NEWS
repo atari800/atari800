@@ -5,7 +5,11 @@
 
 * monitor: "DLIST" now accepts address as an argument
 
-* antic: Dirty update scheme
+* antic: Dirty update scheme that allows slower machines to run Atari800
+         at full speed now! See DOC/HOWTO-DIRTYRECT for more information.
+
+* pokey: allow high-speed disk i/o (Alpha-Load works, thanks to Paul Irvine)
+
 
 Version 1.2.2 (2001/12/31)
 
