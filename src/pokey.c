@@ -16,17 +16,9 @@
 #include "pokeysnd.h"
 #include "input.h"
 
-#ifdef SERIO_SOUND
-void Update_serio_sound( int out, UBYTE data );
-#endif
-
 #ifdef POKEY_UPDATE
 extern void pokey_update(void);
 #endif
-
-#ifndef NO_VOL_ONLY
-void Update_vol_only_sound( void );
-#endif  /* NO_VOL_ONLY */
 
 UBYTE KBCODE;
 UBYTE SERIN;
