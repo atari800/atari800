@@ -55,6 +55,8 @@ Currently supported cartridge types:
 | 20 |   5200    |    4 | Standard 4 KB 5200 cartridge                      |
 | 21 |    800    |    8 | Right slot 8 KB cartridge                         |
 | 22 | 800/XL/XE |   32 | 32 KB Williams cartridge                          |
+| 23 | 800/XL/XE |  256 | XEGS 256 KB cartridge                             |
+| 24 | 800/XL/XE |  512 | XEGS 512 KB cartridge                             |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -268,4 +270,22 @@ stands for the first bank in the image, bank B is the second, etc.
  The cartidge has 4 banks mapped to $A000-$BFFF. An acces to $D500 selects
  bank A, $D501 - bank B, etc. An access to $D508-$D50F disables
  the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 23: XEGS 256 KB cartridge                                            |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 32 banks, 8 KB each.
+ The last bank is always mapped to $A000-BFFF. Five lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
+
++---------------------------------------------------------------------------+
+| Type 24: XEGS 512 KB cartridge                                            |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
+ The last bank is always mapped to $A000-BFFF. Six lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
