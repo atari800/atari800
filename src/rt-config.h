@@ -29,6 +29,8 @@ extern int enable_r_patch;
 extern int enable_new_pokey;
 extern int stereo_enabled;
 extern int disk_directories;
+extern int serio_sound_enabled;
+extern int console_sound_enabled;
 
 int RtConfigLoad(const char *alternate_config_filename);
 void RtConfigSave(void);

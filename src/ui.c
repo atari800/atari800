@@ -731,6 +731,8 @@ int SoundSettings()
 	{
 		{ "HFPO", ITEM_ENABLED|ITEM_CHECK, NULL, "High Fidelity POKEY:", NULL, 0 },
 		{ "STER", ITEM_ENABLED|ITEM_CHECK, NULL, "Dual POKEY (Stereo):", NULL, 1 },
+		{ "CONS", ITEM_ENABLED|ITEM_CHECK, NULL, "Speaker (Key Click):", NULL, 2 },
+		{ "SERI", ITEM_ENABLED|ITEM_CHECK, NULL, "Serial IO Sound    :", NULL, 3 },
 		MENU_END
 	};
 
@@ -749,6 +751,20 @@ int SoundSettings()
 #endif
 			menu_array[1].flags &= ~ITEM_CHECKED;
 
+#ifdef CONSOLE_SOUND
+		if(console_sound_enabled)
+			menu_array[2].flags |= ITEM_CHECKED;
+		else
+#endif
+			menu_array[2].flags &= ~ITEM_CHECKED;
+
+#ifdef SERIO_SOUND
+		if(serio_sound_enabled)
+			menu_array[3].flags |= ITEM_CHECKED;
+		else
+#endif
+			menu_array[3].flags &= ~ITEM_CHECKED;
+
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 
 		switch (option) {
@@ -766,6 +782,20 @@ int SoundSettings()
 			stereo_enabled = !stereo_enabled;
 #else
 			ui_driver->fMessage("Stereo sound support not compiled in");
+#endif
+			break;
+		case 2:
+#ifdef CONSOLE_SOUND
+			console_sound_enabled = !console_sound_enabled;
+#else
+			ui_driver->fMessage("Speaker sound support not compiled in");
+#endif
+			break;
+		case 3:
+#ifdef SERIO_SOUND
+			serio_sound_enabled = !serio_sound_enabled;
+#else
+			ui_driver->fMessage("SERIO sound support not compiled in");
 #endif
 			break;
 		}
@@ -968,6 +998,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.50  2003/12/12 00:24:52  markgrebe
+Added enable for console and sio sound
+
 Revision 1.49  2003/11/22 23:26:19  joy
 cassette support improved
 

@@ -250,6 +250,12 @@ int RtConfigLoad(const char *alternate_config_filename)
 			else if (strcmp(string, "STEREO_POKEY") == 0) {
 				sscanf(ptr, "%d", &stereo_enabled);
 			}
+			else if (strcmp(string, "SPEAKER_SOUND") == 0) {
+				sscanf(ptr, "%d", &console_sound_enabled);
+			}
+			else if (strcmp(string, "SERIO_SOUND") == 0) {
+				sscanf(ptr, "%d", &serio_sound_enabled);
+			}
 			else if (strcmp(string, "MACHINE_TYPE") == 0) {
 				if (strcmp(ptr, "Atari OS/A") == 0)
 					machine_type = MACHINE_OSA;
@@ -380,6 +386,8 @@ void RtConfigSave(void)
 	fprintf(fp, "ENABLE_R_PATCH=%d\n", enable_r_patch);
 	fprintf(fp, "ENABLE_NEW_POKEY=%d\n", enable_new_pokey);
 	fprintf(fp, "STEREO_POKEY=%d\n", stereo_enabled);
+	fprintf(fp, "SPEAKER_SOUND=%d\n", console_sound_enabled);
+	fprintf(fp, "SERIO_SOUND=%d\n", serio_sound_enabled);
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
 	Atari_ConfigSave(fp);
@@ -480,6 +488,8 @@ void RtConfigUpdate(void)
 	GetYesNoAsInt("Enable R: (Atari850 via net) patch [%c] ", &enable_r_patch);
 	GetYesNoAsInt("Enable new HiFi POKEY [%c] ", &enable_new_pokey);
 	GetYesNoAsInt("Enable STEREO POKEY Sound [%c] ", &stereo_enabled);
+	GetYesNoAsInt("Enable SPEAKER Sound [%c] ", &console_sound_enabled);
+	GetYesNoAsInt("Enable SERIO Sound [%c] ", &serio_sound_enabled);
 
 #ifdef VGA
 	printf("Standard joysticks configuration selected.\n"
@@ -493,6 +503,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.18  2003/12/12 00:24:16  markgrebe
+Added enable for console and sio sound
+
 Revision 1.17  2003/08/31 21:59:13  joy
 R: not enabled by default
 

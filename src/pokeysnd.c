@@ -223,10 +223,12 @@ static void Update_serio_sound_rf(int out, UBYTE data);
 static void null_serio_sound(int out, UBYTE data) {}
 void (*Update_serio_sound)(int out, UBYTE data) = null_serio_sound;
 #endif
+int serio_sound_enabled = 1;
 
 static void Update_consol_sound_rf(int set);
 static void null_consol_sound(int set) {}
 void (*Update_consol_sound)(int set) = null_consol_sound;
+int console_sound_enabled = 1;
 
 static void Update_vol_only_sound_rf(void);
 static void null_vol_only_sound(void) {}
@@ -1061,6 +1063,8 @@ static void Update_serio_sound_rf( int out, UBYTE data )
 {
 #ifdef VOL_ONLY_SOUND
    int bits,pv,future;
+        if (!serio_sound_enabled) return;
+
 	pv=0;
 	future=0;
 	bits= (data<<1) | 0x200;
@@ -1118,6 +1122,8 @@ static void Update_consol_sound_rf(int set)
   static int prev_atari_speaker=0;
   static unsigned int prev_cpu_clock=0;
   int d;
+        if (!console_sound_enabled) return;
+        
 	if( !set && samp_consol_val==0 )	return;
 	sampbuf_lastval-=samp_consol_val;
 	if( prev_atari_speaker!=atari_speaker )
@@ -1164,6 +1170,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.18  2003/12/12 00:23:59  markgrebe
+Added enable for console and sio sound
+
 Revision 1.17  2003/02/24 09:33:09  joy
 header cleanup
 
