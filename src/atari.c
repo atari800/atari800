@@ -717,7 +717,7 @@ static void Atari_sleep(double s)
 void atari_sync(void)
 {
 #ifdef USE_CLOCK
-	static ULONG nextclock = 0;	/* put here a non-zero value to enable speed regulator */
+	static ULONG nextclock = 1;	/* put here a non-zero value to enable speed regulator */
 	/* on Atari Falcon CLK_TCK = 200 (i.e. 5 ms granularity) */
 	/* on DOS (DJGPP) CLK_TCK = 91 (not too precise, but should work anyway)*/
 	if (nextclock) {
@@ -915,6 +915,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.32  2001/12/04 22:28:16  joy
+the speed regulation when -DUSE_CLOCK is enabled so that key autorepeat in UI works.
+
 Revision 1.31  2001/11/11 22:11:53  joy
 wrong value for vertical position of disk led caused x11 port to crash badly.
 
