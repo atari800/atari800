@@ -1,4 +1,4 @@
-Atari800 emulator version 1.0.7
+Atari800 emulator version 1.2.0
 --------------------------------
 
 This is free and portable Atari800/XL/XE/5200 emulator, originally written
@@ -14,7 +14,8 @@ If you get no answer you can write directly to me (contact below).
 Look at DOC/BUGS first to not report same bug hundred times, please.
 
 If you want to help developing Atari800 emulator you can subscribe to our
-A8 developer mailing list running at http://www.inf.upol.cz/workshop/weblist/
+A8 developer mailing list running at the sophics.cz server (instructions
+for subscribing at the URL below).
 DOC/TODO might point you in the right direction.
 
 This version (and all versions back to 0.8.2) has been released by me (Petr
@@ -23,11 +24,11 @@ go to David Firth and all the people that helped making this release.
 
 EnJoy!
 
-Petr Stehlik, in Zlin, Czech Republic in May the 4th 2001.
+Petr Stehlik, in Zlin, Czech Republic in October 10, 2001.
 
 E-mail: pstehlik@sophics.cz
 
-http://joy.sophics.cz/
+http://joy.sophics.cz/a800/
 ftp://ftp.sophics.cz/pub/Atari800/
 
 And at last one URL that is easy to remember: http://atari800.atari.org/
