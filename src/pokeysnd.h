@@ -112,11 +112,10 @@ extern void (* Update_vol_only_sound)(void);
 int Pokey_sound_init(uint32 freq17,
 			     uint16 playback_freq,
 			     uint8 num_pokeys,
-			     unsigned int flags,
-			     unsigned int quality
+			     unsigned int flags
 			    );
-int Pokey_set_quality(int quality);
-int Pokey_get_quality(void);
+int Pokey_DoInit();
+void Pokey_set_mzquality(int quality);	/* specially for win32, perhaps not needed? */
 
 #ifdef __cplusplus
 }

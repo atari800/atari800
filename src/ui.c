@@ -28,6 +28,7 @@
 #include "rtime.h"
 #include "input.h"
 #include "pokeysnd.h"
+#include "rt-config.h"	/* extern for enable_new_pokey and stereo_enabled */
 
 tUIDriver* ui_driver = &basic_ui_driver;
 
@@ -35,10 +36,6 @@ int ui_is_active = FALSE;
 int alt_function = -1;		/* alt function init */
 int current_disk_directory = 0;
 int hold_start_on_reboot = 0;
-
-#ifdef STEREO
-extern int stereo_enabled;
-#endif
 
 static char curr_disk_dir[FILENAME_MAX] = "";
 static char curr_cart_dir[FILENAME_MAX] = "";
@@ -644,7 +641,7 @@ int SoundSettings()
 	int option = 0;
 
 	do {
-		if(Pokey_get_quality())
+		if(enable_new_pokey)
 			menu_array[0].flags |= ITEM_CHECKED;
 		else
 			menu_array[0].flags &= ~ITEM_CHECKED;
@@ -660,7 +657,8 @@ int SoundSettings()
 
 		switch (option) {
 		case 0:
-            Pokey_set_quality(Pokey_get_quality() ? 0 : 1 /* default hifi */);
+			enable_new_pokey = !enable_new_pokey;
+            Pokey_DoInit();
             /* According the PokeySnd doc the POKEY switch can occur on
                a cold-restart only */
 			reboot_required = TRUE;
@@ -874,6 +872,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.41  2003/02/09 21:20:43  joy
+updated for global enable_new_pokey
+
 Revision 1.40  2003/02/09 13:17:29  joy
 switch Pokey cores on-the-fly
 

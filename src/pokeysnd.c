@@ -177,10 +177,11 @@ static uint16 last_val = 0;		/* last output value */
 #endif
 #ifdef STEREO
 #ifndef NOSNDINTER
-static uint16 last_val2 = 0;		/* last output value */
+static uint16 last_val2 = 0;	/* last output value */
 #endif
 extern int stereo_enabled;
 #endif
+extern int enable_new_pokey;	/* declared in rt-config.c */
 
 /* Volume only emulations declarations */
 #ifndef	NO_VOL_ONLY
@@ -211,8 +212,7 @@ static uint32 snd_freq17 = FREQ_17_EXACT;
 static uint16 snd_playback_freq = 44100;
 static uint8 snd_num_pokeys = 1;
 static int snd_flags = 0;
-static int snd_quality = 0;
-const static int mymaxquality = 1;
+static int mz_quality = 1;		/* default quality for mzpokeysnd */
 
 /* multiple sound engine interface */
 static void Pokey_process_8(void * sndbuffer, unsigned sndn);
@@ -283,38 +283,36 @@ void (*Update_vol_only_sound)(void) = null_vol_only_sound;
 /*****************************************************************************/
 
 static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
-           uint8 num_pokeys, unsigned int flags, unsigned int quality);
+           uint8 num_pokeys, unsigned int flags);
 
-int Pokey_set_quality(int quality)
+int Pokey_DoInit()
 {
-	snd_quality = quality;
-
-	if (quality >= mymaxquality)
-		return Pokey_sound_init_mz(snd_freq17, snd_playback_freq, snd_num_pokeys, snd_flags,
-				     quality - mymaxquality);
+	if (enable_new_pokey)
+		return Pokey_sound_init_mz(snd_freq17, snd_playback_freq,
+				snd_num_pokeys, snd_flags, mz_quality);
 	else
-		return Pokey_sound_init_rf(snd_freq17, snd_playback_freq, snd_num_pokeys, snd_flags,
-				     quality - mymaxquality);
-}
-
-int Pokey_get_quality(void)
-{
-	return snd_quality;
+		return Pokey_sound_init_rf(snd_freq17, snd_playback_freq,
+				snd_num_pokeys, snd_flags);
 }
 
 int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
-		     unsigned int flags, unsigned int quality)
+		     unsigned int flags)
 {
 	snd_freq17 = freq17;
 	snd_playback_freq = playback_freq;
 	snd_num_pokeys = num_pokeys;
 	snd_flags = flags;
 
-	return Pokey_set_quality(quality);
+	return Pokey_DoInit();
+}
+
+void Pokey_set_mzquality(int quality)	/* specially for win32, perhaps not needed? */
+{
+	mz_quality = quality;
 }
 
 static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
-           uint8 num_pokeys, unsigned int flags, unsigned int quality)
+           uint8 num_pokeys, unsigned int flags)
 {
 	uint8 chan;
 
@@ -1173,6 +1171,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.13  2003/02/09 21:20:43  joy
+updated for global enable_new_pokey
+
 Revision 1.12  2003/02/09 13:17:29  joy
 switch Pokey cores on-the-fly
 
