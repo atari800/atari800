@@ -14,6 +14,7 @@
 #include "sio.h"
 #include "statesav.h"
 #include "pokeysnd.h"
+#include "input.h"
 
 #ifdef SERIO_SOUND
 void Update_serio_sound( int out, UBYTE data );
@@ -341,6 +342,10 @@ void POKEY_Scanline(void)
 #ifndef NO_VOL_ONLY
 	Update_vol_only_sound();
 #endif  /* NO_VOL_ONLY */
+
+	INPUT_Scanline();	/* Handle Amiga and ST mice. */
+						/* It's not a part of POKEY emulation, */
+						/* but it looks to be the best place to put it. */
 
 	if (pot_scanline < 228)
 		pot_scanline++;
