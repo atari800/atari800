@@ -240,3 +240,6 @@ Jacek Poplawski <jpopl@interia.pl>
 Nathan Hartwell <mage@magelair.com>
 - win32 fixes
 - sethdr perl script
+
+Friedrich Delgado Friedrichs <friedel@nomaden.org>
+- RPM .spec file

@@ -1,114 +1,154 @@
-Usage
------
+Up-to-date list of accepted command line parameters
+===================================================
 
-Usage: atari800 [-atari] [-xl] [-xe] [-5200] [-b] [-c] [-d]
-		[disk1.xfd ... disk8.xfd]
-                [-xcolpf1]
-		[-rom filename]
-                [-rom16 filename]
-                [-ags32 filename]
-		[-oss filename]
-		[-nopatch]
-		{-small|-large|-huge}
-		{-clip_x number-of-pixels}
-		{-clip_width number-of-pixels}
-		{-clip_y number-of-pixels}
-		{-clip_height number-of-pixels}
-		{-sound}
-		{-left|-central|-right|-wide1|-wide2}
+Usage:
+atari800 [options] [disk1 ... disk8]
 
--atari  Enable Atari 800 Emulation Mode [default]
--xl     Enable Atari 800XL Emulation Mode
--xe     Enable Atari 130XE Emulation Mode (but Antic accesses the bank that
-        the CPU is using)
--320xe  Enable Atari 130XE with 320 kB memory Emulation Mode. Default is
-        CompyShop mode, compatible with Q-meg.
--rambo  Use Rambo mode of 320 kB memory.
--5200   Enable Atari 5200 Games System Emulation Mode.
+where:
+disk1 ... disk8 are file names of the disk images mounted to Atari drives 1-8
+(the first file is mounted to the drive 1, next one to the drive 2, etc.).
+Supported types of disk images are: ATR, XFD and DCM. If the emulator has been
+compiled with ZLIB support, additionally ATR.GZ and XFD.GZ are supported.
 
--artif   enables Colour Artifacting
+Options
+-------
 
--nobasic Disables BASIC (just like when you hold down OPTION while booting)
+-help                 Display list of options and terminate
+-v                    Display version number and terminate
+-verbose              Display framerate when exiting
 
--basic   Enables BASIC (even if disabled in atari800.cfg by HoldOption)
+-configure            Update configuration file (this is default
+                      if the configuration file has not been found)
+-config <filename>    Use specified configuration file instead of default
+-osa_rom <filename>   Use specified OS/A ROM image
+-osb_rom <filename>   Use specified OS/B ROM image
+-xlxe_rom <filename>  Use specified XL/XE OS ROM image
+-5200_rom <filename>  Use specified 5200 OS ROM image
+-basic_rom <filename> Use specified Atari BASIC ROM image
 
--nopatch Normally the OS is patched giving very fast I/O. This option
-         prevents the patch from being applied so that the OS works
-         using the serial port hardware directly. This option will
-         probably never be needed since programs that access the
-         serial hardware directly will work even if the OS has been
-         patched.
+-atari                Emulate Atari 800
+-xl                   Emulate Atari 800 XL
+-xe                   Emulate Atari 130 XE
+-320xe                Emulate Atari 320 XE (Compy Shop)
+-rambo                Emulate Atari 320 XE (Rambo)
+-5200                 Emulate Atari 5200
+-emuos                Use EmuOS
 
--rom     Loads the following 8K ROM Cartridge
--rom16   Loads the following 16K ROM Cartridge
--ags32   Loads the following Atari 5200 Games System 32K ROM Cartridge.
--oss     Loads the following OSS Super Cartridge
--db      Loads the following DB Super Cartridge
-         (Private 32K Cartridge Format - not for general use)
+-a                    Use OS/A for Atari 800
+-b                    Use OS/B for Atari 800
+-c                    Enable RAM between 0xc000 and 0xcfff in Atari 800
 
--a       Use Atari OS/A ROM (atariosa.rom)
--b       Use Atari OS/B ROM (atariosb.rom) [default]
--c       Enable RAM between $C000 and $CFFF
--d       Enable DEBUG Mode. Monitor is entered straight away. Only
-         useful for basic version.
+-pal                  Emulate PAL TV mode
+-ntsc                 Emulate NTSC TV mode
 
-X Window Options
-----------------
+-nobasic              Turn off Atari BASIC ROM
+-basic                Turn on Atari BASIC ROM
 
--small	Creates a small window where one Atari 800 pixel is represented
-	by a single X Window pixel.
--large	Creates a large window where one Atari 800 pixel is represented
-	by a 2x2 X Window rectangle.
--huge	Creates a huge window where one Atari 800 pixel is represented
-	by a 3x3 X Window rectangle.
--clip_x <n>		Sets left offset for clipping.
--clip_width <n>		Sets the width of the clipping-area.
--clip_y <n>		Sets top offset for clipping.
--clip_height <n>	Sets the height of the clipping-area.
+-cart <filename>      Insert cartridge (CART or raw format)
 
-SVGALIB Options
----------------
+-run <filename>       Run Atari executable file (EXE, COM, XEX)
 
--sound	Select this if you want to try the test sound implementation.
-	You must have the piano1.sbi file in your current directory.
-	The piano1.sbi file can be obtained from snd-data-0.1.tar.Z
-	in the kernel/sound directory on sunsite.
+-tape <filename>      Attach cassette image (CAS format or raw file)
+-boottape <filename>  Attach cassette image and boot it
 
--interlace	Select this to display only half the scanlines at a
-		time. Gives a performance increase of about 10%.
+-nopatch              Don't patch SIO routine in OS
+-nopatchall           Don't patch OS at all, H: and P: devices won't work
+-H1 <path>            Set path for H1: device
+-H2 <path>            Set path for H2: device
+-H3 <path>            Set path for H3: device
+-H4 <path>            Set path for H4: device
+-hdreadonly <onoff>   Enable (1) or disable (0) read-only mode for H: device
+-devbug               Put debugging messages for H: and P: devices in log file
 
-Amiga Options
--------------
+-rtime <onoff>        Enable (1) or disable (0) R-Time 8 emulation
 
-Please look into the supplied Atari800.guide
+-mouse off            Do not use mouse
+-mouse pad            Emulate paddles
+-mouse touch          Emulate Atari Touch Tablet
+-mouse koala          Emulate Koala Pad
+-mouse pen            Emulate Light Pen
+-mouse gun            Emulate Light Gun
+-mouse amiga          Emulate Amiga mouse
+-mouse st             Emulate Atari ST mouse
+-mouse trak           Emulate Atari Trak-Ball
+-mouse joy            Emulate joystick using mouse
+-mouseport <num>      Set mouse port 1-4 (default 1)
+-mousespeed <num>     Set mouse speed 1-9 (default 3)
 
-Curses Options
---------------
+-refresh <rate>       Set screen refresh rate
+-artif <mode>         Set artifacting mode 0-4 (0 = disable)
+-palette <filename>   Read Atari colors from ACT file
+-black <num>          Set black level 0-255
+-while <num>          Set white level 0-255
+-colors <num>         Set color intensity
+-colshift <num>       Set color shift
+-realpal              Use palette created by Zdenek Eisenhammer
+-oldpal               Use old Atari800 palette
+-foxpal               Use palette created by Piotr Fusik
 
--left		Use columns 0 to 39
--central	Use columns 20 to 59
--right		Use columns 40 to 79
--wide1		Use columns 0 to 79 (Spaces between characters)
--wide2		Use columns 0 to 79 (as above but Normal/Reverse spaces)
+-sound                Enable sound
+-nosound              Disable sound
+-dsprate <freq>       Set mixing frequency (Hz)
+-snddelay <time>      Set sound delay (milliseconds)
 
-Dos VGA Options
----------------
+Curses version options
+----------------------
+-left                 Use columns 0 to 39
+-central              Use columns 20 to 59
+-right                Use columns 40 to 79
+-wide1                Use columns 0 to 79 (spaces between characters)
+-wide2                Use columns 0 to 79 (as above but normal/reverse spaces)
 
--interlace	Select this to display only half the scanlines at a
-            time. Gives a performance increase of about 10%.
--nosound	Use this for disabling sound
--joyswap	Use this for swapping joy0 and joy1
--LPTjoy1    Use this when you have connected joy to LPT1
--video <n>  Select video mode: 0 = 320x200, 1 = 320x240
+Falcon version options
+----------------------
 
+-interlace <x>        Generate Falcon screen only every x frame
+-videl                Direct VIDEL programming (Falcon/VGA only)
+-double               Double the screen size on NOVA
+-delta                Delta screen output (differences only)
 
-Falcon Options
---------------
+-joyswap              Swap joysticks
 
--interlace <n>	Select this to update the Falcon screen less times
--joyswap	Use this for swapping joy0 and joy1
--resolution <n>	Choose between 320x240, 352x240 and 384x240 graphics.
-                See INSTALL.falcon for details, please.
+SVGALIB version options
+-----------------------
+
+-interlace            Generate screen with interlace
+
+DOS/VGA version options
+-----------------------
+
+-interlace            Generate screen with interlace
+-video <mode>         0=320x200, 1=320x240, 2=320x480 interlaced with black
+                      lines, 3=320x480 interlaced with darker lines
+-novesa               Do not use VESA 2 video modes
+-vretrace             Use vertical retrace control
+
+-LPTjoy1              Read joystick connected to LPT1
+-LPTjoy2              Read joystick connected to LPT2
+-LPTjoy3              Read joystick connected to LPT3
+-joyswap              Swap joysticks
+
+-keyboard 0           PC keyboard layout
+-keyboard 1           Atari keyboard layout
+
+X11 options
+-----------
+
+-small                Single size window
+-large                Double size window
+-huge                 Triple size window
+-clip_x <n>           Left offset for clipping
+-clip_y <n>           Top offset for clipping
+-clip_width           Width of the clipping area
+-clip_height          Height of the clipping area
+-private_cmap         Use private colormap
+
+-fps                  Show framerate
+-sio                  Show SIO monitor
+-x11bug               Enable debug code in atari_x11.c
+
+-keypad               Keypad mode
+
 
 Keyboard + Joystick & Paddle Controllers
 ========================================
@@ -154,10 +194,10 @@ F5	Warm Reset
 Shft+F5	Cold Reset
 F6	Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
 F7	Break Key
-F8	---
+F8	Enter monitor
 F9	Exit Emulator
-F10	---
-F11	---
+F10	Save Screenshot (+Shift=interlaced screenshot)
+F11	Joystick Autofire On/Off
 F12	---
 
 `	This character replaces the CAPS lock key because I have not
@@ -233,7 +273,7 @@ F6	PIL Mode (Atari800) / Help Key (XL/XE)
 F7	Switch between Emulated joysticks mode and Normal keyboard
 F8	Enter monitor
 F9	EXIT Emulator
-F10	Save Screenshot
+F10	Save Screenshot (+Shift=interlaced screenshot)
 
 Control-C terminates the program; to type Control-c, type ALT-c instead.
 ` is used as the Atari-Invers key

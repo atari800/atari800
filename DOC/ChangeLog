@@ -1,3 +1,9 @@
+2001-12-17  Petr Stehlik  <pstehlik@sophics.cz>
+
+* configure.in changed so it doesn'ta ask any questions by default
+  Use --enable-FEATURE or --disable-FEATURE.
+* configure.in updated for better Falcon support
+
 2001-12-08  Krzysztof Nikiel  <knik@poczta.onet.pl>
 
 * acconfig.h: unused symbol COMPILED_PALETTE removed

@@ -1,10 +1,16 @@
-Version 1.2.1 (unreleased yet)
+Version 1.2.1pre0 (2001/12/17)
 
 * Falcon port configurable and buildable again
 
 * SDL support for 32-bit display, screen width switching (LALT+g)
 
-* documentation updated
+* documentation updated (still can be much improved :)
+
+* util/ folder contains new sethdr and act2html utilities
+
+* configure process is non-interactive (doesn't ask any questions)
+
+* RPM .spec file for easy building of Atari800 from source .tar.gz
 
 
 Version 1.2.0 (2001/11/29)

@@ -52,6 +52,7 @@ many others with a little work):-
 7. VGA Version for DOS
 8. DirectX Version for Microsoft Windows
 9. SDL (Linux/Unix, Windows, BeOS)
+10. WinCE
 
 Installed zlib (compression library) enables building the emulator with
 compressed statesave images support.
@@ -63,7 +64,7 @@ compressed statesave images support.
 Building the Emulator on a Unix Platform
 ----------------------------------------
 
-1. Type "./configure" for a list of supported platforms.
+1. Type "./configure --target=" for a list of supported platforms.
 2. Type "make"
 3. Install the emulator by typing "make install".
 
@@ -130,19 +131,20 @@ and compile the source on a filesystem supporting long file names (for example
 VFAT of Windows95). An additional change of DJGPP setting is required:
 open the DJGPP.ENV file in editor and change the LFN= line to LFN=y
 
-1. Run "./configure vga" or "configure.bat vga".
-	("./configure" to get list of available targets)
+1. Run "./configure --target=vga".
+   "./configure --target=" to get list of available targets)
 2. Run "make" and "make joycfg".
 3. If everything went good you should have atari800.exe and joycfg.exe -
    copy them to destination directory.
    
 Building the Emulator for Windows
------------------------------
+---------------------------------
 
 Atari800 for Windows can be built using Cygwin environment:
 http://cygwin.com/
 
-1. Type "./configure dx". ("./configure" for list of available targets)
+1. Type "./configure --target=dx".
+   "./configure --target=" to get list of available targets)
 2. Type "make".
 3. Copy atari800.exe to destination directory.
 
@@ -160,7 +162,6 @@ Building the Emulator for SDL
 
 0. Please install (and configure) SDL library (http://www.libsdl.org). 
 1. Type "./configure --target=sdl".
-   (you can press ENTER for all questions, I hope it will be removed soon)
 2. Type "make".
 3. Type "make install".
 4. You can run atari800 anytime you want.
