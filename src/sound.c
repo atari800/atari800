@@ -1,3 +1,4 @@
+/* $Id$ */
 #include <stdio.h>
 #include <unistd.h>
 
@@ -43,10 +44,11 @@ void Sound_Initialise(int *argc, char *argv[])
 			sscanf(argv[++i], "%d", &snddelay);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				printf("\t-sound                    enable sound");
-				printf("\t-nosound                  disable sound");
-				printf("\t-dsprate <rate>           set dsp rate");
-				printf("\t-snddelay <milliseconds>  set sound delay");
+				printf("\t-sound                    enable sound\n"
+				       "\t-nosound                  disable sound\n"
+				       "\t-dsprate <rate>           set dsp rate\n"
+				       "\t-snddelay <milliseconds>  set sound delay\n"
+				      );
 			}
 			argv[j++] = argv[i];
 		}
@@ -104,13 +106,6 @@ void Sound_Initialise(int *argc, char *argv[])
 			sound_enabled = 0;
 			return;
 		}
-
-		printf("%s: %d(%d) fragments(free) of %d bytes, %d bytes free\n",
-			   dspname,
-			   abi.fragstotal,
-			   abi.fragments,
-			   abi.fragsize,
-			   abi.bytes);
 
 #ifdef STEREO
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 2);
@@ -175,3 +170,10 @@ void Sound_Continue(void)
 }
 
 #endif	/* SOUND */
+
+/*
+ $Log$
+ Revision 1.3  2001/03/24 06:28:07  knik
+ help fixed and control message removed
+
+ */
