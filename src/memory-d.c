@@ -191,7 +191,6 @@ void PatchOS(void)
 int Initialise_AtariXL(void)
 {
 	int status;
-	CART_Remove();
 	mach_xlxe = TRUE;
 	status = load_image(atari_xlxe_filename, 0xc000, 0x4000);
 	if (status) {
@@ -212,7 +211,6 @@ int Initialise_AtariXL(void)
 int Initialise_Atari5200(void)
 {
 	int status;
-	CART_Remove();
 	mach_xlxe = FALSE;
 	memset(memory, 0, 0xf800);
 	status = load_image(atari_5200_filename, 0xf800, 0x800);
@@ -241,7 +239,6 @@ int Initialise_EmuOS(void)
 {
 	int status;
 
-	CART_Remove();
 	status = load_image("emuos.img", 0xc000, 0x4000);
 	if (!status)
 		memcpy(&memory[0xc000], emuos_h, 0x4000);
@@ -283,7 +280,6 @@ void DisablePILL(void)
 int Initialise_AtariOSA(void)
 {
 	int status;
-	CART_Remove();
 	mach_xlxe = FALSE;
 	status = load_image(atari_osa_filename, 0xd800, 0x2800);
 	if (status) {
@@ -305,7 +301,6 @@ int Initialise_AtariOSA(void)
 int Initialise_AtariOSB(void)
 {
 	int status;
-	CART_Remove();
 	mach_xlxe = FALSE;
 	status = load_image(atari_osb_filename, 0xd800, 0x2800);
 	if (status) {
@@ -578,6 +573,10 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.7  2001/08/16 23:28:57  fox
+deleted CART_Remove() in Initialise_Atari*, so auto-switching to 5200 mode
+when inserting a 5200 cartridge works
+
 Revision 1.6  2001/07/20 20:15:35  fox
 rewritten to support the new cartridge module
 
