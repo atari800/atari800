@@ -701,7 +701,7 @@ void ANTIC_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	artif_init();
+	ANTIC_UpdateArtifacting();
 
 	playfield_lookup[0x00] = L_BAK;
 	playfield_lookup[0x40] = L_PF0;
@@ -723,7 +723,8 @@ void ANTIC_Initialise(int *argc, char *argv[])
 	init_pm_lookup();
 }
 
-void ANTIC_Reset(void) {
+void ANTIC_Reset(void)
+{
 	NMIEN = 0x00;
 	NMIST = 0x3f;	/* Probably bit 5 is Reset flag */
 	ANTIC_PutByte(_DMACTL, 0);
@@ -1692,7 +1693,7 @@ void (*draw_antic_0_ptr)(void) = draw_antic_0;
 
 /* Artifacting ------------------------------------------------------------ */
 
-void artif_init(void)
+void ANTIC_UpdateArtifacting(void)
 {
 #define ART_BROWN 0
 #define ART_BLUE 1
@@ -1815,7 +1816,8 @@ UWORD get_DL_word(void)
 
 /* Real ANTIC doesn't fetch beginning bytes in HSC
    nor screen+47 in wide playfield. This function does. */
-void ANTIC_load(void) {
+void ANTIC_load(void)
+{
 #ifdef PAGED_MEM
 	UBYTE *ANTIC_memptr = ANTIC_memory + ANTIC_margin;
 	UWORD new_screenaddr = screenaddr + chars_read[md];
@@ -1832,13 +1834,13 @@ void ANTIC_load(void) {
 	UWORD new_screenaddr = screenaddr + chars_read[md];
 	if ((screenaddr ^ new_screenaddr) & 0xf000) {
 		int bytes = (-screenaddr) & 0xfff;
-		memcpy(ANTIC_memory + ANTIC_margin, memory + screenaddr, bytes);
+		dCopyFromMem(screenaddr, ANTIC_memory + ANTIC_margin, bytes);
 		if (new_screenaddr & 0xfff)
-			memcpy(ANTIC_memory + ANTIC_margin + bytes, memory + screenaddr + bytes - 0x1000, new_screenaddr & 0xfff);
+			dCopyFromMem(screenaddr + bytes - 0x1000, ANTIC_memory + ANTIC_margin + bytes, new_screenaddr & 0xfff);
 		screenaddr = new_screenaddr - 0x1000;
 	}
 	else {
-		memcpy(ANTIC_memory + ANTIC_margin, memory + screenaddr, chars_read[md]);
+		dCopyFromMem(screenaddr, ANTIC_memory + ANTIC_margin, chars_read[md]);
 		screenaddr = new_screenaddr;
 	}
 #endif
@@ -2106,7 +2108,8 @@ UBYTE ANTIC_GetByte(UWORD addr)
 }
 
 /* GTIA calls it on write to PRIOR */
-void set_prior(UBYTE byte) {
+void set_prior(UBYTE byte)
+{
 	if ((byte ^ PRIOR) & 0x0f) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 		UBYTE col = 0;
