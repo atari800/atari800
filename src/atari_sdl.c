@@ -662,8 +662,8 @@ int Atari_Keyboard(void)
 			return AKEY_DOLLAR;
 		case SDLK_5:
 			return AKEY_PERCENT;
-//      case SDLK_6:
-//          return AKEY_;    ^ <-- what is that?
+		case SDLK_6:
+			return AKEY_CARET;
 		case SDLK_7:
 			return AKEY_AMPERSAND;
 		case SDLK_8:
@@ -796,6 +796,10 @@ int Atari_Keyboard(void)
 	switch (lastkey) {
 	case SDLK_END:
 		return AKEY_HELP;
+	case SDLK_PAGEDOWN:
+		return AKEY_HELP;
+	case SDLK_PAGEUP:
+		return AKEY_CAPSLOCK;
 	case SDLK_HOME:
 		return AKEY_CLEAR;
 	case SDLK_PAUSE:
@@ -823,7 +827,22 @@ int Atari_Keyboard(void)
 	case SDLK_ESCAPE:
 		return AKEY_ESCAPE;
 	case SDLK_TAB:
-		return AKEY_TAB;
+		if (key_shift)
+			return AKEY_SETTAB;
+		else if (CONTROL)
+			return AKEY_CLRTAB;
+		else
+			return AKEY_TAB;
+	case SDLK_DELETE:
+		if (key_shift)
+			return AKEY_DELETE_LINE;
+		else
+			return AKEY_DELETE_CHAR;
+	case SDLK_INSERT:
+		if (key_shift)
+			return AKEY_INSERT_LINE;
+		else
+			return AKEY_INSERT_CHAR;
 	}
 	return AKEY_NONE;
 }
@@ -969,7 +988,8 @@ void Atari_Initialise(int *argc, char *argv[])
 	}
 	atexit(SDL_Quit);
 
-	SDL_WM_SetCaption(ATARI_TITLE, NULL);
+	/* SDL_WM_SetIcon("/usr/local/atari800/atarixe.ICO"), NULL); */
+	SDL_WM_SetCaption(ATARI_TITLE, "Atari800");
 
 #ifdef SOUND
 	SDL_Sound_Initialise(argc, argv);
@@ -1595,6 +1615,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.34  2003/02/18 09:07:52  joy
+ more Atari keys supported: CARET, HELP, CAPSLOCK, SETTAB, CLRTAB, DELETE_LINE, DELETE_CHAR, INSERT_LINE, INSERT_CHAR
+
  Revision 1.33  2003/02/17 14:21:33  joy
  window title set
 
