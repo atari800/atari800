@@ -772,7 +772,7 @@ void CART_Start(void) {
 
 void CARTStateRead( void )
 {
-    int savedCartType = CART_NONE;;
+    int savedCartType = CART_NONE;
     UWORD namelen;
     FILE *fp;
     char filename[FILENAME_MAX];
