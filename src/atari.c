@@ -61,52 +61,32 @@
 #include "ui.h"
 #include "log.h"
 #include "statesav.h"
-#include "diskled.h"
 #include "colours.h"
 #include "binload.h"
 #include "rtime.h"
 #include "cassette.h"
 #include "input.h"
+#include "screen.h"
 #ifdef SOUND
 #include "sound.h"
 #endif
-
-ULONG *atari_screen = NULL;
-#ifdef DIRTYRECT
-UBYTE *screen_dirty = NULL;
-#endif
-#ifdef BITPL_SCR
-ULONG *atari_screen_b = NULL;
-ULONG *atari_screen1 = NULL;
-ULONG *atari_screen2 = NULL;
-#endif
-
-/* The area that can been seen on screen is x1 <= x < x2, y1 <= y < y2.
-   Full Atari screen is 336x240. ATARI_WIDTH is 384 only because
-   the code in antic.c sometimes draws more than 336 bytes in a line.
-   Currently screen_visible variables are used only to place
-   disk led and snailmeter in corners of screen, but they might be
-   also used for optimisations in antic.c.
-*/
-int screen_visible_x1 = 24;				/* 0 .. ATARI_WIDTH */
-int screen_visible_y1 = 0;				/* 0 .. ATARI_HEIGHT */
-int screen_visible_x2 = 360;			/* 0 .. ATARI_WIDTH */
-int screen_visible_y2 = ATARI_HEIGHT;	/* 0 .. ATARI_HEIGHT */
 
 int machine_type = MACHINE_OSB;
 int ram_size = 48;
 int tv_mode = TV_PAL;
 
 int verbose = FALSE;
-double fps;
+
 int nframes = 0;
+
 static double frametime = 0.1;	/* measure time between two Antic runs */
-static int emu_too_fast = 0;
+double deltatime;
+double fps;
+int percent_atari_speed = 100;
 
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 int pil_on = FALSE;
 
-double deltatime;
 
 static char *rom_filename = NULL;
 
@@ -773,23 +753,6 @@ void Atari800_UpdatePatches(void)
 	}
 }
 
-#ifdef SNAILMETER
-static void ShowRealSpeed(ULONG * atari_screen)
-{
-#define MAXSPEED	200
-  UBYTE *ptr;
-  int speed = (int) (100.0 * deltatime / frametime + 0.5);
-
-  if (speed > MAXSPEED)
-    speed = MAXSPEED;
-
-  ptr = (UBYTE *) atari_screen + screen_visible_x1 + ATARI_WIDTH * (screen_visible_y2 - 1);
-  video_memset(ptr, 0xc8, speed);
-  video_memset(ptr+speed, 0x02, MAXSPEED-speed);
-  video_putbyte(ptr+100, 0x38);
-}
-#endif
-
 static double Atari_time(void)
 {
 #ifdef WIN32
@@ -806,7 +769,6 @@ static double Atari_time(void)
 
 static void Atari_sleep(double s)
 {
-  emu_too_fast = 0;
   if (s > 0)
   {
 #ifdef linux
@@ -832,7 +794,6 @@ static void Atari_sleep(double s)
 #else
     usleep(s * 1e6);
 #endif
-    emu_too_fast = 1;
   }
 }
 
@@ -869,6 +830,7 @@ void atari_sync(void)
 	  if ((lasttime + deltatime) < curtime)
 	    lasttime = curtime;
 	}
+	percent_atari_speed = (int) (100.0 * deltatime / frametime + 0.5);
 #endif /* USE_CLOCK */
 }
 
@@ -894,14 +856,9 @@ void Atari800_Frame(int mode)
 		break;
 	case EMULATE_FULL:
 		ANTIC_Frame(TRUE);
-#ifdef SHOW_DISK_LED
-		LED_Frame();
-#endif
-#ifdef SNAILMETER
-		if (!emu_too_fast)
-			ShowRealSpeed(atari_screen);
-#endif
 		INPUT_DrawMousePointer();
+		Screen_DrawAtariSpeed();
+		Screen_DrawDiskLED();
 		break;
 	}
 	POKEY_Frame();
@@ -1067,6 +1024,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.55  2005/03/03 09:36:26  pfusik
+moved screen-related variables to the new "screen" module
+
 Revision 1.54  2005/02/23 16:45:30  pfusik
 PNG screenshots
 

@@ -25,10 +25,6 @@
 # define	ULONG unsigned long int
 #endif
 
-#ifdef SHM
-/* #define USE_COLOUR_TRANSLATION_TABLE */
-#endif
-
 #define MACHINE_OSA		0
 #define MACHINE_OSB		1
 #define MACHINE_XLXE	2
@@ -45,6 +41,7 @@ extern int tv_mode;				/* now it is simply number of scanlines */
 
 extern int nframes;
 extern double deltatime;
+extern int percent_atari_speed;
 
 extern int verbose;
 
@@ -67,25 +64,6 @@ extern int xpos_limit;
 #define DMAR	9
 #define max_ypos tv_mode		/* number of scanlines */
 /* if tv_mod is enum, max_ypos is (tv_mod == TV_PAL ? 312 : 262) */
-
-extern ULONG *atari_screen;
-#ifdef DIRTYRECT
-#ifndef CLIENTUPDATE
-extern UBYTE *screen_dirty;
-#endif
-#endif
-void entire_screen_dirty();
-
-#ifdef BITPL_SCR
-extern ULONG *atari_screen_b;
-extern ULONG *atari_screen1;
-extern ULONG *atari_screen2;
-#endif
-
-extern int screen_visible_x1;
-extern int screen_visible_y1;
-extern int screen_visible_x2;
-extern int screen_visible_y2;
 
 extern unsigned int screenline_cpu_clock;
 #define cpu_clock (screenline_cpu_clock + xpos)
@@ -244,6 +222,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.47  2005/03/03 09:36:26  pfusik
+moved screen-related variables to the new "screen" module
+
 Revision 1.46  2004/12/30 18:43:03  joy
 updated for new release
 
