@@ -14,6 +14,7 @@
 #include "memory.h"
 #include "rt-config.h"	/* refresh_rate */
 #include "ui.h"
+#include "log.h"
 
 #ifdef SOUND
 #include "sound.h"
@@ -45,8 +46,17 @@ void Atari_Initialise(int *argc, char *argv[])
 			curses_mode = CURSES_WIDE_1;
 		else if (strcmp(argv[i], "-wide2") == 0)
 			curses_mode = CURSES_WIDE_2;
-		else
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-central         Center emulated screen\n"
+				       "\t-left            Align left\n"
+				       "\t-right           Align right (on 80 columns)\n"
+				       "\t-wide1           Use 80 columns\n"
+				       "\t-wide2           Use 80 columns, display twice\n"
+				      );
+			}
 			argv[j++] = argv[i];
+		}
 	}
 
 	*argc = j;
@@ -83,6 +93,7 @@ int Atari_Exit(int run_monitor)
         else
            Sound_Exit();
 #endif
+	Aflushlog();
 	return restart;
 }
 
@@ -679,6 +690,9 @@ int main(int argc, char **argv)
 }
 /*
 $Log$
+Revision 1.7  2002/08/07 08:40:37  joy
+Aflushlog added, -help added
+
 Revision 1.6  2001/12/12 15:24:37  joy
 F5 is a warm start on all platforms.
 
