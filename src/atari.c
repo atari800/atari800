@@ -675,6 +675,7 @@ void Atari800_Frame(int mode)
 		if (!emu_too_fast)
 			ShowRealSpeed(atari_screen);
 #endif
+		INPUT_DrawMousePointer();
 		break;
 	}
 	POKEY_Frame();
@@ -816,6 +817,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.24  2001/09/27 22:36:39  fox
+called INPUT_DrawMousePointer
+
 Revision 1.23  2001/09/27 09:34:32  fox
 called INPUT_Initialise
 
