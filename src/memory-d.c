@@ -25,28 +25,6 @@ int have_basic;	/* Atari BASIC image has been successfully read (Atari 800 only)
 extern int os;
 extern int pil_on;
 
-int load_image(char *filename, int addr, int nbytes)
-{
-	int status = FALSE;
-	FILE *f;
-
-	f = fopen(filename, "rb");
-	if (f) {
-		status = fread(&memory[addr], 1, nbytes, f);
-		fclose(f);
-		if (status != nbytes) {
-			Aprint("Error reading %s", filename);
-			return FALSE;
-		}
-
-		status = TRUE;
-	}
-	else
-		Aprint("Error loading rom: %s", filename);
-
-	return status;
-}
-
 void add_esc(UWORD address, UBYTE esc_code)
 {
 	memory[address++] = 0xf2;	/* ESC */
@@ -186,76 +164,44 @@ void PatchOS(void)
 	}
 }
 
-int Initialise_AtariXL(void)
+void MEMORY_InitialiseMachine(void)
 {
-	int status;
-	mach_xlxe = TRUE;
-	status = load_image(atari_xlxe_filename, 0xc000, 0x4000);
-	if (status) {
-		memcpy(atari_os, memory + 0xc000, 0x4000);
-		machine = AtariXL;
+	switch (machine) {
+	case Atari:
+		memcpy(memory + 0xd800, atari_os, 0x2800);
 		PatchOS();
-
-		status = load_image(atari_basic_filename, 0xa000, 0x2000);
-		memcpy(atari_basic, memory + 0xa000, 0x2000);
 		SetRAM(0x0000, 0xbfff);
-		SetROM(0xc000, 0xffff);
+		if (enable_c000_ram)
+			SetRAM(0xc000, 0xcfff);
+		else
+			SetROM(0xc000, 0xcfff);
 		SetHARDWARE(0xd000, 0xd7ff);
+		SetROM(0xd800, 0xffff);
 		Coldstart();
-	}
-	return status;
-}
-
-int Initialise_Atari5200(void)
-{
-	int status;
-	mach_xlxe = FALSE;
-	memset(memory, 0, 0xf800);
-	status = load_image(atari_5200_filename, 0xf800, 0x800);
-	if (status) {
-		machine = Atari5200;
+		break;
+	case AtariXL:
+	case AtariXE:
+	case Atari320XE:
+		memcpy(memory + 0xc000, atari_os, 0x4000);
+		PatchOS();
+		SetRAM(0x0000, 0xbfff);
+		SetROM(0xc000, 0xcfff);
+		SetHARDWARE(0xd000, 0xd7ff);
+		SetROM(0xd800, 0xffff);
+		Coldstart();
+		break;
+	case Atari5200:
+		memset(memory, 0, 0xf800);
+		memcpy(memory + 0xf800, atari_os, 0x800);
 		SetRAM(0x0000, 0x3fff);
-		/*SetROM(0xf800, 0xffff);*/
 		SetROM(0x4000, 0xffff);
 		SetHARDWARE(0xc000, 0xc0ff);	/* 5200 GTIA Chip */
 		SetHARDWARE(0xd400, 0xd4ff);	/* 5200 ANTIC Chip */
 		SetHARDWARE(0xe800, 0xe8ff);	/* 5200 POKEY Chip */
 		SetHARDWARE(0xeb00, 0xebff);	/* 5200 POKEY Chip */
 		Coldstart();
+		break;
 	}
-	return status;
-}
-
-/*
- * Initialise System with an replacement OS. It has just
- * enough functionality to run Defender and Star Raider.
- */
-
-#include "emuos.h"
-
-int Initialise_EmuOS(void)
-{
-	int status;
-
-	status = load_image("emuos.img", 0xc000, 0x4000);
-	if (!status)
-		memcpy(&memory[0xc000], emuos_h, 0x4000);
-	else
-		Aprint("EmuOS: Using external emulated OS");
-
-	memcpy(atari_os, memory + 0xd800, 0x2800);
-	machine = Atari;
-	PatchOS();
-	SetRAM(0x0000, 0xbfff);
-	if (enable_c000_ram)
-		SetRAM(0xc000, 0xcfff);
-	else
-		SetROM(0xc000, 0xcfff);
-	SetROM(0xd800, 0xffff);
-	SetHARDWARE(0xd000, 0xd7ff);
-	Coldstart();
-
-	return TRUE;
 }
 
 void ClearRAM(void)
@@ -273,54 +219,6 @@ void DisablePILL(void)
 {
 	SetRAM(0x8000, 0xbfff);
 	pil_on = FALSE;
-}
-
-int Initialise_AtariOSA(void)
-{
-	int status;
-	mach_xlxe = FALSE;
-	status = load_image(atari_osa_filename, 0xd800, 0x2800);
-	if (status) {
-		memcpy(atari_os, memory + 0xd800, 0x2800);
-		machine = Atari;
-		PatchOS();
-
-		have_basic = load_image(atari_basic_filename, 0xa000, 0x2000);
-		memcpy(atari_basic, memory + 0xa000, 0x2000);
-		SetRAM(0x0000, 0xbfff);
-		if (enable_c000_ram)
-			SetRAM(0xc000, 0xcfff);
-		else
-			SetROM(0xc000, 0xcfff);
-		SetROM(0xd800, 0xffff);
-		SetHARDWARE(0xd000, 0xd7ff);
-		Coldstart();
-	}
-	return status;
-}
-
-int Initialise_AtariOSB(void)
-{
-	int status;
-	mach_xlxe = FALSE;
-	status = load_image(atari_osb_filename, 0xd800, 0x2800);
-	if (status) {
-		memcpy(atari_os, memory + 0xd800, 0x2800);
-		machine = Atari;
-		PatchOS();
-
-		have_basic = load_image(atari_basic_filename, 0xa000, 0x2000);
-		memcpy(atari_basic, memory + 0xa000, 0x2000);
-		SetRAM(0x0000, 0xbfff);
-		if (enable_c000_ram)
-			SetRAM(0xc000, 0xcfff);
-		else
-			SetROM(0xc000, 0xcfff);
-		SetROM(0xd800, 0xffff);
-		SetHARDWARE(0xd000, 0xd7ff);
-		Coldstart();
-	}
-	return status;
 }
 
 void MemStateSave( UBYTE SaveVerbose )
@@ -577,6 +475,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.9  2001/09/17 07:33:07  fox
+Initialise_Atari... functions moved to atari.c
+
 Revision 1.8  2001/09/09 08:39:01  fox
 read Atari BASIC for Atari 800
 

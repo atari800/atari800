@@ -29,14 +29,10 @@ extern int cartA0BF_enabled;
 typedef int ATPtr;
 
 void PatchOS(void);
-int Initialise_AtariXL(void);
-int Initialise_Atari5200(void);
-int Initialise_EmuOS(void);
+void MEMORY_InitialiseMachine(void);
 void ClearRAM(void);
 void DisablePILL(void);
 void EnablePILL(void);
-int Initialise_AtariOSA(void);
-int Initialise_AtariOSB(void);
 void MemStateSave(UBYTE SaveVerbose);
 void MemStateRead(UBYTE SaveVerbose);
 void CopyFromMem(ATPtr from, UBYTE * to, int size);
