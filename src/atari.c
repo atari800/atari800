@@ -406,27 +406,27 @@ int Atari800_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-				Aprint("\t-configure    Update Configuration File");
-				Aprint("\t-config fnm   Specify Alternate Configuration File");
-				Aprint("\t-atari        Standard Atari 800 mode");
-				Aprint("\t-xl           Atari 800XL mode");
-				Aprint("\t-xe           Atari 130XE mode");
-				Aprint("\t-320xe        Atari 320XE mode (COMPY SHOP)");
-				Aprint("\t-rambo        Atari 320XE mode (RAMBO)");
-				Aprint("\t-nobasic      Turn off Atari BASIC ROM");
-				Aprint("\t-basic        Turn on Atari BASIC ROM");
-				Aprint("\t-5200         Atari 5200 Games System");
-				Aprint("\t-pal          Enable PAL TV mode");
-				Aprint("\t-ntsc         Enable NTSC TV mode");
-				Aprint("\t-cart fnm     Install cartridge (raw or CART format)");
-				Aprint("\t-run fnm      Run file directly");
-				Aprint("\t-refresh num  Specify screen refresh rate");
-				Aprint("\t-nopatch      Don't patch SIO routine in OS");
-				Aprint("\t-nopatchall   Don't patch OS at all, H: device won't work");
-				Aprint("\t-a            Use A OS");
-				Aprint("\t-b            Use B OS");
-				Aprint("\t-c            Enable RAM between 0xc000 and 0xd000");
-				Aprint("\t-v            Show version/release number");
+				Aprint("\t-configure       Update Configuration File");
+				Aprint("\t-config <file>   Specify Alternate Configuration File");
+				Aprint("\t-atari           Standard Atari 800 mode");
+				Aprint("\t-xl              Atari 800XL mode");
+				Aprint("\t-xe              Atari 130XE mode");
+				Aprint("\t-320xe           Atari 320XE mode (COMPY SHOP)");
+				Aprint("\t-rambo           Atari 320XE mode (RAMBO)");
+				Aprint("\t-nobasic         Turn off Atari BASIC ROM");
+				Aprint("\t-basic           Turn on Atari BASIC ROM");
+				Aprint("\t-5200            Atari 5200 Games System");
+				Aprint("\t-pal             Enable PAL TV mode");
+				Aprint("\t-ntsc            Enable NTSC TV mode");
+				Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
+				Aprint("\t-run <file>      Run file directly");
+				Aprint("\t-refresh <rate>  Specify screen refresh rate");
+				Aprint("\t-nopatch         Don't patch SIO routine in OS");
+				Aprint("\t-nopatchall      Don't patch OS at all, H: device won't work");
+				Aprint("\t-a               Use A OS");
+				Aprint("\t-b               Use B OS");
+				Aprint("\t-c               Enable RAM between 0xc000 and 0xd000");
+				Aprint("\t-v               Show version/release number");
 			}
 			argv[j++] = argv[i];
 		}
@@ -942,6 +942,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.39  2002/08/07 07:23:02  joy
+-help formatting fixed, crlf converted to lf
+
 Revision 1.38  2002/07/14 13:25:24  pfusik
 emulation of 576K and 1088K RAM machines
 
