@@ -843,12 +843,15 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 void DiskManagement(UBYTE * screen)
 {
 	char *menu[8];
+	int rwflags[8];
 	int done = FALSE;
 	int dsknum = 0;
 	int i;
 #ifndef WIN32
-	for (i = 0; i < 8; ++i)
+	for (i = 0; i < 8; ++i) {
 		menu[i] = sio_filename[i];
+		rwflags[i] = (drive_status[i] == ReadOnly ? TRUE : FALSE);
+	}
 
 	while (!done) {
 		char filename[1024];
@@ -858,6 +861,7 @@ void DiskManagement(UBYTE * screen)
 		TitleScreen(screen, "Disk Management");
 		Box(screen, 0x9a, 0x94, 0, 3, 39, 23);
 
+/*
 		Print(screen, 0x9a, 0x94, "D1:", 1, 4);
 		Print(screen, 0x9a, 0x94, "D2:", 1, 5);
 		Print(screen, 0x9a, 0x94, "D3:", 1, 6);
@@ -866,8 +870,14 @@ void DiskManagement(UBYTE * screen)
 		Print(screen, 0x9a, 0x94, "D6:", 1, 9);
 		Print(screen, 0x9a, 0x94, "D7:", 1, 10);
 		Print(screen, 0x9a, 0x94, "D8:", 1, 11);
+*/
+		for(i = 0; i < 8; i++) {
+			char diskName[80];
+			sprintf(diskName, "<%c>D%d:", rwflags[i] ? 'R' : 'W', i+1);
+			Print(screen, 0x9a, 0x94, diskName, 1, 4+i);
+		}
 
-		dsknum = Select(screen, dsknum, 8, menu, 8, 1, 4, 4, FALSE, &ascii);
+		dsknum = Select(screen, dsknum, 8, menu, 8, 1, 7, 4, FALSE, &ascii);
 		if (dsknum > -1) {
 			if (ascii == 0x9b) {	/* User pressed "Enter" to select a disk image */
 				char *pathname;
@@ -881,7 +891,7 @@ void DiskManagement(UBYTE * screen)
 					subdir = opendir(filename);
 					if (!subdir) {	/* A file was selected */
 						SIO_Dismount(dsknum + 1);
-						SIO_Mount(dsknum + 1, filename, FALSE);
+						SIO_Mount(dsknum + 1, filename, rwflags[dsknum]);
 						break;
 					}
 					else {		/* A directory was selected */
@@ -889,6 +899,15 @@ void DiskManagement(UBYTE * screen)
 						pathname = filename;
 					}
 				}
+			}
+			else if (ascii == 0x20) {	/* User pressed "SpaceBar" to change read/write flag of this drive */
+				char *flag;
+				rwflags[dsknum] = !rwflags[dsknum];
+				/* now the drive should probably be remounted
+				   and the rwflag should be read from the drive_status again */
+				/* TODO remount drive */
+				flag = rwflags[dsknum] ? "R" : "W";
+				Print(screen, 0x9a, 0x94, flag, 2, 4+i);
 			}
 			else {
 				if (strcmp(sio_filename[dsknum], "Empty") == 0)
