@@ -465,65 +465,57 @@ void SelectSystem(UBYTE * screen)
 {
 	int system;
 	int ascii;
-	int status;
 
-	char *menu[7] =
+#define SYSTEMS 9
+	char *menu[SYSTEMS] =
 	{
-		"Atari OS/A",
-		"Atari OS/B",
-		"Atari 800XL",
-		"Atari 130XE",
-		"Atari 320XE (RAMBO)",
-		"Atari 320XE (COMPY SHOP)",
-		"Atari 5200"
+		"Atari OS/A (48 KB)",
+		"Atari OS/A (52 KB)",
+		"Atari OS/B (48 KB)",
+		"Atari OS/B (52 KB)",
+		"Atari 800XL (64 KB)",
+		"Atari 130XE (128 KB)",
+		"Atari 320XE (320 KB RAMBO)",
+		"Atari 320XE (320 KB COMPY SHOP)",
+		"Atari 5200 (16 KB)"
+	};
+
+	int machine_types[SYSTEMS] =
+	{
+		MACHINE_OSA,
+		MACHINE_OSA,
+		MACHINE_OSB,
+		MACHINE_OSB,
+		MACHINE_XLXE,
+		MACHINE_XLXE,
+		MACHINE_XLXE,
+		MACHINE_XLXE,
+		MACHINE_5200
+	};
+
+	int ram_sizes[SYSTEMS] =
+	{
+		48,
+		52,
+		48,
+		52,
+		64,
+		128,
+		RAM_320_RAMBO,
+		RAM_320_COMPY_SHOP,
+		16
 	};
 
 	ClearScreen(screen);
 	TitleScreen(screen, "Select System");
 	Box(screen, 0x9a, 0x94, 0, 3, 39, 23);
 
-	system = Select(screen, 0, 7, menu, 7, 1, 1, 4, FALSE, &ascii);
-	if (system < 0)
-		return;
+	system = Select(screen, 0, SYSTEMS, menu, SYSTEMS, 1, 1, 4, FALSE, &ascii);
 
-	switch (system) {
-	case 0:
-		machine_type = MACHINE_OSA;
-		ram_size = 48;
+	if (system >= 0 && system < SYSTEMS) {
+		machine_type = machine_types[system];
+		ram_size = ram_sizes[system];
 		Atari800_InitialiseMachine();
-		break;
-	case 1:
-		machine_type = MACHINE_OSB;
-		ram_size = 48;
-		Atari800_InitialiseMachine();
-		break;
-	case 2:
-		machine_type = MACHINE_XLXE;
-		ram_size = 64;
-		Atari800_InitialiseMachine();
-		break;
-	case 3:
-		machine_type = MACHINE_XLXE;
-		ram_size = 128;
-		Atari800_InitialiseMachine();
-		break;
-	case 4:
-		machine_type = MACHINE_XLXE;
-		ram_size = RAM_320_RAMBO;
-		Atari800_InitialiseMachine();
-		break;
-	case 5:
-		machine_type = MACHINE_XLXE;
-		ram_size = RAM_320_COMPY_SHOP;
-		Atari800_InitialiseMachine();
-		break;
-	case 6:
-		machine_type = MACHINE_5200;
-		ram_size = 16;
-		Atari800_InitialiseMachine();
-		break;
-	default:
-		break;
 	}
 }
 
@@ -1160,30 +1152,28 @@ int RunExe(UBYTE *screen)
 
 void AtariSettings(UBYTE *screen)
 {
-	const int nitems = 6;
-	static char menu[6][38] =
+	const int nitems = 5;
+	static char menu[5][38] =
 	{
 		"Disable BASIC when booting Atari: Yes",
-		"RAM between $C000 and $CFFF:      Yes",
 		"Enable R-Time 8:                  Yes",
 		"SIO patch (fast disk access):     Yes",
 		"H: device (hard disk):            Yes",
 		"P: device (printer):              Yes"
 	};
-	static char *menu_ptr[6] = { menu[0], menu[1], menu[2], menu[3], menu[4], menu[5] };
+	static char *menu_ptr[5] = { menu[0], menu[1], menu[2], menu[3], menu[4] };
 
 	int option = 0;
 	int ascii;
 
-	Box(screen, 0x9a, 0x94, 1, 12, 39, 19);
+	Box(screen, 0x9a, 0x94, 1, 12, 39, 18);
 
 	do {
 		sprintf(menu[0] + 34, disable_basic ? "Yes" : "No ");
-		sprintf(menu[1] + 34, enable_c000_ram ? "Yes" : "No ");
-		sprintf(menu[2] + 34, rtime_enabled ? "Yes" : "No ");
-		sprintf(menu[3] + 34, enable_sio_patch ? "Yes" : "No ");
-		sprintf(menu[4] + 34, enable_h_patch ? "Yes" : "No ");
-		sprintf(menu[5] + 34, enable_p_patch ? "Yes" : "No ");
+		sprintf(menu[1] + 34, rtime_enabled ? "Yes" : "No ");
+		sprintf(menu[2] + 34, enable_sio_patch ? "Yes" : "No ");
+		sprintf(menu[3] + 34, enable_h_patch ? "Yes" : "No ");
+		sprintf(menu[4] + 34, enable_p_patch ? "Yes" : "No ");
 
 		option = Select(screen, option,
 						nitems, menu_ptr,
@@ -1194,18 +1184,15 @@ void AtariSettings(UBYTE *screen)
 			disable_basic = !disable_basic;
 			break;
 		case 1:
-			enable_c000_ram = !enable_c000_ram;
-			break;
-		case 2:
 			rtime_enabled = !rtime_enabled;
 			break;
-		case 3:
+		case 2:
 			enable_sio_patch = !enable_sio_patch;
 			break;
-		case 4:
+		case 3:
 			enable_h_patch = !enable_h_patch;
 			break;
-		case 5:
+		case 4:
 			enable_p_patch = !enable_p_patch;
 			break;
 		}
@@ -1507,6 +1494,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.14  2001/09/17 18:17:53  fox
+enable_c000_ram -> ram_size = 52
+
 Revision 1.13  2001/09/17 18:14:01  fox
 machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
 

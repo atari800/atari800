@@ -40,7 +40,6 @@ char print_command[256];
 int hd_read_only;
 int refresh_rate;
 int disable_basic;
-int enable_c000_ram;
 int enable_sio_patch;
 int enable_h_patch;
 int enable_p_patch;
@@ -92,7 +91,6 @@ int RtConfigLoad(char *rtconfig_filename)
 	ram_size = 64;
 	tv_mode = TV_PAL;
 	disable_basic = 1;
-	enable_c000_ram = 0;
 	enable_sio_patch = 1;
 	enable_h_patch = 1;
 	enable_p_patch = 1;
@@ -163,8 +161,13 @@ int RtConfigLoad(char *rtconfig_filename)
 				/* HOLD_OPTION supported for compatibility with previous Atari800 versions */
 				else if (strcmp(string, "DISABLE_BASIC") == 0 || strcmp(string, "HOLD_OPTION") == 0)
 					sscanf(ptr, "%d", &disable_basic);
-				else if (strcmp(string, "ENABLE_C000_RAM") == 0)
+				/* Supported for compatibility with previous Atari800 versions */
+				else if (strcmp(string, "ENABLE_C000_RAM") == 0) {
+					int enable_c000_ram = 0;
 					sscanf(ptr, "%d", &enable_c000_ram);
+					if (enable_c000_ram && ram_size == 48)
+						ram_size = 52;
+				}
 				else if (strcmp(string, "ENABLE_ROM_PATCH") == 0) {
 					/* Supported for compatibility with previous Atari800 versions */
 					int enable_rom_patches;
@@ -230,6 +233,8 @@ int RtConfigLoad(char *rtconfig_filename)
 						ram_size = 16;
 					else if (strcmp(ptr, "48") == 0)
 						ram_size = 48;
+					else if (strcmp(ptr, "52") == 0)
+						ram_size = 52;
 					else if (strcmp(ptr, "64") == 0)
 						ram_size = 64;
 					else if (strcmp(ptr, "128") == 0)
@@ -337,7 +342,6 @@ void RtConfigSave(void)
 		fprintf(fp, "DEFAULT_TV_MODE=NTSC\n");
 
 	fprintf(fp, "DISABLE_BASIC=%d\n", disable_basic);
-	fprintf(fp, "ENABLE_C000_RAM=%d\n", enable_c000_ram);
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", enable_sio_patch);
 	fprintf(fp, "ENABLE_H_PATCH=%d\n", enable_h_patch);
 	fprintf(fp, "ENABLE_P_PATCH=%d\n", enable_p_patch);
@@ -393,7 +397,14 @@ void RtConfigUpdate(void)
 	switch (machine_type) {
 	case MACHINE_OSA:
 	case MACHINE_OSB:
-		ram_size = 48;
+		{
+			int enable_c000_ram = ram_size == 52;
+			do {
+				GetNumber("Enable C000-CFFF RAM in Atari800 mode [%d] ",
+						  &enable_c000_ram);
+			} while ((enable_c000_ram < 0) || (enable_c000_ram > 1));
+			ram_size = enable_c000_ram ? 52 : 48;
+		}
 		break;
 	case MACHINE_XLXE:
 		{
@@ -437,11 +448,6 @@ void RtConfigUpdate(void)
 	} while ((disable_basic < 0) || (disable_basic > 1));
 
 	do {
-		GetNumber("Enable C000-CFFF RAM in Atari800 mode [%d] ",
-				  &enable_c000_ram);
-	} while ((enable_c000_ram < 0) || (enable_c000_ram > 1));
-
-	do {
 		GetNumber("Enable SIO patch (Recommended for speed) [%d] ",
 			  	&enable_sio_patch);
 	} while ((enable_sio_patch < 0) || (enable_sio_patch > 1));
@@ -468,6 +474,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.10  2001/09/17 18:16:03  fox
+enable_c000_ram -> ram_size = 52
+
 Revision 1.9  2001/09/17 18:13:05  fox
 machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
 
