@@ -177,6 +177,8 @@ Uint8 *kbhits;
 static int last_key_break = 0;
 static int last_key_code = AKEY_NONE;
 
+int Sound_Update(void) { return 0; }	// fake function
+
 void SetPalette()
 {
 	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
