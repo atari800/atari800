@@ -1,3 +1,8 @@
+2002-06-27   Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c: updated LPTjoy support to compile under Linux only. If there's
+  another Unix flavor that can read parallel port using ioctl then it can be
+  easily added. Just define LPTJOY for it (see the begining of atari_sdl.c).
+
 2002-06-27  Piotr Wiszowaty  <pwiszowa@elka.pw.edu.pl>
 * atari_sdl.c: added LPTjoy support for Linux
 

@@ -93,11 +93,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef linux
+#define LPTJOY	1
+#endif
+
+#ifdef LPTJOY
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <linux/lp.h>
+#endif /* LPTJOY */
 
 // Atari800 includes
 #include "config.h"
@@ -765,29 +771,33 @@ int Atari_Keyboard(void)
 	return AKEY_NONE;
 }
 
-/*
-void Init_Joysticks()
+void Init_SDL_Joysticks(int first, int second)
 {
-	joystick0 = SDL_JoystickOpen(0);
-	if (joystick0 == NULL)
-		Aprint("joystick 0 not found");
-	else {
-		Aprint("joystick 0 found!");
-		joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
-		SWAP_JOYSTICKS = 1;		// real joy is STICK(0) and numblock is STICK(1)
+	if (first) {
+		joystick0 = SDL_JoystickOpen(0);
+		if (joystick0 == NULL)
+			Aprint("joystick 0 not found");
+		else {
+			Aprint("joystick 0 found!");
+			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
+			SWAP_JOYSTICKS = 1;		// real joy is STICK(0) and numblock is STICK(1)
+		}
 	}
-	joystick1 = SDL_JoystickOpen(1);
-	if (joystick1 == NULL)
-		Aprint("joystick 1 not found");
-	else {
-		Aprint("joystick 1 found!");
-		joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
+
+	if (second) {
+		joystick1 = SDL_JoystickOpen(1);
+		if (joystick1 == NULL)
+			Aprint("joystick 1 not found");
+		else {
+			Aprint("joystick 1 found!");
+			joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
+		}
 	}
 }
-*/
 
 void Init_Joysticks(int *argc, char *argv[])
 {
+#ifdef LPTJOY
 	char *lpt_joy0 = NULL;
 	char *lpt_joy1 = NULL;
 	int i;
@@ -812,33 +822,16 @@ void Init_Joysticks(int *argc, char *argv[])
 	}
 	*argc = j;
 	
-	if (lpt_joy0 == NULL) {
-		joystick0 = SDL_JoystickOpen(0);
-		if (joystick0 == NULL) {
-			Aprint("joystick 0 not found");
-		} else {
-			Aprint("joystick 0 found!");
-			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
-			SWAP_JOYSTICKS = 1;	// real joy is STICK(0) and numblock is STICK(1)
-		}
-	} else {				// LPT1 joystick
+	if (lpt_joy0 != NULL) {				// LPT1 joystick
 		fd_joystick0 = open(lpt_joy0, O_RDONLY);
 		if (fd_joystick0 == -1) perror(lpt_joy0);
-		
 	}
-
-	if (lpt_joy1 == NULL) {
-		joystick1 = SDL_JoystickOpen(1);
-		if (joystick1 == NULL) {
-			Aprint("joystick 1 not found");
-		} else {
-			Aprint("joystick 1 found!");
-			joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
-		}
-	} else {				// LPT2 joystick
+	if (lpt_joy1 != NULL) {				// LPT2 joystick
 		fd_joystick1 = open(lpt_joy1, O_RDONLY);
 		if (fd_joystick1 == -1) perror(lpt_joy1);
 	}
+#endif /* LPTJOY */
+	Init_SDL_Joysticks(fd_joystick0 == -1, fd_joystick1 == -1);
 }
 
 
@@ -890,8 +883,10 @@ void Atari_Initialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-help") == 0) {
 				Aprint("\t-rotate90        Display 240x320 screen");
 				Aprint("\t-nojoystick      Disable joystick");
+#ifdef LPTJOY
 				Aprint("\t-joy0 <pathname> Select LPTjoy0 device");
 				Aprint("\t-joy1 <pathname> Select LPTjoy0 device");
+#endif /* LPTJOY */
 				Aprint("\t-width <num>     Host screen width");
 				Aprint("\t-height <num>    Host screen height");
 				Aprint("\t-bpp <num>       Host color depth");
@@ -1218,6 +1213,7 @@ int get_SDL_joystick_state(SDL_Joystick *joystick)
 
 int get_LPT_joystick_state(int fd)
 {
+#ifdef LPTJOY
 	int status;
 
 	ioctl(fd, LPGETSTATUS, &status);
@@ -1248,8 +1244,10 @@ int get_LPT_joystick_state(int fd)
 			return STICK_CENTRE;
 		}
 	}
+#else
+	return 0;
+#endif /* LPTJOY */
 }
-
 
 void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 {
@@ -1326,7 +1324,6 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 {
 	int trig0, trig1, i;
-	int status;
 
 	if ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B]))
 		trig0 = 0;
@@ -1348,11 +1345,14 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 	}
 
 	if (fd_joystick0 != -1) {
+#ifdef LPTJOY
+		int status;
 		ioctl(fd_joystick0, LPGETSTATUS, &status);
 		if (status & 8)
 			*t0 = 1;
 		else
 			*t0 = 0;
+#endif /* LPTJOY */
 	} else if (joystick0 != NULL) {
 		trig0 = 1;
 		for (i = 0; i < joystick0_nbuttons; i++) {
@@ -1365,11 +1365,14 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 	}
 	
 	if (fd_joystick1 != -1) {
+#ifdef LPTJOY
+		int status;
 		ioctl(fd_joystick1, LPGETSTATUS, &status);
 		if (status & 8)
 			*t1 = 1;
 		else
 			*t1 = 0;
+#endif /* LPTJOY */
 	} else if (joystick1 != NULL) {
 		trig1 = 1;
 		for (i = 0; i < joystick1_nbuttons; i++) {
@@ -1502,6 +1505,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.25  2002/06/27 21:50:25  joy
+ LPTjoy in SDL works under Linux only
+
  Revision 1.24  2002/06/27 21:20:08  joy
  LPT joy in SDL
 
