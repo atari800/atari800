@@ -57,6 +57,11 @@ void Setbuffer(long bufbeg, long bufsize)
 	DMActrlptr[9] = bufend & 0xff;
 }
 
+void Sound_Update(void)
+{
+	/* dunno what to do here as the sound precomputing is interrupt driven */
+}
+
 void timer_A_v_C(void)
 {
 	static int first = FALSE;	/* start computing second buffer */
