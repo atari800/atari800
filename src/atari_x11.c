@@ -2,7 +2,7 @@
  * atari_x11.c - X11 specific port code
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2004 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -252,16 +252,18 @@ extern int nframes;
 static int autorepeat=1;
 static int last_focus=FocusOut;
 
-void autorepeat_get( ovid )
-{ XKeyboardState kstat;
+void autorepeat_get(void)
+{
+	XKeyboardState kstat;
+
 	XGetKeyboardControl(display, &kstat);
 	autorepeat=kstat.global_auto_repeat;
 }
-void autorepeat_off( ovid )
+void autorepeat_off(void)
 {
 	XAutoRepeatOff(display);
 }
-void autorepeat_restore( ovid )
+void autorepeat_restore(void)
 {
 	if( autorepeat )
 		XAutoRepeatOn(display);
@@ -297,8 +299,6 @@ int GetKeyCode(XEvent * event)
 #endif
 		break;
 	case FocusIn:
-		/* sometimes 2 FocusIn occur with fvwm2 (when switching virt. desktops) */
-		if (last_focus == FocusOut) autorepeat_get();
 		autorepeat_off();
 		last_focus = FocusIn;
 		break;
@@ -1973,6 +1973,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		printf("Failed to open display\n");
 		exit(1);
 	}
+	autorepeat_get();
 	screen = XDefaultScreenOfDisplay(display);
 	if (!screen) {
 		printf("Unable to get screen\n");
@@ -2548,8 +2549,11 @@ int Atari_Exit(int run_monitor)
 {
 	int restart;
 
-	if (run_monitor)
+	if (run_monitor) {
+		autorepeat_restore();
 		restart = monitor();
+		autorepeat_off();
+	}
 	else
 		restart = FALSE;
 
