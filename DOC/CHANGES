@@ -1,5 +1,9 @@
 Changes in pre1.0.7
 ----------------
+o unix, windows and dos makefiles rewritten and reorganized <Krzysztof>
+
+o all open() calls on regular files replaced by fopen(). <Krzysztof>
+
 o win32 conditionals removed; new win32 port <Krzysztof>
 
 o atari_sleep_ms() replaced by new function atari_sync() with better
