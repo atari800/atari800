@@ -359,7 +359,7 @@ int GetKeyCode(XEvent * event)
 			keycode = AKEY_COLDSTART;
 			break;
 		case XK_F6:
-			keycode = AKEY_PIL;
+			keycode = AKEY_HELP;
 			break;
 		case XK_Break:
 		case XK_F7:
@@ -3602,50 +3602,13 @@ int Atari_POT(int num)
 
 int main(int argc, char **argv)
 {
-	int test_val = 0;
-	int keycode = AKEY_NONE;
-
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
 	/* main loop */
 	while (TRUE) {
-		keycode = Atari_Keyboard();
-
-		switch (keycode) {
-		case AKEY_COLDSTART:
-			Coldstart();
-			break;
-		case AKEY_WARMSTART:
-			Warmstart();
-			break;
-		case AKEY_EXIT:
-			Atari800_Exit(FALSE);
-			exit(1);
-		case AKEY_UI:
-#ifdef SOUND
-			Sound_Pause();
-#endif
-			ui((UBYTE *)atari_screen);
-#ifdef SOUND
-			Sound_Continue();
-#endif
-			break;
-		case AKEY_SCREENSHOT:
-			Screen_SaveNextScreenshot(FALSE);
-			break;
-		case AKEY_SCREENSHOT_INTERLACE:
-			Screen_SaveNextScreenshot(TRUE);
-			break;
-		case AKEY_BREAK:
-			key_break = 1;
-			break;
-		default:
-			key_break = 0;
-			key_code = keycode;
-			break;
-		}
+		key_code = Atari_Keyboard();
 
 		if (menu_consol != CONSOL_NONE) {
 			key_consol = menu_consol;
@@ -3654,23 +3617,8 @@ int main(int argc, char **argv)
 		else
 			key_consol = keyboard_consol;
 
-		if (++test_val == refresh_rate) {
-			Atari800_Frame(EMULATE_FULL);
-#ifndef DONT_SYNC_WITH_HOST
-			atari_sync(); /* here seems to be the best place to sync */
-#endif
+		Atari800_Frame();
+		if (display_screen)
 			Atari_DisplayScreen((UBYTE *) atari_screen);
-			test_val = 0;
-		}
-		else {
-#ifdef VERY_SLOW
-			Atari800_Frame(EMULATE_BASIC);
-#else	/* VERY_SLOW */
-			Atari800_Frame(EMULATE_NO_SCREEN);
-#ifndef DONT_SYNC_WITH_HOST
-			atari_sync();
-#endif
-#endif	/* VERY_SLOW */
-		}
 	}
 }

@@ -573,7 +573,7 @@ int Atari_Keyboard(void)
 		keycode = AKEY_ESCAPE;
 		break;
 	case KEY_F0 + 1:
-                keycode = AKEY_UI;
+		keycode = AKEY_UI;
 		break;
 	case KEY_F0 + 2:
 		key_consol &= 0x03;
@@ -591,7 +591,7 @@ int Atari_Keyboard(void)
 		keycode = AKEY_WARMSTART;
 		break;
 	case KEY_F0 + 6:
-		keycode = AKEY_PIL;
+		keycode = AKEY_HELP;
 		break;
 	case KEY_F0 + 7:
 		keycode = AKEY_BREAK;
@@ -646,73 +646,25 @@ int Atari_TRIG(int num)
 
 int main(int argc, char **argv)
 {
-	int test_val = 0;
-	int keycode = AKEY_NONE;
-
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
 	/* main loop */
 	while (TRUE) {
-		keycode = Atari_Keyboard();
-
-		switch (keycode) {
-		case AKEY_COLDSTART:
-			Coldstart();
-			break;
-		case AKEY_WARMSTART:
-			Warmstart();
-			break;
-		case AKEY_EXIT:
-			Atari800_Exit(FALSE);
-			return 0;
-		case AKEY_UI:
-#ifdef SOUND
-			Sound_Pause();
-#endif
-			ui((UBYTE *)atari_screen);
-#ifdef SOUND
-			Sound_Continue();
-#endif
-			break;
-		case AKEY_SCREENSHOT:
-			Screen_SaveNextScreenshot(FALSE);
-			break;
-		case AKEY_SCREENSHOT_INTERLACE:
-			Screen_SaveNextScreenshot(TRUE);
-			break;
-		case AKEY_BREAK:
-			key_break = 1;
-			break;
-		default:
-			key_break = 0;
-			key_code = keycode;
-			break;
-		}
-
-		if (++test_val == refresh_rate) {
-			Atari800_Frame(EMULATE_FULL);
-#ifndef DONT_SYNC_WITH_HOST
-			atari_sync(); /* here seems to be the best place to sync */
-#endif
+		key_code = Atari_Keyboard();
+		Atari800_Frame();
+		if (display_screen)
 			Atari_DisplayScreen((UBYTE *) atari_screen);
-			test_val = 0;
-		}
-		else {
-#ifdef VERY_SLOW
-			Atari800_Frame(EMULATE_BASIC);
-#else	/* VERY_SLOW */
-			Atari800_Frame(EMULATE_NO_SCREEN);
-#ifndef DONT_SYNC_WITH_HOST
-			atari_sync();
-#endif
-#endif	/* VERY_SLOW */
-		}
 	}
 }
+
 /*
 $Log$
+Revision 1.13  2005/03/05 12:26:05  pfusik
+support for special AKEY_*, refresh rate control and atari_sync()
+moved to Atari800_Frame(); F6 is Atari HELP key
+
 Revision 1.12  2005/02/23 16:45:32  pfusik
 PNG screenshots
 
