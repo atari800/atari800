@@ -34,8 +34,19 @@ extern int DELAYED_SEROUT_IRQ;
 void CopyFromMem(int to, UBYTE *, int size);
 void CopyToMem(UBYTE *, ATPtr from, int size);
 
-/* Both ATR and XFD images can have 128- and 256-byte boot sectors */
-static int boot_sectorsize[MAX_DRIVES];
+/* If ATR image is in double density (256 bytes per sector),
+   then the boot sectors (sectors 1-3) can be:
+   - logical (as seen by Atari) - 128 bytes in each sector
+   - physical (as stored on the disk) - 256 bytes in each sector.
+     Only the first half of sector is used for storing data, rest is zero.
+   - SIO2PC (the type used by the SIO2PC program) - 3 * 128 bytes for data
+     of boot sectors, then 3 * 128 unused bytes (zero)
+   The XFD images in double density have either logical or physical boot sectors.
+*/
+#define BOOT_SECTORS_LOGICAL	0
+#define BOOT_SECTORS_PHYSICAL	1
+#define BOOT_SECTORS_SIO2PC		2
+static int boot_sectors_type[MAX_DRIVES];
 
 /* Format is also size of header :-) */
 typedef enum Format {
@@ -184,7 +195,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 
 		strcpy(sio_filename[diskno - 1], filename);
 
-		boot_sectorsize[diskno - 1] = 128;
+		boot_sectors_type[diskno - 1] = BOOT_SECTORS_LOGICAL;
 
 		if ((header.magic1 == MAGIC1) && (header.magic2 == MAGIC2)) {
 			format[diskno - 1] = ATR;
@@ -205,9 +216,20 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			/* Fix if double density */
 			if (sectorsize[diskno - 1] == 256) {
 				if (sectorcount[diskno - 1] & 1)
-					sectorcount[diskno - 1] += 3;		/* 128-byte boot sectors */
-				else
-					boot_sectorsize[diskno - 1] = 256;	/* 256-byte boot sectors */
+					sectorcount[diskno - 1] += 3;		/* logical (128-byte) boot sectors */
+				else {	/* 256-byte boot sectors */
+					/* check if physical or SIO2PC */
+					/* Physical if there's a non-zero byte in bytes 0x190-0x30f of the ATR file */
+					UBYTE buffer[0x180];
+					fseek(f, 0x190L, SEEK_SET);
+					fread(buffer, 1, 0x180, f);
+					boot_sectors_type[diskno - 1] = BOOT_SECTORS_SIO2PC;
+					for (i = 0; i < 0x180; i++)
+						if (buffer[i] != 0) {
+							boot_sectors_type[diskno - 1] = BOOT_SECTORS_PHYSICAL;
+							break;
+						}
+				}
 				sectorcount[diskno - 1] >>= 1;
 			}
 #ifdef DEBUG
@@ -219,14 +241,19 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		else {
 			format[diskno - 1] = XFD;
 
-			if (file_length <= (1040 * 128))
+			if (file_length <= (1040 * 128)) {
 				sectorsize[diskno - 1] = 128;	/* single density */
+				sectorcount[diskno - 1] = file_length / 128;
+			}
 			else {
 				sectorsize[diskno - 1] = 256;	/* double density */
-				if ((file_length & 0xff) == 0)
-					boot_sectorsize[diskno - 1] = 256;
+				if ((file_length & 0xff) == 0) {
+					boot_sectors_type[diskno - 1] = BOOT_SECTORS_PHYSICAL;
+					sectorcount[diskno - 1] = file_length / 256;
+				}
+				else
+					sectorcount[diskno - 1] = (file_length + 0x180) / 256;
 			}
-			sectorcount[diskno - 1] = 3 + (file_length - 3 * boot_sectorsize[diskno - 1]) / sectorsize[diskno - 1];
 		}
 	}
 	else {
@@ -277,11 +304,11 @@ void SizeOfSector(UBYTE unit, int sector, int *sz, ULONG * ofs)
 	if (sector < 4) {
 		/* special case for first three sectors in ATR and XFD image */
 		size = 128;
-		offset = format[unit] + (sector - 1) * boot_sectorsize[unit];
+		offset = format[unit] + (sector - 1) * (boot_sectors_type[unit] == BOOT_SECTORS_PHYSICAL ? 256 : 128);
 	}
 	else {
 		size = sectorsize[unit];
-		offset = format[unit] + 3 * boot_sectorsize[unit] + (sector - 4) * size;
+		offset = format[unit] + (boot_sectors_type[unit] == BOOT_SECTORS_LOGICAL ? 0x180 : 0x300) + (sector - 4) * size;
 	}
 
 	if (sz)
@@ -1030,6 +1057,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.6  2001/07/21 20:00:44  fox
+made double density ATR images compatible with SIO2PC
+
 Revision 1.5  2001/04/15 09:14:33  knik
 zlib_capable -> have_libz (autoconf compatibility)
 
