@@ -1160,6 +1160,63 @@ int RunExe(UBYTE *screen)
 	return ret;
 }
 
+void AtariOSPatches(UBYTE *screen)
+{
+	const int nitems = 3;
+	static char menu[3][28] =
+	{
+		"SIO (fast disk access): ON ",
+		"H: device (hard disk) : ON ",
+		"P: device (printer)   : ON "
+	};
+	static char *menu_ptr[3] = { menu[0], menu[1], menu[2] };
+
+	int option = 0;
+	int ascii;
+
+	Box(screen, 0x9a, 0x94, 4, 12, 32, 16);
+
+	do {
+		if (enable_sio_patch) {
+			menu[0][25] = 'N';
+			menu[0][26] = ' ';
+		}
+		else
+			menu[0][25] = menu[0][26] = 'F';
+
+		if (enable_h_patch) {
+			menu[1][25] = 'N';
+			menu[1][26] = ' ';
+		}
+		else
+			menu[1][25] = menu[1][26] = 'F';
+
+		if (enable_p_patch) {
+			menu[2][25] = 'N';
+			menu[2][26] = ' ';
+		}
+		else
+			menu[2][25] = menu[2][26] = 'F';
+
+		option = Select(screen, option,
+						nitems, menu_ptr,
+						nitems, 1,
+						5, 13, FALSE, &ascii);
+		switch (option) {
+		case 0:
+			enable_sio_patch = !enable_sio_patch;
+			break;
+		case 1:
+			enable_h_patch = !enable_h_patch;
+			break;
+		case 2:
+			enable_p_patch = !enable_p_patch;
+			break;
+		}
+	} while (option >= 0);
+	Atari800_UpdatePatches();
+}
+
 int SaveState(UBYTE *screen)
 {
 	char statename[MAX_FILENAME_LEN];
@@ -1211,6 +1268,7 @@ void ui(UBYTE *screen)
 		"Sound Mono/Stereo                Alt+O",
 		"Sound Recording start/stop       Alt+W",
 		"Artifacting mode                      ",
+		"Atari OS patches                      ",
 		"Save State                       Alt+S",
 		"Load State                       Alt+L",
 		"PCX screenshot                     F10",
@@ -1306,6 +1364,9 @@ void ui(UBYTE *screen)
 					global_artif_mode = option;
 			}
 			artif_init();
+			break;
+		case MENU_PATCHES:
+			AtariOSPatches(screen);
 			break;
 		case MENU_SOUND:
 			{
@@ -1451,6 +1512,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.8  2001/07/20 00:29:04  fox
+added "Atari OS patches" menu item
+
 Revision 1.7  2001/03/25 06:57:36  knik
 open() replaced by fopen()
 
