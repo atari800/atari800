@@ -1545,8 +1545,8 @@ int main(int argc, char **argv)
 		case AKEY_BREAK:
 			key_break = 1;
 			if (!last_key_break) {
-				IRQST &= ~0x80;
 				if (IRQEN & 0x80) {
+					IRQST &= ~0x80;
 					GenerateIRQ();
 				}
 				break;
@@ -1578,8 +1578,8 @@ int main(int argc, char **argv)
 			if ((key_code ^ last_key_code) & ~AKEY_SHFTCTRL) {
 				last_key_code = key_code;
 				KBCODE = (UBYTE) key_code;
-				IRQST &= ~0x40;
 				if (IRQEN & 0x40) {
+					IRQST &= ~0x40;
 					GenerateIRQ();
 				}
 			}
@@ -1609,6 +1609,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.31  2003/02/08 20:06:09  joy
+ input.c had a bug that Piotr fixed, I just copied the bugfix here.
+
  Revision 1.30  2003/01/27 14:13:02  joy
  Perry's cycle-exact ANTIC/GTIA emulation
 
