@@ -67,6 +67,7 @@
 #include "binload.h"
 #include "sio.h"
 #include "ui.h"
+#include "rdevice.h"
 
 static char *H[5] = {
 	".",
@@ -1976,6 +1977,30 @@ int Device_PatchOS(void)
 				Atari800_RemoveEsc(ESC_PHINIT);
 			}
 			break;
+
+		case 'R':
+			if (enable_r_patch) {
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) +
+								   1, ESC_ROPEN, Device_ROPEN);
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_CLOS) +
+								   1, ESC_RCLOS, Device_RCLOS);
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) +
+								   1, ESC_RWRIT, Device_RWRIT);
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_STAT) +
+								   1, ESC_RSTAT, Device_RSTAT);
+				Atari800_AddEscRts2(devtab + DEVICE_TABLE_INIT, ESC_RINIT,
+									Device_RINIT);
+				patched = TRUE;
+			}
+			else {
+				Atari800_RemoveEsc(ESC_ROPEN);
+				Atari800_RemoveEsc(ESC_RCLOS);
+				Atari800_RemoveEsc(ESC_RWRIT);
+				Atari800_RemoveEsc(ESC_RSTAT);
+				Atari800_RemoveEsc(ESC_RINIT);
+			}
+			break;
+
 #ifdef BASIC
 		case 'E':
 			Aprint("Editor Device");
@@ -2056,6 +2081,7 @@ void Device_RemoveHATABSEntry(char device, UWORD entry_address,
 }
 
 static UWORD h_entry_address = 0;
+static UWORD r_entry_address = 0;
 
 #define H_DEVICE_BEGIN  0xd140
 #define H_TABLE_ADDRESS 0xd140
@@ -2067,12 +2093,26 @@ static UWORD h_entry_address = 0;
 #define H_PATCH_SPEC    0xd15f
 #define H_DEVICE_END    0xd161
 
+#define R_DEVICE_BEGIN  0xd180
+#define R_TABLE_ADDRESS 0xd180
+#define R_PATCH_OPEN    0xd1a0
+#define R_PATCH_CLOS    0xd1a3
+#define R_PATCH_READ    0xd1a6
+#define R_PATCH_WRIT    0xd1a9
+#define R_PATCH_STAT    0xd1ac
+#define R_PATCH_SPEC    0xd1af
+#define R_PATCH_INIT    0xd1b3
+#define R_DEVICE_END    0xd1b5
+
 void Device_Frame(void)
 {
 	if (enable_h_patch)
 		h_entry_address =
 			Device_UpdateHATABSEntry('H', h_entry_address,
 									 H_TABLE_ADDRESS);
+
+	if (enable_r_patch)
+		r_entry_address = Device_UpdateHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
 }
 
 /* this is called when enable_h_patch is toggled */
@@ -2115,10 +2155,54 @@ void Device_UpdatePatches(void)
 		/* fill memory area used for table and patches with 0xff */
 		dFillMem(H_DEVICE_BEGIN, 0xff, H_DEVICE_END - H_DEVICE_BEGIN + 1);
 	}
+
+	if (enable_r_patch) {		/* enable R: device */
+		/* change memory attributex for the area, where we put
+		   R: handler table and patches */
+#ifndef PAGED_ATTRIB
+		SetROM(R_DEVICE_BEGIN, R_DEVICE_END);
+#else
+#warning R: device not working yet
+#endif
+		/* set handler table */
+		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_OPEN, R_PATCH_OPEN - 1);
+		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_CLOS, R_PATCH_CLOS - 1);
+		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_READ, R_PATCH_READ - 1);
+		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_WRIT, R_PATCH_WRIT - 1);
+		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_STAT, R_PATCH_STAT - 1);
+		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_SPEC, R_PATCH_SPEC - 1);
+		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_INIT, R_PATCH_INIT - 1);
+		/* set patches */
+		Atari800_AddEscRts(R_PATCH_OPEN, ESC_ROPEN, Device_ROPEN);
+		Atari800_AddEscRts(R_PATCH_CLOS, ESC_RCLOS, Device_RCLOS);
+		Atari800_AddEscRts(R_PATCH_READ, ESC_RREAD, Device_RREAD);
+		Atari800_AddEscRts(R_PATCH_WRIT, ESC_RWRIT, Device_RWRIT);
+		Atari800_AddEscRts(R_PATCH_STAT, ESC_RSTAT, Device_RSTAT);
+		Atari800_AddEscRts(R_PATCH_SPEC, ESC_RSPEC, Device_RSPEC);
+		Atari800_AddEscRts(R_PATCH_INIT, ESC_RINIT, Device_RINIT);
+		/* R: in HATABS will be added next frame by Device_Frame */
+	}
+	else {						/* disable R: device */
+		/* remove R: entry from HATABS */
+		Device_RemoveHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
+		/* remove patches */
+		Atari800_RemoveEsc(ESC_ROPEN);
+		Atari800_RemoveEsc(ESC_RCLOS);
+		Atari800_RemoveEsc(ESC_RREAD);
+		Atari800_RemoveEsc(ESC_RWRIT);
+		Atari800_RemoveEsc(ESC_RSTAT);
+		Atari800_RemoveEsc(ESC_RSPEC);
+		/* fill memory area used for table and patches with 0xff */
+		dFillMem(R_DEVICE_BEGIN, 0xff, R_DEVICE_END - R_DEVICE_BEGIN + 1);
+	}
+
 }
 
 /*
 $Log$
+Revision 1.19  2003/05/28 19:54:58  joy
+R: device support (networking?)
+
 Revision 1.18  2003/03/03 09:57:33  joy
 Ed improved autoconf again plus fixed some little things
 

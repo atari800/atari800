@@ -1,0 +1,26 @@
+---- about the R: device in Atari800 emulator ----
+
+From: Chris Martin <cmartin@ti.com>
+
+I have some code that I have integrated into my personal
+download of atari800 v1.3.0 for allowing talking to the
+Atari800 emulator via R: and network sockets.  I have taken
+some code released by Tom Hunt and made some bug fixes and a
+few minor updates. 
+
+I have tested this both under Solaris and Linux.  I have
+plans to update the code to allow connections to the host
+machine serial ports for talking to a real Modem as well.
+
+I have tested this with Bobterm and Ice-T.  If you need the ATR files for
+these programs, let me know.
+
+Once in Bobterm or Ice-T you can type 'ATDI localhost 23', to telnet.
+
+I would like to add options for allowing to compile this or not, and
+command line args for the connect string and the port number (it accepts
+connections on port 9000 now for in coming calls...)
+
+Best regards,
+Chris
+

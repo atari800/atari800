@@ -594,6 +594,7 @@ void AtariSettings()
 		{ "SIOP", ITEM_ENABLED|ITEM_CHECK, NULL, "SIO patch (fast disk access):",     NULL, 3 },
 		{ "HDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "H: device (hard disk):",            NULL, 4 },
 		{ "PDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "P: device (printer):",              NULL, 5 },
+		{ "RDEV", ITEM_ENABLED|ITEM_CHECK, NULL, "R: device (network?):",              NULL, 6 },
 		MENU_END
 	};
 
@@ -624,6 +625,10 @@ void AtariSettings()
 			menu_array[5].flags |= ITEM_CHECKED;
 		else
 			menu_array[5].flags &= ~ITEM_CHECKED;
+		if(enable_r_patch)
+			menu_array[6].flags |= ITEM_CHECKED;
+		else
+			menu_array[6].flags &= ~ITEM_CHECKED;
 
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 
@@ -646,6 +651,9 @@ void AtariSettings()
 			break;
 		case 5:
 			enable_p_patch = !enable_p_patch;
+			break;
+		case 6:
+			enable_r_patch = !enable_r_patch;
 			break;
 		}
 	} while (option >= 0);
@@ -956,6 +964,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.46  2003/05/28 19:54:58  joy
+R: device support (networking?)
+
 Revision 1.45  2003/03/03 10:16:01  joy
 multiple disk sets supported
 

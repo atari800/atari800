@@ -67,6 +67,7 @@ int disable_basic;
 int enable_sio_patch;
 int enable_h_patch;
 int enable_p_patch;
+int enable_r_patch;
 int disk_directories;
 int enable_new_pokey;
 int stereo_enabled;
@@ -127,6 +128,7 @@ static void RtPresetDefaults()
 	enable_sio_patch = 1;
 	enable_h_patch = 1;
 	enable_p_patch = 1;
+	enable_r_patch = 1;
 	enable_new_pokey = 1;
 	stereo_enabled = 0;
 }
@@ -238,6 +240,9 @@ int RtConfigLoad(const char *alternate_config_filename)
 			}
 			else if (strcmp(string, "ENABLE_P_PATCH") == 0) {
 				sscanf(ptr, "%d", &enable_p_patch);
+			}
+			else if (strcmp(string, "ENABLE_R_PATCH") == 0) {
+				sscanf(ptr, "%d", &enable_r_patch);
 			}
 			else if (strcmp(string, "ENABLE_NEW_POKEY") == 0) {
 				sscanf(ptr, "%d", &enable_new_pokey);
@@ -372,6 +377,7 @@ void RtConfigSave(void)
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", enable_sio_patch);
 	fprintf(fp, "ENABLE_H_PATCH=%d\n", enable_h_patch);
 	fprintf(fp, "ENABLE_P_PATCH=%d\n", enable_p_patch);
+	fprintf(fp, "ENABLE_R_PATCH=%d\n", enable_r_patch);
 	fprintf(fp, "ENABLE_NEW_POKEY=%d\n", enable_new_pokey);
 	fprintf(fp, "STEREO_POKEY=%d\n", stereo_enabled);
 
@@ -471,6 +477,7 @@ void RtConfigUpdate(void)
 			  	&enable_sio_patch);
 	GetYesNoAsInt("Enable H: (Hard disk) patch [%c] ", &enable_h_patch);
 	GetYesNoAsInt("Enable P: (Printer) patch [%c] ", &enable_p_patch);
+	GetYesNoAsInt("Enable R: (Network?) patch [%c] ", &enable_r_patch);
 	GetYesNoAsInt("Enable new HiFi POKEY [%c] ", &enable_new_pokey);
 	GetYesNoAsInt("Enable STEREO POKEY Sound [%c] ", &stereo_enabled);
 
@@ -486,6 +493,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.16  2003/05/28 19:54:58  joy
+R: device support (networking?)
+
 Revision 1.15  2003/02/24 09:33:10  joy
 header cleanup
 

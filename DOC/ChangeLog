@@ -1,3 +1,18 @@
+2003-05-28  Petr Stehlik  <pstehlik@sophics.cz>
+* cpu_m68k.asm - major update, brings it to the 1.3.0+ level of cpu.c
+  Thanks Gerhard.
+
+* devices.c, atari.h, rdevice.[ch] - new R: device support (sockets).
+  Originally written by Tom Hunt. Fixed, updated and prepared for Atari800
+  integration by Chris Martin <cmartin@ti.com>. Thanks Chris!
+
+* atari.c, ui.c, rt-config.[ch], Makefile.in - updated to allow run-time
+  configuration of the R: entry in HATABS.
+
+* DOC/sockets.txt - is an excerpt from mails I got from Chris. It may
+  explain some basic ideas about the R: device.
+
+
 2003-03-07  Piotr Fusik  <fox@scene.pl>
 * pia.[ch], memory.[ch], atari.c: fixed MultiJoy and PORTB:
   PORTA must be configured as output to select MultiJoy port.

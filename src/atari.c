@@ -411,7 +411,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-nopatch") == 0)
 			enable_sio_patch = FALSE;
 		else if (strcmp(argv[i], "-nopatchall") == 0)
-			enable_sio_patch = enable_h_patch = enable_p_patch = FALSE;
+			enable_sio_patch = enable_h_patch = enable_p_patch = enable_r_patch = FALSE;
 		else if (strcmp(argv[i], "-pal") == 0)
 			tv_mode = TV_PAL;
 		else if (strcmp(argv[i], "-ntsc") == 0)
@@ -1001,6 +1001,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.48  2003/05/28 19:54:58  joy
+R: device support (networking?)
+
 Revision 1.47  2003/03/07 11:38:40  pfusik
 oops, didn't updated to 1.45 before commiting 1.46
 

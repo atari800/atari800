@@ -141,9 +141,13 @@ Cameron Heide <cheide@home.com>
 Alex Hornby <alex@zetnet.co.uk>
     - Virtual 2600 Emulator from which I took /dev/dsp device code
 
+Tom Hunt
+    - original author of R: device support
+
 Gerhard Janka <gerhard.janka@siemens.at>
     - cpu_m68k.s corrections and improvements
     - double buffering of screen output
+    - cpu_m68k.asm massive updates that keep it compatible with cpu.c
 
 Ed Kaminski <ekamins@ibm.net>
     - Correction of Antic 4&5 Bug affecting Galactic Chase & Mr. Do
@@ -167,6 +171,9 @@ Chris Lam <lamcw@sun.aston.ac.uk>
 Rich Lawrence <rich@kesmai.com>
     - Win32 port (using DirectX)
     - DCM and ZLIB compressed files support
+
+Chris Martin <cmartin@ti.com>
+    - R: device in Atari800
 
 Cyrus Malek <Cyrus.Malek@amd.com>
     - Patch to make the X11 Backspace key work the same as the Delete key
