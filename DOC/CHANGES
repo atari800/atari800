@@ -1,3 +1,6 @@
+o the configure process can be silent now - use --enable-FEATURE or --disable-FEATURE
+  (e.g. --disable-SOUND). Sent by Dale Scheetz (the original author is Alan Shutko).
+
 o completely refactored UI by Vasyl. Now allows different (port specific) GUIs.
 
 o Basic XE (OSS Supercart) should work now <Shamus>
