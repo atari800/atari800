@@ -1,4 +1,4 @@
-
+/* $Id$ */
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef VMS
@@ -2701,10 +2701,6 @@ after_screen_update:
 		XtAppNextEvent(app, &event);
 		XtDispatchEvent(&event);
 	}
-#endif
-
-#ifdef SOUND
-	Sound_Update();
 #endif
 
 	if (screen_dump) {

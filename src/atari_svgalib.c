@@ -653,9 +653,6 @@ void Atari_DisplayScreen(UBYTE * screen)
 #endif
 after_screen_update:
 
-#ifdef SOUND
-	Sound_Update();
-#endif
 }
 
 #ifdef LINUX_JOYSTICK
@@ -769,6 +766,9 @@ void LeaveVGAMode(void)
 
 /*
 $Log$
+Revision 1.5  2001/04/08 05:54:48  knik
+sound_update call removed (moved to atari.c)
+
 Revision 1.4  2001/03/22 06:15:49  knik
 ctrig fix
 

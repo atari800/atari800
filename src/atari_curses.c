@@ -1,3 +1,4 @@
+/* $Id$ */
 #ifdef NCURSES
 #include	<ncurses.h>
 #else
@@ -592,11 +593,6 @@ int Atari_Keyboard(void)
 		keycode = AKEY_NONE;
 		break;
 	}
-
-#ifdef SOUND
-        Sound_Update();
-#endif
-
 	return keycode;
 }
 
@@ -624,3 +620,10 @@ int Atari_PEN(int vertical)
 {
 	return 0;
 }
+
+/*
+$Log$
+Revision 1.3  2001/04/08 05:54:48  knik
+sound_update call removed (moved to atari.c)
+
+*/
