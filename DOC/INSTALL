@@ -2,9 +2,7 @@ Installation of the Atari 800 Emulator
 --------------------------------------
 
 If you downloaded this package from CVS install autoconf and run autogen.sh
-before configuring. Version of autoconf more recent than 2.13 may require
-install-sh, config.sub and config.guess files. These files can be found in
-autoconf source package.
+before configuring.
 
 Irrespective of whether you are going to compile the emulator yourself
 or install a pre-compiled binary version you must obtain a copy of the
