@@ -1,3 +1,4 @@
+/* $Id$ */
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
@@ -12,9 +13,7 @@
 #else
 #include	<fcntl.h>
 #ifndef	AMIGA
-#ifndef WIN32
 #include	<unistd.h>
-#endif
 #endif
 #endif
 
@@ -28,16 +27,8 @@
 #undef	DO_DIR
 #endif
 
-#ifdef WIN32
-#include <io.h>
-#include <sys/stat.h>
-#include "windows.h"
-#endif
-
 #ifdef DO_DIR
-#ifndef WIN32
 #include	<dirent.h>
-#endif
 #endif
 
 #ifdef BASIC
@@ -146,9 +137,7 @@ static int fid;
 static char filename[64];
 
 #ifdef DO_DIR
-#ifndef WIN32
 static DIR	*dp = NULL;
-#endif
 #endif
 
 char *strtoupper(char *str)
@@ -189,11 +178,7 @@ int Device_isvalid(char ch)
 {
 	int valid;
 
-#ifdef WIN32
-  if( isalnum(ch) && ch!=-101 )
-#else
 	if (isalnum(ch))
-#endif
 		valid = TRUE;
 	else
 		switch (ch) {
@@ -328,7 +313,6 @@ void Device_HHOPEN(void)
 	case 6:
 	case 7:
 #ifdef DO_DIR
-#ifndef WIN32
 		fp[fid] = tmpfile();
 		if (fp[fid]) {
 			dp = opendir(H[devnum]);
@@ -357,47 +341,6 @@ void Device_HHOPEN(void)
 			}
 		}
           else
-#else	/* WIN32 DIR code */
-		  fp[fid] = tmpfile ();
-	  if( fp[fid] )
-	  {
-		  WIN32_FIND_DATA FindFileData;
-		  HANDLE	hSearch;
-		  char filesearch[ MAX_PATH ];
-		  
-		  strcpy( filesearch, H[devnum] );
-		  strcat( filesearch, "\\*.*" );
-		  
-		  hSearch = FindFirstFile( filesearch, &FindFileData );
-		  
-		  if( hSearch )
-		  {
-			  FindNextFile( hSearch, &FindFileData );
-			  
-			  while( FindNextFile( hSearch, &FindFileData ) )
-			  {
-				  if( (match( filename, FindFileData.cFileName )) )
-					  fprintf (fp[fid],"%s\n", FindFileData.cFileName );
-			  }
-			  
-			  FindClose( hSearch );
-			  regY = 1;
-			  ClrN;
-			  
-			  rewind (fp[fid]);
-			  
-			  flag[fid] = TRUE;
-		  }
-		  else
-		  {
-			  regY = 163;
-			  SetN;
-			  fclose (fp[fid]);
-			  fp[fid] = NULL;
-		  }
-	  }
-	  else
-#endif /* Win32 */
 #endif /* DO_DIR */
 		{
 			regY = 163;
@@ -602,13 +545,11 @@ void Device_PHCLOS(void)
 		system(command);
 
 #ifndef VMS
-#ifndef WIN32
 		status = unlink(spool_file);
 		if (status == -1) {
 			perror(spool_file);
 			exit(1);
 		}
-#endif
 #endif
 
 		phfd = -1;
@@ -972,3 +913,10 @@ void AtariEscape(UBYTE esc_code)
 		exit(0);
 #endif
 }
+
+/*
+$Log$
+Revision 1.4  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

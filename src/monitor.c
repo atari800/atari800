@@ -1,12 +1,9 @@
+/* $Id$ */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
-
-#ifdef WIN32
-#include "windows.h"
-#endif
 
 #ifdef VMS
 #include <unixio.h>
@@ -1366,3 +1363,9 @@ UWORD assembler(UWORD addr)
 }
 #endif
 
+/*
+$Log$
+Revision 1.2  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

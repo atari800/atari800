@@ -1,3 +1,4 @@
+/* $Id$ */
 /*****************************************************************************/
 /*                                                                           */
 /* Module:  POKEY Chip Emulator, V2.4                                        */
@@ -93,9 +94,7 @@
 #include "atari.h"
 #include "sndsave.h"
 
-#ifndef WIN32
 #include "config.h"
-#endif
 
 #ifdef UNALIGNED_LONG_OK
 #  define READ_U32(x)    (*(uint32 *)(x))
@@ -742,7 +741,7 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
 #endif
 		count--;
 	} while (count);
-//#if defined (USE_DOSSOUND) || (WIN32)
+//#if defined (USE_DOSSOUND)
 //	cur_val += 32 * atari_speaker;
 //#endif
 
@@ -1152,3 +1151,10 @@ void Update_vol_only_sound( void )
 #endif /* NO_CONSOL_SOUND */
 }
 #endif	/* NO_VOL_ONLY */
+
+/*
+$Log$
+Revision 1.3  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

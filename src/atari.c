@@ -7,9 +7,6 @@
 #include <signal.h>
 #ifdef WIN32
 #include <windows.h>
-#include <io.h>
-#include <time.h>
-#include "winatari.h"
 #else
 #include <sys/time.h>
 #include <unistd.h>
@@ -80,25 +77,7 @@ double fps;
 int nframes;
 ULONG lastspeed;				/* measure time between two Antic runs */
 
-#ifdef WIN32		/* AUGH clean this crap up REL */
-#include "ddraw.h"
-#include "registry.h"
-extern unsigned char *screenbuff;
-extern void (*Atari_PlaySound)( void );
-extern HWND	hWnd;
-extern void GetJoystickInput( void );
-extern void Start_Atari_Timer( void );
-extern void Screen_Paused( UBYTE *screen );
-extern unsigned long ulMiscStates;
-extern void CheckBootFailure( void );
-int			ulAtariState = ATARI_UNINITIALIZED | ATARI_PAUSED;
-int		test_val;
-int		FindCartType( char *rom_filename );
-char	current_rom[ _MAX_PATH ];
 int pil_on = FALSE;
-#else	/* not Win32 */
-int pil_on = FALSE;
-#endif
 
 int	os = 2;
 
@@ -211,19 +190,6 @@ int main(int argc, char **argv)
 #endif /* REALTIME */
 #endif /* linux */
 
-#ifdef WIN32
-	/* The Win32 version doesn't use configuration files, it reads values in from the Registry */
-	int update_registry = FALSE;
-	Ram256 = 0;
-
-	if( argc > 1 )
-		update_registry = TRUE;
-	ulAtariState &= ~ATARI_UNINITIALIZED;
-	ulAtariState |= ATARI_INITIALIZING | ATARI_PAUSED;
-	rom_inserted = FALSE;
-	Aprint("Start log");
-	test_val = 0;
-#else
 	char *rtconfig_filename = NULL;
 	int config = FALSE;
 
@@ -262,8 +228,6 @@ int main(int argc, char **argv)
 
 		RtConfigSave();
 	}
-
-#endif /* !Win32 */
 
 	switch (default_system) {
 	case 1:
@@ -378,10 +342,8 @@ int main(int argc, char **argv)
 		else if (strcmp(argv[i], "-palette") == 0)
 			read_palette(argv[++i]);
 		else if (strcmp(argv[i], "-help") == 0) {
-#ifndef WIN32
 			Aprint("\t-configure    Update Configuration File");
 			Aprint("\t-config fnm   Specify Alternate Configuration File");
-#endif
 			Aprint("\t-atari        Standard Atari 800 mode");
 			Aprint("\t-xl           Atari 800XL mode");
 			Aprint("\t-xe           Atari 130XE mode");
@@ -406,11 +368,9 @@ int main(int argc, char **argv)
 			Aprint("\t-c            Enable RAM between 0xc000 and 0xd000");
 			Aprint("\t-v            Show version/release number");
 			argv[j++] = argv[i];
-#ifndef WIN32
 			Aprint("\nPress Return/Enter to continue...");
 			getchar();
 			Aprint("\r                                 \n");
-#endif
 		}
 		else if (strcmp(argv[i], "-a") == 0)
 			os = 1;
@@ -449,15 +409,11 @@ int main(int argc, char **argv)
 
 
 	if (!atari_screen) {
-#ifdef WIN32
-		atari_screen = (ULONG *)screenbuff;
-#else
 		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
 #ifdef BITPL_SCR
 		atari_screen_b = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
 		atari_screen1 = atari_screen;
 		atari_screen2 = atari_screen_b;
-#endif
 #endif
 	}
 	/*
@@ -495,9 +451,7 @@ int main(int argc, char **argv)
 	/*
 	 * Install CTRL-C Handler
 	 */
-#ifndef WIN32
 	signal(SIGINT, sigint_handler);
-#endif
 	/*
 	 * Configure Atari System
 	 */
@@ -521,15 +475,6 @@ int main(int argc, char **argv)
 		status = Initialise_AtariXE();
 		break;
 	case Atari320XE:
-#ifdef WIN32
-		if( !Ram256 )
-		{
-		if( ulMiscStates & ATARI_RAMBO_MODE )
-			Ram256 = 1;
-		else
-			Ram256 = 2;
-		}
-#endif
 		/* Ram256 is even now set */
 		status = Initialise_Atari320XE();
 		break;
@@ -543,52 +488,17 @@ int main(int argc, char **argv)
 		return FALSE;
 	}
 
-#ifdef WIN32
-	if (!status || (ulAtariState & ATARI_UNINITIALIZED) )
-    {
-		Aprint("Failed loading specified Atari OS ROM (or basic), check filename\nunder the Atari/Hardware and Atari/Cartridges menu.");
-		ulAtariState |= ATARI_LOAD_FAILED | ATARI_PAUSED | ATARI_LOAD_WARNING;
-
-		CheckBootFailure( );
-		
-		if( update_registry )
-			WriteAtari800Registry( NULL );
-		return FALSE;
-	}
-#else
 	if (!status) {
 		Aprint("Operating System not available - using Emulated OS");
 		status = Initialise_EmuOS();
 	}
-#endif /* WIN32 */
 
 /*
  * ================================
  * Install requested ROM cartridges
  * ================================
  */
-#ifdef WIN32
-	if( current_rom[0] )
-	{
-		rom_filename = current_rom;
-		if( !strcmp( current_rom, "None" ) )
-			rom_filename = NULL;
-		if( !strcmp( atari_basic_filename, current_rom ) )
-		{
-			if( hold_option )
-				rom_filename = NULL;
-			else
-				cart_type = NORMAL8_CART;
-		}
-	}
-#endif /* WIN32 */
 	if (rom_filename) {
-#ifdef WIN32
-	  if( !cart_type || cart_type == NO_CART )
-	  {
-		  cart_type = FindCartType( rom_filename );
-	  }
-#endif /* WIN32 */
 		switch (cart_type) {
 		case CARTRIDGE:
 			status = Insert_Cartridge(rom_filename);
@@ -629,43 +539,11 @@ int main(int argc, char **argv)
 	if (run_direct != NULL)
 		BIN_loader(run_direct);
 
-#ifdef WIN32
-	if( update_registry )
-		WriteAtari800Registry( NULL );
-	Start_Atari_Timer();
-	ulAtariState = ATARI_HW_READY | ATARI_PAUSED;
-#else
 	Atari800_Hardware();
 	Aprint("Fatal error: Atari800_Hardware() returned");
 	Atari800_Exit(FALSE);
-#endif /* WIN32 */
 	return 0;
 }
-
-#ifdef WIN32
-int FindCartType( char *rom_filename )
-{
-	int		file;
-	int		length = 0, result = -1;
-
-	file =  _open( rom_filename, _O_RDONLY | _O_BINARY, 0 );
-	if( file == -1 )
-		return NO_CART;
-
-	length = _filelength( file );
-	_close( file );
-
-	cart_type = NO_CART;
-	if( length < 8193 )
-		cart_type = NORMAL8_CART;
-	else if( length < 16385 )
-		cart_type = NORMAL16_CART;
-	else if( length < 32769 )
-		cart_type = AGS32_CART;
-
-	return cart_type;
-}
-#endif /* WIN32 */
 
 int Atari800_Exit(int run_monitor)
 {
@@ -962,26 +840,6 @@ void Atari800_Hardware(void)
 	}
 }
 
-#ifdef WIN32
-void WinAtari800_Hardware (void)
-{
-	Atari_Keyboard ();
-	GetJoystickInput( );
-	ANTIC_RunDisplayList();			/* generate screen */
-	Update_LED();
-	if (++test_val==refresh_rate)
-	{
-		Atari_DisplayScreen ((UBYTE*)atari_screen);
-		test_val = 0;
-	}
-	Atari_PlaySound();
-
-	if( ulAtariState & ATARI_PAUSED )
-		Screen_Paused( (UBYTE *)atari_screen );
-}
-#endif /* Win32 */
-
-#ifndef WIN32
 int zlib_capable(void)
 {
 #ifdef ZLIB_CAPABLE
@@ -1002,7 +860,6 @@ int ReadDisabledROMs(void)
 {
 	return FALSE;
 }
-#endif
 
 void MainStateSave( void )
 {
@@ -1085,6 +942,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.5  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
 Revision 1.4  2001/03/18 06:24:04  knik
 unused variable removed
 

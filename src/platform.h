@@ -1,3 +1,4 @@
+/* $Id$ */
 #ifndef __PLATFORM__
 #define __PLATFORM__
 
@@ -10,11 +11,7 @@
 void Atari_Initialise(int *argc, char *argv[]);
 int Atari_Exit(int run_monitor);
 int Atari_Keyboard(void);
-#ifdef WIN32
-void (*Atari_DisplayScreen)(UBYTE *screen);
-#else
 void Atari_DisplayScreen (UBYTE *screen);
-#endif
 
 int Atari_PORT(int num);
 int Atari_TRIG(int num);
@@ -26,3 +23,10 @@ void Atari_Set_LED(int how);
 #endif
 
 #endif
+
+/*
+$Log$
+Revision 1.2  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

@@ -1,3 +1,4 @@
+/* $Id$ */
 /* dcmtoatr based on code written by Chad Wagner (cmwagner@gate.net),
    version 1.4 (also by Preston Crow) */
 
@@ -9,10 +10,6 @@
 /* This also became the natural place to put zlib conversion functions */
 
 /* Include files */
-#ifdef WIN32
-#include <windows.h>
-#include <io.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -60,16 +57,9 @@ static unsigned char	createdisk ,working ,last ,density, buf[256], atr;
 static FILE *fin = NULL, *fout = NULL;
 
 
-#ifdef WIN32
-extern FARPROC	pgzread, pgzopen, pgzclose, pgzwrite, pgzerror;
-#define GZOPEN( X, Y ) (gzFile)pgzopen( X, Y )
-#define GZCLOSE( X ) (int)pgzclose( X )
-#define GZREAD( X, Y, Z ) (int)pgzread( X, Y, Z )
-#else
 #define GZOPEN( X, Y ) gzopen( X, Y )
 #define GZCLOSE( X ) gzclose( X )
 #define GZREAD( X, Y, Z ) gzread( X, Y, Z )
-#endif
 
 /* This is a port-specific function that should return -1 if the port is unable to
    use zlib, any other value if it can. For instance, Windows might return -1 if the
@@ -173,9 +163,6 @@ int openzlib(int diskno, const char *infilename, char *outfilename )
 			}
 		} while( result == ZLIB_BUFFER_SIZE );
 		temp = GZCLOSE( gzSource );
-#ifdef WIN32
-		_commit( outfile );
-#endif
 		close( outfile );
 		if( result > -1 )
 			fd = open(outfilename, O_RDONLY | O_BINARY, 0777);
@@ -338,12 +325,6 @@ int opendcm( int diskno, const char *infilename, char *outfilename )
 	FILE	*infile, *outfile;
 	int	fd = -1;
 	char	*curptr = outfilename;
-
-#ifdef WIN32
-	curptr += GetTempPath( MAX_PATH, outfilename) - 1;
-	if( (curptr == outfilename - 1) || *curptr != '\\' )
-		curptr++;
-#endif
 
 	if( tmpnam( curptr )== NULL )
 		return -1;
@@ -673,3 +654,10 @@ static long soffset()
 	return (long)atr + (cursec < 4 ? ((long)cursec - 1) * 128 :
 			 ((long)cursec - 1) * secsize);
 }
+
+/*
+$Log$
+Revision 1.3  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

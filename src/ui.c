@@ -1,14 +1,11 @@
+/* $Id$ */
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>				/* for free() */
 #include <unistd.h>				/* for open() */
-#ifdef WIN32
-#include "winatari.h"
-#else
 #include <dirent.h>
 #include <sys/stat.h>
-#endif
 #include "rt-config.h"
 #include "atari.h"
 #include "cpu.h"
@@ -48,13 +45,6 @@ static char curr_cart_dir[MAX_FILENAME_LEN] = "";
 static char curr_exe_dir[MAX_FILENAME_LEN] = "";
 static char curr_state_dir[MAX_FILENAME_LEN] = "";
 static char charset[1024];
-
-#ifdef WIN32
-extern unsigned long ulAtariState;
-extern void SafeShowScreen(void);
-extern HWND MainhWnd;
-unsigned long hThread = 0L;
-#endif	/* WIN32 */
 
 #ifdef STEREO
 extern int stereo_enabled;
@@ -550,38 +540,6 @@ int FilenameSort(char *filename1, char *filename2)
 
 List *GetDirectory(char *directory)
 {
-#ifdef WIN32
-	List *list = NULL;
-	char filesearch[MAX_PATH];
-	WIN32_FIND_DATA FindFileData;
-	HANDLE hSearch;
-
-	strcpy(filesearch, directory);
-	strcat(filesearch, "\\*.*");
-
-	hSearch = FindFirstFile(filesearch, &FindFileData);
-
-	if (hSearch) {
-		list = ListCreate();
-		if (!list) {
-			MessageBox(NULL, "Out of memory", "Atari800Win", MB_OK);
-			return NULL;
-		}
-		ListAddTail(list, FindFileData.cFileName);
-
-		while (FindNextFile(hSearch, &FindFileData)) {
-			char *filename = _strdup(FindFileData.cFileName);
-			if (!filename)
-				MessageBox(NULL, "Out of memory", "Atari800Win", MB_OK);
-			else
-				ListAddTail(list, filename);
-		}
-
-		FindClose(hSearch);
-
-		ListSort(list, FilenameSort);
-	}
-#else
 	DIR *dp = NULL;
 	List *list = NULL;
 	struct stat st;
@@ -669,7 +627,6 @@ List *GetDirectory(char *directory)
 #endif
 #endif
 
-#endif
 	return list;
 }
 
@@ -678,7 +635,7 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 	List *list;
 	int flag = FALSE;
 	int next_dir;
-#ifndef WIN32
+
 	do {
 #ifdef __DJGPP__
 		char helpdir[MAX_FILENAME_LEN];
@@ -836,7 +793,6 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 			ListFree(list, (void *) free);
 		}
 	} while (next_dir);
-#endif /* WIN32 */
 	return flag;
 }
 
@@ -847,7 +803,7 @@ void DiskManagement(UBYTE * screen)
 	int done = FALSE;
 	int dsknum = 0;
 	int i;
-#ifndef WIN32
+
 	for (i = 0; i < 8; ++i) {
 		menu[i] = sio_filename[i];
 		rwflags[i] = (drive_status[i] == ReadOnly ? TRUE : FALSE);
@@ -919,7 +875,6 @@ void DiskManagement(UBYTE * screen)
 		else
 			done = TRUE;
 	}
-#endif
 }
 
 void CartManagement(UBYTE * screen)
@@ -1273,9 +1228,7 @@ void ui(UBYTE *screen)
 #endif
 
 	ui_is_active = TRUE;
-#ifdef WIN32
-	ulAtariState |= ATARI_UI_ACTIVE;
-#endif
+
 	/* Sound_Active(FALSE); */
 	if (!initialised) {
 		get_charset(charset);
@@ -1430,11 +1383,6 @@ void ui(UBYTE *screen)
 	/* Sound_Active(TRUE); */
 	ui_is_active = FALSE;
 	while (Atari_Keyboard() != AKEY_NONE);	/* flush keypresses */
-#ifdef WIN32
-	ulAtariState &= ~ATARI_UI_ACTIVE;
-	hThread = 0L;
-	/* ExitThread(0); */
-#endif
 }
 
 
@@ -1499,3 +1447,10 @@ void ReadCharacterSet( void )
 {
 	get_charset(charset);
 }
+
+/*
+$Log$
+Revision 1.5  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

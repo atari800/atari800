@@ -1,10 +1,7 @@
+/* $Id$ */
 /* State saving module */
 
 /* Include files */
-#ifdef WIN32
-#include <windows.h>
-#include <io.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -42,20 +39,11 @@ extern int ReadDisabledROMs( void );
 extern int mach_xlxe;
 
 #ifdef ZLIB_CAPABLE
-#ifdef WIN32
-extern FARPROC	pgzread, pgzopen, pgzclose, pgzwrite, pgzerror;
-#define GZOPEN( X, Y ) (gzFile)pgzopen( X, Y )
-#define GZCLOSE( X ) (int)pgzclose( X )
-#define GZREAD( X, Y, Z ) (int)pgzread( X, Y, Z )
-#define GZWRITE( X, Y, Z ) (int)pgzwrite( X, Y, Z )
-#define GZERROR( X, Y ) (const char *)pgzerror( X, Y )
-#else
 #define GZOPEN( X, Y )		gzopen( X, Y )
 #define GZCLOSE( X )		gzclose( X )
 #define GZREAD( X, Y, Z )	gzread( X, Y, Z )
 #define GZWRITE( X, Y, Z )	gzwrite( X, Y, Z )
 #define GZERROR( X, Y )		gzerror( X, Y )
-#endif
 #else	/* ZLIB_CAPABLE */
 #define GZOPEN( X, Y )		fopen( X, Y )
 #define GZCLOSE( X )		fclose( X )
@@ -442,3 +430,10 @@ int ReadAtariState( char *filename, const char *mode )
 
 	return TRUE;
 }
+
+/*
+$Log$
+Revision 1.2  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

@@ -1,3 +1,4 @@
+/* $Id$ */
 /*
 
  * All Input is assumed to be going to RAM (no longer, ROM works, too.)
@@ -15,11 +16,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#ifdef WIN32
-#include <windows.h>
-#include <fcntl.h>
-#include <io.h>
-#else
 #ifdef VMS
 #include <unixio.h>
 #include <file.h>
@@ -27,7 +23,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #endif	/* VMS */
-#endif	/* WIN32 */
 
 extern int DELAYED_SERIN_IRQ;
 extern int DELAYED_SEROUT_IRQ;
@@ -1035,3 +1030,10 @@ int Rotate_Disks( void )
 
 	return bSuccess;
 }
+
+/*
+$Log$
+Revision 1.3  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

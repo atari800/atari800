@@ -1,3 +1,4 @@
+/* $Id$ */
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -19,11 +20,7 @@ void Aprint(char *format, ... )
 	va_end(args);
 
 #ifdef BUFFERED_LOG
-#ifdef WIN32
-	strcat(buffer, "\r\n");
-#else
 	strcat(buffer, "\n");
-#endif
 	buflen = strlen(buffer);
 
 	if ((strlen(memory_log) + strlen(buffer) + 1) > MAX_LOG_SIZE)
@@ -44,3 +41,10 @@ void Aflushlog(void)
 	}
 }
 #endif
+
+/*
+$Log$
+Revision 1.2  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

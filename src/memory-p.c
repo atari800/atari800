@@ -1,3 +1,4 @@
+/* $Id$ */
 /* #define MEM_DEBUG */
 
 #include <string.h>
@@ -574,9 +575,7 @@ void PORTB_handler(UBYTE byte)
 	default:
 		Aprint("Fatal Error in pia.c: PIA_PutByte(): Unknown machine\n");
 		Atari800_Exit(FALSE);
-#ifndef WIN32
 		exit(1);
-#endif
 		break;
 	}
 }
@@ -592,3 +591,10 @@ void get_charset(char * cs)
 	Aprint("get_charset called");
 	exit(1);
 }
+
+/*
+$Log$
+Revision 1.2  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

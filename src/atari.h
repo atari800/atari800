@@ -1,9 +1,6 @@
+/* $Id$ */
 #ifndef __ATARI__
 #define	__ATARI__
-
-#ifdef WIN32
-#include "windows.h"
-#endif
 
 #include "config.h"
 
@@ -29,12 +26,10 @@
 
 #define	UBYTE unsigned char
 #define	UWORD unsigned short int
-#ifndef WIN32
 #ifndef ATARI800_64_BIT
 #define	ULONG unsigned long int
 #else
 #define	ULONG unsigned int
-#endif
 #endif
 
 #ifndef O_BINARY				/* flag for binary files on MS-DOS */
@@ -449,3 +444,10 @@ int Insert_Cartridge(char *filename);
 void atari_sync(void);
 
 #endif
+
+/*
+$Log$
+Revision 1.5  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

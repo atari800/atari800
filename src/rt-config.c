@@ -1,3 +1,4 @@
+/* $Id$ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,9 +67,6 @@ int RtConfigLoad(char *rtconfig_filename)
 	FILE *fp;
 	int status = TRUE;
 
-	/* Win32 version doesn't use any of the RTxxx functions, but needs the variable 
-	   declarations above, so all of these are stubbed out by ifndefs in Win32	*/
-#ifndef WIN32
 	/*
 	 * Set Configuration Parameters to sensible values
 	 * in case the configuration file is missing.
@@ -90,7 +88,7 @@ int RtConfigLoad(char *rtconfig_filename)
 	atari_state_dir[0] = '\0';
 
 #ifdef SUPPORTS_ATARI_CONFIGINIT
-  Atari_ConfigInit();
+	Atari_ConfigInit();
 #endif
 
 	strcpy(print_command, "lpr %s");
@@ -227,13 +225,11 @@ int RtConfigLoad(char *rtconfig_filename)
 	else {
 		status = FALSE;
 	}
-#endif /* Win32 */
 	return status;
 }
 
 void RtConfigSave(void)
 {
-#ifndef WIN32
 	FILE *fp;
 	int i;
 
@@ -303,14 +299,12 @@ void RtConfigSave(void)
 #endif
 
 	fclose(fp);
-#endif /* Win32 */
 }
 
 #ifndef DONT_USE_RTCONFIGUPDATE
 
 void RtConfigUpdate(void)
 {
-#ifndef WIN32
 	strcpy(atari_osa_filename, "atariosa.rom");
 	strcpy(atari_osb_filename, "atariosb.rom");
 	strcpy(atari_xlxe_filename, "atarixl.rom");
@@ -392,7 +386,13 @@ void RtConfigUpdate(void)
 	fflush(stdout);
 	getchar();
 #endif
-#endif /* Win32 */
 }
 
 #endif /* DONT_USE_RTCONFIGUPDATE */
+
+/*
+$Log$
+Revision 1.3  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/

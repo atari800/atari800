@@ -1,3 +1,4 @@
+/* $Id$ */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -33,10 +34,6 @@ extern UBYTE atarixl_os[16384];
 extern UBYTE atari_basic[8192];
 extern int pil_on;
 extern int Ram256;
-
-#ifdef WIN32
-extern char	current_rom[ ];
-#endif
 
 int load_image(char *filename, int addr, int nbytes)
 {
@@ -79,9 +76,6 @@ int Insert_8K_ROM(char *filename)
 		cart_type = NORMAL8_CART;
 		rom_inserted = TRUE;
 		status = TRUE;
-#ifdef WIN32
-		strcpy( current_rom, filename );
-#endif
 	}
 	return status;
 }
@@ -103,9 +97,6 @@ int Insert_16K_ROM(char *filename)
 		cart_type = NORMAL16_CART;
 		rom_inserted = TRUE;
 		status = TRUE;
-#ifdef WIN32
-		strcpy( current_rom, filename );
-#endif
 	}
 	return status;
 }
@@ -134,9 +125,6 @@ int Insert_OSS_ROM(char *filename)
 			cart_type = OSS_SUPERCART;
 			rom_inserted = TRUE;
 			status = TRUE;
-#ifdef WIN32
-			strcpy( current_rom, filename );
-#endif
 		}
 		close(fd);
 	}
@@ -166,9 +154,6 @@ int Insert_DB_ROM(char *filename)
 			cart_type = DB_SUPERCART;
 			rom_inserted = TRUE;
 			status = TRUE;
-#ifdef WIN32
-			strcpy( current_rom, filename );
-#endif
 		}
 		close(fd);
 	}
@@ -232,9 +217,6 @@ int Insert_32K_5200ROM(char *filename)
 		/* cart_type = AGS32_CART; */
 		rom_inserted = TRUE;
 		status = TRUE;
-#ifdef WIN32
-		strcpy( current_rom, filename );
-#endif
 	}
 	return status;
 }
@@ -835,9 +817,7 @@ void PORTB_handler(UBYTE byte)
 	default:
 		Aprint("Fatal Error in pia.c: PIA_PutByte(): Unknown machine\n");
 		Atari800_Exit(FALSE);
-#ifndef WIN32
 		exit(1);
-#endif
 		break;
 	}
 }
@@ -887,3 +867,10 @@ void get_charset(char * cs)
 	else
 		memcpy(cs, memory + 0xe000, 1024);
 }
+
+/*
+$Log$
+Revision 1.2  2001/03/18 06:34:58  knik
+WIN32 conditionals removed
+
+*/
