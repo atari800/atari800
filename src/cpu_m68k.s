@@ -1,13 +1,16 @@
 ; Original Author :   empty head
-; Last changes    :   1st November 2000, gerhard.janka
-
-; Tries :
-;
-; cycles count from macros to each command ?!
+; Last changes    :   26th November 2000, gerhard.janka
 
 P65C02 ; we emulate this version of processor (6502 has a bug in jump code,
        ; you can emulate this bug by commenting out this line :)
 ; PROFILE  ; fills the 'instruction_count' array for instruction profiling
+; MONITOR_BREAK  ; jump to monitor at break
+; CRASH_MENU  ; enable crash menu output
+
+; TODO :
+;
+;   CRASH_MENU
+;   Changes at inofficial opcodes
 
   OPT    P=68040,L1,O+,W-
   output cpu_m68k.o
@@ -35,12 +38,26 @@ P65C02 ; we emulate this version of processor (6502 has a bug in jump code,
   xdef _regS
   xdef _regX
   xdef _regY
-  xdef _remember_PC
-  xdef _remember_JMP
   xref _memory
   xref _attrib
   ifd PROFILE
   xref _instruction_count
+  endc
+  ifd MONITOR_BREAK
+  xdef _remember_PC
+  xdef _remember_JMP
+  xref _break_addr
+  xref _break_step
+  xref _break_ret
+  xref _break_cim
+  xref _break_here
+  xref _brkhere
+  xref _ret_nesting
+  endc
+  ifd CRASH_MENU
+  xref _crash_code
+  xref _crash_address
+  xref _crash_afterCIM
   endc
   xdef _IRQ
   xdef _NMI
@@ -51,13 +68,20 @@ P65C02 ; we emulate this version of processor (6502 has a bug in jump code,
   xdef _CPU_INIT
   xdef _cycles ;temporarily needed outside :)
 
+  ifd MONITOR_BREAK
+
+rem_pc_steps  equ 16  ; has to be equal to REMEMBER_PC_STEPS
+rem_jmp_steps equ 16  ; has to be equal to REMEMBER_JMP_STEPS
+
 remember_PC
 _remember_PC
-  ds.w 16  ;REMEMBER_PC_STEPS
+  ds.w rem_pc_steps   ;REMEMBER_PC_STEPS
 
 remember_JMP
 _remember_JMP
-  ds.w 16  ;REMEMBER_JMP_STEPS
+  ds.w rem_jmp_steps  ;REMEMBER_JMP_STEPS
+
+  endc
 
 regA
   ds.b 1
@@ -121,7 +145,9 @@ UPDATE_GLOBAL_REGS  macro
 ;#define UPDATE_LOCAL_REGS PC=regPC;A=regA;X=regX;Y=regY
 UPDATE_LOCAL_REGS macro
   clr.l   d7
-  movem.w regA,d2-d4       ;d2-d4 (A,X,Y)
+  move.w  regA,d2
+  move.w  regX,d3
+  move.w  regY,d4
 ; lea     $100(memory_pointer),stack_pointer
   move.w  regPC,d7
   move.l  memory_pointer,PC6502
@@ -424,7 +450,7 @@ ConvertSTATUS_RegP macro
   andi.b #Z_FLAGN,\1
 .SETZ\@
   tst.l  VFLAG
-  bne.s  .SETV\@
+  bmi.s  .SETV\@        ; !!!
   andi.b #V_FLAGN,\1
 .SETV\@
   move.b \1,_regP       ;put result to _regP ! TEST
@@ -432,9 +458,10 @@ ConvertSTATUS_RegP macro
 
 ConvertRegP_STATUS macro
   move.b _regP,\1
+  clr.l  VFLAG          ; !!!
   btst   #V_FLAGB,\1
   beq.s  .SETV\@
-  bset   #31,VFLAG
+  not.l  VFLAG          ; much faster than setting bit
 .SETV\@
   btst   #C_FLAGB,\1
   sne    CCR6502
@@ -578,6 +605,9 @@ CPUCHECKIRQ macro
   move.l d7,PC6502
   add.l  memory_pointer,PC6502
   addq.l #7,CD
+  ifd MONITOR_BREAK
+  addq.l #1,_ret_nesting
+  endc
   bra.w  NEXTCHANGE_WITHOUT
   endm
 
@@ -613,6 +643,9 @@ _NMI:
   LoHi d1
   move.w d1,_regPC
   addq.l #7,_xpos
+  ifd MONITOR_BREAK
+  addq.l #1,_ret_nesting
+  endc
   rts
 
 _GO: ;cycles (d0)
@@ -655,7 +688,6 @@ NO_WS_HALT:
   lea     $100(memory_pointer),stack_pointer
   UPDATE_LOCAL_REGS
   ConvertRegP_STATUS d0
-; lea     OPMODE_TABLE,a1
   lea     _attrib,attrib_pointer
   tst.b   _IRQ          ; CPUCHECKIRQ
   beq     NEXTCHANGE_WITHOUT
@@ -681,6 +713,9 @@ NO_WS_HALT:
   add.l   memory_pointer,PC6502
   addq.l #7,CD
   clr.b   _IRQ ;clear interrupt.....
+  ifd MONITOR_BREAK
+  addq.l #1,_ret_nesting
+  endc
   bra     NEXTCHANGE_WITHOUT
 
 ;/*
@@ -695,7 +730,8 @@ NO_WS_HALT:
 
 NCYCLES_XY macro
   cmp.b  \1,d7 ; if ( (UBYTE) addr < X,Y ) ncycles++;
-  bpl.s  .NCY_XY_NC\@
+; bpl.s  .NCY_XY_NC\@
+  bcc.s  .NCY_XY_NC\@             ; !!!
   addq.l #1,CD
 .NCY_XY_NC\@:
   endm
@@ -813,7 +849,6 @@ GETANYBYTE macro
   bne.s  .Getbyte_RAMROM\@
   EXE_GETBYTE
   move.b d0,\1
-; lea OPMODE_TABLE,a1
   bra.s  .AFTER_READ\@
 .Getbyte_RAMROM\@
   move.b (memory_pointer,d7.l),\1 ;get byte
@@ -824,7 +859,6 @@ GETANYBYTE_d0 macro
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   bne.s  .Getbyte_RAMROM\@
   EXE_GETBYTE
-; lea OPMODE_TABLE,a1
   bra.s  .AFTER_READ\@
 .Getbyte_RAMROM\@
   move.b (memory_pointer,d7.l),d0 ;get byte
@@ -839,7 +873,6 @@ LOADANYBYTE macro
 .LoadByte_HW\@
   EXE_GETBYTE
   move.b d0,\1
-; lea OPMODE_TABLE,a1
   NEXTCHANGE_REG \1
   endm
 
@@ -900,7 +933,6 @@ A800PUTB:
   move.l d1,-(a7)
   EXE_PUTBYTE_d0
   move.l (a7)+,d1
-; lea OPMODE_TABLE,a1
 A800PUTBE:
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -933,7 +965,6 @@ RPW_HW_ROL:
   move.l ZFLAG,-(a7)
   EXE_PUTBYTE ZFLAG
   move.l (a7)+,ZFLAG
-; lea OPMODE_TABLE,a1
   bra.w  NEXTCHANGE_WITHOUT
 RPW_ROM_ROL:
   move.b (memory_pointer,d7.l),ZFLAG ;get byte
@@ -967,7 +998,6 @@ RPW_HW_ROR:
   move.l ZFLAG,-(a7)
   EXE_PUTBYTE ZFLAG
   move.l (a7)+,ZFLAG
-; lea OPMODE_TABLE,a1
   bra.w  NEXTCHANGE_WITHOUT
 RPW_ROM_ROR:
   move.b (memory_pointer,d7.l),ZFLAG ;get byte
@@ -1000,7 +1030,6 @@ RPW_HW_ASL:
   move.l ZFLAG,-(a7)
   EXE_PUTBYTE ZFLAG
   move.l (a7)+,ZFLAG
-; lea OPMODE_TABLE,a1
   bra.w  NEXTCHANGE_WITHOUT
 RPW_ROM_ASL:
   move.b (memory_pointer,d7.l),ZFLAG ;get byte
@@ -1033,7 +1062,6 @@ RPW_HW_LSR:
   move.l ZFLAG,-(a7)
   EXE_PUTBYTE ZFLAG
   move.l (a7)+,ZFLAG
-; lea OPMODE_TABLE,a1
   bra.w  NEXTCHANGE_WITHOUT
 RPW_ROM_LSR:
   move.b (memory_pointer,d7.l),ZFLAG ;get byte
@@ -1067,12 +1095,6 @@ LSE_C_CONT macro   ;/* [unofficial - LSR Mem then EOR with A] */
 .ROM_OR_HW\@
   cmp.b  #isROM,(attrib_pointer,d7.l)
   bne.w  A800PUTB
-  bra.w  NEXTCHANGE_WITHOUT
-  endm
-
-CIM_C_CONT macro   ;/* [unofficial - crash intermediate] */
-  subq.w #1,PC6502
-; addq.l #\1,CD
   bra.w  NEXTCHANGE_WITHOUT
   endm
 
@@ -1166,7 +1188,6 @@ OR_ANYBYTE macro
 .Getbyte_HW\@:
   EXE_GETBYTE
   or.b   d0,A
-; lea OPMODE_TABLE,a1
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
   endm
@@ -1199,7 +1220,6 @@ AND_ANYBYTE macro
 .Getbyte_HW\@:
   EXE_GETBYTE
   and.b  d0,A
-; lea OPMODE_TABLE,a1
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
   endm
@@ -1226,8 +1246,25 @@ BIT_C_CONT macro
 
 ;opcode_02:  ;/* CIM [unofficial] */
 instr_CIM:
-  addq.l #cy_02,CD
-  CIM_C_CONT cy_CIM
+  subq.w #1,PC6502
+  addq.l #cy_CIM,CD
+  clr.l d7
+  ifd MONITOR_BREAK
+  move.b #1,_break_cim
+  move.b #$ff,d7
+  UPDATE_GLOBAL_REGS
+  CPU_GetStatus d0
+; ifd CRASH_MENU
+; ...
+; else
+  move.l d7,-(a7)
+  jsr    _AtariEscape
+  addq.l #4,a7
+; endc             ;
+  CPU_PutStatus d0
+  UPDATE_LOCAL_REGS
+  endc
+  bra.w  NEXTCHANGE_WITHOUT
 
 opcode_03:  ;/* ASO (ab,x) [unofficial] */
   INDIRECT_X
@@ -1759,6 +1796,21 @@ opcode_ff:  ;/* INS abcd,x [unofficial] */
 ; official opcodes
 
 opcode_00: ;/* BRK */
+  ifd MONITOR_BREAK
+  tst.l _brkhere
+  beq.s .oc_00_norm
+  move.b #1,_break_here
+  move.b #$ff,d7
+  UPDATE_GLOBAL_REGS
+  CPU_GetStatus d0
+  move.l d7,-(a7)
+  jsr    _AtariEscape
+  addq.l #4,a7
+  CPU_PutStatus d0
+  UPDATE_LOCAL_REGS
+  bra.w  NEXTCHANGE_WITHOUT
+.oc_00_norm:
+  endc
   addq.l #cy_00,CD
 ; btst   #I_FLAGB,_regP
 ; bne.w  NEXTCHANGE_WITHOUT
@@ -1861,6 +1913,16 @@ opcode_20: ;/* JSR abcd */
   addq.l #cy_20,CD
   move.l PC6502,d7 ;current pointer
   sub.l memory_pointer,d7
+  ifd MONITOR_BREAK
+  move.l #rem_jmp_steps,d0
+  subq.l #1,d0
+  lea _remember_JMP,a0
+.shift_rem_jmp:
+  move.w 2(a0),(a0)+
+  dbra   d0,.shift_rem_jmp
+  move.w d7,-(a0)  ; remember program counter
+  addq.l #1,_ret_nesting
+  endc
   addq.l #1,d7 ; return address
   PHW d7,d0
   JMP_C cy_20
@@ -1918,6 +1980,9 @@ opcode_28: ;/* PLP */
   move.l d7,PC6502
   add.l  memory_pointer,PC6502
   addq.l #7,CD
+  ifd MONITOR_BREAK
+  addq.l #1,_ret_nesting
+  endc
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_29: ;/* AND #ab */
@@ -1993,6 +2058,15 @@ _RTI:
   addq.l #cy_40,CD
   PLP_AND_W d7,d0
   lea    (memory_pointer,d7.l),PC6502
+  ifd MONITOR_BREAK
+  tst.b _break_ret
+  beq.s .mb_end
+  tst.l _ret_nesting
+  bmi.s .mb_end
+  move.b #1,_break_step
+.mb_end:
+  subq.l #1,_ret_nesting
+  endc
   tst.b  _IRQ           ; CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
   move.b _regP,d0
@@ -2020,6 +2094,9 @@ _RTI:
   move.l d7,PC6502
   add.l  memory_pointer,PC6502
   addq.l #7,CD
+  ifd MONITOR_BREAK
+  addq.l #1,_ret_nesting
+  endc
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_41: ;/* EOR (ab,x) */
@@ -2060,6 +2137,18 @@ opcode_4a: ;/* LSRA */
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_4c: ;/* JMP abcd */
+  ifd MONITOR_BREAK
+  move.l #rem_jmp_steps,d0
+  subq.l #1,d0
+  lea _remember_JMP,a0
+.shift_rem_jmp:
+  move.w 2(a0),(a0)+
+  dbra   d0,.shift_rem_jmp
+  move.l PC6502,d0
+  sub.l  memory_pointer,d0
+  move.w d0,-(a0)  ; remember program counter
+  addq.l #1,_ret_nesting
+  endc
   addq.l #cy_4c,CD
   JMP_C cy_4c
 
@@ -2114,6 +2203,9 @@ opcode_58: ;/* CLI */
   add.l  memory_pointer,PC6502
   clr.b  _IRQ
   addq.l #7,CD
+  ifd MONITOR_BREAK
+  addq.l #1,_ret_nesting
+  endc
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_59: ;/* EOR abcd,y */
@@ -2137,6 +2229,15 @@ opcode_60: ;/* RTS */
   PLW d7,d0
   lea    1(memory_pointer,d7.l),PC6502
   addq.l #cy_60,CD
+  ifd MONITOR_BREAK
+  tst.b _break_ret
+  beq.s .mb_end
+  tst.l _ret_nesting
+  bmi.s .mb_end
+  move.b #1,_break_step
+.mb_end:
+  subq.l #1,_ret_nesting
+  endc
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_61: ;/* ADC (ab,x) */
@@ -2174,6 +2275,18 @@ opcode_6a: ;/* RORA */
   NEXTCHANGE_REG A
 
 opcode_6c: ;/* JMP (abcd) */
+  ifd MONITOR_BREAK
+  move.l #rem_jmp_steps,d0
+  subq.l #1,d0
+  lea _remember_JMP,a0
+.shift_rem_jmp:
+  move.w 2(a0),(a0)+
+  dbra   d0,.shift_rem_jmp
+  move.l PC6502,d0
+  sub.l  memory_pointer,d0
+  move.w d0,-(a0)  ; remember program counter
+  addq.l #1,_ret_nesting
+  endc
   move.w (PC6502)+,d7
   LoHi d7
   ifd P65C02
@@ -2541,21 +2654,26 @@ opcode_d1: ;/* CMP (ab),y */
 opcode_d2: ;/* ESCRTS #ab (JAM) - on Atari is here instruction CIM
            ;[unofficial] !RS! */
   move.b (PC6502)+,d7
-; movem.l d1/a1,-(a7)
-  move.l d1,-(a7)
   move.l d7,-(a7)
   UPDATE_GLOBAL_REGS
   CPU_GetStatus d0
   jsr _AtariEscape /*in atari c*/
   addq.l #4,a7
   CPU_PutStatus d0
-; movem.l (a7)+,d1/a1
-  move.l (a7)+,d1
   UPDATE_LOCAL_REGS
   PLW d7,d0
   lea (memory_pointer,d7.l),PC6502
   addq.l #1,PC6502
   addq.l #cy_d2,CD
+  ifd MONITOR_BREAK
+  tst.b _break_ret
+  beq.s .mb_end
+  tst.l _ret_nesting
+  bmi.s .mb_end
+  move.b #1,_break_step
+.mb_end:
+  subq.l #1,_ret_nesting
+  endc
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_d5: ;/* CMP ab,x */
@@ -2676,16 +2794,12 @@ opcode_f1: ;/* SBC (ab),y */
 opcode_f2:  ;/* ESC #ab (JAM) - on Atari is here instruction CIM
             ;[unofficial] !RS! */
   move.b (PC6502)+,d7
-; movem.l d1/a1,-(a7)
-  move.l d1,-(a7)
   move.l d7,-(a7)
   UPDATE_GLOBAL_REGS
   CPU_GetStatus d0
   jsr _AtariEscape
   addq.l #4,a7
   CPU_PutStatus d0
-; movem.l (a7)+,d1/a1
-  move.l (a7)+,d1
   UPDATE_LOCAL_REGS
   addq.l #cy_f2,CD
   bra.w  NEXTCHANGE_WITHOUT
@@ -2745,15 +2859,24 @@ NEXTCHANGE_WITHOUT:
 ****************************************
   ifd MONITOR_BREAK  ;following block of code allows you to enter
   move ccr,-(sp)     ;a break address in monitor
+  move.l #rem_pc_steps,d7
+  subq.l #1,d7
+  lea _remember_PC,a0
+.shift_rem_pc:
+  move.w 2(a0),(a0)+
+  dbra   d7,.shift_rem_pc
   move.l PC6502,d7
   sub.l memory_pointer,d7
-  cmp.w _break_addr,d7
-  bne.s .get_first
+  move.w d7,-(a0)  ; remember program counter
+  cmp.w _break_addr,d7 ; break address reached ?
+  beq.s .go_monitor
+  tst.b _break_step ; step mode active ?
+  beq.s .get_first
+.go_monitor:
   move.b #$ff,d7
   move (sp)+,ccr
-  bsr odskoc_si   ;on break monitor is invoked
+  bsr go_monitor  ;on break monitor is invoked
   move ccr,-(sp)
-
 .get_first
   move (sp)+,ccr
   endc
@@ -2764,7 +2887,6 @@ NEXTCHANGE_WITHOUT:
   lea _instruction_count,a0
   addq.l #1,(a0,d7.l*4)
   endc
-; jmp ([a1,d7.l*4])
   jmp ([OPMODE_TABLE,PC,d7.l*4])
 
 END_OF_CYCLE:
@@ -2781,6 +2903,7 @@ SOLVE:
   move.l PC6502,d0
   add.l  d7,PC6502
   sub.l  memory_pointer,d0
+  and.w  #255,d0                  ; !!!
   add.w  d7,d0
   and.w  #$ff00,d0
   bne.s  SOLVE_PB
@@ -2794,12 +2917,13 @@ adc:
   btst   #D_FLAGB,_regP
   bne.s  BCD_ADC
   move.w CCR6502,CCR
-  addx.b d0,A ;data are added with carry (in 68000 Extended bit in this case)
-  move.w CCR,CCR6502
+  addx.b d0,A
   bvs.s  .SET_V
+  move.w CCR,CCR6502
   bclr   #31,VFLAG
   NEXTCHANGE_REG A
 .SET_V:
+  move.w CCR,CCR6502
   bset   #31,VFLAG
   NEXTCHANGE_REG A
 ; Version 1 : exact like Thor
@@ -2808,60 +2932,38 @@ adc:
 ;   C from decimal calc.
 ; a lot of code necessary to replicate a 6502 bug
 BCD_ADC:
-  move.w d6,-(a7)  ; no movem because d0 is needed first
-  move.w d7,-(a7)
-  move.w d0,-(a7)
-  move.b d0,d6
-  lsr.b  #4,d6
-  andi.b #$0f,d0  ; low nibble Add
+  move.w d0,-(a7)  ; needed first
+  andi.b #$0f,d0   ; low nibble Add
   move.b A,d7
-  andi.b #$0f,d7  ; low nibble A
+  andi.b #$0f,d7   ; low nibble A
   move.w CCR6502,CCR
-  addx.b d0,d7
-  cmp.b  #10,d7
-  bmi.s  .lonib_e
-  addq.b #6,d7   ; low nibble BCD fixup
-  andi.b #15,d7
-  addq.b #1,d6   ; add to high nibble Add
-.lonib_e:
+  abcd   d0,d7     ; low nibble BCD add
   move.b A,d0
-  lsr.b  #4,d0   ; high nibble A
-  add.b  d0,d6
-  move.b d6,ZFLAG
-  lsl.b  #4,ZFLAG
-  ext.w  NFLAG   ; NFLAG finished
-  move.w (a7),d0 ; without + because we need it again
-  eor.b  A,d0
-; not.b  d0
-; bpl.s  .CLR_V
-  bmi.s  .CLR_V
-  eor.b  A,ZFLAG
-  bpl.s  .CLR_V
+  andi.b #$f0,d0   ; high nibble Add
+  add.b  d0,d7
+  move.w (a7),d0
+  andi.b #$f0,d0   ; high nibble Add
+  add.b  d0,d7
+  move.b d7,ZFLAG
+  ext.w  NFLAG     ; NFLAG finished
+  eor.b  A,d0      ; A eor data
+  bmi.s  .CLR_V    ; highest bit ?
+  eor.b  A,ZFLAG   ; A eor temp
+  bpl.s  .CLR_V    ; not highest bit ?
   bset   #31,VFLAG
   bra.s  .V_DONE
-.CLR_V:
+ .CLR_V:
   bclr   #31,VFLAG
-.V_DONE:         ; VFLAG finished
-  cmp.b  #10,d6
-  bmi.s  .hinib_e
-  addq.b #6,d6   ; high nibble BCD fixup
-.hinib_e:
-  move.w (a7)+,d0  ; second time restored
+ .V_DONE:           ; VFLAG finished
+  move.w (a7)+,d0  ; restore data
   move.w CCR6502,CCR
-  addx.b d0,A
-  move.b A,ZFLAG ; ZFLAG finished
-; clr.w  CCR6502
-; cmp.b  #16,d6
-; bmi.s  .C_DONE
-; not.w  CCR6502
-;.C_DONE          ; CCR6502 finished
-  lsl.b  #4,d6
-  move.w CCR,CCR6502
-  or.b   d6,d7   ; compose result
-  move.b d7,A
-  move.w (a7)+,d7
-  move.w (a7)+,d6
+  move.b A,ZFLAG
+  addx.b d0,ZFLAG  ; ZFLAG finished
+  move.w CCR6502,CCR
+  abcd   d0,A      ; A finished
+  move.w CCR,CCR6502 ; CFLAG finished
   bra.w  NEXTCHANGE_WITHOUT
+  nop                             ; !!! TEST !!!
 
 sbc:
   btst   #D_FLAGB,_regP
@@ -2869,7 +2971,6 @@ sbc:
   not.w  CCR6502
   move.w CCR6502,CCR
   subx.b d0,A
-; move.w CCR,CCR6502
   bvs.s  .SET_V
   move.w CCR,CCR6502
   not.w  CCR6502
@@ -2880,29 +2981,33 @@ sbc:
   not.w  CCR6502
   bset   #31,VFLAG
   NEXTCHANGE_REG A
+; Version exact like Thor
+;   C, Z, N, V from binary calc.
+;   A from decimal calc.
 BCD_SBC:
   move.b A,ZFLAG
   not.w  CCR6502
   move.w CCR6502,CCR
+  sbcd   d0,A
+  move.w CCR6502,CCR
   subx.b d0,ZFLAG
   bvs.s  .SET_VX
-  bclr   #31,VFLAG
-  bra.s  .END_VX
-.SET_VX:
-  bset   #31,VFLAG
-.END_VX:
-  ext.w  NFLAG
-  move.w CCR6502,CCR
-  sbcd   d0,A
   move.w CCR,CCR6502
   not.w  CCR6502
+  bclr   #31,VFLAG
+  ext.w  NFLAG
+  bra.w  NEXTCHANGE_WITHOUT
+.SET_VX:
+  move.w CCR,CCR6502
+  not.w  CCR6502
+  bset   #31,VFLAG
+  ext.w  NFLAG
   bra.w  NEXTCHANGE_WITHOUT
 
 Putbyte_SPCL macro
   move.l d1,-(a7)
   EXE_PUTBYTE_d0
   move.l (a7)+,d1
-; lea OPMODE_TABLE,a1
   endm
 
 Putbyte_ADC:
@@ -2917,17 +3022,13 @@ Putbyte_SBC:
   Putbyte_SPCL
   bra.w  sbc
 
-odskoc_si:
+go_monitor:
   UPDATE_GLOBAL_REGS
-; movem.l d1/a1,-(a7)
-  move.l  d1,-(a7)
   CPU_GetStatus d0
   move.l d7,-(a7)
   jsr    _AtariEscape
   addq.l #4,a7
   CPU_PutStatus d0
-; movem.l (a7)+,d1/a1
-  move.l  (a7)+,d1
   UPDATE_LOCAL_REGS
   rts
 
