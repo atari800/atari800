@@ -72,15 +72,12 @@ static Widget fsel_b;
 static Widget fsel_d;
 static Widget fsel_r;
 static Widget rbox_d;
-static Widget rbox_r;
 static Widget togg_d1, togg_d2, togg_d3, togg_d4;
 static Widget togg_d5, togg_d6, togg_d7, togg_d8;
-static Widget togg_8k, togg_16k, togg_oss, togg_32k, togg_5200;
 static Widget eject_menu;
 static Widget disable_menu;
 static Widget system_menu;
 static int motif_disk_sel = 1;
-static int motif_rom_sel = 1;
 #endif
 
 #include <X11/Xlib.h>
@@ -88,6 +85,7 @@ static int motif_rom_sel = 1;
 #include <X11/keysym.h>
 
 #include "atari.h"
+#include "cartridge.h"
 #include "colours.h"
 #include "input.h"
 #include "monitor.h"
@@ -98,11 +96,6 @@ static int motif_rom_sel = 1;
 #include "rt-config.h"
 #include "ui.h"
 #include "log.h"
-
-/*
-static struct timeval tp;	warning: 'tp' defined but not used
-static struct timezone tzp;	warning: 'tzp' defined but not used
-*/
 
 #ifdef SHM
 #include <sys/ipc.h>
@@ -137,9 +130,6 @@ static int js1_centre_y;
 static struct JS_DATA_TYPE js_data;
 #endif
 
-#define	FALSE	0
-#define	TRUE	1
-
 typedef enum {
 	Small,
 	Large,
@@ -161,9 +151,9 @@ static int window_width=ATARI_WIDTH;
 static int window_height=ATARI_HEIGHT;
 
 static int clipping_factor=1;
-static int clipping_x=0;
+static int clipping_x=24;
 static int clipping_y=0;
-static int clipping_width=ATARI_WIDTH;
+static int clipping_width=336;
 static int clipping_height=ATARI_HEIGHT;
 
 
@@ -214,7 +204,7 @@ static int keypad_mode = -1;	/* Joystick */
 static int keypad_trig = 1;		/* Keypad Trigger Position */
 static int keypad_stick = 0x0f;	/* Keypad Joystick Position */
 
-static int mouse_mode = -1;		/* Joystick, Paddle and Light Pen */
+static int xmouse_mode = -1;		/* Joystick, Paddle and Light Pen */
 static int mouse_stick;			/* Mouse Joystick Position */
 
 static int js0_mode = -1;
@@ -719,6 +709,7 @@ int GetKeyCode(XEvent * event)
 		switch (keysym) {
 		case XK_Shift_L:
 		case XK_Shift_R:
+			key_shift = 0;
 			SHIFT = 0x00;
 			break;
 		case XK_Control_L:
@@ -781,6 +772,28 @@ int GetKeyCode(XEvent * event)
 }
 
 #if defined(XVIEW) || defined(MOTIF)
+static int insert_rom(char *filename)
+{
+	int r;
+	r = CART_Insert(filename);
+	if (r < 0)
+		return FALSE;
+	if (r == 0) {
+		Coldstart();
+		return TRUE;
+	}
+	/* TODO: select cartridge type */
+	int i;
+	for (i = 1; i < CART_LAST_SUPPORTED; i++) {
+		if (cart_kb[i] == r) {
+			cart_type = i;
+			Coldstart();
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 static int xview_keycode = AKEY_NONE;
 #endif
 
@@ -911,64 +924,7 @@ void disable_callback(void)
 
 int rom_change(char *a, char *full_filename, char *filename)
 {
-	struct stat buf;
-	int status = XV_ERROR;
-	int yesno;
-
-	stat(full_filename, &buf);
-
-	switch (buf.st_size) {
-	case 0x2000:
-		Remove_ROM();
-		if (Insert_8K_ROM(full_filename)) {
-			Coldstart();
-			status = XV_OK;
-		}
-		break;
-	case 0x4000:
-		yesno = notice_prompt(panel, NULL,
-							  NOTICE_MESSAGE_STRINGS,
-							  filename,
-							  "Is this an OSS Supercartridge?",
-							  NULL,
-							  NOTICE_BUTTON_YES, "No",
-							  NOTICE_BUTTON_NO, "Yes",
-							  NULL);
-		if (yesno == NOTICE_YES) {
-			Remove_ROM();
-			if (Insert_16K_ROM(full_filename)) {
-				Coldstart();
-				status = XV_OK;
-			}
-		}
-		else {
-			Remove_ROM();
-			if (Insert_OSS_ROM(full_filename)) {
-				Coldstart();
-				status = XV_OK;
-			}
-		}
-		break;
-	case 0x8000:
-		Remove_ROM();
-		if (machine == Atari5200) {
-			if (Insert_32K_5200ROM(full_filename)) {
-				Coldstart();
-				status = XV_OK;
-			}
-		}
-		else {
-			if (Insert_DB_ROM(full_filename)) {
-				Coldstart();
-				status = XV_OK;
-			}
-		}
-		break;
-	default:
-		break;
-	}
-
-	return status;
+	return insert_rom(full_filename) ? XV_OK : XV_ERROR;
 }
 
 void insert_rom_callback(void)
@@ -995,6 +951,7 @@ void enable_pill_callback(void)
 
 void exit_callback(void)
 {
+	Atari_Exit(FALSE);
 	exit(1);
 }
 
@@ -1033,11 +990,13 @@ void coldstart_callback(void)
 	Coldstart();
 }
 
-void coldstart_osa_callback(void)
+void coldstart_sys(int machtype, int ram, int nohelp, const char *errmsg)
 {
 	int status;
 
-	status = Initialise_AtariOSA();
+	machine_type = machtype;
+	ram_size = ram;
+	status = Atari800_InitialiseMachine();
 	if (status) {
 		Menu_item menuitem;
 
@@ -1045,117 +1004,42 @@ void coldstart_osa_callback(void)
 						  MENU_NTH_ITEM, 4);
 
 		xv_set(menuitem,
-			   MENU_INACTIVE, TRUE,
+			   MENU_INACTIVE, nohelp,
 			   NULL);
 	}
 	else {
 		notice_prompt(panel, NULL,
 					  NOTICE_MESSAGE_STRINGS,
-					  "Sorry, OS/A ROM Unavailable",
+					  errmsg,
 					  NULL,
 					  NOTICE_BUTTON, "Cancel", 1,
 					  NULL);
 	}
+}
+
+void coldstart_osa_callback(void)
+{
+	coldstart_sys(MACHINE_OSA, 48, TRUE, "Sorry, OS/A ROM Unavailable");
 }
 
 void coldstart_osb_callback(void)
 {
-	int status;
-
-	status = Initialise_AtariOSB();
-	if (status) {
-		Menu_item menuitem;
-
-		menuitem = xv_get(consol_menu,
-						  MENU_NTH_ITEM, 4);
-
-		xv_set(menuitem,
-			   MENU_INACTIVE, TRUE,
-			   NULL);
-	}
-	else {
-		notice_prompt(panel, NULL,
-					  NOTICE_MESSAGE_STRINGS,
-					  "Sorry, OS/B ROM Unavailable",
-					  NULL,
-					  NOTICE_BUTTON, "Cancel", 1,
-					  NULL);
-	}
+	coldstart_sys(MACHINE_OSB, 48, TRUE, "Sorry, OS/B ROM Unavailable");
 }
 
 void coldstart_xl_callback(void)
 {
-	int status;
-
-	status = Initialise_AtariXL();
-	if (status) {
-		Menu_item menuitem;
-
-		menuitem = xv_get(consol_menu,
-						  MENU_NTH_ITEM, 4);
-
-		xv_set(menuitem,
-			   MENU_INACTIVE, FALSE,
-			   NULL);
-	}
-	else {
-		notice_prompt(panel, NULL,
-					  NOTICE_MESSAGE_STRINGS,
-					  "Sorry, XL/XE ROM Unavailable",
-					  NULL,
-					  NOTICE_BUTTON, "Cancel", 1,
-					  NULL);
-	}
+	coldstart_sys(MACHINE_XLXE, 64, FALSE, "Sorry, XL/XE ROM Unavailable");
 }
 
 void coldstart_xe_callback(void)
 {
-	int status;
-
-	status = Initialise_AtariXE();
-	if (status) {
-		Menu_item menuitem;
-
-		menuitem = xv_get(consol_menu,
-						  MENU_NTH_ITEM, 4);
-
-		xv_set(menuitem,
-			   MENU_INACTIVE, FALSE,
-			   NULL);
-	}
-	else {
-		notice_prompt(panel, NULL,
-					  NOTICE_MESSAGE_STRINGS,
-					  "Sorry, XL/XE ROM Unavailable",
-					  NULL,
-					  NOTICE_BUTTON, "Cancel", 1,
-					  NULL);
-	}
+	coldstart_sys(MACHINE_XLXE, 128, FALSE, "Sorry, XL/XE ROM Unavailable");
 }
 
 void coldstart_5200_callback(void)
 {
-	int status;
-
-	status = Initialise_Atari5200();
-	if (status) {
-		Menu_item menuitem;
-
-		menuitem = xv_get(consol_menu,
-						  MENU_NTH_ITEM, 4);
-
-		xv_set(menuitem,
-			   MENU_INACTIVE, FALSE,
-			   NULL);
-	}
-	else {
-		notice_prompt(panel, NULL,
-					  NOTICE_MESSAGE_STRINGS,
-					  "Sorry, 5200 ROM Unavailable",
-					  NULL,
-					  NOTICE_BUTTON, "Cancel", 1,
-					  NULL);
-	}
+	coldstart_sys(MACHINE_5200, 16, TRUE, "Sorry, 5200 ROM Unavailable");
 }
 
 void controllers_ok_callback(void)
@@ -1176,7 +1060,7 @@ void sorry_message()
 {
 	notice_prompt(panel, NULL,
 				  NOTICE_MESSAGE_STRINGS,
-				  "Sorry, controller already assign",
+				  "Sorry, controller already assigned",
 				  "to another device",
 				  NULL,
 				  NOTICE_BUTTON, "Cancel", 1,
@@ -1189,7 +1073,7 @@ void keypad_callback(void)
 
 	new_mode = xv_get(keypad_item, PANEL_VALUE);
 
-	if ((new_mode != mouse_mode) &&
+	if ((new_mode != xmouse_mode) &&
 		(new_mode != js0_mode) &&
 		(new_mode != js1_mode)) {
 		keypad_mode = new_mode;
@@ -1211,12 +1095,12 @@ void mouse_callback(void)
 	if ((new_mode != keypad_mode) &&
 		(new_mode != js0_mode) &&
 		(new_mode != js1_mode)) {
-		mouse_mode = new_mode;
+		xmouse_mode = new_mode;
 	}
 	else {
 		sorry_message();
 		xv_set(mouse_item,
-			   PANEL_VALUE, mouse_mode,
+			   PANEL_VALUE, xmouse_mode,
 			   NULL);
 	}
 }
@@ -1229,7 +1113,7 @@ void js0_callback(void)
 	new_mode = xv_get(js0_item, PANEL_VALUE);
 
 	if ((new_mode != keypad_mode) &&
-		(new_mode != mouse_mode) &&
+		(new_mode != xmouse_mode) &&
 		(new_mode != js1_mode)) {
 		js0_mode = new_mode;
 	}
@@ -1248,7 +1132,7 @@ void js1_callback(void)
 	new_mode = xv_get(js1_item, PANEL_VALUE);
 
 	if ((new_mode != keypad_mode) &&
-		(new_mode != mouse_mode) &&
+		(new_mode != xmouse_mode) &&
 		(new_mode != js0_mode)) {
 		js1_mode = new_mode;
 	}
@@ -1343,43 +1227,14 @@ void motif_insert_disk(Widget fs, XtPointer client_data, XtPointer cbs)
 	XtPopdown(XtParent(fs));
 }
 
-void motif_select_rom(Widget toggle, XtPointer client_data, XtPointer cbs)
-{
-	motif_rom_sel = (int) client_data;
-}
-
 void motif_insert_rom(Widget fs, XtPointer client_data, XtPointer cbs)
 {
 	char *filename;
-	int ret;
 
 	if (XmStringGetLtoR(((XmFileSelectionBoxCallbackStruct *) cbs)->value,
 						XmSTRING_DEFAULT_CHARSET, &filename)) {
 		if (*filename) {
-			Remove_ROM();
-			switch (motif_rom_sel) {
-			case 1:
-				ret = Insert_8K_ROM(filename);
-				break;
-			case 2:
-				ret = Insert_16K_ROM(filename);
-				break;
-			case 3:
-				ret = Insert_OSS_ROM(filename);
-				break;
-			case 4:
-				ret = Insert_DB_ROM(filename);
-				break;
-			case 5:
-				ret = Insert_32K_5200ROM(filename);
-				break;
-			default:
-				ret = 0;
-				break;
-			}
-			if (ret) {
-				Coldstart();
-			}
+			insert_rom(filename);
 		}
 		XtFree(filename);
 	}
@@ -1444,7 +1299,7 @@ void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 		XtPopup(XtParent(fsel_r), XtGrabNone);
 		break;
 	case 5:
-		Remove_ROM();
+		CART_Remove();
 		Coldstart();
 		break;
 	case 6:
@@ -1452,31 +1307,42 @@ void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 		Coldstart();
 		break;
 	case 7:
-		status = Initialise_AtariOSA();
+		machine_type = MACHINE_OSA;
+		ram_size = 48;
+		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, OS/A ROM Unavailable";
 		break;
 	case 8:
-		status = Initialise_AtariOSB();
+		machine_type = MACHINE_OSB;
+		ram_size = 48;
+		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, OS/B ROM Unavailable";
 		break;
 	case 9:
-		status = Initialise_AtariXL();
+		machine_type = MACHINE_XLXE;
+		ram_size = 64;
+		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, XL/XE ROM Unavailable";
 		break;
 	case 10:
-		status = Initialise_AtariXE();
+		machine_type = MACHINE_XLXE;
+		ram_size = 128;
+		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, XL/XE ROM Unavailable";
 		break;
 	case 11:
-		status = Initialise_Atari5200();
+		machine_type = MACHINE_5200;
+		ram_size = 16;
+		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, 5200 ROM Unavailable";
 		break;
 	case 12:
+		Atari800_Exit(FALSE);
 		exit(0);
 	}
 
@@ -1610,11 +1476,11 @@ void Atari_Initialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				printf("\t-small           Small window (%dx%d)\n",
-					   ATARI_WIDTH, ATARI_HEIGHT);
+					   clipping_width, clipping_height);
 				printf("\t-large           Large window (%dx%d)\n",
-					   ATARI_WIDTH * 2, ATARI_HEIGHT * 2);
+					   clipping_width * 2, clipping_height * 2);
 				printf("\t-huge            Huge window (%dx%d)\n",
-					   ATARI_WIDTH * 3, ATARI_HEIGHT * 3);
+					   clipping_width * 3, clipping_height * 3);
 				printf("\t-x11bug          Enable debug code in atari_x11.c\n");
 				printf("\t-clip_x <n>      Set left offset in pixels for clipping\n");
 				printf("\t-clip_width <n>  Set window clip-width\n");
@@ -1650,6 +1516,10 @@ void Atari_Initialise(int *argc, char *argv[])
 	{
 		clipping_height = ATARI_HEIGHT - clipping_y;
 	}
+	screen_visible_x1 = clipping_x;
+	screen_visible_x2 = clipping_x + clipping_width;
+	screen_visible_y1 = clipping_y;
+	screen_visible_y2 = clipping_y + clipping_height;
 	switch (windowsize) {
 	case Small:
 		clipping_factor = 1;
@@ -1707,7 +1577,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	}
 #endif
 
-	mouse_mode = mode++;
+	xmouse_mode = mode++;
 	if (keypad_mode == -1)
 		keypad_mode = mode++;
 
@@ -1862,7 +1732,7 @@ void Atari_Initialise(int *argc, char *argv[])
 										 PANEL_VALUE_X, 150,
 										 PANEL_VALUE_Y, ypos,
 										 PANEL_LAYOUT, PANEL_HORIZONTAL,
-									PANEL_LABEL_STRING, "Numeric Keypad",
+										 PANEL_LABEL_STRING, "Numeric Keypad",
 										 PANEL_CHOICE_STRINGS,
 										 "Joystick 1",
 										 "Joystick 2",
@@ -1870,7 +1740,7 @@ void Atari_Initialise(int *argc, char *argv[])
 										 "Joystick 4",
 										 NULL,
 										 PANEL_VALUE, keypad_mode,
-									  PANEL_NOTIFY_PROC, keypad_callback,
+										 PANEL_NOTIFY_PROC, keypad_callback,
 										 NULL);
 	ypos += 25;
 
@@ -1884,17 +1754,8 @@ void Atari_Initialise(int *argc, char *argv[])
 										"Joystick 2",
 										"Joystick 3",
 										"Joystick 4",
-										"Paddle 1",
-										"Paddle 2",
-										"Paddle 3",
-										"Paddle 4",
-										"Paddle 5",
-										"Paddle 6",
-										"Paddle 7",
-										"Paddle 8",
-										"Light Pen",
 										NULL,
-										PANEL_VALUE, mouse_mode,
+										PANEL_VALUE, xmouse_mode,
 										PANEL_NOTIFY_PROC, mouse_callback,
 										NULL);
 	ypos += 25;
@@ -1960,14 +1821,14 @@ void Atari_Initialise(int *argc, char *argv[])
 	refresh_slider = (Panel_item) xv_create(performance_panel, PANEL_SLIDER,
 											PANEL_VALUE_X, 155,
 											PANEL_VALUE_Y, ypos,
-										  PANEL_LAYOUT, PANEL_HORIZONTAL,
-							   PANEL_LABEL_STRING, "Screen Refresh Rate",
+											PANEL_LAYOUT, PANEL_HORIZONTAL,
+											PANEL_LABEL_STRING, "Screen Refresh Rate",
 											PANEL_VALUE, refresh_rate,
 											PANEL_MIN_VALUE, 1,
 											PANEL_MAX_VALUE, 32,
 											PANEL_SLIDER_WIDTH, 100,
 											PANEL_TICKS, 32,
-									 PANEL_NOTIFY_PROC, refresh_callback,
+											PANEL_NOTIFY_PROC, refresh_callback,
 											NULL);
 	ypos += 25;
 
@@ -2081,7 +1942,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		s_break = XmStringCreateSimple("Break");
 		s_warmstart = XmStringCreateSimple("Warmstart");
 		s_coldstart = XmStringCreateSimple("Coldstart");
-		;
+
 		menubar = XmVaCreateSimpleMenuBar(main_w, "menubar",
 										XmVaCASCADEBUTTON, s_system, 'S',
 									   XmVaCASCADEBUTTON, s_console, 'C',
@@ -2242,61 +2103,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		XtAddCallback(fsel_r, XmNokCallback, motif_insert_rom, NULL);
 		XtAddCallback(fsel_r, XmNcancelCallback, motif_fs_cancel, NULL);
 
-		n = 0;
-		XtSetArg(args[n], XmNradioBehavior, True);
-		n++;
-		XtSetArg(args[n], XmNradioAlwaysOne, True);
-		n++;
-		rbox_r = XmCreateWorkArea(fsel_r, "rbox_r", args, n);
-		XtManageChild(rbox_r);
-
-		s_label = XmStringCreateSimple("8K");
-		n = 0;
-		XtSetArg(args[n], XmNlabelString, s_label);
-		n++;
-		XtSetArg(args[n], XmNset, True);
-		n++;
-		togg_8k = XmCreateToggleButtonGadget(rbox_r, "togg_8k", args, n);
-		XtManageChild(togg_8k);
-		XmStringFree(s_label);
-		XtAddCallback(togg_8k, XmNarmCallback, motif_select_rom, (XtPointer) 1);
-
-		s_label = XmStringCreateSimple("16K");
-		n = 0;
-		XtSetArg(args[n], XmNlabelString, s_label);
-		n++;
-		togg_16k = XmCreateToggleButtonGadget(rbox_r, "togg_16k", args, n);
-		XtManageChild(togg_16k);
-		XmStringFree(s_label);
-		XtAddCallback(togg_16k, XmNarmCallback, motif_select_rom, (XtPointer) 2);
-
-		s_label = XmStringCreateSimple("OSS 16K Bank Switched");
-		n = 0;
-		XtSetArg(args[n], XmNlabelString, s_label);
-		n++;
-		togg_oss = XmCreateToggleButtonGadget(rbox_r, "togg_oss", args, n);
-		XtManageChild(togg_oss);
-		XmStringFree(s_label);
-		XtAddCallback(togg_oss, XmNarmCallback, motif_select_rom, (XtPointer) 3);
-
-		s_label = XmStringCreateSimple("DB 32K Bank Switched");
-		n = 0;
-		XtSetArg(args[n], XmNlabelString, s_label);
-		n++;
-		togg_32k = XmCreateToggleButtonGadget(rbox_r, "togg_32k", args, n);
-		XtManageChild(togg_32k);
-		XmStringFree(s_label);
-		XtAddCallback(togg_32k, XmNarmCallback, motif_select_rom, (XtPointer) 4);
-
-		s_label = XmStringCreateSimple("5200 32K");
-		n = 0;
-		XtSetArg(args[n], XmNlabelString, s_label);
-		n++;
-		togg_5200 = XmCreateToggleButtonGadget(rbox_r, "togg_5200", args, n);
-		XtManageChild(togg_5200);
-		XmStringFree(s_label);
-		XtAddCallback(togg_5200, XmNarmCallback, motif_select_rom, (XtPointer) 5);
-
 		tmpstr = (char *) XtMalloc(strlen(atari_disk_dirs[0] + 3));
 		strcpy(tmpstr, atari_disk_dirs[0]);
 		strcat(tmpstr, "/*");
@@ -2442,7 +2248,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		int minor;
 		Bool pixmaps;
 		Status status;
-                int shmsize;
+		int shmsize;
 
 		status = XShmQueryVersion(display, &major, &minor, &pixmaps);
 		if (!status) {
@@ -2453,8 +2259,8 @@ void Atari_Initialise(int *argc, char *argv[])
 
 		image = XShmCreateImage(display, visual, depth, ZPixmap,
 						NULL, &shminfo, window_width, window_height);
-                shmsize = (window_width * window_height *
-                                 image->bits_per_pixel) / 8;
+		shmsize = (window_width * window_height *
+					image->bits_per_pixel) / 8;
 
 
 		shminfo.shmid = shmget(IPC_PRIVATE, shmsize, IPC_CREAT | 0777);
@@ -2547,7 +2353,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		Atari_WhatIs(keypad_mode);
 		printf("\n");
 		printf("Mouse is ");
-		Atari_WhatIs(mouse_mode);
+		Atari_WhatIs(xmouse_mode);
 		printf("\n");
 		printf("/dev/js0 is ");
 		Atari_WhatIs(js0_mode);
@@ -2655,8 +2461,8 @@ void Atari_DisplayScreen(UBYTE * screen)
 
 #ifdef SHM
 	int first_x, last_x, first_y, last_y;
-        int xpos;
-        int ypos;
+	int xpos;
+	int ypos;
 
 	first_x = ATARI_WIDTH;
 	last_x = -1000;
@@ -2664,45 +2470,37 @@ void Atari_DisplayScreen(UBYTE * screen)
 	last_y = -1000;
 
 	if( invisible )   goto after_screen_update;  /* mmm */
-        if(image->bits_per_pixel == 32)
-        {
-                ULONG *ptr = (ULONG *) image->data;
-                UBYTE *ptr2 = screen;
+	if(image->bits_per_pixel == 32) {
+		ULONG *ptr = (ULONG *) image->data;
+		UBYTE *ptr2 = screen;
 		ULONG help_color;
 
-		if (windowsize == Small)
-		{
+		if (windowsize == Small) {
 			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr++;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 			}
 		}
-		else if (windowsize == Large)
-		{
+		else if (windowsize == Large) {
 			ULONG *ptr_second_line;
 			
 			ptr_second_line = ptr + window_width;
@@ -2710,15 +2508,12 @@ void Atari_DisplayScreen(UBYTE * screen)
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
@@ -2726,23 +2521,20 @@ void Atari_DisplayScreen(UBYTE * screen)
 						*ptr_second_line++ = help_color;
 						*ptr_second_line++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr += 2;
 						ptr_second_line += 2;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 				ptr += window_width;
 				ptr_second_line += window_width;
 			}
 		}
-		else /* if (windowsize == Huge) */
-		{
+		else /* if (windowsize == Huge) */ {
 			ULONG *ptr_second_line;
 			ULONG *ptr_third_line;
 
@@ -2752,15 +2544,12 @@ void Atari_DisplayScreen(UBYTE * screen)
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
@@ -2773,63 +2562,53 @@ void Atari_DisplayScreen(UBYTE * screen)
 						*ptr_third_line++ = help_color;
 						*ptr_third_line++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr += 3;
 						ptr_second_line += 3;
 						ptr_third_line += 3;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 				ptr += (window_width + window_width);
 				ptr_second_line += (window_width + window_width);
 				ptr_third_line += (window_width + window_width);
 			}
 		}
-        }
-        else if(image->bits_per_pixel == 16)
-        {
-                UWORD *ptr = (UWORD *) image->data;
-                UBYTE *ptr2 = screen;
+	}
+	else if(image->bits_per_pixel == 16) {
+		UWORD *ptr = (UWORD *) image->data;
+		UBYTE *ptr2 = screen;
 		UWORD help_color;
 
-		if (windowsize == Small)
-		{
+		if (windowsize == Small) {
 			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr++;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 			}
 		}
-		else if (windowsize == Large)
-		{
+		else if (windowsize == Large) {
 			UWORD *ptr_second_line;
 			
 			ptr_second_line = ptr + window_width;
@@ -2837,15 +2616,12 @@ void Atari_DisplayScreen(UBYTE * screen)
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
@@ -2853,23 +2629,20 @@ void Atari_DisplayScreen(UBYTE * screen)
 						*ptr_second_line++ = help_color;
 						*ptr_second_line++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr += 2;
 						ptr_second_line += 2;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 				ptr += window_width;
 				ptr_second_line += window_width;
 			}
 		}
-		else /* if (windowsize == Huge) */
-		{
+		else /* if (windowsize == Huge) */ {
 			UWORD *ptr_second_line;
 			UWORD *ptr_third_line;
 
@@ -2879,15 +2652,12 @@ void Atari_DisplayScreen(UBYTE * screen)
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
@@ -2900,63 +2670,53 @@ void Atari_DisplayScreen(UBYTE * screen)
 						*ptr_third_line++ = help_color;
 						*ptr_third_line++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr += 3;
 						ptr_second_line += 3;
 						ptr_third_line += 3;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 				ptr += (window_width + window_width);
 				ptr_second_line += (window_width + window_width);
 				ptr_third_line += (window_width + window_width);
 			}
 		}
-        }
-        else if(image->bits_per_pixel == 8)
-        {
-                UBYTE *ptr = (UBYTE *) image->data;
-                UBYTE *ptr2 = screen;
+	}
+	else if(image->bits_per_pixel == 8) {
+		UBYTE *ptr = (UBYTE *) image->data;
+		UBYTE *ptr2 = screen;
 		UBYTE help_color;
 
-		if (windowsize == Small)
-		{
+		if (windowsize == Small) {
 			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr++;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 			}
 		}
-		else if (windowsize == Large)
-		{
+		else if (windowsize == Large) {
 			UBYTE *ptr_second_line;
 			
 			ptr_second_line = ptr + window_width;
@@ -2964,15 +2724,12 @@ void Atari_DisplayScreen(UBYTE * screen)
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
@@ -2980,23 +2737,20 @@ void Atari_DisplayScreen(UBYTE * screen)
 						*ptr_second_line++ = help_color;
 						*ptr_second_line++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr += 2;
 						ptr_second_line += 2;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 				ptr += window_width;
 				ptr_second_line += window_width;
 			}
 		}
-		else /* if (windowsize == Huge) */
-		{
+		else /* if (windowsize == Huge) */ {
 			UBYTE *ptr_second_line;
 			UBYTE *ptr_third_line;
 
@@ -3006,15 +2760,12 @@ void Atari_DisplayScreen(UBYTE * screen)
 				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
 					help_color =  colours[*ptr2++];
-					if (help_color != *ptr)
-					{
+					if (help_color != *ptr) {
 						last_y = ypos;
-						if (xpos > last_x)
-						{
+						if (xpos > last_x) {
 							last_x = xpos;
 						}
-						if (xpos < first_x)
-						{
+						if (xpos < first_x) {
 							first_x = xpos;
 						}
 						*ptr++ = help_color;
@@ -3027,60 +2778,48 @@ void Atari_DisplayScreen(UBYTE * screen)
 						*ptr_third_line++ = help_color;
 						*ptr_third_line++ = help_color;
 					}
-					else
-					{
+					else {
 						ptr += 3;
 						ptr_second_line += 3;
 						ptr_third_line += 3;
 					}
 				}
 
-				if ((first_y > last_y) && (last_y >= 0))
-				{
-				  first_y = last_y;
+				if ((first_y > last_y) && (last_y >= 0)) {
+					first_y = last_y;
 				}
 				ptr += (window_width + window_width);
 				ptr_second_line += (window_width + window_width);
 				ptr_third_line += (window_width + window_width);
 			}
 		}
-        }
-
-
-        if (modified)
-        {
-	    XShmPutImage(display, window, gc, image, 0, 0, 0, 0,
-				 window_width, window_height, 0);
-	    modified = FALSE;
 	}
-	else
-        {
-	  if (last_y >= 0)
-          {
+
+
+	if (modified) {
+		XShmPutImage(display, window, gc, image, 0, 0, 0, 0,
+				 window_width, window_height, 0);
+		modified = FALSE;
+	}
+	else if (last_y >= 0) {
 		last_x++; 
 		last_y++; 
-		if (first_x < clipping_x)
-		{
+		if (first_x < clipping_x) {
 			first_x = clipping_x;
 		}
-		if (last_x > clipping_x + clipping_width)
-		{
+		if (last_x > clipping_x + clipping_width) {
 			last_x = clipping_x + clipping_width;
 		}
-		else if (last_x <= first_x)
-		{
+		else if (last_x <= first_x) {
 			last_x = first_x + 1;
 		}
-		if (first_y < clipping_y)
-		{
+		if (first_y < clipping_y) {
 			first_y = clipping_y;
 		}
-		if (last_y > clipping_y + clipping_height)
-		{
+		if (last_y > clipping_y + clipping_height) {
 			last_y = clipping_y + clipping_height;
 		}
-		else if (last_y <= first_y)
-		{
+		else if (last_y <= first_y) {
 			last_y = first_y + 1;
 		}
 
@@ -3090,15 +2829,14 @@ void Atari_DisplayScreen(UBYTE * screen)
 		last_y *= clipping_factor;
 
 		XShmPutImage(display, window, gc, image,
-			     first_x - (clipping_x * clipping_factor), first_y - (clipping_y * clipping_factor), first_x - (clipping_x * clipping_factor), first_y - (clipping_y * clipping_factor),
+				 first_x - (clipping_x * clipping_factor), first_y - (clipping_y * clipping_factor), first_x - (clipping_x * clipping_factor), first_y - (clipping_y * clipping_factor),
 				 last_x - first_x, last_y - first_y, 0);
-	  }
 	}
 
 	XSync(display, FALSE);
 #else
 	UBYTE *scanline_ptr = image_data;
-        UBYTE *ptr2 = screen;
+	UBYTE *ptr2 = screen;
 	int xpos;
 	int ypos;
 
@@ -3429,13 +3167,15 @@ int Atari_PORT(int num)
 		else if (keypad_mode == 1)
 			nibble_1 = keypad_stick;
 
-		if (mouse_mode == 0) {
-			mouse_joystick(mouse_mode);
-			nibble_0 = mouse_stick;
-		}
-		else if (mouse_mode == 1) {
-			mouse_joystick(mouse_mode);
-			nibble_1 = mouse_stick;
+		if (mouse_mode == MOUSE_OFF) {
+			if (xmouse_mode == 0) {
+				mouse_joystick(xmouse_mode);
+				nibble_0 = mouse_stick;
+			}
+			else if (xmouse_mode == 1) {
+				mouse_joystick(xmouse_mode);
+				nibble_1 = mouse_stick;
+			}
 		}
 #ifdef LINUX_JOYSTICK
 		if (js0_mode == 0) {
@@ -3462,14 +3202,17 @@ int Atari_PORT(int num)
 		else if (keypad_mode == 3)
 			nibble_1 = keypad_stick;
 
-		if (mouse_mode == 2) {
-			mouse_joystick(mouse_mode);
-			nibble_0 = mouse_stick;
+		if (mouse_mode == MOUSE_OFF) {
+			if (xmouse_mode == 2) {
+				mouse_joystick(xmouse_mode);
+				nibble_0 = mouse_stick;
+			}
+			else if (xmouse_mode == 3) {
+				mouse_joystick(xmouse_mode);
+				nibble_1 = mouse_stick;
+			}
 		}
-		else if (mouse_mode == 3) {
-			mouse_joystick(mouse_mode);
-			nibble_1 = mouse_stick;
-		}
+
 #ifdef LINUX_JOYSTICK
 		if (js0_mode == 2) {
 			read_joystick(js0, js0_centre_x, js0_centre_y);
@@ -3500,7 +3243,7 @@ int Atari_TRIG(int num)
 	if (num == keypad_mode) {
 		trig = keypad_trig;
 	}
-	if (num == mouse_mode) {
+	if (num == xmouse_mode) {
 		Window root_return;
 		Window child_return;
 		int root_x_return;
@@ -3568,46 +3311,30 @@ int Atari_TRIG(int num)
 	return trig;
 }
 
-int Atari_POT(int num)
+void Atari_Mouse(void)
 {
-	int pot;
+	static int last_x = 0;
+	static int last_y = 0;
+	Window root_return;
+	Window child_return;
+	int root_x_return;
+	int root_y_return;
+	int win_x_return;
+	int win_y_return;
+	int mask_return;
 
-	if (num == (mouse_mode - 4)) {
-		Window root_return;
-		Window child_return;
-		int root_x_return;
-		int root_y_return;
-		int win_x_return;
-		int win_y_return;
-		int mask_return;
-
-		if (XQueryPointer(display, window, &root_return,
-						  &child_return, &root_x_return, &root_y_return,
-						  &win_x_return, &win_y_return, &mask_return)) {
-			switch (windowsize) {
-			case Small:
-				pot = ((float) (window_width - win_x_return) /
-					   (float) (window_width)) * 228;
-				break;
-			case Large:
-				pot = ((float) (window_width - win_x_return) /
-					   (float) (window_width)) * 228;
-				break;
-			default:
-				pot = ((float) (window_width - win_x_return) /
-					   (float) (window_width)) * 228;
-				break;
-			}
-		}
-		else {
-			pot = 228;
-		}
+	if (mouse_mode == MOUSE_OFF)
+		return;
+	if (XQueryPointer(display, window, &root_return,
+					  &child_return, &root_x_return, &root_y_return,
+					  &win_x_return, &win_y_return, &mask_return)) {
+		mouse_delta_x = win_x_return - last_x;
+		mouse_delta_y = win_y_return - last_y;
+		mouse_buttons = (mask_return & Button1Mask ? 1 : 0)
+		              | (mask_return & Button3Mask ? 2 : 0);
+		last_x = win_x_return;
+		last_y = win_y_return;
 	}
-	else {
-		pot = 228;
-	}
-
-	return pot;
 }
 
 int main(int argc, char **argv)
@@ -3626,6 +3353,8 @@ int main(int argc, char **argv)
 		}
 		else
 			key_consol = keyboard_consol;
+
+		Atari_Mouse();
 
 		Atari800_Frame();
 		if (display_screen)
