@@ -9,6 +9,16 @@ P=atari800
 
 ARCH := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 
+# Special Debian build options - nostrip yet un-handled
+export CFLAGS
+CFLAGS += -g -Wall
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+CFLAGS += -O0
+else
+CFLAGS += -O3
+endif
+
+
 # Build the binary components and assemble the libraries
 # =====================================================================
 build: 
@@ -44,10 +54,11 @@ bld-curses:
 clean:
 	$(checkdir)
 	-rm -f build
-	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
+	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi; \
+	 rm -f config.log config.status config.h Makefile
 	mv ./atari800.spec ./tmp ; rm -f atari800.* ; mv ./tmp ./atari800.spec
-	-rm -rf debian/tmp debian/*~ *~ *.orig *.log
-	-rm -rf debian/files* debian/substvars*
+	-rm -rf	debian/tmp debian/*~ *~ *.orig *.log \
+		debian/files* debian/substvars*
 
 binary: binary-arch
 
@@ -79,11 +90,9 @@ binary-arch:		checkroot build
 #
 	install -d debian/tmp/usr/share/doc/$(P)
 	cp debian/changelog debian/tmp/usr/share/doc/$(P)/changelog.Debian
-	cp debian/README.Debian debian/tmp/usr/share/doc/$(P)/README.Debian
-	cp DOC/ChangeLog debian/tmp/usr/share/doc/$(P)/ChangeLog
+	cp DOC/ChangeLog debian/tmp/usr/share/doc/$(P)/changelog
 	cp DOC/NEWS debian/tmp/usr/share/doc/$(P)/NEWS
 	cp DOC/CREDITS debian/tmp/usr/share/doc/$(P)/CREDITS
-	cp DOC/INSTALL debian/tmp/usr/share/doc/$(P)/INSTALL
 	cp DOC/README debian/tmp/usr/share/doc/$(P)/README
 	cp DOC/USAGE debian/tmp/usr/share/doc/$(P)/USAGE
 	gzip -9v debian/tmp/usr/share/doc/$(P)/*
@@ -93,6 +102,8 @@ binary-arch:		checkroot build
 	cp DOC/FAQ debian/tmp/usr/share/doc/$(P)/FAQ
 	cp DOC/BUGS debian/tmp/usr/share/doc/$(P)/BUGS
 	cp DOC/TODO debian/tmp/usr/share/doc/$(P)/TODO
+	cp debian/README.Debian debian/tmp/usr/share/doc/$(P)/README.Debian
+	cp debian/atari800.cfg debian/tmp/usr/share/doc/$(P)/atari800.cfg
 
 
 # and don't gzip the copyright statement
@@ -121,6 +132,8 @@ binary-arch:		checkroot build
 	install -d debian/tmp/usr/bin
 	install -s $(P).curses $(P).x11 debian/tmp/usr/bin
 	install -s $(P).sdl debian/tmp/usr/bin/$(P)
+#	(if [ "$(ARCH)" = "i386" ]; then install debian/$(P) debian/tmp/usr/bin; \
+#	else install debian/$(P).alt debian/tmp/usr/bin/$(P); fi)
 
 # Create dependency information
 #

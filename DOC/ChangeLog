@@ -1,3 +1,6 @@
+2004-06-04  Petr Stehlik  <pstehlik@sophics.cz>
+* config.{sub,guess}, debian/*: updated by the atari800 debian diff file
+
 2004-06-03  Piotr Fusik  <fox@scene.pl>
 * antic.c: ANTIC mode 2 + GTIA mode 10 should be shifted right by a half
   of a pixel [a fix for the upcoming demo :-) ]

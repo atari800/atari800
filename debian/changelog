@@ -1,3 +1,29 @@
+atari800 (1.3.2-1) unstable; urgency=low
+
+  * New upstream source and new maintainer (closes: #226787).
+  * Debian/control: remove debhelper and sharutils from Build-Depends.
+  * Debian/rules: handle DEB_BUILD_OPTIONS=noopt,
+    clean: removes src/Makefile and src/config.{h,log,status}.
+  * Update config.{guess,sub} from autotools-dev-20040105.1.
+  * Patch src/rdevice.c::581,583 to use '/dev/ttyS0' on all archs.
+  * Add some notes of new maintainer to README.Debian - thanks Dale.
+ 
+ -- Martin Albert <ma@debian.org>  Thu, 19 Feb 2004 20:09:49 +0100
+
+atari800 (1.3.1-2) unstable; urgency=low
+
+  * Fixed broken syntax in last changelog entry. Closes: #203707
+  * Changed dependency from xlib6g-dev to xlibs-dev. Closes: #209203
+  * Repaired bad patch. Now deliver upstream changelog and NEWS
+  * Updated /etc/atari800.cfg example in /usr/share/doc/atari800
+  *                provided by upstream author.
+  * Fixed several Lintian Warnings/Errors:
+  *     Removed /usr/share/doc/atari800/INSTALL.gz
+  *     Removed postinst usr-doc-link code
+  *     Added copyright reference to /usr/share/common-licenses
+
+ -- Dale Scheetz (Dwarf #1) <dwarf@polaris.net>  Wed,  8 Oct 2003 17:26:37 -0400
+
 atari800 (1.3.1-1) unstable; urgency=low
 
   * new upstream source

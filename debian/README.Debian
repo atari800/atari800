@@ -37,3 +37,18 @@ the SDL version will be eliminated, for brevity sake.
 Luck,
 
 -- Dale Scheetz <dwarf@polaris.net>
+
+From the new maintainer:
+------------------------
+
+I took over this package from Dale after using it for some years, thanks Dwarf!
+
+Future packages should be build with either
+ - diskleds (temporarily visible disk activity indicators) or
+ - siosound (the atari makes some noise for every disk sector transferred).
+Please vote!
+
+Join the A-Team to comaintain this and possibly other (Atari-)Emulators and
+build some common foundation and knowledgebase for emulation within Debian GNU.
+
+Have a nice day, Martin Albert <ma@debian.org>

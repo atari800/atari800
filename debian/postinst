@@ -1,8 +1,2 @@
 #!/bin/sh
-if [ "$1" = "configure" ]; then
-	if [ -d /usr/doc -a ! -e /usr/doc/atari800 -a -d /usr/share/doc/atari800 ]; then
-		ln -sf ../share/doc/atari800 /usr/doc/atari800
-	fi
-fi
-
 if [ "$1" = "configure" -a -x /usr/bin/update-menus ]; then update-menus ; fi
