@@ -167,7 +167,7 @@ int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 
 		if(strcmp(pNewMenu[i].sig, "STER") == 0)
 		{
-#ifndef STEREO
+#ifndef STEREO_SOUND
 		/* Stereo is disabled based on compile settings */
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
 #endif

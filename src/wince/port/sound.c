@@ -50,7 +50,7 @@ static int issound = SOUND_NONE;
 static int dsprate = 22050;
 static int snddelay = 40;	/* delay in milliseconds */
 static int snddelaywav = 100;
-#ifdef STEREO
+#ifdef STEREO_SOUND
 static int stereo = TRUE;
 #else
 static int stereo = FALSE;
@@ -474,6 +474,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.5  2003/03/03 09:57:33  joy
+Ed improved autoconf again plus fixed some little things
+
 Revision 1.4  2003/02/24 09:33:41  joy
 header cleanup
 

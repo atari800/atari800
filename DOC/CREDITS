@@ -37,9 +37,9 @@ Chris Chiesa <xetwnk@shell.portal.com>
     - Added code allowing emulator to run under DEC Windows.
 
 Ed Cogburn <ecogburn@xtn.net>
-    - updated configure.ac
+    - major improvements of configure & make process
     - added copyright headers to all source files
-    - miscellaneous cleanups
+    - miscellaneous cleanups and fixes
 
 Matthew Conte <matt@conte.com>
     - new SoundBlaster driver for DOS

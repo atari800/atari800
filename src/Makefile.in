@@ -1,23 +1,18 @@
-# $Id$
-
 CC = @CC@
 RC = windres
-EXEEXT=@EXEEXT@
-TARGET=atari800$(EXEEXT)
-CFLAGS=@CPPFLAGS@ @CFLAGS@
-DEFS=@DEFS@
 
-PREFIX		= @prefix@
-BIN_PATH	= ${PREFIX}/bin
-LIB_PATH	= ${PREFIX}/lib
-MAN_PATH	= ${PREFIX}/share/man
+DEFS = @DEFS@
+LIBS = @LIBS@
+TARGET = atari800@EXEEXT@
 
-INCLUDE=-I.
+CFLAGS = @CFLAGS@
+LDFLAGS = @LDFLAGS@
 
-LDFLAGS=@LDFLAGS@
-LIBS=@LIBS@
+BIN_DIR = @prefix@/bin
+LIB_DIR = @prefix@/lib
+MAN_DIR = @prefix@/share/man/man1
 
-OBJ = \
+OBJS = \
 	atari.o \
 	cpu.o \
 	monitor.o \
@@ -41,58 +36,57 @@ OBJ = \
 	compfile.o \
 	memory.o \
 	statesav.o \
-	diskled.o \
 	colours.o \
 	pokeysnd.o \
 	mzpokeysnd.o \
 	remez.o \
 	sndsave.o \
 	cassette.o \
-	input.o\
-	cycle_map.o
+	input.o \
+	cycle_map.o \
+	@OBJS@
 
-OBJ += @OBJ@
+
 
 all: $(TARGET)
 
 %.o: %.c
-	$(CC) -c -o $@ $(DEFS) $(INCLUDE) $(CFLAGS) $<
+	$(CC) -c -o $@ $(DEFS) $(CFLAGS) $<
 
 %.ro: %.rc
 	$(RC) --define WIN32 --define __MINGW32__ --include-dir . $< $@
 
 %.o: %.cpp
-	$(CC) -c -o $@ $(DEFS) $(INCLUDE) $(CFLAGS) $<
+	$(CC) -c -o $@ $(DEFS) $(CFLAGS) $<
 
 %.o: %.asm
 	cd $(<D); xgen -L1 $(@F) $(<F)
 	cd $(<D); gst2gcc gcc $(@F)
 
-$(TARGET): $(OBJ)
-	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
+$(TARGET): $(OBJS)
+	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
 
 dep:
-	@if ! makedepend -Y $(DEFS) $(INCLUDE) ${OBJ:.o=.c} 2>/dev/null; \
+	@if ! makedepend -Y $(DEFS) ${OBJS:.o=.c} 2>/dev/null; \
 	then echo warning: makedepend failed; fi
 
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o $(TARGET) core *.bak *~
 
 distclean: clean
 	-rm -f Makefile configure config.log config.status config.h
 	-rm -rf autom4te.cache
 
-install-svgalib : install
-	chown root.root ${BIN_PATH}/$(TARGET)
-	chmod 4755 ${BIN_PATH}/$(TARGET)
+install:
+	cp $(TARGET) ${BIN_DIR}/$(TARGET)
+	cp atari800.man ${MAN_DIR}/atari800.1
 
-install :
-	cp atari800 ${BIN_PATH}/$(TARGET)
-	cp atari800.man ${MAN_PATH}/man1/atari800.1
-
-doc: readme.html
+install-svgalib: install
+	chown root.root ${BIN_DIR}/$(TARGET)
+	chmod 4755 ${BIN_DIR}/$(TARGET)
 
 readme.html: $(TARGET)
 	./$(TARGET) -help </dev/null | ../util/usage2html.pl \
 		../DOC/readme.html.in ../DOC/USAGE ./atari.h > $@
 
+doc: readme.html

@@ -67,10 +67,8 @@ static FILE *fin = NULL, *fout = NULL;
 extern int zlib_capable( void );
 
 /* prepend_tmpfile_path is a port-specific function that should insert into the supplied
-   buffer pointer any path name the port wants before the filename returned by tmpnam().
-   Note that tmpnam() typically returns a slash as the first character, so you should
-   make sure prepend_tmpfile_path doesn't include a trailing slash of its own. This
-   function should return the number of bytes that the prepended path represents */
+   buffer pointer any path name the port wants before the filename created by mkstemp().
+   This function should return the number of bytes that the prepended path represents */
 extern int prepend_tmpfile_path( char *buffer );
 
 /* This function was added because unlike DOS, the Windows version might visit this
@@ -97,7 +95,7 @@ static void show_file_error( FILE *stream )
 
 /* Opens a ZLIB compressed (gzip) file, creates a temporary filename, and decompresses
    the contents of the .gz file to the temporary file name. Note that *outfilename is
-   actually blank coming in and is filled in with whatever tmpnam returns */
+   actually blank coming in and is filled by mkstemp */
 FILE * openzlib(int diskno, const char *infilename, char *outfilename )
 {
 #ifndef HAVE_LIBZ
@@ -123,14 +121,9 @@ FILE * openzlib(int diskno, const char *infilename, char *outfilename )
 	}
 
 	curptr += prepend_tmpfile_path( outfilename );
-	if( tmpnam( curptr )== NULL )
-	{
-		Aprint( "Could not obtain temporary filename" );
-		free( zlib_buffer );
-		return NULL;
-	}
-
-	if (!(outfile = fopen(outfilename, "wb")))
+    strcpy(curptr,"TMP_XXXXXX\0");
+	outfile = fdopen(mkstemp(curptr), "wb");
+	if (!outfile)
 	{
 		Aprint( "Could not open temporary file" );
 		free( zlib_buffer );
@@ -324,9 +317,8 @@ FILE *opendcm( int diskno, const char *infilename, char *outfilename )
 	FILE	*file = NULL;
 	char	*curptr = outfilename;
 
-	if( tmpnam( curptr )== NULL )
-		return NULL;
-	outfile = fopen( outfilename, "wb" );
+    strcpy(curptr,"TMP_XXXXXX\0");
+	outfile = fdopen(mkstemp(curptr), "wb");
 	if( !outfile )
 		return NULL;
 	
@@ -655,6 +647,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.10  2003/03/03 09:57:32  joy
+Ed improved autoconf again plus fixed some little things
+
 Revision 1.9  2003/02/24 09:32:50  joy
 header cleanup
 

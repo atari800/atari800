@@ -85,7 +85,7 @@ static UBYTE joydefs[] =
   SCANCODE_KEYPAD1,	/* down/left */
   SCANCODE_KEYPAD2,	/* down */
   SCANCODE_KEYPAD3,	/* down/right */
-#ifdef SVGA_CURSORBLOCK
+#ifdef USE_CURSORBLOCK
   SCANCODE_CURSORBLOCKUP,
   SCANCODE_CURSORBLOCKLEFT,
   SCANCODE_CURSORBLOCKRIGHT,
@@ -104,7 +104,7 @@ static UBYTE joymask[] =
   ~2 & ~4,	/* down/left */
   ~2,		/* down */
   ~2 & ~8,	/* down/right */
-#ifdef SVGA_CURSORBLOCK
+#ifdef USE_CURSORBLOCK
   ~1, 		/* up */
   ~4,		/* left */
   ~8,		/* right */
@@ -199,7 +199,7 @@ int Atari_Keyboard(void)
         if (kbjoy)
         {
           /* fire */
-#ifdef SVGA_CURSORBLOCK
+#ifdef USE_CURSORBLOCK
           ctrig = (kbhits[joydefs[0]] ? 0 : 1) & (kbhits[SCANCODE_LEFTCONTROL] ? 0 : 1);
 #else
           ctrig = kbhits[joydefs[0]] ? 0 : 1;
@@ -836,6 +836,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.11  2003/03/03 09:57:32  joy
+Ed improved autoconf again plus fixed some little things
+
 Revision 1.10  2003/02/24 09:32:43  joy
 header cleanup
 

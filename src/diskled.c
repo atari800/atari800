@@ -25,12 +25,12 @@
 #include "atari.h"
 #include "diskled.h"
 
-int led_status = 0;
-int led_off_delay = -1;
-
 #define DISKLED_FONT_WIDTH		5
 #define DISKLED_FONT_HEIGHT		7
 #define DISKLED_FONT_CHARSIZE	(DISKLED_FONT_WIDTH * DISKLED_FONT_HEIGHT)
+
+int led_status = 0;
+int led_off_delay = -1;
 
 static unsigned char DiskLED[]= {
 172,172,172,172,172,
@@ -179,12 +179,13 @@ static unsigned char DiskLED[]= {
 053,053,053,053,053	/* End of write LEDs	*/
 };
 
+
 void LED_Frame(void)
 {
 	if (led_off_delay >= 0)
 		if (--led_off_delay < 0)
 			led_status = 0;
-#ifdef SHOW_DISK_LED
+
 	if (led_status) {
 		UBYTE *shape = DiskLED + (led_status - 1) * DISKLED_FONT_CHARSIZE;
 		UBYTE *scrn = (UBYTE *) atari_screen
@@ -198,5 +199,4 @@ void LED_Frame(void)
 			scrn += ATARI_WIDTH - DISKLED_FONT_WIDTH;
 		}
 	}
-#endif /* SHOW_DISK_LED */
 }

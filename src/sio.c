@@ -36,9 +36,12 @@
 #include "pokeysnd.h"
 #include "platform.h"
 #include "log.h"
-#include "diskled.h"
 #include "binload.h"
 #include "cassette.h"
+
+#ifdef SHOW_DISK_LED
+#include "diskled.h"
+#endif
 
 /* If ATR image is in double density (256 bytes per sector),
    then the boot sectors (sectors 1-3) can be:
@@ -331,7 +334,9 @@ static int ReadSector(int unit, int sector, UBYTE * buffer)
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (sector > 0 && sector <= sectorcount[unit]) {
+#ifdef SHOW_DISK_LED
 				LED_SetRead(unit, 1);
+#endif
 				size = SeekSector(unit, sector);
 				fread(buffer, 1, size, disk[unit]);
 				return 'C';
@@ -353,7 +358,9 @@ static int WriteSector(int unit, int sector, UBYTE * buffer)
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
+#ifdef SHOW_DISK_LED
 				LED_SetWrite(unit, 1);
+#endif
 				if (sector > 0 && sector <= sectorcount[unit]) {
 					size = SeekSector(unit, sector);
 					fwrite(buffer, 1, size, disk[unit]);
@@ -756,7 +763,9 @@ static UBYTE Command_Frame(void)
 			ExpectedBytes = realsize + 1;
 			DataIndex = 0;
 			TransferStatus = SIO_WriteFrame;
+#ifdef SHOW_DISK_LED
 			LED_SetWrite(unit, 10);
+#endif
 			return 'A';
 		case 0x52:				/* Read */
 			SizeOfSector((UBYTE)unit, sector, &realsize, NULL);
@@ -770,7 +779,9 @@ static UBYTE Command_Frame(void)
 			if (sector == 2)
 				DELAYED_SERIN_IRQ += SECTOR_DELAY;
 #endif
+#ifdef SHOW_DISK_LED
 			LED_SetRead(unit, 10);
+#endif
 			return 'A';
 		case 0x53:				/* Status */
 			DataBuffer[0] = DriveStatus(unit, DataBuffer + 1);
@@ -1012,6 +1023,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.16  2003/03/03 09:57:33  joy
+Ed improved autoconf again plus fixed some little things
+
 Revision 1.15  2003/02/24 09:33:10  joy
 header cleanup
 

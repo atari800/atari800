@@ -1,3 +1,20 @@
+2003-03-03  Ed Cogburn  <ecogburn@xtn.net>
+* mzpokeysnd.c: Initialize some uninitialized variables to fix gcc warning
+
+* devices.c, compfile.c: tmpnam() -> mkstemp() to fix gcc warning
+
+* atari_sdl.c: control key support added (how it could be compiled before?)
+
+* configure.ac: massive rewrite, new way of handling our options. Config
+  summary added.
+
+* Makefile.in: a number of small changes, and OBJ is changed to OBJS for
+  consistancy within configure.ac
+
+* atari.c, diskled.c, sio.c: diskled module is compiled in only if it's
+  enabled in configure.
+
+
 2003-02-27  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c, DOC/cart.txt, DOC/CREDITS, DOC/README:
   new cartridge type

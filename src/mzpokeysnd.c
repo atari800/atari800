@@ -1443,7 +1443,10 @@ static void Update_audctl(PokeyState* ps, unsigned char val)
     unsigned char recalc2=0;
     unsigned char recalc3=0;
 
-    unsigned char cnt0, cnt1, cnt2, cnt3;
+    unsigned char cnt0=0;
+    unsigned char cnt1=0;
+    unsigned char cnt2=0;
+    unsigned char cnt3=0;
 
     nc0_hf = (val & 0x40) != 0;
     nc2_hf = (val & 0x20) != 0;
@@ -2111,6 +2114,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.12  2003/03/03 09:57:33  joy
+Ed improved autoconf again plus fixed some little things
+
 Revision 1.11  2003/02/24 09:33:05  joy
 header cleanup
 
