@@ -2,7 +2,7 @@
  * mzpokeysnd.c - POKEY sound chip emulation, v1.6
  *
  * Copyright (C) 2002 Michael Borisov
- * Copyright (C) 2002-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2002-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -982,7 +982,7 @@ static int remez_filter_table(double resamp_rate, // output_rate/input_rate
     {70, 90, {4.9e-3, 3.45e-3, 2.65e-3, 2.2e-3}},
     {55, 25, {3.4e-3, 2.7e-3, 2.05e-3, 1.7e-3}},
     {40, 6.0, {2.6e-3, 1.8e-3, 1.5e-3, 1.2e-3}},
-    {-1}
+    {-1, 0, {0, 0, 0, 0}}
   };
   static const double passtab[] = {0.5, 0.6, 0.7};
   int ripple = 0, order = 0;
@@ -993,12 +993,12 @@ static int remez_filter_table(double resamp_rate, // output_rate/input_rate
 
   *cutoff = 0.95 * 0.5 * resamp_rate;
 
-  if (quality >= sizeof(passtab)/sizeof(passtab[0]))
-    quality = sizeof(passtab)/sizeof(passtab[0]) - 1;
+  if (quality >= (int) (sizeof(passtab) / sizeof(passtab[0])))
+    quality = (int) (sizeof(passtab) / sizeof(passtab[0])) - 1;
 
   for (ripple = 0; paramtab[ripple].stop > 0; ripple++)
   {
-    for (order = 0; order < (sizeof(orders)/sizeof(orders[0])); order++)
+    for (order = 0; order < (int) (sizeof(orders)/sizeof(orders[0])); order++)
     {
       if ((*cutoff - paramtab[ripple].twidth[order])
 	  > passtab[quality] * 0.5 * resamp_rate)
@@ -2099,7 +2099,7 @@ static void Pokey_process_8(void* sndbuffer, unsigned sndn)
 
     /* if there are two pokeys, then the signal is stereo
        we assume even sndn */
-    while(nsam>=num_cur_pokeys)
+    while(nsam >= (int) num_cur_pokeys)
     {
 #ifdef VOL_ONLY_SOUND
         if( sampbuf_rptr!=sampbuf_ptr )
@@ -2148,7 +2148,7 @@ static void Pokey_process_16(void* sndbuffer, unsigned sndn)
 
     /* if there are two pokeys, then the signal is stereo
        we assume even sndn */
-    while(nsam>=num_cur_pokeys)
+    while(nsam >= (int) num_cur_pokeys)
     {
 #ifdef VOL_ONLY_SOUND
         if( sampbuf_rptr!=sampbuf_ptr )
@@ -2280,6 +2280,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.16  2005/03/08 04:32:46  pfusik
+killed gcc -W warnings
+
 Revision 1.15  2003/12/12 00:23:24  markgrebe
 Added console and sio Sound back in
 

@@ -2,7 +2,7 @@
  * sio.c - Serial I/O emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -325,9 +325,9 @@ static int SeekSector(int unit, int sector)
 
 	sio_last_sector = sector;
 	sprintf(sio_status, "%d: %d", unit + 1, sector);
-	SizeOfSector((UBYTE)unit, sector, &size, (ULONG*)&offset);
+	SizeOfSector((UBYTE)unit, sector, &size, &offset);
 	fseek(disk[unit], 0L, SEEK_END);
-	if (offset < 0 || offset > ftell(disk[unit])) {
+	if (offset > (ULONG) ftell(disk[unit])) {
 #ifdef DEBUG
 		Aprint("SIO:SeekSector() - Wrong seek offset");
 #endif
@@ -1237,6 +1237,9 @@ void SIOStateRead( void )
 
 /*
 $Log$
+Revision 1.22  2005/03/08 04:32:46  pfusik
+killed gcc -W warnings
+
 Revision 1.21  2005/03/03 09:37:59  pfusik
 deleted diskled.[ch], moved disk LEDs to the new "screen" module
 

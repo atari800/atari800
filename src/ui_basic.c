@@ -354,7 +354,7 @@ void TitleScreen(UBYTE * screen, char *title)
 
 void ShortenItem(char *source, char *destination, int iMaxXsize)
 {
-	if (strlen(source) > iMaxXsize) {
+	if ((int) strlen(source) > iMaxXsize) {
 
 		int iFirstLen = (iMaxXsize - 3) / 2;
 		int iLastStart = strlen(source) - (iMaxXsize - 3 - iFirstLen);
@@ -1028,6 +1028,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.16  2005/03/08 04:32:46  pfusik
+killed gcc -W warnings
+
 Revision 1.15  2005/03/05 12:34:08  pfusik
 fixed "Error opening '' directory"
 

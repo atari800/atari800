@@ -157,7 +157,7 @@ FILE * openzlib(int diskno, const char *infilename, char *outfilename )
 			result = GZREAD( gzSource, &zlib_buffer[0], ZLIB_BUFFER_SIZE );
 			if( result > 0 )
 			{
-				if( fwrite(zlib_buffer, 1, result, outfile) != result )
+				if( (int) fwrite(zlib_buffer, 1, result, outfile) != result )
 				{
 					Aprint( "Error writing to temporary file %s, disk may be full", outfilename );
 					result = -1;
@@ -649,12 +649,15 @@ static int write_sector(FILE *fout)
 */
 static long soffset()
 {
-	return (long)atr + (cursec < 4 ? ((long)cursec - 1) * 128 :
-			 ((long)cursec - 1) * secsize);
+	return (long) atr + (cursec < 4 ? ((long) cursec - 1) * 128 :
+			 ((long) cursec - 1) * (long) secsize);
 }
 
 /*
 $Log$
+Revision 1.15  2005/03/08 04:32:41  pfusik
+killed gcc -W warnings
+
 Revision 1.14  2003/12/17 07:01:18  markgrebe
 Fixed serious bug in Type 41 decoding
 

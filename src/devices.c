@@ -2,7 +2,7 @@
  * devices.c - H: devices emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -1203,7 +1203,7 @@ void Device_HHSPEC_Unlock(void)
 
 void Device_HHSPEC_Note(void)
 {
-	unsigned long pos;
+	long pos;
 	unsigned long iocb;
 
 	if (devbug)
@@ -2215,6 +2215,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.24  2005/03/08 04:32:41  pfusik
+killed gcc -W warnings
+
 Revision 1.23  2004/07/02 11:28:27  sba
 Don't remove DO_DIR define when compiling for Amiga.
 

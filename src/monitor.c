@@ -2,7 +2,7 @@
  * monitor.c - Implements a builtin system monitor for debugging
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -541,7 +541,7 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 			 * arguments, so after a 'm 600' we will see 'm 700' ...
 			 */
 			memcpy(s, old_s, sizeof(s));
-			for (i = 0; i < sizeof(s); ++i)
+			for (i = 0; i < (int) sizeof(s); ++i)
 				if (isspace(s[i])) {
 					s[i] = '\0';
 					break;
@@ -885,7 +885,7 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 						if (!(f = fopen(filename, "rb")))
 							perror(filename);
 						else {
-							if (fread(&memory[addr], 1, nbytes, f) == -1)
+							if (fread(&memory[addr], 1, nbytes, f) == 0)
 								perror(filename);
 							fclose(f);
 						}
@@ -911,7 +911,8 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 				if (!(f = fopen(filename, "wb")))
 				  perror(filename);
 				else {
-				  if (fwrite(&memory[addr1], 1, addr2 - addr1 + 1, f) == -1)
+				  size_t nbytes = addr2 - addr1 + 1;
+				  if (fwrite(&memory[addr1], 1, addr2 - addr1 + 1, f) < nbytes)
                                     perror(filename);
 				  fclose(f);
 				}
@@ -1451,6 +1452,9 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.16  2005/03/08 04:32:41  pfusik
+killed gcc -W warnings
+
 Revision 1.15  2003/02/24 09:33:04  joy
 header cleanup
 
