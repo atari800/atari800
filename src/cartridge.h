@@ -25,9 +25,10 @@
 #define CART_WILL_32	22
 #define CART_XEGS_256	23
 #define CART_XEGS_512	24
-#define CART_LAST_SUPPORTED 24
+#define CART_XEGS_1024	25
+#define CART_LAST_SUPPORTED 25
 
-#define CART_MAX_SIZE	(512 * 1024)
+#define CART_MAX_SIZE	(1024 * 1024)
 extern int cart_kb[CART_LAST_SUPPORTED + 1];
 extern int cart_type;
 

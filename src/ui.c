@@ -241,6 +241,7 @@ int SelectCartType(UBYTE* screen, int k)
 		{ "CRTM", ITEM_ACTION, NULL, "32 KB Williams cartridge",     	NULL, 22 },
 		{ "CRTN", ITEM_ACTION, NULL, "XEGS 256 KB cartridge",           NULL, 23 },
 		{ "CRTO", ITEM_ACTION, NULL, "XEGS 512 KB cartridge",           NULL, 24 },
+		{ "CRTP", ITEM_ACTION, NULL, "XEGS 1 MB cartridge",             NULL, 25 },
 		MENU_END
 	};
 
@@ -817,8 +818,8 @@ int CrashMenu()
 
 /*
 $Log$
-Revision 1.35  2002/07/24 10:52:18  pfusik
-256K and 512K XEGS carts (thanks to Nir Dary)
+Revision 1.36  2002/08/15 16:57:20  pfusik
+1 MB XEGS cart
 
 Revision 1.34  2002/07/14 13:25:36  pfusik
 emulation of 576K and 1088K RAM machines

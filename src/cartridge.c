@@ -33,7 +33,8 @@ int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	8,  /* CART_RIGHT_8 */
 	32, /* CART_WILL_32 */
 	256,/* CART_XEGS_256 */
-	512 /* CART_XEGS_512 */
+	512,/* CART_XEGS_512 */
+	1024/* CART_XEGS_1024 */
 };
 
 int CART_IsFor5200(int type)
@@ -57,7 +58,7 @@ int cart_type = CART_NONE;
 
 static int bank;
 
-/* DB_32, XEGS_32, XEGS_64, XEGS_128, XEGS_256, XEGS_512 */
+/* DB_32, XEGS_32, XEGS_64, XEGS_128, XEGS_256, XEGS_512, XEGS_1024 */
 static void set_bank_809F(int b)
 {
 	if (b != bank) {
@@ -223,6 +224,9 @@ void CART_PutByte(UWORD addr, UBYTE byte)
 		break;
 	case CART_XEGS_512:
 		set_bank_809F(byte & 0x3f);
+		break;
+	case CART_XEGS_1024:
+		set_bank_809F(byte & 0x7f);
 		break;
 	case CART_ATRAX_128:
 		if (byte & 0x80) {
@@ -489,6 +493,13 @@ void CART_Start(void) {
 			CartA0BF_Enable();
 			CopyROM(0x8000, 0x9fff, cart_image);
 			CopyROM(0xa000, 0xbfff, cart_image + 0x7e000);
+			bank = 0;
+			break;
+		case CART_XEGS_1024:
+			Cart809F_Enable();
+			CartA0BF_Enable();
+			CopyROM(0x8000, 0x9fff, cart_image);
+			CopyROM(0xa000, 0xbfff, cart_image + 0xfe000);
 			bank = 0;
 			break;
 		case CART_OSS2_16:
