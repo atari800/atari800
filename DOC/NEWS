@@ -50,6 +50,9 @@ Detailed list of changes follows:
   Both can be en/disabled in the configuration file (call atari800 with
   the "-configure" parameter to reconfigure these and other options).
 
+  Win32 and SDL ports also recognize a new cmdline switch "-audio16"
+  that switches to 16-bit sound.
+
 
 Unreleased version 1.2.10 (2003/02/09)
 
@@ -82,7 +85,7 @@ Unreleased version 1.2.7 (2003/01/27)
 Unreleased version 1.2.6 (2003/01/27)
 
 * New sound core and 16 bit sound support -- high sound quality but slower.
-  Use -bit16 option to enable 16 bit sound and -quality <level> to set sound
+  Use -audio16 option to enable 16 bit sound and -quality <level> to set sound
   quality (level > 0 enables new sound core) on the win32 port.
   Consult port specific doc for command line details.
 

@@ -339,7 +339,7 @@ void Sound_Initialise(int *argc, char *argv[])
 	usesound = TRUE;
       else if (strcmp(argv[i], "-nosound") == 0)
 	usesound = FALSE;
-      else if (strcmp(argv[i], "-bit16") == 0)
+      else if (strcmp(argv[i], "-audio16") == 0)
 	bit16 = TRUE;
       else if (strcmp(argv[i], "-dsprate") == 0)
 	sscanf(argv[++i], "%d", &dsprate);
@@ -373,7 +373,7 @@ void Sound_Initialise(int *argc, char *argv[])
 #endif
 		 "\t-dsprate <rate>		set dsp rate\n"
 		 "\t-snddelay <milliseconds>	set sound delay\n"
-		 "\t-bit16			use 16 bit mixing\n"
+		 "\t-audio16			use 16 bit mixing\n"
 		 "\t-quality <quality level>	set sound quality\n"
 		);
 	  help = TRUE;
@@ -484,6 +484,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.13  2003/02/10 21:32:11  joy
+little updates
+
 Revision 1.12  2003/02/10 19:27:55  joy
 minor fixes
 

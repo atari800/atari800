@@ -12,6 +12,8 @@
   is still limited to 8+3 filenames.
 * win32/sound.c: restored original behaviour of "-quality" switch.
 * atari800.man: version increased, SDL option "-audio16" added.
+* win32/sound.c: "-bit16" renamed to "-audio16" to be in sync with SDL port
+* emuos.h: finally updated with proper URL
 * most files in DOC folder updated with minor fixes
 
 2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
