@@ -43,6 +43,7 @@ OBJ = \
 	diskled.o \
 	colours.o \
 	pokeysnd.o \
+	mzpokeysnd.o \
 	sndsave.o \
 	cassette.o \
 	input.o
