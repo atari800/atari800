@@ -73,10 +73,8 @@ extern ULONG *atari_screen1;
 extern ULONG *atari_screen2;
 #endif
 
-#ifndef NO_VOL_ONLY
 extern unsigned int screenline_cpu_clock;
 #define cpu_clock (screenline_cpu_clock + xpos)
-#endif
 
 #define NO_CART 0
 #define NORMAL8_CART 1
@@ -437,6 +435,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.10  2001/07/19 23:26:43  fox
+removed #ifndef NO_VOL_ONLY for cpu_clock
+
 Revision 1.9  2001/05/04 15:38:34  joy
 version++
 
