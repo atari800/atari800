@@ -1,7 +1,4 @@
-/*	CPU.C
- *	Original Author : David Firth
- *	Last changes    : 14th July 2001, Piotr Fusik (Fox)
- */
+/*	CPU.C  */
 /*
 	Compilation options
 	===================
@@ -73,6 +70,7 @@
 #include <stdio.h>
 #include <string.h>	/* for memmove() */
 
+#include "antic.h"
 #include "atari.h"
 #include "config.h"
 #include "cpu.h"
@@ -163,8 +161,6 @@ int instruction_count[256];
 #endif
 
 UBYTE IRQ;
-
-extern int wsync_halt;			/* WSYNC_HALT */
 
 #ifdef MONITOR_BREAK
 UWORD remember_PC[REMEMBER_PC_STEPS];
