@@ -39,14 +39,7 @@
 #include "log.h"
 #include "binload.h"
 #include "sio.h"
-
-#ifdef CRASH_MENU
-extern int crash_code;
-extern UWORD crash_address;
-extern UWORD crash_afterCIM;
-extern void CrashMenu(UBYTE *screen, UBYTE cimcode, UWORD address);
-#endif
-
+#include "ui.h"
 
 #define	ICHIDZ	0x0020
 #define	ICDNOZ	0x0021
@@ -618,7 +611,7 @@ void Device_EHREAD(void)
 	ClrN;
 }
 
-void Device_EHWRITE(void)
+void Device_EHWRIT(void)
 {
 	UBYTE ch;
 
@@ -662,7 +655,7 @@ void AtariEscape(UBYTE esc_code)
 		Device_EHREAD();
 		return;
 	case ESC_E_WRITE:
-		Device_EHWRITE();
+		Device_EHWRIT();
 		return;
 #endif
 	case ESC_PHOPEN:
@@ -744,6 +737,9 @@ void AtariEscape(UBYTE esc_code)
 
 /*
 $Log$
+Revision 1.11  2001/10/01 17:10:34  fox
+#include "ui.h" for CRASH_MENU externs
+
 Revision 1.10  2001/09/21 16:54:11  fox
 removed unused variable
 
