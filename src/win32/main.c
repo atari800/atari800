@@ -29,7 +29,7 @@
 #include <process.h>
 #include "config.h"
 #include "main.h"
-#include "screen.h"
+#include "screen_win32.h"
 #include "keyboard.h"
 #include "sound.h"
 #include "input.h"
@@ -244,6 +244,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 
 /*
 $Log$
+Revision 1.11  2005/03/03 09:15:43  pfusik
+renamed win32/screen.[ch] to win32/screen_win32.[ch]
+
 Revision 1.10  2005/02/23 16:47:54  pfusik
 PNG screenshots
 

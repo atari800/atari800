@@ -28,7 +28,7 @@
 #include <windows.h>
 #include <ddraw.h>
 #include <stdio.h>
-#include "screen.h"
+#include "screen_win32.h"
 #include "main.h"
 #include "atari.h"
 #include "colours.h"
@@ -334,6 +334,9 @@ void refreshv(UBYTE * scr_ptr)
 
 /*
 $Log$
+Revision 1.1  2005/03/03 09:15:43  pfusik
+renamed win32/screen.[ch] to win32/screen_win32.[ch]
+
 Revision 1.6  2003/02/24 09:33:34  joy
 header cleanup
 
