@@ -55,6 +55,9 @@
 /* Enable Snailmeter (shows how much is the emulator slower than original) */
 #undef SNAILMETER
 
+/* define to use clock() instead of gettimeofday() */
+#undef USE_CLOCK
+
 /* Draw every 1/50 sec only 1/refresh of screen */
 #undef SVGA_SPEEDUP
 
