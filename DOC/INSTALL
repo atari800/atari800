@@ -152,10 +152,11 @@ Building the Emulator for Falcon
 --------------------------------
 
 You need a recent GCC, for example 2.7.2, running on a filesystem with long
-file names (either minix-fs of MiNT, or VFAT of MagiC). Unpack the source
-archive and copy all files from falcon/ subdirectory to the main source
-files directory. Then just rename Makefile.falcon to Makefile and type
-"make videl" or just "make" to see the list of possible versions.
+file names (either minix-fs of MiNT, or VFAT of MagiC).
+
+1. Type "./configure --target=falcon".
+2. Type "make".
+3. Copy atari800 to destination directory or try "make install".
 
 Building the Emulator for SDL
 -----------------------------
