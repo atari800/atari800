@@ -2,7 +2,7 @@
  * atari_curses.c - Curses based port code
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2005 Atari800 development team (see DOC/CREDITS)
 
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -29,13 +29,13 @@
 #endif
 
 #include "atari.h"
-#include "ataripcx.h"
 #include "config.h"
 #include "cpu.h"
 #include "input.h"
 #include "monitor.h"
 #include "memory.h"
 #include "rt-config.h"	/* refresh_rate */
+#include "screen.h"
 #include "ui.h"
 #include "log.h"
 
@@ -677,10 +677,10 @@ int main(int argc, char **argv)
 #endif
 			break;
 		case AKEY_SCREENSHOT:
-			Save_PCX_file(FALSE, Find_PCX_name());
+			Screen_SaveNextScreenshot(FALSE);
 			break;
 		case AKEY_SCREENSHOT_INTERLACE:
-			Save_PCX_file(TRUE, Find_PCX_name());
+			Screen_SaveNextScreenshot(TRUE);
 			break;
 		case AKEY_BREAK:
 			key_break = 1;
@@ -713,6 +713,9 @@ int main(int argc, char **argv)
 }
 /*
 $Log$
+Revision 1.12  2005/02/23 16:45:32  pfusik
+PNG screenshots
+
 Revision 1.11  2003/03/03 09:57:32  joy
 Ed improved autoconf again plus fixed some little things
 

@@ -2,7 +2,7 @@
  * atari_svgalib.c - SVGALIB library specific port code
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -37,7 +37,7 @@
 #include "platform.h"
 #include "log.h"
 #include "ui.h"
-#include "ataripcx.h"
+#include "screen.h"
 
 extern int refresh_rate;
 
@@ -799,10 +799,10 @@ int main(int argc, char **argv)
 #endif
 			break;
 		case AKEY_SCREENSHOT:
-			Save_PCX_file(FALSE, Find_PCX_name());
+			Screen_SaveNextScreenshot(FALSE);
 			break;
 		case AKEY_SCREENSHOT_INTERLACE:
-			Save_PCX_file(TRUE, Find_PCX_name());
+			Screen_SaveNextScreenshot(TRUE);
 			break;
 		case AKEY_BREAK:
 			key_break = 1;
@@ -836,6 +836,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.13  2005/02/23 16:45:33  pfusik
+PNG screenshots
+
 Revision 1.12  2004/11/26 18:26:09  joy
 gcc 3.4.x compilation fix
 

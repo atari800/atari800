@@ -22,7 +22,6 @@ AMIGASRCS=\
 EMUSRCS= \
 	antic.c \
 	atari.c \
-	ataripcx.c \
 	binload.c \
 	cartridge.c \
 	cassette.c \
@@ -46,6 +45,7 @@ EMUSRCS= \
 	remez.c \
 	rt-config.c \
 	rtime.c \
+	screen.c \
 	sio.c \
 	statesav.c \
 	ui.c \

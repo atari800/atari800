@@ -2,7 +2,7 @@
  * atari_vga.c - DOS VGA mode specific port code
  *
  * Copyright (c) 1996 Ivo van Poorten
- * Copyright (c) 1996-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1996-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -40,7 +40,7 @@
 #include "dos/sound_dos.h"
 #include "monitor.h"
 #include "pcjoy.h"
-#include "ataripcx.h"
+#include "screen.h"
 #include "rt-config.h"	/* for refresh_rate */
 #include "diskled.h"	/* for led_status */
 
@@ -1499,10 +1499,10 @@ int main(int argc, char **argv)
 #endif
 			break;
 		case AKEY_SCREENSHOT:
-			Save_PCX_file(FALSE, Find_PCX_name());
+			Screen_SaveNextScreenshot(FALSE);
 			break;
 		case AKEY_SCREENSHOT_INTERLACE:
-			Save_PCX_file(TRUE, Find_PCX_name());
+			Screen_SaveNextScreenshot(TRUE);
 			break;
 		case AKEY_BREAK:
 			key_break = 1;

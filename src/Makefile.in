@@ -37,7 +37,7 @@ OBJS = \
 	ui_basic.o \
 	binload.o \
 	list.o \
-	ataripcx.o \
+	screen.o \
 	log.o \
 	compfile.o \
 	memory.o \

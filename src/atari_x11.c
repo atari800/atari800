@@ -2,7 +2,7 @@
  * atari_x11.c - X11 specific port code
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (C) 1998-2004 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -88,10 +88,10 @@ static int motif_rom_sel = 1;
 #include <X11/keysym.h>
 
 #include "atari.h"
-#include "ataripcx.h"
 #include "colours.h"
 #include "input.h"
 #include "monitor.h"
+#include "screen.h"
 #include "sio.h"
 #include "sound.h"
 #include "platform.h"
@@ -3633,10 +3633,10 @@ int main(int argc, char **argv)
 #endif
 			break;
 		case AKEY_SCREENSHOT:
-			Save_PCX_file(FALSE, Find_PCX_name());
+			Screen_SaveNextScreenshot(FALSE);
 			break;
 		case AKEY_SCREENSHOT_INTERLACE:
-			Save_PCX_file(TRUE, Find_PCX_name());
+			Screen_SaveNextScreenshot(TRUE);
 			break;
 		case AKEY_BREAK:
 			key_break = 1;

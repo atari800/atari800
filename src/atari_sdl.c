@@ -2,7 +2,7 @@
  * atari_sdl.c - SDL library specific port code
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
- * Copyright (C) 2001-2004 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -146,7 +146,7 @@
 #include "monitor.h"
 #include "platform.h"
 #include "ui.h"
-#include "ataripcx.h"
+#include "screen.h"
 #include "pokeysnd.h"
 #include "gtia.h"
 #include "antic.h"
@@ -1801,10 +1801,10 @@ int main(int argc, char **argv)
 #endif
 			break;
 		case AKEY_SCREENSHOT:
-			Save_PCX_file(FALSE, Find_PCX_name());
+			Screen_SaveNextScreenshot(FALSE);
 			break;
 		case AKEY_SCREENSHOT_INTERLACE:
-			Save_PCX_file(TRUE, Find_PCX_name());
+			Screen_SaveNextScreenshot(TRUE);
 			break;
 		case AKEY_BREAK:
 			key_break = 1;
@@ -1882,6 +1882,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.44  2005/02/23 16:45:32  pfusik
+ PNG screenshots
+
  Revision 1.43  2005/01/08 04:59:27  emuslor
  Corrected SDL argv handling.
 

@@ -59,7 +59,6 @@
 #include "prompts.h"
 #include "rt-config.h"
 #include "ui.h"
-#include "ataripcx.h"		/* for Save_PCX() */
 #include "log.h"
 #include "statesav.h"
 #include "diskled.h"
@@ -1068,6 +1067,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.54  2005/02/23 16:45:30  pfusik
+PNG screenshots
+
 Revision 1.53  2003/12/16 18:30:34  pfusik
 check OS before applying C: patches
 

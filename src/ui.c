@@ -43,7 +43,7 @@
 #include "statesav.h"
 #include "config.h"
 #include "antic.h"
-#include "ataripcx.h"
+#include "screen.h"
 #include "binload.h"
 #include "sndsave.h"
 #include "cartridge.h"
@@ -811,7 +811,7 @@ void Screenshot(int interlaced)
 	char fname[FILENAME_SIZE + 1];
 	if (ui_driver->fGetSaveFilename(fname)) {
 		ANTIC_Frame(TRUE);
-		Save_PCX_file(interlaced, fname);
+		Screen_SaveScreenshot(fname, interlaced);
 	}
 }
 
@@ -830,7 +830,11 @@ void ui(UBYTE* screen)
 		{ "SETT", ITEM_ENABLED|ITEM_SUBMENU, NULL, "Atari Settings",             NULL,       MENU_SETTINGS },
 		{ "SAVE", ITEM_ENABLED|ITEM_FILESEL, NULL, "Save State",                 "Alt+S",    MENU_SAVESTATE },
 		{ "LOAD", ITEM_ENABLED|ITEM_FILESEL, NULL, "Load State",                 "Alt+L",    MENU_LOADSTATE },
+#ifdef HAVE_LIBPNG
+		{ "PCXN", ITEM_ENABLED|ITEM_FILESEL, NULL, "PNG/PCX screenshot",         "F10",      MENU_PCX },
+#else
 		{ "PCXN", ITEM_ENABLED|ITEM_FILESEL, NULL, "PCX screenshot",             "F10",      MENU_PCX },
+#endif
 /*		{ "PCXI", ITEM_ENABLED|ITEM_FILESEL, NULL, "PCX interlaced screenshot",  "Shift+F10",MENU_PCXI }, */
 		{ "CONT", ITEM_ENABLED|ITEM_ACTION,  NULL, "Back to emulated Atari",     "Esc",      MENU_BACK },
 		{ "REST", ITEM_ENABLED|ITEM_ACTION,  NULL, "Reset (Warm Start)",         "F5",       MENU_RESETW },
@@ -1000,6 +1004,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.52  2005/02/23 16:45:35  pfusik
+PNG screenshots
+
 Revision 1.51  2003/12/16 18:26:30  pfusik
 new cartridge types: Phoenix and Blizzard
 
