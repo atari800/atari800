@@ -5,6 +5,7 @@
 #include "atari.h"
 #include "config.h"
 #include "cpu.h"
+#include "input.h"
 #include "memory.h"
 #include "pia.h"
 #include "sio.h"
@@ -84,8 +85,10 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 	case _PORTA:
 		if (!(PACTL & 0x04))
  			PORTA_mask = ~byte;
-		else
+		else {
 			PORTA = byte;		/* change from thor */
+			INPUT_SelectMultiJoy(byte >> 4);
+		}
 
 		break;
 	case _PORTB:
@@ -163,6 +166,9 @@ void PIAStateRead(void)
 
 /*
 $Log$
+Revision 1.9  2002/08/15 16:59:15  pfusik
+MultiJoy4 interface (4 joysticks for XL/XE)
+
 Revision 1.8  2002/07/14 13:25:57  pfusik
 removed a hack that affected 1088 XE
 

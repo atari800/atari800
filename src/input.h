@@ -248,6 +248,8 @@ extern int joy_autofire[4];		/* autofire mode for each Atari port */
 extern int joy_block_opposite_directions;	/* can't move joystick left
 											   and right simultaneously */
 
+extern int joy_multijoy;	/* emulate MultiJoy4 interface */
+
 /* 5200 joysticks values */
 extern int joy_5200_min;
 extern int joy_5200_center;
@@ -285,5 +287,6 @@ extern int mouse_joy_inertia;	/* how long the mouse pointer can move (time in At
 void INPUT_Initialise(int *argc, char *argv[]);
 void INPUT_Frame(void);
 void INPUT_Scanline(void);
+void INPUT_SelectMultiJoy(int no);
 void INPUT_CenterMousePointer(void);
 void INPUT_DrawMousePointer(void);
