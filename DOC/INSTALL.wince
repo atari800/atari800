@@ -1,0 +1,31 @@
+Atari 800, 800/XL, 130/XE and 5200 Emulator for PocketPC
+--------------------------------------------------------
+
+Irrespective of whether you are going to compile the emulator yourself
+or install a pre-compiled binary version you must obtain a copy of the
+Operating System ROMs.
+
+The ROM images are distributed within the PC Xformer 2.5 package (other
+versions of this program do not contain the ROMs in a suitable format)
+which can be downloaded from:-
+
+http://prdownloads.sf.net/atari800/xf25.zip
+
+PC-Xformer contains "ataribas.rom", "atariosb.rom" and "atarixl.rom".
+If have the original OS it should be called "atariosa.rom" and if
+you have the ROM for the 5200 Games System it should be called
+"atari5200.rom".
+
+Installation of the Emulator
+----------------------------
+
+1. Create a folder somewhere on Pocket PC (yes, it can be on CF card) and copy
+   included PocketAtari.exe and Atari800.cfg there. Make sure that you are
+   using executable matchine your PocketPC CPU type.
+
+2. Download GAPI 1.2 (http://www.microsoft.com/mobile/downloads/developer/
+   gapi.asp). Copy proper DX.DLL to Windows folder on your Pocket PC.
+
+3. Copy the Operating System ROMS into the same newly created folder.
+
+4. Start emulator by clicking on executable file icon.
