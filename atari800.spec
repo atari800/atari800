@@ -1,8 +1,8 @@
 %define name	atari800
-%define ver	1.2.5
+%define ver	1.3.0
 %define rel	1
 %define copy	GPL
-%define ich joy <joy@sophics.cz>
+%define ich Petr Stehlik <pstehlik@sophics.cz>
 %define group	Console/Emulators
 %define realname atari800-%{ver}
 %define src atari800-%{ver}.tar.gz
@@ -23,13 +23,13 @@ BuildRoot: /var/tmp/%{name}-root
 #Patch: %{name}-%{ver}.patch
 %description
 Atari800 is an emulator for the 800, 800XL, 130XE and 5200 models of
-the Atari personal computer. It can be used under SVGAlib or X11. It
-features excellent compatibility with full sound support, artifacting
-emulation, and more.
+the Atari personal computer. It can be used on FrameBuffer, SVGAlib or X11.
+It features excellent compatibility, HIFI sound support, artifacting
+emulation, precise cycle-exact ANTIC/GTIA emulation and more.
 
 Authors:
 David Firth
-and many others (see CREDITS for a full list)
+and Atari800 Development Team (see CREDITS for a full list)
 
 %prep
 rm -rf %{realname}
@@ -49,7 +49,7 @@ do
 	--enable-USE_CURSORBLOCK --enable-LINUX_JOYSTICK \
 	--enable-SOUND  --disable-NO_VOL_ONLY --disable-NO_CONSOL_SOUND \
 	--disable-SERIO_SOUND --disable-NOSNDINTER --enable-CLIP \
-	--disable-STEREO --enable-BUFFERED_LOG --enable-SET_LED \
+	--enable-BUFFERED_LOG --enable-SET_LED \
 	--disable-NO_LED_ON_SCREEN --disable-SVGA_SPEEDUP --disable-JOYMOUSE
 	make
 	mv atari800 atari800-$target
@@ -86,6 +86,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/atari800.1.bz2
 
 %changelog
+* Mon Feb 10 2003 Petr Stehlik <pstehlik@sophics.cz>
+Version increased. STEREO enabled by default. Description updated.
 * Mon Dec 2 2002 Petr Stehlik <pstehlik@sophics.cz>
 Version increased.
 * Wed Aug 7 2002 Petr Stehlik <pstehlik@sophics.cz>

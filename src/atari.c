@@ -310,18 +310,30 @@ int Atari800_Initialise(int *argc, char *argv[])
 	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
-		if (strcmp(argv[i], "-configure") == 0)
+		if (strcmp(argv[i], "-configure") == 0) {
 			config = TRUE;
-		else if (strcmp(argv[i], "-config") == 0)
+		}
+		else if (strcmp(argv[i], "-config") == 0) {
 			rtconfig_filename = argv[++i];
-		else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "-version") == 0) {
+		}
+		else if (strcmp(argv[i], "-v") == 0 ||
+				 strcmp(argv[i], "-version") == 0 ||
+				 strcmp(argv[i], "--version") == 0) {
 			printf("%s\n", ATARI_TITLE);
 			return FALSE;
 		}
-		else if (strcmp(argv[i], "-verbose") == 0)
+		else if (strcmp(argv[i], "--usage") == 0 ||
+				 strcmp(argv[i], "--help") == 0) {
+			printf("%s: unrecognized option `%s'\n", argv[0], argv[1]);
+			printf("Try `%s -help' for more information.\n", argv[0]);
+			return FALSE;
+		}
+		else if (strcmp(argv[i], "-verbose") == 0) {
 			verbose = TRUE;
-		else
+		}
+		else {
 			argv[j++] = argv[i];
+		}
 	}
 
 	*argc = j;
@@ -960,6 +972,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.43  2003/02/10 11:22:32  joy
+preparing for 1.3.0 release
+
 Revision 1.42  2003/01/27 21:05:33  joy
 little BeOS support
 

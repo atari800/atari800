@@ -1,10 +1,21 @@
-Unreleased version 1.2.11 (2003/02/09)
+Version 1.3.0 (2003/02/10)
+
+ Highlights since last 1.2.5 release:
+ ------------------------------------
+ * new HiFi sound (you may en/disable it in the UI)
+ * new cycle-exact Antic emulation
+ * "H:" emulation complete (including subfolders)
+ * Paged memory implementation (fast XE bank-switching)
+ * new configuration file name and location ($HOME/.atari800.cfg)
+
+Detailed list of changes follows:
 
 * configuration file ("atari800.cfg") related changes: 
 
-  1) configuration file is named ".atari800.cfg" by default (note
+  1) configuration file is renamed to ".atari800.cfg" by default (note
      the leading dot in the name, similarly to most other configuration
-     files of programs on Unix platforms)
+     files of programs on Unix platforms). On DOS/TOS (FS 8+3 limitation)
+     the old "atari800.cfg" will be supported.
 
   2) RT-Config (the module in Atari800) tries to search the configuration
      file in user's home folder first (environment variable HOME should
@@ -72,7 +83,7 @@ Unreleased version 1.2.6 (2003/01/27)
 
 * New sound core and 16 bit sound support -- high sound quality but slower.
   Use -bit16 option to enable 16 bit sound and -quality <level> to set sound
-  quality (level > 0 enables new sound core).
+  quality (level > 0 enables new sound core) on the win32 port.
   Consult port specific doc for command line details.
 
 Version 1.2.5 (2002/12/02)

@@ -1,7 +1,11 @@
+** tagged as 1.3.0
+
 2003-02-10  Petr Stehlik  <pstehlik@sophics.cz>
 
 * pokey.c, monitor.c: added include. Interesting is that my compiler at
   home hasn't complained but the gcc-3.2.2 here at work was uncompromising.
+* atari.c: "--help", "--usage" and "--version" recognized now, though the
+  former two just ask user to type "-help" again.
 
 2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
 
