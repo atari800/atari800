@@ -11,7 +11,7 @@
 #include "config.h"
 #include "log.h"
 #ifdef HAVE_LIBZ
-#include "zlib.h"
+#include <zlib.h>
 #endif
 
 #define SAVE_VERSION_NUMBER	3
@@ -432,6 +432,9 @@ int ReadAtariState( char *filename, const char *mode )
 
 /*
 $Log$
+Revision 1.5  2002/01/10 11:50:10  joy
+include zlib.h from the system include path and not from local directory
+
 Revision 1.4  2001/09/17 18:13:35  fox
 machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
 
