@@ -386,7 +386,7 @@ struct ATR_Header {
 #define MENU_SOUND		4
 #define MENU_SOUND_RECORDING	5
 #define MENU_ARTIF		6
-#define MENU_PATCHES	7
+#define MENU_SETTINGS	7
 #define MENU_SAVESTATE	8
 #define MENU_LOADSTATE	9
 #define MENU_PCX		10
@@ -421,6 +421,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.14  2001/09/06 17:13:40  fox
+MENU_PATCHES -> MENU_SETTINGS
+
 Revision 1.13  2001/07/20 20:01:54  fox
 added declarations of mach_xlxe and Ram256,
 removed cartridge types and Insert/Remove functions for cartridges
