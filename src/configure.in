@@ -43,29 +43,20 @@ fi
 AC_PROG_CC
 
 a800_host=none
-AC_CYGWIN
-if test "$CYGWIN" = yes; then
-a800_host=win
-if test "$a800_target" = dx; then 
-CC="gcc -mno-cygwin"
-ac_cv_prog_CC=$CC
-echo "using CC=$CC to disable cygwin library";
-fi
-fi
-AC_MINGW32
-if test "$MINGW32" = yes; then a800_host=win; fi
-
-AC_CACHE_CHECK(for DJGPP environment, ac_cv_djgpp,
-[AC_TRY_COMPILE(,[
-return __DJGPP__;],
-ac_cv_djgpp=yes, ac_cv_djgpp=no)])
-if test "$ac_cv_djgpp" = yes; then a800_host=dos; fi
-
-AC_CACHE_CHECK(for linux environment, ac_cv_linux,
-[AC_TRY_COMPILE(,[
-return linux;],
-ac_cv_linux=yes, ac_cv_linux=no)])
-if test "$ac_cv_linux" = yes; then a800_host=linux; fi
+AC_CANONICAL_HOST
+case $host_os in
+  cygwin )
+	a800_host=win
+	if test "$a800_target" = dx; then 
+		CC="gcc -mno-cygwin"
+		ac_cv_prog_CC=$CC
+		echo "using CC=$CC to disable cygwin library";
+	fi
+	;;
+  mingw32 ) a800_host=win;;
+  msdosdjgpp ) a800_host=dos;;
+  linux ) a800_host=linux;;
+esac
 
 echo "$a800_host environment found"
 
