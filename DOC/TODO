@@ -1,8 +1,5 @@
 This is a list of things that need to be done
 ---------------------------------------------
-o update documentation (README, USAGE, INSTALL) to cover all the
-  new ports.
-
 o make the new function Rotate_Disks in sio.c available from UI
 
 o merge common parts of VGA, SVGALIB and AtariFalcon keyboard stuff
@@ -10,4 +7,23 @@ o merge common parts of VGA, SVGALIB and AtariFalcon keyboard stuff
 
 o rewrite joycfg to use curses so it would be usable on all platforms.
 
-o update Amiga and X11 ports, find and name maintainer for each port.
+o before the SVGAlib is removed move the special features to the SDL port
+  (speedup, joystick, cursorblock, recongnized keys)
+
+o update RPM spec file and debian rules for new configure options
+
+o if midlevel keyboard abstract layer can't find volunteers then perhaps
+  configurable keyboard layout (in text file?) would do?
+
+o find out why atari_sdl doesn't use common Atari_Frame/Input code and
+  possibly fix it.
+
+o remove SVGAlib as soon as the SDL target is in better shape than SVGAlib
+  ever was.
+
+o further clean up in the directory structure - port specific files should
+  be hidden in their subfolders (falcon, amiga, ..)
+
+o try to find out a common interface for setting host sound parameters from
+  the command line - freq (11050 - 44100), bits (8/16) and then remove 
+  the port specific command line parsing and make use of RtConfig file.
