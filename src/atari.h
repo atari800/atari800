@@ -10,26 +10,20 @@
    =================================
  */
 
-#ifdef VMS
-#define SBYTE char
-#define SWORD short int
-#define SLONG long int
-#else
 #define	SBYTE signed char
 #define	SWORD signed short int
-#ifndef ATARI800_64_BIT
-#define	SLONG signed long int
+#if SIZEOF_LONG > 4
+# define	SLONG signed int
 #else
-#define	SLONG signed int
-#endif
+# define	SLONG signed long int
 #endif
 
 #define	UBYTE unsigned char
 #define	UWORD unsigned short int
-#ifndef ATARI800_64_BIT
-#define	ULONG unsigned long int
+#if SIZEOF_LONG > 4
+# define	ULONG unsigned int
 #else
-#define	ULONG unsigned int
+# define	ULONG unsigned long int
 #endif
 
 #ifdef SHM
@@ -443,6 +437,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.7  2001/04/15 09:10:52  knik
+atari_64_bit -> sizeof_long (autoconf compatibility)
+
 Revision 1.6  2001/03/25 07:00:05  knik
 removed o_binary define
 
