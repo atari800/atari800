@@ -221,7 +221,7 @@ extern int brkhere;
 
 void CPU_GetStatus(void)
 {
-	if (N)
+	if (N & 0x80)
 		SetN;
 	else
 		ClrN;
@@ -482,7 +482,7 @@ void GO(int limit)
    execution speed. It does not seem to have any adverse effect on
    the emulation for two reasons:-
 
-   1. NMI's will can only be raised in atari_custom.c - there is
+   1. NMI's will can only be raised in antic.c - there is
    no way an NMI can be generated whilst in this routine.
 
    2. The timing of the IRQs are not that critical.
@@ -493,7 +493,7 @@ void GO(int limit)
 		if(DRAWING_SCREEN){
 /* if WSYNC_C is a stolen cycle, antic2cpu_ptr will convert that to the nearest
    cpu cycle before that cycle.  The CPU will see this cycle, if WSYNC is not 
-   delayed. (Acutally this cycle is the first cycle of the instruction after
+   delayed. (Actually this cycle is the first cycle of the instruction after
   STA WSYNC, which was really executed one cycle after STA WSYNC because
   of an internal antic delay ).   delayed_wsync is added to this cycle to form
    the limit in the case that WSYNC is not early (does not allow this extra cycle) */
@@ -549,10 +549,6 @@ void GO(int limit)
 		}
 #endif
 
-#ifdef PROFILE
-		instruction_count[dGetByte(PC)]++;
-#endif
-
 #ifdef MONITOR_BREAK
 		remember_PC[remember_PC_curpos]=PC;
 		remember_PC_curpos=(remember_PC_curpos+1)%REMEMBER_PC_STEPS;
@@ -577,6 +573,10 @@ void GO(int limit)
 #endif
 		insn = dGetByte(PC++);
 		xpos += cycles[insn];
+
+#ifdef PROFILE
+		instruction_count[insn]++;
+#endif
 
 #ifdef NO_GOTO
 		switch (insn) {
