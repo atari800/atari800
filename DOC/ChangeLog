@@ -1,3 +1,10 @@
+2003-09-22  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: got sprite collisions working with NEW_CYCLE_EXACT
+  (broken by mistake)
+* antic.c: a fix for "Sweet Illusions" part with wireframe vectors
+  (sprites highlighting the scrolling text)
+
+
 2003-09-21  Piotr Fusik  <fox@scene.pl>
 * input.c: implemented bit 6 of SKSTAT - now you can exit from
   the "spinning camera" part of "Cool Emotion"
