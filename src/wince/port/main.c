@@ -57,12 +57,14 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 	static PAINTSTRUCT ps;
 	switch (message)
 	{
+	/* All right, I don't understand this. PPC2000 throws VK_LWIN every time button
+	   is pressed and PPC2002 adds VK_F21 after each joystick press */
 	case WM_KEYDOWN:
-		if(wParam != VK_LWIN) // huh?
+		if(wParam != VK_LWIN && wParam != VK_F21) // huh?
 			hitbutton((short)wParam);
 		return 0;
 	case WM_KEYUP:
-		if(wParam != VK_LWIN) // huh?
+		if(wParam != VK_LWIN && wParam != VK_F21) // huh?
 			releasebutton((short)wParam);
 		return 0;
 	case WM_LBUTTONDOWN:
