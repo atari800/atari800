@@ -1,5 +1,9 @@
+/* $Id$ */
+
 #include <stdio.h>		/* for sscanf */
 #include "config.h"
+
+#ifdef SOUND
 
 #include "pokeysnd.h"
 #include "dos_sb.h"
@@ -67,8 +71,14 @@ void Sound_Continue(void)
 		sb_startoutput((sbmix_t) Pokey_process);
 }
 
+void Sound_Update(void)
+{
+}
+
 void Sound_Exit(void)
 {
 	if (sound_enabled)
 		sb_shutdown();
 }
+
+#endif /* SOUND */
