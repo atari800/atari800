@@ -1,15 +1,21 @@
+/* $Id$ */
 #ifndef __SIO__
 #define __SIO__
 
+#define MAX_DRIVES 8
+
+#ifdef WIN32
+# include <stdlib.h>
+# ifdef MAX_PATH
+#  define FILENAME_LEN MAX_PATH
+# endif
+#endif
+#ifndef FILENAME_LEN
+# define FILENAME_LEN 256
+#endif
+
 #include "atari.h"
 
-#define MAX_DRIVES 8
-#ifdef WIN32
-#include "windows.h"
-#define FILENAME_LEN MAX_PATH
-#else
-#define FILENAME_LEN 256
-#endif	/* WIN32 */
 
 /*
  * it seems, there are two different ATR formats with different handling for

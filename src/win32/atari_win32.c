@@ -1,0 +1,426 @@
+/* (C) 2000  Krzysztof Nikiel */
+/* $Id$ */
+#include <windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <dinput.h>
+
+#include "config.h"
+#include "platform.h"
+#include "atari.h"
+#include "screen.h"
+#include "keyboard.h"
+#include "main.h"
+#include "sound.h"
+#include "monitor.h"
+
+void Sound_Pause(void);
+void Sound_Continue(void);
+static int usesnd = 1;
+
+extern int refresh_rate;
+
+extern int SHIFT_KEY, KEYPRESSED;
+extern int alt_function;
+static int kbjoy = 1;
+static UBYTE joydefs[] =
+{
+  DIK_NUMPAD0,			/* fire */
+  DIK_NUMPAD7,			/* up/left */
+  DIK_NUMPAD8,			/* up */
+  DIK_NUMPAD9,			/* up/right */
+  DIK_NUMPAD4,			/* left */
+  DIK_NUMPAD6,			/* right */
+  DIK_NUMPAD1,			/* down/left */
+  DIK_NUMPAD2,			/* down */
+  DIK_NUMPAD3,			/* down/right */
+#ifdef USE_CURSORBLOCK
+  DIK_UP,
+  DIK_LEFT,
+  DIK_RIGHT,
+  DIK_DOWN,
+#endif
+};
+
+static UBYTE joymask[] =
+{
+  0,				/* not used */
+  ~1 & ~4,			/* up/left */
+  ~1,				/* up */
+  ~1 & ~8,			/* up/right */
+  ~4,				/* left */
+  ~8,				/* right */
+  ~2 & ~4,			/* down/left */
+  ~2,				/* down */
+  ~2 & ~8,			/* down/right */
+#ifdef USE_CURSORBLOCK
+  ~1,				/* up */
+  ~4,				/* left */
+  ~8,				/* right */
+  ~2,				/* down */
+#endif
+};
+
+static int trig0;
+static int stick0;
+static int consol;
+
+extern int TRIG_auto[4];	/* autofire */
+
+extern double deltatime;
+
+int Atari_Keyboard(void)
+{
+  int keycode;
+  int i;
+
+  prockb();
+
+  if (kbjoy)
+    {
+      /* fire */
+#ifdef USE_CURSORBLOCK
+      trig0 = (kbhits[joydefs[0]] ? 0 : 1) & (kbhits[DIK_LCONTROL] ? 0 : 1);
+#else
+      trig0 = kbhits[joydefs[0]] ? 0 : 1;
+#endif
+      stick0 |= 0xf;
+      for (i = 1; i < sizeof(joydefs) / sizeof(joydefs[0]); i++)
+	if (kbhits[joydefs[i]])
+	  stick0 &= joymask[i];
+    }
+
+  consol = (consol & ~7)
+    | (kbhits[DIK_F2] ? 0 : 4)
+    | (kbhits[DIK_F3] ? 0 : 2)
+    | (kbhits[DIK_F4] ? 0 : 1);
+
+  if (pause_hit)
+    {
+      pause_hit = 0;
+      return AKEY_BREAK;
+    }
+
+  SHIFT_KEY = (kbhits[DIK_LSHIFT]
+	       | kbhits[DIK_RSHIFT]) ? 1 : 0;
+
+  alt_function = -1;		/* no alt function */
+  if (kbhits[DIK_LMENU])
+    {				/* left Alt key is pressed */
+      if (kbcode == DIK_R)
+	alt_function = MENU_RUN;	/* ALT+R .. Run file */
+      else if (kbcode == DIK_Y)
+	alt_function = MENU_SYSTEM;	/* ALT+Y .. Select system */
+      else if (kbcode == DIK_O)
+	alt_function = MENU_SOUND;	/* ALT+O .. mono/stereo sound */
+      else if (kbcode == DIK_A)
+	alt_function = MENU_ABOUT;	/* ALT+A .. About */
+      else if (kbcode == DIK_S)
+	alt_function = MENU_SAVESTATE;	/* ALT+S .. Save state */
+      else if (kbcode == DIK_D)
+	alt_function = MENU_DISK;	/* ALT+D .. Disk management */
+      else if (kbcode == DIK_L)
+	alt_function = MENU_LOADSTATE;	/* ALT+L .. Load state */
+      else if (kbcode == DIK_C)
+	alt_function = MENU_CARTRIDGE;	/* ALT+C .. Cartridge management */
+    }
+  if (alt_function != -1)
+    return AKEY_UI;
+
+  /* need to set shift mask here to avoid conflict with PC layout */
+  keycode = (SHIFT_KEY ? 0x40 : 0)
+    | ((kbhits[DIK_LCONTROL]
+	| kbhits[DIK_RCONTROL]) ? 0x80 : 0);
+
+  switch (kbcode)
+    {
+    case DIK_F9:
+      return AKEY_EXIT;
+      break;
+    case DIK_F8:
+      keycode = Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT;
+      kbcode = 0;
+      break;
+    case DIK_SCROLL:		/* pause */
+      while (kbhits[DIK_SCROLL])
+	prockb();
+      while (!kbhits[DIK_SCROLL])
+	prockb();
+      kbcode = 0;
+      break;
+    case DIK_SYSRQ:
+    case DIK_F10:
+      keycode = SHIFT_KEY ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
+      kbcode = 0;
+      break;
+
+    case DIK_F1:
+      return AKEY_UI;
+      break;
+    case DIK_F5:
+      return SHIFT_KEY ? AKEY_COLDSTART : AKEY_WARMSTART;
+      break;
+    case DIK_F11:
+      for (i = 0; i < 4; i++)
+	{
+	  if (++TRIG_auto[i] > 2)
+	    TRIG_auto[i] = 0;
+	}
+      kbcode = 0;
+      break;
+
+#define KBSCAN(name) \
+	  case DIK_##name: \
+	    keycode |= (AKEY_##name & ~(AKEY_CTRL | AKEY_SHFT)); \
+	    break;
+      KBSCAN(ESCAPE)
+	KBSCAN(1)
+    case DIK_2:
+      if (SHIFT_KEY)
+	keycode = AKEY_AT;
+      else
+	keycode |= AKEY_2;
+      break;
+      KBSCAN(3)
+	KBSCAN(4)
+	KBSCAN(5)
+    case DIK_6:
+      if (SHIFT_KEY)
+	keycode = AKEY_CARET;
+      else
+	keycode |= AKEY_6;
+      break;
+    case DIK_7:
+      if (SHIFT_KEY)
+	keycode = AKEY_AMPERSAND;
+      else
+	keycode |= AKEY_7;
+      break;
+    case DIK_8:
+      if (SHIFT_KEY)
+	keycode = AKEY_ASTERISK;
+      else
+	keycode |= AKEY_8;
+      break;
+      KBSCAN(9)
+	KBSCAN(0)
+	KBSCAN(MINUS)
+    case DIK_EQUALS:
+      if (SHIFT_KEY)
+	keycode = AKEY_PLUS;
+      else
+	keycode |= AKEY_EQUAL;
+      break;
+      KBSCAN(BACKSPACE)
+	KBSCAN(TAB)
+	KBSCAN(Q)
+	KBSCAN(W)
+	KBSCAN(E)
+	KBSCAN(R)
+	KBSCAN(T)
+	KBSCAN(Y)
+	KBSCAN(U)
+	KBSCAN(I)
+	KBSCAN(O)
+	KBSCAN(P)
+    case DIK_LBRACKET:
+      keycode |= AKEY_BRACKETLEFT;
+      break;
+    case DIK_RBRACKET:
+      keycode |= AKEY_BRACKETRIGHT;
+      break;
+    case DIK_RETURN:
+      keycode |= AKEY_RETURN;
+      break;
+      KBSCAN(A)
+	KBSCAN(S)
+	KBSCAN(D)
+	KBSCAN(F)
+	KBSCAN(G)
+	KBSCAN(H)
+	KBSCAN(J)
+	KBSCAN(K)
+	KBSCAN(L)
+	KBSCAN(SEMICOLON)
+    case DIK_APOSTROPHE:
+      if (SHIFT_KEY)
+	keycode = AKEY_DBLQUOTE;
+      else
+	keycode |= AKEY_QUOTE;
+      break;
+    case DIK_GRAVE:
+      keycode |= AKEY_ATARI;
+      break;
+    case DIK_BACKSLASH:
+      if (SHIFT_KEY)
+	keycode = AKEY_EQUAL | AKEY_SHFT;
+      else
+	keycode |= AKEY_BACKSLASH;
+      break;
+      KBSCAN(Z)
+	KBSCAN(X)
+	KBSCAN(C)
+	KBSCAN(V)
+	KBSCAN(B)
+	KBSCAN(N)
+	KBSCAN(M)
+    case DIK_COMMA:
+      if (SHIFT_KEY)
+	keycode = AKEY_LESS;
+      else
+	keycode |= AKEY_COMMA;
+      break;
+    case DIK_PERIOD:
+      if (SHIFT_KEY)
+	keycode = AKEY_GREATER;
+      else
+	keycode |= AKEY_FULLSTOP;
+      break;
+      KBSCAN(SLASH)
+	KBSCAN(SPACE)
+	KBSCAN(CAPSLOCK)
+    case DIK_UP:
+      keycode = AKEY_UP;
+      break;
+    case DIK_DOWN:
+      keycode = AKEY_DOWN;
+      break;
+    case DIK_LEFT:
+      keycode = AKEY_LEFT;
+      break;
+    case DIK_RIGHT:
+      keycode = AKEY_RIGHT;
+      break;
+    case DIK_DELETE:
+      if (SHIFT_KEY)
+	keycode = AKEY_DELETE_LINE;
+      else
+	keycode |= AKEY_DELETE_CHAR;
+      break;
+    case DIK_INSERT:
+      if (SHIFT_KEY)
+	keycode = AKEY_INSERT_LINE;
+      else
+	keycode |= AKEY_INSERT_CHAR;
+      break;
+    case DIK_HOME:
+      keycode = AKEY_CLEAR;
+      break;
+    case DIK_END:
+      keycode = AKEY_HELP;
+      break;
+    default:
+      keycode = AKEY_NONE;
+    }
+
+  KEYPRESSED = (keycode != AKEY_NONE);
+  return keycode;
+}
+
+void Atari_Initialise(int *argc, char *argv[])
+{
+  ShowWindow(hWndMain, SW_RESTORE);
+
+  if (usesnd)
+    initsound(argc, argv);
+  if (initinput())
+  {
+    MessageBox(hWndMain, "DirectInput Init FAILED",
+		myname,
+		MB_ICONEXCLAMATION
+		| MB_OK);
+    exit(1);
+  }
+  if (gron(argc, argv))
+    exit(1);
+
+#if defined(SET_LED) && !defined(NO_LED_ON_SCREEN)
+  LED_lastline = 239;
+#endif
+  clearkb();
+
+  trig0 = 1;
+  stick0 = 15;
+  consol = 7;
+}
+
+int Atari_Exit(int run_monitor)
+{
+  int i;
+
+  if (run_monitor)
+    {
+      Sound_Pause();
+      ShowWindow(hWndMain, SW_MINIMIZE);
+      i = monitor();
+      ShowWindow(hWndMain, SW_RESTORE);
+      Sound_Continue();
+      if (i)
+	return 1;	      /* return to emulation */
+    }
+
+#ifdef BUFFERED_LOG
+  Aflushlog();
+#endif
+
+  return 0;
+}
+
+void Atari_DisplayScreen(UBYTE * ascreen)
+{
+  while (!bActive)
+    {
+      if (vloopexit)
+	break;
+      Sleep(100);
+    }
+  if (vloopexit)
+    {
+      exit(0);
+    }
+  refreshv(ascreen + 24);
+  sndhandler();
+}
+
+int Atari_PORT(int num)
+{
+  if (num == 0)
+    {
+      return 0xf0 | stick0;
+    }
+  else
+    return 0xff;
+}
+
+
+int Atari_TRIG(int num)
+{
+  if (num == 0)
+    {
+      return trig0;
+    }
+  else
+    return 1;
+}
+
+int Atari_POT(int num)
+{
+  return 228;
+}
+
+int Atari_CONSOL(void)
+{
+  return consol;
+}
+
+int Atari_PEN(int vertical)
+{
+  return vertical ? 0xff : 0;
+}
+
+/*
+$Log$
+Revision 1.1  2001/03/18 07:56:48  knik
+win32 port
+
+*/

@@ -1,3 +1,5 @@
+/* $Id$ */
+#include <stdlib.h>
 #include <time.h>
 
 #include "atari.h"
