@@ -395,8 +395,20 @@ void CopyToMem(UBYTE * from, ATPtr to, int size)
 	}
 }
 
+/*
+ * Returns non-zero, if Atari BASIC is disabled by given PORTB output.
+ * Normally BASIC is disabled by setting bit 1, but it's also disabled
+ * when using 576K and 1088K memory expansions, where bit 1 is used
+ * for selecting extended memory bank number.
+ */
+static int basic_disabled(UBYTE portb)
+{
+	return (portb & 0x02) != 0
+	 || ((portb & 0x10) == 0 && (ram_size == 576 || ram_size == 1088));
+}
+
 /* Note: this function is only for XL/XE! */
-void PORTB_handler(UBYTE byte)
+void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 {
 #ifdef PAGED_ATTRIB
 	int	i;
@@ -460,12 +472,8 @@ void PORTB_handler(UBYTE byte)
 			}
 	}
 
-#ifdef DEBUG
-	printf("Storing %x to PORTB, PC = %x\n", byte, regPC);
-#endif
-
 	/* Enable/disable OS ROM in 0xc000-0xcfff and 0xd800-0xffff */
-	if ((PORTB ^ byte) & 0x01) {
+	if ((oldval ^ byte) & 0x01) {
 		if (byte & 0x01) {
 			/* Enable OS ROM */
 			if (ram_size > 48) {
@@ -532,9 +540,8 @@ void PORTB_handler(UBYTE byte)
 	/* Enable/disable BASIC ROM in 0xa000-0xbfff */
 	if (!cartA0BF_enabled) {
 		/* BASIC is disabled if bit 1 set or accessing extended 576K or 1088K memory */
-		int was_disabled = (PORTB & 0x02) || ((PORTB & 0x10) == 0 && (ram_size == 576 || ram_size == 1088));
-		int now_disabled = (byte & 0x02) || ((byte & 0x10) == 0 && (ram_size == 576 || ram_size == 1088));
-		if (was_disabled != now_disabled) {
+		int now_disabled = basic_disabled(byte);
+		if (basic_disabled(oldval) != now_disabled) {
 			if (now_disabled) {
 				/* Disable BASIC ROM */
 				if (ram_size > 40) {
@@ -612,8 +619,6 @@ void PORTB_handler(UBYTE byte)
 			selftest_enabled = TRUE;
 		}
 	}
-
-	PORTB = byte;
 }
 
 static int cart809F_enabled = FALSE;
@@ -673,8 +678,7 @@ void CartA0BF_Disable(void)
 	if (cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if ((machine_type != MACHINE_XLXE) || (PORTB & 0x02)
-		|| ((PORTB & 0x10) == 0 && (ram_size == 576 || ram_size == 1088))) {
+		if ((machine_type != MACHINE_XLXE) || basic_disabled(PORTB | PORTB_mask)) {
 			if (ram_size > 40) {
 				memcpy(memory + 0xa000, under_cartA0BF, 0x2000);
 #ifndef PAGED_ATTRIB
@@ -745,6 +749,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.4  2003/03/07 11:22:38  pfusik
+PORTB_handler() -> MEMORY_HandlePORTB()
+
 Revision 1.3  2003/02/24 09:33:02  joy
 header cleanup
 
