@@ -49,9 +49,6 @@
 /* Enable assembler in monitor (you can enter ASM insns directly) */
 #undef MONITOR_ASSEMBLER
 
-/* Compile internal palettes */
-#undef COMPILED_PALETTE
-
 /* Enable Snailmeter (shows how much is the emulator slower than original) */
 #undef SNAILMETER
 
