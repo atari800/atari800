@@ -706,8 +706,12 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 				}
 				else if (item >= nitems) {	/* Scroll Left */
 					if ((offset - NROWS) >= 0)
+					{
 						offset -= NROWS;
-					item = item % nitems;
+						item = item % nitems;
+					}
+					else
+						item = 0;
 				}
 				else if (item == -2) {	/* Next directory */
 					DIR *dr;
@@ -990,6 +994,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.7  2002/06/12 06:40:41  vasyl
+Fixed odd behavior of Up button on the first item in file selector
+
 Revision 1.6  2002/03/30 06:19:28  vasyl
 Dirty rectangle scheme implementation part 2.
 All video memory accesses everywhere are going through the same macros
