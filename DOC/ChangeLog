@@ -1,3 +1,9 @@
+2002-08-15  Piotr Fusik  <fox@scene.pl>
+* DOC/BUGS: "Numen" soundtrack
+* cartridge.[ch], ui.c, DOC/cart.txt: 1 MB XEGS cart
+* input.c: Amiga/ST mouse right button ("Bombdown")
+* input.h, input.c, pia.c: MultiJoy4 interface (4 joysticks for XL/XE)
+
 ** released as 1.2.4
 
 2002-08-07  Petr Stehlik  <pstehlik@sophics.cz>
