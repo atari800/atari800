@@ -47,40 +47,40 @@ default :
 
 include common.mak
 
-svgalib: $(CONFDEPS)
+svgalib:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DSVGALIB" OBJ="$(OBJ) $(SVGAOBJ)" \
 		LIBS="$(LIBS) -lvga"
 
-curses: $(CONFDEPS)
+curses:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DCURSES" OBJ="$(OBJ) $(CURSOBJ)" \
 		LIBS="$(LIBS) -lcurses"
 
-ncurses: $(CONFDEPS)
+ncurses:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DCURSES -DNCURSES" \
 		OBJ="$(OBJ) $(CURSOBJ)" \
 		INCLUDE="$(INCLUDE) -I/usr/include/ncurses" \
 		LIBS="$(LIBS) -lncurses"
 
-sunos-curses: $(CONFDEPS)
+sunos-curses:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DCURSES" OBJ="$(OBJ) $(CURSOBJ)" \
 		INCLUDE="$(INCLUDE) -I/usr/5include" \
 		LIBS="-L/usr/5lib $(LIBS) -lcurses"
 
-basic: $(CONFDEPS)
+basic:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DBASIC" OBJ="$(OBJ) $(BASICOBJ)"
 
 
-x11: $(CONFDEPS)
+x11:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DX11" OBJ="$(OBJ) $(XOBJ)" \
 		INCLUDE="$(INCLUDE) -I/usr/X11R6/include" \
 		LIBS="-L/usr/X11/lib -L/usr/X11R6/lib $(LIBS) -lX11"
 
-x11-shm: $(CONFDEPS)
+x11-shm:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DX11 -DSHM" OBJ="$(OBJ) $(XOBJ)" \
 		INCLUDE="$(INCLUDE) -I/usr/X11R6/include" \
 		LIBS="-L/usr/X11/lib -L/usr/X11R6/lib $(LIBS) -lX11 -lXext"
 
-hp9000-ansic-x11: $(CONFDEPS)
+hp9000-ansic-x11:
 	$(MAKE) $(TARGET) \
 		CC="cc" \
 		DEFS="-DX11 -D_POSIX_SOURCE" \
@@ -89,18 +89,18 @@ hp9000-ansic-x11: $(CONFDEPS)
 		LIBS="-L/usr/lib/X11R5 $(LIBS) -lX11" \
 		OBJ="$(OBJ) $(XOBJ)"
 
-xview: $(CONFDEPS)
+xview:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DX11 -DXVIEW" OBJ="$(OBJ) $(XOBJ)" \
 		INCLUDE="$(INCLUDE) -I/usr/X11R6/include" \
 		LIBS="-L/usr/X11/lib -L/usr/X11R6/lib $(LIBS) -lxview -lolgx -lX11"
 
-xview-shm: $(CONFDEPS)
+xview-shm:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DX11 -DXVIEW -DSHM" \
 		OBJ="$(OBJ) $(XOBJ)" \
 		INCLUDE="$(INCLUDE) -I/usr/X11R6/include" \
 		LIBS="-L/usr/X11/lib -L/usr/X11R6/lib $(LIBS) -lxview -lolgx -lX11 -lXext"
 
-motif: $(CONFDEPS)
+motif:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DX11 -DMOTIF" OBJ="$(OBJ) $(XOBJ)" \
 		INCLUDE="$(INCLUDE) -I/opt/IXImd12s/include" \
 		LIBS="-L/opt/IXImd12s/lib $(LIBS) -lXm -lXt -lX11 -lgen -lsocket"

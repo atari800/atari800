@@ -52,7 +52,7 @@ config config.h .atari800: config.in
 configure$(EXE): configure.o prompts.o
 	$(CC) -o $@ $(LDFLAGS) configure.o prompts.o
 
-$(TARGET): $(OBJ)
+$(TARGET): $(OBJ) $(CONFDEPS)
 	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
 
 distclean: clean

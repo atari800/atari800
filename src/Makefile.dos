@@ -37,13 +37,13 @@ default:
 
 include common.mak
 
-vga: $(CONFDEPS) joycfg.exe
+vga: joycfg.exe
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DVGA" OBJ="$(OBJ) $(VGAOBJ)"
 
-basic: $(CONFDEPS)
+basic:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DBASIC" OBJ="$(OBJ) $(BASICOBJ)"
 
-curses: $(CONFDEPS)
+curses:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DCURSES" OBJ="$(OBJ) $(CURSOBJ)" \
 		LIBS="$(LIBS) -lcurses"
 

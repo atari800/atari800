@@ -39,15 +39,16 @@ default:
 
 include common.mak
 
-dx: $(CONFDEPS)
+dx:
+	$(MAKE) $(CONFDEPS) DEFS="$(DEFS)"
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -Dmain=atari_main" \
 		OBJ="$(OBJ) $(DXOBJ)" \
 		LIBS="$(LIBS) -lgdi32 -lddraw -ldinput -ldsound -ldxguid"
         
-basic: $(CONFDEPS)
+basic:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DBASIC" OBJ="$(OBJ) $(BASICOBJ)"
 
-curses: $(CONFDEPS)
+curses:
 	$(MAKE) $(TARGET) DEFS="$(DEFS) -DCURSES" OBJ="$(OBJ) $(CURSOBJ)" \
 		LIBS="$(LIBS) -lcurses"
 
