@@ -6,6 +6,7 @@
 #include "atari.h"
 #include "prompts.h"
 #include "rt-config.h"
+#include "log.h"
 
 #if defined(VGA) || defined(SUPPORTS_ATARI_CONFIGURE)
 	/* This procedure processes lines not recognized by RtConfigLoad. */
@@ -44,27 +45,36 @@ int enable_sio_patch;
 int enable_h_patch;
 int enable_p_patch;
 int disk_directories;
+int enable_new_pokey;
+int stereo_enabled;
 
 /* If another default path config path is defined use it
    otherwise use the default one */
-#ifdef DEFAULT_CFG_PATH
-static char *rtconfig_filename1 = DEFAULT_CFG_PATH;
-#else
-static char *rtconfig_filename1 = "atari800.cfg";
+#ifndef DEFAULT_CFG_NAME
+#define DEFAULT_CFG_NAME	".atari800.cfg"
 #endif
 
-static char *rtconfig_filename2 = "/etc/atari800.cfg";
+#ifndef SYSTEM_WIDE_CFG_FILE
+#define SYSTEM_WIDE_CFG_FILE	"/etc/atari800.cfg"
+#endif
 
-int RtConfigLoad(char *rtconfig_filename)
+static char rtconfig_filename[FILENAME_MAX];
+#define RTCFGNAME_MAX	(sizeof(rtconfig_filename)-1)
+
+#ifdef BACK_SLASH
+#define PATH_SEPARATOR		'\\'
+#define PATH_SEPARATOR_STR	"\\"
+#else
+#define PATH_SEPARATOR	'/'
+#define PATH_SEPARATOR_STR	"/"
+#endif
+
+/*
+ * Set Configuration Parameters to sensible values
+ * in case the configuration file is missing.
+ */
+static void RtPresetDefaults()
 {
-	FILE *fp;
-	int status = TRUE;
-
-	/*
-	 * Set Configuration Parameters to sensible values
-	 * in case the configuration file is missing.
-	 */
-
 	atari_osa_filename[0] = '\0';
 	atari_osb_filename[0] = '\0';
 	atari_xlxe_filename[0] = '\0';
@@ -94,185 +104,176 @@ int RtConfigLoad(char *rtconfig_filename)
 	enable_sio_patch = 1;
 	enable_h_patch = 1;
 	enable_p_patch = 1;
+	enable_new_pokey = 1;
+	stereo_enabled = 0;
+}
 
-	if (rtconfig_filename) {
-		fp = fopen(rtconfig_filename, "r");
-		if (!fp) {
-			perror(rtconfig_filename);
-			exit(1);
-		}
+int RtConfigLoad(const char *alternate_config_filename)
+{
+	FILE *fp;
+	const char *fname = rtconfig_filename;
+	int status = TRUE;
+	char string[256];
+	char *ptr;
+
+	RtPresetDefaults();
+
+	/* if alternate config filename is passed then use it */
+	if (alternate_config_filename != NULL && *alternate_config_filename > 0) {
+		strncpy(rtconfig_filename, alternate_config_filename, RTCFGNAME_MAX);
+		rtconfig_filename[RTCFGNAME_MAX] = '\0';
 	}
+	/* else use the default config name under the HOME folder */
 	else {
-		fp = fopen(rtconfig_filename1, "r");
-		if (!fp)
-			fp = fopen(rtconfig_filename2, "r");
+		*rtconfig_filename = '\0';
+		char *home = getenv("HOME");
+		if (home != NULL) {
+			int len;
+			strncpy(rtconfig_filename, home, RTCFGNAME_MAX);
+			rtconfig_filename[RTCFGNAME_MAX] = '\0';
+			len = strlen(rtconfig_filename);
+			if (len > 0) {
+				if (rtconfig_filename[len-1] != PATH_SEPARATOR) {
+					strcat(rtconfig_filename, PATH_SEPARATOR_STR);
+				}
+			}
+		}
+		strncat(rtconfig_filename, DEFAULT_CFG_NAME, RTCFGNAME_MAX-strlen(rtconfig_filename));
+		rtconfig_filename[RTCFGNAME_MAX] = '\0';
 	}
 
-	if (fp) {
-		char string[256];
-		char *ptr;
+	fp = fopen(fname, "r");
+	if (!fp) {
+		Aprint("User config file '%s' not found.", rtconfig_filename);
 
-		fgets(string, sizeof(string), fp);
-
-		fprintf(stderr, "Configuration Created by %s", string);
-
-		while (fgets(string, sizeof(string), fp)) {
-			RemoveLF(string);
-			ptr = strchr(string, '=');
-			if (ptr) {
-				*ptr++ = '\0';
-
-				if (strcmp(string, "OS/A_ROM") == 0)
-					strcpy(atari_osa_filename, ptr);
-				else if (strcmp(string, "OS/B_ROM") == 0)
-					strcpy(atari_osb_filename, ptr);
-				else if (strcmp(string, "XL/XE_ROM") == 0)
-					strcpy(atari_xlxe_filename, ptr);
-				else if (strcmp(string, "BASIC_ROM") == 0)
-					strcpy(atari_basic_filename, ptr);
-				else if (strcmp(string, "5200_ROM") == 0)
-					strcpy(atari_5200_filename, ptr);
-				else if (strcmp(string, "DISK_DIR") == 0) {
-					if (disk_directories == MAX_DIRECTORIES)
-						printf("All disk directory slots used!\n");
-					else
-						strcpy(atari_disk_dirs[disk_directories++], ptr);
-				}
-				else if (strcmp(string, "ROM_DIR") == 0)
-					strcpy(atari_rom_dir, ptr);
-				else if (strcmp(string, "H1_DIR") == 0)
-					strcpy(atari_h1_dir, ptr);
-				else if (strcmp(string, "H2_DIR") == 0)
-					strcpy(atari_h2_dir, ptr);
-				else if (strcmp(string, "H3_DIR") == 0)
-					strcpy(atari_h3_dir, ptr);
-				else if (strcmp(string, "H4_DIR") == 0)
-					strcpy(atari_h4_dir, ptr);
-				else if (strcmp(string, "HD_READ_ONLY") == 0)
-					sscanf(ptr, "%d", &hd_read_only);
-				else if (strcmp(string, "EXE_DIR") == 0)
-					strcpy(atari_exe_dir, ptr);
-				else if (strcmp(string, "STATE_DIR") == 0)
-					strcpy(atari_state_dir, ptr);
-				else if (strcmp(string, "PRINT_COMMAND") == 0)
-					strcpy(print_command, ptr);
-				else if (strcmp(string, "SCREEN_REFRESH_RATIO") == 0)
-					sscanf(ptr, "%d", &refresh_rate);
-				/* HOLD_OPTION supported for compatibility with previous Atari800 versions */
-				else if (strcmp(string, "DISABLE_BASIC") == 0 || strcmp(string, "HOLD_OPTION") == 0)
-					sscanf(ptr, "%d", &disable_basic);
-				/* Supported for compatibility with previous Atari800 versions */
-				else if (strcmp(string, "ENABLE_C000_RAM") == 0) {
-					int enable_c000_ram = 0;
-					sscanf(ptr, "%d", &enable_c000_ram);
-					if (enable_c000_ram && ram_size == 48)
-						ram_size = 52;
-				}
-				else if (strcmp(string, "ENABLE_ROM_PATCH") == 0) {
-					/* Supported for compatibility with previous Atari800 versions */
-					int enable_rom_patches;
-					sscanf(ptr, "%d", &enable_rom_patches);
-					enable_h_patch = enable_p_patch = enable_rom_patches;
-				}
-				else if (strcmp(string, "ENABLE_SIO_PATCH") == 0) {
-					sscanf(ptr, "%d", &enable_sio_patch);
-				}
-				else if (strcmp(string, "ENABLE_H_PATCH") == 0) {
-					sscanf(ptr, "%d", &enable_h_patch);
-				}
-				else if (strcmp(string, "ENABLE_P_PATCH") == 0) {
-					sscanf(ptr, "%d", &enable_p_patch);
-				}
-				/* Supported for compatibility with previous Atari800 versions */
-				else if (strcmp(string, "DEFAULT_SYSTEM") == 0) {
-					if (strcmp(ptr, "Atari OS/A") == 0) {
-						machine_type = MACHINE_OSA;
-						ram_size = 48;
-					}
-					else if (strcmp(ptr, "Atari OS/B") == 0) {
-						machine_type = MACHINE_OSB;
-						ram_size = 48;
-					}
-					else if (strcmp(ptr, "Atari XL") == 0) {
-						machine_type = MACHINE_XLXE;
-						ram_size = 64;
-					}
-					else if (strcmp(ptr, "Atari XE") == 0) {
-						machine_type = MACHINE_XLXE;
-						ram_size = 128;
-					}
-					else if (strcmp(ptr, "Atari 320XE (RAMBO)") == 0) {
-						machine_type = MACHINE_XLXE;
-						ram_size = RAM_320_RAMBO;
-					}
-					else if (strcmp(ptr, "Atari 320XE (COMPY SHOP)") == 0) {
-						machine_type = MACHINE_XLXE;
-						ram_size = RAM_320_COMPY_SHOP;
-					}
-					else if (strcmp(ptr, "Atari 5200") == 0) {
-						machine_type = MACHINE_5200;
-						ram_size = 16;
-					}
-					else
-						printf("Invalid System: %s\n", ptr);
-				}
-				else if (strcmp(string, "MACHINE_TYPE") == 0) {
-					if (strcmp(ptr, "Atari OS/A") == 0)
-						machine_type = MACHINE_OSA;
-					else if (strcmp(ptr, "Atari OS/B") == 0)
-						machine_type = MACHINE_OSB;
-					else if (strcmp(ptr, "Atari XL/XE") == 0)
-						machine_type = MACHINE_XLXE;
-					else if (strcmp(ptr, "Atari 5200") == 0)
-						machine_type = MACHINE_5200;
-					else
-						printf("Invalid machine type: %s\n", ptr);
-				}
-				else if (strcmp(string, "RAM_SIZE") == 0) {
-					if (strcmp(ptr, "16") == 0)
-						ram_size = 16;
-					else if (strcmp(ptr, "48") == 0)
-						ram_size = 48;
-					else if (strcmp(ptr, "52") == 0)
-						ram_size = 52;
-					else if (strcmp(ptr, "64") == 0)
-						ram_size = 64;
-					else if (strcmp(ptr, "128") == 0)
-						ram_size = 128;
-					else if (strcmp(ptr, "320 (RAMBO)") == 0)
-						ram_size = RAM_320_RAMBO;
-					else if (strcmp(ptr, "320 (COMPY SHOP)") == 0)
-						ram_size = RAM_320_COMPY_SHOP;
-					else
-						printf("Invalid ram size: %s\n", ptr);
-				}
-				else if (strcmp(string, "DEFAULT_TV_MODE") == 0) {
-					if (strcmp(ptr, "PAL") == 0)
-						tv_mode = TV_PAL;
-					else if (strcmp(ptr, "NTSC") == 0)
-						tv_mode = TV_NTSC;
-					else
-						printf("Invalid TV Mode: %s\n", ptr);
-				}
-				else
-#if defined(VGA) || defined(SUPPORTS_ATARI_CONFIGURE)
-                                if (!Atari_Configure(string,ptr))
-					printf("Unrecognized variable or bad parameters: %s=%s\n", string,ptr);
-#else
-					printf("Unrecognized Variable: %s\n", string);
+#ifdef SYSTEM_WIDE_CFG_FILE
+		/* try system wide config file */
+		fname = SYSTEM_WIDE_CFG_FILE;
+		Aprint("Trying system wide config file: %s", fname);
+		fp = fopen(fname, "r");
 #endif
+	}
+	if (!fp) {
+		Aprint("No configuration file found, will create fresh one from scratch:");
+		return FALSE;
+	}
+
+	fgets(string, sizeof(string), fp);
+
+	Aprint("Using Atari800 config file: %s\nCreated by %s", fname, string);
+
+	while (fgets(string, sizeof(string), fp)) {
+		RemoveLF(string);
+		ptr = strchr(string, '=');
+		if (ptr) {
+			*ptr++ = '\0';
+
+			if (strcmp(string, "OS/A_ROM") == 0)
+				strcpy(atari_osa_filename, ptr);
+			else if (strcmp(string, "OS/B_ROM") == 0)
+				strcpy(atari_osb_filename, ptr);
+			else if (strcmp(string, "XL/XE_ROM") == 0)
+				strcpy(atari_xlxe_filename, ptr);
+			else if (strcmp(string, "BASIC_ROM") == 0)
+				strcpy(atari_basic_filename, ptr);
+			else if (strcmp(string, "5200_ROM") == 0)
+				strcpy(atari_5200_filename, ptr);
+			else if (strcmp(string, "DISK_DIR") == 0) {
+				if (disk_directories == MAX_DIRECTORIES)
+					printf("All disk directory slots used!\n");
+				else
+					strcpy(atari_disk_dirs[disk_directories++], ptr);
+			}
+			else if (strcmp(string, "ROM_DIR") == 0)
+				strcpy(atari_rom_dir, ptr);
+			else if (strcmp(string, "H1_DIR") == 0)
+				strcpy(atari_h1_dir, ptr);
+			else if (strcmp(string, "H2_DIR") == 0)
+				strcpy(atari_h2_dir, ptr);
+			else if (strcmp(string, "H3_DIR") == 0)
+				strcpy(atari_h3_dir, ptr);
+			else if (strcmp(string, "H4_DIR") == 0)
+				strcpy(atari_h4_dir, ptr);
+			else if (strcmp(string, "HD_READ_ONLY") == 0)
+				sscanf(ptr, "%d", &hd_read_only);
+			else if (strcmp(string, "EXE_DIR") == 0)
+				strcpy(atari_exe_dir, ptr);
+			else if (strcmp(string, "STATE_DIR") == 0)
+				strcpy(atari_state_dir, ptr);
+			else if (strcmp(string, "PRINT_COMMAND") == 0)
+				strcpy(print_command, ptr);
+			else if (strcmp(string, "SCREEN_REFRESH_RATIO") == 0)
+				sscanf(ptr, "%d", &refresh_rate);
+			else if (strcmp(string, "DISABLE_BASIC") == 0)
+				sscanf(ptr, "%d", &disable_basic);
+			else if (strcmp(string, "ENABLE_SIO_PATCH") == 0) {
+				sscanf(ptr, "%d", &enable_sio_patch);
+			}
+			else if (strcmp(string, "ENABLE_H_PATCH") == 0) {
+				sscanf(ptr, "%d", &enable_h_patch);
+			}
+			else if (strcmp(string, "ENABLE_P_PATCH") == 0) {
+				sscanf(ptr, "%d", &enable_p_patch);
+			}
+			else if (strcmp(string, "ENABLE_NEW_POKEY") == 0) {
+				sscanf(ptr, "%d", &enable_new_pokey);
+			}
+			else if (strcmp(string, "STEREO_POKEY") == 0) {
+				sscanf(ptr, "%d", &stereo_enabled);
+			}
+			else if (strcmp(string, "MACHINE_TYPE") == 0) {
+				if (strcmp(ptr, "Atari OS/A") == 0)
+					machine_type = MACHINE_OSA;
+				else if (strcmp(ptr, "Atari OS/B") == 0)
+					machine_type = MACHINE_OSB;
+				else if (strcmp(ptr, "Atari XL/XE") == 0)
+					machine_type = MACHINE_XLXE;
+				else if (strcmp(ptr, "Atari 5200") == 0)
+					machine_type = MACHINE_5200;
+				else
+					printf("Invalid machine type: %s\n", ptr);
+			}
+			else if (strcmp(string, "RAM_SIZE") == 0) {
+				if (strcmp(ptr, "16") == 0)
+					ram_size = 16;
+				else if (strcmp(ptr, "48") == 0)
+					ram_size = 48;
+				else if (strcmp(ptr, "52") == 0)
+					ram_size = 52;
+				else if (strcmp(ptr, "64") == 0)
+					ram_size = 64;
+				else if (strcmp(ptr, "128") == 0)
+					ram_size = 128;
+				else if (strcmp(ptr, "320 (RAMBO)") == 0)
+					ram_size = RAM_320_RAMBO;
+				else if (strcmp(ptr, "320 (COMPY SHOP)") == 0)
+					ram_size = RAM_320_COMPY_SHOP;
+				else
+					printf("Invalid ram size: %s\n", ptr);
+			}
+			else if (strcmp(string, "DEFAULT_TV_MODE") == 0) {
+				if (strcmp(ptr, "PAL") == 0)
+					tv_mode = TV_PAL;
+				else if (strcmp(ptr, "NTSC") == 0)
+					tv_mode = TV_NTSC;
+				else
+					printf("Invalid TV Mode: %s\n", ptr);
 			}
 			else {
-				printf("Ignored Config Line: %s\n", string);
+#if defined(VGA) || defined(SUPPORTS_ATARI_CONFIGURE)
+				if (!Atari_Configure(string,ptr))
+					Aprint("Unrecognized variable or bad parameters: %s=%s\n", string,ptr);
+#else
+				Aprint("Unrecognized Variable: %s\n", string);
+#endif
 			}
 		}
-
-
-		fclose(fp);
+		else {
+			Aprint("Ignored Config Line: %s\n", string);
+		}
 	}
-	else {
-		status = FALSE;
-	}
+
+	fclose(fp);
 	return status;
 }
 
@@ -281,12 +282,14 @@ void RtConfigSave(void)
 	FILE *fp;
 	int i;
 
-	fp = fopen(rtconfig_filename1, "w");
+	fp = fopen(rtconfig_filename, "w");
 	if (!fp) {
-		perror(rtconfig_filename1);
+		perror(rtconfig_filename);
+		Aprint("Cannot write to config file: %s", rtconfig_filename);
+		Aflushlog();
 		exit(1);
 	}
-	printf("\nWriting: %s\n\n", rtconfig_filename1);
+	printf("\nWriting: %s\n\n", rtconfig_filename);
 
 	fprintf(fp, "%s\n", ATARI_TITLE);
 	fprintf(fp, "OS/A_ROM=%s\n", atari_osa_filename);
@@ -345,6 +348,8 @@ void RtConfigSave(void)
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", enable_sio_patch);
 	fprintf(fp, "ENABLE_H_PATCH=%d\n", enable_h_patch);
 	fprintf(fp, "ENABLE_P_PATCH=%d\n", enable_p_patch);
+	fprintf(fp, "ENABLE_NEW_POKEY=%d\n", enable_new_pokey);
+	fprintf(fp, "STEREO_POKEY=%d\n", stereo_enabled);
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
 	Atari_ConfigSave(fp);
@@ -376,10 +381,7 @@ void RtConfigUpdate(void)
 	GetString("Enter path for H2: device [%s] ", atari_h2_dir);
 	GetString("Enter path for H3: device [%s] ", atari_h3_dir);
 	GetString("Enter path for H4: device [%s] ", atari_h4_dir);
-	do {
-		GetNumber("H: devices are read only [%d] ",
-				  &hd_read_only);
-	} while ((hd_read_only < 0) || (hd_read_only > 1));
+	GetYesNoAsInt("H: devices are read only [%c] ", &hd_read_only);
 	GetString("Enter path for single exe files [%s] ", atari_exe_dir);
 	GetString("Enter path for state files [%s] ", atari_state_dir);
 	GetString("Enter print command [%s] ", print_command);
@@ -398,11 +400,9 @@ void RtConfigUpdate(void)
 	case MACHINE_OSA:
 	case MACHINE_OSB:
 		{
-			int enable_c000_ram = ram_size == 52;
-			do {
-				GetNumber("Enable C000-CFFF RAM in Atari800 mode [%d] ",
+			int enable_c000_ram = (ram_size == 52);
+			GetYesNoAsInt("Enable C000-CFFF RAM in Atari800 mode [%c] ",
 						  &enable_c000_ram);
-			} while ((enable_c000_ram < 0) || (enable_c000_ram > 1));
 			ram_size = enable_c000_ram ? 52 : 48;
 		}
 		break;
@@ -442,25 +442,13 @@ void RtConfigUpdate(void)
 		tv_mode = default_tv_mode == 1 ? TV_PAL : TV_NTSC;
 	}
 
-	do {
-		GetNumber("Disable BASIC when booting Atari [%d] ",
-				  &disable_basic);
-	} while ((disable_basic < 0) || (disable_basic > 1));
-
-	do {
-		GetNumber("Enable SIO patch (Recommended for speed) [%d] ",
+	GetYesNoAsInt("Disable BASIC when booting Atari [%c] ", &disable_basic);
+	GetYesNoAsInt("Enable SIO patch (Recommended for speed) [%c] ",
 			  	&enable_sio_patch);
-	} while ((enable_sio_patch < 0) || (enable_sio_patch > 1));
-
-	do {
-		GetNumber("Enable H: (Hard disk) patch [%d] ",
-				  &enable_h_patch);
-	} while ((enable_h_patch < 0) || (enable_h_patch > 1));
-
-	do {
-		GetNumber("Enable P: (Printer) patch [%d] ",
-				  &enable_p_patch);
-	} while ((enable_p_patch < 0) || (enable_p_patch > 1));
+	GetYesNoAsInt("Enable H: (Hard disk) patch [%c] ", &enable_h_patch);
+	GetYesNoAsInt("Enable P: (Printer) patch [%c] ", &enable_p_patch);
+	GetYesNoAsInt("Enable new HiFi POKEY [%c] ", &enable_new_pokey);
+	GetYesNoAsInt("Enable STEREO POKEY Sound [%c] ", &stereo_enabled);
 
 #ifdef VGA
 	printf("Standard joysticks configuration selected.\n"
@@ -474,6 +462,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.13  2003/02/09 21:19:59  joy
+reworked searching for config file
+
 Revision 1.12  2002/04/07 19:35:40  joy
 remove non ANSI t parameter in fopen
 
