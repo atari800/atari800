@@ -45,7 +45,6 @@ extern int ram_size;
 extern int tv_mode;				/* now it is simply number of scanlines */
 
 extern int verbose;
-extern int draw_display;		/* Draw actualy generated screen */
 
 #ifndef FALSE
 #define FALSE	0
@@ -186,6 +185,8 @@ struct ATR_Header {
 #define MENU_ABOUT		16
 #define MENU_EXIT		17
 
+int Atari800_Initialise(int *argc, char *argv[]);
+
 #define EMULATE_BASIC		0	/* no screen, no interrupts */
 #define EMULATE_NO_SCREEN	1	/* don't draw screen */
 #define EMULATE_FULL		2	/* normal mode */
@@ -206,6 +207,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.18  2001/09/21 17:08:41  fox
+removed draw_display, added Atari800_Initialise
+
 Revision 1.17  2001/09/21 17:00:33  fox
 joystick positions and Atari key codes moved to input.h
 
