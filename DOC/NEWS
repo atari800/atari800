@@ -1,0 +1,16 @@
+Version 1.2.1 (unreleased yet)
+
+  * Falcon port configurable and buildable again
+
+  * SDL supports all host color depths (8/16/24/32 bpp) ??
+
+
+Version 1.2.0 (2001/11/29)
+
+  * completely new SDL port (use ./configure --target=sdl) that should run
+    on most/all platforms/OSes SDL supports (http://www.libsdl.org/)
+
+  * Piotr, fill this please.
+
+  * ===== "" ======
+

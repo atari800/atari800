@@ -1,0 +1,10 @@
+--- 2001/12/04 - joy
+
+  * added Nathan's sethdr perl script and Piotr's act2html C code to util/
+  * SDL port now calls Aflushlog() before it exits
+  * fixed win32 compile and runtime problems (thanks to Nathan)
+
+--- 2001/12/03 - joy
+
+  * updated configure.in to support the Atari Falcon port
+  * Falcon port' proprietary -DDMASOUND changed to general -DSOUND
