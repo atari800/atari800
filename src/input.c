@@ -1,5 +1,3 @@
-/* $Id */
-
 #include "antic.h"
 #include "atari.h"
 #include "cassette.h"
@@ -464,10 +462,3 @@ void INPUT_DrawMousePointer(void)
 		ptr[ATARI_WIDTH / 2] ^= 0xffff;
 	}
 }
-
-/*
-$Log$
-Revision 1.9  2001/10/07 14:10:41  fox
-smoother movement in Amiga/ST/joy modes
-
-*/
