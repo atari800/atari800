@@ -1,6 +1,9 @@
-2002-07-11  Krzysztof Nikiel  <knik@poczta.onet.pl>
-* configure.in: freature processing redesigned to be more consistent. Correct
-  enable/disable info is printed in help.
+2002-07-14  Piotr Fusik  <fox@scene.pl>
+* atari.c, memory-d.c, ui.c: emulation of 576K and 1088K RAM machines
+* pia.c: removed a hack that affected 1088 XE
+* antic.c, memory-d.c, atari800.man: separate ANTIC access to extended memory
+  for 130 XE and 320 Compy Shop
+* DOC/README: updated features
 
 ** released as 1.2.3
 
