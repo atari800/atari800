@@ -1,6 +1,6 @@
 .TH ATARI800 1 "07 August 2002"
 .SH NAME
-atari800 \- Atari 800 Emulator, Version 1.2.4
+atari800 \- Atari 800 Emulator, Version 1.3.0
 .SH SYNOPSIS
 \fBatari800\fP [options] [diskfiles...]
 .SH DESCRIPTION
@@ -9,7 +9,7 @@ Atari 5200 Games System.
 .SS Options
 .TP
 \fB-help
-Print emulator version.
+Print complete and up-to-date list of command line switches
 .TP
 \fB-v
 Print emulator version.
@@ -370,6 +370,9 @@ Defines path to device used in LPTjoy 0. Available on linux-ia32 only.
 .TP
 \fB-joy1 path-to-device
 Defines path to device used in LPTjoy 1. Available on linux-ia32 only.
+.TP
+\fB-audio16
+16-bit sound output enabled.
 
 .PD 0
 
