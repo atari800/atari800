@@ -2,7 +2,9 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
-   23-02-2002 - it's time for back to coding
+   23-04-2002 - added command line options:
+		"--nojoystick", "--width x", "--height y", "--bpp b",
+		"--fullscreen", "--windowed"
    06-12-2001 - replaced SHORTER_MODE with WIDTH_MODE, now there are 3 states:
 		DEFAULT_WIDTH_MODE (ATARI_WIDTH-2*24), SHORTER_WIDTH_MODE
 		(ATARI_WIDTH-2*24-2*8), and FULL_WIDTH_MODE (ATARI_WIDTH)
@@ -152,7 +154,8 @@ int SDL_JOY_1_RIGHTDOWN = SDLK_c;
 
 // real joysticks
 
-SDL_Joystick *joystick0, *joystick1;
+SDL_Joystick *joystick0 = NULL;
+SDL_Joystick *joystick1 = NULL;
 int joystick0_nbuttons, joystick1_nbuttons;
 
 #define minjoy 10000			// real joystick tolerancy
@@ -171,14 +174,16 @@ SDL_Surface *MainScreen = NULL;
 SDL_Color colors[256];			// palette
 Uint16 Palette16[256];			// 16-bit palette
 Uint32 Palette32[256];			// 32-bit palette
-#define CurrentBPP -1
 
 // keyboard
 Uint8 *kbhits;
 static int last_key_break = 0;
 static int last_key_code = AKEY_NONE;
 
-int Sound_Update(void) { return 0; }	// fake function
+int Sound_Update(void)
+{
+	return 0;
+}								// fake function
 
 void SetPalette()
 {
@@ -310,9 +315,6 @@ void SetNewVideoMode(int w, int h, int bpp)
 	h = h / 8;
 	h = h * 8;
 
-	if (bpp == CurrentBPP)
-		bpp = MainScreen->format->BitsPerPixel;
-
 	SetVideoMode(w, h, bpp);
 
 	SDL_ATARI_BPP = MainScreen->format->BitsPerPixel;
@@ -337,7 +339,8 @@ void SetNewVideoMode(int w, int h, int bpp)
 void SwitchFullscreen()
 {
 	FULLSCREEN = 1 - FULLSCREEN;
-	SetNewVideoMode(MainScreen->w, MainScreen->h, CurrentBPP);
+	SetNewVideoMode(MainScreen->w, MainScreen->h,
+					MainScreen->format->BitsPerPixel);
 	Atari_DisplayScreen((UBYTE *) atari_screen);
 }
 
@@ -346,16 +349,8 @@ void SwitchWidth()
 	WIDTH_MODE++;
 	if (WIDTH_MODE > FULL_WIDTH_MODE)
 		WIDTH_MODE = SHORT_WIDTH_MODE;
-	SetNewVideoMode(MainScreen->w, MainScreen->h, CurrentBPP);
-	Atari_DisplayScreen((UBYTE *) atari_screen);
-}
-
-void SwitchBPP()
-{
-	SDL_ATARI_BPP *= 2;
-	if (SDL_ATARI_BPP > 32)
-		SDL_ATARI_BPP = 8;
-	SetNewVideoMode(MainScreen->w, MainScreen->h, SDL_ATARI_BPP);
+	SetNewVideoMode(MainScreen->w, MainScreen->h,
+					MainScreen->format->BitsPerPixel);
 	Atari_DisplayScreen((UBYTE *) atari_screen);
 }
 
@@ -426,7 +421,8 @@ int Atari_Keyboard(void)
 			key_pressed = 0;
 			break;
 		case SDL_VIDEORESIZE:
-			SetNewVideoMode(event.resize.w, event.resize.h, CurrentBPP);
+			SetNewVideoMode(event.resize.w, event.resize.h,
+							MainScreen->format->BitsPerPixel);
 			break;
 		case SDL_QUIT:
 			return AKEY_EXIT;
@@ -445,9 +441,6 @@ int Atari_Keyboard(void)
 	if (kbhits[SDLK_LALT]) {
 		if (key_pressed) {
 			switch (lastkey) {
-			case SDLK_e:
-				SwitchBPP();
-				break;
 			case SDLK_f:
 				SwitchFullscreen();
 				break;
@@ -760,7 +753,7 @@ void Init_Joysticks()
 	else {
 		Aprint("joystick 0 found!");
 		joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
-		SWAP_JOYSTICKS = 1;	// real joy is STICK(0) and numblock is STICK(1)
+		SWAP_JOYSTICKS = 1;		// real joy is STICK(0) and numblock is STICK(1)
 	}
 	joystick1 = SDL_JoystickOpen(1);
 	if (joystick1 == NULL)
@@ -773,6 +766,9 @@ void Init_Joysticks()
 
 void Atari_Initialise(int *argc, char *argv[])
 {
+	int i, j;
+	int no_joystick;
+	int width, height, bpp;
 	Aprint
 		("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>");
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) != 0) {
@@ -782,11 +778,46 @@ void Atari_Initialise(int *argc, char *argv[])
 		exit(-1);
 	}
 
-#if NVIDIA	/* can't set < 640x480 resolution */
-	SetNewVideoMode(672, 480, SDL_ATARI_BPP);
-#else
-	SetNewVideoMode(ATARI_WIDTH - 2 * 24, ATARI_HEIGHT, SDL_ATARI_BPP);
-#endif
+	no_joystick = 0;
+	width = ATARI_WIDTH;
+	height = ATARI_HEIGHT;
+	bpp = SDL_ATARI_BPP;
+
+	for (i = j = 1; i < *argc; i++) {
+		if (strcmp(argv[i], "--nojoystick") == 0) {
+			no_joystick = 1;
+			printf("no joystick\n");
+		}
+		else if (strcmp(argv[i], "--width") == 0) {
+			sscanf(argv[i + 1], "%i", &width);
+			i++;
+			printf("width set\n");
+		}
+		else if (strcmp(argv[i], "--height") == 0) {
+			sscanf(argv[i + 1], "%i", &height);
+			i++;
+			printf("height set\n");
+		}
+		else if (strcmp(argv[i], "--bpp") == 0) {
+			sscanf(argv[i + 1], "%i", &bpp);
+			i++;
+			printf("bpp set\n");
+		}
+		else if (strcmp(argv[i], "--fullscreen") == 0) {
+			FULLSCREEN = 1;
+			i++;
+		}
+		else if (strcmp(argv[i], "--windowed") == 0) {
+			FULLSCREEN = 0;
+			i++;
+		}
+		else {
+			argv[j++] = argv[i];
+		}
+	}
+	*argc = j;
+
+	SetNewVideoMode(width, height, bpp);
 	CalcPalette();
 	SetPalette();
 
@@ -794,7 +825,8 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	SDL_Sound_Initialise(argc, argv);
 
-	Init_Joysticks();
+	if (no_joystick == 0)
+		Init_Joysticks();
 
 }
 
@@ -1256,17 +1288,15 @@ int main(int argc, char **argv)
 				break;
 		default:
 				key_break = 0;
-				if (keycode != SDL_JOY_0_LEFT		// plain hack
+				if (keycode != SDL_JOY_0_LEFT	// plain hack
 					&& keycode != SDL_JOY_0_RIGHT	// see atari_vga.c
-					&& keycode != SDL_JOY_0_UP		// for better way
+					&& keycode != SDL_JOY_0_UP	// for better way
 					&& keycode != SDL_JOY_0_DOWN
 					&& keycode != SDL_JOY_0_LEFTDOWN
 					&& keycode != SDL_JOY_0_RIGHTDOWN
 					&& keycode != SDL_JOY_0_LEFTUP
 					&& keycode != SDL_JOY_0_RIGHTUP
-					&& keycode != SDL_TRIG_0
-					&& keycode != SDL_TRIG_0_B
-					)
+					&& keycode != SDL_TRIG_0 && keycode != SDL_TRIG_0_B)
 					key_code = keycode;
 				break;
 			}
@@ -1315,6 +1345,10 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.21  2002/04/22 23:37:17  jacek_poplawski
+
+ added command line options to SDL port
+
  Revision 1.20  2002/02/23 05:12:36  jacek_poplawski
  *** empty log message ***
 
