@@ -7,13 +7,22 @@ Requires:  OS4
 Version:   2.1
 
 This is the Amiga port of the Atari800 Emulator. It requires at
-OS4.
+least OS4 (e.g. the prerelease CD).
+
+Install
+~~~~~~~
+Extract the archive and copy the resulting Atari800 drawer
+anywhere you like. Later, copy the ROM Files into the ROMs
+directory. Those ROMs can be extracted from an old XFormer
+Archive. See http://atari800.sourceforce.net for details.
+From there you find also the information how to obtain the
+source code which is released under the GPL.
 
 History
 ~~~~~~~
-Version 2.1 (xx.09.2004)
+Version 2.1 (24.09.2004)
  - major changes within the Amiga front end, including
-    o) ported to OS4
+    o) ported to OS4, requires PPC processor
     o) dropped MUI GUI, GUI is now menu driven
     o) dropped overlay support for now
     o) Atari joystick can be mapped to the keyboard
