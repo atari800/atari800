@@ -464,12 +464,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif
 	}
 	/*
-	 * Initialise basic 64K memory to zero.
-	 */
-
-	ClearRAM();
-
-	/*
 	 * Initialise Custom Chips
 	 */
 
@@ -831,17 +825,21 @@ void MainStateSave( void )
 
 	switch (machine_type) {
 	case MACHINE_OSA:
-		temp = 0;
+		temp = ram_size == 16 ? 5 : 0;
 		os = 1;
 		default_system = 1;
 		break;
 	case MACHINE_OSB:
-		temp = 0;
+		temp = ram_size == 16 ? 5 : 0;
 		os = 2;
 		default_system = 2;
 		break;
 	case MACHINE_XLXE:
 		switch (ram_size) {
+		case 16:
+			temp = 6;
+			default_system = 3;
+			break;
 		case 64:
 			temp = 1;
 			default_system = 3;
@@ -906,10 +904,18 @@ void MainStateRead( void )
 		machine_type = MACHINE_5200;
 		ram_size = 16;
 		break;
+	case 5:
+		machine_type = os == 1 ? MACHINE_OSA : MACHINE_OSB;
+		ram_size = 16;
+		break;
+	case 6:
+		machine_type = MACHINE_XLXE;
+		ram_size = 16;
+		break;
 	default:
 		machine_type = MACHINE_XLXE;
 		ram_size = 64;
-		Aprint( "Warning: Bad machine type read in from state save, defaulting to XL" );
+		Aprint( "Warning: Bad machine type read in from state save, defaulting to 800 XL" );
 		break;
 	}
 
@@ -920,6 +926,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.37  2002/07/04 12:41:21  pfusik
+emulation of 16K RAM machines: 400 and 600XL
+
 Revision 1.36  2002/06/23 21:48:58  joy
 Atari800 does quit immediately when started with "-help" option.
 "-palette" moved to colours.c

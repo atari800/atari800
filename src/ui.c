@@ -72,24 +72,30 @@ void SelectSystem()
 
 	static tMenuItem menu_array[] =
 	{
-		{ "SYAS", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/A (48 KB)",              NULL, 0 },
-		{ "SYAL", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/A (52 KB)",              NULL, 1 },
-		{ "SYBS", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/B (48 KB)",              NULL, 2 },
-		{ "SYBL", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/B (52 KB)",              NULL, 3 },
-		{ "SYXL", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 800XL (64 KB)",             NULL, 4 },
-		{ "SYXE", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 130XE (128 KB)",            NULL, 5 },
-		{ "SYRM", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 320XE (320 KB RAMBO)",      NULL, 6 },
-		{ "SYCS", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 320XE (320 KB COMPY SHOP)", NULL, 7 },
-		{ "SY52", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 5200 (16 KB)",              NULL, 8 },
+		{ "SYAF", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/A (16 KB)",              NULL, 0 },
+		{ "SYAS", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/A (48 KB)",              NULL, 1 },
+		{ "SYAL", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/A (52 KB)",              NULL, 2 },
+		{ "SYBF", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/B (16 KB)",              NULL, 3 },
+		{ "SYBS", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/B (48 KB)",              NULL, 4 },
+		{ "SYBL", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari OS/B (52 KB)",              NULL, 5 },
+		{ "SYXS", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 600XL (16 KB)",             NULL, 6 },
+		{ "SYXL", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 800XL (64 KB)",             NULL, 7 },
+		{ "SYXE", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 130XE (128 KB)",            NULL, 8 },
+		{ "SYRM", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 320XE (320 KB RAMBO)",      NULL, 9 },
+		{ "SYCS", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 320XE (320 KB COMPY SHOP)", NULL, 10 },
+		{ "SY52", ITEM_ENABLED|ITEM_ACTION, NULL, "Atari 5200 (16 KB)",              NULL, 11 },
 		MENU_END
 	};
 
 	static tSysConfig machine[] =
 	{
+		{ MACHINE_OSA,  16 },
 		{ MACHINE_OSA,  48 },
 		{ MACHINE_OSA,  52 },
+		{ MACHINE_OSB,  16 },
 		{ MACHINE_OSB,  48 },
 		{ MACHINE_OSB,  52 },
+		{ MACHINE_XLXE, 16 },
 		{ MACHINE_XLXE, 64 },
 		{ MACHINE_XLXE, 128 },
 		{ MACHINE_XLXE, RAM_320_RAMBO },
@@ -771,6 +777,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.32  2002/07/04 12:41:38  pfusik
+emulation of 16K RAM machines: 400 and 600XL
+
 Revision 1.31  2002/06/23 21:42:09  joy
 SoundRecording() accessible from outside (atari_x11.c needs it)
 
