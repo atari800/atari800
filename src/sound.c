@@ -73,7 +73,7 @@ void Sound_Initialise(int *argc, char *argv[])
 				Aprint("\t-sound           Enable sound\n"
 				       "\t-nosound         Disable sound\n"
 				       "\t-dsprate <rate>  Set DSP rate in Hz\n"
-				       "\t-snddelay <ms>   Set sound delay in milliseconds\n"
+				       "\t-snddelay <ms>   Set sound delay in milliseconds"
 				      );
 			}
 			argv[j++] = argv[i];
@@ -191,6 +191,9 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.14  2005/03/24 18:09:49  pfusik
+ removed extra \n from the output of -help
+
  Revision 1.13  2003/02/24 09:33:10  joy
  header cleanup
 
