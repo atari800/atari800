@@ -1,4 +1,5 @@
-#include <stdlib.h> // for NULL
+#include <stdlib.h>	/* for NULL */
+#include <string.h>	/* for strcmp() */
 #include <time.h>
 
 #include "atari.h"
