@@ -172,6 +172,12 @@ Cameron Heide <cheide@home.com>
 
 Marek Zelem <marek@formax.elf.stuba.sk>
 - little improvements in SIO and main sync loop for Unix
+- X11 keyboard
+- X11 screen (background => faster emulation)
+- digital (volume only) sound
+- console sound emulation
+- disk drive sound emulation
+- various fixes
 
 Petr Mojzisek <mojzisek@bimbo.fjfi.cvut.cz>
 - rawkey support for svgalib
@@ -185,14 +191,6 @@ Krzysztof Nikiel (knik) <krzych00@priv.onet.pl>
 
 Jari Karppinen <jakarppi@mail.student.oulu.fi>
 - killed some warnings and bugs in source (like e.g. void main() in joycfg ;-)
-
-Marek Zelem <marek@fornax.elf.stuba.sk>
-- X11 keyboard
-- X11 screen (background => faster emulation)
-- digital (volume only) sound
-- console sound emulation
-- disk drive sound emulation
-- various fixes
 
 ERU (Marcin Zukowski) <eru@ibb.waw.pl>
 - fix in ANTIC, GTIA
@@ -210,7 +208,6 @@ Piotr Fusik <fox@scene.pl>
 - improved IRQ accuracy
 - ATR write protection
 - monitor improvements
-- paddles and light pen emulation
 - loading of .act palette files
 - improved disk LEDs
 - rewritten executable loader
