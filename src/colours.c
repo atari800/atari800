@@ -3,6 +3,7 @@
 #include <string.h>	/* for strcmp() */
 #include <math.h>
 #include "atari.h"
+#include "colours.h"
 #include "log.h"
 
 #define COLINTENS	80
@@ -242,7 +243,7 @@ void Palette_Format(int black, int white, int colors)
 
   for (i = 0; i < 0x100; i++)
   {
-    int c = palette_loaded ? colortable[i] : basicpal[i];
+    int c = basicpal[i];
 
     rgb[i][0] = (c >> 16) & 0xff;
     rgb[i][1] = (c >> 8) & 0xff;
@@ -289,38 +290,41 @@ void Palette_Format(int black, int white, int colors)
 
 void Palette_Initialise(int *argc, char *argv[])
 {
-  int i, j;
+	int i, j;
+	int generate_palette = FALSE;
 
-  // use real palette by default
-  memcpy(basicpal, real_pal, sizeof(basicpal));
-  palette_loaded = TRUE;
+	/* use real palette by default */
+	memcpy(basicpal, real_pal, sizeof(basicpal));
 
-  for (i = j = 1; i < *argc; i++)
-    {
-      if (strcmp(argv[i], "-black") == 0)
-	sscanf(argv[++i], "%d", &min_y);
-      else if (strcmp(argv[i], "-white") == 0)
-	sscanf(argv[++i], "%d", &max_y);
-      else if (strcmp(argv[i], "-colors") == 0)
-	sscanf(argv[++i], "%d", &colintens);
-      else if (strcmp(argv[i], "-colshift") == 0)
-	sscanf(argv[++i], "%d", &colshift);
-      else if (strcmp(argv[i], "-genpal") == 0)
-	palette_loaded = FALSE;
+	for (i = j = 1; i < *argc; i++)
+	{
+		if (strcmp(argv[i], "-black") == 0)
+			sscanf(argv[++i], "%d", &min_y);
+		else if (strcmp(argv[i], "-white") == 0)
+			sscanf(argv[++i], "%d", &max_y);
+		else if (strcmp(argv[i], "-colors") == 0)
+			sscanf(argv[++i], "%d", &colintens);
+		else if (strcmp(argv[i], "-colshift") == 0)
+			sscanf(argv[++i], "%d", &colshift);
+		else if (strcmp(argv[i], "-genpal") == 0)
+			generate_palette = TRUE;
+		else if (strcmp(argv[i], "-palette") == 0)
+			read_palette(argv[++i]);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-black <0-255>   set black level");
-				Aprint("\t-white <0-255>   set white level");
-				Aprint("\t-colors <num>    set color intensity");
-				Aprint("\t-genpal <num>    generate artificial palette");
-				Aprint("\t-colshift <num>  set color shift (-genpal only)");
+				Aprint("\t-palette <file>  Use external palette");
+				Aprint("\t-black <0-255>   Set black level");
+				Aprint("\t-white <0-255>   Set white level");
+				Aprint("\t-colors <num>    Set color intensity");
+				Aprint("\t-genpal <num>    Generate artificial palette");
+				Aprint("\t-colshift <num>  Set color shift (-genpal only)");
 			}
 			argv[j++] = argv[i];
 		}
 	}
-  *argc = j;
+	*argc = j;
 
-  if (!palette_loaded)
+	if (generate_palette)
     /* generate a fresh palette */
     {
       UBYTE rgb[0x100][3];
@@ -362,9 +366,10 @@ void Palette_Initialise(int *argc, char *argv[])
 	  + (rgb[i][1] << 8)
 	  + (rgb[i][2] << 0);
       }
-      palette_loaded = TRUE;
     }
-  Palette_Format(min_y, max_y, colintens);
+
+	if (! palette_loaded)
+		Palette_Format(min_y, max_y, colintens);
 }
 
 /* returns TRUE if successful */
@@ -392,8 +397,9 @@ int read_palette(char *filename) {
 
 /*
 $Log$
-Revision 1.7  2002/06/20 20:58:26  joy
-loaded palette fixed
+Revision 1.8  2002/06/23 21:50:51  joy
+"-palette" moved from atari.c to colours.c
+other changes to get "-palette" working correctly.
 
 Revision 1.6  2001/11/27 19:11:21  knik
 real palette used by default so COMPILED_PALETTE conditional not needed
