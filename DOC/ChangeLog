@@ -1,3 +1,6 @@
+2002-08-21  Piotr Fusik  <fox@scene.pl>
+* antic.c: ANTIC mode E + GTIA mode 9 ("Unconventional 2k", "Ass Kisiel")
+
 2002-08-15  Piotr Fusik  <fox@scene.pl>
 * DOC/BUGS: "Numen" soundtrack
 * cartridge.[ch], ui.c, DOC/cart.txt: 1 MB XEGS cart
