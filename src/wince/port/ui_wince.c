@@ -7,6 +7,7 @@
 #include "screen.h"   /* For linear filter */
 #include "keyboard.h" /* For virtual joystick */
 #include "input.h"    /* For joystick autofire */
+#include "rt-config.h"/* For refresh rate */
 
 int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii);
 int WinCeUIGetSaveFilename(char* pFilename);
@@ -62,9 +63,12 @@ void EmulatorSettings()
 {
 	static tMenuItem menu_array[] =
 	{
-		{ "SMTH", ITEM_ENABLED|ITEM_CHECK, NULL, "Enable linear filtering:",          NULL, 0 },
-		{ "VJOY", ITEM_ENABLED|ITEM_CHECK, NULL, "Virtual joystick:",                 NULL, 1 },
-		{ "AFRE", ITEM_ENABLED|ITEM_CHECK, NULL, "Joystick autofire:",                NULL, 2 },
+		{ "SMTH", ITEM_ENABLED|ITEM_CHECK,  NULL, "Enable linear filtering:",          NULL, 0 },
+		{ "VJOY", ITEM_ENABLED|ITEM_CHECK,  NULL, "Virtual joystick:",                 NULL, 1 },
+		{ "AFRE", ITEM_ENABLED|ITEM_CHECK,  NULL, "Joystick autofire:",                NULL, 2 },
+		{ "FRAM", ITEM_ENABLED|ITEM_ACTION, NULL, "Current frameskip 00",              NULL, 3 },
+		{ "FRUP", ITEM_ENABLED|ITEM_ACTION, NULL, "Increase frameskip",                NULL, 4 },
+		{ "FRDN", ITEM_ENABLED|ITEM_ACTION, NULL, "Decrease frameskip",                NULL, 5 },
 		MENU_END
 	};
 
@@ -90,6 +94,9 @@ void EmulatorSettings()
 		else
 			menu_array[2].flags &= ~ITEM_CHECKED;
 
+		menu_array[3].item[18] = (refresh_rate > 9) ? (char)('0' + refresh_rate/10) : ' ';
+		menu_array[3].item[19] = (char)('0' + refresh_rate%10);
+
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 
 		switch(option)
@@ -102,6 +109,14 @@ void EmulatorSettings()
 			break;
 		case 2:
 			joy_autofire[0] = joy_autofire[0]?0:1;
+			break;
+		case 4:
+			if(refresh_rate < 15)
+				refresh_rate ++;
+			break;
+		case 5:
+			if(refresh_rate > 1)
+				refresh_rate --;
 			break;
 		}
 	}
