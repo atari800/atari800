@@ -1,5 +1,6 @@
 #include "atari.h"
 #include "config.h"
+#include "input.h"
 #include "monitor.h"
 
 void Atari_Initialise(int *argc, char *argv[])
@@ -41,4 +42,19 @@ int Atari_CONSOL(void)
 int Atari_PEN(int vertical)
 {
 	return vertical ? 0xff : 0;
+}
+
+int main(int argc, char **argv)
+{
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
+
+	/* main loop */
+	while (TRUE) {
+		Atari800_Frame(EMULATE_BASIC);
+#ifndef	DONT_SYNC_WITH_HOST
+		atari_sync();
+#endif
+	}
 }
