@@ -246,11 +246,12 @@ int CART_Insert(char *filename)
 		cart_type = CART_NONE;
 		len >>= 10;	/* number of kilobytes */
 		for (type = 1; type <= CART_LAST_SUPPORTED; type++)
-			if (cart_kb[type] == len)
+			if (cart_kb[type] == len) {
 				if (cart_type == CART_NONE)
 					cart_type = type;
 				else
 					return len;	/* more than one cartridge type of such length - user must select */
+			}
 		if (cart_type != CART_NONE) {
 			CART_Start();
 			return 0;	/* ok */
