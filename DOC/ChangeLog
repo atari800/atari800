@@ -1,3 +1,9 @@
+2002-07-04  Piotr Fusik  <fox@scene.pl>
+* atari.c, memory-d.c, ui.c: emulation of 16K RAM machines: 400 and 600XL
+* cpu.c: cycle-exact LSR $D01A
+* input.c: after playing with real paddles changed mouse_pot_min to 1
+* monitor.c: fixed optype6502[] to match unofficial instructions
+
 2002-06-27   Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c: updated LPTjoy support to compile under Linux only. If there's
   another Unix flavor that can read parallel port using ioctl then it can be
