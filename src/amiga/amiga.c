@@ -204,20 +204,6 @@ static struct NewMenu MenuEntries[] =
 	{NM_TITLE, "Project", NULL, 0, 0L, (APTR)MEN_PROJECT},
 	{NM_ITEM, "About...", "?", 0, 0L, (APTR)MEN_PROJECT_ABOUT},
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Load State...", "L", 0, 0L, (APTR)MEN_PROJECT_LOADSTATE},
-	{NM_ITEM, "Save State...", "S", 0, 0L, (APTR)MEN_PROJECT_SAVESTATE},
-	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Load BIN...", NULL, 0, 0L, (APTR)MEN_PROJECT_LOADBIN},
-	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Record Sound?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_PROJECT_RECORDSOUND},
-	{NM_ITEM, "Select Path...", NULL, 0, 0L, (APTR)MEN_PROJECT_SOUNDPATH},
-	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Help...", NULL, 0, 0L, (APTR)MEN_PROJECT_HELP},
-	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Iconify", NULL, 0, 0L, (APTR)MEN_PROJECT_ICONIFY},
-	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Quit...", "Q", 0, 0L, (APTR)MEN_PROJECT_QUIT},
-	{NM_TITLE, "System", NULL, 0, 0L, (APTR)MEN_SYSTEM},
 	{NM_ITEM, "Boot Disk...", "B", 0, 0L, (APTR)MEN_SYSTEM_BOOT},
 	{NM_ITEM, "Insert Disk", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID},
 	{NM_SUB, "Drive 1...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID1},
@@ -238,14 +224,14 @@ static struct NewMenu MenuEntries[] =
 	{NM_SUB, "Drive 7", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED7},
 	{NM_SUB, "Drive 8", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED8},
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Insert Cartridge", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC},
-	{NM_SUB, "8K Cart...", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC8K},
-	{NM_SUB, "16K Cart...", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC16K},
-	{NM_SUB, "OSS SuperCart", NULL, 0, 0L, (APTR)MEN_SYSTEM_ICOSS},
-	{NM_ITEM, "Remove Cartride", NULL, 0, 0L, (APTR)MEN_SYSTEM_REMOVEC},
-	{NM_ITEM, "Enable PILL", "F6", NM_COMMANDSTRING, 0L, (APTR)MEN_SYSTEM_PILL},
-	{NM_ITEM, NM_BARLABEL, NULL,   0, 0L, NULL},
+	{NM_ITEM, "Load State...", "L", 0, 0L, (APTR)MEN_PROJECT_LOADSTATE},
+	{NM_ITEM, "Save State...", "S", 0, 0L, (APTR)MEN_PROJECT_SAVESTATE},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Load BIN...", NULL, 0, 0L, (APTR)MEN_PROJECT_LOADBIN},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
 	{NM_ITEM, "Internal User Interface", "F1", NM_COMMANDSTRING, 0L, (APTR)MEN_SYSTEM_UI},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Quit...", "Q", 0, 0L, (APTR)MEN_PROJECT_QUIT},
 	{NM_TITLE, "Console", NULL, 0, 0L, (APTR)MEN_CONSOLE},
 	{NM_ITEM, "Option", "F2", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_OPTION},
 	{NM_ITEM, "Select", "F3", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_SELECT},
@@ -605,55 +591,6 @@ BOOL SetupTimer(void)
 	return FALSE;
 }
 
-BOOL IsSoundFileOpen(void)
-{
-	return FALSE;
-}
-
-void WriteToSoundFile(void)
-{
-}
-
-void OpenSoundFile(void)
-{
-}
-
-void CloseSoundFile(void)
-{
-}
-
-/**************************************************************************
- Record Sound menu entry selected
-**************************************************************************/
-VOID Project_RecordSound(void)
-{
-	struct MenuItem *mi = (struct MenuItem*)FindUserData(MenuMain,(APTR)MEN_PROJECT_RECORDSOUND);
-	if(mi)
-	{
-		if(mi->Flags & CHECKED) SetupSoundFile();
-		else FreeSoundFile();
-	}
-}
-
-/**************************************************************************
- Select the filename for the recorded sound
-**************************************************************************/
-VOID Project_SelectSoundPath(void)
-{
-	struct FileRequester *filereq = (struct FileRequester*)AllocAslRequest( ASL_FileRequest, NULL);
-	if(filereq)
-	{
-		if(AslRequestTags(filereq,
-							ASLFR_DoSaveMode,TRUE,
-							ASLFR_InitialDrawer, "PROGDIR:",
-							TAG_DONE))
-		{
-			if(ahi_soundpath) FreeVec(ahi_soundpath);
-			ahi_soundpath = GetFullPath(filereq->fr_Drawer, filereq->fr_File);
-		}
-	}
-}
-
 /**************************************************************************
  Handle the menu
 **************************************************************************/
@@ -738,10 +675,6 @@ int HandleMenu(UWORD code)
 							}
 							break;
 
-				case	MEN_PROJECT_RECORDSOUND: Project_RecordSound(); break;
-				case	MEN_PROJECT_SOUNDPATH: Project_SelectSoundPath(); break;
-				case	MEN_PROJECT_ICONIFY: Iconify(); return -1;
-				case	MEN_PROJECT_HELP: break;
 				case	MEN_PROJECT_QUIT: keycode = AKEY_EXIT; break;
 
 				case	MEN_SYSTEM_BOOT:
@@ -752,123 +685,22 @@ int HandleMenu(UWORD code)
 							}
 							break;
 
-				case	MEN_SYSTEM_ID1:
-							if(InsertDisk(1))
-							{
-							}
-							break;
-
-				case	MEN_SYSTEM_ID2:
-							if(InsertDisk(2))
-							{
-							}
-							break;
-
-				case	MEN_SYSTEM_ID3:
-							if(InsertDisk(3))
-							{
-							}
-							break;
-
-				case	MEN_SYSTEM_ID4:
-							if(InsertDisk(4))
-							{
-							}
-							break;
-
-				case	MEN_SYSTEM_ID5:
-							if(InsertDisk(5))
-							{
-							}
-							break;
-
-				case	MEN_SYSTEM_ID6:
-							if(InsertDisk(6))
-							{
-							}
-							break;
-
-				case	MEN_SYSTEM_ID7:
-							if(InsertDisk(7))
-							{
-							}
-							break;
-
-				case	MEN_SYSTEM_ID8:
-							if(InsertDisk(8))
-							{
-							}
-							break;
-
-				case	MEN_SYSTEM_ED1:
-							SIO_Dismount(1);
-							break;
-
-				case	MEN_SYSTEM_ED2:
-							SIO_Dismount(2);
-							break;
-
-				case	MEN_SYSTEM_ED3:
-							SIO_Dismount(3);
-							break;
-
-				case	MEN_SYSTEM_ED4:
-							SIO_Dismount(4);
-							break;
-
-				case	MEN_SYSTEM_ED5:
-							SIO_Dismount(5);
-							break;
-
-				case	MEN_SYSTEM_ED6:
-							SIO_Dismount(6);
-							break;
-
-				case	MEN_SYSTEM_ED7:
-							SIO_Dismount(7);
-							break;
-
-				case	MEN_SYSTEM_ED8:
-							SIO_Dismount(8);
-							break;
-
-				case	MEN_SYSTEM_IC8K:
-							InsertROM(0);
-							break;
-
-				case	MEN_SYSTEM_IC16K:
-							InsertROM(1);
-							break;
-
-				case	MEN_SYSTEM_ICOSS:
-							InsertROM(2);
-							break;
-
-				case	MEN_SYSTEM_REMOVEC:
-//						  Remove_ROM();
-						  Coldstart();
-							break;
-
-				case	MEN_SYSTEM_PILL:
-						  EnablePILL();
-						  Coldstart();
-							break;
-
-				case	MEN_SYSTEM_ATARI800A:
-//							Initialise_AtariOSA();
-							break;
-
-				case	MEN_SYSTEM_ATARI800B:
-//							Initialise_AtariOSB();
-							break;
-
-				case	MEN_SYSTEM_ATARI800XL:
-//							Initialise_AtariXL();
-							break;
-
-				case	MEN_SYSTEM_ATARI130XL:
-//							Initialise_AtariXE();
-							break;
+				case	MEN_SYSTEM_ID1: InsertDisk(1); break;
+				case	MEN_SYSTEM_ID2: InsertDisk(2); break;
+				case	MEN_SYSTEM_ID3: InsertDisk(3); break;
+				case	MEN_SYSTEM_ID4: InsertDisk(4); break;
+				case	MEN_SYSTEM_ID5: InsertDisk(5); break;
+				case	MEN_SYSTEM_ID6: InsertDisk(6); break;
+				case	MEN_SYSTEM_ID7: InsertDisk(7); break;
+				case	MEN_SYSTEM_ID8: InsertDisk(8); break;
+				case	MEN_SYSTEM_ED1: SIO_Dismount(1); break;
+				case	MEN_SYSTEM_ED2: SIO_Dismount(2); break;
+				case	MEN_SYSTEM_ED3: SIO_Dismount(3); break;
+				case	MEN_SYSTEM_ED4: SIO_Dismount(4); break;
+				case	MEN_SYSTEM_ED5: SIO_Dismount(5); break;
+				case	MEN_SYSTEM_ED6: SIO_Dismount(6); break;
+				case	MEN_SYSTEM_ED7: SIO_Dismount(7); break;
+				case	MEN_SYSTEM_ED8: SIO_Dismount(8); break;
 
 				case	MEN_SYSTEM_UI:
 						keycode = AKEY_UI;
@@ -1143,6 +975,35 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 }
 
 /**************************************************************************
+ Called by the emulator.
+**************************************************************************/
+BOOL IsSoundFileOpen(void)
+{
+	return FALSE;
+}
+
+/**************************************************************************
+ Called by the emulator.
+**************************************************************************/
+void WriteToSoundFile(void)
+{
+}
+
+/**************************************************************************
+ Called by the emulator.
+**************************************************************************/
+void OpenSoundFile(void)
+{
+}
+
+/**************************************************************************
+ Called by the emulator.
+**************************************************************************/
+void CloseSoundFile(void)
+{
+}
+
+/**************************************************************************
  Play the sound. Called by the emulator.
 **************************************************************************/
 void Sound_Update(void)
@@ -1336,32 +1197,12 @@ static void ScreenData28bit(UBYTE *src, UBYTE *dest, UBYTE *colortable8, ULONG w
 void Atari_DisplayScreen(UBYTE *screen)
 {
 	static char fpsbuf[32];
-	if (ShowFPS)
-	{
-		extern double fps;
-		double fpsv;
-		double fpsn = modf(fps, &fpsv);
-
-		snprintf(fpsbuf,sizeof(fpsbuf),"%d.%d/%d (%d%%)",(int)fpsv,(int)(fpsn*10),ahi_fps,(int)(100*fps/ahi_fps));
-	}
+	int fgpen = 15,bgpen = 0;
 
 	if (UseCustomScreen)
 	{
-		LONG x = -32;
-		LONG y = 0;
-
-		WriteChunkyPixels(WindowMain->RPort, x, y, x + ATARI_WIDTH - 1, y + ATARI_HEIGHT - 1,
-						  screen, ATARI_WIDTH);
-
-		if (ShowFPS)
-		{
-			LONG len;
-
-			SetABPenDrMd(WindowMain->RPort,15,0,JAM2);
-			len = TextLength(WindowMain->RPort,fpsbuf,strlen(fpsbuf));
-			Move(WindowMain->RPort, WindowMain->Width - 20 - len, 4 + WindowMain->RPort->TxBaseline);
-			Text(WindowMain->RPort, fpsbuf,strlen(fpsbuf));
-		}
+		WriteChunkyPixels(WindowMain->RPort, 0, 0, ATARI_WIDTH - 1 - 64, ATARI_HEIGHT - 1,
+						  screen + 32, ATARI_WIDTH);
 	} else
 	{
 		LONG offx = WindowMain->BorderLeft;
@@ -1375,20 +1216,27 @@ void Atari_DisplayScreen(UBYTE *screen)
 										InnerWidth(WindowMain), InnerHeight(WindowMain), RECTFMT_LUT8);
 		}	else
 		{
-			struct RastPort temprp;
-			InitRastPort(&temprp);
-			WritePixelArray8( WindowMain->RPort,offx,offy,offx+ATARI_WIDTH-1,offy+ATARI_HEIGHT-1, tempscreendata, &temprp);
+			WriteChunkyPixels(WindowMain->RPort, offx, offy, offx + ATARI_WIDTH - 1 - 56, offy + ATARI_HEIGHT - 1,
+						  tempscreendata + 28, ATARI_WIDTH);
 		}
+		fgpen = colortable8[fgpen];
+		bgpen = colortable8[bgpen];
+	}
 
-		if (ShowFPS)
-		{
-			LONG len;
-	
-			SetABPenDrMd(WindowMain->RPort,colortable8[15],colortable8[0],JAM2);
-			len = TextLength(WindowMain->RPort,fpsbuf,strlen(fpsbuf));
-			Move(WindowMain->RPort, offx + WindowMain->Width - 20 - len, offy + 4 + WindowMain->RPort->TxBaseline);
-			Text(WindowMain->RPort, fpsbuf,strlen(fpsbuf));
-		}
+	if (ShowFPS)
+	{
+		LONG len;
+
+		extern double fps;
+		double fpsv;
+		double fpsn = modf(fps, &fpsv);
+
+		snprintf(fpsbuf,sizeof(fpsbuf),"%d.%d/%d (%d%%)",(int)fpsv,(int)(fpsn*10),ahi_fps,(int)(100*fps/ahi_fps));
+
+		SetABPenDrMd(WindowMain->RPort,fgpen,bgpen,JAM2);
+		len = TextLength(WindowMain->RPort,fpsbuf,strlen(fpsbuf));
+		Move(WindowMain->RPort, WindowMain->Width - 4 - len - WindowMain->BorderRight, 4 + WindowMain->RPort->TxBaseline + WindowMain->BorderTop);
+		Text(WindowMain->RPort, fpsbuf,strlen(fpsbuf));
 	}
 }
 
@@ -1749,22 +1597,26 @@ LONG SetupDisplay(void)
 	struct MenuItem *mi;
 	int i;
 
-	STATIC WORD ScreenPens[] =
-	{
-		15, /* Unknown */
-		15, /* Unknown */
-		0, /* Windows titlebar text when inactive */
-		15, /* Windows bright edges */
-		0, /* Windows dark edges */
-		120, /* Windows titlebar when active */
-		0, /* Windows titlebar text when active */
-		4, /* Windows titlebar when inactive */
-		15, /* Unknown */
-		1, /* Menubar text */
-		15, /* Menubar */
-		0, /* Menubar base */
-		-1
-	};
+	STATIC WORD ScreenPens[NUMDRIPENS+1];
+
+	ScreenPens[DETAILPEN] = 0;
+	ScreenPens[BLOCKPEN] = 15;
+	ScreenPens[TEXTPEN] = 0;
+	ScreenPens[SHINEPEN] = 15;
+	ScreenPens[SHADOWPEN] = 0;
+	ScreenPens[FILLPEN] = 120;
+	ScreenPens[FILLTEXTPEN] = 0;
+	ScreenPens[BACKGROUNDPEN] = 9;
+	ScreenPens[HIGHLIGHTTEXTPEN] = 15;
+	ScreenPens[BARDETAILPEN] = 0;
+	ScreenPens[BARBLOCKPEN] = 15;
+	ScreenPens[BARTRIMPEN] = 0;
+	ScreenPens[NUMDRIPENS] = -1;
+
+#if DRI_VERSION > 2
+	ScreenPens[MENUBACKGROUNDPEN] = 13;
+	ScreenPens[SELECTPEN] = 120;
+#endif
 
 	if (UseCustomScreen)
 	{
@@ -1815,7 +1667,7 @@ LONG SetupDisplay(void)
 	{
 		ScreenIsCustom = FALSE;
 
-		ScreenWidth = ATARI_WIDTH;
+		ScreenWidth = ATARI_WIDTH - 56;
 		ScreenHeight = ATARI_HEIGHT;
 
 		if ((ScreenMain = LockPubScreen(NULL)))
