@@ -1,14 +1,16 @@
-CC = ppc-amigaos-gcc
-AR = ppc-amigaos-ar
-RANLIB = ppc-amigaos-ranlib
-STRIP = ppc-amigaos-strip
-RM = rm
-MKDIR = mkdir
+CROSS=ppc-amigaos-
+
+CC = $(CROSS)gcc
+AR = $(CROSS)ar
+RANLIB = $(CROSS)ranlib
+STRIP = $(CROSS)strip
+RM = rm -rf
+MKDIR = mkdir -p
 
 # -------------------------------------------------------------
 
 TARGET = Atari800
-CFLAGS = -I$(SDK_INCLUDE) -I$(AHI_INCLUDE) -I. -I.. -Wall
+CFLAGS = -I. -I.. -I"$(SDK_INCLUDE)" -I"$(AHI_INCLUDE)" -Wall
 LIBS = -lm
 
 AMIGASRCS=\
@@ -65,6 +67,7 @@ dirs:
 $(TARGET): $(OBJS) $(AOBJS)
 	$(CC) $(LINK) -o $@.debug $(OBJS) $(AOBJS) $(LIBS)
 	$(STRIP) --strip-all -o $@ $@.debug
+	cp Atari800.debug "/cygdrive/c/Dokumente und Einstellungen/sba/Eigene Dateien/AmigaOne/Atari800/Atari800"
 
 ppc-amigaos-objs/amiga/%.o: %.S
 	$(CC) -Wa,-mregnames $(AFLAGS) -I$/home/sba/amigaos4/include -c $< -o $@
