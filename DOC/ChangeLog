@@ -1,3 +1,8 @@
+2002-02-13  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c: fixed screen offset in 32bpp (thanks to Suzanne Archibald)
+* atari_sdl.c: fixed sound initialisation (thanks to Tomas Mraz)
+* pokey.c: fixed sound channel 1 in stereo mode (thanks to Radek Sterba)
+
 2002-02-04  Piotr Fusik  <fox@scene.pl>
 * DOC/BUGS: updated list of games
 
