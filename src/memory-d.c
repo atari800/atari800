@@ -54,21 +54,11 @@ void PatchOS(void)
 #endif
 
 	/* Disable Checksum Test */
-	switch (machine) {
-	case Atari:
-		break;
-	case AtariXL:
-	case AtariXE:
-	case Atari320XE:
+	if (machine_type == MACHINE_XLXE) {
 		memory[0xc314] = 0x8e;
 		memory[0xc315] = 0xff;
 		memory[0xc319] = 0x8e;
 		memory[0xc31a] = 0xff;
-		break;
-	default:
-		Aprint("Fatal Error in atari.c: PatchOS(): Unknown machine");
-		Atari800_Exit(FALSE);
-		break;
 	}
 
 	/* Set SIO (fast disk access) patch */
@@ -80,13 +70,12 @@ void PatchOS(void)
    Patch O.S. - Modify Handler Table (HATABS)
    ==========================================
  */
-	switch (machine) {
-	case Atari:
+	switch (machine_type) {
+	case MACHINE_OSA:
+	case MACHINE_OSB:
 		addr = 0xf0e3;
 		break;
-	case AtariXL:
-	case AtariXE:
-	case Atari320XE:
+	case MACHINE_XLXE:
 		addr = 0xc42e;
 		break;
 	default:
@@ -166,8 +155,9 @@ void PatchOS(void)
 
 void MEMORY_InitialiseMachine(void)
 {
-	switch (machine) {
-	case Atari:
+	switch (machine_type) {
+	case MACHINE_OSA:
+	case MACHINE_OSB:
 		memcpy(memory + 0xd800, atari_os, 0x2800);
 		PatchOS();
 		SetRAM(0x0000, 0xbfff);
@@ -179,9 +169,7 @@ void MEMORY_InitialiseMachine(void)
 		SetROM(0xd800, 0xffff);
 		Coldstart();
 		break;
-	case AtariXL:
-	case AtariXE:
-	case Atari320XE:
+	case MACHINE_XLXE:
 		memcpy(memory + 0xc000, atari_os, 0x4000);
 		PatchOS();
 		SetRAM(0x0000, 0xbfff);
@@ -190,7 +178,7 @@ void MEMORY_InitialiseMachine(void)
 		SetROM(0xd800, 0xffff);
 		Coldstart();
 		break;
-	case Atari5200:
+	case MACHINE_5200:
 		memset(memory, 0, 0xf800);
 		memcpy(memory + 0xf800, atari_os, 0x800);
 		SetRAM(0x0000, 0x3fff);
@@ -226,8 +214,7 @@ void MemStateSave( UBYTE SaveVerbose )
 	SaveUBYTE( &memory[0], 65536 );
 	SaveUBYTE( &attrib[0], 65536 );
 
-	if( mach_xlxe )
-	{
+	if (machine_type == MACHINE_XLXE) {
 		if( SaveVerbose != 0 )
 			SaveUBYTE( &atari_basic[0], 8192 );
 		SaveUBYTE( &under_atari_basic[0], 8192 );
@@ -237,7 +224,7 @@ void MemStateSave( UBYTE SaveVerbose )
 		SaveUBYTE( &under_atarixl_os[0], 16384 );
 	}
 
-	if( machine == Atari320XE || machine == AtariXE  )
+	if (ram_size > 64)
 		SaveUBYTE( &atarixe_memory[0], 278528 );
 
 }
@@ -247,8 +234,7 @@ void MemStateRead( UBYTE SaveVerbose )
 	ReadUBYTE( &memory[0], 65536 );
 	ReadUBYTE( &attrib[0], 65536 );
 
-	if( mach_xlxe )
-	{
+	if (machine_type == MACHINE_XLXE) {
 		if( SaveVerbose != 0 )
 			ReadUBYTE( &atari_basic[0], 8192 );
 		ReadUBYTE( &under_atari_basic[0], 8192 );
@@ -258,7 +244,7 @@ void MemStateRead( UBYTE SaveVerbose )
 		ReadUBYTE( &under_atarixl_os[0], 16384 );
 	}
 
-	if( machine == Atari320XE || machine == AtariXE  )
+	if (ram_size > 64)
 		ReadUBYTE( &atarixe_memory[0], 278528 );
 
 }
@@ -283,76 +269,69 @@ void CopyToMem(UBYTE * from, ATPtr to, int size)
 
 void PORTB_handler(UBYTE byte)
 {
-	switch (machine) {
-	case AtariXE:
-	case Atari320XE:
-		{
-			int bank;
-			/* bank = 0 ...normal RAM */
-			/* bank = 1..4 (..16) ...extended RAM */
+	if (ram_size > 64) {
+		int bank = 0;
+		/* bank = 0 ...normal RAM */
+		/* bank = 1..4 (..16) ...extended RAM */
 
-			if (byte & 0x10) {
-				/* CPU to normal RAM */
-				bank = 0;
-			}
-			else {
-				/* CPU to extended RAM */
-				if (machine == Atari320XE) {
-					if (Ram256 == 1)
-						bank = (((byte & 0x0c) | ((byte & 0x60) >> 1)) >> 2) + 1; /* RAMBO */
-					else 
-						bank = (((byte & 0x0c) | ((byte & 0xc0) >> 2)) >> 2) + 1; /* COMPY SHOP */
-				}
-				else
-					bank = ((byte & 0x0c) >> 2) + 1;
+		if ((byte & 0x10) == 0)
+			switch (ram_size) {
+			case 128:
+				bank = ((byte & 0x0c) >> 2) + 1;
+				break;
+			case RAM_320_RAMBO:
+				bank = (((byte & 0x0c) | ((byte & 0x60) >> 1)) >> 2) + 1;
+				break;
+			case RAM_320_COMPY_SHOP:
+				bank = (((byte & 0x0c) | ((byte & 0xc0) >> 2)) >> 2) + 1;
+				break;
 			}
 
-			if (bank != xe_bank) {
-				if (selftest_enabled) {
-					/* SelfTestROM Disable */
-					memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
-					SetRAM(0x5000, 0x57ff);
-					selftest_enabled = FALSE;
-				}
-				memcpy(atarixe_memory + (((long) xe_bank) << 14), memory + 0x4000, 16384);
-				memcpy(memory + 0x4000, atarixe_memory + (((long) bank) << 14), 16384);
-				xe_bank = bank;
+		if (bank != xe_bank) {
+			if (selftest_enabled) {
+				/* SelfTestROM Disable */
+				memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
+				SetRAM(0x5000, 0x57ff);
+				selftest_enabled = FALSE;
 			}
+			memcpy(atarixe_memory + (((long) xe_bank) << 14), memory + 0x4000, 16384);
+			memcpy(memory + 0x4000, atarixe_memory + (((long) bank) << 14), 16384);
+			xe_bank = bank;
 		}
-	case AtariXL:
+	}
 #ifdef DEBUG
-		printf("Storing %x to PORTB, PC = %x\n", byte, regPC);
+	printf("Storing %x to PORTB, PC = %x\n", byte, regPC);
 #endif
 /*
  * Enable/Disable OS ROM 0xc000-0xcfff and 0xd800-0xffff
  */
-		if ((PORTB ^ byte) & 0x01) {	/* Only when is changed this bit !RS! */
-			if (byte & 0x01) {
-				/* OS ROM Enable */
-				memcpy(under_atarixl_os, memory + 0xc000, 0x1000);
-				memcpy(under_atarixl_os + 0x1800, memory + 0xd800, 0x2800);
-				memcpy(memory + 0xc000, atari_os, 0x1000);
-				memcpy(memory + 0xd800, atari_os + 0x1800, 0x2800);
-				SetROM(0xc000, 0xcfff);
-				SetROM(0xd800, 0xffff);
-				PatchOS();
-			}
-			else {
-				/* OS ROM Disable */
-				memcpy(memory + 0xc000, under_atarixl_os, 0x1000);
-				memcpy(memory + 0xd800, under_atarixl_os + 0x1800, 0x2800);
-				SetRAM(0xc000, 0xcfff);
-				SetRAM(0xd800, 0xffff);
+	if ((PORTB ^ byte) & 0x01) {	/* Only when is changed this bit !RS! */
+		if (byte & 0x01) {
+			/* OS ROM Enable */
+			memcpy(under_atarixl_os, memory + 0xc000, 0x1000);
+			memcpy(under_atarixl_os + 0x1800, memory + 0xd800, 0x2800);
+			memcpy(memory + 0xc000, atari_os, 0x1000);
+			memcpy(memory + 0xd800, atari_os + 0x1800, 0x2800);
+			SetROM(0xc000, 0xcfff);
+			SetROM(0xd800, 0xffff);
+			PatchOS();
+		}
+		else {
+			/* OS ROM Disable */
+			memcpy(memory + 0xc000, under_atarixl_os, 0x1000);
+			memcpy(memory + 0xd800, under_atarixl_os + 0x1800, 0x2800);
+			SetRAM(0xc000, 0xcfff);
+			SetRAM(0xd800, 0xffff);
 
 /* when OS ROM is disabled we also have to disable SelfTest - Jindroush */
-				/* SelfTestROM Disable */
-				if (selftest_enabled) {
-					memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
-					SetRAM(0x5000, 0x57ff);
-					selftest_enabled = FALSE;
-				}
+			/* SelfTestROM Disable */
+			if (selftest_enabled) {
+				memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
+				SetRAM(0x5000, 0x57ff);
+				selftest_enabled = FALSE;
 			}
 		}
+	}
 
 /*
    =====================================
@@ -361,52 +340,45 @@ void PORTB_handler(UBYTE byte)
    Other cartridge cannot be disable
    =====================================
  */
-		if (!cartA0BF_enabled) {
-			if ((PORTB ^ byte) & 0x02) {	/* Only when change this bit !RS! */
-				if (byte & 0x02) {
-					/* BASIC Disable */
-					memcpy(memory + 0xa000, under_atari_basic, 0x2000);
-					SetRAM(0xa000, 0xbfff);
-				}
-				else {
-					/* BASIC Enable */
-					memcpy(under_atari_basic, memory + 0xa000, 0x2000);
-					memcpy(memory + 0xa000, atari_basic, 0x2000);
-					SetROM(0xa000, 0xbfff);
-				}
+	if (!cartA0BF_enabled) {
+		if ((PORTB ^ byte) & 0x02) {	/* Only when change this bit !RS! */
+			if (byte & 0x02) {
+				/* BASIC Disable */
+				memcpy(memory + 0xa000, under_atari_basic, 0x2000);
+				SetRAM(0xa000, 0xbfff);
+			}
+			else {
+				/* BASIC Enable */
+				memcpy(under_atari_basic, memory + 0xa000, 0x2000);
+				memcpy(memory + 0xa000, atari_basic, 0x2000);
+				SetROM(0xa000, 0xbfff);
 			}
 		}
+	}
 /*
  * Enable/Disable Self Test ROM
  */
-		if (byte & 0x80) {
-			/* SelfTestROM Disable */
-			if (selftest_enabled) {
-				memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
-				SetRAM(0x5000, 0x57ff);
-				selftest_enabled = FALSE;
-			}
+	if (byte & 0x80) {
+		/* SelfTestROM Disable */
+		if (selftest_enabled) {
+			memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
+			SetRAM(0x5000, 0x57ff);
+			selftest_enabled = FALSE;
 		}
-		else {
-/* we can enable Selftest only if the OS ROM is enabled */
-			/* SELFTEST ROM enable */
-			if (!selftest_enabled && (byte & 0x01) && ((byte & 0x10) || (Ram256 < 2))) {
-				/* Only when CPU access to normal RAM or isn't 256Kb RAM or RAMBO mode is set */
-				memcpy(under_atarixl_os + 0x1000, memory + 0x5000, 0x800);
-				memcpy(memory + 0x5000, atari_os + 0x1000, 0x800);
-				SetROM(0x5000, 0x57ff);
-				selftest_enabled = TRUE;
-			}
-		}
-
-		PORTB = byte;
-		break;
-	default:
-		Aprint("Fatal Error in pia.c: PIA_PutByte(): Unknown machine\n");
-		Atari800_Exit(FALSE);
-		exit(1);
-		break;
 	}
+	else {
+/* we can enable Selftest only if the OS ROM is enabled */
+		/* SELFTEST ROM enable */
+		if (!selftest_enabled && (byte & 0x01) && ((byte & 0x10) || (ram_size != RAM_320_COMPY_SHOP))) {
+			/* Only when CPU access to normal RAM or isn't 256Kb RAM or RAMBO mode is set */
+			memcpy(under_atarixl_os + 0x1000, memory + 0x5000, 0x800);
+			memcpy(memory + 0x5000, atari_os + 0x1000, 0x800);
+			SetROM(0x5000, 0x57ff);
+			selftest_enabled = TRUE;
+		}
+	}
+
+	PORTB = byte;
 }
 
 static int cart809F_enabled = FALSE;
@@ -435,14 +407,14 @@ void Cart809F_Enable(void)
 void CartA0BF_Disable(void)
 {
 	if (cartA0BF_enabled) {
-		if (!mach_xlxe || (PORTB & 0x02)) {
+		if ((machine_type != MACHINE_XLXE) || (PORTB & 0x02)) {
 			memcpy(memory + 0xa000, under_cartA0BF, 0x2000);
 			SetRAM(0xa000, 0xbfff);
 		}
 		else
 			memcpy(memory + 0xa000, atari_basic, 0x2000);
 		cartA0BF_enabled = FALSE;
-		if (mach_xlxe) {
+		if (machine_type == MACHINE_XLXE) {
 			TRIG[3] = 0;
 			if (GRACTL & 4)
 				TRIG_latch[3] = 0;
@@ -453,28 +425,37 @@ void CartA0BF_Disable(void)
 void CartA0BF_Enable(void)
 {
 	if (!cartA0BF_enabled) {
-		if (!mach_xlxe || (PORTB & 0x02)) {
+		if ((machine_type != MACHINE_XLXE) || (PORTB & 0x02)) {
 			memcpy(under_cartA0BF, memory + 0xa000, 0x2000);
 			SetROM(0xa000, 0xbfff);
 		}
 		cartA0BF_enabled = TRUE;
-		if (mach_xlxe)
+		if (machine_type == MACHINE_XLXE)
 			TRIG[3] = 1;
 	}
 }
 
 void get_charset(char * cs)
 {
-	if (mach_xlxe)
-		memcpy(cs, atari_os + 0x2000, 1024);
-	else if (machine == Atari5200)
-		memcpy(cs, memory + 0xf800, 1024);
-	else
+	switch (machine_type) {
+	case MACHINE_OSA:
+	case MACHINE_OSB:
 		memcpy(cs, memory + 0xe000, 1024);
+		break;
+	case MACHINE_XLXE:
+		memcpy(cs, atari_os + 0x2000, 1024);
+		break;
+	case MACHINE_5200:
+		memcpy(cs, memory + 0xf800, 1024);
+		break;
+	}
 }
 
 /*
 $Log$
+Revision 1.10  2001/09/17 18:12:08  fox
+machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
+
 Revision 1.9  2001/09/17 07:33:07  fox
 Initialise_Atari... functions moved to atari.c
 

@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Clean ups and optimizations:                     */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 6th August 2001                    */
+/* Last changes: 16th September 2001                */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -282,7 +282,7 @@ void GTIA_Triggers(void)
 		if ((TRIG_auto[i] && !TRIG[i]) || TRIG_auto[i] == 2)
 			TRIG[i] = (nframes & 2) ? 1 : 0;
 	}
-	if (mach_xlxe) {
+	if (machine_type == MACHINE_XLXE) {
 		TRIG[2] = 1;
 		TRIG[3] = cartA0BF_enabled;
 	}

@@ -304,7 +304,7 @@ void CART_Remove(void)
 }
 
 void CART_Start(void) {
-	if (machine == Atari5200) {
+	if (machine_type == MACHINE_5200) {
 		SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
 		SetROM(0x5ff6, 0x5ff9);
 		switch (cart_type) {
@@ -400,7 +400,8 @@ void CART_Start(void) {
 			break;
 		default:
 			Cart809F_Disable();
-			if (machine == Atari && !disable_basic && have_basic) {
+			if ((machine_type == MACHINE_OSA || machine_type == MACHINE_OSB)
+			 && !disable_basic && have_basic) {
 				CartA0BF_Enable();
 				CopyROM(0xa000, 0xbfff, atari_basic);
 				break;

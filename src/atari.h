@@ -30,21 +30,20 @@
 /* #define USE_COLOUR_TRANSLATION_TABLE */
 #endif
 
-typedef enum {
-	Atari,
-	AtariXL,
-	AtariXE,
-	Atari320XE,
-	Atari5200
-} Machine;
+#define MACHINE_OSA		0
+#define MACHINE_OSB		1
+#define MACHINE_XLXE	2
+#define MACHINE_5200	3
+extern int machine_type;
+
+#define RAM_320_RAMBO		320
+#define RAM_320_COMPY_SHOP	321
+extern int ram_size;
 
 #define TV_PAL 312
 #define TV_NTSC 262
-
 extern int tv_mode;				/* now it is simply number of scanlines */
-extern Machine machine;
-extern int mach_xlxe;
-extern int Ram256;
+
 extern int verbose;
 extern int draw_display;		/* Draw actualy generated screen */
 
@@ -403,24 +402,21 @@ struct ATR_Header {
 void EnablePILL(void);
 void Coldstart(void);
 void Warmstart(void);
-int Initialise_AtariOSA(void);
-int Initialise_AtariOSB(void);
-int Initialise_AtariXL(void);
-int Initialise_AtariXE(void);
-int Initialise_Atari320XE(void);
-int Initialise_Atari5200(void);
+int Atari800_InitialiseMachine(void);
 int Atari800_Exit(int run_monitor);
 UBYTE Atari800_GetByte(UWORD addr);
 void Atari800_PutByte(UWORD addr, UBYTE byte);
 void Atari800_UpdatePatches(void);
 void AtariEscape(UBYTE esc_code);
-int Initialise_EmuOS(void);
 void atari_sync(void);
 
 #endif
 
 /*
 $Log$
+Revision 1.15  2001/09/17 18:10:37  fox
+machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
+
 Revision 1.14  2001/09/06 17:13:40  fox
 MENU_PATCHES -> MENU_SETTINGS
 

@@ -54,21 +54,10 @@ UBYTE PIA_GetByte(UWORD addr)
 			byte = Atari_PORT(0) & (PORTA | PORTA_mask);
 		break;
 	case _PORTB:
-		switch (machine) {
-		case Atari:
-			byte = Atari_PORT(1) & (PORTB | PORTB_mask);
-			break;
-		case AtariXL:
-		case AtariXE:
-		case Atari320XE:
+		if (machine_type == MACHINE_XLXE)
 			byte = (PORTB & (~PORTB_mask)) | PORTB_mask;
-			break;
-		default:
-			Aprint("Fatal Error in pia.c: PIA_GetByte(): Unknown machine\n");
-			Atari800_Exit(FALSE);
-			exit(1);
-			break;
-		}
+		else
+			byte = Atari_PORT(1) & (PORTB | PORTB_mask);
 		break;
 	}
 
@@ -106,23 +95,30 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 			break;
 		}
 
-		if (((byte | PORTB_mask) == 0) && mach_xlxe)
-			break;				/* special hack for old Atari800 games like is Tapper, for example */
-
-		if (machine == Atari) {
+		if (machine_type == MACHINE_XLXE) {
+			if ((byte | PORTB_mask) == 0)
+				break;				/* special hack for old Atari800 games like is Tapper, for example */
+			PORTB_handler(byte);
+		}
+		else {
 		/*
 			if (!(PBCTL & 0x04))
 				PORTB_mask = ~byte;
 		*/
 			PORTB = byte;
-		} else {
-			PORTB_handler(byte);
 		}
+		break;
 	}
 }
 
 void PIAStateSave(void)
 {
+	int Ram256 = 0;
+	if (ram_size == RAM_320_RAMBO)
+		Ram256 = 1;
+	else if (ram_size == RAM_320_COMPY_SHOP)
+		Ram256 = 2;
+
 	SaveUBYTE( &PACTL, 1 );
 	SaveUBYTE( &PBCTL, 1 );
 	SaveUBYTE( &PORTA, 1 );
@@ -140,6 +136,8 @@ void PIAStateSave(void)
 
 void PIAStateRead(void)
 {
+	int Ram256 = 0;
+
 	ReadUBYTE( &PACTL, 1 );
 	ReadUBYTE( &PBCTL, 1 );
 	ReadUBYTE( &PORTA, 1 );
@@ -149,6 +147,9 @@ void PIAStateRead(void)
 	ReadINT( &selftest_enabled, 1 );
 	ReadINT( &Ram256, 1 );
 
+	if (Ram256 == 1 && machine_type == MACHINE_XLXE && ram_size == RAM_320_COMPY_SHOP)
+		ram_size = RAM_320_RAMBO;
+
 	ReadINT( &cartA0BF_enabled, 1 );
 
 	ReadUBYTE( &PORTA_mask, 1 );
@@ -157,6 +158,9 @@ void PIAStateRead(void)
 
 /*
 $Log$
+Revision 1.6  2001/09/17 18:12:33  fox
+machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
+
 Revision 1.5  2001/07/20 20:08:26  fox
 Ram256 moved to atari.c,
 cartA0BF_enabled in memory-d is used instead of rom_inserted

@@ -36,7 +36,6 @@ extern void PIAStateRead( void );
 extern void POKEYStateRead( void );
 
 extern int ReadDisabledROMs( void );
-extern int mach_xlxe;
 
 #ifdef HAVE_LIBZ
 #define GZOPEN( X, Y )		gzopen( X, Y )
@@ -418,7 +417,7 @@ int ReadAtariState( char *filename, const char *mode )
 	if( nFileError != Z_OK )
 		return FALSE;
 
-	if( !SaveVerbose && mach_xlxe )
+	if( !SaveVerbose && machine_type == MACHINE_XLXE )
 	{
 		/* ReadDisabledRoms is a port specific function that will read atari basic into 
 		   atari_basic[] and the OS into atarixl_os for XL/XEs. It should return FALSE
@@ -433,6 +432,9 @@ int ReadAtariState( char *filename, const char *mode )
 
 /*
 $Log$
+Revision 1.4  2001/09/17 18:13:35  fox
+machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
+
 Revision 1.3  2001/04/15 09:14:33  knik
 zlib_capable -> have_libz (autoconf compatibility)
 

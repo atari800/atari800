@@ -488,40 +488,42 @@ void SelectSystem(UBYTE * screen)
 
 	switch (system) {
 	case 0:
-		Ram256 = 0;
-		status = Initialise_AtariOSA();
+		machine_type = MACHINE_OSA;
+		ram_size = 48;
+		Atari800_InitialiseMachine();
 		break;
 	case 1:
-		Ram256 = 0;
-		status = Initialise_AtariOSB();
+		machine_type = MACHINE_OSB;
+		ram_size = 48;
+		Atari800_InitialiseMachine();
 		break;
 	case 2:
-		Ram256 = 0;
-		status = Initialise_AtariXL();
+		machine_type = MACHINE_XLXE;
+		ram_size = 64;
+		Atari800_InitialiseMachine();
 		break;
 	case 3:
-		Ram256 = 0;
-		status = Initialise_AtariXE();
+		machine_type = MACHINE_XLXE;
+		ram_size = 128;
+		Atari800_InitialiseMachine();
 		break;
 	case 4:
-		Ram256 = 1;
-		status = Initialise_Atari320XE();
+		machine_type = MACHINE_XLXE;
+		ram_size = RAM_320_RAMBO;
+		Atari800_InitialiseMachine();
 		break;
 	case 5:
-		Ram256 = 2;
-		status = Initialise_Atari320XE();
+		machine_type = MACHINE_XLXE;
+		ram_size = RAM_320_COMPY_SHOP;
+		Atari800_InitialiseMachine();
 		break;
 	case 6:
-		Ram256 = 0;
-		status = Initialise_Atari5200();
+		machine_type = MACHINE_5200;
+		ram_size = 16;
+		Atari800_InitialiseMachine();
 		break;
 	default:
-		status = 1;	/* don't init EmuOS */
 		break;
-	}
-	if (!status) {
-		Aprint("Operating System not available - using Emulated OS\n");
-		status = Initialise_EmuOS();
 	}
 }
 
@@ -1060,13 +1062,15 @@ void CartManagement(UBYTE * screen)
 					cart_type = SelectCartType(screen, r);
 				if (cart_type != CART_NONE) {
 					int for5200 = CART_IsFor5200(cart_type);
-					if (for5200 && machine != Atari5200) {
-						Ram256 = 0;
-						Initialise_Atari5200();
+					if (for5200 && machine_type != MACHINE_5200) {
+						machine_type = MACHINE_5200;
+						ram_size = 16;
+						Atari800_InitialiseMachine();
 					}
-					else if (!for5200 && machine == Atari5200) {
-						Ram256 = 0;
-						Initialise_AtariXL();
+					else if (!for5200 && machine_type == MACHINE_5200) {
+						machine_type = MACHINE_XLXE;
+						ram_size = 64;
+						Atari800_InitialiseMachine();
 					}
 				}
 				Coldstart();
@@ -1503,6 +1507,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.13  2001/09/17 18:14:01  fox
+machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
+
 Revision 1.12  2001/09/09 08:38:02  fox
 hold_option -> disable_basic
 

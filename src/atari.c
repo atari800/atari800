@@ -52,19 +52,18 @@ ULONG *atari_screen1 = NULL;
 ULONG *atari_screen2 = NULL;
 #endif
 
+int machine_type = MACHINE_OSB;
+int ram_size = 48;
 int tv_mode = TV_PAL;
-Machine machine = Atari;
-int mach_xlxe = FALSE;
-int Ram256 = 0;
+
 int verbose = FALSE;
 double fps;
 int nframes;
 static double frametime = 0.1;	/* measure time between two Antic runs */
 static int emu_too_fast = 0;
 
+int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 int pil_on = FALSE;
-
-int	os = 2;
 
 double deltatime;
 int draw_display=1;		/* Draw actualy generated screen */
@@ -92,12 +91,7 @@ void Warmstart(void)
 {
 	PORTA = 0x00;
 /* After reset must by actived rom os */
-	if (mach_xlxe) {
-		PIA_PutByte(_PORTB, 0xff);	/* turn on operating system */
-	}
-	else
-		PORTB = 0xff;
-
+	PIA_PutByte(_PORTB, 0xff);	/* turn on operating system */
 	ANTIC_Reset();
 	CPU_Reset();
 }
@@ -142,85 +136,57 @@ static int load_image(char *filename, UBYTE *buffer, int nbytes)
 	return status;
 }
 
-int Initialise_AtariOSA(void)
-{
-	if (!load_image(atari_osa_filename, atari_os, 0x2800))
-		return FALSE;
-	have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
-	machine = Atari;
-	mach_xlxe = FALSE;
-	MEMORY_InitialiseMachine();
-	return TRUE;
-}
-
-int Initialise_AtariOSB(void)
-{
-	if (!load_image(atari_osb_filename, atari_os, 0x2800))
-		return FALSE;
-	have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
-	machine = Atari;
-	mach_xlxe = FALSE;
-	MEMORY_InitialiseMachine();
-	return TRUE;
-}
-
-int Initialise_AtariXL(void)
-{
-	if (!load_image(atari_xlxe_filename, atari_os, 0x4000))
-		return FALSE;
-	if (!load_image(atari_basic_filename, atari_basic, 0x2000))
-		return FALSE;
-	machine = AtariXL;
-	mach_xlxe = TRUE;
-	MEMORY_InitialiseMachine();
-	return TRUE;
-}
-
-int Initialise_AtariXE(void)
-{
-	if (!Initialise_AtariXL())
-		return FALSE;
-	machine = AtariXE;
-	xe_bank = 0;
-	return TRUE;
-}
-
-int Initialise_Atari320XE(void)
-{
-	if (!Initialise_AtariXL())
-		return FALSE;
-	machine = Atari320XE;
-	xe_bank = 0;
-	return TRUE;
-}
-
-int Initialise_Atari5200(void)
-{
-	if (!load_image(atari_5200_filename, atari_os, 0x800))
-		return FALSE;
-	machine = Atari5200;
-	mach_xlxe = FALSE;
-	MEMORY_InitialiseMachine();
-	return TRUE;
-}
-
-/*
- * Initialise System with an replacement OS. It has just
- * enough functionality to run Defender and Star Raider.
- */
-
 #include "emuos.h"
 
-int Initialise_EmuOS(void)
+int Atari800_InitialiseMachine(void)
 {
-	if (load_image("emuos.img", atari_os, 0x4000))
-		Aprint("EmuOS: Using external emulated OS");
-	else
-		memcpy(atari_os, emuos_h, 0x4000);
-	/* skip 6 KB, because OS in 800 is 10 KB, not 16 KB */
-	memmove(atari_os, atari_os + 0x1800, 0x2800);
-	machine = Atari;
-	mach_xlxe = FALSE;
+	switch (machine_type) {
+	case MACHINE_OSA:
+		if (emuos_mode == 2)
+			memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+		else {
+			if (!load_image(atari_osa_filename, atari_os, 0x2800)) {
+				if (emuos_mode == 1)
+					memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+				else
+					return FALSE;
+			}
+		}
+		have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
+		break;
+	case MACHINE_OSB:
+		if (emuos_mode == 2)
+			memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+		else {
+			if (!load_image(atari_osb_filename, atari_os, 0x2800)) {
+				if (emuos_mode == 1)
+					memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+				else
+					return FALSE;
+			}
+		}
+		have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
+		break;
+	case MACHINE_XLXE:
+		if (emuos_mode == 2)
+			memcpy(atari_os, emuos_h, 0x4000);
+		else {
+			if (!load_image(atari_xlxe_filename, atari_os, 0x4000)) {
+				if (emuos_mode == 1)
+					memcpy(atari_os, emuos_h, 0x4000);
+				else
+					return FALSE;
+			}
+			else if (!load_image(atari_basic_filename, atari_basic, 0x2000))
+				return FALSE;
+		}
+		xe_bank = 0;
+		break;
+	case MACHINE_5200:
+		if (!load_image(atari_5200_filename, atari_os, 0x800))
+			return FALSE;
+		break;
+	}
 	MEMORY_InitialiseMachine();
 	return TRUE;
 }
@@ -233,7 +199,6 @@ int Initialise_EmuOS(void)
 
 int main(int argc, char **argv)
 {
-	int status;
 	int error = FALSE;
 	int diskno = 1;
 	int i, j;
@@ -283,50 +248,33 @@ int main(int argc, char **argv)
 		RtConfigSave();
 	}
 
-	switch (default_system) {
-	case 1:
-		machine = Atari;
-		os = 1;
-		break;
-	case 2:
-		machine = Atari;
-		os = 2;
-		break;
-	case 3:
-		machine = AtariXL;
-		break;
-	case 4:
-		machine = AtariXE;
-		break;
-	case 5:
-		machine = Atari320XE;
-		break;
-	case 6:
-		machine = Atari5200;
-		break;
-	default:
-		machine = AtariXL;
-		break;
-	}
-
 	for (i = j = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-atari") == 0)
-			machine = Atari;
-		else if (strcmp(argv[i], "-xl") == 0)
-			machine = AtariXL;
-		else if (strcmp(argv[i], "-xe") == 0)
-			machine = AtariXE;
+		if (strcmp(argv[i], "-atari") == 0) {
+			if (machine_type != MACHINE_OSA) {
+				machine_type = MACHINE_OSB;
+				ram_size = 48;
+			}
+		}
+		else if (strcmp(argv[i], "-xl") == 0) {
+			machine_type = MACHINE_XLXE;
+			ram_size = 64;
+		}
+		else if (strcmp(argv[i], "-xe") == 0) {
+			machine_type = MACHINE_XLXE;
+			ram_size = 128;
+		}
 		else if (strcmp(argv[i], "-320xe") == 0) {
-			machine = Atari320XE;
-			if (!Ram256)
-				Ram256 = 2;	/* default COMPY SHOP */
+			machine_type = MACHINE_XLXE;
+			ram_size = RAM_320_COMPY_SHOP;
 		}
 		else if (strcmp(argv[i], "-rambo") == 0) {
-			machine = Atari320XE;
-			Ram256 = 1;
+			machine_type = MACHINE_XLXE;
+			ram_size = RAM_320_RAMBO;
 		}
-		else if (strcmp(argv[i], "-5200") == 0)
-			machine = Atari5200;
+		else if (strcmp(argv[i], "-5200") == 0) {
+			machine_type = MACHINE_5200;
+			ram_size = 16;
+		}
 		else if (strcmp(argv[i], "-nobasic") == 0)
 			disable_basic = TRUE;
 		else if (strcmp(argv[i], "-basic") == 0)
@@ -390,14 +338,16 @@ int main(int argc, char **argv)
 			getchar();
 			Aprint("\r                                 \n");
 		}
-		else if (strcmp(argv[i], "-a") == 0)
-			os = 1;
-		else if (strcmp(argv[i], "-b") == 0)
-			os = 2;
-		else if (strcmp(argv[i], "-emuos") == 0) {
-			machine = Atari;
-			os = 4;
+		else if (strcmp(argv[i], "-a") == 0) {
+			machine_type = MACHINE_OSA;
+			ram_size = 48;
 		}
+		else if (strcmp(argv[i], "-b") == 0) {
+			machine_type = MACHINE_OSB;
+			ram_size = 48;
+		}
+		else if (strcmp(argv[i], "-emuos") == 0)
+			emuos_mode = 2;
 		else if (strcmp(argv[i], "-c") == 0)
 			enable_c000_ram = TRUE;
 		else
@@ -470,42 +420,7 @@ int main(int argc, char **argv)
 	 * Configure Atari System
 	 */
 
-	switch (machine) {
-	case Atari:
-		Ram256 = 0;
-		if (os == 1)
-			status = Initialise_AtariOSA();
-		else if (os == 2)
-			status = Initialise_AtariOSB();
-		else
-			status = Initialise_EmuOS();
-		break;
-	case AtariXL:
-		Ram256 = 0;
-		status = Initialise_AtariXL();
-		break;
-	case AtariXE:
-		Ram256 = 0;
-		status = Initialise_AtariXE();
-		break;
-	case Atari320XE:
-		/* Ram256 is even now set */
-		status = Initialise_Atari320XE();
-		break;
-	case Atari5200:
-		Ram256 = 0;
-		status = Initialise_Atari5200();
-		break;
-	default:
-		Aprint("Fatal Error in atari.c");
-		Atari800_Exit(FALSE);
-		return FALSE;
-	}
-
-	if (!status) {
-		Aprint("Operating System not available - using Emulated OS");
-		status = Initialise_EmuOS();
-	}
+	Atari800_InitialiseMachine();
 
 /*
  * ================================
@@ -529,13 +444,15 @@ int main(int argc, char **argv)
 		}
 		if (cart_type != CART_NONE) {
 			int for5200 = CART_IsFor5200(cart_type);
-			if (for5200 && machine != Atari5200) {
-				Ram256 = 0;
-				Initialise_Atari5200();
+			if (for5200 && machine_type != MACHINE_5200) {
+				machine_type = MACHINE_5200;
+				ram_size = 16;
+				Atari800_InitialiseMachine();
 			}
-			else if (!for5200 && machine == Atari5200) {
-				Ram256 = 0;
-				Initialise_AtariXL();
+			else if (!for5200 && machine_type == MACHINE_5200) {
+				machine_type = MACHINE_XLXE;
+				ram_size = 64;
+				Atari800_InitialiseMachine();
 			}
 		}
 	}
@@ -637,18 +554,24 @@ void Atari800_PutByte(UWORD addr, UBYTE byte)
 
 void Atari800_UpdatePatches(void)
 {
-	if (machine == Atari) {
+	switch (machine_type) {
+	case MACHINE_OSA:
+	case MACHINE_OSB:
 		/* Restore unpatched OS */
 		memcpy(memory + 0xd800, atari_os, 0x2800);
 		/* Set patches */
 		PatchOS();
-	}
-	else if (mach_xlxe && PORTB & 1) {
+		break;
+	case MACHINE_XLXE:
+		/* Don't patch if OS disabled */
+		if ((PORTB & 1) == 0)
+			break;
 		/* Restore unpatched OS */
 		memcpy(memory + 0xc000, atari_os, 0x1000);
 		memcpy(memory + 0xd800, atari_os + 0x1800, 0x2800);
 		/* Set patches */
 		PatchOS();
+		break;
 	}
 }
 
@@ -898,6 +821,8 @@ void MainStateSave( void )
 {
 	UBYTE	temp;
 	int default_tv_mode;	/* for compatibility with previous versions */
+	int os = 0;
+	int default_system = 3;
 
 	/* Possibly some compilers would handle an enumerated type differently,
 	   so convert these into unsigned bytes and save them out that way */
@@ -911,16 +836,39 @@ void MainStateSave( void )
 	}
 	SaveUBYTE( &temp, 1 );
 
-	if( machine == Atari )
+	switch (machine_type) {
+	case MACHINE_OSA:
 		temp = 0;
-	if( machine == AtariXL )
-		temp = 1;
-	if( machine == AtariXE )
-		temp = 2;
-	if( machine == Atari320XE )
-		temp = 3;
-	if( machine == Atari5200 )
+		os = 1;
+		default_system = 1;
+		break;
+	case MACHINE_OSB:
+		temp = 0;
+		os = 2;
+		default_system = 2;
+		break;
+	case MACHINE_XLXE:
+		switch (ram_size) {
+		case 64:
+			temp = 1;
+			default_system = 3;
+			break;
+		case 128:
+			temp = 2;
+			default_system = 4;
+			break;
+		case RAM_320_RAMBO:
+		case RAM_320_COMPY_SHOP:
+			temp = 3;
+			default_system = 5;
+			break;
+		}
+		break;
+	case MACHINE_5200:
 		temp = 4;
+		default_system = 6;
+		break;
+	}
 	SaveUBYTE( &temp, 1 );
 
 	SaveINT( &os, 1 );
@@ -933,6 +881,8 @@ void MainStateRead( void )
 {
 	UBYTE	temp;
 	int default_tv_mode;	/* for compatibility with previous versions */
+	int os;
+	int default_system;
 
 	ReadUBYTE( &temp, 1 );
 	if( temp == 0 )
@@ -940,40 +890,42 @@ void MainStateRead( void )
 	else
 		tv_mode = TV_NTSC;
 
-	mach_xlxe = FALSE;
 	ReadUBYTE( &temp, 1 );
+	ReadINT( &os, 1 );
 	switch( temp )
 	{
 		case	0:
-			machine = Atari;
+			machine_type = os == 1 ? MACHINE_OSA : MACHINE_OSB;
+			ram_size = 48;
 			break;
 
 		case	1:
-			machine = AtariXL;
-			mach_xlxe = TRUE;
+			machine_type = MACHINE_XLXE;
+			ram_size = 64;
 			break;
 
 		case	2:
-			machine = AtariXE;
-			mach_xlxe = TRUE;
+			machine_type = MACHINE_XLXE;
+			ram_size = 128;
 			break;
 
 		case	3:
-			machine = Atari320XE;
-			mach_xlxe = TRUE;
+			machine_type = MACHINE_XLXE;
+			ram_size = RAM_320_COMPY_SHOP;
 			break;
 
 		case	4:
-			machine = Atari5200;
+			machine_type = MACHINE_5200;
+			ram_size = 16;
 			break;
 
 		default:
-			machine = AtariXL;
+			machine_type = MACHINE_XLXE;
+			ram_size = 64;
 			Aprint( "Warning: Bad machine type read in from state save, defaulting to XL" );
 			break;
 	}
 
-	ReadINT( &os, 1 );
 	ReadINT( &pil_on, 1 );
 	ReadINT( &default_tv_mode, 1 );
 	ReadINT( &default_system, 1 );
@@ -981,6 +933,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.18  2001/09/17 18:09:40  fox
+machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
+
 Revision 1.17  2001/09/17 07:39:50  fox
 Initialise_Atari... functions moved to atari.c
 

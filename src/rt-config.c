@@ -39,7 +39,6 @@ char atari_state_dir[FILENAME_MAX];
 char print_command[256];
 int hd_read_only;
 int refresh_rate;
-int default_system;
 int disable_basic;
 int enable_c000_ram;
 int enable_sio_patch;
@@ -89,7 +88,8 @@ int RtConfigLoad(char *rtconfig_filename)
 	strcpy(print_command, "lpr %s");
 	hd_read_only = 1;
 	refresh_rate = 1;
-	default_system = 3;
+	machine_type = MACHINE_XLXE;
+	ram_size = 64;
 	tv_mode = TV_PAL;
 	disable_basic = 1;
 	enable_c000_ram = 0;
@@ -180,27 +180,66 @@ int RtConfigLoad(char *rtconfig_filename)
 				else if (strcmp(string, "ENABLE_P_PATCH") == 0) {
 					sscanf(ptr, "%d", &enable_p_patch);
 				}
+				/* Supported for compatibility with previous Atari800 versions */
 				else if (strcmp(string, "DEFAULT_SYSTEM") == 0) {
-					if (strcmp(ptr, "Atari OS/A") == 0)
-						default_system = 1;
-					else if (strcmp(ptr, "Atari OS/B") == 0)
-						default_system = 2;
-					else if (strcmp(ptr, "Atari XL") == 0)
-						default_system = 3;
-					else if (strcmp(ptr, "Atari XE") == 0)
-						default_system = 4;
+					if (strcmp(ptr, "Atari OS/A") == 0) {
+						machine_type = MACHINE_OSA;
+						ram_size = 48;
+					}
+					else if (strcmp(ptr, "Atari OS/B") == 0) {
+						machine_type = MACHINE_OSB;
+						ram_size = 48;
+					}
+					else if (strcmp(ptr, "Atari XL") == 0) {
+						machine_type = MACHINE_XLXE;
+						ram_size = 64;
+					}
+					else if (strcmp(ptr, "Atari XE") == 0) {
+						machine_type = MACHINE_XLXE;
+						ram_size = 128;
+					}
 					else if (strcmp(ptr, "Atari 320XE (RAMBO)") == 0) {
-						default_system = 5;
-						Ram256 = 1;
+						machine_type = MACHINE_XLXE;
+						ram_size = RAM_320_RAMBO;
 					}
 					else if (strcmp(ptr, "Atari 320XE (COMPY SHOP)") == 0) {
-						default_system = 5;
-						Ram256 = 2;
+						machine_type = MACHINE_XLXE;
+						ram_size = RAM_320_COMPY_SHOP;
 					}
-					else if (strcmp(ptr, "Atari 5200") == 0)
-						default_system = 6;
+					else if (strcmp(ptr, "Atari 5200") == 0) {
+						machine_type = MACHINE_5200;
+						ram_size = 16;
+					}
 					else
 						printf("Invalid System: %s\n", ptr);
+				}
+				else if (strcmp(string, "MACHINE_TYPE") == 0) {
+					if (strcmp(ptr, "Atari OS/A") == 0)
+						machine_type = MACHINE_OSA;
+					else if (strcmp(ptr, "Atari OS/B") == 0)
+						machine_type = MACHINE_OSB;
+					else if (strcmp(ptr, "Atari XL/XE") == 0)
+						machine_type = MACHINE_XLXE;
+					else if (strcmp(ptr, "Atari 5200") == 0)
+						machine_type = MACHINE_5200;
+					else
+						printf("Invalid machine type: %s\n", ptr);
+				}
+				else if (strcmp(string, "RAM_SIZE") == 0) {
+					if (strcmp(ptr, "16") == 0)
+						ram_size = 16;
+					else if (strcmp(ptr, "48") == 0)
+						ram_size = 48;
+					else if (strcmp(ptr, "64") == 0)
+						ram_size = 64;
+					else if (strcmp(ptr, "128") == 0)
+						ram_size = 128;
+					else if (strcmp(ptr, "320 (RAMBO)") == 0)
+						ram_size = RAM_320_RAMBO;
+					else if (strcmp(ptr, "320 (COMPY SHOP)") == 0)
+						ram_size = RAM_320_COMPY_SHOP;
+					else
+						printf("Invalid ram size: %s\n", ptr);
 				}
 				else if (strcmp(string, "DEFAULT_TV_MODE") == 0) {
 					if (strcmp(ptr, "PAL") == 0)
@@ -263,28 +302,32 @@ void RtConfigSave(void)
 	fprintf(fp, "PRINT_COMMAND=%s\n", print_command);
 	fprintf(fp, "SCREEN_REFRESH_RATIO=%d\n", refresh_rate);
 
-	fprintf(fp, "DEFAULT_SYSTEM=Atari ");
-	switch (default_system) {
-	case 1:
+	fprintf(fp, "MACHINE_TYPE=Atari ");
+	switch (machine_type) {
+	case MACHINE_OSA:
 		fprintf(fp, "OS/A\n");
 		break;
-	case 2:
+	case MACHINE_OSB:
 		fprintf(fp, "OS/B\n");
 		break;
-	case 3:
-		fprintf(fp, "XL\n");
+	case MACHINE_XLXE:
+		fprintf(fp, "XL/XE\n");
 		break;
-	case 4:
-		fprintf(fp, "XE\n");
-		break;
-	case 5:
-		if (Ram256 == 1)
-			fprintf(fp, "320XE (RAMBO)\n");
-		else if (Ram256 == 2)
-			fprintf(fp, "320XE (COMPY SHOP)\n");
-		break;
-	case 6:
+	case MACHINE_5200:
 		fprintf(fp, "5200\n");
+		break;
+	}
+
+	fprintf(fp, "RAM_SIZE=");
+	switch (ram_size) {
+	case RAM_320_RAMBO:
+		fprintf(fp, "320 (RAMBO)\n");
+		break;
+	case RAM_320_COMPY_SHOP:
+		fprintf(fp, "320 (COMPY SHOP)\n");
+		break;
+	default:
+		fprintf(fp, "%d\n", ram_size);
 		break;
 	}
 
@@ -343,17 +386,40 @@ void RtConfigUpdate(void)
 		refresh_rate = 60;
 
 	do {
-		GetNumber("Default System 1=OS/A 2=OS/B 3=800XL 4=130XE 5=320XE 6=5200 [%d] ",
-				  &default_system);
-	} while ((default_system < 1) || (default_system > 6));
+		GetNumber("Machine type: 0=OS/A 1=OS/B 2=XL/XE 3=5200 [%d] ",
+				  &machine_type);
+	} while ((machine_type < 0) || (machine_type > 3));
 
-	if (default_system == 5) {
-		do {
-			if (!Ram256)
-				Ram256 = 2;
-			GetNumber("320XE memory bank control 1=RAMBO, 2=COMPY SHOP [%d] ",
-					  &Ram256);
-		} while ((Ram256 < 1) || (Ram256 > 2));
+	switch (machine_type) {
+	case MACHINE_OSA:
+	case MACHINE_OSB:
+		ram_size = 48;
+		break;
+	case MACHINE_XLXE:
+		{
+			int k = ram_size;
+			if (k == RAM_320_RAMBO || k == RAM_320_COMPY_SHOP)
+				k = 320;
+			do {
+				GetNumber("Ram size (kilobytes): 64,128,320 [%d] ",
+						  &k);
+			} while ((k != 64) && (k != 128) && (k != 320));
+			if (k == 320) {
+				if (ram_size == RAM_320_RAMBO)
+					k = 1;
+				else
+					k = 2;
+				do {
+					GetNumber("320XE memory bank control 1=RAMBO, 2=COMPY SHOP [%d] ",
+						&k);
+				} while ((k < 1) || (k > 2));
+				ram_size = k == 1 ? RAM_320_RAMBO : RAM_320_COMPY_SHOP;
+			}
+		}
+		break;
+	case MACHINE_5200:
+		ram_size = 16;
+		break;
 	}
 
 	{
@@ -402,6 +468,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.9  2001/09/17 18:13:05  fox
+machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
+
 Revision 1.8  2001/09/16 11:24:26  fox
 removed default_tv_mode
 

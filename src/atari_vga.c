@@ -1001,7 +1001,7 @@ int Atari_Keyboard(void)
  * This needs a bit of tidying up - array lookup
  */
 /* Atari5200 stuff */
-        if (machine == Atari5200 && !ui_is_active) {
+        if (machine_type == MACHINE_5200 && !ui_is_active) {
                 POT[0] = 120;
                 POT[1] = 120;
                 if (!(stick0 & 0x04))
@@ -1139,7 +1139,7 @@ int Atari_Keyboard(void)
                 keycode = SHIFT_KEY ? AKEY_COLDSTART : AKEY_WARMSTART;
                 break;
         case 0x40:                                      /* F6 */
-                if (machine == Atari)
+                if (machine_type != MACHINE_XLXE)
                         keycode = AKEY_PIL;
                 else
                         keycode = AKEY_HELP;
@@ -1559,7 +1559,7 @@ int Atari_TRIG(int num)
 
 int Atari_POT(int num)
 {
-	if (machine == Atari5200 && num >= 0 && num < 2)
+	if (machine_type == MACHINE_5200 && num >= 0 && num < 2)
 		return POT[num];
 	if (mouse_mode == MOUSE_PAD && num < 2)
 		return num == 1 ? 228 - mouse_y : 228 - mouse_x;
