@@ -41,19 +41,6 @@
 #include "sio.h"
 #include "ui.h"
 
-#define	ICHIDZ	0x0020
-#define	ICDNOZ	0x0021
-#define	ICCOMZ	0x0022
-#define	ICSTAZ	0x0023
-#define	ICBALZ	0x0024
-#define	ICBAHZ	0x0025
-#define	ICPTLZ	0x0026
-#define	ICPTHZ	0x0027
-#define	ICBLLZ	0x0028
-#define	ICBLHZ	0x0029
-#define	ICAX1Z	0x002a
-#define	ICAX2Z	0x002b
-
 static char *H[5] =
 {
 	".",
@@ -110,11 +97,11 @@ void Device_Initialise(int *argc, char *argv[])
 	*argc = j;
 }
 
-int Device_isvalid(char ch)
+int Device_isvalid(UBYTE ch)
 {
 	int valid;
 
-	if (isalnum(ch))
+	if (ch < 0x80 && isalnum(ch))
 		valid = TRUE;
 	else
 		switch (ch) {
@@ -634,109 +621,189 @@ void Device_EHWRIT(void)
 
 #endif /* BASIC */
 
-void AtariEscape(UBYTE esc_code)
+/* Device_PatchOS is called by Atari800_PatchOS to modify standard device
+   handlers in Atari OS. It puts escape codes at beginnings of OS routines,
+   so the patches work even if they are called directly, without CIO.
+   Returns TRUE if something has been patched.
+   Currently we only patch P: and, in BASIC version, E: and K:.
+   We don't replace C: with H: now, so the cassette works even
+   if H: is enabled.
+*/
+int Device_PatchOS(void)
 {
-	switch (esc_code) {
-	case ESC_SIOV:
-		/* jump to SIO emulation only if it's really our ESC code */
-		if (enable_sio_patch && (regPC == (0xe459+2))) {
-			SIO();
-			return;
-		}
-		break;
-#ifdef BASIC
-	case ESC_K_READ:
-		Device_KHREAD();
-		return;
-	case ESC_E_OPEN:
-		Device_EHOPEN();
-		return;
-	case ESC_E_READ:
-		Device_EHREAD();
-		return;
-	case ESC_E_WRITE:
-		Device_EHWRIT();
-		return;
-#endif
-	case ESC_PHOPEN:
-		Device_PHOPEN();
-		return;
-		break;
-	case ESC_PHCLOS:
-		Device_PHCLOS();
-		return;
-		break;
-	case ESC_PHREAD:
-		Device_PHREAD();
-		return;
-		break;
-	case ESC_PHWRIT:
-		Device_PHWRIT();
-		return;
-		break;
-	case ESC_PHSTAT:
-		Device_PHSTAT();
-		return;
-		break;
-	case ESC_PHSPEC:
-		Device_PHSPEC();
-		return;
-		break;
-	case ESC_PHINIT:
-		Device_PHINIT();
-		return;
-		break;
-	case ESC_HHOPEN:
-		Device_HHOPEN();
-		return;
-		break;
-	case ESC_HHCLOS:
-		Device_HHCLOS();
-		return;
-		break;
-	case ESC_HHREAD:
-		Device_HHREAD();
-		return;
-		break;
-	case ESC_HHWRIT:
-		Device_HHWRIT();
-		return;
-		break;
-	case ESC_HHSTAT:
-		Device_HHSTAT();
-		return;
-		break;
-	case ESC_HHSPEC:
-		Device_HHSPEC();
-		return;
-		break;
-	case ESC_HHINIT:
-		Device_HHINIT();
-		return;
-		break;
-	case ESC_BINLOADER_CONT:
-		BIN_loader_cont();
-		return;
-		break;
-	}
-	/* for all codes that fall through the cases */
+	UWORD addr;
+	UWORD devtab;
+	int i;
+	int patched = FALSE;
 
-	
-#ifdef CRASH_MENU
-	regPC -= 2;
-	crash_address = regPC;
-	crash_afterCIM = regPC+2;
-	crash_code = dGetByte(crash_address);
-	ui((UBYTE*)atari_screen);
-#else
-	Aprint("Invalid ESC Code %x at Address %x", esc_code, regPC - 2);
-	if(!Atari800_Exit(TRUE))
-		exit(0);
+	switch (machine_type) {
+	case MACHINE_OSA:
+	case MACHINE_OSB:
+		addr = 0xf0e3;
+		break;
+	case MACHINE_XLXE:
+		addr = 0xc42e;
+		break;
+	default:
+		Aprint("Fatal Error in Device_PatchOS(): Unknown machine");
+		return patched;
+	}
+
+	for (i = 0; i < 5; i++) {
+		devtab = dGetWord(addr + 1);
+		switch (dGetByte(addr)) {
+		case 'P':
+			if (enable_p_patch) {
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) + 1, ESC_PHOPEN, Device_PHOPEN);
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_CLOS) + 1, ESC_PHCLOS, Device_PHCLOS);
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) + 1, ESC_PHWRIT, Device_PHWRIT);
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_STAT) + 1, ESC_PHSTAT, Device_PHSTAT);
+				Atari800_AddEscRts2(devtab + DEVICE_TABLE_INIT, ESC_PHINIT, Device_PHINIT);
+				patched = TRUE;
+			}
+			else {
+				Atari800_RemoveEsc(ESC_PHOPEN);
+				Atari800_RemoveEsc(ESC_PHCLOS);
+				Atari800_RemoveEsc(ESC_PHWRIT);
+				Atari800_RemoveEsc(ESC_PHSTAT);
+				Atari800_RemoveEsc(ESC_PHINIT);
+			}
+			break;
+#ifdef BASIC
+		case 'E':
+			Aprint("Editor Device");
+			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) + 1, ESC_EHOPEN, Device_EHOPEN);
+			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1, ESC_EHREAD, Device_EHREAD);
+			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) + 1, ESC_EHWRIT, Device_EHWRIT);
+			patched = TRUE;
+			break;
+		case 'K':
+			Aprint("Keyboard Device");
+			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1, ESC_KHREAD, Device_KHREAD);
+			patched = TRUE;
+			break;
 #endif
+		default:
+			break;
+		}
+		addr += 3;				/* Next Device in HATABS */
+	}
+	return patched;
+}
+
+/* New handling of H: device.
+   Previously we simply replaced C: device in OS with our H:.
+   Now we don't change ROM for H: patch, but add H: to HATABS in RAM
+   and put the device table and patches in unused area of address space
+   (0xd100-0xd1ff), which is meant for 'new devices' (like hard disk).
+   We have to contiunously check if our H: is still in HATABS,
+   because RESET routine in Atari OS clears HATABS and initializes it
+   using a table in ROM (see Device_PatchOS).
+   Before we put H: entry in HATABS, we must make sure that HATABS is there.
+   For example a program, that doesn't use Atari OS, could use this memory
+   area for its own data, and we shouldn't place 'H' there.
+   We also allow an Atari program to change address of H: device table.
+   So after we put H: entry in HATABS, we only check if 'H' is still where
+   we put it (h_entry_address).
+   Device_UpdateHATABSEntry and Device_RemoveHATABSEntry can be used to add
+   other devices than H:.
+*/
+
+#define HATABS 0x31a
+
+UWORD Device_UpdateHATABSEntry(char device, UWORD entry_address, UWORD table_address)
+{
+	UWORD address;
+	if (entry_address != 0 && dGetByte(entry_address) == device)
+		return entry_address;
+	if (dGetByte(HATABS) != 'P' || dGetByte(HATABS + 3) != 'C'
+		|| dGetByte(HATABS + 6) != 'E' || dGetByte(HATABS + 9) != 'S'
+		|| dGetByte(HATABS + 12) != 'K')
+		return entry_address;
+	for (address = HATABS + 15; address < HATABS + 33; address += 3) {
+		if (dGetByte(address) == device)
+			return address;
+		if (dGetByte(address) == 0) {
+			dPutByte(address, device);
+			dPutWord(address + 1, table_address);
+			return address;
+		}
+	}
+	/* HATABS full */
+	return entry_address;
+}
+
+void Device_RemoveHATABSEntry(char device, UWORD entry_address, UWORD table_address)
+{
+	if (entry_address != 0 && dGetByte(entry_address) == device
+		&& dGetWord(entry_address + 1) == table_address) {
+		dPutByte(entry_address, 0);
+		dPutWord(entry_address + 1, 0);
+	}
+}
+
+static UWORD h_entry_address = 0;
+
+#define H_DEVICE_BEGIN	0xd140
+#define H_TABLE_ADDRESS	0xd140
+#define H_PATCH_OPEN	0xd150
+#define H_PATCH_CLOS	0xd153
+#define H_PATCH_READ	0xd156
+#define H_PATCH_WRIT	0xd159
+#define H_PATCH_STAT	0xd15c
+#define H_PATCH_SPEC	0xd15f
+#define H_DEVICE_END	0xd161
+
+void Device_Frame(void)
+{
+	if (enable_h_patch)
+		h_entry_address = Device_UpdateHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
+}
+
+/* this is called when enable_h_patch is toggled */
+void Device_UpdatePatches(void)
+{
+	if (enable_h_patch) {		/* enable H: device */
+		/* change memory attributex for the area, where we put
+		   H: handler table and patches */
+		SetROM(H_DEVICE_BEGIN, H_DEVICE_END);
+		/* set handler table */
+		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_OPEN, H_PATCH_OPEN - 1);
+		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_CLOS, H_PATCH_CLOS - 1);
+		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_READ, H_PATCH_READ - 1);
+		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_WRIT, H_PATCH_WRIT - 1);
+		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_STAT, H_PATCH_STAT - 1);
+		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_SPEC, H_PATCH_SPEC - 1);
+		/* set patches */
+		Atari800_AddEscRts(H_PATCH_OPEN, ESC_HHOPEN, Device_HHOPEN);
+		Atari800_AddEscRts(H_PATCH_CLOS, ESC_HHCLOS, Device_HHCLOS);
+		Atari800_AddEscRts(H_PATCH_READ, ESC_HHREAD, Device_HHREAD);
+		Atari800_AddEscRts(H_PATCH_WRIT, ESC_HHWRIT, Device_HHWRIT);
+		Atari800_AddEscRts(H_PATCH_STAT, ESC_HHSTAT, Device_HHSTAT);
+		Atari800_AddEscRts(H_PATCH_SPEC, ESC_HHSPEC, Device_HHSPEC);
+		/* H: in HATABS will be added next frame by Device_Frame */
+	}
+	else {	/* disable H: device */
+		/* remove H: entry from HATABS */
+		Device_RemoveHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
+		/* remove patches */
+		Atari800_RemoveEsc(ESC_HHOPEN);
+		Atari800_RemoveEsc(ESC_HHCLOS);
+		Atari800_RemoveEsc(ESC_HHREAD);
+		Atari800_RemoveEsc(ESC_HHWRIT);
+		Atari800_RemoveEsc(ESC_HHSTAT);
+		Atari800_RemoveEsc(ESC_HHSPEC);
+		/* fill memory area used for table and patches with 0xff */
+		dFillMem(H_DEVICE_BEGIN, 0xff, H_DEVICE_END - H_DEVICE_BEGIN + 1);
+	}
 }
 
 /*
 $Log$
+Revision 1.12  2001/10/03 16:40:54  fox
+rewritten escape codes handling,
+corrected Device_isvalid (isalnum((char) 0x9b) == 1 !)
+
 Revision 1.11  2001/10/01 17:10:34  fox
 #include "ui.h" for CRASH_MENU externs
 
