@@ -1,5 +1,5 @@
 %define name	atari800
-%define ver	1.3.1
+%define ver	1.3.2
 %define rel	1
 %define copy	GPL
 %define ich Petr Stehlik <pstehlik@sophics.cz>
@@ -82,6 +82,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/doc/atari800/NEWS
 
 %changelog
+* Sat Dec 20 2003 Petr Stehlik <pstehlik@sophics.cz>
+Version increased.
 * Thu Sep 04 2003 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Configure options removed.
 SVGAlib target dropped.

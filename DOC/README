@@ -1,4 +1,4 @@
-Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.3.1
+Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.3.2
 --------------------------------------------------------------------
 
     Copyright (C) 1995 David Firth. E-Mail: david@signus.demon.co.uk
@@ -10,7 +10,7 @@ Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.3.1
     the Free Software Foundation; either version 1, or (at your option)
     any later version.
 
-This is the version 1.3.1 of the Atari 800, 800XL, 130XE and 5200 emulator
+This is the version 1.3.2 of the Atari 800, 800XL, 130XE and 5200 emulator
 for Unix, Linux, Amiga, MS-DOS, Atari TT/Falcon, MS Windows, MS WinCE
 and systems running the SDL library. Our main objective is to create
 a freely distributable portable emulator (i.e. with source code available).
@@ -126,4 +126,4 @@ o Sound output may be written to WAV files.
 
 o User interface on all versions supporting bitmapped graphics.
 
-o R: device (the Atari850 serial ports) mapped to TCP port 9000
+o R: device (the Atari850 serial ports) mapped to net or real serial port

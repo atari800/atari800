@@ -1,3 +1,15 @@
+Version 1.3.2 (2003/12/20)
+
+ Highlights since previous release:
+ ----------------------------------
+ * R: can now be hooked to a real serial port (no runtime config yet)
+ * various ANTIC and POKEY fixes for perfect software compatibility
+ * disk and cartridge info saved in the state files
+ * casette handling greatly improved
+ * even more cartridges supported (40 now!)
+ * some rare buffer overflows fixed
+
+
 Version 1.3.1 (2003/09/04)
 
  Highlights since last 1.3.0 release:
