@@ -812,10 +812,10 @@ void AboutEmulator(UBYTE * screen)
 	Box(screen, 0x9a, 0x94, 0, 0, 39, 8);
 	CenterPrint(screen, 0x9a, 0x94, ATARI_TITLE, 1);
 	CenterPrint(screen, 0x9a, 0x94, "Copyright (c) 1995-1998 David Firth", 2);
-	CenterPrint(screen, 0x9a, 0x94, "E-Mail: david@signus.demon.co.uk", 3);
-	CenterPrint(screen, 0x9a, 0x94, "http://atari800.atari.org/", 4);
-	CenterPrint(screen, 0x9a, 0x94, "Atari PokeySound 2.4", 6);
-	CenterPrint(screen, 0x9a, 0x94, "Copyright (c) 1996-1998 Ron Fries", 7);
+	CenterPrint(screen, 0x9a, 0x94, "and", 3);
+	CenterPrint(screen, 0x9a, 0x94, "(c)1998-2001 Atari800 Development Team", 4);
+	CenterPrint(screen, 0x9a, 0x94, "See CREDITS file for details.", 5);
+	CenterPrint(screen, 0x9a, 0x94, "http://atari800.atari.org/", 7);
 
 	Box(screen, 0x9a, 0x94, 0, 9, 39, 23);
 	CenterPrint(screen, 0x9a, 0x94, "This program is free software; you can", 10);
@@ -990,6 +990,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.5  2001/11/29 12:36:42  joy
+copyright notice updated
+
 Revision 1.4  2001/10/16 17:11:27  knik
 keyboard autorepeat rate changed
 
