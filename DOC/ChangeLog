@@ -1,3 +1,12 @@
+2005-03-15  Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
+* casette.[ch], pokey.[ch], sio.[ch], pia.c: implemented cassette loading
+  by hardware registers.
+  Examples of now working games:
+  - Ninja: (eof-)blocks pass on tape while the OS waits for a leader.
+  - Elektraglide has a nonstandard format which is not readable by the
+    SIO-patch but requires raw loading.
+
+
 2005-03-11  Piotr Fusik  <fox@scene.pl>
 * atari_x11.c: "-mouse" works. Set default clipping area to 336x240.
   x11-motif is now compilable, possibly also x11-xview.

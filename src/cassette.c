@@ -2,7 +2,7 @@
  * cassette.c - cassette emulation
  *
  * Copyright (C) 2001 Piotr Fusik
- * Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -24,6 +24,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "atari.h"
 #include "cpu.h"
@@ -38,16 +40,24 @@ static FILE *cassette_file = NULL;
 static int cassette_isCAS;
 UBYTE cassette_buffer[4096];
 static ULONG cassette_block_offset[MAX_BLOCKS];
+static SLONG cassette_elapsedtime;	//elapsed time since begin of file
+					//  in scanlines
+static SLONG cassette_nextirqevent;	//timestamp of next irq in scanlines
 
 char cassette_filename[FILENAME_MAX];
 char cassette_description[CASSETTE_DESCRIPTION_MAX];
+int cassette_current_blockbyte = 0;
 int cassette_current_block;
+int cassette_max_blockbytes = 0;
 int cassette_max_block = 0;
 int cassette_savefile = FALSE;
 int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
+int cassette_motor = 0;
+int cassette_baudrate = 600;	/* provisional: 600 baud */
 
 int hold_start = 0;
 int press_space = 0;
+int eof_of_tape = 0;
 
 typedef struct {
 	char identifier[4];
@@ -216,8 +226,8 @@ int CASSETTE_CreateFile(char *filename, FILE **fp, int *isCAS)
 	}
 	
 	memset(&header,0,sizeof(header));
-	header.aux_lo=0x58;	/* provisional: 600 baud */
-	header.aux_hi=2;
+	header.aux_lo=cassette_baudrate & 0xff;	/* provisional: 600 baud */
+	header.aux_hi=cassette_baudrate >> 8;
 	if((fwrite("baud",1,4,*fp)==4) &&
 			(fwrite(&header.length_lo,1,4,*fp)==4)){}
 	else{
@@ -234,7 +244,12 @@ int CASSETTE_CreateFile(char *filename, FILE **fp, int *isCAS)
 int CASSETTE_Insert(char *filename)
 {
 	strcpy(cassette_filename, filename);
+	cassette_elapsedtime = 0;
+	cassette_nextirqevent = 0;
+	cassette_current_blockbyte = 0;
+	cassette_max_blockbytes = 0;
 	cassette_current_block = 1;
+	eof_of_tape = 0;
 	cassette_savefile = FALSE;
 	return CASSETTE_CheckFile(filename, &cassette_file, cassette_description,
 		 &cassette_max_block, &cassette_isCAS);
@@ -251,8 +266,9 @@ void CASSETTE_Remove(void)
 	memset(cassette_description, 0, sizeof(cassette_description));
 }
 
-/* returns block length (with checksum) */
-static UWORD ReadRecord(void)
+/* Read a record by SIO-patch
+   returns block length (with checksum) */
+static UWORD ReadRecord_SIO(void)
 {
 	UWORD length = 0;
 	if (cassette_isCAS) {
@@ -273,7 +289,7 @@ static UWORD ReadRecord(void)
 			/* add time used by the data themselves
 			   atm, assumes a baud rate of 600 (a byte is encoded
 			    into 10 bits -> 60 bytes per second) */
-			filegaptimes+=1000/60*length;
+			filegaptimes+=length*1000/60;
 		
 			fread(&cassette_buffer[0], 1, length, cassette_file);
 			cassette_current_block++;
@@ -284,7 +300,7 @@ static UWORD ReadRecord(void)
 		length = 132;
 		cassette_buffer[0] = 0x55;
 		cassette_buffer[1] = 0x55;
-		if (cassette_current_block == cassette_max_block) {
+		if (cassette_current_block >= cassette_max_block) {
 			/* EOF record */
 			cassette_buffer[2] = 0xfe;
 			memset(cassette_buffer + 3, 0, 128);
@@ -367,7 +383,7 @@ int CASSETTE_Read()
 		return -1;
        	if (cassette_current_block > cassette_max_block)
                	return -1;     /* EOF */
-       	return ReadRecord();
+       	return ReadRecord_SIO();
 }
 
 /* Write Cassette Record to Storage medium
@@ -391,3 +407,229 @@ int CASSETTE_Write(int length)
 	cassette_savefile=TRUE;
 	return WriteRecord(length);
 }
+
+/* convert milliseconds to scanlines */
+SLONG MSToScanLines(int ms)
+{
+        //for PAL resolution, deviation in NTSC is negligible
+        return 312*50*ms/1000;
+}
+
+/* Support to read a record by POKEY-registers
+   evals gap length
+   returns block length (with checksum) */
+static UWORD ReadRecord_POKEY(void)
+{
+	UWORD length = 0;
+	if (cassette_isCAS) {
+		CAS_Header header;
+		/* no file or blockpositions dont match anymore after saving */
+		if ((cassette_file == NULL) || (cassette_savefile == TRUE)) {
+			cassette_nextirqevent=-1;
+			length = -1;
+			return length;
+		}
+		/* if end of CAS file */
+		if (cassette_current_block > cassette_max_block){
+			cassette_nextirqevent=-1;
+			length = -1;
+			eof_of_tape = 1;
+			return length;
+		}
+		else {
+			fseek(cassette_file, cassette_block_offset[
+				cassette_current_block], SEEK_SET);
+			fread(&header.length_lo, 1, 4, cassette_file);
+			length = header.length_lo + (header.length_hi << 8);
+			/* eval total length as pregap + 1 byte */
+			cassette_nextirqevent = cassette_elapsedtime +
+				MSToScanLines(
+				header.aux_lo + (header.aux_hi << 8)
+				+ 10*1000/cassette_baudrate);
+			/* read block into buffer */
+			fread(&cassette_buffer[0], 1, length, cassette_file);
+			cassette_max_blockbytes = length;
+			cassette_current_blockbyte = 0;
+			cassette_current_block++;
+		}
+	}
+	else {
+		length = 132;
+		cassette_buffer[0] = 0x55;
+		cassette_buffer[1] = 0x55;
+		if (cassette_current_block >= cassette_max_block) {
+			/* EOF record */
+			cassette_buffer[2] = 0xfe;
+			memset(cassette_buffer + 3, 0, 128);
+			if(cassette_current_block > cassette_max_block) {
+				eof_of_tape = 1;
+			}
+		}
+		else {
+			int bytes;
+			fseek(cassette_file, 
+				(cassette_current_block - 1) * 128, SEEK_SET);
+			bytes = fread(cassette_buffer + 3, 1, 128, 
+				cassette_file);
+			if (bytes < 128) {
+				cassette_buffer[2] = 0xfa; /* non-full record */
+				memset(cassette_buffer + 3 + bytes, 0, 
+					127 - bytes);
+				cassette_buffer[0x82] = bytes;
+			}
+			else
+				cassette_buffer[2] = 0xfc; /* full record */
+		}
+		cassette_buffer[0x83] = SIO_ChkSum(cassette_buffer, 0x83);
+		//eval time to first byte coming out of pokey
+		if(cassette_current_block == 1) {
+			//on first block, length includes a leader
+			cassette_nextirqevent = cassette_elapsedtime +
+				MSToScanLines(19200
+				+ 10*1000/cassette_baudrate);
+		}
+		else {
+			cassette_nextirqevent = cassette_elapsedtime +
+				MSToScanLines(260
+				+ 10*1000/cassette_baudrate);
+		}
+		cassette_max_blockbytes = length;
+		cassette_current_blockbyte = 0;
+		cassette_current_block++;
+	}
+	return length;
+}
+
+/* sets the stamp of next irq and loads new record if necessary
+   adjust is a value to correction of time of next irq*/
+int SetNextByteTime_POKEY(int adjust)
+{
+	int length = 0;
+	cassette_current_blockbyte += 1;
+	//if there are still bytes in the buffer, take next byte
+	if(cassette_current_blockbyte < cassette_max_blockbytes) {
+		cassette_nextirqevent = cassette_elapsedtime + adjust
+		+ MSToScanLines(10*1000/cassette_baudrate);
+		return 0;
+	}
+
+	//if buffer is exhausted, load next record
+	length = ReadRecord_POKEY();
+	//if failed, return -1
+	if(length == -1) {
+		cassette_nextirqevent = -1;
+		return -1;
+	}
+	cassette_nextirqevent += adjust;
+	return 0;
+}
+
+/* Get the byte for which the serial data ready int has been triggered */
+int CASSETTE_GetByte()
+{
+	//there are programs which load 2 blocks as one
+        return cassette_buffer[cassette_current_blockbyte];
+}
+
+/* Check status of I/O-line
+  Mark tone and stop bit gives 1, start bit 0
+  $55 as data give 1,0,1,0,1,0,1,0 (sync to evaluate tape speed,
+    least significant bit first)
+  returns state of I/O-line as block.byte.bit */
+int CASSETTE_IOLineStatus()
+{
+	int bit = 0;
+
+	//if motor off and EOF return always 1 (eviqualent the mark tone)
+	if ((cassette_motor == 0)
+		|| (eof_of_tape != 0)) {
+		return 1;
+	}
+
+	//exam rate; if elapsed time > nextirq - duration of one byte
+	if (cassette_elapsedtime >
+		(cassette_nextirqevent - 10*50*312/cassette_baudrate + 1)) {
+		bit = (cassette_nextirqevent - cassette_elapsedtime)
+			/ (50*312/cassette_baudrate);
+	}
+	else {
+		bit=0;
+	}
+
+	// if stopbit or out of range, return mark tone
+	if ((bit<=0)||(bit>9))
+		return 1;
+
+	// if start bit, return space tone
+	if (bit==9)
+		return 0;
+
+	//eval tone to return
+	return (CASSETTE_GetByte() >> (8-bit)) & 1;
+}
+
+/* Get the delay to trigger the next interrupt
+   remark: The I/O-Line-status is also evaluated on this basis */
+SLONG CASSETTE_GetInputIRQDelay()
+{
+	SLONG timespan;
+
+	//if no file or eof or motor off, return zero
+	if ((cassette_file == NULL)
+		|| (eof_of_tape != 0)
+		|| (cassette_motor == 0)
+		|| (cassette_nextirqevent < 0)) {
+		return 0;
+	}
+
+	//return time span
+	timespan = cassette_nextirqevent - cassette_elapsedtime;
+	//if timespan is negative, eval timespan to next byte
+	if (timespan <= 0) {
+		if(SetNextByteTime_POKEY(0)==-1) {
+			return -1;
+		}
+		//return time span
+		timespan = cassette_nextirqevent - cassette_elapsedtime;
+	}
+	if(timespan < 40) {
+		timespan += ((312*50-1)/cassette_baudrate)*10;
+	}
+
+	//if still negative, return "failed"
+	if(timespan < 0) {
+		timespan = -1;
+	}
+        return timespan;
+}
+
+/* set motor status
+ 1 - on, 0 - off 
+ remark: the real evaluation is done in AddScanLine*/
+void CASSETTE_TapeMotor(int onoff)
+{
+	if(cassette_file != NULL) {
+		cassette_motor = onoff;
+	}
+}
+
+void CASSETTE_AddScanLine()
+{
+	int tmp;
+	//if motor on and a cassette file is opened, and not eof
+	//  increment elapsed cassette time
+	if(cassette_motor && (cassette_file != NULL)
+		&& (eof_of_tape == 0)) {
+		cassette_elapsedtime++;
+
+		// valid cassette times are up to 870 baud, giving
+		//   a time span of 18 scanlines, so comparing with
+		//   -2 leaves a safe timespan for letting get the bit out
+		//   of the pokey
+		if ((cassette_nextirqevent - cassette_elapsedtime) <= -2 ) {
+			tmp=SetNextByteTime_POKEY(-2);
+		}
+	}
+}
+
+

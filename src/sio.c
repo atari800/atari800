@@ -45,6 +45,7 @@
 #include "binload.h"
 #include "cassette.h"
 #include "statesav.h"
+#include "rt-config.h"
 
 /* If ATR image is in double density (256 bytes per sector),
    then the boot sectors (sectors 1-3) can be:
@@ -970,6 +971,38 @@ static UBYTE Command_Frame(void)
 		}
 }
 
+// Enable/disable the Tape Motor
+void SIO_TapeMotor(int onoff)
+{
+	//if sio is patched, do not do anything
+	if(enable_sio_patch)
+		return;
+	if (onoff) {
+		//set frame to cassette frame, if not
+		//  in a transfer with an intelligent peripheral
+		if(TransferStatus == SIO_NoFrame) {
+			TransferStatus = SIO_CasRead;
+			CASSETTE_TapeMotor(onoff);
+			DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
+		}
+		else {
+			CASSETTE_TapeMotor(onoff);
+		}
+	}
+	else {
+		//set frame to none
+		if(TransferStatus == SIO_CasRead) {
+			TransferStatus = SIO_NoFrame;
+			CASSETTE_TapeMotor(onoff);
+			DELAYED_SERIN_IRQ = 0; //off
+		}
+		else {
+			CASSETTE_TapeMotor(onoff);
+			DELAYED_SERIN_IRQ = 0; //off
+		}
+	}
+}
+
 /* Enable/disable the command frame */
 void SwitchCommandFrame(int onoff)
 {
@@ -1127,6 +1160,10 @@ int SIO_GetByte(void)
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
+	case SIO_CasRead:
+		byte = CASSETTE_GetByte();
+		DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
+		break;
 	default:
 		break;
 	}
@@ -1237,6 +1274,9 @@ void SIOStateRead( void )
 
 /*
 $Log$
+Revision 1.23  2005/03/15 19:11:58  joy
+cassette loading by registers
+
 Revision 1.22  2005/03/08 04:32:46  pfusik
 killed gcc -W warnings
 

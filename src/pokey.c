@@ -2,7 +2,7 @@
  * pokey.c - POKEY sound chip emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -40,6 +40,8 @@
 #include "input.h"
 #include "antic.h"
 #include "rt-config.h"
+#include "cassette.h"
+#include "log.h"
 
 #ifdef POKEY_UPDATE
 extern void pokey_update(void);
@@ -51,7 +53,7 @@ UBYTE IRQST;
 UBYTE IRQEN;
 UBYTE SKSTAT;
 UBYTE SKCTLS;
-int DELAYED_SERIN_IRQ;
+SLONG DELAYED_SERIN_IRQ;
 int DELAYED_SEROUT_IRQ;
 int DELAYED_XMTDONE_IRQ;
 
@@ -123,7 +125,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		byte = IRQST;
 		break;
 	case _SKSTAT:
-		byte = SKSTAT;
+		byte = (SKSTAT & 0xEF) | (CASSETTE_IOLineStatus() << 4);
 		break;
 	}
 
@@ -204,6 +206,13 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		printf("WR: IRQEN = %x, PC = %x\n", IRQEN, PC);
 #endif
 		IRQST |= ~byte & 0xf7;	/* Reset disabled IRQs except XMTDONE */
+		if (IRQEN & 0x20) {
+			SLONG delay;
+			delay=CASSETTE_GetInputIRQDelay();
+			if(delay>0) {
+				DELAYED_SERIN_IRQ=delay;
+			}
+		}
 		if ((~IRQST & IRQEN) == 0)
 			IRQ = 0;
 		break;
@@ -373,6 +382,10 @@ void POKEY_Scanline(void)
 		pot_scanline++;
 
 	random_scanline_counter += LINE_C;
+
+	//on nonpatched i/o-operation, enable the cassette timing
+	if (!enable_sio_patch)
+		CASSETTE_AddScanLine();
 
 	if (DELAYED_SERIN_IRQ > 0) {
 		if (--DELAYED_SERIN_IRQ == 0) {

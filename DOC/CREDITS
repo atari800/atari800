@@ -136,6 +136,7 @@ Christian Groessler <cpg@aladdin.de>
 
 Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
     - XF551 highspeed transfer emulation
+    - casette loading greatly improved
 
 Nathan Hartwell <mage@magelair.com>
     - win32 fixes

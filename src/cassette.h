@@ -27,6 +27,11 @@ void CASSETTE_LeaderLoad();
 void CASSETTE_LeaderSave();
 int CASSETTE_Read(void);
 int CASSETTE_Write(int length);
+int CASSETTE_IOLineStatus();
+int CASSETTE_GetByte();
+SLONG CASSETTE_GetInputIRQDelay();
+void CASSETTE_TapeMotor(int onoff);
+void CASSETTE_AddScanLine();
 extern UBYTE cassette_buffer[4096];
 
 #endif /* _CASSETTE_H_ */
