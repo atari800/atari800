@@ -58,7 +58,7 @@ extern int verbose;
 #define ATARI_WIDTH  384
 #define ATARI_HEIGHT 240
 
-#define ATARI_TITLE  "Atari 800 Emulator, Version 1.3.2"
+#define ATARI_TITLE  "Atari 800 Emulator, Version 1.3.3"
 
 extern int xpos;
 extern int xpos_limit;
@@ -244,6 +244,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.44  2004/08/08 08:43:37  joy
+version increased
+
 Revision 1.43  2003/12/20 20:49:28  joy
 version increased
 
