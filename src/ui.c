@@ -925,14 +925,14 @@ void CartManagement(UBYTE * screen)
 				UBYTE image[32769];
 				int type = CART_UNKNOWN;
 				int nbytes;
-				int fd;
+				FILE *f;
 
-				fd = open(filename, O_RDONLY | O_BINARY, 0777);
-				if (fd == -1) {
+				f = fopen(filename, "rb");
+				if (!f) {
 					perror(filename);
 					exit(1);
 				}
-				nbytes = read(fd, image, sizeof(image));
+				nbytes = fread(image, 1, sizeof(image), f);
 				switch (nbytes) {
 				case 8192:
 					type = CART_STD_8K;
@@ -970,7 +970,7 @@ void CartManagement(UBYTE * screen)
 					type = CART_AGS;
 				}
 
-				close(fd);
+				fclose(f);
 
 				if (type != CART_UNKNOWN) {
 					Header header;
@@ -1004,40 +1004,40 @@ void CartManagement(UBYTE * screen)
 					header.gash[3] = '\0';
 
 					sprintf(filename, "%s/%s", atari_rom_dir, fname);
-					fd = open(filename, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0777);
-					if (fd != -1) {
-						write(fd, &header, sizeof(header));
-						write(fd, image, nbytes);
-						close(fd);
+					f = fopen(filename, "wb");
+					if (f) {
+					  fwrite(&header, 1, sizeof(header), f);
+					  fwrite(image, 1, nbytes, f);
+					  fclose(f);
 					}
 				}
 			}
 			break;
 		case 1:
 			if (FileSelector(screen, curr_cart_dir, filename)) {
-				int fd;
+				FILE *f;
 
-				fd = open(filename, O_RDONLY | O_BINARY, 0777);
-				if (fd != -1) {
+				f = fopen(filename, "rb");
+				if (f) {
 					Header header;
 					UBYTE image[32769];
 					char fname[FILENAME_SIZE+1];
 					int nbytes;
 
-					read(fd, &header, sizeof(header));
-					nbytes = read(fd, image, sizeof(image));
+					fread(&header, 1, sizeof(header), f);
+					nbytes = fread(image, 1, sizeof(image), f);
 
-					close(fd);
+					fclose(f);
 
 					if (!EditFilename(screen, fname))
 						break;
 
 					sprintf(filename, "%s/%s", atari_rom_dir, fname);
 
-					fd = open(filename, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0777);
-					if (fd != -1) {
-						write(fd, image, nbytes);
-						close(fd);
+					f = fopen(filename, "wb");
+					if (f) {
+					  fwrite(image, 1, nbytes, f);
+					  fclose(f);
 					}
 				}
 			}
@@ -1451,6 +1451,9 @@ void ReadCharacterSet( void )
 
 /*
 $Log$
+Revision 1.7  2001/03/25 06:57:36  knik
+open() replaced by fopen()
+
 Revision 1.6  2001/03/18 07:56:48  knik
 win32 port
 

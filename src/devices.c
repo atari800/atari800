@@ -449,7 +449,7 @@ void Device_HHINIT(void)
 		Aprint("HHINIT");
 }
 
-static int phfd = -1;
+static FILE *phf = NULL;
 void Device_PHCLOS(void);
 static char *spool_file = NULL;
 
@@ -458,12 +458,12 @@ void Device_PHOPEN(void)
 	if (devbug)
 		Aprint("PHOPEN");
 
-	if (phfd != -1)
+	if (phf)
 		Device_PHCLOS();
 
 	spool_file = tmpnam(NULL);
-	phfd = open(spool_file, O_CREAT | O_TRUNC | O_WRONLY, 0777);
-	if (phfd != -1) {
+	phf = fopen(spool_file, "w");
+	if (phf) {
 		regY = 1;
 		ClrN;
 	}
@@ -478,11 +478,11 @@ void Device_PHCLOS(void)
 	if (devbug)
 		Aprint("PHCLOS");
 
-	if (phfd != -1) {
+	if (phf) {
 		char command[256];
 		int status;
 
-		close(phfd);
+		fclose(phf);
 
 		sprintf(command, print_command, spool_file);
 		system(command);
@@ -495,7 +495,7 @@ void Device_PHCLOS(void)
 		}
 #endif
 
-		phfd = -1;
+		phf = NULL;
 	}
 	regY = 1;
 	ClrN;
@@ -522,7 +522,7 @@ void Device_PHWRIT(void)
 	if (byte == 0x9b)
 		byte = '\n';
 
-	status = write(phfd, &byte, 1);
+	status = fwrite(&byte, 1, 1, phf);
 	if (status == 1) {
 		regY = 1;
 		ClrN;
@@ -553,7 +553,7 @@ void Device_PHINIT(void)
 	if (devbug)
 		Aprint("PHINIT");
 
-	phfd = -1;
+	phf = NULL;
 	regY = 1;
 	ClrN;
 }
@@ -767,6 +767,9 @@ void AtariEscape(UBYTE esc_code)
 
 /*
 $Log$
+Revision 1.6  2001/03/25 06:57:35  knik
+open() replaced by fopen()
+
 Revision 1.5  2001/03/22 06:16:58  knik
 removed basic improvement
 

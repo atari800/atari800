@@ -44,7 +44,7 @@ main(int argc, char *argv[], char *envp[])
 	int addr1 = -1;
 	int addr2 = -1;
 	int addr;
-	int fd;
+	FILE *f;
 	int i;
 
 	State state = Expect_Header1;
@@ -72,15 +72,15 @@ main(int argc, char *argv[], char *envp[])
 	}
 	memset(image, 0, 65536);
 
-	fd = open(in_filename, O_RDONLY | O_BINARY, 0777);
-	if (fd == -1) {
+	f = fopen(in_filename, "rb");
+	if (!f) {
 		perror(in_filename);
 		exit(1);
 	}
 	while (1) {
 		unsigned char byte;
 
-		if (read(fd, &byte, 1) != 1)
+		if (fread(&byte, 1, 1, f) != 1)
 			break;
 
 		switch (state) {
@@ -130,21 +130,21 @@ main(int argc, char *argv[], char *envp[])
 		}
 	}
 
-	close(fd);
+	fclose(f);
 
 	/*
 	 * Write image to file
 	 */
 
 	if (image_filename) {
-		fd = open(image_filename, O_CREAT | O_TRUNC | O_WRONLY, 0777);
-		if (fd == -1) {
+		f = fopen(image_filename, "wb");
+		if (!f) {
 			perror(image_filename);
 			exit(1);
 		}
-		write(fd, &image[addr1], addr2 - addr1 + 1);
+		fwrite(&image[addr1], 1, addr2 - addr1 + 1, f);
 
-		close(fd);
+		fclose(f);
 	}
 	if (header_filename) {
 		FILE *fp;

@@ -1,7 +1,5 @@
-
+/* $Id$ */
 #include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
 
 #include "atari.h"
 #include "config.h"
@@ -11,15 +9,15 @@
 #include "pia.h"
 
 int start_binloading = 0;
-static int bin_fd = -1;
+static FILE *binf = NULL;
 
 /* Read a word from file */
 static int BIN_read_word(void)
 {
 	UBYTE buf[2];
-	if (read(bin_fd, buf, 2) != 2) {
-		close(bin_fd);
-		bin_fd = -1;
+	if (fread(buf, 1, 2, binf) != 2) {
+		fclose(binf);
+		binf = 0;
 		if (start_binloading) {
 			start_binloading = 0;
 			Aprint("binload: not valid BIN file");
@@ -38,7 +36,7 @@ void BIN_loader_cont(void)
 	int to;
 	UBYTE byte;
 
-	if (bin_fd < 0)
+	if (!binf)
 		return;
 	if (start_binloading)
 	{
@@ -69,9 +67,9 @@ void BIN_loader_cont(void)
 		to++;
 		to &= 0xffff;
 		do {
-			if (read(bin_fd, &byte, 1) == 0) {
-				close(bin_fd);
-				bin_fd = -1;
+			if (fread(&byte, 1, 1, binf) == 0) {
+				fclose(binf);
+				binf = 0;
 				regPC = dGetByte(0x2e0) | (dGetByte(0x2e1) << 8);
 				if (dGetByte(0x2e3) != 0xd7) {
 					regPC--;
@@ -114,15 +112,15 @@ int BIN_loade_start(UBYTE *buffer)
 int BIN_loader(char *filename)
 {
 	UBYTE buf[2];
-	if (bin_fd >= 0)		/* close previously open file */
-		close(bin_fd);
-	if ((bin_fd = open(filename, O_RDONLY | O_BINARY)) < 0) {	/* open */
+	if (binf)		/* close previously open file */
+	  fclose(binf);
+	if (!(binf = fopen(filename, "rb"))) {	/* open */
 		Aprint("binload: can't open %s", filename);
 		return FALSE;
 	}
-	if (read(bin_fd, buf, 2) != 2 || buf[0] != 0xff || buf[1] != 0xff) {	/* check header */
-		close(bin_fd);
-		bin_fd = -1;
+	if (fread(buf, 1, 2, binf) != 2 || buf[0] != 0xff || buf[1] != 0xff) {	/* check header */
+		fclose(binf);
+		binf = 0;
 		Aprint("binload: not valid BIN file");
 		return FALSE;
 	}

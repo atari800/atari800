@@ -3,14 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <unistd.h>
-
-#ifdef VMS
-#include <unixio.h>
-#include <file.h>
-#else
-#include <fcntl.h>
-#endif
 
 #include "atari.h"
 #include "config.h"
@@ -823,15 +815,14 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 				if (status) {
 					status = get_hex(NULL, &nbytes);
 					if (status) {
-						int fd;
+						FILE *f;
 
-						fd = open(filename, O_RDONLY | O_BINARY);
-						if (fd == -1)
+						if (!(f = fopen(filename, "rb")))
 							perror(filename);
 						else {
-							if (read(fd, &memory[addr], nbytes) == -1)
-								perror("read");
-							close(fd);
+							if (fread(&memory[addr], 1, nbytes, f) == -1)
+								perror(filename);
+							fclose(f);
 						}
 					}
 				}
@@ -850,14 +841,14 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 				filename="memdump.dat"; 
 
 			if (status) {
-				int fd;
+				FILE *f;
 
-				fd = open(filename, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0777);
-				if (fd == -1)
-					perror("open");
+				if (!(f = fopen(filename, "wb")))
+				  perror(filename);
 				else {
-					write(fd, &memory[addr1], addr2 - addr1 + 1);
-					close(fd);
+				  if (fwrite(&memory[addr1], 1, addr2 - addr1 + 1, f) == -1)
+                                    perror(filename);
+				  fclose(f);
 				}
 			}
 		}
@@ -1365,6 +1356,9 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.3  2001/03/25 06:57:36  knik
+open() replaced by fopen()
+
 Revision 1.2  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 

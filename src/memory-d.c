@@ -1,8 +1,5 @@
 /* $Id$ */
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,17 +35,17 @@ extern int Ram256;
 int load_image(char *filename, int addr, int nbytes)
 {
 	int status = FALSE;
-	int fd;
+	FILE *f;
 
-	fd = open(filename, O_RDONLY | O_BINARY, 0777);
-	if (fd != -1) {
-		status = read(fd, &memory[addr], nbytes);
+	f = fopen(filename, "rb");
+	if (f) {
+		status = fread(&memory[addr], 1, nbytes, f);
 		if (status != nbytes) {
 			Aprint("Error reading %s", filename);
 			Atari800_Exit(FALSE);
 			return FALSE;
 		}
-		close(fd);
+		fclose(f);
 
 		status = TRUE;
 	}
@@ -65,12 +62,12 @@ int load_image(char *filename, int addr, int nbytes)
 int Insert_8K_ROM(char *filename)
 {
 	int status = FALSE;
-	int fd;
+	FILE *f;
 
-	fd = open(filename, O_RDONLY | O_BINARY, 0777);
-	if (fd != -1) {
-		read(fd, &memory[0xa000], 0x2000);
-		close(fd);
+	f = fopen(filename, "rb");
+	if (f) {
+		fread(&memory[0xa000], 1, 0x2000, f);
+		fclose(f);
 		SetRAM(0x8000, 0x9fff);
 		SetROM(0xa000, 0xbfff);
 		cart_type = NORMAL8_CART;
@@ -87,12 +84,12 @@ int Insert_8K_ROM(char *filename)
 int Insert_16K_ROM(char *filename)
 {
 	int status = FALSE;
-	int fd;
+	FILE *f;
 
-	fd = open(filename, O_RDONLY | O_BINARY, 0777);
-	if (fd != -1) {
-		read(fd, &memory[0x8000], 0x4000);
-		close(fd);
+	f = fopen(filename, "rb");
+	if (f) {
+		fread(&memory[0x8000], 1, 0x4000, f);
+		fclose(f);
 		SetROM(0x8000, 0xbfff);
 		cart_type = NORMAL16_CART;
 		rom_inserted = TRUE;
@@ -111,13 +108,13 @@ int Insert_16K_ROM(char *filename)
 int Insert_OSS_ROM(char *filename)
 {
 	int status = FALSE;
-	int fd;
+	FILE *f;
 
-	fd = open(filename, O_RDONLY | O_BINARY, 0777);
-	if (fd != -1) {
+	f = fopen(filename, "rb");
+	if (f) {
 		cart_image = (UBYTE *) malloc(0x4000);
 		if (cart_image) {
-			read(fd, cart_image, 0x4000);
+			fread(cart_image, 1, 0x4000, f);
 			memcpy(&memory[0xa000], cart_image, 0x1000);
 			memcpy(&memory[0xb000], cart_image + 0x3000, 0x1000);
 			SetRAM(0x8000, 0x9fff);
@@ -126,7 +123,7 @@ int Insert_OSS_ROM(char *filename)
 			rom_inserted = TRUE;
 			status = TRUE;
 		}
-		close(fd);
+		fclose(f);
 	}
 	return status;
 }
@@ -141,13 +138,13 @@ int Insert_OSS_ROM(char *filename)
 int Insert_DB_ROM(char *filename)
 {
 	int status = FALSE;
-	int fd;
+	FILE *f;
 
-	fd = open(filename, O_RDONLY | O_BINARY, 0777);
-	if (fd != -1) {
+	f = fopen(filename, "rb");
+	if (f) {
 		cart_image = (UBYTE *) malloc(0x8000);
 		if (cart_image) {
-			read(fd, cart_image, 0x8000);
+			fread(cart_image, 1, 0x8000, f);
 			memcpy(&memory[0x8000], cart_image, 0x2000);
 			memcpy(&memory[0xa000], cart_image + 0x6000, 0x2000);
 			SetROM(0x8000, 0xbfff);
@@ -155,7 +152,7 @@ int Insert_DB_ROM(char *filename)
 			rom_inserted = TRUE;
 			status = TRUE;
 		}
-		close(fd);
+		fclose(f);
 	}
 	return status;
 }
@@ -167,36 +164,36 @@ int Insert_DB_ROM(char *filename)
 int Insert_32K_5200ROM(char *filename)
 {
 	int status = FALSE;
-	int fd;
+	FILE *f;
 
-	fd = open(filename, O_RDONLY | O_BINARY, 0777);
-	if (fd != -1) {
+	f = fopen(filename, "rb");
+	if (f) {
 		/* read the first 16k */
-		if (read(fd, &memory[0x4000], 0x4000) != 0x4000) {
-			close(fd);
+		if (fread(&memory[0x4000], 1, 0x4000, f) != 0x4000) {
+			fclose(f);
 			return FALSE;
 		}
 		/* try and read next 16k */
 		cart_type = AGS32_CART;
-		if ((status = read(fd, &memory[0x8000], 0x4000)) == 0) {
+		if ((status = fread(&memory[0x8000], 1, 0x4000, f)) == 0) {
 			/* note: AB__ ABB_ ABBB AABB */
 			memcpy(&memory[0x8000], &memory[0x6000], 0x2000);
 			memcpy(&memory[0xA000], &memory[0x6000], 0x2000);
 			memcpy(&memory[0x6000], &memory[0x4000], 0x2000);
 		}
 		else if (status != 0x4000) {
-			close(fd);
+			fclose(f);
 			Aprint("Error reading 32K 5200 rom, %X", status);
 			return FALSE;
 		}
 		else {
 			UBYTE temp_byte;
-			if (read(fd, &temp_byte, 1) == 1) {
+			if (fread(&temp_byte, 1, 1, f) == 1) {
 				/* ABCD EFGH IJ */
 				if (!(cart_image = (UBYTE *) malloc(0x8000)))
 					return FALSE;
 				*cart_image = temp_byte;
-				if (read(fd, &cart_image[1], 0x1fff) != 0x1fff)
+				if (fread(&cart_image[1], 1, 0x1fff, f) != 0x1fff)
 					return FALSE;
 				memcpy(&cart_image[0x2000], &memory[0x6000], 0x6000);	/* IJ CD EF GH :CI */
 
@@ -212,7 +209,7 @@ int Insert_32K_5200ROM(char *filename)
 				SetHARDWARE(0x5ff6, 0x5ff9);
 			}
 		}
-		close(fd);
+		fclose(f);
 		/* SetROM (0x4000, 0xbfff); */
 		/* cart_type = AGS32_CART; */
 		rom_inserted = TRUE;
@@ -242,13 +239,13 @@ int Remove_ROM(void)
 int Insert_Cartridge(char *filename)
 {
 	int status = FALSE;
-	int fd;
+	FILE *f;
 
-	fd = open(filename, O_RDONLY | O_BINARY, 0777);
-	if (fd != -1) {
+	f = fopen(filename, "rb");
+	if (f) {
 		UBYTE header[16];
 
-		read(fd, header, sizeof(header));
+		fread(header, 1, sizeof(header), f);
 		if ((header[0] == 'C') &&
 			(header[1] == 'A') &&
 			(header[2] == 'R') &&
@@ -272,7 +269,7 @@ int Insert_Cartridge(char *filename)
 #define OSS 3
 #define AGS 4
 			case STD_8K:
-				read(fd, &memory[0xa000], 0x2000);
+				fread(&memory[0xa000], 1, 0x2000, f);
 				SetRAM(0x8000, 0x9fff);
 				SetROM(0xa000, 0xbfff);
 				cart_type = NORMAL8_CART;
@@ -280,7 +277,7 @@ int Insert_Cartridge(char *filename)
 				status = TRUE;
 				break;
 			case STD_16K:
-				read(fd, &memory[0x8000], 0x4000);
+				fread(&memory[0x8000], 1, 0x4000, f);
 				SetROM(0x8000, 0xbfff);
 				cart_type = NORMAL16_CART;
 				rom_inserted = TRUE;
@@ -289,7 +286,7 @@ int Insert_Cartridge(char *filename)
 			case OSS:
 				cart_image = (UBYTE *) malloc(0x4000);
 				if (cart_image) {
-					read(fd, cart_image, 0x4000);
+					fread(cart_image, 1, 0x4000, f);
 					memcpy(&memory[0xa000], cart_image, 0x1000);
 					memcpy(&memory[0xb000], cart_image + 0x3000, 0x1000);
 					SetRAM(0x8000, 0x9fff);
@@ -300,8 +297,7 @@ int Insert_Cartridge(char *filename)
 				}
 				break;
 			case AGS:
-				read(fd, &memory[0x4000], 0x8000);
-				close(fd);
+				fread(&memory[0x4000], 1, 0x8000, f);
 				SetROM(0x4000, 0xbfff);
 				cart_type = AGS32_CART;
 				rom_inserted = TRUE;
@@ -315,7 +311,7 @@ int Insert_Cartridge(char *filename)
 		else {
 			Aprint("%s is not a cartridge", filename);
 		}
-		close(fd);
+		fclose(f);
 	}
 	return status;
 }
@@ -870,6 +866,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.3  2001/03/25 06:57:35  knik
+open() replaced by fopen()
+
 Revision 1.2  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 

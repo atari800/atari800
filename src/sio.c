@@ -16,13 +16,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#ifdef VMS
-#include <unixio.h>
-#include <file.h>
-#else
-#include <fcntl.h>
-#include <unistd.h>
-#endif	/* VMS */
 
 extern int DELAYED_SERIN_IRQ;
 extern int DELAYED_SEROUT_IRQ;
@@ -50,7 +43,7 @@ typedef enum Format {
 } Format;
 
 static Format format[MAX_DRIVES];
-static int disk[MAX_DRIVES] = {-1, -1, -1, -1, -1, -1, -1, -1};
+static FILE *disk[MAX_DRIVES] = {0, 0, 0, 0, 0, 0, 0, 0};
 static int sectorcount[MAX_DRIVES];
 static int sectorsize[MAX_DRIVES];
 
@@ -69,9 +62,9 @@ int DataIndex = 0;
 int TransferStatus = 0;
 int ExpectedBytes = 0;
 
-extern int opendcm( int diskno, const char *infilename, char *outfilename );
+extern FILE *opendcm( int diskno, const char *infilename, char *outfilename );
 #ifdef ZLIB_CAPABLE
-extern int openzlib(int diskno, const char *infilename, char *outfilename );
+extern FILE *openzlib(int diskno, const char *infilename, char *outfilename );
 #endif
 
 void SIO_Initialise(int *argc, char *argv[])
@@ -98,10 +91,10 @@ void Clear_Temp_Files( void )
 	{
 		if( istmpfile[i] != 0 )
 		{
-			if( disk[i] != -1 )
+			if(disk[i])
 			{
-				close(disk[i]);
-				disk[i] = -1;
+				fclose(disk[i]);
+				disk[i] = 0;
 			}
 			remove( tmp_filename[i] );
 			memset( tmp_filename[i], 0, FILENAME_LEN );
@@ -116,7 +109,7 @@ void Clear_Temp_Files( void )
 void Set_Temp_File( int diskno )
 {
 	diskno--;
-	if( disk[ diskno ] == -1 )
+	if(!disk[ diskno ])
 		return;
 	istmpfile[ diskno ] = 1;
 	strcpy( tmp_filename[ diskno ], sio_filename[ diskno ] );
@@ -126,9 +119,9 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 {
 	char	upperfile[ FILENAME_LEN ];
 	struct ATR_Header header;
-	int fd, i;
+	int i;
+	FILE *f = NULL;
 
-	fd = -1;
 	memset( upperfile, 0, FILENAME_LEN );
 	for( i=0; i < (int)strlen( filename ); i++ )
 		upperfile[i] = toupper( filename[i] );
@@ -138,8 +131,8 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 	{
 		istmpfile[ diskno -1 ] = 1;
 		drive_status[ diskno -1 ] = b_open_readonly ? ReadOnly : ReadWrite;	/* this is a fake but some games need it */
-		fd = opendcm( diskno, filename, tmp_filename[diskno - 1] );
-		if( fd == -1 )
+		f = opendcm( diskno, filename, tmp_filename[diskno - 1] );
+		if(!f)
 			istmpfile[ diskno - 1] = 0;
 	}
 #ifdef ZLIB_CAPABLE
@@ -150,8 +143,8 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 	{
 		istmpfile[ diskno -1 ] = 1;
 		drive_status[ diskno -1 ] = b_open_readonly ? ReadOnly : ReadWrite;	/* this is a fake but some games need it */
-		fd = openzlib( diskno, filename, tmp_filename[ diskno - 1] );
-		if( fd == -1 )
+		f = openzlib( diskno, filename, tmp_filename[ diskno - 1] );
+		if(!f)
 		{
 			istmpfile[ diskno - 1] = 0;
 			drive_status[ diskno - 1] = NoDisk;
@@ -165,24 +158,27 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 
 		if( b_open_readonly == FALSE )
 		{
-		fd = open(filename, O_RDWR | O_BINARY, 0777);
+		  f = fopen(filename, "rb+");
 		}
-		if ( b_open_readonly == TRUE || fd == -1) 
+		if ( b_open_readonly == TRUE || !f)
 		{
-			fd = open(filename, O_RDONLY | O_BINARY, 0755);
+			f = fopen(filename, "rb");
 			drive_status[diskno - 1] = ReadOnly;
 		}
 	}
 
-	if (fd >= 0) {
+	if (f) {
 		int status;
-		ULONG file_length = lseek(fd, 0L, SEEK_END);
-		lseek(fd, 0L, SEEK_SET);
+		ULONG file_length;
 
-		status = read(fd, &header, sizeof(struct ATR_Header));
+		fseek(f, 0L, SEEK_END);
+		file_length = ftell(f);
+		fseek(f, 0L, SEEK_SET);
+
+		status = fread(&header, 1, sizeof(struct ATR_Header), f);
 		if (status == -1) {
-			close(fd);
-			disk[diskno - 1] = -1;
+			fclose(f);
+			disk[diskno - 1] = 0;
 			return FALSE;
 		}
 
@@ -237,17 +233,17 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		drive_status[diskno - 1] = NoDisk;
 	}
 
-	disk[diskno - 1] = fd;
+	disk[diskno - 1] = f;
 
-	return (disk[diskno - 1] != -1) ? TRUE : FALSE;
+	return disk[diskno - 1] ? TRUE : FALSE;
 }
 
 void SIO_Dismount(int diskno)
 {
-	if (disk[diskno - 1] != -1) 
+	if (disk[diskno - 1])
 	{
-		close(disk[diskno - 1]);
-		disk[diskno - 1] = -1;
+		fclose(disk[diskno - 1]);
+		disk[diskno - 1] = 0;
 		drive_status[diskno - 1] = NoDisk;
 		strcpy(sio_filename[diskno - 1], "Empty");
 		if( istmpfile[ diskno - 1] )
@@ -302,13 +298,14 @@ int SeekSector(int unit, int sector)
 
 	sprintf(sio_status, "%d: %d", unit + 1, sector);
 	SizeOfSector((UBYTE)unit, sector, &size, (ULONG*)&offset);
-	if (offset < 0 || offset > lseek(disk[unit], 0L, SEEK_END)) {
+	fseek(disk[unit], 0L, SEEK_END);
+	if (offset < 0 || offset > ftell(disk[unit])) {
 #ifdef DEBUG
 		Aprint("SIO:SeekSector() - Wrong seek offset");
 #endif
 	}
 	else
-		lseek(disk[unit], offset, SEEK_SET);
+		fseek(disk[unit], offset, SEEK_SET);
 
 	return size;
 }
@@ -322,11 +319,11 @@ int ReadSector(int unit, int sector, UBYTE * buffer)
 		return(BIN_loade_start(buffer));
 
 	if (drive_status[unit] != Off) {
-		if (disk[unit] != -1) {
+		if (disk[unit]) {
 			if (sector > 0 && sector <= sectorcount[unit]) {
 				Set_LED_Read(unit);
 				size = SeekSector(unit, sector);
-				read(disk[unit], buffer, size);
+				fread(buffer, 1, size, disk[unit]);
 				return 'C';
 			}
 			else
@@ -344,12 +341,12 @@ int WriteSector(int unit, int sector, UBYTE * buffer)
 	int size;
 
 	if (drive_status[unit] != Off) {
-		if (disk[unit] != -1) {
+		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
 				Set_LED_Write(unit);
 				if (sector > 0 && sector <= sectorcount[unit]) {
 					size = SeekSector(unit, sector);
-					write(disk[unit], buffer, size);
+					fwrite(buffer, 1, size, disk[unit]);
 					return 'C';
 				}
 				else
@@ -376,14 +373,14 @@ int ATRFormat( int unit, UBYTE * buffer )
 
 	if( drive_status[unit] != Off )
 	{
-		if( disk[unit] != -1 ) 
+		if(disk[unit])
 		{
 			if( drive_status[unit] == ReadWrite )
 			{
 				SeekSector( unit, 1 );
 				memset( buffer, 0, sectorsize[unit] );
 				for( i = 1; i <= sectorcount[unit]; i++ )
-					write( disk[unit], buffer, sectorsize[unit] );
+				  fwrite(buffer, 1, sectorsize[unit], disk[unit]);
 				memset( buffer, 0xff, sectorsize[unit] );
 				return 'C';
 			}
@@ -407,7 +404,7 @@ int FormatSingle(int unit, UBYTE * buffer)
 	int i;
 
 	if (drive_status[unit] != Off) {
-		if (disk[unit] != -1) {
+		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
 				if( format[unit] == ATR )
 					return ATRFormat( unit, buffer );
@@ -417,7 +414,7 @@ int FormatSingle(int unit, UBYTE * buffer)
 				SeekSector(unit, 1);
 				memset(buffer, 0, 128);
 				for (i = 1; i <= 720; i++)
-					write(disk[unit], buffer, 128);
+				  fwrite(buffer, 1, 128, disk[unit]);
 				memset(buffer, 0xff, 128);
 				return 'C';
 			}
@@ -436,7 +433,7 @@ int FormatEnhanced(int unit, UBYTE * buffer)
 	int i;
 
 	if (drive_status[unit] != Off) {
-		if (disk[unit] != -1) {
+		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
 				if( format[unit] == ATR )
 					return ATRFormat( unit, buffer );
@@ -446,7 +443,7 @@ int FormatEnhanced(int unit, UBYTE * buffer)
 				SeekSector(unit, 1);
 				memset(buffer, 0, 128);
 				for (i = 1; i <= 1040; i++)
-					write(disk[unit], buffer, 128);
+				  fwrite(buffer, 1, 128, disk[unit]);
 				memset(buffer, 0xff, 128);
 				return 'C';
 			}
@@ -566,12 +563,12 @@ int DriveStatus(int unit, UBYTE * buffer)
 	if (drive_status[unit] != Off) {
 		if (drive_status[unit] == ReadWrite) {
 			buffer[0] = (sectorsize[unit] == 256) ? (32 + 16) : (16);
-			/* buffer[1] = (disk[unit] != -1) ? (128) : (0); */
-			buffer[1] = (disk[unit] != -1) ? (255) : (0);	/* for StripPoker */
+			/* buffer[1] = (disk[unit]) ? (128) : (0); */
+			buffer[1] = (disk[unit]) ? (255) : (0);	/* for StripPoker */
 		}
 		else {
 			buffer[0] = (sectorsize[unit] == 256) ? (32 + 8) : (8);
-			buffer[1] = (disk[unit] != -1) ? (192) : (64);
+			buffer[1] = (disk[unit]) ? (192) : (64);
 		}
 		if (sectorcount[unit] == 1040)
 			buffer[0] |= 128;
@@ -1033,6 +1030,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.4  2001/03/25 06:57:36  knik
+open() replaced by fopen()
+
 Revision 1.3  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
