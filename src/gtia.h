@@ -122,7 +122,8 @@ extern UWORD colour_translation_table[256];
 extern UBYTE TRIG[4];
 extern UBYTE TRIG_latch[4];
 
-extern int next_console_value;
+extern int consol_index;
+extern UBYTE consol_table[3];
 
 void GTIA_Initialise(int *argc, char *argv[]);
 void new_pm_scanline(void);

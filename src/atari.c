@@ -122,8 +122,13 @@ void Coldstart(void)
 	ANTIC_Reset();
 	CPU_Reset();
 
+	consol_index = 2;
+	consol_table[2] = 0x0f;
 	if (hold_option)
-		next_console_value = 0x03;	/* Hold Option During Reboot */
+		consol_table[2] &= ~4;	/* hold Option during reboot */
+	if (hold_start)
+		consol_table[2] &= ~1;	/* hold Start during reboot */
+	consol_table[1] = consol_table[2];
 }
 
 int Initialise_AtariXE(void)
@@ -729,8 +734,14 @@ void Atari800_Hardware(void)
 			Save_PCX_interlaced();
 			break;
 		case AKEY_NONE:
-			last_key = -1;
-			break;
+			if (press_space) {
+				keycode = AKEY_SPACE;
+				press_space = 0;
+			}
+			else {
+				last_key = -1;
+				break;
+			}
 		default:
 			if (keycode == last_key)
 				break;	
@@ -901,6 +912,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.13  2001/08/06 13:11:19  fox
+hold_start support
+
 Revision 1.12  2001/08/03 12:48:55  fox
 cassette support
 

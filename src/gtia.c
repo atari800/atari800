@@ -3,12 +3,13 @@
 /*              David Firth                         */
 /* Clean ups and optimizations:                     */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 19th July 2001                     */
+/* Last changes: 6th August 2001                    */
 /* ------------------------------------------------ */
 
 #include <string.h>
 
 #include "antic.h"
+#include "cassette.h"
 #include "config.h"
 #include "gtia.h"
 #include "memory.h"
@@ -63,7 +64,8 @@ UBYTE GRACTL;
 /* Internal GTIA state ----------------------------------------------------- */
 
 int atari_speaker;
-int next_console_value = 7;			/* for 'hold OPTION during reboot' */
+int consol_index = 0;
+UBYTE consol_table[3];
 UBYTE consol_mask;
 UBYTE TRIG[4];
 UBYTE TRIG_latch[4];
@@ -269,6 +271,10 @@ void new_pm_scanline(void)
 void GTIA_Triggers(void)
 {
 	int i;
+	int consol = Atari_CONSOL() | 0x08;
+
+	consol_table[0] = consol;
+	consol_table[1] = consol_table[2] &= consol;
 
 	for(i = 0; i < 4; i++)
 	{
@@ -390,15 +396,14 @@ UBYTE GTIA_GetByte(UWORD addr)
 			byte = 0x0f; */
 		break;
 	case _CONSOL:
-		if (next_console_value != 7) {
-			byte = (next_console_value | 0x08) & consol_mask;
-			next_console_value = 0x07;
+		byte = consol_table[consol_index] & consol_mask;
+		if (consol_index == 1 && hold_start) {
+			/* press Space after Start to start cassette boot */
+			press_space = 1;
+			hold_start = 0;
 		}
-		else {
-			/* 0x08 is because 'speaker is always 'on' '
-			consol_mask is set by CONSOL (write) !PM! */
-			byte = (Atari_CONSOL() | 0x08) & consol_mask;
-		}
+		if (consol_index > 0)
+			consol_index--;
 		break;
 	}
 
@@ -932,6 +937,8 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 
 void GTIAStateSave( void )
 {
+	int next_console_value = 7;
+
 	SaveUBYTE( &HPOSP0, 1 );
 	SaveUBYTE( &HPOSP1, 1 );
 	SaveUBYTE( &HPOSP2, 1 );
@@ -983,6 +990,8 @@ void GTIAStateSave( void )
 
 void GTIAStateRead( void )
 {
+	int next_console_value;	/* ignored */
+
 	ReadUBYTE( &HPOSP0, 1 );
 	ReadUBYTE( &HPOSP1, 1 );
 	ReadUBYTE( &HPOSP2, 1 );
