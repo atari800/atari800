@@ -81,16 +81,25 @@
 #include "amiga.h"
 #include "support.h"
 
+/******************************/
+
+#define PORT_SOURCE_UNASSIGNED  0
+#define PORT_SOURCE_GAMEPORT    1
+#define PORT_SOURCE_NUMERIC     2
+#define PORT_SOURCE_CURSOR      3
+
+static char *port_source_text[] =
+{
+	"UNASSIGNED","GAMEPORT","NUMERICPAD","CURSOR",NULL
+};
 
 /******************************/
 
 struct timezone;
+
 /******************************/
 
 extern int refresh_rate;
-
-#define GAMEPORT0 0
-#define GAMEPORT1 1
 
 struct Library *IntuitionBase;
 struct Library *GfxBase;
@@ -141,8 +150,8 @@ static ULONG ahi_streamlen;
 /* Emulation */
 static int menu_consol;
 static int keyboard_consol;
-static int trig0;
-static int stick0;
+static int trig[2];
+static int stick[2];
 
 static LONG Overlay;
 static LONG Scalable;
@@ -151,6 +160,7 @@ static LONG UseBestID = TRUE;
 static LONG SoundEnabled = TRUE;
 static LONG ShowFPS;
 static ULONG DisplayID = INVALID_ID;
+static ULONG PortSource[2];
 
 /* Emulator GUI */
 static LONG ScreenIsCustom;
@@ -169,12 +179,7 @@ struct FileRequester *CartFileReq;
 struct FileRequester *StateFileReq;
 struct FileRequester *BinFileReq;
 
-static int Controller;
 static int PaddlePos;
-
-#define controller_Null 0
-#define controller_Joystick 1
-#define controller_Paddle 2
 
 /**************************************************************************
  usleep() function
@@ -231,7 +236,7 @@ static struct NewMenu MenuEntries[] =
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
 	{NM_ITEM, "Load BIN...", NULL, 0, 0L, (APTR)MEN_PROJECT_LOADBIN},
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
-	{NM_ITEM, "Internal User Interface", "F1", NM_COMMANDSTRING, 0L, (APTR)MEN_SYSTEM_UI},
+	{NM_ITEM, "Internal User Interface", "I", 0, 0L, (APTR)MEN_SYSTEM_UI},
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
 	{NM_ITEM, "Quit...", "Q", 0, 0L, (APTR)MEN_PROJECT_QUIT},
 	{NM_TITLE, "Console", NULL, 0, 0L, (APTR)MEN_CONSOLE},
@@ -247,6 +252,17 @@ static struct NewMenu MenuEntries[] =
 	{NM_TITLE, "Settings", NULL, 0, 0L, (APTR)MEN_SETTINGS},
 	{NM_ITEM, "Use Custom Screen?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_SETTINGS_CUSTOMSCREEN},
 	{NM_ITEM, "Show Framerate?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_SETTINGS_FRAMERATE},
+	{NM_ITEM, NM_BARLABEL, NULL, 0, 0L, NULL},
+	{NM_ITEM, "Atari Gameport 0", NULL, 0, 0L, NULL},
+	{NM_SUB, "Gameport 1", NULL, CHECKIT, 2+4+8, (APTR)MEN_SETTINGS_PORT0_GAMEPORT},
+	{NM_SUB, "Numeric Pad", NULL, CHECKIT, 1+4+8, (APTR)MEN_SETTINGS_PORT0_NUMERICPAD},
+	{NM_SUB, "Cursor Keys", NULL, CHECKIT, 1+2+8, (APTR)MEN_SETTINGS_PORT0_CURSORKEYS},
+	{NM_SUB, "Unassigned", NULL, CHECKIT, 1+2+4, (APTR)MEN_SETTINGS_PORT0_UNASSIGNED},
+	{NM_ITEM, "Atari Gameport 1", NULL, 0, 0L, NULL},
+	{NM_SUB, "Gameport 1", NULL, CHECKIT, 2+4+8, (APTR)MEN_SETTINGS_PORT1_GAMEPORT},
+	{NM_SUB, "Numeric Pad", NULL, CHECKIT, 1+4+8, (APTR)MEN_SETTINGS_PORT1_NUMERICPAD},
+	{NM_SUB, "Cursor Keys", NULL, CHECKIT, 1+2+8, (APTR)MEN_SETTINGS_PORT1_CURSORKEYS},
+	{NM_SUB, "Unassigned", NULL, CHECKIT, 1+2+4, (APTR)MEN_SETTINGS_PORT1_UNASSIGNED},
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
 	{NM_ITEM, "Save Settings", NULL, 0, 0L, (APTR)MEN_SETTINGS_SAVE},
 	{NM_END, NULL, NULL, 0, 0L, NULL}
@@ -341,7 +357,7 @@ BOOL SetupJoystick(void)
 		gameport_io_msg = (struct IOStdReq *) CreateIORequest (gameport_msg_port, sizeof(struct IOStdReq));
 		if( gameport_io_msg )
 		{
-			gameport_error = OpenDevice ("gameport.device", GAMEPORT1, (struct IORequest*)gameport_io_msg, 0xFFFF);
+			gameport_error = OpenDevice ("gameport.device", 1, (struct IORequest*)gameport_io_msg, 0xFFFF);
 			if(!gameport_error)
 			{
 				BYTE type = 0;
@@ -749,6 +765,17 @@ int HandleMenu(UWORD code)
 						ShowFPS = !!(mi->Flags & CHECKED);
 						break;
 
+				case	MEN_SETTINGS_PORT0_GAMEPORT: PortSource[0] = PORT_SOURCE_GAMEPORT; break;
+				case	MEN_SETTINGS_PORT0_NUMERICPAD: PortSource[0] = PORT_SOURCE_NUMERIC; break;
+				case	MEN_SETTINGS_PORT0_CURSORKEYS: PortSource[0] = PORT_SOURCE_CURSOR; break;
+				case	MEN_SETTINGS_PORT0_UNASSIGNED: PortSource[0] = PORT_SOURCE_UNASSIGNED; break;
+
+				case	MEN_SETTINGS_PORT1_GAMEPORT: PortSource[1] = PORT_SOURCE_GAMEPORT; break;
+				case	MEN_SETTINGS_PORT1_NUMERICPAD: PortSource[1] = PORT_SOURCE_NUMERIC; break;
+				case	MEN_SETTINGS_PORT1_CURSORKEYS: PortSource[1] = PORT_SOURCE_CURSOR; break;
+				case	MEN_SETTINGS_PORT1_UNASSIGNED: PortSource[1] = PORT_SOURCE_UNASSIGNED; break;
+
+
 				case	MEN_SETTINGS_SAVE:
 						RtConfigSave();
 						break;
@@ -906,15 +933,80 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 {
 	int keycode = -1;
 
+	if ((qual & IEQUALIFIER_NUMERICPAD) && (PortSource[0] == PORT_SOURCE_NUMERIC || PortSource[1] == PORT_SOURCE_NUMERIC))
+	{
+		/* TODO: This needs to be improved when pressing multiple keys */
+		static int matrix[8];
+
+		int i, before_pressed = 0, pressed = 0;
+		int local_stick = -1;
+
+		before_pressed = 0;
+		for (i=0;i<8;i++)
+			if (matrix[i]) before_pressed = 1;
+
+		/* key pressed */
+		if (!(code & 0x80))
+		{
+			switch (code)
+			{
+				case	29: matrix[0] = 1; local_stick = 9; break;
+				case	30: matrix[1] = 1; local_stick = 13; break;
+				case	31: matrix[2] = 1; local_stick = 5; break;
+				case	45: matrix[3] = 1; local_stick = 11; break;
+				case	47: matrix[4] = 1; local_stick = 7; break;
+				case	61: matrix[5] = 1; local_stick = 10; break;
+				case	62: matrix[6] = 1; local_stick = 14; break;
+				case	63: matrix[7] = 1; local_stick = 6; break;
+
+				case	46:	/* 5 in the middle */
+						if (PortSource[0] == PORT_SOURCE_NUMERIC) trig[0] = 0;
+						if (PortSource[1] == PORT_SOURCE_NUMERIC) trig[1] = 0;
+						return -1;
+			}
+		} else
+		{
+			switch (code&0x7f)
+			{
+				case	29: matrix[0] = 0; break;
+				case	30: matrix[1] = 0; break;
+				case	31: matrix[2] = 0; break;
+				case	45: matrix[3] = 0; break;
+				case	47: matrix[4] = 0; break;
+				case	61: matrix[5] = 0; break;
+				case	62: matrix[6] = 0; break;
+				case	63: matrix[7] = 0; break;
+				case	46:	/* 5 in the middle */
+						if (PortSource[0] == PORT_SOURCE_NUMERIC) trig[0] = 1;
+						if (PortSource[1] == PORT_SOURCE_NUMERIC) trig[1] = 1;
+						return -1;
+			}
+		}
+
+		pressed = 0;
+		for (i=0;i<8;i++)
+			if (matrix[i]) pressed = 1;
+
+		if (local_stick != -1 || (before_pressed && !pressed))
+		{
+			if (!pressed) local_stick = 15;
+			if (PortSource[0] == PORT_SOURCE_NUMERIC) stick[0] = local_stick;
+			if (PortSource[1] == PORT_SOURCE_NUMERIC) stick[1] = local_stick;
+			return -1;
+		}
+	}
+
 	switch (code)
 	{
-		case	0x50: keycode = AKEY_UI; break; /* F1 */
 		case	0x51: keyboard_consol &= 0x03; keycode = AKEY_NONE; break; /* F2 pressed */
 		case	0xd1: keyboard_consol |= 0x04; keycode = AKEY_NONE; break; /* F2 released */
 		case	0x52: keyboard_consol &= 0x05; keycode = AKEY_NONE; break; /* F3 pressed */
 		case	0xd2: keyboard_consol |= 0x02; keycode = AKEY_NONE; break; /* F3 released */
 		case	0x53: keyboard_consol &= 0x06; keycode = AKEY_NONE; break; /* F4 pressed */
 		case	0xd3: keyboard_consol |= 0x01; keycode = AKEY_NONE; break; /* F4 released */
+		case	0x56: keycode = AKEY_BREAK; break; /* F7 */
+		case	0x59: keycode = AKEY_NONE; break;
+		case	0x5f: keycode = AKEY_HELP; 	break;
 
 		case	0x54:	/* F5 */
 					if (qual & (IEQUALIFIER_RSHIFT | IEQUALIFIER_RSHIFT)) keycode = AKEY_COLDSTART;
@@ -922,13 +1014,79 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 					keyboard_consol = 7;
 					break;
 
-		case	0x56: keycode = AKEY_BREAK; break; /* F7 */
-		case	0x59: keycode = AKEY_NONE; break;
-		case	0x5f: keycode = AKEY_HELP; 	break;
-		case	CURSORLEFT: keycode = AKEY_LEFT; break;
-		case	CURSORUP: keycode = AKEY_UP; break;
- 		case	CURSORRIGHT: keycode = AKEY_RIGHT; break;
-		case	CURSORDOWN: keycode = AKEY_DOWN; break;
+		case	CURSORLEFT: /* Cursor Left */
+				if (qual & IEQUALIFIER_CONTROL ||
+				   (PortSource[0] != PORT_SOURCE_CURSOR && PortSource[1] != PORT_SOURCE_CURSOR))
+				{
+					keycode = AKEY_LEFT;
+				} else
+				{
+					if (PortSource[0] == PORT_SOURCE_CURSOR) stick[0] &= ~4;
+					if (PortSource[1] == PORT_SOURCE_CURSOR) stick[1] &= ~4;
+				}
+		 		break;
+		case	CURSORLEFT|0x80:
+				if (PortSource[0] == PORT_SOURCE_CURSOR) stick[0] |= 4;
+				if (PortSource[1] == PORT_SOURCE_CURSOR) stick[1] |= 4;
+		 		break;
+
+		case	CURSORRIGHT: /* Cursor Right */
+				if (qual & IEQUALIFIER_CONTROL ||
+				   (PortSource[0] != PORT_SOURCE_CURSOR && PortSource[1] != PORT_SOURCE_CURSOR))
+				{
+					keycode = AKEY_RIGHT;
+				} else
+				{
+					if (PortSource[0] == PORT_SOURCE_CURSOR) stick[0] &= ~8;
+					if (PortSource[1] == PORT_SOURCE_CURSOR) stick[1] &= ~8;
+				}
+		 		break;
+		case	CURSORRIGHT|0x80:
+				if (PortSource[0] == PORT_SOURCE_CURSOR) stick[0] |= 8;
+				if (PortSource[1] == PORT_SOURCE_CURSOR) stick[1] |= 8;
+		 		break;
+
+		case	CURSORUP: /* Cursor Up */
+				if (qual & IEQUALIFIER_CONTROL ||
+				   (PortSource[0] != PORT_SOURCE_CURSOR && PortSource[1] != PORT_SOURCE_CURSOR))
+				{
+					keycode = AKEY_UP;
+				} else
+				{
+					if (PortSource[0] == PORT_SOURCE_CURSOR) stick[0] &= ~1;
+					if (PortSource[1] == PORT_SOURCE_CURSOR) stick[1] &= ~1;
+				}
+		 		break;
+		case	CURSORUP|0x80:
+				if (PortSource[0] == PORT_SOURCE_CURSOR) stick[0] |= 1;
+				if (PortSource[1] == PORT_SOURCE_CURSOR) stick[1] |= 1;
+		 		break;
+
+		case	CURSORDOWN: /* Cursor Down */
+				if (qual & IEQUALIFIER_CONTROL ||
+				   (PortSource[0] != PORT_SOURCE_CURSOR && PortSource[1] != PORT_SOURCE_CURSOR))
+				{
+					keycode = AKEY_DOWN;
+				} else
+				{
+					if (PortSource[0] == PORT_SOURCE_CURSOR) stick[0] &= ~2;
+					if (PortSource[1] == PORT_SOURCE_CURSOR) stick[1] &= ~2;
+				}
+		 		break;
+		case	CURSORDOWN|0x80:
+				if (PortSource[0] == PORT_SOURCE_CURSOR) stick[0] |= 2;
+				if (PortSource[1] == PORT_SOURCE_CURSOR) stick[1] |= 2;
+		 		break;
+
+		case	101: /* R ALT */
+				if (PortSource[0] == PORT_SOURCE_CURSOR) trig[0] = 0;
+				if (PortSource[1] == PORT_SOURCE_CURSOR) trig[1] = 0;
+				break;
+
+		case	101|0x80: /* R ALT - released */
+				if (PortSource[0] == PORT_SOURCE_CURSOR) trig[0] = 1;
+				if (PortSource[1] == PORT_SOURCE_CURSOR) trig[1] = 1;
+				break;
 
 		default:
 					{
@@ -1049,11 +1207,23 @@ void Atari_ConfigInit(void)
 **************************************************************************/
 int Atari_Configure(char* option, char *parameters)
 {
+	int i;
+
 	if(!strcmp(option,"AMIGA_GFX_USEBESTMODE")) sscanf(parameters,"%d",&UseBestID);
 	else if(!strcmp(option,"AMIGA_GFX_USEOVERLAY")) sscanf(parameters,"%d",&Overlay);
 	else if(!strcmp(option,"AMIGA_GFX_USECUSTOMSCREEN")) sscanf(parameters,"%d",&UseCustomScreen);
 	else if(!strcmp(option,"AMIGA_GFX_SCALABLE")) sscanf(parameters, "%d",&Scalable);
 	else if(!strcmp(option,"AMIGA_GFX_DISPLAYID")) sscanf(parameters, "%x",&DisplayID);
+	else if(!strcmp(option,"AMIGA_CONTROLLER0_SOURCE"))
+	{
+		for (i=0;port_source_text[i];i++)
+			if (!strcmp(port_source_text[i],parameters)) PortSource[0] = i;
+	}
+	else if(!strcmp(option,"AMIGA_CONTROLLER1_SOURCE"))
+	{
+		for (i=0;port_source_text[i];i++)
+			if (!strcmp(port_source_text[i],parameters)) PortSource[1] = i;
+	}
 	else if(!strcmp(option,"AMIGA_SOUND"))
 	{
 		if(!strcmp(parameters,"AHI")) SoundEnabled=TRUE;
@@ -1067,6 +1237,8 @@ int Atari_Configure(char* option, char *parameters)
 **************************************************************************/
 void Atari_ConfigSave(FILE *fp)
 {
+	int i;
+
 	fprintf(fp,"AMIGA_GFX_DISPLAYID=0x%x\n",DisplayID);
 	fprintf(fp,"AMIGA_GFX_USEBESTMODE=%d\n",UseBestID);
 	fprintf(fp,"AMIGA_GFX_USECUSTOMSCREEN=%d\n",UseCustomScreen);
@@ -1076,6 +1248,11 @@ void Atari_ConfigSave(FILE *fp)
 	fputs("AMIGA_SOUND=",fp);
 	if(SoundEnabled) fputs("AHI\n",fp);
 	else fputs("NO\n",fp);
+
+	for (i=0;i<2;i++)
+	{
+		fprintf(fp,"AMIGA_CONTROLLER%d_SOURCE=%s\n",i,port_source_text[PortSource[i]]);
+	}
 }
 
 
@@ -1111,7 +1288,6 @@ int Atari_Exit (int run_monitor)
 **************************************************************************/
 void Atari_Initialise (int *argc, unsigned char **argv)
 {
-	Controller = controller_Joystick;
 	PaddlePos = 228;
 
 	if (OpenLibraries())
@@ -1141,8 +1317,8 @@ void Atari_Initialise (int *argc, unsigned char **argv)
 					{
 						if (SetupDisplay())
 						{
-							trig0 = 1;
-							stick0 = 15;
+							trig[0] = trig[1] = 1;
+							stick[0] = stick[1] = 15;
 							menu_consol = 7;
 							keyboard_consol = 7;
 						}
@@ -1242,7 +1418,7 @@ int Atari_Keyboard (void)
 		UWORD code = imsg->Code;
 		UWORD qual = imsg->Qualifier;
 		APTR iaddress = imsg->IAddress;
-		WORD mx = imsg->MouseX;
+//		WORD mx = imsg->MouseX;
 		/*WORD my = imsg->MouseY;*/
 
 		if (cl == IDCMP_MENUVERIFY)
@@ -1260,6 +1436,7 @@ int Atari_Keyboard (void)
 			case	IDCMP_MENUPICK: keycode = HandleMenu(code); break;
 
 			case	IDCMP_MOUSEBUTTONS :
+#if 0
 					if (Controller == controller_Paddle)
 					{
 						switch (code)
@@ -1269,9 +1446,11 @@ int Atari_Keyboard (void)
 							default: break;
 						}
 					}
+#endif
 					break;
 
 			case	IDCMP_MOUSEMOVE :
+#if 0
 					if (Controller == controller_Paddle)
 					{
 						if (mx > 57)
@@ -1284,6 +1463,7 @@ int Atari_Keyboard (void)
 							PaddlePos = 228;
 						}
 					}
+#endif
 					break;
 
 			default: break;
@@ -1303,6 +1483,14 @@ int Atari_Keyboard (void)
 	return keycode;
 }
 
+/**************************************************************************
+ Handle the joyick.
+**************************************************************************/
+static void Atari_Joystick(int port)
+{
+}
+
+#if 0
 /**************************************************************************
  Handle the joysting
 **************************************************************************/
@@ -1348,7 +1536,7 @@ static void Atari_Joystick(void)
     }
     if (stick != 0) old_stick = stick;
 
-    if(code == IECODE_LBUTTON) trig0 = 0;
+    if (code == IECODE_LBUTTON) trig0 = 0;
     else if (code == (IECODE_LBUTTON | IECODE_UP_PREFIX)) trig0 = 1;
 
     SendIO ((struct IORequest*)gameport_io_msg);
@@ -1356,15 +1544,21 @@ static void Atari_Joystick(void)
 
   stick0 = old_stick;
 }
+#endif
 
 /**************************************************************************
  Handle Joystick Port (direction)
 **************************************************************************/
 int Atari_PORT (int num)
 {
+	Atari_Joystick(num);
+	return stick[num];
+
+#if 0
 	if (num == 0)
 	{
-		if (Controller == controller_Joystick)
+		
+/*		if (Controller == controller_Joystick)
 		{
 			Atari_Joystick ();
 			return 0xf0 | stick0;
@@ -1372,12 +1566,13 @@ int Atari_PORT (int num)
 		else
 		{
 			return stick0;
-		}
+		}*/
 	}
 	else
 	{
 		return 0xff;
 	}
+#endif
 }
 
 /**************************************************************************
@@ -1385,13 +1580,8 @@ int Atari_PORT (int num)
 **************************************************************************/
 int Atari_TRIG (int num)
 {
-	if (num == 0)
-	{
-		Atari_Joystick ();
-		return trig0;
-	}
-	else
-		return 1;
+	Atari_Joystick(num);
+	return trig[num];
 }
 
 /**************************************************************************
@@ -1531,7 +1721,6 @@ LONG InsertROM(LONG CartType)
 
 	return Success;
 }
-
 
 /**************************************************************************
  Free everything which is assoicated with the Atari Screen while
@@ -1728,7 +1917,25 @@ LONG SetupDisplay(void)
 
 					if ((mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_FRAMERATE)))
 						mi->Flags |= ShowFPS?CHECKED:0;
-					
+
+					switch (PortSource[0])
+					{
+						case PORT_SOURCE_GAMEPORT:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_GAMEPORT);break;
+						case PORT_SOURCE_NUMERIC:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_NUMERICPAD);break;
+						case PORT_SOURCE_CURSOR:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_CURSORKEYS);break;
+						default: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT0_UNASSIGNED);break;
+					}
+					if (mi) mi->Flags |= CHECKED;
+
+					switch (PortSource[1])
+					{
+						case PORT_SOURCE_GAMEPORT:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_GAMEPORT);break;
+						case PORT_SOURCE_NUMERIC:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_NUMERICPAD);break;
+						case PORT_SOURCE_CURSOR:mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_CURSORKEYS);break;
+						default: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_UNASSIGNED);break;
+					}
+					if (mi) mi->Flags |= CHECKED;
+
 					SetMenuStrip(WindowMain, MenuMain);
 					return 1;
 				}
