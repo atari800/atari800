@@ -305,9 +305,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 			config = TRUE;
 		else if (strcmp(argv[i], "-config") == 0)
 			rtconfig_filename = argv[++i];
-		else if (strcmp(argv[i], "-v") == 0) {
-			Aprint("%s", ATARI_TITLE);
-			return 0;
+		else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "-version") == 0) {
+			printf("%s\n", ATARI_TITLE);
+			return FALSE;
 		}
 		else if (strcmp(argv[i], "-verbose") == 0)
 			verbose = TRUE;
@@ -942,6 +942,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.40  2002/08/07 07:59:24  joy
+displaying version (-v) fixed
+
 Revision 1.39  2002/08/07 07:23:02  joy
 -help formatting fixed, crlf converted to lf
 
