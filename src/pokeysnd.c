@@ -100,7 +100,7 @@
 #  define READ_U32(x)    (*(uint32 *)(x))
 #  define WRITE_U32(x,d) (*(uint32 *)(x)=(d))
 #else
-#  ifdef ATARI800_BIG_ENDIAN
+#  ifdef WORDS_BIGENDIAN
 #    define READ_U32(x) (((*(unsigned char *)(x)) << 24) | ((*((unsigned char *)(x)+1)) << 16) | \
                         ((*((unsigned char *)(x)+2)) << 8) | ((*((unsigned char *)(x)+3))))
 #    define WRITE_U32(x,d) \
@@ -693,7 +693,7 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
 	register uint8 *vol_ptr;
 
 	/* set a pointer to the whole portion of the samp_n_cnt */
-#ifdef ATARI800_BIG_ENDIAN
+#ifdef WORDS_BIGENDIAN
 	samp_cnt_w_ptr = ((uint8 *) (&Samp_n_cnt[0]) + 3);
 #else
 	samp_cnt_w_ptr = ((uint8 *) (&Samp_n_cnt[0]) + 1);
@@ -1051,7 +1051,7 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
 #endif /* STEREO */
 #endif /* CLIP */
 
-#ifdef ATARI800_BIG_ENDIAN
+#ifdef WORDS_BIGENDIAN
 			*(Samp_n_cnt + 1) += Samp_n_max;
 #else
 			*Samp_n_cnt += Samp_n_max;
@@ -1164,6 +1164,9 @@ void Update_vol_only_sound( void )
 
 /*
 $Log$
+Revision 1.5  2001/04/15 09:17:53  knik
+atari800_big_endian -> words_bigendian (autoconf compatibility)
+
 Revision 1.4  2001/04/08 06:05:24  knik
 weird bug in WRITE_U32 macro fixed
 

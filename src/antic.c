@@ -381,10 +381,10 @@ UWORD cl_lookup[128];
 
 /* Hi-res modes optimizations
    Now hi-res modes are drawn with words, not bytes. Endianess defaults
-   to little-endian. ATARI800_BIG_ENDIAN should be defined when compiling on
+   to little-endian. WORDS_BIGENDIAN should be defined when compiling on
    big-endian machine. */
 
-#ifdef ATARI800_BIG_ENDIAN
+#ifdef WORDS_BIGENDIAN
 #define BYTE0_MASK		0xff00
 #define BYTE1_MASK		0x00ff
 #define HIRES_MASK_01	0xfff0
