@@ -10,7 +10,7 @@ DEFS=@DEFS@
 PREFIX		= @prefix@
 BIN_PATH	= ${PREFIX}/bin
 LIB_PATH	= ${PREFIX}/lib
-MAN_PATH	= ${PREFIX}/man
+MAN_PATH	= ${PREFIX}/share/man
 
 INCLUDE=-I.
 

@@ -1,6 +1,6 @@
 %define name	atari800
 %define ver	1.2.3
-%define rel	3
+%define rel	1
 %define copy	GPL
 %define ich friedel <friedel@nomaden.org>
 %define group	Console/Emulators
@@ -9,7 +9,7 @@
 %define targets ncurses svgalib x11 sdl
 ## If you change the targets, you'll have to change the files list at the
 ## bottom of this file as well
-%define maintarget svgalib
+%define maintarget sdl
 Summary:	An emulator for 8-bit Atari personal computers.
 Name:		%{name}
 Version:	%{ver}
@@ -60,7 +60,7 @@ touch atari800
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/bin
-mkdir -p $RPM_BUILD_ROOT/usr/man/man1
+mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
 make install PREFIX=$RPM_BUILD_ROOT/usr
 for target in %{targets}
 do
@@ -83,9 +83,11 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/atari800-x11
 /usr/bin/atari800-ncurses
 /usr/bin/atari800-sdl
-/usr/man/man1/atari800.1
+/usr/share/man/man1/atari800.1.bz2
 
 %changelog
+* Tue Jul 9 2002 Petr Stehlik <pstehlik@sophics.cz>
+Main target is SDL. Manual is installed to /usr/share/man (FHS).
 * Mon Jul 8 2002 Petr Stehlik <pstehlik@sophics.cz>
 Atari800 now installs to /usr/bin
 * Fri Dec 21 2001 Friedrich Delgado Friedrichs <friedel@nomaden.org>
