@@ -363,21 +363,17 @@ static int decode_C1(void)
 	int	secoff,tmpoff,c;
 
 	tmpoff = fgetc(fin);
-	c = fgetc(fin);
-	if( tmpoff == EOF || c == EOF )
+	if( tmpoff == EOF)
 	{
 		show_file_error( fin );
 		return 0;
 	}
 
-	for (secoff=0; secoff<(int)secsize; secoff++) 
-		buf[secoff]=c;
-
 	c=tmpoff;
-	for (secoff=0; secoff<tmpoff; secoff++) 
+	for (secoff=0; secoff<=tmpoff; secoff++) 
 	{
-		c--;
 		buf[c]=fgetc(fin);
+		c--;
 		if( feof(fin) )
 		{
 			show_file_error( fin );
@@ -659,6 +655,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.14  2003/12/17 07:01:18  markgrebe
+Fixed serious bug in Type 41 decoding
+
 Revision 1.13  2003/09/14 20:07:28  joy
 O_BINARY defined
 
