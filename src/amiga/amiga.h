@@ -1,8 +1,6 @@
 #ifndef _ATARI_AMIGA_H_
 #define _ATARI_AMIGA_H_
 
-LONG DisplayYesNoWindow(void);
-
 LONG InsertROM(LONG CartType);
 LONG InsertDisk( LONG Drive );
 
@@ -16,6 +14,7 @@ enum{
 	MEN_PROJECT_LOADSTATE,
 	MEN_PROJECT_SAVESTATE,
 	MEN_PROJECT_LOADBIN,
+	MEN_PROJECT_ICONIFY,
 	MEN_PROJECT_QUIT,
 
 	MEN_SYSTEM,

@@ -51,8 +51,11 @@
 #include <dos/dos.h>
 #include <dos/dostags.h>
 #include <intuition/intuition.h>
+#include <intuition/imageclass.h>
+#include <intuition/gadgetclass.h>
 #include <cybergraphx/cybergraphics.h>
 #include <workbench/workbench.h>
+#include <workbench/icon.h>
 
 #include <proto/exec.h>
 #include <proto/asl.h>
@@ -63,6 +66,7 @@
 #include <proto/timer.h>
 #include <proto/keymap.h>
 #include <proto/utility.h>
+#include <proto/icon.h>
 #include <proto/wb.h>
 
 #include <proto/ahi.h>
@@ -80,6 +84,10 @@
 
 #include "amiga.h"
 #include "support.h"
+
+/******************************/
+
+int Atari_Exit (int run_monitor);
 
 /******************************/
 
@@ -110,11 +118,15 @@ static char *display_text[] =
 	"WINDOW","SCALBALEWINDOW","CUSTOMSCREEN",NULL
 };
 
-/***"***************************/
+/*******************************/
 
 struct timezone;
 
 /******************************/
+
+#define ICONIFY_GID 1
+
+/*******************************/
 
 extern int refresh_rate;
 
@@ -129,6 +141,7 @@ struct Library *CyberGfxBase;
 struct Library *KeymapBase;
 struct Library *UtilityBase;
 struct Library *WorkbenchBase;
+struct Library *IconBase;
 
 struct IntuitionIFace *IIntuition;
 struct GraphicsIFace *IGraphics;
@@ -140,6 +153,7 @@ struct CyberGfxIFace *ICyberGfx;
 struct KeymapIFace *IKeymap;
 struct UtilityIFace *IUtility;
 struct WorkbenchIFace *IWorkbench;
+struct IconIFace *IIcon;
 
 /* Gameport */
 static struct InputEvent gameport_data;
@@ -190,6 +204,8 @@ static ULONG ScreenDepth;
 static APTR VisualInfoMain;
 static struct Window *WindowMain = NULL;
 static struct Menu *MenuMain;
+static Object *IconifyImage;
+static Object *IconifyGadget;
 static BOOL SizeVerify; /* SizeVerify State (don't draw anything) */
 
 static UBYTE pentable[256];
@@ -226,6 +242,33 @@ int gettimeofday(struct timeval *tp, struct timezone *tzp)
 		GetSysTime(tp);
 	return 0;
 }
+
+/**************************************************************************
+ Returns the Programm's Diskobject
+**************************************************************************/
+struct DiskObject *GetProgramObject(void)
+{
+	struct DiskObject *obj;
+	extern char program_name[]; /* from startup.c */
+	BPTR odir;
+	
+	odir = CurrentDir(GetProgramDir());
+
+	obj = GetIconTags(program_name,
+						ICONGETA_FailIfUnavailable, FALSE,
+						ICONGETA_GenerateImageMasks, FALSE,
+						TAG_DONE);
+
+	if(!obj)
+		obj = GetIconTags(NULL,
+						ICONGETA_GetDefaultType, WBTOOL,
+						TAG_DONE);
+
+	CurrentDir(odir);
+
+	return obj;
+}
+
 
 /**************************************************************************
  Load any file. Returns 1 on success and 2 if machine needs to be reseted
@@ -333,6 +376,8 @@ static struct NewMenu MenuEntries[] =
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
 	{NM_ITEM, "Internal User Interface", "I", 0, 0L, (APTR)MEN_SYSTEM_UI},
 	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Iconify", NULL, 0, 0L, (APTR)MEN_PROJECT_ICONIFY},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
 	{NM_ITEM, "Quit...", "Q", 0, 0L, (APTR)MEN_PROJECT_QUIT},
 	{NM_TITLE, "Console", NULL, 0, 0L, (APTR)MEN_CONSOLE},
 	{NM_ITEM, "Option", "F2", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_OPTION},
@@ -371,6 +416,7 @@ static struct NewMenu MenuEntries[] =
 **************************************************************************/
 VOID CloseLibraries(void)
 {
+	if (IconBase) CloseLibraryInterface(IconBase, IIcon);
 	if (WorkbenchBase) CloseLibraryInterface(WorkbenchBase, IWorkbench);
 	if (CyberGfxBase) CloseLibraryInterface(CyberGfxBase, ICyberGfx);
 	if (KeymapBase) CloseLibraryInterface(KeymapBase,IKeymap);
@@ -405,6 +451,7 @@ BOOL OpenLibraries(void)
 
 								if ((WorkbenchBase = OpenLibraryInterface("workbench.library",36, &IWorkbench)))
 								{
+									IconBase = OpenLibraryInterface("icon.library",50,&IIcon);
 									return TRUE;
 								}
 							}
@@ -678,6 +725,18 @@ VOID FreeDisplay(void)
 		WindowMain = NULL;
 	}
 
+	if (IconifyImage)
+	{
+		DisposeObject(IconifyImage);
+		IconifyImage = NULL;
+	}
+
+	if (IconifyGadget)
+	{
+		DisposeObject(IconifyGadget);
+		IconifyGadget = NULL;
+	}
+
 	if (VisualInfoMain)
 	{
 		FreeVisualInfo( VisualInfoMain );
@@ -836,6 +895,32 @@ LONG SetupDisplay(void)
 				pensallocated = 1;
 			}
 
+			/* Iconfiy Gadget is optional */
+			if (IntuitionBase->lib_Version >= 50)
+			{
+				struct DrawInfo *dri;
+
+				if ((dri = GetScreenDrawInfo(ScreenMain)))
+				{
+				    if ((IconifyImage = NewObject( NULL, "sysiclass",
+							SYSIA_DrawInfo, dri,
+							SYSIA_Which, ICONIFYIMAGE,
+							TAG_DONE )))
+					{
+						IconifyGadget = NewObject( NULL, "buttongclass",
+						        GA_Image, IconifyImage,
+								GA_Titlebar, TRUE,     /* Implies GA_TopBorder, TRUE */
+								GA_RelRight, 0,        /* Just to set GFLG_RELRIGHT */
+								GA_ID, ICONIFY_GID,
+								GA_RelVerify, TRUE,
+								TAG_DONE );
+					}
+
+					FreeScreenDrawInfo(ScreenMain,dri);
+				}
+			}
+
+
 			if (!(tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),MEMF_CLEAR)))
 			{
 				UnlockPubScreen(NULL,ScreenMain);
@@ -859,7 +944,7 @@ LONG SetupDisplay(void)
 					WA_InnerWidth, ScreenWidth,
 					WA_InnerHeight, ScreenHeight,
 					WA_IDCMP, IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE | IDCMP_MENUPICK | IDCMP_CLOSEWINDOW |
-									IDCMP_RAWKEY | IDCMP_NEWSIZE | IDCMP_SIZEVERIFY,
+									IDCMP_RAWKEY | IDCMP_NEWSIZE | IDCMP_SIZEVERIFY | IDCMP_GADGETUP,
 					WA_ReportMouse, TRUE,
 					WA_CustomScreen, ScreenMain,
 					WA_Borderless, ScreenIsCustom,
@@ -875,6 +960,12 @@ LONG SetupDisplay(void)
 					DisplayType == DISPLAY_SCALABLEWINDOW?WA_MaxHeight:TAG_IGNORE,-1,
 					TAG_DONE)))
 				{
+					if (IconifyGadget)
+					{
+						AddGList( WindowMain, (struct Gadget*)IconifyGadget, (UWORD)0, 1, NULL );
+						RefreshGList( (struct Gadget*)IconifyGadget, WindowMain, NULL, 1 );
+					}
+
 					if ((mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_FRAMERATE)))
 						mi->Flags |= ShowFPS?CHECKED:0;
 
@@ -974,6 +1065,48 @@ BOOL SetupTimer(void)
 	return FALSE;
 }
 
+
+/**************************************************************************
+ Iconify the atari emu by closing the display and placing an icon
+ on the wb.
+**************************************************************************/
+VOID Iconify(void)
+{
+	struct DiskObject *dobj = GetProgramObject();
+	struct AppIcon *app_icon;
+	extern char program_name[];
+
+	if (!dobj) return;
+
+	if ((app_icon = AddAppIcon(2,0L,program_name,app_port,ZERO,dobj,
+								TAG_DONE)))
+	{
+		int ready = 0;
+		
+		FreeDisplay();
+		
+		while (!ready)
+		{
+			struct AppMessage *amsg;
+			WaitPort(app_port);
+
+			while ((amsg = (struct AppMessage *)GetMsg(app_port)))
+			{
+				if (amsg->am_Type == AMTYPE_APPICON && amsg->am_ID == 2)
+					ready = 1;
+				ReplyMsg((struct Message*)amsg);
+			}
+		}
+
+		RemoveAppIcon(app_icon);
+
+		if (!SetupDisplay())
+			Atari_Exit(0);
+	}
+
+	FreeDiskObject(dobj);
+}
+
 /**************************************************************************
  Handle the menu
 **************************************************************************/
@@ -1058,6 +1191,7 @@ int HandleMenu(UWORD code)
 							}
 							break;
 
+				case	MEN_PROJECT_ICONIFY: keycode = -2; break;
 				case	MEN_PROJECT_QUIT: keycode = AKEY_EXIT; break;
 
 				case	MEN_SYSTEM_BOOT:
@@ -1869,6 +2003,7 @@ int Atari_Keyboard (void)
 	static int old_keycode = -1;
 
 	int keycode = -1;
+	int iconify = 0;
 
 	struct IntuiMessage *imsg;
 
@@ -1901,7 +2036,15 @@ int Atari_Keyboard (void)
 			case	IDCMP_NEWSIZE: SizeVerify = FALSE; break;
 			case	IDCMP_RAWKEY: keycode = HandleRawkey(code,qual,iaddress); break;
 			case	IDCMP_CLOSEWINDOW: keycode = AKEY_EXIT; break;
-			case	IDCMP_MENUPICK: keycode = HandleMenu(code); break;
+			case	IDCMP_MENUPICK:
+					keycode = HandleMenu(code);
+					if (keycode == -2)
+					{
+						iconify = 1;
+						keycode = -1;
+					}
+					break;
+			case	IDCMP_GADGETUP: iconify = 1; break;
 
 			case	IDCMP_MOUSEBUTTONS :
 #if 0
@@ -1976,6 +2119,12 @@ int Atari_Keyboard (void)
 			}
 			ReplyMsg((struct Message*)amsg);
 		}
+	}
+
+	if (iconify)
+	{
+		Iconify();
+		keycode = -1;
 	}
 
 	return keycode;
@@ -2119,22 +2268,6 @@ void Sound_Continue(void)
 }
 
 /**************************************************************************
- Display a question requester. Returns TRUE for a positive
- answer otherwise FALSE
-**************************************************************************/
-LONG DisplayYesNoWindow(void)
-{
-	struct EasyStruct easy;
-	easy.es_StructSize = sizeof(struct EasyStruct);
-	easy.es_Flags = 0;
-	easy.es_Title = "Warning";
-	easy.es_TextFormat = "Are you sure?";
-	easy.es_GadgetFormat = "OK|Cancel";
-
-	return EasyRequestArgs( WindowMain, &easy, NULL, NULL );
-}
-
-/**************************************************************************
  Insert a disk into the drive
 **************************************************************************/
 LONG InsertDisk( LONG Drive )
@@ -2220,34 +2353,7 @@ LONG InsertROM(LONG CartType)
 	return Success;
 }
 
-/**************************************************************************
- Iconify the emulator
-**************************************************************************/
-VOID Iconify(void)
-{
-	struct Window *iconifyWnd;
-
-	FreeDisplay();
-
-	iconifyWnd = OpenWindowTags( NULL,
-									WA_InnerHeight,-2,
-									WA_InnerWidth, 130,
-									WA_CloseGadget, TRUE,
-									WA_DragBar, TRUE,
-									WA_DepthGadget, TRUE,
-									WA_IDCMP, IDCMP_CLOSEWINDOW,
-									WA_Title, "Atari800 Emulator",
-									TAG_DONE );
-
-	if( iconifyWnd )
-	{
-		WaitPort( iconifyWnd->UserPort );
-		CloseWindow( iconifyWnd );
-	}
-
-	if (!SetupDisplay())
-		Atari_Exit(0);
-}
+char program_name[256];
 
 /**************************************************************************
  main
@@ -2255,6 +2361,23 @@ VOID Iconify(void)
 int main(int argc, char **argv)
 {
 	int keycode;
+
+	if (!argc)
+	{
+		/* started from workbench */
+		
+		struct WBStartup *wbs = (struct WBStartup*)argv;
+		if (wbs)
+		{
+			strncpy(program_name, wbs->sm_ArgList->wa_Name, sizeof(program_name)-1);
+			program_name[sizeof(program_name)-1]= 0;	
+		}
+	} else
+	{
+		/* started from shell */
+		strncpy(program_name,argv[0],sizeof(program_name)-1);
+		program_name[sizeof(program_name)-1]=0;
+	}
 
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
