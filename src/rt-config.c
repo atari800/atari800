@@ -47,6 +47,8 @@
 	extern void Atari_ConfigInit(void);
 #endif
 
+extern char *safe_strncpy(char *dest, const char *src, size_t size);
+
 char atari_osa_filename[FILENAME_MAX];
 char atari_osb_filename[FILENAME_MAX];
 char atari_xlxe_filename[FILENAME_MAX];
@@ -197,39 +199,39 @@ int RtConfigLoad(const char *alternate_config_filename)
 			RemoveSpaces(ptr);
 
 			if (strcmp(string, "OS/A_ROM") == 0)
-				strcpy(atari_osa_filename, ptr);
+				safe_strncpy(atari_osa_filename, ptr, sizeof(atari_osa_filename));
 			else if (strcmp(string, "OS/B_ROM") == 0)
-				strcpy(atari_osb_filename, ptr);
+				safe_strncpy(atari_osb_filename, ptr, sizeof(atari_osb_filename));
 			else if (strcmp(string, "XL/XE_ROM") == 0)
-				strcpy(atari_xlxe_filename, ptr);
+				safe_strncpy(atari_xlxe_filename, ptr, sizeof(atari_xlxe_filename));
 			else if (strcmp(string, "BASIC_ROM") == 0)
-				strcpy(atari_basic_filename, ptr);
+				safe_strncpy(atari_basic_filename, ptr, sizeof(atari_basic_filename));
 			else if (strcmp(string, "5200_ROM") == 0)
-				strcpy(atari_5200_filename, ptr);
+				safe_strncpy(atari_5200_filename, ptr, sizeof(atari_5200_filename));
 			else if (strcmp(string, "DISK_DIR") == 0) {
 				if (disk_directories == MAX_DIRECTORIES)
 					Aprint("All disk directory slots used!");
 				else
-					strcpy(atari_disk_dirs[disk_directories++], ptr);
+					safe_strncpy(atari_disk_dirs[disk_directories++], ptr, sizeof(atari_disk_dirs[0]));
 			}
 			else if (strcmp(string, "ROM_DIR") == 0)
-				strcpy(atari_rom_dir, ptr);
+				safe_strncpy(atari_rom_dir, ptr, sizeof(atari_rom_dir));
 			else if (strcmp(string, "H1_DIR") == 0)
-				strcpy(atari_h1_dir, ptr);
+				safe_strncpy(atari_h1_dir, ptr, sizeof(atari_h1_dir));
 			else if (strcmp(string, "H2_DIR") == 0)
-				strcpy(atari_h2_dir, ptr);
+				safe_strncpy(atari_h2_dir, ptr, sizeof(atari_h2_dir));
 			else if (strcmp(string, "H3_DIR") == 0)
-				strcpy(atari_h3_dir, ptr);
+				safe_strncpy(atari_h3_dir, ptr, sizeof(atari_h3_dir));
 			else if (strcmp(string, "H4_DIR") == 0)
-				strcpy(atari_h4_dir, ptr);
+				safe_strncpy(atari_h4_dir, ptr, sizeof(atari_h4_dir));
 			else if (strcmp(string, "HD_READ_ONLY") == 0)
 				sscanf(ptr, "%d", &hd_read_only);
 			else if (strcmp(string, "EXE_DIR") == 0)
-				strcpy(atari_exe_dir, ptr);
+				safe_strncpy(atari_exe_dir, ptr, sizeof(atari_exe_dir));
 			else if (strcmp(string, "STATE_DIR") == 0)
-				strcpy(atari_state_dir, ptr);
+				safe_strncpy(atari_state_dir, ptr, sizeof(atari_state_dir));
 			else if (strcmp(string, "PRINT_COMMAND") == 0)
-				strcpy(print_command, ptr);
+				safe_strncpy(print_command, ptr, sizeof(print_command));
 			else if (strcmp(string, "SCREEN_REFRESH_RATIO") == 0)
 				sscanf(ptr, "%d", &refresh_rate);
 			else if (strcmp(string, "DISABLE_BASIC") == 0)
@@ -499,6 +501,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.21  2004/11/26 18:10:29  joy
+buffer overflow fixes
+
 Revision 1.20  2004/06/06 12:19:19  joy
 RemoveSpaces() used on the variable and its value
 Aprint() fixes
