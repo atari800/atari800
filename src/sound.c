@@ -57,7 +57,7 @@ void Sound_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	if (sound_enabled) {
-		if ((dsp_fd = open(dspname, O_WRONLY)) == -1) {
+		if ((dsp_fd = open(dspname, O_WRONLY|O_NONBLOCK)) == -1) {
 			perror(dspname);
 			sound_enabled = 0;
 			return;
@@ -163,6 +163,9 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.5  2001/06/18 12:08:51  joy
+ non-blocking open of sound device.
+
  Revision 1.4  2001/04/08 05:59:32  knik
  sound_pause/continue removed if no sound used
 

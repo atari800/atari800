@@ -1,3 +1,5 @@
+o nonblocking open of sound device on linux <Rudolf>
+
 Changes in 1.0.7
 ----------------
 o atari_x11.c: Added clipping and made the -large and -huge work with XShm.
