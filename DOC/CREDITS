@@ -126,6 +126,8 @@ Mark Grebe <markgrebe@yahoo.com>
     - initial Mac OSX support
     - new complete H: device support (subdirectories added recently)
     - Multiple Disk Set support
+    - new state-file implementation supporting bank-switching cartridges
+      and SIO disks
 
 Christian Groessler <cpg@aladdin.de>
     - SVGAlib patch for joystick

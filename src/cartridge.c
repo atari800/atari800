@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "atari.h"
 #include "cartridge.h"
@@ -31,6 +32,7 @@
 #include "pia.h"
 #include "rt-config.h"
 #include "rtime.h"
+#include "statesav.h"
 
 int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	0,
@@ -91,6 +93,7 @@ int CART_IsFor5200(int type)
 }
 
 UBYTE *cart_image = NULL;		/* For cartridge memory */
+char cart_filename[FILENAME_MAX];
 int cart_type = CART_NONE;
 
 static int bank;
@@ -471,6 +474,9 @@ int CART_Insert(char *filename)
 	fseek(fp, 0L, SEEK_END);
 	len = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
+        
+	/* Save Filename for state save */
+	strcpy(cart_filename, filename);
 
 	/* if full kilobytes, assume it is raw image */
 	if ((len & 0x3ff) == 0) {
@@ -752,3 +758,65 @@ void CART_Start(void) {
 		}
 	}
 }
+
+void CARTStateRead( void )
+{
+    int savedCartType = CART_NONE;;
+    UWORD namelen;
+    FILE *fp;
+    char filename[FILENAME_MAX];
+    
+    /* Set the filename to NULL, in case the read fails */
+    filename[0] = 0;
+    /* Read the cart type from the file.  If there is no cart type, becaused we have
+       reached the end of the file, this will just default to CART_NONE */
+    ReadINT(&savedCartType, 1);
+    if (savedCartType != CART_NONE) {
+        /* Read the length of the saved cartridge filename */
+        ReadUWORD(&namelen, 1);
+        if (namelen != 0) {
+            if (namelen > (FILENAME_MAX-1))
+                namelen = FILENAME_MAX-1;
+            /* Read the filename, and add the terminating zero for C-string */
+            ReadUBYTE(filename, namelen);
+            filename[namelen] = 0;
+            /* Check to make sure the filename is valid */
+            fp = fopen(filename, "rb");
+            if (fp == NULL)
+		return;
+            else
+                fclose(fp);
+            /* Insert the cartridge...*/
+            if (CART_Insert(filename) >= 0) {
+                /* And set the type to the saved type, in case it was a raw cartridge image */
+                cart_type = savedCartType;
+                CART_Start();
+                }
+            }
+        }
+}
+
+void CARTStateSave( void)
+{
+    UWORD namelen;
+    char *filename;
+    char dirname[FILENAME_MAX];
+    
+    /* Save the cartridge type, or CART_NONE if there isn't one...*/
+    SaveINT(&cart_type,1);
+    if (cart_type != CART_NONE) {
+        /* Check to see if file is in application tree, if so, just save as 
+           relative path....*/
+        getcwd(dirname, FILENAME_MAX);
+        if (strncmp(cart_filename, dirname, strlen(dirname)) == 0)
+            filename = &cart_filename[strlen(dirname)+1];
+        else
+            filename = cart_filename;
+
+        namelen = strlen(filename);
+        /* Save the length of the filename, followed by the filename */
+        SaveUWORD(&namelen, 1);
+        SaveUBYTE(filename, namelen);
+        }
+}
+

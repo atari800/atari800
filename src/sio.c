@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 #ifdef DEBUG
 #include <time.h>
 #include <sys/time.h>
@@ -43,6 +44,7 @@
 #include "log.h"
 #include "binload.h"
 #include "cassette.h"
+#include "statesav.h"
 
 #ifdef SHOW_DISK_LED
 #include "diskled.h"
@@ -92,6 +94,8 @@ char sio_status[256];
 int DataIndex = 0;
 int TransferStatus = 0;
 int ExpectedBytes = 0;
+
+int ignore_header_writeprotect = 0;
 
 extern FILE *opendcm( int diskno, const char *infilename, char *outfilename );
 #ifdef HAVE_LIBZ
@@ -193,7 +197,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		if ((header.magic1 == MAGIC1) && (header.magic2 == MAGIC2)) {
 			format[diskno - 1] = ATR;
 
-			if (header.writeprotect)
+			if (header.writeprotect && !ignore_header_writeprotect)
 				drive_status[diskno - 1] = ReadOnly;
 
 			sectorsize[diskno - 1] = header.secsizehi << 8 |
@@ -1132,8 +1136,73 @@ int Rotate_Disks( void )
 	return bSuccess;
 }
 
+void SIOStateSave( void ) 
+{
+    int i;
+    UWORD namelen;    
+    char *filename;
+    char dirname[FILENAME_MAX];
+
+    getcwd(dirname, FILENAME_MAX);
+
+    for (i=0;i<8;i++) {
+        if (strncmp(sio_filename[i], dirname, strlen(dirname)) == 0)
+            filename = &sio_filename[i][strlen(dirname)+1];
+        else
+            filename = sio_filename[i];
+
+        namelen = strlen(filename);
+        SaveINT((int *)&drive_status[i], 1);
+        SaveUWORD(&namelen, 1);
+        SaveUBYTE(filename, namelen);
+        }
+}
+
+void SIOStateRead( void )
+{
+    int i;
+    UWORD namelen;
+    char filename[FILENAME_MAX];
+    FILE *fp;
+    int saved_drive_status;
+
+    for (i=0;i<8;i++) {
+        ReadINT((int *)&saved_drive_status, 1);
+        ReadUWORD(&namelen,1);
+        if (namelen != 0) {
+            filename[0] = 0;
+            ReadUBYTE(filename, namelen);
+            filename[namelen] = 0;
+            /* Check to make sure the filename is valid */
+            fp = fopen(filename, "rb");
+            if (fp == NULL)
+		continue;
+            else
+                fclose(fp);                
+            drive_status[i] = saved_drive_status;
+            /* If the disk drive wasn't empty or off when saved,
+               mount the disk */
+            if ((drive_status[i] != Off) &&
+                (drive_status[i] != NoDisk)) {
+                    /* unmount */
+                    SIO_Dismount(i + 1);
+                    /* try to mount with saved R/W status  */
+                    if (drive_status[i] == ReadOnly)
+                        SIO_Mount(i + 1, filename, 1);
+                    else
+                        SIO_Mount(i + 1, filename, 0);
+                }
+            }
+        else
+            drive_status[i] = saved_drive_status;
+        }
+}
+
 /*
 $Log$
+Revision 1.19  2003/10/26 18:49:40  joy
+new state file format for bankswitching
+
 Revision 1.18  2003/10/24 14:13:14  pfusik
 "Overmind" runs with NEW_CYCLE_EXACT and SIO patch enabled
 

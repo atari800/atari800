@@ -34,7 +34,7 @@
 #include <zlib.h>
 #endif
 
-#define SAVE_VERSION_NUMBER	3
+#define SAVE_VERSION_NUMBER	4
 
 #ifndef TRUE
 #define TRUE	1
@@ -47,6 +47,8 @@ extern void CpuStateSave( UBYTE SaveVerbose );
 extern void GTIAStateSave( void );
 extern void PIAStateSave( void );
 extern void POKEYStateSave( void );
+extern void CARTStateSave( void );
+extern void SIOStateSave( void );
 
 extern void AnticStateRead( void );
 extern void MainStateRead( void );
@@ -54,6 +56,8 @@ extern void CpuStateRead( UBYTE SaveVerbose );
 extern void GTIAStateRead( void );
 extern void PIAStateRead( void );
 extern void POKEYStateRead( void );
+extern void CARTStateRead( void );
+extern void SIOStateRead( void );
 
 extern int ReadDisabledROMs( void );
 
@@ -359,6 +363,8 @@ int SaveAtariState( char *filename, const char *mode, UBYTE SaveVerbose )
 		/* The order here is important. Main must be first because it saves the machine type, and
 		   decisions on what to save/not save are made based off that later in the process */
 		MainStateSave( );
+		CARTStateSave( );
+		SIOStateSave( );
 		AnticStateSave( );
 		CpuStateSave( SaveVerbose );
 		GTIAStateSave( );
@@ -416,7 +422,7 @@ int ReadAtariState( char *filename, const char *mode )
 		return FALSE;
 	}
 
-	if( StateVersion != SAVE_VERSION_NUMBER)
+	if( StateVersion != SAVE_VERSION_NUMBER && StateVersion != 3)
 	{
 		Aprint( "Cannot read this state file because it is an incompatible version." );
 		result = GZCLOSE( StateFile );
@@ -425,6 +431,10 @@ int ReadAtariState( char *filename, const char *mode )
 	}
 
 	MainStateRead( );
+        if (StateVersion != 3) {
+            CARTStateRead( );
+            SIOStateRead( );
+        }
 	AnticStateRead( );
 	CpuStateRead( SaveVerbose );
 	GTIAStateRead( );
@@ -452,6 +462,9 @@ int ReadAtariState( char *filename, const char *mode )
 
 /*
 $Log$
+Revision 1.7  2003/10/26 18:49:40  joy
+new state file format for bankswitching
+
 Revision 1.6  2003/02/24 09:33:11  joy
 header cleanup
 

@@ -1,3 +1,16 @@
+2003-10-26  Mark Grebe  <markgrebe@yahoo.com>
+* cartridge.c, sio.c, statesav.c: saving disk and cartridge info
+  in the state file. Bumped the state file version number, and then added
+  save functions to the Cart and SIO files. It currently supports reading
+  the current version (3) as well as the new version (4) state files.
+  It writes only the new version (4). The filename information for cartridge
+  and disk information is stored in two ways. It is stored as a relative
+  path if the file is in the emulator's directory tree, and it is stored
+  as an absolute path if it isn't. If it doesn't find the cartridge or disk,
+  it does not refuse to load the state, but continues. New state file format
+  works extremely well with the bank switched cartridges.
+
+
 2003-10-25  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_falcon.c: disable compiling with stereo sound enabled
 
