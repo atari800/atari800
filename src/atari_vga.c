@@ -30,6 +30,8 @@
 #include "pcjoy.h"
 #include "diskled.h"	/* for LED_lastline */
 #include "antic.h"		/* for light_pen_enabled */
+#include "ataripcx.h"
+#include "rt-config.h"	/* for refresh_rate */
 
 #include "dos/vga_gfx.h"
 
@@ -238,7 +240,6 @@ unsigned int raw_key_r; /*key actually read from PC keyboard*/
 
 _go32_dpmi_seginfo old_key_handler, new_key_handler;
 
-extern int SHIFT_KEY, KEYPRESSED;
 static int control = FALSE;
 static int extended_key_follows = FALSE;
 volatile static int key_leave=0;
@@ -397,7 +398,7 @@ void key_handler(void)
             }
         }
 
-        SHIFT_KEY = SHIFT_LEFT | SHIFT_RIGHT;
+        key_shift = SHIFT_LEFT | SHIFT_RIGHT;
         raw_key_r=(key_leave?0x200:0)|raw_key_r;
         if (raw_key_r==0x200) raw_key_r=0;
         if (raw_key==last_raw_key && raw_key_r!=0) {raw_key=raw_key_r;raw_key_r=0;}
@@ -1019,17 +1020,12 @@ int Atari_Keyboard(void)
                         keycode = AKEY_UI;
                         break;
                 case 0x3f:                              /* F5 */
-                        /* if (SHIFT_KEY) */
                         keycode = AKEY_COLDSTART;       /* 5200 has no warmstart */
-                        /*  else
-                           keycode = AKEY_WARMSTART;
-                         */
-
                         break;
                 case 0x44:                              /* F10 */
                         if (!norepkey)
                         {
-                            keycode = SHIFT_KEY ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
+                            keycode = key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
                             norepkey=TRUE;
                         }else
                             keycode = AKEY_NONE;
@@ -1095,13 +1091,12 @@ int Atari_Keyboard(void)
                         norepkey = FALSE;
                         break;
                 }
-                KEYPRESSED = (keycode != AKEY_NONE);    /* for POKEY */
                 if (raw_key_r!=0) {raw_key=raw_key_r;raw_key_r=0;}
                 return keycode;
         }
 
         /* preinitialize of keycode */
-        shift_mask = SHIFT_KEY ? 0x40 : 0;
+        shift_mask = key_shift ? 0x40 : 0;
         keycode = shift_mask | (control ? 0x80 : 0);
 
         switch (raw_key) {
@@ -1111,7 +1106,7 @@ int Atari_Keyboard(void)
                         keycode = AKEY_NONE;
 			update_leds();
                 }
-                else if (SHIFT_KEY) {
+                else if (key_shift) {
                         PC_keyboard = FALSE;    /* Atari keyboard mode */
                         keycode = AKEY_NONE;
 			update_leds();
@@ -1130,14 +1125,14 @@ int Atari_Keyboard(void)
         case 0x44:                                      /* F10 */
                 if (!norepkey)
                 {
-                     keycode = SHIFT_KEY ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
+                     keycode = key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
                      norepkey = TRUE;
                 }
                 else
                      keycode = AKEY_NONE;
                 break;
         case 0x3f:                                      /* F5 */
-                keycode = SHIFT_KEY ? AKEY_COLDSTART : AKEY_WARMSTART;
+                keycode = key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
                 break;
         case 0x40:                                      /* F6 */
                 if (machine_type != MACHINE_XLXE)
@@ -1216,7 +1211,7 @@ int Atari_Keyboard(void)
         case 0x03:
                 if (!PC_keyboard)
                         keycode |= AKEY_2;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_AT;
                 else
                         keycode |= AKEY_2;      /* 2,@ */
@@ -1233,7 +1228,7 @@ int Atari_Keyboard(void)
         case 0x07:
                 if (!PC_keyboard)
                         keycode |= AKEY_6;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_CIRCUMFLEX;      /* 6,^ */
                 else
                         keycode |= AKEY_6;
@@ -1241,7 +1236,7 @@ int Atari_Keyboard(void)
         case 0x08:
                 if (!PC_keyboard)
                         keycode |= AKEY_7;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_AMPERSAND;       /* 7,& */
                 else
                         keycode |= AKEY_7;
@@ -1249,7 +1244,7 @@ int Atari_Keyboard(void)
         case 0x09:
                 if (!PC_keyboard)
                         keycode |= AKEY_8;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_ASTERISK;        /* 8,* */
                 else
                         keycode |= AKEY_8;
@@ -1257,7 +1252,7 @@ int Atari_Keyboard(void)
         case 0x0a:
                 if (!PC_keyboard)
                         keycode |= AKEY_9;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_PARENLEFT;
                 else
                         keycode |= AKEY_9;      /* 9,( */
@@ -1265,7 +1260,7 @@ int Atari_Keyboard(void)
         case 0x0b:
                 if (!PC_keyboard)
                         keycode |= AKEY_0;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_PARENRIGHT;      /* 0,) */
                 else
                         keycode |= AKEY_0;
@@ -1273,7 +1268,7 @@ int Atari_Keyboard(void)
         case 0x0c:
                 if (!PC_keyboard)
                         keycode |= AKEY_LESS;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_UNDERSCORE;
                 else
                         keycode |= AKEY_MINUS;
@@ -1281,7 +1276,7 @@ int Atari_Keyboard(void)
         case 0x0d:
                 if (!PC_keyboard)
                         keycode |= AKEY_GREATER;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_PLUS;
                 else
                         keycode |= AKEY_EQUAL;
@@ -1351,7 +1346,7 @@ int Atari_Keyboard(void)
         case 0x1a:
                 if (!PC_keyboard)
                         keycode |= AKEY_MINUS;
-                else if (control | SHIFT_KEY)
+                else if (control | key_shift)
                         keycode |= AKEY_UP;
                 else
                         keycode = AKEY_BRACKETLEFT;
@@ -1359,7 +1354,7 @@ int Atari_Keyboard(void)
         case 0x1b:
                 if (!PC_keyboard)
                         keycode |= AKEY_EQUAL;
-                else if (control | SHIFT_KEY)
+                else if (control | key_shift)
                         keycode |= AKEY_DOWN;
                 else
                         keycode = AKEY_BRACKETRIGHT;
@@ -1426,7 +1421,7 @@ int Atari_Keyboard(void)
         case 0x28:
                 if (!PC_keyboard)
                         keycode |= AKEY_PLUS;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_DBLQUOTE;
                 else
                         keycode = AKEY_QUOTE;
@@ -1435,7 +1430,7 @@ int Atari_Keyboard(void)
         case 0x56:                                      /* PC key "\,|" */
                 if (!PC_keyboard)
                         keycode |= AKEY_ASTERISK;
-                else if (SHIFT_KEY)
+                else if (key_shift)
                         keycode = AKEY_BAR;
                 else
                         keycode |= AKEY_BACKSLASH;
@@ -1472,7 +1467,7 @@ int Atari_Keyboard(void)
         case 0x33:
                 if (!PC_keyboard)
                         keycode |= AKEY_COMMA;
-                else if (SHIFT_KEY && !control)
+                else if (key_shift && !control)
                         keycode = AKEY_LESS;
                 else
                         keycode |= AKEY_COMMA;
@@ -1480,7 +1475,7 @@ int Atari_Keyboard(void)
         case 0x34:
                 if (!PC_keyboard)
                         keycode |= AKEY_FULLSTOP;
-                else if (SHIFT_KEY && !control)
+                else if (key_shift && !control)
                         keycode = AKEY_GREATER;
                 else
                         keycode |= AKEY_FULLSTOP;
@@ -1497,13 +1492,13 @@ int Atari_Keyboard(void)
                 keycode |= 118;                 /* clear screen */
                 break;
         case 0xd2:                                      /* INSERT key */
-                if (SHIFT_KEY)
+                if (key_shift)
                         keycode = AKEY_INSERT_LINE;
                 else
                         keycode = AKEY_INSERT_CHAR;
                 break;
         case 0xd3:                                      /* DELETE key */
-                if (SHIFT_KEY)
+                if (key_shift)
                         keycode = AKEY_DELETE_LINE;
                 else
                         keycode = AKEY_DELETE_CHAR;
@@ -1514,7 +1509,6 @@ int Atari_Keyboard(void)
                 break;
         }
 
-        KEYPRESSED = (keycode != AKEY_NONE);    /* for POKEY */
         if (raw_key_r!=0) {raw_key=raw_key_r;raw_key_r=0;}
 
         return keycode;
@@ -1585,3 +1579,71 @@ int Atari_PEN(int vertical)
 }
 
 /* -------------------------------------------------------------------------- */
+
+int main(int argc, char **argv)
+{
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
+
+	/* main loop */
+	while (TRUE) {
+		static int test_val = 0;
+		int keycode;
+
+		keycode = Atari_Keyboard();
+
+		switch (keycode) {
+		case AKEY_COLDSTART:
+			Coldstart();
+			break;
+		case AKEY_WARMSTART:
+			Warmstart();
+			break;
+		case AKEY_EXIT:
+			Atari800_Exit(FALSE);
+			exit(1);
+		case AKEY_UI:
+#ifdef SOUND
+			Sound_Pause();
+#endif
+			ui((UBYTE *)atari_screen);
+#ifdef SOUND
+			Sound_Continue();
+#endif
+			break;
+		case AKEY_SCREENSHOT:
+			Save_PCX_file(FALSE, Find_PCX_name());
+			break;
+		case AKEY_SCREENSHOT_INTERLACE:
+			Save_PCX_file(TRUE, Find_PCX_name());
+			break;
+		case AKEY_BREAK:
+			key_break = 1;
+			break;
+		default:
+			key_break = 0;
+			key_code = keycode;
+			break;
+		}
+
+		if (++test_val == refresh_rate) {
+			Atari800_Frame(EMULATE_FULL);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync(); /* here seems to be the best place to sync */
+#endif
+			Atari_DisplayScreen((UBYTE *) atari_screen);
+			test_val = 0;
+		}
+		else {
+#ifdef VERY_SLOW
+			Atari800_Frame(EMULATE_BASIC);
+#else	/* VERY_SLOW */
+			Atari800_Frame(EMULATE_NO_SCREEN);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync();
+#endif
+#endif	/* VERY_SLOW */
+		}
+	}
+}
