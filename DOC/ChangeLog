@@ -29,6 +29,8 @@
   Somebody should inspect the atari_sdl.c why it doesn't use the 
   Atari800_Frame system and possibly use it in the SDL port as well.
 
+* DOC/TODO: some items removed, some edited.
+
 
 2003-10-24  Piotr Fusik  <fox@scene.pl>
 * sio.c: "Overmind" runs with NEW_CYCLE_EXACT and SIO patch enabled.

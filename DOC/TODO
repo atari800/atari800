@@ -8,12 +8,10 @@ o extend the configuration options in UI to cover all RT-CONFIG options.
 
 o add "Save Config" to UI.
 
-o make the new function Rotate_Disks in sio.c available from UI
-
 o merge common parts of VGA, SVGALIB and AtariFalcon keyboard stuff
   into one source file named like atari_keyboard.c.
 
-o rewrite joycfg to use curses so it would be usable on all platforms.
+o include joycfg in Atari800 itself
 
 o before the SVGAlib is removed move the special features to the SDL port
   (speedup, joystick, cursorblock, recongnized keys)
