@@ -1,10 +1,12 @@
 Changes in pre1.0.7
 ----------------
+o win32 conditionals removed; new win32 port <Krzysztof>
+
 o atari_sleep_ms() replaced by new function atari_sync() with better
   synchronization code (lasttime is increased by constant interval
-  and previously could differ depending on gettime call delay) <Krzysiek>
+  and previously could differ depending on gettime call delay) <Krzysztof>
 
-o bug causing vesa modes not to be detected correctly fixed. <Krzysiek>
+o bug causing vesa modes not to be detected correctly fixed. <Krzysztof>
 
 o cpu_m68k.s is 100% compatible with the cpu.c now <Gerhard>
 
@@ -16,7 +18,7 @@ o it seems that zero in first byte of block 41/C1 should be interpreted
    as 00, not 0x100 [eg. 1st disk of Big Demo couldn't be read because of
    this]. Jakub Bogusz <qboosh@prioris.mini.pw.edu.pl>
 
-O double density DCM disks weren't handled properly ("Output
+o double density DCM disks weren't handled properly ("Output
   desynchronized...") [eg. 1st disk of Sweet Illusions demo couldn't be
   read because of this] <Jakub>
 
