@@ -1182,12 +1182,10 @@ void Atari_Initialise(int *argc, char *argv[])
 			bpp=16;
 			no_joystick = 1;
 			Aprint("rotate90 mode");
-			i++;
 		}
 		else if (strcmp(argv[i], "-nojoystick") == 0) {
 			no_joystick = 1;
 			Aprint("no joystick");
-			i++;
 		}
 		else if (strcmp(argv[i], "-width") == 0) {
 			sscanf(argv[++i], "%i", &width);
@@ -1884,6 +1882,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.43  2005/01/08 04:59:27  emuslor
+ Corrected SDL argv handling.
+
  Revision 1.42  2005/01/06 08:46:38  joy
  disable sound when entering the monitor
 
