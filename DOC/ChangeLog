@@ -1,3 +1,6 @@
+2002-09-16  Piotr Fusik  <fox@scene.pl>
+* cartridge.[ch], ui.c, DOC/cart.txt: five new cartridge types (Nir Dary)
+
 2002-09-05  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c, DOC/cart.txt, DOC/README: seven new cartridge types
   (by Nir Dary)
