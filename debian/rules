@@ -87,7 +87,9 @@ binary-arch:		checkroot build
 #
 	install -d debian/tmp/usr/share/doc/$(P)
 	cp debian/changelog debian/tmp/usr/share/doc/$(P)/changelog.Debian
-	cp DOC/CHANGES debian/tmp/usr/share/doc/$(P)/changelog
+	cp debian/README.Debian debian/tmp/usr/share/doc/$(P)/README.Debian
+	cp DOC/ChangeLog debian/tmp/usr/share/doc/$(P)/ChangeLog
+	cp DOC/NEWS debian/tmp/usr/share/doc/$(P)/NEWS
 	cp DOC/CREDITS debian/tmp/usr/share/doc/$(P)/CREDITS
 	cp DOC/INSTALL debian/tmp/usr/share/doc/$(P)/INSTALL
 	cp DOC/README debian/tmp/usr/share/doc/$(P)/README
