@@ -22,6 +22,7 @@
 #include "config.h"
 #include "cpu.h"
 #include "colours.h"
+#include "input.h"
 #include "ui.h"         /* for ui_is_active */
 #include "log.h"
 #include "dos/sound_dos.h"
