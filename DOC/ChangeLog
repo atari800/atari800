@@ -1,3 +1,12 @@
+2005-03-05  Piotr Fusik  <fox@scene.pl>
+* ui_basic.c: fixed "Error opening '' directory"
+* input.[ch]: support AKEY_BREAK
+* atari.[ch], atari_curses.c, atari_falcon.c, atari_svgalib.c, atari_x11.c,
+  amiga/amiga.c, dos/atari_vga.c, win32/main.c, wince/port/atari_wince.c:
+  support for special AKEY_*, refresh rate control and atari_sync()
+  moved to Atari800_Frame()
+* atari_curses.c, atari_falcon.c, atari_x11.c: F6 is Atari HELP key
+
 2005-03-03  Piotr Fusik  <fox@scene.pl>
 * win32/*, configure.ac:
   renamed win32/screen.[ch] to win32/screen_win32.[ch]
