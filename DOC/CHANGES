@@ -1,4 +1,4 @@
-Changes in pre1.0.7
+Changes in 1.0.7
 ----------------
 o atari_x11.c: Added clipping and made the -large and -huge work with XShm.
   The XShm code was rewritten, so that only the screen-portion which
