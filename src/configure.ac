@@ -1,7 +1,7 @@
 dnl   configure.ac - Autoconf script for building configure
 dnl
 dnl   Copyright (C) 2001 Krzysztof Nikiel
-dnl   Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
+dnl   Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
 dnl
 dnl   This file is part of the Atari800 emulator project which emulates
 dnl   the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -422,11 +422,6 @@ else
     WANT_CLIP_SOUND="no"
 fi
 
-A8_OPTION(snailmeter,no,
-          [Show how much the emulator is slower than the original (default=OFF)],
-          SNAILMETER,[define to use snailmeter]
-         )
-
 A8_OPTION(pagedattrib,no,
           [Use page-based attribute array (default=OFF)],
           PAGED_ATTRIB,[define to use page-based attribute array]
@@ -438,7 +433,7 @@ A8_OPTION(bufferedlog,no,
          )
 
 A8_OPTION(veryslow,no,
-          [Use very slow computer support (disables generating screen completely) (default=OFF)],
+          [Use very slow computer support (use with the -refresh option) (default=OFF)],
           VERY_SLOW,[define to use very slow computer support]
          )
 
@@ -526,7 +521,6 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
 else
     echo "    (Sound sub-options disabled)"
 fi
-echo "Using the snailmeter?.................: $WANT_SNAILMETER"
 echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
 echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
 echo "Using the disk LED emulation?.........: $WANT_SHOW_DISK_LED"
