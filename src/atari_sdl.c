@@ -586,6 +586,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 				Aprint("\t-sound           Enable sound");
 				Aprint("\t-nosound         Disable sound");
 				Aprint("\t-dsprate <rate>  Set DSP rate in Hz");
+				sound_enabled = FALSE;
 			}
 			argv[j++] = argv[i];
 		}
@@ -1778,14 +1779,25 @@ int Atari_PORT(int num)
 {
 	UBYTE a, b;
 	SDL_Atari_PORT(&a, &b);
-	return (b << 4) | (a & 0x0f);
+	if (num == 0)
+		return (b << 4) | (a & 0x0f);
+	else
+		return 0xff;
 }
 
 int Atari_TRIG(int num)
 {
 	UBYTE a, b;
 	SDL_Atari_TRIG(&a, &b);
-	return (b << 4) | (a & 0x0f);
+	switch (num) {
+	case 0:
+		return a;
+	case 1:
+		return b;
+	default:
+		break;
+	}
+	return 1;
 }
 
 int main(int argc, char **argv)
@@ -1802,128 +1814,12 @@ int main(int argc, char **argv)
 			Atari_DisplayScreen((UBYTE *) atari_screen);
 	}
 }
-#if 0
-int main1(int argc, char **argv)
-{
-	int keycode;
-	static UBYTE STICK[4];
-	int done = 0;
-
-	if (!Atari800_Initialise(&argc, argv))
-		return 3;
-
-	SDL_EnableUNICODE(1);
-
-#ifdef SOUND
-	if (sound_enabled)
-		SDL_PauseAudio(0);
-#endif
-	while (!done) {
-		keycode = Atari_Keyboard();
-
-		switch (keycode) {
-		case AKEY_EXIT:
-			done = 1;
-			break;
-		case AKEY_COLDSTART:
-			Coldstart();
-			break;
-		case AKEY_WARMSTART:
-			Warmstart();
-			break;
-		case AKEY_UI:
-#ifdef SOUND
-			if (sound_enabled)
-				SDL_PauseAudio(1);
-#endif
-			ui((UBYTE *) atari_screen);
-#ifdef SOUND
-			if (sound_enabled)
-				SDL_PauseAudio(0);
-#endif
-			break;
-		case AKEY_SCREENSHOT:
-			Screen_SaveNextScreenshot(FALSE);
-			break;
-		case AKEY_SCREENSHOT_INTERLACE:
-			Screen_SaveNextScreenshot(TRUE);
-			break;
-		case AKEY_BREAK:
-			key_break = 1;
-			if (!last_key_break) {
-				if (IRQEN & 0x80) {
-					IRQST &= ~0x80;
-					GenerateIRQ();
-				}
-				break;
-		default:
-				key_break = 0;
-				if (keycode != SDL_JOY_0_LEFT	// plain hack
-					&& keycode != SDL_JOY_0_RIGHT	// see atari_vga.c
-					&& keycode != SDL_JOY_0_UP	// for better way
-					&& keycode != SDL_JOY_0_DOWN
-					&& keycode != SDL_JOY_0_LEFTDOWN
-					&& keycode != SDL_JOY_0_RIGHTDOWN
-					&& keycode != SDL_JOY_0_LEFTUP
-					&& keycode != SDL_JOY_0_RIGHTUP
-					&& keycode != SDL_TRIG_0 && keycode != SDL_TRIG_0_B)
-					key_code = keycode;
-				break;
-			}
-		}
-
-		last_key_break = key_break;
-
-		SKSTAT |= 0xc;
-		if (key_shift)
-			SKSTAT &= ~8;
-		if (key_code == AKEY_NONE)
-			last_key_code = AKEY_NONE;
-		if (key_code != AKEY_NONE) {
-			SKSTAT &= ~4;
-			if ((key_code ^ last_key_code) & ~AKEY_SHFTCTRL) {
-				last_key_code = key_code;
-				KBCODE = (UBYTE) key_code;
-				if (IRQEN & 0x40) {
-					if (IRQST & 0x40) {
-						IRQST &= ~0x40;
-						GenerateIRQ();
-					}
-					else {
-						/* keyboard over-run */
-						SKSTAT &= ~0x40;
-						/* assert(IRQ != 0); */
-					}
- 				}
-			}
-		}
-
-		SDL_Atari_PORT(&STICK[0], &STICK[1]);
-		SDL_Atari_TRIG(&TRIG[0], &TRIG[1]);
-
-		PORT_input[0] = (STICK[1] << 4) | STICK[0];
-
-		Device_Frame();
-		GTIA_Frame();
-		ANTIC_Frame(TRUE);
-		Screen_DrawAtariSpeed();
-		Screen_DrawDiskLED();
-		POKEY_Frame();
-		nframes++;
-		atari_sync();
-		Atari_DisplayScreen((UBYTE *) atari_screen);
-#ifdef FPS_COUNTER
-		CountFPS();
-#endif
-	}
-	Atari800_Exit(FALSE);
-	Aflushlog();
-	return 0;
-}
-#endif
 
 /*
  $Log$
+ Revision 1.47  2005/03/10 05:02:34  pfusik
+ corrected Atari_TRIG() and don't initialize sound on "-help"
+
  Revision 1.46  2005/03/09 21:08:46  joy
  back to good old Atari800_Frame()
 
