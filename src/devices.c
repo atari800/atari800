@@ -173,8 +173,18 @@ void Device_Initialise(int *argc, char *argv[])
 			devbug = TRUE;
 		else if (strcmp(argv[i], "-hdreadonly") == 0)
 			hd_read_only = (argv[++i][0] != '0');
-		else
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-H1 <path>       Set path for H1: device");
+				Aprint("\t-H2 <path>       Set path for H2: device");
+				Aprint("\t-H3 <path>       Set path for H3: device");
+				Aprint("\t-H4 <path>       Set path for H4: device");
+				Aprint("\t-Hpath <path>    Set path for Atari executables on the H: device");
+				Aprint("\t-hdreadonly <on> Enable (1) or disable (0) read-only mode for H: device");
+				Aprint("\t-devbug          Debugging messages for H: and P: devices");
+			}
 			argv[j++] = argv[i];
+		}
 	}
 
 	*argc = j;
@@ -1339,8 +1349,8 @@ void Device_HHSPEC_Load(int mydos)
 		SetN;
 		return;
 	}
-	printf("Mydos %d, AX1 %d, AX2 %d\n", mydos, dGetByte(ICAX1Z),
-		   dGetByte(ICAX2Z));
+	/*printf("Mydos %d, AX1 %d, AX2 %d\n", mydos, dGetByte(ICAX1Z),
+		   dGetByte(ICAX2Z));*/
 	if (mydos) {
 		switch (dGetByte(ICAX1Z)) {
 		case 4:
@@ -1379,7 +1389,7 @@ void Device_HHSPEC_File_Length(void)
 	unsigned long iocb;
 	int filesize;
 	struct stat fstatus;
-	printf("File Length Command\n");
+	/*printf("File Length Command\n");*/
 	if (devbug)
 		Aprint("Get File Length Command");
 	/* If IOCB is open, then assume it is a file length command.. */
@@ -2133,8 +2143,8 @@ void Device_Frame(void)
 void Device_UpdatePatches(void)
 {
 	if (enable_h_patch) {		/* enable H: device */
-		/* change memory attributex for the area, where we put
-		   H: handler table and patches */
+		/* change memory attributes for the area, where we put
+		   the H: handler table and patches */
 #ifndef PAGED_ATTRIB
 		SetROM(H_DEVICE_BEGIN, H_DEVICE_END);
 #else
@@ -2172,8 +2182,8 @@ void Device_UpdatePatches(void)
 
 #if defined(R_IO_DEVICE)
 	if (enable_r_patch) {		/* enable R: device */
-		/* change memory attributex for the area, where we put
-		   R: handler table and patches */
+		/* change memory attributes for the area, where we put
+		   the R: handler table and patches */
 #ifndef PAGED_ATTRIB
 		SetROM(R_DEVICE_BEGIN, R_DEVICE_END);
 #else
@@ -2215,6 +2225,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.25  2005/03/24 18:11:47  pfusik
+added "-help"
+
 Revision 1.24  2005/03/08 04:32:41  pfusik
 killed gcc -W warnings
 
