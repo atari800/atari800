@@ -1,3 +1,12 @@
+2003-12-21  Petr Stehlik  <pstehlik@sophics.cz>
+* ui_basic.c: Aprint warning that fileselector couldn't open a folder.
+  The warning should be propagated to the UI and shown to user. Or better
+  yet, the Fileselector should be able to modify the path until it could
+  open it (example: /tmp/state_files/ -> /tmp/)
+
+
+** 1.3.2 released
+
 2003-12-20  Petr Stehlik  <pstehlik@sophics.cz>
 * macosx/*: all old files removed and new up-to-date ones (from Mark Grebe)
   stored in a single macosx.tar.gz file for easier maintenance.

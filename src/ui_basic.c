@@ -635,6 +635,9 @@ List *GetDirectory(char *directory)
 
 		ListSort(list, (void *) FilenameSort);
 	}
+	else {
+		Aprint("Error opening '%s' directory", directory);
+	}
 #ifdef DOS_DRIVES
 	/*in DOS, add all existing disk letters */
 	ListAddTail(list, strdup("[A:]"));	/*do not check A: - it's slow */
@@ -1017,6 +1020,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.11  2003/12/21 11:00:26  joy
+problem with opening invalid folders in UI identified
+
 Revision 1.10  2003/02/24 09:33:13  joy
 header cleanup
 
