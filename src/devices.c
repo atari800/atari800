@@ -3,6 +3,7 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include	<ctype.h>
+#include 	<errno.h>
 
 #include	"config.h"
 #include	"ui.h"
@@ -18,17 +19,24 @@
 #endif
 
 #define	DO_DIR
+#define DO_SPECIAL
 
 #ifdef AMIGA
 #undef	DO_DIR
+#undef  DO_SPECIAL
 #endif
 
 #ifdef VMS
 #undef	DO_DIR
+#undef  DO_SPECIAL
 #endif
 
 #ifdef DO_DIR
 #include	<dirent.h>
+#endif
+
+#ifdef DO_SPECIAL
+#include        <sys/stat.h>
 #endif
 
 #include "atari.h"
@@ -58,6 +66,9 @@ static int flag[8];
 
 static int fid;
 static char filename[64];
+#ifdef DO_SPECIAL
+static char newfilename[64];
+#endif
 
 #ifdef DO_DIR
 static DIR	*dp = NULL;
@@ -146,9 +157,61 @@ void Device_GetFilename(void)
 	filename[offset++] = '\0';
 }
 
+#ifdef DO_SPECIAL
+void Device_GetFilenames(void)
+{
+	int bufadr;
+	int offset = 0;
+	int devnam = TRUE;
+	int byte;
+
+	bufadr = (dGetByte(ICBAHZ) << 8) | dGetByte(ICBALZ);
+
+	while (Device_isvalid(dGetByte(bufadr))) {
+		byte = dGetByte(bufadr);
+
+		if (!devnam) {
+			if (isupper(byte))
+				byte = tolower(byte);
+
+			filename[offset++] = byte;
+		}
+		else if (byte == ':')
+			devnam = FALSE;
+
+		bufadr++;
+	}
+	filename[offset++] = '\0';
+
+	while(!Device_isvalid(dGetByte(bufadr))) {
+		byte = dGetByte(bufadr);
+		if ((byte > 0x80) || (byte == 0)) {
+			newfilename[0] = 0;
+			return;
+			}
+		bufadr++;
+		}
+
+	offset = 0;
+	while (Device_isvalid(dGetByte(bufadr))) {
+		byte = dGetByte(bufadr);
+
+		if (isupper(byte))
+			byte = tolower(byte);
+
+		newfilename[offset++] = byte;
+		bufadr++;
+	}
+	newfilename[offset++] = '\0';
+}
+#endif
+
 int match(char *pattern, char *filename)
 {
 	int status = TRUE;
+
+	if (strcmp(pattern,"*.*") == 0)
+		return TRUE;
 
 	while (status && *filename && *pattern) {
 		switch (*pattern) {
@@ -178,11 +241,43 @@ int match(char *pattern, char *filename)
 	return status;
 }
 
+#ifdef DO_SPECIAL
+void fillin(char *pattern, char *filename)
+{
+	while (*pattern) {
+		switch (*pattern) {
+		case '?':
+			pattern++;
+			filename++;
+			break;
+		case '*':
+			if (*filename == pattern[1]) {
+				pattern++;
+			}
+			else {
+				filename++;
+			}
+			break;
+		default:
+			*filename++ = *pattern++;
+			break;
+		}
+	}
+        *filename = 0;
+}
+#endif
+
 void Device_HHOPEN(void)
 {
-	char fname[128];
+	char fname[FILENAME_MAX];
 	int devnum;
 	int temp;
+#ifdef DO_SPECIAL
+	struct stat status;
+	char entryname[FILENAME_MAX];
+	char *ext;
+	int size;
+#endif
 
 	if (devbug)
 		Aprint("HHOPEN");
@@ -197,6 +292,8 @@ void Device_HHOPEN(void)
 	devnum = dGetByte(ICDNOZ);
 	if (devnum > 9) {
 		Aprint("Attempt to access H%d: device", devnum);
+		regY = 160;
+		SetN;
 		return;
 	}
 	if (devnum >= 5) {
@@ -243,8 +340,31 @@ void Device_HHOPEN(void)
 				struct dirent *entry;
 
 				while ((entry = readdir(dp))) {
-					if (match(filename, entry->d_name))
-						fprintf(fp[fid], "%s\n", strtoupper(entry->d_name));
+					if (match(filename,entry->d_name))
+#ifndef DO_SPECIAL
+                                            fprintf(fp[fid], "%s\n", strtoupper(entry->d_name));
+#else
+                                            if (entry->d_name[0] != '.') {
+                                                sprintf(fname, "%s/%s", H[devnum], entry->d_name);
+                                                stat(fname,&status);
+                                                if ((status.st_size != 0) && (status.st_size % 256 == 0))
+                                                    size = status.st_size/256;
+                                                else
+                                                    size = status.st_size/256 + 1;
+                                                if (size > 999)
+                                                    size = 999;
+                                                strcpy(entryname,strtoupper(entry->d_name));
+                                                    ext = strtok(entryname,".");
+                                                    ext = strtok(NULL,".");
+                                                    if (ext == NULL)
+                                                        ext = "   ";
+                                                    fprintf(fp[fid], "%s %-8s%-3s %03d\n", 
+                                                            (status.st_mode & S_IWUSR) ? " ":"*",
+                                                            entryname,
+                                                            ext,
+                                                            size);
+                                                }
+#endif
 				}
 
 				closedir(dp);
@@ -282,11 +402,37 @@ void Device_HHOPEN(void)
 			regY = 1;
 			ClrN;
 		}
+                else if (errno == EACCES) {
+                        regY = 135;
+                        SetN;
+                        }
 		else {
 			regY = 170;
 			SetN;
 		}
 		break;
+#ifdef DO_SPECIAL                
+	case 12:		/* read and write  (update) */
+		if (hd_read_only) {
+			regY = 135;	/* device is read only */
+			SetN;
+			break;
+		}
+		fp[fid] = fopen(fname, "rb+");
+		if (fp[fid]) {
+			regY = 1;
+			ClrN;
+		}
+                else if (errno == EACCES) {
+                        regY = 135;
+                        SetN;
+                        }
+		else {
+			regY = 170;
+			SetN;
+		}
+		break;
+#endif                
 	default:
 		regY = 163;
 		SetN;
@@ -388,6 +534,19 @@ void Device_HHSTAT(void)
 
 void Device_HHSPEC(void)
 {
+	char fname[FILENAME_MAX];
+	int devnum;
+#ifdef DO_SPECIAL        
+	char newfname[FILENAME_MAX];
+	char renamefname[FILENAME_MAX];
+	unsigned long pos;
+	unsigned long iocb;
+	int status;
+	struct stat filestatus;
+	int num_changed = 0;
+	int num_locked = 0;
+#endif        
+
 	if (devbug)
 		Aprint("HHSPEC");
 
@@ -395,22 +554,290 @@ void Device_HHSPEC(void)
 
 	switch (dGetByte(ICCOMZ)) {
 	case 0x20:
-		Aprint("RENAME Command");
-		break;
+		if (devbug)
+			Aprint("RENAME Command");
+#ifdef DO_SPECIAL                        
+		if (hd_read_only) {
+			regY = 135;	/* device is read only */
+			SetN;
+			return;
+			}
+		Device_GetFilenames();
+		devnum = dGetByte(ICDNOZ);
+		if (devnum > 9) {
+			Aprint("Attempt to access H%d: device", devnum);
+			regY = 160;
+			SetN;
+			return;
+			}
+		if (devnum >= 5) {
+			devnum -= 5;
+		}
+                
+                dp = opendir(H[devnum]);
+                if (dp) {
+                        struct dirent *entry;
+                        
+                        status = 0;
+                        while ((entry = readdir(dp))) {
+                                if (match(filename, entry->d_name)) {
+                                    sprintf(fname, "%s/%s", H[devnum], entry->d_name);
+                                    sprintf(renamefname,"%s",entry->d_name);
+                                    fillin(newfilename, renamefname);
+                                    sprintf(newfname, "%s/%s", H[devnum], renamefname);
+                                    stat(fname,&filestatus);
+                                    if (filestatus.st_mode & S_IWUSR) {
+                                        if (rename(fname,newfname) != 0)
+                                            status = -1;
+                                        else
+                                            num_changed++;
+                                        }
+                                    else
+                                        num_locked++;
+                                    }
+                            }
+
+                        closedir(dp);
+                        }
+                else
+                    status = -1;
+                
+		if (num_locked) {
+			regY = 167;
+			SetN;
+			return;
+			}
+		else if (status == 0 && num_changed != 0) {
+			regY = 1;
+			ClrN;
+			return;
+		    }
+		else {
+			regY = 170;
+			SetN;
+			return;
+			}
+#endif                        
+                break;
 	case 0x21:
-		Aprint("DELETE Command");
-		break;
+		if (devbug)
+			Aprint("DELETE Command");
+#ifdef DO_SPECIAL                        
+		if (hd_read_only) {
+			regY = 135;	/* device is read only */
+			SetN;
+			return;
+			}
+		Device_GetFilename();
+		devnum = dGetByte(ICDNOZ);
+		if (devnum > 9) {
+			Aprint("Attempt to access H%d: device", devnum);
+			regY = 160;
+			SetN;
+			return;
+			}
+		if (devnum >= 5) {
+			devnum -= 5;
+		}
+
+                dp = opendir(H[devnum]);
+                if (dp) {
+                        struct dirent *entry;
+                        
+                        status = 0;
+                        while ((entry = readdir(dp))) {
+                                if (match(filename, entry->d_name)) {
+                                    sprintf(fname, "%s/%s", H[devnum], entry->d_name);
+                                    stat(fname,&filestatus);
+                                    if (filestatus.st_mode & S_IWUSR) {
+                                    	if (unlink(fname) != 0)
+                                            status = -1;
+                                        else
+                                            num_changed++;
+                                        }
+                                    else
+                                        num_locked++;
+                                    }
+
+                            }
+
+                        closedir(dp);
+                        }
+                else
+                    status = -1;
+                
+		if (status == 0 && num_changed != 0) {
+			regY = 1;
+			ClrN;
+			return;
+		    }
+		else {
+			regY = 170;
+			SetN;
+			return;
+			}
+#endif                        
+                break;
 	case 0x23:
-		Aprint("LOCK Command");
+		if (devbug)
+                    Aprint("LOCK Command");
+#ifdef DO_SPECIAL
+		if (hd_read_only) {
+			regY = 135;	/* device is read only */
+			SetN;
+			return;
+			}
+		Device_GetFilename();
+		devnum = dGetByte(ICDNOZ);
+		if (devnum > 9) {
+			Aprint("Attempt to access H%d: device", devnum);
+			regY = 160;
+			SetN;
+			return;
+			}
+		if (devnum >= 5) {
+			devnum -= 5;
+		}
+
+                dp = opendir(H[devnum]);
+                if (dp) {
+                        struct dirent *entry;
+                        
+                        status = 0;
+                        while ((entry = readdir(dp))) {
+                                if (match(filename, entry->d_name)) {
+                                    sprintf(fname, "%s/%s", H[devnum], entry->d_name);
+                                    if (chmod(fname, S_IROTH | S_IRGRP | S_IRUSR) != 0)
+                                        status = -1;
+                                    else
+                                        num_changed++;
+                                    }
+                            }
+
+                        closedir(dp);
+                        }
+                else
+                    status = -1;
+ 
+		if (status == 0 && num_changed != 0) {
+			regY = 1;
+			ClrN;
+			return;
+		    }
+		else {
+			regY = 170;
+			SetN;
+			return;
+			}
+#endif                    
 		break;
 	case 0x24:
-		Aprint("UNLOCK Command");
-		break;
-	case 0x25:
-		Aprint("NOTE Command");
+		if (devbug)
+                    Aprint("UNLOCK Command");
+#ifdef DO_SPECIAL
+		if (hd_read_only) {
+			regY = 135;	/* device is read only */
+			SetN;
+			return;
+			}
+		Device_GetFilename();
+		devnum = dGetByte(ICDNOZ);
+		if (devnum > 9) {
+			Aprint("Attempt to access H%d: device", devnum);
+			regY = 160;
+			SetN;
+			return;
+			}
+		if (devnum >= 5) {
+			devnum -= 5;
+		}
+
+                dp = opendir(H[devnum]);
+                if (dp) {
+                        struct dirent *entry;
+                        
+                        status = 0;
+                        while ((entry = readdir(dp))) {
+                                if (match(filename, entry->d_name)) {
+                                    sprintf(fname, "%s/%s", H[devnum], entry->d_name);
+                                    if (chmod(fname, S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR) != 0)
+                                        status = -1;
+                                    else
+                                        num_changed++;
+                                    }
+                            }
+
+                        closedir(dp);
+                        }
+                else
+                    status = -1;
+ 
+		if (status == 0 && num_changed != 0) {
+			regY = 1;
+			ClrN;
+			return;
+		    }
+		else {
+			regY = 170;
+			SetN;
+			return;
+			}
+#endif                    
 		break;
 	case 0x26:
-		Aprint("POINT Command");
+		if (devbug)
+			Aprint("NOTE Command");
+#ifdef DO_SPECIAL                        
+		if (fp[fid]) {
+			iocb = IOCB0 + ((fid) * 16);
+			pos = ftell(fp[fid]);
+			if (pos != -1) {
+				dPutByte(iocb + ICAX5, (pos & 0xff));
+				dPutByte(iocb + ICAX3, ((pos & 0xff00) >> 8));
+				dPutByte(iocb + ICAX4, ((pos & 0xff0000) >> 16));
+				regY = 1;
+				ClrN;
+				return;
+				}
+			else {
+				regY = 163;
+				SetN;
+				return;
+				}
+			}
+		else {
+			regY = 163;
+			SetN;
+			return;
+			}
+#endif                        
+		break;
+	case 0x25:
+		if (devbug)
+			Aprint("POINT Command");
+#ifdef DO_SPECIAL
+		if (fp[fid]) {
+			iocb = IOCB0 + ((fid) * 16);
+			pos = (dGetByte(iocb + ICAX4) << 16) +
+			      (dGetByte(iocb + ICAX3) << 8)  +
+			      (dGetByte(iocb + ICAX5));
+			if (fseek(fp[fid], pos, SEEK_SET) == 0) {
+				regY = 1;
+				ClrN;
+				return;
+				}
+			else {
+				regY = 163;
+				SetN;
+				return;
+				}
+			}
+		else {
+			regY = 163;
+			SetN;
+			return;
+			}
+#endif                        
 		break;
 	case 0xFE:
 		Aprint("FORMAT Command");
@@ -467,15 +894,13 @@ void Device_PHCLOS(void)
 
 		sprintf(command, print_command, spool_file);
 		system(command);
-
-#ifndef VMS
+#if !defined(VMS) && !defined(MACOSX)
 		status = unlink(spool_file);
 		if (status == -1) {
 			perror(spool_file);
 			exit(1);
 		}
 #endif
-
 		phf = NULL;
 	}
 	regY = 1;
@@ -800,6 +1225,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.13  2002/12/04 10:09:21  joy
+H device supports all DOS functions
+
 Revision 1.12  2001/10/03 16:40:54  fox
 rewritten escape codes handling,
 corrected Device_isvalid (isalnum((char) 0x9b) == 1 !)

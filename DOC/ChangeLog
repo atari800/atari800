@@ -1,3 +1,9 @@
+2002-12-04  Mark Grebe <markgrebe@yahoo.com>
+* devices.c: device H: now fully emulates the standard DOS functions
+  Rename, Delete, Lock, Unlock, Note, Point, and Open for Update.
+  Also changed the directory listing to look like the standard Atari
+  DOS 2.0 listing. (The sector count is based on 256 byte sectors).
+
 ** released as 1.2.5 on 2002/12/02
 
 2002-11-25  Piotr Fusik  <fox@scene.pl>

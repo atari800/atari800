@@ -25,6 +25,25 @@ void Device_UpdatePatches(void);
 #define	ICAX1Z	0x002a
 #define	ICAX2Z	0x002b
 
+#define IOCB0   0x0340
+#define	ICHID	0x0000
+#define	ICDNO	0x0001
+#define	ICCOM	0x0002
+#define	ICSTA	0x0003
+#define	ICBAL	0x0004
+#define	ICBAH	0x0005
+#define	ICPTL	0x0006
+#define	ICPTH	0x0007
+#define	ICBLL	0x0008
+#define	ICBLH	0x0009
+#define	ICAX1	0x000a
+#define	ICAX2	0x000b
+#define	ICAX3	0x000c
+#define	ICAX4	0x000d
+#define	ICAX5	0x000e
+#define	ICAX6	0x000f
+
+
 #define DEVICE_TABLE_OPEN	0
 #define DEVICE_TABLE_CLOS	2
 #define DEVICE_TABLE_READ	4
