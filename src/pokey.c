@@ -50,6 +50,9 @@ static int pot_scanline;
 int stereo_enabled = TRUE;
 #endif
 
+UBYTE poly9_lookup[511];
+UBYTE poly17_lookup[16385];
+
 UBYTE POKEY_GetByte(UWORD addr)
 {
 	UBYTE byte = 0xff;
@@ -255,6 +258,8 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 void POKEY_Initialise(int *argc, char *argv[])
 {
 	int i;
+	int j;
+	ULONG reg;
 
 	/*
 	 * Initialise Serial Port Interrupts
@@ -281,6 +286,23 @@ void POKEY_Initialise(int *argc, char *argv[])
 		DivNIRQ[i] = DivNMax[i] = 0;
 
 	pot_scanline = 0;
+
+	/* initialise poly9_lookup */
+	reg = 0x1ff;
+	for (i = 0; i < 511; i++) {
+		poly9_lookup[i] = reg >> 1;
+		reg |= (((reg >> 5) ^ reg) & 1) << 9;
+		reg >>= 1;
+	}
+	/* initialise poly17_lookup */
+	reg = 0x1ffff;
+	for (i = 0; i < 16385; i++) {
+		poly17_lookup[i] = reg >> 9;
+		for (j = 0; j < 8; j++) {
+			reg |= (((reg >> 5) ^ reg) & 1) << 17;
+			reg >>= 1;
+		}
+	}
 }
 
 /***************************************************************************
