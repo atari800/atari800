@@ -43,10 +43,10 @@ UBYTE PIA_GetByte(UWORD addr)
 	addr &= 0x03;		/* HW registers are mirrored */
 	switch (addr) {
 	case _PACTL:
-		byte = PACTL;
+		byte = PACTL & 0x3f;
 		break;
 	case _PBCTL:
-		byte = PBCTL;
+		byte = PBCTL & 0x3f;
 #ifdef DEBUG1
 		printf("RD: PBCTL = %x, PC = %x\n", PBCTL, PC);
 #endif
@@ -55,13 +55,12 @@ UBYTE PIA_GetByte(UWORD addr)
 		if (!(PACTL & 0x04))
  			byte = ~PORTA_mask;
 		else
-			byte = Atari_PORT(0) & (PORTA_mask|PORTA);
+			byte = Atari_PORT(0) & (PORTA | PORTA_mask);
 		break;
 	case _PORTB:
 		switch (machine) {
 		case Atari:
-			byte = Atari_PORT(1);
-			byte &= PORTB_mask|PORTB;
+			byte = Atari_PORT(1) & (PORTB | PORTB_mask);
 			break;
 		case AtariXL:
 		case AtariXE:
@@ -162,6 +161,9 @@ void PIAStateRead(void)
 
 /*
 $Log$
+Revision 1.3  2001/07/19 23:11:08  fox
+& 0x3f on read PACTL and PBCTL
+
 Revision 1.2  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
