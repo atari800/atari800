@@ -1,3 +1,11 @@
+2003-09-04  Petr Stehlik  <pstehlik@sophics.cz>
+* configure.ac: forgot to increase version
+
+* util/export: added check for version in configure.ac
+
+* ChangeLog: some older entries about fixing bugs in Debian BTS corrected
+
+
 ** tagged as ATARI800_1_3_1
 
 2003-09-04  Petr Stehlik  <pstehlik@sophics.cz>

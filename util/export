@@ -20,34 +20,39 @@ fi
 #
 grep ATARI_TITLE atari800/src/atari.h | grep $VERSION >/dev/null
 if [ $? -ne 0 ]; then
-	echo "increase version in src/atari.h"
+	echo "ERROR: increase version in src/atari.h"
 	exit 1
 fi
 grep "[Vv]ersion "$VERSION atari800/README.1ST >/dev/null
 if [ $? -ne 0 ]; then
-	echo "increase version in README.1ST"
+	echo "ERROR: increase version in README.1ST"
 	exit 1
 fi
 grep "[Vv]ersion "$VERSION atari800/DOC/README >/dev/null
 if [ $? -ne 0 ]; then
-	echo "increase version in DOC/README (2x)"
+	echo "ERROR: increase version in DOC/README (2x)"
 	exit 1
 fi
 grep "[Vv]ersion "$VERSION atari800/src/atari800.man >/dev/null
 if [ $? -ne 0 ]; then
-	echo "increase version in src/atari800.man"
+	echo "ERROR: increase version in src/atari800.man"
 	exit 1
 fi
 grep "%define ver" atari800/atari800.spec | grep $VERSION >/dev/null
 if [ $? -ne 0 ]; then
-	echo "increase version in atari800.spec"
+	echo "ERROR: increase version in atari800.spec"
+	exit 1
+fi
+grep "AC_INIT(Atari800, "$VERSION atari800/src/configure.ac | grep $VERSION >/dev/null
+if [ $? -ne 0 ]; then
+	echo "ERROR: increase version in src/configure.ac"
 	exit 1
 fi
 #
 cd atari800/src
 ./autogen.sh
 # remove leftovers from autogen process
-rm autogen.sh config.cache config.log configure.ac
+rm -f autogen.sh config.cache config.log configure.ac
 cd ../..
 mv atari800 $FOLDER
 GZIP=--best tar chozvf $FNAME $FOLDER
