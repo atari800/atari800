@@ -46,10 +46,6 @@
 #include "cassette.h"
 #include "statesav.h"
 
-#ifdef SHOW_DISK_LED
-#include "diskled.h"
-#endif
-
 /* If ATR image is in double density (256 bytes per sector),
    then the boot sectors (sectors 1-3) can be:
    - logical (as seen by Atari) - 128 bytes in each sector
@@ -85,6 +81,11 @@ char sio_filename[MAX_DRIVES][FILENAME_MAX];
 
 static char	tmp_filename[MAX_DRIVES][FILENAME_MAX];
 static UBYTE istmpfile[MAX_DRIVES] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+int sio_last_op;
+int sio_last_op_time = 0;
+int sio_last_drive;
+int sio_last_sector;
 
 /* Serial I/O emulation support */
 UBYTE CommandFrame[6];
@@ -322,6 +323,7 @@ static int SeekSector(int unit, int sector)
 	ULONG offset;
 	int size;
 
+	sio_last_sector = sector;
 	sprintf(sio_status, "%d: %d", unit + 1, sector);
 	SizeOfSector((UBYTE)unit, sector, &size, (ULONG*)&offset);
 	fseek(disk[unit], 0L, SEEK_END);
@@ -348,9 +350,9 @@ static int ReadSector(int unit, int sector, UBYTE * buffer)
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (sector > 0 && sector <= sectorcount[unit]) {
-#ifdef SHOW_DISK_LED
-				LED_SetRead(unit, 1);
-#endif
+				sio_last_op = SIO_LAST_READ;
+				sio_last_op_time = 1;
+				sio_last_drive = unit + 1;
 				size = SeekSector(unit, sector);
 				fread(buffer, 1, size, disk[unit]);
 				io_success[unit]=0;
@@ -374,9 +376,9 @@ static int WriteSector(int unit, int sector, UBYTE * buffer)
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
-#ifdef SHOW_DISK_LED
-				LED_SetWrite(unit, 1);
-#endif
+				sio_last_op = SIO_LAST_WRITE;
+				sio_last_op_time = 1;
+				sio_last_drive = unit + 1;
 				if (sector > 0 && sector <= sectorcount[unit]) {
 					size = SeekSector(unit, sector);
 					fwrite(buffer, 1, size, disk[unit]);
@@ -876,9 +878,9 @@ static UBYTE Command_Frame(void)
 			ExpectedBytes = realsize + 1;
 			DataIndex = 0;
 			TransferStatus = SIO_WriteFrame;
-#ifdef SHOW_DISK_LED
-			LED_SetWrite(unit, 10);
-#endif
+			sio_last_op = SIO_LAST_WRITE;
+			sio_last_op_time = 10;
+			sio_last_drive = unit + 1;
 			return 'A';
 		case 0x52:				/* Read */
 		case 0xD2:				/* xf551 hispeed */
@@ -905,9 +907,9 @@ static UBYTE Command_Frame(void)
 				delay_counter = 0;
 			}
 #endif
-#ifdef SHOW_DISK_LED
-			LED_SetRead(unit, 10);
-#endif
+			sio_last_op = SIO_LAST_READ;
+			sio_last_op_time = 10;
+			sio_last_drive = unit + 1;
 			return 'A';
 		case 0x53:				/* Status */
 #ifdef DEBUG
@@ -1235,6 +1237,9 @@ void SIOStateRead( void )
 
 /*
 $Log$
+Revision 1.21  2005/03/03 09:37:59  pfusik
+deleted diskled.[ch], moved disk LEDs to the new "screen" module
+
 Revision 1.20  2003/11/22 23:26:19  joy
 cassette support improved
 
