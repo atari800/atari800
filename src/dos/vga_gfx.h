@@ -38,7 +38,7 @@ extern void Map_i_bitmap(BITMAP *bitmap,void *memory,void *memory2,int width,int
 /*make darker copy of buffer 'source'*/
 extern void make_darker(void *target,void *source,int bytes);
 
-#endif AT_USE_ALLEGRO
+#endif /* AT_USE_ALLEGRO */
 
 /*vertical retrace control*/
 extern void v_ret();
