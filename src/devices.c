@@ -207,7 +207,7 @@ void Device_HHOPEN(void)
 	if (devbug)
 		Aprint("HHOPEN");
 
-	fid = dGetByte(0x2e) >> 4;
+	fid = regX >> 4;
 
 	if (fp[fid]) {
 		fclose(fp[fid]);
@@ -318,7 +318,7 @@ void Device_HHCLOS(void)
 	if (devbug)
 		Aprint("HHCLOS");
 
-	fid = dGetByte(0x2e) >> 4;
+	fid = regX >> 4;
 
 	if (fp[fid]) {
 		fclose(fp[fid]);
@@ -333,7 +333,7 @@ void Device_HHREAD(void)
 	if (devbug)
 		Aprint("HHREAD");
 
-	fid = dGetByte(0x2e) >> 4;
+	fid = regX >> 4;
 
 	if (fp[fid]) {
 		int ch;
@@ -369,7 +369,7 @@ void Device_HHWRIT(void)
 	if (devbug)
 		Aprint("HHWRIT");
 
-	fid = dGetByte(0x2e) >> 4;
+	fid = regX >> 4;
 
 	if (fp[fid]) {
 		int ch;
@@ -399,7 +399,7 @@ void Device_HHSTAT(void)
 	if (devbug)
 		Aprint("HHSTAT");
 
-	fid = dGetByte(0x2e) >> 4;
+	fid = regX >> 4;
 
 	regY = 146;
 	SetN;
@@ -410,7 +410,7 @@ void Device_HHSPEC(void)
 	if (devbug)
 		Aprint("HHSPEC");
 
-	fid = dGetByte(0x2e) >> 4;
+	fid = regX >> 4;
 
 	switch (dGetByte(ICCOMZ)) {
 	case 0x20:
@@ -767,6 +767,10 @@ void AtariEscape(UBYTE esc_code)
 
 /*
 $Log$
+Revision 1.7  2001/07/19 23:08:02  fox
+replaced "dGetByte(0x2e)" with "regX" in H: handler routines
+(fixes problems with Atari BASIC's GET/PUT/INPUT/PRINT)
+
 Revision 1.6  2001/03/25 06:57:35  knik
 open() replaced by fopen()
 
