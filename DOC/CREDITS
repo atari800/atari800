@@ -162,7 +162,8 @@ Gerhard Janka <gerhard.janka@siemens.at>
 
 Jindroush <kubecj@asw.cz>
 - various corrections and refinements (SIO)
-  hours of testing on real Atari800XL
+- hours of testing on real Atari800XL
+- research on real cartridges
 
 Ken Sider
 - his binary loader has been used by Rich for developing our EXE LOADER
@@ -224,6 +225,9 @@ Piotr Fusik <fox@scene.pl>
 
 Matthew Conte <matt@conte.com>
 - new SoundBlaster driver for DOS
+
+Nir Dary
+- 8*8 KB D50x and OSS 'M091' cartridges
 
 Vasyl Tsvirkunov <vasyl@pacbell.net>
 - WinCE port of Atari800
