@@ -30,7 +30,6 @@ EMUSRCS= \
 	cpu.c \
 	cycle_map.c \
 	devices.c \
-	diskled.c \
 	gtia.c \
 	input.c \
 	list.c \
