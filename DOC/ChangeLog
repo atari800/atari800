@@ -1,24 +1,382 @@
---- 2001/12/04 - Jacek
+2001-12-07  Piotr Fusik  <fox@scene.pl>
 
-  * fixed undefined Aflushlog in log.[ch]
-  * cleanups for readability in atari_sdl.c
+* cpu.c: #include <stdlib.h> for exit()
+* rtime.c: #include <string.h> for strcmp()
 
---- 2001/12/04 - joy
+2001-12-04  Jacek Poplawski  <jpopl@interia.pl>
 
-  * added Nathan's sethdr perl script and Piotr's act2html C code to util/
-  * SDL port now calls Aflushlog() before it exits
-  * fixed win32 compile and runtime problems (thanks to Nathan)
+* log.c, log.h: fixed undefined Aflushlog
+* atari_sdl.c: cleanups for readability
 
---- 2001/12/03 - joy
+2001-12-04  Petr Stehlik  <pstehlik@sophics.cz>
 
-  * updated configure.in to support the Atari Falcon port
-  * Falcon port' proprietary -DDMASOUND changed to general -DSOUND
+* util/sethdr, util/act2html.c: added Nathan's sethdr perl script and Piotr's
+  act2html C code
+* SDL port now calls Aflushlog() before it exits
+* fixed win32 compile and runtime problems (thanks to Nathan)
 
---- 2001-11-27	Krzysztof (knik)
+2001-12-03  Petr Stehlik  <pstehlik@sophics.cz>
 
-  * colours.c: default palette changed to the real palette created by
-    Zdenek Eisenhammer.
-  * colours.c: code to adjust palette properties improved and moved
-    to separate function Palette_Format.
+* configure.in: updated to support the Atari Falcon port
+* Falcon port' proprietary -DDMASOUND changed to general -DSOUND
 
--- Piotr please fill this from the old CHANGES file, at least approximately
+2001-11-27  Krzysztof Nikiel  <knik@priv.onet.pl>
+
+* colours.c: default palette changed to the real palette created by
+  Zdenek Eisenhammer.
+* colours.c: code to adjust palette properties improved and moved
+  to separate function Palette_Format.
+
+2001-11-26  Piotr Fusik  <fox@scene.pl>
+
+* colours.c: #include <string.h> for strcmp()
+
+2001-11-18  Piotr Fusik  <fox@scene.pl>
+
+* ui.c: fixed a bug: modification of string literals
+
+2001-11-09  Piotr Fusik  <fox@scene.pl>
+
+* pbi.c, pbi.h, Makefile.in: removed pbi module (it did nothing useful and
+  was out of date)
+
+2001-11-04  Piotr Fusik  <fox@scene.pl>
+
+* input.h, input.c: added Trak-Ball emulation ("Missile Command")
+  and blocked opposite joystick directions (good for "Mario Bros.")
+* cartridge.h, cartridge.c, ui.c: right slot cartridge
+
+2001-10-29  Piotr Fusik  <fox@scene.pl>
+
+* monitor.c: "DLIST" didn't stopped on JVB if Display List had multiple of 15
+  instructions
+* cpu.c, gtia.h: removed i386 asm tricks - gcc 2.95.3 does it better :-)
+* atari.h, gtia.c: changed implementation of WSYNC/VCOUNT timing
+  (previously it assumed that the instruction accessing VCOUNT had 4 cycles)
+* antic.c: corrected timing of DLISTL/H ("Spelunker" works)
+
+2001-10-26  Piotr Fusik  <fox@scene.pl>
+
+* atari_vga.c, configure.in: moved atari_vga.c from src to src/dos
+* configure.bat, configure_dos.bat: renamed configure.bat to configure_dos.bat
+  (in bash 2.04.7 "./configure" runs configure.bat instead of configure)
+* atari.c, memory-d.c: made 130 XE state files compatible with previous
+  versions
+* ui.c: current system is selected by default in SelectSystem()
+* input.h, antic.c, input.c: light gun emulation,
+  "-mouse gun" is same as "-mouse pen", except that the button is inverted
+* input.c: set default light pen/gun offsets to (42, 2) - good for light gun
+  games; a bigger light pen/gun cursor
+
+2001-10-12  Piotr Fusik  <fox@scene.pl>
+
+* cartridge.h, cartridge.c, ui.c: added 8 KB and 4 KB cartridges for 5200
+
+2001-10-11  Piotr Fusik  <fox@scene.pl>
+
+* atari_curses.c, ui_basic.c, ui.c: removed CURSES-specific code from ui.c,
+  added curses_screen for UI
+
+2001-10-10  Piotr Fusik  <fox@scene.pl>
+
+* atari_x11.c, atari_curses.c: compilable now
+* configure.in, ui.c: corrected typos
+
+2001-10-09  Piotr Fusik  <fox@scene.pl>
+
+* ui.c: OSS 'M019' -> 'M091'
+
+2001-10-08  Piotr Fusik  <fox@scene.pl>
+
+* input.c: removed CVS keywords
+* ui.c: corrected stack bug (thanks Vasyl) and renamed some cartridge types
+
+2001-10-07  Piotr Fusik  <fox@scene.pl>
+
+* input.c: smoother mouse pointer movement in Amiga/ST/joy modes
+* atari_basic.c: removed Atari_POT (unused)
+* pokey.c: fixed SEROUT (Sparta DOS X runs)
+
+2001-10-05  Piotr Fusik  <fox@scene.pl>
+
+* atari.c, cartridge.h, cartridge.c, ui.c: added Bounty Bob Strikes Back
+  cartridge for 800/XL/XE (thanks Jindroush)
+* atari.c: H: didn't worked until a patch was toggled
+
+2001-10-03  Piotr Fusik  <fox@scene.pl>
+
+* input.h, input.c: finished mouse code
+* pokey.c: added INPUT_Scanline() call (to emulate Amiga and ST mice)
+* rt-config.c: fixed default TV mode in RtConfigUpdate
+* cpu.c: killed some warnings, AtariEscape -> Atari800_RunEsc
+* atari.h, atari.c, devices.c, devices.h, memory-d.c, binload.c: rewritten
+  escape codes handling
+* devices.c: corrected Device_isvalid (isalnum((char) 0x9b) == 1 !)
+* binload.c: killed a warning, used dGetWord/dPutWord
+* diskled.h, diskled.c, sio.c, atari.c, atari_vga.c, platform.h:
+  SET_LED and Atari_Set_LED are no longer used, Update_LED -> LED_Frame
+* atari.h, atari.c: added screen_visible_* variables
+* input.c, atari_vga.c, platform.h: removed Atari_POT: special handling
+  of 5200 joysticks is in input.c
+* Makefile.in: updated
+
+2001-10-01  Piotr Fusik  <fox@scene.pl>
+
+* dos/vga_asm.s: corrected a bug in make_darker and commented whole routine
+  out (it was used in ALLEGRO version only).
+* ui.h, devices.c, cpu.c, atari.c: #include "ui.h" for CRASH_MENU externs
+* memory-d.h: added a few useful macros (dGetWord, etc.)
+* sio.c, cpu.c, memory-d.c, atari.c, antic.c: updated for new macros in
+  memory-d.h
+* cartridge.h, cartridge.c, ui.c: added new cartridge type: Atrax 128 KB
+  (thanks Jindroush)
+* antic.h, antic.c, ui.c: renamed artif_init to ANTIC_UpdateArtifacting
+* ui.c: CURSES code cleanup (spaces, memory[], goto)
+
+2001-09-27  Piotr Fusik  <fox@scene.pl>
+
+* pia.c, pia.h: Atari_PORT -> PORT_input
+* pokey.c, pokey.h: Atari_POT -> POT_input
+* input.h: added INPUT_Initialise and a few mouse variables
+* input.c: added INPUT_Initialise, PORT_input, POT_input
+* atari_basic.c: removed Atari_CONSOL and Atari_PEN (not used anymore)
+* cpu.c: fixed nasty bug with extern int wsync_halt
+  - there's UBYTE wsync_halt in antic.c (oooooppss!)
+* cpu_m68k.s: fixed wsync_halt bug, bounty_bob1/2 -> CART_BountyBob1/2,
+  SupertCart_GetByte/PutByte -> CART_GetByte/PutByte
+* input.h: mouse_speed, INPUT_CenterMousePointer, INPUT_DrawMousePointer
+* input.c: emulation of Paddles, Atari Touch Tablet, Koala Pad
+  and Light Pen/Light Gun
+* atari.c: called INPUT_Initialise and INPUT_DrawMousePointer
+* atari_vga.c: updated mouse code
+* Makefile.in: updated
+
+2001-09-26  Piotr Fusik  <fox@scene.pl>
+
+* input.c, input.h: added mouse_mode, mouse_port, 5200 key codes
+* antic.h, antic.c, platforma.h, atari_vga.c: light_pen_enabled, Atari_PEN ->
+  mouse_mode==MOUSE_PEN, PENH_input, PENV_input (direct mouse support
+  for light pen emulation)
+
+2001-09-22  Piotr Fusik  <fox@scene.pl>
+
+* input.h, input.c: added key_consol, joy_autofire, AKEY_SHFT etc.
+* input.c: fixed key_break and key_code
+* atari.h: declared nframes and deltatime, AKEY_SHFT etc. moved to input.h
+* gtia.c, platform.h, atari_vga.c: Atari_CONSOL -> key_consol,
+  TRIG_auto -> joy_autofire
+
+2001-09-21  Piotr Fusik  <fox@scene.pl>
+
+* antic.c: optimized character modes
+* devices.c: removed unused variable
+* atari.h, atari.c: Atari800_Frame(): new function that groups emulation
+  of one Atari frame. The functions for individual modules will be called
+  ANTIC_Frame(), GTIA_Frame(), etc.
+* input.h, input.c: new module, for keyboard/joystick/mouse
+* pokey.h: declared SKSTAT (for input)
+* atari_vga.c, ui.c: included input.h
+* atari.h: joystick positions and Atari key codes moved to input.h
+* atari.c: part of keyboard handling moved to INPUT_Frame()
+* Makefile.in: updated for the input module
+* antic.h, antic.c, ataripcx.c, ui.c: ANTIC_RunDisplayList -> ANTIC_Frame
+* gtia.h, gtia.c: GTIA_Triggers -> GTIA_Frame
+* atari.h: removed draw_display, added Atari800_Initialise
+* atari.c: main() is now in platform-dependent code, should call
+  Atari800_Initialise and Atari800_Frame
+* input.c, input.h, pokey.c, atari_vga.c: SHIFT_KEY -> key_shift (consistent
+  naming convention)
+* pokey.c, atari_vga.c: removed KEYPRESSED (not needed, since INPUT_Frame()
+  can check if key_code!=AKEY_NONE)
+* atari_basic.c, atari_vga.c: added main()
+
+2001-09-20  Piotr Fusik  <fox@scene.pl>
+
+* gtia.c: optimized players in new_pm_scanline
+
+2001-09-19  Piotr Fusik  <fox@scene.pl>
+
+* pokey.c: corrected RANDOM
+
+2001-09-17  Piotr Fusik  <fox@scene.pl>
+
+* antic.c: optimized: memcpy in ANTIC_Load
+* memory-d.c, memory-d.h, atari.c: Initialise_Atari... functions moved
+  to atari.c (they don't need to be memory-d/-p specific, it should simplify
+  finishing PAGED_MEM code)
+* atari.c, atari.h, atari_vga.c, cartridge.c, gtia.c, memory-d.c, pia.c,
+  rt-config.c, rt-config.h, statesav.c, ui.c:
+  machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
+  (removed lots of confusing variables, now it's easier to add new machines
+  - 16,192,1088,... KB of RAM)
+* cartridge.c: killed a warning
+* rt-config.c, rt-config.c, ui.c, memory-d.c, atari.c:
+  enable_c000_ram -> ram_size = 52
+* memory-d.c: malloc/free atarixe_memory (don't waste 256 KB if not
+  in XE mode)
+* atari.c: shortened state file of 130 XE
+
+2001-09-16  Piotr Fusik  <fox@scene.pl>
+
+* atari.c, rt-config.c, rt-config.h: removed default_tv_mode (not needed,
+  since there's tv_mode)
+
+2001-09-09  Piotr Fusik  <fox@scene.pl>
+
+* pia.h: declared atari_basic and selftest_enabled
+* rt-config.h, rt-config.c, atari.c, ui.c: hold_option -> disable_basic
+* memory-d.h, memory-d.c, cartridge.c:o "-basic" and "-nobasic" work
+  for Atari 800 (Atari BASIC is attached as a cartridge in Atari 800)
+
+2001-09-06  Piotr Fusik  <fox@scene.pl>
+
+* atari.h: MENU_PATCHES -> MENU_SETTINGS
+
+2001-09-04  Piotr Fusik  <fox@scene.pl>
+
+* pokey.c: implemented SKRES and bit 5 of SKSTAT
+* cartridge.c: CART_Remove works in 5200 mode
+* ui.c: hold_option, enable_c000_ram and rtime_enabled available in menu
+
+2001-09-03  Piotr Fusik  <fox@scene.pl>
+
+* pokey.c: call SIO_GetByte() when triggering IRQ, not when reading SERIN
+  ("Timeless Announcement" loads now)
+* sio.c: disk drive answers 'E' to an unknown command.
+
+2001-08-29  Piotr Fusik  <fox@scene.pl>
+
+* cassette.h, cassette.c: using FILENAME_MAX from stdio.h
+
+2001-08-27  Piotr Fusik  <fox@scene.pl>
+
+* pokey.c: RANDOM is 0xff if (SKCTLS&0x03)==0 (for stereo detection in
+  "Sheol")
+
+2001-08-24  Piotr Fusik  <fox@scene.pl>
+
+* pokey.h: declared stereo_enabled (for monitor.c)
+* pokey.c: initialize KBCODE to 0xff - for a stereo detection routine
+
+2001-08-16  Piotr Fusik  <fox@scene.pl>
+
+* atari.c: selecting cartridge type didn't worked in 5200 mode
+* memory-d.c: deleted CART_Remove() in Initialise_Atari*, so auto-switching
+  to 5200 mode when inserting a 5200 cartridge works
+* cartridge.c: fix for Bounty Bob 5200 cartridge (thanks Jindroush)
+
+2001-08-06  Piotr Fusik  <fox@scene.pl>
+
+* colours.c: -help bug fix
+* cassette.h, gtia.h, gtia.c, atari.c: hold_start support
+  (emulator presses Start and Space to boot the tape)
+* cassette.c: CAS format support
+* Makefile.in: added cassette.[ch]
+
+2001-08-03  Piotr Fusik  <fox@scene.pl>
+
+* cassette.h, cassette.c: new module, for cassette recorder emulation
+* sio.h: declared SIO_ChkSum (for cassette.c)
+* atari.c, sio.c: cassette support
+
+2001-07-25  Piotr Fusik  <fox@scene.pl>
+
+* sio.h, compfile.c, atari.c, sio.c: added SIO_Exit(), code clean ups
+* sio.c: Format Disk rewritten. Now it can resize both ATR and XFD images.
+  The ATR header is being updated. Double density formatting works.
+
+2001-07-24  Piotr Fusik  <fox@scene.pl>
+
+* antic.c: speeded up Vasyl's code
+
+2001-07-23  Piotr Fusik  <fox@scene.pl>
+
+* sio.c: corrected and added checks if drive number is in range 1-8
+
+2001-07-21  Piotr Fusik  <fox@scene.pl>
+
+* sio.c: made double density ATR images compatible with SIO2PC
+
+2001-07-20  Piotr Fusik  <fox@scene.pl>
+
+* monitor.c: "C 600 ABCD" does the same as "C 600 CD AB".
+  "DLIST" - 1 KB boundary respected. "POKEY" command.
+  "S" without parameters repeats last search.
+  Corrected Petr's mistake in rev.1.4.
+* pia.c, pia.h: renamed atarixl_os to atari_os (this array may be used
+  also for storing 800 and 5200 OSes)
+* rt-config.h, rt-config.c, atari.c, atari.h, memory-d.c, memory.d.h:
+  removed enable_rom_patches, added: enable_h_patch, enable_p_patch and
+  Atari800_UpdatePatches(). SIO, H: and P: patches are now independent
+  and can be toggled at run-time (original OS is saved in atari_os).
+  Removed SetSIOEsc() and RestoreSIO().
+* atari.h, ui.c: added "Atari OS patches" menu item
+* cpu.c, devices.c, atari.h: removed ESC_BREAK (it wasn't really an escape
+  code, it was used for entering the monitor - the monitor can be called
+  directly)
+* devices.c: replaced K_Device with Device_KHREAD, replaced E_Device with
+  Device_EHOPEN, Device_EHREAD and Device_EHWRITE (now K: and E: handlers
+  are implemented in the same way as H: and P:)
+* rtime.h, rtime.c: new module, created from R-Time 8 emulation routines in
+  supercart
+* cartridge.h, cartridge.c: new module, for inserting cartridges (previously
+  in memory-d) and bank-switching (previously in memory-d and supercart)
+* monitor.c: not displaying rom_inserted in "PIA" command (because the new
+  cartridge types can be disabled by software)
+* atari.h: added declarations of mach_xlxe and Ram256,
+  removed cartridge types and Insert/Remove functions for cartridges
+* rt-config.c: removed #define TRUE/FALSE and extern int Ram256 (it's in
+  atari.h)
+* memory-d.h, memory-d.c: rewritten to support the new cartridge module
+* pia.c: Ram256 moved to atari.c (it's not related with PIA)
+* gtia.h: declared TRIG and TRIG_latch (accessed by memory-d)
+* pia.c, gtia.c: cartA0BF_enabled is used instead of rom_inserted
+* ui.h: declared SelectCartType(), removed mach_xlxe and Ram256
+  (which are declared in atari.h)
+* atari.c: support for new rtime and cartridge modules
+* ui.c: inserting, removing and converting of new cartridge types
+* Makefile.in, common.mak: added cartridge and rtime, removed supercart
+* supercart.c, supercart.h: removed - routines moved to new modules cartridge
+  and rtime
+
+2001-07-19  Piotr Fusik  <fox@scene.pl>
+
+* binload.c: 0x31 stored at 0x300 ("Studio Dream" loads now)
+* supercart.c: added "byte &= 0x0f" to prevent out of bounds accesses
+  to regset[]
+* pokey.c: SKSTAT variable renamed to SKCTLS to avoid confusions
+  (it's the write-only, not the read-only Pokey register)
+* devices.c: replaced "dGetByte(0x2e)" with "regX" in H: handler routines
+  (fixes problems with Atari BASIC's GET/PUT/INPUT/PRINT)
+* cpu.c: on reset, the I flag is set (now reset works if stuck in interrupts)
+* pia.c: & 0x3f on read PACTL and PBCTL (bits 6 and 7 are read-only in real
+  PIA)
+* antic.c: described cycle-exact Antic timing for a few modes
+  (not implemented)
+* devices.c: added open mode 9 (append) for H: device
+* pokey.c: potentiometers emulation improved: POTGO and ALLPOT registers
+  and bit 2 of SKCTLS implemented, "Tree Surgeon" no longer hangs
+* pokey.c, pokey.h, pokeysnd.c, pokeysnd.h: moved a few definitions from
+  pokeysnd to pokey (the goal is not to duplicate the variables of same
+  meaning in pokey and pokeysnd, e.g. AUDC/AUDF/AUDCTL)
+* pokey.c: blocked POTs, SERIN, SEROUT, KBCODE, IRQ, SKSTAT, SKCTLS
+  in the second Pokey chip, second Pokey unaccesible until stereo_enabled set
+  (helps some stereo detection routines)
+* pokey.c, pokey.h, pokeysnd.c: replaced bit17[] with poly9_lookup[] and
+  poly17_lookup[]. bit17[] was initialized with rand(), while poly9/17_lookups
+  use the original POKEY algorithms. Moreover, poly9/17_lookups are smaller,
+  which saves ca. 100 KB of memory.
+* atari.h, pokey.h, antic.c, pokey.c: true RANDOM emulation (both 9- and
+  17-bit poly) ! Not using rand() anymore. POKEY_Frame() and cpu_clock are
+  needed for it. Try the "Bank Bang!" game.
+* antic.c, gtia.c: the background color can be changed inside a scanline.
+  Currently implemented only for blank lines without PMG.
+  Try the "Partyland" part of the "Bitter Reality" demo.
+  The feature can be disabled by defining NO_CYCLE_EXACT.
+* pokey.c: STIMER fixed (speech in "Mirax Force" is better, but still
+  not perfect)
+* cpu.c: slight optimization of ROL and ROR
+* cpu.c: Read-Modify-Write (RMW) instructions (ASL, INC, etc.) store
+  the unmodified value of $D01A before they store the modified value.
+  Now you can see the white dots made with INC $D01A.
+* ui.h: removed declaration of atarixl_os (why was it declared here?)
