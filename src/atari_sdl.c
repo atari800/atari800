@@ -2,6 +2,11 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   14-12-2002 - added support for new audio stuff:
+   		"-mzpokey" - enable new (better) pokey code
+		"-oldpokey" - disable new pokey code (default)
+		"-stereo" - enable stereo mode
+		"-audio16" - enable 16bit audio mode (recommended)
    23-04-2002 - added command line options:
 		"--nojoystick", "--width x", "--height y", "--bpp b",
 		"--fullscreen", "--windowed"
@@ -127,6 +132,9 @@
 // emulator, probably we need two variables or command line argument)
 #ifdef SOUND
 static int sound_enabled = TRUE;
+static int mz_pokey = 0;
+static int sound_flags = 0;
+static int sound_bits = 8;
 #endif
 static int SDL_ATARI_BPP = 0;	// 0 - autodetect
 static int FULLSCREEN = 1;
@@ -403,11 +411,14 @@ void SwapJoysticks()
 #ifdef SOUND
 void SDL_Sound_Update(void *userdata, Uint8 * stream, int len)
 {
-	Uint8 dsp_buffer[1 << FRAGSIZE];
+	Uint8 dsp_buffer[2 << FRAGSIZE]; // x2, because 16bit buffers
 	if (len > 1 << FRAGSIZE)
 		len = 1 << FRAGSIZE;
 	Pokey_process(dsp_buffer, len);
-	SDL_MixAudio(stream, dsp_buffer, len, SOUND_VOLUME);
+	if (sound_bits==8)
+		SDL_MixAudio(stream, dsp_buffer, len, SOUND_VOLUME);
+	else	
+		SDL_MixAudio(stream, dsp_buffer, 2*len, SOUND_VOLUME);
 }
 
 void SDL_Sound_Initialise(int *argc, char *argv[])
@@ -420,6 +431,29 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 			sound_enabled = TRUE;
 		else if (strcmp(argv[i], "-nosound") == 0)
 			sound_enabled = FALSE;
+		else if (strcmp(argv[i], "-mzpokey") == 0)
+		{
+			Aprint("mzpokey enabled");
+			mz_pokey = 1;
+		}	
+		else if (strcmp(argv[i], "-oldpokey") == 0)
+		{	
+			Aprint("mzpokey disabled");
+			mz_pokey = 0;
+		}	
+		else if (strcmp(argv[i], "-stereo") == 0)
+		{	
+			Aprint("stereo enabled");
+			sound_flags|=SND_STEREO;
+			mz_pokey = 0;
+		}	
+		else if (strcmp(argv[i], "-audio16") == 0)
+		{	
+			Aprint("audio 16bit enabled");
+			sound_flags|=SND_BIT16;
+			sound_bits=16;
+			mz_pokey = 0;
+		}	
 		else if (strcmp(argv[i], "-dsprate") == 0)
 			sscanf(argv[++i], "%d", &dsprate);
 		else {
@@ -436,7 +470,18 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 	if (sound_enabled) {
 		desired.freq = dsprate;
-		desired.format = AUDIO_U8;
+		if (sound_bits==8)
+			desired.format = AUDIO_U8;
+		else
+			if (sound_bits==16)
+				desired.format = AUDIO_U16;
+		else
+		{
+			Aprint ("unknown sound_bits");
+			Atari800_Exit(FALSE);
+			Aflushlog();
+		};	
+			
 		desired.samples = 1 << FRAGSIZE;
 		desired.callback = SDL_Sound_Update;
 		desired.userdata = NULL;
@@ -449,8 +494,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 			return;
 		}
 
-		// mono
-		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
+		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1,sound_flags,mz_pokey);
 	}
 	else {
 		Aprint
@@ -1564,6 +1608,10 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.29  2002/12/14 11:02:56  jacek_poplawski
+
+ updated audio stuff (mzpokey, stereo, 16bit audio)
+
  Revision 1.28  2002/08/18 20:24:12  joy
  MacOSX needs SetPalette private
 
