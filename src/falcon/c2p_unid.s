@@ -5,7 +5,7 @@
 *-------------------------------------------------------*
 
 *-------------------------------------------------------*
-*	Initialisation functions			*
+*	external variables				*
 *-------------------------------------------------------*
 
 	xref		_screenw,_screenh
@@ -17,6 +17,7 @@
 *	General functions				*
 *-------------------------------------------------------*
 
+	xdef		_rplanes_delta_init
 	xdef		_rplanes_delta
 
 *-------------------------------------------------------*
@@ -24,17 +25,22 @@
 *-------------------------------------------------------*
 
 pushall	macro
-;	movem.l		d0-a6,-(sp)
-	movem.l		d2-d7/a2-a6,-(sp)
+	movem.l		d2-d7/a2-a5,-(sp)
 	endm
 
 popall	macro
-;	movem.l		(sp)+,d0-a6
-	movem.l		(sp)+,d2-d7/a2-a6
+	movem.l		(sp)+,d2-d7/a2-a5
 	endm
 
 *-------------------------------------------------------*
 *	Initialise rendering display			*
+*-------------------------------------------------------*
+_rplanes_delta_init:
+*-------------------------------------------------------*
+	rts
+*-------------------------------------------------------*
+*-------------------------------------------------------*
+*	display	conversion				*
 *-------------------------------------------------------*
 _rplanes_delta:
 *-------------------------------------------------------*
@@ -48,7 +54,7 @@ _rplanes_delta:
 ; centering of view at screen 
 	move.w		#384,d0		; width of Atari800 emulated screen
 	sub.w		_screenw,d0	; width of displayed screen
-	move.w		d0,src_line_offset
+	movea.w		d0,a3
 	lsr.w		#1,d0		; centering
 	lea		(a0,d0),a0	; offset 24 or 32 pixels
 	lea		(a2,d0),a2	; offset 24 or 32 pixels
@@ -56,7 +62,7 @@ _rplanes_delta:
 ; centering of screen in videoram in horizontal axis
 	move.w		_vramw,d0
 	sub.w		_screenw,d0
-	move.w		d0,dst_line_offset
+	movea.w		d0,a4
 	lsr.w		#1,d0
 	neg.w		d0
 	lea		(a1,d0),a1	; negative pre-offset (will be OK at .ylp)
@@ -73,113 +79,41 @@ _rplanes_delta:
 	move.w		_screenw,d0
 	lsr.w		#4,d0
 	subq.w		#1,d0
-	move.w		d0,line_long_width
+	movea.w		d0,a5
 
 *-------------------------------------------------------*
-;	movem.l		(a0)+,d1-d4
+	move.w		_screenh,d6
+	subq.w		#1,d6
+	move.w		a5,d5
+	nop			; for cache alignment	
+*-------------------------------------------------------*
+.xlp:	
 	move.l		(a0)+,d4
 	move.l		(a0)+,d3
 	move.l		(a0)+,d2
 	move.l		(a0)+,d1
-;	movem.l		(a2)+,a3-a6
-	move.l		(a2)+,a3
-	move.l		(a2)+,a4
-	move.l		(a2)+,a5
-	move.l		(a2)+,a6
 *-------------------------------------------------------*
-	cmp.l		d4,a3
+	moveq		#12,d0
+	cmp.l		(a2)+,d4
 	bne.s		.doit
-	cmp.l		d3,a4
+	moveq		#8,d0
+	cmp.l		(a2)+,d3
 	bne.s		.doit
-	cmp.l		d2,a5
+	moveq		#4,d0
+	cmp.l		(a2)+,d2
 	bne.s		.doit
-	cmp.l		d1,a6
-	bne.s		.doit
-	lea		16(a1),a1
-	bra		.xyl
-.doit:
-*-------------------------------------------------------*
-	move.l		#$00FF00FF,d0	; 4
-	splice.8	d4,d2,d0,d7	; 18
-	splice.8	d3,d1,d0,d7	; 18
-*-------------------------------------------------------*
-	move.l		#$0F0F0F0F,d0	; 4
-	splice.4	d4,d3,d0,d7	; 18
-	splice.4	d2,d1,d0,d7	; 18
-*-------------------------------------------------------*
-	swap		d3		; 4(4:0)
-	swap		d1		; 4(4:0)
-	eor.w		d4,d3		; 2(2:0)
-	eor.w		d2,d1		; 2(2:0)
-	eor.w		d3,d4		; 2(2:0)
-	eor.w		d1,d2		; 2(2:0)
-	eor.w		d4,d3		; 2(2:0)
-	eor.w		d2,d1		; 2(2:0)
-	swap		d3		; 4(4:0)
-	swap		d1		; 4(4:0)
-*-------------------------------------------------------*
-	move.l		#$33333333,d0	; 4
-	splice.2	d4,d3,d0,d7	; 18
-	splice.2	d2,d1,d0,d7	; 18
-*-------------------------------------------------------*
-	move.l		#$55555555,d0	; 4
-	splice.1	d4,d2,d0,d7	; 18
-	splice.1	d3,d1,d0,d7	; 18
-*-------------------------------------------------------*
-*	32-bit destination				*
-*-------------------------------------------------------*
-	swap		d1		; 4(4:0)
-	eor.w		d3,d1		; 2(2:0)
-	eor.w		d1,d3		; 2(2:0)
-	eor.w		d3,d1		; 2(2:0)
-	swap		d3		; 4(4:0)
-	swap		d2		; 4(4:0)
-	eor.w		d4,d2		; 2(2:0)
-	eor.w		d2,d4		; 2(2:0)
-	eor.w		d4,d2		; 2(2:0)
-	swap		d4		; 4(4:0)
-*-------------------------------------------------------*
- 	move.l		d1,(a1)+
-	move.l		d2,(a1)+
-	move.l		d3,(a1)+
-	move.l		d4,(a1)+
-*-------------------------------------------------------*
-.xyl:	move.w		_screenh,d6
-	subq.w		#1,d6
-*-------------------------------------------------------*
-.ylp:	move.w		line_long_width,d5
-	move.w		dst_line_offset,d0
-	lea		(a1,d0),a1
-*-------------------------------------------------------*
-.xlp:	tst.w		d5
-	bne.s		.nono
-	move.w		src_line_offset,d0
-	lea		(a0,d0),a0	; offset D0 pixels to beginning of next line
-	lea		(a2,d0),a2	; offset D0 pixels to beginning of next line
-.nono:	
-;	movem.l		(a0)+,d4-d1	; (2+8+(4*4)) = 26
-	move.l		(a0)+,d4	; (2+2)*5 = 20
-	move.l		(a0)+,d3
-	move.l		(a0)+,d2
-	move.l		(a0)+,d1
-;	movem.l		(a2)+,a3-a6
-	move.l		(a2)+,a3
-	move.l		(a2)+,a4
-	move.l		(a2)+,a5
-	move.l		(a2)+,a6
-*-------------------------------------------------------*
-	cmp.l		d4,a3
-	bne.s		.doit2
-	cmp.l		d3,a4
-	bne.s		.doit2
-	cmp.l		d2,a5
-	bne.s		.doit2
-	cmp.l		d1,a6
+	cmp.l		(a2)+,d1
 	bne.s		.doit2
 	lea		16(a1),a1
 	dbra		d5,.xlp
-	dbra		d6,.ylp
+	adda.l		a3,a0
+	adda.l		a3,a2
+	adda.l		a4,a1
+	move.w		a5,d5
+	dbra		d6,.xlp
 	bra		.none
+.doit:
+	adda.l		d0,a2
 .doit2:
 *-------------------------------------------------------*
 	move.l		#$00FF00FF,d0	; 4
@@ -228,19 +162,15 @@ _rplanes_delta:
 	move.l		d4,(a1)+
 *-------------------------------------------------------*
 	dbra		d5,.xlp
-	dbra		d6,.ylp
+	adda.l		a3,a0
+	adda.l		a3,a2
+	adda.l		a4,a1
+	move.w		a5,d5
+	dbra		d6,.xlp
 *-------------------------------------------------------*
 .none:
-
 *-------------------------------------------------------*
 	popall
 *-------------------------------------------------------*
 	rts
-
-*-------------------------------------------------------*
-			bss
-*-------------------------------------------------------*
-src_line_offset		ds.w	1
-dst_line_offset		ds.w	1
-line_long_width		ds.w	1
 *-------------------------------------------------------*
