@@ -1,3 +1,4 @@
+#include <stdlib.h> // for NULL
 #include <time.h>
 
 #include "atari.h"
