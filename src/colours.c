@@ -242,7 +242,7 @@ void Palette_Format(int black, int white, int colors)
 
   for (i = 0; i < 0x100; i++)
   {
-    int c = basicpal[i];
+    int c = palette_loaded ? colortable[i] : basicpal[i];
 
     rgb[i][0] = (c >> 16) & 0xff;
     rgb[i][1] = (c >> 8) & 0xff;
@@ -392,6 +392,9 @@ int read_palette(char *filename) {
 
 /*
 $Log$
+Revision 1.7  2002/06/20 20:58:26  joy
+loaded palette fixed
+
 Revision 1.6  2001/11/27 19:11:21  knik
 real palette used by default so COMPILED_PALETTE conditional not needed
 palette adjusting code improved and moved to Palette_Format function
