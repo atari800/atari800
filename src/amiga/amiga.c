@@ -143,6 +143,7 @@ static struct InputEvent gameport_data;
 static struct MsgPort *gameport_msg_port;
 static struct IOStdReq *gameport_io_msg;
 static BOOL gameport_error;
+static BOOL gameport_msg_sent;
 
 /* Timer */
 static struct MsgPort *timer_msg_port;
@@ -341,12 +342,16 @@ VOID FreeJoystick(void)
 {
 	if (gameport_io_msg)
 	{
-		if( !gameport_error)
+		if (!gameport_error)
 		{
 			BYTE type = GPCT_NOCONTROLLER;
 
-			AbortIO((struct IORequest*)gameport_io_msg);
-			WaitIO((struct IORequest*)gameport_io_msg);
+			if (gameport_msg_sent)
+			{
+				AbortIO((struct IORequest*)gameport_io_msg);
+				WaitIO((struct IORequest*)gameport_io_msg);
+				gameport_msg_sent = FALSE;
+			}
 
 			gameport_io_msg->io_Command = GPD_SETCTYPE;
 			gameport_io_msg->io_Length = 1;
@@ -380,6 +385,7 @@ BOOL SetupJoystick(void)
 			if(!gameport_error)
 			{
 				BYTE type = 0;
+				int ok = 1;
 				struct GamePortTrigger gpt;
 
 				gameport_io_msg->io_Command = GPD_ASKCTYPE;
@@ -405,8 +411,8 @@ BOOL SetupJoystick(void)
 
 				DoIO ((struct IORequest*)gameport_io_msg);
 
-				if(gameport_io_msg->io_Error)
-					printf ("Failed to set controller type\n");
+				if (gameport_io_msg->io_Error)
+					ok = 0;
 
 				gpt.gpt_Keys = GPTF_DOWNKEYS | GPTF_UPKEYS;
 				gpt.gpt_Timeout = 0;
@@ -419,16 +425,19 @@ BOOL SetupJoystick(void)
 
 				DoIO ((struct IORequest*)gameport_io_msg);
 
-				if(gameport_io_msg->io_Error)
-					printf ("Failed to set controller trigger\n");
+				if (gameport_io_msg->io_Error)
+					ok = 0;
 
-				gameport_io_msg->io_Command = GPD_READEVENT;
-				gameport_io_msg->io_Length = sizeof (struct InputEvent);
-				gameport_io_msg->io_Data = (APTR) &gameport_data;
-				gameport_io_msg->io_Flags = 0;
-
-				SendIO ((struct IORequest*)gameport_io_msg);
-				return TRUE;
+				if (ok)
+				{
+					gameport_io_msg->io_Command = GPD_READEVENT;
+					gameport_io_msg->io_Length = sizeof (struct InputEvent);
+					gameport_io_msg->io_Data = (APTR) &gameport_data;
+					gameport_io_msg->io_Flags = 0;
+					SendIO ((struct IORequest*)gameport_io_msg);
+					gameport_msg_sent = TRUE;
+					return TRUE;
+				}
 			}
 		}
 	}
@@ -643,7 +652,7 @@ LONG EnsureScaledDisplay(LONG Width)
 **************************************************************************/
 LONG SetupDisplay(void)
 {
-	UWORD ScreenWidth, ScreenHeight;
+	UWORD ScreenWidth = 0, ScreenHeight = 0;
 	struct MenuItem *mi;
 	int i;
 
@@ -773,6 +782,7 @@ LONG SetupDisplay(void)
 					ScreenIsCustom?TAG_IGNORE:WA_Title, "Atari 800",
 					ScreenIsCustom?TAG_IGNORE:WA_ScreenTitle, VERS,
 					WA_SizeGadget, DisplayType == DISPLAY_SCALABLEWINDOW,
+					WA_SmartRefresh, TRUE,
 					DisplayType == DISPLAY_SCALABLEWINDOW?WA_SizeBBottom:TAG_IGNORE, TRUE,
 					DisplayType == DISPLAY_SCALABLEWINDOW?WA_MaxWidth:TAG_IGNORE,-1,
 					DisplayType == DISPLAY_SCALABLEWINDOW?WA_MaxHeight:TAG_IGNORE,-1,
@@ -806,6 +816,20 @@ LONG SetupDisplay(void)
 						default: mi = FindUserData(MenuMain,(APTR)MEN_SETTINGS_PORT1_UNASSIGNED);break;
 					}
 					if (mi) mi->Flags |= CHECKED;
+
+					mi = FindUserData(MenuMain, (APTR)MEN_SETTINGS_PORT0_GAMEPORT);
+					if (mi)
+					{
+						if (gameport_msg_sent) mi->Flags |= ITEMENABLED;
+						else mi->Flags &= ~ITEMENABLED;
+					}
+
+					mi = FindUserData(MenuMain, (APTR)MEN_SETTINGS_PORT1_GAMEPORT);
+					if (mi)
+					{
+						if (gameport_msg_sent) mi->Flags |= ITEMENABLED;
+						else mi->Flags &= ~ITEMENABLED;
+					}
 
 					SetMenuStrip(WindowMain, MenuMain);
 					return 1;
@@ -1426,10 +1450,10 @@ void Atari_ConfigInit(void)
 {
 	int i;
 
-	strcpy(atari_osa_filename, "PROGDIR:atariosa.rom");
-	strcpy(atari_osb_filename, "PROGDIR:atariosb.rom");
-	strcpy(atari_xlxe_filename, "PROGDIR:atarixl.rom");
-	strcpy(atari_basic_filename, "PROGDIR:ataribas.rom");
+	strcpy(atari_osa_filename, "PROGDIR:ROMs/atariosa.rom");
+	strcpy(atari_osb_filename, "PROGDIR:ROMs/atariosb.rom");
+	strcpy(atari_xlxe_filename, "PROGDIR:ROMs/atarixl.rom");
+	strcpy(atari_basic_filename, "PROGDIR:ROMs/ataribas.rom");
 	atari_5200_filename[0] = '\0';
 
 	for (i=0;i<MAX_DIRECTORIES;i++)
