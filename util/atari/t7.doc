@@ -1,0 +1,28 @@
+T7.bas a test program for cycle-counting.
+The basic idea: we can find out how the real Atari does things by
+changing a register after a certain number of NOP's on a certain
+scanline.  By aligning a player with the colour change, the horizontal
+position can be determined and checked on the emulator.
+Second idea: We can use RANDOM as a cycle-timer.  Set the 9-bit
+random number generator (repeating 511 different values in a sequence),
+then generate all 511 values and store them in an array, with
+the value as the index and the index as the value.
+Then given two different readings of RANDOM at different times,
+look up the index of both in the table, and the difference , mod 511
+is the number of cycles elapsed between the readings.
+Only problem is that we can only read 8 bits of RANDOM, so there's
+two possible values for each reading, giving 4 possible offsets.
+But only one of these will remain constant if the procedure is
+repeated.
+The 4 values printed by the program at the bottom are the computed
+possible offsets, the one which remains constant is the acutal
+offset.
+
+N=# of NOP cycles
+P=HPOSP0
+C=register to change (0=player 0, 9=COLBK, 10=DMACTL, 11-13 HPOS,SIZE,GRAF)
+V=value to change to
+PG=player graphics
+M=antic IR mode
+
+
