@@ -42,6 +42,8 @@ static Format format[MAX_DRIVES];
 static FILE *disk[MAX_DRIVES] = {0, 0, 0, 0, 0, 0, 0, 0};
 static int sectorcount[MAX_DRIVES];
 static int sectorsize[MAX_DRIVES];
+static int format_sectorcount[MAX_DRIVES];
+static int format_sectorsize[MAX_DRIVES];
 
 UnitStatus drive_status[MAX_DRIVES];
 char sio_filename[MAX_DRIVES][FILENAME_LEN];
@@ -72,6 +74,8 @@ void SIO_Initialise(int *argc, char *argv[])
 		memset(tmp_filename[i], 0, FILENAME_LEN );
 		drive_status[i] = Off;
 		istmpfile[i] = 0;
+		format_sectorsize[i] = 128;
+		format_sectorcount[i] = 720;
 	}
 
 	TransferStatus = SIO_NoFrame;
@@ -211,6 +215,8 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 					sectorcount[diskno - 1] = (file_length + 0x180) / 256;
 			}
 		}
+		format_sectorsize[diskno - 1] = sectorsize[diskno - 1];
+		format_sectorcount[diskno - 1] = sectorcount[diskno - 1];
 	}
 	else {
 		drive_status[diskno - 1] = NoDisk;
@@ -345,98 +351,86 @@ static int WriteSector(int unit, int sector, UBYTE * buffer)
 		return 0;
 }
 
-/* Before this function we were ruining ATR images every time they were
- * formatted, because they would be re-initialized as XFD, paying no
- * attention to the ATR header information, and in fact overwriting it!
- */
-
-static int ATRFormat( int unit, UBYTE * buffer )
+static int FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 {
-	int i;
-
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (drive_status[unit] == ReadWrite) {
-				SeekSector(unit, 1);
-				memset(buffer, 0, sectorsize[unit]);
-				for (i = 1; i <= sectorcount[unit]; i++)
-					fwrite(buffer, 1, sectorsize[unit], disk[unit]);
-				memset(buffer, 0xff, sectorsize[unit]);
+				char fname[FILENAME_LEN];
+				int is_atr;
+				int save_boot_sectors_type;
+				int bootsectsize;
+				int bootsectcount;
+				FILE *f;
+				int i;
+				/* Note formatting the disk can change size of the file.
+				   There is no portable way to truncate the file at given position.
+				   We have to close the "r+b" opened file and open it in "wb" mode.
+				   First get the information about the disk image, because we are going
+				   to umount it. */
+				memcpy(fname, sio_filename[unit], FILENAME_LEN);
+				is_atr = (format[unit] == ATR);
+				save_boot_sectors_type = boot_sectors_type[unit];
+				bootsectsize = 128;
+				if (sectsize == 256 && save_boot_sectors_type != BOOT_SECTORS_LOGICAL)
+					bootsectsize = 256;
+				bootsectcount = sectcount < 3 ? sectcount : 3;
+				/* Umount the file and open it in "wb" mode (it will truncate the file) */
+				SIO_Dismount(unit + 1);
+				f = fopen(fname, "wb");
+				if (f == NULL) {
+					Aprint("FormatDisk: failed to open %s for writing", fname);
+					return 'E';
+				}
+				/* Write ATR header if necessary */
+				if (is_atr) {
+					struct ATR_Header header;
+					ULONG disksize = (bootsectsize * bootsectcount + sectsize * (sectcount - bootsectcount)) >> 4;
+					memset(&header, 0, sizeof(header));
+					header.magic1 = MAGIC1;
+					header.magic2 = MAGIC2;
+					header.secsizelo = (UBYTE) sectsize;
+					header.secsizehi = (UBYTE) (sectsize >> 8);
+					header.seccountlo = (UBYTE) disksize;
+					header.seccounthi = (UBYTE) (disksize >> 8);
+					header.hiseccountlo = (UBYTE) (disksize >> 16);
+					header.hiseccounthi = (UBYTE) (disksize >> 24);
+					fwrite(&header, 1, sizeof(header), f);
+				}
+				/* Write boot sectors */
+				memset(buffer, 0, sectsize);
+				for (i = 1; i <= 3 && i <= sectcount; i++)
+					fwrite(buffer, 1, bootsectsize, f);
+				/* Write regular sectors */
+				for ( ; i <= sectcount; i++)
+					fwrite(buffer, 1, sectsize, f);
+				/* Close file and mount the disk back */
+				fclose(f);
+				SIO_Mount(unit + 1, fname, FALSE);
+				/* We want to keep the current PHYSICAL/SIO2PC boot sectors type
+				   (since the image is blank it can't be figured out by SIO_Mount) */
+				if (bootsectsize == 256)
+					boot_sectors_type[unit] = save_boot_sectors_type;
+				/* Return information for Atari (buffer filled with ff's - no bad sectors) */
+				memset(buffer, 0xff, sectsize);
 				return 'C';
 			}
 			else
-				return 'E';
+				return 'E';		/* write protection */
 		}
 		else
 			return 'N';
 	}
-
 	return 0;
 }
 
-/*
- * FormatSingle is used on the XF551 for formating SS/DD and DS/DD too
- * however, I have to check if they expect a 256 byte buffer or if 128
- * is ok either
- */
-static int FormatSingle(int unit, UBYTE * buffer)
-{
-	int i;
-
-	if (drive_status[unit] != Off) {
-		if (disk[unit]) {
-			if (drive_status[unit] == ReadWrite) {
-				if (format[unit] == ATR)
-					return ATRFormat(unit, buffer);
-				sectorcount[unit] = 720;
-				sectorsize[unit] = 128;
-				format[unit] = XFD;
-				SeekSector(unit, 1);
-				memset(buffer, 0, 128);
-				for (i = 1; i <= 720; i++)
-					fwrite(buffer, 1, 128, disk[unit]);
-				memset(buffer, 0xff, 128);
-				return 'C';
-			}
-			else
-				return 'E';
-		}
-		else
-			return 'N';
-	}
-	else
-		return 0;
-}
-
-static int FormatEnhanced(int unit, UBYTE * buffer)
-{
-	int i;
-
-	if (drive_status[unit] != Off) {
-		if (disk[unit]) {
-			if (drive_status[unit] == ReadWrite) {
-				if (format[unit] == ATR)
-					return ATRFormat(unit, buffer);
-				sectorcount[unit] = 1040;
-				sectorsize[unit] = 128;
-				format[unit] = XFD;
-				SeekSector(unit, 1);
-				memset(buffer, 0, 128);
-				for (i = 1; i <= 1040; i++)
-					fwrite(buffer, 1, 128, disk[unit]);
-				memset(buffer, 0xff, 128);
-				return 'C';
-			}
-			else
-				return 'E';
-		}
-		else
-			return 'N';
-	}
-	else
-		return 0;
-}
-
+/* Set density and number of sectors
+   This function is used before the format (0x21) command
+   to set how the disk will be formatted.
+   Note this function does *not* affect the currently attached disk
+   (previously sectorsize/sectorcount were used which could result in
+   a corrupted image).
+*/
 static int WriteStatusBlock(int unit, UBYTE * buffer)
 {
 	int size;
@@ -447,25 +441,23 @@ static int WriteStatusBlock(int unit, UBYTE * buffer)
 		 * here. Setting everything else right here seems to
 		 * be non-sense
 		 */
-		if (format[unit] == ATR) {
-			/* I'm not sure about this density settings, my XF551
-			 * honnors only the sector size and ignore the density
-			 */
-			size = buffer[6] * 256 + buffer[7];
-			if (size == 128 || size == 256)
-				sectorsize[unit] = size;
-			else if (buffer[5] == 8) {
-				sectorsize[unit] = 256;
-			}
-			else {
-				sectorsize[unit] = 128;
-			}
-			/* Note, that the number of heads are minus 1 */
-			sectorcount[unit] = buffer[0] * (buffer[2] * 256 + buffer[3]) * (buffer[4] + 1);
-			return 'C';
+		/* I'm not sure about this density settings, my XF551
+		 * honnors only the sector size and ignore the density
+		 */
+		size = buffer[6] * 256 + buffer[7];
+		if (size == 128 || size == 256)
+			format_sectorsize[unit] = size;
+		else if (buffer[5] == 8) {
+			format_sectorsize[unit] = 256;
 		}
-		else
-			return 'E';
+		else {
+			format_sectorsize[unit] = 128;
+		}
+		/* Note, that the number of heads are minus 1 */
+		format_sectorcount[unit] = buffer[0] * (buffer[2] * 256 + buffer[3]) * (buffer[4] + 1);
+		if (format_sectorcount[unit] < 4 || format_sectorcount[unit] > 65536)
+			format_sectorcount[unit] = 720;
+		return 'C';
 	}
 	else
 		return 0;
@@ -483,7 +475,12 @@ static int ReadStatusBlock(int unit, UBYTE * buffer)
 
 	if (drive_status[unit] != Off) {
 		spt = sectorcount[unit] / 40;
-		heads = (spt > 26) ? 2 : 1;
+		if (spt > 26) {
+			heads = 2;
+			spt /= 2;
+		}
+		else
+			heads = 1;
 
 		buffer[0] = 40;			/* # of tracks */
 		buffer[1] = 1;			/* step rate. No idea what this means */
@@ -631,10 +628,11 @@ void SIO(void)
 			else
 				result = 'E';
 			break;
-		case 0x21:				/* Single Density Format */
-			realsize = 128;
+		/*case 0x66:*/			/* US Doubler Format - I think! */
+		case 0x21:				/* Format Disk */
+			realsize = format_sectorsize[unit];
 			if (realsize == length) {
-				result = FormatSingle(unit, DataBuffer);
+				result = FormatDisk(unit, DataBuffer, realsize, format_sectorcount[unit]);
 				if (result == 'C')
 					CopyToMem(DataBuffer, data, realsize);
 			}
@@ -644,17 +642,12 @@ void SIO(void)
 		case 0x22:				/* Enhanced Density Format */
 			realsize = 128;
 			if (realsize == length) {
-				result = FormatEnhanced(unit, DataBuffer);
+				result = FormatDisk(unit, DataBuffer, 128, 1040);
 				if (result == 'C')
 					CopyToMem(DataBuffer, data, realsize);
 			}
 			else
 				result = 'E';
-			break;
-		case 0x66:				/* US Doubler Format - I think! */
-			if (format[unit] == ATR)
-				result = ATRFormat(unit, DataBuffer);
-			result = 'A';		/* Not yet supported... to be done later... */
 			break;
 		default:
 			result = 'N';
@@ -762,24 +755,23 @@ static void Command_Frame(void)
 			TransferStatus = SIO_ReadFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
 			break;
-		case 0x21:				/* Single Density Format */
-			DataBuffer[0] = FormatSingle(unit, DataBuffer + 1);
-			DataBuffer[1 + 128] = ChkSum(DataBuffer + 1, 128);
+		/*case 0x66:*/			/* US Doubler Format - I think! */
+		case 0x21:				/* Format Disk */
+			realsize = format_sectorsize[unit];
+			DataBuffer[0] = FormatDisk(unit, DataBuffer + 1, realsize, format_sectorcount[unit]);
+			DataBuffer[1 + realsize] = ChkSum(DataBuffer + 1, realsize);
 			DataIndex = 0;
-			ExpectedBytes = 2 + 128;
+			ExpectedBytes = 2 + realsize;
 			TransferStatus = SIO_FormatFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
 			break;
 		case 0x22:				/* Duel Density Format */
-			DataBuffer[0] = FormatEnhanced(unit, DataBuffer + 1);
+			DataBuffer[0] = FormatDisk(unit, DataBuffer + 1, 128, 1040);
 			DataBuffer[1 + 128] = ChkSum(DataBuffer + 1, 128);
 			DataIndex = 0;
 			ExpectedBytes = 2 + 128;
 			TransferStatus = SIO_FormatFrame;
 			DELAYED_SERIN_IRQ = SERIN_INTERVAL;
-			break;
-		case 0x66:				/* US Doubler Format - I think! */
-			result = 'A';		/* Not yet supported... to be done later... */
 			break;
 		default:
 			Aprint("Command frame: %02x %02x %02x %02x %02x",
@@ -999,6 +991,10 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.9  2001/07/25 18:07:07  fox
+Format Disk rewritten. Now it can resize both ATR and XFD images.
+The ATR header is being updated. Double density formatting works.
+
 Revision 1.8  2001/07/25 12:57:07  fox
 removed unused functions, added SIO_Exit(), corrected coding style
 
