@@ -1,5 +1,24 @@
-/* (C) 2000  Krzysztof Nikiel */
 /* $Id$ */
+/*****************************************************************************
+
+    Copyright (C) 2000  Krzysztof Nikiel
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+*****************************************************************************/
+
 #define DIRECTDRAW_VERSION 0x0500
 
 #define WIN32_LEAN_AND_MEAN
@@ -224,7 +243,7 @@ void refreshv(UBYTE * scr_ptr)
   int h, w;
   DDBLTFX ddbltfx;
 
-  desc0.dwSize = sizeof(DDSURFACEDESC);
+  desc0.dwSize = sizeof(desc0);
   if ((err = IDirectDrawSurface4_Lock(bltgfx ? lpDDSsrc : lpDDSBack,
 				      NULL, &desc0,
                                       DDLOCK_WRITEONLY
@@ -312,6 +331,10 @@ void refreshv(UBYTE * scr_ptr)
 
 /*
 $Log$
+Revision 1.5  2003/02/15 09:48:23  knik
+added GPL notice
+tiny code fix
+
 Revision 1.4  2003/02/07 17:23:22  knik
 updated DirectDraw interface
 added optional blit stretching support
