@@ -125,69 +125,10 @@
 #  endif
 #endif
 
-/* CONSTANT DEFINITIONS */
-
-/* definitions for AUDCx (D201, D203, D205, D207) */
-#define NOTPOLY5    0x80		/* selects POLY5 or direct CLOCK */
-#define POLY4       0x40		/* selects POLY4 or POLY17 */
-#define PURE        0x20		/* selects POLY4/17 or PURE tone */
-#define VOL_ONLY    0x10		/* selects VOLUME OUTPUT ONLY */
-#define VOLUME_MASK 0x0f		/* volume mask */
-
-/* definitions for AUDCTL (D208) */
-#define POLY9       0x80		/* selects POLY9 or POLY17 */
-#define CH1_179     0x40		/* selects 1.78979 MHz for Ch 1 */
-#define CH3_179     0x20		/* selects 1.78979 MHz for Ch 3 */
-#define CH1_CH2     0x10		/* clocks channel 1 w/channel 2 */
-#define CH3_CH4     0x08		/* clocks channel 3 w/channel 4 */
-#define CH1_FILTER  0x04		/* selects channel 1 high pass filter */
-#define CH2_FILTER  0x02		/* selects channel 2 high pass filter */
-#define CLOCK_15    0x01		/* selects 15.6999kHz or 63.9210kHz */
-
-/* for accuracy, the 64kHz and 15kHz clocks are exact divisions of
-   the 1.79MHz clock */
-#define DIV_64      28			/* divisor for 1.79MHz clock to 64 kHz */
-#define DIV_15      114			/* divisor for 1.79MHz clock to 15 kHz */
-
-/* the size (in entries) of the 4 polynomial tables */
-#define POLY4_SIZE  0x000f
-#define POLY5_SIZE  0x001f
-#define POLY9_SIZE  0x01ff
-
-#ifdef COMP16					/* if 16-bit compiler */
-#define POLY17_SIZE 0x00007fffL	/* reduce to 15 bits for simplicity */
-#else
-#define POLY17_SIZE 0x0001ffffL	/* else use the full 17 bits */
-#endif
-
-/* channel/chip definitions */
-#define CHAN1       0
-#define CHAN2       1
-#define CHAN3       2
-#define CHAN4       3
-#define CHIP1       0
-#define CHIP2       4
-#define CHIP3       8
-#define CHIP4      12
-#define SAMPLE    127
-
-/* LBO - changed for cross-platform support */
-#ifndef FALSE
-#define FALSE       0
-#endif
-#ifndef TRUE
-#define TRUE        1
-#endif
-
 /* GLOBAL VARIABLE DEFINITIONS */
 
 /* number of pokey chips currently emulated */
 static uint8 Num_pokeys;
-
-/* structures to hold the 9 pokey control bytes */
-static uint8 AUDF[4 * MAXPOKEYS];	/* AUDFx (D200, D202, D204, D206) */
-static uint8 AUDC[4 * MAXPOKEYS];	/* AUDCx (D201, D203, D205, D207) */
-static uint8 AUDCTL[MAXPOKEYS];	/* AUDCTL (D208) */
 
 static uint8 AUDV[4 * MAXPOKEYS];	/* Channel volume - derived */
 
@@ -221,9 +162,6 @@ static uint8 bit17[POLY17_SIZE];	/* Rather than have a table with 131071 */
 				/* It shouldn't make much difference since */
 				/* the pattern rarely repeats anyway. */
 
-static uint32 Poly_adjust;		/* the amount that the polynomial will need */
-			   /* to be adjusted to process the next bit */
-
 static uint32 P4 = 0,			/* Global position pointer for the 4-bit  POLY array */
  P5 = 0,						/* Global position pointer for the 5-bit  POLY array */
  P9 = 0,						/* Global position pointer for the 9-bit  POLY array */
@@ -235,8 +173,6 @@ static uint32 Div_n_cnt[4 * MAXPOKEYS],		/* Divide by n counter. one for each ch
 static uint32 Samp_n_max,		/* Sample max.  For accuracy, it is *256 */
  Samp_n_cnt[2];					/* Sample cnt. */
 
-static uint32 Base_mult[MAXPOKEYS];		/* selects either 64Khz or 15Khz clock mult */
-
 extern int atari_speaker;
 
 #ifndef NOSNDINTER
@@ -246,7 +182,6 @@ static uint16 last_val = 0;		/* last output value */
 #ifndef NOSNDINTER
 static uint16 last_val2 = 0;		/* last output value */
 #endif
-extern int pokey_select;
 extern int stereo_enabled;
 #endif
 
@@ -320,7 +255,7 @@ int	sampout2;			/* last out volume */
 
 void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
 {
-	uint8 chan, chip;
+	uint8 chan;
 	int32 n;
 
 #ifndef	NO_VOL_ONLY
@@ -335,7 +270,6 @@ void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
 	/*    _disable(); */ /* RSF - removed for portability 31-MAR-97 */
 
 	/* start all of the polynomial counters at zero */
-	Poly_adjust = 0;
 	P4 = 0;
 	P5 = 0;
 	P9 = 0;
@@ -352,17 +286,10 @@ void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
 		Outbit[chan] = 0;
 		Div_n_cnt[chan] = 0;
 		Div_n_max[chan] = 0x7fffffffL;
-		AUDC[chan] = 0;
-		AUDF[chan] = 0;
 		AUDV[chan] = 0;
 #ifndef	NO_VOL_ONLY
 		sampbuf_AUDV[chan] = 0;
 #endif
-	}
-
-	for (chip = 0; chip < MAXPOKEYS; chip++) {
-		AUDCTL[chip] = 0;
-		Base_mult[chip] = DIV_64;
 	}
 
 	/* set the number of pokey chips currently emulated */
@@ -402,76 +329,67 @@ void Update_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 	/*    _disable(); */ /* RSF - removed for portability 31-MAR-97 */
 
 	/* calculate the chip_offs for the channel arrays */
-#ifdef STEREO
-	chip=pokey_select;
-#endif
 	chip_offs = chip << 2;
 
 	/* determine which address was changed */
 	switch (addr & 0x0f) {
-	case AUDF1_C:
-		AUDF[CHAN1 + chip_offs] = val;
+	case _AUDF1:
+		/* AUDF[CHAN1 + chip_offs] = val; */
 		chan_mask = 1 << CHAN1;
 
 		if (AUDCTL[chip] & CH1_CH2)		/* if ch 1&2 tied together */
 			chan_mask |= 1 << CHAN2;	/* then also change on ch2 */
 		break;
 
-	case AUDC1_C:
-		AUDC[CHAN1 + chip_offs] = val;
+	case _AUDC1:
+		/* AUDC[CHAN1 + chip_offs] = val; */
 		/* RSF - changed gain (removed >> 4) 31-MAR-97 */
 		AUDV[CHAN1 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN1;
 		break;
 
-	case AUDF2_C:
-		AUDF[CHAN2 + chip_offs] = val;
+	case _AUDF2:
+		/* AUDF[CHAN2 + chip_offs] = val; */
 		chan_mask = 1 << CHAN2;
 		break;
 
-	case AUDC2_C:
-		AUDC[CHAN2 + chip_offs] = val;
+	case _AUDC2:
+		/* AUDC[CHAN2 + chip_offs] = val; */
 		/* RSF - changed gain (removed >> 4) 31-MAR-97 */
 		AUDV[CHAN2 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN2;
 		break;
 
-	case AUDF3_C:
-		AUDF[CHAN3 + chip_offs] = val;
+	case _AUDF3:
+		/* AUDF[CHAN3 + chip_offs] = val; */
 		chan_mask = 1 << CHAN3;
 
 		if (AUDCTL[chip] & CH3_CH4)		/* if ch 3&4 tied together */
 			chan_mask |= 1 << CHAN4;	/* then also change on ch4 */
 		break;
 
-	case AUDC3_C:
-		AUDC[CHAN3 + chip_offs] = val;
+	case _AUDC3:
+		/* AUDC[CHAN3 + chip_offs] = val; */
 		/* RSF - changed gain (removed >> 4) 31-MAR-97 */
 		AUDV[CHAN3 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN3;
 		break;
 
-	case AUDF4_C:
-		AUDF[CHAN4 + chip_offs] = val;
+	case _AUDF4:
+		/* AUDF[CHAN4 + chip_offs] = val; */
 		chan_mask = 1 << CHAN4;
 		break;
 
-	case AUDC4_C:
-		AUDC[CHAN4 + chip_offs] = val;
+	case _AUDC4:
+		/* AUDC[CHAN4 + chip_offs] = val; */
 		/* RSF - changed gain (removed >> 4) 31-MAR-97 */
 		AUDV[CHAN4 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN4;
 		break;
 
-	case AUDCTL_C:
-		AUDCTL[chip] = val;
+	case _AUDCTL:
+		/* AUDCTL[chip] = val; */
 		chan_mask = 15;			/* all channels */
-
-		/* determine the base multiplier for the 'div by n' calculations */
-		if (AUDCTL[chip] & CLOCK_15)
-			Base_mult[chip] = DIV_15;
-		else
-			Base_mult[chip] = DIV_64;
 
 		break;
 
@@ -823,15 +741,11 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
 		   division, I don't adjust the polynomials on the SAMPLE events,
 		   only the CHAN events.  I have to keep track of the change,
 		   though. */
-		Poly_adjust += event_min;
 
-			P4 = (P4 + Poly_adjust) % POLY4_SIZE;
-			P5 = (P5 + Poly_adjust) % POLY5_SIZE;
-			P9 = (P9 + Poly_adjust) % POLY9_SIZE;
-			P17 = (P17 + Poly_adjust) % POLY17_SIZE;
-
-			/* reset the polynomial adjust counter to zero */
-			Poly_adjust = 0;
+			P4 = (P4 + event_min) % POLY4_SIZE;
+			P5 = (P5 + event_min) % POLY5_SIZE;
+			P9 = (P9 + event_min) % POLY9_SIZE;
+			P17 = (P17 + event_min) % POLY17_SIZE;
 
 			/* adjust channel counter */
 			Div_n_cnt[next_event] += Div_n_max[next_event];
@@ -1164,6 +1078,9 @@ void Update_vol_only_sound( void )
 
 /*
 $Log$
+Revision 1.6  2001/07/19 23:21:51  fox
+pokey and pokeysnd use the same AUDC/AUDF/AUDCTL
+
 Revision 1.5  2001/04/15 09:17:53  knik
 atari800_big_endian -> words_bigendian (autoconf compatibility)
 
