@@ -44,7 +44,7 @@ char cassette_description[CASSETTE_DESCRIPTION_MAX];
 int cassette_current_block;
 int cassette_max_block = 0;
 int cassette_savefile = FALSE;
-int cassette_gapdelay = 0;	//in ms, includes leader and all gaps
+int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
 
 int hold_start = 0;
 int press_space = 0;
@@ -113,9 +113,9 @@ int CASSETTE_CheckFile(char *filename, FILE **fp, char *description, int *last_b
 	CAS_Header header;
 	int blocks;
 
-//atm, no appending to existing cas files - too dangerous to data!
-//	f = fopen(filename, "rb+");
-//	if (f == NULL)
+/* atm, no appending to existing cas files - too dangerous to data!
+	f = fopen(filename, "rb+");
+	if (f == NULL) */
 		f = fopen(filename, "rb");
 	if (f == NULL)
 		return FALSE;
@@ -147,7 +147,7 @@ int CASSETTE_CheckFile(char *filename, FILE **fp, char *description, int *last_b
 		/* count number of blocks */
 		blocks = 0;
 		do {
-			//chunk header is always 8 bytes
+			/* chunk header is always 8 bytes */
 			if (fread(&header, 1, 8, f) != 8)
 				break;
 			if (header.identifier[0] == 'd'
@@ -181,34 +181,42 @@ int CASSETTE_CheckFile(char *filename, FILE **fp, char *description, int *last_b
 	return TRUE;
 }
 
-//Create CAS file header for saving data to tape
+/* Create CAS file header for saving data to tape */
 int CASSETTE_CreateFile(char *filename, FILE **fp, int *isCAS)
 {
 	CAS_Header header;
 	memset(&header,0,sizeof(header));
 
-	//if no file pointer location was given, this function is senseless
+	/* if no file pointer location was given, this function is senseless */
 	if(fp==NULL)
 		return FALSE;
-	//close if open
+	/* close if open */
 	if(*fp!=NULL)
 		fclose(*fp);
-	//create new file
+	/* create new file */
 	*fp=fopen(filename,"wb");
 	if(*fp==NULL)
 		return FALSE;
 
-	//write CAS-header
-	if((fwrite("FUJI",1,4,*fp)==4) &&
-			(fwrite(&header.length_lo,1,4,*fp)==4)){}
-	else{
-		fclose(*fp);
-		*fp=NULL;
-		return FALSE;
-	};
+	/* write CAS-header */
+	{
+		size_t desc_len = strlen(cassette_description);
+		header.length_lo = (UBYTE) desc_len;
+		header.length_hi = (UBYTE) (desc_len >> 8);
+		if (fwrite("FUJI", 1, 4, *fp) == 4
+		 && fwrite(&header.length_lo, 1, 4, *fp) == 4
+		 && fwrite(cassette_description, 1, desc_len, *fp) == desc_len) {
+			/* ok */
+		}
+		else {
+			fclose(*fp);
+			*fp = NULL;
+			return FALSE;
+		}
+	}
 	
 	memset(&header,0,sizeof(header));
-	header.aux_lo=0x58;	//provisional: 600 baud
+	header.aux_lo=0x58;	/* provisional: 600 baud */
 	header.aux_hi=2;
 	if((fwrite("baud",1,4,*fp)==4) &&
 			(fwrite(&header.length_lo,1,4,*fp)==4)){}
@@ -218,7 +226,7 @@ int CASSETTE_CreateFile(char *filename, FILE **fp, int *isCAS)
 		return FALSE;
 	};
 
-	//file is now a cassette file
+	/* file is now a cassette file */
 	*isCAS=TRUE;
 	return TRUE;
 }
@@ -249,8 +257,8 @@ static UWORD ReadRecord(void)
 	UWORD length = 0;
 	if (cassette_isCAS) {
 		CAS_Header header;
-		//if waiting for gap was longer than gap of record, skip
-		//atm there is no check if we start then inmidst a record
+		/* if waiting for gap was longer than gap of record, skip
+		   atm there is no check if we start then inmidst a record */
 		int filegaptimes = 0;
 		while(cassette_gapdelay>=filegaptimes){
        			if (cassette_current_block > cassette_max_block){
@@ -260,11 +268,11 @@ static UWORD ReadRecord(void)
 			fseek(cassette_file, cassette_block_offset[cassette_current_block], SEEK_SET);
 			fread(&header.length_lo, 1, 4, cassette_file);
 			length = header.length_lo + (header.length_hi << 8);
-			//add gaplength
+			/* add gaplength */
 			filegaptimes+=header.aux_lo + (header.aux_hi << 8);
-			//add time used by the data themselves
-			//atm, assumes a baud rate of 600 (a byte is encoded
-			//  into 10 bits -> 60 bytes per second)
+			/* add time used by the data themselves
+			   atm, assumes a baud rate of 600 (a byte is encoded
+			    into 10 bits -> 60 bytes per second) */
 			filegaptimes+=1000/60*length;
 		
 			fread(&cassette_buffer[0], 1, length, cassette_file);
@@ -304,9 +312,9 @@ static UWORD WriteRecord(int len)
 	CAS_Header header;
 	memset(&header,0,sizeof(header));
 
-	//always append
+	/* always append */
 	fseek(cassette_file,0,SEEK_END);
-	//write recordheader
+	/* write recordheader */
 	strncpy(header.identifier,"data",4);
 	header.length_lo=len&0xFF;
 	header.length_hi=(len>>8)&0xFF;
@@ -314,7 +322,9 @@ static UWORD WriteRecord(int len)
 	header.aux_hi=(cassette_gapdelay>>8)&0xff;
 	cassette_gapdelay=0;
 	fwrite(&header,1,8,cassette_file);
-	//write record
+	cassette_max_block++;
+	cassette_current_block++;
+	/* write record */
 	return fwrite(&cassette_buffer,1,len,cassette_file);
 }
 
@@ -324,35 +334,35 @@ int CASSETTE_AddGap(int gaptime)
 	if(cassette_gapdelay<0)
 		cassette_gapdelay=0;
 	return cassette_gapdelay;
-};
+}
 
-//Indicates that a loading leader is expected by the OS
+/* Indicates that a loading leader is expected by the OS */
 void CASSETTE_LeaderLoad()
 {
 	cassette_gapdelay=9600;
-	//registers for SETVBV: third system timer, ~0.1 sec
+	/* registers for SETVBV: third system timer, ~0.1 sec */
 	regA = 3;
 	regX = 0;
 	regY = 5;
 }
 
-//indicates that a save leader is written by the OS
+/* indicates that a save leader is written by the OS */
 void CASSETTE_LeaderSave()
 {
 	cassette_gapdelay=19200;
-	//registers for SETVBV: third system timer, ~0.1 sec
+	/* registers for SETVBV: third system timer, ~0.1 sec */
 	regA = 3;
 	regX = 0;
 	regY = 5;
 }
 
-//Read Cassette Record from Storage medium
-//returns size of data in buffer (atm equal with record size, but there
-//  are protections with variable baud rates imaginable where a record
-//  must be split and a baud chunk inserted inbetween) or -1 for error
+/* Read Cassette Record from Storage medium
+  returns size of data in buffer (atm equal with record size, but there
+    are protections with variable baud rates imaginable where a record
+    must be split and a baud chunk inserted inbetween) or -1 for error */
 int CASSETTE_Read()
 {
-	//no file or blockpositions dont match anymore after saving
+	/* no file or blockpositions dont match anymore after saving */
 	if ((cassette_file == NULL) || (cassette_savefile == TRUE))
 		return -1;
        	if (cassette_current_block > cassette_max_block)
@@ -360,24 +370,24 @@ int CASSETTE_Read()
        	return ReadRecord();
 }
 
-//Write Cassette Record to Storage medium
-//length is size of the whole data with checksum(s)
-//returns really written bytes, -1 for error
+/* Write Cassette Record to Storage medium
+  length is size of the whole data with checksum(s)
+  returns really written bytes, -1 for error */
 int CASSETTE_Write(int length)
 {
-	//there must be a filename given for saving
+	/* there must be a filename given for saving */
 	if(strcmp(cassette_filename,"None")==0)
 		return -1;
-	//if file doesnt exist (or has no records), create the header
+	/* if file doesnt exist (or has no records), create the header */
 	if((cassette_file==NULL || ftell(cassette_file)==0) &&
 			(CASSETTE_CreateFile(cassette_filename,
 			&cassette_file,&cassette_isCAS)==FALSE))
 		return -1;
-	//on a raw file, saving is denied because it can hold
-	//  only 1 file and could cause confusion
+	/* on a raw file, saving is denied because it can hold
+	    only 1 file and could cause confusion */
 	if(cassette_isCAS==FALSE)
 		return -1;
-	//save record (always appends to the end of file)
+	/* save record (always appends to the end of file) */
 	cassette_savefile=TRUE;
 	return WriteRecord(length);
 }
