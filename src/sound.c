@@ -10,7 +10,7 @@
 #include <sys/soundcard.h>
 
 #include "pokeysnd.h"
-
+#include "log.h"
 #include "sndsave.h"
 
 #define FRAGSIZE	7
@@ -32,6 +32,7 @@ void Sound_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	struct audio_buf_info abi;
+	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-sound") == 0)
@@ -44,6 +45,7 @@ void Sound_Initialise(int *argc, char *argv[])
 			sscanf(argv[++i], "%d", &snddelay);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
 				Aprint("\t-sound           Enable sound\n"
 				       "\t-nosound         Disable sound\n"
 				       "\t-dsprate <rate>  Set DSP rate in Hz\n"
@@ -53,8 +55,10 @@ void Sound_Initialise(int *argc, char *argv[])
 			argv[j++] = argv[i];
 		}
 	}
-
 	*argc = j;
+
+	if (help_only)
+		return;
 
 	if (sound_enabled) {
 		if ((dsp_fd = open(dspname, O_WRONLY|O_NONBLOCK)) == -1) {
@@ -64,7 +68,7 @@ void Sound_Initialise(int *argc, char *argv[])
 		}
 
 		if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &dsprate)) {
-			fprintf(stderr, "%s: cannot set %d speed\n", dspname, dsprate);
+			Aprint("%s: cannot set %d speed\n", dspname, dsprate);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
@@ -72,7 +76,7 @@ void Sound_Initialise(int *argc, char *argv[])
 
 		i = AFMT_U8;
 		if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &i)) {
-			fprintf(stderr, "%s: cannot set 8-bit sample\n", dspname);
+			Aprint("%s: cannot set 8-bit sample\n", dspname);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
@@ -80,7 +84,7 @@ void Sound_Initialise(int *argc, char *argv[])
 #ifdef STEREO
 		i = 1;
 		if (ioctl(dsp_fd, SNDCTL_DSP_STEREO, &i)) {
-			fprintf(stderr, "%s: cannot set stereo\n", dspname);
+			Aprint("%s: cannot set stereo\n", dspname);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
@@ -94,14 +98,14 @@ void Sound_Initialise(int *argc, char *argv[])
 		/* fragments of size 2^FRAGSIZE bytes */
 		i = ((fragstofill + 1) << 16) | FRAGSIZE;
 		if (ioctl(dsp_fd, SNDCTL_DSP_SETFRAGMENT, &i)) {
-			fprintf(stderr, "%s: cannot set fragments\n", dspname);
+			Aprint("%s: cannot set fragments\n", dspname);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
 		}
 
 		if (ioctl(dsp_fd, SNDCTL_DSP_GETOSPACE, &abi)) {
-			fprintf(stderr, "%s: unable to get output space\n", dspname);
+			Aprint("%s: unable to get output space\n", dspname);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
@@ -163,6 +167,9 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.8  2002/08/07 08:43:58  joy
+ ALL printf->Aprint, in help_only doesn't initialize the sound
+
  Revision 1.7  2002/08/07 06:16:50  joy
  printf->Aprint
 
