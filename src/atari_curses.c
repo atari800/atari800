@@ -554,7 +554,7 @@ int Atari_Keyboard(void)
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 5:
-		keycode = AKEY_COLDSTART;
+		keycode = AKEY_WARMSTART;
 		break;
 	case KEY_F0 + 6:
 		keycode = AKEY_PIL;
@@ -563,7 +563,7 @@ int Atari_Keyboard(void)
 		keycode = AKEY_BREAK;
 		break;
 	case KEY_F0 + 8:
-		keycode = AKEY_WARMSTART;
+		keycode = AKEY_COLDSTART;
 		break;
 	case KEY_F0 + 9:
 		keycode = AKEY_EXIT;
@@ -679,6 +679,9 @@ int main(int argc, char **argv)
 }
 /*
 $Log$
+Revision 1.6  2001/12/12 15:24:37  joy
+F5 is a warm start on all platforms.
+
 Revision 1.5  2001/10/11 08:39:55  fox
 added curses_screen for UI
 
