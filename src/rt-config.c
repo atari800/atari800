@@ -128,7 +128,7 @@ static void RtPresetDefaults()
 	enable_sio_patch = 1;
 	enable_h_patch = 1;
 	enable_p_patch = 1;
-	enable_r_patch = 1;
+	enable_r_patch = 0;
 	enable_new_pokey = 1;
 	stereo_enabled = 0;
 }
@@ -477,7 +477,7 @@ void RtConfigUpdate(void)
 			  	&enable_sio_patch);
 	GetYesNoAsInt("Enable H: (Hard disk) patch [%c] ", &enable_h_patch);
 	GetYesNoAsInt("Enable P: (Printer) patch [%c] ", &enable_p_patch);
-	GetYesNoAsInt("Enable R: (Network?) patch [%c] ", &enable_r_patch);
+	GetYesNoAsInt("Enable R: (Atari850 via net) patch [%c] ", &enable_r_patch);
 	GetYesNoAsInt("Enable new HiFi POKEY [%c] ", &enable_new_pokey);
 	GetYesNoAsInt("Enable STEREO POKEY Sound [%c] ", &stereo_enabled);
 
@@ -493,6 +493,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.17  2003/08/31 21:59:13  joy
+R: not enabled by default
+
 Revision 1.16  2003/05/28 19:54:58  joy
 R: device support (networking?)
 
