@@ -149,8 +149,9 @@ void CalcPalette()
 	else
 		for (i = 0; i < 256; i++) {
 			rgb = colortable[i];
-			y = 0.299*((rgb & 0x00ff0000) >> 16) +
-				0.587*((rgb & 0x0000ff00) >> 8) + 0.114*((rgb & 0x000000ff) >> 0);
+			y = 0.299 * ((rgb & 0x00ff0000) >> 16) +
+				0.587 * ((rgb & 0x0000ff00) >> 8) +
+				0.114 * ((rgb & 0x000000ff) >> 0);
 			colors[i].r = y;
 			colors[i].g = y;
 			colors[i].b = y;
@@ -216,8 +217,8 @@ void SwitchBW()
 
 void SwapJoysticks()
 {
-	SWAP_JOYSTICKS=1-SWAP_JOYSTICKS;
-}	
+	SWAP_JOYSTICKS = 1 - SWAP_JOYSTICKS;
+}
 
 void SDL_Sound_Update(void *userdata, Uint8 * stream, int len)
 {
@@ -255,7 +256,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 int Atari_Keyboard(void)
 {
-	static int lastkey=AKEY_NONE, key_pressed = 0;
+	static int lastkey = AKEY_NONE, key_pressed = 0;
 
 	SDL_Event event;
 	kbhits = SDL_GetKeyState(NULL);
@@ -382,7 +383,7 @@ int Atari_Keyboard(void)
 		case SDLK_5:
 			return AKEY_PERCENT;
 //      case SDLK_6:
-//          return AKEY_;    <-- what is that?
+//          return AKEY_;    ^ <-- what is that?
 		case SDLK_7:
 			return AKEY_AMPERSAND;
 		case SDLK_8:
@@ -667,12 +668,12 @@ void Atari_DisplayScreen(UBYTE * screen)
 
 int Atari_PORT(int num)
 {
- return 0;
+	return 0;
 }
 
 int Atari_TRIG(int num)
 {
- return 0;
+	return 0;
 }
 
 // two joysticks at once, it's just for testing, should be written better (more
@@ -725,15 +726,13 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 		|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_DOWN])))
 		stick1 = STICK_LR;
 
-	if (SWAP_JOYSTICKS)
-	{
-	*s1 = stick0;
-	*s0 = stick1;
+	if (SWAP_JOYSTICKS) {
+		*s1 = stick0;
+		*s0 = stick1;
 	}
-	else
-	{
-	*s0 = stick0;
-	*s1 = stick1;
+	else {
+		*s0 = stick0;
+		*s1 = stick1;
 	}
 }
 
@@ -757,7 +756,7 @@ int main(int argc, char **argv)
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
-	refresh_rate=1; // ;-)	
+	refresh_rate = 1;			// ;-)  
 
 	if (sound_enabled)
 		SDL_PauseAudio(0);
@@ -808,8 +807,8 @@ int main(int argc, char **argv)
 		SKSTAT |= 0xc;
 		if (key_shift)
 			SKSTAT &= ~8;
-		if (key_code==AKEY_NONE)	
-			last_key_code=AKEY_NONE;
+		if (key_code == AKEY_NONE)
+			last_key_code = AKEY_NONE;
 		if (key_code != AKEY_NONE) {
 			SKSTAT &= ~4;
 			if ((key_code ^ last_key_code) & ~AKEY_SHFTCTRL) {
