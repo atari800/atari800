@@ -336,6 +336,22 @@ void Atari_ConfigSave(FILE *fp)
 	fprintf(fp,"SDL_JOY_1_RIGHTDOWN=%d\n",SDL_JOY_1_RIGHTDOWN);
 }
 
+void Sound_Pause(void)
+{
+	if (sound_enabled) {
+		/* stop audio output */
+		SDL_PauseAudio(1);
+	}
+}
+
+void Sound_Continue(void)
+{
+	if (sound_enabled) {
+		/* start audio output */
+		SDL_PauseAudio(0);
+	}
+}
+
 #ifdef SOUND
 int Sound_Update(void)
 {
@@ -607,6 +623,9 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 	else {
 		Aprint("Audio is off, you can turn it by -sound");
 	}
+
+	if (sound_enabled)
+		SDL_PauseAudio(0);
 }
 #endif
 
@@ -754,6 +773,12 @@ int Atari_Keyboard(void)
 		}
 	}
 	
+	// joystick keyboard
+	if (key_pressed && lastkey >= SDLK_KP0 && lastkey <= SDLK_KP9) {
+		key_pressed = 0;
+		return AKEY_NONE;
+	}
+
 	switch (lastkey) {
 	case SDLK_LSUPER:
 		return AKEY_ATARI;
@@ -1255,6 +1280,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	if (no_joystick == 0)
 		Init_Joysticks(argc, argv);
 
+	SDL_EnableUNICODE(1);
 }
 
 int Atari_Exit(int run_monitor)
@@ -1528,18 +1554,6 @@ void Atari_DisplayScreen(UBYTE * screen)
 	SDL_Flip(MainScreen);
 }
 
-// two empty functions, needed by input.c and platform.h
-
-int Atari_PORT(int num)
-{
-	return 0;
-}
-
-int Atari_TRIG(int num)
-{
-	return 0;
-}
-
 int get_SDL_joystick_state(SDL_Joystick *joystick)
 {
 	int x;
@@ -1760,7 +1774,36 @@ void CountFPS()
 	}
 }
 
+int Atari_PORT(int num)
+{
+	UBYTE a, b;
+	SDL_Atari_PORT(&a, &b);
+	return (b << 4) | (a & 0x0f);
+}
+
+int Atari_TRIG(int num)
+{
+	UBYTE a, b;
+	SDL_Atari_TRIG(&a, &b);
+	return (b << 4) | (a & 0x0f);
+}
+
 int main(int argc, char **argv)
+{
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
+
+	/* main loop */
+	while (TRUE) {
+		key_code = Atari_Keyboard();
+		Atari800_Frame();
+		if (display_screen)
+			Atari_DisplayScreen((UBYTE *) atari_screen);
+	}
+}
+#if 0
+int main1(int argc, char **argv)
 {
 	int keycode;
 	static UBYTE STICK[4];
@@ -1877,9 +1920,13 @@ int main(int argc, char **argv)
 	Aflushlog();
 	return 0;
 }
+#endif
 
 /*
  $Log$
+ Revision 1.46  2005/03/09 21:08:46  joy
+ back to good old Atari800_Frame()
+
  Revision 1.45  2005/03/03 09:35:00  pfusik
  diskled -> screen
 
