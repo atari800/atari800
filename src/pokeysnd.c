@@ -758,8 +758,8 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
 				/* if the output is pure or the output is poly5 and the poly5 bit */
 				/* is set */
 				if ((audc & NOTPOLY5) || bit5[P5]) {
-					/* if the PURE bit is set */
-					if (audc & PURE) {
+					/* if the PURETONE bit is set */
+					if (audc & PURETONE) {
 						/* then simply toggle the output */
 						toggle = TRUE;
 					}
@@ -1068,6 +1068,9 @@ void Update_vol_only_sound( void )
 
 /*
 $Log$
+Revision 1.8  2001/07/22 08:24:47  knik
+PURE -> PURETONE to avoid windows headers interference
+
 Revision 1.7  2001/07/19 23:25:05  fox
 using poly9_lookup and poly17_lookup (initialised by pokey.c), removed bit17
 (which was initialised with rand()) saving ca. 100 KB of memory.

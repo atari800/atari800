@@ -54,7 +54,7 @@ void POKEY_Scanline(void);
 /* definitions for AUDCx (D201, D203, D205, D207) */
 #define NOTPOLY5    0x80		/* selects POLY5 or direct CLOCK */
 #define POLY4       0x40		/* selects POLY4 or POLY17 */
-#define PURE        0x20		/* selects POLY4/17 or PURE tone */
+#define PURETONE    0x20		/* selects POLY4/17 or PURE tone */
 #define VOL_ONLY    0x10		/* selects VOLUME OUTPUT ONLY */
 #define VOLUME_MASK 0x0f		/* volume mask */
 
