@@ -2,7 +2,7 @@
  * ui_basic.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2004 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -843,7 +843,7 @@ void AboutEmulator(UBYTE * screen)
 	CenterPrint(screen, 0x9a, 0x94, ATARI_TITLE, 1);
 	CenterPrint(screen, 0x9a, 0x94, "Copyright (c) 1995-1998 David Firth", 2);
 	CenterPrint(screen, 0x9a, 0x94, "and", 3);
-	CenterPrint(screen, 0x9a, 0x94, "(c)1998-2003 Atari800 Development Team", 4);
+	CenterPrint(screen, 0x9a, 0x94, "(c)1998-2004 Atari800 Development Team", 4);
 	CenterPrint(screen, 0x9a, 0x94, "See CREDITS file for details.", 5);
 	CenterPrint(screen, 0x9a, 0x94, "http://atari800.atari.org/", 7);
 
@@ -1020,6 +1020,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.12  2004/08/08 08:41:47  joy
+copyright year increased
+
 Revision 1.11  2003/12/21 11:00:26  joy
 problem with opening invalid folders in UI identified
 
