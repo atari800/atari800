@@ -10,7 +10,7 @@
 #include "atari.h"
 #include "config.h"
 #include "log.h"
-#ifdef ZLIB_CAPABLE
+#ifdef HAVE_LIBZ
 #include "zlib.h"
 #endif
 
@@ -38,21 +38,21 @@ extern void POKEYStateRead( void );
 extern int ReadDisabledROMs( void );
 extern int mach_xlxe;
 
-#ifdef ZLIB_CAPABLE
+#ifdef HAVE_LIBZ
 #define GZOPEN( X, Y )		gzopen( X, Y )
 #define GZCLOSE( X )		gzclose( X )
 #define GZREAD( X, Y, Z )	gzread( X, Y, Z )
 #define GZWRITE( X, Y, Z )	gzwrite( X, Y, Z )
 #define GZERROR( X, Y )		gzerror( X, Y )
-#else	/* ZLIB_CAPABLE */
+#else	/* HAVE_LIBZ */
 #define GZOPEN( X, Y )		fopen( X, Y )
 #define GZCLOSE( X )		fclose( X )
 #define GZREAD( X, Y, Z )	fread( Y, Z, 1, X )
 #define GZWRITE( X, Y, Z )	fwrite( Y, Z, 1, X )
 #undef GZERROR
-#endif	/* ZLIB_CAPABLE */
+#endif	/* HAVE_LIBZ */
 
-#ifndef ZLIB_CAPABLE
+#ifndef HAVE_LIBZ
 #define gzFile	FILE
 #define Z_OK	0
 #endif
@@ -62,7 +62,7 @@ static int		nFileError = Z_OK;
 
 static void GetGZErrorText( void )
 {
-#ifdef ZLIB_CAPABLE
+#ifdef HAVE_LIBZ
 	const char *error = GZERROR( StateFile, &nFileError );
 	if( nFileError == Z_ERRNO )
 	{
@@ -72,7 +72,7 @@ static void GetGZErrorText( void )
 		return;
 	}
 	Aprint( "ZLIB returned the following error: %s", error);
-#endif	/* ZLIB_CAPABLE */
+#endif	/* HAVE_LIBZ */
  	Aprint( "State-save failed." );
 }
 	
@@ -433,6 +433,9 @@ int ReadAtariState( char *filename, const char *mode )
 
 /*
 $Log$
+Revision 1.3  2001/04/15 09:14:33  knik
+zlib_capable -> have_libz (autoconf compatibility)
+
 Revision 1.2  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 

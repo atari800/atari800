@@ -19,7 +19,7 @@
 #include "atari.h"
 #include "config.h"
 #include "log.h"
-#ifdef ZLIB_CAPABLE
+#ifdef HAVE_LIBZ
 #include "zlib.h"
 #endif
 
@@ -99,7 +99,7 @@ static void show_file_error( FILE *stream )
    actually blank coming in and is filled in with whatever tmpnam returns */
 FILE * openzlib(int diskno, const char *infilename, char *outfilename )
 {
-#ifndef ZLIB_CAPABLE
+#ifndef HAVE_LIBZ
 	Aprint( "This executable cannot decompress ZLIB files" );
 	return NULL;
 #else
@@ -179,7 +179,7 @@ FILE * openzlib(int diskno, const char *infilename, char *outfilename )
 	}
 
 	return file;
-#endif	/* ZLIB_CAPABLE */
+#endif	/* HAVE_LIBZ */
 }
 
 int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output )
@@ -654,6 +654,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.5  2001/04/15 09:14:33  knik
+zlib_capable -> have_libz (autoconf compatibility)
+
 Revision 1.4  2001/03/25 06:57:35  knik
 open() replaced by fopen()
 

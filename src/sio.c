@@ -63,7 +63,7 @@ int TransferStatus = 0;
 int ExpectedBytes = 0;
 
 extern FILE *opendcm( int diskno, const char *infilename, char *outfilename );
-#ifdef ZLIB_CAPABLE
+#ifdef HAVE_LIBZ
 extern FILE *openzlib(int diskno, const char *infilename, char *outfilename );
 #endif
 
@@ -135,7 +135,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		if(!f)
 			istmpfile[ diskno - 1] = 0;
 	}
-#ifdef ZLIB_CAPABLE
+#ifdef HAVE_LIBZ
 	else if( !strcmp( &upperfile[ strlen( upperfile )-3], "ATZ" ) || 
 		     !strcmp( &upperfile[strlen( upperfile )-6], "ATR.GZ" ) ||
 			 !strcmp( &upperfile[ strlen( upperfile )-3], "XFZ" ) || 
@@ -150,7 +150,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			drive_status[ diskno - 1] = NoDisk;
 		}
 	}	
-#endif /* ZLIB_CAPABLE */
+#endif /* HAVE_LIBZ */
 	else /* Normal ATR, XFD disk */
 	{
 		drive_status[diskno - 1] = ReadWrite;
@@ -1030,6 +1030,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.5  2001/04/15 09:14:33  knik
+zlib_capable -> have_libz (autoconf compatibility)
+
 Revision 1.4  2001/03/25 06:57:36  knik
 open() replaced by fopen()
 

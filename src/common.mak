@@ -8,7 +8,7 @@ ifeq (.atari800,$(wildcard .atari800))
 include .atari800
 endif
 
-ifdef ZLIB_CAPABLE
+ifdef HAVE_LIBZ
 LIBS += -lz
 endif
 
