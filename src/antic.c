@@ -24,7 +24,9 @@
 #include "cycle_map.h"
 
 
+#ifndef NO_YPOS_BREAK_FLICKER
 extern UWORD ypos_break_addr;
+#endif
 #ifndef NO_NEW_CYCLE_EXACT
 void draw_partial_scanline(int l,int r);
 void update_scanline();
