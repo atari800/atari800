@@ -46,7 +46,8 @@ OBJ = \
 	colours.o \
 	pokeysnd.o \
 	sndsave.o \
-	cassette.o
+	cassette.o \
+	input.o
 
 OBJ += @OBJ@
 
@@ -91,7 +92,7 @@ antic.o: platform.h pokey.h rt-config.h statesav.h
 atari.o: config.h atari.h cpu.h memory.h memory-d.h antic.h gtia.h pia.h
 atari.o: pokey.h cartridge.h devices.h sio.h monitor.h platform.h prompts.h
 atari.o: rt-config.h ui.h ataripcx.h log.h statesav.h diskled.h colours.h
-atari.o: binload.h rtime.h cassette.h sound.h
+atari.o: binload.h rtime.h cassette.h input.h sound.h emuos.h
 atari_amiga.o: config.h atari.h binload.h colours.h monitor.h pokeysnd.h
 atari_amiga.o: pokey.h sio.h statesav.h rt-config.h atari_amiga.h
 atari_amiga.o: amiga/amiga_asm.h amiga/support.h
@@ -101,15 +102,16 @@ atari_falcon.o: falcon/xcb.h falcon/res.h config.h cpu.h atari.h colours.h
 atari_falcon.o: ui.h antic.h platform.h monitor.h log.h
 atari_svgalib.o: config.h atari.h colours.h monitor.h sound.h platform.h
 atari_svgalib.o: log.h
-atari_vga.o: config.h cpu.h atari.h colours.h ui.h log.h dos/sound_dos.h
-atari_vga.o: monitor.h pcjoy.h diskled.h antic.h dos/vga_gfx.h
+atari_vga.o: config.h cpu.h atari.h colours.h input.h ui.h log.h
+atari_vga.o: dos/sound_dos.h monitor.h pcjoy.h diskled.h antic.h
+atari_vga.o: dos/vga_gfx.h
 atari_x11.o: config.h atari.h colours.h monitor.h sio.h sound.h platform.h
 atari_x11.o: rt-config.h
 ataripcx.o: antic.h atari.h config.h colours.h
 binload.o: atari.h config.h log.h cpu.h memory-d.h pia.h
-cartridge.o: atari.h config.h cartridge.h memory.h memory-d.h rtime.h
-cassette.o: atari.h config.h cassette.h rt-config.h log.h memory.h memory-d.h
-cassette.o: sio.h
+cartridge.o: atari.h config.h cartridge.h memory.h memory-d.h pia.h
+cartridge.o: rt-config.h rtime.h
+cassette.o: atari.h config.h cassette.h log.h memory.h memory-d.h sio.h
 colours.o: atari.h config.h log.h
 compfile.o: atari.h config.h log.h
 configure.o: prompts.h
@@ -117,17 +119,18 @@ cpu.o: atari.h config.h cpu.h memory.h memory-d.h statesav.h
 devices.o: config.h ui.h atari.h cpu.h memory.h memory-d.h devices.h
 devices.o: rt-config.h log.h binload.h sio.h
 diskled.o: config.h
-gtia.o: antic.h atari.h config.h cassette.h rt-config.h gtia.h memory.h
-gtia.o: memory-d.h platform.h statesav.h
+gtia.o: antic.h atari.h config.h cassette.h gtia.h memory.h memory-d.h
+gtia.o: platform.h statesav.h
+input.o: atari.h config.h cassette.h cpu.h input.h pokey.h
 joycfg.o: config.h pcjoy.h
 list.o: config.h list.h
 log.o: config.h log.h
 memory-d.o: atari.h config.h antic.h cartridge.h cpu.h gtia.h log.h memory.h
-memory-d.o: memory-d.h pia.h rt-config.h statesav.h emuos.h
+memory-d.o: memory-d.h pia.h rt-config.h statesav.h
 memory-p.o: atari.h config.h log.h rt-config.h antic.h cpu.h gtia.h pbi.h
 memory-p.o: pia.h pokey.h memory.h memory-d.h
 memory.o: config.h memory-d.c atari.h antic.h cartridge.h cpu.h gtia.h log.h
-memory.o: memory.h memory-d.h pia.h rt-config.h statesav.h emuos.h
+memory.o: memory.h memory-d.h pia.h rt-config.h statesav.h
 mkimg.o: config.h
 monitor.o: atari.h config.h cpu.h memory.h memory-d.h antic.h pia.h gtia.h
 monitor.o: pokey.h prompts.h
@@ -141,14 +144,14 @@ prompts.o: prompts.h
 rt-config.o: atari.h config.h prompts.h rt-config.h
 rtime.o: atari.h config.h log.h
 sio.o: atari.h config.h cpu.h memory.h memory-d.h sio.h pokey.h pokeysnd.h
-sio.o: platform.h log.h diskled.h binload.h cassette.h rt-config.h
+sio.o: platform.h log.h diskled.h binload.h cassette.h
 sndsave.o: sndsave.h atari.h config.h
 sound.o: config.h pokeysnd.h pokey.h atari.h sndsave.h
 sound_falcon.o: config.h
 statesav.o: atari.h config.h log.h
 ui.o: rt-config.h atari.h config.h cpu.h memory.h memory-d.h platform.h
 ui.o: prompts.h gtia.h sio.h list.h ui.h log.h statesav.h antic.h ataripcx.h
-ui.o: binload.h sndsave.h cartridge.h
+ui.o: binload.h sndsave.h cartridge.h rtime.h input.h
 dos/dos_sb.o: config.h dos/dos_sb.h dos/dos_ints.h log.h
 dos/sound_dos.o: config.h pokeysnd.h pokey.h atari.h dos/dos_sb.h log.h
 dos/vga_gfx.o: atari.h config.h
