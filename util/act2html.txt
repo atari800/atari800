@@ -1,0 +1,13 @@
+From:	"Piotr Fusik" <P.Fusik@elka.pw.edu.pl>
+To:	"A8" <a8@sophics.cz>
+Subject: act2html
+Date:	Sat, 1 Dec 2001 18:31:57 +0100
+
+Yesterday I noticed that we already have 6 act files. How to compare them? I
+wrote a simple program. It could be a perl script, but I don't know perl.
+:-)
+
+Use: act2html *.act >acts.html
+Or: act2html --columns 2 *.act >acts.html
+
+Piotr
