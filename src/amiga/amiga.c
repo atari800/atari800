@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include <exec/types.h>
 #include <exec/libraries.h>
@@ -75,6 +76,12 @@
 #include "amiga.h"
 #include "gui.h"
 #include "support.h"
+
+
+/******************************/
+
+struct timezone;
+/******************************/
 
 extern int refresh_rate;
 
@@ -222,6 +229,7 @@ int gettimeofday(struct timeval *tp, struct timezone *tzp)
 	{
 		GetSysTime(tp);
 	} else printf("notimerbase\n");
+	return 0;
 }
 
 /**************************************************************************
@@ -229,72 +237,68 @@ int gettimeofday(struct timeval *tp, struct timezone *tzp)
 **************************************************************************/
 static struct NewMenu MenuEntries[] =
 {
-	NM_TITLE, "Project", NULL, 0, 0L, (APTR)MEN_PROJECT,
-	NM_ITEM, "About...", "?", 0, 0L, (APTR)MEN_PROJECT_ABOUT,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Load State...", "L", 0, 0L, (APTR)MEN_PROJECT_LOADSTATE,
-	NM_ITEM, "Save State...", "S", 0, 0L, (APTR)MEN_PROJECT_SAVESTATE,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Load BIN...", NULL, 0, 0L, (APTR)MEN_PROJECT_LOADBIN,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Record Sound?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_PROJECT_RECORDSOUND,
-	NM_ITEM, "Select Path...", NULL, 0, 0L, (APTR)MEN_PROJECT_SOUNDPATH,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Help...", NULL, 0, 0L, (APTR)MEN_PROJECT_HELP,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Iconify", NULL, 0, 0L, (APTR)MEN_PROJECT_ICONIFY,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Quit...", "Q", 0, 0L, (APTR)MEN_PROJECT_QUIT,
-	NM_TITLE, "System", NULL, 0, 0L, (APTR)MEN_SYSTEM,
-	NM_ITEM, "Boot Disk...", "B", 0, 0L, (APTR)MEN_SYSTEM_BOOT,
-	NM_ITEM, "Insert Disk", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID,
-	NM_SUB, "Drive 1...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID1,
-	NM_SUB, "Drive 2...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID2,
-	NM_SUB, "Drive 3...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID3,
-	NM_SUB, "Drive 4...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID4,
-	NM_SUB, "Drive 5...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID5,
-	NM_SUB, "Drive 6...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID6,
-	NM_SUB, "Drive 7...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID7,
-	NM_SUB, "Drive 8...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID8,
-	NM_ITEM, "Eject Disk", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED,
-	NM_SUB, "Drive 1", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED1,
-	NM_SUB, "Drive 2", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED2,
-	NM_SUB, "Drive 3", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED3,
-	NM_SUB, "Drive 4", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED4,
-	NM_SUB, "Drive 5", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED5,
-	NM_SUB, "Drive 6", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED6,
-	NM_SUB, "Drive 7", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED7,
-	NM_SUB, "Drive 8", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED8,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Insert Cartridge", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC,
-	NM_SUB, "8K Cart...", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC8K,
-	NM_SUB, "16K Cart...", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC16K,
-	NM_SUB, "OSS SuperCart", NULL, 0, 0L, (APTR)MEN_SYSTEM_ICOSS,
-	NM_ITEM, "Remove Cartride", NULL, 0, 0L, (APTR)MEN_SYSTEM_REMOVEC,
-	NM_ITEM, "Enable PILL", "F6", NM_COMMANDSTRING, 0L, (APTR)MEN_SYSTEM_PILL,
-	NM_ITEM, NM_BARLABEL, NULL,   0, 0L, NULL,
-	NM_ITEM, "Internal User Interface", "F1", NM_COMMANDSTRING, 0L, (APTR)MEN_SYSTEM_UI,
-/*	NM_ITEM, "Atari 800 OS/A", NULL, 0, 0L, (APTR)NULL,
-	NM_ITEM, "Atari 800 OS/B", NULL, 0, 0L, NULL,
-	NM_ITEM, "Atari 800XL", NULL, 0, 0L, NULL,
-	NM_ITEM, "Atari 130XE", NULL, 0, 0L, NULL,*/
-	NM_TITLE, "Console", NULL, 0, 0L, (APTR)MEN_CONSOLE,
-	NM_ITEM, "Option", "F2", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_OPTION,
-	NM_ITEM, "Select", "F3", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_SELECT,
-	NM_ITEM, "Start", "F4", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_START,
-	NM_ITEM, "Help", "Help", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_HELP,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Break", "F7", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_BREAK,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Reset", "F5", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_RESET,
-	NM_ITEM, "Coldstart", "Shift F5", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_COLDSTART,
-	NM_TITLE, "Settings", NULL, 0, 0L, (APTR)MEN_SETTINGS,
-	NM_ITEM, "Show Framerate?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_SETTINGS_FRAMERATE,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Edit Settings...", NULL, 0, 0L, NULL,
-	NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL,
-	NM_ITEM, "Save Settings", NULL, 0, 0L, NULL,
-	NM_END, NULL, NULL, 0, 0L, NULL
+	{NM_TITLE, "Project", NULL, 0, 0L, (APTR)MEN_PROJECT},
+	{NM_ITEM, "About...", "?", 0, 0L, (APTR)MEN_PROJECT_ABOUT},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Load State...", "L", 0, 0L, (APTR)MEN_PROJECT_LOADSTATE},
+	{NM_ITEM, "Save State...", "S", 0, 0L, (APTR)MEN_PROJECT_SAVESTATE},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Load BIN...", NULL, 0, 0L, (APTR)MEN_PROJECT_LOADBIN},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Record Sound?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_PROJECT_RECORDSOUND},
+	{NM_ITEM, "Select Path...", NULL, 0, 0L, (APTR)MEN_PROJECT_SOUNDPATH},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Help...", NULL, 0, 0L, (APTR)MEN_PROJECT_HELP},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Iconify", NULL, 0, 0L, (APTR)MEN_PROJECT_ICONIFY},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Quit...", "Q", 0, 0L, (APTR)MEN_PROJECT_QUIT},
+	{NM_TITLE, "System", NULL, 0, 0L, (APTR)MEN_SYSTEM},
+	{NM_ITEM, "Boot Disk...", "B", 0, 0L, (APTR)MEN_SYSTEM_BOOT},
+	{NM_ITEM, "Insert Disk", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID},
+	{NM_SUB, "Drive 1...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID1},
+	{NM_SUB, "Drive 2...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID2},
+	{NM_SUB, "Drive 3...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID3},
+	{NM_SUB, "Drive 4...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID4},
+	{NM_SUB, "Drive 5...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID5},
+	{NM_SUB, "Drive 6...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID6},
+	{NM_SUB, "Drive 7...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID7},
+	{NM_SUB, "Drive 8...", NULL, 0, 0L, (APTR)MEN_SYSTEM_ID8},
+	{NM_ITEM, "Eject Disk", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED},
+	{NM_SUB, "Drive 1", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED1},
+	{NM_SUB, "Drive 2", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED2},
+	{NM_SUB, "Drive 3", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED3},
+	{NM_SUB, "Drive 4", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED4},
+	{NM_SUB, "Drive 5", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED5},
+	{NM_SUB, "Drive 6", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED6},
+	{NM_SUB, "Drive 7", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED7},
+	{NM_SUB, "Drive 8", NULL, 0, 0L, (APTR)MEN_SYSTEM_ED8},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Insert Cartridge", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC},
+	{NM_SUB, "8K Cart...", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC8K},
+	{NM_SUB, "16K Cart...", NULL, 0, 0L, (APTR)MEN_SYSTEM_IC16K},
+	{NM_SUB, "OSS SuperCart", NULL, 0, 0L, (APTR)MEN_SYSTEM_ICOSS},
+	{NM_ITEM, "Remove Cartride", NULL, 0, 0L, (APTR)MEN_SYSTEM_REMOVEC},
+	{NM_ITEM, "Enable PILL", "F6", NM_COMMANDSTRING, 0L, (APTR)MEN_SYSTEM_PILL},
+	{NM_ITEM, NM_BARLABEL, NULL,   0, 0L, NULL},
+	{NM_ITEM, "Internal User Interface", "F1", NM_COMMANDSTRING, 0L, (APTR)MEN_SYSTEM_UI},
+	{NM_TITLE, "Console", NULL, 0, 0L, (APTR)MEN_CONSOLE},
+	{NM_ITEM, "Option", "F2", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_OPTION},
+	{NM_ITEM, "Select", "F3", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_SELECT},
+	{NM_ITEM, "Start", "F4", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_START},
+	{NM_ITEM, "Help", "Help", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_HELP},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Break", "F7", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_BREAK},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Reset", "F5", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_RESET},
+	{NM_ITEM, "Coldstart", "Shift F5", NM_COMMANDSTRING, 0L, (APTR)MEN_CONSOLE_COLDSTART},
+	{NM_TITLE, "Settings", NULL, 0, 0L, (APTR)MEN_SETTINGS},
+	{NM_ITEM, "Show Framerate?", NULL, MENUTOGGLE|CHECKIT, 0L, (APTR)MEN_SETTINGS_FRAMERATE},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Edit Settings...", NULL, 0, 0L, NULL},
+	{NM_ITEM, NM_BARLABEL, NULL,	0, 0L, NULL},
+	{NM_ITEM, "Save Settings", NULL, 0, 0L, NULL},
+	{NM_END, NULL, NULL, 0, 0L, NULL}
 };
 
 #define GUI_SAVE		1
@@ -575,6 +579,7 @@ BOOL SetupSound(void)
 		ahi_msg_port = NULL;
 	}
 	SoundEnabled = FALSE;
+	return FALSE;
 }
 
 /**************************************************************************
