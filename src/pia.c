@@ -25,7 +25,7 @@ extern int mach_xlxe;
 
 int rom_inserted;
 UBYTE atari_basic[8192];
-UBYTE atarixl_os[16384];
+UBYTE atari_os[16384];
 
 static UBYTE PORTA_mask = 0xff;
 static UBYTE PORTB_mask = 0xff;
@@ -161,8 +161,8 @@ void PIAStateRead(void)
 
 /*
 $Log$
-Revision 1.3  2001/07/19 23:11:08  fox
-& 0x3f on read PACTL and PBCTL
+Revision 1.4  2001/07/20 00:24:33  fox
+renamed atarixl_os to atari_os
 
 Revision 1.2  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
