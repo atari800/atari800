@@ -243,6 +243,7 @@ void SetVideoMode(int w, int h, int bpp)
 
 	if (MainScreen == NULL) {
 		Aprint("Setting Video Mode: %ix%ix%i FAILED", w, h, bpp);
+		Aflushlog();
 		exit(-1);
 	}
 	SDL_ATARI_BPP = MainScreen->format->BitsPerPixel;
@@ -347,6 +348,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 		if (SDL_OpenAudio(&desired, &obtained) < 0) {
 			Aprint("Problem with audio: %s", SDL_GetError());
 			Aprint("You can disable sound by setting sound_enabled=0");
+			Aflushlog();
 			exit(-1);
 		}
 
@@ -386,6 +388,7 @@ int Atari_Keyboard(void)
 
 	if (kbhits == NULL) {
 		Aprint("oops, kbhits is NULL!");
+		Aflushlog();
 		exit(-1);
 	}
 
@@ -723,6 +726,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) != 0) {
 		Aprint("SDL_Init FAILED");
 		Aprint(SDL_GetError());
+		Aflushlog();
 		exit(-1);
 	}
 
@@ -831,6 +835,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 				   MainScreen->format->BitsPerPixel);
 			Aprint
 				("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+			Aflushlog();
 			exit(-1);
 		}
 	}
@@ -918,6 +923,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 				   MainScreen->format->BitsPerPixel);
 			Aprint
 				("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+			Aflushlog();
 			exit(-1);
 		}
 	}
