@@ -15,6 +15,8 @@ extern UBYTE PORTB;
 
 extern int xe_bank;
 
+extern UBYTE atari_os[16384];
+
 void PIA_Initialise(int *argc, char *argv[]);
 UBYTE PIA_GetByte(UWORD addr);
 void PIA_PutByte(UWORD addr, UBYTE byte);
