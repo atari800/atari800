@@ -293,13 +293,12 @@ int CART_Insert(char *filename)
 
 void CART_Remove(void)
 {
-	Cart809F_Disable();
-	CartA0BF_Disable();
 	cart_type = CART_NONE;
 	if (cart_image != NULL) {
 		free(cart_image);
 		cart_image = NULL;
 	}
+	CART_Start();
 }
 
 void CART_Start(void) {
@@ -327,12 +326,17 @@ void CART_Start(void) {
 			CopyROM(0x8000, 0xbfff, cart_image);
 			break;
 		default:
+			/* clear cartridge area so the 5200 will crash */
+#ifndef PAGED_MEM
+			memset(memory + 0x4000, 0, 0x8000);
+#endif
 			break;
 		}
 	}
 	else {
 		switch (cart_type) {
 		case CART_STD_8:
+			Cart809F_Disable();
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xbfff, cart_image);
 			break;
@@ -342,6 +346,7 @@ void CART_Start(void) {
 			CopyROM(0x8000, 0xbfff, cart_image);
 			break;
 		case CART_OSS_16:
+			Cart809F_Disable();
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xafff, cart_image);
 			CopyROM(0xb000, 0xbfff, cart_image + 0x3000);
@@ -358,6 +363,7 @@ void CART_Start(void) {
 		case CART_EXP_64:
 		case CART_DIAMOND_64:
 		case CART_SDX_64:
+			Cart809F_Disable();
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xbfff, cart_image);
 			bank = 0;
@@ -384,12 +390,15 @@ void CART_Start(void) {
 			bank = 0;
 			break;
 		case CART_OSS2_16:
+			Cart809F_Disable();
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xafff, cart_image + 0x1000);
 			CopyROM(0xb000, 0xbfff, cart_image);
 			bank = 0;
 			break;
 		default:
+			Cart809F_Disable();
+			CartA0BF_Disable();
 			break;
 		}
 	}
