@@ -242,9 +242,11 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 	else {
 		ptr2 = NULL;
 	}
+#ifdef HAVE_LIBPNG
 	if (is_png)
 		Screen_SavePNG(fp, ptr1, ptr2);
 	else
+#endif
 		Screen_SavePCX(fp, ptr1, ptr2);
 	fclose(fp);
 	if (interlaced) {
