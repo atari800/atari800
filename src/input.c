@@ -28,8 +28,15 @@ int mouse_buttons = 0;
 int mouse_speed = 3;
 int mouse_pot_min = 0;
 int mouse_pot_max = 228;
-int mouse_pen_ofs_h = 0;
-int mouse_pen_ofs_v = 0;
+/* There should be UI or options for light pen/gun offsets.
+   Below are best offsets for different programs:
+   AtariGraphics: H = 0..32, V = 0 (there's calibration in the program)
+   Bug Hunt: H = 44, V = 2
+   Barnyard Blaster: H = 40, V = 0
+   Operation Blood (light gun version): H = 40, V = 4
+ */
+int mouse_pen_ofs_h = 42;
+int mouse_pen_ofs_v = 2;
 int mouse_joy_inertia = 10;
 
 #ifndef MOUSE_SHIFT
@@ -78,6 +85,8 @@ void INPUT_Initialise(int *argc, char *argv[])
 				mouse_mode = MOUSE_KOALA;
 			else if (strcmp(mode, "pen") == 0)
 				mouse_mode = MOUSE_PEN;
+			else if (strcmp(mode, "gun") == 0)
+				mouse_mode = MOUSE_GUN;
 			else if (strcmp(mode, "amiga") == 0)
 				mouse_mode = MOUSE_AMIGA;
 			else if (strcmp(mode, "st") == 0)
@@ -325,6 +334,7 @@ void INPUT_Frame(void)
 			STICK[mouse_port] &= ~(mouse_buttons << 2);
 		break;
 	case MOUSE_PEN:
+	case MOUSE_GUN:
 		mouse_x += mouse_delta_x * mouse_speed;
 		if (mouse_x < 0)
 			mouse_x = 0;
@@ -337,7 +347,7 @@ void INPUT_Frame(void)
 			mouse_y = 119 << MOUSE_SHIFT;
 		PENH_input = 44 + mouse_pen_ofs_h + (mouse_x >> MOUSE_SHIFT);
 		PENV_input = 4 + mouse_pen_ofs_v + (mouse_y >> MOUSE_SHIFT);
-		if (mouse_buttons & 1)
+		if ((mouse_buttons & 1) == (mouse_mode == MOUSE_PEN))
 			STICK[mouse_port] &= ~1;
 		if ((mouse_buttons & 2) && !(last_mouse_buttons & 2))
 			mouse_pen_show_pointer = !mouse_pen_show_pointer;
@@ -438,6 +448,7 @@ void INPUT_CenterMousePointer(void)
 		mouse_y = 114 << MOUSE_SHIFT;
 		break;
 	case MOUSE_PEN:
+	case MOUSE_GUN:
 		mouse_x = 84 << MOUSE_SHIFT;
 		mouse_y = 60 << MOUSE_SHIFT;
 		break;
@@ -450,15 +461,33 @@ void INPUT_CenterMousePointer(void)
 	}
 }
 
+#define PLOT(dx, dy)	do {\
+							ptr[(dx) + ATARI_WIDTH * (dy)] ^= 0x0f0f;\
+							ptr[(dx) + ATARI_WIDTH * (dy) + ATARI_WIDTH / 2] ^= 0x0f0f;\
+						} while (0)
+
 /* draw light pen cursor */
 void INPUT_DrawMousePointer(void)
 {
-	if (mouse_mode == MOUSE_PEN && mouse_pen_show_pointer
-	 && mouse_x >= 0 && (mouse_x >> MOUSE_SHIFT) < 168
-	 && mouse_y >= 0 && (mouse_y >> MOUSE_SHIFT) < 120) {
-		UWORD *ptr = & ((UWORD *) atari_screen)[12 + (mouse_x >> MOUSE_SHIFT)
-					 + ATARI_WIDTH * (mouse_y >> MOUSE_SHIFT)];
-		*ptr ^= 0xffff;
-		ptr[ATARI_WIDTH / 2] ^= 0xffff;
+	if ((mouse_mode == MOUSE_PEN || mouse_mode == MOUSE_GUN) && mouse_pen_show_pointer) {
+		int x = mouse_x >> MOUSE_SHIFT;
+		int y = mouse_y >> MOUSE_SHIFT;
+		if (x >= 0 && x <= 167 && y >= 0 && y <= 119) {
+			UWORD *ptr = & ((UWORD *) atari_screen)[12 + x + ATARI_WIDTH * y];
+			PLOT(-2, 0);
+			PLOT(-1, 0);
+			PLOT(1, 0);
+			PLOT(2, 0);
+			if (y >= 1) {
+				PLOT(0, -1);
+				if (y >= 2)
+					PLOT(0, -2);
+			}
+			if (y <= 118) {
+				PLOT(0, 1);
+				if (y <= 117)
+					PLOT(0, 2);
+			}
+		}
 	}
 }
