@@ -1,4 +1,4 @@
-** tagged as ATARI800_1_3_1_RC1
+** tagged as ATARI800_1_3_1-RC1
 
 2003-09-03  Petr Stehlik  <pstehlik@sophics.cz>
 * dos/vga_gfx.h: wrong #endif fixed

@@ -1,6 +1,6 @@
 VER_MAJOR=1
 VER_MINOR=3
-VER_MICRO=0
+VER_MICRO=1-rc1
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO
 TAG="ATARI800_"$VER_MAJOR"_"$VER_MINOR"_"$VER_MICRO
@@ -39,8 +39,6 @@ cd atari800/src
 ./autogen.sh
 # remove leftovers from autogen process
 rm autogen.sh acconfig.h config.cache config.log configure.in
-# remove old stuff
-rm configure.c config.in
 cd ../..
 mv atari800 $FOLDER
 tar czvf $FNAME $FOLDER
