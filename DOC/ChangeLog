@@ -1,3 +1,13 @@
+2003-08-05  Petr Stehlik  <pstehlik@sophics.cz>
+* atari.c: tried to fix a recent security issue (atari800 got famous "thanks"
+  to that). In order to provide a complex fix I wrote code that is not looking
+  very well but works correctly, hopefully. Nevertheless this fixes only
+  the main module arguments parsing - the various ports do it on their own
+  and that should be fixed as well. Best by going for GNU getopt!
+
+* atari_sdl.c: refresh_rate unused, removed
+
+
 2003-08-05  Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
 * sio.c: fixed random timeout while sectorread at datatransfer with
          command frames.

@@ -326,6 +326,13 @@ int Atari800_InitialiseMachine(void)
 	return TRUE;
 }
 
+char *safe_strncpy(char *dest, const char *src, size_t size)
+{
+	strncpy(dest, src, size);
+	dest[size-1] = '\0';
+	return dest;
+}
+
 int Atari800_Initialise(int *argc, char *argv[])
 {
 	int error = FALSE;
@@ -416,27 +423,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 			tv_mode = TV_PAL;
 		else if (strcmp(argv[i], "-ntsc") == 0)
 			tv_mode = TV_NTSC;
-		else if (strcmp(argv[i], "-osa_rom") == 0)
-			strcpy(atari_osa_filename, argv[++i]);
-		else if (strcmp(argv[i], "-osb_rom") == 0)
-			strcpy(atari_osb_filename, argv[++i]);
-		else if (strcmp(argv[i], "-xlxe_rom") == 0)
-			strcpy(atari_xlxe_filename, argv[++i]);
-		else if (strcmp(argv[i], "-5200_rom") == 0)
-			strcpy(atari_5200_filename, argv[++i]);
-		else if (strcmp(argv[i], "-basic_rom") == 0)
-			strcpy(atari_basic_filename, argv[++i]);
-		else if (strcmp(argv[i], "-cart") == 0) {
-			rom_filename = argv[++i];
-		}
-		else if (strcmp(argv[i], "-run") == 0) {
-			run_direct = argv[++i];
-		}
-		else if (strcmp(argv[i], "-refresh") == 0) {
-			sscanf(argv[++i], "%d", &refresh_rate);
-			if (refresh_rate < 1)
-				refresh_rate = 1;
-		}
 		else if (strcmp(argv[i], "-a") == 0) {
 			machine_type = MACHINE_OSA;
 			ram_size = 48;
@@ -452,31 +438,78 @@ int Atari800_Initialise(int *argc, char *argv[])
 				ram_size = 52;
 		}
 		else {
-			if (strcmp(argv[i], "-help") == 0) {
-				help_only = TRUE;
-				Aprint("\t-configure       Update Configuration File");
-				Aprint("\t-config <file>   Specify Alternate Configuration File");
-				Aprint("\t-atari           Standard Atari 800 mode");
-				Aprint("\t-xl              Atari 800XL mode");
-				Aprint("\t-xe              Atari 130XE mode");
-				Aprint("\t-320xe           Atari 320XE mode (COMPY SHOP)");
-				Aprint("\t-rambo           Atari 320XE mode (RAMBO)");
-				Aprint("\t-nobasic         Turn off Atari BASIC ROM");
-				Aprint("\t-basic           Turn on Atari BASIC ROM");
-				Aprint("\t-5200            Atari 5200 Games System");
-				Aprint("\t-pal             Enable PAL TV mode");
-				Aprint("\t-ntsc            Enable NTSC TV mode");
-				Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
-				Aprint("\t-run <file>      Run file directly");
-				Aprint("\t-refresh <rate>  Specify screen refresh rate");
-				Aprint("\t-nopatch         Don't patch SIO routine in OS");
-				Aprint("\t-nopatchall      Don't patch OS at all, H: device won't work");
-				Aprint("\t-a               Use A OS");
-				Aprint("\t-b               Use B OS");
-				Aprint("\t-c               Enable RAM between 0xc000 and 0xd000");
-				Aprint("\t-v               Show version/release number");
+			/* parameters that take additional argument follow here */
+			int i_a = ( (i+1) < *argc );	/* is argument available? */
+			int a_m = FALSE;				/* error, argument missing! */
+
+			if (strcmp(argv[i], "-osa_rom") == 0) {
+				if (i_a) safe_strncpy(atari_osa_filename, argv[++i], sizeof(atari_osa_filename)); else a_m = TRUE;
 			}
-			argv[j++] = argv[i];
+			else if (strcmp(argv[i], "-osb_rom") == 0) {
+				if (i_a) safe_strncpy(atari_osb_filename, argv[++i], sizeof(atari_osb_filename)); else a_m = TRUE;
+			}
+			else if (strcmp(argv[i], "-xlxe_rom") == 0) {
+				if (i_a) safe_strncpy(atari_xlxe_filename, argv[++i], sizeof(atari_xlxe_filename)); else a_m = TRUE;
+			}
+			else if (strcmp(argv[i], "-5200_rom") == 0) {
+				if (i_a) safe_strncpy(atari_5200_filename, argv[++i], sizeof(atari_5200_filename)); else a_m = TRUE;
+			}
+			else if (strcmp(argv[i], "-basic_rom") == 0) {
+				if (i_a) safe_strncpy(atari_basic_filename, argv[++i], sizeof(atari_basic_filename)); else a_m = TRUE;
+			}
+			else if (strcmp(argv[i], "-cart") == 0) {
+				if (i_a) rom_filename = argv[++i]; else a_m = TRUE;
+			}
+			else if (strcmp(argv[i], "-run") == 0) {
+				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
+			}
+			else if (strcmp(argv[i], "-refresh") == 0) {
+				if (i_a) {
+					sscanf(argv[++i], "%d", &refresh_rate);
+					if (refresh_rate < 1)
+						refresh_rate = 1;
+				}
+				else
+					a_m = TRUE;
+			}
+
+			else {
+				/* all options known to main module tried but none matched */
+
+				if (strcmp(argv[i], "-help") == 0) {
+					help_only = TRUE;
+					Aprint("\t-configure       Update Configuration File");
+					Aprint("\t-config <file>   Specify Alternate Configuration File");
+					Aprint("\t-atari           Standard Atari 800 mode");
+					Aprint("\t-xl              Atari 800XL mode");
+					Aprint("\t-xe              Atari 130XE mode");
+					Aprint("\t-320xe           Atari 320XE mode (COMPY SHOP)");
+					Aprint("\t-rambo           Atari 320XE mode (RAMBO)");
+					Aprint("\t-nobasic         Turn off Atari BASIC ROM");
+					Aprint("\t-basic           Turn on Atari BASIC ROM");
+					Aprint("\t-5200            Atari 5200 Games System");
+					Aprint("\t-pal             Enable PAL TV mode");
+					Aprint("\t-ntsc            Enable NTSC TV mode");
+					Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
+					Aprint("\t-run <file>      Run file directly");
+					Aprint("\t-refresh <rate>  Specify screen refresh rate");
+					Aprint("\t-nopatch         Don't patch SIO routine in OS");
+					Aprint("\t-nopatchall      Don't patch OS at all, H: device won't work");
+					Aprint("\t-a               Use A OS");
+					Aprint("\t-b               Use B OS");
+					Aprint("\t-c               Enable RAM between 0xc000 and 0xd000");
+					Aprint("\t-v               Show version/release number");
+				}
+
+				/* copy this option for platform/module specific evaluation */
+				argv[j++] = argv[i];
+			}
+
+			/* this is the end of the additional argument check */
+			if (a_m) {
+				printf("Missing argument for '%s'\n", argv[i]);
+				return FALSE;
+			}
 		}
 	}
 
@@ -1001,6 +1034,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.49  2003/08/05 13:22:56  joy
+security fix
+
 Revision 1.48  2003/05/28 19:54:58  joy
 R: device support (networking?)
 
