@@ -5,9 +5,6 @@ o sound recording: make use of new sndsave.[ch] module (replace the
 
 o make the new function Rotate_Disks in sio.c available from UI
 
-o allow user to choose whether open a disk image read-only or not
-  (third parameter in SIO_Mount)
-
 o merge common parts of VGA, SVGALIB and AtariFalcon keyboard stuff
   into one source file named like atari_keyboard.c.
 
@@ -19,7 +16,5 @@ o rewrite joycfg to use curses so it will be usable on all platforms.
 
 o simplify and correct synchronization code in main emulator loop - some
   people still complain that the emulator is slower than the original Atari.
-
-o update the m68k assembler version of cpu.c
 
 o clean up the source and start using GNU autoconfig stuff
