@@ -302,8 +302,8 @@ void INPUT_Frame(void)
 				last_stick[i] |= STICK[i] & 0x03;
 			}
 		}
-
-		last_stick[i] = STICK[i];
+		else
+			last_stick[i] = STICK[i];
 		TRIG[i] = Atari_TRIG(i);
 		if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
 			TRIG[i] = (nframes & 2) ? 1 : 0;
