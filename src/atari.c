@@ -282,6 +282,7 @@ int Atari800_InitialiseMachine(void)
 		break;
 	}
 	MEMORY_InitialiseMachine();
+	Device_UpdatePatches();
 	return TRUE;
 }
 
@@ -918,6 +919,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.29  2001/10/05 16:46:45  fox
+H: didn't worked until a patch was toggled
+
 Revision 1.28  2001/10/05 10:20:24  fox
 added Bounty Bob Strikes Back cartridge for 800/XL/XE
 
