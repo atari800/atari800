@@ -196,16 +196,14 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 			pot_scanline = 0;	/* slow pot mode */
 		break;
 	case _SEROUT:
-		if ((SKCTLS & 0x70) == 0x20) {
-			if (POKEY_siocheck()) {
-				SIO_PutByte(byte);
-				IRQST |= 0x08;
-				DELAYED_XMTDONE_IRQ = XMTDONE_INTERVAL;
+		if ((SKCTLS & 0x70) == 0x20 && POKEY_siocheck())
+			SIO_PutByte(byte);
+		DELAYED_SEROUT_IRQ = SEROUT_INTERVAL;
+		IRQST |= 0x08;
+		DELAYED_XMTDONE_IRQ = XMTDONE_INTERVAL;
 #ifdef SERIO_SOUND
-				Update_serio_sound(1,byte);
+		Update_serio_sound(1,byte);
 #endif
-			}
-		}
 		break;
 	case _STIMER:
 		DivNIRQ[CHAN1] = DivNMax[CHAN1];
