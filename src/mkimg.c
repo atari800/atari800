@@ -23,7 +23,7 @@
 */
 
 /*
- * Usage: mkimg -input <filename
+ * Usage: mkimg -input filename
  *              -image filename
  *              -header filename
  *              hexaddr1
@@ -40,11 +40,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#include <fcntl.h>
-#include "config.h"
-
-#define FALSE 0
-#define TRUE 1
+#include <string.h>
 
 typedef enum {
 	Expect_Header1,
@@ -56,13 +52,13 @@ typedef enum {
 	Expect_Data
 } State;
 
-main(int argc, char *argv[], char *envp[])
+int main(int argc, char *argv[])
 {
 	unsigned char image[65536];
 	char *in_filename = NULL;
 	char *image_filename = NULL;
 	char *header_filename = NULL;
-	int error = FALSE;
+	int error = 0;
 	int start_addr = 0;
 	int finish_addr = 0;
 	int addr1 = -1;
@@ -85,21 +81,21 @@ main(int argc, char *argv[], char *envp[])
 		else if (addr2 == -1)
 			sscanf(argv[i], "%x", &addr2);
 		else
-			error = TRUE;
+			error = 1;
 	}
 
 	if (!in_filename || (!image_filename && !header_filename) ||
 		error || (addr1 == -1) || (addr2 == -1)) {
 		printf("Usage: %s -input in_fname {-image image_fname|-header header_fname} hexaddr1 hexaddr2\n",
 			   argv[0]);
-		exit(0);
+		return 0;
 	}
 	memset(image, 0, 65536);
 
 	f = fopen(in_filename, "rb");
 	if (!f) {
 		perror(in_filename);
-		exit(1);
+		return 1;
 	}
 	while (1) {
 		unsigned char byte;
@@ -150,7 +146,7 @@ main(int argc, char *argv[], char *envp[])
 			break;
 		default:
 			printf("Error: Invalid State\n");
-			exit(1);
+			return 1;
 		}
 	}
 
@@ -164,7 +160,7 @@ main(int argc, char *argv[], char *envp[])
 		f = fopen(image_filename, "wb");
 		if (!f) {
 			perror(image_filename);
-			exit(1);
+			return 1;
 		}
 		fwrite(&image[addr1], 1, addr2 - addr1 + 1, f);
 
@@ -178,7 +174,7 @@ main(int argc, char *argv[], char *envp[])
 		fp = fopen(header_filename, "wb");
 		if (!fp) {
 			perror(header_filename);
-			exit(1);
+			return 1;
 		}
 		for (ptr = header_filename; *ptr; ptr++) {
 			if (!isalnum(*ptr))
@@ -206,4 +202,5 @@ main(int argc, char *argv[], char *envp[])
 
 		fclose(fp);
 	}
+	return 0;
 }
