@@ -14,7 +14,7 @@ static int cassette_isCAS;
 UBYTE cassette_buffer[4096];
 static ULONG cassette_block_offset[MAX_BLOCKS];
 
-char cassette_filename[FILENAME_LEN];
+char cassette_filename[FILENAME_MAX];
 char cassette_description[CASSETTE_DESCRIPTION_MAX];
 int cassette_current_block;
 int cassette_max_block;
