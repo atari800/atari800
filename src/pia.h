@@ -13,6 +13,8 @@ extern UBYTE PBCTL;
 extern UBYTE PORTA;
 extern UBYTE PORTB;
 
+extern UBYTE PORT_input[2];
+
 extern int xe_bank;
 extern int selftest_enabled;
 

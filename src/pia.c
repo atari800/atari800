@@ -7,7 +7,6 @@
 #include "cpu.h"
 #include "memory.h"
 #include "pia.h"
-#include "platform.h"
 #include "sio.h"
 #include "log.h"
 #include "statesav.h"
@@ -16,6 +15,7 @@ UBYTE PACTL;
 UBYTE PBCTL;
 UBYTE PORTA;
 UBYTE PORTB;
+UBYTE PORT_input[2] = {0xff, 0xff};
 
 int xe_bank = 0;
 int selftest_enabled = 0;
@@ -51,13 +51,13 @@ UBYTE PIA_GetByte(UWORD addr)
 		if (!(PACTL & 0x04))
  			byte = ~PORTA_mask;
 		else
-			byte = Atari_PORT(0) & (PORTA | PORTA_mask);
+			byte = PORT_input[0] & (PORTA | PORTA_mask);
 		break;
 	case _PORTB:
 		if (machine_type == MACHINE_XLXE)
 			byte = (PORTB & (~PORTB_mask)) | PORTB_mask;
 		else
-			byte = Atari_PORT(1) & (PORTB | PORTB_mask);
+			byte = PORT_input[1] & (PORTB | PORTB_mask);
 		break;
 	}
 
@@ -158,6 +158,9 @@ void PIAStateRead(void)
 
 /*
 $Log$
+Revision 1.7  2001/09/27 09:30:39  fox
+Atari_PORT -> PORT_input
+
 Revision 1.6  2001/09/17 18:12:33  fox
 machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
 
