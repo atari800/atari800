@@ -3,7 +3,7 @@ Unreleased version 1.2.11 (2003/02/09)
 * configuration file ("atari800.cfg") related changes: 
 
   1) configuration file is named ".atari800.cfg" by default (note
-     the leading zero in the name, similar to most other configuration
+     the leading dot in the name, similarly to most other configuration
      files of programs on Unix platforms)
 
   2) RT-Config (the module in Atari800) tries to search the configuration
@@ -17,7 +17,9 @@ Unreleased version 1.2.11 (2003/02/09)
   3) RT-Config can also be told where your configuration file is by
      using the "-config <filepath>" command line parameter. If the file
      is not there yet it's created. So it's quite easy to let Atari800
-     create a test config file and compare it with your current config.
+     create a test config file and compare it with your current config
+     or to have several config files for various game/demo/application
+     uses of the Atari800 emulator.
 
   4) Some config file options were renamed or otherwise changed some
      time ago already but they were still recognized. This is no longer
@@ -30,9 +32,12 @@ Unreleased version 1.2.11 (2003/02/09)
 * new Sound:
 
   The new MZ POKEY emulation is now enabled by default on all ports.
-  Also the STEREO sound (Dual POKEY) is enabled by default now.
-  Both can be disabled in the configuration file (call atari800 with the
-  "-configure" parameter to reconfigure these and other options).
+  Also the STEREO sound (Dual POKEY) is compiled in by default
+  but is not enabled (so there's a single POKEY by default but you
+  can enable the second one very easily in the User Interface (press F1).
+
+  Both can be en/disabled in the configuration file (call atari800 with
+  the "-configure" parameter to reconfigure these and other options).
 
 
 Unreleased version 1.2.10 (2003/02/09)
