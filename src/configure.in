@@ -115,7 +115,7 @@ vga)
 		exit 1
 	fi
 	AC_DEFINE(VGA)
-	OBJ="atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
+	OBJ="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
 ;;
 svgalib)
 dnl Replace `main' with a function in -lvga:
