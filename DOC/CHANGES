@@ -36,6 +36,9 @@ o cassette recorder emulation! (experimental)
   No UI available yet. Attach a file with "-tape filename"
   or "-boottape filename" (emulator presses Start and Space to boot the tape).
 
+o "-basic" and "-nobasic" work for Atari 800 (Atari BASIC is attached
+  as a cartridge in Atari 800)
+
 o antic,gtia: the background color can be changed inside a scanline.
   Currently implemented only for blank lines without PMG.
   Try the "Partyland" part of the "Bitter Reality" demo.
@@ -98,6 +101,7 @@ o sio: Format Disk rewritten. Now it can resize both ATR and XFD images.
 o supercart: added "byte &= 0x0f" to prevent out of bounds accesses
   to regset[]
 
+o ui: added Atari Settings
 
 Changes in 1.0.7
 ----------------
