@@ -77,7 +77,96 @@ void sigint_handler(int num)
 	exit(0);
 }
 
-/* static int Reset_Disabled = FALSE; - why is this defined here? (PS) */
+/* Now we check address of every escape code, to make sure that the patch
+   has been set by the emulator and is not a CIM in Atari program.
+   Also switch() for escape codes has been changed to array of pointers
+   to functions. This allows adding port-specific patches (e.g. modem device)
+   using Atari800_AddEsc, Device_UpdateHATABSEntry etc. without modifying
+   atari.c/devices.c. Unfortunately it can't be done for patches in Atari OS,
+   because the OS in XL/XE can be disabled.
+*/
+static UWORD esc_address[256];
+static EscFunctionType esc_function[256];
+
+void Atari800_ClearAllEsc(void)
+{
+	int i;
+	for (i = 0; i < 256; i++)
+		esc_function[i] = NULL;
+}
+
+void Atari800_AddEsc(UWORD address, UBYTE esc_code, EscFunctionType function)
+{
+	esc_address[esc_code] = address;
+	esc_function[esc_code] = function;
+	dPutByte(address, 0xf2);			/* ESC */
+	dPutByte(address + 1, esc_code);	/* ESC CODE */
+}
+
+void Atari800_AddEscRts(UWORD address, UBYTE esc_code, EscFunctionType function)
+{
+	esc_address[esc_code] = address;
+	esc_function[esc_code] = function;
+	dPutByte(address, 0xf2);			/* ESC */
+	dPutByte(address + 1, esc_code);	/* ESC CODE */
+	dPutByte(address + 2, 0x60);		/* RTS */
+}
+
+/* 0xd2 is ESCRTS, which works same as pair of ESC and RTS (I think so...).
+   So this function does effectively the same as Atari800_AddEscRts,
+   except that it modifies 2, not 3 bytes in Atari memory.
+   I don't know why it is done that way, so I simply leave it
+   unchanged (0xf2/0xd2 are used as in previous versions).
+*/
+void Atari800_AddEscRts2(UWORD address, UBYTE esc_code, EscFunctionType function)
+{
+	esc_address[esc_code] = address;
+	esc_function[esc_code] = function;
+	dPutByte(address, 0xd2);			/* ESCRTS */
+	dPutByte(address + 1, esc_code);	/* ESC CODE */
+}
+
+void Atari800_RemoveEsc(UBYTE esc_code)
+{
+	esc_function[esc_code] = NULL;
+}
+
+void Atari800_RunEsc(UBYTE esc_code)
+{
+	if (esc_address[esc_code] == regPC - 2 && esc_function[esc_code] != NULL) {
+		esc_function[esc_code]();
+		return;
+	}
+#ifdef CRASH_MENU
+	regPC -= 2;
+	crash_address = regPC;
+	crash_afterCIM = regPC + 2;
+	crash_code = dGetByte(crash_address);
+	ui((UBYTE *) atari_screen);
+#else
+	Aprint("Invalid ESC Code %x at Address %x", esc_code, regPC - 2);
+	if (!Atari800_Exit(TRUE))
+		exit(0);
+#endif
+}
+
+void Atari800_PatchOS(void)
+{
+	int patched = Device_PatchOS();
+	if (enable_sio_patch) {
+		Atari800_AddEscRts(0xe459, ESC_SIOV, SIO);
+		patched = TRUE;
+	}
+	else
+		Atari800_RemoveEsc(ESC_SIOV);
+	if (patched && machine_type == MACHINE_XLXE) {
+		/* Disable Checksum Test */
+		dPutByte(0xc314, 0x8e);
+		dPutByte(0xc315, 0xff);
+		dPutByte(0xc319, 0x8e);
+		dPutByte(0xc31a, 0xff);
+	}
+}
 
 void Warmstart(void)
 {
@@ -132,6 +221,7 @@ static int load_image(char *filename, UBYTE *buffer, int nbytes)
 
 int Atari800_InitialiseMachine(void)
 {
+	Atari800_ClearAllEsc();
 	switch (machine_type) {
 	case MACHINE_OSA:
 		if (emuos_mode == 2)
@@ -533,7 +623,8 @@ void Atari800_UpdatePatches(void)
 		/* Restore unpatched OS */
 		dCopyToMem(atari_os, 0xd800, 0x2800);
 		/* Set patches */
-		PatchOS();
+		Atari800_PatchOS();
+		Device_UpdatePatches();
 		break;
 	case MACHINE_XLXE:
 		/* Don't patch if OS disabled */
@@ -543,7 +634,8 @@ void Atari800_UpdatePatches(void)
 		dCopyToMem(atari_os, 0xc000, 0x1000);
 		dCopyToMem(atari_os + 0x1800, 0xd800, 0x2800);
 		/* Set patches */
-		PatchOS();
+		Atari800_PatchOS();
+		Device_UpdatePatches();
 		break;
 	}
 }
@@ -643,6 +735,7 @@ void atari_sync(void)
 
 void Atari800_Frame(int mode)
 {
+	Device_Frame();
 	INPUT_Frame();
 	GTIA_Frame();
 
@@ -809,6 +902,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.26  2001/10/03 16:40:17  fox
+rewritten escape codes handling
+
 Revision 1.25  2001/10/01 17:22:16  fox
 unused CRASH_MENU externs removed; Poke -> dPutByte;
 memcpy(memory + ...) -> dCopyToMem

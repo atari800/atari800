@@ -6,7 +6,6 @@
 #include "atari.h"
 #include "antic.h"
 #include "cartridge.h"
-#include "cpu.h"
 #include "gtia.h"
 #include "log.h"
 #include "memory.h"
@@ -24,134 +23,6 @@ static ULONG atarixe_memory_size = 0;
 int have_basic;	/* Atari BASIC image has been successfully read (Atari 800 only) */
 
 extern int pil_on;
-
-void add_esc(UWORD address, UBYTE esc_code)
-{
-	memory[address++] = 0xf2;	/* ESC */
-	memory[address++] = esc_code;	/* ESC CODE */
-	memory[address] = 0x60;		/* RTS */
-}
-
-void PatchOS(void)
-{
-	const unsigned short o_open = 0;
-	const unsigned short o_close = 2;
-	const unsigned short o_read = 4;
-	const unsigned short o_write = 6;
-	const unsigned short o_status = 8;
-	/* const unsigned short   o_special = 10; */
-	const unsigned short o_init = 12;
-
-	unsigned short addr = 0;
-	unsigned short entry;
-	unsigned short devtab;
-	int i;
-
-#ifndef BASIC
-	/* Check if ROM patches are enabled - if not return immediately */
-	if (!enable_sio_patch && !enable_h_patch && !enable_p_patch)
-		return;
-#endif
-
-	/* Disable Checksum Test */
-	if (machine_type == MACHINE_XLXE) {
-		memory[0xc314] = 0x8e;
-		memory[0xc315] = 0xff;
-		memory[0xc319] = 0x8e;
-		memory[0xc31a] = 0xff;
-	}
-
-	/* Set SIO (fast disk access) patch */
-	if (enable_sio_patch)
-		add_esc(0xe459, ESC_SIOV);
-
-/*
-   ==========================================
-   Patch O.S. - Modify Handler Table (HATABS)
-   ==========================================
- */
-	switch (machine_type) {
-	case MACHINE_OSA:
-	case MACHINE_OSB:
-		addr = 0xf0e3;
-		break;
-	case MACHINE_XLXE:
-		addr = 0xc42e;
-		break;
-	default:
-		Aprint("Fatal Error in atari.c: PatchOS(): Unknown machine");
-		Atari800_Exit(FALSE);
-		break;
-	}
-
-	for (i = 0; i < 5; i++) {
-		devtab = (memory[addr + 2] << 8) | memory[addr + 1];
-
-		switch (memory[addr]) {
-		case 'P':
-			if (!enable_p_patch)
-				break;
-			entry = (memory[devtab + o_open + 1] << 8) | memory[devtab + o_open];
-			add_esc((UWORD)(entry + 1), ESC_PHOPEN);
-			entry = (memory[devtab + o_close + 1] << 8) | memory[devtab + o_close];
-			add_esc((UWORD)(entry + 1), ESC_PHCLOS);
-/*
-   entry = (memory[devtab+o_read+1] << 8) | memory[devtab+o_read];
-   add_esc (entry+1, ESC_PHREAD);
- */
-			entry = (memory[devtab + o_write + 1] << 8) | memory[devtab + o_write];
-			add_esc((UWORD)(entry + 1), ESC_PHWRIT);
-			entry = (memory[devtab + o_status + 1] << 8) | memory[devtab + o_status];
-			add_esc((UWORD)(entry + 1), ESC_PHSTAT);
-/*
-   entry = (memory[devtab+o_special+1] << 8) | memory[devtab+o_special];
-   add_esc (entry+1, ESC_PHSPEC);
- */
-			memory[devtab + o_init] = 0xd2;
-			memory[devtab + o_init + 1] = ESC_PHINIT;
-			break;
-		case 'C':
-			if (!enable_h_patch)
-				break;
-			memory[addr] = 'H';
-			entry = (memory[devtab + o_open + 1] << 8) | memory[devtab + o_open];
-			add_esc((UWORD)(entry + 1), ESC_HHOPEN);
-			entry = (memory[devtab + o_close + 1] << 8) | memory[devtab + o_close];
-			add_esc((UWORD)(entry + 1), ESC_HHCLOS);
-			entry = (memory[devtab + o_read + 1] << 8) | memory[devtab + o_read];
-			add_esc((UWORD)(entry + 1), ESC_HHREAD);
-			entry = (memory[devtab + o_write + 1] << 8) | memory[devtab + o_write];
-			add_esc((UWORD)(entry + 1), ESC_HHWRIT);
-			entry = (memory[devtab + o_status + 1] << 8) | memory[devtab + o_status];
-			add_esc((UWORD)(entry + 1), ESC_HHSTAT);
-			break;
-		case 'E':
-#ifdef BASIC
-			Aprint("Editor Device");
-			entry = (memory[devtab + o_open + 1] << 8) | memory[devtab + o_open];
-			add_esc((UWORD)(entry + 1), ESC_E_OPEN);
-			entry = (memory[devtab + o_read + 1] << 8) | memory[devtab + o_read];
-			add_esc((UWORD)(entry + 1), ESC_E_READ);
-			entry = (memory[devtab + o_write + 1] << 8) | memory[devtab + o_write];
-			add_esc((UWORD)(entry + 1), ESC_E_WRITE);
-#endif
-			break;
-		case 'S':
-			break;
-		case 'K':
-#ifdef BASIC
-			Aprint("Keyboard Device");
-			entry = (memory[devtab + o_read + 1] << 8) | memory[devtab + o_read];
-			add_esc(entry + 1, ESC_K_READ);
-#endif
-			break;
-		default:
-			break;
-		}
-
-		addr += 3;				/* Next Device in HATABS */
-	}
-}
 
 static void AllocXEMemory(void)
 {
@@ -188,7 +59,7 @@ void MEMORY_InitialiseMachine(void)
 	case MACHINE_OSA:
 	case MACHINE_OSB:
 		memcpy(memory + 0xd800, atari_os, 0x2800);
-		PatchOS();
+		Atari800_PatchOS();
 		SetRAM(0x0000, 0xbfff);
 		if (ram_size == 52)
 			SetRAM(0xc000, 0xcfff);
@@ -199,7 +70,7 @@ void MEMORY_InitialiseMachine(void)
 		break;
 	case MACHINE_XLXE:
 		memcpy(memory + 0xc000, atari_os, 0x4000);
-		PatchOS();
+		Atari800_PatchOS();
 		SetRAM(0x0000, 0xbfff);
 		SetROM(0xc000, 0xcfff);
 		SetHARDWARE(0xd000, 0xd7ff);
@@ -341,7 +212,7 @@ void PORTB_handler(UBYTE byte)
 			memcpy(memory + 0xd800, atari_os + 0x1800, 0x2800);
 			SetROM(0xc000, 0xcfff);
 			SetROM(0xd800, 0xffff);
-			PatchOS();
+			Atari800_PatchOS();
 		}
 		else {
 			/* OS ROM Disable */
@@ -480,6 +351,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.13  2001/10/03 16:42:50  fox
+rewritten escape codes handling
+
 Revision 1.12  2001/10/01 17:13:26  fox
 Poke -> dPutByte
 

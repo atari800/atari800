@@ -79,24 +79,25 @@ extern ULONG *atari_screen2;
 extern unsigned int screenline_cpu_clock;
 #define cpu_clock (screenline_cpu_clock + xpos)
 
+/* Escape codes */
 enum ESCAPE {
 	ESC_SIOV,
 /*
  * These are special device escape codes required by the Basic version
  */
-	ESC_E_OPEN,
-	ESC_E_CLOSE,
-	ESC_E_READ,
-	ESC_E_WRITE,
-	ESC_E_STATUS,
-	ESC_E_SPECIAL,
+	ESC_EHOPEN,
+	ESC_EHCLOS,
+	ESC_EHREAD,
+	ESC_EHWRIT,
+	ESC_EHSTAT,
+	ESC_EHSPEC,
 
-	ESC_K_OPEN,
-	ESC_K_CLOSE,
-	ESC_K_READ,
-	ESC_K_WRITE,
-	ESC_K_STATUS,
-	ESC_K_SPECIAL,
+	ESC_KHOPEN,
+	ESC_KHCLOS,
+	ESC_KHREAD,
+	ESC_KHWRIT,
+	ESC_KHSTAT,
+	ESC_KHSPEC,
 
 	ESC_BINLOADER_CONT,
 
@@ -121,6 +122,18 @@ enum ESCAPE {
 	ESC_HHSPEC = 0xc5,
 	ESC_HHINIT = 0xc6
 };
+
+typedef void (*EscFunctionType)(void);
+
+void Atari800_AddEsc(UWORD address, UBYTE esc_code, EscFunctionType function);
+void Atari800_AddEscRts(UWORD address, UBYTE esc_code, EscFunctionType function);
+void Atari800_AddEscRts2(UWORD address, UBYTE esc_code, EscFunctionType function);
+void Atari800_RemoveEsc(UBYTE esc_code);
+void Atari800_RunEsc(UBYTE esc_code);
+
+UBYTE Atari800_GetByte(UWORD addr);
+void Atari800_PutByte(UWORD addr, UBYTE byte);
+void Atari800_PatchOS(void);
 
 /* 
    =================
@@ -196,16 +209,16 @@ void Coldstart(void);
 void Warmstart(void);
 int Atari800_InitialiseMachine(void);
 int Atari800_Exit(int run_monitor);
-UBYTE Atari800_GetByte(UWORD addr);
-void Atari800_PutByte(UWORD addr, UBYTE byte);
 void Atari800_UpdatePatches(void);
-void AtariEscape(UBYTE esc_code);
 void atari_sync(void);
 
 #endif
 
 /*
 $Log$
+Revision 1.20  2001/10/03 16:39:54  fox
+rewritten escape codes handling
+
 Revision 1.19  2001/09/22 09:21:33  fox
 declared nframes and deltatime, AKEY_SHFT etc. moved to input.h
 
