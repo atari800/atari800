@@ -1,4 +1,4 @@
-Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.0.7
+Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.2.0
 --------------------------------------------------------------------
 
     Copyright (C) 1995 David Firth. E-Mail: david@signus.demon.co.uk
@@ -8,7 +8,7 @@ Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.0.7
     the Free Software Foundation; either version 1, or (at your option)
     any later version.
 
-This is the version 1.0.7 of my Atari 800, 800XL, 130XE and 5200 emulator
+This is the version 1.2.0 of my Atari 800, 800XL, 130XE and 5200 emulator
 for Unix, Amiga, MS-DOS and Atari TT/Falcon. My main objective
 is to create a freely distributable portable emulator (i.e. with source
 code available). It can be configured to run in the following ways :-
@@ -21,6 +21,7 @@ code available). It can be configured to run in the following ways :-
  	6. MS-DOS
 	7. Atari Falcon/TT and compatible machines
 	8. MS Windows 9x
+	9. SDL
 
 The basic mode is only useful for running programs such as MAC65,
 Atari Basic etc. I have had this version running on Linux,
