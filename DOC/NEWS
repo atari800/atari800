@@ -1,3 +1,8 @@
+* New sound core and 16 bit sound support -- high sound quality but slower.
+  Use -bit16 option to enable 16 bit sound and -quality <level> to set sound
+  quality (level > 0 enables new sound core).
+  Consult port specific doc for command line details.
+
 Version 1.2.5 (2002/12/02)
 
 * UI - the SpaceBar in disk management switches between the RW and RO flags
