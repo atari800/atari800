@@ -1,5 +1,5 @@
-#ifndef _SCREEN_H_
-#define _SCREEN_H_
+#ifndef _SCREEN_WIN32_H_
+#define _SCREEN_WIN32_H_
 
 #include "atari.h"
 
