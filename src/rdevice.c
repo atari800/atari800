@@ -1,19 +1,53 @@
-/* Originally From Closer To Home (Tom Hunt) */
-// 2003.04.03 cmartin@ti.com - Added connecting Host name lookup and port changing as well as CONNECT_STRING changing...
-// 2003.04.03 cmartin@ti.com - Added setsockopt SO_REUSEADDR for socket to allow reconnections
-// 2003.04.05 cmartin@ti.com - Added sighandler for catching SIGPIPE error...can get this and cause the emu to crash if the other end disconnects prematurely...
-// 2003.04.06 cmartin@ti.com - Added translation on/off and line feeds
-//                           - Fixed IP address lookup (print ip address if lookup fails...)
-// 2003.04.07 cmartin@ti.com - Added Local echo when not connected.
-// 2003.04.17 cmartin@ti.com - Added Telnet escape sequence parsing for connecting to telnet
+/*
+ * rdevice.c - Atari850 emulation
+ *
+ * Copyright (c) ???? Tom Hunt, Chris Martin
+ * Copyright (c) 2003 Atari800 development team (see DOC/CREDITS)
+ *
+ * This file is part of the Atari800 emulator project which emulates
+ * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
+ *
+ * Atari800 is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Atari800 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Atari800; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
 
-// TODO: Add serial reads/write to tty
-//       create a new socket and a buffer for each port number....
-//       non-concurrent mode
-// Dialing out via telnet:
-// Type "ATDL" to toggle Linefeeds on/off (normally off)
-// Type "ATDI <hostname> <port>" example: "ATDI localhost 23"
-// if the port is omitted, then 23 is assumed.
+/* Originally From Closer To Home (Tom Hunt) */
+
+/* 2003.04.03 cmartin@ti.com - Added connecting Host name lookup and port
+                               changing as well as CONNECT_STRING changing...
+   2003.04.03 cmartin@ti.com - Added setsockopt SO_REUSEADDR for socket
+                               to allow reconnections
+   2003.04.05 cmartin@ti.com - Added sighandler for catching SIGPIPE error...
+                               can get this and cause the emu to crash if the
+                               other end disconnects prematurely...
+   2003.04.06 cmartin@ti.com - Added translation on/off and line feeds
+                             - Fixed IP address lookup (print ip address if
+                                                        lookup fails...)
+   2003.04.07 cmartin@ti.com - Added Local echo when not connected.
+   2003.04.17 cmartin@ti.com - Added Telnet escape sequence parsing
+                               for connecting to telnet
+*/
+
+/*
+ TODO: Add serial reads/write to tty
+       create a new socket and a buffer for each port number....
+       non-concurrent mode
+ Dialing out via telnet:
+ Type "ATDL" to toggle Linefeeds on/off (normally off)
+ Type "ATDI <hostname> <port>" example: "ATDI localhost 23"
+ if the port is omitted, then 23 is assumed.
+*/
 
 #include    <stdio.h>
 #include    <stdlib.h>
@@ -23,8 +57,6 @@
 #include    <time.h>
 #include    <errno.h>
 #include    <unistd.h>
-
-
 
 #include <sys/stat.h>
 
