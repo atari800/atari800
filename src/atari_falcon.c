@@ -122,7 +122,7 @@ static int LED_timeout = 0;
 
 /* -------------------------------------------------------------------------- */
 
-static int consol;
+// static int consol;
 static int trig0;
 static int stick0;
 static int joyswap = FALSE;
@@ -417,7 +417,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	key_tab = Keytbl(-1, -1, -1);
 
-	consol = 7;
+	// consol = 7;
 
 	CPU_Initialise();
 
@@ -707,17 +707,17 @@ int Atari_Keyboard(void)
 
 
 	if (key_buf[0x3c])	/* F2 */
-		consol &= 0x03;	/* OPTION key ON */
+		key_consol &= ~CONSOL_OPTION;	/* OPTION key ON */
 	else
-		consol |= 0x04;	/* OPTION key OFF */
+		key_consol |= CONSOL_OPTION;	/* OPTION key OFF */
 	if (key_buf[0x3d])	/* F3 */
-		consol &= 0x05;	/* SELECT key ON */
+		key_consol &= ~CONSOL_SELECT;	/* SELECT key ON */
 	else
-		consol |= 0x02;	/* SELECT key OFF */
+		key_consol |= CONSOL_SELECT;	/* SELECT key OFF */
 	if (key_buf[0x3e])	/* F4 */
-		consol &= 0x06;	/* START key ON */
+		key_consol &= ~CONSOL_START;	/* START key ON */
 	else
-		consol |= 0x01;	/* START key OFF */
+		key_consol |= CONSOL_START;	/* START key OFF */
 
 	if (scancode) {
 		/* read ASCII code of pressed key */
@@ -1203,12 +1203,6 @@ int Atari_POT(int num)
 
 /* -------------------------------------------------------------------------- */
 
-int Atari_CONSOL(void)
-{
-	return consol;
-}
-
-/* -------------------------------------------------------------------------- */
 int Atari_PEN(int vertical)
 {
 	return vertical ? 0xff : 0;
