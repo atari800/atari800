@@ -920,37 +920,13 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 					keyboard_consol = 7;
 					break;
 
-		case	0x55:	/* F6 */
-					keycode = AKEY_PIL;
-					break;
-
-		case	0x56:
-					keycode = AKEY_BREAK;
-					break;
-
-		case	0x59:
-					keycode = AKEY_NONE;
-					break;
-
-		case	0x5f:	/* HELP */
-					keycode = AKEY_HELP;
-					break;
-
-		case	CURSORLEFT:
-					keycode = AKEY_LEFT;
-					break;
-
-		case	CURSORUP:
-					keycode = AKEY_UP;
-					break;
-
-		case	CURSORRIGHT:
-					keycode = AKEY_RIGHT;
-					break;
-
-		case	CURSORDOWN:
-					keycode = AKEY_DOWN;
-					break;
+		case	0x56: keycode = AKEY_BREAK; break; /* F7 */
+		case	0x59: keycode = AKEY_NONE; break;
+		case	0x5f: keycode = AKEY_HELP; 	break;
+		case	CURSORLEFT: keycode = AKEY_LEFT; break;
+		case	CURSORUP: keycode = AKEY_UP; break;
+ 		case	CURSORRIGHT: keycode = AKEY_RIGHT; break;
+		case	CURSORDOWN: keycode = AKEY_DOWN; break;
 
 		default:
 					{
@@ -1245,7 +1221,9 @@ void Atari_DisplayScreen(UBYTE *screen)
 **************************************************************************/
 int Atari_Keyboard (void)
 {
-	int keycode=-1;
+	static int old_keycode = -1;
+
+	int keycode = -1;
 
 	struct IntuiMessage *imsg;
 
@@ -1301,7 +1279,11 @@ int Atari_Keyboard (void)
 
 			default: break;
 		}
+		
+		old_keycode = keycode;
 	}
+
+	if (keycode == -1) keycode = old_keycode;
 
 	if (menu_consol != 7)
 	{
@@ -1785,6 +1767,7 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		keycode = Atari_Keyboard();
+
 		if (keycode == AKEY_EXIT) break;
 
 		if (ScreenIsCustom != UseCustomScreen)
