@@ -171,7 +171,8 @@ struct Hook settings_screenmode_stophook;
 #endif
 /* Emulation */
 
-static int consol;
+static int menu_consol;
+static int keyboard_consol;
 static int trig0;
 static int stick0;
 
@@ -1192,20 +1193,10 @@ int HandleMenu(UWORD code)
 							}
 							break;
 
-				case	MEN_PROJECT_RECORDSOUND:
-							Project_RecordSound();
-							break;
-				
-				case	MEN_PROJECT_SOUNDPATH:
-							Project_SelectSoundPath();
-							break;
-
-				case	MEN_PROJECT_ICONIFY:
-							Iconify();
-							return -1;
-
-				case	MEN_PROJECT_HELP:
-							break;
+				case	MEN_PROJECT_RECORDSOUND: Project_RecordSound(); break;
+				case	MEN_PROJECT_SOUNDPATH: Project_SelectSoundPath(); break;
+				case	MEN_PROJECT_ICONIFY: Iconify(); return -1;
+				case	MEN_PROJECT_HELP: break;
 
 				case	MEN_PROJECT_QUIT:
 							if(DisplayYesNoWindow())
@@ -1217,7 +1208,7 @@ int HandleMenu(UWORD code)
 				case	MEN_SYSTEM_BOOT:
 							if(InsertDisk (1))
 							{
-								consol = 7;
+								menu_consol = 7;
 								keycode = AKEY_COLDSTART;
 							}
 							break;
@@ -1346,21 +1337,21 @@ int HandleMenu(UWORD code)
 
 				case	MEN_CONSOLE_RESET:
 							keycode = AKEY_WARMSTART;
-							consol = 7;
+							menu_consol = 7;
 							break;
 
 				case	MEN_CONSOLE_OPTION:
-							consol &= 0x03;
+							menu_consol &= 0x03;
 							keycode = AKEY_NONE;
 							break;
 
 				case	MEN_CONSOLE_SELECT:
-							consol &= 0x05;
+							menu_consol &= 0x05;
 							keycode = AKEY_NONE;
 							break;
 
 				case	MEN_CONSOLE_START:
-							consol &= 0x06;
+							menu_consol &= 0x06;
 							keycode = AKEY_NONE;
 							break;
 
@@ -1374,12 +1365,12 @@ int HandleMenu(UWORD code)
 
 				case	MEN_CONSOLE_COLDSTART:
 							keycode = AKEY_COLDSTART;
-							consol = 7;
+							menu_consol = 7;
 							break;
 
 				case	MEN_SETTINGS_FRAMERATE:
 							{
-								if(mi->Flags & CHECKED) ShowFPS = TRUE;
+								if (mi->Flags & CHECKED) ShowFPS = TRUE;
 								else ShowFPS = FALSE;
 							}
 							break;
@@ -1416,33 +1407,13 @@ int HandleVanillakey(int code)
 
 	switch (code)
 	{
-		case	0x01:
-					keycode = AKEY_CTRL_a;
-					break;
-
-		case	0x02:
-					keycode = AKEY_CTRL_b;
-					break;
-
-		case	0x03:
-					keycode = AKEY_CTRL_c;
-					break;
-
-		case	0x04:
-					keycode = AKEY_CTRL_d;
-					break;
-
-		case	0x05:
-					keycode = AKEY_CTRL_E;
-					break;
-
-		case	0x06:
-					keycode = AKEY_CTRL_F;
-					break;
-
-		case	0x07:
-					keycode = AKEY_CTRL_G;
-					break;
+		case	0x01: keycode = AKEY_CTRL_a; break;
+		case	0x02: keycode = AKEY_CTRL_b; break;
+		case	0x03: keycode = AKEY_CTRL_c; break;
+		case	0x04: keycode = AKEY_CTRL_d; break;
+		case	0x05: keycode = AKEY_CTRL_E; break;
+		case	0x06: keycode = AKEY_CTRL_F; break;
+		case	0x07: keycode = AKEY_CTRL_G; break;
 
 		/*
 							case 0x08 :
@@ -1454,117 +1425,47 @@ int HandleVanillakey(int code)
 								keycode = AKEY_CTRL_I;
 								break;
 		*/
-		case	0x0a:
-					keycode = AKEY_CTRL_J;
-					break;
-		case	0x0b:
-					keycode = AKEY_CTRL_K;
-					break;
-		case	0x0c:
-					keycode = AKEY_CTRL_L;
-					break;
+		case	0x0a: keycode = AKEY_CTRL_J; break;
+		case	0x0b: keycode = AKEY_CTRL_K; break;
+		case	0x0c: keycode = AKEY_CTRL_L; break;
 
 		/*
 							case 0x0d :
 								keycode = AKEY_CTRL_M;
 								break;
 		*/
-		case	0x0e :
-					keycode = AKEY_CTRL_N;
-					break;
-		case	0x0f :
-					keycode = AKEY_CTRL_O;
-					break;
-		case	0x10 :
-					keycode = AKEY_CTRL_P;
-					break;
-		case	0x11 :
-					keycode = AKEY_CTRL_Q;
-					break;
-		case	0x12 :
-					keycode = AKEY_CTRL_R;
-					break;
-		case	0x13 :
-					keycode = AKEY_CTRL_S;
-					break;
-		case	0x14 :
-					keycode = AKEY_CTRL_T;
-					break;
-		case	0x15 :
-					keycode = AKEY_CTRL_U;
-					break;
-		case	0x16 :
-					keycode = AKEY_CTRL_V;
-					break;
-		case	0x17 :
-					keycode = AKEY_CTRL_W;
-					break;
-		case	0x18 :
-					keycode = AKEY_CTRL_X;
-					break;
-		case	0x19 :
-					keycode = AKEY_CTRL_Y;
-					break;
-		case	0x1a :
-					keycode = AKEY_CTRL_Z;
-					break;
-		case	8 :
-					keycode = AKEY_BACKSPACE;
-					break;
-		case	13 :
-					keycode = AKEY_RETURN;
-					break;
-		case	0x1b :
-					keycode = AKEY_ESCAPE;
-					break;
-		case	'0' :
-					keycode = AKEY_0;
-					break;
-		case	'1' :
-					keycode = AKEY_1;
-					break;
-		case	'2':
-					keycode = AKEY_2;
-					break;
-		case	'3':
-					keycode = AKEY_3;
-					break;
-		case	'4':
-					keycode = AKEY_4;
-					break;
-		case	'5':
-					keycode = AKEY_5;
-					break;
-		case	'6':
-					keycode = AKEY_6;
-					break;
-		case	'7':
-					keycode = AKEY_7;
-					break;
-		case	'8':
-					keycode = AKEY_8;
-					break;
-		case	'9':
-					keycode = AKEY_9;
-					break;
-		case	'A': case	'a':
-					keycode = AKEY_a;
-					break;
-		case	'B' : case 'b' :
-					keycode = AKEY_b;
-					break;
-		case	'C' : case 'c' :
-					keycode = AKEY_c;
-					break;
-		case	'D' : case 'd' :
-					keycode = AKEY_d;
-					break;
-		case	'E' : case 'e' :
-					keycode = AKEY_e;
-					break;
-		case	'F' : case 'f' :
-					keycode = AKEY_f;
-					break;
+		case	0x0e: keycode = AKEY_CTRL_N; break;
+		case	0x0f: keycode = AKEY_CTRL_O; break;
+		case	0x10: keycode = AKEY_CTRL_P; break;
+		case	0x11: keycode = AKEY_CTRL_Q; break;
+		case	0x12: keycode = AKEY_CTRL_R; break;
+		case	0x13: keycode = AKEY_CTRL_S; break;
+		case	0x14: keycode = AKEY_CTRL_T; break;
+		case	0x15: keycode = AKEY_CTRL_U; break;
+		case	0x16: keycode = AKEY_CTRL_V; break;
+		case	0x17: keycode = AKEY_CTRL_W; break;
+		case	0x18: keycode = AKEY_CTRL_X; break;
+		case	0x19: keycode = AKEY_CTRL_Y; break;
+		case	0x1a: keycode = AKEY_CTRL_Z; break;
+		case	8:    keycode = AKEY_BACKSPACE; break;
+		case	13:   keycode = AKEY_RETURN; break;
+		case	0x1b: keycode = AKEY_ESCAPE; break;
+		case	'0':  keycode = AKEY_0; break;
+		case	'1':  keycode = AKEY_1; break;
+		case	'2':  keycode = AKEY_2; break;
+		case	'3':  keycode = AKEY_3; break;
+		case	'4':  keycode = AKEY_4; break;
+		case	'5':  keycode = AKEY_5; break;
+		case	'6':  keycode = AKEY_6; break;
+		case	'7':  keycode = AKEY_7; break;
+		case	'8':  keycode = AKEY_8; break;
+		case	'9':  keycode = AKEY_9; break;
+		case	'A': case	'a': keycode = AKEY_a; break;
+		case	'B' : case 'b' : keycode = AKEY_b; break;
+		case	'C' : case 'c' : keycode = AKEY_c; break;
+		case	'D' : case 'd' : keycode = AKEY_d; break;
+		case	'E' : case 'e' : keycode = AKEY_e; break;
+		case	'F' : case 'f' : keycode = AKEY_f; break;
 		case	'G' : case 'g' :
 					keycode = AKEY_g;
 					break;
@@ -1735,44 +1636,18 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 
 	switch (code)
 	{
-		case	0x50:	/* F1 */
-					keycode = AKEY_UI;
-					break;		
-
-		case	0x51:	/* F2 pressed */
-					consol &= 0x03;
-					keycode = AKEY_NONE;
-					break;
-
-		case	0xd1:	/* F2 released */
-					consol |= 0x04;
-					keycode = AKEY_NONE;
-					break;
-
-		case	0x52:	/* F3 pressed */
-					consol &= 0x05;
-					keycode = AKEY_NONE;
-					break;
-
-		case	0xd2:	/* F3 released */
-					consol |= 0x02;
-					keycode = AKEY_NONE;
-					break;
-
-		case	0x53:	/* F4 pressed */
-					consol &= 0x06;
-					keycode = AKEY_NONE;
-					break;
-
-		case	0xd3:	/* F4 released */
-					consol |= 0x01;
-					keycode = AKEY_NONE;
-					break;
+		case	0x50: keycode = AKEY_UI; break; /* F1 */
+		case	0x51: keyboard_consol &= 0x03; keycode = AKEY_NONE; break; /* F2 pressed */
+		case	0xd1: keyboard_consol |= 0x04; keycode = AKEY_NONE; break; /* F2 released */
+		case	0x52: keyboard_consol &= 0x05; keycode = AKEY_NONE; break; /* F3 pressed */
+		case	0xd2: keyboard_consol |= 0x02; keycode = AKEY_NONE; break; /* F3 released */
+		case	0x53: keyboard_consol &= 0x06; keycode = AKEY_NONE; break; /* F4 pressed */
+		case	0xd3: keyboard_consol |= 0x01; keycode = AKEY_NONE; break; /* F4 released */
 
 		case	0x54:	/* F5 */
-					if(qual & (IEQUALIFIER_RSHIFT | IEQUALIFIER_RSHIFT)) keycode = AKEY_COLDSTART;
+					if (qual & (IEQUALIFIER_RSHIFT | IEQUALIFIER_RSHIFT)) keycode = AKEY_COLDSTART;
 					else keycode = AKEY_WARMSTART;
-					consol = 7;
+					keyboard_consol = 7;
 					break;
 
 		case	0x55:	/* F6 */
@@ -1819,7 +1694,7 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 						ev.ie_EventAddress = (APTR) *((ULONG *) iaddress);
 						ev.ie_NextEvent = NULL;
 
-						if( MapRawKey( &ev, &key, 1, NULL ))
+						if (MapRawKey( &ev, &key, 1, NULL ))
 						{
 							keycode = HandleVanillakey(key);
 						}
@@ -2028,7 +1903,8 @@ void Atari_Initialise (int *argc, unsigned char **argv)
 
 						trig0 = 1;
 						stick0 = 15;
-						consol = 7;
+						menu_consol = 7;
+						keyboard_consol = 7;
 					}
 				}
 			}
@@ -2107,7 +1983,7 @@ int Atari_Keyboard (void)
 
 	struct IntuiMessage *imsg;
 
-	while (( imsg = (struct IntuiMessage*) GetMsg (WindowMain->UserPort)))
+	while ((imsg = (struct IntuiMessage*) GetMsg (WindowMain->UserPort)))
 	{
 		ULONG cl = imsg->Class;
 		UWORD code = imsg->Code;
@@ -2187,6 +2063,12 @@ int Atari_Keyboard (void)
 						break;
 		}
 	}
+
+	if (menu_consol != 7)
+	{
+		key_consol = menu_consol;
+		menu_consol = 7;
+	} else key_consol = keyboard_consol;
 
 	return keycode;
 }
@@ -2291,10 +2173,10 @@ int Atari_POT (int num)
  Handle the Console Keys. Note that all the work is done
  in Atari_Keyboard
 **************************************************************************/
-int Atari_CONSOL (void)
+/*static int Atari_CONSOL (void)
 {
 	return consol;
-}
+}*/
 
 /**************************************************************************
  ...
@@ -2485,7 +2367,7 @@ VOID SetupDisplay(void)
 	UWORD ScreenWidth, ScreenHeight, ScrDepth;
 	int i;
 
-	STATIC WORD ScreenPens[13] =
+	STATIC WORD ScreenPens[] =
 	{
 		15, /* Unknown */
 		15, /* Unknown */
@@ -2496,7 +2378,7 @@ VOID SetupDisplay(void)
 		0, /* Windows titlebar text when active */
 		4, /* Windows titlebar when inactive */
 		15, /* Unknown */
-		0, /* Menubar text */
+		1, /* Menubar text */
 		15, /* Menubar */
 		0, /* Menubar base */
 		-1
@@ -2505,6 +2387,7 @@ VOID SetupDisplay(void)
 	if( ScreenType == CUSTOMSCREEN)
 	{
 		ULONG ScreenDisplayID;
+		static ULONG colors32[3*256+1];
 
 		ScreenType = CUSTOMSCREEN;
 
@@ -2514,7 +2397,22 @@ VOID SetupDisplay(void)
 		ScrDepth = 8;
 
 		ScreenDisplayID = DisplayID;
-		if(UseBestID) ScreenDisplayID = GetBestID(ScreenWidth,ScreenHeight,ScrDepth);
+		if (UseBestID) ScreenDisplayID = GetBestID(ScreenWidth,ScreenHeight,ScrDepth);
+
+		colors32[0] = 256 << 16;
+		for (i=0;i<256;i++)
+		{
+			int rgb = colortable[i];
+			int red,green,blue;
+			
+			red = rgb & 0x00ff0000;
+			green = rgb & 0x0000ff00;
+			blue = rgb & 0x000000ff;
+
+			colors32[1+i*3] = red | (red << 8) | (red << 16) | (red << 24);
+			colors32[2+i*3] = green | (green << 8) | (green << 16) | (green << 24);
+			colors32[3+i*3] = blue | (blue << 8) | (blue << 16) | (blue << 24);
+		}
 
 		ScreenMain = OpenScreenTags( NULL,
 									SA_Left, 0,
@@ -2526,24 +2424,11 @@ VOID SetupDisplay(void)
 									SA_Quiet, TRUE,
 									SA_Type, CUSTOMSCREEN,
 									SA_AutoScroll, TRUE,
-									SA_LikeWorkbench, TRUE,
-									SA_DisplayID,ScreenDisplayID,
+									SA_DisplayID, ScreenDisplayID,
+									SA_Colors32, colors32,
+									SA_Exclusive, TRUE,
+									SA_OffScreenDragging, TRUE,
 									TAG_DONE);
-
-		if( ScreenMain )
-		{
-			for (i=0;i<256;i++)
-			{
-				int rgb = colortable[i];
-				int red,green,blue;
-			
-				red = (rgb & 0x00ff0000) >> 20;
-				green = (rgb & 0x0000ff00) >> 12;
-				blue = (rgb & 0x000000ff) >> 4;
-			
-				SetRGB4 (&ScreenMain->ViewPort, i, red, green, blue);
-			}
-		}
 	}	else
 	{
 		ScreenWidth = ATARI_WIDTH;
@@ -2551,7 +2436,7 @@ VOID SetupDisplay(void)
 
 		if ((ScreenMain = LockPubScreen(NULL)))
 		{
-			if((colortable8 = (UBYTE*)AllocVec(256*sizeof(UBYTE),0)))
+			if ((colortable8 = (UBYTE*)AllocVec(256*sizeof(UBYTE),0)))
 			{
 				LONG i;
 				for(i=0;i<256;i++)
@@ -2567,17 +2452,16 @@ VOID SetupDisplay(void)
 
 					colortable8[i] = ObtainBestPenA(ScreenMain->ViewPort.ColorMap,red,green,blue,NULL);
 				}
-				if((tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),0)))
+				if ((tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),0)))
 				{
 				}
 			}
 		}
 	}
 
-	if( ScreenMain )
+	if (ScreenMain)
 	{
-		VisualInfoMain = GetVisualInfoA( ScreenMain, NULL );
-		if( VisualInfoMain )
+		if ((VisualInfoMain = GetVisualInfoA( ScreenMain, NULL )))
 		{
 			MenuMain = CreateMenus( MenuEntries,
 											GTMN_NewLookMenus, TRUE,
@@ -2653,15 +2537,34 @@ VOID Iconify(void)
 **************************************************************************/
 int main(int argc, char **argv)
 {
-	int keycode = AKEY_NONE;
+	int keycode;
 
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 20;
 
-	while (keycode != AKEY_EXIT)
+	while (1)
 	{
 		keycode = Atari_Keyboard();
+		if (keycode == AKEY_EXIT) break;
+		switch (keycode)
+		{
+				case AKEY_UI:
+					Sound_Pause();
+					ui((UBYTE *)atari_screen);
+					Sound_Continue();
+					break;
+
+				case AKEY_COLDSTART:
+					Coldstart();
+					break;
+
+				case AKEY_WARMSTART:
+					Warmstart();
+					break;
+
+		}
+		key_code = keycode;
 
 		Atari800_Frame(EMULATE_FULL);
 

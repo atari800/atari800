@@ -8,7 +8,7 @@ MKDIR = mkdir
 # -------------------------------------------------------------
 
 TARGET = Atari800
-CFLAGS = -I$(SDK_INCLUDE) -I. -I.. -Wall
+CFLAGS = -I$(SDK_INCLUDE) -I$(AHI_INCLUDE) -I. -I.. -Wall
 LIBS = -lm
 
 AMIGASRCS=\

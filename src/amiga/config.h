@@ -16,6 +16,7 @@
 /*#define SET_LED*/
 
 #define SOUND
+#define CONSOLE_SOUND
 
 #define USE_NEW_BINLOAD
 #define NO_GOTO
