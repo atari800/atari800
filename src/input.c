@@ -29,7 +29,7 @@ int mouse_delta_x = 0;
 int mouse_delta_y = 0;
 int mouse_buttons = 0;
 int mouse_speed = 3;
-int mouse_pot_min = 0;
+int mouse_pot_min = 1;
 int mouse_pot_max = 228;
 /* There should be UI or options for light pen/gun offsets.
    Below are best offsets for different programs:
