@@ -122,7 +122,7 @@ int RtConfigLoad(char *rtconfig_filename)
 
 		fgets(string, sizeof(string), fp);
 
-		printf("Configuration Created by %s", string);
+		fprintf(stderr, "Configuration Created by %s", string);
 
 		while (fgets(string, sizeof(string), fp)) {
 			RemoveLF(string);
