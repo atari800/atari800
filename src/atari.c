@@ -59,7 +59,7 @@ int tv_mode = TV_PAL;
 
 int verbose = FALSE;
 double fps;
-int nframes;
+int nframes = 0;
 static double frametime = 0.1;	/* measure time between two Antic runs */
 static int emu_too_fast = 0;
 
@@ -67,7 +67,6 @@ int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not availab
 int pil_on = FALSE;
 
 double deltatime;
-int draw_display=1;		/* Draw actualy generated screen */
 
 void Atari800_Hardware(void);
 
@@ -192,35 +191,16 @@ int Atari800_InitialiseMachine(void)
 	return TRUE;
 }
 
-#ifdef linux
-#ifdef REALTIME
-#include <sched.h>
-#endif /* REALTIME */
-#endif /* linux */
-
-int main(int argc, char **argv)
+int Atari800_Initialise(int *argc, char *argv[])
 {
 	int error = FALSE;
 	int diskno = 1;
 	int i, j;
 	char *run_direct=NULL;
-#ifdef linux
-#ifdef REALTIME
-	struct sched_param sp;
-#endif /* REALTIME */
-#endif /* linux */
-
 	char *rtconfig_filename = NULL;
 	int config = FALSE;
 
-#ifdef linux
-#ifdef REALTIME
-	sp.sched_priority = sched_get_priority_max(SCHED_RR);
-	sched_setscheduler(getpid(),SCHED_RR, &sp);
-#endif /* REALTIME */
-#endif /* linux */
-
-	for (i = j = 1; i < argc; i++) {
+	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-configure") == 0)
 			config = TRUE;
 		else if (strcmp(argv[i], "-config") == 0)
@@ -235,7 +215,7 @@ int main(int argc, char **argv)
 			argv[j++] = argv[i];
 	}
 
-	argc = j;
+	*argc = j;
 
 	if (!RtConfigLoad(rtconfig_filename))
 		config = TRUE;
@@ -249,7 +229,7 @@ int main(int argc, char **argv)
 		RtConfigSave();
 	}
 
-	for (i = j = 1; i < argc; i++) {
+	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-atari") == 0) {
 			if (machine_type != MACHINE_OSA) {
 				machine_type = MACHINE_OSB;
@@ -357,7 +337,7 @@ int main(int argc, char **argv)
 			argv[j++] = argv[i];
 	}
 
-	argc = j;
+	*argc = j;
 
 	if (tv_mode == TV_PAL)
 	{
@@ -368,12 +348,12 @@ int main(int argc, char **argv)
 		deltatime = (1.0 / 60.0);
 	}
 
-	Palette_Initialise(&argc, argv);
-	Device_Initialise(&argc, argv);
-	RTIME_Initialise(&argc, argv);
-	SIO_Initialise (&argc, argv);
-	CASSETTE_Initialise(&argc, argv);
-	Atari_Initialise(&argc, argv);	/* Platform Specific Initialisation */
+	Palette_Initialise(argc, argv);
+	Device_Initialise(argc, argv);
+	RTIME_Initialise(argc, argv);
+	SIO_Initialise (argc, argv);
+	CASSETTE_Initialise(argc, argv);
+	Atari_Initialise(argc, argv);	/* Platform Specific Initialisation */
 
 	if (!atari_screen) {
 		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
@@ -393,16 +373,16 @@ int main(int argc, char **argv)
 	 * Initialise Custom Chips
 	 */
 
-	ANTIC_Initialise(&argc, argv);
-	GTIA_Initialise(&argc, argv);
-	PIA_Initialise(&argc, argv);
-	POKEY_Initialise(&argc, argv);
+	ANTIC_Initialise(argc, argv);
+	GTIA_Initialise(argc, argv);
+	PIA_Initialise(argc, argv);
+	POKEY_Initialise(argc, argv);
 
 	/*
 	 * Any parameters left on the command line must be disk images.
 	 */
 
-	for (i = 1; i < argc; i++) {
+	for (i = 1; i < *argc; i++) {
 		if (!SIO_Mount(diskno++, argv[i], FALSE)) {
 			Aprint("Disk File %s not found", argv[i]);
 			error = TRUE;
@@ -468,10 +448,7 @@ int main(int argc, char **argv)
 	if (run_direct != NULL)
 		BIN_loader(run_direct);
 
-	Atari800_Hardware();
-	Aprint("Fatal error: Atari800_Hardware() returned");
-	Atari800_Exit(FALSE);
-	return 0;
+	return TRUE;
 }
 
 int Atari800_Exit(int run_monitor)
@@ -674,6 +651,7 @@ void atari_sync(void)
 void Atari800_Frame(int mode)
 {
 	INPUT_Frame();
+	GTIA_Frame();
 
 #ifdef SOUND
 	Sound_Update();
@@ -681,19 +659,16 @@ void Atari800_Frame(int mode)
 
 	switch (mode) {
 	case EMULATE_BASIC:
-		draw_display = 0;
 		for (ypos = 0; ypos < max_ypos; ypos++) {
 			GO(LINE_C);
 			xpos -= LINE_C - DMAR;
 		}
 		break;
 	case EMULATE_NO_SCREEN:
-		draw_display = 0;
-		ANTIC_RunDisplayList();
+		ANTIC_Frame(FALSE);
 		break;
 	case EMULATE_FULL:
-		draw_display = 1;
-		ANTIC_RunDisplayList();
+		ANTIC_Frame(TRUE);
 		Update_LED();
 #ifdef SNAILMETER
 		if (!emu_too_fast)
@@ -701,102 +676,8 @@ void Atari800_Frame(int mode)
 #endif
 		break;
 	}
-}
-
-void Atari800_Hardware(void)
-{
-	nframes = 0;
-
-	while (TRUE) {
-#ifndef BASIC
-		static int test_val = 0;
-		int keycode;
-
-		draw_display=1;
-
-		keycode = Atari_Keyboard();
-
-		switch (keycode) {
-		case AKEY_COLDSTART:
-			Coldstart();
-			break;
-		case AKEY_WARMSTART:
-			Warmstart();
-			break;
-		case AKEY_EXIT:
-			Atari800_Exit(FALSE);
-			exit(1);
-		case AKEY_BREAK:
-			key_break = 1;
-			break;
-		case AKEY_UI:
-#ifdef SOUND
-			Sound_Pause();
-#endif
-			ui((UBYTE *)atari_screen);
-#ifdef SOUND
-			Sound_Continue();
-#endif
-			break;
-		case AKEY_PIL:
-			if (pil_on)
-				DisablePILL();
-			else
-				EnablePILL();
-			break;
-		case AKEY_SCREENSHOT:
-			Save_PCX((UBYTE *)atari_screen);
-			break;
-		case AKEY_SCREENSHOT_INTERLACE:
-			Save_PCX_interlaced();
-			break;
-		case AKEY_NONE:
-			key_break = 0;
-			key_code = AKEY_NONE;
-			break;
-		default:
-			key_code = keycode;
-			break;
-		}
-#endif	/* !BASIC */
-
-		/*
-		 * Generate Screen
-		 */
-
-#ifndef BASIC
-#ifndef SVGA_SPEEDUP
-		if (++test_val == refresh_rate) {
-#endif
-			Atari800_Frame(EMULATE_FULL);
-#ifndef DONT_SYNC_WITH_HOST
-			atari_sync(); /* here seems to be the best place to sync */
-#endif
-			Atari_DisplayScreen((UBYTE *) atari_screen);
-#ifndef SVGA_SPEEDUP
-			test_val = 0;
-		}
-		else {
-#ifdef VERY_SLOW
-			Atari800_Frame(EMULATE_BASIC);
-#else	/* VERY_SLOW */
-			Atari800_Frame(EMULATE_NO_SCREEN);
-#ifndef DONT_SYNC_WITH_HOST
-			atari_sync();
-#endif
-			Atari_DisplayScreen((UBYTE *) atari_screen);
-#endif	/* VERY_SLOW */
-		}
-#endif	/* !SVGA_SPEEDUP */
-#else	/* !BASIC */
-		Atari800_Frame(EMULATE_BASIC);
-#ifndef	DONT_SYNC_WITH_HOST
-		atari_sync();
-#endif
-#endif	/* !BASIC */
-
-		nframes++;
-	}
+	POKEY_Frame();
+	nframes++;
 }
 
 int zlib_capable(void)
@@ -934,6 +815,10 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.22  2001/09/21 17:09:05  fox
+main() is now in platform-dependent code, should call Atari800_Initialise
+and Atari800_Frame
+
 Revision 1.21  2001/09/21 17:00:57  fox
 part of keyboard handling moved to INPUT_Frame()
 
