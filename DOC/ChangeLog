@@ -1,3 +1,6 @@
+2002-06-27  Piotr Wiszowaty  <pwiszowa@elka.pw.edu.pl>
+* atari_sdl.c: added LPTjoy support for Linux
+
 2002-06-23  Petr Stehlik  <pstehlik@sophics.cz>
 * OK, the "-palette" patch from Andrew was completely wrong. I fixed it
   the right way and when I was at it I also moved the "-palette" command

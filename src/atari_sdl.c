@@ -93,6 +93,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <linux/lp.h>
+
 // Atari800 includes
 #include "config.h"
 #include "input.h"
@@ -154,6 +160,9 @@ int SDL_JOY_1_LEFTDOWN = SDLK_z;
 int SDL_JOY_1_RIGHTDOWN = SDLK_c;
 
 // real joysticks
+
+int fd_joystick0 = -1;
+int fd_joystick1 = -1;
 
 SDL_Joystick *joystick0 = NULL;
 SDL_Joystick *joystick1 = NULL;
@@ -756,6 +765,7 @@ int Atari_Keyboard(void)
 	return AKEY_NONE;
 }
 
+/*
 void Init_Joysticks()
 {
 	joystick0 = SDL_JoystickOpen(0);
@@ -774,6 +784,63 @@ void Init_Joysticks()
 		joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
 	}
 }
+*/
+
+void Init_Joysticks(int *argc, char *argv[])
+{
+	char *lpt_joy0 = NULL;
+	char *lpt_joy1 = NULL;
+	int i;
+	int j;
+	
+	for (i=j=1; i<*argc; i++) {
+		if (!strcmp(argv[i], "-joy0")) {
+			if (i == *argc - 1) {
+				Aprint("joystick device path missing!");
+				break;
+			}
+			lpt_joy0 = argv[++i];
+		} else if (!strcmp(argv[i], "-joy1")) {
+			if (i == *argc - 1) {
+				Aprint("joystick device path missing!");
+				break;
+			}
+			lpt_joy1 = argv[++i];
+		} else {
+			argv[j++] = argv[i];
+		}
+	}
+	*argc = j;
+	
+	if (lpt_joy0 == NULL) {
+		joystick0 = SDL_JoystickOpen(0);
+		if (joystick0 == NULL) {
+			Aprint("joystick 0 not found");
+		} else {
+			Aprint("joystick 0 found!");
+			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
+			SWAP_JOYSTICKS = 1;	// real joy is STICK(0) and numblock is STICK(1)
+		}
+	} else {				// LPT1 joystick
+		fd_joystick0 = open(lpt_joy0, O_RDONLY);
+		if (fd_joystick0 == -1) perror(lpt_joy0);
+		
+	}
+
+	if (lpt_joy1 == NULL) {
+		joystick1 = SDL_JoystickOpen(1);
+		if (joystick1 == NULL) {
+			Aprint("joystick 1 not found");
+		} else {
+			Aprint("joystick 1 found!");
+			joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
+		}
+	} else {				// LPT2 joystick
+		fd_joystick1 = open(lpt_joy1, O_RDONLY);
+		if (fd_joystick1 == -1) perror(lpt_joy1);
+	}
+}
+
 
 void Atari_Initialise(int *argc, char *argv[])
 {
@@ -821,13 +888,15 @@ void Atari_Initialise(int *argc, char *argv[])
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-rotate90     Display 240x320 screen");
-				Aprint("\t-nojoystick   Disable joystick");
-				Aprint("\t-width <num>  Host screen width");
-				Aprint("\t-height <num> Host screen height");
-				Aprint("\t-bpp <num>    Host color depth");
-				Aprint("\t-fullscreen   Run fullscreen");
-				Aprint("\t-windowed     Run in window");
+				Aprint("\t-rotate90        Display 240x320 screen");
+				Aprint("\t-nojoystick      Disable joystick");
+				Aprint("\t-joy0 <pathname> Select LPTjoy0 device");
+				Aprint("\t-joy1 <pathname> Select LPTjoy0 device");
+				Aprint("\t-width <num>     Host screen width");
+				Aprint("\t-height <num>    Host screen height");
+				Aprint("\t-bpp <num>       Host color depth");
+				Aprint("\t-fullscreen      Run fullscreen");
+				Aprint("\t-windowed        Run in window");
 				return;	/* return early */
 			}
 			argv[j++] = argv[i];
@@ -853,7 +922,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	SDL_Sound_Initialise(argc, argv);
 
 	if (no_joystick == 0)
-		Init_Joysticks();
+		Init_Joysticks(argc, argv);
 
 }
 
@@ -1115,10 +1184,76 @@ int Atari_TRIG(int num)
 	return 0;
 }
 
+int get_SDL_joystick_state(SDL_Joystick *joystick)
+{
+	int x;
+	int y;
+
+	x = SDL_JoystickGetAxis(joystick, 0);
+	y = SDL_JoystickGetAxis(joystick, 1);
+
+	if (x > minjoy) {
+		if (y < -minjoy)
+			return STICK_UR;
+		else if (y > minjoy)
+			return STICK_LR;
+		else
+			return STICK_RIGHT;
+	} else if (x < -minjoy) {
+		if (y < -minjoy)
+			return STICK_UL;
+		else if (y > minjoy)
+			return STICK_LL;
+		else
+			return STICK_LEFT;
+	} else {
+		if (y < -minjoy)
+			return STICK_FORWARD;
+		else if (y > minjoy)
+			return STICK_BACK;
+		else
+			return STICK_CENTRE;
+	}
+}
+
+int get_LPT_joystick_state(int fd)
+{
+	int status;
+
+	ioctl(fd, LPGETSTATUS, &status);
+	status ^= 0x78;
+
+	if (status & 0x40) {			// right
+		if (status & 0x10) {		// up
+			return STICK_UR;
+		} else if (status & 0x20) {	// down
+			return STICK_LR;
+		} else {
+			return STICK_RIGHT;
+		}
+	} else if (status & 0x80) {		// left
+		if (status & 0x10) {		// up
+			return STICK_UL;
+		} else if (status & 0x20) {	// down
+			return STICK_LL;
+		} else {
+			return STICK_LEFT;
+		}
+	} else {
+		if (status & 0x10) {		// up
+			return STICK_FORWARD;
+		} else if (status & 0x20) {	// down
+			return STICK_BACK;
+		} else {
+			return STICK_CENTRE;
+		}
+	}
+}
+
+
 void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 {
 	int stick0, stick1;
-	int x, y;
 	stick0 = STICK_CENTRE;
 	stick1 = STICK_CENTRE;
 
@@ -1176,70 +1311,22 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 	{
 		SDL_JoystickUpdate();
 	}
-	if (joystick0 != NULL) {
-		x = SDL_JoystickGetAxis(joystick0, 0);
-		y = SDL_JoystickGetAxis(joystick0, 1);
-		if (x > minjoy) {
-			if (y < -minjoy)
-				stick0 = STICK_UR;
-			else if (y > minjoy)
-				stick0 = STICK_LR;
-			else
-				stick0 = STICK_RIGHT;
-		}
-		else if (x < -minjoy) {
-			if (y < -minjoy)
-				stick0 = STICK_UL;
-			else if (y > minjoy)
-				stick0 = STICK_LL;
-			else
-				stick0 = STICK_LEFT;
-		}
-		else {
-			if (y < -minjoy)
-				stick0 = STICK_FORWARD;
-			else if (y > minjoy)
-				stick0 = STICK_BACK;
-			else
-				stick0 = STICK_CENTRE;
-		}
-		*s0 = stick0;
-	}
-	if (joystick1 != NULL) {
-		x = SDL_JoystickGetAxis(joystick1, 0);
-		y = SDL_JoystickGetAxis(joystick1, 1);
-		if (x > minjoy) {
-			if (y < -minjoy)
-				stick1 = STICK_UR;
-			else if (y > minjoy)
-				stick1 = STICK_LR;
-			else
-				stick1 = STICK_RIGHT;
-		}
-		else if (x < -minjoy) {
-			if (y < -minjoy)
-				stick1 = STICK_UL;
-			else if (y > minjoy)
-				stick1 = STICK_LL;
-			else
-				stick1 = STICK_LEFT;
-		}
-		else {
-			if (y < -minjoy)
-				stick1 = STICK_FORWARD;
-			else if (y > minjoy)
-				stick1 = STICK_BACK;
-			else
-				stick1 = STICK_CENTRE;
-		}
-		*s1 = stick1;
-	}
+	
+	if (fd_joystick0 != -1)
+		*s0 = get_LPT_joystick_state(fd_joystick0);
+	else if (joystick0 != NULL)
+		*s0 = get_SDL_joystick_state(joystick0);
 
+	if (fd_joystick1 != -1)
+		*s1 = get_LPT_joystick_state(fd_joystick1);
+	else if (joystick1 != NULL)
+		*s1 = get_SDL_joystick_state(joystick1);
 }
 
 void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 {
 	int trig0, trig1, i;
+	int status;
 
 	if ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B]))
 		trig0 = 0;
@@ -1260,7 +1347,13 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 		*t1 = trig1;
 	}
 
-	if (joystick0 != NULL) {
+	if (fd_joystick0 != -1) {
+		ioctl(fd_joystick0, LPGETSTATUS, &status);
+		if (status & 8)
+			*t0 = 1;
+		else
+			*t0 = 0;
+	} else if (joystick0 != NULL) {
 		trig0 = 1;
 		for (i = 0; i < joystick0_nbuttons; i++) {
 			if (SDL_JoystickGetButton(joystick0, i)) {
@@ -1270,7 +1363,14 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 		}
 		*t0 = trig0;
 	}
-	if (joystick1 != NULL) {
+	
+	if (fd_joystick1 != -1) {
+		ioctl(fd_joystick1, LPGETSTATUS, &status);
+		if (status & 8)
+			*t1 = 1;
+		else
+			*t1 = 0;
+	} else if (joystick1 != NULL) {
 		trig1 = 1;
 		for (i = 0; i < joystick1_nbuttons; i++) {
 			if (SDL_JoystickGetButton(joystick1, i)) {
@@ -1402,6 +1502,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.24  2002/06/27 21:20:08  joy
+ LPT joy in SDL
+
  Revision 1.23  2002/06/23 21:52:49  joy
  "-help" added
  options handling fixed.

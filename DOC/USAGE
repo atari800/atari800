@@ -324,6 +324,10 @@ At the moment it is not possible to use a Paddle with this version.
 SDL port keys and options
 =========================
 
+-joy0 <pathname>      Select LPTjoy0 device; ex.:
+                      $ atari800 -joy0 /dev/lp0 ...
+-joy1 <pathname>      Select LPTjoy1 device
+
 LALT+f - switching FULLSCREEN (probably doesn't work in Windows)
 LALT+g - switching WIDTH_MODE (so you can set 320x240)
 LALT+b - switching BLACK-AND-WHITE (feel to power of BW monitor!)
