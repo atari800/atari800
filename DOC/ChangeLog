@@ -1,3 +1,12 @@
+2004-08-05  Christian Groessler <cpg@aladdin.de>
+* atari_x11.c: adds the left ctrl key as joystick button if "-keypad" is
+  in use. Also cleans up mostly adding ANSI C function headers.
+
+
+2004-07-26  Sebastian Bauer
+* amiga/*: major update, cleanup, fixed console keys, upgraded sound support
+
+
 2004-07-05  Petr Stehlik  <pstehlik@sophics.cz>
 * configure.ac: Ken Ames sent a patch that supports OS/2
 
