@@ -171,6 +171,9 @@ Set mouse port 1-4 (default 1)
 .TP
 \fB-mousespeed <num>   
 Set mouse speed 1-9 (default 3)
+.TP
+\fB-multijoy           
+Emulate MultiJoy4 interface
 
 .TP
 \fB-refresh
@@ -196,17 +199,11 @@ Set white level 0-255
 \fB-colors <num>       
 Set color intensity
 .TP
+\fB-genpal             
+Generate artifical palette
+.TP
 \fB-colshift <num>     
-Set color shift
-.TP
-\fB-realpal            
-Use palette created by Zdenek Eisenhammer
-.TP
-\fB-oldpal             
-Use old Atari800 palette
-.TP
-\fB-foxpal             
-Use palette created by Piotr Fusik
+Set color shift (-genpal only)
 
 .TP
 \fB-sound              
@@ -396,7 +393,7 @@ Start
 Warm Reset
 .TP
 \fBF6
-Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+Help Key (XL/XE)
 .TP
 \fBF7
 Break Key
@@ -447,7 +444,7 @@ Warm Reset
 Cold Reset
 .TP
 \fBF6
-Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+Help Key (XL/XE)
 .TP
 \fBF7
 Break Key
@@ -456,10 +453,13 @@ Break Key
 Enter monitor
 .TP
 \fBF9
-EXIT Emulator
+Exit Emulator
+.TP
+\fBF10
+Save Screenshot (+Shift=interlaced screenshot)
 .TP
 \fBHelp
-HELP key (800XL/130XE)
+Help Key (XL/XE)
 
 .PP
 Joystick 0 is operated by the numeric keypad (make sure that the numeric
@@ -496,7 +496,7 @@ Warm Reset
 Cold Reset
 .TP
 \fBF6
-Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+---
 .TP
 \fBF7
 Break Key
@@ -562,7 +562,7 @@ Warm Reset
 Cold Reset
 .TP
 \fBF6
-PIL Mode (Atari800) / Help Key (XL/XE)
+Help Key (XL/XE)
 .TP
 \fBF7
 Switch between Emulated joysticks mode and Normal keyboard
@@ -571,7 +571,7 @@ Switch between Emulated joysticks mode and Normal keyboard
 Enter monitor
 .TP
 \fBF9
-EXIT Emulator
+Exit Emulator
 .TP
 \fBF10
 Save Screenshot (+Shift=interlaced screenshot)
@@ -584,8 +584,6 @@ Joysticks can be either real one connected to game port, or old 8-bit
 digital CX-40 joysticks connected to parallel port or keyboard joysticks
 (try out JOYCFG.EXE).
  
-At the moment it is not possible to use a Paddle with this version.
-
 .SS X11
 .TP
 \fBF1
@@ -607,19 +605,19 @@ Warm Reset
 Cold Reset
 .TP
 \fBF6
-Toggle RAM/ROM between 0x8000 and 0xbfff (PIL Mode)
+Help Key (XL/XE)
 .TP
 \fBF7
 Break Key
 .TP
 \fBF8
----
+GIF Screenshot
 .TP
 \fBF9
 Exit Emulator
 .TP
 \fBF10
----
+Toggle Fullspeed
 .TP
 \fBF11
 Vertical Positioning: Scroll Screen Downwards
@@ -634,8 +632,6 @@ Atari Key (Either ALT Key will work)
 Joystick 0 is operated by the mouse position relative to the center of
 the screen. The mouse button acts as the trigger.  On Linux, standard
 joysticks are also supported.
-
-Paddle 0 is operated by moving the mouse pointer across the window.
 
 .SS SDL
 .TP
