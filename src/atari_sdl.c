@@ -613,16 +613,19 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 int Atari_Keyboard(void)
 {
 	static int lastkey = AKEY_NONE, key_pressed = 0, key_control = 0;
+ 	static int lastuni = 0;
 
 	SDL_Event event;
 	if (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			lastkey = event.key.keysym.sym;
+ 			lastuni = event.key.keysym.unicode;
 			key_pressed = 1;
 			break;
 		case SDL_KEYUP:
 			lastkey = event.key.keysym.sym;
+ 			lastuni = event.key.keysym.unicode;
 			key_pressed = 0;
 			break;
 		case SDL_VIDEORESIZE:
@@ -634,6 +637,9 @@ int Atari_Keyboard(void)
 			break;
 		}
 	}
+	else if ( ! key_pressed )
+		return AKEY_NONE;
+
 	kbhits = SDL_GetKeyState(NULL);
 
 	if (kbhits == NULL) {
@@ -687,13 +693,12 @@ int Atari_Keyboard(void)
 				break;
 			}
 		}
-		key_pressed = 0;
 		if (alt_function != -1)
+		{
+			key_pressed = 0;
 			return AKEY_UI;
-		else
-			return AKEY_NONE;
 	}
-
+	}
 
 	// SHIFT STATE
 	if ((kbhits[SDLK_LSHIFT]) || (kbhits[SDLK_RSHIFT]))
@@ -706,6 +711,11 @@ int Atari_Keyboard(void)
 		key_control = 1;
 	else
 		key_control = 0;
+
+	//if( event.type == 2 || event.type == 3 )
+	//{
+	//	Aprint("E:%x S:%x C:%x K:%x U:%x M:%x",event.type,key_shift,key_control,lastkey,event.key.keysym.unicode,event.key.keysym.mod);
+	//}
 
 	// OPTION / SELECT / START keys
 	key_consol = CONSOL_NONE;
@@ -720,98 +730,11 @@ int Atari_Keyboard(void)
 		return AKEY_NONE;
 	}
 
-	// really stupid piece of code, I think it should be an array, not switch/case
-	// IDEA: it will be nice to define keyboard, like joystick emulation keys
+	// Handle movement and special keys.
 	if (key_shift)
 		switch (lastkey) {
-		case SDLK_a:
-			return AKEY_A;
-		case SDLK_b:
-			return AKEY_B;
-		case SDLK_c:
-			return AKEY_C;
-		case SDLK_d:
-			return AKEY_D;
-		case SDLK_e:
-			return AKEY_E;
-		case SDLK_f:
-			return AKEY_F;
-		case SDLK_g:
-			return AKEY_G;
-		case SDLK_h:
-			return AKEY_H;
-		case SDLK_i:
-			return AKEY_I;
-		case SDLK_j:
-			return AKEY_J;
-		case SDLK_k:
-			return AKEY_K;
-		case SDLK_l:
-			return AKEY_L;
-		case SDLK_m:
-			return AKEY_M;
-		case SDLK_n:
-			return AKEY_N;
-		case SDLK_o:
-			return AKEY_O;
-		case SDLK_p:
-			return AKEY_P;
-		case SDLK_q:
-			return AKEY_Q;
-		case SDLK_r:
-			return AKEY_R;
-		case SDLK_s:
-			return AKEY_S;
-		case SDLK_t:
-			return AKEY_T;
-		case SDLK_u:
-			return AKEY_U;
-		case SDLK_v:
-			return AKEY_V;
-		case SDLK_w:
-			return AKEY_W;
-		case SDLK_x:
-			return AKEY_X;
-		case SDLK_y:
-			return AKEY_Y;
-		case SDLK_z:
-			return AKEY_Z;
-		case SDLK_SEMICOLON:
-			return AKEY_COLON;
 		case SDLK_F5:
 			return AKEY_COLDSTART;
-		case SDLK_1:
-			return AKEY_EXCLAMATION;
-		case SDLK_2:
-			return AKEY_AT;
-		case SDLK_3:
-			return AKEY_HASH;
-		case SDLK_4:
-			return AKEY_DOLLAR;
-		case SDLK_5:
-			return AKEY_PERCENT;
-		case SDLK_6:
-			return AKEY_CARET;
-		case SDLK_7:
-			return AKEY_AMPERSAND;
-		case SDLK_8:
-			return AKEY_ASTERISK;
-		case SDLK_9:
-			return AKEY_PARENLEFT;
-		case SDLK_0:
-			return AKEY_PARENRIGHT;
-		case SDLK_EQUALS:
-			return AKEY_PLUS;
-		case SDLK_MINUS:
-			return AKEY_UNDERSCORE;
-		case SDLK_QUOTE:
-			return AKEY_DBLQUOTE;
-		case SDLK_SLASH:
-			return AKEY_QUESTION;
-		case SDLK_COMMA:
-			return AKEY_LESS;
-		case SDLK_PERIOD:
-			return AKEY_GREATER;
 		case SDLK_F10:
 			key_pressed = 0;
 			return AKEY_SCREENSHOT_INTERLACE;
@@ -820,114 +743,29 @@ int Atari_Keyboard(void)
 		}
 	else
 		switch (lastkey) {
-		case SDLK_a:
-			return AKEY_a;
-		case SDLK_b:
-			return AKEY_b;
-		case SDLK_c:
-			return AKEY_c;
-		case SDLK_d:
-			return AKEY_d;
-		case SDLK_e:
-			return AKEY_e;
-		case SDLK_f:
-			return AKEY_f;
-		case SDLK_g:
-			return AKEY_g;
-		case SDLK_h:
-			return AKEY_h;
-		case SDLK_i:
-			return AKEY_i;
-		case SDLK_j:
-			return AKEY_j;
-		case SDLK_k:
-			return AKEY_k;
-		case SDLK_l:
-			return AKEY_l;
-		case SDLK_m:
-			return AKEY_m;
-		case SDLK_n:
-			return AKEY_n;
-		case SDLK_o:
-			return AKEY_o;
-		case SDLK_p:
-			return AKEY_p;
-		case SDLK_q:
-			return AKEY_q;
-		case SDLK_r:
-			return AKEY_r;
-		case SDLK_s:
-			return AKEY_s;
-		case SDLK_t:
-			return AKEY_t;
-		case SDLK_u:
-			return AKEY_u;
-		case SDLK_v:
-			return AKEY_v;
-		case SDLK_w:
-			return AKEY_w;
-		case SDLK_x:
-			return AKEY_x;
-		case SDLK_y:
-			return AKEY_y;
-		case SDLK_z:
-			return AKEY_z;
-		case SDLK_SEMICOLON:
-			return AKEY_SEMICOLON;
 		case SDLK_F5:
 			return AKEY_WARMSTART;
-		case SDLK_0:
-			return AKEY_0;
-		case SDLK_1:
-			return AKEY_1;
-		case SDLK_2:
-			return AKEY_2;
-		case SDLK_3:
-			return AKEY_3;
-		case SDLK_4:
-			return AKEY_4;
-		case SDLK_5:
-			return AKEY_5;
-		case SDLK_6:
-			return AKEY_6;
-		case SDLK_7:
-			return AKEY_7;
-		case SDLK_8:
-			return AKEY_8;
-		case SDLK_9:
-			return AKEY_9;
-		case SDLK_COMMA:
-			return AKEY_COMMA;
-		case SDLK_PERIOD:
-			return AKEY_FULLSTOP;
-		case SDLK_EQUALS:
-			return AKEY_EQUAL;
-		case SDLK_MINUS:
-			return AKEY_MINUS;
-		case SDLK_QUOTE:
-			return AKEY_QUOTE;
-		case SDLK_SLASH:
-			return AKEY_SLASH;
-		case SDLK_BACKSLASH:
-			return AKEY_BACKSLASH;
-		case SDLK_LEFTBRACKET:
-			return AKEY_BRACKETLEFT;
-		case SDLK_RIGHTBRACKET:
-			return AKEY_BRACKETRIGHT;
 		case SDLK_F10:
 			key_pressed = 0;
 			return AKEY_SCREENSHOT;
 		case SDLK_INSERT:
 			return AKEY_INSERT_CHAR;
 		}
-
+	
 	switch (lastkey) {
+	case SDLK_LSUPER:
+		return AKEY_ATARI;
+	case SDLK_RSUPER:
+		if( key_shift )
+			return AKEY_CAPSLOCK;
+		else
+			return AKEY_CAPSTOGGLE;
 	case SDLK_END:
 		return AKEY_HELP;
 	case SDLK_PAGEDOWN:
-		return AKEY_HELP;
+		return AKEY_F2 | AKEY_SHFT;
 	case SDLK_PAGEUP:
-		return AKEY_CAPSLOCK;
+		return AKEY_F1 | AKEY_SHFT;
 	case SDLK_HOME:
 		return AKEY_CLEAR;
 	case SDLK_PAUSE:
@@ -935,7 +773,12 @@ int Atari_Keyboard(void)
 	case SDLK_CAPSLOCK:
 		return AKEY_CAPSLOCK;
 	case SDLK_SPACE:
-		return AKEY_SPACE;
+		if( key_control )
+			return AKEY_SPACE | AKEY_CTRL;
+		else if (key_shift)
+			return AKEY_SPACE | AKEY_SHFT;
+		else
+			return AKEY_SPACE;
 	case SDLK_BACKSPACE:
 		return AKEY_BACKSPACE;
 	case SDLK_RETURN:
@@ -972,6 +815,281 @@ int Atari_Keyboard(void)
 		else
 			return AKEY_INSERT_CHAR;
 	}
+
+	// Handle CTRL-0 to CTRL-9
+	if( key_control )
+	{
+		switch(lastuni)
+		{
+		case '.':
+			return AKEY_FULLSTOP | AKEY_CTRL;
+		case ',':
+			return AKEY_COMMA | AKEY_CTRL;
+		case ';':
+			return AKEY_SEMICOLON | AKEY_CTRL;
+		}
+		switch(lastkey)
+		{
+		case SDLK_0:
+			return AKEY_CTRL_0;
+		case SDLK_1:
+			return AKEY_CTRL_1;
+		case SDLK_2:
+			return AKEY_CTRL_2;
+		case SDLK_3:
+			return AKEY_CTRL_3;
+		case SDLK_4:
+			return AKEY_CTRL_4;
+		case SDLK_5:
+			return AKEY_CTRL_5;
+		case SDLK_6:
+			return AKEY_CTRL_6;
+		case SDLK_7:
+			return AKEY_CTRL_7;
+		case SDLK_8:
+			return AKEY_CTRL_8;
+		case SDLK_9:
+			return AKEY_CTRL_9;
+		}
+	}
+	
+	// Uses only UNICODE translation, no shift states
+	switch(lastuni)
+	{
+		case 1:
+			return AKEY_CTRL_a;
+		case 2:
+			return AKEY_CTRL_b;
+		case 3:
+			return AKEY_CTRL_c;
+		case 4:
+			return AKEY_CTRL_d;
+		case 5:
+			return AKEY_CTRL_e;
+		case 6:
+			return AKEY_CTRL_f;
+		case 7:
+			return AKEY_CTRL_g;
+		case 8:
+			return AKEY_CTRL_h;
+		case 9:
+			return AKEY_CTRL_i;
+		case 10:
+			return AKEY_CTRL_j;
+		case 11:
+			return AKEY_CTRL_k;
+		case 12:
+			return AKEY_CTRL_l;
+		case 13:
+			return AKEY_CTRL_m;
+		case 14:
+			return AKEY_CTRL_n;
+		case 15:
+			return AKEY_CTRL_o;
+		case 16:
+			return AKEY_CTRL_p;
+		case 17:
+			return AKEY_CTRL_q;
+		case 18:
+			return AKEY_CTRL_r;
+		case 19:
+			return AKEY_CTRL_s;
+		case 20:
+			return AKEY_CTRL_t;
+		case 21:
+			return AKEY_CTRL_u;
+		case 22:
+			return AKEY_CTRL_v;
+		case 23:
+			return AKEY_CTRL_w;
+		case 24:
+			return AKEY_CTRL_x;
+		case 25:
+			return AKEY_CTRL_y;
+		case 26:
+			return AKEY_CTRL_z;
+		case 'A':
+			return AKEY_A;
+		case 'B':
+			return AKEY_B;
+		case 'C':
+			return AKEY_C;
+		case 'D':
+			return AKEY_D;
+		case 'E':
+			return AKEY_E;
+		case 'F':
+			return AKEY_F;
+		case 'G':
+			return AKEY_G;
+		case 'H':
+			return AKEY_H;
+		case 'I':
+			return AKEY_I;
+		case 'J':
+			return AKEY_J;
+		case 'K':
+			return AKEY_K;
+		case 'L':
+			return AKEY_L;
+		case 'M':
+			return AKEY_M;
+		case 'N':
+			return AKEY_N;
+		case 'O':
+			return AKEY_O;
+		case 'P':
+			return AKEY_P;
+		case 'Q':
+			return AKEY_Q;
+		case 'R':
+			return AKEY_R;
+		case 'S':
+			return AKEY_S;
+		case 'T':
+			return AKEY_T;
+		case 'U':
+			return AKEY_U;
+		case 'V':
+			return AKEY_V;
+		case 'W':
+			return AKEY_W;
+		case 'X':
+			return AKEY_X;
+		case 'Y':
+			return AKEY_Y;
+		case 'Z':
+			return AKEY_Z;
+		case ':':
+			return AKEY_COLON;
+		case '!':
+			return AKEY_EXCLAMATION;
+		case '@':
+			return AKEY_AT;
+		case '#':
+			return AKEY_HASH;
+		case '$':
+			return AKEY_DOLLAR;
+		case '%':
+			return AKEY_PERCENT;
+		case '^':
+			return AKEY_CARET;
+		case '&':
+			return AKEY_AMPERSAND;
+		case '*':
+			return AKEY_ASTERISK;
+		case '(':
+			return AKEY_PARENLEFT;
+		case ')':
+			return AKEY_PARENRIGHT;
+		case '+':
+			return AKEY_PLUS;
+		case '_':
+			return AKEY_UNDERSCORE;
+		case '"':
+			return AKEY_DBLQUOTE;
+		case '?':
+			return AKEY_QUESTION;
+		case '<':
+			return AKEY_LESS;
+		case '>':
+			return AKEY_GREATER;
+		case 'a':
+			return AKEY_a;
+		case 'b':
+			return AKEY_b;
+		case 'c':
+			return AKEY_c;
+		case 'd':
+			return AKEY_d;
+		case 'e':
+			return AKEY_e;
+		case 'f':
+			return AKEY_f;
+		case 'g':
+			return AKEY_g;
+		case 'h':
+			return AKEY_h;
+		case 'i':
+			return AKEY_i;
+		case 'j':
+			return AKEY_j;
+		case 'k':
+			return AKEY_k;
+		case 'l':
+			return AKEY_l;
+		case 'm':
+			return AKEY_m;
+		case 'n':
+			return AKEY_n;
+		case 'o':
+			return AKEY_o;
+		case 'p':
+			return AKEY_p;
+		case 'q':
+			return AKEY_q;
+		case 'r':
+			return AKEY_r;
+		case 's':
+			return AKEY_s;
+		case 't':
+			return AKEY_t;
+		case 'u':
+			return AKEY_u;
+		case 'v':
+			return AKEY_v;
+		case 'w':
+			return AKEY_w;
+		case 'x':
+			return AKEY_x;
+		case 'y':
+			return AKEY_y;
+		case 'z':
+			return AKEY_z;
+		case ';':
+			return AKEY_SEMICOLON;
+		case '0':
+			return AKEY_0;
+		case '1':
+			return AKEY_1;
+		case '2':
+			return AKEY_2;
+		case '3':
+			return AKEY_3;
+		case '4':
+			return AKEY_4;
+		case '5':
+			return AKEY_5;
+		case '6':
+			return AKEY_6;
+		case '7':
+			return AKEY_7;
+		case '8':
+			return AKEY_8;
+		case '9':
+			return AKEY_9;
+		case ',':
+			return AKEY_COMMA;
+		case '.':
+			return AKEY_FULLSTOP;
+		case '=':
+			return AKEY_EQUAL;
+		case '-':
+			return AKEY_MINUS;
+		case '\'':
+			return AKEY_QUOTE;
+		case '/':
+			return AKEY_SLASH;
+		case '\\':
+			return AKEY_BACKSLASH;
+		case '[':
+			return AKEY_BRACKETLEFT;
+		case ']':
+			return AKEY_BRACKETRIGHT;
+		case '|':
+			return AKEY_SHFT | AKEY_EQUAL;
+		}
+
 	return AKEY_NONE;
 }
 
@@ -1634,6 +1752,8 @@ int main(int argc, char **argv)
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
+	SDL_EnableUNICODE(1);
+
 #ifdef SOUND
 	if (sound_enabled)
 		SDL_PauseAudio(0);
@@ -1744,6 +1864,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.40  2004/12/28 21:32:31  joy
+ unicode based keyboard handling
+
  Revision 1.39  2004/06/06 12:14:26  joy
  keyboard joysticks loaded from config file
 
