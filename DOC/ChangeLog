@@ -1,3 +1,7 @@
+2002-12-08  Krzysztof Nikiel  <knik@poczta.onet.pl>
+* pokeysnd.c mzpokeysnd.c: Added 16bit and quality sound setting support.
+  Added multiple sound engines support.
+
 2002-12-04  Mark Grebe <markgrebe@yahoo.com>
 * devices.c: device H: now fully emulates the standard DOS functions
   Rename, Delete, Lock, Unlock, Note, Point, and Open for Update.
@@ -75,6 +79,10 @@
 * antic.c, memory-d.c, atari800.man: separate ANTIC access to extended memory
   for 130 XE and 320 Compy Shop
 * DOC/README: updated features
+
+2002-07-11  Krzysztof Nikiel  <knik@poczta.onet.pl>
+* configure.in: Freature processing redesigned to be more consistent.
+  Correct enable/disable info is printed in help.
 
 ** released as 1.2.3
 
