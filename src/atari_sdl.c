@@ -2,6 +2,14 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   06-11-2001 - replaced SHORTER_MODE with WIDTH_MODE, now there are 3 states:
+		DEFAULT_WIDTH_MODE (ATARI_WIDTH-2*24), SHORTER_WIDTH_MODE
+		(ATARI_WIDTH-2*24-2*8), and FULL_WIDTH_MODE (ATARI_WIDTH)
+	      - checking if bpp is supported (8,16,32 only), if not - switching
+		to 8bit	
+	      - moved fps stuff to CountFPS		
+	      - moved "bug reports" message up, so user could see that when
+		init fails
    04-11-2001 - split Atari_DisplayScreen (DisplayWithoutScaling and
                 DisplayWithScaling)
 	      - put Aflushlog everywhere	
@@ -66,7 +74,7 @@
    - you can switch between color/bw mode with LALT+b - FEEL THE POWER OF BW
      MONITOR!
    - you can swap joysticks with LALT+j  
-   - you can switch "short mode" with LALT+g - so you can set 320x240 or
+   - you can switch "width modes" with LALT+g - so you can set 320x240 or
      640x480
    - you can switch color depth (for now - 8/16) with LALT+e   
    - fullscreen switching probably doesn't work in Windows, you need to set
@@ -107,7 +115,10 @@ static int SDL_ATARI_BPP = 0;	// 0 - autodetect
 static int FULLSCREEN = 0;
 static int BW = 0;
 static int SWAP_JOYSTICKS = 0;
-static int SHORTER_MODE = 0;
+static int WIDTH_MODE = 1;
+#define SHORT_WIDTH_MODE 0
+#define DEFAULT_WIDTH_MODE 1
+#define FULL_WIDTH_MODE 2
 
 // you need to uncomment this to turn on fps counter
 
@@ -211,7 +222,7 @@ void CalcPalette()
 
 void ModeInfo()
 {
-	char bwflag, fullflag, shorterflag, joyflag;
+	char bwflag, fullflag, width, joyflag;
 	if (BW)
 		bwflag = '*';
 	else
@@ -220,10 +231,20 @@ void ModeInfo()
 		fullflag = '*';
 	else
 		fullflag = ' ';
-	if (SHORTER_MODE)
-		shorterflag = '*';
-	else
-		shorterflag = ' ';
+	switch (WIDTH_MODE) {
+	case FULL_WIDTH_MODE:
+		width = 'f';
+		break;
+	case DEFAULT_WIDTH_MODE:
+		width = 'd';
+		break;
+	case SHORT_WIDTH_MODE:
+		width = 's';
+		break;
+	default:
+		width = '?';
+		break;
+	}
 	if (SWAP_JOYSTICKS)
 		joyflag = '*';
 	else
@@ -231,54 +252,54 @@ void ModeInfo()
 	Aprint("Video Mode: %ix%ix%i", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel);
 	Aprint
-		("[%c] FULLSCREEN  [%c] BW  [%c] SHORTER MODE  [%c] JOYSTICKS SWAPPED",
-		 fullflag, bwflag, shorterflag, joyflag);
+		("[%c] FULLSCREEN  [%c] BW  [%c] WIDTH MODE  [%c] JOYSTICKS SWAPPED",
+		 fullflag, bwflag, width, joyflag);
 	Aflushlog();
 }
 
 void SetVideoMode(int w, int h, int bpp)
 {
-	if (bpp == CurrentBPP)
-		bpp = MainScreen->format->BitsPerPixel;
 	if (FULLSCREEN)
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
 	else
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_RESIZABLE);
-
 	if (MainScreen == NULL) {
 		Aprint("Setting Video Mode: %ix%ix%i FAILED", w, h, bpp);
 		Aflushlog();
 		exit(-1);
 	}
-	SDL_ATARI_BPP = MainScreen->format->BitsPerPixel;
-
-	SetPalette();
-
-	SDL_ShowCursor(SDL_DISABLE);	// hide mouse cursor 
 }
 
 void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
-	if ((h < ATARI_HEIGHT) || (w < ATARI_WIDTH - 2 * 24)) {
+	if ((h < ATARI_HEIGHT) || (w < ATARI_WIDTH)) {
 		h = ATARI_HEIGHT;
-		w = ATARI_WIDTH - 2 * 24;
+		w = ATARI_WIDTH;
 	}
 
 	// aspect ratio, floats needed
 	ww = w;
 	hh = h;
-	if (SHORTER_MODE) {
+	switch (WIDTH_MODE) {
+	case SHORT_WIDTH_MODE:
 		if (ww * 0.75 < hh)
 			hh = ww * 0.75;
 		else
 			ww = hh / 0.75;
-	}
-	else {
+		break;
+	case DEFAULT_WIDTH_MODE:
 		if (ww / 1.4 < hh)
 			hh = ww / 1.4;
 		else
 			ww = hh * 1.4;
+		break;
+	case FULL_WIDTH_MODE:
+		if (ww / 1.6 < hh)
+			hh = ww / 1.6;
+		else
+			ww = hh * 1.6;
+		break;
 	}
 	w = ww;
 	h = hh;
@@ -286,7 +307,30 @@ void SetNewVideoMode(int w, int h, int bpp)
 	w = w * 8;
 	h = h / 8;
 	h = h * 8;
+
+	if (bpp == CurrentBPP)
+		bpp = MainScreen->format->BitsPerPixel;
+
 	SetVideoMode(w, h, bpp);
+
+	SDL_ATARI_BPP = MainScreen->format->BitsPerPixel;
+	if (bpp == 0) {
+		Aprint("detected %ibpp", SDL_ATARI_BPP);
+		if ((SDL_ATARI_BPP != 8) && (SDL_ATARI_BPP != 16)
+			&& (SDL_ATARI_BPP != 32)) {
+			Aprint
+				("it's unsupported, so setting 8bit mode (slow conversion)");
+			SetVideoMode(w, h, 8);
+		}
+		Aflushlog();
+	}
+
+	SetPalette();
+
+	SDL_ShowCursor(SDL_DISABLE);	// hide mouse cursor 
+
+	ModeInfo();
+
 }
 
 void SwitchFullscreen()
@@ -294,15 +338,15 @@ void SwitchFullscreen()
 	FULLSCREEN = 1 - FULLSCREEN;
 	SetNewVideoMode(MainScreen->w, MainScreen->h, CurrentBPP);
 	Atari_DisplayScreen((UBYTE *) atari_screen);
-	ModeInfo();
 }
 
-void SwitchShorter()
+void SwitchWidth()
 {
-	SHORTER_MODE = 1 - SHORTER_MODE;
+	WIDTH_MODE++;
+	if (WIDTH_MODE > FULL_WIDTH_MODE)
+		WIDTH_MODE = SHORT_WIDTH_MODE;
 	SetNewVideoMode(MainScreen->w, MainScreen->h, CurrentBPP);
 	Atari_DisplayScreen((UBYTE *) atari_screen);
-	ModeInfo();
 }
 
 void SwitchBPP()
@@ -312,7 +356,6 @@ void SwitchBPP()
 		SDL_ATARI_BPP = 8;
 	SetNewVideoMode(MainScreen->w, MainScreen->h, SDL_ATARI_BPP);
 	Atari_DisplayScreen((UBYTE *) atari_screen);
-	ModeInfo();
 }
 
 void SwitchBW()
@@ -410,7 +453,7 @@ int Atari_Keyboard(void)
 				SwitchFullscreen();
 				break;
 			case SDLK_g:
-				SwitchShorter();
+				SwitchWidth();
 				break;
 			case SDLK_b:
 				SwitchBW();
@@ -731,6 +774,8 @@ void Init_Joysticks()
 
 void Atari_Initialise(int *argc, char *argv[])
 {
+	Aprint
+		("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>");
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) != 0) {
 		Aprint("SDL_Init FAILED");
 		Aprint(SDL_GetError());
@@ -747,10 +792,6 @@ void Atari_Initialise(int *argc, char *argv[])
 	SDL_Sound_Initialise(argc, argv);
 
 	Init_Joysticks();
-
-	Aprint
-		("please report SDL port bugs to Jacek Poplawski <jacekp@linux.com.pl>");
-	ModeInfo();
 
 }
 
@@ -928,7 +969,7 @@ void DisplayWithScaling(Uint8 * screen, int jumped, int width)
 		Aprint("unsupported color depth %i",
 			   MainScreen->format->BitsPerPixel);
 		Aprint
-			("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+			("please set SDL_ATARI_BPP to 8 or 16 or 32 and recompile atari_sdl");
 		Aflushlog();
 		exit(-1);
 	}
@@ -938,13 +979,24 @@ void Atari_DisplayScreen(UBYTE * screen)
 {
 	int width, jumped;
 
-	if (SHORTER_MODE) {
+	switch (WIDTH_MODE) {
+	case SHORT_WIDTH_MODE:
 		width = ATARI_WIDTH - 2 * 24 - 2 * 8;
 		jumped = 24 + 8;
-	}
-	else {
+		break;
+	case DEFAULT_WIDTH_MODE:
 		width = ATARI_WIDTH - 2 * 24;
 		jumped = 24;
+		break;
+	case FULL_WIDTH_MODE:
+		width = ATARI_WIDTH;
+		jumped = 0;
+		break;
+	default:
+		Aprint("unsupported WIDTH_MODE");
+		Aflushlog();
+		exit(-1);
+		break;
 	}
 
 	if ((MainScreen->w == width)
@@ -1134,12 +1186,26 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 	}
 }
 
+void CountFPS()
+{
+	static int ticks1 = 0, ticks2, shortframes;
+	if (ticks1 == 0)
+		ticks1 = SDL_GetTicks();
+	ticks2 = SDL_GetTicks();
+	shortframes++;
+	if (ticks2 - ticks1 > 1000) {
+		ticks1 = ticks2;
+		Aprint("%i fps", shortframes);
+		Aflushlog();
+		shortframes = 0;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int keycode;
 	static UBYTE STICK[4];
 	int done = 0;
-	int ticks1, ticks2, shortframes;
 
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
@@ -1148,8 +1214,6 @@ int main(int argc, char **argv)
 
 	if (sound_enabled)
 		SDL_PauseAudio(0);
-	shortframes = 0;
-	ticks1 = SDL_GetTicks();
 	while (!done) {
 		keycode = Atari_Keyboard();
 
@@ -1223,15 +1287,8 @@ int main(int argc, char **argv)
 		nframes++;
 		atari_sync();
 		Atari_DisplayScreen((UBYTE *) atari_screen);
-		ticks2 = SDL_GetTicks();
 #ifdef FPS_COUNTER
-		shortframes++;
-		if (ticks2 - ticks1 > 1000) {
-			ticks1 = ticks2;
-			Aprint("%i fps", shortframes);
-			Aflushlog();
-			shortframes = 0;
-		}
+		CountFPS();
 #endif
 	}
 	Atari800_Exit(FALSE);
