@@ -1,6 +1,6 @@
-.TH ATARI800 1 "26 February 2002"
+.TH ATARI800 1 "08 July 2002"
 .SH NAME
-atari800 \- Atari 800 Emulator, Version 1.2.2
+atari800 \- Atari 800 Emulator, Version 1.2.3
 .SH SYNOPSIS
 \fBatari800\fP [options] [diskfiles...]
 .SH DESCRIPTION
@@ -342,8 +342,34 @@ Enable debug code in atari_x11.c
 Keypad mode
 
 .SS SDL Options
-.PP
-No SDL-specific options at this time
+.TP
+\fB-rotate90
+Runs the emulator with rotated display (useful for devices with 240x320
+screen)
+.TP
+\fB-fullscreen
+Runs in fullscreen (tries to switch to 336x240 resolution)
+.TP
+\fB-windowed
+Runs in a window (does not change your working resolution)
+.TP
+\fB-width number-of-pixels
+Host horizontal resolution for fullscreen
+.TP
+\fB-height number-of-pixels
+Host vertical resolution for fullscreen
+.TP
+\fB-bpp number-of-bits
+Host color depth for running in fullscreen
+.TP
+\fB-nojoystick
+SDL Joysticks will not be initialized
+.TP
+\fB-joy0 path-to-device
+Defines path to device used in LPTjoy 0. Available on linux-ia32 only.
+.TP
+\fB-joy1 path-to-device
+Defines path to device used in LPTjoy 1. Available on linux-ia32 only.
 
 .PD 0
 
