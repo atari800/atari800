@@ -65,6 +65,11 @@ Currently supported cartridge types:
 | 30 | 800/XL/XE |  256 | MegaCart 256 KB cartridge                         |
 | 31 | 800/XL/XE |  512 | MegaCart 512 KB cartridge                         |
 | 32 | 800/XL/XE | 1024 | MegaCart 1 MB cartridge                           |
+| 33 | 800/XL/XE |   32 | Switchable XEGS 32 KB cartridge                   |
+| 34 | 800/XL/XE |   64 | Switchable XEGS 64 KB cartridge                   |
+| 35 | 800/XL/XE |  128 | Switchable XEGS 128 KB cartridge                  |
+| 36 | 800/XL/XE |  256 | Switchable XEGS 256 KB cartridge                  |
+| 37 | 800/XL/XE |  512 | Switchable XEGS 512 KB cartridge                  |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -361,3 +366,54 @@ stands for the first bank in the image, bank B is the second, etc.
  A bank-switched cartridge that occupies 16 KB of address space between
  $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Six
  lowest bits select one of 64 available banks, bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 33: Switchable XEGS 32 KB cartridge                                  |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each.
+ Bank D (the last one) is always mapped to $A000-BFFF. Two lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 34: Switchable XEGS 64 KB cartridge                                  |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
+ Bank H (the last one) is always mapped to $A000-BFFF. Three lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 35: Switchable XEGS 128 KB cartridge                                 |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
+ Bank P (the last one) is always mapped to $A000-BFFF. Four lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 36: Switchable XEGS 256 KB cartridge                                 |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 32 banks, 8 KB each.
+ The last bank is always mapped to $A000-BFFF. Five lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 37: Switchable XEGS 512 KB cartridge                                 |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
+ The last bank is always mapped to $A000-BFFF. Six lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ bit 7 disables the cartridge.
+
