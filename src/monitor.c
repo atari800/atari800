@@ -1041,10 +1041,21 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 		else if (strcmp(t, "POKEY") == 0) {
 			printf("AUDF1= %02x    AUDF2= %02x    AUDF3= %02x    "
 				   "AUDF4= %02x    AUDCTL=%02x    KBCODE=%02x\n",
-				   AUDF[CHAN1], AUDF[CHAN2], AUDF[CHAN3], AUDF[CHAN4], AUDCTL, KBCODE);
+				   AUDF[CHAN1], AUDF[CHAN2], AUDF[CHAN3], AUDF[CHAN4], AUDCTL[0], KBCODE);
 			printf("AUDC1= %02x    AUDC2= %02x    AUDC3= %02x    "
 				   "AUDC4= %02x    IRQEN= %02x    IRQST= %02x\n",
 				   AUDC[CHAN1], AUDC[CHAN2], AUDC[CHAN3], AUDC[CHAN4], IRQEN, IRQST);
+#ifdef STEREO
+			if (stereo_enabled) {
+				printf("second chip:\n");
+				printf("AUDF1= %02x    AUDF2= %02x    AUDF3= %02x    "
+					   "AUDF4= %02x    AUDCTL=%02x\n",
+					   AUDF[CHAN1 + CHIP2], AUDF[CHAN2 + CHIP2], AUDF[CHAN3 + CHIP2], AUDF[CHAN4 + CHIP2], AUDCTL[1]);
+				printf("AUDC1= %02x    AUDC2= %02x    AUDC3= %02x    "
+					   "AUDC4= %02x\n",
+					   AUDC[CHAN1 + CHIP2], AUDC[CHAN2 + CHIP2], AUDC[CHAN3 + CHIP2], AUDC[CHAN4 + CHIP2]);
+			}
+#endif
 		}
 #ifdef MONITOR_ASSEMBLER
                 else if (strcmp(t,"A") == 0)
@@ -1379,15 +1390,8 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
-Revision 1.5  2001/07/20 00:21:28  fox
-- "C 600 ABCD" does the same as "C 600 CD AB"
-- "DLIST" - 1 KB boundary respected
-- "POKEY" command
-- "S" without parameters repeats last search
-- corrected Petr's mistake in rev.1.4
-
-Revision 1.4  2001/07/11 10:03:52  joy
-label without semicolon is non-portable. Besides that, goto should be used for error recovery only.
+Revision 1.6  2001/07/20 00:22:14  fox
+"POKEY" displays registers of second Pokey (if stereo enabled)
 
 Revision 1.3  2001/03/25 06:57:36  knik
 open() replaced by fopen()
