@@ -103,28 +103,28 @@ atari_vga.o: rt-config.h dos/vga_gfx.h
 atari_x11.o: config.h atari.h colours.h monitor.h sio.h sound.h platform.h
 atari_x11.o: rt-config.h
 ataripcx.o: antic.h atari.h config.h colours.h
-binload.o: atari.h config.h log.h cpu.h memory-d.h pia.h
+binload.o: atari.h config.h cpu.h log.h memory.h memory-d.h
 cartridge.o: atari.h config.h cartridge.h memory.h memory-d.h pia.h
 cartridge.o: rt-config.h rtime.h
 cassette.o: atari.h config.h cassette.h log.h memory.h memory-d.h sio.h
 colours.o: atari.h config.h log.h
 compfile.o: atari.h config.h log.h
 configure.o: prompts.h
-cpu.o: antic.h atari.h config.h cpu.h memory.h memory-d.h statesav.h
+cpu.o: antic.h atari.h config.h cpu.h memory.h memory-d.h statesav.h ui.h
 devices.o: config.h ui.h atari.h cpu.h memory.h memory-d.h devices.h
 devices.o: rt-config.h log.h binload.h sio.h
-diskled.o: config.h
+diskled.o: atari.h config.h diskled.h
 gtia.o: antic.h atari.h config.h cassette.h gtia.h input.h statesav.h
 input.o: antic.h atari.h config.h cassette.h cpu.h gtia.h input.h log.h
 input.o: memory.h memory-d.h pia.h platform.h pokey.h
 joycfg.o: config.h pcjoy.h
 list.o: config.h list.h
 log.o: config.h log.h
-memory-d.o: atari.h config.h antic.h cartridge.h cpu.h gtia.h log.h memory.h
+memory-d.o: atari.h config.h antic.h cartridge.h gtia.h log.h memory.h
 memory-d.o: memory-d.h pia.h rt-config.h statesav.h
 memory-p.o: atari.h config.h log.h rt-config.h antic.h cpu.h gtia.h pbi.h
 memory-p.o: pia.h pokey.h memory.h memory-d.h
-memory.o: config.h memory-d.c atari.h antic.h cartridge.h cpu.h gtia.h log.h
+memory.o: config.h memory-d.c atari.h antic.h cartridge.h gtia.h log.h
 memory.o: memory.h memory-d.h pia.h rt-config.h statesav.h
 mkimg.o: config.h
 monitor.o: atari.h config.h cpu.h memory.h memory-d.h antic.h pia.h gtia.h
@@ -133,7 +133,7 @@ pbi.o: atari.h config.h
 pia.o: atari.h config.h cpu.h memory.h memory-d.h pia.h sio.h log.h
 pia.o: statesav.h
 pokey.o: atari.h config.h cpu.h pia.h pokey.h gtia.h sio.h statesav.h
-pokey.o: pokeysnd.h
+pokey.o: pokeysnd.h input.h
 pokeysnd.o: pokeysnd.h config.h pokey.h atari.h sndsave.h
 prompts.o: prompts.h
 rt-config.o: atari.h config.h prompts.h rt-config.h
