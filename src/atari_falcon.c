@@ -2,7 +2,7 @@
  * atari_falcon.c - Atari Falcon specific port code
  *
  * Copyright (c) 1997-1998 Petr Stehlik and Karel Rous
- * Copyright (c) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -34,7 +34,7 @@
 #include "colours.h"
 #include "ui.h"         /* for ui_is_active */
 #include "input.h"
-#include "ataripcx.h"
+#include "screen.h"
 #include "config.h"
 #include "antic.h"		/* for BITPL_SCR */
 #include "platform.h"
@@ -1207,18 +1207,6 @@ int Atari_TRIG(int num)
 
 /* -------------------------------------------------------------------------- */
 
-int Atari_POT(int num)
-{
-	return 228;
-}
-
-/* -------------------------------------------------------------------------- */
-
-int Atari_PEN(int vertical)
-{
-	return vertical ? 0xff : 0;
-}
-
 int main(int argc, char **argv)
 {
 	/* initialise Atari800 core */
@@ -1250,10 +1238,10 @@ int main(int argc, char **argv)
 #endif
 			break;
 		case AKEY_SCREENSHOT:
-			Save_PCX_file(FALSE, Find_PCX_name());
+			Screen_SaveNextScreenshot(FALSE);
 			break;
 		case AKEY_SCREENSHOT_INTERLACE:
-			Save_PCX_file(TRUE, Find_PCX_name());
+			Screen_SaveNextScreenshot(TRUE);
 			break;
 		case AKEY_BREAK:
 			key_break = 1;

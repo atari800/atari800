@@ -2,7 +2,7 @@
  * atari_wince.c - WinCE port specific code
  *
  * Copyright (C) 2001 Vasyl Tsvirkunov
- * Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -39,7 +39,7 @@
 #include "diskled.h"
 #include "rt-config.h"
 #include "ui.h"
-#include "ataripcx.h"
+#include "screen.h"
 
 static int usesnd = 1;
 
@@ -132,45 +132,6 @@ int Atari_TRIG(int num)
 		return 1;
 }
 
-int Atari_POT(int num)
-{
-	if(machine_type == MACHINE_5200)
-	{
-	/* The most primitive implementation for the first version */
-		if(num == 0) /* first stick hor */
-		{
-			if(!(stick0 & 4))
-				return 1;
-			else if(!(stick0 & 8))
-				return 228;
-			else
-				return 113;
-		}
-		else if(num == 1) /* first stick vert */
-		{
-			if(!(stick0 & 1))
-				return 1;
-			else if(!(stick0 & 2))
-				return 228;
-			else
-				return 113;
-		}
-	}
-	return 228;
-}
-
-/*
-int Atari_CONSOL(void)
-{
-	return console;
-}
-*/
-int Atari_PEN(int vertical)
-{
-	return vertical ? 0xff : 0;
-}
-
-
 int wince_main(int argc, char **argv)
 {
 	/* initialise Atari800 core */
@@ -205,10 +166,10 @@ int wince_main(int argc, char **argv)
 #endif
 			break;
 		case AKEY_SCREENSHOT:
-			Save_PCX_file(FALSE, Find_PCX_name());
+			Screen_SaveNextScreenshot(FALSE);
 			break;
 		case AKEY_SCREENSHOT_INTERLACE:
-			Save_PCX_file(TRUE, Find_PCX_name());
+			Screen_SaveNextScreenshot(TRUE);
 			break;
 		case AKEY_BREAK:
 			key_break = 1;

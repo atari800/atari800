@@ -602,7 +602,7 @@ SOURCE=..\atari.c
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -631,7 +631,7 @@ DEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -660,7 +660,7 @@ DEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\colours.h"\
@@ -689,7 +689,7 @@ NODEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\colours.h"\
@@ -718,7 +718,7 @@ NODEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -747,7 +747,7 @@ DEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -776,7 +776,7 @@ DEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -807,7 +807,7 @@ DEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -838,7 +838,7 @@ DEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -869,7 +869,7 @@ DEP_CPP_ATARI=\
 DEP_CPP_ATARI=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -901,7 +901,7 @@ DEP_CPP_ATARI=\
 # End Source File
 # Begin Source File
 
-SOURCE=..\ataripcx.c
+SOURCE=..\screen.c
 
 !IF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Release"
 
@@ -3890,7 +3890,7 @@ SOURCE=..\ui.c
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -3915,7 +3915,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -3940,7 +3940,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -3965,7 +3965,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -3990,7 +3990,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -4015,7 +4015,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -4040,7 +4040,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -4065,7 +4065,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -4090,7 +4090,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cpu.h"\
@@ -4115,7 +4115,7 @@ DEP_CPP_UI_C38=\
 DEP_CPP_UI_C38=\
 	"..\antic.h"\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\binload.h"\
 	"..\cartridge.h"\
 	"..\cassette.h"\
@@ -4313,7 +4313,7 @@ SOURCE=..\atari.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\ataripcx.h
+SOURCE=..\screen.h
 # End Source File
 # Begin Source File
 
@@ -4539,7 +4539,7 @@ DEP_CPP_ATARI_=\
 
 DEP_CPP_ATARI_=\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\diskled.h"\
 	"..\input.h"\
 	"..\platform.h"\
@@ -4556,7 +4556,7 @@ DEP_CPP_ATARI_=\
 
 DEP_CPP_ATARI_=\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\diskled.h"\
 	"..\input.h"\
 	"..\platform.h"\
@@ -4588,7 +4588,7 @@ DEP_CPP_ATARI_=\
 
 DEP_CPP_ATARI_=\
 	"..\atari.h"\
-	"..\ataripcx.h"\
+	"..\screen.h"\
 	"..\diskled.h"\
 	"..\input.h"\
 	"..\platform.h"\
