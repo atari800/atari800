@@ -23,6 +23,38 @@
 #include "rt-config.h"
 #include "statesav.h"
 
+/* Memory access helpers----------------------------------------------------- */
+/* This is very similar (uint32 replaced with ULONG) to macros in POKEYSND.C.
+   These should really be promoted to some header */
+#ifdef UNALIGNED_LONG_OK
+#  define READ_U32(x)    (*(ULONG *)(x))
+#  define WRITE_U32(x,d) (*(ULONG *)(x)=(d))
+#else
+#  ifdef WORDS_BIGENDIAN
+#    define READ_U32(x) (((*(unsigned char *)(x)) << 24) | ((*((unsigned char *)(x)+1)) << 16) | \
+                        ((*((unsigned char *)(x)+2)) << 8) | ((*((unsigned char *)(x)+3))))
+#    define WRITE_U32(x,d) \
+  { \
+  ULONG i = d; \
+  (*(unsigned char *)(x)) = (((i)>>24)&255); \
+  (*((unsigned char *)(x)+1)) = (((i)>>16)&255); \
+  (*((unsigned char *)(x)+2)) = (((i)>>8)&255); \
+  (*((unsigned char *)(x)+3)) = ((i)&255); \
+  }
+#  else
+#    define READ_U32(x) ((*(unsigned char *)(x)) | ((*((unsigned char *)(x)+1)) << 8) | \
+                        ((*((unsigned char *)(x)+2)) << 16) | ((*((unsigned char *)(x)+3)) << 24))
+#    define WRITE_U32(x,d) \
+  { \
+  ULONG i = d; \
+  (*(unsigned char *)(x)) = ((i)&255); \
+  (*((unsigned char *)(x)+1)) = (((i)>>8)&255); \
+  (*((unsigned char *)(x)+2)) = (((i)>>16)&255); \
+  (*((unsigned char *)(x)+3)) = (((i)>>24)&255); \
+  }
+#  endif
+#endif
+
 /* ANTIC Registers --------------------------------------------------------- */
 
 UBYTE DMACTL;
@@ -718,10 +750,12 @@ void ANTIC_Reset(void) {
 /* Border ------------------------------------------------------------------ */
 
 #define DO_BORDER_1 {\
-	if (!(*(ULONG *) pm_scanline_ptr)) {\
+	if (!READ_U32(pm_scanline_ptr)) {\
 		ULONG *l_ptr = (ULONG *) ptr;\
-		*l_ptr++ = background;\
-		*l_ptr++ = background;\
+      WRITE_U32(l_ptr, background); \
+      l_ptr ++; \
+      WRITE_U32(l_ptr, background); \
+      l_ptr ++; \
 		ptr = (UWORD *) l_ptr;\
 		pm_scanline_ptr += 4;\
 	} else {\
@@ -936,7 +970,7 @@ void draw_antic_2(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		chdata = (screendata & invert_mask) ? 0xff : 0;
 		if (blank_lookup[screendata & blank_mask])
 			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
-		if (!(*t_pm_scanline_ptr)) {
+		if (!READ_U32(t_pm_scanline_ptr)) {
 			if (chdata) {
 				*ptr++ = hires_norm(chdata & 0xc0);
 				*ptr++ = hires_norm(chdata & 0x30);
@@ -974,7 +1008,7 @@ void draw_antic_2_artif(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
 		screendata_tally <<= 8;
 		screendata_tally |= chdata;
-		if (!(*t_pm_scanline_ptr))
+		if (!READ_U32(t_pm_scanline_ptr))
 			DRAW_ARTIF
 		else {
 			chdata = screendata_tally >> 8;
@@ -996,9 +1030,9 @@ void draw_antic_2_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 		chdata = (screendata & invert_mask) ? 0xff : 0;
 		if (blank_lookup[screendata & blank_mask])
 			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
-		((ULONG *) ptr)[0] = lookup_gtia9[chdata >> 4];
-		((ULONG *) ptr)[1] = lookup_gtia9[chdata & 0x0f];
-		if (!(*t_pm_scanline_ptr))
+		WRITE_U32(((ULONG *) ptr)+0, lookup_gtia9[chdata >> 4]);
+		WRITE_U32(((ULONG *) ptr)+1, lookup_gtia9[chdata & 0x0f]);
+		if (!READ_U32(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
 			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
@@ -1048,9 +1082,9 @@ void draw_antic_2_gtia10(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 		chdata = (screendata & invert_mask) ? 0xff : 0;
 		if (blank_lookup[screendata & blank_mask])
 			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
-		if (!(*t_pm_scanline_ptr)) {
-			((ULONG *) ptr)[0] = lookup_gtia10[chdata >> 4];
-			((ULONG *) ptr)[1] = lookup_gtia10[chdata & 0x0f];
+		if (!READ_U32(t_pm_scanline_ptr)) {
+			WRITE_U32(((ULONG *) ptr)+0, lookup_gtia10[chdata >> 4]);
+			WRITE_U32(((ULONG *) ptr)+1, lookup_gtia10[chdata & 0x0f]);
 			ptr += 4;
 		}
 		else {
@@ -1084,9 +1118,9 @@ void draw_antic_2_gtia11(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 		chdata = (screendata & invert_mask) ? 0xff : 0;
 		if (blank_lookup[screendata & blank_mask])
 			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
-		((ULONG *) ptr)[0] = lookup_gtia11[chdata >> 4];
-		((ULONG *) ptr)[1] = lookup_gtia11[chdata & 0x0f];
-		if (!(*t_pm_scanline_ptr))
+		WRITE_U32(((ULONG *) ptr)+0, lookup_gtia11[chdata >> 4]);
+		WRITE_U32(((ULONG *) ptr)+1, lookup_gtia11[chdata & 0x0f]);
+		if (!READ_U32(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
 			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
@@ -1137,7 +1171,7 @@ void draw_antic_4(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		else
 			lookup = lookup2;
 		chdata = dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
-		if (!(*t_pm_scanline_ptr)) {
+		if (!READ_U32(t_pm_scanline_ptr)) {
 			if (chdata) {
 				*ptr++ = lookup[chdata & 0xc0];
 				*ptr++ = lookup[chdata & 0x30];
@@ -1178,7 +1212,7 @@ void draw_antic_6(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		colour = COLOUR((playfield_lookup + 0x40)[screendata & 0xc0]);
 		chdata = dGetByte(t_chbase + ((UWORD) (screendata & 0x3f) << 3));
 		do {
-			if (!(*t_pm_scanline_ptr)) {
+			if (!READ_U32(t_pm_scanline_ptr)) {
 				if (chdata & 0xf0) {
 					if (chdata & 0x80)
 						*ptr++ = colour;
@@ -1234,7 +1268,7 @@ void draw_antic_8(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		do {
 			if ((UBYTE *) t_pm_scanline_ptr >= pm_scanline + 4 * (48 - RCHOP))
 				break;
-			if (!(*t_pm_scanline_ptr)) {
+			if (!READ_U32(t_pm_scanline_ptr)) {
 				ptr[3] = ptr[2] = ptr[1] = ptr[0] = lookup2[screendata & 0xc0];
 				ptr += 4;
 			}
@@ -1264,7 +1298,7 @@ void draw_antic_9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		do {
 			if ((UBYTE *) t_pm_scanline_ptr >= pm_scanline + 4 * (48 - RCHOP))
 				break;
-			if (!(*t_pm_scanline_ptr)) {
+			if (!READ_U32(t_pm_scanline_ptr)) {
 				ptr[1] = ptr[0] = lookup2[screendata & 0x80];
 				ptr[3] = ptr[2] = lookup2[screendata & 0x40];
 				ptr += 4;
@@ -1315,7 +1349,7 @@ void draw_antic_a(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		UBYTE screendata = *ANTIC_memptr++;
 		int kk = 2;
 		do {
-			if (!(*t_pm_scanline_ptr)) {
+			if (!READ_U32(t_pm_scanline_ptr)) {
 				ptr[1] = ptr[0] = lookup2[screendata & 0xc0];
 				ptr[3] = ptr[2] = lookup2[screendata & 0x30];
 				ptr += 4;
@@ -1347,7 +1381,7 @@ void draw_antic_c(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		UBYTE screendata = *ANTIC_memptr++;
 		int kk = 2;
 		do {
-			if (!(*t_pm_scanline_ptr)) {
+			if (!READ_U32(t_pm_scanline_ptr)) {
 				*ptr++ = lookup2[screendata & 0x80];
 				*ptr++ = lookup2[screendata & 0x40];
 				*ptr++ = lookup2[screendata & 0x20];
@@ -1381,7 +1415,7 @@ void draw_antic_e(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 
 	CHAR_LOOP_BEGIN
 		UBYTE screendata = *ANTIC_memptr++;
-		if (!(*t_pm_scanline_ptr)) {
+		if (!READ_U32(t_pm_scanline_ptr)) {
 			if (screendata) {
 				*ptr++ = lookup2[screendata & 0xc0];
 				*ptr++ = lookup2[screendata & 0x30];
@@ -1415,7 +1449,7 @@ void draw_antic_f(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 
 	CHAR_LOOP_BEGIN
 		int screendata = *ANTIC_memptr++;
-		if (!(*t_pm_scanline_ptr)) {
+		if (!READ_U32(t_pm_scanline_ptr)) {
 			if (screendata) {
 				*ptr++ = hires_norm(screendata & 0xc0);
 				*ptr++ = hires_norm(screendata & 0x30);
@@ -1441,7 +1475,7 @@ void draw_antic_f_artif(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 		int screendata = *ANTIC_memptr++;
 		screendata_tally <<= 8;
 		screendata_tally |= screendata;
-		if (!(*t_pm_scanline_ptr))
+		if (!READ_U32(t_pm_scanline_ptr))
 			DRAW_ARTIF
 		else {
 			screendata = ANTIC_memptr[-2];
@@ -1456,9 +1490,9 @@ void draw_antic_f_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 {
 	CHAR_LOOP_BEGIN
 		UBYTE screendata = *ANTIC_memptr++;
-		((ULONG *) ptr)[0] = lookup_gtia9[screendata >> 4];
-		((ULONG *) ptr)[1] = lookup_gtia9[screendata & 0x0f];
-		if (!(*t_pm_scanline_ptr))
+		WRITE_U32(((ULONG *) ptr)+0, lookup_gtia9[screendata >> 4]);
+		WRITE_U32(((ULONG *) ptr)+1, lookup_gtia9[screendata & 0x0f]);
+		if (!READ_U32(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
 			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
@@ -1502,9 +1536,9 @@ void draw_antic_f_gtia10(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 	t_pm_scanline_ptr = (ULONG *) (((UBYTE *) t_pm_scanline_ptr) + 1);
 	CHAR_LOOP_BEGIN
 		UBYTE screendata = *ANTIC_memptr++;
-		if (!(*t_pm_scanline_ptr)) {
-			((ULONG *) ptr)[0] = lookup_gtia10[screendata >> 4];
-			((ULONG *) ptr)[1] = lookup_gtia10[screendata & 0x0f];
+		if (!READ_U32(t_pm_scanline_ptr)) {
+			WRITE_U32(((ULONG *) ptr)+0, lookup_gtia10[screendata >> 4]);
+			WRITE_U32(((ULONG *) ptr)+1, lookup_gtia10[screendata & 0x0f]);
 			ptr += 4;
 		}
 		else {
@@ -1531,9 +1565,9 @@ void draw_antic_f_gtia11(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 {
 	CHAR_LOOP_BEGIN
 		UBYTE screendata = *ANTIC_memptr++;
-		((ULONG *) ptr)[0] = lookup_gtia11[screendata >> 4];
-		((ULONG *) ptr)[1] = lookup_gtia11[screendata & 0x0f];
-		if (!(*t_pm_scanline_ptr))
+		WRITE_U32(((ULONG *) ptr)+0, lookup_gtia11[screendata >> 4]);
+		WRITE_U32(((ULONG *) ptr)+1, lookup_gtia11[screendata & 0x0f]);
+		if (!READ_U32(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
 			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
@@ -1575,7 +1609,7 @@ void draw_antic_f_gtia_bug(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t
 
 	CHAR_LOOP_BEGIN
 		UBYTE screendata = *ANTIC_memptr++;
-		if (!(*t_pm_scanline_ptr)) {
+		if (!READ_U32(t_pm_scanline_ptr)) {
 			*ptr++ = lookup2[screendata & 0xc0];
 			*ptr++ = lookup2[screendata & 0x30];
 			*ptr++ = lookup2[screendata & 0x0c];
@@ -1988,7 +2022,7 @@ void ANTIC_RunDisplayList(void)
 				ULONG *ptr = (ULONG *) (scrn_ptr + 4 * LCHOP);
 				int k = 2 * (48 - LCHOP - RCHOP);
 				do {
-					*ptr |= ptr[-ATARI_WIDTH / 4];
+               WRITE_U32(ptr, READ_U32(ptr)|READ_U32(ptr-ATARI_WIDTH/4));
 					ptr++;
 				} while (--k);
 			}
