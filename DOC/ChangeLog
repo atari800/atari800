@@ -1,3 +1,9 @@
+2004-02-21  Petr Stehlik  <pstehlik@sophics.cz>
+* rdevice.c: Martin Albert, our new Debian package maintainer, suggested
+  to allow /dev/ttyS0 for all Linux archs, which is a good idea.
+  This device should be runtime configurable, anyway.
+
+
 2003-12-21  Petr Stehlik  <pstehlik@sophics.cz>
 * ui_basic.c: Aprint warning that fileselector couldn't open a folder.
   The warning should be propagated to the UI and shown to user. Or better

@@ -578,8 +578,8 @@ void open_connection(char * address, int port)
 }
 
 
-#if defined (__linux__) && defined(__i386__)
-#define TTY_DEV_NAME "/dev/ttyS0"   /* Linux/x86 */
+#ifdef __linux__
+#define TTY_DEV_NAME "/dev/ttyS0"   /* Linux */
 #elif defined (__NetBSD__) && defined(__i386__)
 #define TTY_DEV_NAME "/dev/tty00"   /* NetBSD/x86 */
 #elif defined (__sun__)
