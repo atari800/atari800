@@ -4,7 +4,7 @@ Atari800 emulator version 1.2.0
 This is free and portable Atari800/XL/XE/5200 emulator, originally written
 by David Firth and now developed by many people on the Net (see DOC/CREDITS).
 
-Please read DOC/README, DOC/INSTALL and DOC/USAGE.
+Please read DOC/README, DOC/INSTALL and DOC/USAGE (usage1).
 
 If you'd like to find out what's new in this release please read DOC/CHANGES.
 
@@ -19,17 +19,17 @@ for subscribing at the URL below).
 DOC/TODO might point you in the right direction.
 
 This version (and all versions back to 0.8.2) has been released by me (Petr
-Stehlik) and is available primarily at my FTP/WWW site (URL below). Thanks
+Stehlik) and are now available at Sourceforge.net (URL below). Thanks
 go to David Firth and all the people that helped making this release.
 
 EnJoy!
 
-Petr Stehlik, in Zlin, Czech Republic in October 10, 2001.
+Petr Stehlik
+November 29, 2001.
 
 E-mail: pstehlik@sophics.cz
 
-http://joy.sophics.cz/a800/
-ftp://ftp.sophics.cz/pub/Atari800/
+Project homepage: http://atari800.atari.org/
 
-And at last one URL that is easy to remember: http://atari800.atari.org/
+Files released at: http://atari800.sf.net/
 
