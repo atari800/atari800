@@ -29,11 +29,6 @@ int Atari_TRIG(int num)
 	return 1;
 }
 
-int Atari_POT(int num)
-{
-	return 228;
-}
-
 int main(int argc, char **argv)
 {
 	/* initialise Atari800 core */
