@@ -105,3 +105,9 @@
 
 /* color change inside a scanline */
 #undef NO_CYCLE_EXACT
+
+/* new color change inside a scanline */
+#undef NO_NEW_CYCLE_EXACT
+
+/* paged attrib implementation */
+#undef PAGED_ATTRIB

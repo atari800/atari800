@@ -270,6 +270,7 @@ fi
 fi
 DEF_FEATURE(VERY_SLOW, slow, enable, very slow computer support (disables generating screen completely), n)
 DEF_FEATURE(NO_CYCLE_EXACT, scancolor, disable, color changes inside a scanline (cycle exact), n)
+DEF_FEATURE(NO_NEW_CYCLE_EXACT, cycleexact, disable, new cycle-exact scanline changes, n)
 DEF_FEATURE(CRASH_MENU, crashmenu, enable, crash menu after CIM instruction, y)
 DEF_FEATURE(MONITOR_BREAK, break, enable, BREAK command in monitor (slows CPU a little bit), y)
 DEF_FEATURE(MONITOR_HINTS, hints, enable, hints in disassembler (addresses get human readable labels), y)

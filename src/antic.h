@@ -3,6 +3,8 @@
 
 #include "atari.h"
 
+
+
 /*
  * Offset to registers in custom relative to start of antic memory addresses.
  */
@@ -53,4 +55,26 @@ void ANTIC_UpdateArtifacting(void);
 void video_memset(UBYTE* ptr, UBYTE val, ULONG size);
 void video_putbyte(UBYTE* ptr, UBYTE val);
 
-#endif
+#ifndef NO_NEW_CYCLE_EXACT
+#define NOT_DRAWING -999
+#define DRAWING_SCREEN (cur_screen_pos!=NOT_DRAWING)
+extern int delayed_wsync;
+extern int cur_screen_pos;
+extern int *cpu2antic_ptr;
+extern int *antic2cpu_ptr;
+void update_scanline();
+void update_scanline_prior(UBYTE byte);
+#ifndef NO_GTIA11_DELAY
+extern int prevline_prior_pos; 
+extern int curline_prior_pos;
+extern int prior_curpos;
+#define PRIOR_BUF_SIZE 40
+extern UBYTE prior_val_buf[PRIOR_BUF_SIZE];
+extern int prior_pos_buf[PRIOR_BUF_SIZE];
+#endif /*NO_GTIA11_DELAY*/
+
+#define XPOS ( DRAWING_SCREEN ? cpu2antic_ptr[xpos] : xpos )
+#else
+#define XPOS xpos
+#endif /*NO_NEW_CYCLE_EXACT*/
+#endif 

@@ -420,6 +420,19 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 	UWORD cword;
 	UWORD cword2;
 
+#ifndef NO_NEW_CYCLE_EXACT
+	int x; /* the cycle-exact update position in pm_scanline*/
+	if(DRAWING_SCREEN){
+		if((addr&0x1f)!=_PRIOR){
+			update_scanline();
+		}else{
+			update_scanline_prior(byte);
+		}
+	}
+#define UPDATE_PM_CYCLE_EXACT if(DRAWING_SCREEN) new_pm_scanline();
+#else
+#define UPDATE_PM_CYCLE_EXACT
+#endif
 	switch (addr & 0x1f) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	case _COLBK:
@@ -824,43 +837,88 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		break;
 	case _GRAFM:
 		GRAFM = byte;
+		UPDATE_PM_CYCLE_EXACT
 		break;
-	case _GRAFP0:
-		GRAFP0 = byte;
-		break;
-	case _GRAFP1:
-		GRAFP1 = byte;
-		break;
-	case _GRAFP2:
-		GRAFP2 = byte;
-		break;
-	case _GRAFP3:
-		GRAFP3 = byte;
-		break;
+
+#ifndef NO_NEW_CYCLE_EXACT
+#define CYCLE_EXACT_GRAFP(n) x=XPOS*2-3;\
+if(HPOSP##n >= x) {\
+/*hpos right of x */\
+	/*redraw*/  \
+	UPDATE_PM_CYCLE_EXACT\
+}
+#else
+#define CYCLE_EXACT_GRAFP(n)
+#endif /*NO_NEW_CYCLE_EXACT*/
+
+#define DO_GRAFP(n) case _GRAFP##n:\
+	GRAFP##n = byte;\
+	CYCLE_EXACT_GRAFP(n);\
+	break;
+
+	DO_GRAFP(0)
+	DO_GRAFP(1)
+	DO_GRAFP(2)
+	DO_GRAFP(3)
+
 	case _HITCLR:
 		M0PL = M1PL = M2PL = M3PL = 0;
 		P0PL = P1PL = P2PL = P3PL = 0;
 		PF0PM = PF1PM = PF2PM = PF3PM = 0;
 		break;
+/*TODO: cycle-exact missile HPOS, GRAF, SIZE*/
+/*this is only an approximation*/
 	case _HPOSM0:
 		HPOSM0 = byte;
 		hposm_ptr[0] = pm_scanline + byte - 0x20;
+		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _HPOSM1:
 		HPOSM1 = byte;
 		hposm_ptr[1] = pm_scanline + byte - 0x20;
+		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _HPOSM2:
 		HPOSM2 = byte;
 		hposm_ptr[2] = pm_scanline + byte - 0x20;
+		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _HPOSM3:
 		HPOSM3 = byte;
 		hposm_ptr[3] = pm_scanline + byte - 0x20;
+		UPDATE_PM_CYCLE_EXACT
 		break;
 
+#ifndef NO_NEW_CYCLE_EXACT
+#define CYCLE_EXACT_HPOSP(n) x=XPOS*2-1;\
+if(HPOSP##n < x && byte <x) {\
+/*case 1: both left of x */\
+	/* do nothing*/\
+}else if (HPOSP##n >= x && byte >= x ) {\
+/*case 2: both right of x*/\
+	/* redraw, clearing first */\
+	UPDATE_PM_CYCLE_EXACT\
+} else if (HPOSP##n <x && byte >= x){\
+/*case 3: new value is right, old value is left*/\
+	/*redraw without clearning first*/\
+	/*note: a hack, we can get away with it unless another change occurs*/\
+	/*before the original copy that wasn't erased due to changing */\
+	/*pm_dirty is drawn*/\
+	pm_dirty=FALSE;\
+	UPDATE_PM_CYCLE_EXACT\
+	pm_dirty=TRUE; /*can't trust that it was reset correctly*/\
+}else{\
+/*case 4: new value is left, old value is right*/\
+	/* remove old player and don't draw the new one*/\
+	UBYTE save_graf=GRAFP##n;\
+	GRAFP##n=0;\
+	UPDATE_PM_CYCLE_EXACT\
+	GRAFP##n=save_graf;\
+}
+#else
+#define CYCLE_EXACT_HPOSP(n)
+#endif /*NO_NEW_CYCLE_EXACT*/
 #define DO_HPOSP(n)	case _HPOSP##n:								\
-	HPOSP##n = byte;											\
 	hposp_ptr[n] = pm_scanline + byte - 0x20;					\
 	if (byte >= 0x22) {											\
 		if (byte > 0xbe) {										\
@@ -876,6 +934,8 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		hposp_mask[n] = 0xffffffff << (0x22 - byte);			\
 	else														\
 		hposp_mask[n] = 0;										\
+	CYCLE_EXACT_HPOSP(n)\
+	HPOSP##n = byte;											\
 	break;
 
 	DO_HPOSP(0)
@@ -883,30 +943,45 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 	DO_HPOSP(2)
 	DO_HPOSP(3)
 
+/*TODO: cycle-exact size changes*/
+/*this is only an approximation*/
 	case _SIZEM:
 		SIZEM = byte;
 		global_sizem[0] = PM_Width[byte & 0x03];
 		global_sizem[1] = PM_Width[(byte & 0x0c) >> 2];
 		global_sizem[2] = PM_Width[(byte & 0x30) >> 4];
 		global_sizem[3] = PM_Width[(byte & 0xc0) >> 6];
+		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _SIZEP0:
 		SIZEP0 = byte;
 		grafp_ptr[0] = grafp_lookup[byte & 3];
+		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _SIZEP1:
 		SIZEP1 = byte;
 		grafp_ptr[1] = grafp_lookup[byte & 3];
+		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _SIZEP2:
 		SIZEP2 = byte;
 		grafp_ptr[2] = grafp_lookup[byte & 3];
+		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _SIZEP3:
 		SIZEP3 = byte;
 		grafp_ptr[3] = grafp_lookup[byte & 3];
+		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _PRIOR:
+#ifndef NO_NEW_CYCLE_EXACT
+#ifndef NO_GTIA11_DELAY
+		/*update prior change ring buffer*/
+  		prior_curpos=(prior_curpos+1)%PRIOR_BUF_SIZE;
+		prior_pos_buf[prior_curpos]=XPOS*2-37+2;
+		prior_val_buf[prior_curpos]=byte;
+#endif
+#endif
 		set_prior(byte);
 		PRIOR = byte;
 		if (byte & 0x40)

@@ -1,3 +1,19 @@
+Unreleased version 1.2.9 (2003/01/27)
+
+* New cycle-exact ANTIC/GTIA emulation. Enabled by default, disable by
+  ./configure --disable-cycleexact
+
+Unreleased version 1.2.8 (2003/01/27)
+
+* Paged memory implementation finished. Disabled by default, enable by
+  ./configure --enable-paged
+
+Unreleased version 1.2.7 (2003/01/27)
+
+* Harddisk emulation now complete including support for subdirectories.
+
+Unreleased version 1.2.6 (2003/01/27)
+
 * New sound core and 16 bit sound support -- high sound quality but slower.
   Use -bit16 option to enable 16 bit sound and -quality <level> to set sound
   quality (level > 0 enables new sound core).

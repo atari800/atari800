@@ -4,12 +4,22 @@ Bugs and Known Problems
 o a few keyboard-related bugs: e.g. pressing SHIFT+1 and then
   releasing SHIFT should still give '!' characters
 
-o ANTIC emulation is scanline-, not pixel-exact.
+o The cycle-exact ANTIC/GTIA/CPU timing is not 100%.
   This causes display bugs in following programs:
+  - Surf's up (game) (The horizon)
+  - Dimension X (game) (aligment problem? not tested on acutal machine)
+  - Te.mod (demo) (small glitched pixel in the final credits on the bottom left)
+  - The break(demo) (bug may exist in the original, check)
+  - Our 5oft Unity Part (demo) (cycle-aligment, probably WSYNC)
+
+o Non-bugs:
+  - Mail Order Monsters (game)
+	 (some colour changes do not align with text, occurs on a real Atari) 
+
+o The following programs are improved by using the new cycle-exact code
   - 8 Players Demo (demo)
   - Bewesoft's Demo (demo)
   - Bitter Reality (demo)
-  - Darkness Warrior (picture)
   - Demonic Laughter (music collection)
   - Extract (graphics collection)
   - GED (graphics editor)
@@ -18,12 +28,16 @@ o ANTIC emulation is scanline-, not pixel-exact.
   - Master of the Lamps (game)
   - Orneta '95 invitro (demo)
   - Our 5oft Unity Part (demo)
-  - Power Graph (graphics editor)
   - Studio Dream (demo)
   - Sweet Illusion (demo)
   - Te.mod (demo)
   - The Break (demo)
-
+  - Miner 2049'er (game) (rotating 5's)
+  - Dimension X (game) (title screen upper and lower bars) 
+  - Graphics impossible (demo) (Antic magazine)
+(not tested:)
+  - Power Graph (graphics editor)
+  - Darkness Warrior (picture)
 o POKEY interrupts are scanline-, not cycle-exact.
   This causes sound bugs in following programs:
   - Mirax Force (game)

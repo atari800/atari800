@@ -15,6 +15,7 @@
 #include "statesav.h"
 #include "pokeysnd.h"
 #include "input.h"
+#include "antic.h"
 
 #ifdef POKEY_UPDATE
 extern void pokey_update(void);
@@ -77,7 +78,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		break;
 	case _RANDOM:
 		if ((SKCTLS & 0x03) != 0) {
-			int i = random_scanline_counter + xpos;
+			int i = random_scanline_counter + XPOS;
 			if (AUDCTL[0] & POLY9)
 				byte = poly9_lookup[i % POLY9_SIZE];
 			else {

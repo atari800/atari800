@@ -210,7 +210,7 @@ UWORD assembler(UWORD addr);
     {"P0PF"  ,0xd004}, {"HPOSM0",0xd004}, {"P1PF"  ,0xd005}, {"HPOSM1",0xd005},
     {"P2PF"  ,0xd006}, {"HPOSM2",0xd006}, {"P3PF"  ,0xd007}, {"HPOSM3",0xd007},
     {"M0PL"  ,0xd008}, {"SIZEP0",0xd008}, {"M1PL"  ,0xd009}, {"SIZEP1",0xd009}, 
-    {"M2PL"  ,0xd00a}, {"HPOSP2",0xd00a}, {"M3PL"  ,0xd00b}, {"HPOSP3",0xd00b},
+    {"M2PL"  ,0xd00a}, {"SIZEP2",0xd00a}, {"M3PL"  ,0xd00b}, {"SIZEP3",0xd00b},
     {"P0PL"  ,0xd00c}, {"SIZEM", 0xd00c}, {"P1PL"  ,0xd00d}, {"GRAFP0",0xd00d}, 
     {"P2PL"  ,0xd00e}, {"GRAFP1",0xd00e}, {"P3PL"  ,0xd00f}, {"GRAFP2",0xd00f},
     {"TRIG0" ,0xd010}, {"GRAFP3",0xd010}, {"TRIG1" ,0xd011}, {"GRAFM", 0xd011}, 
@@ -324,6 +324,20 @@ char *get_token(char *string)
 	return t;					/* Pointer to String */
 }
 
+int get_dec(char *string, UWORD * decval)
+{
+	int idecval;
+	char *t;
+
+	t = get_token(string);
+	if (t) {
+		sscanf(t, "%d", &idecval);
+		*decval = idecval;
+		return 1;
+	}
+	return 0;
+}
+
 int get_hex(char *string, UWORD * hexval)
 {
 	int ihexval;
@@ -348,6 +362,7 @@ static UBYTE get_dlist_byte(UWORD *addr)
 }
 
 UWORD break_addr;
+UWORD ypos_break_addr=0xffff;
 UBYTE break_step=0;
 UBYTE break_cim=0;
 UBYTE break_here=0;
@@ -551,16 +566,33 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 		else if (strcmp(t, "BREAK") == 0) {
 			get_hex(NULL, &break_addr);
 		}
+		else if (strcmp(t, "YBREAK") == 0) {
+			get_dec(NULL, &ypos_break_addr);
+		}
 		else if (strcmp(t, "HISTORY") == 0) {
 			int i;
-			for (i = 0; i < REMEMBER_PC_STEPS; i++)
-				printf("%04x  ", remember_PC[i]);
+			for (i = 0; i < REMEMBER_PC_STEPS; i++) {
+				UWORD addr1,addr;
+				int j;
+				addr=remember_PC[(remember_PC_curpos+i)%REMEMBER_PC_STEPS];
+#ifndef NO_NEW_CYCLE_EXACT
+				printf("%3d  ", (remember_xpos[(remember_xpos_curpos+i)%REMEMBER_PC_STEPS]>>8));
+				printf("%3d  ", (remember_xpos[(remember_xpos_curpos+i)%REMEMBER_PC_STEPS]&0xff));
+#endif
+				printf("%04X ", addr);
+				addr1 = show_instruction(addr, 20);
+				printf("; %Xcyc ; ", cycles[dGetByte(addr)]);
+				for (j = 0; j < addr1; j++){
+					printf("%02X ", dGetByte((UWORD) (addr + j)));
+				}
+				printf("\n");
+			}
 			printf("\n");
 		}
 		else if (strcmp(t, "JUMPS") == 0) {
 			int i;
 			for (i = 0; i < REMEMBER_JMP_STEPS; i++)
-				printf("%04x  ", remember_JMP[i]);
+				printf("%04x  ", remember_JMP[(remember_jmp_curpos+i)%REMEMBER_JMP_STEPS]);
 			printf("\n");
 		}
 #endif
@@ -1088,9 +1120,15 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 #endif
 #ifdef MONITOR_BREAK
 			printf("BREAK [addr]                   - Set breakpoint at address\n");
- 			printf("BRKHERE on|off                 - Set BRK opcode behaviour\n");
-			printf("HISTORY                        - List last %i PC addresses\n",(int)REMEMBER_PC_STEPS);
+			printf("YBREAK [pos], or [1000+pos]    - Break at scanline or flash scanline\n");
 
+ 			printf("BRKHERE on|off                 - Set BRK opcode behaviour\n");
+#ifndef NO_NEW_CYCLE_EXACT
+			printf("HISTORY                        - Disasm. last %i PC addrs. giving ypos xpos\n",(int)REMEMBER_PC_STEPS);
+
+#else
+			printf("HISTORY                        - Disasm. last %i PC addrs. ",(int)REMEMBER_PC_STEPS);
+#endif /*NO_NEW_CYCLE_EXACT*/
                         printf("Press return to continue: ");
                         getchar();
 
@@ -1389,6 +1427,9 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.12  2003/01/27 14:13:02  joy
+Perry's cycle-exact ANTIC/GTIA emulation
+
 Revision 1.11  2003/01/27 13:14:53  joy
 Jason's changes: either PAGED_ATTRIB support (mostly), or just clean up.
 

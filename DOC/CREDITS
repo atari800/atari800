@@ -117,6 +117,7 @@ Perry McFarlane <ce596@freenet.toronto.on.ca>
 - Allegro library in DOS port
 - Colour Artifacting
 - 'digital sound' emulation in DOS port
+- complete cycle-exact ANTIC/GTIA emulation
 
 Thomas Richter <thor@math.tu-berlin.de>
 - GTIA collisions and third colour of players

@@ -48,7 +48,8 @@ OBJ = \
 	remez.o \
 	sndsave.o \
 	cassette.o \
-	input.o
+	input.o\
+	cycle_map.o
 
 OBJ += @OBJ@
 

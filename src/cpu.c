@@ -172,8 +172,15 @@ UBYTE IRQ;
 
 #ifdef MONITOR_BREAK
 UWORD remember_PC[REMEMBER_PC_STEPS];
+int remember_PC_curpos = 0;
+#ifndef NO_NEW_CYCLE_EXACT
+int remember_xpos[REMEMBER_PC_STEPS];
+int remember_xpos_curpos = 0;
+#endif
+extern UWORD ypos_break_addr;
 extern UWORD break_addr;
 UWORD remember_JMP[REMEMBER_JMP_STEPS];
+int remember_jmp_curpos=0;
 extern UBYTE break_step;
 extern UBYTE break_ret;
 extern UBYTE break_cim;
@@ -463,13 +470,36 @@ void GO(int limit)
    2. The timing of the IRQs are not that critical.
  */
 
+#ifndef NO_NEW_CYCLE_EXACT
+	if (wsync_halt) {
+		if(DRAWING_SCREEN){
+/* if WSYNC_C is a stolen cycle, antic2cpu_ptr will convert that to the nearest
+   cpu cycle before that cycle.  The CPU will see this cycle, if WSYNC is not 
+   delayed. (Acutally this cycle is the first cycle of the instruction after
+  STA WSYNC, which was really executed one cycle after STA WSYNC because
+  of an internal antic delay ).   delayed_wsync is added to this cycle to form
+   the limit in the case that WSYNC is not early (does not allow this extra cycle) */
+ 
+			if (limit<antic2cpu_ptr[WSYNC_C]+delayed_wsync)
+				return;
+			xpos = antic2cpu_ptr[WSYNC_C]+delayed_wsync;
+		}else{
+			if (limit<(WSYNC_C+delayed_wsync))
+				return;
+			xpos = WSYNC_C;
+			
+		}
+		wsync_halt = 0;
+		delayed_wsync=0;
+	}
+#else
 	if (wsync_halt) {
 		if (limit<WSYNC_C)
 			return;
 		xpos = WSYNC_C;
 		wsync_halt = 0;
 	}
-
+#endif /*NO_NEW_CYCLE_EXACT*/
 	xpos_limit = limit;			/* needed for WSYNC store inside ANTIC */
 
 	UPDATE_LOCAL_REGS;
@@ -506,10 +536,19 @@ void GO(int limit)
 #endif
 
 #ifdef MONITOR_BREAK
-		memmove(&remember_PC[0], &remember_PC[1], (REMEMBER_PC_STEPS - 1) * 2);
-		remember_PC[REMEMBER_PC_STEPS - 1] = PC;
+		remember_PC[remember_PC_curpos]=PC;
+		remember_PC_curpos=(remember_PC_curpos+1)%REMEMBER_PC_STEPS;
+#ifndef NO_NEW_CYCLE_EXACT
+		if(DRAWING_SCREEN){
+			remember_xpos[remember_xpos_curpos] = cpu2antic_ptr[xpos]+(ypos<<8);
+		}else{
+			remember_xpos[remember_xpos_curpos] = xpos+(ypos<<8);
+		}
+		remember_xpos_curpos=(remember_xpos_curpos+1)%REMEMBER_PC_STEPS;
+			
+#endif
 
-		if (break_addr == PC) {
+		if (break_addr == PC || ypos_break_addr == ypos) {
 			UPDATE_GLOBAL_REGS;
 			CPU_GetStatus();
 			if (!Atari800_Exit(TRUE))
@@ -726,8 +765,8 @@ void GO(int limit)
 		{
 			UWORD retadr = PC + 1;
 #ifdef MONITOR_BREAK
-			memmove(&remember_JMP[0], &remember_JMP[1], 2 * (REMEMBER_JMP_STEPS - 1));
-			remember_JMP[REMEMBER_JMP_STEPS - 1] = PC - 1;
+			remember_JMP[remember_jmp_curpos]=PC-1;
+			remember_jmp_curpos=(remember_jmp_curpos+1)%REMEMBER_JMP_STEPS;
 			ret_nesting++;
 #endif
 			PHW(retadr);
@@ -969,8 +1008,8 @@ void GO(int limit)
 
 	OPCODE(4c)				/* JMP abcd */
 #ifdef MONITOR_BREAK
-		memmove(&remember_JMP[0], &remember_JMP[1], 2 * (REMEMBER_JMP_STEPS - 1));
-		remember_JMP[REMEMBER_JMP_STEPS - 1] = PC - 1;
+		remember_JMP[remember_jmp_curpos]=PC-1;
+		remember_jmp_curpos=(remember_jmp_curpos+1)%REMEMBER_JMP_STEPS;
 #endif
 		PC = dGetWord(PC);
 		DONE
@@ -1162,8 +1201,8 @@ void GO(int limit)
 
 	OPCODE(6c)				/* JMP (abcd) */
 #ifdef MONITOR_BREAK
-		memmove(&remember_JMP[0], &remember_JMP[1], 2 * (REMEMBER_JMP_STEPS - 1));
-		remember_JMP[REMEMBER_JMP_STEPS - 1] = PC - 1;
+		remember_JMP[remember_jmp_curpos]=PC-1;
+		remember_jmp_curpos=(remember_jmp_curpos+1)%REMEMBER_JMP_STEPS;
 #endif
 		addr = dGetWord(PC);
 #ifdef CPU65C02

@@ -50,10 +50,15 @@ extern UBYTE regX;
 
 extern UBYTE IRQ;
 
-#define REMEMBER_PC_STEPS 16
+#define REMEMBER_PC_STEPS 64
 extern UWORD remember_PC[REMEMBER_PC_STEPS];
+extern int remember_PC_curpos;
+#ifndef NO_NEW_CYCLE_EXACT
+extern int remember_xpos[REMEMBER_PC_STEPS];
+extern int remember_xpos_curpos;
+#endif
 
 #define REMEMBER_JMP_STEPS 16
 extern UWORD remember_JMP[REMEMBER_JMP_STEPS];
-
+extern int remember_jmp_curpos;
 #endif
