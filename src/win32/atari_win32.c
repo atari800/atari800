@@ -61,9 +61,6 @@ static UBYTE joymask[] =
 
 static int trig0;
 static int stick0;
-static int consol;
-
-extern int TRIG_auto[4];	/* autofire */
 
 extern double deltatime;
 
@@ -88,10 +85,10 @@ int Atari_Keyboard(void)
 	  stick0 &= joymask[i];
     }
 
-  consol = (consol & ~7)
-    | (kbhits[DIK_F2] ? 0 : 4)
-    | (kbhits[DIK_F3] ? 0 : 2)
-    | (kbhits[DIK_F4] ? 0 : 1);
+  key_consol = (key_consol & ~CONSOL_NONE)
+    | (kbhits[DIK_F2] ? 0 : CONSOL_OPTION)
+    | (kbhits[DIK_F3] ? 0 : CONSOL_SELECT)
+    | (kbhits[DIK_F4] ? 0 : CONSOL_START);
 
   if (pause_hit)
     {
@@ -160,8 +157,8 @@ int Atari_Keyboard(void)
     case DIK_F11:
       for (i = 0; i < 4; i++)
 	{
-	  if (++TRIG_auto[i] > 2)
-	    TRIG_auto[i] = 0;
+	  if (++joy_autofire[i] > 2)
+	    joy_autofire[i] = 0;
 	}
       kbcode = 0;
       break;
@@ -339,7 +336,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
   trig0 = 1;
   stick0 = 15;
-  consol = 7;
+  key_consol = CONSOL_NONE;
 }
 
 int Atari_Exit(int run_monitor)
@@ -399,18 +396,11 @@ int Atari_POT(int num)
   return 228;
 }
 
-int Atari_CONSOL(void)
-{
-  return consol;
-}
-
-int Atari_PEN(int vertical)
-{
-  return vertical ? 0xff : 0;
-}
-
 /*
 $Log$
+Revision 1.5  2001/10/03 16:16:42  knik
+keyboard update
+
 Revision 1.4  2001/09/25 17:40:16  knik
 keyboard and display update
 

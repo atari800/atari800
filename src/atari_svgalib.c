@@ -107,10 +107,6 @@ static int cstick;
 static int atrig;
 static int astick;
 
-static int consol;
-
-extern int TRIG_auto[4];		/* autofire */
-
 extern double deltatime;
 
 static int invisible=0;
@@ -191,10 +187,10 @@ int Atari_Keyboard(void)
               cstick &= joymask[i];
         }
 
-        consol = (consol & ~7)
-        	| (kbhits[SCANCODE_F2] ? 0 : 4)
-        	| (kbhits[SCANCODE_F3] ? 0 : 2)
-        	| (kbhits[SCANCODE_F4] ? 0 : 1);
+        key_consol = (key_consol & ~CONSOL_NONE)
+        	| (kbhits[SCANCODE_F2] ? 0 : CONSOL_OPTION)
+        	| (kbhits[SCANCODE_F3] ? 0 : CONSOL_SELECT)
+        	| (kbhits[SCANCODE_F4] ? 0 : CONSOL_START);
 
         if (pause_hit)
         {
@@ -265,8 +261,8 @@ int Atari_Keyboard(void)
           case SCANCODE_F11:
             for(i = 0; i < 4; i++)
             {
-              if (++TRIG_auto[i] > 2)
-                TRIG_auto[i] = 0;
+              if (++joy_autofire[i] > 2)
+                joy_autofire[i] = 0;
             }
             kbcode = 0;
             break;
@@ -533,7 +529,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	cstick = 15;
 	atrig = 1;
 	astick = 15;
-	consol = 7;
+	key_consol = CONSOL_NONE;
 }
 
 int Atari_Exit(int run_monitor)
@@ -749,16 +745,6 @@ int Atari_POT(int num)
 	return 228;
 }
 
-int Atari_CONSOL(void)
-{
-	return consol;
-}
-
-int Atari_PEN(int vertical)
-{
-	return vertical ? 0xff : 0;
-}
-
 int main(int argc, char **argv)
 {
 	/* initialise Atari800 core */
@@ -829,6 +815,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.7  2001/10/03 16:15:58  knik
+keyboard update
+
 Revision 1.6  2001/09/25 17:41:49  knik
 added main loop; updated keyboard and display
 
