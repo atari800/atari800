@@ -1,3 +1,16 @@
+2005-03-10  Piotr Fusik  <fox@scene.pl>
+* atari_basic.c: updated for new Atari800_Frame()
+
+* atari_sdl.c: corrected Atari_TRIG() and don't initialize sound on "-help"
+
+* ui.c: "Extract ROM image from Cartridge" should skip the CART header,
+  not just copy the whole file
+
+* ui_basic.c: fixed a memory leak
+
+* ui.[ch], atari.c, cpu.c: removed the unused "screen" parameter from ui()
+  and SelectCartType()
+
 2005-03-09  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c: switched back to Atari800_Frame like all other ports do.
   So far everything looks OK. Why did Jacek abandon the Atari800_Frame
@@ -13,12 +26,11 @@
   a lot of cleanup: move the mouse emulation to input.c and make sure
   the keyboard joystick, mouse joystick and real joysticks do cope together.
 
-
 2005-03-08  Piotr Fusik  <fox@scene.pl>
 * antic.c: added missing combinations of ANTIC modes with GTIA modes.
   GTIA modes are correctly scrolled horizontally.
 
-* compfile.c, devices.c, monitor.c, mzpokeysnd.c, sio.c, ui_basic.c:
+* compfile.c, devices.c, gtia.c, monitor.c, mzpokeysnd.c, sio.c, ui_basic.c:
   killed gcc -W warnings. Remained only the warnings about unused parameters.
 
 * antic.c, input.c, dos/sound_dos.c: handle "-help" option
