@@ -455,8 +455,8 @@ fi
 if [[ "$a8_host" = "linux" ]]; then
     case "$a8_target" in
         svgalib | x11*)
-            A8_OPTION(linuxjoystick,no,
-                      [Use LINUX joystick (linux svgalib/x11 targets only) (default=OFF)],
+            A8_OPTION(linuxjoystick,yes,
+                      [Use LINUX joystick (linux svgalib/x11 targets only) (default=ON)],
                       LINUX_JOYSTICK,[define to use LINUX joystick]
                       )
     esac
