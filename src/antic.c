@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Correct timing, internal memory and other fixes: */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 27th September 2001                */
+/* Last changes: 21st September 2001                */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -936,10 +936,29 @@ static UBYTE gtia_10_pm[] =
 
 #endif /* USE_COLOUR_TRANSLATION_TABLE */
 
+#ifdef PAGED_MEM
+
 #define INIT_ANTIC_2	int t_chbase = (dctr ^ chbase_20) & 0xfc07;\
 	xpos += font_cycles[md];\
 	blank_lookup[0x60] = (anticmode == 2 || dctr & 0xe) ? 0xff : 0;\
 	blank_lookup[0x00] = blank_lookup[0x20] = blank_lookup[0x40] = (dctr & 0xe) == 8 ? 0 : 0xff;
+
+#define GET_CHDATA_ANTIC_2	chdata = (screendata & invert_mask) ? 0xff : 0;\
+	if (blank_lookup[screendata & blank_mask])\
+		chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
+
+#else /* PAGED_MEM */
+
+#define INIT_ANTIC_2	UBYTE *chptr = memory + ((dctr ^ chbase_20) & 0xfc07);\
+	xpos += font_cycles[md];\
+	blank_lookup[0x60] = (anticmode == 2 || dctr & 0xe) ? 0xff : 0;\
+	blank_lookup[0x00] = blank_lookup[0x20] = blank_lookup[0x40] = (dctr & 0xe) == 8 ? 0 : 0xff;
+
+#define GET_CHDATA_ANTIC_2	chdata = (screendata & invert_mask) ? 0xff : 0;\
+	if (blank_lookup[screendata & blank_mask])\
+		chdata ^= chptr[(screendata & 0x7f) << 3];
+
+#endif /* PAGED_MEM */
 
 void draw_antic_2(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr)
 {
@@ -951,9 +970,7 @@ void draw_antic_2(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		UBYTE screendata = *ANTIC_memptr++;
 		int chdata;
 
-		chdata = (screendata & invert_mask) ? 0xff : 0;
-		if (blank_lookup[screendata & blank_mask])
-			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
+		GET_CHDATA_ANTIC_2
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 			if (chdata) {
 				*ptr++ = hires_norm(chdata & 0xc0);
@@ -977,9 +994,7 @@ void draw_antic_2_artif(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 	UBYTE screendata = *ANTIC_memptr++;
 	UBYTE chdata;
 	INIT_ANTIC_2
-	chdata = (screendata & invert_mask) ? 0xff : 0;
-	if (blank_lookup[screendata & blank_mask])
-		chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
+	GET_CHDATA_ANTIC_2
 	screendata_tally = chdata;
 	setup_art_colours();
 
@@ -987,9 +1002,7 @@ void draw_antic_2_artif(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 		UBYTE screendata = *ANTIC_memptr++;
 		ULONG chdata;
 
-		chdata = (screendata & invert_mask) ? 0xff : 0;
-		if (blank_lookup[screendata & blank_mask])
-			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
+		GET_CHDATA_ANTIC_2
 		screendata_tally <<= 8;
 		screendata_tally |= chdata;
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
@@ -1011,9 +1024,7 @@ void draw_antic_2_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm
 		UBYTE screendata = *ANTIC_memptr++;
 		int chdata;
 
-		chdata = (screendata & invert_mask) ? 0xff : 0;
-		if (blank_lookup[screendata & blank_mask])
-			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
+		GET_CHDATA_ANTIC_2
 		DO_GTIA_BYTE(ptr, lookup_gtia9, chdata)
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
 			ptr += 4;
@@ -1078,9 +1089,7 @@ void draw_antic_2_gtia10(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 		UBYTE screendata = *ANTIC_memptr++;
 		int chdata;
 
-		chdata = (screendata & invert_mask) ? 0xff : 0;
-		if (blank_lookup[screendata & blank_mask])
-			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
+		GET_CHDATA_ANTIC_2
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 			DO_GTIA_BYTE(ptr, lookup_gtia10, chdata)
 			ptr += 4;
@@ -1113,9 +1122,7 @@ void draw_antic_2_gtia11(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 		UBYTE screendata = *ANTIC_memptr++;
 		int chdata;
 
-		chdata = (screendata & invert_mask) ? 0xff : 0;
-		if (blank_lookup[screendata & blank_mask])
-			chdata ^= dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
+		GET_CHDATA_ANTIC_2
 		DO_GTIA_BYTE(ptr, lookup_gtia11, chdata)
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
 			ptr += 4;
@@ -1148,7 +1155,11 @@ void draw_antic_2_gtia11(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 void draw_antic_4(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr)
 {
 	INIT_BACKGROUND_8
+#ifdef PAGED_MEM
 	UWORD t_chbase = ((anticmode == 4 ? dctr : dctr >> 1) ^ chbase_20) & 0xfc07;
+#else
+	UBYTE *chptr = memory + (((anticmode == 4 ? dctr : dctr >> 1) ^ chbase_20) & 0xfc07);
+#endif
 
 	xpos += font_cycles[md];
 	lookup2[0x0f] = lookup2[0x00] = cl_lookup[C_BAK];
@@ -1167,7 +1178,11 @@ void draw_antic_4(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 			lookup = lookup2 + 0xf;
 		else
 			lookup = lookup2;
+#ifdef PAGED_MEM
 		chdata = dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
+#else
+		chdata = chptr[(screendata & 0x7f) << 3];
+#endif
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 			if (chdata) {
 				*ptr++ = lookup[chdata & 0xc0];
@@ -1198,7 +1213,11 @@ void draw_antic_4(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 
 void draw_antic_6(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr)
 {
+#ifdef PAGED_MEM
 	UWORD t_chbase = (anticmode == 6 ? dctr & 7 : dctr >> 1) ^ chbase_20;
+#else
+	UBYTE *chptr = memory + ((anticmode == 6 ? dctr & 7 : dctr >> 1) ^ chbase_20);
+#endif
 
 	xpos += font_cycles[md];
 	CHAR_LOOP_BEGIN
@@ -1207,7 +1226,11 @@ void draw_antic_6(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 		UWORD colour;
 		int kk = 2;
 		colour = COLOUR((playfield_lookup + 0x40)[screendata & 0xc0]);
+#ifdef PAGED_MEM
 		chdata = dGetByte(t_chbase + ((UWORD) (screendata & 0x3f) << 3));
+#else
+		chdata = chptr[(screendata & 0x3f) << 3];
+#endif
 		do {
 			if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 				if (chdata & 0xf0) {
