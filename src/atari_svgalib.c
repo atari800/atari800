@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include <vga.h>
 
@@ -31,8 +32,10 @@ static int js1;
 
 static int js0_centre_x;
 static int js0_centre_y;
+#if 0 /* currently not used */
 static int js1_centre_x;
 static int js1_centre_y;
+#endif
 
 static struct JS_DATA_TYPE js_data;
 #endif
@@ -475,10 +478,10 @@ void Atari_Initialise(int *argc, char *argv[])
 		js0_centre_x = js_data.x;
 		js0_centre_y = js_data.y;
 	}
-        else {
-                printf("cannot open joystick /dev/js0: %s\n"
-                       "joystick disabled\n",strerror(errno));
-        }
+	else {
+		printf("cannot open joystick /dev/js0: %s\n"
+			   "joystick disabled\n",strerror(errno));
+	}
 #if 0 /* currently not used */
 	js1 = open("/dev/js1", O_RDONLY, 0777);
 	if (js1 != -1) {
