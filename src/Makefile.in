@@ -44,7 +44,7 @@ OBJ = \
 	colours.o \
 	pokeysnd.o \
 	mzpokeysnd.o \
-	pokey_resample.o \
+	remez.o \
 	sndsave.o \
 	cassette.o \
 	input.o
