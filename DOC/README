@@ -69,55 +69,58 @@ Features
 
 Note: Not all features are supported on all platforms.
 
-o Atari 800, 800XL, 130XE and 5200 Games System.
+o Atari 400, 800, 600 XL, 800XL, 130XE, 5200 Games System.
 
-  Note 1: During 130XE emulation Antic accesses the same memory bank
-          which the main CPU is using.
+o 130XE compatible memory expansions: 320K, 576K, 1088K.
 
-  Note 2: 5200 emulation is incomplete, mainly controllers support!
+o Optional 4K RAM between 0xc000 and 0xcfff in 400/800 mode.
 
-o 48K/52K Atari 400/800 emulation (optional RAM between 0xc000 and 0xcfff)
+o Cycle-exact 6502 emulation, all unofficial instructions.
 
-o OSS Super Cartridges.
+o Cycle-exact NMI interrupts, scanline-based POKEY interrupts.
 
-o Standard, Wide and Narrow Playfields.
+o Scanline-based ANTIC emulation, all display modes, precise timing.
 
-o Display List Interrupts and Vertical Blank Interrupts.
+o Player/Missile Graphics, exact priority control and collision detection.
 
-o All Antic Display Modes.
+o Exact POKEY shift registers (sound and random number generator).
 
-o GTIA graphics support for all Antic modes including GTIA/Antic
-  character modes.
+o 8 disk drives, emulated at computer-to-drive communication
+  and fast patched SIO levels.
 
-o Player Missile Graphics with collision detection.
+o ATR, XFD, DCM, ATR.GZ and XFD.GZ disk images.
 
-o Playfield and Player/Missile Priorities
+o Direct loading of Atari executable files.
 
-o Access both ATR and XFD disk images.
+o 22 cartridge types, raw and CART format.
 
-o PIL mode - allows memory between 0x8000 and 0xbfff to be toggled
-  between RAM and ROM.
+o Cassette player, raw and CAS images.
 
-o Horizontal and Vertical Fine Scrolling.
-
-o Optionaly extended use of COLPF1 in Antic Modes 2, 3 and f. This
-  allows the use of two different colours instead of one colour and
-  two luminances.
-
-o Printer Support.
-
-o Sound Support on Unix using "/dev/dsp".
+o Printer support.
 
 o Files can be stored directly on your host computer via the H: device.
-  This device replaces the C: device.
 
-o Hot Disk and Cartridge swapping.
+o Current emulation state can be saved in a state file.
+
+o Sound support on Unix using "/dev/dsp".
+
+o Stereo (two POKEYs) emulation.
 
 o Joystick controller using numeric keypad.
 
 o Real joystick support.
 
-o Paddle controller using X Window mouse position.
+o Paddles, Atari touch tablet, Koala pad, light pen, light gun,
+  ST/Amiga mouse, Atari trak-ball, joystick and Atari 5200 analog
+  controller emulated using mouse.
 
-o User Interface on all version supporting bitmapped graphics.
-  i.e. X11, SVGALIB, MS-DOS, Amiga and Falcon/TT.
+o R-Time 8 emulation using host computer clock.
+
+o Atari palette read from a file or calculated basing on user-defined
+  parameters.
+
+o Screen snapshots (normal and interlaced) to PCX files.
+
+o Sound output may be written to WAV files.
+
+o User interface on all versions supporting bitmapped graphics.
