@@ -28,13 +28,10 @@ extern void pokey_update(void);
 void Update_vol_only_sound( void );
 #endif  /* NO_VOL_ONLY */
 
-#define FALSE 0
-#define TRUE 1
-
 UBYTE KBCODE;
 UBYTE IRQST;
 UBYTE IRQEN;
-UBYTE SKSTAT;
+UBYTE SKCTLS;
 int SHIFT_KEY = FALSE, KEYPRESSED = FALSE;
 int DELAYED_SERIN_IRQ;
 int DELAYED_SEROUT_IRQ;
@@ -230,7 +227,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 	case _POTGO:
 		break;
 	case _SEROUT:
-		if ((SKSTAT & 0x70) == 0x20) {
+		if ((SKCTLS & 0x70) == 0x20) {
 			if (POKEY_siocheck()) {
 				SIO_PutByte(byte);
 				IRQST |= 0x08;
@@ -247,8 +244,8 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		printf("WR: STIMER = %x\n", byte);
 #endif
 		break;
-	case _SKSTAT:
-		SKSTAT = byte;
+	case _SKCTLS:
+		SKCTLS = byte;
 		break;
 	}
 }
@@ -441,7 +438,7 @@ void POKEYStateSave( void )
 	SaveUBYTE( &KBCODE, 1 );
 	SaveUBYTE( &IRQST, 1 );
 	SaveUBYTE( &IRQEN, 1 );
-	SaveUBYTE( &SKSTAT, 1 );
+	SaveUBYTE( &SKCTLS, 1 );
 
 	SaveINT( &SHIFT_KEY, 1 );
 	SaveINT( &KEYPRESSED, 1 );
@@ -465,7 +462,7 @@ void POKEYStateRead( void )
 	ReadUBYTE( &KBCODE, 1 );
 	ReadUBYTE( &IRQST, 1 );
 	ReadUBYTE( &IRQEN, 1 );
-	ReadUBYTE( &SKSTAT, 1 );
+	ReadUBYTE( &SKCTLS, 1 );
 
 	ReadINT( &SHIFT_KEY, 1 );
 	ReadINT( &KEYPRESSED, 1 );
