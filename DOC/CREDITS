@@ -279,3 +279,6 @@ and Alexander Martinez <kubus3561@gmx.de>
 Daniel Serpell <daniel_serpell@yahoo.com>
     - SDL keyboard based on Unicode values, more keys emulated correctly
 
+Ken Zalewski <kennyz@nycap.rr.com>
+    - segfault fix in GetKeyCode of atari_x11
+

@@ -1,3 +1,14 @@
+2004-12-29  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_x11.c: Ken Zalewski contributed a patch for keyboard handling
+  that fixes a segfault (XLookupString was called even if the event
+  was not keyboard related).
+
+* atari_x11.c: after looking into the keyboard handling under X11
+  I realized that keyboard auto-repeat was not working at all.
+  I tried to fix it by keeping the keycode status persistent.
+  It seems to work in non-XVIEW/non-MOTIF version.
+
+
 2004-12-28  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c: Daniel Serpell contributed a patch for keyboard handling
   that makes the Atari800 keyboard working on non-US keyboard layouts
