@@ -1,5 +1,6 @@
 Changes in pre1.0.7
 ----------------
+o introduced autoconf stuff <Krzysztof>
 o win32: standard wave output routines added to sound driver (-wavonly switch
   to disable direct sound) <Krzysztof>
 o sound_update removed from port specific routines (moved to atari.c) and
