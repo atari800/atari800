@@ -4,6 +4,8 @@
 
 #undef CURSES
 
+#undef SVGALIB
+
 #undef NCURSES
 
 #ifndef WIN32
