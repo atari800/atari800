@@ -7,6 +7,9 @@
   extra \r before \n at end of fgets string. fputs() should be OK as
   the text mode is most probably the default mode.
 
+2002-03-29  Vasyl Tsvirkunov <vasyl@pacbell.net>
+* Dirty update scheme is completed
+
 2002-03-18  Piotr Fusik  <fox@scene.pl>
 * antic.c: NMIST bit 5 is external NMI (not reset) status in Antic,
   unused in Atari
