@@ -576,7 +576,7 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 				UWORD addr1,addr;
 				int j;
 				addr=remember_PC[(remember_PC_curpos+i)%REMEMBER_PC_STEPS];
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 				printf("%3d  ", (remember_xpos[(remember_xpos_curpos+i)%REMEMBER_PC_STEPS]>>8));
 				printf("%3d  ", (remember_xpos[(remember_xpos_curpos+i)%REMEMBER_PC_STEPS]&0xff));
 #endif
@@ -1077,7 +1077,7 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 			printf("AUDC1= %02x    AUDC2= %02x    AUDC3= %02x    "
 				   "AUDC4= %02x    IRQEN= %02x    IRQST= %02x\n",
 				   AUDC[CHAN1], AUDC[CHAN2], AUDC[CHAN3], AUDC[CHAN4], IRQEN, IRQST);
-#ifdef STEREO
+#ifdef STEREO_SOUND
 			if (stereo_enabled) {
 				printf("second chip:\n");
 				printf("AUDF1= %02x    AUDF2= %02x    AUDF3= %02x    "
@@ -1124,12 +1124,12 @@ static char old_s[sizeof(s)]=""; /*GOLDA CHANGED*/
 			printf("YBREAK [pos], or [1000+pos]    - Break at scanline or flash scanline\n");
 
  			printf("BRKHERE on|off                 - Set BRK opcode behaviour\n");
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 			printf("HISTORY                        - Disasm. last %i PC addrs. giving ypos xpos\n",(int)REMEMBER_PC_STEPS);
 
 #else
 			printf("HISTORY                        - Disasm. last %i PC addrs. ",(int)REMEMBER_PC_STEPS);
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
                         printf("Press return to continue: ");
                         getchar();
 
@@ -1428,6 +1428,9 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.14  2003/02/19 14:07:46  joy
+configure stuff cleanup
+
 Revision 1.13  2003/02/10 10:00:59  joy
 include added
 

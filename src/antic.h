@@ -55,7 +55,7 @@ void ANTIC_UpdateArtifacting(void);
 void video_memset(UBYTE* ptr, UBYTE val, ULONG size);
 void video_putbyte(UBYTE* ptr, UBYTE val);
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 #define NOT_DRAWING -999
 #define DRAWING_SCREEN (cur_screen_pos!=NOT_DRAWING)
 extern int delayed_wsync;
@@ -76,5 +76,5 @@ extern int prior_pos_buf[PRIOR_BUF_SIZE];
 #define XPOS ( DRAWING_SCREEN ? cpu2antic_ptr[xpos] : xpos )
 #else
 #define XPOS xpos
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 #endif 

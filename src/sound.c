@@ -82,7 +82,7 @@ void Sound_Initialise(int *argc, char *argv[])
 			sound_enabled = 0;
 			return;
 		}
-#ifdef STEREO
+#ifdef STEREO_SOUND
 		i = 1;
 		if (ioctl(dsp_fd, SNDCTL_DSP_STEREO, &i)) {
 			Aprint("%s: cannot set stereo\n", dspname);
@@ -112,7 +112,7 @@ void Sound_Initialise(int *argc, char *argv[])
 			return;
 		}
 
-#ifdef STEREO
+#ifdef STEREO_SOUND
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 2, 0);
 #else
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, 0);
@@ -155,7 +155,7 @@ void Sound_Update(void)
 	i = (abi.fragstotal * abi.fragsize - abi.bytes) >> FRAGSIZE;
 
 	/* we need fragstofill fragments to be filled */
-#ifdef STEREO
+#ifdef STEREO_SOUND
 	for (; i < fragstofill*2; i++) {
 #else
 	for (; i < fragstofill; i++) {
@@ -168,6 +168,9 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.12  2003/02/19 14:07:48  joy
+ configure stuff cleanup
+
  Revision 1.11  2003/02/09 21:24:12  joy
  updated for different number of Pokey_sound_init parameters
 

@@ -160,7 +160,7 @@ void LED_Frame(void)
 	if (led_off_delay >= 0)
 		if (--led_off_delay < 0)
 			led_status = 0;
-#ifndef NO_LED_ON_SCREEN
+#ifdef SHOW_DISK_LED
 	if (led_status) {
 		UBYTE *shape = DiskLED + (led_status - 1) * DISKLED_FONT_CHARSIZE;
 		UBYTE *scrn = (UBYTE *) atari_screen
@@ -174,5 +174,5 @@ void LED_Frame(void)
 			scrn += ATARI_WIDTH - DISKLED_FONT_WIDTH;
 		}
 	}
-#endif /* NO_LED_ON_SCREEN */
+#endif /* SHOW_DISK_LED */
 }

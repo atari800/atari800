@@ -79,7 +79,7 @@
 #include "statesav.h"
 #include "ui.h"
 
-#ifdef CPUASS
+#ifdef FALCON_CPUASM
 extern UBYTE IRQ;
 
 #ifdef PAGED_MEM
@@ -115,7 +115,7 @@ void CPU_PutStatus(void)
 #define PL dGetByte(0x0100 + ++S)
 #define PH(x) dPutByte(0x0100 + S--, x)
 
-#ifndef NO_CYCLE_EXACT
+#ifdef CYCLE_EXACT
 #ifndef PAGED_ATTRIB
 #define RMW_GetByte(x,addr) \
 		if (attrib[addr] == HARDWARE) { \
@@ -137,7 +137,7 @@ void CPU_PutStatus(void)
 #endif /* PAGED_ATTRIB */
 #else
 #define RMW_GetByte(x,addr) x = GetByte(addr);
-#endif /* NO_CYCLE_EXACT */
+#endif /* CYCLE_EXACT */
 
 #define PHW(x) PH((x)>>8); PH((x) & 0xff)
 
@@ -173,7 +173,7 @@ UBYTE IRQ;
 #ifdef MONITOR_BREAK
 UWORD remember_PC[REMEMBER_PC_STEPS];
 int remember_PC_curpos = 0;
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 int remember_xpos[REMEMBER_PC_STEPS];
 int remember_xpos_curpos = 0;
 #endif
@@ -470,7 +470,7 @@ void GO(int limit)
    2. The timing of the IRQs are not that critical.
  */
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 	if (wsync_halt) {
 		if(DRAWING_SCREEN){
 /* if WSYNC_C is a stolen cycle, antic2cpu_ptr will convert that to the nearest
@@ -499,7 +499,7 @@ void GO(int limit)
 		xpos = WSYNC_C;
 		wsync_halt = 0;
 	}
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 	xpos_limit = limit;			/* needed for WSYNC store inside ANTIC */
 
 	UPDATE_LOCAL_REGS;
@@ -538,7 +538,7 @@ void GO(int limit)
 #ifdef MONITOR_BREAK
 		remember_PC[remember_PC_curpos]=PC;
 		remember_PC_curpos=(remember_PC_curpos+1)%REMEMBER_PC_STEPS;
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 		if(DRAWING_SCREEN){
 			remember_xpos[remember_xpos_curpos] = cpu2antic_ptr[xpos]+(ypos<<8);
 		}else{
@@ -2041,7 +2041,7 @@ void GO(int limit)
 void CPU_Initialise(void)
 {
 }
-#endif /* CPU_ASM */
+#endif /* FALCON_CPUASM */
 
 void CPU_Reset(void)
 {

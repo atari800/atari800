@@ -116,7 +116,7 @@ static int HOST_WIDTH, HOST_HEIGHT, HOST_PLANES;
 #define CENTER_Y	((HOST_HEIGHT - EMUL_HEIGHT) / 2)
 #define CENTER		(CENTER_X + CENTER_Y * HOST_WIDTH)
 
-#if defined(SET_LED) && defined(NO_LED_ON_SCREEN)
+#ifdef SHOW_DISK_LED
 static int LED_timeout = 0;
 #endif
 
@@ -494,7 +494,7 @@ void Atari_DisplayScreen(UBYTE *screen)
 	if (! draw_display)
 		return;
 */
-#if defined(SET_LED) && defined(NO_LED_ON_SCREEN)
+#ifdef SHOW_DISK_LED
 	if (LED_timeout)
 		if (--LED_timeout == 0)
 			Atari_Set_LED(0);
@@ -610,7 +610,7 @@ void Atari_DisplayScreen(UBYTE *screen)
 	}
 }
 
-#if defined(SET_LED) && defined(NO_LED_ON_SCREEN)
+#ifdef SHOW_DISK_LED
 void Atari_Set_LED(int how)
 {
 	if (how) {

@@ -399,7 +399,7 @@ UBYTE GTIA_GetByte(UWORD addr)
 	return byte;
 }
 
-#ifndef NO_CYCLE_EXACT
+#ifdef CYCLE_EXACT
 extern UBYTE *scrn_ptr;	/* in antic.c */
 extern int scrn_ofs;	/* in antic.c */
 
@@ -420,7 +420,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 	UWORD cword;
 	UWORD cword2;
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 	int x; /* the cycle-exact update position in pm_scanline*/
 	if(DRAWING_SCREEN){
 		if((addr&0x1f)!=_PRIOR){
@@ -654,7 +654,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		break;
 #else /* USE_COLOUR_TRANSLATION_TABLE */
 	case _COLBK:
-#ifndef NO_CYCLE_EXACT
+#ifdef CYCLE_EXACT
 		if (scrn_ofs >= 0) {
 			int next_ofs = xpos_to_offset_blank[xpos];
 			video_memset(((UBYTE *) scrn_ptr) + scrn_ofs, COLBK, next_ofs - scrn_ofs);
@@ -830,7 +830,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #endif /* USE_COLOUR_TRANSLATION_TABLE */
 	case _CONSOL:
 		atari_speaker = !(byte & 0x08);
-#ifndef NO_CONSOL_SOUND
+#ifdef CONSOLE_SOUND
 		Update_consol_sound(1);
 #endif
 		consol_mask = (~byte) & 0x0f;
@@ -840,7 +840,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		UPDATE_PM_CYCLE_EXACT
 		break;
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 #define CYCLE_EXACT_GRAFP(n) x=XPOS*2-3;\
 if(HPOSP##n >= x) {\
 /*hpos right of x */\
@@ -849,7 +849,7 @@ if(HPOSP##n >= x) {\
 }
 #else
 #define CYCLE_EXACT_GRAFP(n)
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 
 #define DO_GRAFP(n) case _GRAFP##n:\
 	GRAFP##n = byte;\
@@ -889,7 +889,7 @@ if(HPOSP##n >= x) {\
 		UPDATE_PM_CYCLE_EXACT
 		break;
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 #define CYCLE_EXACT_HPOSP(n) x=XPOS*2-1;\
 if(HPOSP##n < x && byte <x) {\
 /*case 1: both left of x */\
@@ -917,7 +917,7 @@ if(HPOSP##n < x && byte <x) {\
 }
 #else
 #define CYCLE_EXACT_HPOSP(n)
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 #define DO_HPOSP(n)	case _HPOSP##n:								\
 	hposp_ptr[n] = pm_scanline + byte - 0x20;					\
 	if (byte >= 0x22) {											\
@@ -974,7 +974,7 @@ if(HPOSP##n < x && byte <x) {\
 		UPDATE_PM_CYCLE_EXACT
 		break;
 	case _PRIOR:
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 #ifndef NO_GTIA11_DELAY
 		/*update prior change ring buffer*/
   		prior_curpos=(prior_curpos+1)%PRIOR_BUF_SIZE;

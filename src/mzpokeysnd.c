@@ -1086,10 +1086,10 @@ static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain
 #ifdef SERIO_SOUND
     Update_serio_sound = Update_serio_sound_mz;
 #endif
-#ifndef NO_CONSOL_SOUND
+#ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set );
 #endif
-#ifndef	NO_VOL_ONLY
+#ifdef VOL_ONLY_SOUND
 static void Update_vol_only_sound_mz( void );
 #endif
 
@@ -1106,10 +1106,10 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 #ifdef SERIO_SOUND
     Update_serio_sound = Update_serio_sound_mz;
 #endif
-#ifndef NO_CONSOL_SOUND
+#ifdef CONSOLE_SOUND
     Update_consol_sound = Update_consol_sound_mz;
 #endif
-#ifndef	NO_VOL_ONLY
+#ifdef VOL_ONLY_SOUND
     Update_vol_only_sound = Update_vol_only_sound_mz;
 #endif
 
@@ -2105,17 +2105,16 @@ static void Pokey_process_16(void* sndbuffer, unsigned sndn)
     }
 }
 
-#ifndef NO_CONSOL_SOUND
+#ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set )
 { 
 }
 #endif
 
-#ifndef	NO_VOL_ONLY
+#ifdef VOL_ONLY_SOUND
 static void Update_vol_only_sound_mz( void )
 {
 }
-
 #endif
 
 /*****************************************************************************
@@ -2123,6 +2122,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.10  2003/02/19 14:07:47  joy
+configure stuff cleanup
+
 Revision 1.9  2003/02/17 17:11:17  knik
 remez_filter_table(): fixed static constants and variables
 

@@ -18,7 +18,7 @@
 
 extern int refresh_rate;
 
-#ifdef JOYMOUSE
+#ifdef SVGA_JOYMOUSE
 #include <vgamouse.h>
 
 #define CENTER_X 16384
@@ -62,7 +62,7 @@ static UBYTE joydefs[] =
   SCANCODE_KEYPAD1,	/* down/left */
   SCANCODE_KEYPAD2,	/* down */
   SCANCODE_KEYPAD3,	/* down/right */
-#ifdef USE_CURSORBLOCK
+#ifdef SVGA_CURSORBLOCK
   SCANCODE_CURSORBLOCKUP,
   SCANCODE_CURSORBLOCKLEFT,
   SCANCODE_CURSORBLOCKRIGHT,
@@ -81,7 +81,7 @@ static UBYTE joymask[] =
   ~2 & ~4,	/* down/left */
   ~2,		/* down */
   ~2 & ~8,	/* down/right */
-#ifdef USE_CURSORBLOCK
+#ifdef SVGA_CURSORBLOCK
   ~1, 		/* up */
   ~4,		/* left */
   ~8,		/* right */
@@ -95,7 +95,7 @@ static UBYTE joymask[] =
 #define FALSE 0
 #define TRUE 1
 
-#ifdef JOYMOUSE
+#ifdef SVGA_JOYMOUSE
 static int vgamouse_stick;
 static int vgamouse_strig;
 #endif
@@ -176,7 +176,7 @@ int Atari_Keyboard(void)
         if (kbjoy)
         {
           /* fire */
-#ifdef USE_CURSORBLOCK
+#ifdef SVGA_CURSORBLOCK
           ctrig = (kbhits[joydefs[0]] ? 0 : 1) & (kbhits[SCANCODE_LEFTCONTROL] ? 0 : 1);
 #else
           ctrig = kbhits[joydefs[0]] ? 0 : 1;
@@ -454,7 +454,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
-#ifdef JOYMOUSE
+#ifdef SVGA_JOYMOUSE
 	if (mouse_init("/dev/mouse", vga_getmousetype(), MOUSE_DEFAULTSAMPLERATE) == -1) {
 		perror("/dev/mouse");
 		exit(1);
@@ -571,7 +571,7 @@ int Atari_Exit(int run_monitor)
 		}
 	}
 	else {
-#ifdef JOYMOUSE
+#ifdef SVGA_JOYMOUSE
 		mouse_close();
 #endif
 
@@ -619,7 +619,7 @@ void Atari_DisplayScreen(UBYTE * screen)
   writepage ^= 1;
 #endif
 
-#ifdef JOYMOUSE
+#ifdef SVGA_JOYMOUSE
 	vgamouse_stick = 0xff;
 
 	if (mouse_update() != 0) {
@@ -681,7 +681,7 @@ int Atari_PORT(int num)
 	  
 //sorry, no time for this now 
 //
-//#ifdef JOYMOUSE
+//#ifdef SVGA_JOYMOUSE
 //		stick0 = vgamouse_stick;
 //#endif
 
@@ -702,7 +702,7 @@ int Atari_TRIG(int num)
 
 //sorry, no time for this now 
 //	  
-//#ifdef JOYMOUSE
+//#ifdef SVGA_JOYMOUSE
 //		trig0 = vgamouse_strig;
 //#endif
 
@@ -813,6 +813,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.9  2003/02/19 14:07:46  joy
+configure stuff cleanup
+
 Revision 1.8  2002/08/07 06:16:50  joy
 printf->Aprint
 

@@ -76,7 +76,7 @@ dep:
 	then echo warning: makedepend failed; fi
 
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f *.o $(TARGET)
 
 distclean: clean
 	-rm -f Makefile configure config.log config.status config.h

@@ -27,7 +27,7 @@
 #ifndef NO_YPOS_BREAK_FLICKER
 extern UWORD ypos_break_addr;
 #endif
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 void draw_partial_scanline(int l,int r);
 void update_scanline();
 void update_scanline_prior(UBYTE byte);
@@ -55,7 +55,7 @@ UBYTE prior_val_buf[PRIOR_BUF_SIZE];
 /*ring buffer to hold the positions where PRIOR changed*/ 
 int prior_pos_buf[PRIOR_BUF_SIZE];
 #endif /*NO_GTIA11_DELAY*/
-#endif /* NO_NEW_CYCLE_EXACT */
+#endif /*NEW_CYCLE_EXACT*/
 /* Video memory access is hidden behind these macros. It allows to track dirty video memory
    to improve video system performance */
 #ifdef DIRTYRECT
@@ -370,11 +370,11 @@ These are all cases:
 
 unsigned int screenline_cpu_clock = 0;
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 #define UPDATE_DMACTL if(dmactl_changed){dmactl_changed=0;ANTIC_PutByte(_DMACTL,DELAYED_DMACTL);} if(draw_antic_ptr_changed){draw_antic_ptr_changed=0;draw_antic_ptr=saved_draw_antic_ptr;}
 #else
 #define UPDATE_DMACTL
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 #define GOEOL_CYCLE_EXACT  GO(antic2cpu_ptr[LINE_C]); xpos=cpu2antic_ptr[xpos]; xpos -= LINE_C; screenline_cpu_clock += LINE_C; ypos++
 #define GOEOL GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL ypos++
 #define OVERSCREEN_LINE	xpos += DMAR; GOEOL
@@ -434,7 +434,7 @@ static int extra_cycles[6];
 /* border parameters for current display width */
 static int left_border_chars;
 static int right_border_start;
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 static int left_border_start=LCHOP*4;
 static int right_border_end=(48-RCHOP)*4;
 #define LBORDER_START left_border_start
@@ -442,7 +442,7 @@ static int right_border_end=(48-RCHOP)*4;
 #else
 #define LBORDER_START (LCHOP*4)
 #define RBORDER_END ((48-RCHOP)*4)
-#endif /* NO_NEW_CYCLE_EXACT */
+#endif /*NEW_CYCLE_EXACT*/
 /* set with CHBASE *and* CHACTL - bits 0..2 set if flip on */
 static UWORD chbase_20;			/* CHBASE for 20 character mode */
 
@@ -902,11 +902,11 @@ void ANTIC_Initialise(int *argc, char *argv[])
 	hires_lum(0x00) = hires_lum(0x40) = hires_lum(0x80) = hires_lum(0xc0) = 0;
 #endif
 	init_pm_lookup();
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 	create_cycle_map();
 	cpu2antic_ptr=&cpu2antic[0];
 	antic2cpu_ptr=&antic2cpu[0];
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 }
 
 void ANTIC_Reset(void)
@@ -1120,7 +1120,7 @@ static UBYTE gtia_10_pm[] =
 #endif /* USE_COLOUR_TRANSLATION_TABLE */
 
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 #define ADD_FONT_CYCLES do{}while(0)
 #else
 #define ADD_FONT_CYCLES xpos += font_cycles[md]
@@ -1182,7 +1182,7 @@ void draw_antic_2(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanl
 	do_border();
 }
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 void draw_antic_2_dmactl_bug(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr)
 {
 	INIT_BACKGROUND_6
@@ -2006,7 +2006,7 @@ draw_antic_function draw_antic_table[4][16] = {
 
 /* pointer to current GTIA/ANTIC mode routine */
 draw_antic_function draw_antic_ptr = draw_antic_8;
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 draw_antic_function saved_draw_antic_ptr;
 #endif
 /* pointer to current GTIA mode blank drawing routine */
@@ -2186,10 +2186,10 @@ static void ANTIC_load(void)
 #endif
 }
 
-#ifndef NO_CYCLE_EXACT
+#ifdef CYCLE_EXACT
 int scrn_ofs = -1;
 #endif
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 int cur_screen_pos=NOT_DRAWING;
 #endif
 /* This function emulates one frame drawing screen at atari_screen */
@@ -2204,15 +2204,15 @@ void ANTIC_Frame(int draw_display)
 	{ 0, 0, 7, 9, 7, 15, 7, 15, 7, 3, 3, 1, 0, 1, 0, 0 };
 	UBYTE vscrol_flag = FALSE;
 	UBYTE no_jvb = TRUE;
-#ifdef NO_NEW_CYCLE_EXACT
+#ifndef NEW_CYCLE_EXACT
 	UBYTE need_load;
 #endif
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 	int cpu2antic_index;
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 #ifndef NO_GTIA11_DELAY
-#ifndef NO_NEW_CYCLE_EXACT 
+#ifdef NEW_CYCLE_EXACT
 	int stop=FALSE;
 /* can be negative, leave as signed ints*/
 	int old_curline_prior_pos;
@@ -2220,7 +2220,7 @@ void ANTIC_Frame(int draw_display)
 	int change_pos; 
 #else
 	int delayed_gtia11 = 250;
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 #endif /*NO_GTIA11_DELAY*/
 
 	ypos = 0;
@@ -2230,10 +2230,10 @@ void ANTIC_Frame(int draw_display)
 	} while (ypos < 8);
 
 	scrn_ptr = (UWORD *) atari_screen;
-#ifndef NO_CYCLE_EXACT
+#ifdef CYCLE_EXACT
 	scrn_ofs = -1;
 #endif
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 	cur_screen_pos = NOT_DRAWING;
 #endif
 	need_dl = TRUE;
@@ -2320,7 +2320,7 @@ void ANTIC_Frame(int draw_display)
 				break;
 			}
 		}
-		#ifndef NO_NEW_CYCLE_EXACT
+                #ifdef NEW_CYCLE_EXACT
 		cpu2antic_index=0;
 		if (anticmode < 2 || (DMACTL & 3) == 0 || \
 			(anticmode>=8 && !need_load)){
@@ -2353,13 +2353,13 @@ void ANTIC_Frame(int draw_display)
 		}
 		cpu2antic_ptr=&cpu2antic[CPU2ANTIC_SIZE*cpu2antic_index];
 		antic2cpu_ptr=&antic2cpu[CPU2ANTIC_SIZE*cpu2antic_index];
-		#endif /* NO_NEW_CYCLE_EXACT */
+                #endif /*NEW_CYCLE_EXACT*/
 		
 
 		if (anticmode == 1 && DMACTL & 0x20)
 			dlist = get_DL_word();
 
-		#ifndef NO_NEW_CYCLE_EXACT
+                #ifdef NEW_CYCLE_EXACT
 		/* begin drawing here */
                 if (draw_display) {
  		cur_screen_pos = LBORDER_START;
@@ -2377,7 +2377,7 @@ void ANTIC_Frame(int draw_display)
 			}
 		}
 		}else{ /* force this to be within an else if NEW_CYCLE_EXACT*/ 
-		#endif /*NO_NEW_CYCLE_EXACT */
+                #endif /*NEW_CYCLE_EXACT*/
 		if (dctr == lastline) {
 			if (no_jvb)
 				need_dl = TRUE;
@@ -2390,9 +2390,9 @@ void ANTIC_Frame(int draw_display)
 				}
 			}
 		}
-		#ifndef NO_NEW_CYCLE_EXACT
+                #ifdef NEW_CYCLE_EXACT
                 }
-                #endif /*NO_NEW_CYCLE_EXACT */
+                #endif /*NEW_CYCLE_EXACT*/
 		if (!draw_display) {
 			xpos += DMAR;
 			if (anticmode < 2 || (DMACTL & 3) == 0) {
@@ -2428,7 +2428,7 @@ void ANTIC_Frame(int draw_display)
 #endif /* NO_YPOS_BREAK_FLICKER*/
 
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 		new_pm_scanline();
 		if (anticmode < 2 || (DMACTL & 3) == 0) {
 			GOEOL_CYCLE_EXACT;
@@ -2449,11 +2449,11 @@ void ANTIC_Frame(int draw_display)
 		UPDATE_DMACTL
 		cur_screen_pos = NOT_DRAWING;
 
-#else /* NO_NEW_CYCLE_EXACT defined*/
+#else /*NEW_CYCLE_EXACT not defined*/
 		if (need_load && anticmode <= 5 && DMACTL & 3)
 			xpos += before_cycles[md];
 
-#ifndef NO_CYCLE_EXACT
+#ifdef CYCLE_EXACT
 		if ((anticmode < 2 || (DMACTL & 3) == 0)
 			 && (GRAFP0 == 0 || HPOSP0 <= 0x0c || HPOSP0 >= 0xd4)
 			 && (GRAFP1 == 0 || HPOSP1 <= 0x0c || HPOSP1 >= 0xd4)
@@ -2505,9 +2505,9 @@ void ANTIC_Frame(int draw_display)
 			scrn_ptr + x_min[md],
 			(ULONG *) &pm_scanline[x_min[md]]);
 
-#endif /*NO_NEW_CYCLE_EXACT */
+#endif /*NEW_CYCLE_EXACT*/
 #ifndef NO_GTIA11_DELAY
-#ifdef NO_NEW_CYCLE_EXACT
+#ifndef NEW_CYCLE_EXACT
 		if (PRIOR >= 0xc0)
 			delayed_gtia11 = ypos + 1;
 		else
@@ -2519,7 +2519,7 @@ void ANTIC_Frame(int draw_display)
 					ptr++;
 				} while (--k);
 			}
-#else /* NO_NEW_CYCLE_EXACT not defined */
+#else /*NEW_CYCLE_EXACT defined*/
 /*Basic explaination: */
 /*the ring buffer prior_pos_buf has three pointers:*/
 /*     A   B  C              D     E    F      G   */
@@ -2606,11 +2606,11 @@ void ANTIC_Frame(int draw_display)
 			}
 			last_pos = (change_pos>last_pos) ? change_pos: last_pos;
 		}while(!stop);
-#endif /* NO_NEW_CYCLE_EXACT */
+#endif /*NEW_CYCLE_EXACT*/
 #endif /*NO_GTIA11_DELAY*/
-#ifdef NO_NEW_CYCLE_EXACT
+#ifndef NEW_CYCLE_EXACT
 		GOEOL;
-#endif /*NO_NEW_CYCLE_EXACT */
+#endif /*NEW_CYCLE_EXACT*/
 		YPOS_BREAK_FLICKER
 		scrn_ptr += ATARI_WIDTH / 2;
 		dctr++;
@@ -2634,7 +2634,7 @@ void ANTIC_Frame(int draw_display)
 	} while (ypos < max_ypos);
 }
 
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 
 /*update the scanline from the last changed position to the current
 position , when a change
@@ -2850,7 +2850,7 @@ void draw_partial_scanline(int l,int r){
 	left_border_start = LCHOP*4;
 	right_border_end = (48-RCHOP)*4;
 }
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 /* ANTIC registers --------------------------------------------------------- */
 
 UBYTE ANTIC_GetByte(UWORD addr)
@@ -3027,7 +3027,7 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 	switch (addr & 0xf) {
 	case _CHACTL:
 /*TODO: cycle-exact timing*/
-	#ifndef NO_NEW_CYCLE_EXACT
+        #ifdef NEW_CYCLE_EXACT
 		if(DRAWING_SCREEN){
 			update_scanline();
 		}
@@ -3048,7 +3048,7 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 /*TODO: make this truely cycle-exact, update cpu2antic and antic2cpu,
 add support for wider->narrow glitches including the interesting mode 6
 glitch*/
-	#ifndef NO_NEW_CYCLE_EXACT        	
+        #ifdef NEW_CYCLE_EXACT
 		/*check if DMACTL width changed and not to 0 and not from 0*/
 		if((byte&3)!=(DMACTL&3) && (byte&3)!=0 && (DMACTL&3)!=0){
 			/* DMACTL width has increased */
@@ -3091,7 +3091,7 @@ glitch*/
 					
 							
 		}
-	#endif /*NO_NEW_CYCLE_EXACT*/
+        #endif /*NEW_CYCLE_EXACT*/
 		DMACTL = byte;
 		switch (byte & 0x03) {
 		case 0x00:
@@ -3215,7 +3215,7 @@ glitch*/
 /* *******FALLTHROUGH ***********/
 	case _HSCROL:
 /*TODO: make this truely cycle exact, and update cpu2antic and antic2cpu*/
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 	if(DRAWING_SCREEN){
 		update_scanline();
 	}
@@ -3307,7 +3307,7 @@ glitch*/
 		break;
 	case _CHBASE:
 /*TODO: cycle-exact timing*/
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 	if(DRAWING_SCREEN){
 		update_scanline();
 	}
@@ -3318,7 +3318,7 @@ glitch*/
 			chbase_20 ^= 7;
 		break;
 	case _WSYNC:
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 	 		
 		if(DRAWING_SCREEN){
 		if (xpos <= antic2cpu_ptr[WSYNC_C] && xpos_limit >= antic2cpu_ptr[WSYNC_C])
@@ -3347,16 +3347,16 @@ case we have cpu2antic_ptr[WSYNC_C+1]-1 = 8 and in the 2nd =12  */
 		}
 		}else{
 			delayed_wsync=0;
-#endif/*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 		if (xpos <= WSYNC_C && xpos_limit >= WSYNC_C)
 			xpos = WSYNC_C;
 		else {
 			wsync_halt = TRUE;
 			xpos = xpos_limit;
 		}
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 		}
-#endif /*NO_NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 		break;
 	case _NMIEN:
 		NMIEN = byte;

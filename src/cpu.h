@@ -20,7 +20,7 @@ void NMI(void);
 void GO(int limit);
 #define GenerateIRQ() (IRQ = 1)
 
-#ifdef CPUASS
+#ifdef FALCON_CPUASM
 extern void CPU_INIT(void);
 extern void CPUGET(void);		/* put from CCR, N & Z FLAG into regP */
 extern void CPUPUT(void);		/* put from regP into CCR, N & Z FLAG */
@@ -53,7 +53,7 @@ extern UBYTE IRQ;
 #define REMEMBER_PC_STEPS 64
 extern UWORD remember_PC[REMEMBER_PC_STEPS];
 extern int remember_PC_curpos;
-#ifndef NO_NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 extern int remember_xpos[REMEMBER_PC_STEPS];
 extern int remember_xpos_curpos;
 #endif

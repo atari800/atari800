@@ -528,13 +528,13 @@ BOOL SetupSound(void)
 
 				ahi_streamlen = ahi_streamfreq/ahi_fps;
 
-#ifdef STEREO
+#ifdef STEREO_SOUND
         ahi_streamlen *= 2;
 #endif
 
 				ahi_samplepos = 0;
 
-#ifdef STEREO
+#ifdef STEREO_SOUND
 				Pokey_sound_init(FREQ_17_EXACT, ahi_streamfreq, 2, 0);
 #else
 				Pokey_sound_init(FREQ_17_EXACT, ahi_streamfreq, 1, 0);
@@ -551,7 +551,7 @@ BOOL SetupSound(void)
 						ahi_request->ahir_Std.io_Offset   = 0;
 						ahi_request->ahir_Frequency       = ahi_streamfreq;
 
-#ifdef STEREO
+#ifdef STEREO_SOUND
 						ahi_request->ahir_Type            = AHIST_S8S;
 #else
 						ahi_request->ahir_Type            = AHIST_M8S;

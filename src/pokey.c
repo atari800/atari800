@@ -50,7 +50,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 {
 	UBYTE byte = 0xff;
 
-#ifdef STEREO
+#ifdef STEREO_SOUND
 	if (addr & 0x0010 && stereo_enabled)
 		return 0;
 #endif
@@ -116,7 +116,7 @@ int POKEY_siocheck(void)
 
 void POKEY_PutByte(UWORD addr, UBYTE byte)
 {
-#ifdef STEREO
+#ifdef STEREO_SOUND
 	addr &= stereo_enabled ? 0x1f : 0x0f;
 #else
 	addr &= 0x0f;
@@ -210,7 +210,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		if (byte & 4)
 			pot_scanline = 228;	/* fast pot mode - return results immediately */
 		break;
-#ifdef STEREO
+#ifdef STEREO_SOUND
 	case _AUDC1 + _POKEY2:
 		AUDC[CHAN1 + CHIP2] = byte;
 		Update_pokey_sound(_AUDC1, byte, 1, SOUND_GAIN);
@@ -333,9 +333,9 @@ void POKEY_Scanline(void)
 	pokey_update();
 #endif
 
-#ifndef NO_VOL_ONLY
+#ifdef VOL_ONLY_SOUND
 	Update_vol_only_sound();
-#endif  /* NO_VOL_ONLY */
+#endif  /* VOL_ONLY_SOUND */
 
 	INPUT_Scanline();	/* Handle Amiga and ST mice. */
 						/* It's not a part of POKEY emulation, */
