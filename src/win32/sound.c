@@ -1,33 +1,55 @@
 /* (C) 2000  Krzysztof Nikiel */
 /* $Id$ */
-#define DIRECTSOUND_VERSION 0x0500
+
+#include "config.h"
+
+#ifdef SOUND
 
 #include <windows.h>
-#include <dsound.h>
+#ifdef DIRECTX
+# define DIRECTSOUND_VERSION 0x0500
+# include <dsound.h>
+#endif
 #include <stdio.h>
+#include <stdlib.h>
 #include "sound.h"
 #include "main.h"
 #include "pokeysnd.h"
 #include "atari.h"
 #include "log.h"
 
-#define MIXBUFSIZE     0x800
+#define MIXBUFSIZE	0x800
+#define WAVSIZE		0x100
+int buffers = 0;
+
+enum {SOUND_NONE, SOUND_DX, SOUND_WAV};
+
+static int issound = SOUND_NONE;
+static int dsprate = 22050;
+static int snddelay = 40;	/* delay in milliseconds */
+#ifdef STEREO
+static int stereo = TRUE;
+#else
+static int stereo = FALSE;
+#endif
+
+static HANDLE event;
+static HWAVEOUT wout;
+static WAVEHDR *waves;
+
+#ifdef DIRECTX
+static int wavonly = FALSE;
+static int sbufsize = 0;
+static int samples = 0; 	/* #samples to be in play buffer */
+static UBYTE mixbuf[MIXBUFSIZE];
+static DWORD bufpos = 0;
 
 static LPDIRECTSOUND lpDS = NULL;
 static LPDIRECTSOUNDBUFFER pDSB = NULL;
 
-static int issound = FALSE;
-static int usesound = TRUE;
-static int sbufsize = 0;
-static int samples = 0; 	/* #samples to be in play buffer */
-static int dsprate = 22050;
-static int snddelay = 40;	/* delay in milliseconds */
-static UBYTE mixbuf[MIXBUFSIZE];
-static DWORD bufpos = 0;
-
-int initsound(int *argc, char *argv[])
+static int initsound_dx(void)
 {
-  int i, j;
+  int i;
   int err;
   DSBUFFERDESC dsBD =
   {0};
@@ -37,35 +59,8 @@ int initsound(int *argc, char *argv[])
   LPVOID pMem1, pMem2;
   DWORD dwSize1, dwSize2;
 
-  if (issound)
+  if (issound != SOUND_NONE)
     return 0;
-
-  for (i = j = 1; i < *argc; i++)
-    {
-      if (strcmp(argv[i], "-sound") == 0)
-	usesound = TRUE;
-      else if (strcmp(argv[i], "-nosound") == 0)
-	usesound = FALSE;
-      else if (strcmp(argv[i], "-dsprate") == 0)
-	sscanf(argv[++i], "%d", &dsprate);
-      else if (strcmp(argv[i], "-snddelay") == 0)
-	sscanf(argv[++i], "%d", &snddelay);
-      else
-      {
-	if (strcmp(argv[i], "-help") == 0)
-	{
-	  Aprint("\t-sound		      enable sound");
-	  Aprint("\t-nosound		      disable sound");
-	  Aprint("\t-dsprate <rate>	      set dsp rate");
-	  Aprint("\t-snddelay <milliseconds>  set sound delay");
-	}
-	argv[j++] = argv[i];
-      }
-    }
-  *argc = j;
-
-  if (!usesound)
-    return 1;
 
   if ((err = DirectSoundCreate(NULL, &lpDS, NULL)) < 0)
     return err;
@@ -80,20 +75,15 @@ int initsound(int *argc, char *argv[])
   dsBD.dwBufferBytes = 0x4000;
   dsBD.lpwfxFormat = &wfx;
 
-  wfx.wFormatTag = 1;
+  wfx.wFormatTag = WAVE_FORMAT_PCM;
+  wfx.nChannels = stereo ? 2 : 1;
   wfx.nChannels = 1;
-#if 0
-  wfx.nSamplesPerSec = 22050;
-  wfx.nAvgBytesPerSec = 44100;
-  wfx.nBlockAlign = 2;
-  wfx.wBitsPerSample = 16;
-#else
   wfx.nSamplesPerSec = dsprate;
-  wfx.nAvgBytesPerSec = dsprate;
-  wfx.nBlockAlign = 1;
+  wfx.nAvgBytesPerSec = dsprate * wfx.nChannels;
+  wfx.nBlockAlign = stereo ? 2 : 1;
   wfx.wBitsPerSample = 8;
-#endif
   wfx.cbSize = 0;
+
   if ((err = IDirectSound_CreateSoundBuffer(lpDS, &dsBD, &pDSB, NULL)) < 0)
     goto end;
 
@@ -120,18 +110,19 @@ int initsound(int *argc, char *argv[])
 
   IDirectSoundBuffer_GetCurrentPosition(pDSB, 0, &bufpos);
 
-  issound = 1;
+  issound = SOUND_DX;
   return 0;
 
 end:
   MessageBox(hWndMain, "DirectSound Init FAILED", myname, MB_OK);
-  uninitsound();
+  Sound_Exit();
   return err;
 }
 
-void uninitsound(void)
+static void uninitsound_dx(void)
 {
-  issound = 0;
+  if (issound != SOUND_DX)
+    return;
 
   if (lpDS)
     {
@@ -144,18 +135,23 @@ void uninitsound(void)
       IDirectSound_Release(lpDS);
       lpDS = NULL;
     }
+  issound = SOUND_NONE;
 }
 
-void sndrestore(void)
+void Sound_Continue(void)
 {
+#ifdef DIRECTX
+  if (issound != SOUND_DX)
+    return;
   if (!pDSB)
     return;
   IDirectSoundBuffer_Restore(pDSB);
   IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
   IDirectSoundBuffer_GetCurrentPosition(pDSB, 0, &bufpos);
+#endif
 }
 
-void sndhandler(void)
+static void sound_update_dx(void)
 {
   DWORD wc;
   int d1;
@@ -166,7 +162,7 @@ void sndhandler(void)
   int err;
   int i;
 
-  if (!issound)
+  if (issound != SOUND_DX)
     return;
 
   IDirectSoundBuffer_GetCurrentPosition(pDSB, 0, &wc);
@@ -196,7 +192,7 @@ void sndhandler(void)
 				     0)) < 0)
     {
       if (err == DSERR_BUFFERLOST)
-	sndrestore();
+	Sound_Continue();
       return;
     }
 
@@ -232,21 +228,230 @@ void sndhandler(void)
 
   return;
 }
+#endif /* DIRECTX */
+
+static void uninitsound_wav(void)
+{
+  int i;
+  MMRESULT err;
+
+  if (issound != SOUND_WAV)
+    return;
+
+l0:
+  for (i = 0; i < buffers; i++)
+    {
+      if (!(waves[i].dwFlags & WHDR_DONE))
+	{
+	  WaitForSingleObject(event, 5000);
+	  ResetEvent(event);
+	  goto l0;
+	}
+    }
+
+  waveOutReset (wout);
+
+  for (i = 0; i < buffers; i++)
+    {
+      err = waveOutUnprepareHeader(wout, &waves[i], sizeof (waves[i]));
+      if (err != MMSYSERR_NOERROR)
+	{
+	  fprintf(stderr, "warning: cannot unprepare wave header (%x)\n", err);
+	}
+      free(waves[i].lpData);
+    }
+  free(waves);
+
+  waveOutClose(wout);
+  CloseHandle(event);
+
+  issound = SOUND_NONE;
+}
+
+static int initsound_wav(void)
+{
+  int i;
+  WAVEFORMATEX wf;
+  MMRESULT err;
+
+  event = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+  memset(&wf, 0, sizeof(wf));
+
+  wf.wFormatTag = WAVE_FORMAT_PCM;
+  wf.nChannels = stereo ? 2 : 1;
+  wf.nSamplesPerSec = dsprate;
+  wf.nAvgBytesPerSec = dsprate * wf.nChannels;
+  wf.nBlockAlign = 2;
+  wf.wBitsPerSample = 8;
+  wf.cbSize = 0;
+
+  err = waveOutOpen(&wout, WAVE_MAPPER, &wf, (int)event, 0, CALLBACK_EVENT);
+  if (err == WAVERR_BADFORMAT)
+    {
+      Aprint("wave output paremeters unsupported\n");
+      exit(1);
+    }
+  if (err != MMSYSERR_NOERROR)
+    {
+      Aprint("cannot open wave output (%x)\n", err);
+      exit(1);
+    }
+
+  buffers = ((wf.nAvgBytesPerSec * snddelay / 1000) >> 8) + 1;
+  waves = malloc(buffers * sizeof(*waves));
+  for (i = 0; i < buffers; i++)
+    {
+      memset(&waves[i], 0, sizeof (waves[i]));
+      if (!(waves[i].lpData = (uint8 *)malloc(WAVSIZE)))
+	{
+	  Aprint("could not get wave buffer memory\n");
+	  exit(1);
+	}
+      waves[i].dwBufferLength = WAVSIZE;
+      err = waveOutPrepareHeader(wout, &waves[i], sizeof(waves[i]));
+      if (err != MMSYSERR_NOERROR)
+	{
+	  Aprint("cannot prepare wave header (%x)\n", err);
+	  exit(1);
+	}
+      waves[i].dwFlags |= WHDR_DONE;
+    }
+
+  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
+
+  issound = SOUND_WAV;
+  return 0;
+}
+
+void Sound_Initialise(int *argc, char *argv[])
+{
+  int i, j;
+  int usesound = TRUE;
+
+  if (issound != SOUND_NONE)
+    return;
+
+  for (i = j = 1; i < *argc; i++)
+    {
+      if (strcmp(argv[i], "-sound") == 0)
+	usesound = TRUE;
+      else if (strcmp(argv[i], "-nosound") == 0)
+	usesound = FALSE;
+      else if (strcmp(argv[i], "-dsprate") == 0)
+	sscanf(argv[++i], "%d", &dsprate);
+      else if (strcmp(argv[i], "-snddelay") == 0)
+	sscanf(argv[++i], "%d", &snddelay);
+#ifdef DIRECTX
+      else if (strcmp(argv[i], "-wavonly") == 0)
+	wavonly = TRUE;
+#endif
+      else
+      {
+	if (strcmp(argv[i], "-help") == 0)
+	{
+	  Aprint("\t-sound			enable sound\n"
+		 "\t-nosound			disable sound\n"
+#ifdef DIRECTX
+		 "\t-wavonly			disable direct sound\n"
+#endif
+		 "\t-dsprate <rate>		set dsp rate\n"
+		 "\t-snddelay <milliseconds>	set sound delay\n"
+		);
+	}
+	argv[j++] = argv[i];
+      }
+    }
+  *argc = j;
+
+  if (!usesound)
+    return;
+
+#ifdef DIRECTX
+  if (!wavonly)
+  {
+    i = initsound_dx();
+    if (!i)
+      return;
+  }
+#endif
+  initsound_wav();
+  return;
+}
+
+void Sound_Exit(void)
+{
+#ifdef DIRECTX
+  if (issound == SOUND_DX)
+    uninitsound_dx();
+#endif
+  if (issound == SOUND_WAV)
+    uninitsound_wav();
+
+  issound = SOUND_NONE;
+}
+
+static WAVEHDR *getwave(void)
+{
+  int i;
+
+  for (i = 0; i < buffers; i++)
+    {
+      if (waves[i].dwFlags & WHDR_DONE)
+	{
+	  waves[i].dwFlags &= ~WHDR_DONE;
+	  return &waves[i];
+	}
+    }
+
+  return NULL;
+}
+
+void Sound_Update(void)
+{
+  MMRESULT err;
+  WAVEHDR *wh;
+
+  switch (issound)
+  {
+  case SOUND_WAV:
+    while ((wh = getwave()))
+    {
+      Pokey_process(wh->lpData, wh->dwBufferLength);
+      err = waveOutWrite(wout, wh, sizeof(*wh));
+      if (err != MMSYSERR_NOERROR)
+      {
+	Aprint("cannot write wave output (%x)\n", err);
+	return;
+      }
+    }
+    break;
+#ifdef DIRECTX
+  case SOUND_DX:
+    sound_update_dx();
+#endif
+  }
+}
 
 void Sound_Pause(void)
 {
+#ifdef DIRECTX
+  if (issound != SOUND_DX)
+    return;
   if (!pDSB)
     return;
   IDirectSoundBuffer_Stop(pDSB);
+#endif
 }
 
-void Sound_Continue(void)
-{
-  sndrestore();
-}
+#endif	/* SOUND */
+
 
 /*
 $Log$
+Revision 1.3  2001/04/08 05:50:16  knik
+standard wave output driver added; sound and directx conditional compile
+
 Revision 1.2  2001/03/24 10:13:43  knik
 -nosound option fixed
 
