@@ -1,0 +1,27 @@
+Who does build the binaries for Atari800 releases?
+==================================================
+
+The regular binaries for Linux (curses, SVGAlib, SDL and X11) distributed
+in RPM and Debian packages and available at Sourceforge.net for download
+are built by me (Petr Stehlik).
+
+Official Debian package is built by Dale Scheetz <dwarf@polaris.net>.
+
+The following guys should build the binary for the other port/platform/OS:
+
+Port (platform, OS):   Maintainer:
+----------------------+-----------------------------------------
+Win32                  Krzysztof Nikiel  <knik@poczta.onet.pl>
+PocketPC               Vasyl Tsvirkunov <vasyl@pacbell.net>
+Mac OS X               Mark Grebe  <markgrebe@yahoo.com>
+Atari Falcon/TT        Petr Stehlik  <pstehlik@sophics.cz>
+BeOS                   <volunteer wanted>
+OS/2                   <volunteer wanted>
+*BSD                   <volunteer wanted>
+Amiga                  <volunteer wanted>
+
+If there is a volunteer for any of the above listed ports or if there
+is another port working that I didn't list then please contact me
+at <pstehlik@sophics.cz>.
+
+This document created on 2003/02/11.
