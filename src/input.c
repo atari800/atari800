@@ -146,6 +146,21 @@ void INPUT_Initialise(int *argc, char *argv[])
 			joy_multijoy = 1;
 		}
 		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-mouse off       Do not use mouse");
+				Aprint("\t-mouse pad       Emulate paddles");
+				Aprint("\t-mouse touch     Emulate Atari Touch Tablet");
+				Aprint("\t-mouse koala     Emulate Koala Pad");
+				Aprint("\t-mouse pen       Emulate Light Pen");
+				Aprint("\t-mouse gun       Emulate Light Gun");
+				Aprint("\t-mouse amiga     Emulate Amiga mouse");
+				Aprint("\t-mouse st        Emulate Atari ST mouse");
+				Aprint("\t-mouse trak      Emulate Atari Trak-Ball");
+				Aprint("\t-mouse joy       Emulate joystick using mouse");
+				Aprint("\t-mouseport <n>   Set mouse port 1-4 (default 1)");
+				Aprint("\t-mousespeed <n>  Set mouse speed 1-9 (default 3)");
+				Aprint("\t-multijoy        Emulate MultiJoy4 interface");
+			}
 			argv[j++] = argv[i];
 		}
 	}

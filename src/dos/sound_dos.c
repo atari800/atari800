@@ -59,8 +59,16 @@ void Sound_Initialise(int *argc, char *argv[])
 			sscanf(argv[++i], "%d", &playback_freq);
 		else if (strcmp(argv[i], "-bufsize") == 0)
 			sscanf(argv[++i], "%d", &buffersize);
-		else
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				sound_enabled = FALSE;
+				Aprint("\t-sound           Enable sound");
+				Aprint("\t-nosound         Disable sound");
+				Aprint("\t-dsprate <freq>  Set mixing frequency (Hz)");
+				Aprint("\t-bufsize         Set sound buffer size");
+			}
 			argv[j++] = argv[i];
+		}
 	}
 
 	*argc = j;
