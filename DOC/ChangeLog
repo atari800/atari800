@@ -1,4 +1,7 @@
-2003-06-29  Piotr Fusik  <fox@scene.pl>
+2003-07-04  Piotr Fusik  <fox@scene.pl>
+* mzpokeysnd.c: added key click
+
+
 * cpu.c: a fix for "CMC Demo" crashing NEW_CYCLE_EXACT emulator
   (the problem could probably exist in many other demos
   which play samples using IRQ)
