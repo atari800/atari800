@@ -1,6 +1,0 @@
-# (C) 2001  Krzysztof Nikiel
-# $Id$
-
-CYGOPT = -mno-cygwin
-
-include ./Makefile.win32
