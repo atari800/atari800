@@ -1,3 +1,10 @@
+2002-07-04  Vasyl Tsvirkunov  <vasyl@pacbell.net>
+* ui.c,gtia.c,atari.h,cassette.h: cassette image loading is available from
+  main menu. Also, main menu allows to persist "Hold Start" setting.
+  Interlaced screenshot is commented out in main menu.
+* ui_wince.c: updated to reflect above changes (one port-specific item was
+  piggyback on interlaced screenshot, had to move).
+
 2002-07-04  Piotr Fusik  <fox@scene.pl>
 * atari.c, memory-d.c, ui.c: emulation of 16K RAM machines: 400 and 600XL
 * cpu.c: cycle-exact LSR $D01A
