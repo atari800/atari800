@@ -39,7 +39,6 @@ OBJ = \
 	log.o \
 	compfile.o \
 	memory.o \
-	pbi.o \
 	statesav.o \
 	diskled.o \
 	colours.o \
