@@ -1,3 +1,5 @@
+/* $Id$ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,10 +21,6 @@
 #include <file.h>
 #else
 #include <fcntl.h>
-#endif
-
-#ifdef DJGPP
-int timesync = 1;
 #endif
 
 #define FALSE   0
@@ -1084,3 +1082,10 @@ void MainStateRead( void )
 	ReadINT( &default_tv_mode, 1 );
 	ReadINT( &default_system, 1 );
 }
+
+/*
+$Log$
+Revision 1.4  2001/03/18 06:24:04  knik
+unused variable removed
+
+*/

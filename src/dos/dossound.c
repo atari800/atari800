@@ -1,9 +1,11 @@
+/* $Id$ */
+
 #include "config.h"
 #include <fcntl.h>
 #include "atari.h"
 #include "pokeysnd.h"
 #include "allegro.h"
-extern int timesync;
+
 int speed_count = 0;
 
 #define FALSE 0
@@ -71,7 +73,6 @@ int dossound_Initialise(int *argc, char *argv[])
          }
 	}
 	if (sound_enabled) {
-		timesync = FALSE;
 		stream_len = (44100 - 1) / frames_per_second;
 		stream_freq = stream_len * frames_per_second;
 		sample_pos = 0;
@@ -82,9 +83,6 @@ int dossound_Initialise(int *argc, char *argv[])
 		memset(buffer, 0x00, stream_len);
 		Pokey_sound_init(FREQ_17_EXACT, stream_freq, 1);
                 init_stream();
-	}
-	else {
-		timesync = TRUE;
 	}
 	return 0;
 }
@@ -124,4 +122,9 @@ void Atari_AUDCTL(int byte)
 	Update_pokey_sound(  8, byte, 0, gain);
 }
 
+/*
+$Log$
+Revision 1.2  2001/03/18 06:24:04  knik
+unused variable removed
 
+*/
