@@ -57,7 +57,7 @@ case $host_os in
   mingw32 ) a800_host=win;;
   msdosdjgpp ) a800_host=dos;;
   linux ) a800_host=linux;;
-  falcon ) a800_host=falcon;;
+  mint ) a800_host=falcon;;
 esac
 
 echo "$a800_host environment found"
@@ -155,6 +155,7 @@ atari_sdl.o"
 ;;
 falcon)
 AC_DEFINE(DOS_DRIVES)
+AC_DEFINE(USE_CLOCK)
 LIBS="$LIBS -lgem"
 OBJ="$OBJ \
 atari_falcon.o \
