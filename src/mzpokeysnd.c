@@ -2,7 +2,7 @@
  *                                                                           *
  *  Atari800  Atari 800XL, etc. emulator                                     *
  *  ----------------------------------------------------------------------   *
- *  POKEY Chip Emulator, V1.2                                                *
+ *  POKEY Chip Emulator, V1.3                                                *
  *  by Michael Borisov                                                       *
  *                                                                           *
  *****************************************************************************/
@@ -31,8 +31,19 @@
  *                                                                           *
  *****************************************************************************/
 
+/*****************************************************************************
 
+  REVISION HISTORY
 
+  V1.2  02.12.2002   Added STIMER feature - M.B.
+  V1.3  04.12.2002   All C++ style comments changed to C style for
+                      portability
+                     poly17tbl and poly9tbl converted to unsigned char
+                      to save memory
+                     copyright info removed from static code
+                      also to save some memory - M.B.
+
+ *****************************************************************************/
 
 #include "pokeysnd.h"
 #include "atari.h"
@@ -56,13 +67,13 @@ static unsigned int master_gain2 = 2;
 static unsigned int num_cur_pokeys = 0;
 
 /* Filter */
-static unsigned long sample_rate = 44100; // Hz
-static unsigned long pokey_frq = 1808100 ; //Hz - for easier resampling
+static unsigned long sample_rate = 44100; /* Hz */
+static unsigned long pokey_frq = 1808100 ; /* Hz - for easier resampling */
 static int filter_size = 1274;
 static const double* filter_data = filter_44;
 static unsigned long audible_frq = 20000;
 
-static const unsigned long pokey_frq_ideal =  1789790; //Hz - True
+static const unsigned long pokey_frq_ideal =  1789790; /* Hz - True */
 static const int filter_size_44 = 1274;
 static const int filter_size_22 = 1239;
 static const int filter_size_11 = 1305;
@@ -70,15 +81,11 @@ static const int filter_size_48 = 898;
 static const int filter_size_8  = 1322;
 
 
-// Copyright info
-static char copyright_info[] = "Pokey emulation (c) 2002, written by Michael Borisov";
-
-
 /* Poly tables */
 static unsigned char poly4tbl[15];
 static unsigned char poly5tbl[31];
-static unsigned long poly17tbl[131071];
-static unsigned short poly9tbl[511];
+static unsigned char poly17tbl[131071];
+static unsigned char poly9tbl[511];
 
 
 struct stPokeyState;
@@ -99,13 +106,13 @@ typedef struct stPokeyState
 
     /* Change queue */
     unsigned char ovola;
-    int qet[1322]; // maximal length of filter
+    int qet[1322]; /* maximal length of filter */
     unsigned char qev[1322];
     int qebeg;
     int qeend;
 
     /* Main divider (64khz/15khz) */
-    unsigned char mdivk;    // 28 for 64khz, 114 for 15khz
+    unsigned char mdivk;    /* 28 for 64khz, 114 for 15khz */
 
     /* Main switches */
     unsigned char selpoly9;
@@ -116,7 +123,7 @@ typedef struct stPokeyState
 
     /* Main output state */
     unsigned char outvol_all;
-    unsigned char forcero; // Force readout
+    unsigned char forcero; /* Force readout */
 
     /* channel 0 state */
 
@@ -124,22 +131,22 @@ typedef struct stPokeyState
     event_t event_0;
 
     unsigned long c0divpos;
-    unsigned long c0divstart;   // AUDF0 recalculated
-    unsigned long c0divstart_p; // start value when c1_f0
-    unsigned short c0diva;      // AUDF0 register
-    unsigned char c0ctl;        // AUDC0 register
+    unsigned long c0divstart;   /* AUDF0 recalculated */
+    unsigned long c0divstart_p; /* start value when c1_f0 */
+    unsigned short c0diva;      /* AUDF0 register */
+    unsigned char c0ctl;        /* AUDC0 register */
 
-    unsigned char c0t1;         // D - 5bit, Q goes to sw3
-    unsigned char c0t2;         // D - out sw2, Q goes to sw4 and t3
-    unsigned char c0t3;         // D - out t2, q goes to xor
+    unsigned char c0t1;         /* D - 5bit, Q goes to sw3 */
+    unsigned char c0t2;         /* D - out sw2, Q goes to sw4 and t3 */
+    unsigned char c0t3;         /* D - out t2, q goes to xor */
 
-    unsigned char c0sw1;        // in1 - 4bit, in2 - 17bit, out goes to sw2
-    unsigned char c0sw2;        // in1 - /Q t2, in2 - out sw1, out goes to t2
-    unsigned char c0sw3;        // in1 - +5, in2 - Q t1, out goes to C t2
-    unsigned char c0sw4;        // hi-pass sw
-    unsigned char c0vo;         // volume only
+    unsigned char c0sw1;        /* in1 - 4bit, in2 - 17bit, out goes to sw2 */
+    unsigned char c0sw2;        /* in1 - /Q t2, in2 - out sw1, out goes to t2 */
+    unsigned char c0sw3;        /* in1 - +5, in2 - Q t1, out goes to C t2 */
+    unsigned char c0sw4;        /* hi-pass sw */
+    unsigned char c0vo;         /* volume only */
 
-    unsigned char c0stop;       // channel counter stopped
+    unsigned char c0stop;       /* channel counter stopped */
 
     unsigned char vol0;
 
@@ -165,7 +172,7 @@ typedef struct stPokeyState
     unsigned char c1sw4;
     unsigned char c1vo;
 
-    unsigned char c1stop;      // channel counter stopped
+    unsigned char c1stop;      /* channel counter stopped */
 
     unsigned char vol1;
 
@@ -178,7 +185,7 @@ typedef struct stPokeyState
 
     unsigned long c2divpos;
     unsigned long c2divstart;
-    unsigned long c2divstart_p;     // start value when c1_f0
+    unsigned long c2divstart_p;     /* start value when c1_f0 */
     unsigned short c2diva;
     unsigned char c2ctl;
 
@@ -190,7 +197,7 @@ typedef struct stPokeyState
     unsigned char c2sw3;
     unsigned char c2vo;
 
-    unsigned char c2stop;          // channel counter stopped
+    unsigned char c2stop;          /* channel counter stopped */
 
     unsigned char vol2;
 
@@ -214,7 +221,7 @@ typedef struct stPokeyState
     unsigned char c3sw3;
     unsigned char c3vo;
 
-    unsigned char c3stop;          // channel counter stopped
+    unsigned char c3stop;          /* channel counter stopped */
 
     unsigned char vol3;
 
@@ -224,23 +231,16 @@ typedef struct stPokeyState
 
 PokeyState pokey_states[NPOKEYS];
 
-/* channel 0 state */
+/* Forward declarations for ResetPokeyState */
 
 static unsigned char readout0_normal(PokeyState* ps);
 static void event0_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
-
-/* channel 1 state */
-
 static unsigned char readout1_normal(PokeyState* ps);
 static void event1_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
-/* channel 2 state */
-
 static unsigned char readout2_normal(PokeyState* ps);
 static void event2_pure(PokeyState* ps, char p5v, char p4v, char p917v);
-
-/* channel 3 state */
 
 static unsigned char readout3_normal(PokeyState* ps);
 static void event3_pure(PokeyState* ps, char p5v, char p4v, char p917v);
@@ -382,14 +382,14 @@ double read_resam_all(PokeyState* ps)
 
     if(ps->qebeg == ps->qeend)
     {
-        return ps->ovola * filter_data[0]; // if no events in the queue
+        return ps->ovola * filter_data[0]; /* if no events in the queue */
     }
 
     avol = ps->ovola;
     sum = 0;
 
-    // Separate two loop cases, for wrap-around and without
-    if(ps->qeend < ps->qebeg) // With wrap
+    /* Separate two loop cases, for wrap-around and without */
+    if(ps->qeend < ps->qebeg) /* With wrap */
     {
         while(i<filter_size)
         {
@@ -401,7 +401,7 @@ double read_resam_all(PokeyState* ps)
         i=0;
     }
 
-    // without wrap
+    /* without wrap */
     while(i<ps->qeend)
     {
         bvol = ps->qev[i];
@@ -425,9 +425,9 @@ void add_change(PokeyState* ps, unsigned char a)
 
 void bump_qe_subticks(PokeyState* ps, int subticks)
 {
-    // Remove too old events from the queue while bumping
+    /* Remove too old events from the queue while bumping */
     int i = ps->qebeg;
-    if(ps->qeend < ps->qebeg) // Loop with wrap
+    if(ps->qeend < ps->qebeg) /* Loop with wrap */
     {
         while(i<filter_size)
         {
@@ -443,7 +443,7 @@ void bump_qe_subticks(PokeyState* ps, int subticks)
         }
         i=0;
     }
-    // loop without wrap
+    /* loop without wrap */
     while(i<ps->qeend)
     {
         ps->qet[i] += subticks;
@@ -460,8 +460,7 @@ void bump_qe_subticks(PokeyState* ps, int subticks)
 
 unsigned char readout_resam(PokeyState* ps)
 {
-
-    return floor((read_resam_all(ps)-64.0)*master_gain + 0.5) + 128;
+    return (unsigned char)floor((read_resam_all(ps)-64.0)*master_gain + 0.5) + 128;
 }
 
 
@@ -490,7 +489,7 @@ static void build_poly5(void)
 
     for(i=0; i<31; i++)
     {
-        poly5tbl[i] = ~poly5; // Inversion! Attention!
+        poly5tbl[i] = ~poly5; /* Inversion! Attention! */
         c = ((poly5>>2)&1) ^ ((poly5>>4)&1);
         poly5 = ((poly5<<1)&31) + c;
     }
@@ -504,7 +503,7 @@ static void build_poly17(void)
 
     for(i=0; i<131071; i++)
     {
-        poly17tbl[i] = poly17;
+        poly17tbl[i] = (unsigned char)(poly17 & 0xFF);
         c = ((poly17>>11)&1) ^ ((poly17>>16)&1);
         poly17 = ((poly17<<1)&131071)+c;
     }
@@ -518,7 +517,7 @@ static void build_poly9(void)
 
     for(i=0; i<511; i++)
     {
-        poly9tbl[i] = poly9;
+        poly9tbl[i] = (unsigned char)(poly9 & 0xFF);
         c = ((poly9>>3)&1) ^ ((poly9>>8)&1);
         poly9 = ((poly9<<1)&511)+c;
     }
@@ -719,7 +718,7 @@ static void event2_pure(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c2t2 = !ps->c2t2;
     ps->c2t1 = p5v;
-    // high-pass clock for channel 0
+    /* high-pass clock for channel 0 */
     ps->c0t3 = ps->c0t2;
 }
 
@@ -728,7 +727,7 @@ static void event2_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c2t1)
         ps->c2t2 = !ps->c2t2;
     ps->c2t1 = p5v;
-    // high-pass clock for channel 0
+    /* high-pass clock for channel 0 */
     ps->c0t3 = ps->c0t2;
 }
 
@@ -736,7 +735,7 @@ static void event2_p4(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c2t2 = p4v;
     ps->c2t1 = p5v;
-    // high-pass clock for channel 0
+    /* high-pass clock for channel 0 */
     ps->c0t3 = ps->c0t2;
 }
 
@@ -744,7 +743,7 @@ static void event2_p917(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c2t2 = p917v;
     ps->c2t1 = p5v;
-    // high-pass clock for channel 0
+    /* high-pass clock for channel 0 */
     ps->c0t3 = ps->c0t2;
 }
 
@@ -753,7 +752,7 @@ static void event2_p4_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c2t1)
         ps->c2t2 = p4v;
     ps->c2t1 = p5v;
-    // high-pass clock for channel 0
+    /* high-pass clock for channel 0 */
     ps->c0t3 = ps->c0t2;
 }
 
@@ -762,7 +761,7 @@ static void event2_p917_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c2t1)
         ps->c2t2 = p917v;
     ps->c2t1 = p5v;
-    // high-pass clock for channel 0
+    /* high-pass clock for channel 0 */
     ps->c0t3 = ps->c0t2;
 }
 
@@ -776,7 +775,7 @@ static void event3_pure(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c3t2 = !ps->c3t2;
     ps->c3t1 = p5v;
-    // high-pass closk for channel 1
+    /* high-pass closk for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -785,7 +784,7 @@ static void event3_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c3t1)
         ps->c3t2 = !ps->c3t2;
     ps->c3t1 = p5v;
-    // high-pass closk for channel 1
+    /* high-pass closk for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -793,7 +792,7 @@ static void event3_p4(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c3t2 = p4v;
     ps->c3t1 = p5v;
-    // high-pass closk for channel 1
+    /* high-pass closk for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -801,7 +800,7 @@ static void event3_p917(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c3t2 = p917v;
     ps->c3t1 = p5v;
-    // high-pass closk for channel 1
+    /* high-pass closk for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -810,7 +809,7 @@ static void event3_p4_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c3t1)
         ps->c3t2 = p4v;
     ps->c3t1 = p5v;
-    // high-pass closk for channel 1
+    /* high-pass closk for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -819,7 +818,7 @@ static void event3_p917_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c3t1)
         ps->c3t2 = p917v;
     ps->c3t1 = p5v;
-    // high-pass closk for channel 1
+    /* high-pass closk for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -991,32 +990,32 @@ void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
     case 44100:
         filter_data = filter_44;
         filter_size = filter_size_44;
-        pokey_frq = 1808100; // 1.02% off ideal
-        audible_frq = 20000; // ultrasound
+        pokey_frq = 1808100; /* 1.02% off ideal */
+        audible_frq = 20000; /* ultrasound */
         break;
     case 22050:
         filter_data = filter_22;
         filter_size = filter_size_22;
-        pokey_frq = 1786050; // 0.2% off ideal
-        audible_frq = 10000; // 30db filter attenuation
+        pokey_frq = 1786050; /* 0.2% off ideal */
+        audible_frq = 10000; /* 30db filter attenuation */
         break;
     case 11025:
         filter_data = filter_11;
         filter_size = filter_size_11;
-        pokey_frq = 1786050; // 0.2% off ideal
-        audible_frq = 4500; // 30db filter attenuation
+        pokey_frq = 1786050; /* 0.2% off ideal */
+        audible_frq = 4500; /* 30db filter attenuation */
         break;
     case 48000:
         filter_data = filter_48;
         filter_size = filter_size_48;
-        pokey_frq = 1776000; // 0.7% off ideal
-        audible_frq = 20000; // ultrasound
+        pokey_frq = 1776000; /* 0.7% off ideal */
+        audible_frq = 20000; /* ultrasound */
         break;
     case 8000:
         filter_data = filter_8;
         filter_size = filter_size_8;
-        pokey_frq = 1792000; // 0.1% off ideal
-        audible_frq = 4000; // Nyquist, also 30db attn, should be 50
+        pokey_frq = 1792000; /* 0.1% off ideal */
+        audible_frq = 4000; /* Nyquist, also 30db attn, should be 50 */
         break;
     }
 
@@ -1407,7 +1406,7 @@ static void Update_c0stop(PokeyState* ps)
 
     if(ps->c0vo || ps->vol0 == 0)
         ps->c0stop = 1;
-    else if(!ps->c0sw4 && ps->c0sw3 && ps->c0sw2) // If channel 0 is a pure tone...
+    else if(!ps->c0sw4 && ps->c0sw3 && ps->c0sw2) /* If channel 0 is a pure tone... */
     {
         if(ps->c1_f0)
         {
@@ -1426,12 +1425,12 @@ static void Update_c0stop(PokeyState* ps)
             }
         }
     }
-    else if(!ps->c0sw4 && ps->c0sw3 && !ps->c0sw2 && ps->c0sw1) // if channel 0 is poly4...
+    else if(!ps->c0sw4 && ps->c0sw3 && !ps->c0sw2 && ps->c0sw1) /* if channel 0 is poly4... */
     {
-        // period for poly4 signal is 15 cycles
+        /* period for poly4 signal is 15 cycles */
         if(ps->c1_f0)
         {
-            if(ps->c1divstart <= lim*2/15) // all poly4 signal is above Nyquist
+            if(ps->c1divstart <= lim*2/15) /* all poly4 signal is above Nyquist */
             {
                 ps->c0stop = 1;
                 hfa = 1;
@@ -1461,12 +1460,12 @@ static void Update_c1stop(PokeyState* ps)
 
     if(!ps->c1_f0 && (ps->c1vo || ps->vol1 == 0))
         ps->c1stop = 1;
-    else if(!ps->c1sw4 && ps->c1sw3 && ps->c1sw2 && ps->c1divstart <= lim) // If channel 1 is a pure tone
+    else if(!ps->c1sw4 && ps->c1sw3 && ps->c1sw2 && ps->c1divstart <= lim) /* If channel 1 is a pure tone */
     {
         ps->c1stop = 1;
         hfa = 1;
     }
-    else if(!ps->c1sw4 && ps->c1sw3 && !ps->c1sw2 && ps->c1sw1 && ps->c1divstart <= lim*2/15)  // all poly4 signal is above Nyquist
+    else if(!ps->c1sw4 && ps->c1sw3 && !ps->c1sw2 && ps->c1sw1 && ps->c1divstart <= lim*2/15)  /* all poly4 signal is above Nyquist */
     {
         ps->c1stop = 1;
         hfa = 1;
@@ -1486,7 +1485,7 @@ static void Update_c2stop(PokeyState* ps)
 
     if(!ps->c0sw4 && (ps->c2vo || ps->vol2 == 0))
         ps->c2stop = 1;
-    // If channel 2 is a pure tone and no filter for c0...
+    /* If channel 2 is a pure tone and no filter for c0... */
     else if(ps->c2sw3 && ps->c2sw2 && !ps->c0sw4)
     {
         if(ps->c3_f2)
@@ -1506,12 +1505,12 @@ static void Update_c2stop(PokeyState* ps)
             }
         }
     }
-    else if(ps->c2sw3 && !ps->c2sw2 && ps->c2sw1 && !ps->c0sw4) // if channel 2 is poly4 and no filter for c0...
+    else if(ps->c2sw3 && !ps->c2sw2 && ps->c2sw1 && !ps->c0sw4) /* if channel 2 is poly4 and no filter for c0... */
     {
-        // period for poly4 signal is 15 cycles
+        /* period for poly4 signal is 15 cycles */
         if(ps->c3_f2)
         {
-            if(ps->c3divstart <= lim*2/15) // all poly4 signal is above Nyquist
+            if(ps->c3divstart <= lim*2/15) /* all poly4 signal is above Nyquist */
             {
                 ps->c2stop = 1;
                 hfa = 1;
@@ -1540,13 +1539,13 @@ static void Update_c3stop(PokeyState* ps)
 
     if(!ps->c1sw4 && !ps->c3_f2 && (ps->c3vo || ps->vol3 == 0))
         ps->c3stop = 1;
-    // If channel 3 is a pure tone
+    /* If channel 3 is a pure tone */
     else if(ps->c3sw3 && ps->c3sw2 && !ps->c1sw4 && ps->c3divstart <= lim)
     {
         ps->c3stop = 1;
         hfa = 1;
     }
-    else if(ps->c3sw3 && !ps->c3sw2 && ps->c3sw1 && !ps->c1sw4 && ps->c3divstart <= lim*2/15)  // all poly4 signal is above Nyquist
+    else if(ps->c3sw3 && !ps->c3sw2 && ps->c3sw1 && !ps->c1sw4 && ps->c3divstart <= lim*2/15)  /* all poly4 signal is above Nyquist */
     {
         ps->c3stop = 1;
         hfa = 1;
@@ -1704,10 +1703,10 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
     int nsam = sndn;
 
     if(num_cur_pokeys<1)
-        return; // module was not initialized
+        return; /* module was not initialized */
 
-    // if there are two pokeys, then the signal is stereo
-    // we assume even sndn
+    /* if there are two pokeys, then the signal is stereo
+       we assume even sndn */
     while(nsam>=num_cur_pokeys)
     {
         for(i=0; i<num_cur_pokeys; i++)
