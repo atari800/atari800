@@ -1,4 +1,4 @@
-/* (C) 2001  Vasyl Tsvirkunov */
+/* (C) 2001,2002  Vasyl Tsvirkunov */
 /* Originally based on Win32 port by  Krzysztof Nikiel */
 
 #include <windows.h>
@@ -13,7 +13,7 @@ extern "C"
 #include "ui.h"
 #include "keyboard.h"
 
-int smooth_filter = 0;
+int smooth_filter = 1; /* default is YES */
 int filter_available = 0;
 };
 
@@ -23,15 +23,19 @@ static UBYTE palRed[MAX_CLR];
 static UBYTE palGreen[MAX_CLR];
 static UBYTE palBlue[MAX_CLR];
 static unsigned short pal[MAX_CLR];
-/* First 10 and last 10 colors on palettized devices require special treatment */
-static UBYTE staticTranslate[20];
+/* First 10 and last 10 colors on palettized devices require special treatment,
+   this table will map all colors into 236-color space starting at 10 */
+static UBYTE staticTranslate[256];
 
+/* Hicolor mode conversion parameters */
+static int redshift = 8; /* 8 for 565 mode, 7 for 555 */
+static int greenmask = 0xfc; /* 0xfc for 565, 0xf8 for 555 */
+/* Monochromatic mode conversion parameters */
 static UBYTE invert = 0;
 static int colorscale = 0;
 
-#define COLORCONV565(r,g,b) (((r&0xf8)<<(11-3))|((g&0xfc)<<(5-2))|((b&0xf8)>>3))
-#define COLORCONV555(r,g,b) (((r&0xf8)<<(10-3))|((g&0xf8)<<(5-2))|((b&0xf8)>>3))
-#define COLORCONVMONO(r,g,b) ((((3*r>>3)+(g>>1)+(b>>3))>>colorscale)^invert)
+#define COLORCONVHICOLOR(r,g,b) ((((r)&0xf8)<<redshift)|(((g)&greenmask)<<(5-2))|(((b)&0xf8)>>3))
+#define COLORCONVMONO(r,g,b) ((((3*(r)>>3)+((g)>>1)+((b)>>3))>>colorscale)^invert)
 
 /* Using vectorized function to save on branches */
 typedef void (*tCls)();
@@ -47,8 +51,7 @@ void palette_Refresh(UBYTE*);
 void palette_DrawKbd(UBYTE*);
 
 void hicolor_Cls();
-void hicolor555_Refresh(UBYTE*);
-void hicolor565_Refresh(UBYTE*);
+void hicolor_Refresh(UBYTE*);
 void hicolor_DrawKbd(UBYTE*);
 
 static tCls        pCls        = NULL;
@@ -164,15 +167,23 @@ int gron(int *argc, char *argv[])
 	if(gxdp.ffFormat & kfDirect565)
 	{
 		pCls =        hicolor_Cls;
-		pRefresh =    hicolor565_Refresh;
+		pRefresh =    hicolor_Refresh;
 		pDrawKbd =    hicolor_DrawKbd;
+
+		redshift = 8;
+		greenmask = 0xfc;
+
 		filter_available = 1;
 	}
 	else if(gxdp.ffFormat & kfDirect555)
 	{
 		pCls =        hicolor_Cls;
-		pRefresh =    hicolor555_Refresh;
+		pRefresh =    hicolor_Refresh;
 		pDrawKbd =    hicolor_DrawKbd;
+
+		redshift = 7;
+		greenmask = 0xf8;
+
 		filter_available = 1;
 	}
 	else if((gxdp.ffFormat & kfDirect) && (gxdp.cBPP <= 8))
@@ -267,10 +278,8 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 	palGreen[ent] = g;
 	palBlue[ent] = b;
 
-	if(gxdp.ffFormat & kfDirect565)
-		pal[ent] = COLORCONV565(r,g,b);
-	else if(gxdp.ffFormat & kfDirect555)
-		pal[ent] = COLORCONV555(r,g,b);
+	if(gxdp.ffFormat & (kfDirect565|kfDirect555))
+		pal[ent] = COLORCONVHICOLOR(r,g,b);
 	else if(gxdp.ffFormat & kfDirect)
 		pal[ent] = COLORCONVMONO(r,g,b);
 }
@@ -320,8 +329,10 @@ void palette_update()
 		ReleaseDC(hWndMain, hDC);
 		free((void*)ple);
 
-		for(i=0; i<20; i++)
-			staticTranslate[i] = best_match(palRed[i+236], palGreen[i+236], palBlue[i+236], 236)+10;
+		for(i=0; i<236; i++)
+			staticTranslate[i] = i+10;
+		for(i=236; i<256; i++)
+			staticTranslate[i] = best_match(palRed[i], palGreen[i], palBlue[i], 236)+10;
 	}
 }
 
@@ -413,9 +424,6 @@ void hicolor_Cls()
 void refreshv(UBYTE* scr_ptr)
 {
 	pRefresh(scr_ptr);
-#ifdef DIRTYRECT
-	memset(screen_dirty, 0, ATARI_HEIGHT * ATARI_WIDTH/8);
-#endif
 }
 
 void overlay_kbd(UBYTE* scr_ptr);
@@ -424,19 +432,20 @@ void overlay_kbd(UBYTE* scr_ptr);
 	bitshift += gxdp.cBPP;             \
 	if(bitshift >= 8)                  \
 	{                                  \
-		bitshift = 0;                  \
-		bitmask = (1<<gxdp.cBPP)-1;    \
+		bitshift = refbitshift;        \
+		bitmask = refbitmask;          \
 		address += step;               \
 	}                                  \
 	else                               \
 		bitmask <<= gxdp.cBPP;
 
+
 #define ADVANCE_REV_PARTIAL(address, step)        \
 	bitshift -= gxdp.cBPP;                        \
 	if(bitshift < 0)                              \
 	{                                             \
-		bitshift = 8-gxdp.cBPP;                   \
-		bitmask = ((1<<gxdp.cBPP)-1)<<bitshift;   \
+		bitshift = refbitshift;                   \
+		bitmask = refbitmask;                     \
 		address += step;                          \
 	}                                             \
 	else                                          \
@@ -451,6 +460,8 @@ void mono_Refresh(UBYTE * scr_ptr)
 	static UBYTE *scraddr;
 	static UBYTE *scr_ptr_limit;
 	static UBYTE *src_limit;
+	static UBYTE *dirty_ptr_line;
+	static UBYTE *dirty_ptr;
 	static long pixelstep;
 	static long linestep;
 	static long skipmask;
@@ -458,6 +469,8 @@ void mono_Refresh(UBYTE * scr_ptr)
 // Special code is used to deal with packed pixels in monochrome mode
 	static UBYTE bitmask;
 	static int   bitshift;
+	static UBYTE refbitmask;
+	static int   refbitshift;
 
 	if(!active)
 	{
@@ -494,8 +507,8 @@ void mono_Refresh(UBYTE * scr_ptr)
 	// this will work on mono iPAQ and @migo, don't know about any others
 		linestep = (pixelstep > 0) ? -1 : 1;
 
-		bitshift = 0;
-		bitmask = (1<<gxdp.cBPP)-1;
+		bitshift = refbitshift = 0;
+		bitmask = refbitmask = (1<<gxdp.cBPP)-1;
 
 		if(scraddr)
 		{
@@ -506,7 +519,9 @@ void mono_Refresh(UBYTE * scr_ptr)
 			scr_ptr += geom[useMode].sourceoffset;
 			scr_ptr_limit = scr_ptr + geom[useMode].lineLimit;
 			src_limit = scr_ptr + geom[useMode].xLimit;
-			
+			dirty_ptr_line = screen_dirty + ((ULONG)scr_ptr-(ULONG)atari_screen)/8;
+			dirty_ptr;
+
 			/* Internal pixel loops */
 			if(skipmask == 3 && (smooth_filter || ui_is_active) && gxdp.cBPP >= 4)
 			{
@@ -514,160 +529,156 @@ void mono_Refresh(UBYTE * scr_ptr)
 				{
 					src = scr_ptr;
 					dst = scraddr;
+					dirty_ptr = dirty_ptr_line;
 					while(src < src_limit)
 					{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
-					{
-						UBYTE r, g, b;
-						r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
-						g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
-						b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
-						g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
-						b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
-						g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
-						b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-
-						r = (3*palRed[*(src+4)] + palRed[*(src+5)])>>2;
-						g = (3*palGreen[*(src+4)] + palGreen[*(src+5)])>>2;
-						b = (3*palBlue[*(src+4)] + palBlue[*(src+5)])>>2;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+5)] + palRed[*(src+6)])>>1;
-						g = (palGreen[*(src+5)] + palGreen[*(src+6)])>>1;
-						b = (palBlue[*(src+5)] + palBlue[*(src+6)])>>1;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+6)] + 3*palRed[*(src+7)])>>2;
-						g = (palGreen[*(src+6)] + 3*palGreen[*(src+7)])>>2;
-						b = (palBlue[*(src+6)] + 3*palBlue[*(src+7)])>>2;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-					}
-					else
-						dst += pixelstep*6;
-
-					src += 8;
-#else
-						UBYTE r, g, b;
-						r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
-						g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
-						b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
-						g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
-						b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
-						g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
-						b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
-
-						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
-
-						dst += pixelstep;
-
-						src += 4;
-#endif
-					}
-
-					ADVANCE_PARTIAL(scraddr, linestep);
-
-					scr_ptr += ATARI_WIDTH;
-					src_limit += ATARI_WIDTH;
-				}
-			}
-			else if(skipmask != 0xffffffff)
-			{
-				while(scr_ptr < scr_ptr_limit)
-				{
-					src = scr_ptr;
-					dst = scraddr;
-					while(src < src_limit)
-					{
-#ifdef DIRTYRECT
-						if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+						if(*dirty_ptr)
 						{
-							if((long)src & skipmask)
-							{
-								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-								dst += pixelstep;
-							}
+							UBYTE r, g, b;
+							r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
+							g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
+							b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
+
+							*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+							dst += pixelstep;
+
+							r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
+							g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
+							b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
+
+							*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+							dst += pixelstep;
+
+							r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
+							g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
+							b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
+
+							*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+							dst += pixelstep;
+
+							r = (3*palRed[*(src+4)] + palRed[*(src+5)])>>2;
+							g = (3*palGreen[*(src+4)] + palGreen[*(src+5)])>>2;
+							b = (3*palBlue[*(src+4)] + palBlue[*(src+5)])>>2;
+
+							*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+							dst += pixelstep;
+
+							r = (palRed[*(src+5)] + palRed[*(src+6)])>>1;
+							g = (palGreen[*(src+5)] + palGreen[*(src+6)])>>1;
+							b = (palBlue[*(src+5)] + palBlue[*(src+6)])>>1;
+
+							*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+							dst += pixelstep;
+
+							r = (palRed[*(src+6)] + 3*palRed[*(src+7)])>>2;
+							g = (palGreen[*(src+6)] + 3*palGreen[*(src+7)])>>2;
+							b = (palBlue[*(src+6)] + 3*palBlue[*(src+7)])>>2;
+
+							*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+							dst += pixelstep;
+
+							*dirty_ptr = 0;
 						}
 						else
-						{
-							if((long)src & skipmask)
-								dst += pixelstep;
-						}
-#else
-						if((long)src & skipmask)
-						{
-							*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-							dst += pixelstep;
-						}
-#endif
-						src ++;
+							dst += pixelstep*6;
+
+						src += 8;
+						dirty_ptr ++;
 					}
 
 					ADVANCE_PARTIAL(scraddr, linestep);
 
 					scr_ptr += ATARI_WIDTH;
 					src_limit += ATARI_WIDTH;
+					dirty_ptr_line += ATARI_WIDTH/8;
 				}
 			}
-			else
+			else if(skipmask == 0x00000003)
 			{
 				while(scr_ptr < scr_ptr_limit)
 				{
 					src = scr_ptr;
 					dst = scraddr;
+					dirty_ptr = dirty_ptr_line;
 					while(src < src_limit)
 					{
-#ifdef DIRTYRECT
-						if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
-							*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-#else
-						*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-#endif
-						dst += pixelstep;
-						src ++;
+						if(*dirty_ptr)
+						{
+							*dst = ((*dst)&~bitmask)|(pal[*(src+0)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+1)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+2)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+4)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+5)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+6)]<<bitshift);
+							dst += pixelstep;
+							*dirty_ptr = 0;
+						}
+						else
+							dst += pixelstep*6;
+
+						src += 8;
+						dirty_ptr ++;
 					}
 
 					ADVANCE_PARTIAL(scraddr, linestep);
 
 					scr_ptr += ATARI_WIDTH;
 					src_limit += ATARI_WIDTH;
+					dirty_ptr_line += ATARI_WIDTH/8;
+				}
+			}
+			else if(skipmask == 0xffffffff) /* sanity check */
+			{
+				while(scr_ptr < scr_ptr_limit)
+				{
+					src = scr_ptr;
+					dst = scraddr;
+					dirty_ptr = dirty_ptr_line;
+					while(src < src_limit)
+					{
+						if(*dirty_ptr)
+						{
+							*dst = ((*dst)&~bitmask)|(pal[*(src+0)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+1)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+2)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+3)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+4)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+5)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+6)]<<bitshift);
+							dst += pixelstep;
+							*dst = ((*dst)&~bitmask)|(pal[*(src+7)]<<bitshift);
+							dst += pixelstep;
+							*dirty_ptr = 0;
+						}
+						else
+							dst += pixelstep*8;
+
+						src += 8;
+						dirty_ptr ++;
+					}
+
+					ADVANCE_PARTIAL(scraddr, linestep);
+
+					scr_ptr += ATARI_WIDTH;
+					src_limit += ATARI_WIDTH;
+					dirty_ptr_line += ATARI_WIDTH/8;
 				}
 			}
 		}
@@ -686,148 +697,219 @@ void mono_Refresh(UBYTE * scr_ptr)
 			scr_ptr += geom[useMode].sourceoffset;
 			scr_ptr_limit = scr_ptr + geom[useMode].lineLimit;
 			src_limit = scr_ptr + geom[useMode].xLimit;
+			dirty_ptr_line = screen_dirty + ((ULONG)scr_ptr-(ULONG)atari_screen)/8;
 
-			if(skipmask != 0xffffffff)
+			if(skipmask == 0x00000003)
 			{
 				if(pixelstep > 0)
 				{
-					bitshift = 8-gxdp.cBPP;
-					bitmask = ((1<<gxdp.cBPP)-1)<<bitshift;
+					bitshift = refbitshift = 8-gxdp.cBPP;
+					bitmask = refbitmask = ((1<<gxdp.cBPP)-1)<<bitshift;
 
 					while(scr_ptr < scr_ptr_limit)
 					{
 						src = scr_ptr;
 						dst = scraddr;
 						dst -= (linestep-pixelstep);
+						dirty_ptr = dirty_ptr_line;
 						while(src < src_limit)
 						{
-#ifdef DIRTYRECT
-							if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+							if(*dirty_ptr)
 							{
-								if((long)src & skipmask)
-								{
-									*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-									ADVANCE_REV_PARTIAL(dst, pixelstep);
-								}
+								*dst = ((*dst)&~bitmask)|(pal[*(src+0)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+1)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+2)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+4)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+5)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+6)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dirty_ptr = 0;
 							}
 							else
 							{
-								if((long)src & skipmask)
-									ADVANCE_REV_PARTIAL(dst, pixelstep);
-							}
-#else
-							if((long)src & skipmask)
-							{
-								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
 								ADVANCE_REV_PARTIAL(dst, pixelstep);
 							}
-#endif
-							src ++;
+
+							src += 8;
+							dirty_ptr ++;
 						}
 
 						scraddr += linestep;
 
 						scr_ptr += ATARI_WIDTH;
 						src_limit += ATARI_WIDTH;
+						dirty_ptr_line += ATARI_WIDTH/8;
 					}
 				}
 				else
 				{
-					bitshift = 0;
-					bitmask = (1<<gxdp.cBPP)-1;
+					bitshift = refbitshift = 0;
+					bitmask = refbitmask = (1<<gxdp.cBPP)-1;
 
 					while(scr_ptr < scr_ptr_limit)
 					{
 						src = scr_ptr;
 						dst = scraddr;
+						dirty_ptr = dirty_ptr_line;
 						while(src < src_limit)
 						{
-#ifdef DIRTYRECT
-							if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+							if(*dirty_ptr)
 							{
-								if((long)src & skipmask)
-								{
-									*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-									ADVANCE_PARTIAL(dst, pixelstep);
-								}
+								*dst = ((*dst)&~bitmask)|(pal[*(src+0)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+1)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+2)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+4)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+5)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+6)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dirty_ptr = 0;
 							}
 							else
 							{
-								if((long)src & skipmask)
-									ADVANCE_PARTIAL(dst, pixelstep);
-							}
-#else
-							if((long)src & skipmask)
-							{
-								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
 								ADVANCE_PARTIAL(dst, pixelstep);
 							}
-#endif
-							src ++;
+							src += 8;
+							dirty_ptr ++;
 						}
 
 						scraddr += linestep;
 
 						scr_ptr += ATARI_WIDTH;
 						src_limit += ATARI_WIDTH;
+						dirty_ptr_line += ATARI_WIDTH/8;
 					}
 				}
 			}
-			else
+			else if(skipmask == 0xffffffff)
 			{
 				if(pixelstep > 0)
 				{
-					bitshift = 8-gxdp.cBPP;
-					bitmask = ((1<<gxdp.cBPP)-1)<<bitshift;
+					bitshift = refbitshift = 8-gxdp.cBPP;
+					bitmask = refbitmask = ((1<<gxdp.cBPP)-1)<<bitshift;
 
 					while(scr_ptr < scr_ptr_limit)
 					{
 						src = scr_ptr;
 						dst = scraddr;
 						dst -= (linestep-pixelstep);
+						dirty_ptr = dirty_ptr_line;
 						while(src < src_limit)
 						{
-#ifdef DIRTYRECT
-							if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
-								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-#else
-							*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-#endif
-							ADVANCE_REV_PARTIAL(dst, pixelstep);
-							src ++;
+							if(*dirty_ptr)
+							{
+								*dst = ((*dst)&~bitmask)|(pal[*(src+0)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+1)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+2)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+3)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+4)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+5)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+6)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+7)]<<bitshift);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								*dirty_ptr = 0;
+							}
+							else
+							{
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+								ADVANCE_REV_PARTIAL(dst, pixelstep);
+							}
+
+							src += 8;
+							dirty_ptr ++;
 						}
 
 						scraddr += linestep;
 
 						scr_ptr += ATARI_WIDTH;
 						src_limit += ATARI_WIDTH;
+						dirty_ptr_line += ATARI_WIDTH/8;
 					}
 				}
 				else
 				{
-					bitshift = 0;
-					bitmask = (1<<gxdp.cBPP)-1;
+					bitshift = refbitshift = 0;
+					bitmask = refbitmask = (1<<gxdp.cBPP)-1;
 
 					while(scr_ptr < scr_ptr_limit)
 					{
 						src = scr_ptr;
 						dst = scraddr;
+						dirty_ptr = dirty_ptr_line;
 						while(src < src_limit)
 						{
-#ifdef DIRTYRECT
-							if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
-								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-#else
-							*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
-#endif
-							ADVANCE_PARTIAL(dst, pixelstep);
-							src ++;
+							if(*dirty_ptr)
+							{
+								*dst = ((*dst)&~bitmask)|(pal[*(src+0)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+1)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+2)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+3)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+4)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+5)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+6)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dst = ((*dst)&~bitmask)|(pal[*(src+7)]<<bitshift);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								*dirty_ptr = 0;
+							}
+							else
+							{
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+								ADVANCE_PARTIAL(dst, pixelstep);
+							}
+							src += 8;
+							dirty_ptr ++;
 						}
 
 						scraddr += linestep;
 
 						scr_ptr += ATARI_WIDTH;
 						src_limit += ATARI_WIDTH;
+						dirty_ptr_line += ATARI_WIDTH/8;
 					}
 				}
 			}
@@ -836,20 +918,32 @@ void mono_Refresh(UBYTE * scr_ptr)
 	RELEASE_SCREEN();
 }
 
-void palette_Refresh(UBYTE * scr_ptr)
-{
-	static UBYTE *src;
-	static UBYTE *dst;
-	static UBYTE *scraddr;
-	static UBYTE *scr_ptr_limit;
-	static UBYTE *src_limit;
-	static long pixelstep;
-	static long linestep;
-	static long skipmask;
 
-// Special code is used to deal with packed pixels in monochrome mode
-	static UBYTE bitmask;
-	static int   bitshift;
+void palette_Refresh(UBYTE* scr_ptr)
+{
+/* Mode-specific metrics */
+	static long pixelstep = geom[useMode].pixelstep;
+	static long linestep  = geom[useMode].linestep;
+	static long low_limit = geom[useMode].sourceoffset+24;
+	static long high_limit = low_limit + geom[useMode].xLimit;
+
+/* Addressing withing screen_dirty array. This implementation assumes that the
+   array does not get reallocated in runtime */
+	static UBYTE* screen_dirty_ptr;
+	static UBYTE* screen_dirty_limit = screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+
+/* Source base pointer */
+	static UBYTE* screen_line_ptr;
+/* Source/destination pixel offset */
+	static long xoffset;
+
+/* Destination base pointer */
+	static UBYTE* dest_line_ptr;
+
+/* Running source and destination pointers */
+	static UBYTE* src_ptr;
+	static UBYTE* src_ptr_next;
+	static UBYTE* dest_ptr;
 
 	if(!active)
 	{
@@ -859,133 +953,139 @@ void palette_Refresh(UBYTE * scr_ptr)
 #endif
 		return;
 	}
-	
-	/* Update screen mode, also thread protection by doing this */
+
+/* Update screen mode, also thread protection by doing this */
 	if(useMode != currentScreenMode)
 	{
 		useMode = currentScreenMode;
-		pCls();
+
+		entire_screen_dirty();
+
+		pixelstep = geom[useMode].pixelstep;
+		linestep = geom[useMode].linestep;
+		low_limit = geom[useMode].sourceoffset+24;
+		high_limit = low_limit + geom[useMode].xLimit;
 	}
 	
-	/* Ensure keyboard flag consistency */
+/* Ensure keyboard flag consistency */
 	if(currentScreenMode == 0)
 		currentKeyboardMode = 4;
 	
-	/* Overlay keyboard in landscape modes */
+/* Overlay keyboard in landscape modes */
 	if(currentKeyboardMode != 4)
 		overlay_kbd(scr_ptr);
 
-	pixelstep = geom[useMode].pixelstep;
-	linestep = geom[useMode].linestep;
-	skipmask = geom[useMode].xSkipMask;
-	
-	scraddr = GET_SCREEN_PTR();
-	if(scraddr)
+	dest_line_ptr = GET_SCREEN_PTR();
+	if(dest_line_ptr)
 	{
 		if(useMode == 0)
-			pDrawKbd(scraddr);
+			pDrawKbd(dest_line_ptr);
 		
-		scraddr += geom[useMode].startoffset;
-		scr_ptr += geom[useMode].sourceoffset;
-		scr_ptr_limit = scr_ptr + geom[useMode].lineLimit;
-		src_limit = scr_ptr + geom[useMode].xLimit;
-		
-		/* Internal pixel loops */
-		if(skipmask != 0xffffffff)
+		screen_dirty_ptr = screen_dirty;
+		screen_line_ptr = (UBYTE*)atari_screen;
+		xoffset = 0;
+
+	/* Offset destination pointer to allow for rotation and particular screen geometry */
+		dest_line_ptr += geom[useMode].startoffset;
+
+	/* There are multiple versions of the internal loop based on screen geometry and settings */
+		if(geom[currentScreenMode].xSkipMask == 0xffffffff)
 		{
-			while(scr_ptr < scr_ptr_limit)
+		/* Regular 1:1 copy, with color conversion */
+			while(screen_dirty_ptr < screen_dirty_limit)
 			{
-				src = scr_ptr;
-				dst = scraddr;
-				while(src < src_limit)
+				if(*screen_dirty_ptr)
 				{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					if(xoffset >= low_limit && xoffset < high_limit)
 					{
-						for(int i=0; i<8; i++)
-						{
-							if((long)src & skipmask)
-							{
-								if(*src < 236)
-									*dst = *src+10;
-								else
-									*dst = staticTranslate[*src-236];
-								dst += pixelstep;
-							}
-							src ++;
-						}
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*pixelstep;
+						src_ptr = screen_line_ptr + xoffset;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr];
 					}
-					else
-					{
-						for(int i=0; i<8; i++)
-						{
-							if((long)src & skipmask)
-								dst += pixelstep;
-							src ++;
-						}
-					}
-#else
-					if((long)src & skipmask)
-					{
-						if(*src < 236)
-							*dst = *src+10;
-						else
-							*dst = staticTranslate[*src-236];
-						dst += pixelstep;
-					}
-					src ++;
-#endif
+					*screen_dirty_ptr = 0;
 				}
-				scraddr += linestep;
-				scr_ptr += ATARI_WIDTH;
-				src_limit += ATARI_WIDTH;
+
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
+				}
+
+				screen_dirty_ptr ++;
 			}
 		}
 		else
 		{
-			while(scr_ptr < scr_ptr_limit)
+		/* 3/4 pixel skip version. Filtering is not supported for paletted mode */
+			while(screen_dirty_ptr < screen_dirty_limit)
 			{
-				src = scr_ptr;
-				dst = scraddr;
-				while(src < src_limit)
+				if(*screen_dirty_ptr)
 				{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					if(xoffset >= low_limit && xoffset < high_limit)
 					{
-						if(*src < 236)
-							*dst = *src+10;
-						else
-							*dst = staticTranslate[*src-236];
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*3/4*pixelstep;
+						src_ptr = screen_line_ptr + xoffset;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						src_ptr ++;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr++]; dest_ptr += pixelstep;
+						*dest_ptr = staticTranslate[*src_ptr];
 					}
-#else
-					if(*src < 236)
-						*dst = *src+10;
-					else
-						*dst = staticTranslate[*src-236];
-#endif
-					dst += pixelstep;
-					src ++;
+					*screen_dirty_ptr = 0;
 				}
-				scraddr += linestep;
-				scr_ptr += ATARI_WIDTH;
-				src_limit += ATARI_WIDTH;
+
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
+				}
+
+				screen_dirty_ptr ++;
 			}
 		}
-		
+
 		RELEASE_SCREEN();
 	}
 }
 
-void hicolor555_Refresh(UBYTE * scr_ptr)
+void hicolor_Refresh(UBYTE* scr_ptr)
 {
-	static UBYTE *src;
-	static UBYTE *dst;
-	static UBYTE *scraddr;
-	static UBYTE *scr_ptr_limit;
-	static UBYTE *src_limit;
-	static long pixelstep;
-	static long linestep;
-	static long skipmask;
+/* Mode-specific metrics */
+	static long pixelstep = geom[useMode].pixelstep;
+	static long linestep  = geom[useMode].linestep;
+	static long low_limit = geom[useMode].sourceoffset+24;
+	static long high_limit = low_limit + geom[useMode].xLimit;
+
+/* Addressing withing screen_dirty array. This implementation assumes that the
+   array does not get reallocated in runtime */
+	static UBYTE* screen_dirty_ptr;
+	static UBYTE* screen_dirty_limit = screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+
+/* Source base pointer */
+	static UBYTE* screen_line_ptr;
+/* Source/destination pixel offset */
+	static long xoffset;
+
+/* Destination base pointer */
+	static UBYTE* dest_line_ptr;
+
+/* Running source and destination pointers */
+	static UBYTE* src_ptr;
+	static UBYTE* src_ptr_next;
+	static UBYTE* dest_ptr;
 
 	if(!active)
 	{
@@ -995,457 +1095,193 @@ void hicolor555_Refresh(UBYTE * scr_ptr)
 #endif
 		return;
 	}
-	
-	/* Update screen mode, also thread protection by doing this */
+
+/* Update screen mode, also thread protection by doing this */
 	if(useMode != currentScreenMode)
 	{
 		useMode = currentScreenMode;
-		pCls();
+
+		entire_screen_dirty();
+
+		pixelstep = geom[useMode].pixelstep;
+		linestep = geom[useMode].linestep;
+		low_limit = geom[useMode].sourceoffset+24;
+		high_limit = low_limit + geom[useMode].xLimit;
 	}
 	
-	/* Ensure keyboard flag consistency */
+/* Ensure keyboard flag consistency */
 	if(currentScreenMode == 0)
 		currentKeyboardMode = 4;
 	
-	/* Overlay keyboard in landscape modes */
+/* Overlay keyboard in landscape modes */
 	if(currentKeyboardMode != 4)
 		overlay_kbd(scr_ptr);
 
-	pixelstep = geom[useMode].pixelstep;
-	linestep = geom[useMode].linestep;
-	skipmask = geom[useMode].xSkipMask;
-	
-	scraddr = GET_SCREEN_PTR();
-	if(scraddr)
+	dest_line_ptr = GET_SCREEN_PTR();
+	if(dest_line_ptr)
 	{
 		if(useMode == 0)
-			pDrawKbd(scraddr);
+			pDrawKbd(dest_line_ptr);
 		
-		scraddr += geom[useMode].startoffset;
-		scr_ptr += geom[useMode].sourceoffset;
-		scr_ptr_limit = scr_ptr + geom[useMode].lineLimit;
-		src_limit = scr_ptr + geom[useMode].xLimit;
-		
-		/* Internal pixel loops */
-		if(skipmask == 3 && (smooth_filter || ui_is_active))
+		screen_dirty_ptr = screen_dirty;
+		screen_line_ptr = (UBYTE*)atari_screen;
+		xoffset = 0;
+
+	/* Offset destination pointer to allow for rotation and particular screen geometry */
+		dest_line_ptr += geom[useMode].startoffset;
+
+	/* There are multiple versions of the internal loop based on screen geometry and settings */
+		if(geom[currentScreenMode].xSkipMask == 0xffffffff)
 		{
-			while(scr_ptr < scr_ptr_limit)
+		/* Regular 1:1 copy, with color conversion */
+			while(screen_dirty_ptr < screen_dirty_limit)
 			{
-				src = scr_ptr;
-				dst = scraddr;
-				while(src < src_limit)
+				if(*screen_dirty_ptr)
 				{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					if(xoffset >= low_limit && xoffset < high_limit)
 					{
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*pixelstep;
+						src_ptr = screen_line_ptr + xoffset;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr];
+					}
+					*screen_dirty_ptr = 0;
+				}
+
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
+				}
+
+				screen_dirty_ptr ++;
+			}
+		}
+		else if(smooth_filter || ui_is_active)
+		{
+		/* The most complex version of the internal loop does 3/4 linear filtering */
+			while(screen_dirty_ptr < screen_dirty_limit)
+			{
+				if(*screen_dirty_ptr)
+				{
+					if(xoffset >= low_limit && xoffset < high_limit)
+					{
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*3/4*pixelstep;
+						src_ptr = screen_line_ptr + xoffset;
+						src_ptr_next = src_ptr+1;
+
 						UBYTE r, g, b;
-						r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
-						g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
-						b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
+						r = (3*palRed[*src_ptr] + palRed[*src_ptr_next])>>2;
+						g = (3*palGreen[*src_ptr] + palGreen[*src_ptr_next])>>2;
+						b = (3*palBlue[*src_ptr] + palBlue[*src_ptr_next])>>2;
 
-						*(unsigned short*)dst = COLORCONV555(r,g,b);
+						*(unsigned short*)dest_ptr = COLORCONVHICOLOR(r,g,b);
+						dest_ptr += pixelstep;
+						src_ptr++;
+						src_ptr_next++;
 
-						dst += pixelstep;
+						r = (palRed[*src_ptr] + palRed[*src_ptr_next])>>1;
+						g = (palGreen[*src_ptr] + palGreen[*src_ptr_next])>>1;
+						b = (palBlue[*src_ptr] + palBlue[*src_ptr_next])>>1;
 
-						r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
-						g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
-						b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
+						*(unsigned short*)dest_ptr = COLORCONVHICOLOR(r,g,b);
+						dest_ptr += pixelstep;
+						src_ptr++;
+						src_ptr_next++;
 
-						*(unsigned short*)dst = COLORCONV555(r,g,b);
+						r = (palRed[*src_ptr] + 3*palRed[*src_ptr_next])>>2;
+						g = (palGreen[*src_ptr] + 3*palGreen[*src_ptr_next])>>2;
+						b = (palBlue[*src_ptr] + 3*palBlue[*src_ptr_next])>>2;
 
-						dst += pixelstep;
+						*(unsigned short*)dest_ptr = COLORCONVHICOLOR(r,g,b);
+						dest_ptr += pixelstep;
+						src_ptr += 2;
+						src_ptr_next += 2;
 
-						r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
-						g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
-						b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
+						r = (3*palRed[*src_ptr] + palRed[*src_ptr_next])>>2;
+						g = (3*palGreen[*src_ptr] + palGreen[*src_ptr_next])>>2;
+						b = (3*palBlue[*src_ptr] + palBlue[*src_ptr_next])>>2;
 
-						*(unsigned short*)dst = COLORCONV555(r,g,b);
+						*(unsigned short*)dest_ptr = COLORCONVHICOLOR(r,g,b);
+						dest_ptr += pixelstep;
+						src_ptr++;
+						src_ptr_next++;
 
-						dst += pixelstep;
+						r = (palRed[*src_ptr] + palRed[*src_ptr_next])>>1;
+						g = (palGreen[*src_ptr] + palGreen[*src_ptr_next])>>1;
+						b = (palBlue[*src_ptr] + palBlue[*src_ptr_next])>>1;
 
-						r = (3*palRed[*(src+4)] + palRed[*(src+5)])>>2;
-						g = (3*palGreen[*(src+4)] + palGreen[*(src+5)])>>2;
-						b = (3*palBlue[*(src+4)] + palBlue[*(src+5)])>>2;
+						*(unsigned short*)dest_ptr = COLORCONVHICOLOR(r,g,b);
+						dest_ptr += pixelstep;
+						src_ptr++;
+						src_ptr_next++;
 
-						*(unsigned short*)dst = COLORCONV555(r,g,b);
+						r = (palRed[*src_ptr] + 3*palRed[*src_ptr_next])>>2;
+						g = (palGreen[*src_ptr] + 3*palGreen[*src_ptr_next])>>2;
+						b = (palBlue[*src_ptr] + 3*palBlue[*src_ptr_next])>>2;
 
-						dst += pixelstep;
-
-						r = (palRed[*(src+5)] + palRed[*(src+6)])>>1;
-						g = (palGreen[*(src+5)] + palGreen[*(src+6)])>>1;
-						b = (palBlue[*(src+5)] + palBlue[*(src+6)])>>1;
-
-						*(unsigned short*)dst = COLORCONV555(r,g,b);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+6)] + 3*palRed[*(src+7)])>>2;
-						g = (palGreen[*(src+6)] + 3*palGreen[*(src+7)])>>2;
-						b = (palBlue[*(src+6)] + 3*palBlue[*(src+7)])>>2;
-
-						*(unsigned short*)dst = COLORCONV555(r,g,b);
-
-						dst += pixelstep;
+						*(unsigned short*)dest_ptr = COLORCONVHICOLOR(r,g,b);
 					}
-					else
-						dst += pixelstep*6;
-
-					src += 8;
-#else
-					UBYTE r, g, b;
-					r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
-					g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
-					b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
-
-					*(unsigned short*)dst = COLORCONV555(r,g,b);
-
-					dst += pixelstep;
-
-					r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
-					g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
-					b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
-
-					*(unsigned short*)dst = COLORCONV555(r,g,b);
-
-					dst += pixelstep;
-
-					r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
-					g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
-					b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
-
-					*(unsigned short*)dst = COLORCONV555(r,g,b);
-
-					dst += pixelstep;
-
-					src += 4;
-#endif
+					*screen_dirty_ptr = 0;
 				}
-				scraddr += linestep;
-				scr_ptr += ATARI_WIDTH;
-				src_limit += ATARI_WIDTH;
-			}
-		}
-		else if(skipmask != 0xffffffff)
-		{
-			while(scr_ptr < scr_ptr_limit)
-			{
-				src = scr_ptr;
-				dst = scraddr;
-				while(src < src_limit)
+
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
-					{
-						for(int i=0; i<8; i++)
-						{
-							if((long)src & skipmask)
-							{
-								*(unsigned short*)dst = pal[*src];
-								dst += pixelstep;
-							}
-							src ++;
-						}
-					}
-					else
-					{
-						for(int i=0; i<8; i++)
-						{
-							if((long)src & skipmask)
-								dst += pixelstep;
-							src ++;
-						}
-					}
-#else
-					if((long)src & skipmask)
-					{
-						*(unsigned short*)dst = pal[*src];
-						dst += pixelstep;
-					}
-					src ++;
-#endif
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
 				}
-				scraddr += linestep;
-				scr_ptr += ATARI_WIDTH;
-				src_limit += ATARI_WIDTH;
+
+				screen_dirty_ptr ++;
 			}
 		}
 		else
 		{
-			while(scr_ptr < scr_ptr_limit)
+		/* 3/4 pixel skip version. Not recommended anymore */
+			while(screen_dirty_ptr < screen_dirty_limit)
 			{
-				src = scr_ptr;
-				dst = scraddr;
-				while(src < src_limit)
+				if(*screen_dirty_ptr)
 				{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					if(xoffset >= low_limit && xoffset < high_limit)
 					{
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*3/4*pixelstep;
+						src_ptr = screen_line_ptr + xoffset;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						src_ptr ++;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr];
 					}
-					else
-					{
-						dst += pixelstep<<3;
-						src += 8;
-					}
-#else
-					*(unsigned short*)dst = pal[*src];
-					dst += pixelstep;
-					src ++;
-#endif
+					*screen_dirty_ptr = 0;
 				}
 
-				scraddr += linestep;
-				scr_ptr += ATARI_WIDTH;
-				src_limit += ATARI_WIDTH;
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
+				}
+
+				screen_dirty_ptr ++;
 			}
 		}
-		
+
 		RELEASE_SCREEN();
 	}
 }
 
-void hicolor565_Refresh(UBYTE * scr_ptr)
-{
-	static UBYTE *src;
-	static UBYTE *dst;
-	static UBYTE *scraddr;
-	static UBYTE *scr_ptr_limit;
-	static UBYTE *src_limit;
-	static long pixelstep;
-	static long linestep;
-	static long skipmask;
-
-	if(!active)
-	{
-		Sleep(100);
-#ifndef MULTITHREADED
-		MsgPump();
-#endif
-		return;
-	}
-	
-	/* Update screen mode, also thread protection by doing this */
-	if(useMode != currentScreenMode)
-	{
-		useMode = currentScreenMode;
-		pCls();
-	}
-	
-	/* Ensure keyboard flag consistency */
-	if(currentScreenMode == 0)
-		currentKeyboardMode = 4;
-	
-	/* Overlay keyboard in landscape modes */
-	if(currentKeyboardMode != 4)
-		overlay_kbd(scr_ptr);
-
-	pixelstep = geom[useMode].pixelstep;
-	linestep = geom[useMode].linestep;
-	skipmask = geom[useMode].xSkipMask;
-	
-	scraddr = GET_SCREEN_PTR();
-	if(scraddr)
-	{
-		if(useMode == 0)
-			pDrawKbd(scraddr);
-		
-		scraddr += geom[useMode].startoffset;
-		scr_ptr += geom[useMode].sourceoffset;
-		scr_ptr_limit = scr_ptr + geom[useMode].lineLimit;
-		src_limit = scr_ptr + geom[useMode].xLimit;
-		
-		/* Internal pixel loops */
-		if(skipmask == 3 && (smooth_filter || ui_is_active))
-		{
-			while(scr_ptr < scr_ptr_limit)
-			{
-				src = scr_ptr;
-				dst = scraddr;
-				while(src < src_limit)
-				{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
-					{
-						UBYTE r, g, b;
-						r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
-						g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
-						b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
-
-						*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
-						g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
-						b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
-
-						*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
-						g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
-						b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
-
-						*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-						dst += pixelstep;
-
-						r = (3*palRed[*(src+4)] + palRed[*(src+5)])>>2;
-						g = (3*palGreen[*(src+4)] + palGreen[*(src+5)])>>2;
-						b = (3*palBlue[*(src+4)] + palBlue[*(src+5)])>>2;
-
-						*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+5)] + palRed[*(src+6)])>>1;
-						g = (palGreen[*(src+5)] + palGreen[*(src+6)])>>1;
-						b = (palBlue[*(src+5)] + palBlue[*(src+6)])>>1;
-
-						*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-						dst += pixelstep;
-
-						r = (palRed[*(src+6)] + 3*palRed[*(src+7)])>>2;
-						g = (palGreen[*(src+6)] + 3*palGreen[*(src+7)])>>2;
-						b = (palBlue[*(src+6)] + 3*palBlue[*(src+7)])>>2;
-
-						*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-						dst += pixelstep;
-					}
-					else
-						dst += pixelstep*6;
-
-					src += 8;
-#else
-
-					UBYTE r, g, b;
-					r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
-					g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
-					b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
-
-					*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-					dst += pixelstep;
-
-					r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
-					g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
-					b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
-
-					*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-					dst += pixelstep;
-
-					r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
-					g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
-					b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
-
-					*(unsigned short*)dst = COLORCONV565(r,g,b);
-
-					dst += pixelstep;
-
-					src += 4;
-#endif
-				}
-				scraddr += linestep;
-				scr_ptr += ATARI_WIDTH;
-				src_limit += ATARI_WIDTH;
-			}
-		}
-		else if(skipmask != 0xffffffff)
-		{
-			while(scr_ptr < scr_ptr_limit)
-			{
-				src = scr_ptr;
-				dst = scraddr;
-				while(src < src_limit)
-				{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
-					{
-						for(int i=0; i<8; i++)
-						{
-							if((long)src & skipmask)
-							{
-								*(unsigned short*)dst = pal[*src];
-								dst += pixelstep;
-							}
-							src ++;
-						}
-					}
-					else
-					{
-						for(int i=0; i<8; i++)
-						{
-							if((long)src & skipmask)
-								dst += pixelstep;
-							src ++;
-						}
-					}
-#else
-					if((long)src & skipmask)
-					{
-						*(unsigned short*)dst = pal[*src];
-						dst += pixelstep;
-					}
-					src ++;
-#endif
-				}
-				scraddr += linestep;
-				scr_ptr += ATARI_WIDTH;
-				src_limit += ATARI_WIDTH;
-			}
-		}
-		else
-		{
-			while(scr_ptr < scr_ptr_limit)
-			{
-				src = scr_ptr;
-				dst = scraddr;
-				while(src < src_limit)
-				{
-#ifdef DIRTYRECT
-					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
-					{
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
-					}
-					else
-					{
-						dst += pixelstep<<3;
-						src += 8;
-					}
-#else
-					*(unsigned short*)dst = pal[*src];
-					dst += pixelstep;
-					src ++;
-#endif
-				}
-
-				scraddr += linestep;
-				scr_ptr += ATARI_WIDTH;
-				src_limit += ATARI_WIDTH;
-			}
-		}
-		
-		RELEASE_SCREEN();
-	}
-}
 
 void refresh_kbd()
 {
