@@ -21,6 +21,11 @@ static int usesnd = 1;
 
 static int kbjoy = 1;
 
+/* WinCE port does not have console, no log either */
+void Aprint(char *format, ... ) {}
+void Aflushlog(void) {}
+
+
 int Atari_Keyboard(void)
 {
 	int keycode;
