@@ -62,15 +62,20 @@ static int motif_rom_sel = 1;
 #include "config.h"
 #endif
 #include "atari.h"
+#include "ataripcx.h"
 #include "colours.h"
+#include "input.h"
 #include "monitor.h"
 #include "sio.h"
 #include "sound.h"
 #include "platform.h"
 #include "rt-config.h"
+#include "ui.h"
 
-static struct timeval tp;
-static struct timezone tzp;
+/*
+static struct timeval tp;	warning: 'tp' defined but not used
+static struct timezone tzp;	warning: 'tzp' defined but not used
+*/
 
 #ifdef SHM
 #include <sys/ipc.h>
@@ -107,8 +112,6 @@ static struct JS_DATA_TYPE js_data;
 
 #define	FALSE	0
 #define	TRUE	1
-
-extern int SHIFT_KEY, KEYPRESSED;
 
 typedef enum {
 	Small,
@@ -276,12 +279,12 @@ int GetKeyCode(XEvent * event)
 		return AKEY_NONE;
 		break;
 	case KeyPress:
-		SHIFT_KEY = 0;
+		key_shift = 0;
 		switch (keysym) {
 		case XK_Shift_L:
 		case XK_Shift_R:
 			SHIFT = AKEY_SHFT;
-			SHIFT_KEY = 1;
+			key_shift = 1;
 			break;
 		case XK_Control_L:
 		case XK_Control_R:
@@ -725,8 +728,6 @@ int GetKeyCode(XEvent * event)
 		}
 		break;
 	}
-	if( event->type==KeyPress || event->type==KeyRelease )
-	        KEYPRESSED = (keycode != AKEY_NONE);
 	return keycode;
 }
 
@@ -3036,7 +3037,8 @@ void Atari_DisplayScreen(UBYTE * screen)
 	int xpos;
 	int ypos;
 
-	if( invisible || !draw_display )   goto after_screen_update; 
+	if (invisible)
+		goto after_screen_update; 
 	for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
 		ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 		scanline_ptr = ((UBYTE *) image_data) + ((ypos * ATARI_WIDTH) + clipping_x);
@@ -3546,21 +3548,77 @@ int Atari_POT(int num)
 	return pot;
 }
 
-int Atari_CONSOL(void)
+int main(int argc, char **argv)
 {
-	int temp;
+	int test_val = 0;
+	int keycode = AKEY_NONE;
 
-	if (menu_consol != 7) {
-		temp = menu_consol;
-		menu_consol = 0x07;
-	}
-	else {
-		temp = keyboard_consol;
-	}
-	return temp;
-}
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
 
-int Atari_PEN(int vertical)
-{
-	return vertical ? 0xff : 0;
+	/* main loop */
+	while (TRUE) {
+		keycode = Atari_Keyboard();
+
+		switch (keycode) {
+		case AKEY_COLDSTART:
+			Coldstart();
+			break;
+		case AKEY_WARMSTART:
+			Warmstart();
+			break;
+		case AKEY_EXIT:
+			Atari800_Exit(FALSE);
+			exit(1);
+		case AKEY_UI:
+#ifdef SOUND
+			Sound_Pause();
+#endif
+			ui((UBYTE *)atari_screen);
+#ifdef SOUND
+			Sound_Continue();
+#endif
+			break;
+		case AKEY_SCREENSHOT:
+			Save_PCX_file(FALSE, Find_PCX_name());
+			break;
+		case AKEY_SCREENSHOT_INTERLACE:
+			Save_PCX_file(TRUE, Find_PCX_name());
+			break;
+		case AKEY_BREAK:
+			key_break = 1;
+			break;
+		default:
+			key_break = 0;
+			key_code = keycode;
+			break;
+		}
+
+		if (menu_consol != 7) {
+			key_consol = menu_consol;
+			menu_consol = 0x07;
+		}
+		else
+			key_consol = keyboard_consol;
+
+		if (++test_val == refresh_rate) {
+			Atari800_Frame(EMULATE_FULL);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync(); /* here seems to be the best place to sync */
+#endif
+			Atari_DisplayScreen((UBYTE *) atari_screen);
+			test_val = 0;
+		}
+		else {
+#ifdef VERY_SLOW
+			Atari800_Frame(EMULATE_BASIC);
+#else	/* VERY_SLOW */
+			Atari800_Frame(EMULATE_NO_SCREEN);
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync();
+#endif
+#endif	/* VERY_SLOW */
+		}
+	}
 }
