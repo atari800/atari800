@@ -71,6 +71,8 @@ Currently supported cartridge types:
 | 36 | 800/XL/XE |  256 | Switchable XEGS 256 KB cartridge                  |
 | 37 | 800/XL/XE |  512 | Switchable XEGS 512 KB cartridge                  |
 | 38 | 800/XL/XE | 1024 | Switchable XEGS 1 MB cartridge                    |
+| 39 | 800/XL/XE |    8 | Phoenix 8 KB cartridge                            |
+| 40 | 800/XL/XE |   16 | Blizzard 16 KB cartridge                          |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -427,4 +429,18 @@ stands for the first bank in the image, bank B is the second, etc.
  The last bank is always mapped to $A000-$BFFF. Seven lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 39: Phoenix 8 KB cartridge                                           |
++---------------------------------------------------------------------------+
+
+ An 8 KB cartridge, that occupies 8 KB of address space between $A000
+ and $BFFF, and can be disabled by an access to $D500-$D5FF.
+
++---------------------------------------------------------------------------+
+| Type 40: Blizzard 16 KB cartridge                                         |
++---------------------------------------------------------------------------+
+
+ A 16 KB cartridge, that occupies 16 KB of address space between $8000
+ and $BFFF, and can be disabled by an access to $D500-$D5FF.
 
