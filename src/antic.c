@@ -3172,11 +3172,13 @@ glitch*/
 						draw_antic_ptr=draw_antic_0_dmactl_bug;
 					}		
 				}
+			}else{
+			/* DMACTL width has decreased */
+			/*TODO: this is not 100% correct*/
+				if(DRAWING_SCREEN){
+					update_scanline();
+				}
 			}
-					
-					
-					
-							
 		}
         #endif /*NEW_CYCLE_EXACT*/
 		DMACTL = byte;
