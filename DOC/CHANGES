@@ -30,7 +30,8 @@ o mouse can emulate following devices
   - paddles (-mouse pad)
   - Atari Touch Tablet (-mouse touch)
   - Koala Pad (-mouse koala)
-  - Light Pen, Light Gun (-mouse pen)
+  - Light Pen (-mouse pen)
+  - Light Gun (-mouse gun)
   - Amiga mouse (-mouse amiga)
   - Atari ST mouse (-mouse st)
   - joystick (-mouse joy)
@@ -76,6 +77,8 @@ o ui: added Atari Settings (enable/disable BASIC, R-Time 8, SIO patch, H:, P:)
 o antic,gtia: the background color can be changed inside a scanline.
   Currently implemented only for blank lines without PMG.
   Try the "Partyland" part of the "Bitter Reality" demo.
+
+o antic: corrected timing of DLISTL/H ("Spelunker" works)
 
 o binload: 0x31 stored at 0x300 ("Studio Dream" loads now)
 
@@ -152,6 +155,8 @@ o replaced following variables: machine, mach_xlxe, Ram256, os,
 
 o moved main() to platform-dependent code,
   created Atari800_Initialise and Atari800_Frame
+
+o removed i386 asm tricks
 
 o diskled: rewritten to be cleaner and more flexible
 
