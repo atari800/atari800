@@ -1609,9 +1609,16 @@ int main(int argc, char **argv)
 				last_key_code = key_code;
 				KBCODE = (UBYTE) key_code;
 				if (IRQEN & 0x40) {
-					IRQST &= ~0x40;
-					GenerateIRQ();
-				}
+					if (IRQST & 0x40) {
+						IRQST &= ~0x40;
+						GenerateIRQ();
+					}
+					else {
+						/* keyboard over-run */
+						SKSTAT &= ~0x40;
+						/* assert(IRQ != 0); */
+					}
+ 				}
 			}
 		}
 
@@ -1641,6 +1648,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.38  2003/10/25 19:07:48  joy
+ keyboard overrun fix in SDL
+
  Revision 1.37  2003/08/05 13:22:37  joy
  removed unused stuff
 

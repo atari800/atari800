@@ -7,10 +7,14 @@
 * atari.c: wrong path to disk image is not a reason to quit with an error
   message
 
-* mzpokeysnd.c: simple fix for SERIO_SOUND
+* mzpokeysnd.c: simple fix for SERIO_SOUND (thanks to Mark Grebe)
 
 * pokey.c: some platforms (MacOSX) might need different SOUND_GAIN
   so it's possible to define it in configure/Makefile now.
+
+* atari_sdl.c: hatefully backported fix from input.c (see 2003-09-21)
+  Somebody should inspect the atari_sdl.c why it doesn't use the 
+  Atari800_Frame system and possibly use it in the SDL port as well.
 
 
 2003-10-24  Piotr Fusik  <fox@scene.pl>
