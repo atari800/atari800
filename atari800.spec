@@ -68,7 +68,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc ../DOC ../README.1ST ../COPYING
+#%doc ../DOC ../README.1ST ../COPYING
 /usr/bin/atari800
 /usr/bin/atari800-x11
 /usr/bin/atari800-ncurses

@@ -33,6 +33,11 @@ if [ $? -ne 0 ]; then
 	echo "increase version in DOC/README (2x)"
 	exit 1
 fi
+grep "[Vv]ersion "$VERSION atari800/src/atari800.man >/dev/null
+if [ $? -ne 0 ]; then
+	echo "increase version in src/atari800.man"
+	exit 1
+fi
 grep "%define ver" atari800/atari800.spec | grep $VERSION >/dev/null
 if [ $? -ne 0 ]; then
 	echo "increase version in atari800.spec"
