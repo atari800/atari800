@@ -5,6 +5,7 @@
 #include "config.h"
 #include "log.h"
 
+#define MAX_LOG_SIZE		8192
 char memory_log[MAX_LOG_SIZE]="";
 
 void Aprint(char *format, ... )
@@ -44,6 +45,10 @@ void Aflushlog(void)
 
 /*
 $Log$
+Revision 1.4  2002/04/07 05:44:47  vasyl
+Log buffer is completely hidden inside C file (no extern in header). This allows
+log-less ports to save extra 8K.
+
 Revision 1.3  2001/12/04 14:17:52  joy
 Aflushlog() should be always available though it does nothing when BUFFERED_LOG is undefined
 
