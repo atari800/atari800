@@ -1,0 +1,3 @@
+#!/bin/sh
+
+if [ -x /usr/bin/update-menus ]; then update-menus ; fi

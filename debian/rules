@@ -1,0 +1,168 @@
+#!/usr/bin/make -f
+#
+# This is a debian/rules make file. It supports the targets:
+# build, clean, binary-indep, binary-arch, and binary
+#
+# Package name variables
+#
+P=atari800
+
+ARCH := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+
+# Build the binary components and assemble the libraries
+# =====================================================================
+build: 
+	$(checkdir)
+##	if [ "$(ARCH)" = "i386" ]; then debian/rules bld-svgalib; fi
+	debian/rules bld-x11
+	debian/rules bld-curses
+	debian/rules bld-sdl
+	touch build
+
+bld-sdl:
+	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
+	cd src ; ./configure \
+		 --target=sdl
+	cd src ; $(MAKE)
+	cp src/atari800 atari800.sdl
+
+##bld-svgalib:
+##	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
+##	cd src ; ./configure \
+##		 --target=svgalib
+##	cd src ; $(MAKE)
+##	cp src/atari800 atari800.svgalib
+
+bld-x11:
+	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
+	cd src ; ./configure \
+		 --target=x11
+	cd src ; $(MAKE)
+	cp src/atari800 atari800.x11
+
+bld-curses:
+	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
+	cd src ; ./configure \
+		 --target=ncurses
+	cd src ; $(MAKE)
+	cp src/atari800 atari800.curses
+
+# Clean up after a build and before building a source package
+#======================================================================
+clean:
+	$(checkdir)
+	-rm -f build
+	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
+	mv ./atari800.spec ./tmp ; rm -f atari800.* ; mv ./tmp ./atari800.spec
+	-rm -rf debian/tmp debian/*~ *~ *.orig *.log
+	-rm -rf debian/files* debian/substvars*
+
+binary: binary-arch
+
+# No binary independent components to this package
+#======================================================================
+binary-indep:
+#
+# No independent components
+#
+	echo "No independent binary components."
+
+# Install package components into debian/tmp to be built into packages
+#======================================================================
+binary-arch:		checkroot build
+
+# Clean out old tmp directory
+#
+	-rm -rf debian/tmp
+	install -d debian/tmp
+
+# Install installation scripts
+#
+	install -d debian/tmp/DEBIAN
+	install -m 755 debian/postinst debian/tmp/DEBIAN/.
+	install -m 755 debian/postrm debian/tmp/DEBIAN/.
+	install -m 755 debian/prerm debian/tmp/DEBIAN/.
+
+# Install docs in proper directory and gzip them
+#
+	install -d debian/tmp/usr/share/doc/$(P)
+	cp debian/changelog debian/tmp/usr/share/doc/$(P)/changelog.Debian
+	cp DOC/CHANGES debian/tmp/usr/share/doc/$(P)/changelog
+	cp DOC/CREDITS debian/tmp/usr/share/doc/$(P)/CREDITS
+	cp DOC/INSTALL debian/tmp/usr/share/doc/$(P)/INSTALL
+	cp DOC/README debian/tmp/usr/share/doc/$(P)/README
+	cp DOC/USAGE debian/tmp/usr/share/doc/$(P)/USAGE
+	gzip -9v debian/tmp/usr/share/doc/$(P)/*
+
+# These are too small to gzip
+#
+	cp DOC/FAQ debian/tmp/usr/share/doc/$(P)/FAQ
+	cp DOC/BUGS debian/tmp/usr/share/doc/$(P)/BUGS
+	cp DOC/TODO debian/tmp/usr/share/doc/$(P)/TODO
+
+
+# and don't gzip the copyright statement
+#
+	cp debian/copyright debian/tmp/usr/share/doc/$(P)/copyright
+
+# install and gzip man page
+#
+	install -d debian/tmp/usr/share/man/man1
+	install -m 644 src/$(P).man debian/tmp/usr/share/man/man1/$(P).1
+	gzip -9 debian/tmp/usr/share/man/man1/$(P).1
+
+# link other executables to the main manpage
+#
+	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).sdl.1.gz
+##	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).svgalib.1.gz
+	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).x11.1.gz
+	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).curses.1.gz
+
+# install menu file
+#
+	install -d debian/tmp/usr/lib/menu
+	install -m 644 debian/menu debian/tmp/usr/lib/menu/$(P)
+
+# install binaries
+#
+	install -d debian/tmp/usr/bin
+##	if [ "$(ARCH)" = "i386" ]; then install -s $(P).svgalib debian/tmp/usr/bin; fi
+	install -s $(P).curses $(P).x11 debian/tmp/usr/bin
+	install -s $(P).sdl debian/tmp/usr/bin/$(P)
+#	(if [ "$(ARCH)" = "i386" ]; then install debian/$(P) debian/tmp/usr/bin; \
+#	else install debian/$(P).alt debian/tmp/usr/bin/$(P); fi)
+
+# Create dependency information
+#
+##	(if [ "$(ARCH)" = "i386" ]; then \
+##	dpkg-shlibdeps ./$(P).sdl ./$(P).svgalib ./$(P).x11 ./$(P).curses ; \
+##	else dpkg-shlibdeps ./$(P).sdl ./$(P).x11 ./$(P).curses ; fi)
+	dpkg-shlibdeps ./$(P).sdl ./$(P).x11 ./$(P).curses ; fi)
+
+# Generate control file for the package
+#
+	dpkg-gencontrol -p$(P) -isp
+
+# Clean up file ownership
+#
+	chown -R root.root debian/tmp
+##	if [ "$(ARCH)" = "i386" ]; then chmod u+s debian/tmp/usr/bin/$(P).svgalib; fi
+
+# and permissions
+#
+	chmod -R g-ws debian/tmp
+
+# and build the package
+#
+	dpkg --build debian/tmp ..	
+
+define checkdir
+	test -f ./atari800.spec
+endef
+
+# Below here is fairly generic really
+checkroot:
+	$(checkdir)
+	test root = "`whoami`"
+
+.PHONY: binary binary-arch binary-indep clean checkroot
