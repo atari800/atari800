@@ -543,10 +543,10 @@ void GO(int limit)
 		remember_PC[REMEMBER_PC_STEPS - 1] = PC;
 
 		if (break_addr == PC) {
-			data = ESC_BREAK;
 			UPDATE_GLOBAL_REGS;
 			CPU_GetStatus();
-			AtariEscape(data);
+			if (!Atari800_Exit(TRUE))
+				exit(0);
 			CPU_PutStatus();
 			UPDATE_LOCAL_REGS;
 		}
@@ -564,10 +564,10 @@ void GO(int limit)
 #ifdef MONITOR_BREAK
 		if (brkhere) {
 			break_here = 1;
-			data = ESC_BREAK;
 			UPDATE_GLOBAL_REGS;
 			CPU_GetStatus();
-			AtariEscape(data);
+			if (!Atari800_Exit(TRUE))
+				exit(0);
 			CPU_PutStatus();
 			UPDATE_LOCAL_REGS;
 		}
@@ -1934,11 +1934,6 @@ void GO(int limit)
 	/* OPCODE(d2) Used for ESCRTS #ab (CIM) */
 	/* OPCODE(f2) Used for ESC #ab (CIM) */
 		PC--;
-		data = 0;
-#ifdef MONITOR_BREAK
-		break_cim = 1;
-		data = ESC_BREAK;
-#endif
 		UPDATE_GLOBAL_REGS;
 		CPU_GetStatus();
 
@@ -1948,8 +1943,13 @@ void GO(int limit)
 		crash_code = insn;
 		ui((UBYTE*)atari_screen);
 #else
-		AtariEscape(data);
+#ifdef MONITOR_BREAK
+		break_cim = 1;
 #endif
+		if (!Atari800_Exit(TRUE))
+			exit(0);
+#endif /* CRASH_MENU */
+
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;
 		DONE
@@ -2018,10 +2018,10 @@ void GO(int limit)
 
 #ifdef MONITOR_BREAK
 		if (break_step) {
-			data = ESC_BREAK;
 			UPDATE_GLOBAL_REGS;
 			CPU_GetStatus();
-			AtariEscape(data);
+			if (!Atari800_Exit(TRUE))
+				exit(0);
 			CPU_PutStatus();
 			UPDATE_LOCAL_REGS;
 		}
