@@ -157,11 +157,6 @@ static uint8 bit5[POLY5_SIZE] =
 {0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1};
 #endif
 
-static uint8 bit17[POLY17_SIZE];	/* Rather than have a table with 131071 */
-				/* entries, I use a random number generator. */
-				/* It shouldn't make much difference since */
-				/* the pattern rarely repeats anyway. */
-
 static uint32 P4 = 0,			/* Global position pointer for the 4-bit  POLY array */
  P5 = 0,						/* Global position pointer for the 5-bit  POLY array */
  P9 = 0,						/* Global position pointer for the 9-bit  POLY array */
@@ -256,15 +251,10 @@ int	sampout2;			/* last out volume */
 void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys)
 {
 	uint8 chan;
-	int32 n;
 
 #ifndef	NO_VOL_ONLY
 	samp_freq=playback_freq;
 #endif	/* NO_VOL_ONLY */
-	/* fill the 17bit polynomial with random bits */
-	for (n = 0; n < POLY17_SIZE; n++) {
-		bit17[n] = rand() & 0x01;	/* fill poly 17 with random bits */
-	}
 
 	/* disable interrupts to handle critical sections */
 	/*    _disable(); */ /* RSF - removed for portability 31-MAR-97 */
@@ -782,11 +772,11 @@ void Pokey_process(uint8 * sndbuffer, const uint16 sndn)
 						/* if 9-bit poly is selected on this chip */
 						if (AUDCTL[next_event >> 2] & POLY9) {
 							/* compare to the poly9 bit */
-							toggle = (bit17[P9] == !(*out_ptr));
+							toggle = ((poly9_lookup[P9] & 1) == !(*out_ptr));
 						}
 						else {
 							/* otherwise compare to the poly17 bit */
-							toggle = (bit17[P17] == !(*out_ptr));
+							toggle = (((poly17_lookup[P17 >> 3] >> (P17 & 7)) & 1) == !(*out_ptr));
 						}
 					}
 				}
@@ -1078,8 +1068,9 @@ void Update_vol_only_sound( void )
 
 /*
 $Log$
-Revision 1.6  2001/07/19 23:21:51  fox
-pokey and pokeysnd use the same AUDC/AUDF/AUDCTL
+Revision 1.7  2001/07/19 23:25:05  fox
+using poly9_lookup and poly17_lookup (initialised by pokey.c), removed bit17
+(which was initialised with rand()) saving ca. 100 KB of memory.
 
 Revision 1.5  2001/04/15 09:17:53  knik
 atari800_big_endian -> words_bigendian (autoconf compatibility)
