@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #endif
 
+#include <signal.h>
 #include <sys/time.h>
 
 typedef unsigned char ubyte;
@@ -240,6 +241,11 @@ void autorepeat_restore( ovid )
 	else	XAutoRepeatOff(display);
 }
 
+void segmentationfault(int x)
+{
+	Atari_Exit(0);
+	exit(0);
+}
 int GetKeyCode(XEvent * event)
 {
 	KeySym keysym;
@@ -2500,6 +2506,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		Atari_WhatIs(js1_mode);
 		printf("\n");
 	}
+	signal(SIGSEGV, segmentationfault);
 }
 
 int Atari_Exit(int run_monitor)
