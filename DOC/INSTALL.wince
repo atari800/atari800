@@ -14,13 +14,13 @@ http://prdownloads.sf.net/atari800/xf25.zip
 PC-Xformer contains "ataribas.rom", "atariosb.rom" and "atarixl.rom".
 If have the original OS it should be called "atariosa.rom" and if
 you have the ROM for the 5200 Games System it should be called
-"atari5200.rom".
+"5200.rom".
 
 Installation of the Emulator
 ----------------------------
 
 1. Create a folder somewhere on Pocket PC (yes, it can be on CF card) and copy
-   included PocketAtari.exe and Atari800.cfg there. Make sure that you are
+   included PocketAtari.exe and .atari800.cfg there. Make sure that you are
    using executable matchine your PocketPC CPU type.
 
 2. Download GAPI 1.2 (http://www.microsoft.com/mobile/downloads/developer/
