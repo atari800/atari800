@@ -18,7 +18,7 @@
 #include "atari.h"
 #include "log.h"
 
-#define MIXBUFSIZE	0x800
+#define MIXBUFSIZE	0x1000
 #define WAVSHIFT	9
 #define WAVSIZE		(1 << WAVSHIFT)
 int buffers = 0;
@@ -26,7 +26,7 @@ int buffers = 0;
 enum {SOUND_NONE, SOUND_DX, SOUND_WAV};
 
 static int issound = SOUND_NONE;
-static int dsprate = 22050;
+static int dsprate = 44100;
 static int snddelay = 40;	/* delay in milliseconds */
 static int snddelaywav = 100;
 #ifdef STEREO
@@ -34,6 +34,8 @@ static int stereo = TRUE;
 #else
 static int stereo = FALSE;
 #endif
+static int bit16 = FALSE;
+static int quality = 0;
 
 static HANDLE event;
 static HWAVEOUT wout;
@@ -80,9 +82,9 @@ static int initsound_dx(void)
   wfx.wFormatTag = WAVE_FORMAT_PCM;
   wfx.nChannels = stereo ? 2 : 1;
   wfx.nSamplesPerSec = dsprate;
-  wfx.nAvgBytesPerSec = dsprate * wfx.nChannels;
-  wfx.nBlockAlign = stereo ? 2 : 1;
-  wfx.wBitsPerSample = 8;
+  wfx.nAvgBytesPerSec = dsprate * wfx.nChannels * (bit16 ? 2 : 1);
+  wfx.nBlockAlign = (stereo ? 2 : 1) * (bit16 ? 2 : 1);
+  wfx.wBitsPerSample = bit16 ? 16 : 8;
   wfx.cbSize = 0;
 
   if ((err = IDirectSound_CreateSoundBuffer(lpDS, &dsBD, &pDSB, NULL)) < 0)
@@ -105,7 +107,9 @@ static int initsound_dx(void)
 
   IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
 
-  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
+  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1,
+		   (stereo ? SND_STEREO : 0) | (bit16 ? SND_BIT16 : 0),
+		   quality);
 
   samples = dsprate * snddelay / 1000;
 
@@ -145,10 +149,11 @@ static void sound_update_dx(void)
   int d1;
   LPVOID pMem1, pMem2;
   DWORD dwSize1, dwSize2;
-  UBYTE *p1, *p2;
+  void *p1, *p2;
   int s1, s2;
   int err;
   int i;
+  int samplesize = bit16 ? 2 : 1;
 
   if (issound != SOUND_DX)
     return;
@@ -163,10 +168,10 @@ static void sound_update_dx(void)
       else
 	d1 -= sbufsize;
     }
-  if (d1 < -samples)		/* there is more than necessary bytes filled? */
+  if (d1 < (-samples * samplesize)) // there is more than necessary bytes filled?
     return;
 
-  d1 = samples + d1;		/* samples to fill */
+  d1 = (samples * samplesize) + d1; // bytes to fill
   if (d1 > (sizeof(mixbuf) / sizeof(mixbuf[0])))
     {
       d1 = (sizeof(mixbuf) / sizeof(mixbuf[0]));
@@ -192,6 +197,11 @@ static void sound_update_dx(void)
   if (bufpos >= sbufsize)
     bufpos -= sbufsize;
 
+  if (bit16)
+  {
+    s1 /= 2;
+    s2 /= 2;
+  }
   i = s1 + s2;
 
   Pokey_process(mixbuf, i);
@@ -199,17 +209,21 @@ static void sound_update_dx(void)
   i = (int) mixbuf;
   if (s1)
     {
+      if (bit16)
       for (; s1; s1--)
-	{
-	  *p1++ = *(((UBYTE *) i)++);
-	}
+	  *((signed short *)p1)++ = *(((signed short *) i)++);
+      else
+	for (; s1; s1--)
+	  *((UBYTE *)p1)++ = *(((UBYTE *) i)++);
     }
   if (s2)
     {
+      if (bit16)
       for (; s2; s2--)
-	{
-	  *p2++ = *(((UBYTE *) i)++);
-	}
+	  *((signed short *)p2)++ = *(((signed short *) i)++);
+      else
+	for (; s2; s2--)
+	  *((UBYTE *)p2)++ = *(((UBYTE *) i)++);
     }
 
   IDirectSoundBuffer_Unlock(pDSB, pMem1, dwSize1, pMem2, dwSize2);
@@ -259,22 +273,22 @@ l0:
 static int initsound_wav(void)
 {
   int i;
-  WAVEFORMATEX wf;
+  WAVEFORMATEX wfx;
   MMRESULT err;
 
   event = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-  memset(&wf, 0, sizeof(wf));
+  memset(&wfx, 0, sizeof(wfx));
 
-  wf.wFormatTag = WAVE_FORMAT_PCM;
-  wf.nChannels = stereo ? 2 : 1;
-  wf.nSamplesPerSec = dsprate;
-  wf.nAvgBytesPerSec = dsprate * wf.nChannels;
-  wf.nBlockAlign = 2;
-  wf.wBitsPerSample = 8;
-  wf.cbSize = 0;
+  wfx.wFormatTag = WAVE_FORMAT_PCM;
+  wfx.nChannels = stereo ? 2 : 1;
+  wfx.nSamplesPerSec = dsprate;
+  wfx.nAvgBytesPerSec = dsprate * wfx.nChannels * (bit16 ? 2 : 1);
+  wfx.nBlockAlign = (stereo ? 2 : 1) * (bit16 ? 2 : 1);
+  wfx.wBitsPerSample = bit16 ? 16 : 8;
+  wfx.cbSize = 0;
 
-  err = waveOutOpen(&wout, WAVE_MAPPER, &wf, (int)event, 0, CALLBACK_EVENT);
+  err = waveOutOpen(&wout, WAVE_MAPPER, &wfx, (int)event, 0, CALLBACK_EVENT);
   if (err == WAVERR_BADFORMAT)
     {
       Aprint("wave output paremeters unsupported\n");
@@ -286,7 +300,7 @@ static int initsound_wav(void)
       exit(1);
     }
 
-  buffers = ((wf.nAvgBytesPerSec * snddelaywav / 1000) >> WAVSHIFT) + 1;
+  buffers = ((wfx.nAvgBytesPerSec * snddelaywav / 1000) >> WAVSHIFT) + 1;
   waves = malloc(buffers * sizeof(*waves));
   for (i = 0; i < buffers; i++)
     {
@@ -306,7 +320,9 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1);
+  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1,
+		   (stereo ? SND_STEREO : 0) | (bit16 ? SND_BIT16 : 0),
+		   quality);
 
   issound = SOUND_WAV;
   return 0;
@@ -453,6 +469,10 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.7  2002/12/08 20:34:24  knik
+default dac rate changed to more reasonable value of 44100
+preliminary 16bit and mono/stereo switch support
+
 Revision 1.6  2001/12/04 13:09:06  joy
 DirectSound buffer creation error fixed by Nathan
 
