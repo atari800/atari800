@@ -40,9 +40,9 @@
 #include "dos/sound_dos.h"
 #include "monitor.h"
 #include "pcjoy.h"
-#include "diskled.h"	/* for led_status */
 #include "ataripcx.h"
 #include "rt-config.h"	/* for refresh_rate */
+#include "diskled.h"	/* for led_status */
 
 #include "dos/vga_gfx.h"
 
@@ -52,6 +52,7 @@
     joysticks and keyboard (ie with joy_keyboard off joysticks do not work)
 #define KEYBOARD_EXCLUSIVE
 */
+
 
 static int trig0;
 static int stick0;
@@ -212,16 +213,27 @@ void read_LPTjoy(int port, int joyport)
         }
 }
 
-void update_leds(void)
+static void update_leds(void)
 {
 	outportb(0x60,0xed);
-	asm("	   jmp 0f
-		0: jmp 1f
-		1:
-	");
+	asm("nop; nop");
 	outportb(0x60,	(PC_keyboard ? 0 : 2)
+#ifdef SHOW_DISK_LED
 			|(led_status ? 4 : 0)
+#endif
 			|(joy_keyboard ? 1 : 0));
+}
+
+static void update_disk_led()
+{
+#ifdef SHOW_DISK_LED
+	static int last_led_status = 0;
+
+	if (led_status != last_led_status) {
+		update_leds();
+		last_led_status = led_status;
+	}
+#endif
 }
 
 /* -------------------------------------------------------------------------- */
@@ -403,17 +415,17 @@ void key_handler(void)
 
 void key_init(void)
 {
-        int i;
-        for (i=0;i<256;i++) keypush[i]=0; /*none key is pressed*/
-        extended_key_follows=FALSE;
+	int i;
+	for (i=0;i<256;i++) keypush[i]=0; /*none key is pressed*/
+	extended_key_follows=FALSE;
 	update_leds();
-        raw_key_r=0;raw_key=0;
-        new_key_handler.pm_offset = (int) key_handler;
-        new_key_handler.pm_selector = _go32_my_cs();
-        _go32_dpmi_get_protected_mode_interrupt_vector(0x9, &old_key_handler);
-        _go32_dpmi_allocate_iret_wrapper(&new_key_handler);
-        _go32_dpmi_set_protected_mode_interrupt_vector(0x9, &new_key_handler);
-        keyboard_handler_replaced = TRUE;
+	raw_key_r=0;raw_key=0;
+	new_key_handler.pm_offset = (int) key_handler;
+	new_key_handler.pm_selector = _go32_my_cs();
+	_go32_dpmi_get_protected_mode_interrupt_vector(0x9, &old_key_handler);
+	_go32_dpmi_allocate_iret_wrapper(&new_key_handler);
+	_go32_dpmi_set_protected_mode_interrupt_vector(0x9, &new_key_handler);
+	keyboard_handler_replaced = TRUE;
 }
 
 void key_delete(void)
@@ -424,10 +436,7 @@ void key_delete(void)
                 /*set the original keyboard LED settings*/
                 kflags=_farpeekb(_dos_ds,0x417);
                 outportb(0x60,0xed);
-                asm("   jmp 0f
-                     0: jmp 1f
-                     1:
-                     ");
+                asm("nop; nop");
                 outportb(0x60,((kflags>>4)&0x7));
         }
 }
@@ -1461,17 +1470,14 @@ int Atari_TRIG(int num)
 
 int main(int argc, char **argv)
 {
-	int test_val = 0;
-	int last_led_status = 0;
-	int keycode;
-
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
 	/* main loop */
 	while (TRUE) {
-		keycode = Atari_Keyboard();
+		int refresh_counter = 0;
+		int keycode = Atari_Keyboard();
 
 		switch (keycode) {
 		case AKEY_COLDSTART:
@@ -1518,17 +1524,14 @@ int main(int argc, char **argv)
 			mouse_buttons = rg.x.bx;
 		}
 
-		if (++test_val == refresh_rate) {
+		if (++refresh_counter == refresh_rate) {
 			Atari800_Frame(EMULATE_FULL);
 #ifndef DONT_SYNC_WITH_HOST
 			atari_sync(); /* here seems to be the best place to sync */
 #endif
-			if (led_status != last_led_status) {
-				update_leds();
-				last_led_status = led_status;
-			}
+			update_disk_led();
 			Atari_DisplayScreen((UBYTE *) atari_screen);
-			test_val = 0;
+			refresh_counter = 0;
 		}
 		else {
 #ifdef VERY_SLOW
