@@ -1,6 +1,69 @@
 o Basic XE (OSS Supercart) should work now <Shamus>
 o nonblocking open of sound device on linux <Rudolf>
 
+-- Piotr:
+
+o removed enable_rom_patches, added enable_h_patch and enable_p_patch.
+  SIO, H: and P: patches are now independent and can be toggled at run-time
+  (original OS is saved in atari_os). Removed SetSIOEsc() and RestoreSIO().
+  After changing enable_*_patch call Atari800_UpdatePatches().
+  Added UI menu for enabling/disabling patches.
+
+o antic,gtia: the background color can be changed inside a scanline.
+  Currently implemented only for blank lines without PMG.
+  Try the "Partyland" part of the "Bitter Reality" demo.
+  The feature can be disabled by defining NO_CYCLE_EXACT.
+
+o binload: 0x31 stored at 0x300 ("Studio Dream" loads now)
+
+o cpu: on reset, the I flag is set (now reset works if stuck in interrupts)
+
+o cpu: slight optimization of ROL and ROR
+
+o cpu: Read-Modify-Write (RMW) instructions (ASL, INC, etc.) store
+  the unmodified value of $D01A before they store the modified value.
+  Now you can see the white dots made with INC $D01A.
+
+o devices: replaced "dGetByte(0x2e)" with "regX" in H: handler routines
+  (fixes problems with Atari BASIC's GET/PUT/INPUT/PRINT)
+
+o devices: added open mode 9 (append) for H: device
+
+o monitor: "C 600 ABCD" does the same as "C 600 CD AB"
+
+o monitor: "DLIST" - 1 KB boundary respected
+
+o monitor: "POKEY" command
+
+o monitor: "S" without parameters repeats last search
+
+o pia: & 0x3f on read PACTL and PBCTL
+
+o pokey: SKSTAT variable renamed to SKCTLS to avoid confusions
+  (it's the write-only, not the read-only Pokey register)
+
+o pokey: potentiometers emulation improved: POTGO and ALLPOT registers
+  and bit 2 of SKCTLS implemented, "Tree Surgeon" no longer hangs
+
+o pokey: blocked POTs, SERIN, SEROUT, KBCODE, IRQ, SKSTAT, SKCTLS
+  in the second Pokey chip, second Pokey unaccesible until stereo_enabled set
+
+o pokey: true RANDOM emulation (both 9- and 17-bit poly) !
+  Not using rand() anymore. POKEY_Frame() and cpu_clock are needed for it.
+  Try the "Bank Bang!" game.
+
+o pokey: STIMER fixed
+
+o pokeysnd: removed duplicates of Pokey constant definitions
+  and AUDC/AUDF/AUDCTL variables, included pokey.h
+
+o pokeysnd: added exact poly9_lookup and poly17_lookup, removed bit17 (which
+  was initialised with rand()) saving ca. 100 KB of memory.
+  Do you hear any difference?
+
+o supercart: added "byte &= 0x0f" to prevent out of bounds accesses
+  to regset[]
+
 Changes in 1.0.7
 ----------------
 o atari_x11.c: Added clipping and made the -large and -huge work with XShm.
