@@ -291,12 +291,13 @@ void Device_HHOPEN(void)
 		}
 		break;
 	case 8:
+	case 9:		/* write at the end of file (append) */
 		if (hd_read_only) {
 			regY = 135;	/* device is read only */
 			SetN;
 			break;
 		}
-		fp[fid] = fopen(fname, "wb");
+		fp[fid] = fopen(fname, temp == 9 ? "ab" : "wb");
 		if (fp[fid]) {
 			regY = 1;
 			ClrN;
@@ -767,9 +768,8 @@ void AtariEscape(UBYTE esc_code)
 
 /*
 $Log$
-Revision 1.7  2001/07/19 23:08:02  fox
-replaced "dGetByte(0x2e)" with "regX" in H: handler routines
-(fixes problems with Atari BASIC's GET/PUT/INPUT/PRINT)
+Revision 1.8  2001/07/19 23:15:41  fox
+added open mode 9 (append) for H: device
 
 Revision 1.6  2001/03/25 06:57:35  knik
 open() replaced by fopen()
