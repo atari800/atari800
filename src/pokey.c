@@ -41,10 +41,6 @@ ULONG Base_mult[MAXPOKEYS];		/* selects either 64Khz or 15Khz clock mult */
 UBYTE POT_input[8] = {228, 228, 228, 228, 228, 228, 228, 228};
 static int pot_scanline;
 
-#ifdef STEREO
-int stereo_enabled = TRUE;
-#endif
-
 UBYTE poly9_lookup[511];
 UBYTE poly17_lookup[16385];
 static ULONG random_scanline_counter;

@@ -25,9 +25,11 @@ extern int disable_basic;
 extern int enable_sio_patch;
 extern int enable_h_patch;
 extern int enable_p_patch;
+extern int enable_new_pokey;
+extern int stereo_enabled;
 extern int disk_directories;
 
-int RtConfigLoad(char *rtconfig_filename);
+int RtConfigLoad(const char *alternate_config_filename);
 void RtConfigSave(void);
 void RtConfigUpdate(void);
 
