@@ -48,8 +48,8 @@ Preston Crow <preston.crow@dancer.dartmouth.edu>
     - Corrected calculation of ATR sectror count
     - UI enhancement (folders in disk management)
 
-Nir Dary
-    - 8*8 KB D50x and OSS 'M091' cartridges
+Nir Dary <ndary@bigfoot.com>
+    - detailed information about OSS, Williams, XEGS and MegaCart cartridges
 
 Jason Duerstock <jason@cluephone.com>
     - R-Time 8 cartridge support (real date and time from host machine)
@@ -155,12 +155,10 @@ Jari Karppinen <jakarppi@mail.student.oulu.fi>
 Kuba <kubad@zeus.polsl.gliwice.pl>
     - vertical retrace control in DOS port
 
-Jindroush <kubecj@asw.cz>
+Jindrich Kubec <kubecj@asw.cz>
     - various corrections and refinements (SIO)
     - hours of testing on real Atari800XL
     - research on real cartridges
-
-Jindrich Kubec <kubecj@asw.cz>
 
 Chris Lam <lamcw@sun.aston.ac.uk>
     - Lookup table containing RGB values for each Atari Colour
