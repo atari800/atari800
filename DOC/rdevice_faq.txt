@@ -1,0 +1,518 @@
+Atari800 R: Emulation Frequently Asked Questions
+------------------------------------------------
+
+Chris Martin
+<atariguy1@comcast.net>
+
+
+1. General Information
+
+1.1 Q: What is an R: Device?
+    A: The R: device is typically a handler for an RS-232 serial port.
+       This serial port can be on an Atari 850, an MIO, Black Box or
+       P:R:Connection from ICD.  Most handlers are the same with
+       subtle differences.
+
+1.2 Q: What is the Atari 850?
+    A: The Atari 850 is a computer peripheral for the Atari 8-bit line
+       of computers that was released in 1980.  
+       It was called an "Interface module" that connected to the SIO port.  
+       It provided 4 RS-232 serial ports:
+         one was fully functional (R1:)
+         and 3 that did not provide all the RS-232 signals (R2:-R4:). 
+       It also provided one parallel port (P1:).
+       
+1.3 Q: What features of the 850 are supported by Atari800?
+    A: Atari800 support several features of both the 850 hardware and the
+       R: handler.  There are two modes of operation for the R: device 
+       emulation: network sockets or serial port.  I will talk more about
+       this below, but you can either use the host serial ports 
+       (/dev/ttyS* under Linux) or network sockets (ports 9000-9003).
+ 
+       XIO calls (The following are the BASIC examples):
+       -------------------------------------------------
+
+       In each of the XIO calls below, 'channel' specifies the IOCB or 
+       channel number (1-7) and "Rn" specifies the RS-232-C port, 
+       where n = {1-4}.
+
+                            - XIO 32 - 
+       
+       XIO 32, #channel, Aux1, Aux2, "Rn:"
+
+       (Not Implemented)
+
+                            - XIO 34 - 
+       
+       XIO 34, #channel, Aux1, Aux2, "Rn:"
+
+         Aux1 bits do the following:
+         
+         Aux1[7] = DTR control enable (active high)
+         Aux1[6] = Force DTR value
+         Aux1[5] = RTS control enable (active high)
+         Aux1[4] = Force RTS value
+         Aux1[3] = not used
+         Aux1[2] = not used
+         Aux1[1] = XMT control enable (active high)
+         Aux1[0] = Force XMT to SPACE (0) or MARK (1) * Not implemented
+       
+         To force DTR off: Aux1 = 128
+         To force DTR on:  Aux1 = 192
+       
+         Aux2 is unused.
+
+       XIO 34 is really only used if using the serial port on the host,
+       if you are using network sockets, then changing DTR is the only
+       operation that you may perform.  Turning DTR off, in this case, 
+       will disconnect.
+       
+                            - XIO 36 - 
+       
+       XIO 36, #channel, Aux1, Aux2, "Rn:"
+       
+         Aux1 select the Baud rate, the Word size and the stop bits.
+         Add the values listed below to obtain the BASIC number.
+
+         Aux1[3:0] = Baud rate where:
+                     0 = 300 bps
+                     1 = 57600 bps (was 45.5 bps in 850 spec)
+                     2 = 50 bps 
+                     3 = 115200 bps (was 56.875 bps in 850 spec)
+                     4 = 75 bps
+                     5 = 110 bps
+                     6 = 134.5 bps
+                     7 = 150 bps
+                     8 = 300 bps
+                     9 = 600 bps
+                    10 = 1200 bps
+                    11 = 1800 bps
+                    12 = 2400 bps
+                    13 = 4800 bps
+                    14 = 9600 bps 
+                    15 = 19200 bps
+
+         Aux1[5:4] = Word size where:
+                     0 = 8 bits
+                     1 = 7 bits
+                     2 = 6 bits
+                     3 = 5 bits
+
+         Aux1[6] = Select 230400 bps (feature added to Atari800)             
+
+         Aux1[7] = Stop bits
+                   0 = 1 stop bit
+                   1 = 2 stop bits
+
+         Aux2 specifies whether or not the Interface Module should check
+         Data Set Ready (DSR), Clear to Send (CTS) and/or Carrier Detect (CD).
+         This function is currently not supported.
+    
+                            - XIO 38 - 
+       
+       XIO 38, #channel, Aux1, Aux2, "Rn:"
+
+         Aux1 Specifies te translation mode, input/output parity modes and
+         the append Line Feed option.
+        
+         Aux1[1:0] = Output Parity (* Not Implemented)
+                     0 = Do not change parity bit
+                     1 = Set output parity odd
+                     2 = Set output parity even
+                     3 = Set output parity bit to 1
+
+         Aux1[3:2] = Input Parity
+                     0 = Ignore and do not change Parity bit (NO PARITY)
+                     1 = Set Parity to ODD
+                     2 = Set Parity to EVEN
+                     3 = Do not use Parity (NO PARITY)
+
+         Aux1[4] = Heavy Translation * Not Implemented
+                   0 = Light Translation
+                   1 = Heavy Translation
+
+         Aux1[5] = Translation
+                   0 = Translation ON
+                   1 = Translation off
+
+         Aux1[6] = Line Feeds
+                   0 = Do not append LF
+                   1 = Append LF after Carriage Return
+
+         Aux1[7] = Not Used          
+
+         Aux2 is the numeric representation of the "won't translate" character
+         for heavy translation.  (Not currently supported.)
+
+                            - XIO 40 - 
+       
+       XIO 40, #channel, Aux1, Aux2, "Rn:"
+       
+         XIO 40 starts concurrent I/O Mode.
+
+         Both Aux1 and Aux2 are used to specify an output buffer, but using
+         the specified input buffer is not currently supported.  The default
+         256 byte internal buffer is use when both Aux1 and Aux2 = 0.  
+
+         However, since using a different buffer is not supported, the
+         setting Aux1 or Aux2 to any value will not affect how this works.
+
+       Other BASIC commands:
+       ---------------------
+       OPEN #Channel, Aux1, Aux2, "Rn:"
+
+         Aux1 specifies the direction of the port.
+           Aux1[7:4] = NOT USED.
+           Aux1[3] = Specifies Output when high.
+           Aux1[2] = Specifies Input when high.
+           Aux1[1] = NOT USED.
+           Aux1[0] = Specifies Concurrent I/O mode.
+        
+         Aux2 is not used.
+
+       CLOSE #Channel
+         
+         Closes the Serial port or the network connection.
+
+       GET, INPUT, PUT and PRINT - Use as normal
+
+       STATUS #Channel, AVAR 
+         
+         The STATUS command will update the memory locations 746-749.  
+         Please read the meaning of these locations below.
+
+         AVAR is a variable that receives the status returned for the STATUS
+         call itself.  This number will be the same as the ERROR code.
+   
+       Atari Memory Address Locations:
+       -------------------------------
+
+       The following locations will be updated after a STATUS call (after
+       the STATUS function/routine runs).
+
+       0x2ea (746) - Error flags (* Not Implemented)
+                     bit[7] = Received Data Framing Error
+                     bit[6] = Received Data Byte Overrun Error
+                     bit[5] = Received Data Parity Error
+                     bit[4] = Received Data Buffer Overflow error
+                     bit[3] = Illegal Option Combination Attempted
+                     bit[2] = External Device Not Fully Ready Flag
+                     bit[1] = Error On Block Data Transfer Out
+                     bit[0] = Error On Command To Interface Module
+
+       0x2eb (747) - Concurrent I/O Mode:
+                     Number of Characters in Input buffer (Low Byte)
+                     
+                     Non-Concurrent I/O Mode: (* Not Implemented)
+                     bit[7] = Data Set Ready (DSR) status during current 
+                              STATUS command.  0=DSR is low; 1=DSR is hi.
+                     bit[6] = DSR status during last STATUS command.
+                     bit[5] = Clear to Send (CTS) status during current
+                              STATUS command. 0=CTS is low; 1=CTS is hi.
+                     bit[4] = CTS status during last STATUS command.
+                     bit[3] = CARRIER DETECT (CD) status during current 
+                              STATUS command. 0=CD is low; 1=CD is high.
+                     bit[2] = CD status during last STATUS command.
+                     bit[1] = NOT USED.
+                     bit[0] = Data Receive (RCV) current status.
+                              1 = MARK (1)
+                              0 = SPACE (0)
+
+       0x2ec (748) - Concurrent I/O Mode:
+                     Number of Characters in Input buffer (High Byte)
+                     This is always zero in Atari800 since the input
+                     buffer is only 256 bytes.
+
+                     Non-Concurrent I/O Mode:
+                     Always zero.
+
+       0x2ed (749) - Concurrent I/O Mode:
+                     Number of Character in Output Buffer.
+                     This is always zero in Atari800 since we always
+                     output the character, so a write of more than
+                     one character will not work.
+
+                     Non-Concurrent I/O Mode:
+                     Always Zero.
+
+1.4 Q: What features of the 850 are not currently supported by Atari800?
+    A: 
+
+    1. Cannot set RTS or XMT in XIO 34.
+    2. Cannot select 45.5 bps or 56.875 bps in XIO 36.
+    3. Cannot monitor DSR, CTS or CD in XIO 36.
+    4. Heavy ASCII/ATASCII translation.
+    5. Early force of short I/O block (XIO 32).  This forces the output
+       buffer to be sent, but it is not currently implement as we now
+       always send after a write.
+    6. Cannot set output parity with XIO 38.  The Output parity is set the
+       same as the input parity.
+    7. Using a different input buffer, as specified by XIO 40 is not supported.
+       I am not sure anyone ever used this anyway...
+    8. Not all functions return an error code if something fails.
+       Most of the functions should return an error to regY.  
+    9. Error bits at location 746 are not implemented.   
+   10. Although you can access each serial port or talk to the network to 
+       a different socket, you cannot have more than one R: device
+       open at a time.  For example, you cannot open R1: and R2: and expect
+       things to behave sanely.  The reason for this is that currently
+       there is only one buffer for ALL serial ports.
+   11. Error reporting to address 747 during non-concurrent mode has 
+       not been implemented.  In fact non-concurrent mode has not been
+       tested!  I invite you to test it and let me know!!!
+
+
+1.5 Q: Is there a version of the 850 Operator's Manual On-line?
+    A: I am currently working on scanning the original Document.  See below
+       in the links section.
+
+1.6 Q: Do you have some example code?
+    A: Yes.  Below are several BASIC programs taken from the 850 Operator's
+       Manual.  Also included is a C program written by Christian Groessler
+       using the rs232 library for cc65 (www.cc65.org).
+
+------------------------------------------------
+RECEIVE PROGRAM
+------------------------------------------------
+
+110 DIM INLINE$(255)
+200 REM
+201 REM ==========
+202 REM
+210 LET TRANSLATE=32:REM [Full ATASCII]
+220 XIO 38,#1,TRANSLATE,0,"R1:"
+230 REM
+240 PRINT "Receive file's full name";
+250 INPUT INLINE$
+260 OPEN #2,8.0,INLINE$
+270 REM
+280 OPEN #1,13,0,"R1:"
+290 XIO 40,#1,0,0,"R1:":REM [Start I/0]
+500 REM
+501 REM ==========
+502 REM
+510 FOR ETERNITY=1 TO 2 STEP 0
+520 REM
+530 INPUT #1;INLINE$:REM [Get line]
+540 CLOSE #1:REM [Stop I/O]
+550 REM
+560 IF INLINE$="EOF EOF EOF" THEN 900
+570 REM
+580 PRINT #2; INLINE$:REM [Save line]
+590 PRINT INLINE$:REM [Echo onscreen]
+600 REM
+610 OPEN #1,13,0,"R1:"
+620 XIO 40,#1,0,0,"R1:":REM [Start I/O]
+630 PRINT #1:REM [Send reply]
+640 REM
+650 NEXT ETERNITY
+900 REM
+901 REM ==========
+902 REM
+910 CLOSE #2:REM [EOF received]
+999 END
+
+------------------------------------------------
+SEND PROGRAM
+------------------------------------------------
+
+110 DIM OUTLINE$(255)
+200 REM
+201 REM ==========
+202 REM
+210 LET TRANSLATE=32:REM [Full ATASCII]
+220 XIO 38,#2,TRANSLATE,0,"Rl:"
+230 REM
+240 PRINT "Send file's full name";
+250 INPUT OUTLINE$
+260 OPEN #1,4,0,OUTLINE$
+500 REM
+501 REM ==========
+502 REM
+510 FOR ETERNITY=1 TO 2 STEP 0
+520 REM
+530 TRAP 900:REM [Trap end file #1]
+540 INPUT #1, OUTLINE$:REM [Get line]
+550 PRINT OUTLINE$:REM [Echo onscreen]
+560 REM
+570 OPEN #2,13,0,"Rl:"
+580 XIO 40,#2,0,0,"Rl":REM [Start I/O]
+590 PRINT #2;OUTLINE$:REM [Send line]
+600 INPUT #2;OUTLINE$:REM [Get reply]
+610 CLOSE #2:REM [Stop I/O]
+620 REM
+630 NEXT ETERNITY
+900 REM
+901 REM ==========
+902 REM
+910 OPEN #2,8,0,"Rl:":REM [Send EOF]
+920 PRINT #2;"EOF EOF EOF"
+930 CLOSE #2:CLOSE #1:REM [All done]
+999 END
+
+
+------------------------------------------------
+rs232t.c
+------------------------------------------------
+
+/* $Id$
+ *
+ * RS232 library test
+ * (c) by Christian Groessler, chris@groessler.org
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <dbg.h>
+#include <6502.h>
+#include <conio.h>
+#include <rs232.h>
+#include <time.h>
+
+void main(void)
+{
+  char err;
+  unsigned char c, baud, t;
+
+  do {
+    printf("\n");
+    printf("0 = 300baud\n");
+    printf("1 = 1200baud\n");
+    printf("2 = 2400baud\n");
+    printf("3 = 4800baud\n");
+    printf("4 = 9600baud\n");
+    printf("Enter type (0-4): ");
+    c = cgetc();
+    printf("%c\n",c);
+  } while (c < '0' || c > '4');
+  t = c - '0';
+  switch (t) {
+  case 0: baud = RS_BAUD_300; break;
+  case 1: baud = RS_BAUD_1200; break;
+  case 2: baud = RS_BAUD_2400; break;
+  case 3: baud = RS_BAUD_4800; break;
+  case 4: baud = RS_BAUD_9600; break;
+  }
+
+  err = rs232_init(0);
+  printf("rs232_init: %d\n", err);
+  err = rs232_params(baud | RS_BITS_8 | RS_STOP_1, RS_PAR_NONE);
+  printf("rs232_params: %d\n", err);
+
+  printf("waiting for stuff to arrive...\n");
+
+  /* display all received chars,
+   * send all typed chars to the other end,
+   * type ESC to exit
+   */
+  while(1) {
+    if (kbhit()) {
+      c = cgetc();
+      if (c == CH_ESC) break;
+      else rs232_put(c);
+    }
+    if (rs232_get(&c) != RS_ERR_NO_DATA) cputc(c);
+  }
+
+  rs232_done();
+}
+
+------------------------------------------------
+1.7 Q: What Atari programs use the R: device?
+    A: 
+       Terminal programs: Bobterm, Ice-T, etc.
+       BBS programs:  Express, Carina, etc.
+       Some Games:  I know I saw a Modem Chess game back in the day.
+                    I will have to find the ATR image of this.
+
+
+1.8 Q: How does the Serial Port Version work?
+    A: Basically, in this mode, when you open R1: under Atari800, you will
+       open the first serial port on the host computer.  Under Linux, this 
+       will be /dev/ttyS0. Opening R2: will open /dev/ttyS1 and so on.
+       When you control the baud rate, parity, stop bits (with XIO 36), you
+       will control the host serial port.  The same will all the other 
+       configuration options, this will set those options on the host 
+       serial port.  This mode can be used to connect to a real MODEM, or
+       to use a null-modem cable to connect to you Linux host.  The 
+       null-modem could be used to run SLIP(Linux) and Contiki on Atari800.
+
+       The R: device emulation will take care of adding Line Feeds and 
+       Light ASCII translation.
+      
+1.9 Q: How does the Network Sockets version work?
+    A: This mode works similarly to the Serial Port Version, except that
+       instead of connecting to the host serial ports you will connect
+       to a network socket.  All configuration such as baud rate, parity
+       et cetera will be ignored, since these mean nothing in this mode.
+
+       Opening an R: device will open a network socket and allow other users
+       to "telnet" into Atari800.  For example, if you open R1:, port 9000
+       will accept connections from other hosts (or the local host). R2: will
+       accept connections on 9001, and so on.  Only one of these can 
+       currently be opened at one time.  (I may add support for
+       multiple R: devices later.)  Allow others to connect to your 
+       emulated Atari can be used to run an emulated BBS or to potentially
+       run a web server from Atari800.
+
+       Also included with the Network Sockets version of the R: Device
+       emulation is a somewhat handicapped Modem emulation.  There are
+       only two commands that are implemented:
+
+       ATDL - Translates carrage returns into line feeds. 
+              This may not be needed if the "add line feeds" in XIO 38 
+              is used.  But I found that it is not always used by terminal
+              programs, and thus some telnet and ftp servers expect
+              a line feed, causing you to not be able to do anything
+              once connected.
+
+              Typing 'ATDL' in a terminal program such as Bobterm or Ice-T
+              will toggle CR translation on/off.
+       
+       ATDI <address name|ip address> <port #>
+
+              This command allows you to "dial" out to an external host.
+              For example you can connect to my BBS by typing the following:
+              'ATDI jybolac.homelinux.com 800'
+        
+              This connects Atari800 to the external host 
+              'jybolac.homelinux.com' at port 800.
+      
+       These commands were chosen to somewhat look like modem 'AT' commands.
+
+       The R: device emulation will take care of adding Line Feeds and 
+       Light ASCII translation, same as in the Serial Port Version.
+       
+
+1.10 Q: Who wrote the R: Device Emulation?
+     A: Tom Hunt wrote the original network sockets version.  I, Chris Martin,
+        updated that code, added the simple modem emulation and added code
+        to access the serial ports on the host computer via the R: device.  I
+        also added ASCII/ATASCII translation.
+
+1.11 Q: Do you have any URLs for more information?
+     A: Sure!
+
+    I am working on scanning and placing the Atari 850 Operator's Manual
+    online here:
+    http://jybolac.virtualave.net/atari/850man/
+
+    The MIO documentation has some great info that still applies to
+    the 850:
+    http://www.1000bit.net/support/manuali/atari/pdf/icd_mio.pdf
+
+    The Black-Box Documentation has some great info on the 850 as well:
+    http://nleaudio.com/css/products/BB_Docs.htm
+
+    Some Atari Magazine Articles:
+    http://www.atarimagazines.com/creative/v9n6/177_A_letter_quality_alternat.php
+
+    The JL-BASIC Manual:
+    http://www.jeff-jackson.com/Atari/JLS_Manual.html
+
+    Mapping the Atari will show some information about some R:-related 
+    addresses (746-747) and IOCB:
+    http://www.atariarchives.org/mapping/memorymap.php
+    
+
+
