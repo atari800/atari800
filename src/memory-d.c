@@ -25,6 +25,8 @@ int have_basic;	/* Atari BASIC image has been successfully read (Atari 800 only)
 
 extern int pil_on;
 
+extern UBYTE *antic_xe_ptr;	/* Separate ANTIC access to extended memory */
+
 static void AllocXEMemory(void)
 {
 	if (ram_size > 64) {
@@ -56,6 +58,7 @@ static void AllocXEMemory(void)
 
 void MEMORY_InitialiseMachine(void)
 {
+	antic_xe_ptr = NULL;
 	switch (machine_type) {
 	case MACHINE_OSA:
 	case MACHINE_OSB:
@@ -216,17 +219,33 @@ void PORTB_handler(UBYTE byte)
 				bank = (((byte & 0x0e) | ((byte & 0xe0) >> 1)) >> 1) + 1;
 				break;
 			}
+		/* Note: in Compy Shop bit 5 (ANTIC access) disables Self Test */
+		if (selftest_enabled && (bank != xe_bank || (ram_size == RAM_320_COMPY_SHOP && (byte & 0x20) == 0))) {
+			/* Disable Self Test ROM */
+			memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
+			SetRAM(0x5000, 0x57ff);
+			selftest_enabled = FALSE;
+		}
 		if (bank != xe_bank) {
-			if (selftest_enabled) {
-				/* Disable Self Test ROM */
-				memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
-				SetRAM(0x5000, 0x57ff);
-				selftest_enabled = FALSE;
-			}
 			memcpy(atarixe_memory + (((long) xe_bank) << 14), memory + 0x4000, 16384);
 			memcpy(memory + 0x4000, atarixe_memory + (((long) bank) << 14), 16384);
 			xe_bank = bank;
 		}
+		if (ram_size == 128 || ram_size == RAM_320_COMPY_SHOP)
+			switch (byte & 0x30) {
+			case 0x20:	/* ANTIC: base, CPU: extended */
+				antic_xe_ptr = atarixe_memory;
+				break;
+			case 0x10:	/* ANTIC: extended, CPU: base */
+				if (ram_size == 128)
+					antic_xe_ptr = atarixe_memory + ((long) (((byte & 0x0c) >> 2) + 1) << 14);
+				else	/* 320 Compy Shop */
+					antic_xe_ptr = atarixe_memory + ((long) ((((byte & 0x0c) | ((byte & 0xc0) >> 2)) >> 2) + 1) << 14);
+				break;
+			default:	/* ANTIC same as CPU */
+				antic_xe_ptr = NULL;
+				break;
+			}
 	}
 
 #ifdef DEBUG
@@ -314,8 +333,10 @@ void PORTB_handler(UBYTE byte)
 	else {
 		/* We can enable Self Test only if the OS ROM is enabled */
 		/* and we're not accessing extended 320K Compy Shop or 1088K memory */
+		/* Note: in Compy Shop bit 5 (ANTIC access) disables Self Test */
 		if (!selftest_enabled && (byte & 0x01)
-		&& ((byte & 0x10) || (ram_size != RAM_320_COMPY_SHOP && ram_size != 1088))) {
+		&& !((byte & 0x30) != 0x30 && ram_size == RAM_320_COMPY_SHOP)
+		&& !((byte & 0x10) == 0 && ram_size == 1088)) {
 			/* Enable Self Test ROM */
 			if (ram_size > 20) {
 				memcpy(under_atarixl_os + 0x1000, memory + 0x5000, 0x800);
@@ -418,6 +439,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.18  2002/07/14 13:32:01  pfusik
+separate ANTIC access to extended memory for 130 XE and 320 Compy Shop
+
 Revision 1.17  2002/07/14 13:25:07  pfusik
 emulation of 576K and 1088K RAM machines
 

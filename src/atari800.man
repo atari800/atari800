@@ -49,7 +49,7 @@ Used to override paths defined at compile time.
 Emulate Atari 800 XL.
 .TP
 \fB-xe
-Emulate Atari 130 XE - but Antic accesses the same bank the CPU is using.
+Emulate Atari 130 XE.
 .TP
 \fB-320xe
 Emulate Atari 320 XE (Compy Shop)
