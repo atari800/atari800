@@ -90,6 +90,24 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 int Atari_Keyboard(void)
 {
+	int w, h;
+	SDL_Event event;
+	if (SDL_PollEvent(&event)) {
+		switch (event.type) {
+			case SDL_KEYDOWN:
+				lastkey = event.key.keysym.sym;
+				key_pressed = 1;
+				break;
+			case SDL_KEYUP:
+				key_pressed = 0;
+				break;
+			case SDL_VIDEORESIZE:
+				w = event.resize.w;
+				h = event.resize.h;
+				SetVideoMode(w, h);
+				break;
+		}
+	}
 
 	kbhits = SDL_GetKeyState(NULL);
 	// SHIFT STATE
@@ -420,10 +438,7 @@ int Atari_TRIG(int num)
 
 int main(int argc, char **argv)
 {
-	int keycode;
 	int frametimer;
-	int w, h;
-	SDL_Event event;
 
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
@@ -435,23 +450,7 @@ int main(int argc, char **argv)
 	SDL_PauseAudio(0);
 	key_pressed = 0;
 	while (TRUE) {
-		if (SDL_PollEvent(&event)) {
-			switch (event.type) {
-			case SDL_KEYDOWN:
-				lastkey = event.key.keysym.sym;
-				key_pressed = 1;
-				break;
-			case SDL_KEYUP:
-				key_pressed = 0;
-				break;
-			case SDL_VIDEORESIZE:
-				w = event.resize.w;
-				h = event.resize.h;
-				SetVideoMode(w, h);
-				break;
-			}
-		}
-		keycode = Atari_Keyboard();
+		int keycode = Atari_Keyboard();
 
 		switch (keycode) {
 		case AKEY_EXIT:
