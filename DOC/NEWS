@@ -1,3 +1,12 @@
+Version 1.3.5 (2004/12/30)
+
+ Changes:
+ --------
+ * keyboard handling improved in SDL (working on non-US layouts, more
+   keys recognized)
+ * keyboard handling improved in X11 (crash fixed, auto-repeat working)
+
+
 Version 1.3.4 (2004/12/27)
 
  Changes:
