@@ -98,7 +98,7 @@ atari_falcon.o: ui.h antic.h platform.h monitor.h log.h
 atari_svgalib.o: config.h atari.h ataripcx.h colours.h monitor.h sound.h
 atari_svgalib.o: platform.h log.h
 atari_vga.o: config.h cpu.h atari.h colours.h input.h ui.h log.h
-atari_vga.o: dos/sound_dos.h monitor.h pcjoy.h diskled.h antic.h ataripcx.h
+atari_vga.o: dos/sound_dos.h monitor.h pcjoy.h diskled.h ataripcx.h
 atari_vga.o: rt-config.h dos/vga_gfx.h
 atari_x11.o: config.h atari.h colours.h monitor.h sio.h sound.h platform.h
 atari_x11.o: rt-config.h
@@ -110,13 +110,13 @@ cassette.o: atari.h config.h cassette.h log.h memory.h memory-d.h sio.h
 colours.o: atari.h config.h log.h
 compfile.o: atari.h config.h log.h
 configure.o: prompts.h
-cpu.o: atari.h config.h cpu.h memory.h memory-d.h statesav.h
+cpu.o: antic.h atari.h config.h cpu.h memory.h memory-d.h statesav.h
 devices.o: config.h ui.h atari.h cpu.h memory.h memory-d.h devices.h
 devices.o: rt-config.h log.h binload.h sio.h
 diskled.o: config.h
 gtia.o: antic.h atari.h config.h cassette.h gtia.h input.h statesav.h
-input.o: atari.h config.h cassette.h cpu.h gtia.h input.h memory.h memory-d.h
-input.o: pia.h platform.h pokey.h
+input.o: antic.h atari.h config.h cassette.h cpu.h gtia.h input.h log.h
+input.o: memory.h memory-d.h pia.h platform.h pokey.h
 joycfg.o: config.h pcjoy.h
 list.o: config.h list.h
 log.o: config.h log.h
