@@ -209,7 +209,7 @@ static uint32 snd_freq17 = FREQ_17_EXACT;
 static uint16 snd_playback_freq = 44100;
 static uint8 snd_num_pokeys = 1;
 static int snd_flags = 0;
-static int mz_quality = 1;		/* default quality for mzpokeysnd */
+static int mz_quality = 0;		/* default quality for mzpokeysnd */
 
 /* multiple sound engine interface */
 static void Pokey_process_8(void * sndbuffer, unsigned sndn);
@@ -1168,6 +1168,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.15  2003/02/10 14:59:17  joy
+fixes fixes
+
 Revision 1.14  2003/02/10 13:29:16  joy
 extern removed
 
