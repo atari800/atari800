@@ -461,7 +461,9 @@ int main(int argc, char **argv)
 			"Unknown error");
 		}
 		if (r > 0) {
+			ui_is_active = TRUE;
 			cart_type = SelectCartType((UBYTE *) atari_screen, r);
+			ui_is_active = FALSE;
 			CART_Start();
 		}
 		if (cart_type != CART_NONE) {
@@ -912,6 +914,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.14  2001/08/16 23:24:25  fox
+selecting cartridge type didn't worked in 5200 mode
+
 Revision 1.13  2001/08/06 13:11:19  fox
 hold_start support
 
