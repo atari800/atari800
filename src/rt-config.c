@@ -2,7 +2,7 @@
  * rt-config.c - Routines to support the atari800.cfg file
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2004 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -38,7 +38,7 @@
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
 	/* This function saves additional config lines */
-	extern void Atari_ConfigSave( FILE *fp);
+	extern void Atari_ConfigSave(FILE *fp);
 #endif
 
 #ifdef SUPPORTS_ATARI_CONFIGINIT
@@ -193,6 +193,8 @@ int RtConfigLoad(const char *alternate_config_filename)
 		ptr = strchr(string, '=');
 		if (ptr) {
 			*ptr++ = '\0';
+			RemoveSpaces(string);
+			RemoveSpaces(ptr);
 
 			if (strcmp(string, "OS/A_ROM") == 0)
 				strcpy(atari_osa_filename, ptr);
@@ -206,7 +208,7 @@ int RtConfigLoad(const char *alternate_config_filename)
 				strcpy(atari_5200_filename, ptr);
 			else if (strcmp(string, "DISK_DIR") == 0) {
 				if (disk_directories == MAX_DIRECTORIES)
-					printf("All disk directory slots used!\n");
+					Aprint("All disk directory slots used!");
 				else
 					strcpy(atari_disk_dirs[disk_directories++], ptr);
 			}
@@ -266,7 +268,7 @@ int RtConfigLoad(const char *alternate_config_filename)
 				else if (strcmp(ptr, "Atari 5200") == 0)
 					machine_type = MACHINE_5200;
 				else
-					printf("Invalid machine type: %s\n", ptr);
+					Aprint("Invalid machine type: %s", ptr);
 			}
 			else if (strcmp(string, "RAM_SIZE") == 0) {
 				if (strcmp(ptr, "16") == 0)
@@ -284,7 +286,7 @@ int RtConfigLoad(const char *alternate_config_filename)
 				else if (strcmp(ptr, "320 (COMPY SHOP)") == 0)
 					ram_size = RAM_320_COMPY_SHOP;
 				else
-					printf("Invalid ram size: %s\n", ptr);
+					Aprint("Invalid ram size: %s", ptr);
 			}
 			else if (strcmp(string, "DEFAULT_TV_MODE") == 0) {
 				if (strcmp(ptr, "PAL") == 0)
@@ -292,20 +294,20 @@ int RtConfigLoad(const char *alternate_config_filename)
 				else if (strcmp(ptr, "NTSC") == 0)
 					tv_mode = TV_NTSC;
 				else
-					printf("Invalid TV Mode: %s\n", ptr);
+					Aprint("Invalid TV Mode: %s", ptr);
 			}
 			else {
 #ifdef SUPPORTS_ATARI_CONFIGURE
 				if (!Atari_Configure(string,ptr)) {
-					Aprint("Unrecognized variable or bad parameters: %s=%s\n", string,ptr);
+					Aprint("Unrecognized variable or bad parameters: '%s=%s'", string, ptr);
 				}
 #else
-				Aprint("Unrecognized Variable: %s\n", string);
+				Aprint("Unrecognized Variable: %s", string);
 #endif
 			}
 		}
 		else {
-			Aprint("Ignored Config Line: %s\n", string);
+			Aprint("Ignored Config Line: %s", string);
 		}
 	}
 
@@ -325,7 +327,7 @@ void RtConfigSave(void)
 		Aflushlog();
 		exit(1);
 	}
-	printf("\nWriting: %s\n\n", rtconfig_filename);
+	Aprint("Writing config file: %s", rtconfig_filename);
 
 	fprintf(fp, "%s\n", ATARI_TITLE);
 	fprintf(fp, "OS/A_ROM=%s\n", atari_osa_filename);
@@ -497,6 +499,10 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.20  2004/06/06 12:19:19  joy
+RemoveSpaces() used on the variable and its value
+Aprint() fixes
+
 Revision 1.19  2004/06/04 22:15:30  joy
 SUPPORTS_ATARI_CONFIG* is enough, other platforms define it if needed
 
