@@ -76,6 +76,7 @@
 #include "cpu.h"
 #include "memory.h"
 #include "statesav.h"
+#include "ui.h"
 
 #ifdef CPUASS
 extern UBYTE IRQ;
@@ -110,16 +111,8 @@ void CPU_PutStatus(void)
 #define UPDATE_GLOBAL_REGS regPC=PC;regS=S;regA=A;regX=X;regY=Y
 #define UPDATE_LOCAL_REGS PC=regPC;S=regS;A=regA;X=regX;Y=regY
 
-#ifdef PAGED_MEM
-#define PH(x) PutByte((0x0100 + S--), (x))
-#define PL (GetByte(0x100 + ++S))
-#define dGetWord(x) (GetByte(x) | (GetByte(x+1) << 8))
-#else
-#define PH(x) memory[0x0100 + S--] = (x) 
-#define PL (memory[0x100 + ++S])
-#define dGetWord(x) (memory[x] | (memory[x+1] << 8))
-#define dPutByte(x,y) (memory[x] = y)
-#endif
+#define PL dGetByte(0x0100 + ++S)
+#define PH(x) dPutByte(0x0100 + S--, x)
 
 #ifndef NO_CYCLE_EXACT
 #ifdef PAGED_MEM
@@ -173,14 +166,6 @@ extern UBYTE break_here;
 extern int ret_nesting;
 extern int brkhere;
 #endif
-
-#ifdef CRASH_MENU
-extern int crash_code;
-extern UWORD crash_address;
-extern UWORD crash_afterCIM;
-#endif
-extern ULONG *atari_screen;
-extern void ui(UBYTE *screen);
 
 /*
    ===============================================================
@@ -271,7 +256,7 @@ void NMI(void)
 	PHW(regPC);
 	PHPB0;
 	SetI;
-	regPC = dGetWord(0xfffa);
+	regPC = dGetWordAligned(0xfffa);
 	regS = S;
 	xpos += 7;		/* getting interrupt takes 7 cycles */
 #ifdef MONITOR_BREAK
@@ -288,7 +273,7 @@ void NMI(void)
 			PHW(PC);					\
 			PHPB0;						\
 			SetI;						\
-			PC = dGetWord(0xfffe);				\
+			PC = dGetWordAligned(0xfffe);				\
 			xpos += 7;					\
 			ret_nesting+=1;					\
 		}							\
@@ -302,7 +287,7 @@ void NMI(void)
 			PHW(PC);					\
 			PHPB0;						\
 			SetI;						\
-			PC = dGetWord(0xfffe);				\
+			PC = dGetWordAligned(0xfffe);				\
 			xpos += 7;					\
 		}							\
 	}								\
@@ -574,7 +559,7 @@ void GO(int limit)
 			PHW(PC);
 			PHPB1;
 			SetI;
-			PC = dGetWord(0xfffe);
+			PC = dGetWordAligned(0xfffe);
 #ifdef MONITOR_BREAK
 			ret_nesting++;
 #endif
@@ -1001,7 +986,7 @@ void GO(int limit)
 		memmove(&remember_JMP[0], &remember_JMP[1], 2 * (REMEMBER_JMP_STEPS - 1));
 		remember_JMP[REMEMBER_JMP_STEPS - 1] = PC - 1;
 #endif
-		PC = (dGetByte(PC + 1) << 8) | dGetByte(PC);
+		PC = dGetWord(PC);
 		DONE
 
 	OPCODE(4d)				/* EOR abcd */
@@ -1194,14 +1179,14 @@ void GO(int limit)
 		memmove(&remember_JMP[0], &remember_JMP[1], 2 * (REMEMBER_JMP_STEPS - 1));
 		remember_JMP[REMEMBER_JMP_STEPS - 1] = PC - 1;
 #endif
-		addr = (dGetByte(PC + 1) << 8) | dGetByte(PC);
+		addr = dGetWord(PC);
 #ifdef CPU65C02
-		PC = (dGetByte(addr + 1) << 8) | dGetByte(addr);
+		PC = dGetWord(addr);
 #else							/* original 6502 had a bug in jmp (addr) when addr crossed page boundary */
 		if ((UBYTE) addr == 0xff)
 			PC = (dGetByte(addr & ~0xff) << 8) | dGetByte(addr);
 		else
-			PC = (dGetByte(addr + 1) << 8) | dGetByte(addr);
+			PC = dGetWord(addr);
 #endif
 		DONE
 
@@ -2044,7 +2029,7 @@ void CPU_Reset(void)
 	regP = 0x34;				/* The unused bit is always 1, I flag set! */
 	CPU_PutStatus( );	/* Make sure flags are all updated */
 	regS = 0xff;
-	regPC = dGetWord(0xfffc);
+	regPC = dGetWordAligned(0xfffc);
 }
 
 void CpuStateSave( UBYTE SaveVerbose )
