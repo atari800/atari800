@@ -26,6 +26,9 @@
 ** $Id$
 */
 
+#include "config.h"
+#ifdef SOUND
+
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -1118,10 +1121,15 @@ int sb_startoutput(sbmix_t fillbuf)
       return 0;
 }
 
+#endif /* SOUND */
+
 /*
 ** $Log$
-** Revision 1.1  2000/10/10 13:27:18  joy
-** Initial revision
+** Revision 1.2  2001/04/08 06:02:13  knik
+** SOUND ifdef
+**
+** Revision 1.1.1.1  2000/10/10 13:27:18  joy
+** Imported using TkCVS
 **
 ** Revision 1.6  2000/08/11 01:40:33  matt
 ** major rewrite - far cleaner, and fixed an SB detection reboot bug =(
