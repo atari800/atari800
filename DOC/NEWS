@@ -1,3 +1,20 @@
+Version 1.2.5 (2002/12/02)
+
+* UI - the SpaceBar in disk management switches between the RW and RO flags
+  (this didn't work for a long time, now fixed). Please note that this RW/RO
+  switch is just temporary and does not change the writeprotect flag of ATR
+  images. Besides, it cannot override this flag so you actually can't mount
+  a writeprotected ATR image read/write using this Space Bar toggle.
+
+* Atari800 compilable under OS/2
+
+* MultiJoy4 interface and Amiga/AtariST right mouse button supported
+
+* 13 new cartridge types supported
+
+* ANTIC mode E + GTIA mode 9 added (used in "Unconventional 2k", "Ass Kisiel")
+
+
 Version 1.2.4 (2002/08/07)
 
 * 576 and 1088 kB RAM supported (selection available in the UI)
