@@ -125,6 +125,7 @@ enum ESCAPE {
 	ESC_PHSPEC = 0xb5,
 	ESC_PHINIT = 0xb6,
 
+#if defined(R_IO_DEVICE)
 	ESC_ROPEN = 0xd0,
 	ESC_RCLOS = 0xd1,
 	ESC_RREAD = 0xd2,
@@ -132,6 +133,7 @@ enum ESCAPE {
 	ESC_RSTAT = 0xd4,
 	ESC_RSPEC = 0xd5,
 	ESC_RINIT = 0xd6,
+#endif /* defined(R_IO_DEVICE) */
 
 	ESC_HHOPEN = 0xc0,
 	ESC_HHCLOS = 0xc1,
@@ -236,6 +238,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.38  2003/08/31 21:57:43  joy
+rdevice module compiled in conditionally
+
 Revision 1.37  2003/05/28 19:10:42  joy
 R: device codes
 

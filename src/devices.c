@@ -67,7 +67,10 @@
 #include "binload.h"
 #include "sio.h"
 #include "ui.h"
+
+#if defined(R_IO_DEVICE)
 #include "rdevice.h"
+#endif
 
 static char *H[5] = {
 	".",
@@ -1978,6 +1981,7 @@ int Device_PatchOS(void)
 			}
 			break;
 
+#if defined(R_IO_DEVICE)
 		case 'R':
 			if (enable_r_patch) {
 				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) +
@@ -2000,6 +2004,7 @@ int Device_PatchOS(void)
 				Atari800_RemoveEsc(ESC_RINIT);
 			}
 			break;
+#endif
 
 #ifdef BASIC
 		case 'E':
@@ -2081,7 +2086,9 @@ void Device_RemoveHATABSEntry(char device, UWORD entry_address,
 }
 
 static UWORD h_entry_address = 0;
+#if defined(R_IO_DEVICE)
 static UWORD r_entry_address = 0;
+#endif
 
 #define H_DEVICE_BEGIN  0xd140
 #define H_TABLE_ADDRESS 0xd140
@@ -2093,6 +2100,7 @@ static UWORD r_entry_address = 0;
 #define H_PATCH_SPEC    0xd15f
 #define H_DEVICE_END    0xd161
 
+#if defined(R_IO_DEVICE)
 #define R_DEVICE_BEGIN  0xd180
 #define R_TABLE_ADDRESS 0xd180
 #define R_PATCH_OPEN    0xd1a0
@@ -2103,6 +2111,7 @@ static UWORD r_entry_address = 0;
 #define R_PATCH_SPEC    0xd1af
 #define R_PATCH_INIT    0xd1b3
 #define R_DEVICE_END    0xd1b5
+#endif
 
 void Device_Frame(void)
 {
@@ -2111,8 +2120,10 @@ void Device_Frame(void)
 			Device_UpdateHATABSEntry('H', h_entry_address,
 									 H_TABLE_ADDRESS);
 
+#if defined(R_IO_DEVICE)
 	if (enable_r_patch)
 		r_entry_address = Device_UpdateHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
+#endif
 }
 
 /* this is called when enable_h_patch is toggled */
@@ -2156,6 +2167,7 @@ void Device_UpdatePatches(void)
 		dFillMem(H_DEVICE_BEGIN, 0xff, H_DEVICE_END - H_DEVICE_BEGIN + 1);
 	}
 
+#if defined(R_IO_DEVICE)
 	if (enable_r_patch) {		/* enable R: device */
 		/* change memory attributex for the area, where we put
 		   R: handler table and patches */
@@ -2195,11 +2207,14 @@ void Device_UpdatePatches(void)
 		/* fill memory area used for table and patches with 0xff */
 		dFillMem(R_DEVICE_BEGIN, 0xff, R_DEVICE_END - R_DEVICE_BEGIN + 1);
 	}
-
+#endif /* defined(R_IO_DEVICE) */
 }
 
 /*
 $Log$
+Revision 1.20  2003/08/31 21:57:44  joy
+rdevice module compiled in conditionally
+
 Revision 1.19  2003/05/28 19:54:58  joy
 R: device support (networking?)
 

@@ -99,18 +99,21 @@ case $host_os in
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[alternate system-wide config file for non-Unix OS])
         AC_DEFINE(USE_CLOCK,,[define to use clock() instead of gettimeofday()])
         ;;
+  *unix*)
+        a8_host="unix"
+        ;;
   *)
         a8_host="$host_os"
         ;;
 esac
 
 dnl Set CFLAGS
-if [[ "X_$CFLAGS" = "X_" ]]; then
+if [[ "X_$CFLAGS" == "X_" ]]; then
     CFLAGS="-O2 -Wall"
 fi
 
 dnl Set LDFLAGS
-if [[ "X_$LDFLAGS" = "X_" ]]; then
+if [[ "X_$LDFLAGS" == "X_" ]]; then
     LDFLAGS="-s"
 fi
 
@@ -119,20 +122,21 @@ fi
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
-AC_PROG_MAKE_SET
 
 
 
 dnl Checks for header files.
+AC_PATH_X
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([OS.h fcntl.h limits.h stdlib.h string.h strings.h sys/ioctl.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([OS.h arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
 
 
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
+AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 AC_C_VOLATILE
@@ -148,7 +152,7 @@ dnl set OBJS depending on target (and host)
 dnl OBJS is not an AC "precious" variable but is used in the Makefile, so
 dnl it must be explicitly AC_SUBST'ed at the end of this file.
 OBJS=
-if [[ "$a8_host" = "win" ]]; then
+if [[ "$a8_host" == "win" ]]; then
         A8_NEED_LIB(gdi32)
         A8_NEED_LIB(winmm)
         OBJS="win32/atari.ro"
@@ -184,9 +188,14 @@ case "$a8_target" in
         ;;
     sdl)
         AC_DEFINE(SDL,,[System with SDL library])
-        CFLAGS="$CFLAGS `sdl-config --cflags`"
-        LIBS="$LIBS `sdl-config --libs`"
-        OBJS="atari_sdl.o"
+	sdlcheck="X_`sdl-config --cflags`"
+        if [[ "$sdlcheck" != "X_" ]]; then
+            CFLAGS="$CFLAGS `sdl-config --cflags`"
+	    LIBS="$LIBS `sdl-config --libs`"
+            OBJS="atari_sdl.o"
+	else
+            AC_MSG_ERROR("No output from sdl-config!  Is sdl-config installed?")
+        fi
         ;;
     svgalib)
         AC_DEFINE(SVGALIB,,[Linux with SVGALib])
@@ -245,7 +254,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([atexit floor getcwd gettimeofday memset mkdir modf rmdir select strcasecmp strchr strdup strerror strrchr strtol])
+AC_CHECK_FUNCS([atexit floor getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa memset mkdir modf rmdir select socket strcasecmp strchr strdup strerror strrchr strstr strtol])
 
 
 
@@ -467,6 +476,15 @@ if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
               USE_CURSORBLOCK,[define using cursor/ctrl keys for keyboard joystick]
              )
 fi
+if [[ "$a8_host" = "linux" -o "$a8_host" = "unix" ]]; then
+    A8_OPTION(riodevice,yes,
+              [Use the R: networking device (Linux/Unix only) (default=ON)],
+              R_IO_DEVICE,[define to use R: device]
+             )
+    if [[ "$WANT_R_IO_DEVICE" = "yes" ]]; then
+        OBJS="$OBJS rdevice.o"
+    fi
+fi
 
 
 
@@ -525,6 +543,9 @@ if [[ "$a8_target" = "svgalib" ]]; then
 fi
 if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
     echo "Using cursor/ctrl keys?...............: $WANT_USE_CURSORBLOCK"
+fi
+if [[ "$a8_host" = "linux" -o "$a8_host" = "unix" ]]; then
+    echo "Using R: device?......................: $WANT_R_IO_DEVICE"
 fi
 
 echo
