@@ -1,3 +1,13 @@
+2003-10-24  Piotr Fusik  <fox@scene.pl>
+* sio.c: "Overmind" runs with NEW_CYCLE_EXACT and SIO patch enabled.
+  I implemented NO_SECTOR_DELAY in 0.9.9i to allow running the "Overmind"
+  demo.  Originally this hack relied on the xpos variable and thus wasn't
+  NEW_CYCLE_EXACT compatible.  Now the delay occurs only between
+  successive reads of sector 1, not every time reading sector 2.
+  This makes every disk image boot 0.2 sec. faster.
+* sio.h: NO_SECTOR_DELAY is internal to sio.c
+
+
 2003-09-23  Piotr Fusik  <fox@scene.pl>
 * ui.c, sio.h: added Rotate_Disks() to UI
 
