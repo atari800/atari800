@@ -5,6 +5,9 @@
   the main module arguments parsing - the various ports do it on their own
   and that should be fixed as well. Best by going for GNU getopt!
 
+  Also the osa/osb/xlxe/5200/basic rom loading options were not documented
+  in the "-help" list. Fixed.
+
 * atari_sdl.c: refresh_rate unused, removed
 
 

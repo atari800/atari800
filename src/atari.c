@@ -490,13 +490,18 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Aprint("\t-5200            Atari 5200 Games System");
 					Aprint("\t-pal             Enable PAL TV mode");
 					Aprint("\t-ntsc            Enable NTSC TV mode");
+					Aprint("\t-osa_rom <file>  Load OS A ROM from file");
+					Aprint("\t-osb_rom <file>  Load OS B ROM from file");
+					Aprint("\t-xlxe_rom <file> Load XL/XE ROM from file");
+					Aprint("\t-5200_rom <file> Load 5200 ROM from file");
+					Aprint("\t-basic_rom <fil> Load BASIC ROM from file");
 					Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
 					Aprint("\t-run <file>      Run file directly");
 					Aprint("\t-refresh <rate>  Specify screen refresh rate");
 					Aprint("\t-nopatch         Don't patch SIO routine in OS");
 					Aprint("\t-nopatchall      Don't patch OS at all, H: device won't work");
-					Aprint("\t-a               Use A OS");
-					Aprint("\t-b               Use B OS");
+					Aprint("\t-a               Use OS A");
+					Aprint("\t-b               Use OS B");
 					Aprint("\t-c               Enable RAM between 0xc000 and 0xd000");
 					Aprint("\t-v               Show version/release number");
 				}
@@ -1034,6 +1039,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.50  2003/08/05 13:32:08  joy
+more options documented
+
 Revision 1.49  2003/08/05 13:22:56  joy
 security fix
 
