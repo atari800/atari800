@@ -1,3 +1,7 @@
+2004-06-03  Piotr Fusik  <fox@scene.pl>
+* antic.c: ANTIC mode 2 + GTIA mode 10 should be shifted right by a half
+  of a pixel [a fix for the upcoming demo :-) ]
+
 2004-06-02  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_x11.c: Chris suggests to add XK_Break to generate the AKEY_BREAK
   so that Ctrl+Pause on linux machine generates the AKEY_BREAK keypress
