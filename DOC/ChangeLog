@@ -1,9 +1,12 @@
+** tagged as 1.2.10
+
 2003-02-09  Petr Stehlik  <pstehlik@sophics.cz>
 
 * pokeysnd.[ch]: added Pokey_set/get_quality() that allows me to switch
   the Pokey routines (Ron Fries/Michael Borisov) on-the-fly from UI.
 * ui.c: Sound Settings submenu added. Allows changing the Pokey routines
   on-the-fly (automatically reboots) and also Mono/Stereo (if compiled in).
+* emuos.lis: updated URL
 
 2003-02-08  Petr Stehlik  <pstehlik@sophics.cz>
 
