@@ -439,7 +439,7 @@ A8_OPTION(veryslow,no,
           VERY_SLOW,[define to use very slow computer support]
          )
 
-if [[ "$a8_host" = falcon -a "$a8_target" = falcon ]]; then
+if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
     A8_OPTION(falconcpuasm,no,
               [Use m68k assembler CPU core for Falcon target (default=OFF)],
               FALCON_CPUASM,[define to use m68k assembler CPU core for Falcon target]
