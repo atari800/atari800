@@ -15,8 +15,6 @@
 #include "monitor.h"
 #include "diskled.h"
 
-void Sound_Pause(void);
-void Sound_Continue(void);
 static int usesnd = 1;
 
 extern int refresh_rate;
@@ -322,8 +320,10 @@ void Atari_Initialise(int *argc, char *argv[])
 {
   ShowWindow(hWndMain, SW_RESTORE);
 
+#ifdef SOUND
   if (usesnd)
-    initsound(argc, argv);
+    Sound_Initialise(argc, argv);
+#endif
   if (initinput())
   {
     MessageBox(hWndMain, "DirectInput Init FAILED",
@@ -351,11 +351,15 @@ int Atari_Exit(int run_monitor)
 
   if (run_monitor)
     {
+#ifdef SOUND
       Sound_Pause();
+#endif
       ShowWindow(hWndMain, SW_MINIMIZE);
       i = monitor();
       ShowWindow(hWndMain, SW_RESTORE);
+#ifdef SOUND
       Sound_Continue();
+#endif
       if (i)
 	return 1;	      /* return to emulation */
     }
@@ -380,7 +384,6 @@ void Atari_DisplayScreen(UBYTE * ascreen)
       exit(0);
     }
   refreshv(ascreen + 24);
-  sndhandler();
 }
 
 int Atari_PORT(int num)
@@ -421,6 +424,9 @@ int Atari_PEN(int vertical)
 
 /*
 $Log$
+Revision 1.3  2001/04/08 05:51:44  knik
+sound calls update
+
 Revision 1.2  2001/03/24 10:15:13  knik
 included missing header
 
