@@ -59,7 +59,7 @@ extern int verbose;
 #define ATARI_WIDTH  384
 #define ATARI_HEIGHT 240
 
-#define ATARI_TITLE  "Atari 800 Emulator, Version 1.2.2"
+#define ATARI_TITLE  "Atari 800 Emulator, Version 1.2.3"
 
 extern int xpos;
 extern int xpos_limit;
@@ -229,6 +229,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.28  2002/07/08 20:27:14  joy
+ver++
+
 Revision 1.27  2002/07/04 22:35:07  vasyl
 Added cassette support in main menu
 
