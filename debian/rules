@@ -137,7 +137,7 @@ binary-arch:		checkroot build
 ##	(if [ "$(ARCH)" = "i386" ]; then \
 ##	dpkg-shlibdeps ./$(P).sdl ./$(P).svgalib ./$(P).x11 ./$(P).curses ; \
 ##	else dpkg-shlibdeps ./$(P).sdl ./$(P).x11 ./$(P).curses ; fi)
-	dpkg-shlibdeps ./$(P).sdl ./$(P).x11 ./$(P).curses ; fi)
+	dpkg-shlibdeps ./$(P).sdl ./$(P).x11 ./$(P).curses
 
 # Generate control file for the package
 #
