@@ -46,6 +46,11 @@
 
 * ui.c: fixed a bug: modification of string literals
 
+2001-11-14  Vasyl Tsvirkunov <vasyl@pacbell.net>
+
+* WinCE: Fixed a few keyboard issues
+* Linear filter applied to screen image in portrait mode (looks much better)
+
 2001-11-09  Piotr Fusik  <fox@scene.pl>
 
 * pbi.c, pbi.h, Makefile.in: removed pbi module (it did nothing useful and

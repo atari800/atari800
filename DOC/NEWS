@@ -10,6 +10,8 @@ Version 1.2.0 (2001/11/29)
 * completely new SDL port (use ./configure --target=sdl) that should run
   on most/all platforms/OSes SDL supports (http://www.libsdl.org/)
 
+* completely new WinCE port
+
 *** New features:
 
 * support for Express, Diamond, SpartaDOS X, XEGS, Action!, BASIC XL
