@@ -86,9 +86,6 @@ extern unsigned int screenline_cpu_clock;
 
 enum ESCAPE {
 	ESC_SIOV,
-#ifdef MONITOR_BREAK
-	ESC_BREAK,
-#endif
 /*
  * These are special device escape codes required by the Basic version
  */
@@ -437,8 +434,8 @@ void atari_sync(void);
 
 /*
 $Log$
-Revision 1.11  2001/07/20 00:26:52  fox
-added MENU_PATCHES and Atari800_UpdatePatches()
+Revision 1.12  2001/07/20 00:30:46  fox
+removed ESC_BREAK
 
 Revision 1.9  2001/05/04 15:38:34  joy
 version++
