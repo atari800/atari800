@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Clean ups and optimizations:                     */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 13th July 2001                     */
+/* Last changes: 19th July 2001                     */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -11,6 +11,7 @@
 #include "antic.h"
 #include "config.h"
 #include "gtia.h"
+#include "memory.h"
 #include "platform.h"
 #include "statesav.h"
 
@@ -64,12 +65,10 @@ UBYTE GRACTL;
 int atari_speaker;
 int next_console_value = 7;			/* for 'hold OPTION during reboot' */
 UBYTE consol_mask;
-static UBYTE TRIG[4];
+UBYTE TRIG[4];
 UBYTE TRIG_latch[4];
 int TRIG_auto[4];		/* autofire */
 extern int nframes;		/* base autofire speed on frame count */
-extern int rom_inserted;
-extern int mach_xlxe;
 void set_prior(UBYTE byte);			/* in antic.c */
 
 /* Player/Missile stuff ---------------------------------------------------- */
@@ -277,8 +276,10 @@ void GTIA_Triggers(void)
 		if ((TRIG_auto[i] && !TRIG[i]) || TRIG_auto[i] == 2)
 			TRIG[i] = (nframes & 2) ? 1 : 0;
 	}
-	TRIG[2] = mach_xlxe ? 1 : TRIG[2];
-	TRIG[3] = mach_xlxe ? rom_inserted : TRIG[3];
+	if (mach_xlxe) {
+		TRIG[2] = 1;
+		TRIG[3] = cartA0BF_enabled;
+	}
 	if (GRACTL & 4) {
 		TRIG_latch[0] &= TRIG[0];
 		TRIG_latch[1] &= TRIG[1];
