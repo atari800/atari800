@@ -63,7 +63,7 @@ extern int verbose;
 
 extern int xpos;
 extern int xpos_limit;
-#define WSYNC_C	110
+#define WSYNC_C	106
 #define LINE_C	114
 #define DMAR	9
 #define max_ypos tv_mode		/* number of scanlines */
@@ -221,6 +221,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.23  2001/10/29 17:58:49  fox
+changed implementation of WSYNC/VCOUNT timing
+
 Revision 1.22  2001/10/10 06:58:31  joy
 version++
 
