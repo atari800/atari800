@@ -1,6 +1,6 @@
 /*	CPU.C
  *	Original Author : David Firth
- *	Last changes    : 25th May 2000, Piotr Fusik (Fox)
+ *	Last changes    : 6th July 2001, Piotr Fusik (Fox)
  */
 /*
 	Compilation options
@@ -2087,7 +2087,8 @@ void CPU_Reset(void)
 
 	IRQ = 0;
 
-	regP = 0x30;				/* The unused bit is always 1 */
+	regP = 0x34;				/* The unused bit is always 1, I flag set! */
+	CPU_PutStatus( );	/* Make sure flags are all updated */
 	regS = 0xff;
 	regPC = dGetWord(0xfffc);
 }
