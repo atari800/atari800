@@ -54,7 +54,7 @@ int stereo_enabled = TRUE;
 
 UBYTE poly9_lookup[511];
 UBYTE poly17_lookup[16385];
-static ULONG random_frame_counter;
+static ULONG random_scanline_counter;
 
 UBYTE POKEY_GetByte(UWORD addr)
 {
@@ -85,7 +85,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		break;
 	case _RANDOM:
 		if ((SKCTLS & 0x03) != 0) {
-			int i = random_frame_counter + cpu_clock;
+			int i = random_scanline_counter + xpos;
 			if (AUDCTL[0] & POLY9)
 				byte = poly9_lookup[i % POLY9_SIZE];
 			else {
@@ -323,13 +323,12 @@ void POKEY_Initialise(int *argc, char *argv[])
 		}
 	}
 
-	random_frame_counter = time(NULL) % POLY17_SIZE;
+	random_scanline_counter = time(NULL) % POLY17_SIZE;
 }
 
 void POKEY_Frame(void)
 {
-	random_frame_counter += max_ypos * LINE_C;
-	random_frame_counter %= AUDCTL[0] & POLY9 ? POLY9_SIZE : POLY17_SIZE;
+	random_scanline_counter %= AUDCTL[0] & POLY9 ? POLY9_SIZE : POLY17_SIZE;
 }
 
 /***************************************************************************
@@ -350,6 +349,8 @@ void POKEY_Scanline(void)
 
 	if (pot_scanline < 228)
 		pot_scanline++;
+
+	random_scanline_counter += LINE_C;
 
 	if (DELAYED_SERIN_IRQ > 0) {
 		if (--DELAYED_SERIN_IRQ == 0) {
