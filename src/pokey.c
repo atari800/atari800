@@ -34,7 +34,6 @@ UBYTE IRQST;
 UBYTE IRQEN;
 UBYTE SKSTAT;
 UBYTE SKCTLS;
-int SHIFT_KEY = FALSE, KEYPRESSED = FALSE;
 int DELAYED_SERIN_IRQ;
 int DELAYED_SEROUT_IRQ;
 int DELAYED_XMTDONE_IRQ;
@@ -108,10 +107,6 @@ UBYTE POKEY_GetByte(UWORD addr)
 		break;
 	case _SKSTAT:
 		byte = SKSTAT;
-		if (SHIFT_KEY)
-			byte &= ~8;
-		if (KEYPRESSED)
-			byte &= ~4;
 		break;
 	}
 
@@ -505,6 +500,9 @@ void Update_Counter(int chan_mask)
 
 void POKEYStateSave( void )
 {
+	int SHIFT_KEY = 0;
+	int KEYPRESSED = 0;
+
 	SaveUBYTE( &KBCODE, 1 );
 	SaveUBYTE( &IRQST, 1 );
 	SaveUBYTE( &IRQEN, 1 );
@@ -528,6 +526,8 @@ void POKEYStateSave( void )
 void POKEYStateRead( void )
 {
         int i;
+	int SHIFT_KEY;
+	int KEYPRESSED;
 
 	ReadUBYTE( &KBCODE, 1 );
 	ReadUBYTE( &IRQST, 1 );
