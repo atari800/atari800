@@ -1,3 +1,11 @@
+2003-03-03  Mark Grebe  <markgrebe@yahoo.com>
+* ui.c: Save/Load Disk Set implemented. Result of Save is a text file
+  containing names of the disk images that are currently in the drives.
+  On saving drives with no disks are marked as "Empty" and on loading
+  no changes are made to such drives. This allows the user to load multiple
+  disk sets sequentially. File extension is ".set".
+
+
 2003-03-03  Ed Cogburn  <ecogburn@xtn.net>
 * mzpokeysnd.c: Initialize some uninitialized variables to fix gcc warning
 

@@ -166,6 +166,8 @@ void DiskManagement()
 		{ "DKS6", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[5], sio_filename[5], NULL, 5 },
 		{ "DKS7", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[6], sio_filename[6], NULL, 6 },
 		{ "DKS8", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[7], sio_filename[7], NULL, 7 },
+        { "SSET", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, NULL, "Save Disk Set", NULL, 8 },
+        { "LSET", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, NULL, "Load Disk Set", NULL, 9 },
 		MENU_END
 	};
 
@@ -181,7 +183,10 @@ void DiskManagement()
 
 	while (!done) {
 		char filename[FILENAME_MAX+1];
+		char diskfilename[FILENAME_MAX+1];
+        char setname[FILENAME_MAX+1];
 		int seltype;
+        FILE *setFile;
 
 		for(i = 0; i < 8; i++)
 		{
@@ -199,38 +204,94 @@ void DiskManagement()
 				if (curr_disk_dir[0] == '\0')
 					strcpy(curr_disk_dir, atari_disk_dirs[current_disk_directory]);
 
-				while (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
-					DIR *subdir;
+                if (dsknum == 8) {  /* Save a disk set */
+                    /* Get the filename */
+                    ui_driver->fGetSaveFilename(filename);
 
-					subdir = opendir(filename);
-					if (!subdir) {	/* A file was selected */
-						SIO_Dismount(dsknum + 1);
-						/* try to mount read/write */
-						SIO_Mount(dsknum + 1, filename, FALSE);
-						/* update rwflags with the real mount status */
-						rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
-						break;
-					}
-					else {		/* A directory was selected */
-						closedir(subdir);
-						pathname = filename;
-					}
-				}
+                    /* Put it in the current disks directory */
+                    strcpy(setname, curr_disk_dir);
+                    if (*setname) {
+                        char last = setname[strlen(setname)-1];
+                        if (last != '/' && last != '\\')
+                #ifdef BACK_SLASH
+                            strcat(setname, "\\");
+                #else
+                            strcat(setname, "/");
+                #endif
+                    }
+                    strcat(setname, filename);
+
+                    /* Write the current disk file names out to it */
+                    setFile = fopen(setname,"w");
+                    if (setFile) {
+                        for (i=0;i<8;i++) 
+                            fprintf(setFile,"%s\n",sio_filename[i]);
+                        }
+                        fclose(setFile);
+                    }
+                else {
+				    while (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
+                        DIR *subdir;
+
+                        subdir = opendir(filename);
+                        if (!subdir) {	/* A file was selected */
+                            if (dsknum < 8) { /* Normal disk mount */
+                                SIO_Dismount(dsknum + 1);
+                                /* try to mount read/write */
+                                SIO_Mount(dsknum + 1, filename, FALSE);
+                                /* update rwflags with the real mount status */
+                                rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
+                                }
+                            else if (dsknum == 9) { /* Load a disk set */
+                                setFile = fopen(filename,"r");
+                                if (setFile) {
+                                    for (i=0;i<8;i++) {
+                                        /* Get the disk filename from the set file */
+                                        fgets(diskfilename,FILENAME_MAX,setFile);
+                                        /* Remove the trailing newline */
+                                        if (strlen(diskfilename) != 0) 
+                                            diskfilename[strlen(diskfilename)-1] = 0;
+                                        /* If the disk drive wasn't empty or off when saved,
+                                           mount the disk */
+                                        if ((strcmp(diskfilename,"Empty") != 0) &&
+                                            (strcmp(diskfilename,"Off") != 0)) {
+                                            SIO_Dismount(i+1);
+                                            /* Mount the disk read/write */
+                                            SIO_Mount(i+1, diskfilename, FALSE);
+                                            /* update rwflags with the real mount status */
+                                            rwflags[i] = (drive_status[i] == ReadOnly ? TRUE : FALSE);
+                                            }
+                                        }
+                                    fclose(setFile);
+                                    }
+                                }
+                             break;
+                            }
+                        else {		/* A directory was selected */
+                            closedir(subdir);
+                            pathname = filename;
+                        }
+                    }
+                }
 			}
 			else if (seltype == USER_TOGGLE) {
-				/* User pressed "SpaceBar" to change R/W status of this drive */
-				/* unmount */
-				SIO_Dismount(dsknum + 1);
-				/* try to remount with changed R/W status (!rwflags) */
-				SIO_Mount(dsknum + 1, filename, !rwflags[dsknum]);
-				/* update rwflags with the real mount status */
-				rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
+                if (dsknum < 8) {
+                    /* User pressed "SpaceBar" to change R/W status of this drive */
+                    /* unmount */
+                    SIO_Dismount(dsknum + 1);
+                    /* try to remount with changed R/W status (!rwflags) */
+                    SIO_Mount(dsknum + 1, filename, !rwflags[dsknum]);
+                    /* update rwflags with the real mount status */
+                    rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
+                    }
 			}
 			else {
-				if (strcmp(sio_filename[dsknum], "Empty") == 0)
-					SIO_DisableDrive(dsknum + 1);
-				else
-					SIO_Dismount(dsknum + 1);
+                if (dsknum < 8) {
+                    if (strcmp(sio_filename[dsknum], "Empty") == 0)
+                        SIO_DisableDrive(dsknum + 1);
+                    else
+                        SIO_Dismount(dsknum + 1);
+                }
 			}
 		}
 		else
@@ -302,7 +363,6 @@ int SelectCartType(UBYTE* screen, int k)
 
 	return CART_NONE;
 }
-
 
 void CartManagement()
 {
@@ -896,6 +956,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.45  2003/03/03 10:16:01  joy
+multiple disk sets supported
+
 Revision 1.44  2003/02/27 17:42:08  pfusik
 new cartridge type
 
@@ -1012,3 +1075,4 @@ Revision 1.5  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
 */
+

@@ -125,6 +125,7 @@ Robert Golias <golias@informatics.muni.cz>
 Mark Grebe <markgrebe@yahoo.com>
     - initial Mac OSX support
     - new complete H: device support (subdirectories added recently)
+    - Multiple Disk Set support
 
 Christian Groessler <cpg@aladdin.de>
     - SVGAlib patch for joystick
