@@ -242,6 +242,9 @@
 #define CLK_TCK 1000
 //#define DONT_SYNC_WITH_HOST
 
+#define DIRTYRECT
+//#define NODIRTYCOMPARE
+
 /* Some port-specific workarounds */
 #define strcasecmp _stricmp
 

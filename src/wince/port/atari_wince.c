@@ -59,10 +59,6 @@ void Atari_Initialise(int *argc, char *argv[])
 	}
 	
 	clearkb();
-	
-	/* Port tweaks */
-	if(refresh_rate < 2)
-		refresh_rate = 2;
 }
 
 int Atari_Exit(int run_monitor)

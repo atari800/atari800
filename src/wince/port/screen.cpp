@@ -55,6 +55,19 @@ static tCls        pCls        = NULL;
 static tRefresh    pRefresh    = NULL;
 static tDrawKbd    pDrawKbd    = NULL;
 
+// Acquire screen pointer every frame?
+#define FRAMEBASE
+
+#ifdef FRAMEBASE
+	#define GET_SCREEN_PTR() ((UBYTE*)GXBeginDraw())
+	#define RELEASE_SCREEN() (GXEndDraw())
+#else
+	UBYTE* spScreen = NULL;
+	#define GET_SCREEN_PTR() (spScreen)
+	#define RELEASE_SCREEN()
+#endif
+
+
 /* */
 
 GXDisplayProperties gxdp;
@@ -90,6 +103,8 @@ void set_screen_mode(int mode)
 		currentKeyboardMode = 4;
 	
 	kbd_image_ok = 0;
+
+	entire_screen_dirty();
 }
 
 int get_screen_mode()
@@ -101,6 +116,13 @@ void gr_suspend()
 {
 	if(active)
 	{
+#ifndef FRAMEBASE
+		if(spScreen)
+		{
+			GXEndDraw();
+			spScreen = NULL;
+		}
+#endif
 		active = 0;
 		GXSuspend();
 	}
@@ -112,6 +134,9 @@ void gr_resume()
 	{
 		active = 1;
 		GXResume();
+#ifndef FRAMEBASE
+		spScreen = (UBYTE*)GXBeginDraw();
+#endif
 	}
 	palette_update();
 	kbd_image_ok = 0;
@@ -119,6 +144,13 @@ void gr_resume()
 
 void groff(void)
 {
+#ifndef FRAMEBASE
+	if(spScreen)
+	{
+		GXEndDraw();
+		spScreen = NULL;
+	}
+#endif
 	GXCloseDisplay();
 	active = 0;
 }
@@ -218,6 +250,11 @@ int gron(int *argc, char *argv[])
 
 	active = 1;
 	kbd_image_ok = 0;
+
+#ifndef FRAMEBASE
+	spScreen = (UBYTE*)GXBeginDraw();
+#endif
+
 	return 0;
 }
 
@@ -291,6 +328,7 @@ void palette_update()
 void cls()
 {
 	pCls();
+	entire_screen_dirty();
 }
 
 void mono_Cls()
@@ -308,7 +346,7 @@ void mono_Cls()
 		return;
 	linestep = (pixelstep > 0) ? -1 : 1;
 
-	scraddr = (UBYTE*)GXBeginDraw();
+	scraddr = GET_SCREEN_PTR();
 	if(scraddr)
 	{
 		for(y=0; y<geom[0].height*gxdp.cBPP/8; y++)
@@ -321,7 +359,7 @@ void mono_Cls()
 			}
 			scraddr += linestep;
 		}
-		GXEndDraw();
+		RELEASE_SCREEN();
 	}
 	kbd_image_ok = 0;
 }
@@ -331,7 +369,7 @@ void palette_Cls()
 	int x, y;
 	UBYTE* dst;
 	UBYTE *scraddr;
-	scraddr = (UBYTE*)GXBeginDraw();
+	scraddr = GET_SCREEN_PTR();
 	if(scraddr)
 	{
 		for(y=0; y<geom[useMode].height; y++)
@@ -344,7 +382,7 @@ void palette_Cls()
 			}
 			scraddr += geom[useMode].linestep;
 		}
-		GXEndDraw();
+		RELEASE_SCREEN();
 	}
 	kbd_image_ok = 0;
 }
@@ -354,7 +392,7 @@ void hicolor_Cls()
 	int x, y;
 	UBYTE* dst;
 	UBYTE *scraddr;
-	scraddr = (UBYTE*)GXBeginDraw();
+	scraddr = GET_SCREEN_PTR();
 	if(scraddr)
 	{
 		for(y=0; y<geom[useMode].height; y++)
@@ -367,7 +405,7 @@ void hicolor_Cls()
 			}
 			scraddr += geom[useMode].linestep;
 		}
-		GXEndDraw();
+		RELEASE_SCREEN();
 	}
 	kbd_image_ok = 0;
 }
@@ -375,6 +413,9 @@ void hicolor_Cls()
 void refreshv(UBYTE* scr_ptr)
 {
 	pRefresh(scr_ptr);
+#ifdef DIRTYRECT
+	memset(screen_dirty, 0, ATARI_HEIGHT * ATARI_WIDTH/8);
+#endif
 }
 
 void overlay_kbd(UBYTE* scr_ptr);
@@ -446,7 +487,7 @@ void mono_Refresh(UBYTE * scr_ptr)
 	linestep = geom[useMode].linestep;
 	skipmask = geom[useMode].xSkipMask;
 
-	scraddr = (UBYTE*)GXBeginDraw();
+	scraddr = GET_SCREEN_PTR();
 	
 	if(pixelstep)
 	{
@@ -475,6 +516,63 @@ void mono_Refresh(UBYTE * scr_ptr)
 					dst = scraddr;
 					while(src < src_limit)
 					{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						UBYTE r, g, b;
+						r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
+						g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
+						b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
+
+						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
+						g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
+						b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
+
+						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
+						g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
+						b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
+
+						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+						dst += pixelstep;
+
+						r = (3*palRed[*(src+4)] + palRed[*(src+5)])>>2;
+						g = (3*palGreen[*(src+4)] + palGreen[*(src+5)])>>2;
+						b = (3*palBlue[*(src+4)] + palBlue[*(src+5)])>>2;
+
+						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+5)] + palRed[*(src+6)])>>1;
+						g = (palGreen[*(src+5)] + palGreen[*(src+6)])>>1;
+						b = (palBlue[*(src+5)] + palBlue[*(src+6)])>>1;
+
+						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+6)] + 3*palRed[*(src+7)])>>2;
+						g = (palGreen[*(src+6)] + 3*palGreen[*(src+7)])>>2;
+						b = (palBlue[*(src+6)] + 3*palBlue[*(src+7)])>>2;
+
+						*dst = (*dst & ~bitmask) | (COLORCONVMONO(r,g,b)<<bitshift);
+
+						dst += pixelstep;
+					}
+					else
+						dst += pixelstep*6;
+
+					src += 8;
+#else
 						UBYTE r, g, b;
 						r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
 						g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
@@ -501,6 +599,7 @@ void mono_Refresh(UBYTE * scr_ptr)
 						dst += pixelstep;
 
 						src += 4;
+#endif
 					}
 
 					ADVANCE_PARTIAL(scraddr, linestep);
@@ -517,11 +616,27 @@ void mono_Refresh(UBYTE * scr_ptr)
 					dst = scraddr;
 					while(src < src_limit)
 					{
+#ifdef DIRTYRECT
+						if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+						{
+							if((long)src & skipmask)
+							{
+								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+								dst += pixelstep;
+							}
+						}
+						else
+						{
+							if((long)src & skipmask)
+								dst += pixelstep;
+						}
+#else
 						if((long)src & skipmask)
 						{
 							*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
 							dst += pixelstep;
 						}
+#endif
 						src ++;
 					}
 
@@ -539,7 +654,12 @@ void mono_Refresh(UBYTE * scr_ptr)
 					dst = scraddr;
 					while(src < src_limit)
 					{
+#ifdef DIRTYRECT
+						if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+							*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+#else
 						*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+#endif
 						dst += pixelstep;
 						src ++;
 					}
@@ -581,11 +701,27 @@ void mono_Refresh(UBYTE * scr_ptr)
 						dst -= (linestep-pixelstep);
 						while(src < src_limit)
 						{
+#ifdef DIRTYRECT
+							if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+							{
+								if((long)src & skipmask)
+								{
+									*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+									ADVANCE_REV_PARTIAL(dst, pixelstep);
+								}
+							}
+							else
+							{
+								if((long)src & skipmask)
+									ADVANCE_REV_PARTIAL(dst, pixelstep);
+							}
+#else
 							if((long)src & skipmask)
 							{
 								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
 								ADVANCE_REV_PARTIAL(dst, pixelstep);
 							}
+#endif
 							src ++;
 						}
 
@@ -606,11 +742,27 @@ void mono_Refresh(UBYTE * scr_ptr)
 						dst = scraddr;
 						while(src < src_limit)
 						{
+#ifdef DIRTYRECT
+							if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+							{
+								if((long)src & skipmask)
+								{
+									*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+									ADVANCE_PARTIAL(dst, pixelstep);
+								}
+							}
+							else
+							{
+								if((long)src & skipmask)
+									ADVANCE_PARTIAL(dst, pixelstep);
+							}
+#else
 							if((long)src & skipmask)
 							{
 								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
 								ADVANCE_PARTIAL(dst, pixelstep);
 							}
+#endif
 							src ++;
 						}
 
@@ -635,7 +787,12 @@ void mono_Refresh(UBYTE * scr_ptr)
 						dst -= (linestep-pixelstep);
 						while(src < src_limit)
 						{
+#ifdef DIRTYRECT
+							if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+#else
 							*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+#endif
 							ADVANCE_REV_PARTIAL(dst, pixelstep);
 							src ++;
 						}
@@ -657,7 +814,12 @@ void mono_Refresh(UBYTE * scr_ptr)
 						dst = scraddr;
 						while(src < src_limit)
 						{
+#ifdef DIRTYRECT
+							if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+								*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+#else
 							*dst = ((*dst)&~bitmask)|(pal[*src]<<bitshift);
+#endif
 							ADVANCE_PARTIAL(dst, pixelstep);
 							src ++;
 						}
@@ -671,7 +833,7 @@ void mono_Refresh(UBYTE * scr_ptr)
 			}
 		}
 	}
-	GXEndDraw();
+	RELEASE_SCREEN();
 }
 
 void palette_Refresh(UBYTE * scr_ptr)
@@ -717,7 +879,7 @@ void palette_Refresh(UBYTE * scr_ptr)
 	linestep = geom[useMode].linestep;
 	skipmask = geom[useMode].xSkipMask;
 	
-	scraddr = (UBYTE*)GXBeginDraw();
+	scraddr = GET_SCREEN_PTR();
 	if(scraddr)
 	{
 		if(useMode == 0)
@@ -737,6 +899,32 @@ void palette_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						for(int i=0; i<8; i++)
+						{
+							if((long)src & skipmask)
+							{
+								if(*src < 236)
+									*dst = *src+10;
+								else
+									*dst = staticTranslate[*src-236];
+								dst += pixelstep;
+							}
+							src ++;
+						}
+					}
+					else
+					{
+						for(int i=0; i<8; i++)
+						{
+							if((long)src & skipmask)
+								dst += pixelstep;
+							src ++;
+						}
+					}
+#else
 					if((long)src & skipmask)
 					{
 						if(*src < 236)
@@ -746,6 +934,7 @@ void palette_Refresh(UBYTE * scr_ptr)
 						dst += pixelstep;
 					}
 					src ++;
+#endif
 				}
 				scraddr += linestep;
 				scr_ptr += ATARI_WIDTH;
@@ -760,10 +949,20 @@ void palette_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						if(*src < 236)
+							*dst = *src+10;
+						else
+							*dst = staticTranslate[*src-236];
+					}
+#else
 					if(*src < 236)
 						*dst = *src+10;
 					else
 						*dst = staticTranslate[*src-236];
+#endif
 					dst += pixelstep;
 					src ++;
 				}
@@ -773,7 +972,7 @@ void palette_Refresh(UBYTE * scr_ptr)
 			}
 		}
 		
-		GXEndDraw();
+		RELEASE_SCREEN();
 	}
 }
 
@@ -816,7 +1015,7 @@ void hicolor555_Refresh(UBYTE * scr_ptr)
 	linestep = geom[useMode].linestep;
 	skipmask = geom[useMode].xSkipMask;
 	
-	scraddr = (UBYTE*)GXBeginDraw();
+	scraddr = GET_SCREEN_PTR();
 	if(scraddr)
 	{
 		if(useMode == 0)
@@ -836,6 +1035,63 @@ void hicolor555_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						UBYTE r, g, b;
+						r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
+						g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
+						b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
+
+						*(unsigned short*)dst = COLORCONV555(r,g,b);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
+						g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
+						b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
+
+						*(unsigned short*)dst = COLORCONV555(r,g,b);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
+						g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
+						b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
+
+						*(unsigned short*)dst = COLORCONV555(r,g,b);
+
+						dst += pixelstep;
+
+						r = (3*palRed[*(src+4)] + palRed[*(src+5)])>>2;
+						g = (3*palGreen[*(src+4)] + palGreen[*(src+5)])>>2;
+						b = (3*palBlue[*(src+4)] + palBlue[*(src+5)])>>2;
+
+						*(unsigned short*)dst = COLORCONV555(r,g,b);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+5)] + palRed[*(src+6)])>>1;
+						g = (palGreen[*(src+5)] + palGreen[*(src+6)])>>1;
+						b = (palBlue[*(src+5)] + palBlue[*(src+6)])>>1;
+
+						*(unsigned short*)dst = COLORCONV555(r,g,b);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+6)] + 3*palRed[*(src+7)])>>2;
+						g = (palGreen[*(src+6)] + 3*palGreen[*(src+7)])>>2;
+						b = (palBlue[*(src+6)] + 3*palBlue[*(src+7)])>>2;
+
+						*(unsigned short*)dst = COLORCONV555(r,g,b);
+
+						dst += pixelstep;
+					}
+					else
+						dst += pixelstep*6;
+
+					src += 8;
+#else
 					UBYTE r, g, b;
 					r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
 					g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
@@ -862,6 +1118,7 @@ void hicolor555_Refresh(UBYTE * scr_ptr)
 					dst += pixelstep;
 
 					src += 4;
+#endif
 				}
 				scraddr += linestep;
 				scr_ptr += ATARI_WIDTH;
@@ -876,12 +1133,36 @@ void hicolor555_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						for(int i=0; i<8; i++)
+						{
+							if((long)src & skipmask)
+							{
+								*(unsigned short*)dst = pal[*src];
+								dst += pixelstep;
+							}
+							src ++;
+						}
+					}
+					else
+					{
+						for(int i=0; i<8; i++)
+						{
+							if((long)src & skipmask)
+								dst += pixelstep;
+							src ++;
+						}
+					}
+#else
 					if((long)src & skipmask)
 					{
 						*(unsigned short*)dst = pal[*src];
 						dst += pixelstep;
 					}
 					src ++;
+#endif
 				}
 				scraddr += linestep;
 				scr_ptr += ATARI_WIDTH;
@@ -896,9 +1177,28 @@ void hicolor555_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+					}
+					else
+					{
+						dst += pixelstep<<3;
+						src += 8;
+					}
+#else
 					*(unsigned short*)dst = pal[*src];
 					dst += pixelstep;
 					src ++;
+#endif
 				}
 
 				scraddr += linestep;
@@ -907,7 +1207,7 @@ void hicolor555_Refresh(UBYTE * scr_ptr)
 			}
 		}
 		
-		GXEndDraw();
+		RELEASE_SCREEN();
 	}
 }
 
@@ -950,7 +1250,7 @@ void hicolor565_Refresh(UBYTE * scr_ptr)
 	linestep = geom[useMode].linestep;
 	skipmask = geom[useMode].xSkipMask;
 	
-	scraddr = (UBYTE*)GXBeginDraw();
+	scraddr = GET_SCREEN_PTR();
 	if(scraddr)
 	{
 		if(useMode == 0)
@@ -970,6 +1270,64 @@ void hicolor565_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						UBYTE r, g, b;
+						r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
+						g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
+						b = (3*palBlue[*(src+0)] + palBlue[*(src+1)])>>2;
+
+						*(unsigned short*)dst = COLORCONV565(r,g,b);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+1)] + palRed[*(src+2)])>>1;
+						g = (palGreen[*(src+1)] + palGreen[*(src+2)])>>1;
+						b = (palBlue[*(src+1)] + palBlue[*(src+2)])>>1;
+
+						*(unsigned short*)dst = COLORCONV565(r,g,b);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+2)] + 3*palRed[*(src+3)])>>2;
+						g = (palGreen[*(src+2)] + 3*palGreen[*(src+3)])>>2;
+						b = (palBlue[*(src+2)] + 3*palBlue[*(src+3)])>>2;
+
+						*(unsigned short*)dst = COLORCONV565(r,g,b);
+
+						dst += pixelstep;
+
+						r = (3*palRed[*(src+4)] + palRed[*(src+5)])>>2;
+						g = (3*palGreen[*(src+4)] + palGreen[*(src+5)])>>2;
+						b = (3*palBlue[*(src+4)] + palBlue[*(src+5)])>>2;
+
+						*(unsigned short*)dst = COLORCONV565(r,g,b);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+5)] + palRed[*(src+6)])>>1;
+						g = (palGreen[*(src+5)] + palGreen[*(src+6)])>>1;
+						b = (palBlue[*(src+5)] + palBlue[*(src+6)])>>1;
+
+						*(unsigned short*)dst = COLORCONV565(r,g,b);
+
+						dst += pixelstep;
+
+						r = (palRed[*(src+6)] + 3*palRed[*(src+7)])>>2;
+						g = (palGreen[*(src+6)] + 3*palGreen[*(src+7)])>>2;
+						b = (palBlue[*(src+6)] + 3*palBlue[*(src+7)])>>2;
+
+						*(unsigned short*)dst = COLORCONV565(r,g,b);
+
+						dst += pixelstep;
+					}
+					else
+						dst += pixelstep*6;
+
+					src += 8;
+#else
+
 					UBYTE r, g, b;
 					r = (3*palRed[*(src+0)] + palRed[*(src+1)])>>2;
 					g = (3*palGreen[*(src+0)] + palGreen[*(src+1)])>>2;
@@ -996,6 +1354,7 @@ void hicolor565_Refresh(UBYTE * scr_ptr)
 					dst += pixelstep;
 
 					src += 4;
+#endif
 				}
 				scraddr += linestep;
 				scr_ptr += ATARI_WIDTH;
@@ -1010,12 +1369,36 @@ void hicolor565_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						for(int i=0; i<8; i++)
+						{
+							if((long)src & skipmask)
+							{
+								*(unsigned short*)dst = pal[*src];
+								dst += pixelstep;
+							}
+							src ++;
+						}
+					}
+					else
+					{
+						for(int i=0; i<8; i++)
+						{
+							if((long)src & skipmask)
+								dst += pixelstep;
+							src ++;
+						}
+					}
+#else
 					if((long)src & skipmask)
 					{
 						*(unsigned short*)dst = pal[*src];
 						dst += pixelstep;
 					}
 					src ++;
+#endif
 				}
 				scraddr += linestep;
 				scr_ptr += ATARI_WIDTH;
@@ -1030,9 +1413,28 @@ void hicolor565_Refresh(UBYTE * scr_ptr)
 				dst = scraddr;
 				while(src < src_limit)
 				{
+#ifdef DIRTYRECT
+					if(screen_dirty[((ULONG)src-(ULONG)atari_screen)/8])
+					{
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+						*(unsigned short*)dst = pal[*src++]; dst += pixelstep;
+					}
+					else
+					{
+						dst += pixelstep<<3;
+						src += 8;
+					}
+#else
 					*(unsigned short*)dst = pal[*src];
 					dst += pixelstep;
 					src ++;
+#endif
 				}
 
 				scraddr += linestep;
@@ -1041,18 +1443,18 @@ void hicolor565_Refresh(UBYTE * scr_ptr)
 			}
 		}
 		
-		GXEndDraw();
+		RELEASE_SCREEN();
 	}
 }
 
 void refresh_kbd()
 {
 	static UBYTE *scraddr;
-	scraddr = (UBYTE*)GXBeginDraw();
+	scraddr = GET_SCREEN_PTR();
 	if(scraddr)
 	{
 		pDrawKbd(scraddr);
-		GXEndDraw();
+		RELEASE_SCREEN();
 	}
 }
 
