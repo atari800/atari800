@@ -51,10 +51,6 @@
 
 #define DO_DIR
 
-#ifdef AMIGA
-#undef  DO_DIR
-#endif
-
 #ifdef VMS
 #undef  DO_DIR
 #endif
@@ -2219,6 +2215,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.23  2004/07/02 11:28:27  sba
+Don't remove DO_DIR define when compiling for Amiga.
+
 Revision 1.22  2003/09/14 20:07:30  joy
 O_BINARY defined
 
