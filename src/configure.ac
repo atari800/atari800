@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 
 dnl Set a8_target
 case "$target" in
-  basic | curses | ncurses | dosvga | falcon | sdl | windx | x11)
+  basic | curses | ncurses | svgalib | dosvga | falcon | sdl | windx | x11)
         a8_target="$target"
         ;;
   shm | motif | xview | xview-shm)
