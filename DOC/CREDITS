@@ -176,10 +176,12 @@ Marek Zelem <marek@formax.elf.stuba.sk>
 Petr Mojzisek <mojzisek@bimbo.fjfi.cvut.cz>
 - rawkey support for svgalib
 
-Krzysztof Nikiel <krzych00@priv7.onet.pl>
+Krzysztof Nikiel (knik) <krzych00@priv.onet.pl>
 - SaveINT() fix in state save code
 - Linux improvements (new svgalib keyboard input and screen output)
 - sound improvements (sound interpolation, configurable sound delay, 4 buffers)
+- autoconf stuff
+- Windows code clean up and DirectX version
 
 Jari Karppinen <jakarppi@mail.student.oulu.fi>
 - killed some warnings and bugs in source (like e.g. void main() in joycfg ;-)
@@ -206,7 +208,3 @@ Piotr Fusik <P.Fusik@elka.pw.edu.pl>
 
 Matthew Conte <matt@conte.com>
 - new SoundBlaster driver for DOS
-
-Krzysztof Nikiel <krzych00@priv7.onet.pl>
-- autoconf stuff
-- Windows code clean up and DirectX version
