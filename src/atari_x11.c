@@ -34,6 +34,10 @@
 #include <signal.h>
 #include <sys/time.h>
 
+#ifndef VMS
+#include "config.h"
+#endif
+
 typedef unsigned char ubyte;
 typedef unsigned short uword;
 
@@ -83,9 +87,6 @@ static int motif_rom_sel = 1;
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 
-#ifndef VMS
-#include "config.h"
-#endif
 #include "atari.h"
 #include "ataripcx.h"
 #include "colours.h"
@@ -321,6 +322,7 @@ int GetKeyCode(XEvent * event)
 			key_shift = 1;
 			break;
 		case XK_Control_L:
+			keypad_trig = 0;
 		case XK_Control_R:
 			CONTROL = AKEY_CTRL;
 			break;
@@ -712,6 +714,7 @@ int GetKeyCode(XEvent * event)
 			SHIFT = 0x00;
 			break;
 		case XK_Control_L:
+			keypad_trig = 1;
 		case XK_Control_R:
 			CONTROL = 0x00;
 			break;
@@ -810,7 +813,7 @@ int disk_change(char *a, char *full_filename, char *filename)
 		exit(1);
 	}
 	SIO_Dismount(diskno);
-	if (!SIO_Mount(diskno, full_filename))
+	if (!SIO_Mount(diskno, full_filename, FALSE))
 		status = XV_ERROR;
 	else {
 		if (auto_reboot)
@@ -821,7 +824,7 @@ int disk_change(char *a, char *full_filename, char *filename)
 	return status;
 }
 
-boot_callback()
+void boot_callback(void)
 {
 	auto_reboot = TRUE;
 
@@ -833,7 +836,7 @@ boot_callback()
 		   NULL);
 }
 
-insert_callback()
+void insert_callback(void)
 {
 	auto_reboot = FALSE;
 
@@ -845,7 +848,7 @@ insert_callback()
 		   NULL);
 }
 
-eject_callback()
+void eject_callback(void)
 {
 	int diskno;
 
@@ -870,7 +873,7 @@ eject_callback()
 	SIO_Dismount(diskno);
 }
 
-disable_callback()
+void disable_callback(void)
 {
 	int diskno;
 
@@ -957,7 +960,7 @@ int rom_change(char *a, char *full_filename, char *filename)
 	return status;
 }
 
-insert_rom_callback()
+void insert_rom_callback(void)
 {
 	xv_set(chooser,
 		   FRAME_LABEL, "ROM Selector",
@@ -967,59 +970,59 @@ insert_rom_callback()
 		   NULL);
 }
 
-remove_rom_callback()
+void remove_rom_callback(void)
 {
 	Remove_ROM();
 	Coldstart();
 }
 
-enable_pill_callback()
+void enable_pill_callback(void)
 {
 	EnablePILL();
 	Coldstart();
 }
 
-exit_callback()
+void exit_callback(void)
 {
 	exit(1);
 }
 
-option_callback()
+void option_callback(void)
 {
 	menu_consol &= 0x03;
 }
 
-select_callback()
+void select_callback(void)
 {
 	menu_consol &= 0x05;
 }
 
-start_callback()
+void start_callback(void)
 {
 	menu_consol &= 0x6;
 }
 
-help_callback()
+void help_callback(void)
 {
 	xview_keycode = AKEY_HELP;
 }
 
-break_callback()
+void break_callback(void)
 {
 	xview_keycode = AKEY_BREAK;
 }
 
-reset_callback()
+void reset_callback(void)
 {
 	Warmstart();
 }
 
-coldstart_callback()
+void coldstart_callback(void)
 {
 	Coldstart();
 }
 
-coldstart_osa_callback()
+void coldstart_osa_callback(void)
 {
 	int status;
 
@@ -1044,7 +1047,7 @@ coldstart_osa_callback()
 	}
 }
 
-coldstart_osb_callback()
+void coldstart_osb_callback(void)
 {
 	int status;
 
@@ -1069,7 +1072,7 @@ coldstart_osb_callback()
 	}
 }
 
-coldstart_xl_callback()
+void coldstart_xl_callback(void)
 {
 	int status;
 
@@ -1094,7 +1097,7 @@ coldstart_xl_callback()
 	}
 }
 
-coldstart_xe_callback()
+void coldstart_xe_callback(void)
 {
 	int status;
 
@@ -1119,7 +1122,7 @@ coldstart_xe_callback()
 	}
 }
 
-coldstart_5200_callback()
+void coldstart_5200_callback(void)
 {
 	int status;
 
@@ -1144,14 +1147,14 @@ coldstart_5200_callback()
 	}
 }
 
-controllers_ok_callback()
+void controllers_ok_callback(void)
 {
 	xv_set(controllers_frame,
 		   XV_SHOW, FALSE,
 		   NULL);
 }
 
-controllers_callback()
+void controllers_callback(void)
 {
 	xv_set(controllers_frame,
 		   XV_SHOW, TRUE,
@@ -1169,7 +1172,7 @@ void sorry_message()
 				  NULL);
 }
 
-keypad_callback()
+void keypad_callback(void)
 {
 	int new_mode;
 
@@ -1188,7 +1191,7 @@ keypad_callback()
 	}
 }
 
-mouse_callback()
+void mouse_callback(void)
 {
 	int new_mode;
 
@@ -1208,7 +1211,7 @@ mouse_callback()
 }
 
 #ifdef LINUX_JOYSTICK
-js0_callback()
+void js0_callback(void)
 {
 	int new_mode;
 
@@ -1227,7 +1230,7 @@ js0_callback()
 	}
 }
 
-js1_callback()
+void js1_callback(void)
 {
 	int new_mode;
 
@@ -1247,21 +1250,21 @@ js1_callback()
 }
 #endif
 
-performance_ok_callback()
+void performance_ok_callback(void)
 {
 	xv_set(performance_frame,
 		   XV_SHOW, FALSE,
 		   NULL);
 }
 
-performance_callback()
+void performance_callback(void)
 {
 	xv_set(performance_frame,
 		   XV_SHOW, TRUE,
 		   NULL);
 }
 
-refresh_callback(Panel_item item, int value, Event * event)
+void refresh_callback(Panel_item item, int value, Event * event)
 {
 	refresh_rate = value;
 }
@@ -1299,7 +1302,7 @@ void motif_boot_disk(Widget fs, XtPointer client_data,
 						XmSTRING_DEFAULT_CHARSET, &filename)) {
 		if (*filename) {
 			SIO_Dismount(1);
-			if (SIO_Mount(1, filename))
+			if (SIO_Mount(1, filename, FALSE))
 				Coldstart();
 		}
 		XtFree(filename);
@@ -1321,7 +1324,7 @@ void motif_insert_disk(Widget fs, XtPointer client_data, XtPointer cbs)
 						XmSTRING_DEFAULT_CHARSET, &filename)) {
 		if (*filename) {
 			SIO_Dismount(motif_disk_sel);
-			SIO_Mount(motif_disk_sel, filename);
+			SIO_Mount(motif_disk_sel, filename, FALSE);
 		}
 		XtFree(filename);
 	}
