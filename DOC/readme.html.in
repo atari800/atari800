@@ -1,0 +1,143 @@
+<html>
+<head>
+<title>
+Atari800 emulator readme
+</title>
+</head>
+<body>
+
+<center><h1>
+Atari800 emulator version $A800VERSION
+</h1></center>
+
+<h2>Table Of Contents:</h2>
+
+<menu>
+<li><a href="#intro">INTRODUCTION</a>
+<li><a href="#install">INSTALLATION</a>
+<li><a href="#keys">KEYS</a>
+<li><a href="#run">RUNNING ATARI800</a>
+<li><a href="#bugs">REPORTING BUGS</a>
+<li><a href="#copy">COPYRIGHT</a>
+<li><a href="#contact">CONTACT</a>
+</menu>
+
+
+<a name="intro">
+<h3>INTRODUCTION</h3>
+This is the version $A800VERSION of Atari800 for MS Windows.
+Atari800 is a free (you don't pay for it, you can get source code and you are
+welcome to develop it) and portable (can run on many weird machines
+and different operating systems) emulator of Atari 800XL, 130XE and 5200
+computers, developed by <A HREF="DOC/CREDITS">many people</A> under the <A HREF="COPYING">GPL</A>. More information you find
+in the <A HREF="DOC/README">README</A> file.
+
+<a name="install">
+<h3>INSTALLATION</h3>
+To install this Atari800 package you will need the following:
+<menu>
+<li>	Windows 9x<br>
+<li>	DirectX<br>
+<li>	Atari 800 ROM files (see <A HREF="DOC/INSTALL.dos">INSTALL</A> file for more info)<br>
+<li>	Seperate folder to put the emulator and ROM files in<br>
+</menu>
+
+Extract Atari800 zip file to destination folder and copy ROM files to the same
+folder.
+Run atari800 and you will be prompted for several config values, if you don't
+know the correct value just press Enter.
+
+<a name="keys">
+<h3>KEYS</h3>
+<menu>
+<li>F1	Menu (built in User Interface)
+<li>F2	Option
+<li>F3	Select
+<li>F4	Start
+<li>F5	Warm Reset
+<li>Shft+F5 Cold Reset
+<li>F8	Monitor
+<li>F9	Exit Emulator
+<li>F10 Screenshot
+<li>F11 Change autofire mode
+</menu>
+
+Joystick 0 is operated by the numeric keypad:<br>
+<menu>
+<li>7 - forward/left
+<li>8 - forward
+<li>9 - forward/right
+<li>4 - left
+<li>6 - right
+<li>1 - back/left
+<li>2 - back
+<li>3 - back/right
+<li>0 - fire key
+</menu>
+
+<a name="run">
+<h3>RUNNING ATARI800</h3>
+You can use some command line parameters to atari800.
+To add command line parameter create a shortcut to atari800 and append them
+to Properties/Shortcut/Target window.<br>
+If you need '-mouse pad' option you should have something like:<br>
+"C:\Program Files\Atari800\Atari800.exe -mouse pad"<br>
+
+Available command line options are: (see <A HREF="DOC/USAGE">USAGE</A> for more)
+<menu>
+
+$HELPMENU
+
+</menu>
+
+<a name="bugs">
+<h3>REPORTING BUGS</h3>
+If you have a problem running this emulator please read <A HREF="DOC/FAQ">FAQ</A> first.<br>
+Look at <A HREF="DOC/BUGS">BUGS</A> first to not report same bug hundred times, please.<br>
+If the problem persists you can contact Atari800 developers at
+<a href="mailto:atari800-users@lists.sourceforge.net">
+atari800-users mailing list</a>
+or you can use <a href="http://sourceforge.net/projects/atari800/">
+sourceforge.net interface</a>.
+
+<a name="copy">
+<h3>COPYRIGHT</h3>
+<blockquote>
+    Copyright &copy 1995
+    <a href="mailto:david@signus.demon.co.uk">David Firth.</a><br>
+    Copyright &copy 2002
+    <a href="mailto:atari800-users@lists.sourceforge.net">
+    Atari800 development team</a>
+</blockquote>
+<blockquote>
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+</blockquote>
+<blockquote>
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+</blockquote>
+<blockquote>
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+</blockquote>
+
+See <A HREF="COPYING">COPYING</A> file for details.<br><br>
+All trademarks are the property of their respective companies.
+
+<a name="contact">
+<h3>CONTACT</h3>
+Atari800 Windows port maintainer:
+<a href="mailto:knik@poczta.onet.pl">Krzysztof Nikiel</a><br>
+You can find more info at <a href="http://atari800.atari.org/">
+Atari800 home page</a>.<br>
+<br><br<br>
+<center><h6>Page by Krzysztof Nikiel</h6></center>
+
+</body>
+</html>
