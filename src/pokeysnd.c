@@ -103,15 +103,25 @@
 #  ifdef ATARI800_BIG_ENDIAN
 #    define READ_U32(x) (((*(unsigned char *)(x)) << 24) | ((*((unsigned char *)(x)+1)) << 16) | \
                         ((*((unsigned char *)(x)+2)) << 8) | ((*((unsigned char *)(x)+3))))
-#    define WRITE_U32(x,d) ((*(unsigned char *)(x)) = (((d)>>24)&255), (*((unsigned char *)(x)+1)) = \
-                           (((d)>>16)&255), (*((unsigned char *)(x)+2)) = (((d)>>8)&255), \
-                           (*((unsigned char *)(x)+3)) = ((d)&255), d)
+#    define WRITE_U32(x,d) \
+  { \
+  uint32 i = d; \
+  (*(unsigned char *)(x)) = (((i)>>24)&255); \
+  (*((unsigned char *)(x)+1)) = (((i)>>16)&255); \
+  (*((unsigned char *)(x)+2)) = (((i)>>8)&255); \
+  (*((unsigned char *)(x)+3)) = ((i)&255); \
+  }
 #  else
 #    define READ_U32(x) ((*(unsigned char *)(x)) | ((*((unsigned char *)(x)+1)) << 8) | \
                         ((*((unsigned char *)(x)+2)) << 16) | ((*((unsigned char *)(x)+3)) << 24))
-#    define WRITE_U32(x,d) ((*(unsigned char *)(x)) = ((d)&255), (*((unsigned char *)(x)+1)) = \
-                           (((d)>>8)&255), (*((unsigned char *)(x)+2)) = (((d)>>16)&255), \
-                           (*((unsigned char *)(x)+3)) = (((d)>>24)&255), d)
+#    define WRITE_U32(x,d) \
+  { \
+  uint32 i = d; \
+  (*(unsigned char *)(x)) = ((i)&255); \
+  (*((unsigned char *)(x)+1)) = (((i)>>8)&255); \
+  (*((unsigned char *)(x)+2)) = (((i)>>16)&255); \
+  (*((unsigned char *)(x)+3)) = (((i)>>24)&255); \
+  }
 #  endif
 #endif
 
@@ -1154,6 +1164,9 @@ void Update_vol_only_sound( void )
 
 /*
 $Log$
+Revision 1.4  2001/04/08 06:05:24  knik
+weird bug in WRITE_U32 macro fixed
+
 Revision 1.3  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
