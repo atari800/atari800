@@ -1,4 +1,4 @@
-#include <stdlib.h>
+/* #include <stdlib.h> - was here only for rand() ? */
 #ifdef VMS
 #include <types.h>
 #else
@@ -52,11 +52,11 @@ int stereo_enabled = TRUE;
 
 UBYTE poly9_lookup[511];
 UBYTE poly17_lookup[16385];
+static ULONG random_frame_counter;
 
 UBYTE POKEY_GetByte(UWORD addr)
 {
 	UBYTE byte = 0xff;
-	static int rand_init = 0;
 
 #ifdef STEREO
 	if (addr & 0x0010 && stereo_enabled)
@@ -82,11 +82,18 @@ UBYTE POKEY_GetByte(UWORD addr)
 		byte = KBCODE;
 		break;
 	case _RANDOM:
-		if (!rand_init) {
-			srand((int) time((time_t *) NULL));
-			rand_init = 1;
+		{
+			int i = random_frame_counter + cpu_clock;
+			if (AUDCTL[0] & POLY9)
+				byte = poly9_lookup[i % POLY9_SIZE];
+			else {
+				UBYTE *ptr;
+				i %= POLY17_SIZE;
+				ptr = poly17_lookup + (i >> 3);
+				i &= 7;
+				byte = (UBYTE) ((ptr[0] >> i) | (ptr[1] << (8 - i)));
+			}
 		}
-		byte = rand();
 		break;
 	case _SERIN:
 		byte = SIO_GetByte();
@@ -303,6 +310,14 @@ void POKEY_Initialise(int *argc, char *argv[])
 			reg >>= 1;
 		}
 	}
+
+	random_frame_counter = time(NULL) % POLY17_SIZE;
+}
+
+void POKEY_Frame(void)
+{
+	random_frame_counter += max_ypos * LINE_C;
+	random_frame_counter %= AUDCTL[0] & POLY9 ? POLY9_SIZE : POLY17_SIZE;
 }
 
 /***************************************************************************
