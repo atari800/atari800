@@ -6,7 +6,9 @@
 
 #undef NCURSES
 
-#undef WIN32
+#ifndef WIN32
+# undef WIN32
+#endif
 
 #undef DIRECTX
 
