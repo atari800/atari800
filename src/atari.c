@@ -769,34 +769,80 @@ void ShowRealSpeed(ULONG * atari_screen, int refresh_rate)
 }
 #endif
 
-void atari_sleep_ms(ULONG miliseconds)
+void atari_sync(void)
 {
-#ifdef POSIX
-	struct timespec t;
-	t.tv_sec = 0;
-	t.tv_nsec = miliseconds * 1E6UL;
-	nanosleep(&t, NULL);	/* POSIX  */
-#else
-	usleep(miliseconds * 1000);
+#ifdef SNAILMETER
+	static long emu_too_fast = 0;	/* automatically enable/disable snailmeter */
 #endif
+#ifdef USE_CLOCK
+	static ULONG nextclock = 0;	/* put here a non-zero value to enable speed regulator */
+	/* on Atari Falcon CLK_TCK = 200 (i.e. 5 ms granularity) */
+	/* on DOS (DJGPP) CLK_TCK = 91 (not too precise, but should work anyway)*/
+	if (nextclock) {
+		ULONG curclock;
+#ifdef SNAILMETER
+		emu_too_fast = -1;
+#endif
+		do {
+			curclock = clock();
+#ifdef SNAILMETER
+			emu_too_fast++;
+#endif
+		} while (curclock < nextclock);
+
+		nextclock = curclock + (CLK_TCK / (tv_mode == TV_PAL ? 50 : 60));
+	}
+#else	/* USE_CLOCK */
+#if !defined(WIN32) && !defined(DJGPP)
+	static struct timeval tp;
+	static struct timezone tzp;
+#endif
+	static double lasttime = 0;
+
+	if (deltatime > 0.0) {
+		double curtime;
+#ifdef linux
+		gettimeofday(&tp, NULL);
+		curtime = (lasttime + deltatime)
+			- tp.tv_sec - (tp.tv_usec * 0.000001);
+		if( curtime>0 )
+		{	tp.tv_sec=  (int)(curtime);
+			tp.tv_usec= (int)((curtime-tp.tv_sec)*1000000);
+/* printf("delta=%f sec=%d usec=%d\n",curtime,tp.tv_sec,tp.tv_usec); */
+			select(1,NULL,NULL,NULL,&tp);
+		}
+		gettimeofday(&tp, NULL);
+		curtime = tp.tv_sec + (tp.tv_usec * 0.000001);
+#else	/* linux */
+
+#ifdef SNAILMETER
+		emu_too_fast = -1;
+#endif
+		do {
+#ifdef WIN32
+			curtime = GetTickCount() * 0.001;
+#elif defined(DJGPP)
+	      curtime = uclock() * ((double)1 / UCLOCKS_PER_SEC);
+#else
+			gettimeofday(&tp, &tzp);
+			curtime = tp.tv_sec + (tp.tv_usec * 0.000001);
+#endif
+#ifdef SNAILMETER
+			emu_too_fast++;
+#endif
+		} while (curtime < (lasttime + deltatime));
+#endif	/* linux */
+		fps = 1.0 / (curtime - lasttime);
+		lasttime += deltatime;
+		if ((lasttime + deltatime) < curtime)
+		  lasttime = curtime;
+	}
+#endif	/* DJGPP */
 }
 
 void Atari800_Hardware(void)
 {
-#ifndef WIN32
-	static struct timeval tp;
-	static struct timezone tzp;
-	static double lasttime;
-#ifdef USE_CLOCK
-	static ULONG nextclock = 0;	/* put here a non-zero value to enable speed regulator */
-#endif
-#ifdef SNAILMETER
-	static long emu_too_fast = 0;	/* automatically enable/disable snailmeter */
-#endif
-
 	nframes = 0;
-	gettimeofday(&tp, &tzp);
-	lasttime = tp.tv_sec + (tp.tv_usec / 1000000.0);
 	fps = 0.0;
 
 	while (TRUE) {
@@ -862,6 +908,9 @@ void Atari800_Hardware(void)
 			}
 			break;
 		}
+#ifdef SOUND
+       	Sound_Update();
+#endif
 #endif	/* !BASIC */
 
 		/*
@@ -878,6 +927,9 @@ void Atari800_Hardware(void)
 			if (emu_too_fast == 0)
 				ShowRealSpeed(atari_screen, refresh_rate);
 #endif
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync(); /* here seems to be the best place to sync */
+#endif
 			Atari_DisplayScreen((UBYTE *) atari_screen);
 #ifndef SVGA_SPEEDUP
 			test_val = 0;
@@ -891,6 +943,9 @@ void Atari800_Hardware(void)
 #else	/* VERY_SLOW */
 			draw_display=0;
 			ANTIC_RunDisplayList();
+#ifndef DONT_SYNC_WITH_HOST
+			atari_sync();
+#endif
 			Atari_DisplayScreen((UBYTE *) atari_screen);
 #endif	/* VERY_SLOW */
 		}
@@ -900,106 +955,13 @@ void Atari800_Hardware(void)
 			GO(LINE_C);
 			xpos -= LINE_C - DMAR;
 		}
-#ifdef SOUND
-       	Sound_Update();
+#ifndef	DONT_SYNC_WITH_HOST
+		atari_sync();
 #endif
 #endif	/* !BASIC */
 
 		nframes++;
-
-#ifndef	DONT_SYNC_WITH_HOST
-/* if too fast host computer, slow the emulation down to 100% of original speed */
-
-#ifdef USE_CLOCK
-		/* on Atari Falcon CLK_TCK = 200 (i.e. 5 ms granularity) */
-		/* on DOS (DJGPP) CLK_TCK = 91 (not too precise, but should work anyway)*/
-		if (nextclock) {
-			ULONG curclock;
-
-#ifdef SNAILMETER
-			emu_too_fast = -1;
-#endif
-			do {
-				curclock = clock();
-#ifdef SNAILMETER
-				emu_too_fast++;
-#endif
-			} while (curclock < nextclock);
-
-			nextclock = curclock + (CLK_TCK / (tv_mode == TV_PAL ? 50 : 60));
-		}
-#else	/* USE_CLOCK */
-#ifndef DJGPP
-		if (deltatime > 0.0) {
-			double curtime;
-
-#ifdef linux
-		gettimeofday(&tp, NULL);
-		curtime = (lasttime + deltatime)
-			- tp.tv_sec - (tp.tv_usec / 1000000.0);
-		if( curtime>0 )
-		{	tp.tv_sec=  (int)(curtime);
-			tp.tv_usec= (int)((curtime-tp.tv_sec)*1000000);
-/* printf("delta=%f sec=%d usec=%d\n",curtime,tp.tv_sec,tp.tv_usec); */
-			select(1,NULL,NULL,NULL,&tp);
-		}
-		gettimeofday(&tp, NULL);
-		curtime = tp.tv_sec + (tp.tv_usec / 1000000.0);
-#else	/* linux */
-
-#ifdef SNAILMETER
-			emu_too_fast = -1;
-#endif
-			do {
-				gettimeofday(&tp, &tzp);
-				curtime = tp.tv_sec + (tp.tv_usec / 1000000.0);
-#ifdef SNAILMETER
-				emu_too_fast++;
-#endif
-			} while (curtime < (lasttime + deltatime));
-#endif	/* linux */
-			
-			fps = 1.0 / (curtime - lasttime);
-			lasttime = curtime;
-		}
-#else	/* !DJGPP */	/* for dos, count ticks and use the ticks_per_second global variable */
-		/* Use the high speed clock tick function uclock() */
-		if (timesync) {
-			if (deltatime > 0.0) {
-				static uclock_t lasttime = 0;
-				uclock_t curtime, uclockd;
-				unsigned long uclockd_hi, uclockd_lo;
-				unsigned long uclocks_per_int;
-
-				uclocks_per_int = (deltatime * (double) UCLOCKS_PER_SEC) + 0.5;
-				/* printf( "ticks_per_int %d, %.8X\n", uclocks_per_int, (unsigned long) lasttime ); */
-
-#ifdef SNAILMETER
-				emu_too_fast = -1;
-#endif
-				do {
-					curtime = uclock();
-					if (curtime > lasttime) {
-						uclockd = curtime - lasttime;
-					}
-					else {
-						uclockd = ((uclock_t) ~ 0 - lasttime) + curtime + (uclock_t) 1;
-					}
-					uclockd_lo = (unsigned long) uclockd;
-					uclockd_hi = (unsigned long) (uclockd >> 32);
-#ifdef SNAILMETER
-					emu_too_fast++;
-#endif
-				} while ((uclockd_hi == 0) && (uclocks_per_int > uclockd_lo));
-
-				lasttime = curtime;
-			}
-		}
-#endif	/* !DJGPP */
-#endif	/* USE_CLOCK */
-#endif	/* !DONT_SYNC_WITH_HOST */
 	}
-#endif	/* !WIN32 */
 }
 
 #ifdef WIN32

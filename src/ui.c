@@ -111,8 +111,8 @@ unsigned char ascii_to_screen[128] =
 };
 
 
-#define KB_DELAY		15
-#define KB_AUTOREPEAT	3
+#define KB_DELAY		20
+#define KB_AUTOREPEAT		4
 
 int GetKeyPress(UBYTE * screen)
 {
@@ -131,7 +131,7 @@ int GetKeyPress(UBYTE * screen)
 		static int rep = KB_DELAY;
 		if (Atari_Keyboard() == AKEY_NONE) {
 			rep = KB_DELAY;
-			atari_sleep_ms(100);	/* mmm */
+			atari_sync();
 			break;
 		}
 		if (rep == 0) {
@@ -139,7 +139,7 @@ int GetKeyPress(UBYTE * screen)
 			break;
 		}
 		rep--;
-		atari_sleep_ms(20);
+		atari_sync();
 	}
 
 	do {

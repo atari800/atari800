@@ -446,6 +446,6 @@ void Atari800_PutByte(UWORD addr, UBYTE byte);
 void AtariEscape(UBYTE esc_code);
 int Initialise_EmuOS(void);
 int Insert_Cartridge(char *filename);
-void atari_sleep_ms(ULONG miliseconds);
+void atari_sync(void);
 
 #endif
