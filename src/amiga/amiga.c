@@ -76,10 +76,15 @@
 #include "pokeysnd.h"
 #include "sio.h"
 #include "statesav.h"
-#include "rt-config.h"
 
 #include "amiga.h"
 #include "support.h"
+
+/******************************/
+
+#include "Atari800_rev.h"
+
+static char __attribute__((used)) verstag[] = VERSTAG;
 
 /******************************/
 
@@ -766,7 +771,7 @@ LONG SetupDisplay(void)
 					WA_DragBar, !ScreenIsCustom,
 					WA_DepthGadget, !ScreenIsCustom,
 					ScreenIsCustom?TAG_IGNORE:WA_Title, "Atari 800",
-					ScreenIsCustom?TAG_IGNORE:WA_ScreenTitle, ATARI_TITLE,
+					ScreenIsCustom?TAG_IGNORE:WA_ScreenTitle, VERS,
 					WA_SizeGadget, DisplayType == DISPLAY_SCALABLEWINDOW,
 					DisplayType == DISPLAY_SCALABLEWINDOW?WA_SizeBBottom:TAG_IGNORE, TRUE,
 					DisplayType == DISPLAY_SCALABLEWINDOW?WA_MaxWidth:TAG_IGNORE,-1,
@@ -875,10 +880,10 @@ int HandleMenu(UWORD code)
 							easy.es_StructSize = sizeof(struct EasyStruct);
 							easy.es_Flags = 0;
 							easy.es_Title = "Atari800";
-							easy.es_TextFormat = ATARI_TITLE "\n\nCopyright (C) 2000-2004\nAtari800 development team\nAmiga port done by Sebastian Bauer";
+							easy.es_TextFormat = "Atari800 version %ld.%ld\n\nBased upon " ATARI_TITLE "\nCopyright (C) 2000-2004\nAtari800 development team\nAmiga port done by Sebastian Bauer";
 							easy.es_GadgetFormat = "Ok";
 							
-							EasyRequestArgs( WindowMain, &easy, NULL, NULL );
+							EasyRequest( WindowMain, &easy, NULL, VERSION, REVISION);
 						}
 						break;
 
