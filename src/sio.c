@@ -621,7 +621,7 @@ void SIO(void)
 	static int delay_counter = 1;	/* no delay on first read */
 #endif
 
-	if (Peek(0x300) == 0x31)
+	if (Peek(0x300) == 0x31 && unit < MAX_DRIVES)	/* UBYTE range ! */
 		switch (cmd) {
 		case 0x4e:				/* Read Status Block */
 			if (12 == length) {
@@ -767,7 +767,7 @@ void Command_Frame(void)
 
 	sector = CommandFrame[2] | (((UWORD) (CommandFrame[3])) << 8);
 	unit = CommandFrame[0] - '1';
-	if (unit > 8) {				/* UBYTE - range ! */
+	if (unit >= MAX_DRIVES) {				/* UBYTE - range ! */
 		Aprint("Unknown command frame: %02x %02x %02x %02x %02x",
 			   CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			   CommandFrame[3], CommandFrame[4]);
@@ -881,7 +881,7 @@ UBYTE WriteSectorBack(void)
 
 	sector = CommandFrame[2] | (((UWORD) (CommandFrame[3])) << 8);
 	unit = CommandFrame[0] - '1';
-	if (unit > 8) {				/* UBYTE range ! */
+	if (unit >= MAX_DRIVES) {				/* UBYTE range ! */
 		result = 0;
 	}
 	else
@@ -1057,6 +1057,9 @@ int Rotate_Disks( void )
 
 /*
 $Log$
+Revision 1.7  2001/07/23 09:11:30  fox
+corrected and added checks if drive number is in range 1-8
+
 Revision 1.6  2001/07/21 20:00:44  fox
 made double density ATR images compatible with SIO2PC
 
