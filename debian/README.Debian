@@ -24,9 +24,9 @@ an X version and either vga or curses version for the console.
 
 With the incorporation of the SDL interface, the same code can run in both 
 the console and an X window. While the other compilations will still be
-included in the package and can be called explicitly as atari800.x11, 
-atari800.svgalib, or atari800.curses, when atari800 is entered, or selected 
-from a menu in X, the SDL library interface version will be executed.
+included in the package and can be called explicitly as atari800.x11 or
+atari800.curses, when atari800 is entered, or selected from a menu in X,
+the SDL library interface version will be executed.
 
 The previously provided script that selected which code to execute is no
 longer provided, as it is no longer necessary.

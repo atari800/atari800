@@ -13,7 +13,6 @@ ARCH := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 # =====================================================================
 build: 
 	$(checkdir)
-##	if [ "$(ARCH)" = "i386" ]; then debian/rules bld-svgalib; fi
 	debian/rules bld-x11
 	debian/rules bld-curses
 	debian/rules bld-sdl
@@ -25,13 +24,6 @@ bld-sdl:
 		 --target=sdl
 	cd src ; $(MAKE)
 	cp src/atari800 atari800.sdl
-
-##bld-svgalib:
-##	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
-##	cd src ; ./configure \
-##		 --target=svgalib
-##	cd src ; $(MAKE)
-##	cp src/atari800 atari800.svgalib
 
 bld-x11:
 	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
@@ -116,7 +108,6 @@ binary-arch:		checkroot build
 # link other executables to the main manpage
 #
 	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).sdl.1.gz
-##	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).svgalib.1.gz
 	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).x11.1.gz
 	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).curses.1.gz
 
@@ -128,17 +119,11 @@ binary-arch:		checkroot build
 # install binaries
 #
 	install -d debian/tmp/usr/bin
-##	if [ "$(ARCH)" = "i386" ]; then install -s $(P).svgalib debian/tmp/usr/bin; fi
 	install -s $(P).curses $(P).x11 debian/tmp/usr/bin
 	install -s $(P).sdl debian/tmp/usr/bin/$(P)
-#	(if [ "$(ARCH)" = "i386" ]; then install debian/$(P) debian/tmp/usr/bin; \
-#	else install debian/$(P).alt debian/tmp/usr/bin/$(P); fi)
 
 # Create dependency information
 #
-##	(if [ "$(ARCH)" = "i386" ]; then \
-##	dpkg-shlibdeps ./$(P).sdl ./$(P).svgalib ./$(P).x11 ./$(P).curses ; \
-##	else dpkg-shlibdeps ./$(P).sdl ./$(P).x11 ./$(P).curses ; fi)
 	dpkg-shlibdeps ./$(P).sdl ./$(P).x11 ./$(P).curses
 
 # Generate control file for the package
@@ -148,7 +133,6 @@ binary-arch:		checkroot build
 # Clean up file ownership
 #
 	chown -R root.root debian/tmp
-##	if [ "$(ARCH)" = "i386" ]; then chmod u+s debian/tmp/usr/bin/$(P).svgalib; fi
 
 # and permissions
 #

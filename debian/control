@@ -2,14 +2,14 @@ Source: atari800
 Section: contrib/otherosfs
 Priority: optional
 Maintainer: Dale Scheetz (Dwarf #1) <dwarf@polaris.net>
-Build-Depends: xlib6g-dev, libsdl1.2-dev, libncurses-dev, svgalibg1-dev [i386], zlib1g-dev, debhelper, sharutils
+Build-Depends: xlib6g-dev, libsdl1.2-dev, libncurses-dev, zlib1g-dev, debhelper, sharutils
 Standards-Version: 3.1.1.1
 
 Package: atari800
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: Atari emulator for svgalib/X/curses/SDL
- This is an Atari emulator that can use SVGALIB, X, plain curses or SDL.
+Description: Atari emulator for X/curses/SDL
+ This is an Atari emulator that can use X, plain curses or SDL.
  It can emulate the Atari 800, 800XL, 130XE, and 5200 systems.
  .
  The Atari Operating System ROMs are not available with this package, due to

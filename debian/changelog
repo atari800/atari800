@@ -1,3 +1,10 @@
+atari800 (1.3.1-rc1-1) unstable; urgency=low
+
+  * new upstream source.
+  * SVGALIB abandoned altogether
+
+ -- Petr Stehlik <pstehlik@sophics.cz>  Thu, 04 Sep 2003 21:02:25 +0100
+
 atari800 (1.3.0-1) unstable; urgency=low
 
   * new upstream source.
