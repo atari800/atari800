@@ -46,7 +46,7 @@ void ANTIC_Frame(int draw_display);
 UBYTE ANTIC_GetByte(UWORD addr);
 void ANTIC_PutByte(UWORD addr, UBYTE byte);
 
-/* always call artif_init after changing global_artif_mode */
-void artif_init(void);
+/* always call ANTIC_UpdateArtifacting after changing global_artif_mode */
+void ANTIC_UpdateArtifacting(void);
 
 #endif
