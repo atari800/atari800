@@ -36,6 +36,10 @@
 
 #define _POKEY2 0x10			/* offset to second pokey chip (STEREO expansion) */
 
+#ifdef STEREO
+extern int stereo_enabled;
+#endif
+
 extern UBYTE KBCODE;
 extern UBYTE IRQST;
 extern UBYTE IRQEN;
