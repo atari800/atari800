@@ -1339,6 +1339,7 @@ void draw_antic_2_gtia10(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 	lookup_gtia10[15] = lookup_gtia10[7] = cl_lookup[C_PF3];
 	lookup_gtia10[8] = lookup_gtia10[9] = lookup_gtia10[10] = lookup_gtia10[11] = cl_lookup[C_BAK];
 #endif
+	ptr++;
 	t_pm_scanline_ptr = (ULONG *) (((UBYTE *) t_pm_scanline_ptr) + 1);
 	CHAR_LOOP_BEGIN
 		UBYTE screendata = *ANTIC_memptr++;
