@@ -60,6 +60,10 @@ all: $(TARGET)
 %.o: %.cpp
 	$(CC) -c -o $@ $(DEFS) $(INCLUDE) $(CFLAGS) $<
 
+%.o: %.s
+	cd falcon; xgen -L1 $@ $<
+	cd falcon; gst2gcc gcc $@
+
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
 
