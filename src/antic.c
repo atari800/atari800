@@ -395,7 +395,7 @@ unsigned int screenline_cpu_clock = 0;
 #else
 #define UPDATE_DMACTL
 #endif /*NEW_CYCLE_EXACT*/
-#define GOEOL_CYCLE_EXACT  GO(antic2cpu_ptr[LINE_C]); xpos=cpu2antic_ptr[xpos]; xpos -= LINE_C; screenline_cpu_clock += LINE_C; ypos++
+#define GOEOL_CYCLE_EXACT  GO(antic2cpu_ptr[LINE_C]); xpos=cpu2antic_ptr[xpos]; xpos -= LINE_C; screenline_cpu_clock += LINE_C; ypos++ ;update_pmpl_colls();
 #define GOEOL GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL ypos++
 #define OVERSCREEN_LINE	xpos += DMAR; GOEOL
 
@@ -3130,8 +3130,14 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 add support for wider->narrow glitches including the interesting mode 6
 glitch*/
         #ifdef NEW_CYCLE_EXACT
-		/*check if DMACTL width changed and not to 0 and not from 0*/
-		if((byte&3)!=(DMACTL&3) && (byte&3)!=0 && (DMACTL&3)!=0){
+		/*DMACTL width changed to or from 0*/
+		if((byte&3)!=(DMACTL&3) && ((byte&3)==0 || (DMACTL&3)==0)){
+			/*TODO: this is not 100% correct*/
+			if(DRAWING_SCREEN){
+				update_scanline();
+			}
+		/*DMACTL width has changed and not to 0 and not from 0*/
+		} else if((byte&3)!=(DMACTL&3) ){
 			/* DMACTL width has increased */
 			if ( (byte&3) > (DMACTL&3) ){
 				int x; /* the change cycle*/
