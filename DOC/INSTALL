@@ -51,6 +51,7 @@ many others with a little work):-
    for any 32 bit environment supporting ANSI C.
 7. VGA Version for DOS
 8. DirectX Version for Microsoft Windows
+9. SDL (Linux/Unix, Windows, BeOS)
 
 Installed zlib (compression library) enables building the emulator with
 compressed statesave images support.
@@ -153,3 +154,13 @@ file names (either minix-fs of MiNT, or VFAT of MagiC). Unpack the source
 archive and copy all files from falcon/ subdirectory to the main source
 files directory. Then just rename Makefile.falcon to Makefile and type
 "make videl" or just "make" to see the list of possible versions.
+
+Building the Emulator for SDL
+-----------------------------
+
+0. Please install (and configure) SDL library (http://www.libsdl.org). 
+1. Type "./configure --target=sdl".
+   (you can press ENTER for all questions, I hope it will be removed soon)
+2. Type "make".
+3. Type "make install".
+4. You can run atari800 anytime you want.

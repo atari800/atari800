@@ -55,6 +55,12 @@ a User Interface implemented on the emulators "screen". The User
 Interface is enter by pressing F1 at any time. ESC is used to return
 to the previous screen.
 
+The SDL version should compile on Unix, Win32, BeOS, etc... It's optimized for
+8, 16 and 32 color depth. Of course it will work fastest in 8bit. If you use it
+in XFree86 - please set "Depth=8" in XF86Config to gain maximum speed. On linux
+framebuffer device and linux svgalib it should set 8bit itself, I am not sure
+about Windows.
+
 ---------------------------------------------------------------------------
 
 Features
