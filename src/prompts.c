@@ -26,7 +26,7 @@ void GetNumber(char *message, int *num)
 		sscanf(gash, "\n%d", num);
 }
 
-void YesNo(char *message, char *yn)
+void GetYesNo(char *message, char *yn)
 {
 	char gash[128];
 	char t_yn;
@@ -47,6 +47,13 @@ void YesNo(char *message, char *yn)
 
 	if (t_yn != ' ')
 		*yn = t_yn;
+}
+
+void GetYesNoAsInt(char *message, int *num)
+{
+	char yn = (*num > 0) ? 'Y' : 'N';
+	GetYesNo(message, &yn);
+	*num = (yn == 'Y') ? 1 : 0;
 }
 
 void RemoveSpaces(char *string)
