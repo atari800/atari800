@@ -7,7 +7,7 @@
 
 #include "config.h"
 #include "platform.h"
-#include "atari.h"
+#include "input.h"
 #include "screen.h"
 #include "keyboard.h"
 #include "main.h"
@@ -19,7 +19,6 @@ static int usesnd = 1;
 
 extern int refresh_rate;
 
-extern int SHIFT_KEY, KEYPRESSED;
 extern int alt_function;
 static int kbjoy = 1;
 static UBYTE joydefs[] =
@@ -100,8 +99,7 @@ int Atari_Keyboard(void)
       return AKEY_BREAK;
     }
 
-  SHIFT_KEY = (kbhits[DIK_LSHIFT]
-	       | kbhits[DIK_RSHIFT]) ? 1 : 0;
+  key_shift = (kbhits[DIK_LSHIFT] | kbhits[DIK_RSHIFT]) ? 1 : 0;
 
   alt_function = -1;		/* no alt function */
   if (kbhits[DIK_LMENU])
@@ -127,7 +125,7 @@ int Atari_Keyboard(void)
     return AKEY_UI;
 
   /* need to set shift mask here to avoid conflict with PC layout */
-  keycode = (SHIFT_KEY ? 0x40 : 0)
+  keycode = (key_shift ? 0x40 : 0)
     | ((kbhits[DIK_LCONTROL]
 	| kbhits[DIK_RCONTROL]) ? 0x80 : 0);
 
@@ -149,7 +147,7 @@ int Atari_Keyboard(void)
       break;
     case DIK_SYSRQ:
     case DIK_F10:
-      keycode = SHIFT_KEY ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
+      keycode = key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
       kbcode = 0;
       break;
 
@@ -157,7 +155,7 @@ int Atari_Keyboard(void)
       return AKEY_UI;
       break;
     case DIK_F5:
-      return SHIFT_KEY ? AKEY_COLDSTART : AKEY_WARMSTART;
+      return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
       break;
     case DIK_F11:
       for (i = 0; i < 4; i++)
@@ -175,7 +173,7 @@ int Atari_Keyboard(void)
       KBSCAN(ESCAPE)
 	KBSCAN(1)
     case DIK_2:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_AT;
       else
 	keycode |= AKEY_2;
@@ -184,19 +182,19 @@ int Atari_Keyboard(void)
 	KBSCAN(4)
 	KBSCAN(5)
     case DIK_6:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_CARET;
       else
 	keycode |= AKEY_6;
       break;
     case DIK_7:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_AMPERSAND;
       else
 	keycode |= AKEY_7;
       break;
     case DIK_8:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_ASTERISK;
       else
 	keycode |= AKEY_8;
@@ -205,7 +203,7 @@ int Atari_Keyboard(void)
 	KBSCAN(0)
 	KBSCAN(MINUS)
     case DIK_EQUALS:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_PLUS;
       else
 	keycode |= AKEY_EQUAL;
@@ -242,7 +240,7 @@ int Atari_Keyboard(void)
 	KBSCAN(L)
 	KBSCAN(SEMICOLON)
     case DIK_APOSTROPHE:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_DBLQUOTE;
       else
 	keycode |= AKEY_QUOTE;
@@ -251,7 +249,7 @@ int Atari_Keyboard(void)
       keycode |= AKEY_ATARI;
       break;
     case DIK_BACKSLASH:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_EQUAL | AKEY_SHFT;
       else
 	keycode |= AKEY_BACKSLASH;
@@ -264,13 +262,13 @@ int Atari_Keyboard(void)
 	KBSCAN(N)
 	KBSCAN(M)
     case DIK_COMMA:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_LESS;
       else
 	keycode |= AKEY_COMMA;
       break;
     case DIK_PERIOD:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_GREATER;
       else
 	keycode |= AKEY_FULLSTOP;
@@ -291,13 +289,13 @@ int Atari_Keyboard(void)
       keycode = AKEY_RIGHT;
       break;
     case DIK_DELETE:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_DELETE_LINE;
       else
 	keycode |= AKEY_DELETE_CHAR;
       break;
     case DIK_INSERT:
-      if (SHIFT_KEY)
+      if (key_shift)
 	keycode = AKEY_INSERT_LINE;
       else
 	keycode |= AKEY_INSERT_CHAR;
@@ -312,7 +310,6 @@ int Atari_Keyboard(void)
       keycode = AKEY_NONE;
     }
 
-  KEYPRESSED = (keycode != AKEY_NONE);
   return keycode;
 }
 
@@ -373,16 +370,6 @@ int Atari_Exit(int run_monitor)
 
 void Atari_DisplayScreen(UBYTE * ascreen)
 {
-  while (!bActive)
-    {
-      if (vloopexit)
-	break;
-      Sleep(100);
-    }
-  if (vloopexit)
-    {
-      exit(0);
-    }
   refreshv(ascreen + 24);
 }
 
@@ -424,6 +411,9 @@ int Atari_PEN(int vertical)
 
 /*
 $Log$
+Revision 1.4  2001/09/25 17:40:16  knik
+keyboard and display update
+
 Revision 1.3  2001/04/08 05:51:44  knik
 sound calls update
 
