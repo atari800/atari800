@@ -6,16 +6,21 @@ o a few keyboard-related bugs: e.g. pressing SHIFT+1 and then
 
 o ANTIC emulation is scanline-, not pixel-exact.
   This causes display bugs in following programs:
+  - 8 Players Demo (demo)
+  - Bewesoft's Demo (demo)
   - Bitter Reality (demo)
   - Darkness Warrior (picture)
+  - Demonic Laughter (music collection)
   - Extract (graphics collection)
   - GED (graphics editor)
   - Joyride (demo)
   - Orneta '95 invitro (demo)
+  - Our 5oft Unity Part (demo)
   - Power Graph (graphics editor)
   - Studio Dream (demo)
   - Sweet Illusion (demo)
-  - Temod (demo)
+  - Te.mod (demo)
+  - The Break (demo)
 
 o POKEY interrupts are scanline-, not cycle-exact.
   This causes sound bugs in following programs:
@@ -29,14 +34,9 @@ o sound emulation uses VOL_ONLY hack.
   - Ghostbusters (game)
   - Overmind (demo)
 
-o intensive 130xe-banks switching slows down emulation
-  much.
+o intensive 130xe-banks switching slows down emulation much.
   This causes performance problems in following programs:
   - Impossible but Real (demo)
   - Sheol (demo)
   - Total Daze (demo)
   - Ultra (demo)
-
-o ANTIC timing isn't 100% accurate.
-  This causes major display bugs in following programs:
-  - Spelunker (game)
