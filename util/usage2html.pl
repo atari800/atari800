@@ -94,6 +94,8 @@ sub addopt
     $dscr = $2;
   } else {die "can't parse \'$_\'"}
   
+  $opt =~ s/</&lt/g;
+  
   for $test (@opts) {
     if ($test eq $opt) {
       $opt = "";
