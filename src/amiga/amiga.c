@@ -177,12 +177,13 @@ static ULONG ScreenDepth;
 static APTR VisualInfoMain;
 static struct Window *WindowMain = NULL;
 static struct Menu *MenuMain;
+static BOOL SizeVerify; /* SizeVerify State (don't draw anything) */
 
 static UBYTE pentable[256];
 static BOOL pensallocated;
 static UBYTE *tempscreendata;
-static ULONG scaledscreendatasize;
-static UBYTE *scaledscreendata;
+static struct RastPort lineRastPort;
+static struct BitMap *lineBitMap;
 
 struct FileRequester *DiskFileReq;
 struct FileRequester *CartFileReq;
@@ -581,11 +582,11 @@ VOID FreeDisplay(void)
 		FreeVisualInfo( VisualInfoMain );
 		VisualInfoMain = NULL;
 	}
-	
-	if (scaledscreendata)
+
+	if (lineBitMap)
 	{
-		FreeVec(scaledscreendata);
-		scaledscreendata = NULL;
+		FreeBitMap(lineBitMap);
+		lineBitMap = NULL;
 	}
 
 	if (tempscreendata)
@@ -613,15 +614,22 @@ VOID FreeDisplay(void)
 /**************************************************************************
  Ensures that the scaledscreendata is big enough
 **************************************************************************/
-LONG EnsureScaledDisplay(WORD Width, WORD Height)
+LONG EnsureScaledDisplay(LONG Width)
 {
-	if (!scaledscreendata || (((LONG)Width * (LONG)Height) > scaledscreendatasize))
+	ULONG depth;
+
+	if (lineBitMap)
 	{
-		scaledscreendatasize = (LONG)Width * (LONG)Height;
-		if (scaledscreendata) FreeVec(scaledscreendata);
-		scaledscreendata = (UBYTE*)AllocVec(scaledscreendatasize,MEMF_CLEAR);
+		if (GetBitMapAttr(lineBitMap, BMA_WIDTH) >= Width)
+			return 1;
+		FreeBitMap(lineBitMap);
 	}
-	return !!scaledscreendata;
+
+	depth = GetBitMapAttr(ScreenMain->RastPort.BitMap, BMA_DEPTH);
+	lineBitMap = AllocBitMap(Width,1,depth,BMF_MINPLANES|BMF_DISPLAYABLE,ScreenMain->RastPort.BitMap);
+	InitRastPort(&lineRastPort);
+	lineRastPort.BitMap = lineBitMap;
+	return !!lineBitMap;
 }
 
 /**************************************************************************
@@ -750,7 +758,7 @@ LONG SetupDisplay(void)
 					WA_InnerWidth, ScreenWidth,
 					WA_InnerHeight, ScreenHeight,
 					WA_IDCMP, IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE | IDCMP_MENUPICK | IDCMP_CLOSEWINDOW |
-									IDCMP_RAWKEY,
+									IDCMP_RAWKEY | IDCMP_NEWSIZE | IDCMP_SIZEVERIFY,
 					WA_ReportMouse, TRUE,
 					WA_CustomScreen, ScreenMain,
 					WA_Borderless, ScreenIsCustom,
@@ -1576,41 +1584,41 @@ static void ScreenData28bit(UBYTE *src, UBYTE *dest, UBYTE *pentable, ULONG widt
 
 **************************************************************************/
 static void Scale8Bit(UBYTE *src, LONG srcwidth, LONG srcheight, LONG srcmod,
-					  UBYTE *dest, LONG destwidth, LONG destheight, LONG destmod)
+					  struct RastPort *destrp, LONG destx, LONG desty, LONG destwidth, LONG destheight)
 {
 	int x;
 	int dx;
 	int i;
 	int y;
-	int w4;
 	int w, h;
 	int count;
 	int dy;
 	UBYTE *ss;
 	ULONG quad;
 	ULONG *dest32;
+	static UBYTE lineBuffer[4096];
 
-	if ((srcwidth % 4) || (destmod % 4) || (srcwidth > destwidth) || srcheight > destheight)
+	if ((srcwidth % 4) || (srcwidth > destwidth) || srcheight > destheight || destwidth > (sizeof(lineBuffer)/sizeof(lineBuffer[0])))
 		return;
 
 	w = (srcwidth) << 16;
 	h = (srcheight) << 16;
 	dx = w / destwidth;
 	dy = h / destheight;
-	w4 = destmod / 4 - 1;
 	ss = src;
 	y = (0) << 16;
 	i = destheight;
 
-	dest32 = (ULONG*)dest;
-
 	while (i > 0)
 	{
-		ss = src + srcmod * (y >> 16);
+		int lines, j;
 
-		count = w4;
+		ss = src + srcmod * (y >> 16);
+		dest32 = (ULONG*)lineBuffer;
+
+		count = (destwidth + 3) /  4;
 		x = 0 << 16;
-		while (count >= 0)
+		while (count > 0)
 		{
 			quad = (ss[x >> 16] << 24);
 			x = x + dx;
@@ -1624,8 +1632,34 @@ static void Scale8Bit(UBYTE *src, LONG srcwidth, LONG srcheight, LONG srcmod,
 			*dest32++ = quad;
 			count--;
 		}
-		y = y + dy;
-		i--;
+		
+		lines = (0x1ffff - (y & 0xffff))/dy;
+
+#if 1
+		WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, WindowMain->RPort, colortable, destx, desty + destheight-i, destwidth, 1, CTABFMT_XRGB8);
+		for (j=1;j<lines;j++)
+		{
+			ClipBlit(WindowMain->RPort, destx, desty + destheight - i, WindowMain->RPort, destx, desty + destheight - i + j, destwidth, 1, 0xc0);
+		}
+
+#else
+		if (lines == 1)
+		{
+			WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, WindowMain->RPort, colortable, destx, desty + destheight-i, destwidth, 1, CTABFMT_XRGB8);
+		} else
+		{
+			int j;
+
+			WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, &lineRastPort, colortable, 0, 0, destwidth, 1, CTABFMT_XRGB8);
+			for (j=0;j<lines;j++)
+			{
+				BltBitMapRastPort(lineBitMap, 0, 0, WindowMain->RPort, destx, desty + destheight - i + j, destwidth, 1, 0xc0);
+			}
+		}
+#endif
+
+		y = y + dy * lines;
+		i -= lines;
 	}
 }
 
@@ -1657,13 +1691,14 @@ void Atari_DisplayScreen(UBYTE *screen)
 				ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
 				ScalePixelArray( tempscreendata + atariX, atariWidth, atariHeight, ATARI_WIDTH, WindowMain->RPort, offx, offy,
 										InnerWidth(WindowMain), InnerHeight(WindowMain), RECTFMT_LUT8);
+				fgpen = pentable[fgpen];
+				bgpen = pentable[bgpen];
 			} else
 			{
-				if (EnsureScaledDisplay((InnerWidth(WindowMain) + 3)&0xfffffff7,InnerHeight(WindowMain)))
+				if (EnsureScaledDisplay(InnerWidth(WindowMain)))
 				{
 					Scale8Bit(screen + atariX, atariWidth, atariHeight, ATARI_WIDTH,
-					  scaledscreendata, InnerWidth(WindowMain), InnerHeight(WindowMain), (InnerWidth(WindowMain) + 3)&0xffffffc);
-					WriteLUTPixelArray(scaledscreendata, 0, 0, (InnerWidth(WindowMain) + 3)&0xffffffc, WindowMain->RPort, colortable, offx, offy, InnerWidth(WindowMain), InnerHeight(WindowMain), CTABFMT_XRGB8);
+					  WindowMain->RPort, offx, offy, InnerWidth(WindowMain), InnerHeight(WindowMain));
 				}
 			}
 		}	else
@@ -1673,13 +1708,14 @@ void Atari_DisplayScreen(UBYTE *screen)
 				ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
 				WriteChunkyPixels(WindowMain->RPort, offx, offy, offx + atariWidth - 1, offy + atariHeight - 1,
 							  tempscreendata + atariX, ATARI_WIDTH);
+
+				fgpen = pentable[fgpen];
+				bgpen = pentable[bgpen];
 			} else
 			{
 				WriteLUTPixelArray(screen, atariX, atariY, ATARI_WIDTH, WindowMain->RPort, colortable, offx, offy, atariWidth, atariHeight, CTABFMT_XRGB8);
 			}
 		}
-		fgpen = pentable[fgpen];
-		bgpen = pentable[bgpen];
 	}
 
 	if (ShowFPS)
@@ -1725,10 +1761,18 @@ int Atari_Keyboard (void)
 			continue;
 		}
 
+		if (cl == IDCMP_SIZEVERIFY)
+		{
+			SizeVerify = TRUE;
+			ReplyMsg((struct Message*)imsg);
+			continue;
+		}
+
 		ReplyMsg((struct Message*)imsg);
 
 		switch (cl)
 		{
+			case	IDCMP_NEWSIZE: SizeVerify = FALSE; break;
 			case	IDCMP_RAWKEY: keycode = HandleRawkey(code,qual,iaddress); break;
 			case	IDCMP_CLOSEWINDOW: keycode = AKEY_EXIT; break;
 			case	IDCMP_MENUPICK: keycode = HandleMenu(code); break;
@@ -2098,7 +2142,8 @@ int main(int argc, char **argv)
 
 		atari_sync(); /* here seems to be the best place to sync */
 
-		Atari_DisplayScreen((UBYTE *) atari_screen);
+		if (!SizeVerify)
+			Atari_DisplayScreen((UBYTE *) atari_screen);
 	}
 
 	Atari_Exit(0);
