@@ -30,7 +30,7 @@
 #include <time.h>
 #include "config.h"
 #include "main.h"
-#include "screen.h"
+#include "screen_wince.h"
 #include "keyboard.h"
 #include "sound.h"
 #include "ui.h"

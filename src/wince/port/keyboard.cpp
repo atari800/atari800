@@ -30,7 +30,7 @@ extern "C"
 #include "input.h"
 #include "main.h"
 #include "keyboard.h"
-#include "screen.h"
+#include "screen_wince.h"
 #include "ui.h"
 
 int virtual_joystick = 0;
