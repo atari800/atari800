@@ -22,7 +22,8 @@ OBJ = \
 	gtia.o \
 	pokey.o \
 	pia.o \
-	supercart.o \
+	cartridge.o \
+	rtime.o \
 	prompts.o \
 	rt-config.o \
 	ui.o \
@@ -87,6 +88,7 @@ atari_x11.o: config.h atari.h colours.h monitor.h sio.h sound.h platform.h
 atari_x11.o: rt-config.h
 ataripcx.o: antic.h atari.h config.h colours.h
 binload.o: atari.h config.h log.h cpu.h memory-d.h pia.h
+cartridge.o: atari.h cartridge.h memory.h memory-d.h rtime.h
 colours.o: atari.h config.h
 compfile.o: atari.h config.h log.h
 configure.o: prompts.h
@@ -115,13 +117,13 @@ pokey.o: statesav.h pokeysnd.h
 pokeysnd.o: pokeysnd.h config.h atari.h sndsave.h
 prompts.o: prompts.h
 rt-config.o: atari.h config.h prompts.h rt-config.h
+rtime.o: atari.h log.h
 sio.o: atari.h config.h cpu.h memory.h memory-d.h sio.h pokeysnd.h platform.h
 sio.o: log.h diskled.h binload.h
 sndsave.o: sndsave.h atari.h config.h
 sound.o: config.h
 sound_falcon.o: config.h
 statesav.o: atari.h config.h log.h
-supercart.o: atari.h config.h memory.h memory-d.h log.h
 ui.o: rt-config.h atari.h config.h cpu.h memory.h memory-d.h platform.h
 ui.o: prompts.h gtia.h sio.h list.h ui.h log.h statesav.h antic.h ataripcx.h
 ui.o: binload.h sndsave.h
