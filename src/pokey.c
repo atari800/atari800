@@ -202,6 +202,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		DivNIRQ[CHAN1] = DivNMax[CHAN1];
 		DivNIRQ[CHAN2] = DivNMax[CHAN2];
 		DivNIRQ[CHAN4] = DivNMax[CHAN4];
+		Update_pokey_sound(_STIMER, byte, 0, SOUND_GAIN);
 #ifdef DEBUG1
 		printf("WR: STIMER = %x\n", byte);
 #endif
@@ -253,6 +254,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 	case _AUDF4 + _POKEY2:
 		AUDF[CHAN4 + CHIP2] = byte;
 		Update_pokey_sound(_AUDF4, byte, 1, SOUND_GAIN);
+		break;
+	case _STIMER:
+		Update_pokey_sound(_STIMER, byte, 1, SOUND_GAIN);
 		break;
 #endif
 	}
