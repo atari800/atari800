@@ -18,6 +18,10 @@
 #include <os2.h>
 #endif
 
+#ifdef __BEOS__
+#include <OS.h>
+#endif
+
 #include "atari.h"
 #include "cpu.h"
 #include "memory.h"
@@ -717,6 +721,9 @@ static void Atari_sleep(double s)
 #elif defined __EMX__
     DosSleep(s); /* added by Brian Smith for os/2 */
 
+#elif defined __BEOS__
+    snooze(s * 1e6); /* added by Walter Las for BeOS */
+
 #else
     usleep(s * 1e6);
 #endif
@@ -953,6 +960,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.42  2003/01/27 21:05:33  joy
+little BeOS support
+
 Revision 1.41  2002/11/05 23:01:21  joy
 OS/2 compatibility
 
