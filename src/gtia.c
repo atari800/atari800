@@ -1,10 +1,4 @@
-/* GTIA emulation --------------------------------- */
-/* Original Author:                                 */
-/*              David Firth                         */
-/* Clean ups and optimizations:                     */
-/*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 20th September 2001                */
-/* ------------------------------------------------ */
+/* GTIA emulation */
 
 #include <string.h>
 
@@ -12,8 +6,7 @@
 #include "cassette.h"
 #include "config.h"
 #include "gtia.h"
-#include "memory.h"
-#include "platform.h"
+#include "input.h"
 #include "statesav.h"
 
 #ifndef NO_CONSOL_SOUND
@@ -69,8 +62,6 @@ UBYTE consol_table[3];
 UBYTE consol_mask;
 UBYTE TRIG[4];
 UBYTE TRIG_latch[4];
-int TRIG_auto[4];		/* autofire */
-extern int nframes;		/* base autofire speed on frame count */
 void set_prior(UBYTE byte);			/* in antic.c */
 
 /* Player/Missile stuff ---------------------------------------------------- */
@@ -282,22 +273,11 @@ void new_pm_scanline(void)
 
 void GTIA_Frame(void)
 {
-	int i;
-	int consol = Atari_CONSOL() | 0x08;
+	int consol = key_consol | 0x08;
 
 	consol_table[0] = consol;
 	consol_table[1] = consol_table[2] &= consol;
 
-	for(i = 0; i < 4; i++)
-	{
-		TRIG[i] = Atari_TRIG(i);
-		if ((TRIG_auto[i] && !TRIG[i]) || TRIG_auto[i] == 2)
-			TRIG[i] = (nframes & 2) ? 1 : 0;
-	}
-	if (machine_type == MACHINE_XLXE) {
-		TRIG[2] = 1;
-		TRIG[3] = cartA0BF_enabled;
-	}
 	if (GRACTL & 4) {
 		TRIG_latch[0] &= TRIG[0];
 		TRIG_latch[1] &= TRIG[1];

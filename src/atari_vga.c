@@ -54,7 +54,6 @@ static int mouse_x = 0;
 static int mouse_y = 0;
 static int mouse_buttons = 0;
 
-static int consol;
 static int trig0;
 static int stick0;
 static int trig1;
@@ -63,8 +62,6 @@ static int trig2;
 static int stick2;
 static int trig3;
 static int stick3;
-
-extern int TRIG_auto[4];		/* autofire */
 
 /*stick & trig values for analog joystick*/
 static int astick;
@@ -350,21 +347,21 @@ void key_handler(void)
                         break;
                 case 0x3c:
                         if (!key_leave)
-                          consol &= 0x03;                       /* OPTION key ON */
+                          key_consol &= ~CONSOL_OPTION;	/* OPTION key ON */
                         else
-                          consol |= 0x04;                       /* OPTION key OFF */
+                          key_consol |= CONSOL_OPTION;	/* OPTION key OFF */
                         break;
                 case 0x3d:
                         if (!key_leave)
-                          consol &= 0x05;                       /* SELECT key ON */
+                          key_consol &= ~CONSOL_SELECT;	/* SELECT key ON */
                         else
-                          consol |= 0x02;                       /* SELECT key OFF */
+                          key_consol |= CONSOL_SELECT;	/* SELECT key OFF */
                         break;
                 case 0x3e:
                         if (!key_leave)
-                          consol &= 0x06;                       /* START key ON */
+                          key_consol &= ~CONSOL_START;	/* START key ON */
                         else
-                          consol |= 0x01;                       /* START key OFF */
+                          key_consol |= CONSOL_START;	/* START key OFF */
                         break;
         }
 
@@ -824,8 +821,6 @@ void Atari_Initialise(int *argc, char *argv[])
             keyset_used[i]=0;
         }
 
-        consol = 7;
-
         SetupVgaEnvironment();
 
 }
@@ -1153,10 +1148,9 @@ int Atari_Keyboard(void)
                 break;
 		case 0x57:					/* F11 */
 		 		keycode = AKEY_NONE;
-				for(i = 0; i < 4; i++)
-				{
-		 		  if (++TRIG_auto[i] > 2)
-		 		    TRIG_auto[i] = 0;
+				for(i = 0; i < 4; i++) {
+		 		  if (++joy_autofire[i] > 2)
+		 		    joy_autofire[i] = 0;
 		 		}
 		 		raw_key = 0;	/* aviod continuous change */
 		 		break;
@@ -1559,13 +1553,6 @@ int Atari_POT(int num)
 	if (mouse_mode == MOUSE_PAD && num < 2)
 		return num == 1 ? 228 - mouse_y : 228 - mouse_x;
 	return 228;
-}
-
-/* -------------------------------------------------------------------------- */
-
-int Atari_CONSOL(void)
-{
-        return consol;
 }
 
 /* -------------------------------------------------------------------------- */
