@@ -92,6 +92,8 @@ void BIN_loader_cont(void)
 	regS--;
 	regPC = dGetByte(0x2e2) | (dGetByte(0x2e3) << 8);
 	SetC;
+
+	dPutByte(0x0300, 0x31);	/* for "Studio Dream" */
 }
 
 /* Fake boot sector to call BIN_loader_cont at boot time */
