@@ -1270,7 +1270,15 @@ int Atari_Exit(int run_monitor)
 		if (FULLSCREEN) {
 			SwitchFullscreen();
 		}
+#ifdef SOUND
+		if (sound_enabled)
+			SDL_PauseAudio(1);
+#endif
 		restart = monitor();
+#ifdef SOUND
+		if (sound_enabled)
+			SDL_PauseAudio(0);
+#endif
 	}
 	else {
 		restart = FALSE;
@@ -1876,6 +1884,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.42  2005/01/06 08:46:38  joy
+ disable sound when entering the monitor
+
  Revision 1.41  2005/01/06 08:39:13  joy
  quick hack to get monitor in SDL working
 
