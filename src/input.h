@@ -1,17 +1,11 @@
-/* joystick position */
-
-#define	STICK_LL		0x09
-#define	STICK_BACK		0x0d
-#define	STICK_LR		0x05
-#define	STICK_LEFT		0x0b
-#define	STICK_CENTRE	0x0f
-#define	STICK_RIGHT		0x07
-#define	STICK_UL		0x0a
-#define	STICK_FORWARD	0x0e
-#define	STICK_UR		0x06
+/* Keyboard ------------------------------------------------------------ */
 
 /* key_code values */
 #define AKEY_NONE -1
+
+#define AKEY_SHFT 0x40
+#define AKEY_CTRL 0x80
+#define AKEY_SHFTCTRL 0xc0
 
 #define AKEY_0 0x32
 #define AKEY_1 0x1f
@@ -200,9 +194,40 @@
 /* Following keys cannot be read with both shift and control pressed:
    J K L ; + * Z X C V B F1 F2 F3 F4 HELP	 */
 
+/* key_consol masks */
+/* Note: key_consol should be CONSOL_NONE if no consol key is pressed.
+   When a consol key is pressed, corresponding bit should be cleared.
+ */
+#define CONSOL_NONE		0x07
+#define CONSOL_START	0x01
+#define CONSOL_SELECT	0x02
+#define CONSOL_OPTION	0x04
+
 extern int key_code;	/* regular Atari key code */
 extern int key_break;	/* Break key pressed */
 extern int key_shift;	/* Shift key pressed */
+extern int key_consol;	/* Start, Select and Option keys */
 
-/* functions */
+/* Joysticks ----------------------------------------------------------- */
+
+/* joystick position */
+#define	STICK_LL		0x09
+#define	STICK_BACK		0x0d
+#define	STICK_LR		0x05
+#define	STICK_LEFT		0x0b
+#define	STICK_CENTRE	0x0f
+#define	STICK_RIGHT		0x07
+#define	STICK_UL		0x0a
+#define	STICK_FORWARD	0x0e
+#define	STICK_UR		0x06
+
+/* joy_autofire values */
+#define AUTOFIRE_OFF	0
+#define AUTOFIRE_FIRE	1	/* Fire dependent */
+#define AUTOFIRE_CONT	2	/* Continuous */
+
+extern int joy_autofire[4];		/* autofire mode for each Atari port */
+
+/* Functions ----------------------------------------------------------- */
+
 void INPUT_Frame(void);
