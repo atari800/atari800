@@ -1,3 +1,12 @@
+2003-09-16  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: cycle-perfect CHACTL mid-scanline changes
+* DOC/BUGS: updated
+
+
+2003-09-15  Chris Martin <cmartin@ti.com>
+* DOC/rdevice_faq.txt: detailed documentation
+
+
 2003-05-28  Chris Martin <cmartin@ti.com>
 * rdevice.c: fixed several bugs with the sockets version, and it now includes
   a serial port mode as well.  The R: device can now be emulated by network

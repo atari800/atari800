@@ -49,6 +49,8 @@ void draw_partial_scanline(int l,int r);
 void update_scanline();
 void update_scanline_prior(UBYTE byte);
 void update_scanline_chbase();
+void update_scanline_invert();
+void update_scanline_blank();
 int *cpu2antic_ptr;
 int *antic2cpu_ptr;
 int delayed_wsync=0;
@@ -2699,6 +2701,31 @@ void update_scanline_chbase(){
 	cur_screen_pos=newpos;
 }
 
+/* chactl invert needs a different adjusment */
+void update_scanline_invert(){
+	int antic_xpos=cpu2antic_ptr[xpos];
+	int hscrollsb_adj=(HSCROL&1);
+	int newpos;
+	
+	/* empirically determinted: adjustment of 4 */
+	newpos=antic_xpos*2-37+hscrollsb_adj+4;
+	draw_partial_scanline(cur_screen_pos,newpos);
+	cur_screen_pos=newpos;
+}
+
+/* chactl blank needs a different adjusment */
+void update_scanline_blank(){
+	int antic_xpos=cpu2antic_ptr[xpos];
+	int hscrollsb_adj=(HSCROL&1);
+	int newpos;
+	
+	/* empirically determinted: adjustment of 7 */
+	newpos=antic_xpos*2-37+hscrollsb_adj+7;
+	draw_partial_scanline(cur_screen_pos,newpos);
+	cur_screen_pos=newpos;
+}
+
+
 
 
 /*draw a partial scanline between point l and point r */
@@ -3068,17 +3095,29 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 {
 	switch (addr & 0xf) {
 	case _CHACTL:
-/*TODO: cycle-exact timing*/
         #ifdef NEW_CYCLE_EXACT
 		if(DRAWING_SCREEN){
-			update_scanline();
+			update_scanline_invert();
 		}
 	#endif
-		if ((CHACTL ^ byte) & 4)
-			chbase_20 ^= 7;
-		CHACTL = byte;
 		invert_mask = byte & 2 ? 0x80 : 0;
+        #ifdef NEW_CYCLE_EXACT
+		if(DRAWING_SCREEN){
+			update_scanline_blank();
+		}
+	#endif
 		blank_mask = byte & 1 ? 0xe0 : 0x60;
+		if ((CHACTL ^ byte) & 4){
+        #ifdef NEW_CYCLE_EXACT
+			if(DRAWING_SCREEN){
+			/* timing for flip is the same as chbase*/
+				update_scanline_chbase(); 
+			}
+	#endif
+			chbase_20 ^= 7;
+		}
+		CHACTL = byte;
+		
 		break;
 	case _DLISTL:
 		dlist = (dlist & 0xff00) | byte;
