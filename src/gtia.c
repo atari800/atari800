@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Clean ups and optimizations:                     */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 16th September 2001                */
+/* Last changes: 20th September 2001                */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -84,7 +84,7 @@ extern UBYTE missile_flickering;
 
 static UBYTE *hposp_ptr[4];
 static UBYTE *hposm_ptr[4];
-static UBYTE hposp_skip[4];
+static ULONG hposp_mask[4];
 
 static ULONG grafp_lookup[4][256];
 static ULONG *grafp_ptr[4];
@@ -214,22 +214,34 @@ void new_pm_scanline(void)
 /* Draw Players */
 
 #define DO_PLAYER(n)	if (GRAFP##n) {						\
-	ULONG grafp = grafp_ptr[n][GRAFP##n] >> hposp_skip[n];	\
+	ULONG grafp = grafp_ptr[n][GRAFP##n] & hposp_mask[n];	\
 	if (grafp) {											\
 		UBYTE *ptr = hposp_ptr[n];							\
-		if (ptr < pm_scanline + ATARI_WIDTH / 2 - 2) {		\
-			pm_dirty = TRUE;								\
-			do {											\
-				if (grafp & 1)								\
-					P##n##PL |= *ptr |= 1 << n;				\
-				ptr++;										\
-				grafp >>= 1;								\
-			} while (grafp && ptr < pm_scanline + ATARI_WIDTH / 2 - 2);	\
-		}													\
+		pm_dirty = TRUE;									\
+		do {												\
+			if (grafp & 1)									\
+				P##n##PL |= *ptr |= 1 << n;					\
+			ptr++;											\
+			grafp >>= 1;									\
+		} while (grafp);									\
 	}														\
 }
 
-	DO_PLAYER(0)
+	/* optimized DO_PLAYER(0): pm_scanline is clear and P0PL is unused */
+	if (GRAFP0) {
+		ULONG grafp = grafp_ptr[0][GRAFP0] & hposp_mask[0];
+		if (grafp) {
+			UBYTE *ptr = hposp_ptr[0];
+			pm_dirty = TRUE;
+			do {
+				if (grafp & 1)
+					*ptr = 1;
+				ptr++;
+				grafp >>= 1;
+			} while (grafp);
+		}
+	}
+
 	DO_PLAYER(1)
 	DO_PLAYER(2)
 	DO_PLAYER(3)
@@ -870,18 +882,23 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		hposm_ptr[3] = pm_scanline + byte - 0x20;
 		break;
 
-#define DO_HPOSP(n)	case _HPOSP##n:							\
-	HPOSP##n = byte;										\
-	if (byte >= 0x22) {										\
-		hposp_ptr[n] = pm_scanline + byte - 0x20;			\
-		hposp_skip[n] = 0;									\
-	}														\
-	else if (byte > 2) {									\
-		hposp_ptr[n] = pm_scanline + 2;						\
-		hposp_skip[n] = 0x22 - byte;						\
-	}														\
-	else													\
-		hposp_ptr[n] = pm_scanline + ATARI_WIDTH / 2 - 2;	\
+#define DO_HPOSP(n)	case _HPOSP##n:								\
+	HPOSP##n = byte;											\
+	hposp_ptr[n] = pm_scanline + byte - 0x20;					\
+	if (byte >= 0x22) {											\
+		if (byte > 0xbe) {										\
+			if (byte >= 0xde)									\
+				hposp_mask[n] = 0;								\
+			else												\
+				hposp_mask[n] = 0xffffffff >> (byte - 0xbe);	\
+		}														\
+		else													\
+			hposp_mask[n] = 0xffffffff;							\
+	}															\
+	else if (byte > 2)											\
+		hposp_mask[n] = 0xffffffff << (0x22 - byte);			\
+	else														\
+		hposp_mask[n] = 0;										\
 	break;
 
 	DO_HPOSP(0)
