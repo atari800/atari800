@@ -2,6 +2,8 @@
    SDL port of Atari800
    Jacek Poplawski <jacekp@linux.com.pl>
 
+   29-11-2001 - real joystick(s) support
+   	      - fixed bug with triggers, when joysticks was swapped
    23-11-2001 - 16bpp support - it's faster, becouse SDL doesn't need to
 		convert surface, of course if your video mode is 24 or 32bpp -
 		conversion still will be done, 8bpp should be faster in that
@@ -53,14 +55,14 @@
    - Atari_Exit - monitor stuff (debugger?)
    
    USAGE:
-   - for now you need makefile, please download:
-     ftp://ftp.sophics.cz/pub/Atari800/src/Makefile.SDL
-     then "make -f Makefile.SDL"
    - you can turn off sound by changing sound_enabled to 0  
    - you can switch between fullscreen/window mode with LALT+f
    - you can switch between color/bw mode with LALT+b - FEEL THE POWER OF BW
      MONITOR!
    - you can swap joysticks with LALT+j  
+   - you can switch "short mode" with LALT+g - so you can set 320x240 or
+     640x480
+   - you can switch color depth (for now - 8/16) with LALT+e   
    - fullscreen switching probably doesn't work in Windows, you need to set
      variable in source code
    - if you are using XFree86 - try to set low videomode, like 400x300 - so you
@@ -95,7 +97,7 @@
 // I am not sure what to do with sound_enabled (can't turn it on inside
 // emulator, probably we need two variables or command line argument)
 static int sound_enabled = 1;
-static int SDL_ATARI_BPP = 0;
+static int SDL_ATARI_BPP = 0; // 0 - autodetect
 static int FULLSCREEN = 0;
 static int BW = 0;
 static int SWAP_JOYSTICKS = 0;
@@ -133,6 +135,9 @@ int SDL_JOY_1_RIGHTDOWN = SDLK_c;
 // real joysticks
 
 SDL_Joystick *joystick0, *joystick1;
+int joystick0_nbuttons, joystick1_nbuttons;
+
+#define minjoy 10000 // real joystick tolerancy 
 
 extern int refresh_rate;
 
@@ -698,19 +703,24 @@ void Init_Joysticks()
 	joystick0 = SDL_JoystickOpen(0);
 	if (joystick0 == NULL)
 		Aprint("joystick 0 not found");
-	else
+	else {
 		Aprint("joystick 0 found!");
+		joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
+	}
 	joystick1 = SDL_JoystickOpen(1);
 	if (joystick1 == NULL)
 		Aprint("joystick 1 not found");
-	else
+	else {
 		Aprint("joystick 1 found!");
+		joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
+	}
 }
 
 void Atari_Initialise(int *argc, char *argv[])
 {
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) != 0) {
 		Aprint("SDL_Init FAILED");
+		Aprint(SDL_GetError());
 		exit(-1);
 	}
 
@@ -897,6 +907,7 @@ int Atari_TRIG(int num)
 void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 {
 	int stick0, stick1;
+	int x, y;
 	stick0 = STICK_CENTRE;
 	stick1 = STICK_CENTRE;
 
@@ -941,6 +952,67 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 		|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_DOWN])))
 		stick1 = STICK_LR;
 
+	if ((joystick0 != NULL) || (joystick1 != NULL))	// can only joystick1!=NULL ?
+	{
+		SDL_JoystickUpdate();
+	}
+	if (joystick0 != NULL) {
+		x = SDL_JoystickGetAxis(joystick0, 0);
+		y = SDL_JoystickGetAxis(joystick0, 1);
+		if (x > minjoy) {
+			if (y < -minjoy)
+				stick0 = STICK_UR;
+			else if (y > minjoy)
+				stick0 = STICK_LR;
+			else
+				stick0 = STICK_RIGHT;
+		}
+		else if (x < -minjoy) {
+			if (y < -minjoy)
+				stick0 = STICK_UL;
+			else if (y > minjoy)
+				stick0 = STICK_LL;
+			else
+				stick0 = STICK_LEFT;
+		}
+		else {
+			if (y < -minjoy)
+				stick0 = STICK_FORWARD;
+			else if (y > minjoy)
+				stick0 = STICK_BACK;
+			else
+				stick0 = STICK_CENTRE;
+		}
+	}
+	if (joystick1 != NULL) {
+		x = SDL_JoystickGetAxis(joystick1, 0);
+		y = SDL_JoystickGetAxis(joystick1, 1);
+		if (x > minjoy) {
+			if (y < -minjoy)
+				stick0 = STICK_UR;
+			else if (y > minjoy)
+				stick0 = STICK_LR;
+			else
+				stick0 = STICK_RIGHT;
+		}
+		else if (x < -minjoy) {
+			if (y < -minjoy)
+				stick0 = STICK_UL;
+			else if (y > minjoy)
+				stick0 = STICK_LL;
+			else
+				stick0 = STICK_LEFT;
+		}
+		else {
+			if (y < -minjoy)
+				stick0 = STICK_FORWARD;
+			else if (y > minjoy)
+				stick0 = STICK_BACK;
+			else
+				stick0 = STICK_CENTRE;
+		}
+	}
+
 	if (SWAP_JOYSTICKS) {
 		*s1 = stick0;
 		*s0 = stick1;
@@ -951,16 +1023,46 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 	}
 }
 
-void SDL_Atari_TRIG(Uint8 * t1, Uint8 * t2)
+void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 {
-	if ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B]))
-		*t1 = 0;
-	else
-		*t1 = 1;
-	if ((kbhits[SDL_TRIG_1]) || (kbhits[SDL_TRIG_1_B]))
-		*t2 = 0;
-	else
-		*t2 = 1;
+	int trig0, trig1, i;
+
+	if (joystick0 == NULL) {
+		if ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B]))
+			trig0 = 0;
+		else
+			trig0 = 1;
+	}
+	else {
+		trig0 = 1;
+		for (i = 0; i < joystick0_nbuttons; i++) {
+			if (SDL_JoystickGetButton(joystick0, i))
+				trig0 = 0;
+		}
+	}
+	if (joystick1 == NULL) {
+		if ((kbhits[SDL_TRIG_1]) || (kbhits[SDL_TRIG_1_B]))
+			trig1 = 0;
+		else
+			trig1 = 1;
+	}
+	else {
+		trig1 = 1;
+		for (i = 0; i < joystick1_nbuttons; i++) {
+			if (SDL_JoystickGetButton(joystick1, i))
+				trig1 = 0;
+		}
+	}
+
+
+	if (SWAP_JOYSTICKS) {
+		*t1 = trig0;
+		*t0 = trig1;
+	}
+	else {
+		*t0 = trig0;
+		*t1 = trig1;
+	}
 }
 
 int main(int argc, char **argv)
