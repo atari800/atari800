@@ -2,6 +2,8 @@
 #ifndef __SIO__
 #define __SIO__
 
+#include "config.h"
+
 #define MAX_DRIVES 8
 
 #ifdef WIN32
