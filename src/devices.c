@@ -569,102 +569,83 @@ void Device_PHINIT(void)
    ================================
  */
 
-void K_Device(UBYTE esc_code)
-{
-	char ch;
-
-	switch (esc_code) {
-	case ESC_K_OPEN:
-	case ESC_K_CLOSE:
-		regY = 1;
-		ClrN;
-		break;
-	case ESC_K_WRITE:
-	case ESC_K_STATUS:
-	case ESC_K_SPECIAL:
-		regY = 146;
-		SetN;
-		break;
-	case ESC_K_READ:
-		if (feof(stdin)) {
-			Atari800_Exit(FALSE);
-			exit(0);
-		}
-		ch = getchar();
-		switch (ch) {
-		case '\n':
-			ch = (char)0x9b;
-			break;
-		default:
-			break;
-		}
-		regA = ch;
-		regY = 1;
-		ClrN;
-		break;
-	}
-}
-
-void E_Device(UBYTE esc_code)
+void Device_KHREAD(void)
 {
 	UBYTE ch;
 
-	switch (esc_code) {
-	case ESC_E_OPEN:
-		Aprint( "Editor device open" );
-		regY = 1;
-		ClrN;
+	if (feof(stdin)) {
+		Atari800_Exit(FALSE);
+		exit(0);
+	}
+	ch = getchar();
+	switch (ch) {
+	case '\n':
+		ch = (char)0x9b;
 		break;
-	case ESC_E_READ:
-		if (feof(stdin)) {
-			Atari800_Exit(FALSE);
-			exit(0);
-		}
-		ch = getchar();
-		switch (ch) {
-		case '\n':
-			ch = 0x9b;
-			break;
-		default:
-			break;
-		}
-		regA = ch;
-		regY = 1;
-		ClrN;
-		break;
-	case ESC_E_WRITE:
-		ch = regA;
-		switch (ch) {
-		case 0x7d:
-			putchar('*');
-			break;
-		case 0x9b:
-			putchar('\n');
-			break;
-		default:
-			if ((ch >= 0x20) && (ch <= 0x7e))	/* for DJGPP */
-				putchar(ch & 0x7f);
-			break;
-		}
-		regY = 1;
-		ClrN;
+	default:
 		break;
 	}
+	regA = ch;
+	regY = 1;
+	ClrN;
+}
+
+void Device_EHOPEN(void)
+{
+	UBYTE ch;
+
+	Aprint( "Editor device open" );
+	regY = 1;
+	ClrN;
+}
+
+void Device_EHREAD(void)
+{
+	UBYTE ch;
+
+	if (feof(stdin)) {
+		Atari800_Exit(FALSE);
+		exit(0);
+	}
+	ch = getchar();
+	switch (ch) {
+	case '\n':
+		ch = 0x9b;
+		break;
+	default:
+		break;
+	}
+	regA = ch;
+	regY = 1;
+	ClrN;
+}
+
+void Device_EHWRITE(void)
+{
+	UBYTE ch;
+
+	ch = regA;
+	switch (ch) {
+	case 0x7d:
+		putchar('*');
+		break;
+	case 0x9b:
+		putchar('\n');
+		break;
+	default:
+		if ((ch >= 0x20) && (ch <= 0x7e))	/* for DJGPP */
+			putchar(ch & 0x7f);
+		break;
+	}
+	regY = 1;
+	ClrN;
 }
 
 #endif /* BASIC */
 
-#define CDTMV1 0x0218
-
 void AtariEscape(UBYTE esc_code)
 {
 	switch (esc_code) {
-#ifdef MONITOR_BREAK
-	case ESC_BREAK:
-		if (!Atari800_Exit(TRUE))
-			exit(0);
-		return;
-#endif
 	case ESC_SIOV:
 		/* jump to SIO emulation only if it's really our ESC code */
 		if (enable_sio_patch && (regPC == (0xe459+2))) {
@@ -673,21 +654,18 @@ void AtariEscape(UBYTE esc_code)
 		}
 		break;
 #ifdef BASIC
-	case ESC_K_OPEN:
-	case ESC_K_CLOSE:
 	case ESC_K_READ:
-	case ESC_K_WRITE:
-	case ESC_K_STATUS:
-	case ESC_K_SPECIAL:
-		K_Device(esc_code);
+		Device_KHREAD();
 		return;
-		break;
 	case ESC_E_OPEN:
-	case ESC_E_READ:
-	case ESC_E_WRITE:
-		E_Device(esc_code);
+		Device_EHOPEN();
 		return;
-		break;
+	case ESC_E_READ:
+		Device_EHREAD();
+		return;
+	case ESC_E_WRITE:
+		Device_EHWRITE();
+		return;
 #endif
 	case ESC_PHOPEN:
 		Device_PHOPEN();
@@ -768,8 +746,10 @@ void AtariEscape(UBYTE esc_code)
 
 /*
 $Log$
-Revision 1.8  2001/07/19 23:15:41  fox
-added open mode 9 (append) for H: device
+Revision 1.9  2001/07/20 00:30:08  fox
+replaced K_Device with Device_KHREAD,
+replaced E_Device with Device_EHOPEN, Device_EHREAD and Device_EHWRITE,
+removed ESC_BREAK
 
 Revision 1.6  2001/03/25 06:57:35  knik
 open() replaced by fopen()
