@@ -1,5 +1,5 @@
-#ifndef _SCREEN_H_
-#define _SCREEN_H_
+#ifndef _SCREEN_WINCE_H_
+#define _SCREEN_WINCE_H_
 
 #include "atari.h"
 
@@ -24,4 +24,4 @@ void translate_kbd(short* px, short* py);
 extern int smooth_filter;
 extern int filter_available;
 
-#endif /* _SCREEN_H_ */
+#endif /* _SCREEN_WINCE_H_ */
