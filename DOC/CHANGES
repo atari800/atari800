@@ -5,6 +5,7 @@ o cpu_m68k.s is 100% compatible with the cpu.c now <Gerhard>
 
 o Don Mahurin improved atari_console for redirected in/out and added
   sound support to curses version. See DOC/Redirect.txt for examples.
+  Also vox_ routines were renamed.
 
 o it seems that zero in first byte of block 41/C1 should be interpreted
    as 00, not 0x100 [eg. 1st disk of Big Demo couldn't be read because of
@@ -13,6 +14,9 @@ o it seems that zero in first byte of block 41/C1 should be interpreted
 O double density DCM disks weren't handled properly ("Output
   desynchronized...") [eg. 1st disk of Sweet Illusions demo couldn't be
   read because of this] <Jakub>
+
+o some preliminary code for UI menu switch for readonly/readwrite disk
+  in UI.C. This needs to be discussed first, then finished.
 
 
 
