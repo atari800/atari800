@@ -444,9 +444,9 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 		if (SDL_OpenAudio(&desired, &obtained) < 0) {
 			Aprint("Problem with audio: %s", SDL_GetError());
-			Aprint("You can disable sound by -nosound");
-			Aflushlog();
-			exit(-1);
+			Aprint("Sound is disabled.");
+			sound_enabled = FALSE;
+			return;
 		}
 
 		// mono
@@ -454,7 +454,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 	}
 	else {
 		Aprint
-			("Audio is off, you can turn it on -sound");
+			("Audio is off, you can turn it by -sound");
 	}
 }
 #endif
@@ -1564,6 +1564,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.27  2002/08/07 08:54:34  joy
+ when sound init failed Atari800 continues to run with sound disabled
+
  Revision 1.26  2002/08/07 07:26:58  joy
  SDL cleanup thanks to atexit, -nosound supported, -disable-SOUND supported, -dsprate added, -help fixed
 
