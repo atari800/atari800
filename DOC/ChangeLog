@@ -1,3 +1,10 @@
+2003-02-04  Petr Stehlik  <pstehlik@sophics.cz>
+
+configure.in, acconfig.h: after few days of autoconf 2.5x support I
+   rolled back the changes since Ken Ames had a problem with upgrading
+   autoconf on OS/2.
+
+
 ** tagged as 1.2.9
 
 2003-01-27  Perry McFarlane  <ce596@torfree.net>
