@@ -1,3 +1,8 @@
+2003-09-21  Piotr Fusik  <fox@scene.pl>
+* input.c: implemented bit 6 of SKSTAT - now you can exit from
+  the "spinning camera" part of "Cool Emotion"
+
+
 2003-09-16  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: cycle-perfect CHACTL mid-scanline changes
 * DOC/BUGS: updated
