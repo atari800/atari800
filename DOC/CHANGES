@@ -3,6 +3,12 @@ o nonblocking open of sound device on linux <Rudolf>
 
 -- Piotr:
 
+o support for Express, Diamond, SpartaDOS X, XEGS, Action!, BASIC XL
+  and other cartridge types (see cart.txt for complete list).
+  The "-cart" option runs CART files and all types of raw images.
+  Added cartridge.[ch] and rtime.[ch], removed supercart.[ch].
+  "-rtime 0" disables emulation of R-Time 8.
+
 o removed enable_rom_patches, added enable_h_patch and enable_p_patch.
   SIO, H: and P: patches are now independent and can be toggled at run-time
   (original OS is saved in atari_os). Removed SetSIOEsc() and RestoreSIO().
