@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>	/* for strcmp() */
 #include <math.h>
 #include "atari.h"
 #include "log.h"
