@@ -16,6 +16,9 @@ int key_shift = 0;
 int key_consol = CONSOL_NONE;
 
 int joy_autofire[4] = {AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF};
+int joy_5200_min = 6;
+int joy_5200_center = 114;
+int joy_5200_max = 220;
 
 int mouse_mode = MOUSE_OFF;
 int mouse_port = 0;
@@ -23,15 +26,39 @@ int mouse_delta_x = 0;
 int mouse_delta_y = 0;
 int mouse_buttons = 0;
 int mouse_speed = 3;
+int mouse_pot_min = 0;
+int mouse_pot_max = 228;
 int mouse_pen_ofs_h = 0;
 int mouse_pen_ofs_v = 0;
+int mouse_joy_inertia = 10;
 
 #ifndef MOUSE_SHIFT
 #define MOUSE_SHIFT 4
 #endif
 static int mouse_x = 0;
 static int mouse_y = 0;
+static int mouse_move_x = 0;
+static int mouse_move_y = 0;
 static int mouse_pen_show_pointer = 0;
+
+static UBYTE mouse_amiga_codes[16] = {
+	0x00, 0x02, 0x0a, 0x08,
+	0x01, 0x03, 0x0b, 0x09,
+	0x05, 0x07, 0x0f, 0x0d,
+	0x04, 0x06, 0x0e, 0x0c
+};
+
+static UBYTE mouse_st_codes[16] = {
+	0x00, 0x02, 0x03, 0x01,
+	0x08, 0x0a, 0x0b, 0x09,
+	0x0c, 0x0e, 0x0f, 0x0d,
+	0x04, 0x06, 0x07, 0x05
+};
+
+static UBYTE STICK[4];
+
+static int max_scanline_counter;
+static int scanline_counter;
 
 void INPUT_Initialise(int *argc, char *argv[])
 {
@@ -59,10 +86,17 @@ void INPUT_Initialise(int *argc, char *argv[])
 				mouse_mode = MOUSE_JOY;
 		}
 		else if (strcmp(argv[i], "-mouseport") == 0) {
-			mouse_port = argv[++i][0] - '0';
+			mouse_port = argv[++i][0] - '1';
 			if (mouse_port < 0 || mouse_port > 3) {
-				Aprint("Invalid mouse port, using 0");
+				Aprint("Invalid mouse port, using 1");
 				mouse_port = 0;
+			}
+		}
+		else if (strcmp(argv[i], "-mousespeed") == 0) {
+			mouse_speed = argv[++i][0] - '0';
+			if (mouse_speed < 1 || mouse_speed > 9) {
+				Aprint("Invalid mouse speed, using 3");
+				mouse_speed = 3;
 			}
 		}
 		else {
@@ -74,13 +108,47 @@ void INPUT_Initialise(int *argc, char *argv[])
 	*argc = j;
 }
 
+/* Updates position of Amiga/ST mouse and returns mouse output.
+   The mouse is moved one step in the direction given by mouse_move_x
+   and mouse_move_y, these variables are decreased towards zero */
+UBYTE mouse_step(void)
+{
+	if (mouse_move_x < 0) {
+		mouse_x--;
+		mouse_move_x += 1 << MOUSE_SHIFT;
+		if (mouse_move_x > 0)
+			mouse_move_x = 0;
+	}
+	else if (mouse_move_x > 0) {
+		mouse_x++;
+		mouse_move_x -= 1 << MOUSE_SHIFT;
+		if (mouse_move_x < 0)
+			mouse_move_x = 0;
+	}
+	if (mouse_move_y < 0) {
+		mouse_y--;
+		mouse_move_y += 1 << MOUSE_SHIFT;
+		if (mouse_move_y > 0)
+			mouse_move_y = 0;
+	}
+	else if (mouse_move_y > 0) {
+		mouse_y++;
+		mouse_move_y -= 1 << MOUSE_SHIFT;
+		if (mouse_move_y < 0)
+			mouse_move_y = 0;
+	}
+	return (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
+			[(mouse_y & 3) * 4 + (mouse_x & 3)];
+}
+
 void INPUT_Frame(void)
 {
 	int i;
 	static int last_key_code = AKEY_NONE;
 	static int last_key_break = 0;
-	UBYTE STICK[4];
 	static int last_mouse_buttons = 0;
+
+	scanline_counter = 10000;	/* do nothing in INPUT_Scanline() */
 
 	/* handle keyboard */
 
@@ -145,18 +213,18 @@ void INPUT_Frame(void)
 			mouse_x += mouse_delta_x * mouse_speed;
 		else
 			mouse_x -= mouse_delta_x * mouse_speed;
-		if (mouse_x < 0)
-			mouse_x = 0;
-		else if (mouse_x > 228 << MOUSE_SHIFT)
-			mouse_x = 228 << MOUSE_SHIFT;
+		if (mouse_x < mouse_pot_min << MOUSE_SHIFT)
+			mouse_x = mouse_pot_min << MOUSE_SHIFT;
+		else if (mouse_x > mouse_pot_max << MOUSE_SHIFT)
+			mouse_x = mouse_pot_max << MOUSE_SHIFT;
 		if (mouse_mode == MOUSE_KOALA || machine_type == MACHINE_5200)
 			mouse_y += mouse_delta_y * mouse_speed;
 		else
 			mouse_y -= mouse_delta_y * mouse_speed;
-		if (mouse_y < 0)
-			mouse_y = 0;
-		else if (mouse_y > 228 << MOUSE_SHIFT)
-			mouse_y = 228 << MOUSE_SHIFT;
+		if (mouse_y < mouse_pot_min << MOUSE_SHIFT)
+			mouse_y = mouse_pot_min << MOUSE_SHIFT;
+		else if (mouse_y > mouse_pot_max << MOUSE_SHIFT)
+			mouse_y = mouse_pot_max << MOUSE_SHIFT;
 		POT_input[mouse_port << 1] = mouse_x >> MOUSE_SHIFT;
 		POT_input[(mouse_port << 1) + 1] = mouse_y >> MOUSE_SHIFT;
 		if (machine_type == MACHINE_5200) {
@@ -188,11 +256,88 @@ void INPUT_Frame(void)
 		break;
 	case MOUSE_AMIGA:
 	case MOUSE_ST:
-	case MOUSE_JOY:
+		mouse_move_x += (mouse_delta_x * mouse_speed) >> 1;
+		mouse_move_y += (mouse_delta_y * mouse_speed) >> 1;
+
+		/* i = max(abs(mouse_move_x), abs(mouse_move_y)); */
+		i = mouse_move_x >= 0 ? mouse_move_x : -mouse_move_x;
+		if (mouse_move_y > i)
+			i = mouse_move_y;
+		else if (-mouse_move_y > i)
+			i = -mouse_move_y;
+
+		if (i > 0) {
+			i += (1 << MOUSE_SHIFT) - 1;
+			i >>= MOUSE_SHIFT;
+			if (i > 50)
+				max_scanline_counter = scanline_counter = 5;
+			else
+				max_scanline_counter = scanline_counter = max_ypos / i;
+			STICK[mouse_port] = mouse_step();
+		}
+		else
+			STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
+								[(mouse_y & 3) * 4 + (mouse_x & 3)];
+
 		if (mouse_buttons & 1)
 			TRIG[mouse_port] = 0;
-		if (machine_type == MACHINE_5200 && mouse_buttons & 2)
-			SKSTAT &= ~8;
+		break;
+	case MOUSE_JOY:
+		if (machine_type == MACHINE_5200) {
+			/* 2 * mouse_speed is ok for Super Breakout, for Ballblazer you need more */
+			int val = joy_5200_center + ((mouse_delta_x * 2 * mouse_speed) >> MOUSE_SHIFT);
+			if (val < joy_5200_min)
+				val = joy_5200_min;
+			else if (val > joy_5200_max)
+				val = joy_5200_max;
+			POT_input[mouse_port << 1] = val;
+			val = joy_5200_center + ((mouse_delta_y * 2 * mouse_speed) >> MOUSE_SHIFT);
+			if (val < joy_5200_min)
+				val = joy_5200_min;
+			else if (val > joy_5200_max)
+				val = joy_5200_max;
+			POT_input[(mouse_port << 1) + 1] = val;
+			if (mouse_buttons & 2)
+				SKSTAT &= ~8;
+		}
+		else {
+			mouse_move_x += mouse_delta_x * mouse_speed;
+			if (mouse_move_x < 0) {
+				if (mouse_move_x < -mouse_joy_inertia << MOUSE_SHIFT)
+					mouse_move_x = -mouse_joy_inertia << MOUSE_SHIFT;
+				STICK[mouse_port] &= STICK_LEFT;
+				mouse_move_x += 1 << MOUSE_SHIFT;
+				if (mouse_move_x > 0)
+					mouse_move_x = 0;
+			}
+			else if (mouse_move_x > 0) {
+				if (mouse_move_x > mouse_joy_inertia << MOUSE_SHIFT)
+					mouse_move_x = mouse_joy_inertia << MOUSE_SHIFT;
+				STICK[mouse_port] &= STICK_RIGHT;
+				mouse_move_x -= 1 << MOUSE_SHIFT;
+				if (mouse_move_x < 0)
+					mouse_move_x = 0;
+			}
+			mouse_move_y += mouse_delta_y * mouse_speed;
+			if (mouse_move_y < 0) {
+				if (mouse_move_y < -mouse_joy_inertia << MOUSE_SHIFT)
+					mouse_move_y = -mouse_joy_inertia << MOUSE_SHIFT;
+				STICK[mouse_port] &= STICK_FORWARD;
+				mouse_move_y += 1 << MOUSE_SHIFT;
+				if (mouse_move_y > 0)
+					mouse_move_y = 0;
+			}
+			else if (mouse_move_y > 0) {
+				if (mouse_move_y > mouse_joy_inertia << MOUSE_SHIFT)
+					mouse_move_y = mouse_joy_inertia << MOUSE_SHIFT;
+				STICK[mouse_port] &= STICK_BACK;
+				mouse_move_y -= 1 << MOUSE_SHIFT;
+				if (mouse_move_y < 0)
+					mouse_move_y = 0;
+			}
+		}
+		if (mouse_buttons & 1)
+			TRIG[mouse_port] = 0;
 		break;
 	default:
 		break;
@@ -208,6 +353,16 @@ void INPUT_Frame(void)
 	PORT_input[1] = (STICK[3] << 4) | STICK[2];
 }
 
+void INPUT_Scanline(void)
+{
+	if (--scanline_counter == 0) {
+		STICK[mouse_port] = mouse_step();
+		PORT_input[0] = (STICK[1] << 4) | STICK[0];
+		PORT_input[1] = (STICK[3] << 4) | STICK[2];
+		scanline_counter = max_scanline_counter;
+	}
+}
+
 void INPUT_CenterMousePointer(void)
 {
 	switch (mouse_mode) {
@@ -220,6 +375,12 @@ void INPUT_CenterMousePointer(void)
 	case MOUSE_PEN:
 		mouse_x = 84 << MOUSE_SHIFT;
 		mouse_y = 60 << MOUSE_SHIFT;
+		break;
+	case MOUSE_AMIGA:
+	case MOUSE_ST:
+	case MOUSE_JOY:
+		mouse_move_x = 0;
+		mouse_move_y = 0;
 		break;
 	}
 }

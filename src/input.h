@@ -245,6 +245,11 @@ extern int key_consol;	/* Start, Select and Option keys */
 
 extern int joy_autofire[4];		/* autofire mode for each Atari port */
 
+/* 5200 joysticks values */
+extern int joy_5200_min;
+extern int joy_5200_center;
+extern int joy_5200_max;
+
 /* Mouse --------------------------------------------------------------- */
 
 /* mouse_mode values */
@@ -257,18 +262,23 @@ extern int joy_autofire[4];		/* autofire mode for each Atari port */
 #define MOUSE_ST		6	/* Atari ST mouse */
 #define MOUSE_JOY		7	/* Joystick */
 
-extern int mouse_mode;		/* device emulated with mouse */
-extern int mouse_port;		/* Atari port, to which the emulated device is attached */
-extern int mouse_delta_x;	/* x motion since last frame */
-extern int mouse_delta_y;	/* y motion since last frame */
-extern int mouse_buttons;	/* buttons (b0=1: first button pressed, b1=1: 2nd pressed, etc. */
-extern int mouse_speed;		/* how fast the mouse pointer moves */
-extern int mouse_pen_ofs_h;	/* light pen/gun horizontal offset (for calibration) */
-extern int mouse_pen_ofs_v;	/* light pen/gun vertical offset (for calibration) */
+extern int mouse_mode;			/* device emulated with mouse */
+extern int mouse_port;			/* Atari port, to which the emulated device is attached */
+extern int mouse_delta_x;		/* x motion since last frame */
+extern int mouse_delta_y;		/* y motion since last frame */
+extern int mouse_buttons;		/* buttons (b0=1: first button pressed, b1=1: 2nd pressed, etc. */
+extern int mouse_speed;			/* how fast the mouse pointer moves */
+extern int mouse_pot_min;		/* min. value of POKEY's POT register */
+extern int mouse_pot_max;		/* max. value of POKEY's POT register */
+extern int mouse_pen_ofs_h;		/* light pen/gun horizontal offset (for calibration) */
+extern int mouse_pen_ofs_v;		/* light pen/gun vertical offset (for calibration) */
+extern int mouse_joy_inertia;	/* how long the mouse pointer can move (time in Atari frames)
+								   after a fast motion of mouse */
 
 /* Functions ----------------------------------------------------------- */
 
 void INPUT_Initialise(int *argc, char *argv[]);
 void INPUT_Frame(void);
+void INPUT_Scanline(void);
 void INPUT_CenterMousePointer(void);
 void INPUT_DrawMousePointer(void);
