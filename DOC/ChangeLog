@@ -1,6 +1,12 @@
+** 1.3.3 released
+
+2004-08-08  Petr Stehlik  <pstehlik@sophics.cz>
+* various files: updated for 1.3.3 release
+
+
 2004-08-05  Christian Groessler <cpg@aladdin.de>
 * atari_x11.c: adds the left ctrl key as joystick button if "-keypad" is
-  in use. Also cleans up mostly adding ANSI C function headers.
+  in use. Also cleans up mostly by adding ANSI C function headers.
 
 
 2004-07-26  Sebastian Bauer

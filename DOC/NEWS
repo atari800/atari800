@@ -1,3 +1,17 @@
+Version 1.3.3 (2004/08/08)
+
+ Changes:
+ --------
+ * ANTIC mode 2 + GTIA mode 10 - half pixel shift fix
+ * Amiga port updated
+ * OS/2 port updated
+ * DOSVGA port updated - joystick definition read again
+ * X11 port has improved keyboard support (Ctrl+Pause, left Ctrl for joy button)
+ * SDL port updated: joysticks emulated on keyboard can be freely edited
+   now with SDL_JOY_0_<direction> and SDL_TRIG_0 (same for JOY_1/TRIG_1)
+   config file parameters that expect values from SDL keySyms.
+
+
 Version 1.3.2 (2003/12/20)
 
  Highlights since previous release:
