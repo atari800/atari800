@@ -1,3 +1,10 @@
+2005-03-24  Piotr Fusik  <fox@scene.pl>
+* cpu.c: fixed incorrectly saved N flag when entering the monitor (bug found
+  by Marcin Lewandowski)
+
+* devices.c: added "-help"
+
+
 2005-03-15  Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
 * casette.[ch], pokey.[ch], sio.[ch], pia.c: implemented cassette loading
   by hardware registers.
