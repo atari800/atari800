@@ -21,7 +21,7 @@ by configure's build-in test.
 ?(LINUX)REALTIME	Run atari800 as Linux realtime process
 ?(LINUX)LINUX_JOYSTICK	Enable LINUX Joystick
 ?(SVGALIB)JOYMOUSE	Support for Toshiba Joystick Mouse (Linux SVGALIB Only)
-?(LINUX)VOXWARE		Enable Voxware Sound Support (Linux)
+?(LINUX)SOUND		Enable Sound Support (Linux)
 ?!()NO_VOL_ONLY		Enable volume only sound (digitized sound effects)
 ?!(!NO_VOL_ONLY)NO_CONSOL_SOUND	Enable console sound (keyboard clicks)
 ?(!NO_VOL_ONLY)SERIO_SOUND	Enable serial in/out sound
