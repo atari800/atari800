@@ -828,8 +828,10 @@ void supercart_handler(UWORD addr, UBYTE byte)
 			memcpy(memory + 0xa000, cart_image, 0x1000);
 			break;
 		case 0xd504:
+		case 0xd509:
 			memcpy(memory + 0xa000, cart_image + 0x1000, 0x1000);
 			break;
+		case 0xd501:
 		case 0xd503:
 		case 0xd507:
 			memcpy(memory + 0xa000, cart_image + 0x2000, 0x1000);
@@ -866,6 +868,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.4  2001/07/10 12:35:13  joy
+Basic XE (OSS Supercart) should work now. Thanks for this patch to Shamus (<jihamm@pacificnet.net>)
+
 Revision 1.3  2001/03/25 06:57:35  knik
 open() replaced by fopen()
 
