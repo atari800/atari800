@@ -159,20 +159,13 @@ void Sound_Update(void)
 		write(dsp_fd, dsp_buffer, sizeof(dsp_buffer));
 	}
 }
-
-#else
-void Sound_Pause(void)
-{
-}
-
-void Sound_Continue(void)
-{
-}
-
 #endif	/* SOUND */
 
 /*
  $Log$
+ Revision 1.4  2001/04/08 05:59:32  knik
+ sound_pause/continue removed if no sound used
+
  Revision 1.3  2001/03/24 06:28:07  knik
  help fixed and control message removed
 
