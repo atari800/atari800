@@ -1,3 +1,7 @@
+2003-02-18  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c: sends more Atari keys: SETTAB/CLRTAB, HELP, CAPSLOCK,
+  INSERT_LINE/CHAR, DELETE_LINE/CHAR. Thanks to Mark for updating the file.
+
 2003-02-17  Petr Stehlik  <pstehlik@sophics.cz>
 * debian/ folder with deb scripts added (taken from official Atari800
   debian package created by Dale Scheetz)
