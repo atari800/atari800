@@ -27,7 +27,6 @@ extern UBYTE *cart_image;
 extern int os;
 extern int mach_xlxe;
 extern int selftest_enabled;
-extern UBYTE atarixl_os[16384];
 extern UBYTE atari_basic[8192];
 extern int pil_on;
 extern int Ram256;
@@ -323,19 +322,6 @@ void add_esc(UWORD address, UBYTE esc_code)
 	memory[address] = 0x60;		/* RTS */
 }
 
-void SetSIOEsc( void )
-{
-	if (enable_sio_patch)
-		add_esc(0xe459, ESC_SIOV);
-}
-
-void RestoreSIO( void )
-{
-	memory[0xe459] = 0x4c;
-	memory[0xe45a] = 0x59;
-	memory[0xe45b] = 0xe9;
-}
-
 void PatchOS(void)
 {
 	const unsigned short o_open = 0;
@@ -351,19 +337,13 @@ void PatchOS(void)
 	unsigned short devtab;
 	int i;
 
-/*
-	Check if ROM patches are enabled - if not return immediately
-*/
-	if (enable_rom_patches == 0)
+#ifndef BASIC
+	/* Check if ROM patches are enabled - if not return immediately */
+	if (!enable_sio_patch && !enable_h_patch && !enable_p_patch)
 		return;
-/*
-   =====================
-   Disable Checksum Test
-   =====================
- */
+#endif
 
-	SetSIOEsc( );
-
+	/* Disable Checksum Test */
 	switch (machine) {
 	case Atari:
 		break;
@@ -380,6 +360,11 @@ void PatchOS(void)
 		Atari800_Exit(FALSE);
 		break;
 	}
+
+	/* Set SIO (fast disk access) patch */
+	if (enable_sio_patch)
+		add_esc(0xe459, ESC_SIOV);
+
 /*
    ==========================================
    Patch O.S. - Modify Handler Table (HATABS)
@@ -405,6 +390,8 @@ void PatchOS(void)
 
 		switch (memory[addr]) {
 		case 'P':
+			if (!enable_p_patch)
+				break;
 			entry = (memory[devtab + o_open + 1] << 8) | memory[devtab + o_open];
 			add_esc((UWORD)(entry + 1), ESC_PHOPEN);
 			entry = (memory[devtab + o_close + 1] << 8) | memory[devtab + o_close];
@@ -425,6 +412,8 @@ void PatchOS(void)
 			memory[devtab + o_init + 1] = ESC_PHINIT;
 			break;
 		case 'C':
+			if (!enable_h_patch)
+				break;
 			memory[addr] = 'H';
 			entry = (memory[devtab + o_open + 1] << 8) | memory[devtab + o_open];
 			add_esc((UWORD)(entry + 1), ESC_HHOPEN);
@@ -471,9 +460,9 @@ int Initialise_AtariXL(void)
 	mach_xlxe = TRUE;
 	status = load_image(atari_xlxe_filename, 0xc000, 0x4000);
 	if (status) {
+		memcpy(atari_os, memory + 0xc000, 0x4000);
 		machine = AtariXL;
 		PatchOS();
-		memcpy(atarixl_os, memory + 0xc000, 0x4000);
 
 		if (cart_type == NO_CART) {
 			status = Insert_8K_ROM(atari_basic_filename);
@@ -539,6 +528,7 @@ int Initialise_EmuOS(void)
 	else
 		Aprint("EmuOS: Using external emulated OS");
 
+	memcpy(atari_os, memory + 0xd800, 0x2800);
 	machine = Atari;
 	PatchOS();
 	SetRAM(0x0000, 0xbfff);
@@ -597,6 +587,7 @@ int Initialise_AtariOSA(void)
 	mach_xlxe = FALSE;
 	status = load_image(atari_osa_filename, 0xd800, 0x2800);
 	if (status) {
+		memcpy(atari_os, memory + 0xd800, 0x2800);
 		machine = Atari;
 		PatchOS();
 		SetRAM(0x0000, 0xbfff);
@@ -617,6 +608,7 @@ int Initialise_AtariOSB(void)
 	mach_xlxe = FALSE;
 	status = load_image(atari_osb_filename, 0xd800, 0x2800);
 	if (status) {
+		memcpy(atari_os, memory + 0xd800, 0x2800);
 		machine = Atari;
 		PatchOS();
 		SetRAM(0x0000, 0xbfff);
@@ -643,7 +635,7 @@ void MemStateSave( UBYTE SaveVerbose )
 		SaveUBYTE( &under_atari_basic[0], 8192 );
 
 		if( SaveVerbose != 0 )
-			SaveUBYTE( &atarixl_os[0], 16384 );
+			SaveUBYTE( &atari_os[0], 16384 );
 		SaveUBYTE( &under_atarixl_os[0], 16384 );
 	}
 
@@ -664,7 +656,7 @@ void MemStateRead( UBYTE SaveVerbose )
 		ReadUBYTE( &under_atari_basic[0], 8192 );
 
 		if( SaveVerbose != 0 )
-			ReadUBYTE( &atarixl_os[0], 16384 );
+			ReadUBYTE( &atari_os[0], 16384 );
 		ReadUBYTE( &under_atarixl_os[0], 16384 );
 	}
 
@@ -741,10 +733,11 @@ void PORTB_handler(UBYTE byte)
 				/* OS ROM Enable */
 				memcpy(under_atarixl_os, memory + 0xc000, 0x1000);
 				memcpy(under_atarixl_os + 0x1800, memory + 0xd800, 0x2800);
-				memcpy(memory + 0xc000, atarixl_os, 0x1000);
-				memcpy(memory + 0xd800, atarixl_os + 0x1800, 0x2800);
+				memcpy(memory + 0xc000, atari_os, 0x1000);
+				memcpy(memory + 0xd800, atari_os + 0x1800, 0x2800);
 				SetROM(0xc000, 0xcfff);
 				SetROM(0xd800, 0xffff);
+				PatchOS();
 			}
 			else {
 				/* OS ROM Disable */
@@ -802,7 +795,7 @@ void PORTB_handler(UBYTE byte)
 			if (!selftest_enabled && (byte & 0x01) && ((byte & 0x10) || (Ram256 < 2))) {
 				/* Only when CPU access to normal RAM or isn't 256Kb RAM or RAMBO mode is set */
 				memcpy(under_atarixl_os + 0x1000, memory + 0x5000, 0x800);
-				memcpy(memory + 0x5000, atarixl_os + 0x1000, 0x800);
+				memcpy(memory + 0x5000, atari_os + 0x1000, 0x800);
 				SetROM(0x5000, 0x57ff);
 				selftest_enabled = TRUE;
 			}
@@ -859,7 +852,7 @@ void supercart_handler(UWORD addr, UBYTE byte)
 void get_charset(char * cs)
 {
 	if (mach_xlxe)
-		memcpy(cs, atarixl_os + 0x2000, 1024);
+		memcpy(cs, atari_os + 0x2000, 1024);
 	else if (machine == Atari5200)
 		memcpy(cs, memory + 0xf800, 1024);
 	else
@@ -868,6 +861,11 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.5  2001/07/20 00:28:13  fox
+removed enable_rom_patches, added enable_h_patch and enable_p_patch.
+SIO, H: and P: patches are now independent and can be toggled at run-time
+(original OS is saved in atari_os). Removed SetSIOEsc() and RestoreSIO().
+
 Revision 1.4  2001/07/10 12:35:13  joy
 Basic XE (OSS Supercart) should work now. Thanks for this patch to Shamus (<jihamm@pacificnet.net>)
 
