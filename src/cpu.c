@@ -476,35 +476,6 @@ void GO(int limit)
 #define	ZPAGE_X		addr=(UBYTE)(dGetByte(PC++)+X);
 #define	ZPAGE_Y		addr=(UBYTE)(dGetByte(PC++)+Y);
 
-#ifndef PAGED_MEM
-#ifdef __i386__
-#undef ABSOLUTE
-#undef ABSOLUTE_X
-#undef ABSOLUTE_Y
-#ifdef __ELF__
-#define ABSOLUTE asm("movw memory(%1),%0" \
-				: "=r" (addr) \
-				: "r" ((ULONG)PC)); PC+=2;
-#define ABSOLUTE_X asm("movw memory(%1),%0; addw %2,%0" \
-				: "=r" (addr) \
-				: "r" ((ULONG)PC), "r" ((UWORD)X));PC+=2;
-#define ABSOLUTE_Y asm("movw memory(%1),%0; addw %2,%0" \
-				: "=r" (addr) \
-				: "r" ((ULONG)PC), "r" ((UWORD)Y));PC+=2;
-#else
-#define ABSOLUTE asm("movw _memory(%1),%0" \
-				: "=r" (addr) \
-				: "r" ((ULONG)PC)); PC+=2;
-#define ABSOLUTE_X asm("movw _memory(%1),%0; addw %2,%0" \
-				: "=r" (addr) \
-				: "r" ((ULONG)PC), "r" ((UWORD)X));PC+=2;
-#define ABSOLUTE_Y asm("movw _memory(%1),%0; addw %2,%0" \
-				: "=r" (addr) \
-				: "r" ((ULONG)PC), "r" ((UWORD)Y));PC+=2;
-#endif
-#endif
-#endif
-
 	while (xpos < xpos_limit) {
 
 #ifdef TRACE
