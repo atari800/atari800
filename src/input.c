@@ -279,30 +279,30 @@ void INPUT_Frame(void)
 	STICK[2] = i & 0x0f;
 	STICK[3] = (i >> 4) & 0x0f;
 
-	if (joy_block_opposite_directions) {
-		if ((STICK[i] & 0x0c) == 0) {	/* right and left simultaneously */
-			if (last_stick[i] & 0x04)	/* if wasn't left before, move left */
-				STICK[i] |= 0x08;
-			else						/* else move right */
-				STICK[i] |= 0x04;
-		}
-		else {
-			last_stick[i] &= 0x03;
-			last_stick[i] |= STICK[i] & 0x0c;
-		}
-		if ((STICK[i] & 0x03) == 0) {	/* up and down simultaneously */
-			if (last_stick[i] & 0x01)	/* if wasn't up before, move up */
-				STICK[i] |= 0x02;
-			else						/* else move down */
-				STICK[i] |= 0x01;
-		}
-		else {
-			last_stick[i] &= 0x0c;
-			last_stick[i] |= STICK[i] & 0x03;
-		}
-	}
-
 	for (i = 0; i < 4; i++) {
+		if (joy_block_opposite_directions) {
+			if ((STICK[i] & 0x0c) == 0) {	/* right and left simultaneously */
+				if (last_stick[i] & 0x04)	/* if wasn't left before, move left */
+					STICK[i] |= 0x08;
+				else						/* else move right */
+					STICK[i] |= 0x04;
+			}
+			else {
+				last_stick[i] &= 0x03;
+				last_stick[i] |= STICK[i] & 0x0c;
+			}
+			if ((STICK[i] & 0x03) == 0) {	/* up and down simultaneously */
+				if (last_stick[i] & 0x01)	/* if wasn't up before, move up */
+					STICK[i] |= 0x02;
+				else						/* else move down */
+					STICK[i] |= 0x01;
+			}
+			else {
+				last_stick[i] &= 0x0c;
+				last_stick[i] |= STICK[i] & 0x03;
+			}
+		}
+
 		last_stick[i] = STICK[i];
 		TRIG[i] = Atari_TRIG(i);
 		if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
