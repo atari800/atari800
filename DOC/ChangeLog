@@ -1,3 +1,7 @@
+2001-12-29  Petr Stehlik  <pstehlik@sophics.cz>
+* joysticks (both real and keyboard) in SDL port fixed.
+* configure now allows to --enable-CPUASS for m68k assembler CPU core.
+
 2001-12-24  Jakub Bogusz <qboosh@pld.org.pl>
 * memory corruption in input.c (joystick checking) fixed.
 
