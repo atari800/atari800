@@ -32,6 +32,8 @@
 #endif /*__PLUS*/
 #include "config.h"
 
+#include "rt-config.h"	/* extern for console_sound_enabled and serio_sound_enabled */
+
 #ifdef __PLUS
 #include "sound_win.h"
 #endif /*__PLUS*/
@@ -42,6 +44,21 @@
 
 #define NPOKEYS 2
 
+/* Volume only emulations declarations */
+#ifdef VOL_ONLY_SOUND
+
+#define	SAMPBUF_MAX	2000
+extern int	sampbuf_val[SAMPBUF_MAX];	/* volume values */
+extern int	sampbuf_cnt[SAMPBUF_MAX];	/* relative start time */
+extern int	sampbuf_ptr;                    /* pointer to sampbuf */
+extern int	sampbuf_rptr;                   /* pointer to read from sampbuf */
+extern int	sampbuf_last;                   /* last absolute time */
+extern int	sampbuf_AUDV[4 * MAXPOKEYS];	/* prev. channel volume */
+extern int	sampbuf_lastval;		/* last volume */
+extern int	sampout;			/* last out volume */
+extern uint16	samp_freq;
+extern int	samp_consol_val;		/* actual value of console sound */
+#endif  /* VOL_ONLY_SOUND */
 
 /* M_PI was not defined in MSVC headers */
 #ifndef M_PI
@@ -1073,7 +1090,7 @@ static void Pokey_process_8(void* sndbuffer, unsigned sndn);
 static void Pokey_process_16(void* sndbuffer, unsigned sndn);
 static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain);
 #ifdef SERIO_SOUND
-static void Update_serio_sound_mz(int out, UBYTE data) {}
+static void Update_serio_sound_mz(int out, UBYTE data);
 #endif
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set );
@@ -1101,6 +1118,10 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 #ifdef VOL_ONLY_SOUND
     Update_vol_only_sound = Update_vol_only_sound_mz;
 #endif
+
+#ifdef VOL_ONLY_SOUND
+	samp_freq=playback_freq;
+#endif  /* VOL_ONLY_SOUND */
 
     if (flags & SND_BIT16)
       Pokey_process = Pokey_process_16;
@@ -1979,6 +2000,11 @@ void Pokey_debugreset(uint8 chip)
  volume seems to be pretty much like 8 on single POKEY's channel.
  So, the volumes now can sum up to 136 (4 channels * 15 * 2
  + 8 * 2 for GTIA), not 120.
+ 
+ A note from Mark Grebe:
+ I've added back in the console and sio sounds from the old
+ pokey version.  So, now the volumes can sum up to 152
+ (4 channesl * 15 * 2 + 8 * 4 for old sound), not 120 or 136.
 
  ******************************************************************/
 
@@ -2059,7 +2085,7 @@ void Pokey_debugreset(uint8 chip)
 
  ******************************************************************/
 
-#define MAX_SAMPLE 136
+#define MAX_SAMPLE 152
 extern int atari_speaker;
 
 static void Pokey_process_8(void* sndbuffer, unsigned sndn)
@@ -2075,9 +2101,32 @@ static void Pokey_process_8(void* sndbuffer, unsigned sndn)
        we assume even sndn */
     while(nsam>=num_cur_pokeys)
     {
-    	/* add GTIA click sound (atari_speaker) to output of the first POKEY */
-        buffer[0] = (uint8)floor((generate_sample(pokey_states) + atari_speaker * 16 - MAX_SAMPLE / 2.0)
+#ifdef VOL_ONLY_SOUND
+        if( sampbuf_rptr!=sampbuf_ptr )
+            { int l;
+            if( sampbuf_cnt[sampbuf_rptr]>0 )
+                sampbuf_cnt[sampbuf_rptr]-=1280;
+            while(  (l=sampbuf_cnt[sampbuf_rptr])<=0 )
+                {	sampout=sampbuf_val[sampbuf_rptr];
+                        sampbuf_rptr++;
+                        if( sampbuf_rptr>=SAMPBUF_MAX )
+                                sampbuf_rptr=0;
+                        if( sampbuf_rptr!=sampbuf_ptr )
+                            {   
+                            sampbuf_cnt[sampbuf_rptr]+=l;
+                            }
+                        else	break;
+                }
+            }
+#endif
+
+#ifdef VOL_ONLY_SOUND
+        buffer[0] = (uint8)floor((generate_sample(pokey_states) + sampout - MAX_SAMPLE / 2.0)
          * (255.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+#else
+        buffer[0] = (uint8)floor((generate_sample(pokey_states) - MAX_SAMPLE / 2.0)
+         * (255.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+#endif
         for(i=1; i<num_cur_pokeys; i++)
         {
             buffer[i] = (uint8)floor((generate_sample(pokey_states + i) - MAX_SAMPLE / 2.0)
@@ -2101,9 +2150,31 @@ static void Pokey_process_16(void* sndbuffer, unsigned sndn)
        we assume even sndn */
     while(nsam>=num_cur_pokeys)
     {
-    	/* add GTIA click sound (atari_speaker) to output of the first POKEY */
-        buffer[0] = (int16)floor((generate_sample(pokey_states) + atari_speaker * 16 - MAX_SAMPLE / 2.0)
+#ifdef VOL_ONLY_SOUND
+        if( sampbuf_rptr!=sampbuf_ptr )
+            { int l;
+            if( sampbuf_cnt[sampbuf_rptr]>0 )
+                sampbuf_cnt[sampbuf_rptr]-=1280;
+            while(  (l=sampbuf_cnt[sampbuf_rptr])<=0 )
+                {	sampout=sampbuf_val[sampbuf_rptr];
+                        sampbuf_rptr++;
+                        if( sampbuf_rptr>=SAMPBUF_MAX )
+                                sampbuf_rptr=0;
+                        if( sampbuf_rptr!=sampbuf_ptr )
+                            {   
+                            sampbuf_cnt[sampbuf_rptr]+=l;
+                            }
+                        else	break;
+                }
+            }
+#endif 
+#ifdef VOL_ONLY_SOUND
+        buffer[0] = (int16)floor((generate_sample(pokey_states) + sampout - MAX_SAMPLE / 2.0)
          * (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+#else
+        buffer[0] = (int16)floor((generate_sample(pokey_states) - MAX_SAMPLE / 2.0)
+         * (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+#endif         
         for(i=1; i<num_cur_pokeys; i++)
         {
             buffer[i] = (int16)floor((generate_sample(pokey_states + i) - MAX_SAMPLE / 2.0)
@@ -2114,15 +2185,93 @@ static void Pokey_process_16(void* sndbuffer, unsigned sndn)
     }
 }
 
+#ifdef SERIO_SOUND
+static void Update_serio_sound_mz( int out, UBYTE data )
+{
+#ifdef VOL_ONLY_SOUND
+   int bits,pv,future;
+        if (!serio_sound_enabled) return;
+  
+	pv=0;
+	future=0;
+	bits= (data<<1) | 0x200;
+	while( bits )
+	{
+		sampbuf_lastval-=pv;
+		pv=(bits&0x01)*pokey_states[0].vol3;
+		sampbuf_lastval+=pv;
+
+	sampbuf_val[sampbuf_ptr]=sampbuf_lastval;
+	sampbuf_cnt[sampbuf_ptr]=
+		(cpu_clock+future-sampbuf_last)*128*samp_freq/178979;
+	sampbuf_last=cpu_clock+future;
+	sampbuf_ptr++;
+	if( sampbuf_ptr>=SAMPBUF_MAX )
+		sampbuf_ptr=0;
+	if( sampbuf_ptr==sampbuf_rptr )
+	{	sampbuf_rptr++;
+		if( sampbuf_rptr>=SAMPBUF_MAX )
+			sampbuf_rptr=0;
+	}
+			/* 1789790/19200 = 93 */
+		future+=93;	/* ~ 19200 bit/s - FIXME!!! set speed form AUDF [2] ??? */
+		bits>>=1;
+	}
+	sampbuf_lastval-=pv;
+#endif  /* VOL_ONLY_SOUND */
+}
+#endif /* SERIO_SOUND */
+
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set )
 { 
+#ifdef VOL_ONLY_SOUND
+  static int prev_atari_speaker=0;
+  static unsigned int prev_cpu_clock=0;
+  int d;
+        if (!console_sound_enabled) return;
+  
+	if( !set && samp_consol_val==0 )	return;
+	sampbuf_lastval-=samp_consol_val;
+	if( prev_atari_speaker!=atari_speaker )
+	{	samp_consol_val=atari_speaker*8*4;	/* gain */
+		prev_cpu_clock=cpu_clock;
+	}
+	else if( !set )
+	{	d=cpu_clock - prev_cpu_clock;
+		if( d<114 )
+		{	sampbuf_lastval+=samp_consol_val;   return;	}
+		while( d>=114 /* CPUL */ )
+		{	samp_consol_val=samp_consol_val*99/100;
+			d-=114;
+		}
+		prev_cpu_clock=cpu_clock-d;
+	}
+	sampbuf_lastval+=samp_consol_val;
+	prev_atari_speaker=atari_speaker;
+
+	sampbuf_val[sampbuf_ptr]=sampbuf_lastval;
+	sampbuf_cnt[sampbuf_ptr]=
+		(cpu_clock-sampbuf_last)*128*samp_freq/178979;
+	sampbuf_last=cpu_clock;
+	sampbuf_ptr++;
+	if( sampbuf_ptr>=SAMPBUF_MAX )
+		sampbuf_ptr=0;
+	if( sampbuf_ptr==sampbuf_rptr )
+	{	sampbuf_rptr++;
+		if( sampbuf_rptr>=SAMPBUF_MAX )
+			sampbuf_rptr=0;
+	}
+#endif  /* VOL_ONLY_SOUND */
 }
 #endif
 
 #ifdef VOL_ONLY_SOUND
 static void Update_vol_only_sound_mz( void )
 {
+#ifdef CONSOLE_SOUND
+	Update_consol_sound(0);	/* mmm */
+#endif /* CONSOLE_SOUND */
 }
 #endif
 
@@ -2131,6 +2280,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.15  2003/12/12 00:23:24  markgrebe
+Added console and sio Sound back in
+
 Revision 1.14  2003/10/25 18:40:54  joy
 various little updates for better MacOSX support
 
