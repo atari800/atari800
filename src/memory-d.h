@@ -23,6 +23,7 @@ extern UBYTE attrib[65536];
 #endif
 #define Poke(x,y) (dPutByte((x),(y)))
 
+extern int have_basic;
 extern int cartA0BF_enabled;
 
 typedef int ATPtr;

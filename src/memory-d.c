@@ -20,11 +20,10 @@ static UBYTE under_atarixl_os[16384];
 static UBYTE under_atari_basic[8192];
 static UBYTE atarixe_memory[278528];	/* 16384 (for RAM under BankRAM buffer) + 65536 (for 130XE) * 4 (for Atari320) */
 
+int have_basic;	/* Atari BASIC image has been successfully read (Atari 800 only) */
+
 extern int os;
-extern int selftest_enabled;
-extern UBYTE atari_basic[8192];
 extern int pil_on;
-extern int Ram256;
 
 int load_image(char *filename, int addr, int nbytes)
 {
@@ -34,12 +33,11 @@ int load_image(char *filename, int addr, int nbytes)
 	f = fopen(filename, "rb");
 	if (f) {
 		status = fread(&memory[addr], 1, nbytes, f);
+		fclose(f);
 		if (status != nbytes) {
 			Aprint("Error reading %s", filename);
-			Atari800_Exit(FALSE);
 			return FALSE;
 		}
-		fclose(f);
 
 		status = TRUE;
 	}
@@ -286,6 +284,9 @@ int Initialise_AtariOSA(void)
 		memcpy(atari_os, memory + 0xd800, 0x2800);
 		machine = Atari;
 		PatchOS();
+
+		have_basic = load_image(atari_basic_filename, 0xa000, 0x2000);
+		memcpy(atari_basic, memory + 0xa000, 0x2000);
 		SetRAM(0x0000, 0xbfff);
 		if (enable_c000_ram)
 			SetRAM(0xc000, 0xcfff);
@@ -307,6 +308,9 @@ int Initialise_AtariOSB(void)
 		memcpy(atari_os, memory + 0xd800, 0x2800);
 		machine = Atari;
 		PatchOS();
+
+		have_basic = load_image(atari_basic_filename, 0xa000, 0x2000);
+		memcpy(atari_basic, memory + 0xa000, 0x2000);
 		SetRAM(0x0000, 0xbfff);
 		if (enable_c000_ram)
 			SetRAM(0xc000, 0xcfff);
@@ -573,6 +577,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.8  2001/09/09 08:39:01  fox
+read Atari BASIC for Atari 800
+
 Revision 1.7  2001/08/16 23:28:57  fox
 deleted CART_Remove() in Initialise_Atari*, so auto-switching to 5200 mode
 when inserting a 5200 cartridge works
