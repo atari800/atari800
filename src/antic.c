@@ -3,7 +3,7 @@
 /*              David Firth                         */
 /* Correct timing, internal memory and other fixes: */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 6th July 2001                      */
+/* Last changes: 11th July 2001                     */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -201,12 +201,8 @@ These are all cases:
 
 #define DMAR	9	/* defined also in atari.h */
 
-#ifndef NO_VOL_ONLY
 unsigned int screenline_cpu_clock = 0;
 #define GOEOL	GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; ypos++
-#else
-#define GOEOL	GO(LINE_C); xpos -= LINE_C; ypos++
-#endif
 #define OVERSCREEN_LINE	xpos += DMAR; GOEOL
 
 int xpos = 0;
@@ -1988,6 +1984,8 @@ void ANTIC_RunDisplayList(void)
 		POKEY_Scanline();		/* check and generate IRQ */
 		OVERSCREEN_LINE;
 	} while (ypos < max_ypos);
+
+	POKEY_Frame();				/* update random_frame_counter */
 }
 
 /* ANTIC registers --------------------------------------------------------- */
