@@ -222,7 +222,6 @@
 #define CONSOL_OPTION	0x04
 
 extern int key_code;	/* regular Atari key code */
-extern int key_break;	/* Break key pressed */
 extern int key_shift;	/* Shift key pressed */
 extern int key_consol;	/* Start, Select and Option keys */
 

@@ -2,7 +2,7 @@
  * input.c - joystick emulation via keypad and mouse
  *
  * Copyright (C) 2001-2002 Piotr Fusik
- * Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -36,7 +36,6 @@
 #include "screen.h" /* for atari_screen */
 
 int key_code = AKEY_NONE;
-int key_break = 0;
 int key_shift = 0;
 int key_consol = CONSOL_NONE;
 
@@ -281,7 +280,7 @@ void INPUT_Frame(void)
 	   (this is simply not emulated).
 	   key_code is used for keypad keys and key_shift is used for 2nd button.
 	*/
-	i = machine_type == MACHINE_5200 ? key_shift : key_break;
+	i = machine_type == MACHINE_5200 ? key_shift : (key_code == AKEY_BREAK);
 	if (i && !last_key_break) {
 		if (IRQEN & 0x80) {
 			IRQST &= ~0x80;
@@ -294,7 +293,7 @@ void INPUT_Frame(void)
 	if (key_shift)
 		SKSTAT &= ~8;
 
-	if (key_code == AKEY_NONE) {
+	if (key_code < 0) {
 		if (press_space) {
 			key_code = AKEY_SPACE;
 			press_space = 0;
@@ -303,7 +302,7 @@ void INPUT_Frame(void)
 			last_key_code = AKEY_NONE;
 		}
 	}
-	if (key_code != AKEY_NONE) {
+	if (key_code >= 0) {
 		SKSTAT &= ~4;
 		if ((key_code ^ last_key_code) & ~AKEY_SHFTCTRL) {
 		/* ignore if only shift or control has changed its state */
