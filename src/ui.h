@@ -1,5 +1,6 @@
 #ifndef _UI_H
 #define _UI_H
+#include	"atari.h"	/* for UBYTE */
 void ui(UBYTE * screen);
 
 extern int ui_is_active;
