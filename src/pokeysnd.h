@@ -41,6 +41,7 @@
 #define _POKEYSOUND_H
 
 #include "config.h"
+#include "pokey.h"
 
 #ifndef _TYPEDEF_H
 #define _TYPEDEF_H
@@ -64,41 +65,6 @@
 
 /* CONSTANT DEFINITIONS */
 
-/* POKEY WRITE LOGICALS */
-/* Note: only 0x00 - 0x09 are emulated by POKEYSND */
-#define AUDF1_C     0x00
-#define AUDC1_C     0x01
-#define AUDF2_C     0x02
-#define AUDC2_C     0x03
-#define AUDF3_C     0x04
-#define AUDC3_C     0x05
-#define AUDF4_C     0x06
-#define AUDC4_C     0x07
-#define AUDCTL_C    0x08
-#define STIMER_C    0x09
-#define SKREST_C    0x0A
-#define POTGO_C     0x0B
-#define SEROUT_C    0x0D
-#define IRQEN_C     0x0E
-#define SKCTL_C     0x0F
-
-/* POKEY READ LOGICALS */
-#define POT0_C      0x00
-#define POT1_C      0x01
-#define POT2_C      0x02
-#define POT3_C      0x03
-#define POT4_C      0x04
-#define POT5_C      0x05
-#define POT6_C      0x06
-#define POT7_C      0x07
-#define ALLPOT_C    0x08
-#define KBCODE_C    0x09
-#define RANDOM_C    0x0A
-#define SERIN_C     0x0D
-#define IRQST_C     0x0E
-#define SKSTAT_C    0x0F
-
-
 /* As an alternative to using the exact frequencies, selecting a playback
    frequency that is an exact division of the main clock provides a higher
    quality output due to less aliasing.  For best results, a value of
@@ -115,8 +81,6 @@
 
 #define FREQ_17_EXACT     1789790	/* exact 1.79 MHz clock freq */
 #define FREQ_17_APPROX    1787520	/* approximate 1.79 MHz clock freq */
-
-#define MAXPOKEYS         4		/* max number of emulated chips */
 
 #ifdef __cplusplus
 extern "C" {
