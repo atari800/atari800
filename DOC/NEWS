@@ -1,3 +1,13 @@
+Version 1.3.4 (2004/12/27)
+
+ Changes:
+ --------
+ * security fixes (buffer overflows) and compilation errors (GCC 3.4)
+ * ANTIC timing fix for Timeslip game
+ * fix in UI fileselector (crashed if there were no files)
+ * Amiga port updated
+
+
 Version 1.3.3 (2004/08/08)
 
  Changes:
