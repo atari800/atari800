@@ -1,3 +1,14 @@
+2003-06-29  Piotr Fusik  <fox@scene.pl>
+* cpu.c: a fix for "CMC Demo" crashing NEW_CYCLE_EXACT emulator
+  (the problem could probably exist in many other demos
+  which play samples using IRQ)
+
+
+2003-06-27  Perry McFarlane  <ce596@torfree.net>
+* cycle_map.[ch]: a fix that prevents "Cool Emotion" demo from crashing
+  NEW_CYCLE_EXACT emulator if P: patch is disabled
+
+
 2003-06-15  Petr Stehlik  <pstehlik@sophics.cz>
 * compfile.c - quick fix for non-zlib capable environments
 
