@@ -44,6 +44,8 @@ UBYTE AUDCTL;     /* AUDCTL (D208) */
 int DivNIRQ[4], DivNMax[4];
 int TimeBase = DIV_64;
 
+static int pot_scanline;
+
 #ifdef STEREO
 int pokey_select;
 int stereo_enabled = TRUE;
@@ -55,39 +57,23 @@ UBYTE POKEY_GetByte(UWORD addr)
 	static int rand_init = 0;
 
 	addr &= 0x0f;
+	if (addr < 8) {
+		byte = Atari_POT(addr);
+		if (byte <= pot_scanline)
+			return byte;
+		return pot_scanline;
+	}
 	switch (addr) {
+	case _ALLPOT:
+		{
+			int i;
+			for (i = 0; i < 8; i++)
+				if (Atari_POT(addr) <= pot_scanline)
+					byte &= ~(1 << i);		/* reset bit if pot value known */
+		}
+		break;
 	case _KBCODE:
 		byte = KBCODE;
-		break;
-	case _IRQST:
-		byte = IRQST;
-#ifdef DEBUG1
-		printf("RD: IRQST = %x, PC = %x\n", byte, PC);
-#endif
-		break;
-	case _POT0:
-		byte = Atari_POT(0);
-		break;
-	case _POT1:
-		byte = Atari_POT(1);
-		break;
-	case _POT2:
-		byte = Atari_POT(2);
-		break;
-	case _POT3:
-		byte = Atari_POT(3);
-		break;
-	case _POT4:
-		byte = Atari_POT(4);
-		break;
-	case _POT5:
-		byte = Atari_POT(5);
-		break;
-	case _POT6:
-		byte = Atari_POT(6);
-		break;
-	case _POT7:
-		byte = Atari_POT(7);
 		break;
 	case _RANDOM:
 		if (!rand_init) {
@@ -97,22 +83,15 @@ UBYTE POKEY_GetByte(UWORD addr)
 		byte = rand();
 		break;
 	case _SERIN:
-		/* byte = SIO_SERIN(); */
 		byte = SIO_GetByte();
-#ifdef DEBUG1
-		printf("RD: SERIN = %x, BUFRFL = %x, CHKSUM = %x, BUFR = %02x%02x, BFEN=%02x%02x, PC = %x\n",
-			byte, memory[0x38], memory[0x31], memory[0x33], memory[0x32],
-			   memory[0x35], memory[0x34], PC);
-		printf("AR RD: SERIN = %x, BUFRFL = %x, CHKSUM = %x, BUFR = %02x%02x, BFEN=%02x%02x, PC = %x\n",
-			 byte, memory[0x38], memory[0x23c], memory[0x1], memory[0x0],
-			   memory[0x23b], memory[0x23a], PC);
-#endif
 #ifdef SERIO_SOUND
 			Update_serio_sound(0,byte);
 #endif
 		break;
+	case _IRQST:
+		byte = IRQST;
+		break;
 	case _SKSTAT:
-		byte = 0xff;
 		if (SHIFT_KEY)
 			byte &= ~8;
 		if (KEYPRESSED)
@@ -225,6 +204,8 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 			IRQ = 0;
 		break;
 	case _POTGO:
+		if (!(SKCTLS & 4))
+			pot_scanline = 0;	/* slow pot mode */
 		break;
 	case _SEROUT:
 		if ((SKCTLS & 0x70) == 0x20) {
@@ -246,6 +227,8 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		break;
 	case _SKCTLS:
 		SKCTLS = byte;
+		if (byte & 4)
+			pot_scanline = 228;	/* fast pot mode - return results immediately */
 		break;
 	}
 }
@@ -269,6 +252,8 @@ void POKEY_Initialise(int *argc, char *argv[])
 
 	for (i = 0; i < 4; i++)
 		DivNIRQ[i] = DivNMax[i] = 0;
+
+	pot_scanline = 0;
 }
 
 /***************************************************************************
@@ -286,6 +271,9 @@ void POKEY_Scanline(void)
 #ifndef NO_VOL_ONLY
 	Update_vol_only_sound();
 #endif  /* NO_VOL_ONLY */
+
+	if (pot_scanline < 228)
+		pot_scanline++;
 
 	if (DELAYED_SERIN_IRQ > 0) {
 		if (--DELAYED_SERIN_IRQ == 0) {
