@@ -1,19 +1,18 @@
 %define name	atari800
-%define ver	1.3.1-rc1
+%define ver	1.3.1
 %define rel	1
 %define copy	GPL
 %define ich Petr Stehlik <pstehlik@sophics.cz>
 %define group	Console/Emulators
 %define realname atari800-%{ver}
 %define src atari800-%{ver}.tar.gz
-%define targets ncurses svgalib x11 sdl
+%define targets ncurses x11 sdl
 ## If you change the targets, you'll have to change the files list at the
 ## bottom of this file as well
 %define maintarget sdl
 Summary:	An emulator of 8-bit Atari personal computers.
 Name:		%{name}
-#Version:	%{ver}
-Version:	1.3.1rc1
+Version:	%{ver}
 Release:	%{rel}
 Copyright:	%{copy}
 Packager: %{ich}
@@ -24,7 +23,7 @@ BuildRoot: /var/tmp/%{name}-root
 #Patch: %{name}-%{ver}.patch
 %description
 Atari800 is an emulator for the 800, 800XL, 130XE and 5200 models of
-the Atari personal computer. It can be used on FrameBuffer, SVGAlib or X11.
+the Atari personal computer. It can be used on console, FrameBuffer or X11.
 It features excellent compatibility, HIFI sound support, artifacting
 emulation, precise cycle-exact ANTIC/GTIA emulation and more.
 
@@ -70,7 +69,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %doc ../DOC ../README.1ST ../COPYING
-%attr(4755,root,root) /usr/bin/atari800-svgalib
 /usr/bin/atari800
 /usr/bin/atari800-x11
 /usr/bin/atari800-ncurses
@@ -80,6 +78,7 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Thu Sep 04 2003 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Configure options removed.
+SVGALib target dropped.
 * Mon Feb 10 2003 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. STEREO enabled by default. Description updated.
 * Mon Dec 2 2002 Petr Stehlik <pstehlik@sophics.cz>

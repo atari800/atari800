@@ -1,6 +1,9 @@
+#!/bin/sh
+# This scripts helps with building the source .tar.gz file
+
 VER_MAJOR=1
 VER_MINOR=3
-VER_MICRO=1-rc1
+VER_MICRO=1
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO
 TAG="ATARI800_"$VER_MAJOR"_"$VER_MINOR"_"$VER_MICRO
@@ -12,8 +15,7 @@ FNAME=$FOLDER".tar.gz"
 echo "download from CVS? (y/N)"
 read key
 if [ "x"$key = "xy" ]; then
-	cvs -d:pserver:anonymous@cvs.atari800.sf.net:/cvsroot/atari800 login
-	cvs -z9 -d:pserver:anonymous@cvs.atari800.sf.net:/cvsroot/atari800 export -r $TAG atari800
+	cvs -z9 -d:ext:joy@cvs.atari800.sourceforge.net:/cvsroot/atari800 export -r $TAG atari800
 fi
 #
 grep ATARI_TITLE atari800/src/atari.h | grep $VERSION >/dev/null
@@ -40,7 +42,7 @@ fi
 cd atari800/src
 ./autogen.sh
 # remove leftovers from autogen process
-rm autogen.sh acconfig.h config.cache config.log configure.in
+rm autogen.sh config.cache config.log configure.ac
 cd ../..
 mv atari800 $FOLDER
-tar czvf $FNAME $FOLDER
+GZIP=--best tar chozvf $FNAME $FOLDER

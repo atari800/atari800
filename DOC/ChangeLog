@@ -1,3 +1,12 @@
+** tagged as ATARI800_1_3_1
+
+2003-09-04  Petr Stehlik  <pstehlik@sophics.cz>
+* configure.ac: svgalib target added
+* SVGAlib target dropped from Debian and RPM build scripts
+* -rc1 removed from everywhere, it was causing pain for the build scripts
+* sockets.txt renamed to r_device.txt
+
+
 ** tagged as ATARI800_1_3_1-RC1
 
 2003-09-03  Petr Stehlik  <pstehlik@sophics.cz>
