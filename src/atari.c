@@ -57,7 +57,7 @@ ULONG *atari_screen2 = NULL;
 int screen_visible_x1 = 24;				/* 0 .. ATARI_WIDTH */
 int screen_visible_y1 = 0;				/* 0 .. ATARI_HEIGHT */
 int screen_visible_x2 = 360;			/* 0 .. ATARI_WIDTH */
-int screen_visible_y2 = ATARI_WIDTH;	/* 0 .. ATARI_HEIGHT */
+int screen_visible_y2 = ATARI_HEIGHT;	/* 0 .. ATARI_HEIGHT */
 
 int machine_type = MACHINE_OSB;
 int ram_size = 48;
@@ -915,6 +915,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.31  2001/11/11 22:11:53  joy
+wrong value for vertical position of disk led caused x11 port to crash badly.
+
 Revision 1.30  2001/10/26 05:42:44  fox
 made 130 XE state files compatible with previous versions
 
