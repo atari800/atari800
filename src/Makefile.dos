@@ -3,7 +3,7 @@
 CC = gcc
 EXE=.exe
 CFLAGS = -O2 -Wall
-DEFS = -DDOS_DRIVES
+DEFS = -DDOS_DRIVES -DSOUND
 
 INCLUDE=-I.
 

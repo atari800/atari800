@@ -4,12 +4,12 @@ CC = gcc $(CYGOPT)
 EXE=.exe
 RC = windres
 CFLAGS = -mcpu=i686 -O2 -Wall 
-DEFS = -DWIN32 -DBACK_SLASH -DDOS_DRIVES
+DEFS = -DWIN32 -DBACK_SLASH -DDOS_DRIVES -DSOUND
 
 INCLUDE=-I.
 
 LDFLAGS = -s
-LIBS = -luser32
+LIBS = -luser32 -lwinmm
 
 DXOBJ = \
 	win32/atari_win32.o \
@@ -19,9 +19,9 @@ DXOBJ = \
 	win32/keyboard.o \
 	win32/atari.ro
 
-BASICOBJ = atari_basic.o
+BASICOBJ = atari_basic.o win32/sound.o
 
-CURSOBJ= atari_curses.o sound.o
+CURSOBJ= atari_curses.o win32/sound.o
 
 ALLOBJ = $(OBJ) $(DXOBJ) $(BASICOBJ) $(CURSOBJ)
 
@@ -41,7 +41,7 @@ include common.mak
 
 dx:
 	$(MAKE) $(CONFDEPS) DEFS="$(DEFS)"
-	$(MAKE) $(TARGET) DEFS="$(DEFS) -Dmain=atari_main" \
+	$(MAKE) $(TARGET) DEFS="$(DEFS) -Dmain=atari_main -DDIRECTX" \        
 		OBJ="$(OBJ) $(DXOBJ)" \
 		LIBS="$(LIBS) -lgdi32 -lddraw -ldinput -ldsound -ldxguid"
         
