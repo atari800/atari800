@@ -1,3 +1,13 @@
+2003-12-16  Piotr Fusik  <fox@scene.pl>
+* cartridge.[ch], ui.c, DOC/cart.txt, DOC/README: new cartridge types:
+  Phoenix and Blizzard
+
+* cassette.c: write cassette description, update tape position indicators
+  when writing, changed C++ style comments to traditional
+
+* atari.c: check OS before applying C: patches
+
+
 2003-11-22  Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
 * atari.c: when the snailmeter is enabled and the speed grown beyond 100%
   a negative amount of memory was tried to be filled.
