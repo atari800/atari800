@@ -655,7 +655,3 @@ Atari Basic
 .SH BUGS
 A few programs cause the emulator to enter its built in debugger. The
 reason for this is unknown at the moment.
-
-The SDL port doesn't seem to recognize the
-.B -help
-option.
