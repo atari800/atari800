@@ -968,7 +968,7 @@ void GO(int limit)
 
 	OPCODE(4e)				/* LSR abcd */
 		ABSOLUTE;
-		data = GetByte(addr);
+		RMW_GetByte(data, addr);
 		C = data & 1;
 		Z = data >> 1;
 		N = 0;
