@@ -1,3 +1,18 @@
+2005-03-03  Piotr Fusik  <fox@scene.pl>
+* win32/*, configure.ac:
+  renamed win32/screen.[ch] to win32/screen_win32.[ch]
+
+* wince/port/*, wince/PocketAtari.vcp:
+  renamed wince/port/screen.* to wince/port/screen_wince.*
+
+* atari.[ch], screen.[ch], antic.c, cpu.c, input.c, ui_basic.c:
+  moved screen-related variables to the new "screen" module
+
+* configure.ac, makefile, atari.[ch], screen.[ch], sio.[ch], atari_sdl.c,
+  dos/atari_vga.c:
+  deleted diskled.[ch], moved disk LEDs to the new "screen" module,
+  added sector counter and speedometer
+
 2005-02-23  Piotr Fusik  <fox@scene.pl>
 * colours.[ch]: refactored, using jakub.act by default
 
