@@ -82,7 +82,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		byte = KBCODE;
 		break;
 	case _RANDOM:
-		{
+		if ((SKCTLS & 0x03) != 0) {
 			int i = random_frame_counter + cpu_clock;
 			if (AUDCTL[0] & POLY9)
 				byte = poly9_lookup[i % POLY9_SIZE];
