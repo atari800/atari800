@@ -255,7 +255,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		AUDF[CHAN4 + CHIP2] = byte;
 		Update_pokey_sound(_AUDF4, byte, 1, SOUND_GAIN);
 		break;
-	case _STIMER:
+	case _STIMER + _POKEY2:
 		Update_pokey_sound(_STIMER, byte, 1, SOUND_GAIN);
 		break;
 #endif
