@@ -1,3 +1,4 @@
+/* $Id$ */
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -740,10 +741,7 @@ int Atari_TRIG(int num)
                 }
         if (num==0)		
 	{
-#ifdef USE_CURSORBLOCK
 		return ctrig;
-#endif	
-		return 1;
 	}
 	return 1;
 }
@@ -769,3 +767,9 @@ void LeaveVGAMode(void)
 }
 */
 
+/*
+$Log$
+Revision 1.4  2001/03/22 06:15:49  knik
+ctrig fix
+
+*/
