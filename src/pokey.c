@@ -12,7 +12,6 @@
 #include "pokey.h"
 #include "gtia.h"
 #include "sio.h"
-#include "platform.h"
 #include "statesav.h"
 #include "pokeysnd.h"
 
@@ -45,6 +44,7 @@ UBYTE AUDCTL[MAXPOKEYS];	/* AUDCTL (D208) */
 int DivNIRQ[4], DivNMax[4];
 ULONG Base_mult[MAXPOKEYS];		/* selects either 64Khz or 15Khz clock mult */
 
+UBYTE POT_input[8] = {228, 228, 228, 228, 228, 228, 228, 228};
 static int pot_scanline;
 
 #ifdef STEREO
@@ -65,7 +65,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 #endif
 	addr &= 0x0f;
 	if (addr < 8) {
-		byte = Atari_POT(addr);
+		byte = POT_input[addr];
 		if (byte <= pot_scanline)
 			return byte;
 		return pot_scanline;
@@ -75,7 +75,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		{
 			int i;
 			for (i = 0; i < 8; i++)
-				if (Atari_POT(addr) <= pot_scanline)
+				if (POT_input[addr] <= pot_scanline)
 					byte &= ~(1 << i);		/* reset bit if pot value known */
 		}
 		break;

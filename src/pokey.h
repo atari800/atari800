@@ -48,6 +48,8 @@ extern int DELAYED_SERIN_IRQ;
 extern int DELAYED_SEROUT_IRQ;
 extern int DELAYED_XMTDONE_IRQ;
 
+extern UBYTE POT_input[8];
+
 UBYTE POKEY_GetByte(UWORD addr);
 void POKEY_PutByte(UWORD addr, UBYTE byte);
 void POKEY_Initialise(int *argc, char *argv[]);
