@@ -3,7 +3,6 @@
 /*              David Firth                         */
 /* Correct timing, internal memory and other fixes: */
 /*              Piotr Fusik <pfusik@elka.pw.edu.pl> */
-/* Last changes: 21st September 2001                */
 /* ------------------------------------------------ */
 
 #include <string.h>
@@ -15,10 +14,10 @@
 #include "atari.h"
 #include "config.h"
 #include "cpu.h"
-#include "log.h"
 #include "gtia.h"
+#include "input.h"
+#include "log.h"
 #include "memory.h"
-#include "platform.h"
 #include "pokey.h"
 #include "rt-config.h"
 #include "statesav.h"
@@ -251,12 +250,10 @@ static UBYTE vscrol_off;		/* boolean: displaying line ending VSC */
 
 /* Light pen support ------------------------------------------------------- */
 
-int light_pen_enabled = 0;		/* set to non-zero at any time to enable light pen */
-static UBYTE PEN_X;
-static UBYTE PEN_Y;
-static UBYTE light_pen_x;
-static UBYTE light_pen_y;
-extern UBYTE TRIG_latch[4];	/* in gtia.c */
+static UBYTE PENH;
+static UBYTE PENV;
+UBYTE PENH_input = 0x00;
+UBYTE PENV_input = 0xff;
 
 /* Pre-computed values for improved performance ---------------------------- */
 
@@ -1868,9 +1865,6 @@ void ANTIC_Frame(int draw_display)
 	int delayed_gtia11 = 250;
 #endif
 
-	PEN_X = Atari_PEN(0);
-	PEN_Y = Atari_PEN(1);
-
 	ypos = 0;
 	do {
 		POKEY_Scanline();		/* check and generate IRQ */
@@ -1883,11 +1877,11 @@ void ANTIC_Frame(int draw_display)
 #endif
 	need_dl = TRUE;
 	do {
-		if (light_pen_enabled && ypos >> 1 == PEN_Y) {
-			light_pen_x = PEN_X;
-			light_pen_y = PEN_Y;
+		if ((mouse_mode == MOUSE_PEN) && (ypos >> 1 == PENV_input)) {
+			PENH = PENH_input;
+			PENV = PENV_input;
 			if (GRACTL & 4)
-				TRIG_latch[0] = 0;
+				TRIG_latch[mouse_port] = 0;
 		}
 
 		POKEY_Scanline();		/* check and generate IRQ */
@@ -2101,9 +2095,9 @@ UBYTE ANTIC_GetByte(UWORD addr)
 	case _VCOUNT:
 		return ypos >> 1;
 	case _PENH:
-		return light_pen_x;
+		return PENH;
 	case _PENV:
-		return light_pen_y;
+		return PENV;
 	case _NMIST:
 		return NMIST;
 	default:

@@ -36,7 +36,9 @@ extern int ypos;
 extern UBYTE wsync_halt;
 
 extern int global_artif_mode;
-extern int light_pen_enabled;
+
+extern UBYTE PENH_input;
+extern UBYTE PENV_input;
 
 void ANTIC_Initialise(int *argc, char *argv[]);
 void ANTIC_Reset(void);
