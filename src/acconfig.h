@@ -95,3 +95,6 @@
 
 /* Display LED on screen */
 #undef NO_LED_ON_SCREEN
+
+/* color change inside a scanline */
+#undef NO_CYCLE_EXACT
