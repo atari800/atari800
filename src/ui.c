@@ -346,6 +346,8 @@ int SelectCartType(UBYTE* screen, int k)
 		{ "CRU0", ITEM_ACTION, NULL, "Switchable XEGS 256 KB cartridge",NULL, 36 },
 		{ "CRU1", ITEM_ACTION, NULL, "Switchable XEGS 512 KB cartridge",NULL, 37 },
 		{ "CRU2", ITEM_ACTION, NULL, "Switchable XEGS 1 MB cartridge",  NULL, 38 },
+		{ "CRU3", ITEM_ACTION, NULL, "Phoenix 8 KB cartridge",          NULL, 39 },
+		{ "CRU4", ITEM_ACTION, NULL, "Blizzard 16 KB cartridge",        NULL, 40 },
 		MENU_END
 	};
 
@@ -998,6 +1000,9 @@ int CrashMenu()
 
 /*
 $Log$
+Revision 1.51  2003/12/16 18:26:30  pfusik
+new cartridge types: Phoenix and Blizzard
+
 Revision 1.50  2003/12/12 00:24:52  markgrebe
 Added enable for console and sio sound
 

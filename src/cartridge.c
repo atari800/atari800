@@ -73,7 +73,9 @@ int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	128,/* CART_SWXEGS_128 */
 	256,/* CART_SWXEGS_256 */
 	512,/* CART_SWXEGS_512 */
-	1024/* CART_SWXEGS_1024 */
+	1024,/* CART_SWXEGS_1024 */
+	8,  /* CART_PHOENIX_8 */
+	16  /* CART_BLIZZARD_16 */
 };
 
 int CART_IsFor5200(int type)
@@ -252,6 +254,13 @@ static void CART_Access(UWORD addr)
 			break;
 		}
 		set_bank_A0AF(b, 0x0000);
+		break;
+	case CART_PHOENIX_8:
+		CartA0BF_Disable();
+		break;
+	case CART_BLIZZARD_16:
+		Cart809F_Disable();
+		CartA0BF_Disable();
 		break;
 	default:
 		break;
@@ -607,11 +616,13 @@ void CART_Start(void) {
 	else {
 		switch (cart_type) {
 		case CART_STD_8:
+		case CART_PHOENIX_8:
 			Cart809F_Disable();
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xbfff, cart_image);
 			break;
 		case CART_STD_16:
+		case CART_BLIZZARD_16:
 			Cart809F_Enable();
 			CartA0BF_Enable();
 			CopyROM(0x8000, 0xbfff, cart_image);
