@@ -51,6 +51,7 @@
 #include "input.h"
 #include "pokeysnd.h"
 #include "rt-config.h"	/* extern for enable_new_pokey and stereo_enabled */
+#include "boot.h"
 
 tUIDriver* ui_driver = &basic_ui_driver;
 
@@ -84,7 +85,7 @@ void AtariSettings();
 int SaveState();
 int LoadState();
 void Screenshot(int interlaced);
-
+void MakeBlankDisk(FILE *setFile);
 
 void SelectSystem()
 {
@@ -165,9 +166,10 @@ void DiskManagement()
 		{ "DKS6", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[5], sio_filename[5], NULL, 5 },
 		{ "DKS7", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[6], sio_filename[6], NULL, 6 },
 		{ "DKS8", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, drive_array[7], sio_filename[7], NULL, 7 },
-        { "SSET", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, NULL, "Save Disk Set", NULL, 8 },
-        { "LSET", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, NULL, "Load Disk Set", NULL, 9 },
+    { "SSET", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, NULL, "Save Disk Set", NULL, 8 },
+    { "LSET", ITEM_ENABLED|ITEM_FILESEL|ITEM_MULTI, NULL, "Load Disk Set", NULL, 9 },
 		{ "RDSK", ITEM_ENABLED|ITEM_ACTION, NULL, "Rotate Disks", NULL, 10 },
+		{ "MDSK", ITEM_ENABLED|ITEM_ACTION|ITEM_MULTI, NULL, "Make Blank Boot Disk", NULL, 11 },
 		MENU_END
 	};
 
@@ -204,6 +206,25 @@ void DiskManagement()
 
 /*              pathname=atari_disk_dirs[current_disk_directory]; */
 
+				if (dsknum == 11) {
+					ui_driver->fGetSaveFilename(filename);
+          strcpy(setname, curr_disk_dir);
+          if (*setname) {
+          	char last = setname[strlen(setname)-1];
+            if (last != '/' && last != '\\')
+           #ifdef BACK_SLASH
+            	strcat(setname, "\\");
+           #else
+              strcat(setname, "/");
+           #endif
+          }
+         	strcat(setname, filename);
+        	setFile = fopen(setname,"wb");
+					MakeBlankDisk(setFile);
+					fclose(setFile);
+					done = TRUE;
+					continue;
+				}
 				if (curr_disk_dir[0] == '\0')
 					strcpy(curr_disk_dir, atari_disk_dirs[current_disk_directory]);
 
@@ -231,7 +252,7 @@ void DiskManagement()
                             fprintf(setFile,"%s\n",sio_filename[i]);
                         }
                         fclose(setFile);
-                    }
+                  }
                 else {
 				    while (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
                         DIR *subdir;
@@ -286,7 +307,7 @@ void DiskManagement()
                     SIO_Mount(dsknum + 1, filename, !rwflags[dsknum]);
                     /* update rwflags with the real mount status */
                     rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
-                    }
+                }
 			}
 			else {
                 if (dsknum < 8) {
@@ -1011,8 +1032,47 @@ int CrashMenu()
 }
 #endif
 
+
+/* Inspired by LNG (lng.sourceforge.net) */
+void MakeBlankDisk(FILE *setFile)
+{
+
+	unsigned long sectorCnt = 0;
+	unsigned long paras = 0;
+	struct ATR_Header hdr;
+	int fileSize = 0;
+	typedef unsigned char byte;
+	size_t padding;
+	
+	sectorCnt = (unsigned short) (127L/128L+3L);
+	paras = sectorCnt*8;
+	memset(&hdr, 0, sizeof(hdr));
+	hdr.magic1 = (byte) 0x96;
+	hdr.magic2 = (byte) 0x02;
+	hdr.seccountlo = (byte) (paras&0xFF);
+	hdr.seccounthi = (byte) ((paras>>8)&0xFF);
+	hdr.hiseccountlo = (byte) ((paras>>16)&0xFF);
+	hdr.secsizelo = (byte) 128;
+	
+	fwrite(&hdr, 1, sizeof(hdr), setFile);
+	
+	bootData[9] = (byte) (fileSize&0xFF);
+	bootData[10] = (byte) ((fileSize>>8)&0xFF);
+	bootData[11] = (byte) ((fileSize>>16)&0xFF);
+	bootData[12] = 0;
+	
+	fwrite(bootData, 1, 384, setFile);
+	
+	padding = (size_t) ((sectorCnt-3)*128-fileSize);
+	if (padding)
+		fwrite(bootData, 1, padding, setFile);
+}
+
 /*
 $Log$
+Revision 1.54  2005/04/30 13:42:00  joy
+make blank boot disk
+
 Revision 1.53  2005/03/10 04:42:35  pfusik
 "Extract ROM image from Cartridge" should skip the CART header,
 not just copy the whole file;
@@ -1158,4 +1218,3 @@ Revision 1.5  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
 */
-
