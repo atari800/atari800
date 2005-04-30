@@ -79,7 +79,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/doc/atari800/NEWS
 
 %changelog
-* Sat Apr 30 2004 Petr Stehlik <pstehlik@sophics.cz>
+* Sat Apr 30 2005 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Changes documented in the NEWS.
 * Thu Dec 30 2004 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Changes documented in the NEWS.
