@@ -1,3 +1,10 @@
+2005-04-30  Petr Stehlik  <pstehlik@sophics.cz>
+* ui.c, boot.h: "Make Blank Boot Disk" added to "Disk Management",
+  inspired by LNG (lng.sourceforge.net). It creates a blank boot atr file.
+  Before you can use this blank disk, you must format it. Patch by
+  'maddoxik' (whoever he is, didn't supply real name).
+
+
 2005-03-24  Piotr Fusik  <fox@scene.pl>
 * cpu.c: fixed incorrectly saved N flag when entering the monitor (bug found
   by Marcin Lewandowski)

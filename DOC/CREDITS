@@ -283,3 +283,6 @@ Daniel Serpell <daniel_serpell@yahoo.com>
 Ken Zalewski <kennyz@nycap.rr.com>
     - segfault fix in GetKeyCode of atari_x11
 
+maddoxik <maddoxik@funnyvoid.com>
+    - "Make Blank Boot Disk" option added to Disk Management UI
+
