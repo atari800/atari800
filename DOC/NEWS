@@ -1,3 +1,20 @@
+Version 1.3.6 (2005/04/30)
+
+ Changes:
+ --------
+ * different color palette used by default
+ * PNG screenshots added
+ * added sector counter and speedometer
+ * F6 is Atari HELP key on Curses, Falcon and in X11
+ * added missing combinations of ANTIC modes with GTIA modes
+ * keyboard joystick works in more games (doesn't pause the game) in SDL
+ * mouse joystick emulation works in X11
+ * cassette loading by hardware registers (Ninja and Elektraglide
+   are examples of games that load correctly now)
+ * blank boot ATR disk image can be created in the Disk Management menu
+ * many small fixes and major source code clean up
+
+
 Version 1.3.5 (2004/12/30)
 
  Changes:

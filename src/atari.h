@@ -58,7 +58,7 @@ extern int verbose;
 #define ATARI_WIDTH  384
 #define ATARI_HEIGHT 240
 
-#define ATARI_TITLE  "Atari 800 Emulator, Version 1.3.5"
+#define ATARI_TITLE  "Atari 800 Emulator, Version 1.3.6"
 
 extern int xpos;
 extern int xpos_limit;
@@ -222,6 +222,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.49  2005/04/30 14:07:17  joy
+version increased for release
+
 Revision 1.48  2005/03/05 12:28:24  pfusik
 support for special AKEY_*, refresh rate control and atari_sync()
 moved to Atari800_Frame()

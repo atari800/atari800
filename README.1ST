@@ -1,4 +1,4 @@
-Atari800 emulator version 1.3.5
+Atari800 emulator version 1.3.6
 -------------------------------
 
 This is free and portable Atari800/XL/XE/5200 emulator, originally written
@@ -20,14 +20,14 @@ If you want to help developing Atari800 emulator you can subscribe to our
 mailing list (http://lists.sourceforge.net/lists/listinfo/atari800-users).
 DOC/TODO might point you in the right direction.
 
-This version (and all versions back to 0.8.2) has been released by me (Petr
+This version, and all versions back to 0.8.2 have been released by me (Petr
 Stehlik) and are now available at Sourceforge.net (URL below). Thanks
 go to David Firth and all the people that helped making this release.
 
 EnJoy!
 
 Petr Stehlik
-December 30, 2004.
+April 30, 2005.
 
 E-mail: pstehlik@sophics.cz
 
