@@ -1,5 +1,5 @@
 %define name	atari800
-%define ver	1.3.5
+%define ver	1.3.6
 %define rel	1
 %define copy	GPL
 %define ich Petr Stehlik <pstehlik@sophics.cz>
@@ -50,8 +50,6 @@ touch atari800
 
 %install
 rm -rf $RPM_BUILD_ROOT
-#mkdir -p $RPM_BUILD_ROOT/usr/bin
-#mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
 make install DESTDIR=$RPM_BUILD_ROOT
 for target in %{targets}
 do
@@ -68,7 +66,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-#%doc ../DOC ../README.1ST ../COPYING
 /usr/bin/atari800
 /usr/bin/atari800-x11
 /usr/bin/atari800-ncurses
@@ -82,6 +79,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/doc/atari800/NEWS
 
 %changelog
+* Sat Apr 30 2004 Petr Stehlik <pstehlik@sophics.cz>
+Version increased. Changes documented in the NEWS.
 * Thu Dec 30 2004 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Changes documented in the NEWS.
 * Mon Dec 27 2004 Petr Stehlik <pstehlik@sophics.cz>
