@@ -232,8 +232,6 @@ Uint32 Palette32[256];			// 32-bit palette
 
 // keyboard
 Uint8 *kbhits;
-static int last_key_break = 0;
-static int last_key_code = AKEY_NONE;
 
 // For better handling of the Atari_Configure-recognition...
 // Takes a keySym as integer-string and fills the value
@@ -1817,6 +1815,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.48  2005/04/30 13:44:51  joy
+ unused variables removed
+
  Revision 1.47  2005/03/10 05:02:34  pfusik
  corrected Atari_TRIG() and don't initialize sound on "-help"
 
