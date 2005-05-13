@@ -219,7 +219,7 @@ case "$a8_target" in
         A8_NEED_LIB(dsound)
         A8_NEED_LIB(dxguid)
         A8_NEED_LIB(ws2_32)
-        OBJS="win32/atari_win32.o win32/screen_win32.o win32/main.o win32/keyboard.o win32/atari.ro"
+        OBJS="win32/atari_win32.o win32/screen_win32.o win32/main.o win32/keyboard.o win32/joystick.o win32/atari.ro"
         ;;
     x11*)
         AC_PATH_X
