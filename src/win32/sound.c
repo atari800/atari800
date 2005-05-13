@@ -316,7 +316,7 @@ static int initsound_wav(void)
   err = waveOutOpen(&wout, WAVE_MAPPER, &wfx, (int)event, 0, CALLBACK_EVENT);
   if (err == WAVERR_BADFORMAT)
     {
-      Aprint("wave output paremeters unsupported\n");
+      Aprint("wave output parameters unsupported\n");
       exit(1);
     }
   if (err != MMSYSERR_NOERROR)
@@ -394,15 +394,15 @@ void Sound_Initialise(int *argc, char *argv[])
       {
 	if (strcmp(argv[i], "-help") == 0)
 	{
-	  Aprint("\t-sound			enable sound\n"
-		 "\t-nosound			disable sound\n"
+	  Aprint("\t-sound           Enable sound\n"
+		 "\t-nosound         Disable sound\n"
 #ifdef DIRECTX
-		 "\t-wavonly			disable direct sound\n"
+		 "\t-wavonly         Disable direct sound\n"
 #endif
-		 "\t-dsprate <rate>		set dsp rate\n"
-		 "\t-snddelay <milliseconds>	set sound delay\n"
-		 "\t-audio16			use 16 bit mixing\n"
-		 "\t-quality <quality level>	set sound quality\n"
+		 "\t-dsprate <rate>  Set dsp rate\n"
+		 "\t-snddelay <ms>   Set sound delay\n"
+		 "\t-audio16         Use 16 bit mixing\n"
+		 "\t-quality <level> Set sound quality"
 		);
 	  help = TRUE;
 	}
@@ -512,6 +512,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.16  2005/05/13 23:28:15  emuslor
+-help cleanup
+
 Revision 1.15  2003/09/14 19:13:41  joy
 round to a sample pair
 

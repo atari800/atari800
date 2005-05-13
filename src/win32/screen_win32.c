@@ -107,8 +107,8 @@ int gron(int *argc, char *argv[])
       {
         if (strcmp(argv[i], "-help") == 0)
         {
-	  Aprint("\t-width <num>	set display mode width");
-	  Aprint("\t-blt		use blitting to draw graphics");
+	  Aprint("\t-width <num>     Set display mode width");
+	  Aprint("\t-blt             Use blitting to draw graphics");
 	  help = TRUE;
         }
         argv[j++] = argv[i];
@@ -334,6 +334,9 @@ void refreshv(UBYTE * scr_ptr)
 
 /*
 $Log$
+Revision 1.2  2005/05/13 23:28:15  emuslor
+-help cleanup
+
 Revision 1.1  2005/03/03 09:15:43  pfusik
 renamed win32/screen.[ch] to win32/screen_win32.[ch]
 
