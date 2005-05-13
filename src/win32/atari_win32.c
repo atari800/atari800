@@ -32,16 +32,18 @@
 #include "input.h"
 #include "screen_win32.h"
 #include "keyboard.h"
+#include "joystick.h"
 #include "main.h"
 #include "sound.h"
 #include "monitor.h"
+#include "log.h"
 
 static int usesnd = 1;
 
 extern int refresh_rate;
 
 extern int alt_function;
-static int kbjoy = 1;
+static int kbjoy = 0;
 static UBYTE joydefs[] =
 {
   DIK_NUMPAD0,			/* fire */
@@ -80,8 +82,10 @@ static UBYTE joymask[] =
 #endif
 };
 
-static int trig0;
+static int trig0 = 1;
+static int trig1 = 1;
 static int stick0;
+static int stick1;
 
 extern double deltatime;
 
@@ -92,6 +96,8 @@ int Atari_Keyboard(void)
 
   prockb();
 
+  stick0 |= 0xf;
+  stick1 |= 0xf;
   if (kbjoy)
     {
       /* fire */
@@ -100,10 +106,22 @@ int Atari_Keyboard(void)
 #else
       trig0 = kbhits[joydefs[0]] ? 0 : 1;
 #endif
-      stick0 |= 0xf;
       for (i = 1; i < sizeof(joydefs) / sizeof(joydefs[0]); i++)
 	if (kbhits[joydefs[i]])
 	  stick0 &= joymask[i];
+    }
+  else
+    {
+      if (!procjoy(0))
+        {
+          trig0 = !joystat.trig;
+          stick0 &= joystat.stick;
+        }
+      if (!procjoy(1))
+        {
+          trig1 = !joystat.trig;
+          stick1 &= joystat.stick;
+        }
     }
 
   key_consol = (key_consol & ~CONSOL_NONE)
@@ -333,12 +351,41 @@ int Atari_Keyboard(void)
 
 void Atari_Initialise(int *argc, char *argv[])
 {
-  ShowWindow(hWndMain, SW_RESTORE);
+  int i;
+  int j;
+  int help_only = FALSE;
+
+  for (i = j = 1; i < *argc; i++)
+  {
+    if (strcmp(argv[i], "-nojoystick") == 0)
+    {
+      kbjoy = 1;
+      Aprint("no joystick");
+    }
+    else
+    {
+      if (strcmp(argv[i], "-help") == 0)
+      {
+        help_only = TRUE;
+        Aprint("\t-nojoystick      Disable joystick");
+      }
+      argv[j++] = argv[i];
+    }
+  }
+    
+  *argc = j;
 
 #ifdef SOUND
   if (usesnd)
     Sound_Initialise(argc, argv);
 #endif
+
+  if (gron(argc, argv))
+    exit(1);
+
+  if (help_only)
+    return;
+
   if (initinput())
   {
     MessageBox(hWndMain, "DirectInput Init FAILED",
@@ -347,14 +394,22 @@ void Atari_Initialise(int *argc, char *argv[])
 		| MB_OK);
     exit(1);
   }
-  if (gron(argc, argv))
-    exit(1);
-
   clearkb();
+
+  if (!kbjoy)
+  {
+    if (initjoystick())
+    {
+      kbjoy = 1;
+      Aprint("joystick not found");
+    }
+  }
 
   trig0 = 1;
   stick0 = 15;
   key_consol = CONSOL_NONE;
+
+  ShowWindow(hWndMain, SW_RESTORE);
 }
 
 int Atari_Exit(int run_monitor)
@@ -391,22 +446,27 @@ void Atari_DisplayScreen(UBYTE * ascreen)
 int Atari_PORT(int num)
 {
   if (num == 0)
-    {
-      return 0xf0 | stick0;
-    }
+  {
+    return (stick1 << 4) | stick0;
+  }
   else
+  {
     return 0xff;
+  }
 }
 
 
 int Atari_TRIG(int num)
 {
-  if (num == 0)
-    {
-      return trig0;
-    }
-  else
+  switch (num)
+  {
+  case 0:
+    return trig0;
+  case 1:
+    return trig1;
+  default:
     return 1;
+  }
 }
 
 int Atari_POT(int num)
@@ -416,6 +476,9 @@ int Atari_POT(int num)
 
 /*
 $Log$
+Revision 1.9  2005/05/13 23:32:24  emuslor
+Joystick support for DirectX and startup/-help cleanup
+
 Revision 1.8  2005/03/03 09:15:43  pfusik
 renamed win32/screen.[ch] to win32/screen_win32.[ch]
 
