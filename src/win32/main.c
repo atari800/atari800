@@ -31,6 +31,7 @@
 #include "main.h"
 #include "screen_win32.h"
 #include "keyboard.h"
+#include "joystick.h"
 #include "sound.h"
 #include "input.h"
 #include "screen.h"
@@ -92,6 +93,7 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 #ifdef SOUND
       Sound_Exit();
 #endif
+      uninitjoystick();
       uninitinput();
       break;
     case WM_DESTROY:
@@ -193,6 +195,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 
 /*
 $Log$
+Revision 1.13  2005/05/13 23:31:28  emuslor
+Joystick support for DirectX
+
 Revision 1.12  2005/03/05 12:31:26  pfusik
 support for special AKEY_*, refresh rate control and atari_sync()
 moved to Atari800_Frame()
