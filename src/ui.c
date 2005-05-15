@@ -618,6 +618,7 @@ void AtariSettings()
 		{"HDEV", ITEM_ENABLED | ITEM_CHECK, NULL, "H: device (hard disk):", NULL, 4},
 		{"PDEV", ITEM_ENABLED | ITEM_CHECK, NULL, "P: device (printer):", NULL, 5},
 		{"RDEV", ITEM_ENABLED | ITEM_CHECK, NULL, "R: device (Atari850 via net):", NULL, 6},
+		{"UCFG", ITEM_ENABLED | ITEM_ACTION, NULL, "Update configuration file", NULL, 7},
 		MENU_END
 	};
 
@@ -677,6 +678,10 @@ void AtariSettings()
 			break;
 		case 6:
 			enable_r_patch = !enable_r_patch;
+			break;
+		case 7:
+			RtConfigSave();
+			ui_driver->fMessage("Configuration file updated");
 			break;
 		}
 	} while (option >= 0);
@@ -1049,6 +1054,9 @@ void MakeBlankDisk(FILE * setFile)
 
 /*
 $Log$
+Revision 1.56  2005/05/15 07:03:52  emuslor
+Added configuration update to settings menu
+
 Revision 1.55  2005/04/30 13:46:42  joy
 indented properly
 
