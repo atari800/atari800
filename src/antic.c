@@ -1468,7 +1468,7 @@ static void draw_antic_2_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULON
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int k = 4;
 			UBYTE pm_reg;
 			do {
@@ -1542,7 +1542,7 @@ static void draw_antic_2_gtia10(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULO
 			ptr += 4;
 		}
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int pm_pixel;
 			int colreg;
 			int k = 4;
@@ -1580,7 +1580,7 @@ static void draw_antic_2_gtia11(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULO
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int k = 4;
 			UBYTE pm_reg;
 			do {
@@ -1653,7 +1653,7 @@ static void draw_antic_4(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				DRAW_BACKGROUND(C_BAK)
 		}
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int pm_pixel;
 			int colreg;
 			int k = 4;
@@ -1767,7 +1767,7 @@ static void draw_antic_6(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				chdata <<= 4;
 			}
 			else {
-				UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+				UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 				int pm_pixel;
 				UBYTE setcol = (playfield_lookup + 0x40)[screendata & 0xc0];
 				int colreg;
@@ -1841,7 +1841,7 @@ static void draw_antic_8(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				WRITE_VIDEO(ptr++, data);
 			}
 			else {
-				UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+				UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 				int pm_pixel;
 				int colreg = playfield_lookup[screendata & 0xc0];
 				int k = 4;
@@ -1893,7 +1893,7 @@ static void draw_antic_9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				screendata <<= 2;
 			}
 			else {
-				UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+				UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 				int pm_pixel;
 				int colreg;
 				int k = 4;
@@ -1944,7 +1944,7 @@ static void draw_antic_a(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				screendata <<= 4;
 			}
 			else {
-				UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+				UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 				int pm_pixel;
 				int colreg;
 				int k = 4;
@@ -1999,7 +1999,7 @@ static void draw_antic_c(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				screendata <<= 4;
 			}
 			else {
-				UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+				UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 				int pm_pixel;
 				int colreg;
 				int k = 4;
@@ -2036,7 +2036,7 @@ static void draw_antic_e(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_p
 				DRAW_BACKGROUND(C_BAK)
 		}
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int pm_pixel;
 			int colreg;
 			int k = 4;
@@ -2088,7 +2088,7 @@ static void draw_antic_e_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULON
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int k = 4;
 			UBYTE pm_reg;
 			do {
@@ -2196,7 +2196,7 @@ static void draw_antic_f_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULON
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int k = 4;
 			UBYTE pm_reg;
 			do {
@@ -2265,7 +2265,7 @@ static void draw_antic_f_gtia10(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULO
 			ptr += 4;
 		}
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int pm_pixel;
 			int colreg;
 			int k = 4;
@@ -2298,7 +2298,7 @@ static void draw_antic_f_gtia11(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULO
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr))
 			ptr += 4;
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int k = 4;
 			UBYTE pm_reg;
 			do {
@@ -2346,7 +2346,7 @@ static void draw_antic_f_gtia_bug(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, U
 			WRITE_VIDEO(ptr++, lookup2[screendata & 0x03]);
 		}
 		else {
-			UBYTE *c_pm_scanline_ptr = (char *) t_pm_scanline_ptr;
+			UBYTE *c_pm_scanline_ptr = (UBYTE *) t_pm_scanline_ptr;
 			int pm_pixel;
 			int colreg;
 			int k = 4;
