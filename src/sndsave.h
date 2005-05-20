@@ -4,7 +4,6 @@
 #include "atari.h"
 #include <stdio.h>
 
-extern FILE		*sndoutput;
 extern int		iSoundRate;
 
 typedef int BOOL;
