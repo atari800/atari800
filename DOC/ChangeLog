@@ -1,3 +1,12 @@
+2005-06-24  Piotr Fusik  <fox@scene.pl>
+* sio.c: fixed PERCOM configuration (spotted by Erhard Puetz):
+  - 1 track, 1 side for non-standard disk images (i.e. exactly 65535 sectors
+    for 65535 sectors image)
+  - 80 tracks for standard 720K, 1.44M and 2.88M disks
+  - MFM byte is 0 for SD, 4 otherwise
+  - unused bytes are set to 0
+
+
 2005-05-20  Piotr Fusik  <fox@scene.pl>
 * antic.c, sndsave.h, ui_basic.c: fixed an error and some warnings reported
   by GCC 4.0.0
