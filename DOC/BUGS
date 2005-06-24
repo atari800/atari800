@@ -19,6 +19,8 @@ o Non-bugs:
   - Mail Order Monsters (game)
 	 (some colour changes do not align with text, occurs on a real Atari) 
   - The Break (demo) (bugs on the left side of photo)
+  - Star Raiders (game) (doesn't work on XL/XE, select OS/B)
+  - Strip Poker (game) (Atari Basic must be enabled)
 
 o The following programs are improved by using the new cycle-exact code:
   - 8 Players Demo (demo)
