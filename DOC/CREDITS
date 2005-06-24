@@ -179,6 +179,9 @@ Rich Lawrence <rich@kesmai.com>
     - Win32 port (using DirectX)
     - DCM and ZLIB compressed files support
 
+Marcin Lewandowski <jaskier@atari8.info>
+	- incorrectly saved N flag when entering the monitor
+
 Chris Martin <cmartin@ti.com>
     - R: device as Atari850 emulation via network
 
@@ -220,6 +223,9 @@ Ivo van Poorten <ipoorten@cs.vu.nl>
 
 Jacek Poplawski <jpopl@interia.pl>
     - SDL port of Atari800
+
+Erhard Puetz <erhard-puetz@wtal.de>
+    - reported inaccurate PERCOM emulation
 
 Thomas Richter <thor@math.tu-berlin.de>
     - GTIA collisions and third colour of players
