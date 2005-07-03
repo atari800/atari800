@@ -1112,7 +1112,7 @@ int SIO_GetByte(void)
 	case SIO_FormatFrame:
 		TransferStatus = SIO_ReadFrame;
 		DELAYED_SERIN_IRQ = SERIN_INTERVAL << 3;
-		 /* FALL THROUGH */
+		/* FALL THROUGH */
 	case SIO_ReadFrame:
 		if (DataIndex < ExpectedBytes) {
 			byte = DataBuffer[DataIndex++];
@@ -1121,7 +1121,7 @@ int SIO_GetByte(void)
 			}
 			else {
 				/* set delay using the expected transfer speed */
-				DELAYED_SERIN_IRQ = (DataIndex==1) ? SERIN_INTERVAL
+				DELAYED_SERIN_IRQ = (DataIndex == 1) ? SERIN_INTERVAL
 					: ((SERIN_INTERVAL * AUDF[CHAN3] - 1) / 0x28 + 1);
 			}
 		}
@@ -1160,11 +1160,11 @@ int SIO_GetByte(void)
 
 int Rotate_Disks(void)
 {
-	char	tmp_filenames[MAX_DRIVES][FILENAME_MAX];
-	int		i;
-	int		bSuccess = TRUE;
+	char tmp_filenames[MAX_DRIVES][FILENAME_MAX];
+	int i;
+	int bSuccess = TRUE;
 
-	for (i = 0; i < MAX_DRIVES; i++)
+	for (i = 0; i < MAX_DRIVES; i++) {
 		strcpy(tmp_filenames[i], sio_filename[i]);
 		SIO_Dismount(i + 1);
 	}
@@ -1253,6 +1253,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.25  2005/07/03 09:47:54  pfusik
+added a missing brace
+
 Revision 1.24  2005/06/24 11:25:12  pfusik
 fixed PERCOM configuration
 
