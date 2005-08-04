@@ -1,3 +1,21 @@
+2005-08-05  Piotr Fusik  <fox@scene.pl>
+* configure.ac: added checks for some headers and functions used in devices.c
+  and atari.c.
+  VERY IMPORTANT: if you don't use Configure, make sure you define HAVE_*
+  symbols (in config.h) for the header files and functions you have.
+
+* sio.c: getcwd() may be unavailable
+
+* devices.c, devices.h: fancy I/O functions may be unavailable;
+  got rid of numerous #ifdef BACK_SLASH
+
+* statesav.c: ReadDisabledROMs wasn't actually called!
+  Thank you GCC 4 for the warning.
+
+* atari.c: use best time functions available - now checked by Configure,
+  not hard-coded for platforms (almost...)
+
+
 2005-06-24  Piotr Fusik  <fox@scene.pl>
 * sio.c: fixed PERCOM configuration (spotted by Erhard Puetz):
   - 1 track, 1 side for non-standard disk images (i.e. exactly 65535 sectors
