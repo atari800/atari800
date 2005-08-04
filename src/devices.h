@@ -9,7 +9,6 @@ void Device_Initialise(int *argc, char *argv[]);
 int Device_PatchOS(void);
 void Device_Frame(void);
 void Device_UpdatePatches(void);
-void Device_HHINIT(void);
 
 /* following is for ports which want to add their specific devices */
 

@@ -22,44 +22,47 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include    <stdio.h>
-#include    <stdlib.h>
-#include    <string.h>
-#include    <ctype.h>
-#include    <time.h>
-#include    <errno.h>
-#include	"config.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <time.h>
+#include <errno.h>
+#include "config.h"
+
+#ifdef HAVE_UNIXIO_H
+#include <unixio.h>
+#endif
+
+#ifdef HAVE_FILE_H
+#include <file.h>
+#endif
+
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#if defined(HAVE_DIRENT_H) && defined(HAVE_OPENDIR)
+/* !VMS */
+#define DO_DIR
+#endif
+
+#ifdef DO_DIR
+#include <dirent.h>
+#endif
+
+#include <sys/stat.h>
+
 #ifndef HAVE_MKSTEMP
 # ifndef O_BINARY
 #  define O_BINARY	0
 # endif
 # define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
 #endif
-
-#include    "config.h"
-#include    "ui.h"
-
-#ifdef VMS
-#include    <unixio.h>
-#include    <file.h>
-#else
-#include    <fcntl.h>
-#ifndef AMIGA
-#include    <unistd.h>
-#endif
-#endif
-
-#define DO_DIR
-
-#ifdef VMS
-#undef  DO_DIR
-#endif
-
-#ifdef DO_DIR
-#include    <dirent.h>
-#endif
-
-#include        <sys/stat.h>
 
 #include "atari.h"
 #include "cpu.h"
@@ -71,7 +74,7 @@
 #include "sio.h"
 #include "ui.h"
 
-#if defined(R_IO_DEVICE)
+#ifdef R_IO_DEVICE
 #include "rdevice.h"
 #endif
 
@@ -106,7 +109,7 @@ static char newfilename[FILENAME_MAX];
 static DIR *dp = NULL;
 #endif
 
-char *strtoupper(char *str)
+static char *strtoupper(char *str)
 {
 	char *ptr;
 	for (ptr = str; *ptr; ptr++)
@@ -115,7 +118,7 @@ char *strtoupper(char *str)
 	return str;
 }
 
-char *strtolower(char *str)
+static char *strtolower(char *str)
 {
 	char *ptr;
 	for (ptr = str; *ptr; ptr++)
@@ -124,7 +127,7 @@ char *strtolower(char *str)
 	return str;
 }
 
-static void Device_GeneratePath()
+static void Device_GeneratePath(void)
 {
 	int i;
 
@@ -152,6 +155,8 @@ static void Device_GeneratePath()
 		strtolower(HPaths[i]);
 	}
 }
+
+static void Device_HHINIT(void);
 
 void Device_Initialise(int *argc, char *argv[])
 {
@@ -217,7 +222,7 @@ int Device_isvalid(UBYTE ch)
 	return valid;
 }
 
-void Device_GetFilename(void)
+static void Device_GetFilename(void)
 {
 	int bufadr;
 	int offset = 0;
@@ -243,7 +248,7 @@ void Device_GetFilename(void)
 	filename[offset++] = '\0';
 }
 
-void Device_GetFilenames(void)
+static void Device_GetFilenames(void)
 {
 	int bufadr;
 	int offset = 0;
@@ -290,7 +295,7 @@ void Device_GetFilenames(void)
 	newfilename[offset++] = '\0';
 }
 
-int match(char *pattern, char *filename)
+static int match(char *pattern, char *filename)
 {
 	int status = TRUE;
 
@@ -325,7 +330,7 @@ int match(char *pattern, char *filename)
 	return status;
 }
 
-void fillin(char *pattern, char *filename)
+static void fillin(char *pattern, char *filename)
 {
 	while (*pattern) {
 		switch (*pattern) {
@@ -349,7 +354,22 @@ void fillin(char *pattern, char *filename)
 	*filename = 0;
 }
 
-void apply_relative_path(char *rel_path, char *current)
+#ifdef BACK_SLASH
+#define DIR_SEP_CHAR '\\'
+#define DIR_SEP_STR "\\"
+#else
+#define DIR_SEP_CHAR '/'
+#define DIR_SEP_STR "/"
+#endif
+
+/* Concatenate file paths. */
+/* Place directory separator char between, unless path2 already starts with it. */
+static void cat_path(char *result, const char *path1, const char *path2)
+{
+	sprintf(result, path2[0] == DIR_SEP_CHAR ? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
+}
+
+static void apply_relative_path(char *rel_path, char *current)
 {
 	char *end_current = current + strlen(current);
 
@@ -361,40 +381,24 @@ void apply_relative_path(char *rel_path, char *current)
 		}
 	}
 	else if (current[0] != 0) {
-#ifdef BACK_SLASH
-		*end_current++ = '\\';
-#else
-		*end_current++ = '/';
-#endif
+		*end_current++ = DIR_SEP_CHAR;
 	}
 
 	while (*rel_path) {
 		if (*rel_path == '>' || *rel_path == ':') {
 			if (*(rel_path + 1) == '>' || *(rel_path + 1) == ':') {
 				/* Move up a directory */
-#ifdef BACK_SLASH
-				while ((end_current > current) && (*end_current != '\\'))
-#else
-				while ((end_current > current) && (*end_current != '/'))
-#endif
+				while ((end_current > current) && (*end_current != DIR_SEP_CHAR))
 					end_current--;
 				rel_path += 2;
 				if ((*rel_path != '>') && (*rel_path != ':')
 					&& (*rel_path != 0))
-#ifdef BACK_SLASH
-					*end_current++ = '\\';
-#else
-					*end_current++ = '/';
-#endif
+					*end_current++ = DIR_SEP_CHAR;
 				else
 					*end_current = 0;
 			}
 			else {
-#ifdef BACK_SLASH
-				*end_current++ = '\\';
-#else
-				*end_current++ = '/';
-#endif
+				*end_current++ = DIR_SEP_CHAR;
 				rel_path++;
 			}
 		}
@@ -407,7 +411,7 @@ void apply_relative_path(char *rel_path, char *current)
 }
 
 
-void Device_ApplyPathToFilename(int devnum)
+static void Device_ApplyPathToFilename(int devnum)
 {
 	char path[FILENAME_MAX];
 
@@ -416,18 +420,14 @@ void Device_ApplyPathToFilename(int devnum)
 	strcpy(filename, path);
 }
 
-void Device_SeparateFileFromPath()
+static void Device_SeparateFileFromPath()
 {
 	char *ptr;
 
 	strcpy(pathname, filename);
 	ptr = pathname + strlen(pathname);
 	while (ptr > pathname) {
-#ifdef BACK_SLASH
-		if (*ptr == '\\') {
-#else
-		if (*ptr == '/') {
-#endif
+		if (*ptr == DIR_SEP_CHAR) {
 			*ptr = 0;
 			strcpy(filename, ptr + 1);
 			break;
@@ -436,12 +436,11 @@ void Device_SeparateFileFromPath()
 	}
 }
 
-void Device_HHOPEN(void)
+static void Device_HHOPEN(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
 	int temp;
-	struct stat status;
 	char entryname[FILENAME_MAX];
 	char *ext;
 	int size;
@@ -480,22 +479,13 @@ void Device_HHOPEN(void)
 #ifdef VMS
 /* Assumes H[devnum] is a directory _logical_, not an explicit directory
    specification! */
+	/* XXX: Maybe this should go into cat_path() ? */
 	if (filename[0] == ':')
 		sprintf(fname, "%s%s", H[devnum], filename);
 	else
 		sprintf(fname, "%s:%s", H[devnum], filename);
 #else
-#ifdef BACK_SLASH
-	if (filename[0] == '\\')
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-		sprintf(fname, "%s\\%s", H[devnum], filename);
-#else
-	if (filename[0] == '/')
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-		sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
+	cat_path(fname, H[devnum], filename);
 #endif
 	strcpy(filename, fname);
 	temp = dGetByte(ICAX1Z);
@@ -531,11 +521,7 @@ void Device_HHOPEN(void)
 					else {
 						end_dir = pathname + strlen(pathname);
 						while (end_dir > pathname) {
-#ifdef BACK_SLASH
-							if (*end_dir == '\\') {
-#else
-							if (*end_dir == '/') {
-#endif
+							if (*end_dir == DIR_SEP_CHAR) {
 								end_dir++;
 								break;
 							}
@@ -551,13 +537,8 @@ void Device_HHOPEN(void)
 					strcpy(entryname, entry->d_name);
 					if (match(strtoupper(filename), strtoupper(entryname)))
 						if (entry->d_name[0] != '.') {
-#ifdef BACK_SLASH
-							sprintf(fname, "%s\\%s", pathname,
-									entry->d_name);
-#else
-							sprintf(fname, "%s/%s", pathname,
-									entry->d_name);
-#endif
+							struct stat status;
+							cat_path(fname, pathname, entry->d_name);
 							stat(fname, &status);
 							if ((status.st_size != 0)
 								&& (status.st_size % 256 == 0))
@@ -591,7 +572,7 @@ void Device_HHOPEN(void)
 							}
 							else {
 								if (status.st_mode & S_IFDIR)
-									ext = "\304\311\322";
+									ext = "\304\311\322"; /* "DIR" with bit 7 set */
 								fprintf(fp[fid], "%s %-8s%-3s %03d\n",
 										(status.
 										 st_mode & S_IWUSR) ? " " : "*",
@@ -645,7 +626,7 @@ void Device_HHOPEN(void)
 			SetN;
 		}
 		break;
-	case 12:					/* read and write  (update) */
+	case 12:					/* read and write (update) */
 		if (hd_read_only) {
 			regY = 135;			/* device is read only */
 			SetN;
@@ -668,7 +649,7 @@ void Device_HHOPEN(void)
 	}
 }
 
-void Device_HHCLOS(void)
+static void Device_HHCLOS(void)
 {
 	if (devbug)
 		Aprint("HHCLOS");
@@ -683,7 +664,7 @@ void Device_HHCLOS(void)
 	ClrN;
 }
 
-void Device_HHREAD(void)
+static void Device_HHREAD(void)
 {
 	if (devbug)
 		Aprint("HHREAD");
@@ -719,7 +700,7 @@ void Device_HHREAD(void)
 	}
 }
 
-void Device_HHWRIT(void)
+static void Device_HHWRIT(void)
 {
 	if (devbug)
 		Aprint("HHWRIT");
@@ -749,7 +730,7 @@ void Device_HHWRIT(void)
 	}
 }
 
-void Device_HHSTAT(void)
+static void Device_HHSTAT(void)
 {
 	if (devbug)
 		Aprint("HHSTAT");
@@ -787,7 +768,7 @@ static SLONG Device_HSPEC_BIN_read_word(void)
 	return buf[0] | (buf[1] << 8);
 }
 
-void Device_HSPEC_BIN_loader_cont(void)
+static void Device_HSPEC_BIN_loader_cont(void)
 {
 	SLONG temp;
 	UWORD from;
@@ -858,14 +839,13 @@ void Device_HSPEC_BIN_loader_cont(void)
 	dPutByte(0x0300, 0x31);		/* for "Studio Dream" */
 }
 
-void Device_HHSPEC_Rename(void)
+static void Device_HHSPEC_Rename(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
 	char newfname[FILENAME_MAX];
 	char renamefname[FILENAME_MAX];
 	int status;
-	struct stat filestatus;
 	int num_changed = 0;
 	int num_locked = 0;
 
@@ -890,21 +870,11 @@ void Device_HHSPEC_Rename(void)
 
 	Device_GetFilenames();
 	Device_ApplyPathToFilename(devnum);
-#ifdef BACK_SLASH
-	if (filename[0] == '\\')
-#else
-	if (filename[0] == '/')
-#endif
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-#ifdef BACK_SLASH
-		sprintf(fname, "%s\\%s", H[devnum], filename);
-#else
-		sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
+	cat_path(fname, H[devnum], filename);
 	strcpy(filename, fname);
-	Device_SeparateFileFromPath();
 
+#ifdef DO_DIR
+	Device_SeparateFileFromPath();
 	dp = opendir(pathname);
 	if (dp) {
 		struct dirent *entry;
@@ -912,19 +882,12 @@ void Device_HHSPEC_Rename(void)
 		status = 0;
 		while ((entry = readdir(dp))) {
 			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
+				struct stat filestatus;
 				strtolower(entry->d_name);
-#ifdef BACK_SLASH
-				sprintf(fname, "%s\\%s", pathname, entry->d_name);
-#else
-				sprintf(fname, "%s/%s", pathname, entry->d_name);
-#endif
-				sprintf(renamefname, "%s", entry->d_name);
+				cat_path(fname, pathname, entry->d_name);
+				strcpy(renamefname, entry->d_name);
 				fillin(newfilename, renamefname);
-#ifdef BACK_SLASH
-				sprintf(newfname, "%s\\%s", pathname, renamefname);
-#else
-				sprintf(newfname, "%s/%s", pathname, renamefname);
-#endif
+				cat_path(newfname, pathname, renamefname);
 				stat(fname, &filestatus);
 				if (filestatus.st_mode & S_IWUSR) {
 					if (rename(fname, newfname) != 0)
@@ -938,27 +901,30 @@ void Device_HHSPEC_Rename(void)
 		}
 		closedir(dp);
 	}
+#else
+	status = 0;
+	if (rename(filename, newfilename) == 0)
+		num_changed++;
+#endif
 	else
 		status = -1;
 
 	if (num_locked) {
 		regY = 167;
 		SetN;
-		return;
 	}
 	else if (status == 0 && num_changed != 0) {
 		regY = 1;
 		ClrN;
-		return;
 	}
 	else {
 		regY = 170;
 		SetN;
-		return;
 	}
 }
 
-void Device_HHSPEC_Delete(void)
+#ifdef HAVE_UNLINK
+static void Device_HHSPEC_Delete(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
@@ -988,21 +954,11 @@ void Device_HHSPEC_Delete(void)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-#ifdef BACK_SLASH
-	if (filename[0] == '\\')
-#else
-	if (filename[0] == '/')
-#endif
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-#ifdef BACK_SLASH
-		sprintf(fname, "%s\\%s", H[devnum], filename);
-#else
-		sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
+	cat_path(fname, H[devnum], filename);
 	strcpy(filename, fname);
-	Device_SeparateFileFromPath();
 
+#ifdef DO_DIR
+	Device_SeparateFileFromPath();
 	dp = opendir(pathname);
 	if (dp) {
 		struct dirent *entry;
@@ -1011,11 +967,7 @@ void Device_HHSPEC_Delete(void)
 		while ((entry = readdir(dp))) {
 			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
 				strtolower(entry->d_name);
-#ifdef BACK_SLASH
-				sprintf(fname, "%s\\%s", pathname, entry->d_name);
-#else
-				sprintf(fname, "%s/%s", pathname, entry->d_name);
-#endif
+				cat_path(fname, pathname, entry->d_name);
 				stat(fname, &filestatus);
 				if (filestatus.st_mode & S_IWUSR) {
 					if (unlink(fname) != 0)
@@ -1030,27 +982,32 @@ void Device_HHSPEC_Delete(void)
 		}
 		closedir(dp);
 	}
+#else
+	if (unlink(filename) == 0) {
+		status = 0;
+		num_changed++;
+	}
+#endif
 	else
 		status = -1;
 
 	if (num_locked) {
 		regY = 167;
 		SetN;
-		return;
 	}
 	else if (status == 0 && num_changed != 0) {
 		regY = 1;
 		ClrN;
-		return;
 	}
 	else {
 		regY = 170;
 		SetN;
-		return;
 	}
 }
+#endif
 
-void Device_HHSPEC_Lock(void)
+#ifdef HAVE_CHMOD
+static void Device_HHSPEC_Lock(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
@@ -1078,21 +1035,11 @@ void Device_HHSPEC_Lock(void)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-#ifdef BACK_SLASH
-	if (filename[0] == '\\')
-#else
-	if (filename[0] == '/')
-#endif
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-#ifdef BACK_SLASH
-		sprintf(fname, "%s\\%s", H[devnum], filename);
-#else
-		sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
+	cat_path(fname, H[devnum], filename);
 	strcpy(filename, fname);
-	Device_SeparateFileFromPath();
 
+#ifdef DO_DIR
+	Device_SeparateFileFromPath();
 	dp = opendir(pathname);
 	if (dp) {
 		struct dirent *entry;
@@ -1101,11 +1048,7 @@ void Device_HHSPEC_Lock(void)
 		while ((entry = readdir(dp))) {
 			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
 				strtolower(entry->d_name);
-#ifdef BACK_SLASH
-				sprintf(fname, "%s\\%s", pathname, entry->d_name);
-#else
-				sprintf(fname, "%s/%s", pathname, entry->d_name);
-#endif
+				cat_path(fname, pathname, entry->d_name);
 				if (chmod(fname, S_IRUSR) != 0)
 					status = -1;
 				else
@@ -1115,22 +1058,26 @@ void Device_HHSPEC_Lock(void)
 
 		closedir(dp);
 	}
+#else
+	if (chmod(filename, S_IRUSR) == 0) {
+		status = 0;
+		num_changed++;
+	}
+#endif
 	else
 		status = -1;
 
 	if (status == 0 && num_changed != 0) {
 		regY = 1;
 		ClrN;
-		return;
 	}
 	else {
 		regY = 170;
 		SetN;
-		return;
 	}
 }
 
-void Device_HHSPEC_Unlock(void)
+static void Device_HHSPEC_Unlock(void)
 {
 
 	char fname[FILENAME_MAX];
@@ -1159,21 +1106,11 @@ void Device_HHSPEC_Unlock(void)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-#ifdef BACK_SLASH
-	if (filename[0] == '\\')
-#else
-	if (filename[0] == '/')
-#endif
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-#ifdef BACK_SLASH
-		sprintf(fname, "%s\\%s", H[devnum], filename);
-#else
-		sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
+	cat_path(fname, H[devnum], filename);
 	strcpy(filename, fname);
-	Device_SeparateFileFromPath();
 
+#ifdef DO_DIR
+	Device_SeparateFileFromPath();
 	dp = opendir(pathname);
 	if (dp) {
 		struct dirent *entry;
@@ -1182,11 +1119,7 @@ void Device_HHSPEC_Unlock(void)
 		while ((entry = readdir(dp))) {
 			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
 				strtolower(entry->d_name);
-#ifdef BACK_SLASH
-				sprintf(fname, "%s\\%s", pathname, entry->d_name);
-#else
-				sprintf(fname, "%s/%s", pathname, entry->d_name);
-#endif
+				cat_path(fname, pathname, entry->d_name);
 				if (chmod(fname, S_IRUSR | S_IWUSR) != 0)
 					status = -1;
 				else
@@ -1196,22 +1129,27 @@ void Device_HHSPEC_Unlock(void)
 
 		closedir(dp);
 	}
+#else
+	if (chmod(fname, S_IRUSR | S_IWUSR) == 0) {
+		status = 0;
+		num_changed++;
+	}
+#endif
 	else
 		status = -1;
 
 	if (status == 0 && num_changed != 0) {
 		regY = 1;
 		ClrN;
-		return;
 	}
 	else {
 		regY = 170;
 		SetN;
-		return;
 	}
 }
+#endif /* HAVE_CHMOD */
 
-void Device_HHSPEC_Note(void)
+static void Device_HHSPEC_Note(void)
 {
 	long pos;
 	unsigned long iocb;
@@ -1227,23 +1165,19 @@ void Device_HHSPEC_Note(void)
 			dPutByte(iocb + ICAX4, ((pos & 0xff0000) >> 16));
 			regY = 1;
 			ClrN;
-			return;
 		}
 		else {
 			regY = 163;
 			SetN;
-			return;
 		}
 	}
 	else {
 		regY = 163;
 		SetN;
-		return;
 	}
 }
 
-
-void Device_HHSPEC_Point(void)
+static void Device_HHSPEC_Point(void)
 {
 	unsigned long pos;
 	unsigned long iocb;
@@ -1257,22 +1191,19 @@ void Device_HHSPEC_Point(void)
 		if (fseek(fp[fid], pos, SEEK_SET) == 0) {
 			regY = 1;
 			ClrN;
-			return;
 		}
 		else {
 			regY = 163;			/* Need to change to invalid Point MDG */
 			SetN;
-			return;
 		}
 	}
 	else {
 		regY = 163;
 		SetN;
-		return;
 	}
 }
 
-void Device_HHSPEC_Load(int mydos)
+static void Device_HHSPEC_Load(int mydos)
 {
 	char fname[FILENAME_MAX];
 	char loadpath[FILENAME_MAX];
@@ -1298,43 +1229,25 @@ void Device_HHSPEC_Load(int mydos)
 	Device_GetFilename();
 
 	for (i = 0; i < HPathCount; i++) {
+		char *p;
 		if (HPathDrive[i] == -1)
 			drive_root = H[devnum];
 		else
 			drive_root = H[HPathDrive[i]];
 		loadpath[0] = 0;
 		apply_relative_path(HPaths[i], loadpath);
-#ifdef BACK_SLASH
-		if (filename[0] == '\\')
-			sprintf(fname, "%s\\%s%s", drive_root, loadpath, filename);
-#else
-		if (filename[0] == '/')
-			sprintf(fname, "%s/%s%s", drive_root, loadpath, filename);
-#endif
-		else
-#ifdef BACK_SLASH
-			sprintf(fname, "%s\\%s\\%s", drive_root, loadpath, filename);
-#else
-			sprintf(fname, "%s/%s/%s", drive_root, loadpath, filename);
-#endif
+		cat_path(fname, drive_root, loadpath);
+		p = fname + strlen(fname);
+		if (filename[0] != DIR_SEP_CHAR)
+			*p++ = DIR_SEP_CHAR;
+		strcpy(p, filename);
 		binf = fopen(fname, "rb");
 		if (binf)
 			break;
 	}
 	if (!binf) {
 		Device_ApplyPathToFilename(devnum);
-#ifdef BACK_SLASH
-		if (filename[0] == '\\')
-#else
-		if (filename[0] == '/')
-#endif
-			sprintf(fname, "%s%s", H[devnum], filename);
-		else
-#ifdef BACK_SLASH
-			sprintf(fname, "%s\\%s", H[devnum], filename);
-#else
-			sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
+		cat_path(fname, H[devnum], filename);
 		if (!(binf = fopen(fname, "rb"))) {	/* open */
 			Aprint("H: load: can't open %s", filename);
 			regY = 170;
@@ -1384,16 +1297,16 @@ void Device_HHSPEC_Load(int mydos)
 	return;
 }
 
-void Device_HHSPEC_File_Length(void)
+static void Device_HHSPEC_File_Length(void)
 {
-	unsigned long iocb;
-	int filesize;
-	struct stat fstatus;
-	/*printf("File Length Command\n");*/
 	if (devbug)
 		Aprint("Get File Length Command");
 	/* If IOCB is open, then assume it is a file length command.. */
 	if (fp[fid]) {
+#ifdef HAVE_FSTAT
+		unsigned long iocb;
+		int filesize;
+		struct stat fstatus;
 		iocb = IOCB0 + ((fid) * 16);
 		fstat(fileno(fp[fid]), &fstatus);
 		filesize = fstatus.st_size;
@@ -1402,17 +1315,19 @@ void Device_HHSPEC_File_Length(void)
 		dPutByte(iocb + ICAX5, ((filesize & 0xff0000) >> 16));
 		regY = 1;
 		ClrN;
-		return;
+#else
+		regY = 168;
+		SetN;
+#endif
 	}
 	/* Otherwise, we are going to assume it is a MYDOS Load File
 	   command, since they use a different XIO value */
-	else {
+	else
 		Device_HHSPEC_Load(TRUE);
-		return;
-	}
 }
 
-void Device_HHSPEC_Mkdir(void)
+#ifdef HAVE_MKDIR
+static void Device_HHSPEC_Mkdir(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
@@ -1433,40 +1348,28 @@ void Device_HHSPEC_Mkdir(void)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-#ifdef BACK_SLASH
-	if (filename[0] == '\\')
-#else
-	if (filename[0] == '/')
-#endif
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-#ifdef BACK_SLASH
-		sprintf(fname, "%s\\%s", H[devnum], filename);
-#else
-		sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
+	cat_path(fname, H[devnum], filename);
 
 #ifdef WIN32
-	if (mkdir(fname) == 0) {
+	if (mkdir(fname) == 0)
 #else
 	umask(S_IWGRP | S_IWOTH);
-	if (mkdir
-		(fname,
-		 S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH | S_IXGRP |
-		 S_IXOTH) == 0) {
+	if (mkdir(fname,
+		 S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH) == 0)
 #endif
+	{
 		regY = 1;
 		ClrN;
-		return;
 	}
 	else {
 		regY = 170;				/* Need to change to invalid Point MDG */
 		SetN;
-		return;
 	}
 }
+#endif
 
-void Device_HHSPEC_Deldir(void)
+#ifdef HAVE_RMDIR
+static void Device_HHSPEC_Deldir(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
@@ -1487,39 +1390,26 @@ void Device_HHSPEC_Deldir(void)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-#ifdef BACK_SLASH
-	if (filename[0] == '\\')
-#else
-	if (filename[0] == '/')
-#endif
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-#ifdef BACK_SLASH
-		sprintf(fname, "%s\\%s", H[devnum], filename);
-#else
-		sprintf(fname, "%s/%s", H[devnum], filename);
-#endif
+	cat_path(fname, H[devnum], filename);
 
 	if (rmdir(fname) == 0) {
 		regY = 1;
 		ClrN;
-		return;
 	}
 	else {
-		if (errno == ENOTEMPTY)
-			regY = 167;
-		else
-			regY = 150;
+		regY = (errno == ENOTEMPTY) ? 167 : 150;
 		SetN;
-		return;
 	}
 }
+#endif
 
-void Device_HHSPEC_Cd(void)
+static void Device_HHSPEC_Cd(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
+#ifdef HAVE_STAT
 	struct stat filestatus;
+#endif
 	char new_path[FILENAME_MAX];
 
 	if (devbug)
@@ -1539,54 +1429,32 @@ void Device_HHSPEC_Cd(void)
 
 	strcpy(new_path, current_dir[devnum]);
 	apply_relative_path(filename, new_path);
-	if (new_path[0] != 0) {
-#ifdef BACK_SLASH
-		if (new_path[0] == '\\')
-#else
-		if (new_path[0] == '/')
-#endif
-			sprintf(fname, "%s%s", H[devnum], new_path);
-		else
-#ifdef BACK_SLASH
-			sprintf(fname, "%s\\%s", H[devnum], new_path);
-#else
-			sprintf(fname, "%s/%s", H[devnum], new_path);
-#endif
-	}
+	if (new_path[0] != 0)
+		cat_path(fname, H[devnum], new_path);
 	else
 		strcpy(fname, H[devnum]);
 
-
-	if (stat(fname, &filestatus) == 0) {
-#ifdef BACK_SLASH
-		if (new_path[0] == '\\')
-#else
-		if (new_path[0] == '/')
-#endif
-			strcpy(current_dir[devnum], &new_path[1]);
-		else
-			strcpy(current_dir[devnum], new_path);
-		strcpy(current_path[devnum], H[devnum]);
-		if (current_dir[devnum][0] != 0) {
-#ifdef BACK_SLASH
-			strcat(current_path[devnum], "\\");
-#else
-			strcat(current_path[devnum], "/");
-#endif
-			strcat(current_path[devnum], current_dir[devnum]);
-		}
-		regY = 1;
-		ClrN;
-		return;
-	}
-	else {
+#ifdef HAVE_STAT
+	if (stat(fname, &filestatus) != 0) {
 		regY = 150;
 		SetN;
 		return;
 	}
+#endif
+	if (new_path[0] == DIR_SEP_CHAR)
+		strcpy(current_dir[devnum], &new_path[1]);
+	else
+		strcpy(current_dir[devnum], new_path);
+	strcpy(current_path[devnum], H[devnum]);
+	if (current_dir[devnum][0] != 0) {
+		strcat(current_path[devnum], DIR_SEP_STR);
+		strcat(current_path[devnum], current_dir[devnum]);
+	}
+	regY = 1;
+	ClrN;
 }
 
-void Device_HHSPEC_Disk_Info(void)
+static void Device_HHSPEC_Disk_Info(void)
 {
 	int devnum;
 	int bufadr;
@@ -1629,7 +1497,7 @@ void Device_HHSPEC_Disk_Info(void)
 	ClrN;
 }
 
-void Device_HHSPEC_Current_Dir(void)
+static void Device_HHSPEC_Current_Dir(void)
 {
 	int devnum;
 	char new_path[FILENAME_MAX];
@@ -1659,11 +1527,7 @@ void Device_HHSPEC_Current_Dir(void)
 	pathlen = strlen(new_path);
 
 	for (i = 0; i < pathlen; i++) {
-#ifdef BACK_SLASH
-		if (new_path[i] == '\\')
-#else
-		if (new_path[i] == '/')
-#endif
+		if (new_path[i] == DIR_SEP_CHAR)
 			new_path[i] = '>';
 	}
 	strtoupper(new_path);
@@ -1676,7 +1540,7 @@ void Device_HHSPEC_Current_Dir(void)
 	ClrN;
 }
 
-void Device_HHSPEC(void)
+static void Device_HHSPEC(void)
 {
 	if (devbug)
 		Aprint("HHSPEC");
@@ -1687,15 +1551,19 @@ void Device_HHSPEC(void)
 	case 0x20:
 		Device_HHSPEC_Rename();
 		return;
+#ifdef HAVE_UNLINK
 	case 0x21:
 		Device_HHSPEC_Delete();
 		return;
+#endif
+#ifdef HAVE_CHMOD
 	case 0x23:
 		Device_HHSPEC_Lock();
 		return;
 	case 0x24:
 		Device_HHSPEC_Unlock();
 		return;
+#endif
 	case 0x26:
 		Device_HHSPEC_Note();
 		return;
@@ -1708,12 +1576,16 @@ void Device_HHSPEC(void)
 	case 0x28:
 		Device_HHSPEC_Load(FALSE);
 		return;
+#ifdef HAVE_MKDIR
 	case 0x2A:
 		Device_HHSPEC_Mkdir();
 		return;
+#endif
+#ifdef HAVE_RMDIR
 	case 0x2B:
 		Device_HHSPEC_Deldir();
 		return;
+#endif
 	case 0x2C:
 		Device_HHSPEC_Cd();
 		return;
@@ -1733,11 +1605,11 @@ void Device_HHSPEC(void)
 		break;
 	}
 
-	regY = 146;
+	regY = 168;
 	SetN;
 }
 
-void Device_HHINIT(void)
+static void Device_HHINIT(void)
 {
 	int i;
 
@@ -1752,10 +1624,10 @@ void Device_HHINIT(void)
 }
 
 static FILE *phf = NULL;
-void Device_PHCLOS(void);
+static void Device_PHCLOS(void);
 static char spool_file[13];
 
-void Device_PHOPEN(void)
+static void Device_PHOPEN(void)
 {
 	if (devbug)
 		Aprint("PHOPEN");
@@ -1763,7 +1635,7 @@ void Device_PHOPEN(void)
 	if (phf)
 		Device_PHCLOS();
 
-	strcpy(spool_file,"SPOOL_XXXXXX\0");
+	strcpy(spool_file, "SPOOL_XXXXXX\0");
 	phf = fdopen(mkstemp(spool_file), "w");
 	if (phf) {
 		regY = 1;
@@ -1775,7 +1647,7 @@ void Device_PHOPEN(void)
 	}
 }
 
-void Device_PHCLOS(void)
+static void Device_PHCLOS(void)
 {
 	if (devbug)
 		Aprint("PHCLOS");
@@ -1801,16 +1673,7 @@ void Device_PHCLOS(void)
 	ClrN;
 }
 
-void Device_PHREAD(void)
-{
-	if (devbug)
-		Aprint("PHREAD");
-
-	regY = 146;
-	SetN;
-}
-
-void Device_PHWRIT(void)
+static void Device_PHWRIT(void)
 {
 	unsigned char byte;
 	int status;
@@ -1833,22 +1696,13 @@ void Device_PHWRIT(void)
 	}
 }
 
-void Device_PHSTAT(void)
+static void Device_PHSTAT(void)
 {
 	if (devbug)
 		Aprint("PHSTAT");
 }
 
-void Device_PHSPEC(void)
-{
-	if (devbug)
-		Aprint("PHSPEC");
-
-	regY = 1;
-	ClrN;
-}
-
-void Device_PHINIT(void)
+static void Device_PHINIT(void)
 {
 	if (devbug)
 		Aprint("PHINIT");
@@ -1868,7 +1722,7 @@ void Device_PHINIT(void)
    ================================
  */
 
-void Device_KHREAD(void)
+static void Device_KHREAD(void)
 {
 	UBYTE ch;
 
@@ -1889,14 +1743,14 @@ void Device_KHREAD(void)
 	ClrN;
 }
 
-void Device_EHOPEN(void)
+static void Device_EHOPEN(void)
 {
 	Aprint("Editor device open");
 	regY = 1;
 	ClrN;
 }
 
-void Device_EHREAD(void)
+static void Device_EHREAD(void)
 {
 	UBYTE ch;
 
@@ -1917,7 +1771,7 @@ void Device_EHREAD(void)
 	ClrN;
 }
 
-void Device_EHWRIT(void)
+static void Device_EHWRIT(void)
 {
 	UBYTE ch;
 
@@ -1994,7 +1848,7 @@ int Device_PatchOS(void)
 			}
 			break;
 
-#if defined(R_IO_DEVICE)
+#ifdef R_IO_DEVICE
 		case 'R':
 			if (enable_r_patch) {
 				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) +
@@ -2099,7 +1953,7 @@ void Device_RemoveHATABSEntry(char device, UWORD entry_address,
 }
 
 static UWORD h_entry_address = 0;
-#if defined(R_IO_DEVICE)
+#ifdef R_IO_DEVICE
 static UWORD r_entry_address = 0;
 #endif
 
@@ -2133,7 +1987,7 @@ void Device_Frame(void)
 			Device_UpdateHATABSEntry('H', h_entry_address,
 									 H_TABLE_ADDRESS);
 
-#if defined(R_IO_DEVICE)
+#ifdef R_IO_DEVICE
 	if (enable_r_patch)
 		r_entry_address = Device_UpdateHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
 #endif
@@ -2180,7 +2034,7 @@ void Device_UpdatePatches(void)
 		dFillMem(H_DEVICE_BEGIN, 0xff, H_DEVICE_END - H_DEVICE_BEGIN + 1);
 	}
 
-#if defined(R_IO_DEVICE)
+#ifdef R_IO_DEVICE
 	if (enable_r_patch) {		/* enable R: device */
 		/* change memory attributes for the area, where we put
 		   the R: handler table and patches */
@@ -2225,6 +2079,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.26  2005/08/04 22:50:24  pfusik
+fancy I/O functions may be unavailable; got rid of numerous #ifdef BACK_SLASH
+
 Revision 1.25  2005/03/24 18:11:47  pfusik
 added "-help"
 
