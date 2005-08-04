@@ -1194,14 +1194,18 @@ void SIOStateSave(void)
 	int i;
 	UWORD namelen;    
 	char *filename;
+#ifdef HAVE_GETCWD
 	char dirname[FILENAME_MAX];
 	
 	getcwd(dirname, FILENAME_MAX);
+#endif
 	
 	for (i = 0; i < 8; i++) {
+#ifdef HAVE_GETCWD
 		if (strncmp(sio_filename[i], dirname, strlen(dirname)) == 0)
 			filename = &sio_filename[i][strlen(dirname) + 1];
 		else
+#endif
 			filename = sio_filename[i];
 	
 		namelen = strlen(filename);
@@ -1253,6 +1257,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.26  2005/08/04 22:48:21  pfusik
+getcwd() may be unavailable
+
 Revision 1.25  2005/07/03 09:47:54  pfusik
 added a missing brace
 
