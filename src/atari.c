@@ -738,46 +738,55 @@ void Atari800_UpdatePatches(void)
 
 static double Atari_time(void)
 {
-#ifdef WIN32
-  return GetTickCount() * 1e-3;
-#elif defined(DJGPP)
-  return uclock() * (1.0 / UCLOCKS_PER_SEC);
+#ifdef DJGPP
+	/* DJGPP has gettimeofday, but it's not more accurate than uclock */
+	return uclock() * (1.0 / UCLOCKS_PER_SEC);
+#elif defined(HAVE_GETTICKCOUNT)
+	/* WIN32 */
+	return GetTickCount() * 1e-3;
+#elif defined(HAVE_GETTIMEOFDAY)
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
+	return tp.tv_sec + 1e-6 * tp.tv_usec;
+#elif defined(HAVE_UCLOCK)
+	return uclock() * (1.0 / UCLOCKS_PER_SEC);
 #else
-  struct timeval tp;
-
-  gettimeofday(&tp, NULL);
-  return tp.tv_sec + 1e-6 * tp.tv_usec;
+#error No function found for Atari_time()
 #endif
 }
 
 static void Atari_sleep(double s)
 {
-  if (s > 0)
-  {
-#ifdef linux
-    struct timeval tp;
+	if (s <= 0)
+		return;
 
-    tp.tv_sec = 0;
-    tp.tv_usec = 1e6 * s;
-    select(1,NULL,NULL,NULL,&tp);
-
-#elif defined(WIN32)
-    Sleep(s * 1e3);
-    
-#elif defined(DJGPP)
+#ifdef DJGPP
+	/* DJGPP has usleep and select, but they won't work that good */
+	/* XXX: find out why */
     double curtime = Atari_time();
     while ((curtime + s) > Atari_time());
-
-#elif defined __EMX__
-    DosSleep(s); /* added by Brian Smith for os/2 */
-
-#elif defined __BEOS__
-    snooze(s * 1e6); /* added by Walter Las for BeOS */
-
+#elif defined(HAVE_USLEEP)
+	usleep(s * 1e6);
+#elif defined(HAVE_SNOOZE)
+	/* __BEOS__ */
+	/* added by Walter Las for BeOS */
+	snooze(s * 1e6);
+#elif defined(HAVE_DOSSLEEP)
+	/* __EMX__ */
+	/* added by Brian Smith for os/2 */
+	DosSleep(s);
+#elif defined(HAVE_SLEEP)
+	/* WIN32 */
+	Sleep(s * 1e3);
+#elif defined(HAVE_SELECT)
+	/* linux */
+    struct timeval tp;
+    tp.tv_sec = 0;
+    tp.tv_usec = 1e6 * s;
+    select(1, NULL, NULL, NULL, &tp);
 #else
-    usleep(s * 1e6);
+#error No function found for Atari_sleep()
 #endif
-  }
 }
 
 void atari_sync(void)
@@ -1050,6 +1059,10 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.59  2005/08/04 22:51:33  pfusik
+use best time functions available - now checked by Configure,
+not hard-coded for platforms (almost...)
+
 Revision 1.58  2005/03/10 04:43:32  pfusik
 removed the unused "screen" parameter from ui() and SelectCartType()
 
