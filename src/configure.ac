@@ -132,7 +132,7 @@ dnl Checks for header files.
 AC_PATH_X
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([OS.h arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([OS.h arpa/inet.h fcntl.h file.h limits.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h unistd.h unixio.h])
 
 
 
@@ -265,7 +265,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([atexit floor getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa memset mkdir modf rmdir select socket strcasecmp strchr strdup strerror strrchr strstr strtol mkstemp vsnprintf])
+AC_CHECK_FUNCS([DosSleep GetTickCount Sleep atexit chmod floor fstat getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa opendir memset mkdir mkstemp modf rmdir select snooze socket stat strcasecmp strchr strdup strerror strrchr strstr strtol uclock unlink vsnprintf])
 
 
 
