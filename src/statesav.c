@@ -431,10 +431,10 @@ int ReadAtariState( char *filename, const char *mode )
 	}
 
 	MainStateRead( );
-        if (StateVersion != 3) {
-            CARTStateRead( );
-            SIOStateRead( );
-        }
+	if (StateVersion != 3) {
+		CARTStateRead( );
+		SIOStateRead( );
+	}
 	AnticStateRead( );
 	CpuStateRead( SaveVerbose );
 	GTIAStateRead( );
@@ -453,7 +453,7 @@ int ReadAtariState( char *filename, const char *mode )
 		   atari_basic[] and the OS into atarixl_os for XL/XEs. It should return FALSE
 		   for failure. This is for saved states that don't have these ROMs in the save
 		   because they are not important (not patched or otherwise modified) */
-		if( !ReadDisabledROMs )
+		if( !ReadDisabledROMs() )
 			return FALSE;
 	}
 
@@ -462,6 +462,9 @@ int ReadAtariState( char *filename, const char *mode )
 
 /*
 $Log$
+Revision 1.8  2005/08/04 23:03:40  pfusik
+ReadDisabledROMs wasn't actually called!
+
 Revision 1.7  2003/10/26 18:49:40  joy
 new state file format for bankswitching
 
