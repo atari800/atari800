@@ -383,7 +383,7 @@ void POKEY_Scanline(void)
 
 	random_scanline_counter += LINE_C;
 
-	//on nonpatched i/o-operation, enable the cassette timing
+	/* on nonpatched i/o-operation, enable the cassette timing */
 	if (!enable_sio_patch)
 		CASSETTE_AddScanLine();
 

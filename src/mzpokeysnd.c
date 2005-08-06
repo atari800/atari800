@@ -968,14 +968,14 @@ static double generate_sample(PokeyState* ps)
  filter table generator by Krzysztof Nikiel
  ******************************************/
 
-static int remez_filter_table(double resamp_rate, // output_rate/input_rate
+static int remez_filter_table(double resamp_rate, /* output_rate/input_rate */
                               double *cutoff, int quality)
 {
   int i;
   static const int orders[] = {600, 800, 1000, 1200};
   static const struct {
-    int stop;		// stopband ripple
-    double weight;	// stopband weight
+    int stop;		/* stopband ripple */
+    double weight;	/* stopband weight */
     double twidth[sizeof(orders)/sizeof(orders[0])];
   } paramtab[] =
   {
@@ -1002,12 +1002,12 @@ static int remez_filter_table(double resamp_rate, // output_rate/input_rate
     {
       if ((*cutoff - paramtab[ripple].twidth[order])
 	  > passtab[quality] * 0.5 * resamp_rate)
-	// transition width OK
+	/* transition width OK */
 	goto found;
     }
   }
 
-  // not found -- use shortest trasition
+  /* not found -- use shortest trasition */
   ripple--;
   order--;
 
@@ -1024,7 +1024,7 @@ found:
 
   size = orders[order] + 1;
 
-  if (size > SND_FILTER_SIZE) // static table too short
+  if (size > SND_FILTER_SIZE) /* static table too short */
     return 0;
 
   desired[0] = 1;
@@ -1054,7 +1054,7 @@ found:
     }
   }
 
-  // compute reversed cumulative sum table
+  /* compute reversed cumulative sum table */
   for (i = size - 2; i >= 0; i--)
     filter_data[i] += filter_data[i + 1];
 
@@ -2280,6 +2280,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.17  2005/08/06 18:28:46  pfusik
+// comments changed to /* */
+
 Revision 1.16  2005/03/08 04:32:46  pfusik
 killed gcc -W warnings
 

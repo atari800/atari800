@@ -2,7 +2,7 @@
  * pokey_resample.c - POKEY sound chip filter emulation, v1.2
  *
  * Copyright (C) 2002 Michael Borisov
- * Copyright (C) 2002-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2002-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -24,7 +24,7 @@
 
 #include "pokey_resample.h"
 
-// Filter for 44100 sample rate, 8 bit (0.05db/45db ripple, transition 17000-22050)
+/* Filter for 44100 sample rate, 8 bit (0.05db/45db ripple, transition 17000-22050) */
  double filter_44_8[] = {
      0.99710033003364174,
      0.99479971880342255,
@@ -912,7 +912,7 @@
      0.00230061123021915
 };
 
-// Filter for 44100 sample rate (0.02db/70db ripple, transition 17000-22050)
+/* Filter for 44100 sample rate (0.02db/70db ripple, transition 17000-22050) */
  double filter_44[] = {
     1.00151,
     1.00166,
@@ -2191,7 +2191,7 @@
     -0.00015504
 };
 
-// Filter for 22050 sample rate (0.1db/45db ripple, transition 6500-11025)
+/* Filter for 22050 sample rate (0.1db/45db ripple, transition 6500-11025) */
  double filter_22_8[] = {
      0.99346257383417802,
      0.99022815725387459,
@@ -3088,7 +3088,7 @@
      0.00323441658030338
 };
 
-// Filter for 22050 sample rate (0.07db/70db ripple, transition 6500-11025)
+/* Filter for 22050 sample rate (0.07db/70db ripple, transition 6500-11025) */
  double filter_22[] = {
     1.00527,
     1.00548,
@@ -4331,7 +4331,7 @@
     -0.000215753,
 };
 
-// Filter for 11025 sample rate, 8-bit (0.4/45db ripple, transition 2000-5512
+/* Filter for 11025 sample rate, 8-bit (0.4/45db ripple, transition 2000-5512 */
  double filter_11_8[] = {
      0.98245761126257036,
      0.98523342954552928,
@@ -5272,7 +5272,7 @@
     -0.00277581828295897
 };
 
-// Filter for 11025 sample rate (0.4db/70db ripple, transition 2000-5512)
+/* Filter for 11025 sample rate (0.4db/70db ripple, transition 2000-5512) */
  double filter_11[] = {
     0.963783,
     0.963536,
@@ -6581,7 +6581,7 @@
     0.000247061
 };
 
-// Filter for 48000 sample rate (0.05db/45db ripple, transition 17000-24000)
+/* Filter for 48000 sample rate (0.05db/45db ripple, transition 17000-24000) */
  double filter_48_8[] = {
      1.00287685711006770,
      1.00570603068948560,
@@ -7212,7 +7212,7 @@
     -0.00282917357941791
 };
 
-// Filter for 48000 sample rate (0.02db/70db ripple, transition 17000-24000)
+/* Filter for 48000 sample rate (0.02db/70db ripple, transition 17000-24000) */
  double filter_48[] = {
     0.998616,
     0.998433,
@@ -8114,7 +8114,7 @@
     0.00018334
 };
 
-// Filter for 8000 sample rate, 8 bit (1db/45db ripple, transition 1700-4000)
+/* Filter for 8000 sample rate, 8 bit (1db/45db ripple, transition 1700-4000) */
  double filter_8_8[] = {
      1.07840156905687160,
      1.08244918844731130,
@@ -9332,7 +9332,7 @@
     -0.00404761939043973
 };
 
-// Filter for 8000 sample rate (1db/50db ripple, transition 1700-4000)
+/* Filter for 8000 sample rate (1db/50db ripple, transition 1700-4000) */
  double filter_8[] = {
     1.06573,
     1.06797,

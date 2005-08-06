@@ -2,7 +2,7 @@
  * prompts.c - Routines which prompt for input
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2004 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -83,7 +83,7 @@ void RemoveSpaces(char *string)
 	static char SPACES_TO_REMOVE[] = " \t\r\n";
 	int len = strlen(string);
 
-	// head
+	/* head */
 /*
 	int skiphead = 0;
 	while(skiphead < len && strchr(SPACES_TO_REMOVE, string[skiphead])) {
@@ -95,7 +95,7 @@ void RemoveSpaces(char *string)
 		memmove(string, string+skiphead, len-skiphead+1);
 		len -= skiphead;
 	}
-	// tail
+	/* tail */
 	while(--len > 0) {
 		if (strchr(SPACES_TO_REMOVE, string[len]) != NULL) {
 			string[len] = '\0';
