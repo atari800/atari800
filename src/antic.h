@@ -60,7 +60,7 @@ extern int delayed_wsync;
 extern int cur_screen_pos;
 extern int *cpu2antic_ptr;
 extern int *antic2cpu_ptr;
-void update_scanline();
+void update_scanline(void);
 void update_scanline_prior(UBYTE byte);
 #ifndef NO_GTIA11_DELAY
 extern int prevline_prior_pos; 

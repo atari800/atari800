@@ -7,7 +7,7 @@ int SelectCartType(int k);
 void ui(void);
 
 /* this entry is used by atari_x11.c which implements its own GUI */
-void SoundRecording();
+void SoundRecording(void);
 
 extern int ui_is_active;
 
@@ -74,10 +74,10 @@ typedef int (*fnGetLoadFilename)(char* pDirectory, char* pFilename);
 /* Message is just some kind of MessageBox */
 typedef void (*fnMessage)(char* pMessage);
 /* AboutBox shows information about emulator */
-typedef void (*fnAboutBox)();
+typedef void (*fnAboutBox)(void);
 /* Init is called to initialize driver every time UI code is executed. Driver must be
    protected against multiple inits */
-typedef void (*fnInit)();
+typedef void (*fnInit)(void);
 
 typedef struct
 {
