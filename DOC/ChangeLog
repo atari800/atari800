@@ -1,3 +1,27 @@
+2005-08-06  Piotr Fusik  <fox@scene.pl>
+* configure.ac, devices.c: check for rename() and snprintf()
+
+* devices.c: fixed error codes; fixed "unused" warnings; other minor fixes
+
+* antic.[ch], atari_sdl.c, atari_x11.c, cassette.[ch], cycle_map.h, pokeysnd.[ch],
+  screen.h, ui.[ch], ui_basic.c, dos/atari_vga.c, dos/vga_gfx.h:
+  changed () function signatures to (void)
+
+* antic.c, atari_sdl.c, atari_x11.c, cassette.c, cycle_map.c, monitor.c,
+  pokeysnd.c, ui_basic.c: fixed indenting
+
+* rtime.c: optimized RTIME_GetByte
+
+* mzpokeysnd.c, pokey.c, pokeysnd.h, pokey_resample.c, prompts.c:
+  // comments changed to /* */
+
+* emuos.lis, emuos.h, ui_basic.c: updated copyright year
+
+* atari.c: if no sleep-like function available, fall back to time polling
+
+* monitor.c: fixed a warning
+
+
 2005-08-05  Piotr Fusik  <fox@scene.pl>
 * configure.ac: added checks for some headers and functions used in devices.c
   and atari.c.
