@@ -41,6 +41,6 @@ extern void make_darker(void *target,void *source,int bytes);
 #endif /* AT_USE_ALLEGRO */
 
 /*vertical retrace control*/
-extern void v_ret();
+extern void v_ret(void);
 
 #endif /* _VGA_GFX_H_ */

@@ -431,7 +431,7 @@ void key_delete(void)
 /* VGA HANDLING                                                               */
 /* -------------------------------------------------------------------------- */
 
-void SetupVgaEnvironment()
+void SetupVgaEnvironment(void)
 {
         int a, i;
         union REGS rg;
@@ -444,7 +444,7 @@ void SetupVgaEnvironment()
           use_vesa=VESA_open(vesa_mode,vesa_memptr,vesa_memsize,&vesa_linear,&vesa_selector);
         }
         if (!use_vesa) /*if '-novesa' specified or VESA_open failed */
-          switch(video_mode)
+          switch (video_mode)
           {
             case 0:
               rg.x.ax = 0x0013;
@@ -501,7 +501,7 @@ void SetupVgaEnvironment()
         key_init(); /*initialize keyboard handler*/
 }
 
-void ShutdownVgaEnvironment()
+void ShutdownVgaEnvironment(void)
 {
         union REGS rg;
 
@@ -544,7 +544,7 @@ void Atari_DisplayScreen(UBYTE * ascreen)
 
         if (use_vesa)
             /*draw screen using VESA2*/
-            switch(video_mode)
+            switch (video_mode)
             {
               case 0:
                 VESA_blit(ascreen+first_col + first_lno*ATARI_WIDTH,
@@ -565,7 +565,7 @@ void Atari_DisplayScreen(UBYTE * ascreen)
             }
         else
             /*draw screen using vga or x-mode*/
-            switch(video_mode)
+            switch (video_mode)
             {
               case 0:
                 for (ypos = 0; ypos < 200; ypos += ypos_inc) {
@@ -686,7 +686,7 @@ void Atari_Initialise(int *argc, char *argv[])
         /*find number of VESA2 video mode*/
         if (use_vesa)
         {
-          switch(video_mode)
+          switch (video_mode)
           {
             case 0:
               use_vesa=VESA_getmode(320,200,&vesa_mode,&vesa_memptr,&vesa_linelenght,&vesa_memsize);
@@ -1060,11 +1060,11 @@ int Atari_Keyboard(void)
                 break;
 		case 0x57:					/* F11 */
 		 		keycode = AKEY_NONE;
-				for(i = 0; i < 4; i++) {
-		 		  if (++joy_autofire[i] > 2)
-		 		    joy_autofire[i] = 0;
+				for (i = 0; i < 4; i++) {
+					if (++joy_autofire[i] > 2)
+						joy_autofire[i] = 0;
 		 		}
-		 		raw_key = 0;	/* aviod continuous change */
+		 		raw_key = 0;	/* avoid continuous change */
 		 		break;
         case 0x01:
                 keycode |= AKEY_ESCAPE;

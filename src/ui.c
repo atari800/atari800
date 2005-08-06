@@ -87,7 +87,7 @@ int LoadState();
 void Screenshot(int interlaced);
 void MakeBlankDisk(FILE * setFile);
 
-void SelectSystem()
+void SelectSystem(void)
 {
 	typedef struct {
 		int type;
@@ -148,7 +148,7 @@ void SelectSystem()
 	}
 }
 
-void DiskManagement()
+void DiskManagement(void)
 {
 	static char drive_array[8][7];
 
@@ -382,7 +382,7 @@ int SelectCartType(int k)
 	return CART_NONE;
 }
 
-void CartManagement()
+void CartManagement(void)
 {
 	static tMenuItem menu_array[] = {
 		{"CRCR", ITEM_ENABLED | ITEM_FILESEL, NULL, "Create Cartridge from ROM image", NULL, 0},
@@ -552,7 +552,7 @@ void CartManagement()
 	}
 }
 
-void SoundRecording()
+void SoundRecording(void)
 {
 	static int record_num = 0;
 	char buf[128];
@@ -574,7 +574,7 @@ void SoundRecording()
 	ui_driver->fMessage(msg);
 }
 
-int RunExe()
+int RunExe(void)
 {
 	char exename[FILENAME_MAX + 1];
 	int ret = FALSE;
@@ -591,7 +591,7 @@ int RunExe()
 	return ret;
 }
 
-int LoadTape()
+int LoadTape(void)
 {
 	char tapename[FILENAME_MAX + 1];
 	int ret = FALSE;
@@ -608,7 +608,7 @@ int LoadTape()
 	return ret;
 }
 
-void AtariSettings()
+void AtariSettings(void)
 {
 	static tMenuItem menu_array[] = {
 		{"NBAS", ITEM_ENABLED | ITEM_CHECK, NULL, "Disable BASIC when booting Atari:", NULL, 0},
@@ -688,7 +688,7 @@ void AtariSettings()
 	Atari800_UpdatePatches();
 }
 
-int SaveState()
+int SaveState(void)
 {
 	char statename[FILENAME_MAX];
 	char fname[FILENAME_SIZE + 1];
@@ -711,7 +711,7 @@ int SaveState()
 	return SaveAtariState(statename, "wb", TRUE);
 }
 
-int LoadState()
+int LoadState(void)
 {
 	char statename[FILENAME_MAX + 1];
 	int ret = FALSE;
@@ -724,7 +724,7 @@ int LoadState()
 	return ret;
 }
 
-void SelectArtifacting()
+void SelectArtifacting(void)
 {
 	static tMenuItem menu_array[] = {
 		{"ARNO", ITEM_ENABLED | ITEM_ACTION, NULL, "none", NULL, 0},
@@ -745,7 +745,7 @@ void SelectArtifacting()
 	}
 }
 
-int SoundSettings()
+int SoundSettings(void)
 {
 	int reboot_required = FALSE;
 
@@ -970,7 +970,7 @@ void ui(void)
 
 #ifdef CRASH_MENU
 
-int CrashMenu()
+int CrashMenu(void)
 {
 	static tMenuItem menu_array[] = {
 		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", "F5", 0},
@@ -1018,7 +1018,7 @@ int CrashMenu()
 
 
 /* Inspired by LNG (lng.sourceforge.net) */
-void MakeBlankDisk(FILE * setFile)
+void MakeBlankDisk(FILE *setFile)
 {
 
 	unsigned long sectorCnt = 0;
@@ -1054,6 +1054,9 @@ void MakeBlankDisk(FILE * setFile)
 
 /*
 $Log$
+Revision 1.57  2005/08/06 18:25:40  pfusik
+changed () function signatures to (void)
+
 Revision 1.56  2005/05/15 07:03:52  emuslor
 Added configuration update to settings menu
 

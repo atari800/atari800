@@ -98,7 +98,7 @@ extern "C" {
 #define SAMP_MID 128
 #endif
 
-// init flags
+/* init flags */
 #define SND_BIT16	1
 #define SND_STEREO	2
 
@@ -108,12 +108,9 @@ extern void (* Update_serio_sound)(int out, UBYTE data);
 extern void (* Update_consol_sound)(int set);
 extern void (* Update_vol_only_sound)(void);
 
-int Pokey_sound_init(uint32 freq17,
-			     uint16 playback_freq,
-			     uint8 num_pokeys,
-			     unsigned int flags
-			    );
-int Pokey_DoInit();
+int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
+                     unsigned int flags);
+int Pokey_DoInit(void);
 void Pokey_set_mzquality(int quality);
 
 #ifdef __cplusplus

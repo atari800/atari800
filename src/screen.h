@@ -6,7 +6,7 @@
 extern UBYTE *screen_dirty;
 #endif
 #endif
-void entire_screen_dirty();
+void entire_screen_dirty(void);
 
 extern ULONG *atari_screen;
 

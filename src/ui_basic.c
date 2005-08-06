@@ -66,15 +66,15 @@ int BasicUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 int BasicUIGetSaveFilename(char* pFilename);
 int BasicUIGetLoadFilename(char* pDirectory, char* pFilename);
 void BasicUIMessage(char* pMessage);
-void BasicUIAboutBox();
-void BasicUIInit();
+void BasicUIAboutBox(void);
+void BasicUIInit(void);
 
 tUIDriver basic_ui_driver =
 {
 	&BasicUISelect,
 	&BasicUIGetSaveFilename,
 	&BasicUIGetLoadFilename,
-	&BasicUIMessage, 
+	&BasicUIMessage,
 	&BasicUIAboutBox,
 	&BasicUIInit
 };
@@ -134,13 +134,12 @@ int GetKeyPress(UBYTE * screen)
 #ifndef BASIC
 #ifdef SVGA_SPEEDUP
 	int i;
-		for(i=0;i<refresh_rate;i++)
+	for (i = 0; i < refresh_rate; i++)
 #endif
-			Atari_DisplayScreen(screen);
+		Atari_DisplayScreen(screen);
 #endif
 
-	while(1)
-	{
+	for (;;) {
 		static int rep = KB_DELAY;
 		if (Atari_Keyboard() == AKEY_NONE) {
 			rep = KB_DELAY;
@@ -230,9 +229,8 @@ void Print(UBYTE * screen, int fg, int bg, char *string, int x, int y)
 void CenterPrint(UBYTE * screen, int fg, int bg, char *string, int y)
 {
 	int length;
-	char* eol = strchr(string, '\n');
-	while(eol != NULL && string[0])
-	{
+	char *eol = strchr(string, '\n');
+	while (eol != NULL && string[0]) {
 		length = eol-string-1;
 		Print(screen, fg, bg, string, (40 - length) / 2, y++);
 		string = eol+1;
@@ -250,7 +248,7 @@ int EditString(UBYTE * screen, int fg, int bg,
 
 	Print(screen, fg, bg, string, x, y);
 
-	for(;;) {
+	for (;;) {
 		int ascii;
 
 		Plot(screen, bg, fg, string[offset], x + offset, y);
@@ -334,12 +332,11 @@ void ClearScreen(UBYTE * screen)
 int CountLines(char* string)
 {
 	int lines;
-	if(string == NULL || *string == 0)
+	if (string == NULL || *string == 0)
 		return 0;
 
 	lines = 1;
-	while((string = strchr(string, '\n')) != NULL)
-	{
+	while ((string = strchr(string, '\n')) != NULL) {
 		lines ++;
 		string ++;
 	}
@@ -375,7 +372,7 @@ void SelectItem(UBYTE * screen,
 				char* suffix[],
 				int nrows, int ncolumns,
 				int xoffset, int yoffset,
-	 		    int itemwidth,
+				int itemwidth,
 				int active)
 {
 	int x;
@@ -394,22 +391,20 @@ void SelectItem(UBYTE * screen,
 	y += yoffset;
 
 	szOrig[0] = 0;
-	if(prefix && prefix[index])
+	if (prefix && prefix[index])
 		strcat(szOrig, prefix[index]);
 	strcat(szOrig, items[index]);
-	if(suffix && suffix[index])
-	{
+	if (suffix && suffix[index]) {
 		spaceToAdd = itemwidth - strlen(szOrig) - strlen(suffix[index]);
-		if(spaceToAdd > 0)
-			for(; spaceToAdd; spaceToAdd--)
+		if (spaceToAdd > 0)
+			for (; spaceToAdd; spaceToAdd--)
 				strcat(szOrig, " ");
 		strcat(szOrig, suffix[index]);
 	}
-	else
-	{
+	else {
 		spaceToAdd = itemwidth - strlen(szOrig);
-		if(spaceToAdd > 0)
-			for(; spaceToAdd; spaceToAdd--)
+		if (spaceToAdd > 0)
+			for (; spaceToAdd; spaceToAdd--)
 				strcat(szOrig, " ");
 	}
 
@@ -461,7 +456,7 @@ int Select(UBYTE * screen,
 	int index = 0;
 	int localascii;
 
-	if(ascii == NULL)
+	if (ascii == NULL)
 		ascii = &localascii;
 
 	for (index = 0; index < nitems; index++)
@@ -696,8 +691,7 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 			while (ListTraverse(list, (void *) &filename))
 				nfiles++;
 
-			if (!nfiles)
-			{
+			if (!nfiles) {
 				ListFree(list, (void *) free);
 				BasicUIMessage("No files inside directory");
 				break;
@@ -738,8 +732,7 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 					item = item % nitems;
 				}
 				else if (item >= nitems) {	/* Scroll Left */
-					if ((offset - NROWS) >= 0)
-					{
+					if ((offset - NROWS) >= 0) {
 						offset -= NROWS;
 						item = item % nitems;
 					}
@@ -798,7 +791,7 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 							char lastchar = directory[strlen(directory) - 1];
 							char* pbracket = strchr(files[item], ']');
 
-							if(pbracket)
+							if (pbracket)
 								*pbracket = '\0';	/*cut ']' */
 							if (lastchar == '/' || lastchar == '\\')
 								sprintf(help, "%s%s", directory, files[item] + 1);	/*directory already ends with slash */
@@ -850,7 +843,7 @@ void AboutEmulator(UBYTE * screen)
 	CenterPrint(screen, 0x9a, 0x94, ATARI_TITLE, 1);
 	CenterPrint(screen, 0x9a, 0x94, "Copyright (c) 1995-1998 David Firth", 2);
 	CenterPrint(screen, 0x9a, 0x94, "and", 3);
-	CenterPrint(screen, 0x9a, 0x94, "(c)1998-2004 Atari800 Development Team", 4);
+	CenterPrint(screen, 0x9a, 0x94, "(c)1998-2005 Atari800 Development Team", 4);
 	CenterPrint(screen, 0x9a, 0x94, "See CREDITS file for details.", 5);
 	CenterPrint(screen, 0x9a, 0x94, "http://atari800.atari.org/", 7);
 
@@ -882,50 +875,44 @@ int MenuSelectEx(UBYTE* screen, char* title, int subitem, int default_item, tMen
 
 	nitems = 0;
 	retval = 0;
-	for(i=0; items[i].sig; i++)
-	{
-		if(items[i].flags & ITEM_ENABLED)
-		{
+	for (i = 0; items[i].sig; i++) {
+		if (items[i].flags & ITEM_ENABLED) {
 			prefix[nitems] = items[i].prefix;
 			root[nitems] = items[i].item;
-			if(items[i].flags & ITEM_CHECK)
-			{
-				if(items[i].flags & ITEM_CHECKED)
+			if (items[i].flags & ITEM_CHECK) {
+				if (items[i].flags & ITEM_CHECKED)
 					suffix[nitems] = "Yes";
 				else
 					suffix[nitems] = "No ";
 			}
 			else
 				suffix[nitems] = items[i].suffix;
-			if(items[i].retval == default_item)
+			if (items[i].retval == default_item)
 				retval = nitems;
 			nitems ++;
 		}
 	}
 
-	if(nitems == 0)
+	if (nitems == 0)
 		return -1; /* cancel immediately */
 
-	if(!subitem)
-	{
+	if (!subitem) {
 		ClearScreen(screen);
 		TitleScreen(screen, title);
 	}
 
-	if(subitem)
-	{
+	if (subitem) {
 		w = 0;
-		for(i=0; i<nitems; i++)
-		{
+		for (i = 0; i  <nitems; i++) {
 			ws = strlen(root[i]);
-			if(prefix && prefix[i])
+			if (prefix && prefix[i])
 				ws += strlen(prefix[i]);
-			if(suffix && suffix[i])
+			if (suffix && suffix[i])
 				ws += strlen(suffix[i]);
-			if(ws > w)
+			if (ws > w)
 				w = ws;
 		}
-		if(w > 38)
+		if (w > 38)
 			w = 38;
 
 		x1 = (40 - w)/2 - 1;
@@ -933,8 +920,7 @@ int MenuSelectEx(UBYTE* screen, char* title, int subitem, int default_item, tMen
 		y1 = (24 - nitems)/2 - 1;
 		y2 = y1 + nitems + 1;
 	}
-	else
-	{
+	else {
 		w = 38;
 		x1 = 0;
 		y1 = CountLines(title) + 2;
@@ -945,18 +931,13 @@ int MenuSelectEx(UBYTE* screen, char* title, int subitem, int default_item, tMen
 	Box(screen, 0x9a, 0x94, x1, y1, x2, y2);
 	scrollable = (nitems > y2-y1-1);
 	retval = Select(screen, retval, nitems, root, prefix, suffix, nitems, 1, x1+1, y1+1, w, scrollable, &ascii);
-	if(retval < 0)
+	if (retval < 0)
 		return retval;
-	for(i=0; items[i].sig; i++)
-	{
-		if(items[i].flags & ITEM_ENABLED)
-		{
-			if(retval == 0)
-			{
-				if((items[i].flags & ITEM_MULTI) && seltype)
-				{
-					switch(ascii)
-					{
+	for (i = 0; items[i].sig; i++) {
+		if (items[i].flags & ITEM_ENABLED) {
+			if (retval == 0) {
+				if ((items[i].flags & ITEM_MULTI) && seltype) {
+					switch (ascii) {
 					case 0x9b:
 						*seltype = USER_SELECT;
 						break;
@@ -970,7 +951,7 @@ int MenuSelectEx(UBYTE* screen, char* title, int subitem, int default_item, tMen
 				return items[i].retval;
 			}
 			else
-				retval --;
+				retval--;
 		}
 	}
 	return 0;
@@ -983,10 +964,9 @@ void Message(UBYTE* screen, char* msg)
 	GetKeyPress(screen);
 }
 
-void InitializeUI()
+void InitializeUI(void)
 {
-	if(!initialised)
-	{
+	if (!initialised) {
 		get_charset(charset);
 		initialised = TRUE;
 	}
@@ -1014,12 +994,12 @@ void BasicUIMessage(char* pMessage)
 	Message((UBYTE*)atari_screen, pMessage);
 }
 
-void BasicUIAboutBox()
+void BasicUIAboutBox(void)
 {
 	AboutEmulator((UBYTE*)atari_screen);
 }
 
-void BasicUIInit()
+void BasicUIInit(void)
 {
 	InitializeUI();
 }
@@ -1027,6 +1007,9 @@ void BasicUIInit()
 
 /*
 $Log$
+Revision 1.19  2005/08/06 18:25:40  pfusik
+changed () function signatures to (void)
+
 Revision 1.18  2005/05/20 09:08:17  pfusik
 fixed some warnings
 
