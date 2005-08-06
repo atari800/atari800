@@ -61,7 +61,8 @@
 # ifndef O_BINARY
 #  define O_BINARY	0
 # endif
-# define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
+/* XXX: race condition */
+# define mkstemp(a) open(mktemp(a), O_RDWR | O_CREAT | O_BINARY, 0600)
 #endif
 
 #include "atari.h"
@@ -248,6 +249,7 @@ static void Device_GetFilename(void)
 	filename[offset++] = '\0';
 }
 
+#ifdef HAVE_RENAME
 static void Device_GetFilenames(void)
 {
 	int bufadr;
@@ -294,7 +296,9 @@ static void Device_GetFilenames(void)
 	}
 	newfilename[offset++] = '\0';
 }
+#endif
 
+#ifdef DO_DIR
 static int match(char *pattern, char *filename)
 {
 	int status = TRUE;
@@ -309,12 +313,10 @@ static int match(char *pattern, char *filename)
 			filename++;
 			break;
 		case '*':
-			if (*filename == pattern[1]) {
+			if (*filename == pattern[1])
 				pattern++;
-			}
-			else {
+			else
 				filename++;
-			}
 			break;
 		default:
 			status = (*pattern++ == *filename++);
@@ -329,7 +331,9 @@ static int match(char *pattern, char *filename)
 	}
 	return status;
 }
+#endif
 
+#ifdef HAVE_RENAME
 static void fillin(char *pattern, char *filename)
 {
 	while (*pattern) {
@@ -339,12 +343,10 @@ static void fillin(char *pattern, char *filename)
 			filename++;
 			break;
 		case '*':
-			if (*filename == pattern[1]) {
+			if (*filename == pattern[1])
 				pattern++;
-			}
-			else {
+			else
 				filename++;
-			}
 			break;
 		default:
 			*filename++ = *pattern++;
@@ -353,6 +355,7 @@ static void fillin(char *pattern, char *filename)
 	}
 	*filename = 0;
 }
+#endif
 
 #ifdef BACK_SLASH
 #define DIR_SEP_CHAR '\\'
@@ -366,7 +369,11 @@ static void fillin(char *pattern, char *filename)
 /* Place directory separator char between, unless path2 already starts with it. */
 static void cat_path(char *result, const char *path1, const char *path2)
 {
+#ifdef HAVE_SNPRINTF
+	snprintf(result, FILENAME_MAX, path2[0] == DIR_SEP_CHAR ? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
+#else
 	sprintf(result, path2[0] == DIR_SEP_CHAR ? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
+#endif
 }
 
 static void apply_relative_path(char *rel_path, char *current)
@@ -420,6 +427,7 @@ static void Device_ApplyPathToFilename(int devnum)
 	strcpy(filename, path);
 }
 
+#ifdef DO_DIR
 static void Device_SeparateFileFromPath()
 {
 	char *ptr;
@@ -435,24 +443,29 @@ static void Device_SeparateFileFromPath()
 		ptr--;
 	}
 }
+#endif
+
+#define GET_FID if ((fid = regX >> 4) >= 8) { regY = 134; /* invalid IOCB number */ SetN; return; }
+
+#define GET_DEVNUM	devnum = dGetByte(ICDNOZ); \
+	if (devnum > 9) { \
+		regY = 160; /* invalid unit/drive number */ \
+		SetN; \
+		return; \
+	} \
+	if (devnum >= 5) \
+		devnum -= 5;
 
 static void Device_HHOPEN(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
 	int temp;
-	char entryname[FILENAME_MAX];
-	char *ext;
-	int size;
-	int extended;
-	struct tm *time;
-	char *end_dir;
-	char end_dir_str[128];
 
 	if (devbug)
 		Aprint("HHOPEN");
 
-	fid = regX >> 4;
+	GET_FID;
 
 	if (fp[fid]) {
 		fclose(fp[fid]);
@@ -461,8 +474,7 @@ static void Device_HHOPEN(void)
 	Device_GetFilename();
 	devnum = dGetByte(ICDNOZ);
 	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
+		regY = 160; /* invalid unit/drive number */
 		SetN;
 		return;
 	}
@@ -480,10 +492,11 @@ static void Device_HHOPEN(void)
 /* Assumes H[devnum] is a directory _logical_, not an explicit directory
    specification! */
 	/* XXX: Maybe this should go into cat_path() ? */
-	if (filename[0] == ':')
-		sprintf(fname, "%s%s", H[devnum], filename);
-	else
-		sprintf(fname, "%s:%s", H[devnum], filename);
+# ifdef HAVE_SNPRINTF
+	snprintf(fname, FILENAME_MAX, filename[0] == ':' ? "%s%s" : "%s:%s", H[devnum], filename);
+# else
+	sprintf(fname, filename[0] == ':' ? "%s%s" : "%s:%s", H[devnum], filename);
+# endif
 #else
 	cat_path(fname, H[devnum], filename);
 #endif
@@ -498,27 +511,28 @@ static void Device_HHOPEN(void)
 			ClrN;
 		}
 		else {
-			regY = 170;
+			regY = 170; /* file not found */
 			SetN;
 		}
 		break;
+#ifdef DO_DIR
 	case 6:
 	case 7:
-#ifdef DO_DIR
 		Device_SeparateFileFromPath();
-		extended = dGetByte(ICAX2Z);
 		fp[fid] = tmpfile();
 		if (fp[fid]) {
 			dp = opendir(pathname);
 			if (dp) {
 				struct dirent *entry;
-
+				int extended = dGetByte(ICAX2Z);
 				if (extended >= 128) {
 					fprintf(fp[fid], "\nVolume:    HDISK%d\nDirectory: ",
 							devnum);
 					if (strcmp(pathname, H[devnum]) == 0)
 						fprintf(fp[fid], "MAIN\n\n");
 					else {
+						const char *end_dir;
+						char end_dir_str[FILENAME_MAX];
 						end_dir = pathname + strlen(pathname);
 						while (end_dir > pathname) {
 							if (*end_dir == DIR_SEP_CHAR) {
@@ -534,51 +548,54 @@ static void Device_HHOPEN(void)
 				}
 
 				while ((entry = readdir(dp))) {
+					char entryname[FILENAME_MAX];
 					strcpy(entryname, entry->d_name);
-					if (match(strtoupper(filename), strtoupper(entryname)))
-						if (entry->d_name[0] != '.') {
-							struct stat status;
-							cat_path(fname, pathname, entry->d_name);
-							stat(fname, &status);
-							if ((status.st_size != 0)
-								&& (status.st_size % 256 == 0))
-								size = status.st_size / 256;
-							else
-								size = status.st_size / 256 + 1;
-							if (size > 999)
-								size = 999;
-							ext = strtok(entryname, ".");
-							ext = strtok(NULL, ".");
-							if (ext == NULL)
-								ext = "   ";
-							if (extended >= 128) {
-								if (status.st_mode & S_IFDIR) {
-									fprintf(fp[fid], "%-8s     <DIR>  ",
-											entryname);
-								}
-								else {
-									fprintf(fp[fid], "%-8s %-3s %6d ",
-											entryname, ext,
-											(int) status.st_size);
-								}
-								time = localtime(&status.st_mtime);
-								if (time->tm_year >= 100)
-									time->tm_year -= 100;
-								fprintf(fp[fid],
-										"%02d-%02d-%02d %02d:%02d\n",
-										time->tm_mon, time->tm_mday,
-										time->tm_year, time->tm_hour,
-										time->tm_min);
+					if (entry->d_name[0] != '.'
+					 && match(strtoupper(filename), strtoupper(entryname))) {
+						const char *ext;
+						int size;
+						struct stat status;
+						cat_path(fname, pathname, entry->d_name);
+						stat(fname, &status);
+						if ((status.st_size != 0)
+							&& (status.st_size % 256 == 0))
+							size = status.st_size / 256;
+						else
+							size = status.st_size / 256 + 1;
+						if (size > 999)
+							size = 999;
+						ext = strtok(entryname, ".");
+						ext = strtok(NULL, ".");
+						if (ext == NULL)
+							ext = "   ";
+						if (extended >= 128) {
+							struct tm *filetime;
+							if (status.st_mode & S_IFDIR) {
+								fprintf(fp[fid], "%-8s     <DIR>  ",
+										entryname);
 							}
 							else {
-								if (status.st_mode & S_IFDIR)
-									ext = "\304\311\322"; /* "DIR" with bit 7 set */
-								fprintf(fp[fid], "%s %-8s%-3s %03d\n",
-										(status.
-										 st_mode & S_IWUSR) ? " " : "*",
-										entryname, ext, size);
+								fprintf(fp[fid], "%-8s %-3s %6d ",
+										entryname, ext,
+										(int) status.st_size);
 							}
+							filetime = localtime(&status.st_mtime);
+							if (filetime->tm_year >= 100)
+								filetime->tm_year -= 100;
+							fprintf(fp[fid],
+									"%02d-%02d-%02d %02d:%02d\n",
+									filetime->tm_mon, filetime->tm_mday,
+									filetime->tm_year, filetime->tm_hour,
+									filetime->tm_min);
 						}
+						else {
+							if (status.st_mode & S_IFDIR)
+								ext = "\304\311\322"; /* "DIR" with bit 7 set */
+							fprintf(fp[fid], "%c %-8s%-3s %03d\n",
+									(status.st_mode & S_IWUSR) ? ' ' : '*',
+									entryname, ext, size);
+						}
+					}
 				}
 
 				if (extended >= 128)
@@ -588,31 +605,30 @@ static void Device_HHOPEN(void)
 
 				closedir(dp);
 
-				regY = 1;
-				ClrN;
-
 				rewind(fp[fid]);
 
 				flag[fid] = TRUE;
+
+				regY = 1;
+				ClrN;
 			}
 			else {
-				regY = 163;
-				SetN;
 				fclose(fp[fid]);
 				fp[fid] = NULL;
+				regY = 144; /* device done error */
+				SetN;
 			}
 		}
-		else
-#endif							/* DO_DIR */
-		{
-			regY = 163;
+		else {
+			regY = 144; /* device done error */
 			SetN;
 		}
 		break;
+#endif /* DO_DIR */
 	case 8:
-	case 9:					/* write at the end of file (append) */
+	case 9: /* write at the end of file (append) */
 		if (hd_read_only) {
-			regY = 135;			/* device is read only */
+			regY = 163; /* disk write-protected */
 			SetN;
 			break;
 		}
@@ -622,13 +638,13 @@ static void Device_HHOPEN(void)
 			ClrN;
 		}
 		else {
-			regY = 170;
+			regY = 170; /* file not found; XXX */
 			SetN;
 		}
 		break;
-	case 12:					/* read and write (update) */
+	case 12: /* read and write (update) */
 		if (hd_read_only) {
-			regY = 135;			/* device is read only */
+			regY = 163; /* disk write-protected */
 			SetN;
 			break;
 		}
@@ -638,12 +654,12 @@ static void Device_HHOPEN(void)
 			ClrN;
 		}
 		else {
-			regY = 170;
+			regY = 170; /* file not found; XXX */
 			SetN;
 		}
 		break;
 	default:
-		regY = 163;
+		regY = 168; /* invalid device command */
 		SetN;
 		break;
 	}
@@ -654,7 +670,7 @@ static void Device_HHCLOS(void)
 	if (devbug)
 		Aprint("HHCLOS");
 
-	fid = regX >> 4;
+	GET_FID;
 
 	if (fp[fid]) {
 		fclose(fp[fid]);
@@ -669,7 +685,7 @@ static void Device_HHREAD(void)
 	if (devbug)
 		Aprint("HHREAD");
 
-	fid = regX >> 4;
+	GET_FID;
 
 	if (fp[fid]) {
 		int ch;
@@ -690,12 +706,12 @@ static void Device_HHREAD(void)
 			ClrN;
 		}
 		else {
-			regY = 136;
+			regY = 136; /* end of file */
 			SetN;
 		}
 	}
 	else {
-		regY = 163;
+		regY = 136; /* end of file; XXX: this seems to be what Atari DOSes return */
 		SetN;
 	}
 }
@@ -705,7 +721,7 @@ static void Device_HHWRIT(void)
 	if (devbug)
 		Aprint("HHWRIT");
 
-	fid = regX >> 4;
+	GET_FID;
 
 	if (fp[fid]) {
 		int ch;
@@ -714,7 +730,7 @@ static void Device_HHWRIT(void)
 		if (flag[fid]) {
 			switch (ch) {
 			case 0x9b:
-				ch = 0x0a;
+				ch = '\n';
 				break;
 			default:
 				break;
@@ -725,7 +741,8 @@ static void Device_HHWRIT(void)
 		ClrN;
 	}
 	else {
-		regY = 163;
+		regY = 135; /* attempted to write to a read-only device */
+		            /* XXX: this seems to be what Atari DOSes return */
 		SetN;
 	}
 }
@@ -735,9 +752,7 @@ static void Device_HHSTAT(void)
 	if (devbug)
 		Aprint("HHSTAT");
 
-	fid = regX >> 4;
-
-	regY = 146;
+	regY = 146; /* function not implemented in handler; XXX: check file existence? */
 	SetN;
 }
 
@@ -751,11 +766,11 @@ static SLONG Device_HSPEC_BIN_read_word(void)
 	UBYTE buf[2];
 	if (fread(buf, 1, 2, binf) != 2) {
 		fclose(binf);
-		binf = 0;
+		binf = NULL;
 		if (start_binloading) {
 			start_binloading = 0;
 			Aprint("binload: not valid BIN file");
-			regY = 180;
+			regY = 180; /* not a binary file */
 			SetN;
 			return -1;
 		}
@@ -839,12 +854,11 @@ static void Device_HSPEC_BIN_loader_cont(void)
 	dPutByte(0x0300, 0x31);		/* for "Studio Dream" */
 }
 
+#ifdef HAVE_RENAME
 static void Device_HHSPEC_Rename(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
-	char newfname[FILENAME_MAX];
-	char renamefname[FILENAME_MAX];
 	int status;
 	int num_changed = 0;
 	int num_locked = 0;
@@ -852,21 +866,12 @@ static void Device_HHSPEC_Rename(void)
 	if (devbug)
 		Aprint("RENAME Command");
 	if (hd_read_only) {
-		regY = 135;				/* device is read only */
+		regY = 163; /* disk write-protected */
 		SetN;
 		return;
 	}
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	Device_GetFilenames();
 	Device_ApplyPathToFilename(devnum);
@@ -882,6 +887,8 @@ static void Device_HHSPEC_Rename(void)
 		status = 0;
 		while ((entry = readdir(dp))) {
 			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
+				char newfname[FILENAME_MAX];
+				char renamefname[FILENAME_MAX];
 				struct stat filestatus;
 				strtolower(entry->d_name);
 				cat_path(fname, pathname, entry->d_name);
@@ -910,7 +917,7 @@ static void Device_HHSPEC_Rename(void)
 		status = -1;
 
 	if (num_locked) {
-		regY = 167;
+		regY = 167; /* file locked */
 		SetN;
 	}
 	else if (status == 0 && num_changed != 0) {
@@ -918,10 +925,11 @@ static void Device_HHSPEC_Rename(void)
 		ClrN;
 	}
 	else {
-		regY = 170;
+		regY = 170; /* file not found */
 		SetN;
 	}
 }
+#endif
 
 #ifdef HAVE_UNLINK
 static void Device_HHSPEC_Delete(void)
@@ -929,28 +937,18 @@ static void Device_HHSPEC_Delete(void)
 	char fname[FILENAME_MAX];
 	int devnum;
 	int status;
-	struct stat filestatus;
 	int num_changed = 0;
 	int num_locked = 0;
 
 	if (devbug)
 		Aprint("DELETE Command");
 	if (hd_read_only) {
-		regY = 135;				/* device is read only */
+		regY = 163; /* disk write-protected */
 		SetN;
 		return;
 	}
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
@@ -966,6 +964,8 @@ static void Device_HHSPEC_Delete(void)
 		status = 0;
 		while ((entry = readdir(dp))) {
 			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
+				struct stat filestatus;
+
 				strtolower(entry->d_name);
 				cat_path(fname, pathname, entry->d_name);
 				stat(fname, &filestatus);
@@ -992,7 +992,7 @@ static void Device_HHSPEC_Delete(void)
 		status = -1;
 
 	if (num_locked) {
-		regY = 167;
+		regY = 167; /* file locked */
 		SetN;
 	}
 	else if (status == 0 && num_changed != 0) {
@@ -1000,7 +1000,7 @@ static void Device_HHSPEC_Delete(void)
 		ClrN;
 	}
 	else {
-		regY = 170;
+		regY = 170; /* file not found */
 		SetN;
 	}
 }
@@ -1017,21 +1017,12 @@ static void Device_HHSPEC_Lock(void)
 	if (devbug)
 		Aprint("LOCK Command");
 	if (hd_read_only) {
-		regY = 135;				/* device is read only */
+		regY = 163; /* disk write-protected */
 		SetN;
 		return;
 	}
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
@@ -1072,7 +1063,7 @@ static void Device_HHSPEC_Lock(void)
 		ClrN;
 	}
 	else {
-		regY = 170;
+		regY = 170; /* file not found */
 		SetN;
 	}
 }
@@ -1088,21 +1079,12 @@ static void Device_HHSPEC_Unlock(void)
 	if (devbug)
 		Aprint("UNLOCK Command");
 	if (hd_read_only) {
-		regY = 135;				/* device is read only */
+		regY = 163; /* disk write-protected */
 		SetN;
 		return;
 	}
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
@@ -1151,15 +1133,12 @@ static void Device_HHSPEC_Unlock(void)
 
 static void Device_HHSPEC_Note(void)
 {
-	long pos;
-	unsigned long iocb;
-
 	if (devbug)
 		Aprint("NOTE Command");
 	if (fp[fid]) {
-		iocb = IOCB0 + ((fid) * 16);
-		pos = ftell(fp[fid]);
-		if (pos != -1) {
+		long pos = ftell(fp[fid]);
+		if (pos >= 0) {
+			int iocb = IOCB0 + fid * 16;
 			dPutByte(iocb + ICAX5, (pos & 0xff));
 			dPutByte(iocb + ICAX3, ((pos & 0xff00) >> 8));
 			dPutByte(iocb + ICAX4, ((pos & 0xff0000) >> 16));
@@ -1167,38 +1146,35 @@ static void Device_HHSPEC_Note(void)
 			ClrN;
 		}
 		else {
-			regY = 163;
+			regY = 144; /* device done error */
 			SetN;
 		}
 	}
 	else {
-		regY = 163;
+		regY = 130; /* specified device does not exist; XXX: correct? */
 		SetN;
 	}
 }
 
 static void Device_HHSPEC_Point(void)
 {
-	unsigned long pos;
-	unsigned long iocb;
-
 	if (devbug)
 		Aprint("POINT Command");
 	if (fp[fid]) {
-		iocb = IOCB0 + ((fid) * 16);
-		pos = (dGetByte(iocb + ICAX4) << 16) +
+		int iocb = IOCB0 + fid * 16;
+		long pos = (dGetByte(iocb + ICAX4) << 16) +
 			(dGetByte(iocb + ICAX3) << 8) + (dGetByte(iocb + ICAX5));
 		if (fseek(fp[fid], pos, SEEK_SET) == 0) {
 			regY = 1;
 			ClrN;
 		}
 		else {
-			regY = 163;			/* Need to change to invalid Point MDG */
+			regY = 166; /* invalid POINT request */
 			SetN;
 		}
 	}
 	else {
-		regY = 163;
+		regY = 130; /* specified device does not exist; XXX: correct? */
 		SetN;
 	}
 }
@@ -1215,16 +1191,7 @@ static void Device_HHSPEC_Load(int mydos)
 	if (devbug)
 		Aprint("LOAD Command");
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	Device_GetFilename();
 
@@ -1282,6 +1249,7 @@ static void Device_HHSPEC_Load(int mydos)
 		default:
 			runBinFile = 0;
 			initBinFile = 0;
+			break;
 		}
 	}
 	else {
@@ -1294,7 +1262,6 @@ static void Device_HHSPEC_Load(int mydos)
 
 	start_binloading = 1;
 	Device_HSPEC_BIN_loader_cont();
-	return;
 }
 
 static void Device_HHSPEC_File_Length(void)
@@ -1304,10 +1271,10 @@ static void Device_HHSPEC_File_Length(void)
 	/* If IOCB is open, then assume it is a file length command.. */
 	if (fp[fid]) {
 #ifdef HAVE_FSTAT
-		unsigned long iocb;
+		int iocb;
 		int filesize;
 		struct stat fstatus;
-		iocb = IOCB0 + ((fid) * 16);
+		iocb = IOCB0 + fid * 16;
 		fstat(fileno(fp[fid]), &fstatus);
 		filesize = fstatus.st_size;
 		dPutByte(iocb + ICAX3, (filesize & 0xff));
@@ -1335,16 +1302,7 @@ static void Device_HHSPEC_Mkdir(void)
 	if (devbug)
 		Aprint("MKDIR Command");
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
@@ -1362,7 +1320,7 @@ static void Device_HHSPEC_Mkdir(void)
 		ClrN;
 	}
 	else {
-		regY = 170;				/* Need to change to invalid Point MDG */
+		regY = 144; /* device done error */
 		SetN;
 	}
 }
@@ -1377,16 +1335,7 @@ static void Device_HHSPEC_Deldir(void)
 	if (devbug)
 		Aprint("DELDIR Command");
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
@@ -1397,7 +1346,9 @@ static void Device_HHSPEC_Deldir(void)
 		ClrN;
 	}
 	else {
-		regY = (errno == ENOTEMPTY) ? 167 : 150;
+		regY = (errno == ENOTEMPTY)
+		     ? 167 /* Sparta: Cannot delete directory */
+		     : 150 /* Sparta: Directory not found */;
 		SetN;
 	}
 }
@@ -1416,16 +1367,7 @@ static void Device_HHSPEC_Cd(void)
 		Aprint("CD Command");
 
 	Device_GetFilename();
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	strcpy(new_path, current_dir[devnum]);
 	apply_relative_path(filename, new_path);
@@ -1462,16 +1404,7 @@ static void Device_HHSPEC_Disk_Info(void)
 	if (devbug)
 		Aprint("Get Disk Information Command");
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	bufadr = (dGetByte(ICBLHZ) << 8) | dGetByte(ICBLLZ);
 
@@ -1508,16 +1441,7 @@ static void Device_HHSPEC_Current_Dir(void)
 	if (devbug)
 		Aprint("Get Current Directory Command");
 
-	devnum = dGetByte(ICDNOZ);
-	if (devnum > 9) {
-		Aprint("Attempt to access H%d: device", devnum);
-		regY = 160;
-		SetN;
-		return;
-	}
-	if (devnum >= 5) {
-		devnum -= 5;
-	}
+	GET_DEVNUM;
 
 	bufadr = (dGetByte(ICBLHZ) << 8) | dGetByte(ICBLLZ);
 
@@ -1531,7 +1455,7 @@ static void Device_HHSPEC_Current_Dir(void)
 			new_path[i] = '>';
 	}
 	strtoupper(new_path);
-	new_path[pathlen] = 155;
+	new_path[pathlen] = (char) 0x9b;
 
 	for (i = 0; i < pathlen + 1; i++)
 		dPutByte(bufadr + i, new_path[i]);
@@ -1545,12 +1469,14 @@ static void Device_HHSPEC(void)
 	if (devbug)
 		Aprint("HHSPEC");
 
-	fid = regX >> 4;
+	GET_FID;
 
 	switch (dGetByte(ICCOMZ)) {
+#ifdef HAVE_RENAME
 	case 0x20:
 		Device_HHSPEC_Rename();
 		return;
+#endif
 #ifdef HAVE_UNLINK
 	case 0x21:
 		Device_HHSPEC_Delete();
@@ -1605,7 +1531,7 @@ static void Device_HHSPEC(void)
 		break;
 	}
 
-	regY = 168;
+	regY = 168; /* invalid device command */
 	SetN;
 }
 
@@ -1635,14 +1561,14 @@ static void Device_PHOPEN(void)
 	if (phf)
 		Device_PHCLOS();
 
-	strcpy(spool_file, "SPOOL_XXXXXX\0");
+	strcpy(spool_file, "SPOOL_XXXXXX");
 	phf = fdopen(mkstemp(spool_file), "w");
 	if (phf) {
 		regY = 1;
 		ClrN;
 	}
 	else {
-		regY = 130;
+		regY = 144; /* device done error */
 		SetN;
 	}
 }
@@ -1657,17 +1583,20 @@ static void Device_PHCLOS(void)
 		int status;
 
 		fclose(phf);
+		phf = NULL;
 
+#ifdef HAVE_SNPRINTF
+		snprintf(command, 256, print_command, spool_file);
+#else
 		sprintf(command, print_command, spool_file);
+#endif
 		system(command);
-#if !defined(VMS) && !defined(MACOSX)
+#if defined(HAVE_UNLINK) && !defined(VMS) && !defined(MACOSX)
 		status = unlink(spool_file);
 		if (status == -1) {
 			perror(spool_file);
-			exit(1);
 		}
 #endif
-		phf = NULL;
 	}
 	regY = 1;
 	ClrN;
@@ -1675,7 +1604,7 @@ static void Device_PHCLOS(void)
 
 static void Device_PHWRIT(void)
 {
-	unsigned char byte;
+	UBYTE byte;
 	int status;
 
 	if (devbug)
@@ -1691,7 +1620,7 @@ static void Device_PHWRIT(void)
 		ClrN;
 	}
 	else {
-		regY = 144;
+		regY = 144; /* device done error */
 		SetN;
 	}
 }
@@ -1707,7 +1636,13 @@ static void Device_PHINIT(void)
 	if (devbug)
 		Aprint("PHINIT");
 
-	phf = NULL;
+	if (phf) {
+		fclose(phf);
+		phf = NULL;
+#ifdef HAVE_UNLINK
+		unlink(spool_file);
+#endif
+	}
 	regY = 1;
 	ClrN;
 }
@@ -1715,33 +1650,6 @@ static void Device_PHINIT(void)
 /* K: and E: handlers for BASIC version, using getchar() and putchar() */
 
 #ifdef BASIC
-/*
-   ================================
-   N = 0 : I/O Successful and Y = 1
-   N = 1 : I/O Error and Y = error#
-   ================================
- */
-
-static void Device_KHREAD(void)
-{
-	UBYTE ch;
-
-	if (feof(stdin)) {
-		Atari800_Exit(FALSE);
-		exit(0);
-	}
-	ch = getchar();
-	switch (ch) {
-	case '\n':
-		ch = (char) 0x9b;
-		break;
-	default:
-		break;
-	}
-	regA = ch;
-	regY = 1;
-	ClrN;
-}
 
 static void Device_EHOPEN(void)
 {
@@ -1752,21 +1660,21 @@ static void Device_EHOPEN(void)
 
 static void Device_EHREAD(void)
 {
-	UBYTE ch;
+	int ch;
 
-	if (feof(stdin)) {
-		Atari800_Exit(FALSE);
-		exit(0);
-	}
 	ch = getchar();
 	switch (ch) {
+	case EOF:
+		Atari800_Exit(FALSE);
+		exit(0);
+		break;
 	case '\n':
 		ch = 0x9b;
 		break;
 	default:
 		break;
 	}
-	regA = ch;
+	regA = (UBYTE) ch;
 	regY = 1;
 	ClrN;
 }
@@ -1785,14 +1693,14 @@ static void Device_EHWRIT(void)
 		break;
 	default:
 		if ((ch >= 0x20) && (ch <= 0x7e))	/* for DJGPP */
-			putchar(ch & 0x7f);
+			putchar(ch);
 		break;
 	}
 	regY = 1;
 	ClrN;
 }
 
-#endif							/* BASIC */
+#endif /* BASIC */
 
 /* Device_PatchOS is called by Atari800_PatchOS to modify standard device
    handlers in Atari OS. It puts escape codes at beginnings of OS routines,
@@ -1849,6 +1757,7 @@ int Device_PatchOS(void)
 			break;
 
 #ifdef R_IO_DEVICE
+		/* XXX: what ROM has R: ? */
 		case 'R':
 			if (enable_r_patch) {
 				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) +
@@ -1887,7 +1796,7 @@ int Device_PatchOS(void)
 		case 'K':
 			Aprint("Keyboard Device");
 			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1,
-							   ESC_KHREAD, Device_KHREAD);
+							   ESC_EHREAD, Device_EHREAD);
 			patched = TRUE;
 			break;
 #endif
@@ -1983,9 +1892,7 @@ static UWORD r_entry_address = 0;
 void Device_Frame(void)
 {
 	if (enable_h_patch)
-		h_entry_address =
-			Device_UpdateHATABSEntry('H', h_entry_address,
-									 H_TABLE_ADDRESS);
+		h_entry_address = Device_UpdateHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
 
 #ifdef R_IO_DEVICE
 	if (enable_r_patch)
@@ -2079,6 +1986,12 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.27  2005/08/06 18:13:34  pfusik
+check for rename() and snprintf()
+fixed error codes
+fixed "unused" warnings
+other minor fixes
+
 Revision 1.26  2005/08/04 22:50:24  pfusik
 fancy I/O functions may be unavailable; got rid of numerous #ifdef BACK_SLASH
 
