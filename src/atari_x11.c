@@ -150,11 +150,11 @@ static int private_cmap = FALSE;
 static int window_width=ATARI_WIDTH;
 static int window_height=ATARI_HEIGHT;
 
-static int clipping_factor=1;
-static int clipping_x=24;
-static int clipping_y=0;
-static int clipping_width=336;
-static int clipping_height=ATARI_HEIGHT;
+static int clipping_factor = 1;
+static int clipping_x = 24;
+static int clipping_y = 0;
+static int clipping_width = 336;
+static int clipping_height = ATARI_HEIGHT;
 
 
 static Display *display = NULL;
@@ -254,7 +254,7 @@ void autorepeat_off(void)
 }
 void autorepeat_restore(void)
 {
-	if( autorepeat )
+	if (autorepeat)
 		XAutoRepeatOn(display);
 	else
 		XAutoRepeatOff(display);
@@ -266,7 +266,7 @@ void segmentationfault(int x)
 	exit(0);
 }
 
-int GetKeyCode(XEvent * event)
+int GetKeyCode(XEvent *event)
 {
 	KeySym keysym;
 	char buffer[128];
@@ -296,9 +296,10 @@ int GetKeyCode(XEvent * event)
 		last_focus = FocusOut;
 		break;
 	case VisibilityNotify:
-		if( ((XVisibilityEvent*)event)->state==VisibilityFullyObscured )
-			invisible=1;
-		else	invisible=0;
+		if (((XVisibilityEvent*)event)->state == VisibilityFullyObscured)
+			invisible = 1;
+		else
+			invisible = 0;
 		break;
 	case KeyPress:
 		key_shift = 0;
@@ -360,9 +361,8 @@ int GetKeyCode(XEvent * event)
 			keycode = AKEY_NONE;
 			break;
 		case XK_F8:
-			if(CONTROL) {
+			if (CONTROL)
 				SoundRecording();
-			}
 			else
 				screen_dump = 2;
 			keycode = AKEY_NONE;
@@ -1056,7 +1056,7 @@ void controllers_callback(void)
 		   NULL);
 }
 
-void sorry_message()
+void sorry_message(void)
 {
 	notice_prompt(panel, NULL,
 				  NOTICE_MESSAGE_STRINGS,
@@ -1501,21 +1501,13 @@ void Atari_Initialise(int *argc, char *argv[])
 		return;
 
 	if ((clipping_x < 0) || (clipping_x >= ATARI_WIDTH))
-	{
 		clipping_x = 0;
-	}
 	if ((clipping_y < 0) || (clipping_y >= ATARI_HEIGHT))
-	{
 		clipping_y = 0;
-	}
 	if ((clipping_width <= 0) || (clipping_x + clipping_width > ATARI_WIDTH))
-	{
 		clipping_width = ATARI_WIDTH - clipping_x;
-	}
 	if ((clipping_height <= 0) || (clipping_y + clipping_height > ATARI_HEIGHT))
-	{
 		clipping_height = ATARI_HEIGHT - clipping_y;
-	}
 	screen_visible_x1 = clipping_x;
 	screen_visible_x2 = clipping_x + clipping_width;
 	screen_visible_y1 = clipping_y;
@@ -1869,7 +1861,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	xv_set(canvas_paint_window(canvas),
 		   WIN_EVENT_PROC, event_proc,
-		   WIN_CONSUME_EVENTS, WIN_ASCII_EVENTS, WIN_MOUSE_BUTTONS, 
+		   WIN_CONSUME_EVENTS, WIN_ASCII_EVENTS, WIN_MOUSE_BUTTONS,
 		   WIN_VISIBILITY_NOTIFY, /* mmm */
 		   NULL,
 		   NULL);
@@ -2416,7 +2408,7 @@ int Atari_Exit(int run_monitor)
 }
 
 #ifndef SHM
-void Atari_ScanLine_Flush()
+void Atari_ScanLine_Flush(void)
 {
 	if (windowsize == Small) {
 		if (npoints != 0) {
@@ -2439,7 +2431,7 @@ void Atari_ScanLine_Flush()
 }
 #endif
 
-void ScreenDump()
+void ScreenDump(void)
 {
 	static char command[128];
 	static int frame_num = 0;
@@ -2469,8 +2461,9 @@ void Atari_DisplayScreen(UBYTE * screen)
 	first_y = ATARI_HEIGHT;
 	last_y = -1000;
 
-	if( invisible )   goto after_screen_update;  /* mmm */
-	if(image->bits_per_pixel == 32) {
+	if (invisible)
+		goto after_screen_update;  /* mmm */
+	if (image->bits_per_pixel == 32) {
 		ULONG *ptr = (ULONG *) image->data;
 		UBYTE *ptr2 = screen;
 		ULONG help_color;
@@ -2578,7 +2571,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 			}
 		}
 	}
-	else if(image->bits_per_pixel == 16) {
+	else if (image->bits_per_pixel == 16) {
 		UWORD *ptr = (UWORD *) image->data;
 		UBYTE *ptr2 = screen;
 		UWORD help_color;
@@ -2686,7 +2679,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 			}
 		}
 	}
-	else if(image->bits_per_pixel == 8) {
+	else if (image->bits_per_pixel == 8) {
 		UBYTE *ptr = (UBYTE *) image->data;
 		UBYTE *ptr2 = screen;
 		UBYTE help_color;
@@ -2802,8 +2795,8 @@ void Atari_DisplayScreen(UBYTE * screen)
 		modified = FALSE;
 	}
 	else if (last_y >= 0) {
-		last_x++; 
-		last_y++; 
+		last_x++;
+		last_y++;
 		if (first_x < clipping_x) {
 			first_x = clipping_x;
 		}
@@ -2841,7 +2834,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 	int ypos;
 
 	if (invisible)
-		goto after_screen_update; 
+		goto after_screen_update;
 	for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
 		ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
 		scanline_ptr = ((UBYTE *) image_data) + ((ypos * ATARI_WIDTH) + clipping_x);
@@ -3110,8 +3103,8 @@ void mouse_joystick(int mode)
 			threshold = 96;
 		}
 
-		if( win_x_return<0 || win_x_return>center_x*2 ||
-		    win_y_return<0 || win_y_return>center_y*2 )
+		if (win_x_return < 0 || win_x_return > center_x * 2 ||
+		    win_y_return < 0 || win_y_return > center_y * 2 )
 			mouse_stick = 0x0f;
 		else
 		{
@@ -3256,7 +3249,7 @@ int Atari_TRIG(int num)
 						  &root_x_return, &root_y_return,
 						  &win_x_return, &win_y_return,
 						  &mask_return)) {
-			int mx,my;
+			int mx, my;
 			if (windowsize == Small) {
 				mx = window_width;
 				my = window_height;
@@ -3269,11 +3262,10 @@ int Atari_TRIG(int num)
 				mx = window_width;
 				my = window_height;
 			}
-			if( win_x_return<0 || win_x_return>mx ||
-			    win_y_return<0 || win_y_return>my )
+			if (win_x_return < 0 || win_x_return > mx ||
+			    win_y_return < 0 || win_y_return > my)
 				trig = 1;
-			else
-			if (mask_return & Button1Mask)
+			else if (mask_return & Button1Mask)
 				trig = 0;
 		}
 	}

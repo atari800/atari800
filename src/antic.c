@@ -47,33 +47,33 @@ extern UWORD ypos_break_addr;
 #endif
 #ifdef NEW_CYCLE_EXACT
 void draw_partial_scanline(int l,int r);
-void update_scanline();
+void update_scanline(void);
 void update_scanline_prior(UBYTE byte);
-void update_scanline_chbase();
-void update_scanline_invert();
-void update_scanline_blank();
+void update_scanline_chbase(void);
+void update_scanline_invert(void);
+void update_scanline_blank(void);
 int *cpu2antic_ptr;
 int *antic2cpu_ptr;
-int delayed_wsync=0;
-int dmactl_changed=0;
+int delayed_wsync = 0;
+int dmactl_changed = 0;
 UBYTE DELAYED_DMACTL;
-int draw_antic_ptr_changed=0;
+int draw_antic_ptr_changed = 0;
 UBYTE need_load;
 int dmactl_bug_chdata;
 #ifndef NO_GTIA11_DELAY
 /* the position in the ring buffer where the last change before*/
 /* the previous line occured to PRIOR*/
-int prevline_prior_pos=0; 
+int prevline_prior_pos = 0;
 /* the position in the ring buffer where the last change before*/
 /* the current line occured to PRIOR*/
-int curline_prior_pos=0;
+int curline_prior_pos = 0;
 /* the current position in the ring buffer where the most recent */
 /* change to PRIOR occured*/
-int prior_curpos=0;
+int prior_curpos = 0;
 /*ring buffer to hold the previous values of PRIOR*/
 UBYTE prior_val_buf[PRIOR_BUF_SIZE];
 /* can be negative, leave as signed ints*/
-/*ring buffer to hold the positions where PRIOR changed*/ 
+/*ring buffer to hold the positions where PRIOR changed*/
 int prior_pos_buf[PRIOR_BUF_SIZE];
 #endif /*NO_GTIA11_DELAY*/
 #endif /*NEW_CYCLE_EXACT*/
@@ -117,7 +117,7 @@ int prior_pos_buf[PRIOR_BUF_SIZE];
 			{ \
 				scratchUWordPtr = (ptr); \
 				scratchUWord = (val); \
-				if(*scratchUWordPtr != scratchUWord) \
+				if (*scratchUWordPtr != scratchUWord) \
 				{ \
 					screen_dirty[((ULONG)scratchUWordPtr-(ULONG)atari_screen)>>3] = 1; \
 					*scratchUWordPtr = scratchUWord; \
@@ -127,7 +127,7 @@ int prior_pos_buf[PRIOR_BUF_SIZE];
 			{ \
 				scratchULongPtr = (ptr); \
 				scratchULong = (val); \
-				if(*scratchULongPtr != scratchULong) \
+				if (*scratchULongPtr != scratchULong) \
 				{ \
 					screen_dirty[((ULONG)scratchULongPtr-(ULONG)atari_screen)>>3] = 1; \
 					*scratchULongPtr = scratchULong; \
@@ -137,7 +137,7 @@ int prior_pos_buf[PRIOR_BUF_SIZE];
 			{ \
 				scratchUBytePtr = (ptr); \
 				scratchUByte = (val); \
-				if(*scratchUBytePtr != scratchUByte) \
+				if (*scratchUBytePtr != scratchUByte) \
 				{ \
 					screen_dirty[((ULONG)scratchUBytePtr-(ULONG)atari_screen)>>3] = 1; \
 					*scratchUBytePtr = scratchUByte; \
@@ -151,7 +151,7 @@ int prior_pos_buf[PRIOR_BUF_SIZE];
 				scratchFillLimit = scratchUBytePtr + (size); \
 				for(; scratchUBytePtr<scratchFillLimit; scratchUBytePtr++) \
 				{ \
-					if(*scratchUBytePtr != scratchUByte) \
+					if (*scratchUBytePtr != scratchUByte) \
 					{ \
 						screen_dirty[((ULONG)scratchUBytePtr-(ULONG)atari_screen)>>3] = 1; \
 						*scratchUBytePtr = scratchUByte; \
@@ -160,13 +160,13 @@ int prior_pos_buf[PRIOR_BUF_SIZE];
 			}
 	#endif
 
-	void entire_screen_dirty() { memset(screen_dirty, 1, ATARI_WIDTH*ATARI_HEIGHT/8); }
+	void entire_screen_dirty(void) { memset(screen_dirty, 1, ATARI_WIDTH*ATARI_HEIGHT/8); }
 #else
 	#define WRITE_VIDEO(ptr, val) (*(ptr) = val);
 	#define WRITE_VIDEO_LONG(ptr, val) (*(ptr) = val);
 	#define WRITE_VIDEO_BYTE(ptr, val) (*(ptr) = val);
 	#define FILL_VIDEO(ptr, val, size) memset(ptr, val, size);
-	void entire_screen_dirty() {}
+	void entire_screen_dirty(void) {}
 #endif
 #define READ_VIDEO_LONG(ptr) (*(ptr))
 
@@ -357,8 +357,8 @@ These are all cases:
   - CPU goes until NMIST_C
   - ANTIC sets NMIST to 0x5f
   if (NMIEN & 0x40) {
-	  - CPU goes until NMI_C
-	  - ANTIC forces NMI
+      - CPU goes until NMI_C
+      - ANTIC forces NMI
   }
   - ANTIC gets DMAR cycles
   - CPU goes until LINE_C
@@ -374,8 +374,8 @@ These are all cases:
   - CPU goes until NMIST_C
   - ANTIC sets NMIST to 0x9f
   if (NMIEN & 0x80) {
-	  - CPU goes until NMI_C
-	  - ANTIC forces NMI
+      - CPU goes until NMI_C
+      - ANTIC forces NMI
   }
   - CPU goes until SCR_C
   - ANTIC draws line with DMAR
@@ -392,11 +392,23 @@ These are all cases:
 unsigned int screenline_cpu_clock = 0;
 
 #ifdef NEW_CYCLE_EXACT
-#define UPDATE_DMACTL if(dmactl_changed){dmactl_changed=0;ANTIC_PutByte(_DMACTL,DELAYED_DMACTL);} if(draw_antic_ptr_changed){draw_antic_ptr_changed=0;draw_antic_ptr=saved_draw_antic_ptr;}
+#define UPDATE_DMACTL if (dmactl_changed) { \
+		dmactl_changed=0; \
+		ANTIC_PutByte(_DMACTL,DELAYED_DMACTL); \
+	} \
+	if (draw_antic_ptr_changed) { \
+		draw_antic_ptr_changed = 0; \
+		draw_antic_ptr = saved_draw_antic_ptr; \
+	}
 #else
 #define UPDATE_DMACTL
 #endif /*NEW_CYCLE_EXACT*/
-#define GOEOL_CYCLE_EXACT  GO(antic2cpu_ptr[LINE_C]); xpos=cpu2antic_ptr[xpos]; xpos -= LINE_C; screenline_cpu_clock += LINE_C; ypos++ ;update_pmpl_colls();
+#define GOEOL_CYCLE_EXACT  GO(antic2cpu_ptr[LINE_C]); \
+	xpos = cpu2antic_ptr[xpos]; \
+	xpos -= LINE_C; \
+	screenline_cpu_clock += LINE_C; \
+	ypos++; \
+	update_pmpl_colls();
 #define GOEOL GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL ypos++
 #define OVERSCREEN_LINE	xpos += DMAR; GOEOL
 
@@ -456,13 +468,13 @@ static int extra_cycles[6];
 static int left_border_chars;
 static int right_border_start;
 #ifdef NEW_CYCLE_EXACT
-static int left_border_start=LCHOP*4;
-static int right_border_end=(48-RCHOP)*4;
+static int left_border_start = LCHOP * 4;
+static int right_border_end = (48 - RCHOP) * 4;
 #define LBORDER_START left_border_start
 #define RBORDER_END right_border_end
 #else
-#define LBORDER_START (LCHOP*4)
-#define RBORDER_END ((48-RCHOP)*4)
+#define LBORDER_START (LCHOP * 4)
+#define RBORDER_END ((48 - RCHOP) * 4)
 #endif /*NEW_CYCLE_EXACT*/
 
 /* set with CHBASE *and* CHACTL - bits 0..2 set if flip on */
@@ -572,15 +584,15 @@ UWORD cl_lookup[128];
 
 #define INIT_BACKGROUND_6 ULONG background = cl_lookup[C_PF2] | (((ULONG) cl_lookup[C_PF2]) << 16);
 #define INIT_BACKGROUND_8 ULONG background = lookup_gtia9[0];
-#define DRAW_BACKGROUND(colreg) {\
-		ULONG *l_ptr = (ULONG *) ptr;\
+#define DRAW_BACKGROUND(colreg) { \
+		ULONG *l_ptr = (ULONG *) ptr; \
 		WRITE_VIDEO_LONG(l_ptr++, background); \
 		WRITE_VIDEO_LONG(l_ptr++, background); \
-		ptr = (UWORD *) l_ptr;\
+		ptr = (UWORD *) l_ptr; \
 	}
 #define DRAW_ARTIF {\
 		WRITE_VIDEO_LONG((ULONG*)ptr, art_curtable[(UBYTE) (screendata_tally >> 10)]); \
-		WRITE_VIDEO_LONG(((ULONG*)ptr)+1, art_curtable[(UBYTE) (screendata_tally >> 6)]);\
+		WRITE_VIDEO_LONG(((ULONG*)ptr)+1, art_curtable[(UBYTE) (screendata_tally >> 6)]); \
 		ptr += 4;\
 	}
 
@@ -597,9 +609,9 @@ UWORD cl_lookup[128];
 	}
 #define DRAW_ARTIF {\
 		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[(screendata_tally & 0x03fc00) >> 9]); \
-		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[((screendata_tally & 0x03fc00) >> 9) + 1]);\
-		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[(screendata_tally & 0x003fc0) >> 5]);\
-		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[((screendata_tally & 0x003fc0) >> 5) + 1]);\
+		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[((screendata_tally & 0x03fc00) >> 9) + 1]); \
+		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[(screendata_tally & 0x003fc0) >> 5]); \
+		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[((screendata_tally & 0x003fc0) >> 5) + 1]); \
 	}
 
 #endif /* UNALIGNED_LONG_OK */
@@ -960,7 +972,8 @@ void ANTIC_Reset(void)
 		WRITE_VIDEO_LONG(l_ptr++, background); \
 		ptr = (UWORD *) l_ptr;\
 		pm_scanline_ptr += 4;\
-	} else {\
+	}\
+	else {\
 		int k = 4;\
 		do
 
@@ -1375,8 +1388,8 @@ static void draw_antic_2_dmactl_bug(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr,
 /* When this gate was set on the last line and the next line is glitched */
 /* it remains set and the whole line appears inverted */
 /* We'll use this modeline to draw antic f glitched as well, and set */
-/* dmactl_bug_chdata to 0 */ 
-		int chdata=(dmactl_bug_chdata & invert_mask)? 0xff : 0;
+/* dmactl_bug_chdata to 0 */
+		int chdata = (dmactl_bug_chdata & invert_mask) ? 0xff : 0;
 		/*GET_CHDATA_ANTIC_2*/
 		if (IS_ZERO_ULONG(t_pm_scanline_ptr)) {
 
@@ -2120,7 +2133,7 @@ static void draw_antic_e_gtia10 (int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, UL
 	prepare_an_antic_e(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 	draw_an_gtia10(t_pm_scanline_ptr);
 }
-static void draw_antic_e_gtia11 (int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr) 
+static void draw_antic_e_gtia11 (int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr)
 {
 	prepare_an_antic_e(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 	draw_an_gtia11(t_pm_scanline_ptr);\
@@ -2210,8 +2223,7 @@ static void draw_antic_f_gtia9(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULON
 						WRITE_VIDEO(ptr, tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3]);
 #endif
 					}
-					else
-					{
+					else {
 						WRITE_VIDEO(ptr, COLOUR(pm_reg));
 					}
 				}
@@ -2395,8 +2407,9 @@ static draw_antic_function saved_draw_antic_ptr;
 /* pointer to current GTIA mode blank drawing routine */
 static void (*draw_antic_0_ptr)(void) = draw_antic_0;
 
-/*wrapper for antic_0, for dmactl bugs*/
-static void draw_antic_0_dmactl_bug(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr){
+/* wrapper for antic_0, for dmactl bugs */
+static void draw_antic_0_dmactl_bug(int nchars, UBYTE *ANTIC_memptr, UWORD *ptr, ULONG *t_pm_scanline_ptr)
+{
 	draw_antic_0_ptr();
 }
 
@@ -2413,10 +2426,10 @@ void ANTIC_UpdateArtifacting(void)
 #define ART_RED 6
 #define ART_GREEN 7
 	static UBYTE art_colour_table[4][8] = {
-	{ 0x88, 0x14, 0x88, 0x14, 0x8f, 0x1f, 0xbb, 0x5f },	/* brownblue */
-	{ 0x14, 0x88, 0x14, 0x88, 0x1f, 0x8f, 0x5f, 0xbb },	/* bluebrown */
-	{ 0xd6, 0x46, 0xd6, 0x46, 0xdf, 0x4a, 0x4f, 0xac },	/* redgreen */
-	{ 0x46, 0xd6, 0x46, 0xd6, 0x4a, 0xdf, 0xac, 0x4f }	/* greenred */
+		{ 0x88, 0x14, 0x88, 0x14, 0x8f, 0x1f, 0xbb, 0x5f },	/* brownblue */
+		{ 0x14, 0x88, 0x14, 0x88, 0x1f, 0x8f, 0x5f, 0xbb },	/* bluebrown */
+		{ 0xd6, 0x46, 0xd6, 0x46, 0xdf, 0x4a, 0x4f, 0xac },	/* redgreen */
+		{ 0x46, 0xd6, 0x46, 0xd6, 0x4a, 0xdf, 0xac, 0x4f }	/* greenred */
 	};
 
 	int i;
@@ -2488,7 +2501,6 @@ void ANTIC_UpdateArtifacting(void)
 			else
 				c = ART_BROWN;					/* x010x */
 
-
 			((UBYTE *)art_lookup_reverse)[((255 - i) << 2) + j] =
 			((UBYTE *)art_lookup_normal)[(i << 2) + j] = art_colours[(j & 1) ^ c];
 			continue;
@@ -2548,7 +2560,7 @@ static void ANTIC_load(void)
 	if ((screenaddr ^ new_screenaddr) & 0xf000) {
 		int bytes = (-screenaddr) & 0xfff;
 		if (antic_xe_ptr != NULL && screenaddr < 0x8000 && screenaddr >= 0x4000) {
-			memcpy(ANTIC_memory + ANTIC_margin , antic_xe_ptr + (screenaddr - 0x4000), bytes);
+			memcpy(ANTIC_memory + ANTIC_margin, antic_xe_ptr + (screenaddr - 0x4000), bytes);
 			if (new_screenaddr & 0xfff)
 				memcpy(ANTIC_memory + ANTIC_margin + bytes, antic_xe_ptr + (screenaddr + bytes - 0x5000), new_screenaddr & 0xfff);
 		}
@@ -2561,7 +2573,7 @@ static void ANTIC_load(void)
 	}
 	else {
 		if (antic_xe_ptr != NULL && screenaddr < 0x8000 && screenaddr >= 0x4000)
-			memcpy(ANTIC_memory + ANTIC_margin , antic_xe_ptr + (screenaddr - 0x4000), chars_read[md]);
+			memcpy(ANTIC_memory + ANTIC_margin, antic_xe_ptr + (screenaddr - 0x4000), chars_read[md]);
 		else
 			dCopyFromMem(screenaddr, ANTIC_memory + ANTIC_margin , chars_read[md]);
 		screenaddr = new_screenaddr;
@@ -2573,19 +2585,20 @@ static void ANTIC_load(void)
 int scrn_ofs = -1;
 #endif
 #ifdef NEW_CYCLE_EXACT
-int cur_screen_pos=NOT_DRAWING;
+int cur_screen_pos = NOT_DRAWING;
 #endif
 
 /* This function emulates one frame drawing screen at atari_screen */
 void ANTIC_Frame(int draw_display)
 {
 	static UBYTE mode_type[32] = {
-	NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL1, NORMAL1,
-	NORMAL2, NORMAL2, NORMAL1, NORMAL1, NORMAL1, NORMAL0, NORMAL0, NORMAL0,
-	SCROLL0, SCROLL0, SCROLL0, SCROLL0, SCROLL0, SCROLL0, SCROLL1, SCROLL1,
-	SCROLL2, SCROLL2, SCROLL1, SCROLL1, SCROLL1, SCROLL0, SCROLL0, SCROLL0};
+		NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL1, NORMAL1,
+		NORMAL2, NORMAL2, NORMAL1, NORMAL1, NORMAL1, NORMAL0, NORMAL0, NORMAL0,
+		SCROLL0, SCROLL0, SCROLL0, SCROLL0, SCROLL0, SCROLL0, SCROLL1, SCROLL1,
+		SCROLL2, SCROLL2, SCROLL1, SCROLL1, SCROLL1, SCROLL0, SCROLL0, SCROLL0
+	};
 	static UBYTE normal_lastline[16] =
-	{ 0, 0, 7, 9, 7, 15, 7, 15, 7, 3, 3, 1, 0, 1, 0, 0 };
+		{ 0, 0, 7, 9, 7, 15, 7, 15, 7, 3, 3, 1, 0, 1, 0, 0 };
 	UBYTE vscrol_flag = FALSE;
 	UBYTE no_jvb = TRUE;
 #ifndef NEW_CYCLE_EXACT
@@ -2597,11 +2610,11 @@ void ANTIC_Frame(int draw_display)
 #endif /*NEW_CYCLE_EXACT*/
 #ifndef NO_GTIA11_DELAY
 #ifdef NEW_CYCLE_EXACT
-	int stop=FALSE;
+	int stop = FALSE;
 /* can be negative, leave as signed ints*/
 	int old_curline_prior_pos;
 	int last_pos;
-	int change_pos; 
+	int change_pos;
 #else
 	int delayed_gtia11 = 250;
 #endif /*NEW_CYCLE_EXACT*/
@@ -2704,79 +2717,75 @@ void ANTIC_Frame(int draw_display)
 				break;
 			}
 		}
-                #ifdef NEW_CYCLE_EXACT
-		cpu2antic_index=0;
-		if (anticmode < 2 || (DMACTL & 3) == 0 || \
-			(anticmode>=8 && !need_load)){
-			cpu2antic_index=0;
-		}else { 
-/*TODO: use a cleaner lookup table here*/
-			if(!(IR & 0x10)&& ((DMACTL&3)==1)){
-				cpu2antic_index=1;
-			}else if((!(IR &0x10) && ((DMACTL&3)==2))||\
-				((IR&0x10) && ((DMACTL&3)==1))){
-				cpu2antic_index=2;
-			}else {
-				cpu2antic_index=10;
-			}
-			if(IR&0x10){
-				cpu2antic_index+=(HSCROL>>1);
-			}
-			if(anticmode >=2 && anticmode <=7 && !need_load){
-				cpu2antic_index += 17;
-			}
-			if(anticmode ==6 || anticmode ==7){
-				cpu2antic_index+=17*2;
-		 	}else if(anticmode==8 || anticmode ==9){
-				cpu2antic_index+=17*6;
-			}else if(anticmode >=0xa && anticmode <=0xc){
-				cpu2antic_index+=17*5;
-			}else if(anticmode >=0x0d){
-				cpu2antic_index+=17*4;
-			}
+#ifdef NEW_CYCLE_EXACT
+		cpu2antic_index = 0;
+		if (anticmode < 2 || (DMACTL & 3) == 0 ||
+			(anticmode >= 8 && !need_load)) {
+			cpu2antic_index = 0;
 		}
-		cpu2antic_ptr=&cpu2antic[CPU2ANTIC_SIZE*cpu2antic_index];
-		antic2cpu_ptr=&antic2cpu[CPU2ANTIC_SIZE*cpu2antic_index];
-                #endif /*NEW_CYCLE_EXACT*/
-		
+		else {
+/*TODO: use a cleaner lookup table here*/
+			if (!(IR & 0x10) && ((DMACTL & 3) == 1))
+				cpu2antic_index = 1;
+			else if ((!(IR &0x10) && ((DMACTL & 3) == 2)) ||
+				((IR & 0x10) && ((DMACTL & 3) == 1))) {
+				cpu2antic_index = 2;
+			}
+			else
+				cpu2antic_index = 10;
+			if (IR & 0x10) {
+				cpu2antic_index += (HSCROL >> 1);
+			}
+			if (anticmode >=2 && anticmode <=7 && !need_load)
+				cpu2antic_index += 17;
+			if (anticmode ==6 || anticmode ==7)
+				cpu2antic_index += 17 * 2;
+		 	else if (anticmode==8 || anticmode == 9)
+				cpu2antic_index += 17 * 6;
+			else if (anticmode >=0xa && anticmode <=0xc)
+				cpu2antic_index += 17 * 5;
+			else if (anticmode >=0x0d)
+				cpu2antic_index += 17 * 4;
+		}
+		cpu2antic_ptr = &cpu2antic[CPU2ANTIC_SIZE*cpu2antic_index];
+		antic2cpu_ptr = &antic2cpu[CPU2ANTIC_SIZE*cpu2antic_index];
+#endif /*NEW_CYCLE_EXACT*/
 
 		if (anticmode == 1 && DMACTL & 0x20)
 			dlist = get_DL_word();
 
-                #ifdef NEW_CYCLE_EXACT
+#ifdef NEW_CYCLE_EXACT
 		/* begin drawing here */
-                if (draw_display) {
- 		cur_screen_pos = LBORDER_START;
-		xpos=antic2cpu_ptr[xpos]; /*convert antic to cpu(need for WSYNC)*/
-		if (dctr == lastline) {
-			if (no_jvb)
-				need_dl = TRUE;
-			if (IR & 0x80) {
-				GO(antic2cpu_ptr[NMIST_C]);
-				NMIST = 0x9f;
-				if(NMIEN & 0x80) {
-					GO(antic2cpu_ptr[NMI_C]);
-					NMI();
+		if (draw_display) {
+			cur_screen_pos = LBORDER_START;
+			xpos=antic2cpu_ptr[xpos]; /*convert antic to cpu(need for WSYNC)*/
+			if (dctr == lastline) {
+				if (no_jvb)
+					need_dl = TRUE;
+				if (IR & 0x80) {
+					GO(antic2cpu_ptr[NMIST_C]);
+					NMIST = 0x9f;
+					if (NMIEN & 0x80) {
+						GO(antic2cpu_ptr[NMI_C]);
+						NMI();
+					}
 				}
 			}
 		}
-		}else{ /* force this to be within an else if NEW_CYCLE_EXACT*/ 
-                #endif /*NEW_CYCLE_EXACT*/
+		else /* force this to be within an else if NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 		if (dctr == lastline) {
 			if (no_jvb)
 				need_dl = TRUE;
 			if (IR & 0x80) {
 				GO(NMIST_C);
 				NMIST = 0x9f;
-				if(NMIEN & 0x80) {
+				if (NMIEN & 0x80) {
 					GO(NMI_C);
 					NMI();
 				}
 			}
 		}
-                #ifdef NEW_CYCLE_EXACT
-                }
-                #endif /*NEW_CYCLE_EXACT*/
 		if (!draw_display) {
 			xpos += DMAR;
 			if (anticmode < 2 || (DMACTL & 3) == 0) {
@@ -2800,27 +2809,26 @@ void ANTIC_Frame(int draw_display)
 			continue;
 		}
 #ifndef NO_YPOS_BREAK_FLICKER
-#define YPOS_BREAK_FLICKER if(ypos==ypos_break_addr-1000){\
+#define YPOS_BREAK_FLICKER if (ypos == ypos_break_addr - 1000){\
 				static int toggle;\
-				if(toggle==1){\
-				FILL_VIDEO(scrn_ptr+LBORDER_START, 0x0f0f, (RBORDER_END - LBORDER_START) * 2);\
+				if (toggle == 1){\
+					FILL_VIDEO(scrn_ptr + LBORDER_START, 0x0f0f, (RBORDER_END - LBORDER_START) * 2);\
 				}\
-				toggle=!toggle;\
+				toggle = !toggle;\
 			}
 #else
 #define YPOS_BREAK_FLICKER
 #endif /* NO_YPOS_BREAK_FLICKER*/
 
-
 #ifdef NEW_CYCLE_EXACT
 		new_pm_scanline();
 		if (anticmode < 2 || (DMACTL & 3) == 0) {
 			GOEOL_CYCLE_EXACT;
-			draw_partial_scanline(cur_screen_pos,RBORDER_END);
+			draw_partial_scanline(cur_screen_pos, RBORDER_END);
 			UPDATE_DMACTL
 			cur_screen_pos = NOT_DRAWING;
 			YPOS_BREAK_FLICKER
-                        scrn_ptr += ATARI_WIDTH / 2;
+			scrn_ptr += ATARI_WIDTH / 2;
 			if (no_jvb) {
 				dctr++;
 				dctr &= 0xf;
@@ -2829,7 +2837,7 @@ void ANTIC_Frame(int draw_display)
 		}
 
 		GOEOL_CYCLE_EXACT;
-		draw_partial_scanline(cur_screen_pos,RBORDER_END);
+		draw_partial_scanline(cur_screen_pos, RBORDER_END);
 		UPDATE_DMACTL
 		cur_screen_pos = NOT_DRAWING;
 
@@ -2899,7 +2907,7 @@ void ANTIC_Frame(int draw_display)
 				ULONG *ptr = (ULONG *) (scrn_ptr + 4 * LCHOP);
 				int k = 2 * (48 - LCHOP - RCHOP);
 				do {
-					WRITE_VIDEO_LONG(ptr, READ_VIDEO_LONG(ptr)|READ_VIDEO_LONG(ptr-ATARI_WIDTH/4));
+					WRITE_VIDEO_LONG(ptr, READ_VIDEO_LONG(ptr) | READ_VIDEO_LONG(ptr - ATARI_WIDTH / 4));
 					ptr++;
 				} while (--k);
 			}
@@ -2907,7 +2915,7 @@ void ANTIC_Frame(int draw_display)
 /*Basic explaination: */
 /*the ring buffer prior_pos_buf has three pointers:*/
 /*     A   B  C              D     E    F      G   */
-/*     ^                     ^                 ^   */ 
+/*     ^                     ^                 ^   */
 /*prevline_prior_pos  curline_prior_pos  prior_curpos  */
 /*  G would be the most recent change which occured during drawing*/
 /* of the current line , D is the most recent */
@@ -2927,69 +2935,67 @@ void ANTIC_Frame(int draw_display)
 /* update prev_prior_val and cur_prior_val to be equal the the PRIOR values*/
 /* "in effect" *before* those changes occured.  If those PRIOR values */
 /* should cause a GTIA11_DELAY effect to occur then this is processed*/
-/* for that portion of the scanline */ 
+/* for that portion of the scanline */
 /* At the end of processing, the buffer would look like:*/
 /*the ring buffer prior_pos_buf has three pointers:*/
 /*     A   B  C              D     E    F      G   */
-/*                           ^                 ^   */ 
+/*                           ^                 ^   */
 /*                    prevline_prior_pos  curline_prior_pos==prior_curpos  */
- 
 
-
-		stop=FALSE;
-		last_pos=LBORDER_START;
-		old_curline_prior_pos=curline_prior_pos;
-		do{
+		stop = FALSE;
+		last_pos = LBORDER_START;
+		old_curline_prior_pos = curline_prior_pos;
+		do {
 			
 			UBYTE prev_prior_val;
 			UBYTE cur_prior_val;
-			prev_prior_val=prior_val_buf[prevline_prior_pos];
-			cur_prior_val=prior_val_buf[curline_prior_pos];
+			prev_prior_val = prior_val_buf[prevline_prior_pos];
+			cur_prior_val = prior_val_buf[curline_prior_pos];
 
-			if(prevline_prior_pos==old_curline_prior_pos &&
-			curline_prior_pos==prior_curpos){
+			if (prevline_prior_pos == old_curline_prior_pos &&
+				curline_prior_pos == prior_curpos) {
 			/*no more changes*/
-				change_pos=RBORDER_END;
-				stop=TRUE;
-			}else if(prevline_prior_pos!=old_curline_prior_pos &&
-			curline_prior_pos!=prior_curpos){
-			/*find leftmost change*/
-				int pnext=(prevline_prior_pos+1)%PRIOR_BUF_SIZE;
-				int cnext=(curline_prior_pos+1)%PRIOR_BUF_SIZE;
-				if(prior_pos_buf[pnext]<prior_pos_buf[cnext]){
-					change_pos=prior_pos_buf[pnext];
-					prevline_prior_pos=pnext;
-				}else{
-					change_pos=prior_pos_buf[cnext];
-					curline_prior_pos=cnext;
-				}
-			}else if(prevline_prior_pos!=old_curline_prior_pos){
-			/* only have prevline change*/
-				prevline_prior_pos=(prevline_prior_pos+1)%PRIOR_BUF_SIZE;
-				change_pos=prior_pos_buf[prevline_prior_pos];
-
-			}else{
-			/* must only have curline change*/
-				curline_prior_pos=(curline_prior_pos+1)%PRIOR_BUF_SIZE;
-				change_pos=prior_pos_buf[curline_prior_pos];
-						
+				change_pos = RBORDER_END;
+				stop = TRUE;
 			}
-							
-			if(prev_prior_val>=0xC0 && cur_prior_val <0xC0 &&
-				change_pos>LBORDER_START &&
-				change_pos>last_pos && last_pos < RBORDER_END){
-				
-				int adj_change_pos = (change_pos > RBORDER_END )? RBORDER_END : change_pos;	
+			else if (prevline_prior_pos != old_curline_prior_pos &&
+				curline_prior_pos != prior_curpos){
+			/*find leftmost change*/
+				int pnext = (prevline_prior_pos + 1) % PRIOR_BUF_SIZE;
+				int cnext = (curline_prior_pos + 1) % PRIOR_BUF_SIZE;
+				if (prior_pos_buf[pnext] < prior_pos_buf[cnext]) {
+					change_pos = prior_pos_buf[pnext];
+					prevline_prior_pos = pnext;
+				}
+				else {
+					change_pos = prior_pos_buf[cnext];
+					curline_prior_pos = cnext;
+				}
+			}
+			else if (prevline_prior_pos != old_curline_prior_pos) {
+				/* only have prevline change*/
+				prevline_prior_pos = (prevline_prior_pos + 1) % PRIOR_BUF_SIZE;
+				change_pos = prior_pos_buf[prevline_prior_pos];
+			}
+			else{
+				/* must only have curline change*/
+				curline_prior_pos = (curline_prior_pos + 1) % PRIOR_BUF_SIZE;
+				change_pos = prior_pos_buf[curline_prior_pos];
+			}
+
+			if (prev_prior_val >= 0xC0 && cur_prior_val < 0xC0 &&
+				change_pos > LBORDER_START &&
+				change_pos > last_pos && last_pos < RBORDER_END) {
+				int adj_change_pos = (change_pos > RBORDER_END) ? RBORDER_END : change_pos;
 				UWORD *ptr = (scrn_ptr + last_pos);
-				int k = adj_change_pos-last_pos;
+				int k = adj_change_pos - last_pos;
 				do {
-					WRITE_VIDEO(ptr, *ptr|*(ptr-ATARI_WIDTH/2));
+					WRITE_VIDEO(ptr, *ptr | *(ptr - ATARI_WIDTH / 2));
 					ptr++;
 				} while (--k);
-				
 			}
-			last_pos = (change_pos>last_pos) ? change_pos: last_pos;
-		}while(!stop);
+			last_pos = (change_pos > last_pos) ? change_pos: last_pos;
+		} while (!stop);
 #endif /*NEW_CYCLE_EXACT*/
 #endif /*NO_GTIA11_DELAY*/
 #ifndef NEW_CYCLE_EXACT
@@ -3020,104 +3026,107 @@ void ANTIC_Frame(int draw_display)
 
 #ifdef NEW_CYCLE_EXACT
 
-/*update the scanline from the last changed position to the current
-position , when a change
-was made to a display register during drawing*/
-void update_scanline(){
-	int antic_xpos=cpu2antic_ptr[xpos];
-  	int newpos=antic_xpos*2-37;
-	draw_partial_scanline(cur_screen_pos,newpos);
-	cur_screen_pos=newpos;
+/* update the scanline from the last changed position to the current
+position, when a change was made to a display register during drawing */
+void update_scanline(void)
+{
+	int antic_xpos = cpu2antic_ptr[xpos];
+	int newpos = antic_xpos * 2 - 37;
+	draw_partial_scanline(cur_screen_pos, newpos);
+	cur_screen_pos = newpos;
 }
 
-/* prior needs a different adjusment and could generate small glitches
+/* prior needs a different adjustment and could generate small glitches
 between mode changes*/
 /*TODO: support glitches between mode changes (tiny areas that are neither
-the new mode nor the old mode, which occur between mode changes*/
-void update_scanline_prior(UBYTE byte){
-	int antic_xpos=cpu2antic_ptr[xpos];
-	int prior_mode_adj=2;
+the new mode nor the old mode, which occur between mode changes */
+void update_scanline_prior(UBYTE byte)
+{
+	int antic_xpos = cpu2antic_ptr[xpos];
+	int prior_mode_adj = 2;
 	int newpos;
-  	newpos=antic_xpos*2-37+prior_mode_adj;
-	draw_partial_scanline(cur_screen_pos,newpos);
-	cur_screen_pos=newpos;
+	newpos = antic_xpos * 2 - 37 + prior_mode_adj;
+	draw_partial_scanline(cur_screen_pos, newpos);
+	cur_screen_pos = newpos;
 }
 
-/* chbase needs a different adjusment */
-void update_scanline_chbase(){
-	int antic_xpos=cpu2antic_ptr[xpos];
-	int hscrollsb_adj=(HSCROL&1);
+/* chbase needs a different adjustment */
+void update_scanline_chbase(void)
+{
+	int antic_xpos = cpu2antic_ptr[xpos];
+	int hscrollsb_adj = (HSCROL & 1);
 	int newpos;
 	int fontfetch_adj;
-/* antic fetches character font data every 2 or 4 cycles */
+	/* antic fetches character font data every 2 or 4 cycles */
 	/* we want to delay the change until the next fetch */
 	/* empirically determinted: */
-	if(anticmode>=2 && anticmode<=5){
-		fontfetch_adj=(((HSCROL>>1)-antic_xpos+0)&1)*2+9; 
-	}else if(anticmode==6 || anticmode==7){
-		fontfetch_adj=(((HSCROL>>1)-antic_xpos+2)&3)*2+9; 
-	}else{
-		fontfetch_adj=0;
+	if (anticmode >= 2 && anticmode <= 5) {
+		fontfetch_adj = (((HSCROL >>1) - antic_xpos + 0) & 1) * 2 + 9;
 	}
-	
-	newpos=antic_xpos*2-37+hscrollsb_adj+fontfetch_adj;
-	draw_partial_scanline(cur_screen_pos,newpos);
-	cur_screen_pos=newpos;
+	else if (anticmode == 6 || anticmode == 7) {
+		fontfetch_adj = (((HSCROL >> 1) - antic_xpos + 2) & 3) * 2 + 9;
+	}
+	else{
+		fontfetch_adj = 0;
+	}
+	newpos = antic_xpos * 2 - 37 + hscrollsb_adj + fontfetch_adj;
+	draw_partial_scanline(cur_screen_pos, newpos);
+	cur_screen_pos = newpos;
 }
 
-/* chactl invert needs a different adjusment */
-void update_scanline_invert(){
-	int antic_xpos=cpu2antic_ptr[xpos];
-	int hscrollsb_adj=(HSCROL&1);
+/* chactl invert needs a different adjustment */
+void update_scanline_invert(void)
+{
+	int antic_xpos = cpu2antic_ptr[xpos];
+	int hscrollsb_adj = (HSCROL & 1);
 	int newpos;
-	
+
 	/* empirically determinted: adjustment of 4 */
-	newpos=antic_xpos*2-37+hscrollsb_adj+4;
-	draw_partial_scanline(cur_screen_pos,newpos);
-	cur_screen_pos=newpos;
+	newpos = antic_xpos * 2 - 37 + hscrollsb_adj + 4;
+	draw_partial_scanline(cur_screen_pos, newpos);
+	cur_screen_pos = newpos;
 }
 
 /* chactl blank needs a different adjusment */
-void update_scanline_blank(){
-	int antic_xpos=cpu2antic_ptr[xpos];
-	int hscrollsb_adj=(HSCROL&1);
+void update_scanline_blank(void)
+{
+	int antic_xpos = cpu2antic_ptr[xpos];
+	int hscrollsb_adj = (HSCROL & 1);
 	int newpos;
-	
+
 	/* empirically determinted: adjustment of 7 */
-	newpos=antic_xpos*2-37+hscrollsb_adj+7;
-	draw_partial_scanline(cur_screen_pos,newpos);
-	cur_screen_pos=newpos;
+	newpos = antic_xpos * 2 - 37 + hscrollsb_adj + 7;
+	draw_partial_scanline(cur_screen_pos, newpos);
+	cur_screen_pos = newpos;
 }
 
 
-
-
-/*draw a partial scanline between point l and point r */
-void draw_partial_scanline(int l,int r){
-/*l is the left hand word, r is the point one past the right-most word to draw*/
-
+/* draw a partial scanline between point l and point r */
+/* l is the left hand word, r is the point one past the right-most word to draw*/
+void draw_partial_scanline(int l, int r)
+{
 	/* lborder_chars: save left border chars,we restore it after */
 	/*                it is the number of 8pixel 'chars' in the left border*/
 	int lborder_chars = left_border_chars;
 
-        /* rborder_start: save right border start, we restore it after*/
+	/* rborder_start: save right border start, we restore it after*/
 	/*                it is the start of the right border, in words*/
 	int rborder_start = right_border_start;
 
-        /* lborder_start: start of the left border, in words */
-	int lborder_start = LCHOP*4;
-        /* end of the left border, in words */
-	int lborder_end = LCHOP*4 + left_border_chars*4;
-        /* end of the right border, in words */
-	int rborder_end = (48-RCHOP)*4;
+	/* lborder_start: start of the left border, in words */
+	int lborder_start = LCHOP * 4;
+	/* end of the left border, in words */
+	int lborder_end = LCHOP * 4 + left_border_chars * 4;
+	/* end of the right border, in words */
+	int rborder_end = (48 - RCHOP) * 4;
 	/* flag: if true, don't show playfield. used if the partial scanline*/
 	/*    does not include the playfield */
-	int dont_display_playfield=0;
+	int dont_display_playfield = 0;
 	/* offset of the left most drawable 8 pixel pf block */
 	/*int l_pfchar = (lborder_end - x_min[md])/4; */
 	int l_pfchar = 0;
 	/* offset of the right most drawable 8 pixel pf plock, *plus one* */
-	int r_pfchar=0;
+	int r_pfchar = 0;
 	/* buffer to save 0,1,2 or 3 words of the left hand portion of an 8pixel*/
 	/* 'char' which is going to be erased by the left hand side of the */
 	/* left most 8pixel 'char' in the partial scanline and must be saved */
@@ -3127,30 +3136,30 @@ void draw_partial_scanline(int l,int r){
 	/* 8pixel 'chars' of playfield which is going to be erased by the left */
 	/* hand most 8pixel 'char's of the 2(modes 67abc) or 4(modes 89) 8pixel */
 	/* 'char'-sized blocks that these modes must draw. */	
-	UWORD sv_buf2[4*4]; /* for modes 6,7,8,9,a,b,c */
+	UWORD sv_buf2[4 * 4]; /* for modes 6,7,8,9,a,b,c */
 	/* start,size of the above buffers*/
-	int sv_bufstart=0;
-	int sv_bufsize=0;
-	int sv_bufstart2=0;
-	int sv_bufsize2=0;
+	int sv_bufstart = 0;
+	int sv_bufsize = 0;
+	int sv_bufstart2 = 0;
+	int sv_bufsize2 = 0;
 	/* number of 8,16,32pixel chars to draw in the playfield */
-	int nchars=0;
+	int nchars = 0;
 	/* adjusment to ch_index , it is the number of 8,16,32pixel chars */
 	/* that we do not draw on the left hand side that would usually be drawn */
 	/* for this mode */
-	int ch_adj=0;
+	int ch_adj = 0;
 	/* adjustment to x_min to skip over the left side */
-	int x_min_adj=0;
+	int x_min_adj = 0;
 	/* it's the offset of the left most drawable 8pixel pfblock which is*/
 	/* rounded *down* to the nearest factor of (2:mode 67abc,4:mode 89)*/
 	/* if it is divided by (2:mode 67abc,4:mode 89) it will give the */
 	/* offset of the left most drawable (16,32)pixel 'char' */ 	
-	int l_pfactual=0;
+	int l_pfactual = 0;
 	/* it is the offset of the right most drawable 8pixel pf block which is*/
 	/* rounded *up* to the nearest factor of (2,4),  *plus one* */
 	/* so that r_pfactual-l_pfactual / (2,4) = number of 16,32 pixel 'chars'*/
 	/* to be drawn*/
-	int r_pfactual=0;	
+	int r_pfactual = 0;
 	/* it is the offset of the 8pixel block aligned with pf which overlaps */
 	/* the left border. We need this for modes 6-c, because in these modes*/
 	/* the code will save 8pixel blocks to the left of l_pfchar and*/
@@ -3159,131 +3168,144 @@ void draw_partial_scanline(int l,int r){
 	/* use this variable to alter the number of chars saved */
 	/*int l_borderpfchar=0;*/
 
-
-	r_pfchar=chars_displayed[md];
-	if(md==NORMAL1 || md== SCROLL1) { /* modes 6,7,a,b,c*/
-		r_pfchar*=2;
-	}else if(md == NORMAL2 || md == SCROLL2) { /* modes 8,9 */
-		r_pfchar*=4;
+	r_pfchar = chars_displayed[md];
+	if (md == NORMAL1 || md == SCROLL1) { /* modes 6,7,a,b,c*/
+		r_pfchar *= 2;
+	}
+	else if (md == NORMAL2 || md == SCROLL2) { /* modes 8,9 */
+		r_pfchar *= 4;
 	}
 	if (anticmode < 2 || (DMACTL & 3) == 0) {
 		lborder_end=rborder_end;	
 		dont_display_playfield=1;
-        }
-        if(l>rborder_end) l=rborder_end;
-        if(r>rborder_end) r=rborder_end;
-        if(l<lborder_start) l=lborder_start;
-        if(r<lborder_start) r=lborder_start;
-        if(l>=r) return;
-        if(l<lborder_end ){ /* left point is within left border*/
-		sv_bufstart=(l&(~3)); /* high order bits give buffer start*/
-		sv_bufsize=l-sv_bufstart;
-       		left_border_start = sv_bufstart;
-		left_border_chars = lborder_chars-(sv_bufstart-lborder_start)/4; 
-		if(l>x_min[md]) {
-		/* special case for modes 56789abc*/
-		/* position buffer within the reference frame */
-		/* of the playfield if that*/
-		/* results in more pixels being saved in the buffer*/
-		/* needed because for modes 5789abc the overlapping part */
-		/* can be more than 1 8pixel char and we only save the left*/
-		/* hand most 8pixel chars in the code in the later section */
-		/* further down, so there is a possibility that the 8pixels*/
-		/* which are saved within the reference frame of the border*/
-		/* are not enough to ensure that everyting gets saved*/
-			l_pfchar=(l - x_min[md])/4;
-			if(((l-x_min[md])&3)>sv_bufsize){
-				sv_bufsize=((l-x_min[md])&3);
-				sv_bufstart=l-sv_bufsize;
+	}
+	if (l > rborder_end)
+		l = rborder_end;
+	if (r > rborder_end)
+		r = rborder_end;
+	if (l < lborder_start)
+		l = lborder_start;
+	if (r < lborder_start)
+		r = lborder_start;
+	if (l >= r)
+		return;
+	if (l < lborder_end) {
+		/* left point is within left border*/
+		sv_bufstart = (l & (~3)); /* high order bits give buffer start*/
+		sv_bufsize = l-sv_bufstart;
+		left_border_start = sv_bufstart;
+		left_border_chars = lborder_chars - (sv_bufstart - lborder_start) / 4;
+		if (l > x_min[md]) {
+			/* special case for modes 56789abc*/
+			/* position buffer within the reference frame */
+			/* of the playfield if that*/
+			/* results in more pixels being saved in the buffer*/
+			/* needed because for modes 5789abc the overlapping part */
+			/* can be more than 1 8pixel char and we only save the left*/
+			/* hand most 8pixel chars in the code in the later section */
+			/* further down, so there is a possibility that the 8pixels*/
+			/* which are saved within the reference frame of the border*/
+			/* are not enough to ensure that everyting gets saved*/
+			l_pfchar = (l - x_min[md]) / 4;
+			if (((l - x_min[md]) & 3) > sv_bufsize){
+				sv_bufsize = ((l - x_min[md]) & 3);
+				sv_bufstart = l - sv_bufsize;
 			}
 		}
-	}else if(l>=rborder_start){
-		sv_bufstart=(l&(~3)); /* high order bits give buffer start*/
-		sv_bufsize=l-sv_bufstart;
-       		right_border_start=sv_bufstart;
-		dont_display_playfield=1; /*don't display the playfield*/
-	}else{ /*within screen */
-		sv_bufsize=((l-x_min[md])&3); /* low bits have buf size*/
-		sv_bufstart=l-sv_bufsize; /* difference gives start */
-		l_pfchar=(sv_bufstart-x_min[md])/4;
-		left_border_chars=0; /*dont display left border*/
 	}
-	memcpy(sv_buf,scrn_ptr+sv_bufstart,sv_bufsize*sizeof(UWORD)); /*save part of screen*/
+	else if (l >= rborder_start){
+		sv_bufstart = (l & (~3)); /* high order bits give buffer start*/
+		sv_bufsize = l - sv_bufstart;
+		right_border_start = sv_bufstart;
+		dont_display_playfield = 1; /* don't display the playfield*/
+	}
+	else { /*within screen */
+		sv_bufsize = ((l - x_min[md]) & 3); /* low bits have buf size*/
+		sv_bufstart = l - sv_bufsize; /* difference gives start */
+		l_pfchar = (sv_bufstart - x_min[md]) / 4;
+		left_border_chars = 0; /* dont display left border*/
+	}
+	memcpy(sv_buf, scrn_ptr + sv_bufstart, sv_bufsize * sizeof(UWORD)); /*save part of screen*/
 
-	if(r<=lborder_end){
+	if (r <= lborder_end) {
 		/*right_end_char=(r+3)/4;*/
-		left_border_chars = (r+3)/4-sv_bufstart/4; 
+		left_border_chars = (r + 3) / 4 - sv_bufstart / 4;
 		/* everything must be within the left border */
-		dont_display_playfield=1;/*don't display the playfield*/
-	}else{ /* right point is past start of playfield */
+		dont_display_playfield = 1;/*don't display the playfield*/
+	}
+	else{ /* right point is past start of playfield */
 		/* now load ANTIC data: needed for ANTIC glitches*/
 		if (need_load) {
 			ANTIC_load();
-			need_load=FALSE;
+			need_load = FALSE;
 		}
- 
-		if(r>rborder_start){
-			right_border_end=((r+3)&(~3)); /* round up to nearest 8pixel */
-		}else{
-			r_pfchar=(r-x_min[md]+3)/4; /* round up to nearest 8pixel*/
+
+		if (r > rborder_start) {
+			right_border_end = ((r + 3) & (~3)); /* round up to nearest 8pixel */
+		}
+		else {
+			r_pfchar = (r - x_min[md] + 3) / 4; /* round up to nearest 8pixel*/
 		}
 	}
-	if(dont_display_playfield){
-		nchars=0;
-		x_min_adj=0;
-		ch_adj=0;
-	} else if(md==NORMAL1 || md== SCROLL1) { /* modes 6,7,a,b,c */
-		l_pfactual=(l_pfchar&(~1)); /* round down to nearest 16pixel*/
-		sv_bufsize2=(l_pfchar-l_pfactual)*4; 
-		sv_bufstart2=x_min[md]+l_pfactual*4;
-		r_pfactual=((r_pfchar+1)&(~1)); /* round up to nearest 16pixel*/
-		nchars=(r_pfactual-l_pfactual)/2;
-		x_min_adj=l_pfactual*4;
-		ch_adj=l_pfactual/2;
- 		
-	}else if(md == NORMAL2 || md == SCROLL2) { /* modes 8,9 */
-		l_pfactual=(l_pfchar&(~3));
-		sv_bufsize2=(l_pfchar-l_pfactual)*4;
-		sv_bufstart2=x_min[md]+l_pfactual*4;
-		r_pfactual=((r_pfchar+3)&(~3));
-		nchars=(r_pfactual-l_pfactual)/4;
-		x_min_adj=l_pfactual*4;
-		ch_adj=l_pfactual/4;
-	}else{
-		nchars=r_pfchar-l_pfchar;
-		x_min_adj=l_pfchar*4;
-		ch_adj=l_pfchar;	
-	}	
-	memcpy(sv_buf2,scrn_ptr+sv_bufstart2,sv_bufsize2*sizeof(UWORD)); /*save part of screen*/
+	if (dont_display_playfield){
+		nchars = 0;
+		x_min_adj = 0;
+		ch_adj = 0;
+	}
+	else if (md == NORMAL1 || md == SCROLL1) { /* modes 6,7,a,b,c */
+		l_pfactual = (l_pfchar & (~1)); /* round down to nearest 16pixel*/
+		sv_bufsize2 = (l_pfchar - l_pfactual) * 4;
+		sv_bufstart2 = x_min[md] + l_pfactual * 4;
+		r_pfactual = ((r_pfchar + 1) & (~1)); /* round up to nearest 16pixel*/
+		nchars = (r_pfactual - l_pfactual) / 2;
+		x_min_adj = l_pfactual * 4;
+		ch_adj = l_pfactual / 2;
+	}
+	else if (md == NORMAL2 || md == SCROLL2) { /* modes 8,9 */
+		l_pfactual = (l_pfchar & (~3));
+		sv_bufsize2 = (l_pfchar - l_pfactual) * 4;
+		sv_bufstart2 = x_min[md] + l_pfactual * 4;
+		r_pfactual = ((r_pfchar + 3) & (~3));
+		nchars = (r_pfactual - l_pfactual) / 4;
+		x_min_adj = l_pfactual * 4;
+		ch_adj = l_pfactual / 4;
+	}
+	else {
+		nchars = r_pfchar - l_pfchar;
+		x_min_adj = l_pfchar * 4;
+		ch_adj = l_pfchar;
+	}
+	memcpy(sv_buf2, scrn_ptr + sv_bufstart2, sv_bufsize2 * sizeof(UWORD)); /*save part of screen*/
 
-		
-	if(dont_display_playfield){
+	if (dont_display_playfield) {
 /* the idea here is to use draw_antic_0_ptr() to draw just the border only, since*/
 /* we can't set nchars=0.  draw_antic_0_ptr will work if left_border_start and */
 /* right_border_end are set correctly */
-		if (anticmode < 2 || (DMACTL & 3) == 0|| r<=lborder_end) {
-			right_border_end=left_border_start + left_border_chars*4;
-		} else if (l>=rborder_start){
-			left_border_start=right_border_start;
-		} 
-			
+		if (anticmode < 2 || (DMACTL & 3) == 0 || r <= lborder_end) {
+			right_border_end = left_border_start + left_border_chars * 4;
+		}
+		else if (l >= rborder_start){
+			left_border_start = right_border_start;
+		}
 		draw_antic_0_ptr();
-        }else {
+	}
+	else {
 		draw_antic_ptr(nchars,/*chars_displayed[md],*/
-			ANTIC_memory + ANTIC_margin + ch_offset[md]+ch_adj,
-			scrn_ptr + x_min[md]+x_min_adj,
-			(ULONG *) &pm_scanline[x_min[md]+x_min_adj]);
-	}	
-	memcpy(scrn_ptr+sv_bufstart2,sv_buf2,sv_bufsize2*sizeof(UWORD)); /*restore screen*/
-	memcpy(scrn_ptr+sv_bufstart,sv_buf,sv_bufsize*sizeof(UWORD)); /*restore screen*/
-        
+			ANTIC_memory + ANTIC_margin + ch_offset[md] + ch_adj,
+			scrn_ptr + x_min[md] + x_min_adj,
+			(ULONG *) &pm_scanline[x_min[md] + x_min_adj]);
+	}
+	memcpy(scrn_ptr + sv_bufstart2, sv_buf2, sv_bufsize2 * sizeof(UWORD)); /*restore screen*/
+	memcpy(scrn_ptr + sv_bufstart, sv_buf, sv_bufsize * sizeof(UWORD)); /*restore screen*/
+
 	/* restore border global variables */
-        left_border_chars=lborder_chars;
-        right_border_start=rborder_start;	
-	left_border_start = LCHOP*4;
-	right_border_end = (48-RCHOP)*4;
+	left_border_chars=lborder_chars;
+	right_border_start=rborder_start;
+	left_border_start = LCHOP * 4;
+	right_border_end = (48-RCHOP)  *4;
 }
 #endif /*NEW_CYCLE_EXACT*/
+
 /* ANTIC registers --------------------------------------------------------- */
 
 UBYTE ANTIC_GetByte(UWORD addr)
@@ -3459,29 +3481,28 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 {
 	switch (addr & 0xf) {
 	case _CHACTL:
-        #ifdef NEW_CYCLE_EXACT
-		if(DRAWING_SCREEN){
+#ifdef NEW_CYCLE_EXACT
+		if (DRAWING_SCREEN) {
 			update_scanline_invert();
 		}
-	#endif
+#endif
 		invert_mask = byte & 2 ? 0x80 : 0;
-        #ifdef NEW_CYCLE_EXACT
-		if(DRAWING_SCREEN){
+#ifdef NEW_CYCLE_EXACT
+		if (DRAWING_SCREEN) {
 			update_scanline_blank();
 		}
-	#endif
+#endif
 		blank_mask = byte & 1 ? 0xe0 : 0x60;
 		if ((CHACTL ^ byte) & 4){
-        #ifdef NEW_CYCLE_EXACT
-			if(DRAWING_SCREEN){
-			/* timing for flip is the same as chbase*/
-				update_scanline_chbase(); 
+#ifdef NEW_CYCLE_EXACT
+			if (DRAWING_SCREEN) {
+				/* timing for flip is the same as chbase*/
+				update_scanline_chbase();
 			}
-	#endif
+#endif
 			chbase_20 ^= 7;
 		}
 		CHACTL = byte;
-		
 		break;
 	case _DLISTL:
 		dlist = (dlist & 0xff00) | byte;
@@ -3490,61 +3511,67 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 		dlist = (dlist & 0x00ff) | (byte << 8);
 		break;
 	case _DMACTL:
-/*TODO: make this truely cycle-exact, update cpu2antic and antic2cpu,
+/* TODO: make this truely cycle-exact, update cpu2antic and antic2cpu,
 add support for wider->narrow glitches including the interesting mode 6
-glitch*/
-        #ifdef NEW_CYCLE_EXACT
-		/*DMACTL width changed to or from 0*/
-		if((byte&3)!=(DMACTL&3) && ((byte&3)==0 || (DMACTL&3)==0)){
+glitch */
+#ifdef NEW_CYCLE_EXACT
+		/* DMACTL width changed to or from 0 */
+		if ((byte & 3) != (DMACTL & 3) && ((byte & 3)==0 || (DMACTL & 3) == 0)) {
 			/*TODO: this is not 100% correct*/
-			if(DRAWING_SCREEN){
+			if (DRAWING_SCREEN) {
 				update_scanline();
 			}
-		/*DMACTL width has changed and not to 0 and not from 0*/
-		} else if((byte&3)!=(DMACTL&3) ){
+		/* DMACTL width has changed and not to 0 and not from 0 */
+		}
+		else if ((byte & 3) != (DMACTL & 3)) {
 			/* DMACTL width has increased and no HSCROL*/
-			if ( ((byte&3) > (DMACTL&3)) && !(IR&0x10) ){
+			if (((byte & 3) > (DMACTL & 3)) && !(IR & 0x10)) {
 				int x; /* the change cycle*/
-				int left_glitch_cycle=0;
-				int right_glitch_cycle=0;
-				x=XPOS;	
-				if(((DMACTL&3)==2)&&((byte&3)==3)){ /*Normal->Wide*/
-					left_glitch_cycle=11;
-					right_glitch_cycle=18;
-				} else if(((DMACTL&3)==1)&&((byte&3)==3)){ /*Narrow->Wide*/
-					left_glitch_cycle=11;
-					right_glitch_cycle=26;
-				} else if(((DMACTL&3)==1)&&((byte&3)==2)){ /*Narrow->Normal*/
-					left_glitch_cycle=19;
-					right_glitch_cycle=27;
+				int left_glitch_cycle = 0;
+				int right_glitch_cycle = 0;
+				x = XPOS;
+				if (((DMACTL & 3) == 2) && ((byte & 3) == 3)) { /* Normal->Wide */
+					left_glitch_cycle = 11;
+					right_glitch_cycle = 18;
+				}
+				else if (((DMACTL & 3) == 1) && ((byte & 3) == 3)) { /* Narrow->Wide */
+					left_glitch_cycle = 11;
+					right_glitch_cycle = 26;
+				}
+				else if (((DMACTL & 3) == 1) && ((byte & 3) == 2)) { /* Narrow->Normal */
+					left_glitch_cycle = 19;
+					right_glitch_cycle = 27;
 				}
 				/* change occurs during drawing of line*/
 				/* delay change till next line*/
-				if(x>right_glitch_cycle){
-					dmactl_changed=1;
-					DELAYED_DMACTL=byte;
+				if (x > right_glitch_cycle) {
+					dmactl_changed = 1;
+					DELAYED_DMACTL = byte;
 					break;
 				/* change occurs during 'glitch' region */
-				}else if (x>=left_glitch_cycle && x<=right_glitch_cycle && anticmode > 1){
-					need_load=FALSE;
-						saved_draw_antic_ptr=draw_antic_ptr;
-						draw_antic_ptr_changed=1;
-					if(anticmode==2 || anticmode==3 || anticmode==0xf){
-						draw_antic_ptr=draw_antic_2_dmactl_bug;
-						dmactl_bug_chdata=(anticmode==0xf) ? 0 : ANTIC_memory[ANTIC_margin+chars_read[md]-1];
-					}else {
-						draw_antic_ptr=draw_antic_0_dmactl_bug;
-					}		
 				}
-			}else{
-			/* DMACTL width has decreased or HSCROL*/
-			/*TODO: this is not 100% correct*/
-				if(DRAWING_SCREEN){
+				else if (x >= left_glitch_cycle && x <= right_glitch_cycle && anticmode > 1) {
+					need_load = FALSE;
+					saved_draw_antic_ptr = draw_antic_ptr;
+					draw_antic_ptr_changed = 1;
+					if (anticmode == 2 || anticmode == 3 || anticmode == 0xf){
+						draw_antic_ptr = draw_antic_2_dmactl_bug;
+						dmactl_bug_chdata = (anticmode == 0xf) ? 0 : ANTIC_memory[ANTIC_margin+chars_read[md]-1];
+					}
+					else {
+						draw_antic_ptr = draw_antic_0_dmactl_bug;
+					}
+				}
+			}
+			else {
+				/* DMACTL width has decreased or HSCROL*/
+				/*TODO: this is not 100% correct*/
+				if (DRAWING_SCREEN) {
 					update_scanline();
 				}
 			}
 		}
-        #endif /*NEW_CYCLE_EXACT*/
+#endif /*NEW_CYCLE_EXACT*/
 		DMACTL = byte;
 		switch (byte & 0x03) {
 		case 0x00:
@@ -3667,11 +3694,11 @@ glitch*/
 		byte = HSCROL;	/* update horizontal scroll data */
 /* *******FALLTHROUGH ***********/
 	case _HSCROL:
-/*TODO: make this truely cycle exact, and update cpu2antic and antic2cpu*/
+/* TODO: make this truely cycle exact, and update cpu2antic and antic2cpu */
 #ifdef NEW_CYCLE_EXACT
-	if(DRAWING_SCREEN){
-		update_scanline();
-	}
+		if (DRAWING_SCREEN) {
+			update_scanline();
+		}
 #endif
 		HSCROL = byte &= 0x0f;
 		if (DMACTL & 3) {
@@ -3760,9 +3787,9 @@ glitch*/
 		break;
 	case _CHBASE:
 #ifdef NEW_CYCLE_EXACT
-	if(DRAWING_SCREEN){
-		update_scanline_chbase();
-	}
+		if (DRAWING_SCREEN) {
+			update_scanline_chbase();
+		}
 #endif
 		CHBASE = byte;
 		chbase_20 = (byte & 0xfe) << 8;
@@ -3771,11 +3798,10 @@ glitch*/
 		break;
 	case _WSYNC:
 #ifdef NEW_CYCLE_EXACT
-	 		
-		if(DRAWING_SCREEN){
-		if (xpos <= antic2cpu_ptr[WSYNC_C] && xpos_limit >= antic2cpu_ptr[WSYNC_C])
-			if(cpu2antic_ptr[xpos+1]==cpu2antic_ptr[xpos]+1){
-				/*antic does not steal the current cycle */
+		if (DRAWING_SCREEN) {
+			if (xpos <= antic2cpu_ptr[WSYNC_C] && xpos_limit >= antic2cpu_ptr[WSYNC_C])
+				if (cpu2antic_ptr[xpos + 1] == cpu2antic_ptr[xpos] + 1) {
+					/*antic does not steal the current cycle */
 /*note that if WSYNC_C is a stolen cycle, then antic2cpu_ptr[WSYNC_C+1]-1 corresponds
 to the last cpu cycle < WSYNC_C.  Then the cpu will see this cycle if WSYNC
 is not delayed, since it really occured one cycle after the STA WSYNC.  But if
@@ -3783,29 +3809,32 @@ WSYNC is "delayed" then xpos is the next cpu cycle after WSYNC_C (which was stol
 ), so it is one greater than the above value.  EG if WSYNC_C=10 and is stolen
 (and let us say cycle 9,11 are also stolen, and 8,12 are not), then in the first
 case we have cpu2antic_ptr[WSYNC_C+1]-1 = 8 and in the 2nd =12  */
-				xpos = antic2cpu_ptr[WSYNC_C+1]-1;
-			}else{
-				xpos = antic2cpu_ptr[WSYNC_C+1];
-			}
-		else {
-			wsync_halt = TRUE;
-			xpos = xpos_limit;
-			if(cpu2antic_ptr[xpos+1]==cpu2antic_ptr[xpos]+1){
-				/*antic does not steal the current cycle */
-				delayed_wsync=0;
-			}else{
-				delayed_wsync=1;
+					xpos = antic2cpu_ptr[WSYNC_C + 1] - 1;
+				}
+				else{
+					xpos = antic2cpu_ptr[WSYNC_C + 1];
+				}
+			else {
+				wsync_halt = TRUE;
+				xpos = xpos_limit;
+				if (cpu2antic_ptr[xpos+1] == cpu2antic_ptr[xpos] + 1) {
+					/*antic does not steal the current cycle */
+					delayed_wsync = 0;
+				}
+				else {
+					delayed_wsync = 1;
+				}
 			}
 		}
-		}else{
-			delayed_wsync=0;
+		else {
+			delayed_wsync = 0;
 #endif /*NEW_CYCLE_EXACT*/
-		if (xpos <= WSYNC_C && xpos_limit >= WSYNC_C)
-			xpos = WSYNC_C;
-		else {
-			wsync_halt = TRUE;
-			xpos = xpos_limit;
-		}
+			if (xpos <= WSYNC_C && xpos_limit >= WSYNC_C)
+				xpos = WSYNC_C;
+			else {
+				wsync_halt = TRUE;
+				xpos = xpos_limit;
+			}
 #ifdef NEW_CYCLE_EXACT
 		}
 #endif /*NEW_CYCLE_EXACT*/

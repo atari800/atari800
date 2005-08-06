@@ -1,4 +1,4 @@
-/* 
+/*
  * atari_sdl.c - SDL library specific port code
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
@@ -66,9 +66,9 @@
 	      - "shorter mode" (changed with ALT+G) - without 8 columns on left
 		and right side, so you can set 320x240 or 640x480 mode now	
 	      - mode info	
-   20-11-2001 - ui shortcuts 
+   20-11-2001 - ui shortcuts
    	      - fix small problem with LALT+b
-	      - removed global variable "done" 
+	      - removed global variable "done"
    19-11-2001 - I still don't have any testers, so I started to experiment a
 		little. Changed Atari_PORT/TRIG to SDL_Atari_PORT/TRIG, don't
 		use Atari800_Frame, don't use INPUT_Frame, copied some code
@@ -84,11 +84,11 @@
 	      - now using len in SDL_Sound_Update	
    15-11-2001 - fullscreen switching
               - scaling only with ratio >= 1.0
-	      - more keyboard updates 
+	      - more keyboard updates
 	      - scaling should be LIGHTSPEED now, but please compile emulator
 		with optimization CFLAGS like "-O2 -march=your_cpu_type" and
 		"-fomit-frame-pointer" - so compiler can use pentium
-		instructions and one additional register 
+		instructions and one additional register
 	      - fantastic new feature "Black-and-White video", you can switch
 		BW mode with ALT+b	
    14-11-2001 - scaling with any ratio supported
@@ -98,28 +98,28 @@
               - better keyboard support
    12-11-2001 - video
               - joystick emulation
-   
+
    TODO:
    - implement all Atari800 parameters
    - use mouse and real joystick
    - turn off fullscreen when error happen
    - Atari_Exit - monitor stuff (debugger?)
-   
+
    USAGE:
-   - you can turn off sound by changing sound_enabled to 0  
+   - you can turn off sound by changing sound_enabled to 0
    - you can switch between fullscreen/window mode with LALT+f
    - you can switch between color/bw mode with LALT+b - FEEL THE POWER OF BW
      MONITOR!
-   - you can swap joysticks with LALT+j  
+   - you can swap joysticks with LALT+j
    - you can switch "width modes" with LALT+g - so you can set 320x240 or
      640x480
-   - you can switch color depth (for now - 8/16) with LALT+e   
+   - you can switch color depth (for now - 8/16) with LALT+e
    - fullscreen switching probably doesn't work in Windows, you need to set
      variable in source code
    - if you are using XFree86 - try to set low videomode, like 400x300 - so you
-     will play without scaling (speed!)  
+     will play without scaling (speed!)
 
-   Thanks to David Olofson for scaling tips!  
+   Thanks to David Olofson for scaling tips!
 */
 
 #include <SDL.h>
@@ -139,7 +139,7 @@
 #include <linux/lp.h>
 #endif /* LPTJOY */
 
-// Atari800 includes
+/* Atari800 includes */
 #include "config.h"
 #include "input.h"
 #include "colours.h"
@@ -156,15 +156,15 @@
 #include "pia.h"
 #include "log.h"
 
-// you can set that variables in code, or change it when emulator is running
-// I am not sure what to do with sound_enabled (can't turn it on inside
-// emulator, probably we need two variables or command line argument)
+/* you can set that variables in code, or change it when emulator is running
+   I am not sure what to do with sound_enabled (can't turn it on inside
+   emulator, probably we need two variables or command line argument) */
 #ifdef SOUND
 static int sound_enabled = TRUE;
 static int sound_flags = 0;
 static int sound_bits = 8;
 #endif
-static int SDL_ATARI_BPP = 0;	// 0 - autodetect
+static int SDL_ATARI_BPP = 0;	/* 0 - autodetect */
 static int FULLSCREEN = 1;
 static int BW = 0;
 static int SWAP_JOYSTICKS = 0;
@@ -174,13 +174,13 @@ static int ROTATE90 =0;
 #define DEFAULT_WIDTH_MODE 1
 #define FULL_WIDTH_MODE 2
 
-// you need to uncomment this to turn on fps counter
+/* you need to uncomment this to turn on fps counter */
 
-// #define FPS_COUNTER = 1
+/* #define FPS_COUNTER = 1 */
 
-// joystick emulation
-// keys are loaded from config file
-// Here the defaults if there is no keymap in the config file...
+/* joystick emulation
+   keys are loaded from config file
+   Here the defaults if there is no keymap in the config file... */
 
 int SDL_TRIG_0 = SDLK_LCTRL;
 int SDL_TRIG_0_B = SDLK_KP0;
@@ -204,7 +204,7 @@ int SDL_JOY_1_RIGHTUP = SDLK_e;
 int SDL_JOY_1_LEFTDOWN = SDLK_z;
 int SDL_JOY_1_RIGHTDOWN = SDLK_c;
 
-// real joysticks
+/* real joysticks */
 
 int fd_joystick0 = -1;
 int fd_joystick1 = -1;
@@ -213,32 +213,32 @@ SDL_Joystick *joystick0 = NULL;
 SDL_Joystick *joystick1 = NULL;
 int joystick0_nbuttons, joystick1_nbuttons;
 
-#define minjoy 10000			// real joystick tolerancy
+#define minjoy 10000			/* real joystick tolerancy */
 
 extern int alt_function;
 
 #ifdef SOUND
-// sound 
-#define FRAGSIZE        10		// 1<<FRAGSIZE is size of sound buffer
+/* sound */
+#define FRAGSIZE        10		/* 1<<FRAGSIZE is size of sound buffer */
 static int SOUND_VOLUME = SDL_MIX_MAXVOLUME / 4;
 static int dsprate = 44100;
 #endif
 
-// video
+/* video */
 SDL_Surface *MainScreen = NULL;
-SDL_Color colors[256];			// palette
-Uint16 Palette16[256];			// 16-bit palette
-Uint32 Palette32[256];			// 32-bit palette
+SDL_Color colors[256];			/* palette */
+Uint16 Palette16[256];			/* 16-bit palette */
+Uint32 Palette32[256];			/* 32-bit palette */
 
-// keyboard
+/* keyboard */
 Uint8 *kbhits;
 
-// For better handling of the Atari_Configure-recognition...
-// Takes a keySym as integer-string and fills the value
-// into the retval referentially.
-// Authors: B.Schreiber, A.Martinez
-// fixed and cleaned up by joy
-int SDLKeyBind(int * retval, char* sdlKeySymIntStr)
+/* For better handling of the Atari_Configure-recognition...
+   Takes a keySym as integer-string and fills the value
+   into the retval referentially.
+   Authors: B.Schreiber, A.Martinez
+   fixed and cleaned up by joy */
+int SDLKeyBind(int *retval, char *sdlKeySymIntStr)
 {
 	int ksym;
 
@@ -246,11 +246,11 @@ int SDLKeyBind(int * retval, char* sdlKeySymIntStr)
 		return FALSE;
 	}
 
-	// make an int out of the keySymIntStr...
-	sscanf(sdlKeySymIntStr,"%d",&ksym);
+	/* make an int out of the keySymIntStr... */
+	sscanf(sdlKeySymIntStr, "%d", &ksym);
 
-	if (ksym>SDLK_FIRST && ksym<SDLK_LAST) {
-		*retval=ksym;
+	if (ksym > SDLK_FIRST && ksym < SDLK_LAST) {
+		*retval = ksym;
 		return TRUE;
 	}
 	else {
@@ -258,80 +258,80 @@ int SDLKeyBind(int * retval, char* sdlKeySymIntStr)
 	}
 }
 
-// For getting sdl key map out of the config...
-// Authors: B.Schreiber, A.Martinez
-// cleaned up by joy
-int Atari_Configure(char* option, char* parameters) 
+/* For getting sdl key map out of the config...
+   Authors: B.Schreiber, A.Martinez
+   cleaned up by joy */
+int Atari_Configure(char *option, char *parameters)
 {
-	if (strcmp(option,"SDL_TRIG_0")==0)
-		return SDLKeyBind(&SDL_TRIG_0,parameters);
-	else if (strcmp(option,"SDL_TRIG_0_B")==0)
-		return SDLKeyBind(&SDL_TRIG_0_B,parameters);
-	else if (strcmp(option,"SDL_JOY_0_LEFT")==0)
-		return SDLKeyBind(&SDL_JOY_0_LEFT,parameters);
-	else if (strcmp(option,"SDL_JOY_0_RIGHT")==0)
-		return SDLKeyBind(&SDL_JOY_0_RIGHT,parameters);
-	else if (strcmp(option,"SDL_JOY_0_DOWN")==0)
-		return SDLKeyBind(&SDL_JOY_0_DOWN,parameters);
-	else if (strcmp(option,"SDL_JOY_0_UP")==0)
-		return SDLKeyBind(&SDL_JOY_0_UP,parameters);
-	else if (strcmp(option,"SDL_JOY_0_LEFTUP")==0)
-		return SDLKeyBind(&SDL_JOY_0_LEFTUP,parameters);
-	else if (strcmp(option,"SDL_JOY_0_RIGHTUP")==0)
-		return SDLKeyBind(&SDL_JOY_0_RIGHTUP,parameters);
-	else if (strcmp(option,"SDL_JOY_0_LEFTDOWN")==0)
-		return SDLKeyBind(&SDL_JOY_0_LEFTDOWN,parameters);
-	else if (strcmp(option,"SDL_JOY_0_RIGHTDOWN")==0)
-		return SDLKeyBind(&SDL_JOY_0_RIGHTDOWN,parameters);
-	else if (strcmp(option,"SDL_TRIG_1")==0)
-		return SDLKeyBind(&SDL_TRIG_1,parameters);
-	else if (strcmp(option,"SDL_TRIG_1_B")==0)
-		return SDLKeyBind(&SDL_TRIG_1_B,parameters);
-	else if (strcmp(option,"SDL_JOY_1_LEFT")==0)
-		return SDLKeyBind(&SDL_JOY_1_LEFT,parameters);
-	else if (strcmp(option,"SDL_JOY_1_RIGHT")==0)
-		return SDLKeyBind(&SDL_JOY_1_RIGHT,parameters);
-	else if (strcmp(option,"SDL_JOY_1_DOWN")==0)
-		return SDLKeyBind(&SDL_JOY_1_DOWN,parameters);
-	else if (strcmp(option,"SDL_JOY_1_UP")==0)
-		return SDLKeyBind(&SDL_JOY_1_UP,parameters);
-	else if (strcmp(option,"SDL_JOY_1_LEFTUP")==0)
-		return SDLKeyBind(&SDL_JOY_1_LEFTUP,parameters);
-	else if (strcmp(option,"SDL_JOY_1_RIGHTUP")==0)
-		return SDLKeyBind(&SDL_JOY_1_RIGHTUP,parameters);
-	else if (strcmp(option,"SDL_JOY_1_LEFTDOWN")==0)
-		return SDLKeyBind(&SDL_JOY_1_LEFTDOWN,parameters);
-	else if (strcmp(option,"SDL_JOY_1_RIGHTDOWN")==0)
-		return SDLKeyBind(&SDL_JOY_1_RIGHTDOWN,parameters);
+	if (strcmp(option, "SDL_TRIG_0") == 0)
+		return SDLKeyBind(&SDL_TRIG_0, parameters);
+	else if (strcmp(option, "SDL_TRIG_0_B") == 0)
+		return SDLKeyBind(&SDL_TRIG_0_B, parameters);
+	else if (strcmp(option, "SDL_JOY_0_LEFT") == 0)
+		return SDLKeyBind(&SDL_JOY_0_LEFT, parameters);
+	else if (strcmp(option, "SDL_JOY_0_RIGHT") == 0)
+		return SDLKeyBind(&SDL_JOY_0_RIGHT, parameters);
+	else if (strcmp(option, "SDL_JOY_0_DOWN") == 0)
+		return SDLKeyBind(&SDL_JOY_0_DOWN, parameters);
+	else if (strcmp(option, "SDL_JOY_0_UP") == 0)
+		return SDLKeyBind(&SDL_JOY_0_UP, parameters);
+	else if (strcmp(option, "SDL_JOY_0_LEFTUP") == 0)
+		return SDLKeyBind(&SDL_JOY_0_LEFTUP, parameters);
+	else if (strcmp(option, "SDL_JOY_0_RIGHTUP") == 0)
+		return SDLKeyBind(&SDL_JOY_0_RIGHTUP, parameters);
+	else if (strcmp(option, "SDL_JOY_0_LEFTDOWN") == 0)
+		return SDLKeyBind(&SDL_JOY_0_LEFTDOWN, parameters);
+	else if (strcmp(option, "SDL_JOY_0_RIGHTDOWN") == 0)
+		return SDLKeyBind(&SDL_JOY_0_RIGHTDOWN, parameters);
+	else if (strcmp(option, "SDL_TRIG_1") == 0)
+		return SDLKeyBind(&SDL_TRIG_1, parameters);
+	else if (strcmp(option, "SDL_TRIG_1_B") == 0)
+		return SDLKeyBind(&SDL_TRIG_1_B, parameters);
+	else if (strcmp(option, "SDL_JOY_1_LEFT") == 0)
+		return SDLKeyBind(&SDL_JOY_1_LEFT, parameters);
+	else if (strcmp(option, "SDL_JOY_1_RIGHT") == 0)
+		return SDLKeyBind(&SDL_JOY_1_RIGHT, parameters);
+	else if (strcmp(option, "SDL_JOY_1_DOWN") == 0)
+		return SDLKeyBind(&SDL_JOY_1_DOWN, parameters);
+	else if (strcmp(option, "SDL_JOY_1_UP") == 0)
+		return SDLKeyBind(&SDL_JOY_1_UP, parameters);
+	else if (strcmp(option, "SDL_JOY_1_LEFTUP") == 0)
+		return SDLKeyBind(&SDL_JOY_1_LEFTUP, parameters);
+	else if (strcmp(option, "SDL_JOY_1_RIGHTUP") == 0)
+		return SDLKeyBind(&SDL_JOY_1_RIGHTUP, parameters);
+	else if (strcmp(option, "SDL_JOY_1_LEFTDOWN") == 0)
+		return SDLKeyBind(&SDL_JOY_1_LEFTDOWN, parameters);
+	else if (strcmp(option, "SDL_JOY_1_RIGHTDOWN") == 0)
+		return SDLKeyBind(&SDL_JOY_1_RIGHTDOWN, parameters);
 	else
 		return FALSE;
 }
 
-// Save the keybindings and the keybindapp options to the config file...
-// Authors: B.Schreiber, A.Martinez
-// cleaned up by joy
+/* Save the keybindings and the keybindapp options to the config file...
+   Authors: B.Schreiber, A.Martinez
+   cleaned up by joy */
 void Atari_ConfigSave(FILE *fp)
 {
-	fprintf(fp,"SDL_TRIG_0=%d\n",SDL_TRIG_0);
-	fprintf(fp,"SDL_TRIG_0_B=%d\n",SDL_TRIG_0_B);
-	fprintf(fp,"SDL_JOY_0_LEFT=%d\n",SDL_JOY_0_LEFT);
-	fprintf(fp,"SDL_JOY_0_RIGHT=%d\n",SDL_JOY_0_RIGHT);
-	fprintf(fp,"SDL_JOY_0_UP=%d\n",SDL_JOY_0_UP);
-	fprintf(fp,"SDL_JOY_0_DOWN=%d\n",SDL_JOY_0_DOWN);
-	fprintf(fp,"SDL_JOY_0_LEFTUP=%d\n",SDL_JOY_0_LEFTUP);
-	fprintf(fp,"SDL_JOY_0_RIGHTUP=%d\n",SDL_JOY_0_RIGHTUP);
-	fprintf(fp,"SDL_JOY_0_LEFTDOWN=%d\n",SDL_JOY_0_LEFTDOWN);
-	fprintf(fp,"SDL_JOY_0_RIGHTDOWN=%d\n",SDL_JOY_0_RIGHTDOWN);
-	fprintf(fp,"SDL_TRIG_1=%d\n",SDL_TRIG_1);
-	fprintf(fp,"SDL_TRIG_1_B=%d\n",SDL_TRIG_1_B);
-	fprintf(fp,"SDL_JOY_1_LEFT=%d\n",SDL_JOY_1_LEFT);
-	fprintf(fp,"SDL_JOY_1_RIGHT=%d\n",SDL_JOY_1_RIGHT);
-	fprintf(fp,"SDL_JOY_1_UP=%d\n",SDL_JOY_1_UP);
-	fprintf(fp,"SDL_JOY_1_DOWN=%d\n",SDL_JOY_1_DOWN);
-	fprintf(fp,"SDL_JOY_1_LEFTUP=%d\n",SDL_JOY_1_LEFTUP);
-	fprintf(fp,"SDL_JOY_1_RIGHTUP=%d\n",SDL_JOY_1_RIGHTUP);
-	fprintf(fp,"SDL_JOY_1_LEFTDOWN=%d\n",SDL_JOY_1_LEFTDOWN);
-	fprintf(fp,"SDL_JOY_1_RIGHTDOWN=%d\n",SDL_JOY_1_RIGHTDOWN);
+	fprintf(fp, "SDL_TRIG_0=%d\n", SDL_TRIG_0);
+	fprintf(fp, "SDL_TRIG_0_B=%d\n", SDL_TRIG_0_B);
+	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", SDL_JOY_0_LEFT);
+	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", SDL_JOY_0_RIGHT);
+	fprintf(fp, "SDL_JOY_0_UP=%d\n", SDL_JOY_0_UP);
+	fprintf(fp, "SDL_JOY_0_DOWN=%d\n", SDL_JOY_0_DOWN);
+	fprintf(fp, "SDL_JOY_0_LEFTUP=%d\n", SDL_JOY_0_LEFTUP);
+	fprintf(fp, "SDL_JOY_0_RIGHTUP=%d\n", SDL_JOY_0_RIGHTUP);
+	fprintf(fp, "SDL_JOY_0_LEFTDOWN=%d\n", SDL_JOY_0_LEFTDOWN);
+	fprintf(fp, "SDL_JOY_0_RIGHTDOWN=%d\n", SDL_JOY_0_RIGHTDOWN);
+	fprintf(fp, "SDL_TRIG_1=%d\n", SDL_TRIG_1);
+	fprintf(fp, "SDL_TRIG_1_B=%d\n", SDL_TRIG_1_B);
+	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", SDL_JOY_1_LEFT);
+	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", SDL_JOY_1_RIGHT);
+	fprintf(fp, "SDL_JOY_1_UP=%d\n", SDL_JOY_1_UP);
+	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", SDL_JOY_1_DOWN);
+	fprintf(fp, "SDL_JOY_1_LEFTUP=%d\n", SDL_JOY_1_LEFTUP);
+	fprintf(fp, "SDL_JOY_1_RIGHTUP=%d\n", SDL_JOY_1_RIGHTUP);
+	fprintf(fp, "SDL_JOY_1_LEFTDOWN=%d\n", SDL_JOY_1_LEFTDOWN);
+	fprintf(fp, "SDL_JOY_1_RIGHTDOWN=%d\n", SDL_JOY_1_RIGHTDOWN);
 }
 
 void Sound_Pause(void)
@@ -354,15 +354,15 @@ void Sound_Continue(void)
 int Sound_Update(void)
 {
 	return 0;
-}								// fake function
+}								/* fake function */
 #endif
 
-static void SetPalette()
+static void SetPalette(void)
 {
 	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
 }
 
-void CalcPalette()
+void CalcPalette(void)
 {
 	int i, rgb;
 	float y;
@@ -400,7 +400,7 @@ void CalcPalette()
 
 }
 
-void ModeInfo()
+void ModeInfo(void)
 {
 	char bwflag, fullflag, width, joyflag;
 	if (BW)
@@ -452,71 +452,68 @@ void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
 
-	if (ROTATE90)
-	{
-		SetVideoMode(w,h,bpp);
+	if (ROTATE90) {
+		SetVideoMode(w, h, bpp);
 	}
-	else
-	{
-	
+	else {
 
-	if ((h < ATARI_HEIGHT) || (w < ATARI_WIDTH)) {
-		h = ATARI_HEIGHT;
-		w = ATARI_WIDTH;
-	}
-
-	// aspect ratio, floats needed
-	ww = w;
-	hh = h;
-	switch (WIDTH_MODE) {
-	case SHORT_WIDTH_MODE:
-		if (ww * 0.75 < hh)
-			hh = ww * 0.75;
-		else
-			ww = hh / 0.75;
-		break;
-	case DEFAULT_WIDTH_MODE:
-		if (ww / 1.4 < hh)
-			hh = ww / 1.4;
-		else
-			ww = hh * 1.4;
-		break;
-	case FULL_WIDTH_MODE:
-		if (ww / 1.6 < hh)
-			hh = ww / 1.6;
-		else
-			ww = hh * 1.6;
-		break;
-	}
-	w = ww;
-	h = hh;
-	w = w / 8;
-	w = w * 8;
-	h = h / 8;
-	h = h * 8;
-
-	SetVideoMode(w, h, bpp);
-
-	SDL_ATARI_BPP = MainScreen->format->BitsPerPixel;
-	if (bpp == 0) {
-		Aprint("detected %ibpp", SDL_ATARI_BPP);
-		if ((SDL_ATARI_BPP != 8) && (SDL_ATARI_BPP != 16)
-			&& (SDL_ATARI_BPP != 32)) {
-			Aprint("it's unsupported, so setting 8bit mode (slow conversion)");
-			SetVideoMode(w, h, 8);
+		if ((h < ATARI_HEIGHT) || (w < ATARI_WIDTH)) {
+			h = ATARI_HEIGHT;
+			w = ATARI_WIDTH;
 		}
-	}
+
+		/* aspect ratio, floats needed */
+		ww = w;
+		hh = h;
+		switch (WIDTH_MODE) {
+		case SHORT_WIDTH_MODE:
+			if (ww * 0.75 < hh)
+				hh = ww * 0.75;
+			else
+				ww = hh / 0.75;
+			break;
+		case DEFAULT_WIDTH_MODE:
+			if (ww / 1.4 < hh)
+				hh = ww / 1.4;
+			else
+				ww = hh * 1.4;
+			break;
+		case FULL_WIDTH_MODE:
+			if (ww / 1.6 < hh)
+				hh = ww / 1.6;
+			else
+				ww = hh * 1.6;
+			break;
+		}
+		w = ww;
+		h = hh;
+		w = w / 8;
+		w = w * 8;
+		h = h / 8;
+		h = h * 8;
+
+		SetVideoMode(w, h, bpp);
+
+		SDL_ATARI_BPP = MainScreen->format->BitsPerPixel;
+		if (bpp == 0) {
+			Aprint("detected %ibpp", SDL_ATARI_BPP);
+			if ((SDL_ATARI_BPP != 8) && (SDL_ATARI_BPP != 16)
+				&& (SDL_ATARI_BPP != 32)) {
+				Aprint("it's unsupported, so setting 8bit mode (slow conversion)");
+				SetVideoMode(w, h, 8);
+			}
+		}
 	}
 
 	SetPalette();
 
-	SDL_ShowCursor(SDL_DISABLE);	// hide mouse cursor 
+	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
 
 	ModeInfo();
 
 }
 
-void SwitchFullscreen()
+void SwitchFullscreen(void)
 {
 	FULLSCREEN = 1 - FULLSCREEN;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
@@ -524,7 +521,7 @@ void SwitchFullscreen()
 	Atari_DisplayScreen((UBYTE *) atari_screen);
 }
 
-void SwitchWidth()
+void SwitchWidth(void)
 {
 	WIDTH_MODE++;
 	if (WIDTH_MODE > FULL_WIDTH_MODE)
@@ -534,7 +531,7 @@ void SwitchWidth()
 	Atari_DisplayScreen((UBYTE *) atari_screen);
 }
 
-void SwitchBW()
+void SwitchBW(void)
 {
 	BW = 1 - BW;
 	CalcPalette();
@@ -542,23 +539,23 @@ void SwitchBW()
 	ModeInfo();
 }
 
-void SwapJoysticks()
+void SwapJoysticks(void)
 {
 	SWAP_JOYSTICKS = 1 - SWAP_JOYSTICKS;
 	ModeInfo();
 }
 
 #ifdef SOUND
-void SDL_Sound_Update(void *userdata, Uint8 * stream, int len)
+void SDL_Sound_Update(void *userdata, Uint8 *stream, int len)
 {
-	Uint8 dsp_buffer[2 << FRAGSIZE]; // x2, because 16bit buffers
+	Uint8 dsp_buffer[2 << FRAGSIZE]; /* x2, because 16bit buffers */
 	if (len > 1 << FRAGSIZE)
 		len = 1 << FRAGSIZE;
 	Pokey_process(dsp_buffer, len);
-	if (sound_bits==8)
+	if (sound_bits == 8)
 		SDL_MixAudio(stream, dsp_buffer, len, SOUND_VOLUME);
 	else	
-		SDL_MixAudio(stream, dsp_buffer, 2*len, SOUND_VOLUME);
+		SDL_MixAudio(stream, dsp_buffer, 2 * len, SOUND_VOLUME);
 }
 
 void SDL_Sound_Initialise(int *argc, char *argv[])
@@ -571,11 +568,10 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 			sound_enabled = TRUE;
 		else if (strcmp(argv[i], "-nosound") == 0)
 			sound_enabled = FALSE;
-		else if (strcmp(argv[i], "-audio16") == 0)
-		{	
+		else if (strcmp(argv[i], "-audio16") == 0) {
 			Aprint("audio 16bit enabled");
-			sound_flags|=SND_BIT16;
-			sound_bits=16;
+			sound_flags |= SND_BIT16;
+			sound_bits = 16;
 		}	
 		else if (strcmp(argv[i], "-dsprate") == 0)
 			sscanf(argv[++i], "%d", &dsprate);
@@ -593,18 +589,16 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 	if (sound_enabled) {
 		desired.freq = dsprate;
-		if (sound_bits==8)
+		if (sound_bits == 8)
 			desired.format = AUDIO_U8;
-		else
-			if (sound_bits==16)
-				desired.format = AUDIO_U16;
-		else
-		{
+		else if (sound_bits == 16)
+			desired.format = AUDIO_U16;
+		else {
 			Aprint("unknown sound_bits");
 			Atari800_Exit(FALSE);
 			Aflushlog();
-		};	
-			
+		}
+
 		desired.samples = 1 << FRAGSIZE;
 		desired.callback = SDL_Sound_Update;
 		desired.userdata = NULL;
@@ -620,7 +614,7 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, sound_flags);
 	}
 	else {
-		Aprint("Audio is off, you can turn it by -sound");
+		Aprint("Audio is off, you can turn it on with -sound");
 	}
 
 	if (sound_enabled)
@@ -655,7 +649,7 @@ int Atari_Keyboard(void)
 			break;
 		}
 	}
-	else if ( ! key_pressed )
+	else if (!key_pressed)
 		return AKEY_NONE;
 
 	kbhits = SDL_GetKeyState(NULL);
@@ -711,31 +705,32 @@ int Atari_Keyboard(void)
 				break;
 			}
 		}
-		if (alt_function != -1)
-		{
+		if (alt_function != -1) {
 			key_pressed = 0;
 			return AKEY_UI;
-	}
+		}
 	}
 
-	// SHIFT STATE
+	/* SHIFT STATE */
 	if ((kbhits[SDLK_LSHIFT]) || (kbhits[SDLK_RSHIFT]))
 		key_shift = 1;
 	else
 		key_shift = 0;
 
-    // CONTROL STATE
+    /* CONTROL STATE */
 	if ((kbhits[SDLK_LCTRL]) || (kbhits[SDLK_RCTRL]))
 		key_control = 1;
 	else
 		key_control = 0;
 
-	//if( event.type == 2 || event.type == 3 )
-	//{
-	//	Aprint("E:%x S:%x C:%x K:%x U:%x M:%x",event.type,key_shift,key_control,lastkey,event.key.keysym.unicode,event.key.keysym.mod);
-	//}
+	/*
+	if( event.type == 2 || event.type == 3 )
+	{
+		Aprint("E:%x S:%x C:%x K:%x U:%x M:%x",event.type,key_shift,key_control,lastkey,event.key.keysym.unicode,event.key.keysym.mod);
+	}
+	*/
 
-	// OPTION / SELECT / START keys
+	/* OPTION / SELECT / START keys */
 	key_consol = CONSOL_NONE;
 	if (kbhits[SDLK_F2])
 		key_consol &= (~CONSOL_OPTION);
@@ -744,11 +739,10 @@ int Atari_Keyboard(void)
 	if (kbhits[SDLK_F4])
 		key_consol &= (~CONSOL_START);
 
-	if (key_pressed == 0) {
+	if (key_pressed == 0)
 		return AKEY_NONE;
-	}
 
-	// Handle movement and special keys.
+	/* Handle movement and special keys. */
 	if (key_shift) {
 		switch (lastkey) {
 		case SDLK_F5:
@@ -771,8 +765,8 @@ int Atari_Keyboard(void)
 			return AKEY_INSERT_CHAR;
 		}
 	}
-	
-	// joystick keyboard
+
+	/* joystick keyboard */
 	if (key_pressed && lastkey >= SDLK_KP0 && lastkey <= SDLK_KP9) {
 		key_pressed = 0;
 		return AKEY_NONE;
@@ -782,7 +776,7 @@ int Atari_Keyboard(void)
 	case SDLK_LSUPER:
 		return AKEY_ATARI;
 	case SDLK_RSUPER:
-		if( key_shift )
+		if (key_shift)
 			return AKEY_CAPSLOCK;
 		else
 			return AKEY_CAPSTOGGLE;
@@ -799,7 +793,7 @@ int Atari_Keyboard(void)
 	case SDLK_CAPSLOCK:
 		return AKEY_CAPSLOCK;
 	case SDLK_SPACE:
-		if( key_control )
+		if (key_control)
 			return AKEY_SPACE | AKEY_CTRL;
 		else if (key_shift)
 			return AKEY_SPACE | AKEY_SHFT;
@@ -844,11 +838,9 @@ int Atari_Keyboard(void)
 			return AKEY_INSERT_CHAR;
 	}
 
-	// Handle CTRL-0 to CTRL-9
-	if( key_control )
-	{
-		switch(lastuni)
-		{
+	/* Handle CTRL-0 to CTRL-9 */
+	if (key_control) {
+		switch(lastuni) {
 		case '.':
 			return AKEY_FULLSTOP | AKEY_CTRL;
 		case ',':
@@ -856,8 +848,7 @@ int Atari_Keyboard(void)
 		case ';':
 			return AKEY_SEMICOLON | AKEY_CTRL;
 		}
-		switch(lastkey)
-		{
+		switch (lastkey) {
 		case SDLK_0:
 			return AKEY_CTRL_0;
 		case SDLK_1:
@@ -881,242 +872,241 @@ int Atari_Keyboard(void)
 		}
 	}
 	
-	// Uses only UNICODE translation, no shift states
-	switch(lastuni)
-	{
-		case 1:
-			return AKEY_CTRL_a;
-		case 2:
-			return AKEY_CTRL_b;
-		case 3:
-			return AKEY_CTRL_c;
-		case 4:
-			return AKEY_CTRL_d;
-		case 5:
-			return AKEY_CTRL_e;
-		case 6:
-			return AKEY_CTRL_f;
-		case 7:
-			return AKEY_CTRL_g;
-		case 8:
-			return AKEY_CTRL_h;
-		case 9:
-			return AKEY_CTRL_i;
-		case 10:
-			return AKEY_CTRL_j;
-		case 11:
-			return AKEY_CTRL_k;
-		case 12:
-			return AKEY_CTRL_l;
-		case 13:
-			return AKEY_CTRL_m;
-		case 14:
-			return AKEY_CTRL_n;
-		case 15:
-			return AKEY_CTRL_o;
-		case 16:
-			return AKEY_CTRL_p;
-		case 17:
-			return AKEY_CTRL_q;
-		case 18:
-			return AKEY_CTRL_r;
-		case 19:
-			return AKEY_CTRL_s;
-		case 20:
-			return AKEY_CTRL_t;
-		case 21:
-			return AKEY_CTRL_u;
-		case 22:
-			return AKEY_CTRL_v;
-		case 23:
-			return AKEY_CTRL_w;
-		case 24:
-			return AKEY_CTRL_x;
-		case 25:
-			return AKEY_CTRL_y;
-		case 26:
-			return AKEY_CTRL_z;
-		case 'A':
-			return AKEY_A;
-		case 'B':
-			return AKEY_B;
-		case 'C':
-			return AKEY_C;
-		case 'D':
-			return AKEY_D;
-		case 'E':
-			return AKEY_E;
-		case 'F':
-			return AKEY_F;
-		case 'G':
-			return AKEY_G;
-		case 'H':
-			return AKEY_H;
-		case 'I':
-			return AKEY_I;
-		case 'J':
-			return AKEY_J;
-		case 'K':
-			return AKEY_K;
-		case 'L':
-			return AKEY_L;
-		case 'M':
-			return AKEY_M;
-		case 'N':
-			return AKEY_N;
-		case 'O':
-			return AKEY_O;
-		case 'P':
-			return AKEY_P;
-		case 'Q':
-			return AKEY_Q;
-		case 'R':
-			return AKEY_R;
-		case 'S':
-			return AKEY_S;
-		case 'T':
-			return AKEY_T;
-		case 'U':
-			return AKEY_U;
-		case 'V':
-			return AKEY_V;
-		case 'W':
-			return AKEY_W;
-		case 'X':
-			return AKEY_X;
-		case 'Y':
-			return AKEY_Y;
-		case 'Z':
-			return AKEY_Z;
-		case ':':
-			return AKEY_COLON;
-		case '!':
-			return AKEY_EXCLAMATION;
-		case '@':
-			return AKEY_AT;
-		case '#':
-			return AKEY_HASH;
-		case '$':
-			return AKEY_DOLLAR;
-		case '%':
-			return AKEY_PERCENT;
-		case '^':
-			return AKEY_CARET;
-		case '&':
-			return AKEY_AMPERSAND;
-		case '*':
-			return AKEY_ASTERISK;
-		case '(':
-			return AKEY_PARENLEFT;
-		case ')':
-			return AKEY_PARENRIGHT;
-		case '+':
-			return AKEY_PLUS;
-		case '_':
-			return AKEY_UNDERSCORE;
-		case '"':
-			return AKEY_DBLQUOTE;
-		case '?':
-			return AKEY_QUESTION;
-		case '<':
-			return AKEY_LESS;
-		case '>':
-			return AKEY_GREATER;
-		case 'a':
-			return AKEY_a;
-		case 'b':
-			return AKEY_b;
-		case 'c':
-			return AKEY_c;
-		case 'd':
-			return AKEY_d;
-		case 'e':
-			return AKEY_e;
-		case 'f':
-			return AKEY_f;
-		case 'g':
-			return AKEY_g;
-		case 'h':
-			return AKEY_h;
-		case 'i':
-			return AKEY_i;
-		case 'j':
-			return AKEY_j;
-		case 'k':
-			return AKEY_k;
-		case 'l':
-			return AKEY_l;
-		case 'm':
-			return AKEY_m;
-		case 'n':
-			return AKEY_n;
-		case 'o':
-			return AKEY_o;
-		case 'p':
-			return AKEY_p;
-		case 'q':
-			return AKEY_q;
-		case 'r':
-			return AKEY_r;
-		case 's':
-			return AKEY_s;
-		case 't':
-			return AKEY_t;
-		case 'u':
-			return AKEY_u;
-		case 'v':
-			return AKEY_v;
-		case 'w':
-			return AKEY_w;
-		case 'x':
-			return AKEY_x;
-		case 'y':
-			return AKEY_y;
-		case 'z':
-			return AKEY_z;
-		case ';':
-			return AKEY_SEMICOLON;
-		case '0':
-			return AKEY_0;
-		case '1':
-			return AKEY_1;
-		case '2':
-			return AKEY_2;
-		case '3':
-			return AKEY_3;
-		case '4':
-			return AKEY_4;
-		case '5':
-			return AKEY_5;
-		case '6':
-			return AKEY_6;
-		case '7':
-			return AKEY_7;
-		case '8':
-			return AKEY_8;
-		case '9':
-			return AKEY_9;
-		case ',':
-			return AKEY_COMMA;
-		case '.':
-			return AKEY_FULLSTOP;
-		case '=':
-			return AKEY_EQUAL;
-		case '-':
-			return AKEY_MINUS;
-		case '\'':
-			return AKEY_QUOTE;
-		case '/':
-			return AKEY_SLASH;
-		case '\\':
-			return AKEY_BACKSLASH;
-		case '[':
-			return AKEY_BRACKETLEFT;
-		case ']':
-			return AKEY_BRACKETRIGHT;
-		case '|':
-			return AKEY_SHFT | AKEY_EQUAL;
-		}
+	/* Uses only UNICODE translation, no shift states */
+	switch (lastuni) {
+	case 1:
+		return AKEY_CTRL_a;
+	case 2:
+		return AKEY_CTRL_b;
+	case 3:
+		return AKEY_CTRL_c;
+	case 4:
+		return AKEY_CTRL_d;
+	case 5:
+		return AKEY_CTRL_e;
+	case 6:
+		return AKEY_CTRL_f;
+	case 7:
+		return AKEY_CTRL_g;
+	case 8:
+		return AKEY_CTRL_h;
+	case 9:
+		return AKEY_CTRL_i;
+	case 10:
+		return AKEY_CTRL_j;
+	case 11:
+		return AKEY_CTRL_k;
+	case 12:
+		return AKEY_CTRL_l;
+	case 13:
+		return AKEY_CTRL_m;
+	case 14:
+		return AKEY_CTRL_n;
+	case 15:
+		return AKEY_CTRL_o;
+	case 16:
+		return AKEY_CTRL_p;
+	case 17:
+		return AKEY_CTRL_q;
+	case 18:
+		return AKEY_CTRL_r;
+	case 19:
+		return AKEY_CTRL_s;
+	case 20:
+		return AKEY_CTRL_t;
+	case 21:
+		return AKEY_CTRL_u;
+	case 22:
+		return AKEY_CTRL_v;
+	case 23:
+		return AKEY_CTRL_w;
+	case 24:
+		return AKEY_CTRL_x;
+	case 25:
+		return AKEY_CTRL_y;
+	case 26:
+		return AKEY_CTRL_z;
+	case 'A':
+		return AKEY_A;
+	case 'B':
+		return AKEY_B;
+	case 'C':
+		return AKEY_C;
+	case 'D':
+		return AKEY_D;
+	case 'E':
+		return AKEY_E;
+	case 'F':
+		return AKEY_F;
+	case 'G':
+		return AKEY_G;
+	case 'H':
+		return AKEY_H;
+	case 'I':
+		return AKEY_I;
+	case 'J':
+		return AKEY_J;
+	case 'K':
+		return AKEY_K;
+	case 'L':
+		return AKEY_L;
+	case 'M':
+		return AKEY_M;
+	case 'N':
+		return AKEY_N;
+	case 'O':
+		return AKEY_O;
+	case 'P':
+		return AKEY_P;
+	case 'Q':
+		return AKEY_Q;
+	case 'R':
+		return AKEY_R;
+	case 'S':
+		return AKEY_S;
+	case 'T':
+		return AKEY_T;
+	case 'U':
+		return AKEY_U;
+	case 'V':
+		return AKEY_V;
+	case 'W':
+		return AKEY_W;
+	case 'X':
+		return AKEY_X;
+	case 'Y':
+		return AKEY_Y;
+	case 'Z':
+		return AKEY_Z;
+	case ':':
+		return AKEY_COLON;
+	case '!':
+		return AKEY_EXCLAMATION;
+	case '@':
+		return AKEY_AT;
+	case '#':
+		return AKEY_HASH;
+	case '$':
+		return AKEY_DOLLAR;
+	case '%':
+		return AKEY_PERCENT;
+	case '^':
+		return AKEY_CARET;
+	case '&':
+		return AKEY_AMPERSAND;
+	case '*':
+		return AKEY_ASTERISK;
+	case '(':
+		return AKEY_PARENLEFT;
+	case ')':
+		return AKEY_PARENRIGHT;
+	case '+':
+		return AKEY_PLUS;
+	case '_':
+		return AKEY_UNDERSCORE;
+	case '"':
+		return AKEY_DBLQUOTE;
+	case '?':
+		return AKEY_QUESTION;
+	case '<':
+		return AKEY_LESS;
+	case '>':
+		return AKEY_GREATER;
+	case 'a':
+		return AKEY_a;
+	case 'b':
+		return AKEY_b;
+	case 'c':
+		return AKEY_c;
+	case 'd':
+		return AKEY_d;
+	case 'e':
+		return AKEY_e;
+	case 'f':
+		return AKEY_f;
+	case 'g':
+		return AKEY_g;
+	case 'h':
+		return AKEY_h;
+	case 'i':
+		return AKEY_i;
+	case 'j':
+		return AKEY_j;
+	case 'k':
+		return AKEY_k;
+	case 'l':
+		return AKEY_l;
+	case 'm':
+		return AKEY_m;
+	case 'n':
+		return AKEY_n;
+	case 'o':
+		return AKEY_o;
+	case 'p':
+		return AKEY_p;
+	case 'q':
+		return AKEY_q;
+	case 'r':
+		return AKEY_r;
+	case 's':
+		return AKEY_s;
+	case 't':
+		return AKEY_t;
+	case 'u':
+		return AKEY_u;
+	case 'v':
+		return AKEY_v;
+	case 'w':
+		return AKEY_w;
+	case 'x':
+		return AKEY_x;
+	case 'y':
+		return AKEY_y;
+	case 'z':
+		return AKEY_z;
+	case ';':
+		return AKEY_SEMICOLON;
+	case '0':
+		return AKEY_0;
+	case '1':
+		return AKEY_1;
+	case '2':
+		return AKEY_2;
+	case '3':
+		return AKEY_3;
+	case '4':
+		return AKEY_4;
+	case '5':
+		return AKEY_5;
+	case '6':
+		return AKEY_6;
+	case '7':
+		return AKEY_7;
+	case '8':
+		return AKEY_8;
+	case '9':
+		return AKEY_9;
+	case ',':
+		return AKEY_COMMA;
+	case '.':
+		return AKEY_FULLSTOP;
+	case '=':
+		return AKEY_EQUAL;
+	case '-':
+		return AKEY_MINUS;
+	case '\'':
+		return AKEY_QUOTE;
+	case '/':
+		return AKEY_SLASH;
+	case '\\':
+		return AKEY_BACKSLASH;
+	case '[':
+		return AKEY_BRACKETLEFT;
+	case ']':
+		return AKEY_BRACKETRIGHT;
+	case '|':
+		return AKEY_SHFT | AKEY_EQUAL;
+	}
 
 	return AKEY_NONE;
 }
@@ -1130,7 +1120,7 @@ void Init_SDL_Joysticks(int first, int second)
 		else {
 			Aprint("joystick 0 found!");
 			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
-			SWAP_JOYSTICKS = 1;		// real joy is STICK(0) and numblock is STICK(1)
+			SWAP_JOYSTICKS = 1;		/* real joy is STICK(0) and numblock is STICK(1) */
 		}
 	}
 
@@ -1153,32 +1143,36 @@ void Init_Joysticks(int *argc, char *argv[])
 	int i;
 	int j;
 	
-	for (i=j=1; i<*argc; i++) {
+	for (i = j = 1; i < *argc; i++) {
 		if (!strcmp(argv[i], "-joy0")) {
 			if (i == *argc - 1) {
 				Aprint("joystick device path missing!");
 				break;
 			}
 			lpt_joy0 = argv[++i];
-		} else if (!strcmp(argv[i], "-joy1")) {
+		}
+		else if (!strcmp(argv[i], "-joy1")) {
 			if (i == *argc - 1) {
 				Aprint("joystick device path missing!");
 				break;
 			}
 			lpt_joy1 = argv[++i];
-		} else {
+		}
+		else {
 			argv[j++] = argv[i];
 		}
 	}
 	*argc = j;
 	
-	if (lpt_joy0 != NULL) {				// LPT1 joystick
+	if (lpt_joy0 != NULL) {				/* LPT1 joystick */
 		fd_joystick0 = open(lpt_joy0, O_RDONLY);
-		if (fd_joystick0 == -1) perror(lpt_joy0);
+		if (fd_joystick0 == -1)
+			perror(lpt_joy0);
 	}
-	if (lpt_joy1 != NULL) {				// LPT2 joystick
+	if (lpt_joy1 != NULL) {				/* LPT2 joystick */
 		fd_joystick1 = open(lpt_joy1, O_RDONLY);
-		if (fd_joystick1 == -1) perror(lpt_joy1);
+		if (fd_joystick1 == -1)
+			perror(lpt_joy1);
 	}
 #endif /* LPTJOY */
 	Init_SDL_Joysticks(fd_joystick0 == -1, fd_joystick1 == -1);
@@ -1200,9 +1194,9 @@ void Atari_Initialise(int *argc, char *argv[])
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-rotate90") == 0) {
 			ROTATE90 = 1;
-			width=240;
-			height=320;
-			bpp=16;
+			width = 240;
+			height = 320;
+			bpp = 16;
 			no_joystick = 1;
 			Aprint("rotate90 mode");
 		}
@@ -1321,32 +1315,30 @@ int Atari_Exit(int run_monitor)
 	return restart;
 }
 
-void DisplayRotated240x320(Uint8 * screen)
+void DisplayRotated240x320(Uint8 *screen)
 {
 	int i,j;
 	Uint8 c;
 	register Uint32 *start32;
 	Uint32 quad;
-	if (MainScreen->format->BitsPerPixel!=16) 
-	{
+	if (MainScreen->format->BitsPerPixel!=16) {
 		Aprint("rotated display works only for bpp=16 right now");
 		Aflushlog();
 		exit(-1);
-	};
+	}
 	start32 = (Uint32 *) MainScreen->pixels;
-	for (j=0;j<MainScreen->h;j++)
-	  for (i=0;i<MainScreen->w/2;i++)
-	  {
-		c=screen[ATARI_WIDTH*(i*2)+32+320-j];
-		quad=Palette16[c]<<16;
-		c=screen[ATARI_WIDTH*(i*2+1)+32+320-j];
-		quad+=Palette16[c];
-	  	*start32=quad;
-		start32++;
-	  }	
+	for (j = 0; j < MainScreen->h; j++)
+		for (i = 0; i < MainScreen->w / 2; i++) {
+			c = screen[ATARI_WIDTH * (i * 2) + 32 + 320 - j];
+			quad = Palette16[c] << 16;
+			c = screen[ATARI_WIDTH * (i * 2 + 1) + 32 + 320 - j];
+			quad += Palette16[c];
+			*start32 = quad;
+			start32++;
+		}
 }
 
-void DisplayWithoutScaling(Uint8 * screen, int jumped, int width)
+void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 {
 	register Uint32 quad;
 	register Uint32 *start32;
@@ -1408,7 +1400,7 @@ void DisplayWithoutScaling(Uint8 * screen, int jumped, int width)
 	}
 }
 
-void DisplayWithScaling(Uint8 * screen, int jumped, int width)
+void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 {
 	register Uint32 quad;
 	register int x;
@@ -1513,7 +1505,7 @@ void DisplayWithScaling(Uint8 * screen, int jumped, int width)
 	}
 }
 
-void Atari_DisplayScreen(UBYTE * screen)
+void Atari_DisplayScreen(UBYTE *screen)
 {
 	int width, jumped;
 
@@ -1537,16 +1529,13 @@ void Atari_DisplayScreen(UBYTE * screen)
 		break;
 	}
 
-	if (ROTATE90)
-	{
+	if (ROTATE90) {
 		DisplayRotated240x320(screen);
 	}
-	else
-	if ((MainScreen->w == width)
+	else if ((MainScreen->w == width)
 		&& (MainScreen->h == ATARI_HEIGHT)) {
 		DisplayWithoutScaling(screen, jumped, width);
 	}
-
 	else {
 		DisplayWithScaling(screen, jumped, width);
 	}
@@ -1568,14 +1557,16 @@ int get_SDL_joystick_state(SDL_Joystick *joystick)
 			return STICK_LR;
 		else
 			return STICK_RIGHT;
-	} else if (x < -minjoy) {
+	}
+	else if (x < -minjoy) {
 		if (y < -minjoy)
 			return STICK_UL;
 		else if (y > minjoy)
 			return STICK_LL;
 		else
 			return STICK_LEFT;
-	} else {
+	}
+	else {
 		if (y < -minjoy)
 			return STICK_FORWARD;
 		else if (y > minjoy)
@@ -1593,28 +1584,36 @@ int get_LPT_joystick_state(int fd)
 	ioctl(fd, LPGETSTATUS, &status);
 	status ^= 0x78;
 
-	if (status & 0x40) {			// right
-		if (status & 0x10) {		// up
+	if (status & 0x40) {			/* right */
+		if (status & 0x10) {		/* up */
 			return STICK_UR;
-		} else if (status & 0x20) {	// down
+		}
+		else if (status & 0x20) {	/* down */
 			return STICK_LR;
-		} else {
+		}
+		else {
 			return STICK_RIGHT;
 		}
-	} else if (status & 0x80) {		// left
-		if (status & 0x10) {		// up
+	}
+	else if (status & 0x80) {		/* left */
+		if (status & 0x10) {		/* up */
 			return STICK_UL;
-		} else if (status & 0x20) {	// down
+		}
+		else if (status & 0x20) {	/* down */
 			return STICK_LL;
-		} else {
+		}
+		else {
 			return STICK_LEFT;
 		}
-	} else {
-		if (status & 0x10) {		// up
+	}
+	else {
+		if (status & 0x10) {		/* up */
 			return STICK_FORWARD;
-		} else if (status & 0x20) {	// down
+		}
+		else if (status & 0x20) {	/* down */
 			return STICK_BACK;
-		} else {
+		}
+		else {
 			return STICK_CENTRE;
 		}
 	}
@@ -1623,7 +1622,7 @@ int get_LPT_joystick_state(int fd)
 #endif /* LPTJOY */
 }
 
-void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
+void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 {
 	int stick0, stick1;
 	stick0 = STICK_CENTRE;
@@ -1679,7 +1678,7 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 		*s1 = stick1;
 	}
 
-	if ((joystick0 != NULL) || (joystick1 != NULL))	// can only joystick1!=NULL ?
+	if ((joystick0 != NULL) || (joystick1 != NULL))	/* can only joystick1!=NULL ? */
 	{
 		SDL_JoystickUpdate();
 	}
@@ -1695,7 +1694,7 @@ void SDL_Atari_PORT(Uint8 * s0, Uint8 * s1)
 		*s1 = get_SDL_joystick_state(joystick1);
 }
 
-void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
+void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 {
 	int trig0, trig1, i;
 
@@ -1727,7 +1726,8 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 		else
 			*t0 = 0;
 #endif /* LPTJOY */
-	} else if (joystick0 != NULL) {
+	}
+	else if (joystick0 != NULL) {
 		trig0 = 1;
 		for (i = 0; i < joystick0_nbuttons; i++) {
 			if (SDL_JoystickGetButton(joystick0, i)) {
@@ -1737,7 +1737,7 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 		}
 		*t0 = trig0;
 	}
-	
+
 	if (fd_joystick1 != -1) {
 #ifdef LPTJOY
 		int status;
@@ -1747,7 +1747,8 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 		else
 			*t1 = 0;
 #endif /* LPTJOY */
-	} else if (joystick1 != NULL) {
+	}
+	else if (joystick1 != NULL) {
 		trig1 = 1;
 		for (i = 0; i < joystick1_nbuttons; i++) {
 			if (SDL_JoystickGetButton(joystick1, i)) {
@@ -1759,7 +1760,7 @@ void SDL_Atari_TRIG(Uint8 * t0, Uint8 * t1)
 	}
 }
 
-void CountFPS()
+void CountFPS(void)
 {
 	static int ticks1 = 0, ticks2, shortframes;
 	if (ticks1 == 0)
@@ -1775,10 +1776,11 @@ void CountFPS()
 
 int Atari_PORT(int num)
 {
-	UBYTE a, b;
-	SDL_Atari_PORT(&a, &b);
-	if (num == 0)
+	if (num == 0) {
+		UBYTE a, b;
+		SDL_Atari_PORT(&a, &b);
 		return (b << 4) | (a & 0x0f);
+	}
 	else
 		return 0xff;
 }
@@ -1815,6 +1817,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.49  2005/08/06 18:16:26  pfusik
+ changed () function signatures to (void); fixed indenting
+
  Revision 1.48  2005/04/30 13:44:51  joy
  unused variables removed
 
@@ -1928,5 +1933,3 @@ int main(int argc, char **argv)
  dates in changelog fixed (it was December for sure)
 
  */
-
-
