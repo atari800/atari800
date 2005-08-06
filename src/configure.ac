@@ -265,7 +265,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([DosSleep GetTickCount Sleep atexit chmod floor fstat getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa opendir memset mkdir mkstemp modf rmdir select snooze socket stat strcasecmp strchr strdup strerror strrchr strstr strtol uclock unlink vsnprintf])
+AC_CHECK_FUNCS([DosSleep GetTickCount Sleep atexit chmod floor fstat getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa opendir memset mkdir mkstemp modf rename rmdir select snooze snprintf socket stat strcasecmp strchr strdup strerror strrchr strstr strtol uclock unlink vsnprintf])
 
 
 
