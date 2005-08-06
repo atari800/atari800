@@ -757,36 +757,36 @@ static double Atari_time(void)
 
 static void Atari_sleep(double s)
 {
-	if (s <= 0)
-		return;
-
+	if (s > 0) {
 #ifdef DJGPP
-	/* DJGPP has usleep and select, but they won't work that good */
-	/* XXX: find out why */
-    double curtime = Atari_time();
-    while ((curtime + s) > Atari_time());
+		/* DJGPP has usleep and select, but they won't work that good */
+		/* XXX: find out why */
+		double curtime = Atari_time();
+		while ((curtime + s) > Atari_time());
 #elif defined(HAVE_USLEEP)
-	usleep(s * 1e6);
+		usleep(s * 1e6);
 #elif defined(HAVE_SNOOZE)
-	/* __BEOS__ */
-	/* added by Walter Las for BeOS */
-	snooze(s * 1e6);
+		/* __BEOS__ */
+		/* added by Walter Las for BeOS */
+		snooze(s * 1e6);
 #elif defined(HAVE_DOSSLEEP)
-	/* __EMX__ */
-	/* added by Brian Smith for os/2 */
-	DosSleep(s);
+		/* __EMX__ */
+		/* added by Brian Smith for os/2 */
+		DosSleep(s);
 #elif defined(HAVE_SLEEP)
-	/* WIN32 */
-	Sleep(s * 1e3);
+		/* WIN32 */
+		Sleep(s * 1e3);
 #elif defined(HAVE_SELECT)
-	/* linux */
-    struct timeval tp;
-    tp.tv_sec = 0;
-    tp.tv_usec = 1e6 * s;
-    select(1, NULL, NULL, NULL, &tp);
+		/* linux */
+		struct timeval tp;
+		tp.tv_sec = 0;
+		tp.tv_usec = 1e6 * s;
+		select(1, NULL, NULL, NULL, &tp);
 #else
-#error No function found for Atari_sleep()
+		double curtime = Atari_time();
+		while ((curtime + s) > Atari_time());
 #endif
+	}
 }
 
 void atari_sync(void)
@@ -1059,6 +1059,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.60  2005/08/06 18:14:07  pfusik
+if no sleep-like function available, fall back to time polling
+
 Revision 1.59  2005/08/04 22:51:33  pfusik
 use best time functions available - now checked by Configure,
 not hard-coded for platforms (almost...)
