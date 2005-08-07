@@ -1,3 +1,17 @@
+2005-08-07  Piotr Fusik  <fox@scene.pl>
+* mzpokeysnd.c: eschew traditional comments in log messages!
+
+* devices.c: MSVC headers have no S_IRUSR nor S_IWUSR
+
+* devices.c: empty Hx_DIR now refers to the current directory rather than
+  the root
+
+* ui.c: display error messages for "Run BIN file", "Select tape",
+  "Insert cartridge" and "Save screenshot"
+
+* compfile.c: fixed indenting; other minor improvements
+
+
 2005-08-06  Piotr Fusik  <fox@scene.pl>
 * configure.ac, devices.c: check for rename() and snprintf()
 
