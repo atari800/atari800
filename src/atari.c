@@ -900,15 +900,6 @@ void Atari800_Frame(void)
 #endif
 }
 
-int zlib_capable(void)
-{
-#ifdef HAVE_LIBZ
-	return TRUE;
-#else
-	return FALSE;
-#endif
-}
-
 int prepend_tmpfile_path(char *buffer)
 {
 	if (buffer)
@@ -1059,6 +1050,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.61  2005/08/07 13:45:18  pfusik
+removed zlib_capable()
+
 Revision 1.60  2005/08/06 18:14:07  pfusik
 if no sleep-like function available, fall back to time polling
 
