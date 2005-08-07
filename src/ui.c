@@ -87,6 +87,14 @@ int LoadState();
 void Screenshot(int interlaced);
 void MakeBlankDisk(FILE * setFile);
 
+static void SetItemChecked(tMenuItem *mip, int checked)
+{
+	if (checked)
+		mip->flags |= ITEM_CHECKED;
+	else
+		mip->flags &= ~ITEM_CHECKED;
+}
+
 void SelectSystem(void)
 {
 	typedef struct {
@@ -169,7 +177,6 @@ void DiskManagement(void)
 	};
 
 	int rwflags[8];
-	int done = FALSE;
 	int dsknum = 0;
 	int i;
 
@@ -178,7 +185,7 @@ void DiskManagement(void)
 		rwflags[i] = (drive_status[i] == ReadOnly ? TRUE : FALSE);
 	}
 
-	while (!done) {
+	for (;;) {
 		char filename[FILENAME_MAX + 1];
 		char diskfilename[FILENAME_MAX + 1];
 		char setname[FILENAME_MAX + 1];
@@ -216,8 +223,7 @@ void DiskManagement(void)
 					setFile = fopen(setname, "wb");
 					MakeBlankDisk(setFile);
 					fclose(setFile);
-					done = TRUE;
-					continue;
+					break;
 				}
 				if (curr_disk_dir[0] == '\0')
 					strcpy(curr_disk_dir, atari_disk_dirs[current_disk_directory]);
@@ -312,7 +318,7 @@ void DiskManagement(void)
 			}
 		}
 		else
-			done = TRUE;
+			break;
 	}
 }
 
@@ -517,8 +523,24 @@ void CartManagement(void)
 		case 2:
 			if (ui_driver->fGetLoadFilename(curr_cart_dir, filename)) {
 				int r = CART_Insert(filename);
-				if (r > 0)
+				switch (r) {
+				case CART_CANT_OPEN:
+					ui_driver->fMessage("Can't open cartridge image file");
+					break;
+				case CART_BAD_FORMAT:
+					ui_driver->fMessage("Unknown cartridge format");
+					break;
+				case CART_BAD_CHECKSUM:
+					ui_driver->fMessage("Warning: bad CART checksum");
+					break;
+				case 0:
+					/* ok */
+					break;
+				default:
+					/* r > 0 */
 					cart_type = SelectCartType(r);
+					break;
+				}
 				if (cart_type != CART_NONE) {
 					int for5200 = CART_IsFor5200(cart_type);
 					if (for5200 && machine_type != MACHINE_5200) {
@@ -584,7 +606,9 @@ int RunExe(void)
 	if (ui_driver->fGetLoadFilename(curr_exe_dir, exename)) {
 		ret = BIN_loader(exename);
 		if (!ret) {
-			/* display log to a window */
+			char msg[FILENAME_MAX + 30];
+			sprintf(msg, "Can't load \"%s\"", exename);
+			ui_driver->fMessage(msg);
 		}
 	}
 
@@ -601,7 +625,9 @@ int LoadTape(void)
 	if (ui_driver->fGetLoadFilename(curr_tape_dir, tapename)) {
 		ret = CASSETTE_Insert(tapename);
 		if (!ret) {
-			/* display log to a window */
+			char msg[FILENAME_MAX + 30];
+			sprintf(msg, "Can't load \"%s\"", tapename);
+			ui_driver->fMessage(msg);
 		}
 	}
 
@@ -625,34 +651,13 @@ void AtariSettings(void)
 	int option = 0;
 
 	do {
-		if (disable_basic)
-			menu_array[0].flags |= ITEM_CHECKED;
-		else
-			menu_array[0].flags &= ~ITEM_CHECKED;
-		if (hold_start_on_reboot)
-			menu_array[1].flags |= ITEM_CHECKED;
-		else
-			menu_array[1].flags &= ~ITEM_CHECKED;
-		if (rtime_enabled)
-			menu_array[2].flags |= ITEM_CHECKED;
-		else
-			menu_array[2].flags &= ~ITEM_CHECKED;
-		if (enable_sio_patch)
-			menu_array[3].flags |= ITEM_CHECKED;
-		else
-			menu_array[3].flags &= ~ITEM_CHECKED;
-		if (enable_h_patch)
-			menu_array[4].flags |= ITEM_CHECKED;
-		else
-			menu_array[4].flags &= ~ITEM_CHECKED;
-		if (enable_p_patch)
-			menu_array[5].flags |= ITEM_CHECKED;
-		else
-			menu_array[5].flags &= ~ITEM_CHECKED;
-		if (enable_r_patch)
-			menu_array[6].flags |= ITEM_CHECKED;
-		else
-			menu_array[6].flags &= ~ITEM_CHECKED;
+		SetItemChecked(&menu_array[0], disable_basic);
+		SetItemChecked(&menu_array[1], hold_start_on_reboot);
+		SetItemChecked(&menu_array[2], rtime_enabled);
+		SetItemChecked(&menu_array[3], enable_sio_patch);
+		SetItemChecked(&menu_array[4], enable_h_patch);
+		SetItemChecked(&menu_array[5], enable_p_patch);
+		SetItemChecked(&menu_array[6], enable_r_patch);
 
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 
@@ -760,31 +765,19 @@ int SoundSettings(void)
 	int option = 0;
 
 	do {
-		if (enable_new_pokey)
-			menu_array[0].flags |= ITEM_CHECKED;
-		else
-			menu_array[0].flags &= ~ITEM_CHECKED;
+		SetItemChecked(&menu_array[0], enable_new_pokey);
 
 #ifdef STEREO_SOUND
-		if (stereo_enabled)
-			menu_array[1].flags |= ITEM_CHECKED;
-		else
+		SetItemChecked(&menu_array[1], stereo_enabled);
 #endif
-			menu_array[1].flags &= ~ITEM_CHECKED;
 
 #ifdef CONSOLE_SOUND
-		if (console_sound_enabled)
-			menu_array[2].flags |= ITEM_CHECKED;
-		else
+		SetItemChecked(&menu_array[2], console_sound_enabled);
 #endif
-			menu_array[2].flags &= ~ITEM_CHECKED;
 
 #ifdef SERIO_SOUND
-		if (serio_sound_enabled)
-			menu_array[3].flags |= ITEM_CHECKED;
-		else
+		SetItemChecked(&menu_array[3], serio_sound_enabled);
 #endif
-			menu_array[3].flags &= ~ITEM_CHECKED;
 
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 
@@ -792,7 +785,7 @@ int SoundSettings(void)
 		case 0:
 			enable_new_pokey = !enable_new_pokey;
 			Pokey_DoInit();
-			/* According the PokeySnd doc the POKEY switch can occur on
+			/* According to the PokeySnd doc the POKEY switch can occur on
 			   a cold-restart only */
 			reboot_required = TRUE;
 			ui_driver->fMessage("Will reboot to apply the change");
@@ -830,7 +823,8 @@ void Screenshot(int interlaced)
 	char fname[FILENAME_SIZE + 1];
 	if (ui_driver->fGetSaveFilename(fname)) {
 		ANTIC_Frame(TRUE);
-		Screen_SaveScreenshot(fname, interlaced);
+		if (!Screen_SaveScreenshot(fname, interlaced))
+			ui_driver->fMessage("Error saving screenshot");
 	}
 }
 
@@ -1054,6 +1048,10 @@ void MakeBlankDisk(FILE *setFile)
 
 /*
 $Log$
+Revision 1.58  2005/08/07 13:44:08  pfusik
+display error messages for "Run BIN file", "Select tape",
+"Insert cartridge" and "Save screenshot"
+
 Revision 1.57  2005/08/06 18:25:40  pfusik
 changed () function signatures to (void)
 
