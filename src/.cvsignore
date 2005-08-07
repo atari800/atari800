@@ -1,2 +1,7 @@
+atari800.cfg
 autom4te.cache
+config.h
+config.log
+config.status
 configure
+Makefile
