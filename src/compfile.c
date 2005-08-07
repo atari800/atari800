@@ -28,16 +28,23 @@
 #include "atari.h"
 #include "config.h"
 #include "log.h"
+
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
+
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
+
 #ifndef HAVE_MKSTEMP
 # ifndef O_BINARY
 #  define O_BINARY	0
 # endif
-# define mkstemp(a) open(mktemp(a),O_RDWR|O_CREAT|O_BINARY,0600)
+/* XXX: race condition */
+# define mkstemp(a) open(mktemp(a), O_RDWR | O_CREAT | O_BINARY, 0600)
 #endif
+
 /* Size of memory buffer ZLIB should use when decompressing files */
 #define ZLIB_BUFFER_SIZE	32767
 
@@ -57,302 +64,252 @@ static long soffset(void);
 
 /* Global variables */
 static unsigned int	secsize;
-static unsigned short	cursec ,maxsec;
-static unsigned char	createdisk ,working ,last ,density, buf[256], atr;
+static unsigned short cursec, maxsec;
+static unsigned char createdisk, working, last, density, buf[256], atr;
 static FILE *fin = NULL, *fout = NULL;
-
-#ifdef HAVE_LIBZ
-#define GZOPEN( X, Y ) gzopen( X, Y )
-#define GZCLOSE( X ) gzclose( X )
-#define GZREAD( X, Y, Z ) gzread( X, Y, Z )
-#else	/* HAVE_LIBZ */
-#define GZOPEN( X, Y ) (-1)
-#define GZCLOSE( X ) (-1)
-#define GZREAD( X, Y, Z ) (-1)
-#endif	/* HAVE_LIBZ */
-
-/* This is a port-specific function that should return -1 if the port is unable to
-   use zlib, any other value if it can. For instance, Windows might return -1 if the
-   zlib DLL cannot be loaded. If you are not zlib capable you should macro out the
-   gz???? functions to avoid linkage problems */
-extern int zlib_capable( void );
 
 /* prepend_tmpfile_path is a port-specific function that should insert into the supplied
    buffer pointer any path name the port wants before the filename created by mkstemp().
    This function should return the number of bytes that the prepended path represents */
-extern int prepend_tmpfile_path( char *buffer );
+extern int prepend_tmpfile_path(char *buffer);
 
 /* This function was added because unlike DOS, the Windows version might visit this
    module many times, not a run-once occurence. Everything needs to be reset per file,
    so that is what init_globals does */
-static void init_globals( FILE *input, FILE *output )
+static void init_globals(FILE *input, FILE *output)
 {
 	secsize = 0;
 	cursec = maxsec = 0;
 	createdisk = working = last = density = 0;
 	atr = 16;
-	memset( buf, 0, 256 );
+	memset(buf, 0, 256);
 	fin = input;
 	fout = output;
 }
 
-static void show_file_error( FILE *stream )
+static void show_file_error(FILE *stream)
 {
-	if( feof( stream ) )
-		Aprint( "Unexpected end of file during I/O operation, file is probably corrupt" );
+	if (feof(stream))
+		Aprint("Unexpected end of file during I/O operation, file is probably corrupt");
 	else
-		Aprint( "I/O error reading or writing a character" );
+		Aprint("I/O error reading or writing a character");
 }
 
 /* Opens a ZLIB compressed (gzip) file, creates a temporary filename, and decompresses
    the contents of the .gz file to the temporary file name. Note that *outfilename is
    actually blank coming in and is filled by mkstemp */
-FILE * openzlib(int diskno, const char *infilename, char *outfilename )
+FILE *openzlib(int diskno, const char *infilename, char *outfilename)
 {
 #ifndef HAVE_LIBZ
-	Aprint( "This executable cannot decompress ZLIB files" );
+	Aprint("This executable cannot decompress ZLIB files");
 	return NULL;
 #else
-	gzFile	gzSource;
-	FILE	*file = NULL, *outfile = NULL;
-	char	*curptr = outfilename;
-	char	*zlib_buffer = NULL;
+	gzFile gzSource;
+	FILE *file = NULL, *outfile = NULL;
+	char *curptr = outfilename;
+	char *zlib_buffer = NULL;
 
-	if( zlib_capable() == -1 )
-	{
-		Aprint( "This executable cannot decompress ZLIB files" );
+	zlib_buffer = malloc(ZLIB_BUFFER_SIZE + 1);
+	if (!zlib_buffer) {
+		Aprint("Could not obtain memory for zlib decompression");
 		return NULL;
 	}
 
-	zlib_buffer = malloc( ZLIB_BUFFER_SIZE + 1 );
-	if( !zlib_buffer )
-	{
-		Aprint( "Could not obtain memory for zlib decompression" );
-		return NULL;
-	}
-
-	curptr += prepend_tmpfile_path( outfilename );
-    strcpy(curptr,"TMP_XXXXXX\0");
+	curptr += prepend_tmpfile_path(outfilename);
+	strcpy(curptr, "TMP_XXXXXX");
 	outfile = fdopen(mkstemp(curptr), "wb");
-	if (!outfile)
-	{
-		Aprint( "Could not open temporary file" );
-		free( zlib_buffer );
+	if (!outfile) {
+		Aprint("Could not open temporary file");
+		free(zlib_buffer);
 		return NULL;
 	}
 
-	gzSource = GZOPEN( infilename, "rb" );
-	if( !gzSource )
-	{
-		Aprint( "ZLIB could not open file %s", infilename );
-		fclose( outfile );
+	gzSource = gzopen(infilename, "rb");
+	if (!gzSource) {
+		Aprint("ZLIB could not open file %s", infilename);
+		fclose(outfile);
 	}
-	else	/* Convert the gzip file to the temporary file */
-	{
+	else {
+		/* Convert the gzip file to the temporary file */
 		int	result, temp;
 
-		Aprint( "Converting %s to %s", infilename, outfilename );
-		do
-		{
-			result = GZREAD( gzSource, &zlib_buffer[0], ZLIB_BUFFER_SIZE );
-			if( result > 0 )
-			{
-				if( (int) fwrite(zlib_buffer, 1, result, outfile) != result )
-				{
+		Aprint("Converting %s to %s", infilename, outfilename);
+		do {
+			result = gzread(gzSource, zlib_buffer, ZLIB_BUFFER_SIZE);
+			if (result > 0) {
+				if( (int) fwrite(zlib_buffer, 1, result, outfile) != result ) {
 					Aprint( "Error writing to temporary file %s, disk may be full", outfilename );
 					result = -1;
 				}
 			}
-		} while( result == ZLIB_BUFFER_SIZE );
-		temp = GZCLOSE( gzSource );
-		fclose( outfile );
-		if( result > -1 )
+		} while(result == ZLIB_BUFFER_SIZE);
+		temp = gzclose(gzSource);
+		fclose(outfile);
+		if (result >= 0)
 			file = fopen(outfilename, "rb");
-		else
-		{
+		else {
 			Aprint( "Error while parsing gzip file" );
 			file = NULL;
 		}
 	}
 
-	if(!file)
-	{
-		if( zlib_buffer )
-			free( zlib_buffer );
-		Aprint( "Removing temporary file %s", outfilename );
-		remove( outfilename );
+	if (!file) {
+		free(zlib_buffer);
+		Aprint("Removing temporary file %s", outfilename);
+		remove(outfilename);
 	}
 
 	return file;
 #endif	/* HAVE_LIBZ */
 }
 
-int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output )
+int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 {
 	int archivetype;	/* Block type for first block */
 	int blocktype;		/* Current block type */
 	int tmp;			/* Temporary for read without clobber on eof */
 
-	init_globals( fin, fout );
-	Aprint( "Converting %s to %s", input, output );
-	if( !fin || !fout )
-	{
+	init_globals(fin, fout);
+	Aprint("Converting %s to %s", input, output);
+	if (!fin || !fout) {
 		Aprint( "Programming error - NULL file specified for conversion" );
 		return 0;
 	}
 	archivetype = blocktype = fgetc(fin);
 
-	if( archivetype == EOF )
-	{
-		show_file_error( fin );
+	if (archivetype == EOF) {
+		show_file_error(fin);
 		return 0;
 	}
 
-	switch(blocktype) 
-	{
-		case 0xF9:
-		case 0xFA:
-			break;
-		default:
-			Aprint("0x%02X is not a known header block at start of input file",blocktype);
-			return 0;
+	switch(blocktype) {
+	case 0xF9:
+	case 0xFA:
+		break;
+	default:
+		Aprint("0x%02X is not a known header block at start of input file", blocktype);
+		return 0;
 	}
-	
+
 	rewind(fin);
-	
-	while( 1 )
-	{
-		if (feof(fin)) 
-		{
-			fflush(stdout); /* Possible buffered I/O confusion fix */
+
+	for (;;) {
+		if (feof(fin)) {
 			if ((!last) && (blocktype == 0x45) && (archivetype == 0xF9)) {
 				Aprint("Multi-part archive error.");
 				Aprint("To process these files, you must first combine the files into a single file.");
+#if defined(WIN32) || defined(DJGPP)
 				Aprint("COPY /B file1.dcm+file2.dcm+file3.dcm newfile.dcm from the DOS prompt");
+#elif defined(linux) || defined(unix)
+				Aprint("cat file1.dcm file2.dcm file3.dcm >newfile.dcm from the shell");
+#endif
 			}
-			else 
-			{
+			else {
 				Aprint("EOF before end block, input file likely corrupt");
 			}
 			return 0;
 		}
 		
-		if (working) {
-			if (soffset() != ftell(fout)) 
-			{
-				Aprint("Output desyncronized, possibly corrupt dcm file. fin=%lu fout=%lu != %lu cursec=%u secsize=%u", 
-					ftell(fin),ftell(fout),soffset(),cursec,secsize);
-				return 0;
-			}
+		if (working && soffset() != ftell(fout)) {
+			Aprint("Output desynchronized, possibly corrupt dcm file. fin=%lu fout=%lu != %lu cursec=%u secsize=%u", 
+				ftell(fin), ftell(fout), soffset(), cursec, secsize);
+			return 0;
 		}
 		
 		tmp = fgetc(fin); /* blocktype is needed on EOF error--don't corrupt it */
-		if( tmp == EOF )
-		{
-			show_file_error( fin );
+		if (tmp == EOF) {
+			show_file_error(fin);
 			return 0;
 		}
 
 		blocktype = tmp;
-		switch(blocktype) 
-		{
-		      case 0xF9:
-			  case 0xFA:
-				  /* New block */
-				  if( decode_FA() == 0 )
-					  return 0;
-				  break;
-			  case 0x45:
-				  /* End block */
-				  working=0;
-				  if (last)
-					  return 1;	/* Normal exit */
-				  break;
-			  case 0x41:
-			  case 0xC1:
-				  if( decode_C1() == 0 )
-					  return 0;
-				  break;
-			  case 0x43:
-			  case 0xC3:
-				  if( decode_C3() == 0 )
-					  return 0;
-				  break;
-			  case 0x44:
-			  case 0xC4:
-				  if( decode_C4() == 0 )
-					  return 0;
-				  break;
-			  case 0x46:
-			  case 0xC6:
-				  if( decode_C6() == 0 )
-					  return 0;
-				  break;
-			  case 0x47:
-			  case 0xC7:
-				  if( decode_C7() == 0 )
-					  return 0;
-				  break;
-			  default:
-				  Aprint("0x%02X is not a known block type.  File may be corrupt.",blocktype);
-				  return 0;
+		switch (blocktype) {
+		case 0xF9:
+		case 0xFA:
+			/* New block */
+			if (decode_FA() == 0)
+				return 0;
+			break;
+		case 0x45:
+			/* End block */
+			working = 0;
+			if (last)
+				return 1;	/* Normal exit */
+			break;
+		case 0x41:
+		case 0xC1:
+			if (decode_C1() == 0)
+				return 0;
+			break;
+		case 0x43:
+		case 0xC3:
+			if (decode_C3() == 0)
+				return 0;
+			break;
+		case 0x44:
+		case 0xC4:
+			if (decode_C4() == 0)
+				return 0;
+			break;
+		case 0x46:
+		case 0xC6:
+			if (decode_C6() == 0)
+				return 0;
+			break;
+		case 0x47:
+		case 0xC7:
+			if (decode_C7() == 0)
+				return 0;
+			break;
+		default:
+			Aprint("0x%02X is not a known block type.  File may be corrupt.", blocktype);
+			return 0;
 		} /* end case */
-		
-		if ((blocktype != 0x45) && (blocktype != 0xFA) && (blocktype != 0xF9)) 
-		{
-			if (!(blocktype & 0x80)) 
-			{
-				cursec=read_atari16(fin);
-				if( fseek(fout, soffset(), SEEK_SET) != 0 )
-				{
-					Aprint( "Failed a seek in output file, cannot continue" );
+
+		if ((blocktype != 0x45) && (blocktype != 0xFA) && (blocktype != 0xF9)) {
+			if (!(blocktype & 0x80)) {
+				cursec = read_atari16(fin);
+				if (fseek(fout, soffset(), SEEK_SET) != 0) {
+					Aprint("Failed a seek in output file, cannot continue" );
 					return 0;
 				}
 			} 
-			else 
-			{
+			else {
 				cursec++;
-				if(cursec==4 && secsize!=128)
-					fseek(fout,(secsize-128)*3,SEEK_CUR);
+				if (cursec == 4 && secsize != 128)
+					fseek(fout, (secsize-128) * 3 ,SEEK_CUR);
 			}
 		}
-	} 	
+	}
 	return 0; /* Should never be executed */
 }
 
 /* Opens a DCM file and decodes it to a temporary file, then returns the
    file handle for the temporary file and its name. */
-FILE *opendcm( int diskno, const char *infilename, char *outfilename )
+FILE *opendcm(int diskno, const char *infilename, char *outfilename)
 {
-	FILE	*infile, *outfile;
-	FILE	*file = NULL;
-	char	*curptr = outfilename;
+	FILE *infile, *outfile;
+	FILE *file = NULL;
+	char *curptr = outfilename;
 
-    strcpy(curptr,"TMP_XXXXXX\0");
+	strcpy(curptr, "TMP_XXXXXX");
 	outfile = fdopen(mkstemp(curptr), "wb");
-	if( !outfile ){
+	if (!outfile) {
 		Aprint("mkstemp failed\n");
 		return NULL;
-	}	
-	infile = fopen( infilename, "rb" );
-	if( !infile )
-	{
-		fclose( outfile );
 	}
-	else
-	{
-		if( dcmtoatr( infile, outfile, infilename, outfilename ) != 0 )
-		{
-			fflush( outfile );
-			fclose( outfile );
-			file = fopen(outfilename, "rb");
-		}
+	infile = fopen(infilename, "rb");
+	if (!infile) {
+		fclose(outfile);
+	}
+	else if (dcmtoatr(infile, outfile, infilename, outfilename) != 0) {
+		fclose(outfile);
+		file = fopen(outfilename, "rb");
 	}
 
-	if(!file)
-	{
-		Aprint( "Removing temporary file %s", outfilename );
-		remove( outfilename );
+	if (!file) {
+		Aprint("Removing temporary file %s", outfilename);
+		remove(outfilename);
 	}
 
 	return file;
@@ -360,119 +317,106 @@ FILE *opendcm( int diskno, const char *infilename, char *outfilename )
 
 static int decode_C1(void)
 {
-	int	secoff,tmpoff,c;
+	int secoff, tmpoff, c;
 
 	tmpoff = fgetc(fin);
-	if( tmpoff == EOF)
-	{
-		show_file_error( fin );
+	if (tmpoff == EOF) {
+		show_file_error(fin);
 		return 0;
 	}
 
-	c=tmpoff;
-	for (secoff=0; secoff<=tmpoff; secoff++) 
-	{
-		buf[c]=fgetc(fin);
+	c = tmpoff;
+	for (secoff = 0; secoff <= tmpoff; secoff++) {
+		buf[c] = fgetc(fin);
 		c--;
-		if( feof(fin) )
-		{
-			show_file_error( fin );
+		if (feof(fin)) {
+			show_file_error(fin);
 			return 0;
 		}
 	}
-	if( !write_sector(fout) )
+	if (!write_sector(fout))
 		return 0;
 	return 1;
 }
 
 static int decode_C3(void)
 {
-	int	secoff,tmpoff,c;
-	
-	secoff=0;
-	do 
-	{
+	int secoff, tmpoff, c;
+
+	secoff = 0;
+	do {
 		if (secoff)
 			tmpoff = read_offset(fin);
 		else
 			tmpoff = fgetc(fin);
 
-		if( tmpoff == EOF )
-		{
-			show_file_error( fin );
+		if (tmpoff == EOF) {
+			show_file_error(fin);
 			return 0;
 		}
 
-		for (; secoff<tmpoff; secoff++) 
-		{
+		for (; secoff < tmpoff; secoff++) {
 			buf[secoff] = fgetc(fin);
-			if( feof(fin) )
-			{
-				show_file_error( fin );
+			if (feof(fin)) {
+				show_file_error(fin);
 				return 0;
 			}
-
 		}
-		if (secoff == (int)secsize)
+		if (secoff == (int) secsize)
 			break;
 
 		tmpoff = read_offset(fin);
 		c = fgetc(fin);
-		if( tmpoff == EOF || c == EOF )
-		{
-			show_file_error( fin );
+		if (tmpoff == EOF || c == EOF) {
+			show_file_error(fin);
 			return 0;
 		}
 
-		for (; secoff<tmpoff; secoff++) 
-		{
+		for (; secoff < tmpoff; secoff++) 
 			buf[secoff] = c;
-		}
-	} while(secoff < (int)secsize);
+	} while (secoff < (int) secsize);
 
-	if( !write_sector(fout) )
+	if (!write_sector(fout))
 		return 0;
 	return 1;
 }
 
 static int decode_C4(void)
 {
-	int	secoff,tmpoff;
+	int secoff,tmpoff;
 
 	tmpoff = read_offset(fin);
-	if( tmpoff == EOF )
-	{
+	if (tmpoff == EOF) {
 		show_file_error( fin );
 		return 0;
 	}
 
-	for (secoff=tmpoff; secoff<(int)secsize; secoff++) {
-		buf[secoff]=fgetc(fin);
-		if( feof(fin) )
-		{
+	for (secoff = tmpoff; secoff < (int) secsize; secoff++) {
+		buf[secoff] = fgetc(fin);
+		if (feof(fin)) {
 			show_file_error( fin );
 			return 0;
 		}
 	}
-	if( !write_sector(fout) )
+	if (!write_sector(fout))
 		return 0;
 	return 1;
 }
 
 static int decode_C6(void)
 {
-	if( !write_sector(fout) )
+	if (!write_sector(fout))
 		return 0;
 	return 1;
 }
 
 static int decode_C7(void)
 {
-	if( !read_sector(fin) )
+	if (!read_sector(fin))
 		return 0;
-	if( !write_sector(fout) )
+	if (!write_sector(fout))
 		return 0;
-	
+
 	return 1;
 }
 
@@ -480,78 +424,73 @@ static int decode_FA(void)
 {
 	unsigned char c;
 
-	if (working) 
-	{
+	if (working) {
 		Aprint("Trying to start section but last section never had an end section block.");
 		return 0;
 	}
-	c=fgetc(fin);
-	if( feof(fin) )
-	{
-		show_file_error( fin );
+	c = fgetc(fin);
+	if (feof(fin)) {
+		show_file_error(fin);
 		return 0;
 	}
-	density=((c & 0x70) >> 4);
-	last=((c & 0x80) >> 7);
-	switch(density) 
-	{
-		case 0:
-			maxsec=720;
-			secsize=128;
-			break;
-		case 2:
-			maxsec=720;
-			secsize=256;
-			break;
-		case 4:
-			maxsec=1040;
-			secsize=128;
-			break;
-		default:
-			Aprint( "Density type is unknown, density type=%u",density);
-			return 0;
+	density = ((c & 0x70) >> 4);
+	last = ((c & 0x80) >> 7);
+	switch(density) {
+	case 0:
+		maxsec = 720;
+		secsize = 128;
+		break;
+	case 2:
+		maxsec = 720;
+		secsize = 256;
+		break;
+	case 4:
+		maxsec = 1040;
+		secsize = 128;
+		break;
+	default:
+		Aprint("Density type is unknown, density type=%u", density);
+		return 0;
 	}
 
 	if (createdisk == 0) {
 		createdisk = 1;
 		/* write out atr header */
 		/* special code, 0x0296 */
-		if( write_atari16(fout,0x296) == 0 )
+		if (write_atari16(fout, 0x296) == 0)
 			return 0;
 		/* image size (low) */
-		if( write_atari16(fout,(short)(((long)maxsec * secsize) >> 4)) == 0 )
+		if (write_atari16(fout, (short) (((long) maxsec * secsize) >> 4)) == 0)
 			return 0;
 		/* sector size */
-		if( write_atari16(fout,secsize) == 0 )
+		if (write_atari16(fout, secsize) == 0)
 			return 0;
 		/* image size (high) */
-		if( write_atari16(fout,(short)(((long)maxsec * secsize) >> 20)) == 0 )
+		if (write_atari16(fout, (short) (((long) maxsec * secsize) >> 20)) == 0)
 			return 0;
 		/* 8 bytes unused */
-		if( write_atari16(fout,0) == 0 )
+		if (write_atari16(fout, 0) == 0)
 			return 0;
-		if( write_atari16(fout,0) == 0 )
+		if (write_atari16(fout, 0) == 0)
 			return 0;
-		if( write_atari16(fout,0) == 0 )
+		if (write_atari16(fout, 0) == 0)
 			return 0;
-		if( write_atari16(fout,0) == 0 )
+		if (write_atari16(fout, 0) == 0)
 			return 0;
-		memset(buf,0,256);
-		for (cursec=0; cursec<maxsec; cursec++) {
-			if( fwrite(buf,secsize,1,fout) != 1 )
-			{
+		memset(buf, 0, 256);
+		for (cursec = 0; cursec < maxsec; cursec++) {
+			if (fwrite(buf, secsize, 1, fout) != 1 ) {
 				Aprint( "Error writing to output file" );
 				return 0;
 			}
 		}
 	}
-	cursec=read_atari16(fin);
-	if( fseek( fout, soffset(), SEEK_SET) != 0 )
-	{
+	cursec = read_atari16(fin);
+	if (fseek(fout, soffset(), SEEK_SET) != 0) {
 		Aprint( "Failed a seek in output file, cannot continue" );
 		return 0;
 	}
-	working=1;
+	working = 1;
 	return 1;
 }
 
@@ -562,27 +501,25 @@ static int decode_FA(void)
 */
 static int read_atari16(FILE *fin)
 {
-	int ch_low,ch_high; /* fgetc() is type int, not char */
+	int ch_low, ch_high; /* fgetc() is type int, not char */
 
 	ch_low = fgetc(fin);
 	ch_high = fgetc(fin);
-	if( ch_low == EOF || ch_high == EOF )
-	{
-		show_file_error( fin );
+	if (ch_low == EOF || ch_high == EOF) {
+		show_file_error(fin);
 		return 0;
 	}
-	return(ch_low + 256*ch_high);
+	return (ch_low + 256 * ch_high);
 }
 
-static int write_atari16(FILE *fout,int n)
+static int write_atari16(FILE *fout, int n)
 {
-	unsigned char ch_low,ch_high;
+	unsigned char ch_low, ch_high;
 
-	ch_low = (unsigned char)(n&0xff);
-	ch_high = (unsigned char)(n/256);
-	if( fputc(ch_low,fout) == EOF || fputc(ch_high,fout) == EOF )
-	{
-		show_file_error( fout );
+	ch_low = (unsigned char) (n & 0xff);
+	ch_high = (unsigned char) (n / 256);
+	if (fputc(ch_low, fout) == EOF || fputc(ch_high, fout) == EOF) {
+		show_file_error(fout);
 		return 0;
 	}
 	return 1;
@@ -599,15 +536,14 @@ static int read_offset(FILE *fin)
 	int ch; /* fgetc() is type int, not char */
 
 	ch = fgetc(fin);
-	if( ch == EOF )
-	{
-		show_file_error( fin );
+	if (ch == EOF) {
+		show_file_error(fin);
 		return EOF;
 	}
 	if (ch == 0)
 		ch = 256;
 
-	return(ch);
+	return ch;
 }
 
 /*
@@ -618,9 +554,8 @@ static int read_offset(FILE *fin)
 */
 static int read_sector(FILE *fin)
 {
-	if( fread(buf,(cursec < 4 ? 128 : secsize),1,fin) != 1 )
-	{
-		Aprint( "A sector read operation failed from the source file" );
+	if (fread(buf, (cursec < 4 ? 128 : secsize), 1, fin) != 1) {
+		Aprint("A sector read operation failed from the source file");
 		return 0;
 	}
 	return 1;
@@ -634,9 +569,8 @@ static int read_sector(FILE *fin)
 */
 static int write_sector(FILE *fout)
 {
-	if( fwrite(buf,(cursec < 4 ? 128 : secsize),1,fout) != 1 )
-	{
-		Aprint( "A sector write operation failed to the destination file" );
+	if (fwrite(buf, (cursec < 4 ? 128 : secsize), 1, fout) != 1) {
+		Aprint("A sector write operation failed to the destination file");
 		return 0;
 	}
 	return 1;
@@ -649,12 +583,16 @@ static int write_sector(FILE *fout)
 */
 static long soffset()
 {
+	/* XXX: does this work correctly for 256-byte sectors? */
 	return (long) atr + (cursec < 4 ? ((long) cursec - 1) * 128 :
 			 ((long) cursec - 1) * (long) secsize);
 }
 
 /*
 $Log$
+Revision 1.16  2005/08/07 13:44:43  pfusik
+fixed indenting; other minor improvements
+
 Revision 1.15  2005/03/08 04:32:41  pfusik
 killed gcc -W warnings
 
