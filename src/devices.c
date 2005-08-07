@@ -57,6 +57,13 @@
 
 #include <sys/stat.h>
 
+#ifndef S_IREAD
+#define S_IREAD S_IRUSR
+#endif
+#ifndef S_IWRITE
+#define S_IWRITE S_IWUSR
+#endif
+
 #ifndef HAVE_MKSTEMP
 # ifndef O_BINARY
 #  define O_BINARY	0
@@ -79,6 +86,8 @@
 #include "rdevice.h"
 #endif
 
+/* Note: you can't use H0: via Atari OS, because it sets ICDNOZ=1 for it. */
+/* Current directory is only available as H5: */
 static char *H[5] = {
 	".",
 	atari_h1_dir,
@@ -365,15 +374,18 @@ static void fillin(char *pattern, char *filename)
 #define DIR_SEP_STR "/"
 #endif
 
-/* Concatenate file paths. */
-/* Place directory separator char between, unless path2 already starts with it. */
+/* Concatenate file paths.
+   Place directory separator char between, unless path1 is empty
+   or path2 already starts with the separator char. */
 static void cat_path(char *result, const char *path1, const char *path2)
 {
 #ifdef HAVE_SNPRINTF
-	snprintf(result, FILENAME_MAX, path2[0] == DIR_SEP_CHAR ? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
+	snprintf(result, FILENAME_MAX,
 #else
-	sprintf(result, path2[0] == DIR_SEP_CHAR ? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
+	sprintf(result,
 #endif
+		(path1[0] == '\0' || path2[0] == DIR_SEP_CHAR)
+			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
 }
 
 static void apply_relative_path(char *rel_path, char *current)
@@ -592,7 +604,7 @@ static void Device_HHOPEN(void)
 							if (status.st_mode & S_IFDIR)
 								ext = "\304\311\322"; /* "DIR" with bit 7 set */
 							fprintf(fp[fid], "%c %-8s%-3s %03d\n",
-									(status.st_mode & S_IWUSR) ? ' ' : '*',
+									(status.st_mode & S_IWRITE) ? ' ' : '*',
 									entryname, ext, size);
 						}
 					}
@@ -896,7 +908,7 @@ static void Device_HHSPEC_Rename(void)
 				fillin(newfilename, renamefname);
 				cat_path(newfname, pathname, renamefname);
 				stat(fname, &filestatus);
-				if (filestatus.st_mode & S_IWUSR) {
+				if (filestatus.st_mode & S_IWRITE) {
 					if (rename(fname, newfname) != 0)
 						status = -1;
 					else
@@ -969,7 +981,7 @@ static void Device_HHSPEC_Delete(void)
 				strtolower(entry->d_name);
 				cat_path(fname, pathname, entry->d_name);
 				stat(fname, &filestatus);
-				if (filestatus.st_mode & S_IWUSR) {
+				if (filestatus.st_mode & S_IWRITE) {
 					if (unlink(fname) != 0)
 						status = -1;
 					else
@@ -1040,7 +1052,7 @@ static void Device_HHSPEC_Lock(void)
 			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
 				strtolower(entry->d_name);
 				cat_path(fname, pathname, entry->d_name);
-				if (chmod(fname, S_IRUSR) != 0)
+				if (chmod(fname, S_IREAD) != 0)
 					status = -1;
 				else
 					num_changed++;
@@ -1050,7 +1062,7 @@ static void Device_HHSPEC_Lock(void)
 		closedir(dp);
 	}
 #else
-	if (chmod(filename, S_IRUSR) == 0) {
+	if (chmod(filename, S_IREAD) == 0) {
 		status = 0;
 		num_changed++;
 	}
@@ -1102,7 +1114,7 @@ static void Device_HHSPEC_Unlock(void)
 			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
 				strtolower(entry->d_name);
 				cat_path(fname, pathname, entry->d_name);
-				if (chmod(fname, S_IRUSR | S_IWUSR) != 0)
+				if (chmod(fname, S_IREAD | S_IWRITE) != 0)
 					status = -1;
 				else
 					num_changed++;
@@ -1112,7 +1124,7 @@ static void Device_HHSPEC_Unlock(void)
 		closedir(dp);
 	}
 #else
-	if (chmod(fname, S_IRUSR | S_IWUSR) == 0) {
+	if (chmod(fname, S_IREAD | S_IWRITE) == 0) {
 		status = 0;
 		num_changed++;
 	}
@@ -1876,7 +1888,7 @@ static UWORD r_entry_address = 0;
 #define H_PATCH_SPEC    0xd15f
 #define H_DEVICE_END    0xd161
 
-#if defined(R_IO_DEVICE)
+#ifdef R_IO_DEVICE
 #define R_DEVICE_BEGIN  0xd180
 #define R_TABLE_ADDRESS 0xd180
 #define R_PATCH_OPEN    0xd1a0
@@ -1986,6 +1998,10 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.28  2005/08/07 13:43:32  pfusik
+MSVC headers have no S_IRUSR nor S_IWUSR
+empty Hx_DIR now refers to the current directory rather than the root
+
 Revision 1.27  2005/08/06 18:13:34  pfusik
 check for rename() and snprintf()
 fixed error codes
