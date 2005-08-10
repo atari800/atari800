@@ -58,7 +58,6 @@ tUIDriver *ui_driver = &basic_ui_driver;
 int ui_is_active = FALSE;
 int alt_function = -1;			/* alt function init */
 int current_disk_directory = 0;
-int hold_start_on_reboot = 0;
 
 static char curr_disk_dir[FILENAME_MAX] = "";
 static char curr_cart_dir[FILENAME_MAX] = "";
@@ -576,24 +575,32 @@ void CartManagement(void)
 
 void SoundRecording(void)
 {
-	static int record_num = 0;
-	char buf[128];
-	char msg[256];
-
 	if (!IsSoundFileOpen()) {
-		sprintf(buf, "%d.raw", record_num);
-		if (OpenSoundFile(buf))
-			sprintf(msg, "Recording sound to file \"%s\"", buf);
-		else
-			sprintf(msg, "Can't write to file \"%s\"", buf);
+		int no = -1;
+	
+		while (++no < 1000) {
+			char buffer[20];
+			FILE *fp;
+			sprintf(buffer, "atari%03d.wav", no);
+			fp = fopen(buffer, "rb");
+			if (fp == NULL) {
+				char msg[50];
+				/*file does not exist - we can create it */
+				if (OpenSoundFile(buffer))
+					sprintf(msg, "Recording sound to file \"%s\"", buffer);
+				else
+					sprintf(msg, "Can't write to file \"%s\"", buffer);
+				ui_driver->fMessage(msg);
+				return;
+			}
+			fclose(fp);
+		}
+		ui_driver->fMessage("All atariXXX.wav files exist!");
 	}
 	else {
 		CloseSoundFile();
-		sprintf(msg, "Recording stopped");
-		record_num++;
+		ui_driver->fMessage("Recording stopped");
 	}
-
-	ui_driver->fMessage(msg);
 }
 
 int RunExe(void)
@@ -1048,6 +1055,10 @@ void MakeBlankDisk(FILE *setFile)
 
 /*
 $Log$
+Revision 1.59  2005/08/10 19:39:24  pfusik
+hold_start_on_reboot moved to cassette.c;
+improved autogeneration of filenames for sound recording
+
 Revision 1.58  2005/08/07 13:44:08  pfusik
 display error messages for "Run BIN file", "Select tape",
 "Insert cartridge" and "Save screenshot"
