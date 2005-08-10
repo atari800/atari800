@@ -1,3 +1,51 @@
+2005-08-10  Piotr Fusik  <fox@scene.pl>
+* atari_basic.c: sound support; don't link with input.o
+
+* atari.c: BASIC and VERY_SLOW now generate VBLK and Pokey interrupts.
+  This generally means that you can hear music and SIO works without a patch.
+  Timing in these versions is now much more precise.
+
+* antic.[ch], monitor.c: "dlist" in monitor now supports Display Lists
+  in extended memory with exclusive Antic access
+
+* devices.c: patching E: open doesn't make sense
+
+* cassette.c, ui.c: hold_start_on_reboot moved to cassette.c
+
+* antic.c, cartridge.c, gtia.c, memory.c, pia.c, pokey.c, sio.c:
+  no state files in BASIC version
+
+* configure.ac, Makefile.in: link cycle_map.o only for NEW_CYCLE_EXACT;
+  CYCLE_EXACT, NEW_CYCLE_EXACT, CRASH_MENU, VERY_SLOW not available in BASIC
+  version; input.o, screen.o, colours.o, statesav.o, list.o, ui_basic.o, ui.o
+  not linked in BASIC version
+
+* atari.c, cpu.c, gtia.c, pia.c, pokey.c: input.o and statesav.o not linked
+  in BASIC version
+
+* Makefile.in: "make clean" now additionally cleans dos/, falcon/ and win32/
+
+* mzpokeysnd.c, pokeysnd.[ch], sndsave.[ch]: Sound Recording was designed
+  only for 8-bit unsigned samples mono on little-endian machines. Even in this
+  configuration it didn't work, because the frequency wasn't written
+  in the header (and you should have selected old pokeysnd in order to have
+  any samples in the file). Now 8-bit unsigned samples mono/stereo old/new
+  Pokey should work on all machines. 16-bit and signed samples are still TODO.
+
+* ui.c: Sound Recording to atari000.wav, atari001.wav, etc. rather than 0.raw,
+  1.raw. Doesn't overwrite existing files now. TODO: prompt for filename.
+
+* atari.c: close sound file at exit, so correct headers are written
+
+* antic.c, cartridge.[ch], cpu.c, emuos.h, gtia.c: added consts
+
+* antic.c: fixed code formatting
+
+* configure.ac: small fix for ncurses and support for pdcurses
+
+* atari_curses.c: backspace now works on DJGPP/pdcurses
+
+
 2005-08-07  Piotr Fusik  <fox@scene.pl>
 * mzpokeysnd.c: eschew traditional comments in log messages!
 
@@ -17,8 +65,8 @@
 
 * devices.c: fixed error codes; fixed "unused" warnings; other minor fixes
 
-* antic.[ch], atari_sdl.c, atari_x11.c, cassette.[ch], cycle_map.h, pokeysnd.[ch],
-  screen.h, ui.[ch], ui_basic.c, dos/atari_vga.c, dos/vga_gfx.h:
+* antic.[ch], atari_sdl.c, atari_x11.c, cassette.[ch], cycle_map.h,
+  pokeysnd.[ch], screen.h, ui.[ch], ui_basic.c, dos/atari_vga.c, dos/vga_gfx.h:
   changed () function signatures to (void)
 
 * antic.c, atari_sdl.c, atari_x11.c, cassette.c, cycle_map.c, monitor.c,
