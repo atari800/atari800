@@ -98,8 +98,10 @@
 #include "config.h"
 #include "cpu.h"
 #include "memory.h"
+#ifndef BASIC
 #include "statesav.h"
 #include "ui.h"
+#endif
 
 #ifdef FALCON_CPUASM
 extern UBYTE IRQ;
@@ -335,7 +337,7 @@ void NMI(void)
 #endif
 
 /*	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
-int cycles[256] =
+const int cycles[256] =
 {
 	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,		/* 0x */
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,		/* 1x */
@@ -384,7 +386,7 @@ void GO(int limit)
 #else
 #define OPCODE(code)	opcode_##code:
 #define DONE			goto next;
-	static void *opcode[256] =
+	static const void *opcode[256] =
 	{
 		&&opcode_00, &&opcode_01, &&opcode_02, &&opcode_03,
 		&&opcode_04, &&opcode_05, &&opcode_06, &&opcode_07,
@@ -488,36 +490,36 @@ void GO(int limit)
    2. The timing of the IRQs are not that critical.
  */
 
-#ifdef NEW_CYCLE_EXACT
 	if (wsync_halt) {
-		if(DRAWING_SCREEN){
+
+#ifdef NEW_CYCLE_EXACT
+		if (DRAWING_SCREEN) {
 /* if WSYNC_C is a stolen cycle, antic2cpu_ptr will convert that to the nearest
    cpu cycle before that cycle.  The CPU will see this cycle, if WSYNC is not 
    delayed. (Actually this cycle is the first cycle of the instruction after
   STA WSYNC, which was really executed one cycle after STA WSYNC because
   of an internal antic delay ).   delayed_wsync is added to this cycle to form
    the limit in the case that WSYNC is not early (does not allow this extra cycle) */
- 
-			if (limit<antic2cpu_ptr[WSYNC_C]+delayed_wsync)
+
+			if (limit < antic2cpu_ptr[WSYNC_C] + delayed_wsync)
 				return;
-			xpos = antic2cpu_ptr[WSYNC_C]+delayed_wsync;
-		}else{
-			if (limit<(WSYNC_C+delayed_wsync))
+			xpos = antic2cpu_ptr[WSYNC_C] + delayed_wsync;
+		}
+		else {
+			if (limit < (WSYNC_C + delayed_wsync))
 				return;
 			xpos = WSYNC_C;
-			
 		}
-		wsync_halt = 0;
-		delayed_wsync=0;
-	}
+		delayed_wsync = 0;
+
 #else
-	if (wsync_halt) {
-		if (limit<WSYNC_C)
+		if (limit < WSYNC_C)
 			return;
 		xpos = WSYNC_C;
+#endif /*NEW_CYCLE_EXACT*/
+
 		wsync_halt = 0;
 	}
-#endif /*NEW_CYCLE_EXACT*/
 	xpos_limit = limit;			/* needed for WSYNC store inside ANTIC */
 
 	UPDATE_LOCAL_REGS;
@@ -2075,6 +2077,8 @@ void CPU_Reset(void)
 	regPC = dGetWordAligned(0xfffc);
 }
 
+#ifndef BASIC
+
 void CpuStateSave( UBYTE SaveVerbose )
 {
 	SaveUBYTE( &regA, 1 );
@@ -2108,3 +2112,5 @@ void CpuStateRead( UBYTE SaveVerbose )
 	
 	ReadUWORD( &regPC, 1 );
 }
+
+#endif
