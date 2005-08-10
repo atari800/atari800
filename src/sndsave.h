@@ -2,16 +2,11 @@
 #define __SNDSAVE__
 
 #include "atari.h"
-#include <stdio.h>
 
-extern int		iSoundRate;
-
-typedef int BOOL;
-
-BOOL IsSoundFileOpen( void );
-BOOL CloseSoundFile( void );
-BOOL OpenSoundFile( const char *szFileName );
-int WriteToSoundFile( const unsigned char *ucBuffer, const unsigned int uiSize );
+int IsSoundFileOpen(void);
+int CloseSoundFile(void);
+int OpenSoundFile(const char *szFileName);
+int WriteToSoundFile(const UBYTE *ucBuffer, unsigned int uiSize);
 
 #endif
 
