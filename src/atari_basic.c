@@ -24,36 +24,31 @@
 
 #include "atari.h"
 #include "config.h"
-#include "input.h"
 #include "monitor.h"
 #include "log.h"
+#ifdef SOUND
+#include "sound.h"
+#endif
 
 void Atari_Initialise(int *argc, char *argv[])
 {
+#ifdef SOUND
+	Sound_Initialise(argc, argv);
+#endif
 }
 
 int Atari_Exit(int run_monitor)
 {
-	if (run_monitor)
-		return monitor();
-
 	Aflushlog();
+
+	if (run_monitor && monitor())
+		return TRUE;
+
+#ifdef SOUND
+	Sound_Exit();
+#endif
+
 	return FALSE;
-}
-
-int Atari_Keyboard(void)
-{
-	return AKEY_NONE;
-}
-
-int Atari_PORT(int num)
-{
-	return 0xff;
-}
-
-int Atari_TRIG(int num)
-{
-	return 1;
 }
 
 int main(int argc, char **argv)
