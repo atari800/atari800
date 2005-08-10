@@ -2,7 +2,7 @@
  * memory.c - RAM memory emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -37,7 +37,9 @@
 #include "pia.h"
 #include "pokey.h"
 #include "rt-config.h"
+#ifndef BASIC
 #include "statesav.h"
+#endif
 
 UBYTE memory[65536];
 #ifndef PAGED_ATTRIB
@@ -307,6 +309,8 @@ void DisablePILL(void)
 	pil_on = FALSE;
 }
 
+#ifndef BASIC
+
 void MemStateSave( UBYTE SaveVerbose )
 {
 	SaveUBYTE( &memory[0], 65536 );
@@ -374,6 +378,8 @@ void MemStateRead( UBYTE SaveVerbose )
 	}
 
 }
+
+#endif /* BASIC */
 
 void CopyFromMem(ATPtr from, UBYTE * to, int size)
 {
@@ -749,6 +755,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.5  2005/08/10 19:52:03  pfusik
+no state files in BASIC version
+
 Revision 1.4  2003/03/07 11:22:38  pfusik
 PORTB_handler() -> MEMORY_HandlePORTB()
 
