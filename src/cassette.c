@@ -55,6 +55,7 @@ int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
 int cassette_motor = 0;
 int cassette_baudrate = 600;	/* provisional: 600 baud */
 
+int hold_start_on_reboot = 0;
 int hold_start = 0;
 int press_space = 0;
 int eof_of_tape = 0;
@@ -278,7 +279,7 @@ static UWORD ReadRecord_SIO(void)
 		/* if waiting for gap was longer than gap of record, skip
 		   atm there is no check if we start then inmidst a record */
 		int filegaptimes = 0;
-		while (cassette_gapdelay >= filegaptimes){
+		while (cassette_gapdelay >= filegaptimes) {
 			if (cassette_current_block > cassette_max_block) {
 				length = -1;
 				break;
