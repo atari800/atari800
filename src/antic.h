@@ -25,6 +25,7 @@
 
 extern UBYTE CHACTL;
 extern UBYTE CHBASE;
+extern UWORD dlist;
 extern UBYTE DMACTL;
 extern UBYTE HSCROL;
 extern UBYTE NMIEN;
@@ -34,6 +35,9 @@ extern UBYTE VSCROL;
 
 extern int ypos;
 extern UBYTE wsync_halt;
+
+#define NMIST_C	6
+#define NMI_C	12
 
 extern int global_artif_mode;
 
@@ -45,6 +49,9 @@ void ANTIC_Reset(void);
 void ANTIC_Frame(int draw_display);
 UBYTE ANTIC_GetByte(UWORD addr);
 void ANTIC_PutByte(UWORD addr, UBYTE byte);
+
+UBYTE ANTIC_GetDLByte(UWORD *paddr);
+UWORD ANTIC_GetDLWord(UWORD *paddr);
 
 /* always call ANTIC_UpdateArtifacting after changing global_artif_mode */
 void ANTIC_UpdateArtifacting(void);
