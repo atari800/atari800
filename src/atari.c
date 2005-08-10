@@ -28,12 +28,22 @@
 #include <string.h>
 #include <ctype.h>
 #include <signal.h>
+
 #ifdef WIN32
-#include <windows.h>
-#else
-#include <sys/time.h>
-#include <unistd.h>
-#endif
+
+# include <windows.h>
+
+#else /* WIN32 */
+
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# endif
+
+# ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+# endif
+
+#endif /* WIN32 */
 
 #ifdef __EMX__
 #define INCL_DOS
@@ -58,18 +68,21 @@
 #include "platform.h"
 #include "prompts.h"
 #include "rt-config.h"
-#include "ui.h"
 #include "log.h"
-#include "statesav.h"
+#ifndef BASIC
 #include "colours.h"
+#include "input.h"
+#include "screen.h"
+#include "statesav.h"
+#include "ui.h"
+#endif
 #include "binload.h"
 #include "rtime.h"
 #include "cassette.h"
-#include "input.h"
-#include "screen.h"
 #ifdef SOUND
 #include "sound.h"
 #endif
+#include "sndsave.h"
 
 int machine_type = MACHINE_OSB;
 int ram_size = 48;
@@ -264,26 +277,23 @@ void Coldstart(void)
 	consol_table[1] = consol_table[2];
 }
 
-static int load_image(char *filename, UBYTE *buffer, int nbytes)
+static int load_image(const char *filename, UBYTE *buffer, int nbytes)
 {
-	int status = FALSE;
 	FILE *f;
+	int len;
 
 	f = fopen(filename, "rb");
-	if (f) {
-		status = fread(buffer, 1, nbytes, f);
-		fclose(f);
-		if (status != nbytes) {
-			Aprint("Error reading %s", filename);
-			return FALSE;
-		}
-
-		status = TRUE;
-	}
-	else
+	if (f == NULL) {
 		Aprint("Error loading rom: %s", filename);
-
-	return status;
+		return FALSE;
+	}
+	len = fread(buffer, 1, nbytes, f);
+	fclose(f);
+	if (len != nbytes) {
+		Aprint("Error reading %s", filename);
+		return FALSE;
+	}
+	return TRUE;
 }
 
 #include "emuos.h"
@@ -295,42 +305,36 @@ int Atari800_InitialiseMachine(void)
 	case MACHINE_OSA:
 		if (emuos_mode == 2)
 			memcpy(atari_os, emuos_h + 0x1800, 0x2800);
-		else {
-			if (!load_image(atari_osa_filename, atari_os, 0x2800)) {
-				if (emuos_mode == 1)
-					memcpy(atari_os, emuos_h + 0x1800, 0x2800);
-				else
-					return FALSE;
-			}
+		else if (!load_image(atari_osa_filename, atari_os, 0x2800)) {
+			if (emuos_mode == 1)
+				memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+			else
+				return FALSE;
 		}
 		have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
 		break;
 	case MACHINE_OSB:
 		if (emuos_mode == 2)
 			memcpy(atari_os, emuos_h + 0x1800, 0x2800);
-		else {
-			if (!load_image(atari_osb_filename, atari_os, 0x2800)) {
-				if (emuos_mode == 1)
-					memcpy(atari_os, emuos_h + 0x1800, 0x2800);
-				else
-					return FALSE;
-			}
+		else if (!load_image(atari_osb_filename, atari_os, 0x2800)) {
+			if (emuos_mode == 1)
+				memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+			else
+				return FALSE;
 		}
 		have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
 		break;
 	case MACHINE_XLXE:
 		if (emuos_mode == 2)
 			memcpy(atari_os, emuos_h, 0x4000);
-		else {
-			if (!load_image(atari_xlxe_filename, atari_os, 0x4000)) {
-				if (emuos_mode == 1)
-					memcpy(atari_os, emuos_h, 0x4000);
-				else
-					return FALSE;
-			}
-			else if (!load_image(atari_basic_filename, atari_basic, 0x2000))
+		else if (!load_image(atari_xlxe_filename, atari_os, 0x4000)) {
+			if (emuos_mode == 1)
+				memcpy(atari_os, emuos_h, 0x4000);
+			else
 				return FALSE;
 		}
+		else if (!load_image(atari_basic_filename, atari_basic, 0x2000))
+			return FALSE;
 		xe_bank = 0;
 		break;
 	case MACHINE_5200:
@@ -354,7 +358,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 {
 	int diskno = 1;
 	int i, j;
-	char *run_direct=NULL;
+	char *run_direct = NULL;
 	char *rtconfig_filename = NULL;
 	int config = FALSE;
 	int help_only = FALSE;
@@ -455,7 +459,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		}
 		else {
 			/* parameters that take additional argument follow here */
-			int i_a = ( (i+1) < *argc );	/* is argument available? */
+			int i_a = ( i + 1 < *argc );	/* is argument available? */
 			int a_m = FALSE;				/* error, argument missing! */
 
 			if (strcmp(argv[i], "-osa_rom") == 0) {
@@ -479,6 +483,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-run") == 0) {
 				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
 			}
+#ifndef BASIC
 			else if (strcmp(argv[i], "-refresh") == 0) {
 				if (i_a) {
 					sscanf(argv[++i], "%d", &refresh_rate);
@@ -488,6 +493,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 				else
 					a_m = TRUE;
 			}
+#endif
 
 			else {
 				/* all options known to main module tried but none matched */
@@ -513,7 +519,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Aprint("\t-basic_rom <fil> Load BASIC ROM from file");
 					Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
 					Aprint("\t-run <file>      Run Atari executable file (COM, EXE, XEX)");
+#ifndef BASIC
 					Aprint("\t-refresh <rate>  Specify screen refresh rate");
+#endif
 					Aprint("\t-nopatch         Don't patch SIO routine in OS");
 					Aprint("\t-nopatchall      Don't patch OS at all, H: device won't work");
 					Aprint("\t-a               Use OS A");
@@ -536,25 +544,28 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
-	if (tv_mode == TV_PAL) {
+	if (tv_mode == TV_PAL)
 		deltatime = (1.0 / 50.0);
-	}
-	else {
+	else
 		deltatime = (1.0 / 60.0);
-	}
 
+#ifndef BASIC
 	Palette_Initialise(argc, argv);
+#endif
 	Device_Initialise(argc, argv);
 	RTIME_Initialise(argc, argv);
 	SIO_Initialise (argc, argv);
 	CASSETTE_Initialise(argc, argv);
+#ifndef BASIC
 	INPUT_Initialise(argc, argv);
+#endif
 	Atari_Initialise(argc, argv);	/* Platform Specific Initialisation */
 
+#ifndef BASIC
 	if (!atari_screen) {
 		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
 #ifdef DIRTYRECT
-		screen_dirty = (UBYTE *) malloc(ATARI_HEIGHT * ATARI_WIDTH/8);
+		screen_dirty = (UBYTE *) malloc(ATARI_HEIGHT * ATARI_WIDTH / 8);
 		entire_screen_dirty();
 #endif
 #ifdef BITPL_SCR
@@ -563,6 +574,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		atari_screen2 = atari_screen_b;
 #endif
 	}
+#endif
 
 	/* Initialise Custom Chips */
 	ANTIC_Initialise(argc, argv);
@@ -599,10 +611,14 @@ int Atari800_Initialise(int *argc, char *argv[])
 			"Unknown error");
 		}
 		if (r > 0) {
+#ifdef BASIC
+			Aprint("Raw cartridge images not supported in BASIC version!");
+#else
 			ui_is_active = TRUE;
 			cart_type = SelectCartType(r);
 			ui_is_active = FALSE;
 			CART_Start();
+#endif
 		}
 		if (cart_type != CART_NONE) {
 			int for5200 = CART_IsFor5200(cart_type);
@@ -630,11 +646,13 @@ int Atari800_Exit(int run_monitor)
 {
 	int restart;
 	if (verbose) {
-		Aprint("Current Frames per Secound = %f", fps);
+		Aprint("Current Frames per Second = %f", fps);
 	}
 	restart = Atari_Exit(run_monitor);
-	if (!restart)
+	if (!restart) {
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
+		CloseSoundFile();
+	}
 	return restart;
 }
 
@@ -759,7 +777,7 @@ static void Atari_sleep(double s)
 {
 	if (s > 0) {
 #ifdef DJGPP
-		/* DJGPP has usleep and select, but they won't work that good */
+		/* DJGPP has usleep and select, but they don't work that good */
 		/* XXX: find out why */
 		double curtime = Atari_time();
 		while ((curtime + s) > Atari_time());
@@ -807,30 +825,153 @@ void atari_sync(void)
 	static double lasttime = 0, lastcurtime = 0;
 	double curtime;
 
-	if (deltatime > 0.0)
-	{
-	  curtime = Atari_time();
-	  Atari_sleep(lasttime + deltatime - curtime);
-	  curtime = Atari_time();
+	if (deltatime > 0.0) {
+		curtime = Atari_time();
+		Atari_sleep(lasttime + deltatime - curtime);
+		curtime = Atari_time();
 
-	  /* make average time */
-	  frametime = (frametime * 4.0 + curtime - lastcurtime) * 0.2;
-	  fps = 1.0 / frametime;
-	  lastcurtime = curtime;
+		/* make average time */
+		frametime = (frametime * 4.0 + curtime - lastcurtime) * 0.2;
+		fps = 1.0 / frametime;
+		lastcurtime = curtime;
 
-	  lasttime += deltatime;
-	  if ((lasttime + deltatime) < curtime)
-	    lasttime = curtime;
+		lasttime += deltatime;
+		if ((lasttime + deltatime) < curtime)
+			lasttime = curtime;
 	}
 	percent_atari_speed = (int) (100.0 * deltatime / frametime + 0.5);
 #endif /* USE_CLOCK */
 }
 
+#if defined(BASIC) || defined(VERY_SLOW)
+
+static int scanlines_to_dl;
+
+/* steal cycles and generate DLI */
+static void basic_antic_scanline(void)
+{
+	static UBYTE IR = 0;
+	static const UBYTE mode_scanlines[16] =
+		{ 0, 0, 8, 10, 8, 16, 8, 16, 8, 4, 4, 2, 1, 2, 1, 1 };
+	static const UBYTE mode_cycles[16] =
+		{ 0, 0, 40, 40, 40, 40, 20, 20, 10, 10, 20, 20, 20, 40, 40, 40 };
+	static const UBYTE font40_cycles[4] = { 0, 32, 40, 47 };
+	static const UBYTE font20_cycles[4] = { 0, 16, 20, 24 };
+
+	int cycles_to_steal = 0;
+	if (--scanlines_to_dl <= 0) {
+		if (DMACTL & 0x20) {
+			IR = ANTIC_GetDLByte(&dlist);
+			xpos++;
+		}
+		else
+			IR &= 0x7f;	/* repeat last instruction, but don't generate DLI */
+		switch (IR & 0xf) {
+		case 0:
+			scanlines_to_dl = ((IR >> 4) & 7) + 1;
+			break;
+		case 1:
+			if (DMACTL & 0x20) {
+				dlist = ANTIC_GetDLWord(&dlist);
+				xpos += 2;
+			}
+			scanlines_to_dl = (IR & 0x40) ? 1024 /* no more DL in this frame */ : 1;
+			break;
+		default:
+			if (IR & 0x40 && DMACTL & 0x20) {
+				ANTIC_GetDLWord(&dlist);
+				xpos += 2;
+			}
+			/* can't steal cycles now, because DLI must come first */
+			/* just an approximation: doesn't check HSCROL */
+			switch (DMACTL & 3) {
+			case 1:
+				cycles_to_steal = mode_cycles[IR & 0xf] * 8 / 10;
+				break;
+			case 2:
+				cycles_to_steal = mode_cycles[IR & 0xf];
+				break;
+			case 3:
+				cycles_to_steal = mode_cycles[IR & 0xf] * 12 / 10;
+				break;
+			default:
+				break;
+			}
+			/* just an approximation: doesn't check VSCROL */
+			scanlines_to_dl = mode_scanlines[IR & 0xf];
+			break;
+		}
+	}
+	if (scanlines_to_dl == 1 && (IR & 0x80)) {
+		GO(NMIST_C);
+		NMIST = 0x9f;
+		if (NMIEN & 0x80) {
+			GO(NMI_C);
+			NMI();
+		}
+	}
+	xpos += cycles_to_steal;
+	/* steal cycles in font modes */
+	switch (IR & 0xf) {
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+		xpos += font40_cycles[DMACTL & 3];
+		break;
+	case 6:
+	case 7:
+		xpos += font20_cycles[DMACTL & 3];
+		break;
+	default:
+		break;
+	}
+}
+
+static void basic_frame(void)
+{
+	/* scanlines 0 - 7 */
+	for (ypos = 0; ypos < 8; ypos++) {
+		POKEY_Scanline();		/* check and generate IRQ */
+		GO(LINE_C);
+		xpos -= LINE_C - DMAR;
+	}
+
+	scanlines_to_dl = 1;
+	/* scanlines 8 - 247 */
+	for (; ypos < 248; ypos++) {
+		POKEY_Scanline();		/* check and generate IRQ */
+		basic_antic_scanline();
+		GO(LINE_C);
+		xpos -= LINE_C - DMAR;
+	}
+
+	/* scanline 248 */
+	POKEY_Scanline();		/* check and generate IRQ */
+	GO(NMIST_C);
+	NMIST = 0x5f;				/* Set VBLANK */
+	if (NMIEN & 0x40) {
+		GO(NMI_C);
+		NMI();
+	}
+	GO(LINE_C);
+	xpos -= LINE_C - DMAR;
+	ypos++;
+
+	/* scanlines 249 - 261(311) */
+	for (; ypos < max_ypos; ypos++) {
+		POKEY_Scanline();		/* check and generate IRQ */
+		GO(LINE_C);
+		xpos -= LINE_C - DMAR;
+	}
+}
+
+#endif /* defined(BASIC) || defined(VERY_SLOW) */
+
 void Atari800_Frame(void)
 {
 #ifndef BASIC
 	static int refresh_counter = 0;
-#endif
 	switch (key_code) {
 	case AKEY_COLDSTART:
 		Coldstart();
@@ -859,8 +1000,11 @@ void Atari800_Frame(void)
 		Screen_SaveNextScreenshot(TRUE);
 		break;
 	}
+#endif
 	Device_Frame();
+#ifndef BASIC
 	INPUT_Frame();
+#endif
 	GTIA_Frame();
 
 #ifdef SOUND
@@ -868,10 +1012,7 @@ void Atari800_Frame(void)
 #endif
 
 #ifdef BASIC
-	for (ypos = 0; ypos < max_ypos; ypos++) {
-		GO(LINE_C);
-		xpos -= LINE_C - DMAR;
-	}
+	basic_frame();
 #else /* BASIC */
 	if (++refresh_counter >= refresh_rate) {
 		refresh_counter = 0;
@@ -883,10 +1024,7 @@ void Atari800_Frame(void)
 	}
 	else {
 #ifdef VERY_SLOW
-		for (ypos = 0; ypos < max_ypos; ypos++) {
-			GO(LINE_C);
-			xpos -= LINE_C - DMAR;
-		}
+		basic_frame();
 #else /* VERY_SLOW */
 		ANTIC_Frame(sprite_collisions_in_skipped_frames);
 #endif /* VERY_SLOW */
@@ -906,6 +1044,8 @@ int prepend_tmpfile_path(char *buffer)
 		*buffer = 0;
 	return 0;
 }
+
+#ifndef BASIC
 
 int ReadDisabledROMs(void)
 {
@@ -1048,8 +1188,13 @@ void MainStateRead( void )
 	ReadINT( &default_system, 1 );
 }
 
+#endif
+
 /*
 $Log$
+Revision 1.62  2005/08/10 19:49:59  pfusik
+greatly improved BASIC and VERY_SLOW
+
 Revision 1.61  2005/08/07 13:45:18  pfusik
 removed zlib_capable()
 
