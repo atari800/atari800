@@ -44,7 +44,9 @@
 #include "log.h"
 #include "binload.h"
 #include "cassette.h"
+#ifndef BASIC
 #include "statesav.h"
+#endif
 #include "rt-config.h"
 
 /* If ATR image is in double density (256 bytes per sector),
@@ -1189,6 +1191,8 @@ int Rotate_Disks(void)
 	return bSuccess;
 }
 
+#ifndef BASIC
+
 void SIOStateSave(void)
 {
 	int i;
@@ -1255,8 +1259,13 @@ void SIOStateRead(void)
 	}
 }
 
+#endif /* BASIC */
+
 /*
 $Log$
+Revision 1.27  2005/08/10 19:27:18  pfusik
+no state files in BASIC version
+
 Revision 1.26  2005/08/04 22:48:21  pfusik
 getcwd() may be unavailable
 
