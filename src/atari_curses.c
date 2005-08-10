@@ -201,7 +201,7 @@ int Atari_Keyboard(void)
 	/* for debugging */
 	if (keycode > 0) {
 		Atari800_Exit(FALSE);
-		printf("%o (%x, %d)\n", keycode,keycode,keycode);
+		printf("keycode == %d (0x%x)\n", keycode, keycode);
 		exit(1);
 	}
 #endif
@@ -230,7 +230,7 @@ int Atari_Keyboard(void)
 	case 0x07:
 		keycode = AKEY_CTRL_G;
 		break;
-#ifndef SOLARIS2
+#if !defined(DJGPP) && !defined(SOLARIS2)
 	case 0x08:
 		keycode = AKEY_CTRL_H;
 		break;
@@ -614,7 +614,7 @@ int Atari_Keyboard(void)
 	case KEY_UP:
 		keycode = AKEY_UP;
 		break;
-#ifdef SOLARIS2
+#if defined(DJGPP) || defined(SOLARIS2)
 	case 8:
 	case 127:
 #else
@@ -661,6 +661,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.14  2005/08/10 20:03:38  pfusik
+backspace now works on DJGPP/pdcurses
+
 Revision 1.13  2005/03/05 12:26:05  pfusik
 support for special AKEY_*, refresh rate control and atari_sync()
 moved to Atari800_Frame(); F6 is Atari HELP key
