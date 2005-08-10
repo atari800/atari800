@@ -51,12 +51,12 @@ extern int cart_kb[CART_LAST_SUPPORTED + 1];
 extern int cart_type;
 
 int CART_IsFor5200(int type);
-int CART_Checksum(UBYTE *image, int nbytes);
+int CART_Checksum(const UBYTE *image, int nbytes);
 
 #define CART_CANT_OPEN		-1	/* Can't open cartridge image file */
 #define CART_BAD_FORMAT		-2	/* Unknown cartridge format */
 #define CART_BAD_CHECKSUM	-3	/* Warning: bad CART checksum */
-int CART_Insert(char *filename);
+int CART_Insert(const char *filename);
 
 void CART_Remove(void);
 
