@@ -202,16 +202,16 @@ int	sampout2;			/* last out volume */
 #endif  /* VOL_ONLY_SOUND */
 
 static uint32 snd_freq17 = FREQ_17_EXACT;
-static uint16 snd_playback_freq = 44100;
+int32 snd_playback_freq = 44100;
 static uint8 snd_num_pokeys = 1;
 static int snd_flags = 0;
 static int mz_quality = 0;		/* default quality for mzpokeysnd */
 
 /* multiple sound engine interface */
-static void Pokey_process_8(void * sndbuffer, unsigned sndn);
-static void Pokey_process_16(void * sndbuffer, unsigned sndn);
+static void Pokey_process_8(void *sndbuffer, unsigned sndn);
+static void Pokey_process_16(void *sndbuffer, unsigned sndn);
 static void null_pokey_process(void *sndbuffer, unsigned int sndn) {}
-void (* Pokey_process)(void * sndbuffer, unsigned int sndn) = null_pokey_process;
+void (*Pokey_process_ptr)(void *sndbuffer, unsigned int sndn) = null_pokey_process;
 
 static void Update_pokey_sound_rf(uint16, uint8, uint8, uint8);
 static void null_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain) {}
@@ -291,7 +291,7 @@ int Pokey_DoInit(void)
 }
 
 int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
-		     unsigned int flags)
+                     unsigned int flags)
 {
 	snd_freq17 = freq17;
 	snd_playback_freq = playback_freq;
@@ -304,6 +304,12 @@ int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 void Pokey_set_mzquality(int quality)	/* specially for win32, perhaps not needed? */
 {
 	mz_quality = quality;
+}
+
+void Pokey_process(void *sndbuffer, unsigned int sndn)
+{
+	Pokey_process_ptr(sndbuffer, sndn);
+	WriteToSoundFile(sndbuffer, sndn);
 }
 
 static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
@@ -322,13 +328,10 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 	Update_vol_only_sound = Update_vol_only_sound_rf;
 #endif
 
-	if (flags & SND_BIT16)
-	  Pokey_process = Pokey_process_16;
-        else
-	  Pokey_process = Pokey_process_8;
+	Pokey_process_ptr = (flags & SND_BIT16) ? Pokey_process_16 : Pokey_process_8;
 
 #ifdef VOL_ONLY_SOUND
-	samp_freq=playback_freq;
+	samp_freq = playback_freq;
 #endif  /* VOL_ONLY_SOUND */
 
 	/* disable interrupts to handle critical sections */
@@ -649,7 +652,7 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 /*                                                                           */
 /*****************************************************************************/
 
-void Pokey_process_8(void * sndbuffer, unsigned sndn)
+static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 {
 	register uint8 *buffer = sndbuffer;
 	register uint16 n = sndn;
@@ -1051,9 +1054,6 @@ void Pokey_process_8(void * sndbuffer, unsigned sndn)
 		sampbuf_last2 = cpu_clock;
 #endif
 #endif  /* VOL_ONLY_SOUND */
-
-	if (IsSoundFileOpen())
-		WriteToSoundFile(sndbuffer, sndn);
 }
 
 #ifdef SERIO_SOUND
@@ -1093,7 +1093,7 @@ static void Update_serio_sound_rf(int out, UBYTE data)
 }
 #endif /* SERIO_SOUND */
 
-void Pokey_process_16(void *sndbuffer, unsigned sndn)
+static void Pokey_process_16(void *sndbuffer, unsigned sndn)
 {
   uint16 *buffer = sndbuffer;
   int i;
@@ -1102,7 +1102,7 @@ void Pokey_process_16(void *sndbuffer, unsigned sndn)
 
   for (i = sndn - 1; i >= 0; i--)
   {
-    int smp = ((int)(((uint8 *) buffer)[i]) - 0x80) * 0x100;
+    int smp = ((int) (((uint8 *) buffer)[i]) - 0x80) * 0x100;
 
     if (smp > SHRT_MAX)
       smp = SHRT_MAX;
@@ -1172,6 +1172,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.20  2005/08/10 19:48:33  pfusik
+fixes for sound recording
+
 Revision 1.19  2005/08/06 18:16:26  pfusik
 changed () function signatures to (void); fixed indenting
 
