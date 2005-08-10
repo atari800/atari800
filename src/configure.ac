@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 
 dnl Set a8_target
 case "$target" in
-  basic | curses | ncurses | svgalib | dosvga | falcon | sdl | windx | x11)
+  basic | curses | ncurses | pdcurses | svgalib | dosvga | falcon | sdl | windx | x11)
         a8_target="$target"
         ;;
   shm | motif | xview | xview-shm)
@@ -47,7 +47,9 @@ if [[ "$a8_target" == "UNKNOWN" ]]; then
     echo "options, including Atari800 specific '--enable' options.  Possible values"
     echo "for the '--target' option are:"
     echo "    basic"
-    echo "    (n)curses"
+    echo "    curses"
+    echo "    ncurses"
+    echo "    pdcurses"
     echo "    dosvga           (DOS only)"
     echo "    falcon           (Atari Falcon systems only)"
     echo "    svgalib          (Linux system with SVGALib library)"
@@ -147,9 +149,9 @@ AC_C_VOLATILE
 
 dnl Checks for libraries.
 if [[ "$a8_host" != "os2-emx" ]]; then
-AC_CHECK_LIB(z,gzopen,,AC_MSG_ERROR("z compression library not found!"))
-AC_CHECK_LIB(png,png_get_libpng_ver)
-AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
+    AC_CHECK_LIB(z,gzopen,,AC_MSG_ERROR("z compression library not found!"))
+    AC_CHECK_LIB(png,png_get_libpng_ver)
+    AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
 fi
 
 dnl set OBJS depending on target (and host)
@@ -180,19 +182,25 @@ case "$a8_target" in
         OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
         ;;
     curses)
-        AC_DEFINE(USE_CURSES,,[System with Curses library])
+        AC_DEFINE(USE_CURSES,,[System with Curses-compatible library])
         A8_NEED_LIB(curses)
+        OBJS="atari_curses.o"
+        ;;
+    ncurses)
+        AC_DEFINE(USE_CURSES,,[System with Curses-compatible library])
+        AC_DEFINE(USE_NCURSES,,[System with Ncurses library])
+        A8_NEED_LIB(ncurses)
+        OBJS="atari_curses.o"
+        ;;
+    pdcurses)
+        AC_DEFINE(USE_CURSES,,[System with Curses-compatible library])
+        A8_NEED_LIB(pdcurses)
         OBJS="atari_curses.o"
         ;;
     falcon)
         AC_DEFINE(FALCON,,[Atari Falcon system])
         A8_NEED_LIB(gem)
         OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
-        ;;
-    ncurses)
-        AC_DEFINE(USE_NCURSES,,[System with Ncurses library])
-        A8_NEED_LIB(ncurses)
-        OBJS="atari_curses.o"
         ;;
     sdl)
         AC_DEFINE(SDL,,[System with SDL library])
@@ -329,10 +337,13 @@ AC_DEFUN([A8_OPTION],[
     fi
 ])
 
-A8_OPTION(crashmenu,yes,
-          [Use a crash menu after a CIM instruction (default=ON)],
-          CRASH_MENU,[define to activate crash menu after CIM instruction]
-         )
+if [[ "$a8_target" != "basic" ]]; then
+    OBJS="$OBJS input.o screen.o colours.o statesav.o list.o ui_basic.o ui.o"
+    A8_OPTION(crashmenu,yes,
+              [Use a crash menu after a CIM instruction (default=ON)],
+              CRASH_MENU,[define to activate crash menu after CIM instruction]
+             )
+fi
 
 A8_OPTION(monitorbreak,yes,
           [Allow the BREAK command in the monitor (slows CPU a bit) (default=ON)],
@@ -349,15 +360,19 @@ A8_OPTION(monitorasm,yes,
           MONITOR_ASSEMBLER,[define to activate assembler in monitor]
          )
 
-A8_OPTION(cycleexact,yes,
-          [Allow color changes inside a scanline (default=ON)],
-          CYCLE_EXACT,[define to allow color changes inside a scanline]
-         )
+if [[ "$a8_target" != "basic" ]]; then
 
-A8_OPTION(newcycleexact,yes,
-          [Use the new cycle-exact scanline routines (default=ON)],
-          NEW_CYCLE_EXACT,[define to allow new cycle-exact scanline routines]
-         )
+    A8_OPTION(cycleexact,yes,
+              [Allow color changes inside a scanline (default=ON)],
+              CYCLE_EXACT,[define to allow color changes inside a scanline]
+             )
+    
+    A8_OPTION(newcycleexact,yes,
+              [Use the new cycle-exact scanline routines (default=ON)],
+              NEW_CYCLE_EXACT,[define to allow new cycle-exact scanline routines]
+             )
+
+fi
 
 dnl sound support section
 A8_OPTION(sound,yes,
@@ -432,10 +447,16 @@ A8_OPTION(bufferedlog,no,
           BUFFERED_LOG,[define to use buffered debug output]
          )
 
-A8_OPTION(veryslow,no,
-          [Use very slow computer support (use with the -refresh option) (default=OFF)],
-          VERY_SLOW,[define to use very slow computer support]
-         )
+if [[ "$a8_target" != "basic" ]]; then
+    A8_OPTION(veryslow,no,
+              [Use very slow computer support (use with the -refresh option) (default=OFF)],
+              VERY_SLOW,[define to use very slow computer support]
+             )
+fi
+
+if [[ "$WANT_NEW_CYCLE_EXACT" = "yes" ]]; then
+    OBJS="$OBJS cycle_map.o"
+fi
 
 if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
     A8_OPTION(falconcpuasm,no,
@@ -500,12 +521,16 @@ echo "-------------------------------------------------------"
 echo "Host OS...............................: $a8_host"
 echo "Target ...............................: $a8_target"
 echo
-echo "Using the crash menu?.................: $WANT_CRASH_MENU"
+if [[ "$a8_target" != "basic" ]]; then
+    echo "Using the crash menu?.................: $WANT_CRASH_MENU"
+fi
 echo "Using monitor breaks?.................: $WANT_MONITOR_BREAK"
 echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
 echo "Using the monitor assembler?..........: $WANT_MONITOR_ASSEMBLER"
-echo "Using cycle exact?....................: $WANT_CYCLE_EXACT"
-echo "Using the new cycle exact code?.......: $WANT_NEW_CYCLE_EXACT"
+if [[ "$a8_target" != "basic" ]]; then
+    echo "Using cycle exact?....................: $WANT_CYCLE_EXACT"
+    echo "Using the new cycle exact code?.......: $WANT_NEW_CYCLE_EXACT"
+fi
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
     echo "    Using sound interpolation?........: $WANT_INTERPOLATE_SOUND"
@@ -523,7 +548,9 @@ else
 fi
 echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
 echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
-echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
+if [[ "$a8_target" != "basic" ]]; then
+    echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
+fi
 if [[ "$a8_target" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
 fi
