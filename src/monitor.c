@@ -43,8 +43,6 @@ extern int instruction_count[256];
 #endif
 extern int cycles[256];
 
-extern UWORD dlist;
-
 #ifdef TRACE
 int tron = FALSE;
 #endif
@@ -386,15 +384,6 @@ static int get_hex3(UWORD *hexval1, UWORD *hexval2, UWORD *hexval3)
 	return get_hex(hexval1) && get_hex(hexval2) && get_hex(hexval3);
 }
 
-static UBYTE get_dlist_byte(UWORD *addr)
-{
-	UBYTE result = dGetByte(*addr);
-	(*addr)++;
-	if ((*addr & 0x03ff) == 0)
-		(*addr) -= 0x0400;
-	return result;
-}
-
 UWORD break_addr;
 UWORD ypos_break_addr = 0xffff;
 UBYTE break_step = 0;
@@ -640,7 +629,7 @@ int monitor(void)
 
 				printf("%04x: ", tdlist);
 
-				IR = get_dlist_byte(&tdlist);
+				IR = ANTIC_GetDLByte(&tdlist);
 
 				if (IR & 0x80)
 					printf("DLI ");
@@ -650,8 +639,7 @@ int monitor(void)
 					printf("%d BLANK", ((IR >> 4) & 0x07) + 1);
 					break;
 				case 0x01:
-					addr = get_dlist_byte(&tdlist);
-					addr |= get_dlist_byte(&tdlist) << 8;
+					addr = ANTIC_GetDLWord(&tdlist);
 					if (IR & 0x40) {
 						printf("JVB %04x ", addr);
 						done = TRUE;
@@ -663,8 +651,7 @@ int monitor(void)
 					break;
 				default:
 					if (IR & 0x40) {
-						addr = get_dlist_byte(&tdlist);
-						addr |= get_dlist_byte(&tdlist) << 8;
+						addr = ANTIC_GetDLWord(&tdlist);
 						printf("LMS %04x ", addr);
 					}
 					if (IR & 0x20)
@@ -1141,7 +1128,7 @@ int monitor(void)
 			printf("HISTORY                        - Disasm. last %i PC addrs. giving ypos xpos\n", (int) REMEMBER_PC_STEPS);
 
 #else
-			printf("HISTORY                        - Disasm. last %i PC addrs. ", (int) REMEMBER_PC_STEPS);
+			printf("HISTORY                        - Disasm. last %i PC addrs.\n", (int) REMEMBER_PC_STEPS);
 #endif /*NEW_CYCLE_EXACT*/
 			printf("Press return to continue: ");
 			getchar();
@@ -1475,6 +1462,9 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.18  2005/08/10 19:42:08  pfusik
+support DL in extended memory with exclusive Antic access
+
 Revision 1.17  2005/08/06 18:30:38  pfusik
 fixed indenting; fixed a warning
 
