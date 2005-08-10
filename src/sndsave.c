@@ -2,7 +2,7 @@
  * sndsave.c - reading and writing sound to files
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -22,27 +22,30 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <stdio.h>
+#include "pokeysnd.h"
+#include "rt-config.h" /* for stereo_enabled */
 #include "sndsave.h"
-
-#define WAVE_CHUNK_HEADER	"RIFF\000\000\000\000WAVEfmt\040\020\000\000\000\001\000\001\000"
-#define WAVE_CHUNK_HEADER_LENGTH	24
-#define DATA_CHUNK_HEADER	"\001\000\010\000data\000\000\000\000"
-#define DATA_CHUNK_HEADER_LENGTH	8
 
 /* sndoutput is just the file pointer for the current sound file */
 static FILE *sndoutput = NULL;
 
-/* iSoundRate is the cycle rate in hertz of the WAV being recorded. In
-   Atari800 this is equivalent to the value passed into Pokey_sound_init
-   as the second parameter (i.e. Pokey_sound_init( XXX, iSoundRate, YYY) */
-int	iSoundRate = 0;
+static ULONG byteswritten;
 
+/* write 32-bit word as little endian */
+static void write32(long x)
+{
+	fputc(x & 0xff, sndoutput);
+	fputc((x >> 8) & 0xff, sndoutput);
+	fputc((x >> 16) & 0xff, sndoutput);
+	fputc((x >> 24) & 0xff, sndoutput);
+}
 
 /* IsSoundFileOpen simply returns true if the sound file is currently open and able to receive writes
    RETURNS: TRUE is file is open, FALSE if it is not */
-BOOL IsSoundFileOpen( void )
+int IsSoundFileOpen(void)
 {
-	return( sndoutput != 0 );
+	return sndoutput != NULL;
 }
 
 
@@ -53,46 +56,25 @@ BOOL IsSoundFileOpen( void )
   
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close */
 
-BOOL CloseSoundFile( void )
+int CloseSoundFile(void)
 {
-	BOOL	bSuccess = TRUE;
+	int bSuccess = TRUE;
 
-	if( sndoutput )
-	{
-		int	iPos = 0;
-
+	if (sndoutput != NULL) {
 		/* Sound file is finished, so modify header and close it. */
-		if( fseek( sndoutput, 0, SEEK_END ) != 0 )
+		if (fseek(sndoutput, 4, SEEK_SET) != 0)	/* Seek past RIFF */
 			bSuccess = FALSE;
-
-		iPos = ftell( sndoutput );
-
-		/* iPos must be greater than the data headers plus one data element for this file to make sense */
-		if( iPos > ( WAVE_CHUNK_HEADER_LENGTH + DATA_CHUNK_HEADER_LENGTH + 1 ) )
-		{
-
-			if( fseek( sndoutput, 4, SEEK_SET )!= 0 )	/* Seek past RIFF */
+		else {
+			write32(byteswritten + 36);
+			if (fseek(sndoutput, 40, SEEK_SET) != 0)
 				bSuccess = FALSE;
-
-			iPos -= 8;
-			if( fwrite( &iPos, 1, 4, sndoutput ) != 4 ) /* Write out file size - 8 */
-				bSuccess = FALSE;
-
-			if( fseek( sndoutput, 40, SEEK_SET ) != 0)
-				bSuccess = FALSE;
-
-			iPos -= 36;						
-			if( fwrite( &iPos, 1, 4, sndoutput ) != 4)	/* Write out size of just sample data */
-				bSuccess = FALSE;
+			else {
+				write32(byteswritten);
+			}
 		}
-		else
-		{
-			bSuccess = FALSE;
-		}
-		
-		fclose( sndoutput );
+		fclose(sndoutput);
+		sndoutput = NULL;
 	}
-	sndoutput = NULL;
 
 	return bSuccess;
 }
@@ -103,19 +85,14 @@ BOOL CloseSoundFile( void )
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open */
 
-BOOL OpenSoundFile( const char *szFileName )
+int OpenSoundFile(const char *szFileName)
 {
-	if( sndoutput )
-	{
-		CloseSoundFile();
-	}
+	CloseSoundFile();
 
-	sndoutput = fopen( szFileName, "wb" );
+	sndoutput = fopen(szFileName, "wb");
 
-	if( sndoutput == NULL )
-	{
+	if (sndoutput == NULL)
 		return FALSE;
-	}
 	/*
 	The RIFF header: 
 
@@ -142,30 +119,35 @@ BOOL OpenSoundFile( const char *szFileName )
 	  44        bytes  <sample data>
 	*/
 
-	if( fwrite( WAVE_CHUNK_HEADER, 1, WAVE_CHUNK_HEADER_LENGTH, sndoutput ) != WAVE_CHUNK_HEADER_LENGTH )
-	{
-		fclose( sndoutput );
+	if (fwrite("RIFF\0\0\0\0WAVEfmt \x10\0\0\0\1\0", 1, 22, sndoutput) != 22) {
+		fclose(sndoutput);
+		sndoutput = NULL;
 		return FALSE;
 	}
 
-	if( fwrite( &iSoundRate, 1, 4, sndoutput ) != 4 )
-	{
-		fclose( sndoutput );
+#ifdef STEREO_SOUND
+	fputc(stereo_enabled + 1, sndoutput);
+#else
+	fputc(1, sndoutput);
+#endif
+	fputc(0, sndoutput);
+	write32(snd_playback_freq);
+	write32(snd_playback_freq);
+
+#ifdef STEREO_SOUND
+	fputc(stereo_enabled + 1, sndoutput);
+#else
+	fputc(1, sndoutput);
+#endif
+
+	/* XXX FIXME: signed/unsigned samples; 16-bit (byte order!) */
+	if (fwrite("\0\x08\0data\0\0\0\0", 1, 7, sndoutput) != 7) {
+		fclose(sndoutput);
+		sndoutput = NULL;
 		return FALSE;
 	}
 
-	if( fwrite( &iSoundRate, 1, 4, sndoutput ) != 4 )
-	{
-		fclose( sndoutput );
-		return FALSE;
-	}
-
-	if( fwrite( DATA_CHUNK_HEADER, 1, DATA_CHUNK_HEADER_LENGTH, sndoutput ) != DATA_CHUNK_HEADER_LENGTH )
-	{
-		fclose( sndoutput );
-		return FALSE;
-	}
-
+	byteswritten = 0;
 	return TRUE;
 }
 
@@ -174,14 +156,13 @@ BOOL OpenSoundFile( const char *szFileName )
 
    RETURNS: the number of bytes written to the file (should be equivalent to the input uiSize parm) */
    
-int WriteToSoundFile( const unsigned char *ucBuffer, const unsigned int uiSize )
+int WriteToSoundFile(const unsigned char *ucBuffer, unsigned int uiSize)
 {
-	unsigned int uiWriteLength = 0;
-
-	if( sndoutput && ucBuffer && uiSize )
-	{
-		uiWriteLength = fwrite( ucBuffer, 1, uiSize, sndoutput );
+	if (sndoutput && ucBuffer && uiSize) {
+		int result = fwrite(ucBuffer, 1, uiSize, sndoutput);
+		byteswritten += result;
+		return result;
 	}
 
-	return( uiWriteLength );
+	return 0;
 }
