@@ -1,3 +1,16 @@
+ Changes:
+ --------
+ * sound recording now works (was completely broken)
+ * improved PERCOM emulation
+ * greatly improved BASIC version:
+ - supports sound
+ - supports all interrupts
+ - timing much closer to real Atari
+ - much smaller executable (does not include unused code)
+ * support for pdcurses, small fix for ncurses
+ * small fixes and code clean up
+
+
 Version 1.3.6 (2005/04/30)
 
  Changes:
