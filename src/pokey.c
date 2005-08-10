@@ -35,9 +35,11 @@
 #include "pokey.h"
 #include "gtia.h"
 #include "sio.h"
-#include "statesav.h"
-#include "pokeysnd.h"
+#ifndef BASIC
 #include "input.h"
+#include "statesav.h"
+#endif
+#include "pokeysnd.h"
 #include "antic.h"
 #include "rt-config.h"
 #include "cassette.h"
@@ -208,10 +210,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		IRQST |= ~byte & 0xf7;	/* Reset disabled IRQs except XMTDONE */
 		if (IRQEN & 0x20) {
 			SLONG delay;
-			delay=CASSETTE_GetInputIRQDelay();
-			if(delay>0) {
-				DELAYED_SERIN_IRQ=delay;
-			}
+			delay = CASSETTE_GetInputIRQDelay();
+			if (delay > 0)
+				DELAYED_SERIN_IRQ = delay;
 		}
 		if ((~IRQST & IRQEN) == 0)
 			IRQ = 0;
@@ -374,9 +375,11 @@ void POKEY_Scanline(void)
 	Update_vol_only_sound();
 #endif  /* VOL_ONLY_SOUND */
 
+#ifndef BASIC
 	INPUT_Scanline();	/* Handle Amiga and ST mice. */
 						/* It's not a part of POKEY emulation, */
 						/* but it looks to be the best place to put it. */
+#endif
 
 	if (pot_scanline < 228)
 		pot_scanline++;
@@ -542,6 +545,8 @@ void Update_Counter(int chan_mask)
 	}
 }
 
+#ifndef BASIC
+
 void POKEYStateSave( void )
 {
 	int SHIFT_KEY = 0;
@@ -598,3 +603,5 @@ void POKEYStateRead( void )
 	ReadINT((int *)&DivNMax[0], 4);
 	ReadINT((int *)&Base_mult[0], 1 );
 }
+
+#endif
