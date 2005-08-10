@@ -2,7 +2,7 @@
  * cartridge.c - cartridge emulation
  *
  * Copyright (C) 2001-2003 Piotr Fusik
- * Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -32,7 +32,9 @@
 #include "pia.h"
 #include "rt-config.h"
 #include "rtime.h"
+#ifndef BASIC
 #include "statesav.h"
+#endif
 
 int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	0,
@@ -457,7 +459,7 @@ void BountyBob2_PutByte(UWORD addr, UBYTE value)
 }
 #endif
 
-int CART_Checksum(UBYTE *image, int nbytes)
+int CART_Checksum(const UBYTE *image, int nbytes)
 {
 	int checksum = 0;
 	while (nbytes > 0) {
@@ -467,7 +469,7 @@ int CART_Checksum(UBYTE *image, int nbytes)
 	return checksum;
 }
 
-int CART_Insert(char *filename)
+int CART_Insert(const char *filename)
 {
 	FILE *fp;
 	int len;
@@ -772,6 +774,8 @@ void CART_Start(void) {
 	}
 }
 
+#ifndef BASIC
+
 void CARTStateRead( void )
 {
     int savedCartType = CART_NONE;
@@ -833,3 +837,4 @@ void CARTStateSave( void)
         }
 }
 
+#endif
