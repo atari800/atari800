@@ -28,8 +28,10 @@
 #include "cassette.h"
 #include "config.h"
 #include "gtia.h"
+#ifndef BASIC
 #include "input.h"
 #include "statesav.h"
+#endif
 #include "pokeysnd.h"
 
 /* GTIA Registers ---------------------------------------------------------- */
@@ -81,6 +83,16 @@ UBYTE consol_table[3];
 UBYTE consol_mask;
 UBYTE TRIG[4];
 UBYTE TRIG_latch[4];
+
+#ifdef BASIC
+
+#define PF0PM 0
+#define PF1PM 0
+#define PF2PM 0
+#define PF3PM 0
+
+#else /* BASIC */
+
 void set_prior(UBYTE byte);			/* in antic.c */
 
 /* Player/Missile stuff ---------------------------------------------------- */
@@ -112,6 +124,7 @@ int hitclr_pos;
 #define M2PL_T M2PL
 #define M3PL_T M3PL
 #endif /*NEW_CYCLE_EXACT*/
+
 extern UBYTE player_dma_enabled;
 extern UBYTE missile_dma_enabled;
 extern UBYTE player_gra_enabled;
@@ -127,7 +140,7 @@ static ULONG grafp_lookup[4][256];
 static ULONG *grafp_ptr[4];
 static int global_sizem[4];
 
-static UBYTE PM_Width[4] = {1, 2, 1, 4};
+static const UBYTE PM_Width[4] = {1, 2, 1, 4};
 
 /* Meaning of bits in pm_scanline:
 bit 0 - Player 0
@@ -164,6 +177,8 @@ UBYTE pm_dirty = TRUE;
 #define C_PF2	0x60
 #define C_PF3	0x70
 
+extern UWORD cl_lookup[128];
+
 #define PF0PM (*(UBYTE *) &cl_lookup[C_PF0 | C_COLLS])
 #define PF1PM (*(UBYTE *) &cl_lookup[C_PF1 | C_COLLS])
 #define PF2PM (*(UBYTE *) &cl_lookup[C_PF2 | C_COLLS])
@@ -172,18 +187,13 @@ UBYTE pm_dirty = TRUE;
 /* Colours ----------------------------------------------------------------- */
 
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-
 UWORD colour_translation_table[256];
-
 #else
-
 extern UWORD hires_lookup_l[128];
-
 #endif /* USE_COLOUR_TRANSLATION_TABLE */
 
 extern ULONG lookup_gtia9[16];
 extern ULONG lookup_gtia11[16];
-extern UWORD cl_lookup[128];
 
 void setup_gtia9_11(void) {
 	int i;
@@ -208,10 +218,13 @@ void setup_gtia9_11(void) {
 #endif
 }
 
+#endif /* BASIC */
+
 /* Initialization ---------------------------------------------------------- */
 
 void GTIA_Initialise(int *argc, char *argv[])
 {
+#ifndef BASIC
 	int i;
 	for (i = 0; i < 256; i++) {
 		int tmp = i + 0x100;
@@ -236,57 +249,63 @@ void GTIA_Initialise(int *argc, char *argv[])
 	memset(cl_lookup, COLOUR_BLACK, sizeof(cl_lookup));
 	for (i = 0; i < 32; i++)
 		GTIA_PutByte((UWORD) i, 0);
+#endif /* BASIC */
 }
 
 #ifdef NEW_CYCLE_EXACT
 
 /*generate updated PxPL and MxPL for part of a scanline*/
 /*slow, but should be called rarely*/
-void generate_partial_pmpl_colls(int l,int r){
+void generate_partial_pmpl_colls(int l, int r)
+{
 	int i;
-	if(r < 0 || l >= (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0]))
+	if (r < 0 || l >= (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0]))
 		return;
-	if(r >= (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0])) {
+	if (r >= (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0])) {
 		r = (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0]);
 	}
-	if(l<0) l=0;
+	if (l < 0)
+		l = 0;
 	
-	for(i=l;i<=r;i++){
-		UBYTE p=pm_scanline[i];
+	for (i = l; i <= r; i++) {
+		UBYTE p = pm_scanline[i];
 /* It is possible that some bits are set in PxPL/MxPL here, which would
  * not otherwise be set ever in new_pm_scanline.  This is because the 
  * player collisions are always generated in order in new_pm_scanline.
  * However this does not cause any problem because we never use those bits
  * of PxPL/MxPL in the collision reading code.
  */
-		P1PL |= (p&(1<<1)) ?  p : 0;
-		P2PL |= (p&(1<<2)) ?  p : 0;
-		P3PL |= (p&(1<<3)) ?  p : 0;
-		M0PL |= (p&(0x10<<0)) ?  p : 0;
-		M1PL |= (p&(0x10<<1)) ?  p : 0;
-		M2PL |= (p&(0x10<<2)) ?  p : 0;
-		M3PL |= (p&(0x10<<3)) ?  p : 0;
+		P1PL |= (p & (1 << 1)) ?  p : 0;
+		P2PL |= (p & (1 << 2)) ?  p : 0;
+		P3PL |= (p & (1 << 3)) ?  p : 0;
+		M0PL |= (p & (0x10 << 0)) ?  p : 0;
+		M1PL |= (p & (0x10 << 1)) ?  p : 0;
+		M2PL |= (p & (0x10 << 2)) ?  p : 0;
+		M3PL |= (p & (0x10 << 3)) ?  p : 0;
 	}
 	
 }
 
 /*update pm->pl collisions for a partial scanline*/
-void update_partial_pmpl_colls(void){
-	int l=collision_curpos;
-	int r=XPOS*2-37;
-	generate_partial_pmpl_colls(l,r);
-	collision_curpos=r;
+void update_partial_pmpl_colls(void)
+{
+	int l = collision_curpos;
+	int r = XPOS * 2 - 37;
+	generate_partial_pmpl_colls(l, r);
+	collision_curpos = r;
 }
 
 /* update pm-> pl collisions at the end of a scanline*/
-void update_pmpl_colls(void){
+void update_pmpl_colls(void)
+{
 	if (hitclr_pos != 0){
-		generate_partial_pmpl_colls(hitclr_pos,\
-				sizeof(pm_scanline)/sizeof(pm_scanline[0])-1);
+		generate_partial_pmpl_colls(hitclr_pos,
+				sizeof(pm_scanline) / sizeof(pm_scanline[0]) - 1);
 /* If hitclr was written to, then only part of pm_scanline should be used
  * for collisions*/
 
-	}else{
+	}
+	else {
 /* otherwise the whole of pm_scaline can be used for collisions.  This will
  * update the collision registers based on the generated collisions for the
  * current line*/
@@ -298,21 +317,24 @@ void update_pmpl_colls(void){
 		M2PL |= M2PL_T;
 		M3PL |= M3PL_T;
 	}
-	collision_curpos=0;
-	hitclr_pos=0;
+	collision_curpos = 0;
+	hitclr_pos = 0;
 }
 
 #else
 #define update_partial_pmpl_colls(a) do{}while(0)
 #endif /*NEW_CYCLE_EXACT*/
+
 /* Prepare PMG scanline ---------------------------------------------------- */
+
+#ifndef BASIC
 
 void new_pm_scanline(void)
 {
 #ifdef NEW_CYCLE_EXACT
 /* reset temporary pm->pl collisions*/
-P1PL_T=P2PL_T=P3PL_T=0;
-M0PL_T=M1PL_T=M2PL_T=M3PL_T=0;
+	P1PL_T = P2PL_T = P3PL_T = 0;
+	M0PL_T = M1PL_T = M2PL_T = M3PL_T = 0;
 #endif /*NEW_CYCLE_EXACT*/
 /* Clear if necessary */
 	if (pm_dirty) {
@@ -380,18 +402,24 @@ M0PL_T=M1PL_T=M2PL_T=M3PL_T=0;
 
 	if (GRAFM) {
 		pm_dirty = TRUE;
-		DO_MISSILE(3,0x80,0xc0,0x80,0x40)
-		DO_MISSILE(2,0x40,0x30,0x20,0x10)
-		DO_MISSILE(1,0x20,0x0c,0x08,0x04)
-		DO_MISSILE(0,0x10,0x03,0x02,0x01)
+		DO_MISSILE(3, 0x80, 0xc0, 0x80, 0x40)
+		DO_MISSILE(2, 0x40, 0x30, 0x20, 0x10)
+		DO_MISSILE(1, 0x20, 0x0c, 0x08, 0x04)
+		DO_MISSILE(0, 0x10, 0x03, 0x02, 0x01)
 	}
 }
+
+#endif /* BASIC */
 
 /* GTIA registers ---------------------------------------------------------- */
 
 void GTIA_Frame(void)
 {
+#ifdef BASIC
+	int consol = 0xf;
+#else
 	int consol = key_consol | 0x08;
+#endif
 
 	consol_table[0] = consol;
 	consol_table[1] = consol_table[2] &= consol;
@@ -542,19 +570,20 @@ static int xpos_to_offset_blank[121] = {
 	294, 298, 302, 306, 310, 314, 318, 322, 326, 330, 334, 338, 342, 346, 350, 354,
 	358, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360
 };
-#endif
+#endif /* CYCLE_EXACT */
 
 void GTIA_PutByte(UWORD addr, UBYTE byte)
 {
+#ifndef BASIC
 	UWORD cword;
 	UWORD cword2;
 
 #ifdef NEW_CYCLE_EXACT
 	int x; /* the cycle-exact update position in pm_scanline*/
-	if(DRAWING_SCREEN){
-		if((addr&0x1f)!=_PRIOR){
+	if (DRAWING_SCREEN) {
+		if ((addr & 0x1f) != PRIOR) {
 			update_scanline();
-		}else{
+		} else {
 			update_scanline_prior(byte);
 		}
 	}
@@ -562,7 +591,20 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #else
 #define UPDATE_PM_CYCLE_EXACT
 #endif
+
+#endif /* BASIC */
+
 	switch (addr & 0x1f) {
+	case _CONSOL:
+		atari_speaker = !(byte & 0x08);
+#ifdef CONSOLE_SOUND
+		Update_consol_sound(1);
+#endif
+		consol_mask = (~byte) & 0x0f;
+		break;
+
+#ifndef BASIC
+
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	case _COLBK:
 		COLBK = byte &= 0xfe;
@@ -957,25 +999,18 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		}
 		break;
 #endif /* USE_COLOUR_TRANSLATION_TABLE */
-	case _CONSOL:
-		atari_speaker = !(byte & 0x08);
-#ifdef CONSOLE_SOUND
-		Update_consol_sound(1);
-#endif
-		consol_mask = (~byte) & 0x0f;
-		break;
 	case _GRAFM:
 		GRAFM = byte;
 		UPDATE_PM_CYCLE_EXACT
 		break;
 
 #ifdef NEW_CYCLE_EXACT
-#define CYCLE_EXACT_GRAFP(n) x=XPOS*2-3;\
-if(HPOSP##n >= x) {\
-/*hpos right of x */\
-	/*redraw*/  \
-	UPDATE_PM_CYCLE_EXACT\
-}
+#define CYCLE_EXACT_GRAFP(n) x = XPOS * 2 - 3;\
+	if (HPOSP##n >= x) {\
+	/*hpos right of x */\
+		/*redraw*/  \
+		UPDATE_PM_CYCLE_EXACT\
+	}
 #else
 #define CYCLE_EXACT_GRAFP(n)
 #endif /*NEW_CYCLE_EXACT*/
@@ -995,8 +1030,8 @@ if(HPOSP##n >= x) {\
 		P0PL = P1PL = P2PL = P3PL = 0;
 		PF0PM = PF1PM = PF2PM = PF3PM = 0;
 #ifdef NEW_CYCLE_EXACT
-		hitclr_pos=XPOS*2-37;
-		collision_curpos=hitclr_pos;
+		hitclr_pos = XPOS * 2 - 37;
+		collision_curpos = hitclr_pos;
 #endif
 		break;
 /*TODO: cycle-exact missile HPOS, GRAF, SIZE*/
@@ -1023,31 +1058,34 @@ if(HPOSP##n >= x) {\
 		break;
 
 #ifdef NEW_CYCLE_EXACT
-#define CYCLE_EXACT_HPOSP(n) x=XPOS*2-1;\
-if(HPOSP##n < x && byte <x) {\
-/*case 1: both left of x */\
-	/* do nothing*/\
-}else if (HPOSP##n >= x && byte >= x ) {\
-/*case 2: both right of x*/\
-	/* redraw, clearing first */\
-	UPDATE_PM_CYCLE_EXACT\
-} else if (HPOSP##n <x && byte >= x){\
-/*case 3: new value is right, old value is left*/\
-	/*redraw without clearning first*/\
-	/*note: a hack, we can get away with it unless another change occurs*/\
-	/*before the original copy that wasn't erased due to changing */\
-	/*pm_dirty is drawn*/\
-	pm_dirty=FALSE;\
-	UPDATE_PM_CYCLE_EXACT\
-	pm_dirty=TRUE; /*can't trust that it was reset correctly*/\
-}else{\
-/*case 4: new value is left, old value is right*/\
-	/* remove old player and don't draw the new one*/\
-	UBYTE save_graf=GRAFP##n;\
-	GRAFP##n=0;\
-	UPDATE_PM_CYCLE_EXACT\
-	GRAFP##n=save_graf;\
-}
+#define CYCLE_EXACT_HPOSP(n) x = XPOS * 2 - 1;\
+	if (HPOSP##n < x && byte < x) {\
+	/*case 1: both left of x */\
+		/* do nothing*/\
+	}\
+	else if (HPOSP##n >= x && byte >= x ) {\
+	/*case 2: both right of x*/\
+		/* redraw, clearing first */\
+		UPDATE_PM_CYCLE_EXACT\
+	}\
+	else if (HPOSP##n <x && byte >= x) {\
+	/*case 3: new value is right, old value is left*/\
+		/*redraw without clearning first*/\
+		/*note: a hack, we can get away with it unless another change occurs*/\
+		/*before the original copy that wasn't erased due to changing */\
+		/*pm_dirty is drawn*/\
+		pm_dirty=FALSE;\
+		UPDATE_PM_CYCLE_EXACT\
+		pm_dirty=TRUE; /*can't trust that it was reset correctly*/\
+	}\
+	else {\
+	/*case 4: new value is left, old value is right*/\
+		/* remove old player and don't draw the new one*/\
+		UBYTE save_graf=GRAFP##n;\
+		GRAFP##n=0;\
+		UPDATE_PM_CYCLE_EXACT\
+		GRAFP##n=save_graf;\
+	}
 #else
 #define CYCLE_EXACT_HPOSP(n)
 #endif /*NEW_CYCLE_EXACT*/
@@ -1110,9 +1148,9 @@ if(HPOSP##n < x && byte <x) {\
 #ifdef NEW_CYCLE_EXACT
 #ifndef NO_GTIA11_DELAY
 		/*update prior change ring buffer*/
-  		prior_curpos=(prior_curpos+1)%PRIOR_BUF_SIZE;
-		prior_pos_buf[prior_curpos]=XPOS*2-37+2;
-		prior_val_buf[prior_curpos]=byte;
+  		prior_curpos = (prior_curpos + 1) % PRIOR_BUF_SIZE;
+		prior_pos_buf[prior_curpos] = XPOS * 2 - 37 + 2;
+		prior_val_buf[prior_curpos] = byte;
 #endif
 #endif
 		set_prior(byte);
@@ -1132,10 +1170,14 @@ if(HPOSP##n < x && byte <x) {\
 		if ((byte & 4) == 0)
 			TRIG_latch[0] = TRIG_latch[1] = TRIG_latch[2] = TRIG_latch[3] = 1;
 		break;
+
+#endif /* BASIC */
 	}
 }
 
 /* State ------------------------------------------------------------------- */
+
+#ifndef BASIC
 
 void GTIAStateSave( void )
 {
@@ -1272,3 +1314,5 @@ void GTIAStateRead( void )
 	GTIA_PutByte(_PRIOR, PRIOR);
 	GTIA_PutByte(_GRACTL, GRACTL);
 }
+
+#endif /* BASIC */
