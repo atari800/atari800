@@ -27,16 +27,9 @@
 
 #include "pokeysnd.h"
 #include "atari.h"
-#ifndef __PLUS
-#include "sndsave.h"
-#endif /*__PLUS*/
 #include "config.h"
 
 #include "rt-config.h"	/* extern for console_sound_enabled and serio_sound_enabled */
-
-#ifdef __PLUS
-#include "sound_win.h"
-#endif /*__PLUS*/
 
 #include "remez.h"
 
@@ -1123,10 +1116,7 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 	samp_freq=playback_freq;
 #endif  /* VOL_ONLY_SOUND */
 
-    if (flags & SND_BIT16)
-      Pokey_process = Pokey_process_16;
-    else
-      Pokey_process = Pokey_process_8;
+	Pokey_process_ptr = (flags & SND_BIT16) ? Pokey_process_16 : Pokey_process_8;
 
     switch(playback_freq)
     {
@@ -1904,21 +1894,6 @@ void Pokey_debugreset(uint8 chip)
     ps->c3t2 = 1;
 }
 
-/*****************************************************************************/
-/* Module:  Pokey_process()                                                  */
-/* Purpose: To fill the output buffer with the sound output based on the     */
-/*          pokey chip parameters.                                           */
-/*                                                                           */
-/* Inputs:  *buffer - pointer to the buffer where the audio output will      */
-/*                    be placed                                              */
-/*          n - size of the playback buffer                                  */
-/*          num_pokeys - number of currently active pokeys to process        */
-/*                                                                           */
-/* Outputs: the buffer will be filled with n bytes of audio - no return val  */
-/*          Also the buffer will be written to disk if Sound recording is ON */
-/*                                                                           */
-/*****************************************************************************/
-
 /**************************************************************
 
            Master gain and DC offset calculation
@@ -2280,6 +2255,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.19  2005/08/10 19:35:43  pfusik
+Pokey_process -> Pokey_process_ptr
+
 Revision 1.18  2005/08/07 13:40:29  pfusik
 eschew traditional comments in log messages!
 
