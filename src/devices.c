@@ -47,6 +47,7 @@
 #endif
 
 #if defined(HAVE_DIRENT_H) && defined(HAVE_OPENDIR)
+/* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
 /* !VMS */
 #define DO_DIR
 #endif
@@ -55,7 +56,9 @@
 #include <dirent.h>
 #endif
 
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
 
 #ifndef S_IREAD
 #define S_IREAD S_IRUSR
@@ -80,7 +83,6 @@
 #include "log.h"
 #include "binload.h"
 #include "sio.h"
-#include "ui.h"
 
 #ifdef R_IO_DEVICE
 #include "rdevice.h"
@@ -112,10 +114,12 @@ static int flag[8];
 
 static int fid;
 static char filename[FILENAME_MAX];
-static char pathname[FILENAME_MAX];
+#ifdef HAVE_RENAME
 static char newfilename[FILENAME_MAX];
+#endif
 
 #ifdef DO_DIR
+static char pathname[FILENAME_MAX];
 static DIR *dp = NULL;
 #endif
 
@@ -342,7 +346,7 @@ static int match(char *pattern, char *filename)
 }
 #endif
 
-#ifdef HAVE_RENAME
+#if defined(HAVE_RENAME) && defined(DO_DIR)
 static void fillin(char *pattern, char *filename)
 {
 	while (*pattern) {
@@ -1592,7 +1596,6 @@ static void Device_PHCLOS(void)
 
 	if (phf) {
 		char command[256];
-		int status;
 
 		fclose(phf);
 		phf = NULL;
@@ -1604,8 +1607,7 @@ static void Device_PHCLOS(void)
 #endif
 		system(command);
 #if defined(HAVE_UNLINK) && !defined(VMS) && !defined(MACOSX)
-		status = unlink(spool_file);
-		if (status == -1) {
+		if (unlink(spool_file) == -1) {
 			perror(spool_file);
 		}
 #endif
@@ -1662,13 +1664,6 @@ static void Device_PHINIT(void)
 /* K: and E: handlers for BASIC version, using getchar() and putchar() */
 
 #ifdef BASIC
-
-static void Device_EHOPEN(void)
-{
-	Aprint("Editor device open");
-	regY = 1;
-	ClrN;
-}
 
 static void Device_EHREAD(void)
 {
@@ -1797,8 +1792,6 @@ int Device_PatchOS(void)
 #ifdef BASIC
 		case 'E':
 			Aprint("Editor Device");
-			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) + 1,
-							   ESC_EHOPEN, Device_EHOPEN);
 			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1,
 							   ESC_EHREAD, Device_EHREAD);
 			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) + 1,
@@ -1808,7 +1801,7 @@ int Device_PatchOS(void)
 		case 'K':
 			Aprint("Keyboard Device");
 			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1,
-							   ESC_EHREAD, Device_EHREAD);
+							   ESC_KHREAD, Device_EHREAD);
 			patched = TRUE;
 			break;
 #endif
@@ -1998,6 +1991,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.29  2005/08/10 19:54:16  pfusik
+patching E: open doesn't make sense; fixed some warnings
+
 Revision 1.28  2005/08/07 13:43:32  pfusik
 MSVC headers have no S_IRUSR nor S_IWUSR
 empty Hx_DIR now refers to the current directory rather than the root
