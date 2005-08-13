@@ -399,7 +399,7 @@ Help Key (XL/XE)
 Break Key
 .TP
 \fBF8
-Cold Reset
+Enter monitor
 .TP
 \fBF9
 Exit Emulator
