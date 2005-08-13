@@ -23,13 +23,10 @@
 */
 
 #include <stdio.h>
-#include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>				/* for free() */
-#include <unistd.h>				/* for open() */
 #include <dirent.h>
 #include <sys/stat.h>
-#include "rt-config.h"
 #include "atari.h"
 #include "cpu.h"
 #include "memory.h"
@@ -44,12 +41,14 @@
 #include "antic.h"
 #include "screen.h"
 #include "binload.h"
-#include "sndsave.h"
 #include "cartridge.h"
 #include "cassette.h"
 #include "rtime.h"
 #include "input.h"
+#ifdef SOUND
 #include "pokeysnd.h"
+#include "sndsave.h"
+#endif
 #include "rt-config.h"			/* extern for enable_new_pokey and stereo_enabled */
 #include "boot.h"
 
@@ -119,7 +118,7 @@ void SelectSystem(void)
 		MENU_END
 	};
 
-	static tSysConfig machine[] = {
+	static const tSysConfig machine[] = {
 		{MACHINE_OSA, 16},
 		{MACHINE_OSA, 48},
 		{MACHINE_OSA, 52},
@@ -573,6 +572,7 @@ void CartManagement(void)
 	}
 }
 
+#ifdef SOUND
 void SoundRecording(void)
 {
 	if (!IsSoundFileOpen()) {
@@ -602,6 +602,7 @@ void SoundRecording(void)
 		ui_driver->fMessage("Recording stopped");
 	}
 }
+#endif
 
 int RunExe(void)
 {
@@ -650,7 +651,9 @@ void AtariSettings(void)
 		{"SIOP", ITEM_ENABLED | ITEM_CHECK, NULL, "SIO patch (fast disk access):", NULL, 3},
 		{"HDEV", ITEM_ENABLED | ITEM_CHECK, NULL, "H: device (hard disk):", NULL, 4},
 		{"PDEV", ITEM_ENABLED | ITEM_CHECK, NULL, "P: device (printer):", NULL, 5},
+#ifdef R_IO_DEVICE
 		{"RDEV", ITEM_ENABLED | ITEM_CHECK, NULL, "R: device (Atari850 via net):", NULL, 6},
+#endif
 		{"UCFG", ITEM_ENABLED | ITEM_ACTION, NULL, "Update configuration file", NULL, 7},
 		MENU_END
 	};
@@ -736,6 +739,7 @@ int LoadState(void)
 	return ret;
 }
 
+#ifndef CURSES_BASIC
 void SelectArtifacting(void)
 {
 	static tMenuItem menu_array[] = {
@@ -756,16 +760,22 @@ void SelectArtifacting(void)
 		ANTIC_UpdateArtifacting();
 	}
 }
+#endif
 
+#ifdef SOUND
 int SoundSettings(void)
 {
-	int reboot_required = FALSE;
-
 	static tMenuItem menu_array[] = {
 		{"HFPO", ITEM_ENABLED | ITEM_CHECK, NULL, "High Fidelity POKEY:", NULL, 0},
+#ifdef STEREO_SOUND
 		{"STER", ITEM_ENABLED | ITEM_CHECK, NULL, "Dual POKEY (Stereo):", NULL, 1},
+#endif
+#ifdef CONSOLE_SOUND
 		{"CONS", ITEM_ENABLED | ITEM_CHECK, NULL, "Speaker (Key Click):", NULL, 2},
+#endif
+#ifdef SETIO_SOUND
 		{"SERI", ITEM_ENABLED | ITEM_CHECK, NULL, "Serial IO Sound    :", NULL, 3},
+#endif
 		MENU_END
 	};
 
@@ -794,37 +804,31 @@ int SoundSettings(void)
 			Pokey_DoInit();
 			/* According to the PokeySnd doc the POKEY switch can occur on
 			   a cold-restart only */
-			reboot_required = TRUE;
 			ui_driver->fMessage("Will reboot to apply the change");
-			option = -1;		/* immediate exit from the while loop */
-			break;
-		case 1:
+			return TRUE; /* reboot required */
 #ifdef STEREO_SOUND
+		case 1:
 			stereo_enabled = !stereo_enabled;
-#else
-			ui_driver->fMessage("Stereo sound support not compiled in");
-#endif
 			break;
-		case 2:
+#endif
 #ifdef CONSOLE_SOUND
+		case 2:
 			console_sound_enabled = !console_sound_enabled;
-#else
-			ui_driver->fMessage("Speaker sound support not compiled in");
-#endif
 			break;
-		case 3:
+#endif
 #ifdef SERIO_SOUND
+		case 3:
 			serio_sound_enabled = !serio_sound_enabled;
-#else
-			ui_driver->fMessage("SERIO sound support not compiled in");
-#endif
 			break;
+#endif
 		}
 	} while (option >= 0);
 
-	return reboot_required;
+	return FALSE;
 }
+#endif /* SOUND */
 
+#ifndef CURSES_BASIC
 void Screenshot(int interlaced)
 {
 	char fname[FILENAME_SIZE + 1];
@@ -834,6 +838,7 @@ void Screenshot(int interlaced)
 			ui_driver->fMessage("Error saving screenshot");
 	}
 }
+#endif
 
 void ui(void)
 {
@@ -843,18 +848,24 @@ void ui(void)
 		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run BIN file directly", "Alt+R", MENU_RUN},
 		{"CASS", ITEM_ENABLED | ITEM_FILESEL, NULL, "Select tape image", NULL, MENU_CASSETTE},
 		{"SYST", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select System", "Alt+Y", MENU_SYSTEM},
+#ifdef SOUND
 		{"SNDS", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Settings", "Alt+O", MENU_SOUND},
 		{"SREC", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Recording start/stop", "Alt+W", MENU_SOUND_RECORDING},
+#endif
+#ifndef CURSES_BASIC
 		{"ARTF", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Artifacting mode", NULL, MENU_ARTIF},
+#endif
 		{"SETT", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Atari Settings", NULL, MENU_SETTINGS},
 		{"SAVE", ITEM_ENABLED | ITEM_FILESEL, NULL, "Save State", "Alt+S", MENU_SAVESTATE},
 		{"LOAD", ITEM_ENABLED | ITEM_FILESEL, NULL, "Load State", "Alt+L", MENU_LOADSTATE},
+#ifndef CURSES_BASIC
 #ifdef HAVE_LIBPNG
 		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX screenshot", "F10", MENU_PCX},
 #else
 		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX screenshot", "F10", MENU_PCX},
 #endif
 /*		{ "PCXI", ITEM_ENABLED|ITEM_FILESEL, NULL, "PCX interlaced screenshot",  "Shift+F10",MENU_PCXI }, */
+#endif
 		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Back to emulated Atari", "Esc", MENU_BACK},
 		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", "F5", MENU_RESETW},
 		{"REBT", ITEM_ENABLED | ITEM_ACTION, NULL, "Reboot (Cold Start)", "Shift+F5", MENU_RESETC},
@@ -911,12 +922,10 @@ void ui(void)
 		case MENU_SYSTEM:
 			SelectSystem();
 			break;
-		case MENU_ARTIF:
-			SelectArtifacting();
-			break;
 		case MENU_SETTINGS:
 			AtariSettings();
 			break;
+#ifdef SOUND
 		case MENU_SOUND:
 			if (SoundSettings()) {
 				Coldstart();
@@ -926,11 +935,16 @@ void ui(void)
 		case MENU_SOUND_RECORDING:
 			SoundRecording();
 			break;
+#endif
 		case MENU_SAVESTATE:
 			SaveState();
 			break;
 		case MENU_LOADSTATE:
 			LoadState();
+			break;
+#ifndef CURSES_BASIC
+		case MENU_ARTIF:
+			SelectArtifacting();
 			break;
 		case MENU_PCX:
 			Screenshot(0);
@@ -938,6 +952,7 @@ void ui(void)
 		case MENU_PCXI:
 			Screenshot(1);
 			break;
+#endif
 		case MENU_BACK:
 			done = TRUE;		/* back to emulator */
 			break;
@@ -1026,24 +1041,23 @@ void MakeBlankDisk(FILE *setFile)
 	unsigned long paras = 0;
 	struct ATR_Header hdr;
 	int fileSize = 0;
-	typedef unsigned char byte;
 	size_t padding;
 
 	sectorCnt = (unsigned short) (127L / 128L + 3L);
 	paras = sectorCnt * 8;
 	memset(&hdr, 0, sizeof(hdr));
-	hdr.magic1 = (byte) 0x96;
-	hdr.magic2 = (byte) 0x02;
-	hdr.seccountlo = (byte) (paras & 0xFF);
-	hdr.seccounthi = (byte) ((paras >> 8) & 0xFF);
-	hdr.hiseccountlo = (byte) ((paras >> 16) & 0xFF);
-	hdr.secsizelo = (byte) 128;
+	hdr.magic1 = (UBYTE) 0x96;
+	hdr.magic2 = (UBYTE) 0x02;
+	hdr.seccountlo = (UBYTE) (paras & 0xFF);
+	hdr.seccounthi = (UBYTE) ((paras >> 8) & 0xFF);
+	hdr.hiseccountlo = (UBYTE) ((paras >> 16) & 0xFF);
+	hdr.secsizelo = (UBYTE) 128;
 
 	fwrite(&hdr, 1, sizeof(hdr), setFile);
 
-	bootData[9] = (byte) (fileSize & 0xFF);
-	bootData[10] = (byte) ((fileSize >> 8) & 0xFF);
-	bootData[11] = (byte) ((fileSize >> 16) & 0xFF);
+	bootData[9] = (UBYTE) (fileSize & 0xFF);
+	bootData[10] = (UBYTE) ((fileSize >> 8) & 0xFF);
+	bootData[11] = (UBYTE) ((fileSize >> 16) & 0xFF);
 	bootData[12] = 0;
 
 	fwrite(bootData, 1, 384, setFile);
@@ -1055,6 +1069,9 @@ void MakeBlankDisk(FILE *setFile)
 
 /*
 $Log$
+Revision 1.60  2005/08/13 08:53:09  pfusik
+CURSES_BASIC; no sound objects if SOUND disabled; no R: if not compiled in
+
 Revision 1.59  2005/08/10 19:39:24  pfusik
 hold_start_on_reboot moved to cassette.c;
 improved autogeneration of filenames for sound recording
