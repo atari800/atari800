@@ -29,13 +29,13 @@ AC_CONFIG_HEADER(config.h)
 
 dnl Set a8_target
 case "$target" in
-  basic | curses | ncurses | pdcurses | svgalib | dosvga | falcon | sdl | windx | x11)
+    basic | curses | ncurses | pdcurses | svgalib | dosvga | falcon | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
-  shm | motif | xview | xview-shm)
+    shm | motif | xview | xview-shm)
         a8_target="x11-$target"
         ;;
-  *)
+    *)
         a8_target="UNKNOWN"
         ;;
 esac
@@ -67,13 +67,13 @@ fi
 dnl Set a8_host
 AC_CANONICAL_HOST
 case $host_os in
-  i386-pc-os2-emx)
+    i386-pc-os2-emx)
         a8_host="os/2"
         ;;
-  cygwin)
+    cygwin)
         a8_host="win"
-        AC_DEFINE(BACK_SLASH,,[define to use back slash])
-        AC_DEFINE(DOS_DRIVES,,[define to enable dos style drives support])
+        AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
+        AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
         if [[ "$a8_target" = "windx" ]]; then
                 CC="gcc -mno-cygwin"
                 echo
@@ -81,33 +81,33 @@ case $host_os in
                 echo
         fi
         ;;
-  mingw32)
+    mingw32)
         a8_host="win"
-        AC_DEFINE(BACK_SLASH,,[define to use back slash])
-        AC_DEFINE(DOS_DRIVES,,[define to enable dos style drives support])
+        AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
+        AC_DEFINE(DOS_DRIVES,,[Define to enable dos style drives support.])
         ;;
-  msdosdjgpp)
+    msdosdjgpp)
         a8_host="dos"
-        AC_DEFINE(BACK_SLASH,,[define to use back slash])
-        AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[alternate config filename due to 8+3 fs limit])
-        AC_DEFINE(DOS_DRIVES,,[define to enable dos style drives support])
-        AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[alternate system-wide config file for non-Unix OS])
+        AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
+        AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
+        AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
+        AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
         ;;
-  linux | linux-gnu)
+    linux | linux-gnu)
         a8_host="linux"
         ;;
-  mint)
+    mint)
         a8_host="falcon"
-        AC_DEFINE(BACK_SLASH,,[define to use back slash])
-        AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[alternate config filename due to 8+3 fs limit])
-        AC_DEFINE(DOS_DRIVES,,[define to enable dos style drives support])
-        AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[alternate system-wide config file for non-Unix OS])
-        AC_DEFINE(USE_CLOCK,,[define to use clock() instead of gettimeofday()])
+        AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
+        AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
+        AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
+        AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
+        AC_DEFINE(USE_CLOCK,,[Define to use clock() instead of gettimeofday().])
         ;;
-  *unix*)
+    *unix*)
         a8_host="unix"
         ;;
-  *)
+    *)
         a8_host="$host_os"
         ;;
 esac
@@ -134,7 +134,7 @@ dnl Checks for header files.
 AC_PATH_X
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([OS.h arpa/inet.h fcntl.h file.h limits.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h unistd.h unixio.h])
+AC_CHECK_HEADERS([OS.h arpa/inet.h fcntl.h file.h limits.h netdb.h netinet/in.h signal.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h termios.h unistd.h unixio.h])
 
 
 
@@ -149,7 +149,7 @@ AC_C_VOLATILE
 
 dnl Checks for libraries.
 if [[ "$a8_host" != "os2-emx" ]]; then
-    AC_CHECK_LIB(z,gzopen,,AC_MSG_ERROR("z compression library not found!"))
+    AC_CHECK_LIB(z,gzopen)
     AC_CHECK_LIB(png,png_get_libpng_ver)
     AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
 fi
@@ -162,50 +162,49 @@ OBJS=
 if [[ "$a8_host" == "win" ]]; then
         A8_NEED_LIB(gdi32)
         A8_NEED_LIB(winmm)
-        OBJS="win32/atari.ro"
 else
-if [[ "$a8_host" != "os2-emx" -a "$a8_host" != "beos" ]]; then
+    if [[ "$a8_host" != "os2-emx" -a "$a8_host" != "beos" ]]; then
         A8_NEED_LIB(m)
-        fi
+    fi
 fi
 case "$a8_target" in
     basic)
-        AC_DEFINE(BASIC,,[Text mode only])
+        AC_DEFINE(BASIC,,[Target: standard I/O.])
         OBJS="atari_basic.o"
         ;;
     dosvga)
         if [[ "$a8_host" != "dos" ]]; then
             AC_MSG_ERROR("the dosvga target is only valid on a DOS system!")
         fi
-        AC_DEFINE(DOSVGA,,[DOS vga])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,,[Additional config file options])
+        AC_DEFINE(DOSVGA,,[Target: DOS VGA.])
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,,[Additional config file options.])
         OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
         ;;
     curses)
-        AC_DEFINE(USE_CURSES,,[System with Curses-compatible library])
+        AC_DEFINE(USE_CURSES,,[Target: Curses-compatible library.])
         A8_NEED_LIB(curses)
         OBJS="atari_curses.o"
         ;;
     ncurses)
-        AC_DEFINE(USE_CURSES,,[System with Curses-compatible library])
-        AC_DEFINE(USE_NCURSES,,[System with Ncurses library])
+        AC_DEFINE(USE_CURSES,,[Target: Curses-compatible library.])
+        AC_DEFINE(USE_NCURSES,,[Target: Ncurses library.])
         A8_NEED_LIB(ncurses)
         OBJS="atari_curses.o"
         ;;
     pdcurses)
-        AC_DEFINE(USE_CURSES,,[System with Curses-compatible library])
+        AC_DEFINE(USE_CURSES,,[Target: Curses-compatible library.])
         A8_NEED_LIB(pdcurses)
         OBJS="atari_curses.o"
         ;;
     falcon)
-        AC_DEFINE(FALCON,,[Atari Falcon system])
+        AC_DEFINE(FALCON,,[Target: Atari Falcon system.])
         A8_NEED_LIB(gem)
         OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
         ;;
     sdl)
-        AC_DEFINE(SDL,,[System with SDL library])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,,[Additional config file options])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,,[Save additional config file options])
+        AC_DEFINE(SDL,,[Target: SDL library.])
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,,[Additional config file options.])
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,,[Save additional config file options.])
         sdlcheck="X_`sdl-config --cflags`"
         if [[ "$sdlcheck" != "X_" ]]; then
             CFLAGS="$CFLAGS `sdl-config --cflags`"
@@ -216,12 +215,12 @@ case "$a8_target" in
         fi
         ;;
     svgalib)
-        AC_DEFINE(SVGALIB,,[Linux with SVGALib])
+        AC_DEFINE(SVGALIB,,[Target: Linux with SVGALib.])
         A8_NEED_LIB(vga)
         OBJS="atari_svgalib.o"
         ;;
     windx)
-        AC_DEFINE(DIRECTX,,[Windows with DirectX])
+        AC_DEFINE(DIRECTX,,[Target: Windows with DirectX.])
         A8_NEED_LIB(ddraw)
         A8_NEED_LIB(dinput)
         A8_NEED_LIB(dsound)
@@ -231,7 +230,7 @@ case "$a8_target" in
         ;;
     x11*)
         AC_PATH_X
-        AC_DEFINE(X11,,[Standard X11])
+        AC_DEFINE(X11,,[Target: Standard X11.])
         if [[ "X_$x_includes" != "X_" ]]; then
             CFLAGS="$CFLAGS -I$x_includes"
         fi
@@ -241,18 +240,18 @@ case "$a8_target" in
         A8_NEED_LIB(X11)
         case "$a8_target" in
             *-shm)
-                AC_DEFINE(SHM,,[X11 with shared memory extensions])
+                AC_DEFINE(SHM,,[Target: X11 with shared memory extensions.])
                 A8_NEED_LIB(Xext)
                 ;;
         esac
         case "$a8_target" in
             x11-xview*)
-                AC_DEFINE(XVIEW,,[X11 with XView])
+                AC_DEFINE(XVIEW,,[Target: X11 with XView.])
                 A8_NEED_LIB(xview)
                 A8_NEED_LIB(olgx)
                 ;;
             x11-motif)
-                AC_DEFINE(MOTIF,,[X11 with Motif])
+                AC_DEFINE(MOTIF,,[Target: X11 with Motif.])
                 A8_NEED_LIB(Xm)
                 A8_NEED_LIB(Xt)
                 A8_NEED_LIB(gen)
@@ -269,11 +268,12 @@ dnl Checks for library functions.
 AC_FUNC_CLOSEDIR_VOID
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([DosSleep GetTickCount Sleep atexit chmod floor fstat getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa opendir memset mkdir mkstemp modf rename rmdir select snooze snprintf socket stat strcasecmp strchr strdup strerror strrchr strstr strtol uclock unlink vsnprintf])
+AC_CHECK_FUNCS([DosSleep GetTickCount Sleep atexit chmod floor fstat getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa opendir memmove memset mkdir mkstemp modf rename rmdir select signal snooze snprintf socket stat strcasecmp strchr strdup strerror strrchr strspn strstr strtol uclock unlink vsnprintf])
 
 
 
@@ -300,14 +300,15 @@ int main(void)
         *((long *) ((char *) l + 1)) = 1;
         signal(SIGBUS, SIG_DFL);
         return 0;
-    }else{
+    }
+    else {
         signal(SIGBUS, SIG_DFL);
         return 1;
     }
 #endif
 }], ac_cv_unaligned_long_ok=yes, ac_cv_unaligned_long_ok=no, ac_cv_unaligned_long_ok=no)])
 if [[ "$ac_cv_unaligned_long_ok" = "yes" ]]; then
-    AC_DEFINE(UNALIGNED_LONG_OK,,[define if unaligned long access is ok])
+    AC_DEFINE(UNALIGNED_LONG_OK,,[Define if unaligned long access is ok.])
 fi
 
 
@@ -338,48 +339,74 @@ AC_DEFUN([A8_OPTION],[
 ])
 
 if [[ "$a8_target" != "basic" ]]; then
-    OBJS="$OBJS input.o screen.o colours.o statesav.o list.o ui_basic.o ui.o"
+
+    dnl These objects are not compiled in BASIC target
+    OBJS="$OBJS input.o statesav.o list.o ui_basic.o ui.o"
+
+    case "$a8_target" in
+        *curses)
+            A8_OPTION(cursesbasic,yes,
+                      [No bitmap graphics emulation (default=ON)],
+                      CURSES_BASIC,[Define to disable bitmap graphics emulation in CURSES target.]
+                     )
+            ;;
+    esac
+
+    if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
+
+        dnl These objects are not compiled in BASIC nor CURSES_BASIC target
+        OBJS="$OBJS screen.o colours.o"
+
+        A8_OPTION(cycleexact,yes,
+                  [Allow color changes inside a scanline (default=ON)],
+                  CYCLE_EXACT,[Define to allow color changes inside a scanline.]
+                 )
+
+        A8_OPTION(newcycleexact,yes,
+                  [Use the new cycle-exact scanline routines (default=ON)],
+                  NEW_CYCLE_EXACT,[Define to allow new cycle-exact scanline routines.]
+                 )
+        if [[ "$WANT_NEW_CYCLE_EXACT" = "yes" ]]; then
+            OBJS="$OBJS cycle_map.o"
+        fi
+
+        A8_OPTION(veryslow,no,
+                  [Use very slow computer support (use with the -refresh option) (default=OFF)],
+                  VERY_SLOW,[Define to use very slow computer support (faster -refresh).]
+                 )
+
+    fi
+
     A8_OPTION(crashmenu,yes,
-              [Use a crash menu after a CIM instruction (default=ON)],
-              CRASH_MENU,[define to activate crash menu after CIM instruction]
+              [Display a menu after a CIM instruction (default=ON)],
+              CRASH_MENU,[Define to activate crash menu after CIM instruction.]
              )
 fi
 
 A8_OPTION(monitorbreak,yes,
-          [Allow the BREAK command in the monitor (slows CPU a bit) (default=ON)],
-          MONITOR_BREAK,[define to activate BREAK command in monitor]
+          [Allow the BREAK command in the monitor (slower emulation) (default=ON)],
+          MONITOR_BREAK,[Define to activate BREAK command in monitor.]
          )
 
 A8_OPTION(monitorhints,yes,
           [Provide hints in the disassembler (human-readable address labels) (default=ON)],
-          MONITOR_HINTS,[define to activate hints in disassembler]
+          MONITOR_HINTS,[Define to activate hints in disassembler.]
          )
 
 A8_OPTION(monitorasm,yes,
           [Provide an assembler in the monitor (default=ON)],
-          MONITOR_ASSEMBLER,[define to activate assembler in monitor]
+          MONITOR_ASSEMBLER,[Define to activate assembler in monitor.]
          )
-
-if [[ "$a8_target" != "basic" ]]; then
-
-    A8_OPTION(cycleexact,yes,
-              [Allow color changes inside a scanline (default=ON)],
-              CYCLE_EXACT,[define to allow color changes inside a scanline]
-             )
-    
-    A8_OPTION(newcycleexact,yes,
-              [Use the new cycle-exact scanline routines (default=ON)],
-              NEW_CYCLE_EXACT,[define to allow new cycle-exact scanline routines]
-             )
-
-fi
 
 dnl sound support section
 A8_OPTION(sound,yes,
           [Use sound support (default=ON)],
-          SOUND,[define to activate sound support]
+          SOUND,[Define to activate sound support.]
          )
 if [[ "$WANT_SOUND" = "yes" ]]; then
+
+    OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
+
     if [[ "$a8_target" != sdl ]]; then
         case "$a8_host" in
             dos)
@@ -398,26 +425,26 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
 
     A8_OPTION(interpolatesound,yes,
               [Use sound interpolation (default=ON)],
-              INTERPOLATE_SOUND,[define to allow sound interpolation]
+              INTERPOLATE_SOUND,[Define to allow sound interpolation.]
              )
 
     A8_OPTION(stereosound,yes,
               [Use stereo sound (default=ON)],
-              STEREO_SOUND,[define to allow stereo sound]
+              STEREO_SOUND,[Define to allow stereo sound.]
              )
 
     A8_OPTION(volonlysound,yes,
               [Use volume only sound (digitized sound effects) (default=ON)],
-              VOL_ONLY_SOUND,[define to allow stereo sound]
+              VOL_ONLY_SOUND,[Define to allow volume only sound.]
              )
     if [[ "$WANT_VOL_ONLY_SOUND" = "yes" ]]; then
         A8_OPTION(consolesound,yes,
                   [Use console sound (keyboard clicks) (default=ON)],
-                  CONSOLE_SOUND,[define to allow console sound (keyboard clicks)]
+                  CONSOLE_SOUND,[Define to allow console sound (keyboard clicks).]
                  )
         A8_OPTION(seriosound,no,
                   [Use serial in/out sound (default=OFF)],
-                  SERIO_SOUND,[define to allow serial in/out sound]
+                  SERIO_SOUND,[Define to allow serial in/out sound.]
                  )
     else
         WANT_CONSOLE_SOUND="no"
@@ -426,7 +453,7 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
 
     A8_OPTION(clipsound,no,
               [Use sound clipping (default=OFF)],
-              CLIP_SOUND,[define to allow sound clipping]
+              CLIP_SOUND,[Define to allow sound clipping.]
              )
 else
     WANT_INTERPOLATE_SOUND="no"
@@ -439,29 +466,18 @@ fi
 
 A8_OPTION(pagedattrib,no,
           [Use page-based attribute array (default=OFF)],
-          PAGED_ATTRIB,[define to use page-based attribute array]
+          PAGED_ATTRIB,[Define to use page-based attribute array.]
          )
 
 A8_OPTION(bufferedlog,no,
           [Use buffered debug output (until the graphics mode switches back to text mode) (default=OFF)],
-          BUFFERED_LOG,[define to use buffered debug output]
+          BUFFERED_LOG,[Define to use buffered debug output.]
          )
-
-if [[ "$a8_target" != "basic" ]]; then
-    A8_OPTION(veryslow,no,
-              [Use very slow computer support (use with the -refresh option) (default=OFF)],
-              VERY_SLOW,[define to use very slow computer support]
-             )
-fi
-
-if [[ "$WANT_NEW_CYCLE_EXACT" = "yes" ]]; then
-    OBJS="$OBJS cycle_map.o"
-fi
 
 if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
     A8_OPTION(falconcpuasm,no,
               [Use m68k assembler CPU core for Falcon target (default=OFF)],
-              FALCON_CPUASM,[define to use m68k assembler CPU core for Falcon target]
+              FALCON_CPUASM,[Define to use m68k assembler CPU core for Falcon target.]
              )
     if [[ "$WANT_FALCON_CPUASM" = "yes" ]]; then
         OBJS="$OBJS cpu_m68k.o"
@@ -473,7 +489,7 @@ if [[ "$a8_host" = "linux" ]]; then
         svgalib | x11*)
             A8_OPTION(linuxjoystick,yes,
                       [Use LINUX joystick (linux svgalib/x11 targets only) (default=ON)],
-                      LINUX_JOYSTICK,[define to use LINUX joystick]
+                      LINUX_JOYSTICK,[Define to use LINUX joystick.]
                       )
     esac
 fi
@@ -481,24 +497,25 @@ fi
 if [[ "$a8_target" = "svgalib" ]]; then
     A8_OPTION(svgaspeedup,no,
               [Drawing every 1/50 sec only 1/refresh of screen (svgalib target only) (default=OFF)],
-              SVGA_SPEEDUP,[define for drawing every 1/50 sec only 1/refresh of screen]
+              SVGA_SPEEDUP,[Define for drawing every 1/50 sec only 1/refresh of screen.]
              )
     A8_OPTION(svgajoymouse,no,
               [Using Toshiba Joystick Mouse support (svgalib target only) (default=OFF)],
-              SVGA_JOYMOUSE,[define to use Toshiba Joystick Mouse support]
+              SVGA_JOYMOUSE,[Define to use Toshiba Joystick Mouse support.]
              )
 fi
 
 if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
     A8_OPTION(cursorblock,no,
               [Using cursor/ctrl keys for keyboard joystick (svgalib target only) (default=OFF)],
-              USE_CURSORBLOCK,[define using cursor/ctrl keys for keyboard joystick]
+              USE_CURSORBLOCK,[Define for using cursor/ctrl keys for keyboard joystick.]
              )
 fi
+
 if [[ "$a8_host" = "linux" -o "$a8_host" = "unix" ]]; then
     A8_OPTION(riodevice,yes,
               [Use the R: networking device (Linux/Unix only) (default=ON)],
-              R_IO_DEVICE,[define to use R: device]
+              R_IO_DEVICE,[Define to use R: device.]
              )
     if [[ "$WANT_R_IO_DEVICE" = "yes" ]]; then
         OBJS="$OBJS rdevice.o"
@@ -522,15 +539,21 @@ echo "Host OS...............................: $a8_host"
 echo "Target ...............................: $a8_target"
 echo
 if [[ "$a8_target" != "basic" ]]; then
+    case "$a8_target" in
+        *curses)
+            echo "Using no bitmap graphics emulation?...: $WANT_CURSES_BASIC"
+            ;;
+    esac
+    if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
+        echo "Using cycle exact?....................: $WANT_CYCLE_EXACT"
+        echo "Using the new cycle exact code?.......: $WANT_NEW_CYCLE_EXACT"
+        echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
+    fi
     echo "Using the crash menu?.................: $WANT_CRASH_MENU"
 fi
 echo "Using monitor breaks?.................: $WANT_MONITOR_BREAK"
 echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
 echo "Using the monitor assembler?..........: $WANT_MONITOR_ASSEMBLER"
-if [[ "$a8_target" != "basic" ]]; then
-    echo "Using cycle exact?....................: $WANT_CYCLE_EXACT"
-    echo "Using the new cycle exact code?.......: $WANT_NEW_CYCLE_EXACT"
-fi
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
     echo "    Using sound interpolation?........: $WANT_INTERPOLATE_SOUND"
@@ -548,9 +571,6 @@ else
 fi
 echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
 echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
-if [[ "$a8_target" != "basic" ]]; then
-    echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
-fi
 if [[ "$a8_target" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
 fi
