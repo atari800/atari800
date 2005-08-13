@@ -573,9 +573,9 @@ int CASSETTE_IOLineStatus(void)
 
 /* Get the delay to trigger the next interrupt
    remark: The I/O-Line-status is also evaluated on this basis */
-SLONG CASSETTE_GetInputIRQDelay(void)
+int CASSETTE_GetInputIRQDelay(void)
 {
-	SLONG timespan;
+	int timespan;
 
 	/* if no file or eof or motor off, return zero */
 	if ((cassette_file == NULL)
