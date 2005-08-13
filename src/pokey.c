@@ -39,14 +39,16 @@
 #include "input.h"
 #include "statesav.h"
 #endif
+#ifdef SOUND
 #include "pokeysnd.h"
+#endif
 #include "antic.h"
 #include "rt-config.h"
 #include "cassette.h"
 #include "log.h"
 
 #ifdef POKEY_UPDATE
-extern void pokey_update(void);
+void pokey_update(void);
 #endif
 
 UBYTE KBCODE;
@@ -55,7 +57,7 @@ UBYTE IRQST;
 UBYTE IRQEN;
 UBYTE SKSTAT;
 UBYTE SKCTLS;
-SLONG DELAYED_SERIN_IRQ;
+int DELAYED_SERIN_IRQ;
 int DELAYED_SEROUT_IRQ;
 int DELAYED_XMTDONE_IRQ;
 
@@ -64,7 +66,7 @@ UBYTE AUDF[4 * MAXPOKEYS];	/* AUDFx (D200, D202, D204, D206) */
 UBYTE AUDC[4 * MAXPOKEYS];	/* AUDCx (D201, D203, D205, D207) */
 UBYTE AUDCTL[MAXPOKEYS];	/* AUDCTL (D208) */
 int DivNIRQ[4], DivNMax[4];
-ULONG Base_mult[MAXPOKEYS];		/* selects either 64Khz or 15Khz clock mult */
+int Base_mult[MAXPOKEYS];		/* selects either 64Khz or 15Khz clock mult */
 
 UBYTE POT_input[8] = {228, 228, 228, 228, 228, 228, 228, 228};
 static int pot_scanline;
@@ -144,6 +146,10 @@ int POKEY_siocheck(void)
 
 #ifndef SOUND_GAIN /* sound gain can be pre-defined in the configure/Makefile */
 #define SOUND_GAIN 4
+#endif
+
+#ifndef SOUND
+#define Update_pokey_sound(addr, val, chip, gain)
 #endif
 
 void POKEY_PutByte(UWORD addr, UBYTE byte)
@@ -547,61 +553,60 @@ void Update_Counter(int chan_mask)
 
 #ifndef BASIC
 
-void POKEYStateSave( void )
+void POKEYStateSave(void)
 {
 	int SHIFT_KEY = 0;
 	int KEYPRESSED = 0;
 
-	SaveUBYTE( &KBCODE, 1 );
-	SaveUBYTE( &IRQST, 1 );
-	SaveUBYTE( &IRQEN, 1 );
-	SaveUBYTE( &SKCTLS, 1 );
+	SaveUBYTE(&KBCODE, 1);
+	SaveUBYTE(&IRQST, 1);
+	SaveUBYTE(&IRQEN, 1);
+	SaveUBYTE(&SKCTLS, 1);
 
-	SaveINT( &SHIFT_KEY, 1 );
-	SaveINT( &KEYPRESSED, 1 );
-	SaveINT( &DELAYED_SERIN_IRQ, 1 );
-	SaveINT( &DELAYED_SEROUT_IRQ, 1 );
-	SaveINT( &DELAYED_XMTDONE_IRQ, 1 );
+	SaveINT(&SHIFT_KEY, 1);
+	SaveINT(&KEYPRESSED, 1);
+	SaveINT(&DELAYED_SERIN_IRQ, 1);
+	SaveINT(&DELAYED_SEROUT_IRQ, 1);
+	SaveINT(&DELAYED_XMTDONE_IRQ, 1);
 
-	SaveUBYTE( &AUDF[0], 4 );
-	SaveUBYTE( &AUDC[0], 4 );
-	SaveUBYTE( &AUDCTL[0], 1 );
+	SaveUBYTE(&AUDF[0], 4);
+	SaveUBYTE(&AUDC[0], 4);
+	SaveUBYTE(&AUDCTL[0], 1);
 
-	SaveINT((int *)&DivNIRQ[0], 4);
-	SaveINT((int *)&DivNMax[0], 4);
-	SaveINT((int *)&Base_mult[0], 1 );
+	SaveINT(&DivNIRQ[0], 4);
+	SaveINT(&DivNMax[0], 4);
+	SaveINT(&Base_mult[0], 1);
 }
 
-void POKEYStateRead( void )
+void POKEYStateRead(void)
 {
-        int i;
+	int i;
 	int SHIFT_KEY;
 	int KEYPRESSED;
 
-	ReadUBYTE( &KBCODE, 1 );
-	ReadUBYTE( &IRQST, 1 );
-	ReadUBYTE( &IRQEN, 1 );
-	ReadUBYTE( &SKCTLS, 1 );
+	ReadUBYTE(&KBCODE, 1);
+	ReadUBYTE(&IRQST, 1);
+	ReadUBYTE(&IRQEN, 1);
+	ReadUBYTE(&SKCTLS, 1);
 
-	ReadINT( &SHIFT_KEY, 1 );
-	ReadINT( &KEYPRESSED, 1 );
-	ReadINT( &DELAYED_SERIN_IRQ, 1 );
-	ReadINT( &DELAYED_SEROUT_IRQ, 1 );
-	ReadINT( &DELAYED_XMTDONE_IRQ, 1 );
+	ReadINT(&SHIFT_KEY, 1);
+	ReadINT(&KEYPRESSED, 1);
+	ReadINT(&DELAYED_SERIN_IRQ, 1);
+	ReadINT(&DELAYED_SEROUT_IRQ, 1);
+	ReadINT(&DELAYED_XMTDONE_IRQ, 1);
 
-	ReadUBYTE( &AUDF[0], 4 );
-	ReadUBYTE( &AUDC[0], 4 );
-	ReadUBYTE( &AUDCTL[0], 1 );
-        for (i = 0; i < 4; i++)
-        {
-                POKEY_PutByte(_AUDF1 + i * 2, AUDF[i]);
-                POKEY_PutByte(_AUDC1 + i * 2, AUDC[i]);
-        }
-        POKEY_PutByte(_AUDCTL, AUDCTL[0]);
+	ReadUBYTE(&AUDF[0], 4);
+	ReadUBYTE(&AUDC[0], 4);
+	ReadUBYTE(&AUDCTL[0], 1);
+	for (i = 0; i < 4; i++) {
+		POKEY_PutByte(_AUDF1 + i * 2, AUDF[i]);
+		POKEY_PutByte(_AUDC1 + i * 2, AUDC[i]);
+	}
+	POKEY_PutByte(_AUDCTL, AUDCTL[0]);
 
-	ReadINT((int *)&DivNIRQ[0], 4);
-	ReadINT((int *)&DivNMax[0], 4);
-	ReadINT((int *)&Base_mult[0], 1 );
+	ReadINT(&DivNIRQ[0], 4);
+	ReadINT(&DivNMax[0], 4);
+	ReadINT(&Base_mult[0], 1);
 }
 
 #endif
