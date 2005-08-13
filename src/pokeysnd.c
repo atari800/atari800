@@ -85,7 +85,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#ifdef HAVE_LIMITS_H
 #include <limits.h>
+#endif
 
 #include "pokeysnd.h"
 #include "mzpokeysnd.h"
@@ -222,17 +224,21 @@ void (*Update_pokey_sound) (uint16 addr, uint8 val, uint8 chip, uint8 gain)
 static void Update_serio_sound_rf(int out, UBYTE data);
 static void null_serio_sound(int out, UBYTE data) {}
 void (*Update_serio_sound)(int out, UBYTE data) = null_serio_sound;
-#endif
 int serio_sound_enabled = 1;
+#endif
 
+#ifdef CONSOLE_SOUND
 static void Update_consol_sound_rf(int set);
 static void null_consol_sound(int set) {}
 void (*Update_consol_sound)(int set) = null_consol_sound;
 int console_sound_enabled = 1;
+#endif
 
+#ifdef VOL_ONLY_SOUND
 static void Update_vol_only_sound_rf(void);
 static void null_vol_only_sound(void) {}
 void (*Update_vol_only_sound)(void) = null_vol_only_sound;
+#endif
 
 /*****************************************************************************/
 /* In my routines, I treat the sample output as another divide by N counter  */
@@ -1172,6 +1178,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.21  2005/08/13 08:48:11  pfusik
+fixed warnings
+
 Revision 1.20  2005/08/10 19:48:33  pfusik
 fixes for sound recording
 
