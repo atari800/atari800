@@ -27,23 +27,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 
 #ifdef WIN32
+#include <windows.h>
+#endif
 
-# include <windows.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
 
-#else /* WIN32 */
-
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# endif
-
-# ifdef HAVE_UNISTD_H
-#  include <unistd.h>
-# endif
-
-#endif /* WIN32 */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifdef __EMX__
 #define INCL_DOS
@@ -69,10 +68,12 @@
 #include "prompts.h"
 #include "rt-config.h"
 #include "log.h"
-#ifndef BASIC
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 #include "colours.h"
-#include "input.h"
 #include "screen.h"
+#endif
+#ifndef BASIC
+#include "input.h"
 #include "statesav.h"
 #include "ui.h"
 #endif
@@ -81,8 +82,8 @@
 #include "cassette.h"
 #ifdef SOUND
 #include "sound.h"
-#endif
 #include "sndsave.h"
+#endif
 
 int machine_type = MACHINE_OSB;
 int ram_size = 48;
@@ -105,7 +106,8 @@ int pil_on = FALSE;
 
 static char *rom_filename = NULL;
 
-void sigint_handler(int num)
+#ifdef HAVE_SIGNAL
+RETSIGTYPE sigint_handler(int num)
 {
 	int restart;
 
@@ -117,6 +119,7 @@ void sigint_handler(int num)
 
 	exit(0);
 }
+#endif
 
 /* Now we check address of every escape code, to make sure that the patch
    has been set by the emulator and is not a CIM in Atari program.
@@ -549,7 +552,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	else
 		deltatime = (1.0 / 60.0);
 
-#ifndef BASIC
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 	Palette_Initialise(argc, argv);
 #endif
 	Device_Initialise(argc, argv);
@@ -561,7 +564,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif
 	Atari_Initialise(argc, argv);	/* Platform Specific Initialisation */
 
-#ifndef BASIC
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 	if (!atari_screen) {
 		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
 #ifdef DIRTYRECT
@@ -593,9 +596,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Aprint("Disk File %s not found", argv[i]);
 		}
 	}
-
-	/* Install CTRL-C Handler */
-	signal(SIGINT, sigint_handler);
 
 	/* Configure Atari System */
 	Atari800_InitialiseMachine();
@@ -639,6 +639,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 	if (run_direct != NULL)
 		BIN_loader(run_direct);
 
+#ifdef HAVE_SIGNAL
+	/* Install CTRL-C Handler */
+	signal(SIGINT, sigint_handler);
+#endif
+
 	return TRUE;
 }
 
@@ -651,7 +656,9 @@ int Atari800_Exit(int run_monitor)
 	restart = Atari_Exit(run_monitor);
 	if (!restart) {
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
+#ifdef SOUND
 		CloseSoundFile();
+#endif
 	}
 	return restart;
 }
@@ -812,7 +819,7 @@ void atari_sync(void)
 #ifdef USE_CLOCK
 	static ULONG nextclock = 1;	/* put here a non-zero value to enable speed regulator */
 	/* on Atari Falcon CLK_TCK = 200 (i.e. 5 ms granularity) */
-	/* on DOS (DJGPP) CLK_TCK = 91 (not too precise, but should work anyway)*/
+	/* on DOS (DJGPP) CLK_TCK = 91 (not too precise, but should work anyway) */
 	if (nextclock) {
 		ULONG curclock;
 		do {
@@ -843,7 +850,15 @@ void atari_sync(void)
 #endif /* USE_CLOCK */
 }
 
-#if defined(BASIC) || defined(VERY_SLOW)
+#ifdef USE_CURSES
+void curses_clear_screen(void);
+#endif
+
+#if defined(BASIC) || defined(VERY_SLOW) || defined(CURSES_BASIC)
+
+#ifdef CURSES_BASIC
+void curses_display_line(int anticmode, const UBYTE *screendata);
+#endif
 
 static int scanlines_to_dl;
 
@@ -853,12 +868,16 @@ static void basic_antic_scanline(void)
 	static UBYTE IR = 0;
 	static const UBYTE mode_scanlines[16] =
 		{ 0, 0, 8, 10, 8, 16, 8, 16, 8, 4, 4, 2, 1, 2, 1, 1 };
-	static const UBYTE mode_cycles[16] =
+	static const UBYTE mode_bytes[16] =
 		{ 0, 0, 40, 40, 40, 40, 20, 20, 10, 10, 20, 20, 20, 40, 40, 40 };
 	static const UBYTE font40_cycles[4] = { 0, 32, 40, 47 };
 	static const UBYTE font20_cycles[4] = { 0, 16, 20, 24 };
+#ifdef CURSES_BASIC
+	static UWORD screenaddr = 0;
+	int newscreenaddr;
+#endif
 
-	int cycles_to_steal = 0;
+	int bytes = 0;
 	if (--scanlines_to_dl <= 0) {
 		if (DMACTL & 0x20) {
 			IR = ANTIC_GetDLByte(&dlist);
@@ -879,24 +898,36 @@ static void basic_antic_scanline(void)
 			break;
 		default:
 			if (IR & 0x40 && DMACTL & 0x20) {
-				ANTIC_GetDLWord(&dlist);
+#ifdef CURSES_BASIC
+				screenaddr =
+#endif
+					ANTIC_GetDLWord(&dlist);
 				xpos += 2;
 			}
 			/* can't steal cycles now, because DLI must come first */
 			/* just an approximation: doesn't check HSCROL */
 			switch (DMACTL & 3) {
 			case 1:
-				cycles_to_steal = mode_cycles[IR & 0xf] * 8 / 10;
+				bytes = mode_bytes[IR & 0xf] * 8 / 10;
 				break;
 			case 2:
-				cycles_to_steal = mode_cycles[IR & 0xf];
+				bytes = mode_bytes[IR & 0xf];
 				break;
 			case 3:
-				cycles_to_steal = mode_cycles[IR & 0xf] * 12 / 10;
+				bytes = mode_bytes[IR & 0xf] * 12 / 10;
 				break;
 			default:
 				break;
 			}
+#ifdef CURSES_BASIC
+			curses_display_line(IR & 0xf, memory + screenaddr);
+			newscreenaddr = screenaddr + bytes;
+			/* 4k wrap */
+			if (((screenaddr ^ newscreenaddr) & 0x1000) != 0)
+				screenaddr = newscreenaddr - 0x1000;
+			else
+				screenaddr = newscreenaddr;
+#endif
 			/* just an approximation: doesn't check VSCROL */
 			scanlines_to_dl = mode_scanlines[IR & 0xf];
 			break;
@@ -910,7 +941,7 @@ static void basic_antic_scanline(void)
 			NMI();
 		}
 	}
-	xpos += cycles_to_steal;
+	xpos += bytes;
 	/* steal cycles in font modes */
 	switch (IR & 0xf) {
 	case 2:
@@ -993,12 +1024,14 @@ void Atari800_Frame(void)
 #endif
 		frametime = deltatime;
 		break;
+#ifndef CURSES_BASIC
 	case AKEY_SCREENSHOT:
 		Screen_SaveNextScreenshot(FALSE);
 		break;
 	case AKEY_SCREENSHOT_INTERLACE:
 		Screen_SaveNextScreenshot(TRUE);
 		break;
+#endif
 	}
 #endif
 	Device_Frame();
@@ -1016,18 +1049,25 @@ void Atari800_Frame(void)
 #else /* BASIC */
 	if (++refresh_counter >= refresh_rate) {
 		refresh_counter = 0;
+#ifdef USE_CURSES
+		curses_clear_screen();
+#endif
+#ifdef CURSES_BASIC
+		basic_frame();
+#else
 		ANTIC_Frame(TRUE);
 		INPUT_DrawMousePointer();
 		Screen_DrawAtariSpeed();
 		Screen_DrawDiskLED();
+#endif
 		display_screen = TRUE;
 	}
 	else {
-#ifdef VERY_SLOW
+#if defined(VERY_SLOW) || defined(CURSES_BASIC)
 		basic_frame();
-#else /* VERY_SLOW */
+#else
 		ANTIC_Frame(sprite_collisions_in_skipped_frames);
-#endif /* VERY_SLOW */
+#endif
 		display_screen = FALSE;
 	}
 #endif /* BASIC */
@@ -1192,6 +1232,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.63  2005/08/13 08:42:33  pfusik
+CURSES_BASIC; generate curses screen basing on the DL
+
 Revision 1.62  2005/08/10 19:49:59  pfusik
 greatly improved BASIC and VERY_SLOW
 
