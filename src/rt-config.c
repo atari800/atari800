@@ -32,22 +32,21 @@
 #include "log.h"
 
 #ifdef SUPPORTS_ATARI_CONFIGURE
-	/* This procedure processes lines not recognized by RtConfigLoad. */
-	extern int Atari_Configure(char* option,char *parameters);
+/* This procedure processes lines not recognized by RtConfigLoad. */
+int Atari_Configure(char* option, char *parameters);
 #endif
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
-	/* This function saves additional config lines */
-	extern void Atari_ConfigSave(FILE *fp);
+/* This function saves additional config lines */
+void Atari_ConfigSave(FILE *fp);
 #endif
 
 #ifdef SUPPORTS_ATARI_CONFIGINIT
-	/* This function set the configuration parameters to
-     default values */
-	extern void Atari_ConfigInit(void);
+/* This function set the configuration parameters to default values */
+void Atari_ConfigInit(void);
 #endif
 
-extern char *safe_strncpy(char *dest, const char *src, size_t size);
+char *safe_strncpy(char *dest, const char *src, size_t size);
 
 char atari_osa_filename[FILENAME_MAX];
 char atari_osb_filename[FILENAME_MAX];
@@ -255,10 +254,14 @@ int RtConfigLoad(const char *alternate_config_filename)
 				sscanf(ptr, "%d", &stereo_enabled);
 			}
 			else if (strcmp(string, "SPEAKER_SOUND") == 0) {
+#ifdef CONSOLE_SOUND
 				sscanf(ptr, "%d", &console_sound_enabled);
+#endif
 			}
 			else if (strcmp(string, "SERIO_SOUND") == 0) {
+#ifdef SERIO_SOUND
 				sscanf(ptr, "%d", &serio_sound_enabled);
+#endif
 			}
 			else if (strcmp(string, "MACHINE_TYPE") == 0) {
 				if (strcmp(ptr, "Atari OS/A") == 0)
@@ -391,8 +394,12 @@ void RtConfigSave(void)
 	fprintf(fp, "ENABLE_R_PATCH=%d\n", enable_r_patch);
 	fprintf(fp, "ENABLE_NEW_POKEY=%d\n", enable_new_pokey);
 	fprintf(fp, "STEREO_POKEY=%d\n", stereo_enabled);
+#ifdef CONSOLE_SOUND
 	fprintf(fp, "SPEAKER_SOUND=%d\n", console_sound_enabled);
+#endif
+#ifdef SERIO_SOUND
 	fprintf(fp, "SERIO_SOUND=%d\n", serio_sound_enabled);
+#endif
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
 	Atari_ConfigSave(fp);
@@ -490,17 +497,28 @@ void RtConfigUpdate(void)
 			  	&enable_sio_patch);
 	GetYesNoAsInt("Enable H: (Hard disk) patch [%c] ", &enable_h_patch);
 	GetYesNoAsInt("Enable P: (Printer) patch [%c] ", &enable_p_patch);
+#ifdef R_IO_DEVICE
 	GetYesNoAsInt("Enable R: (Atari850 via net) patch [%c] ", &enable_r_patch);
+#endif
 	GetYesNoAsInt("Enable new HiFi POKEY [%c] ", &enable_new_pokey);
+#ifdef STEREO_SOUND
 	GetYesNoAsInt("Enable STEREO POKEY Sound [%c] ", &stereo_enabled);
+#endif
+#ifdef CONSOLE_SOUND
 	GetYesNoAsInt("Enable SPEAKER Sound [%c] ", &console_sound_enabled);
+#endif
+#ifdef SERIO_SOUND
 	GetYesNoAsInt("Enable SERIO Sound [%c] ", &serio_sound_enabled);
+#endif
 }
 
 #endif /* DONT_USE_RTCONFIGUPDATE */
 
 /*
 $Log$
+Revision 1.22  2005/08/13 08:49:22  pfusik
+no pokeysnd if SOUND disabled; no R: if not compiled in
+
 Revision 1.21  2004/11/26 18:10:29  joy
 buffer overflow fixes
 
