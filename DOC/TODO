@@ -1,13 +1,10 @@
 This is a list of things that need to be done
 ---------------------------------------------
-o generate CURSES screen data by tracing the Display List rather than relying
-  on OS I/O in text mode
+o direct loading of Atari BASIC programs (both SAVEd and LISTed)
 
-o make bitmap graphics generation optional in the CURSES version (using
-  CURSES_BASIC symbol). Now it is enabled, but is useful only for screenshots.
+o Covox sound device emulation
 
-o support configurations with no sound emulation at all and configurations
-  without live sound that can write WAV files
+o support configurations without live sound that can write WAV files
 
 o H: devices should have no access outside the specified directories
 
