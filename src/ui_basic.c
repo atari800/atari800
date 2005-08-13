@@ -23,10 +23,8 @@
 */
 
 #include <stdio.h>
-#include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>				/* for free() */
-#include <unistd.h>				/* for open() */
 #include <dirent.h>
 #include <sys/stat.h>
 #include "rt-config.h"
@@ -42,17 +40,9 @@
 #include "memory.h"
 #include "screen.h" /* for atari_screen */
 
-/* not needed anymore?
-#ifdef __DJGPP__
-#include <dos.h>
-#endif
-#ifdef linux
-#include <time.h>
-#endif
-*/
-
 #ifdef USE_CURSES
 extern UBYTE curses_screen[24][40];
+void curses_clear_screen(void);
 #endif
 
 extern int current_disk_directory;
@@ -62,10 +52,10 @@ static char charset[1024];
 
 /* Basic UI driver calls */
 
-int BasicUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii);
-int BasicUIGetSaveFilename(char* pFilename);
-int BasicUIGetLoadFilename(char* pDirectory, char* pFilename);
-void BasicUIMessage(char* pMessage);
+int BasicUISelect(char *pTitle, int bFloat, int nDefault, tMenuItem *menu, int *ascii);
+int BasicUIGetSaveFilename(char *pFilename);
+int BasicUIGetLoadFilename(char *pDirectory, char *pFilename);
+void BasicUIMessage(char *pMessage);
 void BasicUIAboutBox(void);
 void BasicUIInit(void);
 
@@ -127,7 +117,7 @@ unsigned char ascii_to_screen[128] =
 #define KB_DELAY		20
 #define KB_AUTOREPEAT		3
 
-int GetKeyPress(UBYTE * screen)
+int GetKeyPress(UBYTE *screen)
 {
 	int keycode;
 
@@ -162,7 +152,7 @@ int GetKeyPress(UBYTE * screen)
 	return key_to_ascii[keycode];
 }
 
-void Plot(UBYTE * screen, int fg, int bg, int ch, int x, int y)
+void Plot(UBYTE *screen, int fg, int bg, int ch, int x, int y)
 {
 #ifndef USE_CURSES
 	int offset = ascii_to_screen[(ch & 0x07f)] * 8;
@@ -218,7 +208,7 @@ void Plot(UBYTE * screen, int fg, int bg, int ch, int x, int y)
 #endif
 }
 
-void Print(UBYTE * screen, int fg, int bg, char *string, int x, int y)
+void Print(UBYTE *screen, int fg, int bg, const char *string, int x, int y)
 {
 	while (*string && *string != '\n') {
 		Plot(screen, fg, bg, *string++, x, y);
@@ -226,21 +216,21 @@ void Print(UBYTE * screen, int fg, int bg, char *string, int x, int y)
 	}
 }
 
-void CenterPrint(UBYTE * screen, int fg, int bg, char *string, int y)
+void CenterPrint(UBYTE *screen, int fg, int bg, const char *string, int y)
 {
 	int length;
 	char *eol = strchr(string, '\n');
 	while (eol != NULL && string[0]) {
-		length = eol-string-1;
+		length = eol - string - 1;
 		Print(screen, fg, bg, string, (40 - length) / 2, y++);
-		string = eol+1;
+		string = eol + 1;
 		eol = strchr(string, '\n');
 	}
 	length = strlen(string);
 	Print(screen, fg, bg, string, (40 - length) / 2, y);
 }
 
-int EditString(UBYTE * screen, int fg, int bg,
+int EditString(UBYTE *screen, int fg, int bg,
 				int len, char *string,
 				int x, int y)
 {
@@ -286,7 +276,7 @@ int EditString(UBYTE * screen, int fg, int bg,
 	}
 }
 
-void Box(UBYTE * screen, int fg, int bg, int x1, int y1, int x2, int y2)
+void Box(UBYTE *screen, int fg, int bg, int x1, int y1, int x2, int y2)
 {
 	int x;
 	int y;
@@ -307,9 +297,11 @@ void Box(UBYTE * screen, int fg, int bg, int x1, int y1, int x2, int y2)
 	Plot(screen, fg, bg, 26, x1, y2);
 }
 
-void ClearScreen(UBYTE * screen)
+void ClearScreen(UBYTE *screen)
 {
-#ifndef USE_CURSES
+#ifdef USE_CURSES
+	curses_clear_screen();
+#else
 	UBYTE *ptr;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	video_memset(screen, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
@@ -320,16 +312,10 @@ void ClearScreen(UBYTE * screen)
 	for (ptr = screen + ATARI_WIDTH * 24 + 32; ptr < screen + ATARI_WIDTH * (24 + 192); ptr += ATARI_WIDTH)
 		video_memset(ptr, 0x94, 320);
 #endif
-#else
-	int x;
-	int y;
-	for (y = 0; y < 24; y++)
-		for (x = 0; x < 40; x++)
-			curses_screen[y][x] = 0;
 #endif
 }
 
-int CountLines(char* string)
+int CountLines(const char *string)
 {
 	int lines;
 	if (string == NULL || *string == 0)
@@ -337,19 +323,19 @@ int CountLines(char* string)
 
 	lines = 1;
 	while ((string = strchr(string, '\n')) != NULL) {
-		lines ++;
-		string ++;
+		lines++;
+		string++;
 	}
 	return lines;
 }
 
-void TitleScreen(UBYTE * screen, char *title)
+void TitleScreen(UBYTE *screen, char *title)
 {
-	Box(screen, 0x9a, 0x94, 0, 0, 39, 1+CountLines(title));
+	Box(screen, 0x9a, 0x94, 0, 0, 39, 1 + CountLines(title));
 	CenterPrint(screen, 0x9a, 0x94, title, 1);
 }
 
-void ShortenItem(char *source, char *destination, int iMaxXsize)
+void ShortenItem(const char *source, char *destination, int iMaxXsize)
 {
 	if ((int) strlen(source) > iMaxXsize) {
 
@@ -365,11 +351,11 @@ void ShortenItem(char *source, char *destination, int iMaxXsize)
 		strcpy(destination, source);
 }
 
-void SelectItem(UBYTE * screen,
+void SelectItem(UBYTE *screen,
 				int fg, int bg,
 				int index, char *items[],
-				char* prefix[],
-				char* suffix[],
+				char *prefix[],
+				char *suffix[],
 				int nrows, int ncolumns,
 				int xoffset, int yoffset,
 				int itemwidth,
@@ -378,7 +364,7 @@ void SelectItem(UBYTE * screen,
 	int x;
 	int y;
 	int iMaxXsize = ((40 - xoffset) / ncolumns) - 1;
-	char szOrig[FILENAME_MAX+40]; /* allow for prefix and suffix */
+	char szOrig[FILENAME_MAX + 40]; /* allow for prefix and suffix */
 	char szString[41];
 	int spaceToAdd;
 
@@ -397,15 +383,17 @@ void SelectItem(UBYTE * screen,
 	if (suffix && suffix[index]) {
 		spaceToAdd = itemwidth - strlen(szOrig) - strlen(suffix[index]);
 		if (spaceToAdd > 0)
-			for (; spaceToAdd; spaceToAdd--)
+			do
 				strcat(szOrig, " ");
+			while (--spaceToAdd);
 		strcat(szOrig, suffix[index]);
 	}
 	else {
 		spaceToAdd = itemwidth - strlen(szOrig);
 		if (spaceToAdd > 0)
-			for (; spaceToAdd; spaceToAdd--)
+			do
 				strcat(szOrig, " ");
+			while (--spaceToAdd);
 	}
 
 	if (strlen(szOrig) > 3) {
@@ -442,11 +430,11 @@ void SelectItem(UBYTE * screen,
 	}
 }
 
-int Select(UBYTE * screen,
+int Select(UBYTE *screen,
 		   int default_item,
 		   int nitems, char *items[],
-		   char* prefix[],
-		   char* suffix[],
+		   char *prefix[],
+		   char *suffix[],
 		   int nrows, int ncolumns,
 		   int xoffset, int yoffset,
 		   int itemwidth,
@@ -510,7 +498,7 @@ int Select(UBYTE * screen,
 				return index + nitems * 2;
 			break;
 		case 0x7f:				/* Tab (for exchanging disk directories) */
-			return -2;			/*GOLDA CHANGED */
+			return -2;			/* GOLDA CHANGED */
 		case 0x20:				/* Space */
 		case 0x7e:				/* Backspace */
 		case 0x9b:				/* Select */
@@ -545,7 +533,7 @@ int EditFilename(UBYTE *screen, char *fname)
 }
 
 
-int FilenameSort(char *filename1, char *filename2)
+int FilenameSort(const char *filename1, const char *filename2)
 {
 	if (*filename1 == '[' && *filename2 != '[')
 		return -1;
@@ -656,7 +644,7 @@ List *GetDirectory(char *directory)
 	return list;
 }
 
-int FileSelector(UBYTE * screen, char *directory, char *full_filename)
+int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 {
 	List *list;
 	int flag = FALSE;
@@ -789,7 +777,7 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 #endif
 						else {	/*directory selected */
 							char lastchar = directory[strlen(directory) - 1];
-							char* pbracket = strchr(files[item], ']');
+							char *pbracket = strchr(files[item], ']');
 
 							if (pbracket)
 								*pbracket = '\0';	/*cut ']' */
@@ -835,7 +823,7 @@ int FileSelector(UBYTE * screen, char *directory, char *full_filename)
 }
 
 
-void AboutEmulator(UBYTE * screen)
+void AboutEmulator(UBYTE *screen)
 {
 	ClearScreen(screen);
 
@@ -860,7 +848,7 @@ void AboutEmulator(UBYTE * screen)
 }
 
 
-int MenuSelectEx(UBYTE* screen, char* title, int subitem, int default_item, tMenuItem* items, int* seltype)
+int MenuSelectEx(UBYTE *screen, char *title, int subitem, int default_item, tMenuItem *items, int *seltype)
 {
 	int scrollable;
 	int i;
@@ -974,29 +962,33 @@ void InitializeUI(void)
 
 /* UI Driver entries */
 
+#ifdef CURSES_BASIC
+#define atari_screen NULL
+#endif
+
 int BasicUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii)
 {
-	return MenuSelectEx((UBYTE*)atari_screen, pTitle, bFloat, nDefault, menu, ascii);
+	return MenuSelectEx((UBYTE *) atari_screen, pTitle, bFloat, nDefault, menu, ascii);
 }
 
 int BasicUIGetSaveFilename(char* pFilename)
 {
-	return EditFilename((UBYTE*)atari_screen, pFilename);
+	return EditFilename((UBYTE *) atari_screen, pFilename);
 }
 
 int BasicUIGetLoadFilename(char* pDirectory, char* pFilename)
 {
-	return FileSelector((UBYTE*)atari_screen, pDirectory, pFilename);
+	return FileSelector((UBYTE *) atari_screen, pDirectory, pFilename);
 }
 
 void BasicUIMessage(char* pMessage)
 {
-	Message((UBYTE*)atari_screen, pMessage);
+	Message((UBYTE *) atari_screen, pMessage);
 }
 
 void BasicUIAboutBox(void)
 {
-	AboutEmulator((UBYTE*)atari_screen);
+	AboutEmulator((UBYTE *) atari_screen);
 }
 
 void BasicUIInit(void)
@@ -1007,6 +999,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.20  2005/08/13 08:53:42  pfusik
+CURSES_BASIC; fixed indentation
+
 Revision 1.19  2005/08/06 18:25:40  pfusik
 changed () function signatures to (void)
 
