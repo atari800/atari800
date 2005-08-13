@@ -84,14 +84,14 @@ UBYTE consol_mask;
 UBYTE TRIG[4];
 UBYTE TRIG_latch[4];
 
-#ifdef BASIC
+#if defined(BASIC) || defined(CURSES_BASIC)
 
-#define PF0PM 0
-#define PF1PM 0
-#define PF2PM 0
-#define PF3PM 0
+static UBYTE PF0PM = 0;
+static UBYTE PF1PM = 0;
+static UBYTE PF2PM = 0;
+static UBYTE PF3PM = 0;
 
-#else /* BASIC */
+#else /* defined(BASIC) || defined(CURSES_BASIC) */
 
 void set_prior(UBYTE byte);			/* in antic.c */
 
@@ -106,11 +106,11 @@ UBYTE M0PL_T;
 UBYTE M1PL_T;
 UBYTE M2PL_T;
 UBYTE M3PL_T;
-/*If partial collisions have been generated during a scanline, this
+/* If partial collisions have been generated during a scanline, this
  * is the position of the up-to-date collision point , otherwise it is 0
  */
 int collision_curpos;
-/*if hitclr has been written to during a scanline, this is the position
+/* if hitclr has been written to during a scanline, this is the position
  * within pm_scaline at which it was written to, and collisions should 
  * only be generated from this point on, otherwise it is 0
  */
@@ -123,7 +123,7 @@ int hitclr_pos;
 #define M1PL_T M1PL
 #define M2PL_T M2PL
 #define M3PL_T M3PL
-#endif /*NEW_CYCLE_EXACT*/
+#endif /* NEW_CYCLE_EXACT */
 
 extern UBYTE player_dma_enabled;
 extern UBYTE missile_dma_enabled;
@@ -218,13 +218,13 @@ void setup_gtia9_11(void) {
 #endif
 }
 
-#endif /* BASIC */
+#endif /* defined(BASIC) || defined(CURSES_BASIC) */
 
 /* Initialization ---------------------------------------------------------- */
 
 void GTIA_Initialise(int *argc, char *argv[])
 {
-#ifndef BASIC
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 	int i;
 	for (i = 0; i < 256; i++) {
 		int tmp = i + 0x100;
@@ -249,13 +249,13 @@ void GTIA_Initialise(int *argc, char *argv[])
 	memset(cl_lookup, COLOUR_BLACK, sizeof(cl_lookup));
 	for (i = 0; i < 32; i++)
 		GTIA_PutByte((UWORD) i, 0);
-#endif /* BASIC */
+#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
 }
 
 #ifdef NEW_CYCLE_EXACT
 
-/*generate updated PxPL and MxPL for part of a scanline*/
-/*slow, but should be called rarely*/
+/* generate updated PxPL and MxPL for part of a scanline */
+/* slow, but should be called rarely */
 void generate_partial_pmpl_colls(int l, int r)
 {
 	int i;
@@ -286,7 +286,7 @@ void generate_partial_pmpl_colls(int l, int r)
 	
 }
 
-/*update pm->pl collisions for a partial scanline*/
+/* update pm->pl collisions for a partial scanline */
 void update_partial_pmpl_colls(void)
 {
 	int l = collision_curpos;
@@ -295,20 +295,20 @@ void update_partial_pmpl_colls(void)
 	collision_curpos = r;
 }
 
-/* update pm-> pl collisions at the end of a scanline*/
+/* update pm-> pl collisions at the end of a scanline */
 void update_pmpl_colls(void)
 {
 	if (hitclr_pos != 0){
 		generate_partial_pmpl_colls(hitclr_pos,
 				sizeof(pm_scanline) / sizeof(pm_scanline[0]) - 1);
 /* If hitclr was written to, then only part of pm_scanline should be used
- * for collisions*/
+ * for collisions */
 
 	}
 	else {
 /* otherwise the whole of pm_scaline can be used for collisions.  This will
  * update the collision registers based on the generated collisions for the
- * current line*/
+ * current line */
 		P1PL |= P1PL_T;
 		P2PL |= P2PL_T;
 		P3PL |= P3PL_T;
@@ -323,19 +323,19 @@ void update_pmpl_colls(void)
 
 #else
 #define update_partial_pmpl_colls(a) do{}while(0)
-#endif /*NEW_CYCLE_EXACT*/
+#endif /* NEW_CYCLE_EXACT */
 
 /* Prepare PMG scanline ---------------------------------------------------- */
 
-#ifndef BASIC
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 
 void new_pm_scanline(void)
 {
 #ifdef NEW_CYCLE_EXACT
-/* reset temporary pm->pl collisions*/
+/* reset temporary pm->pl collisions */
 	P1PL_T = P2PL_T = P3PL_T = 0;
 	M0PL_T = M1PL_T = M2PL_T = M3PL_T = 0;
-#endif /*NEW_CYCLE_EXACT*/
+#endif /* NEW_CYCLE_EXACT */
 /* Clear if necessary */
 	if (pm_dirty) {
 		memset(pm_scanline, 0, ATARI_WIDTH / 2);
@@ -409,7 +409,7 @@ void new_pm_scanline(void)
 	}
 }
 
-#endif /* BASIC */
+#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
 
 /* GTIA registers ---------------------------------------------------------- */
 
@@ -574,12 +574,12 @@ static int xpos_to_offset_blank[121] = {
 
 void GTIA_PutByte(UWORD addr, UBYTE byte)
 {
-#ifndef BASIC
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 	UWORD cword;
 	UWORD cword2;
 
 #ifdef NEW_CYCLE_EXACT
-	int x; /* the cycle-exact update position in pm_scanline*/
+	int x; /* the cycle-exact update position in pm_scanline */
 	if (DRAWING_SCREEN) {
 		if ((addr & 0x1f) != PRIOR) {
 			update_scanline();
@@ -592,7 +592,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #define UPDATE_PM_CYCLE_EXACT
 #endif
 
-#endif /* BASIC */
+#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
 
 	switch (addr & 0x1f) {
 	case _CONSOL:
@@ -603,7 +603,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		consol_mask = (~byte) & 0x0f;
 		break;
 
-#ifndef BASIC
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	case _COLBK:
@@ -1007,13 +1007,13 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #ifdef NEW_CYCLE_EXACT
 #define CYCLE_EXACT_GRAFP(n) x = XPOS * 2 - 3;\
 	if (HPOSP##n >= x) {\
-	/*hpos right of x */\
-		/*redraw*/  \
+	/* hpos right of x */\
+		/* redraw */  \
 		UPDATE_PM_CYCLE_EXACT\
 	}
 #else
 #define CYCLE_EXACT_GRAFP(n)
-#endif /*NEW_CYCLE_EXACT*/
+#endif /* NEW_CYCLE_EXACT */
 
 #define DO_GRAFP(n) case _GRAFP##n:\
 	GRAFP##n = byte;\
@@ -1034,8 +1034,8 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		collision_curpos = hitclr_pos;
 #endif
 		break;
-/*TODO: cycle-exact missile HPOS, GRAF, SIZE*/
-/*this is only an approximation*/
+/* TODO: cycle-exact missile HPOS, GRAF, SIZE */
+/* this is only an approximation */
 	case _HPOSM0:
 		HPOSM0 = byte;
 		hposm_ptr[0] = pm_scanline + byte - 0x20;
@@ -1060,35 +1060,35 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #ifdef NEW_CYCLE_EXACT
 #define CYCLE_EXACT_HPOSP(n) x = XPOS * 2 - 1;\
 	if (HPOSP##n < x && byte < x) {\
-	/*case 1: both left of x */\
-		/* do nothing*/\
+	/* case 1: both left of x */\
+		/* do nothing */\
 	}\
 	else if (HPOSP##n >= x && byte >= x ) {\
-	/*case 2: both right of x*/\
+	/* case 2: both right of x */\
 		/* redraw, clearing first */\
 		UPDATE_PM_CYCLE_EXACT\
 	}\
 	else if (HPOSP##n <x && byte >= x) {\
-	/*case 3: new value is right, old value is left*/\
-		/*redraw without clearning first*/\
-		/*note: a hack, we can get away with it unless another change occurs*/\
-		/*before the original copy that wasn't erased due to changing */\
-		/*pm_dirty is drawn*/\
-		pm_dirty=FALSE;\
+	/* case 3: new value is right, old value is left */\
+		/* redraw without clearning first */\
+		/* note: a hack, we can get away with it unless another change occurs */\
+		/* before the original copy that wasn't erased due to changing */\
+		/* pm_dirty is drawn */\
+		pm_dirty = FALSE;\
 		UPDATE_PM_CYCLE_EXACT\
-		pm_dirty=TRUE; /*can't trust that it was reset correctly*/\
+		pm_dirty = TRUE; /* can't trust that it was reset correctly */\
 	}\
 	else {\
-	/*case 4: new value is left, old value is right*/\
-		/* remove old player and don't draw the new one*/\
-		UBYTE save_graf=GRAFP##n;\
-		GRAFP##n=0;\
+	/* case 4: new value is left, old value is right */\
+		/* remove old player and don't draw the new one */\
+		UBYTE save_graf = GRAFP##n;\
+		GRAFP##n = 0;\
 		UPDATE_PM_CYCLE_EXACT\
-		GRAFP##n=save_graf;\
+		GRAFP##n = save_graf;\
 	}
 #else
 #define CYCLE_EXACT_HPOSP(n)
-#endif /*NEW_CYCLE_EXACT*/
+#endif /* NEW_CYCLE_EXACT */
 #define DO_HPOSP(n)	case _HPOSP##n:								\
 	hposp_ptr[n] = pm_scanline + byte - 0x20;					\
 	if (byte >= 0x22) {											\
@@ -1114,8 +1114,8 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 	DO_HPOSP(2)
 	DO_HPOSP(3)
 
-/*TODO: cycle-exact size changes*/
-/*this is only an approximation*/
+/* TODO: cycle-exact size changes */
+/* this is only an approximation */
 	case _SIZEM:
 		SIZEM = byte;
 		global_sizem[0] = PM_Width[byte & 0x03];
@@ -1147,7 +1147,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 	case _PRIOR:
 #ifdef NEW_CYCLE_EXACT
 #ifndef NO_GTIA11_DELAY
-		/*update prior change ring buffer*/
+		/* update prior change ring buffer */
   		prior_curpos = (prior_curpos + 1) % PRIOR_BUF_SIZE;
 		prior_pos_buf[prior_curpos] = XPOS * 2 - 37 + 2;
 		prior_val_buf[prior_curpos] = byte;
@@ -1171,7 +1171,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 			TRIG_latch[0] = TRIG_latch[1] = TRIG_latch[2] = TRIG_latch[3] = 1;
 		break;
 
-#endif /* BASIC */
+#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
 	}
 }
 
@@ -1179,110 +1179,108 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 
 #ifndef BASIC
 
-void GTIAStateSave( void )
+void GTIAStateSave(void)
 {
 	int next_console_value = 7;
 
-	SaveUBYTE( &HPOSP0, 1 );
-	SaveUBYTE( &HPOSP1, 1 );
-	SaveUBYTE( &HPOSP2, 1 );
-	SaveUBYTE( &HPOSP3, 1 );
-	SaveUBYTE( &HPOSM0, 1 );
-	SaveUBYTE( &HPOSM1, 1 );
-	SaveUBYTE( &HPOSM2, 1 );
-	SaveUBYTE( &HPOSM3, 1 );
-	SaveUBYTE( &PF0PM, 1 );
-	SaveUBYTE( &PF1PM, 1 );
-	SaveUBYTE( &PF2PM, 1 );
-	SaveUBYTE( &PF3PM, 1 );
-	SaveUBYTE( &M0PL, 1 );
-	SaveUBYTE( &M1PL, 1 );
-	SaveUBYTE( &M2PL, 1 );
-	SaveUBYTE( &M3PL, 1 );
-	SaveUBYTE( &P0PL, 1 );
-	SaveUBYTE( &P1PL, 1 );
-	SaveUBYTE( &P2PL, 1 );
-	SaveUBYTE( &P3PL, 1 );
-	SaveUBYTE( &SIZEP0, 1 );
-	SaveUBYTE( &SIZEP1, 1 );
-	SaveUBYTE( &SIZEP2, 1 );
-	SaveUBYTE( &SIZEP3, 1 );
-	SaveUBYTE( &SIZEM, 1 );
-	SaveUBYTE( &GRAFP0, 1 );
-	SaveUBYTE( &GRAFP1, 1 );
-	SaveUBYTE( &GRAFP2, 1 );
-	SaveUBYTE( &GRAFP3, 1 );
-	SaveUBYTE( &GRAFM, 1 );
-	SaveUBYTE( &COLPM0, 1 );
-	SaveUBYTE( &COLPM1, 1 );
-	SaveUBYTE( &COLPM2, 1 );
-	SaveUBYTE( &COLPM3, 1 );
-	SaveUBYTE( &COLPF0, 1 );
-	SaveUBYTE( &COLPF1, 1 );
-	SaveUBYTE( &COLPF2, 1 );
-	SaveUBYTE( &COLPF3, 1 );
-	SaveUBYTE( &COLBK, 1 );
-	SaveUBYTE( &PRIOR, 1 );
-	SaveUBYTE( &VDELAY, 1 );
-	SaveUBYTE( &GRACTL, 1 );
+	SaveUBYTE(&HPOSP0, 1);
+	SaveUBYTE(&HPOSP1, 1);
+	SaveUBYTE(&HPOSP2, 1);
+	SaveUBYTE(&HPOSP3, 1);
+	SaveUBYTE(&HPOSM0, 1);
+	SaveUBYTE(&HPOSM1, 1);
+	SaveUBYTE(&HPOSM2, 1);
+	SaveUBYTE(&HPOSM3, 1);
+	SaveUBYTE(&PF0PM, 1);
+	SaveUBYTE(&PF1PM, 1);
+	SaveUBYTE(&PF2PM, 1);
+	SaveUBYTE(&PF3PM, 1);
+	SaveUBYTE(&M0PL, 1);
+	SaveUBYTE(&M1PL, 1);
+	SaveUBYTE(&M2PL, 1);
+	SaveUBYTE(&M3PL, 1);
+	SaveUBYTE(&P0PL, 1);
+	SaveUBYTE(&P1PL, 1);
+	SaveUBYTE(&P2PL, 1);
+	SaveUBYTE(&P3PL, 1);
+	SaveUBYTE(&SIZEP0, 1);
+	SaveUBYTE(&SIZEP1, 1);
+	SaveUBYTE(&SIZEP2, 1);
+	SaveUBYTE(&SIZEP3, 1);
+	SaveUBYTE(&SIZEM, 1);
+	SaveUBYTE(&GRAFP0, 1);
+	SaveUBYTE(&GRAFP1, 1);
+	SaveUBYTE(&GRAFP2, 1);
+	SaveUBYTE(&GRAFP3, 1);
+	SaveUBYTE(&GRAFM, 1);
+	SaveUBYTE(&COLPM0, 1);
+	SaveUBYTE(&COLPM1, 1);
+	SaveUBYTE(&COLPM2, 1);
+	SaveUBYTE(&COLPM3, 1);
+	SaveUBYTE(&COLPF0, 1);
+	SaveUBYTE(&COLPF1, 1);
+	SaveUBYTE(&COLPF2, 1);
+	SaveUBYTE(&COLPF3, 1);
+	SaveUBYTE(&COLBK, 1);
+	SaveUBYTE(&PRIOR, 1);
+	SaveUBYTE(&VDELAY, 1);
+	SaveUBYTE(&GRACTL, 1);
 
-	SaveUBYTE( &consol_mask, 1 );
-
-	SaveINT( &atari_speaker, 1 );
-	SaveINT( &next_console_value, 1 );
+	SaveUBYTE(&consol_mask, 1);
+	SaveINT(&atari_speaker, 1);
+	SaveINT(&next_console_value, 1);
 }
 
-void GTIAStateRead( void )
+void GTIAStateRead(void)
 {
 	int next_console_value;	/* ignored */
 
-	ReadUBYTE( &HPOSP0, 1 );
-	ReadUBYTE( &HPOSP1, 1 );
-	ReadUBYTE( &HPOSP2, 1 );
-	ReadUBYTE( &HPOSP3, 1 );
-	ReadUBYTE( &HPOSM0, 1 );
-	ReadUBYTE( &HPOSM1, 1 );
-	ReadUBYTE( &HPOSM2, 1 );
-	ReadUBYTE( &HPOSM3, 1 );
-	ReadUBYTE( &PF0PM, 1 );
-	ReadUBYTE( &PF1PM, 1 );
-	ReadUBYTE( &PF2PM, 1 );
-	ReadUBYTE( &PF3PM, 1 );
-	ReadUBYTE( &M0PL, 1 );
-	ReadUBYTE( &M1PL, 1 );
-	ReadUBYTE( &M2PL, 1 );
-	ReadUBYTE( &M3PL, 1 );
-	ReadUBYTE( &P0PL, 1 );
-	ReadUBYTE( &P1PL, 1 );
-	ReadUBYTE( &P2PL, 1 );
-	ReadUBYTE( &P3PL, 1 );
-	ReadUBYTE( &SIZEP0, 1 );
-	ReadUBYTE( &SIZEP1, 1 );
-	ReadUBYTE( &SIZEP2, 1 );
-	ReadUBYTE( &SIZEP3, 1 );
-	ReadUBYTE( &SIZEM, 1 );
-	ReadUBYTE( &GRAFP0, 1 );
-	ReadUBYTE( &GRAFP1, 1 );
-	ReadUBYTE( &GRAFP2, 1 );
-	ReadUBYTE( &GRAFP3, 1 );
-	ReadUBYTE( &GRAFM, 1 );
-	ReadUBYTE( &COLPM0, 1 );
-	ReadUBYTE( &COLPM1, 1 );
-	ReadUBYTE( &COLPM2, 1 );
-	ReadUBYTE( &COLPM3, 1 );
-	ReadUBYTE( &COLPF0, 1 );
-	ReadUBYTE( &COLPF1, 1 );
-	ReadUBYTE( &COLPF2, 1 );
-	ReadUBYTE( &COLPF3, 1 );
-	ReadUBYTE( &COLBK, 1 );
-	ReadUBYTE( &PRIOR, 1 );
-	ReadUBYTE( &VDELAY, 1 );
-	ReadUBYTE( &GRACTL, 1 );
+	ReadUBYTE(&HPOSP0, 1);
+	ReadUBYTE(&HPOSP1, 1);
+	ReadUBYTE(&HPOSP2, 1);
+	ReadUBYTE(&HPOSP3, 1);
+	ReadUBYTE(&HPOSM0, 1);
+	ReadUBYTE(&HPOSM1, 1);
+	ReadUBYTE(&HPOSM2, 1);
+	ReadUBYTE(&HPOSM3, 1);
+	ReadUBYTE(&PF0PM, 1);
+	ReadUBYTE(&PF1PM, 1);
+	ReadUBYTE(&PF2PM, 1);
+	ReadUBYTE(&PF3PM, 1);
+	ReadUBYTE(&M0PL, 1);
+	ReadUBYTE(&M1PL, 1);
+	ReadUBYTE(&M2PL, 1);
+	ReadUBYTE(&M3PL, 1);
+	ReadUBYTE(&P0PL, 1);
+	ReadUBYTE(&P1PL, 1);
+	ReadUBYTE(&P2PL, 1);
+	ReadUBYTE(&P3PL, 1);
+	ReadUBYTE(&SIZEP0, 1);
+	ReadUBYTE(&SIZEP1, 1);
+	ReadUBYTE(&SIZEP2, 1);
+	ReadUBYTE(&SIZEP3, 1);
+	ReadUBYTE(&SIZEM, 1);
+	ReadUBYTE(&GRAFP0, 1);
+	ReadUBYTE(&GRAFP1, 1);
+	ReadUBYTE(&GRAFP2, 1);
+	ReadUBYTE(&GRAFP3, 1);
+	ReadUBYTE(&GRAFM, 1);
+	ReadUBYTE(&COLPM0, 1);
+	ReadUBYTE(&COLPM1, 1);
+	ReadUBYTE(&COLPM2, 1);
+	ReadUBYTE(&COLPM3, 1);
+	ReadUBYTE(&COLPF0, 1);
+	ReadUBYTE(&COLPF1, 1);
+	ReadUBYTE(&COLPF2, 1);
+	ReadUBYTE(&COLPF3, 1);
+	ReadUBYTE(&COLBK, 1);
+	ReadUBYTE(&PRIOR, 1);
+	ReadUBYTE(&VDELAY, 1);
+	ReadUBYTE(&GRACTL, 1);
 
-	ReadUBYTE( &consol_mask, 1 );
-
-	ReadINT( &atari_speaker, 1 );
-	ReadINT( &next_console_value, 1 );
+	ReadUBYTE(&consol_mask, 1);
+	ReadINT(&atari_speaker, 1);
+	ReadINT(&next_console_value, 1);
 
 	GTIA_PutByte(_HPOSP0, HPOSP0);
 	GTIA_PutByte(_HPOSP1, HPOSP1);
