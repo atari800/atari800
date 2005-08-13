@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
 #ifdef DEBUG
 #include <time.h>
 #include <sys/time.h>
@@ -1196,66 +1195,42 @@ int Rotate_Disks(void)
 void SIOStateSave(void)
 {
 	int i;
-	UWORD namelen;    
-	char *filename;
-#ifdef HAVE_GETCWD
-	char dirname[FILENAME_MAX];
-	
-	getcwd(dirname, FILENAME_MAX);
-#endif
-	
+
 	for (i = 0; i < 8; i++) {
-#ifdef HAVE_GETCWD
-		if (strncmp(sio_filename[i], dirname, strlen(dirname)) == 0)
-			filename = &sio_filename[i][strlen(dirname) + 1];
-		else
-#endif
-			filename = sio_filename[i];
-	
-		namelen = strlen(filename);
 		SaveINT((int *) &drive_status[i], 1);
-		SaveUWORD(&namelen, 1);
-		SaveUBYTE(filename, namelen);
+		SaveFNAME(sio_filename[i]);
 	}
 }
 
 void SIOStateRead(void)
 {
 	int i;
-	UWORD namelen;
-	char filename[FILENAME_MAX];
-	FILE *fp;
-	int saved_drive_status;
-	
+
 	for (i = 0; i < 8; i++) {
-		ReadINT((int *) &saved_drive_status, 1);
-		ReadUWORD(&namelen, 1);
-		if (namelen != 0) {
-			filename[0] = 0;
-			ReadUBYTE(filename, namelen);
-			filename[namelen] = 0;
-			/* Check to make sure the filename is valid */
-			fp = fopen(filename, "rb");
-			if (fp == NULL)
-				continue;
-			else
-				fclose(fp);                
-			drive_status[i] = saved_drive_status;
-			/* If the disk drive wasn't empty or off when saved,
-			   mount the disk */
-			if ((drive_status[i] != Off) &&
-				(drive_status[i] != NoDisk)) {
-					/* unmount */
-					SIO_Dismount(i + 1);
-					/* try to mount with saved R/W status  */
-					if (drive_status[i] == ReadOnly)
-						SIO_Mount(i + 1, filename, 1);
-					else
-						SIO_Mount(i + 1, filename, 0);
-				}
-			}
-		else
-			drive_status[i] = saved_drive_status;
+		int saved_drive_status;
+		char filename[FILENAME_MAX];
+
+		ReadINT(&saved_drive_status, 1);
+		drive_status[i] = saved_drive_status;
+
+		ReadFNAME(filename);
+		if (filename[0] == 0)
+			continue;
+
+		/* If the disk drive wasn't empty or off when saved,
+		   mount the disk */
+		switch (saved_drive_status) {
+		case ReadOnly:
+			SIO_Dismount(i + 1);
+			SIO_Mount(i + 1, filename, 1);
+			break;
+		case ReadWrite:
+			SIO_Dismount(i + 1);
+			SIO_Mount(i + 1, filename, 0);
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -1263,6 +1238,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.28  2005/08/13 08:50:49  pfusik
+added functions for filename save/read
+
 Revision 1.27  2005/08/10 19:27:18  pfusik
 no state files in BASIC version
 
