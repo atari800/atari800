@@ -7,7 +7,14 @@
  - supports all interrupts
  - timing much closer to real Atari
  - much smaller executable (does not include unused code)
- * support for pdcurses, small fix for ncurses
+ * greatly improved CURSES version:
+ - support for pdcurses
+ - small fix for ncurses
+ - generates screen basing on the Display List
+ - fixed TAB, F8 and console keys
+ - fixed -wide2 mode
+ - bitmap graphics emulation is now disabled by default
+   (smaller and faster executable), but can be enabled with configure
  * small fixes and code clean up
 
 
