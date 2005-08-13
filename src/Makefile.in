@@ -37,10 +37,6 @@ OBJS = \
 	log.o \
 	compfile.o \
 	memory.o \
-	pokeysnd.o \
-	mzpokeysnd.o \
-	remez.o \
-	sndsave.o \
 	cassette.o \
 	@OBJS@
 
