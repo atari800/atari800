@@ -57,8 +57,8 @@ UWORD ANTIC_GetDLWord(UWORD *paddr);
 void ANTIC_UpdateArtifacting(void);
 
 /* Video memory access */
-void video_memset(UBYTE* ptr, UBYTE val, ULONG size);
-void video_putbyte(UBYTE* ptr, UBYTE val);
+void video_memset(UBYTE *ptr, UBYTE val, ULONG size);
+void video_putbyte(UBYTE *ptr, UBYTE val);
 
 #ifdef NEW_CYCLE_EXACT
 #define NOT_DRAWING -999
@@ -76,11 +76,11 @@ extern int prior_curpos;
 #define PRIOR_BUF_SIZE 40
 extern UBYTE prior_val_buf[PRIOR_BUF_SIZE];
 extern int prior_pos_buf[PRIOR_BUF_SIZE];
-#endif /*NO_GTIA11_DELAY*/
+#endif /* NO_GTIA11_DELAY */
 
 #define XPOS ( DRAWING_SCREEN ? cpu2antic_ptr[xpos] : xpos )
 #else
 #define XPOS xpos
-#endif /*NEW_CYCLE_EXACT*/
+#endif /* NEW_CYCLE_EXACT */
 
 #endif /* _ANTIC_H_ */
