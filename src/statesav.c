@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <errno.h>
 #include "atari.h"
 #include "config.h"
@@ -36,424 +35,384 @@
 
 #define SAVE_VERSION_NUMBER	4
 
-#ifndef TRUE
-#define TRUE	1
-#define FALSE	0
-#endif
+void AnticStateSave(void);
+void MainStateSave(void);
+void CpuStateSave(UBYTE SaveVerbose);
+void GTIAStateSave(void);
+void PIAStateSave(void);
+void POKEYStateSave(void);
+void CARTStateSave(void);
+void SIOStateSave(void);
 
-extern void AnticStateSave( void );
-extern void MainStateSave( void );
-extern void CpuStateSave( UBYTE SaveVerbose );
-extern void GTIAStateSave( void );
-extern void PIAStateSave( void );
-extern void POKEYStateSave( void );
-extern void CARTStateSave( void );
-extern void SIOStateSave( void );
+void AnticStateRead(void);
+void MainStateRead(void);
+void CpuStateRead(UBYTE SaveVerbose);
+void GTIAStateRead(void);
+void PIAStateRead(void);
+void POKEYStateRead(void);
+void CARTStateRead(void);
+void SIOStateRead(void);
 
-extern void AnticStateRead( void );
-extern void MainStateRead( void );
-extern void CpuStateRead( UBYTE SaveVerbose );
-extern void GTIAStateRead( void );
-extern void PIAStateRead( void );
-extern void POKEYStateRead( void );
-extern void CARTStateRead( void );
-extern void SIOStateRead( void );
-
-extern int ReadDisabledROMs( void );
+int ReadDisabledROMs(void);
 
 #ifdef HAVE_LIBZ
-#define GZOPEN( X, Y )		gzopen( X, Y )
-#define GZCLOSE( X )		gzclose( X )
-#define GZREAD( X, Y, Z )	gzread( X, Y, Z )
-#define GZWRITE( X, Y, Z )	gzwrite( X, Y, Z )
-#define GZERROR( X, Y )		gzerror( X, Y )
-#else	/* HAVE_LIBZ */
-#define GZOPEN( X, Y )		fopen( X, Y )
-#define GZCLOSE( X )		fclose( X )
-#define GZREAD( X, Y, Z )	fread( Y, Z, 1, X )
-#define GZWRITE( X, Y, Z )	fwrite( Y, Z, 1, X )
+#define GZOPEN(X, Y)     gzopen(X, Y)
+#define GZCLOSE(X)       gzclose(X)
+#define GZREAD(X, Y, Z)  gzread(X, Y, Z)
+#define GZWRITE(X, Y, Z) gzwrite(X, Y, Z)
+#define GZERROR(X, Y)    gzerror(X, Y)
+#else /* HAVE_LIBZ */
+#define GZOPEN(X, Y)     fopen(X, Y)
+#define GZCLOSE(X)       fclose(X)
+#define GZREAD(X, Y, Z)  fread(Y, Z, 1, X)
+#define GZWRITE(X, Y, Z) fwrite(Y, Z, 1, X)
 #undef GZERROR
-#endif	/* HAVE_LIBZ */
+#define gzFile  FILE
+#define Z_OK    0
+#endif /* HAVE_LIBZ */
 
-#ifndef HAVE_LIBZ
-#define gzFile	FILE
-#define Z_OK	0
-#endif
+static gzFile *StateFile = NULL;
+static int nFileError = Z_OK;
 
-static gzFile	*StateFile = NULL;
-static int		nFileError = Z_OK;
-
-static void GetGZErrorText( void )
+static void GetGZErrorText(void)
 {
 #ifdef HAVE_LIBZ
-	const char *error = GZERROR( StateFile, &nFileError );
-	if( nFileError == Z_ERRNO )
-	{
+	const char *error = GZERROR(StateFile, &nFileError);
+	if (nFileError == Z_ERRNO) {
 		nFileError = errno;
-		Aprint( "The following general file I/O error occured: " );
-		Aprint( strerror( nFileError ) );
+		Aprint("The following general file I/O error occured: ");
+		Aprint(strerror(nFileError));
 		return;
 	}
-	Aprint( "ZLIB returned the following error: %s", error);
-#endif	/* HAVE_LIBZ */
- 	Aprint( "State-save failed." );
+	Aprint("ZLIB returned the following error: %s", error);
+#endif /* HAVE_LIBZ */
+ 	Aprint("State file I/O failed.");
 }
 	
 /* Value is memory location of data, num is number of type to save */
-void SaveUBYTE( UBYTE *data, int num )
+void SaveUBYTE(const UBYTE *data, int num)
 {
-	int	result;
-
-	if( !StateFile || nFileError != Z_OK )
+	if (!StateFile || nFileError != Z_OK)
 		return;
 
 	/* Assumption is that UBYTE = 8bits and the pointer passed in refers
 	   directly to the active bits if in a padded location. If not (unlikely)
 	   you'll have to redefine this to save appropriately for cross-platform
 	   compatibility */
-	result = GZWRITE( StateFile, data, num );
-	if( result == 0 )
-	{
+	if (GZWRITE(StateFile, data, num) == 0)
 		GetGZErrorText();
-	}
 }
 
 /* Value is memory location of data, num is number of type to save */
-void ReadUBYTE( UBYTE *data, int num )
+void ReadUBYTE(UBYTE *data, int num)
 {
-	int	result;
-
-	if( !StateFile || nFileError != Z_OK )
+	if (!StateFile || nFileError != Z_OK)
 		return;
 
-	result = GZREAD( StateFile, data, num );
-	if( result == 0 )
-	{
+	if (GZREAD(StateFile, data, num) == 0)
 		GetGZErrorText();
-	}
 }
 
 /* Value is memory location of data, num is number of type to save */
-void SaveUWORD( UWORD *data, int num )
+void SaveUWORD(const UWORD *data, int num)
 {
-	if( !StateFile || nFileError != Z_OK )
+	if (!StateFile || nFileError != Z_OK)
 		return;
 
 	/* UWORDS are saved as 16bits, regardless of the size on this particular
 	   platform. Each byte of the UWORD will be pushed out individually in 
 	   LSB order. The shifts here and in the read routines will work for both
 	   LSB and MSB architectures. */
-	while( num > 0 )
-	{
-		UWORD	temp;
-		UBYTE	byte;
-		int	result;
+	while (num > 0) {
+		UWORD temp;
+		UBYTE byte;
 
-		temp = *data;
+		temp = *data++;
 		byte = temp & 0xff;
-		result = GZWRITE( StateFile, &byte, 1 );
-		if( result == 0 )
-		{
+		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
+			break;
 		}
 
 		temp >>= 8;
 		byte = temp & 0xff;
-		result = GZWRITE( StateFile, &byte, 1 );
-		if( result == 0 )
-		{
+		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
+			break;
 		}
 		num--;
-		data++;
 	}
 }
 
 /* Value is memory location of data, num is number of type to save */
-void ReadUWORD( UWORD *data, int num )
+void ReadUWORD(UWORD *data, int num)
 {
-	if( !StateFile || nFileError != Z_OK )
+	if (!StateFile || nFileError != Z_OK)
 		return;
 
-	while( num > 0 )
-	{
-		UBYTE	byte1, byte2;
-		int	result;
+	while (num > 0) {
+		UBYTE byte1, byte2;
 
-		
-		result = GZREAD( StateFile, &byte1, 1 );
-		if( result == 0 )
-		{
+		if (GZREAD(StateFile, &byte1, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
+			break;
 		}
 
-		result = GZREAD( StateFile, &byte2, 1 );
-		if( result == 0 )
-		{
+		if (GZREAD(StateFile, &byte2, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
+			break;
 		}
-		*data = (byte2 << 8) | byte1;
 
+		*data++ = (byte2 << 8) | byte1;
 		num--;
-		data++;
 	}
 }
 
-void SaveINT( int *data, int num )
+void SaveINT(const int *data, int num)
 {
+	if (!StateFile || nFileError != Z_OK)
+		return;
+
 	/* INTs are always saved as 32bits (4 bytes) in the file. They can be any size
 	   on the platform however. The sign bit is clobbered into the fourth byte saved
 	   for each int; on read it will be extended out to its proper position for the
 	   native INT size */
-	while( num > 0 )
-	{
-		unsigned char signbit = 0;
-		unsigned int	temp;
-		UBYTE	byte;
-		int result;
+	while (num > 0) {
+		UBYTE signbit = 0;
+		unsigned int temp;
+		UBYTE byte;
 		int temp0;
 
-		if( !StateFile || nFileError != Z_OK )
-		  return;
-
-		temp0 = *data;
-		if (temp0 < 0)
-		{
-		  temp0 = -temp0;
-		  signbit = 0x80;
+		temp0 = *data++;
+		if (temp0 < 0) {
+			temp0 = -temp0;
+			signbit = 0x80;
 		}
-		temp = (unsigned int)temp0;
+		temp = (unsigned int) temp0;
 
 		byte = temp & 0xff;
-		result = GZWRITE( StateFile, &byte, 1 );
-		if( result == 0 )
-		{
+		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;			
+			break;
 		} 
 
 		temp >>= 8;
 		byte = temp & 0xff;
-		result = GZWRITE( StateFile, &byte, 1 );
-		if( result == 0 )
-		{
+		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
-		}
+			break;
+		} 
 
 		temp >>= 8;
 		byte = temp & 0xff;
-		result = GZWRITE( StateFile, &byte, 1 );
-		if( result == 0 )
-		{
+		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
-		}
-		temp >>= 8;
+			break;
+		} 
 
+		temp >>= 8;
 		byte = (temp & 0x7f) | signbit;
-		result = GZWRITE( StateFile, &byte, 1 );
-		if( result == 0 )
-		{
+		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
-		}
+			break;
+		} 
+
 		num--;
-		data++;
 	}
 }
 
-void ReadINT( int *data, int num )
+void ReadINT(int *data, int num)
 {
-	unsigned char signbit = 0;
-
-	if( !StateFile || nFileError != Z_OK )
+	if (!StateFile || nFileError != Z_OK)
 		return;
 
-	while( num > 0 )
-	{
-		int	temp;
-		UBYTE	byte1, byte2, byte3, byte4;
-		int result;
+	while (num > 0) {
+		UBYTE signbit = 0;
+		int temp;
+		UBYTE byte1, byte2, byte3, byte4;
 
-		result = GZREAD( StateFile, &byte1, 1 );
-		if( result == 0 )
-		{
+		if (GZREAD(StateFile, &byte1, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;			
+			break;
 		} 
 
-		result = GZREAD( StateFile, &byte2, 1 );
-		if( result == 0 )
-		{
+		if (GZREAD(StateFile, &byte2, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
-		}
+			break;
+		} 
 
-		result = GZREAD( StateFile, &byte3, 1 );
-		if( result == 0 )
-		{
+		if (GZREAD(StateFile, &byte3, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
-		}
+			break;
+		} 
 
-		result = GZREAD( StateFile, &byte4, 1 );
-		if( result == 0 )
-		{
+		if (GZREAD(StateFile, &byte4, 1) == 0) {
 			GetGZErrorText();
-			num = 0;
-			continue;
-		}
+			break;
+		} 
 
 		signbit = byte4 & 0x80;
 		byte4 &= 0x7f;
 
 		temp = (byte4 << 24) | (byte3 << 16) | (byte2 << 8) | byte1;
-		if( signbit )
+		if (signbit)
 			temp = -temp;
-		*data = temp;
+		*data++ = temp;
 
 		num--;
-		data++;
 	}
 }
 
-int SaveAtariState( char *filename, const char *mode, UBYTE SaveVerbose )
+void SaveFNAME(const char *filename)
 {
-	int result;
+	UWORD namelen;
+#ifdef HAVE_GETCWD
+	char dirname[FILENAME_MAX];
 
-	if( StateFile )
-		result = GZCLOSE( StateFile );
-	StateFile = NULL;
+	/* Check to see if file is in application tree, if so, just save as 
+	   relative path....*/
+	getcwd(dirname, FILENAME_MAX);
+	if (strncmp(filename, dirname, strlen(dirname)) == 0)
+		/* XXX: check if '/' or '\\' follows dirname in filename? */
+		filename += strlen(dirname) + 1;
+#endif
+
+	namelen = strlen(filename);
+	/* Save the length of the filename, followed by the filename */
+	SaveUWORD(&namelen, 1);
+	SaveUBYTE((const UBYTE *) filename, namelen);
+}
+
+void ReadFNAME(char *filename)
+{
+	UWORD namelen = 0;
+
+	ReadUWORD(&namelen, 1);
+	if (namelen >= FILENAME_MAX) {
+		Aprint("Filenames of %d characters not supported on this platform", (int) namelen);
+		return;
+	}
+	ReadUBYTE((UBYTE *) filename, namelen);
+	filename[namelen] = 0;
+}
+
+int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
+{
+	UBYTE StateVersion = SAVE_VERSION_NUMBER;
+
+	if (StateFile != NULL) {
+		GZCLOSE(StateFile);
+		StateFile = NULL;
+	}
 	nFileError = Z_OK;
 
-	StateFile = GZOPEN( filename, mode );
-	if( !StateFile )
-	{
-		Aprint( "Could not open %s for state save." );
+	StateFile = GZOPEN(filename, mode);
+	if (StateFile == NULL) {
+		Aprint("Could not open %s for state save.", filename);
 		GetGZErrorText();
 		return FALSE;
 	}
-	result = GZWRITE( StateFile, "ATARI800", 8 );
-	if( !result )
-	{
+	if (GZWRITE(StateFile, "ATARI800", 8) == 0) {
 		GetGZErrorText();
-	}
-	else
-	{
-		UBYTE	StateVersion = SAVE_VERSION_NUMBER;
-		
-		SaveUBYTE( &StateVersion, 1 );
-		SaveUBYTE( &SaveVerbose, 1 );
-		/* The order here is important. Main must be first because it saves the machine type, and
-		   decisions on what to save/not save are made based off that later in the process */
-		MainStateSave( );
-		CARTStateSave( );
-		SIOStateSave( );
-		AnticStateSave( );
-		CpuStateSave( SaveVerbose );
-		GTIAStateSave( );
-		PIAStateSave( );
-		POKEYStateSave( );
+		GZCLOSE(StateFile);
+		StateFile = NULL;
+		return FALSE;
 	}
 
-	result = GZCLOSE( StateFile );
+	SaveUBYTE(&StateVersion, 1);
+	SaveUBYTE(&SaveVerbose, 1);
+	/* The order here is important. Main must be first because it saves the machine type, and
+	   decisions on what to save/not save are made based off that later in the process */
+	MainStateSave();
+	CARTStateSave();
+	SIOStateSave();
+	AnticStateSave();
+	CpuStateSave(SaveVerbose);
+	GTIAStateSave();
+	PIAStateSave();
+	POKEYStateSave();
+
+	GZCLOSE(StateFile);
 	StateFile = NULL;
 
-	if( nFileError != Z_OK )
+	if (nFileError != Z_OK)
 		return FALSE;
 
 	return TRUE;
 }
 
-int ReadAtariState( char *filename, const char *mode )
+int ReadAtariState(const char *filename, const char *mode)
 {
-	int result, result1;
-	char	header_string[9];
-	UBYTE	StateVersion  = 0;		/* The version of the save file */
-	UBYTE	SaveVerbose	 = 0;		/* Verbose mode means save basic, OS if patched */
+	char header_string[8];
+	UBYTE StateVersion = 0;  /* The version of the save file */
+	UBYTE SaveVerbose = 0;   /* Verbose mode means save basic, OS if patched */
 
-	if( StateFile )
-		result = GZCLOSE( StateFile );
-	StateFile = NULL;
+	if (StateFile != NULL) {
+		GZCLOSE(StateFile);
+		StateFile = NULL;
+	}
 	nFileError = Z_OK;
 
-	StateFile = GZOPEN( filename, mode );
-	if( !StateFile )
-	{
-		Aprint( "Could not open %s for state read." );
+	StateFile = GZOPEN(filename, mode);
+	if (StateFile == NULL) {
+		Aprint("Could not open %s for state read.", filename);
 		GetGZErrorText();
 		return FALSE;
 	}
 
-	result = GZREAD( StateFile, header_string, 8 );
-	header_string[8] = 0;
-	if( strcmp( header_string, "ATARI800" ) )
-	{
-		Aprint( "This is not an Atari800 state save file." );
-		result = GZCLOSE( StateFile );
-		StateFile = NULL;
-		return FALSE;
-	}
-
-	result = GZREAD( StateFile, &StateVersion, 1 );
-	result1 = GZREAD( StateFile, &SaveVerbose, 1 );
-	if( result == 0 || result1 == 0 )
-	{
+	if (GZREAD(StateFile, header_string, 8) == 0) {
 		GetGZErrorText();
-		Aprint( "Failed read from Atari state file." );
-		result = GZCLOSE( StateFile );
+		GZCLOSE(StateFile);
+		StateFile = NULL;
+		return FALSE;
+	}
+	if (memcmp(header_string, "ATARI800", 8) != 0) {
+		Aprint("This is not an Atari800 state save file.");
+		GZCLOSE(StateFile);
 		StateFile = NULL;
 		return FALSE;
 	}
 
-	if( StateVersion != SAVE_VERSION_NUMBER && StateVersion != 3)
-	{
-		Aprint( "Cannot read this state file because it is an incompatible version." );
-		result = GZCLOSE( StateFile );
+	if (GZREAD(StateFile, &StateVersion, 1) == 0
+	 || GZREAD(StateFile, &SaveVerbose, 1) == 0) {
+		Aprint("Failed read from Atari state file.");
+		GetGZErrorText();
+		GZCLOSE(StateFile);
 		StateFile = NULL;
 		return FALSE;
 	}
 
-	MainStateRead( );
+	if (StateVersion != SAVE_VERSION_NUMBER && StateVersion != 3) {
+		Aprint("Cannot read this state file because it is an incompatible version.");
+		GZCLOSE(StateFile);
+		StateFile = NULL;
+		return FALSE;
+	}
+
+	MainStateRead();
 	if (StateVersion != 3) {
-		CARTStateRead( );
-		SIOStateRead( );
+		CARTStateRead();
+		SIOStateRead();
 	}
-	AnticStateRead( );
-	CpuStateRead( SaveVerbose );
-	GTIAStateRead( );
-	PIAStateRead( );
-	POKEYStateRead( );
+	AnticStateRead();
+	CpuStateRead(SaveVerbose);
+	GTIAStateRead();
+	PIAStateRead();
+	POKEYStateRead();
 
-	result = GZCLOSE( StateFile );
+	GZCLOSE(StateFile);
 	StateFile = NULL;
 
-	if( nFileError != Z_OK )
+	if (nFileError != Z_OK)
 		return FALSE;
 
-	if( !SaveVerbose && machine_type == MACHINE_XLXE )
-	{
+	/* XXX: is this necessary? */
+	if (!SaveVerbose && machine_type == MACHINE_XLXE) {
 		/* ReadDisabledRoms is a port specific function that will read atari basic into 
 		   atari_basic[] and the OS into atarixl_os for XL/XEs. It should return FALSE
 		   for failure. This is for saved states that don't have these ROMs in the save
 		   because they are not important (not patched or otherwise modified) */
-		if( !ReadDisabledROMs() )
+		if (!ReadDisabledROMs())
 			return FALSE;
 	}
 
@@ -462,6 +421,9 @@ int ReadAtariState( char *filename, const char *mode )
 
 /*
 $Log$
+Revision 1.9  2005/08/13 08:51:39  pfusik
+added functions for filename save/read; fixed indentation
+
 Revision 1.8  2005/08/04 23:03:40  pfusik
 ReadDisabledROMs wasn't actually called!
 
