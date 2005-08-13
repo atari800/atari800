@@ -1,7 +1,38 @@
+2005-08-13  Piotr Fusik  <fox@scene.pl>
+* atari_curses.c: TAB is now TAB rather than CONTROL+I;
+  F8 is "enter monitor" not coldstart;
+  Start, Select, Option can now be released;
+  fixed -wide2 mode
+
+* antic.c, atari.c, atari_curses.c: generate curses screen basing on the DL
+  rather than OS screen - Self Test and halt screen of emuos are now visible
+
+* configure.ac: support --target x11-shm, x11-motif, x11-xview, x11-xview-shm;
+  changed hints for symbols in config.h to full sentences,
+  to be consistent with autoconf-generated hints;
+  fixed hint for VOL_ONLY_SOUND; lack of zlib is no fatal error;
+  check for signal.h, termios.h, memmove, signal, strspn;
+  CURSES_BASIC; no sound objects if SOUND disabled
+
+* antic.c, atari.c, configure.ac, gtia.c, input.c, ui.c, ui_basic.c:
+  CURSES version without bitmap screen generation (i.e. no screenshots)
+  enabled with CURSES_BASIC - faster and smaller, enabled by default
+
+* cartridge.c, cassette.[ch], pokey.[ch], sio.c: fixed warnings
+
+* antic.[ch], gtia.c, pokey.c, statesav.[ch], ui_basic.c: fixed indentation
+
+* ui.c: not compiled-in features don't show in menus
+
+* cartridge.c, sio.c, statesav.[ch]: added functions for filename save/read
+
+* configure.ac, Makefile.in, ui.c: no sound emulation if sound is disabled
+
+
 2005-08-10  Piotr Fusik  <fox@scene.pl>
 * atari_basic.c: sound support; don't link with input.o
 
-* atari.c: BASIC and VERY_SLOW now generate VBLK and Pokey interrupts.
+* atari.c: BASIC and VERY_SLOW now generate all kinds of interrupts.
   This generally means that you can hear music and SIO works without a patch.
   Timing in these versions is now much more precise.
 
@@ -57,7 +88,7 @@
 * ui.c: display error messages for "Run BIN file", "Select tape",
   "Insert cartridge" and "Save screenshot"
 
-* compfile.c: fixed indenting; other minor improvements
+* compfile.c: fixed indentation; other minor improvements
 
 
 2005-08-06  Piotr Fusik  <fox@scene.pl>
@@ -70,7 +101,7 @@
   changed () function signatures to (void)
 
 * antic.c, atari_sdl.c, atari_x11.c, cassette.c, cycle_map.c, monitor.c,
-  pokeysnd.c, ui_basic.c: fixed indenting
+  pokeysnd.c, ui_basic.c: fixed indentation
 
 * rtime.c: optimized RTIME_GetByte
 
