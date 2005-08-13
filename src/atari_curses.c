@@ -22,21 +22,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <string.h>
 #ifdef USE_NCURSES
-#include	<ncurses.h>
+#include <ncurses.h>
 #else
-#include	<curses.h>
+#include <curses.h>
 #endif
 
+#include "antic.h" /* ypos */
 #include "atari.h"
 #include "config.h"
-#include "cpu.h"
 #include "input.h"
 #include "monitor.h"
-#include "memory.h"
-#include "rt-config.h"	/* refresh_rate */
-#include "screen.h"
-#include "ui.h"
 #include "log.h"
 
 #ifdef SOUND
@@ -92,7 +89,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	nodelay(stdscr, 1);			/* Don't block for keypress */
 
 #ifdef SOUND
-   Sound_Initialise(argc, argv);
+	Sound_Initialise(argc, argv);
 #endif
 }
 
@@ -113,27 +110,86 @@ int Atari_Exit(int run_monitor)
 		curs_set(0);
 	}
 #ifdef SOUND
-        else
-           Sound_Exit();
+	else
+		Sound_Exit();
 #endif
 	Aflushlog();
 	return restart;
 }
 
-void Atari_DisplayScreen(UBYTE * screen)
+void curses_clear_screen(void)
 {
-	UWORD screenaddr;
+	int y;
+	for (y = 0; y < 24; y++)
+		memset(curses_screen[y], 0, 40);
+}
 
-	int xpos;
-	int ypos;
+void curses_display_line(int anticmode, const UBYTE *screendata)
+{
+	// TODO
+	UBYTE *p;
+	int w;
+	if (ypos < 32 || ypos >= 224)
+		return;
+	p = &(curses_screen[(ypos >> 3) - 4][0]);
+	switch (anticmode) {
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+		switch (DMACTL & 3) {
+		case 1:
+			p += 4;
+			w = 32;
+			break;
+		case 2:
+			w = 40;
+			break;
+		case 3:
+			screendata += 4;
+			w = 48;
+			break;
+		default:
+			return;
+		}
+		memcpy(p, screendata, w);
+		break;
+	case 6:
+	case 7:
+		switch (DMACTL & 3) {
+		case 1:
+			p += 12;
+			w = 16;
+			break;
+		case 2:
+			p += 10;
+			w = 20;
+			break;
+		case 3:
+			screendata += 2;
+			p += 8;
+			w = 24;
+			break;
+		default:
+			return;
+		}
+		do
+			*p++ = *screendata++ & 0xbf;
+		while (--w);
+		break;
+	default:
+		break;
+	}
+}
 
-	screenaddr = dGetWordAligned(88);
+void Atari_DisplayScreen(UBYTE *screen)
+{
+	int x;
+	int y;
 
-	for (ypos = 0; ypos < 24; ypos++) {
-		for (xpos = 0; xpos < 40; xpos++) {
-			int ch;
-
-			ch = ui_is_active ? curses_screen[ypos][xpos] : dGetByte(screenaddr);
+	for (y = 0; y < 24; y++) {
+		for (x = 0; x < 40; x++) {
+			int ch = curses_screen[y][x];
 
 			switch (ch & 0xe0) {
 			case 0x00:			/* Numbers + !"$% etc. */
@@ -161,30 +217,28 @@ void Atari_DisplayScreen(UBYTE * screen)
 				break;
 			}
 
-			switch (curses_mode & 0x0f) {
+			switch (curses_mode) {
 			default:
 			case CURSES_LEFT:
-				move(ypos, xpos);
+				move(y, x);
 				break;
 			case CURSES_CENTRAL:
-				move(ypos, 20 + xpos);
+				move(y, 20 + x);
 				break;
 			case CURSES_RIGHT:
-				move(ypos, 40 + xpos);
+				move(y, 40 + x);
 				break;
 			case CURSES_WIDE_1:
-				move(ypos, xpos + xpos);
+				move(y, x + x);
 				break;
 			case CURSES_WIDE_2:
-				move(ypos, xpos + xpos);
+				move(y, x + x);
 				addch(ch);
-				ch = (ch & 0x80) | 0x20;
+				ch = ' ' + (ch & A_REVERSE);
 				break;
 			}
 
 			addch(ch);
-
-			screenaddr++;
 		}
 	}
 
@@ -193,9 +247,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 
 int Atari_Keyboard(void)
 {
-	int keycode;
-
-	keycode = getch();
+	int keycode = getch();
 
 #if 0
 	/* for debugging */
@@ -205,6 +257,8 @@ int Atari_Keyboard(void)
 		exit(1);
 	}
 #endif
+
+	key_consol = CONSOL_NONE;
 
 	switch (keycode) {
 	case 0x01:
@@ -236,7 +290,7 @@ int Atari_Keyboard(void)
 		break;
 #endif
 	case 0x09:
-		keycode = AKEY_CTRL_I;
+		keycode = AKEY_TAB;
 		break;
 /*
    case 0x0a :
@@ -576,15 +630,15 @@ int Atari_Keyboard(void)
 		keycode = AKEY_UI;
 		break;
 	case KEY_F0 + 2:
-		key_consol &= 0x03;
+		key_consol &= ~CONSOL_OPTION;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 3:
-		key_consol &= 0x05;
+		key_consol &= ~CONSOL_SELECT;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 4:
-		key_consol &= 0x06;
+		key_consol &= ~CONSOL_START;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 5:
@@ -597,7 +651,7 @@ int Atari_Keyboard(void)
 		keycode = AKEY_BREAK;
 		break;
 	case KEY_F0 + 8:
-		keycode = AKEY_COLDSTART;
+		keycode = Atari_Exit(TRUE) ? AKEY_NONE : AKEY_EXIT;
 		break;
 	case KEY_F0 + 9:
 		keycode = AKEY_EXIT;
@@ -655,12 +709,16 @@ int main(int argc, char **argv)
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen(NULL);
 	}
 }
 
 /*
 $Log$
+Revision 1.15  2005/08/13 08:43:35  pfusik
+generate curses screen basing on the DL; fixed -wide2;
+fixed TAB, F8 and console keys
+
 Revision 1.14  2005/08/10 20:03:38  pfusik
 backspace now works on DJGPP/pdcurses
 
