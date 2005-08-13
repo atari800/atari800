@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <string.h>
 #include "antic.h"
 #include "atari.h"
 #include "cassette.h"
@@ -33,7 +34,9 @@
 #include "pia.h"
 #include "platform.h"
 #include "pokey.h"
+#ifndef CURSES_BASIC
 #include "screen.h" /* for atari_screen */
+#endif
 
 int key_code = AKEY_NONE;
 int key_shift = 0;
@@ -604,6 +607,8 @@ void INPUT_CenterMousePointer(void)
 	}
 }
 
+#ifndef CURSES_BASIC
+
 #define PLOT(dx, dy)	do {\
 							ptr[(dx) + ATARI_WIDTH * (dy)] ^= 0x0f0f;\
 							ptr[(dx) + ATARI_WIDTH * (dy) + ATARI_WIDTH / 2] ^= 0x0f0f;\
@@ -634,3 +639,5 @@ void INPUT_DrawMousePointer(void)
 		}
 	}
 }
+
+#endif /* CURSES_BASIC */
