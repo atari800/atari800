@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "atari.h"
+#include "config.h"
 #include "cartridge.h"
 #include "memory.h"
 #include "pia.h"
