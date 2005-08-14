@@ -131,7 +131,7 @@ int GetKeyPress(UBYTE *screen)
 
 	for (;;) {
 		static int rep = KB_DELAY;
-		if (Atari_Keyboard() == AKEY_NONE) {
+		if (Atari_Keyboard() < 0) {
 			rep = KB_DELAY;
 			atari_sync();
 			break;
@@ -147,7 +147,7 @@ int GetKeyPress(UBYTE *screen)
 	do {
 		atari_sync();
 		keycode = Atari_Keyboard();
-	} while (keycode == AKEY_NONE);
+	} while (keycode < 0);
 
 	return key_to_ascii[keycode];
 }
@@ -622,8 +622,8 @@ List *GetDirectory(char *directory)
 		Aprint("Error opening '%s' directory", directory);
 	}
 #ifdef DOS_DRIVES
-	/*in DOS, add all existing disk letters */
-	ListAddTail(list, strdup("[A:]"));	/*do not check A: - it's slow */
+	/* in DOS, add all existing disk letters */
+	ListAddTail(list, strdup("[A:]"));	/* do not check A: - it's slow */
 	letter[0] = 'C';
 	while (letter[0] <= 'Z') {
 #ifdef __DJGPP__
@@ -637,7 +637,7 @@ List *GetDirectory(char *directory)
 		(letter[0])++;
 	}
 #ifdef __DJGPP__
-	_djstat_flags = s_backup;	/*return the original state */
+	_djstat_flags = s_backup;	/* return the original state */
 #endif
 #endif
 
@@ -855,9 +855,9 @@ int MenuSelectEx(UBYTE *screen, char *title, int subitem, int default_item, tMen
 	int w, ws;
 	int x1, y1, x2, y2;
 	int nitems;
-	char* prefix[100];
-	char* root[100];
-	char* suffix[100];
+	char *prefix[100];
+	char *root[100];
+	char *suffix[100];
 	int retval;
 	int ascii;
 
@@ -903,9 +903,9 @@ int MenuSelectEx(UBYTE *screen, char *title, int subitem, int default_item, tMen
 		if (w > 38)
 			w = 38;
 
-		x1 = (40 - w)/2 - 1;
+		x1 = (40 - w) / 2 - 1;
 		x2 = x1 + w + 1;
-		y1 = (24 - nitems)/2 - 1;
+		y1 = (24 - nitems) / 2 - 1;
 		y2 = y1 + nitems + 1;
 	}
 	else {
@@ -917,8 +917,8 @@ int MenuSelectEx(UBYTE *screen, char *title, int subitem, int default_item, tMen
 	}
 
 	Box(screen, 0x9a, 0x94, x1, y1, x2, y2);
-	scrollable = (nitems > y2-y1-1);
-	retval = Select(screen, retval, nitems, root, prefix, suffix, nitems, 1, x1+1, y1+1, w, scrollable, &ascii);
+	scrollable = (nitems > y2 - y1 - 1);
+	retval = Select(screen, retval, nitems, root, prefix, suffix, nitems, 1, x1 + 1, y1 + 1, w, scrollable, &ascii);
 	if (retval < 0)
 		return retval;
 	for (i = 0; items[i].sig; i++) {
@@ -966,22 +966,22 @@ void InitializeUI(void)
 #define atari_screen NULL
 #endif
 
-int BasicUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii)
+int BasicUISelect(char *pTitle, int bFloat, int nDefault, tMenuItem *menu, int *ascii)
 {
 	return MenuSelectEx((UBYTE *) atari_screen, pTitle, bFloat, nDefault, menu, ascii);
 }
 
-int BasicUIGetSaveFilename(char* pFilename)
+int BasicUIGetSaveFilename(char *pFilename)
 {
 	return EditFilename((UBYTE *) atari_screen, pFilename);
 }
 
-int BasicUIGetLoadFilename(char* pDirectory, char* pFilename)
+int BasicUIGetLoadFilename(char *pDirectory, char *pFilename)
 {
 	return FileSelector((UBYTE *) atari_screen, pDirectory, pFilename);
 }
 
-void BasicUIMessage(char* pMessage)
+void BasicUIMessage(char *pMessage)
 {
 	Message((UBYTE *) atari_screen, pMessage);
 }
@@ -999,6 +999,10 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.21  2005/08/14 08:44:23  pfusik
+avoid negative array indexes with special keys pressed in UI;
+fixed indentation
+
 Revision 1.20  2005/08/13 08:53:42  pfusik
 CURSES_BASIC; fixed indentation
 
