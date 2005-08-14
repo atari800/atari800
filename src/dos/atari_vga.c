@@ -37,7 +37,7 @@
 #include "input.h"
 #include "ui.h"         /* for ui_is_active */
 #include "log.h"
-#include "dos/sound_dos.h"
+#include "sound.h"
 #include "monitor.h"
 #include "pcjoy.h"
 #include "screen.h"
