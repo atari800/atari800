@@ -28,6 +28,7 @@
 
 #include "atari.h"
 #include "antic.h"
+#include "config.h"
 #include "cpu.h"
 #include "cartridge.h"
 #include "gtia.h"
@@ -755,6 +756,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.6  2005/08/14 08:41:34  pfusik
+#include "config.h" for BASIC and PAGED_ATTRIB definitions
+
 Revision 1.5  2005/08/10 19:52:03  pfusik
 no state files in BASIC version
 
