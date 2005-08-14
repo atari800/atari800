@@ -85,6 +85,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "config.h"
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
@@ -94,8 +95,6 @@
 #include "atari.h"
 #include "sndsave.h"
 #include "rt-config.h"	/* extern for stereo_enabled and enable_new_pokey */
-
-#include "config.h"
 
 #ifdef UNALIGNED_LONG_OK
 #  define READ_U32(x)    (*(uint32 *)(x))
@@ -205,7 +204,7 @@ int	sampout2;			/* last out volume */
 
 static uint32 snd_freq17 = FREQ_17_EXACT;
 int32 snd_playback_freq = 44100;
-static uint8 snd_num_pokeys = 1;
+uint8 snd_num_pokeys = 1;
 static int snd_flags = 0;
 static int mz_quality = 0;		/* default quality for mzpokeysnd */
 
@@ -569,12 +568,12 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 #ifdef STEREO_SOUND
 				if (chip & 0x01) {
 					sampbuf_lastval2 += AUDV[chan + chip_offs]
-						-sampbuf_AUDV[chan + chip_offs];
+						- sampbuf_AUDV[chan + chip_offs];
 
 					sampbuf_val2[sampbuf_ptr2] = sampbuf_lastval2;
 					sampbuf_AUDV[chan + chip_offs] = AUDV[chan + chip_offs];
 					sampbuf_cnt2[sampbuf_ptr2] =
-						(cpu_clock-sampbuf_last2) * 128 * samp_freq / 178979;
+						(cpu_clock - sampbuf_last2) * 128 * samp_freq / 178979;
 					sampbuf_last2 = cpu_clock;
 					sampbuf_ptr2++;
 					if (sampbuf_ptr2 >= SAMPBUF_MAX)
@@ -593,12 +592,12 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 					sampbuf_val[sampbuf_ptr] = sampbuf_lastval;
 					sampbuf_AUDV[chan + chip_offs] = AUDV[chan + chip_offs];
 					sampbuf_cnt[sampbuf_ptr] =
-						(cpu_clock-sampbuf_last) * 128 * samp_freq / 178979;
+						(cpu_clock - sampbuf_last) * 128 * samp_freq / 178979;
 					sampbuf_last = cpu_clock;
 					sampbuf_ptr++;
 					if (sampbuf_ptr >= SAMPBUF_MAX)
 						sampbuf_ptr = 0;
-					if (sampbuf_ptr == sampbuf_rptr ) {
+					if (sampbuf_ptr == sampbuf_rptr) {
 						sampbuf_rptr++;
 						if (sampbuf_rptr >= SAMPBUF_MAX)
 							sampbuf_rptr = 0;
@@ -976,7 +975,7 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 #endif  /* INTERPOLATE_SOUND */
 
 #ifdef VOL_ONLY_SOUND
-			if (sampbuf_rptr!=sampbuf_ptr) {
+			if (sampbuf_rptr != sampbuf_ptr) {
 				int l;
 				if (sampbuf_cnt[sampbuf_rptr] > 0)
 					sampbuf_cnt[sampbuf_rptr] -= 1280;
@@ -1178,6 +1177,10 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.22  2005/08/14 08:42:21  pfusik
+#include "config.h" early for HAVE_LIMITS_H;
+snd_num_pokeys for sound recording
+
 Revision 1.21  2005/08/13 08:48:11  pfusik
 fixed warnings
 
