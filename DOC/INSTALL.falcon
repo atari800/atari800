@@ -18,15 +18,18 @@ ATARICPU.TTP      - atari800 (cpu.c rewritten in optimized MC68030 asm)
 
 Keyboard emulation works well:
 
-F1 = configuration menu
-F2 = OPTION key of Atari 800XL
-F3 = SELECT key
-F4 = START key
-F5 = PowerON RESET (warm start)
-Shift + F5 = PowerOFF RESET (cold start)
-F6 = BREAK key
-F8 = Invoke Monitor
-F9 = Exit Emulator
+F1 = Configuration menu
+F2 = Option key
+F3 = Select key
+F4 = Start key
+F5 = Reset key (warm start)
+Shift+F5 = Switch Atari off and on (cold start)
+F6 = Help key
+F7 = Break key
+F8 = Invoke monitor
+F9 = Exit emulator
+F10 = Save screenshot
+Shift+F10 = Save interlaced screenshot
 Help = Help key
 
 Joystick emulation works fine. Both real joysticks (CX-40 type) can be
