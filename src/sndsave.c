@@ -125,20 +125,12 @@ int OpenSoundFile(const char *szFileName)
 		return FALSE;
 	}
 
-#ifdef STEREO_SOUND
-	fputc(stereo_enabled + 1, sndoutput);
-#else
-	fputc(1, sndoutput);
-#endif
+	fputc(snd_num_pokeys, sndoutput);
 	fputc(0, sndoutput);
 	write32(snd_playback_freq);
-	write32(snd_playback_freq);
+	write32(snd_playback_freq * snd_num_pokeys);
 
-#ifdef STEREO_SOUND
-	fputc(stereo_enabled + 1, sndoutput);
-#else
-	fputc(1, sndoutput);
-#endif
+	fputc(snd_num_pokeys, sndoutput);
 
 	/* XXX FIXME: signed/unsigned samples; 16-bit (byte order!) */
 	if (fwrite("\0\x08\0data\0\0\0\0", 1, 7, sndoutput) != 7) {
