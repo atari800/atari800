@@ -39,13 +39,13 @@ Compiling the Emulator
 The emulator can be compiled for the following systems (and probably
 many others with a little work):-
 
-1. X Window Version (Including SUN OpenWindows) on a Unix Platform
+1. X Window Version (including SUN OpenWindows) on a Unix Platform
 2. SVGALIB Version on Linux
 3. CURSES version
 4. Graphical Version for the Amiga
 5. Graphical version for the Atari TT/Falcon and compatible computers
 6. BASIC version (No Graphics). Should be straightforward to configure
-   for any 32 bit environment supporting ANSI C.
+   for any 32-bit environment supporting ANSI C.
 7. VGA Version for DOS
 8. DirectX Version for Microsoft Windows
 9. SDL (Linux/Unix, Windows, BeOS)
@@ -66,7 +66,7 @@ Building the Emulator on most platforms
 3. Run "./autogen.sh" (make sure you have autoconf >= 2.5x installed).
 4. Type "./configure --target=" for a list of supported platforms.
 5. Type "./configure --target=<YourTarget>" (choose from the list above)
-6. Type "make"
+6. Type "make".
 7. Install the emulator by typing "make install".
 
 Building the Emulator for Curses
@@ -132,7 +132,7 @@ and compile the source on a filesystem supporting long file names (for example
 VFAT of Windows95). An additional change of DJGPP setting is required:
 open the DJGPP.ENV file in editor and change the LFN= line to LFN=y
 
-1. Run "configure_dos.bat --target=vga".
+1. Run "configure_dos.bat".
 2. Run "make" and "make joycfg".
 3. If everything went good you should have atari800.exe and joycfg.exe -
    copy them to destination directory.
