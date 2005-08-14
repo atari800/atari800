@@ -2,6 +2,7 @@
  --------
  * sound recording now works (was completely broken)
  * improved PERCOM emulation
+ * stereo now works in DOS ports
  * greatly improved BASIC version:
  - supports sound
  - supports all interrupts

@@ -1,3 +1,13 @@
+2005-08-14  Piotr Fusik  <fox@scene.pl>
+* dos/dos_sb.c, dos/sound_dos.c: stereo now works
+
+* dos/atari_vga.c, dos/sound_dos.h: sound_dos.h removed, use sound.h instead
+
+* rt-config.c: support 16, 576, 1088 RAM; skip non-working options
+
+* ui_basic.c: avoid negative array indexes with special keys pressed in UI
+
+
 2005-08-13  Piotr Fusik  <fox@scene.pl>
 * atari_curses.c: TAB is now TAB rather than CONTROL+I;
   F8 is "enter monitor" not coldstart;
