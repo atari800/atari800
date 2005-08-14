@@ -29,6 +29,12 @@
 #include <curses.h>
 #endif
 
+/* workaround warnings with PDCurses */
+#undef HAVE_LIMITS_H
+#undef HAVE_MEMMOVE
+#undef HAVE_MEMORY_H
+#undef HAVE_UNISTD_H
+
 #include "antic.h" /* ypos */
 #include "atari.h"
 #include "config.h"
@@ -46,7 +52,7 @@
 #define CURSES_WIDE_1 3
 #define CURSES_WIDE_2 4
 
-static int curses_mode;
+static int curses_mode = CURSES_LEFT;
 
 UBYTE curses_screen[24][40];
 
@@ -126,7 +132,6 @@ void curses_clear_screen(void)
 
 void curses_display_line(int anticmode, const UBYTE *screendata)
 {
-	// TODO
 	UBYTE *p;
 	int w;
 	if (ypos < 32 || ypos >= 224)
@@ -147,7 +152,7 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 			break;
 		case 3:
 			screendata += 4;
-			w = 48;
+			w = 40;
 			break;
 		default:
 			return;
@@ -166,7 +171,6 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 			w = 20;
 			break;
 		case 3:
-			screendata += 2;
 			p += 8;
 			w = 24;
 			break;
@@ -193,21 +197,17 @@ void Atari_DisplayScreen(UBYTE *screen)
 
 			switch (ch & 0xe0) {
 			case 0x00:			/* Numbers + !"$% etc. */
-				ch = 0x20 + ch;
-				break;
 			case 0x20:			/* Upper Case Characters */
-				ch = 0x40 + (ch - 0x20);
+				ch = 0x20 + ch;
 				break;
 			case 0x40:			/* Control Characters */
 				ch = ch + A_BOLD;
 				break;
 			case 0x60:			/* Lower Case Characters */
 				break;
-			case 0x80:			/* Number, !"$% etc. */
-				ch = 0x20 + (ch & 0x7f) + A_REVERSE;
-				break;
+			case 0x80:			/* Numbers, !"$% etc. */
 			case 0xa0:			/* Upper Case Characters */
-				ch = 0x40 + ((ch & 0x7f) - 0x20) + A_REVERSE;
+				ch = 0x20 + (ch & 0x7f) + A_REVERSE;
 				break;
 			case 0xc0:			/* Control Characters */
 				ch = (ch & 0x7f) + A_REVERSE + A_BOLD;
@@ -715,6 +715,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.16  2005/08/14 08:40:31  pfusik
+fixed warnings with PDCurses; fixed wide Atari screen
+
 Revision 1.15  2005/08/13 08:43:35  pfusik
 generate curses screen basing on the DL; fixed -wide2;
 fixed TAB, F8 and console keys
