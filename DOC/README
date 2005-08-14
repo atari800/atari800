@@ -2,7 +2,7 @@ Atari 800 Emulator for Unix, Amiga, MS-DOS and Falcon, Version 1.3.6
 --------------------------------------------------------------------
 
     Copyright (C) 1995 David Firth. E-Mail: david@signus.demon.co.uk
-    Copyright (C) 1998-2004 Atari800 Development Team.
+    Copyright (C) 1998-2005 Atari800 Development Team.
                             http://atari800.sourceforge.net/
 
     This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@ It can be configured to run in the following ways :-
 The basic mode is only useful for running programs such as MAC65,
 Atari Basic etc. I have had this version running on Linux,
 SunOS 4.1.3, Solaris 2.4, Silicon Graphics, VAX/VMS, CBM Amiga
-(Dice C and GNU C) and the HP-UX 9000/380.
+(Dice C and GNU C), DOS/DJGPP and the HP-UX 9000/380.
 
 The CURSES mode is similar to the basic mode, but it also enables full
 screen editing capability. Some computer don't seem to support curses
@@ -40,15 +40,15 @@ The SVGALIB version runs at a reasonable speed. The screen dimensions
 are limited to 320x240.
 
 The X Window version supports graphics and has an optional XVIEW
-user interface. The Linux X Window version can be built with
-joystick support (If joystick module is installed in the kernel).
+or MOTIF user interface. The Linux X Window version can be built with
+joystick support (if joystick module is installed in the kernel).
 
 The Amiga version supports graphics but currently lacks Paddle support.
 
 The MS-DOS version supports 320x200, 320x240 and even 320x480 interlaced
 graphics, sound (SoundBlaster compatible sound cards, 8bit),
 keyboard, one joystick connected to game port and up to three additional
-digital joysticks connected to parallel (printer) ports.
+digital joysticks connected to parallel (printer) ports and mouse.
 
 The Atari Falcon030/040 version supports 320x240 and 336x240 Falcon/TT
 8-bit planes graphics modes, NOVA graphics cards, DMA sound and both
@@ -59,7 +59,7 @@ The SDL version should compile on Unix, Win32, BeOS, etc... It's optimized for
 in XFree86 - please set "Depth=8" in XF86Config to gain maximum speed. 
 
 From version 0.7.0 all versions supporting bitmapped graphics have
-a User Interface implemented on the emulators "screen". The User
+a User Interface implemented on the emulator's "screen". The User
 Interface is enter by pressing F1 at any time. ESC is used to return
 to the previous screen.
 
@@ -80,7 +80,7 @@ o Cycle-exact 6502 emulation, all unofficial instructions.
 
 o Cycle-exact NMI interrupts, scanline-based POKEY interrupts.
 
-o Scanline-based ANTIC emulation, all display modes, precise timing.
+o Cycle-exact ANTIC and GTIA emulation, all display modes.
 
 o Player/Missile Graphics, exact priority control and collision detection.
 
@@ -95,7 +95,7 @@ o Direct loading of Atari executable files.
 
 o 40 cartridge types, raw and CART format.
 
-o Cassette player, raw and CAS images.
+o Cassette recorder, raw and CAS images.
 
 o Printer support.
 
@@ -120,7 +120,7 @@ o R-Time 8 emulation using host computer clock.
 o Atari palette read from a file or calculated basing on user-defined
   parameters.
 
-o Screen snapshots (normal and interlaced) to PCX files.
+o Screen snapshots (normal and interlaced) to PCX and PNG files.
 
 o Sound output may be written to WAV files.
 
