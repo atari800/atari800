@@ -2,7 +2,7 @@
  * sound_dos.c - high level sound routines for DOS port
  *
  * Copyright (c) 1998-2000 Matthew Conte
- * Copyright (c) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -28,27 +28,26 @@
 
 #ifdef SOUND
 
+#include "atari.h"
 #include "pokeysnd.h"
 #include "dos_sb.h"
 #include "log.h"
 
-#define FALSE 0
-#define TRUE 1
-
 static int sound_enabled = TRUE;
 
-int playback_freq = FREQ_17_APPROX / 28 / 3;
-int buffersize = 440;
-int stereo = FALSE;
-int bps = 8;
+static int playback_freq = FREQ_17_APPROX / 28 / 3;
+#ifdef STEREO_SOUND
+static int buffersize = 880;
+static int stereo = TRUE;
+#else
+static int buffersize = 440;
+static int stereo = FALSE;
+#endif
+static int bps = 8;
 
 void Sound_Initialise(int *argc, char *argv[])
 {
 	int i, j;
-
-#ifdef STEREO
-	stereo = TRUE;
-#endif
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-sound") == 0)
@@ -79,12 +78,7 @@ void Sound_Initialise(int *argc, char *argv[])
 			sound_enabled = FALSE;
 		}
 		else {
-
-#ifdef STEREO
-			Pokey_sound_init(FREQ_17_APPROX, playback_freq, 2, 0);
-#else
-			Pokey_sound_init(FREQ_17_APPROX, playback_freq, 1, 0);
-#endif
+			Pokey_sound_init(FREQ_17_APPROX, playback_freq, stereo ? 2 : 1, 0);
 			sb_startoutput((sbmix_t) Pokey_process);
 		}
 	}
