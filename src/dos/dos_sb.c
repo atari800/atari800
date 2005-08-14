@@ -2,7 +2,7 @@
  * atari_sb.c - DOS Sound Blaster sound port code
  *
  * Copyright (c) 1998-2000 Matthew Conte
- * Copyright (c) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -84,6 +84,8 @@ typedef  uint8    boolean;
 #define  SB_FORMAT_STEREO     0x02
 
 /* DSP register offsets */
+#define  MIXER_REGISTER       0x04
+#define  MIXER_DATA           0x05
 #define  DSP_RESET            0x06
 #define  DSP_READ             0x0A
 #define  DSP_READ_READY       0x0E
@@ -102,6 +104,9 @@ typedef  uint8    boolean;
 #define  DSP_GET_VERSION      0xE1
 
 /* SB 1.5 - Pro commands */
+#define  MIXER_OUTPUT_STEREO  0x0E
+#define  MIXER_OUTPUT_STEREO_MONO    0x11
+#define  MIXER_OUTPUT_STEREO_STEREO  0x13
 #define  DSP_DMA_BLOCK_SIZE   0x48
 #define  DSP_DMA_DAC_AI_8BIT  0x1C  /* low-speed autoinit */
 #define  DSP_DMA_DAC_HS_8BIT  0x90  /* high-speed autoinit */
@@ -859,7 +864,7 @@ int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
    /* try autoinit DMA first */
    dma.autoinit = TRUE;
    sb.format = (16 == *bps) ? SB_FORMAT_16BIT : SB_FORMAT_8BIT;
-   sb.format |= (TRUE == *stereo) ? SB_FORMAT_STEREO : SB_FORMAT_MONO;
+   sb.format |= *stereo ? SB_FORMAT_STEREO : SB_FORMAT_MONO;
 
    /* determine which SB model we have, and act accordingly */
    if (sb.dsp_version < DSP_VERSION_SB_15)
@@ -946,6 +951,8 @@ static uint8 get_time_constant(int rate)
 
 static void init_samplerate(int rate)
 {
+   if ((sb.format & SB_FORMAT_STEREO))
+      rate *= 2;
    if ((sb.format & SB_FORMAT_16BIT) || sb.dsp_version >= DSP_VERSION_SB16)
    {
       dsp_write(DSP_DMA_DAC_RATE);
@@ -1091,6 +1098,11 @@ int sb_startoutput(sbmix_t fillbuf)
    /* set the callback routine */
    sb.callback = fillbuf;
 
+   /* XXX: is this all MIXER stuff necessary? */
+   /* outportb(sb.baseio, 0); */
+   outportb(sb.baseio + MIXER_REGISTER, MIXER_OUTPUT_STEREO);
+   outportb(sb.baseio + MIXER_DATA, (sb.format & SB_FORMAT_STEREO) ? MIXER_OUTPUT_STEREO_STEREO : MIXER_OUTPUT_STEREO_MONO);
+
    /* get the transfer going */
    start_transfer();
 
@@ -1126,6 +1138,10 @@ int sb_startoutput(sbmix_t fillbuf)
 
 /*
 ** $Log$
+** Revision 1.4  2005/08/14 08:38:23  pfusik
+** fixes for stereo: double output rate in stereo mode,
+** initialize mixer (dunno if necessary)
+**
 ** Revision 1.3  2003/02/24 09:33:21  joy
 ** header cleanup
 **
