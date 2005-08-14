@@ -290,8 +290,12 @@ int RtConfigLoad(const char *alternate_config_filename)
 					ram_size = RAM_320_RAMBO;
 				else if (strcmp(ptr, "320 (COMPY SHOP)") == 0)
 					ram_size = RAM_320_COMPY_SHOP;
+				else if (strcmp(ptr, "576") == 0)
+					ram_size = 576;
+				else if (strcmp(ptr, "1088") == 0)
+					ram_size = 1088;
 				else
-					Aprint("Invalid ram size: %s", ptr);
+					Aprint("Invalid RAM size: %s", ptr);
 			}
 			else if (strcmp(string, "DEFAULT_TV_MODE") == 0) {
 				if (strcmp(ptr, "PAL") == 0)
@@ -303,7 +307,7 @@ int RtConfigLoad(const char *alternate_config_filename)
 			}
 			else {
 #ifdef SUPPORTS_ATARI_CONFIGURE
-				if (!Atari_Configure(string,ptr)) {
+				if (!Atari_Configure(string, ptr)) {
 					Aprint("Unrecognized variable or bad parameters: '%s=%s'", string, ptr);
 				}
 #else
@@ -349,9 +353,13 @@ void RtConfigSave(void)
 	fprintf(fp, "H4_DIR=%s\n", atari_h4_dir);
 	fprintf(fp, "HD_READ_ONLY=%d\n", hd_read_only);
 	fprintf(fp, "EXE_DIR=%s\n", atari_exe_dir);
+#ifndef BASIC
 	fprintf(fp, "STATE_DIR=%s\n", atari_state_dir);
+#endif
 	fprintf(fp, "PRINT_COMMAND=%s\n", print_command);
+#ifndef BASIC
 	fprintf(fp, "SCREEN_REFRESH_RATIO=%d\n", refresh_rate);
+#endif
 
 	fprintf(fp, "MACHINE_TYPE=Atari ");
 	switch (machine_type) {
@@ -391,14 +399,20 @@ void RtConfigSave(void)
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", enable_sio_patch);
 	fprintf(fp, "ENABLE_H_PATCH=%d\n", enable_h_patch);
 	fprintf(fp, "ENABLE_P_PATCH=%d\n", enable_p_patch);
+#ifdef R_IO_DEVICE
 	fprintf(fp, "ENABLE_R_PATCH=%d\n", enable_r_patch);
+#endif
+#ifdef SOUND
 	fprintf(fp, "ENABLE_NEW_POKEY=%d\n", enable_new_pokey);
+#ifdef STEREO_SOUND
 	fprintf(fp, "STEREO_POKEY=%d\n", stereo_enabled);
+#endif
 #ifdef CONSOLE_SOUND
 	fprintf(fp, "SPEAKER_SOUND=%d\n", console_sound_enabled);
 #endif
 #ifdef SERIO_SOUND
 	fprintf(fp, "SERIO_SOUND=%d\n", serio_sound_enabled);
+#endif
 #endif
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
@@ -433,13 +447,17 @@ void RtConfigUpdate(void)
 	GetString("Enter path for H4: device [%s] ", atari_h4_dir);
 	GetYesNoAsInt("H: devices are read only [%c] ", &hd_read_only);
 	GetString("Enter path for single exe files [%s] ", atari_exe_dir);
+#ifndef BASIC
 	GetString("Enter path for state files [%s] ", atari_state_dir);
+#endif
 	GetString("Enter print command [%s] ", print_command);
+#ifndef BASIC
 	GetNumber("Enter default screen refresh ratio 1:[%d] ", &refresh_rate);
 	if (refresh_rate < 1)
 		refresh_rate = 1;
 	else if (refresh_rate > 60)
 		refresh_rate = 60;
+#endif
 
 	do {
 		GetNumber("Machine type: 0=OS/A 1=OS/B 2=XL/XE 3=5200 [%d] ",
@@ -462,9 +480,9 @@ void RtConfigUpdate(void)
 			if (k == RAM_320_RAMBO || k == RAM_320_COMPY_SHOP)
 				k = 320;
 			do {
-				GetNumber("Ram size (kilobytes): 64,128,320 [%d] ",
+				GetNumber("Ram size (kilobytes): 16,64,128,320,576,1088 [%d] ",
 						  &k);
-			} while ((k != 64) && (k != 128) && (k != 320));
+			} while (k != 16 && k != 64 && k != 128 && k != 320 && k != 576 && k != 1088);
 			if (k == 320) {
 				if (ram_size == RAM_320_RAMBO)
 					k = 1;
@@ -500,6 +518,7 @@ void RtConfigUpdate(void)
 #ifdef R_IO_DEVICE
 	GetYesNoAsInt("Enable R: (Atari850 via net) patch [%c] ", &enable_r_patch);
 #endif
+#ifdef SOUND
 	GetYesNoAsInt("Enable new HiFi POKEY [%c] ", &enable_new_pokey);
 #ifdef STEREO_SOUND
 	GetYesNoAsInt("Enable STEREO POKEY Sound [%c] ", &stereo_enabled);
@@ -510,12 +529,16 @@ void RtConfigUpdate(void)
 #ifdef SERIO_SOUND
 	GetYesNoAsInt("Enable SERIO Sound [%c] ", &serio_sound_enabled);
 #endif
+#endif
 }
 
 #endif /* DONT_USE_RTCONFIGUPDATE */
 
 /*
 $Log$
+Revision 1.23  2005/08/14 08:43:19  pfusik
+support 16, 576, 1088 RAM; skip non-working options
+
 Revision 1.22  2005/08/13 08:49:22  pfusik
 no pokeysnd if SOUND disabled; no R: if not compiled in
 
