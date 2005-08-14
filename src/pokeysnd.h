@@ -103,6 +103,7 @@ extern "C" {
 #define SND_STEREO	2
 
 extern int32 snd_playback_freq;
+extern uint8 snd_num_pokeys;
 
 extern void (*Pokey_process_ptr)(void *sndbuffer, unsigned int sndn);
 extern void (*Update_pokey_sound)(uint16 addr, uint8 val, uint8 /*chip*/, uint8 gain);
