@@ -1,3 +1,58 @@
+2005-08-15  Piotr Fusik  <fox@scene.pl>
+* atari.c: corrected VOL_ONLY_SOUND in BASIC and CURSES_BASIC
+
+* binload.[ch], sio.c: BIN_loade_start -> BIN_loader_start
+
+* cpu.c: corrected cycles for unofficial opcodes 0xB3, 0xBB, 0xBF
+
+* cpu.c: auto-define NO_GOTO for non-gccs
+
+* cpu.[ch], monitor.c: HISTORY displays ypos xpos also with NEW_CYCLE_EXACT
+  disabled
+
+* cpu.c, memory.h: changed some | to +: this gives better code on x86 due to
+  the LEA instruction
+
+* monitor.c: "C", "M" and "S" support hardware registers
+
+* monitor.c: display correct value for ZP,Y instruction
+
+* monitor.c: PENL -> PENV
+
+* cartridge.c, memory.[ch]: simplify code by defining SetROM and SetRAM
+  for PAGED_ATTRIB
+
+* devices.c: '!', '#', '$', '&', '(', ')', '-' and '@' are now valid
+  in H: filenames
+
+* atari.c, binload.[ch], cartridge.c, cpu.[ch], devices.c, ui.c:
+  direct loading of Atari Basic programs. Supported are:
+  - SAVEd (*.BAS) programs
+  - LISTed (*.LST) programs with auto-detected Atari, LF, CR/LF or CR
+    line terminators
+  From the user's point of view, loading of Atari Basic programs works
+  exactly like loading binary executables: use "-run" from command line
+  or "Run Atari program directly" from the User Interface.
+  The inner workings are much more interesting:
+  0a. BIN_loader() detects file type: *.BAS programs start with two 0x00 bytes,
+      *.LST programs must start with a digit.
+  0b. During coldstart Atari Basic is enabled, even if disable_basic is set.
+  0c. Device_PatchOS() installs a patch for E: write.
+  1. The "READY" prompt is expected on E:. This is not necessarily
+     the first thing printed on E: - a DOS may print its messages before running
+	 Atari Basic.
+  2. RUN "E:" (for *.BAS) or ENTER "E:" (for *.LST) is passed to Atari Basic
+     via E:.
+  3. A patched E: open handler installs handlers for read and close operations.
+  4. Reading bytes from the file. A conversion is applied to *.LST files:
+     first 0x9b, (0x0d,0x0a), 0x0d or 0x0a found in the file becomes the line
+	 terminator and is converted to 0x9b.
+  5. Close file. Patches are removed.
+  6. (for *.LST) The "READY" prompt is expected on E:. If something different
+     appears (probably "ERROR"), skip the step 7.
+  7. (for *.LST) "RUN" is passed to Atari Basic via E:.
+
+
 2005-08-14  Piotr Fusik  <fox@scene.pl>
 * dos/dos_sb.c, dos/sound_dos.c: stereo now works
 
