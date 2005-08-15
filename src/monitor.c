@@ -37,11 +37,7 @@
 #include "pokey.h"
 #include "prompts.h"
 #include "rt-config.h"
-
-#ifdef PROFILE
-extern int instruction_count[256];
-#endif
-extern int cycles[256];
+#include "monitor.h"
 
 #ifdef TRACE
 int tron = FALSE;
@@ -53,13 +49,14 @@ UWORD show_instruction(UWORD inad, int wid);
 static UWORD addr = 0;
 
 #ifdef MONITOR_ASSEMBLER
-UWORD assembler(UWORD addr);
+static UWORD assembler(UWORD addr);
 #endif
+
 #ifdef MONITOR_HINTS
-  typedef struct {
-    char name[9];  /* max. 8 characters */
-    UWORD addr;
-  } symtable_rec;
+typedef struct {
+	char name[9];  /* max. 8 characters */
+	UWORD addr;
+} symtable_rec;
   /*SYMBOL NAMES TAKEN FROM atari.equ - part of disassembler by Erich BACHER
     and from GTIA.H, POKEY.H, PIA.H & ANTIC.H                                */
   /*Note: all symbols must be sorted by address (binary search is used).
@@ -67,7 +64,7 @@ UWORD assembler(UWORD addr);
     If the adress has different names when reading/writting to it (GTIA ports),
     put the read name first. */
 
-  symtable_rec symtable[] = { 
+static const symtable_rec symtable[] = {
     {"NGFLAG",  0x0001}, {"CASINI",  0x0002}, {"CASINI+1",0x0003}, {"RAMLO",   0x0004},
     {"RAMLO+1", 0x0005}, {"TRAMSZ",  0x0006}, {"CMCMD",   0x0007}, {"WARMST",  0x0008},
     {"BOOT",    0x0009}, {"DOSVEC",  0x000a}, {"DOSVEC+1",0x000b}, {"DOSINI",  0x000c},
@@ -255,7 +252,7 @@ UWORD assembler(UWORD addr);
 
     {"DMACTL",0xd400}, {"CHACTL",0xd401}, {"DLISTL",0xd402}, {"DLISTH",0xd403},
     {"HSCROL",0xd404}, {"VSCROL",0xd405}, {"PMBASE",0xd407}, {"CHBASE",0xd409},
-    {"WSYNC", 0xd40a}, {"VCOUNT",0xd40b}, {"PENH",  0xd40c}, {"PENL",  0xd40d},
+    {"WSYNC", 0xd40a}, {"VCOUNT",0xd40b}, {"PENH",  0xd40c}, {"PENV",  0xd40d},
     {"NMIEN", 0xd40e}, {"NMIST" ,0xd40f}, {"NMIRES",0xd40f},
 
     {"AFP",   0xd800}, {"FASC",  0xd8e6}, {"IFP",   0xd9aa}, {"FPI",   0xd9d2},
@@ -272,7 +269,7 @@ UWORD assembler(UWORD addr);
     {"SELFTSV",0xe483},{"PENTV", 0xe486}, {"PHUNLV",0xe489}, {"PHINIV",0xe48c},
     {"GPDVV", 0xe48f}
     };
-  int symtable_size = sizeof(symtable) / sizeof(symtable_rec);
+static const int symtable_size = sizeof(symtable) / sizeof(symtable_rec);
 #endif
 
 /* Opcode type:
@@ -297,7 +294,7 @@ UWORD assembler(UWORD addr);
      F = ESC
 */
 #if defined(MONITOR_BREAK) || defined(MONITOR_HINTS)
-static UBYTE optype6502[256] = {
+static const UBYTE optype6502[256] = {
   0x01, 0x52, 0x01, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
   0x92, 0x62, 0x01, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b,
   0x13, 0x52, 0x01, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
@@ -346,6 +343,7 @@ static char *get_token(char *string)
 	return t;					/* Pointer to String */
 }
 
+#ifdef MONITOR_BREAK
 static int get_dec(char *string, UWORD * decval)
 {
 	int idecval;
@@ -359,6 +357,7 @@ static int get_dec(char *string, UWORD * decval)
 	}
 	return 0;
 }
+#endif
 
 static int get_hex(UWORD *hexval)
 {
@@ -384,6 +383,17 @@ static int get_hex3(UWORD *hexval1, UWORD *hexval2, UWORD *hexval3)
 	return get_hex(hexval1) && get_hex(hexval2) && get_hex(hexval3);
 }
 
+static void show_regs(void)
+{
+	int i;
+	printf("PC=%04x, A=%02x, S=%02x, X=%02x, Y=%02x, P=",
+		regPC, regA, regS, regX, regY);
+	for (i = 0; i < 8; i++)
+		putchar(regP & (0x80 >> i) ? "NV*BDIZC"[i] : '-');
+	putchar('\n');
+}
+
+#ifdef MONITOR_BREAK
 UWORD break_addr;
 UWORD ypos_break_addr = 0xffff;
 UBYTE break_step = 0;
@@ -393,12 +403,13 @@ UBYTE show_inst = 0;
 UBYTE break_ret = 0;
 int ret_nesting = 0;
 int brkhere = 0;
+#endif
 
 int monitor(void)
 {
 	UWORD addr;
 	char s[128];
-	static char old_s[sizeof(s)] = ""; /*GOLDA CHANGED*/
+	static char old_s[128] = ""; /* GOLDA CHANGED */
 	int p;
 
 	addr = 0;
@@ -407,14 +418,14 @@ int monitor(void)
 	
 #ifdef MONITOR_BREAK
 	if (show_inst && !break_step) {
-		/*break was caused by "O" command */
+		/* break was caused by "O" command */
 		break_addr = 0;
 	}
 	if (break_here) {
 		printf("(Break due to BRK opcode)\n");
 		show_inst = 1;
 	}
-	if (show_inst) { /*this part will disassemble actual instruction & show some hints */
+	if (show_inst) { /* this part will disassemble actual instruction & show some hints */
 		UWORD value = 0;
 		UBYTE optype;
 
@@ -425,97 +436,97 @@ int monitor(void)
 		show_instruction(regPC, 20);
 		optype = optype6502[dGetByte(regPC)] >> 4;
 		switch (optype) {
-		case 0x1:
+		case 0x1: /* abcd */
 			value = dGetWord(regPC + 1);
-			value = dGetByte(value);
+			value = GetByte(value);
 			break;
-		case 0x2:
+		case 0x2: /* #ab */
 			value = dGetByte(regPC + 1);
 			break;
-		case 0x3:
-			value=memory[(memory[regPC+2]<<8)+memory[regPC+1]+regX];
+		case 0x3: /* abcd,X */
+			value = dGetWord(regPC + 1) + regX;
+			value = GetByte(value);
 			break;
-		case 0x4:
-			value=memory[(memory[regPC+2]<<8)+memory[regPC+1]+regY];
+		case 0x4: /* abcd,Y */
+			value = dGetWord(regPC + 1) + regY;
+			value = GetByte(value);
 			break;
-		case 0x5:
-			value=(UBYTE)(memory[regPC+1]+regX);
-			value=(memory[(UBYTE)(value+1)]<<8)+memory[value];
-			value=memory[value];
+		case 0x5: /* (ab,X) */
+			value = dGetWord((UBYTE) (dGetByte(regPC + 1) + regX));
+			value = GetByte(value);
 			break;
-		case 0x6:
-			value=memory[regPC+1];
-			value=(memory[(UBYTE)(value+1)]<<8)+memory[value]+regY;
-			value=memory[value];
+		case 0x6: /* (ab),Y */
+			value = dGetWord(dGetByte(regPC + 1)) + regY;
+			value = dGetByte(value);
 			break;
-		case 0x7:
-			value=memory[(UBYTE)(memory[regPC+1]+regX)];
+		case 0x7: /* ab,X */
+			value = dGetByte((UBYTE) (dGetByte(regPC + 1) + regX));
 			break;
-		case 0x8:
-			value=memory[(UBYTE)(memory[regPC+1]+regX)];
+		case 0x8: /* ab,Y */
+			value = dGetByte((UBYTE) (dGetByte(regPC + 1) + regY));
 			break;
-		case 0x9:
+		case 0x9: /* branch */
 			switch (dGetByte(regPC)) {
-			case 0x10:  /*BPL*/
+			case 0x10:  /* BPL */
 				if (!(regP & N_FLAG))
 					value = 1;
 				break;
-			case 0x30:  /*BMI*/
+			case 0x30:  /* BMI */
 				if (regP & N_FLAG)
 					value = 1;
 				break;
-			case 0x50:  /*BVC*/
+			case 0x50:  /* BVC */
 				if (!(regP & V_FLAG))
 					value = 1;
 				break;
-			case 0x70:  /*BVS*/
+			case 0x70:  /* BVS */
 				if (regP & V_FLAG)
 					value = 1;
 				break;
-			case 0x90:  /*BCC*/
+			case 0x90:  /* BCC */
 				if (!(regP & C_FLAG))
 					value = 1;
 				break;
-			case 0xb0:  /*BCS*/
+			case 0xb0:  /* BCS */
 				if (regP & C_FLAG)
 					value = 1;
 				break;
-			case 0xd0:  /*BNE*/
+			case 0xd0:  /* BNE */
 				if (!(regP & Z_FLAG))
 					value = 1;
 				break;
-			case 0xf0:  /*BEQ*/
+			case 0xf0:  /* BEQ */
 				if (regP & Z_FLAG)
 					value = 1;
 				break;
 			}
 			printf(value != 0 ? "(Y) " : "(N) ");
 			break;
-		case 0xb:
-			value=memory[0x100+(UBYTE)(regS+1)]+(memory[0x100+(UBYTE)(regS+2)]<<8)+1;
+		case 0xb: /* RTS */
+			value = dGetWord(0x100 + (UBYTE) (regS + 1)) + 1;
 			break;
-		case 0xc:
-			value=memory[0x100+(UBYTE)(regS+2)]+(memory[0x100+(UBYTE)(regS+3)]<<8);
+		case 0xc: /* RTI */
+			value = dGetWord(0x100 + (UBYTE) (regS + 2));
 			break;
-		case 0xd:
-			value=memory[regPC+1]+(memory[regPC+2]<<8);
-			value=memory[value]+(memory[value+1]<<8);
+		case 0xd: /* (abcd) */
+			value = dGetWord(regPC + 1);
+			value = dGetWord(value);
 			break;
 		case 0xe:
-			printf("(ESC %02X) ",memory[regPC+1]);
-			value=memory[0x100+(UBYTE)(regS+1)]+(memory[0x100+(UBYTE)(regS+2)]<<8)+1;
+			printf("(ESC %02X) ", dGetByte(regPC + 1));
+			value = dGetWord(0x100 + (UBYTE) (regS + 1)) + 1;
 			break;
 		case 0xf:
-			printf("(ESC %02X) ",memory[regPC+1]);
+			printf("(ESC %02X) ", dGetByte(regPC + 1));
 			break;
 		}
 		if (optype != 0x0 && optype != 0x9 && optype != 0xa && optype != 0xf
-		 && memory[regPC] != 0x4c && memory[regPC] != 0x20)
+		 && dGetByte(regPC) != 0x4c && dGetByte(regPC) != 0x20)
 			printf("(%04X)  ", value);
-		printf("PC=%04x, A=%02x, S=%02x, X=%02x, Y=%02x, P=%02x\n",
-			regPC, regA, regS, regX, regY, regP);
-	} else if (break_addr==regPC)
-		printf("(breakpoint at %X)\n", (int) break_addr);
+		show_regs();
+	}
+	else if (break_addr == regPC)
+		printf("(breakpoint at %04x)\n", (unsigned int) break_addr);
 	else if (break_cim)
 		printf("(CIM encountered)\n");
 	break_cim = 0;
@@ -560,10 +571,7 @@ int monitor(void)
 
 		if (strcmp(t, "CONT") == 0) {
 #ifdef PROFILE
-			int i;
-
-			for (i = 0; i < 256; i++)
-				instruction_count[i] = 0;
+			memset(instruction_count, 0, sizeof(instruction_count));
 #endif
 			return 1;
 		}
@@ -598,25 +606,23 @@ int monitor(void)
 				UWORD addr1, addr;
 				int j;
 				addr = remember_PC[(remember_PC_curpos + i) % REMEMBER_PC_STEPS];
-#ifdef NEW_CYCLE_EXACT
-				printf("%3d  ", (remember_xpos[(remember_xpos_curpos + i) % REMEMBER_PC_STEPS] >> 8));
-				printf("%3d  ", (remember_xpos[(remember_xpos_curpos + i) % REMEMBER_PC_STEPS] & 0xff));
-#endif
+				j = remember_xpos[(remember_PC_curpos + i) % REMEMBER_PC_STEPS];
+				printf("%3d  ", j >> 8);
+				printf("%3d  ", j & 0xff);
 				printf("%04X ", addr);
 				addr1 = show_instruction(addr, 20);
 				printf("; %Xcyc ;", cycles[dGetByte(addr)]);
-				for (j = 0; j < addr1; j++){
+				for (j = 0; j < addr1; j++)
 					printf(" %02X", dGetByte((UWORD) (addr + j)));
-				}
-				printf("\n");
+				putchar('\n');
 			}
-			printf("\n");
+			putchar('\n');
 		}
 		else if (strcmp(t, "JUMPS") == 0) {
 			int i;
 			for (i = 0; i < REMEMBER_JMP_STEPS; i++)
 				printf("%04x  ", remember_JMP[(remember_jmp_curpos + i) % REMEMBER_JMP_STEPS]);
-			printf("\n");
+			putchar('\n');
 		}
 #endif
 		else if (strcmp(t, "DLIST") == 0) {
@@ -641,11 +647,11 @@ int monitor(void)
 				case 0x01:
 					addr = ANTIC_GetDLWord(&tdlist);
 					if (IR & 0x40) {
-						printf("JVB %04x ", addr);
+						printf("JVB %04x", addr);
 						done = TRUE;
 					}
 					else {
-						printf("JMP %04x ", addr);
+						printf("JMP %04x", addr);
 						tdlist = addr;
 					}
 					break;
@@ -660,10 +666,10 @@ int monitor(void)
 					if (IR & 0x10)
 						printf("HSCROL ");
 
-					printf("MODE %X ", IR & 0x0f);
+					printf("MODE %X", IR & 0x0f);
 				}
 
-				printf("\n");
+				putchar('\n');
 				nlines++;
 
 				if (!done && nlines == 15) {
@@ -774,14 +780,8 @@ int monitor(void)
 			}
 		}
 #endif
-		else if (strcmp(t, "SHOW") == 0) {
-			int i;
-			printf("PC=%04x, A=%02x, S=%02x, X=%02x, Y=%02x, P=",
-				regPC, regA, regS, regX, regY);
-			for (i = 0; i < 8; i++)
-				putchar(regP & (0x80 >> i) ? "NV*BDIZC"[i] : '-');
-			putchar('\n');
-		}
+		else if (strcmp(t, "SHOW") == 0)
+			show_regs();
 		else if (strcmp(t, "STACK") == 0) {
 			UWORD ts, ta;
 			for (ts = 0x101 + regS; ts < 0x200; ) {
@@ -920,14 +920,14 @@ int monitor(void)
 			while (count) {
 				printf("%04X : ", addr);
 				for (i = 0; i < 16; i++)
-					printf("%02X ", dGetByte((UWORD) (addr + i)));
-				printf("\t");
-				for(i=0;i<16;i++) {
-					char c;
-					c = dGetByte((UWORD) (addr + i));
-					putchar(c >= ' ' && c <= 'z' && c!= '\x60' ? c : '.');
+					printf("%02X ", GetByte((UWORD) (addr + i)));
+				putchar('\t');
+				for (i = 0; i < 16; i++) {
+					UBYTE c;
+					c = GetByte((UWORD) (addr + i));
+					putchar(c >= ' ' && c <= 'z' && c != '\x60' ? c : '.');
 				}
-				printf("\n");
+				putchar('\n');
 				addr += 16;
 				count--;
 			}
@@ -972,7 +972,7 @@ int monitor(void)
 
 				for (addr = addr1; addr <= addr2; addr++) {
 					int i = 0;
-					while (dGetByte(addr + i) == tab[i]) {
+					while (GetByte(addr + i) == tab[i]) {
 						i++;
 						if (i >= n) {
 							printf("Found at %04x\n", addr);
@@ -989,10 +989,26 @@ int monitor(void)
 			get_hex(&addr);
 
 			while (get_hex(&temp)) {
-				dPutByte(addr, (UBYTE) temp);
+#ifdef PAGED_ATTRIB
+				if (writemap[addr >> 8] != NULL && writemap[addr >> 8] != ROM_PutByte)
+					(*writemap[addr >> 8])(addr, (UBYTE) temp);
+#else
+				if (attrib[addr] == HARDWARE)
+					Atari800_PutByte(addr, (UBYTE) temp);
+#endif
+				else /* RAM, ROM */
+					dPutByte(addr, (UBYTE) temp);
 				addr++;
-				if (temp & 0xff00) {
-					dPutByte(addr, (UBYTE) (temp >> 8));
+				if (temp >> 8) {
+#ifdef PAGED_ATTRIB
+					if (writemap[addr >> 8] != NULL && writemap[addr >> 8] != ROM_PutByte)
+						(*writemap[addr >> 8])(addr, (UBYTE) (temp >> 8));
+#else
+					if (attrib[addr] == HARDWARE)
+						Atari800_PutByte(addr, (UBYTE) (temp >> 8));
+#endif
+					else /* RAM, ROM */
+						dPutByte(addr, (UBYTE) (temp >> 8));
 					addr++;
 				}
 			}
@@ -1011,7 +1027,7 @@ int monitor(void)
 			return 1;
 		}
 		else if (strcmp(t, "O") == 0) {
-		/* with RTS, RTI, JMP, SKW, ESCRTS we simply do step */
+			/* with RTS, RTI, JMP, SKW, ESCRTS we simply do step */
 			switch (dGetByte(regPC)) {
 			case 0x60:
 			case 0x40:
@@ -1031,7 +1047,7 @@ int monitor(void)
 				return 1;
 			default:
 				show_inst = 1;
-				break_addr = regPC + (UWORD) (optype6502[dGetByte(regPC)] & 0x3);
+				break_addr = regPC + (optype6502[dGetByte(regPC)] & 0x3);
 				return 1;
 			}
 		}
@@ -1051,8 +1067,8 @@ int monitor(void)
 				   PMBASE, CHBASE, ypos >> 1, NMIEN, ypos);
 		}
 		else if (strcmp(t, "PIA") == 0) {
-			printf("PACTL=%02x      PBCTL=%02x     PORTA=%02x     "
-				   "PORTB=%02x\n", PACTL, PBCTL, PORTA, PORTB);
+			printf("PACTL= %02x    PBCTL= %02x    PORTA= %02x    "
+				   "PORTB= %02x\n", PACTL, PBCTL, PORTA, PORTB);
 		}
 		else if (strcmp(t, "GTIA") == 0) {
 			printf("HPOSP0=%02x    HPOSP1=%02x    HPOSP2=%02x    "
@@ -1124,12 +1140,7 @@ int monitor(void)
 			printf("YBREAK [pos], or [1000+pos]    - Break at scanline or flash scanline\n");
 
  			printf("BRKHERE on|off                 - Set BRK opcode behaviour\n");
-#ifdef NEW_CYCLE_EXACT
 			printf("HISTORY                        - Disasm. last %i PC addrs. giving ypos xpos\n", (int) REMEMBER_PC_STEPS);
-
-#else
-			printf("HISTORY                        - Disasm. last %i PC addrs.\n", (int) REMEMBER_PC_STEPS);
-#endif /*NEW_CYCLE_EXACT*/
 			printf("Press return to continue: ");
 			getchar();
 
@@ -1174,7 +1185,7 @@ unsigned int disassemble(UWORD addr1, UWORD addr2)
 		printf("; %Xcyc ; ", cycles[dGetByte(addr)]);
 		for (i = 0; i < addr1; i++)
 			printf("%02X ", dGetByte((UWORD) (addr + i)));
-		printf("\n");
+		putchar('\n');
 		addr += addr1;
 		if (addr2 != 0 && addr >= addr2 )
 			break;
@@ -1183,7 +1194,7 @@ unsigned int disassemble(UWORD addr1, UWORD addr2)
 	return addr;
 }
 
-static char *instr6502[256] =
+static const char *instr6502[256] =
 {
 	"BRK", "ORA ($1,X)", "CIM", "ASO ($1,X)", "NOP $1", "ORA $1", "ASL $1", "ASO $1",
 	"PHP", "ORA #$1", "ASL", "ANC #$1", "NOP $2", "ORA $2", "ASL $2", "ASO $2",
@@ -1237,8 +1248,9 @@ static char *instr6502[256] =
 	"BEQ $0", "SBC ($1),Y", "CIM      [ESC]", "INS ($1),Y", "NOP $1,X", "SBC $1,X", "INC $1,X", "INS $1,X",
 	"SED", "SBC $2,Y", "NOP", "INS $2,Y", "NOP $2,X", "SBC $2,X", "INC $2,X", "INS $2,X"
 };
+
 #ifdef MONITOR_HINTS
-int find_symbol(UWORD addr)
+static int find_symbol(UWORD addr)
 {
 	int lo = 0, hi = symtable_size - 1, mi = 0;
 	
@@ -1247,9 +1259,9 @@ int find_symbol(UWORD addr)
 		if (symtable[mi].addr == addr)
 			break;
 		else if (symtable[mi].addr > addr)
-			hi=mi;
+			hi = mi;
 		else
-			lo=mi + 1;
+			lo = mi + 1;
 	}
 	if (symtable[mi].addr == addr)
 		/* return the lowest index of symbol with given address */
@@ -1338,7 +1350,7 @@ UWORD show_instruction(UWORD inad, int wid)
 
 
 #ifdef MONITOR_ASSEMBLER
-UWORD assembler(UWORD addr)
+static UWORD assembler(UWORD addr)
 {
 	char s[128];  /* input string */
 	char c[128];  /* converted input */
@@ -1356,7 +1368,7 @@ UWORD assembler(UWORD addr)
 			return addr;
 
 		/* convert string to upper case */
-		for (sp=s; *sp != '\0'; sp++)
+		for (sp = s; *sp != '\0'; sp++)
 			*sp = toupper(*sp);
 
 		oplen = 0;
@@ -1368,9 +1380,9 @@ UWORD assembler(UWORD addr)
 			*cp++ = *sp++;
 
 		*cp = '\0'; /* temporarily put end of string here */
-		branch = (strcmp(c,"BMI") == 0) || (strcmp(c,"BPL") == 0) || (strcmp(c,"BNE") == 0) ||
-		         (strcmp(c,"BEQ") == 0) || (strcmp(c,"BVC") == 0) || (strcmp(c,"BVS") == 0) ||
-		         (strcmp(c,"BCC") == 0) || (strcmp(c,"BCS") == 0);
+		branch = (strcmp(c, "BMI") == 0) || (strcmp(c, "BPL") == 0) || (strcmp(c, "BNE") == 0) ||
+		         (strcmp(c, "BEQ") == 0) || (strcmp(c, "BVC") == 0) || (strcmp(c, "BVS") == 0) ||
+		         (strcmp(c, "BCC") == 0) || (strcmp(c, "BCS") == 0);
 
 		/* insert space before operands */
 		if (*sp != '\0')
@@ -1379,7 +1391,7 @@ UWORD assembler(UWORD addr)
 		/* convert input to format of instr6502[] table */
 		while (*sp != '\0') {
 			/*skip white spaces*/
-			while (*sp==' ' || *sp=='\t')
+			while (*sp== ' ' || *sp== '\t')
 				sp++;
 			if ( (*sp >= '0' && *sp <= '9') || (*sp >= 'A' && *sp <= 'F')) {
 				/*parse hexadecimal value*/
@@ -1462,6 +1474,12 @@ UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.19  2005/08/15 17:23:22  pfusik
+HISTORY displays ypos xpos also with NEW_CYCLE_EXACT disabled;
+"C", "M" and "S" support hardware registers;
+display correct value for ZP,Y instruction;
+PENL -> PENV; fixed indentation
+
 Revision 1.18  2005/08/10 19:42:08  pfusik
 support DL in extended memory with exclusive Antic access
 
