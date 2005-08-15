@@ -134,7 +134,7 @@ dnl Checks for header files.
 AC_PATH_X
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([OS.h file.h limits.h signal.h strings.h sys/time.h unistd.h unixio.h])
+AC_CHECK_HEADERS([file.h limits.h signal.h sys/time.h unistd.h unixio.h])
 SUPPORTS_SOUND_O=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_O=no)
 SUPPORTS_RDEVICE=yes
@@ -276,7 +276,10 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([DosSleep GetTickCount Sleep atexit chmod floor fstat getcwd gettimeofday opendir memmove memset mkdir mkstemp modf rename rmdir select signal snooze snprintf stat strcasecmp strchr strdup strerror strrchr strspn strstr strtol uclock unlink vsnprintf])
+AC_CHECK_FUNCS([atexit chmod floor fstat getcwd gettimeofday opendir memmove])
+AC_CHECK_FUNCS([memset mkdir mkstemp modf rename rmdir select signal snprintf])
+AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strspn strstr])
+AC_CHECK_FUNCS([strtol uclock unlink vsnprintf])
 AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 
 
