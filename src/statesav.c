@@ -2,7 +2,7 @@
  * statesav.c - saving the emulator's state to a file
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -29,6 +29,9 @@
 #include "atari.h"
 #include "config.h"
 #include "log.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* getcwd */
+#endif
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
@@ -59,7 +62,7 @@ int ReadDisabledROMs(void);
 #define GZOPEN(X, Y)     gzopen(X, Y)
 #define GZCLOSE(X)       gzclose(X)
 #define GZREAD(X, Y, Z)  gzread(X, Y, Z)
-#define GZWRITE(X, Y, Z) gzwrite(X, Y, Z)
+#define GZWRITE(X, Y, Z) gzwrite(X, (const voidp) Y, Z)
 #define GZERROR(X, Y)    gzerror(X, Y)
 #else /* HAVE_LIBZ */
 #define GZOPEN(X, Y)     fopen(X, Y)
@@ -421,6 +424,9 @@ int ReadAtariState(const char *filename, const char *mode)
 
 /*
 $Log$
+Revision 1.10  2005/08/15 17:25:34  pfusik
+fixed two warnings
+
 Revision 1.9  2005/08/13 08:51:39  pfusik
 added functions for filename save/read; fixed indentation
 
