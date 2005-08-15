@@ -4,7 +4,8 @@
  ******************************************************************/
 #include <stdio.h>
 #include <stdarg.h>
-#include <strings.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <go32.h>
 #include <sys/farptr.h>
