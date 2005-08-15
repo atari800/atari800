@@ -75,16 +75,16 @@ case $host_os in
         AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
         AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
         if [[ "$a8_target" = "windx" ]]; then
-                CC="gcc -mno-cygwin"
-                echo
-                echo "Using CC=\"$CC\" to disable cygwin library...";
-                echo
+            CC="gcc -mno-cygwin"
+            echo
+            echo "Using CC=\"$CC\" to disable cygwin library...";
+            echo
         fi
         ;;
     mingw32)
         a8_host="win"
         AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
-        AC_DEFINE(DOS_DRIVES,,[Define to enable dos style drives support.])
+        AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
         ;;
     msdosdjgpp)
         a8_host="dos"
@@ -134,8 +134,11 @@ dnl Checks for header files.
 AC_PATH_X
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([OS.h arpa/inet.h fcntl.h file.h limits.h netdb.h netinet/in.h signal.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h termios.h unistd.h unixio.h])
-
+AC_CHECK_HEADERS([OS.h file.h limits.h signal.h strings.h sys/time.h unistd.h unixio.h])
+SUPPORTS_SOUND_O=yes
+AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_O=no)
+SUPPORTS_RDEVICE=yes
+AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no)
 
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -160,8 +163,8 @@ dnl OBJS is not an AC "precious" variable but is used in the Makefile, so
 dnl it must be explicitly AC_SUBST'ed at the end of this file.
 OBJS=
 if [[ "$a8_host" == "win" ]]; then
-        A8_NEED_LIB(gdi32)
-        A8_NEED_LIB(winmm)
+    A8_NEED_LIB(gdi32)
+    A8_NEED_LIB(winmm)
 else
     if [[ "$a8_host" != "os2-emx" -a "$a8_host" != "beos" ]]; then
         A8_NEED_LIB(m)
@@ -273,8 +276,8 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([DosSleep GetTickCount Sleep atexit chmod floor fstat getcwd gethostbyaddr gethostbyname gettimeofday inet_ntoa opendir memmove memset mkdir mkstemp modf rename rmdir select signal snooze snprintf socket stat strcasecmp strchr strdup strerror strrchr strspn strstr strtol uclock unlink vsnprintf])
-
+AC_CHECK_FUNCS([DosSleep GetTickCount Sleep atexit chmod floor fstat getcwd gettimeofday opendir memmove memset mkdir mkstemp modf rename rmdir select signal snooze snprintf stat strcasecmp strchr strdup strerror strrchr strspn strstr strtol uclock unlink vsnprintf])
+AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 
 
 dnl Check for validity of unaligned long accesses.
@@ -330,7 +333,7 @@ dnl         $3    = The right side of the help line.
 dnl                 The left side is always "--enable-$1".
 dnl         $4    = The symbol name which goes to config.h, the C #define symbol.
 dnl                 A symbol called "WANT_$4" is defined for use in this configure.ac.
-dnl         $5    = The help string which shows up in config.h for the $3 symbol.
+dnl         $5    = The help string which shows up in config.h for the $4 symbol.
 AC_DEFUN([A8_OPTION],[
     AC_ARG_ENABLE($1,AC_HELP_STRING(--enable-$1,$3),WANT_$4=$enableval,WANT_$4=$2)
     if [[ "$WANT_$4" = "yes" ]]; then
@@ -419,7 +422,12 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
                 OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
                 ;;
             *)
-                OBJS="$OBJS sound.o"
+                if [[ "$SUPPORTS_SOUND_O" = "yes" ]]; then
+                    OBJS="$OBJS sound.o"
+                else
+                    AC_MSG_ERROR([Sound support not available, re-run configure with --disable-sound])
+                fi
+                ;;
         esac
     fi
 
@@ -507,12 +515,12 @@ fi
 
 if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
     A8_OPTION(cursorblock,no,
-              [Using cursor/ctrl keys for keyboard joystick (svgalib target only) (default=OFF)],
+              [Using cursor/ctrl keys for keyboard joystick (svgalib/windx targets only) (default=OFF)],
               USE_CURSORBLOCK,[Define for using cursor/ctrl keys for keyboard joystick.]
              )
 fi
 
-if [[ "$a8_host" = "linux" -o "$a8_host" = "unix" ]]; then
+if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     A8_OPTION(riodevice,yes,
               [Use the R: networking device (Linux/Unix only) (default=ON)],
               R_IO_DEVICE,[Define to use R: device.]
@@ -587,7 +595,7 @@ fi
 if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
     echo "Using cursor/ctrl keys?...............: $WANT_USE_CURSORBLOCK"
 fi
-if [[ "$a8_host" = "linux" -o "$a8_host" = "unix" ]]; then
+if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     echo "Using R: device?......................: $WANT_R_IO_DEVICE"
 fi
 
