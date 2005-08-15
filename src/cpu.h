@@ -50,16 +50,20 @@ extern UBYTE regX;
 
 extern UBYTE IRQ;
 
+extern void (*rts_handler)(void);
+
 #define REMEMBER_PC_STEPS 64
 extern UWORD remember_PC[REMEMBER_PC_STEPS];
 extern int remember_PC_curpos;
-#ifdef NEW_CYCLE_EXACT
 extern int remember_xpos[REMEMBER_PC_STEPS];
-extern int remember_xpos_curpos;
-#endif
 
 #define REMEMBER_JMP_STEPS 16
 extern UWORD remember_JMP[REMEMBER_JMP_STEPS];
 extern int remember_jmp_curpos;
+
+extern const int cycles[256];
+#ifdef PROFILE
+extern int instruction_count[256];
+#endif
 
 #endif /* _CPU_H_ */
