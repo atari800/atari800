@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "atari.h"
+#include "binload.h" /* loading_basic */
 #include "config.h"
 #include "cartridge.h"
 #include "memory.h"
@@ -566,15 +567,8 @@ void CART_Remove(void)
 
 void CART_Start(void) {
 	if (machine_type == MACHINE_5200) {
-#ifndef PAGED_ATTRIB
 		SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
 		SetROM(0x5ff6, 0x5ff9);
-#else
-		readmap[0x4f] = NULL;
-		readmap[0x5f] = NULL;
-		writemap[0x4f] = ROM_PutByte;
-		writemap[0x5f] = ROM_PutByte;
-#endif
 		switch (cart_type) {
 		case CART_5200_32:
 			CopyROM(0x4000, 0xbfff, cart_image);
@@ -737,7 +731,7 @@ void CART_Start(void) {
 			if (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB) {
 				Cart809F_Enable();
 				CopyROM(0x8000, 0x9fff, cart_image);
-				if (!disable_basic && have_basic) {
+				if ((!disable_basic || loading_basic) && have_basic) {
 					CartA0BF_Enable();
 					CopyROM(0xa000, 0xbfff, atari_basic);
 					break;
@@ -764,7 +758,7 @@ void CART_Start(void) {
 		default:
 			Cart809F_Disable();
 			if ((machine_type == MACHINE_OSA || machine_type == MACHINE_OSB)
-			 && !disable_basic && have_basic) {
+			 && (!disable_basic || loading_basic) && have_basic) {
 				CartA0BF_Enable();
 				CopyROM(0xa000, 0xbfff, atari_basic);
 				break;
