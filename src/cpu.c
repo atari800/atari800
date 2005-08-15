@@ -25,8 +25,8 @@
 /*
 	Compilation options
 	===================
-	By default, goto * is used.
-	Use -DNO_GOTO to force using switch().
+	-DNO_GOTO if you have GCC, but want switch() rather than goto *.
+	-DCPU65C02 if you don't want 6502 JMP() bug emulation.
 
 	Limitations
 	===========
@@ -98,6 +98,7 @@
 #include "config.h"
 #include "cpu.h"
 #include "memory.h"
+#include "monitor.h" /* tron */
 #ifndef BASIC
 #include "statesav.h"
 #include "ui.h"
@@ -127,21 +128,26 @@ void CPU_PutStatus(void)
 
 #else
 
+#ifndef __GNUC__
+#define NO_GOTO
+#endif
+
 /*
    ==========================================================
    Emulated Registers and Flags are kept local to this module
    ==========================================================
  */
 
-#define UPDATE_GLOBAL_REGS regPC=PC;regS=S;regA=A;regX=X;regY=Y
-#define UPDATE_LOCAL_REGS PC=regPC;S=regS;A=regA;X=regX;Y=regY
+#define UPDATE_GLOBAL_REGS regPC = PC; regS = S; regA = A; regX = X; regY = Y
+#define UPDATE_LOCAL_REGS PC = regPC; S = regS; A = regA; X = regX; Y = regY
 
 #define PL dGetByte(0x0100 + ++S)
 #define PH(x) dPutByte(0x0100 + S--, x)
 
 #ifdef CYCLE_EXACT
+
 #ifndef PAGED_ATTRIB
-#define RMW_GetByte(x,addr) \
+#define RMW_GetByte(x, addr) \
 		if (attrib[addr] == HARDWARE) { \
 			x = Atari800_GetByte(addr); \
 			if ((addr & 0xef1f) == 0xc01a) { \
@@ -149,18 +155,22 @@ void CPU_PutStatus(void)
 				 Atari800_PutByte(addr, x); \
 				 xpos++; \
 			} \
-		} else x = memory[addr];
+		} else \
+			x = dGetByte(addr);
 #else
-#define RMW_GetByte(x,addr) \
+#define RMW_GetByte(x, addr) \
 		x = GetByte(addr); \
 		if ((addr & 0xef1f) == 0xc01a) { \
 			xpos--; \
-			PutByte(addr,x); \
+			PutByte(addr, x); \
 			xpos++; \
 		}
 #endif /* PAGED_ATTRIB */
+
 #else
-#define RMW_GetByte(x,addr) x = GetByte(addr);
+
+#define RMW_GetByte(x, addr) x = GetByte(addr);
+
 #endif /* CYCLE_EXACT */
 
 #define PHW(x) PH((x)>>8); PH((x) & 0xff)
@@ -177,13 +187,12 @@ static UBYTE Z;					/* zero (0) or non-zero (1) */
 static UBYTE V;
 static UBYTE C;					/* zero (0) or one(1) */
 
+/* for Atari Basic loader */
+void (*rts_handler)(void) = NULL;
+
 /*
    #define PROFILE
  */
-
-#ifdef TRACE
-extern int tron;
-#endif
 
 /*
  * The following array is used for 6502 instruction profiling
@@ -197,29 +206,10 @@ UBYTE IRQ;
 #ifdef MONITOR_BREAK
 UWORD remember_PC[REMEMBER_PC_STEPS];
 int remember_PC_curpos = 0;
-#ifdef NEW_CYCLE_EXACT
 int remember_xpos[REMEMBER_PC_STEPS];
-int remember_xpos_curpos = 0;
-#endif
-extern UWORD ypos_break_addr;
-extern UWORD break_addr;
 UWORD remember_JMP[REMEMBER_JMP_STEPS];
 int remember_jmp_curpos=0;
-extern UBYTE break_step;
-extern UBYTE break_ret;
-extern UBYTE break_cim;
-extern UBYTE break_here;
-extern int ret_nesting;
-extern int brkhere;
 #endif
-
-/*
-   ===============================================================
-   Z flag: This actually contains the result of an operation which
-   would modify the Z flag. The value is tested for
-   equality by the BEQ and BNE instruction.
-   ===============================================================
- */
 
 void CPU_GetStatus(void)
 {
@@ -227,17 +217,14 @@ void CPU_GetStatus(void)
 		SetN;
 	else
 		ClrN;
-
 	if (Z)
 		ClrZ;
 	else
 		SetZ;
-
 	if (V)
 		SetV;
 	else
 		ClrV;
-
 	if (C)
 		SetC;
 	else
@@ -250,17 +237,14 @@ void CPU_PutStatus(void)
 		N = 0x80;
 	else
 		N = 0x00;
-
 	if (regP & Z_FLAG)
 		Z = 0;
 	else
 		Z = 1;
-
 	if (regP & V_FLAG)
 		V = 1;
 	else
 		V = 0;
-
 	if (regP & C_FLAG)
 		C = 1;
 	else
@@ -278,10 +262,10 @@ void CPU_PutStatus(void)
 #define ORA(t_data) data = t_data; Z = N = A |= data
 
 #define PHP(x)	data = (N & 0x80); \
-				data |= V ? 0x40 : 0; \
-				data |= (regP & x); \
-				data |= (Z == 0) ? 0x02 : 0; \
-				data |= C; \
+				data += V ? 0x40 : 0; \
+				data += (regP & x); \
+				data += (Z == 0) ? 0x02 : 0; \
+				data += C; \
 				PH(data);
 
 #define PHPB0 PHP(0x2c)
@@ -292,7 +276,7 @@ void CPU_PutStatus(void)
 			V = (data & 0x40) ? 1 : 0; \
 			Z = (data & 0x02) ? 0 : 1; \
 			C = (data & 0x01); \
-			regP = (data & 0x3c) | 0x30;
+			regP = (data & 0x0c) + 0x30;
 
 void NMI(void)
 {
@@ -320,7 +304,7 @@ void NMI(void)
 		SetI; \
 		PC = dGetWordAligned(0xfffe); \
 		xpos += 7; \
-		ret_nesting+=1; \
+		ret_nesting += 1; \
 	} \
 }
 #else
@@ -360,20 +344,20 @@ const int cycles[256] =
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7		/* Fx */
 };
 
-/* decrement 1 or 2 cycles for conditional jumps */
-#define BRANCH(cond)	if (cond) {			\
-		SWORD sdata = (SBYTE)dGetByte(PC++);\
-		if ( (sdata + (UBYTE)PC) & 0xff00)	\
-			xpos++;							\
-		xpos++;								\
-		PC += sdata;						\
-		DONE								\
-	}										\
-	PC++;									\
+/* 1 or 2 extra cycles for conditional jumps */
+#define BRANCH(cond)	if (cond) { \
+		SWORD sdata = (SBYTE) dGetByte(PC++); \
+		if ((sdata + (UBYTE) PC) & 0xff00) \
+			xpos++; \
+		xpos++; \
+		PC += sdata; \
+		DONE \
+	} \
+	PC++; \
 	DONE
-/* decrement 1 cycle for X (or Y) index overflow */
-#define NCYCLES_Y		if ( (UBYTE) addr < Y ) xpos++;
-#define NCYCLES_X		if ( (UBYTE) addr < X ) xpos++;
+/* 1 extra cycle for X (or Y) index overflow */
+#define NCYCLES_Y		if ((UBYTE) addr < Y) xpos++;
+#define NCYCLES_X		if ((UBYTE) addr < X) xpos++;
 
 
 void GO(int limit)
@@ -485,7 +469,7 @@ void GO(int limit)
    the emulation for two reasons:-
 
    1. NMI's will can only be raised in antic.c - there is
-   no way an NMI can be generated whilst in this routine.
+      no way an NMI can be generated whilst in this routine.
 
    2. The timing of the IRQs are not that critical.
  */
@@ -497,8 +481,8 @@ void GO(int limit)
 /* if WSYNC_C is a stolen cycle, antic2cpu_ptr will convert that to the nearest
    cpu cycle before that cycle.  The CPU will see this cycle, if WSYNC is not 
    delayed. (Actually this cycle is the first cycle of the instruction after
-  STA WSYNC, which was really executed one cycle after STA WSYNC because
-  of an internal antic delay ).   delayed_wsync is added to this cycle to form
+   STA WSYNC, which was really executed one cycle after STA WSYNC because
+   of an internal antic delay ).   delayed_wsync is added to this cycle to form
    the limit in the case that WSYNC is not early (does not allow this extra cycle) */
 
 			if (limit < antic2cpu_ptr[WSYNC_C] + delayed_wsync)
@@ -532,37 +516,34 @@ void GO(int limit)
    =====================================
  */
 
-#define	ABSOLUTE	addr=dGetWord(PC);PC+=2;
-#define	ZPAGE		addr=dGetByte(PC++);
-#define	ABSOLUTE_X	addr=dGetWord(PC)+X;PC+=2;
-#define	ABSOLUTE_Y	addr=dGetWord(PC)+Y;PC+=2;
-#define	INDIRECT_X	addr=(UBYTE)(dGetByte(PC++)+X);addr=dGetWord(addr);
-#define	INDIRECT_Y	addr=dGetByte(PC++);addr=dGetWord(addr)+Y;
-#define	ZPAGE_X		addr=(UBYTE)(dGetByte(PC++)+X);
-#define	ZPAGE_Y		addr=(UBYTE)(dGetByte(PC++)+Y);
+#define	ABSOLUTE	addr = dGetWord(PC); PC += 2;
+#define	ZPAGE		addr = dGetByte(PC++);
+#define	ABSOLUTE_X	addr = dGetWord(PC) + X; PC += 2;
+#define	ABSOLUTE_Y	addr = dGetWord(PC) + Y; PC += 2;
+#define	INDIRECT_X	addr = (UBYTE) (dGetByte(PC++) + X); addr = dGetWord(addr);
+#define	INDIRECT_Y	addr = dGetByte(PC++); addr = dGetWord(addr) + Y;
+#define	ZPAGE_X		addr = (UBYTE) (dGetByte(PC++) + X);
+#define	ZPAGE_Y		addr = (UBYTE) (dGetByte(PC++) + Y);
 
 	while (xpos < xpos_limit) {
 
 #ifdef TRACE
 		if (tron) {
 			disassemble(PC, PC + 1);
-			printf("\tA=%2x, X=%2x, Y=%2x, S=%2x\n",
+			printf("\tA=%02x, X=%02x, Y=%02x, S=%02x\n",
 				   A, X, Y, S);
 		}
 #endif
 
 #ifdef MONITOR_BREAK
-		remember_PC[remember_PC_curpos]=PC;
-		remember_PC_curpos=(remember_PC_curpos+1)%REMEMBER_PC_STEPS;
+		remember_PC[remember_PC_curpos] = PC;
 #ifdef NEW_CYCLE_EXACT
-		if(DRAWING_SCREEN){
-			remember_xpos[remember_xpos_curpos] = cpu2antic_ptr[xpos]+(ypos<<8);
-		}else{
-			remember_xpos[remember_xpos_curpos] = xpos+(ypos<<8);
-		}
-		remember_xpos_curpos=(remember_xpos_curpos+1)%REMEMBER_PC_STEPS;
-			
+		if (DRAWING_SCREEN)
+			remember_xpos[remember_PC_curpos] = cpu2antic_ptr[xpos] + (ypos << 8);
+		else
 #endif
+			remember_xpos[remember_PC_curpos] = xpos + (ypos << 8);
+		remember_PC_curpos = (remember_PC_curpos + 1) % REMEMBER_PC_STEPS;
 
 		if (break_addr == PC || ypos_break_addr == ypos) {
 			UPDATE_GLOBAL_REGS;
@@ -657,7 +638,7 @@ void GO(int limit)
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(07)				/* ASO zpage [unofficial - ASL then ORA with Acc] */
+	OPCODE(07)				/* ASO ab [unofficial - ASL then ORA with Acc] */
 		ZPAGE;
 
 	aso_zpage:
@@ -734,7 +715,7 @@ void GO(int limit)
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(17)				/* ASO zpage,x [unofficial - ASL then ORA with Acc] */
+	OPCODE(17)				/* ASO ab,x [unofficial - ASL then ORA with Acc] */
 		ZPAGE_X;
 		goto aso_zpage;
 
@@ -782,16 +763,14 @@ void GO(int limit)
 		goto aso;
 
 	OPCODE(20)				/* JSR abcd */
-		{
-			UWORD retadr = PC + 1;
+		addr = PC + 1;
 #ifdef MONITOR_BREAK
-			remember_JMP[remember_jmp_curpos]=PC-1;
-			remember_jmp_curpos=(remember_jmp_curpos+1)%REMEMBER_JMP_STEPS;
-			ret_nesting++;
+		remember_JMP[remember_jmp_curpos] = PC - 1;
+		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
+		ret_nesting++;
 #endif
-			PHW(retadr);
-			PC = dGetWord(PC);
-		}
+		PHW(addr);
+		PC = dGetWord(PC);
 		DONE
 
 	OPCODE(21)				/* AND (ab,x) */
@@ -806,7 +785,7 @@ void GO(int limit)
 		RMW_GetByte(data, addr);
 		if (C) {
 			C = (data & 0x80) ? 1 : 0;
-			data = (data << 1) | 1;
+			data = (data << 1) + 1;
 		}
 		else {
 			C = (data & 0x80) ? 1 : 0;
@@ -831,19 +810,19 @@ void GO(int limit)
 	OPCODE(26)				/* ROL ab */
 		ZPAGE;
 		data = dGetByte(addr);
-		Z = N = (data << 1) | C;
+		Z = N = (data << 1) + C;
 		C = (data & 0x80) ? 1 : 0;
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(27)				/* RLA zpage [unofficial - ROL Mem, then AND with A] */
+	OPCODE(27)				/* RLA ab [unofficial - ROL Mem, then AND with A] */
 		ZPAGE;
 
 	rla_zpage:
 		data = dGetByte(addr);
 		if (C) {
 			C = (data & 0x80) ? 1 : 0;
-			data = (data << 1) | 1;
+			data = (data << 1) + 1;
 		}
 		else {
 			C = (data & 0x80) ? 1 : 0;
@@ -863,7 +842,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(2a)				/* ROL */
-		Z = N = (A << 1) | C;
+		Z = N = (A << 1) + C;
 		C = (A & 0x80) ? 1 : 0;
 		A = Z;
 		DONE
@@ -883,7 +862,7 @@ void GO(int limit)
 	OPCODE(2e)				/* ROL abcd */
 		ABSOLUTE;
 		RMW_GetByte(data, addr);
-		Z = N = (data << 1) | C;
+		Z = N = (data << 1) + C;
 		C = (data & 0x80) ? 1 : 0;
 		PutByte(addr, Z);
 		DONE
@@ -913,12 +892,12 @@ void GO(int limit)
 	OPCODE(36)				/* ROL ab,x */
 		ZPAGE_X;
 		data = dGetByte(addr);
-		Z = N = (data << 1) | C;
+		Z = N = (data << 1) + C;
 		C = (data & 0x80) ? 1 : 0;
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(37)				/* RLA zpage,x [unofficial - ROL Mem, then AND with A] */
+	OPCODE(37)				/* RLA ab,x [unofficial - ROL Mem, then AND with A] */
 		ZPAGE_X;
 		goto rla_zpage;
 
@@ -945,7 +924,7 @@ void GO(int limit)
 	OPCODE(3e)				/* ROL abcd,x */
 		ABSOLUTE_X;
 		RMW_GetByte(data, addr);
-		Z = N = (data << 1) | C;
+		Z = N = (data << 1) + C;
 		C = (data & 0x80) ? 1 : 0;
 		PutByte(addr, Z);
 		DONE
@@ -957,7 +936,7 @@ void GO(int limit)
 	OPCODE(40)				/* RTI */
 		PLP;
 		data = PL;
-		PC = (PL << 8) | data;
+		PC = (PL << 8) + data;
 		CPUCHECKIRQ;
 #ifdef MONITOR_BREAK
 		if (break_ret && ret_nesting <= 0)
@@ -996,7 +975,7 @@ void GO(int limit)
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(47)				/* LSE zpage [unofficial - LSR then EOR result with A] */
+	OPCODE(47)				/* LSE ab [unofficial - LSR then EOR result with A] */
 		ZPAGE;
 
 	lse_zpage:
@@ -1028,8 +1007,8 @@ void GO(int limit)
 
 	OPCODE(4c)				/* JMP abcd */
 #ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos]=PC-1;
-		remember_jmp_curpos=(remember_jmp_curpos+1)%REMEMBER_JMP_STEPS;
+		remember_JMP[remember_jmp_curpos] = PC - 1;
+		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
 #endif
 		PC = dGetWord(PC);
 		DONE
@@ -1079,7 +1058,7 @@ void GO(int limit)
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(57)				/* LSE zpage,x [unofficial - LSR then EOR result with A] */
+	OPCODE(57)				/* LSE ab,x [unofficial - LSR then EOR result with A] */
 		ZPAGE_X;
 		goto lse_zpage;
 
@@ -1119,12 +1098,16 @@ void GO(int limit)
 
 	OPCODE(60)				/* RTS */
 		data = PL;
-		PC = ((PL << 8) | data) + 1;
+		PC = (PL << 8) + data + 1;
 #ifdef MONITOR_BREAK
 		if (break_ret && ret_nesting <= 0)
 			break_step = 1;
 		ret_nesting--;
 #endif
+		if (rts_handler != NULL) {
+			rts_handler();
+			rts_handler = NULL;
+		}
 		DONE
 
 	OPCODE(61)				/* ADC (ab,x) */
@@ -1139,7 +1122,7 @@ void GO(int limit)
 		RMW_GetByte(data, addr);
 		if (C) {
 			C = data & 1;
-			data = (data >> 1) | 0x80;
+			data = (data >> 1) + 0x80;
 		}
 		else {
 			C = data & 1;
@@ -1156,19 +1139,19 @@ void GO(int limit)
 	OPCODE(66)				/* ROR ab */
 		ZPAGE;
 		data = dGetByte(addr);
-		Z = N = (C << 7) | (data >> 1);
+		Z = N = (C << 7) + (data >> 1);
 		C = data & 1;
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(67)				/* RRA zpage [unofficial - ROR Mem, then ADC to Acc] */
+	OPCODE(67)				/* RRA ab [unofficial - ROR Mem, then ADC to Acc] */
 		ZPAGE;
 
 	rra_zpage:
 		data = dGetByte(addr);
 		if (C) {
 			C = data & 1;
-			data = (data >> 1) | 0x80;
+			data = (data >> 1) + 0x80;
 		}
 		else {
 			C = data & 1;
@@ -1186,7 +1169,7 @@ void GO(int limit)
 		goto adc;
 
 	OPCODE(6a)				/* ROR */
-		Z = N = (C << 7) | (A >> 1);
+		Z = N = (C << 7) + (A >> 1);
 		C = A & 1;
 		A = Z;
 		DONE
@@ -1195,41 +1178,40 @@ void GO(int limit)
 		/* It does some 'BCD fixup' if D flag is set */
 		/* MPC 05/24/00 */
 		data = A & dGetByte(PC++);
-		if (regP & D_FLAG)
-		{
-			UWORD temp = (data >> 1) | (C << 7);
+		if (regP & D_FLAG) {
+			UBYTE temp = (data >> 1) + (C << 7);
 			Z = N = (UBYTE) temp;
 			V = ((temp ^ data) & 0x40) >> 6;
-			if (((data & 0x0F) + (data & 0x01)) > 5)
-				temp = (temp & 0xF0) | ((temp + 0x6) & 0x0F);
-			if (((data & 0xF0) + (data & 0x10)) > 0x50)
-			{
-				temp = (temp & 0x0F) | ((temp + 0x60) & 0xF0);
+			if ((data & 0x0F) + (data & 0x01) > 5)
+				temp = (temp & 0xF0) + ((temp + 0x6) & 0x0F);
+			if (data + (data & 0x10) >= 0x60) {
+				temp += 0x60;
 				C = 1;
 			}
 			else
 				C = 0;
 			A = (UBYTE) temp;
 		}
-		else
-		{
-			Z = N = A = (data >> 1) | (C << 7);
-			C = (A & 0x40) >> 6;
-			V = ((A >> 6) ^ (A >> 5)) & 1;
+		else {
+			Z = N = A = (data >> 1) + (C << 7);
+			C = data >> 7;
+			V = C ^ ((A >> 5) & 1);
 		}
 		DONE
 
 	OPCODE(6c)				/* JMP (abcd) */
 #ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos]=PC-1;
-		remember_jmp_curpos=(remember_jmp_curpos+1)%REMEMBER_JMP_STEPS;
+		remember_JMP[remember_jmp_curpos] = PC-1;
+		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
 #endif
 		addr = dGetWord(PC);
 #ifdef CPU65C02
+		/* XXX: if ((UBYTE) addr == 0xff) xpos++; */
 		PC = dGetWord(addr);
-#else							/* original 6502 had a bug in jmp (addr) when addr crossed page boundary */
+#else
+		/* original 6502 had a bug in JMP (addr) when addr crossed page boundary */
 		if ((UBYTE) addr == 0xff)
-			PC = (dGetByte(addr & ~0xff) << 8) | dGetByte(addr);
+			PC = (dGetByte(addr - 0xff) << 8) + dGetByte(addr);
 		else
 			PC = dGetWord(addr);
 #endif
@@ -1243,7 +1225,7 @@ void GO(int limit)
 	OPCODE(6e)				/* ROR abcd */
 		ABSOLUTE;
 		RMW_GetByte(data, addr);
-		Z = N = (C << 7) | (data >> 1);
+		Z = N = (C << 7) + (data >> 1);
 		C = data & 1;
 		PutByte(addr, Z);
 		DONE
@@ -1273,12 +1255,12 @@ void GO(int limit)
 	OPCODE(76)				/* ROR ab,x */
 		ZPAGE_X;
 		data = dGetByte(addr);
-		Z = N = (C << 7) | (data >> 1);
+		Z = N = (C << 7) + (data >> 1);
 		C = data & 1;
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(77)				/* RRA zpage,x [unofficial - ROR Mem, then ADC to Acc] */
+	OPCODE(77)				/* RRA ab,x [unofficial - ROR Mem, then ADC to Acc] */
 		ZPAGE_X;
 		goto rra_zpage;
 
@@ -1305,7 +1287,7 @@ void GO(int limit)
 	OPCODE(7e)				/* ROR abcd,x */
 		ABSOLUTE_X;
 		RMW_GetByte(data, addr);
-		Z = N = (C << 7) | (data >> 1);
+		Z = N = (C << 7) + (data >> 1);
 		C = data & 1;
 		PutByte(addr, Z);
 		DONE
@@ -1341,7 +1323,7 @@ void GO(int limit)
 		dPutByte(addr, X);
 		DONE
 
-	OPCODE(87)				/* SAX zpage [unofficial - Store result A AND X] */
+	OPCODE(87)				/* SAX ab [unofficial - Store result A AND X] */
 		ZPAGE;
 		data = A & X;
 		dPutByte(addr, data);
@@ -1393,7 +1375,7 @@ void GO(int limit)
 	OPCODE(93)				/* SHA (ab),y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] (Fox) */
 		/* It seems previous memory value is important - also in 9f */
 		addr = dGetByte(PC++);
-		data = dGetByte((UBYTE)(addr + 1));	/* Get high byte from zpage */
+		data = dGetByte((UBYTE) (addr + 1));	/* Get high byte from zpage */
 		data = A & X & (data + 1);
 		addr = dGetWord(addr) + Y;
 		PutByte(addr, data);
@@ -1414,7 +1396,7 @@ void GO(int limit)
 		PutByte(addr, X);
 		DONE
 
-	OPCODE(97)				/* SAX zpage,y [unofficial - Store result A AND X] */
+	OPCODE(97)				/* SAX ab,y [unofficial - Store result A AND X] */
 		ZPAGE_Y;
 		data = A & X;
 		dPutByte(addr, data);
@@ -1490,7 +1472,7 @@ void GO(int limit)
 		LDX(dGetByte(PC++));
 		DONE
 
-	OPCODE(a3)				/* LAX (ind,x) [unofficial] */
+	OPCODE(a3)				/* LAX (ab,x) [unofficial] */
 		INDIRECT_X;
 		Z = N = X = A = GetByte(addr);
 		DONE
@@ -1510,7 +1492,7 @@ void GO(int limit)
 		LDX(dGetByte(addr));
 		DONE
 
-	OPCODE(a7)				/* LAX zpage [unofficial] */
+	OPCODE(a7)				/* LAX ab [unofficial] */
 		ZPAGE;
 		Z = N = X = A = GetByte(addr);
 		DONE
@@ -1546,7 +1528,7 @@ void GO(int limit)
 		LDX(GetByte(addr));
 		DONE
 
-	OPCODE(af)				/* LAX absolute [unofficial] */
+	OPCODE(af)				/* LAX abcd [unofficial] */
 		ABSOLUTE;
 		Z = N = X = A = GetByte(addr);
 		DONE
@@ -1560,8 +1542,9 @@ void GO(int limit)
 		LDA(GetByte(addr));
 		DONE
 
-	OPCODE(b3)				/* LAX (ind),y [unofficial] */
+	OPCODE(b3)				/* LAX (ab),y [unofficial] */
 		INDIRECT_Y;
+		NCYCLES_Y;
 		Z = N = X = A = GetByte(addr);
 		DONE
 
@@ -1580,7 +1563,7 @@ void GO(int limit)
 		LDX(GetByte(addr));
 		DONE
 
-	OPCODE(b7)				/* LAX zpage,y [unofficial] */
+	OPCODE(b7)				/* LAX ab,y [unofficial] */
 		ZPAGE_Y;
 		Z = N = X = A = GetByte(addr);
 		DONE
@@ -1609,6 +1592,7 @@ void GO(int limit)
 
 	OPCODE(bb)				/* LAS abcd,y [unofficial - AND S with Mem, transfer to A and X (Fox) */
 		ABSOLUTE_Y;
+		NCYCLES_Y;
 		Z = N = A = X = S &= GetByte(addr);
 		DONE
 
@@ -1630,8 +1614,9 @@ void GO(int limit)
 		LDX(GetByte(addr));
 		DONE
 
-	OPCODE(bf)				/* LAX absolute,y [unofficial] */
+	OPCODE(bf)				/* LAX abcd,y [unofficial] */
 		ABSOLUTE_Y;
+		NCYCLES_Y;
 		Z = N = X = A = GetByte(addr);
 		DONE
 
@@ -1670,7 +1655,7 @@ void GO(int limit)
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(c7)				/* DCM zpage [unofficial - DEC Mem then CMP with Acc] */
+	OPCODE(c7)				/* DCM ab [unofficial - DEC Mem then CMP with Acc] */
 		ZPAGE;
 
 	dcm_zpage:
@@ -1746,7 +1731,7 @@ void GO(int limit)
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(d7)				/* DCM zpage,x [unofficial - DEC Mem then CMP with Acc] */
+	OPCODE(d7)				/* DCM ab,x [unofficial - DEC Mem then CMP with Acc] */
 		ZPAGE_X;
 		goto dcm_zpage;
 
@@ -1815,7 +1800,7 @@ void GO(int limit)
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(e7)				/* INS zpage [unofficial - INC Mem then SBC with Acc] */
+	OPCODE(e7)				/* INS ab [unofficial - INC Mem then SBC with Acc] */
 		ZPAGE;
 
 	ins_zpage:
@@ -1886,7 +1871,7 @@ void GO(int limit)
 		dPutByte(addr, Z);
 		DONE
 
-	OPCODE(f7)				/* INS zpage,x [unofficial - INC Mem then SBC with Acc] */
+	OPCODE(f7)				/* INS ab,x [unofficial - INC Mem then SBC with Acc] */
 		ZPAGE_X;
 		goto ins_zpage;
 
@@ -1929,7 +1914,7 @@ void GO(int limit)
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;
 		data = PL;
-		PC = ((PL << 8) | data) + 1;
+		PC = (PL << 8) + data + 1;
 #ifdef MONITOR_BREAK
 		if (break_ret && ret_nesting <= 0)
 			break_step = 1;
@@ -1965,7 +1950,7 @@ void GO(int limit)
 
 #ifdef CRASH_MENU
 		crash_address = PC;
-		crash_afterCIM = PC+1;
+		crash_afterCIM = PC + 1;
 		crash_code = insn;
 		ui();
 #else
@@ -1986,19 +1971,19 @@ void GO(int limit)
 	adc:
 		if (!(regP & D_FLAG)) {
 			UWORD tmp;		/* Binary mode */
-			tmp = A + data + (UWORD)C;
+			tmp = A + data + C;
 			C = tmp > 0xff;
 			V = !((A ^ data) & 0x80) && ((A ^ tmp) & 0x80);
 			Z = N = A = (UBYTE) tmp;
 	    }
 		else {
 			UWORD tmp;		/* Decimal mode */
-			tmp = (A & 0x0f) + (data & 0x0f) + (UWORD)C;
+			tmp = (A & 0x0f) + (data & 0x0f) + C;
 			if (tmp >= 10)
 				tmp = (tmp - 10) | 0x10;
 			tmp += (A & 0xf0) + (data & 0xf0);
 
-			Z = A + data + (UWORD)C;
+			Z = A + data + C;
 			N = (UBYTE) tmp;
 			V = !((A ^ data) & 0x80) && ((A ^ tmp) & 0x80);
 
@@ -2026,13 +2011,14 @@ void GO(int limit)
 				al -= 6;	/* BCD fixup for lower nybble */
 				ah--;
 			}
-			if (ah & 0x10) ah -= 6;		/* BCD fixup for upper nybble */
+			if (ah & 0x10)
+				ah -= 6;	/* BCD fixup for upper nybble */
 
 			C = tmp < 0x100;			/* Set flags */
 			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
 			Z = N = (UBYTE) tmp;
 
-			A = (ah << 4) | (al & 0x0f);	/* Compose result */
+			A = (ah << 4) + (al & 0x0f);	/* Compose result */
 		}
 		DONE
 
@@ -2072,45 +2058,45 @@ void CPU_Reset(void)
 	IRQ = 0;
 
 	regP = 0x34;				/* The unused bit is always 1, I flag set! */
-	CPU_PutStatus( );	/* Make sure flags are all updated */
+	CPU_PutStatus();	/* Make sure flags are all updated */
 	regS = 0xff;
 	regPC = dGetWordAligned(0xfffc);
 }
 
 #ifndef BASIC
 
-void CpuStateSave( UBYTE SaveVerbose )
+void CpuStateSave(UBYTE SaveVerbose)
 {
-	SaveUBYTE( &regA, 1 );
+	SaveUBYTE(&regA, 1);
 
-	CPU_GetStatus( );	/* Make sure flags are all updated */
-	SaveUBYTE( &regP, 1 );
-	
-	SaveUBYTE( &regS, 1 );
-	SaveUBYTE( &regX, 1 );
-	SaveUBYTE( &regY, 1 );
-	SaveUBYTE( &IRQ, 1 );
+	CPU_GetStatus();	/* Make sure flags are all updated */
+	SaveUBYTE(&regP, 1);
 
-	MemStateSave( SaveVerbose );
-	
-	SaveUWORD( &regPC, 1 );
+	SaveUBYTE(&regS, 1);
+	SaveUBYTE(&regX, 1);
+	SaveUBYTE(&regY, 1);
+	SaveUBYTE(&IRQ, 1);
+
+	MemStateSave(SaveVerbose);
+
+	SaveUWORD(&regPC, 1);
 }
 
-void CpuStateRead( UBYTE SaveVerbose )
+void CpuStateRead(UBYTE SaveVerbose)
 {
-	ReadUBYTE( &regA, 1 );
-	
-	ReadUBYTE( &regP, 1 );
-	CPU_PutStatus( );	/* Make sure flags are all updated */
+	ReadUBYTE(&regA, 1);
 
-	ReadUBYTE( &regS, 1 );
-	ReadUBYTE( &regX, 1 );
-	ReadUBYTE( &regY, 1 );
-	ReadUBYTE( &IRQ, 1 );
+	ReadUBYTE(&regP, 1);
+	CPU_PutStatus();	/* Make sure flags are all updated */
+
+	ReadUBYTE(&regS, 1);
+	ReadUBYTE(&regX, 1);
+	ReadUBYTE(&regY, 1);
+	ReadUBYTE(&IRQ, 1);
 
 	MemStateRead( SaveVerbose );
-	
-	ReadUWORD( &regPC, 1 );
+
+	ReadUWORD(&regPC, 1);
 }
 
 #endif
