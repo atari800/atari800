@@ -2,7 +2,7 @@
  * compfile.c - File I/O and ZLIB compression
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -137,18 +137,18 @@ FILE *openzlib(int diskno, const char *infilename, char *outfilename)
 		do {
 			result = gzread(gzSource, zlib_buffer, ZLIB_BUFFER_SIZE);
 			if (result > 0) {
-				if( (int) fwrite(zlib_buffer, 1, result, outfile) != result ) {
-					Aprint( "Error writing to temporary file %s, disk may be full", outfilename );
+				if ((int) fwrite(zlib_buffer, 1, result, outfile) != result) {
+					Aprint("Error writing to temporary file %s, disk may be full", outfilename);
 					result = -1;
 				}
 			}
-		} while(result == ZLIB_BUFFER_SIZE);
+		} while (result == ZLIB_BUFFER_SIZE);
 		temp = gzclose(gzSource);
 		fclose(outfile);
 		if (result >= 0)
 			file = fopen(outfilename, "rb");
 		else {
-			Aprint( "Error while parsing gzip file" );
+			Aprint("Error while parsing gzip file");
 			file = NULL;
 		}
 	}
@@ -172,7 +172,7 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 	init_globals(fin, fout);
 	Aprint("Converting %s to %s", input, output);
 	if (!fin || !fout) {
-		Aprint( "Programming error - NULL file specified for conversion" );
+		Aprint("Programming error - NULL file specified for conversion");
 		return 0;
 	}
 	archivetype = blocktype = fgetc(fin);
@@ -479,15 +479,15 @@ static int decode_FA(void)
 			return 0;
 		memset(buf, 0, 256);
 		for (cursec = 0; cursec < maxsec; cursec++) {
-			if (fwrite(buf, secsize, 1, fout) != 1 ) {
-				Aprint( "Error writing to output file" );
+			if (fwrite(buf, secsize, 1, fout) != 1) {
+				Aprint("Error writing to output file");
 				return 0;
 			}
 		}
 	}
 	cursec = read_atari16(fin);
 	if (fseek(fout, soffset(), SEEK_SET) != 0) {
-		Aprint( "Failed a seek in output file, cannot continue" );
+		Aprint("Failed a seek in output file, cannot continue");
 		return 0;
 	}
 	working = 1;
@@ -514,10 +514,10 @@ static int read_atari16(FILE *fin)
 
 static int write_atari16(FILE *fout, int n)
 {
-	unsigned char ch_low, ch_high;
+	UBYTE ch_low, ch_high;
 
-	ch_low = (unsigned char) (n & 0xff);
-	ch_high = (unsigned char) (n / 256);
+	ch_low = (UBYTE) n;
+	ch_high = (UBYTE) (n >> 8);
 	if (fputc(ch_low, fout) == EOF || fputc(ch_high, fout) == EOF) {
 		show_file_error(fout);
 		return 0;
@@ -590,6 +590,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.17  2005/08/15 17:17:06  pfusik
+fixed indentation
+
 Revision 1.16  2005/08/07 13:44:43  pfusik
 fixed indenting; other minor improvements
 
