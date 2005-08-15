@@ -32,16 +32,16 @@
 #include <signal.h>
 #endif
 
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef WIN32
+#include <windows.h>
 #endif
 
 #ifdef __EMX__
@@ -91,11 +91,11 @@ int tv_mode = TV_PAL;
 
 int verbose = FALSE;
 
-int sprite_collisions_in_skipped_frames = FALSE;
 int display_screen = FALSE;
 int nframes = 0;
+int sprite_collisions_in_skipped_frames = FALSE;
 
-static double frametime = 0.1;	/* measure time between two Antic runs */
+static double frametime = 0.1;
 double deltatime;
 double fps;
 int percent_atari_speed = 100;
@@ -188,7 +188,7 @@ void Atari800_RunEsc(UBYTE esc_code)
 	crash_code = dGetByte(crash_address);
 	ui();
 #else
-	Aprint("Invalid ESC Code %x at Address %x", esc_code, regPC - 2);
+	Aprint("Invalid ESC code %02x at address %04x", esc_code, regPC - 2);
 	if (!Atari800_Exit(TRUE))
 		exit(0);
 #endif
@@ -353,13 +353,12 @@ int Atari800_InitialiseMachine(void)
 char *safe_strncpy(char *dest, const char *src, size_t size)
 {
 	strncpy(dest, src, size);
-	dest[size-1] = '\0';
+	dest[size - 1] = '\0';
 	return dest;
 }
 
 int Atari800_Initialise(int *argc, char *argv[])
 {
-	int diskno = 1;
 	int i, j;
 	char *run_direct = NULL;
 	char *rtconfig_filename = NULL;
@@ -462,7 +461,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		}
 		else {
 			/* parameters that take additional argument follow here */
-			int i_a = ( i + 1 < *argc );	/* is argument available? */
+			int i_a = (i + 1 < *argc);		/* is argument available? */
 			int a_m = FALSE;				/* error, argument missing! */
 
 			if (strcmp(argv[i], "-osa_rom") == 0) {
@@ -497,7 +496,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 					a_m = TRUE;
 			}
 #endif
-
 			else {
 				/* all options known to main module tried but none matched */
 
@@ -590,10 +588,14 @@ int Atari800_Initialise(int *argc, char *argv[])
 		return FALSE;
 	}
 
-	/* Any parameters left on the command line must be disk images. */
+	/* Any parameters left on the command line must be disk images */
 	for (i = 1; i < *argc; i++) {
-		if (!SIO_Mount(diskno++, argv[i], FALSE)) {
-			Aprint("Disk File %s not found", argv[i]);
+		if (i > 8) {
+			Aprint("Too many disk image filenames on the command line (max. 8).");
+			break;
+		}
+		if (!SIO_Mount(i, argv[i], FALSE)) {
+			Aprint("Disk image \"%s\" not found", argv[i]);
 		}
 	}
 
@@ -604,7 +606,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	if (rom_filename) {
 		int r = CART_Insert(rom_filename);
 		if (r < 0) {
-			Aprint("Error inserting cartridge %s: %s", rom_filename,
+			Aprint("Error inserting cartridge \"%s\": %s", rom_filename,
 			r == CART_CANT_OPEN ? "Can't open file" :
 			r == CART_BAD_FORMAT ? "Bad format" :
 			r == CART_BAD_CHECKSUM ? "Bad checksum" :
@@ -651,7 +653,7 @@ int Atari800_Exit(int run_monitor)
 {
 	int restart;
 	if (verbose) {
-		Aprint("Current Frames per Second = %f", fps);
+		Aprint("Current frames per second: %f", fps);
 	}
 	restart = Atari_Exit(run_monitor);
 	if (!restart) {
@@ -766,8 +768,7 @@ static double Atari_time(void)
 #ifdef DJGPP
 	/* DJGPP has gettimeofday, but it's not more accurate than uclock */
 	return uclock() * (1.0 / UCLOCKS_PER_SEC);
-#elif defined(HAVE_GETTICKCOUNT)
-	/* WIN32 */
+#elif defined(WIN32)
 	return GetTickCount() * 1e-3;
 #elif defined(HAVE_GETTIMEOFDAY)
 	struct timeval tp;
@@ -790,16 +791,13 @@ static void Atari_sleep(double s)
 		while ((curtime + s) > Atari_time());
 #elif defined(HAVE_USLEEP)
 		usleep(s * 1e6);
-#elif defined(HAVE_SNOOZE)
-		/* __BEOS__ */
+#elif defined(__BEOS__)
 		/* added by Walter Las for BeOS */
 		snooze(s * 1e6);
-#elif defined(HAVE_DOSSLEEP)
-		/* __EMX__ */
+#elif defined(__EMX__)
 		/* added by Brian Smith for os/2 */
 		DosSleep(s);
-#elif defined(HAVE_SLEEP)
-		/* WIN32 */
+#elif defined(WIN32)
 		Sleep(s * 1e3);
 #elif defined(HAVE_SELECT)
 		/* linux */
@@ -1011,7 +1009,6 @@ void Atari800_Frame(void)
 	case AKEY_EXIT:
 		Atari800_Exit(FALSE);
 		exit(0);
-		return;
 	case AKEY_UI:
 #ifdef SOUND
 		Sound_Pause();
@@ -1029,15 +1026,15 @@ void Atari800_Frame(void)
 	case AKEY_SCREENSHOT_INTERLACE:
 		Screen_SaveNextScreenshot(TRUE);
 		break;
-#endif
+#endif /* CURSES_BASIC */
 	}
-#endif
+#endif /* BASIC */
+
 	Device_Frame();
 #ifndef BASIC
 	INPUT_Frame();
 #endif
 	GTIA_Frame();
-
 #ifdef SOUND
 	Sound_Update();
 #endif
@@ -1057,7 +1054,7 @@ void Atari800_Frame(void)
 		INPUT_DrawMousePointer();
 		Screen_DrawAtariSpeed();
 		Screen_DrawDiskLED();
-#endif
+#endif /* CURSES_BASIC */
 		display_screen = TRUE;
 	}
 	else {
@@ -1069,6 +1066,7 @@ void Atari800_Frame(void)
 		display_screen = FALSE;
 	}
 #endif /* BASIC */
+
 	POKEY_Frame();
 	nframes++;
 #ifndef DONT_SYNC_WITH_HOST
@@ -1090,16 +1088,16 @@ int ReadDisabledROMs(void)
 	return FALSE;
 }
 
-void MainStateSave( void )
+void MainStateSave(void)
 {
-	UBYTE	temp;
+	UBYTE temp;
 	int default_tv_mode;	/* for compatibility with previous versions */
 	int os = 0;
 	int default_system = 3;
 
 	/* Possibly some compilers would handle an enumerated type differently,
 	   so convert these into unsigned bytes and save them out that way */
-	if( tv_mode == TV_PAL ) {
+	if (tv_mode == TV_PAL) {
 		temp = 0;
 		default_tv_mode = 1;
 	}
@@ -1107,7 +1105,7 @@ void MainStateSave( void )
 		temp = 1;
 		default_tv_mode = 2;
 	}
-	SaveUBYTE( &temp, 1 );
+	SaveUBYTE(&temp, 1);
 
 	switch (machine_type) {
 	case MACHINE_OSA:
@@ -1154,29 +1152,26 @@ void MainStateSave( void )
 		default_system = 6;
 		break;
 	}
-	SaveUBYTE( &temp, 1 );
+	SaveUBYTE(&temp, 1);
 
-	SaveINT( &os, 1 );
-	SaveINT( &pil_on, 1 );
-	SaveINT( &default_tv_mode, 1 );
-	SaveINT( &default_system, 1 );
+	SaveINT(&os, 1);
+	SaveINT(&pil_on, 1);
+	SaveINT(&default_tv_mode, 1);
+	SaveINT(&default_system, 1);
 }
 
-void MainStateRead( void )
+void MainStateRead(void)
 {
-	UBYTE	temp;
+	UBYTE temp;
 	int default_tv_mode;	/* for compatibility with previous versions */
 	int os;
 	int default_system;
 
-	ReadUBYTE( &temp, 1 );
-	if( temp == 0 )
-		tv_mode = TV_PAL;
-	else
-		tv_mode = TV_NTSC;
+	ReadUBYTE(&temp, 1);
+	tv_mode = (temp == 0) ? TV_PAL : TV_NTSC;
 
-	ReadUBYTE( &temp, 1 );
-	ReadINT( &os, 1 );
+	ReadUBYTE(&temp, 1);
+	ReadINT(&os, 1);
 	switch (temp) {
 	case 0:
 		machine_type = os == 1 ? MACHINE_OSA : MACHINE_OSB;
@@ -1217,19 +1212,23 @@ void MainStateRead( void )
 	default:
 		machine_type = MACHINE_XLXE;
 		ram_size = 64;
-		Aprint( "Warning: Bad machine type read in from state save, defaulting to 800 XL" );
+		Aprint("Warning: Bad machine type read in from state save, defaulting to 800 XL");
 		break;
 	}
 
-	ReadINT( &pil_on, 1 );
-	ReadINT( &default_tv_mode, 1 );
-	ReadINT( &default_system, 1 );
+	ReadINT(&pil_on, 1);
+	ReadINT(&default_tv_mode, 1);
+	ReadINT(&default_system, 1);
 }
 
 #endif
 
 /*
 $Log$
+Revision 1.65  2005/08/15 20:36:25  pfusik
+allow no more than 8 disk images from the command line;
+back to #ifdef WIN32, __BEOS__, __EMX__
+
 Revision 1.64  2005/08/15 17:13:27  pfusik
 Basic loader; VOL_ONLY_SOUND in BASIC and CURSES_BASIC
 
