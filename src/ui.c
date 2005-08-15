@@ -845,7 +845,7 @@ void ui(void)
 	static tMenuItem menu_array[] = {
 		{"DISK", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Disk Management", "Alt+D", MENU_DISK},
 		{"CART", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Cartridge Management", "Alt+C", MENU_CARTRIDGE},
-		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run BIN file directly", "Alt+R", MENU_RUN},
+		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run Atari program directly", "Alt+R", MENU_RUN},
 		{"CASS", ITEM_ENABLED | ITEM_FILESEL, NULL, "Select tape image", NULL, MENU_CASSETTE},
 		{"SYST", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select System", "Alt+Y", MENU_SYSTEM},
 #ifdef SOUND
@@ -1069,6 +1069,9 @@ void MakeBlankDisk(FILE *setFile)
 
 /*
 $Log$
+Revision 1.61  2005/08/15 17:26:18  pfusik
+"Run BIN file" -> "Run Atari program"
+
 Revision 1.60  2005/08/13 08:53:09  pfusik
 CURSES_BASIC; no sound objects if SOUND disabled; no R: if not compiled in
 
