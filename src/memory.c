@@ -109,9 +109,6 @@ static void AllocXEMemory(void)
 
 void MEMORY_InitialiseMachine(void)
 {
-#ifdef PAGED_ATTRIB
-	int	i;
-#endif
 	antic_xe_ptr = NULL;
 	switch (machine_type) {
 	case MACHINE_OSA:
@@ -119,25 +116,10 @@ void MEMORY_InitialiseMachine(void)
 		memcpy(memory + 0xd800, atari_os, 0x2800);
 		Atari800_PatchOS();
 		dFillMem(0x0000, 0x00, ram_size * 1024 - 1);
-#ifndef PAGED_ATTRIB
 		SetRAM(0x0000, ram_size * 1024 - 1);
-#else
-		for(i=0;i<(ram_size*4);i++) {
-			readmap[i] = NULL;
-			writemap[i] = NULL;
-		}
-#endif
-		
 		if (ram_size < 52) {
 			dFillMem(ram_size * 1024, 0xff, 0xd000 - ram_size * 1024);
-#ifndef PAGED_ATTRIB
 			SetROM(ram_size * 1024, 0xcfff);
-#else
-			for(i=(ram_size*4);i<0xd0;i++) {
-				readmap[i] = NULL;
-				writemap[i] = ROM_PutByte;
-			}
-#endif
 		}
 #ifndef PAGED_ATTRIB
 		SetHARDWARE(0xd000, 0xd7ff);
@@ -159,55 +141,20 @@ void MEMORY_InitialiseMachine(void)
 		writemap[0xd6] = PBIM1_PutByte;
 		writemap[0xd7] = PBIM2_PutByte;
 #endif
-#ifndef PAGED_ATTRIB
 		SetROM(0xd800, 0xffff);
-#else
-		for(i=0xd8;i<=0xff;i++) {
-			readmap[i] = NULL;
-			writemap[i] = ROM_PutByte;
-		}
-#endif
 		break;
 	case MACHINE_XLXE:
 		memcpy(memory + 0xc000, atari_os, 0x4000);
 		Atari800_PatchOS();
 		if (ram_size == 16) {
 			dFillMem(0x0000, 0x00, 0x4000);
-#ifndef PAGED_ATTRIB
 			SetRAM(0x0000, 0x3fff);
-#else
-			for(i=0x00;i<0x40;i++) {
-				readmap[i] = NULL;
-				writemap[i] = NULL;
-			}
-#endif
 			dFillMem(0x4000, 0xff, 0x8000);
-#ifndef PAGED_ATTRIB
 			SetROM(0x4000, 0xcfff);
-#else
-			for(i=0x40;i<0xD0;i++) {
-				readmap[i] = NULL;
-				writemap[i] = ROM_PutByte;
-			}
-#endif
 		} else {
 			dFillMem(0x0000, 0x00, 0xc000);
-#ifndef PAGED_ATTRIB
 			SetRAM(0x0000, 0xbfff);
-#else
-			for(i=0x00;i<0xc0;i++) {
-				readmap[i] = NULL;
-				writemap[i] = NULL;
-			}
-#endif
-#ifndef PAGED_ATTRIB
 			SetROM(0xc000, 0xcfff);
-#else
-			for(i=0xC0;i<0xD0;i++) {
-				readmap[i] = NULL;
-				writemap[i] = ROM_PutByte;
-			}
-#endif
 		}
 #ifndef PAGED_ATTRIB
 		SetHARDWARE(0xd000, 0xd7ff);
@@ -229,34 +176,13 @@ void MEMORY_InitialiseMachine(void)
 		writemap[0xd6] = PBIM1_PutByte;
 		writemap[0xd7] = PBIM2_PutByte;
 #endif
-#ifndef PAGED_ATTRIB
 		SetROM(0xd800, 0xffff);
-#else
-		for(i=0xd8;i<=0xff;i++) {
-			readmap[i] = NULL;
-			writemap[i] = ROM_PutByte;
-		}
-#endif
 		break;
 	case MACHINE_5200:
 		memcpy(memory + 0xf800, atari_os, 0x800);
 		dFillMem(0x0000, 0x00, 0xf800);
-#ifndef PAGED_ATTRIB
 		SetRAM(0x0000, 0x3fff);
-#else
-			for(i=0x00;i<0x40;i++) {
-				readmap[i] = NULL;
-				writemap[i] = NULL;
-			}
-#endif
-#ifndef PAGED_ATTRIB
 		SetROM(0x4000, 0xffff);
-#else
-		for(i=0x40;i<=0xff;i++) {
-			readmap[i] = NULL;
-			writemap[i] = ROM_PutByte;
-		}
-#endif
 #ifndef PAGED_ATTRIB
 		SetHARDWARE(0xc000, 0xc0ff);	/* 5200 GTIA Chip */
 		SetHARDWARE(0xd400, 0xd4ff);	/* 5200 ANTIC Chip */
@@ -280,59 +206,39 @@ void MEMORY_InitialiseMachine(void)
 
 void EnablePILL(void)
 {
-#ifdef PAGED_ATTRIB
-	int	i;
-#endif
-#ifndef PAGED_ATTRIB
 	SetROM(0x8000, 0xbfff);
-#else
-		for(i=0x80;i<0xc0;i++) {
-			readmap[i] = NULL;
-			writemap[i] = ROM_PutByte;
-		}
-#endif
 	pil_on = TRUE;
 }
 
 void DisablePILL(void)
 {
-#ifdef PAGED_ATTRIB
-	int	i;
-#endif
-#ifndef PAGED_ATTRIB
 	SetRAM(0x8000, 0xbfff);
-#else
-		for(i=0x80;i<0xc0;i++) {
-			readmap[i] = NULL;
-			writemap[i] = NULL;
-		}
-#endif
 	pil_on = FALSE;
 }
 
 #ifndef BASIC
 
-void MemStateSave( UBYTE SaveVerbose )
+void MemStateSave(UBYTE SaveVerbose)
 {
-	SaveUBYTE( &memory[0], 65536 );
+	SaveUBYTE(&memory[0], 65536);
 #ifndef PAGED_ATTRIB
-	SaveUBYTE( &attrib[0], 65536 );
+	SaveUBYTE(&attrib[0], 65536);
 #else
 #warning state save not working yet
 #endif
 
 	if (machine_type == MACHINE_XLXE) {
-		if( SaveVerbose != 0 )
-			SaveUBYTE( &atari_basic[0], 8192 );
-		SaveUBYTE( &under_atari_basic[0], 8192 );
+		if (SaveVerbose != 0)
+			SaveUBYTE(&atari_basic[0], 8192);
+		SaveUBYTE(&under_atari_basic[0], 8192);
 
-		if( SaveVerbose != 0 )
-			SaveUBYTE( &atari_os[0], 16384 );
-		SaveUBYTE( &under_atarixl_os[0], 16384 );
+		if (SaveVerbose != 0)
+			SaveUBYTE(&atari_os[0], 16384);
+		SaveUBYTE(&under_atarixl_os[0], 16384);
 	}
 
 	if (ram_size > 64) {
-		SaveUBYTE( &atarixe_memory[0], atarixe_memory_size );
+		SaveUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		/* a hack that makes state files compatible with previous versions:
            for 130 XE there's written 192 KB of unused data */
 		if (ram_size == 128) {
@@ -346,28 +252,29 @@ void MemStateSave( UBYTE SaveVerbose )
 
 }
 
-void MemStateRead( UBYTE SaveVerbose )
+void MemStateRead(UBYTE SaveVerbose)
 {
-	ReadUBYTE( &memory[0], 65536 );
+	ReadUBYTE(&memory[0], 65536);
 #ifndef PAGED_ATTRIB
-	ReadUBYTE( &attrib[0], 65536 );
+	ReadUBYTE(&attrib[0], 65536);
 #else
 #warning state save not working yet
 #endif
 
 	if (machine_type == MACHINE_XLXE) {
-		if( SaveVerbose != 0 )
-			ReadUBYTE( &atari_basic[0], 8192 );
-		ReadUBYTE( &under_atari_basic[0], 8192 );
+		if (SaveVerbose != 0)
+			ReadUBYTE(&atari_basic[0], 8192);
+		ReadUBYTE(&under_atari_basic[0], 8192);
 
-		if( SaveVerbose != 0 )
-			ReadUBYTE( &atari_os[0], 16384 );
-		ReadUBYTE( &under_atarixl_os[0], 16384 );
+		if (SaveVerbose != 0)
+			ReadUBYTE(&atari_os[0], 16384);
+		ReadUBYTE(&under_atarixl_os[0], 16384);
 	}
 
+	antic_xe_ptr = NULL;
 	AllocXEMemory();
 	if (ram_size > 64) {
-		ReadUBYTE( &atarixe_memory[0], atarixe_memory_size );
+		ReadUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		/* a hack that makes state files compatible with previous versions:
            for 130 XE there's written 192 KB of unused data */
 		if (ram_size == 128) {
@@ -387,18 +294,19 @@ void CopyFromMem(ATPtr from, UBYTE * to, int size)
 	memcpy(to, from + memory, size);
 }
 
-void CopyToMem(UBYTE * from, ATPtr to, int size)
+void CopyToMem(const UBYTE *from, ATPtr to, int size)
 {
 	int i;
 
 	for (i = 0; i < size; i++) {
 #ifndef PAGED_ATTRIB
-		if (!attrib[to])
+		if (attrib[to] == RAM)
 #else
-		if (!writemap[to>>8])
+		if (!writemap[to >> 8])
 #endif
 			dPutByte(to, *from);
-		from++, to++;
+		from++;
+		to++;
 	}
 }
 
@@ -417,9 +325,6 @@ static int basic_disabled(UBYTE portb)
 /* Note: this function is only for XL/XE! */
 void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 {
-#ifdef PAGED_ATTRIB
-	int	i;
-#endif
 	/* Switch XE memory bank in 0x4000-0x7fff */
 	if (ram_size > 64) {
 		int bank = 0;
@@ -447,14 +352,7 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 		if (selftest_enabled && (bank != xe_bank || (ram_size == RAM_320_COMPY_SHOP && (byte & 0x20) == 0))) {
 			/* Disable Self Test ROM */
 			memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
-#ifndef PAGED_ATTRIB
 			SetRAM(0x5000, 0x57ff);
-#else
-			for(i=0x50;i<0x58;i++) {
-				readmap[i] = NULL;
-				writemap[i] = NULL;
-			}
-#endif
 			selftest_enabled = FALSE;
 		}
 		if (bank != xe_bank) {
@@ -486,19 +384,8 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			if (ram_size > 48) {
 				memcpy(under_atarixl_os, memory + 0xc000, 0x1000);
 				memcpy(under_atarixl_os + 0x1800, memory + 0xd800, 0x2800);
-#ifndef PAGED_ATTRIB
 				SetROM(0xc000, 0xcfff);
 				SetROM(0xd800, 0xffff);
-#else
-				for(i=0xc0;i<0xd0;i++) {
-					readmap[i] = NULL;
-					writemap[i] = ROM_PutByte;
-				}
-				for(i=0xd8;i<=0xff;i++) {
-					readmap[i] = NULL;
-					writemap[i] = ROM_PutByte;
-				}
-#endif
 			}
 			memcpy(memory + 0xc000, atari_os, 0x1000);
 			memcpy(memory + 0xd800, atari_os + 0x1800, 0x2800);
@@ -509,19 +396,8 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			if (ram_size > 48) {
 				memcpy(memory + 0xc000, under_atarixl_os, 0x1000);
 				memcpy(memory + 0xd800, under_atarixl_os + 0x1800, 0x2800);
-#ifndef PAGED_ATTRIB
 				SetRAM(0xc000, 0xcfff);
 				SetRAM(0xd800, 0xffff);
-#else
-				for(i=0xc0;i<0xd0;i++) {
-					readmap[i] = NULL;
-					writemap[i] = NULL;
-				}
-				for(i=0xd8;i<=0xff;i++) {
-					readmap[i] = NULL;
-					writemap[i] = NULL;
-				}
-#endif
 			} else {
 				dFillMem(0xc000, 0xff, 0x1000);
 				dFillMem(0xd800, 0xff, 0x2800);
@@ -530,15 +406,10 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			if (selftest_enabled) {
 				if (ram_size > 20) {
 					memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
-#ifndef PAGED_ATTRIB
 					SetRAM(0x5000, 0x57ff);
-#else
-					for(i=0x50;i<0x58;i++) {
-						readmap[i] = NULL;
-						writemap[i] = NULL;
-					}
-#endif
-				} else dFillMem(0x5000, 0xff, 0x800);
+				}
+				else
+					dFillMem(0x5000, 0xff, 0x800);
 				selftest_enabled = FALSE;
 			}
 		}
@@ -553,14 +424,7 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 				/* Disable BASIC ROM */
 				if (ram_size > 40) {
 					memcpy(memory + 0xa000, under_atari_basic, 0x2000);
-#ifndef PAGED_ATTRIB
 					SetRAM(0xa000, 0xbfff);
-#else
-					for(i=0xA0;i<0xC0;i++) {
-						readmap[i] = NULL;
-						writemap[i] = NULL;
-					}
-#endif
 				}
 				else
 					dFillMem(0xa000, 0xff, 0x2000);
@@ -569,14 +433,7 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 				/* Enable BASIC ROM */
 				if (ram_size > 40) {
 					memcpy(under_atari_basic, memory + 0xa000, 0x2000);
-#ifndef PAGED_ATTRIB
 					SetROM(0xa000, 0xbfff);
-#else
-					for(i=0xa0;i<0xc0;i++) {
-						readmap[i] = NULL;
-						writemap[i] = ROM_PutByte;
-					}
-#endif
 				}
 				memcpy(memory + 0xa000, atari_basic, 0x2000);
 			}
@@ -589,14 +446,7 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			/* Disable Self Test ROM */
 			if (ram_size > 20) {
 				memcpy(memory + 0x5000, under_atarixl_os + 0x1000, 0x800);
-#ifndef PAGED_ATTRIB
 				SetRAM(0x5000, 0x57ff);
-#else
-				for(i=0x50;i<0x58;i++) {
-					readmap[i] = NULL;
-					writemap[i] = NULL;
-				}
-#endif
 			}
 			else
 				dFillMem(0x5000, 0xff, 0x800);
@@ -613,14 +463,7 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			/* Enable Self Test ROM */
 			if (ram_size > 20) {
 				memcpy(under_atarixl_os + 0x1000, memory + 0x5000, 0x800);
-#ifndef PAGED_ATTRIB
 				SetROM(0x5000, 0x57ff);
-#else
-				for(i=0x50;i<0x58;i++) {
-					readmap[i] = NULL;
-					writemap[i] = ROM_PutByte;
-				}
-#endif
 			}
 			memcpy(memory + 0x5000, atari_os + 0x1000, 0x800);
 			selftest_enabled = TRUE;
@@ -635,20 +478,10 @@ static UBYTE under_cartA0BF[8192];
 
 void Cart809F_Disable(void)
 {
-#ifdef PAGED_ATTRIB
-	int	i;
-#endif
 	if (cart809F_enabled) {
 		if (ram_size > 32) {
 			memcpy(memory + 0x8000, under_cart809F, 0x2000);
-#ifndef PAGED_ATTRIB
 			SetRAM(0x8000, 0x9fff);
-#else
-				for(i=0x80;i<0xA0;i++) {
-					readmap[i] = NULL;
-					writemap[i] = NULL;
-				}
-#endif
 		}
 		else
 			dFillMem(0x8000, 0xff, 0x2000);
@@ -658,20 +491,10 @@ void Cart809F_Disable(void)
 
 void Cart809F_Enable(void)
 {
-#ifdef PAGED_ATTRIB
-	int	i;
-#endif
 	if (!cart809F_enabled) {
 		if (ram_size > 32) {
 			memcpy(under_cart809F, memory + 0x8000, 0x2000);
-#ifndef PAGED_ATTRIB
 			SetROM(0x8000, 0x9fff);
-#else
-			for(i=0x80;i<0xA0;i++) {
-				readmap[i] = NULL;
-				writemap[i] = ROM_PutByte;
-			}
-#endif
 		}
 		cart809F_enabled = TRUE;
 	}
@@ -679,23 +502,13 @@ void Cart809F_Enable(void)
 
 void CartA0BF_Disable(void)
 {
-#ifdef PAGED_ATTRIB
-	int	i;
-#endif
 	if (cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
 		if ((machine_type != MACHINE_XLXE) || basic_disabled(PORTB | PORTB_mask)) {
 			if (ram_size > 40) {
 				memcpy(memory + 0xa000, under_cartA0BF, 0x2000);
-#ifndef PAGED_ATTRIB
 				SetRAM(0xa000, 0xbfff);
-#else
-				for(i=0xA0;i<0xC0;i++) {
-					readmap[i] = NULL;
-					writemap[i] = NULL;
-				}
-#endif
 			}
 			else
 				dFillMem(0xa000, 0xff, 0x2000);
@@ -713,9 +526,6 @@ void CartA0BF_Disable(void)
 
 void CartA0BF_Enable(void)
 {
-#ifdef PAGED_ATTRIB
-	int	i;
-#endif
 	if (!cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
@@ -723,14 +533,7 @@ void CartA0BF_Enable(void)
 		|| ((PORTB & 0x10) == 0 && (ram_size == 576 || ram_size == 1088)))) {
 			/* Back-up 0xa000-0xbfff RAM */
 			memcpy(under_cartA0BF, memory + 0xa000, 0x2000);
-#ifndef PAGED_ATTRIB
 			SetROM(0xa000, 0xbfff);
-#else
-			for(i=0xA0;i<0xc0;i++) {
-				readmap[i] = NULL;
-				writemap[i] = ROM_PutByte;
-			}
-#endif
 		}
 		cartA0BF_enabled = TRUE;
 		if (machine_type == MACHINE_XLXE)
@@ -738,7 +541,7 @@ void CartA0BF_Enable(void)
 	}
 }
 
-void get_charset(char * cs)
+void get_charset(UBYTE *cs)
 {
 	switch (machine_type) {
 	case MACHINE_OSA:
@@ -756,6 +559,9 @@ void get_charset(char * cs)
 
 /*
 $Log$
+Revision 1.7  2005/08/15 17:21:53  pfusik
+SetROM/SetRAM macros for PAGED_ATTRIB
+
 Revision 1.6  2005/08/14 08:41:34  pfusik
 #include "config.h" for BASIC and PAGED_ATTRIB definitions
 
