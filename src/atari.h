@@ -1,82 +1,200 @@
 #ifndef _ATARI_H_
-#define	_ATARI_H_
+#define _ATARI_H_
 
 #include "config.h"
 
-/*
-   =================================
-   Define Data Types on Local System
-   =================================
- */
-
-#define	SBYTE signed char
-#define	SWORD signed short int
-#if SIZEOF_LONG > 4
-# define	SLONG signed int
-#else
-# define	SLONG signed long int
-#endif
-
-#define	UBYTE unsigned char
-#define	UWORD unsigned short int
-#if SIZEOF_LONG > 4
-# define	ULONG unsigned int
-#else
-# define	ULONG unsigned long int
-#endif
-
-#define MACHINE_OSA		0
-#define MACHINE_OSB		1
-#define MACHINE_XLXE	2
-#define MACHINE_5200	3
-extern int machine_type;
-
-#define RAM_320_RAMBO		320
-#define RAM_320_COMPY_SHOP	321
-extern int ram_size;
-
-#define TV_PAL 312
-#define TV_NTSC 262
-extern int tv_mode;				/* now it is simply number of scanlines */
-
-extern int sprite_collisions_in_skipped_frames;
-extern int display_screen;
-extern int nframes;
-
-extern double deltatime;
-extern int percent_atari_speed;
-
-extern int verbose;
-
-#ifndef FALSE
-#define FALSE	0
-#endif
-#ifndef TRUE
-#define TRUE	1
-#endif
-
-#define ATARI_WIDTH  384
-#define ATARI_HEIGHT 240
+/* Fundamental declarations ---------------------------------------------- */
 
 #define ATARI_TITLE  "Atari 800 Emulator, Version 1.3.6"
 
-extern int xpos;
-extern int xpos_limit;
-#define WSYNC_C	106
-#define LINE_C	114
-#define DMAR	9
-#define max_ypos tv_mode		/* number of scanlines */
-/* if tv_mod is enum, max_ypos is (tv_mod == TV_PAL ? 312 : 262) */
+#ifndef FALSE
+#define FALSE  0
+#endif
+#ifndef TRUE
+#define TRUE   1
+#endif
 
+/* SBYTE and UBYTE must be exactly 1 byte long. */
+/* SWORD and UWORD must be exactly 2 bytes long. */
+/* SLONG and ULONG must be exactly 4 bytes long. */
+#define SBYTE signed char
+#define SWORD signed short
+#define SLONG signed int
+#define UBYTE unsigned char
+#define UWORD unsigned short
+#define ULONG unsigned int
+/* Note: in various parts of the emulator we assume that char is 1 byte
+   and int is 4 bytes. */
+
+
+/* Public interface ------------------------------------------------------ */
+
+/* Machine type. */
+#define MACHINE_OSA   0
+#define MACHINE_OSB   1
+#define MACHINE_XLXE  2
+#define MACHINE_5200  3
+extern int machine_type;
+
+/* RAM size in kilobytes.
+   Valid values for MACHINE_OSA and MACHINE_OSB are: 16, 48, 52.
+   Valid values for MACHINE_XLXE are: 16, 64, 128, RAM_320_RAMBO,
+   RAM_320_COMPY_SHOP, 576, 1088.
+   The only valid value for MACHINE_5200 is 16. */
+#define RAM_320_RAMBO       320
+#define RAM_320_COMPY_SHOP  321
+extern int ram_size;
+
+/* Always call Atari800_InitialiseMachine() after changing machine_type
+   or ram_size! */
+
+/* Video system. */
+#define TV_PAL 312
+#define TV_NTSC 262
+extern int tv_mode;
+
+/* Dimensions of atari_screen.
+   atari_screen is ATARI_WIDTH * ATARI_HEIGHT bytes.
+   Each byte is an Atari color code - use Palette_Get[RGB] functions
+   to get actual RGB codes.
+   You should never display anything outside the middle 336 columns. */
+#define ATARI_WIDTH  384
+#define ATARI_HEIGHT 240
+
+/* If Atari800_Frame() sets it to TRUE, then the current contents
+   of atari_screen should be displayed. */
+extern int display_screen;
+
+/* Simply incremented by Atari800_Frame(). */
+extern int nframes;
+
+/* Time between Atari frames, in seconds
+   (normally 1.0/50 for PAL, 1.0/60 for NTSC). */
+extern double deltatime;
+
+/* You can read it to see how fast is the emulator compared to real Atari
+   (100 if running at real Atari speed). */
+extern int percent_atari_speed;
+
+/* Set to TRUE for faster emulation with refresh_rate > 1.
+   Set to FALSE for accurate emulation with refresh_rate > 1. */
+extern int sprite_collisions_in_skipped_frames;
+
+/* Special key codes.
+   Store in key_code. */
+#define AKEY_WARMSTART             -2
+#define AKEY_COLDSTART             -3
+#define AKEY_EXIT                  -4
+#define AKEY_BREAK                 -5
+#define AKEY_UI                    -7
+#define AKEY_SCREENSHOT            -8
+#define AKEY_SCREENSHOT_INTERLACE  -9
+
+/* Menu codes for Alt+letter shortcuts.
+   Store in alt_function and put AKEY_UI in key_code.*/
+#define MENU_DISK             0
+#define MENU_CARTRIDGE        1
+#define MENU_RUN              2
+#define MENU_SYSTEM           3
+#define MENU_SOUND            4
+#define MENU_SOUND_RECORDING  5
+#define MENU_ARTIF            6
+#define MENU_SETTINGS         7
+#define MENU_SAVESTATE        8
+#define MENU_LOADSTATE        9
+#define MENU_PCX             10
+#define MENU_PCXI            11
+#define MENU_BACK            12
+#define MENU_RESETW          13
+#define MENU_RESETC          14
+#define MENU_MONITOR         15
+#define MENU_ABOUT           16
+#define MENU_EXIT            17
+#define MENU_CASSETTE        18
+
+/* Initializes Atari800 emulation core. */
+int Atari800_Initialise(int *argc, char *argv[]);
+
+/* Emulates one frame (1/50sec for PAL, 1/60sec for NTSC). */
+void Atari800_Frame(void);
+
+/* Reboots the emulated Atari. */
+void Coldstart(void);
+
+/* Presses the Reset key in the emulated Atari. */
+void Warmstart(void);
+
+/* Reinitializes after machine_type or ram_size change.
+   You should call Coldstart() after it. */
+int Atari800_InitialiseMachine(void);
+
+/* Reinitializes patches after enable_*_patch change. */
+void Atari800_UpdatePatches(void);
+
+/* Shuts down Atari800 emulation core. */
+int Atari800_Exit(int run_monitor);
+
+
+/* Private interface ----------------------------------------------------- */
+/* Don't use outside the emulation core! */
+
+/* ATR format header */
+struct ATR_Header {
+	unsigned char magic1;
+	unsigned char magic2;
+	unsigned char seccountlo;
+	unsigned char seccounthi;
+	unsigned char secsizelo;
+	unsigned char secsizehi;
+	unsigned char hiseccountlo;
+	unsigned char hiseccounthi;
+	unsigned char gash[7];
+	unsigned char writeprotect;
+};
+
+/* First two bytes of an ATR file. */
+#define MAGIC1  0x96
+#define MAGIC2  0x02
+
+/* Current clock cycle in a scanline.
+   Normally 0 <= xpos && xpos < LINE_C, but in some cases xpos >= LINE_C,
+   which means that we are already in line (ypos + 1). */
+extern int xpos;
+
+/* xpos limit for the currently running 6502 emulation. */
+extern int xpos_limit;
+
+/* Number of cycles per scanline. */
+#define LINE_C   114
+
+/* STA WSYNC resumes here. */
+#define WSYNC_C  106
+
+/* Number of memory refresh cycles per scanline.
+   In the first scanline of a font mode there are actually less than DMAR
+   memory refresh cycles. */
+#define DMAR     9
+
+/* Number of scanlines per frame. */
+#define max_ypos tv_mode
+
+/* Main clock value at the beginning of the current scanline. */
 extern unsigned int screenline_cpu_clock;
+
+/* Current main clock value. */
 #define cpu_clock (screenline_cpu_clock + xpos)
 
-/* Escape codes */
+/* Escape codes used to mark places in 6502 code that must
+   be handled specially by the emulator. An escape sequence
+   is an illegal 6502 opcode 0xF2 or 0xD2 followed
+   by one of these escape codes: */
 enum ESCAPE {
+
+	/* SIO patch. */
 	ESC_SIOV,
-/*
- * These are special device escape codes required by the Basic version
- */
+
+	/* stdio-based handlers for the BASIC version
+	   and handlers for Atari Basic loader. */
 	ESC_EHOPEN,
 	ESC_EHCLOS,
 	ESC_EHREAD,
@@ -91,19 +209,14 @@ enum ESCAPE {
 	ESC_KHSTAT,
 	ESC_KHSPEC,
 
+	/* Atari executable loader. */
 	ESC_BINLOADER_CONT,
 
-/*
- * Escape codes for cassette stuff
-*/
+	/* Cassette emulation. */
 	ESC_COPENLOAD = 0xa8,
 	ESC_COPENSAVE = 0xa9,
 
-/*
- * These are Escape codes for the normal device handlers.
- * Some are never used and some are only sometimes used.
- */
-
+	/* Printer. */
 	ESC_PHOPEN = 0xb0,
 	ESC_PHCLOS = 0xb1,
 	ESC_PHREAD = 0xb2,
@@ -112,7 +225,8 @@ enum ESCAPE {
 	ESC_PHSPEC = 0xb5,
 	ESC_PHINIT = 0xb6,
 
-#if defined(R_IO_DEVICE)
+#ifdef R_IO_DEVICE
+	/* R: device. */
 	ESC_ROPEN = 0xd0,
 	ESC_RCLOS = 0xd1,
 	ESC_RREAD = 0xd2,
@@ -120,8 +234,9 @@ enum ESCAPE {
 	ESC_RSTAT = 0xd4,
 	ESC_RSPEC = 0xd5,
 	ESC_RINIT = 0xd6,
-#endif /* defined(R_IO_DEVICE) */
+#endif
 
+	/* H: device. */
 	ESC_HHOPEN = 0xc0,
 	ESC_HHCLOS = 0xc1,
 	ESC_HHREAD = 0xc2,
@@ -131,97 +246,46 @@ enum ESCAPE {
 	ESC_HHINIT = 0xc6
 };
 
+/* A function called to handle an escape sequence. */
 typedef void (*EscFunctionType)(void);
 
+/* Puts an escape sequence at the specified address. */
 void Atari800_AddEsc(UWORD address, UBYTE esc_code, EscFunctionType function);
+
+/* Puts an escape sequence followed by the RTS instruction. */
 void Atari800_AddEscRts(UWORD address, UBYTE esc_code, EscFunctionType function);
+
+/* Puts an escape sequence with an integrated RTS. */
 void Atari800_AddEscRts2(UWORD address, UBYTE esc_code, EscFunctionType function);
+
+/* Unregisters an escape sequence. You must cleanup the Atari memory yourself. */
 void Atari800_RemoveEsc(UBYTE esc_code);
+
+/* Handles an escape sequence. */
 void Atari800_RunEsc(UBYTE esc_code);
 
+/* Reads a byte from the specified special address (not RAM or ROM). */
 UBYTE Atari800_GetByte(UWORD addr);
+
+/* Stores a byte at the specified special address (not RAM or ROM). */
 void Atari800_PutByte(UWORD addr, UBYTE byte);
+
+/* Installs SIO patch and disables ROM checksum test. */
 void Atari800_PatchOS(void);
 
-/* 
-   =================
-   ATR Info
-   =================
- */
- 
-#define	MAGIC1	0x96
-#define	MAGIC2	0x02
-
-struct ATR_Header {
-	unsigned char magic1;
-	unsigned char magic2;
-	unsigned char seccountlo;
-	unsigned char seccounthi;
-	unsigned char secsizelo;
-	unsigned char secsizehi;
-	unsigned char hiseccountlo;
-	unsigned char hiseccounthi;
-	unsigned char gash[7];
-	unsigned char writeprotect;
-};
-
-/*
-   ===========================
-   non-standard keyboard codes
-   ===========================
- */
-
-#define AKEY_WARMSTART -2
-#define AKEY_COLDSTART -3
-#define AKEY_EXIT -4
-#define AKEY_BREAK -5
-/* #define AKEY_PIL -6 */
-#define AKEY_UI -7
-#define AKEY_SCREENSHOT -8
-#define AKEY_SCREENSHOT_INTERLACE -9
-
-/*
-   ==============
-   menu functions
-   ==============
- */
-
-#define MENU_DISK		0
-#define MENU_CARTRIDGE	1		
-#define MENU_RUN		2
-#define MENU_SYSTEM		3
-#define MENU_SOUND		4
-#define MENU_SOUND_RECORDING	5
-#define MENU_ARTIF		6
-#define MENU_SETTINGS	7
-#define MENU_SAVESTATE	8
-#define MENU_LOADSTATE	9
-#define MENU_PCX		10
-#define MENU_PCXI		11
-#define MENU_BACK		12
-#define MENU_RESETW		13
-#define MENU_RESETC		14
-#define MENU_MONITOR	15
-#define MENU_ABOUT		16
-#define MENU_EXIT		17
-#define MENU_CASSETTE   18
-
-int Atari800_Initialise(int *argc, char *argv[]);
-
-void Atari800_Frame(void);
-
-void EnablePILL(void);
-void Coldstart(void);
-void Warmstart(void);
-int Atari800_InitialiseMachine(void);
-int Atari800_Exit(int run_monitor);
-void Atari800_UpdatePatches(void);
+/* Effects deltatime delay. */
 void atari_sync(void);
 
 #endif /* _ATARI_H_ */
 
+
 /*
 $Log$
+Revision 1.50  2005/08/15 20:35:40  pfusik
+completely reorganized, and now with good comments;
+why define ULONG as long if we assume that int is 32-bit
+in other parts of the emulator?
+
 Revision 1.49  2005/04/30 14:07:17  joy
 version increased for release
 
