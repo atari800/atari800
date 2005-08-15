@@ -322,14 +322,7 @@ static int SeekSector(int unit, int sector)
 	sio_last_sector = sector;
 	sprintf(sio_status, "%d: %d", unit + 1, sector);
 	SizeOfSector((UBYTE) unit, sector, &size, &offset);
-	fseek(disk[unit], 0L, SEEK_END);
-	if (offset > (ULONG) ftell(disk[unit])) {
-#ifdef DEBUG
-		Aprint("SIO:SeekSector() - Wrong seek offset");
-#endif
-	}
-	else
-		fseek(disk[unit], offset, SEEK_SET);
+	fseek(disk[unit], offset, SEEK_SET);
 
 	return size;
 }
@@ -337,15 +330,14 @@ static int SeekSector(int unit, int sector)
 /* Unit counts from zero up */
 static int ReadSector(int unit, int sector, UBYTE *buffer)
 {
-	int size;
-
 	if (start_binloading)
-		return BIN_loade_start(buffer);
+		return BIN_loader_start(buffer);
 
 	io_success[unit] = -1;
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
 			if (sector > 0 && sector <= sectorcount[unit]) {
+				int size;
 				sio_last_op = SIO_LAST_READ;
 				sio_last_op_time = 1;
 				sio_last_drive = unit + 1;
@@ -366,8 +358,6 @@ static int ReadSector(int unit, int sector, UBYTE *buffer)
 
 static int WriteSector(int unit, int sector, UBYTE *buffer)
 {
-	int size;
-
 	io_success[unit] = -1;
 	if (drive_status[unit] != Off) {
 		if (disk[unit]) {
@@ -376,7 +366,7 @@ static int WriteSector(int unit, int sector, UBYTE *buffer)
 				sio_last_op_time = 1;
 				sio_last_drive = unit + 1;
 				if (sector > 0 && sector <= sectorcount[unit]) {
-					size = SeekSector(unit, sector);
+					int size = SeekSector(unit, sector);
 					fwrite(buffer, 1, size, disk[unit]);
 					io_success[unit] = 0;
 					return 'C';
@@ -1238,6 +1228,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.29  2005/08/15 17:25:04  pfusik
+BIN_loade_start -> BIN_loader_start
+
 Revision 1.28  2005/08/13 08:50:49  pfusik
 added functions for filename save/read
 
