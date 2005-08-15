@@ -68,12 +68,12 @@
 #include "prompts.h"
 #include "rt-config.h"
 #include "log.h"
+#include "input.h"
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 #include "colours.h"
 #include "screen.h"
 #endif
 #ifndef BASIC
-#include "input.h"
 #include "statesav.h"
 #include "ui.h"
 #endif
@@ -269,13 +269,13 @@ void Coldstart(void)
 	   and Start key (boot from cassette) */
 	consol_index = 2;
 	consol_table[2] = 0x0f;
-	if (disable_basic) {
+	if (disable_basic && !loading_basic) {
 		/* hold Option during reboot */
-		consol_table[2] &= ~4;
+		consol_table[2] &= ~CONSOL_OPTION;
 	}
 	if (hold_start) {
 		/* hold Start during reboot */
-		consol_table[2] &= ~1;
+		consol_table[2] &= ~CONSOL_START;
 	}
 	consol_table[1] = consol_table[2];
 }
@@ -521,7 +521,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Aprint("\t-5200_rom <file> Load 5200 ROM from file");
 					Aprint("\t-basic_rom <fil> Load BASIC ROM from file");
 					Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
-					Aprint("\t-run <file>      Run Atari executable file (COM, EXE, XEX)");
+					Aprint("\t-run <file>      Run Atari program (COM, EXE, XEX, BIN, LST)");
 #ifndef BASIC
 					Aprint("\t-refresh <rate>  Specify screen refresh rate");
 #endif
@@ -959,42 +959,40 @@ static void basic_antic_scanline(void)
 	}
 }
 
+#define BASIC_LINE GO(LINE_C); xpos -= LINE_C - DMAR; screenline_cpu_clock += LINE_C; ypos++
+
 static void basic_frame(void)
 {
 	/* scanlines 0 - 7 */
-	for (ypos = 0; ypos < 8; ypos++) {
+	ypos = 0;
+	do {
 		POKEY_Scanline();		/* check and generate IRQ */
-		GO(LINE_C);
-		xpos -= LINE_C - DMAR;
-	}
+		BASIC_LINE;
+	} while (ypos < 8);
 
 	scanlines_to_dl = 1;
 	/* scanlines 8 - 247 */
-	for (; ypos < 248; ypos++) {
+	do {
 		POKEY_Scanline();		/* check and generate IRQ */
 		basic_antic_scanline();
-		GO(LINE_C);
-		xpos -= LINE_C - DMAR;
-	}
+		BASIC_LINE;
+	} while (ypos < 248);
 
 	/* scanline 248 */
-	POKEY_Scanline();		/* check and generate IRQ */
+	POKEY_Scanline();			/* check and generate IRQ */
 	GO(NMIST_C);
 	NMIST = 0x5f;				/* Set VBLANK */
 	if (NMIEN & 0x40) {
 		GO(NMI_C);
 		NMI();
 	}
-	GO(LINE_C);
-	xpos -= LINE_C - DMAR;
-	ypos++;
+	BASIC_LINE;
 
 	/* scanlines 249 - 261(311) */
-	for (; ypos < max_ypos; ypos++) {
+	do {
 		POKEY_Scanline();		/* check and generate IRQ */
-		GO(LINE_C);
-		xpos -= LINE_C - DMAR;
-	}
+		BASIC_LINE;
+	} while (ypos < max_ypos);
 }
 
 #endif /* defined(BASIC) || defined(VERY_SLOW) */
@@ -1232,6 +1230,9 @@ void MainStateRead( void )
 
 /*
 $Log$
+Revision 1.64  2005/08/15 17:13:27  pfusik
+Basic loader; VOL_ONLY_SOUND in BASIC and CURSES_BASIC
+
 Revision 1.63  2005/08/13 08:42:33  pfusik
 CURSES_BASIC; generate curses screen basing on the DL
 
