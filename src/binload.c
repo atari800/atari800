@@ -2,7 +2,7 @@
  * binload.c - load a binary executable file
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -25,20 +25,23 @@
 #include <stdio.h>
 
 #include "atari.h"
+#include "binload.h"
 #include "cpu.h"
+#include "devices.h"
 #include "log.h"
 #include "memory.h"
 
 int start_binloading = 0;
-static FILE *binf = NULL;
+int loading_basic = 0;
+FILE *bin_file = NULL;
 
 /* Read a word from file */
-static SLONG BIN_read_word(void)
+static int BIN_read_word(void)
 {
 	UBYTE buf[2];
-	if (fread(buf, 1, 2, binf) != 2) {
-		fclose(binf);
-		binf = 0;
+	if (fread(buf, 1, 2, bin_file) != 2) {
+		fclose(bin_file);
+		bin_file = NULL;
 		if (start_binloading) {
 			start_binloading = 0;
 			Aprint("binload: not valid BIN file");
@@ -47,18 +50,18 @@ static SLONG BIN_read_word(void)
 		regPC = dGetWord(0x2e0);
 		return -1;
 	}
-	return buf[0] | (buf[1] << 8);
+	return buf[0] + (buf[1] << 8);
 }
 
 /* Start or continue loading */
 void BIN_loader_cont(void)
 {
-	SLONG temp;
+	int temp;
 	UWORD from;
 	UWORD to;
 	UBYTE byte;
 
-	if (!binf)
+	if (bin_file == NULL)
 		return;
 	if (start_binloading) {
 		dPutByte(0x244, 0);
@@ -88,9 +91,9 @@ void BIN_loader_cont(void)
 
 		to++;
 		do {
-			if (fread(&byte, 1, 1, binf) == 0) {
-				fclose(binf);
-				binf = 0;
+			if (fread(&byte, 1, 1, bin_file) == 0) {
+				fclose(bin_file);
+				bin_file = NULL;
 				regPC = dGetWord(0x2e0);
 				if (dGetByte(0x2e3) != 0xd7) {
 					regPC--;
@@ -118,7 +121,7 @@ void BIN_loader_cont(void)
 }
 
 /* Fake boot sector to call BIN_loader_cont at boot time */
-int BIN_loade_start(UBYTE *buffer)
+int BIN_loader_start(UBYTE *buffer)
 {
 	buffer[0] = 0x00;	/* ignored */
 	buffer[1] = 0x01;	/* one boot sector */
@@ -133,23 +136,44 @@ int BIN_loade_start(UBYTE *buffer)
 }
 
 /* Load BIN file, returns TRUE if ok */
-int BIN_loader(char *filename)
+int BIN_loader(const char *filename)
 {
 	UBYTE buf[2];
-	if (binf)		/* close previously open file */
-		fclose(binf);
-	if (!(binf = fopen(filename, "rb"))) {	/* open */
-		Aprint("binload: can't open %s", filename);
+	if (bin_file != NULL) {		/* close previously open file */
+		fclose(bin_file);
+		bin_file = NULL;
+		loading_basic = 0;
+	}
+	if (machine_type == MACHINE_5200) {
+		Aprint("binload: can't run Atari programs directly on the 5200");
 		return FALSE;
 	}
-	if (fread(buf, 1, 2, binf) != 2 || buf[0] != 0xff || buf[1] != 0xff) {	/* check header */
-		fclose(binf);
-		binf = 0;
-		Aprint("binload: not valid BIN file");
+	bin_file = fopen(filename, "rb");
+	if (bin_file == NULL) {	/* open */
+		Aprint("binload: can't open \"%s\"", filename);
 		return FALSE;
 	}
-
-	Coldstart();			/* reboot */
-	start_binloading = 1;	/* force SIO to call BIN_loade_start at boot */
-	return TRUE;
+	if (fread(buf, 1, 2, bin_file) == 2) {
+		if (buf[0] == 0xff && buf[1] == 0xff) {
+			start_binloading = 1;	/* force SIO to call BIN_loader_start at boot */
+			Coldstart();			/* reboot */
+			return TRUE;
+		}
+		else if (buf[0] == 0 && buf[1] == 0) {
+			loading_basic = LOADING_BASIC_SAVED;
+			Device_PatchOS();
+			Coldstart();
+			return TRUE;
+		}
+		else if (buf[0] >= '0' && buf[0] <= '9') {
+			loading_basic = LOADING_BASIC_LISTED;
+			Device_PatchOS();
+			Coldstart();
+			return TRUE;
+		}
+	}
+	fclose(bin_file);
+	bin_file = NULL;
+	Aprint("binload: \"%s\" not recognized as a DOS or BASIC program", filename);
+	return FALSE;
 }
