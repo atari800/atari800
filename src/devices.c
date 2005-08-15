@@ -82,6 +82,7 @@
 #include "rt-config.h"
 #include "log.h"
 #include "binload.h"
+#include "pia.h" /* atari_os */
 #include "sio.h"
 
 #ifdef R_IO_DEVICE
@@ -214,26 +215,27 @@ void Device_Initialise(int *argc, char *argv[])
 
 int Device_isvalid(UBYTE ch)
 {
-	int valid;
-
 	if (ch < 0x80 && isalnum(ch))
-		valid = TRUE;
-	else
-		switch (ch) {
-		case ':':
-		case '.':
-		case '_':
-		case '*':
-		case '?':
-		case '>':
-			valid = TRUE;
-			break;
-		default:
-			valid = FALSE;
-			break;
-		}
-
-	return valid;
+		return TRUE;
+	switch (ch) {
+	case ':':
+	case '.':
+	case '!':
+	case '#':
+	case '$':
+	case '&':
+	case '(':
+	case ')':
+	case '-':
+	case '@':
+	case '_':
+	case '*':
+	case '?':
+	case '>':
+		return TRUE;
+	default:
+		return FALSE;
+	}
 }
 
 static void Device_GetFilename(void)
@@ -806,7 +808,7 @@ static void Device_HSPEC_BIN_loader_cont(void)
 	UWORD to;
 	UBYTE byte;
 
-	if (!binf)
+	if (binf == NULL)
 		return;
 	if (start_binloading) {
 		dPutByte(0x244, 0);
@@ -841,7 +843,7 @@ static void Device_HSPEC_BIN_loader_cont(void)
 		do {
 			if (fread(&byte, 1, 1, binf) == 0) {
 				fclose(binf);
-				binf = 0;
+				binf = NULL;
 				if (runBinFile)
 					regPC = dGetWord(0x2e0);
 				if (initBinFile && (dGetByte(0x2e3) != 0xd7)) {
@@ -1225,13 +1227,14 @@ static void Device_HHSPEC_Load(int mydos)
 			*p++ = DIR_SEP_CHAR;
 		strcpy(p, filename);
 		binf = fopen(fname, "rb");
-		if (binf)
+		if (binf != NULL)
 			break;
 	}
-	if (!binf) {
+	if (binf == NULL) {
 		Device_ApplyPathToFilename(devnum);
 		cat_path(fname, H[devnum], filename);
-		if (!(binf = fopen(fname, "rb"))) {	/* open */
+		binf = fopen(fname, "rb");
+		if (binf == NULL) {
 			Aprint("H: load: can't open %s", filename);
 			regY = 170;
 			SetN;
@@ -1240,6 +1243,7 @@ static void Device_HHSPEC_Load(int mydos)
 	}
 	if (fread(buf, 1, 2, binf) != 2 || buf[0] != 0xff || buf[1] != 0xff) {	/* check header */
 		fclose(binf);
+		binf = NULL;
 		Aprint("H: load: not valid BIN file");
 		regY = 180;
 		SetN;
@@ -1709,6 +1713,255 @@ static void Device_EHWRIT(void)
 
 #endif /* BASIC */
 
+/* Atari BASIC loader */
+
+static UWORD ehopen_addr = 0;
+static UWORD ehclos_addr = 0;
+static UWORD ehread_addr = 0;
+static UWORD ehwrit_addr = 0;
+
+static void Device_IgnoreReady(void);
+static void Device_GetBasicCommand(void);
+static void Device_OpenBasicFile(void);
+static void Device_ReadBasicFile(void);
+static void Device_CloseBasicFile(void);
+
+static void Device_RestoreHandler(UWORD address, UBYTE esc_code)
+{
+	Atari800_RemoveEsc(esc_code);
+	/* restore original OS code */
+	dCopyToMem(machine_type == MACHINE_XLXE
+	            ? atari_os + address - 0xc000
+	            : atari_os + address - 0xd800,
+	           address, 3);
+}
+
+static void Device_RestoreEHOPEN(void)
+{
+	Device_RestoreHandler(ehopen_addr, ESC_EHOPEN);
+}
+
+static void Device_RestoreEHCLOS(void)
+{
+	Device_RestoreHandler(ehclos_addr, ESC_EHCLOS);
+}
+
+#ifndef BASIC
+
+static void Device_RestoreEHREAD(void)
+{
+	Device_RestoreHandler(ehread_addr, ESC_EHREAD);
+}
+
+static void Device_RestoreEHWRIT(void)
+{
+	Device_RestoreHandler(ehwrit_addr, ESC_EHWRIT);
+}
+
+static void Device_InstallIgnoreReady(void)
+{
+	Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
+}
+
+#endif
+
+/* Atari Basic loader step 1: ignore "READY" printed on E: after booting */
+/* or step 6: ignore "READY" printed on E: after the "ENTER" command */
+
+static const UBYTE * const ready_prompt = (const UBYTE *) "\x9bREADY\x9b";
+
+static const UBYTE *ready_ptr = NULL;
+
+static const UBYTE *basic_command_ptr = NULL;
+
+static void Device_IgnoreReady(void)
+{
+	if (ready_ptr != NULL && regA == *ready_ptr) {
+		ready_ptr++;
+		if (*ready_ptr == '\0') {
+			ready_ptr = NULL;
+			/* uninstall patch */
+#ifdef BASIC
+			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_EHWRIT);
+#else
+			rts_handler = Device_RestoreEHWRIT;
+#endif
+			if (loading_basic == LOADING_BASIC_SAVED) {
+				basic_command_ptr = (const UBYTE *) "RUN \"E:\"\x9b";
+				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
+			}
+			else if (loading_basic == LOADING_BASIC_LISTED) {
+				basic_command_ptr = (const UBYTE *) "ENTER \"E:\"\x9b";
+				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
+			}
+			else if (loading_basic == LOADING_BASIC_RUN) {
+				basic_command_ptr = (const UBYTE *) "RUN\x9b";
+				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
+			}
+		}
+		regY = 1;
+		ClrN;
+		return;
+	}
+	/* not "READY" (maybe "BOOT ERROR" or a DOS message) */
+	if (loading_basic == LOADING_BASIC_RUN) {
+		/* don't "RUN" if no "READY" (probably "ERROR") */
+		loading_basic = 0; 
+		ready_ptr = NULL;
+	}
+	if (ready_ptr != NULL) {
+		/* If ready_ptr != ready_prompt then we skipped some characters
+		   from ready_prompt, which weren't part of full ready_prompt.
+		   Well, they probably weren't that important. :-) */
+		ready_ptr = ready_prompt;
+	}
+	/* call original handler */
+#ifdef BASIC
+	Device_EHWRIT();
+#else
+	rts_handler = Device_InstallIgnoreReady;
+	Device_RestoreEHWRIT();
+	regPC = ehwrit_addr;
+#endif
+}
+
+/* Atari Basic loader step 2: type command to load file from E: */
+/* or step 7: type "RUN" for ENTERed program */
+
+static void Device_GetBasicCommand(void)
+{
+	if (basic_command_ptr != NULL) {
+		regA = *basic_command_ptr++;
+		regY = 1;
+		ClrN;
+		if (*basic_command_ptr != '\0')
+			return;
+		if (loading_basic == LOADING_BASIC_SAVED || loading_basic == LOADING_BASIC_LISTED)
+			Atari800_AddEscRts(ehopen_addr, ESC_EHOPEN, Device_OpenBasicFile);
+		basic_command_ptr = NULL;
+	}
+#ifdef BASIC
+	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_EHREAD);
+#else
+	rts_handler = Device_RestoreEHREAD;
+#endif
+}
+
+/* Atari Basic loader step 3: open file */
+
+static void Device_OpenBasicFile(void)
+{
+	if (bin_file != NULL) {
+		fseek(bin_file, 0, SEEK_SET);
+		Atari800_AddEscRts(ehclos_addr, ESC_EHCLOS, Device_CloseBasicFile);
+		Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_ReadBasicFile);
+		regY = 1;
+		ClrN;
+	}
+	rts_handler = Device_RestoreEHOPEN;
+}
+
+/* Atari Basic loader step 4: read byte */
+
+static void Device_ReadBasicFile(void)
+{
+	if (bin_file != NULL) {
+		int ch = fgetc(bin_file);
+		if (ch == EOF) {
+			regY = 136;
+			SetN;
+			return;
+		}
+		switch (loading_basic) {
+		case LOADING_BASIC_LISTED:
+			switch (ch) {
+			case 0x9b:
+				loading_basic = LOADING_BASIC_LISTED_ATARI;
+				break;
+			case 0x0a:
+				loading_basic = LOADING_BASIC_LISTED_LF;
+				ch = 0x9b;
+				break;
+			case 0x0d:
+				loading_basic = LOADING_BASIC_LISTED_CR_OR_CRLF;
+				ch = 0x9b;
+				break;
+			default:
+				break;
+			}
+			break;
+		case LOADING_BASIC_LISTED_CR:
+			if (ch == 0x0d)
+				ch = 0x9b;
+			break;
+		case LOADING_BASIC_LISTED_LF:
+			if (ch == 0x0a)
+				ch = 0x9b;
+			break;
+		case LOADING_BASIC_LISTED_CRLF:
+			if (ch == 0x0a) {
+				ch = fgetc(bin_file);
+				if (ch == EOF) {
+					regY = 136;
+					SetN;
+					return;
+				}
+			}
+			if (ch == 0x0d)
+				ch = 0x9b;
+			break;
+		case LOADING_BASIC_LISTED_CR_OR_CRLF:
+			if (ch == 0x0a) {
+				loading_basic = LOADING_BASIC_LISTED_CRLF;
+				ch = fgetc(bin_file);
+				if (ch == EOF) {
+					regY = 136;
+					SetN;
+					return;
+				}
+			}
+			else
+				loading_basic = LOADING_BASIC_LISTED_CR;
+			if (ch == 0x0d)
+				ch = 0x9b;
+			break;
+		case LOADING_BASIC_SAVED:
+		case LOADING_BASIC_LISTED_ATARI:
+		default:
+			break;
+		}
+		regA = (UBYTE) ch;
+		regY = 1;
+		ClrN;
+	}
+}
+
+/* Atari Basic loader step 5: close file */
+
+static void Device_CloseBasicFile(void)
+{
+	if (bin_file != NULL) {
+		fclose(bin_file);
+		bin_file = NULL;
+		/* "RUN" ENTERed program */
+		if (loading_basic != 0 && loading_basic != LOADING_BASIC_SAVED) {
+			ready_ptr = ready_prompt;
+			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
+			loading_basic = LOADING_BASIC_RUN;
+		}
+		else
+			loading_basic = 0;
+	}
+#ifdef BASIC
+	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_EHREAD);
+#else
+	Device_RestoreEHREAD();
+#endif
+	rts_handler = Device_RestoreEHCLOS;
+	regY = 1;
+	ClrN;
+}
+
 /* Device_PatchOS is called by Atari800_PatchOS to modify standard device
    handlers in Atari OS. It puts escape codes at beginnings of OS routines,
    so the patches work even if they are called directly, without CIO.
@@ -1789,17 +2042,25 @@ int Device_PatchOS(void)
 			break;
 #endif
 
-#ifdef BASIC
 		case 'E':
-			Aprint("Editor Device");
+			if (loading_basic) {
+				ehopen_addr = dGetWord(devtab + DEVICE_TABLE_OPEN) + 1;
+				ehclos_addr = dGetWord(devtab + DEVICE_TABLE_CLOS) + 1;
+				ehread_addr = dGetWord(devtab + DEVICE_TABLE_READ) + 1;
+				ehwrit_addr = dGetWord(devtab + DEVICE_TABLE_WRIT) + 1;
+				ready_ptr = ready_prompt;
+				Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
+				patched = TRUE;
+			}
+#ifdef BASIC
+			else
+				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) + 1,
+								   ESC_EHWRIT, Device_EHWRIT);
 			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1,
 							   ESC_EHREAD, Device_EHREAD);
-			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) + 1,
-							   ESC_EHWRIT, Device_EHWRIT);
 			patched = TRUE;
 			break;
 		case 'K':
-			Aprint("Keyboard Device");
 			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1,
 							   ESC_KHREAD, Device_EHREAD);
 			patched = TRUE;
@@ -1991,6 +2252,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.30  2005/08/15 17:20:25  pfusik
+Basic loader; more characters valid in H: filenames
+
 Revision 1.29  2005/08/10 19:54:16  pfusik
 patching E: open doesn't make sense; fixed some warnings
 
