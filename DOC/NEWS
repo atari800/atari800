@@ -1,21 +1,29 @@
  Changes:
  --------
  * sound recording now works (was completely broken)
- * improved PERCOM emulation
+ * direct loading of Atari Basic programs. Supported are:
+   - SAVEd (*.BAS) programs
+   - LISTed (*.LST) programs with auto-detected Atari, LF, CR/LF or CR
+     line terminators
+   From the user's point of view, loading of Atari Basic programs works
+   exactly like loading binary executables: use "-run" from command line
+   or "Run Atari program directly" from the User Interface.
+ * improved PERCOM emulation (helps non-standard disk images)
  * stereo now works in DOS ports
  * greatly improved BASIC version:
- - supports sound
- - supports all interrupts
- - timing much closer to real Atari
- - much smaller executable (does not include unused code)
+   - supports sound
+   - supports all interrupts
+   - timing much closer to real Atari
+   - much smaller executable (does not include unused code)
  * greatly improved CURSES version:
- - support for pdcurses
- - small fix for ncurses
- - generates screen basing on the Display List
- - fixed TAB, F8 and console keys
- - fixed -wide2 mode
- - bitmap graphics emulation is now disabled by default
-   (smaller and faster executable), but can be enabled with configure
+   - support for pdcurses
+   - small fix for ncurses
+   - generates screen basing on the Display List
+   - fixed TAB, F8 and console keys
+   - fixed -wide2 mode
+   - bitmap graphics emulation is now disabled by default
+     (smaller and faster executable), but can be enabled with configure
+ * "C", "M" and "S" monitor commands support hardware registers
  * small fixes and code clean up
 
 

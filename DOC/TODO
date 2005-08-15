@@ -1,7 +1,5 @@
 This is a list of things that need to be done
 ---------------------------------------------
-o direct loading of Atari BASIC programs (both SAVEd and LISTed)
-
 o Covox sound device emulation
 
 o support configurations without live sound that can write WAV files
