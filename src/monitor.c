@@ -22,13 +22,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
 #include "atari.h"
-#include "config.h"
 #include "cpu.h"
 #include "memory.h"
 #include "antic.h"
@@ -539,7 +539,9 @@ int monitor(void)
 		char *t;
 
 		printf("> ");
+#ifdef HAVE_FFLUSH
 		fflush(stdout);
+#endif
 		fgets(s, sizeof(s), stdin);
 		RemoveLF(s);
 		if (s[0])
@@ -557,10 +559,12 @@ int monitor(void)
 					break;
 				}
 		}
+#ifdef HAVE_SYSTEM
 		if (s[0] == '!') {
 			system(s + 1);
 			continue;
 		}
+#endif
 		t = get_token(s);
 		if (t == NULL) {
 			continue;
@@ -1474,6 +1478,10 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.20  2005/08/16 23:10:52  pfusik
+#include "config.h" before system headers;
+#ifdef HAVE_FFLUSH; #ifdef HAVE_SYSTEM
+
 Revision 1.19  2005/08/15 17:23:22  pfusik
 HISTORY displays ypos xpos also with NEW_CYCLE_EXACT disabled;
 "C", "M" and "S" support hardware registers;
