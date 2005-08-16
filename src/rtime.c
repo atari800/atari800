@@ -22,9 +22,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdlib.h>	/* for NULL */
 #include <string.h>	/* for strcmp() */
+#ifdef HAVE_TIME_H
 #include <time.h>
+#endif
 
 #include "atari.h"
 #include "log.h"
@@ -38,7 +41,7 @@ static int rtime_state = 0;
 static int rtime_tmp = 0;
 static int rtime_tmp2 = 0;
 
-static int regset[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static UBYTE regset[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 void RTIME_Initialise(int *argc, char *argv[])
 {
@@ -52,6 +55,8 @@ void RTIME_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 }
+
+#if defined(HAVE_TIME) && defined(HAVE_LOCALTIME)
 
 static int hex2bcd(int h)
 {
@@ -85,6 +90,8 @@ static int gettime(int p)
 	return 0;
 }
 
+#endif /* defined(HAVE_TIME) && defined(HAVE_LOCALTIME) */
+
 UBYTE RTIME_GetByte(void)
 {
 	switch (rtime_state) {
@@ -93,10 +100,20 @@ UBYTE RTIME_GetByte(void)
 		return 0;
 	case 1:
 		rtime_state = 2;
-		return (rtime_tmp <= 6 ? gettime(rtime_tmp) : regset[rtime_tmp]) >> 4;
+		return (
+#if defined(HAVE_TIME) && defined(HAVE_LOCALTIME)
+			rtime_tmp <= 6 ?
+			gettime(rtime_tmp) :
+#endif
+			regset[rtime_tmp]) >> 4;
 	case 2:
 		rtime_state = 0;
-		return (rtime_tmp <= 6 ? gettime(rtime_tmp) : regset[rtime_tmp]) & 0x0f;
+		return (
+#if defined(HAVE_TIME) && defined(HAVE_LOCALTIME)
+			rtime_tmp <= 6 ?
+			gettime(rtime_tmp) :
+#endif
+			regset[rtime_tmp]) & 0x0f;
 	}
 	return 0;
 }
