@@ -22,12 +22,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "atari.h"
-#include "config.h"
-#include "log.h"
 
 #ifdef HAVE_LIBZ
 #include <zlib.h>
@@ -37,13 +35,20 @@
 #include <fcntl.h>
 #endif
 
+/* XXX: try tmpfile(), tmpnam(), tempnam() ? */
 #ifndef HAVE_MKSTEMP
+# ifndef HAVE_MKTEMP
+#  define mktemp(a) (a) /* ;-) */
+# endif
 # ifndef O_BINARY
-#  define O_BINARY	0
+#  define O_BINARY  0
 # endif
 /* XXX: race condition */
 # define mkstemp(a) open(mktemp(a), O_RDWR | O_CREAT | O_BINARY, 0600)
 #endif
+
+#include "atari.h"
+#include "log.h"
 
 /* Size of memory buffer ZLIB should use when decompressing files */
 #define ZLIB_BUFFER_SIZE	32767
@@ -590,6 +595,10 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.18  2005/08/16 23:08:08  pfusik
+#include "config.h" before system headers;
+dirty workaround for lack of mktemp()
+
 Revision 1.17  2005/08/15 17:17:06  pfusik
 fixed indentation
 
