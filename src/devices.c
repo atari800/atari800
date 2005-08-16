@@ -22,13 +22,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
 #include <errno.h>
-#include "config.h"
 
 #ifdef HAVE_UNIXIO_H
 #include <unixio.h>
@@ -67,9 +67,13 @@
 #define S_IWRITE S_IWUSR
 #endif
 
+/* XXX: try tmpfile(), tmpnam(), tempnam() ? */
 #ifndef HAVE_MKSTEMP
+# ifndef HAVE_MKTEMP
+#  define mktemp(a) (a) /* ;-) */
+# endif
 # ifndef O_BINARY
-#  define O_BINARY	0
+#  define O_BINARY  0
 # endif
 /* XXX: race condition */
 # define mkstemp(a) open(mktemp(a), O_RDWR | O_CREAT | O_BINARY, 0600)
@@ -587,7 +591,9 @@ static void Device_HHOPEN(void)
 						if (ext == NULL)
 							ext = "   ";
 						if (extended >= 128) {
+#ifdef HAVE_LOCALTIME
 							struct tm *filetime;
+#endif
 							if (status.st_mode & S_IFDIR) {
 								fprintf(fp[fid], "%-8s     <DIR>  ",
 										entryname);
@@ -597,6 +603,7 @@ static void Device_HHOPEN(void)
 										entryname, ext,
 										(int) status.st_size);
 							}
+#ifdef HAVE_LOCALTIME
 							filetime = localtime(&status.st_mtime);
 							if (filetime->tm_year >= 100)
 								filetime->tm_year -= 100;
@@ -605,6 +612,9 @@ static void Device_HHOPEN(void)
 									filetime->tm_mon, filetime->tm_mday,
 									filetime->tm_year, filetime->tm_hour,
 									filetime->tm_min);
+#else
+							fprintf(fp[fid], "01-01-01 00:00\n");
+#endif
 						}
 						else {
 							if (status.st_mode & S_IFDIR)
@@ -1569,6 +1579,8 @@ static void Device_HHINIT(void)
 	}
 }
 
+#ifdef HAVE_SYSTEM
+
 static FILE *phf = NULL;
 static void Device_PHCLOS(void);
 static char spool_file[13];
@@ -1664,6 +1676,8 @@ static void Device_PHINIT(void)
 	regY = 1;
 	ClrN;
 }
+
+#endif /* HAVE_SYSTEM */
 
 /* K: and E: handlers for BASIC version, using getchar() and putchar() */
 
@@ -1993,6 +2007,7 @@ int Device_PatchOS(void)
 	for (i = 0; i < 5; i++) {
 		devtab = dGetWord(addr + 1);
 		switch (dGetByte(addr)) {
+#ifdef HAVE_SYSTEM
 		case 'P':
 			if (enable_p_patch) {
 				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) +
@@ -2015,6 +2030,7 @@ int Device_PatchOS(void)
 				Atari800_RemoveEsc(ESC_PHINIT);
 			}
 			break;
+#endif
 
 #ifdef R_IO_DEVICE
 		/* XXX: what ROM has R: ? */
@@ -2252,6 +2268,11 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.31  2005/08/16 23:09:56  pfusik
+#include "config.h" before system headers;
+dirty workaround for lack of mktemp();
+#ifdef HAVE_LOCALTIME; #ifdef HAVE_SYSTEM
+
 Revision 1.30  2005/08/15 17:20:25  pfusik
 Basic loader; more characters valid in H: filenames
 
