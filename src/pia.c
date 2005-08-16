@@ -22,11 +22,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "atari.h"
-#include "config.h"
 #include "cpu.h"
 #include "memory.h"
 #include "pia.h"
@@ -218,6 +218,9 @@ void PIAStateRead(void)
 
 /*
 $Log$
+Revision 1.14  2005/08/16 23:06:41  pfusik
+#include "config.h" before system headers
+
 Revision 1.13  2005/08/10 19:43:48  pfusik
 input.o and statesav.o not linked in BASIC version
 

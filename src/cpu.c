@@ -89,13 +89,13 @@
 	be zero-extended while computing address in indexed mode.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>	/* for exit() */
 #include <string.h>	/* for memmove() */
 
 #include "antic.h"
 #include "atari.h"
-#include "config.h"
 #include "cpu.h"
 #include "memory.h"
 #include "monitor.h" /* tron */

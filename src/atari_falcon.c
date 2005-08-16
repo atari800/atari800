@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "config.h"
 #include <osbind.h>
 #include <string.h>
 #include <stdio.h>
@@ -29,13 +30,12 @@
 #include <falcon.h>		/* for VsetRGB */
 #include "falcon/xcb.h"		/* for NOVA screensaver */
 
-#include "config.h"
+#include "atari.h"
 #include "cpu.h"
 #include "colours.h"
 #include "ui.h"         /* for ui_is_active */
 #include "input.h"
 #include "screen.h"
-#include "config.h"
 #include "antic.h"		/* for BITPL_SCR */
 #include "platform.h"
 #include "monitor.h"
@@ -45,11 +45,6 @@
 #include "gem.h"
 
 /* -------------------------------------------------------------------------- */
-
-#define FALSE 0
-#define TRUE 1
-
-extern int refresh_rate;
 
 int get_cookie(long cookie, long *value)
 {

@@ -82,45 +82,45 @@
    The unoptimized Pokey_process2() function has been removed.
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "config.h"
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
 
-#include "pokeysnd.h"
-#include "mzpokeysnd.h"
 #include "atari.h"
+#include "mzpokeysnd.h"
+#include "pokeysnd.h"
+#include "rt-config.h"	/* stereo_enabled, enable_new_pokey */
 #include "sndsave.h"
-#include "rt-config.h"	/* extern for stereo_enabled and enable_new_pokey */
 
 #ifdef UNALIGNED_LONG_OK
-#  define READ_U32(x)    (*(uint32 *)(x))
-#  define WRITE_U32(x,d) (*(uint32 *)(x)=(d))
+#  define READ_U32(x)     (*(uint32 *) (x))
+#  define WRITE_U32(x, d) (*(uint32 *) (x) = (d))
 #else
 #  ifdef WORDS_BIGENDIAN
-#    define READ_U32(x) (((*(unsigned char *)(x)) << 24) | ((*((unsigned char *)(x)+1)) << 16) | \
-                        ((*((unsigned char *)(x)+2)) << 8) | ((*((unsigned char *)(x)+3))))
-#    define WRITE_U32(x,d) \
+#    define READ_U32(x) (((*(unsigned char *)(x)) << 24) | ((*((unsigned char *)(x) + 1)) << 16) | \
+                        ((*((unsigned char *)(x) + 2)) << 8) | ((*((unsigned char *)(x) + 3))))
+#    define WRITE_U32(x, d) \
   { \
   uint32 i = d; \
-  (*(unsigned char *)(x)) = (((i)>>24)&255); \
-  (*((unsigned char *)(x)+1)) = (((i)>>16)&255); \
-  (*((unsigned char *)(x)+2)) = (((i)>>8)&255); \
-  (*((unsigned char *)(x)+3)) = ((i)&255); \
+  (*(unsigned char *) (x)) = (((i) >> 24) & 255); \
+  (*((unsigned char *) (x) + 1)) = (((i) >> 16) & 255); \
+  (*((unsigned char *) (x) + 2)) = (((i) >> 8) & 255); \
+  (*((unsigned char *) (x) + 3)) = ((i) & 255); \
   }
 #  else
-#    define READ_U32(x) ((*(unsigned char *)(x)) | ((*((unsigned char *)(x)+1)) << 8) | \
-                        ((*((unsigned char *)(x)+2)) << 16) | ((*((unsigned char *)(x)+3)) << 24))
-#    define WRITE_U32(x,d) \
+#    define READ_U32(x) ((*(unsigned char *) (x)) | ((*((unsigned char *) (x) + 1)) << 8) | \
+                        ((*((unsigned char *) (x) + 2)) << 16) | ((*((unsigned char *) (x) + 3)) << 24))
+#    define WRITE_U32(x, d) \
   { \
   uint32 i = d; \
-  (*(unsigned char *)(x)) = ((i)&255); \
-  (*((unsigned char *)(x)+1)) = (((i)>>8)&255); \
-  (*((unsigned char *)(x)+2)) = (((i)>>16)&255); \
-  (*((unsigned char *)(x)+3)) = (((i)>>24)&255); \
+  (*(unsigned char *)(x)) = ((i) & 255); \
+  (*((unsigned char *)(x) + 1)) = (((i) >> 8) & 255); \
+  (*((unsigned char *)(x) + 2)) = (((i) >> 16) & 255); \
+  (*((unsigned char *)(x) + 3)) = (((i) >> 24) & 255); \
   }
 #  endif
 #endif
@@ -1177,6 +1177,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.23  2005/08/16 23:07:28  pfusik
+#include "config.h" before system headers
+
 Revision 1.22  2005/08/14 08:42:21  pfusik
 #include "config.h" early for HAVE_LIMITS_H;
 snd_num_pokeys for sound recording

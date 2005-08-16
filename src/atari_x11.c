@@ -22,9 +22,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 #ifdef VMS
 #include <stat.h>
 #else
@@ -33,10 +37,6 @@
 
 #include <signal.h>
 #include <sys/time.h>
-
-#ifndef VMS
-#include "config.h"
-#endif
 
 typedef unsigned char ubyte;
 typedef unsigned short uword;
@@ -109,15 +109,10 @@ extern int colour_translation_table[256];
 #endif
 #endif
 
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-
-static int invisible=0;
+static int invisible = 0;
 
 #ifdef LINUX_JOYSTICK
 #include <linux/joystick.h>
-#include <fcntl.h>
 
 static int js0;
 static int js1;

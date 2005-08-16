@@ -2,7 +2,7 @@
  * sound.c - high-level sound routines
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -22,13 +22,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-
 #include "config.h"
 
 #ifdef SOUND
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
@@ -85,7 +85,7 @@ void Sound_Initialise(int *argc, char *argv[])
 		return;
 
 	if (sound_enabled) {
-		if ((dsp_fd = open(dspname, O_WRONLY|O_NONBLOCK)) == -1) {
+		if ((dsp_fd = open(dspname, O_WRONLY | O_NONBLOCK)) == -1) {
 			perror(dspname);
 			sound_enabled = 0;
 			return;
@@ -179,7 +179,7 @@ void Sound_Update(void)
 
 	/* we need fragstofill fragments to be filled */
 #ifdef STEREO_SOUND
-	for (; i < fragstofill*2; i++) {
+	for (; i < fragstofill * 2; i++) {
 #else
 	for (; i < fragstofill; i++) {
 #endif
@@ -191,6 +191,9 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.15  2005/08/16 23:07:28  pfusik
+ #include "config.h" before system headers
+
  Revision 1.14  2005/03/24 18:09:49  pfusik
  removed extra \n from the output of -help
 

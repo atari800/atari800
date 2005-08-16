@@ -2,7 +2,7 @@
  * rt-config.c - Routines to support the atari800.cfg file
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2004 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -536,6 +537,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.24  2005/08/16 23:07:28  pfusik
+#include "config.h" before system headers
+
 Revision 1.23  2005/08/14 08:43:19  pfusik
 support 16, 576, 1088 RAM; skip non-working options
 

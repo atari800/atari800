@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -29,7 +30,6 @@
 
 #include <vga.h>
 
-#include "config.h"
 #include "input.h"
 #include "colours.h"
 #include "monitor.h"
@@ -783,6 +783,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.15  2005/08/16 23:05:49  pfusik
+#include "config.h" before system headers
+
 Revision 1.14  2005/03/05 12:28:24  pfusik
 support for special AKEY_*, refresh rate control and atari_sync()
 moved to Atari800_Frame()

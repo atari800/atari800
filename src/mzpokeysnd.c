@@ -22,16 +22,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdlib.h>
 #include <math.h>
 
-#include "pokeysnd.h"
 #include "atari.h"
-#include "config.h"
-
-#include "rt-config.h"	/* extern for console_sound_enabled and serio_sound_enabled */
-
+#include "pokeysnd.h"
 #include "remez.h"
+#include "rt-config.h"	/* extern for console_sound_enabled and serio_sound_enabled */
 
 #define SND_FILTER_SIZE  2048
 
@@ -2255,6 +2253,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.20  2005/08/16 23:06:41  pfusik
+#include "config.h" before system headers
+
 Revision 1.19  2005/08/10 19:35:43  pfusik
 Pokey_process -> Pokey_process_ptr
 

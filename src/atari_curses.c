@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <string.h>
 #ifdef USE_NCURSES
 #include <ncurses.h>
@@ -37,7 +38,6 @@
 
 #include "antic.h" /* ypos */
 #include "atari.h"
-#include "config.h"
 #include "input.h"
 #include "monitor.h"
 #include "log.h"
@@ -715,6 +715,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.17  2005/08/16 23:05:49  pfusik
+#include "config.h" before system headers
+
 Revision 1.16  2005/08/14 08:40:31  pfusik
 fixed warnings with PDCurses; fixed wide Atari screen
 

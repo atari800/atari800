@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <string.h>
 
 #define LCHOP 3			/* do not build lefmost 0..3 characters in wide mode */
@@ -29,7 +30,6 @@
 
 #include "antic.h"
 #include "atari.h"
-#include "config.h"
 #include "cpu.h"
 #include "gtia.h"
 #include "log.h"

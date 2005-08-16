@@ -2,7 +2,7 @@
  * list.c - routines to implement a linked list
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -22,14 +22,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
+#include "config.h"
 #include <stdlib.h>
 
-#include "config.h"
 #include "list.h"
 
+#ifndef FALSE
 #define	FALSE 0
+#endif
+#ifndef TRUE
 #define	TRUE 1
+#endif
+#ifndef NULL
+#define NULL 0
+#endif
 
 /*+
    Creates an empty List
@@ -66,7 +72,7 @@ List *ListCreate(void)
    NULL value can be supplied if a deallocation function is not necessary.
    + */
 
-int ListFree(List * list, void (*func) ())
+int ListFree(List *list, void (*func)())
 {
 	struct list_entry *temp;
 	struct list_entry *next;
@@ -99,7 +105,7 @@ int ListFree(List * list, void (*func) ())
    anything, and with care a simple integer value.
    + */
 
-int ListAddHead(List * list, void *data)
+int ListAddHead(List *list, void *data)
 {
 	struct list_entry *temp;
 
@@ -137,7 +143,7 @@ int ListAddHead(List * list, void *data)
    anything, and with care a simple integer value.
    + */
 
-int ListAddTail(List * list, void *data)
+int ListAddTail(List *list, void *data)
 {
 	struct list_entry *temp;
 
@@ -176,7 +182,7 @@ int ListAddTail(List * list, void *data)
    List *list2 This is list that will be appended to the primary list.
    + */
 
-List *ListMerge(List * list1, List * list2)
+List *ListMerge(List *list1, List *list2)
 {
 	if (!list1->head) {
 		list1->head = list2->head;
@@ -205,7 +211,7 @@ List *ListMerge(List * list1, List * list2)
    and +1 if entry1 > entry2.
    + */
 
-void ListSort(List * list, int (*func) ())
+void ListSort(List *list, int (*func)())
 {
 	struct list_entry *next;
 	struct list_entry *temp;
@@ -242,7 +248,7 @@ void ListSort(List * list, int (*func) ())
    List *list The list to be reset.
    + */
 
-int ListReset(List * list)
+int ListReset(List *list)
 {
 	int status = FALSE;
 
@@ -270,7 +276,7 @@ int ListReset(List * list)
    of the next data item in the list.
    + */
 
-int ListTraverse(List * list, void **entry /*+ Current Entry + */ )
+int ListTraverse(List *list, void **entry /*+ Current Entry + */ )
 {
 	struct list_entry *next;
 
@@ -306,7 +312,7 @@ int ListTraverse(List * list, void **entry /*+ Current Entry + */ )
    of the previous data item in the list.
    + */
 
-int ListTraverseBck(List * list, void **entry /*+ Current Entry + */ )
+int ListTraverseBck(List *list, void **entry /*+ Current Entry + */ )
 {
 	struct list_entry *prev;
 
@@ -342,7 +348,7 @@ int ListTraverseBck(List * list, void **entry /*+ Current Entry + */ )
    List *list The current entry in this list will be deleted.
    + */
 
-int ListDeleteEntry(List * list)
+int ListDeleteEntry(List *list)
 {
 	int status = FALSE;
 
@@ -387,7 +393,7 @@ int ListDeleteEntry(List * list)
    void *data This is the data item that will be inserted into the list.
    + */
 
-int ListInsertBefore(List * list, void *data)
+int ListInsertBefore(List *list, void *data)
 {
 	int status = FALSE;
 
@@ -434,7 +440,7 @@ int ListInsertBefore(List * list, void *data)
    void *data This is the data item that will be inserted into the list.
    + */
 
-int ListInsertAfter(List * list, void *data)
+int ListInsertAfter(List *list, void *data)
 {
 	int status = FALSE;
 
@@ -479,7 +485,7 @@ int ListInsertAfter(List * list, void *data)
    List *list List containing the items to be swapped.
    + */
 
-int ListSwapEntry(List * list)
+int ListSwapEntry(List *list)
 {
 	int status = FALSE;
 

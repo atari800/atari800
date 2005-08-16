@@ -22,13 +22,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "atari.h"
 #include "antic.h"
-#include "config.h"
 #include "cpu.h"
 #include "cartridge.h"
 #include "gtia.h"
@@ -559,6 +559,9 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.8  2005/08/16 23:06:41  pfusik
+#include "config.h" before system headers
+
 Revision 1.7  2005/08/15 17:21:53  pfusik
 SetROM/SetRAM macros for PAGED_ATTRIB
 

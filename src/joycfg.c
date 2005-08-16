@@ -2,6 +2,7 @@
  Joystick configuration utility for David Firth's Atari800 emulator
  22.5.1998 Robert Golias   (golias@fi.muni.cz)
  ******************************************************************/
+#include "config.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -13,7 +14,6 @@
 #include <pc.h>
 #include <conio.h>
 
-#include "config.h"
 #include "pcjoy.h"
 
 /*color attributes*/

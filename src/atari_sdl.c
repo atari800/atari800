@@ -122,6 +122,7 @@
    Thanks to David Olofson for scaling tips!
 */
 
+#include "config.h"
 #include <SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -140,7 +141,6 @@
 #endif /* LPTJOY */
 
 /* Atari800 includes */
-#include "config.h"
 #include "input.h"
 #include "colours.h"
 #include "monitor.h"
@@ -1817,6 +1817,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.50  2005/08/16 23:05:49  pfusik
+ #include "config.h" before system headers
+
  Revision 1.49  2005/08/06 18:16:26  pfusik
  changed () function signatures to (void); fixed indenting
 
