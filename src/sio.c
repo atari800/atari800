@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +34,6 @@
 
 #include "antic.h"  /* ypos */
 #include "atari.h"
-#include "config.h"
 #include "cpu.h"
 #include "memory.h"
 #include "sio.h"
@@ -1228,6 +1228,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.30  2005/08/16 23:15:33  pfusik
+#include "config.h" before system headers
+
 Revision 1.29  2005/08/15 17:25:04  pfusik
 BIN_loade_start -> BIN_loader_start
 
