@@ -938,12 +938,6 @@ void remove_rom_callback(void)
 	Coldstart();
 }
 
-void enable_pill_callback(void)
-{
-	EnablePILL();
-	Coldstart();
-}
-
 void exit_callback(void)
 {
 	Atari_Exit(FALSE);
@@ -1298,45 +1292,41 @@ void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 		Coldstart();
 		break;
 	case 6:
-		EnablePILL();
-		Coldstart();
-		break;
-	case 7:
 		machine_type = MACHINE_OSA;
 		ram_size = 48;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, OS/A ROM Unavailable";
 		break;
-	case 8:
+	case 7:
 		machine_type = MACHINE_OSB;
 		ram_size = 48;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, OS/B ROM Unavailable";
 		break;
-	case 9:
+	case 8:
 		machine_type = MACHINE_XLXE;
 		ram_size = 64;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, XL/XE ROM Unavailable";
 		break;
-	case 10:
+	case 9:
 		machine_type = MACHINE_XLXE;
 		ram_size = 128;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, XL/XE ROM Unavailable";
 		break;
-	case 11:
+	case 10:
 		machine_type = MACHINE_5200;
 		ram_size = 16;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, 5200 ROM Unavailable";
 		break;
-	case 12:
+	case 11:
 		Atari800_Exit(FALSE);
 		exit(0);
 	}
@@ -1609,10 +1599,6 @@ void Atari_Initialise(int *argc, char *argv[])
 							MENU_NOTIFY_PROC, remove_rom_callback,
 							NULL,
 							MENU_ITEM,
-							MENU_STRING, "Enable PILL",
-							MENU_NOTIFY_PROC, enable_pill_callback,
-							NULL,
-							MENU_ITEM,
 							MENU_STRING, "Atari 800 OS/A",
 							MENU_NOTIFY_PROC, coldstart_osa_callback,
 							NULL,
@@ -1874,7 +1860,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		XmString s_disable_drive;
 		XmString s_insert_cart;
 		XmString s_remove_cart;
-		XmString s_enable_pill;
 		XmString s_osa;
 		XmString s_osb;
 		XmString s_osxl;
@@ -1913,7 +1898,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		s_disable_drive = XmStringCreateSimple("Disable Drive");
 		s_insert_cart = XmStringCreateSimple("Insert Cartridge...");
 		s_remove_cart = XmStringCreateSimple("Remove Cartridge");
-		s_enable_pill = XmStringCreateSimple("Enable PILL");
 		s_osa = XmStringCreateSimple("Atari 800 OS/A");
 		s_osb = XmStringCreateSimple("Atari 800 OS/B");
 		s_osxl = XmStringCreateSimple("Atari 800XL");
@@ -1944,7 +1928,6 @@ void Atari_Initialise(int *argc, char *argv[])
 										 XmVaSEPARATOR,
 						  XmVaPUSHBUTTON, s_insert_cart, 'n', NULL, NULL,
 						  XmVaPUSHBUTTON, s_remove_cart, 'R', NULL, NULL,
-						  XmVaPUSHBUTTON, s_enable_pill, 'P', NULL, NULL,
 										 XmVaSEPARATOR,
 								  XmVaPUSHBUTTON, s_osa, 'A', NULL, NULL,
 								  XmVaPUSHBUTTON, s_osb, 'B', NULL, NULL,
@@ -1974,7 +1957,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		XmStringFree(s_disable_drive);
 		XmStringFree(s_insert_cart);
 		XmStringFree(s_remove_cart);
-		XmStringFree(s_enable_pill);
 		XmStringFree(s_osa);
 		XmStringFree(s_osb);
 		XmStringFree(s_osxl);
@@ -2356,6 +2338,7 @@ int Atari_Exit(int run_monitor)
 {
 	int restart;
 
+	Aflushlog();
 	if (run_monitor) {
 		autorepeat_restore();
 		restart = monitor();
@@ -2397,7 +2380,6 @@ int Atari_Exit(int run_monitor)
 #ifdef SOUND
 		Sound_Exit();
 #endif
-		Aflushlog();
 	}
 	return restart;
 }
