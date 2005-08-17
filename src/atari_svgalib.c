@@ -123,10 +123,10 @@ static int vgamouse_stick;
 static int vgamouse_strig;
 #endif
 
-// cursor keys joystick
+/* cursor keys joystick */
 static int ctrig;
 static int cstick;
-// analog joystick
+/* analog joystick */
 static int atrig;
 static int astick;
 
@@ -701,69 +701,59 @@ void read_joystick(int js, int centre_x, int centre_y)
 int Atari_PORT(int num)
 {
 	if (num == 0) {
-	  
-//sorry, no time for this now 
-//
-//#ifdef SVGA_JOYMOUSE
-//		stick0 = vgamouse_stick;
-//#endif
+/* sorry, no time for this now 
+
+#ifdef SVGA_JOYMOUSE
+		stick0 = vgamouse_stick;
+#endif
+*/
 
 #ifdef LINUX_JOYSTICK
-                if (js0 != -1)
-		read_joystick(js0, js0_centre_x, js0_centre_y);
+		if (js0 != -1)
+			read_joystick(js0, js0_centre_x, js0_centre_y);
 #endif
 		return (astick << 4) | cstick;
 	}
-	else
-		return 0xff;
+	return 0xff;
 }
 
 
 int Atari_TRIG(int num)
 {
+	if (num == 0)
+		return ctrig;
+#ifdef LINUX_JOYSTICK
 	if (num == 1) {
 
-//sorry, no time for this now 
-//	  
-//#ifdef SVGA_JOYMOUSE
-//		trig0 = vgamouse_strig;
-//#endif
+/* sorry, no time for this now 
+#ifdef SVGA_JOYMOUSE
+		trig0 = vgamouse_strig;
+#endif
+*/
 
-#ifdef LINUX_JOYSTICK
-                if (js0 != -1) {
-		int status;
-
-		status = read(js0, &js_data, JS_RETURN);
-		if (status != JS_RETURN) {
-			perror("/dev/js0");
-			exit(1);
-		}
-		if (js_data.buttons & 0x01)
-			atrig = 0;
-		else
-			atrig = 1;
+		if (js0 != -1) {
+			int status;
+			status = read(js0, &js_data, JS_RETURN);
+			if (status != JS_RETURN) {
+				perror("/dev/js0");
+				exit(1);
+			}
+			if (js_data.buttons & 0x01)
+				atrig = 0;
+			else
+				atrig = 1;
 		}
 /*
 		if (js_data.buttons & 0x02)
 			special_keycode = ' ';
 */
 /*
-   trig0 = (js_data.buttons & 0x0f) ? 0 : 1;
+		trig0 = (js_data.buttons & 0x0f) ? 0 : 1;
  */
 		return atrig;
-#endif
-		return 1;
-                }
-        if (num==0)		
-	{
-		return ctrig;
 	}
+#endif
 	return 1;
-}
-
-int Atari_POT(int num)
-{
-	return 228;
 }
 
 int main(int argc, char **argv)
@@ -783,6 +773,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.16  2005/08/17 22:25:28  pfusik
+// comments to traditional; removed obsolete Atari_POT
+
 Revision 1.15  2005/08/16 23:05:49  pfusik
 #include "config.h" before system headers
 
