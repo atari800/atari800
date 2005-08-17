@@ -854,6 +854,8 @@ int Atari_Exit(int run_monitor)
 
         key_delete();                           /* enable keyboard in monitor */
 
+        Aflushlog();
+
         if (run_monitor) {
 #ifdef SOUND
                 Sound_Pause();
@@ -873,8 +875,6 @@ int Atari_Exit(int run_monitor)
 #ifdef SOUND
         Sound_Exit();
 #endif
-
-        Aflushlog();
 
         return 0;
 }
