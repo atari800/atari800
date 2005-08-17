@@ -1,6 +1,12 @@
 2005-08-17  Piotr Fusik  <fox@scene.pl>
 * configure.ac, *.c: autoconf improvements for Playstation 2;
-  config.h must be included before system headers because of #define malloc
+  include config.h before system headers as autoconf's manual suggests
+
+* configure.ac: don't use AC_FUNC_MALLOC because we never do malloc(0)
+
+* rt-config.c: check if print_command is safe for sprintf format
+
+* atari_x11.c, memory.[ch], ui.c: removed PILL (use cartridge images instead)
 
 
 2005-08-15  Piotr Fusik  <fox@scene.pl>
