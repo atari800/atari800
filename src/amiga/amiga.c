@@ -129,8 +129,6 @@ struct timezone;
 
 /*******************************/
 
-extern int refresh_rate;
-
 struct Library *IntuitionBase;
 struct Library *GfxBase;
 struct Library *LayersBase;
@@ -2230,22 +2228,6 @@ int Atari_TRIG (int num)
 {
 	Atari_Joystick(num);
 	return trig[num];
-}
-
-/**************************************************************************
- ...
-**************************************************************************/
-int Atari_POT (int num)
-{
-	return PaddlePos;
-}
-
-/**************************************************************************
- ...
-**************************************************************************/
-int Atari_PEN(int vertical)
-{
-	return vertical?0xff:0;
 }
 
 /**************************************************************************
