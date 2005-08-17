@@ -2,7 +2,7 @@
  * atari_win32.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -39,8 +39,6 @@
 #include "log.h"
 
 static int usesnd = 1;
-
-extern int refresh_rate;
 
 extern int alt_function;
 static int kbjoy = 0;
@@ -86,8 +84,6 @@ static int trig0 = 1;
 static int trig1 = 1;
 static int stick0;
 static int stick1;
-
-extern double deltatime;
 
 int Atari_Keyboard(void)
 {
@@ -416,6 +412,8 @@ int Atari_Exit(int run_monitor)
 {
   int i;
 
+  Aflushlog();
+
   if (run_monitor)
     {
 #ifdef SOUND
@@ -430,10 +428,6 @@ int Atari_Exit(int run_monitor)
       if (i)
 	return 1;	      /* return to emulation */
     }
-
-#ifdef BUFFERED_LOG
-  Aflushlog();
-#endif
 
   return 0;
 }
@@ -469,13 +463,11 @@ int Atari_TRIG(int num)
   }
 }
 
-int Atari_POT(int num)
-{
-  return 228;
-}
-
 /*
 $Log$
+Revision 1.10  2005/08/17 22:16:05  pfusik
+flush buffered log when entering monitor; removed obsolete Atari_POT
+
 Revision 1.9  2005/05/13 23:32:24  emuslor
 Joystick support for DirectX and startup/-help cleanup
 
