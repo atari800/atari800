@@ -32,8 +32,15 @@
 #include <signal.h>
 #endif
 
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# elif defined(HAVE_TIME_H)
+#  include <time.h>
+# endif
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -763,6 +770,8 @@ void Atari800_UpdatePatches(void)
 	}
 }
 
+#ifndef USE_CLOCK
+
 static double Atari_time(void)
 {
 #ifdef DJGPP
@@ -776,10 +785,17 @@ static double Atari_time(void)
 	return tp.tv_sec + 1e-6 * tp.tv_usec;
 #elif defined(HAVE_UCLOCK)
 	return uclock() * (1.0 / UCLOCKS_PER_SEC);
+#elif defined(HAVE_CLOCK)
+#define USE_CLOCK
+	return clock() * (1.0 / CLK_TCK);
 #else
 #error No function found for Atari_time()
 #endif
 }
+
+#endif /* USE_CLOCK */
+
+#ifndef USE_CLOCK
 
 static void Atari_sleep(double s)
 {
@@ -798,7 +814,7 @@ static void Atari_sleep(double s)
 		/* added by Brian Smith for os/2 */
 		DosSleep(s);
 #elif defined(WIN32)
-		Sleep(s * 1e3);
+		Sleep((DWORD) (s * 1e3));
 #elif defined(HAVE_SELECT)
 		/* linux */
 		struct timeval tp;
@@ -811,6 +827,8 @@ static void Atari_sleep(double s)
 #endif
 	}
 }
+
+#endif /* USE_CLOCK */
 
 void atari_sync(void)
 {
@@ -1225,6 +1243,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.66  2005/08/17 22:21:41  pfusik
+auto-define USE_CLOCK as a last resort for Atari_time
+
 Revision 1.65  2005/08/15 20:36:25  pfusik
 allow no more than 8 disk images from the command line;
 back to #ifdef WIN32, __BEOS__, __EMX__
