@@ -135,6 +135,25 @@ static void RtPresetDefaults()
 	stereo_enabled = 0;
 }
 
+static int is_print_command_safe(const char *command)
+{
+	const char *p = command;
+	int was_percent_s = FALSE;
+	while (*p != '\0') {
+		if (*p++ == '%') {
+			char c = *p++;
+			if (c == '%')
+				continue; /* %% is safe */
+			if (c == 's' && !was_percent_s) {
+				was_percent_s = TRUE; /* only one %s is safe */
+				continue;
+			}
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
 int RtConfigLoad(const char *alternate_config_filename)
 {
 	FILE *fp;
@@ -230,8 +249,12 @@ int RtConfigLoad(const char *alternate_config_filename)
 				safe_strncpy(atari_exe_dir, ptr, sizeof(atari_exe_dir));
 			else if (strcmp(string, "STATE_DIR") == 0)
 				safe_strncpy(atari_state_dir, ptr, sizeof(atari_state_dir));
-			else if (strcmp(string, "PRINT_COMMAND") == 0)
-				safe_strncpy(print_command, ptr, sizeof(print_command));
+			else if (strcmp(string, "PRINT_COMMAND") == 0) {
+				if (is_print_command_safe(ptr))
+					safe_strncpy(print_command, ptr, sizeof(print_command));
+				else
+					Aprint("Unsafe PRINT_COMMAND ignored");
+			}
 			else if (strcmp(string, "SCREEN_REFRESH_RATIO") == 0)
 				sscanf(ptr, "%d", &refresh_rate);
 			else if (strcmp(string, "DISABLE_BASIC") == 0)
@@ -357,7 +380,9 @@ void RtConfigSave(void)
 #ifndef BASIC
 	fprintf(fp, "STATE_DIR=%s\n", atari_state_dir);
 #endif
+#ifdef HAVE_SYSTEM
 	fprintf(fp, "PRINT_COMMAND=%s\n", print_command);
+#endif
 #ifndef BASIC
 	fprintf(fp, "SCREEN_REFRESH_RATIO=%d\n", refresh_rate);
 #endif
@@ -451,7 +476,18 @@ void RtConfigUpdate(void)
 #ifndef BASIC
 	GetString("Enter path for state files [%s] ", atari_state_dir);
 #endif
-	GetString("Enter print command [%s] ", print_command);
+#ifdef HAVE_SYSTEM
+	for (;;) {
+		char command[256];
+		strcpy(command, print_command);
+		GetString("Enter print command [%s] ", command);
+		if (is_print_command_safe(command)) {
+			strcpy(print_command, command);
+			break;
+		}
+		printf("The command you entered is not safe. You may use at most one %%s.\n");
+ 	}
+#endif
 #ifndef BASIC
 	GetNumber("Enter default screen refresh ratio 1:[%d] ", &refresh_rate);
 	if (refresh_rate < 1)
@@ -537,6 +573,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.25  2005/08/17 22:41:48  pfusik
+is_print_command_safe()
+
 Revision 1.24  2005/08/16 23:07:28  pfusik
 #include "config.h" before system headers
 
