@@ -83,9 +83,6 @@
 */
 
 #include "config.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
@@ -1177,6 +1174,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.24  2005/08/17 22:40:41  pfusik
+removed unnecessary includes: stdio.h, stdlib.h, time.h
+
 Revision 1.23  2005/08/16 23:07:28  pfusik
 #include "config.h" before system headers
 
