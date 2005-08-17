@@ -976,7 +976,7 @@ int monitor(void)
 
 				for (addr = addr1; addr <= addr2; addr++) {
 					int i = 0;
-					while (GetByte(addr + i) == tab[i]) {
+					while (GetByte((UWORD) (addr + i)) == tab[i]) {
 						i++;
 						if (i >= n) {
 							printf("Found at %04x\n", addr);
@@ -1162,7 +1162,9 @@ int monitor(void)
 			printf("PROFILE                        - Display profiling statistics\n");
 #endif
 			printf("COLDSTART, WARMSTART           - Perform system coldstart/warmstart\n");
+#ifdef HAVE_SYSTEM
 			printf("!command                       - Execute shell command\n");
+#endif
 			printf("QUIT                           - Quit emulator\n");
 			printf("HELP or ?                      - This text\n");
 		}
@@ -1478,6 +1480,9 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.21  2005/08/17 22:34:25  pfusik
+fixed VC6 warning; "!command" in HELP only if supported
+
 Revision 1.20  2005/08/16 23:10:52  pfusik
 #include "config.h" before system headers;
 #ifdef HAVE_FFLUSH; #ifdef HAVE_SYSTEM
