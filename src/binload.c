@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <stdio.h>
 
 #include "atari.h"
@@ -109,7 +110,7 @@ void BIN_loader_cont(void)
 	} while (dGetByte(0x2e3) == 0xd7);
 
 	regS--;
-	Atari800_AddEsc(0x100 + regS, ESC_BINLOADER_CONT, BIN_loader_cont);
+	Atari800_AddEsc((UWORD) (0x100 + regS), ESC_BINLOADER_CONT, BIN_loader_cont);
 	regS--;
 	dPutByte(0x0100 + regS--, 0x01);	/* high */
 	dPutByte(0x0100 + regS, regS + 1);	/* low */
