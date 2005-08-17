@@ -27,8 +27,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <time.h>
 #include <errno.h>
+
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 
 #ifdef HAVE_UNIXIO_H
 #include <unixio.h>
@@ -44,6 +47,11 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef WIN32
+#include <direct.h> /* mkdir, rmdir */
+#include <io.h>     /* mktemp, open */
 #endif
 
 #if defined(HAVE_DIRENT_H) && defined(HAVE_OPENDIR)
@@ -870,7 +878,7 @@ static void Device_HSPEC_BIN_loader_cont(void)
 	} while (!initBinFile || dGetByte(0x2e3) == 0xd7);
 
 	regS--;
-	Atari800_AddEsc(0x100 + regS, ESC_BINLOADER_CONT,
+	Atari800_AddEsc((UWORD) (0x100 + regS), ESC_BINLOADER_CONT,
 					Device_HSPEC_BIN_loader_cont);
 	regS--;
 	dPutByte(0x0100 + regS--, 0x01);	/* high */
@@ -1611,7 +1619,7 @@ static void Device_PHCLOS(void)
 		Aprint("PHCLOS");
 
 	if (phf) {
-		char command[256];
+		char command[256 + 13]; /* 256 for print_command + 13 for spool_file */
 
 		fclose(phf);
 		phf = NULL;
@@ -2010,16 +2018,16 @@ int Device_PatchOS(void)
 #ifdef HAVE_SYSTEM
 		case 'P':
 			if (enable_p_patch) {
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) +
-								   1, ESC_PHOPEN, Device_PHOPEN);
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_CLOS) +
-								   1, ESC_PHCLOS, Device_PHCLOS);
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) +
-								   1, ESC_PHWRIT, Device_PHWRIT);
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_STAT) +
-								   1, ESC_PHSTAT, Device_PHSTAT);
-				Atari800_AddEscRts2(devtab + DEVICE_TABLE_INIT, ESC_PHINIT,
-									Device_PHINIT);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_OPEN) + 1),
+				                   ESC_PHOPEN, Device_PHOPEN);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_CLOS) + 1),
+				                   ESC_PHCLOS, Device_PHCLOS);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_WRIT) + 1),
+				                   ESC_PHWRIT, Device_PHWRIT);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_STAT) + 1),
+				                   ESC_PHSTAT, Device_PHSTAT);
+				Atari800_AddEscRts2((UWORD) (devtab + DEVICE_TABLE_INIT), ESC_PHINIT,
+				                    Device_PHINIT);
 				patched = TRUE;
 			}
 			else {
@@ -2028,32 +2036,6 @@ int Device_PatchOS(void)
 				Atari800_RemoveEsc(ESC_PHWRIT);
 				Atari800_RemoveEsc(ESC_PHSTAT);
 				Atari800_RemoveEsc(ESC_PHINIT);
-			}
-			break;
-#endif
-
-#ifdef R_IO_DEVICE
-		/* XXX: what ROM has R: ? */
-		case 'R':
-			if (enable_r_patch) {
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_OPEN) +
-								   1, ESC_ROPEN, Device_ROPEN);
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_CLOS) +
-								   1, ESC_RCLOS, Device_RCLOS);
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) +
-								   1, ESC_RWRIT, Device_RWRIT);
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_STAT) +
-								   1, ESC_RSTAT, Device_RSTAT);
-				Atari800_AddEscRts2(devtab + DEVICE_TABLE_INIT, ESC_RINIT,
-									Device_RINIT);
-				patched = TRUE;
-			}
-			else {
-				Atari800_RemoveEsc(ESC_ROPEN);
-				Atari800_RemoveEsc(ESC_RCLOS);
-				Atari800_RemoveEsc(ESC_RWRIT);
-				Atari800_RemoveEsc(ESC_RSTAT);
-				Atari800_RemoveEsc(ESC_RINIT);
 			}
 			break;
 #endif
@@ -2070,15 +2052,15 @@ int Device_PatchOS(void)
 			}
 #ifdef BASIC
 			else
-				Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_WRIT) + 1,
-								   ESC_EHWRIT, Device_EHWRIT);
-			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1,
-							   ESC_EHREAD, Device_EHREAD);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_WRIT) + 1),
+				                   ESC_EHWRIT, Device_EHWRIT);
+			Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_READ) + 1),
+			                   ESC_EHREAD, Device_EHREAD);
 			patched = TRUE;
 			break;
 		case 'K':
-			Atari800_AddEscRts(dGetWord(devtab + DEVICE_TABLE_READ) + 1,
-							   ESC_KHREAD, Device_EHREAD);
+			Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_READ) + 1),
+			                   ESC_KHREAD, Device_EHREAD);
 			patched = TRUE;
 			break;
 #endif
@@ -2268,6 +2250,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.32  2005/08/17 22:32:34  pfusik
+direct.h and io.h on WIN32; fixed VC6 warnings
+
 Revision 1.31  2005/08/16 23:09:56  pfusik
 #include "config.h" before system headers;
 dirty workaround for lack of mktemp();
