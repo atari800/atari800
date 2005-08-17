@@ -1,14 +1,14 @@
 /* $Id$ */
-#ifndef __SIO__
-#define __SIO__
-
-#include <stdio.h>
+#ifndef _SIO_H_
+#define _SIO_H_
 
 #include "config.h"
 
-#define MAX_DRIVES 8
+#include <stdio.h> /* FILENAME_MAX */
 
 #include "atari.h"
+
+#define MAX_DRIVES 8
 
 typedef enum tagUnitStatus {
 	Off,
@@ -43,7 +43,7 @@ void SIO(void);
 #define SIO_FormatFrame     (0x06)
 #define SIO_CasRead         (0x60)
 
-UBYTE SIO_ChkSum(UBYTE * buffer, UWORD length);
+UBYTE SIO_ChkSum(const UBYTE *buffer, int length);
 void SIO_TapeMotor(int onoff);
 void SwitchCommandFrame(int onoff);
 void SIO_PutByte(int byte);
@@ -52,9 +52,9 @@ void SIO_Initialise(int *argc, char *argv[]);
 void SIO_Exit(void);
 
 /* Some defines about the serial I/O timing. Currently fixed! */
-#define XMTDONE_INTERVAL 15
-#define SERIN_INTERVAL 8
-#define SEROUT_INTERVAL 8
-#define ACK_INTERVAL 36
+#define XMTDONE_INTERVAL  15
+#define SERIN_INTERVAL     8
+#define SEROUT_INTERVAL    8
+#define ACK_INTERVAL      36
 
-#endif	/* __SIO__ */
+#endif	/* _SIO_H_ */
