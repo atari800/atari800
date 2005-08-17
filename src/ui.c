@@ -26,8 +26,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>				/* for free() */
+
+#if defined(HAVE_DIRENT_H) && defined(HAVE_OPENDIR)
+/* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
+#define DO_DIR
+#endif
+
+#ifdef DO_DIR
 #include <dirent.h>
-#include <sys/stat.h>
+#endif
 
 #include "atari.h"
 #include "cpu.h"
@@ -202,7 +209,7 @@ void DiskManagement(void)
 				Rotate_Disks();
 			}
 			else if (seltype == USER_SELECT) {	/* User pressed "Enter" to select a disk image */
-				char *pathname;
+				/* char *pathname; XXX: what was the supposed purpose of it? */
 
 /*              pathname=atari_disk_dirs[current_disk_directory]; */
 
@@ -254,10 +261,12 @@ void DiskManagement(void)
 				}
 				else {
 					while (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
+#ifdef DO_DIR
 						DIR *subdir;
 
 						subdir = opendir(filename);
 						if (!subdir) {	/* A file was selected */
+#endif
 							if (dsknum < 8) {	/* Normal disk mount */
 								SIO_Dismount(dsknum + 1);
 								/* try to mount read/write */
@@ -288,11 +297,13 @@ void DiskManagement(void)
 								}
 							}
 							break;
+#ifdef DO_DIR
 						}
 						else {	/* A directory was selected */
 							closedir(subdir);
-							pathname = filename;
+							/* pathname = filename; */
 						}
+#endif
 					}
 				}
 			}
@@ -394,7 +405,6 @@ void CartManagement(void)
 		{"EXCR", ITEM_ENABLED | ITEM_FILESEL, NULL, "Extract ROM image from Cartridge", NULL, 1},
 		{"INCR", ITEM_ENABLED | ITEM_FILESEL, NULL, "Insert Cartridge", NULL, 2},
 		{"RECR", ITEM_ENABLED | ITEM_ACTION, NULL, "Remove Cartridge", NULL, 3},
-		{"PILL", ITEM_ENABLED | ITEM_ACTION, NULL, "Enable PILL Mode", NULL, 4},
 		MENU_END
 	};
 
@@ -561,10 +571,6 @@ void CartManagement(void)
 			CART_Remove();
 			Coldstart();
 			done = TRUE;
-			break;
-		case 4:
-			EnablePILL();
-			Coldstart();
 			break;
 		default:
 			done = TRUE;
@@ -1070,6 +1076,9 @@ void MakeBlankDisk(FILE *setFile)
 
 /*
 $Log$
+Revision 1.63  2005/08/17 22:47:54  pfusik
+compile without <dirent.h>; removed PILL
+
 Revision 1.62  2005/08/16 23:07:28  pfusik
 #include "config.h" before system headers
 
