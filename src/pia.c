@@ -23,15 +23,12 @@
 */
 
 #include "config.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "atari.h"
 #include "cpu.h"
 #include "memory.h"
 #include "pia.h"
 #include "sio.h"
-#include "log.h"
 #ifndef BASIC
 #include "input.h"
 #include "statesav.h"
@@ -218,6 +215,9 @@ void PIAStateRead(void)
 
 /*
 $Log$
+Revision 1.15  2005/08/17 22:38:43  pfusik
+removed unnecessary includes: stdio.h, stdlib.h, log.h
+
 Revision 1.14  2005/08/16 23:06:41  pfusik
 #include "config.h" before system headers
 
