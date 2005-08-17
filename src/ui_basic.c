@@ -25,9 +25,24 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>				/* for free() */
+#include <stdlib.h> /* free() */
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* getcwd() */
+#endif
+
+#if defined(HAVE_DIRENT_H) && defined(HAVE_OPENDIR)
+/* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
+#define DO_DIR
+#endif
+
+#ifdef DO_DIR
 #include <dirent.h>
+#endif
+
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
 
 #include "rt-config.h"
 #include "atari.h"
@@ -118,7 +133,7 @@ unsigned char ascii_to_screen[128] =
 #define KB_DELAY		20
 #define KB_AUTOREPEAT		3
 
-int GetKeyPress(UBYTE *screen)
+static int GetKeyPress(UBYTE *screen)
 {
 	int keycode;
 
@@ -153,7 +168,7 @@ int GetKeyPress(UBYTE *screen)
 	return key_to_ascii[keycode];
 }
 
-void Plot(UBYTE *screen, int fg, int bg, int ch, int x, int y)
+static void Plot(UBYTE *screen, int fg, int bg, int ch, int x, int y)
 {
 #ifndef USE_CURSES
 	int offset = ascii_to_screen[(ch & 0x07f)] * 8;
@@ -209,7 +224,7 @@ void Plot(UBYTE *screen, int fg, int bg, int ch, int x, int y)
 #endif
 }
 
-void Print(UBYTE *screen, int fg, int bg, const char *string, int x, int y)
+static void Print(UBYTE *screen, int fg, int bg, const char *string, int x, int y)
 {
 	while (*string && *string != '\n') {
 		Plot(screen, fg, bg, *string++, x, y);
@@ -217,7 +232,7 @@ void Print(UBYTE *screen, int fg, int bg, const char *string, int x, int y)
 	}
 }
 
-void CenterPrint(UBYTE *screen, int fg, int bg, const char *string, int y)
+static void CenterPrint(UBYTE *screen, int fg, int bg, const char *string, int y)
 {
 	int length;
 	char *eol = strchr(string, '\n');
@@ -231,9 +246,8 @@ void CenterPrint(UBYTE *screen, int fg, int bg, const char *string, int y)
 	Print(screen, fg, bg, string, (40 - length) / 2, y);
 }
 
-int EditString(UBYTE *screen, int fg, int bg,
-				int len, char *string,
-				int x, int y)
+static int EditString(UBYTE *screen, int fg, int bg,
+                      int len, char *string, int x, int y)
 {
 	int offset = 0;
 
@@ -277,7 +291,7 @@ int EditString(UBYTE *screen, int fg, int bg,
 	}
 }
 
-void Box(UBYTE *screen, int fg, int bg, int x1, int y1, int x2, int y2)
+static void Box(UBYTE *screen, int fg, int bg, int x1, int y1, int x2, int y2)
 {
 	int x;
 	int y;
@@ -298,7 +312,7 @@ void Box(UBYTE *screen, int fg, int bg, int x1, int y1, int x2, int y2)
 	Plot(screen, fg, bg, 26, x1, y2);
 }
 
-void ClearScreen(UBYTE *screen)
+static void ClearScreen(UBYTE *screen)
 {
 #ifdef USE_CURSES
 	curses_clear_screen();
@@ -316,7 +330,7 @@ void ClearScreen(UBYTE *screen)
 #endif
 }
 
-int CountLines(const char *string)
+static int CountLines(const char *string)
 {
 	int lines;
 	if (string == NULL || *string == 0)
@@ -330,13 +344,13 @@ int CountLines(const char *string)
 	return lines;
 }
 
-void TitleScreen(UBYTE *screen, char *title)
+static void TitleScreen(UBYTE *screen, char *title)
 {
 	Box(screen, 0x9a, 0x94, 0, 0, 39, 1 + CountLines(title));
 	CenterPrint(screen, 0x9a, 0x94, title, 1);
 }
 
-void ShortenItem(const char *source, char *destination, int iMaxXsize)
+static void ShortenItem(const char *source, char *destination, int iMaxXsize)
 {
 	if ((int) strlen(source) > iMaxXsize) {
 
@@ -352,15 +366,13 @@ void ShortenItem(const char *source, char *destination, int iMaxXsize)
 		strcpy(destination, source);
 }
 
-void SelectItem(UBYTE *screen,
-				int fg, int bg,
-				int index, char *items[],
-				char *prefix[],
-				char *suffix[],
-				int nrows, int ncolumns,
-				int xoffset, int yoffset,
-				int itemwidth,
-				int active)
+static void SelectItem(UBYTE *screen, int fg, int bg,
+                       int index, char *items[],
+                       char *prefix[], char *suffix[],
+                       int nrows, int ncolumns,
+                       int xoffset, int yoffset,
+                       int itemwidth,
+                       int active)
 {
 	int x;
 	int y;
@@ -431,16 +443,15 @@ void SelectItem(UBYTE *screen,
 	}
 }
 
-int Select(UBYTE *screen,
-		   int default_item,
-		   int nitems, char *items[],
-		   char *prefix[],
-		   char *suffix[],
-		   int nrows, int ncolumns,
-		   int xoffset, int yoffset,
-		   int itemwidth,
-		   int scrollable,
-		   int *ascii)
+static int Select(UBYTE *screen,
+                  int default_item,
+                  int nitems, char *items[],
+                  char *prefix[], char *suffix[],
+                  int nrows, int ncolumns,
+                  int xoffset, int yoffset,
+                  int itemwidth,
+                  int scrollable,
+                  int *ascii)
 {
 	int index = 0;
 	int localascii;
@@ -521,7 +532,7 @@ int Select(UBYTE *screen,
 }
 
 /* returns TRUE if valid filename */
-int EditFilename(UBYTE *screen, char *fname)
+static int EditFilename(UBYTE *screen, char *fname)
 {
 	memset(fname, ' ', FILENAME_SIZE);
 	fname[FILENAME_SIZE] = '\0';
@@ -533,8 +544,9 @@ int EditFilename(UBYTE *screen, char *fname)
 	return fname[0] != '\0';
 }
 
+#ifdef DO_DIR
 
-int FilenameSort(const char *filename1, const char *filename2)
+static int FilenameSort(const char *filename1, const char *filename2)
 {
 	if (*filename1 == '[' && *filename2 != '[')
 		return -1;
@@ -550,7 +562,7 @@ int FilenameSort(const char *filename1, const char *filename2)
 	return strcmp(filename1, filename2);
 }
 
-List *GetDirectory(char *directory)
+static List *GetDirectory(char *directory)
 {
 	DIR *dp = NULL;
 	List *list = NULL;
@@ -645,8 +657,11 @@ List *GetDirectory(char *directory)
 	return list;
 }
 
-int FileSelector(UBYTE *screen, char *directory, char *full_filename)
+#endif /* DO_DIR */
+
+static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 {
+#ifdef DO_DIR
 	List *list;
 	int flag = FALSE;
 	int next_dir;
@@ -741,11 +756,11 @@ int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 					break;
 				}
 				else if (item != -1) {
-					if (files[item][0] == '[') {	/*directory selected */
+					if (files[item][0] == '[') {	/* directory selected */
 						DIR *dr;
-						char help[FILENAME_MAX];	/*new directory */
+						char help[FILENAME_MAX];	/* new directory */
 
-						if (strcmp(files[item], "[..]") == 0) {		/*go up */
+						if (strcmp(files[item], "[..]") == 0) {		/* go up */
 							char *pos, *pos2;
 
 							strcpy(help, directory);
@@ -754,7 +769,7 @@ int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 								pos = strrchr(help, '\\');
 							if (pos) {
 								*pos = '\0';
-								/*if there is no slash in directory, add one at the end */
+								/* if there is no slash in directory, add one at the end */
 								pos2 = strrchr(help, '/');
 								if (!pos2)
 									pos2 = strrchr(help, '\\');
@@ -770,20 +785,20 @@ int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 
 						}
 #ifdef DOS_DRIVES
-						else if (files[item][2] == ':' && files[item][3] == ']') {	/*disk selected */
+						else if (files[item][2] == ':' && files[item][3] == ']') {	/* disk selected */
 							strcpy(help, files[item] + 1);
 							help[2] = '\\';
 							help[3] = '\0';
 						}
 #endif
-						else {	/*directory selected */
+						else {	/* directory selected */
 							char lastchar = directory[strlen(directory) - 1];
 							char *pbracket = strchr(files[item], ']');
 
 							if (pbracket)
 								*pbracket = '\0';	/*cut ']' */
 							if (lastchar == '/' || lastchar == '\\')
-								sprintf(help, "%s%s", directory, files[item] + 1);	/*directory already ends with slash */
+								sprintf(help, "%s%s", directory, files[item] + 1);	/* directory already ends with slash */
 							else
 #ifndef BACK_SLASH
 								sprintf(help, "%s/%s", directory, files[item] + 1);
@@ -791,7 +806,7 @@ int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 								sprintf(help, "%s\\%s", directory, files[item] + 1);
 #endif
 						}
-						dr = opendir(help);		/*check, if new directory is valid */
+						dr = opendir(help);		/* check, if new directory is valid */
 						if (dr) {
 							strcpy(directory, help);
 							closedir(dr);
@@ -799,10 +814,10 @@ int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 							break;
 						}
 					}
-					else {		/*normal filename selected */
+					else {		/* normal filename selected */
 						char lastchar = directory[strlen(directory) - 1];
 						if (lastchar == '/' || lastchar == '\\')
-							sprintf(full_filename, "%s%s", directory, files[item]);		/*directory already ends with slash */
+							sprintf(full_filename, "%s%s", directory, files[item]);		/* directory already ends with slash */
 						else
 #ifndef BACK_SLASH
 							sprintf(full_filename, "%s/%s", directory, files[item]);
@@ -821,10 +836,33 @@ int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 		}
 	} while (next_dir);
 	return flag;
+#else /* DO_DIR */
+	char fname[FILENAME_SIZE + 1];
+	if (EditFilename(screen, fname)) {
+		char lastchar;
+		if (directory[0] == '\0' || strcmp(directory, ".") == 0)
+#ifdef HAVE_GETCWD
+			getcwd(directory, FILENAME_MAX);
+#else
+			strcpy(directory, ".");
+#endif
+		lastchar = directory[strlen(directory) - 1];
+		if (lastchar == '/' || lastchar == '\\' || fname[0] == '/' || fname[0] == '\\')
+			/* directory already ends with slash or fname is absolute */
+			sprintf(full_filename, "%s%s", directory, fname);
+		else
+#ifndef BACK_SLASH
+			sprintf(full_filename, "%s/%s", directory, fname);
+#else							/* DOS, TOS fs */
+			sprintf(full_filename, "%s\\%s", directory, fname);
+#endif
+		return TRUE;
+	}
+	return FALSE;
+#endif /* DO_DIR */
 }
 
-
-void AboutEmulator(UBYTE *screen)
+static void AboutEmulator(UBYTE *screen)
 {
 	ClearScreen(screen);
 
@@ -849,7 +887,8 @@ void AboutEmulator(UBYTE *screen)
 }
 
 
-int MenuSelectEx(UBYTE *screen, char *title, int subitem, int default_item, tMenuItem *items, int *seltype)
+static int MenuSelectEx(UBYTE *screen, char *title, int subitem,
+                        int default_item, tMenuItem *items, int *seltype)
 {
 	int scrollable;
 	int i;
@@ -946,14 +985,13 @@ int MenuSelectEx(UBYTE *screen, char *title, int subitem, int default_item, tMen
 	return 0;
 }
 
-
-void Message(UBYTE* screen, char* msg)
+static void Message(UBYTE* screen, char* msg)
 {
 	CenterPrint(screen, 0x94, 0x9a, msg, 22);
 	GetKeyPress(screen);
 }
 
-void InitializeUI(void)
+static void InitializeUI(void)
 {
 	if (!initialised) {
 		get_charset(charset);
@@ -1000,6 +1038,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.24  2005/08/17 22:49:15  pfusik
+compile without <dirent.h>
+
 Revision 1.23  2005/08/16 23:07:28  pfusik
 #include "config.h" before system headers
 
