@@ -270,13 +270,12 @@ dnl All future references to OBJS should ADD to it, not (re)define it.
 dnl Checks for library functions.
 AC_FUNC_CLOSEDIR_VOID
 AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([atexit chmod fflush floor fstat getcwd gettimeofday localtime memmove])
+AC_CHECK_FUNCS([atexit chmod clock fflush floor fstat getcwd gettimeofday localtime memmove])
 AC_CHECK_FUNCS([memset mkdir mkstemp mktemp modf opendir rename rmdir select signal])
 AC_CHECK_FUNCS([snprintf stat strcasecmp strchr strdup strerror strrchr strspn strstr])
 AC_CHECK_FUNCS([strtol system time uclock unlink vsnprintf])
