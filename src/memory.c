@@ -204,18 +204,6 @@ void MEMORY_InitialiseMachine(void)
 	Coldstart();
 }
 
-void EnablePILL(void)
-{
-	SetROM(0x8000, 0xbfff);
-	pil_on = TRUE;
-}
-
-void DisablePILL(void)
-{
-	SetRAM(0x8000, 0xbfff);
-	pil_on = FALSE;
-}
-
 #ifndef BASIC
 
 void MemStateSave(UBYTE SaveVerbose)
@@ -505,7 +493,7 @@ void CartA0BF_Disable(void)
 	if (cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if ((machine_type != MACHINE_XLXE) || basic_disabled(PORTB | PORTB_mask)) {
+		if ((machine_type != MACHINE_XLXE) || basic_disabled((UBYTE) (PORTB | PORTB_mask))) {
 			if (ram_size > 40) {
 				memcpy(memory + 0xa000, under_cartA0BF, 0x2000);
 				SetRAM(0xa000, 0xbfff);
@@ -559,6 +547,9 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.9  2005/08/17 22:33:19  pfusik
+removed PILL
+
 Revision 1.8  2005/08/16 23:06:41  pfusik
 #include "config.h" before system headers
 

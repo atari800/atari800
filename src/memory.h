@@ -82,8 +82,6 @@ extern int cartA0BF_enabled;
 typedef int ATPtr;
 
 void MEMORY_InitialiseMachine(void);
-void DisablePILL(void);
-void EnablePILL(void);
 void MemStateSave(UBYTE SaveVerbose);
 void MemStateRead(UBYTE SaveVerbose);
 void CopyFromMem(ATPtr from, UBYTE *to, int size);
