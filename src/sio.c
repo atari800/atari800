@@ -29,7 +29,6 @@
 #include <ctype.h>
 #ifdef DEBUG
 #include <time.h>
-#include <sys/time.h>
 #endif
 
 #include "antic.h"  /* ypos */
@@ -732,7 +731,7 @@ void SIO(void)
 			else
 				result = 'C';
 			/* check checksum */
-			if (cassette_buffer[length] != SIO_ChkSum(cassette_buffer,length))
+			if (cassette_buffer[length] != SIO_ChkSum(cassette_buffer, length))
 				result = 'E';
 			/* if all went ok, copy to Atari */
 			if (result == 'C')
@@ -783,7 +782,7 @@ void SIO(void)
 	SetC;
 }
 
-UBYTE SIO_ChkSum(UBYTE * buffer, UWORD length)
+UBYTE SIO_ChkSum(const UBYTE *buffer, int length)
 {
 	int i;
 	int checksum = 0;
@@ -871,7 +870,7 @@ static UBYTE Command_Frame(void)
 #endif
 			SizeOfSector((UBYTE) unit, sector, &realsize, NULL);
 			DataBuffer[0] = ReadSector(unit, sector, DataBuffer + 1);
-			DataBuffer[1 + realsize] = SIO_ChkSum(DataBuffer + 1, (UWORD) realsize);
+			DataBuffer[1 + realsize] = SIO_ChkSum(DataBuffer + 1, realsize);
 			DataIndex = 0;
 			ExpectedBytes = 2 + realsize;
 			TransferStatus = SIO_ReadFrame;
@@ -1060,7 +1059,7 @@ void SIO_PutByte(int byte)
 		if (DataIndex < ExpectedBytes) {
 			DataBuffer[DataIndex++] = byte;
 			if (DataIndex >= ExpectedBytes) {
-				sum = SIO_ChkSum(DataBuffer, (UWORD) (ExpectedBytes - 1));
+				sum = SIO_ChkSum(DataBuffer, ExpectedBytes - 1);
 				if (sum == DataBuffer[ExpectedBytes - 1]) {
 					result = WriteSectorBack();
 					if (result) {
@@ -1228,6 +1227,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.31  2005/08/17 22:45:06  pfusik
+removed unnecessary #include <sys/time.h>; fixed VC6 warnings
+
 Revision 1.30  2005/08/16 23:15:33  pfusik
 #include "config.h" before system headers
 
