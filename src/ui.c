@@ -836,16 +836,27 @@ int SoundSettings(void)
 #endif /* SOUND */
 
 #ifndef CURSES_BASIC
+
+#ifdef USE_CURSES
+void curses_clear_screen(void);
+#endif
+
 void Screenshot(int interlaced)
 {
 	char fname[FILENAME_SIZE + 1];
 	if (ui_driver->fGetSaveFilename(fname)) {
+#ifdef USE_CURSES
+		/* must clear, otherwise in case of a failure we'll see parts
+		   of Atari screen on top of UI screen */
+		curses_clear_screen();
+#endif
 		ANTIC_Frame(TRUE);
 		if (!Screen_SaveScreenshot(fname, interlaced))
 			ui_driver->fMessage("Error saving screenshot");
 	}
 }
-#endif
+
+#endif /* CURSES_BASIC */
 
 void ui(void)
 {
@@ -897,12 +908,12 @@ void ui(void)
 	}
 #endif
 
-	while (!done) {
+	while (!done || alt_function >= 0) { /* always handle Alt+letter pressed in UI */
 
 		if (alt_function < 0) {
 			option = ui_driver->fSelect(ATARI_TITLE, FALSE, option, menu_array, NULL);
 		}
-		else {
+		if (alt_function >= 0) {
 			option = alt_function;
 			alt_function = -1;
 			done = TRUE;
@@ -1013,6 +1024,9 @@ int CrashMenu(void)
 
 		option = ui_driver->fSelect(bf, FALSE, option, menu_array, NULL);
 
+		if (alt_function >= 0) /* pressed F5, Shift+F5 or F9 */
+			return FALSE;
+
 		switch (option) {
 		case 0:				/* Power On Reset */
 			alt_function = MENU_RESETW;
@@ -1076,6 +1090,9 @@ void MakeBlankDisk(FILE *setFile)
 
 /*
 $Log$
+Revision 1.64  2005/08/18 23:34:00  pfusik
+shortcut keys in UI
+
 Revision 1.63  2005/08/17 22:47:54  pfusik
 compile without <dirent.h>; removed PILL
 

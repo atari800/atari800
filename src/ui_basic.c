@@ -147,7 +147,7 @@ static int GetKeyPress(UBYTE *screen)
 
 	for (;;) {
 		static int rep = KB_DELAY;
-		if (Atari_Keyboard() < 0) {
+		if (Atari_Keyboard() == AKEY_NONE) {
 			rep = KB_DELAY;
 			atari_sync();
 			break;
@@ -163,6 +163,29 @@ static int GetKeyPress(UBYTE *screen)
 	do {
 		atari_sync();
 		keycode = Atari_Keyboard();
+		switch (keycode) {
+		case AKEY_WARMSTART:
+			alt_function = MENU_RESETW;
+			return 0x1b; /* escape */
+		case AKEY_COLDSTART:
+			alt_function = MENU_RESETC;
+			return 0x1b; /* escape */
+		case AKEY_EXIT:
+			alt_function = MENU_EXIT;
+			return 0x1b; /* escape */
+		case AKEY_UI:
+			if (alt_function >= 0) /* Alt+letter, not F1 */
+				return 0x1b; /* escape */
+			break;
+		case AKEY_SCREENSHOT:
+			alt_function = MENU_PCX;
+			return 0x1b; /* escape */
+		case AKEY_SCREENSHOT_INTERLACE:
+			alt_function = MENU_PCXI;
+			return 0x1b; /* escape */
+		default:
+			break;
+		}
 	} while (keycode < 0);
 
 	return key_to_ascii[keycode];
@@ -1038,6 +1061,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.25  2005/08/18 23:34:00  pfusik
+shortcut keys in UI
+
 Revision 1.24  2005/08/17 22:49:15  pfusik
 compile without <dirent.h>
 
