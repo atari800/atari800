@@ -108,7 +108,6 @@ double fps;
 int percent_atari_speed = 100;
 
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
-int pil_on = FALSE;
 
 
 static char *rom_filename = NULL;
@@ -314,10 +313,10 @@ int Atari800_InitialiseMachine(void)
 	switch (machine_type) {
 	case MACHINE_OSA:
 		if (emuos_mode == 2)
-			memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+			memcpy(atari_os, emuos_h, 0x2800);
 		else if (!load_image(atari_osa_filename, atari_os, 0x2800)) {
 			if (emuos_mode == 1)
-				memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+				memcpy(atari_os, emuos_h, 0x2800);
 			else
 				return FALSE;
 		}
@@ -325,21 +324,25 @@ int Atari800_InitialiseMachine(void)
 		break;
 	case MACHINE_OSB:
 		if (emuos_mode == 2)
-			memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+			memcpy(atari_os, emuos_h, 0x2800);
 		else if (!load_image(atari_osb_filename, atari_os, 0x2800)) {
 			if (emuos_mode == 1)
-				memcpy(atari_os, emuos_h + 0x1800, 0x2800);
+				memcpy(atari_os, emuos_h, 0x2800);
 			else
 				return FALSE;
 		}
 		have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
 		break;
 	case MACHINE_XLXE:
-		if (emuos_mode == 2)
-			memcpy(atari_os, emuos_h, 0x4000);
+		if (emuos_mode == 2) {
+			memset(atari_os, 0, 0x1800);
+			memcpy(atari_os + 0x1800, emuos_h, 0x2800);
+		}
 		else if (!load_image(atari_xlxe_filename, atari_os, 0x4000)) {
-			if (emuos_mode == 1)
-				memcpy(atari_os, emuos_h, 0x4000);
+			if (emuos_mode == 1) {
+				memset(atari_os, 0, 0x1800);
+				memcpy(atari_os + 0x1800, emuos_h, 0x2800);
+			}
 			else
 				return FALSE;
 		}
@@ -570,18 +573,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	Atari_Initialise(argc, argv);	/* Platform Specific Initialisation */
 
 #if !defined(BASIC) && !defined(CURSES_BASIC)
-	if (!atari_screen) {
-		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
-#ifdef DIRTYRECT
-		screen_dirty = (UBYTE *) malloc(ATARI_HEIGHT * ATARI_WIDTH / 8);
-		entire_screen_dirty();
-#endif
-#ifdef BITPL_SCR
-		atari_screen_b = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
-		atari_screen1 = atari_screen;
-		atari_screen2 = atari_screen_b;
-#endif
-	}
+	Screen_Initialise(argc, argv);
 #endif
 
 	/* Initialise Custom Chips */
@@ -1109,9 +1101,10 @@ int ReadDisabledROMs(void)
 void MainStateSave(void)
 {
 	UBYTE temp;
-	int default_tv_mode;	/* for compatibility with previous versions */
+	int default_tv_mode;
 	int os = 0;
 	int default_system = 3;
+	int pil_on = FALSE;
 
 	/* Possibly some compilers would handle an enumerated type differently,
 	   so convert these into unsigned bytes and save them out that way */
@@ -1180,10 +1173,12 @@ void MainStateSave(void)
 
 void MainStateRead(void)
 {
+	/* these are all for compatibility with previous versions */
 	UBYTE temp;
-	int default_tv_mode;	/* for compatibility with previous versions */
+	int default_tv_mode;
 	int os;
 	int default_system;
+	int pil_on;
 
 	ReadUBYTE(&temp, 1);
 	tv_mode = (temp == 0) ? TV_PAL : TV_NTSC;
@@ -1243,6 +1238,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.67  2005/08/18 23:27:37  pfusik
+Screen_Initialise(); smaller emuos_h
+
 Revision 1.66  2005/08/17 22:21:41  pfusik
 auto-define USE_CLOCK as a last resort for Atari_time
 
