@@ -10,6 +10,7 @@ void ui(void);
 void SoundRecording(void);
 
 extern int ui_is_active;
+extern int alt_function;
 
 extern unsigned char ascii_to_screen[128];
 
