@@ -19,10 +19,13 @@
    - support for pdcurses
    - small fix for ncurses
    - generates screen basing on the Display List
-   - fixed TAB, F8 and console keys
+   - fixed Tab, Backspace, F2, F3, F4, F8 and Ctrl+letter
    - fixed -wide2 mode
+   - Alt+letter shortcuts work on pdcurses
    - bitmap graphics emulation is now disabled by default
      (smaller and faster executable), but can be enabled with configure
+ * "-screenshots <pattern>" command-line option
+ * new monitor command: "LOOP"
  * "C", "M" and "S" monitor commands support hardware registers
  * small fixes and code clean up
 
