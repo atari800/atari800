@@ -48,22 +48,20 @@ UBYTE attrib[65536];
 #else
 rdfunc readmap[256];
 wrfunc writemap[256];
-#endif
-#ifdef PAGED_ATTRIB
+
 typedef struct map_save {
-        int     code;
-        rdfunc  rdptr;
-        wrfunc  wrptr;
+	int     code;
+	rdfunc  rdptr;
+	wrfunc  wrptr;
 } map_save;
 
 void ROM_PutByte(UWORD addr, UBYTE value)
 {
-        return;
 }
 
 map_save save_map[2] = {
-        {0,     NULL,   NULL},          /* RAM */
-        {1,     NULL,   ROM_PutByte}    /* ROM */
+	{0, NULL, NULL},          /* RAM */
+	{1, NULL, ROM_PutByte}    /* ROM */
 };
 #endif
 
@@ -73,8 +71,6 @@ static UBYTE *atarixe_memory = NULL;
 static ULONG atarixe_memory_size = 0;
 
 int have_basic;	/* Atari BASIC image has been successfully read (Atari 800 only) */
-
-extern int pil_on;
 
 extern UBYTE *antic_xe_ptr;	/* Separate ANTIC access to extended memory */
 
@@ -547,6 +543,9 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.10  2005/08/18 23:31:30  pfusik
+minor clean up
+
 Revision 1.9  2005/08/17 22:33:19  pfusik
 removed PILL
 
