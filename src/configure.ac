@@ -351,7 +351,7 @@ if [[ "$a8_target" != "basic" ]]; then
     case "$a8_target" in
         *curses)
             A8_OPTION(cursesbasic,yes,
-                      [No bitmap graphics emulation (default=ON)],
+                      [No bitmap graphics emulation (curses targets only) (default=ON)],
                       CURSES_BASIC,[Define to disable bitmap graphics emulation in CURSES target.]
                      )
             ;;
