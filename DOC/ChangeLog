@@ -1,3 +1,31 @@
+2005-08-19  Piotr Fusik  <fox@scene.pl>
+* atari.c, screen.[ch]: Screen_Initialise();
+  support "-screenshots <pattern>" on the command line: it defines a pattern
+  for quick screenshots (i.e. the ones made with (Shift+)F10).
+  For example "-screenshots /home/fred/foo##.pcx" means that
+  /home/fred/foo00.pcx, /home/fred/foo01.pcx, ... should be used.
+  Existing files are overwritten only if all the files defined by the pattern
+  exist. Submitted as a feature request on sf.net.
+
+* atari_curses.c: Alt+letter work on PDCurses;
+  Ctrl+letter should be Control+letter, not Shift+Control+letter;
+  Always treat 0x08 and KEY_BACKSPACE as Backspace;
+  F10 = Screenshot (must run configure with --disable-cursesbasic to make this
+  one work)
+
+* atari.c, emuos.h: stripped 6k of zeros from emuos
+
+* ui.[ch], ui_basic.c: shortcut keys (Alt+letter, F9, ...) didn't work in UI
+  (reported as a bug on sf.net)
+
+* monitor.c: addr defaults to regPC (handy for "D" and "LOOP");
+  new command "LOOP": disassemble from the beginning of a loop that contains
+  the instruction at the specified address.
+  The loop is detected by looking for a branch instruction after the specified
+  address whose target is below (or equal to) the specified address.
+  Unconditional (JMP) loops are not detected.
+
+
 2005-08-17  Piotr Fusik  <fox@scene.pl>
 * configure.ac, *.c: autoconf improvements for Playstation 2;
   include config.h before system headers as autoconf's manual suggests
