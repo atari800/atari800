@@ -30,6 +30,7 @@
 #include "antic.h"
 #include "atari.h"
 #include "colours.h"
+#include "log.h"
 #include "screen.h"
 #include "sio.h"
 
@@ -66,6 +67,91 @@ int show_atari_speed = FALSE;
 int show_disk_led = TRUE;
 int show_sector_counter = FALSE;
 
+#ifdef HAVE_LIBPNG
+#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.png"
+#else
+#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.pcx"
+#endif
+
+static char screenshot_filename_format[FILENAME_MAX] = DEFAULT_SCREENSHOT_FILENAME_FORMAT;
+static int screenshot_no_max = 1000;
+
+/* converts "foo%bar##.pcx" to "foo%%bar%02d.pcx" */
+static void Screen_SetScreenshotFilenamePattern(const char *p)
+{
+	char *f = screenshot_filename_format;
+	char no_width = '0';
+	screenshot_no_max = 1;
+	/* 9 because sprintf'ed "no" can be 9 digits */
+	while (f < screenshot_filename_format + FILENAME_MAX - 9) {
+		/* replace a sequence of hashes with e.g. "%05d" */
+		if (*p == '#') {
+			if (no_width > '0') /* already seen a sequence of hashes */
+				break;          /* invalid */
+			/* count hashes */
+			do {
+				screenshot_no_max *= 10;
+				p++;
+				no_width++;
+				/* now no_width is the number of hashes seen so far
+				   and p points after the counted hashes */
+			} while (no_width < '9' && *p == '#'); /* no more than 9 hashes */
+			*f++ = '%';
+			*f++ = '0';
+			*f++ = no_width;
+			*f++ = 'd';
+			continue;
+		}
+		if (*p == '%')
+			*f++ = '%'; /* double the percents */
+		*f++ = *p;
+		if (*p == '\0')
+			return; /* ok */
+		p++;
+	}
+	Aprint("Invalid filename pattern for screenshots, using default.");
+	strcpy(screenshot_filename_format, DEFAULT_SCREENSHOT_FILENAME_FORMAT);
+	screenshot_no_max = 1000;
+}
+
+void Screen_Initialise(int *argc, char *argv[])
+{
+	int i;
+	int j;
+	int help_only = FALSE;
+
+	for (i = j = 1; i < *argc; i++) {
+		if (strcmp(argv[i], "-screenshots") == 0) {
+			Screen_SetScreenshotFilenamePattern(argv[++i]);
+		}
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
+				Aprint("\t-screenshots <p> Set filename pattern for screenshots");
+			}
+			argv[j++] = argv[i];
+		}
+	}
+	*argc = j;
+
+	/* don't bother mallocing atari_screen with just "-help" */
+	if (help_only)
+		return;
+
+	if (atari_screen == NULL) { /* platform-specific code can initalize it in theory */
+		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
+#ifdef DIRTYRECT
+		screen_dirty = (UBYTE *) malloc(ATARI_HEIGHT * ATARI_WIDTH / 8);
+		entire_screen_dirty();
+#endif
+#ifdef BITPL_SCR
+		atari_screen_b = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
+		atari_screen1 = atari_screen;
+		atari_screen2 = atari_screen_b;
+#endif
+	}
+}
+
 #define SMALLFONT_WIDTH    5
 #define SMALLFONT_HEIGHT   7
 #define SMALLFONT_PERCENT  10
@@ -80,7 +166,7 @@ int show_sector_counter = FALSE;
 
 static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2)
 {
-	static UBYTE font[11][SMALLFONT_HEIGHT] = {
+	static const UBYTE font[11][SMALLFONT_HEIGHT] = {
 		{
 			SMALLFONT_____,
 			SMALLFONT__X__,
@@ -232,18 +318,21 @@ void Screen_DrawDiskLED(void)
 
 void Screen_FindScreenshotFilename(char *buffer)
 {
-	int no = -1;
+	static int no = -1;
+	static int overwrite = FALSE;
 	FILE *fp;
 
-	while (++no < 1000) {
-#ifdef HAVE_LIBPNG
-		sprintf(buffer, "atari%03d.png", no);
-#else
-		sprintf(buffer, "atari%03d.pcx", no);
-#endif
+	for (;;) {
+		if (++no >= screenshot_no_max) {
+			no = 0;
+			overwrite = TRUE;
+		}
+		sprintf(buffer, screenshot_filename_format, no);
+		if (overwrite)
+			break;
 		fp = fopen(buffer, "rb");
 		if (fp == NULL)
-			return; /*file does not exist - we can create it */
+			return; /* file does not exist - we can create it */
 		fclose(fp);
 	}
 }
@@ -257,8 +346,8 @@ static void fputw(int x, FILE *fp)
 static void Screen_SavePCX(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 {
 	int i;
-	int xpos;
-	int ypos;
+	int x;
+	int y;
 	UBYTE plane = 16;	/* 16 = Red, 8 = Green, 0 = Blue */
 	UBYTE last;
 	UBYTE count;
@@ -273,19 +362,19 @@ static void Screen_SavePCX(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	fputw(ATARI_HEIGHT - 1, fp);        /* YMax */
 	fputw(0, fp);     /* HRes */
 	fputw(0, fp);     /* VRes */
-	for (i=0; i < 48; i++)
-		fputc(0, fp); /*EGA color palette */
+	for (i = 0; i < 48; i++)
+		fputc(0, fp); /* EGA color palette */
 	fputc(0, fp);     /* reserved */
 	fputc(ptr2 != NULL ? 3 : 1, fp); /* number of bit planes */
 	fputw(ATARI_VISIBLE_WIDTH, fp);  /* number of bytes per scan line per color plane */
 	fputw(1, fp);     /* palette info */
 	fputw(ATARI_VISIBLE_WIDTH, fp); /* screen resolution */
 	fputw(ATARI_HEIGHT, fp);
-	for (i=0; i<54; i++)
-		fputc(0,fp);  /* unused */
+	for (i = 0; i < 54; i++)
+		fputc(0, fp);  /* unused */
 
-	for (ypos = 0; ypos < ATARI_HEIGHT; ) {
-		xpos = 0;
+	for (y = 0; y < ATARI_HEIGHT; ) {
+		x = 0;
 		do {
 			last = ptr2 != NULL ? (((colortable[*ptr1] >> plane) & 0xff) + ((colortable[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1;
 			count = 0xc0;
@@ -294,13 +383,13 @@ static void Screen_SavePCX(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 				if (ptr2 != NULL)
 					ptr2++;
 				count++;
-				xpos++;
+				x++;
 			} while (last == (ptr2 != NULL ? (((colortable[*ptr1] >> plane) & 0xff) + ((colortable[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1)
-						&& count < 0xff && xpos < ATARI_VISIBLE_WIDTH);
+						&& count < 0xff && x < ATARI_VISIBLE_WIDTH);
 			if (count > 0xc1 || last >= 0xc0)
 				fputc(count, fp);
 			fputc(last, fp);
-		} while (xpos < ATARI_VISIBLE_WIDTH);
+		} while (x < ATARI_VISIBLE_WIDTH);
 
 		if (ptr2 != NULL && plane) {
 			ptr1 -= ATARI_VISIBLE_WIDTH;
@@ -313,14 +402,14 @@ static void Screen_SavePCX(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 				ptr2 += ATARI_WIDTH - ATARI_VISIBLE_WIDTH;
 				plane = 16;
 			}
-			ypos++;
+			y++;
 		}
 	}
 
 	if (ptr2 == NULL) {
-		/*write palette*/
+		/* write palette */
 		fputc(0xc, fp);
-		for (i=0; i<256; i++) {
+		for (i = 0; i < 256; i++) {
 			fputc(Palette_GetR(i), fp);
 			fputc(Palette_GetG(i), fp);
 			fputc(Palette_GetB(i), fp);

@@ -21,6 +21,7 @@ extern int screen_visible_y1;
 extern int screen_visible_x2;
 extern int screen_visible_y2;
 
+void Screen_Initialise(int *argc, char *argv[]);
 void Screen_DrawAtariSpeed(void);
 void Screen_DrawDiskLED(void);
 void Screen_FindScreenshotFilename(char *buffer);
