@@ -96,6 +96,7 @@ Command line Options
 -colors <num>         Set color intensity
 -genpal               Generate artifical palette
 -colshift <num>       Set color shift (-genpal only)
+-screenshots <pattern>Set filename pattern for screenshots
 
 -sound                Enable sound
 -nosound              Disable sound
@@ -257,7 +258,7 @@ F6	Help Key (XL/XE)
 F7	Break Key
 F8	Enter monitor
 F9	Exit Emulator
-F10	---
+F10	Save Screenshot (not available in the default CURSES_BASIC build)
 F11	---
 F12	---
 
@@ -298,7 +299,7 @@ F9	Exit Emulator
 F10	Save Screenshot (+Shift=interlaced screenshot)
 
 Control-C terminates the program; to type Control-c, type ALT-c instead.
-` is used as the Atari-Invers key
+` is used as the Atari-Inverse key
 
 Joysticks can be either real one connected to game port, or old 8-bit
 digital CX-40 joysticks connected to parallel port or keyboard joysticks
