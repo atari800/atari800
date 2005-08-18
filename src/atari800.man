@@ -204,6 +204,12 @@ Generate artifical palette
 .TP
 \fB-colshift <num>     
 Set color shift (-genpal only)
+.TP
+\fB-screenshots <pattern>
+Set filename pattern for screenshots. Use to override the default
+atari000.png, atari001.png etc. filenames. Hashes are replaced with
+raising numbers. Existing files are overwritten only if all the files
+defined by the pattern exist.
 
 .TP
 \fB-sound              
@@ -405,7 +411,7 @@ Enter monitor
 Exit Emulator
 .TP
 \fBF10
----
+Save Screenshot (not available in the default CURSES_BASIC build)
 .TP
 \fBF11
 ---
