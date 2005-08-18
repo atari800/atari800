@@ -57,9 +57,9 @@ typedef struct {
 	char name[9];  /* max. 8 characters */
 	UWORD addr;
 } symtable_rec;
-  /*SYMBOL NAMES TAKEN FROM atari.equ - part of disassembler by Erich BACHER
-    and from GTIA.H, POKEY.H, PIA.H & ANTIC.H                                */
-  /*Note: all symbols must be sorted by address (binary search is used).
+ /* SYMBOL NAMES TAKEN FROM atari.equ - part of disassembler by Erich BACHER
+    and from GTIA.H, POKEY.H, PIA.H & ANTIC.H */
+ /* Note: all symbols must be sorted by address (binary search is used).
     Maximal length of symbol name is 8 characters (can be changed above).
     If the adress has different names when reading/writting to it (GTIA ports),
     put the read name first. */
@@ -218,9 +218,9 @@ static const symtable_rec symtable[] = {
     {"B7-ICBAL",0x03b4}, {"B7-ICBAH",0x03b5}, {"B7-ICPTL",0x03b6}, {"B7-ICPTH",0x03b7},
     {"B7-ICBLL",0x03b8}, {"B7-ICBLH",0x03b9}, {"B7-ICAX1",0x03ba}, {"B7-ICAX2",0x03bb},
     {"B7-ICAX3",0x03bc}, {"B7-ICAX4",0x03bd}, {"B7-ICAX5",0x03be}, {"B7-ICAX6",0x03bf},
-    {"PRNBUF",  0x03c0},  /*PRNBUF 1-39 */
+    {"PRNBUF",  0x03c0},  /* PRNBUF 1-39 */
     {"SUPERF",  0x03e8}, {"CKEY",    0x03e9}, {"CASSBT",  0x03ea}, {"CARTCK",  0x03eb},
-    {"DERRF",   0x03ec}, {"ACMVAR",  0x03ed}, /*ACMVAR 1-10*/
+    {"DERRF",   0x03ec}, {"ACMVAR",  0x03ed}, /* ACMVAR 1-10 */
     {"BASICF",  0x03f8}, {"MINTLK",  0x03f9}, {"GINTLK",  0x03fa}, {"CHLINK",  0x03fb},
     {"CHLINK+1",0x03fc}, {"CASBUF",  0x03fd},
 
@@ -293,7 +293,7 @@ static const int symtable_size = sizeof(symtable) / sizeof(symtable_rec);
      E = ESC RTS
      F = ESC
 */
-#if defined(MONITOR_BREAK) || defined(MONITOR_HINTS)
+
 static const UBYTE optype6502[256] = {
   0x01, 0x52, 0x01, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
   0x92, 0x62, 0x01, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b,
@@ -311,7 +311,6 @@ static const UBYTE optype6502[256] = {
   0x92, 0x62, 0xe2, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b,
   0xa2, 0x52, 0xa2, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
   0x92, 0x62, 0xf2, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b };
-#endif	/* MONITOR_BREAK || MONITOR_HINTS */
 
 
 static char *get_token(char *string)
@@ -412,7 +411,7 @@ int monitor(void)
 	static char old_s[128] = ""; /* GOLDA CHANGED */
 	int p;
 
-	addr = 0;
+	addr = regPC;
 
 	CPU_GetStatus();
 	
@@ -1062,6 +1061,28 @@ int monitor(void)
 			get_hex(&addr1);
 			addr = disassemble(addr1, 0);
 		}
+		else if (strcmp(t, "LOOP") == 0) {
+			UWORD addr1;
+			UWORD addr2;
+			int ok = FALSE;
+			addr1 = addr;
+			get_hex(&addr1);
+			for (addr2 = addr1; addr2 <= (UWORD) (addr1 + 0x7e); ) {
+				UBYTE opcode = dGetByte(addr2);
+				if ((opcode & 0x1f) == 0x10) {
+					/* branch */
+					UWORD target = addr2 + 2 + (SBYTE) dGetByte(addr2 + 1);
+					if (target <= addr1) {
+						addr = disassemble(target, 0);
+						ok = TRUE;
+						break;
+					}
+				}
+				addr2 += optype6502[opcode] & 3;
+			}
+			if (!ok)
+				printf("Conditional loop containing instruction at %04x not detected\n", addr1);
+		}
 		else if (strcmp(t, "ANTIC") == 0) {
 			printf("DMACTL=%02x    CHACTL=%02x    DLISTL=%02x    "
 				   "DLISTH=%02x    HSCROL=%02x    VSCROL=%02x\n",
@@ -1129,6 +1150,7 @@ int monitor(void)
 			printf("F startaddr endaddr hexval     - Fill memory\n");
 			printf("M [startaddr]                  - Memory list\n");
 			printf("S startaddr endaddr hexval...  - Search memory\n");
+			printf("LOOP [inneraddr]               - Disassemble a loop that contains inneraddr\n");
 			printf("ROM startaddr endaddr          - Convert memory block into ROM\n");
 			printf("RAM startaddr endaddr          - Convert memory block into RAM\n");
 			printf("HARDWARE startaddr endaddr     - Convert memory block into HARDWARE\n");
@@ -1480,6 +1502,9 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.22  2005/08/18 23:32:23  pfusik
+"LOOP"; addr defaults to regPC
+
 Revision 1.21  2005/08/17 22:34:25  pfusik
 fixed VC6 warning; "!command" in HELP only if supported
 
