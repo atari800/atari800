@@ -33,8 +33,9 @@
 #include "antic.h" /* ypos */
 #include "atari.h"
 #include "input.h"
-#include "monitor.h"
 #include "log.h"
+#include "monitor.h"
+#include "ui.h" /* alt_function */
 
 #ifdef SOUND
 #include "sound.h"
@@ -255,90 +256,88 @@ int Atari_Keyboard(void)
 
 	switch (keycode) {
 	case 0x01:
-		keycode = AKEY_CTRL_A;
+		keycode = AKEY_CTRL_a;
 		break;
 	case 0x02:
-		keycode = AKEY_CTRL_B;
+		keycode = AKEY_CTRL_b;
 		break;
-/*
-   case 0x03 :
-   keycode = AKEY_CTRL_C;
-   break;
- */
+	case 0x03 :
+		keycode = AKEY_CTRL_c;
+		break;
 	case 0x04:
-		keycode = AKEY_CTRL_D;
+		keycode = AKEY_CTRL_d;
 		break;
 	case 0x05:
-		keycode = AKEY_CTRL_E;
+		keycode = AKEY_CTRL_e;
 		break;
 	case 0x06:
-		keycode = AKEY_CTRL_F;
+		keycode = AKEY_CTRL_f;
 		break;
 	case 0x07:
-		keycode = AKEY_CTRL_G;
+		keycode = AKEY_CTRL_g;
 		break;
-#if !defined(DJGPP) && !defined(SOLARIS2)
+/*
 	case 0x08:
-		keycode = AKEY_CTRL_H;
+		keycode = AKEY_CTRL_h;
 		break;
-#endif
+ */
 	case 0x09:
 		keycode = AKEY_TAB;
 		break;
 /*
-   case 0x0a :
-   keycode = AKEY_CTRL_J;
-   break;
+	case 0x0a:
+		keycode = AKEY_CTRL_j;
+		break;
  */
 	case 0x0b:
-		keycode = AKEY_CTRL_K;
+		keycode = AKEY_CTRL_k;
 		break;
 	case 0x0c:
-		keycode = AKEY_CTRL_L;
+		keycode = AKEY_CTRL_l;
 		break;
 /*
-   case 0x0d :
-   keycode = AKEY_CTRL_M;
-   break;
+	case 0x0d:
+		keycode = AKEY_CTRL_m;
+		break;
  */
 	case 0x0e:
-		keycode = AKEY_CTRL_N;
+		keycode = AKEY_CTRL_n;
 		break;
 	case 0x0f:
-		keycode = AKEY_CTRL_O;
+		keycode = AKEY_CTRL_o;
 		break;
 	case 0x10:
-		keycode = AKEY_CTRL_P;
+		keycode = AKEY_CTRL_p;
 		break;
 	case 0x11:
-		keycode = AKEY_CTRL_Q;
+		keycode = AKEY_CTRL_q;
 		break;
 	case 0x12:
-		keycode = AKEY_CTRL_R;
+		keycode = AKEY_CTRL_r;
 		break;
 	case 0x13:
-		keycode = AKEY_CTRL_S;
+		keycode = AKEY_CTRL_s;
 		break;
 	case 0x14:
-		keycode = AKEY_CTRL_T;
+		keycode = AKEY_CTRL_t;
 		break;
 	case 0x15:
-		keycode = AKEY_CTRL_U;
+		keycode = AKEY_CTRL_u;
 		break;
 	case 0x16:
-		keycode = AKEY_CTRL_V;
+		keycode = AKEY_CTRL_v;
 		break;
 	case 0x17:
-		keycode = AKEY_CTRL_W;
+		keycode = AKEY_CTRL_w;
 		break;
 	case 0x18:
-		keycode = AKEY_CTRL_X;
+		keycode = AKEY_CTRL_x;
 		break;
 	case 0x19:
-		keycode = AKEY_CTRL_Y;
+		keycode = AKEY_CTRL_y;
 		break;
 	case 0x1a:
-		keycode = AKEY_CTRL_Z;
+		keycode = AKEY_CTRL_z;
 		break;
 	case '`':
 		keycode = AKEY_CAPSTOGGLE;
@@ -649,6 +648,9 @@ int Atari_Keyboard(void)
 	case KEY_F0 + 9:
 		keycode = AKEY_EXIT;
 		break;
+	case KEY_F0 + 10:
+		keycode = AKEY_SCREENSHOT;
+		break;
 	case KEY_DOWN:
 		keycode = AKEY_DOWN;
 		break;
@@ -661,12 +663,12 @@ int Atari_Keyboard(void)
 	case KEY_UP:
 		keycode = AKEY_UP;
 		break;
-#if defined(DJGPP) || defined(SOLARIS2)
 	case 8:
 	case 127:
-#else
-	case 127:
+#ifdef KEY_BACKSPACE
+# if KEY_BACKSPACE != 8 && KEY_BACKSPACE != 127
 	case KEY_BACKSPACE:
+# endif
 #endif
 		keycode = AKEY_BACKSPACE;
 		break;
@@ -674,6 +676,45 @@ int Atari_Keyboard(void)
 	case '\n':
 		keycode = AKEY_RETURN;
 		break;
+#ifdef ALT_A
+	/* PDCurses specific */
+	case ALT_A:
+		alt_function = MENU_ABOUT;
+		keycode = AKEY_UI;
+		break;
+	case ALT_C:
+		alt_function = MENU_CARTRIDGE;
+		keycode = AKEY_UI;
+		break;
+	case ALT_D:
+		alt_function = MENU_DISK;
+		keycode = AKEY_UI;
+		break;
+	case ALT_L:
+		alt_function = MENU_LOADSTATE;
+		keycode = AKEY_UI;
+		break;
+	case ALT_O:
+		alt_function = MENU_SOUND;
+		keycode = AKEY_UI;
+		break;
+	case ALT_R:
+		alt_function = MENU_RUN;
+		keycode = AKEY_UI;
+		break;
+	case ALT_S:
+		alt_function = MENU_SAVESTATE;
+		keycode = AKEY_UI;
+		break;
+	case ALT_W:
+		alt_function = MENU_SOUND_RECORDING;
+		keycode = AKEY_UI;
+		break;
+	case ALT_Y:
+		alt_function = MENU_SYSTEM;
+		keycode = AKEY_UI;
+		break;
+#endif
 	default:
 		keycode = AKEY_NONE;
 		break;
@@ -708,6 +749,12 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.19  2005/08/18 23:28:54  pfusik
+Alt+letter work on PDCurses;
+Ctrl+letter should be Control+letter, not Shift+Control+letter;
+Always treat 0x08 and KEY_BACKSPACE as Backspace;
+F10 = Screenshot
+
 Revision 1.18  2005/08/17 22:24:43  pfusik
 early #include "config.h" fixes warnings with PDCurses;
 flush buffered log when entering monitor
