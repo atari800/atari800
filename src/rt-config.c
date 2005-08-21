@@ -116,10 +116,6 @@ static void RtPresetDefaults()
 	atari_exe_dir[0] = '\0';
 	atari_state_dir[0] = '\0';
 
-#ifdef SUPPORTS_ATARI_CONFIGINIT
-	Atari_ConfigInit();
-#endif
-
 	strcpy(print_command, "lpr %s");
 	hd_read_only = 1;
 	refresh_rate = 1;
@@ -133,6 +129,10 @@ static void RtPresetDefaults()
 	enable_r_patch = 0;
 	enable_new_pokey = 1;
 	stereo_enabled = 0;
+
+#ifdef SUPPORTS_ATARI_CONFIGINIT
+	Atari_ConfigInit();
+#endif
 }
 
 static int is_print_command_safe(const char *command)
@@ -456,6 +456,7 @@ void RtConfigUpdate(void)
 	strcpy(atari_osb_filename, "atariosb.rom");
 	strcpy(atari_xlxe_filename, "atarixl.rom");
 	strcpy(atari_basic_filename, "ataribas.rom");
+	strcpy(atari_5200_filename, "atari5200.rom");
 	strcpy(atari_disk_dirs[0], ".");
 	disk_directories = 1;
 	strcpy(atari_rom_dir, ".");
@@ -573,6 +574,11 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.26  2005/08/21 15:50:11  pfusik
+default filename for the 5200 ROM;
+moved Atari_ConfigInit() to the end of RtPresetDefaults(),
+so the Smartphone port can override enable_new_pokey
+
 Revision 1.25  2005/08/17 22:41:48  pfusik
 is_print_command_safe()
 
