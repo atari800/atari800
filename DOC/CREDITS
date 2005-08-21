@@ -98,6 +98,7 @@ Piotr Fusik <fox@scene.pl>
     - changed ANTIC/CPU synchronization
     - corrected undocumented 6502 opcodes
     - corrected PCX screenshots and added interlaced screenshots
+    - PNG screenshots
     - improved IRQ accuracy
     - ATR write protection
     - monitor improvements
@@ -261,6 +262,10 @@ Radek Sterba <raster@infos.cz>
 
 Petr Sumbera <xsumbe00@stud.fee.vutbr.cz>
     - LPTjoy idea and design of the interface
+
+Steven Tucker <classics@atarimax.com>
+and Wrathchild <atari@mkeates.f9.co.uk>
+    - Atarimax cartridges
 
 Vasyl Tsvirkunov <vasyl@pacbell.net>
     - WinCE port of Atari800

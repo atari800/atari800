@@ -73,6 +73,8 @@ Currently supported cartridge types:
 | 38 | 800/XL/XE | 1024 | Switchable XEGS 1 MB cartridge                    |
 | 39 | 800/XL/XE |    8 | Phoenix 8 KB cartridge                            |
 | 40 | 800/XL/XE |   16 | Blizzard 16 KB cartridge                          |
+| 41 | 800/XL/XE |  128 | Atarimax 128 KB Flash cartridge                   |
+| 42 | 800/XL/XE | 1024 | Atarimax 1 MB Flash cartridge                     |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -444,3 +446,21 @@ stands for the first bank in the image, bank B is the second, etc.
  A 16 KB cartridge, that occupies 16 KB of address space between $8000
  and $BFFF, and can be disabled by an access to $D500-$D5FF.
 
++---------------------------------------------------------------------------+
+| Type 41: Atarimax 128 KB Flash cartridge                                  |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
+ The 4 lowest bits of the address written to $D500-$D50F select the bank
+ mapped to $A000-$BFFF. Writing to $D510-$D51F disables the cartridge
+ and any write to $D520-$D5FF is ignored.
+
++---------------------------------------------------------------------------+
+| Type 42: Atarimax 1 MB Flash cartridge                                    |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
+ The seven lowest bits of the address written to $D500-$D57F select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.

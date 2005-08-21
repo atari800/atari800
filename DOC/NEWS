@@ -8,6 +8,7 @@
    From the user's point of view, loading of Atari Basic programs works
    exactly like loading binary executables: use "-run" from command line
    or "Run Atari program directly" from the User Interface.
+ * Atarimax cartridges
  * improved PERCOM emulation (helps non-standard disk images)
  * stereo now works in DOS ports
  * greatly improved BASIC version:
@@ -19,15 +20,18 @@
    - support for pdcurses
    - small fix for ncurses
    - generates screen basing on the Display List
-   - fixed Tab, Backspace, F2, F3, F4, F8 and Ctrl+letter
-   - fixed -wide2 mode
+   - fixed Tab, Backspace, Insert, Delete, Home, F2, F3, F4, F8 and Ctrl+letter
+   - fixed "-wide2" mode
    - Alt+letter shortcuts work on pdcurses
    - bitmap graphics emulation is now disabled by default
-     (smaller and faster executable), but can be enabled with configure
+     (smaller and faster executable), but can be enabled with "configure"
+ * much faster display in the X11 version
+ * implemented Atari 5200 keys in SDL and X11 versions
  * "-screenshots <pattern>" command-line option
  * new monitor command: "LOOP"
  * "C", "M" and "S" monitor commands support hardware registers
- * small fixes and code clean up
+ * improved "configure" script
+ * many small fixes and major source code clean up
 
 
 Version 1.3.6 (2005/04/30)
