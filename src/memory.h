@@ -1,5 +1,5 @@
 #ifndef _MEMORY_H_
-#define	_MEMORY_H_
+#define _MEMORY_H_
 
 #include <string.h>	/* memcpy, memset */
 
@@ -40,11 +40,11 @@ extern UBYTE memory[65536];
 #ifndef PAGED_ATTRIB
 
 extern UBYTE attrib[65536];
-#define	GetByte(addr)		(attrib[addr] == HARDWARE ? Atari800_GetByte(addr) : memory[addr])
-#define	PutByte(addr, byte)	if (attrib[addr] == RAM) memory[addr] = byte; else if (attrib[addr] == HARDWARE) Atari800_PutByte(addr, byte);
 #define RAM 0
 #define ROM 1
 #define HARDWARE 2
+#define GetByte(addr)		(attrib[addr] == HARDWARE ? Atari800_GetByte(addr) : memory[addr])
+#define PutByte(addr, byte)	 do { if (attrib[addr] == RAM) memory[addr] = byte; else if (attrib[addr] == HARDWARE) Atari800_PutByte(addr, byte); } while (0)
 #define SetRAM(addr1, addr2) memset(attrib + (addr1), RAM, (addr2) - (addr1) + 1)
 #define SetROM(addr1, addr2) memset(attrib + (addr1), ROM, (addr2) - (addr1) + 1)
 #define SetHARDWARE(addr1, addr2) memset(attrib + (addr1), HARDWARE, (addr2) - (addr1) + 1)
@@ -79,13 +79,11 @@ void ROM_PutByte(UWORD addr, UBYTE byte);
 extern int have_basic;
 extern int cartA0BF_enabled;
 
-typedef int ATPtr;
-
 void MEMORY_InitialiseMachine(void);
 void MemStateSave(UBYTE SaveVerbose);
 void MemStateRead(UBYTE SaveVerbose);
-void CopyFromMem(ATPtr from, UBYTE *to, int size);
-void CopyToMem(const UBYTE *from, ATPtr to, int size);
+void CopyFromMem(UWORD from, UBYTE *to, int size);
+void CopyToMem(const UBYTE *from, UWORD to, int size);
 void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval);
 void Cart809F_Disable(void);
 void Cart809F_Enable(void);
