@@ -27,11 +27,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
-
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -42,20 +40,16 @@
 #  include <time.h>
 # endif
 #endif
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-
 #ifdef WIN32
 #include <windows.h>
 #endif
-
 #ifdef __EMX__
 #define INCL_DOS
 #include <os2.h>
 #endif
-
 #ifdef __BEOS__
 #include <OS.h>
 #endif
@@ -307,9 +301,8 @@ static int load_image(const char *filename, UBYTE *buffer, int nbytes)
 
 #include "emuos.h"
 
-int Atari800_InitialiseMachine(void)
+static int load_roms(void)
 {
-	Atari800_ClearAllEsc();
 	switch (machine_type) {
 	case MACHINE_OSA:
 		if (emuos_mode == 2)
@@ -355,6 +348,14 @@ int Atari800_InitialiseMachine(void)
 			return FALSE;
 		break;
 	}
+	return TRUE;
+}
+
+int Atari800_InitialiseMachine(void)
+{
+	Atari800_ClearAllEsc();
+	if (!load_roms())
+		return FALSE;
 	MEMORY_InitialiseMachine();
 	Device_UpdatePatches();
 	return TRUE;
@@ -390,9 +391,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "--usage") == 0 ||
 				 strcmp(argv[i], "--help") == 0) {
-			printf("%s: unrecognized option `%s'\n", argv[0], argv[1]);
-			printf("Try `%s -help' for more information.\n", argv[0]);
-			return FALSE;
+			argv[j++] = "-help";
 		}
 		else if (strcmp(argv[i], "-verbose") == 0) {
 			verbose = TRUE;
@@ -693,7 +692,7 @@ UBYTE Atari800_GetByte(UWORD addr)
 	case 0xd400:				/* ANTIC */
 		byte = ANTIC_GetByte(addr);
 		break;
-	case 0xd500:				/* RTIME-8 */
+	case 0xd500:				/* bank-switching cartridges, RTIME-8 */
 		byte = CART_GetByte(addr);
 		break;
 	default:
@@ -729,7 +728,7 @@ void Atari800_PutByte(UWORD addr, UBYTE byte)
 	case 0xd400:				/* ANTIC */
 		ANTIC_PutByte(addr, byte);
 		break;
-	case 0xd500:				/* Super Cartridges */
+	case 0xd500:				/* bank-switching cartridges, RTIME-8 */
 		CART_PutByte(addr, byte);
 		break;
 	default:
@@ -758,6 +757,8 @@ void Atari800_UpdatePatches(void)
 		/* Set patches */
 		Atari800_PatchOS();
 		Device_UpdatePatches();
+		break;
+	default:
 		break;
 	}
 }
@@ -881,8 +882,9 @@ static void basic_antic_scanline(void)
 	static const UBYTE font40_cycles[4] = { 0, 32, 40, 47 };
 	static const UBYTE font20_cycles[4] = { 0, 16, 20, 24 };
 #ifdef CURSES_BASIC
+	static int scanlines_to_curses_display = 0;
 	static UWORD screenaddr = 0;
-	int newscreenaddr;
+	static UWORD newscreenaddr = 0;
 #endif
 
 	int bytes = 0;
@@ -928,13 +930,14 @@ static void basic_antic_scanline(void)
 				break;
 			}
 #ifdef CURSES_BASIC
-			curses_display_line(IR & 0xf, memory + screenaddr);
+			/* Normally, we would call curses_display_line here,
+			   and not use scanlines_to_curses_display at all.
+			   That would however cause incorrect color of the "MEMORY"
+			   menu item in Self Test - it isn't set properly
+			   in the first scanline. We therefore postpone
+			   curses_display_line call to the next scanline. */
+			scanlines_to_curses_display = 2;
 			newscreenaddr = screenaddr + bytes;
-			/* 4k wrap */
-			if (((screenaddr ^ newscreenaddr) & 0x1000) != 0)
-				screenaddr = newscreenaddr - 0x1000;
-			else
-				screenaddr = newscreenaddr;
 #endif
 			/* just an approximation: doesn't check VSCROL */
 			scanlines_to_dl = mode_scanlines[IR & 0xf];
@@ -949,6 +952,16 @@ static void basic_antic_scanline(void)
 			NMI();
 		}
 	}
+#ifdef CURSES_BASIC
+	if (--scanlines_to_curses_display == 0) {
+		curses_display_line(IR & 0xf, memory + screenaddr);
+		/* 4k wrap */
+		if (((screenaddr ^ newscreenaddr) & 0x1000) != 0)
+			screenaddr = newscreenaddr - 0x1000;
+		else
+			screenaddr = newscreenaddr;
+	}
+#endif
 	xpos += bytes;
 	/* steal cycles in font modes */
 	switch (IR & 0xf) {
@@ -1003,7 +1016,7 @@ static void basic_frame(void)
 	} while (ypos < max_ypos);
 }
 
-#endif /* defined(BASIC) || defined(VERY_SLOW) */
+#endif /* defined(BASIC) || defined(VERY_SLOW) || defined(CURSES_BASIC) */
 
 void Atari800_Frame(void)
 {
@@ -1037,6 +1050,8 @@ void Atari800_Frame(void)
 		Screen_SaveNextScreenshot(TRUE);
 		break;
 #endif /* CURSES_BASIC */
+	default:
+		break;
 	}
 #endif /* BASIC */
 
@@ -1084,19 +1099,43 @@ void Atari800_Frame(void)
 #endif
 }
 
-int prepend_tmpfile_path(char *buffer)
+/* Opens a new temporary file and fills in filename with its name.
+   filename must point to FILENAME_MAX characters buffer, but doesn't need
+   to be initialized. */
+FILE *Atari_tmpfile(char *filename, const char *mode)
 {
-	if (buffer)
-		*buffer = 0;
-	return 0;
+	/* We cannot simply call tmpfile(), because we don't want the file
+	   to be deleted when we close it, and we need the filename. */
+
+#if defined(HAVE_MKSTEMP) && defined(HAVE_FDOPEN)
+	/* this is the only implementation without a race condition */
+	strcpy(filename, "a8XXXXXX");
+	/* mkstemp() modifies the 'X'es and returns an open descriptor */
+	return fdopen(mkstemp(filename), mode);
+#elif defined(HAVE_TMPNAM)
+	/* tmpnam() is better than mktemp(), because it creates filenames
+	   in system's temporary directory. It is also more portable. */
+	return fopen(tmpnam(filename), mode);
+#elif defined(HAVE_MKTEMP)
+	strcpy(filename, "a8XXXXXX");
+	/* mktemp() modifies the 'X'es and returns filename */
+	return fopen(mktemp(filename), mode);
+#else
+	/* Roll-your-own */
+	int no;
+	for (no = 0; no < 1000000; no++) {
+		FILE *fp;
+		sprintf(filename, "a8%06d", no);
+		fp = fopen(filename, "rb");
+		if (fp == NULL)
+			return fopen(filename, mode);
+		fclose(fp);
+	}
+	return NULL;
+#endif
 }
 
 #ifndef BASIC
-
-int ReadDisabledROMs(void)
-{
-	return FALSE;
-}
 
 void MainStateSave(void)
 {
@@ -1232,12 +1271,18 @@ void MainStateRead(void)
 	ReadINT(&pil_on, 1);
 	ReadINT(&default_tv_mode, 1);
 	ReadINT(&default_system, 1);
+	load_roms();
 }
 
 #endif
 
 /*
 $Log$
+Revision 1.68  2005/08/21 15:35:25  pfusik
+fixed loading of non-verbose state files;
+correct highlighting of Self Test menu on CURSES_BASIC;
+"--usage" and "--help" now work; Atari_tmpfile()
+
 Revision 1.67  2005/08/18 23:27:37  pfusik
 Screen_Initialise(); smaller emuos_h
 
