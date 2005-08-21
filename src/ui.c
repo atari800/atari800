@@ -26,13 +26,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>				/* for free() */
-
-#if defined(HAVE_DIRENT_H) && defined(HAVE_OPENDIR)
 /* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
-#define DO_DIR
-#endif
-
-#ifdef DO_DIR
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
 
@@ -79,20 +74,6 @@ UWORD crash_afterCIM;
 int CrashMenu();
 #endif
 
-/* Forward declarations */
-void DiskManagement();
-void CartManagement();
-int RunExe();
-int LoadTape();
-void SelectSystem();
-int SoundSettings();
-void SelectArtifacting();
-void AtariSettings();
-int SaveState();
-int LoadState();
-void Screenshot(int interlaced);
-void MakeBlankDisk(FILE * setFile);
-
 static void SetItemChecked(tMenuItem *mip, int checked)
 {
 	if (checked)
@@ -101,7 +82,7 @@ static void SetItemChecked(tMenuItem *mip, int checked)
 		mip->flags &= ~ITEM_CHECKED;
 }
 
-void SelectSystem(void)
+static void SelectSystem(void)
 {
 	typedef struct {
 		int type;
@@ -162,7 +143,40 @@ void SelectSystem(void)
 	}
 }
 
-void DiskManagement(void)
+/* Inspired by LNG (lng.sourceforge.net) */
+static void MakeBlankDisk(FILE *setFile)
+{
+	unsigned long sectorCnt = 0;
+	unsigned long paras = 0;
+	struct ATR_Header hdr;
+	int fileSize = 0;
+	size_t padding;
+
+	sectorCnt = (unsigned short) (127L / 128L + 3L);
+	paras = sectorCnt * 8;
+	memset(&hdr, 0, sizeof(hdr));
+	hdr.magic1 = (UBYTE) 0x96;
+	hdr.magic2 = (UBYTE) 0x02;
+	hdr.seccountlo = (UBYTE) paras;
+	hdr.seccounthi = (UBYTE) (paras >> 8);
+	hdr.hiseccountlo = (UBYTE) (paras >> 16);
+	hdr.secsizelo = (UBYTE) 128;
+
+	fwrite(&hdr, 1, sizeof(hdr), setFile);
+
+	bootData[9] = (UBYTE) fileSize;
+	bootData[10] = (UBYTE) (fileSize >> 8);
+	bootData[11] = (UBYTE) (fileSize >> 16);
+	bootData[12] = 0;
+
+	fwrite(bootData, 1, 384, setFile);
+
+	padding = (size_t) ((sectorCnt - 3) * 128 - fileSize);
+	if (padding)
+		fwrite(bootData, 1, padding, setFile);
+}
+
+static void DiskManagement(void)
 {
 	static char drive_array[8][7];
 
@@ -261,7 +275,7 @@ void DiskManagement(void)
 				}
 				else {
 					while (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 						DIR *subdir;
 
 						subdir = opendir(filename);
@@ -297,7 +311,7 @@ void DiskManagement(void)
 								}
 							}
 							break;
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 						}
 						else {	/* A directory was selected */
 							closedir(subdir);
@@ -376,6 +390,8 @@ int SelectCartType(int k)
 		{"CRU2", ITEM_ACTION, NULL, "Switchable XEGS 1 MB cartridge", NULL, 38},
 		{"CRU3", ITEM_ACTION, NULL, "Phoenix 8 KB cartridge", NULL, 39},
 		{"CRU4", ITEM_ACTION, NULL, "Blizzard 16 KB cartridge", NULL, 40},
+		{"CRU5", ITEM_ACTION, NULL, "Atarimax 128 KB Flash cartridge", NULL, 41},
+		{"CRU6", ITEM_ACTION, NULL, "Atarimax 1 MB Flash cartridge", NULL, 42},
 		MENU_END
 	};
 
@@ -398,7 +414,7 @@ int SelectCartType(int k)
 	return CART_NONE;
 }
 
-void CartManagement(void)
+static void CartManagement(void)
 {
 	static tMenuItem menu_array[] = {
 		{"CRCR", ITEM_ENABLED | ITEM_FILESEL, NULL, "Create Cartridge from ROM image", NULL, 0},
@@ -611,45 +627,41 @@ void SoundRecording(void)
 }
 #endif
 
-int RunExe(void)
+static void CantLoad(const char *filename)
+{
+	char msg[FILENAME_MAX + 30];
+	sprintf(msg, "Can't load \"%s\"", filename);
+	ui_driver->fMessage(msg);
+}
+
+static int RunExe(void)
 {
 	char exename[FILENAME_MAX + 1];
-	int ret = FALSE;
 
 	if (!curr_exe_dir[0])
 		strcpy(curr_exe_dir, atari_exe_dir);
 	if (ui_driver->fGetLoadFilename(curr_exe_dir, exename)) {
-		ret = BIN_loader(exename);
-		if (!ret) {
-			char msg[FILENAME_MAX + 30];
-			sprintf(msg, "Can't load \"%s\"", exename);
-			ui_driver->fMessage(msg);
-		}
+		if (!BIN_loader(exename))
+			CantLoad(exename);
+		else
+			return TRUE;
 	}
-
-	return ret;
+	return FALSE;
 }
 
-int LoadTape(void)
+static void LoadTape(void)
 {
 	char tapename[FILENAME_MAX + 1];
-	int ret = FALSE;
 
 	if (!curr_tape_dir[0])
 		strcpy(curr_tape_dir, atari_exe_dir);
 	if (ui_driver->fGetLoadFilename(curr_tape_dir, tapename)) {
-		ret = CASSETTE_Insert(tapename);
-		if (!ret) {
-			char msg[FILENAME_MAX + 30];
-			sprintf(msg, "Can't load \"%s\"", tapename);
-			ui_driver->fMessage(msg);
-		}
+		if (!CASSETTE_Insert(tapename))
+			CantLoad(tapename);
 	}
-
-	return ret;
 }
 
-void AtariSettings(void)
+static void AtariSettings(void)
 {
 	static tMenuItem menu_array[] = {
 		{"NBAS", ITEM_ENABLED | ITEM_CHECK, NULL, "Disable BASIC when booting Atari:", NULL, 0},
@@ -710,13 +722,13 @@ void AtariSettings(void)
 	Atari800_UpdatePatches();
 }
 
-int SaveState(void)
+static void SaveState(void)
 {
-	char statename[FILENAME_MAX];
 	char fname[FILENAME_SIZE + 1];
+	char statename[FILENAME_MAX];
 
 	if (!ui_driver->fGetSaveFilename(fname))
-		return 0;
+		return;
 
 	strcpy(statename, atari_state_dir);
 	if (*statename) {
@@ -730,24 +742,27 @@ int SaveState(void)
 	}
 	strcat(statename, fname);
 
-	return SaveAtariState(statename, "wb", TRUE);
+	if (!SaveAtariState(statename, "wb", TRUE)) {
+		char msg[FILENAME_MAX + 30];
+		sprintf(msg, "Can't save \"%s\"", statename);
+		ui_driver->fMessage(msg);
+	}
 }
 
-int LoadState(void)
+static void LoadState(void)
 {
 	char statename[FILENAME_MAX + 1];
-	int ret = FALSE;
 
 	if (!curr_state_dir[0])
 		strcpy(curr_state_dir, atari_state_dir);
-	if (ui_driver->fGetLoadFilename(curr_state_dir, statename))
-		ret = ReadAtariState(statename, "rb");
-
-	return ret;
+	if (ui_driver->fGetLoadFilename(curr_state_dir, statename)) {
+		if (!ReadAtariState(statename, "rb"))
+			CantLoad(statename);
+	}
 }
 
 #ifndef CURSES_BASIC
-void SelectArtifacting(void)
+static void SelectArtifacting(void)
 {
 	static tMenuItem menu_array[] = {
 		{"ARNO", ITEM_ENABLED | ITEM_ACTION, NULL, "none", NULL, 0},
@@ -770,7 +785,7 @@ void SelectArtifacting(void)
 #endif
 
 #ifdef SOUND
-int SoundSettings(void)
+static int SoundSettings(void)
 {
 	static tMenuItem menu_array[] = {
 		{"HFPO", ITEM_ENABLED | ITEM_CHECK, NULL, "High Fidelity POKEY:", NULL, 0},
@@ -841,7 +856,7 @@ int SoundSettings(void)
 void curses_clear_screen(void);
 #endif
 
-void Screenshot(int interlaced)
+static void Screenshot(int interlaced)
 {
 	char fname[FILENAME_SIZE + 1];
 	if (ui_driver->fGetSaveFilename(fname)) {
@@ -867,7 +882,7 @@ void ui(void)
 		{"CASS", ITEM_ENABLED | ITEM_FILESEL, NULL, "Select tape image", NULL, MENU_CASSETTE},
 		{"SYST", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select System", "Alt+Y", MENU_SYSTEM},
 #ifdef SOUND
-		{"SNDS", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Settings", "Alt+O", MENU_SOUND},
+		{"SNDS", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Sound Settings", "Alt+O", MENU_SOUND},
 		{"SREC", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Recording start/stop", "Alt+W", MENU_SOUND_RECORDING},
 #endif
 #ifndef CURSES_BASIC
@@ -879,10 +894,11 @@ void ui(void)
 #ifndef CURSES_BASIC
 #ifdef HAVE_LIBPNG
 		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX screenshot", "F10", MENU_PCX},
+/*		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX interlaced screenshot", "Shift+F10", MENU_PCXI}, */
 #else
 		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX screenshot", "F10", MENU_PCX},
+/*		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX interlaced screenshot", "Shift+F10", MENU_PCXI}, */
 #endif
-/*		{ "PCXI", ITEM_ENABLED|ITEM_FILESEL, NULL, "PCX interlaced screenshot",  "Shift+F10",MENU_PCXI }, */
 #endif
 		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Back to emulated Atari", "Esc", MENU_BACK},
 		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", "F5", MENU_RESETW},
@@ -1054,42 +1070,12 @@ int CrashMenu(void)
 #endif
 
 
-/* Inspired by LNG (lng.sourceforge.net) */
-void MakeBlankDisk(FILE *setFile)
-{
-
-	unsigned long sectorCnt = 0;
-	unsigned long paras = 0;
-	struct ATR_Header hdr;
-	int fileSize = 0;
-	size_t padding;
-
-	sectorCnt = (unsigned short) (127L / 128L + 3L);
-	paras = sectorCnt * 8;
-	memset(&hdr, 0, sizeof(hdr));
-	hdr.magic1 = (UBYTE) 0x96;
-	hdr.magic2 = (UBYTE) 0x02;
-	hdr.seccountlo = (UBYTE) (paras & 0xFF);
-	hdr.seccounthi = (UBYTE) ((paras >> 8) & 0xFF);
-	hdr.hiseccountlo = (UBYTE) ((paras >> 16) & 0xFF);
-	hdr.secsizelo = (UBYTE) 128;
-
-	fwrite(&hdr, 1, sizeof(hdr), setFile);
-
-	bootData[9] = (UBYTE) (fileSize & 0xFF);
-	bootData[10] = (UBYTE) ((fileSize >> 8) & 0xFF);
-	bootData[11] = (UBYTE) ((fileSize >> 16) & 0xFF);
-	bootData[12] = 0;
-
-	fwrite(bootData, 1, 384, setFile);
-
-	padding = (size_t) ((sectorCnt - 3) * 128 - fileSize);
-	if (padding)
-		fwrite(bootData, 1, padding, setFile);
-}
-
 /*
 $Log$
+Revision 1.65  2005/08/21 17:40:06  pfusik
+Atarimax cartridges; error messages for state load/save;
+DO_DIR -> HAVE_OPENDIR; minor clean up
+
 Revision 1.64  2005/08/18 23:34:00  pfusik
 shortcut keys in UI
 
