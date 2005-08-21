@@ -27,43 +27,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
-
+#endif
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
-
 #ifdef HAVE_UNIXIO_H
 #include <unixio.h>
 #endif
-
 #ifdef HAVE_FILE_H
 #include <file.h>
 #endif
-
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-
-#ifdef WIN32
+#ifdef HAVE_DIRECT_H
+/* WIN32 */
 #include <direct.h> /* mkdir, rmdir */
-#include <io.h>     /* mktemp, open */
 #endif
-
-#if defined(HAVE_DIRENT_H) && defined(HAVE_OPENDIR)
 /* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
-/* !VMS */
-#define DO_DIR
-#endif
-
-#ifdef DO_DIR
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
-
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -73,18 +62,6 @@
 #endif
 #ifndef S_IWRITE
 #define S_IWRITE S_IWUSR
-#endif
-
-/* XXX: try tmpfile(), tmpnam(), tempnam() ? */
-#ifndef HAVE_MKSTEMP
-# ifndef HAVE_MKTEMP
-#  define mktemp(a) (a) /* ;-) */
-# endif
-# ifndef O_BINARY
-#  define O_BINARY  0
-# endif
-/* XXX: race condition */
-# define mkstemp(a) open(mktemp(a), O_RDWR | O_CREAT | O_BINARY, 0600)
 #endif
 
 #include "atari.h"
@@ -131,7 +108,7 @@ static char filename[FILENAME_MAX];
 static char newfilename[FILENAME_MAX];
 #endif
 
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 static char pathname[FILENAME_MAX];
 static DIR *dp = NULL;
 #endif
@@ -325,7 +302,7 @@ static void Device_GetFilenames(void)
 }
 #endif
 
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 static int match(char *pattern, char *filename)
 {
 	int status = TRUE;
@@ -360,7 +337,7 @@ static int match(char *pattern, char *filename)
 }
 #endif
 
-#if defined(HAVE_RENAME) && defined(DO_DIR)
+#if defined(HAVE_RENAME) && defined(HAVE_OPENDIR)
 static void fillin(char *pattern, char *filename)
 {
 	while (*pattern) {
@@ -457,7 +434,7 @@ static void Device_ApplyPathToFilename(int devnum)
 	strcpy(filename, path);
 }
 
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 static void Device_SeparateFileFromPath()
 {
 	char *ptr;
@@ -545,7 +522,7 @@ static void Device_HHOPEN(void)
 			SetN;
 		}
 		break;
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 	case 6:
 	case 7:
 		Device_SeparateFileFromPath();
@@ -640,8 +617,11 @@ static void Device_HHOPEN(void)
 					fprintf(fp[fid], "999 FREE SECTORS\n");
 
 				closedir(dp);
-
+#ifdef HAVE_REWIND
 				rewind(fp[fid]);
+#else
+				fseek(fp[fid], 0, SEEK_SET);
+#endif
 
 				flag[fid] = TRUE;
 
@@ -660,7 +640,7 @@ static void Device_HHOPEN(void)
 			SetN;
 		}
 		break;
-#endif /* DO_DIR */
+#endif /* HAVE_OPENDIR */
 	case 8:
 	case 9: /* write at the end of file (append) */
 		if (hd_read_only) {
@@ -914,7 +894,7 @@ static void Device_HHSPEC_Rename(void)
 	cat_path(fname, H[devnum], filename);
 	strcpy(filename, fname);
 
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 	Device_SeparateFileFromPath();
 	dp = opendir(pathname);
 	if (dp) {
@@ -991,7 +971,7 @@ static void Device_HHSPEC_Delete(void)
 	cat_path(fname, H[devnum], filename);
 	strcpy(filename, fname);
 
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 	Device_SeparateFileFromPath();
 	dp = opendir(pathname);
 	if (dp) {
@@ -1065,7 +1045,7 @@ static void Device_HHSPEC_Lock(void)
 	cat_path(fname, H[devnum], filename);
 	strcpy(filename, fname);
 
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 	Device_SeparateFileFromPath();
 	dp = opendir(pathname);
 	if (dp) {
@@ -1127,7 +1107,7 @@ static void Device_HHSPEC_Unlock(void)
 	cat_path(fname, H[devnum], filename);
 	strcpy(filename, fname);
 
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 	Device_SeparateFileFromPath();
 	dp = opendir(pathname);
 	if (dp) {
@@ -1591,7 +1571,7 @@ static void Device_HHINIT(void)
 
 static FILE *phf = NULL;
 static void Device_PHCLOS(void);
-static char spool_file[13];
+static char spool_file[FILENAME_MAX];
 
 static void Device_PHOPEN(void)
 {
@@ -1601,8 +1581,7 @@ static void Device_PHOPEN(void)
 	if (phf)
 		Device_PHCLOS();
 
-	strcpy(spool_file, "SPOOL_XXXXXX");
-	phf = fdopen(mkstemp(spool_file), "w");
+	phf = Atari_tmpfile(spool_file, "w");
 	if (phf) {
 		regY = 1;
 		ClrN;
@@ -1619,16 +1598,12 @@ static void Device_PHCLOS(void)
 		Aprint("PHCLOS");
 
 	if (phf) {
-		char command[256 + 13]; /* 256 for print_command + 13 for spool_file */
+		char command[256 + FILENAME_MAX]; /* 256 for print_command + FILENAME_MAX for spool_file */
 
 		fclose(phf);
 		phf = NULL;
 
-#ifdef HAVE_SNPRINTF
-		snprintf(command, 256, print_command, spool_file);
-#else
 		sprintf(command, print_command, spool_file);
-#endif
 		system(command);
 #if defined(HAVE_UNLINK) && !defined(VMS) && !defined(MACOSX)
 		if (unlink(spool_file) == -1) {
@@ -2250,6 +2225,10 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.33  2005/08/21 15:42:10  pfusik
+Atari_tmpfile(); DO_DIR -> HAVE_OPENDIR;
+#ifdef HAVE_ERRNO_H; #ifdef HAVE_REWIND
+
 Revision 1.32  2005/08/17 22:32:34  pfusik
 direct.h and io.h on WIN32; fixed VC6 warnings
 
