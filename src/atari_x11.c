@@ -41,12 +41,6 @@
 typedef unsigned char ubyte;
 typedef unsigned short uword;
 
-/*
- * Note: For SHM version check if image_data or the pixmap is needed
- *       Check if rect, nrects, points and npoints are needed.
- *       scanline_ptr.
- */
-
 #ifdef XVIEW
 #include <xview/xview.h>
 #include <xview/frame.h>
@@ -142,8 +136,8 @@ enum {
 static int x11bug = FALSE;
 static int private_cmap = FALSE;
 
-static int window_width=ATARI_WIDTH;
-static int window_height=ATARI_HEIGHT;
+static int window_width = 336;
+static int window_height = ATARI_HEIGHT;
 
 static int clipping_factor = 1;
 static int clipping_x = 24;
@@ -206,13 +200,9 @@ static int js0_mode = -1;
 static int js1_mode = -1;
 
 #ifndef SHM
-static int last_colour = -1;
 
-#define	NPOINTS	(4096/4)
-#define	NRECTS	(4096/4)
-
-static int nrects = 0;
-static int npoints = 0;
+#define	NPOINTS	(4096 / 4)
+#define	NRECTS	(4096 / 4)
 
 static XPoint points[NPOINTS];
 static XRectangle rectangles[NRECTS];
@@ -222,31 +212,25 @@ static int keyboard_consol = CONSOL_NONE;
 static int menu_consol = CONSOL_NONE;
 static int screen_dump = 0;
 
-/*
-   ==========================================
-   Import a few variables from atari_custom.c
-   ==========================================
- */
-
 extern int refresh_rate;
-extern double deltatime;
 extern double fps;
-extern int nframes;
 
-static int autorepeat=1;
-static int last_focus=FocusOut;
+static int autorepeat = 1;
+static int last_focus = FocusOut;
 
 void autorepeat_get(void)
 {
 	XKeyboardState kstat;
 
 	XGetKeyboardControl(display, &kstat);
-	autorepeat=kstat.global_auto_repeat;
+	autorepeat = kstat.global_auto_repeat;
 }
+
 void autorepeat_off(void)
 {
 	XAutoRepeatOff(display);
 }
+
 void autorepeat_restore(void)
 {
 	if (autorepeat)
@@ -291,7 +275,7 @@ int GetKeyCode(XEvent *event)
 		last_focus = FocusOut;
 		break;
 	case VisibilityNotify:
-		if (((XVisibilityEvent*)event)->state == VisibilityFullyObscured)
+		if (((XVisibilityEvent*) event)->state == VisibilityFullyObscured)
 			invisible = 1;
 		else
 			invisible = 0;
@@ -309,47 +293,14 @@ int GetKeyCode(XEvent *event)
 		case XK_Control_R:
 			CONTROL = AKEY_CTRL;
 			break;
-		case XK_Caps_Lock:
-			if (SHIFT)
-				keycode = AKEY_CAPSLOCK;
-			else
-				keycode = AKEY_CAPSTOGGLE;
-			break;
-		case XK_Shift_Lock:
-			if (x11bug)
-				printf("XK_Shift_Lock\n");
-			break;
-		case XK_Alt_L:
-		case XK_Alt_R:
-			keycode = AKEY_ATARI;
-			break;
 		case XK_F1:
 			keycode = AKEY_UI;
-			break;
-		case XK_F2:
-			keyboard_consol &= (~CONSOL_OPTION);
-			keycode = AKEY_NONE;
-			break;
-		case XK_F3:
-			keyboard_consol &= (~CONSOL_SELECT);
-			keycode = AKEY_NONE;
-			break;
-		case XK_F4:
-			keyboard_consol &= (~CONSOL_START);
-			keycode = AKEY_NONE;
 			break;
 		case XK_F5:
 			keycode = AKEY_WARMSTART;
 			break;
 		case XK_L5:
 			keycode = AKEY_COLDSTART;
-			break;
-		case XK_F6:
-			keycode = AKEY_HELP;
-			break;
-		case XK_Break:
-		case XK_F7:
-			keycode = AKEY_BREAK;
 			break;
 		case XK_L8:
 			screen_dump = (1 - screen_dump);
@@ -372,8 +323,150 @@ int GetKeyCode(XEvent *event)
 			else
 				deltatime = 0.0;
 			break;
+		case XK_Left:
+			keycode = AKEY_LEFT;
+			keypad_stick &= STICK_LEFT;
+			break;
+		case XK_Up:
+			keycode = AKEY_UP;
+			keypad_stick &= STICK_FORWARD;
+			break;
+		case XK_Right:
+			keycode = AKEY_RIGHT;
+			keypad_stick &= STICK_RIGHT;
+			break;
+		case XK_Down:
+			keycode = AKEY_DOWN;
+			keypad_stick &= STICK_BACK;
+			break;
+		case XK_KP_0:
+			keypad_trig = 0;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_1:
+			keypad_stick = STICK_LL;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_2:
+			keypad_stick &= STICK_BACK;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_3:
+			keypad_stick = STICK_LR;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_4:
+			keypad_stick &= STICK_LEFT;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_5:
+			keypad_stick = STICK_CENTRE;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_6:
+			keypad_stick &= STICK_RIGHT;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_7:
+			keypad_stick = STICK_UL;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_8:
+			keypad_stick &= STICK_FORWARD;
+			keycode = AKEY_NONE;
+			break;
+		case XK_KP_9:
+			keypad_stick = STICK_UR;
+			keycode = AKEY_NONE;
+			break;
+		}
+		if (machine_type == MACHINE_5200 && !ui_is_active) {
+			switch (keysym) {
+			case XK_F4:
+				keycode = SHIFT | AKEY_5200_START;
+				break;
+			case XK_P:
+			case XK_p:
+				keycode = SHIFT | AKEY_5200_PAUSE;
+				break;
+			case XK_R:
+			case XK_r:
+				keycode = SHIFT | AKEY_5200_RESET;
+				break;
+			case XK_0:
+				keycode = SHIFT | AKEY_5200_0;
+				break;
+			case XK_1:
+				keycode = SHIFT | AKEY_5200_1;
+				break;
+			case XK_2:
+				keycode = SHIFT | AKEY_5200_2;
+				break;
+			case XK_3:
+				keycode = SHIFT | AKEY_5200_3;
+				break;
+			case XK_4:
+				keycode = SHIFT | AKEY_5200_4;
+				break;
+			case XK_5:
+				keycode = SHIFT | AKEY_5200_5;
+				break;
+			case XK_6:
+				keycode = SHIFT | AKEY_5200_6;
+				break;
+			case XK_7:
+				keycode = SHIFT | AKEY_5200_7;
+				break;
+			case XK_8:
+				keycode = SHIFT | AKEY_5200_8;
+				break;
+			case XK_9:
+				keycode = SHIFT | AKEY_5200_9;
+				break;
+			/* XXX: "SHIFT | " harmful for '#' and '*' ? */
+			case XK_numbersign:
+			case XK_equal:
+				keycode = AKEY_5200_HASH;
+				break;
+			case XK_asterisk:
+				keycode = AKEY_5200_ASTERISK;
+				break;
+			}
+			break;
+		}
+		switch (keysym) {
+		case XK_Caps_Lock:
+			keycode = SHIFT | CONTROL | AKEY_CAPSTOGGLE;
+			break;
+		case XK_Shift_Lock:
+			if (x11bug)
+				printf("XK_Shift_Lock\n");
+			break;
+		case XK_Alt_L:
+		case XK_Alt_R:
+			keycode = AKEY_ATARI;
+			break;
+		case XK_F2:
+			keyboard_consol &= (~CONSOL_OPTION);
+			keycode = AKEY_NONE;
+			break;
+		case XK_F3:
+			keyboard_consol &= (~CONSOL_SELECT);
+			keycode = AKEY_NONE;
+			break;
+		case XK_F4:
+			keyboard_consol &= (~CONSOL_START);
+			keycode = AKEY_NONE;
+			break;
+		case XK_F6:
+			keycode = AKEY_HELP;
+			break;
+		case XK_Break:
+		case XK_F7:
+			keycode = AKEY_BREAK;
+			break;
 		case XK_Home:
-			keycode = 0x76;
+			keycode = AKEY_CLEAR;
 			break;
 		case XK_Insert:
 			if (SHIFT)
@@ -395,128 +488,107 @@ int GetKeyCode(XEvent *event)
 			else if (SHIFT)
 				keycode = AKEY_DELETE_LINE;
 			else
-				keycode = AKEY_BACKSPACE;
+				keycode = AKEY_BACKSPACE; /* XXX */
 			break;
 		case XK_End:
-			keycode = AKEY_HELP;
-			break;
-		case XK_Left:
-			keycode = AKEY_LEFT;
-			keypad_stick &= STICK_LEFT;
-			break;
-		case XK_Up:
-			keycode = AKEY_UP;
-			keypad_stick &= STICK_FORWARD;
-			break;
-		case XK_Right:
-			keycode = AKEY_RIGHT;
-			keypad_stick &= STICK_RIGHT;
-			break;
-		case XK_Down:
-			keycode = AKEY_DOWN;
-			keypad_stick &= STICK_BACK;
+			keycode = SHIFT | CONTROL | AKEY_HELP;
 			break;
 		case XK_Escape:
-			keycode = AKEY_ESCAPE;
+			keycode = SHIFT | CONTROL | AKEY_ESCAPE;
 			break;
 		case XK_Tab:
-			if (CONTROL)
-				keycode = AKEY_CLRTAB;
-			else if (SHIFT)
-				keycode = AKEY_SETTAB;
-			else
-				keycode = AKEY_TAB;
+			keycode = SHIFT | CONTROL | AKEY_TAB;
 			break;
 		case XK_exclam:
-			keycode = AKEY_EXCLAMATION;
+			keycode = CONTROL | AKEY_EXCLAMATION;
 			break;
 		case XK_quotedbl:
-			keycode = AKEY_DBLQUOTE;
+			keycode = CONTROL | AKEY_DBLQUOTE;
 			break;
 		case XK_numbersign:
-			keycode = AKEY_HASH;
+			keycode = CONTROL | AKEY_HASH;
 			break;
 		case XK_dollar:
-			keycode = AKEY_DOLLAR;
+			keycode = CONTROL | AKEY_DOLLAR;
 			break;
 		case XK_percent:
-			keycode = AKEY_PERCENT;
+			keycode = CONTROL | AKEY_PERCENT;
 			break;
 		case XK_ampersand:
-			keycode = AKEY_AMPERSAND;
+			keycode = CONTROL | AKEY_AMPERSAND;
 			break;
 		case XK_quoteright:
-			keycode = AKEY_QUOTE;
+			keycode = CONTROL | AKEY_QUOTE;
 			break;
 		case XK_at:
-			keycode = AKEY_AT;
+			keycode = CONTROL | AKEY_AT;
 			break;
 		case XK_parenleft:
-			keycode = AKEY_PARENLEFT;
+			keycode = CONTROL | AKEY_PARENLEFT;
 			break;
 		case XK_parenright:
-			keycode = AKEY_PARENRIGHT;
+			keycode = CONTROL | AKEY_PARENRIGHT;
 			break;
 		case XK_less:
-			keycode = AKEY_LESS;
+			keycode = CONTROL | AKEY_LESS;
 			break;
 		case XK_greater:
-			keycode = AKEY_GREATER;
+			keycode = CONTROL | AKEY_GREATER;
 			break;
 		case XK_equal:
-			keycode = AKEY_EQUAL;
+			keycode = CONTROL | AKEY_EQUAL;
 			break;
 		case XK_question:
-			keycode = AKEY_QUESTION;
+			keycode = CONTROL | AKEY_QUESTION;
 			break;
 		case XK_minus:
-			keycode = AKEY_MINUS;
+			keycode = CONTROL | AKEY_MINUS;
 			break;
 		case XK_plus:
-			keycode = AKEY_PLUS;
+			keycode = CONTROL | AKEY_PLUS;
 			break;
 		case XK_asterisk:
-			keycode = AKEY_ASTERISK;
+			keycode = CONTROL | AKEY_ASTERISK;
 			break;
 		case XK_slash:
-			keycode = AKEY_SLASH;
+			keycode = CONTROL | AKEY_SLASH;
 			break;
 		case XK_colon:
-			keycode = AKEY_COLON;
+			keycode = CONTROL | AKEY_COLON;
 			break;
 		case XK_semicolon:
-			keycode = AKEY_SEMICOLON;
+			keycode = CONTROL | AKEY_SEMICOLON;
 			break;
 		case XK_comma:
-			keycode = AKEY_COMMA;
+			keycode = CONTROL | AKEY_COMMA;
 			break;
 		case XK_period:
-			keycode = AKEY_FULLSTOP;
+			keycode = CONTROL | AKEY_FULLSTOP;
 			break;
 		case XK_underscore:
-			keycode = AKEY_UNDERSCORE;
+			keycode = CONTROL | AKEY_UNDERSCORE;
 			break;
 		case XK_bracketleft:
-			keycode = AKEY_BRACKETLEFT;
+			keycode = CONTROL | AKEY_BRACKETLEFT;
 			break;
 		case XK_bracketright:
-			keycode = AKEY_BRACKETRIGHT;
+			keycode = CONTROL | AKEY_BRACKETRIGHT;
 			break;
 		case XK_asciicircum:
-			keycode = AKEY_CIRCUMFLEX;
+			keycode = CONTROL | AKEY_CIRCUMFLEX;
 			break;
 		case XK_backslash:
-			keycode = AKEY_BACKSLASH;
+			keycode = CONTROL | AKEY_BACKSLASH;
 			break;
 		case XK_bar:
-			keycode = AKEY_BAR;
+			keycode = CONTROL | AKEY_BAR;
 			break;
 		case XK_space:
-			keycode = AKEY_SPACE;
+			keycode = SHIFT | CONTROL | AKEY_SPACE;
 			keypad_trig = 0;
 			break;
 		case XK_Return:
-			keycode = AKEY_RETURN;
+			keycode = SHIFT | CONTROL | AKEY_RETURN;
 			keypad_stick = STICK_CENTRE;
 			break;
 		case XK_0:
@@ -653,46 +725,6 @@ int GetKeyCode(XEvent *event)
 		case XK_z:
 			keycode = SHIFT | CONTROL | AKEY_z;
 			break;
-		case XK_KP_0:
-			keypad_trig = 0;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_1:
-			keypad_stick = STICK_LL;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_2:
-			keypad_stick &= STICK_BACK;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_3:
-			keypad_stick = STICK_LR;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_4:
-			keypad_stick &= STICK_LEFT;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_5:
-			keypad_stick = STICK_CENTRE;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_6:
-			keypad_stick &= STICK_RIGHT;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_7:
-			keypad_stick = STICK_UL;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_8:
-			keypad_stick &= STICK_FORWARD;
-			keycode = AKEY_NONE;
-			break;
-		case XK_KP_9:
-			keypad_stick = STICK_UR;
-			keycode = AKEY_NONE;
-			break;
 		default:
 			if (x11bug)
 				printf("Pressed Keysym = %x\n", (int) keysym);
@@ -711,12 +743,6 @@ int GetKeyCode(XEvent *event)
 			keypad_trig = 1;
 		case XK_Control_R:
 			CONTROL = 0x00;
-			break;
-		case XK_Caps_Lock:
-			if (SHIFT)
-				keycode = AKEY_CAPSLOCK;
-			else
-				keycode = AKEY_CAPSTOGGLE;
 			break;
 		case XK_Shift_Lock:
 			if (x11bug)
@@ -737,19 +763,19 @@ int GetKeyCode(XEvent *event)
 			break;
 		case XK_Down:
 		case XK_KP_2:
-			keypad_stick |= 0x0f ^ STICK_BACK;
+			keypad_stick |= STICK_CENTRE ^ STICK_BACK;
 			break;
 		case XK_Left:
 		case XK_KP_4:
-			keypad_stick |= 0x0f ^ STICK_LEFT;
+			keypad_stick |= STICK_CENTRE ^ STICK_LEFT;
 			break;
 		case XK_Right:
 		case XK_KP_6:
-			keypad_stick |= 0x0f ^ STICK_RIGHT;
+			keypad_stick |= STICK_CENTRE ^ STICK_RIGHT;
 			break;
 		case XK_Up:
 		case XK_KP_8:
-			keypad_stick |= 0x0f ^ STICK_FORWARD;
+			keypad_stick |= STICK_CENTRE ^ STICK_FORWARD;
 			break;
 		case XK_KP_1:
 		case XK_KP_3:
@@ -767,7 +793,7 @@ int GetKeyCode(XEvent *event)
 }
 
 #if defined(XVIEW) || defined(MOTIF)
-static int insert_rom(char *filename)
+static int insert_rom(const char *filename)
 {
 	int r;
 	r = CART_Insert(filename);
@@ -885,11 +911,8 @@ void eject_callback(void)
 						   NOTICE_BUTTON, "8", 8,
 						   NULL);
 
-	if ((diskno < 1) || (diskno > 8)) {
-		printf("Invalid diskno: %d\n", diskno);
-		exit(1);
-	}
-	SIO_Dismount(diskno);
+	if (diskno >= 1 && diskno <= 8)
+		SIO_Dismount(diskno);
 }
 
 void disable_callback(void)
@@ -910,11 +933,8 @@ void disable_callback(void)
 						   NOTICE_BUTTON, "8", 8,
 						   NULL);
 
-	if ((diskno < 1) || (diskno > 8)) {
-		printf("Invalid driveno: %d\n", diskno);
-		exit(1);
-	}
-	SIO_DisableDrive(diskno);
+	if (diskno >= 1 && diskno <= 8)
+		SIO_DisableDrive(diskno);
 }
 
 int rom_change(char *a, char *full_filename, char *filename)
@@ -1132,7 +1152,7 @@ void js1_callback(void)
 			   NULL);
 	}
 }
-#endif
+#endif /* LINUX_JOYSTICK */
 
 void performance_ok_callback(void)
 {
@@ -1153,7 +1173,7 @@ void refresh_callback(Panel_item item, int value, Event * event)
 	refresh_rate = value;
 }
 
-#endif
+#endif /* XVIEW */
 
 void Atari_WhatIs(int mode)
 {
@@ -1177,6 +1197,7 @@ void Atari_WhatIs(int mode)
 }
 
 #ifdef MOTIF
+
 void motif_boot_disk(Widget fs, XtPointer client_data,
 					 XtPointer cbs)
 {
@@ -1382,8 +1403,8 @@ void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
 	}
 }
 
-void motif_keypress(Widget w, XtPointer client_data, XEvent * event,
-					Boolean * continue_to_dispatch)
+void motif_keypress(Widget w, XtPointer client_data, XEvent *event,
+					Boolean *continue_to_dispatch)
 {
 	int keycode;
 
@@ -1392,20 +1413,18 @@ void motif_keypress(Widget w, XtPointer client_data, XEvent * event,
 		xview_keycode = keycode;
 }
 
-void motif_exposure(Widget w, XtPointer client_data, XEvent * event,
-					Boolean * continue_to_dispatch)
+void motif_exposure(Widget w, XtPointer client_data, XEvent *event,
+					Boolean *continue_to_dispatch)
 {
 	modified = TRUE;
 }
 
-#endif
+#endif /* MOTIF */
 
 void Atari_Initialise(int *argc, char *argv[])
 {
-#ifndef XVIEW
-#ifndef MOTIF
+#if !defined(XVIEW) && !defined(MOTIF)
 	XSetWindowAttributes xswda;
-#endif
 #endif
 
 	XGCValues xgcvl;
@@ -1847,7 +1866,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		   NULL,
 		   NULL);
 
-#endif
+#endif /* XVIEW */
 
 #ifdef MOTIF
 	{
@@ -2167,10 +2186,9 @@ void Atari_Initialise(int *argc, char *argv[])
 	}
 	depth = XDefaultDepthOfScreen(screen);
 	cmap = XDefaultColormapOfScreen(screen);
-#endif
+#endif /* MOTIF */
 
-#ifndef MOTIF
-#ifndef XVIEW
+#if !defined(XVIEW) && !defined(MOTIF)
 	display = XOpenDisplay(NULL);
 	if (!display) {
 		printf("Failed to open display\n");
@@ -2208,8 +2226,7 @@ void Atari_Initialise(int *argc, char *argv[])
 						   &xswda);
 
 	XStoreName(display, window, ATARI_TITLE);
-#endif
-#endif
+#endif /* !defined(XVIEW) && !defined(MOTIF) */
 
 #ifdef SHM
 	{
@@ -2231,7 +2248,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		shmsize = (window_width * window_height *
 					image->bits_per_pixel) / 8;
 
-
 		shminfo.shmid = shmget(IPC_PRIVATE, shmsize, IPC_CREAT | 0777);
 		shminfo.shmaddr = image->data = shmat(shminfo.shmid, 0, 0);
 		shminfo.readOnly = False;
@@ -2246,7 +2262,7 @@ void Atari_Initialise(int *argc, char *argv[])
 #else
 	pixmap = XCreatePixmap(display, window,
 						   window_width, window_height, depth);
-#endif
+#endif /* SHM */
 
 	if (depth <= 8)
 		colorstep = 2;
@@ -2266,13 +2282,13 @@ void Atari_Initialise(int *argc, char *argv[])
 							 cmap,
 							 &colour);
 
-		for (j=0; j<colorstep; j++)
-			colours[i+j] = colour.pixel;
+		for (j = 0; j < colorstep; j++)
+			colours[i + j] = colour.pixel;
 
 #ifdef SHM
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-		for (j=0; j<colorstep; j++)
-			colour_translation_table[i+j] = colours[i+j] | (colours[i+j] << 8);
+		for (j = 0; j < colorstep; j++)
+			colour_translation_table[i + j] = colours[i + j] | (colours[i + j] << 8);
 #endif
 #endif
 	}
@@ -2296,13 +2312,16 @@ void Atari_Initialise(int *argc, char *argv[])
 #ifndef SHM
 	XFillRectangle(display, pixmap, gc, 0, 0,
 				   window_width, window_height);
+	for (i = 0; i < NRECTS; i++)
+		rectangles[i].height = (windowsize == Huge) ? 3 : 2;
 #endif
 
 	XMapWindow(display, window);
 
 	XSync(display, False);
 	autorepeat_get();
-/*
+
+ /*
    ============================
    Storage for Atari 800 Screen
    ============================
@@ -2384,31 +2403,7 @@ int Atari_Exit(int run_monitor)
 	return restart;
 }
 
-#ifndef SHM
-void Atari_ScanLine_Flush(void)
-{
-	if (windowsize == Small) {
-		if (npoints != 0) {
-			XDrawPoints(display, pixmap, gc_colour[last_colour],
-						points, npoints, CoordModeOrigin);
-			npoints = 0;
-			modified = TRUE;
-		}
-	}
-	else {
-		if (nrects != 0) {
-			XFillRectangles(display, pixmap, gc_colour[last_colour],
-							rectangles, nrects);
-			nrects = 0;
-			modified = TRUE;
-		}
-	}
-
-	last_colour = -1;
-}
-#endif
-
-void ScreenDump(void)
+static void ScreenDump(void)
 {
 	static char command[128];
 	static int frame_num = 0;
@@ -2423,460 +2418,275 @@ void ScreenDump(void)
 	system(command);
 }
 
-void Atari_DisplayScreen(UBYTE * screen)
+void Atari_DisplayScreen(UBYTE *screen)
 {
 	static char status_line[64];
 	int update_status_line = FALSE;
 
+	if (!invisible) {
+		const UBYTE *ptr2 = screen + clipping_y * ATARI_WIDTH + clipping_x;
+
 #ifdef SHM
-	int first_x, last_x, first_y, last_y;
-	int xpos;
-	int ypos;
 
-	first_x = ATARI_WIDTH;
-	last_x = -1000;
-	first_y = ATARI_HEIGHT;
-	last_y = -1000;
+		int first_x = ATARI_WIDTH;
+		int last_x = -1000;
+		int first_y = ATARI_HEIGHT;
+		int last_y = -1000;
+		int x;
+		int y;
 
-	if (invisible)
-		goto after_screen_update;  /* mmm */
-	if (image->bits_per_pixel == 32) {
-		ULONG *ptr = (ULONG *) image->data;
-		UBYTE *ptr2 = screen;
-		ULONG help_color;
+#define SHM_SET_LAST \
+		last_y = y; \
+		if (x > last_x) \
+			last_x = x; \
+		if (x < first_x) \
+			first_x = x;
 
-		if (windowsize == Small) {
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
-						}
-						if (xpos < first_x) {
-							first_x = xpos;
-						}
-						*ptr++ = help_color;
-					}
-					else {
-						ptr++;
-					}
-				}
-
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
-				}
+#define SHM_DISPLAY_SCREEN(pixel_type) \
+			pixel_type *ptr = (pixel_type *) image->data; \
+			pixel_type help_color; \
+			if (windowsize == Small) { \
+				for (y = clipping_y; y < (clipping_y + clipping_height); y++) { \
+					for (x = clipping_x; x < (clipping_x + clipping_width); x++) { \
+						help_color = colours[*ptr2++]; \
+						if (help_color != *ptr) { \
+							SHM_SET_LAST \
+							*ptr = help_color; \
+						} \
+						ptr++; \
+					} \
+					if (first_y > last_y && last_y >= 0) \
+						first_y = last_y; \
+					ptr2 += ATARI_WIDTH - clipping_width; \
+				} \
+			} \
+			else if (windowsize == Large) { \
+				for (y = clipping_y; y < (clipping_y + clipping_height); y++) { \
+					pixel_type *ptr_second_line = ptr + window_width; \
+					for (x = clipping_x; x < (clipping_x + clipping_width); x++) { \
+						help_color = colours[*ptr2++]; \
+						if (help_color != *ptr) { \
+							SHM_SET_LAST \
+							ptr[0] = help_color; \
+							ptr[1] = help_color; \
+							ptr_second_line[0] = help_color; \
+							ptr_second_line[1] = help_color; \
+						} \
+						ptr += 2; \
+						ptr_second_line += 2; \
+					} \
+					if (first_y > last_y && last_y >= 0) \
+						first_y = last_y; \
+					ptr2 += ATARI_WIDTH - clipping_width; \
+					ptr += window_width; \
+				} \
+			} \
+			else { \
+				for (y = clipping_y; y < (clipping_y + clipping_height); y++) { \
+					pixel_type *ptr_second_line = ptr + window_width; \
+					pixel_type *ptr_third_line = ptr + window_width + window_width; \
+					for (x = clipping_x; x < (clipping_x + clipping_width); x++) { \
+						help_color = colours[*ptr2++]; \
+						if (help_color != *ptr) { \
+							SHM_SET_LAST \
+							ptr[0] = help_color; \
+							ptr[1] = help_color; \
+							ptr[2] = help_color; \
+							ptr_second_line[0] = help_color; \
+							ptr_second_line[1] = help_color; \
+							ptr_second_line[2] = help_color; \
+							ptr_third_line[0] = help_color; \
+							ptr_third_line[1] = help_color; \
+							ptr_third_line[2] = help_color; \
+						} \
+						ptr += 3; \
+						ptr_second_line += 3; \
+						ptr_third_line += 3; \
+					} \
+					if (first_y > last_y && last_y >= 0) \
+						first_y = last_y; \
+					ptr2 += ATARI_WIDTH - clipping_width; \
+					ptr += window_width + window_width; \
+				} \
 			}
-		}
-		else if (windowsize == Large) {
-			ULONG *ptr_second_line;
-			
-			ptr_second_line = ptr + window_width;
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
-						}
-						if (xpos < first_x) {
-							first_x = xpos;
-						}
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-					}
-					else {
-						ptr += 2;
-						ptr_second_line += 2;
-					}
-				}
 
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
+		if (image->bits_per_pixel == 32) {
+			SHM_DISPLAY_SCREEN(ULONG)
+		}
+		else if (image->bits_per_pixel == 16) {
+			SHM_DISPLAY_SCREEN(UWORD)
+		}
+		else if (image->bits_per_pixel == 8) {
+			SHM_DISPLAY_SCREEN(UBYTE)
+		}
+
+		if (modified) {
+			XShmPutImage(display, window, gc, image, 0, 0, 0, 0,
+					 window_width, window_height, 0);
+			modified = FALSE;
+		}
+		else if (last_y >= 0) {
+			last_x++;
+			last_y++;
+			if (first_x < clipping_x)
+				first_x = clipping_x;
+			if (last_x > clipping_x + clipping_width)
+				last_x = clipping_x + clipping_width;
+			else if (last_x <= first_x)
+				last_x = first_x + 1;
+			if (first_y < clipping_y)
+				first_y = clipping_y;
+			if (last_y > clipping_y + clipping_height)
+				last_y = clipping_y + clipping_height;
+			else if (last_y <= first_y)
+				last_y = first_y + 1;
+
+			first_x *= clipping_factor;
+			last_x *= clipping_factor;
+			first_y *= clipping_factor;
+			last_y *= clipping_factor;
+	
+			XShmPutImage(display, window, gc, image,
+					 first_x - (clipping_x * clipping_factor),
+					 first_y - (clipping_y * clipping_factor),
+					 first_x - (clipping_x * clipping_factor),
+					 first_y - (clipping_y * clipping_factor),
+					 last_x - first_x, last_y - first_y, 0);
+		}
+
+		XSync(display, FALSE);
+
+#else /* SHM */
+
+		UBYTE *ptr = image_data + clipping_y * ATARI_WIDTH + clipping_x;
+		int n = 0;
+		int last_colour = -1;
+		int x;
+		int y;
+
+		switch (windowsize) {
+		case Small:
+			for (y = 0; y < clipping_height; y++) {
+				for (x = 0; x < clipping_width; x++) {
+					UBYTE colour = *ptr2++;
+					if (colour != *ptr) {
+						*ptr = colour;
+						if (colour != last_colour || n >= NPOINTS) {
+							if (n > 0) {
+								XDrawPoints(display, pixmap, gc_colour[last_colour],
+											points, n, CoordModeOrigin);
+								n = 0;
+								modified = TRUE;
+							}
+							last_colour = colour;
+						}
+						points[n].x = x;
+						points[n].y = y;
+						n++;
+					}
+					ptr++;
 				}
-				ptr += window_width;
-				ptr_second_line += window_width;
+				ptr += ATARI_WIDTH - clipping_width;
+				ptr2 += ATARI_WIDTH - clipping_width;
 			}
-		}
-		else /* if (windowsize == Huge) */ {
-			ULONG *ptr_second_line;
-			ULONG *ptr_third_line;
-
-			ptr_second_line = ptr + window_width;
-			ptr_third_line = ptr + window_width + window_width;
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
-						}
-						if (xpos < first_x) {
-							first_x = xpos;
-						}
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_third_line++ = help_color;
-						*ptr_third_line++ = help_color;
-						*ptr_third_line++ = help_color;
-					}
-					else {
-						ptr += 3;
-						ptr_second_line += 3;
-						ptr_third_line += 3;
-					}
-				}
-
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
-				}
-				ptr += (window_width + window_width);
-				ptr_second_line += (window_width + window_width);
-				ptr_third_line += (window_width + window_width);
+			if (n > 0) {
+				XDrawPoints(display, pixmap, gc_colour[last_colour],
+							points, n, CoordModeOrigin);
+				modified = TRUE;
 			}
-		}
-	}
-	else if (image->bits_per_pixel == 16) {
-		UWORD *ptr = (UWORD *) image->data;
-		UBYTE *ptr2 = screen;
-		UWORD help_color;
-
-		if (windowsize == Small) {
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
+			break;
+		case Large:
+			for (y = 0; y < window_height; y += 2) {
+				for (x = 0; x < window_width; ) {
+					UBYTE colour = *ptr2++;
+					if (colour != *ptr) {
+						int width = 2;
+						*ptr++ = colour;
+						if (colour != last_colour || n >= NRECTS) {
+							if (n > 0) {
+								XFillRectangles(display, pixmap, gc_colour[last_colour],
+												rectangles, n);
+								n = 0;
+								modified = TRUE;
+							}
+							last_colour = colour;
 						}
-						if (xpos < first_x) {
-							first_x = xpos;
+						rectangles[n].x = x;
+						rectangles[n].y = y;
+						while ((x += 2) < window_width && colour == *ptr2 && colour != *ptr) {
+							width += 2;
+							ptr2++;
+							*ptr++ = colour;
 						}
-						*ptr++ = help_color;
+						rectangles[n].width = width;
+						/* rectangles[n].height = 2; */
+						n++;
+						continue;
 					}
-					else {
-						ptr++;
-					}
+					ptr++;
+					x += 2;
 				}
-
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
-				}
+				ptr += ATARI_WIDTH - clipping_width;
+				ptr2 += ATARI_WIDTH - clipping_width;
 			}
-		}
-		else if (windowsize == Large) {
-			UWORD *ptr_second_line;
-			
-			ptr_second_line = ptr + window_width;
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
-						}
-						if (xpos < first_x) {
-							first_x = xpos;
-						}
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-					}
-					else {
-						ptr += 2;
-						ptr_second_line += 2;
-					}
-				}
-
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
-				}
-				ptr += window_width;
-				ptr_second_line += window_width;
+			if (n > 0) {
+				XFillRectangles(display, pixmap, gc_colour[last_colour],
+								rectangles, n);
+				modified = TRUE;
 			}
-		}
-		else /* if (windowsize == Huge) */ {
-			UWORD *ptr_second_line;
-			UWORD *ptr_third_line;
-
-			ptr_second_line = ptr + window_width;
-			ptr_third_line = ptr + window_width + window_width;
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
+			break;
+		case Huge:
+			for (y = 0; y < window_height; y += 3) {
+				for (x = 0; x < window_width; ) {
+					UBYTE colour = *ptr2++;
+					if (colour != *ptr) {
+						int width = 3;
+						*ptr++ = colour;
+						if (colour != last_colour || n >= NRECTS) {
+							if (n > 0) {
+								XFillRectangles(display, pixmap, gc_colour[last_colour],
+												rectangles, n);
+								n = 0;
+								modified = TRUE;
+							}
+							last_colour = colour;
 						}
-						if (xpos < first_x) {
-							first_x = xpos;
+						rectangles[n].x = x;
+						rectangles[n].y = y;
+						while ((x += 3) < window_width && colour == *ptr2 && colour != *ptr) {
+							width += 3;
+							ptr2++;
+							*ptr++ = colour;
 						}
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_third_line++ = help_color;
-						*ptr_third_line++ = help_color;
-						*ptr_third_line++ = help_color;
+						rectangles[n].width = width;
+						/* rectangles[n].height = 3; */
+						n++;
+						continue;
 					}
-					else {
-						ptr += 3;
-						ptr_second_line += 3;
-						ptr_third_line += 3;
-					}
+					ptr++;
+					x += 3;
 				}
-
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
-				}
-				ptr += (window_width + window_width);
-				ptr_second_line += (window_width + window_width);
-				ptr_third_line += (window_width + window_width);
+				ptr2 += ATARI_WIDTH - clipping_width;
+				ptr += ATARI_WIDTH - clipping_width;
 			}
-		}
-	}
-	else if (image->bits_per_pixel == 8) {
-		UBYTE *ptr = (UBYTE *) image->data;
-		UBYTE *ptr2 = screen;
-		UBYTE help_color;
-
-		if (windowsize == Small) {
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
-						}
-						if (xpos < first_x) {
-							first_x = xpos;
-						}
-						*ptr++ = help_color;
-					}
-					else {
-						ptr++;
-					}
-				}
-
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
-				}
+			if (n > 0) {
+				XFillRectangles(display, pixmap, gc_colour[last_colour],
+								rectangles, n);
+				modified = TRUE;
 			}
+			break;
 		}
-		else if (windowsize == Large) {
-			UBYTE *ptr_second_line;
-			
-			ptr_second_line = ptr + window_width;
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
-						}
-						if (xpos < first_x) {
-							first_x = xpos;
-						}
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-					}
-					else {
-						ptr += 2;
-						ptr_second_line += 2;
-					}
-				}
 
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
-				}
-				ptr += window_width;
-				ptr_second_line += window_width;
-			}
+		if (modified) {
+			XCopyArea(display, pixmap, window, gc, 0, 0,
+					  window_width, window_height, 0, 0);
+			modified = FALSE;
 		}
-		else /* if (windowsize == Huge) */ {
-			UBYTE *ptr_second_line;
-			UBYTE *ptr_third_line;
 
-			ptr_second_line = ptr + window_width;
-			ptr_third_line = ptr + window_width + window_width;
-			for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-				ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-				for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-					help_color =  colours[*ptr2++];
-					if (help_color != *ptr) {
-						last_y = ypos;
-						if (xpos > last_x) {
-							last_x = xpos;
-						}
-						if (xpos < first_x) {
-							first_x = xpos;
-						}
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_second_line++ = help_color;
-						*ptr_third_line++ = help_color;
-						*ptr_third_line++ = help_color;
-						*ptr_third_line++ = help_color;
-					}
-					else {
-						ptr += 3;
-						ptr_second_line += 3;
-						ptr_third_line += 3;
-					}
-				}
+#endif /* SHM */
 
-				if ((first_y > last_y) && (last_y >= 0)) {
-					first_y = last_y;
-				}
-				ptr += (window_width + window_width);
-				ptr_second_line += (window_width + window_width);
-				ptr_third_line += (window_width + window_width);
-			}
-		}
 	}
 
-
-	if (modified) {
-		XShmPutImage(display, window, gc, image, 0, 0, 0, 0,
-				 window_width, window_height, 0);
-		modified = FALSE;
-	}
-	else if (last_y >= 0) {
-		last_x++;
-		last_y++;
-		if (first_x < clipping_x) {
-			first_x = clipping_x;
-		}
-		if (last_x > clipping_x + clipping_width) {
-			last_x = clipping_x + clipping_width;
-		}
-		else if (last_x <= first_x) {
-			last_x = first_x + 1;
-		}
-		if (first_y < clipping_y) {
-			first_y = clipping_y;
-		}
-		if (last_y > clipping_y + clipping_height) {
-			last_y = clipping_y + clipping_height;
-		}
-		else if (last_y <= first_y) {
-			last_y = first_y + 1;
-		}
-
-		first_x *= clipping_factor;
-		last_x *= clipping_factor;
-		first_y *= clipping_factor;
-		last_y *= clipping_factor;
-
-		XShmPutImage(display, window, gc, image,
-				 first_x - (clipping_x * clipping_factor), first_y - (clipping_y * clipping_factor), first_x - (clipping_x * clipping_factor), first_y - (clipping_y * clipping_factor),
-				 last_x - first_x, last_y - first_y, 0);
-	}
-
-	XSync(display, FALSE);
-#else
-	UBYTE *scanline_ptr = image_data;
-	UBYTE *ptr2 = screen;
-	int xpos;
-	int ypos;
-
-	if (invisible)
-		goto after_screen_update;
-	for (ypos = clipping_y; ypos < (clipping_y + clipping_height); ypos++) {
-		ptr2 = ((UBYTE *) screen) + ((ypos * ATARI_WIDTH) + clipping_x);
-		scanline_ptr = ((UBYTE *) image_data) + ((ypos * ATARI_WIDTH) + clipping_x);
-		for (xpos = clipping_x; xpos < (clipping_x + clipping_width); xpos++) {
-			UBYTE colour;
-
-			colour = *ptr2++;
-
-			if (colour != *scanline_ptr) {
-				int flush = FALSE;
-
-				if (windowsize == Small) {
-					if (npoints == NPOINTS)
-						flush = TRUE;
-				}
-				else {
-					if (nrects == NRECTS)
-						flush = TRUE;
-				}
-
-				if (colour != last_colour)
-					flush = TRUE;
-
-				if (flush) {
-					Atari_ScanLine_Flush();
-					last_colour = colour;
-				}
-				if (windowsize == Small) {
-					points[npoints].x = xpos - clipping_x;
-					points[npoints].y = ypos - clipping_y;
-					npoints++;
-				}
-				else if (windowsize == Large) {
-					rectangles[nrects].x = (xpos - clipping_x) << 1;
-					rectangles[nrects].y = (ypos - clipping_y) << 1;
-					rectangles[nrects].width = 2;
-					rectangles[nrects].height = 2;
-					nrects++;
-				}
-				else {
-					rectangles[nrects].x = (xpos + xpos + xpos) - (clipping_x + clipping_x + clipping_x);
-					rectangles[nrects].y = (ypos + ypos + ypos) - (clipping_y + clipping_y + clipping_y);
-					rectangles[nrects].width = 3;
-					rectangles[nrects].height = 3;
-					nrects++;
-				}
-
-				*scanline_ptr++ = colour;
-			}
-			else {
-				scanline_ptr++;
-			}
-		}
-	}
-
-	Atari_ScanLine_Flush();
-
-	if (modified) {
-		XCopyArea(display, pixmap, window, gc, 0, 0,
-				  window_width, window_height, 0, 0);
-	}
-	modified = FALSE;
-#endif
-
-after_screen_update:
 	switch (x11_monitor) {
 	case MONITOR_SIO:
 		if (sio_status[0] != '\0') {
@@ -2898,7 +2708,7 @@ after_screen_update:
 #ifdef XVIEW
 			sprintf(status_line, "%.2f FPS", fps);
 #else
-			sprintf(status_line, " %s - %.2f FPS", ATARI_TITLE, fps);
+			sprintf(status_line, "%s - %.2f FPS", ATARI_TITLE, fps);
 #endif
 			update_status_line = TRUE;
 		}
@@ -2923,6 +2733,7 @@ after_screen_update:
 #endif
 #endif
 	}
+
 #ifdef XVIEW
 	notify_dispatch();
 	XFlush(display);
@@ -2964,6 +2775,7 @@ int Atari_Keyboard(void)
 	return keycode;
 }
 
+#if 0
 void experimental_mouse_joystick(int mode)	/* Don't use ;-) */
 {
 	Window root_return;
@@ -3041,6 +2853,7 @@ void experimental_mouse_joystick(int mode)	/* Don't use ;-) */
 			mouse_stick &= 0xfb;
 	}
 }
+#endif
 
 void mouse_joystick(int mode)
 {
@@ -3226,21 +3039,8 @@ int Atari_TRIG(int num)
 						  &root_x_return, &root_y_return,
 						  &win_x_return, &win_y_return,
 						  &mask_return)) {
-			int mx, my;
-			if (windowsize == Small) {
-				mx = window_width;
-				my = window_height;
-			}
-			else if (windowsize == Large) {
-				mx = window_width;
-				my = window_height;
-			}
-			else {
-				mx = window_width;
-				my = window_height;
-			}
-			if (win_x_return < 0 || win_x_return > mx ||
-			    win_y_return < 0 || win_y_return > my)
+			if (win_x_return < 0 || win_x_return > window_width ||
+			    win_y_return < 0 || win_y_return > window_height)
 				trig = 1;
 			else if (mask_return & Button1Mask)
 				trig = 0;
