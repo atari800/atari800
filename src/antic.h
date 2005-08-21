@@ -65,8 +65,8 @@ void video_putbyte(UBYTE *ptr, UBYTE val);
 #define DRAWING_SCREEN (cur_screen_pos!=NOT_DRAWING)
 extern int delayed_wsync;
 extern int cur_screen_pos;
-extern int *cpu2antic_ptr;
-extern int *antic2cpu_ptr;
+extern const int *cpu2antic_ptr;
+extern const int *antic2cpu_ptr;
 void update_scanline(void);
 void update_scanline_prior(UBYTE byte);
 #ifndef NO_GTIA11_DELAY
