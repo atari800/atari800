@@ -944,49 +944,49 @@ int Atari_Keyboard(void)
                         keycode = AKEY_EXIT;
                         break;
                 case 0x02:
-                        keycode = 0x3f;
+                        keycode = AKEY_5200_1;
                         break;
                 case 0x03:
-                        keycode = 0x3d;
+                        keycode = AKEY_5200_2;
                         break;
                 case 0x04:
-                        keycode = 0x3b;
+                        keycode = AKEY_5200_3;
                         break;
                 case 0x0D:
-                        keycode = 0x23;         /* = = * */
+                        keycode = AKEY_5200_HASH;         /* = = * */
                         break;
                 case 0x05:
-                        keycode = 0x37;
+                        keycode = AKEY_5200_4;
                         break;
                 case 0x06:
-                        keycode = 0x35;
+                        keycode = AKEY_5200_5;
                         break;
                 case 0x07:
-                        keycode = 0x33;
+                        keycode = AKEY_5200_6;
                         break;
                 case 0x08:
-                        keycode = 0x2f;
+                        keycode = AKEY_5200_7;
                         break;
                 case 0x09:
-                        keycode = 0x2d;
+                        keycode = AKEY_5200_8;
                         break;
                 case 0x0C:
-                        keycode = 0x27;         /* - = * */
+                        keycode = AKEY_5200_ASTERISK;         /* - = * */
                         break;
                 case 0x0a:
-                        keycode = 0x2b;
+                        keycode = AKEY_5200_9;
                         break;
                 case 0x0b:
-                        keycode = 0x25;
+                        keycode = AKEY_5200_0;
                         break;
                 case 0x3e:                              /* 1f : */
-                        keycode = 0x39;         /* start */
+                        keycode = AKEY_5200_START;         /* start */
                         break;
                 case 0x19:
-                        keycode = 0x31;         /* pause */
+                        keycode = AKEY_5200_PAUSE;         /* pause */
                         break;
                 case 0x13:
-                        keycode = 0x29;         /* reset */
+                        keycode = AKEY_5200_RESET;         /* reset */
                         break;
                 case 0x42:                              /* F8 */
                         if (!norepkey) {
@@ -1025,12 +1025,7 @@ int Atari_Keyboard(void)
                         keycode = AKEY_UI;
                 break;
         case 0xCF:                                      /* gray END*/
-                if (!norepkey) {
-                        keycode = AKEY_BREAK;
-                        norepkey = TRUE;
-                }
-                else
-                        keycode = AKEY_NONE;
+                keycode = AKEY_BREAK;
                 break;
         case 0x44:                                      /* F10 */
                 if (!norepkey)
