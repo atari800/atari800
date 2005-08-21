@@ -26,29 +26,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
-
 #ifdef HAVE_FCNTL_H
+/* probably not needed here anymore */
 #include <fcntl.h>
-#endif
-
-#ifdef WIN32
-#include <io.h>     /* mktemp, open */
-#endif
-
-/* XXX: try tmpfile(), tmpnam(), tempnam() ? */
-#ifndef HAVE_MKSTEMP
-# ifndef HAVE_MKTEMP
-#  define mktemp(a) (a) /* ;-) */
-# endif
-# ifndef O_BINARY
-#  define O_BINARY  0
-# endif
-/* XXX: race condition */
-# define mkstemp(a) open(mktemp(a), O_RDWR | O_CREAT | O_BINARY, 0600)
 #endif
 
 #include "atari.h"
@@ -65,7 +48,7 @@ static int decode_C6(void);
 static int decode_C7(void);
 static int decode_FA(void);
 static int read_atari16(FILE *);
-static int write_atari16(FILE *,int);
+static int write_atari16(FILE *, int);
 static int read_offset(FILE *);
 static int read_sector(FILE *);
 static int write_sector(FILE *);
@@ -76,11 +59,6 @@ static unsigned int	secsize;
 static unsigned short cursec, maxsec;
 static unsigned char createdisk, working, last, density, buf[256], atr;
 static FILE *fin = NULL, *fout = NULL;
-
-/* prepend_tmpfile_path is a port-specific function that should insert into the supplied
-   buffer pointer any path name the port wants before the filename created by mkstemp().
-   This function should return the number of bytes that the prepended path represents */
-extern int prepend_tmpfile_path(char *buffer);
 
 /* This function was added because unlike DOS, the Windows version might visit this
    module many times, not a run-once occurence. Everything needs to be reset per file,
@@ -106,7 +84,7 @@ static void show_file_error(FILE *stream)
 
 /* Opens a ZLIB compressed (gzip) file, creates a temporary filename, and decompresses
    the contents of the .gz file to the temporary file name. Note that *outfilename is
-   actually blank coming in and is filled by mkstemp */
+   actually blank coming in and is filled by Atari_tmpfile */
 FILE *openzlib(int diskno, const char *infilename, char *outfilename)
 {
 #ifndef HAVE_LIBZ
@@ -115,7 +93,6 @@ FILE *openzlib(int diskno, const char *infilename, char *outfilename)
 #else
 	gzFile gzSource;
 	FILE *file = NULL, *outfile = NULL;
-	char *curptr = outfilename;
 	char *zlib_buffer = NULL;
 
 	zlib_buffer = malloc(ZLIB_BUFFER_SIZE + 1);
@@ -124,10 +101,8 @@ FILE *openzlib(int diskno, const char *infilename, char *outfilename)
 		return NULL;
 	}
 
-	curptr += prepend_tmpfile_path(outfilename);
-	strcpy(curptr, "TMP_XXXXXX");
-	outfile = fdopen(mkstemp(curptr), "wb");
-	if (!outfile) {
+	outfile = Atari_tmpfile(outfilename, "wb");
+	if (outfile == NULL) {
 		Aprint("Could not open temporary file");
 		free(zlib_buffer);
 		return NULL;
@@ -180,10 +155,6 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 
 	init_globals(fin, fout);
 	Aprint("Converting %s to %s", input, output);
-	if (!fin || !fout) {
-		Aprint("Programming error - NULL file specified for conversion");
-		return 0;
-	}
 	archivetype = blocktype = fgetc(fin);
 
 	if (archivetype == EOF) {
@@ -200,7 +171,11 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 		return 0;
 	}
 
+#ifdef HAVE_REWIND
 	rewind(fin);
+#else
+	fseek(fin, 0, SEEK_SET);
+#endif
 
 	for (;;) {
 		if (feof(fin)) {
@@ -286,7 +261,7 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 			else {
 				cursec++;
 				if (cursec == 4 && secsize != 128)
-					fseek(fout, (secsize-128) * 3 ,SEEK_CUR);
+					fseek(fout, (secsize - 128) * 3 ,SEEK_CUR);
 			}
 		}
 	}
@@ -299,16 +274,14 @@ FILE *opendcm(int diskno, const char *infilename, char *outfilename)
 {
 	FILE *infile, *outfile;
 	FILE *file = NULL;
-	char *curptr = outfilename;
 
-	strcpy(curptr, "TMP_XXXXXX");
-	outfile = fdopen(mkstemp(curptr), "wb");
-	if (!outfile) {
-		Aprint("mkstemp failed\n");
+	outfile = Atari_tmpfile(outfilename, "wb");
+	if (outfile == NULL) {
+		Aprint("Cannot create temporary file\n");
 		return NULL;
 	}
 	infile = fopen(infilename, "rb");
-	if (!infile) {
+	if (infile == NULL) {
 		fclose(outfile);
 	}
 	else if (dcmtoatr(infile, outfile, infilename, outfilename) != 0) {
@@ -316,7 +289,7 @@ FILE *opendcm(int diskno, const char *infilename, char *outfilename)
 		file = fopen(outfilename, "rb");
 	}
 
-	if (!file) {
+	if (file == NULL) {
 		Aprint("Removing temporary file %s", outfilename);
 		remove(outfilename);
 	}
@@ -599,6 +572,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.20  2005/08/21 15:40:13  pfusik
+Atari_tmpfile(); #ifdef HAVE_REWIND; removed a redundant assertion
+
 Revision 1.19  2005/08/17 22:30:49  pfusik
 #include <io.h> on WIN32
 
