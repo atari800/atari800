@@ -39,6 +39,12 @@
 #include "rt-config.h"
 #include "monitor.h"
 
+#ifdef HAVE_FFLUSH
+#define FFLUSH_STDOUT fflush(stdout)
+#else
+#define FFLUSH_STDOUT
+#endif
+
 #ifdef TRACE
 int tron = FALSE;
 #endif
@@ -272,6 +278,61 @@ static const symtable_rec symtable[] = {
 static const int symtable_size = sizeof(symtable) / sizeof(symtable_rec);
 #endif
 
+static const char instr6502[256][11] =
+{
+	"BRK", "ORA ($1,X)", "CIM", "ASO ($1,X)", "NOP $1", "ORA $1", "ASL $1", "ASO $1",
+	"PHP", "ORA #$1", "ASL", "ANC #$1", "NOP $2", "ORA $2", "ASL $2", "ASO $2",
+
+	"BPL $0", "ORA ($1),Y", "CIM", "ASO ($1),Y", "NOP $1,X", "ORA $1,X", "ASL $1,X", "ASO $1,X",
+	"CLC", "ORA $2,Y", "NOP", "ASO $2,Y", "NOP $2,X", "ORA $2,X", "ASL $2,X", "ASO $2,X",
+
+	"JSR $2", "AND ($1,X)", "CIM", "RLA ($1,X)", "BIT $1", "AND $1", "ROL $1", "RLA $1",
+	"PLP", "AND #$1", "ROL", "ANC #$1", "BIT $2", "AND $2", "ROL $2", "RLA $2",
+
+	"BMI $0", "AND ($1),Y", "CIM", "RLA ($1),Y", "NOP $1,X", "AND $1,X", "ROL $1,X", "RLA $1,X",
+	"SEC", "AND $2,Y", "NOP", "RLA $2,Y", "NOP $2,X", "AND $2,X", "ROL $2,X", "RLA $2,X",
+
+
+	"RTI", "EOR ($1,X)", "CIM", "LSE ($1,X)", "NOP $1", "EOR $1", "LSR $1", "LSE $1",
+	"PHA", "EOR #$1", "LSR", "ALR #$1", "JMP $2", "EOR $2", "LSR $2", "LSE $2",
+
+	"BVC $0", "EOR ($1),Y", "CIM", "LSE ($1),Y", "NOP $1,X", "EOR $1,X", "LSR $1,X", "LSE $1,X",
+	"CLI", "EOR $2,Y", "NOP", "LSE $2,Y", "NOP $2,X", "EOR $2,X", "LSR $2,X", "LSE $2,X",
+
+	"RTS", "ADC ($1,X)", "CIM", "RRA ($1,X)", "NOP $1", "ADC $1", "ROR $1", "RRA $1",
+	"PLA", "ADC #$1", "ROR", "ARR #$1", "JMP ($2)", "ADC $2", "ROR $2", "RRA $2",
+
+	"BVS $0", "ADC ($1),Y", "CIM", "RRA ($1),Y", "NOP $1,X", "ADC $1,X", "ROR $1,X", "RRA $1,X",
+	"SEI", "ADC $2,Y", "NOP", "RRA $2,Y", "NOP $2,X", "ADC $2,X", "ROR $2,X", "RRA $2,X",
+
+
+	"NOP #$1", "STA ($1,X)", "NOP #$1", "SAX ($1,X)", "STY $1", "STA $1", "STX $1", "SAX $1",
+	"DEY", "NOP #$1", "TXA", "ANE #$1", "STY $2", "STA $2", "STX $2", "SAX $2",
+
+	"BCC $0", "STA ($1),Y", "CIM", "SHA ($1),Y", "STY $1,X", "STA $1,X", "STX $1,Y", "SAX $1,Y",
+	"TYA", "STA $2,Y", "TXS", "SHS $2,Y", "SHY $2,X", "STA $2,X", "SHX $2,Y", "SHA $2,Y",
+
+	"LDY #$1", "LDA ($1,X)", "LDX #$1", "LAX ($1,X)", "LDY $1", "LDA $1", "LDX $1", "LAX $1",
+	"TAY", "LDA #$1", "TAX", "ANX #$1", "LDY $2", "LDA $2", "LDX $2", "LAX $2",
+
+	"BCS $0", "LDA ($1),Y", "CIM", "LAX ($1),Y", "LDY $1,X", "LDA $1,X", "LDX $1,Y", "LAX $1,X",
+	"CLV", "LDA $2,Y", "TSX", "LAS $2,Y", "LDY $2,X", "LDA $2,X", "LDX $2,Y", "LAX $2,Y",
+
+
+	"CPY #$1", "CMP ($1,X)", "NOP #$1", "DCM ($1,X)", "CPY $1", "CMP $1", "DEC $1", "DCM $1",
+	"INY", "CMP #$1", "DEX", "SBX #$1", "CPY $2", "CMP $2", "DEC $2", "DCM $2",
+
+	"BNE $0", "CMP ($1),Y", "[ESCRTS]", "DCM ($1),Y", "NOP $1,X", "CMP $1,X", "DEC $1,X", "DCM $1,X",
+	"CLD", "CMP $2,Y", "NOP", "DCM $2,Y", "NOP $2,X", "CMP $2,X", "DEC $2,X", "DCM $2,X",
+
+
+	"CPX #$1", "SBC ($1,X)", "NOP #$1", "INS ($1,X)", "CPX $1", "SBC $1", "INC $1", "INS $1",
+	"INX", "SBC #$1", "NOP", "SBC #$1", "CPX $2", "SBC $2", "INC $2", "INS $2",
+
+	"BEQ $0", "SBC ($1),Y", "[ESC]", "INS ($1),Y", "NOP $1,X", "SBC $1,X", "INC $1,X", "INS $1,X",
+	"SED", "SBC $2,Y", "NOP", "INS $2,Y", "NOP $2,X", "SBC $2,X", "INC $2,X", "INS $2,X"
+};
+
 /* Opcode type:
    bits 1-0 = instruction length
    bit 3    = instruction writes to memory (without stack-manipulating instructions)
@@ -385,7 +446,7 @@ static int get_hex3(UWORD *hexval1, UWORD *hexval2, UWORD *hexval3)
 static void show_regs(void)
 {
 	int i;
-	printf("PC=%04x, A=%02x, S=%02x, X=%02x, Y=%02x, P=",
+	printf("PC=%04X  A=%02X  S=%02X  X=%02X  Y=%02X  P=",
 		regPC, regA, regS, regX, regY);
 	for (i = 0; i < 8; i++)
 		putchar(regP & (0x80 >> i) ? "NV*BDIZC"[i] : '-');
@@ -525,7 +586,7 @@ int monitor(void)
 		show_regs();
 	}
 	else if (break_addr == regPC)
-		printf("(breakpoint at %04x)\n", (unsigned int) break_addr);
+		printf("(breakpoint at %04X)\n", (unsigned int) break_addr);
 	else if (break_cim)
 		printf("(CIM encountered)\n");
 	break_cim = 0;
@@ -538,9 +599,7 @@ int monitor(void)
 		char *t;
 
 		printf("> ");
-#ifdef HAVE_FFLUSH
-		fflush(stdout);
-#endif
+		FFLUSH_STDOUT;
 		fgets(s, sizeof(s), stdin);
 		RemoveLF(s);
 		if (s[0])
@@ -619,13 +678,15 @@ int monitor(void)
 					printf(" %02X", dGetByte((UWORD) (addr + j)));
 				putchar('\n');
 			}
-			putchar('\n');
 		}
 		else if (strcmp(t, "JUMPS") == 0) {
 			int i;
-			for (i = 0; i < REMEMBER_JMP_STEPS; i++)
-				printf("%04x  ", remember_JMP[(remember_jmp_curpos + i) % REMEMBER_JMP_STEPS]);
-			putchar('\n');
+			for (i = 0; i < REMEMBER_JMP_STEPS; i++) {
+				UWORD addr = remember_JMP[(remember_jmp_curpos + i) % REMEMBER_JMP_STEPS];
+				printf("%04X\t", addr);
+				show_instruction(addr, 20);
+				putchar('\n');
+			}
 		}
 #endif
 		else if (strcmp(t, "DLIST") == 0) {
@@ -636,7 +697,7 @@ int monitor(void)
 			while (!done) {
 				UBYTE IR;
 
-				printf("%04x: ", tdlist);
+				printf("%04X: ", tdlist);
 
 				IR = ANTIC_GetDLByte(&tdlist);
 
@@ -650,18 +711,18 @@ int monitor(void)
 				case 0x01:
 					addr = ANTIC_GetDLWord(&tdlist);
 					if (IR & 0x40) {
-						printf("JVB %04x", addr);
+						printf("JVB %04X", addr);
 						done = TRUE;
 					}
 					else {
-						printf("JMP %04x", addr);
+						printf("JMP %04X", addr);
 						tdlist = addr;
 					}
 					break;
 				default:
 					if (IR & 0x40) {
 						addr = ANTIC_GetDLWord(&tdlist);
-						printf("LMS %04x ", addr);
+						printf("LMS %04X ", addr);
 					}
 					if (IR & 0x20)
 						printf("VSCROL ");
@@ -678,6 +739,7 @@ int monitor(void)
 				if (!done && nlines == 15) {
 					char buf[100];
 					printf("Press return to continue ('q' to quit): ");
+					FFLUSH_STDOUT;
 					fgets(buf, sizeof(buf), stdin);
 					done = buf[0] == 'q' || buf[0] == 'Q';
 					nlines = 0;
@@ -757,7 +819,7 @@ int monitor(void)
 		else if (strcmp(t, "PROFILE") == 0) {
 			int i;
 
-			for (i = 0; i < 10; i++) {
+			for (i = 0; i < 24; i++) {
 				int max, instr;
 				int j;
 
@@ -771,15 +833,11 @@ int monitor(void)
 					}
 				}
 
-				if (max > 0) {
-					instruction_count[instr] = 0;
-					printf("%02x has been executed %d times\n",
-						   instr, max);
-				}
-				else {
-					printf("Instruction Profile data not available\n");
+				if (max <= 0)
 					break;
-				}
+				instruction_count[instr] = 0;
+				printf("Opcode %02X: %-10s has been executed %d times\n",
+					   instr, instr6502[instr], max);
 			}
 		}
 #endif
@@ -978,7 +1036,7 @@ int monitor(void)
 					while (GetByte((UWORD) (addr + i)) == tab[i]) {
 						i++;
 						if (i >= n) {
-							printf("Found at %04x\n", addr);
+							printf("Found at %04X\n", addr);
 							break;
 						}
 					}
@@ -1081,52 +1139,52 @@ int monitor(void)
 				addr2 += optype6502[opcode] & 3;
 			}
 			if (!ok)
-				printf("Conditional loop containing instruction at %04x not detected\n", addr1);
+				printf("Conditional loop containing instruction at %04X not detected\n", addr1);
 		}
 		else if (strcmp(t, "ANTIC") == 0) {
-			printf("DMACTL=%02x    CHACTL=%02x    DLISTL=%02x    "
-				   "DLISTH=%02x    HSCROL=%02x    VSCROL=%02x\n",
+			printf("DMACTL=%02X    CHACTL=%02X    DLISTL=%02X    "
+				   "DLISTH=%02X    HSCROL=%02X    VSCROL=%02X\n",
 				   DMACTL, CHACTL, dlist & 0xff, dlist >> 8, HSCROL, VSCROL);
-			printf("PMBASE=%02x    CHBASE=%02x    VCOUNT=%02x    "
-				   "NMIEN= %02x    ypos= %3d\n",
+			printf("PMBASE=%02X    CHBASE=%02X    VCOUNT=%02X    "
+				   "NMIEN= %02X    ypos=%4d\n",
 				   PMBASE, CHBASE, ypos >> 1, NMIEN, ypos);
 		}
 		else if (strcmp(t, "PIA") == 0) {
-			printf("PACTL= %02x    PBCTL= %02x    PORTA= %02x    "
-				   "PORTB= %02x\n", PACTL, PBCTL, PORTA, PORTB);
+			printf("PACTL= %02X    PBCTL= %02X    PORTA= %02X    "
+				   "PORTB= %02X\n", PACTL, PBCTL, PORTA, PORTB);
 		}
 		else if (strcmp(t, "GTIA") == 0) {
-			printf("HPOSP0=%02x    HPOSP1=%02x    HPOSP2=%02x    "
-				   "HPOSP3=%02x    HPOSM0=%02x    HPOSM1=%02x\n",
+			printf("HPOSP0=%02X    HPOSP1=%02X    HPOSP2=%02X    "
+				   "HPOSP3=%02X    HPOSM0=%02X    HPOSM1=%02X\n",
 				   HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1);
-			printf("HPOSM2=%02x    HPOSM3=%02x    SIZEP0=%02x    "
-				   "SIZEP1=%02x    SIZEP2=%02x    SIZEP3=%02x\n",
+			printf("HPOSM2=%02X    HPOSM3=%02X    SIZEP0=%02X    "
+				   "SIZEP1=%02X    SIZEP2=%02X    SIZEP3=%02X\n",
 				   HPOSM2, HPOSM3, SIZEP0, SIZEP1, SIZEP2, SIZEP3);
-			printf("SIZEM= %02x    GRAFP0=%02x    GRAFP1=%02x    "
-				   "GRAFP2=%02x    GRAFP3=%02x    GRAFM =%02x\n",
+			printf("SIZEM= %02X    GRAFP0=%02X    GRAFP1=%02X    "
+				   "GRAFP2=%02X    GRAFP3=%02X    GRAFM =%02X\n",
 				   SIZEM, GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM);
-			printf("COLPM0=%02x    COLPM1=%02x    COLPM2=%02x    "
-				   "COLPM3=%02x    COLPF0=%02x    COLPF1=%02x\n",
+			printf("COLPM0=%02X    COLPM1=%02X    COLPM2=%02X    "
+				   "COLPM3=%02X    COLPF0=%02X    COLPF1=%02X\n",
 				   COLPM0, COLPM1, COLPM2, COLPM3, COLPF0, COLPF1);
-			printf("COLPF2=%02x    COLPF3=%02x    COLBK= %02x    "
-				   "PRIOR= %02x    VDELAY=%02x    GRACTL=%02x\n",
+			printf("COLPF2=%02X    COLPF3=%02X    COLBK= %02X    "
+				   "PRIOR= %02X    VDELAY=%02X    GRACTL=%02X\n",
 				   COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL);
 		}
 		else if (strcmp(t, "POKEY") == 0) {
-			printf("AUDF1= %02x    AUDF2= %02x    AUDF3= %02x    "
-				   "AUDF4= %02x    AUDCTL=%02x    KBCODE=%02x\n",
+			printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    "
+				   "AUDF4= %02X    AUDCTL=%02X    KBCODE=%02X\n",
 				   AUDF[CHAN1], AUDF[CHAN2], AUDF[CHAN3], AUDF[CHAN4], AUDCTL[0], KBCODE);
-			printf("AUDC1= %02x    AUDC2= %02x    AUDC3= %02x    "
-				   "AUDC4= %02x    IRQEN= %02x    IRQST= %02x\n",
+			printf("AUDC1= %02X    AUDC2= %02X    AUDC3= %02X    "
+				   "AUDC4= %02X    IRQEN= %02X    IRQST= %02X\n",
 				   AUDC[CHAN1], AUDC[CHAN2], AUDC[CHAN3], AUDC[CHAN4], IRQEN, IRQST);
 #ifdef STEREO_SOUND
 			if (stereo_enabled) {
 				printf("second chip:\n");
-				printf("AUDF1= %02x    AUDF2= %02x    AUDF3= %02x    "
-					   "AUDF4= %02x    AUDCTL=%02x\n",
+				printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    "
+					   "AUDF4= %02X    AUDCTL=%02X\n",
 					   AUDF[CHAN1 + CHIP2], AUDF[CHAN2 + CHIP2], AUDF[CHAN3 + CHIP2], AUDF[CHAN4 + CHIP2], AUDCTL[1]);
-				printf("AUDC1= %02x    AUDC2= %02x    AUDC3= %02x    "
-					   "AUDC4= %02x\n",
+				printf("AUDC1= %02X    AUDC2= %02X    AUDC3= %02X    "
+					   "AUDC4= %02X\n",
 					   AUDC[CHAN1 + CHIP2], AUDC[CHAN2 + CHIP2], AUDC[CHAN3 + CHIP2], AUDC[CHAN4 + CHIP2]);
 			}
 #endif
@@ -1166,11 +1224,12 @@ int monitor(void)
 			printf("YBREAK [pos], or [1000+pos]    - Break at scanline or flash scanline\n");
 
  			printf("BRKHERE on|off                 - Set BRK opcode behaviour\n");
-			printf("HISTORY                        - Disasm. last %i PC addrs. giving ypos xpos\n", (int) REMEMBER_PC_STEPS);
+			printf("HISTORY                        - Disasm. last %d PC addrs. giving ypos xpos\n", (int) REMEMBER_PC_STEPS);
 			printf("Press return to continue: ");
+			FFLUSH_STDOUT;
 			getchar();
 
-			printf("JUMPS                          - List last %i locations of JMP/JSR\n", (int) REMEMBER_JMP_STEPS);
+			printf("JUMPS                          - List last %d locations of JMP/JSR\n", (int) REMEMBER_JMP_STEPS);
 			printf("G                              - Execute 1 instruction\n");
 			printf("O                              - Step over the instruction\n");
 			printf("R                              - Execute until return\n");
@@ -1221,61 +1280,6 @@ unsigned int disassemble(UWORD addr1, UWORD addr2)
 	}
 	return addr;
 }
-
-static const char *instr6502[256] =
-{
-	"BRK", "ORA ($1,X)", "CIM", "ASO ($1,X)", "NOP $1", "ORA $1", "ASL $1", "ASO $1",
-	"PHP", "ORA #$1", "ASL", "ANC #$1", "NOP $2", "ORA $2", "ASL $2", "ASO $2",
-
-	"BPL $0", "ORA ($1),Y", "CIM", "ASO ($1),Y", "NOP $1,X", "ORA $1,X", "ASL $1,X", "ASO $1,X",
-	"CLC", "ORA $2,Y", "NOP", "ASO $2,Y", "NOP $2,X", "ORA $2,X", "ASL $2,X", "ASO $2,X",
-
-	"JSR $2", "AND ($1,X)", "CIM", "RLA ($1,X)", "BIT $1", "AND $1", "ROL $1", "RLA $1",
-	"PLP", "AND #$1", "ROL", "ANC #$1", "BIT $2", "AND $2", "ROL $2", "RLA $2",
-
-	"BMI $0", "AND ($1),Y", "CIM", "RLA ($1),Y", "NOP $1,X", "AND $1,X", "ROL $1,X", "RLA $1,X",
-	"SEC", "AND $2,Y", "NOP", "RLA $2,Y", "NOP $2,X", "AND $2,X", "ROL $2,X", "RLA $2,X",
-
-
-	"RTI", "EOR ($1,X)", "CIM", "LSE ($1,X)", "NOP $1", "EOR $1", "LSR $1", "LSE $1",
-	"PHA", "EOR #$1", "LSR", "ALR #$1", "JMP $2", "EOR $2", "LSR $2", "LSE $2",
-
-	"BVC $0", "EOR ($1),Y", "CIM", "LSE ($1),Y", "NOP $1,X", "EOR $1,X", "LSR $1,X", "LSE $1,X",
-	"CLI", "EOR $2,Y", "NOP", "LSE $2,Y", "NOP $2,X", "EOR $2,X", "LSR $2,X", "LSE $2,X",
-
-	"RTS", "ADC ($1,X)", "CIM", "RRA ($1,X)", "NOP $1", "ADC $1", "ROR $1", "RRA $1",
-	"PLA", "ADC #$1", "ROR", "ARR #$1", "JMP ($2)", "ADC $2", "ROR $2", "RRA $2",
-
-	"BVS $0", "ADC ($1),Y", "CIM", "RRA ($1),Y", "NOP $1,X", "ADC $1,X", "ROR $1,X", "RRA $1,X",
-	"SEI", "ADC $2,Y", "NOP", "RRA $2,Y", "NOP $2,X", "ADC $2,X", "ROR $2,X", "RRA $2,X",
-
-
-	"NOP #$1", "STA ($1,X)", "NOP #$1", "SAX ($1,X)", "STY $1", "STA $1", "STX $1", "SAX $1",
-	"DEY", "NOP #$1", "TXA", "ANE #$1", "STY $2", "STA $2", "STX $2", "SAX $2",
-
-	"BCC $0", "STA ($1),Y", "CIM", "SHA ($1),Y", "STY $1,X", "STA $1,X", "STX $1,Y", "SAX $1,Y",
-	"TYA", "STA $2,Y", "TXS", "SHS $2,Y", "SHY $2,X", "STA $2,X", "SHX $2,Y", "SHA $2,Y",
-
-	"LDY #$1", "LDA ($1,X)", "LDX #$1", "LAX ($1,X)", "LDY $1", "LDA $1", "LDX $1", "LAX $1",
-	"TAY", "LDA #$1", "TAX", "ANX #$1", "LDY $2", "LDA $2", "LDX $2", "LAX $2",
-
-	"BCS $0", "LDA ($1),Y", "CIM", "LAX ($1),Y", "LDY $1,X", "LDA $1,X", "LDX $1,Y", "LAX $1,X",
-	"CLV", "LDA $2,Y", "TSX", "LAS $2,Y", "LDY $2,X", "LDA $2,X", "LDX $2,Y", "LAX $2,Y",
-
-
-	"CPY #$1", "CMP ($1,X)", "NOP #$1", "DCM ($1,X)", "CPY $1", "CMP $1", "DEC $1", "DCM $1",
-	"INY", "CMP #$1", "DEX", "SBX #$1", "CPY $2", "CMP $2", "DEC $2", "DCM $2",
-
-	"BNE $0", "CMP ($1),Y", "CIM      [ESCRTS]", "DCM ($1),Y", "NOP $1,X", "CMP $1,X", "DEC $1,X", "DCM $1,X",
-	"CLD", "CMP $2,Y", "NOP", "DCM $2,Y", "NOP $2,X", "CMP $2,X", "DEC $2,X", "DCM $2,X",
-
-
-	"CPX #$1", "SBC ($1,X)", "NOP #$1", "INS ($1,X)", "CPX $1", "SBC $1", "INC $1", "INS $1",
-	"INX", "SBC #$1", "NOP", "SBC #$1", "CPX $2", "SBC $2", "INC $2", "INS $2",
-
-	"BEQ $0", "SBC ($1),Y", "CIM      [ESC]", "INS ($1),Y", "NOP $1,X", "SBC $1,X", "INC $1,X", "INS $1,X",
-	"SED", "SBC $2,Y", "NOP", "INS $2,Y", "NOP $2,X", "SBC $2,X", "INC $2,X", "INS $2,X"
-};
 
 #ifdef MONITOR_HINTS
 static int find_symbol(UWORD addr)
@@ -1348,8 +1352,7 @@ UWORD show_instruction(UWORD inad, int wid)
 				break;
 			}
 			printf(dissbf + i + 2);
-			for (; dissbf[i + 2] != 0; i++)
-				wid--;
+			wid -= strlen(dissbf + i + 2);
 			i = 0;
 			break;
 		}
@@ -1361,14 +1364,11 @@ UWORD show_instruction(UWORD inad, int wid)
 	}
 #ifdef MONITOR_HINTS
 	if (operand && (optype6502[instr] & 0xf0) != 0xa0 && (result = find_symbol(value)) >= 0) {
-		/* different names when reading/writting memory */
+		/* different names when reading/writing memory */
 		if ((optype6502[instr] & 0x08) && symtable[result + 1].addr == value)
 			result++;
-		printf(" ;%s ",symtable[result].name);
-		i = 0;
-		wid -= 3;
-		while (symtable[result].name[i++]!=0)
-			wid--;
+		printf(" ;%s ", symtable[result].name);
+		wid -= 3 + strlen(symtable[result].name);
 	}
 #endif
 	for (i = wid; i > 0; i--)
@@ -1389,7 +1389,8 @@ static UWORD assembler(UWORD addr)
 
 	printf("Simple assembler (enter empty line to exit)\n");
 	while (TRUE) {
-		printf("%X : ",(int)addr);
+		printf("%04X : ",(int) addr);
+		FFLUSH_STDOUT;
 		fgets(s, sizeof(s), stdin);
 		RemoveLF(s);
 		if (s[0] == '\0')
@@ -1413,17 +1414,16 @@ static UWORD assembler(UWORD addr)
 		         (strcmp(c, "BCC") == 0) || (strcmp(c, "BCS") == 0);
 
 		/* insert space before operands */
-		if (*sp != '\0')
-			*cp++=' ';
+		*cp++ = ' ';
 
 		/* convert input to format of instr6502[] table */
 		while (*sp != '\0') {
-			/*skip white spaces*/
-			while (*sp== ' ' || *sp== '\t')
+			/* skip white spaces */
+			while (*sp == ' ' || *sp == '\t')
 				sp++;
 			if ( (*sp >= '0' && *sp <= '9') || (*sp >= 'A' && *sp <= 'F')) {
-				/*parse hexadecimal value*/
-				*cp++ = '$';  /*operands are marked with $ */
+				/* parse hexadecimal value */
+				*cp++ = '$';  /* operands are marked with $ */
 				i = 0;
 				value = 0;
 				while (TRUE)
@@ -1439,13 +1439,13 @@ static UWORD assembler(UWORD addr)
 						break;
 
 				if (branch) {
-					/*relative address*/
+					/* relative address */
 					*cp++ = '0';
 					oplen = 1;
 					value = value - (addr + 2);
 				}
 				else if (i <= 2) {
-					/*zero page adress or immediate*/
+					/* zero page adress or immediate */
 					*cp++ = '1';
 					oplen = 1;
 				}
@@ -1453,20 +1453,22 @@ static UWORD assembler(UWORD addr)
 					*cp++ = '2';
 					oplen = 2;
 				}
-			} /*end of parsing hex.value*/
-			else if (*sp == '$')
-				sp++;  /* ignore $ */
+			} /* end of parsing hex.value */
+			else if (*sp == '$' || *sp == '@')
+				sp++;  /* ignore $ or @ */
 			else
 				*cp++ = *sp++;  /* if the char is not a digit, copy it to the output */
 			 
-		} /*end of converting input*/
-		*cp++ = '\0';  /*terminate output */
+		} /* end of converting input */
+		if (cp[-1] == ' ')
+			cp--; /* no arguments (e.g. NOP or ASL @) */
+		*cp = '\0';  /* terminate output */
 
 		/* search table for instruction */
 		for (i = 0; i < 256 && strcmp(instr6502[i], c) != 0; i++);
 
 		if (i < 256) {
-			/*instruction found*/
+			/* instruction found */
 			switch (oplen) {
 			case 0:
 				dPutByte(addr, (UBYTE) i);
@@ -1502,6 +1504,13 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.23  2005/08/21 15:47:06  pfusik
+use fflush(stdout) where necessary;
+normalized all hex output to uppercase;
+improved "JUMPS": now displays the instructions;
+improved "PROFILE": now displays the instructions;
+accept "ASL @" in assembler
+
 Revision 1.22  2005/08/18 23:32:23  pfusik
 "LOOP"; addr defaults to regPC
 
