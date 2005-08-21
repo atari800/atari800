@@ -134,7 +134,7 @@ dnl Checks for header files.
 AC_PATH_X
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([file.h limits.h signal.h sys/time.h time.h unistd.h unixio.h])
+AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
 SUPPORTS_SOUND_O=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_O=no)
 SUPPORTS_RDEVICE=yes
@@ -255,10 +255,18 @@ case "$a8_target" in
                 ;;
             x11-motif)
                 AC_DEFINE(MOTIF,,[Target: X11 with Motif.])
-                A8_NEED_LIB(Xm)
+                dnl According to the information I was able to find,
+                dnl "-lgen -lsocket" is necessary only with old Sun Motif libs.
+                AC_CHECK_LIB(socket,main,[:],)
+                AC_CHECK_LIB(gen,main,[:],)
+                dnl -lXm must come before -lXt, otherwise I get the following
+                dnl fatal error at runtime, when calling XtVaCreateManagedWidget:
+                dnl X Error of failed request:  BadWindow (invalid Window parameter)
+                dnl See MOTIF FAQ "What order should the libraries be linked in?"
+                dnl Note that AC_CHECK_LIB (and therefore A8_NEED_LIB) _prepends_
+                dnl the found library to LIBS.
                 A8_NEED_LIB(Xt)
-                A8_NEED_LIB(gen)
-                A8_NEED_LIB(socket)
+                A8_NEED_LIB(Xm)
                 ;;
         esac
         OBJS="atari_x11.o"
@@ -275,10 +283,11 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([atexit chmod clock fflush floor fstat getcwd gettimeofday localtime memmove])
-AC_CHECK_FUNCS([memset mkdir mkstemp mktemp modf opendir rename rmdir select signal])
-AC_CHECK_FUNCS([snprintf stat strcasecmp strchr strdup strerror strrchr strspn strstr])
-AC_CHECK_FUNCS([strtol system time uclock unlink vsnprintf])
+AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
+AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkdir mkstemp mktemp])
+AC_CHECK_FUNCS([modf opendir rename rewind rmdir select signal snprintf])
+AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strspn])
+AC_CHECK_FUNCS([strstr strtol system time tmpnam uclock unlink vsnprintf])
 AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 
 
