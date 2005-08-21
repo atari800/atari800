@@ -1,6 +1,8 @@
 #ifndef _SCREEN_H_
 #define _SCREEN_H_
 
+#include "atari.h"  /* UBYTE */
+
 #ifdef DIRTYRECT
 #ifndef CLIENTUPDATE
 extern UBYTE *screen_dirty;
