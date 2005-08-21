@@ -351,9 +351,8 @@ void Sound_Continue(void)
 }
 
 #ifdef SOUND
-int Sound_Update(void)
+void Sound_Update(void)
 {
-	return 0;
 }								/* fake function */
 #endif
 
@@ -429,7 +428,7 @@ void ModeInfo(void)
 		joyflag = '*';
 	else
 		joyflag = ' ';
-	Aprint("Video Mode: %ix%ix%i", MainScreen->w, MainScreen->h,
+	Aprint("Video Mode: %dx%dx%d", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel);
 	Aprint("[%c] FULLSCREEN  [%c] BW  [%c] WIDTH MODE  [%c] JOYSTICKS SWAPPED",
 		 fullflag, bwflag, width, joyflag);
@@ -442,7 +441,7 @@ void SetVideoMode(int w, int h, int bpp)
 	else
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_RESIZABLE);
 	if (MainScreen == NULL) {
-		Aprint("Setting Video Mode: %ix%ix%i FAILED", w, h, bpp);
+		Aprint("Setting Video Mode: %dx%dx%d FAILED", w, h, bpp);
 		Aflushlog();
 		exit(-1);
 	}
@@ -496,7 +495,7 @@ void SetNewVideoMode(int w, int h, int bpp)
 
 		SDL_ATARI_BPP = MainScreen->format->BitsPerPixel;
 		if (bpp == 0) {
-			Aprint("detected %ibpp", SDL_ATARI_BPP);
+			Aprint("detected %dbpp", SDL_ATARI_BPP);
 			if ((SDL_ATARI_BPP != 8) && (SDL_ATARI_BPP != 16)
 				&& (SDL_ATARI_BPP != 32)) {
 				Aprint("it's unsupported, so setting 8bit mode (slow conversion)");
@@ -612,20 +611,16 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 		}
 
 		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, sound_flags);
-	}
-	else {
-		Aprint("Audio is off, you can turn it on with -sound");
-	}
-
-	if (sound_enabled)
 		SDL_PauseAudio(0);
+	}
 }
-#endif
+#endif /* SOUND */
 
 int Atari_Keyboard(void)
 {
 	static int lastkey = AKEY_NONE, key_pressed = 0, key_control = 0;
  	static int lastuni = 0;
+	int shiftctrl = 0;
 
 	SDL_Event event;
 	if (SDL_PollEvent(&event)) {
@@ -665,15 +660,19 @@ int Atari_Keyboard(void)
 		if (key_pressed) {
 			switch (lastkey) {
 			case SDLK_f:
+				key_pressed = 0;
 				SwitchFullscreen();
 				break;
 			case SDLK_g:
+				key_pressed = 0;
 				SwitchWidth();
 				break;
 			case SDLK_b:
+				key_pressed = 0;
 				SwitchBW();
 				break;
 			case SDLK_j:
+				key_pressed = 0;
 				SwapJoysticks();
 				break;
 			case SDLK_r:
@@ -743,45 +742,84 @@ int Atari_Keyboard(void)
 		return AKEY_NONE;
 
 	/* Handle movement and special keys. */
-	if (key_shift) {
-		switch (lastkey) {
-		case SDLK_F5:
-			return AKEY_COLDSTART;
-		case SDLK_F10:
-			key_pressed = 0;
-			return AKEY_SCREENSHOT_INTERLACE;
-		case SDLK_INSERT:
-			return AKEY_INSERT_LINE;
-		}
-	}
-	else {
-		switch (lastkey) {
-		case SDLK_F5:
-			return AKEY_WARMSTART;
-		case SDLK_F10:
-			key_pressed = 0;
-			return AKEY_SCREENSHOT;
-		case SDLK_INSERT:
-			return AKEY_INSERT_CHAR;
-		}
+	switch (lastkey) {
+	case SDLK_F1:
+		key_pressed = 0;
+		return AKEY_UI;
+	case SDLK_F5:
+		key_pressed = 0;
+		return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
+	case SDLK_F8:
+		key_pressed = 0;
+		return (Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT);
+	case SDLK_F9:
+		return AKEY_EXIT;
+	case SDLK_F10:
+		key_pressed = 0;
+		return key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT_INTERLACE;
 	}
 
 	/* joystick keyboard */
-	if (key_pressed && lastkey >= SDLK_KP0 && lastkey <= SDLK_KP9) {
+	if (lastkey >= SDLK_KP0 && lastkey <= SDLK_KP9) {
 		key_pressed = 0;
 		return AKEY_NONE;
 	}
 
+	if (key_shift)
+		shiftctrl ^= AKEY_SHFT;
+
+	if (machine_type == MACHINE_5200 && !ui_is_active) {
+		if (lastkey == SDLK_F4)
+			return AKEY_5200_START ^ shiftctrl;
+		switch (lastuni) {
+		case 'p':
+			return AKEY_5200_PAUSE ^ shiftctrl;
+		case 'r':
+			return AKEY_5200_RESET ^ shiftctrl;
+		case '0':
+			return AKEY_5200_0 ^ shiftctrl;
+		case '1':
+			return AKEY_5200_1 ^ shiftctrl;
+		case '2':
+			return AKEY_5200_2 ^ shiftctrl;
+		case '3':
+			return AKEY_5200_3 ^ shiftctrl;
+		case '4':
+			return AKEY_5200_4 ^ shiftctrl;
+		case '5':
+			return AKEY_5200_5 ^ shiftctrl;
+		case '6':
+			return AKEY_5200_6 ^ shiftctrl;
+		case '7':
+			return AKEY_5200_7 ^ shiftctrl;
+		case '8':
+			return AKEY_5200_8 ^ shiftctrl;
+		case '9':
+			return AKEY_5200_9 ^ shiftctrl;
+		/* XXX: " ^ shiftctrl" harmful for '#' and '*' ? */
+		case '#':
+		case '=':
+			return AKEY_5200_HASH;
+		case '*':
+			return AKEY_5200_ASTERISK;
+		}
+		return AKEY_NONE;
+	}
+
+	if (key_control)
+		shiftctrl ^= AKEY_CTRL;
+
 	switch (lastkey) {
 	case SDLK_LSUPER:
-		return AKEY_ATARI;
+		return AKEY_ATARI ^ shiftctrl;
 	case SDLK_RSUPER:
 		if (key_shift)
 			return AKEY_CAPSLOCK;
 		else
 			return AKEY_CAPSTOGGLE;
 	case SDLK_END:
-		return AKEY_HELP;
+	case SDLK_F6:
+		return AKEY_HELP ^ shiftctrl;
 	case SDLK_PAGEDOWN:
 		return AKEY_F2 | AKEY_SHFT;
 	case SDLK_PAGEUP:
@@ -789,43 +827,28 @@ int Atari_Keyboard(void)
 	case SDLK_HOME:
 		return AKEY_CLEAR;
 	case SDLK_PAUSE:
+	case SDLK_F7:
 		return AKEY_BREAK;
 	case SDLK_CAPSLOCK:
 		return AKEY_CAPSLOCK;
 	case SDLK_SPACE:
-		if (key_control)
-			return AKEY_SPACE | AKEY_CTRL;
-		else if (key_shift)
-			return AKEY_SPACE | AKEY_SHFT;
-		else
-			return AKEY_SPACE;
+		return AKEY_SPACE ^ shiftctrl;
 	case SDLK_BACKSPACE:
 		return AKEY_BACKSPACE;
 	case SDLK_RETURN:
-		return AKEY_RETURN;
-	case SDLK_F9:
-		return AKEY_EXIT;
-	case SDLK_F8:
-		return (Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT);
-	case SDLK_F1:
-		return AKEY_UI;
+		return AKEY_RETURN ^ shiftctrl;
 	case SDLK_LEFT:
-		return AKEY_LEFT;
+		return AKEY_LEFT ^ shiftctrl;
 	case SDLK_RIGHT:
-		return AKEY_RIGHT;
+		return AKEY_RIGHT ^ shiftctrl;
 	case SDLK_UP:
-		return AKEY_UP;
+		return AKEY_UP ^ shiftctrl;
 	case SDLK_DOWN:
-		return AKEY_DOWN;
+		return AKEY_DOWN ^ shiftctrl;
 	case SDLK_ESCAPE:
-		return AKEY_ESCAPE;
+		return AKEY_ESCAPE ^ shiftctrl;
 	case SDLK_TAB:
-		if (key_shift)
-			return AKEY_SETTAB;
-		else if (key_control)
-			return AKEY_CLRTAB;
-		else
-			return AKEY_TAB;
+		return AKEY_TAB ^ shiftctrl;
 	case SDLK_DELETE:
 		if (key_shift)
 			return AKEY_DELETE_LINE;
@@ -1105,7 +1128,7 @@ int Atari_Keyboard(void)
 	case ']':
 		return AKEY_BRACKETRIGHT;
 	case '|':
-		return AKEY_SHFT | AKEY_EQUAL;
+		return AKEY_BAR;
 	}
 
 	return AKEY_NONE;
@@ -1205,15 +1228,15 @@ void Atari_Initialise(int *argc, char *argv[])
 			Aprint("no joystick");
 		}
 		else if (strcmp(argv[i], "-width") == 0) {
-			sscanf(argv[++i], "%i", &width);
+			sscanf(argv[++i], "%d", &width);
 			Aprint("width set", width);
 		}
 		else if (strcmp(argv[i], "-height") == 0) {
-			sscanf(argv[++i], "%i", &height);
+			sscanf(argv[++i], "%d", &height);
 			Aprint("height set");
 		}
 		else if (strcmp(argv[i], "-bpp") == 0) {
-			sscanf(argv[++i], "%i", &bpp);
+			sscanf(argv[++i], "%d", &bpp);
 			Aprint("bpp set");
 		}
 		else if (strcmp(argv[i], "-fullscreen") == 0) {
@@ -1244,7 +1267,8 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	i = SDL_INIT_VIDEO | SDL_INIT_JOYSTICK;
 #ifdef SOUND
-	i |= SDL_INIT_AUDIO;
+	if (!help_only)
+		i |= SDL_INIT_AUDIO;
 #endif
 	if (SDL_Init(i) != 0) {
 		Aprint("SDL_Init FAILED");
@@ -1317,11 +1341,9 @@ int Atari_Exit(int run_monitor)
 
 void DisplayRotated240x320(Uint8 *screen)
 {
-	int i,j;
-	Uint8 c;
+	int i, j;
 	register Uint32 *start32;
-	Uint32 quad;
-	if (MainScreen->format->BitsPerPixel!=16) {
+	if (MainScreen->format->BitsPerPixel != 16) {
 		Aprint("rotated display works only for bpp=16 right now");
 		Aflushlog();
 		exit(-1);
@@ -1329,12 +1351,13 @@ void DisplayRotated240x320(Uint8 *screen)
 	start32 = (Uint32 *) MainScreen->pixels;
 	for (j = 0; j < MainScreen->h; j++)
 		for (i = 0; i < MainScreen->w / 2; i++) {
-			c = screen[ATARI_WIDTH * (i * 2) + 32 + 320 - j];
-			quad = Palette16[c] << 16;
-			c = screen[ATARI_WIDTH * (i * 2 + 1) + 32 + 320 - j];
-			quad += Palette16[c];
-			*start32 = quad;
-			start32++;
+			Uint8 left = screen[ATARI_WIDTH * (i * 2) + 32 + 320 - j];
+			Uint8 right = screen[ATARI_WIDTH * (i * 2 + 1) + 32 + 320 - j];
+#ifdef WORDS_BIGENDIAN
+			*start32++ = (Palette16[left] << 16) + Palette16[right];
+#else
+			*start32++ = (Palette16[right] << 16) + Palette16[left];
+#endif
 		}
 }
 
@@ -1393,7 +1416,7 @@ void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 		}
 		break;
 	default:
-		Aprint("unsupported color depth %i", MainScreen->format->BitsPerPixel);
+		Aprint("unsupported color depth %d", MainScreen->format->BitsPerPixel);
 		Aprint("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
 		Aflushlog();
 		exit(-1);
@@ -1498,7 +1521,7 @@ void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 
 		break;
 	default:
-		Aprint("unsupported color depth %i", MainScreen->format->BitsPerPixel);
+		Aprint("unsupported color depth %d", MainScreen->format->BitsPerPixel);
 		Aprint("please set SDL_ATARI_BPP to 8 or 16 or 32 and recompile atari_sdl");
 		Aflushlog();
 		exit(-1);
@@ -1769,7 +1792,7 @@ void CountFPS(void)
 	shortframes++;
 	if (ticks2 - ticks1 > 1000) {
 		ticks1 = ticks2;
-		Aprint("%i fps", shortframes);
+		Aprint("%d fps", shortframes);
 		shortframes = 0;
 	}
 }
@@ -1817,6 +1840,12 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.51  2005/08/21 15:37:46  pfusik
+ "-rotate90" now works correctly on little-endian machines;
+ don't initialize sound with "-help"; 5200 keys; F6=Help, F7=Break;
+ Shift/Control for Atari, Help, Space, Return, Tab, arrows;
+ Alt+B isn't repeated at a crazy speed
+
  Revision 1.50  2005/08/16 23:05:49  pfusik
  #include "config.h" before system headers
 
