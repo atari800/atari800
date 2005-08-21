@@ -26,20 +26,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* free() */
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* getcwd() */
 #endif
-
-#if defined(HAVE_DIRENT_H) && defined(HAVE_OPENDIR)
 /* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
-#define DO_DIR
-#endif
-
-#ifdef DO_DIR
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
-
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -567,7 +560,7 @@ static int EditFilename(UBYTE *screen, char *fname)
 	return fname[0] != '\0';
 }
 
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 
 static int FilenameSort(const char *filename1, const char *filename2)
 {
@@ -680,11 +673,11 @@ static List *GetDirectory(char *directory)
 	return list;
 }
 
-#endif /* DO_DIR */
+#endif /* HAVE_OPENDIR */
 
 static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 {
-#ifdef DO_DIR
+#ifdef HAVE_OPENDIR
 	List *list;
 	int flag = FALSE;
 	int next_dir;
@@ -859,7 +852,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 		}
 	} while (next_dir);
 	return flag;
-#else /* DO_DIR */
+#else /* HAVE_OPENDIR */
 	char fname[FILENAME_SIZE + 1];
 	if (EditFilename(screen, fname)) {
 		char lastchar;
@@ -882,7 +875,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 		return TRUE;
 	}
 	return FALSE;
-#endif /* DO_DIR */
+#endif /* HAVE_OPENDIR */
 }
 
 static void AboutEmulator(UBYTE *screen)
@@ -1061,6 +1054,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.26  2005/08/21 17:40:53  pfusik
+DO_DIR -> HAVE_OPENDIR
+
 Revision 1.25  2005/08/18 23:34:00  pfusik
 shortcut keys in UI
 
