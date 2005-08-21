@@ -23,11 +23,6 @@
 */
 
 #include "config.h"
-#ifdef VMS
-#include <types.h>
-#else
-#include <sys/types.h>
-#endif
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
