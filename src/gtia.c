@@ -551,6 +551,8 @@ UBYTE GTIA_GetByte(UWORD addr)
 		if (consol_index > 0)
 			consol_index--;
 		break;
+	default:
+		break;
 	}
 
 	return byte;
@@ -603,7 +605,23 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		consol_mask = (~byte) & 0x0f;
 		break;
 
-#if !defined(BASIC) && !defined(CURSES_BASIC)
+#if defined(BASIC) || defined(CURSES_BASIC)
+
+	/* We use these for Antic modes 6, 7 on Curses */
+	case _COLPF0:
+		COLPF0 = byte;
+		break;
+	case _COLPF1:
+		COLPF1 = byte;
+		break;
+	case _COLPF2:
+		COLPF2 = byte;
+		break;
+	case _COLPF3:
+		COLPF3 = byte;
+		break;
+
+#else
 
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	case _COLBK:
@@ -1171,7 +1189,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 			TRIG_latch[0] = TRIG_latch[1] = TRIG_latch[2] = TRIG_latch[3] = 1;
 		break;
 
-#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
+#endif /* defined(BASIC) || defined(CURSES_BASIC) */
 	}
 }
 
