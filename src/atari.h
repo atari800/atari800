@@ -2,6 +2,7 @@
 #define _ATARI_H_
 
 #include "config.h"
+#include <stdio.h>  /* for FILE */
 
 /* Fundamental declarations ---------------------------------------------- */
 
@@ -276,11 +277,17 @@ void Atari800_PatchOS(void);
 /* Effects deltatime delay. */
 void atari_sync(void);
 
+/* Opens a new temporary file and fills in filename with its name. */
+FILE *Atari_tmpfile(char *filename, const char *mode);
+
 #endif /* _ATARI_H_ */
 
 
 /*
 $Log$
+Revision 1.51  2005/08/21 15:36:03  pfusik
+Atari_tmpfile()
+
 Revision 1.50  2005/08/15 20:35:40  pfusik
 completely reorganized, and now with good comments;
 why define ULONG as long if we assume that int is 32-bit
