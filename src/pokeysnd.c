@@ -83,9 +83,6 @@
 */
 
 #include "config.h"
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 #include "atari.h"
 #include "mzpokeysnd.h"
@@ -1097,22 +1094,21 @@ static void Update_serio_sound_rf(int out, UBYTE data)
 
 static void Pokey_process_16(void *sndbuffer, unsigned sndn)
 {
-  uint16 *buffer = sndbuffer;
-  int i;
+	uint16 *buffer = sndbuffer;
+	int i;
 
-  Pokey_process_8(buffer, sndn);
+	Pokey_process_8(buffer, sndn);
 
-  for (i = sndn - 1; i >= 0; i--)
-  {
-    int smp = ((int) (((uint8 *) buffer)[i]) - 0x80) * 0x100;
+	for (i = sndn - 1; i >= 0; i--) {
+		int smp = ((int) (((uint8 *) buffer)[i]) - 0x80) * 0x100;
 
-    if (smp > SHRT_MAX)
-      smp = SHRT_MAX;
-    if (smp < SHRT_MIN)
-      smp = SHRT_MIN;
+		if (smp > 32767)
+			smp = 32767;
+		else if (smp < -32768)
+			smp = -32768;
 
-    buffer[i] = smp;
-  }
+		buffer[i] = smp;
+	}
 }
 
 #ifdef CONSOLE_SOUND
@@ -1174,6 +1170,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.25  2005/08/21 15:48:55  pfusik
+avoid #include <limits.h>
+
 Revision 1.24  2005/08/17 22:40:41  pfusik
 removed unnecessary includes: stdio.h, stdlib.h, time.h
 
