@@ -91,9 +91,9 @@ o 8 disk drives, emulated at computer-to-drive communication
 
 o ATR, XFD, DCM, ATR.GZ and XFD.GZ disk images.
 
-o Direct loading of Atari executable files.
+o Direct loading of Atari executable files and Atari BASIC programs.
 
-o 40 cartridge types, raw and CART format.
+o 42 cartridge types, raw and CART format.
 
 o Cassette recorder, raw and CAS images.
 
@@ -126,4 +126,4 @@ o Sound output may be written to WAV files.
 
 o User interface on all versions supporting bitmapped graphics.
 
-o R: device (the Atari850 serial ports) mapped to net or real serial port
+o R: device (the Atari850 serial ports) mapped to net or real serial port.
