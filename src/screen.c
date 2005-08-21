@@ -27,16 +27,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_LIBPNG
+#include <png.h>
+#endif
+
 #include "antic.h"
 #include "atari.h"
 #include "colours.h"
 #include "log.h"
 #include "screen.h"
 #include "sio.h"
-
-#ifdef HAVE_LIBPNG
-#include <png.h>
-#endif
 
 #define ATARI_VISIBLE_WIDTH 336
 #define ATARI_LEFT_MARGIN 24
@@ -291,14 +291,18 @@ static void SmallFont_DrawInt(UBYTE *screen, int n, UBYTE color1, UBYTE color2)
 
 void Screen_DrawAtariSpeed(void)
 {
-	/* don't show if 99-101% */
-	if (show_atari_speed && (percent_atari_speed < 99 || percent_atari_speed > 101)) {
-		UBYTE *screen;
-		/* space for 5 digits - up to 99999% Atari speed */
-		screen = (UBYTE *) atari_screen + screen_visible_x1 + 5 * SMALLFONT_WIDTH
-			+ (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
-		SmallFont_DrawChar(screen, SMALLFONT_PERCENT, 0x0c, 0x00);
-		SmallFont_DrawInt(screen - SMALLFONT_WIDTH, percent_atari_speed, 0x0c, 0x00);
+	if (show_atari_speed) {
+		static int percent_display = 0;
+		if (nframes % 25 == 0 || percent_display == 0)
+			percent_display = percent_atari_speed;
+		/* don't show if 99-101% */
+		if (percent_display < 99 || percent_display > 101) {
+			/* space for 5 digits - up to 99999% Atari speed */
+			UBYTE *screen = (UBYTE *) atari_screen + screen_visible_x1 + 5 * SMALLFONT_WIDTH
+				          + (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
+			SmallFont_DrawChar(screen, SMALLFONT_PERCENT, 0x0c, 0x00);
+			SmallFont_DrawInt(screen - SMALLFONT_WIDTH, percent_display, 0x0c, 0x00);
+		}
 	}
 }
 
@@ -332,7 +336,7 @@ void Screen_FindScreenshotFilename(char *buffer)
 			break;
 		fp = fopen(buffer, "rb");
 		if (fp == NULL)
-			return; /* file does not exist - we can create it */
+			break; /* file does not exist - we can create it */
 		fclose(fp);
 	}
 }
