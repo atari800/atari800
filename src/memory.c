@@ -72,7 +72,7 @@ static ULONG atarixe_memory_size = 0;
 
 int have_basic;	/* Atari BASIC image has been successfully read (Atari 800 only) */
 
-extern UBYTE *antic_xe_ptr;	/* Separate ANTIC access to extended memory */
+extern const UBYTE *antic_xe_ptr;	/* Separate ANTIC access to extended memory */
 
 static void AllocXEMemory(void)
 {
@@ -273,22 +273,18 @@ void MemStateRead(UBYTE SaveVerbose)
 
 #endif /* BASIC */
 
-void CopyFromMem(ATPtr from, UBYTE * to, int size)
+void CopyFromMem(UWORD from, UBYTE *to, int size)
 {
-	memcpy(to, from + memory, size);
+	while (--size >= 0) {
+		*to++ = GetByte(from);
+		from++;
+	}
 }
 
-void CopyToMem(const UBYTE *from, ATPtr to, int size)
+void CopyToMem(const UBYTE *from, UWORD to, int size)
 {
-	int i;
-
-	for (i = 0; i < size; i++) {
-#ifndef PAGED_ATTRIB
-		if (attrib[to] == RAM)
-#else
-		if (!writemap[to >> 8])
-#endif
-			dPutByte(to, *from);
+	while (--size >= 0) {
+		PutByte(to, *from);
 		from++;
 		to++;
 	}
@@ -320,16 +316,16 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 				bank = ((byte & 0x0c) >> 2) + 1;
 				break;
 			case RAM_320_RAMBO:
-				bank = (((byte & 0x0c) | ((byte & 0x60) >> 1)) >> 2) + 1;
+				bank = (((byte & 0x0c) + ((byte & 0x60) >> 1)) >> 2) + 1;
 				break;
 			case RAM_320_COMPY_SHOP:
-				bank = (((byte & 0x0c) | ((byte & 0xc0) >> 2)) >> 2) + 1;
+				bank = (((byte & 0x0c) + ((byte & 0xc0) >> 2)) >> 2) + 1;
 				break;
 			case 576:
-				bank = (((byte & 0x0e) | ((byte & 0x60) >> 1)) >> 1) + 1;
+				bank = (((byte & 0x0e) + ((byte & 0x60) >> 1)) >> 1) + 1;
 				break;
 			case 1088:
-				bank = (((byte & 0x0e) | ((byte & 0xe0) >> 1)) >> 1) + 1;
+				bank = (((byte & 0x0e) + ((byte & 0xe0) >> 1)) >> 1) + 1;
 				break;
 			}
 		/* Note: in Compy Shop bit 5 (ANTIC access) disables Self Test */
@@ -340,8 +336,8 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			selftest_enabled = FALSE;
 		}
 		if (bank != xe_bank) {
-			memcpy(atarixe_memory + (((long) xe_bank) << 14), memory + 0x4000, 16384);
-			memcpy(memory + 0x4000, atarixe_memory + (((long) bank) << 14), 16384);
+			memcpy(atarixe_memory + (xe_bank << 14), memory + 0x4000, 16384);
+			memcpy(memory + 0x4000, atarixe_memory + (bank << 14), 16384);
 			xe_bank = bank;
 		}
 		if (ram_size == 128 || ram_size == RAM_320_COMPY_SHOP)
@@ -351,9 +347,9 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 				break;
 			case 0x10:	/* ANTIC: extended, CPU: base */
 				if (ram_size == 128)
-					antic_xe_ptr = atarixe_memory + ((long) (((byte & 0x0c) >> 2) + 1) << 14);
+					antic_xe_ptr = atarixe_memory + ((((byte & 0x0c) >> 2) + 1) << 14);
 				else	/* 320 Compy Shop */
-					antic_xe_ptr = atarixe_memory + ((long) ((((byte & 0x0c) | ((byte & 0xc0) >> 2)) >> 2) + 1) << 14);
+					antic_xe_ptr = atarixe_memory + (((((byte & 0x0c) + ((byte & 0xc0) >> 2)) >> 2) + 1) << 14);
 				break;
 			default:	/* ANTIC same as CPU */
 				antic_xe_ptr = NULL;
@@ -543,6 +539,9 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.11  2005/08/21 15:44:34  pfusik
+CopyFromMem and CopyToMem (both used by SIO) now work with hardware registers
+
 Revision 1.10  2005/08/18 23:31:30  pfusik
 minor clean up
 
