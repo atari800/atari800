@@ -1,12 +1,12 @@
 Frequently asked questions (with answers)
 -----------------------------------------
 
-0. Q: Where to get ROM files for the emulator
-   A: download the xf25.zip from http://prdownloads.sf.net/atari800/xf25.zip
+0. Q: Where to get ROM files for the emulator?
+   A: Download the xf25.zip from http://prdownloads.sf.net/atari800/xf25.zip
       You'll get three .ROM files - ATARIBAS.ROM, ATARIOSB.ROM and ATARIXL.ROM.
 
-1. Q: The Atari800Win does not do this or that.
-   A: Contact Rich Lawrence <rich@kesmai.com>, the Atari800Win author
+1. Q: I want Windows version of Atari800 with Windows GUI.
+   A: Try Atari800Win PLus: http://atariarea.histeria.pl/PLus/index_us.htm
 
 2. Q: If I use keyboard as the emulated joystick in the DOS version
       it often stops some games (e.g. Bruce Lee). What should I do?
