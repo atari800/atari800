@@ -32,6 +32,7 @@
 
 #include "antic.h" /* ypos */
 #include "atari.h"
+#include "gtia.h" /* COLPFx */
 #include "input.h"
 #include "log.h"
 #include "monitor.h"
@@ -50,6 +51,7 @@
 static int curses_mode = CURSES_LEFT;
 
 UBYTE curses_screen[24][40];
+static UBYTE mode_6_or_7_line[24];
 
 void Atari_Initialise(int *argc, char *argv[])
 {
@@ -122,15 +124,18 @@ void curses_clear_screen(void)
 	int y;
 	for (y = 0; y < 24; y++)
 		memset(curses_screen[y], 0, 40);
+	memset(mode_6_or_7_line, 0, 24);
 }
 
 void curses_display_line(int anticmode, const UBYTE *screendata)
 {
+	int y;
 	UBYTE *p;
 	int w;
 	if (ypos < 32 || ypos >= 224)
 		return;
-	p = &(curses_screen[(ypos >> 3) - 4][0]);
+	y = (ypos >> 3) - 4;
+	p = &(curses_screen[y][0]);
 	switch (anticmode) {
 	case 2:
 	case 3:
@@ -171,9 +176,19 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 		default:
 			return;
 		}
-		do
-			*p++ = *screendata++ & 0xbf;
-		while (--w);
+		mode_6_or_7_line[y] = 1;
+		{
+#define LIGHT_THRESHOLD 0x0c
+			UBYTE light[4];
+			light[0] = (UBYTE) ((COLPF0 & 0x0e) >= LIGHT_THRESHOLD ? 0x80 : 0);
+			light[1] = (UBYTE) ((COLPF1 & 0x0e) >= LIGHT_THRESHOLD ? -0x40 + 0x80 : -0x40);
+			light[2] = (UBYTE) ((COLPF2 & 0x0e) >= LIGHT_THRESHOLD ? -0x80 + 0x80 : -0x80);
+			light[3] = (UBYTE) ((COLPF3 & 0x0e) >= LIGHT_THRESHOLD ? -0xc0 + 0x80 : -0xc0);
+			do {
+				*p++ = *screendata + light[*screendata >> 6];
+				screendata++;
+			} while (--w);
+		}
 		break;
 	default:
 		break;
@@ -189,26 +204,32 @@ void Atari_DisplayScreen(UBYTE *screen)
 		for (x = 0; x < 40; x++) {
 			int ch = curses_screen[y][x];
 
-			switch (ch & 0xe0) {
-			case 0x00:			/* Numbers + !"$% etc. */
-			case 0x20:			/* Upper Case Characters */
-				ch = 0x20 + ch;
-				break;
-			case 0x40:			/* Control Characters */
-				ch = ch + A_BOLD;
-				break;
-			case 0x60:			/* Lower Case Characters */
-				break;
-			case 0x80:			/* Numbers, !"$% etc. */
-			case 0xa0:			/* Upper Case Characters */
-				ch = 0x20 + (ch & 0x7f) + A_REVERSE;
-				break;
-			case 0xc0:			/* Control Characters */
-				ch = (ch & 0x7f) + A_REVERSE + A_BOLD;
-				break;
-			case 0xe0:			/* Lower Case Characters */
-				ch = (ch & 0x7f) + A_REVERSE;
-				break;
+			if (mode_6_or_7_line[y]) {
+				if (ch & 0x80)
+					ch += -0x80 + 0x20 + A_BOLD;
+				else
+					ch += 0x20;
+			}
+			else {
+				static const int offset[8] = {
+					0x20,                       /* 0x00-0x1f: Numbers + !"$% etc. */
+					0x20,                       /* 0x20-0x3f: Upper Case Characters */
+					A_BOLD,                     /* 0x40-0x5f: Control Characters */
+					0,                          /* 0x60-0x7f: Lower Case Characters */
+					-0x80 + 0x20 + A_REVERSE,   /* 0x80-0x9f: Numbers + !"$% etc. */
+					-0x80 + 0x20 + A_REVERSE,   /* 0xa0-0xbf: Upper Case Characters */
+					-0x80 + A_BOLD + A_REVERSE, /* 0xc0-0xdf: Control Characters */
+					-0x80 + A_REVERSE           /* 0xe0-0xff: Lower Case Characters */
+				};
+				/* PDCurses prints '\x7f' as "^?".
+				   This causes problems if this is the last character in line.
+				   Use bold '>' for Atari's Tab symbol (filled right-pointing triangle). */
+				if (ch == 0x7f)
+					ch = '>' + A_BOLD;
+				else if (ch == 0xff)
+					ch = '>' + A_BOLD + A_REVERSE;
+				else
+					ch += offset[ch >> 5];
 			}
 
 			switch (curses_mode) {
@@ -636,9 +657,21 @@ int Atari_Keyboard(void)
 	case KEY_F0 + 5:
 		keycode = AKEY_WARMSTART;
 		break;
+#ifdef KEY_HELP
+	case KEY_HELP:
+#endif
+#ifdef KEY_SHELP
+	case KEY_SHELP:
+#endif
+#ifdef KEY_LHELP
+	case KEY_LHELP:
+#endif
 	case KEY_F0 + 6:
 		keycode = AKEY_HELP;
 		break;
+#ifdef KEY_BREAK
+	case KEY_BREAK:
+#endif
 	case KEY_F0 + 7:
 		keycode = AKEY_BREAK;
 		break;
@@ -676,6 +709,46 @@ int Atari_Keyboard(void)
 	case '\n':
 		keycode = AKEY_RETURN;
 		break;
+#ifdef KEY_HOME
+	case KEY_HOME:
+		keycode = AKEY_CLEAR;
+		break;
+#endif
+#ifdef KEY_CLEAR
+	case KEY_CLEAR:
+		keycode = AKEY_CLEAR;
+		break;
+#endif
+#ifdef KEY_IC
+	case KEY_IC:
+		keycode = AKEY_INSERT_CHAR;
+		break;
+#endif
+#ifdef KEY_IL
+	case KEY_IL:
+		keycode = AKEY_INSERT_LINE;
+		break;
+#endif
+#ifdef KEY_DC
+	case KEY_DC:
+		keycode = AKEY_DELETE_CHAR;
+		break;
+#endif
+#ifdef KEY_DL
+	case KEY_DL:
+		keycode = AKEY_DELETE_LINE;
+		break;
+#endif
+#ifdef KEY_STAB
+	case KEY_STAB:
+		keycode = AKEY_SETTAB;
+		break;
+#endif
+#ifdef KEY_CTAB
+	case KEY_CTAB:
+		keycode = AKEY_CLRTAB;
+		break;
+#endif
 #ifdef ALT_A
 	/* PDCurses specific */
 	case ALT_A:
@@ -749,6 +822,11 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.20  2005/08/21 15:36:54  pfusik
+highlighting of Self Test menu; fixed display of '\x7f';
+use KEY_HELP, KEY_SHELP, KEY_LHELP, KEY_BREAK, KEY_HOME, KEY_CLEAR,
+KEY_IC, KEY_IL, KEY_DC, KEY_DL, KEY_STAB, KEY_CTAB if available
+
 Revision 1.19  2005/08/18 23:28:54  pfusik
 Alt+letter work on PDCurses;
 Ctrl+letter should be Control+letter, not Shift+Control+letter;
