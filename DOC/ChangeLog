@@ -1,3 +1,59 @@
+2005-08-21  Piotr Fusik  <fox@scene.pl>
+* cartridge.[ch], ui.c: Atarimax cartridges
+
+* atari.c, statesav.c: fixed loading of non-verbose state files
+
+* atari.c: "--usage" and "--help" now work
+
+* memory.[ch], sio.c: CopyFromMem and CopyToMem (both used by SIO)
+  now work with hardware registers
+
+* monitor.c: use fflush(stdout) where necessary;
+  normalized all hex output to uppercase;
+  improved "JUMPS": now displays the instructions;
+  improved "PROFILE": now displays the instructions;
+  accept "ASL @" in assembler
+
+* rt-config.c: default filename for the 5200 ROM;
+  moved Atari_ConfigInit() to the end of RtPresetDefaults(),
+  so the Smartphone port can override enable_new_pokey
+
+* screen.c: improved Screen_DrawAtariSpeed: updated every 0.5 sec or so
+
+* sio.c: removed unportable DEBUG code
+
+* configure.ac, statesav.c: use #ifdef HAVE_STRERROR
+
+* configure.ac, compfile.c, devices.c: use #ifdef HAVE_REWIND
+
+* ui.c: error messages for state load/save
+
+* atari.[ch], compfile.c, configure.ac, devices.c: use ANSI/POSIX tmpnam()
+  for creating filenames of temporary files, rather than unportable
+  mktemp/mkstemp. tmpnam() generates filenames in system's temporary
+  directory.
+
+* antic.c, atari.c, atari_curses.c, gtia.c: Self Test menu highlighting
+  on Curses
+
+* atari_curses.c: fixed display of '\x7f';
+  use KEY_HELP, KEY_SHELP, KEY_LHELP, KEY_BREAK, KEY_HOME, KEY_CLEAR,
+  KEY_IC, KEY_IL, KEY_DC, KEY_DL, KEY_STAB, KEY_CTAB if available
+
+* atari_sdl.c: "-rotate90" now works correctly on little-endian machines;
+  don't initialize sound with "-help"; 5200 keys; F6=Help, F7=Break;
+  Shift/Control for Atari, Help, Space, Return, Tab, arrows;
+  Alt+B isn't repeated at a crazy speed
+
+* atari_x11.c: MUCH faster screen display; 5200 keys; Caps can be released;
+  Shift/Control for Help, Escape, Space, Return, Tab
+
+* configure.ac: fixed x11-motif
+
+* antic.[ch], compfile.c, input.c, screen.h, dos/atari_vga.c, ui.c:
+  minor clean up
+
+
 2005-08-19  Piotr Fusik  <fox@scene.pl>
 * atari.c, screen.[ch]: Screen_Initialise();
   support "-screenshots <pattern>" on the command line: it defines a pattern
