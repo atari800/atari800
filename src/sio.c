@@ -27,9 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef DEBUG
-#include <time.h>
-#endif
 
 #include "antic.h"  /* ypos */
 #include "atari.h"
@@ -73,9 +70,6 @@ static int sectorsize[MAX_DRIVES];
 static int format_sectorcount[MAX_DRIVES];
 static int format_sectorsize[MAX_DRIVES];
 static int io_success[MAX_DRIVES];
-#ifdef DEBUG
-static struct timeval tv;
-#endif
 
 UnitStatus drive_status[MAX_DRIVES];
 char sio_filename[MAX_DRIVES][FILENAME_MAX];
@@ -227,8 +221,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			}
 #ifdef DEBUG
 			Aprint("ATR: sectorcount = %d, sectorsize = %d",
-				   sectorcount[diskno - 1],
-				   sectorsize[diskno - 1]);
+				   sectorcount[diskno - 1], sectorsize[diskno - 1]);
 #endif
 		}
 		else {
@@ -605,19 +598,17 @@ void SIO(void)
 	int sector = dGetWordAligned(0x30a);
 	UBYTE unit = dGetByte(0x301) - 1;
 	UBYTE result = 0x00;
-	ATPtr data = dGetWordAligned(0x304);
+	UWORD data = dGetWordAligned(0x304);
 	int length = dGetWordAligned(0x308);
 	int realsize = 0;
 	int cmd = dGetByte(0x302);
 
 	if (dGetByte(0x300) == 0x31 && unit < MAX_DRIVES) {	/* UBYTE range ! */
 #ifdef DEBUG
-		gettimeofday(&tv,NULL);
-		Aprint("%04lu.%03lu SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
-			tv.tv_sec%10000,tv.tv_usec/1000,
-			cmd,dGetByte(0x303),dGetByte(0x304),dGetByte(0x305),dGetByte(0x306),
-			dGetByte(0x308),dGetByte(0x309),dGetByte(0x30A),dGetByte(0x30B),
-			dGetByte(0x30C),dGetByte(0x30D));
+		Aprint("%SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
+			cmd, dGetByte(0x303), dGetByte(0x304), dGetByte(0x305), dGetByte(0x306),
+			dGetByte(0x308), dGetByte(0x309), dGetByte(0x30a), dGetByte(0x30b),
+			dGetByte(0x30c), dGetByte(0x30d));
 #endif
 		switch (cmd) {
 		case 0x4e:				/* Read Status Block */
@@ -804,9 +795,7 @@ static UBYTE Command_Frame(void)
 
 	sector = CommandFrame[2] | (((UWORD) CommandFrame[3]) << 8);
 	unit = CommandFrame[0] - '1';
-#ifdef DEBUG
-	gettimeofday(&tv, NULL);
-#endif
+
 	if (unit < 0 || unit >= MAX_DRIVES) {
 		/* Unknown device */
 		Aprint("Unknown command frame: %02x %02x %02x %02x %02x",
@@ -819,8 +808,7 @@ static UBYTE Command_Frame(void)
 		switch (CommandFrame[1]) {
 		case 0x4e:				/* Read Status */
 #ifdef DEBUG
-			Aprint("%04lu.%03lu Read-status frame: %02x %02x %02x %02x %02x",
-				tv.tv_sec % 10000, tv.tv_usec / 1000,
+			Aprint("Read-status frame: %02x %02x %02x %02x %02x",
 				CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				CommandFrame[3], CommandFrame[4]);
 #endif
@@ -833,8 +821,7 @@ static UBYTE Command_Frame(void)
 			return 'A';
 		case 0x4f:				/* Write status */
 #ifdef DEBUG
-			Aprint("%04lu.%03lu Write-status frame: %02x %02x %02x %02x %02x",
-				tv.tv_sec%10000, tv.tv_usec/1000,
+			Aprint("Write-status frame: %02x %02x %02x %02x %02x",
 				CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				CommandFrame[3], CommandFrame[4]);
 #endif
@@ -847,8 +834,7 @@ static UBYTE Command_Frame(void)
 		case 0xD0:				/* xf551 hispeed */
 		case 0xD7:
 #ifdef DEBUG
-			Aprint("%04lu.%03lu Write-sector frame: %02x %02x %02x %02x %02x",
-				tv.tv_sec % 10000, tv.tv_usec / 1000,
+			Aprint("Write-sector frame: %02x %02x %02x %02x %02x",
 				CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				CommandFrame[3], CommandFrame[4]);
 #endif
@@ -863,8 +849,7 @@ static UBYTE Command_Frame(void)
 		case 0x52:				/* Read */
 		case 0xD2:				/* xf551 hispeed */
 #ifdef DEBUG
-			Aprint("%04lu.%03lu Read-sector frame: %02x %02x %02x %02x %02x",
-				tv.tv_sec % 10000, tv.tv_usec / 1000,
+			Aprint("Read-sector frame: %02x %02x %02x %02x %02x",
 				CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				CommandFrame[3], CommandFrame[4]);
 #endif
@@ -892,8 +877,7 @@ static UBYTE Command_Frame(void)
 			return 'A';
 		case 0x53:				/* Status */
 #ifdef DEBUG
-			Aprint("%04lu.%03lu Status frame: %02x %02x %02x %02x %02x",
-				tv.tv_sec % 10000, tv.tv_usec / 1000,
+			Aprint("Status frame: %02x %02x %02x %02x %02x",
 				CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				CommandFrame[3], CommandFrame[4]);
 #endif
@@ -908,8 +892,7 @@ static UBYTE Command_Frame(void)
 		case 0x21:				/* Format Disk */
 		case 0xa1:				/* xf551 hispeed */
 #ifdef DEBUG
-			Aprint("%04lu.%03lu Format-disk frame: %02x %02x %02x %02x %02x",
-				tv.tv_sec % 10000, tv.tv_usec / 1000,
+			Aprint("Format-disk frame: %02x %02x %02x %02x %02x",
 				CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				CommandFrame[3], CommandFrame[4]);
 #endif
@@ -924,8 +907,7 @@ static UBYTE Command_Frame(void)
 		case 0x22:				/* Dual Density Format */
 		case 0xa2:				/* xf551 hispeed */
 #ifdef DEBUG
-			Aprint("%04lu.%03lu Format-Medium frame: %02x %02x %02x %02x %02x",
-				tv.tv_sec % 10000, tv.tv_usec / 1000,
+			Aprint("Format-Medium frame: %02x %02x %02x %02x %02x",
 				CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				CommandFrame[3], CommandFrame[4]);
 #endif
@@ -939,8 +921,7 @@ static UBYTE Command_Frame(void)
 		default:
 			/* Unknown command for a disk drive */
 #ifdef DEBUG
-			Aprint("%04lu.%03lu Command frame: %02x %02x %02x %02x %02x",
-				tv.tv_sec % 10000, tv.tv_usec / 1000,
+			Aprint("Command frame: %02x %02x %02x %02x %02x",
 				CommandFrame[0], CommandFrame[1], CommandFrame[2],
 				CommandFrame[3], CommandFrame[4]);
 #endif
@@ -1227,6 +1208,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.32  2005/08/21 15:46:12  pfusik
+got rid of bogus ATPtr; removed unportable DEBUG code
+
 Revision 1.31  2005/08/17 22:45:06  pfusik
 removed unnecessary #include <sys/time.h>; fixed VC6 warnings
 
