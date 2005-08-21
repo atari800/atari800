@@ -26,7 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* getcwd */
 #endif
@@ -57,8 +59,6 @@ void POKEYStateRead(void);
 void CARTStateRead(void);
 void SIOStateRead(void);
 
-int ReadDisabledROMs(void);
-
 #ifdef HAVE_LIBZ
 #define GZOPEN(X, Y)     gzopen(X, Y)
 #define GZCLOSE(X)       gzclose(X)
@@ -83,9 +83,12 @@ static void GetGZErrorText(void)
 #ifdef HAVE_LIBZ
 	const char *error = GZERROR(StateFile, &nFileError);
 	if (nFileError == Z_ERRNO) {
-		nFileError = errno;
-		Aprint("The following general file I/O error occured: ");
-		Aprint(strerror(nFileError));
+#ifdef HAVE_STRERROR
+		Aprint("The following general file I/O error occurred:");
+		Aprint(strerror(errno));
+#else
+		Aprint("A file I/O error occurred");
+#endif
 		return;
 	}
 	Aprint("ZLIB returned the following error: %s", error);
@@ -410,21 +413,15 @@ int ReadAtariState(const char *filename, const char *mode)
 	if (nFileError != Z_OK)
 		return FALSE;
 
-	/* XXX: is this necessary? */
-	if (!SaveVerbose && machine_type == MACHINE_XLXE) {
-		/* ReadDisabledRoms is a port specific function that will read atari basic into 
-		   atari_basic[] and the OS into atarixl_os for XL/XEs. It should return FALSE
-		   for failure. This is for saved states that don't have these ROMs in the save
-		   because they are not important (not patched or otherwise modified) */
-		if (!ReadDisabledROMs())
-			return FALSE;
-	}
-
 	return TRUE;
 }
 
 /*
 $Log$
+Revision 1.12  2005/08/21 17:39:26  pfusik
+fixed loading of non-verbose state files;
+use #ifdef HAVE_STRERROR
+
 Revision 1.11  2005/08/16 23:07:28  pfusik
 #include "config.h" before system headers
 
