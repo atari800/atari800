@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
@@ -301,41 +300,44 @@ static int load_image(const char *filename, UBYTE *buffer, int nbytes)
 
 #include "emuos.h"
 
+#define COPY_EMUOS(padding) do { \
+		memset(atari_os, 0, padding); \
+		memcpy(atari_os + (padding), emuos_h, 0x2000); \
+	} while (0)
+
 static int load_roms(void)
 {
 	switch (machine_type) {
 	case MACHINE_OSA:
 		if (emuos_mode == 2)
-			memcpy(atari_os, emuos_h, 0x2800);
+			COPY_EMUOS(0x0800);
 		else if (!load_image(atari_osa_filename, atari_os, 0x2800)) {
 			if (emuos_mode == 1)
-				memcpy(atari_os, emuos_h, 0x2800);
+				COPY_EMUOS(0x0800);
 			else
 				return FALSE;
 		}
-		have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
+		else
+			have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
 		break;
 	case MACHINE_OSB:
 		if (emuos_mode == 2)
-			memcpy(atari_os, emuos_h, 0x2800);
+			COPY_EMUOS(0x0800);
 		else if (!load_image(atari_osb_filename, atari_os, 0x2800)) {
 			if (emuos_mode == 1)
-				memcpy(atari_os, emuos_h, 0x2800);
+				COPY_EMUOS(0x0800);
 			else
 				return FALSE;
 		}
-		have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
+		else
+			have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
 		break;
 	case MACHINE_XLXE:
-		if (emuos_mode == 2) {
-			memset(atari_os, 0, 0x1800);
-			memcpy(atari_os + 0x1800, emuos_h, 0x2800);
-		}
+		if (emuos_mode == 2)
+			COPY_EMUOS(0x2000);
 		else if (!load_image(atari_xlxe_filename, atari_os, 0x4000)) {
-			if (emuos_mode == 1) {
-				memset(atari_os, 0, 0x1800);
-				memcpy(atari_os + 0x1800, emuos_h, 0x2800);
-			}
+			if (emuos_mode == 1)
+				COPY_EMUOS(0x2000);
 			else
 				return FALSE;
 		}
@@ -1272,12 +1274,17 @@ void MainStateRead(void)
 	ReadINT(&default_tv_mode, 1);
 	ReadINT(&default_system, 1);
 	load_roms();
+	/* XXX: what about patches? */
 }
 
 #endif
 
 /*
 $Log$
+Revision 1.69  2005/08/22 20:52:21  pfusik
+stripped 2k more from emuos;
+don't try to load BASIC ROM in 400/800 emuos mode
+
 Revision 1.68  2005/08/21 15:35:25  pfusik
 fixed loading of non-verbose state files;
 correct highlighting of Self Test menu on CURSES_BASIC;
