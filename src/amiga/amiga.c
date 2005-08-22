@@ -1127,7 +1127,7 @@ int HandleMenu(UWORD code)
 							easy.es_StructSize = sizeof(struct EasyStruct);
 							easy.es_Flags = 0;
 							easy.es_Title = "Atari800";
-							easy.es_TextFormat = "Atari800 version %ld.%ld\n\nBased upon " ATARI_TITLE "\nCopyright (C) 2000-2004\nAtari800 development team\nAmiga port done by Sebastian Bauer";
+							easy.es_TextFormat = "Atari800 version %ld.%ld\n\nBased upon " ATARI_TITLE "\nCopyright (C) 2000-2005\nAtari800 development team\nAmiga port done by Sebastian Bauer";
 							easy.es_GadgetFormat = "Ok";
 							
 							EasyRequest( WindowMain, &easy, NULL, VERSION, REVISION);
