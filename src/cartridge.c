@@ -300,6 +300,12 @@ static void CART_Access(UWORD addr)
 		Cart809F_Disable();
 		CartA0BF_Disable();
 		break;
+	case CART_ATMAX_128:
+		set_bank_A0BF_ATMAX128(addr & 0xff);
+		break;
+	case CART_ATMAX_1024:
+		set_bank_A0BF_ATMAX1024(addr & 0xff);
+		break;
 	default:
 		break;
 	}
@@ -394,12 +400,6 @@ void CART_PutByte(UWORD addr, UBYTE byte)
 		break;
 	case CART_SWXEGS_1024:
 		set_bank_809F(byte, 0xfe000);
-		break;
-	case CART_ATMAX_128:
-		set_bank_A0BF_ATMAX128(addr & 0xff);
-		break;
-	case CART_ATMAX_1024:
-		set_bank_A0BF_ATMAX1024(addr & 0xff);
 		break;
 	default:
 		CART_Access(addr);
