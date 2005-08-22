@@ -30,14 +30,15 @@
 
 #include <string.h>
 
+#include <cybergraphx/cybergraphics.h>
 #include <libraries/gadtools.h>
-#include <libraries/mui.h>
 
 #include <clib/alib_protos.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/graphics.h>
+#include <proto/cybergraphics.h>
 #include <proto/intuition.h>
 
 /**************************************************************************
@@ -97,7 +98,7 @@ ULONG GetBestID( ULONG width, ULONG height, ULONG depth )
 {
 	struct Screen *defscr;
 	ULONG displayID;
-
+ 
 	if ((defscr = LockPubScreen(NULL)))
 	{
 		struct ViewPort *vp;
@@ -110,6 +111,32 @@ ULONG GetBestID( ULONG width, ULONG height, ULONG depth )
 									BIDTAG_MonitorID, GetVPModeID( vp ) & MONITOR_ID_MASK,
 									TAG_DONE);
 
+		if (CyberGfxBase)
+		{
+			if (IsCyberModeID(displayID))
+			{
+				struct DimensionInfo dims;
+
+				/* Get the normal dimensions of the returned displayID */
+				if (GetDisplayInfoData(NULL,&dims,sizeof(dims),DTAG_DIMS,displayID) > 0)
+				{
+					ULONG modeWidth = dims.Nominal.MaxX - dims.Nominal.MinX + 1;
+					ULONG modeHeight = dims.Nominal.MaxY - dims.Nominal.MinY + 1;
+
+					/* If dimensions differ to "much", try to get a better one via cybergfx calls */
+					if (modeWidth > width * 4 / 3 || modeHeight > height * 4 / 3)
+					{
+						displayID = BestCModeIDTags(
+							CYBRBIDTG_Depth, depth,
+							CYBRBIDTG_NominalWidth, width,
+							CYBRBIDTG_NominalHeight, height,
+							CYBRBIDTG_MonitorID, GetVPModeID( vp ) & MONITOR_ID_MASK,
+							TAG_DONE);
+					}
+				}
+			}
+		}
+
 		UnlockPubScreen( NULL, defscr );
 	} else displayID = INVALID_ID;
 
@@ -120,6 +147,7 @@ ULONG GetBestID( ULONG width, ULONG height, ULONG depth )
 									BIDTAG_NominalHeight, height,
 									TAG_DONE);
 	}
+
 	return displayID;
 }
 
