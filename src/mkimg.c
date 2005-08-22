@@ -2,7 +2,7 @@
  * mkimg.c - Make an image or .h file from a binary
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -39,7 +39,6 @@
  */
 
 #include <stdio.h>
-#include <ctype.h>
 #include <string.h>
 
 typedef enum {
@@ -176,15 +175,18 @@ int main(int argc, char *argv[])
 			perror(header_filename);
 			return 1;
 		}
+
 		for (ptr = header_filename; *ptr; ptr++) {
-			if (!isalnum(*ptr))
+			if (!( (*ptr >= 'a' && *ptr <= 'z')
+			    || (*ptr >= 'A' && *ptr <= 'Z')
+			    || (*ptr >= '0' && *ptr <= '9') ))
 				*ptr = '_';
 		}
 
-		fprintf(fp, "#ifndef __%s__\n", header_filename);
-		fprintf(fp, "#define __%s__\n\n", header_filename);
+		fprintf(fp, "#ifndef _%s_\n", header_filename);
+		fprintf(fp, "#define _%s_\n\n", header_filename);
 
-		fprintf(fp, "static char %s[] =\n{\n\t", header_filename);
+		fprintf(fp, "static unsigned char %s[] =\n{\n\t", header_filename);
 
 		for (i = addr1, j = 0; i < addr2; i++) {
 			fprintf(fp, "0x%02x,", image[i]);

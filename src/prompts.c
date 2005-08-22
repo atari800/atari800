@@ -23,7 +23,6 @@
 */
 
 #include <stdio.h>
-#include <ctype.h>
 #include <string.h>
 
 #include "prompts.h"
@@ -52,23 +51,28 @@ void GetNumber(char *message, int *num)
 
 void GetYesNo(char *message, char *yn)
 {
-	char gash[128];
-	char t_yn;
-
-	do {
+	for (;;) {
+		char gash[128];
 		printf(message, *yn);
 		fgets(gash, sizeof(gash), stdin);
-		RemoveLF(gash);
-
-		if (strlen(gash) > 0)
-			t_yn = toupper(gash[0]);
-		else
-			t_yn = ' ';
-
-	} while ((t_yn != ' ') && (t_yn != 'Y') && (t_yn != 'N'));
-
-	if (t_yn != ' ')
-		*yn = t_yn;
+		switch (gash[0]) {
+		case '\0':
+		case '\r':
+		case '\n':
+		case ' ':
+			return; /* keep *yn unchanged */
+		case 'Y':
+		case 'y':
+			*yn = 'Y';
+			return;
+		case 'N':
+		case 'n':
+			*yn = 'N';
+			return;
+		default:
+			break;
+		}
+	}
 }
 
 void GetYesNoAsInt(char *message, int *num)
@@ -80,30 +84,33 @@ void GetYesNoAsInt(char *message, int *num)
 
 void RemoveSpaces(char *string)
 {
-	static char SPACES_TO_REMOVE[] = " \t\r\n";
-	int len = strlen(string);
+	char *p = string;
+	char *q;
+	/* skip leading whitespace */
+	while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
+		p++;
+	/* now p points at the first non-whitespace character */
 
-	/* head */
-/*
-	int skiphead = 0;
-	while(skiphead < len && strchr(SPACES_TO_REMOVE, string[skiphead])) {
-		skiphead++;
+	if (*p == '\0') {
+		/* only whitespace */
+		*string = '\0';
+		return;
 	}
-*/
-	int skiphead = strspn(string, SPACES_TO_REMOVE);
-	if (skiphead > 0) {
-		memmove(string, string+skiphead, len-skiphead+1);
-		len -= skiphead;
-	}
-	/* tail */
-	while(--len > 0) {
-		if (strchr(SPACES_TO_REMOVE, string[len]) != NULL) {
-			string[len] = '\0';
-		}
-		else {
-			break;
-		}
-	}
+
+	q = string + strlen(string);
+	/* skip trailing whitespace */
+	/* we have found p < q such that *p is non-whitespace,
+	   so this loop terminates with q >= p */
+	do
+		q--;
+	while (*q == ' ' || *q == '\t' || *q == '\r' || *q == '\n');
+
+	/* now q points at the last non-whitespace character */
+	/* cut off trailing whitespace */
+	*++q = '\0';
+
+	/* move to string */
+	memmove(string, p, q + 1 - p);
 }
 
 void RemoveLF(char *string)

@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "atari.h"
 #include "cpu.h"
@@ -470,7 +469,6 @@ int monitor(void)
 	UWORD addr;
 	char s[128];
 	static char old_s[128] = ""; /* GOLDA CHANGED */
-	int p;
 
 	addr = regPC;
 
@@ -611,8 +609,8 @@ int monitor(void)
 			 * arguments, so after a 'm 600' we will see 'm 700' ...
 			 */
 			memcpy(s, old_s, sizeof(s));
-			for (i = 0; i < (int) sizeof(s); ++i)
-				if (isspace(s[i])) {
+			for (i = 0; i < (int) sizeof(s); i++)
+				if (s[i] == ' ') {
 					s[i] = '\0';
 					break;
 				}
@@ -624,12 +622,16 @@ int monitor(void)
 		}
 #endif
 		t = get_token(s);
-		if (t == NULL) {
+		if (t == NULL)
 			continue;
+
+		{
+			/* uppercase the command */
+			char *p;
+			for (p = t; *p != '\0'; p++)
+				if (*p >= 'a' && *p <= 'z')
+					*p += 'A' - 'a';
 		}
-		for (p = 0; t[p] != 0; p++)
-			if (islower(t[p]))
-				s[p] = toupper(t[p]);
 
 		if (strcmp(t, "CONT") == 0) {
 #ifdef PROFILE
@@ -1398,7 +1400,8 @@ static UWORD assembler(UWORD addr)
 
 		/* convert string to upper case */
 		for (sp = s; *sp != '\0'; sp++)
-			*sp = toupper(*sp);
+			if (*sp >= 'a' && *sp <= 'z')
+				*sp += 'A' - 'a';
 
 		oplen = 0;
 
@@ -1504,6 +1507,9 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.24  2005/08/22 20:48:13  pfusik
+avoid <ctype.h>
+
 Revision 1.23  2005/08/21 15:47:06  pfusik
 use fflush(stdout) where necessary;
 normalized all hex output to uppercase;

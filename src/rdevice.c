@@ -76,7 +76,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include <ctype.h>
 #include <time.h>
 #include <errno.h>
 #include <unistd.h>
@@ -677,8 +676,8 @@ void Device_GetInetAddress(void)
 
     if (!devnam)
     {
-      if (isupper(byte))
-        byte = tolower(byte);
+      if (byte >= 'A' && byte <= 'Z')
+        byte += 'a' - 'A';
 
       inetaddress[offset++] = byte;
     }

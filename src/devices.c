@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
@@ -117,7 +116,8 @@ static char *strtoupper(char *str)
 {
 	char *ptr;
 	for (ptr = str; *ptr; ptr++)
-		*ptr = toupper(*ptr);
+		if (*ptr >= 'a' && *ptr <= 'z')
+			*ptr += 'A' - 'a';
 
 	return str;
 }
@@ -126,7 +126,8 @@ static char *strtolower(char *str)
 {
 	char *ptr;
 	for (ptr = str; *ptr; ptr++)
-		*ptr = tolower(*ptr);
+		if (*ptr >= 'A' && *ptr <= 'Z')
+			*ptr += 'a' - 'A';
 
 	return str;
 }
@@ -204,7 +205,9 @@ void Device_Initialise(int *argc, char *argv[])
 
 int Device_isvalid(UBYTE ch)
 {
-	if (ch < 0x80 && isalnum(ch))
+	if ((ch >= 'A' && ch <= 'Z')
+	 || (ch >= 'a' && ch <= 'z')
+	 || (ch >= '0' && ch <= '9'))
 		return TRUE;
 	switch (ch) {
 	case ':':
@@ -239,8 +242,8 @@ static void Device_GetFilename(void)
 		int byte = dGetByte(bufadr);
 
 		if (!devnam) {
-			if (isupper(byte))
-				byte = tolower(byte);
+			if (byte >= 'A' && byte <= 'Z')
+				byte += 'a' - 'A';
 
 			filename[offset++] = byte;
 		}
@@ -267,8 +270,8 @@ static void Device_GetFilenames(void)
 		byte = dGetByte(bufadr);
 
 		if (!devnam) {
-			if (isupper(byte))
-				byte = tolower(byte);
+			if (byte >= 'A' && byte <= 'Z')
+				byte += 'a' - 'A';
 
 			filename[offset++] = byte;
 		}
@@ -292,8 +295,8 @@ static void Device_GetFilenames(void)
 	while (Device_isvalid(dGetByte(bufadr))) {
 		byte = dGetByte(bufadr);
 
-		if (isupper(byte))
-			byte = tolower(byte);
+		if (byte >= 'A' && byte <= 'Z')
+			byte += 'a' - 'A';
 
 		newfilename[offset++] = byte;
 		bufadr++;
@@ -2225,6 +2228,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.34  2005/08/22 20:48:13  pfusik
+avoid <ctype.h>
+
 Revision 1.33  2005/08/21 15:42:10  pfusik
 Atari_tmpfile(); DO_DIR -> HAVE_OPENDIR;
 #ifdef HAVE_ERRNO_H; #ifdef HAVE_REWIND
