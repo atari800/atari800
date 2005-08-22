@@ -1,3 +1,21 @@
+2005-08-22  Piotr Fusik  <fox@scene.pl>
+* cartridge.c: Atarimax cartridges can be bank-switched by reading $D5xx
+
+* atari.c, emuos.h: stripped 2k more from emuos (it has no Floating Point,
+  obviously!)
+
+* atari.c, memory.c: don't try to load BASIC ROM in 400/800 emuos mode
+
+* devices.c, mkimg.c, monitor.c, prompts.c, rdevice.c, sio.c:
+  avoid the potentially signed-char-unsafe <ctype.h> functions (macros?)
+
+* configure.ac: good advice for those poor souls who run "configure"
+  with just "--enable-veryslow" and expect a miracle ;-)
+
+* atari.h, ui.c: new "Display Settings" menu allows for changing the framerate
+  and toggling sprite_collisions_in_skipped_frames
+
+
 2005-08-21  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c: Atarimax cartridges
 
