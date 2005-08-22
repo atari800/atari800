@@ -402,7 +402,7 @@ static char *get_token(char *string)
 	return t;					/* Pointer to String */
 }
 
-#ifdef MONITOR_BREAK
+#if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
 static int get_dec(char *string, UWORD * decval)
 {
 	int idecval;
@@ -452,9 +452,10 @@ static void show_regs(void)
 	putchar('\n');
 }
 
+UWORD ypos_break_addr = 0xffff;
+
 #ifdef MONITOR_BREAK
 UWORD break_addr;
-UWORD ypos_break_addr = 0xffff;
 UBYTE break_step = 0;
 UBYTE break_cim = 0;
 UBYTE break_here = 0;
@@ -661,9 +662,6 @@ int monitor(void)
 		else if (strcmp(t, "BREAK") == 0) {
 			get_hex(&break_addr);
 		}
-		else if (strcmp(t, "YBREAK") == 0) {
-			get_dec(NULL, &ypos_break_addr);
-		}
 		else if (strcmp(t, "HISTORY") == 0) {
 			int i;
 			for (i = 0; i < REMEMBER_PC_STEPS; i++) {
@@ -689,6 +687,11 @@ int monitor(void)
 				show_instruction(addr, 20);
 				putchar('\n');
 			}
+		}
+#endif
+#if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
+		else if (strcmp(t, "YBREAK") == 0) {
+			get_dec(NULL, &ypos_break_addr);
 		}
 #endif
 		else if (strcmp(t, "DLIST") == 0) {
@@ -1223,7 +1226,7 @@ int monitor(void)
 #endif
 #ifdef MONITOR_BREAK
 			printf("BREAK [addr]                   - Set breakpoint at address\n");
-			printf("YBREAK [pos], or [1000+pos]    - Break at scanline or flash scanline\n");
+			printf("YBREAK [ypos] or [1000+ypos]   - Break at scanline or flash scanline\n");
 
  			printf("BRKHERE on|off                 - Set BRK opcode behaviour\n");
 			printf("HISTORY                        - Disasm. last %d PC addrs. giving ypos xpos\n", (int) REMEMBER_PC_STEPS);
@@ -1235,6 +1238,8 @@ int monitor(void)
 			printf("G                              - Execute 1 instruction\n");
 			printf("O                              - Step over the instruction\n");
 			printf("R                              - Execute until return\n");
+#elif !defined(NO_YPOS_BREAK_FLICKER)
+			printf("YBREAK [1000+ypos]             - flash scanline\n");
 #endif
 #ifdef MONITOR_ASSEMBLER
 			printf("A [startaddr]                  - Start simple assembler\n");
@@ -1507,6 +1512,9 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.25  2005/08/22 21:42:42  pfusik
+fixed linking error without MONITOR_BREAK defined
+
 Revision 1.24  2005/08/22 20:48:13  pfusik
 avoid <ctype.h>
 
