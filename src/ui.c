@@ -52,7 +52,7 @@
 #include "pokeysnd.h"
 #include "sndsave.h"
 #endif
-#include "rt-config.h"			/* extern for enable_new_pokey and stereo_enabled */
+#include "rt-config.h" /* enable_new_pokey, stereo_enabled, refresh_rate */
 #include "boot.h"
 
 tUIDriver *ui_driver = &basic_ui_driver;
@@ -761,7 +761,14 @@ static void LoadState(void)
 	}
 }
 
+/* CURSES_BASIC doesn't use artifacting or sprite_collisions_in_skipped_frames,
+   but does use refresh_rate. However, changing refresh_rate on CURSES
+   generally is mostly useless, as the text-mode screen is normally updated
+   infrequently by Atari.
+   In case you wonder how artifacting affects CURSES version without
+   CURSES_BASIC: it is visible on the screenshots (yes, they are bitmaps). */
 #ifndef CURSES_BASIC
+
 static void SelectArtifacting(void)
 {
 	static tMenuItem menu_array[] = {
@@ -782,6 +789,55 @@ static void SelectArtifacting(void)
 		ANTIC_UpdateArtifacting();
 	}
 }
+
+static void DisplaySettings(void)
+{
+	/* this is an array, not a string constant, so we can modify it */
+	static char refresh_status[] = "Current refresh rate: 1:1 ";
+	static tMenuItem menu_array[] = {
+		{"ARTF", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select artifacting mode", NULL, 0},
+		{"FRUP", ITEM_ENABLED | ITEM_ACTION, NULL, "Increase frameskip", NULL, 1},
+		{"FRDN", ITEM_ENABLED | ITEM_ACTION, NULL, "Decrease frameskip", NULL, 2},
+		{"CURR", ITEM_ENABLED | ITEM_ACTION, NULL, refresh_status, NULL, 3},
+		{"SCSF", ITEM_ENABLED | ITEM_CHECK, NULL, "Accurate skipped frames:", NULL, 4},
+		MENU_END
+	};
+
+	int option = 0;
+	do {
+		if (refresh_rate <= 9) {
+			refresh_status[24] = (char) ('0' + refresh_rate);
+			refresh_status[25] = ' ';
+		}
+		else {
+			refresh_status[24] = (char) ('0' + refresh_rate / 10);
+			refresh_status[25] = (char) ('0' + refresh_rate % 10);
+		}
+		SetItemChecked(&menu_array[4], sprite_collisions_in_skipped_frames);
+		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
+		switch (option) {
+		case 0:
+			SelectArtifacting();
+			return;
+		case 1:
+			if (refresh_rate < 99)
+				refresh_rate++;
+			break;
+		case 2:
+			if (refresh_rate > 1)
+				refresh_rate--;
+			break;
+		case 4:
+			if (refresh_rate == 1)
+				ui_driver->fMessage("No effect with refresh rate 1");
+			sprite_collisions_in_skipped_frames = !sprite_collisions_in_skipped_frames;
+			break;
+		default:
+			break;
+		}
+	} while (option >= 0);
+}
+
 #endif
 
 #ifdef SOUND
@@ -886,7 +942,7 @@ void ui(void)
 		{"SREC", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Recording start/stop", "Alt+W", MENU_SOUND_RECORDING},
 #endif
 #ifndef CURSES_BASIC
-		{"ARTF", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Artifacting mode", NULL, MENU_ARTIF},
+		{"SCRS", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Display Settings", NULL, MENU_DISPLAY},
 #endif
 		{"SETT", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Atari Settings", NULL, MENU_SETTINGS},
 		{"SAVE", ITEM_ENABLED | ITEM_FILESEL, NULL, "Save State", "Alt+S", MENU_SAVESTATE},
@@ -977,8 +1033,8 @@ void ui(void)
 			LoadState();
 			break;
 #ifndef CURSES_BASIC
-		case MENU_ARTIF:
-			SelectArtifacting();
+		case MENU_DISPLAY:
+			DisplaySettings();
 			break;
 		case MENU_PCX:
 			Screenshot(0);
@@ -1072,6 +1128,9 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.66  2005/08/22 20:50:24  pfusik
+"Display Settings"
+
 Revision 1.65  2005/08/21 17:40:06  pfusik
 Atarimax cartridges; error messages for state load/save;
 DO_DIR -> HAVE_OPENDIR; minor clean up
