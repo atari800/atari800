@@ -1,6 +1,11 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define HAVE_UNISTD_H
+#define HAVE_GETTIMEOFDAY
+
+#define MONITOR_BREAK
+
 #define DEFAULT_CFG_NAME "PROGDIR:Atari800.cfg"
 
 #define SUPPORTS_ATARI_CONFIGINIT
