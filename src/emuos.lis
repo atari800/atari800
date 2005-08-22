@@ -28,7 +28,7 @@
 ; ENTER #H5:EMUOS.LIS,A
 ; ASM,,#H0:EMUOS.OBJ
 ; Exit Emulator
-; mkimg -input emuos.obj -image emuos.img -header emuos.h c000 ffff
+; mkimg -input emuos.obj -image emuos.img -header emuos.h e000 ffff
 ;
 BOOT =  $09
 RTCLOK = $12
