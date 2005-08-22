@@ -70,7 +70,7 @@ static UBYTE under_atari_basic[8192];
 static UBYTE *atarixe_memory = NULL;
 static ULONG atarixe_memory_size = 0;
 
-int have_basic;	/* Atari BASIC image has been successfully read (Atari 800 only) */
+int have_basic = FALSE; /* Atari BASIC image has been successfully read (Atari 800 only) */
 
 extern const UBYTE *antic_xe_ptr;	/* Separate ANTIC access to extended memory */
 
@@ -539,6 +539,9 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.12  2005/08/22 20:54:49  pfusik
+initialize have_basic just in case
+
 Revision 1.11  2005/08/21 15:44:34  pfusik
 CopyFromMem and CopyToMem (both used by SIO) now work with hardware registers
 
