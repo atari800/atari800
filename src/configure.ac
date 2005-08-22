@@ -286,7 +286,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
 AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkdir mkstemp mktemp])
 AC_CHECK_FUNCS([modf opendir rename rewind rmdir select signal snprintf])
-AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strspn])
+AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr])
 AC_CHECK_FUNCS([strstr strtol system time tmpnam uclock unlink vsnprintf])
 AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 
@@ -618,6 +618,22 @@ echo "    LDFLAGS.: \"$LDFLAGS\""
 echo "    OBJS....: \"$OBJS\""
 echo "    LIBS....: \"$LIBS\""
 echo "-------------------------------------------------------"
+
+if [[ "$WANT_VERY_SLOW" = "yes" ]]; then
+	echo
+	echo "IMPORTANT: --enable-veryslow provides a bit better performance"
+	echo "only when the compiled atari800 is run with the -refresh option."
+	if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
+		echo "It is better to use --disable-monitorbreak."
+	fi
+	if [[ "$WANT_SOUND" = "yes" ]]; then
+		echo "Try --disable-sound, too."
+	fi
+	if [[ "$WANT_PAGED_ATTRIB" != "yes" ]]; then
+		echo "Have you tried --enable-pagedattrib ?"
+	fi
+fi
+
 echo
-echo "Now run MAKE."
+echo "Now run \"make\"."
 echo
