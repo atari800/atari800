@@ -851,7 +851,7 @@ static int SoundSettings(void)
 #ifdef CONSOLE_SOUND
 		{"CONS", ITEM_ENABLED | ITEM_CHECK, NULL, "Speaker (Key Click):", NULL, 2},
 #endif
-#ifdef SETIO_SOUND
+#ifdef SERIO_SOUND
 		{"SERI", ITEM_ENABLED | ITEM_CHECK, NULL, "Serial IO Sound    :", NULL, 3},
 #endif
 		MENU_END
@@ -1128,6 +1128,9 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.67  2005/08/23 03:49:34  markgrebe
+Fixed typo in #if SERIO_SOUND
+
 Revision 1.66  2005/08/22 20:50:24  pfusik
 "Display Settings"
 
