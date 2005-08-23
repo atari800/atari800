@@ -597,7 +597,7 @@ static void Device_HHOPEN(void)
 								filetime->tm_year -= 100;
 							fprintf(fp[fid],
 									"%02d-%02d-%02d %02d:%02d\n",
-									filetime->tm_mon, filetime->tm_mday,
+									filetime->tm_mon+1, filetime->tm_mday,
 									filetime->tm_year, filetime->tm_hour,
 									filetime->tm_min);
 #else
@@ -2228,6 +2228,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.35  2005/08/23 03:50:19  markgrebe
+Fixed month on modification date on directory listing.  Should be 1-12, not 0-11
+
 Revision 1.34  2005/08/22 20:48:13  pfusik
 avoid <ctype.h>
 
