@@ -44,7 +44,7 @@
 #define FFLUSH_STDOUT
 #endif
 
-#ifdef TRACE
+#ifdef MONITOR_TRACE
 int tron = FALSE;
 #endif
 
@@ -403,15 +403,13 @@ static char *get_token(char *string)
 }
 
 #if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
-static int get_dec(char *string, UWORD * decval)
+static int get_dec(char *string, int *decval)
 {
-	int idecval;
 	char *t;
 
 	t = get_token(string);
 	if (t) {
-		sscanf(t, "%d", &idecval);
-		*decval = idecval;
+		sscanf(t, "%d", decval);
 		return 1;
 	}
 	return 0;
@@ -452,7 +450,7 @@ static void show_regs(void)
 	putchar('\n');
 }
 
-UWORD ypos_break_addr = 0xffff;
+int ypos_break_addr = 0xffff;
 
 #ifdef MONITOR_BREAK
 UWORD break_addr;
@@ -635,7 +633,7 @@ int monitor(void)
 		}
 
 		if (strcmp(t, "CONT") == 0) {
-#ifdef PROFILE
+#ifdef MONITOR_PROFILE
 			memset(instruction_count, 0, sizeof(instruction_count));
 #endif
 			return 1;
@@ -669,9 +667,7 @@ int monitor(void)
 				int j;
 				addr = remember_PC[(remember_PC_curpos + i) % REMEMBER_PC_STEPS];
 				j = remember_xpos[(remember_PC_curpos + i) % REMEMBER_PC_STEPS];
-				printf("%3d  ", j >> 8);
-				printf("%3d  ", j & 0xff);
-				printf("%04X ", addr);
+				printf("%3d  %3d  %04X ", j >> 8, j & 0xff, addr);
 				addr1 = show_instruction(addr, 20);
 				printf("; %Xcyc ;", cycles[dGetByte(addr)]);
 				for (j = 0; j < addr1; j++)
@@ -814,13 +810,13 @@ int monitor(void)
 			else
 				ClrC;
 		}
-#ifdef TRACE
+#ifdef MONITOR_TRACE
 		else if (strcmp(t, "TRON") == 0)
 			tron = TRUE;
 		else if (strcmp(t, "TROFF") == 0)
 			tron = FALSE;
 #endif
-#ifdef PROFILE
+#ifdef MONITOR_PROFILE
 		else if (strcmp(t, "PROFILE") == 0) {
 			int i;
 
@@ -872,7 +868,7 @@ int monitor(void)
 
 			if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
 				SetROM(addr1, addr2);
-				printf("Changed Memory from %4x to %4x into ROM\n",
+				printf("Changed Memory from %04X to %04X into ROM\n",
 					   addr1, addr2);
 			}
 			else {
@@ -885,7 +881,7 @@ int monitor(void)
 
 			if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
 				SetRAM(addr1, addr2);
-				printf("Changed Memory from %4x to %4x into RAM\n",
+				printf("Changed Memory from %04X to %04X into RAM\n",
 					   addr1, addr2);
 			}
 			else {
@@ -898,7 +894,7 @@ int monitor(void)
 
 			if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
 				SetHARDWARE(addr1, addr2);
-				printf("Changed Memory from %4x to %4x into HARDWARE\n",
+				printf("Changed Memory from %04X to %04X into HARDWARE\n",
 					   addr1, addr2);
 			}
 			else {
@@ -1203,58 +1199,60 @@ int monitor(void)
 		}
 #endif
 		else if (strcmp(t, "HELP") == 0 || strcmp(t, "?") == 0) {
-			printf("CONT                           - Continue emulation\n");
-			printf("SHOW                           - Show registers\n");
-			printf("STACK                          - Show stack\n");
-			printf("SET{PC,A,S,X,Y} hexval         - Set register value\n");
-			printf("SET{N,V,D,I,Z,C} hexval        - Set flag value\n");
-			printf("C startaddr hexval...          - Change memory\n");
-			printf("D [startaddr]                  - Disassemble memory\n");
-			printf("F startaddr endaddr hexval     - Fill memory\n");
-			printf("M [startaddr]                  - Memory list\n");
-			printf("S startaddr endaddr hexval...  - Search memory\n");
-			printf("LOOP [inneraddr]               - Disassemble a loop that contains inneraddr\n");
-			printf("ROM startaddr endaddr          - Convert memory block into ROM\n");
-			printf("RAM startaddr endaddr          - Convert memory block into RAM\n");
-			printf("HARDWARE startaddr endaddr     - Convert memory block into HARDWARE\n");
-			printf("READ filename startaddr nbytes - Read file into memory\n");
-			printf("WRITE startaddr endaddr [file] - Write memory block to a file (memdump.dat)\n");
-			printf("SUM startaddr endaddr          - SUM of specified memory range\n");
-#ifdef TRACE
-			printf("TRON                           - Trace on\n");
-			printf("TROFF                          - Trace off\n");
+			printf(
+				"CONT                           - Continue emulation\n"
+				"SHOW                           - Show registers\n"
+				"STACK                          - Show stack\n"
+				"SET{PC,A,S,X,Y} hexval         - Set register value\n"
+				"SET{N,V,D,I,Z,C} hexval        - Set flag value\n"
+				"C startaddr hexval...          - Change memory\n"
+				"D [startaddr]                  - Disassemble memory\n"
+				"F startaddr endaddr hexval     - Fill memory\n"
+				"M [startaddr]                  - Memory list\n"
+				"S startaddr endaddr hexval...  - Search memory\n"
+				"LOOP [inneraddr]               - Disassemble a loop that contains inneraddr\n"
+				"ROM startaddr endaddr          - Convert memory block into ROM\n"
+				"RAM startaddr endaddr          - Convert memory block into RAM\n"
+				"HARDWARE startaddr endaddr     - Convert memory block into HARDWARE\n"
+				"READ filename startaddr nbytes - Read file into memory\n"
+				"WRITE startaddr endaddr [file] - Write memory block to a file (memdump.dat)\n"
+				"SUM startaddr endaddr          - SUM of specified memory range\n"
+#ifdef MONITOR_TRACE
+				"TRON                           - Trace on\n"
+				"TROFF                          - Trace off\n"
 #endif
 #ifdef MONITOR_BREAK
-			printf("BREAK [addr]                   - Set breakpoint at address\n");
-			printf("YBREAK [ypos] or [1000+ypos]   - Break at scanline or flash scanline\n");
-
- 			printf("BRKHERE on|off                 - Set BRK opcode behaviour\n");
-			printf("HISTORY                        - Disasm. last %d PC addrs. giving ypos xpos\n", (int) REMEMBER_PC_STEPS);
+				"BREAK [addr]                   - Set breakpoint at address\n"
+				"YBREAK [ypos] or [1000+ypos]   - Break at scanline or flash scanline\n"
+				"BRKHERE on|off                 - Set BRK opcode behaviour\n"
+				"HISTORY                        - Disasm. last %d PC addrs. giving ypos xpos\n", REMEMBER_PC_STEPS);
 			printf("Press return to continue: ");
 			FFLUSH_STDOUT;
 			getchar();
 
-			printf("JUMPS                          - List last %d locations of JMP/JSR\n", (int) REMEMBER_JMP_STEPS);
-			printf("G                              - Execute 1 instruction\n");
-			printf("O                              - Step over the instruction\n");
-			printf("R                              - Execute until return\n");
+			printf(
+				"JUMPS                          - List last %d locations of JMP/JSR\n", REMEMBER_JMP_STEPS);
+			printf(
+				"G                              - Execute 1 instruction\n"
+				"O                              - Step over the instruction\n"
+				"R                              - Execute until return\n"
 #elif !defined(NO_YPOS_BREAK_FLICKER)
-			printf("YBREAK [1000+ypos]             - flash scanline\n");
+				"YBREAK [1000+ypos]             - flash scanline\n"
 #endif
 #ifdef MONITOR_ASSEMBLER
-			printf("A [startaddr]                  - Start simple assembler\n");
+				"A [startaddr]                  - Start simple assembler\n"
 #endif
-			printf("ANTIC, GTIA, PIA, POKEY        - Display hardware registers\n");
-			printf("DLIST [startaddr]              - Show Display List\n");
-#ifdef PROFILE
-			printf("PROFILE                        - Display profiling statistics\n");
+				"ANTIC, GTIA, PIA, POKEY        - Display hardware registers\n"
+				"DLIST [startaddr]              - Show Display List\n"
+#ifdef MONITOR_PROFILE
+				"PROFILE                        - Display profiling statistics\n"
 #endif
-			printf("COLDSTART, WARMSTART           - Perform system coldstart/warmstart\n");
+				"COLDSTART, WARMSTART           - Perform system coldstart/warmstart\n"
 #ifdef HAVE_SYSTEM
-			printf("!command                       - Execute shell command\n");
+				"!command                       - Execute shell command\n"
 #endif
-			printf("QUIT                           - Quit emulator\n");
-			printf("HELP or ?                      - This text\n");
+				"QUIT                           - Quit emulator\n"
+				"HELP or ?                      - This text\n");
 		}
 		else if (strcmp(t, "QUIT") == 0) {
 			return 0;
@@ -1393,10 +1391,11 @@ static UWORD assembler(UWORD addr)
 	int i, value = 0;
 	int oplen;
 	int branch;
+	int isa; /* the operand is "A" */
 
 	printf("Simple assembler (enter empty line to exit)\n");
 	while (TRUE) {
-		printf("%04X : ",(int) addr);
+		printf("%04X : ", (int) addr);
 		FFLUSH_STDOUT;
 		fgets(s, sizeof(s), stdin);
 		RemoveLF(s);
@@ -1424,12 +1423,14 @@ static UWORD assembler(UWORD addr)
 		/* insert space before operands */
 		*cp++ = ' ';
 
+		isa = FALSE;
+
 		/* convert input to format of instr6502[] table */
 		while (*sp != '\0') {
 			/* skip white spaces */
 			while (*sp == ' ' || *sp == '\t')
 				sp++;
-			if ( (*sp >= '0' && *sp <= '9') || (*sp >= 'A' && *sp <= 'F')) {
+			if ((*sp >= '0' && *sp <= '9') || (*sp >= 'A' && *sp <= 'F')) {
 				/* parse hexadecimal value */
 				*cp++ = '$';  /* operands are marked with $ */
 				i = 0;
@@ -1456,6 +1457,8 @@ static UWORD assembler(UWORD addr)
 					/* zero page adress or immediate */
 					*cp++ = '1';
 					oplen = 1;
+					if (i == 1 && sp[-1] == 'A')
+						isa = TRUE;
 				}
 				else {
 					*cp++ = '2';
@@ -1464,8 +1467,10 @@ static UWORD assembler(UWORD addr)
 			} /* end of parsing hex.value */
 			else if (*sp == '$' || *sp == '@')
 				sp++;  /* ignore $ or @ */
-			else
+			else {
 				*cp++ = *sp++;  /* if the char is not a digit, copy it to the output */
+				isa = FALSE; /* for example, "ASL A,X" */
+			}
 			 
 		} /* end of converting input */
 		if (cp[-1] == ' ')
@@ -1483,8 +1488,14 @@ static UWORD assembler(UWORD addr)
 				addr++;
 				break;
 			case 1:
+				c[3] = '\0';
 				if (value < -128 || value > 255)
 					printf("Operand out of range!\n");
+				else if (isa && (strcmp(c, "ASL") == 0 || strcmp(c, "LSR") == 0 ||
+				                 strcmp(c, "ROL") == 0 || strcmp(c, "ROR") == 0)) {
+					printf("\"%s A\" is ambiguous.\n"
+					       "Use \"%s\" for accumulator mode or \"%s 0A\" for zeropage mode.\n", c, c, c);
+				}
 				else {
 					dPutByte(addr, (UBYTE) i);
 					addr++;
@@ -1512,6 +1523,10 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.26  2005/08/24 21:14:58  pfusik
+ypos_break_addr -> int; PROFILE -> MONITOR_PROFILE; TRACE -> MONITOR_TRACE;
+combined printfs; reject ambiguous "ASL A" in assembler
+
 Revision 1.25  2005/08/22 21:42:42  pfusik
 fixed linking error without MONITOR_BREAK defined
 
