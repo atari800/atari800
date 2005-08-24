@@ -793,27 +793,33 @@ static void SelectArtifacting(void)
 static void DisplaySettings(void)
 {
 	/* this is an array, not a string constant, so we can modify it */
-	static char refresh_status[] = "Current refresh rate: 1:1 ";
+	static char refresh_status[] = "1:1 ";
 	static tMenuItem menu_array[] = {
 		{"ARTF", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select artifacting mode", NULL, 0},
 		{"FRUP", ITEM_ENABLED | ITEM_ACTION, NULL, "Increase frameskip", NULL, 1},
 		{"FRDN", ITEM_ENABLED | ITEM_ACTION, NULL, "Decrease frameskip", NULL, 2},
-		{"CURR", ITEM_ENABLED | ITEM_ACTION, NULL, refresh_status, NULL, 3},
+		{"CURR", ITEM_ENABLED | ITEM_ACTION, NULL, "Current refresh rate:", refresh_status, 3},
 		{"SCSF", ITEM_ENABLED | ITEM_CHECK, NULL, "Accurate skipped frames:", NULL, 4},
+		{"SHAS", ITEM_ENABLED | ITEM_CHECK, NULL, "Show percents of Atari speed:", NULL, 5},
+		{"SHDL", ITEM_ENABLED | ITEM_CHECK, NULL, "Show disk drive activity:", NULL, 6},
+		{"SHSC", ITEM_ENABLED | ITEM_CHECK, NULL, "Show sector counter:", NULL, 7},
 		MENU_END
 	};
 
 	int option = 0;
 	do {
 		if (refresh_rate <= 9) {
-			refresh_status[24] = (char) ('0' + refresh_rate);
-			refresh_status[25] = ' ';
+			refresh_status[2] = (char) ('0' + refresh_rate);
+			refresh_status[3] = ' ';
 		}
 		else {
-			refresh_status[24] = (char) ('0' + refresh_rate / 10);
-			refresh_status[25] = (char) ('0' + refresh_rate % 10);
+			refresh_status[2] = (char) ('0' + refresh_rate / 10);
+			refresh_status[3] = (char) ('0' + refresh_rate % 10);
 		}
 		SetItemChecked(&menu_array[4], sprite_collisions_in_skipped_frames);
+		SetItemChecked(&menu_array[5], show_atari_speed);
+		SetItemChecked(&menu_array[6], show_disk_led);
+		SetItemChecked(&menu_array[7], show_sector_counter);
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 		switch (option) {
 		case 0:
@@ -831,6 +837,15 @@ static void DisplaySettings(void)
 			if (refresh_rate == 1)
 				ui_driver->fMessage("No effect with refresh rate 1");
 			sprite_collisions_in_skipped_frames = !sprite_collisions_in_skipped_frames;
+			break;
+		case 5:
+			show_atari_speed = !show_atari_speed;
+			break;
+		case 6:
+			show_disk_led = !show_disk_led;
+			break;
+		case 7:
+			show_sector_counter = !show_sector_counter;
 			break;
 		default:
 			break;
@@ -852,7 +867,7 @@ static int SoundSettings(void)
 		{"CONS", ITEM_ENABLED | ITEM_CHECK, NULL, "Speaker (Key Click):", NULL, 2},
 #endif
 #ifdef SERIO_SOUND
-		{"SERI", ITEM_ENABLED | ITEM_CHECK, NULL, "Serial IO Sound    :", NULL, 3},
+		{"SERI", ITEM_ENABLED | ITEM_CHECK, NULL, "Serial IO Sound:", NULL, 3},
 #endif
 		MENU_END
 	};
@@ -1128,6 +1143,10 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.68  2005/08/24 21:02:20  pfusik
+show_atari_speed, show_disk_led, show_sector_counter
+available in "Display Settings"
+
 Revision 1.67  2005/08/23 03:49:34  markgrebe
 Fixed typo in #if SERIO_SOUND
 
