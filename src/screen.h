@@ -23,6 +23,10 @@ extern int screen_visible_y1;
 extern int screen_visible_x2;
 extern int screen_visible_y2;
 
+extern int show_atari_speed;
+extern int show_disk_led;
+extern int show_sector_counter;
+
 void Screen_Initialise(int *argc, char *argv[]);
 void Screen_DrawAtariSpeed(void);
 void Screen_DrawDiskLED(void);
