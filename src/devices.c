@@ -2148,11 +2148,7 @@ void Device_UpdatePatches(void)
 	if (enable_h_patch) {		/* enable H: device */
 		/* change memory attributes for the area, where we put
 		   the H: handler table and patches */
-#ifndef PAGED_ATTRIB
 		SetROM(H_DEVICE_BEGIN, H_DEVICE_END);
-#else
-#warning H: device not working yet
-#endif
 		/* set handler table */
 		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_OPEN, H_PATCH_OPEN - 1);
 		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_CLOS, H_PATCH_CLOS - 1);
@@ -2187,11 +2183,7 @@ void Device_UpdatePatches(void)
 	if (enable_r_patch) {		/* enable R: device */
 		/* change memory attributes for the area, where we put
 		   the R: handler table and patches */
-#ifndef PAGED_ATTRIB
 		SetROM(R_DEVICE_BEGIN, R_DEVICE_END);
-#else
-#warning R: device not working yet
-#endif
 		/* set handler table */
 		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_OPEN, R_PATCH_OPEN - 1);
 		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_CLOS, R_PATCH_CLOS - 1);
@@ -2228,6 +2220,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.36  2005/08/24 21:15:57  pfusik
+H: and R: work with PAGED_ATTRIB
+
 Revision 1.35  2005/08/23 03:50:19  markgrebe
 Fixed month on modification date on directory listing.  Should be 1-12, not 0-11
 
