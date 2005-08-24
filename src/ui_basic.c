@@ -425,18 +425,15 @@ static void SelectItem(UBYTE *screen, int fg, int bg,
 			while (--spaceToAdd);
 	}
 
-	if (strlen(szOrig) > 3) {
-		int iKnownExt = FALSE;
-
-		if (!strcasecmp(szOrig + strlen(szOrig) - 3, "ATR"))
-			iKnownExt = TRUE;
-
-		if (!strcasecmp(szOrig + strlen(szOrig) - 3, "XFD"))
-			iKnownExt = TRUE;
-
-		if (iKnownExt) {
-			szOrig[strlen(szOrig) - 4] = '\0';
-		}
+	if (strlen(szOrig) > 4) {
+		char *ext = szOrig + strlen(szOrig) - 4;
+		/* XXX: add more extensions? */
+#ifdef HAVE_STRCASECMP
+		if (strcasecmp(ext, ".ATR") == 0 || strcasecmp(ext, ".XFD") == 0)
+#else
+		if (stricmp(ext, ".ATR") == 0 || stricmp(ext, ".XFD") == 0)
+#endif
+			*ext = '\0';
 	}
 
 	ShortenItem(szOrig, szString, iMaxXsize);
@@ -1054,6 +1051,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.27  2005/08/24 21:03:41  pfusik
+use stricmp() if there's no strcasecmp()
+
 Revision 1.26  2005/08/21 17:40:53  pfusik
 DO_DIR -> HAVE_OPENDIR
 
