@@ -33,20 +33,20 @@ extern UBYTE regS;
 extern UBYTE regY;
 extern UBYTE regX;
 
-#define SetN regP|=N_FLAG
-#define ClrN regP&=(~N_FLAG)
-#define SetV regP|=V_FLAG
-#define ClrV regP&=(~V_FLAG)
-#define SetB regP|=B_FLAG
-#define ClrB regP&=(~B_FLAG)
-#define SetD regP|=D_FLAG
-#define ClrD regP&=(~D_FLAG)
-#define SetI regP|=I_FLAG
-#define ClrI regP&=(~I_FLAG)
-#define SetZ regP|=Z_FLAG
-#define ClrZ regP&=(~Z_FLAG)
-#define SetC regP|=C_FLAG
-#define ClrC regP&=(~C_FLAG)
+#define SetN regP |= N_FLAG
+#define ClrN regP &= (~N_FLAG)
+#define SetV regP |= V_FLAG
+#define ClrV regP &= (~V_FLAG)
+#define SetB regP |= B_FLAG
+#define ClrB regP &= (~B_FLAG)
+#define SetD regP |= D_FLAG
+#define ClrD regP &= (~D_FLAG)
+#define SetI regP |= I_FLAG
+#define ClrI regP &= (~I_FLAG)
+#define SetZ regP |= Z_FLAG
+#define ClrZ regP &= (~Z_FLAG)
+#define SetC regP |= C_FLAG
+#define ClrC regP &= (~C_FLAG)
 
 extern UBYTE IRQ;
 
@@ -54,15 +54,15 @@ extern void (*rts_handler)(void);
 
 #define REMEMBER_PC_STEPS 64
 extern UWORD remember_PC[REMEMBER_PC_STEPS];
-extern int remember_PC_curpos;
+extern unsigned int remember_PC_curpos;
 extern int remember_xpos[REMEMBER_PC_STEPS];
 
 #define REMEMBER_JMP_STEPS 16
 extern UWORD remember_JMP[REMEMBER_JMP_STEPS];
-extern int remember_jmp_curpos;
+extern unsigned int remember_jmp_curpos;
 
 extern const int cycles[256];
-#ifdef PROFILE
+#ifdef MONITOR_PROFILE
 extern int instruction_count[256];
 #endif
 
