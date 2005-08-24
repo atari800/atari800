@@ -292,9 +292,12 @@ static void SmallFont_DrawInt(UBYTE *screen, int n, UBYTE color1, UBYTE color2)
 void Screen_DrawAtariSpeed(void)
 {
 	if (show_atari_speed) {
-		static int percent_display = 0;
-		if (nframes % 25 == 0 || percent_display == 0)
+		static int percent_display = 100;
+		static int last_updated = 0;
+		if ((nframes - last_updated) >= 25) {
+			last_updated = nframes;
 			percent_display = percent_atari_speed;
+		}
 		/* don't show if 99-101% */
 		if (percent_display < 99 || percent_display > 101) {
 			/* space for 5 digits - up to 99999% Atari speed */
