@@ -58,7 +58,9 @@ Command line Options
 
 -cart <filename>      Insert cartridge (CART or raw format)
 
--run <filename>       Run Atari executable file (EXE, COM, XEX)
+-run <filename>       Run Atari program (EXE, COM, XEX, BAS, LST)
+
+-state <filename>     Load saved-state file
 
 -tape <filename>      Attach cassette image (CAS format or raw file)
 -boottape <filename>  Attach cassette image and boot it
