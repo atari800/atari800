@@ -373,8 +373,11 @@ char *safe_strncpy(char *dest, const char *src, size_t size)
 int Atari800_Initialise(int *argc, char *argv[])
 {
 	int i, j;
-	char *run_direct = NULL;
-	char *rtconfig_filename = NULL;
+	const char *run_direct = NULL;
+#ifndef BASIC
+	const char *state_file = NULL;
+#endif
+	const char *rtconfig_filename = NULL;
 	int config = FALSE;
 	int help_only = FALSE;
 
@@ -497,6 +500,14 @@ int Atari800_Initialise(int *argc, char *argv[])
 				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
 			}
 #ifndef BASIC
+			/* The BASIC version does not support state files, because:
+			   1. It has no ability to save state files, because of lack of UI.
+			   2. It uses a simplified emulation, so the state files would be
+			      incompatible with other versions.
+			   3. statesav is not compiled in to make the executable smaller. */
+			else if (strcmp(argv[i], "-state") == 0) {
+				if (i_a) state_file = argv[++i]; else a_m = TRUE;
+			}
 			else if (strcmp(argv[i], "-refresh") == 0) {
 				if (i_a) {
 					sscanf(argv[++i], "%d", &refresh_rate);
@@ -530,8 +541,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Aprint("\t-5200_rom <file> Load 5200 ROM from file");
 					Aprint("\t-basic_rom <fil> Load BASIC ROM from file");
 					Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
-					Aprint("\t-run <file>      Run Atari program (COM, EXE, XEX, BIN, LST)");
+					Aprint("\t-run <file>      Run Atari program (COM, EXE, XEX, BAS, LST)");
 #ifndef BASIC
+					Aprint("\t-state <file>    Load saved-state file");
 					Aprint("\t-refresh <rate>  Specify screen refresh rate");
 #endif
 					Aprint("\t-nopatch         Don't patch SIO routine in OS");
@@ -640,6 +652,15 @@ int Atari800_Initialise(int *argc, char *argv[])
 	/* Load Atari executable, if any */
 	if (run_direct != NULL)
 		BIN_loader(run_direct);
+
+#ifndef BASIC
+	/* Load state file */
+	if (state_file != NULL) {
+		if (ReadAtariState(state_file, "rb"))
+			/* Don't press Option */
+			consol_table[1] = consol_table[2] = 0x0f;
+	}
+#endif
 
 #ifdef HAVE_SIGNAL
 	/* Install CTRL-C Handler */
@@ -1281,6 +1302,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.70  2005/08/24 21:04:41  pfusik
+load state files from the command line using "-state"
+
 Revision 1.69  2005/08/22 20:52:21  pfusik
 stripped 2k more from emuos;
 don't try to load BASIC ROM in 400/800 emuos mode
