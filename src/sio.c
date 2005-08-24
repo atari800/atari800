@@ -124,136 +124,171 @@ void SIO_Exit(void)
 
 int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 {
-	char upperfile[FILENAME_MAX];
-	struct ATR_Header header;
-	int fname_len;
-	int i;
 	FILE *f = NULL;
+	UnitStatus status;
+	struct ATR_Header header;
 
-	fname_len = (int) strlen(filename);
-	if (fname_len >= FILENAME_MAX)
+	/* avoid overruns in sio_filename[] */
+	if (strlen(filename) >= FILENAME_MAX)
 		return FALSE;
-	for (i = 0; i < fname_len; i++) {
-		char c = filename[i];
-		upperfile[i] = (c >= 'a' && c <= 'z') ? (char) (c + ('A' - 'a')) : c;
+
+	/* release previous disk */
+	SIO_Dismount(diskno);
+
+	/* open file */
+	if (!b_open_readonly) {
+		status = ReadWrite;
+		f = fopen(filename, "rb+");
 	}
-	upperfile[fname_len] = '\0';
+	if (f == NULL) {
+		status = ReadOnly;
+		f = fopen(filename, "rb");
+		if (f == NULL)
+			return FALSE;
+	}
 
-	drive_status[diskno - 1] = b_open_readonly ? ReadOnly : ReadWrite;
+	/* read header */
+	if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
+		fclose(f);
+		return FALSE;
+	}
 
-	/* If file is DCM, open it with opendcm to create a temp file */
-	if (fname_len > 4 && !strcmp(&upperfile[fname_len - 4], ".DCM")) {
+	/* detect compressed image and uncompress */
+	switch (header.magic1) {
+	case 0xf9:
+	case 0xfa:
+		/* DCM */
+		fclose(f);
 		istmpfile[diskno - 1] = 1;
 		f = opendcm(diskno, filename, tmp_filename[diskno - 1]);
-	}
-#ifdef HAVE_LIBZ
-	else if ((fname_len > 4 && !strcmp(&upperfile[fname_len - 4], ".ATZ")) ||
-			 (fname_len > 7 && !strcmp(&upperfile[fname_len - 7], ".ATR.GZ")) ||
-			 (fname_len > 4 && !strcmp(&upperfile[fname_len - 4], ".XFZ")) ||
-			 (fname_len > 7 && !strcmp(&upperfile[fname_len - 7], ".XFD.GZ"))) {
-		istmpfile[diskno - 1] = 1;
-		f = openzlib(diskno, filename, tmp_filename[diskno - 1]);
-	}	
-#endif /* HAVE_LIBZ */
-	else {
-		/* Normal ATR, XFD disk */
-		if (!b_open_readonly) {
-			f = fopen(filename, "rb+");
-		}
-		if (b_open_readonly || !f) {
-			f = fopen(filename, "rb");
-			drive_status[diskno - 1] = ReadOnly;
-		}
-	}
-
-	if (f) {
-		ULONG file_length;
-
-		fseek(f, 0L, SEEK_END);
-		file_length = ftell(f);
-		fseek(f, 0L, SEEK_SET);
-
-		if (fread(&header, 1, sizeof(struct ATR_Header), f) < sizeof(struct ATR_Header)) {
+		if (f == NULL)
+			return FALSE;
+		if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
 			fclose(f);
-			strcpy(sio_filename[diskno - 1], "Empty");
-			drive_status[diskno - 1] = NoDisk;
-			disk[diskno - 1] = 0;
+			remove(tmp_filename[diskno - 1]);
+			memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
+			istmpfile[diskno - 1] = 0;
+			return FALSE;
+		}
+		/* XXX: status = ReadOnly; ? */
+		break;
+	case 0x1f:
+		if (header.magic2 == 0x8b) {
+			/* ATZ, ATR.GZ, XFZ, XFD.GZ */
+			fclose(f);
+			istmpfile[diskno - 1] = 1;
+			f = openzlib(diskno, filename, tmp_filename[diskno - 1]);
+			if (f == NULL)
+				return FALSE;
+			if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
+				fclose(f);
+				remove(tmp_filename[diskno - 1]);
+				memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
+				istmpfile[diskno - 1] = 0;
+				return FALSE;
+			}
+			/* XXX: status = ReadOnly; ? */
+		}
+		break;
+	default:
+		break;
+	}
+
+	boot_sectors_type[diskno - 1] = BOOT_SECTORS_LOGICAL;
+
+	if (header.magic1 == MAGIC1 && header.magic2 == MAGIC2) {
+		/* ATR (may be temporary from DCM or ATR/ATR.GZ) */
+		format[diskno - 1] = ATR;
+
+		sectorsize[diskno - 1] = (header.secsizehi << 8) + header.secsizelo;
+		if (sectorsize[diskno - 1] != 128 && sectorsize[diskno - 1] != 256) {
+			fclose(f);
+			if (istmpfile[diskno - 1]) {
+				remove(tmp_filename[diskno - 1]);
+				memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
+				istmpfile[diskno - 1] = 0;
+			}
 			return FALSE;
 		}
 
-		strcpy(sio_filename[diskno - 1], filename);
+		if (header.writeprotect && !ignore_header_writeprotect)
+			status = ReadOnly;
 
-		boot_sectors_type[diskno - 1] = BOOT_SECTORS_LOGICAL;
+		/* ATR header contains length in 16-byte chunks. */
+		/* First compute number of 128-byte chunks
+		   - it's number of sectors on single density disk */
+		sectorcount[diskno - 1] = ((header.hiseccounthi << 24)
+			+ (header.hiseccountlo << 16)
+			+ (header.seccounthi << 8)
+			+ header.seccountlo) >> 3;
 
-		if ((header.magic1 == MAGIC1) && (header.magic2 == MAGIC2)) {
-			format[diskno - 1] = ATR;
-
-			if (header.writeprotect && !ignore_header_writeprotect)
-				drive_status[diskno - 1] = ReadOnly;
-
-			sectorsize[diskno - 1] = header.secsizehi << 8 |
-				header.secsizelo;
-
-			/* ATR header contains length in 16-byte chunks */
-			/* First compute number of 128-byte chunks */
-			sectorcount[diskno - 1] = (header.hiseccounthi << 24 |
-				header.hiseccountlo << 16 |
-				header.seccounthi << 8 |
-				header.seccountlo) >> 3;
-
-			/* Fix if double density */
-			if (sectorsize[diskno - 1] == 256) {
-				if (sectorcount[diskno - 1] & 1)
-					sectorcount[diskno - 1] += 3;		/* logical (128-byte) boot sectors */
-				else {	/* 256-byte boot sectors */
-					/* check if physical or SIO2PC */
-					/* Physical if there's a non-zero byte in bytes 0x190-0x30f of the ATR file */
-					UBYTE buffer[0x180];
-					fseek(f, 0x190L, SEEK_SET);
-					fread(buffer, 1, 0x180, f);
-					boot_sectors_type[diskno - 1] = BOOT_SECTORS_SIO2PC;
-					for (i = 0; i < 0x180; i++)
-						if (buffer[i] != 0) {
-							boot_sectors_type[diskno - 1] = BOOT_SECTORS_PHYSICAL;
-							break;
-						}
-				}
-				sectorcount[diskno - 1] >>= 1;
-			}
-#ifdef DEBUG
-			Aprint("ATR: sectorcount = %d, sectorsize = %d",
-				   sectorcount[diskno - 1], sectorsize[diskno - 1]);
-#endif
-		}
-		else {
-			format[diskno - 1] = XFD;
-
-			if (file_length <= (1040 * 128)) {
-				sectorsize[diskno - 1] = 128;	/* single density */
-				sectorcount[diskno - 1] = file_length / 128;
-			}
+		/* Fix number of sectors if double density */
+		if (sectorsize[diskno - 1] == 256) {
+			if (sectorcount[diskno - 1] & 1)
+				/* logical (128-byte) boot sectors */
+				sectorcount[diskno - 1] += 3;
 			else {
-				sectorsize[diskno - 1] = 256;	/* double density */
-				if ((file_length & 0xff) == 0) {
-					boot_sectors_type[diskno - 1] = BOOT_SECTORS_PHYSICAL;
-					sectorcount[diskno - 1] = file_length / 256;
+				/* 256-byte boot sectors */
+				/* check if physical or SIO2PC: physical if there's
+				   a non-zero byte in bytes 0x190-0x30f of the ATR file */
+				UBYTE buffer[0x180];
+				int i;
+				fseek(f, 0x190L, SEEK_SET);
+				if (fread(buffer, 1, 0x180, f) != 0x180) {
+					fclose(f);
+					if (istmpfile[diskno - 1]) {
+						remove(tmp_filename[diskno - 1]);
+						memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
+						istmpfile[diskno - 1] = 0;
+					}
+					return FALSE;
 				}
-				else
-					sectorcount[diskno - 1] = (file_length + 0x180) / 256;
+				boot_sectors_type[diskno - 1] = BOOT_SECTORS_SIO2PC;
+				for (i = 0; i < 0x180; i++)
+					if (buffer[i] != 0) {
+						boot_sectors_type[diskno - 1] = BOOT_SECTORS_PHYSICAL;
+						break;
+					}
 			}
+			sectorcount[diskno - 1] >>= 1;
 		}
-		format_sectorsize[diskno - 1] = sectorsize[diskno - 1];
-		format_sectorcount[diskno - 1] = sectorcount[diskno - 1];
 	}
 	else {
-		strcpy(sio_filename[diskno - 1], "Empty");
-		drive_status[diskno - 1] = NoDisk;
-		istmpfile[diskno - 1] = 0;
+		/* XFD (may be temporary from XFZ/XFD.GZ) */
+		ULONG file_length;
+
+		fseek(f, 0, SEEK_END);
+		file_length = (ULONG) ftell(f);
+
+		format[diskno - 1] = XFD;
+
+		if (file_length <= (1040 * 128)) {
+			/* single density */
+			sectorsize[diskno - 1] = 128;
+			sectorcount[diskno - 1] = file_length >> 7;
+		}
+		else {
+			/* double density */
+			sectorsize[diskno - 1] = 256;
+			if ((file_length & 0xff) == 0) {
+				boot_sectors_type[diskno - 1] = BOOT_SECTORS_PHYSICAL;
+				sectorcount[diskno - 1] = file_length >> 8;
+			}
+			else
+				sectorcount[diskno - 1] = (file_length + 0x180) >> 8;
+		}
 	}
 
+#ifdef DEBUG
+	Aprint("sectorcount = %d, sectorsize = %d",
+		   sectorcount[diskno - 1], sectorsize[diskno - 1]);
+#endif
+	format_sectorsize[diskno - 1] = sectorsize[diskno - 1];
+	format_sectorcount[diskno - 1] = sectorcount[diskno - 1];
+	strcpy(sio_filename[diskno - 1], filename);
+	drive_status[diskno - 1] = status;
 	disk[diskno - 1] = f;
-
-	return f ? TRUE : FALSE;
+	return TRUE;
 }
 
 void SIO_Dismount(int diskno)
@@ -264,7 +299,7 @@ void SIO_Dismount(int diskno)
 		drive_status[diskno - 1] = NoDisk;
 		strcpy(sio_filename[diskno - 1], "Empty");
 		if (istmpfile[diskno - 1]) {
-			remove(tmp_filename[diskno - 1] );
+			remove(tmp_filename[diskno - 1]);
 			memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
 			istmpfile[diskno - 1] = 0;
 		}
@@ -1209,6 +1244,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.34  2005/08/24 21:06:25  pfusik
+recognize disk image format by the header rather than filename extension
+
 Revision 1.33  2005/08/22 20:48:13  pfusik
 avoid <ctype.h>
 
