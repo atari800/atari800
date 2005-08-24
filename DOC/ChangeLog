@@ -1,3 +1,34 @@
+2005-08-24  Piotr Fusik  <fox@scene.pl>
+* atari.c: load state files from the command line using "-state"
+
+* sio.c: recognize disk image format by the header rather than filename
+  extension (*.DC3 now work as DCM)
+
+* screen.h, ui.c: show_atari_speed, show_disk_led, show_sector_counter
+  available in "Display Settings"
+
+* devices.c: H: and R: work with PAGED_ATTRIB
+
+* screen.c: fixed Screen_DrawAtariSpeed() not updating with refresh_rate > 1
+
+* ui_basic.c: use stricmp() if there's no strcasecmp()
+
+* monitor.c: people may mean accumulator mode when they write "ASL A"
+  in the assembler
+
+* atari_curses.c: keypad works on PDCurses
+
+* cpu.[ch]: changed remember_PC_curpos and remember_jmp_curpos
+  to unsigned, because "x % POWER_OF_TWO" is much faster for unsigned x
+  (1 instruction vs 6 on x86)
+
+* antic.c, monitor.[ch]: changed ypos_break_addr from UWORD to int (faster)
+
+* cpu.c, monitor.[ch]: PROFILE -> MONITOR_PROFILE, TRACE -> MONITOR_TRACE
+
+* monitor.c: combined consecutive printfs
+
+
 2005-08-22  Piotr Fusik  <fox@scene.pl>
 * cartridge.c: Atarimax cartridges can be bank-switched by reading $D5xx
 
