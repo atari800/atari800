@@ -411,15 +411,27 @@ int Atari_Keyboard(void)
 	case '?':
 		keycode = AKEY_QUESTION;
 		break;
+#ifdef PADMINUS
+	case PADMINUS:
+#endif
 	case '-':
 		keycode = AKEY_MINUS;
 		break;
+#ifdef PADPLUS
+	case PADPLUS:
+#endif
 	case '+':
 		keycode = AKEY_PLUS;
 		break;
+#ifdef PADSTAR
+	case PADSTAR:
+#endif
 	case '*':
 		keycode = AKEY_ASTERISK;
 		break;
+#ifdef PADSLASH
+	case PADSLASH:
+#endif
 	case '/':
 		keycode = AKEY_SLASH;
 		break;
@@ -705,6 +717,9 @@ int Atari_Keyboard(void)
 #endif
 		keycode = AKEY_BACKSPACE;
 		break;
+#ifdef PADENTER
+	case PADENTER:
+#endif
 	case KEY_ENTER:
 	case '\n':
 		keycode = AKEY_RETURN;
@@ -822,6 +837,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.21  2005/08/24 21:07:02  pfusik
+keypad works on PDCurses
+
 Revision 1.20  2005/08/21 15:36:54  pfusik
 highlighting of Self Test menu; fixed display of '\x7f';
 use KEY_HELP, KEY_SHELP, KEY_LHELP, KEY_BREAK, KEY_HOME, KEY_CLEAR,
