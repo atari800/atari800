@@ -191,13 +191,13 @@ static UBYTE C;					/* zero (0) or one(1) */
 void (*rts_handler)(void) = NULL;
 
 /*
-   #define PROFILE
+   #define MONITOR_PROFILE
  */
 
 /*
  * The following array is used for 6502 instruction profiling
  */
-#ifdef PROFILE
+#ifdef MONITOR_PROFILE
 int instruction_count[256];
 #endif
 
@@ -205,10 +205,10 @@ UBYTE IRQ;
 
 #ifdef MONITOR_BREAK
 UWORD remember_PC[REMEMBER_PC_STEPS];
-int remember_PC_curpos = 0;
+unsigned int remember_PC_curpos = 0;
 int remember_xpos[REMEMBER_PC_STEPS];
 UWORD remember_JMP[REMEMBER_JMP_STEPS];
-int remember_jmp_curpos=0;
+unsigned int remember_jmp_curpos = 0;
 #endif
 
 void CPU_GetStatus(void)
@@ -527,7 +527,7 @@ void GO(int limit)
 
 	while (xpos < xpos_limit) {
 
-#ifdef TRACE
+#ifdef MONITOR_TRACE
 		if (tron) {
 			disassemble(PC, PC + 1);
 			printf("\tA=%02x, X=%02x, Y=%02x, S=%02x\n",
@@ -557,7 +557,7 @@ void GO(int limit)
 		insn = dGetByte(PC++);
 		xpos += cycles[insn];
 
-#ifdef PROFILE
+#ifdef MONITOR_PROFILE
 		instruction_count[insn]++;
 #endif
 
@@ -2038,7 +2038,6 @@ void GO(int limit)
 			UPDATE_LOCAL_REGS;
 		}
 #endif
-		continue;
 	}
 
 	UPDATE_GLOBAL_REGS;
@@ -2051,7 +2050,7 @@ void CPU_Initialise(void)
 
 void CPU_Reset(void)
 {
-#ifdef PROFILE
+#ifdef MONITOR_PROFILE
 	memset(instruction_count, 0, sizeof(instruction_count));
 #endif
 
