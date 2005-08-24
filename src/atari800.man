@@ -12,16 +12,16 @@ Atari 5200 Games System.
 Print complete and up-to-date list of command line switches
 .TP
 \fB-v
-Print emulator version.
+Print emulator version
 .TP
 \fB-verbose
 Display framerate when exiting
 .TP
 \fB-configure
-Starts emulator in run-time configuration mode.
+Starts emulator in run-time configuration mode
 .TP
 \fB-config filename
-Specify an alternative configuration filename.
+Specify an alternative configuration filename
 
 .TP
 \fB-osa_rom filename
@@ -45,11 +45,14 @@ Path to file containing Atari BASIC ROM.
 Used to override paths defined at compile time.
 
 .TP
+\fB-atari
+Emulate Atari 800
+.TP
 \fB-xl
-Emulate Atari 800 XL.
+Emulate Atari 800 XL
 .TP
 \fB-xe
-Emulate Atari 130 XE.
+Emulate Atari 130 XE
 .TP
 \fB-320xe
 Emulate Atari 320 XE (Compy Shop)
@@ -58,20 +61,20 @@ Emulate Atari 320 XE (Compy Shop)
 Emulate Atari 320 XE (Rambo)
 .TP
 \fB-5200
-Emulate Atari 5200 - Games controller emulation has not been implemented yet!
+Emulate Atari 5200
 .TP
 \fB-emuos
 Use EmuOS
 
 .TP
 \fB-a
-Use Atari OS/A.
+Use Atari OS/A for Atari 800
 .TP
 \fB-b
-Use Atari OS/B.
+Use Atari OS/B for Atari 800
 .TP
 \fB-c
-Enable RAM between $c000 and $d000.
+Enable RAM between 0xc000 and 0xcfff in Atari 800
 
 .TP
 \fB-pal                
@@ -93,7 +96,10 @@ Turn on Atari BASIC ROM
 Insert cartridge (CART or raw format)
 .TP
 \fB-run <filename>     
-Run Atari executable file (EXE, COM, XEX)
+Run Atari program (EXE, COM, XEX, BAS, LST)
+.TP
+\fB-state <filename>     
+Load saved-state file
 .TP
 \fB-tape <filename>    
 Attach cassette image (CAS format or raw file)
@@ -272,7 +278,8 @@ Enable screen interlace option
 Generate screen with interlace
 .TP
 \fB-video <mode>       
-0=320x200, 1=320x240, 2=320x480 interlaced with black lines, 3=320x480 interlaced with darker lines
+0=320x200, 1=320x240, 2=320x480 interlaced with black lines,
+3=320x480 interlaced with darker lines
 .TP
 \fB-novesa             
 Do not use VESA 2 video modes
@@ -683,6 +690,6 @@ Atari 5200 O/S
 .TP
 \fI/usr/share/atari800/ATARIBAS.ROM\fR
 Atari Basic
+
 .SH BUGS
-A few programs cause the emulator to enter its built in debugger. The
-reason for this is unknown at the moment.
+See the BUGS file.
