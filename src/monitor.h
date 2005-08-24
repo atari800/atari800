@@ -6,13 +6,13 @@
 
 int monitor(void);
 
-#ifdef TRACE
+#ifdef MONITOR_TRACE
 extern int tron;
 #endif
 
 #ifdef MONITOR_BREAK
 extern UWORD break_addr;
-extern UWORD ypos_break_addr;
+extern int ypos_break_addr;
 extern UBYTE break_step;
 extern UBYTE break_ret;
 extern UBYTE break_cim;
