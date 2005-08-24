@@ -48,7 +48,7 @@
 #define RCHOP 3			/* do not build rightmost 0..3 characters in wide mode */
 
 #ifndef NO_YPOS_BREAK_FLICKER
-extern UWORD ypos_break_addr;
+extern int ypos_break_addr;
 #endif
 #ifdef NEW_CYCLE_EXACT
 void draw_partial_scanline(int l,int r);
