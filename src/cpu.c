@@ -2038,6 +2038,10 @@ void GO(int limit)
 			UPDATE_LOCAL_REGS;
 		}
 #endif
+		/* This "continue" does nothing here.
+		   But it is necessary because, if we're not using NO_GOTO nor MONITOR_BREAK,
+		   gcc can complain: "error: label at end of compound statement". */
+		continue;
 	}
 
 	UPDATE_GLOBAL_REGS;
