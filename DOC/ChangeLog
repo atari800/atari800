@@ -1,3 +1,31 @@
+2005-08-27  Piotr Fusik  <fox@scene.pl>
+* atari_sdl.c, atari_x11.c: now compile with --disable-sound
+
+* cartridge.c, memory.c: cast the result of malloc()
+
+* cassette.h: declared CASSETTE_CreateFile()
+
+* compfile.[ch], sio.c: created compfile.h
+
+* cpu.c: restored that "continue" at the end of the main loop
+
+* devices.[ch]: DEFAULT_H_PATH moved to devices.h (for Atari800Win PLus)
+
+* input.c: corrected file description
+
+* memory.h: wrap macro arguments in parentheses, just in case
+
+* remez.c: fixed a memory leak (found by Marcin Lewandowski)
+
+* configure.ac, sound.c, sound_unix.c:
+  renamed sound.c to sound_unix.c to avoid confusion
+
+* statesav.c, ui_basic.c: MSVC declares getcwd() in <direct.h>
+
+* atari.c, util/benchmark.pl: performance tests
+  (some results posted to the mailing list)
+
+
 2005-08-24  Piotr Fusik  <fox@scene.pl>
 * atari.c: load state files from the command line using "-state"
 
