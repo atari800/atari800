@@ -29,40 +29,36 @@
 
 #include "antic.h"  /* ypos */
 #include "atari.h"
-#include "cpu.h"
-#include "memory.h"
-#include "sio.h"
-#include "pokey.h"
-#include "pokeysnd.h"
-#include "platform.h"
-#include "log.h"
 #include "binload.h"
 #include "cassette.h"
+#include "compfile.h"
+#include "cpu.h"
+#include "log.h"
+#include "memory.h"
+#include "sio.h"
+#include "platform.h"
+#include "pokey.h"
+#include "pokeysnd.h"
+#include "rt-config.h"
 #ifndef BASIC
 #include "statesav.h"
 #endif
-#include "rt-config.h"
 
 /* If ATR image is in double density (256 bytes per sector),
    then the boot sectors (sectors 1-3) can be:
    - logical (as seen by Atari) - 128 bytes in each sector
    - physical (as stored on the disk) - 256 bytes in each sector.
-     Only the first half of sector is used for storing data, rest is zero.
+     Only the first half of sector is used for storing data, the rest is zero.
    - SIO2PC (the type used by the SIO2PC program) - 3 * 128 bytes for data
      of boot sectors, then 3 * 128 unused bytes (zero)
-   The XFD images in double density have either logical or physical boot sectors.
-*/
+   The XFD images in double density have either logical or physical
+   boot sectors. */
 #define BOOT_SECTORS_LOGICAL	0
 #define BOOT_SECTORS_PHYSICAL	1
 #define BOOT_SECTORS_SIO2PC		2
 static int boot_sectors_type[MAX_DRIVES];
 
-/* Format is also size of header :-) */
-typedef enum Format {
-	XFD = 0, ATR = 16
-} Format;
-
-static Format format[MAX_DRIVES];
+static int header_size[MAX_DRIVES];
 static FILE *disk[MAX_DRIVES] = {0, 0, 0, 0, 0, 0, 0, 0};
 static int sectorcount[MAX_DRIVES];
 static int sectorsize[MAX_DRIVES];
@@ -92,11 +88,6 @@ int ExpectedBytes = 0;
 
 int ignore_header_writeprotect = 0;
 
-extern FILE *opendcm( int diskno, const char *infilename, char *outfilename );
-#ifdef HAVE_LIBZ
-extern FILE *openzlib(int diskno, const char *infilename, char *outfilename );
-#endif
-
 void SIO_Initialise(int *argc, char *argv[])
 {
 	int i;
@@ -125,7 +116,7 @@ void SIO_Exit(void)
 int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 {
 	FILE *f = NULL;
-	UnitStatus status;
+	UnitStatus status = ReadWrite;
 	struct ATR_Header header;
 
 	/* avoid overruns in sio_filename[] */
@@ -137,7 +128,6 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 
 	/* open file */
 	if (!b_open_readonly) {
-		status = ReadWrite;
 		f = fopen(filename, "rb+");
 	}
 	if (f == NULL) {
@@ -198,7 +188,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 
 	if (header.magic1 == MAGIC1 && header.magic2 == MAGIC2) {
 		/* ATR (may be temporary from DCM or ATR/ATR.GZ) */
-		format[diskno - 1] = ATR;
+		header_size[diskno - 1] = 16;
 
 		sectorsize[diskno - 1] = (header.secsizehi << 8) + header.secsizelo;
 		if (sectorsize[diskno - 1] != 128 && sectorsize[diskno - 1] != 256) {
@@ -260,7 +250,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		fseek(f, 0, SEEK_END);
 		file_length = (ULONG) ftell(f);
 
-		format[diskno - 1] = XFD;
+		header_size[diskno - 1] = 0;
 
 		if (file_length <= (1040 * 128)) {
 			/* single density */
@@ -328,11 +318,11 @@ static void SizeOfSector(UBYTE unit, int sector, int *sz, ULONG *ofs)
 	if (sector < 4) {
 		/* special case for first three sectors in ATR and XFD image */
 		size = 128;
-		offset = format[unit] + (sector - 1) * (boot_sectors_type[unit] == BOOT_SECTORS_PHYSICAL ? 256 : 128);
+		offset = header_size[unit] + (sector - 1) * (boot_sectors_type[unit] == BOOT_SECTORS_PHYSICAL ? 256 : 128);
 	}
 	else {
 		size = sectorsize[unit];
-		offset = format[unit] + (boot_sectors_type[unit] == BOOT_SECTORS_LOGICAL ? 0x180 : 0x300) + (sector - 4) * size;
+		offset = header_size[unit] + (boot_sectors_type[unit] == BOOT_SECTORS_LOGICAL ? 0x180 : 0x300) + (sector - 4) * size;
 	}
 
 	if (sz)
@@ -431,7 +421,7 @@ static int FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 				   First get the information about the disk image, because we are going
 				   to umount it. */
 				memcpy(fname, sio_filename[unit], FILENAME_MAX);
-				is_atr = (format[unit] == ATR);
+				is_atr = (header_size[unit] == 16);
 				save_boot_sectors_type = boot_sectors_type[unit];
 				bootsectsize = 128;
 				if (sectsize == 256 && save_boot_sectors_type != BOOT_SECTORS_LOGICAL)
@@ -1165,6 +1155,7 @@ int SIO_GetByte(void)
 	return byte;
 }
 
+#if !defined(BASIC) && !defined(__PLUS)
 int Rotate_Disks(void)
 {
 	char tmp_filenames[MAX_DRIVES][FILENAME_MAX];
@@ -1195,6 +1186,7 @@ int Rotate_Disks(void)
 
 	return bSuccess;
 }
+#endif /* !defined(BASIC) && !defined(__PLUS) */
 
 #ifndef BASIC
 
@@ -1244,6 +1236,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.35  2005/08/27 10:39:12  pfusik
+created compfile.h
+
 Revision 1.34  2005/08/24 21:06:25  pfusik
 recognize disk image format by the header rather than filename extension
 

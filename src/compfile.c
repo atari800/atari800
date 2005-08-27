@@ -35,6 +35,7 @@
 #endif
 
 #include "atari.h"
+#include "compfile.h"
 #include "log.h"
 
 /* Size of memory buffer ZLIB should use when decompressing files */
@@ -572,6 +573,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.21  2005/08/27 10:39:12  pfusik
+created compfile.h
+
 Revision 1.20  2005/08/21 15:40:13  pfusik
 Atari_tmpfile(); #ifdef HAVE_REWIND; removed a redundant assertion
 
