@@ -3,14 +3,17 @@
 
 #include "atari.h"	/* for UWORD */
 
-/* following is for atari.c */
+/* the following is for atari.c */
 
 void Device_Initialise(int *argc, char *argv[]);
 int Device_PatchOS(void);
 void Device_Frame(void);
 void Device_UpdatePatches(void);
 
-/* following is for ports which want to add their specific devices */
+/* this is for devices.c and Atari800Win PLus */
+#define DEFAULT_H_PATH  "H1:>DOS;>DOS"
+
+/* the following is for ports which want to add their specific devices */
 
 #define	ICHIDZ	0x0020
 #define	ICDNOZ	0x0021

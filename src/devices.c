@@ -1,5 +1,5 @@
 /*
- * devices.c - H: devices emulation
+ * devices.c - emulation of H:, P:, E: and K: Atari devices
  *
  * Copyright (C) 1995-1998 David Firth
  * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
@@ -33,9 +33,11 @@
 #include <time.h>
 #endif
 #ifdef HAVE_UNIXIO_H
+/* VMS */
 #include <unixio.h>
 #endif
 #ifdef HAVE_FILE_H
+/* VMS */
 #include <file.h>
 #endif
 #ifdef HAVE_FCNTL_H
@@ -87,7 +89,6 @@ static char *H[5] = {
 	atari_h4_dir
 };
 
-#define DEFAULT_H_PATH  "H1:>DOS;>DOS"
 char HPath[FILENAME_MAX] = DEFAULT_H_PATH;
 static char *HPaths[20];
 static int HPathDrive[20];
@@ -2220,6 +2221,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.37  2005/08/27 10:37:07  pfusik
+DEFAULT_H_PATH moved to devices.h
+
 Revision 1.36  2005/08/24 21:15:57  pfusik
 H: and R: work with PAGED_ATTRIB
 
