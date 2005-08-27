@@ -1,5 +1,5 @@
 /*
- * input.c - joystick emulation via keypad and mouse
+ * input.c - keyboard, joysticks and mouse emulation
  *
  * Copyright (C) 2001-2002 Piotr Fusik
  * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
