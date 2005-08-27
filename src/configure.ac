@@ -135,8 +135,8 @@ AC_PATH_X
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
-SUPPORTS_SOUND_O=yes
-AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_O=no)
+SUPPORTS_SOUND_UNIX=yes
+AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_UNIX=no)
 SUPPORTS_RDEVICE=yes
 AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no)
 
@@ -286,8 +286,8 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
 AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkdir mkstemp mktemp])
 AC_CHECK_FUNCS([modf opendir rename rewind rmdir select signal snprintf])
-AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr])
-AC_CHECK_FUNCS([strstr strtol system time tmpnam uclock unlink vsnprintf])
+AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
+AC_CHECK_FUNCS([strtol system time tmpnam uclock unlink usleep vsnprintf])
 AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 
 
@@ -433,8 +433,8 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
                 OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
                 ;;
             *)
-                if [[ "$SUPPORTS_SOUND_O" = "yes" ]]; then
-                    OBJS="$OBJS sound.o"
+                if [[ "$SUPPORTS_SOUND_UNIX" = "yes" ]]; then
+                    OBJS="$OBJS sound_unix.o"
                 else
                     AC_MSG_ERROR([Sound support not available, re-run configure with --disable-sound])
                 fi
