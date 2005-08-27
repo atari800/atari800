@@ -17,7 +17,7 @@
 #define dPutWordAligned(x, y)	dPutWord(x, y)
 #else	/* UNALIGNED_LONG_OK */
 #define dGetWord(x)				(memory[x] + (memory[(x) + 1] << 8))
-#define dPutWord(x, y)			(memory[x] = (UBYTE) (y), memory[x + 1] = (UBYTE) ((y) >> 8))
+#define dPutWord(x, y)			(memory[x] = (UBYTE) (y), memory[(x) + 1] = (UBYTE) ((y) >> 8))
 /* faster versions of dGetWord and dPutWord for even addresses */
 /* TODO: guarantee that memory is UWORD-aligned and use UWORD access */
 #define dGetWordAligned(x)		dGetWord(x)
@@ -26,7 +26,7 @@
 #else	/* WORDS_BIGENDIAN */
 /* can't do any word optimizations for big endian machines */
 #define dGetWord(x)				(memory[x] + (memory[(x) + 1] << 8))
-#define dPutWord(x, y)			(memory[x] = (UBYTE) (y), memory[x + 1] = (UBYTE) ((y) >> 8))
+#define dPutWord(x, y)			(memory[x] = (UBYTE) (y), memory[(x) + 1] = (UBYTE) ((y) >> 8))
 #define dGetWordAligned(x)		dGetWord(x)
 #define dPutWordAligned(x, y)	dPutWord(x, y)
 #endif	/* WORDS_BIGENDIAN */
