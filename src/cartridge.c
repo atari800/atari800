@@ -453,7 +453,7 @@ UBYTE BountyBob1_GetByte(UWORD addr)
 			return 0;
 		}
 	}
-	return memory[addr];
+	return dGetByte(addr);
 }
 
 UBYTE BountyBob2_GetByte(UWORD addr)
@@ -469,7 +469,7 @@ UBYTE BountyBob2_GetByte(UWORD addr)
 			return 0;
 		}
 	}
-	return memory[addr];
+	return dGetByte(addr);
 }
 
 void BountyBob1_PutByte(UWORD addr, UBYTE value)
@@ -534,7 +534,7 @@ int CART_Insert(const char *filename)
 	/* if full kilobytes, assume it is raw image */
 	if ((len & 0x3ff) == 0) {
 		/* alloc memory and read data */
-		cart_image = malloc(len);
+		cart_image = (UBYTE *) malloc(len);
 		if (cart_image == NULL) {
 			fclose(fp);
 			return CART_BAD_FORMAT;
@@ -573,7 +573,7 @@ int CART_Insert(const char *filename)
 			int checksum;
 			len = cart_kb[type] << 10;
 			/* alloc memory and read data */
-			cart_image = malloc(len);
+			cart_image = (UBYTE *) malloc(len);
 			if (cart_image == NULL) {
 				fclose(fp);
 				return CART_BAD_FORMAT;

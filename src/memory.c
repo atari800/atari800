@@ -83,7 +83,7 @@ static void AllocXEMemory(void)
 		if (size != atarixe_memory_size) {
 			if (atarixe_memory != NULL)
 				free(atarixe_memory);
-			atarixe_memory = malloc(size);
+			atarixe_memory = (UBYTE *) malloc(size);
 			if (atarixe_memory == NULL) {
 				Aprint("MEMORY_InitialiseMachine: Out of memory! Switching to 64 KB mode");
 				atarixe_memory_size = 0;
@@ -539,6 +539,9 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.13  2005/08/27 10:39:58  pfusik
+cast the result of malloc()
+
 Revision 1.12  2005/08/22 20:54:49  pfusik
 initialize have_basic just in case
 
