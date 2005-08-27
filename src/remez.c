@@ -2,7 +2,7 @@
  * remez.c - Parks-McClellan algorithm for FIR filter design (C version)
  *
  * Copyright (C) 1995,1998 Jake Janovetz
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -702,6 +702,7 @@ void remez(double h[], int numtaps,
    free(D);
    free(E);
    free(Ext);
+   free(taps);
    free(x);
    free(y);
    free(ad);
