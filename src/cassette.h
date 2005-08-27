@@ -10,6 +10,7 @@
 void CASSETTE_Initialise(int *argc, char *argv[]);
 
 int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *last_block, int *isCAS);
+int CASSETTE_CreateFile(const char *filename, FILE **fp, int *isCAS);
 int CASSETTE_Insert(const char *filename);
 void CASSETTE_Remove(void);
 extern char cassette_filename[FILENAME_MAX];
