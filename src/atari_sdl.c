@@ -334,6 +334,8 @@ void Atari_ConfigSave(FILE *fp)
 	fprintf(fp, "SDL_JOY_1_RIGHTDOWN=%d\n", SDL_JOY_1_RIGHTDOWN);
 }
 
+#ifdef SOUND
+
 void Sound_Pause(void)
 {
 	if (sound_enabled) {
@@ -350,11 +352,12 @@ void Sound_Continue(void)
 	}
 }
 
-#ifdef SOUND
 void Sound_Update(void)
 {
-}								/* fake function */
-#endif
+	/* fake function */
+}
+
+#endif /* SOUND */
 
 static void SetPalette(void)
 {
@@ -1311,13 +1314,11 @@ int Atari_Exit(int run_monitor)
 			SwitchFullscreen();
 		}
 #ifdef SOUND
-		if (sound_enabled)
-			SDL_PauseAudio(1);
+		Sound_Pause();
 #endif
 		restart = monitor();
 #ifdef SOUND
-		if (sound_enabled)
-			SDL_PauseAudio(0);
+		Sound_Continue();
 #endif
 	}
 	else {
@@ -1799,17 +1800,19 @@ void CountFPS(void)
 
 int Atari_PORT(int num)
 {
+#ifndef DONT_DISPLAY
 	if (num == 0) {
 		UBYTE a, b;
 		SDL_Atari_PORT(&a, &b);
 		return (b << 4) | (a & 0x0f);
 	}
-	else
-		return 0xff;
+#endif
+	return 0xff;
 }
 
 int Atari_TRIG(int num)
 {
+#ifndef DONT_DISPLAY
 	UBYTE a, b;
 	SDL_Atari_TRIG(&a, &b);
 	switch (num) {
@@ -1820,6 +1823,7 @@ int Atari_TRIG(int num)
 	default:
 		break;
 	}
+#endif
 	return 1;
 }
 
@@ -1840,6 +1844,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.52  2005/08/27 10:41:51  pfusik
+ now compiles with --disable-sound
+
  Revision 1.51  2005/08/21 15:37:46  pfusik
  "-rotate90" now works correctly on little-endian machines;
  don't initialize sound with "-help"; 5200 keys; F6=Help, F7=Break;

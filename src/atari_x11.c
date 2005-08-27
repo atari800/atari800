@@ -307,9 +307,11 @@ int GetKeyCode(XEvent *event)
 			keycode = AKEY_NONE;
 			break;
 		case XK_F8:
+#ifdef SOUND
 			if (CONTROL)
 				SoundRecording();
 			else
+#endif
 				screen_dump = 2;
 			keycode = AKEY_NONE;
 			break;
