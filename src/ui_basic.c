@@ -29,6 +29,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* getcwd() */
 #endif
+#ifdef HAVE_DIRECT_H
+#include <direct.h> /* getcwd on MSVC*/
+#endif
 /* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
@@ -684,9 +687,14 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 		char helpdir[FILENAME_MAX];
 		_fixpath(directory, helpdir);
 		strcpy(directory, helpdir);
-#else
+#elif defined(HAVE_GETCWD)
 		if (directory[0] == '\0' || strcmp(directory, ".") == 0)
 			getcwd(directory, FILENAME_MAX);
+#else
+		if (directory[0] == '\0') {
+			directory[0] = '.';
+			directory[1] = '\0';
+		}
 #endif
 		next_dir = FALSE;
 		list = GetDirectory(directory);
@@ -1051,6 +1059,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.28  2005/08/27 10:36:07  pfusik
+MSVC declares getcwd() in <direct.h>
+
 Revision 1.27  2005/08/24 21:03:41  pfusik
 use stricmp() if there's no strcasecmp()
 
