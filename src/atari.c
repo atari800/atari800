@@ -100,10 +100,13 @@ double deltatime;
 double fps;
 int percent_atari_speed = 100;
 
+#ifdef BENCHMARK
+static double benchmark_start_time;
+#endif
+
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 
-
-static char *rom_filename = NULL;
+static double Atari_time(void);
 
 #ifdef HAVE_SIGNAL
 RETSIGTYPE sigint_handler(int num)
@@ -373,6 +376,7 @@ char *safe_strncpy(char *dest, const char *src, size_t size)
 int Atari800_Initialise(int *argc, char *argv[])
 {
 	int i, j;
+	const char *rom_filename = NULL;
 	const char *run_direct = NULL;
 #ifndef BASIC
 	const char *state_file = NULL;
@@ -583,12 +587,13 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifndef BASIC
 	INPUT_Initialise(argc, argv);
 #endif
-	Atari_Initialise(argc, argv);	/* Platform Specific Initialisation */
-
+#ifndef DONT_DISPLAY
+	/* Platform Specific Initialisation */
+	Atari_Initialise(argc, argv);
+#endif
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	Screen_Initialise(argc, argv);
 #endif
-
 	/* Initialise Custom Chips */
 	ANTIC_Initialise(argc, argv);
 	GTIA_Initialise(argc, argv);
@@ -665,6 +670,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef HAVE_SIGNAL
 	/* Install CTRL-C Handler */
 	signal(SIGINT, sigint_handler);
+#endif
+
+#ifdef BENCHMARK
+	benchmark_start_time = Atari_time();
 #endif
 
 	return TRUE;
@@ -1103,7 +1112,11 @@ void Atari800_Frame(void)
 		Screen_DrawAtariSpeed();
 		Screen_DrawDiskLED();
 #endif /* CURSES_BASIC */
+#ifdef DONT_DISPLAY
+		display_screen = FALSE;
+#else
 		display_screen = TRUE;
+#endif /* DONT_DISPLAY */
 	}
 	else {
 #if defined(VERY_SLOW) || defined(CURSES_BASIC)
@@ -1117,9 +1130,21 @@ void Atari800_Frame(void)
 
 	POKEY_Frame();
 	nframes++;
+
+#ifdef BENCHMARK
+	if (nframes >= BENCHMARK) {
+		double benchmark_time = Atari_time() - benchmark_start_time;
+		Atari800_Exit(FALSE);
+		printf("%d frames emulated in %.2f seconds\n", BENCHMARK, benchmark_time);
+		exit(0);
+	}
+#else
+
 #ifndef DONT_SYNC_WITH_HOST
 	atari_sync();
 #endif
+
+#endif /* BENCHMARK */
 }
 
 /* Opens a new temporary file and fills in filename with its name.
@@ -1302,6 +1327,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.71  2005/08/27 10:32:15  pfusik
+BENCHMARK
+
 Revision 1.70  2005/08/24 21:04:41  pfusik
 load state files from the command line using "-state"
 
