@@ -1,3 +1,51 @@
+2005-08-31  Piotr Fusik  <fox@scene.pl>
+* atari.[ch], ui.c: auto-starting any file supported by the emulator
+  via the command line, User Interface or Alt+R
+
+* binload.c: a fix for BASIC loader that didn't work if drive 1
+  was enabled but contained no disk
+
+* cpu.c: CYCLES_PER_OPCODE, NO_V_FLAG_VARIABLE, PC_PTR, PREFETCH_CODE
+  for better (?) performance (not enabled by default);
+  WRAP_64K and WRAP_ZPAGE for very precise emulation;
+  optimized CPU_GetStatus(), CPU_PutStatus(), BRANCH()
+
+* devices.c: created Device_OpenDir() and Device_ReadDir() that simplify
+  searching directories. On Windows, if opendir() is not available,
+  these functions are implemented using Win32 API. Changed behaviour:
+  - directory listing and wildcard functions Rename, Delete, Lock, Unlock
+    should now correctly handle the current directory, root directories
+    and files with uppercase letters on case-sensitive filesystems
+  - filenames in directory listing are no longer converted to uppercase
+  - filename extension in the directory listing is now the filename part
+    after the last dot and not the first one
+
+* devices.c: improved H5:-H9:
+  - reading supports CR/LF and CR files in addition to LF
+  - writing uses native EOLs rather than LFs
+
+* devices.c: Device_HHSPEC_Disk_Info(), Device_HHSPEC_Current_Dir()
+  no longer use dPutByte(), so the result is wrapped at 64K,
+  doesn't get written to ROM and may be written to hardware registers
+
+* gtia.c: optimized GTIA_GetByte()
+
+* log.c: fixed Aflushlog's bad behaviour when the log contained percents
+
+* memory.[ch]: added two extra bytes to memory[], because the CPU
+  emulation can access them
+
+* cartridge.h, memory.[ch]: state files should now work with PAGED_ATTRIB
+
+* boot.h, ui.c: MakeBlankDisk() now writes a blank Single Density disk
+  rather than a 3-sector disk with useless executable loader - removed boot.h
+
+* atari.[ch], colours.c, gtia.[ch], input.c, log.[ch], mzpokeysnd.[ch],
+  pokey.[ch], pokeysnd.[ch], rt-config.[ch]: support for Atari800Win PLus
+
+* util/benchmark.pl: dropped "-run" so any Atari program may be used
+
+
 2005-08-27  Piotr Fusik  <fox@scene.pl>
 * atari_sdl.c, atari_x11.c: now compile with --disable-sound
 
@@ -503,7 +551,7 @@
 
 2005-01-06  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c: F8 (enter monitor) was not implemented. Fixed. Also
-  entering monitor now switches off the fullscreen mode which makes 
+  entering monitor now switches off the fullscreen mode which makes
   the monitor usable in X-Windows (not sure about framebuffer but
   I'd guess for that one we'd have to turn off the graphics completely).
 
@@ -707,7 +755,7 @@
   so it's possible to define it in configure/Makefile now.
 
 * atari_sdl.c: hatefully backported fix from input.c (see 2003-09-21)
-  Somebody should inspect the atari_sdl.c why it doesn't use the 
+  Somebody should inspect the atari_sdl.c why it doesn't use the
   Atari800_Frame system and possibly use it in the SDL port as well.
 
 * DOC/TODO: some items removed, some edited.
@@ -773,7 +821,7 @@
 * DOC/BUGS: some bugs removed as direct response on Perry's newest patches.
   Possibly many more bugs from this list could be removed now.
 
-* DOC/TODO: added three very important things to do at the top of this 
+* DOC/TODO: added three very important things to do at the top of this
   TO-DO list. Also added an item about configuring the R: device, this
   time at the bottom of the list.
 
@@ -831,7 +879,7 @@
 
 
 2003-08-31  Petr Stehlik  <pstehlik@sophics.cz>
-* rdevice.c: GPL header added (hope that it actually was free source before 
+* rdevice.c: GPL header added (hope that it actually was free source before
   Chris brought it to Atari800 project)
 
 * rt-config.c: R: patch is not enabled by default. It can be enabled in the UI
@@ -852,7 +900,7 @@
 
 
 2003-08-05  Petr Stehlik  <pstehlik@sophics.cz>
-* atari.c: tried to fix a recent security issue known as CAN-2003-0630, 
+* atari.c: tried to fix a recent security issue known as CAN-2003-0630,
   found by Debian Security Audit Project, Debian BTS #203707.
   In order to provide a complex fix (better than the one suggested in BTS)
   I wrote code that is not looking very well but works correctly, hopefully.
@@ -978,13 +1026,13 @@
   consistancy, and to make it easier to figure out what options need to be
   set. The display when you use '--help' also puts those features which
   default to on at the top of the list, so its easy to look down the list
-  and understand whats going on now. 
+  and understand whats going on now.
 
   For those options that I flipped, I made the necessary fixes to the other
   source files, mainly changing #ifdef to #ifndef or vice-versa.
   I also changed symbol names where I thought it made sense. So for examples:
   'NOSNDINTER' is flipped to "INTERPOLATE_SOUND".
-  'NO_VOL_ONLY' is flipped to 'VOL_ONLY_SOUND'. 
+  'NO_VOL_ONLY' is flipped to 'VOL_ONLY_SOUND'.
   'CLIP' is now 'CLIP_SOUND'.
   'STEREO' is now 'STEREO_SOUND'.
   'JOYMOUSE' is now 'SVGA_JOYMOUSE'
@@ -1050,7 +1098,7 @@
   was so I added a function Pokey_set_quality(int). If it wasn't that
   important (was for testing only?) then let's remove this function.
 * pokeysnd.c: a new function "Pokey_DoInit()" does the actual initialization
-  of the Pokey emulation. It's been separated from Pokey_sound_init to 
+  of the Pokey emulation. It's been separated from Pokey_sound_init to
   allow calling from UI.
 * atari_amiga.c, sound.c, sound_falcon.c, dos/sound_dos.c, win32/sound.c,
   wince/sound.c: updated for Pokey_sound_init()'s number of parameters.
@@ -1175,14 +1223,14 @@
 
 2003-01-27  Jason Duerstock  <jason@cluephone.com>
 
-* PAGED_ATTRIB support, removing the attrib[] array and replacing it with 
-  a map of 256 pointers (one for each page of memory.  If the pointer is 
+* PAGED_ATTRIB support, removing the attrib[] array and replacing it with
+  a map of 256 pointers (one for each page of memory.  If the pointer is
   NULL, then the  memory[] array will be accessed directly.
 
   This change is activated through './configure --enable-paged'.
 
   In my estimation, this should improve the performance of the emulator,
-  removing 64K of cache usage, and short-circuiting some switch {} 
+  removing 64K of cache usage, and short-circuiting some switch {}
   statements.
 
   Note that this will render old saved-state files incompatible.
@@ -1202,10 +1250,10 @@
   in the struct, and a byte (the first column) will be saved for each
   page.
 
-  On restore, the byte will be used to reconstruct the readmap and 
+  On restore, the byte will be used to reconstruct the readmap and
   writemap.
 
-* Several warnings have been cleaned up through inclusion of the proper 
+* Several warnings have been cleaned up through inclusion of the proper
   headers.
 
 * 'make distclean' has been added, to remove all the files generated
@@ -1316,7 +1364,7 @@ joy> Note that it may needs the same patches that were applied
 2002-08-07  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c:
   - added atexit(SDL_Quit) to clean up after unsuccessful initialization.
-  - fixed "-help" so that it doesn't initialize graphics mode. 
+  - fixed "-help" so that it doesn't initialize graphics mode.
   - added "-sound" and "-nosound" support so you can disable sound if
     your sound card is not plugged in :)
   - added "-dsprate" support
