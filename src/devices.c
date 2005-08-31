@@ -58,13 +58,6 @@
 #include <sys/stat.h>
 #endif
 
-#ifndef S_IREAD
-#define S_IREAD S_IRUSR
-#endif
-#ifndef S_IWRITE
-#define S_IWRITE S_IWUSR
-#endif
-
 #include "atari.h"
 #include "cpu.h"
 #include "memory.h"
@@ -74,9 +67,199 @@
 #include "binload.h"
 #include "pia.h" /* atari_os */
 #include "sio.h"
-
 #ifdef R_IO_DEVICE
 #include "rdevice.h"
+#endif
+#ifdef __PLUS
+#include "misc_win.h"
+#endif
+
+#ifdef BACK_SLASH
+#define DIR_SEP_CHAR '\\'
+#define DIR_SEP_STR  "\\"
+#else
+#define DIR_SEP_CHAR '/'
+#define DIR_SEP_STR  "/"
+#endif
+
+/* Splits a filename into directory part and file part. */
+/* dir_part or file_part may be NULL. */
+static void split_path(const char *path, char *dir_part, char *file_part)
+{
+	const char *p;
+	/* find the last DIR_SEP_CHAR */
+	p = strrchr(path, DIR_SEP_CHAR);
+	if (p == NULL) {
+		/* no DIR_SEP_CHAR: current dir */
+		if (file_part != NULL)
+			strcpy(file_part, path);
+		if (dir_part != NULL)
+			strcpy(dir_part, "" /* "." */);
+	}
+	else {
+		if (file_part != NULL)
+			strcpy(file_part, p + 1);
+		if (dir_part != NULL) {
+			int len = p - path;
+			if (p == path || (p == path + 2 && path[1] == ':'))
+				/* root dir: include DIR_SEP_CHAR in dir_part */
+				len++;
+			memcpy(dir_part, path, len);
+			dir_part[len] = '\0';
+		}
+	}
+}
+
+/* Concatenates file paths.
+   Places directory separator char between paths, unless path1 is empty
+   or path2 already starts with the separator char. */
+static void cat_path(char *result, const char *path1, const char *path2)
+{
+#ifdef HAVE_SNPRINTF
+	snprintf(result, FILENAME_MAX,
+#else
+	sprintf(result,
+#endif
+		(path1[0] == '\0' || path2[0] == DIR_SEP_CHAR)
+			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
+}
+
+#ifdef HAVE_OPENDIR
+
+#undef toupper
+#define toupper(c)  (((c) >= 'a' && (c) <= 'z') ? (c) - 'a' + 'A' : (c))
+
+static int match(const char *pattern, const char *filename)
+{
+	if (strcmp(pattern, "*.*") == 0)
+		return TRUE;
+
+	while (*filename && *pattern) {
+		switch (*pattern) {
+		case '?':
+			pattern++;
+			filename++;
+			break;
+		case '*':
+			if (toupper(*filename) == toupper(pattern[1]))
+				pattern++;
+			else
+				filename++;
+			break;
+		default:
+			if (toupper(*pattern) != toupper(*filename))
+				return FALSE;
+			pattern++;
+			filename++;
+			break;
+		}
+	}
+	if ((*filename)
+		|| ((*pattern)
+			&& (((*pattern != '*') && (*pattern != '?'))
+				|| pattern[1]))) {
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static char dir_path[FILENAME_MAX];
+static char filename_pattern[FILENAME_MAX];
+static DIR *dp = NULL;
+
+static int Device_OpenDir(const char *searchspec)
+{
+	split_path(searchspec, dir_path, filename_pattern);
+	if (dp != NULL)
+		closedir(dp);
+	dp = opendir(dir_path);
+	return dp != NULL;
+}
+
+static int Device_ReadDir(char *fullfilename, char *filename)
+{
+	struct dirent *entry;
+	for (;;) {
+		entry = readdir(dp);
+		if (entry == NULL) {
+			closedir(dp);
+			dp = NULL;
+			return FALSE;
+		}
+		if (entry->d_name[0] == '.') {
+			/* don't match Unix hidden files unless specifically requested */
+			if (filename_pattern[0] != '.')
+				continue;
+			/* never match "." */
+			if (entry->d_name[1] == '\0')
+				continue;
+			/* never match ".." */
+			if (entry->d_name[1] == '.' && entry->d_name[2] == '\0')
+				continue;
+		}
+		if (match(filename_pattern, entry->d_name))
+			break;
+	}
+	if (filename != NULL)
+		strcpy(filename, entry->d_name);
+	if (fullfilename != NULL)
+		cat_path(fullfilename, dir_path, entry->d_name);
+	return TRUE;
+}
+
+#define DO_DIR
+
+#elif defined(WIN32) || defined(__PLUS)
+
+#include <windows.h>
+
+static char dir_path[FILENAME_MAX];
+static WIN32_FIND_DATA wfd;
+static HANDLE dh = INVALID_HANDLE_VALUE;
+
+static int Device_OpenDir(const char *searchspec)
+{
+	split_path(searchspec, dir_path, NULL);
+	if (dh != INVALID_HANDLE_VALUE)
+		FindClose(dh);
+	dh = FindFirstFile(searchspec, &wfd);
+	return dh != INVALID_HANDLE_VALUE;
+}
+
+static int Device_ReadDir(char *fullfilename, char *filename)
+{
+	if (dh == INVALID_HANDLE_VALUE)
+		return FALSE;
+	/* don't match "." nor ".."  */
+	while (wfd.cFileName[0] == '.' &&
+	       (wfd.cFileName[1] == '\0' || (wfd.cFileName[1] == '.' && wfd.cFileName[2] == '\0'))
+	) {
+		if (!FindNextFile(dh, &wfd)) {
+			FindClose(dh);
+			dh = INVALID_HANDLE_VALUE;
+			return FALSE;
+		}
+	}
+	if (filename != NULL)
+		strcpy(filename, wfd.cFileName);
+	if (fullfilename != NULL)
+		cat_path(fullfilename, dir_path, wfd.cFileName);
+	if (!FindNextFile(dh, &wfd)) {
+		FindClose(dh);
+		dh = INVALID_HANDLE_VALUE;
+	}
+	return TRUE;
+}
+
+#define DO_DIR
+
+#endif /* defined(WIN32) || defined(__PLUS) */
+
+#ifndef S_IREAD
+#define S_IREAD S_IRUSR
+#endif
+#ifndef S_IWRITE
+#define S_IWRITE S_IWUSR
 #endif
 
 /* Note: you can't use H0: via Atari OS, because it sets ICDNOZ=1 for it. */
@@ -100,17 +283,13 @@ static char current_path[5][FILENAME_MAX];
 static int devbug = FALSE;
 
 static FILE *fp[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
-static int flag[8];
+static int h_textmode[8];
+static int h_wascr[8];
 
 static int fid;
 static char filename[FILENAME_MAX];
 #ifdef HAVE_RENAME
 static char newfilename[FILENAME_MAX];
-#endif
-
-#ifdef HAVE_OPENDIR
-static char pathname[FILENAME_MAX];
-static DIR *dp = NULL;
 #endif
 
 static char *strtoupper(char *str)
@@ -233,22 +412,24 @@ int Device_isvalid(UBYTE ch)
 
 static void Device_GetFilename(void)
 {
-	int bufadr;
+	UWORD bufadr;
 	int offset = 0;
 	int devnam = TRUE;
 
-	bufadr = (dGetByte(ICBAHZ) << 8) | dGetByte(ICBALZ);
+	bufadr = dGetWord(ICBALZ);
 
-	while (Device_isvalid(dGetByte(bufadr))) {
-		int byte = dGetByte(bufadr);
+	for (;;) {
+		UBYTE c = GetByte(bufadr);
+		if (!Device_isvalid(c))
+			break;
 
 		if (!devnam) {
-			if (byte >= 'A' && byte <= 'Z')
-				byte += 'a' - 'A';
+			if (c >= 'A' && c <= 'Z')
+				c += 'a' - 'A';
 
-			filename[offset++] = byte;
+			filename[offset++] = c;
 		}
-		else if (byte == ':')
+		else if (c == ':')
 			devnam = FALSE;
 
 		bufadr++;
@@ -258,34 +439,38 @@ static void Device_GetFilename(void)
 }
 
 #ifdef HAVE_RENAME
+
 static void Device_GetFilenames(void)
 {
-	int bufadr;
+	UWORD bufadr;
 	int offset = 0;
 	int devnam = TRUE;
-	int byte;
 
-	bufadr = (dGetByte(ICBAHZ) << 8) | dGetByte(ICBALZ);
+	bufadr = dGetWord(ICBALZ);
 
-	while (Device_isvalid(dGetByte(bufadr))) {
-		byte = dGetByte(bufadr);
+	for (;;) {
+		UBYTE c = GetByte(bufadr);
+		if (!Device_isvalid(c))
+			break;
 
 		if (!devnam) {
-			if (byte >= 'A' && byte <= 'Z')
-				byte += 'a' - 'A';
+			if (c >= 'A' && c <= 'Z')
+				c += 'a' - 'A';
 
-			filename[offset++] = byte;
+			filename[offset++] = c;
 		}
-		else if (byte == ':')
+		else if (c == ':')
 			devnam = FALSE;
 
 		bufadr++;
 	}
 	filename[offset++] = '\0';
 
-	while (!Device_isvalid(dGetByte(bufadr))) {
-		byte = dGetByte(bufadr);
-		if ((byte > 0x80) || (byte == 0)) {
+	for (;;) {
+		UBYTE c = GetByte(bufadr);
+		if (Device_isvalid(c))
+			break;
+		if ((c > 0x80) || (c == 0)) {
 			newfilename[0] = 0;
 			return;
 		}
@@ -293,56 +478,21 @@ static void Device_GetFilenames(void)
 	}
 
 	offset = 0;
-	while (Device_isvalid(dGetByte(bufadr))) {
-		byte = dGetByte(bufadr);
+	for (;;) {
+		UBYTE c = GetByte(bufadr);
+		if (!Device_isvalid(c))
+			break;
 
-		if (byte >= 'A' && byte <= 'Z')
-			byte += 'a' - 'A';
+		if (c >= 'A' && c <= 'Z')
+			c += 'a' - 'A';
 
-		newfilename[offset++] = byte;
+		newfilename[offset++] = c;
 		bufadr++;
 	}
 	newfilename[offset++] = '\0';
 }
-#endif
 
-#ifdef HAVE_OPENDIR
-static int match(char *pattern, char *filename)
-{
-	int status = TRUE;
-
-	if (strcmp(pattern, "*.*") == 0)
-		return TRUE;
-
-	while (status && *filename && *pattern) {
-		switch (*pattern) {
-		case '?':
-			pattern++;
-			filename++;
-			break;
-		case '*':
-			if (*filename == pattern[1])
-				pattern++;
-			else
-				filename++;
-			break;
-		default:
-			status = (*pattern++ == *filename++);
-			break;
-		}
-	}
-	if ((*filename)
-		|| ((*pattern)
-			&& (((*pattern != '*') && (*pattern != '?'))
-				|| pattern[1]))) {
-		status = 0;
-	}
-	return status;
-}
-#endif
-
-#if defined(HAVE_RENAME) && defined(HAVE_OPENDIR)
-static void fillin(char *pattern, char *filename)
+static void fillin(const char *pattern, char *filename)
 {
 	while (*pattern) {
 		switch (*pattern) {
@@ -361,31 +511,10 @@ static void fillin(char *pattern, char *filename)
 			break;
 		}
 	}
-	*filename = 0;
+	*filename = '\0';
 }
-#endif
 
-#ifdef BACK_SLASH
-#define DIR_SEP_CHAR '\\'
-#define DIR_SEP_STR "\\"
-#else
-#define DIR_SEP_CHAR '/'
-#define DIR_SEP_STR "/"
-#endif
-
-/* Concatenate file paths.
-   Place directory separator char between, unless path1 is empty
-   or path2 already starts with the separator char. */
-static void cat_path(char *result, const char *path1, const char *path2)
-{
-#ifdef HAVE_SNPRINTF
-	snprintf(result, FILENAME_MAX,
-#else
-	sprintf(result,
-#endif
-		(path1[0] == '\0' || path2[0] == DIR_SEP_CHAR)
-			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
-}
+#endif /* HAVE_RENAME */
 
 static void apply_relative_path(char *rel_path, char *current)
 {
@@ -438,24 +567,6 @@ static void Device_ApplyPathToFilename(int devnum)
 	strcpy(filename, path);
 }
 
-#ifdef HAVE_OPENDIR
-static void Device_SeparateFileFromPath()
-{
-	char *ptr;
-
-	strcpy(pathname, filename);
-	ptr = pathname + strlen(pathname);
-	while (ptr > pathname) {
-		if (*ptr == DIR_SEP_CHAR) {
-			*ptr = 0;
-			strcpy(filename, ptr + 1);
-			break;
-		}
-		ptr--;
-	}
-}
-#endif
-
 #define GET_FID if ((fid = regX >> 4) >= 8) { regY = 134; /* invalid IOCB number */ SetN; return; }
 
 #define GET_DEVNUM	devnum = dGetByte(ICDNOZ); \
@@ -472,6 +583,10 @@ static void Device_HHOPEN(void)
 	char fname[FILENAME_MAX];
 	int devnum;
 	int temp;
+#ifdef DO_DIR
+	int extended;
+	char entryname[FILENAME_MAX];
+#endif
 
 	if (devbug)
 		Aprint("HHOPEN");
@@ -490,14 +605,14 @@ static void Device_HHOPEN(void)
 		return;
 	}
 	if (devnum >= 5) {
-		flag[fid] = TRUE;
+		h_textmode[fid] = TRUE;
 		devnum -= 5;
 	}
 	else {
-		flag[fid] = FALSE;
+		h_textmode[fid] = FALSE;
 	}
+	h_wascr[fid] = FALSE;
 	Device_ApplyPathToFilename(devnum);
-
 
 #ifdef VMS
 /* Assumes H[devnum] is a directory _logical_, not an explicit directory
@@ -516,6 +631,8 @@ static void Device_HHOPEN(void)
 
 	switch (temp) {
 	case 4:
+		/* don't bother using "r" for textmode:
+		   we want to support LF, CR/LF and CR, not only native EOLs */
 		fp[fid] = fopen(fname, "rb");
 		if (fp[fid]) {
 			regY = 1;
@@ -526,125 +643,103 @@ static void Device_HHOPEN(void)
 			SetN;
 		}
 		break;
-#ifdef HAVE_OPENDIR
+#ifdef DO_DIR
 	case 6:
 	case 7:
-		Device_SeparateFileFromPath();
 		fp[fid] = tmpfile();
-		if (fp[fid]) {
-			dp = opendir(pathname);
-			if (dp) {
-				struct dirent *entry;
-				int extended = dGetByte(ICAX2Z);
-				if (extended >= 128) {
-					fprintf(fp[fid], "\nVolume:    HDISK%d\nDirectory: ",
-							devnum);
-					if (strcmp(pathname, H[devnum]) == 0)
-						fprintf(fp[fid], "MAIN\n\n");
-					else {
-						const char *end_dir;
-						char end_dir_str[FILENAME_MAX];
-						end_dir = pathname + strlen(pathname);
-						while (end_dir > pathname) {
-							if (*end_dir == DIR_SEP_CHAR) {
-								end_dir++;
-								break;
-							}
-							end_dir--;
-						}
-						strcpy(end_dir_str, end_dir);
-						fprintf(fp[fid], "%s\n\n",
-								strtoupper(end_dir_str));
-					}
-				}
-
-				while ((entry = readdir(dp))) {
-					char entryname[FILENAME_MAX];
-					strcpy(entryname, entry->d_name);
-					if (entry->d_name[0] != '.'
-					 && match(strtoupper(filename), strtoupper(entryname))) {
-						const char *ext;
-						int size;
-						struct stat status;
-						cat_path(fname, pathname, entry->d_name);
-						stat(fname, &status);
-						if ((status.st_size != 0)
-							&& (status.st_size % 256 == 0))
-							size = status.st_size / 256;
-						else
-							size = status.st_size / 256 + 1;
-						if (size > 999)
-							size = 999;
-						ext = strtok(entryname, ".");
-						ext = strtok(NULL, ".");
-						if (ext == NULL)
-							ext = "   ";
-						if (extended >= 128) {
-#ifdef HAVE_LOCALTIME
-							struct tm *filetime;
-#endif
-							if (status.st_mode & S_IFDIR) {
-								fprintf(fp[fid], "%-8s     <DIR>  ",
-										entryname);
-							}
-							else {
-								fprintf(fp[fid], "%-8s %-3s %6d ",
-										entryname, ext,
-										(int) status.st_size);
-							}
-#ifdef HAVE_LOCALTIME
-							filetime = localtime(&status.st_mtime);
-							if (filetime->tm_year >= 100)
-								filetime->tm_year -= 100;
-							fprintf(fp[fid],
-									"%02d-%02d-%02d %02d:%02d\n",
-									filetime->tm_mon+1, filetime->tm_mday,
-									filetime->tm_year, filetime->tm_hour,
-									filetime->tm_min);
-#else
-							fprintf(fp[fid], "01-01-01 00:00\n");
-#endif
-						}
-						else {
-							if (status.st_mode & S_IFDIR)
-								ext = "\304\311\322"; /* "DIR" with bit 7 set */
-							fprintf(fp[fid], "%c %-8s%-3s %03d\n",
-									(status.st_mode & S_IWRITE) ? ' ' : '*',
-									entryname, ext, size);
-						}
-					}
-				}
-
-				if (extended >= 128)
-					fprintf(fp[fid], "   999 FREE SECTORS\n");
-				else
-					fprintf(fp[fid], "999 FREE SECTORS\n");
-
-				closedir(dp);
-#ifdef HAVE_REWIND
-				rewind(fp[fid]);
-#else
-				fseek(fp[fid], 0, SEEK_SET);
-#endif
-
-				flag[fid] = TRUE;
-
-				regY = 1;
-				ClrN;
-			}
-			else {
-				fclose(fp[fid]);
-				fp[fid] = NULL;
-				regY = 144; /* device done error */
-				SetN;
-			}
-		}
-		else {
+		if (fp[fid] == NULL) {
 			regY = 144; /* device done error */
 			SetN;
+			break;
 		}
+		if (!Device_OpenDir(filename)) {
+			fclose(fp[fid]);
+			fp[fid] = NULL;
+			regY = 144; /* device done error */
+			SetN;
+			break;
+		}
+		extended = dGetByte(ICAX2Z);
+		if (extended >= 128) {
+			fprintf(fp[fid], "\nVolume:    HDISK%d\nDirectory: ",
+					devnum);
+			if (strcmp(dir_path, H[devnum]) == 0)
+				fprintf(fp[fid], "MAIN\n\n");
+			else {
+				char end_dir_str[FILENAME_MAX];
+				split_path(dir_path, NULL, end_dir_str);
+				fprintf(fp[fid], "%s\n\n",
+						/* strtoupper */(end_dir_str));
+			}
+		}
+
+		while (Device_ReadDir(fname, entryname)) {
+			struct stat status;
+			char *ext;
+			stat(fname, &status);
+			/* strtoupper(entryname); */
+			ext = strrchr(entryname, '.');
+			if (ext == NULL)
+				ext = "";
+			else
+				/* replace the dot with NUL,
+				   so entryname is without extension */
+				*ext++ = '\0';
+			if (extended >= 128) {
+#ifdef HAVE_LOCALTIME
+				struct tm *filetime;
+#endif
+				if (status.st_mode & S_IFDIR) {
+					fprintf(fp[fid], "%-8s     <DIR>  ",
+							entryname);
+				}
+				else {
+					fprintf(fp[fid], "%-8s %-3s %6d ",
+							entryname, ext,
+							(int) status.st_size);
+				}
+#ifdef HAVE_LOCALTIME
+				filetime = localtime(&status.st_mtime);
+				if (filetime->tm_year >= 100)
+					filetime->tm_year -= 100;
+				fprintf(fp[fid],
+						"%02d-%02d-%02d %02d:%02d\n",
+						filetime->tm_mon + 1, filetime->tm_mday,
+						filetime->tm_year, filetime->tm_hour,
+						filetime->tm_min);
+#else /* HAVE_LOCALTIME */
+				fprintf(fp[fid], "01-01-01 00:00\n");
+#endif /* HAVE_LOCALTIME */
+			}
+			else {
+				int size = (status.st_size + 255) >> 8;
+				/* if (status.st_size == 0) size = 1; */
+				if (size > 999)
+					size = 999;
+				if (status.st_mode & S_IFDIR)
+					ext = "\304\311\322"; /* "DIR" with bit 7 set */
+				fprintf(fp[fid], "%c %-8s%-3s %03d\n",
+						(status.st_mode & S_IWRITE) ? ' ' : '*',
+						entryname, ext, size);
+			}
+
+		}
+
+		if (extended >= 128)
+			fprintf(fp[fid], "   999 FREE SECTORS\n");
+		else
+			fprintf(fp[fid], "999 FREE SECTORS\n");
+
+#ifdef HAVE_REWIND
+		rewind(fp[fid]);
+#else
+		fseek(fp[fid], 0, SEEK_SET);
+#endif
+		h_textmode[fid] = TRUE;
+		regY = 1;
+		ClrN;
 		break;
-#endif /* HAVE_OPENDIR */
+#endif /* DO_DIR */
 	case 8:
 	case 9: /* write at the end of file (append) */
 		if (hd_read_only) {
@@ -652,7 +747,7 @@ static void Device_HHOPEN(void)
 			SetN;
 			break;
 		}
-		fp[fid] = fopen(fname, temp == 9 ? "ab" : "wb");
+		fp[fid] = fopen(fname, h_textmode[fid] ? (temp == 9 ? "a" : "w") : (temp == 9 ? "ab" : "wb"));
 		if (fp[fid]) {
 			regY = 1;
 			ClrN;
@@ -668,7 +763,7 @@ static void Device_HHOPEN(void)
 			SetN;
 			break;
 		}
-		fp[fid] = fopen(fname, "rb+");
+		fp[fid] = fopen(fname, h_textmode[fid] ? "r+" : "rb+");
 		if (fp[fid]) {
 			regY = 1;
 			ClrN;
@@ -712,10 +807,32 @@ static void Device_HHREAD(void)
 
 		ch = fgetc(fp[fid]);
 		if (ch != EOF) {
-			if (flag[fid]) {
+			if (h_textmode[fid]) {
 				switch (ch) {
-				case '\n':
+				case 0x0d:
+					h_wascr[fid] = TRUE;
 					ch = 0x9b;
+					break;
+				case 0x0a:
+					if (h_wascr[fid]) {
+						/* ignore LF next to CR */
+						ch = fgetc(fp[fid]);
+						if (ch != EOF) {
+							if (ch == 0x0d) {
+								h_wascr[fid] = TRUE;
+								ch = 0x9b;
+							}
+							else
+								h_wascr[fid] = FALSE;
+						}
+						else {
+							regY = 136; /* end of file */
+							SetN;
+							break;
+						}
+					}
+					else
+						ch = 0x9b;
 					break;
 				default:
 					break;
@@ -747,7 +864,7 @@ static void Device_HHWRIT(void)
 		int ch;
 
 		ch = regA;
-		if (flag[fid]) {
+		if (h_textmode[fid]) {
 			switch (ch) {
 			case 0x9b:
 				ch = '\n';
@@ -800,7 +917,7 @@ static SLONG Device_HSPEC_BIN_read_word(void)
 		ClrN;
 		return -1;
 	}
-	return buf[0] | (buf[1] << 8);
+	return buf[0] + (buf[1] << 8);
 }
 
 static void Device_HSPEC_BIN_loader_cont(void)
@@ -875,12 +992,13 @@ static void Device_HSPEC_BIN_loader_cont(void)
 }
 
 #ifdef HAVE_RENAME
+
 static void Device_HHSPEC_Rename(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
-	int status;
 	int num_changed = 0;
+	int num_failed = 0;
 	int num_locked = 0;
 
 	if (devbug)
@@ -896,68 +1014,69 @@ static void Device_HHSPEC_Rename(void)
 	Device_GetFilenames();
 	Device_ApplyPathToFilename(devnum);
 	cat_path(fname, H[devnum], filename);
-	strcpy(filename, fname);
 
-#ifdef HAVE_OPENDIR
-	Device_SeparateFileFromPath();
-	dp = opendir(pathname);
-	if (dp) {
-		struct dirent *entry;
-
-		status = 0;
-		while ((entry = readdir(dp))) {
-			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
-				char newfname[FILENAME_MAX];
-				char renamefname[FILENAME_MAX];
-				struct stat filestatus;
-				strtolower(entry->d_name);
-				cat_path(fname, pathname, entry->d_name);
-				strcpy(renamefname, entry->d_name);
-				fillin(newfilename, renamefname);
-				cat_path(newfname, pathname, renamefname);
-				stat(fname, &filestatus);
-				if (filestatus.st_mode & S_IWRITE) {
-					if (rename(fname, newfname) != 0)
-						status = -1;
-					else
-						num_changed++;
-				}
-				else
-					num_locked++;
-			}
-		}
-		closedir(dp);
+#ifdef DO_DIR
+	if (!Device_OpenDir(fname)) {
+		regY = 170; /* file not found */
+		SetN;
+		return;
 	}
-#else
-	status = 0;
-	if (rename(filename, newfilename) == 0)
-		num_changed++;
-#endif
-	else
-		status = -1;
+	while (Device_ReadDir(fname, NULL))
+#endif /* DO_DIR */
+	{
+#ifdef HAVE_STAT
+		/* Check file write permission to mimic Atari
+		   permission system: read-only ("locked") file
+		   cannot be deleted. Modern systems have
+		   a different permission for file deletion. */
+		struct stat filestatus;
+		stat(fname, &filestatus);
+		if (!(filestatus.st_mode & S_IWRITE))
+			num_locked++;
+		else
+#endif /* HAVE_STAT */
+		{
+			char newdirpart[FILENAME_MAX];
+			char newfilepart[FILENAME_MAX];
+			char newfname[FILENAME_MAX];
+			split_path(fname, newdirpart, newfilepart);
+			fillin(newfilename, newfilepart);
+			cat_path(newfname, newdirpart, newfilepart);
+			if (rename(fname, newfname) == 0)
+				num_changed++;
+			else
+				num_failed++;
+		}
+	}
+
+	if (devbug)
+		Aprint("%d renamed, %d failed, %d locked",
+		       num_changed, num_failed, num_locked);
 
 	if (num_locked) {
 		regY = 167; /* file locked */
 		SetN;
 	}
-	else if (status == 0 && num_changed != 0) {
-		regY = 1;
-		ClrN;
-	}
-	else {
+	else if (num_failed != 0 || num_changed == 0) {
 		regY = 170; /* file not found */
 		SetN;
 	}
+	else {
+		regY = 1;
+		ClrN;
+	}
 }
-#endif
+
+#endif /* HAVE_RENAME */
 
 #ifdef HAVE_UNLINK
+
 static void Device_HHSPEC_Delete(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
-	int status;
-	int num_changed = 0;
+	int num_deleted = 0;
+	int num_failed = 0;
 	int num_locked = 0;
 
 	if (devbug)
@@ -973,69 +1092,62 @@ static void Device_HHSPEC_Delete(void)
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
 	cat_path(fname, H[devnum], filename);
-	strcpy(filename, fname);
 
-#ifdef HAVE_OPENDIR
-	Device_SeparateFileFromPath();
-	dp = opendir(pathname);
-	if (dp) {
-		struct dirent *entry;
-
-		status = 0;
-		while ((entry = readdir(dp))) {
-			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
-				struct stat filestatus;
-
-				strtolower(entry->d_name);
-				cat_path(fname, pathname, entry->d_name);
-				stat(fname, &filestatus);
-				if (filestatus.st_mode & S_IWRITE) {
-					if (unlink(fname) != 0)
-						status = -1;
-					else
-						num_changed++;
-				}
-				else
-					num_locked++;
-			}
-
-		}
-		closedir(dp);
+#ifdef DO_DIR
+	if (!Device_OpenDir(fname)) {
+		regY = 170; /* file not found */
+		SetN;
+		return;
 	}
-#else
-	if (unlink(filename) == 0) {
-		status = 0;
-		num_changed++;
+	while (Device_ReadDir(fname, NULL))
+#endif /* DO_DIR */
+	{
+#ifdef HAVE_STAT
+		/* Check file write permission to mimic Atari
+		   permission system: read-only ("locked") file
+		   cannot be deleted. Modern systems have
+		   a different permission for file deletion. */
+		struct stat filestatus;
+		stat(fname, &filestatus);
+		if (!(filestatus.st_mode & S_IWRITE))
+			num_locked++;
+		else
+#endif /* HAVE_STAT */
+			if (unlink(fname) == 0)
+				num_deleted++;
+			else
+				num_failed++;
 	}
-#endif
-	else
-		status = -1;
+
+	if (devbug)
+		Aprint("%d deleted, %d failed, %d locked",
+		       num_deleted, num_failed, num_locked);
 
 	if (num_locked) {
 		regY = 167; /* file locked */
 		SetN;
 	}
-	else if (status == 0 && num_changed != 0) {
-		regY = 1;
-		ClrN;
-	}
-	else {
+	else if (num_failed != 0 || num_deleted == 0) {
 		regY = 170; /* file not found */
 		SetN;
 	}
+	else {
+		regY = 1;
+		ClrN;
+	}
 }
-#endif
+
+#endif /* HAVE_UNLINK */
 
 #ifdef HAVE_CHMOD
-static void Device_HHSPEC_Lock(void)
+
+static void Device_Chmod(/* XXX: mode_t */ int mode)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
 	int num_changed = 0;
-	int status;
+	int num_failed = 0;
 
-	if (devbug)
-		Aprint("LOCK Command");
 	if (hd_read_only) {
 		regY = 163; /* disk write-protected */
 		SetN;
@@ -1047,108 +1159,50 @@ static void Device_HHSPEC_Lock(void)
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
 	cat_path(fname, H[devnum], filename);
-	strcpy(filename, fname);
 
-#ifdef HAVE_OPENDIR
-	Device_SeparateFileFromPath();
-	dp = opendir(pathname);
-	if (dp) {
-		struct dirent *entry;
-
-		status = 0;
-		while ((entry = readdir(dp))) {
-			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
-				strtolower(entry->d_name);
-				cat_path(fname, pathname, entry->d_name);
-				if (chmod(fname, S_IREAD) != 0)
-					status = -1;
-				else
-					num_changed++;
-			}
-		}
-
-		closedir(dp);
+#ifdef DO_DIR
+	if (!Device_OpenDir(fname)) {
+		regY = 170; /* file not found */
+		SetN;
+		return;
 	}
-#else
-	if (chmod(filename, S_IREAD) == 0) {
-		status = 0;
-		num_changed++;
+	while (Device_ReadDir(fname, NULL))
+#endif /* DO_DIR */
+	{
+		if (chmod(fname, mode) == 0)
+			num_changed++;
+		else
+			num_failed++;
 	}
-#endif
-	else
-		status = -1;
 
-	if (status == 0 && num_changed != 0) {
-		regY = 1;
-		ClrN;
-	}
-	else {
+	if (devbug)
+		Aprint("%d changed, %d failed",
+		       num_changed, num_failed);
+
+	if (num_failed != 0 || num_changed == 0) {
 		regY = 170; /* file not found */
 		SetN;
 	}
+	else {
+		regY = 1;
+		ClrN;
+	}
+}
+
+static void Device_HHSPEC_Lock(void)
+{
+	if (devbug)
+		Aprint("LOCK Command");
+	Device_Chmod(S_IREAD);
 }
 
 static void Device_HHSPEC_Unlock(void)
 {
-
-	char fname[FILENAME_MAX];
-	int devnum;
-	int num_changed = 0;
-	int status;
-
 	if (devbug)
 		Aprint("UNLOCK Command");
-	if (hd_read_only) {
-		regY = 163; /* disk write-protected */
-		SetN;
-		return;
-	}
-
-	GET_DEVNUM;
-
-	Device_GetFilename();
-	Device_ApplyPathToFilename(devnum);
-	cat_path(fname, H[devnum], filename);
-	strcpy(filename, fname);
-
-#ifdef HAVE_OPENDIR
-	Device_SeparateFileFromPath();
-	dp = opendir(pathname);
-	if (dp) {
-		struct dirent *entry;
-
-		status = 0;
-		while ((entry = readdir(dp))) {
-			if (match(strtoupper(filename), strtoupper(entry->d_name))) {
-				strtolower(entry->d_name);
-				cat_path(fname, pathname, entry->d_name);
-				if (chmod(fname, S_IREAD | S_IWRITE) != 0)
-					status = -1;
-				else
-					num_changed++;
-			}
-		}
-
-		closedir(dp);
-	}
-#else
-	if (chmod(fname, S_IREAD | S_IWRITE) == 0) {
-		status = 0;
-		num_changed++;
-	}
-#endif
-	else
-		status = -1;
-
-	if (status == 0 && num_changed != 0) {
-		regY = 1;
-		ClrN;
-	}
-	else {
-		regY = 170;
-		SetN;
-	}
+	Device_Chmod(S_IREAD | S_IWRITE);
 }
+
 #endif /* HAVE_CHMOD */
 
 static void Device_HHSPEC_Note(void)
@@ -1159,9 +1213,9 @@ static void Device_HHSPEC_Note(void)
 		long pos = ftell(fp[fid]);
 		if (pos >= 0) {
 			int iocb = IOCB0 + fid * 16;
-			dPutByte(iocb + ICAX5, (pos & 0xff));
-			dPutByte(iocb + ICAX3, ((pos & 0xff00) >> 8));
-			dPutByte(iocb + ICAX4, ((pos & 0xff0000) >> 16));
+			dPutByte(iocb + ICAX5, (UBYTE) pos);
+			dPutByte(iocb + ICAX3, (UBYTE) (pos >> 8));
+			dPutByte(iocb + ICAX4, (UBYTE) (pos >> 16));
 			regY = 1;
 			ClrN;
 		}
@@ -1299,9 +1353,9 @@ static void Device_HHSPEC_File_Length(void)
 		iocb = IOCB0 + fid * 16;
 		fstat(fileno(fp[fid]), &fstatus);
 		filesize = fstatus.st_size;
-		dPutByte(iocb + ICAX3, (filesize & 0xff));
-		dPutByte(iocb + ICAX4, ((filesize & 0xff00) >> 8));
-		dPutByte(iocb + ICAX5, ((filesize & 0xff0000) >> 16));
+		dPutByte(iocb + ICAX3, (UBYTE) filesize);
+		dPutByte(iocb + ICAX4, (UBYTE) (filesize >> 8));
+		dPutByte(iocb + ICAX5, (UBYTE) (filesize >> 16));
 		regY = 1;
 		ClrN;
 #else
@@ -1330,7 +1384,7 @@ static void Device_HHSPEC_Mkdir(void)
 	Device_ApplyPathToFilename(devnum);
 	cat_path(fname, H[devnum], filename);
 
-#ifdef WIN32
+#if defined(WIN32) || defined(__PLUS)
 	if (mkdir(fname) == 0)
 #else
 	umask(S_IWGRP | S_IWOTH);
@@ -1420,33 +1474,21 @@ static void Device_HHSPEC_Cd(void)
 
 static void Device_HHSPEC_Disk_Info(void)
 {
+	static UBYTE info[17] = {
+		3, 0, 231, 3, 231, 3,
+		'H', 'D', 'I', 'S', 'K', '0' /* + devnum */, ' ', ' ',
+		0 /* devnum */, 0 /* devnum */, 0 };
 	int devnum;
-	int bufadr;
 
 	if (devbug)
 		Aprint("Get Disk Information Command");
 
 	GET_DEVNUM;
 
-	bufadr = (dGetByte(ICBLHZ) << 8) | dGetByte(ICBLLZ);
-
-	dPutByte(bufadr, 3);
-	dPutByte(bufadr + 1, 0);
-	dPutByte(bufadr + 2, 231);
-	dPutByte(bufadr + 3, 3);
-	dPutByte(bufadr + 4, 231);
-	dPutByte(bufadr + 5, 3);
-	dPutByte(bufadr + 6, 'H');
-	dPutByte(bufadr + 7, 'D');
-	dPutByte(bufadr + 8, 'I');
-	dPutByte(bufadr + 9, 'S');
-	dPutByte(bufadr + 10, 'K');
-	dPutByte(bufadr + 11, '0' + devnum);
-	dPutByte(bufadr + 12, ' ');
-	dPutByte(bufadr + 13, ' ');
-	dPutByte(bufadr + 14, devnum);
-	dPutByte(bufadr + 15, devnum);
-	dPutByte(bufadr + 16, 0);
+	info[11] = (UBYTE) ('0' + devnum);
+	info[14] = (UBYTE) devnum;
+	info[15] = (UBYTE) devnum;
+	CopyToMem(info, dGetWord(ICBLLZ), 17);
 
 	regY = 1;
 	ClrN;
@@ -1465,7 +1507,7 @@ static void Device_HHSPEC_Current_Dir(void)
 
 	GET_DEVNUM;
 
-	bufadr = (dGetByte(ICBLHZ) << 8) | dGetByte(ICBLLZ);
+	bufadr = dGetWord(ICBLLZ);
 
 	new_path[0] = '>';
 	strcpy(&new_path[1], current_dir[devnum]);
@@ -1480,7 +1522,7 @@ static void Device_HHSPEC_Current_Dir(void)
 	new_path[pathlen] = (char) 0x9b;
 
 	for (i = 0; i < pathlen + 1; i++)
-		dPutByte(bufadr + i, new_path[i]);
+		PutByte((UWORD) (bufadr + i), (UBYTE) new_path[i]);
 
 	regY = 1;
 	ClrN;
@@ -1602,18 +1644,22 @@ static void Device_PHCLOS(void)
 		Aprint("PHCLOS");
 
 	if (phf) {
-		char command[256 + FILENAME_MAX]; /* 256 for print_command + FILENAME_MAX for spool_file */
-
 		fclose(phf);
 		phf = NULL;
 
-		sprintf(command, print_command, spool_file);
-		system(command);
-#if defined(HAVE_UNLINK) && !defined(VMS) && !defined(MACOSX)
-		if (unlink(spool_file) == -1) {
-			perror(spool_file);
-		}
+#ifdef __PLUS
+		if (!Misc_ExecutePrintCmd(spool_file))
 #endif
+		{
+			char command[256 + FILENAME_MAX]; /* 256 for print_command + FILENAME_MAX for spool_file */
+			sprintf(command, print_command, spool_file);
+			system(command);
+#if defined(HAVE_UNLINK) && !defined(VMS) && !defined(MACOSX)
+			if (unlink(spool_file) == -1) {
+				perror(spool_file);
+			}
+#endif
+		}
 	}
 	regY = 1;
 	ClrN;
@@ -1807,7 +1853,7 @@ static void Device_IgnoreReady(void)
 	/* not "READY" (maybe "BOOT ERROR" or a DOS message) */
 	if (loading_basic == LOADING_BASIC_RUN) {
 		/* don't "RUN" if no "READY" (probably "ERROR") */
-		loading_basic = 0; 
+		loading_basic = 0;
 		ready_ptr = NULL;
 	}
 	if (ready_ptr != NULL) {
@@ -2221,6 +2267,10 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.38  2005/08/31 20:12:15  pfusik
+created Device_OpenDir() and Device_ReadDir(); improved H5:-H9;
+Device_HHSPEC_Disk_Info(), Device_HHSPEC_Current_Dir() no longer use dPutByte()
+
 Revision 1.37  2005/08/27 10:37:07  pfusik
 DEFAULT_H_PATH moved to devices.h
 
