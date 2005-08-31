@@ -1,15 +1,14 @@
  Changes:
  --------
- * sound recording now works (was completely broken)
- * direct loading of Atari Basic programs. Supported are:
+ * auto-starting any file supported by the emulator
+   via the command line, User Interface or Alt+R
+ * direct loading of Atari Basic programs:
    - SAVEd (*.BAS) programs
    - LISTed (*.LST) programs with auto-detected Atari, LF, CR/LF or CR
      line terminators
-   From the user's point of view, loading of Atari Basic programs works
-   exactly like loading binary executables: use "-run" from command line
-   or "Run Atari program directly" from the User Interface.
  * Atarimax cartridges
  * improved PERCOM emulation (helps non-standard disk images)
+ * sound recording now works (was completely broken)
  * stereo now works in DOS ports
  * greatly improved BASIC version:
    - supports sound
@@ -105,7 +104,7 @@ Version 1.3.1 (2003/09/04)
  * Disk Sets - loading and saving of D1-D8 set is possible in the UI
  * R: as the Atari850 serial port emulation added - see DOC/r_device.txt
  * updated and improved m68k assembler emulation of the CPU
- * XF551 HighSpeed transfer emulation added 
+ * XF551 HighSpeed transfer emulation added
 
 
 Version 1.3.0 (2003/02/10)
@@ -120,7 +119,7 @@ Version 1.3.0 (2003/02/10)
 
 Detailed list of changes follows:
 
-* configuration file ("atari800.cfg") related changes: 
+* configuration file ("atari800.cfg") related changes:
 
   1) configuration file is renamed to ".atari800.cfg" by default (note
      the leading dot in the name, similarly to most other configuration
