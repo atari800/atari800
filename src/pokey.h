@@ -46,6 +46,8 @@ extern int DELAYED_XMTDONE_IRQ;
 
 extern UBYTE POT_input[8];
 
+ULONG POKEY_GetRandomCounter(void);
+void POKEY_SetRandomCounter(ULONG value);
 UBYTE POKEY_GetByte(UWORD addr);
 void POKEY_PutByte(UWORD addr, UBYTE byte);
 void POKEY_Initialise(int *argc, char *argv[]);
@@ -80,7 +82,7 @@ void POKEY_Scanline(void);
 #define POLY4_SIZE  0x000f
 #define POLY5_SIZE  0x001f
 #define POLY9_SIZE  0x01ff
-#define POLY17_SIZE 0x0001ffffL
+#define POLY17_SIZE 0x0001ffff
 
 #define MAXPOKEYS         2		/* max number of emulated chips */
 
@@ -98,12 +100,12 @@ void POKEY_Scanline(void);
 /* structures to hold the 9 pokey control bytes */
 extern UBYTE AUDF[4 * MAXPOKEYS];	/* AUDFx (D200, D202, D204, D206) */
 extern UBYTE AUDC[4 * MAXPOKEYS];	/* AUDCx (D201, D203, D205, D207) */
-extern UBYTE AUDCTL[MAXPOKEYS];	/* AUDCTL (D208) */
+extern UBYTE AUDCTL[MAXPOKEYS];		/* AUDCTL (D208) */
 
 extern int DivNIRQ[4], DivNMax[4];
-extern int Base_mult[MAXPOKEYS];		/* selects either 64Khz or 15Khz clock mult */
+extern int Base_mult[MAXPOKEYS];	/* selects either 64Khz or 15Khz clock mult */
 
-extern UBYTE poly9_lookup[511];
+extern UBYTE poly9_lookup[POLY9_SIZE];
 extern UBYTE poly17_lookup[16385];
 
 #endif

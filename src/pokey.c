@@ -59,7 +59,7 @@ int DELAYED_SERIN_IRQ;
 int DELAYED_SEROUT_IRQ;
 int DELAYED_XMTDONE_IRQ;
 
-/* structures to hold the 9 pokey control bytes */ 
+/* structures to hold the 9 pokey control bytes */
 UBYTE AUDF[4 * MAXPOKEYS];	/* AUDFx (D200, D202, D204, D206) */
 UBYTE AUDC[4 * MAXPOKEYS];	/* AUDCx (D201, D203, D205, D207) */
 UBYTE AUDCTL[MAXPOKEYS];	/* AUDCTL (D208) */
@@ -72,6 +72,16 @@ static int pot_scanline;
 UBYTE poly9_lookup[511];
 UBYTE poly17_lookup[16385];
 static ULONG random_scanline_counter;
+
+ULONG POKEY_GetRandomCounter(void)
+{
+	return random_scanline_counter;
+}
+
+void POKEY_SetRandomCounter(ULONG value)
+{
+	random_scanline_counter = value;
+}
 
 UBYTE POKEY_GetByte(UWORD addr)
 {
@@ -106,11 +116,11 @@ UBYTE POKEY_GetByte(UWORD addr)
 			if (AUDCTL[0] & POLY9)
 				byte = poly9_lookup[i % POLY9_SIZE];
 			else {
-				UBYTE *ptr;
+				const UBYTE *ptr;
 				i %= POLY17_SIZE;
 				ptr = poly17_lookup + (i >> 3);
 				i &= 7;
-				byte = (UBYTE) ((ptr[0] >> i) | (ptr[1] << (8 - i)));
+				byte = (UBYTE) ((ptr[0] >> i) + (ptr[1] << (8 - i)));
 			}
 		}
 		break;
@@ -127,7 +137,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		byte = IRQST;
 		break;
 	case _SKSTAT:
-		byte = (SKSTAT & 0xEF) | (CASSETTE_IOLineStatus() << 4);
+		byte = SKSTAT + (CASSETTE_IOLineStatus() << 4);
 		break;
 	}
 
@@ -136,9 +146,10 @@ UBYTE POKEY_GetByte(UWORD addr)
 
 void Update_Counter(int chan_mask);
 
-int POKEY_siocheck(void)
+static int POKEY_siocheck(void)
 {
-	return (AUDF[CHAN3] == 0x28 || AUDF[CHAN3] == 0x10 || AUDF[CHAN3] == 0x08 || AUDF[CHAN3] == 0x0a)
+	return (AUDF[CHAN3] == 0x28 || AUDF[CHAN3] == 0x10
+	        || AUDF[CHAN3] == 0x08 || AUDF[CHAN3] == 0x0a)
 		&& AUDF[CHAN4] == 0x00 && (AUDCTL[0] & 0x28) == 0x28;
 }
 
@@ -235,7 +246,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		IRQST |= 0x08;
 		DELAYED_XMTDONE_IRQ = XMTDONE_INTERVAL;
 #ifdef SERIO_SOUND
-		Update_serio_sound(1,byte);
+		Update_serio_sound(1, byte);
 #endif
 		break;
 	case _STIMER:
@@ -320,7 +331,7 @@ void POKEY_Initialise(int *argc, char *argv[])
 	SERIN = 0x00;	/* or 0xff ? */
 	IRQST = 0xff;
 	IRQEN = 0x00;
-	SKSTAT = 0xff;
+	SKSTAT = 0xef;
 	SKCTLS = 0x00;
 
 	for (i = 0; i < (MAXPOKEYS * 4); i++) {
@@ -360,7 +371,7 @@ void POKEY_Initialise(int *argc, char *argv[])
 
 void POKEY_Frame(void)
 {
-	random_scanline_counter %= AUDCTL[0] & POLY9 ? POLY9_SIZE : POLY17_SIZE;
+	random_scanline_counter %= (AUDCTL[0] & POLY9) ? POLY9_SIZE : POLY17_SIZE;
 }
 
 /***************************************************************************
@@ -377,7 +388,7 @@ void POKEY_Scanline(void)
 
 #ifdef VOL_ONLY_SOUND
 	Update_vol_only_sound();
-#endif  /* VOL_ONLY_SOUND */
+#endif
 
 #ifndef BASIC
 	INPUT_Scanline();	/* Handle Amiga and ST mice. */
