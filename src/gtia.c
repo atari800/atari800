@@ -97,6 +97,12 @@ void set_prior(UBYTE byte);			/* in antic.c */
 
 /* Player/Missile stuff ---------------------------------------------------- */
 
+/* change to 0x00 to disable collisions */
+UBYTE collisions_mask_missile_playfield = 0x0f;
+UBYTE collisions_mask_player_playfield = 0x0f;
+UBYTE collisions_mask_missile_player = 0x0f;
+UBYTE collisions_mask_player_player = 0x0f;
+
 #ifdef NEW_CYCLE_EXACT
 /* temporary collision registers for the current scanline only */
 UBYTE P1PL_T;
@@ -111,7 +117,7 @@ UBYTE M3PL_T;
  */
 int collision_curpos;
 /* if hitclr has been written to during a scanline, this is the position
- * within pm_scaline at which it was written to, and collisions should 
+ * within pm_scaline at which it was written to, and collisions should
  * only be generated from this point on, otherwise it is 0
  */
 int hitclr_pos;
@@ -200,12 +206,12 @@ void setup_gtia9_11(void) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	UWORD temp;
 	temp = colour_translation_table[COLBK & 0xf0];
-	lookup_gtia11[0] = ((ULONG)temp << 16) | temp;
+	lookup_gtia11[0] = ((ULONG) temp << 16) + temp;
 	for (i = 1; i < 16; i++) {
 		temp = colour_translation_table[COLBK | i];
-		lookup_gtia9[i] = ((ULONG)temp << 16) | temp;
+		lookup_gtia9[i] = ((ULONG) temp << 16) + temp;
 		temp = colour_translation_table[COLBK | (i << 4)];
-		lookup_gtia11[i] = ((ULONG)temp << 16) | temp;
+		lookup_gtia11[i] = ((ULONG) temp << 16) + temp;
 	}
 #else
 	ULONG count9 = 0;
@@ -266,11 +272,11 @@ void generate_partial_pmpl_colls(int l, int r)
 	}
 	if (l < 0)
 		l = 0;
-	
+
 	for (i = l; i <= r; i++) {
 		UBYTE p = pm_scanline[i];
 /* It is possible that some bits are set in PxPL/MxPL here, which would
- * not otherwise be set ever in new_pm_scanline.  This is because the 
+ * not otherwise be set ever in new_pm_scanline.  This is because the
  * player collisions are always generated in order in new_pm_scanline.
  * However this does not cause any problem because we never use those bits
  * of PxPL/MxPL in the collision reading code.
@@ -283,7 +289,7 @@ void generate_partial_pmpl_colls(int l, int r)
 		M2PL |= (p & (0x10 << 2)) ?  p : 0;
 		M3PL |= (p & (0x10 << 3)) ?  p : 0;
 	}
-	
+
 }
 
 /* update pm->pl collisions for a partial scanline */
@@ -434,128 +440,108 @@ void GTIA_Frame(void)
 
 UBYTE GTIA_GetByte(UWORD addr)
 {
-	UBYTE byte = 0x0f;	/* write-only registers return 0x0f */
-
 	switch (addr & 0x1f) {
 	case _M0PF:
-		byte = (PF0PM & 0x10) >> 4;
-		byte |= (PF1PM & 0x10) >> 3;
-		byte |= (PF2PM & 0x10) >> 2;
-		byte |= (PF3PM & 0x10) >> 1;
-		break;
+		return (((PF0PM & 0x10) >> 4)
+		      + ((PF1PM & 0x10) >> 3)
+		      + ((PF2PM & 0x10) >> 2)
+		      + ((PF3PM & 0x10) >> 1)) & collisions_mask_missile_playfield;
 	case _M1PF:
-		byte = (PF0PM & 0x20) >> 5;
-		byte |= (PF1PM & 0x20) >> 4;
-		byte |= (PF2PM & 0x20) >> 3;
-		byte |= (PF3PM & 0x20) >> 2;
-		break;
+		return (((PF0PM & 0x20) >> 5)
+		      + ((PF1PM & 0x20) >> 4)
+		      + ((PF2PM & 0x20) >> 3)
+		      + ((PF3PM & 0x20) >> 2)) & collisions_mask_missile_playfield;
 	case _M2PF:
-		byte = (PF0PM & 0x40) >> 6;
-		byte |= (PF1PM & 0x40) >> 5;
-		byte |= (PF2PM & 0x40) >> 4;
-		byte |= (PF3PM & 0x40) >> 3;
-		break;
+		return (((PF0PM & 0x40) >> 6)
+		      + ((PF1PM & 0x40) >> 5)
+		      + ((PF2PM & 0x40) >> 4)
+		      + ((PF3PM & 0x40) >> 3)) & collisions_mask_missile_playfield;
 	case _M3PF:
-		byte = (PF0PM & 0x80) >> 7;
-		byte |= (PF1PM & 0x80) >> 6;
-		byte |= (PF2PM & 0x80) >> 5;
-		byte |= (PF3PM & 0x80) >> 4;
-		break;
+		return (((PF0PM & 0x80) >> 7)
+		      + ((PF1PM & 0x80) >> 6)
+		      + ((PF2PM & 0x80) >> 5)
+		      + ((PF3PM & 0x80) >> 4)) & collisions_mask_missile_playfield;
 	case _P0PF:
-		byte = (PF0PM & 0x01);
-		byte |= (PF1PM & 0x01) << 1;
-		byte |= (PF2PM & 0x01) << 2;
-		byte |= (PF3PM & 0x01) << 3;
-		break;
+		return ((PF0PM & 0x01)
+		      + ((PF1PM & 0x01) << 1)
+		      + ((PF2PM & 0x01) << 2)
+		      + ((PF3PM & 0x01) << 3)) & collisions_mask_player_playfield;
 	case _P1PF:
-		byte = (PF0PM & 0x02) >> 1;
-		byte |= (PF1PM & 0x02);
-		byte |= (PF2PM & 0x02) << 1;
-		byte |= (PF3PM & 0x02) << 2;
-		break;
+		return (((PF0PM & 0x02) >> 1)
+		      + (PF1PM & 0x02)
+		      + ((PF2PM & 0x02) << 1)
+		      + ((PF3PM & 0x02) << 2)) & collisions_mask_player_playfield;
 	case _P2PF:
-		byte = (PF0PM & 0x04) >> 2;
-		byte |= (PF1PM & 0x04) >> 1;
-		byte |= (PF2PM & 0x04);
-		byte |= (PF3PM & 0x04) << 1;
-		break;
+		return (((PF0PM & 0x04) >> 2)
+		      + ((PF1PM & 0x04) >> 1)
+		      + (PF2PM & 0x04)
+		      + ((PF3PM & 0x04) << 1)) & collisions_mask_player_playfield;
 	case _P3PF:
-		byte = (PF0PM & 0x08) >> 3;
-		byte |= (PF1PM & 0x08) >> 2;
-		byte |= (PF2PM & 0x08) >> 1;
-		byte |= (PF3PM & 0x08);
-		break;
+		return (((PF0PM & 0x08) >> 3)
+		      + ((PF1PM & 0x08) >> 2)
+		      + ((PF2PM & 0x08) >> 1)
+		      + (PF3PM & 0x08)) & collisions_mask_player_playfield;
 	case _M0PL:
 		update_partial_pmpl_colls();
-		byte = M0PL & 0x0f;
-		break;
+		return M0PL & collisions_mask_missile_player;
 	case _M1PL:
 		update_partial_pmpl_colls();
-		byte = M1PL & 0x0f;
-		break;
+		return M1PL & collisions_mask_missile_player;
 	case _M2PL:
 		update_partial_pmpl_colls();
-		byte = M2PL & 0x0f;
-		break;
+		return M2PL & collisions_mask_missile_player;
 	case _M3PL:
 		update_partial_pmpl_colls();
-		byte = M3PL & 0x0f;
-		break;
+		return M3PL & collisions_mask_missile_player;
 	case _P0PL:
 		update_partial_pmpl_colls();
-		byte = (P1PL & 0x01) << 1;	/* mask in player 1 */
-		byte |= (P2PL & 0x01) << 2;	/* mask in player 2 */
-		byte |= (P3PL & 0x01) << 3;	/* mask in player 3 */
-		break;
+		return (((P1PL & 0x01) << 1)  /* mask in player 1 */
+		      + ((P2PL & 0x01) << 2)  /* mask in player 2 */
+		      + ((P3PL & 0x01) << 3)) /* mask in player 3 */
+		     & collisions_mask_player_player;
 	case _P1PL:
 		update_partial_pmpl_colls();
-		byte = (P1PL & 0x01);		/* mask in player 0 */
-		byte |= (P2PL & 0x02) << 1;	/* mask in player 2 */
-		byte |= (P3PL & 0x02) << 2;	/* mask in player 3 */
-		break;
+		return ((P1PL & 0x01)         /* mask in player 0 */
+		      + ((P2PL & 0x02) << 1)  /* mask in player 2 */
+		      + ((P3PL & 0x02) << 2)) /* mask in player 3 */
+		     & collisions_mask_player_player;
 	case _P2PL:
 		update_partial_pmpl_colls();
-		byte = (P2PL & 0x03);		/* mask in player 0 and 1 */
-		byte |= (P3PL & 0x04) << 1;	/* mask in player 3 */
-		break;
+		return ((P2PL & 0x03)         /* mask in player 0 and 1 */
+		      + ((P3PL & 0x04) << 1)) /* mask in player 3 */
+		     & collisions_mask_player_player;
 	case _P3PL:
 		update_partial_pmpl_colls();
-		byte = P3PL & 0x07;			/* mask in player 0,1, and 2 */
-		break;
+		return (P3PL & 0x07)          /* mask in player 0,1, and 2 */
+		     & collisions_mask_player_player;
 	case _TRIG0:
-		byte = TRIG[0] & TRIG_latch[0];
-		break;
+		return TRIG[0] & TRIG_latch[0];
 	case _TRIG1:
-		byte = TRIG[1] & TRIG_latch[1];
-		break;
+		return TRIG[1] & TRIG_latch[1];
 	case _TRIG2:
-		byte = TRIG[2] & TRIG_latch[2];
-		break;
+		return TRIG[2] & TRIG_latch[2];
 	case _TRIG3:
-		byte = TRIG[3] & TRIG_latch[3];
-		break;
+		return TRIG[3] & TRIG_latch[3];
 	case _PAL:
-		if (tv_mode == TV_PAL)
-			byte = 0x01;
-		/* 0x0f is default */
-		/* else
-			byte = 0x0f; */
-		break;
+		return (tv_mode == TV_PAL) ? 0x01 : 0x0f;
 	case _CONSOL:
-		byte = consol_table[consol_index] & consol_mask;
-		if (consol_index == 1 && hold_start) {
-			/* press Space after Start to start cassette boot */
-			press_space = 1;
-			hold_start = hold_start_on_reboot;
+		{
+			UBYTE byte = consol_table[consol_index] & consol_mask;
+			if (consol_index > 0) {
+				consol_index--;
+				if (consol_index == 0 && hold_start) {
+					/* press Space after Start to start cassette boot */
+					press_space = 1;
+					hold_start = hold_start_on_reboot;
+				}
+			}
+			return byte;
 		}
-		if (consol_index > 0)
-			consol_index--;
-		break;
 	default:
 		break;
 	}
 
-	return byte;
+	return 0xf;
 }
 
 #ifdef CYCLE_EXACT
@@ -628,7 +614,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		COLBK = byte &= 0xfe;
 		cl_lookup[C_BAK] = cword = colour_translation_table[byte];
 		if (cword != (UWORD) (lookup_gtia9[0]) ) {
-			lookup_gtia9[0] = cword | (cword << 16);
+			lookup_gtia9[0] = cword + (cword << 16);
 			if (PRIOR & 0x40)
 				setup_gtia9_11();
 		}
@@ -673,7 +659,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 			}
 		}
 		{
-			UBYTE byte2 = (COLPF2 & 0xf0) | (byte & 0xf);
+			UBYTE byte2 = (COLPF2 & 0xf0) + (byte & 0xf);
 			cl_lookup[C_HI2] = cword = colour_translation_table[byte2];
 			cl_lookup[C_HI3] = colour_translation_table[(COLPF3 & 0xf0) | (byte & 0xf)];
 			if (PRIOR & 4)
@@ -693,7 +679,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		COLPF2 = byte &= 0xfe;
 		cl_lookup[C_PF2] = cword = colour_translation_table[byte];
 		{
-			UBYTE byte2 = (byte & 0xf0) | (COLPF1 & 0xf);
+			UBYTE byte2 = (byte & 0xf0) + (COLPF1 & 0xf);
 			cl_lookup[C_HI2] = cword2 = colour_translation_table[byte2];
 			if (PRIOR & 4) {
 				cl_lookup[C_PF2 | C_PM01] = cl_lookup[C_PF2 | C_PM1] = cl_lookup[C_PF2 | C_PM0] = cword;
@@ -854,7 +840,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		COLOUR_TO_WORD(cword,byte);
 		cl_lookup[C_BAK] = cword;
 		if (cword != (UWORD) (lookup_gtia9[0]) ) {
-			lookup_gtia9[0] = cword | (cword << 16);
+			lookup_gtia9[0] = cword + (cword << 16);
 			if (PRIOR & 0x40)
 				setup_gtia9_11();
 		}

@@ -34,7 +34,7 @@
 
 #ifdef SUPPORTS_ATARI_CONFIGURE
 /* This procedure processes lines not recognized by RtConfigLoad. */
-int Atari_Configure(char* option, char *parameters);
+int Atari_Configure(char *option, char *parameters);
 #endif
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
@@ -73,6 +73,27 @@ int enable_r_patch;
 int disk_directories;
 int enable_new_pokey;
 int stereo_enabled;
+
+int RtIsPrintCommandSafe(const char *command)
+{
+	const char *p = command;
+	int was_percent_s = FALSE;
+	while (*p != '\0') {
+		if (*p++ == '%') {
+			char c = *p++;
+			if (c == '%')
+				continue; /* %% is safe */
+			if (c == 's' && !was_percent_s) {
+				was_percent_s = TRUE; /* only one %s is safe */
+				continue;
+			}
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+#ifndef __PLUS
 
 /* If another default path config path is defined use it
    otherwise use the default one */
@@ -133,25 +154,6 @@ static void RtPresetDefaults()
 #ifdef SUPPORTS_ATARI_CONFIGINIT
 	Atari_ConfigInit();
 #endif
-}
-
-static int is_print_command_safe(const char *command)
-{
-	const char *p = command;
-	int was_percent_s = FALSE;
-	while (*p != '\0') {
-		if (*p++ == '%') {
-			char c = *p++;
-			if (c == '%')
-				continue; /* %% is safe */
-			if (c == 's' && !was_percent_s) {
-				was_percent_s = TRUE; /* only one %s is safe */
-				continue;
-			}
-			return FALSE;
-		}
-	}
-	return TRUE;
 }
 
 int RtConfigLoad(const char *alternate_config_filename)
@@ -250,7 +252,7 @@ int RtConfigLoad(const char *alternate_config_filename)
 			else if (strcmp(string, "STATE_DIR") == 0)
 				safe_strncpy(atari_state_dir, ptr, sizeof(atari_state_dir));
 			else if (strcmp(string, "PRINT_COMMAND") == 0) {
-				if (is_print_command_safe(ptr))
+				if (RtIsPrintCommandSafe(ptr))
 					safe_strncpy(print_command, ptr, sizeof(print_command));
 				else
 					Aprint("Unsafe PRINT_COMMAND ignored");
@@ -482,7 +484,7 @@ void RtConfigUpdate(void)
 		char command[256];
 		strcpy(command, print_command);
 		GetString("Enter print command [%s] ", command);
-		if (is_print_command_safe(command)) {
+		if (RtIsPrintCommandSafe(command)) {
 			strcpy(print_command, command);
 			break;
 		}
@@ -572,8 +574,13 @@ void RtConfigUpdate(void)
 
 #endif /* DONT_USE_RTCONFIGUPDATE */
 
+#endif /* __PLUS */
+
 /*
 $Log$
+Revision 1.27  2005/08/31 20:00:47  pfusik
+support for Atari800Win PLus
+
 Revision 1.26  2005/08/21 15:50:11  pfusik
 default filename for the 5200 ROM;
 moved Atari_ConfigInit() to the end of RtPresetDefaults(),

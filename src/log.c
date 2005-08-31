@@ -35,10 +35,11 @@
 #  define PRINT(a) printf("%s", a)
 #endif
 
-#define MAX_LOG_SIZE		8192
-char memory_log[MAX_LOG_SIZE]="";
+#ifdef BUFFERED_LOG
+char memory_log[MAX_LOG_SIZE] = "";
+#endif
 
-void Aprint(char *format, ... )
+void Aprint(char *format, ...)
 {
 	va_list args;
 	char buffer[8192];
@@ -48,13 +49,17 @@ void Aprint(char *format, ... )
 
 	va_start(args, format);
 #ifdef HAVE_VSNPRINTF
-	vsnprintf(buffer, sizeof(buffer) - 1 /* -1 for the strcat(\n) */, format, args);
+	vsnprintf(buffer, sizeof(buffer) - 2 /* -2 for the strcat() */, format, args);
 #else
 	vsprintf(buffer, format, args);
 #endif
 	va_end(args);
 
+#ifdef __PLUS
+	strcat(buffer, "\r\n");
+#else
 	strcat(buffer, "\n");
+#endif
 
 #ifdef BUFFERED_LOG
 	buflen = strlen(buffer);
@@ -72,7 +77,7 @@ void Aflushlog(void)
 {
 #ifdef BUFFERED_LOG
 	if (*memory_log) {
-		printf(memory_log);
+		PRINT(memory_log);
 		*memory_log = 0;
 	}
 #endif
@@ -80,6 +85,9 @@ void Aflushlog(void)
 
 /*
 $Log$
+Revision 1.10  2005/08/31 20:00:47  pfusik
+support for Atari800Win PLus
+
 Revision 1.9  2005/08/16 23:06:41  pfusik
 #include "config.h" before system headers
 

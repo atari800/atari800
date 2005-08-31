@@ -38,6 +38,40 @@
 #include "rt-config.h"
 #include "monitor.h"
 
+#ifdef __PLUS
+
+#include <stdarg.h>
+#include "misc_win.h"
+
+FILE *mon_output, *mon_input;
+
+void monitor_printf(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vfprintf(mon_output, format, args);
+	va_end(args);
+}
+
+#define printf            monitor_printf
+#define puts(s)           fputs(s, mon_output)
+#define putchar(c)        fputc(c, mon_output)
+#define perror(filename)  printf("%s: %s\n", filename, strerror(errno))
+
+#undef stdout
+#define stdout mon_output
+
+#undef stdin
+#define stdin mon_input
+
+#define PLUS_EXIT_MONITOR Misc_FreeMonitorConsole(mon_output, mon_input)
+
+#else /* __PLUS */
+
+#define PLUS_EXIT_MONITOR
+
+#endif /* __PLUS */
+
 #ifdef HAVE_FFLUSH
 #define FFLUSH_STDOUT fflush(stdout)
 #else
@@ -408,10 +442,8 @@ static int get_dec(char *string, int *decval)
 	char *t;
 
 	t = get_token(string);
-	if (t) {
-		sscanf(t, "%d", decval);
-		return 1;
-	}
+	if (t)
+		return sscanf(t, "%d", decval);
 	return 0;
 }
 #endif
@@ -469,10 +501,15 @@ int monitor(void)
 	char s[128];
 	static char old_s[128] = ""; /* GOLDA CHANGED */
 
+#ifdef __PLUS
+	if (!Misc_AllocMonitorConsole(&mon_output, &mon_input))
+		return TRUE;
+#endif
+
 	addr = regPC;
 
 	CPU_GetStatus();
-	
+
 #ifdef MONITOR_BREAK
 	if (show_inst && !break_step) {
 		/* break was caused by "O" command */
@@ -636,7 +673,8 @@ int monitor(void)
 #ifdef MONITOR_PROFILE
 			memset(instruction_count, 0, sizeof(instruction_count));
 #endif
-			return 1;
+			PLUS_EXIT_MONITOR;
+			return TRUE;
 		}
 #ifdef MONITOR_BREAK
 		else if (strcmp(t, "BRKHERE") == 0) {
@@ -687,7 +725,8 @@ int monitor(void)
 #endif
 #if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
 		else if (strcmp(t, "YBREAK") == 0) {
-			get_dec(NULL, &ypos_break_addr);
+			if (!get_dec(NULL, &ypos_break_addr))
+				printf("YBREAK is %04d\n", ypos_break_addr);
 		}
 #endif
 		else if (strcmp(t, "DLIST") == 0) {
@@ -904,11 +943,13 @@ int monitor(void)
 #endif
 		else if (strcmp(t, "COLDSTART") == 0) {
 			Coldstart();
-			return 1;	/* perform reboot immediately */
+			PLUS_EXIT_MONITOR;
+			return TRUE;	/* perform reboot immediately */
 		}
 		else if (strcmp(t, "WARMSTART") == 0) {
 			Warmstart();
-			return 1;	/* perform reboot immediately */
+			PLUS_EXIT_MONITOR;
+			return TRUE;	/* perform reboot immediately */
 		}
 #ifndef PAGED_MEM
 		else if (strcmp(t, "READ") == 0) {
@@ -921,9 +962,9 @@ int monitor(void)
 					UWORD nbytes;
 					status = get_hex(&nbytes);
 					if (status && addr + nbytes <= 0x10000) {
-						FILE *f;
+						FILE *f = fopen(filename, "rb");
 
-						if (!(f = fopen(filename, "rb")))
+						if (f == NULL)
 							perror(filename);
 						else {
 							if (fread(&memory[addr], 1, nbytes, f) == 0)
@@ -943,7 +984,7 @@ int monitor(void)
 			status = get_hex2(&addr1, &addr2);
 
 			if (!(filename = get_token(NULL))) /* ERU */
-				filename = "memdump.dat"; 
+				filename = "memdump.dat";
 
 			if (status) {
 				FILE *f;
@@ -1080,13 +1121,15 @@ int monitor(void)
 		else if (strcmp(t, "G") == 0) {
 			break_step = 1;
 			show_inst = 1;
-			return 1;
+			PLUS_EXIT_MONITOR;
+			return TRUE;
 		}
 		else if (strcmp(t, "R") == 0 ) {
 			break_ret = 1;
 			show_inst = 1;
 			ret_nesting = 0;
-			return 1;
+			PLUS_EXIT_MONITOR;
+			return TRUE;
 		}
 		else if (strcmp(t, "O") == 0) {
 			/* with RTS, RTI, JMP, SKW, ESCRTS we simply do step */
@@ -1106,11 +1149,13 @@ int monitor(void)
 			case 0x9c:
 				break_step = 1;
 				show_inst = 1;
-				return 1;
+				PLUS_EXIT_MONITOR;
+				return TRUE;
 			default:
 				show_inst = 1;
 				break_addr = regPC + (optype6502[dGetByte(regPC)] & 0x3);
-				return 1;
+				PLUS_EXIT_MONITOR;
+				return TRUE;
 			}
 		}
 #endif /* MONITOR_BREAK */
@@ -1251,11 +1296,12 @@ int monitor(void)
 #ifdef HAVE_SYSTEM
 				"!command                       - Execute shell command\n"
 #endif
-				"QUIT                           - Quit emulator\n"
+				"QUIT or EXIT                   - Quit emulator\n"
 				"HELP or ?                      - This text\n");
 		}
-		else if (strcmp(t, "QUIT") == 0) {
-			return 0;
+		else if (strcmp(t, "QUIT") == 0 || strcmp(t, "EXIT") == 0) {
+			PLUS_EXIT_MONITOR;
+			return FALSE;
 		}
 		else {
 			printf("Invalid command.\n");
@@ -1290,7 +1336,7 @@ unsigned int disassemble(UWORD addr1, UWORD addr2)
 static int find_symbol(UWORD addr)
 {
 	int lo = 0, hi = symtable_size - 1, mi = 0;
-	
+
 	while (lo < hi) {
 		mi = (lo + hi) / 2;
 		if (symtable[mi].addr == addr)
@@ -1471,7 +1517,7 @@ static UWORD assembler(UWORD addr)
 				*cp++ = *sp++;  /* if the char is not a digit, copy it to the output */
 				isa = FALSE; /* for example, "ASL A,X" */
 			}
-			 
+
 		} /* end of converting input */
 		if (cp[-1] == ' ')
 			cp--; /* no arguments (e.g. NOP or ASL @) */
@@ -1523,6 +1569,9 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.27  2005/08/31 20:00:47  pfusik
+support for Atari800Win PLus
+
 Revision 1.26  2005/08/24 21:14:58  pfusik
 ypos_break_addr -> int; PROFILE -> MONITOR_PROFILE; TRACE -> MONITOR_TRACE;
 combined printfs; reject ambiguous "ASL A" in assembler

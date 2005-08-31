@@ -88,7 +88,11 @@
 #include "mzpokeysnd.h"
 #include "pokeysnd.h"
 #include "rt-config.h"	/* stereo_enabled, enable_new_pokey */
+#ifndef __PLUS
 #include "sndsave.h"
+#else
+#include "sound_win.h"
+#endif
 
 #ifdef UNALIGNED_LONG_OK
 #  define READ_U32(x)     (*(uint32 *) (x))
@@ -201,6 +205,9 @@ int32 snd_playback_freq = 44100;
 uint8 snd_num_pokeys = 1;
 static int snd_flags = 0;
 static int mz_quality = 0;		/* default quality for mzpokeysnd */
+#ifdef __PLUS
+int mz_clear_regs = 0;
+#endif
 
 /* multiple sound engine interface */
 static void Pokey_process_8(void *sndbuffer, unsigned sndn);
@@ -283,19 +290,30 @@ int Pokey_DoInit(void)
 {
 	if (enable_new_pokey)
 		return Pokey_sound_init_mz(snd_freq17, snd_playback_freq,
-				snd_num_pokeys, snd_flags, mz_quality);
+				snd_num_pokeys, snd_flags, mz_quality
+#ifdef __PLUS
+				, mz_clear_regs
+#endif
+		);
 	else
 		return Pokey_sound_init_rf(snd_freq17, snd_playback_freq,
 				snd_num_pokeys, snd_flags);
 }
 
 int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
-                     unsigned int flags)
+                     unsigned int flags
+#ifdef __PLUS
+                     , int clear_regs
+#endif
+)
 {
 	snd_freq17 = freq17;
 	snd_playback_freq = playback_freq;
 	snd_num_pokeys = num_pokeys;
 	snd_flags = flags;
+#ifdef __PLUS
+	mz_clear_regs = clear_regs;
+#endif
 
 	return Pokey_DoInit();
 }
@@ -308,7 +326,9 @@ void Pokey_set_mzquality(int quality)	/* specially for win32, perhaps not needed
 void Pokey_process(void *sndbuffer, unsigned int sndn)
 {
 	Pokey_process_ptr(sndbuffer, sndn);
+#ifndef __PLUS
 	WriteToSoundFile(sndbuffer, sndn);
+#endif
 }
 
 static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
@@ -557,10 +577,22 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 	/* if channel is volume only, set current output */
 	for (chan = CHAN1; chan <= CHAN4; chan++) {
 		if (chan_mask & (1 << chan)) {
+
 #ifdef VOL_ONLY_SOUND
+
+#ifdef __PLUS
+			if (g_Sound.nDigitized)
+#endif
 			if ((AUDC[chan + chip_offs] & VOL_ONLY)) {
+
 #ifdef STEREO_SOUND
-				if (chip & 0x01) {
+
+#ifdef __PLUS
+				if (stereo_enabled && chip & 0x01)
+#else
+				if (chip & 0x01)
+#endif
+				{
 					sampbuf_lastval2 += AUDV[chan + chip_offs]
 						- sampbuf_AUDV[chan + chip_offs];
 
@@ -578,8 +610,9 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 							sampbuf_rptr2 = 0;
 					}
 				}
-				else {
-#endif
+				else
+#endif /* STEREO_SOUND */
+				{
 					sampbuf_lastval += AUDV[chan + chip_offs]
 						-sampbuf_AUDV[chan + chip_offs];
 
@@ -596,11 +629,11 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 						if (sampbuf_rptr >= SAMPBUF_MAX)
 							sampbuf_rptr = 0;
 					}
-#ifdef STEREO_SOUND
 				}
-#endif
 			}
-#endif  /* VOL_ONLY_SOUND */
+
+#endif /* VOL_ONLY_SOUND */
+
 			/* I've disabled any frequencies that exceed the sampling
 			   frequency.  There isn't much point in processing frequencies
 			   that the hardware can't reproduce.  I've also disabled
@@ -611,7 +644,12 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 			/* or the channel freq is greater than the playback freq */
 			if ( (AUDC[chan + chip_offs] & VOL_ONLY) ||
 				((AUDC[chan + chip_offs] & VOLUME_MASK) == 0)
-				/* || (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))*/) {
+#if defined(__PLUS) && !defined(_WX_)
+				|| (!g_Sound.nBieniasFix && (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8)))
+#else
+				/* || (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))*/
+#endif
+				) {
 				/* indicate the channel is 'on' */
 				Outvol[chan + chip_offs] = 1;
 
@@ -620,7 +658,12 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 					(chan == CHAN4 && !(AUDCTL[chip] & CH2_FILTER)) ||
 					(chan == CHAN1) ||
 					(chan == CHAN2)
-					/* || (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))*/) {
+#if defined(__PLUS) && !defined(_WX_)
+					|| (!g_Sound.nBieniasFix && (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8)))
+#else
+					/* || (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))*/
+#endif
+				) {
 					/* and set channel freq to max to reduce processing */
 					Div_n_max[chan + chip_offs] = 0x7fffffffL;
 					Div_n_cnt[chan + chip_offs] = 0x7fffffffL;
@@ -653,7 +696,7 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 
 static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 {
-	register uint8 *buffer = sndbuffer;
+	register uint8 *buffer = (uint8 *) sndbuffer;
 	register uint16 n = sndn;
 
 	register uint32 *div_n_ptr;
@@ -665,12 +708,16 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 #ifdef STEREO_SOUND
 	register int16 cur_val2;
 #endif
-#else
+#else /* CLIP_SOUND */
 	register uint8 cur_val;		/* otherwise we'll simplify as 8-bit unsigned */
 #ifdef STEREO_SOUND
-	register int8 cur_val2;
+#ifdef __PLUS
+	register uint8 cur_val2;
+#else
+	register int8 cur_val2; /* XXX: uint8 ? */
 #endif
-#endif
+#endif /* STEREO_SOUND */
+#endif /* CLIP_SOUND */
 	register uint8 *out_ptr;
 	register uint8 audc;
 	register uint8 toggle;
@@ -693,8 +740,11 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 	/* add the output values of all 4 channels */
 	cur_val = SAMP_MIN;
 #ifdef STEREO_SOUND
-	cur_val2 = SAMP_MIN;
+#ifdef __PLUS
+	if (stereo_enabled)
 #endif
+	cur_val2 = SAMP_MIN;
+#endif /* STEREO_SOUND */
 
 	count = Num_pokeys;
 	do {
@@ -714,27 +764,32 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 			cur_val += *vol_ptr;
 		vol_ptr++;
 #ifdef STEREO_SOUND
-		count--;
-		if (count) {
-			if (*out_ptr++)
-				cur_val2 += *vol_ptr;
-			vol_ptr++;
-
-			if (*out_ptr++)
-				cur_val2 += *vol_ptr;
-			vol_ptr++;
-
-			if (*out_ptr++)
-				cur_val2 += *vol_ptr;
-			vol_ptr++;
-
-			if (*out_ptr++)
-				cur_val2 += *vol_ptr;
-			vol_ptr++;
-		}
-		else
-			break;
+#ifdef __PLUS
+		if (stereo_enabled)
 #endif
+		{
+			count--;
+			if (count) {
+				if (*out_ptr++)
+					cur_val2 += *vol_ptr;
+				vol_ptr++;
+
+				if (*out_ptr++)
+					cur_val2 += *vol_ptr;
+				vol_ptr++;
+
+				if (*out_ptr++)
+					cur_val2 += *vol_ptr;
+				vol_ptr++;
+
+				if (*out_ptr++)
+					cur_val2 += *vol_ptr;
+				vol_ptr++;
+			}
+			else
+				break;
+		}
+#endif /* STEREO_SOUND */
 		count--;
 	} while (count);
 /*
@@ -871,10 +926,14 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 						/* if on, turn it off */
 						Outvol[next_event & 0xfd] = 0;
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+						if (stereo_enabled && (next_event & 0x04))
+#else
 						if ((next_event & 0x04))
+#endif
 							cur_val2 -= AUDV[next_event & 0xfd];
 						else
-#endif
+#endif /* STEREO_SOUND */
 							cur_val -= AUDV[next_event & 0xfd];
 					}
 				}
@@ -889,10 +948,14 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 						/* if on, turn it off */
 						Outvol[next_event & 0xfd] = 0;
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+						if (stereo_enabled && (next_event & 0x04))
+#else
 						if ((next_event & 0x04))
+#endif
 							cur_val2 -= AUDV[next_event & 0xfd];
 						else
-#endif
+#endif /* STEREO_SOUND */
 							cur_val -= AUDV[next_event & 0xfd];
 					}
 				}
@@ -903,10 +966,14 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 				if (*out_ptr) {
 					/* remove this channel from the signal */
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+					if (stereo_enabled && (next_event & 0x04))
+#else
 					if ((next_event & 0x04))
+#endif
 						cur_val2 -= AUDV[next_event];
 					else
-#endif
+#endif /* STEREO_SOUND */
 						cur_val -= AUDV[next_event];
 
 					/* and turn the output off */
@@ -918,10 +985,14 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 
 					/* and add it to the output signal */
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+					if (stereo_enabled && (next_event & 0x04))
+#else
 					if ((next_event & 0x04))
+#endif
 						cur_val2 += AUDV[next_event];
 					else
-#endif
+#endif /* STEREO_SOUND */
 						cur_val += AUDV[next_event];
 				}
 			}
@@ -948,6 +1019,9 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 			else
 				iout = cur_val;
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+		if (stereo_enabled)
+#endif
 			if (cur_val2 != last_val2) {
 				if (*Samp_n_cnt < Samp_n_max) {		/* need interpolation */
 					iout2 = (cur_val2 * (*Samp_n_cnt) +
@@ -964,45 +1038,58 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 #else   /* INTERPOLATE_SOUND */
 			iout = cur_val;
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+		if (stereo_enabled)
+#endif
 			iout2 = cur_val2;
 #endif  /* STEREO_SOUND */
 #endif  /* INTERPOLATE_SOUND */
 
 #ifdef VOL_ONLY_SOUND
-			if (sampbuf_rptr != sampbuf_ptr) {
-				int l;
-				if (sampbuf_cnt[sampbuf_rptr] > 0)
-					sampbuf_cnt[sampbuf_rptr] -= 1280;
-				while ((l = sampbuf_cnt[sampbuf_rptr]) <= 0) {
-					sampout = sampbuf_val[sampbuf_rptr];
-					sampbuf_rptr++;
-					if (sampbuf_rptr >= SAMPBUF_MAX)
-						sampbuf_rptr = 0;
-					if (sampbuf_rptr != sampbuf_ptr)
-						sampbuf_cnt[sampbuf_rptr] += l;
-					else
-						break;
+#ifdef __PLUS
+			if (g_Sound.nDigitized)
+#endif
+			{
+				if (sampbuf_rptr != sampbuf_ptr) {
+					int l;
+					if (sampbuf_cnt[sampbuf_rptr] > 0)
+						sampbuf_cnt[sampbuf_rptr] -= 1280;
+					while ((l = sampbuf_cnt[sampbuf_rptr]) <= 0) {
+						sampout = sampbuf_val[sampbuf_rptr];
+						sampbuf_rptr++;
+						if (sampbuf_rptr >= SAMPBUF_MAX)
+							sampbuf_rptr = 0;
+						if (sampbuf_rptr != sampbuf_ptr)
+							sampbuf_cnt[sampbuf_rptr] += l;
+						else
+							break;
+					}
 				}
-			}
-			iout += sampout;
+				iout += sampout;
 #ifdef STEREO_SOUND
-			if (sampbuf_rptr2 != sampbuf_ptr2) {
-				int l;
-				if (sampbuf_cnt2[sampbuf_rptr2] > 0)
-					sampbuf_cnt2[sampbuf_rptr2] -= 1280;
-				while ((l = sampbuf_cnt2[sampbuf_rptr2]) <= 0) {
-					sampout2 = sampbuf_val2[sampbuf_rptr2];
-					sampbuf_rptr2++;
-					if (sampbuf_rptr2 >= SAMPBUF_MAX)
-						sampbuf_rptr2 = 0;
-					if (sampbuf_rptr2 != sampbuf_ptr2)
-						sampbuf_cnt2[sampbuf_rptr2] += l;
-					else
-						break;
+#ifdef __PLUS
+				if (stereo_enabled)
+#endif
+				{
+					if (sampbuf_rptr2 != sampbuf_ptr2) {
+						int l;
+						if (sampbuf_cnt2[sampbuf_rptr2] > 0)
+							sampbuf_cnt2[sampbuf_rptr2] -= 1280;
+						while ((l = sampbuf_cnt2[sampbuf_rptr2]) <= 0) {
+							sampout2 = sampbuf_val2[sampbuf_rptr2];
+							sampbuf_rptr2++;
+							if (sampbuf_rptr2 >= SAMPBUF_MAX)
+								sampbuf_rptr2 = 0;
+							if (sampbuf_rptr2 != sampbuf_ptr2)
+								sampbuf_cnt2[sampbuf_rptr2] += l;
+							else
+								break;
+						}
+					}
+					iout2 += sampout2;
 				}
-			}
-			iout2 += sampout2;
 #endif  /* STEREO_SOUND */
+			}
 #endif  /* VOL_ONLY_SOUND */
 
 #ifdef CLIP_SOUND
@@ -1016,6 +1103,16 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 				*buffer++ = (uint8) iout;
 			}
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+			if (stereo_enabled) {
+				if (iout2 > SAMP_MAX)
+					*buffer++ = (uint8) SAMP_MAX;
+				else if (iout2 < SAMP_MIN)
+					*buffer++ = (uint8) SAMP_MIN;
+				else
+					*buffer++ = (uint8) iout2;
+			}
+#else /* __PLUS */
 			if ((stereo_enabled ? iout2 : iout) > SAMP_MAX) {	/* then check high limit */
 				*buffer++ = (uint8) SAMP_MAX;	/* and limit if greater */
 			}
@@ -1025,10 +1122,14 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 			else {				/* otherwise use raw value */
 				*buffer++ = (uint8) (stereo_enabled ? iout2 : iout);
 			}
+#endif /* __PLUS */
 #endif /* STEREO_SOUND */
 #else /* CLIP_SOUND */
 			*buffer++ = (uint8) iout;	/* clipping not selected, use value */
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+			if (stereo_enabled)
+#endif
 			*buffer++ = (uint8) (stereo_enabled ? iout2 : iout);
 #endif /* STEREO_SOUND */
 #endif /* CLIP_SOUND */
@@ -1041,17 +1142,28 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 			/* and indicate one less byte in the buffer */
 			n--;
 #ifdef STEREO_SOUND
+#ifdef __PLUS
+			if (stereo_enabled)
+#endif
 			n--;
 #endif
 		}
 	}
 #ifdef VOL_ONLY_SOUND
-	if (sampbuf_rptr == sampbuf_ptr)
-		sampbuf_last = cpu_clock;
-#ifdef STEREO_SOUND
-	if (sampbuf_rptr2 == sampbuf_ptr2)
-		sampbuf_last2 = cpu_clock;
+#ifdef __PLUS
+	if (g_Sound.nDigitized)
 #endif
+	{
+		if (sampbuf_rptr == sampbuf_ptr)
+			sampbuf_last = cpu_clock;
+#ifdef STEREO_SOUND
+#ifdef __PLUS
+	if (stereo_enabled)
+#endif
+		if (sampbuf_rptr2 == sampbuf_ptr2)
+			sampbuf_last2 = cpu_clock;
+#endif /* STEREO_SOUND */
+	}
 #endif  /* VOL_ONLY_SOUND */
 }
 
@@ -1059,6 +1171,9 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 static void Update_serio_sound_rf(int out, UBYTE data)
 {
 #ifdef VOL_ONLY_SOUND
+#ifdef __PLUS
+	if (g_Sound.nDigitized) {
+#endif
 	int bits, pv, future;
 	if (!serio_sound_enabled) return;
 
@@ -1088,13 +1203,16 @@ static void Update_serio_sound_rf(int out, UBYTE data)
 		bits >>= 1;
 	}
 	sampbuf_lastval -= pv;
+#ifdef __PLUS
+	}
+#endif
 #endif  /* VOL_ONLY_SOUND */
 }
 #endif /* SERIO_SOUND */
 
 static void Pokey_process_16(void *sndbuffer, unsigned sndn)
 {
-	uint16 *buffer = sndbuffer;
+	uint16 *buffer = (uint16 *) sndbuffer;
 	int i;
 
 	Pokey_process_8(buffer, sndn);
@@ -1118,6 +1236,10 @@ static void Update_consol_sound_rf(int set)
 	static int prev_atari_speaker = 0;
 	static unsigned int prev_cpu_clock = 0;
 	int d;
+#ifdef __PLUS
+	if (!g_Sound.nDigitized)
+		return;
+#endif
 	if (!console_sound_enabled)
 		return;
 
@@ -1170,6 +1292,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.26  2005/08/31 20:00:47  pfusik
+support for Atari800Win PLus
+
 Revision 1.25  2005/08/21 15:48:55  pfusik
 avoid #include <limits.h>
 

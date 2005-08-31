@@ -27,6 +27,7 @@
 #include <math.h>
 
 #include "atari.h"
+#include "mzpokeysnd.h"
 #include "pokeysnd.h"
 #include "remez.h"
 #include "rt-config.h"	/* extern for console_sound_enabled and serio_sound_enabled */
@@ -1091,7 +1092,11 @@ static void Update_vol_only_sound_mz( void );
 #endif
 
 int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
-			int flags, int quality)
+                        int flags, int quality
+#ifdef __PLUS
+                        , int clear_regs
+#endif
+                       )
 {
     double cutoff;
 
@@ -1203,11 +1208,16 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
     build_poly9();
     build_poly17();
 
-    ResetPokeyState(pokey_states);
-    ResetPokeyState(pokey_states+1);
-    num_cur_pokeys = num_pokeys;
+#ifdef __PLUS
+	if (clear_regs)
+#endif
+	{
+		ResetPokeyState(pokey_states);
+		ResetPokeyState(pokey_states + 1);
+	}
+	num_cur_pokeys = num_pokeys;
 
-    return 0; /* OK */
+	return 0; /* OK */
 }
 
 /*****************************************************************************/
@@ -1874,7 +1884,7 @@ static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain
 void Pokey_debugreset(uint8 chip)
 {
     PokeyState* ps = pokey_states+chip;
-    
+
     if(ps->c1_f0)
         ps->c0divpos = ps->c0divstart_p;
     else
@@ -1973,7 +1983,7 @@ void Pokey_debugreset(uint8 chip)
  volume seems to be pretty much like 8 on single POKEY's channel.
  So, the volumes now can sum up to 136 (4 channels * 15 * 2
  + 8 * 2 for GTIA), not 120.
- 
+
  A note from Mark Grebe:
  I've added back in the console and sio sounds from the old
  pokey version.  So, now the volumes can sum up to 152
@@ -2065,7 +2075,7 @@ static void Pokey_process_8(void* sndbuffer, unsigned sndn)
 {
     unsigned short i;
     int nsam = sndn;
-    uint8 *buffer = sndbuffer;
+    uint8 *buffer = (uint8 *) sndbuffer;
 
     if(num_cur_pokeys<1)
         return; /* module was not initialized */
@@ -2085,7 +2095,7 @@ static void Pokey_process_8(void* sndbuffer, unsigned sndn)
                         if( sampbuf_rptr>=SAMPBUF_MAX )
                                 sampbuf_rptr=0;
                         if( sampbuf_rptr!=sampbuf_ptr )
-                            {   
+                            {
                             sampbuf_cnt[sampbuf_rptr]+=l;
                             }
                         else	break;
@@ -2114,7 +2124,7 @@ static void Pokey_process_16(void* sndbuffer, unsigned sndn)
 {
     unsigned short i;
     int nsam = sndn;
-    int16 *buffer = sndbuffer;
+    int16 *buffer = (int16 *) sndbuffer;
 
     if(num_cur_pokeys<1)
         return; /* module was not initialized */
@@ -2134,20 +2144,20 @@ static void Pokey_process_16(void* sndbuffer, unsigned sndn)
                         if( sampbuf_rptr>=SAMPBUF_MAX )
                                 sampbuf_rptr=0;
                         if( sampbuf_rptr!=sampbuf_ptr )
-                            {   
+                            {
                             sampbuf_cnt[sampbuf_rptr]+=l;
                             }
                         else	break;
                 }
             }
-#endif 
+#endif
 #ifdef VOL_ONLY_SOUND
         buffer[0] = (int16)floor((generate_sample(pokey_states) + sampout - MAX_SAMPLE / 2.0)
          * (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
 #else
         buffer[0] = (int16)floor((generate_sample(pokey_states) - MAX_SAMPLE / 2.0)
          * (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
-#endif         
+#endif
         for(i=1; i<num_cur_pokeys; i++)
         {
             buffer[i] = (int16)floor((generate_sample(pokey_states + i) - MAX_SAMPLE / 2.0)
@@ -2164,7 +2174,7 @@ static void Update_serio_sound_mz( int out, UBYTE data )
 #ifdef VOL_ONLY_SOUND
    int bits,pv,future;
         if (!serio_sound_enabled) return;
-  
+
 	pv=0;
 	future=0;
 	bits= (data<<1) | 0x200;
@@ -2197,13 +2207,13 @@ static void Update_serio_sound_mz( int out, UBYTE data )
 
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set )
-{ 
+{
 #ifdef VOL_ONLY_SOUND
   static int prev_atari_speaker=0;
   static unsigned int prev_cpu_clock=0;
   int d;
         if (!console_sound_enabled) return;
-  
+
 	if( !set && samp_consol_val==0 )	return;
 	sampbuf_lastval-=samp_consol_val;
 	if( prev_atari_speaker!=atari_speaker )
@@ -2253,6 +2263,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.21  2005/08/31 20:00:47  pfusik
+support for Atari800Win PLus
+
 Revision 1.20  2005/08/16 23:06:41  pfusik
 #include "config.h" before system headers
 

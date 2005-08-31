@@ -38,6 +38,9 @@
 #ifndef CURSES_BASIC
 #include "screen.h" /* for atari_screen */
 #endif
+#ifdef __PLUS
+#include "input_win.h"
+#endif
 
 int key_code = AKEY_NONE;
 int key_shift = 0;
@@ -402,6 +405,9 @@ void INPUT_Frame(void)
 	}
 
 	/* handle mouse */
+#ifdef __PLUS
+	if (g_Input.ulState & IS_CAPTURE_MOUSE)
+#endif
 	switch (mouse_mode) {
 	case MOUSE_PAD:
 	case MOUSE_TOUCH:

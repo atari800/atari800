@@ -32,6 +32,7 @@ extern int disk_directories;
 extern int serio_sound_enabled;
 extern int console_sound_enabled;
 
+int RtIsPrintCommandSafe(const char *command);
 int RtConfigLoad(const char *alternate_config_filename);
 void RtConfigSave(void);
 void RtConfigUpdate(void);
