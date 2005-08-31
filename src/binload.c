@@ -31,6 +31,7 @@
 #include "devices.h"
 #include "log.h"
 #include "memory.h"
+#include "sio.h"
 
 int start_binloading = 0;
 int loading_basic = 0;
@@ -154,6 +155,9 @@ int BIN_loader(const char *filename)
 		Aprint("binload: can't open \"%s\"", filename);
 		return FALSE;
 	}
+	/* Avoid "BOOT ERROR" when loading a BASIC program */
+	if (drive_status[0] == NoDisk)
+		SIO_DisableDrive(1);
 	if (fread(buf, 1, 2, bin_file) == 2) {
 		if (buf[0] == 0xff && buf[1] == 0xff) {
 			start_binloading = 1;	/* force SIO to call BIN_loader_start at boot */
