@@ -1,5 +1,5 @@
 /*
- * colours.c - colour palette emulation
+ * colours.c - Atari colour palette
  *
  * Copyright (C) 1995-1998 David Firth
  * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
@@ -28,6 +28,10 @@
 #include "atari.h"
 #include "colours.h"
 #include "log.h"
+#ifdef __PLUS
+#include "display_win.h"
+#include "misc_win.h"
+#endif
 
 #ifndef M_PI
 #define M_PI		3.14159265358979323846
@@ -114,7 +118,7 @@ void Palette_SetRGB(int i, int r, int g, int b)
 		b = 0;
 	else if (b > 255)
 		b = 255;
-	colortable[i] = r << 16 | g << 8 | b;
+	colortable[i] = (r << 16) + (g << 8) + b;
 }
 
 int Palette_Read(const char *filename)
@@ -198,10 +202,17 @@ void Palette_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
+#ifndef __PLUS
 	int black = 0;
 	int white = 255;
 	int colintens = 100;
 	int colshift = 30;
+#else /* __PLUS */
+	int black = g_Screen.Pal.nBlackLevel;
+	int white = g_Screen.Pal.nWhiteLevel;
+	int colintens = g_Screen.Pal.nSaturation;
+	int colshift = g_Screen.Pal.nColorShift;
+#endif /* __PLUS */
 	int generate = FALSE;
 	int adjust = FALSE;
 
@@ -247,6 +258,9 @@ void Palette_Initialise(int *argc, char *argv[])
 
 /*
 $Log$
+Revision 1.12  2005/08/31 20:21:20  pfusik
+support for Atari800Win PLus
+
 Revision 1.11  2005/02/23 16:35:30  pfusik
 *** empty log message ***
 

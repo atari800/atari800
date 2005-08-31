@@ -109,6 +109,11 @@ extern UWORD colour_translation_table[256];
 
 #endif /* USE_COLOUR_TRANSLATION_TABLE */
 
+extern UBYTE collisions_mask_missile_playfield;
+extern UBYTE collisions_mask_player_playfield;
+extern UBYTE collisions_mask_missile_player;
+extern UBYTE collisions_mask_player_player;
+
 extern UBYTE TRIG[4];
 extern UBYTE TRIG_latch[4];
 
