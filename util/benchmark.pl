@@ -346,7 +346,7 @@ for my $config (@configs) {
 		else {
 			die "$program does not exist\n";
 		}
-		my $result = pipe_command('./atari800', '-config', 'benchmark/atari800.cfg', '-run', $program);
+		my $result = pipe_command('./atari800', '-config', 'benchmark/atari800.cfg', $program);
 		print $result;
 		# parse result
 		$result =~ /\d+ frames emulated in ([0-9.]+) seconds/
@@ -358,7 +358,7 @@ for my $config (@configs) {
 			$speed_msg .= sprintf ' (%d%% of real Atari speed)', 100 * 0.02 * $frames / $1;
 		}
 		print "$speed_msg\n\n";
-		printf OUT "./atari800 -run %-23s # %s\n", $program, $speed_msg;
+		printf OUT "./atari800 %-23s # %s\n", $program, $speed_msg;
 	}
 }
 
