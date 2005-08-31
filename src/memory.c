@@ -1,5 +1,5 @@
 /*
- * memory.c - RAM memory emulation
+ * memory.c - memory emulation
  *
  * Copyright (C) 1995-1998 David Firth
  * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
@@ -42,10 +42,14 @@
 #include "statesav.h"
 #endif
 
-UBYTE memory[65536];
+UBYTE memory[65536 + 2];
+
 #ifndef PAGED_ATTRIB
+
 UBYTE attrib[65536];
-#else
+
+#else /* PAGED_ATTRIB */
+
 rdfunc readmap[256];
 wrfunc writemap[256];
 
@@ -63,7 +67,8 @@ map_save save_map[2] = {
 	{0, NULL, NULL},          /* RAM */
 	{1, NULL, ROM_PutByte}    /* ROM */
 };
-#endif
+
+#endif /* PAGED_ATTRIB */
 
 static UBYTE under_atarixl_os[16384];
 static UBYTE under_atari_basic[8192];
@@ -208,7 +213,31 @@ void MemStateSave(UBYTE SaveVerbose)
 #ifndef PAGED_ATTRIB
 	SaveUBYTE(&attrib[0], 65536);
 #else
-#warning state save not working yet
+	{
+		/* I assume here that consecutive calls to SaveUBYTE()
+		   are equivalent to a single call with all the values
+		   (i.e. SaveUBYTE() doesn't write any headers). */
+		UBYTE attrib_page[256];
+		int i;
+		for (i = 0; i < 256; i++) {
+			if (writemap[i] == NULL)
+				memset(attrib_page, RAM, 256);
+			else if (writemap[i] == ROM_PutByte)
+				memset(attrib_page, ROM, 256);
+			else if (i == 0x4f || i == 0x5f || i == 0x8f || i == 0x9f) {
+				/* special case: Bounty Bob bank switching registers */
+				memset(attrib_page, ROM, 256);
+				attrib_page[0xf6] = HARDWARE;
+				attrib_page[0xf7] = HARDWARE;
+				attrib_page[0xf8] = HARDWARE;
+				attrib_page[0xf9] = HARDWARE;
+			}
+			else {
+				memset(attrib_page, HARDWARE, 256);
+			}
+			SaveUBYTE(&attrib_page[0], 256);
+		}
+	}
 #endif
 
 	if (machine_type == MACHINE_XLXE) {
@@ -242,7 +271,82 @@ void MemStateRead(UBYTE SaveVerbose)
 #ifndef PAGED_ATTRIB
 	ReadUBYTE(&attrib[0], 65536);
 #else
-#warning state save not working yet
+	{
+		UBYTE attrib_page[256];
+		int i;
+		for (i = 0; i < 256; i++) {
+			ReadUBYTE(&attrib_page[0], 256);
+			/* note: 0x40 is intentional here:
+			   we want ROM on page 0xd1 if H: patches are enabled */
+			switch (attrib_page[0x40]) {
+			case RAM:
+				readmap[i] = NULL;
+				writemap[i] = NULL;
+				break;
+			case ROM:
+				if (i != 0xd1 && attrib_page[0xf6] == HARDWARE) {
+					if (i == 0x4f || i == 0x8f) {
+						readmap[i] = BountyBob1_GetByte;
+						writemap[i] = BountyBob1_PutByte;
+					}
+					else if (i == 0x5f || i == 0x9f) {
+						readmap[i] = BountyBob2_GetByte;
+						writemap[i] = BountyBob2_PutByte;
+					}
+					/* else something's wrong, so we keep current values */
+				}
+				else {
+					readmap[i] = NULL;
+					writemap[i] = ROM_PutByte;
+				}
+				break;
+			case HARDWARE:
+				switch (i) {
+				case 0xc0:
+				case 0xd0:
+					readmap[i] = GTIA_GetByte;
+					writemap[i] = GTIA_PutByte;
+					break;
+				case 0xd1:
+					readmap[i] = PBI_GetByte;
+					writemap[i] = PBI_PutByte;
+					break;
+				case 0xd2:
+				case 0xe8:
+				case 0xeb:
+					readmap[i] = POKEY_GetByte;
+					writemap[i] = POKEY_PutByte;
+				case 0xd3:
+					readmap[i] = PIA_GetByte;
+					writemap[i] = PIA_PutByte;
+					break;
+				case 0xd4:
+					readmap[i] = ANTIC_GetByte;
+					writemap[i] = ANTIC_PutByte;
+					break;
+				case 0xd5:
+					readmap[i] = CART_GetByte;
+					writemap[i] = CART_PutByte;
+					break;
+				case 0xd6:
+					readmap[i] = PBIM1_GetByte;
+					readmap[i] = PBIM2_GetByte;
+					break;
+				case 0xd7:
+					writemap[i] = PBIM1_PutByte;
+					writemap[i] = PBIM2_PutByte;
+					break;
+				default:
+					/* something's wrong, so we keep current values */
+					break;
+				}
+				break;
+			default:
+				/* something's wrong, so we keep current values */
+				break;
+			}
+		}
+	}
 #endif
 
 	if (machine_type == MACHINE_XLXE) {
@@ -539,6 +643,10 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.14  2005/08/31 20:04:06  pfusik
+state files should now work with PAGED_ATTRIB;
+added two extra bytes to memory[], because the CPU emulation can access them
+
 Revision 1.13  2005/08/27 10:39:58  pfusik
 cast the result of malloc()
 

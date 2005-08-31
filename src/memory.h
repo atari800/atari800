@@ -35,14 +35,15 @@
 #define dCopyToMem(from, to, size)		memcpy(memory + (to), from, size)
 #define dFillMem(addr1, value, length)	memset(memory + (addr1), value, length)
 
-extern UBYTE memory[65536];
+extern UBYTE memory[65536 + 2];
+
+#define RAM       0
+#define ROM       1
+#define HARDWARE  2
 
 #ifndef PAGED_ATTRIB
 
 extern UBYTE attrib[65536];
-#define RAM 0
-#define ROM 1
-#define HARDWARE 2
 #define GetByte(addr)		(attrib[addr] == HARDWARE ? Atari800_GetByte(addr) : memory[addr])
 #define PutByte(addr, byte)	 do { if (attrib[addr] == RAM) memory[addr] = byte; else if (attrib[addr] == HARDWARE) Atari800_PutByte(addr, byte); } while (0)
 #define SetRAM(addr1, addr2) memset(attrib + (addr1), RAM, (addr2) - (addr1) + 1)
@@ -53,7 +54,6 @@ extern UBYTE attrib[65536];
 
 typedef UBYTE (*rdfunc)(UWORD addr);
 typedef void (*wrfunc)(UWORD addr, UBYTE value);
-
 extern rdfunc readmap[256];
 extern wrfunc writemap[256];
 void ROM_PutByte(UWORD addr, UBYTE byte);
