@@ -23,76 +23,40 @@
 */
 
 /*
-	Compilation options
-	===================
-	-DNO_GOTO if you have GCC, but want switch() rather than goto *.
-	-DCPU65C02 if you don't want 6502 JMP() bug emulation.
+	Configuration symbols
+	=====================
 
-	Limitations
-	===========
-
-	The 6502 emulation ignores memory attributes for
-	instruction fetch. This is because the instruction
-	must come from either RAM or ROM. A program that
-	executes instructions from within hardware
-	addresses will fail since there is never any
-	usable code there.
-
-	The 6502 emulation also ignores memory attributes
-	for accesses to page 0 and page 1.
-
-	Known bugs
-	==========
-
-1.	In zeropage indirect mode, address can be fetched from 0x00ff and 0x0100.
-
-2.	On a x86, memory[0x10000] can be accessed.
-
-3.	BRK bug is not emulated.
+	Define CPU65C02 if you don't want 6502 JMP() bug emulation.
+	Define CYCLES_PER_OPCODE to update xpos in each opcode's emulation.
+	Define MONITOR_BREAK if you want code breakpoints and execution history.
+	Define MONITOR_PROFILE if you want 6502 instruction profiling.
+	Define MONITOR_TRACE if you want the code to be disassembled while it is executed.
+	Define NO_GOTO if you compile with GCC, but want switch() rather than goto *.
+	Define NO_V_FLAG_VARIABLE to don't use local (static) variable V for the V flag.
+	Define PC_PTR to emulate 6502 Program Counter using UBYTE *.
+	Define PREFETCH_CODE to always fetch 2 bytes after the opcode.
+	Define WRAP_64K to correctly emulate instructions that wrap at 64K.
+	Define WRAP_ZPAGE to prevent incorrect access to the address 0x0100 in zeropage
+	indirect mode.
 
 
-	Ideas for Speed Improvements
-	============================
+	Limitations & Known bugs
+	========================
 
-1.	Join N and Z flags
-	Most instructions set both of them, according to the result.
-	Only few instructions set them independently:
-	with BIT, PLP and RTI there's possibility that both N and Z are set.
-	Let's make UWORD variable NZ that way:
+	There is no emulation of the bug in the BRK instruction executed simultaneously
+	with another interrupt.
 
-	<-msb--><-lsb-->
-	-------NN.......
-	        <--Z--->
+	The 6502 emulation ignores memory attributes for instruction fetch.
+	This is because the instruction must come from either RAM or ROM.
+	A program that executes instructions from within hardware addresses will fail
+	since there is never any usable code there.
 
-	6502's Z flag is set if lsb of NZ is zero.
-	6502's N flag is set if any of bits 7 and 8 is set (test with mask 0x0180).
-
-	With this, we change all Z = N = ... to NZ = ..., which should write
-	a byte zero-extended to a word - isn't this faster than writing two bytes?
-	On PLP and RTI let's NZ = ((flags & 0x82) ^ 2) << 1;
-
-	We can even join more flags. How about this:
-
-	<-msb--><-lsb-->
-	NV11DI-CN.......
-	        <--Z--->
-
-2.	Remove cycle table and add cycles in every instruction.
-
-3.	Make PC UBYTE *, pointing directly into memory.
-
-4.	Use 'instruction queue' - fetch a longword of 6502 code at once,
-	then only shift right this register. But we have to swap bytes
-	on a big-endian cpu. We also should re-fetch on a jump.
-
-5.	Make X and Y registers UWORD or unsigned int, so they don't need to
-	be zero-extended while computing address in indexed mode.
+	The 6502 emulation also ignores memory attributes for accesses to page 0 and page 1.
  */
 
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>	/* for exit() */
-#include <string.h>	/* for memmove() */
 
 #include "antic.h"
 #include "atari.h"
@@ -105,10 +69,11 @@
 #endif
 
 #ifdef FALCON_CPUASM
+
 extern UBYTE IRQ;
 
 #ifdef PAGED_MEM
-#error cpu_m68k.s cannot work with paged memory
+#error cpu_m68k.asm cannot work with paged memory
 #endif
 
 void CPU_Initialise(void)
@@ -126,158 +91,233 @@ void CPU_PutStatus(void)
 	CPUPUT();
 }
 
-#else
+#else /* FALCON_CPUASM */
 
 #ifndef __GNUC__
 #define NO_GOTO
 #endif
 
-/*
-   ==========================================================
-   Emulated Registers and Flags are kept local to this module
-   ==========================================================
- */
+/* #define CYCLES_PER_OPCODE */
 
-#define UPDATE_GLOBAL_REGS regPC = PC; regS = S; regA = A; regX = X; regY = Y
-#define UPDATE_LOCAL_REGS PC = regPC; S = regS; A = regA; X = regX; Y = regY
+/* #define MONITOR_PROFILE */
 
-#define PL dGetByte(0x0100 + ++S)
-#define PH(x) dPutByte(0x0100 + S--, x)
+/* #define NO_V_FLAG_VARIABLE */
 
+/* If PC_PTR is defined, local PC is "const UBYTE *", otherwise it's UWORD. */
+/* #define PC_PTR */
+
+/* If PREFETCH_CODE is defined, 2 bytes after the opcode are always fetched. */
+/* #define PREFETCH_CODE */
+
+
+/* 6502 stack handling */
+#define PL                  dGetByte(0x0100 + ++S)
+#define PH(x)               dPutByte(0x0100 + S--, x)
+#define PHW(x)              PH((x) >> 8); PH((x) & 0xff)
+
+/* 6502 code fetching */
+#ifdef PC_PTR
+#define GET_PC()            (PC - memory)
+#define SET_PC(newpc)       (PC = memory + (newpc))
+#define PHPC                { UWORD tmp = PC - memory; PHW(tmp); }
+#define GET_CODE_BYTE()     (*PC++)
+#define PEEK_CODE_BYTE()    (*PC)
+#if !defined(WORDS_BIGENDIAN) && defined(UNALIGNED_LONG_OK)
+#define PEEK_CODE_WORD()    (*(const UWORD *) PC)
+#else
+#define PEEK_CODE_WORD()    (*PC + (PC[1] << 8))
+#endif
+#else /* PC_PTR */
+#define GET_PC()            PC
+#define SET_PC(newpc)       (PC = (newpc))
+#define PHPC                PHW(PC)
+#define GET_CODE_BYTE()     dGetByte(PC++)
+#define PEEK_CODE_BYTE()    dGetByte(PC)
+#define PEEK_CODE_WORD()    dGetWord(PC)
+#endif /* PC_PTR */
+
+/* Cycle-exact Read-Modify-Write instructions.
+   RMW instructions: ASL, LSR, ROL, ROR, INC, DEC
+   (+ some undocumented) write to the specified address
+   *twice*: first the unmodified value, then the modified value.
+   This can be observed only with some hardware registers. */
 #ifdef CYCLE_EXACT
-
 #ifndef PAGED_ATTRIB
 #define RMW_GetByte(x, addr) \
-		if (attrib[addr] == HARDWARE) { \
-			x = Atari800_GetByte(addr); \
-			if ((addr & 0xef1f) == 0xc01a) { \
-				 xpos--; \
-				 Atari800_PutByte(addr, x); \
-				 xpos++; \
-			} \
-		} else \
-			x = dGetByte(addr);
-#else
-#define RMW_GetByte(x, addr) \
-		x = GetByte(addr); \
+	if (attrib[addr] == HARDWARE) { \
+		x = Atari800_GetByte(addr); \
 		if ((addr & 0xef1f) == 0xc01a) { \
-			xpos--; \
-			PutByte(addr, x); \
-			xpos++; \
-		}
+			 xpos--; \
+			 Atari800_PutByte(addr, x); \
+			 xpos++; \
+		} \
+	} else \
+		x = dGetByte(addr);
+#else /* PAGED_ATTRIB */
+#define RMW_GetByte(x, addr) \
+	x = GetByte(addr); \
+	if ((addr & 0xef1f) == 0xc01a) { \
+		xpos--; \
+		PutByte(addr, x); \
+		xpos++; \
+	}
 #endif /* PAGED_ATTRIB */
-
-#else
-
+#else /* CYCLE_EXACT */
+/* Don't emulate the first write */
 #define RMW_GetByte(x, addr) x = GetByte(addr);
-
 #endif /* CYCLE_EXACT */
 
-#define PHW(x) PH((x)>>8); PH((x) & 0xff)
-
+/* 6502 registers. */
 UWORD regPC;
 UBYTE regA;
-UBYTE regP;						/* Processor Status Byte (Partial) */
-UBYTE regS;
 UBYTE regX;
 UBYTE regY;
+UBYTE regP;						/* Processor Status Byte (Partial) */
+UBYTE regS;
+UBYTE IRQ;
 
-static UBYTE N;					/* bit7 zero (0) or bit 7 non-zero (1) */
-static UBYTE Z;					/* zero (0) or non-zero (1) */
-static UBYTE V;
-static UBYTE C;					/* zero (0) or one(1) */
+/* Transfer 6502 registers between global variables and local variables inside GO() */
+#define UPDATE_GLOBAL_REGS  regPC = GET_PC(); regS = S; regA = A; regX = X; regY = Y
+#define UPDATE_LOCAL_REGS   SET_PC(regPC); S = regS; A = regA; X = regX; Y = regY
 
-/* for Atari Basic loader */
+/* 6502 flags local to this module */
+static UBYTE N;					/* bit7 set => N flag set */
+#ifndef NO_V_FLAG_VARIABLE
+static UBYTE V;                 /* non-zero => V flag set */
+#endif
+static UBYTE Z;					/* zero     => Z flag set */
+static UBYTE C;					/* must be 0 or 1 */
+/* B, D, I are always in regP */
+
+void CPU_GetStatus(void)
+{
+#ifndef NO_V_FLAG_VARIABLE
+	regP = (N & 0x80) + (V ? 0x40 : 0) + (regP & 0x3c) + ((Z == 0) ? 0x02 : 0) + C;
+#else
+	regP = (N & 0x80) + (regP & 0x7c) + ((Z == 0) ? 0x02 : 0) + C;
+#endif
+}
+
+void CPU_PutStatus(void)
+{
+	N = regP;
+#ifndef NO_V_FLAG_VARIABLE
+	V = (regP & 0x40);
+#endif
+	Z = (regP & 0x02) ^ 0x02;
+	C = (regP & 0x01);
+}
+
+/* For Atari Basic loader */
 void (*rts_handler)(void) = NULL;
 
-/*
-   #define MONITOR_PROFILE
- */
-
-/*
- * The following array is used for 6502 instruction profiling
- */
+/* 6502 instruction profiling */
 #ifdef MONITOR_PROFILE
 int instruction_count[256];
 #endif
 
-UBYTE IRQ;
-
+/* Execution history */
 #ifdef MONITOR_BREAK
 UWORD remember_PC[REMEMBER_PC_STEPS];
 unsigned int remember_PC_curpos = 0;
 int remember_xpos[REMEMBER_PC_STEPS];
 UWORD remember_JMP[REMEMBER_JMP_STEPS];
 unsigned int remember_jmp_curpos = 0;
+#define INC_RET_NESTING ret_nesting++
+#else /* MONITOR_BREAK */
+#define INC_RET_NESTING
+#endif /* MONITOR_BREAK */
+
+/* Addressing modes */
+#ifdef WRAP_ZPAGE
+#define zGetWord(x) (dGetByte(x) + (dGetByte((UBYTE) ((x) + 1)) << 8))
+#else
+#define zGetWord(x) dGetWord(x)
 #endif
+#ifdef PREFETCH_CODE
+#if defined(WORDS_BIGENDIAN) || !defined(UNALIGNED_LONG_OK)
+#warning PREFETCH_CODE is efficient only on little-endian machines with UNALIGNED_LONG_OK
+#endif
+#define OP_BYTE     ((UBYTE) addr)
+#define OP_WORD     addr
+#define IMMEDIATE   (PC++, (UBYTE) addr)
+#define ABSOLUTE    PC += 2
+#define ZPAGE       PC++; addr &= 0xff
+#define ABSOLUTE_X  addr += X; PC += 2
+#define ABSOLUTE_Y  addr += Y; PC += 2
+#define INDIRECT_X  PC++; addr = (UBYTE) (addr + X); addr = zGetWord(addr)
+#define INDIRECT_Y  PC++; addr &= 0xff; addr = zGetWord(addr) + Y
+#define ZPAGE_X     PC++; addr = (UBYTE) (addr + X)
+#define ZPAGE_Y     PC++; addr = (UBYTE) (addr + Y)
+#else /* PREFETCH_CODE */
+#define OP_BYTE     PEEK_CODE_BYTE()
+#define OP_WORD     PEEK_CODE_WORD()
+#define IMMEDIATE   GET_CODE_BYTE()
+#define ABSOLUTE    addr = PEEK_CODE_WORD(); PC += 2
+#define ZPAGE       addr = GET_CODE_BYTE()
+#define ABSOLUTE_X  addr = PEEK_CODE_WORD() + X; PC += 2
+#define ABSOLUTE_Y  addr = PEEK_CODE_WORD() + Y; PC += 2
+#define INDIRECT_X  addr = (UBYTE) (GET_CODE_BYTE() + X); addr = zGetWord(addr)
+#define INDIRECT_Y  addr = GET_CODE_BYTE(); addr = zGetWord(addr) + Y
+#define ZPAGE_X     addr = (UBYTE) (GET_CODE_BYTE() + X)
+#define ZPAGE_Y     addr = (UBYTE) (GET_CODE_BYTE() + Y)
+#endif /* PREFETCH_CODE */
 
-void CPU_GetStatus(void)
-{
-	if (N & 0x80)
-		SetN;
-	else
-		ClrN;
-	if (Z)
-		ClrZ;
-	else
-		SetZ;
-	if (V)
-		SetV;
-	else
-		ClrV;
-	if (C)
-		SetC;
-	else
-		ClrC;
-}
-
-void CPU_PutStatus(void)
-{
-	if (regP & N_FLAG)
-		N = 0x80;
-	else
-		N = 0x00;
-	if (regP & Z_FLAG)
-		Z = 0;
-	else
-		Z = 1;
-	if (regP & V_FLAG)
-		V = 1;
-	else
-		V = 0;
-	if (regP & C_FLAG)
-		C = 1;
-	else
-		C = 0;
-}
-
-#define AND(t_data) data = t_data; Z = N = A &= data
+/* Instructions */
+#define AND(t_data) Z = N = A &= t_data
 #define CMP(t_data) data = t_data; Z = N = A - data; C = (A >= data)
 #define CPX(t_data) data = t_data; Z = N = X - data; C = (X >= data)
 #define CPY(t_data) data = t_data; Z = N = Y - data; C = (Y >= data)
-#define EOR(t_data) data = t_data; Z = N = A ^= data
-#define LDA(data) Z = N = A = data
-#define LDX(data) Z = N = X = data
-#define LDY(data) Z = N = Y = data
-#define ORA(t_data) data = t_data; Z = N = A |= data
+#define EOR(t_data) Z = N = A ^= t_data
+#define LDA(t_data) Z = N = A = t_data
+#define LDX(t_data) Z = N = X = t_data
+#define LDY(t_data) Z = N = Y = t_data
+#define ORA(t_data) Z = N = A |= t_data
+#ifndef NO_V_FLAG_VARIABLE
+#define PHP(x)      data = (N & 0x80) + (V ? 0x40 : 0) + (regP & (x)) + ((Z == 0) ? 0x02 : 0) + C; PH(data)
+#define PHPB0       PHP(0x2c)  /* push flags with B flag clear (NMI, IRQ) */
+#define PHPB1       PHP(0x3c)  /* push flags with B flag set (PHP, BRK) */
+#define PLP         data = PL; N = data; V = (data & 0x40); Z = (data & 0x02) ^ 0x02; C = (data & 0x01); regP = (data & 0x0c) + 0x30
+#else /* NO_V_FLAG_VARIABLE */
+#define PHP(x)      data = (N & 0x80) + (regP & (x)) + ((Z == 0) ? 0x02 : 0) + C; PH(data)
+#define PHPB0       PHP(0x6c)  /* push flags with B flag clear (NMI, IRQ) */
+#define PHPB1       PHP(0x7c)  /* push flags with B flag set (PHP, BRK) */
+#define PLP         data = PL; N = data; Z = (data & 0x02) ^ 0x02; C = (data & 0x01); regP = (data & 0x4c) + 0x30
+#endif /* NO_V_FLAG_VARIABLE */
+/* 1 or 2 extra cycles for conditional jumps */
+#if 0
+/* old, less efficient version */
+#define BRANCH(cond) \
+	if (cond) { \
+		SWORD sdata = (SBYTE) GET_CODE_BYTE(); \
+		if ((sdata + (UBYTE) GET_PC()) & 0xff00) \
+			xpos++; \
+		xpos++; \
+		PC += sdata; \
+		DONE \
+	} \
+	PC++; \
+	DONE
+#else
+#define BRANCH(cond) \
+	if (cond) { \
+		addr = (UWORD) (SBYTE) IMMEDIATE; \
+		addr += GET_PC(); \
+		if ((addr ^ GET_PC()) & 0xff00) \
+			xpos++; \
+		xpos++; \
+		SET_PC(addr); \
+		DONE \
+	} \
+	PC++; \
+	DONE
+#endif
 
-#define PHP(x)	data = (N & 0x80); \
-				data += V ? 0x40 : 0; \
-				data += (regP & x); \
-				data += (Z == 0) ? 0x02 : 0; \
-				data += C; \
-				PH(data);
+/* 1 extra cycle for X (or Y) index overflow */
+#define NCYCLES_X   if ((UBYTE) addr < X) xpos++
+#define NCYCLES_Y   if ((UBYTE) addr < Y) xpos++
 
-#define PHPB0 PHP(0x2c)
-#define PHPB1 PHP(0x3c)
-
-#define PLP	data = PL; \
-			N = (data & 0x80); \
-			V = (data & 0x40) ? 1 : 0; \
-			Z = (data & 0x02) ? 0 : 1; \
-			C = (data & 0x01); \
-			regP = (data & 0x0c) + 0x30;
-
+/* Triggers a Non-Maskable Interrupt */
 void NMI(void)
 {
 	UBYTE S = regS;
@@ -288,37 +328,20 @@ void NMI(void)
 	SetI;
 	regPC = dGetWordAligned(0xfffa);
 	regS = S;
-	xpos += 7;		/* getting interrupt takes 7 cycles */
-#ifdef MONITOR_BREAK
-	ret_nesting++;
-#endif
+	xpos += 7; /* handling an interrupt by 6502 takes 7 cycles */
+	INC_RET_NESTING;
 }
 
-/* check pending IRQ, helps in (not only) Lucasfilm games */
-#ifdef MONITOR_BREAK
+/* Check pending IRQ, helps in (not only) Lucasfilm games */
 #define CPUCHECKIRQ \
-{ \
 	if (IRQ && !(regP & I_FLAG) && xpos < xpos_limit) { \
-		PHW(PC); \
+		PHPC; \
 		PHPB0; \
 		SetI; \
-		PC = dGetWordAligned(0xfffe); \
+		SET_PC(dGetWordAligned(0xfffe)); \
 		xpos += 7; \
-		ret_nesting += 1; \
-	} \
-}
-#else
-#define CPUCHECKIRQ \
-{ \
-	if (IRQ && !(regP & I_FLAG) && xpos < xpos_limit) { \
-		PHW(PC); \
-		PHPB0; \
-		SetI; \
-		PC = dGetWordAligned(0xfffe); \
-		xpos += 7; \
-	} \
-}
-#endif
+		INC_RET_NESTING; \
+	}
 
 /*	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
 const int cycles[256] =
@@ -344,32 +367,15 @@ const int cycles[256] =
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7		/* Fx */
 };
 
-/* 1 or 2 extra cycles for conditional jumps */
-#define BRANCH(cond)	if (cond) { \
-		SWORD sdata = (SBYTE) dGetByte(PC++); \
-		if ((sdata + (UBYTE) PC) & 0xff00) \
-			xpos++; \
-		xpos++; \
-		PC += sdata; \
-		DONE \
-	} \
-	PC++; \
-	DONE
-/* 1 extra cycle for X (or Y) index overflow */
-#define NCYCLES_Y		if ((UBYTE) addr < Y) xpos++;
-#define NCYCLES_X		if ((UBYTE) addr < X) xpos++;
-
-
+/* 6502 emulation routine */
 void GO(int limit)
 {
-	UBYTE insn;
-
 #ifdef NO_GOTO
-#define OPCODE(code)	case 0x##code:
-#define DONE			break;
+#define OPCODE_ALIAS(code)	case 0x##code:
+#define DONE				break;
 #else
-#define OPCODE(code)	opcode_##code:
-#define DONE			goto next;
+#define OPCODE_ALIAS(code)	opcode_##code:
+#define DONE				goto next;
 	static const void *opcode[256] =
 	{
 		&&opcode_00, &&opcode_01, &&opcode_02, &&opcode_03,
@@ -454,32 +460,42 @@ void GO(int limit)
 	};
 #endif	/* NO_GOTO */
 
+#ifdef CYCLES_PER_OPCODE
+#define OPCODE(code) OPCODE_ALIAS(code) xpos += cycles[0x##code];
+#else
+#define OPCODE(code) OPCODE_ALIAS(code)
+#endif
+
+#ifdef PC_PTR
+	const UBYTE *PC;
+#else
 	UWORD PC;
-	UBYTE S;
+#endif
 	UBYTE A;
 	UBYTE X;
 	UBYTE Y;
+	UBYTE S;
 
 	UWORD addr;
 	UBYTE data;
+#define insn data
 
 /*
    This used to be in the main loop but has been removed to improve
    execution speed. It does not seem to have any adverse effect on
-   the emulation for two reasons:-
+   the emulation for two reasons:
 
    1. NMI's will can only be raised in antic.c - there is
       no way an NMI can be generated whilst in this routine.
 
-   2. The timing of the IRQs are not that critical.
- */
+   2. The timing of the IRQs are not that critical. */
 
 	if (wsync_halt) {
 
 #ifdef NEW_CYCLE_EXACT
 		if (DRAWING_SCREEN) {
 /* if WSYNC_C is a stolen cycle, antic2cpu_ptr will convert that to the nearest
-   cpu cycle before that cycle.  The CPU will see this cycle, if WSYNC is not 
+   cpu cycle before that cycle.  The CPU will see this cycle, if WSYNC is not
    delayed. (Actually this cycle is the first cycle of the instruction after
    STA WSYNC, which was really executed one cycle after STA WSYNC because
    of an internal antic delay ).   delayed_wsync is added to this cycle to form
@@ -496,11 +512,13 @@ void GO(int limit)
 		}
 		delayed_wsync = 0;
 
-#else
+#else /* NEW_CYCLE_EXACT */
+
 		if (limit < WSYNC_C)
 			return;
 		xpos = WSYNC_C;
-#endif /*NEW_CYCLE_EXACT*/
+
+#endif /* NEW_CYCLE_EXACT */
 
 		wsync_halt = 0;
 	}
@@ -510,33 +528,35 @@ void GO(int limit)
 
 	CPUCHECKIRQ;
 
-/*
-   =====================================
-   Extract Address if Required by Opcode
-   =====================================
- */
+	while (xpos < limit) {
 
-#define	ABSOLUTE	addr = dGetWord(PC); PC += 2;
-#define	ZPAGE		addr = dGetByte(PC++);
-#define	ABSOLUTE_X	addr = dGetWord(PC) + X; PC += 2;
-#define	ABSOLUTE_Y	addr = dGetWord(PC) + Y; PC += 2;
-#define	INDIRECT_X	addr = (UBYTE) (dGetByte(PC++) + X); addr = dGetWord(addr);
-#define	INDIRECT_Y	addr = dGetByte(PC++); addr = dGetWord(addr) + Y;
-#define	ZPAGE_X		addr = (UBYTE) (dGetByte(PC++) + X);
-#define	ZPAGE_Y		addr = (UBYTE) (dGetByte(PC++) + Y);
-
-	while (xpos < xpos_limit) {
+#ifdef PC_PTR
+		/* must handle 64k wrapping */
+		if (PC >= memory + 0xfffe) {
+			if (PC >= memory + 0x10000)
+				PC -= 0x10000;
+			else {
+				/* the opcode is before 0x10000, but the operand is past */
+#ifdef UNALIGNED_LONG_OK
+				*(UWORD *) (memory + 0x10000) = *(UWORD *) memory;
+#else
+				memory[0x10000] = memory[0];
+				memory[0x10001] = memory[1];
+#endif
+			}
+		}
+#endif /* PC_PTR */
 
 #ifdef MONITOR_TRACE
 		if (tron) {
-			disassemble(PC, PC + 1);
+			disassemble(GET_PC(), GET_PC() + 1);
 			printf("\tA=%02x, X=%02x, Y=%02x, S=%02x\n",
 				   A, X, Y, S);
 		}
 #endif
 
 #ifdef MONITOR_BREAK
-		remember_PC[remember_PC_curpos] = PC;
+		remember_PC[remember_PC_curpos] = GET_PC();
 #ifdef NEW_CYCLE_EXACT
 		if (DRAWING_SCREEN)
 			remember_xpos[remember_PC_curpos] = cpu2antic_ptr[xpos] + (ypos << 8);
@@ -545,7 +565,7 @@ void GO(int limit)
 			remember_xpos[remember_PC_curpos] = xpos + (ypos << 8);
 		remember_PC_curpos = (remember_PC_curpos + 1) % REMEMBER_PC_STEPS;
 
-		if (break_addr == PC || ypos_break_addr == ypos) {
+		if (break_addr == GET_PC() || ypos_break_addr == ypos) {
 			UPDATE_GLOBAL_REGS;
 			CPU_GetStatus();
 			if (!Atari800_Exit(TRUE))
@@ -553,12 +573,23 @@ void GO(int limit)
 			CPU_PutStatus();
 			UPDATE_LOCAL_REGS;
 		}
+#endif /* MONITOR_BREAK */
+
+#if defined(WRAP_64K) && !defined(PC_PTR)
+		memory[0x10000] = memory[0];
 #endif
-		insn = dGetByte(PC++);
+
+		insn = GET_CODE_BYTE();
+#ifndef CYCLES_PER_OPCODE
 		xpos += cycles[insn];
+#endif
 
 #ifdef MONITOR_PROFILE
 		instruction_count[insn]++;
+#endif
+
+#ifdef PREFETCH_CODE
+		addr = PEEK_CODE_WORD();
 #endif
 
 #ifdef NO_GOTO
@@ -582,13 +613,11 @@ void GO(int limit)
 #endif
 		{
 			PC++;
-			PHW(PC);
+			PHPC;
 			PHPB1;
 			SetI;
-			PC = dGetWordAligned(0xfffe);
-#ifdef MONITOR_BREAK
-			ret_nesting++;
-#endif
+			SET_PC(dGetWordAligned(0xfffe));
+			INC_RET_NESTING;
 		}
 		DONE
 
@@ -604,23 +633,29 @@ void GO(int limit)
 		RMW_GetByte(data, addr);
 		C = (data & 0x80) ? 1 : 0;
 		data <<= 1;
-		PutByte(addr, data); 
+		PutByte(addr, data);
 		Z = N = A |= data;
 		DONE
 
-	OPCODE(04)				/* NOP ab [unofficial - skip byte] */
-	OPCODE(44)
+	OPCODE_ALIAS(04)		/* NOP ab [unofficial - skip byte] */
+	OPCODE_ALIAS(44)
 	OPCODE(64)
-	OPCODE(14)				/* NOP ab,x [unofficial - skip byte] */
-	OPCODE(34)
-	OPCODE(54)
-	OPCODE(74)
-	OPCODE(d4)
+		PC++;
+		DONE
+
+	OPCODE_ALIAS(14)		/* NOP ab,x [unofficial - skip byte] */
+	OPCODE_ALIAS(34)
+	OPCODE_ALIAS(54)
+	OPCODE_ALIAS(74)
+	OPCODE_ALIAS(d4)
 	OPCODE(f4)
-	OPCODE(80)				/* NOP #ab [unofficial - skip byte] */
-	OPCODE(82)
-	OPCODE(89)
-	OPCODE(c2)
+		PC++;
+		DONE
+
+	OPCODE_ALIAS(80)		/* NOP #ab [unofficial - skip byte] */
+	OPCODE_ALIAS(82)
+	OPCODE_ALIAS(89)
+	OPCODE_ALIAS(c2)
 	OPCODE(e2)
 		PC++;
 		DONE
@@ -645,7 +680,7 @@ void GO(int limit)
 		data = dGetByte(addr);
 		C = (data & 0x80) ? 1 : 0;
 		data <<= 1;
-		dPutByte(addr, data); 
+		dPutByte(addr, data);
 		Z = N = A |= data;
 		DONE
 
@@ -654,7 +689,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(09)				/* ORA #ab */
-		ORA(dGetByte(PC++));
+		ORA(IMMEDIATE);
 		DONE
 
 	OPCODE(0a)				/* ASL */
@@ -662,9 +697,9 @@ void GO(int limit)
 		Z = N = A <<= 1;
 		DONE
 
-	OPCODE(0b)				/* ANC #ab [unofficial - AND then copy N to C (Fox) */
+	OPCODE_ALIAS(0b)		/* ANC #ab [unofficial - AND then copy N to C (Fox) */
 	OPCODE(2b)
-		AND(dGetByte(PC++));
+		AND(IMMEDIATE);
 		C = N >= 0x80;
 		DONE
 
@@ -733,13 +768,13 @@ void GO(int limit)
 		ABSOLUTE_Y;
 		goto aso;
 
-	OPCODE(1c)				/* NOP abcd,x [unofficial - skip word] */
-	OPCODE(3c)
-	OPCODE(5c)
-	OPCODE(7c)
-	OPCODE(dc)
+	OPCODE_ALIAS(1c)		/* NOP abcd,x [unofficial - skip word] */
+	OPCODE_ALIAS(3c)
+	OPCODE_ALIAS(5c)
+	OPCODE_ALIAS(7c)
+	OPCODE_ALIAS(dc)
 	OPCODE(fc)
-		if (dGetByte(PC) + X >= 0x100)
+		if (OP_BYTE + X >= 0x100)
 			xpos++;
 		PC += 2;
 		DONE
@@ -763,14 +798,16 @@ void GO(int limit)
 		goto aso;
 
 	OPCODE(20)				/* JSR abcd */
-		addr = PC + 1;
+		{
+			UWORD target = GET_PC() + 1;
 #ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos] = PC - 1;
-		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
-		ret_nesting++;
+			remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
+			remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
+			ret_nesting++;
 #endif
-		PHW(addr);
-		PC = dGetWord(PC);
+			PHW(target);
+		}
+		SET_PC(OP_WORD);
 		DONE
 
 	OPCODE(21)				/* AND (ab,x) */
@@ -798,7 +835,11 @@ void GO(int limit)
 	OPCODE(24)				/* BIT ab */
 		ZPAGE;
 		N = dGetByte(addr);
+#ifndef NO_V_FLAG_VARIABLE
 		V = N & 0x40;
+#else
+		regP = (regP & 0xbf) + (N & 0x40);
+#endif
 		Z = (A & N);
 		DONE
 
@@ -838,7 +879,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(29)				/* AND #ab */
-		AND(dGetByte(PC++));
+		AND(IMMEDIATE);
 		DONE
 
 	OPCODE(2a)				/* ROL */
@@ -850,7 +891,11 @@ void GO(int limit)
 	OPCODE(2c)				/* BIT abcd */
 		ABSOLUTE;
 		N = GetByte(addr);
+#ifndef NO_V_FLAG_VARIABLE
 		V = N & 0x40;
+#else
+		regP = (regP & 0xbf) + (N & 0x40);
+#endif
 		Z = (A & N);
 		DONE
 
@@ -936,7 +981,7 @@ void GO(int limit)
 	OPCODE(40)				/* RTI */
 		PLP;
 		data = PL;
-		PC = (PL << 8) + data;
+		SET_PC((PL << 8) + data);
 		CPUCHECKIRQ;
 #ifdef MONITOR_BREAK
 		if (break_ret && ret_nesting <= 0)
@@ -991,7 +1036,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(49)				/* EOR #ab */
-		EOR(dGetByte(PC++));
+		EOR(IMMEDIATE);
 		DONE
 
 	OPCODE(4a)				/* LSR */
@@ -1000,17 +1045,17 @@ void GO(int limit)
 		DONE
 
 	OPCODE(4b)				/* ALR #ab [unofficial - Acc AND Data, LSR result] */
-		data = A & dGetByte(PC++);
+		data = A & IMMEDIATE;
 		C = data & 1;
 		Z = N = A = (data >> 1);
 		DONE
 
 	OPCODE(4c)				/* JMP abcd */
 #ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos] = PC - 1;
+		remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
 		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
 #endif
-		PC = dGetWord(PC);
+		SET_PC(OP_WORD);
 		DONE
 
 	OPCODE(4d)				/* EOR abcd */
@@ -1032,7 +1077,11 @@ void GO(int limit)
 		goto lse;
 
 	OPCODE(50)				/* BVC */
+#ifndef NO_V_FLAG_VARIABLE
 		BRANCH(!V)
+#else
+		BRANCH(!(regP & 0x40))
+#endif
 
 	OPCODE(51)				/* EOR (ab),y */
 		INDIRECT_Y;
@@ -1098,7 +1147,7 @@ void GO(int limit)
 
 	OPCODE(60)				/* RTS */
 		data = PL;
-		PC = (PL << 8) + data + 1;
+		SET_PC((PL << 8) + data + 1);
 #ifdef MONITOR_BREAK
 		if (break_ret && ret_nesting <= 0)
 			break_step = 1;
@@ -1165,7 +1214,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(69)				/* ADC #ab */
-		data = dGetByte(PC++);
+		data = IMMEDIATE;
 		goto adc;
 
 	OPCODE(6a)				/* ROR */
@@ -1177,11 +1226,15 @@ void GO(int limit)
 	OPCODE(6b)				/* ARR #ab [unofficial - Acc AND Data, ROR result] */
 		/* It does some 'BCD fixup' if D flag is set */
 		/* MPC 05/24/00 */
-		data = A & dGetByte(PC++);
+		data = A & IMMEDIATE;
 		if (regP & D_FLAG) {
 			UBYTE temp = (data >> 1) + (C << 7);
-			Z = N = (UBYTE) temp;
-			V = ((temp ^ data) & 0x40) >> 6;
+			Z = N = temp;
+#ifndef NO_V_FLAG_VARIABLE
+			V = ((temp ^ data) & 0x40);
+#else
+			regP = (regP & 0xbf) + ((temp ^ data) & 0x40);
+#endif
 			if ((data & 0x0F) + (data & 0x01) > 5)
 				temp = (temp & 0xF0) + ((temp + 0x6) & 0x0F);
 			if (data + (data & 0x10) >= 0x60) {
@@ -1195,25 +1248,29 @@ void GO(int limit)
 		else {
 			Z = N = A = (data >> 1) + (C << 7);
 			C = data >> 7;
+#ifndef NO_V_FLAG_VARIABLE
 			V = C ^ ((A >> 5) & 1);
+#else
+			regP = (regP & 0xbf) + ((A ^ data) & 0x40);
+#endif
 		}
 		DONE
 
 	OPCODE(6c)				/* JMP (abcd) */
 #ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos] = PC-1;
+		remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
 		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
 #endif
-		addr = dGetWord(PC);
+		ABSOLUTE;
 #ifdef CPU65C02
 		/* XXX: if ((UBYTE) addr == 0xff) xpos++; */
-		PC = dGetWord(addr);
+		SET_PC(dGetWord(addr));
 #else
 		/* original 6502 had a bug in JMP (addr) when addr crossed page boundary */
 		if ((UBYTE) addr == 0xff)
-			PC = (dGetByte(addr - 0xff) << 8) + dGetByte(addr);
+			SET_PC((dGetByte(addr - 0xff) << 8) + dGetByte(addr));
 		else
-			PC = dGetWord(addr);
+			SET_PC(dGetWord(addr));
 #endif
 		DONE
 
@@ -1235,7 +1292,11 @@ void GO(int limit)
 		goto rra;
 
 	OPCODE(70)				/* BVS */
+#ifndef NO_V_FLAG_VARIABLE
 		BRANCH(V)
+#else
+		BRANCH(regP & 0x40)
+#endif
 
 	OPCODE(71)				/* ADC (ab),y */
 		INDIRECT_Y;
@@ -1338,7 +1399,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(8b)				/* ANE #ab [unofficial - A AND X AND (Mem OR $EF) to Acc] (Fox) */
-		data = dGetByte(PC++);
+		data = IMMEDIATE;
 		N = Z = A & X & data;
 		A &= X & (data | 0xef);
 		DONE
@@ -1374,7 +1435,7 @@ void GO(int limit)
 
 	OPCODE(93)				/* SHA (ab),y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] (Fox) */
 		/* It seems previous memory value is important - also in 9f */
-		addr = dGetByte(PC++);
+		ZPAGE;
 		data = dGetByte((UBYTE) (addr + 1));	/* Get high byte from zpage */
 		data = A & X & (data + 1);
 		addr = dGetWord(addr) + Y;
@@ -1418,8 +1479,7 @@ void GO(int limit)
 	OPCODE(9b)				/* SHS abcd,y [unofficial, UNSTABLE] (Fox) */
 		/* Transfer A AND X to S, then store S AND (H+1)] */
 		/* S seems to be stable, only memory values vary */
-		addr = dGetWord(PC);
-		PC += 2;
+		ABSOLUTE;
 		S = A & X;
 		data = S & ((addr >> 8) + 1);
 		addr += Y;
@@ -1428,8 +1488,7 @@ void GO(int limit)
 
 	OPCODE(9c)				/* SHY abcd,x [unofficial - Store Y and (H+1)] (Fox) */
 		/* Seems to be stable */
-		addr = dGetWord(PC);
-		PC += 2;
+		ABSOLUTE;
 		/* MPC 05/24/00 */
 		data = Y & ((UBYTE) ((addr >> 8) + 1));
 		addr += X;
@@ -1443,8 +1502,7 @@ void GO(int limit)
 
 	OPCODE(9e)				/* SHX abcd,y [unofficial - Store X and (H+1)] (Fox) */
 		/* Seems to be stable */
-		addr = dGetWord(PC);
-		PC += 2;
+		ABSOLUTE;
 		/* MPC 05/24/00 */
 		data = X & ((UBYTE) ((addr >> 8) + 1));
 		addr += Y;
@@ -1452,15 +1510,14 @@ void GO(int limit)
 		DONE
 
 	OPCODE(9f)				/* SHA abcd,y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] (Fox) */
-		addr = dGetWord(PC);
-		PC += 2;
+		ABSOLUTE;
 		data = A & X & ((addr >> 8) + 1);
 		addr += Y;
 		PutByte(addr, data);
 		DONE
 
 	OPCODE(a0)				/* LDY #ab */
-		LDY(dGetByte(PC++));
+		LDY(IMMEDIATE);
 		DONE
 
 	OPCODE(a1)				/* LDA (ab,x) */
@@ -1469,7 +1526,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(a2)				/* LDX #ab */
-		LDX(dGetByte(PC++));
+		LDX(IMMEDIATE);
 		DONE
 
 	OPCODE(a3)				/* LAX (ab,x) [unofficial] */
@@ -1502,7 +1559,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(a9)				/* LDA #ab */
-		LDA(dGetByte(PC++));
+		LDA(IMMEDIATE);
 		DONE
 
 	OPCODE(aa)				/* TAX */
@@ -1510,7 +1567,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(ab)				/* ANX #ab [unofficial - AND #ab, then TAX] */
-		Z = N = X = A &= dGetByte(PC++);
+		Z = N = X = A &= IMMEDIATE;
 		DONE
 
 	OPCODE(ac)				/* LDY abcd */
@@ -1569,7 +1626,11 @@ void GO(int limit)
 		DONE
 
 	OPCODE(b8)				/* CLV */
+#ifndef NO_V_FLAG_VARIABLE
 		V = 0;
+#else
+		ClrV;
+#endif
 		DONE
 
 	OPCODE(b9)				/* LDA abcd,y */
@@ -1621,7 +1682,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(c0)				/* CPY #ab */
-		CPY(dGetByte(PC++));
+		CPY(IMMEDIATE);
 		DONE
 
 	OPCODE(c1)				/* CMP (ab,x) */
@@ -1669,7 +1730,7 @@ void GO(int limit)
 		DONE
 
 	OPCODE(c9)				/* CMP #ab */
-		CMP(dGetByte(PC++));
+		CMP(IMMEDIATE);
 		DONE
 
 	OPCODE(ca)				/* DEX */
@@ -1678,7 +1739,7 @@ void GO(int limit)
 
 	OPCODE(cb)				/* SBX #ab [unofficial - store (A AND X - Mem) in X] (Fox) */
 		X &= A;
-		data = dGetByte(PC++);
+		data = IMMEDIATE;
 		C = X >= data;
 		/* MPC 05/24/00 */
 		Z = N = X -= data;
@@ -1767,7 +1828,7 @@ void GO(int limit)
 		goto dcm;
 
 	OPCODE(e0)				/* CPX #ab */
-		CPX(dGetByte(PC++));
+		CPX(IMMEDIATE);
 		DONE
 
 	OPCODE(e1)				/* SBC (ab,x) */
@@ -1780,7 +1841,7 @@ void GO(int limit)
 
 	ins:
 		RMW_GetByte(data, addr);
-		N = Z = ++data;
+		++data;
 		PutByte(addr, data);
 		goto sbc;
 
@@ -1804,7 +1865,7 @@ void GO(int limit)
 		ZPAGE;
 
 	ins_zpage:
-		data = Z = N = dGetByte(addr) + 1;
+		data = dGetByte(addr) + 1;
 		dPutByte(addr, data);
 		goto sbc;
 
@@ -1812,17 +1873,17 @@ void GO(int limit)
 		Z = N = ++X;
 		DONE
 
-	OPCODE(e9)				/* SBC #ab */
+	OPCODE_ALIAS(e9)		/* SBC #ab */
 	OPCODE(eb)				/* SBC #ab [unofficial] */
-		data = dGetByte(PC++);
+		data = IMMEDIATE;
 		goto sbc;
 
-	OPCODE(ea)				/* NOP */
-	OPCODE(1a)				/* NOP [unofficial] */
-	OPCODE(3a)
-	OPCODE(5a)
-	OPCODE(7a)
-	OPCODE(da)
+	OPCODE_ALIAS(ea)		/* NOP */
+	OPCODE_ALIAS(1a)		/* NOP [unofficial] */
+	OPCODE_ALIAS(3a)
+	OPCODE_ALIAS(5a)
+	OPCODE_ALIAS(7a)
+	OPCODE_ALIAS(da)
 	OPCODE(fa)
 		DONE
 
@@ -1907,14 +1968,14 @@ void GO(int limit)
 		goto ins;
 
 	OPCODE(d2)				/* ESCRTS #ab (CIM) - on Atari is here instruction CIM [unofficial] !RS! */
-		data = dGetByte(PC++);
+		data = IMMEDIATE;
 		UPDATE_GLOBAL_REGS;
 		CPU_GetStatus();
 		Atari800_RunEsc(data);
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;
 		data = PL;
-		PC = (PL << 8) + data + 1;
+		SET_PC((PL << 8) + data + 1);
 #ifdef MONITOR_BREAK
 		if (break_ret && ret_nesting <= 0)
 			break_step = 1;
@@ -1924,7 +1985,7 @@ void GO(int limit)
 
 	OPCODE(f2)				/* ESC #ab (CIM) - on Atari is here instruction CIM [unofficial] !RS! */
 		/* OPCODE(ff: ESC #ab - opcode FF is now used for INS [unofficial] instruction !RS! */
-		data = dGetByte(PC++);
+		data = IMMEDIATE;
 		UPDATE_GLOBAL_REGS;
 		CPU_GetStatus();
 		Atari800_RunEsc(data);
@@ -1932,15 +1993,15 @@ void GO(int limit)
 		UPDATE_LOCAL_REGS;
 		DONE
 
-	OPCODE(02)				/* CIM [unofficial - crash intermediate] */
-	OPCODE(12)
-	OPCODE(22)
-	OPCODE(32)
-	OPCODE(42)
-	OPCODE(52)
-	OPCODE(62)
-	OPCODE(72)
-	OPCODE(92)
+	OPCODE_ALIAS(02)		/* CIM [unofficial - crash intermediate] */
+	OPCODE_ALIAS(12)
+	OPCODE_ALIAS(22)
+	OPCODE_ALIAS(32)
+	OPCODE_ALIAS(42)
+	OPCODE_ALIAS(52)
+	OPCODE_ALIAS(62)
+	OPCODE_ALIAS(72)
+	OPCODE_ALIAS(92)
 	OPCODE(b2)
 	/* OPCODE(d2) Used for ESCRTS #ab (CIM) */
 	/* OPCODE(f2) Used for ESC #ab (CIM) */
@@ -1949,8 +2010,8 @@ void GO(int limit)
 		CPU_GetStatus();
 
 #ifdef CRASH_MENU
-		crash_address = PC;
-		crash_afterCIM = PC + 1;
+		crash_address = GET_PC();
+		crash_afterCIM = GET_PC() + 1;
 		crash_code = insn;
 		ui();
 #else
@@ -1970,14 +2031,23 @@ void GO(int limit)
 
 	adc:
 		if (!(regP & D_FLAG)) {
-			UWORD tmp;		/* Binary mode */
+			/* Binary mode */
+			unsigned int tmp;
 			tmp = A + data + C;
 			C = tmp > 0xff;
-			V = !((A ^ data) & 0x80) && ((A ^ tmp) & 0x80);
+			/* C = tmp >> 8; */
+#ifndef NO_V_FLAG_VARIABLE
+			V = !((A ^ data) & 0x80) && ((data ^ tmp) & 0x80);
+#else
+			ClrV;
+			if (!((A ^ data) & 0x80) && ((data ^ tmp) & 0x80))
+				SetV;
+#endif
 			Z = N = A = (UBYTE) tmp;
 	    }
 		else {
-			UWORD tmp;		/* Decimal mode */
+			/* Decimal mode */
+			unsigned int tmp;
 			tmp = (A & 0x0f) + (data & 0x0f) + C;
 			if (tmp >= 10)
 				tmp = (tmp - 10) | 0x10;
@@ -1985,7 +2055,13 @@ void GO(int limit)
 
 			Z = A + data + C;
 			N = (UBYTE) tmp;
-			V = !((A ^ data) & 0x80) && ((A ^ tmp) & 0x80);
+#ifndef NO_V_FLAG_VARIABLE
+			V = !((A ^ data) & 0x80) && ((data ^ tmp) & 0x80);
+#else
+			ClrV;
+			if (!((A ^ data) & 0x80) && ((data ^ tmp) & 0x80))
+				SetV;
+#endif
 
 			if (tmp > 0x9f)
 				tmp += 0x60;
@@ -1996,16 +2072,27 @@ void GO(int limit)
 
 	sbc:
 		if (!(regP & D_FLAG)) {
-			UWORD tmp;		/* Binary mode */
-			tmp = A - data - !C;
+			/* Binary mode */
+			unsigned int tmp;
+			/* tmp = A - data - !C; */
+			tmp = A - data - 1 + C;
 			C = tmp < 0x100;
+#ifndef NO_V_FLAG_VARIABLE
 			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
+#else
+			ClrV;
+			if (((A ^ tmp) & 0x80) && ((A ^ data) & 0x80))
+				SetV;
+#endif
 			Z = N = A = (UBYTE) tmp;
 		}
 		else {
-			UWORD al, ah, tmp;	/* Decimal mode */
-			tmp = A - data - !C;
-			al = (A & 0x0f) - (data & 0x0f) - !C;	/* Calculate lower nybble */
+			/* Decimal mode */
+			unsigned int al, ah, tmp;
+			/* tmp = A - data - !C; */
+			tmp = A - data - 1 + C;
+			/* al = (A & 0x0f) - (data & 0x0f) - !C; */
+			al = (A & 0x0f) - (data & 0x0f) - 1 + C;	/* Calculate lower nybble */
 			ah = (A >> 4) - (data >> 4);		/* Calculate upper nybble */
 			if (al & 0x10) {
 				al -= 6;	/* BCD fixup for lower nybble */
@@ -2015,7 +2102,13 @@ void GO(int limit)
 				ah -= 6;	/* BCD fixup for upper nybble */
 
 			C = tmp < 0x100;			/* Set flags */
+#ifndef NO_V_FLAG_VARIABLE
 			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
+#else
+			ClrV;
+			if (((A ^ tmp) & 0x80) && ((A ^ data) & 0x80))
+				SetV;
+#endif
 			Z = N = (UBYTE) tmp;
 
 			A = (ah << 4) + (al & 0x0f);	/* Compose result */
@@ -2050,6 +2143,7 @@ void GO(int limit)
 void CPU_Initialise(void)
 {
 }
+
 #endif /* FALCON_CPUASM */
 
 void CPU_Reset(void)
