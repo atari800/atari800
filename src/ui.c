@@ -53,7 +53,6 @@
 #include "sndsave.h"
 #endif
 #include "rt-config.h" /* enable_new_pokey, stereo_enabled, refresh_rate */
-#include "boot.h"
 
 tUIDriver *ui_driver = &basic_ui_driver;
 
@@ -144,36 +143,31 @@ static void SelectSystem(void)
 }
 
 /* Inspired by LNG (lng.sourceforge.net) */
+/* Writes a blank ATR. The ATR must by formatted by an Atari DOS
+   before files are written to it. */
 static void MakeBlankDisk(FILE *setFile)
 {
-	unsigned long sectorCnt = 0;
-	unsigned long paras = 0;
+/* 720, so it's a standard Single Density disk,
+   which can be formatted by 2.x DOSes.
+   It will be resized when formatted in another density. */
+#define BLANK_DISK_SECTORS  720
+#define BLANK_DISK_PARAS    (BLANK_DISK_SECTORS * 128 / 16)
+	int i;
 	struct ATR_Header hdr;
-	int fileSize = 0;
-	size_t padding;
+	UBYTE sector[128];
 
-	sectorCnt = (unsigned short) (127L / 128L + 3L);
-	paras = sectorCnt * 8;
 	memset(&hdr, 0, sizeof(hdr));
-	hdr.magic1 = (UBYTE) 0x96;
-	hdr.magic2 = (UBYTE) 0x02;
-	hdr.seccountlo = (UBYTE) paras;
-	hdr.seccounthi = (UBYTE) (paras >> 8);
-	hdr.hiseccountlo = (UBYTE) (paras >> 16);
-	hdr.secsizelo = (UBYTE) 128;
-
+	hdr.magic1 = 0x96;
+	hdr.magic2 = 0x02;
+	hdr.seccountlo = (UBYTE) BLANK_DISK_PARAS;
+	hdr.seccounthi = (UBYTE) (BLANK_DISK_PARAS >> 8);
+	hdr.hiseccountlo = (UBYTE) (BLANK_DISK_PARAS >> 16);
+	hdr.secsizelo = 128;
 	fwrite(&hdr, 1, sizeof(hdr), setFile);
 
-	bootData[9] = (UBYTE) fileSize;
-	bootData[10] = (UBYTE) (fileSize >> 8);
-	bootData[11] = (UBYTE) (fileSize >> 16);
-	bootData[12] = 0;
-
-	fwrite(bootData, 1, 384, setFile);
-
-	padding = (size_t) ((sectorCnt - 3) * 128 - fileSize);
-	if (padding)
-		fwrite(bootData, 1, padding, setFile);
+	memset(sector, 0, sizeof(sector));
+	for (i = 1; i <= BLANK_DISK_SECTORS; i++)
+		fwrite(sector, 1, sizeof(sector), setFile);
 }
 
 static void DiskManagement(void)
@@ -600,7 +594,7 @@ void SoundRecording(void)
 {
 	if (!IsSoundFileOpen()) {
 		int no = -1;
-	
+
 		while (++no < 1000) {
 			char buffer[20];
 			FILE *fp;
@@ -634,6 +628,8 @@ static void CantLoad(const char *filename)
 	ui_driver->fMessage(msg);
 }
 
+#if 0
+/* Superseded by AutostartFile(). */
 static int RunExe(void)
 {
 	char exename[FILENAME_MAX + 1];
@@ -641,10 +637,24 @@ static int RunExe(void)
 	if (!curr_exe_dir[0])
 		strcpy(curr_exe_dir, atari_exe_dir);
 	if (ui_driver->fGetLoadFilename(curr_exe_dir, exename)) {
-		if (!BIN_loader(exename))
-			CantLoad(exename);
-		else
+		if (BIN_loader(exename))
 			return TRUE;
+		CantLoad(exename);
+	}
+	return FALSE;
+}
+#endif
+
+static int AutostartFile(void)
+{
+	char filename[FILENAME_MAX + 1];
+
+	if (!curr_exe_dir[0])
+		strcpy(curr_exe_dir, atari_exe_dir);
+	if (ui_driver->fGetLoadFilename(curr_exe_dir, filename)) {
+		if (Atari800_OpenFile(filename, TRUE, 1, FALSE))
+			return TRUE;
+		CantLoad(filename);
 	}
 	return FALSE;
 }
@@ -947,9 +957,9 @@ static void Screenshot(int interlaced)
 void ui(void)
 {
 	static tMenuItem menu_array[] = {
+		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run Atari program", "Alt+R", MENU_RUN},
 		{"DISK", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Disk Management", "Alt+D", MENU_DISK},
 		{"CART", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Cartridge Management", "Alt+C", MENU_CARTRIDGE},
-		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run Atari program directly", "Alt+R", MENU_RUN},
 		{"CASS", ITEM_ENABLED | ITEM_FILESEL, NULL, "Select tape image", NULL, MENU_CASSETTE},
 		{"SYST", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select System", "Alt+Y", MENU_SYSTEM},
 #ifdef SOUND
@@ -980,7 +990,7 @@ void ui(void)
 		MENU_END
 	};
 
-	int option = 0;
+	int option = MENU_RUN;
 	int done = FALSE;
 
 	ui_is_active = TRUE;
@@ -1018,7 +1028,8 @@ void ui(void)
 			CartManagement();
 			break;
 		case MENU_RUN:
-			if (RunExe())
+			/* if (RunExe()) */
+			if (AutostartFile())
 				done = TRUE;	/* reboot immediately */
 			break;
 		case MENU_CASSETTE:
@@ -1045,6 +1056,8 @@ void ui(void)
 			SaveState();
 			break;
 		case MENU_LOADSTATE:
+			/* Note: AutostartFile() handles state files, too,
+			   so we can remove LoadState() now. */
 			LoadState();
 			break;
 #ifndef CURSES_BASIC
@@ -1052,10 +1065,10 @@ void ui(void)
 			DisplaySettings();
 			break;
 		case MENU_PCX:
-			Screenshot(0);
+			Screenshot(FALSE);
 			break;
 		case MENU_PCXI:
-			Screenshot(1);
+			Screenshot(TRUE);
 			break;
 #endif
 		case MENU_BACK:
@@ -1073,13 +1086,13 @@ void ui(void)
 			ui_driver->fAboutBox();
 			break;
 		case MENU_MONITOR:
-			if (Atari_Exit(1)) {
+			if (Atari_Exit(TRUE)) {
 				done = TRUE;
 				break;
 			}
 			/* if 'quit' typed in monitor, exit emulator */
 		case MENU_EXIT:
-			Atari800_Exit(0);
+			Atari800_Exit(FALSE);
 			exit(0);
 		}
 	}
@@ -1143,6 +1156,11 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.69  2005/08/31 20:07:06  pfusik
+auto-starting any file supported by the emulator;
+MakeBlankDisk() now writes a blank Single Density disk
+rather than a 3-sector disk with useless executable loader
+
 Revision 1.68  2005/08/24 21:02:20  pfusik
 show_atari_speed, show_disk_led, show_sector_counter
 available in "Display Settings"
