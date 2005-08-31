@@ -2,7 +2,7 @@
 .SH NAME
 atari800 \- Atari 800 Emulator, Version 1.3.6
 .SH SYNOPSIS
-\fBatari800\fP [options] [diskfiles...]
+\fBatari800\fP [options] [files...]
 .SH DESCRIPTION
 \fIatari800\fP emulates the Atari 800, Atari 800 XL, Atari 130 XE and
 Atari 5200 Games System.
@@ -77,10 +77,10 @@ Use Atari OS/B for Atari 800
 Enable RAM between 0xc000 and 0xcfff in Atari 800
 
 .TP
-\fB-pal                
+\fB-pal
 Emulate PAL TV mode
 .TP
-\fB-ntsc               
+\fB-ntsc
 Emulate NTSC TV mode
 
 .TP
@@ -92,16 +92,16 @@ Simulates the Option key being held down during system boot.
 Turn on Atari BASIC ROM
 
 .TP
-\fB-cart <filename>    
+\fB-cart <filename>
 Insert cartridge (CART or raw format)
 .TP
-\fB-run <filename>     
+\fB-run <filename>
 Run Atari program (EXE, COM, XEX, BAS, LST)
 .TP
-\fB-state <filename>     
+\fB-state <filename>
 Load saved-state file
 .TP
-\fB-tape <filename>    
+\fB-tape <filename>
 Attach cassette image (CAS format or raw file)
 .TP
 \fB-boottape <filename>
@@ -115,70 +115,70 @@ hardware directly. This option will probably never be needed since
 programs that access the serial hardware should work even if the OS
 has been patched.
 .TP
-\fB-nopatchall         
+\fB-nopatchall
 Don't patch OS at all, H: and P: devices won't work
 
 .TP
-\fB-H1 <path>          
+\fB-H1 <path>
 Set path for H1: device
 .TP
-\fB-H2 <path>          
+\fB-H2 <path>
 Set path for H2: device
 .TP
-\fB-H3 <path>          
+\fB-H3 <path>
 Set path for H3: device
 .TP
-\fB-H4 <path>          
+\fB-H4 <path>
 Set path for H4: device
 .TP
-\fB-hdreadonly <onoff> 
+\fB-hdreadonly <onoff>
 Enable (1) or disable (0) read-only mode for H: device
 .TP
-\fB-devbug             
+\fB-devbug
 Put debugging messages for H: and P: devices in log file
 
 .TP
-\fB-rtime <onoff>      
+\fB-rtime <onoff>
 Enable (1) or disable (0) R-Time 8 emulation
 
 .TP
-\fB-mouse off          
+\fB-mouse off
 Do not use mouse
 .TP
-\fB-mouse pad          
+\fB-mouse pad
 Emulate paddles
 .TP
-\fB-mouse touch        
+\fB-mouse touch
 Emulate Atari Touch Tablet
 .TP
-\fB-mouse koala        
+\fB-mouse koala
 Emulate Koala Pad
 .TP
-\fB-mouse pen          
+\fB-mouse pen
 Emulate Light Pen
 .TP
-\fB-mouse gun          
+\fB-mouse gun
 Emulate Light Gun
 .TP
-\fB-mouse amiga        
+\fB-mouse amiga
 Emulate Amiga mouse
 .TP
-\fB-mouse st           
+\fB-mouse st
 Emulate Atari ST mouse
 .TP
-\fB-mouse trak         
+\fB-mouse trak
 Emulate Atari Trak-Ball
 .TP
-\fB-mouse joy          
+\fB-mouse joy
 Emulate joystick using mouse
 .TP
-\fB-mouseport <num>    
+\fB-mouseport <num>
 Set mouse port 1-4 (default 1)
 .TP
-\fB-mousespeed <num>   
+\fB-mousespeed <num>
 Set mouse speed 1-9 (default 3)
 .TP
-\fB-multijoy           
+\fB-multijoy
 Emulate MultiJoy4 interface
 
 .TP
@@ -190,25 +190,25 @@ emulation: A higher value results in faster CPU emulation but a
 less frequently updated screen.
 
 .TP
-\fB-artif <mode>       
+\fB-artif <mode>
 Set artifacting mode 0-4 (0 = disable)
 .TP
-\fB-palette <filename> 
+\fB-palette <filename>
 Read Atari colors from ACT file
 .TP
-\fB-black <num>        
+\fB-black <num>
 Set black level 0-255
 .TP
-\fB-while <num>        
+\fB-while <num>
 Set white level 0-255
 .TP
-\fB-colors <num>       
+\fB-colors <num>
 Set color intensity
 .TP
-\fB-genpal             
+\fB-genpal
 Generate artifical palette
 .TP
-\fB-colshift <num>     
+\fB-colshift <num>
 Set color shift (-genpal only)
 .TP
 \fB-screenshots <pattern>
@@ -218,16 +218,16 @@ raising numbers. Existing files are overwritten only if all the files
 defined by the pattern exist.
 
 .TP
-\fB-sound              
+\fB-sound
 Enable sound
 .TP
-\fB-nosound            
+\fB-nosound
 Disable sound
 .TP
-\fB-dsprate <freq>     
+\fB-dsprate <freq>
 Set mixing frequency (Hz)
 .TP
-\fB-snddelay <time>    
+\fB-snddelay <time>
 Set sound delay (milliseconds)
 
 
@@ -254,16 +254,16 @@ in reverse video.
 
 .SS Falcon Options
 .TP
-\fB-interlace <x>      
+\fB-interlace <x>
 Generate Falcon screen only every x frame
 .TP
-\fB-videl              
+\fB-videl
 Direct VIDEL programming (Falcon/VGA only)
 .TP
-\fB-double             
+\fB-double
 Double the screen size on NOVA
 .TP
-\fB-delta              
+\fB-delta
 Delta screen output (differences only)
 
 .SS SVGALIB Options
@@ -274,37 +274,37 @@ Enable screen interlace option
 
 .SS DOS/VGA Options
 .TP
-\fB-interlace          
+\fB-interlace
 Generate screen with interlace
 .TP
-\fB-video <mode>       
+\fB-video <mode>
 0=320x200, 1=320x240, 2=320x480 interlaced with black lines,
 3=320x480 interlaced with darker lines
 .TP
-\fB-novesa             
+\fB-novesa
 Do not use VESA 2 video modes
 .TP
-\fB-vretrace           
+\fB-vretrace
 Use vertical retrace control
 
 .TP
-\fB-LPTjoy1            
+\fB-LPTjoy1
 Read joystick connected to LPT1
 .TP
-\fB-LPTjoy2            
+\fB-LPTjoy2
 Read joystick connected to LPT2
 .TP
-\fB-LPTjoy3            
+\fB-LPTjoy3
 Read joystick connected to LPT3
 .TP
-\fB-joyswap            
+\fB-joyswap
 Swap joysticks
 
 .TP
-\fB-keyboard 0         
+\fB-keyboard 0
 PC keyboard layout
 .TP
-\fB-keyboard 1         
+\fB-keyboard 1
 Atari keyboard layout
 
 
@@ -338,17 +338,17 @@ Sets the height of the clipping-area.
 \fB-private_cmap
 Tells the Emulator to use its own private colormap.
 .TP
-\fB-fps                
+\fB-fps
 Show framerate
 .TP
-\fB-sio                
+\fB-sio
 Show SIO monitor
 .TP
-\fB-x11bug             
+\fB-x11bug
 Enable debug code in atari_x11.c
 
 .TP
-\fB-keypad             
+\fB-keypad
 Keypad mode
 
 .SS SDL Options
@@ -477,15 +477,15 @@ Help Key (XL/XE)
 .PP
 Joystick 0 is operated by the numeric keypad (make sure that the numeric
 keypad has been enabled).
- 
+
         7 8 9
          \\|/
         4 5 6
          /|\\
         1 2 3
- 
+
         And 0 is the fire key.
- 
+
 At the moment it is not possible to use a Paddle with this version.
 
 .SS SVGALIB
@@ -596,7 +596,7 @@ Control-C terminates the program; to type Control-c, type ALT-c instead.
 Joysticks can be either real one connected to game port, or old 8-bit
 digital CX-40 joysticks connected to parallel port or keyboard joysticks
 (try out JOYCFG.EXE).
- 
+
 .SS X11
 .TP
 \fBF1
