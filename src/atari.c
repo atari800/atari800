@@ -52,6 +52,9 @@
 #ifdef __BEOS__
 #include <OS.h>
 #endif
+#ifdef HAVE_LIBZ
+#include <zlib.h>
+#endif
 
 #include "atari.h"
 #include "cpu.h"
@@ -75,18 +78,35 @@
 #endif
 #ifndef BASIC
 #include "statesav.h"
+#ifndef __PLUS
 #include "ui.h"
 #endif
+#endif /* BASIC */
 #include "binload.h"
 #include "rtime.h"
 #include "cassette.h"
-#ifdef SOUND
+#if defined(SOUND) && !defined(__PLUS)
 #include "sound.h"
 #include "sndsave.h"
 #endif
 
-int machine_type = MACHINE_OSB;
-int ram_size = 48;
+#ifdef __PLUS
+#ifdef _WX_
+#include "export.h"
+#else /* _WX_ */
+#include "globals.h"
+#include "macros.h"
+#include "display_win.h"
+#include "misc_win.h"
+#include "registry.h"
+#include "timing.h"
+#include "FileService.h"
+#include "Helpers.h"
+#endif /* _WX_ */
+#endif /* __PLUS */
+
+int machine_type = MACHINE_XLXE;
+int ram_size = 64;
 int tv_mode = TV_PAL;
 
 int verbose = FALSE;
@@ -189,11 +209,18 @@ void Atari800_RunEsc(UBYTE esc_code)
 	crash_afterCIM = regPC + 2;
 	crash_code = dGetByte(crash_address);
 	ui();
-#else
+#else /* CRASH_MENU */
+#ifdef MONITOR_BREAK
+	break_cim = 1;
+#endif
 	Aprint("Invalid ESC code %02x at address %04x", esc_code, regPC - 2);
+#ifndef __PLUS
 	if (!Atari800_Exit(TRUE))
 		exit(0);
-#endif
+#else /* __PLUS */
+	Atari800_Exit(TRUE);
+#endif /* __PLUS */
+#endif /* CRASH_MENU */
 }
 
 void Atari800_PatchOS(void)
@@ -258,6 +285,9 @@ void Warmstart(void)
 	   because Reset routine vector must be read from OS ROM */
 	CPU_Reset();
 	/* note: POKEY and GTIA have no Reset pin */
+#ifdef __PLUS
+	HandleResetEvent();
+#endif
 }
 
 void Coldstart(void)
@@ -366,6 +396,180 @@ int Atari800_InitialiseMachine(void)
 	return TRUE;
 }
 
+int Atari800_DetectFileType(const char *filename)
+{
+	UBYTE header[4];
+	ULONG file_length;
+	FILE *fp = fopen(filename, "rb");
+	if (fp == NULL)
+		return AFILE_ERROR;
+	if (fread(header, 1, 4, fp) != 4) {
+		fclose(fp);
+		return AFILE_ERROR;
+	}
+	switch (header[0]) {
+	case 0:
+		if (header[1] == 0 && (header[2] != 0 || header[3] != 0) /* && file_length < 37 * 1024 */) {
+			fclose(fp);
+			return AFILE_BAS;
+		}
+		break;
+	case 0x1f:
+		if (header[1] == 0x8b) {
+#ifndef HAVE_LIBZ
+			fclose(fp):
+			Aprint("\"%s\" is a compressed file.");
+			Aprint("This executable does not support compressed files. You can uncompress this file");
+			Aprint("with an external program that supports gzip (*.gz) files (e.g. gunzip)");
+			Aprint("and then load into this emulator");
+			return AFILE_ERROR;
+#else /* HAVE_LIBZ */
+			gzFile gzf;
+			fclose(fp);
+			gzf = gzopen(filename, "rb");
+			if (gzf == NULL)
+				return AFILE_ERROR;
+			if (gzread(gzf, header, 4) != 4) {
+				gzclose(gzf);
+				return AFILE_ERROR;
+			}
+			gzclose(gzf);
+			if (header[0] == 0x96 && header[1] == 0x02)
+				return AFILE_ATR_GZ;
+			if (header[0] == 'A' && header[1] == 'T' && header[2] == 'A' && header[3] == 'R')
+				return AFILE_STATE_GZ;
+			return AFILE_XFD_GZ;
+#endif /* HAVE_LIBZ */
+		}
+		break;
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		if ((header[1] >= '0' && header[1] <= '9') || header[1] == ' ') {
+			fclose(fp);
+			return AFILE_LST;
+		}
+		break;
+	case 'A':
+		if (header[1] == 'T' && header[2] == 'A' && header[3] == 'R') {
+			fclose(fp);
+			return AFILE_STATE;
+		}
+		break;
+	case 'C':
+		if (header[1] == 'A' && header[2] == 'R' && header[3] == 'T') {
+			fclose(fp);
+			return AFILE_CART;
+		}
+		break;
+	case 'F':
+		if (header[1] == 'U' && header[2] == 'J' && header[3] == 'I') {
+			fclose(fp);
+			return AFILE_CAS;
+		}
+		break;
+	case 0x96:
+		if (header[1] == 0x02) {
+			fclose(fp);
+			return AFILE_ATR;
+		}
+		break;
+	case 0xf9:
+	case 0xfa:
+		fclose(fp);
+		return AFILE_DCM;
+	case 0xff:
+		if (header[1] == 0xff && (header[2] != 0xff || header[3] != 0xff)) {
+			fclose(fp);
+			return AFILE_XEX;
+		}
+		break;
+	default:
+		break;
+	}
+	fseek(fp, 0, SEEK_END);
+	file_length = (ULONG) ftell(fp);
+	fclose(fp);
+	switch (file_length) {
+	case 4 * 1024:
+	case 8 * 1024:
+	case 16 * 1024:
+	case 32 * 1024:
+	case 40 * 1024:
+	case 64 * 1024:
+	case 128 * 1024:
+	case 256 * 1024:
+	case 512 * 1024:
+	case 1024 * 1024:
+		return AFILE_ROM;
+	default:
+		break;
+	}
+	/* BOOT_TAPE is a raw file containing a program booted from a tape */
+	if ((header[1] << 7) == file_length)
+		return AFILE_BOOT_TAPE;
+	/* Normally: return (file_length % 128 == 0) ? AFILE_XFD : AFILE_ERROR; */
+	/* but we support corrupted XFDs. */
+	return AFILE_XFD;
+}
+
+int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly)
+{
+	int type = Atari800_DetectFileType(filename);
+	switch (type) {
+	case AFILE_ATR:
+	case AFILE_XFD:
+	case AFILE_ATR_GZ:
+	case AFILE_XFD_GZ:
+	case AFILE_DCM:
+		if (!SIO_Mount(diskno, filename, readonly))
+			return AFILE_ERROR;
+		if (reboot)
+			Coldstart();
+		break;
+	case AFILE_XEX:
+	case AFILE_BAS:
+	case AFILE_LST:
+		if (!BIN_loader(filename))
+			return AFILE_ERROR;
+		break;
+	case AFILE_CART:
+	case AFILE_ROM:
+		/* TODO: select format for ROMs; switch 5200 ? */
+		if (CART_Insert(filename) != 0)
+			return AFILE_ERROR;
+		if (reboot)
+			Coldstart();
+		break;
+	case AFILE_CAS:
+	case AFILE_BOOT_TAPE:
+		if (!CASSETTE_Insert(filename))
+			return AFILE_ERROR;
+		if (reboot) {
+			hold_start = TRUE;
+			Coldstart();
+		}
+		break;
+	case AFILE_STATE:
+	case AFILE_STATE_GZ:
+		if (!ReadAtariState(filename, "rb"))
+			return AFILE_ERROR;
+		/* Don't press Option */
+		consol_table[1] = consol_table[2] = 0xf;
+		break;
+	default:
+		break;
+	}
+	return type;
+}
+
 char *safe_strncpy(char *dest, const char *src, size_t size)
 {
 	strncpy(dest, src, size);
@@ -381,6 +585,30 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifndef BASIC
 	const char *state_file = NULL;
 #endif
+#ifdef __PLUS
+	/* Atari800Win PLus doesn't use configuration files,
+	   it reads configuration from the Registry */
+#ifndef _WX_
+	int bUpdateRegistry = (*argc > 1);
+#endif
+	int bTapeFile = FALSE;
+	int nCartType = cart_type;
+
+	/* It is necessary because of the CART_Start (there must not be the
+	   registry-read value available at startup) */
+	cart_type = CART_NONE;
+
+#ifndef _WX_
+	/* Print the time info in the "Log file" window */
+	Misc_PrintTime();
+
+	/* Force screen refreshing */
+	g_nTestVal = _GetRefreshRate() - 1;
+
+	g_ulAtariState = ATARI_UNINITIALIZED;
+#endif /* _WX_ */
+
+#else /* __PLUS */
 	const char *rtconfig_filename = NULL;
 	int config = FALSE;
 	int help_only = FALSE;
@@ -416,13 +644,13 @@ int Atari800_Initialise(int *argc, char *argv[])
 		config = TRUE;
 
 	if (config) {
-
 #ifndef DONT_USE_RTCONFIGUPDATE
 		RtConfigUpdate();
-#endif /* !DONT_USE_RTCONFIGUPDATE */
-
+#endif
 		RtConfigSave();
 	}
+
+#endif /* __PLUS */
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-atari") == 0) {
@@ -526,9 +754,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 				/* all options known to main module tried but none matched */
 
 				if (strcmp(argv[i], "-help") == 0) {
+#ifndef __PLUS
 					help_only = TRUE;
 					Aprint("\t-configure       Update Configuration File");
 					Aprint("\t-config <file>   Specify Alternate Configuration File");
+#endif
 					Aprint("\t-atari           Emulate Atari 800");
 					Aprint("\t-xl              Emulate Atari 800XL");
 					Aprint("\t-xe              Emulate Atari 130XE");
@@ -572,10 +802,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
+#ifndef __PLUS
 	if (tv_mode == TV_PAL)
 		deltatime = (1.0 / 50.0);
 	else
 		deltatime = (1.0 / 60.0);
+#endif /* __PLUS */
 
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	Palette_Initialise(argc, argv);
@@ -600,24 +832,51 @@ int Atari800_Initialise(int *argc, char *argv[])
 	PIA_Initialise(argc, argv);
 	POKEY_Initialise(argc, argv);
 
+#ifndef __PLUS
+
 	if (help_only) {
 		Atari800_Exit(FALSE);
 		return FALSE;
 	}
 
-	/* Any parameters left on the command line must be disk images */
+	/* Configure Atari System */
+	Atari800_InitialiseMachine();
+
+#else /* __PLUS */
+
+	if (!InitialiseMachine()) {
+#ifndef _WX_
+		if (bUpdateRegistry)
+			WriteAtari800Registry();
+#endif
+		return FALSE;
+	}
+
+#endif /* __PLUS */
+
+	/* Auto-start files left on the command line */
+	j = 1; /* diskno */
 	for (i = 1; i < *argc; i++) {
-		if (i > 8) {
+		if (j > 8) {
+			/* The remaining arguments are not necessary disk images, but ignore them... */
 			Aprint("Too many disk image filenames on the command line (max. 8).");
 			break;
 		}
-		if (!SIO_Mount(i, argv[i], FALSE)) {
-			Aprint("Disk image \"%s\" not found", argv[i]);
+		switch (Atari800_OpenFile(argv[i], i == 1, j, FALSE)) {
+		case AFILE_ERROR:
+			Aprint("Error opening \"%s\"", argv[i]);
+			break;
+		case AFILE_ATR:
+		case AFILE_XFD:
+		case AFILE_ATR_GZ:
+		case AFILE_XFD_GZ:
+		case AFILE_DCM:
+			j++;
+			break;
+		default:
+			break;
 		}
 	}
-
-	/* Configure Atari System */
-	Atari800_InitialiseMachine();
 
 	/* Install requested ROM cartridge */
 	if (rom_filename) {
@@ -632,13 +891,20 @@ int Atari800_Initialise(int *argc, char *argv[])
 		if (r > 0) {
 #ifdef BASIC
 			Aprint("Raw cartridge images not supported in BASIC version!");
-#else
+#else /* BASIC */
+
+#ifndef __PLUS
 			ui_is_active = TRUE;
 			cart_type = SelectCartType(r);
 			ui_is_active = FALSE;
+#else /* __PLUS */
+			cart_type = (CART_NONE == nCartType ? SelectCartType(r) : nCartType);
+#endif /* __PLUS */
 			CART_Start();
-#endif
+
+#endif /* BASIC */
 		}
+#ifndef __PLUS
 		if (cart_type != CART_NONE) {
 			int for5200 = CART_IsFor5200(cart_type);
 			if (for5200 && machine_type != MACHINE_5200) {
@@ -652,6 +918,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 				Atari800_InitialiseMachine();
 			}
 		}
+#endif /* __PLUS */
 	}
 
 	/* Load Atari executable, if any */
@@ -672,6 +939,16 @@ int Atari800_Initialise(int *argc, char *argv[])
 	signal(SIGINT, sigint_handler);
 #endif
 
+#ifdef __PLUS
+#ifndef _WX_
+	/* Update the Registry if any parameters were specified */
+	if (bUpdateRegistry)
+		WriteAtari800Registry();
+	Timer_Start(FALSE);
+#endif /* _WX_ */
+	g_ulAtariState &= ~ATARI_UNINITIALIZED;
+#endif /* __PLUS */
+
 #ifdef BENCHMARK
 	benchmark_start_time = Atari_time();
 #endif
@@ -682,16 +959,24 @@ int Atari800_Initialise(int *argc, char *argv[])
 int Atari800_Exit(int run_monitor)
 {
 	int restart;
+
+#if defined(__PLUS) && defined(MONITOR_BREAK)
+	if (break_cim == 1)
+		g_ulAtariState |= ATARI_CRASHED;
+#endif
+
 	if (verbose) {
 		Aprint("Current frames per second: %f", fps);
 	}
 	restart = Atari_Exit(run_monitor);
+#ifndef __PLUS
 	if (!restart) {
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
 #ifdef SOUND
 		CloseSoundFile();
 #endif
 	}
+#endif /* __PLUS */
 	return restart;
 }
 
@@ -794,6 +1079,8 @@ void Atari800_UpdatePatches(void)
 		break;
 	}
 }
+
+#ifndef __PLUS
 
 #ifndef USE_CLOCK
 
@@ -1147,6 +1434,8 @@ void Atari800_Frame(void)
 #endif /* BENCHMARK */
 }
 
+#endif /* __PLUS */
+
 /* Opens a new temporary file and fills in filename with its name.
    filename must point to FILENAME_MAX characters buffer, but doesn't need
    to be initialized. */
@@ -1327,6 +1616,10 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.72  2005/08/31 19:55:33  pfusik
+auto-starting any files supported by the emulator;
+support for Atari800Win PLus
+
 Revision 1.71  2005/08/27 10:32:15  pfusik
 BENCHMARK
 

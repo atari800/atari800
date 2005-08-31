@@ -3,6 +3,9 @@
 
 #include "config.h"
 #include <stdio.h>  /* for FILE */
+#ifdef __PLUS
+#include <windows.h>
+#endif
 
 /* Fundamental declarations ---------------------------------------------- */
 
@@ -23,7 +26,10 @@
 #define SLONG signed int
 #define UBYTE unsigned char
 #define UWORD unsigned short
+#ifndef __PLUS
+/* Windows headers typedef ULONG */
 #define ULONG unsigned int
+#endif
 /* Note: in various parts of the emulator we assume that char is 1 byte
    and int is 4 bytes. */
 
@@ -92,7 +98,7 @@ extern int sprite_collisions_in_skipped_frames;
 #define AKEY_SCREENSHOT_INTERLACE  -9
 
 /* Menu codes for Alt+letter shortcuts.
-   Store in alt_function and put AKEY_UI in key_code.*/
+   Store in alt_function and put AKEY_UI in key_code. */
 #define MENU_DISK             0
 #define MENU_CARTRIDGE        1
 #define MENU_RUN              2
@@ -103,15 +109,32 @@ extern int sprite_collisions_in_skipped_frames;
 #define MENU_SETTINGS         7
 #define MENU_SAVESTATE        8
 #define MENU_LOADSTATE        9
-#define MENU_PCX             10
-#define MENU_PCXI            11
-#define MENU_BACK            12
-#define MENU_RESETW          13
-#define MENU_RESETC          14
-#define MENU_MONITOR         15
-#define MENU_ABOUT           16
-#define MENU_EXIT            17
-#define MENU_CASSETTE        18
+#define MENU_PCX              10
+#define MENU_PCXI             11
+#define MENU_BACK             12
+#define MENU_RESETW           13
+#define MENU_RESETC           14
+#define MENU_MONITOR          15
+#define MENU_ABOUT            16
+#define MENU_EXIT             17
+#define MENU_CASSETTE         18
+
+/* File types returned by Atari800_DetectFileType() and Atari800_OpenFile(). */
+#define AFILE_ERROR      0
+#define AFILE_ATR        1
+#define AFILE_XFD        2
+#define AFILE_ATR_GZ     3
+#define AFILE_XFD_GZ     4
+#define AFILE_DCM        5
+#define AFILE_XEX        6
+#define AFILE_BAS        7
+#define AFILE_LST        8
+#define AFILE_CART       9
+#define AFILE_ROM        10
+#define AFILE_CAS        11
+#define AFILE_BOOT_TAPE  12
+#define AFILE_STATE      13
+#define AFILE_STATE_GZ   14
 
 /* Initializes Atari800 emulation core. */
 int Atari800_Initialise(int *argc, char *argv[]);
@@ -131,6 +154,15 @@ int Atari800_InitialiseMachine(void);
 
 /* Reinitializes patches after enable_*_patch change. */
 void Atari800_UpdatePatches(void);
+
+/* Auto-detects file type and returns one of AFILE_* values. */
+int Atari800_DetectFileType(const char *filename);
+
+/* Auto-detects file type and mounts the file in the emulator.
+   reboot: Coldstart() for disks, cartridges and tapes
+   diskno: drive number for disks (1-8)
+   readonly: mount disks as read-only */
+int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly);
 
 /* Shuts down Atari800 emulation core. */
 int Atari800_Exit(int run_monitor);
@@ -285,6 +317,10 @@ FILE *Atari_tmpfile(char *filename, const char *mode);
 
 /*
 $Log$
+Revision 1.53  2005/08/31 19:55:33  pfusik
+auto-starting any files supported by the emulator;
+support for Atari800Win PLus
+
 Revision 1.52  2005/08/22 20:49:31  pfusik
 MENU_ARTIF -> MENU_DISPLAY
 
