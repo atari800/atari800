@@ -14,7 +14,7 @@ Summary:	An emulator of 8-bit Atari personal computers.
 Name:		%{name}
 Version:	%{ver}
 Release:	%{rel}
-Copyright:	%{copy}
+License:	%{copy}
 Packager: %{ich}
 URL: http://atari800.sourceforge.net/
 Group:	%{group}
