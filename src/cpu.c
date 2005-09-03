@@ -141,31 +141,33 @@ void CPU_PutStatus(void)
    (+ some undocumented) write to the specified address
    *twice*: first the unmodified value, then the modified value.
    This can be observed only with some hardware registers. */
-#ifdef CYCLE_EXACT
+/* XXX: we do this only for GTIA, because NEW_CYCLE_EXACT does not correctly
+   emulate INC $D400 (and INC $D40A wasn't tested) */
+#ifdef NEW_CYCLE_EXACT
 #ifndef PAGED_ATTRIB
 #define RMW_GetByte(x, addr) \
 	if (attrib[addr] == HARDWARE) { \
 		x = Atari800_GetByte(addr); \
-		if ((addr & 0xef1f) == 0xc01a) { \
-			 xpos--; \
-			 Atari800_PutByte(addr, x); \
-			 xpos++; \
+		if ((addr & 0xef00) == 0xc000) { \
+			xpos--; \
+			Atari800_PutByte(addr, x); \
+			xpos++; \
 		} \
 	} else \
 		x = dGetByte(addr);
 #else /* PAGED_ATTRIB */
 #define RMW_GetByte(x, addr) \
 	x = GetByte(addr); \
-	if ((addr & 0xef1f) == 0xc01a) { \
+	if ((addr & 0xef00) == 0xc000) { \
 		xpos--; \
 		PutByte(addr, x); \
 		xpos++; \
 	}
 #endif /* PAGED_ATTRIB */
-#else /* CYCLE_EXACT */
+#else /* NEW_CYCLE_EXACT */
 /* Don't emulate the first write */
 #define RMW_GetByte(x, addr) x = GetByte(addr);
-#endif /* CYCLE_EXACT */
+#endif /* NEW_CYCLE_EXACT */
 
 /* 6502 registers. */
 UWORD regPC;
@@ -799,13 +801,13 @@ void GO(int limit)
 
 	OPCODE(20)				/* JSR abcd */
 		{
-			UWORD target = GET_PC() + 1;
+			UWORD retaddr = GET_PC() + 1;
 #ifdef MONITOR_BREAK
 			remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
 			remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
 			ret_nesting++;
 #endif
-			PHW(target);
+			PHW(retaddr);
 		}
 		SET_PC(OP_WORD);
 		DONE
@@ -1026,7 +1028,7 @@ void GO(int limit)
 	lse_zpage:
 		data = dGetByte(addr);
 		C = data & 1;
-		data = data >> 1;
+		data >>= 1;
 		dPutByte(addr, data);
 		Z = N = A ^= data;
 		DONE
@@ -1737,7 +1739,7 @@ void GO(int limit)
 		Z = N = --X;
 		DONE
 
-	OPCODE(cb)				/* SBX #ab [unofficial - store (A AND X - Mem) in X] (Fox) */
+	OPCODE(cb)				/* SBX #ab [unofficial - store ((A AND X) - Mem) in X] (Fox) */
 		X &= A;
 		data = IMMEDIATE;
 		C = X >= data;
