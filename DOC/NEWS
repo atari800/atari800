@@ -9,11 +9,16 @@
  * Atarimax cartridges
  * improved PERCOM emulation (helps non-standard disk images)
  * sound recording now works (was completely broken)
+ * "-screenshots <pattern>" command-line option
+ * new monitor command: "LOOP"
+ * "C", "M" and "S" monitor commands support hardware registers
  * stereo now works in DOS ports
  * greatly improved BASIC version:
    - supports sound
    - supports all interrupts
    - timing much closer to real Atari
+   - Clear Screen, Backspace, Tab and Bell converted from ATASCII to ASCII
+   - improved "K:" input
    - much smaller executable (does not include unused code)
  * greatly improved CURSES version:
    - support for pdcurses
@@ -25,10 +30,9 @@
    - bitmap graphics emulation is now disabled by default
      (smaller and faster executable), but can be enabled with "configure"
  * much faster display in the X11 version
+ * standard key mappings for F6-F10 in SDL, SVGALIB and X11 versions
  * implemented Atari 5200 keys in SDL and X11 versions
- * "-screenshots <pattern>" command-line option
- * new monitor command: "LOOP"
- * "C", "M" and "S" monitor commands support hardware registers
+ * MOTIF and XVIEW versions are now compilable
  * improved "configure" script
  * many small fixes and major source code clean up
 
@@ -454,4 +458,4 @@ Version 1.2.0 (2001/11/29)
   and AUDC/AUDF/AUDCTL variables, included pokey.h
 
 
-Previous changes (pre 1.2.0) are in the CHANGES file.
+Previous changes (pre 1.2.0) are in the CHANGES.OLD file.
