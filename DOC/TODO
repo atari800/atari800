@@ -1,5 +1,7 @@
 This is a list of things that need to be done
 ---------------------------------------------
+o standardize key mappings in all ports, update USAGE and man
+
 o Covox sound device emulation
 
 o support configurations without live sound that can write WAV files
@@ -34,7 +36,7 @@ o further clean up in the directory structure - port specific files should
   be hidden in their subfolders (falcon, amiga, ..)
 
 o try to find out a common interface for setting host sound parameters from
-  the command line - freq (11050 - 44100), bits (8/16) and then remove 
+  the command line - freq (11050 - 44100), bits (8/16) and then remove
   the port specific command line parsing and make use of RtConfig file.
 
 o R: device configuration: TCP port should be configurable (currently
