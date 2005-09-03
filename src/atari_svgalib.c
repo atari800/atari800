@@ -30,6 +30,7 @@
 
 #include <vga.h>
 
+#include "atari.h"
 #include "input.h"
 #include "colours.h"
 #include "monitor.h"
@@ -112,12 +113,6 @@ static UBYTE joymask[] =
 #endif
 };
 
-
-/* static int lookup[256]; */
-
-#define FALSE 0
-#define TRUE 1
-
 #ifdef SVGA_JOYMOUSE
 static int vgamouse_stick;
 static int vgamouse_strig;
@@ -130,9 +125,7 @@ static int cstick;
 static int atrig;
 static int astick;
 
-extern double deltatime;
-
-static int invisible=0;
+static int invisible = 0;
 
 /*
    Interlace variables
@@ -143,15 +136,9 @@ static int ypos_inc = 1;
 static int svga_ptr_inc = 320;
 static int scrn_ptr_inc = ATARI_WIDTH;
 
-/* define some functions */
-/*
-void Atari_DisplayScreen(UBYTE * screen);
-void LeaveVGAMode(void);
-*/
-
 
 /****************************************************************************/
-/* Linux raw keyboard handler  				    		    */
+/* Linux raw keyboard handler                                               */
 /* by Krzysztof Nikiel, 1999                                                */
 /****************************************************************************/
 static void kbhandler(int code, int state)
@@ -220,7 +207,7 @@ int Atari_Keyboard(void)
           pause_hit = 0;
           return AKEY_BREAK;
         }
-    
+
         key_shift = (kbhits[SCANCODE_LEFTSHIFT]
                    | kbhits[SCANCODE_RIGHTSHIFT]) ? 1 : 0;
 
@@ -252,12 +239,11 @@ int Atari_Keyboard(void)
         keycode = (key_shift ? 0x40 : 0)
         	| ((kbhits[SCANCODE_LEFTCONTROL]
                    | kbhits[SCANCODE_RIGHTCONTROL]) ? 0x80 : 0);
-                
+
         switch (kbcode)
         {
           case SCANCODE_F9:
             return AKEY_EXIT;
-            break;
           case SCANCODE_F8:
             keycode = Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT;
             kbcode = 0;
@@ -274,13 +260,14 @@ int Atari_Keyboard(void)
 			keycode = key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
 			kbcode = 0;
 			break;
-
           case SCANCODE_F1:
             return AKEY_UI;
-            break;
           case SCANCODE_F5:
             return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
-            break;
+          case SCANCODE_F6:
+            return AKEY_HELP;
+          case SCANCODE_F7:
+            return AKEY_BREAK;
           case SCANCODE_F11:
             for(i = 0; i < 4; i++)
             {
@@ -440,11 +427,14 @@ int Atari_Keyboard(void)
 /* end of keyboard handler                                                  */
 /****************************************************************************/
 
-void invisible_start( void )
-{	invisible=1;
+void invisible_start(void)
+{
+	invisible = 1;
 }
-void invisible_stop( void )
-{	invisible=0;
+
+void invisible_stop(void)
+{
+	invisible = 0;
 }
 
 void Atari_Initialise(int *argc, char *argv[])
@@ -500,7 +490,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	}
 	else {
 		printf("cannot open joystick /dev/js0: %s\n"
-			   "joystick disabled\n",strerror(errno));
+		       "joystick disabled\n", strerror(errno));
 	}
 #if 0 /* currently not used */
 	js1 = open("/dev/js1", O_RDONLY, 0777);
@@ -526,14 +516,13 @@ void Atari_Initialise(int *argc, char *argv[])
 	}
 	vga_setmode(VGAMODE);
 
-	if (vga_runinbackground_version() >= 1)
-	{	
+	if (vga_runinbackground_version() >= 1) {
 		vga_runinbackground(1);
 		vga_runinbackground(VGA_GOTOBACK,invisible_start);
 		vga_runinbackground(VGA_COMEFROMBACK,invisible_stop);
 	}
 
-        initkb();
+	initkb();
 
 	for (i = 0; i < 256; i++) {
 		int rgb = colortable[i];
@@ -545,7 +534,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		green = (rgb & 0x0000ff00) >> 10;
 		blue = (rgb & 0x000000ff) >> 2;
 
-                vga_setpalette(i, red, green, blue);
+		vga_setpalette(i, red, green, blue);
 	}
 
 	ctrig = 1;
@@ -559,7 +548,7 @@ int Atari_Exit(int run_monitor)
 {
 	int restart;
 
-        keyboard_close();
+	keyboard_close();
 	vga_setmode(TEXT);
 
 	if (run_monitor)
@@ -569,7 +558,6 @@ int Atari_Exit(int run_monitor)
 
 	if (restart) {
 		int VGAMODE = G320x240x256;
-		/* int status; */
 		int i;
 
 		if (!vga_hasmode(VGAMODE)) {
@@ -578,8 +566,8 @@ int Atari_Exit(int run_monitor)
 		}
 		vga_setmode(VGAMODE);
 
-                initkb();
-                
+		initkb();
+
 		for (i = 0; i < 256; i++) {
 			int rgb = colortable[i];
 			int red;
@@ -590,7 +578,7 @@ int Atari_Exit(int run_monitor)
 			green = (rgb & 0x0000ff00) >> 10;
 			blue = (rgb & 0x000000ff) >> 2;
 
-                        vga_setpalette(i, red, green, blue);
+			vga_setpalette(i, red, green, blue);
 		}
 	}
 	else {
@@ -610,7 +598,7 @@ int Atari_Exit(int run_monitor)
 		Sound_Exit();
 #endif
 
-      	Aflushlog();
+		Aflushlog();
 	}
 
 	return restart;
@@ -620,7 +608,7 @@ void Atari_DisplayScreen(UBYTE * screen)
 {
   static int writepage = 0;
   UBYTE *vbuf = screen + first_lno * ATARI_WIDTH + 32;
- 
+
   if (invisible)
     goto after_screen_update;
 #ifdef SVGA_SPEEDUP
@@ -701,7 +689,7 @@ void read_joystick(int js, int centre_x, int centre_y)
 int Atari_PORT(int num)
 {
 	if (num == 0) {
-/* sorry, no time for this now 
+/* sorry, no time for this now
 
 #ifdef SVGA_JOYMOUSE
 		stick0 = vgamouse_stick;
@@ -725,7 +713,7 @@ int Atari_TRIG(int num)
 #ifdef LINUX_JOYSTICK
 	if (num == 1) {
 
-/* sorry, no time for this now 
+/* sorry, no time for this now
 #ifdef SVGA_JOYMOUSE
 		trig0 = vgamouse_strig;
 #endif
@@ -773,6 +761,9 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.17  2005/09/03 11:51:47  pfusik
+implemented F6 (Help) and F7 (Break)
+
 Revision 1.16  2005/08/17 22:25:28  pfusik
 // comments to traditional; removed obsolete Atari_POT
 
