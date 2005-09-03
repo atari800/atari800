@@ -835,6 +835,7 @@ static void Device_HHREAD(void)
 						ch = 0x9b;
 					break;
 				default:
+					h_wascr[fid] = FALSE;
 					break;
 				}
 			}
@@ -1742,18 +1743,54 @@ static void Device_EHWRIT(void)
 	UBYTE ch;
 
 	ch = regA;
+	/* XXX: are '\f', '\b' and '\a' fully portable? */
 	switch (ch) {
-	case 0x7d:
-		putchar('*');
+	case 0x7d: /* Clear Screen */
+		putchar('\x0c'); /* ASCII Form Feed */
+		break;
+	case 0x7e:
+		putchar('\x08'); /* ASCII Backspace */
+		break;
+	case 0x7f:
+		putchar('\t');
 		break;
 	case 0x9b:
 		putchar('\n');
+		break;
+	case 0xfd:
+		putchar('\x07'); /* ASCII Bell */
 		break;
 	default:
 		if ((ch >= 0x20) && (ch <= 0x7e))	/* for DJGPP */
 			putchar(ch);
 		break;
 	}
+	regY = 1;
+	ClrN;
+}
+
+static void Device_KHREAD(void)
+{
+	int ch;
+	int ch2;
+
+	ch = getchar();
+	switch (ch) {
+	case EOF:
+		Atari800_Exit(FALSE);
+		exit(0);
+		break;
+	case '\n':
+		ch = 0x9b;
+		break;
+	default:
+		/* ignore characters until EOF or EOL */
+		do
+			ch2 = getchar();
+		while (ch2 != EOF && ch2 != '\n');
+		break;
+	}
+	regA = (UBYTE) ch;
 	regY = 1;
 	ClrN;
 }
@@ -2085,7 +2122,7 @@ int Device_PatchOS(void)
 			break;
 		case 'K':
 			Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_READ) + 1),
-			                   ESC_KHREAD, Device_EHREAD);
+			                   ESC_KHREAD, Device_KHREAD);
 			patched = TRUE;
 			break;
 #endif
@@ -2267,6 +2304,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.39  2005/09/03 11:56:42  pfusik
+BASIC version: improved "K:" input and "E:" output
+
 Revision 1.38  2005/08/31 20:12:15  pfusik
 created Device_OpenDir() and Device_ReadDir(); improved H5:-H9;
 Device_HHSPEC_Disk_Info(), Device_HHSPEC_Current_Dir() no longer use dPutByte()
