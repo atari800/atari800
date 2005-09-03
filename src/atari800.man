@@ -1,12 +1,17 @@
 .TH ATARI800 1 "April 30, 2005"
+
 .SH NAME
 atari800 \- Atari 800 Emulator, Version 1.3.6
+
 .SH SYNOPSIS
 \fBatari800\fP [options] [files...]
+
 .SH DESCRIPTION
 \fIatari800\fP emulates the Atari 800, Atari 800 XL, Atari 130 XE and
 Atari 5200 Games System.
+
 .SS Options
+
 .TP
 \fB-help
 Print complete and up-to-date list of command line switches
@@ -230,17 +235,17 @@ Set mixing frequency (Hz)
 \fB-snddelay <time>
 Set sound delay (milliseconds)
 
-
 .SS Curses Options
+
 .TP
 \fB-left
-Use columns 0 to 39.
+Use columns 0 to 39
 .TP
 \fB-central
-Use columns 20 to 59.
+Use columns 20 to 59
 .TP
 \fB-right
-Use columns 40 to 79.
+Use columns 40 to 79
 .TP
 \fB-wide1
 Use columns 0 to 79. In this mode only the even character positions
@@ -251,28 +256,8 @@ Use columns 0 to 79. This mode is similar to \fB-wide1\fP except that
 the spaces are in reverse video if the previous character was also
 in reverse video.
 
-
-.SS Falcon Options
-.TP
-\fB-interlace <x>
-Generate Falcon screen only every x frame
-.TP
-\fB-videl
-Direct VIDEL programming (Falcon/VGA only)
-.TP
-\fB-double
-Double the screen size on NOVA
-.TP
-\fB-delta
-Delta screen output (differences only)
-
-.SS SVGALIB Options
-.TP
-\fB-interlace
-Enable screen interlace option
-
-
 .SS DOS/VGA Options
+
 .TP
 \fB-interlace
 Generate screen with interlace
@@ -307,12 +292,69 @@ PC keyboard layout
 \fB-keyboard 1
 Atari keyboard layout
 
+.SS Falcon Options
+
+.TP
+\fB-interlace <x>
+Generate Falcon screen only every x frame
+.TP
+\fB-videl
+Direct VIDEL programming (Falcon/VGA only)
+.TP
+\fB-double
+Double the screen size on NOVA
+.TP
+\fB-delta
+Delta screen output (differences only)
+
+.SS SDL Options
+
+.TP
+\fB-fullscreen
+Start in fullscreen mode (tries to switch to 336x240 resolution)
+.TP
+\fB-windowed
+Start in a window (does not change your working resolution)
+.TP
+\fB-rotate90
+Run the emulator with rotated display (useful for devices with 240x320
+screen)
+.TP
+\fB-width number-of-pixels
+Host horizontal resolution for fullscreen
+.TP
+\fB-height number-of-pixels
+Host vertical resolution for fullscreen
+.TP
+\fB-bpp number-of-bits
+Host color depth for running in fullscreen
+
+.TP
+\fB-audio16
+Enable 16-bit sound output
+
+.TP
+\fB-nojoystick
+Do not initialize SDL joysticks
+.TP
+\fB-joy0 path-to-device
+Define path to device used in LPTjoy 0. Available on linux-ia32 only.
+.TP
+\fB-joy1 path-to-device
+Define path to device used in LPTjoy 1. Available on linux-ia32 only.
+
+.SS SVGALIB Options
+
+.TP
+\fB-interlace
+Enable screen interlace option
 
 .SS X11 Options
+
 .TP
 \fB-small
-Runs the emulator in a small window where each Atari 800 pixel is
-represented by one X Window pixel.
+Run the emulator in a small window where each Atari 800 pixel is
+represented by one X Window pixel
 .TP
 \fB-large
 Runs the emulator in a large window where each Atari 800 pixel is
@@ -321,22 +363,22 @@ default.
 .TP
 \fB-huge
 Runs the emulator in a huge window where each Atari 800 pixel is
-represented by a 3x3 X Window rectange.
+represented by a 3x3 X Window rectange
 .TP
 \fB-clip_x number-of-pixels
-Sets left offset for clipping.
+Set left offset for clipping
 .TP
 \fB-clip_width number-of-pixels
-Sets the width of the clipping-area.
+Set the width of the clipping-area
 .TP
 \fB-clip_y number-of-pixels
-Sets top offset for clipping.
+Set top offset for clipping
 .TP
 \fB-clip_height number-of-pixels
-Sets the height of the clipping-area.
+Set the height of the clipping-area
 .TP
 \fB-private_cmap
-Tells the Emulator to use its own private colormap.
+Use private colormap
 .TP
 \fB-fps
 Show framerate
@@ -351,326 +393,184 @@ Enable debug code in atari_x11.c
 \fB-keypad
 Keypad mode
 
-.SS SDL Options
-.TP
-\fB-rotate90
-Runs the emulator with rotated display (useful for devices with 240x320
-screen)
-.TP
-\fB-fullscreen
-Runs in fullscreen (tries to switch to 336x240 resolution)
-.TP
-\fB-windowed
-Runs in a window (does not change your working resolution)
-.TP
-\fB-width number-of-pixels
-Host horizontal resolution for fullscreen
-.TP
-\fB-height number-of-pixels
-Host vertical resolution for fullscreen
-.TP
-\fB-bpp number-of-bits
-Host color depth for running in fullscreen
-.TP
-\fB-nojoystick
-SDL Joysticks will not be initialized
-.TP
-\fB-joy0 path-to-device
-Defines path to device used in LPTjoy 0. Available on linux-ia32 only.
-.TP
-\fB-joy1 path-to-device
-Defines path to device used in LPTjoy 1. Available on linux-ia32 only.
-.TP
-\fB-audio16
-16-bit sound output enabled.
-
 .PD 0
 
-.SH KEYBOARD, JOYSTICK & PADDLE CONTROLS
+.SH KEYBOARD, JOYSTICK AND OTHER CONTROLLERS
+
+.TP
+\fBF1
+Built in user interface
+.TP
+\fBF2
+Option key
+.TP
+\fBF3
+Select key
+.TP
+\fBF4
+Start key
+.TP
+\fBF5
+Reset key ("warm reset")
+.TP
+\fBShift+F5
+Reboot ("cold reset")
+.TP
+\fBF6
+Help key (XL/XE only)
+.TP
+\fBF7
+Break key
+.TP
+\fBF8
+Enter monitor
+.TP
+\fBF9
+Exit emulator
+.TP
+\fBF10
+Save screenshot
+.TP
+\fBShift+F10
+Save interlaced screenshot
+.TP
+\fBAlt+R
+Run Atari program
+.TP
+\fBAlt+D
+Disk management
+.TP
+\fBAlt+C
+Cartridge management
+.TP
+\fBAlt+Y
+Select system
+.TP
+\fBAlt+O
+Sound settings
+.TP
+\fBAlt+W
+Sound recording start/stop
+.TP
+\fBAlt+S
+Save state file
+.TP
+\fBAlt+L
+Load state file
+.TP
+\fBAlt+A
+About the emulator
+
+.PP
+Paddles, Atari touch tablet, Koala pad, light pen, light gun,
+ST/Amiga mouse, Atari trak-ball, joystick and Atari 5200 analog
+controller are emulated using mouse on ports that support it.
+See the options above for how to enable mouse.
 
 .SS Curses
-.TP
-\fBF1
-Built in User Interface
-.TP
-\fBF2
-Option
-.TP
-\fBF3
-Select
-.TP
-\fBF4
-Start
-.TP
-\fBF5
-Warm Reset
-.TP
-\fBF6
-Help Key (XL/XE)
-.TP
-\fBF7
-Break Key
-.TP
-\fBF8
-Enter monitor
-.TP
-\fBF9
-Exit Emulator
-.TP
-\fBF10
-Save Screenshot (not available in the default CURSES_BASIC build)
-.TP
-\fBF11
----
-.TP
-\fBF12
----
 
-.PP
-Some control have special meaning within curses and should not be used.
+F10 (Save screenshot) does not work in the default CURSES_BASIC build.
+Shift+F5 and Shift+F10 don't work at all.
+Avoid Ctrl + C, H, J, M, Q, S and Z. The remaining control characters
+can be typed. Control characters are displayed on the screen
+with the associated upper case character in bold.
 
-    Avoid Control + C, J, M, Q, S and Z
-
-The remaining control characters can be typed. Control characters are
-displayed on the screen with the associated upper case character in bold.
-
-No Joystick or Paddle support in this version.
-
-.SS Falcon
-.TP
-\fBF1
-Built in User Interface
-.TP
-\fBF2
-Option
-.TP
-\fBF3
-Select
-.TP
-\fBF4
-Start
-.TP
-\fBF5
-Warm Reset
-.TP
-\fBShft+F5
-Cold Reset
-.TP
-\fBF6
-Help Key (XL/XE)
-.TP
-\fBF7
-Break Key
-.TP
-\fBF8
-Enter monitor
-.TP
-\fBF9
-Exit Emulator
-.TP
-\fBF10
-Save Screenshot (+Shift=interlaced screenshot)
-.TP
-\fBHelp
-Help Key (XL/XE)
-
-.PP
-Joystick 0 is operated by the numeric keypad (make sure that the numeric
-keypad has been enabled).
-
-        7 8 9
-         \\|/
-        4 5 6
-         /|\\
-        1 2 3
-
-        And 0 is the fire key.
-
-At the moment it is not possible to use a Paddle with this version.
-
-.SS SVGALIB
-.TP
-\fBF1
-Built in User Interface
-.TP
-\fBF2
-Option
-.TP
-\fBF3
-Select
-.TP
-\fBF4
-Start
-.TP
-\fBF5
-Warm Reset
-.TP
-\fBShft+F5
-Cold Reset
-.TP
-\fBF6
----
-.TP
-\fBF7
-Break Key
-.TP
-\fBF8
-Enter monitor
-.TP
-\fBF9
-Exit Emulator
-.TP
-\fBF10
-Save Screenshot (+Shift=interlaced screenshot)
-.TP
-\fBF11
-Joystick Autofire On/Off
-.TP
-\fBF12
----
-.TP
-\fB`
-This character replaces the CAPS lock key because I have not found a
-way of detecting it. A future solution maybe to automatically issue a
-CAPS lock key when a transition is made between lower and upper case
-keys. i.e. If svgalib return 'a' followed by 'A' it could send 'a'
-'CAPS' 'A' to the Atari.
-
-.PP
-The CTRL+SHIFT keyboard combinations are implemented using the left
-ALT key.
-
-Joystick 0 is operated by the numeric keypad (make sure that the numeric
-keypad has been enabled).
-
-        7 8 9
-         \\|/
-        4 5 6
-         /|\\
-        1 2 3
-
-        And 0 is the fire key.
-
-At the moment it is not possible to use a Paddle with the SVGALIB
-version.
+Controllers not supported in this version.
 
 .SS DOS/VGA
-.TP
-\fBF1
-Built in User Interface
-.TP
-\fBF2
-Option Key
-.TP
-\fBF3
-Select Key
-.TP
-\fBF4
-Start Key
-.TP
-\fBF5
-Warm Reset
-.TP
-\fBShft+F5
-Cold Reset
-.TP
-\fBF6
-Help Key (XL/XE)
+
 .TP
 \fBF7
 Switch between Emulated joysticks mode and Normal keyboard
 .TP
-\fBF8
-Enter monitor
-.TP
-\fBF9
-Exit Emulator
-.TP
-\fBF10
-Save Screenshot (+Shift=interlaced screenshot)
+\fB`
+Atari/Inverse key
 
 .PP
-Control-C terminates the program; to type Control-c, type ALT-c instead.
-` is used as the Atari-Invers key
-
 Joysticks can be either real one connected to game port, or old 8-bit
 digital CX-40 joysticks connected to parallel port or keyboard joysticks
 (try out JOYCFG.EXE).
 
-.SS X11
+.SS Falcon
+
 .TP
-\fBF1
-Built in User Interface
+\fBHelp
+Help key (XL/XE)
+
+.PP
+Joystick 0 is operated by the numeric keypad (make sure that the numeric
+keypad has been enabled).
+
+        7 8 9
+         \\|/
+        4 5 6
+         /|\\
+        1 2 3
+
+        And 0 is the fire key.
+
+Mouse not supported in this version.
+
+.SS SDL
+
 .TP
-\fBF2
-Option
+\fBLAlt+F
+Switch fullscreen (probably doesn't work in Windows)
 .TP
-\fBF3
-Select
+\fBLAlt+G
+Switch WIDTH_MODE (so you can set 320x240)
 .TP
-\fBF4
-Start
+\fBLAlt+B
+Switch BLACK-AND-WHITE
 .TP
-\fBF5
-Warm Reset
+\fBLAlt+J
+Swap \fBkeyboard_emulated\fP joysticks
 .TP
-\fBShft+F5
-Cold Reset
-.TP
-\fBF6
-Help Key (XL/XE)
-.TP
-\fBF7
-Break Key
-.TP
-\fBF8
-GIF Screenshot
-.TP
-\fBF9
-Exit Emulator
-.TP
-\fBF10
-Toggle Fullspeed
+\fBLAlt+E
+Switch bpp (for debug only, will be removed soon)
+
+.PP
+To redefine keys for joystick emulation you must modify SDL_TRIG_* and
+SDL_JOY_* in atari_sdl.c, then recompile Atari800. In source you can also turn
+off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
+
+On Linux, standard joysticks are supported.
+
+.SS SVGALIB
+
 .TP
 \fBF11
-Vertical Positioning: Scroll Screen Downwards
+Joystick autofire on/off
 .TP
-\fBF12
-Vertical Positioning: Scroll Screen Upwards
+\fB`
+Caps key
+
+.PP
+The Ctrl+Shift keyboard combinations are implemented using the left Alt key.
+
+Joystick 0 is operated by the numeric keypad (make sure that the numeric
+keypad has been enabled).
+
+        7 8 9
+         \\|/
+        4 5 6
+         /|\\
+        1 2 3
+
+        And 0 is the fire key.
+
+Mouse not supported in this version.
+
+.SS X11
+
 .TP
-\fBALT
-Atari Key (Either ALT Key will work)
+\fBAlt
+Atari key (either Alt key will work)
 
 .PP
 Joystick 0 is operated by the mouse position relative to the center of
 the screen. The mouse button acts as the trigger.  On Linux, standard
 joysticks are also supported.
-
-.SS SDL
-.TP
-\fBLALT+f
-switching FULLSCREEN (probably doesn't work in Windows)
-.TP
-\fBLALT+g
-switching WIDTH_MODE (so you can set 320x240)
-.TP
-\fBLALT+b
-switching BLACK-AND-WHITE (feel to power of BW monitor!)
-.TP
-\fBLALT+j
-swapping _keyboard_emulated_ joysticks
-.TP
-\fBLALT+e
-switching bpp (for debug only, will be removed soon)
-
-.PP
-To redefine keys for joystick emulation you must modify SDL_TRIG_* and
-SDL_JOY_* in atari_sdl.c, then recompile Atari800. In source you can
-also turn off sound or change defaults (FULLSCREEN, BW,
-SWAP_JOYSTICKS, WIDTH_MODE).
-
-On Linux, standard joysticks are supported.
-
 
 .PD 1
 

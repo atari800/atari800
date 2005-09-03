@@ -1,5 +1,5 @@
-Up-to-date list of accepted command line parameters
-===================================================
+Up-to-date list of command line parameters and key mappings
+===========================================================
 
 Usage:
 atari800 [options] [filenames]
@@ -16,7 +16,8 @@ Disk images are mounted in order, i.e. the first file is mounted
 to the drive 1, next one to the drive 2, etc.
 
 Cassette operation
-------------------
+==================
+
 As there is no possibility to create a new tape from the UI yet, create a file
 of zero size (e.g. with 'touch' command or a text editor) and Select that
 as tape if you want to save to tape.
@@ -24,8 +25,8 @@ Appending to existing tapes is not allowed. You have to re-insert (select
 again in the tape dialog) a just saved tape when you want to load from it
 in order to rewind it.
 
-Command line Options
---------------------
+Command line options
+====================
 
 -help                 Display list of options and terminate
 -v                    Display version number and terminate
@@ -114,21 +115,6 @@ Curses version options
 -wide1                Use columns 0 to 79 (spaces between characters)
 -wide2                Use columns 0 to 79 (as above but normal/reverse spaces)
 
-Falcon version options
-----------------------
-
--interlace <x>        Generate Falcon screen only every x frame
--videl                Direct VIDEL programming (Falcon/VGA only)
--double               Double the screen size on NOVA
--delta                Delta screen output (differences only)
-
--joyswap              Swap joysticks
-
-SVGALIB version options
------------------------
-
--interlace            Generate screen with interlace
-
 DOS/VGA version options
 -----------------------
 
@@ -145,6 +131,37 @@ DOS/VGA version options
 
 -keyboard 0           PC keyboard layout
 -keyboard 1           Atari keyboard layout
+
+Falcon version options
+----------------------
+
+-interlace <x>        Generate Falcon screen only every x frame
+-videl                Direct VIDEL programming (Falcon/VGA only)
+-double               Double the screen size on NOVA
+-delta                Delta screen output (differences only)
+
+-joyswap              Swap joysticks
+
+SDL version options
+-------------------
+
+-fullscreen           Start in fullscreen mode
+-windowed             Start in windowed mode
+-rotate90             Useful for devices with 240x320 screen (handhelds)
+-width x              Set mode width
+-height y             Set mode height
+-bpp b                Set mode bits per pixel
+
+-audio16              Enable 16-bit sound
+
+-nojoystick           Do not initialize joysticks
+-joy0 </dev/lp0>      Define the device for LPTjoy
+-joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
+
+SVGALIB version options
+-----------------------
+
+-interlace            Generate screen with interlace
 
 X11 options
 -----------
@@ -164,165 +181,75 @@ X11 options
 
 -keypad               Keypad mode
 
-SDL version options
--------------------
-
--nojoystick 	      joysticks will not be initialized
--joy0 </dev/lp0>      define the device for LPTjoy
--joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
--rotate90             useful for devices with 240x320 screen (handhelds)
--width x              set mode width
--height y             set mode height
--bpp b                set mode bits per pixel
--fullscreen           start in fullscreen mode
--windowed             start in windowed mode
--audio16              enables 16-bit sound
-
-Keyboard + Joystick & Paddle Controllers
+Keyboard, joystick and other controllers
 ========================================
 
 Unlike PC Xformer, I have not tried to emulate the exact keyboard layout,
 instead, I have tried to make your native keyboard work as normal.
 
-Note: The function keys will eventually be changed to a more logical
-      order.
+F1         Built in user interface
+F2         Option key
+F3         Select key
+F4         Start key
+F5         Reset key ("warm reset")
+Shift+F5   Reboot ("cold reset")
+F6         Help key (XL/XE only)
+F7         Break key
+F8         Enter monitor
+F9         Exit emulator
+F10        Save screenshot
+Shift+F10  Save interlaced screenshot
+Alt+R      Run Atari program
+Alt+D      Disk management
+Alt+C      Cartridge management
+Alt+Y      Select system
+Alt+O      Sound settings
+Alt+W      Sound recording start/stop
+Alt+S      Save state file
+Alt+L      Load state file
+Alt+A      About the emulator
 
-X11 Keyboard + Joystick & Paddle Controllers
-============================================
+Paddles, Atari touch tablet, Koala pad, light pen, light gun,
+ST/Amiga mouse, Atari trak-ball, joystick and Atari 5200 analog
+controller are emulated using mouse on ports that support it.
+See the options above for how to enable mouse.
 
-F1	Built in User Interface
-F2	Option
-F3	Select
-F4	Start
-F5	Warm Reset
-Shft+F5	Cold Reset
-F6	Help Key (XL/XE)
-F7	Break Key
-F8	GIF Screenshot
-F9	Exit Emulator
-F10	Toggle Fullspeed
-F11	Vertical Positioning: Scroll Screen Downwards
-F12	Vertical Positioning: Scroll Screen Upwards
+Amiga keyboard, joystick and other controllers
+----------------------------------------------
 
-ALT	Atari Key (Either ALT Key will work)
+Please look into the supplied Atari800.guide.
 
-Joystick 0 is operated by the mouse position relative to the center of the
-screen. The mouse button acts as the trigger.
+BASIC keyboard, joystick and other controllers
+----------------------------------------------
 
-SVGALIB Keyboard + Joystick & Paddle Controllers
-================================================
+No function keys or Alt+letter shortcuts.
+Use Ctrl+C to enter the monitor.
+Controllers not supported in this version.
 
-F1	Built in User Interface
-F2	Option
-F3	Select
-F4	Start
-F5	Warm Reset
-Shft+F5	Cold Reset
-F6	---
-F7	Break Key
-F8	Enter monitor
-F9	Exit Emulator
-F10	Save Screenshot (+Shift=interlaced screenshot)
-F11	Joystick Autofire On/Off
-F12	---
+Curses keyboard, joystick and other controllers
+-----------------------------------------------
 
-`	This character replaces the CAPS lock key because I have not
-	found a way of detecting it. A future solution maybe to
-	automatically issue a CAPS lock key when a transition is
-	made between lower and upper case keys. i.e. If svgalib
-	return 'a' followed by 'A' it could send 'a' 'CAPS' 'A' to
-	the Atari.
+F10 (Save screenshot) does not work in the default CURSES_BASIC build.
+Shift+F5 and Shift+F10 don't work at all.
+Avoid Ctrl + C, H, J, M, Q, S and Z. The remaining control characters
+can be typed. Control characters are displayed on the screen
+with the associated upper case character in bold.
+Controllers not supported in this version.
 
-The CTRL+SHIFT keyboard combinations are implemented using the left
-ALT key.
+DOS VGA keyboard, joystick and other controllers
+------------------------------------------------
 
-Joystick 0 is operated by the numeric keypad (make sure that the numeric
-keypad has been enabled).
-
-	7 8 9
-	 \|/
-	4 5 6
-	 /|\
-	1 2 3
-
-	And 0 is the fire key.
-
-At the moment it is not possible to use a Paddle with the SVGALIB version.
-
-CURSES Keyboard + Joystick & Paddle Controllers
-===============================================
-
-F1	Built in User Interface
-F2	Option
-F3	Select
-F4	Start
-F5	Warm Reset
-F6	Help Key (XL/XE)
-F7	Break Key
-F8	Enter monitor
-F9	Exit Emulator
-F10	Save Screenshot (not available in the default CURSES_BASIC build)
-F11	---
-F12	---
-
-Some control have special meaning within curses and should not be used.
-
-	Avoid Control + C, J, M, Q, S and Z
-
-The remaining control characters can be typed. Control characters are
-displayed on the screen with the associated upper case character in bold.
-
-No Joystick or Paddle support in this version.
-
-AMIGA Keyboard + Joystick & Paddle Controllers
-==============================================
-
-Please look into the supplied Atari800.guide
-
-BASIC Keyboard + Joystick & Paddle Controllers
-==============================================
-
-No Frills text. Upper and Lower case letters, 0-9, !"$% etc.
-No Reset, Option, Select, Start, etc.
-No Joystick or Paddle support in this version.
-
-DOS VGA Keyboard + Joystick & Paddle Controllers
-================================================
-
-F1	Built in User Interface
-F2	Option Key
-F3	Select Key
-F4	Start Key
-F5	Warm Reset
-Shft+F5	Cold Reset
-F6	Help Key (XL/XE)
-F7	Switch between Emulated joysticks mode and Normal keyboard
-F8	Enter monitor
-F9	Exit Emulator
-F10	Save Screenshot (+Shift=interlaced screenshot)
-
-Control-C terminates the program; to type Control-c, type ALT-c instead.
-` is used as the Atari-Inverse key
+F7         Switch between Emulated joysticks mode and Normal keyboard
+`          Atari/Inverse key
 
 Joysticks can be either real one connected to game port, or old 8-bit
 digital CX-40 joysticks connected to parallel port or keyboard joysticks
 (try out JOYCFG.EXE).
 
-Falcon Keyboard + Joystick & Paddle Controllers
-===============================================
+Falcon keyboard, joystick and other controllers
+-----------------------------------------------
 
-F1	Built in User Interface
-F2	Option
-F3	Select
-F4	Start
-F5	Warm Reset
-Shft+F5	Cold Reset
-F6	Help Key (XL/XE)
-F7	Break Key
-F8	Enter monitor
-F9	Exit Emulator
-F10	Save Screenshot (+Shift=interlaced screenshot)
-Help	Help key (XL/XE)
+Help       Help key (XL/XE)
 
 Joystick 0 is operated by the numeric keypad (make sure that the numeric
 keypad has been enabled).
@@ -335,22 +262,49 @@ keypad has been enabled).
 
         And 0 is the fire key.
 
-At the moment it is not possible to use a Paddle with this version.
+Mouse not supported in this version.
 
-SDL port keys and options
-=========================
+SDL keyboard, joystick and other controllers
+--------------------------------------------
 
--joy0 <pathname>      Select LPTjoy0 device; ex.:
-                      $ atari800 -joy0 /dev/lp0 ...
--joy1 <pathname>      Select LPTjoy1 device
-
-LALT+f - switching FULLSCREEN (probably doesn't work in Windows)
-LALT+g - switching WIDTH_MODE (so you can set 320x240)
-LALT+b - switching BLACK-AND-WHITE (feel to power of BW monitor!)
-LALT+j - swapping _keyboard_emulated_ joysticks
-LALT+e - switching bpp (for debug only, will be removed soon)
+LAlt+F     Switch fullscreen (probably doesn't work in Windows)
+LAlt+G     Switch WIDTH_MODE (so you can set 320x240)
+LAlt+B     Switch BLACK-AND-WHITE
+LAlt+J     Swap _keyboard_emulated_ joysticks
+LAlt+E     Switch bpp (for debug only, will be removed soon)
 
 To redefine keys for joystick emulation you must modify SDL_TRIG_* and
 SDL_JOY_* in atari_sdl.c, then recompile Atari800. In source you can also turn
 off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
 
+On Linux, standard joysticks are supported.
+
+SVGALIB keyboard, joystick and other controllers
+------------------------------------------------
+
+F11        Joystick autofire on/off
+`          Caps key
+
+The Ctrl+Shift keyboard combinations are implemented using the left Alt key.
+
+Joystick 0 is operated by the numeric keypad (make sure that the numeric
+keypad has been enabled).
+
+        7 8 9
+         \|/
+        4 5 6
+         /|\
+        1 2 3
+
+        And 0 is the fire key.
+
+Mouse not supported in this version.
+
+X11 keyboard, joystick and other controllers
+--------------------------------------------
+
+Alt        Atari/Inverse key (either Alt key will work)
+
+Joystick 0 is operated by the mouse position relative to the center of the
+screen. The mouse button acts as the trigger. On Linux, standard joysticks
+are also supported.
