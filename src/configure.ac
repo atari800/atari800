@@ -250,8 +250,14 @@ case "$a8_target" in
         case "$a8_target" in
             x11-xview*)
                 AC_DEFINE(XVIEW,,[Target: X11 with XView.])
-                A8_NEED_LIB(xview)
+                dnl Dunno if this is the right way...
+                CFLAGS="$CFLAGS -I/usr/openwin/include"
+                LDFLAGS="$LDFLAGS -L/usr/openwin/lib"
+                dnl -lxview must come before -lolgx, otherwise it does not link.
+                dnl Note that AC_CHECK_LIB (and therefore A8_NEED_LIB) _prepends_
+                dnl the found library to LIBS.
                 A8_NEED_LIB(olgx)
+                A8_NEED_LIB(xview)
                 ;;
             x11-motif)
                 AC_DEFINE(MOTIF,,[Target: X11 with Motif.])
@@ -371,14 +377,9 @@ if [[ "$a8_target" != "basic" ]]; then
         dnl These objects are not compiled in BASIC nor CURSES_BASIC target
         OBJS="$OBJS screen.o colours.o"
 
-        A8_OPTION(cycleexact,yes,
-                  [Allow color changes inside a scanline (default=ON)],
-                  CYCLE_EXACT,[Define to allow color changes inside a scanline.]
-                 )
-
         A8_OPTION(newcycleexact,yes,
-                  [Use the new cycle-exact scanline routines (default=ON)],
-                  NEW_CYCLE_EXACT,[Define to allow new cycle-exact scanline routines.]
+                  [Allow color changes inside a scanline (default=ON)],
+                  NEW_CYCLE_EXACT,[Define to allow color changes inside a scanline.]
                  )
         if [[ "$WANT_NEW_CYCLE_EXACT" = "yes" ]]; then
             OBJS="$OBJS cycle_map.o"
@@ -564,8 +565,7 @@ if [[ "$a8_target" != "basic" ]]; then
             ;;
     esac
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
-        echo "Using cycle exact?....................: $WANT_CYCLE_EXACT"
-        echo "Using the new cycle exact code?.......: $WANT_NEW_CYCLE_EXACT"
+        echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
     fi
     echo "Using the crash menu?.................: $WANT_CRASH_MENU"
