@@ -1,3 +1,33 @@
+2005-09-03  Piotr Fusik  <fox@scene.pl>
+* atari.c, gtia.c: I broke the BASIC version recently, fixed
+
+* cpu.c: cycle-exact Read-Modify-Write instructions for NEW_CYCLE_EXACT
+
+* antic.c, configure.ac, gtia.c, util/benchmark.pl: removed CYCLE_EXACT
+  (superseded by NEW_CYCLE_EXACT)
+
+* devices.c: improved "K:" input in BASIC version: use just the first
+  character from the entered line and ignore the remaining characters
+  (including EOL). This is because the input from the terminal
+  is line-buffered, so we have to press Enter for the Atari emulation
+  to continue - but we don't want this Enter to be delivered
+  to the emulated Atari.
+
+* devices.c: BASIC version: Atari Clear Screen, Backspace, Tab and Bell
+  converted to the corresponding ASCII codes
+
+* atari_x11.c, configure.ac: (x11-)xview(-shm) now compiles and works
+
+* atari_x11.c: fixed Shift+F5; F8 and (Shift+)F10 are now "Enter monitor"
+  and "Save (interlaced) screenshot", respectively (just like in other
+  versions of Atari800); don't clear key_shift when another key is pressed
+  TODO: Alt+letter shortcuts
+
+* atari_svgalib.c: implemented F6 (Help) and F7 (Break)
+
+* amiga/config.h: updated for clib2-1.194
+
+
 2005-08-31  Piotr Fusik  <fox@scene.pl>
 * atari.[ch], ui.c: auto-starting any file supported by the emulator
   via the command line, User Interface or Alt+R
