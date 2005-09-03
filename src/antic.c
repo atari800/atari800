@@ -1016,7 +1016,7 @@ void ANTIC_Reset(void)
 		while (--k);\
 	}\
 }
-				
+
 static void do_border(void)
 {
 	int kk;
@@ -2625,9 +2625,6 @@ static void ANTIC_load(void)
 #endif
 }
 
-#ifdef CYCLE_EXACT
-int scrn_ofs = -1;
-#endif
 #ifdef NEW_CYCLE_EXACT
 int cur_screen_pos = NOT_DRAWING;
 #endif
@@ -2677,9 +2674,6 @@ void ANTIC_Frame(int draw_display)
 	} while (ypos < 8);
 
 	scrn_ptr = (UWORD *) atari_screen;
-#ifdef CYCLE_EXACT
-	scrn_ofs = -1;
-#endif
 #ifdef NEW_CYCLE_EXACT
 	cur_screen_pos = NOT_DRAWING;
 #endif
@@ -2906,29 +2900,6 @@ void ANTIC_Frame(int draw_display)
 		if (need_load && anticmode <= 5 && DMACTL & 3)
 			xpos += before_cycles[md];
 
-#ifdef CYCLE_EXACT
-		if ((anticmode < 2 || (DMACTL & 3) == 0)
-			 && (GRAFP0 == 0 || HPOSP0 <= 0x0c || HPOSP0 >= 0xd4)
-			 && (GRAFP1 == 0 || HPOSP1 <= 0x0c || HPOSP1 >= 0xd4)
-			 && (GRAFP2 == 0 || HPOSP2 <= 0x0c || HPOSP2 >= 0xd4)
-			 && (GRAFP3 == 0 || HPOSP3 <= 0x0c || HPOSP3 >= 0xd4)
-			 && GRAFM == 0
-			 && PRIOR < 0x80) {
-			xpos += DMAR;
-			scrn_ofs = 8 * LCHOP;
-			GOEOL;
-			FILL_VIDEO(((UBYTE *) scrn_ptr) + scrn_ofs, COLBK, (48 - RCHOP) * 8 - scrn_ofs);
-			scrn_ofs = -1;
-			YPOS_BREAK_FLICKER
-			scrn_ptr += ATARI_WIDTH / 2;
-			if (no_jvb) {
-				dctr++;
-				dctr &= 0xf;
-			}	
-			continue;
-		}
-#endif
-
 		GO(SCR_C);
 		new_pm_scanline();
 
@@ -3016,7 +2987,7 @@ void ANTIC_Frame(int draw_display)
 		last_pos = LBORDER_START;
 		old_curline_prior_pos = curline_prior_pos;
 		do {
-			
+
 			UBYTE prev_prior_val;
 			UBYTE cur_prior_val;
 			prev_prior_val = prior_val_buf[prevline_prior_pos];
@@ -3205,7 +3176,7 @@ void draw_partial_scanline(int l, int r)
 	/* buffer to save 0 or 1 (modes 6,7,a,b,c) ,or , (0,1,2 or 3) (modes 8,9) */
 	/* 8pixel 'chars' of playfield which is going to be erased by the left */
 	/* hand most 8pixel 'char's of the 2(modes 67abc) or 4(modes 89) 8pixel */
-	/* 'char'-sized blocks that these modes must draw. */	
+	/* 'char'-sized blocks that these modes must draw. */
 	UWORD sv_buf2[4 * 4]; /* for modes 6,7,8,9,a,b,c */
 	/* start,size of the above buffers */
 	int sv_bufstart = 0;
@@ -3223,7 +3194,7 @@ void draw_partial_scanline(int l, int r)
 	/* it's the offset of the left most drawable 8pixel pfblock which is */
 	/* rounded *down* to the nearest factor of (2:mode 67abc,4:mode 89) */
 	/* if it is divided by (2:mode 67abc,4:mode 89) it will give the */
-	/* offset of the left most drawable (16,32)pixel 'char' */ 	
+	/* offset of the left most drawable (16,32)pixel 'char' */
 	int l_pfactual = 0;
 	/* it is the offset of the right most drawable 8pixel pf block which is */
 	/* rounded *up* to the nearest factor of (2,4),  *plus one* */
@@ -3962,7 +3933,7 @@ void AnticStateSave(void)
 
 	SaveUWORD(&dlist, 1);
 	SaveUWORD(&screenaddr, 1);
-	
+
 	SaveINT(&xpos, 1);
 	SaveINT(&xpos_limit, 1);
 	SaveINT(&ypos, 1);
@@ -3987,7 +3958,7 @@ void AnticStateRead(void)
 
 	ReadUWORD(&dlist, 1);
 	ReadUWORD(&screenaddr, 1);
-	
+
 	ReadINT(&xpos, 1);
 	ReadINT(&xpos_limit, 1);
 	ReadINT(&ypos, 1);
