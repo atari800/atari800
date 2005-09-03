@@ -559,11 +559,16 @@ int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly
 		break;
 	case AFILE_STATE:
 	case AFILE_STATE_GZ:
+#ifdef BASIC
+		Aprint("State files are not supported in BASIC version");
+		return AFILE_ERROR;
+#else
 		if (!ReadAtariState(filename, "rb"))
 			return AFILE_ERROR;
 		/* Don't press Option */
 		consol_table[1] = consol_table[2] = 0xf;
 		break;
+#endif
 	default:
 		break;
 	}
@@ -1616,6 +1621,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.73  2005/09/03 11:29:31  pfusik
+fixed the recently broken BASIC version
+
 Revision 1.72  2005/08/31 19:55:33  pfusik
 auto-starting any files supported by the emulator;
 support for Atari800Win PLus
