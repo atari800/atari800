@@ -17,16 +17,13 @@
 #undef CLOSEDIR_VOID
 
 /* Define to allow console sound (keyboard clicks). */
-#define CONSOLE_SOUND
+#define CONSOLE_SOUND 1
 
 /* Define to activate crash menu after CIM instruction. */
-#define CRASH_MENU
+#define CRASH_MENU 1
 
 /* Define to disable bitmap graphics emulation in CURSES target. */
 #undef CURSES_BASIC
-
-/* Define to allow color changes inside a scanline. */
-#define CYCLE_EXACT
 
 /* Alternate config filename due to 8+3 fs limit. */
 #define DEFAULT_CFG_NAME "PROGDIR:Atari800.cfg"
@@ -50,10 +47,10 @@
 #undef HAVE_ARPA_INET_H
 
 /* Define to 1 if you have the `atexit' function. */
-#define HAVE_ATEXIT
+#define HAVE_ATEXIT 1
 
 /* Define to 1 if you have the `chmod' function. */
-#undef HAVE_CHMOD
+#define HAVE_CHMOD 1
 
 /* Define to 1 if you have the `clock' function. */
 #undef HAVE_CLOCK
@@ -63,34 +60,34 @@
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
-#define HAVE_DIRENT_H
+#define HAVE_DIRENT_H 1
 
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 #undef HAVE_DOPRNT
 
 /* Define to 1 if you have the <errno.h> header file. */
-#undef HAVE_ERRNO_H
+#define HAVE_ERRNO_H 1
 
 /* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
+#define HAVE_FCNTL_H 1
 
 /* Define to 1 if you have the `fdopen' function. */
-#undef HAVE_FDOPEN
+#define HAVE_FDOPEN 1
 
 /* Define to 1 if you have the `fflush' function. */
-#undef HAVE_FFLUSH
+#define HAVE_FFLUSH 1
 
 /* Define to 1 if you have the <file.h> header file. */
 #undef HAVE_FILE_H
 
 /* Define to 1 if you have the `floor' function. */
-#undef HAVE_FLOOR
+#define HAVE_FLOOR 1
 
 /* Define to 1 if you have the `fstat' function. */
-#undef HAVE_FSTAT
+#define HAVE_FSTAT 1
 
 /* Define to 1 if you have the `getcwd' function. */
-#undef HAVE_GETCWD
+#define HAVE_GETCWD 1
 
 /* Define to 1 if you have the `gethostbyaddr' function. */
 #undef HAVE_GETHOSTBYADDR
@@ -99,7 +96,7 @@
 #undef HAVE_GETHOSTBYNAME
 
 /* Define to 1 if you have the `gettimeofday' function. */
-#define HAVE_GETTIMEOFDAY
+#define HAVE_GETTIMEOFDAY 1
 
 /* Define to 1 if you have the `inet_ntoa' function. */
 #undef HAVE_INET_NTOA
@@ -114,28 +111,28 @@
 #undef HAVE_LIBZ
 
 /* Define to 1 if you have the `localtime' function. */
-#undef HAVE_LOCALTIME
+#define HAVE_LOCALTIME 1
 
 /* Define to 1 if you have the `memmove' function. */
-#undef HAVE_MEMMOVE
+#define HAVE_MEMMOVE 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the `memset' function. */
-#define HAVE_MEMSET
+#define HAVE_MEMSET 1
 
 /* Define to 1 if you have the `mkdir' function. */
-#undef HAVE_MKDIR
+#define HAVE_MKDIR 1
 
 /* Define to 1 if you have the `mkstemp' function. */
-#undef HAVE_MKSTEMP
+#define HAVE_MKSTEMP 1
 
 /* Define to 1 if you have the `mktemp' function. */
-#undef HAVE_MKTEMP
+#define HAVE_MKTEMP 1
 
 /* Define to 1 if you have the `modf' function. */
-#undef HAVE_MODF
+#define HAVE_MODF 1
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
@@ -147,74 +144,74 @@
 #undef HAVE_NETINET_IN_H
 
 /* Define to 1 if you have the `opendir' function. */
-#define HAVE_OPENDIR
+#define HAVE_OPENDIR 1
 
 /* Define to 1 if you have the `rename' function. */
-#undef HAVE_RENAME
+#define HAVE_RENAME 1
 
 /* Define to 1 if you have the `rewind' function. */
-#undef HAVE_REWIND
+#define HAVE_REWIND 1
 
 /* Define to 1 if you have the `rmdir' function. */
-#undef HAVE_RMDIR
+#define HAVE_RMDIR 1
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
 
 /* Define to 1 if you have the `signal' function. */
-#undef HAVE_SIGNAL
+#define HAVE_SIGNAL 1
 
 /* Define to 1 if you have the <signal.h> header file. */
-#undef HAVE_SIGNAL_H
+#define HAVE_SIGNAL_H 1
 
 /* Define to 1 if you have the `snprintf' function. */
-#define HAVE_SNPRINTF
+#define HAVE_SNPRINTF 1
 
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
 
 /* Define to 1 if you have the `stat' function. */
-#undef HAVE_STAT
+#define HAVE_STAT 1
 
 /* Define to 1 if `stat' has the bug that it succeeds when given the
    zero-length file name argument. */
 #undef HAVE_STAT_EMPTY_STRING_BUG
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
+#define HAVE_STDINT_H 1
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#define HAVE_STDLIB_H
+#define HAVE_STDLIB_H 1
 
 /* Define to 1 if you have the `strcasecmp' function. */
-#undef HAVE_STRCASECMP
+#define HAVE_STRCASECMP 1
 
 /* Define to 1 if you have the `strchr' function. */
-#define HAVE_STRCHR
+#define HAVE_STRCHR 1
 
 /* Define to 1 if you have the `strdup' function. */
-#undef HAVE_STRDUP
+#define HAVE_STRDUP 1
 
 /* Define to 1 if you have the `strerror' function. */
-#undef HAVE_STRERROR
+#define HAVE_STRERROR 1
 
 /* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
+#define HAVE_STRINGS_H 1
 
 /* Define to 1 if you have the <string.h> header file. */
-#define HAVE_STRING_H
+#define HAVE_STRING_H 1
 
 /* Define to 1 if you have the `strrchr' function. */
-#undef HAVE_STRRCHR
+#define HAVE_STRRCHR 1
 
 /* Define to 1 if you have the `strstr' function. */
-#undef HAVE_STRSTR
+#define HAVE_STRSTR 1
 
 /* Define to 1 if you have the `strtol' function. */
-#undef HAVE_STRTOL
+#define HAVE_STRTOL 1
 
 /* Define to 1 if you have the `system' function. */
-#undef HAVE_SYSTEM
+#define HAVE_SYSTEM 1
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
@@ -237,43 +234,46 @@
 #undef HAVE_SYS_SOUNDCARD_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#define HAVE_SYS_STAT_H
+#define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/time.h> header file. */
-#undef HAVE_SYS_TIME_H
+#define HAVE_SYS_TIME_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
+#define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <termios.h> header file. */
-#undef HAVE_TERMIOS_H
+#define HAVE_TERMIOS_H 1
 
 /* Define to 1 if you have the `time' function. */
-#undef HAVE_TIME
+#define HAVE_TIME 1
 
 /* Define to 1 if you have the <time.h> header file. */
-#undef HAVE_TIME_H
+#define HAVE_TIME_H 1
 
 /* Define to 1 if you have the `tmpnam' function. */
-#undef HAVE_TMPNAM
+#define HAVE_TMPNAM 1
 
 /* Define to 1 if you have the `uclock' function. */
 #undef HAVE_UCLOCK
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H
+#define HAVE_UNISTD_H 1
 
 /* Define to 1 if you have the <unixio.h> header file. */
 #undef HAVE_UNIXIO_H
 
 /* Define to 1 if you have the `unlink' function. */
-#undef HAVE_UNLINK
+#define HAVE_UNLINK 1
+
+/* Define to 1 if you have the `usleep' function. */
+#define HAVE_USLEEP 1
 
 /* Define to 1 if you have the `vprintf' function. */
-#undef HAVE_VPRINTF
+#define HAVE_VPRINTF 1
 
 /* Define to 1 if you have the `vsnprintf' function. */
-#undef HAVE_VSNPRINTF
+#define HAVE_VSNPRINTF 1
 
 /* Define to allow sound interpolation. */
 #undef INTERPOLATE_SOUND
@@ -286,40 +286,25 @@
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
 /* Define to activate assembler in monitor. */
-#undef MONITOR_ASSEMBLER
+#define MONITOR_ASSEMBLER 1
 
 /* Define to activate BREAK command in monitor. */
 #undef MONITOR_BREAK
 
 /* Define to activate hints in disassembler. */
-#undef MONITOR_HINTS
+#define MONITOR_HINTS 1
 
 /* Target: X11 with Motif. */
 #undef MOTIF
 
-/* Define to allow new cycle-exact scanline routines. */
-#define NEW_CYCLE_EXACT
-
-/* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#undef PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
-/* Define to the version of this package. */
-#undef PACKAGE_VERSION
+/* Define to allow color changes inside a scanline. */
+#define NEW_CYCLE_EXACT 1
 
 /* Define to use page-based attribute array. */
 #undef PAGED_ATTRIB
 
 /* Define as the return type of signal handlers (`int' or `void'). */
-#undef RETSIGTYPE
+#define RETSIGTYPE void
 
 /* Define to use R: device. */
 #undef R_IO_DEVICE
@@ -346,19 +331,19 @@
 #define SIZEOF_LONG 4
 
 /* Define to activate sound support. */
-#define SOUND
+#define SOUND 1
 
 /* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
+#define STDC_HEADERS 1
 
 /* Define to allow stereo sound. */
 #undef STEREO_SOUND
 
 /* Save additional config file options. */
-#define SUPPORTS_ATARI_CONFIGSAVE
+#define SUPPORTS_ATARI_CONFIGSAVE 1
 
 /* Additional config file options. */
-#define SUPPORTS_ATARI_CONFIGURE
+#define SUPPORTS_ATARI_CONFIGURE 1
 
 /* Target: Linux with SVGALib. */
 #undef SVGALIB
@@ -373,7 +358,7 @@
 #undef SYSTEM_WIDE_CFG_FILE
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-#undef TIME_WITH_SYS_TIME
+#define TIME_WITH_SYS_TIME 1
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
@@ -397,11 +382,11 @@
 #undef VERY_SLOW
 
 /* Define to allow volume only sound. */
-#define VOL_ONLY_SOUND
+#define VOL_ONLY_SOUND 1
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
-#define WORDS_BIGENDIAN
+#define WORDS_BIGENDIAN 1
 
 /* Target: Standard X11. */
 #undef X11
@@ -422,43 +407,6 @@
 /* Define to empty if the keyword `volatile' does not work. Warning: valid
    code using `volatile' can become incorrect without. Disable with care. */
 #undef volatile
-
-
-
-
-
-
-/*
-
-#define HAVE_UNISTD_H
-#define HAVE_GETTIMEOFDAY
-
-#define MONITOR_BREAK
-
-#define DEFAULT_CFG_NAME "PROGDIR:Atari800.cfg"
-
-#define SUPPORTS_ATARI_CONFIGINIT
-#define SUPPORTS_ATARI_CONFIGSAVE
-#define SUPPORTS_ATARI_CONFIGURE
-#define DONT_USE_RTCONFIGUPDATE
-
-#define WORDS_BIGENDIAN
-*/
-
-//#define SIGNED_SAMPLES
-/*#define STEREO*/
-/*#define VERY_SLOW*/
-/*#define SET_LED*/
-
-/*#define SOUND
-#define VOL_ONLY_SOUND
-#define INTERPOLATE_SOUND
-#define CONSOLE_SOUND
-#define SERIO_SOUND
-
-#define DO_DIR
-#define NEW_CYCLE_EXACT
-*/
 
 void usleep(unsigned long usec);
 
