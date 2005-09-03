@@ -72,7 +72,7 @@ static Widget eject_menu;
 static Widget disable_menu;
 static Widget system_menu;
 static int motif_disk_sel = 1;
-#endif
+#endif /* MOTIF */
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -101,7 +101,7 @@ static XImage *image = NULL;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 extern int colour_translation_table[256];
 #endif
-#endif
+#endif /* SHM */
 
 static int invisible = 0;
 
@@ -117,7 +117,7 @@ static int js1_centre_x;
 static int js1_centre_y;
 
 static struct JS_DATA_TYPE js_data;
-#endif
+#endif /* LINUX_JOYSTICK */
 
 typedef enum {
 	Small,
@@ -164,7 +164,6 @@ static Frame frame;
 static Panel panel;
 static Canvas canvas;
 static Menu system_menu;
-static Menu coldstart_menu;
 static Menu consol_menu;
 static Menu options_menu;
 static Frame chooser;
@@ -182,7 +181,7 @@ static Panel_item js1_item;
 static Frame performance_frame;
 static Panel performance_panel;
 static Panel_item refresh_slider;
-#endif
+#endif /* XVIEW */
 
 static int SHIFT = 0x00;
 static int CONTROL = 0x00;
@@ -210,15 +209,13 @@ static XRectangle rectangles[NRECTS];
 
 static int keyboard_consol = CONSOL_NONE;
 static int menu_consol = CONSOL_NONE;
-static int screen_dump = 0;
 
-extern int refresh_rate;
 extern double fps;
 
 static int autorepeat = 1;
 static int last_focus = FocusOut;
 
-void autorepeat_get(void)
+static void autorepeat_get(void)
 {
 	XKeyboardState kstat;
 
@@ -226,12 +223,12 @@ void autorepeat_get(void)
 	autorepeat = kstat.global_auto_repeat;
 }
 
-void autorepeat_off(void)
+static void autorepeat_off(void)
 {
 	XAutoRepeatOff(display);
 }
 
-void autorepeat_restore(void)
+static void autorepeat_restore(void)
 {
 	if (autorepeat)
 		XAutoRepeatOn(display);
@@ -239,13 +236,13 @@ void autorepeat_restore(void)
 		XAutoRepeatOff(display);
 }
 
-void segmentationfault(int x)
+static void segmentationfault(int x)
 {
 	Atari_Exit(0);
 	exit(0);
 }
 
-int GetKeyCode(XEvent *event)
+static int GetKeyCode(XEvent *event)
 {
 	KeySym keysym;
 	char buffer[128];
@@ -281,7 +278,6 @@ int GetKeyCode(XEvent *event)
 			invisible = 0;
 		break;
 	case KeyPress:
-		key_shift = 0;
 		switch (keysym) {
 		case XK_Shift_L:
 		case XK_Shift_R:
@@ -290,6 +286,7 @@ int GetKeyCode(XEvent *event)
 			break;
 		case XK_Control_L:
 			keypad_trig = 0;
+			/* FALLTHROUGH */
 		case XK_Control_R:
 			CONTROL = AKEY_CTRL;
 			break;
@@ -297,33 +294,18 @@ int GetKeyCode(XEvent *event)
 			keycode = AKEY_UI;
 			break;
 		case XK_F5:
-			keycode = AKEY_WARMSTART;
-			break;
 		case XK_L5:
-			keycode = AKEY_COLDSTART;
-			break;
-		case XK_L8:
-			screen_dump = (1 - screen_dump);
-			keycode = AKEY_NONE;
+			keycode = SHIFT ? AKEY_COLDSTART : AKEY_WARMSTART;
 			break;
 		case XK_F8:
-#ifdef SOUND
-			if (CONTROL)
-				SoundRecording();
-			else
-#endif
-				screen_dump = 2;
-			keycode = AKEY_NONE;
+			keycode = Atari_Exit(TRUE) ? AKEY_NONE : AKEY_EXIT;
 			break;
 		case XK_F9:
 			keycode = AKEY_EXIT;
 			break;
 		case XK_F10:
-			keycode = AKEY_NONE;
-			if (deltatime == 0.0)
-				deltatime = (1.0 / 50.0);
-			else
-				deltatime = 0.0;
+		case XK_L10:
+			keycode = SHIFT ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
 			break;
 		case XK_Left:
 			keycode = AKEY_LEFT;
@@ -461,7 +443,7 @@ int GetKeyCode(XEvent *event)
 			keycode = AKEY_NONE;
 			break;
 		case XK_F6:
-			keycode = AKEY_HELP;
+			keycode = SHIFT | CONTROL | AKEY_HELP;
 			break;
 		case XK_Break:
 		case XK_F7:
@@ -743,6 +725,7 @@ int GetKeyCode(XEvent *event)
 			break;
 		case XK_Control_L:
 			keypad_trig = 1;
+			/* FALLTHROUGH */
 		case XK_Control_R:
 			CONTROL = 0x00;
 			break;
@@ -795,9 +778,11 @@ int GetKeyCode(XEvent *event)
 }
 
 #if defined(XVIEW) || defined(MOTIF)
+
 static int insert_rom(const char *filename)
 {
 	int r;
+	int i;
 	r = CART_Insert(filename);
 	if (r < 0)
 		return FALSE;
@@ -806,7 +791,6 @@ static int insert_rom(const char *filename)
 		return TRUE;
 	}
 	/* TODO: select cartridge type */
-	int i;
 	for (i = 1; i < CART_LAST_SUPPORTED; i++) {
 		if (cart_kb[i] == r) {
 			cart_type = i;
@@ -818,11 +802,12 @@ static int insert_rom(const char *filename)
 }
 
 static int xview_keycode = AKEY_NONE;
-#endif
+
+#endif /* defined(XVIEW) || defined(MOTIF) */
 
 #ifdef XVIEW
 
-void event_proc(Xv_Window window, Event * event, Notify_arg arg)
+static void event_proc(Xv_Window window, Event * event, Notify_arg arg)
 {
 	int keycode;
 
@@ -833,7 +818,7 @@ void event_proc(Xv_Window window, Event * event, Notify_arg arg)
 
 static int auto_reboot;
 
-int disk_change(char *a, char *full_filename, char *filename)
+static int disk_change(char *a, char *full_filename, char *filename)
 {
 	int diskno;
 	int status;
@@ -871,7 +856,7 @@ int disk_change(char *a, char *full_filename, char *filename)
 	return status;
 }
 
-void boot_callback(void)
+static void boot_callback(void)
 {
 	auto_reboot = TRUE;
 
@@ -883,7 +868,7 @@ void boot_callback(void)
 		   NULL);
 }
 
-void insert_callback(void)
+static void insert_callback(void)
 {
 	auto_reboot = FALSE;
 
@@ -895,7 +880,7 @@ void insert_callback(void)
 		   NULL);
 }
 
-void eject_callback(void)
+static void eject_callback(void)
 {
 	int diskno;
 
@@ -917,7 +902,7 @@ void eject_callback(void)
 		SIO_Dismount(diskno);
 }
 
-void disable_callback(void)
+static void disable_callback(void)
 {
 	int diskno;
 
@@ -939,12 +924,12 @@ void disable_callback(void)
 		SIO_DisableDrive(diskno);
 }
 
-int rom_change(char *a, char *full_filename, char *filename)
+static int rom_change(char *a, char *full_filename, char *filename)
 {
 	return insert_rom(full_filename) ? XV_OK : XV_ERROR;
 }
 
-void insert_rom_callback(void)
+static void insert_rom_callback(void)
 {
 	xv_set(chooser,
 		   FRAME_LABEL, "ROM Selector",
@@ -954,54 +939,54 @@ void insert_rom_callback(void)
 		   NULL);
 }
 
-void remove_rom_callback(void)
+static void remove_rom_callback(void)
 {
-	Remove_ROM();
+	CART_Remove();
 	Coldstart();
 }
 
-void exit_callback(void)
+static void exit_callback(void)
 {
 	Atari_Exit(FALSE);
 	exit(1);
 }
 
-void option_callback(void)
+static void option_callback(void)
 {
 	menu_consol &= (~CONSOL_OPTION);
 }
 
-void select_callback(void)
+static void select_callback(void)
 {
 	menu_consol &= (~CONSOL_SELECT);
 }
 
-void start_callback(void)
+static void start_callback(void)
 {
 	menu_consol &= (~CONSOL_START);
 }
 
-void help_callback(void)
+static void help_callback(void)
 {
 	xview_keycode = AKEY_HELP;
 }
 
-void break_callback(void)
+static void break_callback(void)
 {
 	xview_keycode = AKEY_BREAK;
 }
 
-void reset_callback(void)
+static void reset_callback(void)
 {
 	Warmstart();
 }
 
-void coldstart_callback(void)
+static void coldstart_callback(void)
 {
 	Coldstart();
 }
 
-void coldstart_sys(int machtype, int ram, int nohelp, const char *errmsg)
+static void coldstart_sys(int machtype, int ram, int nohelp, const char *errmsg)
 {
 	int status;
 
@@ -1028,46 +1013,46 @@ void coldstart_sys(int machtype, int ram, int nohelp, const char *errmsg)
 	}
 }
 
-void coldstart_osa_callback(void)
+static void coldstart_osa_callback(void)
 {
 	coldstart_sys(MACHINE_OSA, 48, TRUE, "Sorry, OS/A ROM Unavailable");
 }
 
-void coldstart_osb_callback(void)
+static void coldstart_osb_callback(void)
 {
 	coldstart_sys(MACHINE_OSB, 48, TRUE, "Sorry, OS/B ROM Unavailable");
 }
 
-void coldstart_xl_callback(void)
+static void coldstart_xl_callback(void)
 {
 	coldstart_sys(MACHINE_XLXE, 64, FALSE, "Sorry, XL/XE ROM Unavailable");
 }
 
-void coldstart_xe_callback(void)
+static void coldstart_xe_callback(void)
 {
 	coldstart_sys(MACHINE_XLXE, 128, FALSE, "Sorry, XL/XE ROM Unavailable");
 }
 
-void coldstart_5200_callback(void)
+static void coldstart_5200_callback(void)
 {
 	coldstart_sys(MACHINE_5200, 16, TRUE, "Sorry, 5200 ROM Unavailable");
 }
 
-void controllers_ok_callback(void)
+static void controllers_ok_callback(void)
 {
 	xv_set(controllers_frame,
 		   XV_SHOW, FALSE,
 		   NULL);
 }
 
-void controllers_callback(void)
+static void controllers_callback(void)
 {
 	xv_set(controllers_frame,
 		   XV_SHOW, TRUE,
 		   NULL);
 }
 
-void sorry_message(void)
+static void sorry_message(void)
 {
 	notice_prompt(panel, NULL,
 				  NOTICE_MESSAGE_STRINGS,
@@ -1078,7 +1063,7 @@ void sorry_message(void)
 				  NULL);
 }
 
-void keypad_callback(void)
+static void keypad_callback(void)
 {
 	int new_mode;
 
@@ -1097,7 +1082,7 @@ void keypad_callback(void)
 	}
 }
 
-void mouse_callback(void)
+static void mouse_callback(void)
 {
 	int new_mode;
 
@@ -1117,7 +1102,7 @@ void mouse_callback(void)
 }
 
 #ifdef LINUX_JOYSTICK
-void js0_callback(void)
+static void js0_callback(void)
 {
 	int new_mode;
 
@@ -1136,7 +1121,7 @@ void js0_callback(void)
 	}
 }
 
-void js1_callback(void)
+static void js1_callback(void)
 {
 	int new_mode;
 
@@ -1156,28 +1141,28 @@ void js1_callback(void)
 }
 #endif /* LINUX_JOYSTICK */
 
-void performance_ok_callback(void)
+static void performance_ok_callback(void)
 {
 	xv_set(performance_frame,
 		   XV_SHOW, FALSE,
 		   NULL);
 }
 
-void performance_callback(void)
+static void performance_callback(void)
 {
 	xv_set(performance_frame,
 		   XV_SHOW, TRUE,
 		   NULL);
 }
 
-void refresh_callback(Panel_item item, int value, Event * event)
+static void refresh_callback(Panel_item item, int value, Event * event)
 {
 	refresh_rate = value;
 }
 
 #endif /* XVIEW */
 
-void Atari_WhatIs(int mode)
+static void Atari_WhatIs(int mode)
 {
 	switch (mode) {
 	case 0:
@@ -1200,7 +1185,7 @@ void Atari_WhatIs(int mode)
 
 #ifdef MOTIF
 
-void motif_boot_disk(Widget fs, XtPointer client_data,
+static void motif_boot_disk(Widget fs, XtPointer client_data,
 					 XtPointer cbs)
 {
 	char *filename;
@@ -1218,12 +1203,12 @@ void motif_boot_disk(Widget fs, XtPointer client_data,
 	XtPopdown(XtParent(fs));
 }
 
-void motif_select_disk(Widget toggle, XtPointer client_data, XtPointer cbs)
+static void motif_select_disk(Widget toggle, XtPointer client_data, XtPointer cbs)
 {
 	motif_disk_sel = (int) client_data;
 }
 
-void motif_insert_disk(Widget fs, XtPointer client_data, XtPointer cbs)
+static void motif_insert_disk(Widget fs, XtPointer client_data, XtPointer cbs)
 {
 	char *filename;
 
@@ -1239,7 +1224,7 @@ void motif_insert_disk(Widget fs, XtPointer client_data, XtPointer cbs)
 	XtPopdown(XtParent(fs));
 }
 
-void motif_insert_rom(Widget fs, XtPointer client_data, XtPointer cbs)
+static void motif_insert_rom(Widget fs, XtPointer client_data, XtPointer cbs)
 {
 	char *filename;
 
@@ -1254,23 +1239,23 @@ void motif_insert_rom(Widget fs, XtPointer client_data, XtPointer cbs)
 	XtPopdown(XtParent(fs));
 }
 
-void motif_fs_cancel(Widget fs, XtPointer client_data, XtPointer call_data)
+static void motif_fs_cancel(Widget fs, XtPointer client_data, XtPointer call_data)
 {
 	XtUnmanageChild(fs);
 	XtPopdown(XtParent(fs));
 }
 
-void motif_eject_cback(Widget button, XtPointer client_data, XtPointer cbs)
+static void motif_eject_cback(Widget button, XtPointer client_data, XtPointer cbs)
 {
 	SIO_Dismount(((int) client_data) + 1);
 }
 
-void motif_disable_cback(Widget button, XtPointer client_data, XtPointer cbs)
+static void motif_disable_cback(Widget button, XtPointer client_data, XtPointer cbs)
 {
 	SIO_DisableDrive(((int) client_data) + 1);
 }
 
-void update_fsel(Widget fsel)
+static void update_fsel(Widget fsel)
 {
 	XmString dirmask;
 
@@ -1278,7 +1263,7 @@ void update_fsel(Widget fsel)
 	XmFileSelectionDoSearch(fsel, dirmask);
 }
 
-void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
+static void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 {
 	XmString t;
 	int status;
@@ -1378,7 +1363,7 @@ void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 	}
 }
 
-void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
+static void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
 {
 	switch ((int) item_no) {
 	case 0:
@@ -1405,8 +1390,8 @@ void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
 	}
 }
 
-void motif_keypress(Widget w, XtPointer client_data, XEvent *event,
-					Boolean *continue_to_dispatch)
+static void motif_keypress(Widget w, XtPointer client_data, XEvent *event,
+                           Boolean *continue_to_dispatch)
 {
 	int keycode;
 
@@ -1415,7 +1400,7 @@ void motif_keypress(Widget w, XtPointer client_data, XEvent *event,
 		xview_keycode = keycode;
 }
 
-void motif_exposure(Widget w, XtPointer client_data, XEvent *event,
+static void motif_exposure(Widget w, XtPointer client_data, XEvent *event,
 					Boolean *continue_to_dispatch)
 {
 	modified = TRUE;
@@ -1666,7 +1651,6 @@ void Atari_Initialise(int *argc, char *argv[])
 								   MENU_ITEM,
 								   MENU_STRING, "Help",
 								   MENU_NOTIFY_PROC, help_callback,
-								   MENU_INACTIVE, (machine == Atari),
 								   NULL,
 								   MENU_ITEM,
 								   MENU_STRING, "Break",
@@ -2405,21 +2389,6 @@ int Atari_Exit(int run_monitor)
 	return restart;
 }
 
-static void ScreenDump(void)
-{
-	static char command[128];
-	static int frame_num = 0;
-
-	sprintf(command, "xwd -name \"%s\"|xwdtopnm -|ppmtogif>%d.gif",
-			ATARI_TITLE, frame_num++);
-/*
-   sprintf (command, "xwd -name \"%s\"|xwdtopnm -|pnmcut 0 25 384 240 -|ppmtogif>%d.gif",
-   ATARI_TITLE, frame_num++);
- */
-
-	system(command);
-}
-
 void Atari_DisplayScreen(UBYTE *screen)
 {
 	static char status_line[64];
@@ -2547,7 +2516,7 @@ void Atari_DisplayScreen(UBYTE *screen)
 			last_x *= clipping_factor;
 			first_y *= clipping_factor;
 			last_y *= clipping_factor;
-	
+
 			XShmPutImage(display, window, gc, image,
 					 first_x - (clipping_x * clipping_factor),
 					 first_y - (clipping_y * clipping_factor),
@@ -2750,12 +2719,6 @@ void Atari_DisplayScreen(UBYTE *screen)
 	}
 #endif
 
-	if (screen_dump) {
-		ScreenDump();
-
-		if (screen_dump == 2)
-			screen_dump = 0;
-	}
 }
 
 int Atari_Keyboard(void)
@@ -2798,7 +2761,7 @@ void experimental_mouse_joystick(int mode)	/* Don't use ;-) */
 	if (mode < 5) {
 		int dx,dy;
 		int course,rc;
-		
+
 		if( prev_x<0 )	prev_x=root_x_return;
 		if( prev_y<0 )	prev_y=root_y_return;
 		dx=(root_x_return-prev_x)<<1;
@@ -2857,7 +2820,7 @@ void experimental_mouse_joystick(int mode)	/* Don't use ;-) */
 }
 #endif
 
-void mouse_joystick(int mode)
+static void mouse_joystick(int mode)
 {
 	Window root_return;
 	Window child_return;
@@ -2918,7 +2881,7 @@ void mouse_joystick(int mode)
 
 #ifdef LINUX_JOYSTICK
 
-void read_joystick(int js, int centre_x, int centre_y)
+static void read_joystick(int js, int centre_x, int centre_y)
 {
 	const int threshold = 50;
 	int status;
