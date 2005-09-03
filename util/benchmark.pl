@@ -192,10 +192,7 @@ my %tests = (
 	'cycleexact' => {
 		'target' => $gfx_target,
 		'cflags' => '-D DONT_DISPLAY',
-		'config' => [ '--disable-cycleexact --disable-newcycleexact',
-		              '--enable-cycleexact --disable-newcycleexact',
-		              '--disable-cycleexact --enable-newcycleexact',
-		              '--enable-cycleexact --enable-newcycleexact' ],
+		'config' => [ '--disable-newcycleexact', '--enable-newcycleexact' ],
 		'run' => [ $reference_program, 'incD01A.xex' ]
 	},
 	'display' => {
@@ -232,7 +229,7 @@ Available tests:
                 (default target: basic)
   pagedattrib   Compare configurations with/without PAGED_ATTRIB
                 (default target: basic)
-  cycleexact    Compare configurations with/without (NEW_)CYCLE_EXACT
+  cycleexact    Compare configurations with/without NEW_CYCLE_EXACT
                 (default target: $gfx_target)
   display       Compare display performance with different Atari programs
                 (default target: $gfx_target)
