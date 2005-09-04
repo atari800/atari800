@@ -428,6 +428,7 @@ static void SelectItem(UBYTE *screen, int fg, int bg,
 			while (--spaceToAdd);
 	}
 
+#if 0
 	if (strlen(szOrig) > 4) {
 		char *ext = szOrig + strlen(szOrig) - 4;
 		/* XXX: add more extensions? */
@@ -438,6 +439,7 @@ static void SelectItem(UBYTE *screen, int fg, int bg,
 #endif
 			*ext = '\0';
 	}
+#endif
 
 	ShortenItem(szOrig, szString, iMaxXsize);
 
@@ -1059,6 +1061,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.29  2005/09/04 18:16:18  pfusik
+don't hide ATR/XFD file extensions in the file selector
+
 Revision 1.28  2005/08/27 10:36:07  pfusik
 MSVC declares getcwd() in <direct.h>
 
