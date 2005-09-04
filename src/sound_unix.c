@@ -44,7 +44,7 @@
 
 #define DEFDSPRATE 22050
 
-static char *dspname = "/dev/dsp";
+static const char *dspname = "/dev/dsp";
 static int dsprate = DEFDSPRATE;
 static int fragstofill = 0;
 static int snddelay = 60;		/* delay in milliseconds */
@@ -85,14 +85,25 @@ void Sound_Initialise(int *argc, char *argv[])
 		return;
 
 	if (sound_enabled) {
-		if ((dsp_fd = open(dspname, O_WRONLY | O_NONBLOCK)) == -1) {
+		if ((dsp_fd = open(dspname, O_WRONLY
+#ifdef __linux__
+			| O_NONBLOCK
+#endif
+		)) == -1) {
 			perror(dspname);
 			sound_enabled = 0;
 			return;
 		}
-
+#ifdef __linux__
+		if (fcntl(dsp_fd, F_SETFL, 0) < 0) {
+			Aprint("%s: Can't make filedescriptor blocking", dspname);
+			close(dsp_fd);
+			sound_enabled = 0;
+			return;
+		}
+#endif
 		if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &dsprate)) {
-			Aprint("%s: cannot set %d speed\n", dspname, dsprate);
+			Aprint("%s: cannot set %d speed", dspname, dsprate);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
@@ -100,7 +111,7 @@ void Sound_Initialise(int *argc, char *argv[])
 
 		i = AFMT_U8;
 		if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &i)) {
-			Aprint("%s: cannot set 8-bit sample\n", dspname);
+			Aprint("%s: cannot set 8-bit sample", dspname);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
@@ -108,7 +119,7 @@ void Sound_Initialise(int *argc, char *argv[])
 #ifdef STEREO_SOUND
 		i = 1;
 		if (ioctl(dsp_fd, SNDCTL_DSP_STEREO, &i)) {
-			Aprint("%s: cannot set stereo\n", dspname);
+			Aprint("%s: cannot set stereo", dspname);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
@@ -122,14 +133,14 @@ void Sound_Initialise(int *argc, char *argv[])
 		/* fragments of size 2^FRAGSIZE bytes */
 		i = ((fragstofill + 1) << 16) | FRAGSIZE;
 		if (ioctl(dsp_fd, SNDCTL_DSP_SETFRAGMENT, &i)) {
-			Aprint("%s: cannot set fragments\n", dspname);
+			Aprint("%s: cannot set fragments", dspname);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
 		}
 
 		if (ioctl(dsp_fd, SNDCTL_DSP_GETOSPACE, &abi)) {
-			Aprint("%s: unable to get output space\n", dspname);
+			Aprint("%s: unable to get output space", dspname);
 			close(dsp_fd);
 			sound_enabled = 0;
 			return;
@@ -174,7 +185,7 @@ void Sound_Update(void)
 
 	if (ioctl(dsp_fd, SNDCTL_DSP_GETOSPACE, &abi))
 		return;
-		
+
 	i = (abi.fragstotal * abi.fragsize - abi.bytes) >> FRAGSIZE;
 
 	/* we need fragstofill fragments to be filled */
@@ -184,6 +195,18 @@ void Sound_Update(void)
 	for (; i < fragstofill; i++) {
 #endif
 		Pokey_process(dsp_buffer, sizeof(dsp_buffer));
+#if 1
+#warning Please report whether sound is good to the Atari800 mailing list.
+		/* For some unknown reason, this is needed
+		   on my Red Hat 9, VT82C686 AC97 Audio Controller.
+		   Not that the sound is just a bit silent without this,
+		   it is totally broken. */
+		{
+			int j;
+			for (j = 0; j < sizeof(dsp_buffer); j++)
+				dsp_buffer[j] <<= 1;
+		}
+#endif
 		write(dsp_fd, dsp_buffer, sizeof(dsp_buffer));
 	}
 }
@@ -191,6 +214,9 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.2  2005/09/04 18:18:03  pfusik
+ fixed sound on Linux
+
  Revision 1.1  2005/08/27 10:34:25  pfusik
  renamed sound.c to sound_unix.c
 
