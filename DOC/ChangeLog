@@ -1,3 +1,17 @@
+2005-09-04  Piotr Fusik  <fox@scene.pl>
+* monitor.c: initialize break_addr with 0xd000. Previously, Atari800
+  compiled with MONITOR_BREAK (the default) entered the monitor
+  rather than executing the instruction at address 0x0000
+  (perfectly legal for 6502 code).
+
+* ui_basic.c: don't hide ATR/XFD file extensions in the file selector
+
+* atari_svgalib.c: Atari 5200 keys
+
+* sound_unix.c: fixed sound on Linux. This is black magic to me.
+  I hope there will be some feedback from users.
+
+
 2005-09-03  Piotr Fusik  <fox@scene.pl>
 * atari.c, gtia.c: I broke the BASIC version recently, fixed
 
