@@ -485,7 +485,7 @@ static void show_regs(void)
 int ypos_break_addr = 0xffff;
 
 #ifdef MONITOR_BREAK
-UWORD break_addr;
+UWORD break_addr = 0xd000;
 UBYTE break_step = 0;
 UBYTE break_cim = 0;
 UBYTE break_here = 0;
@@ -513,7 +513,7 @@ int monitor(void)
 #ifdef MONITOR_BREAK
 	if (show_inst && !break_step) {
 		/* break was caused by "O" command */
-		break_addr = 0;
+		break_addr = 0xd000;
 	}
 	if (break_here) {
 		printf("(Break due to BRK opcode)\n");
@@ -1569,6 +1569,9 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.28  2005/09/04 18:15:17  pfusik
+initialize break_addr with 0xd000
+
 Revision 1.27  2005/08/31 20:00:47  pfusik
 support for Atari800Win PLus
 
