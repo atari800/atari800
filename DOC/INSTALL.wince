@@ -1,5 +1,5 @@
-Atari 800, 800/XL, 130/XE and 5200 Emulator for PocketPC
---------------------------------------------------------
+Atari 800, 800/XL, 130/XE and 5200 Emulator for PocketPC and Smartphone
+-----------------------------------------------------------------------
 
 Irrespective of whether you are going to compile the emulator yourself
 or install a pre-compiled binary version you must obtain a copy of the
@@ -18,14 +18,13 @@ you have the ROM for the 5200 Games System it should be called
 
 Installation of the Emulator
 ----------------------------
-
-1. Create a folder somewhere on Pocket PC (yes, it can be on CF card) and copy
-   included PocketAtari.exe and .atari800.cfg there. Make sure that you are
-   using executable matchine your PocketPC CPU type.
-
-2. Download GAPI 1.2 (http://www.microsoft.com/mobile/downloads/developer/
-   gapi.asp). Copy proper DX.DLL to Windows folder on your Pocket PC.
-
-3. Copy the Operating System ROMS into the same newly created folder.
-
-4. Start emulator by clicking on executable file icon.
+1 Create a directory anywhere on your device.
+2 Copy the pocketatari.exe file there.
+3 Grab the zlibce library from [5]. Copy the appropriate zlibce.dll into the
+  folder you created earlier. (e.g. for arm architectures you need the file
+  at Wce300/Arm inside the zip).
+4 (Optional) Older Windows CE devices also need GAPI from Microsoft [6]. Copy
+  gx.dll into the folder as well.
+5 Copy the Atari OS ROM files in the same folder (see the FAQ for the ROMs).
+6 (Optional) Create a symbolic link to pocketatari.exe at 
+  (IPSM)  \Windows\Start Menu.

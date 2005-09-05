@@ -1,3 +1,8 @@
+2005-09-05  Kostas Nakos <knakos@gmail.com>
+* src/wince/* : Updated the wince port to work with Smartphones.
+  Several other improvements to the port.
+
+
 2005-09-04  Piotr Fusik  <fox@scene.pl>
 * monitor.c: initialize break_addr with 0xd000. Previously, Atari800
   compiled with MONITOR_BREAK (the default) entered the monitor
