@@ -2,7 +2,7 @@
  * screen.cpp - WinCE port specific code
  *
  * Copyright (C) 2001-2002 Vasyl Tsvirkunov
- * Copyright (C) 2002-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2002-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -40,12 +40,14 @@ int smooth_filter = 1; /* default is YES */
 int filter_available = 0;
 };
 
+extern "C" UBYTE *screen_dirty;
 
 #define MAX_CLR         0x100
 static UBYTE palRed[MAX_CLR];
 static UBYTE palGreen[MAX_CLR];
 static UBYTE palBlue[MAX_CLR];
 static unsigned short pal[MAX_CLR];
+static unsigned short optpalRedBlue[MAX_CLR], optpalGreen[MAX_CLR];
 /* First 10 and last 10 colors on palettized devices require special treatment,
    this table will map all colors into 236-color space starting at 10 */
 static UBYTE staticTranslate[256];
@@ -53,12 +55,16 @@ static UBYTE staticTranslate[256];
 /* Hicolor mode conversion parameters */
 static int redshift = 8; /* 8 for 565 mode, 7 for 555 */
 static int greenmask = 0xfc; /* 0xfc for 565, 0xf8 for 555 */
+static unsigned short optgreenmask = 0x7E0;
+static unsigned short optgreenmaskN = ~optgreenmask;
 /* Monochromatic mode conversion parameters */
 static UBYTE invert = 0;
 static int colorscale = 0;
 
 #define COLORCONVHICOLOR(r,g,b) ((((r)&0xf8)<<redshift)|(((g)&greenmask)<<(5-2))|(((b)&0xf8)>>3))
 #define COLORCONVMONO(r,g,b) ((((3*(r)>>3)+((g)>>1)+((b)>>3))>>colorscale)^invert)
+#define OPTCONVAVERAGE(pt1,pt2) ( (((optpalRedBlue[*pt1] + optpalRedBlue[*pt2]) >> 1) & optgreenmaskN) | (((optpalGreen[*pt1] + optpalGreen[*pt2]) >> 1) & optgreenmask) )
+#define OPTPIXAVERAGE(pix1,pix2) ( ((((pix1 & optgreenmaskN) + (pix2 & optgreenmaskN)) >> 1) & optgreenmaskN) | ((((pix1 & optgreenmask) + (pix2 & optgreenmask)) >> 1) & optgreenmask) )
 
 /* Using vectorized function to save on branches */
 typedef void (*tCls)();
@@ -72,10 +78,15 @@ void mono_DrawKbd(UBYTE*);
 void palette_Cls();
 void palette_Refresh(UBYTE*);
 void palette_DrawKbd(UBYTE*);
+void palette_update();
+void palette(int ent, UBYTE r, UBYTE g, UBYTE b);
 
 void hicolor_Cls();
 void hicolor_Refresh(UBYTE*);
 void hicolor_DrawKbd(UBYTE*);
+
+void null_DrawKbd(UBYTE*);
+void smartphone_hicolor_Refresh(UBYTE*);
 
 static tCls        pCls        = NULL;
 static tRefresh    pRefresh    = NULL;
@@ -119,7 +130,7 @@ int currentScreenMode = 0;
 int useMode = 0;
 int maxMode = 2;
 
-void set_screen_mode(int mode)
+extern "C" void set_screen_mode(int mode)
 {
 	currentScreenMode = mode;
 	if(currentScreenMode > maxMode)
@@ -133,12 +144,12 @@ void set_screen_mode(int mode)
 	entire_screen_dirty();
 }
 
-int get_screen_mode()
+extern "C" int get_screen_mode()
 {
 	return currentScreenMode;
 }
 
-void gr_suspend()
+extern "C" void gr_suspend()
 {
 	if(active)
 	{
@@ -154,7 +165,7 @@ void gr_suspend()
 	}
 }
 
-void gr_resume()
+extern "C" void gr_resume()
 {
 	if(!active)
 	{
@@ -168,7 +179,7 @@ void gr_resume()
 	kbd_image_ok = 0;
 }
 
-void groff(void)
+extern "C" void groff(void)
 {
 #ifndef FRAMEBASE
 	if(spScreen)
@@ -181,7 +192,7 @@ void groff(void)
 	active = 0;
 }
 
-int gron(int *argc, char *argv[])
+extern "C" int gron(int *argc, char *argv[])
 {
 	GXOpenDisplay(hWndMain, GX_FULLSCREEN);
 	
@@ -195,6 +206,8 @@ int gron(int *argc, char *argv[])
 
 		redshift = 8;
 		greenmask = 0xfc;
+		optgreenmask = 0x7E0;
+		optgreenmaskN = 0xF81F;
 
 		filter_available = 1;
 	}
@@ -206,6 +219,8 @@ int gron(int *argc, char *argv[])
 
 		redshift = 7;
 		greenmask = 0xf8;
+		optgreenmask = 0x3E0;
+		optgreenmaskN = 0x7C1F;
 
 		filter_available = 1;
 	}
@@ -230,7 +245,8 @@ int gron(int *argc, char *argv[])
 	}
 
 
-	if(!pCls || !pRefresh || !pDrawKbd || gxdp.cxWidth < 240 || gxdp.cyHeight < 240)
+	if( !pCls || !pRefresh || !pDrawKbd || ((gxdp.cxWidth < 240) && (gxdp.cxWidth != 176))
+		|| ((gxdp.cyHeight < 240) && ((gxdp.cyHeight != 220))) )
 	{
 	// I don't believe there are devices that end up here
 		groff();
@@ -269,9 +285,19 @@ int gron(int *argc, char *argv[])
 	geom[2].xSkipMask = 0xffffffff;
 	geom[2].xLimit = 320; // no skip
 	geom[2].lineLimit = ATARI_WIDTH*240;
-	
-	if(gxdp.cyHeight < 320)
-		maxMode = 0; // portrait only!
+
+	if ((gxdp.cxWidth == 176) & (gxdp.cyHeight == 220) & (pRefresh == hicolor_Refresh))
+	{
+		pDrawKbd = null_DrawKbd;
+		pRefresh = smartphone_hicolor_Refresh;
+		geom[0].startoffset = geom[0].pixelstep * 8;
+		issmartphone = 1;
+	}
+	else
+	{
+		if(gxdp.cyHeight < 320)
+			maxMode = 0; // portrait only!
+	}
 
 	for(int i = 0; i < MAX_CLR; i++)
 	{
@@ -300,6 +326,9 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 	palRed[ent] = r;
 	palGreen[ent] = g;
 	palBlue[ent] = b;
+
+	optpalRedBlue[ent] = ( (r & 0xF8) << redshift ) | ( (b & 0xF8) >> 3 );
+	optpalGreen[ent] = (g & greenmask) << 3;
 
 	if(gxdp.ffFormat & (kfDirect565|kfDirect555))
 		pal[ent] = COLORCONVHICOLOR(r,g,b);
@@ -444,7 +473,7 @@ void hicolor_Cls()
 	kbd_image_ok = 0;
 }
 
-void refreshv(UBYTE* scr_ptr)
+extern "C" void refreshv(UBYTE* scr_ptr)
 {
 	pRefresh(scr_ptr);
 }
@@ -1306,7 +1335,306 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 }
 
 
-void refresh_kbd()
+void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
+{
+/* Mode-specific metrics */
+	static long pixelstep = geom[useMode].pixelstep;
+	static long linestep  = geom[useMode].linestep;
+	static long low_limit = geom[useMode].sourceoffset+24;
+	static long high_limit = low_limit + geom[useMode].xLimit;
+
+/* Addressing withing screen_dirty array. This implementation assumes that the
+   array does not get reallocated in runtime */
+	static UBYTE* screen_dirty_ptr;
+	static UBYTE* screen_dirty_ptr_nextline;
+	static UBYTE* screen_dirty_limit = screen_dirty + (ATARI_HEIGHT-10)*ATARI_WIDTH/8;
+
+/* Source base pointer */
+	static UBYTE* screen_line_ptr;
+/* Source/destination pixel offset */
+	static long xoffset;
+
+/* Destination base pointer */
+	static UBYTE* dest_line_ptr;
+
+/* Running source and destination pointers */
+	static UBYTE* src_ptr;
+	static UBYTE* src_ptr_nextline;
+	static UBYTE* src_ptr_next;
+	static UBYTE* src_ptr_next_nextline;
+	static UBYTE* dest_ptr;
+
+	#define SCRYSKIP 10*ATARI_WIDTH;
+	#define DRTYSKIP 10*ATARI_WIDTH/8;
+	static UBYTE linecnt = 0;
+	static long scalepixelstep = (geom[useMode].pixelstep * 11) >> 4;
+	static long scalepixelstephalf = geom[useMode].pixelstep * 5;
+	static unsigned short pixtop = 0;
+	static unsigned short pixbot = 0;
+
+	if(!active)
+	{
+		Sleep(100);
+#ifndef MULTITHREADED
+		MsgPump();
+#endif
+		return;
+	}
+
+/* Update screen mode, also thread protection by doing this */
+	if(useMode != currentScreenMode)
+	{
+		useMode = currentScreenMode;
+
+		entire_screen_dirty();
+		pCls();
+
+		pixelstep = geom[useMode].pixelstep;
+		linestep = geom[useMode].linestep;
+		low_limit = geom[useMode].sourceoffset+24;
+		high_limit = low_limit + geom[useMode].xLimit;
+		scalepixelstep = (geom[useMode].pixelstep * 11) >> 4;
+		scalepixelstephalf = geom[useMode].pixelstep * 5;
+	}
+	
+
+	dest_line_ptr = GET_SCREEN_PTR();
+	if(dest_line_ptr)
+	{
+		
+		screen_dirty_ptr = screen_dirty + DRTYSKIP;
+		screen_line_ptr = (UBYTE*)atari_screen + SCRYSKIP;
+		xoffset = 0;
+		linecnt = 0;
+
+	/* Offset destination pointer to allow for rotation and particular screen geometry */
+		dest_line_ptr += geom[useMode].startoffset;
+
+	/* There are multiple versions of the internal loop based on screen geometry and settings */
+		if((geom[currentScreenMode].xSkipMask == 0xffffffff) & !smooth_filter)
+		{
+		/* Landscape : x -> 11/16 scale, y-> 4/5 scale */
+			while(screen_dirty_ptr < screen_dirty_limit)
+			{
+				/* 1/2 */
+				if(*screen_dirty_ptr)
+				{
+					if(xoffset >= low_limit && xoffset < high_limit)
+					{
+						/*     *_**_**_     */
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*scalepixelstep;
+						src_ptr = screen_line_ptr + xoffset;
+						*(unsigned short*)dest_ptr = pal[*src_ptr]; dest_ptr += pixelstep;src_ptr+=2;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr]; dest_ptr += pixelstep;src_ptr+=2;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr];
+					}
+					*screen_dirty_ptr = 0;
+				}
+				screen_dirty_ptr ++;
+				/* 2/2 */
+				if(*screen_dirty_ptr)
+				{
+					if(xoffset >= low_limit && xoffset < high_limit)
+					{
+						/*     **_**_**     */
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*scalepixelstep + scalepixelstephalf;
+						src_ptr = screen_line_ptr + xoffset + 8;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr]; dest_ptr += pixelstep;src_ptr+=2;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr]; dest_ptr += pixelstep;src_ptr+=2;
+						*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+						*(unsigned short*)dest_ptr = pal[*src_ptr];
+					}
+					*screen_dirty_ptr = 0;
+				}
+				xoffset += 16;
+				screen_dirty_ptr ++;
+
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
+					if ( (linecnt++ & 3) == 3 )
+					{
+						screen_line_ptr += ATARI_WIDTH;
+						screen_dirty_ptr += ATARI_WIDTH/8;
+					}
+				}
+			}
+		}
+		else if((geom[currentScreenMode].xSkipMask == 0xffffffff) & smooth_filter)
+		{
+		/* Landscape - filtering version: x -> 11/16 scale, y-> 4/5 scale */
+			while(screen_dirty_ptr < screen_dirty_limit)
+			{
+				if ( (linecnt & 3) ^ 3)
+				{
+					/* normal line */
+					/* 1/2 */
+					if(*screen_dirty_ptr)
+					{
+						if(xoffset >= low_limit && xoffset < high_limit)
+						{
+							/*     *<**<**<     */
+							dest_ptr = dest_line_ptr + (xoffset-low_limit)*scalepixelstep;
+							src_ptr = screen_line_ptr + xoffset;
+							src_ptr_next = src_ptr + 1;
+							*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next); dest_ptr += pixelstep;src_ptr+=2;src_ptr_next+=3;
+							*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+							*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next); dest_ptr += pixelstep;src_ptr+=2;src_ptr_next+=3;
+							*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+							*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next);
+						}
+						*screen_dirty_ptr = 0;
+					}
+					screen_dirty_ptr ++;
+					/* 2/2 */
+					if(*screen_dirty_ptr)
+					{
+						if(xoffset >= low_limit && xoffset < high_limit)
+						{
+							/*     **<**<**     */
+							dest_ptr = dest_line_ptr + (xoffset-low_limit)*scalepixelstep + scalepixelstephalf;
+							src_ptr = screen_line_ptr + xoffset + 8;
+							src_ptr_next = src_ptr + 2;
+							*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+							*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next); dest_ptr += pixelstep;src_ptr+=2;src_ptr_next+=3;
+							*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+							*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next); dest_ptr += pixelstep;src_ptr+=2;
+							*(unsigned short*)dest_ptr = pal[*src_ptr++]; dest_ptr += pixelstep;
+							*(unsigned short*)dest_ptr = pal[*src_ptr];
+						}
+						*screen_dirty_ptr = 0;
+					}
+				}
+				else
+				{
+					/* average w/ skipped line */
+					screen_dirty_ptr_nextline = screen_dirty_ptr + ATARI_WIDTH/8;
+					/* 1/2 */
+					if ( *screen_dirty_ptr | *screen_dirty_ptr_nextline)
+					{
+						if(xoffset >= low_limit && xoffset < high_limit)
+						{
+							/*     *<**<**<     */
+							dest_ptr = dest_line_ptr + (xoffset-low_limit)*scalepixelstep;
+							src_ptr = screen_line_ptr + xoffset;
+							src_ptr_nextline = src_ptr + ATARI_WIDTH;
+							src_ptr_next = src_ptr + 1;
+							src_ptr_next_nextline = src_ptr_nextline + 1;
+
+							pixtop = OPTCONVAVERAGE(src_ptr,src_ptr_next); src_ptr+=2; src_ptr_next+=3;
+							pixbot = OPTCONVAVERAGE(src_ptr_nextline,src_ptr_next_nextline); src_ptr_nextline+=2; src_ptr_next_nextline+=3;
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pixtop,pixbot); dest_ptr += pixelstep;
+
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pal[*src_ptr],pal[*src_ptr_nextline]); src_ptr++; src_ptr_nextline++; dest_ptr += pixelstep;
+
+							pixtop = OPTCONVAVERAGE(src_ptr,src_ptr_next); src_ptr+=2; src_ptr_next+=3;
+							pixbot = OPTCONVAVERAGE(src_ptr_nextline,src_ptr_next_nextline); src_ptr_nextline+=2; src_ptr_next_nextline+=3;
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pixtop,pixbot); dest_ptr += pixelstep;
+
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pal[*src_ptr],pal[*src_ptr_nextline]); src_ptr++; src_ptr_nextline++; dest_ptr += pixelstep;
+							
+							pixtop = OPTCONVAVERAGE(src_ptr,src_ptr_next);
+							pixbot = OPTCONVAVERAGE(src_ptr_nextline,src_ptr_next_nextline);
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pixtop,pixbot);
+							
+						}
+						*screen_dirty_ptr = 0;
+						*screen_dirty_ptr_nextline = 0;
+					}
+
+					*screen_dirty_ptr++;
+					*screen_dirty_ptr_nextline++;
+					/* 2/2 */
+					if ( *screen_dirty_ptr | *screen_dirty_ptr_nextline)
+					{
+						if(xoffset >= low_limit && xoffset < high_limit)
+						{
+							/*     **<**<**     */
+							dest_ptr = dest_line_ptr + (xoffset-low_limit)*scalepixelstep  + scalepixelstephalf;
+							src_ptr = screen_line_ptr + xoffset + 8;
+							src_ptr_nextline = src_ptr + ATARI_WIDTH;
+							src_ptr_next = src_ptr + 2;
+							src_ptr_next_nextline = src_ptr_nextline + 2;
+
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pal[*src_ptr],pal[*src_ptr_nextline]); src_ptr++; src_ptr_nextline++; dest_ptr += pixelstep;
+
+							pixtop = OPTCONVAVERAGE(src_ptr,src_ptr_next); src_ptr+=2; src_ptr_next+=3;
+							pixbot = OPTCONVAVERAGE(src_ptr_nextline,src_ptr_next_nextline); src_ptr_nextline+=2; src_ptr_next_nextline+=3;
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pixtop,pixbot); dest_ptr += pixelstep;
+
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pal[*src_ptr],pal[*src_ptr_nextline]); src_ptr++; src_ptr_nextline++; dest_ptr += pixelstep;
+
+							pixtop = OPTCONVAVERAGE(src_ptr,src_ptr_next); src_ptr+=2;
+							pixbot = OPTCONVAVERAGE(src_ptr_nextline,src_ptr_next_nextline); src_ptr_nextline+=2;
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pixtop,pixbot); dest_ptr += pixelstep;
+
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pal[*src_ptr],pal[*src_ptr_nextline]); src_ptr++; src_ptr_nextline++; dest_ptr += pixelstep;
+							
+							*(unsigned short*)dest_ptr = OPTPIXAVERAGE(pal[*src_ptr],pal[*src_ptr_nextline]);							
+						}
+						*screen_dirty_ptr = 0;
+						*screen_dirty_ptr_nextline = 0;
+					}
+				}
+
+				xoffset += 16;
+				screen_dirty_ptr ++;
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
+					if ( (linecnt++ & 3) == 3 )
+					{
+						screen_line_ptr += ATARI_WIDTH;
+						screen_dirty_ptr += ATARI_WIDTH/8;
+					}
+				}
+			}
+		}
+		else
+		{
+		/* portait: x -> 1/2 scale, y -> straight blit */
+			while(screen_dirty_ptr < screen_dirty_limit)
+			{
+				if(*screen_dirty_ptr)
+				{
+					if(xoffset >= low_limit && xoffset < high_limit)
+					{
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*(pixelstep>>1);
+						src_ptr = screen_line_ptr + xoffset;
+						*(unsigned short*)dest_ptr = pal[*src_ptr]; dest_ptr += pixelstep;src_ptr+=2;
+						*(unsigned short*)dest_ptr = pal[*src_ptr]; dest_ptr += pixelstep;src_ptr+=2;
+						*(unsigned short*)dest_ptr = pal[*src_ptr]; dest_ptr += pixelstep;src_ptr+=2;
+						*(unsigned short*)dest_ptr = pal[*src_ptr];
+					}
+					*screen_dirty_ptr = 0;
+				}
+
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
+				}
+
+				screen_dirty_ptr ++;
+			}
+		}
+
+		RELEASE_SCREEN();
+	}
+}
+ 
+
+extern "C" void refresh_kbd()
 {
 	static UBYTE *scraddr;
 	scraddr = GET_SCREEN_PTR();
@@ -1327,7 +1655,7 @@ it is the brightest color in the palette.
 
 void overlay_kbd(UBYTE* scr_ptr)
 {
-	static ULONG* kbd_image_ptr;
+	static unsigned long* kbd_image_ptr;
 	static unsigned long curBit;
 	static BYTE color;
 	static UBYTE* scr_ptr_limit;
@@ -1384,7 +1712,7 @@ overlay.
 
 void mono_DrawKbd(UBYTE* scraddr)
 {
-	static ULONG* kbd_image_ptr;
+	static unsigned long* kbd_image_ptr;
 	static unsigned long curBit;
 	static int linestep, pixelstep;
 	static UBYTE colorOn, colorOff;
@@ -1392,7 +1720,7 @@ void mono_DrawKbd(UBYTE* scraddr)
 	static UBYTE* dest;
 	static UBYTE* dest_limit;
 	static int cachedcolor=-1; /* must be static */
-	static ULONG* cachedkbd=NULL;
+	static unsigned long* cachedkbd=NULL;
 	
 	static UBYTE bitmask;
 	static int   bitshift;
@@ -1476,7 +1804,7 @@ void mono_DrawKbd(UBYTE* scraddr)
 
 void palette_DrawKbd(UBYTE* scraddr)
 {
-	static ULONG* kbd_image_ptr;
+	static unsigned long* kbd_image_ptr;
 	static unsigned long curBit;
 	static int linestep, pixelstep;
 	static UBYTE colorOn, colorOff;
@@ -1484,7 +1812,7 @@ void palette_DrawKbd(UBYTE* scraddr)
 	static UBYTE* dest;
 	static UBYTE* dest_limit;
 	static int cachedcolor=-1; /* must be static */
-	static ULONG* cachedkbd=NULL;
+	static unsigned long* cachedkbd=NULL;
 	
 	if(cachedcolor != currentKeyboardColor || cachedkbd != kbd_image)
 	{
@@ -1550,7 +1878,7 @@ void palette_DrawKbd(UBYTE* scraddr)
 
 void hicolor_DrawKbd(UBYTE* scraddr)
 {
-	static ULONG* kbd_image_ptr;
+	static unsigned long* kbd_image_ptr;
 	static unsigned long curBit;
 	static int linestep, pixelstep;
 	static int colorOn, colorOff;
@@ -1558,7 +1886,7 @@ void hicolor_DrawKbd(UBYTE* scraddr)
 	static UBYTE* dest;
 	static UBYTE* dest_limit;
 	static int cachedcolor=-1; /* must be static */
-	static ULONG* cachedkbd=NULL;
+	static unsigned long* cachedkbd=NULL;
 	
 	if(cachedcolor != currentKeyboardColor || cachedkbd != kbd_image)
 	{
@@ -1622,7 +1950,13 @@ void hicolor_DrawKbd(UBYTE* scraddr)
 	kbd_image_ok = 1;
 }
 
-void translate_kbd(short* px, short* py)
+void null_DrawKbd(UBYTE* scraddr)
+{
+	return;
+}
+ 
+
+extern "C" void translate_kbd(short* px, short* py)
 {
 	int x, y;
 	

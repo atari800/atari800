@@ -4,6 +4,7 @@
 extern LPTSTR myname;
 extern HWND hWndMain;
 extern HINSTANCE myInstance;
+extern char issmartphone;
 
 // Multi-threaded implementation has no benefit over single threaded and it
 // has very odd codepath. I will leave code in place anyway */

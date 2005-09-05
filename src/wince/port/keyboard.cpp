@@ -2,7 +2,7 @@
  * atari_wince.c - WinCE port specific code
  *
  * Copyright (C) 2001 Vasyl Tsvirkunov
- * Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -289,6 +289,7 @@ sKeyTranslation kbd_translation[] =
 	{0, AKEY_WARMSTART},
 	{0, AKEY_COLDSTART},
 	{0, AKEY_BREAK},
+	{VK_RETURN, AKEY_RETURN},
 // Non-mappable entries
 	{VK_SHIFT, AKEY_SHFT},
 	{VK_CONTROL, AKEY_CTRL},
@@ -334,7 +335,6 @@ sKeyTranslation kbd_translation[] =
 	{VK_BACKQUOTE, AKEY_ATARI},
 	{VK_CAPITAL, AKEY_CAPSTOGGLE},
 	{VK_TAB, AKEY_TAB},
-	{VK_RETURN, AKEY_RETURN},
 	{VK_SPACE, AKEY_SPACE},
 	{VK_LBRACKET, AKEY_LESS},
 	{VK_RBRACKET, AKEY_GREATER},
@@ -366,6 +366,7 @@ sKeyTranslation kbd_translation[] =
 #define KBDT_WARMSTART	11
 #define KBDT_COLDSTART	12
 #define KBDT_BREAK		13
+#define KBDT_RETURN		14
 
 
 void reset_kbd()
@@ -456,10 +457,12 @@ void hitbutton(short code)
 			stick0 &= ~4;
 		else if(code == joykey_map[get_screen_mode()][3])
 			stick0 &= ~8;
-		else if(code == klist.vkA || code == klist.vkB)
+		else if(code == klist.vkA || code == klist.vkB || code == '4' || code == '6')
 			trig0 = 0;
 		else if(code == klist.vkC)
 			kbcode = AKEY_UI;
+		else if ((code == VK_F3) && (issmartphone))
+			set_screen_mode(get_screen_mode()+1); 
 		else
 		for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
 			if(code == kbd_translation[i].winKey)
@@ -514,7 +517,7 @@ void releasebutton(short code)
 			stick0 |= 4;
 		else if(code == joykey_map[get_screen_mode()][3])
 			stick0 |= 8;
-		else if(code == klist.vkA || code == klist.vkB)
+		else if(code == klist.vkA || code == klist.vkB || code == '4' || code == '6')
 			trig0 = 1;
 		else if(code == klist.vkC)
 			kbcode = AKEY_UI;
@@ -632,8 +635,8 @@ void tapscreen(short x, short y)
 		}
 	}
 
-	if(kbcode == AKEY_BREAK)
-		key_break = 1;
+/*	if(kbcode == AKEY_BREAK)
+		key_break = 1;*/
 
 	push_key(kbcode);
 }
@@ -751,8 +754,8 @@ void untapscreen(short x, short y)
 		}
 	}
 
-	if(kbcode == AKEY_BREAK)
-		key_break = 0;
+/*	if(kbcode == AKEY_BREAK)
+		key_break = 0;*/
 	
 	release_key(kbcode);
 }
@@ -880,9 +883,21 @@ int initinput(void)
 	joykey_map[2][2] = klist.vkUp;
 	joykey_map[2][3] = klist.vkDown;
 
-	kbd_translation[KBDT_F3].winKey = klist.vkA;
-	kbd_translation[KBDT_F2].winKey = klist.vkB;
-	kbd_translation[KBDT_UI].winKey = klist.vkC;
+	if (issmartphone)
+	{
+		kbd_translation[KBDT_F3].winKey = '8';
+		kbd_translation[KBDT_F2].winKey = '7';
+		kbd_translation[KBDT_UI].winKey = klist.vkC;
+		kbd_translation[KBDT_F4].winKey = '9';
+		kbd_translation[KBDT_RETURN].winKey = '0';
+ 
+	}
+	else
+	{
+		kbd_translation[KBDT_F3].winKey = klist.vkA;
+		kbd_translation[KBDT_F2].winKey = klist.vkB;
+		kbd_translation[KBDT_UI].winKey = klist.vkC;
+	}
 
 	kbd_image = kbd_image_800;
 	kbd_struct = kbd_struct_800;

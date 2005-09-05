@@ -1,0 +1,112 @@
+ReadMe-WinCE.txt
+
+PocketAtari: The Windows CE Port of the Atari 800 Emulator.
+
+I. PURPOSE
+------------------------------------------------------------------------------
+This file describes the installation and compilation procedure for the Windows
+CE port of the Atari800 emulator [1]. The port currently supports Pocket PC and
+Smartphone devices deployed with the 2002 version of the OS, also known as
+WCE300.
+
+II. NEWS
+------------------------------------------------------------------------------
+The updated version of this port:
+
+o Adds support for Smartphone devices.
+o Includes interpolating downsampling filter for Smartphone displays.
+o Uses zlib dynamic library for opening gzipped image files.
+o Adds initial support for keeping the backlight always on.
+
+III. INSTALLING
+------------------------------------------------------------------------------
+To intall PocketAtari on your PocketPC/Smartphone device:
+
+o Create a directory anywhere on your device.
+o Copy the pocketatari.exe file there.
+o Grab the zlibce library from [5]. Copy the appropriate zlibce.dll into the
+  folder you created earlier. (e.g. for arm architectures you need the file
+  at Wce300/Arm inside the zip).
+o (Optional) Older Windows CE devices also need GAPI from Microsoft [6]. Copy
+  gx.dll into the folder as well.
+o Copy the Atari OS ROM files in the same folder (see the FAQ for the ROMs).
+o (Optional) Create a symbolic link to pocketatari.exe at 
+  (IPSM)  \Windows\Start Menu.
+o You're good to go!
+
+IV. USING
+------------------------------------------------------------------------------
+a. Pocket PC
+Pocket Atari can operate in portrait, landscape and inverse landscape mode.
+Use the displayed keyboard/menu to operate the emulator. In landscape modes
+tap the bottom right corner of the atari screen to display the keyboard/menu.
+
+b. Smartphone
+Due to the lack of proper keyboard and pointing device, the emulated Atari features
+are limited. You can play the majority of games though. Use the following keys:
+
+Directional keys           : Simulate joystick 0
+Softkey A, Softkey B, 4, 6 : Fire joystick 0
+0                          : Return key
+7                          : Option key
+8                          : Select key
+9                          : Start key
+*                          : Show emulator menu
+Talk/Call/Green key        : Switch between the 3 display modes
+
+NOTE: Functionality of Softkey A, Softkey B and * keys may be attributed
+      differently according to the drivers of your cellphone.
+
+V. COMPILING
+------------------------------------------------------------------------------
+You will need the following tools:
+
+o Microsoft Embedded Visual Tools 3.0 [7].
+o GAPI emulation [4] for the emulators.
+o The zlibce library [5].
+
+Create a folder named zlib inside the src/wince directory. Copy zconf.h
+and zlib.h in zlib/. Create two folders named arm and x86 (src/wince/zlib/arm
+and src/wince/zlib/x86). Copy the appropriate zlibce.lib files in these
+directories. Don't forget to upload gx.dll and zlibce.dll to your emulator.
+Also for Smartphones you'll have to compile yourself a version of the gx.dll
+using the GAPI emulator files. The Smartphone resolution is 176x220 pixels.
+
+VI. HISTORY
+------------------------------------------------------------------------------
+The Pocket PC port was originally done by Vasyl Tsvirkunov [2].
+Kostas Nakos [3] updated the port and added support for Smartphone devices.
+Many thanks to Vasyl for providing us with a stable codebase!
+
+VII. CONTACT
+------------------------------------------------------------------------------
+Please visit my Atari800 page [3] for fresh builds and news.
+To report bugs or request new features you can email me at: knakos@gmail.com
+Also visit Vasyl's Atari800 page [2] and check out the links for more of his work.
+For questions about the Pocket PC/Smartphone port or the emulator in general
+you can use the Atari800-users forum available at [1].
+
+
+                                                               Enjoy!
+                                                               Kostas Nakos,
+                                                               31/08/05
+                                                               Athens, Greece
+
+
+VIII. REFERENCES
+------------------------------------------------------------------------------
+[1] Atari800 project homepage
+    http://atari800.sourceforge.net/
+[2] Vasyl Tsvirkunov's Atari800 page
+    http://pocketatari.retrogames.com
+[3] Kostas Nakos' Atari800 page
+    http://users.uoa.gr/~knakos/atari800
+[4] GAPI emulation
+    http://frogengine.net-connect.net XXXXXXXXXXXXXXXXXXX
+[5] zlib for Windows CE
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+[6] Microsoft GAPI
+    http://www.microsoft.com/mobile/downloads/developer/gapi.asp XXXXXXXXXXX
+[7] Microsoft eMbedded Visual Tools 3.0 
+    http://www.microsoft.com/mobile/downloads/emvt30.asp
+    

@@ -2,7 +2,7 @@
  * main.c - WinCE port specific code
  *
  * Copyright (C) 2001 Vasyl Tsvirkunov
- * Copyright (C) 2001-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -27,7 +27,6 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include "config.h"
 #include "main.h"
 #include "screen_wince.h"
@@ -39,6 +38,7 @@ LPTSTR myname = TEXT("Pocket Atari");
 char* mynameb = "Pocket Atari";
 HWND hWndMain;
 HINSTANCE myInstance;
+char issmartphone = 0;
 
 extern tUIDriver wince_ui_driver;
 
@@ -54,7 +54,7 @@ void __cdecl atari_exit(int code)
 #else
 	MsgPump();
 #endif
-	exit(code);
+//	exit(code);
 }
 
 void wce_perror(char* s)
@@ -190,13 +190,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	static int argc = 0;
 	static char args[0x400];
 	static char *argv[100];
+	char platform[100];
 
 	myInstance = hInstance;
 	if(initwin(hInstance, nCmdShow))
 	{
 		return 1;
 	}
-	
+
+	if (SystemParametersInfo(SPI_GETPLATFORMTYPE, 100, platform, 0))
+		if (strstr(platform, _T("martphone"))) /////////////////FIXME
+			issmartphone = 1;
+
 	if(lpCmdLine)
 		WideCharToMultiByte(CP_ACP, 0, lpCmdLine, -1, args, 0x400, NULL, NULL);
 	else

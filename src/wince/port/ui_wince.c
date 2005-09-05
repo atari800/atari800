@@ -2,7 +2,7 @@
  * ui_wince.c - WinCE PocketPC UI driver
  *
  * Copyright (C) 2001 Vasyl Tsvirkunov
- * Copyright (C) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -34,9 +34,12 @@ int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 int WinCeUIGetSaveFilename(char* pFilename);
 int WinCeUIGetLoadFilename(char* pDirectory, char* pFilename);
 void WinCeUIMessage(char* pMessage);
-void WinCeUIAboutBox();
-void WinCeUIInit();
+void WinCeUIAboutBox(void);
+void WinCeUIInit(void);
 
+extern int smooth_filter;
+extern int filter_available;
+extern char issmartphone;
 
 tUIDriver wince_ui_driver =
 {
@@ -56,7 +59,7 @@ void AboutPocketAtari()
 		MENU_END
 	};
 
-	char* About =
+	char* AboutPocket =
 		"Pocket Atari v.1.1 ("__DATE__")\n"
 		"by Vasyl Tsvirkunov (C) 2002\n"
 		"http://pocketatari.retrogames.com\n"
@@ -68,14 +71,38 @@ void AboutPocketAtari()
 		ATARI_TITLE "\n"
 		"http://atari800.sf.net\n"
 		"\n"
-		"\n"
-		"\n"
-		"\n"
-		"\n"
-		"\n"
+		"PocketPC port update and\n"
+		"Smartphone port by Kostas Nakos\n"
+		"(knakos@phys.uoa.gr)\n"
+		"http://users.uoa.gr/...               \n"
+		"             ...(tilde)knakos/atari800\n"
 		"\n"
 		;
-	ui_driver->fSelect(About, FALSE, 0, menu_array, NULL);
+
+	char* AboutSmart =
+		"Pocket Atari for Smartphones\n"
+		"\n"
+		"\n"
+		"ported by Kostas Nakos\n"
+		"(knakos@gmail.com)\n"
+		"http://users.uoa.gr/...               \n"
+		"             ...(tilde)knakos/atari800\n"
+		"\n"
+		"\n"
+		"Based on the PocketPC/WinCE port\n"
+		"by Vasyl Tsvirkunov\n"
+		"http://pocketatari.retrogames.com\n"
+		"\n"
+		"\n"
+		"Atari core for this version\n"
+		ATARI_TITLE "\n"
+		"http://atari800.sf.net\n"
+		; 
+
+	if (issmartphone)
+		ui_driver->fSelect(AboutSmart, FALSE, 0, menu_array, NULL);
+	else
+		ui_driver->fSelect(AboutPocket, FALSE, 0, menu_array, NULL);
 }
 
 
@@ -172,7 +199,7 @@ int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
 #endif
 		}
-		else if(strcmp(pNewMenu[i].sig, "PCXI") == 0)
+		else if ( (strcmp(pNewMenu[i].sig, "PCXI") == 0) || (strcmp(pNewMenu[i].sig, "PCXN") == 0) )
 		{
 		/* Interlaced PCX screenshot is disabled */
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
@@ -189,7 +216,7 @@ int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 		}
 		else if(strcmp(pNewMenu[i].sig, "MONI") == 0)
 		{
-			if(strcmp(pNewMenu[0].sig, "DISK") == 0) /* Main menu? */
+			if(strcmp(pNewMenu[0].sig, "XBIN") == 0) /* Main menu? */
 			{
 			/* Monitor menu item replaced with About box */
 				pNewMenu[i].sig = "ABPA";
@@ -204,6 +231,15 @@ int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 				pNewMenu[i].flags &= ~ITEM_ENABLED;
 			}
 		}
+		else if(strcmp(pNewMenu[i].sig, "HFPO") == 0)
+		{
+			/* NEVER allow hifi pokey in smartphones */
+			pNewMenu[i].flags &= ~ITEM_ENABLED;
+		} 
+		else if(strcmp(pNewMenu[i].sig, "VJOY") == 0)
+		{
+			pNewMenu[i].flags &= ~ITEM_ENABLED;
+		} 
 	}
 /* Passthrough to the basic driver */
 	result = basic_ui_driver.fSelect(pTitle, bFloat, nDefault, pNewMenu, ascii);
@@ -237,12 +273,12 @@ void WinCeUIMessage(char* pMessage)
 	basic_ui_driver.fMessage(pMessage);
 }
 
-void WinCeUIAboutBox()
+void WinCeUIAboutBox(void)
 {
 	basic_ui_driver.fAboutBox();
 }
 
-void WinCeUIInit()
+void WinCeUIInit(void)
 {
 	basic_ui_driver.fInit();
 }
