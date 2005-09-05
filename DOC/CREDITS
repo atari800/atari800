@@ -6,7 +6,7 @@ Current active members of the Atari800 development team:
     Jacek Poplawski  (SDL)
     Krzysztof Nikiel (Win32)
     Mark Grebe       (Mac OSX)
-    Vasyl Tsvirkunov (Pocket PC)
+    Kostas Nakos     (Windows CE)
 
 
 
@@ -181,7 +181,7 @@ Rich Lawrence <rich@kesmai.com>
     - DCM and ZLIB compressed files support
 
 Marcin Lewandowski <jaskier@atari8.info>
-	- incorrectly saved N flag when entering the monitor
+    - incorrectly saved N flag when entering the monitor
 
 Chris Martin <cmartin@ti.com>
     - R: device as Atari850 emulation via network
@@ -203,6 +203,10 @@ Petr Mojzisek <mojzisek@bimbo.fjfi.cvut.cz>
 
 Nathan Monson <nathan@polaristel.net>
     - Fix for handling 6502 V flag during ADC and SBC operations
+
+Kostas Nakos <knakos@gmail.com>
+    - Update of the WinCE port
+    - Porting to Smartphone devices
 
 Krzysztof Nikiel <krzych00@priv.onet.pl>
     - SaveINT() fix in state save code
