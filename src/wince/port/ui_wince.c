@@ -28,7 +28,6 @@
 #include "screen.h"   /* For linear filter */
 #include "keyboard.h" /* For virtual joystick */
 #include "input.h"    /* For joystick autofire */
-#include "rt-config.h"/* For refresh rate */
 
 int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii);
 int WinCeUIGetSaveFilename(char* pFilename);
@@ -60,12 +59,10 @@ void AboutPocketAtari()
 	};
 
 	char* AboutPocket =
-		"Pocket Atari v.1.1 ("__DATE__")\n"
+		"Pocket Atari v.1.2 ("__DATE__")\n"
 		"by Vasyl Tsvirkunov (C) 2002\n"
 		"http://pocketatari.retrogames.com\n"
 		"\n"
-		"Please report all problems\n"
-		"to vasyl@pacbell.net\n"
 		"\n"
 		"This port is based on\n"
 		ATARI_TITLE "\n"
@@ -73,17 +70,19 @@ void AboutPocketAtari()
 		"\n"
 		"PocketPC port update and\n"
 		"Smartphone port by Kostas Nakos\n"
-		"(knakos@phys.uoa.gr)\n"
+		"(knakos@gmail.com)\n"
 		"http://users.uoa.gr/...               \n"
 		"             ...(tilde)knakos/atari800\n"
+		"\n"
+		"\n"
 		"\n"
 		;
 
 	char* AboutSmart =
 		"Pocket Atari for Smartphones\n"
+		"Built on: "__DATE__"\n"
 		"\n"
-		"\n"
-		"ported by Kostas Nakos\n"
+		"Ported by Kostas Nakos\n"
 		"(knakos@gmail.com)\n"
 		"http://users.uoa.gr/...               \n"
 		"             ...(tilde)knakos/atari800\n"
@@ -114,9 +113,6 @@ void EmulatorSettings()
 		{ "SMTH", ITEM_ENABLED|ITEM_CHECK,  NULL, "Enable linear filtering:",          NULL, 0 },
 		{ "VJOY", ITEM_ENABLED|ITEM_CHECK,  NULL, "Virtual joystick:",                 NULL, 1 },
 		{ "AFRE", ITEM_ENABLED|ITEM_CHECK,  NULL, "Joystick autofire:",                NULL, 2 },
-		{ "FRAM", ITEM_ENABLED|ITEM_ACTION, NULL, "Current frameskip 00",              NULL, 3 },
-		{ "FRUP", ITEM_ENABLED|ITEM_ACTION, NULL, "Increase frameskip",                NULL, 4 },
-		{ "FRDN", ITEM_ENABLED|ITEM_ACTION, NULL, "Decrease frameskip",                NULL, 5 },
 		MENU_END
 	};
 
@@ -142,9 +138,6 @@ void EmulatorSettings()
 		else
 			menu_array[2].flags &= ~ITEM_CHECKED;
 
-		menu_array[3].item[18] = (refresh_rate > 9) ? (char)('0' + refresh_rate/10) : ' ';
-		menu_array[3].item[19] = (char)('0' + refresh_rate%10);
-
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 
 		switch(option)
@@ -157,14 +150,6 @@ void EmulatorSettings()
 			break;
 		case 2:
 			joy_autofire[0] = joy_autofire[0]?0:1;
-			break;
-		case 4:
-			if(refresh_rate < 15)
-				refresh_rate ++;
-			break;
-		case 5:
-			if(refresh_rate > 1)
-				refresh_rate --;
 			break;
 		}
 	}
@@ -190,7 +175,8 @@ int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 /* Modify old menu items */
 	for(i=0; pNewMenu[i].sig; i++)
 	{
-		pNewMenu[i].suffix = NULL; /* no keyboard shortcuts in Pocket Atari */
+		if (strcmp(pNewMenu[i].sig, "CURR") != 0) /* no keyboard shortcuts in Pocket Atari */
+			pNewMenu[i].suffix = NULL; /* except for the refresh rate indicator */
 
 		if(strcmp(pNewMenu[i].sig, "STER") == 0)
 		{
@@ -231,12 +217,12 @@ int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* 
 				pNewMenu[i].flags &= ~ITEM_ENABLED;
 			}
 		}
-		else if(strcmp(pNewMenu[i].sig, "HFPO") == 0)
+		else if ((strcmp(pNewMenu[i].sig, "HFPO") == 0) && issmartphone)
 		{
 			/* NEVER allow hifi pokey in smartphones */
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
 		} 
-		else if(strcmp(pNewMenu[i].sig, "VJOY") == 0)
+		else if ((strcmp(pNewMenu[i].sig, "VJOY") == 0) && issmartphone)
 		{
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
 		} 

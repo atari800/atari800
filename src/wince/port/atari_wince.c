@@ -190,6 +190,8 @@ void Atari_ConfigInit(void)
 	screen_visible_y1 = 10;
 	screen_visible_x2 = 344;
 	screen_visible_y2 = 230;
+	show_disk_led = 1;
+	show_sector_counter = 1;
 }
 
 int Atari_Configure(char* option, char *parameters)

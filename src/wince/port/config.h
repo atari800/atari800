@@ -3,7 +3,7 @@
 #include "missing.h"
 
 /* Define to use back slash as directory separator. */
-#define BACK_SLASH
+#define BACK_SLASH			1
 
 /* Target: standard I/O. */
 #undef BASIC
@@ -12,7 +12,7 @@
 #undef BUFFERED_LOG
 
 /* Define to allow sound clipping. */
-#define CLIP_SOUND
+#define CLIP_SOUND			1
 
 /* Define to 1 if the `closedir' function returns void instead of `int'. */
 #undef CLOSEDIR_VOID
@@ -21,13 +21,10 @@
 #undef CONSOLE_SOUND
 
 /* Define to activate crash menu after CIM instruction. */
-#define CRASH_MENU
+#define CRASH_MENU			1
 
 /* Define to disable bitmap graphics emulation in CURSES target. */
 #undef CURSES_BASIC
-
-/* Define to allow color changes inside a scanline. */
-#undef CYCLE_EXACT
 
 /* Alternate config filename due to 8+3 fs limit. */
 #define DEFAULT_CFG_NAME	"atari800.cfg"
@@ -253,7 +250,7 @@
 #undef HAVE_TERMIOS_H
 
 /* Define to 1 if you have the `time' function. */
-#define HAVE_TIME				1
+#define HAVE_TIME			1
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
@@ -305,10 +302,10 @@
 #undef NEW_CYCLE_EXACT
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "knakos@phys.uoa.gr"
+#undef PACKAGE_BUGREPORT
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "pocketatari"
+#undef PACKAGE_NAME
 
 /* Define to the full name and version of this package. */
 #undef PACKAGE_STRING
@@ -341,7 +338,7 @@
 #define SELECT_TYPE_ARG5 const struct timeval
 
 /* Define to allow serial in/out sound. */
-#define SERIO_SOUND
+#define SERIO_SOUND			1
 
 /* Target: X11 with shared memory extensions. */
 #undef SHM
@@ -350,7 +347,7 @@
 #define SIZEOF_LONG sizeof(long)
 
 /* Define to activate sound support. */
-#define SOUND
+#define SOUND				1
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
@@ -359,10 +356,10 @@
 #undef STEREO_SOUND
 
 /* Save additional config file options. */
-#define SUPPORTS_ATARI_CONFIGSAVE
+#define SUPPORTS_ATARI_CONFIGSAVE		1
 
 /* Additional config file options. */
-#define SUPPORTS_ATARI_CONFIGURE
+#define SUPPORTS_ATARI_CONFIGURE		1
 
 /* Target: Linux with SVGALib. */
 #undef SVGALIB
@@ -386,7 +383,7 @@
 #undef UNALIGNED_LONG_OK
 
 /* Define to use clock() instead of gettimeofday(). */
-#define USE_CLOCK
+#define USE_CLOCK			1
 
 /* Target: Curses-compatible library. */
 #undef USE_CURSES
