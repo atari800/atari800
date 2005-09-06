@@ -93,6 +93,9 @@ void CPU_PutStatus(void)
 
 #else /* FALCON_CPUASM */
 
+/* Windows headers define it */
+#undef ABSOLUTE
+
 #ifndef __GNUC__
 #define NO_GOTO
 #endif

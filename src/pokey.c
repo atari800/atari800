@@ -352,14 +352,14 @@ void POKEY_Initialise(int *argc, char *argv[])
 	/* initialise poly9_lookup */
 	reg = 0x1ff;
 	for (i = 0; i < 511; i++) {
-		poly9_lookup[i] = reg >> 1;
+		poly9_lookup[i] = (UBYTE) (reg >> 1);
 		reg |= (((reg >> 5) ^ reg) & 1) << 9;
 		reg >>= 1;
 	}
 	/* initialise poly17_lookup */
 	reg = 0x1ffff;
 	for (i = 0; i < 16385; i++) {
-		poly17_lookup[i] = reg >> 9;
+		poly17_lookup[i] = (UBYTE) (reg >> 9);
 		for (j = 0; j < 8; j++) {
 			reg |= (((reg >> 5) ^ reg) & 1) << 17;
 			reg >>= 1;
@@ -608,8 +608,8 @@ void POKEYStateRead(void)
 	ReadUBYTE(&AUDC[0], 4);
 	ReadUBYTE(&AUDCTL[0], 1);
 	for (i = 0; i < 4; i++) {
-		POKEY_PutByte(_AUDF1 + i * 2, AUDF[i]);
-		POKEY_PutByte(_AUDC1 + i * 2, AUDC[i]);
+		POKEY_PutByte((UWORD) (_AUDF1 + i * 2), AUDF[i]);
+		POKEY_PutByte((UWORD) (_AUDC1 + i * 2), AUDC[i]);
 	}
 	POKEY_PutByte(_AUDCTL, AUDCTL[0]);
 

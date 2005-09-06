@@ -65,7 +65,7 @@ void PIA_Reset(void)
 {
 	PORTA = 0xff;
 	if (machine_type == MACHINE_XLXE) {
-		MEMORY_HandlePORTB(0xff, PORTB | PORTB_mask);
+		MEMORY_HandlePORTB(0xff, (UBYTE) (PORTB | PORTB_mask));
 	}
 	PORTB = 0xff;
 }
@@ -141,12 +141,12 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 		if (machine_type == MACHINE_XLXE) {
 			if ((PBCTL & 0x04) == 0) {
 				/* direction register */
-				MEMORY_HandlePORTB(PORTB | ~byte, PORTB | PORTB_mask);
+				MEMORY_HandlePORTB((UBYTE) (PORTB | ~byte), (UBYTE) (PORTB | PORTB_mask));
 				PORTB_mask = ~byte;
 			}
 			else {
 				/* output register */
-				MEMORY_HandlePORTB(byte | PORTB_mask, PORTB | PORTB_mask);
+				MEMORY_HandlePORTB((UBYTE) (byte | PORTB_mask), (UBYTE) (PORTB | PORTB_mask));
 				PORTB = byte;
 			}
 		}
@@ -215,6 +215,9 @@ void PIAStateRead(void)
 
 /*
 $Log$
+Revision 1.16  2005/09/06 22:55:58  pfusik
+fixed MSVC warnings
+
 Revision 1.15  2005/08/17 22:38:43  pfusik
 removed unnecessary includes: stdio.h, stdlib.h, log.h
 
