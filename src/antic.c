@@ -3547,6 +3547,7 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 add support for wider->narrow glitches including the interesting mode 6
 glitch */
 #ifdef NEW_CYCLE_EXACT
+		dmactl_changed=0;
 		/* DMACTL width changed to or from 0 */
 		if ((byte & 3) != (DMACTL & 3) && ((byte & 3)==0 || (DMACTL & 3) == 0)) {
 			/* TODO: this is not 100% correct */
