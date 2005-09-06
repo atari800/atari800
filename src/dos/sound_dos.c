@@ -22,16 +22,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <stdio.h>		/* for sscanf */
-#include <string.h>		/* for strcmp */
 #include "config.h"
+#include <string.h>		/* for strcmp */
 
 #ifdef SOUND
 
 #include "atari.h"
-#include "pokeysnd.h"
-#include "dos_sb.h"
 #include "log.h"
+#include "pokeysnd.h"
+#include "util.h"
+
+#include "dos_sb.h"
 
 static int sound_enabled = TRUE;
 
@@ -55,9 +56,9 @@ void Sound_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-nosound") == 0)
 			sound_enabled = FALSE;
 		else if (strcmp(argv[i], "-dsprate") == 0)
-			sscanf(argv[++i], "%d", &playback_freq);
+			playback_freq = Util_sscandec(argv[++i]);
 		else if (strcmp(argv[i], "-bufsize") == 0)
-			sscanf(argv[++i], "%d", &buffersize);
+			buffersize = Util_sscandec(argv[++i]);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				sound_enabled = FALSE;
