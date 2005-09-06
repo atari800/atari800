@@ -13,7 +13,7 @@ Port (platform, OS):   Maintainer:
 ----------------------+-----------------------------------------
 DOS                    James Wilkinson  <slor@comcast.net>
 Win32                  James Wilkinson  <slor@comcast.net>
-PocketPC               Vasyl Tsvirkunov <vasyl@pacbell.net>
+WinCE                  Kostas Nakos  <knakos@phys.uoa.gr>
 Mac OS X               Mark Grebe  <markgrebe@yahoo.com>
 Atari Falcon/TT        Petr Stehlik  <pstehlik@sophics.cz>
 BeOS                   James Wilkinson  <slor@comcast.net>
