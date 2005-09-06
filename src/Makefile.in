@@ -19,25 +19,26 @@ DOC_DIR = @prefix@/share/doc/atari800
 DESTDIR =
 
 OBJS = \
-	atari.o \
-	cpu.o \
-	monitor.o \
-	sio.o \
-	devices.o \
 	antic.o \
-	gtia.o \
-	pokey.o \
-	pia.o \
-	pbi.o \
+	atari.o \
+	binload.o \
 	cartridge.o \
-	rtime.o \
+	cassette.o \
+	compfile.o \
+	cpu.o \
+	devices.o \
+	gtia.o \
+	log.o \
+	memory.o \
+	monitor.o \
+	pbi.o \
+	pia.o \
+	pokey.o \
 	prompts.o \
 	rt-config.o \
-	binload.o \
-	log.o \
-	compfile.o \
-	memory.o \
-	cassette.o \
+	rtime.o \
+	sio.o \
+	util.o \
 	@OBJS@
 
 
