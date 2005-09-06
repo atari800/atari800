@@ -2,11 +2,10 @@ Current active members of the Atari800 development team:
 --------------------------------------------------------
 
     Petr Stehlik     (maintainer)
-    Piotr Fusik
-    Jacek Poplawski  (SDL)
-    Krzysztof Nikiel (Win32)
+    Piotr Fusik      (core developer)
     Mark Grebe       (Mac OSX)
     Kostas Nakos     (Windows CE)
+    James Wilkinson  (DOS, BeOS, Win32)
 
 
 
@@ -301,3 +300,6 @@ Ken Zalewski <kennyz@nycap.rr.com>
 maddoxik <maddoxik@funnyvoid.com>
     - "Make Blank Boot Disk" option added to Disk Management UI
 
+James Wilkinson <james@slor.net>
+    - DirectX joystick support
+    - Minor enhancements and bug fixes
