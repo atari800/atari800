@@ -361,7 +361,7 @@ AC_DEFUN([A8_OPTION],[
 if [[ "$a8_target" != "basic" ]]; then
 
     dnl These objects are not compiled in BASIC target
-    OBJS="$OBJS input.o statesav.o list.o ui_basic.o ui.o"
+    OBJS="$OBJS input.o statesav.o ui_basic.o ui.o"
 
     case "$a8_target" in
         *curses)
