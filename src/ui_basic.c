@@ -43,14 +43,13 @@
 #include "rt-config.h"
 #include "atari.h"
 #include "antic.h"
-#include "list.h"
 #include "ui.h"
 #include "log.h"
 #include "input.h"
-#include "prompts.h"
 #include "platform.h"
 #include "memory.h"
 #include "screen.h" /* for atari_screen */
+#include "util.h"
 
 #ifdef USE_CURSES
 extern UBYTE curses_screen[24][40];
@@ -207,7 +206,7 @@ static void Plot(UBYTE *screen, int fg, int bg, int ch, int x, int y)
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 			video_putbyte(ptr++, colour_translation_table[data & 0x80 ? fg : bg]);
 #else
-			video_putbyte(ptr++, data & 0x80 ? fg : bg);
+			video_putbyte(ptr++, (UBYTE) (data & 0x80 ? fg : bg));
 #endif
 			data <<= 1;
 		}
@@ -558,13 +557,27 @@ static int EditFilename(UBYTE *screen, char *fname)
 	Print(screen, 0x94, 0x9a, "Filename", 4, 9);
 	if (!EditString(screen, 0x9a, 0x94, FILENAME_SIZE, fname, 4, 10))
 		return FALSE;
-	RemoveSpaces(fname);
+	Util_trim(fname);
 	return fname[0] != '\0';
 }
 
 #ifdef HAVE_OPENDIR
 
-static int FilenameSort(const char *filename1, const char *filename2)
+static char **filenames;
+#define FILENAMES_INITIAL_SIZE 256 /* preallocate 1 KB */
+static int n_filenames;
+
+/* filename must be malloc'ed or strdup'ed */
+static void FilenamesAdd(char *filename)
+{
+	if (n_filenames >= FILENAMES_INITIAL_SIZE && (n_filenames & (n_filenames - 1)) == 0) {
+		/* n_filenames is a power of two: allocate twice as much */
+		filenames = (char **) realloc(filenames, 2 * n_filenames * sizeof(char *));
+	}
+	filenames[n_filenames++] = filename;
+}
+
+static int FilenamesCmp(const char *filename1, const char *filename2)
 {
 	if (*filename1 == '[' && *filename2 != '[')
 		return -1;
@@ -577,13 +590,46 @@ static int FilenameSort(const char *filename1, const char *filename2)
 			return 1;
 	}
 
-	return strcmp(filename1, filename2);
+	return Util_stricmp(filename1, filename2);
 }
 
-static List *GetDirectory(char *directory)
+/* quicksort */
+static void FilenamesSort(const char **first, const char **last)
+{
+	if (first + 1 < last) {
+		const char **left = first + 1;
+		const char **right = last;
+		const char *pivot = *first;
+		const char *tmp;
+		while (left < right) {
+			if (FilenamesCmp(*left, pivot) <= 0)
+				left++;
+			else {
+				right--;
+				tmp = *left;
+				*left = *right;
+				*right = tmp;
+			}
+		}
+		left--;
+		tmp = *left;
+		*left = *first;
+		*first = tmp;
+		FilenamesSort(first, left);
+		FilenamesSort(right, last);
+	}
+}
+
+static void FilenamesFree(void)
+{
+	while (n_filenames > 0)
+		free(filenames[--n_filenames]);
+	free(filenames);
+}
+
+static void GetDirectory(char *directory)
 {
 	DIR *dp = NULL;
-	List *list = NULL;
 	struct stat st;
 	char fullfilename[FILENAME_MAX];
 	char *filepart;
@@ -607,72 +653,61 @@ static List *GetDirectory(char *directory)
 		*filepart++ = '/';
 #endif
 
+	filenames = (char **) Util_malloc(FILENAMES_INITIAL_SIZE * sizeof(char *));
+	n_filenames = 0;
+
 	dp = opendir(directory);
 	if (dp) {
 		struct dirent *entry;
 
-		list = ListCreate();
-		if (!list) {
-			Aprint("ListCreate(): Failed\n");
-			return NULL;
-		}
 		while ((entry = readdir(dp))) {
 			char *filename;
 
 			if (strcmp(entry->d_name, ".") == 0)
 				continue;
 
-			strcpy(filepart, entry->d_name);	/*create full filename */
+			strcpy(filepart, entry->d_name);	/* create full filename */
 			stat(fullfilename, &st);
-			if (st.st_mode & S_IFDIR) {		/*directories add as  [dir] */
+			if (st.st_mode & S_IFDIR) {
+				/* add directories as [dir] */
 				int len;
-
 				len = strlen(entry->d_name);
-				if ( (filename = (char *) malloc(len + 3)) ) {
-					strcpy(filename + 1, entry->d_name);
-					filename[0] = '[';
-					filename[len + 1] = ']';
-					filename[len + 2] = '\0';
-				}
+				filename = (char *) Util_malloc(len + 3);
+				memcpy(filename + 1, entry->d_name, len);
+				filename[0] = '[';
+				filename[len + 1] = ']';
+				filename[len + 2] = '\0';
 			}
 			else
-				filename = (char *) strdup(entry->d_name);
+				filename = (char *) Util_strdup(entry->d_name);
 
-			if (!filename) {
-				perror("strdup");
-				return NULL;
-			}
-			ListAddTail(list, filename);
+			FilenamesAdd(filename);
 		}
 
 		closedir(dp);
 
-		ListSort(list, (void *) FilenameSort);
+		FilenamesSort((const char **) filenames, (const char **) filenames + n_filenames - 1);
 	}
 	else {
 		Aprint("Error opening '%s' directory", directory);
 	}
 #ifdef DOS_DRIVES
 	/* in DOS, add all existing disk letters */
-	ListAddTail(list, strdup("[A:]"));	/* do not check A: - it's slow */
-	letter[0] = 'C';
-	while (letter[0] <= 'Z') {
+	FilenamesAdd(Util_strdup("[A:]"));	/* do not check A: - it's slow */
+	for (letter[0] = 'C'; letter[0] <= 'Z'; letter[0]++) {
 #ifdef __DJGPP__
 		stat(letter, &st);
 		if (st.st_mode & S_IXUSR)
 #endif
 		{
 			letter2[1] = letter[0];
-			ListAddTail(list, strdup(letter2));
+			FilenamesAdd(Util_strdup(letter2));
 		}
-		(letter[0])++;
 	}
 #ifdef __DJGPP__
 	_djstat_flags = s_backup;	/* return the original state */
 #endif
 #endif
-
-	return list;
 }
 
 #endif /* HAVE_OPENDIR */
@@ -680,11 +715,21 @@ static List *GetDirectory(char *directory)
 static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 {
 #ifdef HAVE_OPENDIR
-	List *list;
 	int flag = FALSE;
 	int next_dir;
 
 	do {
+		int nitems = 0;
+		int item = 0;
+		int done = FALSE;
+		int offset = 0;
+
+#define NROWS 18
+#define NCOLUMNS 2
+#define MAX_FILES (NROWS * NCOLUMNS)
+
+		char **files;
+
 #ifdef __DJGPP__
 		char helpdir[FILENAME_MAX];
 		_fixpath(directory, helpdir);
@@ -699,164 +744,147 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 		}
 #endif
 		next_dir = FALSE;
-		list = GetDirectory(directory);
-		if (list) {
-			char *filename;
-			int nitems = 0;
-			int item = 0;
-			int done = FALSE;
-			int offset = 0;
-			int nfiles = 0;
 
-#define NROWS 18
-#define NCOLUMNS 2
-#define MAX_FILES (NROWS * NCOLUMNS)
+		/* The WinCE version may spend several seconds when there are many
+		   files in the directory. */
+		/* The extra spaces are needed to clear the previous window title. */
+		TitleScreen(screen, "            Please wait...            ");
+		Atari_DisplayScreen(screen);
 
-			char *files[MAX_FILES];
+		GetDirectory(directory);
 
-			ListReset(list);
-			while (ListTraverse(list, (void *) &filename))
-				nfiles++;
+		if (n_filenames == 0) {
+			FilenamesFree();
+			BasicUIMessage("No files inside directory");
+			break;
+		}
 
-			if (!nfiles) {
-				ListFree(list, (void *) free);
-				BasicUIMessage("No files inside directory");
-				break;
-			}
+		while (!done) {
+			int ascii;
 
-			while (!done) {
-				int ascii;
+			files = filenames + offset;
+			if (offset + MAX_FILES <= n_filenames)
+				nitems = MAX_FILES;
+			else
+				nitems = n_filenames - offset;
 
-				ListReset(list);
-				for (nitems = 0; nitems < offset; nitems++)
-					ListTraverse(list, (void *) &filename);
-
-				for (nitems = 0; nitems < MAX_FILES; nitems++) {
-					if (ListTraverse(list, (void *) &filename)) {
-						files[nitems] = filename;
-					}
-					else
-						break;
-				}
-
-				ClearScreen(screen);
+			ClearScreen(screen);
 #if 1
-				TitleScreen(screen, "Select File");
+			TitleScreen(screen, "Select File");
 #else
-				TitleScreen(screen, directory);
+			TitleScreen(screen, directory);
 #endif
-				Box(screen, 0x9a, 0x94, 0, 3, 39, 23);
+			Box(screen, 0x9a, 0x94, 0, 3, 39, 23);
 
-				if (item < 0)
-					item = 0;
-				else if (item >= nitems)
-					item = nitems - 1;
-				item = Select(screen, item, nitems, files, NULL, NULL, NROWS, NCOLUMNS, 1, 4, 37/NCOLUMNS, TRUE, &ascii);
+			if (item < 0)
+				item = 0;
+			else if (item >= nitems)
+				item = nitems - 1;
+			item = Select(screen, item, nitems, files, NULL, NULL, NROWS, NCOLUMNS, 1, 4, 37 / NCOLUMNS, TRUE, &ascii);
 
-				if (item >= (nitems * 2 + NROWS)) {		/* Scroll Right */
-					if ((offset + NROWS + NROWS) < nfiles)
-						offset += NROWS;
+			if (item >= nitems * 2 + NROWS) {		/* Scroll Right */
+				if (offset + NROWS + NROWS < n_filenames)
+					offset += NROWS;
+				item = item % nitems;
+			}
+			else if (item >= nitems) {	/* Scroll Left */
+				if (offset - NROWS >= 0) {
+					offset -= NROWS;
 					item = item % nitems;
 				}
-				else if (item >= nitems) {	/* Scroll Left */
-					if ((offset - NROWS) >= 0) {
-						offset -= NROWS;
-						item = item % nitems;
-					}
-					else
-						item = 0;
-				}
-				else if (item == -2) {	/* Next directory */
-					DIR *dr;
-					do {
-						current_disk_directory = (current_disk_directory + 1) % disk_directories;
-						strcpy(directory, atari_disk_dirs[current_disk_directory]);
-						dr = opendir(directory);
-					} while (dr == NULL);
-					closedir(dr);
+				else
+					item = 0;
+			}
+			else if (item == -2) {	/* Next directory */
+				DIR *dr;
+				do {
+					current_disk_directory = (current_disk_directory + 1) % disk_directories;
+					strcpy(directory, atari_disk_dirs[current_disk_directory]);
+					dr = opendir(directory);
+				} while (dr == NULL);
+				closedir(dr);
 /*                  directory = atari_disk_dirs[current_disk_directory]; */
-					next_dir = TRUE;
-					break;
-				}
-				else if (item != -1) {
-					if (files[item][0] == '[') {	/* directory selected */
-						DIR *dr;
-						char help[FILENAME_MAX];	/* new directory */
+				next_dir = TRUE;
+				break;
+			}
+			else if (item != -1) {
+				if (files[item][0] == '[') {	/* directory selected */
+					DIR *dr;
+					char help[FILENAME_MAX];	/* new directory */
 
-						if (strcmp(files[item], "[..]") == 0) {		/* go up */
-							char *pos, *pos2;
+					if (strcmp(files[item], "[..]") == 0) {		/* go up */
+						char *pos, *pos2;
 
-							strcpy(help, directory);
-							pos = strrchr(help, '/');
-							if (!pos)
-								pos = strrchr(help, '\\');
-							if (pos) {
-								*pos = '\0';
-								/* if there is no slash in directory, add one at the end */
-								pos2 = strrchr(help, '/');
-								if (!pos2)
-									pos2 = strrchr(help, '\\');
-								if (!pos2) {
+						strcpy(help, directory);
+						pos = strrchr(help, '/');
+						if (!pos)
+							pos = strrchr(help, '\\');
+						if (pos) {
+							*pos = '\0';
+							/* if there is no slash in directory, add one at the end */
+							pos2 = strrchr(help, '/');
+							if (!pos2)
+								pos2 = strrchr(help, '\\');
+							if (!pos2) {
 #ifdef BACK_SLASH
-									*pos++ = '\\';
+								*pos++ = '\\';
 #else
-									*pos++ = '/';
+								*pos++ = '/';
 #endif
-									*pos++ = '\0';
-								}
+								*pos++ = '\0';
 							}
+						}
 
-						}
-#ifdef DOS_DRIVES
-						else if (files[item][2] == ':' && files[item][3] == ']') {	/* disk selected */
-							strcpy(help, files[item] + 1);
-							help[2] = '\\';
-							help[3] = '\0';
-						}
-#endif
-						else {	/* directory selected */
-							char lastchar = directory[strlen(directory) - 1];
-							char *pbracket = strchr(files[item], ']');
-
-							if (pbracket)
-								*pbracket = '\0';	/*cut ']' */
-							if (lastchar == '/' || lastchar == '\\')
-								sprintf(help, "%s%s", directory, files[item] + 1);	/* directory already ends with slash */
-							else
-#ifndef BACK_SLASH
-								sprintf(help, "%s/%s", directory, files[item] + 1);
-#else
-								sprintf(help, "%s\\%s", directory, files[item] + 1);
-#endif
-						}
-						dr = opendir(help);		/* check, if new directory is valid */
-						if (dr) {
-							strcpy(directory, help);
-							closedir(dr);
-							next_dir = TRUE;
-							break;
-						}
 					}
-					else {		/* normal filename selected */
+#ifdef DOS_DRIVES
+					else if (files[item][2] == ':' && files[item][3] == ']') {	/* disk selected */
+						strcpy(help, files[item] + 1);
+						help[2] = '\\';
+						help[3] = '\0';
+					}
+#endif
+					else {	/* directory selected */
 						char lastchar = directory[strlen(directory) - 1];
+						char *pbracket = strchr(files[item], ']');
+
+						if (pbracket)
+							*pbracket = '\0';	/*cut ']' */
 						if (lastchar == '/' || lastchar == '\\')
-							sprintf(full_filename, "%s%s", directory, files[item]);		/* directory already ends with slash */
+							sprintf(help, "%s%s", directory, files[item] + 1);	/* directory already ends with slash */
 						else
 #ifndef BACK_SLASH
-							sprintf(full_filename, "%s/%s", directory, files[item]);
-#else							/* DOS, TOS fs */
-							sprintf(full_filename, "%s\\%s", directory, files[item]);
+							sprintf(help, "%s/%s", directory, files[item] + 1);
+#else
+							sprintf(help, "%s\\%s", directory, files[item] + 1);
 #endif
-						flag = TRUE;
+					}
+					dr = opendir(help);		/* check, if new directory is valid */
+					if (dr) {
+						strcpy(directory, help);
+						closedir(dr);
+						next_dir = TRUE;
 						break;
 					}
 				}
-				else
+				else {		/* normal filename selected */
+					char lastchar = directory[strlen(directory) - 1];
+					if (lastchar == '/' || lastchar == '\\')
+						sprintf(full_filename, "%s%s", directory, files[item]);		/* directory already ends with slash */
+					else
+#ifndef BACK_SLASH
+						sprintf(full_filename, "%s/%s", directory, files[item]);
+#else							/* DOS, TOS fs */
+						sprintf(full_filename, "%s\\%s", directory, files[item]);
+#endif
+					flag = TRUE;
 					break;
+				}
 			}
-
-			ListFree(list, (void *) free);
+			else
+				break;
 		}
+
+		FilenamesFree();
 	} while (next_dir);
 	return flag;
 #else /* HAVE_OPENDIR */
@@ -1061,6 +1089,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.30  2005/09/06 22:58:29  pfusik
+improved file selector; fixed MSVC warnings
+
 Revision 1.29  2005/09/04 18:16:18  pfusik
 don't hide ATR/XFD file extensions in the file selector
 
