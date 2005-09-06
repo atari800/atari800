@@ -33,6 +33,7 @@
 #include "memory.h"
 #include "pokey.h"
 #include "rt-config.h"
+#include "util.h"
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 #include "input.h"
 #include "screen.h"
@@ -934,7 +935,7 @@ void ANTIC_Initialise(int *argc, char *argv[])
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-artif") == 0) {
-			global_artif_mode = argv[++i][0] - '0';
+			global_artif_mode = Util_sscandec(argv[++i]);
 			if (global_artif_mode < 0 || global_artif_mode > 4) {
 				Aprint("Invalid artifacting mode, using default.");
 				global_artif_mode = 0;
@@ -1338,7 +1339,7 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 
 
 #ifdef NEW_CYCLE_EXACT
-#define ADD_FONT_CYCLES do{}while(0)
+#define ADD_FONT_CYCLES
 #else
 #define ADD_FONT_CYCLES xpos += font_cycles[md]
 #endif
@@ -2556,7 +2557,7 @@ UBYTE ANTIC_GetDLByte(UWORD *paddr)
 	if (antic_xe_ptr != NULL && addr < 0x8000 && addr >= 0x4000)
 		result = antic_xe_ptr[addr - 0x4000];
 	else
-		result = GetByte(addr);
+		result = GetByte((UWORD) addr);
 	addr++;
 	if ((addr & 0x3FF) == 0)
 		addr -= 0x400;
@@ -2604,7 +2605,7 @@ static void ANTIC_load(void)
 		else if ((screenaddr & 0xf000) == 0xd000) {
 			CopyFromMem(screenaddr, ANTIC_memory + ANTIC_margin, bytes);
 			if (new_screenaddr & 0xfff)
-				CopyFromMem(screenaddr + bytes - 0x1000, ANTIC_memory + ANTIC_margin + bytes, new_screenaddr & 0xfff);
+				CopyFromMem((UWORD) (screenaddr + bytes - 0x1000), ANTIC_memory + ANTIC_margin + bytes, new_screenaddr & 0xfff);
 		}
 		else {
 			dCopyFromMem(screenaddr, ANTIC_memory + ANTIC_margin, bytes);
@@ -3547,9 +3548,9 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 add support for wider->narrow glitches including the interesting mode 6
 glitch */
 #ifdef NEW_CYCLE_EXACT
-		dmactl_changed=0;
+		dmactl_changed = 0;
 		/* DMACTL width changed to or from 0 */
-		if ((byte & 3) != (DMACTL & 3) && ((byte & 3)==0 || (DMACTL & 3) == 0)) {
+		if ((byte & 3) != (DMACTL & 3) && ((byte & 3) == 0 || (DMACTL & 3) == 0)) {
 			/* TODO: this is not 100% correct */
 			if (DRAWING_SCREEN) {
 				update_scanline();

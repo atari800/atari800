@@ -37,6 +37,7 @@
 #include "log.h"
 #include "screen.h"
 #include "sio.h"
+#include "util.h"
 
 #define ATARI_VISIBLE_WIDTH 336
 #define ATARI_LEFT_MARGIN 24
@@ -273,7 +274,7 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 		int mask;
 		src = font[ch][y];
 		for (mask = 1 << (SMALLFONT_WIDTH - 1); mask != 0; mask >>= 1) {
-			video_putbyte(screen, (src & mask) != 0 ? color1 : color2);
+			video_putbyte(screen, (UBYTE) ((src & mask) != 0 ? color1 : color2));
 			screen++;
 		}
 		screen += ATARI_WIDTH - SMALLFONT_WIDTH;
@@ -317,7 +318,7 @@ void Screen_DrawDiskLED(void)
 		screen = (UBYTE *) atari_screen + screen_visible_x2 - SMALLFONT_WIDTH
 			+ (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
 		if (show_disk_led)
-			SmallFont_DrawChar(screen, sio_last_drive, 0x00, sio_last_op == SIO_LAST_READ ? 0xac : 0x2b);
+			SmallFont_DrawChar(screen, sio_last_drive, 0x00, (UBYTE) (sio_last_op == SIO_LAST_READ ? 0xac : 0x2b));
 		if (show_sector_counter)
 			SmallFont_DrawInt(screen - SMALLFONT_WIDTH, sio_last_sector, 0x00, 0x88);
 	}
@@ -327,7 +328,6 @@ void Screen_FindScreenshotFilename(char *buffer)
 {
 	static int no = -1;
 	static int overwrite = FALSE;
-	FILE *fp;
 
 	for (;;) {
 		if (++no >= screenshot_no_max) {
@@ -337,10 +337,8 @@ void Screen_FindScreenshotFilename(char *buffer)
 		sprintf(buffer, screenshot_filename_format, no);
 		if (overwrite)
 			break;
-		fp = fopen(buffer, "rb");
-		if (fp == NULL)
+		if (!Util_fileexists(buffer))
 			break; /* file does not exist - we can create it */
-		fclose(fp);
 	}
 }
 
@@ -430,11 +428,7 @@ static int striendswith(const char *s1, const char *s2)
 	pos = strlen(s1) - strlen(s2);
 	if (pos < 0)
 		return 0;
-#ifdef HAVE_STRCASECMP
-	return strcasecmp(s1 + pos, s2) == 0;
-#else
-	return stricmp(s1 + pos, s2) == 0;
-#endif
+	return Util_stricmp(s1 + pos, s2) == 0;
 }
 
 #ifdef HAVE_LIBPNG
