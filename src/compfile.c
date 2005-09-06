@@ -37,6 +37,7 @@
 #include "atari.h"
 #include "compfile.h"
 #include "log.h"
+#include "util.h"
 
 /* Size of memory buffer ZLIB should use when decompressing files */
 #define ZLIB_BUFFER_SIZE	32767
@@ -85,7 +86,7 @@ static void show_file_error(FILE *stream)
 
 /* Opens a ZLIB compressed (gzip) file, creates a temporary filename, and decompresses
    the contents of the .gz file to the temporary file name. Note that *outfilename is
-   actually blank coming in and is filled by Atari_tmpfile */
+   actually blank coming in and is filled by Util_tmpfile */
 FILE *openzlib(int diskno, const char *infilename, char *outfilename)
 {
 #ifndef HAVE_LIBZ
@@ -93,58 +94,52 @@ FILE *openzlib(int diskno, const char *infilename, char *outfilename)
 	return NULL;
 #else
 	gzFile gzSource;
-	FILE *file = NULL, *outfile = NULL;
-	char *zlib_buffer = NULL;
+	FILE *fp;
 
-	zlib_buffer = malloc(ZLIB_BUFFER_SIZE + 1);
-	if (!zlib_buffer) {
-		Aprint("Could not obtain memory for zlib decompression");
-		return NULL;
-	}
-
-	outfile = Atari_tmpfile(outfilename, "wb");
-	if (outfile == NULL) {
+	fp = Util_tmpfile(outfilename, "wb");
+	if (fp == NULL) {
 		Aprint("Could not open temporary file");
-		free(zlib_buffer);
 		return NULL;
 	}
 
 	gzSource = gzopen(infilename, "rb");
 	if (!gzSource) {
 		Aprint("ZLIB could not open file %s", infilename);
-		fclose(outfile);
+		fclose(fp);
+		fp = NULL;
 	}
 	else {
 		/* Convert the gzip file to the temporary file */
-		int	result, temp;
+		int result;
+		void *zlib_buffer;
 
 		Aprint("Converting %s to %s", infilename, outfilename);
+		zlib_buffer = Util_malloc(ZLIB_BUFFER_SIZE + 1);
 		do {
 			result = gzread(gzSource, zlib_buffer, ZLIB_BUFFER_SIZE);
 			if (result > 0) {
-				if ((int) fwrite(zlib_buffer, 1, result, outfile) != result) {
+				if ((int) fwrite(zlib_buffer, 1, result, fp) != result) {
 					Aprint("Error writing to temporary file %s, disk may be full", outfilename);
 					result = -1;
 				}
 			}
 		} while (result == ZLIB_BUFFER_SIZE);
-		temp = gzclose(gzSource);
-		fclose(outfile);
+		gzclose(gzSource);
+		fclose(fp);
+		free(zlib_buffer);
 		if (result >= 0)
-			file = fopen(outfilename, "rb");
+			fp = fopen(outfilename, "rb");
 		else {
 			Aprint("Error while parsing gzip file");
-			file = NULL;
+			fp = NULL;
 		}
 	}
 
-	if (!file) {
-		free(zlib_buffer);
+	if (fp == NULL) {
 		Aprint("Removing temporary file %s", outfilename);
 		remove(outfilename);
 	}
-
-	return file;
+	return fp;
 #endif	/* HAVE_LIBZ */
 }
 
@@ -172,11 +167,7 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 		return 0;
 	}
 
-#ifdef HAVE_REWIND
-	rewind(fin);
-#else
-	fseek(fin, 0, SEEK_SET);
-#endif
+	Util_rewind(fin);
 
 	for (;;) {
 		if (feof(fin)) {
@@ -194,13 +185,13 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 			}
 			return 0;
 		}
-		
+
 		if (working && soffset() != ftell(fout)) {
-			Aprint("Output desynchronized, possibly corrupt dcm file. fin=%lu fout=%lu != %lu cursec=%u secsize=%u", 
+			Aprint("Output desynchronized, possibly corrupt dcm file. fin=%lu fout=%lu != %lu cursec=%u secsize=%u",
 				ftell(fin), ftell(fout), soffset(), cursec, secsize);
 			return 0;
 		}
-		
+
 		tmp = fgetc(fin); /* blocktype is needed on EOF error--don't corrupt it */
 		if (tmp == EOF) {
 			show_file_error(fin);
@@ -258,7 +249,7 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 					Aprint("Failed a seek in output file, cannot continue" );
 					return 0;
 				}
-			} 
+			}
 			else {
 				cursec++;
 				if (cursec == 4 && secsize != 128)
@@ -276,7 +267,7 @@ FILE *opendcm(int diskno, const char *infilename, char *outfilename)
 	FILE *infile, *outfile;
 	FILE *file = NULL;
 
-	outfile = Atari_tmpfile(outfilename, "wb");
+	outfile = Util_tmpfile(outfilename, "wb");
 	if (outfile == NULL) {
 		Aprint("Cannot create temporary file\n");
 		return NULL;
@@ -355,7 +346,7 @@ static int decode_C3(void)
 			return 0;
 		}
 
-		for (; secoff < tmpoff; secoff++) 
+		for (; secoff < tmpoff; secoff++)
 			buf[secoff] = c;
 	} while (secoff < (int) secsize);
 
@@ -573,6 +564,10 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.22  2005/09/06 22:55:06  pfusik
+fixed 32 KB memory leak per open zlib-compressed disk image;
+introduced util.[ch]
+
 Revision 1.21  2005/08/27 10:39:12  pfusik
 created compfile.h
 
