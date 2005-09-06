@@ -31,7 +31,7 @@
      (smaller and faster executable), but can be enabled with "configure"
  * much faster display in the X11 version
  * standard key mappings for F6-F10 in SDL, SVGALIB and X11 versions
- * implemented Atari 5200 keys in SDL and X11 versions
+ * implemented Atari 5200 keys in SDL, SVGALIB and X11 versions
  * MOTIF and XVIEW versions are now compilable
  * improved "configure" script
  * many small fixes and major source code clean up
