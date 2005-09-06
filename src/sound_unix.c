@@ -33,14 +33,13 @@
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 
-#include "pokeysnd.h"
+#include "atari.h"
 #include "log.h"
+#include "pokeysnd.h"
 #include "sndsave.h"
+#include "util.h"
 
 #define FRAGSIZE	7
-
-#define FALSE 0
-#define TRUE 1
 
 #define DEFDSPRATE 22050
 
@@ -64,9 +63,9 @@ void Sound_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-nosound") == 0)
 			sound_enabled = FALSE;
 		else if (strcmp(argv[i], "-dsprate") == 0)
-			sscanf(argv[++i], "%d", &dsprate);
+			dsprate = Util_sscandec(argv[++i]);
 		else if (strcmp(argv[i], "-snddelay") == 0)
-			sscanf(argv[++i], "%d", &snddelay);
+			snddelay = Util_sscandec(argv[++i]);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
@@ -102,13 +101,6 @@ void Sound_Initialise(int *argc, char *argv[])
 			return;
 		}
 #endif
-		if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &dsprate)) {
-			Aprint("%s: cannot set %d speed", dspname, dsprate);
-			close(dsp_fd);
-			sound_enabled = 0;
-			return;
-		}
-
 		i = AFMT_U8;
 		if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &i)) {
 			Aprint("%s: cannot set 8-bit sample", dspname);
@@ -125,6 +117,12 @@ void Sound_Initialise(int *argc, char *argv[])
 			return;
 		}
 #endif
+		if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &dsprate)) {
+			Aprint("%s: cannot set %d speed", dspname, dsprate);
+			close(dsp_fd);
+			sound_enabled = 0;
+			return;
+		}
 
 		fragstofill = ((dsprate * snddelay / 1000) >> FRAGSIZE) + 1;
 		if (fragstofill > 100)
@@ -214,6 +212,10 @@ void Sound_Update(void)
 
 /*
  $Log$
+ Revision 1.3  2005/09/06 22:52:11  pfusik
+ set speed after stereo, because the allowed speed may be
+ different for stereo; introduced util.[ch]
+
  Revision 1.2  2005/09/04 18:18:03  pfusik
  fixed sound on Linux
 
