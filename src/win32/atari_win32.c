@@ -22,21 +22,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <dinput.h>
 
-#include "config.h"
-#include "platform.h"
+#include "atari.h"
 #include "input.h"
-#include "screen_win32.h"
-#include "keyboard.h"
-#include "joystick.h"
-#include "main.h"
-#include "sound.h"
-#include "monitor.h"
 #include "log.h"
+#include "monitor.h"
+#include "platform.h"
+#include "sound.h"
+
+#include "joystick.h"
+#include "keyboard.h"
+#include "main.h"
+#include "screen_win32.h"
 
 static int usesnd = 1;
 
@@ -368,7 +370,7 @@ void Atari_Initialise(int *argc, char *argv[])
       argv[j++] = argv[i];
     }
   }
-    
+
   *argc = j;
 
 #ifdef SOUND
@@ -465,6 +467,9 @@ int Atari_TRIG(int num)
 
 /*
 $Log$
+Revision 1.11  2005/09/06 23:03:19  pfusik
+fixed MSVC warnings
+
 Revision 1.10  2005/08/17 22:16:05  pfusik
 flush buffered log when entering monitor; removed obsolete Atari_POT
 

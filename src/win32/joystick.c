@@ -22,15 +22,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #define DIRECTINPUT_VERSION	    0x0500
-
 #include <windows.h>
 #include <dinput.h>
+
 #include "atari.h"
-#include "main.h"
 #include "input.h"
 #include "log.h"
+
 #include "joystick.h"
+#include "main.h"
 
 HRESULT
 SetDIDwordProperty(LPDIRECTINPUTDEVICE pdev, REFGUID guidProperty,
@@ -65,7 +67,7 @@ int procjoy(int num)
       joyreacquire(num);
     return 1;
   }
-  
+
   joystat.trig = (js.rgbButtons[ 0 ] & 0x80) ? 1 : 0;
   if (js.lX == 0)
   {
@@ -121,7 +123,7 @@ static BOOL CALLBACK joycallback(LPCDIDEVICEINSTANCE pdevinst, LPVOID pv)
   dipr.diph.dwHow = DIPH_BYOFFSET;
   dipr.lMin = -1000;
   dipr.lMax = 1000;
-  
+
   if (IDirectInputDevice_SetProperty(pdev, DIPROP_RANGE, &dipr.diph) != DI_OK)
   {
     IDirectInputDevice_Release(pdev);
@@ -178,7 +180,7 @@ int initjoystick(void)
 void uninitjoystick(void)
 {
   int i;
- 
+
   for (i = 0; i < NUM_STICKS; i ++)
   {
     if (dijoy[i])
@@ -192,6 +194,9 @@ void uninitjoystick(void)
 
 /*
 $Log$
+Revision 1.2  2005/09/06 23:03:19  pfusik
+fixed MSVC warnings
+
 Revision 1.1  2005/05/13 23:27:07  emuslor
 Joystick support for DirectX
 

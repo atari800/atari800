@@ -2,7 +2,7 @@
  * keyboard.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -22,11 +22,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #define DIRECTINPUT_VERSION	    0x0500
-
 #include <windows.h>
 #include <dinput.h>
+
 #include "atari.h"
+
 #include "main.h"
 #include "keyboard.h"
 
@@ -52,7 +54,7 @@ int prockb(void)
 {
   DIDEVICEOBJECTDATA que[KEYBUFSIZE];
   DWORD dwEvents;
-  int i;
+  DWORD i;
   HRESULT hRes;
 
   dwEvents = KEYBUFSIZE;
@@ -180,6 +182,9 @@ void clearkb(void)
 
 /*
 $Log$
+Revision 1.3  2005/09/06 23:03:19  pfusik
+fixed MSVC warnings
+
 Revision 1.2  2003/02/24 09:33:32  joy
 header cleanup
 

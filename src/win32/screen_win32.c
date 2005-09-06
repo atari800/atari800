@@ -1,8 +1,8 @@
 /*
- * screen.c - Win32 port specific code
+ * screen_win32.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -22,17 +22,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #define DIRECTDRAW_VERSION 0x0500
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <ddraw.h>
 #include <stdio.h>
-#include "screen_win32.h"
-#include "main.h"
+
 #include "atari.h"
 #include "colours.h"
 #include "log.h"
+
+#include "main.h"
+#include "screen_win32.h"
 
 #define SHOWFRAME 0
 
@@ -208,9 +210,7 @@ int gron(int *argc, char *argv[])
   {
   for (i = 0; i < MAX_CLR; i++)
     {
-      palette(i, (colortable[i] >> 16) & 0xff,
-              (colortable[i] >> 8) & 0xff,
-              (colortable[i]) & 0xff);
+      palette(i, Palette_GetR(i), Palette_GetG(i), Palette_GetB(i));
     }
     IDirectDraw4_CreatePalette(lpDD, DDPCAPS_8BIT,
                              pal, &lpDDPal, NULL);
@@ -334,6 +334,9 @@ void refreshv(UBYTE * scr_ptr)
 
 /*
 $Log$
+Revision 1.3  2005/09/06 23:03:19  pfusik
+fixed MSVC warnings
+
 Revision 1.2  2005/05/13 23:28:15  emuslor
 -help cleanup
 

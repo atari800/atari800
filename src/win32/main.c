@@ -22,22 +22,25 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <process.h>
-#include "config.h"
+
+#include "atari.h"
+#include "input.h"
+#include "platform.h"
+#include "rt-config.h"
+#include "screen.h"
+#include "sound.h"
+#include "ui.h"
+
 #include "main.h"
 #include "screen_win32.h"
 #include "keyboard.h"
 #include "joystick.h"
-#include "sound.h"
-#include "input.h"
-#include "screen.h"
-#include "ui.h"
-#include "rt-config.h"
-#include "platform.h"
 
 char *myname = "Atari800";
 HWND hWndMain;
@@ -156,7 +159,11 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
     }
 
   /* initialise Atari800 core */
+#ifdef _MSC_VER
+  if (!Atari800_Initialise(&__argc, __argv))
+#else
   if (!Atari800_Initialise(&_argc, _argv))
+#endif
     return 3;
 
   msg.message = WM_NULL;
@@ -195,6 +202,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
 
 /*
 $Log$
+Revision 1.14  2005/09/06 23:03:19  pfusik
+fixed MSVC warnings
+
 Revision 1.13  2005/05/13 23:31:28  emuslor
 Joystick support for DirectX
 
