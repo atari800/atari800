@@ -32,7 +32,6 @@ EMUSRCS= \
 	devices.c \
 	gtia.c \
 	input.c \
-	list.c \
 	log.c \
 	memory.c \
 	monitor.c \
@@ -48,7 +47,8 @@ EMUSRCS= \
 	sio.c \
 	statesav.c \
 	ui.c \
-	ui_basic.c
+	ui_basic.c \
+	util.c
 
 
 SRCS = $(AMIGASRCS) $(addprefix ../,$(EMUSRCS))
