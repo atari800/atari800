@@ -31,28 +31,28 @@
 #include <dirent.h>
 #endif
 
-#include "atari.h"
-#include "cpu.h"
-#include "memory.h"
-#include "platform.h"
-#include "prompts.h"
-#include "gtia.h"
-#include "sio.h"
-#include "ui.h"
-#include "log.h"
-#include "statesav.h"
 #include "antic.h"
-#include "screen.h"
+#include "atari.h"
 #include "binload.h"
 #include "cartridge.h"
 #include "cassette.h"
-#include "rtime.h"
+#include "cpu.h"
+#include "gtia.h"
 #include "input.h"
+#include "log.h"
+#include "memory.h"
+#include "platform.h"
+#include "rt-config.h" /* enable_new_pokey, stereo_enabled, refresh_rate */
+#include "rtime.h"
+#include "screen.h"
+#include "sio.h"
+#include "statesav.h"
+#include "ui.h"
+#include "util.h"
 #ifdef SOUND
 #include "pokeysnd.h"
 #include "sndsave.h"
 #endif
-#include "rt-config.h" /* enable_new_pokey, stereo_enabled, refresh_rate */
 
 tUIDriver *ui_driver = &basic_ui_driver;
 
@@ -79,6 +79,13 @@ static void SetItemChecked(tMenuItem *mip, int checked)
 		mip->flags |= ITEM_CHECKED;
 	else
 		mip->flags &= ~ITEM_CHECKED;
+}
+
+static void CantLoad(const char *filename)
+{
+	char msg[FILENAME_MAX + 30];
+	sprintf(msg, "Can't load \"%s\"", filename);
+	ui_driver->fMessage(msg);
 }
 
 static void SelectSystem(void)
@@ -390,15 +397,21 @@ int SelectCartType(int k)
 	};
 
 	int i;
+	int none = TRUE;
 	int option = 0;
 
 	ui_driver->fInit();
 
 	for (i = 1; i <= CART_LAST_SUPPORTED; i++)
-		if (cart_kb[i] == k)
+		if (cart_kb[i] == k) {
+			none = FALSE;
 			menu_array[i].flags |= ITEM_ENABLED;
+		}
 		else
 			menu_array[i].flags &= ~ITEM_ENABLED;
+
+	if (none)
+		return CART_NONE;
 
 	option = ui_driver->fSelect("Select Cartridge Type", FALSE, option, menu_array, NULL);
 
@@ -440,60 +453,64 @@ static void CartManagement(void)
 		switch (option) {
 		case 0:
 			if (ui_driver->fGetLoadFilename(curr_cart_dir, filename)) {
-				UBYTE *image;
-				int nbytes;
 				FILE *f;
+				int nbytes;
+				int type;
+				UBYTE *image;
+				char fname[FILENAME_SIZE + 1];
+				int checksum;
+				Header header;
 
 				f = fopen(filename, "rb");
-				if (!f) {
-					perror(filename);
-					exit(1);
-				}
-				image = malloc(CART_MAX_SIZE + 1);
-				if (image == NULL) {
-					fclose(f);
-					Aprint("CartManagement: out of memory");
+				if (f == NULL) {
+					CantLoad(filename);
 					break;
 				}
-				nbytes = fread(image, 1, CART_MAX_SIZE + 1, f);
+				nbytes = Util_flen(f);
+				if ((nbytes & 0x3ff) != 0) {
+					fclose(f);
+					ui_driver->fMessage("ROM image must be full kilobytes long");
+					break;
+				}
+				type = SelectCartType(nbytes >> 10);
+				if (type == CART_NONE) {
+					fclose(f);
+					break;
+				}
+
+				image = Util_malloc(nbytes);
+				Util_rewind(f);
+				/* TODO: error handling */
+				fread(image, 1, nbytes, f);
 				fclose(f);
-				if ((nbytes & 0x3ff) == 0) {
-					int type = SelectCartType(nbytes / 1024);
-					if (type != CART_NONE) {
-						Header header;
 
-						int checksum = CART_Checksum(image, nbytes);
+				if (!ui_driver->fGetSaveFilename(fname))
+					break;
 
-						char fname[FILENAME_SIZE + 1];
+				checksum = CART_Checksum(image, nbytes);
+				header.id[0] = 'C';
+				header.id[1] = 'A';
+				header.id[2] = 'R';
+				header.id[3] = 'T';
+				header.type[0] = (type >> 24) & 0xff;
+				header.type[1] = (type >> 16) & 0xff;
+				header.type[2] = (type >> 8) & 0xff;
+				header.type[3] = type & 0xff;
+				header.checksum[0] = (checksum >> 24) & 0xff;
+				header.checksum[1] = (checksum >> 16) & 0xff;
+				header.checksum[2] = (checksum >> 8) & 0xff;
+				header.checksum[3] = checksum & 0xff;
+				header.gash[0] = '\0';
+				header.gash[1] = '\0';
+				header.gash[2] = '\0';
+				header.gash[3] = '\0';
 
-						if (!ui_driver->fGetSaveFilename(fname))
-							break;
-
-						header.id[0] = 'C';
-						header.id[1] = 'A';
-						header.id[2] = 'R';
-						header.id[3] = 'T';
-						header.type[0] = (type >> 24) & 0xff;
-						header.type[1] = (type >> 16) & 0xff;
-						header.type[2] = (type >> 8) & 0xff;
-						header.type[3] = type & 0xff;
-						header.checksum[0] = (checksum >> 24) & 0xff;
-						header.checksum[1] = (checksum >> 16) & 0xff;
-						header.checksum[2] = (checksum >> 8) & 0xff;
-						header.checksum[3] = checksum & 0xff;
-						header.gash[0] = '\0';
-						header.gash[1] = '\0';
-						header.gash[2] = '\0';
-						header.gash[3] = '\0';
-
-						sprintf(filename, "%s/%s", atari_rom_dir, fname);
-						f = fopen(filename, "wb");
-						if (f) {
-							fwrite(&header, 1, sizeof(header), f);
-							fwrite(image, 1, nbytes, f);
-							fclose(f);
-						}
-					}
+				sprintf(filename, "%s/%s", atari_rom_dir, fname);
+				f = fopen(filename, "wb");
+				if (f != NULL) { /* TODO: error message */
+					fwrite(&header, 1, sizeof(header), f);
+					fwrite(image, 1, nbytes, f);
+					fclose(f);
 				}
 				free(image);
 			}
@@ -597,10 +614,8 @@ void SoundRecording(void)
 
 		while (++no < 1000) {
 			char buffer[20];
-			FILE *fp;
 			sprintf(buffer, "atari%03d.wav", no);
-			fp = fopen(buffer, "rb");
-			if (fp == NULL) {
+			if (!Util_fileexists(buffer)) {
 				char msg[50];
 				/*file does not exist - we can create it */
 				if (OpenSoundFile(buffer))
@@ -610,7 +625,6 @@ void SoundRecording(void)
 				ui_driver->fMessage(msg);
 				return;
 			}
-			fclose(fp);
 		}
 		ui_driver->fMessage("All atariXXX.wav files exist!");
 	}
@@ -620,13 +634,6 @@ void SoundRecording(void)
 	}
 }
 #endif
-
-static void CantLoad(const char *filename)
-{
-	char msg[FILENAME_MAX + 30];
-	sprintf(msg, "Can't load \"%s\"", filename);
-	ui_driver->fMessage(msg);
-}
 
 #if 0
 /* Superseded by AutostartFile(). */
@@ -1156,6 +1163,9 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.70  2005/09/06 22:54:20  pfusik
+improved "Create Cartridge from ROM image"; introduced util.[ch]
+
 Revision 1.69  2005/08/31 20:07:06  pfusik
 auto-starting any file supported by the emulator;
 MakeBlankDisk() now writes a blank Single Density disk
