@@ -1,4 +1,41 @@
-2005-09-05  Kostas Nakos <knakos@gmail.com>
+2005-09-07  Piotr Fusik  <fox@scene.pl>
+* sound_unix.c: set speed after stereo, because the allowed speed may be
+  different for stereo
+
+* antic.c, atari.[ch], atari_falcon.c, atari_sdl.c, atari_x11.c, cartridge.c,
+  cassette.c, colours.c, compfile.c, devices.c, input.c, monitor.c,
+  rt-config.c, rtime.c, screen.c, sound_falcon.c, sound_unix.c, ui.c,
+  ui_basic.c, util.[ch], dos/sound_dos.c, Makefile.in, amiga/makefile:
+  "util" is a new useful module not related directly to the emulation
+
+* configure.ac, list.[ch], ui_basic.c, amiga/makefile: improved file selector:
+  - sorts filenames case-insensitively
+  - displays "Please wait..." while the directory is read
+  - uses less memory (dynamic array instead of linked list, bye-bye list.[ch])
+  - faster (quicksort instead of bubblesort)
+
+* compfile.c: fixed 32 KB memory leak per open zlib-compressed disk image
+
+* sio.c: optimized SIO_ChkSum()
+
+* ui.c: improved "Create Cartridge from ROM image":
+  - don't exit the emulator without any cleanup if the input file cannot
+    be read, display an error message instead
+  - display a message for files of non-standard sizes (including files that
+    are already CARTs)
+  - allocate only as much memory as necessary rather than 1 MB
+
+* antic.c, atari.c, cpu.c, pia.c, pokey.c, win32/atari_win32.c, win32/joystick.c,
+  win32/keyboard.c: silenced MSVC 6 /W3 warnings
+
+* win32/main.c: MSVC support
+
+
+2005-09-06  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: a fix for DMACTL written twice in the same scanline
+
+
+2005-09-05  Kostas Nakos  <knakos@gmail.com>
 * src/wince/* : Updated the wince port to work with Smartphones.
   Several other improvements to the port.
 
