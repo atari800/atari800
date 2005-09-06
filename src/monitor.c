@@ -34,9 +34,9 @@
 #include "pia.h"
 #include "gtia.h"
 #include "pokey.h"
-#include "prompts.h"
 #include "rt-config.h"
 #include "monitor.h"
+#include "util.h"
 
 #ifdef __PLUS
 
@@ -71,12 +71,6 @@ void monitor_printf(const char *format, ...)
 #define PLUS_EXIT_MONITOR
 
 #endif /* __PLUS */
-
-#ifdef HAVE_FFLUSH
-#define FFLUSH_STDOUT fflush(stdout)
-#else
-#define FFLUSH_STDOUT
-#endif
 
 #ifdef MONITOR_TRACE
 int tron = FALSE;
@@ -407,6 +401,16 @@ static const UBYTE optype6502[256] = {
   0x92, 0x62, 0xf2, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b };
 
 
+static void safe_gets(char *buffer, int size)
+{
+#ifdef HAVE_FFLUSH
+	fflush(stdout);
+#endif
+	fgets(buffer, size, stdin);
+	Util_chomp(buffer);
+}
+
+
 static char *get_token(char *string)
 {
 	static char *s;
@@ -442,24 +446,30 @@ static int get_dec(char *string, int *decval)
 	char *t;
 
 	t = get_token(string);
-	if (t)
-		return sscanf(t, "%d", decval);
-	return 0;
+	if (t) {
+		int x = Util_sscandec(t);
+		if (x < 0)
+			return FALSE;
+		*decval = x;
+		return TRUE;
+	}
+	return FALSE;
 }
 #endif
 
 static int get_hex(UWORD *hexval)
 {
-	unsigned int ihexval;
 	char *t;
 
 	t = get_token(NULL);
 	if (t) {
-		sscanf(t, "%X", &ihexval);
-		*hexval = ihexval;
-		return 1;
+		int x = Util_sscanhex(t);
+		if (x < 0)
+			return FALSE;
+		*hexval = (UWORD) x;
+		return TRUE;
 	}
-	return 0;
+	return FALSE;
 }
 
 static int get_hex2(UWORD *hexval1, UWORD *hexval2)
@@ -633,9 +643,7 @@ int monitor(void)
 		char *t;
 
 		printf("> ");
-		FFLUSH_STDOUT;
-		fgets(s, sizeof(s), stdin);
-		RemoveLF(s);
+		safe_gets(s, sizeof(s));
 		if (s[0])
 			memcpy(old_s, s, sizeof(s));
 		else {
@@ -779,8 +787,7 @@ int monitor(void)
 				if (!done && nlines == 15) {
 					char buf[100];
 					printf("Press return to continue ('q' to quit): ");
-					FFLUSH_STDOUT;
-					fgets(buf, sizeof(buf), stdin);
+					safe_gets(buf, sizeof(buf));
 					done = buf[0] == 'q' || buf[0] == 'Q';
 					nlines = 0;
 				}
@@ -1272,8 +1279,10 @@ int monitor(void)
 				"BRKHERE on|off                 - Set BRK opcode behaviour\n"
 				"HISTORY                        - Disasm. last %d PC addrs. giving ypos xpos\n", REMEMBER_PC_STEPS);
 			printf("Press return to continue: ");
-			FFLUSH_STDOUT;
-			getchar();
+			{
+				char buf[100];
+				safe_gets(buf, sizeof(buf));
+			}
 
 			printf(
 				"JUMPS                          - List last %d locations of JMP/JSR\n", REMEMBER_JMP_STEPS);
@@ -1442,9 +1451,7 @@ static UWORD assembler(UWORD addr)
 	printf("Simple assembler (enter empty line to exit)\n");
 	while (TRUE) {
 		printf("%04X : ", (int) addr);
-		FFLUSH_STDOUT;
-		fgets(s, sizeof(s), stdin);
-		RemoveLF(s);
+		safe_gets(s, sizeof(s));
 		if (s[0] == '\0')
 			return addr;
 
@@ -1569,6 +1576,9 @@ static UWORD assembler(UWORD addr)
 
 /*
 $Log$
+Revision 1.29  2005/09/06 22:51:05  pfusik
+introduced util.[ch]
+
 Revision 1.28  2005/09/04 18:15:17  pfusik
 initialize break_addr with 0xd000
 

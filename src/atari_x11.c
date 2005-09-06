@@ -82,6 +82,7 @@ static int motif_disk_sel = 1;
 #include "cartridge.h"
 #include "colours.h"
 #include "input.h"
+#include "log.h"
 #include "monitor.h"
 #include "screen.h"
 #include "sio.h"
@@ -89,7 +90,7 @@ static int motif_disk_sel = 1;
 #include "platform.h"
 #include "rt-config.h"
 #include "ui.h"
-#include "log.h"
+#include "util.h"
 
 #ifdef SHM
 #include <sys/ipc.h>
@@ -2312,11 +2313,7 @@ void Atari_Initialise(int *argc, char *argv[])
    Storage for Atari 800 Screen
    ============================
  */
-	image_data = (UBYTE *) malloc(ATARI_WIDTH * ATARI_HEIGHT);
-	if (!image_data) {
-		printf("Failed to allocate space for image\n");
-		exit(1);
-	}
+	image_data = (UBYTE *) Util_malloc(ATARI_WIDTH * ATARI_HEIGHT);
 
 	keyboard_consol = CONSOL_NONE;
 

@@ -56,22 +56,25 @@
 #include <zlib.h>
 #endif
 
-#include "atari.h"
-#include "cpu.h"
-#include "memory.h"
 #include "antic.h"
-#include "gtia.h"
-#include "pia.h"
-#include "pokey.h"
+#include "atari.h"
+#include "binload.h"
 #include "cartridge.h"
+#include "cassette.h"
+#include "cpu.h"
 #include "devices.h"
-#include "sio.h"
-#include "monitor.h"
-#include "platform.h"
-#include "prompts.h"
-#include "rt-config.h"
-#include "log.h"
+#include "gtia.h"
 #include "input.h"
+#include "log.h"
+#include "memory.h"
+#include "monitor.h"
+#include "pia.h"
+#include "platform.h"
+#include "pokey.h"
+#include "rt-config.h"
+#include "rtime.h"
+#include "sio.h"
+#include "util.h"
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 #include "colours.h"
 #include "screen.h"
@@ -82,9 +85,6 @@
 #include "ui.h"
 #endif
 #endif /* BASIC */
-#include "binload.h"
-#include "rtime.h"
-#include "cassette.h"
 #if defined(SOUND) && !defined(__PLUS)
 #include "sound.h"
 #include "sndsave.h"
@@ -399,7 +399,7 @@ int Atari800_InitialiseMachine(void)
 int Atari800_DetectFileType(const char *filename)
 {
 	UBYTE header[4];
-	ULONG file_length;
+	int file_length;
 	FILE *fp = fopen(filename, "rb");
 	if (fp == NULL)
 		return AFILE_ERROR;
@@ -494,8 +494,7 @@ int Atari800_DetectFileType(const char *filename)
 	default:
 		break;
 	}
-	fseek(fp, 0, SEEK_END);
-	file_length = (ULONG) ftell(fp);
+	file_length = Util_flen(fp);
 	fclose(fp);
 	switch (file_length) {
 	case 4 * 1024:
@@ -573,13 +572,6 @@ int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly
 		break;
 	}
 	return type;
-}
-
-char *safe_strncpy(char *dest, const char *src, size_t size)
-{
-	strncpy(dest, src, size);
-	dest[size - 1] = '\0';
-	return dest;
 }
 
 int Atari800_Initialise(int *argc, char *argv[])
@@ -716,19 +708,19 @@ int Atari800_Initialise(int *argc, char *argv[])
 			int a_m = FALSE;				/* error, argument missing! */
 
 			if (strcmp(argv[i], "-osa_rom") == 0) {
-				if (i_a) safe_strncpy(atari_osa_filename, argv[++i], sizeof(atari_osa_filename)); else a_m = TRUE;
+				if (i_a) Util_strlcpy(atari_osa_filename, argv[++i], sizeof(atari_osa_filename)); else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-osb_rom") == 0) {
-				if (i_a) safe_strncpy(atari_osb_filename, argv[++i], sizeof(atari_osb_filename)); else a_m = TRUE;
+				if (i_a) Util_strlcpy(atari_osb_filename, argv[++i], sizeof(atari_osb_filename)); else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-xlxe_rom") == 0) {
-				if (i_a) safe_strncpy(atari_xlxe_filename, argv[++i], sizeof(atari_xlxe_filename)); else a_m = TRUE;
+				if (i_a) Util_strlcpy(atari_xlxe_filename, argv[++i], sizeof(atari_xlxe_filename)); else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-5200_rom") == 0) {
-				if (i_a) safe_strncpy(atari_5200_filename, argv[++i], sizeof(atari_5200_filename)); else a_m = TRUE;
+				if (i_a) Util_strlcpy(atari_5200_filename, argv[++i], sizeof(atari_5200_filename)); else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-basic_rom") == 0) {
-				if (i_a) safe_strncpy(atari_basic_filename, argv[++i], sizeof(atari_basic_filename)); else a_m = TRUE;
+				if (i_a) Util_strlcpy(atari_basic_filename, argv[++i], sizeof(atari_basic_filename)); else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-cart") == 0) {
 				if (i_a) rom_filename = argv[++i]; else a_m = TRUE;
@@ -747,9 +739,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 			}
 			else if (strcmp(argv[i], "-refresh") == 0) {
 				if (i_a) {
-					sscanf(argv[++i], "%d", &refresh_rate);
-					if (refresh_rate < 1)
+					refresh_rate = Util_sscandec(argv[++i]);
+					if (refresh_rate < 1) {
+						Aprint("Invalid refresh rate, using 1");
 						refresh_rate = 1;
+					}
 				}
 				else
 					a_m = TRUE;
@@ -1441,42 +1435,6 @@ void Atari800_Frame(void)
 
 #endif /* __PLUS */
 
-/* Opens a new temporary file and fills in filename with its name.
-   filename must point to FILENAME_MAX characters buffer, but doesn't need
-   to be initialized. */
-FILE *Atari_tmpfile(char *filename, const char *mode)
-{
-	/* We cannot simply call tmpfile(), because we don't want the file
-	   to be deleted when we close it, and we need the filename. */
-
-#if defined(HAVE_MKSTEMP) && defined(HAVE_FDOPEN)
-	/* this is the only implementation without a race condition */
-	strcpy(filename, "a8XXXXXX");
-	/* mkstemp() modifies the 'X'es and returns an open descriptor */
-	return fdopen(mkstemp(filename), mode);
-#elif defined(HAVE_TMPNAM)
-	/* tmpnam() is better than mktemp(), because it creates filenames
-	   in system's temporary directory. It is also more portable. */
-	return fopen(tmpnam(filename), mode);
-#elif defined(HAVE_MKTEMP)
-	strcpy(filename, "a8XXXXXX");
-	/* mktemp() modifies the 'X'es and returns filename */
-	return fopen(mktemp(filename), mode);
-#else
-	/* Roll-your-own */
-	int no;
-	for (no = 0; no < 1000000; no++) {
-		FILE *fp;
-		sprintf(filename, "a8%06d", no);
-		fp = fopen(filename, "rb");
-		if (fp == NULL)
-			return fopen(filename, mode);
-		fclose(fp);
-	}
-	return NULL;
-#endif
-}
-
 #ifndef BASIC
 
 void MainStateSave(void)
@@ -1621,6 +1579,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.74  2005/09/06 22:48:36  pfusik
+introduced util.[ch]
+
 Revision 1.73  2005/09/03 11:29:31  pfusik
 fixed the recently broken BASIC version
 

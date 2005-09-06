@@ -28,6 +28,7 @@
 #include "atari.h"
 #include "colours.h"
 #include "log.h"
+#include "util.h"
 #ifdef __PLUS
 #include "display_win.h"
 #include "misc_win.h"
@@ -218,19 +219,19 @@ void Palette_Initialise(int *argc, char *argv[])
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-black") == 0) {
-			sscanf(argv[++i], "%d", &black);
+			black = Util_sscandec(argv[++i]);
 			adjust = TRUE;
 		}
 		else if (strcmp(argv[i], "-white") == 0) {
-			sscanf(argv[++i], "%d", &white);
+			white = Util_sscandec(argv[++i]);
 			adjust = TRUE;
 		}
 		else if (strcmp(argv[i], "-colors") == 0) {
-			sscanf(argv[++i], "%d", &colintens);
+			colintens = Util_sscandec(argv[++i]);
 			adjust = TRUE;
 		}
 		else if (strcmp(argv[i], "-colshift") == 0)
-			sscanf(argv[++i], "%d", &colshift);
+			colshift = Util_sscandec(argv[++i]);
 		else if (strcmp(argv[i], "-genpal") == 0)
 			generate = TRUE;
 		else if (strcmp(argv[i], "-palette") == 0)
@@ -258,6 +259,9 @@ void Palette_Initialise(int *argc, char *argv[])
 
 /*
 $Log$
+Revision 1.13  2005/09/06 22:48:36  pfusik
+introduced util.[ch]
+
 Revision 1.12  2005/08/31 20:21:20  pfusik
 support for Atari800Win PLus
 

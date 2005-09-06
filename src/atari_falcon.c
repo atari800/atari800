@@ -41,6 +41,7 @@
 #include "monitor.h"
 #include "sound.h"
 #include "log.h"
+#include "util.h"
 
 #include "gem.h"
 
@@ -286,7 +287,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-interlace") == 0) {
-			sscanf(argv[++i], "%d", &skip_N_frames);
+			skip_N_frames = Util_sscandec(argv[++i]);
 		}
 		else if (strcmp(argv[i], "-joyswap") == 0)
 			joyswap = TRUE;
@@ -544,7 +545,7 @@ void Atari_DisplayScreen(UBYTE *screen)
 		UBYTE *ptr_dest = kam + CENTER;
 		int j;
 
-		for(j=0; j<ATARI_HEIGHT; j++) {
+		for (j = 0; j < ATARI_HEIGHT; j++) {
 			short cycles;
 			long *long_ptr_from = ptr_from;
 			long *long_ptr_mirror = ptr_mirror;
@@ -559,25 +560,25 @@ void Atari_DisplayScreen(UBYTE *screen)
 						if (data == *long_ptr_mirror++)
 							long_ptr_dest+=2;
 						else {
-							long data2 = DoubleSizeIt((short)data);
-							long data1 = DoubleSizeIt((short)(data >> 16));
-							*(long_ptr_dest + HOST_WIDTH/4) = data1;
+							long data2 = DoubleSizeIt((short) data);
+							long data1 = DoubleSizeIt((short) (data >> 16));
+							*(long_ptr_dest + HOST_WIDTH / 4) = data1;
 							*long_ptr_dest++ = data1;
-							*(long_ptr_dest + HOST_WIDTH/4) = data2;
+							*(long_ptr_dest + HOST_WIDTH / 4) = data2;
 							*long_ptr_dest++ = data2;
 						}
-					} while(cycles--);
+					} while (cycles--);
 				}
 				else {
 					do {
 						long data = *long_ptr_from++;
-						long data2 = DoubleSizeIt((short)data);
-						long data1 = DoubleSizeIt((short)(data >> 16));
-						*(long_ptr_dest + HOST_WIDTH/4) = data1;
+						long data2 = DoubleSizeIt((short) data);
+						long data1 = DoubleSizeIt((short) (data >> 16));
+						*(long_ptr_dest + HOST_WIDTH / 4) = data1;
 						*long_ptr_dest++ = data1;
-						*(long_ptr_dest + HOST_WIDTH/4) = data2;
+						*(long_ptr_dest + HOST_WIDTH / 4) = data2;
 						*long_ptr_dest++ = data2;
-					} while(cycles--);
+					} while (cycles--);
 				}
 				ptr_dest += HOST_WIDTH;
 			}
@@ -597,7 +598,7 @@ void Atari_DisplayScreen(UBYTE *screen)
 						CHECK_AND_WRITE
 						CHECK_AND_WRITE
 						CHECK_AND_WRITE
-					} while(cycles--);
+					} while (cycles--);
 				}
 				else {
 					do {
@@ -605,7 +606,7 @@ void Atari_DisplayScreen(UBYTE *screen)
 						*long_ptr_dest++ = *long_ptr_from++;
 						*long_ptr_dest++ = *long_ptr_from++;
 						*long_ptr_dest++ = *long_ptr_from++;
-					} while(cycles--);
+					} while (cycles--);
 				}
 			}
 

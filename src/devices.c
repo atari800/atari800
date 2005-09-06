@@ -67,6 +67,7 @@
 #include "binload.h"
 #include "pia.h" /* atari_os */
 #include "sio.h"
+#include "util.h"
 #ifdef R_IO_DEVICE
 #include "rdevice.h"
 #endif
@@ -362,7 +363,7 @@ void Device_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-devbug") == 0)
 			devbug = TRUE;
 		else if (strcmp(argv[i], "-hdreadonly") == 0)
-			hd_read_only = (argv[++i][0] != '0');
+			hd_read_only = Util_sscanbool(argv[++i]);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Aprint("\t-H1 <path>       Set path for H1: device");
@@ -730,11 +731,7 @@ static void Device_HHOPEN(void)
 		else
 			fprintf(fp[fid], "999 FREE SECTORS\n");
 
-#ifdef HAVE_REWIND
-		rewind(fp[fid]);
-#else
-		fseek(fp[fid], 0, SEEK_SET);
-#endif
+		Util_rewind(fp[fid]);
 		h_textmode[fid] = TRUE;
 		regY = 1;
 		ClrN;
@@ -1628,7 +1625,7 @@ static void Device_PHOPEN(void)
 	if (phf)
 		Device_PHCLOS();
 
-	phf = Atari_tmpfile(spool_file, "w");
+	phf = Util_tmpfile(spool_file, "w");
 	if (phf) {
 		regY = 1;
 		ClrN;
@@ -2304,6 +2301,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.40  2005/09/06 22:48:36  pfusik
+introduced util.[ch]
+
 Revision 1.39  2005/09/03 11:56:42  pfusik
 BASIC version: improved "K:" input and "E:" output
 

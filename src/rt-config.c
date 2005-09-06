@@ -31,6 +31,7 @@
 #include "prompts.h"
 #include "rt-config.h"
 #include "log.h"
+#include "util.h"
 
 #ifdef SUPPORTS_ATARI_CONFIGURE
 /* This procedure processes lines not recognized by RtConfigLoad. */
@@ -46,8 +47,6 @@ void Atari_ConfigSave(FILE *fp);
 /* This function set the configuration parameters to default values */
 void Atari_ConfigInit(void);
 #endif
-
-char *safe_strncpy(char *dest, const char *src, size_t size);
 
 char atari_osa_filename[FILENAME_MAX];
 char atari_osb_filename[FILENAME_MAX];
@@ -212,81 +211,81 @@ int RtConfigLoad(const char *alternate_config_filename)
 	Aprint("Using Atari800 config file: %s\nCreated by %s", fname, string);
 
 	while (fgets(string, sizeof(string), fp)) {
-		RemoveLF(string);
+		Util_chomp(string);
 		ptr = strchr(string, '=');
 		if (ptr) {
 			*ptr++ = '\0';
-			RemoveSpaces(string);
-			RemoveSpaces(ptr);
+			Util_trim(string);
+			Util_trim(ptr);
 
 			if (strcmp(string, "OS/A_ROM") == 0)
-				safe_strncpy(atari_osa_filename, ptr, sizeof(atari_osa_filename));
+				Util_strlcpy(atari_osa_filename, ptr, sizeof(atari_osa_filename));
 			else if (strcmp(string, "OS/B_ROM") == 0)
-				safe_strncpy(atari_osb_filename, ptr, sizeof(atari_osb_filename));
+				Util_strlcpy(atari_osb_filename, ptr, sizeof(atari_osb_filename));
 			else if (strcmp(string, "XL/XE_ROM") == 0)
-				safe_strncpy(atari_xlxe_filename, ptr, sizeof(atari_xlxe_filename));
+				Util_strlcpy(atari_xlxe_filename, ptr, sizeof(atari_xlxe_filename));
 			else if (strcmp(string, "BASIC_ROM") == 0)
-				safe_strncpy(atari_basic_filename, ptr, sizeof(atari_basic_filename));
+				Util_strlcpy(atari_basic_filename, ptr, sizeof(atari_basic_filename));
 			else if (strcmp(string, "5200_ROM") == 0)
-				safe_strncpy(atari_5200_filename, ptr, sizeof(atari_5200_filename));
+				Util_strlcpy(atari_5200_filename, ptr, sizeof(atari_5200_filename));
 			else if (strcmp(string, "DISK_DIR") == 0) {
 				if (disk_directories == MAX_DIRECTORIES)
 					Aprint("All disk directory slots used!");
 				else
-					safe_strncpy(atari_disk_dirs[disk_directories++], ptr, sizeof(atari_disk_dirs[0]));
+					Util_strlcpy(atari_disk_dirs[disk_directories++], ptr, sizeof(atari_disk_dirs[0]));
 			}
 			else if (strcmp(string, "ROM_DIR") == 0)
-				safe_strncpy(atari_rom_dir, ptr, sizeof(atari_rom_dir));
+				Util_strlcpy(atari_rom_dir, ptr, sizeof(atari_rom_dir));
 			else if (strcmp(string, "H1_DIR") == 0)
-				safe_strncpy(atari_h1_dir, ptr, sizeof(atari_h1_dir));
+				Util_strlcpy(atari_h1_dir, ptr, sizeof(atari_h1_dir));
 			else if (strcmp(string, "H2_DIR") == 0)
-				safe_strncpy(atari_h2_dir, ptr, sizeof(atari_h2_dir));
+				Util_strlcpy(atari_h2_dir, ptr, sizeof(atari_h2_dir));
 			else if (strcmp(string, "H3_DIR") == 0)
-				safe_strncpy(atari_h3_dir, ptr, sizeof(atari_h3_dir));
+				Util_strlcpy(atari_h3_dir, ptr, sizeof(atari_h3_dir));
 			else if (strcmp(string, "H4_DIR") == 0)
-				safe_strncpy(atari_h4_dir, ptr, sizeof(atari_h4_dir));
+				Util_strlcpy(atari_h4_dir, ptr, sizeof(atari_h4_dir));
 			else if (strcmp(string, "HD_READ_ONLY") == 0)
-				sscanf(ptr, "%d", &hd_read_only);
+				hd_read_only = Util_sscandec(ptr);
 			else if (strcmp(string, "EXE_DIR") == 0)
-				safe_strncpy(atari_exe_dir, ptr, sizeof(atari_exe_dir));
+				Util_strlcpy(atari_exe_dir, ptr, sizeof(atari_exe_dir));
 			else if (strcmp(string, "STATE_DIR") == 0)
-				safe_strncpy(atari_state_dir, ptr, sizeof(atari_state_dir));
+				Util_strlcpy(atari_state_dir, ptr, sizeof(atari_state_dir));
 			else if (strcmp(string, "PRINT_COMMAND") == 0) {
 				if (RtIsPrintCommandSafe(ptr))
-					safe_strncpy(print_command, ptr, sizeof(print_command));
+					Util_strlcpy(print_command, ptr, sizeof(print_command));
 				else
 					Aprint("Unsafe PRINT_COMMAND ignored");
 			}
 			else if (strcmp(string, "SCREEN_REFRESH_RATIO") == 0)
-				sscanf(ptr, "%d", &refresh_rate);
+				refresh_rate = Util_sscandec(ptr);
 			else if (strcmp(string, "DISABLE_BASIC") == 0)
-				sscanf(ptr, "%d", &disable_basic);
+				disable_basic = Util_sscanbool(ptr);
 			else if (strcmp(string, "ENABLE_SIO_PATCH") == 0) {
-				sscanf(ptr, "%d", &enable_sio_patch);
+				enable_sio_patch = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "ENABLE_H_PATCH") == 0) {
-				sscanf(ptr, "%d", &enable_h_patch);
+				enable_h_patch = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "ENABLE_P_PATCH") == 0) {
-				sscanf(ptr, "%d", &enable_p_patch);
+				enable_p_patch = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "ENABLE_R_PATCH") == 0) {
-				sscanf(ptr, "%d", &enable_r_patch);
+				enable_r_patch = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "ENABLE_NEW_POKEY") == 0) {
-				sscanf(ptr, "%d", &enable_new_pokey);
+				enable_new_pokey = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "STEREO_POKEY") == 0) {
-				sscanf(ptr, "%d", &stereo_enabled);
+				stereo_enabled = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "SPEAKER_SOUND") == 0) {
 #ifdef CONSOLE_SOUND
-				sscanf(ptr, "%d", &console_sound_enabled);
+				console_sound_enabled = Util_sscanbool(ptr);
 #endif
 			}
 			else if (strcmp(string, "SERIO_SOUND") == 0) {
 #ifdef SERIO_SOUND
-				sscanf(ptr, "%d", &serio_sound_enabled);
+				serio_sound_enabled = Util_sscanbool(ptr);
 #endif
 			}
 			else if (strcmp(string, "MACHINE_TYPE") == 0) {
@@ -578,6 +577,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.28  2005/09/06 22:51:05  pfusik
+introduced util.[ch]
+
 Revision 1.27  2005/08/31 20:00:47  pfusik
 support for Atari800Win PLus
 

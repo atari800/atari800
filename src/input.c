@@ -35,6 +35,7 @@
 #include "pia.h"
 #include "platform.h"
 #include "pokey.h"
+#include "util.h"
 #ifndef CURSES_BASIC
 #include "screen.h" /* for atari_screen */
 #endif
@@ -136,14 +137,14 @@ void INPUT_Initialise(int *argc, char *argv[])
 				mouse_mode = MOUSE_JOY;
 		}
 		else if (strcmp(argv[i], "-mouseport") == 0) {
-			mouse_port = argv[++i][0] - '1';
+			mouse_port = Util_sscandec(argv[++i]) - 1;
 			if (mouse_port < 0 || mouse_port > 3) {
 				Aprint("Invalid mouse port, using 1");
 				mouse_port = 0;
 			}
 		}
 		else if (strcmp(argv[i], "-mousespeed") == 0) {
-			mouse_speed = argv[++i][0] - '0';
+			mouse_speed = Util_sscandec(argv[++i]);
 			if (mouse_speed < 1 || mouse_speed > 9) {
 				Aprint("Invalid mouse speed, using 3");
 				mouse_speed = 3;

@@ -43,13 +43,13 @@
 		DEFAULT_WIDTH_MODE (ATARI_WIDTH-2*24), SHORTER_WIDTH_MODE
 		(ATARI_WIDTH-2*24-2*8), and FULL_WIDTH_MODE (ATARI_WIDTH)
 	      - checking if bpp is supported (8,16,32 only), if not - switching
-		to 8bit	
-	      - moved fps stuff to CountFPS		
+		to 8bit
+	      - moved fps stuff to CountFPS
 	      - moved "bug reports" message up, so user could see that when
 		init fails
    04-12-2001 - split Atari_DisplayScreen (DisplayWithoutScaling and
                 DisplayWithScaling)
-	      - put Aflushlog everywhere	
+	      - put Aflushlog everywhere
    03-12-2001 - 32 bit support
    	      - rewrited Atari_DisplayScreen function a little
 	      - LALT+j swaps only keyboard emulated joysticks now
@@ -62,10 +62,10 @@
 	      - optional fsp counter
 	      - changing bpp in realtime with ALT+E
 	      - I am not unrolling loop in Atari_DisplayScreen anymore, fps
-		counter show that it doesn't help	
+		counter show that it doesn't help
 	      - "shorter mode" (changed with ALT+G) - without 8 columns on left
-		and right side, so you can set 320x240 or 640x480 mode now	
-	      - mode info	
+		and right side, so you can set 320x240 or 640x480 mode now
+	      - mode info
    20-11-2001 - ui shortcuts
    	      - fix small problem with LALT+b
 	      - removed global variable "done"
@@ -76,12 +76,12 @@
 		Warning! Only 2 joysticks support and much reduced input.
 	      - swapping joysticks with LALT+j
    18-11-2001 - couldn't work with code last few days, but I am back and alive!
- 	      - I found memory related bug in ui.c, searching for more	
+ 	      - I found memory related bug in ui.c, searching for more
 	      - fixed problem with switching fullscreen when in ui
 	      - fully configurable two joysticks emulation (I checked it in
 		basic and zybex, second trig work bad in kikstart, don't know
 		why, yet)
-	      - now using len in SDL_Sound_Update	
+	      - now using len in SDL_Sound_Update
    15-11-2001 - fullscreen switching
               - scaling only with ratio >= 1.0
 	      - more keyboard updates
@@ -90,7 +90,7 @@
 		"-fomit-frame-pointer" - so compiler can use pentium
 		instructions and one additional register
 	      - fantastic new feature "Black-and-White video", you can switch
-		BW mode with ALT+b	
+		BW mode with ALT+b
    14-11-2001 - scaling with any ratio supported
    	      - keyboard updates
 	      - aspect ratio
@@ -155,6 +155,7 @@
 #include "memory.h"
 #include "pia.h"
 #include "log.h"
+#include "util.h"
 
 /* you can set that variables in code, or change it when emulator is running
    I am not sure what to do with sound_enabled (can't turn it on inside
@@ -247,7 +248,7 @@ int SDLKeyBind(int *retval, char *sdlKeySymIntStr)
 	}
 
 	/* make an int out of the keySymIntStr... */
-	sscanf(sdlKeySymIntStr, "%d", &ksym);
+	ksym = Util_sscandec(sdlKeySymIntStr);
 
 	if (ksym > SDLK_FIRST && ksym < SDLK_LAST) {
 		*retval = ksym;
@@ -556,7 +557,7 @@ void SDL_Sound_Update(void *userdata, Uint8 *stream, int len)
 	Pokey_process(dsp_buffer, len);
 	if (sound_bits == 8)
 		SDL_MixAudio(stream, dsp_buffer, len, SOUND_VOLUME);
-	else	
+	else
 		SDL_MixAudio(stream, dsp_buffer, 2 * len, SOUND_VOLUME);
 }
 
@@ -574,9 +575,9 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 			Aprint("audio 16bit enabled");
 			sound_flags |= SND_BIT16;
 			sound_bits = 16;
-		}	
+		}
 		else if (strcmp(argv[i], "-dsprate") == 0)
-			sscanf(argv[++i], "%d", &dsprate);
+			dsprate = Util_sscandec(argv[++i]);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Aprint("\t-sound           Enable sound");
@@ -726,8 +727,7 @@ int Atari_Keyboard(void)
 		key_control = 0;
 
 	/*
-	if( event.type == 2 || event.type == 3 )
-	{
+	if (event.type == 2 || event.type == 3) {
 		Aprint("E:%x S:%x C:%x K:%x U:%x M:%x",event.type,key_shift,key_control,lastkey,event.key.keysym.unicode,event.key.keysym.mod);
 	}
 	*/
@@ -897,7 +897,7 @@ int Atari_Keyboard(void)
 			return AKEY_CTRL_9;
 		}
 	}
-	
+
 	/* Uses only UNICODE translation, no shift states */
 	switch (lastuni) {
 	case 1:
@@ -1168,7 +1168,7 @@ void Init_Joysticks(int *argc, char *argv[])
 	char *lpt_joy1 = NULL;
 	int i;
 	int j;
-	
+
 	for (i = j = 1; i < *argc; i++) {
 		if (!strcmp(argv[i], "-joy0")) {
 			if (i == *argc - 1) {
@@ -1189,7 +1189,7 @@ void Init_Joysticks(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
-	
+
 	if (lpt_joy0 != NULL) {				/* LPT1 joystick */
 		fd_joystick0 = open(lpt_joy0, O_RDONLY);
 		if (fd_joystick0 == -1)
@@ -1231,15 +1231,15 @@ void Atari_Initialise(int *argc, char *argv[])
 			Aprint("no joystick");
 		}
 		else if (strcmp(argv[i], "-width") == 0) {
-			sscanf(argv[++i], "%d", &width);
+			width = Util_sscandec(argv[++i]);
 			Aprint("width set", width);
 		}
 		else if (strcmp(argv[i], "-height") == 0) {
-			sscanf(argv[++i], "%d", &height);
+			height = Util_sscandec(argv[++i]);
 			Aprint("height set");
 		}
 		else if (strcmp(argv[i], "-bpp") == 0) {
-			sscanf(argv[++i], "%d", &bpp);
+			bpp = Util_sscandec(argv[++i]);
 			Aprint("bpp set");
 		}
 		else if (strcmp(argv[i], "-fullscreen") == 0) {
@@ -1706,7 +1706,7 @@ void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 	{
 		SDL_JoystickUpdate();
 	}
-	
+
 	if (fd_joystick0 != -1)
 		*s0 = get_LPT_joystick_state(fd_joystick0);
 	else if (joystick0 != NULL)
@@ -1844,6 +1844,9 @@ int main(int argc, char **argv)
 
 /*
  $Log$
+ Revision 1.53  2005/09/06 22:48:36  pfusik
+ introduced util.[ch]
+
  Revision 1.52  2005/08/27 10:41:51  pfusik
  now compiles with --disable-sound
 

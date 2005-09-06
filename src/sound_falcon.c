@@ -2,7 +2,7 @@
  * sound_falcon.c - high-level sound routines for the Atari Falcon port
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -27,10 +27,9 @@
 #ifdef SOUND
 #include <stdio.h>
 #include <osbind.h>
+#include "atari.h"
 #include "pokeysnd.h"
-
-#define FALSE 0
-#define TRUE 1
+#include "util.h"
 
 extern int get_cookie(long cookie, long *value);
 
@@ -50,10 +49,6 @@ static int sndbufsize = SNDBUFSIZE;
 
 /* Atari DMA sound hardware */
 extern void timer_A(void);
-
-#ifndef UBYTE
-#define UBYTE	unsigned char
-#endif
 
 #define	TIMERA		*(long *)0x134
 
@@ -135,7 +130,7 @@ void Sound_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-nosound") == 0)
 			sound_enabled = FALSE;
 		else if (strcmp(argv[i], "-dsprate") == 0) {
-			sscanf(argv[++i], "%d", &dsprate);
+			dsprate = Util_sscandec(argv[++i]);
 			if (dsprate == RATE50KHZ)
 				sndbufsize = 4*SNDBUFSIZE;
 			else if (dsprate == RATE25KHZ)

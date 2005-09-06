@@ -31,6 +31,7 @@
 
 #include "atari.h"
 #include "log.h"
+#include "util.h"
 
 int rtime_enabled = 1;
 
@@ -49,7 +50,7 @@ void RTIME_Initialise(int *argc, char *argv[])
 	int j;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-rtime") == 0)
-			rtime_enabled = (argv[++i][0] != '0');
+			rtime_enabled = Util_sscanbool(argv[++i]);
 		else
 			argv[j++] = argv[i];
 	}

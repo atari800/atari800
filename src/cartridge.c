@@ -34,6 +34,7 @@
 #include "pia.h"
 #include "rt-config.h"
 #include "rtime.h"
+#include "util.h"
 #ifndef BASIC
 #include "statesav.h"
 #endif
@@ -524,21 +525,16 @@ int CART_Insert(const char *filename)
 	if (fp == NULL)
 		return CART_CANT_OPEN;
 	/* check file length */
-	fseek(fp, 0L, SEEK_END);
-	len = ftell(fp);
-	fseek(fp, 0L, SEEK_SET);
-        
+	len = Util_flen(fp);
+	Util_rewind(fp);
+
 	/* Save Filename for state save */
 	strcpy(cart_filename, filename);
 
 	/* if full kilobytes, assume it is raw image */
 	if ((len & 0x3ff) == 0) {
 		/* alloc memory and read data */
-		cart_image = (UBYTE *) malloc(len);
-		if (cart_image == NULL) {
-			fclose(fp);
-			return CART_BAD_FORMAT;
-		}
+		cart_image = (UBYTE *) Util_malloc(len);
 		fread(cart_image, 1, len, fp);
 		fclose(fp);
 		/* find cart type */
@@ -573,11 +569,7 @@ int CART_Insert(const char *filename)
 			int checksum;
 			len = cart_kb[type] << 10;
 			/* alloc memory and read data */
-			cart_image = (UBYTE *) malloc(len);
-			if (cart_image == NULL) {
-				fclose(fp);
-				return CART_BAD_FORMAT;
-			}
+			cart_image = (UBYTE *) Util_malloc(len);
 			fread(cart_image, 1, len, fp);
 			fclose(fp);
 			checksum = (header[8] << 24) |

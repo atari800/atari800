@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "prompts.h"
+#include "util.h"
 
 void GetString(char *message, char *string)
 {
@@ -33,7 +34,7 @@ void GetString(char *message, char *string)
 
 	printf(message, string);
 	fgets(gash, sizeof(gash), stdin);
-	RemoveLF(gash);
+	Util_chomp(gash);
 	if (strlen(gash) > 0)
 		strcpy(string, gash);
 }
@@ -44,7 +45,7 @@ void GetNumber(char *message, int *num)
 
 	printf(message, *num);
 	fgets(gash, sizeof(gash), stdin);
-	RemoveLF(gash);
+	Util_chomp(gash);
 	if (strlen(gash) > 0)
 		sscanf(gash, "\n%d", num);
 }
@@ -80,46 +81,4 @@ void GetYesNoAsInt(char *message, int *num)
 	char yn = (*num > 0) ? 'Y' : 'N';
 	GetYesNo(message, &yn);
 	*num = (yn == 'Y') ? 1 : 0;
-}
-
-void RemoveSpaces(char *string)
-{
-	char *p = string;
-	char *q;
-	/* skip leading whitespace */
-	while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
-		p++;
-	/* now p points at the first non-whitespace character */
-
-	if (*p == '\0') {
-		/* only whitespace */
-		*string = '\0';
-		return;
-	}
-
-	q = string + strlen(string);
-	/* skip trailing whitespace */
-	/* we have found p < q such that *p is non-whitespace,
-	   so this loop terminates with q >= p */
-	do
-		q--;
-	while (*q == ' ' || *q == '\t' || *q == '\r' || *q == '\n');
-
-	/* now q points at the last non-whitespace character */
-	/* cut off trailing whitespace */
-	*++q = '\0';
-
-	/* move to string */
-	memmove(string, p, q + 1 - p);
-}
-
-void RemoveLF(char *string)
-{
-	int len;
-
-	len = strlen(string);
-	if (len >= 2 && string[len - 1] == '\n' && string[len - 2] == '\r')
-		string[len - 2] = '\0';
-	else if (len >= 1 && (string[len - 1] == '\n' || string[len - 1] == '\r'))
-		string[len - 1] = '\0';
 }
