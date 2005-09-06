@@ -35,11 +35,12 @@
 #include "cpu.h"
 #include "log.h"
 #include "memory.h"
-#include "sio.h"
 #include "platform.h"
 #include "pokey.h"
 #include "pokeysnd.h"
 #include "rt-config.h"
+#include "sio.h"
+#include "util.h"
 #ifndef BASIC
 #include "statesav.h"
 #endif
@@ -247,8 +248,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		/* XFD (may be temporary from XFZ/XFD.GZ) */
 		ULONG file_length;
 
-		fseek(f, 0, SEEK_END);
-		file_length = (ULONG) ftell(f);
+		file_length = (ULONG) Util_flen(f);
 
 		header_size[diskno - 1] = 0;
 
@@ -587,7 +587,7 @@ static int DriveStatus(int unit, UBYTE * buffer)
 		buffer[3] = 0 ;
 		return 'C';
 	}
-		
+
 	if (drive_status[unit] != Off) {
 		buffer[0] = 16;         /* drive active */
 		buffer[1] = 255;        /* WD 177x OK */
@@ -801,15 +801,23 @@ void SIO(void)
 
 UBYTE SIO_ChkSum(const UBYTE *buffer, int length)
 {
+#if 0
+	/* old, less efficient version */
 	int i;
 	int checksum = 0;
-
 	for (i = 0; i < length; i++, buffer++) {
 		checksum += *buffer;
 		while (checksum > 255)
 			checksum -= 255;
 	}
-
+#else
+	int checksum = 0;
+	while (--length >= 0)
+		checksum += *buffer++;
+	do
+		checksum = (checksum & 0xff) + (checksum >> 8);
+	while (checksum > 255);
+#endif
 	return checksum;
 }
 
@@ -1236,6 +1244,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.36  2005/09/06 22:52:56  pfusik
+optimized SIO_ChkSum(); introduced util.[ch]
+
 Revision 1.35  2005/08/27 10:39:12  pfusik
 created compfile.h
 
