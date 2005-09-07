@@ -81,12 +81,20 @@ static void SetItemChecked(tMenuItem *mip, int checked)
 		mip->flags &= ~ITEM_CHECKED;
 }
 
-static void CantLoad(const char *filename)
+static void FilenameMessage(const char *format, const char *filename)
 {
 	char msg[FILENAME_MAX + 30];
-	sprintf(msg, "Can't load \"%s\"", filename);
+	sprintf(msg, format, filename);
 	ui_driver->fMessage(msg);
 }
+
+static const char * const cant_load = "Can't load \"%s\"";
+static const char * const cant_save = "Can't save \"%s\"";
+static const char * const created = "Created \"%s\"";
+
+#define CantLoad(filename) FilenameMessage(cant_load, filename)
+#define CantSave(filename) FilenameMessage(cant_save, filename)
+#define Created(filename) FilenameMessage(created, filename)
 
 static void SelectSystem(void)
 {
@@ -193,7 +201,7 @@ static void DiskManagement(void)
 		{"SSET", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, NULL, "Save Disk Set", NULL, 8},
 		{"LSET", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, NULL, "Load Disk Set", NULL, 9},
 		{"RDSK", ITEM_ENABLED | ITEM_ACTION, NULL, "Rotate Disks", NULL, 10},
-		{"MDSK", ITEM_ENABLED | ITEM_ACTION | ITEM_MULTI, NULL, "Make Blank Boot Disk", NULL, 11},
+		{"MDSK", ITEM_ENABLED | ITEM_ACTION | ITEM_MULTI, NULL, "Make Blank ATR Disk", NULL, 11},
 		MENU_END
 	};
 
@@ -229,7 +237,8 @@ static void DiskManagement(void)
 /*              pathname=atari_disk_dirs[current_disk_directory]; */
 
 				if (dsknum == 11) {
-					ui_driver->fGetSaveFilename(filename);
+					if (!ui_driver->fGetSaveFilename(filename))
+						continue;
 					strcpy(setname, curr_disk_dir);
 					if (*setname) {
 						char last = setname[strlen(setname) - 1];
@@ -242,16 +251,22 @@ static void DiskManagement(void)
 					}
 					strcat(setname, filename);
 					setFile = fopen(setname, "wb");
-					MakeBlankDisk(setFile);
-					fclose(setFile);
-					break;
+					if (setFile != NULL) {
+						MakeBlankDisk(setFile);
+						fclose(setFile);
+						Created(setname);
+					}
+					else
+						CantSave(setname);
+					continue;
 				}
 				if (curr_disk_dir[0] == '\0')
 					strcpy(curr_disk_dir, atari_disk_dirs[current_disk_directory]);
 
 				if (dsknum == 8) {	/* Save a disk set */
 					/* Get the filename */
-					ui_driver->fGetSaveFilename(filename);
+					if (!ui_driver->fGetSaveFilename(filename))
+						continue;
 
 					/* Put it in the current disks directory */
 					strcpy(setname, curr_disk_dir);
@@ -268,11 +283,14 @@ static void DiskManagement(void)
 
 					/* Write the current disk file names out to it */
 					setFile = fopen(setname, "w");
-					if (setFile) {
+					if (setFile != NULL) {
 						for (i = 0; i < 8; i++)
 							fprintf(setFile, "%s\n", sio_filename[i]);
+						fclose(setFile);
+						Created(setname);
 					}
-					fclose(setFile);
+					else
+						CantSave(setname);
 				}
 				else {
 					while (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
@@ -291,7 +309,7 @@ static void DiskManagement(void)
 							}
 							else if (dsknum == 9) {	/* Load a disk set */
 								setFile = fopen(filename, "r");
-								if (setFile) {
+								if (setFile != NULL) {
 									for (i = 0; i < 8; i++) {
 										/* Get the disk filename from the set file */
 										fgets(diskfilename, FILENAME_MAX, setFile);
@@ -310,6 +328,8 @@ static void DiskManagement(void)
 									}
 									fclose(setFile);
 								}
+								else
+									CantLoad(filename);
 							}
 							break;
 #ifdef HAVE_OPENDIR
@@ -480,8 +500,11 @@ static void CartManagement(void)
 
 				image = Util_malloc(nbytes);
 				Util_rewind(f);
-				/* TODO: error handling */
-				fread(image, 1, nbytes, f);
+				if ((int) fread(image, 1, nbytes, f) != nbytes) {
+					fclose(f);
+					CantLoad(filename);
+					break;
+				}
 				fclose(f);
 
 				if (!ui_driver->fGetSaveFilename(fname))
@@ -507,11 +530,13 @@ static void CartManagement(void)
 
 				sprintf(filename, "%s/%s", atari_rom_dir, fname);
 				f = fopen(filename, "wb");
-				if (f != NULL) { /* TODO: error message */
+				if (f != NULL) {
 					fwrite(&header, 1, sizeof(header), f);
 					fwrite(image, 1, nbytes, f);
 					fclose(f);
 				}
+				else
+					CantSave(filename);
 				free(image);
 			}
 			break;
@@ -520,7 +545,7 @@ static void CartManagement(void)
 				FILE *f;
 
 				f = fopen(filename, "rb");
-				if (f) {
+				if (f != NULL) {
 					Header header;
 					UBYTE *image;
 					char fname[FILENAME_SIZE + 1];
@@ -532,12 +557,7 @@ static void CartManagement(void)
 						ui_driver->fMessage("Not a CART file");
 						break;
 					}
-					image = malloc(CART_MAX_SIZE + 1);
-					if (image == NULL) {
-						fclose(f);
-						Aprint("CartManagement: out of memory");
-						break;
-					}
+					image = Util_malloc(CART_MAX_SIZE + 1);
 					nbytes = fread(image, 1, CART_MAX_SIZE + 1, f);
 
 					fclose(f);
@@ -554,6 +574,8 @@ static void CartManagement(void)
 					}
 					free(image);
 				}
+				else
+					CantLoad(filename);
 			}
 			break;
 		case 2:
@@ -561,7 +583,7 @@ static void CartManagement(void)
 				int r = CART_Insert(filename);
 				switch (r) {
 				case CART_CANT_OPEN:
-					ui_driver->fMessage("Can't open cartridge image file");
+					CantLoad(filename);
 					break;
 				case CART_BAD_FORMAT:
 					ui_driver->fMessage("Unknown cartridge format");
@@ -759,11 +781,8 @@ static void SaveState(void)
 	}
 	strcat(statename, fname);
 
-	if (!SaveAtariState(statename, "wb", TRUE)) {
-		char msg[FILENAME_MAX + 30];
-		sprintf(msg, "Can't save \"%s\"", statename);
-		ui_driver->fMessage(msg);
-	}
+	if (!SaveAtariState(statename, "wb", TRUE))
+		CantSave(statename);
 }
 
 static void LoadState(void)
@@ -1163,6 +1182,9 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.71  2005/09/07 21:54:02  pfusik
+improved "Save Disk Set" and "Make blank ATR disk"
+
 Revision 1.70  2005/09/06 22:54:20  pfusik
 improved "Create Cartridge from ROM image"; introduced util.[ch]
 
