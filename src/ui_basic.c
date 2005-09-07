@@ -1038,7 +1038,9 @@ static int MenuSelectEx(UBYTE *screen, char *title, int subitem,
 
 static void Message(UBYTE* screen, char* msg)
 {
-	CenterPrint(screen, 0x94, 0x9a, msg, 22);
+	char buf[40];
+	ShortenItem(msg, buf, 38);
+	CenterPrint(screen, 0x94, 0x9a, buf, 22);
 	GetKeyPress(screen);
 }
 
@@ -1089,6 +1091,9 @@ void BasicUIInit(void)
 
 /*
 $Log$
+Revision 1.31  2005/09/07 22:00:29  pfusik
+shorten the messages to fit on screen
+
 Revision 1.30  2005/09/06 22:58:29  pfusik
 improved file selector; fixed MSVC warnings
 
