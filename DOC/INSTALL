@@ -52,11 +52,8 @@ many others with a little work):-
 10. WinCE
 
 Installed zlib (compression library) enables building the emulator with
-compressed statesave images support.
-
-   Note: I don't say 32 bit computer because certain operating systems
-   enforce a 16 bit memory model. No prizes are offered for correctly
-   identifing the OS in question.
+compressed statesave images support. Additionally installed libpng
+makes the emulator capable of generating screenshots in the PNG format.
 
 Building the Emulator on most platforms
 ---------------------------------------
@@ -76,56 +73,15 @@ Follow the instruction for Unix but note that you must be using the
 System V Curses Library. BSD Curses is lacking a few functions and
 will not work (nodelay, attron, attroff, keypad and curs_set).
 
-Building the Emulator for VAX/VMS
----------------------------------
-
-This version only support the BASIC text only mode. You will be
-able to run programs such as:- DOS 2.5, DOS XL, MAC65 (disk version),
-Atari Basic and similar programs. I have had reports that you can
-make the X11 version run under DEC-Windows with a little work.
-
-Note: I have not built this version for a while. Modifications may be
-      required to vmsbuild.
-
-To build type @vmsbuild at the command line. I have compiled it with
-GNU C 2.6.1 but I don't expect problems with other versions. It
-will probably compile OK on VAX C but it will require the appropriate
-compilation options to be inserted into vmsbuild.com
-
-atari800 :== $DISK$xxxx:[yyyy]atari800.exe
-
-	where xxxx is the disk the software is on.
-	      yyyy is the directory the software is in.
-
-Building the Emulator for the CBM Amiga
----------------------------------------
-
-Compiler: GNU C + DICE C (Lattice C Untried)
-
-There is a separate makefile provided for the Amiga - Makefile.amiga
-By default it is setup for use with GCC. If you are using Dice C you
-will need to comment out the GCC section and remove the comments from
-the Dice section. Unfortunately I don't use DICE C very often so if
-it no longer compiles please let me know.
-
-GNU C is available on AMINET under dev/gcc but needs about 6MB to
-compile the emulator.
-
-For GCC be sure that the C_INCLUDE_PATH environment variable is
-pointing to the location of the official Commodore include files
-prior to compiling the emulator.
-
-For example:
-	setenv C_INCLUDE_PATH /path/of/cbm/includes
-
 Building the Emulator for DOS
 -----------------------------
 
 To compile, use DJGPP the DOS port of gcc, which can be get from
 http://www.delorie.com/djgpp/. You will need complete environment
 in order to configure and build the executables.
-You may need zlib (compression library) to use compressed statesave images.
-To build curses (text mode) version install curses library (e.g. PDCurses).
+You may need zlib (compression library) to use compressed statesave images
+and libpng for PNG screenshots. To build curses (text mode) version install
+curses-compatible library (e.g. PDCurses).
 
 Since the source code contains files with long file names, you must unpack
 and compile the source on a filesystem supporting long file names (for example
@@ -136,16 +92,48 @@ open the DJGPP.ENV file in editor and change the LFN= line to LFN=y
 2. Run "make" and "make joycfg".
 3. If everything went good you should have atari800.exe and joycfg.exe -
    copy them to destination directory.
-   
-Building the Emulator for Windows
----------------------------------
+
+Building the Emulator for Windows using Cygwin
+----------------------------------------------
 
 Atari800 for Windows can be built using Cygwin environment:
 http://cygwin.com/
 
-1. Type "./configure --target=dx".
+1. Type "./configure --target=windx".
 2. Type "make".
 3. Copy atari800.exe to destination directory.
+
+Building the Emulator for Windows using Microsoft 32-bit C/C++ Compiler
+-----------------------------------------------------------------------
+
+Atari800 for Windows can be built using command-line tools
+from Microsoft Visual C++ 6.0:
+
+1. Install the ZLIB library:
+a. Download the source code from http://www.zlib.org
+b. Replace -MD with -ML in CFLAGS in win32\Makefile.msc
+c. Compile with "nmake /f win32\Makefile.msc zlib.lib".
+d. Copy zlib.h and zconf.h to the Include directory of MSVC.
+e. Copy zlib.lib to the Lib directory of MSVC.
+2. Install the LIBPNG library:
+a. Download the source code from http://www.libpng.org
+b. Compile with "nmake /f scripts\makefile.vcwin32".
+c. Copy png.h and pngconf.h to the Include directory of MSVC.
+d. Copy libpng.lib to the Lib directory of MSVC.
+OR
+1&2. #undef HAVE_LIBPNG and HAVE_LIBZ in Atari800's src\win32\msc\config.h.
+     The compiled emulator won't handle zlib-compressed disk images
+     and state files and won't produce PNG screenshots.
+3. Navigate to the src directory of Atari800 sources.
+4. Type "nmake /f win32\msc\Makefile".
+5. If you are getting compilation errors from win32\*.c, then you likely
+   have old DirectX headers. Download and install DirectX SDK from Microsoft.
+   Set DXSDK in win32\msc\Makefile to the directory where you installed
+   the SDK. You should probably use short filenames - filenames with spaces
+   didn't work for me, even though I wrapped them in quotes. Back to step 3.
+6. If you are getting linking errors saying something about MSVCRT
+   then you probably ignored step 1b.
+7. Copy atari800.exe to destination directory.
 
 Building the Emulator for Falcon
 --------------------------------
@@ -160,7 +148,7 @@ file names (either minix-fs of MiNT, or VFAT of MagiC).
 Building the Emulator for SDL
 -----------------------------
 
-0. Please install (and configure) SDL library (http://www.libsdl.org). 
+0. Please install (and configure) SDL library (http://www.libsdl.org).
 1. Type "./configure --target=sdl".
 2. Type "make".
 3. Type "make install".

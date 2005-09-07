@@ -50,7 +50,7 @@ static PALETTEENTRY pal[MAX_CLR];       /* palette */
 static int linesize = 0;
 static int scrwidth = 320;
 static int scrheight = 240;
-static void *scraddr = NULL;
+static UBYTE *scraddr = NULL;
 static int bltgfx = 0;
 
 void groff(void)
@@ -238,102 +238,96 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 
 void refreshv(UBYTE * scr_ptr)
 {
-  DDSURFACEDESC2 desc0;
-  int err;
-  int x, y;
-  UBYTE *src;
-  long *dst;
-  int h, w;
-  DDBLTFX ddbltfx;
+	DDSURFACEDESC2 desc0;
+	int err;
+	int x, y;
+	UBYTE *src;
+	ULONG *dst;
+	int h, w;
+	DDBLTFX ddbltfx;
 
-  desc0.dwSize = sizeof(desc0);
-  if ((err = IDirectDrawSurface4_Lock(bltgfx ? lpDDSsrc : lpDDSBack,
-				      NULL, &desc0,
-                                      DDLOCK_WRITEONLY
-                                      | DDLOCK_WAIT
-                                      ,NULL)) == DD_OK)
-    {
-      linesize = desc0.lPitch;
-      scrwidth = desc0.dwWidth;
-      scrheight = desc0.dwHeight;
-      scraddr = desc0.lpSurface + (bltgfx ? linesize * 6 : 0);
+	desc0.dwSize = sizeof(desc0);
+	err = IDirectDrawSurface4_Lock(bltgfx ? lpDDSsrc : lpDDSBack,
+			NULL, &desc0, DDLOCK_WRITEONLY | DDLOCK_WAIT ,NULL);
+	if (err == DD_OK) {
+		linesize = desc0.lPitch;
+		scrwidth = desc0.dwWidth;
+		scrheight = desc0.dwHeight;
+		scraddr = (UBYTE *) desc0.lpSurface + (bltgfx ? linesize * 6 : 0);
 
-      if (bltgfx)
-      {
-	for (y = 0; y < ATARI_HEIGHT; y++)
-	{
-	  dst = (void *) scraddr + y * linesize;
-	  src = scr_ptr + y * ATARI_WIDTH;
-	  for (x = 0; x < scrwidth; x++)
-	    *dst++ = colortable[*src++];
+		if (bltgfx) {
+			for (y = 0; y < ATARI_HEIGHT; y++) {
+				dst = (ULONG *) (scraddr + y * linesize);
+				src = scr_ptr + y * ATARI_WIDTH;
+				for (x = 0; x < scrwidth; x++)
+					*dst++ = colortable[*src++];
+			}
+		}
+		else {
+			w = (scrwidth - 336) / 2;
+			h = (scrheight - ATARI_HEIGHT) / 2;
+			if (w > 0)
+				scraddr += w;
+			else if (w < 0)
+				(UBYTE *) scr_ptr -= w;
+			if (h > 0)
+				scraddr += linesize * h;
+			for (y = 0; y < ATARI_HEIGHT; y++) {
+				dst = (ULONG *) (scraddr + y * linesize);
+				src = scr_ptr + y * ATARI_WIDTH;
+				for (x = (w >= 0) ? (336 >> 2) : (scrwidth >> 2); x > 0; x--)
+					*dst++ = *((ULONG *) src)++;
+			}
+		}
+
+		IDirectDrawSurface4_Unlock(bltgfx ? lpDDSsrc : lpDDSBack, NULL);
+		linesize = 0;
+		scrwidth = 0;
+		scrheight = 0;
+		scraddr = 0;
 	}
-      }
-      else
-      {
-      w = (scrwidth - 336) / 2;
-      h = (scrheight - ATARI_HEIGHT) / 2;
-      if (w > 0)
-        (UBYTE *)scraddr += w;
-      if (w < 0)
-        (UBYTE *)scr_ptr -= w;
-      if (h > 0)
-        (UBYTE *)scraddr += linesize * h;
-      for (y = 0; y < ATARI_HEIGHT; y++)
-        {
-          dst = scraddr + y * linesize;
-          src = (void *) scr_ptr + y * ATARI_WIDTH;
-          for (x = (w >= 0) ? (336 >> 2) : (scrwidth >> 2); x > 0; x--)
-	  *dst++ = *((unsigned *) src)++;
+	else if (err == DDERR_SURFACELOST)
+		err = IDirectDrawSurface4_Restore(bltgfx ? lpDDSsrc : lpDDSBack);
+	else {
+		char txt[0x100];
+		sprintf(txt, "DirectDraw error 0x%x", err);
+		MessageBox(hWndMain, txt, myname, MB_OK);
+		// printf("error: %x\n", err);
+		exit(1);
 	}
-        }
 
-      IDirectDrawSurface4_Unlock(bltgfx ? lpDDSsrc : lpDDSBack, NULL);
-      linesize = 0;
-      scrwidth = 0;
-      scrheight = 0;
-      scraddr = 0;
-    }
-  else if (err == DDERR_SURFACELOST)
-    err = IDirectDrawSurface4_Restore(bltgfx ? lpDDSsrc : lpDDSBack);
-  else
-    {
-      char txt[0x100];
-      sprintf(txt, "DirectDraw error 0x%x", err);
-      MessageBox(hWndMain, txt, myname, MB_OK);
-//      printf("error: %x\n", err);
-      exit(1);
-    }
-
-  if (bltgfx)
-  {
-    memset(&ddbltfx, 0, sizeof(ddbltfx));
-    ddbltfx.dwSize = sizeof(ddbltfx);
-    err = IDirectDrawSurface4_Blt(lpDDSBack, NULL, lpDDSsrc,
-				  NULL, DDBLT_WAIT, &ddbltfx);
-    if (err == DDERR_SURFACELOST)
-      err = IDirectDrawSurface4_Restore(lpDDSBack);
-  }
+	if (bltgfx) {
+		memset(&ddbltfx, 0, sizeof(ddbltfx));
+		ddbltfx.dwSize = sizeof(ddbltfx);
+		err = IDirectDrawSurface4_Blt(lpDDSBack, NULL, lpDDSsrc,
+				NULL, DDBLT_WAIT, &ddbltfx);
+		if (err == DDERR_SURFACELOST)
+			err = IDirectDrawSurface4_Restore(lpDDSBack);
+	}
 
 #if (SHOWFRAME > 0)
-  palette(0, 0x20, 0x20, 0);
-  palupd(CLR_BACK, 1);
+	palette(0, 0x20, 0x20, 0);
+	palupd(CLR_BACK, 1);
 #endif
-  err = IDirectDrawSurface4_Flip(lpDDSPrimary, NULL, DDFLIP_WAIT);
-  //err = IDirectDrawSurface3_Flip(lpDDSPrimary, NULL, 0);
-  if (err == DDERR_SURFACELOST)
-    err = IDirectDrawSurface4_Restore(lpDDSPrimary);
+	err = IDirectDrawSurface4_Flip(lpDDSPrimary, NULL, DDFLIP_WAIT);
+	// err = IDirectDrawSurface3_Flip(lpDDSPrimary, NULL, 0);
+	if (err == DDERR_SURFACELOST)
+		err = IDirectDrawSurface4_Restore(lpDDSPrimary);
 #if (SHOWFRAME > 0)
-  palette(0, 0x0, 0x20, 0x20);
-  palupd(CLR_BACK, 1);
+	palette(0, 0x0, 0x20, 0x20);
+	palupd(CLR_BACK, 1);
 #endif
 #if (SHOWFRAME > 0)
-  palette(0, 0x0, 0x0, 0x0);
-  palupd(CLR_BACK, 1);
+	palette(0, 0x0, 0x0, 0x0);
+	palupd(CLR_BACK, 1);
 #endif
 }
 
 /*
 $Log$
+Revision 1.4  2005/09/07 22:04:25  pfusik
+DirectX version can be compiled with MSVC 6
+
 Revision 1.3  2005/09/06 23:03:19  pfusik
 fixed MSVC warnings
 
