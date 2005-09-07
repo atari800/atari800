@@ -3,9 +3,9 @@
 
 extern int colortable[256];
 
-#define Palette_GetR(x) (colortable[x] >> 16 & 0xff)
-#define Palette_GetG(x) (colortable[x] >> 8 & 0xff)
-#define Palette_GetB(x) (colortable[x] & 0xff)
+#define Palette_GetR(x) ((UBYTE) (colortable[x] >> 16))
+#define Palette_GetG(x) ((UBYTE) (colortable[x] >> 8))
+#define Palette_GetB(x) ((UBYTE) colortable[x])
 #define Palette_GetY(x) (0.30 * Palette_GetR(x) + 0.59 * Palette_GetG(x) + 0.11 * Palette_GetB(x))
 void Palette_SetRGB(int i, int r, int g, int b);
 

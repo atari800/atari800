@@ -102,10 +102,10 @@ typedef void (*event_t)(struct stPokeyState* ps, char p5v, char p4v, char p917v)
 typedef struct stPokeyState
 {
     /* Poly positions */
-    unsigned char poly4pos;
-    unsigned char poly5pos;
-    unsigned long poly17pos;
-    unsigned long poly9pos;
+    unsigned int poly4pos;
+    unsigned int poly5pos;
+    unsigned int poly17pos;
+    unsigned int poly9pos;
 
     /* Change queue */
     unsigned char ovola;
@@ -479,44 +479,41 @@ static void build_poly4(void)
 
 static void build_poly5(void)
 {
-    unsigned char c;
-    unsigned char i;
-    unsigned char poly5=1;
+	unsigned char c;
+	unsigned char i;
+	unsigned char poly5 = 1;
 
-    for(i=0; i<31; i++)
-    {
-        poly5tbl[i] = ~poly5; /* Inversion! Attention! */
-        c = ((poly5>>2)&1) ^ ((poly5>>4)&1);
-        poly5 = ((poly5<<1)&31) + c;
-    }
+	for(i = 0; i < 31; i++) {
+		poly5tbl[i] = ~poly5; /* Inversion! Attention! */
+		c = ((poly5 >> 2) ^ (poly5 >> 4)) & 1;
+		poly5 = ((poly5 << 1) & 31) + c;
+	}
 }
 
 static void build_poly17(void)
 {
-    unsigned char c;
-    unsigned long i;
-    unsigned long poly17=1;
+	unsigned int c;
+	unsigned int i;
+	unsigned int poly17 = 1;
 
-    for(i=0; i<131071; i++)
-    {
-        poly17tbl[i] = (unsigned char)(poly17 & 0xFF);
-        c = ((poly17>>11)&1) ^ ((poly17>>16)&1);
-        poly17 = ((poly17<<1)&131071)+c;
-    }
+	for(i = 0; i < 131071; i++) {
+		poly17tbl[i] = (unsigned char) poly17;
+		c = ((poly17 >> 11) ^ (poly17 >> 16)) & 1;
+		poly17 = ((poly17 << 1) & 131071) + c;
+	}
 }
 
 static void build_poly9(void)
 {
-    unsigned char c;
-    unsigned short i;
-    unsigned short poly9 = 1;
+	unsigned int c;
+	unsigned int i;
+	unsigned int poly9 = 1;
 
-    for(i=0; i<511; i++)
-    {
-        poly9tbl[i] = (unsigned char)(poly9 & 0xFF);
-        c = ((poly9>>3)&1) ^ ((poly9>>8)&1);
-        poly9 = ((poly9<<1)&511)+c;
-    }
+	for(i = 0; i < 511; i++) {
+		poly9tbl[i] = (unsigned char) poly9;
+		c = ((poly9 >> 3) ^ (poly9 >> 8)) & 1;
+		poly9 = ((poly9 << 1) & 511) + c;
+	}
 }
 
 static void advance_polies(PokeyState* ps, unsigned long tacts)
@@ -1200,7 +1197,7 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
           * sample_rate;
 	filter_size = remez_filter_table((double)sample_rate/pokey_frq,
 					 &cutoff, quality);
-	audible_frq = cutoff * pokey_frq;
+	audible_frq = (unsigned) (cutoff * pokey_frq);
     }
 
     build_poly4();
@@ -1462,10 +1459,10 @@ static void Update_audctl(PokeyState* ps, unsigned char val)
     unsigned char recalc2=0;
     unsigned char recalc3=0;
 
-    unsigned char cnt0=0;
-    unsigned char cnt1=0;
-    unsigned char cnt2=0;
-    unsigned char cnt3=0;
+    unsigned int cnt0 = 0;
+    unsigned int cnt1 = 0;
+    unsigned int cnt2 = 0;
+    unsigned int cnt3 = 0;
 
     nc0_hf = (val & 0x40) != 0;
     nc2_hf = (val & 0x20) != 0;
@@ -2263,6 +2260,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.22  2005/09/07 22:01:39  pfusik
+fixed MSVC warnings
+
 Revision 1.21  2005/08/31 20:00:47  pfusik
 support for Atari800Win PLus
 

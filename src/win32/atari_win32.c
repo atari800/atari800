@@ -23,6 +23,7 @@
 */
 
 #include "config.h"
+#define DIRECTINPUT_VERSION 0x0500
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -467,6 +468,9 @@ int Atari_TRIG(int num)
 
 /*
 $Log$
+Revision 1.12  2005/09/07 22:03:40  pfusik
+fixed MSVC warnings
+
 Revision 1.11  2005/09/06 23:03:19  pfusik
 fixed MSVC warnings
 

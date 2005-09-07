@@ -289,14 +289,14 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 int Pokey_DoInit(void)
 {
 	if (enable_new_pokey)
-		return Pokey_sound_init_mz(snd_freq17, snd_playback_freq,
+		return Pokey_sound_init_mz(snd_freq17, (uint16) snd_playback_freq,
 				snd_num_pokeys, snd_flags, mz_quality
 #ifdef __PLUS
 				, mz_clear_regs
 #endif
 		);
 	else
-		return Pokey_sound_init_rf(snd_freq17, snd_playback_freq,
+		return Pokey_sound_init_rf(snd_freq17, (uint16) snd_playback_freq,
 				snd_num_pokeys, snd_flags);
 }
 
@@ -1292,6 +1292,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.27  2005/09/07 22:01:39  pfusik
+fixed MSVC warnings
+
 Revision 1.26  2005/08/31 20:00:47  pfusik
 support for Atari800Win PLus
 

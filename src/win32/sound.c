@@ -64,7 +64,7 @@ static WAVEHDR *waves;
 
 #ifdef DIRECTX
 static int wavonly = FALSE;
-static int sbufsize = 0;
+static DWORD sbufsize = 0;
 static int samples = 0; 	/* #samples to be in play buffer */
 static UBYTE mixbuf[MIXBUFSIZE];
 static DWORD bufpos = 0;
@@ -74,7 +74,7 @@ static LPDIRECTSOUNDBUFFER pDSB = NULL;
 
 static int initsound_dx(void)
 {
-  int i;
+  DWORD i;
   int err;
   DSBUFFERDESC dsBD =
   {0};
@@ -126,8 +126,8 @@ static int initsound_dx(void)
 
   IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
 
-  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1,
-		   (stereo ? SND_STEREO : 0) | (bit16 ? SND_BIT16 : 0));
+  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, 1,
+		   (stereo ? SND_STEREO : 0) + (bit16 ? SND_BIT16 : 0));
 
   samples = dsprate * snddelay / 1000;
 
@@ -173,9 +173,9 @@ static void sound_update_dx(void)
   int i;
   int samplesize = bit16 ? 2 : 1;
 #ifdef STEREO_SOUND
-  int samplepairsize = 2*samplesize; 
+  int samplepairsize = 2*samplesize;
 #else
-  int samplepairsize = samplesize; 
+  int samplepairsize = samplesize;
 #endif
 
   if (issound != SOUND_DX)
@@ -184,13 +184,12 @@ static void sound_update_dx(void)
   IDirectSoundBuffer_GetCurrentPosition(pDSB, 0, &wc);
 
   d1 = (wc - bufpos);
-  if (abs(d1) > (sbufsize >> 1))
-    {
-      if (d1 < 0)
-	d1 += sbufsize;
-      else
-	d1 -= sbufsize;
-    }
+	if ((DWORD) abs(d1) > (sbufsize >> 1)) {
+		if (d1 < 0)
+			d1 += sbufsize;
+		else
+			d1 -= sbufsize;
+	}
   if (d1 < (-samples * samplesize)) // there is more than necessary bytes filled?
     return;
 
@@ -345,8 +344,8 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1,
-		   (stereo ? SND_STEREO : 0) | (bit16 ? SND_BIT16 : 0));
+  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, 1,
+		   (stereo ? SND_STEREO : 0) + (bit16 ? SND_BIT16 : 0));
 
   issound = SOUND_WAV;
   return 0;
@@ -512,6 +511,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.17  2005/09/07 22:03:40  pfusik
+fixed MSVC warnings
+
 Revision 1.16  2005/05/13 23:28:15  emuslor
 -help cleanup
 
