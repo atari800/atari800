@@ -25,10 +25,25 @@
     are already CARTs)
   - allocate only as much memory as necessary rather than 1 MB
 
-* antic.c, atari.c, cpu.c, pia.c, pokey.c, win32/atari_win32.c, win32/joystick.c,
-  win32/keyboard.c: silenced MSVC 6 /W3 warnings
+* ui.c: improved "Save Disk Set" and "Make blank ATR disk":
+  - can be cancelled by pressing Esc while editing the filename
+  - display a message on success
+  - display an error message on failure
+  - don't operate on NULL if fopen() fails
 
-* win32/main.c: MSVC support
+* ui_basic.c: shorten the messages (especially the ones with long filenames)
+  to fit on screen
+
+* antic.c, atari.c, colours.h, cpu.c, mzpokeysnd.c, pia.c, pokey.c,
+  pokeysnd.c, win32/atari_win32.c, win32/joystick.c, win32/keyboard.c,
+  win32/sound.c: silenced MSVC 6 /W3 warnings
+
+* win32/main.c, win32/screen_win32.c, win32/msc/config.h, win32/msc/Makefile,
+  DOC/INSTALL: DirectX version can be compiled with Microsoft 32-bit C/C++
+  Compiler 6.0. Currently missing features:
+  - file selector in ui_basic (one has to type the filename)
+  - lock/unlock operations on H: devices
+  - stereo (just haven't tested it yet)
 
 
 2005-09-06  Perry McFarlane  <perry_m@fastmail.fm>
