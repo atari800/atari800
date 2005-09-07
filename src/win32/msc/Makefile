@@ -70,4 +70,5 @@ $(TARGET): $(OBJS)
 clean:
 	del *.obj
 	del win32\*.obj
+	del win32\atari.res
 	del $(TARGET)
