@@ -1,3 +1,7 @@
+2005-09-09  Piotr Fusik  <fox@scene.pl>
+* DOC/HOWTO-DIRTYSPAN: an alternative to DIRTYRECT (just an idea)
+
+
 2005-09-07  Piotr Fusik  <fox@scene.pl>
 * sound_unix.c: set speed after stereo, because the allowed speed may be
   different for stereo
