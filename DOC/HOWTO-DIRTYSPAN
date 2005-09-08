@@ -1,0 +1,110 @@
+DIRTY SPANS TECHNIQUE
+
+Please note: this is just an idea.
+
+I'll explain it in pseudo-code:
+
+/* in antic.c: */
+
+int dirty_left[ATARI_HEIGHT];
+int dirty_right[ATARI_HEIGHT];
+
+static void draw_antic_*()
+{
+    int x;
+    for (x = left_margin; x < right_margin; x++) {
+        UBYTE new_pixel = generate_pixel(x);
+        if (new_pixel != scrn_ptr[x]) {
+            dirty_left[ypos - 8] = x;
+            x = right_margin;
+            do {
+                x--;
+                new_pixel = generate_pixel(x);
+            } while (new_pixel == scrn_ptr[x]);
+            dirty_right[ypos - 8] = x + 1;
+            for (x = dirty_left[ypos - 8]; x < dirty_right[ypos - 8]; x++) {
+                scrn_ptr[x] = generate_pixel(x);
+            }
+            return;
+        }
+    }
+    /* no pixels changed in this line */
+    dirty_left[ypos - 8] = dirty_right[ypos - 8] = 0;
+}
+
+/* Note: (ypos - 8) is because ypos ranges from 8 to 247
+   for the visible scanlines */
+
+
+/* port-specific Atari_DisplayScreen(): */
+
+void Atari_DisplayScreen(UBYTE *screen)
+{
+    int y;
+    for (y = 0; y < ATARI_HEIGHT; y++) {
+        /* copy pixels dirty_left[y] <= x < dirty_right[y]
+           from screen[] to the real screen */
+        blit_pixels(screen, dirty_left[y], dirty_right[y], y);
+    }
+}
+
+Now some less formal explanation:
+
+The idea is to update only parts of scanlines that changed since last frame.
+We update one continuous sequence of pixels ("span") per scanline.
+dirty_left[y] and dirty_right[y] are the boundaries of the span in scanline y.
+In each scanline, we search for a first pixel that is different
+from the previous frame. If we don't find one, then the whole scanline
+is not dirty, which we mark with:
+dirty_left[y] = dirty_right[y] = 0;
+If we find left-most pixel that differs from the previous frame,
+we save its x coordinate in dirty_left[y]. Then we search starting
+from the right side for a pixel that changed since last frame. We know we'll
+find one. We save (x + 1) in dirty_right[y]. Now we normally generate pixels
+between dirty_left[y] and dirty_right[y].
+
+The display routine doesn't need any additional comments, I think.
+
+Compared to the current approach (always display whole Atari screen),
+the DIRTY SPANS technique adds almost zero overhead in the worst case.
+In the best case we avoid screen updates completely.
+On average, we update just the areas that changed.
+
+There's one case when DIRTY SPANS perform worse than DIRTY RECT:
+if left and right sides of screen are changing while the center of screen
+remains static. This is however extremely rare (actually, I cannot recall
+any real Atari program that does such things).
+
+Compared to DIRTY RECT, DIRTY SPANS has nearly zero overhead in ANTIC code:
+while searching for boundaries there are comparisons but no writes
+to the screen; generating the changed part of the scanlines operates
+as fast as without DIRTY techniques.
+
+Displaying pixels is much faster: we immediately know which pixels to update,
+without stepping through 8K screen_dirty[]. It is also better for hardware
+architectures where continuous writes to the video memory are faster
+then random writes.
+
+It is possible to combine DIRTY SPANS with DIRTY RECT: in the first pass,
+find span boundaries using DIRTY SPANS. Then, in the display loop,
+update only the pixels that changed (compare current pixels to a backup copy
+of the screen).
+
+DIRTY SPANS should be straightforward to implement on most platforms:
+all we need is displaying 1-pixel-high bitmaps.
+
+The ANTIC code is what gets more complicated with DIRTY SPANS.
+Basically, we have to split each function that generates an Atari graphics
+mode into 3 parts:
+1. Find dirty_left (similar to normal code, but compare instead of write
+   pixels).
+2. Find dirty_right (likewise, but *right-to-left*; it should be possible
+   to implement it without a speed penalty).
+3. Write pixels (same as the current code).
+This probably means more and more macros (antic.c is already full of them).
+
+As noted at the beginning of this document, these are all plans
+for the future.
+
+Piotr Fusik
+2005-09-09
