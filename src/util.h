@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
+/* String functions ------------------------------------------------------ */
+
 #ifdef WIN32
 #define Util_stricmp _stricmp
 #elif defined(HAVE_STRCASECMP)
@@ -35,6 +37,9 @@ int Util_sscanhex(const char *s);
 /* Likewise, but allows only 0 and 1. */
 int Util_sscanbool(const char *s);
 
+
+/* Memory management ----------------------------------------------------- */
+
 /* malloc() with out-of-memory checking. Never returns NULL. */
 void *Util_malloc(size_t size);
 
@@ -43,6 +48,26 @@ void *Util_realloc(void *ptr, size_t size);
 
 /* strdup() with out-of-memory checking. Never returns NULL. */
 char *Util_strdup(const char *s);
+
+
+/* File I/O -------------------------------------------------------------- */
+
+#ifdef BACK_SLASH
+#define DIR_SEP_CHAR '\\'
+#define DIR_SEP_STR  "\\"
+#else
+#define DIR_SEP_CHAR '/'
+#define DIR_SEP_STR  "/"
+#endif
+
+/* Splits a filename into directory part and file part. */
+/* dir_part or file_part may be NULL. */
+void Util_splitpath(const char *path, char *dir_part, char *file_part);
+
+/* Concatenates file paths.
+   Places directory separator char between paths, unless path1 is empty
+   or ends with the separator char, or path2 starts with the separator char. */
+void Util_catpath(char *result, const char *path1, const char *path2);
 
 /* Returns TRUE if the specified file exists. */
 int Util_fileexists(const char *filename);

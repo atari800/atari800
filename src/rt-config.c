@@ -28,9 +28,9 @@
 #include <string.h>
 
 #include "atari.h"
+#include "log.h"
 #include "prompts.h"
 #include "rt-config.h"
-#include "log.h"
 #include "util.h"
 
 #ifdef SUPPORTS_ATARI_CONFIGURE
@@ -44,7 +44,7 @@ void Atari_ConfigSave(FILE *fp);
 #endif
 
 #ifdef SUPPORTS_ATARI_CONFIGINIT
-/* This function set the configuration parameters to default values */
+/* This function sets the configuration parameters to default values */
 void Atari_ConfigInit(void);
 #endif
 
@@ -105,20 +105,9 @@ int RtIsPrintCommandSafe(const char *command)
 #endif
 
 static char rtconfig_filename[FILENAME_MAX];
-#define RTCFGNAME_MAX	(sizeof(rtconfig_filename)-1)
 
-#ifdef BACK_SLASH
-#define PATH_SEPARATOR		'\\'
-#define PATH_SEPARATOR_STR	"\\"
-#else
-#define PATH_SEPARATOR	'/'
-#define PATH_SEPARATOR_STR	"/"
-#endif
-
-/*
- * Set Configuration Parameters to sensible values
- * in case the configuration file is missing.
- */
+/* Set Configuration Parameters to sensible values
+ * in case the configuration file is missing. */
 static void RtPresetDefaults()
 {
 	atari_osa_filename[0] = '\0';
@@ -159,39 +148,25 @@ int RtConfigLoad(const char *alternate_config_filename)
 {
 	FILE *fp;
 	const char *fname = rtconfig_filename;
-	int status = TRUE;
 	char string[256];
-	char *ptr;
 
 	RtPresetDefaults();
 
-	*rtconfig_filename = '\0';
-
 	/* if alternate config filename is passed then use it */
 	if (alternate_config_filename != NULL && *alternate_config_filename > 0) {
-		strncpy(rtconfig_filename, alternate_config_filename, RTCFGNAME_MAX);
-		rtconfig_filename[RTCFGNAME_MAX] = '\0';
+		Util_strlcpy(rtconfig_filename, alternate_config_filename, FILENAME_MAX);
 	}
 	/* else use the default config name under the HOME folder */
 	else {
 		char *home = getenv("HOME");
-		if (home != NULL) {
-			int len;
-			strncpy(rtconfig_filename, home, RTCFGNAME_MAX);
-			rtconfig_filename[RTCFGNAME_MAX] = '\0';
-			len = strlen(rtconfig_filename);
-			if (len > 0) {
-				if (rtconfig_filename[len-1] != PATH_SEPARATOR) {
-					strcat(rtconfig_filename, PATH_SEPARATOR_STR);
-				}
-			}
-		}
-		strncat(rtconfig_filename, DEFAULT_CFG_NAME, RTCFGNAME_MAX-strlen(rtconfig_filename));
-		rtconfig_filename[RTCFGNAME_MAX] = '\0';
+		if (home != NULL)
+			Util_catpath(rtconfig_filename, home, DEFAULT_CFG_NAME);
+		else
+			strcpy(rtconfig_filename, DEFAULT_CFG_NAME);
 	}
 
 	fp = fopen(fname, "r");
-	if (!fp) {
+	if (fp == NULL) {
 		Aprint("User config file '%s' not found.", rtconfig_filename);
 
 #ifdef SYSTEM_WIDE_CFG_FILE
@@ -200,10 +175,10 @@ int RtConfigLoad(const char *alternate_config_filename)
 		Aprint("Trying system wide config file: %s", fname);
 		fp = fopen(fname, "r");
 #endif
-	}
-	if (!fp) {
-		Aprint("No configuration file found, will create fresh one from scratch:");
-		return FALSE;
+		if (fp == NULL) {
+			Aprint("No configuration file found, will create fresh one from scratch:");
+			return FALSE;
+		}
 	}
 
 	fgets(string, sizeof(string), fp);
@@ -211,9 +186,10 @@ int RtConfigLoad(const char *alternate_config_filename)
 	Aprint("Using Atari800 config file: %s\nCreated by %s", fname, string);
 
 	while (fgets(string, sizeof(string), fp)) {
+		char *ptr;
 		Util_chomp(string);
 		ptr = strchr(string, '=');
-		if (ptr) {
+		if (ptr != NULL) {
 			*ptr++ = '\0';
 			Util_trim(string);
 			Util_trim(ptr);
@@ -336,17 +312,17 @@ int RtConfigLoad(const char *alternate_config_filename)
 					Aprint("Unrecognized variable or bad parameters: '%s=%s'", string, ptr);
 				}
 #else
-				Aprint("Unrecognized Variable: %s", string);
+				Aprint("Unrecognized variable: %s", string);
 #endif
 			}
 		}
 		else {
-			Aprint("Ignored Config Line: %s", string);
+			Aprint("Ignored config line: %s", string);
 		}
 	}
 
 	fclose(fp);
-	return status;
+	return TRUE;
 }
 
 void RtConfigSave(void)
@@ -355,10 +331,11 @@ void RtConfigSave(void)
 	int i;
 
 	fp = fopen(rtconfig_filename, "w");
-	if (!fp) {
+	if (fp == NULL) {
 		perror(rtconfig_filename);
 		Aprint("Cannot write to config file: %s", rtconfig_filename);
 		Aflushlog();
+		/* FIXME: RtConfigSave may be called from UI */
 		exit(1);
 	}
 	Aprint("Writing config file: %s", rtconfig_filename);
@@ -494,8 +471,8 @@ void RtConfigUpdate(void)
 	GetNumber("Enter default screen refresh ratio 1:[%d] ", &refresh_rate);
 	if (refresh_rate < 1)
 		refresh_rate = 1;
-	else if (refresh_rate > 60)
-		refresh_rate = 60;
+	else if (refresh_rate > 99)
+		refresh_rate = 99;
 #endif
 
 	do {
@@ -568,7 +545,7 @@ void RtConfigUpdate(void)
 #ifdef SERIO_SOUND
 	GetYesNoAsInt("Enable SERIO Sound [%c] ", &serio_sound_enabled);
 #endif
-#endif
+#endif /* SOUND */
 }
 
 #endif /* DONT_USE_RTCONFIGUPDATE */
@@ -577,6 +554,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.29  2005/09/10 12:36:05  pfusik
+Util_splitpath() and Util_catpath()
+
 Revision 1.28  2005/09/06 22:51:05  pfusik
 introduced util.[ch]
 

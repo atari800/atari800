@@ -157,6 +157,43 @@ char *Util_strdup(const char *s)
 	return ptr;
 }
 
+void Util_splitpath(const char *path, char *dir_part, char *file_part)
+{
+	const char *p;
+	/* find the last DIR_SEP_CHAR */
+	p = strrchr(path, DIR_SEP_CHAR);
+	if (p == NULL) {
+		/* no DIR_SEP_CHAR: current dir */
+		if (file_part != NULL)
+			strcpy(file_part, path);
+		if (dir_part != NULL)
+			strcpy(dir_part, "" /* "." */);
+	}
+	else {
+		if (file_part != NULL)
+			strcpy(file_part, p + 1);
+		if (dir_part != NULL) {
+			int len = p - path;
+			if (p == path || (p == path + 2 && path[1] == ':'))
+				/* root dir: include DIR_SEP_CHAR in dir_part */
+				len++;
+			memcpy(dir_part, path, len);
+			dir_part[len] = '\0';
+		}
+	}
+}
+
+void Util_catpath(char *result, const char *path1, const char *path2)
+{
+#ifdef HAVE_SNPRINTF
+	snprintf(result, FILENAME_MAX,
+#else
+	sprintf(result,
+#endif
+		(path1[0] == '\0' || path2[0] == DIR_SEP_CHAR || path1[strlen(path1) - 1] == DIR_SEP_CHAR)
+			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
+}
+
 int Util_fileexists(const char *filename)
 {
 	FILE *fp;

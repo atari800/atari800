@@ -75,56 +75,6 @@
 #include "misc_win.h"
 #endif
 
-#ifdef BACK_SLASH
-#define DIR_SEP_CHAR '\\'
-#define DIR_SEP_STR  "\\"
-#else
-#define DIR_SEP_CHAR '/'
-#define DIR_SEP_STR  "/"
-#endif
-
-/* Splits a filename into directory part and file part. */
-/* dir_part or file_part may be NULL. */
-static void split_path(const char *path, char *dir_part, char *file_part)
-{
-	const char *p;
-	/* find the last DIR_SEP_CHAR */
-	p = strrchr(path, DIR_SEP_CHAR);
-	if (p == NULL) {
-		/* no DIR_SEP_CHAR: current dir */
-		if (file_part != NULL)
-			strcpy(file_part, path);
-		if (dir_part != NULL)
-			strcpy(dir_part, "" /* "." */);
-	}
-	else {
-		if (file_part != NULL)
-			strcpy(file_part, p + 1);
-		if (dir_part != NULL) {
-			int len = p - path;
-			if (p == path || (p == path + 2 && path[1] == ':'))
-				/* root dir: include DIR_SEP_CHAR in dir_part */
-				len++;
-			memcpy(dir_part, path, len);
-			dir_part[len] = '\0';
-		}
-	}
-}
-
-/* Concatenates file paths.
-   Places directory separator char between paths, unless path1 is empty
-   or path2 already starts with the separator char. */
-static void cat_path(char *result, const char *path1, const char *path2)
-{
-#ifdef HAVE_SNPRINTF
-	snprintf(result, FILENAME_MAX,
-#else
-	sprintf(result,
-#endif
-		(path1[0] == '\0' || path2[0] == DIR_SEP_CHAR)
-			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
-}
-
 #ifdef HAVE_OPENDIR
 
 #undef toupper
@@ -170,7 +120,7 @@ static DIR *dp = NULL;
 
 static int Device_OpenDir(const char *searchspec)
 {
-	split_path(searchspec, dir_path, filename_pattern);
+	Util_splitpath(searchspec, dir_path, filename_pattern);
 	if (dp != NULL)
 		closedir(dp);
 	dp = opendir(dir_path);
@@ -204,7 +154,7 @@ static int Device_ReadDir(char *fullfilename, char *filename)
 	if (filename != NULL)
 		strcpy(filename, entry->d_name);
 	if (fullfilename != NULL)
-		cat_path(fullfilename, dir_path, entry->d_name);
+		Util_catpath(fullfilename, dir_path, entry->d_name);
 	return TRUE;
 }
 
@@ -220,7 +170,7 @@ static HANDLE dh = INVALID_HANDLE_VALUE;
 
 static int Device_OpenDir(const char *searchspec)
 {
-	split_path(searchspec, dir_path, NULL);
+	Util_splitpath(searchspec, dir_path, NULL);
 	if (dh != INVALID_HANDLE_VALUE)
 		FindClose(dh);
 	dh = FindFirstFile(searchspec, &wfd);
@@ -244,7 +194,7 @@ static int Device_ReadDir(char *fullfilename, char *filename)
 	if (filename != NULL)
 		strcpy(filename, wfd.cFileName);
 	if (fullfilename != NULL)
-		cat_path(fullfilename, dir_path, wfd.cFileName);
+		Util_catpath(fullfilename, dir_path, wfd.cFileName);
 	if (!FindNextFile(dh, &wfd)) {
 		FindClose(dh);
 		dh = INVALID_HANDLE_VALUE;
@@ -618,14 +568,14 @@ static void Device_HHOPEN(void)
 #ifdef VMS
 /* Assumes H[devnum] is a directory _logical_, not an explicit directory
    specification! */
-	/* XXX: Maybe this should go into cat_path() ? */
+	/* XXX: Maybe this should go into Util_catpath() ? */
 # ifdef HAVE_SNPRINTF
 	snprintf(fname, FILENAME_MAX, filename[0] == ':' ? "%s%s" : "%s:%s", H[devnum], filename);
 # else
 	sprintf(fname, filename[0] == ':' ? "%s%s" : "%s:%s", H[devnum], filename);
 # endif
 #else
-	cat_path(fname, H[devnum], filename);
+	Util_catpath(fname, H[devnum], filename);
 #endif
 	strcpy(filename, fname);
 	temp = dGetByte(ICAX1Z);
@@ -668,7 +618,7 @@ static void Device_HHOPEN(void)
 				fprintf(fp[fid], "MAIN\n\n");
 			else {
 				char end_dir_str[FILENAME_MAX];
-				split_path(dir_path, NULL, end_dir_str);
+				Util_splitpath(dir_path, NULL, end_dir_str);
 				fprintf(fp[fid], "%s\n\n",
 						/* strtoupper */(end_dir_str));
 			}
@@ -1011,7 +961,7 @@ static void Device_HHSPEC_Rename(void)
 
 	Device_GetFilenames();
 	Device_ApplyPathToFilename(devnum);
-	cat_path(fname, H[devnum], filename);
+	Util_catpath(fname, H[devnum], filename);
 
 #ifdef DO_DIR
 	if (!Device_OpenDir(fname)) {
@@ -1037,9 +987,9 @@ static void Device_HHSPEC_Rename(void)
 			char newdirpart[FILENAME_MAX];
 			char newfilepart[FILENAME_MAX];
 			char newfname[FILENAME_MAX];
-			split_path(fname, newdirpart, newfilepart);
+			Util_splitpath(fname, newdirpart, newfilepart);
 			fillin(newfilename, newfilepart);
-			cat_path(newfname, newdirpart, newfilepart);
+			Util_catpath(newfname, newdirpart, newfilepart);
 			if (rename(fname, newfname) == 0)
 				num_changed++;
 			else
@@ -1089,7 +1039,7 @@ static void Device_HHSPEC_Delete(void)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-	cat_path(fname, H[devnum], filename);
+	Util_catpath(fname, H[devnum], filename);
 
 #ifdef DO_DIR
 	if (!Device_OpenDir(fname)) {
@@ -1156,7 +1106,7 @@ static void Device_Chmod(/* XXX: mode_t */ int mode)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-	cat_path(fname, H[devnum], filename);
+	Util_catpath(fname, H[devnum], filename);
 
 #ifdef DO_DIR
 	if (!Device_OpenDir(fname)) {
@@ -1275,7 +1225,7 @@ static void Device_HHSPEC_Load(int mydos)
 			drive_root = H[HPathDrive[i]];
 		loadpath[0] = 0;
 		apply_relative_path(HPaths[i], loadpath);
-		cat_path(fname, drive_root, loadpath);
+		Util_catpath(fname, drive_root, loadpath);
 		p = fname + strlen(fname);
 		if (filename[0] != DIR_SEP_CHAR)
 			*p++ = DIR_SEP_CHAR;
@@ -1286,7 +1236,7 @@ static void Device_HHSPEC_Load(int mydos)
 	}
 	if (binf == NULL) {
 		Device_ApplyPathToFilename(devnum);
-		cat_path(fname, H[devnum], filename);
+		Util_catpath(fname, H[devnum], filename);
 		binf = fopen(fname, "rb");
 		if (binf == NULL) {
 			Aprint("H: load: can't open %s", filename);
@@ -1380,7 +1330,7 @@ static void Device_HHSPEC_Mkdir(void)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-	cat_path(fname, H[devnum], filename);
+	Util_catpath(fname, H[devnum], filename);
 
 #if defined(WIN32) || defined(__PLUS)
 	if (mkdir(fname) == 0)
@@ -1413,7 +1363,7 @@ static void Device_HHSPEC_Deldir(void)
 
 	Device_GetFilename();
 	Device_ApplyPathToFilename(devnum);
-	cat_path(fname, H[devnum], filename);
+	Util_catpath(fname, H[devnum], filename);
 
 	if (rmdir(fname) == 0) {
 		regY = 1;
@@ -1446,7 +1396,7 @@ static void Device_HHSPEC_Cd(void)
 	strcpy(new_path, current_dir[devnum]);
 	apply_relative_path(filename, new_path);
 	if (new_path[0] != 0)
-		cat_path(fname, H[devnum], new_path);
+		Util_catpath(fname, H[devnum], new_path);
 	else
 		strcpy(fname, H[devnum]);
 
@@ -2301,6 +2251,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.41  2005/09/10 12:36:05  pfusik
+Util_splitpath() and Util_catpath()
+
 Revision 1.40  2005/09/06 22:48:36  pfusik
 introduced util.[ch]
 
