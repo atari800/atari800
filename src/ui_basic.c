@@ -61,26 +61,6 @@ extern int current_disk_directory;
 static int initialised = FALSE;
 static UBYTE charset[1024];
 
-/* Basic UI driver calls */
-
-int BasicUISelect(char *pTitle, int bFloat, int nDefault, tMenuItem *menu, int *ascii);
-int BasicUIGetSaveFilename(char *pFilename);
-int BasicUIGetLoadFilename(char *pDirectory, char *pFilename);
-void BasicUIMessage(char *pMessage);
-void BasicUIAboutBox(void);
-void BasicUIInit(void);
-
-tUIDriver basic_ui_driver =
-{
-	&BasicUISelect,
-	&BasicUIGetSaveFilename,
-	&BasicUIGetLoadFilename,
-	&BasicUIMessage,
-	&BasicUIAboutBox,
-	&BasicUIInit
-};
-
-
 unsigned char key_to_ascii[256] =
 {
 	0x6C, 0x6A, 0x3B, 0x00, 0x00, 0x6B, 0x2B, 0x2A, 0x6F, 0x00, 0x70, 0x75, 0x9B, 0x69, 0x2D, 0x3D,
@@ -124,6 +104,13 @@ unsigned char ascii_to_screen[128] =
 	0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f
 };
 
+static void InitializeUI(void)
+{
+	if (!initialised) {
+		get_charset(charset);
+		initialised = TRUE;
+	}
+}
 
 #define KB_DELAY		20
 #define KB_AUTOREPEAT		3
@@ -345,7 +332,7 @@ static void ClearScreen(UBYTE *screen)
 	for (ptr = screen + ATARI_WIDTH * 24 + 32; ptr < screen + ATARI_WIDTH * (24 + 192); ptr += ATARI_WIDTH)
 		video_memset(ptr, 0x94, 320);
 #endif
-#endif
+#endif /* USE_CURSES */
 }
 
 static int CountLines(const char *string)
@@ -362,7 +349,7 @@ static int CountLines(const char *string)
 	return lines;
 }
 
-static void TitleScreen(UBYTE *screen, char *title)
+static void TitleScreen(UBYTE *screen, const char *title)
 {
 	Box(screen, 0x9a, 0x94, 0, 0, 39, 1 + CountLines(title));
 	CenterPrint(screen, 0x9a, 0x94, title, 1);
@@ -384,9 +371,17 @@ static void ShortenItem(const char *source, char *destination, int iMaxXsize)
 		strcpy(destination, source);
 }
 
+static void Message(UBYTE *screen, const char *msg)
+{
+	char buf[40];
+	ShortenItem(msg, buf, 38);
+	CenterPrint(screen, 0x94, 0x9a, buf, 22);
+	GetKeyPress(screen);
+}
+
 static void SelectItem(UBYTE *screen, int fg, int bg,
-                       int index, char *items[],
-                       char *prefix[], char *suffix[],
+                       int index, const char *items[],
+                       const char *prefix[], const char *suffix[],
                        int nrows, int ncolumns,
                        int xoffset, int yoffset,
                        int itemwidth,
@@ -462,8 +457,8 @@ static void SelectItem(UBYTE *screen, int fg, int bg,
 
 static int Select(UBYTE *screen,
                   int default_item,
-                  int nitems, char *items[],
-                  char *prefix[], char *suffix[],
+                  int nitems, const char *items[],
+                  const char *prefix[], const char *suffix[],
                   int nrows, int ncolumns,
                   int xoffset, int yoffset,
                   int itemwidth,
@@ -640,18 +635,13 @@ static void GetDirectory(char *directory)
 	unsigned short s_backup = _djstat_flags;
 	_djstat_flags = _STAT_INODE | _STAT_EXEC_EXT | _STAT_EXEC_MAGIC | _STAT_DIRSIZE |
 		_STAT_ROOT_TIME | _STAT_WRITEBIT;
-	/*we do not need any of those 'hard-to-get' informations */
+	/* we do not need any of those 'hard-to-get' informations */
 #endif	/* DJGPP */
 #endif	/* DOS_DRIVES */
 	strcpy(fullfilename, directory);
 	filepart = fullfilename + strlen(fullfilename);
-#ifdef BACK_SLASH
-	if ((filepart == fullfilename) || *(filepart - 1) != '\\')
-		*filepart++ = '\\';
-#else
-	if ((filepart == fullfilename) || *(filepart - 1) != '/')
-		*filepart++ = '/';
-#endif
+	if (filepart == fullfilename || filepart[-1] != DIR_SEP_CHAR)
+		*filepart++ = DIR_SEP_CHAR;
 
 	filenames = (char **) Util_malloc(FILENAMES_INITIAL_SIZE * sizeof(char *));
 	n_filenames = 0;
@@ -679,7 +669,7 @@ static void GetDirectory(char *directory)
 				filename[len + 2] = '\0';
 			}
 			else
-				filename = (char *) Util_strdup(entry->d_name);
+				filename = Util_strdup(entry->d_name);
 
 			FilenamesAdd(filename);
 		}
@@ -755,7 +745,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 
 		if (n_filenames == 0) {
 			FilenamesFree();
-			BasicUIMessage("No files inside directory");
+			Message(screen, "No files inside directory");
 			break;
 		}
 
@@ -826,11 +816,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 							if (!pos2)
 								pos2 = strrchr(help, '\\');
 							if (!pos2) {
-#ifdef BACK_SLASH
-								*pos++ = '\\';
-#else
-								*pos++ = '/';
-#endif
+								*pos++ = DIR_SEP_CHAR;
 								*pos++ = '\0';
 							}
 						}
@@ -838,25 +824,17 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 					}
 #ifdef DOS_DRIVES
 					else if (files[item][2] == ':' && files[item][3] == ']') {	/* disk selected */
-						strcpy(help, files[item] + 1);
+						help[0] = files[item][1];
+						help[1] = ':';
 						help[2] = '\\';
 						help[3] = '\0';
 					}
 #endif
 					else {	/* directory selected */
-						char lastchar = directory[strlen(directory) - 1];
 						char *pbracket = strchr(files[item], ']');
-
-						if (pbracket)
+						if (pbracket != NULL)
 							*pbracket = '\0';	/*cut ']' */
-						if (lastchar == '/' || lastchar == '\\')
-							sprintf(help, "%s%s", directory, files[item] + 1);	/* directory already ends with slash */
-						else
-#ifndef BACK_SLASH
-							sprintf(help, "%s/%s", directory, files[item] + 1);
-#else
-							sprintf(help, "%s\\%s", directory, files[item] + 1);
-#endif
+						Util_catpath(help, directory, files[item]);
 					}
 					dr = opendir(help);		/* check, if new directory is valid */
 					if (dr) {
@@ -867,15 +845,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 					}
 				}
 				else {		/* normal filename selected */
-					char lastchar = directory[strlen(directory) - 1];
-					if (lastchar == '/' || lastchar == '\\')
-						sprintf(full_filename, "%s%s", directory, files[item]);		/* directory already ends with slash */
-					else
-#ifndef BACK_SLASH
-						sprintf(full_filename, "%s/%s", directory, files[item]);
-#else							/* DOS, TOS fs */
-						sprintf(full_filename, "%s\\%s", directory, files[item]);
-#endif
+					Util_catpath(full_filename, directory, files[item]);
 					flag = TRUE;
 					break;
 				}
@@ -890,23 +860,13 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 #else /* HAVE_OPENDIR */
 	char fname[FILENAME_SIZE + 1];
 	if (EditFilename(screen, fname)) {
-		char lastchar;
 		if (directory[0] == '\0' || strcmp(directory, ".") == 0)
 #ifdef HAVE_GETCWD
 			getcwd(directory, FILENAME_MAX);
 #else
 			strcpy(directory, ".");
 #endif
-		lastchar = directory[strlen(directory) - 1];
-		if (lastchar == '/' || lastchar == '\\' || fname[0] == '/' || fname[0] == '\\')
-			/* directory already ends with slash or fname is absolute */
-			sprintf(full_filename, "%s%s", directory, fname);
-		else
-#ifndef BACK_SLASH
-			sprintf(full_filename, "%s/%s", directory, fname);
-#else							/* DOS, TOS fs */
-			sprintf(full_filename, "%s\\%s", directory, fname);
-#endif
+		Util_catpath(full_filename, directory, fname);
 		return TRUE;
 	}
 	return FALSE;
@@ -938,7 +898,7 @@ static void AboutEmulator(UBYTE *screen)
 }
 
 
-static int MenuSelectEx(UBYTE *screen, char *title, int subitem,
+static int MenuSelectEx(UBYTE *screen, const char *title, int subitem,
                         int default_item, tMenuItem *items, int *seltype)
 {
 	int scrollable;
@@ -946,9 +906,9 @@ static int MenuSelectEx(UBYTE *screen, char *title, int subitem,
 	int w, ws;
 	int x1, y1, x2, y2;
 	int nitems;
-	char *prefix[100];
-	char *root[100];
-	char *suffix[100];
+	const char *prefix[100];
+	const char *root[100];
+	const char *suffix[100];
 	int retval;
 	int ascii;
 
@@ -968,7 +928,7 @@ static int MenuSelectEx(UBYTE *screen, char *title, int subitem,
 				suffix[nitems] = items[i].suffix;
 			if (items[i].retval == default_item)
 				retval = nitems;
-			nitems ++;
+			nitems++;
 		}
 	}
 
@@ -1036,29 +996,13 @@ static int MenuSelectEx(UBYTE *screen, char *title, int subitem,
 	return 0;
 }
 
-static void Message(UBYTE* screen, char* msg)
-{
-	char buf[40];
-	ShortenItem(msg, buf, 38);
-	CenterPrint(screen, 0x94, 0x9a, buf, 22);
-	GetKeyPress(screen);
-}
-
-static void InitializeUI(void)
-{
-	if (!initialised) {
-		get_charset(charset);
-		initialised = TRUE;
-	}
-}
-
 /* UI Driver entries */
 
 #ifdef CURSES_BASIC
 #define atari_screen NULL
 #endif
 
-int BasicUISelect(char *pTitle, int bFloat, int nDefault, tMenuItem *menu, int *ascii)
+int BasicUISelect(const char *pTitle, int bFloat, int nDefault, tMenuItem *menu, int *ascii)
 {
 	return MenuSelectEx((UBYTE *) atari_screen, pTitle, bFloat, nDefault, menu, ascii);
 }
@@ -1073,7 +1017,7 @@ int BasicUIGetLoadFilename(char *pDirectory, char *pFilename)
 	return FileSelector((UBYTE *) atari_screen, pDirectory, pFilename);
 }
 
-void BasicUIMessage(char *pMessage)
+void BasicUIMessage(const char *pMessage)
 {
 	Message((UBYTE *) atari_screen, pMessage);
 }
@@ -1088,9 +1032,21 @@ void BasicUIInit(void)
 	InitializeUI();
 }
 
+tUIDriver basic_ui_driver =
+{
+	&BasicUISelect,
+	&BasicUIGetSaveFilename,
+	&BasicUIGetLoadFilename,
+	&BasicUIMessage,
+	&BasicUIAboutBox,
+	&BasicUIInit
+};
 
 /*
 $Log$
+Revision 1.32  2005/09/10 12:37:25  pfusik
+char * -> const char *; Util_splitpath() and Util_catpath()
+
 Revision 1.31  2005/09/07 22:00:29  pfusik
 shorten the messages to fit on screen
 
