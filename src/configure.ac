@@ -36,33 +36,30 @@ case "$target" in
         a8_target="x11-$target"
         ;;
     *)
-        a8_target="UNKNOWN"
+        echo
+        echo "Usage: configure --target=<target> <other options>"
+        echo
+        echo "The '--target' option is required.  Use '--help' to see other available"
+        echo "options, including Atari800 specific '--enable' options.  Possible values"
+        echo "for the '--target' option are:"
+        echo "    basic            (text mode using standard I/O)"
+        echo "    curses           (text mode using Curses library)"
+        echo "    ncurses          (text mode using NCurses library)"
+        echo "    pdcurses         (text mode using PDCurses library)"
+        echo "    dosvga           (DOS only)"
+        echo "    falcon           (Atari Falcon systems only)"
+        echo "    svgalib          (Linux system with SVGALib library)"
+        echo "    sdl              (System with Simple Direct Media Layer library)"
+        echo "    windx            (Windows with DirectX only)"
+        echo "    x11              (Standard X11)"
+        echo "    (x11-)motif      (Motif on X11)"
+        echo "    (x11-)shm        (Standard X11 with shared memory extensions)"
+        echo "    (x11-)xview      (XView on X11)"
+        echo "    (x11-)xview-shm  (XView on X11, with shared memory extensions)"
+        echo
+        exit 1;
         ;;
 esac
-if [[ "$a8_target" == "UNKNOWN" ]]; then
-    echo
-    echo "Usage: configure --target=<target> <other options>"
-    echo
-    echo "The '--target' option is required.  Use '--help' to see other available"
-    echo "options, including Atari800 specific '--enable' options.  Possible values"
-    echo "for the '--target' option are:"
-    echo "    basic"
-    echo "    curses"
-    echo "    ncurses"
-    echo "    pdcurses"
-    echo "    dosvga           (DOS only)"
-    echo "    falcon           (Atari Falcon systems only)"
-    echo "    svgalib          (Linux system with SVGALib library)"
-    echo "    sdl              (System with Simple Direct Media Layer library)"
-    echo "    windx            (Windows with DirectX only)"
-    echo "    x11              (Standard X11)"
-    echo "    (x11-)motif      (Motif on X11)"
-    echo "    (x11-)shm        (Standard X11 with shared memory extensions)"
-    echo "    (x11-)xview      (XView on X11)"
-    echo "    (x11-)xview-shm  (XView on X11, with shared memory extensions)"
-    echo
-    exit 1;
-fi
 
 dnl Set a8_host
 AC_CANONICAL_HOST
@@ -72,8 +69,8 @@ case $host_os in
         ;;
     cygwin)
         a8_host="win"
-        AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
-        AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
+        AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
+        AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         if [[ "$a8_target" = "windx" ]]; then
             CC="gcc -mno-cygwin"
             echo
@@ -83,14 +80,14 @@ case $host_os in
         ;;
     mingw32)
         a8_host="win"
-        AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
-        AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
+        AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
+        AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         ;;
     msdosdjgpp)
         a8_host="dos"
-        AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
+        AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
-        AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
+        AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
         ;;
     linux | linux-gnu)
@@ -98,11 +95,11 @@ case $host_os in
         ;;
     mint)
         a8_host="falcon"
-        AC_DEFINE(BACK_SLASH,,[Define to use back slash as directory separator.])
+        AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
-        AC_DEFINE(DOS_DRIVES,,[Define to enable DOS style drives support.])
+        AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
-        AC_DEFINE(USE_CLOCK,,[Define to use clock() instead of gettimeofday().])
+        AC_DEFINE(USE_CLOCK,1,[Define to use clock() instead of gettimeofday().])
         ;;
     *unix*)
         a8_host="unix"
@@ -172,42 +169,42 @@ else
 fi
 case "$a8_target" in
     basic)
-        AC_DEFINE(BASIC,,[Target: standard I/O.])
+        AC_DEFINE(BASIC,1,[Target: standard I/O.])
         OBJS="atari_basic.o"
         ;;
     dosvga)
         if [[ "$a8_host" != "dos" ]]; then
-            AC_MSG_ERROR("the dosvga target is only valid on a DOS system!")
+            AC_MSG_ERROR("the dosvga target is valid only on a DOS system!")
         fi
-        AC_DEFINE(DOSVGA,,[Target: DOS VGA.])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,,[Additional config file options.])
+        AC_DEFINE(DOSVGA,1,[Target: DOS VGA.])
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
         OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
         ;;
     curses)
-        AC_DEFINE(USE_CURSES,,[Target: Curses-compatible library.])
+        AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
         A8_NEED_LIB(curses)
         OBJS="atari_curses.o"
         ;;
     ncurses)
-        AC_DEFINE(USE_CURSES,,[Target: Curses-compatible library.])
-        AC_DEFINE(USE_NCURSES,,[Target: Ncurses library.])
+        AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
+        AC_DEFINE(USE_NCURSES,1,[Target: Ncurses library.])
         A8_NEED_LIB(ncurses)
         OBJS="atari_curses.o"
         ;;
     pdcurses)
-        AC_DEFINE(USE_CURSES,,[Target: Curses-compatible library.])
+        AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
         A8_NEED_LIB(pdcurses)
         OBJS="atari_curses.o"
         ;;
     falcon)
-        AC_DEFINE(FALCON,,[Target: Atari Falcon system.])
+        AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
         A8_NEED_LIB(gem)
         OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
         ;;
     sdl)
-        AC_DEFINE(SDL,,[Target: SDL library.])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,,[Additional config file options.])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,,[Save additional config file options.])
+        AC_DEFINE(SDL,1,[Target: SDL library.])
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
+        AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,1,[Save additional config file options.])
         sdlcheck="X_`sdl-config --cflags`"
         if [[ "$sdlcheck" != "X_" ]]; then
             CFLAGS="$CFLAGS `sdl-config --cflags`"
@@ -218,12 +215,12 @@ case "$a8_target" in
         fi
         ;;
     svgalib)
-        AC_DEFINE(SVGALIB,,[Target: Linux with SVGALib.])
+        AC_DEFINE(SVGALIB,1,[Target: Linux with SVGALib.])
         A8_NEED_LIB(vga)
         OBJS="atari_svgalib.o"
         ;;
     windx)
-        AC_DEFINE(DIRECTX,,[Target: Windows with DirectX.])
+        AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])
         A8_NEED_LIB(ddraw)
         A8_NEED_LIB(dinput)
         A8_NEED_LIB(dsound)
@@ -233,7 +230,7 @@ case "$a8_target" in
         ;;
     x11*)
         AC_PATH_X
-        AC_DEFINE(X11,,[Target: Standard X11.])
+        AC_DEFINE(X11,1,[Target: Standard X11.])
         if [[ "X_$x_includes" != "X_" ]]; then
             CFLAGS="$CFLAGS -I$x_includes"
         fi
@@ -243,13 +240,13 @@ case "$a8_target" in
         A8_NEED_LIB(X11)
         case "$a8_target" in
             *-shm)
-                AC_DEFINE(SHM,,[Target: X11 with shared memory extensions.])
+                AC_DEFINE(SHM,1,[Target: X11 with shared memory extensions.])
                 A8_NEED_LIB(Xext)
                 ;;
         esac
         case "$a8_target" in
             x11-xview*)
-                AC_DEFINE(XVIEW,,[Target: X11 with XView.])
+                AC_DEFINE(XVIEW,1,[Target: X11 with XView.])
                 dnl Dunno if this is the right way...
                 CFLAGS="$CFLAGS -I/usr/openwin/include"
                 LDFLAGS="$LDFLAGS -L/usr/openwin/lib"
@@ -260,7 +257,7 @@ case "$a8_target" in
                 A8_NEED_LIB(xview)
                 ;;
             x11-motif)
-                AC_DEFINE(MOTIF,,[Target: X11 with Motif.])
+                AC_DEFINE(MOTIF,1,[Target: X11 with Motif.])
                 dnl According to the information I was able to find,
                 dnl "-lgen -lsocket" is necessary only with old Sun Motif libs.
                 AC_CHECK_LIB(socket,main,[:],)
@@ -328,7 +325,7 @@ int main(void)
 #endif
 }], ac_cv_unaligned_long_ok=yes, ac_cv_unaligned_long_ok=no, ac_cv_unaligned_long_ok=no)])
 if [[ "$ac_cv_unaligned_long_ok" = "yes" ]]; then
-    AC_DEFINE(UNALIGNED_LONG_OK,,[Define if unaligned long access is ok.])
+    AC_DEFINE(UNALIGNED_LONG_OK,1,[Define if unaligned long access is ok.])
 fi
 
 
@@ -354,7 +351,7 @@ dnl         $5    = The help string which shows up in config.h for the $4 symbol
 AC_DEFUN([A8_OPTION],[
     AC_ARG_ENABLE($1,AC_HELP_STRING(--enable-$1,$3),WANT_$4=$enableval,WANT_$4=$2)
     if [[ "$WANT_$4" = "yes" ]]; then
-        AC_DEFINE($4,,$5)
+        AC_DEFINE($4,1,$5)
     fi
 ])
 
