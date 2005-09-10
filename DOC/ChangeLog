@@ -1,3 +1,21 @@
+2005-09-10  Piotr Fusik  <fox@scene.pl>
+* configure.ac: #define our symbols to 1 (just like autoconf's own symbols);
+  described basic and *curses targets
+
+* win32/screen_win32.c: improved error handling:
+  - DirectX docs suggest using FAILED() instead of !=DD_OK
+  - display the name of the failed function and the return code
+    (unfortunately DXTrace() is available only in DirectX 8.0 and higher)
+  - display a hint if SetDisplayMode fails with DDERR_INVALIDMODE
+    (the default 320x240 doesn't work on my Win98SE / Radeon 9000,
+     although it works on XP on the same machine)
+
+* ui.h, ui_basic.c: char * -> const char *
+
+* rt-config.c, ui_basic.c, util.[ch]: simplified code by introducing
+  Util_splitpath() and Util_catpath()
+
+
 2005-09-09  Piotr Fusik  <fox@scene.pl>
 * DOC/HOWTO-DIRTYSPAN: an alternative to DIRTYRECT (just an idea)
 
