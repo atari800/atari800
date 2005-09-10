@@ -32,6 +32,7 @@
 #include "atari.h"
 #include "colours.h"
 #include "log.h"
+#include "util.h"
 
 #include "main.h"
 #include "screen_win32.h"
@@ -44,8 +45,8 @@ static LPDIRECTDRAWSURFACE4 lpDDSBack = NULL;
 static LPDIRECTDRAWSURFACE4 lpDDSsrc = NULL;
 static LPDIRECTDRAWPALETTE lpDDPal = NULL;
 
-#define MAX_CLR         0x100
-static PALETTEENTRY pal[MAX_CLR];       /* palette */
+#define MAX_CLR 0x100
+static PALETTEENTRY pal[MAX_CLR]; /* palette */
 
 static int linesize = 0;
 static int scrwidth = 320;
@@ -55,185 +56,162 @@ static int bltgfx = 0;
 
 void groff(void)
 {
-  if (lpDD != NULL)
-    {
-      if (lpDDSsrc != NULL)
-      {
-	IDirectDrawSurface4_Release(lpDDSsrc);
-	lpDDSsrc = NULL;
-      }
-      if (lpDDSPrimary != NULL)
-        {
-	  IDirectDrawSurface4_Release(lpDDSPrimary);
-          lpDDSPrimary = NULL;
-        }
-      if (lpDDPal != NULL)
-        {
-          IDirectDrawPalette_Release(lpDDPal);
-          lpDDPal = NULL;
-        }
-      IDirectDraw4_Release(lpDD);
-      lpDD = NULL;
-    }
+	if (lpDD != NULL) {
+		if (lpDDSsrc != NULL) {
+			IDirectDrawSurface4_Release(lpDDSsrc);
+			lpDDSsrc = NULL;
+		}
+		if (lpDDSPrimary != NULL) {
+			IDirectDrawSurface4_Release(lpDDSPrimary);
+			lpDDSPrimary = NULL;
+		}
+		if (lpDDPal != NULL) {
+			IDirectDrawPalette_Release(lpDDPal);
+			lpDDPal = NULL;
+		}
+		IDirectDraw4_Release(lpDD);
+		lpDD = NULL;
+	}
 }
 
-static int initFail(HWND hwnd)
+static int initFail(HWND hwnd, const char *func, HRESULT hr)
 {
-  MessageBox(hwnd, "DirectDraw Init FAILED", myname, MB_OK);
-  groff();
-  DestroyWindow(hwnd);
-  return 1;
+	char txt[256];
+	sprintf(txt, "DirectDraw Init FAILED: %s returned 0x%x", func, hr);
+	MessageBox(hwnd, txt, myname, MB_OK);
+	groff();
+	DestroyWindow(hwnd);
+	return 1;
 }
 
 int gron(int *argc, char *argv[])
 {
-  DDSURFACEDESC2 ddsd;
-  DDSCAPS2 ddscaps;
-  HRESULT ddrval;
-  int i, j;
-  int width = 0;
-  int help = FALSE;
+	DDSURFACEDESC2 ddsd;
+	DDSCAPS2 ddscaps;
+	HRESULT ddrval;
+	int i, j;
+	int width = 0;
+	int help = FALSE;
 
-  for (i = j = 1; i < *argc; i++)
-    {
-      if (strcmp(argv[i], "-width") == 0)
-      {
-        i++;
-	width = atoi(argv[i]);
-      }
-      else if (strcmp(argv[i], "-blt") == 0)
-      {
-	bltgfx = !0;
-      }
-      else
-      {
-        if (strcmp(argv[i], "-help") == 0)
-        {
-	  Aprint("\t-width <num>     Set display mode width");
-	  Aprint("\t-blt             Use blitting to draw graphics");
-	  help = TRUE;
-        }
-        argv[j++] = argv[i];
-      }
-    }
-  *argc = j;
+	for (i = j = 1; i < *argc; i++) {
+		if (strcmp(argv[i], "-width") == 0)
+			width = Util_sscandec(argv[++i]);
+		else if (strcmp(argv[i], "-blt") == 0)
+			bltgfx = TRUE;
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-width <num>     Set display mode width");
+				Aprint("\t-blt             Use blitting to draw graphics");
+				help = TRUE;
+			}
+			argv[j++] = argv[i];
+		}
+		}
+	*argc = j;
 
-  if (help)
-    return 0;
+	if (help)
+		return 0;
 
-  if (width)
-  {
-    scrwidth = width;
-    scrheight = width * 3 / 4;
-  }
+	if (width > 0) {
+		scrwidth = width;
+		scrheight = width * 3 / 4;
+	}
 
-  ddrval = DirectDrawCreate(NULL, (void *) &lpDD, NULL);
-  if (ddrval != DD_OK)
-    {
-      return initFail(hWndMain);
-    }
-  ddrval = IDirectDraw4_QueryInterface(lpDD, &IID_IDirectDraw4, (void *) &lpDD);
-  if (ddrval != DD_OK)
-    return initFail(hWndMain);
-  ddrval = IDirectDraw4_SetCooperativeLevel(lpDD, hWndMain,
-                                            DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
-  if (ddrval != DD_OK)
-    {
-      return initFail(hWndMain);
-    }
+	ddrval = DirectDrawCreate(NULL, (void *) &lpDD, NULL);
+	if (FAILED(ddrval))
+		return initFail(hWndMain, "DirectDrawCreate", ddrval);
+	ddrval = IDirectDraw4_QueryInterface(lpDD, &IID_IDirectDraw4, (void *) &lpDD);
+	if (FAILED(ddrval))
+		return initFail(hWndMain, "QueryInterface", ddrval);
+	ddrval = IDirectDraw4_SetCooperativeLevel(lpDD, hWndMain, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
+	if (FAILED(ddrval))
+		return initFail(hWndMain, "SetCooperativeLevel", ddrval);
 
-  if (bltgfx)
-  {
-    memset(&ddsd, 0, sizeof(ddsd));
-    ddsd.dwSize = sizeof(ddsd);
-    ddrval = IDirectDraw4_GetDisplayMode(lpDD, &ddsd);
-  if (ddrval != DD_OK)
-      return initFail(hWndMain);
-    ddrval = IDirectDraw4_SetDisplayMode(lpDD, ddsd.dwWidth, ddsd.dwHeight,
-					 32, 0, 0);
-  if (ddrval != DD_OK)
-      return initFail(hWndMain);
-  }
-  else
-    {
-    ddrval = IDirectDraw4_SetDisplayMode(lpDD, scrwidth, scrheight, 8, 0, 0);
-    if (ddrval != DD_OK)
-      return initFail(hWndMain);
-    }
+	if (bltgfx) {
+		memset(&ddsd, 0, sizeof(ddsd));
+		ddsd.dwSize = sizeof(ddsd);
+		ddrval = IDirectDraw4_GetDisplayMode(lpDD, &ddsd);
+		if (FAILED(ddrval))
+			return initFail(hWndMain, "GetDisplayMode", ddrval);
+		ddrval = IDirectDraw4_SetDisplayMode(lpDD, ddsd.dwWidth, ddsd.dwHeight, 32, 0, 0);
+	}
+	else {
+		ddrval = IDirectDraw4_SetDisplayMode(lpDD, scrwidth, scrheight, 8, 0, 0);
+	}
+	if (FAILED(ddrval)) {
+		if (ddrval == DDERR_INVALIDMODE && !bltgfx && width != 640) {
+			/* 320x240 is not supported on my Win98SE / Radeon 9000 */
+			MessageBox(hWndMain,
+				"DirectDraw does not support the requested mode.\n"
+				"Try running with \"-blt\" or \"-width 640\" on the command line.",
+				myname, MB_OK);
+			groff();
+			DestroyWindow(hWndMain);
+			return 1;
+		}
+		return initFail(hWndMain, "SetDisplayMode", ddrval);
+	}
 
-  memset(&ddsd, 0, sizeof(ddsd));
-  ddsd.dwSize = sizeof(ddsd);
-  ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
-  ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE |
-    DDSCAPS_FLIP |
-    DDSCAPS_COMPLEX;
-  ddsd.dwBackBufferCount = 1;
-  ddrval = IDirectDraw4_CreateSurface(lpDD, &ddsd, &lpDDSPrimary, NULL);
-  if (ddrval != DD_OK)
-    {
-      return initFail(hWndMain);
-    }
-  memset(&ddscaps, 0, sizeof(ddscaps));
-  ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
-  ddrval = IDirectDrawSurface4_GetAttachedSurface(lpDDSPrimary,
-                                                  &ddscaps, &lpDDSBack);
-  if (ddrval != DD_OK)
-    {
-      return initFail(hWndMain);
-    }
+	memset(&ddsd, 0, sizeof(ddsd));
+	ddsd.dwSize = sizeof(ddsd);
+	ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
+	ddsd.dwBackBufferCount = 1;
+	ddrval = IDirectDraw4_CreateSurface(lpDD, &ddsd, &lpDDSPrimary, NULL);
+	if (FAILED(ddrval))
+		return initFail(hWndMain, "CreateSurface", ddrval);
+	memset(&ddscaps, 0, sizeof(ddscaps));
+	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
+	ddrval = IDirectDrawSurface4_GetAttachedSurface(lpDDSPrimary, &ddscaps, &lpDDSBack);
+	if (FAILED(ddrval))
+		return initFail(hWndMain, "GetAttachedSurface", ddrval);
 
-  if (bltgfx)
-  {
-    ddrval = IDirectDraw4_GetDisplayMode(lpDD, &ddsd);
-    if (ddrval != DD_OK)
-      return initFail(hWndMain);
+	if (bltgfx) {
+		ddrval = IDirectDraw4_GetDisplayMode(lpDD, &ddsd);
+		if (FAILED(ddrval))
+			return initFail(hWndMain, "GetDisplayMode", ddrval);
 
-    ddsd.dwSize = sizeof(ddsd);
-    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
-    ddsd.dwWidth = 336;
-    ddsd.dwHeight = 252;
-    ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY;
-    ddrval = IDirectDraw4_CreateSurface(lpDD, &ddsd, &lpDDSsrc, NULL);
-    if (ddrval != DD_OK)
-      return initFail(hWndMain);
+		ddsd.dwSize = sizeof(ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
+		ddsd.dwWidth = 336;
+		ddsd.dwHeight = 252;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY;
+		ddrval = IDirectDraw4_CreateSurface(lpDD, &ddsd, &lpDDSsrc, NULL);
+		if (FAILED(ddrval))
+			return initFail(hWndMain, "CreateSurface", ddrval);
 
-    ddrval = IDirectDrawSurface4_Lock(lpDDSsrc, NULL, &ddsd,
-				      DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-    if (ddrval != DD_OK)
-      return initFail(hWndMain);
+		ddrval = IDirectDrawSurface4_Lock(lpDDSsrc, NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+		if (FAILED(ddrval))
+			return initFail(hWndMain, "Lock", ddrval);
 
-    memset(ddsd.lpSurface, 0, ddsd.lPitch * ddsd.dwHeight);
+		memset(ddsd.lpSurface, 0, ddsd.lPitch * ddsd.dwHeight);
 
-    ddrval = IDirectDrawSurface4_Unlock(lpDDSsrc, NULL);
-  }
-  else
-  {
-  for (i = 0; i < MAX_CLR; i++)
-    {
-      palette(i, Palette_GetR(i), Palette_GetG(i), Palette_GetB(i));
-    }
-    IDirectDraw4_CreatePalette(lpDD, DDPCAPS_8BIT,
-                             pal, &lpDDPal, NULL);
-  if (lpDDPal)
-      IDirectDrawSurface4_SetPalette(lpDDSPrimary, lpDDPal);
-  }
+		ddrval = IDirectDrawSurface4_Unlock(lpDDSsrc, NULL);
+	}
+	else {
+		for (i = 0; i < MAX_CLR; i++)
+			palette(i, Palette_GetR(i), Palette_GetG(i), Palette_GetB(i));
+		IDirectDraw4_CreatePalette(lpDD, DDPCAPS_8BIT, pal, &lpDDPal, NULL);
+		if (lpDDPal)
+			IDirectDrawSurface4_SetPalette(lpDDSPrimary, lpDDPal);
+	}
 
-  return 0;
+	return 0;
 }
 
 void palupd(int beg, int cnt)
 {
-  IDirectDrawPalette_SetEntries(lpDDPal, 0, beg, cnt, pal);
+	IDirectDrawPalette_SetEntries(lpDDPal, 0, beg, cnt, pal);
 }
 
 void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 {
-  if (ent >= MAX_CLR)
-    return;
-  pal[ent].peRed = r;
-  pal[ent].peGreen = g;
-  pal[ent].peBlue = b;
-  pal[ent].peFlags = 0;
+	if (ent >= MAX_CLR)
+		return;
+	pal[ent].peRed = r;
+	pal[ent].peGreen = g;
+	pal[ent].peBlue = b;
+	pal[ent].peFlags = 0;
 }
 
 void refreshv(UBYTE * scr_ptr)
@@ -269,7 +247,7 @@ void refreshv(UBYTE * scr_ptr)
 			if (w > 0)
 				scraddr += w;
 			else if (w < 0)
-				(UBYTE *) scr_ptr -= w;
+				scr_ptr -= w;
 			if (h > 0)
 				scraddr += linesize * h;
 			for (y = 0; y < ATARI_HEIGHT; y++) {
@@ -289,10 +267,10 @@ void refreshv(UBYTE * scr_ptr)
 	else if (err == DDERR_SURFACELOST)
 		err = IDirectDrawSurface4_Restore(bltgfx ? lpDDSsrc : lpDDSBack);
 	else {
-		char txt[0x100];
+		char txt[256];
 		sprintf(txt, "DirectDraw error 0x%x", err);
 		MessageBox(hWndMain, txt, myname, MB_OK);
-		// printf("error: %x\n", err);
+		/* printf("error: %x\n", err); */
 		exit(1);
 	}
 
@@ -310,7 +288,7 @@ void refreshv(UBYTE * scr_ptr)
 	palupd(CLR_BACK, 1);
 #endif
 	err = IDirectDrawSurface4_Flip(lpDDSPrimary, NULL, DDFLIP_WAIT);
-	// err = IDirectDrawSurface3_Flip(lpDDSPrimary, NULL, 0);
+	/* err = IDirectDrawSurface3_Flip(lpDDSPrimary, NULL, 0); */
 	if (err == DDERR_SURFACELOST)
 		err = IDirectDrawSurface4_Restore(lpDDSPrimary);
 #if (SHOWFRAME > 0)
@@ -325,6 +303,9 @@ void refreshv(UBYTE * scr_ptr)
 
 /*
 $Log$
+Revision 1.5  2005/09/10 12:37:58  pfusik
+improved error handling
+
 Revision 1.4  2005/09/07 22:04:25  pfusik
 DirectX version can be compiled with MSVC 6
 
