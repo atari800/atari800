@@ -39,16 +39,19 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
+#ifdef WIN32
+#include <windows.h>
+#endif
 
-#include "rt-config.h"
-#include "atari.h"
 #include "antic.h"
-#include "ui.h"
-#include "log.h"
+#include "atari.h"
 #include "input.h"
-#include "platform.h"
+#include "log.h"
 #include "memory.h"
+#include "platform.h"
+#include "rt-config.h"
 #include "screen.h" /* for atari_screen */
+#include "ui.h"
 #include "util.h"
 
 #ifdef USE_CURSES
@@ -240,7 +243,7 @@ static void Print(UBYTE *screen, int fg, int bg, const char *string, int x, int 
 static void CenterPrint(UBYTE *screen, int fg, int bg, const char *string, int y)
 {
 	int length;
-	char *eol = strchr(string, '\n');
+	const char *eol = strchr(string, '\n');
 	while (eol != NULL && string[0]) {
 		length = eol - string - 1;
 		Print(screen, fg, bg, string, (40 - length) / 2, y++);
@@ -556,7 +559,85 @@ static int EditFilename(UBYTE *screen, char *fname)
 	return fname[0] != '\0';
 }
 
-#ifdef HAVE_OPENDIR
+#ifdef WIN32
+
+static WIN32_FIND_DATA wfd;
+static HANDLE dh = INVALID_HANDLE_VALUE;
+
+static int BasicUIOpenDir(const char *dirname)
+{
+#ifdef UNICODE
+	WCHAR wfilespec[FILENAME_MAX];
+	if (MultiByteToWideChar(CP_ACP, 0, dirname, -1, wfilespec, FILENAME_MAX - 4) <= 0)
+		return FALSE;
+	wcscat(wfilespec, (dirname[0] != '\0' && dirname[strlen(dirname) - 1] != '\\')
+		? L"\\*.*" : L"*.*");
+	dh = FindFirstFile(wfilespec, &wfd);
+#else
+	char filespec[FILENAME_MAX];
+	Util_strlcpy(filespec, dirname, FILENAME_MAX - 4);
+	strcat(filespec, (dirname[0] != '\0' && dirname[strlen(dirname) - 1] != '\\')
+		? "\\*.*" : "*.*");
+	dh = FindFirstFile(filespec, &wfd);
+#endif
+	return dh != INVALID_HANDLE_VALUE;
+}
+
+static int BasicUIReadDir(char *filename, int *isdir)
+{
+	if (dh == INVALID_HANDLE_VALUE)
+		return FALSE;
+#ifdef UNICODE
+	if (WideCharToMultiByte(CP_ACP, 0, wfd.cFileName, -1, filename, FILENAME_MAX, NULL, NULL) <= 0)
+		filename[0] = '\0';
+#else
+	Util_strlcpy(filename, wfd.cFileName, FILENAME_MAX);
+#endif
+	*isdir = (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
+	if (!FindNextFile(dh, &wfd)) {
+		FindClose(dh);
+		dh = INVALID_HANDLE_VALUE;
+	}
+	return TRUE;
+}
+
+#define DO_DIR
+
+#elif defined(HAVE_OPENDIR)
+
+static char dir_path[FILENAME_MAX];
+static DIR *dp = NULL;
+
+static int BasicUIOpenDir(const char *dirname)
+{
+	Util_strlcpy(dir_path, dirname, FILENAME_MAX);
+	dp = opendir(dir_path);
+	return dp != NULL;
+}
+
+static int BasicUIReadDir(char *filename, int *isdir)
+{
+	struct dirent *entry;
+	char fullfilename[FILENAME_MAX];
+	struct stat st;
+	entry = readdir(dp);
+	if (entry == NULL) {
+		closedir(dp);
+		dp = NULL;
+		return FALSE;
+	}
+	strcpy(filename, entry->d_name);
+	Util_catpath(fullfilename, dir_path, entry->d_name);
+	stat(fullfilename, &st);
+	*isdir = (st.st_mode & S_IFDIR) ? TRUE : FALSE;
+	return TRUE;
+}
+
+#define DO_DIR
+
+#endif /* defined(HAVE_OPENDIR) */
+
+#ifdef DO_DIR
 
 static char **filenames;
 #define FILENAMES_INITIAL_SIZE 256 /* preallocate 1 KB */
@@ -624,57 +705,41 @@ static void FilenamesFree(void)
 
 static void GetDirectory(char *directory)
 {
-	DIR *dp = NULL;
-	struct stat st;
-	char fullfilename[FILENAME_MAX];
-	char *filepart;
-#ifdef DOS_DRIVES
-	static char letter[3] = { 'C', ':', '\0' };
-	static char letter2[5] = { '[', 'C', ':', ']', '\0' };
 #ifdef __DJGPP__
 	unsigned short s_backup = _djstat_flags;
 	_djstat_flags = _STAT_INODE | _STAT_EXEC_EXT | _STAT_EXEC_MAGIC | _STAT_DIRSIZE |
 		_STAT_ROOT_TIME | _STAT_WRITEBIT;
 	/* we do not need any of those 'hard-to-get' informations */
 #endif	/* DJGPP */
-#endif	/* DOS_DRIVES */
-	strcpy(fullfilename, directory);
-	filepart = fullfilename + strlen(fullfilename);
-	if (filepart == fullfilename || filepart[-1] != DIR_SEP_CHAR)
-		*filepart++ = DIR_SEP_CHAR;
 
 	filenames = (char **) Util_malloc(FILENAMES_INITIAL_SIZE * sizeof(char *));
 	n_filenames = 0;
 
-	dp = opendir(directory);
-	if (dp) {
-		struct dirent *entry;
+	if (BasicUIOpenDir(directory)) {
+		char filename[FILENAME_MAX];
+		int isdir;
 
-		while ((entry = readdir(dp))) {
-			char *filename;
+		while (BasicUIReadDir(filename, &isdir)) {
+			char *filename2;
 
-			if (strcmp(entry->d_name, ".") == 0)
+			if (filename[0] == '\0' ||
+				(filename[0] == '.' && filename[1] == '\0'))
 				continue;
 
-			strcpy(filepart, entry->d_name);	/* create full filename */
-			stat(fullfilename, &st);
-			if (st.st_mode & S_IFDIR) {
+			if (isdir) {
 				/* add directories as [dir] */
-				int len;
-				len = strlen(entry->d_name);
-				filename = (char *) Util_malloc(len + 3);
-				memcpy(filename + 1, entry->d_name, len);
-				filename[0] = '[';
-				filename[len + 1] = ']';
-				filename[len + 2] = '\0';
+				size_t len = strlen(filename);
+				filename2 = (char *) Util_malloc(len + 3);
+				memcpy(filename2 + 1, filename, len);
+				filename2[0] = '[';
+				filename2[len + 1] = ']';
+				filename2[len + 2] = '\0';
 			}
 			else
-				filename = Util_strdup(entry->d_name);
+				filename2 = Util_strdup(filename);
 
-			FilenamesAdd(filename);
+			FilenamesAdd(filename2);
 		}
-
-		closedir(dp);
 
 		FilenamesSort((const char **) filenames, (const char **) filenames + n_filenames - 1);
 	}
@@ -684,27 +749,42 @@ static void GetDirectory(char *directory)
 #ifdef DOS_DRIVES
 	/* in DOS, add all existing disk letters */
 	FilenamesAdd(Util_strdup("[A:]"));	/* do not check A: - it's slow */
-	for (letter[0] = 'C'; letter[0] <= 'Z'; letter[0]++) {
+	{
+		char letter;
+		for (letter = 'C'; letter <= 'Z'; letter++) {
 #ifdef __DJGPP__
-		stat(letter, &st);
-		if (st.st_mode & S_IXUSR)
+			static char drive[3] = "C:";
+			struct stat st;
+			drive[0] = letter;
+			stat(drive, &st);
+			if (st.st_mode & S_IXUSR)
+#elif defined(WIN32)
+#ifdef UNICODE
+			static WCHAR rootpath[4] = L"C:\\";
+#else
+			static char rootpath[4] = "C:\\";
 #endif
-		{
-			letter2[1] = letter[0];
-			FilenamesAdd(Util_strdup(letter2));
+			rootpath[0] = letter;
+			if (GetDriveType(rootpath) != DRIVE_NO_ROOT_DIR)
+#endif /* defined(WIN32) */
+			{
+				static char drive2[5] = "[C:]";
+				drive2[1] = letter;
+				FilenamesAdd(Util_strdup(drive2));
+			}
 		}
 	}
+#endif /* DOS_DRIVES */
 #ifdef __DJGPP__
-	_djstat_flags = s_backup;	/* return the original state */
-#endif
+	_djstat_flags = s_backup;	/* restore the original state */
 #endif
 }
 
-#endif /* HAVE_OPENDIR */
+#endif /* DO_DIR */
 
 static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 {
-#ifdef HAVE_OPENDIR
+#ifdef DO_DIR
 	int flag = FALSE;
 	int next_dir;
 
@@ -786,20 +866,16 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 					item = 0;
 			}
 			else if (item == -2) {	/* Next directory */
-				DIR *dr;
+				/* FIXME!!! possible endless loop!!! */
 				do {
 					current_disk_directory = (current_disk_directory + 1) % disk_directories;
 					strcpy(directory, atari_disk_dirs[current_disk_directory]);
-					dr = opendir(directory);
-				} while (dr == NULL);
-				closedir(dr);
-/*                  directory = atari_disk_dirs[current_disk_directory]; */
+				} while (!Util_direxists(directory));
 				next_dir = TRUE;
 				break;
 			}
 			else if (item != -1) {
 				if (files[item][0] == '[') {	/* directory selected */
-					DIR *dr;
 					char help[FILENAME_MAX];	/* new directory */
 
 					if (strcmp(files[item], "[..]") == 0) {		/* go up */
@@ -831,15 +907,14 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 					}
 #endif
 					else {	/* directory selected */
-						char *pbracket = strchr(files[item], ']');
+						char *pbracket = strrchr(files[item], ']');
 						if (pbracket != NULL)
 							*pbracket = '\0';	/*cut ']' */
 						Util_catpath(help, directory, files[item] + 1);
 					}
-					dr = opendir(help);		/* check, if new directory is valid */
-					if (dr) {
+					/* check if new directory is valid */
+					if (Util_direxists(help)) {
 						strcpy(directory, help);
-						closedir(dr);
 						next_dir = TRUE;
 						break;
 					}
@@ -857,7 +932,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 		FilenamesFree();
 	} while (next_dir);
 	return flag;
-#else /* HAVE_OPENDIR */
+#else /* DO_DIR */
 	char fname[FILENAME_SIZE + 1];
 	if (EditFilename(screen, fname)) {
 		if (directory[0] == '\0' || strcmp(directory, ".") == 0)
@@ -870,7 +945,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 		return TRUE;
 	}
 	return FALSE;
-#endif /* HAVE_OPENDIR */
+#endif /* DO_DIR */
 }
 
 static void AboutEmulator(UBYTE *screen)
@@ -1044,6 +1119,9 @@ tUIDriver basic_ui_driver =
 
 /*
 $Log$
+Revision 1.34  2005/09/11 20:38:43  pfusik
+implemented file selector on MSVC
+
 Revision 1.33  2005/09/11 07:19:22  pfusik
 fixed file selector which I broke yesterday;
 use Util_realloc() instead of realloc(); fixed a warning
