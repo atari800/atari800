@@ -87,7 +87,7 @@ static void show_file_error(FILE *stream)
 /* Opens a ZLIB compressed (gzip) file, creates a temporary filename, and decompresses
    the contents of the .gz file to the temporary file name. Note that *outfilename is
    actually blank coming in and is filled by Util_tmpfile */
-FILE *openzlib(int diskno, const char *infilename, char *outfilename)
+FILE *openzlib(const char *infilename, char *outfilename)
 {
 #ifndef HAVE_LIBZ
 	Aprint("This executable cannot decompress ZLIB files");
@@ -262,7 +262,7 @@ int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output)
 
 /* Opens a DCM file and decodes it to a temporary file, then returns the
    file handle for the temporary file and its name. */
-FILE *opendcm(int diskno, const char *infilename, char *outfilename)
+FILE *opendcm(const char *infilename, char *outfilename)
 {
 	FILE *infile, *outfile;
 	FILE *file = NULL;
@@ -564,6 +564,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.23  2005/09/11 20:40:25  pfusik
+removed the unused diskno parameter from opendcm() and openzlib()
+
 Revision 1.22  2005/09/06 22:55:06  pfusik
 fixed 32 KB memory leak per open zlib-compressed disk image;
 introduced util.[ch]

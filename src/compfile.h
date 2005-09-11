@@ -3,8 +3,8 @@
 
 #include <stdio.h>  /* FILE */
 
-FILE *opendcm(int diskno, const char *infilename, char *outfilename);
-FILE *openzlib(int diskno, const char *infilename, char *outfilename);
+FILE *opendcm(const char *infilename, char *outfilename);
+FILE *openzlib(const char *infilename, char *outfilename);
 int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output);
 
 #endif /* _COMPFILE_H_ */

@@ -151,7 +151,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		/* DCM */
 		fclose(f);
 		istmpfile[diskno - 1] = 1;
-		f = opendcm(diskno, filename, tmp_filename[diskno - 1]);
+		f = opendcm(filename, tmp_filename[diskno - 1]);
 		if (f == NULL)
 			return FALSE;
 		if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
@@ -168,7 +168,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			/* ATZ, ATR.GZ, XFZ, XFD.GZ */
 			fclose(f);
 			istmpfile[diskno - 1] = 1;
-			f = openzlib(diskno, filename, tmp_filename[diskno - 1]);
+			f = openzlib(filename, tmp_filename[diskno - 1]);
 			if (f == NULL)
 				return FALSE;
 			if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
@@ -1244,6 +1244,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.37  2005/09/11 20:40:25  pfusik
+removed the unused diskno parameter from opendcm() and openzlib()
+
 Revision 1.36  2005/09/06 22:52:56  pfusik
 optimized SIO_ChkSum(); introduced util.[ch]
 
