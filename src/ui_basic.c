@@ -567,7 +567,7 @@ static void FilenamesAdd(char *filename)
 {
 	if (n_filenames >= FILENAMES_INITIAL_SIZE && (n_filenames & (n_filenames - 1)) == 0) {
 		/* n_filenames is a power of two: allocate twice as much */
-		filenames = (char **) realloc(filenames, 2 * n_filenames * sizeof(char *));
+		filenames = (char **) Util_realloc(filenames, 2 * n_filenames * sizeof(char *));
 	}
 	filenames[n_filenames++] = filename;
 }
@@ -718,7 +718,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 #define NCOLUMNS 2
 #define MAX_FILES (NROWS * NCOLUMNS)
 
-		char **files;
+		const char **files;
 
 #ifdef __DJGPP__
 		char helpdir[FILENAME_MAX];
@@ -752,7 +752,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 		while (!done) {
 			int ascii;
 
-			files = filenames + offset;
+			files = (const char **) filenames + offset;
 			if (offset + MAX_FILES <= n_filenames)
 				nitems = MAX_FILES;
 			else
@@ -834,7 +834,7 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 						char *pbracket = strchr(files[item], ']');
 						if (pbracket != NULL)
 							*pbracket = '\0';	/*cut ']' */
-						Util_catpath(help, directory, files[item]);
+						Util_catpath(help, directory, files[item] + 1);
 					}
 					dr = opendir(help);		/* check, if new directory is valid */
 					if (dr) {
@@ -1044,6 +1044,10 @@ tUIDriver basic_ui_driver =
 
 /*
 $Log$
+Revision 1.33  2005/09/11 07:19:22  pfusik
+fixed file selector which I broke yesterday;
+use Util_realloc() instead of realloc(); fixed a warning
+
 Revision 1.32  2005/09/10 12:37:25  pfusik
 char * -> const char *; Util_splitpath() and Util_catpath()
 
