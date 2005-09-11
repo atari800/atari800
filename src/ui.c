@@ -25,11 +25,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>				/* for free() */
-/* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
-#ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#endif
+#include <stdlib.h> /* free() */
 
 #include "antic.h"
 #include "atari.h"
@@ -292,53 +288,37 @@ static void DiskManagement(void)
 					else
 						CantSave(setname);
 				}
-				else {
-					while (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
-#ifdef HAVE_OPENDIR
-						DIR *subdir;
-
-						subdir = opendir(filename);
-						if (!subdir) {	/* A file was selected */
-#endif
-							if (dsknum < 8) {	/* Normal disk mount */
-								SIO_Dismount(dsknum + 1);
-								/* try to mount read/write */
-								SIO_Mount(dsknum + 1, filename, FALSE);
-								/* update rwflags with the real mount status */
-								rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
-							}
-							else if (dsknum == 9) {	/* Load a disk set */
-								setFile = fopen(filename, "r");
-								if (setFile != NULL) {
-									for (i = 0; i < 8; i++) {
-										/* Get the disk filename from the set file */
-										fgets(diskfilename, FILENAME_MAX, setFile);
-										/* Remove the trailing newline */
-										if (strlen(diskfilename) != 0)
-											diskfilename[strlen(diskfilename) - 1] = 0;
-										/* If the disk drive wasn't empty or off when saved,
-										   mount the disk */
-										if ((strcmp(diskfilename, "Empty") != 0) && (strcmp(diskfilename, "Off") != 0)) {
-											SIO_Dismount(i + 1);
-											/* Mount the disk read/write */
-											SIO_Mount(i + 1, diskfilename, FALSE);
-											/* update rwflags with the real mount status */
-											rwflags[i] = (drive_status[i] == ReadOnly ? TRUE : FALSE);
-										}
-									}
-									fclose(setFile);
+				else if (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
+					if (dsknum < 8) {	/* Normal disk mount */
+						SIO_Dismount(dsknum + 1);
+						/* try to mount read/write */
+						SIO_Mount(dsknum + 1, filename, FALSE);
+						/* update rwflags with the real mount status */
+						rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
+					}
+					else if (dsknum == 9) {	/* Load a disk set */
+						setFile = fopen(filename, "r");
+						if (setFile != NULL) {
+							for (i = 0; i < 8; i++) {
+								/* Get the disk filename from the set file */
+								fgets(diskfilename, FILENAME_MAX, setFile);
+								/* Remove the trailing newline */
+								if (strlen(diskfilename) != 0)
+									diskfilename[strlen(diskfilename) - 1] = 0;
+								/* If the disk drive wasn't empty or off when saved,
+								   mount the disk */
+								if ((strcmp(diskfilename, "Empty") != 0) && (strcmp(diskfilename, "Off") != 0)) {
+									SIO_Dismount(i + 1);
+									/* Mount the disk read/write */
+									SIO_Mount(i + 1, diskfilename, FALSE);
+									/* update rwflags with the real mount status */
+									rwflags[i] = (drive_status[i] == ReadOnly ? TRUE : FALSE);
 								}
-								else
-									CantLoad(filename);
 							}
-							break;
-#ifdef HAVE_OPENDIR
+							fclose(setFile);
 						}
-						else {	/* A directory was selected */
-							closedir(subdir);
-							/* pathname = filename; */
-						}
-#endif
+						else
+							CantLoad(filename);
 					}
 				}
 			}
@@ -829,7 +809,7 @@ static void SelectArtifacting(void)
 static void DisplaySettings(void)
 {
 	/* this is an array, not a string constant, so we can modify it */
-	static char refresh_status[] = "1:1 ";
+	static char refresh_status[5] = "1:1 ";
 	static tMenuItem menu_array[] = {
 		{"ARTF", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select artifacting mode", NULL, 0},
 		{"FRUP", ITEM_ENABLED | ITEM_ACTION, NULL, "Increase frameskip", NULL, 1},
@@ -983,14 +963,14 @@ static void Screenshot(int interlaced)
 void ui(void)
 {
 	static tMenuItem menu_array[] = {
-		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run Atari program", "Alt+R", MENU_RUN},
+		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run Atari Program", "Alt+R", MENU_RUN},
 		{"DISK", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Disk Management", "Alt+D", MENU_DISK},
 		{"CART", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Cartridge Management", "Alt+C", MENU_CARTRIDGE},
-		{"CASS", ITEM_ENABLED | ITEM_FILESEL, NULL, "Select tape image", NULL, MENU_CASSETTE},
+		{"CASS", ITEM_ENABLED | ITEM_FILESEL, NULL, "Select Tape Image", NULL, MENU_CASSETTE},
 		{"SYST", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select System", "Alt+Y", MENU_SYSTEM},
 #ifdef SOUND
 		{"SNDS", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Sound Settings", "Alt+O", MENU_SOUND},
-		{"SREC", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Recording start/stop", "Alt+W", MENU_SOUND_RECORDING},
+		{"SREC", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Recording Start/Stop", "Alt+W", MENU_SOUND_RECORDING},
 #endif
 #ifndef CURSES_BASIC
 		{"SCRS", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Display Settings", NULL, MENU_DISPLAY},
@@ -1000,17 +980,17 @@ void ui(void)
 		{"LOAD", ITEM_ENABLED | ITEM_FILESEL, NULL, "Load State", "Alt+L", MENU_LOADSTATE},
 #ifndef CURSES_BASIC
 #ifdef HAVE_LIBPNG
-		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX screenshot", "F10", MENU_PCX},
-/*		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX interlaced screenshot", "Shift+F10", MENU_PCXI}, */
+		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX Screenshot", "F10", MENU_PCX},
+/*		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX Interlaced Screenshot", "Shift+F10", MENU_PCXI}, */
 #else
-		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX screenshot", "F10", MENU_PCX},
-/*		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX interlaced screenshot", "Shift+F10", MENU_PCXI}, */
+		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX Screenshot", "F10", MENU_PCX},
+/*		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX Interlaced Screenshot", "Shift+F10", MENU_PCXI}, */
 #endif
 #endif
-		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Back to emulated Atari", "Esc", MENU_BACK},
+		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Back to Emulated Atari", "Esc", MENU_BACK},
 		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", "F5", MENU_RESETW},
 		{"REBT", ITEM_ENABLED | ITEM_ACTION, NULL, "Reboot (Cold Start)", "Shift+F5", MENU_RESETC},
-		{"MONI", ITEM_ENABLED | ITEM_ACTION, NULL, "Enter monitor", "F8", MENU_MONITOR},
+		{"MONI", ITEM_ENABLED | ITEM_ACTION, NULL, "Enter Monitor", "F8", MENU_MONITOR},
 		{"ABOU", ITEM_ENABLED | ITEM_ACTION, NULL, "About the Emulator", "Alt+A", MENU_ABOUT},
 		{"EXIT", ITEM_ENABLED | ITEM_ACTION, NULL, "Exit Emulator", "F9", MENU_EXIT},
 		MENU_END
@@ -1136,8 +1116,8 @@ int CrashMenu(void)
 		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", "F5", 0},
 		{"REBT", ITEM_ENABLED | ITEM_ACTION, NULL, "Reboot (Cold Start)", "Shift+F5", 1},
 		{"MENU", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Menu", "F1", 2},
-		{"MONI", ITEM_ENABLED | ITEM_ACTION, NULL, "Enter monitor", "F8", 3},
-		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Continue after CIM", "Esc", 4},
+		{"MONI", ITEM_ENABLED | ITEM_ACTION, NULL, "Enter Monitor", "F8", 3},
+		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Continue After CIM", "Esc", 4},
 		{"EXIT", ITEM_ENABLED | ITEM_ACTION, NULL, "Exit Emulator", "F9", 5},
 		MENU_END
 	};
@@ -1182,6 +1162,9 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.72  2005/09/11 20:39:24  pfusik
+removed an opendir() call
+
 Revision 1.71  2005/09/07 21:54:02  pfusik
 improved "Save Disk Set" and "Make blank ATR disk"
 
