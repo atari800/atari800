@@ -250,7 +250,7 @@
 #undef HAVE_TERMIOS_H
 
 /* Define to 1 if you have the `time' function. */
-#define HAVE_TIME			1
+#undef HAVE_TIME
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
@@ -338,7 +338,7 @@
 #define SELECT_TYPE_ARG5 const struct timeval
 
 /* Define to allow serial in/out sound. */
-#define SERIO_SOUND			1
+#undef SERIO_SOUND
 
 /* Target: X11 with shared memory extensions. */
 #undef SHM
@@ -383,7 +383,7 @@
 #undef UNALIGNED_LONG_OK
 
 /* Define to use clock() instead of gettimeofday(). */
-#define USE_CLOCK			1
+#undef USE_CLOCK
 
 /* Target: Curses-compatible library. */
 #undef USE_CURSES
@@ -398,7 +398,7 @@
 #undef VERY_SLOW
 
 /* Define to allow volume only sound. */
-#undef VOL_ONLY_SOUND
+#define VOL_ONLY_SOUND			1
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
