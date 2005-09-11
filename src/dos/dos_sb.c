@@ -36,17 +36,19 @@
 #include <dos.h>
 #include <go32.h>
 #include <dpmi.h>
-#include "dos_sb.h"
-#include "dos_ints.h"
 
 #ifdef DJGPP_USE_NEARPTR
 #include <sys/nearptr.h>
 #endif /* DJGPP_USE_NEARPTR */
 
+#include "atari.h"
+
 /* customize this logging routine as needed */
 #include "log.h"
 #define  log_printf  Aprint
 
+#include "dos_sb.h"
+#include "dos_ints.h"
 
 typedef  char     int8;
 typedef  short    int16;
@@ -58,14 +60,9 @@ typedef  unsigned int   uint32;
 
 typedef  uint8    boolean;
 
-#undef   TRUE
-#define  TRUE     1
-#undef   FALSE
-#define  FALSE    0
-
 /* General defines */
-#define  LOW_BYTE(x)          (uint8) ((x) & 0xFF)
-#define  HIGH_BYTE(x)         (uint8) ((x) >> 8)
+#define  LOW_BYTE(x)          ((uint8) (x))
+#define  HIGH_BYTE(x)         ((uint8) ((x) >> 8))
 
 #define  INVALID              0xFFFFFFFF
 #define  DEFAULT_TIMEOUT      20000
@@ -193,11 +190,11 @@ static struct
    uint8 format;
 
    uint8 irq, dma, dma16;
-   
+
    void *buffer;
    uint32 buf_size;
    uint32 buf_chunk;
-   
+
    sbmix_t callback;
 } sb;
 
@@ -247,7 +244,7 @@ static uint16 dsp_getversion(void)
    uint16 major, minor;
 
    dsp_write(DSP_GET_VERSION);
-   
+
    major = dsp_read();
    minor = dsp_read();
 
@@ -269,8 +266,7 @@ static boolean get_env_item(char *env, void *ptr, char find, int base, int width
    item++;
    value = strtol(item, NULL, base);
 
-   switch (width)
-   {
+   switch (width) {
    case 32:
       *(uint32 *) ptr = value;
       break;
@@ -317,8 +313,8 @@ static boolean parse_blaster_env(void)
 ** Brute force autodetection code
 */
 
-/* detect the base IO by attempting to 
-** reset the DSP at known addresses 
+/* detect the base IO by attempting to
+** reset the DSP at known addresses
 */
 static uint16 detect_baseio(void)
 {
@@ -329,8 +325,7 @@ static uint16 detect_baseio(void)
       0x250, 0x260, 0x280, (uint16) INVALID
    };
 
-   for (i = 0; (uint16) INVALID != port_val[i]; i++)
-   {
+   for (i = 0; (uint16) INVALID != port_val[i]; i++) {
       sb.baseio = port_val[i];
       if (dsp_reset())
          break;
@@ -389,15 +384,13 @@ static uint8 detect_dma(boolean high_dma)
 
    /* TODO: this causes a pretty nasty sound */
    /* program card, see whch channel becomes active */
-   if (FALSE == high_dma)
-   {
+   if (FALSE == high_dma) {
       /* 8 bit */
       dsp_write(DSP_DMA_DAC_8BIT);
       dsp_write(0xF0);
       dsp_write(0xFF);
    }
-   else
-   {
+   else {
       dsp_write(DSP_DMA_START_16BIT); /* 16-bit, D/A, S/C, FIFO off */
       dsp_write(DSP_DMA_SIGNED | DSP_DMA_MONO); /* 16-bit mono signed PCM */
       dsp_write(0xF0);
@@ -450,15 +443,15 @@ static _go32_dpmi_seginfo new_handler[MAX_IRQS];
 static volatile boolean irq_hit[MAX_IRQS];
 
 static void irq2_handler(void)  { irq_hit[2]  = TRUE; }
-END_OF_STATIC_FUNCTION(irq2_handler);
+END_OF_STATIC_FUNCTION(irq2_handler)
 static void irq3_handler(void)  { irq_hit[3]  = TRUE; }
-END_OF_STATIC_FUNCTION(irq3_handler);
+END_OF_STATIC_FUNCTION(irq3_handler)
 static void irq5_handler(void)  { irq_hit[5]  = TRUE; }
-END_OF_STATIC_FUNCTION(irq5_handler);
+END_OF_STATIC_FUNCTION(irq5_handler)
 static void irq7_handler(void)  { irq_hit[7]  = TRUE; }
-END_OF_STATIC_FUNCTION(irq7_handler);
+END_OF_STATIC_FUNCTION(irq7_handler)
 static void irq10_handler(void) { irq_hit[10] = TRUE; }
-END_OF_STATIC_FUNCTION(irq10_handler);
+END_OF_STATIC_FUNCTION(irq10_handler)
 
 static void set_handler(int handler, int irq, int vector)
 {
@@ -511,8 +504,7 @@ static uint8 detect_irq(void)
    delay(100);
 
    /* mask out any interrupts triggered without sound */
-   for (i = 0; i < MAX_IRQS; i++)
-   {
+   for (i = 0; i < MAX_IRQS; i++) {
       irq_mask[i] = irq_hit[i];
       irq_hit[i] = FALSE;
    }
@@ -523,28 +515,23 @@ static uint8 detect_irq(void)
    delay(100);
 
    /* detect triggered interrupts */
-   for (i = 0; i < MAX_IRQS; i++)
-   {
-      if (TRUE == irq_hit[i] && FALSE == irq_mask[i])
-      {
+   for (i = 0; i < MAX_IRQS; i++) {
+      if (TRUE == irq_hit[i] && FALSE == irq_mask[i]) {
          irq = i;
          ack_interrupt(irq);
       }
    }
 
    /* if F2 fails to trigger an int, run a short transfer */
-   if ((uint8) INVALID == irq)
-   {
+   if ((uint8) INVALID == irq) {
       dsp_reset();
       dsp_transfer(sb.dma);
 
       delay(100);
 
       /* detect triggered interrupts */
-      for (i = 0; i < MAX_IRQS; i++)
-      {
-         if (TRUE == irq_hit[i] && FALSE == irq_mask[i])
-         {
+      for (i = 0; i < MAX_IRQS; i++) {
+         if (TRUE == irq_hit[i] && FALSE == irq_mask[i]) {
             irq = i;
             ack_interrupt(irq);
          }
@@ -611,12 +598,10 @@ static boolean sb_probe(void)
       if (FALSE == success)
          continue;
 
-      if (FALSE == dsp_reset())
-      {
+      if (FALSE == dsp_reset()) {
          log_printf("could not reset SB DSP: check BLASTER= variable\n");
       }
-      else
-      {
+      else {
          sb.dsp_version = dsp_getversion();
          return TRUE;
       }
@@ -626,17 +611,14 @@ static boolean sb_probe(void)
 }
 
 /* copy data to DOS memory buffer */
-#ifdef DJGPP_USE_NEARPTR 
+#ifdef DJGPP_USE_NEARPTR
 #define  DOS_PUTBUFFER(dest, src, len)
 #else /* !DJGPP_USE_NEARPTR */
-#define  DOS_PUTBUFFER(dest, src, len) \
-{ \
-   dosmemput((src), (len), (dest)); \
-}
+#define  DOS_PUTBUFFER(dest, src, len) dosmemput((src), (len), (dest))
 #endif /* !DJGPP_USE_NEARPTR */
 
 /*
-** Interrupt handler for 8/16-bit audio 
+** Interrupt handler for 8/16-bit audio
 */
 
 static void sb_isr(void)
@@ -651,8 +633,7 @@ static void sb_isr(void)
    /* NOTE: this only works with 8-bit, as one-shot mode
    ** does not seem to work with 16-bit transfers
    */
-   if (FALSE == dma.autoinit)
-   {
+   if (FALSE == dma.autoinit) {
       dsp_write(DSP_DMA_DAC_8BIT);
       dsp_write(LOW_BYTE(sb.buf_size - 1));
       dsp_write(HIGH_BYTE(sb.buf_size - 1));
@@ -666,13 +647,11 @@ static void sb_isr(void)
    address |= (inportb(dma.addrport) << 8);
    address -= dos.offset;
 
-   if (address < sb.buf_size)
-   {
-      sb.callback(sb.buffer + sb.buf_chunk, sb.buf_size);
-      DOS_PUTBUFFER(dos.bufaddr + sb.buf_chunk, sb.buffer + sb.buf_chunk, sb.buf_chunk);
+   if (address < sb.buf_size) {
+      sb.callback((uint8 *) sb.buffer + sb.buf_chunk, sb.buf_size);
+      DOS_PUTBUFFER(dos.bufaddr + sb.buf_chunk, (uint8 *) sb.buffer + sb.buf_chunk, sb.buf_chunk);
    }
-   else
-   {
+   else {
       sb.callback(sb.buffer, sb.buf_size);
       DOS_PUTBUFFER(dos.bufaddr, sb.buffer, sb.buf_chunk);
    }
@@ -685,7 +664,7 @@ static void sb_isr(void)
    /* maybe needed for slow machines? */
    /*ENABLE_INTS();*/
 }
-END_OF_STATIC_FUNCTION(sb_isr);
+END_OF_STATIC_FUNCTION(sb_isr)
 
 
 /* install the SB ISR */
@@ -697,26 +676,22 @@ static void sb_setisr(void)
    LOCK_VARIABLE(sb);
    LOCK_FUNCTION(sb_isr);
 
-   if (sb.format & SB_FORMAT_16BIT)
-   {
+   if (sb.format & SB_FORMAT_16BIT) {
       dma.ackport = sb.baseio + DSP_DMA_ACK_16BIT;
       dma.addrport = DMA_ADDRBASE_16BIT + (4 * (sb.dma16 - 4));
    }
-   else
-   {
+   else {
       dma.ackport = sb.baseio + DSP_DMA_ACK_8BIT;
       dma.addrport = DMA_ADDRBASE_8BIT + (2 * sb.dma);
    }
 
-   if (sb.irq < 8)
-   {
+   if (sb.irq < 8) {
       /* PIC 1 */
       intr.irq_vector = 0x08 + sb.irq;
       intr.pic_rotateport = 0x20;
       intr.pic_maskport = 0x21;
    }
-   else
-   {
+   else {
       /* PIC 2 */
       intr.irq_vector = 0x70 + (sb.irq - 8);
       intr.pic_rotateport = 0xA0;
@@ -764,13 +739,11 @@ static boolean sb_allocate_buffers(int buf_size)
    int double_bufsize;
 
    /* TODO: I don't like this. */
-   if (sb.format & SB_FORMAT_16BIT)
-   {
+   if (sb.format & SB_FORMAT_16BIT) {
       sb.buf_size = 2 * buf_size;
       sb.buf_chunk = sb.buf_size * sizeof(uint16);
    }
-   else
-   {
+   else {
       sb.buf_size = buf_size;
       sb.buf_chunk = sb.buf_size * sizeof(uint8);
    }
@@ -831,8 +804,7 @@ static void sb_free_buffers(void)
 /* get rid of all things SB */
 void sb_shutdown(void)
 {
-   if (TRUE == sb.initialized)
-   {
+   if (TRUE == sb.initialized) {
       sb.initialized = FALSE;
 
       dsp_reset();
@@ -847,13 +819,13 @@ int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
 #define  CLAMP_RATE(in_rate, min_rate, max_rate) \
                     (in_rate < min_rate ? min_rate : \
                     (in_rate > max_rate ? max_rate : in_rate))
-   
+
    /* don't init twice! */
    if (TRUE == sb.initialized)
       return 0;
 
    memset(&sb, 0, sizeof(sb));
-   
+
    if (FALSE == sb_probe())
       return -1;
 
@@ -867,27 +839,23 @@ int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
    sb.format |= *stereo ? SB_FORMAT_STEREO : SB_FORMAT_MONO;
 
    /* determine which SB model we have, and act accordingly */
-   if (sb.dsp_version < DSP_VERSION_SB_15)
-   {
+   if (sb.dsp_version < DSP_VERSION_SB_15) {
       /* SB 1.0 */
       sb.sample_rate = CLAMP_RATE(*sample_rate, 4000, 22050);
       sb.format &= ~(SB_FORMAT_16BIT | SB_FORMAT_STEREO);
       dma.autoinit = FALSE;
    }
-   else if (sb.dsp_version < DSP_VERSION_SB_20)
-   {
+   else if (sb.dsp_version < DSP_VERSION_SB_20) {
       /* SB 1.5 */
       sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 22050);
       sb.format &= ~(SB_FORMAT_16BIT | SB_FORMAT_STEREO);
    }
-   else if (sb.dsp_version < DSP_VERSION_SB_PRO)
-   {
+   else if (sb.dsp_version < DSP_VERSION_SB_PRO) {
       /* SB 2.0 */
       sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 44100);
       sb.format &= ~(SB_FORMAT_16BIT | SB_FORMAT_STEREO);
    }
-   else if (sb.dsp_version < DSP_VERSION_SB16)
-   {
+   else if (sb.dsp_version < DSP_VERSION_SB16) {
       /* SB Pro */
       if (sb.format & SB_FORMAT_STEREO)
          sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 22050);
@@ -895,15 +863,13 @@ int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
          sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 44100);
       sb.format &= ~SB_FORMAT_16BIT;
    }
-   else
-   {
+   else {
       /* SB 16 */
       sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 44100);
    }
 
    /* sanity check for 16-bit */
-   if ((sb.format & SB_FORMAT_16BIT) && ((uint8) INVALID == sb.dma16))
-   {
+   if ((sb.format & SB_FORMAT_16BIT) && ((uint8) INVALID == sb.dma16)) {
       sb.format &= ~SB_FORMAT_16BIT;
       log_printf("16-bit DMA channel not available, dropping to 8-bit\n");
    }
@@ -927,16 +893,13 @@ int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
 
 void sb_stopoutput(void)
 {
-   if (TRUE == sb.initialized)
-   {
-      if (sb.format & SB_FORMAT_16BIT)
-      {
+   if (TRUE == sb.initialized) {
+      if (sb.format & SB_FORMAT_16BIT) {
          dsp_write(DSP_DMA_PAUSE_16BIT);  /* pause 16-bit DMA */
          dsp_write(DSP_DMA_STOP_8BIT);
          dsp_write(DSP_DMA_PAUSE_16BIT);
       }
-      else
-      {
+      else {
          dsp_write(DSP_DMA_PAUSE_8BIT);  /* pause 8-bit DMA */
          dsp_write(DSP_SPEAKER_OFF);
       }
@@ -953,14 +916,12 @@ static void init_samplerate(int rate)
 {
    if ((sb.format & SB_FORMAT_STEREO))
       rate *= 2;
-   if ((sb.format & SB_FORMAT_16BIT) || sb.dsp_version >= DSP_VERSION_SB16)
-   {
+   if ((sb.format & SB_FORMAT_16BIT) || sb.dsp_version >= DSP_VERSION_SB16) {
       dsp_write(DSP_DMA_DAC_RATE);
       dsp_write(HIGH_BYTE(rate));
       dsp_write(LOW_BYTE(rate));
    }
-   else
-   {
+   else {
       dsp_write(DSP_DMA_TIME_CONST);
       dsp_write(get_time_constant(rate));
    }
@@ -969,14 +930,12 @@ static void init_samplerate(int rate)
 /* set the sample rate */
 void sb_setrate(int rate)
 {
-   if (sb.format & SB_FORMAT_16BIT)
-   {
+   if (sb.format & SB_FORMAT_16BIT) {
       dsp_write(DSP_DMA_PAUSE_16BIT);  /* pause 16-bit DMA */
       init_samplerate(rate);
       dsp_write(DSP_DMA_CONT_16BIT);   /* continue 16-bit DMA */
    }
-   else
-   {
+   else {
       dsp_write(DSP_DMA_PAUSE_8BIT);   /* pause 8-bit DMA */
       init_samplerate(rate);
       dsp_write(DSP_DMA_CONT_8BIT);    /* continue 8-bit DMA */
@@ -995,23 +954,20 @@ static void start_transfer(void)
 
    dma_length = sb.buf_size << 1;
 
-   if (TRUE == dma.autoinit)
-   {
+   if (TRUE == dma.autoinit) {
       start_command = DSP_DMA_DAC_MODE;   /* autoinit DMA */
       dma_mode = DMA_AUTOINIT_MODE;
    }
-   else
-   {
+   else {
       start_command = 0;
       dma_mode = DMA_ONESHOT_MODE;
    }
 
    /* things get a little bit nasty here, look out */
-   if (sb.format & SB_FORMAT_16BIT)
-   {
+   if (sb.format & SB_FORMAT_16BIT) {
       uint8 dma_base = sb.dma16 - 4;
 
-      dma_mode |= dma_base; 
+      dma_mode |= dma_base;
       start_command |= DSP_DMA_START_16BIT;
       mode_command = DSP_DMA_SIGNED;
 
@@ -1025,8 +981,7 @@ static void start_transfer(void)
       outportb(dma16_ports[dma_base], dos.page);
       outportb(DMA_MASKPORT_16BIT, DMA_STARTMASK_BASE | dma_base);
    }
-   else
-   {
+   else {
       dma_mode |= sb.dma;
       start_command |= DSP_DMA_START_8BIT;
       mode_command = DSP_DMA_UNSIGNED;
@@ -1051,20 +1006,17 @@ static void start_transfer(void)
    init_samplerate(sb.sample_rate);
 
    /* start things going */
-   if ((sb.format & SB_FORMAT_16BIT) || sb.dsp_version >= DSP_VERSION_SB16)
-   {
+   if ((sb.format & SB_FORMAT_16BIT) || sb.dsp_version >= DSP_VERSION_SB16) {
       dsp_write(start_command);
       dsp_write(mode_command);
       dsp_write(LOW_BYTE(sb.buf_size - 1));
       dsp_write(HIGH_BYTE(sb.buf_size - 1));
    }
-   else
-   {
+   else {
       /* turn on speaker */
       dsp_write(DSP_SPEAKER_ON);
 
-      if (TRUE == dma.autoinit)
-      {
+      if (TRUE == dma.autoinit) {
          dsp_write(DSP_DMA_BLOCK_SIZE);  /* set buffer size */
          dsp_write(LOW_BYTE(sb.buf_size - 1));
          dsp_write(HIGH_BYTE(sb.buf_size - 1));
@@ -1113,18 +1065,15 @@ int sb_startoutput(sbmix_t fillbuf)
    while (((clock() - count) < CLOCKS_PER_SEC / 2) && (dma.count < 2))
       ; /* loop */
 
-   if (dma.count < 2)
-   {
-      if (TRUE == dma.autoinit)
-      {
+   if (dma.count < 2) {
+      if (TRUE == dma.autoinit) {
          log_printf("Autoinit DMA failed, trying one-shot mode.\n");
          dsp_reset();
          dma.autoinit = FALSE;
          dma.count = 0;
          return (sb_startoutput(fillbuf));
       }
-      else
-      {
+      else {
          log_printf("One-shot DMA mode failed, sound will not be heard.\n");
          log_printf("%d counts\n", dma.count);
          return -1;
@@ -1138,6 +1087,9 @@ int sb_startoutput(sbmix_t fillbuf)
 
 /*
 ** $Log$
+** Revision 1.5  2005/09/11 20:43:19  pfusik
+** fixed some of gcc -pedantic warnings; adapted to Atari800 coding style
+**
 ** Revision 1.4  2005/08/14 08:38:23  pfusik
 ** fixes for stereo: double output rate in stereo mode,
 ** initialize mixer (dunno if necessary)
