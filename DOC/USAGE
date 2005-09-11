@@ -73,10 +73,12 @@ Command line options
 -H2 <path>            Set path for H2: device
 -H3 <path>            Set path for H3: device
 -H4 <path>            Set path for H4: device
--hdreadonly <onoff>   Enable (1) or disable (0) read-only mode for H: device
+-hreadonly            Enable read-only mode for H: device
+-hreadwrite           Disable read-only mode for H: device
 -devbug               Put debugging messages for H: and P: devices in log file
 
--rtime <onoff>        Enable (1) or disable (0) R-Time 8 emulation
+-rtime                Enable R-Time 8 emulation
+-nortime              Disable R-Time 8 emulation
 
 -mouse off            Do not use mouse
 -mouse pad            Emulate paddles
