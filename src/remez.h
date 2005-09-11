@@ -18,8 +18,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *************************************************************************/
-#ifndef __REMEZ_H__
-#define __REMEZ_H__
+#ifndef _REMEZ_H_
+#define _REMEZ_H_
 
 #define BANDPASS       1
 #define DIFFERENTIATOR 2
@@ -35,11 +35,9 @@
 #define MAXITERATIONS  40
 
 /* Function prototype for remez() - the only function that should need be
- * called from external code
- */
+ * called from external code */
 void remez(double h[], int numtaps,
-           int numband, double bands[], double des[], double weight[],
+           int numband, double bands[], const double des[], const double weight[],
            int type);
 
-#endif /* __REMEZ_H__ */
-
+#endif /* _REMEZ_H_ */
