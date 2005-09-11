@@ -49,8 +49,8 @@ typedef struct
 } DIR;
 
 
-DIR*		opendir (const char*);
-struct dirent*	readdir (DIR*);
+DIR*	opendir (const char*);
+struct	dirent*	readdir (DIR*);
 int 	closedir (DIR*);
 
 
@@ -70,7 +70,6 @@ struct timeval
 };
 
 void gettimeofday(struct timeval* tp, void* dummy);
-void usleep(long usec);
 #include <stdlib.h>
 
 struct tm
@@ -121,10 +120,15 @@ int stat(const char *, struct stat *);
 
 
 /* some extra defines not covered in config.h */
-#define NO_YPOS_BREAK_FLICKER
-#define DIRTYRECT
-#define SUPPORTS_ATARI_CONFIGINIT
-#define DONT_USE_RTCONFIGUPDATE
+#ifdef WIN32
+# undef WIN32
+#endif
+
+#define NO_YPOS_BREAK_FLICKER			1
+#define DIRTYRECT						1
+#define SUPPORTS_ATARI_CONFIGINIT		1
+#define DONT_USE_RTCONFIGUPDATE			1
+#define WIN32							1
 
 /* workarounds and old code */
 #define stricmp _stricmp
@@ -157,7 +161,7 @@ char* getenv(const char* varname);
 int rename(const char* oldname, const char* newname);
 int chmod(const char* name, int mode);
 int fstat(int handle, struct stat* buffer);
-int mkdir(const char* name, int param);
+int mkdir(const char* name);
 int rmdir(const char* name);
 int umask(int pmode);
 void rewind(FILE *stream);

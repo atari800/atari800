@@ -24,11 +24,11 @@
 
 /* Based on Win32 port by  Krzysztof Nikiel */
 
+#include "config.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "platform.h"
 #include "atari.h"
 #include "input.h"

@@ -294,15 +294,6 @@ void gettimeofday(struct timeval* tp, void* dummy)
 	tp->tv_usec = dt*1000;
 }
 
-void usleep(long usec)
-{
-	long msec = usec/1000;
-	if(msec <= 0)
-		Sleep(0);
-	else
-		Sleep(msec);
-}
-
 /*
 Windows CE fopen has non-standard behavior -- not
 fully qualified paths refer to root folder rather
@@ -396,7 +387,7 @@ int fstat(int handle, struct stat* buffer)
 }
 
 /* Simplified error code implementation */
-int mkdir(const char* name, int param)
+int mkdir(const char* name)
 {
 	TCHAR fnameUnc[MAX_PATH+1];
 
