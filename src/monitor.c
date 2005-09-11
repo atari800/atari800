@@ -86,227 +86,362 @@ static UWORD assembler(UWORD addr);
 #endif
 
 #ifdef MONITOR_HINTS
+
 typedef struct {
-	char name[9];  /* max. 8 characters */
+	char *name;
 	UWORD addr;
 } symtable_rec;
  /* SYMBOL NAMES TAKEN FROM atari.equ - part of disassembler by Erich BACHER
     and from GTIA.H, POKEY.H, PIA.H & ANTIC.H */
- /* Note: all symbols must be sorted by address (binary search is used).
-    Maximal length of symbol name is 8 characters (can be changed above).
+ /* Note: all symbols must be sorted by address.
     If the adress has different names when reading/writting to it (GTIA ports),
     put the read name first. */
 
-static const symtable_rec symtable[] = {
-    {"NGFLAG",  0x0001}, {"CASINI",  0x0002}, {"CASINI+1",0x0003}, {"RAMLO",   0x0004},
-    {"RAMLO+1", 0x0005}, {"TRAMSZ",  0x0006}, {"CMCMD",   0x0007}, {"WARMST",  0x0008},
-    {"BOOT",    0x0009}, {"DOSVEC",  0x000a}, {"DOSVEC+1",0x000b}, {"DOSINI",  0x000c},
-    {"DOSINI+1",0x000d}, {"APPMHI",  0x000e}, {"APPMHI+1",0x000f}, {"POKMSK",  0x0010},
-    {"BRKKEY",  0x0011}, {"RTCLOK",  0x0012}, {"RTCLOK+1",0x0013}, {"RTCLOK+2",0x0014},
-    {"BUFADR",  0x0015}, {"BUFADR+1",0x0016}, {"ICCOMT",  0x0017}, {"DSKFMS",  0x0018},
-    {"DSKFMS+1",0x0019}, {"DSKUTL",  0x001a}, {"DSKUTL+1",0x001b}, {"ABUFPT",  0x001c},
-    {"ABUFPT+1",0x001d}, {"ABUFPT+2",0x001e}, {"ABUFPT+3",0x001f},
-    {"ICHIDZ",  0x0020}, {"ICDNOZ",  0x0021}, {"ICCOMZ",  0x0022}, {"ICSTAZ",  0x0023},
-    {"ICBALZ",  0x0024}, {"ICBAHZ",  0x0025}, {"ICPTLZ",  0x0026}, {"ICPTHZ",  0x0027},
-    {"ICBLLZ",  0x0028}, {"ICBLHZ",  0x0029}, {"ICAX1Z",  0x002A}, {"ICAX2Z",  0x002B},
-    {"ICAX3Z",  0x002C}, {"ICAX4Z",  0x002D}, {"ICAX5Z",  0x002E}, {"ICAX6Z",  0x002F},
-    {"STATUS",  0x0030}, {"CHKSUM",  0x0031}, {"BUFRLO",  0x0032}, {"BUFRHI",  0x0033},
-    {"BFENLO",  0x0034}, {"BFENHI",  0x0035}, {"LTEMP" ,  0x0036}, {"LTEMP+1", 0x0037},
-    {"BUFRFL",  0x0038}, {"RECVDN",  0x0039}, {"XMTDON",  0x003A}, {"CHKSNT",  0x003B},
-    {"NOCKSM",  0x003C}, {"BPTR"  ,  0x003D}, {"FTYPE" ,  0x003E}, {"FEOF"  ,  0x003F},
-    {"FREQ"  ,  0x0040}, {"SOUNDR",  0x0041}, {"CRITIC",  0x0042}, {"FMSZPG",  0x0043},
-    {"FMSZPG+1",0x0044}, {"FMSZPG+2",0x0045}, {"FMSZPG+3",0x0046}, {"FMSZPG+4",0x0047},
-    {"FMSZPG+5",0x0048}, {"FMSZPG+6",0x0049}, {"ZCHAIN",  0x004A}, {"ZCHAIN+1",0x004B},
-    {"DSTAT" ,  0x004C}, {"ATRACT",  0x004D}, {"DRKMSK",  0x004E}, {"COLRSH",  0x004F},
-    {"TEMP"  ,  0x0050}, {"HOLD1" ,  0x0051}, {"LMARGN",  0x0052}, {"RMARGN",  0x0053},
-    {"ROWCRS",  0x0054}, {"COLCRS",  0x0055}, {"COLCRS+1",0x0056}, {"DINDEX",  0x0057},
-    {"SAVMSC",  0x0058}, {"SAVMSC+1",0x0059}, {"OLDROW",  0x005A}, {"OLDCOL",  0x005B},
-    {"OLDCOL+1",0x005C}, {"OLDCHR",  0x005D}, {"OLDADR",  0x005E}, {"OLDADR+1",0x005F},
-    {"FKDEF" ,  0x0060}, {"FKDEF+1", 0x0061}, {"PALNTS",  0x0062}, {"LOGCOL",  0x0063},
-    {"ADRESS",  0x0064}, {"ADRESS+1",0x0065}, {"MLTTMP",  0x0066}, {"MLTTMP+1",0x0067},
-    {"SAVADR",  0x0068}, {"SAVADR+1",0x0069}, {"RAMTOP",  0x006A}, {"BUFCNT",  0x006B},
-    {"BUFSTR",  0x006C}, {"BUFSTR+1",0x006D}, {"BITMSK",  0x006E}, {"SHFAMT",  0x006F},
-    {"ROWAC" ,  0x0070}, {"ROWAC+1", 0x0071}, {"COLAC" ,  0x0072}, {"COLAC+1", 0x0073},
-    {"ENDPT" ,  0x0074}, {"ENDPT+1", 0x0075}, {"DELTAR",  0x0076}, {"DELTAC",  0x0077},
-    {"DELTAC+1",0x0078}, {"KEYDEF",  0x0079}, {"KEYDEF+1",0x007A}, {"SWPFLG",  0x007B},
-    {"HOLDCH",  0x007C}, {"INSDAT",  0x007D}, {"COUNTR",  0x007E}, {"COUNTR+1",0x007F},
-    {"LOMEM" ,  0x0080}, {"LOMEM+1", 0x0081}, {"VNTP"  ,  0x0082}, {"VNTP+1",  0x0083},
-    {"VNTD"  ,  0x0084}, {"VNTD+1",  0x0085}, {"VVTP"  ,  0x0086}, {"VVTP+1",  0x0087},
-    {"STMTAB",  0x0088}, {"STMTAB+1",0x0089}, {"STMCUR",  0x008A}, {"STMCUR+1",0x008B},
-    {"STARP" ,  0x008C}, {"STARP+1", 0x008D}, {"RUNSTK",  0x008E}, {"RUNSTK+1",0x008F},
-    {"TOPSTK",  0x0090}, {"TOPSTK+1",0x0091}, {"MEOLFLG", 0x0092}, {"POKADR",  0x0095},
-    {"POKADR+1",0x0096}, {"DATAD" ,  0x00B6}, {"DATALN",  0x00B7}, {"DATALN+1",0x00B8},
-    {"STOPLN",  0x00BA}, {"STOPLN+1",0x00BB}, {"SAVCUR",  0x00BE}, {"IOCMD" ,  0x00C0},
-    {"IODVC" ,  0x00C1}, {"PROMPT",  0x00C2}, {"ERRSAVE", 0x00C3}, {"COLOUR",  0x00C8},
-    {"PTABW" ,  0x00C9}, {"LOADFLG", 0x00CA}, {"FR0"   ,  0x00D4}, {"FR0+1" ,  0x00D5},
-    {"FR0+2" ,  0x00D6}, {"FR0+3" ,  0x00D7}, {"FR0+4" ,  0x00D8}, {"FR0+5" ,  0x00D9},
-    {"FRE"   ,  0x00DA}, {"FRE+1" ,  0x00DB}, {"FRE+2" ,  0x00DC}, {"FRE+3" ,  0x00DD},
-    {"FRE+4" ,  0x00DE}, {"FRE+5" ,  0x00DF}, {"FR1"   ,  0x00E0}, {"FR1+1" ,  0x00E1},
-    {"FR1+2" ,  0x00E2}, {"FR1+3" ,  0x00E3}, {"FR1+4" ,  0x00E4}, {"FR1+5" ,  0x00E5},
-    {"FR2"   ,  0x00E6}, {"FR2+1" ,  0x00E7}, {"FR2+2" ,  0x00E8}, {"FR2+3" ,  0x00E9},
-    {"FR2+4" ,  0x00EA}, {"FR2+5" ,  0x00EB}, {"FRX"   ,  0x00EC}, {"EEXP"  ,  0x00ED},
-    {"NSIGN" ,  0x00EE}, {"ESIGN" ,  0x00EF}, {"FCHRFLG", 0x00F0}, {"DIGRT" ,  0x00F1},
-    {"CIX"   ,  0x00F2}, {"INBUFF",  0x00F3}, {"INBUFF+1",0x00F4}, {"ZTEMP1",  0x00F5},
-    {"ZTEMP1+1",0x00F6}, {"ZTEMP4",  0x00F7}, {"ZTEMP4+1",0x00F8}, {"ZTEMP3",  0x00F9},
-    {"ZTEMP3+1",0x00FA}, {"RADFLG",  0x00FB}, {"FLPTR" ,  0x00FC}, {"FLPTR+1", 0x00FD},
-    {"FPTR2" ,  0x00FE}, {"FPTR2+1", 0x00FF},
+static const symtable_rec symtable_builtin[] = {
+	{"NGFLAG",  0x0001}, {"CASINI",  0x0002}, {"CASINI+1",0x0003}, {"RAMLO",   0x0004},
+	{"RAMLO+1", 0x0005}, {"TRAMSZ",  0x0006}, {"CMCMD",   0x0007}, {"WARMST",  0x0008},
+	{"BOOT",    0x0009}, {"DOSVEC",  0x000a}, {"DOSVEC+1",0x000b}, {"DOSINI",  0x000c},
+	{"DOSINI+1",0x000d}, {"APPMHI",  0x000e}, {"APPMHI+1",0x000f}, {"POKMSK",  0x0010},
+	{"BRKKEY",  0x0011}, {"RTCLOK",  0x0012}, {"RTCLOK+1",0x0013}, {"RTCLOK+2",0x0014},
+	{"BUFADR",  0x0015}, {"BUFADR+1",0x0016}, {"ICCOMT",  0x0017}, {"DSKFMS",  0x0018},
+	{"DSKFMS+1",0x0019}, {"DSKUTL",  0x001a}, {"DSKUTL+1",0x001b}, {"ABUFPT",  0x001c},
+	{"ABUFPT+1",0x001d}, {"ABUFPT+2",0x001e}, {"ABUFPT+3",0x001f},
+	{"ICHIDZ",  0x0020}, {"ICDNOZ",  0x0021}, {"ICCOMZ",  0x0022}, {"ICSTAZ",  0x0023},
+	{"ICBALZ",  0x0024}, {"ICBAHZ",  0x0025}, {"ICPTLZ",  0x0026}, {"ICPTHZ",  0x0027},
+	{"ICBLLZ",  0x0028}, {"ICBLHZ",  0x0029}, {"ICAX1Z",  0x002a}, {"ICAX2Z",  0x002b},
+	{"ICAX3Z",  0x002c}, {"ICAX4Z",  0x002d}, {"ICAX5Z",  0x002e}, {"ICAX6Z",  0x002f},
+	{"STATUS",  0x0030}, {"CHKSUM",  0x0031}, {"BUFRLO",  0x0032}, {"BUFRHI",  0x0033},
+	{"BFENLO",  0x0034}, {"BFENHI",  0x0035}, {"LTEMP",   0x0036}, {"LTEMP+1", 0x0037},
+	{"BUFRFL",  0x0038}, {"RECVDN",  0x0039}, {"XMTDON",  0x003a}, {"CHKSNT",  0x003b},
+	{"NOCKSM",  0x003c}, {"BPTR",    0x003d}, {"FTYPE",   0x003e}, {"FEOF",    0x003f},
+	{"FREQ",    0x0040}, {"SOUNDR",  0x0041}, {"CRITIC",  0x0042}, {"FMSZPG",  0x0043},
+	{"FMSZPG+1",0x0044}, {"FMSZPG+2",0x0045}, {"FMSZPG+3",0x0046}, {"FMSZPG+4",0x0047},
+	{"FMSZPG+5",0x0048}, {"FMSZPG+6",0x0049}, {"ZCHAIN",  0x004a}, {"ZCHAIN+1",0x004b},
+	{"DSTAT",   0x004c}, {"ATRACT",  0x004d}, {"DRKMSK",  0x004e}, {"COLRSH",  0x004f},
+	{"TEMP",    0x0050}, {"HOLD1",   0x0051}, {"LMARGN",  0x0052}, {"RMARGN",  0x0053},
+	{"ROWCRS",  0x0054}, {"COLCRS",  0x0055}, {"COLCRS+1",0x0056}, {"DINDEX",  0x0057},
+	{"SAVMSC",  0x0058}, {"SAVMSC+1",0x0059}, {"OLDROW",  0x005a}, {"OLDCOL",  0x005b},
+	{"OLDCOL+1",0x005c}, {"OLDCHR",  0x005d}, {"OLDADR",  0x005e}, {"OLDADR+1",0x005f},
+	{"FKDEF",   0x0060}, {"FKDEF+1", 0x0061}, {"PALNTS",  0x0062}, {"LOGCOL",  0x0063},
+	{"ADRESS",  0x0064}, {"ADRESS+1",0x0065}, {"MLTTMP",  0x0066}, {"MLTTMP+1",0x0067},
+	{"SAVADR",  0x0068}, {"SAVADR+1",0x0069}, {"RAMTOP",  0x006a}, {"BUFCNT",  0x006b},
+	{"BUFSTR",  0x006c}, {"BUFSTR+1",0x006d}, {"BITMSK",  0x006e}, {"SHFAMT",  0x006f},
+	{"ROWAC",   0x0070}, {"ROWAC+1", 0x0071}, {"COLAC",   0x0072}, {"COLAC+1", 0x0073},
+	{"ENDPT",   0x0074}, {"ENDPT+1", 0x0075}, {"DELTAR",  0x0076}, {"DELTAC",  0x0077},
+	{"DELTAC+1",0x0078}, {"KEYDEF",  0x0079}, {"KEYDEF+1",0x007a}, {"SWPFLG",  0x007b},
+	{"HOLDCH",  0x007c}, {"INSDAT",  0x007d}, {"COUNTR",  0x007e}, {"COUNTR+1",0x007f},
+	{"LOMEM",   0x0080}, {"LOMEM+1", 0x0081}, {"VNTP",    0x0082}, {"VNTP+1",  0x0083},
+	{"VNTD",    0x0084}, {"VNTD+1",  0x0085}, {"VVTP",    0x0086}, {"VVTP+1",  0x0087},
+	{"STMTAB",  0x0088}, {"STMTAB+1",0x0089}, {"STMCUR",  0x008a}, {"STMCUR+1",0x008b},
+	{"STARP",   0x008c}, {"STARP+1", 0x008d}, {"RUNSTK",  0x008e}, {"RUNSTK+1",0x008f},
+	{"TOPSTK",  0x0090}, {"TOPSTK+1",0x0091}, {"MEOLFLG", 0x0092}, {"POKADR",  0x0095},
+	{"POKADR+1",0x0096}, {"DATAD",   0x00b6}, {"DATALN",  0x00b7}, {"DATALN+1",0x00b8},
+	{"STOPLN",  0x00ba}, {"STOPLN+1",0x00bb}, {"SAVCUR",  0x00be}, {"IOCMD",   0x00c0},
+	{"IODVC",   0x00c1}, {"PROMPT",  0x00c2}, {"ERRSAVE", 0x00c3}, {"COLOUR",  0x00c8},
+	{"PTABW",   0x00c9}, {"LOADFLG", 0x00ca}, {"FR0",     0x00d4}, {"FR0+1",   0x00d5},
+	{"FR0+2",   0x00d6}, {"FR0+3",   0x00d7}, {"FR0+4",   0x00d8}, {"FR0+5",   0x00d9},
+	{"FRE",     0x00da}, {"FRE+1",   0x00db}, {"FRE+2",   0x00dc}, {"FRE+3",   0x00dd},
+	{"FRE+4",   0x00de}, {"FRE+5",   0x00df}, {"FR1",     0x00e0}, {"FR1+1",   0x00e1},
+	{"FR1+2",   0x00e2}, {"FR1+3",   0x00e3}, {"FR1+4",   0x00e4}, {"FR1+5",   0x00e5},
+	{"FR2",     0x00e6}, {"FR2+1",   0x00e7}, {"FR2+2",   0x00e8}, {"FR2+3",   0x00e9},
+	{"FR2+4",   0x00ea}, {"FR2+5",   0x00eb}, {"FRX",     0x00ec}, {"EEXP",    0x00ed},
+	{"NSIGN",   0x00ee}, {"ESIGN",   0x00ef}, {"FCHRFLG", 0x00f0}, {"DIGRT",   0x00f1},
+	{"CIX",     0x00f2}, {"INBUFF",  0x00f3}, {"INBUFF+1",0x00f4}, {"ZTEMP1",  0x00f5},
+	{"ZTEMP1+1",0x00f6}, {"ZTEMP4",  0x00f7}, {"ZTEMP4+1",0x00f8}, {"ZTEMP3",  0x00f9},
+	{"ZTEMP3+1",0x00fa}, {"RADFLG",  0x00fb}, {"FLPTR",   0x00fc}, {"FLPTR+1", 0x00fd},
+	{"FPTR2",   0x00fe}, {"FPTR2+1", 0x00ff},
 
-    {"VDSLST",  0x0200}, {"VDSLST+1",0x0201}, {"VPRCED",  0x0202}, {"VPRCED+1",0x0203},
-    {"VINTER",  0x0204}, {"VINTER+1",0x0205}, {"VBREAK",  0x0206}, {"VBREAK+1",0x0207},
-    {"VKEYBD",  0x0208}, {"VKEYBD+1",0x0209}, {"VSERIN",  0x020A}, {"VSERIN+1",0x020B},
-    {"VSEROR",  0x020C}, {"VSEROR+1",0x020D}, {"VSEROC",  0x020E}, {"VSEROC+1",0x020F},
-    {"VTIMR1",  0x0210}, {"VTIMR1+1",0x0211}, {"VTIMR2",  0x0212}, {"VTIMR2+1",0x0213},
-    {"VTIMR4",  0x0214}, {"VTIMR4+1",0x0215}, {"VIMIRQ",  0x0216}, {"VIMIRQ+1",0x0217},
-    {"CDTMV1",  0x0218}, {"CDTMV1+1",0x0219}, {"CDTMV2",  0x021A}, {"CDTMV2+1",0x021B},
-    {"CDTMV3",  0x021C}, {"CDTMV3+1",0x021D}, {"CDTMV4",  0x021E}, {"CDTMV4+1",0x021F},
-    {"CDTMV5",  0x0220}, {"CDTMV5+1",0x0221}, {"VVBLKI",  0x0222}, {"VVBLKI+1",0x0223},
-    {"VVBLKD",  0x0224}, {"VVBLKD+1",0x0225}, {"CDTMA1",  0x0226}, {"CDTMA1+1",0x0227},
-    {"CDTMA2",  0x0228}, {"CDTMA2+1",0x0229}, {"CDTMF3",  0x022A}, {"SRTIMR",  0x022B},
-    {"CDTMF4",  0x022C}, {"INTEMP",  0x022D}, {"CDTMF5",  0x022E}, {"SDMCTL",  0x022F},
-    {"SDLSTL",  0x0230}, {"SDLSTH",  0x0231}, {"SSKCTL",  0x0232}, {"SPARE" ,  0x0233},
-    {"LPENH" ,  0x0234}, {"LPENV" ,  0x0235}, {"BRKKY" ,  0x0236}, {"BRKKY+1", 0x0237},
-    {"VPIRQ" ,  0x0238}, {"VPIRQ+1", 0x0239}, {"CDEVIC",  0x023A}, {"CCOMND",  0x023B},
-    {"CAUX1" ,  0x023C}, {"CAUX2" ,  0x023D}, {"TMPSIO",  0x023E}, {"ERRFLG",  0x023F},
-    {"DFLAGS",  0x0240}, {"DBSECT",  0x0241}, {"BOOTAD",  0x0242}, {"BOOTAD+1",0x0243},
-    {"COLDST",  0x0244}, {"RECLEN",  0x0245}, {"DSKTIM",  0x0246}, {"PDVMSK",  0x0247},
-    {"SHPDVS",  0x0248}, {"PDMSK" ,  0x0249}, {"RELADR",  0x024A}, {"RELADR+1",0x024B},
-    {"PPTMPA",  0x024C}, {"PPTMPX",  0x024D}, {"CHSALT",  0x026B}, {"VSFLAG",  0x026C},
-    {"KEYDIS",  0x026D}, {"FINE"  ,  0x026E}, {"GPRIOR",  0x026F}, {"PADDL0",  0x0270},
-    {"PADDL1",  0x0271}, {"PADDL2",  0x0272}, {"PADDL3",  0x0273}, {"PADDL4",  0x0274},
-    {"PADDL5",  0x0275}, {"PADDL6",  0x0276}, {"PADDL7",  0x0277}, {"STICK0",  0x0278},
-    {"STICK1",  0x0279}, {"STICK2",  0x027A}, {"STICK3",  0x027B}, {"PTRIG0",  0x027C},
-    {"PTRIG1",  0x027D}, {"PTRIG2",  0x027E}, {"PTRIG3",  0x027F}, {"PTRIG4",  0x0280},
-    {"PTRIG5",  0x0281}, {"PTRIG6",  0x0282}, {"PTRIG7",  0x0283}, {"STRIG0",  0x0284},
-    {"STRIG1",  0x0285}, {"STRIG2",  0x0286}, {"STRIG3",  0x0287}, {"HIBYTE",  0x0288},
-    {"WMODE" ,  0x0289}, {"BLIM"  ,  0x028A}, {"IMASK" ,  0x028B}, {"JVECK" ,  0x028C},
-    {"NEWADR",  0x028E}, {"TXTROW",  0x0290}, {"TXTCOL",  0x0291}, {"TXTCOL+1",0x0292},
-    {"TINDEX",  0x0293}, {"TXTMSC",  0x0294}, {"TXTMSC+1",0x0295}, {"TXTOLD",  0x0296},
-    {"TXTOLD+1",0x0297}, {"TXTOLD+2",0x0298}, {"TXTOLD+3",0x0299}, {"TXTOLD+4",0x029A},
-    {"TXTOLD+5",0x029B}, {"CRETRY",  0x029C}, {"HOLD3" ,  0x029D}, {"SUBTMP",  0x029E},
-    {"HOLD2" ,  0x029F}, {"DMASK" ,  0x02A0}, {"TMPLBT",  0x02A1}, {"ESCFLG",  0x02A2},
-    {"TABMAP",  0x02A3}, {"TABMAP+1",0x02A4}, {"TABMAP+2",0x02A5}, {"TABMAP+3",0x02A6},
-    {"TABMAP+4",0x02A7}, {"TABMAP+5",0x02A8}, {"TABMAP+6",0x02A9}, {"TABMAP+7",0x02AA},
-    {"TABMAP+8",0x02AB}, {"TABMAP+9",0x02AC}, {"TABMAP+A",0x02AD}, {"TABMAP+B",0x02AE},
-    {"TABMAP+C",0x02AF}, {"TABMAP+D",0x02B0}, {"TABMAP+E",0x02B1}, {"LOGMAP",  0x02B2},
-    {"LOGMAP+1",0x02B3}, {"LOGMAP+2",0x02B4}, {"LOGMAP+3",0x02B5}, {"INVFLG",  0x02B6},
-    {"FILFLG",  0x02B7}, {"TMPROW",  0x02B8}, {"TMPCOL",  0x02B9}, {"TMPCOL+1",0x02BA},
-    {"SCRFLG",  0x02BB}, {"HOLD4" ,  0x02BC}, {"DRETRY",  0x02BD}, {"SHFLOC",  0x02BE},
-    {"BOTSCR",  0x02BF}, {"PCOLR0",  0x02C0}, {"PCOLR1",  0x02C1}, {"PCOLR2",  0x02C2},
-    {"PCOLR3",  0x02C3}, {"COLOR0",  0x02C4}, {"COLOR1",  0x02C5}, {"COLOR2",  0x02C6},
-    {"COLOR3",  0x02C7}, {"COLOR4",  0x02C8}, {"RUNADR",  0x02C9}, {"RUNADR+1",0x02CA},
-    {"HIUSED",  0x02CB}, {"HIUSED+1",0x02CC}, {"ZHIUSE",  0x02CD}, {"ZHIUSE+1",0x02CE},
-    {"GBYTEA",  0x02CF}, {"GBYTEA+1",0x02D0}, {"LOADAD",  0x02D1}, {"LOADAD+1",0x02D2},
-    {"ZLOADA",  0x02D3}, {"ZLOADA+1",0x02D4}, {"DSCTLN",  0x02D5}, {"DSCTLN+1",0x02D6},
-    {"ACMISR",  0x02D7}, {"ACMISR+1",0x02D8}, {"KRPDER",  0x02D9}, {"KEYREP",  0x02DA},
-    {"NOCLIK",  0x02DB}, {"HELPFG",  0x02DC}, {"DMASAV",  0x02DD}, {"PBPNT" ,  0x02DE},
-    {"PBUFSZ",  0x02DF}, {"RUNAD" ,  0x02E0}, {"RUNAD+1", 0x02E1}, {"INITAD",  0x02E2},
-    {"INITAD+1",0x02E3}, {"RAMSIZ",  0x02E4}, {"MEMTOP",  0x02E5}, {"MEMTOP+1",0x02E6},
-    {"MEMLO" ,  0x02E7}, {"MEMLO+1", 0x02E8}, {"HNDLOD",  0x02E9}, {"DVSTAT",  0x02EA},
-    {"DVSTAT+1",0x02EB}, {"DVSTAT+2",0x02EC}, {"DVSTAT+3",0x02ED}, {"CBAUDL",  0x02EE},
-    {"CBAUDH",  0x02EF}, {"CRSINH",  0x02F0}, {"KEYDEL",  0x02F1}, {"CH1"   ,  0x02F2},
-    {"CHACT" ,  0x02F3}, {"CHBAS" ,  0x02F4}, {"NEWROW",  0x02F5}, {"NEWCOL",  0x02F6},
-    {"NEWCOL+1",0x02F7}, {"ROWINC",  0x02F8}, {"COLINC",  0x02F9}, {"CHAR"  ,  0x02FA},
-    {"ATACHR",  0x02FB}, {"CH"    ,  0x02FC}, {"FILDAT",  0x02FD}, {"DSPFLG",  0x02FE},
-    {"SSFLAG",  0x02FF},
+	{"VDSLST",  0x0200}, {"VDSLST+1",0x0201}, {"VPRCED",  0x0202}, {"VPRCED+1",0x0203},
+	{"VINTER",  0x0204}, {"VINTER+1",0x0205}, {"VBREAK",  0x0206}, {"VBREAK+1",0x0207},
+	{"VKEYBD",  0x0208}, {"VKEYBD+1",0x0209}, {"VSERIN",  0x020a}, {"VSERIN+1",0x020b},
+	{"VSEROR",  0x020c}, {"VSEROR+1",0x020d}, {"VSEROC",  0x020e}, {"VSEROC+1",0x020f},
+	{"VTIMR1",  0x0210}, {"VTIMR1+1",0x0211}, {"VTIMR2",  0x0212}, {"VTIMR2+1",0x0213},
+	{"VTIMR4",  0x0214}, {"VTIMR4+1",0x0215}, {"VIMIRQ",  0x0216}, {"VIMIRQ+1",0x0217},
+	{"CDTMV1",  0x0218}, {"CDTMV1+1",0x0219}, {"CDTMV2",  0x021a}, {"CDTMV2+1",0x021b},
+	{"CDTMV3",  0x021c}, {"CDTMV3+1",0x021d}, {"CDTMV4",  0x021e}, {"CDTMV4+1",0x021f},
+	{"CDTMV5",  0x0220}, {"CDTMV5+1",0x0221}, {"VVBLKI",  0x0222}, {"VVBLKI+1",0x0223},
+	{"VVBLKD",  0x0224}, {"VVBLKD+1",0x0225}, {"CDTMA1",  0x0226}, {"CDTMA1+1",0x0227},
+	{"CDTMA2",  0x0228}, {"CDTMA2+1",0x0229}, {"CDTMF3",  0x022a}, {"SRTIMR",  0x022b},
+	{"CDTMF4",  0x022c}, {"INTEMP",  0x022d}, {"CDTMF5",  0x022e}, {"SDMCTL",  0x022f},
+	{"SDLSTL",  0x0230}, {"SDLSTH",  0x0231}, {"SSKCTL",  0x0232}, {"SPARE",   0x0233},
+	{"LPENH",   0x0234}, {"LPENV",   0x0235}, {"BRKKY",   0x0236}, {"BRKKY+1", 0x0237},
+	{"VPIRQ",   0x0238}, {"VPIRQ+1", 0x0239}, {"CDEVIC",  0x023a}, {"CCOMND",  0x023b},
+	{"CAUX1",   0x023c}, {"CAUX2",   0x023d}, {"TMPSIO",  0x023e}, {"ERRFLG",  0x023f},
+	{"DFLAGS",  0x0240}, {"DBSECT",  0x0241}, {"BOOTAD",  0x0242}, {"BOOTAD+1",0x0243},
+	{"COLDST",  0x0244}, {"RECLEN",  0x0245}, {"DSKTIM",  0x0246}, {"PDVMSK",  0x0247},
+	{"SHPDVS",  0x0248}, {"PDMSK",   0x0249}, {"RELADR",  0x024a}, {"RELADR+1",0x024b},
+	{"PPTMPA",  0x024c}, {"PPTMPX",  0x024d}, {"CHSALT",  0x026b}, {"VSFLAG",  0x026c},
+	{"KEYDIS",  0x026d}, {"FINE",    0x026e}, {"GPRIOR",  0x026f}, {"PADDL0",  0x0270},
+	{"PADDL1",  0x0271}, {"PADDL2",  0x0272}, {"PADDL3",  0x0273}, {"PADDL4",  0x0274},
+	{"PADDL5",  0x0275}, {"PADDL6",  0x0276}, {"PADDL7",  0x0277}, {"STICK0",  0x0278},
+	{"STICK1",  0x0279}, {"STICK2",  0x027a}, {"STICK3",  0x027b}, {"PTRIG0",  0x027c},
+	{"PTRIG1",  0x027d}, {"PTRIG2",  0x027e}, {"PTRIG3",  0x027f}, {"PTRIG4",  0x0280},
+	{"PTRIG5",  0x0281}, {"PTRIG6",  0x0282}, {"PTRIG7",  0x0283}, {"STRIG0",  0x0284},
+	{"STRIG1",  0x0285}, {"STRIG2",  0x0286}, {"STRIG3",  0x0287}, {"HIBYTE",  0x0288},
+	{"WMODE",   0x0289}, {"BLIM",    0x028a}, {"IMASK",   0x028b}, {"JVECK",   0x028c},
+	{"NEWADR",  0x028e}, {"TXTROW",  0x0290}, {"TXTCOL",  0x0291}, {"TXTCOL+1",0x0292},
+	{"TINDEX",  0x0293}, {"TXTMSC",  0x0294}, {"TXTMSC+1",0x0295}, {"TXTOLD",  0x0296},
+	{"TXTOLD+1",0x0297}, {"TXTOLD+2",0x0298}, {"TXTOLD+3",0x0299}, {"TXTOLD+4",0x029a},
+	{"TXTOLD+5",0x029b}, {"CRETRY",  0x029c}, {"HOLD3",   0x029d}, {"SUBTMP",  0x029e},
+	{"HOLD2",   0x029f}, {"DMASK",   0x02a0}, {"TMPLBT",  0x02a1}, {"ESCFLG",  0x02a2},
+	{"TABMAP",  0x02a3}, {"TABMAP+1",0x02a4}, {"TABMAP+2",0x02a5}, {"TABMAP+3",0x02a6},
+	{"TABMAP+4",0x02a7}, {"TABMAP+5",0x02a8}, {"TABMAP+6",0x02a9}, {"TABMAP+7",0x02aa},
+	{"TABMAP+8",0x02ab}, {"TABMAP+9",0x02ac}, {"TABMAP+A",0x02ad}, {"TABMAP+B",0x02ae},
+	{"TABMAP+C",0x02af}, {"TABMAP+D",0x02b0}, {"TABMAP+E",0x02b1}, {"LOGMAP",  0x02b2},
+	{"LOGMAP+1",0x02b3}, {"LOGMAP+2",0x02b4}, {"LOGMAP+3",0x02b5}, {"INVFLG",  0x02b6},
+	{"FILFLG",  0x02b7}, {"TMPROW",  0x02b8}, {"TMPCOL",  0x02b9}, {"TMPCOL+1",0x02ba},
+	{"SCRFLG",  0x02bb}, {"HOLD4",   0x02bc}, {"DRETRY",  0x02bd}, {"SHFLOC",  0x02be},
+	{"BOTSCR",  0x02bf}, {"PCOLR0",  0x02c0}, {"PCOLR1",  0x02c1}, {"PCOLR2",  0x02c2},
+	{"PCOLR3",  0x02c3}, {"COLOR0",  0x02c4}, {"COLOR1",  0x02c5}, {"COLOR2",  0x02c6},
+	{"COLOR3",  0x02c7}, {"COLOR4",  0x02c8}, {"RUNADR",  0x02c9}, {"RUNADR+1",0x02ca},
+	{"HIUSED",  0x02cb}, {"HIUSED+1",0x02cc}, {"ZHIUSE",  0x02cd}, {"ZHIUSE+1",0x02ce},
+	{"GBYTEA",  0x02cf}, {"GBYTEA+1",0x02d0}, {"LOADAD",  0x02d1}, {"LOADAD+1",0x02d2},
+	{"ZLOADA",  0x02d3}, {"ZLOADA+1",0x02d4}, {"DSCTLN",  0x02d5}, {"DSCTLN+1",0x02d6},
+	{"ACMISR",  0x02d7}, {"ACMISR+1",0x02d8}, {"KRPDER",  0x02d9}, {"KEYREP",  0x02da},
+	{"NOCLIK",  0x02db}, {"HELPFG",  0x02dc}, {"DMASAV",  0x02dd}, {"PBPNT",   0x02de},
+	{"PBUFSZ",  0x02df}, {"RUNAD",   0x02e0}, {"RUNAD+1", 0x02e1}, {"INITAD",  0x02e2},
+	{"INITAD+1",0x02e3}, {"RAMSIZ",  0x02e4}, {"MEMTOP",  0x02e5}, {"MEMTOP+1",0x02e6},
+	{"MEMLO",   0x02e7}, {"MEMLO+1", 0x02e8}, {"HNDLOD",  0x02e9}, {"DVSTAT",  0x02ea},
+	{"DVSTAT+1",0x02eb}, {"DVSTAT+2",0x02ec}, {"DVSTAT+3",0x02ed}, {"CBAUDL",  0x02ee},
+	{"CBAUDH",  0x02ef}, {"CRSINH",  0x02f0}, {"KEYDEL",  0x02f1}, {"CH1",     0x02f2},
+	{"CHACT",   0x02f3}, {"CHBAS",   0x02f4}, {"NEWROW",  0x02f5}, {"NEWCOL",  0x02f6},
+	{"NEWCOL+1",0x02f7}, {"ROWINC",  0x02f8}, {"COLINC",  0x02f9}, {"CHAR",    0x02fa},
+	{"ATACHR",  0x02fb}, {"CH",      0x02fc}, {"FILDAT",  0x02fd}, {"DSPFLG",  0x02fe},
+	{"SSFLAG",  0x02ff},
 
+	{"DDEVIC",  0x0300}, {"DUNIT",   0x0301}, {"DCOMND",  0x0302}, {"DSTATS",  0x0303},
+	{"DBUFLO",  0x0304}, {"DBUFHI",  0x0305}, {"DTIMLO",  0x0306}, {"DUNUSE",  0x0307},
+	{"DBYTLO",  0x0308}, {"DBYTHI",  0x0309}, {"DAUX1",   0x030a}, {"DAUX2",   0x030b},
+	{"TIMER1",  0x030c}, {"TIMER1+1",0x030d}, {"ADDCOR",  0x030e}, {"CASFLG",  0x030f},
+	{"TIMER2",  0x0310}, {"TIMER2+1",0x0311}, {"TEMP1",   0x0312}, {"TEMP1+1", 0x0313},
+	{"TEMP2",   0x0314}, {"TEMP3",   0x0315}, {"SAVIO",   0x0316}, {"TIMFLG",  0x0317},
+	{"STACKP",  0x0318}, {"TSTAT",   0x0319}, {"HATABS",  0x031a},  /*HATABS 1-34*/
+	{"PUTBT1",  0x033d}, {"PUTBT2",  0x033e}, {"PUTBT3",  0x033f},
+	{"B0-ICHID",0x0340}, {"B0-ICDNO",0x0341}, {"B0-ICCOM",0x0342}, {"B0-ICSTA",0x0343},
+	{"B0-ICBAL",0x0344}, {"B0-ICBAH",0x0345}, {"B0-ICPTL",0x0346}, {"B0-ICPTH",0x0347},
+	{"B0-ICBLL",0x0348}, {"B0-ICBLH",0x0349}, {"B0-ICAX1",0x034a}, {"B0-ICAX2",0x034b},
+	{"B0-ICAX3",0x034c}, {"B0-ICAX4",0x034d}, {"B0-ICAX5",0x034e}, {"B0-ICAX6",0x034f},
+	{"B1-ICHID",0x0350}, {"B1-ICDNO",0x0351}, {"B1-ICCOM",0x0352}, {"B1-ICSTA",0x0353},
+	{"B1-ICBAL",0x0354}, {"B1-ICBAH",0x0355}, {"B1-ICPTL",0x0356}, {"B1-ICPTH",0x0357},
+	{"B1-ICBLL",0x0358}, {"B1-ICBLH",0x0359}, {"B1-ICAX1",0x035a}, {"B1-ICAX2",0x035b},
+	{"B1-ICAX3",0x035c}, {"B1-ICAX4",0x035d}, {"B1-ICAX5",0x035e}, {"B1-ICAX6",0x035f},
+	{"B2-ICHID",0x0360}, {"B2-ICDNO",0x0361}, {"B2-ICCOM",0x0362}, {"B2-ICSTA",0x0363},
+	{"B2-ICBAL",0x0364}, {"B2-ICBAH",0x0365}, {"B2-ICPTL",0x0366}, {"B2-ICPTH",0x0367},
+	{"B2-ICBLL",0x0368}, {"B2-ICBLH",0x0369}, {"B2-ICAX1",0x036a}, {"B2-ICAX2",0x036b},
+	{"B2-ICAX3",0x036c}, {"B2-ICAX4",0x036d}, {"B2-ICAX5",0x036e}, {"B2-ICAX6",0x036f},
+	{"B3-ICHID",0x0370}, {"B3-ICDNO",0x0371}, {"B3-ICCOM",0x0372}, {"B3-ICSTA",0x0373},
+	{"B3-ICBAL",0x0374}, {"B3-ICBAH",0x0375}, {"B3-ICPTL",0x0376}, {"B3-ICPTH",0x0377},
+	{"B3-ICBLL",0x0378}, {"B3-ICBLH",0x0379}, {"B3-ICAX1",0x037a}, {"B3-ICAX2",0x037b},
+	{"B3-ICAX3",0x037c}, {"B3-ICAX4",0x037d}, {"B3-ICAX5",0x037e}, {"B3-ICAX6",0x037f},
+	{"B4-ICHID",0x0380}, {"B4-ICDNO",0x0381}, {"B4-ICCOM",0x0382}, {"B4-ICSTA",0x0383},
+	{"B4-ICBAL",0x0384}, {"B4-ICBAH",0x0385}, {"B4-ICPTL",0x0386}, {"B4-ICPTH",0x0387},
+	{"B4-ICBLL",0x0388}, {"B4-ICBLH",0x0389}, {"B4-ICAX1",0x038a}, {"B4-ICAX2",0x038b},
+	{"B4-ICAX3",0x038c}, {"B4-ICAX4",0x038d}, {"B4-ICAX5",0x038e}, {"B4-ICAX6",0x038f},
+	{"B5-ICHID",0x0390}, {"B5-ICDNO",0x0391}, {"B5-ICCOM",0x0392}, {"B5-ICSTA",0x0393},
+	{"B5-ICBAL",0x0394}, {"B5-ICBAH",0x0395}, {"B5-ICPTL",0x0396}, {"B5-ICPTH",0x0397},
+	{"B5-ICBLL",0x0398}, {"B5-ICBLH",0x0399}, {"B5-ICAX1",0x039a}, {"B5-ICAX2",0x039b},
+	{"B5-ICAX3",0x039c}, {"B5-ICAX4",0x039d}, {"B5-ICAX5",0x039e}, {"B5-ICAX6",0x039f},
+	{"B6-ICHID",0x03a0}, {"B6-ICDNO",0x03a1}, {"B6-ICCOM",0x03a2}, {"B6-ICSTA",0x03a3},
+	{"B6-ICBAL",0x03a4}, {"B6-ICBAH",0x03a5}, {"B6-ICPTL",0x03a6}, {"B6-ICPTH",0x03a7},
+	{"B6-ICBLL",0x03a8}, {"B6-ICBLH",0x03a9}, {"B6-ICAX1",0x03aa}, {"B6-ICAX2",0x03ab},
+	{"B6-ICAX3",0x03ac}, {"B6-ICAX4",0x03ad}, {"B6-ICAX5",0x03ae}, {"B6-ICAX6",0x03af},
+	{"B7-ICHID",0x03b0}, {"B7-ICDNO",0x03b1}, {"B7-ICCOM",0x03b2}, {"B7-ICSTA",0x03b3},
+	{"B7-ICBAL",0x03b4}, {"B7-ICBAH",0x03b5}, {"B7-ICPTL",0x03b6}, {"B7-ICPTH",0x03b7},
+	{"B7-ICBLL",0x03b8}, {"B7-ICBLH",0x03b9}, {"B7-ICAX1",0x03ba}, {"B7-ICAX2",0x03bb},
+	{"B7-ICAX3",0x03bc}, {"B7-ICAX4",0x03bd}, {"B7-ICAX5",0x03be}, {"B7-ICAX6",0x03bf},
+	{"PRNBUF",  0x03c0},  /* PRNBUF 1-39 */
+	{"SUPERF",  0x03e8}, {"CKEY",    0x03e9}, {"CASSBT",  0x03ea}, {"CARTCK",  0x03eb},
+	{"DERRF",   0x03ec}, {"ACMVAR",  0x03ed}, /* ACMVAR 1-10 */
+	{"BASICF",  0x03f8}, {"MINTLK",  0x03f9}, {"GINTLK",  0x03fa}, {"CHLINK",  0x03fb},
+	{"CHLINK+1",0x03fc}, {"CASBUF",  0x03fd},
 
-    {"DDEVIC",  0x0300}, {"DUNIT"   ,0x0301}, {"DCOMND"  ,0x0302}, {"DSTATS"  ,0x0303},
-    {"DBUFLO"  ,0x0304}, {"DBUFHI"  ,0x0305}, {"DTIMLO"  ,0x0306}, {"DUNUSE"  ,0x0307},
-    {"DBYTLO"  ,0x0308}, {"DBYTHI"  ,0x0309}, {"DAUX1"   ,0x030A}, {"DAUX2"   ,0x030B},
-    {"TIMER1"  ,0x030C}, {"TIMER1+1",0x030D}, {"ADDCOR"  ,0x030E}, {"CASFLG"  ,0x030F},
-    {"TIMER2"  ,0x0310}, {"TIMER2+1",0x0311}, {"TEMP1"   ,0x0312}, {"TEMP1+1", 0x0313},
-    {"TEMP2"   ,0x0314}, {"TEMP3"   ,0x0315}, {"SAVIO"   ,0x0316}, {"TIMFLG",  0x0317},
-    {"STACKP",  0x0318}, {"TSTAT"   ,0x0319},
-    {"HATABS",  0x031a},  /*HATABS 1-34*/
-    {"PUTBT1",  0x033d}, {"PUTBT2",  0x033e}, {"PUTBT3",  0x033f},
-    {"B0-ICHID",0x0340}, {"B0-ICDNO",0x0341}, {"B0-ICCOM",0x0342}, {"B0-ICSTA",0x0343},
-    {"B0-ICBAL",0x0344}, {"B0-ICBAH",0x0345}, {"B0-ICPTL",0x0346}, {"B0-ICPTH",0x0347},
-    {"B0-ICBLL",0x0348}, {"B0-ICBLH",0x0349}, {"B0-ICAX1",0x034a}, {"B0-ICAX2",0x034b},
-    {"B0-ICAX3",0x034c}, {"B0-ICAX4",0x034d}, {"B0-ICAX5",0x034e}, {"B0-ICAX6",0x034f},
-    {"B1-ICHID",0x0350}, {"B1-ICDNO",0x0351}, {"B1-ICCOM",0x0352}, {"B1-ICSTA",0x0353},
-    {"B1-ICBAL",0x0354}, {"B1-ICBAH",0x0355}, {"B1-ICPTL",0x0356}, {"B1-ICPTH",0x0357},
-    {"B1-ICBLL",0x0358}, {"B1-ICBLH",0x0359}, {"B1-ICAX1",0x035a}, {"B1-ICAX2",0x035b},
-    {"B1-ICAX3",0x035c}, {"B1-ICAX4",0x035d}, {"B1-ICAX5",0x035e}, {"B1-ICAX6",0x035f},
-    {"B2-ICHID",0x0360}, {"B2-ICDNO",0x0361}, {"B2-ICCOM",0x0362}, {"B2-ICSTA",0x0363},
-    {"B2-ICBAL",0x0364}, {"B2-ICBAH",0x0365}, {"B2-ICPTL",0x0366}, {"B2-ICPTH",0x0367},
-    {"B2-ICBLL",0x0368}, {"B2-ICBLH",0x0369}, {"B2-ICAX1",0x036a}, {"B2-ICAX2",0x036b},
-    {"B2-ICAX3",0x036c}, {"B2-ICAX4",0x036d}, {"B2-ICAX5",0x036e}, {"B2-ICAX6",0x036f},
-    {"B3-ICHID",0x0370}, {"B3-ICDNO",0x0371}, {"B3-ICCOM",0x0372}, {"B3-ICSTA",0x0373},
-    {"B3-ICBAL",0x0374}, {"B3-ICBAH",0x0375}, {"B3-ICPTL",0x0376}, {"B3-ICPTH",0x0377},
-    {"B3-ICBLL",0x0378}, {"B3-ICBLH",0x0379}, {"B3-ICAX1",0x037a}, {"B3-ICAX2",0x037b},
-    {"B3-ICAX3",0x037c}, {"B3-ICAX4",0x037d}, {"B3-ICAX5",0x037e}, {"B3-ICAX6",0x037f},
-    {"B4-ICHID",0x0380}, {"B4-ICDNO",0x0381}, {"B4-ICCOM",0x0382}, {"B4-ICSTA",0x0383},
-    {"B4-ICBAL",0x0384}, {"B4-ICBAH",0x0385}, {"B4-ICPTL",0x0386}, {"B4-ICPTH",0x0387},
-    {"B4-ICBLL",0x0388}, {"B4-ICBLH",0x0389}, {"B4-ICAX1",0x038a}, {"B4-ICAX2",0x038b},
-    {"B4-ICAX3",0x038c}, {"B4-ICAX4",0x038d}, {"B4-ICAX5",0x038e}, {"B4-ICAX6",0x038f},
-    {"B5-ICHID",0x0390}, {"B5-ICDNO",0x0391}, {"B5-ICCOM",0x0392}, {"B5-ICSTA",0x0393},
-    {"B5-ICBAL",0x0394}, {"B5-ICBAH",0x0395}, {"B5-ICPTL",0x0396}, {"B5-ICPTH",0x0397},
-    {"B5-ICBLL",0x0398}, {"B5-ICBLH",0x0399}, {"B5-ICAX1",0x039a}, {"B5-ICAX2",0x039b},
-    {"B5-ICAX3",0x039c}, {"B5-ICAX4",0x039d}, {"B5-ICAX5",0x039e}, {"B5-ICAX6",0x039f},
-    {"B6-ICHID",0x03a0}, {"B6-ICDNO",0x03a1}, {"B6-ICCOM",0x03a2}, {"B6-ICSTA",0x03a3},
-    {"B6-ICBAL",0x03a4}, {"B6-ICBAH",0x03a5}, {"B6-ICPTL",0x03a6}, {"B6-ICPTH",0x03a7},
-    {"B6-ICBLL",0x03a8}, {"B6-ICBLH",0x03a9}, {"B6-ICAX1",0x03aa}, {"B6-ICAX2",0x03ab},
-    {"B6-ICAX3",0x03ac}, {"B6-ICAX4",0x03ad}, {"B6-ICAX5",0x03ae}, {"B6-ICAX6",0x03af},
-    {"B7-ICHID",0x03b0}, {"B7-ICDNO",0x03b1}, {"B7-ICCOM",0x03b2}, {"B7-ICSTA",0x03b3},
-    {"B7-ICBAL",0x03b4}, {"B7-ICBAH",0x03b5}, {"B7-ICPTL",0x03b6}, {"B7-ICPTH",0x03b7},
-    {"B7-ICBLL",0x03b8}, {"B7-ICBLH",0x03b9}, {"B7-ICAX1",0x03ba}, {"B7-ICAX2",0x03bb},
-    {"B7-ICAX3",0x03bc}, {"B7-ICAX4",0x03bd}, {"B7-ICAX5",0x03be}, {"B7-ICAX6",0x03bf},
-    {"PRNBUF",  0x03c0},  /* PRNBUF 1-39 */
-    {"SUPERF",  0x03e8}, {"CKEY",    0x03e9}, {"CASSBT",  0x03ea}, {"CARTCK",  0x03eb},
-    {"DERRF",   0x03ec}, {"ACMVAR",  0x03ed}, /* ACMVAR 1-10 */
-    {"BASICF",  0x03f8}, {"MINTLK",  0x03f9}, {"GINTLK",  0x03fa}, {"CHLINK",  0x03fb},
-    {"CHLINK+1",0x03fc}, {"CASBUF",  0x03fd},
+	{"M0PF",  0xd000}, {"HPOSP0",0xd000}, {"M1PF",  0xd001}, {"HPOSP1",0xd001},
+	{"M2PF",  0xd002}, {"HPOSP2",0xd002}, {"M3PF",  0xd003}, {"HPOSP3",0xd003},
+	{"P0PF",  0xd004}, {"HPOSM0",0xd004}, {"P1PF",  0xd005}, {"HPOSM1",0xd005},
+	{"P2PF",  0xd006}, {"HPOSM2",0xd006}, {"P3PF",  0xd007}, {"HPOSM3",0xd007},
+	{"M0PL",  0xd008}, {"SIZEP0",0xd008}, {"M1PL",  0xd009}, {"SIZEP1",0xd009},
+	{"M2PL",  0xd00a}, {"SIZEP2",0xd00a}, {"M3PL",  0xd00b}, {"SIZEP3",0xd00b},
+	{"P0PL",  0xd00c}, {"SIZEM", 0xd00c}, {"P1PL",  0xd00d}, {"GRAFP0",0xd00d},
+	{"P2PL",  0xd00e}, {"GRAFP1",0xd00e}, {"P3PL",  0xd00f}, {"GRAFP2",0xd00f},
+	{"TRIG0", 0xd010}, {"GRAFP3",0xd010}, {"TRIG1", 0xd011}, {"GRAFM", 0xd011},
+	{"TRIG2", 0xd012}, {"COLPM0",0xd012}, {"TRIG3", 0xd013}, {"COLPM1",0xd013},
+	{"PAL",   0xd014}, {"COLPM2",0xd014}, {"COLPM3",0xd015}, {"COLPF0",0xd016},
+	{"COLPF1",0xd017},
+	{"COLPF2",0xd018}, {"COLPF3",0xd019}, {"COLBK", 0xd01a}, {"PRIOR", 0xd01b},
+	{"VDELAY",0xd01c}, {"GRACTL",0xd01d}, {"HITCLR",0xd01e}, {"CONSOL",0xd01f},
 
-    {"M0PF"  ,0xd000}, {"HPOSP0",0xd000}, {"M1PF"  ,0xd001}, {"HPOSP1",0xd001},
-    {"M2PF"  ,0xd002}, {"HPOSP2",0xd002}, {"M3PF"  ,0xd003}, {"HPOSP3",0xd003},
-    {"P0PF"  ,0xd004}, {"HPOSM0",0xd004}, {"P1PF"  ,0xd005}, {"HPOSM1",0xd005},
-    {"P2PF"  ,0xd006}, {"HPOSM2",0xd006}, {"P3PF"  ,0xd007}, {"HPOSM3",0xd007},
-    {"M0PL"  ,0xd008}, {"SIZEP0",0xd008}, {"M1PL"  ,0xd009}, {"SIZEP1",0xd009},
-    {"M2PL"  ,0xd00a}, {"SIZEP2",0xd00a}, {"M3PL"  ,0xd00b}, {"SIZEP3",0xd00b},
-    {"P0PL"  ,0xd00c}, {"SIZEM", 0xd00c}, {"P1PL"  ,0xd00d}, {"GRAFP0",0xd00d},
-    {"P2PL"  ,0xd00e}, {"GRAFP1",0xd00e}, {"P3PL"  ,0xd00f}, {"GRAFP2",0xd00f},
-    {"TRIG0" ,0xd010}, {"GRAFP3",0xd010}, {"TRIG1" ,0xd011}, {"GRAFM", 0xd011},
-    {"TRIG2" ,0xd012}, {"COLPM0",0xd012}, {"TRIG3" ,0xd013}, {"COLPM1",0xd013},
-    {"PAL"   ,0xd014}, {"COLPM2",0xd014}, {"COLPM3",0xd015}, {"COLPF0",0xd016},
-    {"COLPF1",0xd017},
-    {"COLPF2",0xd018}, {"COLPF3",0xd019}, {"COLBK", 0xd01a}, {"PRIOR", 0xd01b},
-    {"VDELAY",0xd01c}, {"GRACTL",0xd01d}, {"HITCLR",0xd01e}, {"CONSOL",0xd01f},
+	{"POT0",  0xd200}, {"AUDF1", 0xd200}, {"POT1",  0xd201}, {"AUDC1", 0xd201},
+	{"POT2",  0xd202}, {"AUDF2", 0xd202}, {"POT3",  0xd203}, {"AUDC2", 0xd203},
+	{"POT4",  0xd204}, {"AUDF3", 0xd204}, {"POT5",  0xd205}, {"AUDC3", 0xd205},
+	{"POT6",  0xd206}, {"AUDF4", 0xd206}, {"POT7",  0xd207}, {"AUDC4", 0xd207},
+	{"ALLPOT",0xd208}, {"AUDCTL",0xd208}, {"KBCODE",0xd209}, {"STIMER",0xd209},
+	{"RANDOM",0xd20a}, {"SKREST",0xd20a}, {"POTGO", 0xd20b},
+	{"SERIN", 0xd20d}, {"SEROUT",0xd20d}, {"IRQST", 0xd20e}, {"IRQEN", 0xd20e},
+	{"SKSTAT",0xd20f}, {"SKCTL", 0xd20f},
 
-    {"POT0"  ,0xd200}, {"AUDF1", 0xd200}, {"POT1"  ,0xd201}, {"AUDC1", 0xd201},
-    {"POT2"  ,0xd202}, {"AUDF2", 0xd202}, {"POT3"  ,0xd203}, {"AUDC2", 0xd203},
-    {"POT4"  ,0xd204}, {"AUDF3", 0xd204}, {"POT5"  ,0xd205}, {"AUDC3", 0xd205},
-    {"POT6"  ,0xd206}, {"AUDF4", 0xd206}, {"POT7"  ,0xd207}, {"AUDC4", 0xd207},
-    {"ALLPOT",0xd208}, {"AUDCTL",0xd208}, {"KBCODE",0xd209}, {"STIMER",0xd209},
-    {"RANDOM",0xd20a}, {"SKREST",0xd20a}, {"POTGO", 0xd20b},
-    {"SERIN", 0xd20d}, {"SEROUT",0xd20d}, {"IRQST", 0xd20e}, {"IRQEN", 0xd20e},
-    {"SKSTAT",0xd20f}, {"SKCTL", 0xd20f},
+	{"PORTA", 0xd300}, {"PORTB", 0xd301}, {"PACTL", 0xd302}, {"PBCTL", 0xd303},
 
-    {"PORTA", 0xd300}, {"PORTB", 0xd301}, {"PACTL", 0xd302}, {"PBCTL", 0xd303},
+	{"DMACTL",0xd400}, {"CHACTL",0xd401}, {"DLISTL",0xd402}, {"DLISTH",0xd403},
+	{"HSCROL",0xd404}, {"VSCROL",0xd405}, {"PMBASE",0xd407}, {"CHBASE",0xd409},
+	{"WSYNC", 0xd40a}, {"VCOUNT",0xd40b}, {"PENH",  0xd40c}, {"PENV",  0xd40d},
+	{"NMIEN", 0xd40e}, {"NMIST", 0xd40f}, {"NMIRES",0xd40f},
 
-    {"DMACTL",0xd400}, {"CHACTL",0xd401}, {"DLISTL",0xd402}, {"DLISTH",0xd403},
-    {"HSCROL",0xd404}, {"VSCROL",0xd405}, {"PMBASE",0xd407}, {"CHBASE",0xd409},
-    {"WSYNC", 0xd40a}, {"VCOUNT",0xd40b}, {"PENH",  0xd40c}, {"PENV",  0xd40d},
-    {"NMIEN", 0xd40e}, {"NMIST" ,0xd40f}, {"NMIRES",0xd40f},
+	{"AFP",   0xd800}, {"FASC",  0xd8e6}, {"IFP",   0xd9aa}, {"FPI",   0xd9d2},
+	{"ZPRO",  0xda44}, {"ZF1",   0xda46}, {"FSUB",  0xda60}, {"FADD",  0xda66},
+	{"FMUL",  0xdadb}, {"FDIV",  0xdb28}, {"PLYEVL",0xdd40}, {"FLD0R", 0xdd89},
+	{"FLD0R", 0xdd8d}, {"FLD1R", 0xdd98}, {"FLD1P", 0xdd9c}, {"FST0R", 0xdda7},
+	{"FST0P", 0xddab}, {"FMOVE", 0xddb6}, {"EXP",   0xddc0}, {"EXP10", 0xddcc},
+	{"LOG",   0xdecd}, {"LOG10", 0xded1},
 
-    {"AFP",   0xd800}, {"FASC",  0xd8e6}, {"IFP",   0xd9aa}, {"FPI",   0xd9d2},
-    {"ZPRO",  0xda44}, {"ZF1",   0xda46}, {"FSUB",  0xda60}, {"FADD",  0xda66},
-    {"FMUL",  0xdadb}, {"FDIV",  0xdb28}, {"PLYEVL",0xdd40}, {"FLD0R", 0xdd89},
-    {"FLD0R", 0xdd8d}, {"FLD1R", 0xdd98}, {"FLD1P", 0xdd9c}, {"FST0R", 0xdda7},
-    {"FST0P", 0xddab}, {"FMOVE", 0xddb6}, {"EXP",   0xddc0}, {"EXP10", 0xddcc},
-    {"LOG",   0xdecd}, {"LOG10", 0xded1},
+	{"DSKINV",0xe453}, {"CIOV",  0xe456}, {"SIOV",  0xe459}, {"SETVBV",0xe45c},
+	{"SYSVBV",0xe45f}, {"XITVBV",0xe462}, {"SIOINV",0xe465}, {"SENDEV",0xe468},
+	{"INTINV",0xe46b}, {"CIOINV",0xe46e}, {"SELFSV",0xe471}, {"WARMSV",0xe474},
+	{"COLDSV",0xe477}, {"RBLOKV",0xe47a}, {"CSOPIV",0xe47d}, {"PUPDIV",0xe480},
+	{"SELFTSV",0xe483},{"PENTV", 0xe486}, {"PHUNLV",0xe489}, {"PHINIV",0xe48c},
+	{"GPDVV", 0xe48f},
 
-    {"DSKINV",0xe453}, {"CIOV",  0xe456}, {"SIOV",  0xe459}, {"SETVBV",0xe45c},
-    {"SYSVBV",0xe45f}, {"XITVBV",0xe462}, {"SIOINV",0xe465}, {"SENDEV",0xe468},
-    {"INTINV",0xe46b}, {"CIOINV",0xe46e}, {"SELFSV",0xe471}, {"WARMSV",0xe474},
-    {"COLDSV",0xe477}, {"RBLOKV",0xe47a}, {"CSOPIV",0xe47d}, {"PUPDIV",0xe480},
-    {"SELFTSV",0xe483},{"PENTV", 0xe486}, {"PHUNLV",0xe489}, {"PHINIV",0xe48c},
-    {"GPDVV", 0xe48f}
-    };
-static const int symtable_size = sizeof(symtable) / sizeof(symtable_rec);
-#endif
+	{NULL,    0x0000}
+};
 
-static const char instr6502[256][11] =
+static int symtable_builtin_enable = TRUE;
+
+static symtable_rec *symtable_user = NULL;
+static int symtable_user_size = 0;
+
+static const char *find_label_name(UWORD addr, int write)
 {
+	int i;
+	for (i = 0; i < symtable_user_size; i++) {
+		if (symtable_user[i].addr == addr)
+			return symtable_user[i].name;
+	}
+	if (symtable_builtin_enable) {
+		const symtable_rec *p;
+		for (p = symtable_builtin; p->name != NULL; p++) {
+			if (p->addr == addr) {
+				if (write && p[1].addr == addr)
+					p++;
+				return p->name;
+			}
+		}
+	}
+	return NULL;
+}
+
+static symtable_rec *find_user_label(const char *name)
+{
+	int i;
+	for (i = 0; i < symtable_user_size; i++) {
+		if (Util_stricmp(symtable_user[i].name, name) == 0)
+			return &symtable_user[i];
+	}
+	return NULL;
+}
+
+static int find_label_value(const char *name)
+{
+	const symtable_rec *p = find_user_label(name);
+	if (p != NULL)
+		return p->addr;
+	if (symtable_builtin_enable) {
+		for (p = symtable_builtin; p->name != NULL; p++) {
+			if (Util_stricmp(p->name, name) == 0)
+				return p->addr;
+		}
+	}
+	return -1;
+}
+
+static void free_user_labels(void)
+{
+	if (symtable_user != NULL) {
+		while (symtable_user_size > 0)
+			free(symtable_user[--symtable_user_size].name);
+		free(symtable_user);
+		symtable_user = NULL;
+	}
+}
+
+static void add_user_label(const char *name, UWORD addr)
+{
+#define SYMTABLE_USER_INITIAL_SIZE 128
+	if (symtable_user == NULL)
+		symtable_user = (symtable_rec *) Util_malloc(SYMTABLE_USER_INITIAL_SIZE * sizeof(symtable_rec));
+	else if (symtable_user_size >= SYMTABLE_USER_INITIAL_SIZE
+	 && (symtable_user_size & (symtable_user_size - 1)) == 0) {
+		/* symtable_loaded_size is a power of two: allocate twice as much */
+		symtable_user = (symtable_rec *) Util_realloc(symtable_user,
+			2 * symtable_user_size * sizeof(symtable_rec));
+	}
+	symtable_user[symtable_user_size].name = Util_strdup(name);
+	symtable_user[symtable_user_size].addr = addr;
+	symtable_user_size++;
+}
+
+static void load_user_labels(const char *filename)
+{
+	FILE *fp;
+	char line[256];
+	if (filename == NULL) {
+		printf("You must specify a filename\n");
+		return;
+	}
+	/* "rb" and not "r", because we strip EOLs ourselves
+	   - this is better, because we can use CR/LF files on Unix */
+	fp = fopen(filename, "rb");
+	if (fp == NULL) {
+		perror(filename);
+		return;
+	}
+	free_user_labels();
+	while (fgets(line, sizeof(line), fp)) {
+		char *p;
+		unsigned int value = 0;
+		int digits = 0;
+		/* Find first 4 hex digits or more. */
+		/* I hope there's no "Cafe Assembler" that uses its signature. :-) */
+		for (p = line; *p != '\0'; p++) {
+			if (*p >= '0' && *p <= '9') {
+				value = (value << 4) + *p - '0';
+				digits++;
+			}
+			else if (*p >= 'A' && *p <= 'F') {
+				value = (value << 4) + *p - 'A' + 10;
+				digits++;
+			}
+			else if (*p >= 'a' && *p <= 'f') {
+				value = (value << 4) + *p - 'a' + 10;
+				digits++;
+			}
+			else if (digits >= 4)
+				break;
+			else if (*p == '-')
+				break; /* ignore labels with negative values */
+			else {
+				/* note that xasm can put "2" before the label value and mads puts "00" */
+				value = 0;
+				digits = 0;
+			}
+		}
+		if (*p != ' ' && *p != '\t')
+			continue;
+		if (value > 0xffff || digits > 8)
+			continue;
+		do
+			p++;
+		while (*p == ' ' || *p == '\t');
+		Util_chomp(p);
+		if (*p == '\0')
+			continue;
+		add_user_label(p, (UWORD) value);
+	}
+	fclose(fp);
+	printf("Loaded %d labels.\n", symtable_user_size);
+}
+
+#endif /* MONITOR_HINTS */
+
+static const char instr6502[256][11] = {
 	"BRK", "ORA ($1,X)", "CIM", "ASO ($1,X)", "NOP $1", "ORA $1", "ASL $1", "ASO $1",
 	"PHP", "ORA #$1", "ASL", "ANC #$1", "NOP $2", "ORA $2", "ASL $2", "ASO $2",
 
@@ -362,6 +497,7 @@ static const char instr6502[256][11] =
 
 /* Opcode type:
    bits 1-0 = instruction length
+   bit 2    = instruction reads from memory (without stack-manipulating instructions)
    bit 3    = instruction writes to memory (without stack-manipulating instructions)
    bits 7-4 = adressing type:
      0 = NONE (implicit)
@@ -383,22 +519,23 @@ static const char instr6502[256][11] =
 */
 
 static const UBYTE optype6502[256] = {
-  0x01, 0x52, 0x01, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
-  0x92, 0x62, 0x01, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b,
-  0x13, 0x52, 0x01, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
-  0x92, 0x62, 0x01, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b,
-  0xc1, 0x52, 0x01, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
-  0x92, 0x62, 0x01, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b,
-  0xb1, 0x52, 0x01, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0xd3, 0x13, 0x1b, 0x1b,
-  0x92, 0x62, 0x01, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b,
-  0xa2, 0x5a, 0x01, 0x5a, 0x2a, 0x2a, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x1b, 0x1b, 0x1b, 0x1b,
-  0x92, 0x6a, 0x01, 0x6a, 0x7a, 0x7a, 0x8a, 0x8a, 0x01, 0x4b, 0x01, 0x4b, 0x33, 0x3b, 0x43, 0x43,
-  0xa2, 0x52, 0xa2, 0x52, 0x22, 0x22, 0x22, 0x22, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x13, 0x13,
-  0x92, 0x62, 0x01, 0x62, 0x72, 0x72, 0x82, 0x82, 0x01, 0x43, 0x01, 0x43, 0x33, 0x33, 0x43, 0x43,
-  0xa2, 0x52, 0xa2, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
-  0x92, 0x62, 0xe2, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b,
-  0xa2, 0x52, 0xa2, 0x5a, 0x22, 0x22, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x13, 0x1b, 0x1b,
-  0x92, 0x62, 0xf2, 0x6a, 0x72, 0x72, 0x7a, 0x7a, 0x01, 0x43, 0x01, 0x4b, 0x33, 0x33, 0x3b, 0x3b };
+	0x01, 0x56, 0x01, 0x5e, 0x22, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x17, 0x1f, 0x1f,
+	0x92, 0x66, 0x01, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f,
+	0x13, 0x56, 0x01, 0x5e, 0x26, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x17, 0x17, 0x1f, 0x1f,
+	0x92, 0x66, 0x01, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f,
+	0xc1, 0x56, 0x01, 0x5e, 0x22, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x17, 0x1f, 0x1f,
+	0x92, 0x66, 0x01, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f,
+	0xb1, 0x56, 0x01, 0x5e, 0x22, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0xd3, 0x17, 0x1f, 0x1f,
+	0x92, 0x66, 0x01, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f,
+	0xa2, 0x5a, 0x01, 0x5a, 0x2a, 0x2a, 0x2a, 0x2a, 0x01, 0xa2, 0x01, 0xa2, 0x1b, 0x1b, 0x1b, 0x1b,
+	0x92, 0x6a, 0x01, 0x6a, 0x7a, 0x7a, 0x8a, 0x8a, 0x01, 0x4b, 0x01, 0x4b, 0x3b, 0x3b, 0x4b, 0x4b,
+	0xa2, 0x56, 0xa2, 0x56, 0x26, 0x26, 0x26, 0x26, 0x01, 0xa2, 0x01, 0xa2, 0x17, 0x17, 0x17, 0x17,
+	0x92, 0x66, 0x01, 0x66, 0x76, 0x76, 0x86, 0x86, 0x01, 0x47, 0x01, 0x47, 0x37, 0x37, 0x47, 0x47,
+	0xa2, 0x56, 0xa2, 0x5e, 0x26, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x17, 0x17, 0x1f, 0x1f,
+	0x92, 0x66, 0xe2, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f,
+	0xa2, 0x56, 0xa2, 0x5e, 0x26, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x17, 0x17, 0x1f, 0x1f,
+	0x92, 0x66, 0xf2, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f
+};
 
 
 static void safe_gets(char *buffer, int size)
@@ -410,6 +547,13 @@ static void safe_gets(char *buffer, int size)
 	Util_chomp(buffer);
 }
 
+static int pager(void)
+{
+	char buf[100];
+	printf("Press return to continue ('q' to quit): ");
+	safe_gets(buf, sizeof(buf));
+	return buf[0] == 'q' || buf[0] == 'Q';
+}
 
 static char *get_token(char *string)
 {
@@ -443,7 +587,7 @@ static char *get_token(char *string)
 #if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
 static int get_dec(char *string, int *decval)
 {
-	char *t;
+	const char *t;
 
 	t = get_token(string);
 	if (t) {
@@ -459,11 +603,25 @@ static int get_dec(char *string, int *decval)
 
 static int get_hex(UWORD *hexval)
 {
-	char *t;
+	const char *t;
 
 	t = get_token(NULL);
 	if (t) {
 		int x = Util_sscanhex(t);
+#ifdef MONITOR_HINTS
+		int y = find_label_value(t);
+		if (y >= 0) {
+			if (x < 0) {
+				*hexval = (UWORD) y;
+				return TRUE;
+			}
+			if (x != y) {
+				/* t can be a hex number or a label name */
+				printf("%s is ambiguous. Use 0%X or %X instead.\n", t, x, y);
+				return FALSE;
+			}
+		}
+#endif
 		if (x < 0)
 			return FALSE;
 		*hexval = (UWORD) x;
@@ -669,13 +827,8 @@ int monitor(void)
 		if (t == NULL)
 			continue;
 
-		{
-			/* uppercase the command */
-			char *p;
-			for (p = t; *p != '\0'; p++)
-				if (*p >= 'a' && *p <= 'z')
-					*p += 'A' - 'a';
-		}
+		/* uppercase the command */
+		Util_strupper(t);
 
 		if (strcmp(t, "CONT") == 0) {
 #ifdef MONITOR_PROFILE
@@ -785,10 +938,7 @@ int monitor(void)
 				nlines++;
 
 				if (!done && nlines == 15) {
-					char buf[100];
-					printf("Press return to continue ('q' to quit): ");
-					safe_gets(buf, sizeof(buf));
-					done = buf[0] == 'q' || buf[0] == 'Q';
+					done = pager();
 					nlines = 0;
 				}
 			}
@@ -960,24 +1110,19 @@ int monitor(void)
 		}
 #ifndef PAGED_MEM
 		else if (strcmp(t, "READ") == 0) {
-			char *filename;
+			const char *filename;
 
 			filename = get_token(NULL);
-			if (filename) {
-				int status = get_hex(&addr);
-				if (status) {
-					UWORD nbytes;
-					status = get_hex(&nbytes);
-					if (status && addr + nbytes <= 0x10000) {
-						FILE *f = fopen(filename, "rb");
-
-						if (f == NULL)
+			if (filename != NULL) {
+				UWORD nbytes;
+				if (get_hex2(&addr, &nbytes) && addr + nbytes <= 0x10000) {
+					FILE *f = fopen(filename, "rb");
+					if (f == NULL)
+						perror(filename);
+					else {
+						if (fread(&memory[addr], 1, nbytes, f) == 0)
 							perror(filename);
-						else {
-							if (fread(&memory[addr], 1, nbytes, f) == 0)
-								perror(filename);
-							fclose(f);
-						}
+						fclose(f);
 					}
 				}
 			}
@@ -985,18 +1130,19 @@ int monitor(void)
 		else if (strcmp(t, "WRITE") == 0) {
 			UWORD addr1;
 			UWORD addr2;
-			char *filename;
+			const char *filename;
 			int status;
 
 			status = get_hex2(&addr1, &addr2);
 
-			if (!(filename = get_token(NULL))) /* ERU */
+			filename = get_token(NULL);
+			if (filename == NULL)
 				filename = "memdump.dat";
 
 			if (status) {
-				FILE *f;
+				FILE *f = fopen(filename, "wb");
 
-				if (!(f = fopen(filename, "wb")))
+				if (f == NULL)
 					perror(filename);
 				else {
 					size_t nbytes = addr2 - addr1 + 1;
@@ -1016,7 +1162,7 @@ int monitor(void)
 				int i;
 
 				for (i = addr1; i <= addr2; i++)
-					sum += (UWORD) dGetByte(i);
+					sum += dGetByte(i);
 				printf("SUM: %X\n", sum);
 			}
 		}
@@ -1194,6 +1340,87 @@ int monitor(void)
 			if (!ok)
 				printf("Conditional loop containing instruction at %04X not detected\n", addr1);
 		}
+#ifdef MONITOR_HINTS
+		else if (strcmp(t, "LABELS") == 0) {
+			char *cmd = get_token(NULL);
+			if (cmd == NULL) {
+				printf("Built-in labels are %s.\n", symtable_builtin_enable ? "enabled" : "disabled");
+				if (symtable_user_size > 0)
+					printf("Using %d user-defined label%s.\n",
+						symtable_user_size, (symtable_user_size > 1) ? "s" : "");
+				else
+					printf("There are no user-defined labels.\n");
+				printf(
+					"Labels are displayed in disassembly listings.\n"
+					"You may also use them as command arguments"
+/* TODO:
+#ifdef MONITOR_ASSEMBLER
+						" and in the built-in assembler"
+#endif
+*/
+						".\n"
+					"Usage:\n"
+					"LABELS OFF            - no labels\n"
+					"LABELS BUILTIN        - use only built-in labels\n"
+					"LABELS LOAD filename  - use only labels loaded from file\n"
+					"LABELS ADD filename   - use built-in and loaded labels\n"
+					"LABELS SET name value - define a label\n"
+					"LABELS LIST           - list user-defined labels\n"
+				);
+			}
+			else {
+				Util_strupper(cmd);
+				if (strcmp(cmd, "OFF") == 0) {
+					symtable_builtin_enable = FALSE;
+					free_user_labels();
+				}
+				else if (strcmp(cmd, "BUILTIN") == 0) {
+					symtable_builtin_enable = TRUE;
+					free_user_labels();
+				}
+				else if (strcmp(cmd, "LOAD") == 0) {
+					symtable_builtin_enable = FALSE;
+					load_user_labels(get_token(NULL));
+				}
+				else if (strcmp(cmd, "ADD") == 0) {
+					symtable_builtin_enable = TRUE;
+					load_user_labels(get_token(NULL));
+				}
+				else if (strcmp(cmd, "SET") == 0) {
+					const char *name = get_token(NULL);
+					UWORD addr;
+					if (name != NULL && get_hex(&addr)) {
+						symtable_rec *p = find_user_label(name);
+						if (p != NULL) {
+							if (p->addr != addr) {
+								printf("%s redefined (previous value: %04X)\n", name, p->addr);
+								p->addr = addr;
+							}
+						}
+						else
+							add_user_label(name, addr);
+					}
+					else
+						printf("Missing argument(s).\n");
+				}
+				else if (strcmp(cmd, "LIST") == 0) {
+					int i;
+					int nlines = 0;
+					for (i = 0; i < symtable_user_size; i++) {
+						if (++nlines == 24) {
+							if (pager())
+								break;
+							nlines = 0;
+						}
+						printf("%04X %s\n", symtable_user[i].addr, symtable_user[i].name);
+					}
+				}
+				else {
+					printf("Invalid command, type \"LABELS\" for help\n");
+				}
+			}
+		}
+#endif
 		else if (strcmp(t, "ANTIC") == 0) {
 			printf("DMACTL=%02X    CHACTL=%02X    DLISTL=%02X    "
 				   "DLISTH=%02X    HSCROL=%02X    VSCROL=%02X\n",
@@ -1262,6 +1489,10 @@ int monitor(void)
 				"F startaddr endaddr hexval     - Fill memory\n"
 				"M [startaddr]                  - Memory list\n"
 				"S startaddr endaddr hexval...  - Search memory\n"
+			);
+			/* to avoid gcc -pedantic warning: "string length 'xxx' is greater than the length '509'
+			   ISO C89 compilers are required to support" */
+			printf(
 				"LOOP [inneraddr]               - Disassemble a loop that contains inneraddr\n"
 				"ROM startaddr endaddr          - Convert memory block into ROM\n"
 				"RAM startaddr endaddr          - Convert memory block into RAM\n"
@@ -1269,11 +1500,14 @@ int monitor(void)
 				"READ filename startaddr nbytes - Read file into memory\n"
 				"WRITE startaddr endaddr [file] - Write memory block to a file (memdump.dat)\n"
 				"SUM startaddr endaddr          - SUM of specified memory range\n"
+			);
 #ifdef MONITOR_TRACE
+			printf(
 				"TRON                           - Trace on\n"
-				"TROFF                          - Trace off\n"
+				"TROFF                          - Trace off\n");
 #endif
 #ifdef MONITOR_BREAK
+			printf(
 				"BREAK [addr]                   - Set breakpoint at address\n"
 				"YBREAK [ypos] or [1000+ypos]   - Break at scanline or flash scanline\n"
 				"BRKHERE on|off                 - Set BRK opcode behaviour\n"
@@ -1289,10 +1523,12 @@ int monitor(void)
 			printf(
 				"G                              - Execute 1 instruction\n"
 				"O                              - Step over the instruction\n"
-				"R                              - Execute until return\n"
+				"R                              - Execute until return\n");
 #elif !defined(NO_YPOS_BREAK_FLICKER)
-				"YBREAK [1000+ypos]             - flash scanline\n"
+			printf(
+				"YBREAK [1000+ypos]             - flash scanline\n");
 #endif
+			printf(
 #ifdef MONITOR_ASSEMBLER
 				"A [startaddr]                  - Start simple assembler\n"
 #endif
@@ -1300,6 +1536,9 @@ int monitor(void)
 				"DLIST [startaddr]              - Show Display List\n"
 #ifdef MONITOR_PROFILE
 				"PROFILE                        - Display profiling statistics\n"
+#endif
+#ifdef MONITOR_HINTS
+				"LABELS [command] [filename]    - Configure labels\n"
 #endif
 				"COLDSTART, WARMSTART           - Perform system coldstart/warmstart\n"
 #ifdef HAVE_SYSTEM
@@ -1341,28 +1580,6 @@ unsigned int disassemble(UWORD addr1, UWORD addr2)
 	return addr;
 }
 
-#ifdef MONITOR_HINTS
-static int find_symbol(UWORD addr)
-{
-	int lo = 0, hi = symtable_size - 1, mi = 0;
-
-	while (lo < hi) {
-		mi = (lo + hi) / 2;
-		if (symtable[mi].addr == addr)
-			break;
-		else if (symtable[mi].addr > addr)
-			hi = mi;
-		else
-			lo = mi + 1;
-	}
-	if (symtable[mi].addr == addr)
-		/* return the lowest index of symbol with given address */
-		return (mi > 0 && symtable[mi - 1].addr == addr) ? mi - 1 : mi;
-	else
-		return -1;
-}
-#endif
-
 UWORD show_instruction(UWORD inad, int wid)
 {
 	UBYTE instr;
@@ -1370,7 +1587,6 @@ UWORD show_instruction(UWORD inad, int wid)
 	char dissbf[32];
 	int i;
 #ifdef MONITOR_HINTS
-	int result;
 	UBYTE operand = 0;
 #endif
 
@@ -1423,12 +1639,13 @@ UWORD show_instruction(UWORD inad, int wid)
 		inad = 1;
 	}
 #ifdef MONITOR_HINTS
-	if (operand && (optype6502[instr] & 0xf0) != 0xa0 && (result = find_symbol(value)) >= 0) {
+	if (operand && (optype6502[instr] & 0xf0) != 0xa0) {
 		/* different names when reading/writing memory */
-		if ((optype6502[instr] & 0x08) && symtable[result + 1].addr == value)
-			result++;
-		printf(" ;%s ", symtable[result].name);
-		wid -= 3 + strlen(symtable[result].name);
+		const char *label = find_label_name(value, (optype6502[instr] & 0x08) != 0);
+		if (label != NULL) {
+			printf(" ;%s ", label);
+			wid -= 3 + strlen(label);
+		}
 	}
 #endif
 	for (i = wid; i > 0; i--)
@@ -1455,10 +1672,7 @@ static UWORD assembler(UWORD addr)
 		if (s[0] == '\0')
 			return addr;
 
-		/* convert string to upper case */
-		for (sp = s; *sp != '\0'; sp++)
-			if (*sp >= 'a' && *sp <= 'z')
-				*sp += 'A' - 'a';
+		Util_strupper(s);
 
 		oplen = 0;
 
@@ -1572,10 +1786,13 @@ static UWORD assembler(UWORD addr)
 			printf("Invalid instruction!\n");
 	}
 }
-#endif
+#endif /* MONITOR_ASSEMBLER */
 
 /*
 $Log$
+Revision 1.30  2005/09/11 20:34:52  pfusik
+extended labels (MONITOR_HINTS)
+
 Revision 1.29  2005/09/06 22:51:05  pfusik
 introduced util.[ch]
 
