@@ -37,6 +37,24 @@ char *Util_strlcpy(char *dest, const char *src, size_t size)
 	return dest;
 }
 
+char *Util_strupper(char *s)
+{
+	char *p;
+	for (p = s; *p != '\0'; p++)
+		if (*p >= 'a' && *p <= 'z')
+			*p += 'A' - 'a';
+	return s;
+}
+
+char *Util_strlower(char *s)
+{
+	char *p;
+	for (p = s; *p != '\0'; p++)
+		if (*p >= 'A' && *p <= 'Z')
+			*p += 'a' - 'A';
+	return s;
+}
+
 void Util_chomp(char *s)
 {
 	int len;

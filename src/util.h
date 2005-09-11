@@ -20,6 +20,12 @@
    to dest (the result may be truncated). Returns dest. */
 char *Util_strlcpy(char *dest, const char *src, size_t size);
 
+/* Modifies the string to uppercase and returns it. */
+char *Util_strupper(char *s);
+
+/* Modifies the string to lowercase and returns it. */
+char *Util_strlower(char *s);
+
 /* Similar to Perl's chomp(): removes trailing LF, CR or CR/LF. */
 void Util_chomp(char *s);
 
