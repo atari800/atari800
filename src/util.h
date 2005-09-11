@@ -78,6 +78,9 @@ void Util_catpath(char *result, const char *path1, const char *path2);
 /* Returns TRUE if the specified file exists. */
 int Util_fileexists(const char *filename);
 
+/* Returns TRUE if the specified directory exists. */
+int Util_direxists(const char *filename);
+
 /* Rewinds the stream to its beginning. */
 #ifdef HAVE_REWIND
 #define Util_rewind(fp) rewind(fp)

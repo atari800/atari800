@@ -26,6 +26,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 #include "atari.h"
 #include "util.h"
@@ -221,6 +227,42 @@ int Util_fileexists(const char *filename)
 	fclose(fp);
 	return TRUE;
 }
+
+#ifdef WIN32
+
+int Util_direxists(const char *filename)
+{
+	DWORD attr;
+#ifdef UNICODE
+	WCHAR wfilename[FILENAME_MAX];
+	if (MultiByteToWideChar(CP_ACP, 0, filename, -1, wfilename, FILENAME_MAX) <= 0)
+		return FALSE;
+	attr = GetFileAttributes(wfilename);
+#else
+	attr = GetFileAttributes(filename);
+#endif /* UNICODE */
+	if (attr == 0xffffffff)
+		return FALSE;
+	return (attr & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
+}
+
+#elif defined(HAVE_STAT)
+
+int Util_direxists(const char *filename)
+{
+	struct stat filestatus;
+	return stat(filename, &filestatus) == 0 && (filestatus.st_mode & S_IFDIR);
+}
+
+#else
+
+int Util_direxists(const char *filename)
+{
+	return TRUE;
+}
+
+#endif /* defined(HAVE_STAT) */
+
 
 int Util_flen(FILE *fp)
 {
