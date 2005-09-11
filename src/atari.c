@@ -246,7 +246,6 @@ void Atari800_PatchOS(void)
 			save_check_bytes[1] = 0x03;
 			break;
 		default:
-			Aprint("Fatal Error in Atari800_PatchOS(): Unknown machine");
 			return;
 		}
 		/* don't hurt non-standard OSes that may not support cassette at all  */
@@ -417,11 +416,11 @@ int Atari800_DetectFileType(const char *filename)
 	case 0x1f:
 		if (header[1] == 0x8b) {
 #ifndef HAVE_LIBZ
-			fclose(fp):
+			fclose(fp);
 			Aprint("\"%s\" is a compressed file.");
 			Aprint("This executable does not support compressed files. You can uncompress this file");
 			Aprint("with an external program that supports gzip (*.gz) files (e.g. gunzip)");
-			Aprint("and then load into this emulator");
+			Aprint("and then load into this emulator.");
 			return AFILE_ERROR;
 #else /* HAVE_LIBZ */
 			gzFile gzf;
@@ -1579,6 +1578,10 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.75  2005/09/11 07:21:10  pfusik
+fixed parse error in zlib-less compilation;
+removed unnecessary "Fatal Error" message
+
 Revision 1.74  2005/09/06 22:48:36  pfusik
 introduced util.[ch]
 
