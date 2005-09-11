@@ -243,26 +243,6 @@ static char filename[FILENAME_MAX];
 static char newfilename[FILENAME_MAX];
 #endif
 
-static char *strtoupper(char *str)
-{
-	char *ptr;
-	for (ptr = str; *ptr; ptr++)
-		if (*ptr >= 'a' && *ptr <= 'z')
-			*ptr += 'A' - 'a';
-
-	return str;
-}
-
-static char *strtolower(char *str)
-{
-	char *ptr;
-	for (ptr = str; *ptr; ptr++)
-		if (*ptr >= 'A' && *ptr <= 'Z')
-			*ptr += 'a' - 'A';
-
-	return str;
-}
-
 static void Device_GeneratePath(void)
 {
 	int i;
@@ -288,7 +268,7 @@ static void Device_GeneratePath(void)
 		else {
 			HPathDrive[i] = -1;
 		}
-		strtolower(HPaths[i]);
+		Util_strlower(HPaths[i]);
 	}
 }
 
@@ -312,8 +292,10 @@ void Device_Initialise(int *argc, char *argv[])
 			strcpy(HPath, argv[++i]);
 		else if (strcmp(argv[i], "-devbug") == 0)
 			devbug = TRUE;
-		else if (strcmp(argv[i], "-hdreadonly") == 0)
-			hd_read_only = Util_sscanbool(argv[++i]);
+		else if (strcmp(argv[i], "-hreadonly") == 0)
+			hd_read_only = TRUE;
+		else if (strcmp(argv[i], "-hreadwrite") == 0)
+			hd_read_only = FALSE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Aprint("\t-H1 <path>       Set path for H1: device");
@@ -321,7 +303,8 @@ void Device_Initialise(int *argc, char *argv[])
 				Aprint("\t-H3 <path>       Set path for H3: device");
 				Aprint("\t-H4 <path>       Set path for H4: device");
 				Aprint("\t-Hpath <path>    Set path for Atari executables on the H: device");
-				Aprint("\t-hdreadonly <on> Enable (1) or disable (0) read-only mode for H: device");
+				Aprint("\t-hreadonly       Enable read-only mode for H: device");
+				Aprint("\t-hreadwrite      Disable read-only mode for H: device");
 				Aprint("\t-devbug          Debugging messages for H: and P: devices");
 			}
 			argv[j++] = argv[i];
@@ -620,7 +603,7 @@ static void Device_HHOPEN(void)
 				char end_dir_str[FILENAME_MAX];
 				Util_splitpath(dir_path, NULL, end_dir_str);
 				fprintf(fp[fid], "%s\n\n",
-						/* strtoupper */(end_dir_str));
+						/* Util_strupper */(end_dir_str));
 			}
 		}
 
@@ -628,7 +611,7 @@ static void Device_HHOPEN(void)
 			struct stat status;
 			char *ext;
 			stat(fname, &status);
-			/* strtoupper(entryname); */
+			/* Util_strupper(entryname); */
 			ext = strrchr(entryname, '.');
 			if (ext == NULL)
 				ext = "";
@@ -1466,7 +1449,7 @@ static void Device_HHSPEC_Current_Dir(void)
 		if (new_path[i] == DIR_SEP_CHAR)
 			new_path[i] = '>';
 	}
-	strtoupper(new_path);
+	Util_strupper(new_path);
 	new_path[pathlen] = (char) 0x9b;
 
 	for (i = 0; i < pathlen + 1; i++)
@@ -2004,7 +1987,6 @@ static void Device_CloseBasicFile(void)
 int Device_PatchOS(void)
 {
 	UWORD addr;
-	UWORD devtab;
 	int i;
 	int patched = FALSE;
 
@@ -2017,12 +1999,11 @@ int Device_PatchOS(void)
 		addr = 0xc42e;
 		break;
 	default:
-		Aprint("Fatal Error in Device_PatchOS(): Unknown machine");
-		return patched;
+		return FALSE;
 	}
 
 	for (i = 0; i < 5; i++) {
-		devtab = dGetWord(addr + 1);
+		UWORD devtab = dGetWord(addr + 1);
 		switch (dGetByte(addr)) {
 #ifdef HAVE_SYSTEM
 		case 'P':
@@ -2251,6 +2232,11 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.42  2005/09/11 07:22:02  pfusik
+replaced "-hdreadonly <onoff>" with "-hreadonly" / "-hreadwrite";
+Util_strupper() and Util_strlower();
+removed unnecessary "Fatal Error" message
+
 Revision 1.41  2005/09/10 12:36:05  pfusik
 Util_splitpath() and Util_catpath()
 
