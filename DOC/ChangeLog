@@ -1,3 +1,26 @@
+2005-09-11  Piotr Fusik  <fox@scene.pl>
+* ui_basic.c: fixed file selector which I broke yesterday
+
+* atari.c: fixed parse error in zlib-less compilation
+
+* atari.c, devices.c: removed unnecessary "Fatal Error" messages
+
+* memory.c, remez.c, screen.c: use Util_malloc() instead of malloc()
+
+* rdevice.c: avoid malloc()
+
+* ui_basic.c: use Util_realloc() instead of realloc()
+
+* ui.h, ui_basic.c: fixed warnings
+
+* rtime.c: replaced "-rtime <onoff>" with "-rtime" / "-nortime"
+  documented in "-help"
+
+* devices.c: replaced "-hdreadonly <onoff>" with "-hreadonly" / "-hreadwrite"
+
+* devices.c, util.[ch]: Util_strupper() and Util_strlower()
+
+
 2005-09-10  Piotr Fusik  <fox@scene.pl>
 * configure.ac: #define our symbols to 1 (just like autoconf's own symbols);
   described basic and *curses targets
