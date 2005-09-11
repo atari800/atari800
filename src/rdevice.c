@@ -53,7 +53,7 @@
  *                             lengths (5,6,7,8)
  * 2003.09.11 cmartin@ti.com - Fixed Address lookup in open_connection()
  *                           - Reformatted and cleaned whole file.
- *                           - Removed all memory writes to addresses 
+ *                           - Removed all memory writes to addresses
  *                             746 - 749 except within the RSTAT function.
  *
  * TODO:
@@ -72,6 +72,7 @@
  *
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -91,14 +92,16 @@
 #include <fcntl.h>
 #include <termios.h>
 
+#include "atari.h"
 #include "cpu.h"
-#include "memory.h"
 #include "devices.h"
 #include "log.h"
+#include "memory.h"
+#include "util.h"
 
-#define Peek(a)    (dGetByte((a)))
-#define DPeek(a)   (dGetByte((a))+( dGetByte((a)+1)<<8 ) )
-#define Poke(x,y)  (dPutByte((x),(y)))
+#define Peek(a)    dGetByte(a)
+#define DPeek(a)   dGetWord(a)
+#define Poke(x,y)  dPutByte(x, y)
 
 extern int Device_isvalid(UBYTE ch);
 //---------------------------------------------------------------------------
@@ -155,10 +158,10 @@ void catch_disconnect(int sig)
   bufout[0] = 0;
   strcat(bufout, "\r\nNO CARRIER\r\n");
   bufend = 13;
-#if 0  
+#if 0
   Poke(747,bufend);
   Poke(748,0);
-#endif  
+#endif
 }
 
 //---------------------------------------------------------------------------
@@ -181,20 +184,20 @@ void xio_34(void)
     //ioctl(rdev_fd, TIOCMGET, &status);
   }
 
-  if(temp & 0x80) 
+  if(temp & 0x80)
   {
-    if(temp & 0x40) 
+    if(temp & 0x40)
     {
       /* turn DTR on */
-      if(r_serial) 
+      if(r_serial)
       {
         //status |= TIOCM_DTR;
       }
-    } 
-    else 
+    }
+    else
     {
       //Drop DTR
-      if(r_serial) 
+      if(r_serial)
       {
         cfsetispeed(&options, B0);
         cfsetospeed(&options, B0);
@@ -210,27 +213,27 @@ void xio_34(void)
     }
   }
 
-  if(r_serial) 
+  if(r_serial)
   {
     // RTS Set/Clear
-    if(temp & 0x20) 
+    if(temp & 0x20)
     {
-      if(temp & 0x10) 
+      if(temp & 0x10)
       {
         //status |= TIOCM_RTS;
-      } 
-      else 
+      }
+      else
       {
         //status &= ~TIOCM_RTS;
       }
     }
 
-    if(temp & 0x02) 
+    if(temp & 0x02)
     {
-      if(temp & 0x01) 
+      if(temp & 0x01)
       {
         //status |= TIOCM_RTS;
-      } 
+      }
       else
       {
         //status &= ~TIOCM_RTS;
@@ -270,10 +273,10 @@ void xio_36(void)
     if(aux1 & 0x80)
     { //2 Stop bits
       options.c_cflag |= CSTOPB;
-    } 
-    else 
+    }
+    else
     { //1 Stop bit
-      options.c_cflag &= ~CSTOPB; 
+      options.c_cflag &= ~CSTOPB;
     }
 
     //Set word size
@@ -304,12 +307,12 @@ void xio_36(void)
     }
 
     //Set Baud Rate
-    if((aux1 & 0x0f) == 0) 
+    if((aux1 & 0x0f) == 0)
     { //300 Baud
       cfsetispeed(&options, B300);
       cfsetospeed(&options, B300);
-    } 
-    else if((aux1 & 0x0f) == 1) 
+    }
+    else if((aux1 & 0x0f) == 1)
     { // 45.5 Baud (unsupported) - now 57600
 #ifdef B57600
       cfsetispeed(&options, B57600);
@@ -318,13 +321,13 @@ void xio_36(void)
       cfsetispeed(&options, B50);
       cfsetospeed(&options, B50);
 #endif
-    } 
+    }
     else if ((aux1 & 0x0f) == 2)
     { // 50 Baud
       cfsetispeed(&options, B50);
       cfsetospeed(&options, B50);
-    } 
-    else if ((aux1 & 0x0f) == 3) 
+    }
+    else if ((aux1 & 0x0f) == 3)
     { // 56.875 Baud (unsupported) - now 115200
 #ifdef B115200
       cfsetispeed(&options, B115200);
@@ -333,7 +336,7 @@ void xio_36(void)
       cfsetispeed(&options, B50);
       cfsetospeed(&options, B50);
 #endif
-    } 
+    }
     else if((aux1 & 0x0f) == 4)
     { // 75 Baud
       cfsetispeed(&options, B75);
@@ -343,48 +346,48 @@ void xio_36(void)
     { // 110 Baud
       cfsetispeed(&options, B110);
       cfsetospeed(&options, B110);
-    } 
+    }
     else if((aux1 & 0x0f) == 6)
     { // 134.5 Baud
       cfsetispeed(&options, B134);
       cfsetospeed(&options, B134);
-    } 
+    }
     else if((aux1 & 0x0f) == 7)
     { // 150 Baud
       cfsetispeed(&options, B150);
       cfsetospeed(&options, B150);
-    } 
+    }
     else if((aux1 & 0x0f) == 8)
     { // 300 Baud
       cfsetispeed(&options, B300);
       cfsetospeed(&options, B300);
-    } 
+    }
     else if((aux1 & 0x0f) == 9)
     { // 600 Baud
       cfsetispeed(&options, B600);
       cfsetospeed(&options, B600);
-    } 
-    else if((aux1 & 0x0f) == 10) 
+    }
+    else if((aux1 & 0x0f) == 10)
     { // 1200 Baud
       cfsetispeed(&options, B1200);
       cfsetospeed(&options, B1200);
     }
-    else if((aux1 & 0x0f) == 12) 
+    else if((aux1 & 0x0f) == 12)
     { // 2400 Baud
       cfsetispeed(&options, B2400);
       cfsetospeed(&options, B2400);
-    } 
+    }
     else if((aux1 & 0x0f) == 13)
     { // 4800 Baud
       cfsetispeed(&options, B4800);
       cfsetospeed(&options, B4800);
-    } 
+    }
     else if((aux1 & 0x0f) == 14)
     { // 9600 Baud
       cfsetispeed(&options, B9600);
       cfsetospeed(&options, B9600);
     }
-    else if((aux1 & 0x0f) == 15) 
+    else if((aux1 & 0x0f) == 15)
     { // 19200 Baud
 #ifdef B19200
       cfsetispeed(&options, B19200);
@@ -393,8 +396,8 @@ void xio_36(void)
       cfsetispeed(&options, B9600);
       cfsetospeed(&options, B9600);
 #endif
-    } 
-    else 
+    }
+    else
     { // 115200 Baud (can add 38400, 76800 if wanted)
 #ifdef B115200
       cfsetispeed(&options, B115200);
@@ -437,15 +440,15 @@ void xio_38(void)
   ClrN;
 
   aux1 = Peek(ICAX1Z);
-  if(r_serial) 
+  if(r_serial)
   {
-    if(aux1 & 0x04) 
+    if(aux1 & 0x04)
     { //Odd Parity
       tcgetattr(rdev_fd, &options);
       options.c_cflag |= PARENB;
       options.c_cflag |= PARODD;
       tcsetattr(rdev_fd, TCSANOW, &options);
-    } 
+    }
     else if(aux1 & 0x08)
     { //Even Parity
       tcgetattr(rdev_fd, &options);
@@ -453,8 +456,8 @@ void xio_38(void)
       options.c_cflag &= ~PARODD;
       tcsetattr(rdev_fd, TCSANOW, &options);
 
-    } 
-    else 
+    }
+    else
     { //No Parity
       tcgetattr(rdev_fd, &options);
       options.c_cflag &= ~PARENB;
@@ -502,12 +505,12 @@ void xio_40(void)
 
   aux1 = Peek(ICAX1Z);
 
-  if(aux1 >= 12) 
+  if(aux1 >= 12)
   {
     concurrent = 1;
     Aprint("R*: Entering concurrent IO mode...");
   }
-  else 
+  else
   {
     concurrent = 0;
     sprintf(MESSAGE, "R*: XIO 40, %d", aux1);
@@ -533,7 +536,7 @@ void open_connection(char * address, int port)
     rdev_fd = socket ( AF_INET, SOCK_STREAM, 0 );
     fcntl( rdev_fd, F_SETFL, O_NONBLOCK);
     peer_in.sin_family = AF_INET;
-    if(inet_pton(AF_INET, address, &peer_in.sin_addr) == 0) 
+    if(inet_pton(AF_INET, address, &peer_in.sin_addr) == 0)
     { // invalid address if zero
       if((peer_in.sin_addr.s_addr == -1) || (peer_in.sin_addr.s_addr == 0))
       {
@@ -549,16 +552,16 @@ void open_connection(char * address, int port)
         }
       }
     }
-    
+
     if(port > 0)
     {
       peer_in.sin_port = htons (port);
-    } 
+    }
     else
     {  /* telnet port */
       peer_in.sin_port = htons (23);
     }
-    if(connect(rdev_fd, (struct sockaddr *)&peer_in, sizeof ( peer_in )) < 0) 
+    if(connect(rdev_fd, (struct sockaddr *)&peer_in, sizeof ( peer_in )) < 0)
     {
       perror("connect");
     }
@@ -592,35 +595,26 @@ void open_connection(char * address, int port)
 //---------------------------------------------------------------------------
 void open_connection_serial(int port)
 {
-  char * dev_name;
+  char dev_name[12] = TTY_DEV_NAME; /* reinitialize each time */
   struct termios options;
 
   if(connected)
-  {
     close(rdev_fd);
-  }
   do_once = 1;
-  connected = 1;
 
-  dev_name = malloc(sizeof(TTY_DEV_NAME));
-  if (! dev_name) 
-  {
-    perror("R*: open_connection_serial: cannot allocate memory - ");
-    return;
-  }
-  strcpy(dev_name, TTY_DEV_NAME);
-  *(dev_name + strlen(dev_name) - 1) += port - 1;
+  dev_name[strlen(dev_name) - 1] += port - 1;
 
   rdev_fd = open(dev_name, O_RDWR | O_NOCTTY | O_NDELAY);
   //rdev_fd = open("/dev/ttyS0", O_RDONLY | O_NOCTTY | O_NDELAY);
   //rdev_fd = open("/dev/ttyS0", O_WRONLY | O_NOCTTY | O_NDELAY);
-  if(rdev_fd == -1) 
+  if(rdev_fd == -1)
   {
     connected = 0;
     perror("R*: open_port: Unable to open serial Port - ");
-  } 
+  }
   else
   {
+    connected = 1;
 #if 0
     fcntl(rdev_fd, F_SETFL, O_NONBLOCK);
 #endif
@@ -651,7 +645,6 @@ void open_connection_serial(int port)
     cfsetospeed(&options, B115200);
     tcsetattr(rdev_fd, TCSANOW, &options);
   }
-  free(dev_name);
 
 }
 
@@ -713,16 +706,16 @@ void Device_ROPEN(void)
   {
     Aprint("R*: Open for Reading...");
   }
-  
-  if(direction & 0x08) 
+
+  if(direction & 0x08)
   {
     Aprint("R*: Open for Writing...");
-    if(r_serial) 
+    if(r_serial)
     {
       Aprint("R*: serial mode.");
       open_connection_serial(devnum);
-    } 
-    else 
+    }
+    else
     {
       Aprint("R*: Socket mode.");
       Device_GetInetAddress();
@@ -733,7 +726,7 @@ void Device_ROPEN(void)
   {
     /* Open for concurrent mode */
   }
-  
+
 }
 
 //---------------------------------------------------------------------------
@@ -818,7 +811,7 @@ void Device_RWRIT(void)
       out_char = 0x0d;
       if(linefeeds)
       {
-        if((r_serial == 0) && (connected == 0)) 
+        if((r_serial == 0) && (connected == 0))
         { /* local echo */
           bufend++;
           bufout[bufend-1] = out_char;
@@ -829,8 +822,8 @@ void Device_RWRIT(void)
           strcat(bufout, "OK\r\n");
           bufend += 4;
 
-        } 
-        else 
+        }
+        else
         {
           write(rdev_fd, &out_char, 1); // Write return
         }
@@ -838,7 +831,7 @@ void Device_RWRIT(void)
       }
     }
   }
-  else 
+  else
   {
     out_char = regA;
   }
@@ -856,14 +849,14 @@ void Device_RWRIT(void)
   //}
   //if(retval == -1)
 
-  if((r_serial == 0) && (connected == 0)) 
+  if((r_serial == 0) && (connected == 0))
   { /* Local echo - only do if in socket mode */
     bufend++;
     bufout[bufend-1] = out_char;
     bufout[bufend] = 0;
 
     // Grab Command
-    if((out_char == 0x9b) || (out_char == 0x0d)) 
+    if((out_char == 0x9b) || (out_char == 0x0d))
     { //process command with a return/enter
       command_end = 0;
 
@@ -871,14 +864,14 @@ void Device_RWRIT(void)
       if((command_buf[0] == 'A') && (command_buf[1] == 'T') && (command_buf[2] == 'D') && (command_buf[3] == 'I'))
       {
         //Aprint(command_buf);
-        if(strchr(command_buf, ' ') != NULL) 
+        if(strchr(command_buf, ' ') != NULL)
         {
           if(strrchr(command_buf, ' ') != strchr(command_buf, ' '))
           {
             port = atoi((char *)(strrchr(command_buf, ' ')+1));
             * strrchr(command_buf, ' ') = '\0'; //zero last space in line
           }
-          else 
+          else
           {
             port = 23;
           }
@@ -888,8 +881,8 @@ void Device_RWRIT(void)
         strcat(bufout, "OK\r\n");
         bufend += 4;
       //Change translation command 'ATDL'
-      } 
-      else if((command_buf[0] == 'A') && (command_buf[1] == 'T') && (command_buf[2] == 'D') && (command_buf[3] == 'L')) 
+      }
+      else if((command_buf[0] == 'A') && (command_buf[1] == 'T') && (command_buf[2] == 'D') && (command_buf[3] == 'L'))
       {
         trans_cr = (trans_cr + 1) % 2;
 
@@ -897,10 +890,10 @@ void Device_RWRIT(void)
         strcat(bufout, "OK\r\n");
         bufend += 4;
       }
-    } 
-    else 
+    }
+    else
     {
-      if(((out_char == 0x7f) || (out_char == 0x08)) && (command_end > 0)) 
+      if(((out_char == 0x7f) || (out_char == 0x08)) && (command_end > 0))
       {
         command_end--; /* backspace */
         command_buf[command_end] = 0;
@@ -913,7 +906,7 @@ void Device_RWRIT(void)
       }
     }
   }
-  else if((connected) && (write(rdev_fd, &out_char, 1) < 1)) 
+  else if((connected) && (write(rdev_fd, &out_char, 1) < 1))
   { /* returns -1 if disconnected or 0 if could not send */
     perror("write");
     Aprint("R*: ERROR on write.");
@@ -940,7 +933,7 @@ void Device_RSTAT(void)
   //static char IACctr = 0;
   on = 1;
 
-  if(Peek(764) == 1) 
+  if(Peek(764) == 1)
   { /* Hack for Ice-T Terminal program to work! */
     Poke(764, 255);
   }
@@ -957,7 +950,7 @@ void Device_RSTAT(void)
         //strcpy(PORT,"8000\n");
         //sprintf(PORT, "%d", 8000 + devnum);
         portnum = portnum + devnum - 1;
-        
+
         /* Set up the listening port. */
         do_once = 1;
         memset ( &in, 0, sizeof ( struct sockaddr_in ) );
@@ -1037,13 +1030,13 @@ void Device_RSTAT(void)
 
           //sprintf(MESSAGE, "Telnet Command = 0x%x 0x%x", telnet_command[0], telnet_command[1]);
           //Aprint(MESSAGE);
-          if(telnet_command[0] ==  0xfd) 
+          if(telnet_command[0] ==  0xfd)
           { //DO
             if((telnet_command[1] == 0x01) || (telnet_command[1] == 0x03))
             { /* WILL ECHO and GO AHEAD (char mode) */
               telnet_command[0] = 0xfb; // WILL
-            } 
-            else 
+            }
+            else
             {
               telnet_command[0] = 0xfc; // WONT
             }
@@ -1052,26 +1045,26 @@ void Device_RSTAT(void)
           { //WILL
             //telnet_command[0] = 0xfd; //DO
             telnet_command[0] = 0xfe; //DONT
-          } 
+          }
           else if(telnet_command[0] == 0xfe)
           { //DONT
             telnet_command[0] = 0xfc;
-          } 
+          }
           else if(telnet_command[0] == 0xfc)
           { //WONT
             telnet_command[0] = 0xfe;
           }
 
-          if(telnet_command[0] == 0xfa) 
+          if(telnet_command[0] == 0xfa)
           { /* subnegotiation */
             while(read(rdev_fd, &one, 1) != 1) {};
-            
-            while(one != 0xf0) 
+
+            while(one != 0xf0)
             { /* wait for end of sub negotiation */
               while(read(rdev_fd, &one, 1) != 1) {};
             }
-          } 
-          else 
+          }
+          else
           {
             write(rdev_fd, &one, 1);
             write(rdev_fd, telnet_command, 2);
@@ -1098,7 +1091,7 @@ void Device_RSTAT(void)
   regY = 1;
   ClrN;
 
-  if(concurrent) 
+  if(concurrent)
   {
     Poke(747,bufend);
   }
