@@ -38,6 +38,7 @@
 #include "pia.h"
 #include "pokey.h"
 #include "rt-config.h"
+#include "util.h"
 #ifndef BASIC
 #include "statesav.h"
 #endif
@@ -88,16 +89,9 @@ static void AllocXEMemory(void)
 		if (size != atarixe_memory_size) {
 			if (atarixe_memory != NULL)
 				free(atarixe_memory);
-			atarixe_memory = (UBYTE *) malloc(size);
-			if (atarixe_memory == NULL) {
-				Aprint("MEMORY_InitialiseMachine: Out of memory! Switching to 64 KB mode");
-				atarixe_memory_size = 0;
-				ram_size = 64;
-			}
-			else {
-				atarixe_memory_size = size;
-				memset(atarixe_memory, 0, size);
-			}
+			atarixe_memory = (UBYTE *) Util_malloc(size);
+			atarixe_memory_size = size;
+			memset(atarixe_memory, 0, size);
 		}
 	}
 	/* atarixe_memory not needed, free it */
@@ -643,6 +637,9 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.15  2005/09/11 07:23:13  pfusik
+use Util_malloc() instead of malloc()
+
 Revision 1.14  2005/08/31 20:04:06  pfusik
 state files should now work with PAGED_ATTRIB;
 added two extra bytes to memory[], because the CPU emulation can access them

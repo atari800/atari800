@@ -140,13 +140,13 @@ void Screen_Initialise(int *argc, char *argv[])
 		return;
 
 	if (atari_screen == NULL) { /* platform-specific code can initalize it in theory */
-		atari_screen = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
+		atari_screen = (ULONG *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH);
 #ifdef DIRTYRECT
-		screen_dirty = (UBYTE *) malloc(ATARI_HEIGHT * ATARI_WIDTH / 8);
+		screen_dirty = (UBYTE *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH / 8);
 		entire_screen_dirty();
 #endif
 #ifdef BITPL_SCR
-		atari_screen_b = (ULONG *) malloc(ATARI_HEIGHT * ATARI_WIDTH);
+		atari_screen_b = (ULONG *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH);
 		atari_screen1 = atari_screen;
 		atari_screen2 = atari_screen_b;
 #endif
@@ -473,7 +473,7 @@ static void Screen_SavePNG(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		png_bytep ptr3;
 		int x;
 		int y;
-		ptr3 = (png_bytep) malloc(3 * ATARI_VISIBLE_WIDTH * ATARI_HEIGHT);
+		ptr3 = (png_bytep) Util_malloc(3 * ATARI_VISIBLE_WIDTH * ATARI_HEIGHT);
 		for (y = 0; y < ATARI_HEIGHT; y++) {
 			rows[y] = ptr3;
 			for (x = 0; x < ATARI_VISIBLE_WIDTH; x++) {
@@ -516,7 +516,7 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 	main_atari_screen = atari_screen;
 	ptr1 = (UBYTE *) atari_screen + ATARI_LEFT_MARGIN;
 	if (interlaced) {
-		atari_screen = (ULONG *) malloc(ATARI_WIDTH * ATARI_HEIGHT);
+		atari_screen = (ULONG *) Util_malloc(ATARI_WIDTH * ATARI_HEIGHT);
 		ptr2 = (UBYTE *) atari_screen + ATARI_LEFT_MARGIN;
 		ANTIC_Frame(TRUE); /* draw on atari_screen */
 	}

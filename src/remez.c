@@ -25,7 +25,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
 #include "remez.h"
+#include "util.h"
 
 /*******************
  * CreateDenseGrid
@@ -108,7 +110,7 @@ void CreateDenseGrid(int r, int numtaps, int numband, double bands[],
  * Places Extremal Frequencies evenly throughout the dense grid.
  *
  *
- * INPUT: 
+ * INPUT:
  * ------
  * int r        - 1/2 the number of filter coefficients
  * int gridsize - Number of elements in the dense frequency grid
@@ -321,7 +323,7 @@ void Search(int r, int Ext[],
 /*
  * Allocate enough space for found extremals.
  */
-   foundExt = (int *)malloc((2*r) * sizeof(int));
+   foundExt = (int *) Util_malloc((2 * r) * sizeof(int));
    k = 0;
 
 /*
@@ -373,7 +375,7 @@ void Search(int r, int Ext[],
          else if ((!up) && (E[foundExt[j]] > 0.0))
             up = 1;             /* switch to a maxima */
          else
-	 { 
+	 {
             alt = 0;
             break;              /* Ooops, found two non-alternating */
          }                      /* extrema.  Delete smallest of them */
@@ -578,15 +580,15 @@ void remez(double h[], int numtaps,
 /*
  * Dynamically allocate memory for arrays with proper sizes
  */
-   Grid = (double *)malloc(gridsize * sizeof(double));
-   D = (double *)malloc(gridsize * sizeof(double));
-   W = (double *)malloc(gridsize * sizeof(double));
-   E = (double *)malloc(gridsize * sizeof(double));
-   Ext = (int *)malloc((r+1) * sizeof(int));
-   taps = (double *)malloc((r+1) * sizeof(double));
-   x = (double *)malloc((r+1) * sizeof(double));
-   y = (double *)malloc((r+1) * sizeof(double));
-   ad = (double *)malloc((r+1) * sizeof(double));
+   Grid = (double *) Util_malloc(gridsize * sizeof(double));
+   D = (double *) Util_malloc(gridsize * sizeof(double));
+   W = (double *) Util_malloc(gridsize * sizeof(double));
+   E = (double *) Util_malloc(gridsize * sizeof(double));
+   Ext = (int *) Util_malloc((r + 1) * sizeof(int));
+   taps = (double *) Util_malloc((r + 1) * sizeof(double));
+   x = (double *) Util_malloc((r + 1) * sizeof(double));
+   y = (double *) Util_malloc((r + 1) * sizeof(double));
+   ad = (double *) Util_malloc((r + 1) * sizeof(double));
 
 /*
  * Create dense frequency grid
@@ -620,7 +622,7 @@ void remez(double h[], int numtaps,
          {
             c = cos(Pi * Grid[i]);
             D[i] /= c;
-            W[i] *= c; 
+            W[i] *= c;
          }
       }
    }
