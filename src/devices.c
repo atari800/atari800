@@ -75,7 +75,106 @@
 #include "misc_win.h"
 #endif
 
-#ifdef HAVE_OPENDIR
+#ifndef S_IREAD
+#define S_IREAD S_IRUSR
+#endif
+#ifndef S_IWRITE
+#define S_IWRITE S_IWUSR
+#endif
+
+#ifdef WIN32
+
+#include <windows.h>
+
+#undef FILENAME_CONV
+#undef FILENAME
+
+#ifdef UNICODE
+#define FILENAME_CONV \
+	WCHAR wfilename[FILENAME_MAX]; \
+	if (MultiByteToWideChar(CP_ACP, 0, filename, -1, wfilename, FILENAME_MAX) <= 0) \
+		return FALSE;
+#define FILENAME wfilename
+#else /* UNICODE */
+#define FILENAME_CONV
+#define FILENAME filename
+#endif /* UNICODE */
+
+#endif /* WIN32 */
+
+/* Read Directory abstraction layer -------------------------------------- */
+
+#ifdef WIN32
+
+static char dir_path[FILENAME_MAX];
+static WIN32_FIND_DATA wfd;
+static HANDLE dh = INVALID_HANDLE_VALUE;
+
+static int Device_OpenDir(const char *filename)
+{
+	FILENAME_CONV;
+	Util_splitpath(filename, dir_path, NULL);
+	if (dh != INVALID_HANDLE_VALUE)
+		FindClose(dh);
+	dh = FindFirstFile(FILENAME, &wfd);
+	return dh != INVALID_HANDLE_VALUE;
+}
+
+static int Device_ReadDir(char *fullfilename, char *filename, int *isdir,
+                          int *readonly, int *size, char *timetext)
+{
+#ifdef UNICODE
+	char afilename[MAX_PATH];
+#endif
+	if (dh == INVALID_HANDLE_VALUE)
+		return FALSE;
+	/* don't match "." nor ".."  */
+	while (wfd.cFileName[0] == '.' &&
+	       (wfd.cFileName[1] == '\0' || (wfd.cFileName[1] == '.' && wfd.cFileName[2] == '\0'))
+	) {
+		if (!FindNextFile(dh, &wfd)) {
+			FindClose(dh);
+			dh = INVALID_HANDLE_VALUE;
+			return FALSE;
+		}
+	}
+#ifdef UNICODE
+	if (WideCharToMultiByte(CP_ACP, 0, wfd.cFileName, -1, afilename, MAX_PATH, NULL, NULL) <= 0)
+		strcpy(afilename, "?ERROR");
+#define FOUND_FILENAME afilename
+#else
+#define FOUND_FILENAME wfd.cFileName
+#endif /* UNICODE */
+	if (filename != NULL)
+		strcpy(filename, FOUND_FILENAME);
+	if (fullfilename != NULL)
+		Util_catpath(fullfilename, dir_path, FOUND_FILENAME);
+	if (isdir != NULL)
+		*isdir = (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
+	if (readonly != NULL)
+		*readonly = (wfd.dwFileAttributes & FILE_ATTRIBUTE_READONLY) ? TRUE : FALSE;
+	if (size != NULL)
+		*size = (int) wfd.nFileSizeLow;
+	if (timetext != NULL) {
+		SYSTEMTIME st;
+		if (FileTimeToSystemTime(&wfd.ftLastWriteTime, &st) != 0) {
+			sprintf(timetext, "%02d-%02d-%02d %02d:%02d",
+				st.wMonth, st.wDay, st.wYear % 100, st.wHour, st.wMinute);
+		}
+		else
+			strcpy(timetext, "01-01-01 00:00");
+	}
+
+	if (!FindNextFile(dh, &wfd)) {
+		FindClose(dh);
+		dh = INVALID_HANDLE_VALUE;
+	}
+	return TRUE;
+}
+
+#define DO_DIR
+
+#elif defined(HAVE_OPENDIR)
 
 #undef toupper
 #define toupper(c)  (((c) >= 'a' && (c) <= 'z') ? (c) - 'a' + 'A' : (c))
@@ -118,18 +217,20 @@ static char dir_path[FILENAME_MAX];
 static char filename_pattern[FILENAME_MAX];
 static DIR *dp = NULL;
 
-static int Device_OpenDir(const char *searchspec)
+static int Device_OpenDir(const char *filename)
 {
-	Util_splitpath(searchspec, dir_path, filename_pattern);
+	Util_splitpath(filename, dir_path, filename_pattern);
 	if (dp != NULL)
 		closedir(dp);
 	dp = opendir(dir_path);
 	return dp != NULL;
 }
 
-static int Device_ReadDir(char *fullfilename, char *filename)
+static int Device_ReadDir(char *fullfilename, char *filename, int *isdir,
+                          int *readonly, int *size, char *timetext)
 {
 	struct dirent *entry;
+	struct stat status;
 	for (;;) {
 		entry = readdir(dp);
 		if (entry == NULL) {
@@ -155,63 +256,161 @@ static int Device_ReadDir(char *fullfilename, char *filename)
 		strcpy(filename, entry->d_name);
 	if (fullfilename != NULL)
 		Util_catpath(fullfilename, dir_path, entry->d_name);
-	return TRUE;
-}
-
-#define DO_DIR
-
-#elif defined(WIN32) || defined(__PLUS)
-
-#include <windows.h>
-
-static char dir_path[FILENAME_MAX];
-static WIN32_FIND_DATA wfd;
-static HANDLE dh = INVALID_HANDLE_VALUE;
-
-static int Device_OpenDir(const char *searchspec)
-{
-	Util_splitpath(searchspec, dir_path, NULL);
-	if (dh != INVALID_HANDLE_VALUE)
-		FindClose(dh);
-	dh = FindFirstFile(searchspec, &wfd);
-	return dh != INVALID_HANDLE_VALUE;
-}
-
-static int Device_ReadDir(char *fullfilename, char *filename)
-{
-	if (dh == INVALID_HANDLE_VALUE)
-		return FALSE;
-	/* don't match "." nor ".."  */
-	while (wfd.cFileName[0] == '.' &&
-	       (wfd.cFileName[1] == '\0' || (wfd.cFileName[1] == '.' && wfd.cFileName[2] == '\0'))
-	) {
-		if (!FindNextFile(dh, &wfd)) {
-			FindClose(dh);
-			dh = INVALID_HANDLE_VALUE;
-			return FALSE;
+#ifdef HAVE_STAT
+	if (stat(fullfilename, &status) == 0) {
+		if (isdir != NULL)
+			*isdir = (status.st_mode & S_IFDIR) ? TRUE : FALSE;
+		if (readonly != NULL)
+			*readonly = (status.st_mode & S_IWRITE) ? FALSE : TRUE;
+		if (size != NULL)
+			*size = (int) status.st_size;
+		if (timetext != NULL) {
+#ifdef HAVE_LOCALTIME
+			struct tm *ft;
+			ft = localtime(&status.st_mtime);
+			sprintf(timetext, "%02d-%02d-%02d %02d:%02d",
+				ft->tm_mon + 1, ft->tm_mday, ft->tm_year % 100,
+				ft->tm_hour, ft->tm_min);
+#else
+			strcpy(timetext, "01-01-01 00:00");
+#endif /* HAVE_LOCALTIME */
 		}
 	}
-	if (filename != NULL)
-		strcpy(filename, wfd.cFileName);
-	if (fullfilename != NULL)
-		Util_catpath(fullfilename, dir_path, wfd.cFileName);
-	if (!FindNextFile(dh, &wfd)) {
-		FindClose(dh);
-		dh = INVALID_HANDLE_VALUE;
+	else
+#endif /* HAVE_STAT */
+	{
+		if (isdir != NULL)
+			*isdir = FALSE;
+		if (readonly != NULL)
+			*readonly = FALSE;
+		if (size != NULL)
+			*size = 0;
+		if (timetext != NULL)
+			strcpy(timetext, "01-01-01 00:00");
 	}
 	return TRUE;
 }
 
 #define DO_DIR
 
-#endif /* defined(WIN32) || defined(__PLUS) */
+#endif /* defined(HAVE_OPENDIR) */
 
-#ifndef S_IREAD
-#define S_IREAD S_IRUSR
+
+/* Rename File/Directory abstraction layer ------------------------------- */
+
+#ifdef WIN32
+
+static int Device_Rename(const char *oldname, const char *newname)
+{
+#ifdef UNICODE
+	WCHAR woldname[FILENAME_MAX];
+	WCHAR wnewname[FILENAME_MAX];
+	if (MultiByteToWideChar(CP_ACP, 0, oldname, -1, woldname, FILENAME_MAX) <= 0
+	 || MultiByteToWideChar(CP_ACP, 0, newname, -1, wnewname, FILENAME_MAX) <= 0)
+		return FALSE;
+	return MoveFile(woldname, wnewname) != 0;
+#else
+	return MoveFile(oldname, newname) != 0;
+#endif /* UNICODE */
+}
+
+#define DO_RENAME
+
+#elif defined(HAVE_RENAME)
+
+static int Device_Rename(const char *oldname, const char *newname)
+{
+	return rename(oldname, newname) == 0;
+}
+
+#define DO_RENAME
+
 #endif
-#ifndef S_IWRITE
-#define S_IWRITE S_IWUSR
-#endif
+
+
+/* Set/Reset Read-Only Attribute abstraction layer ----------------------- */
+
+#ifdef WIN32
+
+/* Enables/disables read-only mode for the file. Returns TRUE on success. */
+static int Device_SetReadOnly(const char *filename, int readonly)
+{
+	DWORD attr;
+	FILENAME_CONV;
+	attr = GetFileAttributes(FILENAME);
+	if (attr == 0xffffffff)
+		return FALSE;
+	return SetFileAttributes(FILENAME, readonly
+		? (attr | FILE_ATTRIBUTE_READONLY)
+		: (attr & ~FILE_ATTRIBUTE_READONLY)) != 0;
+}
+
+#define DO_LOCK
+
+#elif defined(HAVE_CHMOD)
+
+static int Device_SetReadOnly(const char *filename, int readonly)
+{
+	return chmod(filename, readonly ? S_IREAD : (S_IREAD | S_IWRITE)) == 0;
+}
+
+#define DO_LOCK
+
+#endif /* defined(HAVE_CHMOD) */
+
+/* Make Directory abstraction layer -------------------------------------- */
+
+#ifdef WIN32
+
+static int Device_MakeDirectory(const char *filename)
+{
+	FILENAME_CONV;
+	return CreateDirectory(FILENAME, NULL) != 0;
+}
+
+#define DO_MKDIR
+
+#elif defined(HAVE_MKDIR)
+
+static int Device_MakeDirectory(const char *filename)
+{
+	umask(S_IWGRP | S_IWOTH);
+	return (mkdir(filename,
+		 S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH) == 0);
+}
+
+#define DO_MKDIR
+
+#endif /* defined(HAVE_MKDIR) */
+
+/* Remove Directory abstraction layer ------------------------------------ */
+
+#ifdef WIN32
+
+static int Device_RemoveDirectory(const char *filename)
+{
+	FILENAME_CONV;
+	if (RemoveDirectory(FILENAME) != 0)
+		return 1;
+	return (HRESULT_CODE(GetLastError()) == ERROR_DIR_NOT_EMPTY) ? 167 : 150;
+}
+
+#define DO_RMDIR
+
+#elif defined(HAVE_RMDIR)
+
+static int Device_RemoveDirectory(const char *filename)
+{
+	if (rmdir(filename) == 0)
+		return 1;
+	return (errno == ENOTEMPTY) ? 167 : 150;
+}
+
+#define DO_RMDIR
+
+#endif /* defined(HAVE_RMDIR) */
+
+/* ----------------------------------------------------------------------- */
 
 /* Note: you can't use H0: via Atari OS, because it sets ICDNOZ=1 for it. */
 /* Current directory is only available as H5: */
@@ -239,7 +438,7 @@ static int h_wascr[8];
 
 static int fid;
 static char filename[FILENAME_MAX];
-#ifdef HAVE_RENAME
+#ifdef DO_RENAME
 static char newfilename[FILENAME_MAX];
 #endif
 
@@ -372,7 +571,7 @@ static void Device_GetFilename(void)
 	filename[offset++] = '\0';
 }
 
-#ifdef HAVE_RENAME
+#ifdef DO_RENAME
 
 static void Device_GetFilenames(void)
 {
@@ -448,7 +647,7 @@ static void fillin(const char *pattern, char *filename)
 	*filename = '\0';
 }
 
-#endif /* HAVE_RENAME */
+#endif /* DO_RENAME */
 
 static void apply_relative_path(char *rel_path, char *current)
 {
@@ -520,6 +719,10 @@ static void Device_HHOPEN(void)
 #ifdef DO_DIR
 	int extended;
 	char entryname[FILENAME_MAX];
+	int isdir;
+	int readonly;
+	int size;
+	char timetext[16];
 #endif
 
 	if (devbug)
@@ -607,10 +810,9 @@ static void Device_HHOPEN(void)
 			}
 		}
 
-		while (Device_ReadDir(fname, entryname)) {
-			struct stat status;
+		while (Device_ReadDir(fname, entryname, &isdir, &readonly, &size,
+		                      (extended >= 128) ? timetext : NULL)) {
 			char *ext;
-			stat(fname, &status);
 			/* Util_strupper(entryname); */
 			ext = strrchr(entryname, '.');
 			if (ext == NULL)
@@ -620,41 +822,23 @@ static void Device_HHOPEN(void)
 				   so entryname is without extension */
 				*ext++ = '\0';
 			if (extended >= 128) {
-#ifdef HAVE_LOCALTIME
-				struct tm *filetime;
-#endif
-				if (status.st_mode & S_IFDIR) {
-					fprintf(fp[fid], "%-8s     <DIR>  ",
-							entryname);
+				if (isdir) {
+					fprintf(fp[fid], "%-8s     <DIR>  %s\n",
+					        entryname, timetext);
 				}
 				else {
-					fprintf(fp[fid], "%-8s %-3s %6d ",
-							entryname, ext,
-							(int) status.st_size);
+					fprintf(fp[fid], "%-8s %-3s %6d %s\n",
+					        entryname, ext, size, timetext);
 				}
-#ifdef HAVE_LOCALTIME
-				filetime = localtime(&status.st_mtime);
-				if (filetime->tm_year >= 100)
-					filetime->tm_year -= 100;
-				fprintf(fp[fid],
-						"%02d-%02d-%02d %02d:%02d\n",
-						filetime->tm_mon + 1, filetime->tm_mday,
-						filetime->tm_year, filetime->tm_hour,
-						filetime->tm_min);
-#else /* HAVE_LOCALTIME */
-				fprintf(fp[fid], "01-01-01 00:00\n");
-#endif /* HAVE_LOCALTIME */
 			}
 			else {
-				int size = (status.st_size + 255) >> 8;
-				/* if (status.st_size == 0) size = 1; */
+				size = (size + 255) >> 8;
 				if (size > 999)
 					size = 999;
-				if (status.st_mode & S_IFDIR)
+				if (isdir)
 					ext = "\304\311\322"; /* "DIR" with bit 7 set */
 				fprintf(fp[fid], "%c %-8s%-3s %03d\n",
-						(status.st_mode & S_IWRITE) ? ' ' : '*',
-						entryname, ext, size);
+				        readonly ? '*' : ' ', entryname, ext, size);
 			}
 
 		}
@@ -922,7 +1106,7 @@ static void Device_HSPEC_BIN_loader_cont(void)
 	dPutByte(0x0300, 0x31);		/* for "Studio Dream" */
 }
 
-#ifdef HAVE_RENAME
+#ifdef DO_RENAME
 
 static void Device_HHSPEC_Rename(void)
 {
@@ -931,6 +1115,7 @@ static void Device_HHSPEC_Rename(void)
 	int num_changed = 0;
 	int num_failed = 0;
 	int num_locked = 0;
+	int readonly = FALSE;
 
 	if (devbug)
 		Aprint("RENAME Command");
@@ -952,20 +1137,16 @@ static void Device_HHSPEC_Rename(void)
 		SetN;
 		return;
 	}
-	while (Device_ReadDir(fname, NULL))
+	while (Device_ReadDir(fname, NULL, NULL, &readonly, NULL, NULL))
 #endif /* DO_DIR */
 	{
-#ifdef HAVE_STAT
 		/* Check file write permission to mimic Atari
 		   permission system: read-only ("locked") file
 		   cannot be deleted. Modern systems have
 		   a different permission for file deletion. */
-		struct stat filestatus;
-		stat(fname, &filestatus);
-		if (!(filestatus.st_mode & S_IWRITE))
+		if (readonly)
 			num_locked++;
 		else
-#endif /* HAVE_STAT */
 		{
 			char newdirpart[FILENAME_MAX];
 			char newfilepart[FILENAME_MAX];
@@ -973,7 +1154,7 @@ static void Device_HHSPEC_Rename(void)
 			Util_splitpath(fname, newdirpart, newfilepart);
 			fillin(newfilename, newfilepart);
 			Util_catpath(newfname, newdirpart, newfilepart);
-			if (rename(fname, newfname) == 0)
+			if (Device_Rename(fname, newfname))
 				num_changed++;
 			else
 				num_failed++;
@@ -998,7 +1179,7 @@ static void Device_HHSPEC_Rename(void)
 	}
 }
 
-#endif /* HAVE_RENAME */
+#endif /* DO_RENAME */
 
 #ifdef HAVE_UNLINK
 
@@ -1009,6 +1190,7 @@ static void Device_HHSPEC_Delete(void)
 	int num_deleted = 0;
 	int num_failed = 0;
 	int num_locked = 0;
+	int readonly = FALSE;
 
 	if (devbug)
 		Aprint("DELETE Command");
@@ -1030,20 +1212,16 @@ static void Device_HHSPEC_Delete(void)
 		SetN;
 		return;
 	}
-	while (Device_ReadDir(fname, NULL))
+	while (Device_ReadDir(fname, NULL, NULL, &readonly, NULL, NULL))
 #endif /* DO_DIR */
 	{
-#ifdef HAVE_STAT
 		/* Check file write permission to mimic Atari
 		   permission system: read-only ("locked") file
 		   cannot be deleted. Modern systems have
 		   a different permission for file deletion. */
-		struct stat filestatus;
-		stat(fname, &filestatus);
-		if (!(filestatus.st_mode & S_IWRITE))
+		if (readonly)
 			num_locked++;
 		else
-#endif /* HAVE_STAT */
 			if (unlink(fname) == 0)
 				num_deleted++;
 			else
@@ -1070,9 +1248,9 @@ static void Device_HHSPEC_Delete(void)
 
 #endif /* HAVE_UNLINK */
 
-#ifdef HAVE_CHMOD
+#ifdef DO_LOCK
 
-static void Device_Chmod(/* XXX: mode_t */ int mode)
+static void Device_HHSPEC_LockUnlock(int readonly)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
@@ -1097,10 +1275,10 @@ static void Device_Chmod(/* XXX: mode_t */ int mode)
 		SetN;
 		return;
 	}
-	while (Device_ReadDir(fname, NULL))
+	while (Device_ReadDir(fname, NULL, NULL, NULL, NULL, NULL))
 #endif /* DO_DIR */
 	{
-		if (chmod(fname, mode) == 0)
+		if (Device_SetReadOnly(fname, readonly))
 			num_changed++;
 		else
 			num_failed++;
@@ -1124,17 +1302,17 @@ static void Device_HHSPEC_Lock(void)
 {
 	if (devbug)
 		Aprint("LOCK Command");
-	Device_Chmod(S_IREAD);
+	Device_HHSPEC_LockUnlock(TRUE);
 }
 
 static void Device_HHSPEC_Unlock(void)
 {
 	if (devbug)
 		Aprint("UNLOCK Command");
-	Device_Chmod(S_IREAD | S_IWRITE);
+	Device_HHSPEC_LockUnlock(FALSE);
 }
 
-#endif /* HAVE_CHMOD */
+#endif /* DO_LOCK */
 
 static void Device_HHSPEC_Note(void)
 {
@@ -1276,23 +1454,25 @@ static void Device_HHSPEC_File_Length(void)
 	if (devbug)
 		Aprint("Get File Length Command");
 	/* If IOCB is open, then assume it is a file length command.. */
-	if (fp[fid]) {
-#ifdef HAVE_FSTAT
-		int iocb;
+	if (fp[fid] != NULL) {
+		int iocb = IOCB0 + fid * 16;
 		int filesize;
+#if 0
+		/* old, less portable implementation */
 		struct stat fstatus;
-		iocb = IOCB0 + fid * 16;
 		fstat(fileno(fp[fid]), &fstatus);
 		filesize = fstatus.st_size;
+#else
+		long currentpos;
+		currentpos = ftell(fp[fid]);
+		filesize = Util_flen(fp[fid]);
+		fseek(fp[fid], currentpos, SEEK_SET);
+#endif
 		dPutByte(iocb + ICAX3, (UBYTE) filesize);
 		dPutByte(iocb + ICAX4, (UBYTE) (filesize >> 8));
 		dPutByte(iocb + ICAX5, (UBYTE) (filesize >> 16));
 		regY = 1;
 		ClrN;
-#else
-		regY = 168;
-		SetN;
-#endif
 	}
 	/* Otherwise, we are going to assume it is a MYDOS Load File
 	   command, since they use a different XIO value */
@@ -1300,7 +1480,7 @@ static void Device_HHSPEC_File_Length(void)
 		Device_HHSPEC_Load(TRUE);
 }
 
-#ifdef HAVE_MKDIR
+#ifdef DO_MKDIR
 static void Device_HHSPEC_Mkdir(void)
 {
 	char fname[FILENAME_MAX];
@@ -1315,14 +1495,7 @@ static void Device_HHSPEC_Mkdir(void)
 	Device_ApplyPathToFilename(devnum);
 	Util_catpath(fname, H[devnum], filename);
 
-#if defined(WIN32) || defined(__PLUS)
-	if (mkdir(fname) == 0)
-#else
-	umask(S_IWGRP | S_IWOTH);
-	if (mkdir(fname,
-		 S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH) == 0)
-#endif
-	{
+	if (Device_MakeDirectory(fname)) {
 		regY = 1;
 		ClrN;
 	}
@@ -1333,7 +1506,7 @@ static void Device_HHSPEC_Mkdir(void)
 }
 #endif
 
-#ifdef HAVE_RMDIR
+#ifdef DO_RMDIR
 static void Device_HHSPEC_Deldir(void)
 {
 	char fname[FILENAME_MAX];
@@ -1348,16 +1521,11 @@ static void Device_HHSPEC_Deldir(void)
 	Device_ApplyPathToFilename(devnum);
 	Util_catpath(fname, H[devnum], filename);
 
-	if (rmdir(fname) == 0) {
-		regY = 1;
-		ClrN;
-	}
-	else {
-		regY = (errno == ENOTEMPTY)
-		     ? 167 /* Sparta: Cannot delete directory */
-		     : 150 /* Sparta: Directory not found */;
+	regY = (UBYTE) Device_RemoveDirectory(fname);
+	if (regY >= 128)
 		SetN;
-	}
+	else
+		ClrN;
 }
 #endif
 
@@ -1365,9 +1533,6 @@ static void Device_HHSPEC_Cd(void)
 {
 	char fname[FILENAME_MAX];
 	int devnum;
-#ifdef HAVE_STAT
-	struct stat filestatus;
-#endif
 	char new_path[FILENAME_MAX];
 
 	if (devbug)
@@ -1383,13 +1548,11 @@ static void Device_HHSPEC_Cd(void)
 	else
 		strcpy(fname, H[devnum]);
 
-#ifdef HAVE_STAT
-	if (stat(fname, &filestatus) != 0) {
+	if (!Util_direxists(fname)) {
 		regY = 150;
 		SetN;
 		return;
 	}
-#endif
 	if (new_path[0] == DIR_SEP_CHAR)
 		strcpy(current_dir[devnum], &new_path[1]);
 	else
@@ -1467,7 +1630,7 @@ static void Device_HHSPEC(void)
 	GET_FID;
 
 	switch (dGetByte(ICCOMZ)) {
-#ifdef HAVE_RENAME
+#ifdef DO_RENAME
 	case 0x20:
 		Device_HHSPEC_Rename();
 		return;
@@ -1477,7 +1640,7 @@ static void Device_HHSPEC(void)
 		Device_HHSPEC_Delete();
 		return;
 #endif
-#ifdef HAVE_CHMOD
+#ifdef DO_LOCK
 	case 0x23:
 		Device_HHSPEC_Lock();
 		return;
@@ -1497,12 +1660,12 @@ static void Device_HHSPEC(void)
 	case 0x28:
 		Device_HHSPEC_Load(FALSE);
 		return;
-#ifdef HAVE_MKDIR
+#ifdef DO_MKDIR
 	case 0x2A:
 		Device_HHSPEC_Mkdir();
 		return;
 #endif
-#ifdef HAVE_RMDIR
+#ifdef DO_RMDIR
 	case 0x2B:
 		Device_HHSPEC_Deldir();
 		return;
@@ -2232,6 +2395,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.43  2005/09/11 20:36:50  pfusik
+use Win32 API where available
+
 Revision 1.42  2005/09/11 07:22:02  pfusik
 replaced "-hdreadonly <onoff>" with "-hreadonly" / "-hreadwrite";
 Util_strupper() and Util_strlower();
