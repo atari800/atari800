@@ -190,7 +190,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	static int argc = 0;
 	static char args[0x400];
 	static char *argv[100];
-	char platform[100];
+	TCHAR platform[100];
 
 	myInstance = hInstance;
 	if(initwin(hInstance, nCmdShow))
@@ -199,7 +199,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	}
 
 	if (SystemParametersInfo(SPI_GETPLATFORMTYPE, 100, platform, 0))
-		if (strstr(platform, _T("martphone"))) /////////////////FIXME
+		if (wcsstr(platform, _T("martphone")))
 			issmartphone = 1;
 
 	if(lpCmdLine)
