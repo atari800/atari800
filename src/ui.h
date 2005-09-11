@@ -28,9 +28,9 @@ typedef struct
 {
 	const char *sig;    /* Signature identifying item function. Conventionally, four-letter string */
 	long  flags;        /* Flags, see values below */
-	const char *prefix; /* Text to prepend the item */
-	const char *item;   /* Main item text */
-	const char *suffix; /* Optional (not always) text to show after the item text. Often key shortcut */
+	char *prefix;       /* Text to prepend the item */
+	char *item;         /* Main item text */
+	char *suffix;       /* Optional (not always) text to show after the item text. Often key shortcut */
 	int   retval;       /* Value returned by Select when this item is selected */
 } tMenuItem;
 
