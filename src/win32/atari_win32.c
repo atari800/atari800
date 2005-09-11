@@ -168,7 +168,6 @@ int Atari_Keyboard(void)
     {
     case DIK_F9:
       return AKEY_EXIT;
-      break;
     case DIK_F8:
       keycode = Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT;
       kbcode = 0;
@@ -188,10 +187,10 @@ int Atari_Keyboard(void)
 
     case DIK_F1:
       return AKEY_UI;
-      break;
     case DIK_F5:
       return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
-      break;
+    case DIK_F7:
+      return AKEY_BREAK;
     case DIK_F11:
       for (i = 0; i < 4; i++)
 	{
@@ -338,6 +337,7 @@ int Atari_Keyboard(void)
     case DIK_HOME:
       keycode = AKEY_CLEAR;
       break;
+    case DIK_F6:
     case DIK_END:
       keycode = AKEY_HELP;
       break;
@@ -468,6 +468,9 @@ int Atari_TRIG(int num)
 
 /*
 $Log$
+Revision 1.13  2005/09/11 20:43:50  pfusik
+F6 = Help, F7 = Break
+
 Revision 1.12  2005/09/07 22:03:40  pfusik
 fixed MSVC warnings
 
