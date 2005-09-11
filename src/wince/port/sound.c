@@ -2,7 +2,7 @@
  * sound.c - WinCE port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -27,10 +27,6 @@
 #ifdef SOUND
 
 #include <windows.h>
-#ifdef DIRECTX
-# define DIRECTSOUND_VERSION 0x0500
-# include <dsound.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include "sound.h"
@@ -39,12 +35,11 @@
 #include "atari.h"
 #include "log.h"
 
-#define MIXBUFSIZE	0x800
 #define WAVSHIFT	9
 #define WAVSIZE		(1 << WAVSHIFT)
 int buffers = 0;
 
-enum {SOUND_NONE, SOUND_DX, SOUND_WAV};
+enum {SOUND_NONE, SOUND_WAV};
 
 static int issound = SOUND_NONE;
 static int dsprate = 22050;
@@ -60,184 +55,6 @@ static HANDLE event;
 static HWAVEOUT wout;
 static WAVEHDR *waves;
 
-#ifdef DIRECTX
-static int wavonly = FALSE;
-static int sbufsize = 0;
-static int samples = 0; 	/* #samples to be in play buffer */
-static UBYTE mixbuf[MIXBUFSIZE];
-static DWORD bufpos = 0;
-
-static LPDIRECTSOUND lpDS = NULL;
-static LPDIRECTSOUNDBUFFER pDSB = NULL;
-
-static int initsound_dx(void)
-{
-  int i;
-  int err;
-  DSBUFFERDESC dsBD =
-  {0};
-  WAVEFORMATEX wfx;
-  DSBCAPS bc;
-
-  LPVOID pMem1, pMem2;
-  DWORD dwSize1, dwSize2;
-
-  if (issound != SOUND_NONE)
-    return 0;
-
-  if ((err = DirectSoundCreate(NULL, &lpDS, NULL)) < 0)
-    return err;
-  if ((err = IDirectSound_SetCooperativeLevel(lpDS, hWndMain,
-					      DSSCL_EXCLUSIVE)) < 0)
-    goto end;
-
-  dsBD.dwSize = sizeof(dsBD);
-  dsBD.dwFlags =
-    DSBCAPS_GETCURRENTPOSITION2
-    | DSBCAPS_LOCSOFTWARE;
-  dsBD.dwBufferBytes = 0x4000;
-  dsBD.lpwfxFormat = &wfx;
-
-  wfx.wFormatTag = WAVE_FORMAT_PCM;
-  wfx.nChannels = stereo ? 2 : 1;
-  wfx.nSamplesPerSec = dsprate;
-  wfx.nAvgBytesPerSec = dsprate * wfx.nChannels;
-  wfx.nBlockAlign = stereo ? 2 : 1;
-  wfx.wBitsPerSample = 8;
-  wfx.cbSize = 0;
-
-  if ((err = IDirectSound_CreateSoundBuffer(lpDS, &dsBD, &pDSB, NULL)) < 0)
-    goto end;
-
-  bc.dwSize = sizeof(bc);
-  IDirectSoundBuffer_GetCaps(pDSB, &bc);
-  sbufsize = bc.dwBufferBytes;
-
-  if ((err = IDirectSoundBuffer_Lock(pDSB, 0, sbufsize,
-			       &pMem1, &dwSize1, &pMem2, &dwSize2,
-			       DSBLOCK_FROMWRITECURSOR)) < 0)
-    goto end;
-
-  for (i = 0; i < dwSize1 >> 1; i++)
-    *((short *) pMem1 + i) = 0;
-  for (i = 0; i < dwSize2 >> 1; i++)
-    *((short *) pMem2 + i) = 0;
-  IDirectSoundBuffer_Unlock(pDSB, pMem1, dwSize1, pMem2, dwSize2);
-
-  IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
-
-  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, 0);
-
-  samples = dsprate * snddelay / 1000;
-
-  IDirectSoundBuffer_GetCurrentPosition(pDSB, 0, &bufpos);
-
-  issound = SOUND_DX;
-  return 0;
-
-end:
-  MessageBox(hWndMain, "DirectSound Init FAILED", myname, MB_OK);
-  Sound_Exit();
-  return err;
-}
-
-static void uninitsound_dx(void)
-{
-  if (issound != SOUND_DX)
-    return;
-
-  if (lpDS)
-    {
-      if (pDSB)
-	{
-	  IDirectSoundBuffer_Stop(pDSB);
-	  IDirectSoundBuffer_Release(pDSB);
-	  pDSB = NULL;
-	}
-      IDirectSound_Release(lpDS);
-      lpDS = NULL;
-    }
-  issound = SOUND_NONE;
-}
-
-static void sound_update_dx(void)
-{
-  DWORD wc;
-  int d1;
-  LPVOID pMem1, pMem2;
-  DWORD dwSize1, dwSize2;
-  UBYTE *p1, *p2;
-  int s1, s2;
-  int err;
-  int i;
-
-  if (issound != SOUND_DX)
-    return;
-
-  IDirectSoundBuffer_GetCurrentPosition(pDSB, 0, &wc);
-
-  d1 = (wc - bufpos);
-  if (abs(d1) > (sbufsize >> 1))
-    {
-      if (d1 < 0)
-	d1 += sbufsize;
-      else
-	d1 -= sbufsize;
-    }
-  if (d1 < -samples)		/* there is more than necessary bytes filled? */
-    return;
-
-  d1 = samples + d1;		/* samples to fill */
-  if (d1 > (sizeof(mixbuf) / sizeof(mixbuf[0])))
-    {
-      d1 = (sizeof(mixbuf) / sizeof(mixbuf[0]));
-    }
-
-  if ((err = IDirectSoundBuffer_Lock(pDSB,
-				     bufpos,
-				     d1,
-				     &pMem1, &dwSize1,
-				     &pMem2, &dwSize2,
-				     0)) < 0)
-    {
-      if (err == DSERR_BUFFERLOST)
-	Sound_Continue();
-      return;
-    }
-
-  s1 = dwSize1;
-  s2 = dwSize2;
-  p1 = pMem1;
-  p2 = pMem2;
-  bufpos += (s1 + s2);
-  if (bufpos >= sbufsize)
-    bufpos -= sbufsize;
-
-  i = s1 + s2;
-
-  Pokey_process(mixbuf, i);
-
-  i = (int) mixbuf;
-  if (s1)
-    {
-      for (; s1; s1--)
-	{
-	  *p1++ = *(((UBYTE *) i)++);
-	}
-    }
-  if (s2)
-    {
-      for (; s2; s2--)
-	{
-	  *p2++ = *(((UBYTE *) i)++);
-	}
-    }
-
-  IDirectSoundBuffer_Unlock(pDSB, pMem1, dwSize1, pMem2, dwSize2);
-
-  return;
-}
-#endif /* DIRECTX */
 
 static void uninitsound_wav(void)
 {
@@ -327,7 +144,7 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, 0);
+  Pokey_sound_init(FREQ_17_EXACT,(uint16) dsprate, 1, 0);
 
   issound = SOUND_WAV;
   return 0;
@@ -354,19 +171,12 @@ void Sound_Initialise(int *argc, char *argv[])
 	sscanf(argv[++i], "%d", &snddelay);
         snddelaywav = snddelay;
       }
-#ifdef DIRECTX
-      else if (strcmp(argv[i], "-wavonly") == 0)
-	wavonly = TRUE;
-#endif
       else
       {
 	if (strcmp(argv[i], "-help") == 0)
 	{
 	  Aprint("\t-sound			enable sound\n"
 		 "\t-nosound			disable sound\n"
-#ifdef DIRECTX
-		 "\t-wavonly			disable direct sound\n"
-#endif
 		 "\t-dsprate <rate>		set dsp rate\n"
 		 "\t-snddelay <milliseconds>	set sound delay\n"
 		);
@@ -379,24 +189,12 @@ void Sound_Initialise(int *argc, char *argv[])
   if (!usesound)
     return;
 
-#ifdef DIRECTX
-  if (!wavonly)
-  {
-    i = initsound_dx();
-    if (!i)
-      return;
-  }
-#endif
   initsound_wav();
   return;
 }
 
 void Sound_Exit(void)
 {
-#ifdef DIRECTX
-  if (issound == SOUND_DX)
-    uninitsound_dx();
-#endif
   if (issound == SOUND_WAV)
     uninitsound_wav();
 
@@ -424,9 +222,8 @@ void Sound_Update(void)
   MMRESULT err;
   WAVEHDR *wh;
 
-  switch (issound)
+  if (issound == SOUND_WAV)
   {
-  case SOUND_WAV:
     while ((wh = getwave()))
     {
       Pokey_process(wh->lpData, wh->dwBufferLength);
@@ -437,36 +234,15 @@ void Sound_Update(void)
 	return;
       }
     }
-    break;
-#ifdef DIRECTX
-  case SOUND_DX:
-    sound_update_dx();
-#endif
   }
 }
 
 void Sound_Pause(void)
 {
-#ifdef DIRECTX
-  if (issound != SOUND_DX)
-    return;
-  if (!pDSB)
-    return;
-  IDirectSoundBuffer_Stop(pDSB);
-#endif
 }
 
 void Sound_Continue(void)
 {
-#ifdef DIRECTX
-  if (issound != SOUND_DX)
-    return;
-  if (!pDSB)
-    return;
-  IDirectSoundBuffer_Restore(pDSB);
-  IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
-  IDirectSoundBuffer_GetCurrentPosition(pDSB, 0, &bufpos);
-#endif
 }
 
 #endif	/* SOUND */
@@ -474,6 +250,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.6  2005/09/11 11:48:09  knakos
+removed all DX related source code
+
 Revision 1.5  2003/03/03 09:57:33  joy
 Ed improved autoconf again plus fixed some little things
 
