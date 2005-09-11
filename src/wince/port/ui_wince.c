@@ -22,10 +22,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+
 #include <string.h>
 #include "atari.h"
 #include "ui.h"
-#include "screen.h"   /* For linear filter */
+#include "screen_wince.h"   /* For linear filter */
 #include "keyboard.h" /* For virtual joystick */
 #include "input.h"    /* For joystick autofire */
 

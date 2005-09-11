@@ -871,7 +871,6 @@ DEP_CPP_ATARI=\
 	"..\pia.h"\
 	"..\platform.h"\
 	"..\pokey.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\rtime.h"\
 	"..\screen.h"\
@@ -882,6 +881,19 @@ DEP_CPP_ATARI=\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
+	".\zlib\zconf.h"\
+	".\zlib\zlib.h"\
+	
+NODEP_CPP_ATARI=\
+	"..\display_win.h"\
+	"..\export.h"\
+	"..\FileService.h"\
+	"..\globals.h"\
+	"..\Helpers.h"\
+	"..\macros.h"\
+	"..\misc_win.h"\
+	"..\registry.h"\
+	"..\timing.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
@@ -902,7 +914,6 @@ DEP_CPP_ATARI=\
 	"..\pia.h"\
 	"..\platform.h"\
 	"..\pokey.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\rtime.h"\
 	"..\screen.h"\
@@ -913,10 +924,19 @@ DEP_CPP_ATARI=\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
+	".\zlib\zconf.h"\
+	".\zlib\zlib.h"\
 	
 NODEP_CPP_ATARI=\
-	".\missing\sys\time.h"\
-	".\missing\unistd.h"\
+	"..\display_win.h"\
+	"..\export.h"\
+	"..\FileService.h"\
+	"..\globals.h"\
+	"..\Helpers.h"\
+	"..\macros.h"\
+	"..\misc_win.h"\
+	"..\registry.h"\
+	"..\timing.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -1004,7 +1024,6 @@ DEP_CPP_ATARI=\
 	"..\pia.h"\
 	"..\platform.h"\
 	"..\pokey.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\rtime.h"\
 	"..\screen.h"\
@@ -1015,6 +1034,8 @@ DEP_CPP_ATARI=\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
+	".\zlib\zconf.h"\
+	".\zlib\zlib.h"\
 	
 NODEP_CPP_ATARI=\
 	"..\display_win.h"\
@@ -1121,6 +1142,7 @@ DEP_CPP_BINLO=\
 	"..\cpu.h"\
 	"..\devices.h"\
 	"..\log.h"\
+	"..\sio.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
 	
@@ -1133,6 +1155,7 @@ DEP_CPP_BINLO=\
 	"..\cpu.h"\
 	"..\devices.h"\
 	"..\log.h"\
+	"..\sio.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
 	
@@ -1488,6 +1511,10 @@ DEP_CPP_COLOU=\
 	".\port\config.h"\
 	".\port\missing.h"\
 	
+NODEP_CPP_COLOU=\
+	"..\display_win.h"\
+	"..\misc_win.h"\
+	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
 
@@ -1497,6 +1524,10 @@ DEP_CPP_COLOU=\
 	"..\log.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
+	
+NODEP_CPP_COLOU=\
+	"..\display_win.h"\
+	"..\misc_win.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -1607,11 +1638,10 @@ NODEP_CPP_COMPF=\
 
 DEP_CPP_COMPF=\
 	"..\atari.h"\
+	"..\compfile.h"\
 	"..\log.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
-	
-NODEP_CPP_COMPF=\
 	".\zlib\zconf.h"\
 	".\zlib\zlib.h"\
 	
@@ -1620,12 +1650,10 @@ NODEP_CPP_COMPF=\
 
 DEP_CPP_COMPF=\
 	"..\atari.h"\
+	"..\compfile.h"\
 	"..\log.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
-	
-NODEP_CPP_COMPF=\
-	".\missing\unistd.h"\
 	".\zlib\zconf.h"\
 	".\zlib\zlib.h"\
 	
@@ -1657,6 +1685,8 @@ DEP_CPP_COMPF=\
 	"..\log.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
+	".\zlib\zconf.h"\
+	".\zlib\zlib.h"\
 	
 
 !ENDIF 
@@ -1982,6 +2012,9 @@ DEP_CPP_DEVIC=\
 	".\port\config.h"\
 	".\port\missing.h"\
 	
+NODEP_CPP_DEVIC=\
+	"..\misc_win.h"\
+	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
 
@@ -2000,8 +2033,7 @@ DEP_CPP_DEVIC=\
 	".\port\missing.h"\
 	
 NODEP_CPP_DEVIC=\
-	".\missing\dirent.h"\
-	".\missing\unistd.h"\
+	"..\misc_win.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -2310,6 +2342,9 @@ DEP_CPP_INPUT=\
 	".\port\config.h"\
 	".\port\missing.h"\
 	
+NODEP_CPP_INPUT=\
+	"..\input_win.h"\
+	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
 
@@ -2327,6 +2362,9 @@ DEP_CPP_INPUT=\
 	"..\screen.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
+	
+NODEP_CPP_INPUT=\
+	"..\input_win.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -2380,82 +2418,6 @@ DEP_CPP_INPUT=\
 	
 NODEP_CPP_INPUT=\
 	"..\input_win.h"\
-	
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\list.c
-
-!IF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Release"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Debug"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Release"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Debug"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Release"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Debug"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Release"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	".\port\missing.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	".\port\missing.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Debug"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	
-
-!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86) Debug"
-
-DEP_CPP_LIST_=\
-	".\port\config.h"\
-	".\port\missing.h"\
 	
 
 !ENDIF 
@@ -2791,6 +2753,7 @@ NODEP_CPP_MZPOK=\
 
 DEP_CPP_MZPOK=\
 	"..\atari.h"\
+	"..\mzpokeysnd.h"\
 	"..\pokey.h"\
 	"..\pokeysnd.h"\
 	"..\remez.h"\
@@ -2803,6 +2766,7 @@ DEP_CPP_MZPOK=\
 
 DEP_CPP_MZPOK=\
 	"..\atari.h"\
+	"..\mzpokeysnd.h"\
 	"..\pokey.h"\
 	"..\pokeysnd.h"\
 	"..\remez.h"\
@@ -3441,6 +3405,9 @@ DEP_CPP_POKEYS=\
 	".\port\config.h"\
 	".\port\missing.h"\
 	
+NODEP_CPP_POKEYS=\
+	"..\sound_win.h"\
+	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
 
@@ -3453,6 +3420,9 @@ DEP_CPP_POKEYS=\
 	"..\sndsave.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
+	
+NODEP_CPP_POKEYS=\
+	"..\sound_win.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -4104,6 +4074,7 @@ DEP_CPP_SIO_C=\
 	"..\atari.h"\
 	"..\binload.h"\
 	"..\cassette.h"\
+	"..\compfile.h"\
 	"..\cpu.h"\
 	"..\log.h"\
 	"..\platform.h"\
@@ -4123,6 +4094,7 @@ DEP_CPP_SIO_C=\
 	"..\atari.h"\
 	"..\binload.h"\
 	"..\cassette.h"\
+	"..\compfile.h"\
 	"..\cpu.h"\
 	"..\log.h"\
 	"..\platform.h"\
@@ -4382,8 +4354,6 @@ DEP_CPP_STATE=\
 	"..\log.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
-	
-NODEP_CPP_STATE=\
 	".\zlib\zconf.h"\
 	".\zlib\zlib.h"\
 	
@@ -4395,9 +4365,6 @@ DEP_CPP_STATE=\
 	"..\log.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
-	
-NODEP_CPP_STATE=\
-	".\missing\unistd.h"\
 	".\zlib\zconf.h"\
 	".\zlib\zlib.h"\
 	
@@ -4428,6 +4395,8 @@ DEP_CPP_STATE=\
 	"..\log.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
+	".\zlib\zconf.h"\
+	".\zlib\zlib.h"\
 	
 
 !ENDIF 
@@ -4439,7 +4408,7 @@ SOURCE=..\ui.c
 
 !IF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Release"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4459,14 +4428,14 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	
-NODEP_CPP_UI_C38=\
+NODEP_CPP_UI_C36=\
 	".\missing\dirent.h"\
 	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Debug"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4486,14 +4455,14 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	
-NODEP_CPP_UI_C38=\
+NODEP_CPP_UI_C36=\
 	".\missing\dirent.h"\
 	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Release"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4513,14 +4482,14 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	
-NODEP_CPP_UI_C38=\
+NODEP_CPP_UI_C36=\
 	".\missing\dirent.h"\
 	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Debug"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4540,14 +4509,14 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	
-NODEP_CPP_UI_C38=\
+NODEP_CPP_UI_C36=\
 	".\missing\dirent.h"\
 	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Release"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4567,14 +4536,14 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	
-NODEP_CPP_UI_C38=\
+NODEP_CPP_UI_C36=\
 	".\missing\dirent.h"\
 	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Debug"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4594,14 +4563,14 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	
-NODEP_CPP_UI_C38=\
+NODEP_CPP_UI_C36=\
 	".\missing\dirent.h"\
 	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Release"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4614,7 +4583,6 @@ DEP_CPP_UI_C38=\
 	"..\platform.h"\
 	"..\pokey.h"\
 	"..\pokeysnd.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\rtime.h"\
 	"..\screen.h"\
@@ -4624,14 +4592,11 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
-	
-NODEP_CPP_UI_C38=\
-	"..\boot.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4644,7 +4609,6 @@ DEP_CPP_UI_C38=\
 	"..\platform.h"\
 	"..\pokey.h"\
 	"..\pokeysnd.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\rtime.h"\
 	"..\screen.h"\
@@ -4655,14 +4619,10 @@ DEP_CPP_UI_C38=\
 	".\port\config.h"\
 	".\port\missing.h"\
 	
-NODEP_CPP_UI_C38=\
-	"..\boot.h"\
-	".\missing\dirent.h"\
-	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4682,14 +4642,14 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	
-NODEP_CPP_UI_C38=\
+NODEP_CPP_UI_C36=\
 	".\missing\dirent.h"\
 	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Debug"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4712,14 +4672,14 @@ DEP_CPP_UI_C38=\
 	"..\ui.h"\
 	".\port\config.h"\
 	
-NODEP_CPP_UI_C38=\
+NODEP_CPP_UI_C36=\
 	".\missing\dirent.h"\
 	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86) Debug"
 
-DEP_CPP_UI_C38=\
+DEP_CPP_UI_C36=\
 	"..\antic.h"\
 	"..\atari.h"\
 	"..\binload.h"\
@@ -4732,7 +4692,6 @@ DEP_CPP_UI_C38=\
 	"..\platform.h"\
 	"..\pokey.h"\
 	"..\pokeysnd.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\rtime.h"\
 	"..\screen.h"\
@@ -4861,7 +4820,6 @@ DEP_CPP_UI_BA=\
 	"..\input.h"\
 	"..\log.h"\
 	"..\platform.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\screen.h"\
 	"..\ui.h"\
@@ -4877,16 +4835,11 @@ DEP_CPP_UI_BA=\
 	"..\input.h"\
 	"..\log.h"\
 	"..\platform.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\screen.h"\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
-	
-NODEP_CPP_UI_BA=\
-	".\missing\dirent.h"\
-	".\missing\unistd.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -4932,10 +4885,104 @@ DEP_CPP_UI_BA=\
 	"..\input.h"\
 	"..\log.h"\
 	"..\platform.h"\
-	"..\prompts.h"\
 	"..\rt-config.h"\
 	"..\screen.h"\
 	"..\ui.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\util.c
+
+!IF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Release"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE MIPS) Debug"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Release"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH4) Debug"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Release"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE SH3) Debug"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Release"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Debug"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
+	".\port\config.h"\
+	".\port\missing.h"\
+	
+
+!ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86) Debug"
+
+DEP_CPP_UTIL_=\
+	"..\atari.h"\
 	".\port\config.h"\
 	".\port\missing.h"\
 	
@@ -5002,10 +5049,6 @@ SOURCE=..\gtia.h
 # Begin Source File
 
 SOURCE=..\input.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\list.h
 # End Source File
 # Begin Source File
 
@@ -5094,6 +5137,10 @@ SOURCE=..\statesav.h
 # Begin Source File
 
 SOURCE=..\ui.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\util.h
 # End Source File
 # End Group
 # Begin Group "Port Source Files"
@@ -5386,9 +5433,7 @@ DEP_CPP_KEYBO=\
 	".\port\main.h"\
 	".\port\missing.h"\
 	".\port\screen_wince.h"\
-	
-NODEP_CPP_KEYBO=\
-	".\x.h"\
+	{$(INCLUDE)}"gx.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
@@ -5402,9 +5447,7 @@ DEP_CPP_KEYBO=\
 	".\port\main.h"\
 	".\port\missing.h"\
 	".\port\screen_wince.h"\
-	
-NODEP_CPP_KEYBO=\
-	".\x.h"\
+	{$(INCLUDE)}"gx.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -5800,9 +5843,7 @@ DEP_CPP_SCREEN=\
 	".\port\keyboard.h"\
 	".\port\main.h"\
 	".\port\missing.h"\
-	
-NODEP_CPP_SCREEN=\
-	".\x.h"\
+	{$(INCLUDE)}"gx.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
@@ -5816,9 +5857,7 @@ DEP_CPP_SCREEN=\
 	".\port\keyboard.h"\
 	".\port\main.h"\
 	".\port\missing.h"\
-	
-NODEP_CPP_SCREEN=\
-	".\x.h"\
+	{$(INCLUDE)}"gx.h"\
 	
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE x86em) Release"
@@ -6075,26 +6114,24 @@ DEP_CPP_UI_WI=\
 DEP_CPP_UI_WI=\
 	"..\atari.h"\
 	"..\input.h"\
-	"..\rt-config.h"\
-	"..\screen.h"\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\missing.h"\
+	".\port\screen_wince.h"\
 	
-# ADD CPP /W4
+# ADD CPP /W3
 
 !ELSEIF  "$(CFG)" == "PocketAtari - Win32 (WCE ARM) Debug"
 
 DEP_CPP_UI_WI=\
 	"..\atari.h"\
 	"..\input.h"\
-	"..\rt-config.h"\
-	"..\screen.h"\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\missing.h"\
+	".\port\screen_wince.h"\
 	
 # ADD CPP /W4
 
@@ -6125,15 +6162,14 @@ DEP_CPP_UI_WI=\
 DEP_CPP_UI_WI=\
 	"..\atari.h"\
 	"..\input.h"\
-	"..\rt-config.h"\
-	"..\screen.h"\
 	"..\ui.h"\
 	".\port\config.h"\
 	".\port\keyboard.h"\
 	".\port\missing.h"\
+	".\port\screen_wince.h"\
 	
 # ADD BASE CPP /W4
-# ADD CPP /W4
+# ADD CPP /W3
 
 !ENDIF 
 
