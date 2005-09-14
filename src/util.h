@@ -4,6 +4,9 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 /* String functions ------------------------------------------------------ */
 
@@ -94,5 +97,18 @@ int Util_flen(FILE *fp);
 
 /* Opens a new temporary file and fills in filename with its name. */
 FILE *Util_tmpfile(char *filename, const char *mode);
+
+/* Deletes a file, returns 0 on success, -1 on failure. */
+#ifdef WIN32
+#ifdef UNICODE
+int Util_unlink(const char *filename);
+#else
+#define Util_unlink(filename)  ((DeleteFile(filename) != 0) ? 0 : -1)
+#endif /* UNICODE */
+#define HAVE_UTIL_UNLINK
+#elif defined(HAVE_UNLINK)
+#define Util_unlink  unlink
+#define HAVE_UTIL_UNLINK
+#endif /* defined(HAVE_UNLINK) */
 
 #endif /* _UTIL_H_ */
