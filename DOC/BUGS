@@ -70,5 +70,4 @@ o intensive 130xe-banks switching slows down emulation much.
 o SDL port uses call back system for filling sound buffer.
   This causes wrong sound effects (noise) in some games.
 
-o x11-xview version hangs whole X-Windows when the F1 key is pressed
-  (observed on Linux 2.4.20-8, XView 3.2p1.4-18.2.i386)
+o key repeat does not work on Motif and is too fast on XView
