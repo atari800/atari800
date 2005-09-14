@@ -1084,11 +1084,11 @@ void Atari800_UpdatePatches(void)
 
 static double Atari_time(void)
 {
-#ifdef DJGPP
+#ifdef WIN32
+	return GetTickCount() * 1e-3;
+#elif defined(DJGPP)
 	/* DJGPP has gettimeofday, but it's not more accurate than uclock */
 	return uclock() * (1.0 / UCLOCKS_PER_SEC);
-#elif defined(WIN32)
-	return GetTickCount() * 1e-3;
 #elif defined(HAVE_GETTIMEOFDAY)
 	struct timeval tp;
 	gettimeofday(&tp, NULL);
@@ -1110,11 +1110,18 @@ static double Atari_time(void)
 static void Atari_sleep(double s)
 {
 	if (s > 0) {
-#ifdef DJGPP
+#ifdef WIN32
+		Sleep((DWORD) (s * 1e3));
+#elif defined(DJGPP)
 		/* DJGPP has usleep and select, but they don't work that good */
 		/* XXX: find out why */
 		double curtime = Atari_time();
 		while ((curtime + s) > Atari_time());
+#elif defined(HAVE_NANOSLEEP)
+		struct timespec ts;
+		ts.tv_sec = 0;
+		ts.tv_nsec = s * 1e9;
+		nanosleep(&ts, NULL);
 #elif defined(HAVE_USLEEP)
 		usleep(s * 1e6);
 #elif defined(__BEOS__)
@@ -1123,13 +1130,11 @@ static void Atari_sleep(double s)
 #elif defined(__EMX__)
 		/* added by Brian Smith for os/2 */
 		DosSleep(s);
-#elif defined(WIN32)
-		Sleep((DWORD) (s * 1e3));
 #elif defined(HAVE_SELECT)
 		/* linux */
 		struct timeval tp;
 		tp.tv_sec = 0;
-		tp.tv_usec = 1e6 * s;
+		tp.tv_usec = s * 1e6;
 		select(1, NULL, NULL, NULL, &tp);
 #else
 		double curtime = Atari_time();
@@ -1578,6 +1583,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.76  2005/09/14 20:23:48  pfusik
+prefer nanosleep() to usleep() and select(); prefer Sleep() on WIN32
+
 Revision 1.75  2005/09/11 07:21:10  pfusik
 fixed parse error in zlib-less compilation;
 removed unnecessary "Fatal Error" message
