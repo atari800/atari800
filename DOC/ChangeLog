@@ -1,3 +1,26 @@
+2005-09-14  Piotr Fusik  <fox@scene.pl>
+* atari.c, configure.ac: prefer nanosleep() (POSIX.1) to usleep()
+  and select(); prefer Sleep() on WIN32
+
+* atari_x11.c: handle Motif/XView events in Atari_Keyboard() rather than
+  Atari_DisplayScreen() - F1 User Interface now works in these versions;
+  TODO: key repeat does not work on Motif and is too fast on XView
+
+* pokey.c: can use Win32 API instead of time()
+
+* rtime.c: can use Win32 API; fixed Y2K bug
+
+* compfile.c, devices.c, sio.c, util.[ch]: Util_unlink();
+  use unlink() and not remove(), because remove() calls unlink() for files
+  and we never remove() directories
+
+* util.c: fixed Util_splitpath on root directory path
+
+* ui_basic.c: ".." in Win32 API based file selector on WINCE
+
+* ui_basic.c: include B: in DOS_DRIVES; detect floppies on WIN32
+
+
 2005-09-11  Piotr Fusik  <fox@scene.pl>
 * ui_basic.c: fixed file selector which I broke yesterday
 
