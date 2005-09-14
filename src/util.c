@@ -184,27 +184,27 @@ char *Util_strdup(const char *s)
 void Util_splitpath(const char *path, char *dir_part, char *file_part)
 {
 	const char *p;
-	/* find the last DIR_SEP_CHAR */
-	p = strrchr(path, DIR_SEP_CHAR);
-	if (p == NULL) {
-		/* no DIR_SEP_CHAR: current dir */
-		if (file_part != NULL)
-			strcpy(file_part, path);
-		if (dir_part != NULL)
-			strcpy(dir_part, "" /* "." */);
-	}
-	else {
-		if (file_part != NULL)
-			strcpy(file_part, p + 1);
-		if (dir_part != NULL) {
-			int len = p - path;
-			if (p == path || (p == path + 2 && path[1] == ':'))
-				/* root dir: include DIR_SEP_CHAR in dir_part */
-				len++;
-			memcpy(dir_part, path, len);
-			dir_part[len] = '\0';
+	/* find the last DIR_SEP_CHAR except the last character */
+	for (p = path + strlen(path) - 2; p >= path; p--) {
+		if (*p == DIR_SEP_CHAR) {
+			if (dir_part != NULL) {
+				int len = p - path;
+				if (p == path || (p == path + 2 && path[1] == ':'))
+					/* root dir: include DIR_SEP_CHAR in dir_part */
+					len++;
+				memcpy(dir_part, path, len);
+				dir_part[len] = '\0';
+			}
+			if (file_part != NULL)
+				strcpy(file_part, p + 1);
+			return;
 		}
 	}
+	/* no DIR_SEP_CHAR: current dir */
+	if (dir_part != NULL)
+		dir_part[0] = '\0';
+	if (file_part != NULL)
+		strcpy(file_part, path);
 }
 
 void Util_catpath(char *result, const char *path1, const char *path2)
@@ -302,3 +302,24 @@ FILE *Util_tmpfile(char *filename, const char *mode)
 	return NULL;
 #endif
 }
+
+#if defined(WIN32) && defined(UNICODE)
+int Util_unlink(const char *filename)
+{
+	WCHAR wfilename[FILENAME_MAX];
+#ifdef _WIN32_WCE
+	char cwd[FILENAME_MAX];
+	char fullfilename[FILENAME_MAX];
+	if (filename[0] != '\\' && filename[0] != '/') {
+		getcwd(cwd, FILENAME_MAX);
+		Util_catpath(fullfilename, cwd, filename);
+		if (MultiByteToWideChar(CP_ACP, 0, fullfilename, -1, wfilename, FILENAME_MAX) <= 0)
+			return -1;
+	}
+	else
+#endif
+	if (MultiByteToWideChar(CP_ACP, 0, filename, -1, wfilename, FILENAME_MAX) <= 0)
+		return -1;
+	return (DeleteFile(wfilename) != 0) ? 0 : -1;
+}
+#endif /* defined(WIN32) && defined(UNICODE) */
