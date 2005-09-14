@@ -2702,6 +2702,12 @@ void Atari_DisplayScreen(UBYTE *screen)
 #endif
 	}
 
+}
+
+int Atari_Keyboard(void)
+{
+	static int keycode = AKEY_NONE;
+
 #ifdef XVIEW
 	notify_dispatch();
 	XFlush(display);
@@ -2715,12 +2721,6 @@ void Atari_DisplayScreen(UBYTE *screen)
 		XtDispatchEvent(&event);
 	}
 #endif
-
-}
-
-int Atari_Keyboard(void)
-{
-	static int keycode = AKEY_NONE;
 
 #if defined(XVIEW) || defined(MOTIF)
 	keycode = xview_keycode;
