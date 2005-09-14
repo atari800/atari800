@@ -1181,7 +1181,7 @@ static void Device_HHSPEC_Rename(void)
 
 #endif /* DO_RENAME */
 
-#ifdef HAVE_UNLINK
+#ifdef HAVE_UTIL_UNLINK
 
 static void Device_HHSPEC_Delete(void)
 {
@@ -1222,7 +1222,7 @@ static void Device_HHSPEC_Delete(void)
 		if (readonly)
 			num_locked++;
 		else
-			if (unlink(fname) == 0)
+			if (Util_unlink(fname) == 0)
 				num_deleted++;
 			else
 				num_failed++;
@@ -1246,7 +1246,7 @@ static void Device_HHSPEC_Delete(void)
 	}
 }
 
-#endif /* HAVE_UNLINK */
+#endif /* HAVE_UTIL_UNLINK */
 
 #ifdef DO_LOCK
 
@@ -1635,7 +1635,7 @@ static void Device_HHSPEC(void)
 		Device_HHSPEC_Rename();
 		return;
 #endif
-#ifdef HAVE_UNLINK
+#ifdef HAVE_UTIL_UNLINK
 	case 0x21:
 		Device_HHSPEC_Delete();
 		return;
@@ -1748,8 +1748,8 @@ static void Device_PHCLOS(void)
 			char command[256 + FILENAME_MAX]; /* 256 for print_command + FILENAME_MAX for spool_file */
 			sprintf(command, print_command, spool_file);
 			system(command);
-#if defined(HAVE_UNLINK) && !defined(VMS) && !defined(MACOSX)
-			if (unlink(spool_file) == -1) {
+#if defined(HAVE_UTIL_UNLINK) && !defined(VMS) && !defined(MACOSX)
+			if (Util_unlink(spool_file) != 0) {
 				perror(spool_file);
 			}
 #endif
@@ -1796,8 +1796,8 @@ static void Device_PHINIT(void)
 	if (phf) {
 		fclose(phf);
 		phf = NULL;
-#ifdef HAVE_UNLINK
-		unlink(spool_file);
+#ifdef HAVE_UTIL_UNLINK
+		Util_unlink(spool_file);
 #endif
 	}
 	regY = 1;
@@ -2395,6 +2395,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.44  2005/09/14 20:30:51  pfusik
+unlink() -> Util_unlink()
+
 Revision 1.43  2005/09/11 20:36:50  pfusik
 use Win32 API where available
 
