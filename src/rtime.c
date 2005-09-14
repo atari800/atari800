@@ -28,6 +28,9 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 #include "atari.h"
 #include "log.h"
@@ -63,7 +66,7 @@ void RTIME_Initialise(int *argc, char *argv[])
 	*argc = j;
 }
 
-#if defined(HAVE_TIME) && defined(HAVE_LOCALTIME)
+#if defined(WIN32) || (defined(HAVE_TIME) && defined(HAVE_LOCALTIME))
 
 static int hex2bcd(int h)
 {
@@ -72,6 +75,26 @@ static int hex2bcd(int h)
 
 static int gettime(int p)
 {
+#ifdef WIN32
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+	switch (p) {
+	case 0:
+		return hex2bcd(st.wSecond);
+	case 1:
+		return hex2bcd(st.wMinute);
+	case 2:
+		return hex2bcd(st.wHour);
+	case 3:
+		return hex2bcd(st.wDay);
+	case 4:
+		return hex2bcd(st.wMonth);
+	case 5:
+		return hex2bcd(st.wYear % 100);
+	case 6:
+		return hex2bcd(((st.wDayOfWeek + 2) % 7) + 1);
+	}
+#else /* WIN32 */
 	time_t tt;
 	struct tm *lt;
 
@@ -79,25 +102,28 @@ static int gettime(int p)
 	lt = localtime(&tt);
 
 	switch (p) {
-	case 5:
-		return hex2bcd(lt->tm_year);
-	case 4:
-		return hex2bcd(lt->tm_mon + 1);
-	case 3:
-		return hex2bcd(lt->tm_mday);
-	case 2:
-		return hex2bcd(lt->tm_hour);
-	case 1:
-		return hex2bcd(lt->tm_min);
 	case 0:
 		return hex2bcd(lt->tm_sec);
+	case 1:
+		return hex2bcd(lt->tm_min);
+	case 2:
+		return hex2bcd(lt->tm_hour);
+	case 3:
+		return hex2bcd(lt->tm_mday);
+	case 4:
+		return hex2bcd(lt->tm_mon + 1);
+	case 5:
+		return hex2bcd(lt->tm_year % 100);
 	case 6:
 		return hex2bcd(((lt->tm_wday + 2) % 7) + 1);
 	}
+#endif /* WIN32 */
 	return 0;
 }
 
-#endif /* defined(HAVE_TIME) && defined(HAVE_LOCALTIME) */
+#define HAVE_GETTIME
+
+#endif /* defined(WIN32) || (defined(HAVE_TIME) && defined(HAVE_LOCALTIME)) */
 
 UBYTE RTIME_GetByte(void)
 {
@@ -108,7 +134,7 @@ UBYTE RTIME_GetByte(void)
 	case 1:
 		rtime_state = 2;
 		return (
-#if defined(HAVE_TIME) && defined(HAVE_LOCALTIME)
+#ifdef HAVE_GETTIME
 			rtime_tmp <= 6 ?
 			gettime(rtime_tmp) :
 #endif
@@ -116,7 +142,7 @@ UBYTE RTIME_GetByte(void)
 	case 2:
 		rtime_state = 0;
 		return (
-#if defined(HAVE_TIME) && defined(HAVE_LOCALTIME)
+#ifdef HAVE_GETTIME
 			rtime_tmp <= 6 ?
 			gettime(rtime_tmp) :
 #endif
