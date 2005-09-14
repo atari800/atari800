@@ -135,10 +135,12 @@ FILE *openzlib(const char *infilename, char *outfilename)
 		}
 	}
 
+#ifdef HAVE_UTIL_UNLINK
 	if (fp == NULL) {
 		Aprint("Removing temporary file %s", outfilename);
-		remove(outfilename);
+		Util_unlink(outfilename);
 	}
+#endif
 	return fp;
 #endif	/* HAVE_LIBZ */
 }
@@ -281,11 +283,12 @@ FILE *opendcm(const char *infilename, char *outfilename)
 		file = fopen(outfilename, "rb");
 	}
 
+#ifdef HAVE_UTIL_UNLINK
 	if (file == NULL) {
 		Aprint("Removing temporary file %s", outfilename);
-		remove(outfilename);
+		Util_unlink(outfilename);
 	}
-
+#endif
 	return file;
 }
 
@@ -564,6 +567,9 @@ static long soffset()
 
 /*
 $Log$
+Revision 1.24  2005/09/14 20:28:11  pfusik
+remove() -> Util_unlink()
+
 Revision 1.23  2005/09/11 20:40:25  pfusik
 removed the unused diskno parameter from opendcm() and openzlib()
 

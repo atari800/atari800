@@ -156,7 +156,9 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			return FALSE;
 		if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
 			fclose(f);
-			remove(tmp_filename[diskno - 1]);
+#ifdef HAVE_UTIL_UNLINK
+			Util_unlink(tmp_filename[diskno - 1]);
+#endif
 			memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
 			istmpfile[diskno - 1] = 0;
 			return FALSE;
@@ -173,7 +175,9 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 				return FALSE;
 			if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
 				fclose(f);
-				remove(tmp_filename[diskno - 1]);
+#ifdef HAVE_UTIL_UNLINK
+				Util_unlink(tmp_filename[diskno - 1]);
+#endif
 				memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
 				istmpfile[diskno - 1] = 0;
 				return FALSE;
@@ -195,7 +199,9 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		if (sectorsize[diskno - 1] != 128 && sectorsize[diskno - 1] != 256) {
 			fclose(f);
 			if (istmpfile[diskno - 1]) {
-				remove(tmp_filename[diskno - 1]);
+#ifdef HAVE_UTIL_UNLINK
+				Util_unlink(tmp_filename[diskno - 1]);
+#endif
 				memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
 				istmpfile[diskno - 1] = 0;
 			}
@@ -228,7 +234,9 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 				if (fread(buffer, 1, 0x180, f) != 0x180) {
 					fclose(f);
 					if (istmpfile[diskno - 1]) {
-						remove(tmp_filename[diskno - 1]);
+#ifdef HAVE_UTIL_UNLINK
+						Util_unlink(tmp_filename[diskno - 1]);
+#endif
 						memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
 						istmpfile[diskno - 1] = 0;
 					}
@@ -289,7 +297,9 @@ void SIO_Dismount(int diskno)
 		drive_status[diskno - 1] = NoDisk;
 		strcpy(sio_filename[diskno - 1], "Empty");
 		if (istmpfile[diskno - 1]) {
-			remove(tmp_filename[diskno - 1]);
+#ifdef HAVE_UTIL_UNLINK
+			Util_unlink(tmp_filename[diskno - 1]);
+#endif
 			memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
 			istmpfile[diskno - 1] = 0;
 		}
@@ -1244,6 +1254,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.38  2005/09/14 20:29:20  pfusik
+remove() -> Util_unlink()
+
 Revision 1.37  2005/09/11 20:40:25  pfusik
 removed the unused diskno parameter from opendcm() and openzlib()
 
