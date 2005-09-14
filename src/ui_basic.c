@@ -564,6 +564,13 @@ static int EditFilename(UBYTE *screen, char *fname)
 static WIN32_FIND_DATA wfd;
 static HANDLE dh = INVALID_HANDLE_VALUE;
 
+#ifdef _WIN32_WCE
+/* WinCE's FindFirstFile/FindNext file don't return "." or "..". */
+/* We check if the parent folder exists and add ".." if necessary. */
+static char parentdir[FILENAME_MAX];
+static int was_parentdir;
+#endif
+
 static int BasicUIOpenDir(const char *dirname)
 {
 #ifdef UNICODE
@@ -573,25 +580,43 @@ static int BasicUIOpenDir(const char *dirname)
 	wcscat(wfilespec, (dirname[0] != '\0' && dirname[strlen(dirname) - 1] != '\\')
 		? L"\\*.*" : L"*.*");
 	dh = FindFirstFile(wfilespec, &wfd);
-#else
+#else /* UNICODE */
 	char filespec[FILENAME_MAX];
 	Util_strlcpy(filespec, dirname, FILENAME_MAX - 4);
 	strcat(filespec, (dirname[0] != '\0' && dirname[strlen(dirname) - 1] != '\\')
 		? "\\*.*" : "*.*");
 	dh = FindFirstFile(filespec, &wfd);
+#endif /* UNICODE */
+#ifdef _WIN32_WCE
+	Util_splitpath(dirname, parentdir, NULL);
+	was_parentdir = FALSE;
 #endif
 	return dh != INVALID_HANDLE_VALUE;
 }
 
 static int BasicUIReadDir(char *filename, int *isdir)
 {
-	if (dh == INVALID_HANDLE_VALUE)
+	if (dh == INVALID_HANDLE_VALUE) {
+#ifdef _WIN32_WCE
+		if (!was_parentdir && Util_direxists(parentdir)) {
+			strcpy(filename, "..");
+			*isdir = TRUE;
+			was_parentdir = TRUE;
+			return TRUE;
+		}
+#endif /* _WIN32_WCE */
 		return FALSE;
+	}
 #ifdef UNICODE
 	if (WideCharToMultiByte(CP_ACP, 0, wfd.cFileName, -1, filename, FILENAME_MAX, NULL, NULL) <= 0)
 		filename[0] = '\0';
 #else
 	Util_strlcpy(filename, wfd.cFileName, FILENAME_MAX);
+#endif /* UNICODE */
+#ifdef _WIN32_WCE
+	/* just in case they will implement it some day */
+	if (strcmp(filename, "..") == 0)
+		was_parentdir = TRUE;
 #endif
 	*isdir = (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
 	if (!FindNextFile(dh, &wfd)) {
@@ -747,17 +772,16 @@ static void GetDirectory(char *directory)
 		Aprint("Error opening '%s' directory", directory);
 	}
 #ifdef DOS_DRIVES
-	/* in DOS, add all existing disk letters */
-	FilenamesAdd(Util_strdup("[A:]"));	/* do not check A: - it's slow */
+	/* in DOS/Windows, add all existing disk letters */
 	{
 		char letter;
-		for (letter = 'C'; letter <= 'Z'; letter++) {
+		for (letter = 'A'; letter <= 'Z'; letter++) {
 #ifdef __DJGPP__
 			static char drive[3] = "C:";
 			struct stat st;
 			drive[0] = letter;
-			stat(drive, &st);
-			if (st.st_mode & S_IXUSR)
+			/* don't check floppies - it's slow */
+			if (letter < 'C' || (stat(drive, &st) == 0 && (st.st_mode & S_IXUSR) != 0))
 #elif defined(WIN32)
 #ifdef UNICODE
 			static WCHAR rootpath[4] = L"C:\\";
@@ -1119,6 +1143,10 @@ tUIDriver basic_ui_driver =
 
 /*
 $Log$
+Revision 1.35  2005/09/14 20:32:18  pfusik
+".." in Win32 API based file selector on WINCE;
+include B: in DOS_DRIVES; detect floppies on WIN32
+
 Revision 1.34  2005/09/11 20:38:43  pfusik
 implemented file selector on MSVC
 
