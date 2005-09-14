@@ -26,6 +26,9 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 #include "atari.h"
 #include "cpu.h"
@@ -366,7 +369,14 @@ void POKEY_Initialise(int *argc, char *argv[])
 		}
 	}
 
-	random_scanline_counter = time(NULL) % POLY17_SIZE;
+	random_scanline_counter =
+#ifdef WIN32
+		GetTickCount() % POLY17_SIZE;
+#elif defined(HAVE_TIME)
+		time(NULL) % POLY17_SIZE;
+#else
+		0;
+#endif
 }
 
 void POKEY_Frame(void)
