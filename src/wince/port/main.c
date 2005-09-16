@@ -68,7 +68,7 @@ void wce_perror(char* s)
 
 DWORD WINAPI vloop(LPVOID p)
 {
-	srand(time(0));
+	srand(GetTickCount());
 	ui_driver = &wince_ui_driver;
 	wince_main(gargc, gargv);
 	atari_exit(0);

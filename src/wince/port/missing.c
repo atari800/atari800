@@ -3,180 +3,7 @@
 #include <string.h>
 #include "config.h"
 
-/* forward declaration */
-char *strdup(const char *strSource);
 char *getcwd(char *buffer, int maxlen);
-
-/* Limited dirent implementation. Used by UI.C and DEVICES.C */
-static WIN32_FIND_DATA wfd;
-
-DIR* opendir(const char* fname)
-{
-	DIR* pdir;
-	char fnameMask[MAX_PATH+1];
-	TCHAR fnameUnc[MAX_PATH+1];
-	char nameFound[MAX_PATH+1];
-	
-	if(fname == NULL)
-		return NULL;
-	
-	strcpy(fnameMask, fname);
-	if(!strlen(fnameMask) || fnameMask[strlen(fnameMask)-1] != '\\')
-		strncat(fnameMask, "\\", MAX_PATH-strlen(fnameMask)-1);
-	strncat(fnameMask, "*.*", MAX_PATH-strlen(fnameMask)-4);
-	
-	pdir = malloc(sizeof(DIR)+strlen(fname));
-	pdir->dd_dir.d_ino = 0;
-	pdir->dd_dir.d_reclen = 0;
-	pdir->dd_dir.d_name = 0;
-	pdir->dd_dir.d_namlen = 0;
-	
-	pdir->dd_handle = 0;
-	pdir->dd_stat = 0;
-	strcpy(pdir->dd_name, fname); /* it has exactly enough space for fname and nul char */
-	
-	MultiByteToWideChar(CP_ACP, 0, fnameMask, -1, fnameUnc, MAX_PATH);
-	if((pdir->dd_handle = (long)FindFirstFile(fnameUnc, &wfd)) == (long)INVALID_HANDLE_VALUE)
-	{
-		free(pdir);
-		return NULL;
-	}
-	else
-	{
-		WideCharToMultiByte(CP_ACP, 0, wfd.cFileName, -1, nameFound, MAX_PATH, NULL, NULL);
-		
-		pdir->dd_dir.d_name = strdup(nameFound);
-		pdir->dd_dir.d_namlen = strlen(nameFound);
-	}
-	return pdir;
-}
-
-struct dirent*	readdir(DIR* dir)
-{
-	char nameFound[MAX_PATH+1];
-	static struct dirent dummy;
-	
-	if(dir->dd_stat == 0)
-	{
-		dummy.d_name = ".";
-		dummy.d_namlen = 1;
-		dir->dd_stat ++;
-		return &dummy;
-	}
-	else if(dir->dd_stat == 1)
-	{
-		dummy.d_name = "..";
-		dummy.d_namlen = 2;
-		dir->dd_stat ++;
-		return &dummy;
-	}
-	else if(dir->dd_stat == 2)
-	{
-		dir->dd_stat++;
-		return &dir->dd_dir;
-	}
-	else
-	{
-		if(FindNextFile((HANDLE)dir->dd_handle, &wfd) == 0)
-		{
-			dir->dd_stat = -1;
-			return NULL;
-		}
-		WideCharToMultiByte(CP_ACP, 0, wfd.cFileName, -1, nameFound, MAX_PATH, NULL, NULL);
-		
-		if(dir->dd_dir.d_name)
-			free(dir->dd_dir.d_name);
-		
-		dir->dd_dir.d_name = strdup(nameFound);
-		dir->dd_dir.d_namlen = strlen(nameFound);
-		
-		dir->dd_stat ++;
-		
-		return &dir->dd_dir;
-	}
-}
-
-int closedir(DIR* dir)
-{
-	if(dir == NULL)
-		return 0;
-	
-	if(dir->dd_handle)
-		FindClose((HANDLE)dir->dd_handle);
-	
-	if(dir->dd_dir.d_name)
-		free(dir->dd_dir.d_name);
-	free(dir);
-	return 1;
-}
-
-/* Very limited implementation of stat. Used by UI.C, MEMORY-P.C (latter is not critical) */
-int stat(const char *fname, struct stat *ss)
-{
-	TCHAR fnameUnc[MAX_PATH+1];
-	HANDLE handle;
-	int len;
-	
-	if(fname == NULL || ss == NULL)
-		return -1;
-	
-	/* Special case (dummy on WinCE) */
-	len = strlen(fname);
-	if(len >= 2 && fname[len-1] == '.' && fname[len-2] == '.' &&
-		(len == 2 || fname[len-3] == '\\'))
-	{
-		/* That's everything implemented so far */
-		memset(ss, 0, sizeof(struct stat));
-		ss->st_size = 1024;
-		ss->st_mode |= S_IFDIR;
-		return 0;
-	}
-	
-	MultiByteToWideChar(CP_ACP, 0, fname, -1, fnameUnc, MAX_PATH);
-	handle = FindFirstFile(fnameUnc, &wfd);
-	if(handle == INVALID_HANDLE_VALUE)
-		return -1;
-	else
-	{
-		/* That's everything implemented so far */
-		memset(ss, 0, sizeof(struct stat));
-		ss->st_size = wfd.nFileSizeLow;
-		if(wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			ss->st_mode |= S_IFDIR;
-		
-		FindClose(handle);
-	}
-	return 0;
-}
-
-/* Remove file by name */
-int remove(const char* path)
-{
-	TCHAR pathUnc[MAX_PATH+1];
-	char fullname[MAX_PATH+1];
-
-	if(path[0] != '\\' && path[0] != '/')
-	{
-		getcwd(fullname, MAX_PATH);
-		strncat(fullname, "\\", MAX_PATH-strlen(fullname)-1);
-		strncat(fullname, path, MAX_PATH-strlen(fullname)-strlen(path));
-	}
-	else
-		strcpy(fullname, path);
-
-	MultiByteToWideChar(CP_ACP, 0, fullname, -1, pathUnc, MAX_PATH);
-	return !DeleteFile(pathUnc); 
-}
-
-/* in our case unlink is the same as remove */
-int unlink(const char* path)
-{
-	return remove(path);
-}
-
-/* Used in DEVICES.C and UI.C for some purpose. Not critical in this port */
-int system(const char* path) { return 0; }
-
 
 char *tmpnam(char *string)
 {
@@ -212,22 +39,6 @@ FILE *tmpfile()
 		return 0;
 }
 
-void rewind(FILE *stream)
-{
-	fseek(stream, 0, SEEK_SET);
-}
-
-
-char *strdup(const char *strSource)
-{
-	char* buffer;
-	buffer = malloc(strlen(strSource)+1);
-	if(buffer)
-		strcpy(buffer, strSource);
-	return buffer;
-}
-
-/* Used in UI.C */
 char cwd[MAX_PATH+1] = "";
 char *getcwd(char *buffer, int maxlen)
 {
@@ -250,50 +61,6 @@ char *getcwd(char *buffer, int maxlen)
 	return cwd;
 }
 
-/* Limited implementation of time.h. time_t formula is possibly incorrect. */
-time_t time(time_t* res)
-{
-	time_t t;
-	SYSTEMTIME st;
-	GetLocalTime(&st);
-	
-	t = (time_t)(((((((st.wYear-1970)*12+st.wMonth)*31+st.wDay)*7+st.wDayOfWeek)*24+st.wHour)*60+st.wMinute)*60+st.wSecond);
-	
-	if(res)
-		*res = t;
-	return t;
-}
-
-struct tm* localtime(time_t* timer)
-{
-	static struct tm tmLocalTime;
-	unsigned long rem = *timer;
-	
-	tmLocalTime.tm_sec  = (short)(rem % 60);
-	rem /= 60;
-	tmLocalTime.tm_min  = (short)(rem % 60);
-	rem /= 60;
-	tmLocalTime.tm_hour = (short)(rem % 24);
-	rem /= 24;
-	tmLocalTime.tm_mday = (short)(rem % 7);
-	rem /= 7;
-	tmLocalTime.tm_mday = (short)(rem % 31);
-	rem /= 31;
-	tmLocalTime.tm_mon  = (short)(rem % 12);
-	rem /= 12;
-	tmLocalTime.tm_year = (short)(rem+1970);
-	
-	return &tmLocalTime;
-}
-
-/* Very limited implementation of sys/time.h */
-void gettimeofday(struct timeval* tp, void* dummy)
-{
-	DWORD dt = GetTickCount();
-	tp->tv_sec = dt/1000;
-	tp->tv_usec = dt*1000;
-}
-
 /*
 Windows CE fopen has non-standard behavior -- not
 fully qualified paths refer to root folder rather
@@ -301,7 +68,7 @@ than current folder (concept not implemented in CE).
 */
 #undef fopen
 
-FILE* __cdecl wce_fopen(const char* fname, const char* fmode)
+FILE* wce_fopen(const char* fname, const char* fmode)
 {
 	char fullname[MAX_PATH+1];
 	
@@ -318,12 +85,6 @@ FILE* __cdecl wce_fopen(const char* fname, const char* fmode)
 		return fopen(fname, fmode);
 }
 
-/* This may provide for better sync mechanism */
-unsigned int clock()
-{
-	return GetTickCount();
-}
-
 /* The only environment variable used by Atari800 at this point is HOME */
 char* getenv(const char* varname)
 {
@@ -331,102 +92,4 @@ char* getenv(const char* varname)
 		return getcwd(NULL, 0);
 	else
 		return NULL;
-}
-
-int errno = 0;
-
-/* Should be good enough for now */
-int rename(const char* oldname, const char* newname)
-{
-	TCHAR fnameUnc1[MAX_PATH+1];
-	TCHAR fnameUnc2[MAX_PATH+1];
-
-	MultiByteToWideChar(CP_ACP, 0, oldname, -1, fnameUnc1, MAX_PATH);
-	MultiByteToWideChar(CP_ACP, 0, newname, -1, fnameUnc2, MAX_PATH);
-
-	if(MoveFile(fnameUnc1, fnameUnc2))
-	{
-		errno = 0;
-		return 0;
-	}
-	else
-	{
-		errno = ENOENT;
-		return -1;
-	}
-}
-
-/* PocketPC does not have Unix-like protection modes so
-   this controls read-only flag only */
-int chmod(const char* name, int mode)
-{
-	TCHAR fnameUnc[MAX_PATH+1];
-	DWORD attr;
-
-	MultiByteToWideChar(CP_ACP, 0, name, -1, fnameUnc, MAX_PATH);
-
-	attr = GetFileAttributes(fnameUnc);
-	if(attr == 0xffffffff)
-	{
-		errno = ENOENT;
-		return -1;
-	}
-	if((mode & S_IWUSR) == 0)
-		SetFileAttributes(fnameUnc, attr | FILE_ATTRIBUTE_READONLY);
-	else
-		SetFileAttributes(fnameUnc, attr & ~FILE_ATTRIBUTE_READONLY);
-	return 0;
-}
-
-/* Extremely limited implementation of fstat */
-int fstat(int handle, struct stat* buffer)
-{
-	memset(buffer, 0, sizeof(struct stat));
-	buffer->st_size = GetFileSize((HANDLE)handle, NULL);
-	return 0;
-}
-
-/* Simplified error code implementation */
-int mkdir(const char* name)
-{
-	TCHAR fnameUnc[MAX_PATH+1];
-
-	MultiByteToWideChar(CP_ACP, 0, name, -1, fnameUnc, MAX_PATH);
-
-	if(CreateDirectory(fnameUnc, NULL))
-	{
-		errno = 0;
-		return 0;
-	}
-	else
-	{
-		errno = ENOENT;
-		return -1;
-	}
-}
-
-/* Besides simplistic error code implementation, this is complete */
-int rmdir(const char* name)
-{
-	TCHAR fnameUnc[MAX_PATH+1];
-	
-	MultiByteToWideChar(CP_ACP, 0, name, -1, fnameUnc, MAX_PATH);
-
-	if(RemoveDirectory(fnameUnc))
-	{
-		errno = 0;
-		return 0;
-	}
-	else
-	{
-		errno = ENOTEMPTY;
-		return -1;
-	}
-}
-
-/* The only instance of umask does not do much at this point */
-int umask(int pmode)
-{
-	errno = 0;
-	return 0;
 }

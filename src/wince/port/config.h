@@ -51,10 +51,10 @@
 #undef HAVE_ATEXIT
 
 /* Define to 1 if you have the `chmod' function. */
-#define HAVE_CHMOD			1
+#undef HAVE_CHMOD
 
 /* Define to 1 if you have the `clock' function. */
-#define HAVE_CLOCK			1
+#undef HAVE_CLOCK
 
 /* Define to 1 if you have the <direct.h> header file. */
 #undef HAVE_DIRECT_H
@@ -85,7 +85,7 @@
 #define HAVE_FLOOR			1
 
 /* Define to 1 if you have the `fstat' function. */
-#define HAVE_FSTAT			1
+#undef HAVE_FSTAT
 
 /* Define to 1 if you have the `getcwd' function. */
 #define HAVE_GETCWD			1
@@ -112,7 +112,7 @@
 #define HAVE_LIBZ			1
 
 /* Define to 1 if you have the `localtime' function. */
-#define HAVE_LOCALTIME		1
+#undef HAVE_LOCALTIME
 
 /* Define to 1 if you have the `memmove' function. */
 #define HAVE_MEMMOVE		1
@@ -124,7 +124,7 @@
 #define HAVE_MEMSET			1
 
 /* Define to 1 if you have the `mkdir' function. */
-#define HAVE_MKDIR			1
+#undef HAVE_MKDIR
 
 /* Define to 1 if you have the `mkstemp' function. */
 #undef HAVE_MKSTEMP
@@ -145,16 +145,16 @@
 #undef HAVE_NETINET_IN_H
 
 /* Define to 1 if you have the `opendir' function. */
-#define HAVE_OPENDIR		1
+#undef HAVE_OPENDIR
 
 /* Define to 1 if you have the `rename' function. */
-#define HAVE_RENAME			1
+#undef HAVE_RENAME
 
 /* Define to 1 if you have the `rewind' function. */
-#define HAVE_REWIND			1
+#undef HAVE_REWIND
 
 /* Define to 1 if you have the `rmdir' function. */
-#define HAVE_RMDIR			1
+#undef HAVE_RMDIR
 
 /* Define to 1 if you have the `select' function. */
 #define HAVE_SELECT			1
@@ -166,13 +166,13 @@
 #undef HAVE_SIGNAL_H
 
 /* Define to 1 if you have the `snprintf' function. */
-#define HAVE_SNPRINTF		1
+#undef HAVE_SNPRINTF
 
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
 
 /* Define to 1 if you have the `stat' function. */
-#define HAVE_STAT			1
+#undef HAVE_STAT
 
 /* Define to 1 if `stat' has the bug that it succeeds when given the
    zero-length file name argument. */
@@ -398,7 +398,7 @@
 #undef VERY_SLOW
 
 /* Define to allow volume only sound. */
-#define VOL_ONLY_SOUND			1
+#undef VOL_ONLY_SOUND
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */

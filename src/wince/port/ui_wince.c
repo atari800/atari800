@@ -30,10 +30,10 @@
 #include "keyboard.h" /* For virtual joystick */
 #include "input.h"    /* For joystick autofire */
 
-int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii);
+int WinCeUISelect(const char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii);
 int WinCeUIGetSaveFilename(char* pFilename);
 int WinCeUIGetLoadFilename(char* pDirectory, char* pFilename);
-void WinCeUIMessage(char* pMessage);
+void WinCeUIMessage(const char* pMessage);
 void WinCeUIAboutBox(void);
 void WinCeUIInit(void);
 
@@ -158,7 +158,7 @@ void EmulatorSettings()
 }
 
 
-int WinCeUISelect(char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii)
+int WinCeUISelect(const char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii)
 {
 	tMenuItem* pNewMenu;
 	int i;
@@ -255,7 +255,7 @@ int WinCeUIGetLoadFilename(char* pDirectory, char* pFilename)
 	return basic_ui_driver.fGetLoadFilename(pDirectory, pFilename);
 }
 
-void WinCeUIMessage(char* pMessage)
+void WinCeUIMessage(const char* pMessage)
 {
 	basic_ui_driver.fMessage(pMessage);
 }

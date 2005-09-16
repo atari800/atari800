@@ -42,7 +42,7 @@ int buffers = 0;
 enum {SOUND_NONE, SOUND_WAV};
 
 static int issound = SOUND_NONE;
-static int dsprate = 22050;
+static int dsprate = 11025;
 static int snddelay = 40;	/* delay in milliseconds */
 static int snddelaywav = 100;
 #ifdef STEREO_SOUND
@@ -250,8 +250,8 @@ void Sound_Continue(void)
 
 /*
 $Log$
-Revision 1.6  2005/09/11 11:48:09  knakos
-removed all DX related source code
+Revision 1.7  2005/09/16 22:25:29  knakos
+removed excess functionality, now included in the core
 
 Revision 1.5  2003/03/03 09:57:33  joy
 Ed improved autoconf again plus fixed some little things
