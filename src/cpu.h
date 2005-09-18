@@ -1,11 +1,11 @@
 #ifndef _CPU_H_
 #define _CPU_H_
 
+#include "config.h"
 #include "atari.h"
 
 #define N_FLAG 0x80
 #define V_FLAG 0x40
-#define G_FLAG 0x20
 #define B_FLAG 0x10
 #define D_FLAG 0x08
 #define I_FLAG 0x04
@@ -52,6 +52,8 @@ extern UBYTE IRQ;
 
 extern void (*rts_handler)(void);
 
+extern UBYTE cim_encountered;
+
 #define REMEMBER_PC_STEPS 64
 extern UWORD remember_PC[REMEMBER_PC_STEPS];
 extern unsigned int remember_PC_curpos;
@@ -61,7 +63,8 @@ extern int remember_xpos[REMEMBER_PC_STEPS];
 extern UWORD remember_JMP[REMEMBER_JMP_STEPS];
 extern unsigned int remember_jmp_curpos;
 
-extern const int cycles[256];
+/* extern const int cycles[256]; */
+
 #ifdef MONITOR_PROFILE
 extern int instruction_count[256];
 #endif
