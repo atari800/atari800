@@ -27,15 +27,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "antic.h"
 #include "atari.h"
 #include "cpu.h"
-#include "memory.h"
-#include "antic.h"
-#include "pia.h"
 #include "gtia.h"
+#include "memory.h"
+#include "monitor.h"
+#include "pia.h"
 #include "pokey.h"
 #include "rt-config.h"
-#include "monitor.h"
 #include "util.h"
 
 #ifdef __PLUS
@@ -73,16 +73,7 @@ void monitor_printf(const char *format, ...)
 #endif /* __PLUS */
 
 #ifdef MONITOR_TRACE
-int tron = FALSE;
-#endif
-
-unsigned int disassemble(UWORD addr1, UWORD addr2);
-UWORD show_instruction(UWORD inad, int wid);
-
-static UWORD addr = 0;
-
-#ifdef MONITOR_ASSEMBLER
-static UWORD assembler(UWORD addr);
+FILE *trace_file = NULL;
 #endif
 
 #ifdef MONITOR_HINTS
@@ -91,11 +82,11 @@ typedef struct {
 	char *name;
 	UWORD addr;
 } symtable_rec;
- /* SYMBOL NAMES TAKEN FROM atari.equ - part of disassembler by Erich BACHER
-    and from GTIA.H, POKEY.H, PIA.H & ANTIC.H */
- /* Note: all symbols must be sorted by address.
-    If the adress has different names when reading/writting to it (GTIA ports),
-    put the read name first. */
+
+ /* Symbol names taken from atari.equ - part of disassembler by Erich Bacher
+    and from antic.h, gtia.h, pia.h and pokey.h.
+    Symbols must be sorted by address. If the adress has different names
+    when reading/writing to it, put the read name first. */
 
 static const symtable_rec symtable_builtin[] = {
 	{"NGFLAG",  0x0001}, {"CASINI",  0x0002}, {"CASINI+1",0x0003}, {"RAMLO",   0x0004},
@@ -215,7 +206,7 @@ static const symtable_rec symtable_builtin[] = {
 	{"TIMER1",  0x030c}, {"TIMER1+1",0x030d}, {"ADDCOR",  0x030e}, {"CASFLG",  0x030f},
 	{"TIMER2",  0x0310}, {"TIMER2+1",0x0311}, {"TEMP1",   0x0312}, {"TEMP1+1", 0x0313},
 	{"TEMP2",   0x0314}, {"TEMP3",   0x0315}, {"SAVIO",   0x0316}, {"TIMFLG",  0x0317},
-	{"STACKP",  0x0318}, {"TSTAT",   0x0319}, {"HATABS",  0x031a},  /*HATABS 1-34*/
+	{"STACKP",  0x0318}, {"TSTAT",   0x0319}, {"HATABS",  0x031a}, /* HATABS 1-34 */
 	{"PUTBT1",  0x033d}, {"PUTBT2",  0x033e}, {"PUTBT3",  0x033f},
 	{"B0-ICHID",0x0340}, {"B0-ICDNO",0x0341}, {"B0-ICCOM",0x0342}, {"B0-ICSTA",0x0343},
 	{"B0-ICBAL",0x0344}, {"B0-ICBAH",0x0345}, {"B0-ICPTL",0x0346}, {"B0-ICPTH",0x0347},
@@ -249,7 +240,7 @@ static const symtable_rec symtable_builtin[] = {
 	{"B7-ICBAL",0x03b4}, {"B7-ICBAH",0x03b5}, {"B7-ICPTL",0x03b6}, {"B7-ICPTH",0x03b7},
 	{"B7-ICBLL",0x03b8}, {"B7-ICBLH",0x03b9}, {"B7-ICAX1",0x03ba}, {"B7-ICAX2",0x03bb},
 	{"B7-ICAX3",0x03bc}, {"B7-ICAX4",0x03bd}, {"B7-ICAX5",0x03be}, {"B7-ICAX6",0x03bf},
-	{"PRNBUF",  0x03c0},  /* PRNBUF 1-39 */
+	{"PRNBUF",  0x03c0}, /* PRNBUF 1-39 */
 	{"SUPERF",  0x03e8}, {"CKEY",    0x03e9}, {"CASSBT",  0x03ea}, {"CARTCK",  0x03eb},
 	{"DERRF",   0x03ec}, {"ACMVAR",  0x03ed}, /* ACMVAR 1-10 */
 	{"BASICF",  0x03f8}, {"MINTLK",  0x03f9}, {"GINTLK",  0x03fa}, {"CHLINK",  0x03fb},
@@ -368,8 +359,8 @@ static void add_user_label(const char *name, UWORD addr)
 	if (symtable_user == NULL)
 		symtable_user = (symtable_rec *) Util_malloc(SYMTABLE_USER_INITIAL_SIZE * sizeof(symtable_rec));
 	else if (symtable_user_size >= SYMTABLE_USER_INITIAL_SIZE
-	 && (symtable_user_size & (symtable_user_size - 1)) == 0) {
-		/* symtable_loaded_size is a power of two: allocate twice as much */
+	      && (symtable_user_size & (symtable_user_size - 1)) == 0) {
+		/* symtable_user_size is a power of two: allocate twice as much */
 		symtable_user = (symtable_rec *) Util_realloc(symtable_user,
 			2 * symtable_user_size * sizeof(symtable_rec));
 	}
@@ -399,7 +390,7 @@ static void load_user_labels(const char *filename)
 		unsigned int value = 0;
 		int digits = 0;
 		/* Find first 4 hex digits or more. */
-		/* I hope there's no "Cafe Assembler" that uses its signature. :-) */
+		/* We don't support "Cafe Assembler", "Dead Assembler" or "C0de Assembler". ;-) */
 		for (p = line; *p != '\0'; p++) {
 			if (*p >= '0' && *p <= '9') {
 				value = (value << 4) + *p - '0';
@@ -436,63 +427,63 @@ static void load_user_labels(const char *filename)
 		add_user_label(p, (UWORD) value);
 	}
 	fclose(fp);
-	printf("Loaded %d labels.\n", symtable_user_size);
+	printf("Loaded %d labels\n", symtable_user_size);
 }
 
 #endif /* MONITOR_HINTS */
 
-static const char instr6502[256][11] = {
-	"BRK", "ORA ($1,X)", "CIM", "ASO ($1,X)", "NOP $1", "ORA $1", "ASL $1", "ASO $1",
-	"PHP", "ORA #$1", "ASL", "ANC #$1", "NOP $2", "ORA $2", "ASL $2", "ASO $2",
+static const char instr6502[256][10] = {
+	"BRK", "ORA (1,X)", "CIM", "ASO (1,X)", "NOP 1", "ORA 1", "ASL 1", "ASO 1",
+	"PHP", "ORA #1", "ASL", "ANC #1", "NOP 2", "ORA 2", "ASL 2", "ASO 2",
 
-	"BPL $0", "ORA ($1),Y", "CIM", "ASO ($1),Y", "NOP $1,X", "ORA $1,X", "ASL $1,X", "ASO $1,X",
-	"CLC", "ORA $2,Y", "NOP", "ASO $2,Y", "NOP $2,X", "ORA $2,X", "ASL $2,X", "ASO $2,X",
+	"BPL 0", "ORA (1),Y", "CIM", "ASO (1),Y", "NOP 1,X", "ORA 1,X", "ASL 1,X", "ASO 1,X",
+	"CLC", "ORA 2,Y", "NOP !", "ASO 2,Y", "NOP 2,X", "ORA 2,X", "ASL 2,X", "ASO 2,X",
 
-	"JSR $2", "AND ($1,X)", "CIM", "RLA ($1,X)", "BIT $1", "AND $1", "ROL $1", "RLA $1",
-	"PLP", "AND #$1", "ROL", "ANC #$1", "BIT $2", "AND $2", "ROL $2", "RLA $2",
+	"JSR 2", "AND (1,X)", "CIM", "RLA (1,X)", "BIT 1", "AND 1", "ROL 1", "RLA 1",
+	"PLP", "AND #1", "ROL", "ANC #1", "BIT 2", "AND 2", "ROL 2", "RLA 2",
 
-	"BMI $0", "AND ($1),Y", "CIM", "RLA ($1),Y", "NOP $1,X", "AND $1,X", "ROL $1,X", "RLA $1,X",
-	"SEC", "AND $2,Y", "NOP", "RLA $2,Y", "NOP $2,X", "AND $2,X", "ROL $2,X", "RLA $2,X",
-
-
-	"RTI", "EOR ($1,X)", "CIM", "LSE ($1,X)", "NOP $1", "EOR $1", "LSR $1", "LSE $1",
-	"PHA", "EOR #$1", "LSR", "ALR #$1", "JMP $2", "EOR $2", "LSR $2", "LSE $2",
-
-	"BVC $0", "EOR ($1),Y", "CIM", "LSE ($1),Y", "NOP $1,X", "EOR $1,X", "LSR $1,X", "LSE $1,X",
-	"CLI", "EOR $2,Y", "NOP", "LSE $2,Y", "NOP $2,X", "EOR $2,X", "LSR $2,X", "LSE $2,X",
-
-	"RTS", "ADC ($1,X)", "CIM", "RRA ($1,X)", "NOP $1", "ADC $1", "ROR $1", "RRA $1",
-	"PLA", "ADC #$1", "ROR", "ARR #$1", "JMP ($2)", "ADC $2", "ROR $2", "RRA $2",
-
-	"BVS $0", "ADC ($1),Y", "CIM", "RRA ($1),Y", "NOP $1,X", "ADC $1,X", "ROR $1,X", "RRA $1,X",
-	"SEI", "ADC $2,Y", "NOP", "RRA $2,Y", "NOP $2,X", "ADC $2,X", "ROR $2,X", "RRA $2,X",
+	"BMI 0", "AND (1),Y", "CIM", "RLA (1),Y", "NOP 1,X", "AND 1,X", "ROL 1,X", "RLA 1,X",
+	"SEC", "AND 2,Y", "NOP !", "RLA 2,Y", "NOP 2,X", "AND 2,X", "ROL 2,X", "RLA 2,X",
 
 
-	"NOP #$1", "STA ($1,X)", "NOP #$1", "SAX ($1,X)", "STY $1", "STA $1", "STX $1", "SAX $1",
-	"DEY", "NOP #$1", "TXA", "ANE #$1", "STY $2", "STA $2", "STX $2", "SAX $2",
+	"RTI", "EOR (1,X)", "CIM", "LSE (1,X)", "NOP 1", "EOR 1", "LSR 1", "LSE 1",
+	"PHA", "EOR #1", "LSR", "ALR #1", "JMP 2", "EOR 2", "LSR 2", "LSE 2",
 
-	"BCC $0", "STA ($1),Y", "CIM", "SHA ($1),Y", "STY $1,X", "STA $1,X", "STX $1,Y", "SAX $1,Y",
-	"TYA", "STA $2,Y", "TXS", "SHS $2,Y", "SHY $2,X", "STA $2,X", "SHX $2,Y", "SHA $2,Y",
+	"BVC 0", "EOR (1),Y", "CIM", "LSE (1),Y", "NOP 1,X", "EOR 1,X", "LSR 1,X", "LSE 1,X",
+	"CLI", "EOR 2,Y", "NOP !", "LSE 2,Y", "NOP 2,X", "EOR 2,X", "LSR 2,X", "LSE 2,X",
 
-	"LDY #$1", "LDA ($1,X)", "LDX #$1", "LAX ($1,X)", "LDY $1", "LDA $1", "LDX $1", "LAX $1",
-	"TAY", "LDA #$1", "TAX", "ANX #$1", "LDY $2", "LDA $2", "LDX $2", "LAX $2",
+	"RTS", "ADC (1,X)", "CIM", "RRA (1,X)", "NOP 1", "ADC 1", "ROR 1", "RRA 1",
+	"PLA", "ADC #1", "ROR", "ARR #1", "JMP (2)", "ADC 2", "ROR 2", "RRA 2",
 
-	"BCS $0", "LDA ($1),Y", "CIM", "LAX ($1),Y", "LDY $1,X", "LDA $1,X", "LDX $1,Y", "LAX $1,X",
-	"CLV", "LDA $2,Y", "TSX", "LAS $2,Y", "LDY $2,X", "LDA $2,X", "LDX $2,Y", "LAX $2,Y",
-
-
-	"CPY #$1", "CMP ($1,X)", "NOP #$1", "DCM ($1,X)", "CPY $1", "CMP $1", "DEC $1", "DCM $1",
-	"INY", "CMP #$1", "DEX", "SBX #$1", "CPY $2", "CMP $2", "DEC $2", "DCM $2",
-
-	"BNE $0", "CMP ($1),Y", "[ESCRTS]", "DCM ($1),Y", "NOP $1,X", "CMP $1,X", "DEC $1,X", "DCM $1,X",
-	"CLD", "CMP $2,Y", "NOP", "DCM $2,Y", "NOP $2,X", "CMP $2,X", "DEC $2,X", "DCM $2,X",
+	"BVS 0", "ADC (1),Y", "CIM", "RRA (1),Y", "NOP 1,X", "ADC 1,X", "ROR 1,X", "RRA 1,X",
+	"SEI", "ADC 2,Y", "NOP !", "RRA 2,Y", "NOP 2,X", "ADC 2,X", "ROR 2,X", "RRA 2,X",
 
 
-	"CPX #$1", "SBC ($1,X)", "NOP #$1", "INS ($1,X)", "CPX $1", "SBC $1", "INC $1", "INS $1",
-	"INX", "SBC #$1", "NOP", "SBC #$1", "CPX $2", "SBC $2", "INC $2", "INS $2",
+	"NOP #1", "STA (1,X)", "NOP #1", "SAX (1,X)", "STY 1", "STA 1", "STX 1", "SAX 1",
+	"DEY", "NOP #1", "TXA", "ANE #1", "STY 2", "STA 2", "STX 2", "SAX 2",
 
-	"BEQ $0", "SBC ($1),Y", "[ESC]", "INS ($1),Y", "NOP $1,X", "SBC $1,X", "INC $1,X", "INS $1,X",
-	"SED", "SBC $2,Y", "NOP", "INS $2,Y", "NOP $2,X", "SBC $2,X", "INC $2,X", "INS $2,X"
+	"BCC 0", "STA (1),Y", "CIM", "SHA (1),Y", "STY 1,X", "STA 1,X", "STX 1,Y", "SAX 1,Y",
+	"TYA", "STA 2,Y", "TXS", "SHS 2,Y", "SHY 2,X", "STA 2,X", "SHX 2,Y", "SHA 2,Y",
+
+	"LDY #1", "LDA (1,X)", "LDX #1", "LAX (1,X)", "LDY 1", "LDA 1", "LDX 1", "LAX 1",
+	"TAY", "LDA #1", "TAX", "ANX #1", "LDY 2", "LDA 2", "LDX 2", "LAX 2",
+
+	"BCS 0", "LDA (1),Y", "CIM", "LAX (1),Y", "LDY 1,X", "LDA 1,X", "LDX 1,Y", "LAX 1,X",
+	"CLV", "LDA 2,Y", "TSX", "LAS 2,Y", "LDY 2,X", "LDA 2,X", "LDX 2,Y", "LAX 2,Y",
+
+
+	"CPY #1", "CMP (1,X)", "NOP #1", "DCM (1,X)", "CPY 1", "CMP 1", "DEC 1", "DCM 1",
+	"INY", "CMP #1", "DEX", "SBX #1", "CPY 2", "CMP 2", "DEC 2", "DCM 2",
+
+	"BNE 0", "CMP (1),Y", "ESCRTS #1", "DCM (1),Y", "NOP 1,X", "CMP 1,X", "DEC 1,X", "DCM 1,X",
+	"CLD", "CMP 2,Y", "NOP !", "DCM 2,Y", "NOP 2,X", "CMP 2,X", "DEC 2,X", "DCM 2,X",
+
+
+	"CPX #1", "SBC (1,X)", "NOP #1", "INS (1,X)", "CPX 1", "SBC 1", "INC 1", "INS 1",
+	"INX", "SBC #1", "NOP", "SBC #1 !", "CPX 2", "SBC 2", "INC 2", "INS 2",
+
+	"BEQ 0", "SBC (1),Y", "ESCAPE #1", "INS (1),Y", "NOP 1,X", "SBC 1,X", "INC 1,X", "INS 1,X",
+	"SED", "SBC 2,Y", "NOP !", "INS 2,Y", "NOP 2,X", "SBC 2,X", "INC 2,X", "INS 2,X"
 };
 
 /* Opcode type:
@@ -514,11 +505,9 @@ static const char instr6502[256][11] = {
      B = STACK 2 (RTS)
      C = STACK 3 (RTI)
      D = INDIRECT (JMP () )
-     E = ESC RTS
-     F = ESC
-*/
-
-static const UBYTE optype6502[256] = {
+     E = ESCRTS
+     F = ESCAPE */
+const UBYTE optype6502[256] = {
 	0x01, 0x56, 0x01, 0x5e, 0x22, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x17, 0x1f, 0x1f,
 	0x92, 0x66, 0x01, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f,
 	0x13, 0x56, 0x01, 0x5e, 0x26, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x17, 0x17, 0x1f, 0x1f,
@@ -538,7 +527,7 @@ static const UBYTE optype6502[256] = {
 };
 
 
-static void safe_gets(char *buffer, int size)
+static void safe_gets(char *buffer, size_t size)
 {
 #ifdef HAVE_FFLUSH
 	fflush(stdout);
@@ -550,47 +539,37 @@ static void safe_gets(char *buffer, int size)
 static int pager(void)
 {
 	char buf[100];
-	printf("Press return to continue ('q' to quit): ");
+	printf("Press Return to continue ('q' to quit): ");
 	safe_gets(buf, sizeof(buf));
 	return buf[0] == 'q' || buf[0] == 'Q';
 }
 
-static char *get_token(char *string)
+static char *token_ptr;
+
+static char *get_token(void)
 {
-	static char *s;
-	char *t;
-
-	if (string)
-		s = string;				/* New String */
-
-	while (*s == ' ')
-		s++;					/* Skip Leading Spaces */
-
-	if (*s) {
-		t = s;					/* Start of String */
-		while (*s != ' ' && *s) {	/* Locate End of String */
-			s++;
+	char *p = token_ptr;
+	while (*p == ' ')
+		p++;
+	if (*p == '\0')
+		return NULL;
+	token_ptr = p;
+	do {
+		token_ptr++;
+		if (*token_ptr == ' ') {
+			*token_ptr++ = '\0';
+			break;
 		}
-
-		if (*s == ' ') {		/* Space Terminated ? */
-			*s = '\0';			/* C String Terminator */
-			s++;				/* Point to Next Char */
-		}
-	}
-	else {
-		t = NULL;
-	}
-
-	return t;					/* Pointer to String */
+	} while (*token_ptr != '\0');
+	return p;
 }
 
 #if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
-static int get_dec(char *string, int *decval)
+static int get_dec(int *decval)
 {
 	const char *t;
-
-	t = get_token(string);
-	if (t) {
+	t = get_token();
+	if (t != NULL) {
 		int x = Util_sscandec(t);
 		if (x < 0)
 			return FALSE;
@@ -601,32 +580,33 @@ static int get_dec(char *string, int *decval)
 }
 #endif
 
+static int parse_hex(const char *s, UWORD *hexval)
+{
+	int x = Util_sscanhex(s);
+#ifdef MONITOR_HINTS
+	int y = find_label_value(s);
+	if (y >= 0) {
+		if (x < 0 || x > 0xffff || x == y) {
+			*hexval = (UWORD) y;
+			return TRUE;
+		}
+		/* s can be a hex number or a label name */
+		printf("%s is ambiguous. Use 0%X or %X instead.\n", s, x, y);
+		return FALSE;
+	}
+#endif
+	if (x < 0 || x > 0xffff)
+		return FALSE;
+	*hexval = (UWORD) x;
+	return TRUE;
+}
+
 static int get_hex(UWORD *hexval)
 {
 	const char *t;
-
-	t = get_token(NULL);
-	if (t) {
-		int x = Util_sscanhex(t);
-#ifdef MONITOR_HINTS
-		int y = find_label_value(t);
-		if (y >= 0) {
-			if (x < 0) {
-				*hexval = (UWORD) y;
-				return TRUE;
-			}
-			if (x != y) {
-				/* t can be a hex number or a label name */
-				printf("%s is ambiguous. Use 0%X or %X instead.\n", t, x, y);
-				return FALSE;
-			}
-		}
-#endif
-		if (x < 0)
-			return FALSE;
-		*hexval = (UWORD) x;
-		return TRUE;
-	}
+	t = get_token();
+	if (t != NULL)
+		return parse_hex(t, hexval);
 	return FALSE;
 }
 
@@ -640,34 +620,606 @@ static int get_hex3(UWORD *hexval1, UWORD *hexval2, UWORD *hexval3)
 	return get_hex(hexval1) && get_hex(hexval2) && get_hex(hexval3);
 }
 
-static void show_regs(void)
+static void get_uword(UWORD *val)
 {
-	int i;
-	printf("PC=%04X  A=%02X  S=%02X  X=%02X  Y=%02X  P=",
-		regPC, regA, regS, regX, regY);
-	for (i = 0; i < 8; i++)
-		putchar(regP & (0x80 >> i) ? "NV*BDIZC"[i] : '-');
-	putchar('\n');
+	if (!get_hex(val))
+		printf("Invalid argument!\n");
 }
 
-int ypos_break_addr = 0xffff;
+static void get_ubyte(UBYTE *val)
+{
+	UWORD uword;
+	if (!get_hex(&uword) || uword > 0xff)
+		printf("Invalid argument!\n");
+	else
+		*val = (UBYTE) uword;
+}
+
+static int get_bool(void)
+{
+	const char *t;
+	t = get_token();
+	if (t != NULL) {
+		int result = Util_sscanbool(t);
+		if (result >= 0)
+			return result;
+	}
+	printf("Invalid argument (should be 0 or 1)!\n");
+	return -1;
+}
+
+static int get_attrib_range(UWORD *addr1, UWORD *addr2)
+{
+	if (get_hex2(addr1, addr2) && *addr1 <= *addr2) {
+#ifdef PAGED_ATTRIB
+		if ((*addr1 & 0xff) != 0 || (*addr2 & 0xff) != 0xff) {
+			printf("This is PAGED_ATTRIB version of Atari800.\n"
+			       "You can only change attributes of full memory pages.\n");
+			return FALSE;
+		}
+#endif
+		return TRUE;
+	}
+	printf("Missing or bad argument!\n");
+	return FALSE;
+}
+
+static UWORD show_instruction(FILE *fp, UWORD pc)
+{
+	UBYTE insn;
+	const char *mnemonic;
+	const char *p;
+	int value = 0;
+	int nchars = 0;
+
+	insn = dGetByte(pc++);
+	mnemonic = instr6502[insn];
+	for (p = mnemonic + 3; *p != '\0'; p++) {
+		if (*p == '1') {
+			value = dGetByte(pc++);
+			nchars = fprintf(fp, "%04X: %02X %02X     " /*"%Xcyc  "*/ "%.*s$%02X%s",
+			                 pc - 2, insn, value, /*cycles[insn],*/ p - mnemonic, mnemonic, value, p + 1);
+			break;
+		}
+		if (*p == '2') {
+			value = dGetWord(pc);
+			nchars = fprintf(fp, "%04X: %02X %02X %02X  " /*"%Xcyc  "*/ "%.*s$%04X%s",
+			                 pc - 1, insn, value & 0xff, value >> 8, /*cycles[insn],*/ p - mnemonic, mnemonic, value, p + 1);
+			pc += 2;
+			break;
+		}
+		if (*p == '0') {
+			UBYTE op = dGetByte(pc++);
+			value = (UWORD) (pc + (SBYTE) op);
+			nchars = fprintf(fp, "%04X: %02X %02X     " /*"3cyc  "*/ "%.4s$%04X", pc - 2, insn, op, mnemonic, value);
+			break;
+		}
+	}
+	if (*p == '\0') {
+		fprintf(fp, "%04X: %02X        " /*"%Xcyc  "*/ "%s\n", pc - 1, insn, /*cycles[insn],*/ mnemonic);
+		return pc;
+	}
+#ifdef MONITOR_HINTS
+	if (p[-1] != '#') {
+		/* different names when reading/writing memory */
+		const char *label = find_label_name(value, (optype6502[insn] & 0x08) != 0);
+		if (label != NULL) {
+			fprintf(fp, "%*s;%s\n", 28 - nchars, "", label);
+			return pc;
+		}
+	}
+#endif
+	fputc('\n', fp);
+	return pc;
+}
+
+void show_state(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
+                char n, char v, char z, char c)
+{
+	fprintf(fp, "%3d %3d A=%02X X=%02X Y=%02X S=%02X P=%c%c*-%c%c%c%c PC=",
+		ypos, xpos, a, x, y, s,
+		n, v, (regP & D_FLAG) ? 'D' : '-', (regP & I_FLAG) ? 'I' : '-', z, c);
+	show_instruction(fp, pc);
+}
+
+static void monitor_show_state(void)
+{
+	show_state(stdout, regPC, regA, regX, regY, regS,
+		(regP & N_FLAG) ? 'N' : '-', (regP & V_FLAG) ? 'V' : '-',
+		(regP & Z_FLAG) ? 'Z' : '-', (regP & C_FLAG) ? 'C' : '-');
+}
+
+static UWORD disassemble(UWORD addr)
+{
+	int count = 24;
+	do
+		addr = show_instruction(stdout, addr);
+	while (--count > 0);
+	return addr;
+}
+
+#ifdef MONITOR_ASSEMBLER
+static UWORD assembler(UWORD addr)
+{
+	printf("Simple assembler (enter empty line to exit)\n");
+	for (;;) {
+		char s[128];  /* input string */
+		char c[128];  /* converted input */
+		char *sp;     /* input pointer */
+		char *cp;     /* converted input pointer */
+		char *vp;     /* value pointer (the value is stored in s) */
+		char *tp;     /* type pointer (points at type character '0', '1' or '2' in converted input) */
+		int i;
+		int isa;      /* the operand is "A" */
+		UWORD value = 0;
+
+		printf("%04X: ", (int) addr);
+		safe_gets(s, sizeof(s));
+		if (s[0] == '\0')
+			return addr;
+
+		Util_strupper(s);
+
+		sp = s;
+		cp = c;
+		/* copy first three characters */
+		for (i = 0; i < 3 && *sp != '\0'; i++)
+			*cp++ = *sp++;
+		/* insert space before operands */
+		*cp++ = ' ';
+
+		tp = NULL;
+		isa = FALSE;
+
+		/* convert input to format of instr6502[] table */
+		while (*sp != '\0') {
+			switch (*sp) {
+			case ' ':
+			case '\t':
+			case '$':
+			case '@':
+				sp++;
+				break;
+			case '#':
+			case '(':
+			case ')':
+			case ',':
+				isa = FALSE;
+				*cp++ = *sp++;
+				break;
+			default:
+				if (tp != NULL) {
+					if (*sp == 'X' || *sp == 'Y') {
+						*cp++ = *sp++;
+						break;
+					}
+					goto invalid_instr;
+				}
+				vp = s;
+				do
+					*vp++ = *sp++;
+				while (strchr(" \t$@#(),", *sp) == NULL && *sp != '\0');
+				/* If *sp=='\0', strchr() should return non-NULL,
+				   but we do an extra check to be on safe side. */
+				*vp++ = '\0';
+				tp = cp++;
+				*tp = '0';
+				isa = (s[0] == 'A' && s[1] == '\0');
+				break;
+			}
+		}
+		if (cp[-1] == ' ')
+			cp--;    /* no arguments (e.g. NOP or ASL @) */
+		*cp = '\0';
+
+		/* if there's an operand, get its value */
+		if (tp != NULL && !parse_hex(s, &value)) {
+			printf("Invalid operand!\n");
+			continue;
+		}
+
+		for (;;) {
+			/* search table for instruction */
+			for (i = 0; i < 256; i++) {
+				if (strcmp(instr6502[i], c) == 0) {
+					if (tp == NULL) {
+						dPutByte(addr, (UBYTE) i);
+						addr++;
+					}
+					else if (*tp == '0') {
+						value -= (addr + 2);
+						if ((SWORD) value < -128 || (SWORD) value > 127)
+							printf("Branch out of range!\n");
+						else {
+							dPutByte(addr, (UBYTE) i);
+							addr++;
+							dPutByte(addr, (UBYTE) value);
+							addr++;
+						}
+					}
+					else if (*tp == '1') {
+						c[3] = '\0';
+						if (isa && (strcmp(c, "ASL") == 0 || strcmp(c, "LSR") == 0 ||
+						            strcmp(c, "ROL") == 0 || strcmp(c, "ROR") == 0)) {
+							printf("\"%s A\" is ambiguous.\n"
+							       "Use \"%s\" for accumulator mode or \"%s 0A\" for zeropage mode.\n", c, c, c);
+						}
+						else {
+							dPutByte(addr, (UBYTE) i);
+							addr++;
+							dPutByte(addr, (UBYTE) value);
+							addr++;
+						}
+					}
+					else { /* *tp == '2' */
+						dPutByte(addr, (UBYTE) i);
+						addr++;
+						dPutWord(addr, value);
+						addr += 2;
+					}
+					goto next_instr;
+				}
+			}
+			/* not found */
+			if (tp == NULL || *tp == '2')
+				break;
+			if (++*tp == '1' && value > 0xff)
+				*tp = '2';
+		}
+	invalid_instr:
+		printf("Invalid instruction!\n");
+	next_instr:
+		;
+	}
+}
+#endif /* MONITOR_ASSEMBLER */
 
 #ifdef MONITOR_BREAK
 UWORD break_addr = 0xd000;
-UBYTE break_step = 0;
-UBYTE break_cim = 0;
-UBYTE break_here = 0;
-UBYTE show_inst = 0;
-UBYTE break_ret = 0;
+UBYTE break_step = FALSE;
+static UBYTE break_over = FALSE;
+UBYTE break_ret = FALSE;
+UBYTE break_brk = FALSE;
 int ret_nesting = 0;
-int brkhere = 0;
 #endif
+
+#ifdef MONITOR_BREAKPOINTS
+
+breakpoint_cond breakpoint_table[BREAKPOINT_TABLE_MAX];
+int breakpoint_table_size = 0;
+int breakpoints_enabled = TRUE;
+
+static void breakpoint_print_flag(int flagmask)
+{
+	switch (flagmask) {
+	case N_FLAG:
+		putchar('N');
+		break;
+	case V_FLAG:
+		putchar('V');
+		break;
+	case D_FLAG:
+		putchar('D');
+		break;
+	case I_FLAG:
+		putchar('I');
+		break;
+	case Z_FLAG:
+		putchar('Z');
+		break;
+	case C_FLAG:
+		putchar('C');
+		break;
+	}
+}
+
+static int breakpoint_scan_flag(char c)
+{
+	switch (c) {
+	case 'N':
+		return N_FLAG;
+	case 'V':
+		return V_FLAG;
+	case 'D':
+		return D_FLAG;
+	case 'I':
+		return I_FLAG;
+	case 'Z':
+		return Z_FLAG;
+	case 'C':
+		return C_FLAG;
+	default:
+		return -1;
+	}
+}
+
+static void breakpoints_set(int enabled)
+{
+	int i;
+	if (get_dec(&i)) {
+		do {
+			if (/*i >= 0 &&*/ i < breakpoint_table_size)
+				breakpoint_table[i].enabled = (UBYTE) enabled;
+		} while (get_dec(&i));
+	}
+	else
+		breakpoints_enabled = enabled;
+}
+
+static void monitor_breakpoints(void)
+{
+	char *t = get_token();
+	if (t == NULL) {
+		int i;
+		if (breakpoint_table_size == 0) {
+			printf("No breakpoints defined\n");
+			return;
+		}
+		printf("Breakpoints are %sabled\n", breakpoints_enabled ? "en" : "dis");
+		for (i = 0; i < breakpoint_table_size; i++) {
+			printf("%2d: ", i);
+			if (!breakpoint_table[i].enabled)
+				printf("OFF ");
+			switch (breakpoint_table[i].condition) {
+			case BREAKPOINT_OR:
+				printf("OR");
+				break;
+			case BREAKPOINT_FLAG_CLEAR:
+				printf("CLR");
+				breakpoint_print_flag(breakpoint_table[i].value);
+				break;
+			case BREAKPOINT_FLAG_SET:
+				printf("SET");
+				breakpoint_print_flag(breakpoint_table[i].value);
+				break;
+			default:
+				{
+					const char *op;
+					switch (breakpoint_table[i].condition & 7) {
+					case BREAKPOINT_LESS:
+						op = "<";
+						break;
+					case BREAKPOINT_EQUAL:
+						op = "=";
+						break;
+					case BREAKPOINT_LESS | BREAKPOINT_EQUAL:
+						op = "<=";
+						break;
+					case BREAKPOINT_GREATER:
+						op = ">";
+						break;
+					case BREAKPOINT_GREATER | BREAKPOINT_EQUAL:
+						op = ">=";
+						break;
+					case BREAKPOINT_LESS | BREAKPOINT_GREATER:
+						op = "!=";
+						break;
+					default:
+						op = "?";
+						break;
+					}
+					switch (breakpoint_table[i].condition >> 3) {
+					case BREAKPOINT_PC >> 3:
+						printf("PC%s%04X", op, breakpoint_table[i].value);
+						break;
+					case BREAKPOINT_A >> 3:
+						printf("A%s%02X", op, breakpoint_table[i].value);
+						break;
+					case BREAKPOINT_X >> 3:
+						printf("X%s%02X", op, breakpoint_table[i].value);
+						break;
+					case BREAKPOINT_Y >> 3:
+						printf("A%s%02X", op, breakpoint_table[i].value);
+						break;
+					case BREAKPOINT_S >> 3:
+						printf("S%s%02X", op, breakpoint_table[i].value);
+						break;
+					case BREAKPOINT_READ >> 3:
+						printf("READ%s%04X", op, breakpoint_table[i].value);
+						break;
+					case BREAKPOINT_WRITE >> 3:
+						printf("WRITE%s%04X", op, breakpoint_table[i].value);
+						break;
+					case BREAKPOINT_ACCESS >> 3:
+						printf("ACCESS%s%04X", op, breakpoint_table[i].value);
+						break;
+					default:
+						printf("???");
+						break;
+					}
+				}
+			}
+			putchar('\n');
+		}
+		return;
+	}
+	if (strcmp(t, "?") == 0) {
+		printf(
+			"B                - print breakpoint table\n"
+			"B ?              - this help\n"
+			"B C              - clear breakpoint table\n"
+			"B D pos          - delete one entry\n"
+			"B ON             - enable breakpoints\n"
+			"B OFF            - disable breakpoints\n"
+			"B ON pos1...     - enable specified breakpoints\n"
+			"B OFF pos1...    - disable specified breakpoints\n"
+			"B [pos] cond1... - insert breakpoints (at the specified position)\n"
+			"    cond is: TYPE OPERATOR VALUE (without spaces)\n"
+			"         or: SETFLAG, CLRFLAG where FLAG is: N, V, D, I, Z, C\n");
+		printf(
+			"    TYPE is: PC, A, X, Y, S, READ, WRITE, ACCESS (read or write)\n"
+			"OPERATOR is: <, <=, =, ==, >, >=, !=, <>\n"
+			"   VALUE is a hex number\n"
+			"Breakpoint conditions are connected by AND operator\n"
+			"unless you explicitly use OR.\n"
+			"Examples:\n"
+			"B PC>=203f A<3a OR PC=3a7f X<>0 - creates 5 new entries\n"
+			"B 2 Y<5                         - adds a new entry at position 2\n"
+			"B D 1                           - deletes the entry at position 1\n"
+			"B OR SETD                       - appends 2 new entries\n");
+		return;
+	}
+	Util_strupper(t);
+	if (strcmp(t, "C") == 0) {
+		breakpoint_table_size = 0;
+		printf("Breakpoint table cleared\n");
+	}
+	else if (strcmp(t, "D") == 0) {
+		int i;
+		if (get_dec(&i) && /*i >= 0 &&*/ i < breakpoint_table_size) {
+			breakpoint_table_size--;
+			while (i < breakpoint_table_size) {
+				breakpoint_table[i] = breakpoint_table[i + 1];
+				i++;
+			}
+			printf("Entry deleted\n");
+		}
+		else
+			printf("Missing or bad argument\n");
+	}
+	else if (strcmp(t, "ON") == 0) {
+		breakpoints_set(TRUE);
+	}
+	else if (strcmp(t, "OFF") == 0) {
+		breakpoints_set(FALSE);
+	}
+	else {
+		int i;
+		if (t[0] >= '0' && t[0] <= '9') {
+			i = Util_sscandec(t);
+			if (i < 0 || i > breakpoint_table_size) {
+				printf("Bad argument\n");
+				return;
+			}
+			t = get_token();
+			if (t == NULL) {
+				printf("Missing arguments\n");
+				return;
+			}
+		}
+		else
+			i = breakpoint_table_size;
+		while (breakpoint_table_size < BREAKPOINT_TABLE_MAX) {
+			UBYTE condition;
+			int value;
+			int j;
+			if (strcmp(t, "OR") == 0) {
+				condition = BREAKPOINT_OR;
+				value = 0;
+			}
+			else if (strncmp(t, "CLR", 3) == 0) {
+				condition = BREAKPOINT_FLAG_CLEAR;
+				value = breakpoint_scan_flag(t[3]);
+			}
+			else if (strncmp(t, "SET", 3) == 0) {
+				condition = BREAKPOINT_FLAG_SET;
+				value = breakpoint_scan_flag(t[3]);
+			}
+			else {
+				condition = 0;
+				switch (t[0]) {
+				case 'A':
+					if (strncmp(t, "ACCESS", 6) == 0) {
+						condition = BREAKPOINT_ACCESS;
+						t += 6;
+					}
+					else {
+						condition = BREAKPOINT_A;
+						t++;
+					}
+					break;
+				case 'X':
+					condition = BREAKPOINT_X;
+					t++;
+					break;
+				case 'Y':
+					condition = BREAKPOINT_Y;
+					t++;
+					break;
+				case 'P':
+					if (t[1] == 'C') {
+						condition = BREAKPOINT_PC;
+						t += 2;
+					}
+					break;
+				case 'R':
+					if (strncmp(t, "READ", 4) == 0) {
+						condition = BREAKPOINT_READ;
+						t += 4;
+					}
+					break;
+				case 'S':
+					condition = BREAKPOINT_S;
+					t++;
+					break;
+				case 'W':
+					if (strncmp(t, "WRITE", 5) == 0) {
+						condition = BREAKPOINT_WRITE;
+						t += 5;
+					}
+					break;
+				default:
+					break;
+				}
+				if (t[0] == '!' && t[1] == '=') {
+					condition += BREAKPOINT_LESS | BREAKPOINT_GREATER;
+					t += 2;
+				}
+				else {
+					if (*t == '<') {
+						condition += BREAKPOINT_LESS;
+						t++;
+					}
+					if (*t == '>') {
+						condition += BREAKPOINT_GREATER;
+						t++;
+					}
+					if (*t == '=') {
+						condition += BREAKPOINT_EQUAL;
+						t++;
+						if (*t == '=')
+							t++;
+					}
+				}
+				if ((condition >> 3) == 0 || (condition & 7) == 0) {
+					printf("Bad argument\n");
+					return;
+				}
+				{
+					UWORD tmp;
+					if (parse_hex(t, &tmp))
+						value = tmp;
+					else
+						value = -1;
+				}
+			}
+			if (value < 0 || value > 0xffff) {
+				printf("Bad argument\n");
+				return;
+			}
+			for (j = breakpoint_table_size; j > i; j--)
+				breakpoint_table[j] = breakpoint_table[j - 1];
+			breakpoint_table[i].enabled = TRUE;
+			breakpoint_table[i].condition = condition;
+			breakpoint_table[i].value = (UWORD) value;
+			i++;
+			breakpoint_table_size++;
+			t = get_token();
+			if (t == NULL) {
+				printf("Breakpoint(s) added\n");
+				return;
+			}
+			Util_strupper(t);
+		}
+		printf("Breakpoint table full\n");
+	}
+}
+
+#endif /* MONITOR_BREAKPOINTS */
 
 int monitor(void)
 {
 	UWORD addr;
-	char s[128];
-	static char old_s[128] = ""; /* GOLDA CHANGED */
 
 #ifdef __PLUS
 	if (!Misc_AllocMonitorConsole(&mon_output, &mon_input))
@@ -678,139 +1230,43 @@ int monitor(void)
 
 	CPU_GetStatus();
 
-#ifdef MONITOR_BREAK
-	if (show_inst && !break_step) {
-		/* break was caused by "O" command */
-		break_addr = 0xd000;
-	}
-	if (break_here) {
-		printf("(Break due to BRK opcode)\n");
-		show_inst = 1;
-	}
-	if (show_inst) { /* this part will disassemble actual instruction & show some hints */
-		UWORD value = 0;
-		UBYTE optype;
-
-		if (break_ret)
-			printf("(return)\n");
-
-		show_inst = 0;
-		show_instruction(regPC, 20);
-		optype = optype6502[dGetByte(regPC)] >> 4;
-		switch (optype) {
-		case 0x1: /* abcd */
-			value = dGetWord(regPC + 1);
-			value = GetByte(value);
-			break;
-		case 0x2: /* #ab */
-			value = dGetByte(regPC + 1);
-			break;
-		case 0x3: /* abcd,X */
-			value = dGetWord(regPC + 1) + regX;
-			value = GetByte(value);
-			break;
-		case 0x4: /* abcd,Y */
-			value = dGetWord(regPC + 1) + regY;
-			value = GetByte(value);
-			break;
-		case 0x5: /* (ab,X) */
-			value = dGetWord((UBYTE) (dGetByte(regPC + 1) + regX));
-			value = GetByte(value);
-			break;
-		case 0x6: /* (ab),Y */
-			value = dGetWord(dGetByte(regPC + 1)) + regY;
-			value = dGetByte(value);
-			break;
-		case 0x7: /* ab,X */
-			value = dGetByte((UBYTE) (dGetByte(regPC + 1) + regX));
-			break;
-		case 0x8: /* ab,Y */
-			value = dGetByte((UBYTE) (dGetByte(regPC + 1) + regY));
-			break;
-		case 0x9: /* branch */
-			switch (dGetByte(regPC)) {
-			case 0x10:  /* BPL */
-				if (!(regP & N_FLAG))
-					value = 1;
-				break;
-			case 0x30:  /* BMI */
-				if (regP & N_FLAG)
-					value = 1;
-				break;
-			case 0x50:  /* BVC */
-				if (!(regP & V_FLAG))
-					value = 1;
-				break;
-			case 0x70:  /* BVS */
-				if (regP & V_FLAG)
-					value = 1;
-				break;
-			case 0x90:  /* BCC */
-				if (!(regP & C_FLAG))
-					value = 1;
-				break;
-			case 0xb0:  /* BCS */
-				if (regP & C_FLAG)
-					value = 1;
-				break;
-			case 0xd0:  /* BNE */
-				if (!(regP & Z_FLAG))
-					value = 1;
-				break;
-			case 0xf0:  /* BEQ */
-				if (regP & Z_FLAG)
-					value = 1;
-				break;
-			}
-			printf(value != 0 ? "(Y) " : "(N) ");
-			break;
-		case 0xb: /* RTS */
-			value = dGetWord(0x100 + (UBYTE) (regS + 1)) + 1;
-			break;
-		case 0xc: /* RTI */
-			value = dGetWord(0x100 + (UBYTE) (regS + 2));
-			break;
-		case 0xd: /* (abcd) */
-			value = dGetWord(regPC + 1);
-			value = dGetWord(value);
-			break;
-		case 0xe:
-			printf("(ESC %02X) ", dGetByte(regPC + 1));
-			value = dGetWord(0x100 + (UBYTE) (regS + 1)) + 1;
-			break;
-		case 0xf:
-			printf("(ESC %02X) ", dGetByte(regPC + 1));
-			break;
-		}
-		if (optype != 0x0 && optype != 0x9 && optype != 0xa && optype != 0xf
-		 && dGetByte(regPC) != 0x4c && dGetByte(regPC) != 0x20)
-			printf("(%04X)  ", value);
-		show_regs();
-	}
-	else if (break_addr == regPC)
-		printf("(breakpoint at %04X)\n", (unsigned int) break_addr);
-	else if (break_cim)
+	if (cim_encountered) {
 		printf("(CIM encountered)\n");
-	break_cim = 0;
-	break_here = 0;
-	break_step = 0;
-	break_ret = 0;
-#endif
+		cim_encountered = FALSE;
+	}
 
-	while (TRUE) {
+#ifdef MONITOR_BREAK
+	if (break_over) {
+		/* "O" command was active */
+		break_addr = 0xd000;
+		break_over = FALSE;
+	}
+	else if (regPC == break_addr)
+		printf("(breakpoint at %04X)\n", (unsigned int) break_addr);
+	else if (ypos == break_ypos)
+		printf("(breakpoint at scanline %d)\n", break_ypos);
+	else if (break_ret && ret_nesting <= 0)
+		printf("(returned)\n");
+	break_step = FALSE;
+	break_ret = FALSE;
+#endif /* MONITOR_BREAK */
+
+	monitor_show_state();
+
+	for (;;) {
+		char s[128];
+		static char old_s[128] = "";
 		char *t;
 
 		printf("> ");
 		safe_gets(s, sizeof(s));
-		if (s[0])
-			memcpy(old_s, s, sizeof(s));
+		if (s[0] != '\0')
+			strcpy(old_s, s);
 		else {
-			int i;
-
 			/* if no command is given, restart the last one, but remove all
-			 * arguments, so after a 'm 600' we will see 'm 700' ...
-			 */
-			memcpy(s, old_s, sizeof(s));
+			 * arguments, so after a 'm 600' we will see 'm 700' ... */
+			int i;
+			strcpy(s, old_s);
 			for (i = 0; i < (int) sizeof(s); i++)
 				if (s[i] == ' ') {
 					s[i] = '\0';
@@ -823,7 +1279,8 @@ int monitor(void)
 			continue;
 		}
 #endif
-		t = get_token(s);
+		token_ptr = s;
+		t = get_token();
 		if (t == NULL)
 			continue;
 
@@ -838,263 +1295,313 @@ int monitor(void)
 			return TRUE;
 		}
 #ifdef MONITOR_BREAK
-		else if (strcmp(t, "BRKHERE") == 0) {
-			char *brkarg;
-			brkarg = get_token(NULL);
-			if (brkarg) {
-				if (strcmp(brkarg, "on") == 0) {
-					brkhere = 1;
-				}
-				else if (strcmp(brkarg, "off") == 0) {
-					brkhere = 0;
-				}
-				else {
-					printf("invalid argument: usage: BRKHERE on|off\n");
-				}
-			}
-			else {
-				printf("BRKHERE is %s\n", brkhere ? "on" : "off");
-			}
+		else if (strcmp(t, "BBRK") == 0) {
+			t = get_token();
+			if (t == NULL)
+				printf("Break on BRK is %sabled\n", break_brk ? "en" : "dis");
+			else if (Util_stricmp(t, "ON") == 0)
+				break_brk = TRUE;
+			else if (Util_stricmp(t, "OFF") == 0)
+				break_brk = FALSE;
+			else
+				printf("Invalid argument. Usage: BBRK ON or OFF\n");
 		}
-		else if (strcmp(t, "BREAK") == 0) {
+		else if (strcmp(t, "BPC") == 0) {
 			get_hex(&break_addr);
+			if (break_addr >= 0xd000 && break_addr <= 0xd7ff)
+				printf("PC breakpoint disabled\n");
+			else
+				printf("Breakpoint at PC=%04X\n", break_addr);
 		}
-		else if (strcmp(t, "HISTORY") == 0) {
+		else if (strcmp(t, "HISTORY") == 0 || strcmp(t, "H") == 0) {
 			int i;
 			for (i = 0; i < REMEMBER_PC_STEPS; i++) {
-				UWORD addr1, addr;
 				int j;
-				addr = remember_PC[(remember_PC_curpos + i) % REMEMBER_PC_STEPS];
 				j = remember_xpos[(remember_PC_curpos + i) % REMEMBER_PC_STEPS];
-				printf("%3d  %3d  %04X ", j >> 8, j & 0xff, addr);
-				addr1 = show_instruction(addr, 20);
-				printf("; %Xcyc ;", cycles[dGetByte(addr)]);
-				for (j = 0; j < addr1; j++)
-					printf(" %02X", dGetByte((UWORD) (addr + j)));
-				putchar('\n');
+				printf("%3d %3d ", j >> 8, j & 0xff);
+				show_instruction(stdout, remember_PC[(remember_PC_curpos + i) % REMEMBER_PC_STEPS]);
 			}
 		}
 		else if (strcmp(t, "JUMPS") == 0) {
 			int i;
-			for (i = 0; i < REMEMBER_JMP_STEPS; i++) {
-				UWORD addr = remember_JMP[(remember_jmp_curpos + i) % REMEMBER_JMP_STEPS];
-				printf("%04X\t", addr);
-				show_instruction(addr, 20);
-				putchar('\n');
-			}
+			for (i = 0; i < REMEMBER_JMP_STEPS; i++)
+				show_instruction(stdout, remember_JMP[(remember_jmp_curpos + i) % REMEMBER_JMP_STEPS]);
 		}
 #endif
 #if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
-		else if (strcmp(t, "YBREAK") == 0) {
-			if (!get_dec(NULL, &ypos_break_addr))
-				printf("YBREAK is %04d\n", ypos_break_addr);
+		else if (strcmp(t, "BLINE") == 0) {
+			get_dec(&break_ypos);
+			if (break_ypos >= 1008 && break_ypos <= 1247)
+				printf("Blinking scanline %d\n", break_ypos - 1000);
+#ifdef MONITOR_BREAK
+			else if (break_ypos >= 0 && break_ypos <= 311)
+				printf("Breakpoint set at scanline %d\n", break_ypos);
+#endif
+			else
+				printf("BLINE disabled\n");
 		}
 #endif
 		else if (strcmp(t, "DLIST") == 0) {
+#if 0
+/* one instruction per line */
 			UWORD tdlist = dlist;
-			int done = FALSE;
 			int nlines = 0;
 			get_hex(&tdlist);
-			while (!done) {
+			for (;;) {
 				UBYTE IR;
 
 				printf("%04X: ", tdlist);
-
 				IR = ANTIC_GetDLByte(&tdlist);
 
 				if (IR & 0x80)
 					printf("DLI ");
 
-				switch (IR & 0x0f) {
-				case 0x00:
-					printf("%d BLANK", ((IR >> 4) & 0x07) + 1);
-					break;
-				case 0x01:
-					addr = ANTIC_GetDLWord(&tdlist);
+				if ((IR & 0x0f) == 0)
+					printf("%c BLANK\n", ((IR >> 4) & 0x07) + '1');
+				else if ((IR & 0x0f) == 1) {
+					tdlist = ANTIC_GetDLWord(&tdlist);
 					if (IR & 0x40) {
-						printf("JVB %04X", addr);
-						done = TRUE;
+						printf("JVB %04X\n", tdlist);
+						break;
 					}
-					else {
-						printf("JMP %04X", addr);
-						tdlist = addr;
-					}
-					break;
-				default:
-					if (IR & 0x40) {
-						addr = ANTIC_GetDLWord(&tdlist);
-						printf("LMS %04X ", addr);
-					}
+					printf("JMP %04X\n", tdlist);
+				}
+				else {
+					if (IR & 0x40)
+						printf("LMS %04X ", ANTIC_GetDLWord(&tdlist));
 					if (IR & 0x20)
 						printf("VSCROL ");
-
 					if (IR & 0x10)
 						printf("HSCROL ");
-
-					printf("MODE %X", IR & 0x0f);
+					printf("MODE %X\n", IR & 0x0f);
 				}
 
-				putchar('\n');
-				nlines++;
-
-				if (!done && nlines == 15) {
-					done = pager();
+				if (++nlines == 24) {
+					if (pager())
+						break;
 					nlines = 0;
 				}
 			}
-		}
-		else if (strcmp(t, "SETPC") == 0) {
-			get_hex(&addr);
+#else
+/* group identical instructions */
+			UWORD tdlist = dlist;
+			UWORD new_tdlist;
+			UBYTE IR;
+			int scrnaddr = -1;
+			int nlines = 0;
+			get_hex(&tdlist);
+			new_tdlist = tdlist;
+			IR = ANTIC_GetDLByte(&new_tdlist);
+			for (;;) {
+				printf("%04X: ", tdlist);
+				if ((IR & 0x0f) == 0) {
+					UBYTE new_IR;
+					tdlist = new_tdlist;
+					new_IR = ANTIC_GetDLByte(&new_tdlist);
+					if (new_IR == IR) {
+						int count = 1;
+						do {
+							count++;
+							tdlist = new_tdlist;
+							new_IR = ANTIC_GetDLByte(&new_tdlist);
+						} while (new_IR == IR && count < 240);
+						printf("%dx ", count);
+					}
+					if (IR & 0x80)
+						printf("DLI ");
+					printf("%c BLANK\n", ((IR >> 4) & 0x07) + '1');
+					IR = new_IR;
+				}
+				else if ((IR & 0x0f) == 1) {
+					tdlist = ANTIC_GetDLWord(&new_tdlist);
+					if (IR & 0x80)
+						printf("DLI ");
+					if (IR & 0x40) {
+						printf("JVB %04X\n", tdlist);
+						break;
+					}
+					printf("JMP %04X\n", tdlist);
+					new_tdlist = tdlist;
+					IR = ANTIC_GetDLByte(&new_tdlist);
+				}
+				else {
+					UBYTE new_IR;
+					int new_scrnaddr;
+					int count;
+					if ((IR & 0x40) && scrnaddr < 0)
+						scrnaddr = ANTIC_GetDLWord(&new_tdlist);
+					for (count = 1; ; count++) {
+						tdlist = new_tdlist;
+						new_IR = ANTIC_GetDLByte(&new_tdlist);
+						if (new_IR != IR || count >= 240) {
+							new_scrnaddr = -1;
+							break;
+						}
+						if (IR & 0x40) {
+							new_scrnaddr = ANTIC_GetDLWord(&new_tdlist);
+							if (new_scrnaddr != scrnaddr)
+								break;
+						}
+					}
+					if (count > 1)
+						printf("%dx ", count);
+					if (IR & 0x80)
+						printf("DLI ");
+					if (IR & 0x40)
+						printf("LMS %04X ", scrnaddr);
+					if (IR & 0x20)
+						printf("VSCROL ");
+					if (IR & 0x10)
+						printf("HSCROL ");
+					printf("MODE %X\n", IR & 0x0f);
+					scrnaddr = new_scrnaddr;
+					IR = new_IR;
+				}
 
-			regPC = addr;
+				if (++nlines == 24) {
+					if (pager())
+						break;
+					nlines = 0;
+				}
+			}
+#endif
 		}
-		else if (strcmp(t, "SETS") == 0) {
-			get_hex(&addr);
-			regS = addr & 0xff;
-		}
-		else if (strcmp(t, "SETA") == 0) {
-			get_hex(&addr);
-			regA = addr & 0xff;
-		}
-		else if (strcmp(t, "SETX") == 0) {
-			get_hex(&addr);
-			regX = addr & 0xff;
-		}
-		else if (strcmp(t, "SETY") == 0) {
-			get_hex(&addr);
-			regY = addr & 0xff;
-		}
+		else if (strcmp(t, "SETPC") == 0)
+			get_uword(&regPC);
+		else if (strcmp(t, "SETS") == 0)
+			get_ubyte(&regS);
+		else if (strcmp(t, "SETA") == 0)
+			get_ubyte(&regA);
+		else if (strcmp(t, "SETX") == 0)
+			get_ubyte(&regX);
+		else if (strcmp(t, "SETY") == 0)
+			get_ubyte(&regY);
 		else if (strcmp(t, "SETN") == 0) {
-			get_hex(&addr);
-			if (addr)
-				SetN;
-			else
+			int val = get_bool();
+			if (val == 0)
 				ClrN;
+			else if (val == 1)
+				SetN;
 		}
 		else if (strcmp(t, "SETV") == 0) {
-			get_hex(&addr);
-			if (addr)
-				SetV;
-			else
+			int val = get_bool();
+			if (val == 0)
 				ClrV;
+			else if (val == 1)
+				SetV;
 		}
 		else if (strcmp(t, "SETD") == 0) {
-			get_hex(&addr);
-			if (addr)
-				SetD;
-			else
+			int val = get_bool();
+			if (val == 0)
 				ClrD;
+			else if (val == 1)
+				SetD;
 		}
 		else if (strcmp(t, "SETI") == 0) {
-			get_hex(&addr);
-			if (addr)
-				SetI;
-			else
+			int val = get_bool();
+			if (val == 0)
 				ClrI;
+			else if (val == 1)
+				SetI;
 		}
 		else if (strcmp(t, "SETZ") == 0) {
-			get_hex(&addr);
-			if (addr)
-				SetZ;
-			else
+			int val = get_bool();
+			if (val == 0)
 				ClrZ;
+			else if (val == 1)
+				SetZ;
 		}
 		else if (strcmp(t, "SETC") == 0) {
-			get_hex(&addr);
-			if (addr)
-				SetC;
-			else
+			int val = get_bool();
+			if (val == 0)
 				ClrC;
+			else if (val == 1)
+				SetC;
 		}
 #ifdef MONITOR_TRACE
-		else if (strcmp(t, "TRON") == 0)
-			tron = TRUE;
-		else if (strcmp(t, "TROFF") == 0)
-			tron = FALSE;
-#endif
+		else if (strcmp(t, "TRACE") == 0) {
+			const char *filename = get_token();
+			if (trace_file != NULL) {
+				fclose(trace_file);
+				printf("Trace file closed\n");
+				trace_file = NULL;
+			}
+			if (filename != NULL) {
+				trace_file = fopen(filename, "w");
+				if (trace_file != NULL)
+					printf("Trace file open\n");
+				else
+					perror(filename);
+			}
+		}
+#endif /* MONITOR_TRACE */
 #ifdef MONITOR_PROFILE
 		else if (strcmp(t, "PROFILE") == 0) {
 			int i;
-
 			for (i = 0; i < 24; i++) {
 				int max, instr;
 				int j;
-
 				max = instruction_count[0];
 				instr = 0;
-
 				for (j = 1; j < 256; j++) {
 					if (instruction_count[j] > max) {
 						max = instruction_count[j];
 						instr = j;
 					}
 				}
-
 				if (max <= 0)
 					break;
 				instruction_count[instr] = 0;
-				printf("Opcode %02X: %-10s has been executed %d times\n",
+				printf("Opcode %02X: %-9s has been executed %d times\n",
 					   instr, instr6502[instr], max);
 			}
 		}
-#endif
+#endif /* MONITOR_PROFILE */
 		else if (strcmp(t, "SHOW") == 0)
-			show_regs();
+			monitor_show_state();
 		else if (strcmp(t, "STACK") == 0) {
-			UWORD ts, ta;
+			int ts;
 			for (ts = 0x101 + regS; ts < 0x200; ) {
 				if (ts < 0x1ff) {
-					ta = dGetWord(ts);
-					if (dGetByte(ta - 2) == 0x20) {
-						printf("%04X : %02X %02X\t%04X : JSR %04X\n",
-							ts, dGetByte(ts), dGetByte(ts + 1), ta - 2,
-							dGetWord(ta - 1));
+					UWORD ta = (UWORD) (dGetWord(ts) - 2);
+					if (dGetByte(ta) == 0x20) {
+						printf("%04X: %02X %02X  %04X: JSR %04X\n",
+							ts, dGetByte(ts), dGetByte(ts + 1), ta,
+							dGetWord(ta + 1));
 						ts += 2;
 						continue;
 					}
 				}
-				printf("%04X : %02X\n", ts, dGetByte(ts));
+				printf("%04X: %02X\n", ts, dGetByte(ts));
 				ts++;
 			}
 		}
-#ifndef PAGED_ATTRIB
 		else if (strcmp(t, "ROM") == 0) {
 			UWORD addr1;
 			UWORD addr2;
-
-			if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
+			if (get_attrib_range(&addr1, &addr2)) {
 				SetROM(addr1, addr2);
-				printf("Changed Memory from %04X to %04X into ROM\n",
+				printf("Changed memory from %04X to %04X into ROM\n",
 					   addr1, addr2);
-			}
-			else {
-				printf("*** Memory Unchanged (Bad or missing Parameter) ***\n");
 			}
 		}
 		else if (strcmp(t, "RAM") == 0) {
 			UWORD addr1;
 			UWORD addr2;
-
-			if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
+			if (get_attrib_range(&addr1, &addr2)) {
 				SetRAM(addr1, addr2);
-				printf("Changed Memory from %04X to %04X into RAM\n",
+				printf("Changed memory from %04X to %04X into RAM\n",
 					   addr1, addr2);
 			}
-			else {
-				printf("*** Memory Unchanged (Bad or missing Parameter) ***\n");
-			}
 		}
+#ifndef PAGED_ATTRIB
 		else if (strcmp(t, "HARDWARE") == 0) {
 			UWORD addr1;
 			UWORD addr2;
-
-			if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
+			if (get_attrib_range(&addr1, &addr2)) {
 				SetHARDWARE(addr1, addr2);
-				printf("Changed Memory from %04X to %04X into HARDWARE\n",
+				printf("Changed memory from %04X to %04X into HARDWARE\n",
 					   addr1, addr2);
-			}
-			else {
-				printf("*** Memory Unchanged (Bad or missing Parameter) ***\n");
 			}
 		}
 #endif
@@ -1111,8 +1618,7 @@ int monitor(void)
 #ifndef PAGED_MEM
 		else if (strcmp(t, "READ") == 0) {
 			const char *filename;
-
-			filename = get_token(NULL);
+			filename = get_token();
 			if (filename != NULL) {
 				UWORD nbytes;
 				if (get_hex2(&addr, &nbytes) && addr + nbytes <= 0x10000) {
@@ -1130,18 +1636,13 @@ int monitor(void)
 		else if (strcmp(t, "WRITE") == 0) {
 			UWORD addr1;
 			UWORD addr2;
-			const char *filename;
-			int status;
-
-			status = get_hex2(&addr1, &addr2);
-
-			filename = get_token(NULL);
-			if (filename == NULL)
-				filename = "memdump.dat";
-
-			if (status) {
-				FILE *f = fopen(filename, "wb");
-
+			if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
+				const char *filename;
+				FILE *f;
+				filename = get_token();
+				if (filename == NULL)
+					filename = "memdump.dat";
+				f = fopen(filename, "wb");
 				if (f == NULL)
 					perror(filename);
 				else {
@@ -1156,76 +1657,62 @@ int monitor(void)
 		else if (strcmp(t, "SUM") == 0) {
 			UWORD addr1;
 			UWORD addr2;
-
 			if (get_hex2(&addr1, &addr2)) {
 				int sum = 0;
 				int i;
-
 				for (i = addr1; i <= addr2; i++)
 					sum += dGetByte(i);
 				printf("SUM: %X\n", sum);
 			}
 		}
 		else if (strcmp(t, "M") == 0) {
-			UWORD xaddr1;
-			int i;
-			int count;
-			if (get_hex(&xaddr1))
-				addr = xaddr1;
-			count = 16;
-			while (count) {
-				printf("%04X : ", addr);
+			int count = 16;
+			get_hex(&addr);
+			do {
+				int i;
+				printf("%04X: ", addr);
 				for (i = 0; i < 16; i++)
 					printf("%02X ", GetByte((UWORD) (addr + i)));
-				putchar('\t');
+				putchar(' ');
 				for (i = 0; i < 16; i++) {
 					UBYTE c;
-					c = GetByte((UWORD) (addr + i));
-					putchar(c >= ' ' && c <= 'z' && c != '\x60' ? c : '.');
+					c = GetByte(addr);
+					addr++;
+					putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
 				}
 				putchar('\n');
-				addr += 16;
-				count--;
-			}
+			} while (--count > 0);
 		}
 #ifndef PAGED_MEM
 		else if (strcmp(t, "F") == 0) {
-			int addr;
-			int addr1;
-			int addr2;
-			UWORD xaddr1;
-			UWORD xaddr2;
+			UWORD addr1;
+			UWORD addr2;
 			UWORD hexval;
-
-			get_hex3(&xaddr1, &xaddr2, &hexval);
-
-			addr1 = xaddr1;
-			addr2 = xaddr2;
-
-			for (addr = addr1; addr <= addr2; addr++)
-				dPutByte(addr, (UBYTE) hexval);
+			if (get_hex3(&addr1, &addr2, &hexval)) {
+				/* use int to avoid endless loop with addr2==0xffff */
+				int addr;
+				for (addr = addr1; addr <= addr2; addr++)
+					dPutByte(addr, (UBYTE) hexval);
+			}
 		}
 #endif
 		else if (strcmp(t, "S") == 0) {
+			/* static, so "S" without arguments repeats last search */
 			static int n = 0;
-			static UWORD xaddr1;
-			static UWORD xaddr2;
-			UWORD hexval;
+			static UWORD addr1;
+			static UWORD addr2;
 			static UBYTE tab[64];
-
-			if (get_hex3(&xaddr1, &xaddr2, &hexval)) {
+			UWORD hexval;
+			if (get_hex3(&addr1, &addr2, &hexval)) {
 				n = 0;
 				do {
 					tab[n++] = (UBYTE) hexval;
-					if (hexval & 0xff00 && n < 64)
+					if (hexval > 0xff && n < 64)
 						tab[n++] = (UBYTE) (hexval >> 8);
 				} while (n < 64 && get_hex(&hexval));
 			}
-			if (n) {
+			if (n > 0) {
 				int addr;
-				int addr1 = xaddr1;
-				int addr2 = xaddr2;
-
 				for (addr = addr1; addr <= addr2; addr++) {
 					int i = 0;
 					while (GetByte((UWORD) (addr + i)) == tab[i]) {
@@ -1241,9 +1728,7 @@ int monitor(void)
 #ifndef PAGED_MEM
 		else if (strcmp(t, "C") == 0) {
 			UWORD temp = 0;
-
 			get_hex(&addr);
-
 			while (get_hex(&temp)) {
 #ifdef PAGED_ATTRIB
 				if (writemap[addr >> 8] != NULL && writemap[addr >> 8] != ROM_PutByte)
@@ -1255,7 +1740,7 @@ int monitor(void)
 				else /* RAM, ROM */
 					dPutByte(addr, (UBYTE) temp);
 				addr++;
-				if (temp >> 8) {
+				if (temp > 0xff) {
 #ifdef PAGED_ATTRIB
 					if (writemap[addr >> 8] != NULL && writemap[addr >> 8] != ROM_PutByte)
 						(*writemap[addr >> 8])(addr, (UBYTE) (temp >> 8));
@@ -1272,79 +1757,64 @@ int monitor(void)
 #endif
 #ifdef MONITOR_BREAK
 		else if (strcmp(t, "G") == 0) {
-			break_step = 1;
-			show_inst = 1;
+			break_step = TRUE;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
 		else if (strcmp(t, "R") == 0 ) {
-			break_ret = 1;
-			show_inst = 1;
-			ret_nesting = 0;
+			break_ret = TRUE;
+			ret_nesting = 1;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
 		else if (strcmp(t, "O") == 0) {
-			/* with RTS, RTI, JMP, SKW, ESCRTS we simply do step */
-			switch (dGetByte(regPC)) {
-			case 0x60:
-			case 0x40:
-			case 0x0c:
-			case 0x4c:
-			case 0x6c:
-			case 0xd2:
-			case 0x1c:
-			case 0x3c:
-			case 0x5c:
-			case 0x7c:
-			case 0xdc:
-			case 0xfc:
-			case 0x9c:
-				break_step = 1;
-				show_inst = 1;
-				PLUS_EXIT_MONITOR;
-				return TRUE;
-			default:
-				show_inst = 1;
+			UBYTE opcode = dGetByte(regPC);
+			if ((opcode & 0x1f) == 0x10 || opcode == 0x20) {
+				/* branch or JSR: set breakpoint after it */
 				break_addr = regPC + (optype6502[dGetByte(regPC)] & 0x3);
-				PLUS_EXIT_MONITOR;
-				return TRUE;
+				break_over = TRUE;
 			}
+			else
+				break_step = TRUE;
+			PLUS_EXIT_MONITOR;
+			return TRUE;
 		}
 #endif /* MONITOR_BREAK */
+#ifdef MONITOR_BREAKPOINTS
+		else if (strcmp(t, "B") == 0)
+			monitor_breakpoints();
+#endif
 		else if (strcmp(t, "D") == 0) {
-			UWORD addr1;
-			addr1 = addr;
-			get_hex(&addr1);
-			addr = disassemble(addr1, 0);
+			get_hex(&addr);
+			addr = disassemble(addr);
 		}
 		else if (strcmp(t, "LOOP") == 0) {
-			UWORD addr1;
-			UWORD addr2;
-			int ok = FALSE;
-			addr1 = addr;
-			get_hex(&addr1);
-			for (addr2 = addr1; addr2 <= (UWORD) (addr1 + 0x7e); ) {
-				UBYTE opcode = dGetByte(addr2);
+			int caddr;
+			get_hex(&addr);
+			caddr = addr;
+			for (;;) {
+				UBYTE opcode;
+				if (caddr > (UWORD) (addr + 0x7e)) {
+					printf("Conditional loop containing instruction at %04X not detected\n", addr);
+					break;
+				}
+				opcode = dGetByte(caddr);
 				if ((opcode & 0x1f) == 0x10) {
 					/* branch */
-					UWORD target = addr2 + 2 + (SBYTE) dGetByte(addr2 + 1);
-					if (target <= addr1) {
-						addr = disassemble(target, 0);
-						ok = TRUE;
+					UWORD target = caddr + 2 + (SBYTE) dGetByte(caddr + 1);
+					if (target <= addr) {
+						addr = disassemble(target);
 						break;
 					}
 				}
-				addr2 += optype6502[opcode] & 3;
+				caddr += optype6502[opcode] & 3;
 			}
-			if (!ok)
-				printf("Conditional loop containing instruction at %04X not detected\n", addr1);
 		}
 #ifdef MONITOR_HINTS
 		else if (strcmp(t, "LABELS") == 0) {
-			char *cmd = get_token(NULL);
+			char *cmd = get_token();
 			if (cmd == NULL) {
-				printf("Built-in labels are %s.\n", symtable_builtin_enable ? "enabled" : "disabled");
+				printf("Built-in labels are %sabled.\n", symtable_builtin_enable ? "en" : "dis");
 				if (symtable_user_size > 0)
 					printf("Using %d user-defined label%s.\n",
 						symtable_user_size, (symtable_user_size > 1) ? "s" : "");
@@ -1353,11 +1823,9 @@ int monitor(void)
 				printf(
 					"Labels are displayed in disassembly listings.\n"
 					"You may also use them as command arguments"
-/* TODO:
 #ifdef MONITOR_ASSEMBLER
 						" and in the built-in assembler"
 #endif
-*/
 						".\n"
 					"Usage:\n"
 					"LABELS OFF            - no labels\n"
@@ -1380,15 +1848,14 @@ int monitor(void)
 				}
 				else if (strcmp(cmd, "LOAD") == 0) {
 					symtable_builtin_enable = FALSE;
-					load_user_labels(get_token(NULL));
+					load_user_labels(get_token());
 				}
 				else if (strcmp(cmd, "ADD") == 0) {
 					symtable_builtin_enable = TRUE;
-					load_user_labels(get_token(NULL));
+					load_user_labels(get_token());
 				}
 				else if (strcmp(cmd, "SET") == 0) {
-					const char *name = get_token(NULL);
-					UWORD addr;
+					const char *name = get_token();
 					if (name != NULL && get_hex(&addr)) {
 						symtable_rec *p = find_user_label(name);
 						if (p != NULL) {
@@ -1401,7 +1868,7 @@ int monitor(void)
 							add_user_label(name, addr);
 					}
 					else
-						printf("Missing argument(s).\n");
+						printf("Missing or bad arguments\n");
 				}
 				else if (strcmp(cmd, "LIST") == 0) {
 					int i;
@@ -1415,9 +1882,8 @@ int monitor(void)
 						printf("%04X %s\n", symtable_user[i].addr, symtable_user[i].name);
 					}
 				}
-				else {
+				else
 					printf("Invalid command, type \"LABELS\" for help\n");
-				}
 			}
 		}
 #endif
@@ -1441,7 +1907,7 @@ int monitor(void)
 				   "SIZEP1=%02X    SIZEP2=%02X    SIZEP3=%02X\n",
 				   HPOSM2, HPOSM3, SIZEP0, SIZEP1, SIZEP2, SIZEP3);
 			printf("SIZEM= %02X    GRAFP0=%02X    GRAFP1=%02X    "
-				   "GRAFP2=%02X    GRAFP3=%02X    GRAFM =%02X\n",
+				   "GRAFP2=%02X    GRAFP3=%02X    GRAFM= %02X\n",
 				   SIZEM, GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM);
 			printf("COLPM0=%02X    COLPM1=%02X    COLPM2=%02X    "
 				   "COLPM3=%02X    COLPF0=%02X    COLPF1=%02X\n",
@@ -1459,7 +1925,7 @@ int monitor(void)
 				   AUDC[CHAN1], AUDC[CHAN2], AUDC[CHAN3], AUDC[CHAN4], IRQEN, IRQST);
 #ifdef STEREO_SOUND
 			if (stereo_enabled) {
-				printf("second chip:\n");
+				printf("Second chip:\n");
 				printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    "
 					   "AUDF4= %02X    AUDCTL=%02X\n",
 					   AUDF[CHAN1 + CHIP2], AUDF[CHAN2 + CHIP2], AUDF[CHAN3 + CHIP2], AUDF[CHAN4 + CHIP2], AUDCTL[1]);
@@ -1470,11 +1936,9 @@ int monitor(void)
 #endif
 		}
 #ifdef MONITOR_ASSEMBLER
-		else if (strcmp(t,"A") == 0) {
-			UWORD addr1;
-			addr1 = addr;
-			get_hex(&addr1);
-			addr = assembler(addr1);
+		else if (strcmp(t, "A") == 0) {
+			get_hex(&addr);
+			addr = assembler(addr);
 		}
 #endif
 		else if (strcmp(t, "HELP") == 0 || strcmp(t, "?") == 0) {
@@ -1482,58 +1946,58 @@ int monitor(void)
 				"CONT                           - Continue emulation\n"
 				"SHOW                           - Show registers\n"
 				"STACK                          - Show stack\n"
-				"SET{PC,A,S,X,Y} hexval         - Set register value\n"
-				"SET{N,V,D,I,Z,C} hexval        - Set flag value\n"
+				"SET{PC,A,X,Y,S} hexval         - Set register value\n"
+				"SET{N,V,D,I,Z,C} 0 or 1        - Set flag value\n"
 				"C startaddr hexval...          - Change memory\n"
 				"D [startaddr]                  - Disassemble memory\n"
 				"F startaddr endaddr hexval     - Fill memory\n"
 				"M [startaddr]                  - Memory list\n"
-				"S startaddr endaddr hexval...  - Search memory\n"
-			);
-			/* to avoid gcc -pedantic warning: "string length 'xxx' is greater than the length '509'
-			   ISO C89 compilers are required to support" */
+				"S startaddr endaddr hexval...  - Search memory\n");
+			/* split into several printfs to avoid gcc -pedantic warning: "string length 'xxx'
+			   is greater than the length '509' ISO C89 compilers are required to support" */
 			printf(
 				"LOOP [inneraddr]               - Disassemble a loop that contains inneraddr\n"
-				"ROM startaddr endaddr          - Convert memory block into ROM\n"
 				"RAM startaddr endaddr          - Convert memory block into RAM\n"
+				"ROM startaddr endaddr          - Convert memory block into ROM\n"
 				"HARDWARE startaddr endaddr     - Convert memory block into HARDWARE\n"
 				"READ filename startaddr nbytes - Read file into memory\n"
 				"WRITE startaddr endaddr [file] - Write memory block to a file (memdump.dat)\n"
-				"SUM startaddr endaddr          - SUM of specified memory range\n"
-			);
+				"SUM startaddr endaddr          - Print sum of specified memory range\n");
 #ifdef MONITOR_TRACE
 			printf(
-				"TRON                           - Trace on\n"
-				"TROFF                          - Trace off\n");
+				"TRACE [filename]               - Output 6502 trace on/off\n");
 #endif
 #ifdef MONITOR_BREAK
 			printf(
-				"BREAK [addr]                   - Set breakpoint at address\n"
-				"YBREAK [ypos] or [1000+ypos]   - Break at scanline or flash scanline\n"
-				"BRKHERE on|off                 - Set BRK opcode behaviour\n"
-				"HISTORY                        - Disasm. last %d PC addrs. giving ypos xpos\n", REMEMBER_PC_STEPS);
+				"BPC [addr]                     - Set breakpoint at address\n"
+				"BLINE [ypos] or [1000+ypos]    - Break at scanline or blink scanline\n"
+				"BBRK ON or OFF                 - Breakpoint on BRK on/off\n"
+				"HISTORY or H                   - List last %d executed instructions\n", REMEMBER_PC_STEPS);
+			printf(
+				"JUMPS                          - List last %d executed JMP/JSR\n", REMEMBER_JMP_STEPS);
 			printf("Press return to continue: ");
 			{
 				char buf[100];
 				safe_gets(buf, sizeof(buf));
 			}
-
 			printf(
-				"JUMPS                          - List last %d locations of JMP/JSR\n", REMEMBER_JMP_STEPS);
-			printf(
-				"G                              - Execute 1 instruction\n"
+				"G                              - Execute one instruction\n"
 				"O                              - Step over the instruction\n"
 				"R                              - Execute until return\n");
 #elif !defined(NO_YPOS_BREAK_FLICKER)
 			printf(
-				"YBREAK [1000+ypos]             - flash scanline\n");
+				"BLINE [1000+ypos]              - Blink scanline (8<=ypos<=247)\n");
 #endif
 			printf(
+#ifdef MONITOR_BREAKPOINTS
+				"B [argument...]                - Manage breakpoints (\"B ?\" for help)\n"
+#endif
 #ifdef MONITOR_ASSEMBLER
 				"A [startaddr]                  - Start simple assembler\n"
 #endif
 				"ANTIC, GTIA, PIA, POKEY        - Display hardware registers\n"
-				"DLIST [startaddr]              - Show Display List\n"
+				"DLIST [startaddr]              - Show Display List\n");
+			printf(
 #ifdef MONITOR_PROFILE
 				"PROFILE                        - Display profiling statistics\n"
 #endif
@@ -1551,245 +2015,16 @@ int monitor(void)
 			PLUS_EXIT_MONITOR;
 			return FALSE;
 		}
-		else {
-			printf("Invalid command.\n");
-		}
-	}
-}
-
-unsigned int disassemble(UWORD addr1, UWORD addr2)
-{
-	UWORD i;
-	int count;
-
-	addr = addr1;
-	count = 24;
-
-	while (count) {
-		printf("%04X\t", addr);
-		addr1 = show_instruction(addr, 20);
-		printf("; %Xcyc ; ", cycles[dGetByte(addr)]);
-		for (i = 0; i < addr1; i++)
-			printf("%02X ", dGetByte((UWORD) (addr + i)));
-		putchar('\n');
-		addr += addr1;
-		if (addr2 != 0 && addr >= addr2 )
-			break;
-		count--;
-	}
-	return addr;
-}
-
-UWORD show_instruction(UWORD inad, int wid)
-{
-	UBYTE instr;
-	UWORD value = 0;
-	char dissbf[32];
-	int i;
-#ifdef MONITOR_HINTS
-	UBYTE operand = 0;
-#endif
-
-	instr = dGetByte(inad);
-	strcpy(dissbf, instr6502[instr]);
-
-	for (i = 0; dissbf[i] != 0; i++) {
-		if (dissbf[i] == '$') {
-			wid -= i;
-			dissbf[i] = 0;
-			printf(dissbf);
-			switch (dissbf[i + 1]) {
-			case '0':
-				value = (UWORD) (inad + (char) dGetByte((UWORD) (inad + 1)) + 2);
-				inad = 2;
-				wid -= 5;
-				printf("$%04X", value);
-#ifdef MONITOR_HINTS
-				operand = 1;
-#endif
-				break;
-			case '1':
-				value = (UBYTE) dGetByte((UWORD) (inad + 1));
-				inad = 2;
-				wid -= 3;
-				printf("$%02X", value);
-#ifdef MONITOR_HINTS
-				operand = 1;
-#endif
-				break;
-			case '2':
-				value = (UWORD) dGetByte((UWORD) (inad + 1)) | (dGetByte((UWORD) (inad + 2)) << 8);
-				inad = 3;
-				wid -= 5;
-				printf("$%04X", value);
-#ifdef MONITOR_HINTS
-				operand = 1;
-#endif
-				break;
-			}
-			printf(dissbf + i + 2);
-			wid -= strlen(dissbf + i + 2);
-			i = 0;
-			break;
-		}
-	}
-	if (dissbf[i] == 0) {
-		printf(dissbf);
-		wid -= i;
-		inad = 1;
-	}
-#ifdef MONITOR_HINTS
-	if (operand && (optype6502[instr] & 0xf0) != 0xa0) {
-		/* different names when reading/writing memory */
-		const char *label = find_label_name(value, (optype6502[instr] & 0x08) != 0);
-		if (label != NULL) {
-			printf(" ;%s ", label);
-			wid -= 3 + strlen(label);
-		}
-	}
-#endif
-	for (i = wid; i > 0; i--)
-		printf(" ");
-	return inad;
-}
-
-
-#ifdef MONITOR_ASSEMBLER
-static UWORD assembler(UWORD addr)
-{
-	char s[128];  /* input string */
-	char c[128];  /* converted input */
-	char *sp, *cp;
-	int i, value = 0;
-	int oplen;
-	int branch;
-	int isa; /* the operand is "A" */
-
-	printf("Simple assembler (enter empty line to exit)\n");
-	while (TRUE) {
-		printf("%04X : ", (int) addr);
-		safe_gets(s, sizeof(s));
-		if (s[0] == '\0')
-			return addr;
-
-		Util_strupper(s);
-
-		oplen = 0;
-
-		cp = c;
-		sp = s;
-		/* copy first three characters */
-		for (i = 0; i < 3 && *sp != '\0'; i++)
-			*cp++ = *sp++;
-
-		*cp = '\0'; /* temporarily put end of string here */
-		branch = (strcmp(c, "BMI") == 0) || (strcmp(c, "BPL") == 0) || (strcmp(c, "BNE") == 0) ||
-		         (strcmp(c, "BEQ") == 0) || (strcmp(c, "BVC") == 0) || (strcmp(c, "BVS") == 0) ||
-		         (strcmp(c, "BCC") == 0) || (strcmp(c, "BCS") == 0);
-
-		/* insert space before operands */
-		*cp++ = ' ';
-
-		isa = FALSE;
-
-		/* convert input to format of instr6502[] table */
-		while (*sp != '\0') {
-			/* skip white spaces */
-			while (*sp == ' ' || *sp == '\t')
-				sp++;
-			if ((*sp >= '0' && *sp <= '9') || (*sp >= 'A' && *sp <= 'F')) {
-				/* parse hexadecimal value */
-				*cp++ = '$';  /* operands are marked with $ */
-				i = 0;
-				value = 0;
-				while (TRUE)
-					if (*sp >= '0' && *sp <= '9') {
-						i++;
-						value = value * 16 + (*sp++ - '0');
-					}
-					else if (*sp >= 'A' && *sp <= 'F') {
-						i++;
-						value = value * 16 + 10 + (*sp++ - 'A');
-					}
-					else
-						break;
-
-				if (branch) {
-					/* relative address */
-					*cp++ = '0';
-					oplen = 1;
-					value = value - (addr + 2);
-				}
-				else if (i <= 2) {
-					/* zero page adress or immediate */
-					*cp++ = '1';
-					oplen = 1;
-					if (i == 1 && sp[-1] == 'A')
-						isa = TRUE;
-				}
-				else {
-					*cp++ = '2';
-					oplen = 2;
-				}
-			} /* end of parsing hex.value */
-			else if (*sp == '$' || *sp == '@')
-				sp++;  /* ignore $ or @ */
-			else {
-				*cp++ = *sp++;  /* if the char is not a digit, copy it to the output */
-				isa = FALSE; /* for example, "ASL A,X" */
-			}
-
-		} /* end of converting input */
-		if (cp[-1] == ' ')
-			cp--; /* no arguments (e.g. NOP or ASL @) */
-		*cp = '\0';  /* terminate output */
-
-		/* search table for instruction */
-		for (i = 0; i < 256 && strcmp(instr6502[i], c) != 0; i++);
-
-		if (i < 256) {
-			/* instruction found */
-			switch (oplen) {
-			case 0:
-				dPutByte(addr, (UBYTE) i);
-				addr++;
-				break;
-			case 1:
-				c[3] = '\0';
-				if (value < -128 || value > 255)
-					printf("Operand out of range!\n");
-				else if (isa && (strcmp(c, "ASL") == 0 || strcmp(c, "LSR") == 0 ||
-				                 strcmp(c, "ROL") == 0 || strcmp(c, "ROR") == 0)) {
-					printf("\"%s A\" is ambiguous.\n"
-					       "Use \"%s\" for accumulator mode or \"%s 0A\" for zeropage mode.\n", c, c, c);
-				}
-				else {
-					dPutByte(addr, (UBYTE) i);
-					addr++;
-					dPutByte(addr, (UBYTE) value);
-					addr++;
-				}
-				break;
-			case 2:
-				if (value < 0 || value > 65535)
-					printf("Operand out of range!\n");
-				else {
-					dPutByte(addr, (UBYTE) i);
-					addr++;
-					dPutWord(addr, (UWORD) value);
-					addr += 2;
-				}
-				break;
-			}
-		}
 		else
-			printf("Invalid instruction!\n");
+			printf("Invalid command!\n");
 	}
 }
-#endif /* MONITOR_ASSEMBLER */
 
 /*
 $Log$
+Revision 1.31  2005/09/18 15:05:01  pfusik
+major improvement of monitor
+
 Revision 1.30  2005/09/11 20:34:52  pfusik
 extended labels (MONITOR_HINTS)
 

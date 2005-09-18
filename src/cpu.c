@@ -29,7 +29,8 @@
 	Define CPU65C02 if you don't want 6502 JMP() bug emulation.
 	Define CYCLES_PER_OPCODE to update xpos in each opcode's emulation.
 	Define MONITOR_BREAK if you want code breakpoints and execution history.
-	Define MONITOR_PROFILE if you want 6502 instruction profiling.
+	Define MONITOR_BREAKPOINTS if you want user-defined breakpoints.
+	Define MONITOR_PROFILE if you want 6502 opcode profiling.
 	Define MONITOR_TRACE if you want the code to be disassembled while it is executed.
 	Define NO_GOTO if you compile with GCC, but want switch() rather than goto *.
 	Define NO_V_FLAG_VARIABLE to don't use local (static) variable V for the V flag.
@@ -56,17 +57,19 @@
 
 #include "config.h"
 #include <stdio.h>
-#include <stdlib.h>	/* for exit() */
+#include <stdlib.h>	/* exit() */
 
 #include "antic.h"
 #include "atari.h"
 #include "cpu.h"
 #include "memory.h"
-#include "monitor.h" /* tron */
+#include "monitor.h"
 #ifndef BASIC
 #include "statesav.h"
+#ifndef __PLUS
 #include "ui.h"
 #endif
+#endif /* BASIC */
 
 #ifdef FALCON_CPUASM
 
@@ -221,6 +224,8 @@ void (*rts_handler)(void) = NULL;
 int instruction_count[256];
 #endif
 
+UBYTE cim_encountered = FALSE;
+
 /* Execution history */
 #ifdef MONITOR_BREAK
 UWORD remember_PC[REMEMBER_PC_STEPS];
@@ -348,8 +353,22 @@ void NMI(void)
 		INC_RET_NESTING; \
 	}
 
+/* Enter monitor */
+#ifdef __PLUS
+#define ENTER_MONITOR  Atari800_Exit(TRUE)
+#else
+#define ENTER_MONITOR  if (!Atari800_Exit(TRUE)) exit(0)
+#endif
+#define DO_BREAK \
+	UPDATE_GLOBAL_REGS; \
+	CPU_GetStatus(); \
+	ENTER_MONITOR; \
+	CPU_PutStatus(); \
+	UPDATE_LOCAL_REGS;
+
+
 /*	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
-const int cycles[256] =
+static const int cycles[256] =
 {
 	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,		/* 0x */
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,		/* 1x */
@@ -535,6 +554,10 @@ void GO(int limit)
 
 	while (xpos < limit) {
 
+#ifdef MONITOR_BREAKPOINTS
+	breakpoint_return:
+#endif
+
 #ifdef PC_PTR
 		/* must handle 64k wrapping */
 		if (PC >= memory + 0xfffe) {
@@ -547,16 +570,22 @@ void GO(int limit)
 #else
 				memory[0x10000] = memory[0];
 				memory[0x10001] = memory[1];
-#endif
+#endif /* UNALIGNED_LONG_OK */
 			}
 		}
 #endif /* PC_PTR */
 
 #ifdef MONITOR_TRACE
-		if (tron) {
-			disassemble(GET_PC(), GET_PC() + 1);
-			printf("\tA=%02x, X=%02x, Y=%02x, S=%02x\n",
-				   A, X, Y, S);
+		if (trace_file != NULL) {
+			show_state(trace_file, GET_PC(), A, X, Y, S,
+				(N & 0x80) ? 'N' : '-',
+#ifndef NO_V_FLAG_VARIABLE
+				V ? 'V' : '-',
+#else
+				(regP & V_FLAG) ? 'V' : '-',
+#endif
+				(Z == 0) ? 'Z' : '-',
+				(C != 0) ? 'C' : '-');
 		}
 #endif
 
@@ -570,13 +599,8 @@ void GO(int limit)
 			remember_xpos[remember_PC_curpos] = xpos + (ypos << 8);
 		remember_PC_curpos = (remember_PC_curpos + 1) % REMEMBER_PC_STEPS;
 
-		if (break_addr == GET_PC() || ypos_break_addr == ypos) {
-			UPDATE_GLOBAL_REGS;
-			CPU_GetStatus();
-			if (!Atari800_Exit(TRUE))
-				exit(0);
-			CPU_PutStatus();
-			UPDATE_LOCAL_REGS;
+		if (break_addr == GET_PC() || break_ypos == ypos) {
+			DO_BREAK;
 		}
 #endif /* MONITOR_BREAK */
 
@@ -585,6 +609,166 @@ void GO(int limit)
 #endif
 
 		insn = GET_CODE_BYTE();
+
+#ifdef MONITOR_BREAKPOINTS
+		if (breakpoint_table_size > 0 && breakpoints_enabled) {
+			UBYTE optype = optype6502[insn];
+			int i;
+			switch (optype >> 4) {
+			case 1:
+				addr = PEEK_CODE_WORD();
+				break;
+			case 2:
+				addr = PEEK_CODE_BYTE();
+				break;
+			case 3:
+				addr = PEEK_CODE_WORD() + X;
+				break;
+			case 4:
+				addr = PEEK_CODE_WORD() + Y;
+				break;
+			case 5:
+				addr = (UBYTE) (PEEK_CODE_BYTE() + X);
+				addr = zGetWord(addr);
+				break;
+			case 6:
+				addr = PEEK_CODE_BYTE();
+				addr = zGetWord(addr) + Y;
+				break;
+			case 7:
+				addr = (UBYTE) (PEEK_CODE_BYTE() + X);
+				break;
+			case 8:
+				addr = (UBYTE) (PEEK_CODE_BYTE() + Y);
+				break;
+			/* XXX: case 13 */
+			default:
+				addr = 0;
+				break;
+			}
+			for (i = 0; i < breakpoint_table_size; i++) {
+				int cond;
+				int value;
+				if (!breakpoint_table[i].enabled)
+					continue; /* skip */
+				cond = breakpoint_table[i].condition;
+				if (cond == BREAKPOINT_OR)
+					break; /* fire */
+				value = breakpoint_table[i].value;
+				if (cond == BREAKPOINT_FLAG_CLEAR) {
+					switch (value) {
+					case N_FLAG:
+						if ((N & 0x80) == 0)
+							continue;
+						break;
+#ifndef NO_V_FLAG_VARIABLE
+					case V_FLAG:
+						if (V == 0)
+							continue;
+						break;
+#endif
+					case Z_FLAG:
+						if (Z != 0)
+							continue;
+						break;
+					case C_FLAG:
+						if (C == 0)
+							continue;
+						break;
+					default:
+						if ((regP & value) == 0)
+							continue;
+						break;
+					}
+				}
+				else if (cond == BREAKPOINT_FLAG_SET) {
+					switch (value) {
+					case N_FLAG:
+						if ((N & 0x80) != 0)
+							continue;
+						break;
+#ifndef NO_V_FLAG_VARIABLE
+					case V_FLAG:
+						if (V != 0)
+							continue;
+						break;
+#endif
+					case Z_FLAG:
+						if (Z == 0)
+							continue;
+						break;
+					case C_FLAG:
+						if (C != 0)
+							continue;
+						break;
+					default:
+						if ((regP & value) != 0)
+							continue;
+						break;
+					}
+				}
+				else {
+					int val;
+					switch (cond >> 3) {
+					case BREAKPOINT_PC >> 3:
+						val = GET_PC() - 1;
+						break;
+					case BREAKPOINT_A >> 3:
+						val = A;
+						break;
+					case BREAKPOINT_X >> 3:
+						val = X;
+						break;
+					case BREAKPOINT_Y >> 3:
+						val = Y;
+						break;
+					case BREAKPOINT_S >> 3:
+						val = S;
+						break;
+					case BREAKPOINT_READ >> 3:
+						if ((optype & 4) == 0)
+							goto cond_failed;
+						val = addr;
+						break;
+					case BREAKPOINT_WRITE >> 3:
+						if ((optype & 8) == 0)
+							goto cond_failed;
+						val = addr;
+						break;
+					case BREAKPOINT_ACCESS >> 3:
+						if ((optype & 12) == 0)
+							goto cond_failed;
+						val = addr;
+						break;
+					default:
+						/* shouldn't happen */
+						continue;
+					}
+					if ((cond & BREAKPOINT_LESS) != 0 && val < value)
+						continue;
+					if ((cond & BREAKPOINT_EQUAL) != 0 && val == value)
+						continue;
+					if ((cond & BREAKPOINT_GREATER) != 0 && val > value)
+						continue;
+				cond_failed:
+					;
+				}
+				/* a condition failed */
+				/* quickly skip AND-connected conditions */
+				do {
+					if (++i >= breakpoint_table_size)
+						goto no_breakpoint;
+				} while (breakpoint_table[i].condition != BREAKPOINT_OR || !breakpoint_table[i].enabled);
+			}
+			/* fire breakpoint */
+			PC--;
+			DO_BREAK;
+			goto breakpoint_return;
+		no_breakpoint:
+			;
+		}
+#endif /* MONITOR_BREAKPOINTS */
+
 #ifndef CYCLES_PER_OPCODE
 		xpos += cycles[insn];
 #endif
@@ -605,14 +789,8 @@ void GO(int limit)
 
 	OPCODE(00)				/* BRK */
 #ifdef MONITOR_BREAK
-		if (brkhere) {
-			break_here = 1;
-			UPDATE_GLOBAL_REGS;
-			CPU_GetStatus();
-			if (!Atari800_Exit(TRUE))
-				exit(0);
-			CPU_PutStatus();
-			UPDATE_LOCAL_REGS;
+		if (break_brk) {
+			DO_BREAK;
 		}
 		else
 #endif
@@ -989,9 +1167,8 @@ void GO(int limit)
 		SET_PC((PL << 8) + data);
 		CPUCHECKIRQ;
 #ifdef MONITOR_BREAK
-		if (break_ret && ret_nesting <= 0)
-			break_step = 1;
-		ret_nesting--;
+		if (break_ret && --ret_nesting <= 0)
+			break_step = TRUE;
 #endif
 		DONE
 
@@ -1154,9 +1331,8 @@ void GO(int limit)
 		data = PL;
 		SET_PC((PL << 8) + data + 1);
 #ifdef MONITOR_BREAK
-		if (break_ret && ret_nesting <= 0)
-			break_step = 1;
-		ret_nesting--;
+		if (break_ret && --ret_nesting <= 0)
+			break_step = TRUE;
 #endif
 		if (rts_handler != NULL) {
 			rts_handler();
@@ -1982,9 +2158,8 @@ void GO(int limit)
 		data = PL;
 		SET_PC((PL << 8) + data + 1);
 #ifdef MONITOR_BREAK
-		if (break_ret && ret_nesting <= 0)
-			break_step = 1;
-		ret_nesting--;
+		if (break_ret && --ret_nesting <= 0)
+			break_step = TRUE;
 #endif
 		DONE
 
@@ -2020,11 +2195,8 @@ void GO(int limit)
 		crash_code = insn;
 		ui();
 #else
-#ifdef MONITOR_BREAK
-		break_cim = 1;
-#endif
-		if (!Atari800_Exit(TRUE))
-			exit(0);
+		cim_encountered = TRUE;
+		ENTER_MONITOR;
 #endif /* CRASH_MENU */
 
 		CPU_PutStatus();
@@ -2128,12 +2300,7 @@ void GO(int limit)
 
 #ifdef MONITOR_BREAK
 		if (break_step) {
-			UPDATE_GLOBAL_REGS;
-			CPU_GetStatus();
-			if (!Atari800_Exit(TRUE))
-				exit(0);
-			CPU_PutStatus();
-			UPDATE_LOCAL_REGS;
+			DO_BREAK;
 		}
 #endif
 		/* This "continue" does nothing here.
