@@ -478,7 +478,7 @@ static void CartManagement(void)
 					break;
 				}
 
-				image = Util_malloc(nbytes);
+				image = (UBYTE *) Util_malloc(nbytes);
 				Util_rewind(f);
 				if ((int) fread(image, 1, nbytes, f) != nbytes) {
 					fclose(f);
@@ -495,20 +495,20 @@ static void CartManagement(void)
 				header.id[1] = 'A';
 				header.id[2] = 'R';
 				header.id[3] = 'T';
-				header.type[0] = (type >> 24) & 0xff;
-				header.type[1] = (type >> 16) & 0xff;
-				header.type[2] = (type >> 8) & 0xff;
-				header.type[3] = type & 0xff;
-				header.checksum[0] = (checksum >> 24) & 0xff;
-				header.checksum[1] = (checksum >> 16) & 0xff;
-				header.checksum[2] = (checksum >> 8) & 0xff;
-				header.checksum[3] = checksum & 0xff;
+				header.type[0] = '\0';
+				header.type[1] = '\0';
+				header.type[2] = '\0';
+				header.type[3] = (UBYTE) type;
+				header.checksum[0] = (UBYTE) (checksum >> 24);
+				header.checksum[1] = (UBYTE) (checksum >> 16);
+				header.checksum[2] = (UBYTE) (checksum >> 8);
+				header.checksum[3] = (UBYTE) checksum;
 				header.gash[0] = '\0';
 				header.gash[1] = '\0';
 				header.gash[2] = '\0';
 				header.gash[3] = '\0';
 
-				sprintf(filename, "%s/%s", atari_rom_dir, fname);
+				Util_catpath(filename, atari_rom_dir, fname);
 				f = fopen(filename, "wb");
 				if (f != NULL) {
 					fwrite(&header, 1, sizeof(header), f);
@@ -523,39 +523,40 @@ static void CartManagement(void)
 		case 1:
 			if (ui_driver->fGetLoadFilename(curr_cart_dir, filename)) {
 				FILE *f;
+				int nbytes;
+				Header header;
+				UBYTE *image;
+				char fname[FILENAME_SIZE + 1];
 
 				f = fopen(filename, "rb");
-				if (f != NULL) {
-					Header header;
-					UBYTE *image;
-					char fname[FILENAME_SIZE + 1];
-					int nbytes;
-
-					fread(&header, 1, sizeof(header), f);
-					if (header.id[0] != 'C' || header.id[1] != 'A' || header.id[2] != 'R' || header.id[3] != 'T') {
-						fclose(f);
-						ui_driver->fMessage("Not a CART file");
-						break;
-					}
-					image = Util_malloc(CART_MAX_SIZE + 1);
-					nbytes = fread(image, 1, CART_MAX_SIZE + 1, f);
-
+				if (f == NULL) {
+					CantLoad(filename);
+					break;
+				}
+				nbytes = Util_flen(f) - sizeof(header);
+				Util_rewind(f);
+				if (nbytes <= 0 || fread(&header, 1, sizeof(header), f) != sizeof(header)
+				 || header.id[0] != 'C' || header.id[1] != 'A' || header.id[2] != 'R' || header.id[3] != 'T') {
 					fclose(f);
+					ui_driver->fMessage("Not a CART file");
+					break;
+				}
+				image = (UBYTE *) Util_malloc(nbytes);
+				fread(image, 1, nbytes, f);
+				fclose(f);
 
-					if (!ui_driver->fGetSaveFilename(fname))
-						break;
+				if (!ui_driver->fGetSaveFilename(fname))
+					break;
 
-					sprintf(filename, "%s/%s", atari_rom_dir, fname);
-
-					f = fopen(filename, "wb");
-					if (f) {
-						fwrite(image, 1, nbytes, f);
-						fclose(f);
-					}
-					free(image);
+				Util_catpath(filename, atari_rom_dir, fname);
+				f = fopen(filename, "wb");
+				if (f != NULL) {
+					fwrite(image, 1, nbytes, f);
+					fclose(f);
 				}
 				else
-					CantLoad(filename);
+					CantSave(filename);
+				free(image);
 			}
 			break;
 		case 2:
@@ -619,7 +620,7 @@ void SoundRecording(void)
 			sprintf(buffer, "atari%03d.wav", no);
 			if (!Util_fileexists(buffer)) {
 				char msg[50];
-				/*file does not exist - we can create it */
+				/* file does not exist - we can create it */
 				if (OpenSoundFile(buffer))
 					sprintf(msg, "Recording sound to file \"%s\"", buffer);
 				else
@@ -635,7 +636,7 @@ void SoundRecording(void)
 		ui_driver->fMessage("Recording stopped");
 	}
 }
-#endif
+#endif /* SOUND */
 
 #if 0
 /* Superseded by AutostartFile(). */
@@ -705,7 +706,9 @@ static void AtariSettings(void)
 		SetItemChecked(&menu_array[3], enable_sio_patch);
 		SetItemChecked(&menu_array[4], enable_h_patch);
 		SetItemChecked(&menu_array[5], enable_p_patch);
+#ifdef R_IO_DEVICE
 		SetItemChecked(&menu_array[6], enable_r_patch);
+#endif
 
 		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
 
@@ -729,12 +732,13 @@ static void AtariSettings(void)
 		case 5:
 			enable_p_patch = !enable_p_patch;
 			break;
+#ifdef R_IO_DEVICE
 		case 6:
 			enable_r_patch = !enable_r_patch;
 			break;
+#endif
 		case 7:
-			RtConfigSave();
-			ui_driver->fMessage("Configuration file updated");
+			ui_driver->fMessage(RtConfigSave() ? "Configuration file updated" : "Error writing configuration file");
 			break;
 		}
 	} while (option >= 0);
@@ -1162,6 +1166,10 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.73  2005/09/18 14:58:30  pfusik
+improved "Extract ROM image from Cartridge";
+don't exit emulator if "Update configuration file" failed
+
 Revision 1.72  2005/09/11 20:39:24  pfusik
 removed an opendir() call
 
@@ -1369,8 +1377,4 @@ win32 port
 Revision 1.5  2001/03/18 06:34:58  knik
 WIN32 conditionals removed
 
-*/
-
-/*
-vim:ts=4:sw=4:
 */
