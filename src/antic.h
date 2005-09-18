@@ -33,6 +33,7 @@ extern UBYTE NMIST;
 extern UBYTE PMBASE;
 extern UBYTE VSCROL;
 
+extern int break_ypos;
 extern int ypos;
 extern UBYTE wsync_halt;
 
@@ -70,7 +71,7 @@ extern const int *antic2cpu_ptr;
 void update_scanline(void);
 void update_scanline_prior(UBYTE byte);
 #ifndef NO_GTIA11_DELAY
-extern int prevline_prior_pos; 
+extern int prevline_prior_pos;
 extern int curline_prior_pos;
 extern int prior_curpos;
 #define PRIOR_BUF_SIZE 40

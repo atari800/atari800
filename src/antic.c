@@ -48,9 +48,7 @@
 #define LCHOP 3			/* do not build lefmost 0..3 characters in wide mode */
 #define RCHOP 3			/* do not build rightmost 0..3 characters in wide mode */
 
-#ifndef NO_YPOS_BREAK_FLICKER
-extern int ypos_break_addr;
-#endif
+int break_ypos = 999;
 #ifdef NEW_CYCLE_EXACT
 void draw_partial_scanline(int l,int r);
 void update_scanline(void);
@@ -2865,7 +2863,7 @@ void ANTIC_Frame(int draw_display)
 			continue;
 		}
 #ifndef NO_YPOS_BREAK_FLICKER
-#define YPOS_BREAK_FLICKER if (ypos == ypos_break_addr - 1000) {\
+#define YPOS_BREAK_FLICKER if (ypos == break_ypos - 1000) {\
 				static int toggle;\
 				if (toggle == 1) {\
 					FILL_VIDEO(scrn_ptr + LBORDER_START, 0x0f0f, (RBORDER_END - LBORDER_START) * 2);\
