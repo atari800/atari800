@@ -1,3 +1,63 @@
+2005-09-18  Piotr Fusik  <fox@scene.pl>
+* cpu.c, monitor.[ch]: major improvement of monitor:
+  - new command "B" manages user-defined breakpoints
+    (based on Atari800Win PLus 4.0 by Marcin Lewandowski)
+  - monitor now displays registers and current instruction when invoked
+  - "SHOW" displays current instruction
+  - disassembler displays bytes before the instruction,
+    to avoid misalignment where long labels are present
+  - disassembler no longer displays cycles (it was misleading,
+    because the number of cycles is variable for some instructions)
+  - removed memory contents display in single step mode (not useful)
+  - "ESCAPE" and "ESCRTS" disassembled with their argument
+  - "TRON", "TROFF" -> "TRACE" (output to file, not stdout; includes
+    ypos, xpos and registers)
+  - "BRKHERE" -> "BBRK"
+  - "BREAK" -> "BPC"
+  - "YBREAK" -> "BLINE"
+  - "H" is an alias to "HISTORY"
+  - "ROM", "RAM" work in PAGED_ATTRIB build
+  - "DLIST" groups identical instructions and prints them in one line
+  - assembler supports labels
+  - assembler handles "JSR 0", "LDA 0,Y" etc.
+  - improved branch range checking in assembler
+  - error messages for invalid "SETx" arguments
+  - unofficial "NOP" and "SBC #" are marked with "!" in disassembly
+  - assembler generates the official "NOP" opcode
+
+* configure.ac: MONITOR_BREAKPOINTS ("B" command),
+  MONITOR_PROFILE ("PROFILE" command), MONITOR_TRACE ("TRACE" command)
+
+* atari.c: size of auto-started XFD images must be multiple of 128 bytes.
+  Corrupted images won't work, but we gain a better detection of Atari files.
+
+* atari.c, cpu.[ch], monitor.[ch]: break_cim -> cim_encountered
+  (monitor displays "CIM encountered" not only in MONITOR_BREAK build)
+
+* antic.[ch], cpu.c, monitor.[ch]: ypos_break_addr -> break_ypos
+
+* cpu.c: support for Atari800Win PLus
+
+* rt-config.[ch], ui.c: don't exit emulator if "Update configuration file"
+  failed
+
+* ui_basic.c: fixed file selector: last directory entry wasn't sorted
+
+* ui_basic.c: right arrow in last column of file selector jumps
+  to the last entry
+
+* ui.c: improved "Extract ROM image from Cartridge":
+  - allocates only as much memory as necessary rather than 1 MB
+  - displays error message on write error
+
+* ui.h, ui_basic.c, wince/port/ui_wince.c: saved a few bytes per tMenuItem
+
+* wince/port/config.h:
+  #undef HAVE_NANOSLEEP, #undef HAVE_STRDUP, #define SIZEOF_LONG 4
+  (this is for use with the preprocessor, so sizeof(long) was wrong),
+  #define STDC_HEADERS (this means there are stdlib.h, stdarg.h and string.h)
+
+
 2005-09-14  Piotr Fusik  <fox@scene.pl>
 * atari.c, configure.ac: prefer nanosleep() (POSIX.1) to usleep()
   and select(); prefer Sleep() on WIN32
