@@ -210,9 +210,7 @@ void Atari800_RunEsc(UBYTE esc_code)
 	crash_code = dGetByte(crash_address);
 	ui();
 #else /* CRASH_MENU */
-#ifdef MONITOR_BREAK
-	break_cim = 1;
-#endif
+	cim_encountered = 1;
 	Aprint("Invalid ESC code %02x at address %04x", esc_code, regPC - 2);
 #ifndef __PLUS
 	if (!Atari800_Exit(TRUE))
@@ -495,27 +493,16 @@ int Atari800_DetectFileType(const char *filename)
 	}
 	file_length = Util_flen(fp);
 	fclose(fp);
-	switch (file_length) {
-	case 4 * 1024:
-	case 8 * 1024:
-	case 16 * 1024:
-	case 32 * 1024:
-	case 40 * 1024:
-	case 64 * 1024:
-	case 128 * 1024:
-	case 256 * 1024:
-	case 512 * 1024:
-	case 1024 * 1024:
+	/* 40K or a-power-of-two between 4K and CART_MAX_SIZE */
+	if (file_length >= 4 * 1024 && file_length <= CART_MAX_SIZE
+	 && ((file_length & (file_length - 1)) == 0 || file_length == 40 * 1024))
 		return AFILE_ROM;
-	default:
-		break;
-	}
 	/* BOOT_TAPE is a raw file containing a program booted from a tape */
 	if ((header[1] << 7) == file_length)
 		return AFILE_BOOT_TAPE;
-	/* Normally: return (file_length % 128 == 0) ? AFILE_XFD : AFILE_ERROR; */
-	/* but we support corrupted XFDs. */
-	return AFILE_XFD;
+	if ((file_length & 0x7f) == 0)
+		return AFILE_XFD;
+	return AFILE_ERROR;
 }
 
 int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly)
@@ -958,8 +945,8 @@ int Atari800_Exit(int run_monitor)
 {
 	int restart;
 
-#if defined(__PLUS) && defined(MONITOR_BREAK)
-	if (break_cim == 1)
+#ifdef __PLUS
+	if (cim_encountered)
 		g_ulAtariState |= ATARI_CRASHED;
 #endif
 
@@ -1583,6 +1570,10 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.77  2005/09/18 15:02:14  pfusik
+size of auto-started XFD images must be multiple of 128 bytes;
+break_cim -> cim_encountered
+
 Revision 1.76  2005/09/14 20:23:48  pfusik
 prefer nanosleep() to usleep() and select(); prefer Sleep() on WIN32
 
