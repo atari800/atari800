@@ -1,6 +1,8 @@
-#ifndef _UI_H
-#define _UI_H
-#include "atari.h"	/* for UBYTE */
+#ifndef _UI_H_
+#define _UI_H_
+
+#include "config.h"
+#include "atari.h"
 
 /* Two legitimate entries to UI module. */
 int SelectCartType(int k);
@@ -11,8 +13,6 @@ void SoundRecording(void);
 
 extern int ui_is_active;
 extern int alt_function;
-
-extern unsigned char ascii_to_screen[128];
 
 #ifdef CRASH_MENU
 extern int crash_code;
@@ -26,18 +26,18 @@ extern UWORD crash_afterCIM;
    terminated by MENU_END */
 typedef struct
 {
-	const char *sig;    /* Signature identifying item function. Conventionally, four-letter string */
-	long  flags;        /* Flags, see values below */
-	char *prefix;       /* Text to prepend the item */
-	char *item;         /* Main item text */
-	char *suffix;       /* Optional (not always) text to show after the item text. Often key shortcut */
-	int   retval;       /* Value returned by Select when this item is selected */
+	char sig[5];   /* Signature identifying item function. Conventionally, four-letter string */
+	UBYTE flags;   /* Flags, see values below */
+	char *prefix;  /* Text to prepend the item */
+	char *item;    /* Main item text */
+	char *suffix;  /* Optional (not always) text to show after the item text. Often key shortcut */
+	int   retval;  /* Value returned by Select when this item is selected */
 } tMenuItem;
 
 /* Set if item is enabled. Disabled items will not be shown */
-#define ITEM_ENABLED 0x00000001
+#define ITEM_ENABLED 0x01
 /* For items of type ITEM_CHECK -- check value. For the rest -- ignored */
-#define ITEM_CHECKED 0x00000002
+#define ITEM_CHECKED 0x02
 /* Types are mutually exclusive, only one may be present. Only ITEM_CHECK has
    semantical value, the rest are somewhat "informational." However, they can
    be used to sample menu layout this way: setup "sampling" UI driver and call
@@ -45,19 +45,19 @@ typedef struct
    can go through the entire menu structure. It's a little cumbersome but should
    work. */
 /* Item selection causes immediate action */
-#define ITEM_ACTION  0x00000100
+#define ITEM_ACTION  0x04
 /* Item selection causes submenu */
-#define ITEM_SUBMENU 0x00000200
+#define ITEM_SUBMENU 0x08
 /* Item is toggle-type checkbox */
-#define ITEM_CHECK   0x00000400
+#define ITEM_CHECK   0x10
 /* Item selection invokes file selection dialog */
-#define ITEM_FILESEL 0x00000800
+#define ITEM_FILESEL 0x20
 /* This is type modifier, can be combined with other types. Means that
    the last parameter of Select will contain selection type */
-#define ITEM_MULTI   0x00001000
+#define ITEM_MULTI   0x40
 
 
-#define MENU_END { NULL, 0, NULL, NULL, NULL, 0 }
+#define MENU_END { "", 0, NULL, NULL, NULL, 0 }
 
 /* UI driver entry prototypes */
 

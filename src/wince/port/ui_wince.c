@@ -22,13 +22,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-
 #include <string.h>
 #include "atari.h"
-#include "ui.h"
-#include "screen_wince.h"   /* For linear filter */
-#include "keyboard.h" /* For virtual joystick */
 #include "input.h"    /* For joystick autofire */
+#include "ui.h"
+#include "util.h"
+
+#include "keyboard.h" /* For virtual joystick */
+#include "screen_wince.h"   /* For linear filter */
 
 int WinCeUISelect(const char* pTitle, int bFloat, int nDefault, tMenuItem* menu, int* ascii);
 int WinCeUIGetSaveFilename(char* pFilename);
@@ -46,7 +47,7 @@ tUIDriver wince_ui_driver =
 	&WinCeUISelect,
 	&WinCeUIGetSaveFilename,
 	&WinCeUIGetLoadFilename,
-	&WinCeUIMessage, 
+	&WinCeUIMessage,
 	&WinCeUIAboutBox,
 	&WinCeUIInit
 };
@@ -97,7 +98,7 @@ void AboutPocketAtari()
 		"Atari core for this version\n"
 		ATARI_TITLE "\n"
 		"http://atari800.sf.net\n"
-		; 
+		;
 
 	if (issmartphone)
 		ui_driver->fSelect(AboutSmart, FALSE, 0, menu_array, NULL);
@@ -166,15 +167,15 @@ int WinCeUISelect(const char* pTitle, int bFloat, int nDefault, tMenuItem* menu,
 	int itemcount;
 
 
-/* Count items in old menu */	
-	for(itemcount=0; menu[itemcount].sig; itemcount++) ;
+/* Count items in old menu */
+	for(itemcount=0; menu[itemcount].sig[0] != '\0'; itemcount++) ;
 	itemcount ++;
 /* Allocate memory for new menu, one extra item */
-	pNewMenu = (tMenuItem*)malloc(sizeof(tMenuItem)*itemcount);
+	pNewMenu = (tMenuItem*) Util_malloc(sizeof(tMenuItem)*itemcount);
 /* Copy old menu, add/modify items when necessary */
 	memcpy(pNewMenu, menu, sizeof(tMenuItem)*itemcount);
 /* Modify old menu items */
-	for(i=0; pNewMenu[i].sig; i++)
+	for(i=0; pNewMenu[i].sig[0] != '\0'; i++)
 	{
 		if (strcmp(pNewMenu[i].sig, "CURR") != 0) /* no keyboard shortcuts in Pocket Atari */
 			pNewMenu[i].suffix = NULL; /* except for the refresh rate indicator */
@@ -194,7 +195,7 @@ int WinCeUISelect(const char* pTitle, int bFloat, int nDefault, tMenuItem* menu,
 		else if(strcmp(pNewMenu[i].sig, "SREC") == 0)
 		{
 		/* Interlaced PCX replaced by Emulator Settings (old feature was too esoteric) */
-			pNewMenu[i].sig = "EMUX";
+			strcpy(pNewMenu[i].sig, "EMUX");
 			pNewMenu[i].flags = ITEM_ENABLED|ITEM_SUBMENU;
 			pNewMenu[i].prefix = NULL;
 			pNewMenu[i].item = "Pocket Atari Settings";
@@ -206,7 +207,7 @@ int WinCeUISelect(const char* pTitle, int bFloat, int nDefault, tMenuItem* menu,
 			if(strcmp(pNewMenu[0].sig, "XBIN") == 0) /* Main menu? */
 			{
 			/* Monitor menu item replaced with About box */
-				pNewMenu[i].sig = "ABPA";
+				strcpy(pNewMenu[i].sig, "ABPA");
 				pNewMenu[i].flags = ITEM_ENABLED|ITEM_SUBMENU;
 				pNewMenu[i].prefix = NULL;
 				pNewMenu[i].item = "About Pocket Atari";
@@ -222,11 +223,11 @@ int WinCeUISelect(const char* pTitle, int bFloat, int nDefault, tMenuItem* menu,
 		{
 			/* NEVER allow hifi pokey in smartphones */
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
-		} 
+		}
 		else if ((strcmp(pNewMenu[i].sig, "VJOY") == 0) && issmartphone)
 		{
 			pNewMenu[i].flags &= ~ITEM_ENABLED;
-		} 
+		}
 	}
 /* Passthrough to the basic driver */
 	result = basic_ui_driver.fSelect(pTitle, bFloat, nDefault, pNewMenu, ascii);
