@@ -1,3 +1,4 @@
+/* config.h for Windows CE version of Atari800. */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 #include "missing.h"
@@ -135,6 +136,9 @@
 /* Define to 1 if you have the `modf' function. */
 #define HAVE_MODF			1
 
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
@@ -191,7 +195,7 @@
 #define HAVE_STRCHR			1
 
 /* Define to 1 if you have the `strdup' function. */
-#define HAVE_STRDUP			1
+#undef HAVE_STRDUP
 
 /* Define to 1 if you have the `strerror' function. */
 #undef HAVE_STRERROR
@@ -344,13 +348,13 @@
 #undef SHM
 
 /* The size of a `long', as computed by sizeof. */
-#define SIZEOF_LONG sizeof(long)
+#define SIZEOF_LONG 4
 
 /* Define to activate sound support. */
 #define SOUND				1
 
 /* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
+#define STDC_HEADERS 1
 
 /* Define to allow stereo sound. */
 #undef STEREO_SOUND
