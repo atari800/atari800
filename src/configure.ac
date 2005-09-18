@@ -395,9 +395,19 @@ if [[ "$a8_target" != "basic" ]]; then
              )
 fi
 
+A8_OPTION(monitorasm,yes,
+          [Provide an assembler in the monitor (default=ON)],
+          MONITOR_ASSEMBLER,[Define to activate assembler in monitor.]
+         )
+
 A8_OPTION(monitorbreak,yes,
-          [Allow the BREAK command in the monitor (slower emulation) (default=ON)],
-          MONITOR_BREAK,[Define to activate BREAK command in monitor.]
+          [Support code breakpoints and execution history (slower emulation) (default=ON)],
+          MONITOR_BREAK,[Define to activate code breakpoints and execution history.]
+         )
+
+A8_OPTION(monitorbreakpoints,no,
+          [Support user-defined breakpoints (default=OFF)],
+          MONITOR_BREAKPOINTS,[Define to activate user-defined breakpoints.]
          )
 
 A8_OPTION(monitorhints,yes,
@@ -405,9 +415,14 @@ A8_OPTION(monitorhints,yes,
           MONITOR_HINTS,[Define to activate hints in disassembler.]
          )
 
-A8_OPTION(monitorasm,yes,
-          [Provide an assembler in the monitor (default=ON)],
-          MONITOR_ASSEMBLER,[Define to activate assembler in monitor.]
+A8_OPTION(monitorprofile,no,
+          [6502 opcode profiling (default=OFF)],
+          MONITOR_PROFILE,[Define to activate 6502 opcode profiling.]
+         )
+
+A8_OPTION(monitortrace,no,
+          [Support TRACE command in the monitor (default=OFF)],
+          MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
 dnl sound support section
@@ -567,9 +582,12 @@ if [[ "$a8_target" != "basic" ]]; then
     fi
     echo "Using the crash menu?.................: $WANT_CRASH_MENU"
 fi
-echo "Using monitor breaks?.................: $WANT_MONITOR_BREAK"
-echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
 echo "Using the monitor assembler?..........: $WANT_MONITOR_ASSEMBLER"
+echo "Using code breakpoints and history?...: $WANT_MONITOR_BREAK"
+echo "Using user-defined breakpoints?.......: $WANT_MONITOR_BREAKPOINTS"
+echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
+echo "Using 6502 opcode profiling?..........: $WANT_MONITOR_PROFILE"
+echo "Using TRACE monitor command?..........: $WANT_MONITOR_TRACE"
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
     echo "    Using sound interpolation?........: $WANT_INTERPOLATE_SOUND"
