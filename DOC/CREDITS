@@ -12,6 +12,9 @@ Current active members of the Atari800 development team:
 All contributors, past and present:
 -----------------------------------
 
+Troy Ayers <holiday42@gmail.com>
+    - PlayStation 2 port
+
 Michael Beck <beck@dresearch.de>
     - SIO2PC ATR patch
     - SIO config patches (tested on real XF551)
