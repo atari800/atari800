@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 
 dnl Set a8_target
 case "$target" in
-    basic | curses | ncurses | pdcurses | svgalib | dosvga | falcon | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | curses | ncurses | pdcurses | dosvga | falcon | ps2 | svgalib | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -48,6 +48,7 @@ case "$target" in
         echo "    pdcurses         (text mode using PDCurses library)"
         echo "    dosvga           (DOS only)"
         echo "    falcon           (Atari Falcon systems only)"
+        echo "    ps2              (Sony PlayStation 2)"
         echo "    svgalib          (Linux system with SVGALib library)"
         echo "    sdl              (System with Simple Direct Media Layer library)"
         echo "    windx            (Windows with DirectX only)"
@@ -120,11 +121,9 @@ if [[ "X_$LDFLAGS" == "X_" ]]; then
 fi
 
 
-
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
-
 
 
 dnl Checks for header files.
@@ -200,6 +199,31 @@ case "$a8_target" in
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
         A8_NEED_LIB(gem)
         OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
+        ;;
+    ps2)
+        AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
+        AC_DEFINE(DEFAULT_CFG_NAME,"mc0:/ATARI/ATARI800.CFG",[Alternate config filename due to 8+3 fs limit.])
+        CC="ee-gcc"
+        CFLAGS="-D_EE -O2 -G0 -Wall -mno-crt0 -fno-builtin-printf -nostartfiles"
+        CFLAGS="$CFLAGS -I${PS2SDK}/common/include -I${PS2SDK}/ee/include"
+        CFLAGS="$CFLAGS -I${GSKIT}/ee/dma/include -I${GSKIT}/ee/gs/include"
+        LDFLAGS="-T${PS2SDK}/ee/startup/linkfile"
+        LDFLAGS="$LDFLAGS -L${PS2SDK}/ee/lib -L${GSKITSRC}/lib -L${PS2DEV}/ee/lib/gcc-lib/ee/3.2.2"
+        dnl TODO: are -Is necessary in LDFLAGS?
+        LDFLAGS="$LDFLAGS -I${PS2SDK}/common/include -I${GSKIT}/ee/dma/include -I${GSKIT}/ee/gs/include"
+        LDFLAGS="$LDFLAGS -I${PS2SDK}/ee/include -I${GSKITSRC}/ee/dma/include -I${GSKITSRC}/ee/gs/include"
+        LDFLAGS="$LDFLAGS -I${PS2DEV}/ee/lib/gcc-lib/ee/3.2.2/include"
+        A8_NEED_LIB(debug)
+        A8_NEED_LIB(syscall)
+        A8_NEED_LIB(dmakit)
+        A8_NEED_LIB(gskit)
+        A8_NEED_LIB(gcc)
+        A8_NEED_LIB(c)
+        A8_NEED_LIB(mf)
+        A8_NEED_LIB(pad)
+        A8_NEED_LIB(kbd)
+        A8_NEED_LIB(kernel)
+        OBJS="atari_ps2.o ps2kbd.s usbd.s"
         ;;
     sdl)
         AC_DEFINE(SDL,1,[Target: SDL library.])
