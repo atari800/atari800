@@ -1,3 +1,9 @@
+2005-09-24  Piotr Fusik  <fox@scene.pl>
+* atari_ps2.c, configure.ac: added development version of the PlayStation 2
+  port I'm working on together with Troy Ayers; it is limited at the moment:
+  no real speed synchronization, no sound, no file selector, no monitor
+
+
 2005-09-18  Piotr Fusik  <fox@scene.pl>
 * cpu.c, monitor.[ch]: major improvement of monitor:
   - new command "B" manages user-defined breakpoints
