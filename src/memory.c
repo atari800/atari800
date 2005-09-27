@@ -621,22 +621,33 @@ void CartA0BF_Enable(void)
 
 void get_charset(UBYTE *cs)
 {
+	const UBYTE *p;
 	switch (machine_type) {
 	case MACHINE_OSA:
 	case MACHINE_OSB:
-		memcpy(cs, memory + 0xe000, 1024);
+		p = memory + 0xe000;
 		break;
 	case MACHINE_XLXE:
-		memcpy(cs, atari_os + 0x2000, 1024);
+		p = atari_os + 0x2000;
 		break;
 	case MACHINE_5200:
-		memcpy(cs, memory + 0xf800, 1024);
+		p = memory + 0xf800;
 		break;
+	default:
+		/* shouldn't happen */
+		return;
 	}
+	/* copy font, but change screencode order to ATASCII order */
+	memcpy(cs, p + 0x200, 0x100); /* control chars */
+	memcpy(cs + 0x100, p, 0x200); /* !"#$..., uppercase letters */
+	memcpy(cs + 0x300, p + 0x300, 0x100); /* lowercase letters */
 }
 
 /*
 $Log$
+Revision 1.16  2005/09/27 21:39:49  pfusik
+UI's charset is now in ATASCII order
+
 Revision 1.15  2005/09/11 07:23:13  pfusik
 use Util_malloc() instead of malloc()
 
