@@ -32,7 +32,7 @@
    - bitmap graphics emulation is now disabled by default
      (smaller and faster executable), but can be enabled with "configure"
  * much faster display in the X11 version
- * standard key mappings for F6-F10 in SDL, SVGALIB and X11 versions
+ * standard key mappings for F6-F10 in DirectX, SDL, SVGALIB and X11 versions
  * implemented Atari 5200 keys in SDL, SVGALIB and X11 versions
  * MOTIF and XVIEW versions are now compilable
  * DirectX version now compiles with MSVC 6
