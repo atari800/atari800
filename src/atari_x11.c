@@ -810,11 +810,7 @@ static int xview_keycode = AKEY_NONE;
 
 static void event_proc(Xv_Window window, Event * event, Notify_arg arg)
 {
-	int keycode;
-
-	keycode = GetKeyCode(event->ie_xevent);
-	if (keycode != AKEY_NONE)
-		xview_keycode = keycode;
+	xview_keycode = GetKeyCode(event->ie_xevent);
 }
 
 static int auto_reboot;
@@ -965,16 +961,6 @@ static void select_callback(void)
 static void start_callback(void)
 {
 	menu_consol &= (~CONSOL_START);
-}
-
-static void help_callback(void)
-{
-	xview_keycode = AKEY_HELP;
-}
-
-static void break_callback(void)
-{
-	xview_keycode = AKEY_BREAK;
 }
 
 static void reset_callback(void)
@@ -1377,15 +1363,9 @@ static void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
 		menu_consol &= (~CONSOL_START);
 		break;
 	case 3:
-		xview_keycode = AKEY_HELP;
-		break;
-	case 4:
-		xview_keycode = AKEY_BREAK;
-		break;
-	case 5:
 		Warmstart();
 		break;
-	case 6:
+	case 4:
 		Coldstart();
 		break;
 	}
@@ -1394,11 +1374,7 @@ static void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
 static void motif_keypress(Widget w, XtPointer client_data, XEvent *event,
                            Boolean *continue_to_dispatch)
 {
-	int keycode;
-
-	keycode = GetKeyCode(event);
-	if (keycode != AKEY_NONE)
-		xview_keycode = keycode;
+	xview_keycode = GetKeyCode(event);
 }
 
 static void motif_exposure(Widget w, XtPointer client_data, XEvent *event,
@@ -1650,14 +1626,6 @@ void Atari_Initialise(int *argc, char *argv[])
 								   MENU_NOTIFY_PROC, start_callback,
 								   NULL,
 								   MENU_ITEM,
-								   MENU_STRING, "Help",
-								   MENU_NOTIFY_PROC, help_callback,
-								   NULL,
-								   MENU_ITEM,
-								   MENU_STRING, "Break",
-								   MENU_NOTIFY_PROC, break_callback,
-								   NULL,
-								   MENU_ITEM,
 								   MENU_STRING, "Reset",
 								   MENU_NOTIFY_PROC, reset_callback,
 								   NULL,
@@ -1877,8 +1845,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		XmString s_option;
 		XmString s_select;
 		XmString s_start;
-		XmString s_help;
-		XmString s_break;
 		XmString s_warmstart;
 		XmString s_coldstart;
 
@@ -1915,8 +1881,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		s_option = XmStringCreateSimple("Option");
 		s_select = XmStringCreateSimple("Select");
 		s_start = XmStringCreateSimple("Start");
-		s_help = XmStringCreateSimple("Help");
-		s_break = XmStringCreateSimple("Break");
 		s_warmstart = XmStringCreateSimple("Warmstart");
 		s_coldstart = XmStringCreateSimple("Coldstart");
 
@@ -1949,9 +1913,6 @@ void Atari_Initialise(int *argc, char *argv[])
 							   XmVaPUSHBUTTON, s_select, 't', NULL, NULL,
 								XmVaPUSHBUTTON, s_start, 'S', NULL, NULL,
 									 XmVaSEPARATOR,
-								 XmVaPUSHBUTTON, s_help, 'H', NULL, NULL,
-								XmVaPUSHBUTTON, s_break, 'B', NULL, NULL,
-									 XmVaSEPARATOR,
 							XmVaPUSHBUTTON, s_warmstart, 'W', NULL, NULL,
 							XmVaPUSHBUTTON, s_coldstart, 'C', NULL, NULL,
 									 NULL);
@@ -1974,8 +1935,6 @@ void Atari_Initialise(int *argc, char *argv[])
 		XmStringFree(s_option);
 		XmStringFree(s_select);
 		XmStringFree(s_start);
-		XmStringFree(s_help);
-		XmStringFree(s_break);
 		XmStringFree(s_warmstart);
 		XmStringFree(s_coldstart);
 
@@ -2724,7 +2683,6 @@ int Atari_Keyboard(void)
 
 #if defined(XVIEW) || defined(MOTIF)
 	keycode = xview_keycode;
-	xview_keycode = AKEY_NONE;
 #else
 	if (XEventsQueued(display, QueuedAfterFlush) > 0) {
 		XEvent event;
@@ -3021,11 +2979,6 @@ int Atari_TRIG(int num)
 			trig = 0;
 		else
 			trig = 1;
-
-#if defined(XVIEW) || defined(MOTIF)
-		if (js_data.buttons & 0x02)
-			xview_keycode = AKEY_SPACE;
-#endif
 	}
 	if (num == js1_mode) {
 		int status;

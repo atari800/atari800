@@ -69,5 +69,3 @@ o intensive 130xe-banks switching slows down emulation much.
 
 o SDL port uses call back system for filling sound buffer.
   This causes wrong sound effects (noise) in some games.
-
-o key repeat does not work on Motif and is too fast on XView
