@@ -1,3 +1,21 @@
+2005-09-27  Piotr Fusik  <fox@scene.pl>
+* atari_curses.c, ui_basic.c: screencode -> curses char code conversion
+  is now done in curses_display_line rather than Atari_DisplayScreen:
+  avoided conversion from ASCII to screencode and back in UI (it was wrong
+  for some characters), Alt+O menu in Self Test is fixed
+
+* memory.c, ui_basic.c: UI's charset is now in ATASCII order,
+  so ascii_to_screen is not necessary
+
+* monitor.c: silenced MSVC warnings
+
+* util.h: fixed a warning about implicit declaration of unlink() in sio.c
+
+* atari_x11.c: fixed keyboard on Motif and XView
+
+* configure.ac: PlayStation 2 fixes; lots of small improvements
+
+
 2005-09-24  Piotr Fusik  <fox@scene.pl>
 * atari_ps2.c, configure.ac: added development version of the PlayStation 2
   port I'm working on together with Troy Ayers; it is limited at the moment:
