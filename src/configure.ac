@@ -26,10 +26,10 @@ AC_CONFIG_SRCDIR(atari.c)
 AC_CONFIG_HEADER(config.h)
 
 
+dnl Set a8_target...
 
-dnl Set a8_target
 case "$target" in
-    basic | curses | ncurses | pdcurses | dosvga | falcon | ps2 | svgalib | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | curses | ncurses | pdcurses | dosvga | falcon | ps2 | sdl | svgalib | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -62,7 +62,9 @@ case "$target" in
         ;;
 esac
 
-dnl Set a8_host
+
+dnl Set a8_host...
+
 AC_CANONICAL_HOST
 case $host_os in
     i386-pc-os2-emx)
@@ -110,26 +112,59 @@ case $host_os in
         ;;
 esac
 
-dnl Set CFLAGS
-if [[ "X_$CFLAGS" == "X_" ]]; then
+
+dnl Set CFLAGS and LDFLAGS...
+
+if [[ "X_$CFLAGS" = "X_" ]]; then
     CFLAGS="-O2 -Wall"
 fi
-
-dnl Set LDFLAGS
-if [[ "X_$LDFLAGS" == "X_" ]]; then
+if [[ "X_$LDFLAGS" = "X_" ]]; then
     LDFLAGS="-s"
+fi
+if [[ "$a8_target" = "ps2" ]]; then
+    CC="ee-gcc"
+    CFLAGS="$CFLAGS -D_EE -G0 -mno-crt0 -fno-builtin-printf -nostartfiles"
+    CFLAGS="$CFLAGS -I${PS2SDK}/common/include -I${PS2SDK}/ee/include"
+    CFLAGS="$CFLAGS -I${GSKIT}/ee/dma/include -I${GSKIT}/ee/gs/include"
+    CFLAGS="$CFLAGS -I${PS2DEV}/ee/lib/gcc-lib/ee/3.2.2/include"
+    CFLAGS="$CFLAGS -I${PS2SDK}/ports/include"
+    LDFLAGS="$LDFLAGS -T${PS2SDK}/ee/startup/linkfile"
+    LDFLAGS="$LDFLAGS -L${PS2SDK}/ee/lib -L${GSKITSRC}/lib -L${PS2DEV}/ee/lib/gcc-lib/ee/3.2.2"
+    LDFLAGS="$LDFLAGS -L${PS2SDK}/ports/lib"
 fi
 
 
-dnl Checks for programs.
+dnl Check for programs...
+
 AC_PROG_CC
 AC_PROG_INSTALL
 
 
-dnl Checks for header files.
+dnl Check for header files...
+
+dnl Beware: AC_PATH_X must NOT be inside "case"!
 AC_PATH_X
+case "$a8_target" in
+    sdl)
+        sdlcheck="X_`sdl-config --cflags`"
+        if [[ "$sdlcheck" != "X_" ]]; then
+            CFLAGS="$CFLAGS `sdl-config --cflags`"
+        else
+            AC_MSG_ERROR("No output from sdl-config!  Is sdl-config installed?")
+        fi
+        ;;
+    x11*)
+        if [[ "X_$x_includes" != "X_" ]]; then
+            CFLAGS="$CFLAGS -I$x_includes"
+        fi
+        if [[ "X_$x_libraries" != "X_" ]]; then
+            LDFLAGS="$LDFLAGS -L$x_libraries"
+        fi
+        ;;
+esac
 AC_HEADER_DIRENT
 AC_HEADER_STDC
+AC_HEADER_TIME
 AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
 SUPPORTS_SOUND_UNIX=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_UNIX=no)
@@ -137,34 +172,22 @@ SUPPORTS_RDEVICE=yes
 AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no)
 
 
-dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
-AC_TYPE_SIZE_T
-AC_HEADER_TIME
-AC_STRUCT_TM
-AC_C_VOLATILE
+dnl Check for libraries...
+
+AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
+AC_CHECK_LIB(z,gzopen)
+AC_CHECK_LIB(png,png_get_libpng_ver)
+AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
 
 
-dnl Checks for libraries.
-if [[ "$a8_host" != "os2-emx" ]]; then
-    AC_CHECK_LIB(z,gzopen)
-    AC_CHECK_LIB(png,png_get_libpng_ver)
-    AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
-fi
-
-dnl set OBJS depending on target (and host)
+dnl Set OBJS and libraries depending on host and target...
 
 dnl OBJS is not an AC "precious" variable but is used in the Makefile, so
 dnl it must be explicitly AC_SUBST'ed at the end of this file.
 OBJS=
-if [[ "$a8_host" == "win" ]]; then
+if [[ "$a8_host" = "win" ]]; then
     A8_NEED_LIB(gdi32)
     A8_NEED_LIB(winmm)
-else
-    if [[ "$a8_host" != "os2-emx" -a "$a8_host" != "beos" ]]; then
-        A8_NEED_LIB(m)
-    fi
 fi
 case "$a8_target" in
     basic)
@@ -203,40 +226,25 @@ case "$a8_target" in
     ps2)
         AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
         AC_DEFINE(DEFAULT_CFG_NAME,"mc0:/ATARI/ATARI800.CFG",[Alternate config filename due to 8+3 fs limit.])
-        CC="ee-gcc"
-        CFLAGS="-D_EE -O2 -G0 -Wall -mno-crt0 -fno-builtin-printf -nostartfiles"
-        CFLAGS="$CFLAGS -I${PS2SDK}/common/include -I${PS2SDK}/ee/include"
-        CFLAGS="$CFLAGS -I${GSKIT}/ee/dma/include -I${GSKIT}/ee/gs/include"
-        LDFLAGS="-T${PS2SDK}/ee/startup/linkfile"
-        LDFLAGS="$LDFLAGS -L${PS2SDK}/ee/lib -L${GSKITSRC}/lib -L${PS2DEV}/ee/lib/gcc-lib/ee/3.2.2"
-        dnl TODO: are -Is necessary in LDFLAGS?
-        LDFLAGS="$LDFLAGS -I${PS2SDK}/common/include -I${GSKIT}/ee/dma/include -I${GSKIT}/ee/gs/include"
-        LDFLAGS="$LDFLAGS -I${PS2SDK}/ee/include -I${GSKITSRC}/ee/dma/include -I${GSKITSRC}/ee/gs/include"
-        LDFLAGS="$LDFLAGS -I${PS2DEV}/ee/lib/gcc-lib/ee/3.2.2/include"
+        A8_NEED_LIB(gcc)
+        A8_NEED_LIB(kernel)
         A8_NEED_LIB(debug)
         A8_NEED_LIB(syscall)
         A8_NEED_LIB(dmakit)
         A8_NEED_LIB(gskit)
-        A8_NEED_LIB(gcc)
-        A8_NEED_LIB(c)
-        A8_NEED_LIB(mf)
         A8_NEED_LIB(pad)
         A8_NEED_LIB(kbd)
-        A8_NEED_LIB(kernel)
+        A8_NEED_LIB(mc)
+        A8_NEED_LIB(g)
+        A8_NEED_LIB(c)
         OBJS="atari_ps2.o ps2kbd.s usbd.s"
         ;;
     sdl)
         AC_DEFINE(SDL,1,[Target: SDL library.])
         AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
         AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,1,[Save additional config file options.])
-        sdlcheck="X_`sdl-config --cflags`"
-        if [[ "$sdlcheck" != "X_" ]]; then
-            CFLAGS="$CFLAGS `sdl-config --cflags`"
-            LIBS="$LIBS `sdl-config --libs`"
-            OBJS="atari_sdl.o"
-        else
-            AC_MSG_ERROR("No output from sdl-config!  Is sdl-config installed?")
-        fi
+        LIBS="$LIBS `sdl-config --libs`"
+        OBJS="atari_sdl.o"
         ;;
     svgalib)
         AC_DEFINE(SVGALIB,1,[Target: Linux with SVGALib.])
@@ -253,14 +261,7 @@ case "$a8_target" in
         OBJS="win32/atari_win32.o win32/screen_win32.o win32/main.o win32/keyboard.o win32/joystick.o win32/atari.ro"
         ;;
     x11*)
-        AC_PATH_X
         AC_DEFINE(X11,1,[Target: Standard X11.])
-        if [[ "X_$x_includes" != "X_" ]]; then
-            CFLAGS="$CFLAGS -I$x_includes"
-        fi
-        if [[ "X_$x_libraries" != "X_" ]]; then
-            LDFLAGS="$LDFLAGS -L$x_libraries"
-        fi
         A8_NEED_LIB(X11)
         case "$a8_target" in
             *-shm)
@@ -284,8 +285,8 @@ case "$a8_target" in
                 AC_DEFINE(MOTIF,1,[Target: X11 with Motif.])
                 dnl According to the information I was able to find,
                 dnl "-lgen -lsocket" is necessary only with old Sun Motif libs.
-                AC_CHECK_LIB(socket,main,[:],)
-                AC_CHECK_LIB(gen,main,[:],)
+                AC_CHECK_LIB(socket,main,[LIBS="-lsocket $LIBS"])
+                AC_CHECK_LIB(gen,main,[LIBS="-lgen $LIBS"])
                 dnl -lXm must come before -lXt, otherwise I get the following
                 dnl fatal error at runtime, when calling XtVaCreateManagedWidget:
                 dnl X Error of failed request:  BadWindow (invalid Window parameter)
@@ -302,24 +303,21 @@ esac
 dnl All future references to OBJS should ADD to it, not (re)define it.
 
 
-dnl Checks for library functions.
-AC_FUNC_CLOSEDIR_VOID
+dnl Check for typedefs, structures, and compiler characteristics...
+
+AC_C_BIGENDIAN
+AC_C_CONST
+AC_C_INLINE
+AC_C_VOLATILE
 AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MEMCMP
-AC_FUNC_SELECT_ARGTYPES
+AC_STRUCT_TM
 AC_TYPE_SIGNAL
-AC_FUNC_STAT
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
-AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkdir mkstemp mktemp])
-AC_CHECK_FUNCS([modf nanosleep opendir rename rewind rmdir select signal snprintf])
-AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
-AC_CHECK_FUNCS([strtol system time tmpnam uclock unlink usleep vsnprintf])
-AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
+AC_TYPE_SIZE_T
 
 
-dnl Check for validity of unaligned long accesses.
-AC_CACHE_CHECK([for unaligned long access validity], ac_cv_unaligned_long_ok,
+dnl Check for validity of unaligned word accesses...
+
+AC_CACHE_CHECK([for unaligned word access validity], ac_cv_unaligned_long_ok,
 [AC_TRY_RUN([
 #include <stdlib.h>
 #include <signal.h>
@@ -334,11 +332,10 @@ int main(void)
 #ifndef SIGBUS
     return 0;
 #else
-    long l[2];
-
+    int l[2];
     if (setjmp(jmpbuf) == 0) {
         signal(SIGBUS, bus_err);
-        *((long *) ((char *) l + 1)) = 1;
+        *((int *) ((char *) l + 1)) = 1;
         signal(SIGBUS, SIG_DFL);
         return 0;
     }
@@ -349,20 +346,26 @@ int main(void)
 #endif
 }], ac_cv_unaligned_long_ok=yes, ac_cv_unaligned_long_ok=no, ac_cv_unaligned_long_ok=no)])
 if [[ "$ac_cv_unaligned_long_ok" = "yes" ]]; then
-    AC_DEFINE(UNALIGNED_LONG_OK,1,[Define if unaligned long access is ok.])
+    AC_DEFINE(UNALIGNED_LONG_OK,1,[Define if unaligned word access is ok.])
 fi
 
 
+dnl Check for library functions...
 
-dnl Miscellaneous checks.
-AC_CHECK_SIZEOF(long,4)
-AC_C_BIGENDIAN
+AC_FUNC_CLOSEDIR_VOID
+AC_FUNC_MEMCMP
+AC_FUNC_SELECT_ARGTYPES
+AC_FUNC_STAT
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
+AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkdir mkstemp mktemp])
+AC_CHECK_FUNCS([modf nanosleep opendir rename rewind rmdir select signal snprintf])
+AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
+AC_CHECK_FUNCS([strtol system time tmpnam uclock unlink usleep vsnprintf])
+AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 
 
-
-dnl ****************
-dnl ATARI800 OPTIONS
-dnl ****************
+dnl Select optional Atari800 features...
 
 dnl The A8_OPTION macro automates the calling of AC_ARG_ENABLE, AC_HELP_STRING and AC_DEFINE.
 dnl         $1    = the name of the feature, what follows "--enable-".
@@ -396,7 +399,7 @@ if [[ "$a8_target" != "basic" ]]; then
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
 
         dnl These objects are not compiled in BASIC nor CURSES_BASIC target
-        OBJS="$OBJS screen.o colours.o"
+        OBJS="$OBJS colours.o screen.o"
 
         A8_OPTION(newcycleexact,yes,
                   [Allow color changes inside a scanline (default=ON)],
@@ -418,6 +421,16 @@ if [[ "$a8_target" != "basic" ]]; then
               CRASH_MENU,[Define to activate crash menu after CIM instruction.]
              )
 fi
+
+A8_OPTION(pagedattrib,no,
+          [Use page-based attribute array (default=OFF)],
+          PAGED_ATTRIB,[Define to use page-based attribute array.]
+         )
+
+A8_OPTION(bufferedlog,no,
+          [Use buffered debug output (until the graphics mode switches back to text mode) (default=OFF)],
+          BUFFERED_LOG,[Define to use buffered debug output.]
+         )
 
 A8_OPTION(monitorasm,yes,
           [Provide an assembler in the monitor (default=ON)],
@@ -449,7 +462,9 @@ A8_OPTION(monitortrace,no,
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
-dnl sound support section
+
+dnl Set sound support options...
+
 A8_OPTION(sound,yes,
           [Use sound support (default=ON)],
           SOUND,[Define to activate sound support.]
@@ -458,7 +473,7 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
 
     OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
 
-    if [[ "$a8_target" != sdl ]]; then
+    if [[ "$a8_target" != "sdl" ]]; then
         case "$a8_host" in
             dos)
                 OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
@@ -520,15 +535,8 @@ else
     WANT_CLIP_SOUND="no"
 fi
 
-A8_OPTION(pagedattrib,no,
-          [Use page-based attribute array (default=OFF)],
-          PAGED_ATTRIB,[Define to use page-based attribute array.]
-         )
 
-A8_OPTION(bufferedlog,no,
-          [Use buffered debug output (until the graphics mode switches back to text mode) (default=OFF)],
-          BUFFERED_LOG,[Define to use buffered debug output.]
-         )
+dnl Select host/target specific features...
 
 if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
     A8_OPTION(falconcpuasm,no,
@@ -579,15 +587,15 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
 fi
 
 
+dnl Wrapup: export OBJS and write Makefile...
 
-dnl Wrapup:  export OBJS and write Makefile
 AC_SUBST(OBJS)
 AC_CONFIG_FILES(Makefile)
 AC_OUTPUT
 
 
+dnl Print results of configure's work...
 
-dnl Print results of configure's work
 echo "-------------------------------------------------------"
 echo "                 CONFIGURATION RESULTS:"
 echo "-------------------------------------------------------"
@@ -606,6 +614,8 @@ if [[ "$a8_target" != "basic" ]]; then
     fi
     echo "Using the crash menu?.................: $WANT_CRASH_MENU"
 fi
+echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
+echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
 echo "Using the monitor assembler?..........: $WANT_MONITOR_ASSEMBLER"
 echo "Using code breakpoints and history?...: $WANT_MONITOR_BREAK"
 echo "Using user-defined breakpoints?.......: $WANT_MONITOR_BREAKPOINTS"
@@ -627,8 +637,6 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
 else
     echo "    (Sound sub-options disabled)"
 fi
-echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
-echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
 if [[ "$a8_target" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
 fi
@@ -648,7 +656,6 @@ fi
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     echo "Using R: device?......................: $WANT_R_IO_DEVICE"
 fi
-
 echo
 echo "Main build variables:"
 echo "    CC......: \"$CC\""
