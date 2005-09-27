@@ -702,7 +702,7 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 #ifdef MONITOR_HINTS
 	if (p[-1] != '#') {
 		/* different names when reading/writing memory */
-		const char *label = find_label_name(value, (optype6502[insn] & 0x08) != 0);
+		const char *label = find_label_name((UWORD) value, (optype6502[insn] & 0x08) != 0);
 		if (label != NULL) {
 			fprintf(fp, "%*s;%s\n", 28 - nchars, "", label);
 			return pc;
@@ -725,8 +725,8 @@ void show_state(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
 static void monitor_show_state(void)
 {
 	show_state(stdout, regPC, regA, regX, regY, regS,
-		(regP & N_FLAG) ? 'N' : '-', (regP & V_FLAG) ? 'V' : '-',
-		(regP & Z_FLAG) ? 'Z' : '-', (regP & C_FLAG) ? 'C' : '-');
+		(char) ((regP & N_FLAG) ? 'N' : '-'), (char) ((regP & V_FLAG) ? 'V' : '-'),
+		(char) ((regP & Z_FLAG) ? 'Z' : '-'), (char) ((regP & C_FLAG) ? 'C' : '-'));
 }
 
 static UWORD disassemble(UWORD addr)
@@ -2022,6 +2022,9 @@ int monitor(void)
 
 /*
 $Log$
+Revision 1.32  2005/09/27 21:41:53  pfusik
+silenced MSVC warnings
+
 Revision 1.31  2005/09/18 15:05:01  pfusik
 major improvement of monitor
 
