@@ -50,8 +50,7 @@
 
 static int curses_mode = CURSES_LEFT;
 
-UBYTE curses_screen[24][40];
-static UBYTE mode_6_or_7_line[24];
+static int curses_screen[24][40];
 
 void Atari_Initialise(int *argc, char *argv[])
 {
@@ -98,39 +97,60 @@ void Atari_Initialise(int *argc, char *argv[])
 
 int Atari_Exit(int run_monitor)
 {
-	int restart;
-
 	curs_set(1);
 	endwin();
-
 	Aflushlog();
-	if (run_monitor)
-		restart = monitor();
-	else
-		restart = FALSE;
 
-	if (restart) {
+	if (run_monitor && monitor()) {
 		curs_set(0);
+		return TRUE;
 	}
 #ifdef SOUND
-	else
-		Sound_Exit();
+	Sound_Exit();
 #endif
-	return restart;
+	return FALSE;
 }
 
 void curses_clear_screen(void)
 {
+	int x;
 	int y;
 	for (y = 0; y < 24; y++)
-		memset(curses_screen[y], 0, 40);
-	memset(mode_6_or_7_line, 0, 24);
+		for (x = 0; x < 40; x++)
+			curses_screen[y][x] = ' ';
+}
+
+void curses_putch(int x, int y, int ascii, UBYTE fg, UBYTE bg)
+{
+	/* handle line drawing chars */
+	switch (ascii) {
+	case 18:
+		ascii = '-';
+		break;
+	case 17:
+	case 3:
+		ascii = '/';
+		break;
+	case 26:
+	case 5:
+		ascii = '\\';
+		break;
+	case 124:
+		ascii = '|';
+		break;
+	default:
+		break;
+	}
+	if ((bg & 0xf) > (fg & 0xf))
+		curses_screen[y][x] = ascii + A_REVERSE;
+	else
+		curses_screen[y][x] = ascii;
 }
 
 void curses_display_line(int anticmode, const UBYTE *screendata)
 {
 	int y;
-	UBYTE *p;
+	int *p;
 	int w;
 	if (ypos < 32 || ypos >= 224)
 		return;
@@ -156,7 +176,29 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 		default:
 			return;
 		}
-		memcpy(p, screendata, w);
+		do {
+			static const int offset[8] = {
+				0x20,                       /* 0x00-0x1f: Numbers + !"$% etc. */
+				0x20,                       /* 0x20-0x3f: Upper Case Characters */
+				A_BOLD,                     /* 0x40-0x5f: Control Characters */
+				0,                          /* 0x60-0x7f: Lower Case Characters */
+				-0x80 + 0x20 + A_REVERSE,   /* 0x80-0x9f: Numbers + !"$% etc. */
+				-0x80 + 0x20 + A_REVERSE,   /* 0xa0-0xbf: Upper Case Characters */
+				-0x80 + A_BOLD + A_REVERSE, /* 0xc0-0xdf: Control Characters */
+				-0x80 + A_REVERSE           /* 0xe0-0xff: Lower Case Characters */
+			};
+			UBYTE c = *screendata++;
+			/* PDCurses prints '\x7f' as "^?".
+			   This causes problems if this is the last character in line.
+			   Use bold '>' for Atari's Tab symbol (filled right-pointing triangle). */
+			if (c == 0x7f)
+				*p = '>' + A_BOLD;
+			else if (c == 0xff)
+				*p = '>' + A_BOLD + A_REVERSE;
+			else
+				*p = c + offset[c >> 5];
+			p++;
+		} while (--w);
 		break;
 	case 6:
 	case 7:
@@ -176,14 +218,13 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 		default:
 			return;
 		}
-		mode_6_or_7_line[y] = 1;
 		{
 #define LIGHT_THRESHOLD 0x0c
-			UBYTE light[4];
-			light[0] = (UBYTE) ((COLPF0 & 0x0e) >= LIGHT_THRESHOLD ? 0x80 : 0);
-			light[1] = (UBYTE) ((COLPF1 & 0x0e) >= LIGHT_THRESHOLD ? -0x40 + 0x80 : -0x40);
-			light[2] = (UBYTE) ((COLPF2 & 0x0e) >= LIGHT_THRESHOLD ? -0x80 + 0x80 : -0x80);
-			light[3] = (UBYTE) ((COLPF3 & 0x0e) >= LIGHT_THRESHOLD ? -0xc0 + 0x80 : -0xc0);
+			int light[4];
+			light[0] = (COLPF0 & 0x0e) >= LIGHT_THRESHOLD ? 0x20 + A_BOLD : 0x20;
+			light[1] = (COLPF1 & 0x0e) >= LIGHT_THRESHOLD ? -0x40 + 0x20 + A_BOLD : -0x40 + 0x20;
+			light[2] = (COLPF2 & 0x0e) >= LIGHT_THRESHOLD ? -0x80 + 0x20 + A_BOLD : -0x80 + 0x20;
+			light[3] = (COLPF3 & 0x0e) >= LIGHT_THRESHOLD ? -0xc0 + 0x20 + A_BOLD : -0xc0 + 0x20;
 			do {
 				*p++ = *screendata + light[*screendata >> 6];
 				screendata++;
@@ -199,39 +240,9 @@ void Atari_DisplayScreen(UBYTE *screen)
 {
 	int x;
 	int y;
-
 	for (y = 0; y < 24; y++) {
 		for (x = 0; x < 40; x++) {
 			int ch = curses_screen[y][x];
-
-			if (mode_6_or_7_line[y]) {
-				if (ch & 0x80)
-					ch += -0x80 + 0x20 + A_BOLD;
-				else
-					ch += 0x20;
-			}
-			else {
-				static const int offset[8] = {
-					0x20,                       /* 0x00-0x1f: Numbers + !"$% etc. */
-					0x20,                       /* 0x20-0x3f: Upper Case Characters */
-					A_BOLD,                     /* 0x40-0x5f: Control Characters */
-					0,                          /* 0x60-0x7f: Lower Case Characters */
-					-0x80 + 0x20 + A_REVERSE,   /* 0x80-0x9f: Numbers + !"$% etc. */
-					-0x80 + 0x20 + A_REVERSE,   /* 0xa0-0xbf: Upper Case Characters */
-					-0x80 + A_BOLD + A_REVERSE, /* 0xc0-0xdf: Control Characters */
-					-0x80 + A_REVERSE           /* 0xe0-0xff: Lower Case Characters */
-				};
-				/* PDCurses prints '\x7f' as "^?".
-				   This causes problems if this is the last character in line.
-				   Use bold '>' for Atari's Tab symbol (filled right-pointing triangle). */
-				if (ch == 0x7f)
-					ch = '>' + A_BOLD;
-				else if (ch == 0xff)
-					ch = '>' + A_BOLD + A_REVERSE;
-				else
-					ch += offset[ch >> 5];
-			}
-
 			switch (curses_mode) {
 			default:
 			case CURSES_LEFT:
@@ -252,11 +263,9 @@ void Atari_DisplayScreen(UBYTE *screen)
 				ch = ' ' + (ch & A_REVERSE);
 				break;
 			}
-
 			addch(ch);
 		}
 	}
-
 	refresh();
 }
 
@@ -837,6 +846,10 @@ int main(int argc, char **argv)
 
 /*
 $Log$
+Revision 1.22  2005/09/27 21:38:38  pfusik
+screencode -> curses char code conversion is now done
+in curses_display_line rather than Atari_DisplayScreen
+
 Revision 1.21  2005/08/24 21:07:02  pfusik
 keypad works on PDCurses
 
