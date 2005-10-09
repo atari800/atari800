@@ -33,7 +33,7 @@
 #include "memory.h"
 #include "sio.h"
 
-int start_binloading = 0;
+int start_binloading = FALSE;
 int loading_basic = 0;
 FILE *bin_file = NULL;
 
@@ -45,7 +45,7 @@ static int BIN_read_word(void)
 		fclose(bin_file);
 		bin_file = NULL;
 		if (start_binloading) {
-			start_binloading = 0;
+			start_binloading = FALSE;
 			Aprint("binload: not valid BIN file");
 			return -1;
 		}
@@ -58,11 +58,6 @@ static int BIN_read_word(void)
 /* Start or continue loading */
 void BIN_loader_cont(void)
 {
-	int temp;
-	UWORD from;
-	UWORD to;
-	UBYTE byte;
-
 	if (bin_file == NULL)
 		return;
 	if (start_binloading) {
@@ -74,6 +69,9 @@ void BIN_loader_cont(void)
 
 	dPutByte(0x2e3, 0xd7);
 	do {
+		int temp;
+		UWORD from;
+		UWORD to;
 		do
 			temp = BIN_read_word();
 		while (temp == 0xffff);
@@ -88,16 +86,18 @@ void BIN_loader_cont(void)
 
 		if (start_binloading) {
 			dPutWord(0x2e0, from);
-			start_binloading = 0;
+			start_binloading = FALSE;
 		}
 
 		to++;
 		do {
-			if (fread(&byte, 1, 1, bin_file) == 0) {
+			int byte = fgetc(bin_file);
+			if (byte == EOF) {
 				fclose(bin_file);
 				bin_file = NULL;
 				regPC = dGetWord(0x2e0);
 				if (dGetByte(0x2e3) != 0xd7) {
+					/* run INIT routine which RTSes directly to RUN routine */
 					regPC--;
 					dPutByte(0x0100 + regS--, regPC >> 8);		/* high */
 					dPutByte(0x0100 + regS--, regPC & 0xff);	/* low */
@@ -105,7 +105,7 @@ void BIN_loader_cont(void)
 				}
 				return;
 			}
-			PutByte(from, byte);
+			PutByte(from, (UBYTE) byte);
 			from++;
 		} while (from != to);
 	} while (dGetByte(0x2e3) == 0xd7);
@@ -160,8 +160,8 @@ int BIN_loader(const char *filename)
 		SIO_DisableDrive(1);
 	if (fread(buf, 1, 2, bin_file) == 2) {
 		if (buf[0] == 0xff && buf[1] == 0xff) {
-			start_binloading = 1;	/* force SIO to call BIN_loader_start at boot */
-			Coldstart();			/* reboot */
+			start_binloading = TRUE; /* force SIO to call BIN_loader_start at boot */
+			Coldstart();             /* reboot */
 			return TRUE;
 		}
 		else if (buf[0] == 0 && buf[1] == 0) {
