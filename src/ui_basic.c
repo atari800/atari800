@@ -391,7 +391,7 @@ static void SelectItem(UBYTE *screen, int fg, int bg,
 		empty[38] = '\0';
 		Print(screen, bg, fg, empty, 1, 22);
 		ShortenItem(szOrig, szString, 38);
-		if (strlen(szString) > iMaxXsize)
+		if ((int) strlen(szString) > iMaxXsize)
 			/* the selected item was shortened */
 			CenterPrint(screen, fg, bg, szString, 22);
 	}
@@ -1079,6 +1079,9 @@ tUIDriver basic_ui_driver =
 
 /*
 $Log$
+Revision 1.38  2005/10/09 20:33:36  pfusik
+silenced a warning
+
 Revision 1.37  2005/09/27 21:41:08  pfusik
 UI's charset is now in ATASCII order; curses_putch()
 
