@@ -103,7 +103,6 @@
 #define DPeek(a)   dGetWord(a)
 #define Poke(x,y)  dPutByte(x, y)
 
-extern int Device_isvalid(UBYTE ch);
 //---------------------------------------------------------------------------
 // Global Variables
 //---------------------------------------------------------------------------
@@ -650,37 +649,31 @@ void open_connection_serial(int port)
 
 //---------------------------------------------------------------------------
 // Host Support Function - Retrieve address from open command:
-// From Basic: OPEN #1,8,23,"R:jybolac.homelinux.com"
+// From Basic: OPEN #1,8,23,"R:JYBOLAC.HOMELINUX.COM"
 // Returns:    "jybolac.homelinux.com"
 //---------------------------------------------------------------------------
-void Device_GetInetAddress(void)
+static void Device_GetInetAddress(void)
 {
-  int bufadr;
-  int offset;
-  int devnam;
+  UWORD bufadr = Device_SkipDeviceName();
+  char *p;
 
-  offset = 0;
-  devnam = TRUE;
-  bufadr = (dGetByte(ICBAHZ) << 8) | dGetByte(ICBALZ);
-
-  while (Device_isvalid(dGetByte(bufadr)))
-  {
-    int byte = dGetByte(bufadr);
-
-    if (!devnam)
-    {
-      if (byte >= 'A' && byte <= 'Z')
-        byte += 'a' - 'A';
-
-      inetaddress[offset++] = byte;
-    }
-    else if (byte == ':')
-      devnam = FALSE;
-
-    bufadr++;
+  if (bufadr == 0) {
+    /* XXX: signal error */
+    inetaddress[0] = '\0';
+    return;
   }
 
-  inetaddress[offset++] = '\0';
+  p = inetaddress;
+  while (p < inetaddress + sizeof(inetaddress) - 1) {
+    char c = (char) dGetByte(bufadr);
+    if (c < '!' || c > '\x7e')
+      break;
+    if (c >= 'A' && c <= 'Z')
+      c += 'a' - 'A';
+    *p++ = c;
+    bufadr++;
+  }
+  *p = '\0';
 }
 
 
