@@ -26,14 +26,14 @@ sub make_directory() {
 # runs a command (the output goes to the console)
 sub run_command(@) {
 	print "Running: @_\n";
-	system @_ and die "$[0] failed\n";
+	system @_ and die "$_[0] failed\n";
 }
 
 # runs a command and captures its output
 sub pipe_command(@) {
 	print "Running: @_\n";
 	my $result = `@_`;
-	die "$[0] failed\n" if $?;
+	die "$_[0] failed\n" if $?;
 	return $result;
 }
 
@@ -136,7 +136,7 @@ for (@ARGV) {
 	elsif (/^--cflags=(.+)/) {
 		$cflags = $1;
 	}
-	elsif (/^--(?:en|dis)able-\w+/) {
+	elsif (/^--(?:en|dis)able-/) {
 		push @features, $_;
 	}
 	elsif (/^--program=(.+)/) {
@@ -350,7 +350,7 @@ for my $config (@configs) {
 			or die "Expected 'frames emulated in'\n";
 		my $speed_msg = "$1 seconds";
 		# avoid division by zero
-		if ($1) {
+		if ($1 != 0) {
 			# assuming PAL, real Atari needs (0.02 * $frames) time
 			$speed_msg .= sprintf ' (%d%% of real Atari speed)', 100 * 0.02 * $frames / $1;
 		}
