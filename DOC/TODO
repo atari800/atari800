@@ -6,8 +6,6 @@ o Covox sound device emulation
 
 o support configurations without live sound that can write WAV files
 
-o H: devices should have no access outside the specified directories
-
 o if UI fileselector cannot open a folder either user should be alerted
   or the fileselector should open another folder and not sit there quietly
   like if it was ignoring the user completely.
