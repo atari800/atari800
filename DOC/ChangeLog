@@ -1,8 +1,59 @@
+2005-10-09  Piotr Fusik  <fox@scene.pl>
+* atari_x11.c: removed "Help" menu item disabling, because "Help" was removed
+  recently
+
+* rdevice.c: improved Device_GetInetAddress:
+  - all non-control ASCII characters except space allowed (dunno if correct)
+  - memory wraps at 64K
+  - prevented buffer overflow
+
+* binload.c, devices.c: use fgetc() instead of fread() for single bytes;
+  start_binloading is a boolean, and should be set to TRUE or FALSE
+
+* devices.c, rt-config.[ch]: atari_h[1-4]dir -> atari_h_dir[0..3];
+  hd_read_only -> h_read_only
+
+* devices.[ch]: numerous improvements in H: device emulation:
+  - slash, backslash, colon and greater-than are allowed H: directory
+    separators on all platforms
+  - parent directory on H: is "<" or ".."
+  - access via H: outside the specified directories is not possible
+    (I hope so!)
+  - HPath -> h_exe_path, and is not modified in-place
+  - fixed match(): "F?" matched "F", "FOO?BAR" matched "FOO.BAR"
+  - apostrophe is valid in filenames
+  - MyDOS compatible H: commands: 0x22 = mkdir, 0x29 = cd
+  - H: rename command no longer allows moving files to a different directory
+  - command 0x30 is "ToAbsolutePath" rather than "CurrentDirectory"
+  - mkdir and rmdir no longer work in H: read-only mode
+  - mkdir no longer calls umask(), and now creates directory with default
+    permissions
+  - H5: is no longer valid (but H6:-H9: default to the current directory)
+  - apply fseek(fp, 0, SEEK_CUR) between reads and writes of a file open
+    in "rb+" mode (e.g. DJGPP needs that)
+  - H: directories prefixed with ':' in directory listing on MyDOS
+  - base names longer than 8 characters and extensions longer than
+    3 characters are truncated and terminated with '+' in directory listings
+  - file size in long directory listing limited to 999999
+  - long directory listing uses (SpartaDOS-compatible) 12-hour format
+
+* ui_basic.c: silenced a warning
+
+* win32/atari_win32.c: implemented Atari 5200 keys;
+  F11 and Scroll Lock no longer press L on Atari keyboard;
+  Ctrl+arrows emulate Atari arrows without Control;
+  adapted to Atari800 coding style
+
+* util/benchmark.pl: fixed program name in error messages
+
+* util/hdevtest.lst: automatic test of H: device. Usage instructions inside.
+
+
 2005-09-27  Piotr Fusik  <fox@scene.pl>
 * atari_curses.c, ui_basic.c: screencode -> curses char code conversion
   is now done in curses_display_line rather than Atari_DisplayScreen:
   avoided conversion from ASCII to screencode and back in UI (it was wrong
-  for some characters), Alt+O menu in Self Test is fixed
+  for some characters), this fixes Alt+O menu in Self Test
 
 * memory.c, ui_basic.c: UI's charset is now in ATASCII order,
   so ascii_to_screen is not necessary
@@ -27,7 +78,7 @@
   - new command "B" manages user-defined breakpoints
     (based on Atari800Win PLus 4.0 by Marcin Lewandowski)
   - monitor now displays registers and current instruction when invoked
-  - "SHOW" displays current instruction
+  - "SHOW" additionally displays current instruction
   - disassembler displays bytes before the instruction,
     to avoid misalignment where long labels are present
   - disassembler no longer displays cycles (it was misleading,
