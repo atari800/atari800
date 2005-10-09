@@ -6,15 +6,32 @@
    - SAVEd (*.BAS) programs
    - LISTed (*.LST) programs with auto-detected Atari, LF, CR/LF or CR
      line terminators
+ * numerous fixes and improvements in H: device emulation
+ * fixed a bug in DMACTL emulation
+ * cycle-exact Read-Modify-Write instructions for all GTIA registers
  * Atarimax cartridges
  * improved PERCOM emulation (helps non-standard disk images)
  * sound recording now works (was completely broken)
- * "-screenshots <pattern>" command-line option
+ * file selector sorts case-insensitively
+ * "Make Blank ATR Disk" creates standard Single Density disk image
+ * shortcut keys (Alt+letter, F9, ...) work in User Interface
+ * new "-screenshots <pattern>" command-line option
  * replaced "-rtime <onoff>" with "-rtime" / "-nortime"
  * replaced "-hdreadonly <onoff>" with "-hreadonly" / "-hreadwrite"
  * new monitor commands: "LABELS", "LOOP"
  * "C", "M" and "S" monitor commands support hardware registers
+ * improved "SHOW", "DLIST", "D" and "A" monitor commands
+ * fixed memory leaks, buffer overflows, Y2K and Y2100 bugs
+ * fixed GCC 4 compilation error and warnings
+ * fixed sound in X11 version (feedback is welcome)
+ * much faster display in the X11 version
+ * MOTIF and XVIEW versions are now compilable
+ * standard key mappings for F6-F10 in DirectX, SDL, SVGALIB and X11 versions
+ * implemented Atari 5200 keys in DirectX, SDL, SVGALIB and X11 versions
+ * WinCE version ported to Smartphones
+ * DirectX version can be compiled with MSVC 6
  * stereo now works in DOS ports
+ * fixed "-rotate90" and Alt+B in SDL version
  * greatly improved BASIC version:
    - supports sound
    - supports all interrupts
@@ -31,12 +48,7 @@
    - Alt+letter shortcuts work on PDCurses
    - bitmap graphics emulation is now disabled by default
      (smaller and faster executable), but can be enabled with "configure"
- * much faster display in the X11 version
- * standard key mappings for F6-F10 in DirectX, SDL, SVGALIB and X11 versions
- * implemented Atari 5200 keys in SDL, SVGALIB and X11 versions
- * MOTIF and XVIEW versions are now compilable
- * DirectX version now compiles with MSVC 6
- * WinCE version ported to Smartphones
+ * new experimental PlayStation 2 port
  * improved "configure" script
  * many small fixes and major source code clean up
 
