@@ -55,14 +55,11 @@ char atari_basic_filename[FILENAME_MAX];
 char atari_5200_filename[FILENAME_MAX];
 char atari_disk_dirs[MAX_DIRECTORIES][FILENAME_MAX];
 char atari_rom_dir[FILENAME_MAX];
-char atari_h1_dir[FILENAME_MAX];
-char atari_h2_dir[FILENAME_MAX];
-char atari_h3_dir[FILENAME_MAX];
-char atari_h4_dir[FILENAME_MAX];
+char atari_h_dir[4][FILENAME_MAX];
 char atari_exe_dir[FILENAME_MAX];
 char atari_state_dir[FILENAME_MAX];
 char print_command[256];
-int hd_read_only;
+int h_read_only;
 int refresh_rate;
 int disable_basic;
 int enable_sio_patch;
@@ -118,15 +115,15 @@ static void RtPresetDefaults()
 	atari_disk_dirs[0][0] = '\0';
 	disk_directories = 0;
 	atari_rom_dir[0] = '\0';
-	atari_h1_dir[0] = '\0';
-	atari_h2_dir[0] = '\0';
-	atari_h3_dir[0] = '\0';
-	atari_h4_dir[0] = '\0';
+	atari_h_dir[0][0] = '\0';
+	atari_h_dir[1][0] = '\0';
+	atari_h_dir[2][0] = '\0';
+	atari_h_dir[3][0] = '\0';
 	atari_exe_dir[0] = '\0';
 	atari_state_dir[0] = '\0';
 
 	strcpy(print_command, "lpr %s");
-	hd_read_only = 1;
+	h_read_only = TRUE;
 	refresh_rate = 1;
 	machine_type = MACHINE_XLXE;
 	ram_size = 64;
@@ -213,15 +210,15 @@ int RtConfigLoad(const char *alternate_config_filename)
 			else if (strcmp(string, "ROM_DIR") == 0)
 				Util_strlcpy(atari_rom_dir, ptr, sizeof(atari_rom_dir));
 			else if (strcmp(string, "H1_DIR") == 0)
-				Util_strlcpy(atari_h1_dir, ptr, sizeof(atari_h1_dir));
+				Util_strlcpy(atari_h_dir[0], ptr, FILENAME_MAX);
 			else if (strcmp(string, "H2_DIR") == 0)
-				Util_strlcpy(atari_h2_dir, ptr, sizeof(atari_h2_dir));
+				Util_strlcpy(atari_h_dir[1], ptr, FILENAME_MAX);
 			else if (strcmp(string, "H3_DIR") == 0)
-				Util_strlcpy(atari_h3_dir, ptr, sizeof(atari_h3_dir));
+				Util_strlcpy(atari_h_dir[2], ptr, FILENAME_MAX);
 			else if (strcmp(string, "H4_DIR") == 0)
-				Util_strlcpy(atari_h4_dir, ptr, sizeof(atari_h4_dir));
+				Util_strlcpy(atari_h_dir[3], ptr, FILENAME_MAX);
 			else if (strcmp(string, "HD_READ_ONLY") == 0)
-				hd_read_only = Util_sscandec(ptr);
+				h_read_only = Util_sscandec(ptr);
 			else if (strcmp(string, "EXE_DIR") == 0)
 				Util_strlcpy(atari_exe_dir, ptr, sizeof(atari_exe_dir));
 			else if (strcmp(string, "STATE_DIR") == 0)
@@ -347,11 +344,11 @@ int RtConfigSave(void)
 	for (i = 0; i < disk_directories; i++)
 		fprintf(fp, "DISK_DIR=%s\n", atari_disk_dirs[i]);
 	fprintf(fp, "ROM_DIR=%s\n", atari_rom_dir);
-	fprintf(fp, "H1_DIR=%s\n", atari_h1_dir);
-	fprintf(fp, "H2_DIR=%s\n", atari_h2_dir);
-	fprintf(fp, "H3_DIR=%s\n", atari_h3_dir);
-	fprintf(fp, "H4_DIR=%s\n", atari_h4_dir);
-	fprintf(fp, "HD_READ_ONLY=%d\n", hd_read_only);
+	fprintf(fp, "H1_DIR=%s\n", atari_h_dir[0]);
+	fprintf(fp, "H2_DIR=%s\n", atari_h_dir[1]);
+	fprintf(fp, "H3_DIR=%s\n", atari_h_dir[2]);
+	fprintf(fp, "H4_DIR=%s\n", atari_h_dir[3]);
+	fprintf(fp, "HD_READ_ONLY=%d\n", h_read_only);
 	fprintf(fp, "EXE_DIR=%s\n", atari_exe_dir);
 #ifndef BASIC
 	fprintf(fp, "STATE_DIR=%s\n", atari_state_dir);
@@ -445,11 +442,11 @@ void RtConfigUpdate(void)
 	GetString("Enter path with filename of Atari 5200 ROM [%s] ", atari_5200_filename);
 	GetString("Enter path for disk images [%s] ", atari_disk_dirs[0]);
 	GetString("Enter path for ROM images [%s] ", atari_rom_dir);
-	GetString("Enter path for H1: device [%s] ", atari_h1_dir);
-	GetString("Enter path for H2: device [%s] ", atari_h2_dir);
-	GetString("Enter path for H3: device [%s] ", atari_h3_dir);
-	GetString("Enter path for H4: device [%s] ", atari_h4_dir);
-	GetYesNoAsInt("H: devices are read only [%c] ", &hd_read_only);
+	GetString("Enter path for H1: device [%s] ", atari_h_dir[0]);
+	GetString("Enter path for H2: device [%s] ", atari_h_dir[1]);
+	GetString("Enter path for H3: device [%s] ", atari_h_dir[2]);
+	GetString("Enter path for H4: device [%s] ", atari_h_dir[3]);
+	GetYesNoAsInt("H: devices are read only [%c] ", &h_read_only);
 	GetString("Enter path for single exe files [%s] ", atari_exe_dir);
 #ifndef BASIC
 	GetString("Enter path for state files [%s] ", atari_state_dir);
@@ -553,6 +550,9 @@ void RtConfigUpdate(void)
 
 /*
 $Log$
+Revision 1.31  2005/10/09 20:20:45  pfusik
+atari_h[1-4]dir -> atari_h_dir[0..3]; hd_read_only -> h_read_only
+
 Revision 1.30  2005/09/18 14:57:32  pfusik
 don't exit emulator if "Update configuration file" failed
 
