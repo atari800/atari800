@@ -973,24 +973,11 @@ static void coldstart_callback(void)
 	Coldstart();
 }
 
-static void coldstart_sys(int machtype, int ram, int nohelp, const char *errmsg)
+static void coldstart_sys(int machtype, int ram, const char *errmsg)
 {
-	int status;
-
 	machine_type = machtype;
 	ram_size = ram;
-	status = Atari800_InitialiseMachine();
-	if (status) {
-		Menu_item menuitem;
-
-		menuitem = xv_get(consol_menu,
-						  MENU_NTH_ITEM, 4);
-
-		xv_set(menuitem,
-			   MENU_INACTIVE, nohelp,
-			   NULL);
-	}
-	else {
+	if (!Atari800_InitialiseMachine()) {
 		notice_prompt(panel, NULL,
 					  NOTICE_MESSAGE_STRINGS,
 					  errmsg,
@@ -1002,27 +989,27 @@ static void coldstart_sys(int machtype, int ram, int nohelp, const char *errmsg)
 
 static void coldstart_osa_callback(void)
 {
-	coldstart_sys(MACHINE_OSA, 48, TRUE, "Sorry, OS/A ROM Unavailable");
+	coldstart_sys(MACHINE_OSA, 48, "Sorry, OS/A ROM Unavailable");
 }
 
 static void coldstart_osb_callback(void)
 {
-	coldstart_sys(MACHINE_OSB, 48, TRUE, "Sorry, OS/B ROM Unavailable");
+	coldstart_sys(MACHINE_OSB, 48, "Sorry, OS/B ROM Unavailable");
 }
 
 static void coldstart_xl_callback(void)
 {
-	coldstart_sys(MACHINE_XLXE, 64, FALSE, "Sorry, XL/XE ROM Unavailable");
+	coldstart_sys(MACHINE_XLXE, 64, "Sorry, XL/XE ROM Unavailable");
 }
 
 static void coldstart_xe_callback(void)
 {
-	coldstart_sys(MACHINE_XLXE, 128, FALSE, "Sorry, XL/XE ROM Unavailable");
+	coldstart_sys(MACHINE_XLXE, 128, "Sorry, XL/XE ROM Unavailable");
 }
 
 static void coldstart_5200_callback(void)
 {
-	coldstart_sys(MACHINE_5200, 16, TRUE, "Sorry, 5200 ROM Unavailable");
+	coldstart_sys(MACHINE_5200, 16, "Sorry, 5200 ROM Unavailable");
 }
 
 static void controllers_ok_callback(void)
