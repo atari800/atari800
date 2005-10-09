@@ -1,0 +1,184 @@
+10 REM Atari BASIC program to test emulator's H: device.
+20 REM Usage: atari800 -hreadwrite -H1 /path/to/test/dir hdevtest.lst
+30 REM Be patient! It takes ca. 40 seconds to load this program.
+40 REM You can also boot SpartaDOS and select e.g. "D1:" to be tested.
+50 REM
+90 DIM DEV$(10),LOGFN$(200),FN$(200),T1$(20),T2$(20),T3$(20),D$(300),C$(5)
+100 ? "Device to be tested (Return=H1:) ";:INPUT DEV$
+110 IF DEV$="" THEN DEV$="H1:"
+120 IF LEN(DEV$)<>3 OR DEV$(3)<>":" THEN ? "Must be of form: Xn:":END
+130 ? "Output report to which file"
+140 ? "(Return=H6:hdevtest.log) ";:INPUT LOGFN$
+150 IF LOGFN$="" THEN LOGFN$="H6:hdevtest.log"
+160 TRAP 10100:OPEN #2,8,0,LOGFN$:? #2;"Testing: ";DEV$
+200 ? "Test: Write binary: ";:? #2;"Test: Write binary: ";
+210 TRAP 10200:FN$=DEV$:FN$(4)="DELETE.ME":OPEN #1,8,0,FN$:RESTORE 10250
+220 READ BYTE:IF BYTE<0 THEN 240
+230 PUT #1,BYTE:GOTO 220
+240 CLOSE #1:? "Passed":? #2;"Passed"
+300 ? "Test: Read binary: ";:? #2;"Test: Read binary: ";
+310 BYTE=0:TRAP 10300:OPEN #1,4,0,FN$:RESTORE 10250
+320 READ BYTE:GET #1,FROMFILE:IF FROMFILE=BYTE THEN 320
+330 ? "FAILED: Wrong data":? #2;"FAILED: Wrong data":CLOSE #1:GOTO 400
+340 CLOSE #1:? "Passed":? #2;"Passed"
+400 ? "Test: Append binary: ";:? #2;"Test: Append binary: ";
+410 TRAP 10400:OPEN #1,9,0,FN$:RESTORE 10450
+420 READ BYTE:IF BYTE<0 THEN 440
+430 PUT #1,BYTE:GOTO 420
+440 CLOSE #1:? "Passed":? #2;"Passed"
+500 ? "Test: Read binary: ";:? #2;"Test: Read binary: ";
+510 BYTE=0:TRAP 10500:OPEN #1,4,0,FN$:RESTORE 10250
+520 READ BYTE:IF BYTE=-1 THEN READ BYTE
+530 GET #1,FROMFILE:IF FROMFILE=BYTE THEN 520
+540 ? "FAILED: Wrong data":? #2;"FAILED: Wrong data":CLOSE #1:GOTO 600
+550 CLOSE #1:? "Passed":? #2;"Passed"
+600 ? "Test: Update+Note+Point: ";:? #2;"Test: Update binary + Note + Point: ";
+610 TRAP 10600:OPEN #1,12,0,FN$:RESTORE 10250
+620 READ BYTE:IF BYTE<0 THEN 650
+630 GET #1,FROMFILE:IF FROMFILE=BYTE THEN 620
+640 ? "FAILED: Wrong data":? #2;"FAILED: Wrong data":CLOSE #1:GOTO 700
+650 NOTE #1,OFS1,OFS2:GET #1,FROMFILE:PUT #1,16:PUT #1,17:POINT #1,OFS1,OFS2
+660 GET #1,B1:GET #1,B2:GET #1,B3:GET #1,B4:IF B1=5 AND B2=16 AND B3=17 AND B4=8 THEN 690
+670 ? "FAILED: Wrong data: ";B1;",";B2;",";B3;",";B4
+680 ? #2;"FAILED: Wrong data: ";B1;",";B2;",";B3;",";B4:CLOSE #1:GOTO 700
+690 CLOSE #1:? "Passed":? #2;"Passed"
+700 IF DEV$(1,1)<>"H" THEN 1000
+710 ? "Test: Write text: ";:? #2;"Test: Write text: ";
+720 TRAP 10700:FN$(2,2)=CHR$(ASC(FN$(2,2))+5):OPEN #1,8,0,FN$
+730 REM Don't write CRLF, because it may get translated to CRCRLF
+740 ? #1;"Native EOL":? #1;"CR";CHR$(13);"LF";CHR$(10);
+750 CLOSE #1:? "Passed":? #2;"Passed"
+800 ? "Test: Read text: ";:? #2;"Test: Read text: ";
+810 TRAP 10800:OPEN #1,4,0,FN$:INPUT #1,T1$,T2$,T3$:CLOSE #1
+820 IF T1$<>"Native EOL" OR T2$<>"CR" OR T3$<>"LF" THEN ? "FAILED: Wrong data":? #2;"FAILED: Wrong data":GOTO 1000
+830 ? "Passed":? #2;"Passed"
+1000 ? "Test: Make directory: ";:? #2;"Test: Make directory: ";
+1010 TRAP 11000:FN$=DEV$:FN$(4)="TEMP.DIR":XIO 42,#1,0,0,FN$
+1020 ? "Passed":? #2;"Passed"
+1100 ? "Test: Directory handling: ";:? #2;"Test: Directory handling: ";
+1110 TRAP 11100:FN$(4)="TEMP.DIR>REMOVE.ME":OPEN #1,8,0,FN$:PUT #1,5:CLOSE #1
+1120 FN$(4)="TEMP.DIR>REMOVE.ME":GOSUB 1200:FN$(4)="TEMP.DIR\REMOVE.ME":GOSUB 1200
+1130 IF DEV$(1,1)="H" THEN FN$(4)="TEMP.DIR/REMOVE.ME":GOSUB 1200:FN$(4)="TEMP.DIR:REMOVE.ME":GOSUB 1200
+1140 FN$(4)="TEMP.DIR":XIO 44,#1,0,0,FN$:REM Change directory
+1150 FN$(4)="REMOVE.ME":GOSUB 1200:FN$(4)="<TEMP.DIR>REMOVE.ME":GOSUB 1200
+1160 FN$(4)="..\TEMP.DIR\REMOVE.ME":GOSUB 1200:IF DEV$(1,1)="H" THEN FN$(4)="../TEMP.DIR/REMOVE.ME":GOSUB 1200
+1170 FN$(4)="..":XIO 44,#1,0,0,FN$:REM Change directory
+1180 ? "Passed":? #2;"Passed":GOTO 1300
+1200 OPEN #1,4,0,FN$:GET #1,FROMFILE:CLOSE #1
+1210 IF FROMFILE<>5 THEN ? "FAILED: Wrong data":? #2;"FAILED: Wrong data":POP:GOTO 1300
+1220 RETURN
+1300 ? "Test: Read directory:":? #2;"Test: Read directory:"
+1310 AUX2=0:FN$(4)="*.*":GOSUB 1400:FN$(4)="*.M?":GOSUB 1400:FN$(4)=">?EL??E.M*":GOSUB 1400
+1320 FN$(4)="NOMATCH.*":GOSUB 1400:FN$(4)="TEMP.DIR>*.*":GOSUB 1400:FN$(4)="TEMP.DIR\NOMATCH.*":GOSUB 1400
+1330 AUX2=128:FN$(4)="*.*":GOSUB 1400:FN$(4)="*.M?":GOSUB 1400:FN$(4)=">?EL??E.M*":GOSUB 1400
+1340 FN$(4)="TEMP.DIR>*.*":GOSUB 1400:FN$(4)="TEMP.DIR>*.*":GOSUB 1400:FN$(4)="TEMP.DIR\NOMATCH.*":GOSUB 1400
+1350 ? "Finished":? #2;"Finished":GOTO 1500
+1400 IF AUX2>=128 THEN ? "Extended directory of ";FN$:? #2;"Extended directory of ";FN$:GOTO 1420
+1410 ? "Directory of ";FN$:? #2;"Directory of ";FN$
+1420 TRAP 11400:OPEN #1,6,AUX2,FN$
+1430 INPUT #1,D$:? D$:? #2;D$:GOTO 1430
+1500 IF DEV$(1,1)<>"H" THEN 1600
+1510 ? "Test: Access outside: ";:? #2;"Test: Access outside: ";
+1520 TRAP 1530:FN$(4)="..\*.*":OPEN #1,6,0,FN$:CLOSE #1:? "FAILED: Possible":? #2;"FAILED: Possible":GOTO 1600
+1530 TRAP 1550:FN$(4)=">..>*.*":CLOSE #1:OPEN #1,6,0,FN$:CLOSE #1
+1540 ? "FAILED: Possible":? #2;"FAILED: Possible":GOTO 1600
+1550 CLOSE #1:? "Passed (not allowed)":? #2;"Passed (not allowed)"
+1600 ? "Test: File length: ";:? #2;"Test: File length: ";
+1610 TRAP 11600:FN$(4)="RENAME.ME":OPEN #1,8,0,FN$:PUT #1,1:PUT #1,2:PUT #1,3:CLOSE #1
+1620 OPEN #1,4,0,FN$:XIO 39,#1,0,0,FN$:LEN=PEEK(860)+256*PEEK(861)+65536*PEEK(862):CLOSE #1
+1630 IF LEN<>3 THEN ? "FAILED: Returned ";LEN:? #2;"FAILED: Returned ";LEN:GOTO 1700
+1640 ? "Passed":? #2;"Passed"
+1700 ? "Test: Rename: ";:? #2;"Test: Rename: ";
+1710 TRAP 11700:FN$(4)="RENAME.ME,R?????D":XIO 32,#1,0,0,FN$
+1720 TRAP 1730:FN$(4)="RENAME.ME":OPEN #1,4,0,FN$:CLOSE #1:? "FAILED":? #2;"FAILED":GOTO 1800
+1730 TRAP 11700:FN$(4)="RENAMED":CLOSE #1:OPEN #1,4,0,FN$:CLOSE #1
+1740 ? "Passed":? #2;"Passed"
+1800 ? "Test: Lock: ";:? #2;"Test: Lock: ";
+1810 TRAP 11800:FN$(4)="LOCK.ME":OPEN #1,8,0,FN$:CLOSE #1:XIO 35,#1,0,0,FN$
+1820 TRAP 1830:OPEN #1,8,0,FN$:CLOSE #1:? "FAILED: Overwritten":? #2;"FAILED: Overwritten":GOTO 2000
+1830 CLOSE #1:TRAP 1840:XIO 33,#1,0,0,FN$:? "FAILED: Deleted":? #2;"FAILED: Deleted":GOTO 2000
+1840 TRAP 1850:FN$(4)="LOCK.ME,OHNO":XIO 32,#1,0,0,FN$:? "FAILED: Renamed":? #2;"FAILED: Renamed":GOTO 2000
+1850 ? :? #2:FN$(4)="*.*":? "Directory of ";FN$:? #2;"Directory of ";FN$:TRAP 11810:OPEN #1,6,0,FN$
+1860 INPUT #1,D$:? D$:? #2;D$:GOTO 1860
+1870 CLOSE #1:? "Finished":? #2;"Finished"
+2000 ? "Test: Disk info: ";:? #2;"Test: Disk info: ";
+2010 TRAP 12000:FN$(4)="ANYTHING":CMD=47:L=16:EOT=0:GOSUB 2100:GOTO 2200
+2090 ? CHR$(34);FN$;CHR$(34);"=";:? #2;CHR$(34);FN$;CHR$(34);"=";:L=0
+2100 POKE 850,CMD:FN$(LEN(FN$)+1)=CHR$(155):INBUF=ADR(FN$):POKE 852,ASC(CHR$(INBUF)):POKE 853,INT(INBUF/256):I=0
+2110 D$="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx":OUTBUF=ADR(D$):POKE 856,ASC(CHR$(OUTBUF)):POKE 857,INT(OUTBUF/256)
+2120 POKE 960,104:POKE 961,162:POKE 962,16:POKE 963,76:POKE 964,86:POKE 965,228:I=USR(960)
+2130 IF PEEK(851)>=128 THEN POP:POKE 195,PEEK(851):GOTO PEEK(188)+256*PEEK(189):REM Goto TRAP handler
+2140 L=L+1:IF L<30 AND ASC(D$(L,L))<>EOT THEN 2140
+2150 ? CHR$(34);:? #2;CHR$(34);:IF L=1 THEN 2190
+2160 FOR I=1 TO L-1:C$=D$(I,I):C=ASC(C$)
+2170 IF C<32 OR C>122 THEN C$="\x":C$(3)=CHR$(48+INT(C/16)+7*(C>159)):C=C-16*INT(C/16):C$(4)=CHR$(48+C+7*(C>9))
+2180 ? C$;:? #2;C$;:NEXT I
+2190 ? CHR$(34):? #2;CHR$(34):RETURN
+2200 ? "Test: To absolute path:":? #2;"Test: To absolute path:"
+2210 TRAP 12200:CMD=48:EOT=155:FN$(4)="":GOSUB 2090:FN$(4)="FOOBAR":GOSUB 2090:FN$(4)=">":GOSUB 2090
+2220 FN$(4)=">DELETE.ME":GOSUB 2090:FN$(4)="TEMP.DIR>REMOVE.ME":GOSUB 2090
+2230 FN$(4)="TEMP.DIR":? "Changing directory to ";FN$:? #2;"Changing directory to ";FN$:XIO 44,#1,0,0,FN$
+2240 FN$(4)="":GOSUB 2090:FN$(4)="/":GOSUB 2090:FN$(4)="..":GOSUB 2090:FN$(4)="REMOVE.ME":GOSUB 2090
+2250 FN$(4)="<DELETE.ME":GOSUB 2090:FN$(4)="..\DELETE.ME":GOSUB 2090:FN$(4)="<TEMP.DIR>REMOVE.ME":GOSUB 2090
+2260 FN$(4)="..\TEMP.DIR\REMOVE.ME":GOSUB 2090:IF DEV$(1,1)="H" THEN FN$(4)="../TEMP.DIR/REMOVE.ME":GOSUB 2090
+2270 FN$(4)=">":XIO 44,#1,0,0,FN$:REM Change directory
+2280 ? "Finished":? #2;"Finished"
+2300 ? "Test: Delete file: ";:? #2;"Test: Delete file: ";
+2310 TRAP 12300:FN$(4)="DELETE.ME":XIO 33,#1,0,0,FN$:FN$(4)="RENAMED":XIO 33,#1,0,0,FN$
+2320 TRAP 2330:OPEN #1,4,0,FN$:CLOSE #1:? "FAILED: File exists":? #2;"FAILED: File exists":GOTO 2400
+2330 TRAP 12300:FN$(4)="TEMP.DIR>REMO*.*":XIO 33,#1,0,0,FN$:FN$(4)="TEMP.DIR>REMOVE.ME"
+2340 TRAP 2350:OPEN #1,4,0,FN$:CLOSE #1:? "FAILED: File exists":? #2;"FAILED: File exists":GOTO 2400
+2350 CLOSE #1:TRAP 2370:FN$(4)="LOCK.ME":XIO 33,#1,0,0,FN$
+2360 ? "FAILED: Deleted locked file":? #2;"FAILED: Deleted locked file":GOTO 2400
+2370 TRAP 12300:XIO 36,#1,0,0,FN$:XIO 33,#1,0,0,FN$
+2380 ? "Passed":? #2;"Passed"
+2400 ? "Test: Remove directory: ";:? #2;"Test: Remove directory: ";
+2410 TRAP 12400:FN$(4)="TEMP.DIR":XIO 43,#1,0,0,FN$
+2420 TRAP 2430:XIO 44,#1,0,0,FN$:? "FAILED: Can CD":? #2;"FAILED: Can CD":FN$(4)=">":XIO 44,#1,0,0,FN$:GOTO 2500
+2430 ? "Passed":? #2;"Passed"
+2500 ? "Test: Load executable (Sparta): ";:? #2;"Test: Load executable (Sparta): ";
+2510 TRAP 12500:FN$(4)="TEMP.XEX":OPEN #1,8,0,FN$:PUT #1,255:PUT #1,255
+2520 PUT #1,192:PUT #1,3:PUT #1,192:PUT #1,3:PUT #1,15:CLOSE #1:XIO 40,#1,0,128,FN$
+2530 IF PEEK(960)<>15 THEN ? "FAILED: Not loaded":? #2;"FAILED: Not loaded":GOTO 2600
+2540 IF DEV$(1,1)<>"H" THEN 2590
+2550 FN$(4)=">DOS":XIO 42,#1,0,0,FN$:FN$(4)=">DOS>ONPATH.XEX":OPEN #1,8,0,FN$:PUT #1,255:PUT #1,255
+2560 PUT #1,192:PUT #1,3:PUT #1,192:PUT #1,3:PUT #1,25:CLOSE #1:FN$(4)="ONPATH.XEX":XIO 40,#1,0,128,FN$
+2570 FN$(4)=">DOS>ONPATH.XEX":XIO 33,#1,0,0,FN$:FN$(4)=">DOS":XIO 43,#1,0,0,FN$:REM Delete file and directory
+2580 IF PEEK(960)<>25 THEN ? "FAILED: Not found on PATH":? #2;"FAILED: Not found on PATH":GOTO 2600
+2590 ? "Passed":? #2;"Passed"
+2600 IF DEV$(1,1)<>"H" THEN 2700
+2610 ? "Test: Load executable (MyDOS): ";:? #2;"Test: Load executable (MyDOS): ";
+2620 TRAP 12600:POKE 960,0:FN$(4)="TEMP.XEX":XIO 39,#1,7,0,FN$:XIO 33,#1,0,0,FN$:REM Load and delete
+2630 IF PEEK(960)<>15 THEN ? "FAILED: Not loaded":? #2;"FAILED: Not loaded":GOTO 2700
+2640 ? "Passed":? #2;"Passed"
+2700 REM
+9000 ? "End of tests":? #2;"End of tests":CLOSE #2:END
+10100 ? "Error ";PEEK(195);" opening ";LOGFN$
+10110 IF LOGFN$(1,1)="H" AND PEEK(195)=163 THEN ? "You should enable write to H: devices"
+10120 END
+10200 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 300
+10250 DATA 0,1,2,3,4,13,10,26,65,96,155,255,-1
+10300 IF PEEK(195)=136 AND BYTE<0 THEN 340
+10310 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 400
+10400 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 500
+10450 DATA 5,6,7,8,9,13,10,26,66,98,155,255,-2
+10500 IF PEEK(195)=136 AND BYTE<0 THEN 550
+10510 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 600
+10600 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 700
+10700 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 800
+10800 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 1000
+11000 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 1100
+11100 ? "FAILED: Error ";PEEK(195);" for ";FN$:? #2;"FAILED: Error ";PEEK(195);" for ";FN$:CLOSE #1:GOTO 1300
+11400 IF PEEK(195)=136 THEN CLOSE #1:RETURN
+11410 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 1500
+11600 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 1700
+11700 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 1800
+11800 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 2000
+11810 IF PEEK(195)=136 THEN 1870
+11820 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 2000
+12000 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 2200
+12200 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 2300
+12300 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 2400
+12400 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 2500
+12500 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 2600
+12600 ? "FAILED: Error ";PEEK(195):? #2;"FAILED: Error ";PEEK(195):CLOSE #1:GOTO 2700
