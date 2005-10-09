@@ -1,19 +1,18 @@
 #ifndef _DEVICES_H_
 #define _DEVICES_H_
 
-#include "atari.h"	/* for UWORD */
-
-/* the following is for atari.c */
+#include <stdio.h> /* FILENAME_MAX */
+#include "atari.h" /* UWORD */
 
 void Device_Initialise(int *argc, char *argv[]);
 int Device_PatchOS(void);
 void Device_Frame(void);
 void Device_UpdatePatches(void);
 
-/* this is for devices.c and Atari800Win PLus */
-#define DEFAULT_H_PATH  "H1:>DOS;>DOS"
+UWORD Device_SkipDeviceName(void);
 
-/* the following is for ports which want to add their specific devices */
+#define DEFAULT_H_PATH  "H1:>DOS;>DOS"
+extern char h_exe_path[FILENAME_MAX];
 
 #define	ICHIDZ	0x0020
 #define	ICDNOZ	0x0021
@@ -45,7 +44,6 @@ void Device_UpdatePatches(void);
 #define	ICAX4	0x000d
 #define	ICAX5	0x000e
 #define	ICAX6	0x000f
-
 
 #define DEVICE_TABLE_OPEN	0
 #define DEVICE_TABLE_CLOS	2
