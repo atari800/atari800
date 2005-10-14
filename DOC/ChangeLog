@@ -1,3 +1,9 @@
+2005-10-12  Troy Ayers  <holiday42@gmail.com>
+* configure.ac: For PS2 port removed check for libgcc, added check for libz.
+
+* atari_ps2.c: Changed keyboard input to "raw" mode, as "normal" mode will not
+  read directional keys.  Changed PS2 button assignments.
+  
 2005-10-09  Piotr Fusik  <fox@scene.pl>
 * atari_x11.c: removed "Help" menu item disabling, because "Help" was removed
   recently
