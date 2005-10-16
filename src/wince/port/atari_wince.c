@@ -40,10 +40,6 @@
 #include "ui.h"
 #include "screen.h"
 
-//extern int show_atari_speed;
-
-static int usesnd = 1;
-
 static int kbjoy = 1;
 
 DWORD REG_bat, REG_ac, REG_disp;
@@ -108,8 +104,7 @@ int Atari_Keyboard(void)
 void Atari_Initialise(int *argc, char *argv[])
 {
 #ifdef SOUND
-	if (usesnd)
-		Sound_Initialise(argc, argv);
+	Sound_Initialise(argc, argv);
 #endif
 
 	if (gron(argc, argv))
@@ -192,6 +187,7 @@ void Atari_ConfigInit(void)
 	screen_visible_y2 = 230;
 	show_disk_led = 1;
 	show_sector_counter = 1;
+	show_atari_speed = 1;
 }
 
 int Atari_Configure(char* option, char *parameters)

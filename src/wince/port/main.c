@@ -54,7 +54,6 @@ void __cdecl atari_exit(int code)
 #else
 	MsgPump();
 #endif
-//	exit(code);
 }
 
 void wce_perror(char* s)
@@ -137,9 +136,7 @@ void MsgPump()
 {
 	MSG msg;
 	while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-	{
 		WindowProc(msg.hwnd, msg.message, msg.wParam, msg.lParam);
-	}
 }
 #endif
 

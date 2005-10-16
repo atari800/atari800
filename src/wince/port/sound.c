@@ -42,7 +42,7 @@ int buffers = 0;
 enum {SOUND_NONE, SOUND_WAV};
 
 static int issound = SOUND_NONE;
-static int dsprate = 11025;
+static int dsprate = 22050;
 static int snddelay = 40;	/* delay in milliseconds */
 static int snddelaywav = 100;
 #ifdef STEREO_SOUND
@@ -115,7 +115,7 @@ static int initsound_wav(void)
   err = waveOutOpen(&wout, WAVE_MAPPER, &wf, (int)event, 0, CALLBACK_EVENT);
   if (err == WAVERR_BADFORMAT)
     {
-      Aprint("wave output paremeters unsupported\n");
+      Aprint("wave output parameters unsupported\n");
       exit(1);
     }
   if (err != MMSYSERR_NOERROR)
@@ -141,6 +141,7 @@ static int initsound_wav(void)
 	  Aprint("cannot prepare wave header (%x)\n", err);
 	  exit(1);
 	}
+	  memset(waves[i].lpData, 128, WAVSIZE);	// kill clicking sounds at startup
       waves[i].dwFlags |= WHDR_DONE;
     }
 
@@ -219,21 +220,18 @@ static WAVEHDR *getwave(void)
 
 void Sound_Update(void)
 {
-  MMRESULT err;
   WAVEHDR *wh;
+  int i;
 
   if (issound == SOUND_WAV)
   {
-    while ((wh = getwave()))
-    {
-      Pokey_process(wh->lpData, wh->dwBufferLength);
-      err = waveOutWrite(wout, wh, sizeof(*wh));
-      if (err != MMSYSERR_NOERROR)
-      {
-	Aprint("cannot write wave output (%x)\n", err);
-	return;
-      }
-    }
+	for (i=0; i<buffers; i++)
+		if (waves[i].dwFlags & WHDR_DONE)
+		{
+			wh = &waves[i];
+			Pokey_process(wh->lpData, wh->dwBufferLength);
+			waveOutWrite(wout, wh, sizeof(*wh));
+		}
   }
 }
 
@@ -246,45 +244,3 @@ void Sound_Continue(void)
 }
 
 #endif	/* SOUND */
-
-
-/*
-$Log$
-Revision 1.7  2005/09/16 22:25:29  knakos
-removed excess functionality, now included in the core
-
-Revision 1.5  2003/03/03 09:57:33  joy
-Ed improved autoconf again plus fixed some little things
-
-Revision 1.4  2003/02/24 09:33:41  joy
-header cleanup
-
-Revision 1.3  2003/02/09 21:24:13  joy
-updated for different number of Pokey_sound_init parameters
-
-Revision 1.2  2002/01/22 00:17:21  vasyl
-Updating WinCE port. A lot of changes, the most important are:
-fixed more keyboard bugs;
-support for monochrome and paletted devices;
-speedups in graphics code;
-port-specific UI driver (pass-through).
-
-Revision 1.6  2001/12/04 13:09:06  joy
-DirectSound buffer creation error fixed by Nathan
-
-Revision 1.5  2001/07/22 06:46:08  knik
-waveout default sound delay 100ms, buffer size 0x200
-
-Revision 1.4  2001/04/17 05:32:33  knik
-sound_continue moved outside dx conditional
-
-Revision 1.3  2001/04/08 05:50:16  knik
-standard wave output driver added; sound and directx conditional compile
-
-Revision 1.2  2001/03/24 10:13:43  knik
--nosound option fixed
-
-Revision 1.1  2001/03/18 07:56:48  knik
-win32 port
-
-*/

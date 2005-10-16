@@ -635,9 +635,6 @@ void tapscreen(short x, short y)
 		}
 	}
 
-/*	if(kbcode == AKEY_BREAK)
-		key_break = 1;*/
-
 	push_key(kbcode);
 }
 
@@ -754,9 +751,6 @@ void untapscreen(short x, short y)
 		}
 	}
 
-/*	if(kbcode == AKEY_BREAK)
-		key_break = 0;*/
-	
 	release_key(kbcode);
 }
 
