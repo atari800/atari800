@@ -38,7 +38,6 @@
 #include "pokeysnd.h"
 #include "atari.h"
 #include "log.h"
-#include "rt-config.h"	/* 'enable_new_pokey' defined there */
 
 #define MIXBUFSIZE	0x1000
 #define WAVSHIFT	9
@@ -511,6 +510,9 @@ void Sound_Continue(void)
 
 /*
 $Log$
+Revision 1.18  2005/10/19 21:21:19  pfusik
+removed #include "rt-config.h"
+
 Revision 1.17  2005/09/07 22:03:40  pfusik
 fixed MSVC warnings
 
