@@ -21,6 +21,10 @@
 #define Util_stricmp stricmp
 #endif
 
+/* Same as stpcpy() in some C libraries: copies src to dest
+   and returns a pointer to the trailing NUL in dest. */
+char *Util_stpcpy(char *dest, const char *src);
+
 /* Same as strlcpy() in some C libraries: copies src to dest
    and terminates the string. Never writes more than size characters
    to dest (the result may be truncated). Returns dest. */
