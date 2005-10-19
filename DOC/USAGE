@@ -32,7 +32,6 @@ Command line options
 -v                    Display version number and terminate
 -verbose              Display framerate when exiting
 
--configure            Update configuration file
 -config <filename>    Use specified configuration file instead of default
 -osa_rom <filename>   Use specified OS/A ROM image
 -osb_rom <filename>   Use specified OS/B ROM image
