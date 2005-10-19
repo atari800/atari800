@@ -1,9 +1,74 @@
+2005-10-19  Piotr Fusik  <fox@scene.pl>
+* amiga/amiga.c: Atari_LoadAnyFile() additionally supports DCM, BAS, LST,
+  CART, ROM, CAS, BOOT_TAPE
+
+* ui.c: disks mounted as read-only now marked with '*' in Disk Management
+
+* sio.c: initialize sio_filename[] with "Off" to match drive_status[]
+  initialized with Off; simplified code by removing istmpfile[]
+
+* amiga/amiga.c, atari_curses.c, atari_falcon.c, atari_ps2.c, atari_sdl.c,
+  atari_svgalib.c, atari_vga.c, win32/atari_win32.c, wince/port/atari_wince.c,
+  atari_x11.c, win32/main.c, platform.h, ui_basic.c:
+  removed Atari_DisplayScreen's argument: use atari_screen directly
+
+* util.c: Util_splitpath() and Util_catpath() recognize slash in addition
+  to backslash
+
+* rt-config.[ch], ui.c, ui_basic.c, atari_x11.c: DISK_DIR, ROM_DIR, EXE_DIR
+  and STATE_DIR configuration options replaced with ATARI_FILES_DIR
+  and SAVED_FILES_DIR. See discussion on the mailing list (9-11 Sep 2005).
+
+* ui.[ch], ui_basic.c, ui_wince.c: improved file selection:
+  - file selector's title is the path of the listed directory
+  - sort directories that start with a dot
+  - file selector starts on the previously selected file
+  - Backspace in the file selector goes to the parent directory
+  - filenames of saved files are no longer limited to 32 characters
+  - directory of a saved file appears in the edit box
+  - Tab in the edit box invokes directory browser
+  - added directory selection
+
+* ui.[ch], ui_basic.c, ui_wince.c:
+  - removed box around screen title; screen title now always takes one line
+    and is shortened if necessary
+  - improved refresh_rate selection
+  - added "Controller Configuration"
+  - restored "Save Interlaced Screenshot" in the main menu
+  - "Atari Settings" -> "Emulator Configuration": added H: paths
+    and read-only, print command and ROM settings;
+    the easiest way to configure ROMs is "Find ROM images in a directory"
+    which looks for common names of ROM images (e.g. atarixl.rom)
+  - improved disabling of function keys and Alt+letter in User Interface
+    on WinCE (now using MENU_ACCEL() macro); applied to PlayStation 2, too
+  - changed items[] indexing to pointer access in BasicUISelect();
+    this is not a matter of optimization, since a smart compiler should
+    generate same code for both - I'm 99% sure there's a bug in MSVC 6
+    that caused the disabled R: menu item to appear on screen
+  - some code simplifications
+
+* devices.[ch], rt-config.[ch]:
+  RtIsPrintCommandSafe() -> Device_SetPrintCommand()
+
+* atari.c, prompts.[ch], rt-config.[ch], Makefile.in, amiga/Makefile,
+  win32\msc\Makefile: removed "-configure" command-line option
+  and the questions that appeared in the console window when no configuration
+  file was found; now a default configuration is written and you can modify it
+  using User Interface; removed prompts.[ch]
+
+* atari.[ch], rt-config.[ch], Makefile.in, amiga/Makefile,
+  win32\msc\Makefile: variables configured by the configuration file
+  moved to the modules they actually belong to; config read/write moved
+  to atari.[ch]; removed rt-config.[ch]
+
+
 2005-10-12  Troy Ayers  <holiday42@gmail.com>
 * configure.ac: For PS2 port removed check for libgcc, added check for libz.
 
 * atari_ps2.c: Changed keyboard input to "raw" mode, as "normal" mode will not
   read directional keys.  Changed PS2 button assignments.
-  
+
+
 2005-10-09  Piotr Fusik  <fox@scene.pl>
 * atari_x11.c: removed "Help" menu item disabling, because "Help" was removed
   recently
@@ -16,7 +81,7 @@
 * binload.c, devices.c: use fgetc() instead of fread() for single bytes;
   start_binloading is a boolean, and should be set to TRUE or FALSE
 
-* devices.c, rt-config.[ch]: atari_h[1-4]dir -> atari_h_dir[0..3];
+* devices.c, rt-config.[ch]: atari_h[1-4]_dir -> atari_h_dir[0..3];
   hd_read_only -> h_read_only
 
 * devices.[ch]: numerous improvements in H: device emulation:

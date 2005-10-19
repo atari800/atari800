@@ -11,8 +11,24 @@
  * cycle-exact Read-Modify-Write instructions for all GTIA registers
  * Atarimax cartridges
  * improved PERCOM emulation (helps non-standard disk images)
+ * removed questions that appeared in the console window when no configuration
+   file was found; now a default configuration is written and you can
+   modify it using User Interface; the easiest way to configure ROMs is
+   "Find ROM images in a directory" which looks for common names of ROM images
+ * DISK_DIR, ROM_DIR, EXE_DIR and STATE_DIR configuration options replaced
+   with ATARI_FILES_DIR and SAVED_FILES_DIR
  * sound recording now works (was completely broken)
- * file selector sorts case-insensitively
+ * new in User Interface: "Emulator Configuration", "Controller
+   Configuration", "Save Interlaced Screenshot"
+ * improved "open file" selector:
+   - sorts case-insensitively
+   - sorts directories whose name begins with a dot
+   - starts on the previously selected file
+   - path of the listed directory is shown at the top of the screen
+ * improved "save file" filename selection:
+  - no longer limited to 32 characters
+  - directory appears in the edit box
+  - Tab invokes directory browser
  * "Make Blank ATR Disk" creates standard Single Density disk image
  * shortcut keys (Alt+letter, F9, ...) work in User Interface
  * new "-screenshots <pattern>" command-line option
