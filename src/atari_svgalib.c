@@ -40,7 +40,6 @@
 #include "log.h"
 #include "ui.h"
 #include "screen.h"
-#include "rt-config.h"
 
 #ifdef SVGA_JOYMOUSE
 #include <vgamouse.h>
@@ -646,13 +645,14 @@ int Atari_Exit(int run_monitor)
 	return restart;
 }
 
-void Atari_DisplayScreen(UBYTE * screen)
+void Atari_DisplayScreen(void)
 {
 	static int writepage = 0;
-	UBYTE *vbuf = screen + first_lno * ATARI_WIDTH + 32;
+	UBYTE *vbuf = (UBYTE *) atari_screen + first_lno * ATARI_WIDTH + 32;
 
 	if (invisible)
-		goto after_screen_update;
+		return;
+
 #ifdef SVGA_SPEEDUP
 	vga_copytoplanar256(vbuf + ATARI_WIDTH * (240 / refresh_rate) * writepage, ATARI_WIDTH,
 	                    ((320 * (240 / refresh_rate)) >> 2) * writepage,
@@ -699,8 +699,6 @@ void Atari_DisplayScreen(UBYTE * screen)
 	else
 		vgamouse_strig = 1;
 #endif
-after_screen_update:;
-
 }
 
 #ifdef LINUX_JOYSTICK
@@ -793,16 +791,19 @@ int main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	while (TRUE) {
+	for (;;) {
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen();
 	}
 }
 
 /*
 $Log$
+Revision 1.19  2005/10/19 21:38:34  pfusik
+removed Atari_DisplayScreen's argument; removed #include "rt-config.h"
+
 Revision 1.18  2005/09/04 18:16:55  pfusik
 Atari 5200 keys
 
