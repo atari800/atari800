@@ -38,7 +38,6 @@
 #include "platform.h"
 #include "pokey.h"
 #include "pokeysnd.h"
-#include "rt-config.h"
 #include "sio.h"
 #include "util.h"
 #ifndef BASIC
@@ -60,7 +59,7 @@
 static int boot_sectors_type[MAX_DRIVES];
 
 static int header_size[MAX_DRIVES];
-static FILE *disk[MAX_DRIVES] = {0, 0, 0, 0, 0, 0, 0, 0};
+static FILE *disk[MAX_DRIVES] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 static int sectorcount[MAX_DRIVES];
 static int sectorsize[MAX_DRIVES];
 static int format_sectorcount[MAX_DRIVES];
@@ -71,7 +70,6 @@ UnitStatus drive_status[MAX_DRIVES];
 char sio_filename[MAX_DRIVES][FILENAME_MAX];
 
 static char	tmp_filename[MAX_DRIVES][FILENAME_MAX];
-static UBYTE istmpfile[MAX_DRIVES] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 int sio_last_op;
 int sio_last_op_time = 0;
@@ -84,24 +82,21 @@ int CommandIndex = 0;
 UBYTE DataBuffer[256 + 3];
 char sio_status[256];
 int DataIndex = 0;
-int TransferStatus = 0;
+int TransferStatus = SIO_NoFrame;
 int ExpectedBytes = 0;
 
-int ignore_header_writeprotect = 0;
+int ignore_header_writeprotect = FALSE;
 
 void SIO_Initialise(int *argc, char *argv[])
 {
 	int i;
-
 	for (i = 0; i < MAX_DRIVES; i++) {
-		strcpy(sio_filename[i], "Empty");
-		memset(tmp_filename[i], 0, FILENAME_MAX );
+		strcpy(sio_filename[i], "Off");
+		tmp_filename[i][0] = '\0';
 		drive_status[i] = Off;
-		istmpfile[i] = 0;
 		format_sectorsize[i] = 128;
 		format_sectorcount[i] = 720;
 	}
-
 	TransferStatus = SIO_NoFrame;
 }
 
@@ -109,9 +104,18 @@ void SIO_Initialise(int *argc, char *argv[])
 void SIO_Exit(void)
 {
 	int i;
-
 	for (i = 1; i <= MAX_DRIVES; i++)
 		SIO_Dismount(i);
+}
+
+static void UnlinkTmp(int diskno)
+{
+	if (tmp_filename[diskno - 1][0] != '\0') {
+#ifdef HAVE_UTIL_UNLINK
+		Util_unlink(tmp_filename[diskno - 1]);
+#endif
+		tmp_filename[diskno - 1][0] = '\0';
+	}
 }
 
 int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
@@ -128,14 +132,13 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 	SIO_Dismount(diskno);
 
 	/* open file */
-	if (!b_open_readonly) {
+	if (!b_open_readonly)
 		f = fopen(filename, "rb+");
-	}
 	if (f == NULL) {
-		status = ReadOnly;
 		f = fopen(filename, "rb");
 		if (f == NULL)
 			return FALSE;
+		status = ReadOnly;
 	}
 
 	/* read header */
@@ -150,36 +153,26 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 	case 0xfa:
 		/* DCM */
 		fclose(f);
-		istmpfile[diskno - 1] = 1;
 		f = opendcm(filename, tmp_filename[diskno - 1]);
 		if (f == NULL)
 			return FALSE;
 		if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
 			fclose(f);
-#ifdef HAVE_UTIL_UNLINK
-			Util_unlink(tmp_filename[diskno - 1]);
-#endif
-			memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
-			istmpfile[diskno - 1] = 0;
+			UnlinkTmp(diskno);
 			return FALSE;
 		}
 		/* XXX: status = ReadOnly; ? */
 		break;
 	case 0x1f:
 		if (header.magic2 == 0x8b) {
-			/* ATZ, ATR.GZ, XFZ, XFD.GZ */
+			/* ATZ/ATR.GZ, XFZ/XFD.GZ */
 			fclose(f);
-			istmpfile[diskno - 1] = 1;
 			f = openzlib(filename, tmp_filename[diskno - 1]);
 			if (f == NULL)
 				return FALSE;
 			if (fread(&header, 1, sizeof(struct ATR_Header), f) != sizeof(struct ATR_Header)) {
 				fclose(f);
-#ifdef HAVE_UTIL_UNLINK
-				Util_unlink(tmp_filename[diskno - 1]);
-#endif
-				memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
-				istmpfile[diskno - 1] = 0;
+				UnlinkTmp(diskno);
 				return FALSE;
 			}
 			/* XXX: status = ReadOnly; ? */
@@ -198,17 +191,11 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		sectorsize[diskno - 1] = (header.secsizehi << 8) + header.secsizelo;
 		if (sectorsize[diskno - 1] != 128 && sectorsize[diskno - 1] != 256) {
 			fclose(f);
-			if (istmpfile[diskno - 1]) {
-#ifdef HAVE_UTIL_UNLINK
-				Util_unlink(tmp_filename[diskno - 1]);
-#endif
-				memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
-				istmpfile[diskno - 1] = 0;
-			}
+			UnlinkTmp(diskno);
 			return FALSE;
 		}
 
-		if (header.writeprotect && !ignore_header_writeprotect)
+		if (header.writeprotect != 0 && !ignore_header_writeprotect)
 			status = ReadOnly;
 
 		/* ATR header contains length in 16-byte chunks. */
@@ -221,7 +208,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 
 		/* Fix number of sectors if double density */
 		if (sectorsize[diskno - 1] == 256) {
-			if (sectorcount[diskno - 1] & 1)
+			if ((sectorcount[diskno - 1] & 1) != 0)
 				/* logical (128-byte) boot sectors */
 				sectorcount[diskno - 1] += 3;
 			else {
@@ -230,16 +217,10 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 				   a non-zero byte in bytes 0x190-0x30f of the ATR file */
 				UBYTE buffer[0x180];
 				int i;
-				fseek(f, 0x190L, SEEK_SET);
+				fseek(f, 0x190, SEEK_SET);
 				if (fread(buffer, 1, 0x180, f) != 0x180) {
 					fclose(f);
-					if (istmpfile[diskno - 1]) {
-#ifdef HAVE_UTIL_UNLINK
-						Util_unlink(tmp_filename[diskno - 1]);
-#endif
-						memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
-						istmpfile[diskno - 1] = 0;
-					}
+					UnlinkTmp(diskno);
 					return FALSE;
 				}
 				boot_sectors_type[diskno - 1] = BOOT_SECTORS_SIO2PC;
@@ -291,23 +272,18 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 
 void SIO_Dismount(int diskno)
 {
-	if (disk[diskno - 1]) {
+	if (disk[diskno - 1] != NULL) {
 		fclose(disk[diskno - 1]);
-		disk[diskno - 1] = 0;
+		disk[diskno - 1] = NULL;
 		drive_status[diskno - 1] = NoDisk;
 		strcpy(sio_filename[diskno - 1], "Empty");
-		if (istmpfile[diskno - 1]) {
-#ifdef HAVE_UTIL_UNLINK
-			Util_unlink(tmp_filename[diskno - 1]);
-#endif
-			memset(tmp_filename[diskno - 1], 0, FILENAME_MAX);
-			istmpfile[diskno - 1] = 0;
-		}
+		UnlinkTmp(diskno);
 	}
 }
 
 void SIO_DisableDrive(int diskno)
 {
+	SIO_Dismount(diskno);
 	drive_status[diskno - 1] = Off;
 	strcpy(sio_filename[diskno - 1], "Off");
 }
@@ -1254,6 +1230,11 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.39  2005/10/19 21:41:19  pfusik
+initialize sio_filename[] with "Off" to match drive_status[]
+initialized with Off; simplified code by removing istmpfile[];
+removed #include "rt-config.h"
+
 Revision 1.38  2005/09/14 20:29:20  pfusik
 remove() -> Util_unlink()
 
