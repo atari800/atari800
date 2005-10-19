@@ -7,29 +7,26 @@
 #include <stdio.h>
 
 /* some extra defines not covered in config.h */
-#ifdef WIN32
-# undef WIN32
-#endif
 
 #define NO_YPOS_BREAK_FLICKER			1
 #define DIRTYRECT						1
 #define SUPPORTS_ATARI_CONFIGINIT		1
-#define DONT_USE_RTCONFIGUPDATE			1
+#undef WIN32
 #define WIN32							1
 
-//#define snprintf _snprintf
+/* #define snprintf _snprintf */
 
 #define perror(s) wce_perror(s)
-void wce_perror(char* s);
+void wce_perror(char *s);
 
-FILE* __cdecl wce_fopen(const char* fname, const char* fmode);
+FILE * __cdecl wce_fopen(const char *fname, const char *fmode);
 #define fopen wce_fopen
 
 /* forward declarations of missing functions */
 char *tmpnam(char *string);
 FILE *tmpfile();
 char *getcwd(char *buffer, int maxlen);
-char* getenv(const char* varname);
+char *getenv(const char *varname);
 
 
 #endif
