@@ -39,9 +39,7 @@ EMUSRCS= \
 	pia.c \
 	pokey.c \
 	pokeysnd.c \
-	prompts.c \
 	remez.c \
-	rt-config.c \
 	rtime.c \
 	screen.c \
 	sio.c \
