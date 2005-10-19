@@ -49,17 +49,15 @@
 #include "log.h"
 #include "memory.h"
 #include "platform.h"
-#include "rt-config.h"
 #include "screen.h" /* atari_screen */
 #include "ui.h"
 #include "util.h"
 
 #ifdef USE_CURSES
 void curses_clear_screen(void);
+void curses_clear_rectangle(int x1, int y1, int x2, int y2);
 void curses_putch(int x, int y, int ascii, UBYTE fg, UBYTE bg);
 #endif
-
-extern int current_disk_directory;
 
 static int initialised = FALSE;
 static UBYTE charset[1024];
@@ -87,28 +85,18 @@ static const unsigned char key_to_ascii[256] =
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static void InitializeUI(void)
-{
-	if (!initialised) {
-		get_charset(charset);
-		initialised = TRUE;
-	}
-}
-
 #define KB_DELAY       20
 #define KB_AUTOREPEAT  3
 
-static int GetKeyPress(UBYTE *screen)
+static int GetKeyPress(void)
 {
 	int keycode;
 
-#ifndef BASIC
 #ifdef SVGA_SPEEDUP
 	int i;
 	for (i = 0; i < refresh_rate; i++)
 #endif
-		Atari_DisplayScreen(screen);
-#endif
+		Atari_DisplayScreen();
 
 	for (;;) {
 		static int rep = KB_DELAY;
@@ -155,13 +143,13 @@ static int GetKeyPress(UBYTE *screen)
 	return key_to_ascii[keycode];
 }
 
-static void Plot(UBYTE *screen, int fg, int bg, int ch, int x, int y)
+static void Plot(int fg, int bg, int ch, int x, int y)
 {
 #ifdef USE_CURSES
 	curses_putch(x, y, ch, (UBYTE) fg, (UBYTE) bg);
 #else /* USE_CURSES */
 	const UBYTE *font_ptr = charset + (ch & 0x7f) * 8;
-	UBYTE *ptr = screen + 24 * ATARI_WIDTH + 32 + y * (8 * ATARI_WIDTH) + x * 8;
+	UBYTE *ptr = (UBYTE *) atari_screen + 24 * ATARI_WIDTH + 32 + y * (8 * ATARI_WIDTH) + x * 8;
 	int i;
 	int j;
 
@@ -180,244 +168,156 @@ static void Plot(UBYTE *screen, int fg, int bg, int ch, int x, int y)
 #endif /* USE_CURSES */
 }
 
-static void Print(UBYTE *screen, int fg, int bg, const char *string, int x, int y)
+static void Print(int fg, int bg, const char *string, int x, int y, int maxwidth)
 {
-	while (*string != '\0' && *string != '\n') {
-		Plot(screen, fg, bg, *string++, x, y);
+	char tmpbuf[40];
+	if ((int) strlen(string) > maxwidth) {
+		int firstlen = (maxwidth - 3) >> 1;
+		int laststart = strlen(string) - (maxwidth - 3 - firstlen);
+		sprintf(tmpbuf, "%.*s...%s", firstlen, string, string + laststart);
+		string = tmpbuf;
+	}
+	while (*string != '\0') {
+		Plot(fg, bg, *string++, x, y);
 		x++;
 	}
 }
 
-static void CenterPrint(UBYTE *screen, int fg, int bg, const char *string, int y)
+static void CenterPrint(int fg, int bg, const char *string, int y)
 {
-	int length;
-	const char *eol = strchr(string, '\n');
-	while (eol != NULL && string[0] != '\0') {
-		length = eol - string - 1;
-		Print(screen, fg, bg, string, (40 - length) / 2, y++);
-		string = eol + 1;
-		eol = strchr(string, '\n');
-	}
-	length = strlen(string);
-	Print(screen, fg, bg, string, (40 - length) / 2, y);
+	int length = strlen(string);
+	Print(fg, bg, string, (length < 38) ? (40 - length) >> 1 : 1, y, 38);
 }
 
-static int EditString(UBYTE *screen, int fg, int bg,
-                      int len, char *string, int x, int y)
-{
-	int offset = 0;
-
-	Print(screen, fg, bg, string, x, y);
-
-	for (;;) {
-		int ascii;
-
-		Plot(screen, bg, fg, string[offset], x + offset, y);
-
-		ascii = GetKeyPress(screen);
-		switch (ascii) {
-		case 0x1e:				/* Cursor Left */
-			Plot(screen, fg, bg, string[offset], x + offset, y);
-			if (offset > 0)
-				offset--;
-			break;
-		case 0x1f:				/* Cursor Right */
-			Plot(screen, fg, bg, string[offset], x + offset, y);
-			if ((offset + 1) < len)
-				offset++;
-			break;
-		case 0x7e:				/* Backspace */
-			Plot(screen, fg, bg, string[offset], x + offset, y);
-			if (offset > 0) {
-				offset--;
-				string[offset] = ' ';
-			}
-			break;
-		case 0x9b:				/* Return */
-			return TRUE;
-		case 0x1b:				/* Esc */
-			return FALSE;
-		default:
-			string[offset] = (char) ascii;
-			Plot(screen, fg, bg, string[offset], x + offset, y);
-			if ((offset + 1) < len)
-				offset++;
-			break;
-		}
-	}
-}
-
-static void Box(UBYTE *screen, int fg, int bg, int x1, int y1, int x2, int y2)
+static void Box(int fg, int bg, int x1, int y1, int x2, int y2)
 {
 	int x;
 	int y;
 
 	for (x = x1 + 1; x < x2; x++) {
-		Plot(screen, fg, bg, 18, x, y1);
-		Plot(screen, fg, bg, 18, x, y2);
+		Plot(fg, bg, 18, x, y1);
+		Plot(fg, bg, 18, x, y2);
 	}
 
 	for (y = y1 + 1; y < y2; y++) {
-		Plot(screen, fg, bg, 124, x1, y);
-		Plot(screen, fg, bg, 124, x2, y);
+		Plot(fg, bg, 124, x1, y);
+		Plot(fg, bg, 124, x2, y);
 	}
 
-	Plot(screen, fg, bg, 17, x1, y1);
-	Plot(screen, fg, bg, 5, x2, y1);
-	Plot(screen, fg, bg, 3, x2, y2);
-	Plot(screen, fg, bg, 26, x1, y2);
+	Plot(fg, bg, 17, x1, y1);
+	Plot(fg, bg, 5, x2, y1);
+	Plot(fg, bg, 3, x2, y2);
+	Plot(fg, bg, 26, x1, y2);
 }
 
-static void ClearScreen(UBYTE *screen)
+static void ClearRectangle(int bg, int x1, int y1, int x2, int y2)
+{
+#ifdef USE_CURSES
+	curses_clear_rectangle(x1, y1, x2, y2);
+#else
+	UBYTE *ptr = (UBYTE *) atari_screen + ATARI_WIDTH * 24 + 32 + x1 * 8 + y1 * (ATARI_WIDTH * 8);
+	int bytesperline = (x2 - x1 + 1) << 3;
+	UBYTE *end_ptr = (UBYTE *) atari_screen + ATARI_WIDTH * 32 + 32 + y2 * (ATARI_WIDTH * 8);
+	while (ptr < end_ptr) {
+#ifdef USE_COLOUR_TRANSLATION_TABLE
+		video_memset(ptr, (UBYTE) colour_translation_table[bg], bytesperline);
+#else
+		video_memset(ptr, (UBYTE) bg, bytesperline);
+#endif
+		ptr += ATARI_WIDTH;
+	}
+#endif /* USE_CURSES */
+}
+
+static void ClearScreen(void)
 {
 #ifdef USE_CURSES
 	curses_clear_screen();
 #else
-	UBYTE *ptr;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-	video_memset(screen, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
-	for (ptr = screen + ATARI_WIDTH * 24 + 32; ptr < screen + ATARI_WIDTH * (24 + 192); ptr += ATARI_WIDTH)
-		video_memset(ptr, colour_translation_table[0x94], 320);
+	video_memset((UBYTE *) atari_screen, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
 #else
-	video_memset(screen, 0x00, ATARI_HEIGHT * ATARI_WIDTH);
-	for (ptr = screen + ATARI_WIDTH * 24 + 32; ptr < screen + ATARI_WIDTH * (24 + 192); ptr += ATARI_WIDTH)
-		video_memset(ptr, 0x94, 320);
+	video_memset((UBYTE *) atari_screen, 0x00, ATARI_HEIGHT * ATARI_WIDTH);
 #endif
+	ClearRectangle(0x94, 0, 0, 39, 23);
 #endif /* USE_CURSES */
 }
 
-static int CountLines(const char *string)
+static void TitleScreen(const char *title)
 {
-	int lines;
-	if (string == NULL || *string == '\0')
-		return 0;
-
-	lines = 1;
-	while ((string = strchr(string, '\n')) != NULL) {
-		lines++;
-		string++;
-	}
-	return lines;
+	CenterPrint(0x9a, 0x94, title, 0);
 }
 
-static void TitleScreen(UBYTE *screen, const char *title)
+void BasicUIMessage(const char *msg)
 {
-	Box(screen, 0x9a, 0x94, 0, 0, 39, 1 + CountLines(title));
-	CenterPrint(screen, 0x9a, 0x94, title, 1);
+	CenterPrint(0x94, 0x9a, msg, 22);
+	GetKeyPress();
 }
 
-static void ShortenItem(const char *source, char *destination, int iMaxXsize)
-{
-	if ((int) strlen(source) > iMaxXsize) {
-
-		int iFirstLen = (iMaxXsize - 3) / 2;
-		int iLastStart = strlen(source) - (iMaxXsize - 3 - iFirstLen);
-		strncpy(destination, source, iFirstLen);
-		destination[iFirstLen] = '\0';
-		strcat(destination, "...");
-		strcat(destination, source + iLastStart);
-
-	}
-	else
-		strcpy(destination, source);
-}
-
-static void Message(UBYTE *screen, const char *msg)
-{
-	char buf[40];
-	ShortenItem(msg, buf, 38);
-	CenterPrint(screen, 0x94, 0x9a, buf, 22);
-	GetKeyPress(screen);
-}
-
-static void SelectItem(UBYTE *screen, int fg, int bg,
-                       int index, const char *items[],
+static void SelectItem(int fg, int bg, int index, const char *items[],
                        const char *prefix[], const char *suffix[],
                        int nrows, int ncolumns,
                        int xoffset, int yoffset,
-                       int itemwidth,
-                       int active)
+                       int itemwidth, int active)
 {
 	int x;
 	int y;
 	int iMaxXsize = ((40 - xoffset) / ncolumns) - 1;
-	char szOrig[FILENAME_MAX + 40]; /* allow for prefix and suffix */
-	char szString[41];
-	int spaceToAdd;
+	char szbuf[FILENAME_MAX + 40]; /* allow for prefix and suffix */
+	char *p = szbuf;
 
 	x = index / nrows;
 	y = index - (x * nrows);
 
-	x = x * (40 / ncolumns);
+	x *= (itemwidth + 1);
 
 	x += xoffset;
 	y += yoffset;
 
-	szOrig[0] = 0;
-	if (prefix && prefix[index])
-		strcat(szOrig, prefix[index]);
-	strcat(szOrig, items[index]);
-	if (suffix && suffix[index]) {
-		spaceToAdd = itemwidth - strlen(szOrig) - strlen(suffix[index]);
-		if (spaceToAdd > 0)
-			do
-				strcat(szOrig, " ");
-			while (--spaceToAdd);
-		strcat(szOrig, suffix[index]);
+	if (prefix != NULL && prefix[index] != NULL)
+		p = Util_stpcpy(szbuf, prefix[index]);
+	p = Util_stpcpy(p, items[index]);
+	if (suffix != NULL && suffix[index] != NULL) {
+		char *q = szbuf + itemwidth - strlen(suffix[index]);
+		while (p < q)
+			*p++ = ' ';
+		strcpy(p, suffix[index]);
 	}
 	else {
-		spaceToAdd = itemwidth - strlen(szOrig);
-		if (spaceToAdd > 0)
-			do
-				strcat(szOrig, " ");
-			while (--spaceToAdd);
+		while (p < szbuf + itemwidth)
+			*p++ = ' ';
+		*p = '\0';
 	}
 
-#if 0
-	if (strlen(szOrig) > 4) {
-		char *ext = szOrig + strlen(szOrig) - 4;
-		if (Util_stricmp(ext, ".ATR") == 0 || Util_stricmp(ext, ".XFD") == 0)
-			*ext = '\0';
-	}
-#endif
-
-	ShortenItem(szOrig, szString, iMaxXsize);
-
-	Print(screen, fg, bg, szString, x, y);
+	Print(fg, bg, szbuf, x, y, iMaxXsize);
 
 	if (active) {
-		char empty[41];
-		memset(empty, ' ', 38);
-		empty[38] = '\0';
-		Print(screen, bg, fg, empty, 1, 22);
-		ShortenItem(szOrig, szString, 38);
-		if ((int) strlen(szString) > iMaxXsize)
+		ClearRectangle(0x94, 1, 22, 38, 22);
+		if (iMaxXsize < 38 && (int) strlen(szbuf) > iMaxXsize)
 			/* the selected item was shortened */
-			CenterPrint(screen, fg, bg, szString, 22);
+			CenterPrint(fg, bg, szbuf, 22);
 	}
 }
 
-static int Select(UBYTE *screen,
-                  int default_item,
-                  int nitems, const char *items[],
+static int Select(int default_item, int nitems, const char *items[],
                   const char *prefix[], const char *suffix[],
                   int nrows, int ncolumns,
                   int xoffset, int yoffset,
-                  int itemwidth,
-                  int scrollable,
-                  int *ascii)
+                  int itemwidth, int scrollable, int *ascii)
 {
-	int index = 0;
+	int index;
 	int localascii;
 
 	if (ascii == NULL)
 		ascii = &localascii;
 
+	ClearRectangle(0x94, xoffset, yoffset, xoffset + ncolumns * (itemwidth + 1) - 2, yoffset + nrows - 1);
+
 	for (index = 0; index < nitems; index++)
-		SelectItem(screen, 0x9a, 0x94, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, FALSE);
+		SelectItem(0x9a, 0x94, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, FALSE);
 
 	index = default_item;
-	SelectItem(screen, 0x94, 0x9a, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, TRUE);
+	SelectItem(0x94, 0x9a, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, TRUE);
 
 	for (;;) {
 		int row;
@@ -427,7 +327,7 @@ static int Select(UBYTE *screen,
 		column = index / nrows;
 		row = index - (column * nrows);
 
-		*ascii = GetKeyPress(screen);
+		*ascii = GetKeyPress();
 		switch (*ascii) {
 		case 0x1c:				/* Up */
 			if (row > 0)
@@ -475,25 +375,142 @@ static int Select(UBYTE *screen,
 
 		new_index = (column * nrows) + row;
 		if ((new_index >= 0) && (new_index < nitems)) {
-			SelectItem(screen, 0x9a, 0x94, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, FALSE);
+			SelectItem(0x9a, 0x94, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, FALSE);
 
 			index = new_index;
-			SelectItem(screen, 0x94, 0x9a, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, TRUE);
+			SelectItem(0x94, 0x9a, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, TRUE);
 		}
 	}
 }
 
-/* returns TRUE if valid filename */
-static int EditFilename(UBYTE *screen, char *fname)
+int BasicUISelect(const char *title, int subitem, int default_item, tMenuItem *items, int *seltype)
 {
-	memset(fname, ' ', FILENAME_SIZE);
-	fname[FILENAME_SIZE] = '\0';
-	Box(screen, 0x9a, 0x94, 3, 9, 36, 11);
-	Print(screen, 0x94, 0x9a, "Filename", 4, 9);
-	if (!EditString(screen, 0x9a, 0x94, FILENAME_SIZE, fname, 4, 10))
-		return FALSE;
-	Util_trim(fname);
-	return fname[0] != '\0';
+	int nitems;
+	int retval;
+	const tMenuItem *pitem;
+	const char *prefix[100];
+	const char *root[100];
+	const char *suffix[100];
+	int w;
+	int x1, y1, x2, y2;
+	int scrollable;
+	int ascii;
+
+	nitems = 0;
+	retval = 0;
+	for (pitem = items; pitem->sig[0] != '\0'; pitem++) {
+		if (pitem->flags & ITEM_ENABLED) {
+			prefix[nitems] = pitem->prefix;
+			root[nitems] = pitem->item;
+			if (pitem->flags & ITEM_CHECK) {
+				if (pitem->flags & ITEM_CHECKED)
+					suffix[nitems] = "Yes";
+				else
+					suffix[nitems] = "No ";
+			}
+			else
+				suffix[nitems] = pitem->suffix;
+			if (pitem->retval == default_item)
+				retval = nitems;
+			nitems++;
+		}
+	}
+
+	if (nitems == 0)
+		return -1; /* cancel immediately */
+
+	if (subitem) {
+		int i;
+		w = 0;
+		for (i = 0; i < nitems; i++) {
+			int ws = strlen(root[i]);
+			if (prefix[i] != NULL)
+				ws += strlen(prefix[i]);
+			if (suffix[i] != NULL)
+				ws += strlen(suffix[i]);
+			if (ws > w)
+				w = ws;
+		}
+		if (w > 38)
+			w = 38;
+
+		x1 = (40 - w) / 2 - 1;
+		x2 = x1 + w + 1;
+		y1 = (24 - nitems) / 2 - 1;
+		y2 = y1 + nitems + 1;
+	}
+	else {
+		ClearScreen();
+		TitleScreen(title);
+		w = 38;
+		x1 = 0;
+		y1 = 1;
+		x2 = 39;
+		y2 = 23;
+	}
+
+	Box(0x9a, 0x94, x1, y1, x2, y2);
+	scrollable = (nitems > y2 - y1 - 1);
+	retval = Select(retval, nitems, root, prefix, suffix, nitems, 1, x1 + 1, y1 + 1, w, scrollable, &ascii);
+	if (retval < 0)
+		return retval;
+	for (pitem = items; pitem->sig[0] != '\0'; pitem++) {
+		if (pitem->flags & ITEM_ENABLED) {
+			if (retval == 0) {
+				if ((pitem->flags & ITEM_MULTI) && seltype) {
+					switch (ascii) {
+					case 0x9b:
+						*seltype = USER_SELECT;
+						break;
+					case 0x20:
+						*seltype = USER_TOGGLE;
+						break;
+					default:
+						*seltype = USER_OTHER;
+						break;
+					}
+				}
+				return pitem->retval;
+			}
+			retval--;
+		}
+	}
+	return 0;
+}
+
+int BasicUISelectInt(int default_value, int min_value, int max_value)
+{
+	static char item_values[100][4];
+	static char *items[100];
+	int value;
+	int nitems;
+	int nrows;
+	int ncolumns;
+	int x1, y1, x2, y2;
+	if (min_value < 0 || max_value > 99 || min_value > max_value)
+		return default_value;
+	nitems = 0;
+	for (value = min_value; value <= max_value; value++) {
+		items[nitems] = item_values[nitems];
+		sprintf(item_values[nitems], "%2d", value);
+		nitems++;
+	}
+	if (nitems <= 10) {
+		nrows = nitems;
+		ncolumns = 1;
+	}
+	else {
+		nrows = 10;
+		ncolumns = (nitems + 9) / 10;
+	}
+	x1 = (39 - 3 * ncolumns) >> 1;
+	y1 = (22 - nrows) >> 1;
+	x2 = x1 + 3 * ncolumns;
+	y2 = y1 + nrows + 1;
+	Box(0x9a, 0x94, x1, y1, x2, y2);
+	value = Select(default_value >= min_value && default_value <= max_value ? default_value - min_value : 0,
+		nitems, (const char **) items, NULL, NULL, nrows, ncolumns, x1 + 1, y1 + 1, 2, FALSE, NULL);
+	return value >= 0 ? value + min_value : default_value;
 }
 
 #ifdef WIN32
@@ -615,17 +632,20 @@ static void FilenamesAdd(char *filename)
 
 static int FilenamesCmp(const char *filename1, const char *filename2)
 {
-	if (*filename1 == '[' && *filename2 != '[')
-		return -1;
-	if (*filename1 != '[' && *filename2 == '[')
-		return 1;
-	if (*filename1 == '[' && *filename2 == '[') {
-		if (filename1[1] == '.')
+	if (filename1[0] == '[') {
+		if (filename2[0] != '[')
 			return -1;
+		if (filename1[1] == '.') {
+			if (filename2[1] != '.')
+				return -1;
+			/* return Util_stricmp(filename1, filename2); */
+		}
 		else if (filename2[1] == '.')
 			return 1;
+		/* return Util_stricmp(filename1, filename2); */
 	}
-
+	else if (filename2[0] == '[')
+		return 1;
 	return Util_stricmp(filename1, filename2);
 }
 
@@ -663,7 +683,7 @@ static void FilenamesFree(void)
 	free(filenames);
 }
 
-static void GetDirectory(char *directory)
+static void GetDirectory(const char *directory)
 {
 #ifdef __DJGPP__
 	unsigned short s_backup = _djstat_flags;
@@ -739,74 +759,91 @@ static void GetDirectory(char *directory)
 #endif
 }
 
-#endif /* DO_DIR */
-
-static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
+/* Select file or directory.
+   The result is returned in path and path is where selection begins (i.e. it must be initialized).
+   pDirectories are "favourite" directories (there are nDirectories of them). */
+static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME_MAX], int nDirectories)
 {
-#ifdef DO_DIR
-	int flag = FALSE;
-	int next_dir;
-
-	do {
-		int nitems = 0;
-		int item = 0;
+	char current_dir[FILENAME_MAX];
+	char highlighted_file[FILENAME_MAX];
+	highlighted_file[0] = '\0';
+	if (path[0] == '\0' && nDirectories > 0)
+		strcpy(current_dir, pDirectories[0]);
+	else if (select_dir)
+		strcpy(current_dir, path);
+	else
+		Util_splitpath(path, current_dir, highlighted_file);
+#ifdef __DJGPP__
+	{
+		char help_dir[FILENAME_MAX];
+		_fixpath(current_dir, help_dir);
+		strcpy(current_dir, help_dir);
+	}
+#elif defined(HAVE_GETCWD)
+	if (current_dir[0] == '\0' || (current_dir[0] == '.' && current_dir[1] == '\0'))
+		getcwd(current_dir, FILENAME_MAX);
+#else
+	if (directory[0] == '\0') {
+		directory[0] = '.';
+		directory[1] = '\0';
+	}
+#endif
+	for (;;) {
 		int offset = 0;
+		int item = 0;
+		int i;
 
-#define NROWS 18
+#define NROWS 20
 #define NCOLUMNS 2
 #define MAX_FILES (NROWS * NCOLUMNS)
-
-		const char **files;
-
-#ifdef __DJGPP__
-		char helpdir[FILENAME_MAX];
-		_fixpath(directory, helpdir);
-		strcpy(directory, helpdir);
-#elif defined(HAVE_GETCWD)
-		if (directory[0] == '\0' || strcmp(directory, ".") == 0)
-			getcwd(directory, FILENAME_MAX);
-#else
-		if (directory[0] == '\0') {
-			directory[0] = '.';
-			directory[1] = '\0';
-		}
-#endif
-		next_dir = FALSE;
 
 		/* The WinCE version may spend several seconds when there are many
 		   files in the directory. */
 		/* The extra spaces are needed to clear the previous window title. */
-		TitleScreen(screen, "            Please wait...            ");
-		Atari_DisplayScreen(screen);
+		TitleScreen("            Please wait...            ");
+		Atari_DisplayScreen();
 
-		GetDirectory(directory);
+		GetDirectory(current_dir);
 
 		if (n_filenames == 0) {
+			/* XXX: shouldn't happen: there should be at least ".." or a drive letter */
 			FilenamesFree();
-			Message(screen, "No files inside directory");
-			break;
+			BasicUIMessage("No files inside directory");
+			return FALSE;
+		}
+
+		if (highlighted_file[0] != '\0') {
+			for (i = 0; i < n_filenames; i++) {
+				if (strcmp(filenames[i], highlighted_file) == 0) {
+					item = i % NROWS;
+					offset = i - item;
+					break;
+				}
+			}
 		}
 
 		for (;;) {
-			files = (const char **) filenames + offset;
+			const char **files = (const char **) filenames + offset;
+			int nitems;
+			int ascii;
 			if (offset + MAX_FILES <= n_filenames)
 				nitems = MAX_FILES;
 			else
 				nitems = n_filenames - offset;
 
-			ClearScreen(screen);
-#if 1
-			TitleScreen(screen, "Select File");
+			ClearScreen();
+#if 0
+			TitleScreen(select_dir ? "Space = select current directory" : "Select File");
 #else
-			TitleScreen(screen, directory);
+			TitleScreen(current_dir);
 #endif
-			Box(screen, 0x9a, 0x94, 0, 3, 39, 23);
+			Box(0x9a, 0x94, 0, 1, 39, 23);
 
 			if (item < 0)
 				item = 0;
 			else if (item >= nitems)
 				item = nitems - 1;
-			item = Select(screen, item, nitems, files, NULL, NULL, NROWS, NCOLUMNS, 1, 4, 37 / NCOLUMNS, TRUE, NULL);
+			item = Select(item, nitems, files, NULL, NULL, NROWS, NCOLUMNS, 1, 2, 37 / NCOLUMNS, TRUE, &ascii);
 
 			if (item >= nitems * 2 + NROWS) {
 				/* Scroll Right */
@@ -816,8 +853,9 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 				}
 				else
 					item = nitems - 1;
+				continue;
 			}
-			else if (item >= nitems) {
+			if (item >= nitems) {
 				/* Scroll Left */
 				if (offset - NROWS >= 0) {
 					offset -= NROWS;
@@ -825,253 +863,299 @@ static int FileSelector(UBYTE *screen, char *directory, char *full_filename)
 				}
 				else
 					item = 0;
+				continue;
 			}
-			else if (item == -2) {
-				/* Next directory */
-				/* FIXME!!! possible endless loop!!! */
-				do {
-					current_disk_directory = (current_disk_directory + 1) % disk_directories;
-					strcpy(directory, atari_disk_dirs[current_disk_directory]);
-				} while (!Util_direxists(directory));
-				next_dir = TRUE;
+			if (item == -2) {
+				/* Tab = next favourite directory */
+				if (nDirectories > 0) {
+					/* default: pDirectories[0] */
+					int current_index = nDirectories - 1;
+					/* are we in one of pDirectories? */
+					for (i = 0; i < nDirectories; i++)
+						if (strcmp(pDirectories[i], current_dir) == 0) {
+							current_index = i;
+							break;
+						}
+					i = current_index;
+					do {
+						if (++i >= nDirectories)
+							i = 0;
+						if (Util_direxists(pDirectories[i])) {
+							strcpy(current_dir, pDirectories[i]);
+							break;
+						}
+					} while (i != current_index);
+				}
 				break;
 			}
-			else if (item != -1) {
-				if (files[item][0] == '[') {
-					/* Change directory */
-					char help[FILENAME_MAX]; /* new directory */
-
-					if (strcmp(files[item], "[..]") == 0) {
-						/* go up */
-						char *pos;
-						strcpy(help, directory);
-						pos = strrchr(help, '/');
-						if (pos == NULL)
-							pos = strrchr(help, '\\');
-						if (pos != NULL) {
-							*pos = '\0';
-							/* if there is no slash in directory, add one at the end */
-							if (strchr(help, '/') == NULL && strchr(help, '\\') == NULL) {
-								*pos = DIR_SEP_CHAR;
-								pos[1] = '\0';
-							}
-						}
-
-					}
-#ifdef DOS_DRIVES
-					else if (files[item][2] == ':' && files[item][3] == ']') {
-						/* disk selected */
-						help[0] = files[item][1];
-						help[1] = ':';
-						help[2] = '\\';
-						help[3] = '\0';
-					}
-#endif
-					else {
-						/* directory selected */
-						char *pbracket = strrchr(files[item], ']');
-						if (pbracket != NULL)
-							*pbracket = '\0';	/*cut ']' */
-						Util_catpath(help, directory, files[item] + 1);
-					}
-					/* check if new directory is valid */
-					if (Util_direxists(help)) {
-						strcpy(directory, help);
-						next_dir = TRUE;
-						break;
-					}
-				}
-				else {
-					/* normal filename selected */
-					Util_catpath(full_filename, directory, files[item]);
-					flag = TRUE;
+			if (item == -1) {
+				/* Esc = cancel */
+				FilenamesFree();
+				return FALSE;
+			}
+			if (ascii == 0x7e) {
+				/* Backspace = parent directory */
+				char new_dir[FILENAME_MAX];
+				Util_splitpath(current_dir, new_dir, NULL);
+				if (Util_direxists(new_dir)) {
+					strcpy(current_dir, new_dir);
 					break;
 				}
+				continue;
 			}
-			else
-				break;
+			if (ascii == ' ' && select_dir) {
+				/* Space = select current directory */
+				strcpy(path, current_dir);
+				FilenamesFree();
+				return TRUE;
+			}
+			if (files[item][0] == '[') {
+				/* Change directory */
+				char new_dir[FILENAME_MAX];
+
+				if (strcmp(files[item], "[..]") == 0) {
+					/* go up */
+					Util_splitpath(current_dir, new_dir, NULL);
+				}
+#ifdef DOS_DRIVES
+				else if (files[item][2] == ':' && files[item][3] == ']') {
+					/* disk selected */
+					new_dir[0] = files[item][1];
+					new_dir[1] = ':';
+					new_dir[2] = '\\';
+					new_dir[3] = '\0';
+				}
+#endif
+				else {
+					/* directory selected */
+					char *pbracket = strrchr(files[item], ']');
+					if (pbracket != NULL)
+						*pbracket = '\0';	/*cut ']' */
+					Util_catpath(new_dir, current_dir, files[item] + 1);
+				}
+				/* check if new directory is valid */
+				if (Util_direxists(new_dir)) {
+					strcpy(current_dir, new_dir);
+					break;
+				}
+				continue;
+			}
+			if (!select_dir) {
+				/* normal filename selected */
+				Util_catpath(path, current_dir, files[item]);
+				FilenamesFree();
+				return TRUE;
+			}
 		}
 
 		FilenamesFree();
-	} while (next_dir);
-	return flag;
-#else /* DO_DIR */
-	char fname[FILENAME_SIZE + 1];
-	if (EditFilename(screen, fname)) {
-		if (directory[0] == '\0' || strcmp(directory, ".") == 0)
-#ifdef HAVE_GETCWD
-			getcwd(directory, FILENAME_MAX);
-#else
-			strcpy(directory, ".");
-#endif
-		Util_catpath(full_filename, directory, fname);
-		return TRUE;
+		highlighted_file[0] = '\0';
 	}
-	return FALSE;
+}
+
 #endif /* DO_DIR */
-}
 
-static void AboutEmulator(UBYTE *screen)
+/* nDirectories >= 0 means we are editing a file name */
+static int EditString(int fg, int bg, const char *title,
+                      char *string, int size, int x, int y, int width,
+                      char pDirectories[][FILENAME_MAX], int nDirectories)
 {
-	ClearScreen(screen);
-
-	Box(screen, 0x9a, 0x94, 0, 0, 39, 8);
-	CenterPrint(screen, 0x9a, 0x94, ATARI_TITLE, 1);
-	CenterPrint(screen, 0x9a, 0x94, "Copyright (c) 1995-1998 David Firth", 2);
-	CenterPrint(screen, 0x9a, 0x94, "and", 3);
-	CenterPrint(screen, 0x9a, 0x94, "(c)1998-2005 Atari800 Development Team", 4);
-	CenterPrint(screen, 0x9a, 0x94, "See CREDITS file for details.", 5);
-	CenterPrint(screen, 0x9a, 0x94, "http://atari800.atari.org/", 7);
-
-	Box(screen, 0x9a, 0x94, 0, 9, 39, 23);
-	CenterPrint(screen, 0x9a, 0x94, "This program is free software; you can", 10);
-	CenterPrint(screen, 0x9a, 0x94, "redistribute it and/or modify it under", 11);
-	CenterPrint(screen, 0x9a, 0x94, "the terms of the GNU General Public", 12);
-	CenterPrint(screen, 0x9a, 0x94, "License as published by the Free", 13);
-	CenterPrint(screen, 0x9a, 0x94, "Software Foundation; either version 1,", 14);
-	CenterPrint(screen, 0x9a, 0x94, "or (at your option) any later version.", 15);
-
-	CenterPrint(screen, 0x94, 0x9a, "Press any Key to Continue", 22);
-	GetKeyPress(screen);
-}
-
-
-static int MenuSelectEx(UBYTE *screen, const char *title, int subitem,
-                        int default_item, tMenuItem *items, int *seltype)
-{
-	int scrollable;
-	int i;
-	int w;
-	int x1, y1, x2, y2;
-	int nitems;
-	const char *prefix[100];
-	const char *root[100];
-	const char *suffix[100];
-	int retval;
-	int ascii;
-
-	nitems = 0;
-	retval = 0;
-	for (i = 0; items[i].sig[0] != '\0'; i++) {
-		if (items[i].flags & ITEM_ENABLED) {
-			prefix[nitems] = items[i].prefix;
-			root[nitems] = items[i].item;
-			if (items[i].flags & ITEM_CHECK) {
-				if (items[i].flags & ITEM_CHECKED)
-					suffix[nitems] = "Yes";
-				else
-					suffix[nitems] = "No ";
-			}
+	int caret = strlen(string);
+	int offset = 0;
+	for (;;) {
+		int i;
+		char *p;
+		int ascii;
+		Box(fg, bg, x, y, x + 1 + width, y + 2);
+		Print(bg, fg, title, x + 1, y, width);
+		if (caret - offset >= width)
+			offset = caret - width + 1;
+		else if (caret < offset)
+			offset = caret;
+		p = string + offset;
+		for (i = 0; i < width; i++)
+			if (offset + i == caret)
+				Plot(bg, fg, *p != '\0' ? *p++ : ' ', x + 1 + i, y + 1);
 			else
-				suffix[nitems] = items[i].suffix;
-			if (items[i].retval == default_item)
-				retval = nitems;
-			nitems++;
-		}
-	}
-
-	if (nitems == 0)
-		return -1; /* cancel immediately */
-
-	if (subitem) {
-		w = 0;
-		for (i = 0; i < nitems; i++) {
-			int ws = strlen(root[i]);
-			if (prefix[i] != NULL)
-				ws += strlen(prefix[i]);
-			if (suffix[i] != NULL)
-				ws += strlen(suffix[i]);
-			if (ws > w)
-				w = ws;
-		}
-		if (w > 38)
-			w = 38;
-
-		x1 = (40 - w) / 2 - 1;
-		x2 = x1 + w + 1;
-		y1 = (24 - nitems) / 2 - 1;
-		y2 = y1 + nitems + 1;
-	}
-	else {
-		ClearScreen(screen);
-		TitleScreen(screen, title);
-		w = 38;
-		x1 = 0;
-		y1 = CountLines(title) + 2;
-		x2 = 39;
-		y2 = 23;
-	}
-
-	Box(screen, 0x9a, 0x94, x1, y1, x2, y2);
-	scrollable = (nitems > y2 - y1 - 1);
-	retval = Select(screen, retval, nitems, root, prefix, suffix, nitems, 1, x1 + 1, y1 + 1, w, scrollable, &ascii);
-	if (retval < 0)
-		return retval;
-	for (i = 0; items[i].sig[0] != '\0'; i++) {
-		if (items[i].flags & ITEM_ENABLED) {
-			if (retval == 0) {
-				if ((items[i].flags & ITEM_MULTI) && seltype) {
-					switch (ascii) {
-					case 0x9b:
-						*seltype = USER_SELECT;
-						break;
-					case 0x20:
-						*seltype = USER_TOGGLE;
-						break;
-					default:
-						*seltype = USER_OTHER;
-						break;
+				Plot(fg, bg, *p != '\0' ? *p++ : ' ', x + 1 + i, y + 1);
+		ascii = GetKeyPress();
+		switch (ascii) {
+		case 0x1e:				/* Cursor Left */
+			if (caret > 0)
+				caret--;
+			break;
+		case 0x1f:				/* Cursor Right */
+			if (string[caret] != '\0')
+				caret++;
+			break;
+		case 0x7e:				/* Backspace */
+			if (caret > 0) {
+				caret--;
+				p = string + caret;
+				do
+					p[0] = p[1];
+				while (*p++ != '\0');
+			}
+			break;
+		case 0xfe:				/* Delete */
+			if (string[caret] != '\0') {
+				p = string + caret;
+				do
+					p[0] = p[1];
+				while (*p++ != '\0');
+			}
+			break;
+		case 0x7d:				/* Clear screen */
+		case 0x9c:				/* Delete line */
+			caret = 0;
+			string[0] = '\0';
+			break;
+		case 0x9b:				/* Return */
+			if (nDirectories >= 0) {
+				/* check filename */
+				char lastchar;
+				if (string[0] == '\0')
+					return FALSE;
+				lastchar = string[strlen(string) - 1];
+				return lastchar != '/' && lastchar != '\\';
+			}
+			return TRUE;
+		case 0x1b:				/* Esc */
+			return FALSE;
+#ifdef DO_DIR
+		case 0x7f:				/* Tab = select directory */
+			if (nDirectories >= 0) {
+				char temp_filename[FILENAME_MAX + 1];
+				char temp_path[FILENAME_MAX];
+				char temp_file[FILENAME_MAX];
+				char *p;
+				strcpy(Util_stpcpy(temp_filename, string), "*");
+				Util_splitpath(temp_filename, temp_path, temp_file);
+				p = temp_file + strlen(temp_file) - 1;
+				if (*p == '*') { /* XXX: should be always... */
+					*p = '\0';
+					if (FileSelector(temp_path, TRUE, pDirectories, nDirectories)) {
+						Util_catpath(string, temp_path, temp_file);
+						caret = strlen(string);
+						offset = 0;
 					}
 				}
-				return items[i].retval;
 			}
-			retval--;
+			break;
+#endif
+		default:
+			/* Insert character */
+			i = strlen(string);
+			if (i < size - 1 && ascii >= ' ' && ascii < 0x7f) {
+				do
+					string[i + 1] = string[i];
+				while (--i >= caret);
+				string[caret++] = (char) ascii;
+			}
+			break;
 		}
 	}
-	return 0;
 }
 
-/* UI Driver entries */
-
-#ifdef CURSES_BASIC
-#define atari_screen NULL
+/* returns TRUE if accepted filename */
+static int EditFilename(const char *title, char *pFilename, char pDirectories[][FILENAME_MAX], int nDirectories)
+{
+	char edited_filename[FILENAME_MAX];
+	strcpy(edited_filename, pFilename);
+	if (edited_filename[0] == '\0') {
+		if (nDirectories > 0)
+			strcpy(edited_filename, pDirectories[0]);
+#ifdef HAVE_GETCWD
+		if (edited_filename[0] == '\0') {
+			getcwd(edited_filename, FILENAME_MAX);
+			if (edited_filename[0] != '\0' && strlen(edited_filename) < FILENAME_MAX - 1) {
+				char *p = edited_filename + strlen(edited_filename) - 1;
+				if (*p != '/' && *p != '\\') {
+					p[1] = DIR_SEP_CHAR;
+					p[2] = '\0';
+				}
+			}
+		}
 #endif
-
-int BasicUISelect(const char *pTitle, int bFloat, int nDefault, tMenuItem *menu, int *ascii)
-{
-	return MenuSelectEx((UBYTE *) atari_screen, pTitle, bFloat, nDefault, menu, ascii);
+	}
+	if (!EditString(0x9a, 0x94, title, edited_filename, FILENAME_MAX, 3, 11, 32, pDirectories, nDirectories))
+		return FALSE;
+	strcpy(pFilename, edited_filename);
+	return TRUE;
 }
 
-int BasicUIGetSaveFilename(char *pFilename)
+int BasicUIEditString(const char *pTitle, char *pString, int nSize)
 {
-	return EditFilename((UBYTE *) atari_screen, pFilename);
+	return EditString(0x9a, 0x94, pTitle, pString, nSize, 3, 11, 32, NULL, -1);
 }
 
-int BasicUIGetLoadFilename(char *pDirectory, char *pFilename)
+int BasicUIGetSaveFilename(char *pFilename, char pDirectories[][FILENAME_MAX], int nDirectories)
 {
-	return FileSelector((UBYTE *) atari_screen, pDirectory, pFilename);
+#ifdef DO_DIR
+	return EditFilename("Save as (Tab=dir)", pFilename, pDirectories, nDirectories);
+#else
+	return EditFilename("Save as", pFilename, pDirectories, nDirectories);
+#endif
 }
 
-void BasicUIMessage(const char *pMessage)
+int BasicUIGetLoadFilename(char *pFilename, char pDirectories[][FILENAME_MAX], int nDirectories)
 {
-	Message((UBYTE *) atari_screen, pMessage);
+#ifdef DO_DIR
+	return FileSelector(pFilename, FALSE, pDirectories, nDirectories);
+#else
+	return EditFilename("Filename", pFilename, pDirectories, nDirectories);
+#endif
+}
+
+int BasicUIGetDirectoryPath(char *pDirectory)
+{
+#ifdef DO_DIR
+	return FileSelector(pDirectory, TRUE, NULL, 0);
+#else
+	return EditFilename("Path", pDirectory, NULL, -1);
+#endif
 }
 
 void BasicUIAboutBox(void)
 {
-	AboutEmulator((UBYTE *) atari_screen);
+	ClearScreen();
+
+	Box(0x9a, 0x94, 0, 0, 39, 8);
+	CenterPrint(0x9a, 0x94, ATARI_TITLE, 1);
+	CenterPrint(0x9a, 0x94, "Copyright (c) 1995-1998 David Firth", 2);
+	CenterPrint(0x9a, 0x94, "and", 3);
+	CenterPrint(0x9a, 0x94, "(c)1998-2005 Atari800 Development Team", 4);
+	CenterPrint(0x9a, 0x94, "See CREDITS file for details.", 5);
+	CenterPrint(0x9a, 0x94, "http://atari800.atari.org/", 7);
+
+	Box(0x9a, 0x94, 0, 9, 39, 23);
+	CenterPrint(0x9a, 0x94, "This program is free software; you can", 10);
+	CenterPrint(0x9a, 0x94, "redistribute it and/or modify it under", 11);
+	CenterPrint(0x9a, 0x94, "the terms of the GNU General Public", 12);
+	CenterPrint(0x9a, 0x94, "License as published by the Free", 13);
+	CenterPrint(0x9a, 0x94, "Software Foundation; either version 1,", 14);
+	CenterPrint(0x9a, 0x94, "or (at your option) any later version.", 15);
+
+	CenterPrint(0x94, 0x9a, "Press any Key to Continue", 22);
+	GetKeyPress();
 }
 
 void BasicUIInit(void)
 {
-	InitializeUI();
+	if (!initialised) {
+		get_charset(charset);
+		initialised = TRUE;
+	}
 }
 
 tUIDriver basic_ui_driver =
 {
 	&BasicUISelect,
+	&BasicUISelectInt,
+	&BasicUIEditString,
 	&BasicUIGetSaveFilename,
 	&BasicUIGetLoadFilename,
+	&BasicUIGetDirectoryPath,
 	&BasicUIMessage,
 	&BasicUIAboutBox,
 	&BasicUIInit
@@ -1079,6 +1163,9 @@ tUIDriver basic_ui_driver =
 
 /*
 $Log$
+Revision 1.39  2005/10/19 21:40:30  pfusik
+tons of changes, see ChangeLog
+
 Revision 1.38  2005/10/09 20:33:36  pfusik
 silenced a warning
 

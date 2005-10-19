@@ -33,12 +33,12 @@
 #include "cartridge.h"
 #include "cassette.h"
 #include "cpu.h"
+#include "devices.h" /* Device_SetPrintCommand */
 #include "gtia.h"
 #include "input.h"
 #include "log.h"
 #include "memory.h"
 #include "platform.h"
-#include "rt-config.h" /* enable_new_pokey, stereo_enabled, refresh_rate */
 #include "rtime.h"
 #include "screen.h"
 #include "sio.h"
@@ -53,14 +53,7 @@
 tUIDriver *ui_driver = &basic_ui_driver;
 
 int ui_is_active = FALSE;
-int alt_function = -1;			/* alt function init */
-int current_disk_directory = 0;
-
-static char curr_disk_dir[FILENAME_MAX] = "";
-static char curr_cart_dir[FILENAME_MAX] = "";
-static char curr_exe_dir[FILENAME_MAX] = "";
-static char curr_state_dir[FILENAME_MAX] = "";
-static char curr_tape_dir[FILENAME_MAX] = "";
+int alt_function = -1;
 
 #ifdef CRASH_MENU
 int crash_code = -1;
@@ -68,6 +61,11 @@ UWORD crash_address;
 UWORD crash_afterCIM;
 int CrashMenu();
 #endif
+
+char atari_files_dir[MAX_DIRECTORIES][FILENAME_MAX];
+char saved_files_dir[MAX_DIRECTORIES][FILENAME_MAX];
+int n_atari_files_dir = 0;
+int n_saved_files_dir = 0;
 
 static void SetItemChecked(tMenuItem *mip, int checked)
 {
@@ -183,7 +181,7 @@ static void MakeBlankDisk(FILE *setFile)
 
 static void DiskManagement(void)
 {
-	static char drive_array[8][7];
+	static char drive_array[8][5] = { " D1:", " D2:", " D3:", " D4:", " D5:", " D6:", " D7:", " D8:" };
 
 	static tMenuItem menu_array[] = {
 		{"DKS1", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, drive_array[0], sio_filename[0], NULL, 0},
@@ -194,156 +192,110 @@ static void DiskManagement(void)
 		{"DKS6", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, drive_array[5], sio_filename[5], NULL, 5},
 		{"DKS7", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, drive_array[6], sio_filename[6], NULL, 6},
 		{"DKS8", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, drive_array[7], sio_filename[7], NULL, 7},
-		{"SSET", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, NULL, "Save Disk Set", NULL, 8},
-		{"LSET", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, NULL, "Load Disk Set", NULL, 9},
+		{"SSET", ITEM_ENABLED | ITEM_FILESEL, NULL, "Save Disk Set", NULL, 8},
+		{"LSET", ITEM_ENABLED | ITEM_FILESEL, NULL, "Load Disk Set", NULL, 9},
 		{"RDSK", ITEM_ENABLED | ITEM_ACTION, NULL, "Rotate Disks", NULL, 10},
-		{"MDSK", ITEM_ENABLED | ITEM_ACTION | ITEM_MULTI, NULL, "Make Blank ATR Disk", NULL, 11},
+		{"MDSK", ITEM_ENABLED | ITEM_FILESEL, NULL, "Make Blank ATR Disk", NULL, 11},
 		MENU_END
 	};
 
-	int rwflags[8];
 	int dsknum = 0;
-	int i;
-
-	for (i = 0; i < 8; ++i) {
-		menu_array[i].item = sio_filename[i];
-		rwflags[i] = (drive_status[i] == ReadOnly ? TRUE : FALSE);
-	}
 
 	for (;;) {
-		char filename[FILENAME_MAX + 1];
-		char diskfilename[FILENAME_MAX + 1];
-		char setname[FILENAME_MAX + 1];
+		static char disk_filename[FILENAME_MAX] = "";
+		static char set_filename[FILENAME_MAX] = "";
+		int i;
 		int seltype;
-		FILE *setFile;
 
-		for (i = 0; i < 8; i++) {
-			sprintf(menu_array[i].prefix, "<%c>D%d:", rwflags[i] ? 'R' : 'W', i + 1);
-		}
+		for (i = 0; i < 8; i++)
+			drive_array[i][0] = drive_status[i] == ReadOnly ? '*' : ' ';
 
 		dsknum = ui_driver->fSelect("Disk Management", FALSE, dsknum, menu_array, &seltype);
-
-		if (dsknum > -1) {
-			if (dsknum == 10) {
-				Rotate_Disks();
-			}
-			else if (seltype == USER_SELECT) {	/* User pressed "Enter" to select a disk image */
-				/* char *pathname; XXX: what was the supposed purpose of it? */
-
-/*              pathname=atari_disk_dirs[current_disk_directory]; */
-
-				if (dsknum == 11) {
-					if (!ui_driver->fGetSaveFilename(filename))
-						continue;
-					strcpy(setname, curr_disk_dir);
-					if (*setname) {
-						char last = setname[strlen(setname) - 1];
-						if (last != '/' && last != '\\')
-#ifdef BACK_SLASH
-							strcat(setname, "\\");
-#else
-							strcat(setname, "/");
-#endif
-					}
-					strcat(setname, filename);
-					setFile = fopen(setname, "wb");
-					if (setFile != NULL) {
-						MakeBlankDisk(setFile);
-						fclose(setFile);
-						Created(setname);
-					}
-					else
-						CantSave(setname);
-					continue;
-				}
-				if (curr_disk_dir[0] == '\0')
-					strcpy(curr_disk_dir, atari_disk_dirs[current_disk_directory]);
-
-				if (dsknum == 8) {	/* Save a disk set */
-					/* Get the filename */
-					if (!ui_driver->fGetSaveFilename(filename))
-						continue;
-
-					/* Put it in the current disks directory */
-					strcpy(setname, curr_disk_dir);
-					if (*setname) {
-						char last = setname[strlen(setname) - 1];
-						if (last != '/' && last != '\\')
-#ifdef BACK_SLASH
-							strcat(setname, "\\");
-#else
-							strcat(setname, "/");
-#endif
-					}
-					strcat(setname, filename);
-
-					/* Write the current disk file names out to it */
-					setFile = fopen(setname, "w");
-					if (setFile != NULL) {
-						for (i = 0; i < 8; i++)
-							fprintf(setFile, "%s\n", sio_filename[i]);
-						fclose(setFile);
-						Created(setname);
-					}
-					else
-						CantSave(setname);
-				}
-				else if (ui_driver->fGetLoadFilename(curr_disk_dir, filename)) {
-					if (dsknum < 8) {	/* Normal disk mount */
-						SIO_Dismount(dsknum + 1);
-						/* try to mount read/write */
-						SIO_Mount(dsknum + 1, filename, FALSE);
-						/* update rwflags with the real mount status */
-						rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
-					}
-					else if (dsknum == 9) {	/* Load a disk set */
-						setFile = fopen(filename, "r");
-						if (setFile != NULL) {
-							for (i = 0; i < 8; i++) {
-								/* Get the disk filename from the set file */
-								fgets(diskfilename, FILENAME_MAX, setFile);
-								/* Remove the trailing newline */
-								if (strlen(diskfilename) != 0)
-									diskfilename[strlen(diskfilename) - 1] = 0;
-								/* If the disk drive wasn't empty or off when saved,
-								   mount the disk */
-								if ((strcmp(diskfilename, "Empty") != 0) && (strcmp(diskfilename, "Off") != 0)) {
-									SIO_Dismount(i + 1);
-									/* Mount the disk read/write */
-									SIO_Mount(i + 1, diskfilename, FALSE);
-									/* update rwflags with the real mount status */
-									rwflags[i] = (drive_status[i] == ReadOnly ? TRUE : FALSE);
-								}
-							}
-							fclose(setFile);
-						}
-						else
-							CantLoad(filename);
-					}
-				}
-			}
-			else if (seltype == USER_TOGGLE) {
-				if (dsknum < 8) {
-					/* User pressed "SpaceBar" to change R/W status of this drive */
-					/* unmount */
-					SIO_Dismount(dsknum + 1);
-					/* try to remount with changed R/W status (!rwflags) */
-					SIO_Mount(dsknum + 1, filename, !rwflags[dsknum]);
-					/* update rwflags with the real mount status */
-					rwflags[dsknum] = (drive_status[dsknum] == ReadOnly ? TRUE : FALSE);
-				}
-			}
-			else {
-				if (dsknum < 8) {
-					if (strcmp(sio_filename[dsknum], "Empty") == 0)
-						SIO_DisableDrive(dsknum + 1);
-					else
-						SIO_Dismount(dsknum + 1);
-				}
-			}
-		}
-		else
+		if (dsknum < 0)
 			break;
+
+		switch (dsknum) {
+		case 8:
+			if (ui_driver->fGetSaveFilename(set_filename, saved_files_dir, n_saved_files_dir)) {
+				FILE *fp = fopen(set_filename, "w");
+				if (fp == NULL) {
+					CantSave(set_filename);
+					break;
+				}
+				for (i = 0; i < 8; i++)
+					fprintf(fp, "%s\n", sio_filename[i]);
+				fclose(fp);
+				Created(set_filename);
+			}
+			break;
+		case 9:
+			if (ui_driver->fGetLoadFilename(set_filename, saved_files_dir, n_saved_files_dir)) {
+				FILE *fp = fopen(set_filename, "r");
+				if (fp == NULL) {
+					CantLoad(set_filename);
+					break;
+				}
+				for (i = 0; i < 8; i++) {
+					char filename[FILENAME_MAX];
+					fgets(filename, FILENAME_MAX, fp);
+					Util_chomp(filename);
+					if (strcmp(filename, "Empty") != 0 && strcmp(filename, "Off") != 0)
+						SIO_Mount(i + 1, filename, FALSE);
+				}
+				fclose(fp);
+			}
+			break;
+		case 10:
+			Rotate_Disks();
+			break;
+		case 11:
+			if (ui_driver->fGetSaveFilename(disk_filename, atari_files_dir, n_atari_files_dir)) {
+				FILE *fp = fopen(disk_filename, "wb");
+				if (fp == NULL) {
+					CantSave(disk_filename);
+					break;
+				}
+				MakeBlankDisk(fp);
+				fclose(fp);
+				Created(disk_filename);
+			}
+			break;
+		default: /* 0..7 */
+			switch (seltype) {
+			case USER_SELECT: /* "Enter" */
+				if (drive_status[dsknum] != Off && drive_status[dsknum] != NoDisk)
+					strcpy(disk_filename, sio_filename[dsknum]);
+				if (ui_driver->fGetLoadFilename(disk_filename, atari_files_dir, n_atari_files_dir))
+					SIO_Mount(dsknum + 1, disk_filename, FALSE);
+				break;
+			case USER_TOGGLE: /* "Space" */
+				switch (drive_status[dsknum]) {
+				case ReadOnly:
+					strcpy(disk_filename, sio_filename[dsknum]);
+					SIO_Mount(dsknum + 1, disk_filename, FALSE);
+					break;
+				case ReadWrite:
+					strcpy(disk_filename, sio_filename[dsknum]);
+					SIO_Mount(dsknum + 1, disk_filename, TRUE);
+					break;
+				default:
+					break;
+				}
+				break;
+			default: /* Backspace */
+				switch (drive_status[dsknum]) {
+				case Off:
+					break;
+				case NoDisk:
+					SIO_DisableDrive(dsknum + 1);
+					break;
+				default:
+					SIO_Dismount(dsknum + 1);
+					break;
+				}
+			}
+			break;
+		}
 	}
 }
 
@@ -438,32 +390,26 @@ static void CartManagement(void)
 		UBYTE gash[4];
 	} Header;
 
-	int done = FALSE;
 	int option = 2;
 
-	if (!curr_cart_dir[0])
-		strcpy(curr_cart_dir, atari_rom_dir);
+	for (;;) {
+		static char cart_filename[FILENAME_MAX] = "";
 
-	while (!done) {
-		char filename[FILENAME_MAX + 1];
-		int ascii;
-
-		option = ui_driver->fSelect("Cartridge Management", FALSE, option, menu_array, &ascii);
+		option = ui_driver->fSelect("Cartridge Management", FALSE, option, menu_array, NULL);
 
 		switch (option) {
 		case 0:
-			if (ui_driver->fGetLoadFilename(curr_cart_dir, filename)) {
+			if (ui_driver->fGetLoadFilename(cart_filename, atari_files_dir, n_atari_files_dir)) {
 				FILE *f;
 				int nbytes;
 				int type;
 				UBYTE *image;
-				char fname[FILENAME_SIZE + 1];
 				int checksum;
 				Header header;
 
-				f = fopen(filename, "rb");
+				f = fopen(cart_filename, "rb");
 				if (f == NULL) {
-					CantLoad(filename);
+					CantLoad(cart_filename);
 					break;
 				}
 				nbytes = Util_flen(f);
@@ -482,12 +428,12 @@ static void CartManagement(void)
 				Util_rewind(f);
 				if ((int) fread(image, 1, nbytes, f) != nbytes) {
 					fclose(f);
-					CantLoad(filename);
+					CantLoad(cart_filename);
 					break;
 				}
 				fclose(f);
 
-				if (!ui_driver->fGetSaveFilename(fname))
+				if (!ui_driver->fGetSaveFilename(cart_filename, atari_files_dir, n_atari_files_dir))
 					break;
 
 				checksum = CART_Checksum(image, nbytes);
@@ -508,29 +454,28 @@ static void CartManagement(void)
 				header.gash[2] = '\0';
 				header.gash[3] = '\0';
 
-				Util_catpath(filename, atari_rom_dir, fname);
-				f = fopen(filename, "wb");
-				if (f != NULL) {
-					fwrite(&header, 1, sizeof(header), f);
-					fwrite(image, 1, nbytes, f);
-					fclose(f);
+				f = fopen(cart_filename, "wb");
+				if (f == NULL) {
+					CantSave(cart_filename);
+					break;
 				}
-				else
-					CantSave(filename);
+				fwrite(&header, 1, sizeof(header), f);
+				fwrite(image, 1, nbytes, f);
+				fclose(f);
 				free(image);
+				Created(cart_filename);
 			}
 			break;
 		case 1:
-			if (ui_driver->fGetLoadFilename(curr_cart_dir, filename)) {
+			if (ui_driver->fGetLoadFilename(cart_filename, atari_files_dir, n_atari_files_dir)) {
 				FILE *f;
 				int nbytes;
 				Header header;
 				UBYTE *image;
-				char fname[FILENAME_SIZE + 1];
 
-				f = fopen(filename, "rb");
+				f = fopen(cart_filename, "rb");
 				if (f == NULL) {
-					CantLoad(filename);
+					CantLoad(cart_filename);
 					break;
 				}
 				nbytes = Util_flen(f) - sizeof(header);
@@ -545,26 +490,26 @@ static void CartManagement(void)
 				fread(image, 1, nbytes, f);
 				fclose(f);
 
-				if (!ui_driver->fGetSaveFilename(fname))
+				if (!ui_driver->fGetSaveFilename(cart_filename, atari_files_dir, n_atari_files_dir))
 					break;
 
-				Util_catpath(filename, atari_rom_dir, fname);
-				f = fopen(filename, "wb");
-				if (f != NULL) {
-					fwrite(image, 1, nbytes, f);
-					fclose(f);
+				f = fopen(cart_filename, "wb");
+				if (f == NULL) {
+					CantSave(cart_filename);
+					break;
 				}
-				else
-					CantSave(filename);
+				fwrite(image, 1, nbytes, f);
+				fclose(f);
 				free(image);
+				Created(cart_filename);
 			}
 			break;
 		case 2:
-			if (ui_driver->fGetLoadFilename(curr_cart_dir, filename)) {
-				int r = CART_Insert(filename);
+			if (ui_driver->fGetLoadFilename(cart_filename, atari_files_dir, n_atari_files_dir)) {
+				int r = CART_Insert(cart_filename);
 				switch (r) {
 				case CART_CANT_OPEN:
-					CantLoad(filename);
+					CantLoad(cart_filename);
 					break;
 				case CART_BAD_FORMAT:
 					ui_driver->fMessage("Unknown cartridge format");
@@ -594,23 +539,21 @@ static void CartManagement(void)
 					}
 				}
 				Coldstart();
-				done = TRUE;
+				return;
 			}
 			break;
 		case 3:
 			CART_Remove();
 			Coldstart();
-			done = TRUE;
-			break;
+			return;
 		default:
-			done = TRUE;
-			break;
+			return;
 		}
 	}
 }
 
 #ifdef SOUND
-void SoundRecording(void)
+static void SoundRecording(void)
 {
 	if (!IsSoundFileOpen()) {
 		int no = -1;
@@ -638,30 +581,10 @@ void SoundRecording(void)
 }
 #endif /* SOUND */
 
-#if 0
-/* Superseded by AutostartFile(). */
-static int RunExe(void)
-{
-	char exename[FILENAME_MAX + 1];
-
-	if (!curr_exe_dir[0])
-		strcpy(curr_exe_dir, atari_exe_dir);
-	if (ui_driver->fGetLoadFilename(curr_exe_dir, exename)) {
-		if (BIN_loader(exename))
-			return TRUE;
-		CantLoad(exename);
-	}
-	return FALSE;
-}
-#endif
-
 static int AutostartFile(void)
 {
-	char filename[FILENAME_MAX + 1];
-
-	if (!curr_exe_dir[0])
-		strcpy(curr_exe_dir, atari_exe_dir);
-	if (ui_driver->fGetLoadFilename(curr_exe_dir, filename)) {
+	static char filename[FILENAME_MAX] = "";
+	if (ui_driver->fGetLoadFilename(filename, atari_files_dir, n_atari_files_dir)) {
 		if (Atari800_OpenFile(filename, TRUE, 1, FALSE))
 			return TRUE;
 		CantLoad(filename);
@@ -671,13 +594,10 @@ static int AutostartFile(void)
 
 static void LoadTape(void)
 {
-	char tapename[FILENAME_MAX + 1];
-
-	if (!curr_tape_dir[0])
-		strcpy(curr_tape_dir, atari_exe_dir);
-	if (ui_driver->fGetLoadFilename(curr_tape_dir, tapename)) {
-		if (!CASSETTE_Insert(tapename))
-			CantLoad(tapename);
+	static char filename[FILENAME_MAX] = "";
+	if (ui_driver->fGetLoadFilename(filename, atari_files_dir, n_atari_files_dir)) {
+		if (!CASSETTE_Insert(filename))
+			CantLoad(filename);
 	}
 }
 
@@ -692,14 +612,31 @@ static void AtariSettings(void)
 		{"PDEV", ITEM_ENABLED | ITEM_CHECK, NULL, "P: device (printer):", NULL, 5},
 #ifdef R_IO_DEVICE
 		{"RDEV", ITEM_ENABLED | ITEM_CHECK, NULL, "R: device (Atari850 via net):", NULL, 6},
+#else
+		{"RDEV", 0, NULL, "", NULL, 6},
 #endif
-		{"UCFG", ITEM_ENABLED | ITEM_ACTION, NULL, "Update configuration file", NULL, 7},
+		{"HDE1", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, "H1: ", atari_h_dir[0], NULL, 7},
+		{"HDE2", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, "H2: ", atari_h_dir[1], NULL, 8},
+		{"HDE3", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, "H3: ", atari_h_dir[2], NULL, 9},
+		{"HDE4", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, "H4: ", atari_h_dir[3], NULL, 10},
+		{"HDRO", ITEM_ENABLED | ITEM_CHECK, NULL, "Use H: devices in Read Only mode:", NULL, 11},
+		{"PRNC", ITEM_ENABLED | ITEM_ACTION, "Print command: ", print_command, NULL, 12},
+		{"ROMA", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, " OS/A ROM: ", atari_osa_filename, NULL, 13},
+		{"ROMB", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, " OS/B ROM: ", atari_osb_filename, NULL, 14},
+		{"ROMX", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, "XL/XE ROM: ", atari_xlxe_filename, NULL, 15},
+		{"ROM5", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, " 5200 ROM: ", atari_5200_filename, NULL, 16},
+		{"ROAB", ITEM_ENABLED | ITEM_FILESEL | ITEM_MULTI, "BASIC ROM: ", atari_basic_filename, NULL, 17},
+		{"FDRO", ITEM_ENABLED | ITEM_FILESEL, NULL, "Find ROM images in a directory", NULL, 18},
+		{"UCFG", ITEM_ENABLED | ITEM_ACTION, NULL, "Update configuration file", NULL, 19},
 		MENU_END
 	};
+	char tmp_command[256];
+	char rom_dir[FILENAME_MAX];
 
 	int option = 0;
 
 	do {
+		int seltype;
 		SetItemChecked(&menu_array[0], disable_basic);
 		SetItemChecked(&menu_array[1], hold_start_on_reboot);
 		SetItemChecked(&menu_array[2], rtime_enabled);
@@ -709,8 +646,9 @@ static void AtariSettings(void)
 #ifdef R_IO_DEVICE
 		SetItemChecked(&menu_array[6], enable_r_patch);
 #endif
+		SetItemChecked(&menu_array[11], h_read_only);
 
-		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
+		option = ui_driver->fSelect("Emulator Settings", FALSE, option, menu_array, &seltype);
 
 		switch (option) {
 		case 0:
@@ -738,60 +676,140 @@ static void AtariSettings(void)
 			break;
 #endif
 		case 7:
-			ui_driver->fMessage(RtConfigSave() ? "Configuration file updated" : "Error writing configuration file");
+			if (seltype == USER_OTHER)
+				atari_h_dir[0][0] = '\0';
+			else
+				ui_driver->fGetDirectoryPath(atari_h_dir[0]);
+			break;
+		case 8:
+			if (seltype == USER_OTHER)
+				atari_h_dir[1][0] = '\0';
+			else
+				ui_driver->fGetDirectoryPath(atari_h_dir[1]);
+			break;
+		case 9:
+			if (seltype == USER_OTHER)
+				atari_h_dir[2][0] = '\0';
+			else
+				ui_driver->fGetDirectoryPath(atari_h_dir[2]);
+			break;
+		case 10:
+			if (seltype == USER_OTHER)
+				atari_h_dir[3][0] = '\0';
+			else
+				ui_driver->fGetDirectoryPath(atari_h_dir[3]);
+			break;
+		case 11:
+			h_read_only = !h_read_only;
+			break;
+		case 12:
+			strcpy(tmp_command, print_command);
+			if (ui_driver->fEditString("Print command", tmp_command, sizeof(tmp_command)))
+				if (!Device_SetPrintCommand(tmp_command))
+					ui_driver->fMessage("Specified command is not allowed");
+			break;
+		case 13:
+			if (seltype == USER_OTHER)
+				atari_osa_filename[0] = '\0';
+			else
+				ui_driver->fGetLoadFilename(atari_osa_filename, NULL, 0);
+			break;
+		case 14:
+			if (seltype == USER_OTHER)
+				atari_osb_filename[0] = '\0';
+			else
+				ui_driver->fGetLoadFilename(atari_osb_filename, NULL, 0);
+			break;
+		case 15:
+			if (seltype == USER_OTHER)
+				atari_xlxe_filename[0] = '\0';
+			else
+				ui_driver->fGetLoadFilename(atari_xlxe_filename, NULL, 0);
+			break;
+		case 16:
+			if (seltype == USER_OTHER)
+				atari_5200_filename[0] = '\0';
+			else
+				ui_driver->fGetLoadFilename(atari_5200_filename, NULL, 0);
+			break;
+		case 17:
+			if (seltype == USER_OTHER)
+				atari_basic_filename[0] = '\0';
+			else
+				ui_driver->fGetLoadFilename(atari_basic_filename, NULL, 0);
+			break;
+		case 18:
+			Util_splitpath(atari_xlxe_filename, rom_dir, NULL);
+			if (ui_driver->fGetDirectoryPath(rom_dir)) {
+				static const char *rom_filenames[] = {
+					"atariosa.rom", "atari_osa.rom", "atari_os_a.rom",
+					"ATARIOSA.ROM", "ATARI_OSA.ROM", "ATARI_OS_A.ROM",
+					NULL,
+					"atariosb.rom", "atari_osb.rom", "atari_os_b.rom",
+					"ATARIOSB.ROM", "ATARI_OSB.ROM", "ATARI_OS_B.ROM",
+					NULL,
+					"atarixlxe.rom", "atarixl.rom", "atari_xlxe.rom", "atari_xl_xe.rom",
+					"ATARIXLXE.ROM", "ATARIXL.ROM", "ATARI_XLXE.ROM", "ATARI_XL_XE.ROM",
+					NULL,
+					"atari5200.rom", "atar5200.rom", "5200.rom", "5200.bin", "atari_5200.rom",
+					"ATARI5200.ROM", "ATAR5200.ROM", "5200.ROM", "5200.BIN", "ATARI_5200.ROM",
+					NULL,
+					"ataribasic.rom", "ataribas.rom", "basic.rom", "atari_basic.rom",
+					"ATARIBASIC.ROM", "ATARIBAS.ROM", "BASIC.ROM", "ATARI_BASIC.ROM",
+					NULL
+				};
+				const char **rom_filename = rom_filenames;
+				int i;
+				for (i = 0; i < 5; i++) {
+					do {
+						char full_filename[FILENAME_MAX];
+						Util_catpath(full_filename, rom_dir, *rom_filename);
+						if (Util_fileexists(full_filename)) {
+							strcpy(menu_array[13 + i].item, full_filename);
+							while (*++rom_filename != NULL);
+							break;
+						}
+					} while (*++rom_filename != NULL);
+					rom_filename++;
+				}
+			}
+			break;
+		case 19:
+			ui_driver->fMessage(Atari800_WriteConfig() ? "Configuration file updated" : "Error writing configuration file");
 			break;
 		}
 	} while (option >= 0);
 	Atari800_UpdatePatches();
 }
 
+static char state_filename[FILENAME_MAX] = "";
+
 static void SaveState(void)
 {
-	char fname[FILENAME_SIZE + 1];
-	char statename[FILENAME_MAX];
-
-	if (!ui_driver->fGetSaveFilename(fname))
-		return;
-
-	strcpy(statename, atari_state_dir);
-	if (*statename) {
-		char last = statename[strlen(statename) - 1];
-		if (last != '/' && last != '\\')
-#ifdef BACK_SLASH
-			strcat(statename, "\\");
-#else
-			strcat(statename, "/");
-#endif
+	if (ui_driver->fGetSaveFilename(state_filename, saved_files_dir, n_saved_files_dir)) {
+		if (!SaveAtariState(state_filename, "wb", TRUE))
+			CantSave(state_filename);
 	}
-	strcat(statename, fname);
-
-	if (!SaveAtariState(statename, "wb", TRUE))
-		CantSave(statename);
 }
 
 static void LoadState(void)
 {
-	char statename[FILENAME_MAX + 1];
-
-	if (!curr_state_dir[0])
-		strcpy(curr_state_dir, atari_state_dir);
-	if (ui_driver->fGetLoadFilename(curr_state_dir, statename)) {
-		if (!ReadAtariState(statename, "rb"))
-			CantLoad(statename);
+	if (ui_driver->fGetLoadFilename(state_filename, saved_files_dir, n_saved_files_dir)) {
+		if (!ReadAtariState(state_filename, "rb"))
+			CantLoad(state_filename);
 	}
 }
 
 /* CURSES_BASIC doesn't use artifacting or sprite_collisions_in_skipped_frames,
-   but does use refresh_rate. However, changing refresh_rate on CURSES
-   generally is mostly useless, as the text-mode screen is normally updated
-   infrequently by Atari.
+   but does use refresh_rate. However, changing refresh_rate on CURSES is mostly
+   useless, as the text-mode screen is normally updated infrequently by Atari.
    In case you wonder how artifacting affects CURSES version without
    CURSES_BASIC: it is visible on the screenshots (yes, they are bitmaps). */
 #ifndef CURSES_BASIC
 
-static void SelectArtifacting(void)
+static void DisplaySettings(void)
 {
-	static tMenuItem menu_array[] = {
+	static tMenuItem artif_menu_array[] = {
 		{"ARNO", ITEM_ENABLED | ITEM_ACTION, NULL, "none", NULL, 0},
 		{"ARB1", ITEM_ENABLED | ITEM_ACTION, NULL, "blue/brown 1", NULL, 1},
 		{"ARB2", ITEM_ENABLED | ITEM_ACTION, NULL, "blue/brown 2", NULL, 2},
@@ -799,81 +817,130 @@ static void SelectArtifacting(void)
 		{"ARCT", ITEM_ENABLED | ITEM_ACTION, NULL, "CTIA", NULL, 4},
 		MENU_END
 	};
-
-	int option = global_artif_mode;
-
-	option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
-
-	if (option >= 0) {
-		global_artif_mode = option;
-		ANTIC_UpdateArtifacting();
-	}
-}
-
-static void DisplaySettings(void)
-{
-	/* this is an array, not a string constant, so we can modify it */
-	static char refresh_status[5] = "1:1 ";
+	static char refresh_status[16];
 	static tMenuItem menu_array[] = {
-		{"ARTF", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select artifacting mode", NULL, 0},
-		{"FRUP", ITEM_ENABLED | ITEM_ACTION, NULL, "Increase frameskip", NULL, 1},
-		{"FRDN", ITEM_ENABLED | ITEM_ACTION, NULL, "Decrease frameskip", NULL, 2},
-		{"CURR", ITEM_ENABLED | ITEM_ACTION, NULL, "Current refresh rate:", refresh_status, 3},
-		{"SCSF", ITEM_ENABLED | ITEM_CHECK, NULL, "Accurate skipped frames:", NULL, 4},
-		{"SHAS", ITEM_ENABLED | ITEM_CHECK, NULL, "Show percents of Atari speed:", NULL, 5},
-		{"SHDL", ITEM_ENABLED | ITEM_CHECK, NULL, "Show disk drive activity:", NULL, 6},
-		{"SHSC", ITEM_ENABLED | ITEM_CHECK, NULL, "Show sector counter:", NULL, 7},
+		{"ARTF", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Artifacting mode:", NULL, 0},
+		{"CURR", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Current refresh rate:", refresh_status, 1},
+		{"SCSF", ITEM_ENABLED | ITEM_CHECK, NULL, "Accurate skipped frames:", NULL, 2},
+		{"SHAS", ITEM_ENABLED | ITEM_CHECK, NULL, "Show percents of Atari speed:", NULL, 3},
+		{"SHDL", ITEM_ENABLED | ITEM_CHECK, NULL, "Show disk drive activity:", NULL, 4},
+		{"SHSC", ITEM_ENABLED | ITEM_CHECK, NULL, "Show sector counter:", NULL, 5},
 		MENU_END
 	};
 
 	int option = 0;
-	do {
-		if (refresh_rate <= 9) {
-			refresh_status[2] = (char) ('0' + refresh_rate);
-			refresh_status[3] = ' ';
-		}
-		else {
-			refresh_status[2] = (char) ('0' + refresh_rate / 10);
-			refresh_status[3] = (char) ('0' + refresh_rate % 10);
-		}
-		SetItemChecked(&menu_array[4], sprite_collisions_in_skipped_frames);
-		SetItemChecked(&menu_array[5], show_atari_speed);
-		SetItemChecked(&menu_array[6], show_disk_led);
-		SetItemChecked(&menu_array[7], show_sector_counter);
-		option = ui_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
+	int option2;
+	for (;;) {
+		menu_array[0].suffix = artif_menu_array[global_artif_mode].item;
+		sprintf(refresh_status, "1:%-2d", refresh_rate);
+		SetItemChecked(&menu_array[2], sprite_collisions_in_skipped_frames);
+		SetItemChecked(&menu_array[3], show_atari_speed);
+		SetItemChecked(&menu_array[4], show_disk_led);
+		SetItemChecked(&menu_array[5], show_sector_counter);
+		option = ui_driver->fSelect("Display Settings", FALSE, option, menu_array, NULL);
 		switch (option) {
 		case 0:
-			SelectArtifacting();
-			return;
+			option2 = ui_driver->fSelect(NULL, TRUE, global_artif_mode, artif_menu_array, NULL);
+			if (option2 >= 0) {
+				global_artif_mode = option2;
+				ANTIC_UpdateArtifacting();
+			}
+			break;
 		case 1:
-			if (refresh_rate < 99)
-				refresh_rate++;
+			refresh_rate = ui_driver->fSelectInt(refresh_rate, 1, 99);
 			break;
 		case 2:
-			if (refresh_rate > 1)
-				refresh_rate--;
-			break;
-		case 4:
 			if (refresh_rate == 1)
 				ui_driver->fMessage("No effect with refresh rate 1");
 			sprite_collisions_in_skipped_frames = !sprite_collisions_in_skipped_frames;
 			break;
-		case 5:
+		case 3:
 			show_atari_speed = !show_atari_speed;
 			break;
-		case 6:
+		case 4:
 			show_disk_led = !show_disk_led;
 			break;
-		case 7:
+		case 5:
 			show_sector_counter = !show_sector_counter;
 			break;
 		default:
-			break;
+			return;
 		}
-	} while (option >= 0);
+	}
 }
 
-#endif
+static void ControllerConfiguration(void)
+{
+	static tMenuItem mouse_mode_menu_array[] = {
+		{"MDE0", ITEM_ENABLED | ITEM_ACTION, NULL, "None", NULL, 0},
+		{"MDE1", ITEM_ENABLED | ITEM_ACTION, NULL, "Paddles", NULL, 1},
+		{"MDE2", ITEM_ENABLED | ITEM_ACTION, NULL, "Touch tablet", NULL, 2},
+		{"MDE3", ITEM_ENABLED | ITEM_ACTION, NULL, "Koala pad", NULL, 3},
+		{"MDE4", ITEM_ENABLED | ITEM_ACTION, NULL, "Light pen", NULL, 4},
+		{"MDE5", ITEM_ENABLED | ITEM_ACTION, NULL, "Light gun", NULL, 5},
+		{"MDE6", ITEM_ENABLED | ITEM_ACTION, NULL, "Amiga mouse", NULL, 6},
+		{"MDE7", ITEM_ENABLED | ITEM_ACTION, NULL, "ST mouse", NULL, 7},
+		{"MDE8", ITEM_ENABLED | ITEM_ACTION, NULL, "Trak-ball", NULL, 8},
+		{"MDE9", ITEM_ENABLED | ITEM_ACTION, NULL, "Joystick", NULL, 9},
+		MENU_END
+	};
+	static char mouse_port_status[2] = { '1', '\0' };
+	static char mouse_speed_status[2] = { '1', '\0' };
+	static tMenuItem menu_array[] = {
+		{"AFRE", ITEM_ENABLED | ITEM_ACTION, NULL, "Joystick autofire:", NULL, 0},
+		{"MJOY", ITEM_ENABLED | ITEM_CHECK, NULL, "Enable MultiJoy4:", NULL, 1},
+		{"MDEV", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Mouse device: ", NULL, 2},
+		{"MPRT", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Mouse port:", mouse_port_status, 3},
+		{"MSPD", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Mouse speed:", mouse_speed_status, 4},
+		MENU_END
+	};
+
+	int option = 0;
+	int option2;
+	for (;;) {
+		menu_array[0].suffix = joy_autofire[0] == AUTOFIRE_FIRE ? "Fire"
+		                     : joy_autofire[0] == AUTOFIRE_CONT ? "Always"
+		                     : "Off";
+		SetItemChecked(&menu_array[1], joy_multijoy);
+		menu_array[2].suffix = mouse_mode_menu_array[mouse_mode].item;
+		mouse_port_status[0] = (char) ('1' + mouse_port);
+		mouse_speed_status[0] = (char) ('0' + mouse_speed);
+		option = ui_driver->fSelect("Controller Configuration", FALSE, option, menu_array, NULL);
+		switch (option) {
+		case 0:
+			switch (joy_autofire[0]) {
+			case AUTOFIRE_FIRE:
+				joy_autofire[0] = joy_autofire[1] = joy_autofire[2] = joy_autofire[3] = AUTOFIRE_CONT;
+				break;
+			case AUTOFIRE_CONT:
+				joy_autofire[0] = joy_autofire[1] = joy_autofire[2] = joy_autofire[3] = AUTOFIRE_OFF;
+				break;
+			default:
+				joy_autofire[0] = joy_autofire[1] = joy_autofire[2] = joy_autofire[3] = AUTOFIRE_FIRE;
+				break;
+			}
+			break;
+		case 1:
+			joy_multijoy = !joy_multijoy;
+			break;
+		case 2:
+			option2 = ui_driver->fSelect(NULL, TRUE, mouse_mode, mouse_mode_menu_array, NULL);
+			if (option2 >= 0)
+				mouse_mode = option2;
+			break;
+		case 3:
+			mouse_port = ui_driver->fSelectInt(mouse_port + 1, 1, 4) - 1;
+			break;
+		case 4:
+			mouse_speed = ui_driver->fSelectInt(mouse_speed, 1, 9);
+			break;
+		default:
+			return;
+		}
+	}
+}
+
+#endif /* CURSES_BASIC */
 
 #ifdef SOUND
 static int SoundSettings(void)
@@ -949,16 +1016,16 @@ void curses_clear_screen(void);
 
 static void Screenshot(int interlaced)
 {
-	char fname[FILENAME_SIZE + 1];
-	if (ui_driver->fGetSaveFilename(fname)) {
+	static char filename[FILENAME_MAX] = "";
+	if (ui_driver->fGetSaveFilename(filename, saved_files_dir, n_saved_files_dir)) {
 #ifdef USE_CURSES
 		/* must clear, otherwise in case of a failure we'll see parts
 		   of Atari screen on top of UI screen */
 		curses_clear_screen();
 #endif
 		ANTIC_Frame(TRUE);
-		if (!Screen_SaveScreenshot(fname, interlaced))
-			ui_driver->fMessage("Error saving screenshot");
+		if (!Screen_SaveScreenshot(filename, interlaced))
+			CantSave(filename);
 	}
 }
 
@@ -966,37 +1033,40 @@ static void Screenshot(int interlaced)
 
 void ui(void)
 {
+#define MENU_CONTROLLER 19
 	static tMenuItem menu_array[] = {
-		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run Atari Program", "Alt+R", MENU_RUN},
-		{"DISK", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Disk Management", "Alt+D", MENU_DISK},
-		{"CART", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Cartridge Management", "Alt+C", MENU_CARTRIDGE},
+		{"XBIN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Run Atari Program", MENU_ACCEL("Alt+R"), MENU_RUN},
+		{"DISK", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Disk Management", MENU_ACCEL("Alt+D"), MENU_DISK},
+		{"CART", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Cartridge Management", MENU_ACCEL("Alt+C"), MENU_CARTRIDGE},
 		{"CASS", ITEM_ENABLED | ITEM_FILESEL, NULL, "Select Tape Image", NULL, MENU_CASSETTE},
-		{"SYST", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select System", "Alt+Y", MENU_SYSTEM},
+		{"SYST", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Select System", MENU_ACCEL("Alt+Y"), MENU_SYSTEM},
 #ifdef SOUND
-		{"SNDS", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Sound Settings", "Alt+O", MENU_SOUND},
-		{"SREC", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Recording Start/Stop", "Alt+W", MENU_SOUND_RECORDING},
+		{"SNDS", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Sound Settings", MENU_ACCEL("Alt+O"), MENU_SOUND},
+		{"SREC", ITEM_ENABLED | ITEM_ACTION, NULL, "Sound Recording Start/Stop", MENU_ACCEL("Alt+W"), MENU_SOUND_RECORDING},
 #endif
 #ifndef CURSES_BASIC
 		{"SCRS", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Display Settings", NULL, MENU_DISPLAY},
+		{"CTRC", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Controller Configuration", NULL, MENU_CONTROLLER},
 #endif
-		{"SETT", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Atari Settings", NULL, MENU_SETTINGS},
-		{"SAVE", ITEM_ENABLED | ITEM_FILESEL, NULL, "Save State", "Alt+S", MENU_SAVESTATE},
-		{"LOAD", ITEM_ENABLED | ITEM_FILESEL, NULL, "Load State", "Alt+L", MENU_LOADSTATE},
+		{"SETT", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Emulator Configuration", NULL, MENU_SETTINGS},
+		{"SAVE", ITEM_ENABLED | ITEM_FILESEL, NULL, "Save State", MENU_ACCEL("Alt+S"), MENU_SAVESTATE},
+		{"LOAD", ITEM_ENABLED | ITEM_FILESEL, NULL, "Load State", MENU_ACCEL("Alt+L"), MENU_LOADSTATE},
 #ifndef CURSES_BASIC
 #ifdef HAVE_LIBPNG
-		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX Screenshot", "F10", MENU_PCX},
-/*		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PNG/PCX Interlaced Screenshot", "Shift+F10", MENU_PCXI}, */
+		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "Save Screenshot", MENU_ACCEL("F10"), MENU_PCX},
+		/* there isn't enough space for "PNG/PCX Interlaced Screenshot Shift+F10" */
+		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "Save Interlaced Screenshot", MENU_ACCEL("Shift+F10"), MENU_PCXI},
 #else
-		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX Screenshot", "F10", MENU_PCX},
-/*		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX Interlaced Screenshot", "Shift+F10", MENU_PCXI}, */
+		{"PCXN", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX Screenshot", MENU_ACCEL("F10"), MENU_PCX},
+		{"PCXI", ITEM_ENABLED | ITEM_FILESEL, NULL, "PCX Interlaced Screenshot", MENU_ACCEL("Shift+F10"), MENU_PCXI},
 #endif
 #endif
-		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Back to Emulated Atari", "Esc", MENU_BACK},
-		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", "F5", MENU_RESETW},
-		{"REBT", ITEM_ENABLED | ITEM_ACTION, NULL, "Reboot (Cold Start)", "Shift+F5", MENU_RESETC},
-		{"MONI", ITEM_ENABLED | ITEM_ACTION, NULL, "Enter Monitor", "F8", MENU_MONITOR},
-		{"ABOU", ITEM_ENABLED | ITEM_ACTION, NULL, "About the Emulator", "Alt+A", MENU_ABOUT},
-		{"EXIT", ITEM_ENABLED | ITEM_ACTION, NULL, "Exit Emulator", "F9", MENU_EXIT},
+		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Back to Emulated Atari", MENU_ACCEL("Esc"), MENU_BACK},
+		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", MENU_ACCEL("F5"), MENU_RESETW},
+		{"REBT", ITEM_ENABLED | ITEM_ACTION, NULL, "Reboot (Cold Start)", MENU_ACCEL("Shift+F5"), MENU_RESETC},
+		{"MONI", ITEM_ENABLED | ITEM_ACTION, NULL, "Enter Monitor", MENU_ACCEL("F8"), MENU_MONITOR},
+		{"ABOU", ITEM_ENABLED | ITEM_ACTION, NULL, "About the Emulator", MENU_ACCEL("Alt+A"), MENU_ABOUT},
+		{"EXIT", ITEM_ENABLED | ITEM_ACTION, NULL, "Exit Emulator", MENU_ACCEL("F9"), MENU_EXIT},
 		MENU_END
 	};
 
@@ -1074,6 +1144,9 @@ void ui(void)
 		case MENU_DISPLAY:
 			DisplaySettings();
 			break;
+		case MENU_CONTROLLER:
+			ControllerConfiguration();
+			break;
 		case MENU_PCX:
 			Screenshot(FALSE);
 			break;
@@ -1108,7 +1181,9 @@ void ui(void)
 	}
 	/* Sound_Active(TRUE); */
 	ui_is_active = FALSE;
-	while (Atari_Keyboard() != AKEY_NONE);	/* flush keypresses */
+	/* flush keypresses */
+	while (Atari_Keyboard() != AKEY_NONE)
+		atari_sync();
 }
 
 
@@ -1116,23 +1191,24 @@ void ui(void)
 
 int CrashMenu(void)
 {
+	static char cim_info[42];
 	static tMenuItem menu_array[] = {
-		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", "F5", 0},
-		{"REBT", ITEM_ENABLED | ITEM_ACTION, NULL, "Reboot (Cold Start)", "Shift+F5", 1},
-		{"MENU", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Menu", "F1", 2},
-		{"MONI", ITEM_ENABLED | ITEM_ACTION, NULL, "Enter Monitor", "F8", 3},
-		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Continue After CIM", "Esc", 4},
-		{"EXIT", ITEM_ENABLED | ITEM_ACTION, NULL, "Exit Emulator", "F9", 5},
+		{"CIMI", ITEM_ENABLED | ITEM_ACTION, NULL, cim_info, NULL, 6},
+		{"REST", ITEM_ENABLED | ITEM_ACTION, NULL, "Reset (Warm Start)", MENU_ACCEL("F5"), 0},
+		{"REBT", ITEM_ENABLED | ITEM_ACTION, NULL, "Reboot (Cold Start)", MENU_ACCEL("Shift+F5"), 1},
+		{"MENU", ITEM_ENABLED | ITEM_SUBMENU, NULL, "Menu", MENU_ACCEL("F1"), 2},
+		{"MONI", ITEM_ENABLED | ITEM_ACTION, NULL, "Enter Monitor", MENU_ACCEL("F8"), 3},
+		{"CONT", ITEM_ENABLED | ITEM_ACTION, NULL, "Continue After CIM", MENU_ACCEL("Esc"), 4},
+		{"EXIT", ITEM_ENABLED | ITEM_ACTION, NULL, "Exit Emulator", MENU_ACCEL("F9"), 5},
 		MENU_END
 	};
 
 	int option = 0;
-	char bf[80];				/* CIM info */
+	sprintf(cim_info, "Code $%02X (CIM) at address $%04X", crash_code, crash_address);
 
-	while (1) {
-		sprintf(bf, "!!! The Atari computer has crashed !!!\nCode $%02X (CIM) at address $%04X", crash_code, crash_address);
+	for (;;) {
 
-		option = ui_driver->fSelect(bf, FALSE, option, menu_array, NULL);
+		option = ui_driver->fSelect("!!! The Atari computer has crashed !!!", FALSE, option, menu_array, NULL);
 
 		if (alt_function >= 0) /* pressed F5, Shift+F5 or F9 */
 			return FALSE;
@@ -1159,13 +1235,15 @@ int CrashMenu(void)
 			return FALSE;
 		}
 	}
-	return FALSE;
 }
 #endif
 
 
 /*
 $Log$
+Revision 1.74  2005/10/19 21:40:30  pfusik
+tons of changes, see ChangeLog
+
 Revision 1.73  2005/09/18 14:58:30  pfusik
 improved "Extract ROM image from Cartridge";
 don't exit emulator if "Update configuration file" failed
