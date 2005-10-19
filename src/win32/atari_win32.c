@@ -34,6 +34,7 @@
 #include "log.h"
 #include "monitor.h"
 #include "platform.h"
+#include "screen.h"
 #include "sound.h"
 #include "ui.h"
 
@@ -455,9 +456,9 @@ int Atari_Exit(int run_monitor)
 	return FALSE;
 }
 
-void Atari_DisplayScreen(UBYTE *ascreen)
+void Atari_DisplayScreen(void)
 {
-	refreshv(ascreen + 24);
+	refreshv((UBYTE *) atari_screen + 24);
 }
 
 int Atari_PORT(int num)
@@ -481,6 +482,9 @@ int Atari_TRIG(int num)
 
 /*
 $Log$
+Revision 1.15  2005/10/19 21:18:53  pfusik
+removed Atari_DisplayScreen's argument
+
 Revision 1.14  2005/10/09 20:13:47  pfusik
 implemented Atari 5200 keys;
 F11 and Scroll Lock no longer press L on Atari keyboard;
