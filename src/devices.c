@@ -65,7 +65,6 @@
 #include "log.h"
 #include "memory.h"
 #include "pia.h" /* atari_os */
-#include "rt-config.h"
 #include "sio.h"
 #include "util.h"
 #ifdef R_IO_DEVICE
@@ -440,6 +439,12 @@ static UBYTE Device_RemoveDirectory(const char *filename)
 
 /* emulator debugging mode */
 static int devbug = FALSE;
+
+/* host path for each H: unit */
+char atari_h_dir[4][FILENAME_MAX];
+
+/* read only mode for H: device */
+int h_read_only;
 
 /* ';'-separated list of Atari paths checked by the "load executable"
    command. if a path does not start with "Hn:", then the selected device
@@ -1687,6 +1692,28 @@ static void Device_H_Special(void)
 
 /* P: device emulation --------------------------------------------------- */
 
+char print_command[256] = "lpr %s";
+
+int Device_SetPrintCommand(const char *command)
+{
+	const char *p = command;
+	int was_percent_s = FALSE;
+	while (*p != '\0') {
+		if (*p++ == '%') {
+			char c = *p++;
+			if (c == '%')
+				continue; /* %% is safe */
+			if (c == 's' && !was_percent_s) {
+				was_percent_s = TRUE; /* only one %s is safe */
+				continue;
+			}
+			return FALSE;
+		}
+	}
+	strcpy(print_command, command);
+	return TRUE;
+}
+
 #ifdef HAVE_SYSTEM
 
 static FILE *phf = NULL;
@@ -2116,6 +2143,10 @@ static void Device_CloseBasicFile(void)
 
 /* Patches management ---------------------------------------------------- */
 
+int enable_h_patch = TRUE;
+int enable_p_patch = TRUE;
+int enable_r_patch = FALSE;
+
 /* Device_PatchOS is called by Atari800_PatchOS to modify standard device
    handlers in Atari OS. It puts escape codes at beginnings of OS routines,
    so the patches work even if they are called directly, without CIO.
@@ -2372,6 +2403,10 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.46  2005/10/19 21:42:53  pfusik
+atari_h_dir[], h_read_only, print_command, Device_SetPrintCommand(),
+enable_[hpr]_patch from rt-config
+
 Revision 1.45  2005/10/09 20:22:44  pfusik
 numerous improvements (see ChangeLog)
 
