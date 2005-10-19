@@ -120,6 +120,15 @@ void curses_clear_screen(void)
 			curses_screen[y][x] = ' ';
 }
 
+void curses_clear_rectangle(int x1, int y1, int x2, int y2)
+{
+	int x;
+	int y;
+	for (y = y1; y <= y2; y++)
+		for (x = x1; x <= x2; x++)
+			curses_screen[y][x] = ' ';
+}
+
 void curses_putch(int x, int y, int ascii, UBYTE fg, UBYTE bg)
 {
 	/* handle line drawing chars */
@@ -236,7 +245,7 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 	}
 }
 
-void Atari_DisplayScreen(UBYTE *screen)
+void Atari_DisplayScreen(void)
 {
 	int x;
 	int y;
@@ -836,16 +845,20 @@ int main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	while (TRUE) {
+	for (;;) {
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen(NULL);
+			Atari_DisplayScreen();
 	}
 }
 
 /*
 $Log$
+Revision 1.23  2005/10/19 21:32:46  pfusik
+removed Atari_DisplayScreen's argument;
+added curses_clear_rectangle() for ui_basic
+
 Revision 1.22  2005/09/27 21:38:38  pfusik
 screencode -> curses char code conversion is now done
 in curses_display_line rather than Atari_DisplayScreen
