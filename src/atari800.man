@@ -22,9 +22,6 @@ Print emulator version
 \fB-verbose
 Display framerate when exiting
 .TP
-\fB-configure
-Starts emulator in run-time configuration mode
-.TP
 \fB-config filename
 Specify an alternative configuration filename
 
