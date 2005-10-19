@@ -2,6 +2,7 @@
 #define _ATARI_H_
 
 #include "config.h"
+#include <stdio.h> /* FILENAME_MAX */
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -59,6 +60,12 @@ extern int ram_size;
 #define TV_NTSC 262
 extern int tv_mode;
 
+/* TRUE to disable Atari BASIC when booting Atari (hold Option in XL/XE). */
+extern int disable_basic;
+
+/* TRUE to enable patched (fast) Serial I/O. */
+extern int enable_sio_patch;
+
 /* Dimensions of atari_screen.
    atari_screen is ATARI_WIDTH * ATARI_HEIGHT bytes.
    Each byte is an Atari color code - use Palette_Get[RGB] functions
@@ -82,9 +89,19 @@ extern double deltatime;
    (100 if running at real Atari speed). */
 extern int percent_atari_speed;
 
+/* How often the screen is updated (1 = every Atari frame). */
+extern int refresh_rate;
+
 /* Set to TRUE for faster emulation with refresh_rate > 1.
    Set to FALSE for accurate emulation with refresh_rate > 1. */
 extern int sprite_collisions_in_skipped_frames;
+
+/* Paths to ROM images. */
+extern char atari_osa_filename[FILENAME_MAX];
+extern char atari_osb_filename[FILENAME_MAX];
+extern char atari_xlxe_filename[FILENAME_MAX];
+extern char atari_basic_filename[FILENAME_MAX];
+extern char atari_5200_filename[FILENAME_MAX];
 
 /* Special key codes.
    Store in key_code. */
@@ -162,6 +179,12 @@ int Atari800_DetectFileType(const char *filename);
    diskno: drive number for disks (1-8)
    readonly: mount disks as read-only */
 int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly);
+
+/* Load Atari800 text configuration file. */
+int Atari800_LoadConfig(const char *alternate_config_filename);
+
+/* Writes Atari800 text configuration file. */
+int Atari800_WriteConfig(void);
 
 /* Shuts down Atari800 emulation core. */
 int Atari800_Exit(int run_monitor);
@@ -313,6 +336,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.56  2005/10/19 21:33:48  pfusik
+moved things from rt-config
+
 Revision 1.55  2005/09/11 20:42:24  pfusik
 "defined(WIN32) || defined(__PLUS)" -> "defined(WIN32)"
 

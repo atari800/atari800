@@ -105,6 +105,11 @@ extern "C" {
 extern int32 snd_playback_freq;
 extern uint8 snd_num_pokeys;
 
+extern int enable_new_pokey;
+extern int stereo_enabled;
+extern int serio_sound_enabled;
+extern int console_sound_enabled;
+
 extern void (*Pokey_process_ptr)(void *sndbuffer, unsigned int sndn);
 extern void (*Update_pokey_sound)(uint16 addr, uint8 val, uint8 /*chip*/, uint8 gain);
 extern void (*Update_serio_sound)(int out, UBYTE data);

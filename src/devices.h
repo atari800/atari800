@@ -11,8 +11,19 @@ void Device_UpdatePatches(void);
 
 UWORD Device_SkipDeviceName(void);
 
+extern int enable_h_patch;
+extern int enable_p_patch;
+extern int enable_r_patch;
+
+extern char atari_h_dir[4][FILENAME_MAX];
+extern int h_read_only;
+
 #define DEFAULT_H_PATH  "H1:>DOS;>DOS"
 extern char h_exe_path[FILENAME_MAX];
+
+extern char print_command[256];
+
+int Device_SetPrintCommand(const char *command);
 
 #define	ICHIDZ	0x0020
 #define	ICDNOZ	0x0021
