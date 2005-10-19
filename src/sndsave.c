@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include "pokeysnd.h"
-#include "rt-config.h" /* for stereo_enabled */
 #include "sndsave.h"
 
 /* sndoutput is just the file pointer for the current sound file */
@@ -52,8 +51,8 @@ int IsSoundFileOpen(void)
 /* CloseSoundFile should be called when the program is exiting, or when all data required has been
    written to the file. CloseSoundFile will also be called automatically when a call is made to
    OpenSoundFile, or an error is made in WriteToSoundFile. Note that CloseSoundFile has to back track
-   to the header written out in OpenSoundFile and update it with the length of samples written 
-  
+   to the header written out in OpenSoundFile and update it with the length of samples written
+
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close */
 
 int CloseSoundFile(void)
@@ -81,7 +80,7 @@ int CloseSoundFile(void)
 
 
 /* OpenSoundFile will start a new sound file and write out the header. If an existing sound file is
-   already open it will be closed first, and the new file opened in it's place 
+   already open it will be closed first, and the new file opened in it's place
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open */
 
@@ -94,14 +93,14 @@ int OpenSoundFile(const char *szFileName)
 	if (sndoutput == NULL)
 		return FALSE;
 	/*
-	The RIFF header: 
+	The RIFF header:
 
 	  Offset  Length   Contents
 	  0       4 bytes  'RIFF'
 	  4       4 bytes  <file length - 8>
 	  8       4 bytes  'WAVE'
-	
-	The fmt chunk: 
+
+	The fmt chunk:
 
 	  12      4 bytes  'fmt '
 	  16      4 bytes  0x00000010     // Length of the fmt data (16 bytes)
@@ -112,7 +111,7 @@ int OpenSoundFile(const char *szFileName)
 	  32      2 bytes  <block align>  // channels * bits/sample / 8
 	  34      2 bytes  <bits/sample>  // 8 or 16
 
-	The data chunk: 
+	The data chunk:
 
 	  36      4 bytes  'data'
 	  40      4 bytes  <length of the data block>
@@ -147,7 +146,7 @@ int OpenSoundFile(const char *szFileName)
    probably to call it directly after Pokey_Process(buffer, size) with the same values (buffer, size)
 
    RETURNS: the number of bytes written to the file (should be equivalent to the input uiSize parm) */
-   
+
 int WriteToSoundFile(const unsigned char *ucBuffer, unsigned int uiSize)
 {
 	if (sndoutput && ucBuffer && uiSize) {

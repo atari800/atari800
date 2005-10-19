@@ -30,7 +30,6 @@
 #include "mzpokeysnd.h"
 #include "pokeysnd.h"
 #include "remez.h"
-#include "rt-config.h"	/* extern for console_sound_enabled and serio_sound_enabled */
 
 #define SND_FILTER_SIZE  2048
 
@@ -2260,6 +2259,9 @@ static void Update_vol_only_sound_mz( void )
   REVISION HISTORY
 
 $Log$
+Revision 1.23  2005/10/19 21:37:18  pfusik
+removed #include "rt-config.h"
+
 Revision 1.22  2005/09/07 22:01:39  pfusik
 fixed MSVC warnings
 

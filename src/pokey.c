@@ -44,7 +44,6 @@
 #include "pokeysnd.h"
 #endif
 #include "antic.h"
-#include "rt-config.h"
 #include "cassette.h"
 #include "log.h"
 

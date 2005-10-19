@@ -37,7 +37,6 @@
 #include "pbi.h"
 #include "pia.h"
 #include "pokey.h"
-#include "rt-config.h"
 #include "util.h"
 #ifndef BASIC
 #include "statesav.h"
@@ -645,6 +644,9 @@ void get_charset(UBYTE *cs)
 
 /*
 $Log$
+Revision 1.17  2005/10/19 21:37:18  pfusik
+removed #include "rt-config.h"
+
 Revision 1.16  2005/09/27 21:39:49  pfusik
 UI's charset is now in ATASCII order
 

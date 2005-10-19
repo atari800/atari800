@@ -32,7 +32,6 @@
 #include "log.h"
 #include "memory.h"
 #include "pokey.h"
-#include "rt-config.h"
 #include "util.h"
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 #include "input.h"

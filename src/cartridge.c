@@ -32,7 +32,6 @@
 #include "cartridge.h"
 #include "memory.h"
 #include "pia.h"
-#include "rt-config.h"
 #include "rtime.h"
 #include "util.h"
 #ifndef BASIC
