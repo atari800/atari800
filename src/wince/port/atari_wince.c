@@ -29,16 +29,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "platform.h"
 #include "atari.h"
 #include "input.h"
-#include "screen_wince.h"
+#include "platform.h"
+#include "screen.h"
+#include "sound.h"
+#include "ui.h"
+
 #include "keyboard.h"
 #include "main.h"
-#include "sound.h"
-#include "rt-config.h"
-#include "ui.h"
-#include "screen.h"
+#include "screen_wince.h"
 
 static int kbjoy = 1;
 
@@ -93,7 +93,7 @@ static void backlight_xchg(void)
 int Atari_Keyboard(void)
 {
 	int keycode;
-	
+
 	prockb();
 
 	keycode = get_last_key();
@@ -121,7 +121,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	/* backlight */
 	REG_bat = REG_ac = REG_disp = 2 * 60 * 60 * 1000; /* 2hrs should do it */
 	backlight_xchg();
-	
+
 	clearkb();
 }
 
@@ -132,24 +132,24 @@ int Atari_Exit(int run_monitor)
 	/* monitor is not avaliable in this port */
 	if(run_monitor)
 		return 1;
-	
+
 #ifdef BUFFERED_LOG
 	Aflushlog();
 #endif
-	
+
 	uninitinput();
 	groff();
-	
+
 #ifdef SOUND
 	Sound_Exit();
 #endif
-	
+
 	return 0;
 }
 
-void Atari_DisplayScreen(UBYTE * ascreen)
+void Atari_DisplayScreen(void)
 {
-	refreshv(ascreen + 24);
+	refreshv((UBYTE *) atari_screen + 24);
 }
 
 int Atari_PORT(int num)
@@ -213,10 +213,10 @@ int wince_main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	while (TRUE) {
+	for (;;) {
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen();
 	}
 }
