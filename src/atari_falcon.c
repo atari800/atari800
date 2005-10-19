@@ -493,8 +493,9 @@ inline long DoubleSizeIt(short data)
 	return result;
 }
 
-void Atari_DisplayScreen(UBYTE *screen)
+void Atari_DisplayScreen(void)
 {
+	UBYTE *screen = (UBYTE *) atari_screen;
 	static int i = 0;
 
 /*
@@ -1209,10 +1210,10 @@ int main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	while (TRUE) {
+	for (;;) {
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen();
 	}
 }

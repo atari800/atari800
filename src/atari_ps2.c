@@ -142,22 +142,22 @@ int Atari_Exit(int run_monitor)
 		return TRUE;
 	}
 #endif
-//zzz temp exit procedure 
+//zzz temp exit procedure
 //Hard coded to go back to ulaunch
-    fioExit();
-    SifExitRpc();
-    LoadExecPS2("mc0:/BOOT/BOOT.ELF", 0, NULL);
+	fioExit();
+	SifExitRpc();
+	LoadExecPS2("mc0:/BOOT/BOOT.ELF", 0, NULL);
 //zzz end
 	return FALSE;
 }
 
-void Atari_DisplayScreen(UBYTE *screen)
+void Atari_DisplayScreen(void)
 {
 	GSTEXTURE tex;
 	tex.Width = ATARI_WIDTH;
 	tex.Height = ATARI_HEIGHT;
 	tex.PSM = GS_PSM_T8;
-	tex.Mem = screen;
+	tex.Mem = (UBYTE *) atari_screen;
 	tex.Clut = clut;
 	tex.Vram = 0x200000;
 	tex.VramClut = 0x280000;
@@ -206,16 +206,16 @@ int Atari_Keyboard(void)
 		    return AKEY_COLDSTART;
 		if (new_pad & PAD_R1)
 			return AKEY_WARMSTART;
-        }
-        //PAD_CROSS is used for Atari_TRIG().
+	}
+	//PAD_CROSS is used for Atari_TRIG().
 	if (new_pad & PAD_TRIANGLE)
 		return AKEY_UI;
-        if (new_pad & PAD_SQUARE)
-			return AKEY_SPACE;
+	if (new_pad & PAD_SQUARE)
+		return AKEY_SPACE;
 	if (new_pad & PAD_CIRCLE)
 		return AKEY_RETURN;
-        if (new_pad & PAD_L1)
-			return AKEY_COLDSTART;
+	if (new_pad & PAD_L1)
+		return AKEY_COLDSTART;
 	if (new_pad & PAD_R1)
 		return AKEY_WARMSTART;
 	if (machine_type == MACHINE_5200) {
@@ -230,14 +230,14 @@ int Atari_Keyboard(void)
 		if (new_pad & PAD_CROSS)
 			return AKEY_HELP;
 	}
-	if (machine_type != MACHINE_5200 || ui_is_active) {
+if (machine_type != MACHINE_5200 || ui_is_active) {
 
-		while (PS2KbdReadRaw(&key) != 0) {
-		    if(key.state == PS2KBD_RAWKEY_DOWN){
+	while (PS2KbdReadRaw(&key) != 0) {
+		if (key.state == PS2KBD_RAWKEY_DOWN) {
 			switch (key.key) {
 			case EOF:
-			    Atari800_Exit(FALSE);
-			    exit(0);
+				Atari800_Exit(FALSE);
+				exit(0);
 			    break;
 			case 0x28:
 				return AKEY_RETURN;
@@ -263,16 +263,16 @@ int Atari_Keyboard(void)
 			    return AKEY_RETURN;
 
 			case 0xE0:
-				PS2KbdCONTROL=1;
+				PS2KbdCONTROL = 1;
 				return AKEY_NONE;
 			case 0xE4:
-				PS2KbdCONTROL=1;
+				PS2KbdCONTROL = 1;
 				return AKEY_NONE;
 			case 0xE1:
-				PS2KbdSHIFT=1;
+				PS2KbdSHIFT = 1;
 				return AKEY_NONE;
 			case 0xE5:
-				PS2KbdSHIFT=1;
+				PS2KbdSHIFT = 1;
 				return AKEY_NONE;
 			//todo: map the following keys
 			//control <>: (suits)
@@ -283,14 +283,13 @@ int Atari_Keyboard(void)
 			//control-3 = error - 136? (break?)
 			//akey_caret && circumflex difference???
 			//TODO:enable keyboard repeat when shift nor control pressed
-                        default:
+			default:
 				break;
 			}
 		}
-                    
-		if((key.state == PS2KBD_RAWKEY_DOWN) && (!PS2KbdSHIFT))
-		{
-		switch (key.key) {
+
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && (!PS2KbdSHIFT)) {
+			switch (key.key) {
 			case 0x1E:
 				return AKEY_1;
 			case 0X1F:
@@ -345,8 +344,8 @@ int Atari_Keyboard(void)
 				break;
 			}
 		}
-		if((key.state == PS2KBD_RAWKEY_DOWN) && PS2KbdSHIFT && !PS2KbdCONTROL){
-		switch (key.key) {
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && PS2KbdSHIFT && !PS2KbdCONTROL) {
+			switch (key.key) {
 			case 0x4:
 				return AKEY_A;
 			case 0x5:
@@ -448,8 +447,8 @@ int Atari_Keyboard(void)
 				break;
 			}
 		}
-		if((key.state == PS2KBD_RAWKEY_DOWN) && !PS2KbdSHIFT && !PS2KbdCONTROL){
-			switch(key.key){
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && !PS2KbdSHIFT && !PS2KbdCONTROL) {
+			switch (key.key) {
 			case 0x4:
 				return AKEY_a;
 			case 0x5:
@@ -504,14 +503,14 @@ int Atari_Keyboard(void)
 				return AKEY_z;
 			case 0x49:
 				return AKEY_INSERT_CHAR;
-			case 0x4C:     
+			case 0x4C:
 				return AKEY_DELETE_CHAR;
 			default:
 				break;
 			}
 		}
-		if((key.state == PS2KBD_RAWKEY_DOWN) && (PS2KbdCONTROL)){
-			switch(key.key){
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && (PS2KbdCONTROL)) {
+			switch(key.key) {
 			case 0x4:
 				return AKEY_CTRL_a;
 			case 0x5:
@@ -570,22 +569,22 @@ int Atari_Keyboard(void)
 				break;
 			}
 		}
-		if(key.state == PS2KBD_RAWKEY_UP){
-		switch (key.key){
+		if (key.state == PS2KBD_RAWKEY_UP) {
+			switch (key.key) {
 			case 0x39:
 			//todo: Turn off caps lock LED.
-			return AKEY_CAPSTOGGLE;                                
+			return AKEY_CAPSTOGGLE;
 			case 0xE0:
-				PS2KbdCONTROL=0;
+				PS2KbdCONTROL = 0;
 				return AKEY_NONE;
 			case 0xE4:
-				PS2KbdCONTROL=0;
+				PS2KbdCONTROL = 0;
 				return AKEY_NONE;
 			case 0xE1:
-				PS2KbdSHIFT=0;
+				PS2KbdSHIFT = 0;
 				return AKEY_NONE;
 			case 0xE5:
-				PS2KbdSHIFT=0;
+				PS2KbdSHIFT = 0;
 				return AKEY_NONE;
 			default:
 				break;
@@ -628,10 +627,10 @@ int main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	while (TRUE) {
+	for (;;) {
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen();
 	}
 }

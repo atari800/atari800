@@ -521,7 +521,7 @@ void SwitchFullscreen(void)
 	FULLSCREEN = 1 - FULLSCREEN;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
 					MainScreen->format->BitsPerPixel);
-	Atari_DisplayScreen((UBYTE *) atari_screen);
+	Atari_DisplayScreen();
 }
 
 void SwitchWidth(void)
@@ -531,7 +531,7 @@ void SwitchWidth(void)
 		WIDTH_MODE = SHORT_WIDTH_MODE;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
 					MainScreen->format->BitsPerPixel);
-	Atari_DisplayScreen((UBYTE *) atari_screen);
+	Atari_DisplayScreen();
 }
 
 void SwitchBW(void)
@@ -1529,7 +1529,7 @@ void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 	}
 }
 
-void Atari_DisplayScreen(UBYTE *screen)
+void Atari_DisplayScreen(void)
 {
 	int width, jumped;
 
@@ -1554,14 +1554,13 @@ void Atari_DisplayScreen(UBYTE *screen)
 	}
 
 	if (ROTATE90) {
-		DisplayRotated240x320(screen);
+		DisplayRotated240x320((UBYTE *) atari_screen);
 	}
-	else if ((MainScreen->w == width)
-		&& (MainScreen->h == ATARI_HEIGHT)) {
-		DisplayWithoutScaling(screen, jumped, width);
+	else if (MainScreen->w == width && MainScreen->h == ATARI_HEIGHT) {
+		DisplayWithoutScaling((UBYTE *) atari_screen, jumped, width);
 	}
 	else {
-		DisplayWithScaling(screen, jumped, width);
+		DisplayWithScaling((UBYTE *) atari_screen, jumped, width);
 	}
 	SDL_Flip(MainScreen);
 }
@@ -1834,16 +1833,19 @@ int main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	while (TRUE) {
+	for (;;) {
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen();
 	}
 }
 
 /*
  $Log$
+ Revision 1.54  2005/10/19 21:59:12  pfusik
+ removed Atari_DisplayScreen's argument
+
  Revision 1.53  2005/09/06 22:48:36  pfusik
  introduced util.[ch]
 
