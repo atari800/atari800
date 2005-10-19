@@ -24,7 +24,6 @@
 
 #include "atari.h"
 #include "ui.h"
-#include "rt-config.h"
 #include "screen.h"
 
 #undef FILENAME_SIZE
@@ -80,6 +79,7 @@
 #include "input.h"
 #include "monitor.h"
 #include "pokeysnd.h"
+#include "screen.h"
 #include "sio.h"
 #include "statesav.h"
 
@@ -250,7 +250,7 @@ struct DiskObject *GetProgramObject(void)
 	struct DiskObject *obj;
 	extern char program_name[]; /* from startup.c */
 	BPTR odir;
-	
+
 	odir = CurrentDir(GetProgramDir());
 
 	obj = GetIconTags(program_name,
@@ -270,74 +270,11 @@ struct DiskObject *GetProgramObject(void)
 
 
 /**************************************************************************
- Load any file. Returns 1 on success and 2 if machine needs to be reseted
- additionally.
+ Load any file. Returns TRUE on success.
 **************************************************************************/
 int Atari_LoadAnyFile(STRPTR name)
 {
-	unsigned char buf[16];
-	BPTR fh = Open(name,MODE_OLDFILE);
-	ULONG size;
-	STRPTR delim;
-	if (!fh) return 0;
-
-	Seek(fh,0,OFFSET_END);
-	size = Seek(fh,0,OFFSET_BEGINNING);
-
-	if (Read(fh,buf,16) != 16)
-	{
-		Close(fh);
-		return 0;
-	}
-
-	Close(fh);
-
-	/* check if file is an exe */
-	if (buf[0] == 0xff && buf[1] == 0xff)
-	{
-		LONG start =  buf[3] | (buf[2] << 8);
-		LONG end = buf[5] | (buf[4] << 8);
-
-		if (start <= end)
-		{
-			BIN_loader(name);
-			ActivateWindow(WindowMain);
-			return 1;
-		}
-	}
-
-	/* an save state? */
-	if (!strncmp(buf,"ATARI800",8))
-	{	
-		ReadAtariState(name,"rb");
-		return 1;
-	}
-
-	/* an ATR file? */
-	if (buf[0] == MAGIC1 && buf[1] == 0x02)
-	{
-		if (SIO_Mount (1, name, 0)); /* last parameter is read only */
-		{
-			return 2; /* machine needs to be reseted */	
-		}
-	}
-
-	/* an XFD file? */
-	if ((delim = strrchr(name,'.')))
-	{
-		delim++;
-
-		/* That's all we can do atm about xfd files, as they have no header */
-		if (!Stricmp(delim,"xfd") && !(size % 128))
-		{
-			if (SIO_Mount (1, name, 0)); /* last parameter is read only */
-			{
-				return 2; /* machine needs to be reseted */
-			}
-		}
-	}
-
-	return 0;
+	return Atari800_OpenFile(name, TRUE, 1, FALSE) != AFILE_ERROR;
 }
 
 /**************************************************************************
@@ -670,7 +607,7 @@ BOOL SetupSound(void)
 						ahi_request->ahir_Volume          = 0x10000;          /* Full volume */
 						ahi_request->ahir_Position        = 0x8000;           /* Centered */
 						ahi_request->ahir_Link            = NULL;
-	
+
 						if((ahi_soundreq[0] = (struct AHIRequest*)AllocVec(sizeof(struct AHIRequest),MEMF_PUBLIC)))
 						{
 							if((ahi_soundreq[1] = (struct AHIRequest*)AllocVec(sizeof(struct AHIRequest),MEMF_PUBLIC)))
@@ -840,7 +777,7 @@ LONG SetupDisplay(void)
 		{
 			int rgb = colortable[i];
 			int red,green,blue;
-			
+
 			red = rgb & 0x00ff0000;
 			green = rgb & 0x0000ff00;
 			blue = rgb & 0x000000ff;
@@ -1081,9 +1018,9 @@ VOID Iconify(void)
 								TAG_DONE)))
 	{
 		int ready = 0;
-		
+
 		FreeDisplay();
-		
+
 		while (!ready)
 		{
 			struct AppMessage *amsg;
@@ -1129,7 +1066,7 @@ int HandleMenu(UWORD code)
 							easy.es_Title = "Atari800";
 							easy.es_TextFormat = "Atari800 version %ld.%ld\n\nBased upon " ATARI_TITLE "\nCopyright (C) 2000-2005\nAtari800 development team\nAmiga port done by Sebastian Bauer";
 							easy.es_GadgetFormat = "Ok";
-							
+
 							EasyRequest( WindowMain, &easy, NULL, VERSION, REVISION);
 						}
 						break;
@@ -1649,7 +1586,7 @@ void Sound_Update(void)
 			WaitIO(((struct IORequest*)ahi_soundreq[ahi_current]));
 
 		Pokey_process(ahi_streambuf[ahi_current], ahi_streamlen);
-	
+
 		*ahi_soundreq[ahi_current] = *ahi_request;
 		ahi_soundreq[ahi_current]->ahir_Std.io_Data = ahi_streambuf[ahi_current];
 		ahi_soundreq[ahi_current]->ahir_Std.io_Length = ahi_streamlen;
@@ -1891,7 +1828,7 @@ static void Scale8Bit(UBYTE *src, LONG srcwidth, LONG srcheight, LONG srcmod,
 			*dest32++ = quad;
 			count--;
 		}
-		
+
 		lines = (0x1ffff - (y & 0xffff))/dy;
 
 #if 1
@@ -1925,8 +1862,9 @@ static void Scale8Bit(UBYTE *src, LONG srcwidth, LONG srcheight, LONG srcmod,
 /**************************************************************************
  Do the graphical output (also call the sound play routine)
 **************************************************************************/
-void Atari_DisplayScreen(UBYTE *screen)
+void Atari_DisplayScreen(void)
 {
+	UBYTE *screen = (UBYTE *) atari_screen;
 	static char fpsbuf[32];
 	int fgpen = 15,bgpen = 0;
 
@@ -2078,7 +2016,7 @@ int Atari_Keyboard (void)
 
 			default: break;
 		}
-		
+
 		old_keycode = keycode;
 	}
 
@@ -2100,19 +2038,12 @@ int Atari_Keyboard (void)
 			if (amsg->am_Type == AMTYPE_APPWINDOW && amsg->am_ID == 1 && amsg->am_NumArgs > 0)
 			{
 				BPTR olddir;
-				int rc;
 
 				olddir = CurrentDir(amsg->am_ArgList[0].wa_Lock);
 
-				if ((rc = Atari_LoadAnyFile(amsg->am_ArgList[0].wa_Name)))
+				if (Atari_LoadAnyFile(amsg->am_ArgList[0].wa_Name))
 				{
 					ActivateWindow(WindowMain);
-
-					if (rc == 2)
-					{
-						keycode = AKEY_COLDSTART;
-						menu_consol = 7;
-					}
 				}
 				CurrentDir(olddir);
 			}
@@ -2203,7 +2134,7 @@ int Atari_PORT (int num)
 #if 0
 	if (num == 0)
 	{
-		
+
 /*		if (Controller == controller_Joystick)
 		{
 			Atari_Joystick ();
@@ -2351,7 +2282,7 @@ int main(int argc, char **argv)
 		if ((wbs = (struct WBStartup*)argv))
 		{
 			strncpy(program_name, wbs->sm_ArgList->wa_Name, sizeof(program_name)-1);
-			program_name[sizeof(program_name)-1]= 0;	
+			program_name[sizeof(program_name)-1]= 0;
 		}
 	} else
 	{
@@ -2371,7 +2302,7 @@ int main(int argc, char **argv)
 		CurrentDir(odir);
 	}
 
-	while (1)
+	for (;;)
 	{
 		LONG LastDisplayType = DisplayType;
 
@@ -2387,7 +2318,7 @@ int main(int argc, char **argv)
 		Atari800_Frame();
 
 		if (display_screen && !SizeVerify)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen();
 	}
 
 	Atari_Exit(0);
