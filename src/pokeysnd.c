@@ -87,7 +87,6 @@
 #include "atari.h"
 #include "mzpokeysnd.h"
 #include "pokeysnd.h"
-#include "rt-config.h"	/* stereo_enabled, enable_new_pokey */
 #ifndef __PLUS
 #include "sndsave.h"
 #else
@@ -208,6 +207,9 @@ static int mz_quality = 0;		/* default quality for mzpokeysnd */
 #ifdef __PLUS
 int mz_clear_regs = 0;
 #endif
+
+int enable_new_pokey = TRUE;
+int stereo_enabled = FALSE;
 
 /* multiple sound engine interface */
 static void Pokey_process_8(void *sndbuffer, unsigned sndn);
@@ -1292,6 +1294,9 @@ static void Update_vol_only_sound_rf(void)
 
 /*
 $Log$
+Revision 1.28  2005/10/19 21:42:03  pfusik
+enable_new_pokey and stereo_enabled from rt-config
+
 Revision 1.27  2005/09/07 22:01:39  pfusik
 fixed MSVC warnings
 
