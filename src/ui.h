@@ -2,14 +2,12 @@
 #define _UI_H_
 
 #include "config.h"
+#include <stdio.h> /* FILENAME_MAX */
 #include "atari.h"
 
 /* Two legitimate entries to UI module. */
 int SelectCartType(int k);
 void ui(void);
-
-/* this entry is used by atari_x11.c which implements its own GUI */
-void SoundRecording(void);
 
 extern int ui_is_active;
 extern int alt_function;
@@ -20,7 +18,12 @@ extern UWORD crash_address;
 extern UWORD crash_afterCIM;
 #endif
 
-#define FILENAME_SIZE	32
+#define MAX_DIRECTORIES 8
+
+extern char atari_files_dir[MAX_DIRECTORIES][FILENAME_MAX];
+extern char saved_files_dir[MAX_DIRECTORIES][FILENAME_MAX];
+extern int n_atari_files_dir;
+extern int n_saved_files_dir;
 
 /* Structure of menu item. Each menu is just an array of items of this structure
    terminated by MENU_END */
@@ -56,6 +59,12 @@ typedef struct
    the last parameter of Select will contain selection type */
 #define ITEM_MULTI   0x40
 
+#if defined(PS2) || defined(_WIN32_WCE)
+/* No function keys nor Alt+letter on PlayStation 2 and Windows CE */
+#define MENU_ACCEL(keystroke) NULL
+#else
+#define MENU_ACCEL(keystroke) keystroke
+#endif
 
 #define MENU_END { "", 0, NULL, NULL, NULL, 0 }
 
@@ -69,11 +78,21 @@ typedef struct
    The last argument is used to specify kind of selection for items with type modifier ITEM_MULTI.
    See below for possible return values. */
 typedef int (*fnSelect)(const char *pTitle, int bFloat, int nDefault, tMenuItem *menu, int *seltype);
-/* GetSaveFilename returns short filename in pFilename. It is guaranteed to be no more
-   than FILENAME_SIZE characters in the name */
-typedef int (*fnGetSaveFilename)(char *pFilename);
-/* GetLoadFilename returns fully qualified file name. Selection starts in pDirectory */
-typedef int (*fnGetLoadFilename)(char *pDirectory, char *pFilename);
+/* SelectInt returns an integer chosen by the user from the range min_value..max_value.
+   default_value is the initial selection and the value returned if the selection is cancelled. */
+typedef int (*fnSelectInt)(int nDefault, int nMin, int nMax);
+/* EditString provides string input. pString is shown initially and can be modified by the user.
+   It won't exceed nSize characters, including NUL. Note that pString may be modified even
+   when the user pressed Esc. */
+typedef int (*fnEditString)(const char *pTitle, char *pString, int nSize);
+/* GetSaveFilename and GetLoadFilename return fully qualified file name via pFilename.
+   pDirectories are "favourite" directories (there are nDirectories of them).
+   Selection starts in the directory of the passed pFilename (i.e. pFilename must be initialized)
+   or (if pFilename[0] == '\0') in the first "favourite" directory. */
+typedef int (*fnGetSaveFilename)(char *pFilename, char pDirectories[][FILENAME_MAX], int nDirectories);
+typedef int (*fnGetLoadFilename)(char *pFilename, char pDirectories[][FILENAME_MAX], int nDirectories);
+/* GetDirectoryPath is a directory browser */
+typedef int (*fnGetDirectoryPath)(char *pDirectory);
 /* Message is just some kind of MessageBox */
 typedef void (*fnMessage)(const char *pMessage);
 /* AboutBox shows information about emulator */
@@ -84,12 +103,15 @@ typedef void (*fnInit)(void);
 
 typedef struct
 {
-	fnSelect          fSelect;
-	fnGetSaveFilename fGetSaveFilename;
-	fnGetLoadFilename fGetLoadFilename;
-	fnMessage         fMessage;
-	fnAboutBox        fAboutBox;
-	fnInit            fInit;
+	fnSelect           fSelect;
+	fnSelectInt        fSelectInt;
+    fnEditString       fEditString;
+	fnGetSaveFilename  fGetSaveFilename;
+	fnGetLoadFilename  fGetLoadFilename;
+    fnGetDirectoryPath fGetDirectoryPath;
+	fnMessage          fMessage;
+	fnAboutBox         fAboutBox;
+	fnInit             fInit;
 } tUIDriver;
 
 /* Values returned in the last argument of Select */
