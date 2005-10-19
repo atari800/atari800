@@ -88,7 +88,6 @@ static int motif_disk_sel = 1;
 #include "sio.h"
 #include "sound.h"
 #include "platform.h"
-#include "rt-config.h"
 #include "ui.h"
 #include "util.h"
 
@@ -855,11 +854,15 @@ static int disk_change(char *a, char *full_filename, char *filename)
 
 static void boot_callback(void)
 {
+	static char dir[FILENAME_MAX];
+	if (n_atari_files_dir > 0)
+		strcpy(dir, atari_files_dir[0]);
+	else
+		atari_files_dir[0] = '\0';
 	auto_reboot = TRUE;
-
 	xv_set(chooser,
 		   FRAME_LABEL, "Disk Selector",
-		   FILE_CHOOSER_DIRECTORY, atari_disk_dirs[0],
+		   FILE_CHOOSER_DIRECTORY, dir,
 		   FILE_CHOOSER_NOTIFY_FUNC, disk_change,
 		   XV_SHOW, TRUE,
 		   NULL);
@@ -867,11 +870,15 @@ static void boot_callback(void)
 
 static void insert_callback(void)
 {
+	static char dir[FILENAME_MAX];
+	if (n_atari_files_dir > 0)
+		strcpy(dir, atari_files_dir[0]);
+	else
+		atari_files_dir[0] = '\0';
 	auto_reboot = FALSE;
-
 	xv_set(chooser,
 		   FRAME_LABEL, "Disk Selector",
-		   FILE_CHOOSER_DIRECTORY, atari_disk_dirs[0],
+		   FILE_CHOOSER_DIRECTORY, dir,
 		   FILE_CHOOSER_NOTIFY_FUNC, disk_change,
 		   XV_SHOW, TRUE,
 		   NULL);
@@ -928,9 +935,14 @@ static int rom_change(char *a, char *full_filename, char *filename)
 
 static void insert_rom_callback(void)
 {
+	static char dir[FILENAME_MAX];
+	if (n_atari_files_dir > 0)
+		strcpy(dir, atari_files_dir[0]);
+	else
+		atari_files_dir[0] = '\0';
 	xv_set(chooser,
 		   FRAME_LABEL, "ROM Selector",
-		   FILE_CHOOSER_DIRECTORY, atari_rom_dir,
+		   FILE_CHOOSER_DIRECTORY, dir,
 		   FILE_CHOOSER_NOTIFY_FUNC, rom_change,
 		   XV_SHOW, TRUE,
 		   NULL);
@@ -2024,18 +2036,19 @@ void Atari_Initialise(int *argc, char *argv[])
 		XtAddCallback(fsel_r, XmNokCallback, motif_insert_rom, NULL);
 		XtAddCallback(fsel_r, XmNcancelCallback, motif_fs_cancel, NULL);
 
-		tmpstr = (char *) XtMalloc(strlen(atari_disk_dirs[0] + 3));
-		strcpy(tmpstr, atari_disk_dirs[0]);
-		strcat(tmpstr, "/*");
+		if (n_atari_files_dir > 0) {
+			tmpstr = (char *) XtMalloc(strlen(atari_files_dir[0] + 3));
+			strcpy(Util_stpcpy(tmpstr, atari_files_dir[0]), "/*");
+		}
+		else {
+			tmpstr = (char *) XtMalloc(4);
+			strcpy(tmpstr, "./*");
+		}
 		xmtmpstr = XmStringCreateSimple(tmpstr);
 		XmFileSelectionDoSearch(fsel_b, xmtmpstr);
 		XmFileSelectionDoSearch(fsel_d, xmtmpstr);
 		XmStringFree(xmtmpstr);
-		XtFree(tmpstr);
-
-		tmpstr = (char *) XtMalloc(strlen(atari_rom_dir + 3));
-		strcpy(tmpstr, atari_rom_dir);
-		strcat(tmpstr, "/*");
+		/* XXX: can use the same tmpstr? can use the same xmtmpstr? */
 		xmtmpstr = XmStringCreateSimple(tmpstr);
 		XmFileSelectionDoSearch(fsel_r, xmtmpstr);
 		XmStringFree(xmtmpstr);
@@ -2332,13 +2345,13 @@ int Atari_Exit(int run_monitor)
 	return restart;
 }
 
-void Atari_DisplayScreen(UBYTE *screen)
+void Atari_DisplayScreen(void)
 {
 	static char status_line[64];
 	int update_status_line = FALSE;
 
 	if (!invisible) {
-		const UBYTE *ptr2 = screen + clipping_y * ATARI_WIDTH + clipping_x;
+		const UBYTE *ptr2 = (const UBYTE *) atari_screen + clipping_y * ATARI_WIDTH + clipping_x;
 
 #ifdef SHM
 
@@ -3015,7 +3028,7 @@ int main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	while (TRUE) {
+	for (;;) {
 		key_code = Atari_Keyboard();
 
 		if (menu_consol != CONSOL_NONE) {
@@ -3029,6 +3042,6 @@ int main(int argc, char **argv)
 
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen();
 	}
 }
