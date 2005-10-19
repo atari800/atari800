@@ -43,9 +43,7 @@ OBJS = \
 	pia.obj \
 	pokey.obj \
 	pokeysnd.obj \
-	prompts.obj \
 	remez.obj \
-	rt-config.obj \
 	rtime.obj \
 	screen.obj \
 	sio.obj \
