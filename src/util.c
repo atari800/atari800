@@ -36,6 +36,13 @@
 #include "atari.h"
 #include "util.h"
 
+char *Util_stpcpy(char *dest, const char *src)
+{
+	size_t len = strlen(src);
+	memcpy(dest, src, len + 1);
+	return dest + len;
+}
+
 char *Util_strlcpy(char *dest, const char *src, size_t size)
 {
 	strncpy(dest, src, size);
@@ -186,7 +193,12 @@ void Util_splitpath(const char *path, char *dir_part, char *file_part)
 	const char *p;
 	/* find the last DIR_SEP_CHAR except the last character */
 	for (p = path + strlen(path) - 2; p >= path; p--) {
-		if (*p == DIR_SEP_CHAR) {
+		if (*p == DIR_SEP_CHAR
+#ifdef BACK_SLASH
+/* on DOSish systems slash can be also used as a directory separator */
+		 || *p == '/'
+#endif
+		   ) {
 			if (dir_part != NULL) {
 				int len = p - path;
 				if (p == path || (p == path + 2 && path[1] == ':'))
@@ -214,7 +226,10 @@ void Util_catpath(char *result, const char *path1, const char *path2)
 #else
 	sprintf(result,
 #endif
-		(path1[0] == '\0' || path2[0] == DIR_SEP_CHAR || path1[strlen(path1) - 1] == DIR_SEP_CHAR)
+		path1[0] == '\0' || path2[0] == DIR_SEP_CHAR || path1[strlen(path1) - 1] == DIR_SEP_CHAR
+#ifdef BACK_SLASH
+		 || path2[0] == '/' || path1[strlen(path1) - 1] == '/'
+#endif
 			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
 }
 
