@@ -34,8 +34,6 @@ OBJS = \
 	pbi.o \
 	pia.o \
 	pokey.o \
-	prompts.o \
-	rt-config.o \
 	rtime.o \
 	sio.o \
 	util.o \
