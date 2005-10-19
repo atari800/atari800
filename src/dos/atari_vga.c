@@ -41,7 +41,6 @@
 #include "monitor.h"
 #include "pcjoy.h"
 #include "screen.h"
-#include "rt-config.h"	/* for refresh_rate */
 
 #include "dos/vga_gfx.h"
 
@@ -517,8 +516,9 @@ void ShutdownVgaEnvironment(void)
    vga_started=FALSE;
 }
 
-void Atari_DisplayScreen(UBYTE * ascreen)
+void Atari_DisplayScreen(void)
 {
+        UBYTE *screen = (UBYTE *) atari_screen;
         static int lace = 0;
         unsigned long vga_ptr;
 
@@ -1347,7 +1347,7 @@ int Atari_Keyboard(void)
         case 0x2e:
 				if (alt_key)
 				{
-					keycode = AKEY_UI;			
+					keycode = AKEY_UI;
 					alt_function = MENU_CARTRIDGE;			/* ALT+C .. Cartridge management */
 				}
 				else
@@ -1451,7 +1451,7 @@ int main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	while (TRUE) {
+	for (;;) {
 		key_code = Atari_Keyboard();
 
 		if (mouse_mode != MOUSE_OFF) {
@@ -1467,6 +1467,6 @@ int main(int argc, char **argv)
 
 		Atari800_Frame();
 		if (display_screen)
-			Atari_DisplayScreen((UBYTE *) atari_screen);
+			Atari_DisplayScreen();
 	}
 }
