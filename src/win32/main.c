@@ -32,7 +32,6 @@
 #include "atari.h"
 #include "input.h"
 #include "platform.h"
-#include "rt-config.h"
 #include "screen.h"
 #include "sound.h"
 #include "ui.h"
@@ -51,157 +50,138 @@ static int bActive = 0;		/* activity indicator */
 #if 1
 void exit(int code)
 {
-  MSG msg;
-
-  PostMessage(hWndMain, WM_CLOSE, 0, 0);
-
-  while (GetMessage(&msg, NULL, 0, 0))
-  {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
-  }
-
-  ExitProcess(code);
+	MSG msg;
+	PostMessage(hWndMain, WM_CLOSE, 0, 0);
+	while (GetMessage(&msg, NULL, 0, 0)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+	ExitProcess(code);
 }
 #endif
 
 static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-  switch (message)
-    {
-    case WM_ACTIVATEAPP:
-      bActive = wParam;
-      if (bActive)
-	{
-	  kbreacquire();
+	switch (message) {
+	case WM_ACTIVATEAPP:
+		bActive = wParam;
+		if (bActive) {
+			kbreacquire();
 #ifdef SOUND
-	  Sound_Continue();
+			Sound_Continue();
 #endif
+		}
+		break;
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+		mouse_buttons = ((wParam & MK_LBUTTON) ? 1 : 0)
+		              | ((wParam & MK_RBUTTON) ? 2 : 0);
+		break;
+	case WM_SETCURSOR:
+		SetCursor(NULL);
+		return TRUE;
+	case WM_CREATE:
+		break;
+	case WM_CLOSE:
+		groff();
+#ifdef SOUND
+		Sound_Exit();
+#endif
+		uninitjoystick();
+		uninitinput();
+		break;
+	case WM_DESTROY:
+		PostQuitMessage(10);
+		break;
 	}
-      break;
-    case WM_LBUTTONDOWN:
-    case WM_LBUTTONUP:
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONUP:
-      mouse_buttons = ((wParam & MK_LBUTTON) ? 1 : 0)
-	| ((wParam & MK_RBUTTON) ? 2 : 0);
-      break;
-    case WM_SETCURSOR:
-      SetCursor(NULL);
-      return TRUE;
-    case WM_CREATE:
-      break;
-    case WM_CLOSE:
-      groff();
-#ifdef SOUND
-      Sound_Exit();
-#endif
-      uninitjoystick();
-      uninitinput();
-      break;
-    case WM_DESTROY:
-      PostQuitMessage(10);
-      break;
-    }
-  return DefWindowProc(hWnd, message, wParam, lParam);
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 {
-  WNDCLASS wc;
+	WNDCLASS wc;
 
-  wc.style = CS_HREDRAW | CS_VREDRAW;
-  wc.lpfnWndProc = WindowProc;
-  wc.cbClsExtra = 0;
-  wc.cbWndExtra = 0;
-  wc.hInstance = hInstance;
-  wc.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
-  wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-  wc.hbrBackground = GetStockObject(BLACK_BRUSH);
-  wc.lpszMenuName = myname;
-  wc.lpszClassName = myname;
-  RegisterClass(&wc);
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.lpfnWndProc = WindowProc;
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hInstance = hInstance;
+	wc.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground = GetStockObject(BLACK_BRUSH);
+	wc.lpszMenuName = myname;
+	wc.lpszClassName = myname;
+	RegisterClass(&wc);
 
-  hWndMain = CreateWindowEx(
-			     0,
-			     myname,
-			     myname,
-			     WS_POPUP,
-			     0,
-			     0,
-			     GetSystemMetrics(SM_CXSCREEN),
-			     GetSystemMetrics(SM_CYSCREEN),
-			     NULL,
-			     NULL,
-			     hInstance,
-			     NULL);
+	hWndMain = CreateWindowEx(
+		0, myname, myname, WS_POPUP, 0, 0,
+		GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+		NULL, NULL, hInstance, NULL);
 
-  if (!hWndMain)
-    {
-      return 1;
-    }
-
-  return 0;
+	if (!hWndMain)
+		return 1;
+	return 0;
 }
 
-int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR
-		   lpCmdLine, int nCmdShow)
+int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-  MSG msg;
-  POINT mouse;
-  static int mouse_center_x = 100;
-  static int mouse_center_y = 100;
+	MSG msg;
+	POINT mouse;
+	static int mouse_center_x = 100;
+	static int mouse_center_y = 100;
 
-  myInstance = hInstance;
-  if (initwin(hInstance, nCmdShow))
-    {
-      return 1;
-    }
+	myInstance = hInstance;
+	if (initwin(hInstance, nCmdShow))
+		return 1;
 
-  /* initialise Atari800 core */
+	/* initialise Atari800 core */
 #ifdef _MSC_VER
-  if (!Atari800_Initialise(&__argc, __argv))
+	if (!Atari800_Initialise(&__argc, __argv))
 #else
-  if (!Atari800_Initialise(&_argc, _argv))
+	if (!Atari800_Initialise(&_argc, _argv))
 #endif
-    return 3;
+		return 3;
 
-  msg.message = WM_NULL;
+	msg.message = WM_NULL;
 
-  /* main loop */
-  while (TRUE) {
+	/* main loop */
+	for (;;) {
 
-  start:
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-	{
-      TranslateMessage(&msg);
-      DispatchMessage(&msg);
-    }
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
 
-    if (msg.message == WM_QUIT)
-      break;
+		if (msg.message == WM_QUIT)
+			break;
 
-    if (!bActive)
-      goto start;
+		if (!bActive)
+			continue;
 
-    key_code = Atari_Keyboard();
+		key_code = Atari_Keyboard();
 
-    GetCursorPos(&mouse);
-    mouse_delta_x = mouse.x - mouse_center_x;
-    mouse_delta_y = mouse.y - mouse_center_y;
-    if (mouse_delta_x | mouse_delta_y)
-      SetCursorPos(mouse_center_x, mouse_center_y);
+		GetCursorPos(&mouse);
+		mouse_delta_x = mouse.x - mouse_center_x;
+		mouse_delta_y = mouse.y - mouse_center_y;
+		if (mouse_delta_x | mouse_delta_y)
+			SetCursorPos(mouse_center_x, mouse_center_y);
 
-    Atari800_Frame();
-    if (display_screen)
-      Atari_DisplayScreen((UBYTE *) atari_screen);
-  }
+		Atari800_Frame();
+		if (display_screen)
+			Atari_DisplayScreen();
+	}
 
-  return msg.wParam;
+	return msg.wParam;
 }
 
 /*
 $Log$
+Revision 1.15  2005/10/19 21:19:24  pfusik
+removed Atari_DisplayScreen's argument; removed #include "rt-config.h";
+changed indenting to Atari800 standard
+
 Revision 1.14  2005/09/06 23:03:19  pfusik
 fixed MSVC warnings
 
