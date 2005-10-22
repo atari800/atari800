@@ -1,3 +1,53 @@
+2005-10-22  Piotr Fusik  <fox@scene.pl>
+* monitor.c: #include "pokeysnd.h" for stereo_sound (previously
+  in rt-config.h)
+
+* dos/atari_vga.c: didn't compile after removing Atari_DisplayScreen's
+  argument
+
+* atari_x11.c: XVIEW didn't compile after introducing atari_files_dir
+
+* atari.[ch], ui.c: I forgot about configuration of tv_mode, now it's
+  in "Select System"
+
+* util.[ch], devices.c, ui_basic.c: Util_chrieq()
+
+* ui.[ch], ui_basic.c, wince/port/ui_wince.c, wince/port/main.c:
+  - display error message when SIO_Mount() fails
+  - introduced MENU_* macros to hide tMenuItem structure layout
+    in menu definitions
+  - removed tMenuItem.sig (used by wince_ui_driver only)
+  - simplified tMenuItem.flags values
+  - replaced tUIDriver.fAboutBox with more general tUIDriver.fInfoScreen
+  - added "tooltips" in Disk Management
+  - combined "H: device" with "Use H: devices in Read Only mode"
+  - added "Configure Directories" for configuration of atari_files_dir[]
+    and saved_files_dir[] (thanks Petr for idea)
+  - tUIDriver.fSelect now supports "dragging" (for reordering
+    atari_files_dir[] and saved_files_dir[])
+  - FileSelector's scrolling is less tricky and more reliable,
+    as a side effect Left and Right arrows can be used to jump to first
+    and last menu item respectively
+  - you can quickly move in menus and file selector by pressing first
+    letter of an item
+  - fixed some problems with Alt+letter shortcuts
+  - Alt+O no longer displays a blue line at bottom of the screen
+  - moved WinCE-specific UI menu items to ui.c; only AboutPocketAtari()
+    left in ui_wince.c; wince_ui_driver is history, which is good, because
+    UI Driver is meant for View/Controller, not Model of User Interface;
+    Kostas should review my changes, naturally
+  - some naming changes to follow Atari800 convention
+
+* atari_svgalib.c, ui_basic.c: improved SVGA_SPEEDUP:
+  - now draws 1/refresh_rate part of screen every frame instead
+    of every refresh_rate frames;
+  - protected against problems when changing refresh_rate from UI
+  - should work correctly with refresh_rate not being a divisor of 240
+  - removed special handling from ui_basic.c
+
+* atari.h, configure.ac: version 1.4.0
+
+
 2005-10-19  Piotr Fusik  <fox@scene.pl>
 * amiga/amiga.c: Atari_LoadAnyFile() additionally supports DCM, BAS, LST,
   CART, ROM, CAS, BOOT_TAPE
@@ -19,7 +69,7 @@
   and STATE_DIR configuration options replaced with ATARI_FILES_DIR
   and SAVED_FILES_DIR. See discussion on the mailing list (9-11 Sep 2005).
 
-* ui.[ch], ui_basic.c, ui_wince.c: improved file selection:
+* ui.[ch], ui_basic.c, wince/port/ui_wince.c: improved file selection:
   - file selector's title is the path of the listed directory
   - sort directories that start with a dot
   - file selector starts on the previously selected file
@@ -29,7 +79,7 @@
   - Tab in the edit box invokes directory browser
   - added directory selection
 
-* ui.[ch], ui_basic.c, ui_wince.c:
+* ui.[ch], ui_basic.c, wince/port/ui_wince.c:
   - removed box around screen title; screen title now always takes one line
     and is shortened if necessary
   - improved refresh_rate selection
@@ -51,13 +101,13 @@
   RtIsPrintCommandSafe() -> Device_SetPrintCommand()
 
 * atari.c, prompts.[ch], rt-config.[ch], Makefile.in, amiga/Makefile,
-  win32\msc\Makefile: removed "-configure" command-line option
+  win32/msc/Makefile: removed "-configure" command-line option
   and the questions that appeared in the console window when no configuration
   file was found; now a default configuration is written and you can modify it
   using User Interface; removed prompts.[ch]
 
 * atari.[ch], rt-config.[ch], Makefile.in, amiga/Makefile,
-  win32\msc\Makefile: variables configured by the configuration file
+  win32/msc/Makefile: variables configured by the configuration file
   moved to the modules they actually belong to; config read/write moved
   to atari.[ch]; removed rt-config.[ch]
 
