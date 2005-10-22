@@ -130,7 +130,6 @@ static int invisible = 0;
    Interlace variables
  */
 
-static int first_lno = 0;
 static int ypos_inc = 1;
 static int svga_ptr_inc = 320;
 static int scrn_ptr_inc = ATARI_WIDTH;
@@ -647,30 +646,37 @@ int Atari_Exit(int run_monitor)
 
 void Atari_DisplayScreen(void)
 {
-	static int writepage = 0;
-	UBYTE *vbuf = (UBYTE *) atari_screen + first_lno * ATARI_WIDTH + 32;
+	UBYTE *vbuf = (UBYTE *) atari_screen + 32;
 
 	if (invisible)
 		return;
 
 #ifdef SVGA_SPEEDUP
-	vga_copytoplanar256(vbuf + ATARI_WIDTH * (240 / refresh_rate) * writepage, ATARI_WIDTH,
-	                    ((320 * (240 / refresh_rate)) >> 2) * writepage,
-	                    320 >> 2, 320,
-	                    240 / refresh_rate);
-	vga_setdisplaystart(0);
-	writepage++;
-	if (writepage >= refresh_rate)
-		writepage = 0;
-#else
-	vga_copytoplanar256(vbuf, ATARI_WIDTH,
-	                    ((320 * 240) >> 2) * writepage,
-	                    320 >> 2, 320,
-	                    240);
-	vga_setdisplaystart(320 * 240 * writepage);
-	vga_setpage(0);
-	writepage ^= 1;
+	if (!ui_is_active) {
+		static int writestrip = 0;
+		int y1;
+		int y2;
+		if (writestrip >= refresh_rate)
+			writestrip = 0;
+		y1 = 240 * writestrip / refresh_rate;
+		y2 = 240 * (writestrip + 1) / refresh_rate;
+		vga_copytoplanar256(vbuf + ATARI_WIDTH * y1, ATARI_WIDTH,
+		                    (320 >> 2) * y1,
+		                    320 >> 2, 320, y2 - y1);
+		vga_setdisplaystart(0);
+		writestrip++;
+	}
+	else
 #endif
+	{
+		static int writepage = 0;
+		vga_copytoplanar256(vbuf, ATARI_WIDTH,
+		                   ((320 * 240) >> 2) * writepage,
+		                   320 >> 2, 320, 240);
+		vga_setdisplaystart(320 * 240 * writepage);
+		vga_setpage(0);
+		writepage ^= 1;
+	}
 
 #ifdef SVGA_JOYMOUSE
 	vgamouse_stick = 0xff;
@@ -794,13 +800,18 @@ int main(int argc, char **argv)
 	for (;;) {
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
+#ifndef SVGA_SPEEDUP
 		if (display_screen)
+#endif
 			Atari_DisplayScreen();
 	}
 }
 
 /*
 $Log$
+Revision 1.20  2005/10/22 18:13:51  pfusik
+improved SVGA_SPEEDUP
+
 Revision 1.19  2005/10/19 21:38:34  pfusik
 removed Atari_DisplayScreen's argument; removed #include "rt-config.h"
 
