@@ -36,6 +36,9 @@
 #include "pia.h"
 #include "pokey.h"
 #include "util.h"
+#ifdef STEREO_SOUND
+#include "pokeysnd.h"
+#endif
 
 #ifdef __PLUS
 
@@ -2021,6 +2024,9 @@ int monitor(void)
 
 /*
 $Log$
+Revision 1.34  2005/10/22 18:08:43  pfusik
+#include "pokeysnd.h" for stereo_sound (previously in rt-config.h)
+
 Revision 1.33  2005/10/19 21:37:18  pfusik
 removed #include "rt-config.h"
 
