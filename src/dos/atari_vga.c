@@ -518,7 +518,7 @@ void ShutdownVgaEnvironment(void)
 
 void Atari_DisplayScreen(void)
 {
-        UBYTE *screen = (UBYTE *) atari_screen;
+        UBYTE *ascreen = (UBYTE *) atari_screen;
         static int lace = 0;
         unsigned long vga_ptr;
 
