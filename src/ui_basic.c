@@ -92,11 +92,10 @@ static int GetKeyPress(void)
 {
 	int keycode;
 
-#ifdef SVGA_SPEEDUP
-	int i;
-	for (i = 0; i < refresh_rate; i++)
-#endif
-		Atari_DisplayScreen();
+	if (alt_function >= 0)
+		return 0x1b; /* escape - go to Main Menu */
+
+	Atari_DisplayScreen();
 
 	for (;;) {
 		static int rep = KB_DELAY;
@@ -136,6 +135,7 @@ static int GetKeyPress(void)
 			alt_function = MENU_PCXI;
 			return 0x1b; /* escape */
 		default:
+			alt_function = -1; /* forget previous Main Menu shortcut */
 			break;
 		}
 	} while (keycode < 0);
@@ -177,10 +177,8 @@ static void Print(int fg, int bg, const char *string, int x, int y, int maxwidth
 		sprintf(tmpbuf, "%.*s...%s", firstlen, string, string + laststart);
 		string = tmpbuf;
 	}
-	while (*string != '\0') {
-		Plot(fg, bg, *string++, x, y);
-		x++;
-	}
+	while (*string != '\0')
+		Plot(fg, bg, *string++, x++, y);
 }
 
 static void CenterPrint(int fg, int bg, const char *string, int y)
@@ -254,164 +252,178 @@ void BasicUIMessage(const char *msg)
 	GetKeyPress();
 }
 
-static void SelectItem(int fg, int bg, int index, const char *items[],
-                       const char *prefix[], const char *suffix[],
-                       int nrows, int ncolumns,
-                       int xoffset, int yoffset,
-                       int itemwidth, int active)
-{
-	int x;
-	int y;
-	int iMaxXsize = ((40 - xoffset) / ncolumns) - 1;
-	char szbuf[FILENAME_MAX + 40]; /* allow for prefix and suffix */
-	char *p = szbuf;
-
-	x = index / nrows;
-	y = index - (x * nrows);
-
-	x *= (itemwidth + 1);
-
-	x += xoffset;
-	y += yoffset;
-
-	if (prefix != NULL && prefix[index] != NULL)
-		p = Util_stpcpy(szbuf, prefix[index]);
-	p = Util_stpcpy(p, items[index]);
-	if (suffix != NULL && suffix[index] != NULL) {
-		char *q = szbuf + itemwidth - strlen(suffix[index]);
-		while (p < q)
-			*p++ = ' ';
-		strcpy(p, suffix[index]);
-	}
-	else {
-		while (p < szbuf + itemwidth)
-			*p++ = ' ';
-		*p = '\0';
-	}
-
-	Print(fg, bg, szbuf, x, y, iMaxXsize);
-
-	if (active) {
-		ClearRectangle(0x94, 1, 22, 38, 22);
-		if (iMaxXsize < 38 && (int) strlen(szbuf) > iMaxXsize)
-			/* the selected item was shortened */
-			CenterPrint(fg, bg, szbuf, 22);
-	}
-}
-
-static int Select(int default_item, int nitems, const char *items[],
+static int Select(int default_item, int nitems, const char *item[],
                   const char *prefix[], const char *suffix[],
-                  int nrows, int ncolumns,
-                  int xoffset, int yoffset,
-                  int itemwidth, int scrollable, int *ascii)
+                  const char *tip[], const int nonselectable[],
+                  int nrows, int ncolumns, int xoffset, int yoffset,
+                  int itemwidth, int drag, int *seltype)
 {
-	int index;
-	int localascii;
+	int offset = 0;
+	int index = default_item;
+	int localseltype;
 
-	if (ascii == NULL)
-		ascii = &localascii;
-
-	ClearRectangle(0x94, xoffset, yoffset, xoffset + ncolumns * (itemwidth + 1) - 2, yoffset + nrows - 1);
-
-	for (index = 0; index < nitems; index++)
-		SelectItem(0x9a, 0x94, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, FALSE);
-
-	index = default_item;
-	SelectItem(0x94, 0x9a, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, TRUE);
+	if (seltype == NULL)
+		seltype = &localseltype;
 
 	for (;;) {
+		int col;
 		int row;
-		int column;
-		int new_index;
+		int i;
+		const char *message = NULL;
 
-		column = index / nrows;
-		row = index - (column * nrows);
+		while (index < offset)
+			offset -= nrows;
+		while (index >= offset + nrows * ncolumns)
+			offset += nrows;
 
-		*ascii = GetKeyPress();
-		switch (*ascii) {
-		case 0x1c:				/* Up */
-			if (row > 0)
-				row--;
-			else if (column > 0) {
-				column--;
-				row = nrows - 1;
+		ClearRectangle(0x94, xoffset, yoffset, xoffset + ncolumns * (itemwidth + 1) - 2, yoffset + nrows - 1);
+		col = 0;
+		row = 0;
+		for (i = offset; i < nitems; i++) {
+			char szbuf[40 + FILENAME_MAX]; /* allow for prefix and suffix */
+			char *p = szbuf;
+			if (prefix != NULL && prefix[i] != NULL)
+				p = Util_stpcpy(szbuf, prefix[i]);
+			p = Util_stpcpy(p, item[i]);
+			if (suffix != NULL && suffix[i] != NULL) {
+				char *q = szbuf + itemwidth - strlen(suffix[i]);
+				while (p < q)
+					*p++ = ' ';
+				strcpy(p, suffix[i]);
 			}
-			else if (scrollable)
-				return index + nitems + (nrows - 1);
-			break;
-		case 0x1d:				/* Down */
-			if (row < (nrows - 1))
-				row++;
-			else if (column < (ncolumns - 1)) {
+			else {
+				while (p < szbuf + itemwidth)
+					*p++ = ' ';
+				*p = '\0';
+			}
+			if (i == index)
+				Print(0x94, 0x9a, szbuf, xoffset + col * (itemwidth + 1), yoffset + row, itemwidth);
+			else
+				Print(0x9a, 0x94, szbuf, xoffset + col * (itemwidth + 1), yoffset + row, itemwidth);
+			if (++row >= nrows) {
+				if (++col >= ncolumns)
+					break;
 				row = 0;
-				column++;
 			}
-			else if (scrollable)
-				return index + nitems * 2 - (nrows - 1);
-			break;
-		case 0x1e:				/* Left */
-			if (column > 0)
-				column--;
-			else if (scrollable)
-				return index + nitems;
-			break;
-		case 0x1f:				/* Right */
-			if (column < (ncolumns - 1))
-				column++;
-			else if (scrollable)
-				return index + nitems * 2;
-			break;
-		case 0x7f:				/* Tab (for exchanging disk directories) */
-			return -2;			/* GOLDA CHANGED */
-		case 0x20:				/* Space */
-		case 0x7e:				/* Backspace */
-		case 0x9b:				/* Return=Select */
-			return index;
-		case 0x1b:				/* Esc=Cancel */
-			return -1;
-		default:
+		}
+		if (tip != NULL && tip[index] != NULL)
+			message = tip[index];
+		else if (itemwidth < 38 && (int) strlen(item[index]) > itemwidth)
+			/* the selected item was shortened */
+			message = item[index];
+		if (message != NULL)
+			CenterPrint(0x94, 0x9a, message, 22);
+
+		for (;;) {
+			int ascii;
+			int tmp_index;
+			ascii = GetKeyPress();
+			switch (ascii) {
+			case 0x1c:				/* Up */
+				if (drag) {
+					*seltype = USER_DRAG_UP;
+					return index;
+				}
+				tmp_index = index;
+				do
+					tmp_index--;
+				while (tmp_index >= 0 && nonselectable != NULL && nonselectable[tmp_index]);
+				if (tmp_index >= 0) {
+					index = tmp_index;
+					break;
+				}
+				continue;
+			case 0x1d:				/* Down */
+				if (drag) {
+					*seltype = USER_DRAG_DOWN;
+					return index;
+				}
+				tmp_index = index;
+				do
+					tmp_index++;
+				while (tmp_index < nitems && nonselectable != NULL && nonselectable[tmp_index]);
+				if (tmp_index < nitems) {
+					index = tmp_index;
+					break;
+				}
+				continue;
+			case 0x1e:				/* Left */
+				if (drag)
+					continue;		/* cannot drag left */
+				index = (index > nrows) ? index - nrows : 0;
+				break;
+			case 0x1f:				/* Right */
+				if (drag)
+					continue;		/* cannot drag right */
+				index = (index + nrows < nitems) ? index + nrows : nitems - 1;
+				break;
+			case 0x7f:				/* Tab (for exchanging disk directories) */
+				return -2;			/* GOLDA CHANGED */
+			case 0x20:				/* Space */
+				*seltype = USER_TOGGLE;
+				return index;
+			case 0x7e:				/* Backspace */
+				*seltype = USER_DELETE;
+				return index;
+			case 0x9b:				/* Return=Select */
+				*seltype = USER_SELECT;
+				return index;
+			case 0x1b:				/* Esc=Cancel */
+				return -1;
+			default:
+				if (drag || ascii <= 0x20 || ascii >= 0x7f)
+					continue;
+				tmp_index = index; /* old index */
+				do {
+					if (++index >= nitems)
+						index = 0;
+				} while (index != tmp_index && !Util_chrieq((char) ascii, item[index][0]));
+				break;
+			}
 			break;
 		}
-
-		new_index = (column * nrows) + row;
-		if ((new_index >= 0) && (new_index < nitems)) {
-			SelectItem(0x9a, 0x94, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, FALSE);
-
-			index = new_index;
-			SelectItem(0x94, 0x9a, index, items, prefix, suffix, nrows, ncolumns, xoffset, yoffset, itemwidth, TRUE);
-		}
+		if (message != NULL)
+			ClearRectangle(0x94, 1, 22, 38, 22);
 	}
 }
 
-int BasicUISelect(const char *title, int subitem, int default_item, tMenuItem *items, int *seltype)
+int BasicUISelect(const char *title, int flags, int default_item, const tMenuItem *menu, int *seltype)
 {
 	int nitems;
-	int retval;
-	const tMenuItem *pitem;
-	const char *prefix[100];
-	const char *root[100];
-	const char *suffix[100];
+	int index;
+	const tMenuItem *pmenu;
+	static const char *prefix[100];
+	static const char *item[100];
+	static const char *suffix[100];
+	static const char *tip[100];
+	static int nonselectable[100];
 	int w;
 	int x1, y1, x2, y2;
-	int scrollable;
-	int ascii;
 
 	nitems = 0;
-	retval = 0;
-	for (pitem = items; pitem->sig[0] != '\0'; pitem++) {
-		if (pitem->flags & ITEM_ENABLED) {
-			prefix[nitems] = pitem->prefix;
-			root[nitems] = pitem->item;
-			if (pitem->flags & ITEM_CHECK) {
-				if (pitem->flags & ITEM_CHECKED)
-					suffix[nitems] = "Yes";
-				else
-					suffix[nitems] = "No ";
+	index = 0;
+	for (pmenu = menu; pmenu->item != NULL; pmenu++) {
+		if (pmenu->flags != ITEM_HIDDEN) {
+			prefix[nitems] = pmenu->prefix;
+			item[nitems] = pmenu->item;
+			if (pmenu->flags & ITEM_TIP) {
+				suffix[nitems] = NULL;
+				tip[nitems] = pmenu->suffix;
 			}
-			else
-				suffix[nitems] = pitem->suffix;
-			if (pitem->retval == default_item)
-				retval = nitems;
+			else {
+				if ((pmenu->flags & ITEM_TYPE) == ITEM_CHECK) {
+					if (pmenu->flags & ITEM_CHECKED)
+						suffix[nitems] = "Yes";
+					else
+						suffix[nitems] = "No ";
+				}
+				else
+					suffix[nitems] = pmenu->suffix;
+				tip[nitems] = NULL;
+			}
+			nonselectable[nitems] = (pmenu->retval < 0);
+			if (pmenu->retval == default_item)
+				index = nitems;
 			nitems++;
 		}
 	}
@@ -419,11 +431,11 @@ int BasicUISelect(const char *title, int subitem, int default_item, tMenuItem *i
 	if (nitems == 0)
 		return -1; /* cancel immediately */
 
-	if (subitem) {
+	if (flags & SELECT_POPUP) {
 		int i;
 		w = 0;
 		for (i = 0; i < nitems; i++) {
-			int ws = strlen(root[i]);
+			int ws = strlen(item[i]);
 			if (prefix[i] != NULL)
 				ws += strlen(prefix[i]);
 			if (suffix[i] != NULL)
@@ -450,38 +462,26 @@ int BasicUISelect(const char *title, int subitem, int default_item, tMenuItem *i
 	}
 
 	Box(0x9a, 0x94, x1, y1, x2, y2);
-	scrollable = (nitems > y2 - y1 - 1);
-	retval = Select(retval, nitems, root, prefix, suffix, nitems, 1, x1 + 1, y1 + 1, w, scrollable, &ascii);
-	if (retval < 0)
-		return retval;
-	for (pitem = items; pitem->sig[0] != '\0'; pitem++) {
-		if (pitem->flags & ITEM_ENABLED) {
-			if (retval == 0) {
-				if ((pitem->flags & ITEM_MULTI) && seltype) {
-					switch (ascii) {
-					case 0x9b:
-						*seltype = USER_SELECT;
-						break;
-					case 0x20:
-						*seltype = USER_TOGGLE;
-						break;
-					default:
-						*seltype = USER_OTHER;
-						break;
-					}
-				}
-				return pitem->retval;
-			}
-			retval--;
+	index = Select(index, nitems, item, prefix, suffix, tip, nonselectable,
+	                nitems, 1, x1 + 1, y1 + 1, w,
+	                (flags & SELECT_DRAG) ? TRUE : FALSE, seltype);
+	if (index < 0)
+		return index;
+	for (pmenu = menu; pmenu->item != NULL; pmenu++) {
+		if (pmenu->flags != ITEM_HIDDEN) {
+			if (index == 0)
+				return pmenu->retval;
+			index--;
 		}
 	}
-	return 0;
+	/* shouldn't happen */
+	return -1;
 }
 
 int BasicUISelectInt(int default_value, int min_value, int max_value)
 {
 	static char item_values[100][4];
-	static char *items[100];
+	static const char *items[100];
 	int value;
 	int nitems;
 	int nrows;
@@ -508,8 +508,8 @@ int BasicUISelectInt(int default_value, int min_value, int max_value)
 	x2 = x1 + 3 * ncolumns;
 	y2 = y1 + nrows + 1;
 	Box(0x9a, 0x94, x1, y1, x2, y2);
-	value = Select(default_value >= min_value && default_value <= max_value ? default_value - min_value : 0,
-		nitems, (const char **) items, NULL, NULL, nrows, ncolumns, x1 + 1, y1 + 1, 2, FALSE, NULL);
+	value = Select((default_value >= min_value && default_value <= max_value) ? default_value - min_value : 0,
+		nitems, items, NULL, NULL, NULL, NULL, nrows, ncolumns, x1 + 1, y1 + 1, 2, FALSE, NULL);
 	return value >= 0 ? value + min_value : default_value;
 }
 
@@ -789,8 +789,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 	}
 #endif
 	for (;;) {
-		int offset = 0;
-		int item = 0;
+		int index = 0;
 		int i;
 
 #define NROWS 20
@@ -815,21 +814,15 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 		if (highlighted_file[0] != '\0') {
 			for (i = 0; i < n_filenames; i++) {
 				if (strcmp(filenames[i], highlighted_file) == 0) {
-					item = i % NROWS;
-					offset = i - item;
+					index = i;
 					break;
 				}
 			}
 		}
 
 		for (;;) {
-			const char **files = (const char **) filenames + offset;
-			int nitems;
-			int ascii;
-			if (offset + MAX_FILES <= n_filenames)
-				nitems = MAX_FILES;
-			else
-				nitems = n_filenames - offset;
+			int seltype;
+			const char *selected_filename;
 
 			ClearScreen();
 #if 0
@@ -839,33 +832,9 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 #endif
 			Box(0x9a, 0x94, 0, 1, 39, 23);
 
-			if (item < 0)
-				item = 0;
-			else if (item >= nitems)
-				item = nitems - 1;
-			item = Select(item, nitems, files, NULL, NULL, NROWS, NCOLUMNS, 1, 2, 37 / NCOLUMNS, TRUE, &ascii);
+			index = Select(index, n_filenames, filenames, NULL, NULL, NULL, NULL, NROWS, NCOLUMNS, 1, 2, 37 / NCOLUMNS, FALSE, &seltype);
 
-			if (item >= nitems * 2 + NROWS) {
-				/* Scroll Right */
-				if (offset + NROWS + NROWS < n_filenames) {
-					offset += NROWS;
-					item %= nitems;
-				}
-				else
-					item = nitems - 1;
-				continue;
-			}
-			if (item >= nitems) {
-				/* Scroll Left */
-				if (offset - NROWS >= 0) {
-					offset -= NROWS;
-					item %= nitems;
-				}
-				else
-					item = 0;
-				continue;
-			}
-			if (item == -2) {
+			if (index == -2) {
 				/* Tab = next favourite directory */
 				if (nDirectories > 0) {
 					/* default: pDirectories[0] */
@@ -888,12 +857,12 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 				}
 				break;
 			}
-			if (item == -1) {
+			if (index < 0) {
 				/* Esc = cancel */
 				FilenamesFree();
 				return FALSE;
 			}
-			if (ascii == 0x7e) {
+			if (seltype == USER_DELETE) {
 				/* Backspace = parent directory */
 				char new_dir[FILENAME_MAX];
 				Util_splitpath(current_dir, new_dir, NULL);
@@ -903,24 +872,25 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 				}
 				continue;
 			}
-			if (ascii == ' ' && select_dir) {
+			if (seltype == USER_TOGGLE && select_dir) {
 				/* Space = select current directory */
 				strcpy(path, current_dir);
 				FilenamesFree();
 				return TRUE;
 			}
-			if (files[item][0] == '[') {
+			selected_filename = filenames[index];
+			if (selected_filename[0] == '[') {
 				/* Change directory */
 				char new_dir[FILENAME_MAX];
 
-				if (strcmp(files[item], "[..]") == 0) {
+				if (strcmp(selected_filename, "[..]") == 0) {
 					/* go up */
 					Util_splitpath(current_dir, new_dir, NULL);
 				}
 #ifdef DOS_DRIVES
-				else if (files[item][2] == ':' && files[item][3] == ']') {
+				else if (selected_filename[2] == ':' && selected_filename[3] == ']') {
 					/* disk selected */
-					new_dir[0] = files[item][1];
+					new_dir[0] = selected_filename[1];
 					new_dir[1] = ':';
 					new_dir[2] = '\\';
 					new_dir[3] = '\0';
@@ -928,10 +898,11 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 #endif
 				else {
 					/* directory selected */
-					char *pbracket = strrchr(files[item], ']');
-					if (pbracket != NULL)
-						*pbracket = '\0';	/*cut ']' */
-					Util_catpath(new_dir, current_dir, files[item] + 1);
+					char *pbracket = strrchr(selected_filename, ']');
+					if (pbracket == NULL)
+						continue; /* XXX: regular file? */
+					*pbracket = '\0';	/*cut ']' */
+					Util_catpath(new_dir, current_dir, selected_filename + 1);
 				}
 				/* check if new directory is valid */
 				if (Util_direxists(new_dir)) {
@@ -942,7 +913,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 			}
 			if (!select_dir) {
 				/* normal filename selected */
-				Util_catpath(path, current_dir, files[item]);
+				Util_catpath(path, current_dir, selected_filename);
 				FilenamesFree();
 				return TRUE;
 			}
@@ -1029,6 +1000,9 @@ static int EditString(int fg, int bg, const char *title,
 				char temp_path[FILENAME_MAX];
 				char temp_file[FILENAME_MAX];
 				char *p;
+				/* FIXME: now we append '*' and then discard it
+				   just to workaround Util_splitpath() not recognizing
+				   DIR_SEP_CHAR when it's the last character */
 				strcpy(Util_stpcpy(temp_filename, string), "*");
 				Util_splitpath(temp_filename, temp_path, temp_file);
 				p = temp_file + strlen(temp_file) - 1;
@@ -1046,7 +1020,7 @@ static int EditString(int fg, int bg, const char *title,
 		default:
 			/* Insert character */
 			i = strlen(string);
-			if (i < size - 1 && ascii >= ' ' && ascii < 0x7f) {
+			if (i + 1 < size && ascii >= ' ' && ascii < 0x7f) {
 				do
 					string[i + 1] = string[i];
 				while (--i >= caret);
@@ -1058,13 +1032,13 @@ static int EditString(int fg, int bg, const char *title,
 }
 
 /* returns TRUE if accepted filename */
-static int EditFilename(const char *title, char *pFilename, char pDirectories[][FILENAME_MAX], int nDirectories)
+static int EditFilename(const char *title, char *filename, char directories[][FILENAME_MAX], int n_directories)
 {
 	char edited_filename[FILENAME_MAX];
-	strcpy(edited_filename, pFilename);
+	strcpy(edited_filename, filename);
 	if (edited_filename[0] == '\0') {
-		if (nDirectories > 0)
-			strcpy(edited_filename, pDirectories[0]);
+		if (n_directories > 0)
+			strcpy(edited_filename, directories[0]);
 #ifdef HAVE_GETCWD
 		if (edited_filename[0] == '\0') {
 			getcwd(edited_filename, FILENAME_MAX);
@@ -1078,66 +1052,55 @@ static int EditFilename(const char *title, char *pFilename, char pDirectories[][
 		}
 #endif
 	}
-	if (!EditString(0x9a, 0x94, title, edited_filename, FILENAME_MAX, 3, 11, 32, pDirectories, nDirectories))
+	if (!EditString(0x9a, 0x94, title, edited_filename, FILENAME_MAX, 3, 11, 32, directories, n_directories))
 		return FALSE;
-	strcpy(pFilename, edited_filename);
+	strcpy(filename, edited_filename);
 	return TRUE;
 }
 
-int BasicUIEditString(const char *pTitle, char *pString, int nSize)
+int BasicUIEditString(const char *title, char *string, int size)
 {
-	return EditString(0x9a, 0x94, pTitle, pString, nSize, 3, 11, 32, NULL, -1);
+	return EditString(0x9a, 0x94, title, string, size, 3, 11, 32, NULL, -1);
 }
 
-int BasicUIGetSaveFilename(char *pFilename, char pDirectories[][FILENAME_MAX], int nDirectories)
+int BasicUIGetSaveFilename(char *filename, char directories[][FILENAME_MAX], int n_directories)
 {
 #ifdef DO_DIR
-	return EditFilename("Save as (Tab=dir)", pFilename, pDirectories, nDirectories);
+	return EditFilename("Save as (Tab=dir)", filename, directories, n_directories);
 #else
-	return EditFilename("Save as", pFilename, pDirectories, nDirectories);
+	return EditFilename("Save as", filename, directories, n_directories);
 #endif
 }
 
-int BasicUIGetLoadFilename(char *pFilename, char pDirectories[][FILENAME_MAX], int nDirectories)
+int BasicUIGetLoadFilename(char *filename, char directories[][FILENAME_MAX], int n_directories)
 {
 #ifdef DO_DIR
-	return FileSelector(pFilename, FALSE, pDirectories, nDirectories);
+	return FileSelector(filename, FALSE, directories, n_directories);
 #else
-	return EditFilename("Filename", pFilename, pDirectories, nDirectories);
+	return EditFilename("Filename", filename, directories, n_directories);
 #endif
 }
 
-int BasicUIGetDirectoryPath(char *pDirectory)
+int BasicUIGetDirectoryPath(char *directory)
 {
 #ifdef DO_DIR
-	return FileSelector(pDirectory, TRUE, NULL, 0);
+	return FileSelector(directory, TRUE, NULL, 0);
 #else
-	return EditFilename("Path", pDirectory, NULL, -1);
+	return EditFilename("Path", directory, NULL, -1);
 #endif
 }
 
-void BasicUIAboutBox(void)
+void BasicUIInfoScreen(const char *title, const char *message)
 {
+	int y = 2;
 	ClearScreen();
-
-	Box(0x9a, 0x94, 0, 0, 39, 8);
-	CenterPrint(0x9a, 0x94, ATARI_TITLE, 1);
-	CenterPrint(0x9a, 0x94, "Copyright (c) 1995-1998 David Firth", 2);
-	CenterPrint(0x9a, 0x94, "and", 3);
-	CenterPrint(0x9a, 0x94, "(c)1998-2005 Atari800 Development Team", 4);
-	CenterPrint(0x9a, 0x94, "See CREDITS file for details.", 5);
-	CenterPrint(0x9a, 0x94, "http://atari800.atari.org/", 7);
-
-	Box(0x9a, 0x94, 0, 9, 39, 23);
-	CenterPrint(0x9a, 0x94, "This program is free software; you can", 10);
-	CenterPrint(0x9a, 0x94, "redistribute it and/or modify it under", 11);
-	CenterPrint(0x9a, 0x94, "the terms of the GNU General Public", 12);
-	CenterPrint(0x9a, 0x94, "License as published by the Free", 13);
-	CenterPrint(0x9a, 0x94, "Software Foundation; either version 1,", 14);
-	CenterPrint(0x9a, 0x94, "or (at your option) any later version.", 15);
-
-	CenterPrint(0x94, 0x9a, "Press any Key to Continue", 22);
-	GetKeyPress();
+	TitleScreen(title);
+	Box(0x9a, 0x94, 0, 1, 39, 23);
+	while (*message != '\n') {
+		CenterPrint(0x9a, 0x94, message, y++);
+		while (*message++ != '\0');
+	}
+	BasicUIMessage("Press any key to continue");
 }
 
 void BasicUIInit(void)
@@ -1148,8 +1111,7 @@ void BasicUIInit(void)
 	}
 }
 
-tUIDriver basic_ui_driver =
-{
+tUIDriver basic_ui_driver = {
 	&BasicUISelect,
 	&BasicUISelectInt,
 	&BasicUIEditString,
@@ -1157,12 +1119,15 @@ tUIDriver basic_ui_driver =
 	&BasicUIGetLoadFilename,
 	&BasicUIGetDirectoryPath,
 	&BasicUIMessage,
-	&BasicUIAboutBox,
+	&BasicUIInfoScreen,
 	&BasicUIInit
 };
 
 /*
 $Log$
+Revision 1.40  2005/10/22 18:13:02  pfusik
+another bunch of changes
+
 Revision 1.39  2005/10/19 21:40:30  pfusik
 tons of changes, see ChangeLog
 
