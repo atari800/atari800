@@ -9,7 +9,7 @@
 
 /* Fundamental declarations ---------------------------------------------- */
 
-#define ATARI_TITLE  "Atari 800 Emulator, Version 1.3.6"
+#define ATARI_TITLE  "Atari 800 Emulator, Version 1.4.0"
 
 #ifndef FALSE
 #define FALSE  0
@@ -80,10 +80,6 @@ extern int display_screen;
 
 /* Simply incremented by Atari800_Frame(). */
 extern int nframes;
-
-/* Time between Atari frames, in seconds
-   (normally 1.0/50 for PAL, 1.0/60 for NTSC). */
-extern double deltatime;
 
 /* You can read it to see how fast is the emulator compared to real Atari
    (100 if running at real Atari speed). */
@@ -328,7 +324,7 @@ void Atari800_PutByte(UWORD addr, UBYTE byte);
 /* Installs SIO patch and disables ROM checksum test. */
 void Atari800_PatchOS(void);
 
-/* Effects deltatime delay. */
+/* Sleeps until it's time to emulate next Atari frame. */
 void atari_sync(void);
 
 #endif /* _ATARI_H_ */
@@ -336,6 +332,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.57  2005/10/22 18:14:48  pfusik
+version 1.4.0
+
 Revision 1.56  2005/10/19 21:33:48  pfusik
 moved things from rt-config
 
