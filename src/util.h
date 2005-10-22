@@ -13,6 +13,10 @@
 
 /* String functions ------------------------------------------------------ */
 
+/* Returns TRUE if the characters are equal or represent the same letter
+   in different case. */
+int Util_chrieq(char c1, char c2);
+
 #ifdef WIN32
 #define Util_stricmp _stricmp
 #elif defined(HAVE_STRCASECMP)

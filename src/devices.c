@@ -185,9 +185,6 @@ static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
 
 #elif defined(HAVE_OPENDIR)
 
-#undef toupper
-#define toupper(c)  (((c) >= 'a' && (c) <= 'z') ? (c) - 'a' + 'A' : (c))
-
 static int match(const char *pattern, const char *filename)
 {
 	if (strcmp(pattern, "*.*") == 0)
@@ -204,7 +201,7 @@ static int match(const char *pattern, const char *filename)
 			filename++;
 			break;
 		case '*':
-			if (toupper(*filename) == toupper(pattern[1]))
+			if (Util_chrieq(*filename, pattern[1]))
 				pattern++;
 			else if (*filename == '\0')
 				return FALSE; /* because pattern[1] != '\0' */
@@ -212,7 +209,7 @@ static int match(const char *pattern, const char *filename)
 				filename++;
 			break;
 		default:
-			if (toupper(*pattern) != toupper(*filename))
+			if (!Util_chrieq(*pattern, *filename))
 				return FALSE;
 			pattern++;
 			filename++;
@@ -2403,6 +2400,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.47  2005/10/22 18:11:07  pfusik
+Util_chrieq()
+
 Revision 1.46  2005/10/19 21:42:53  pfusik
 atari_h_dir[], h_read_only, print_command, Device_SetPrintCommand(),
 enable_[hpr]_patch from rt-config

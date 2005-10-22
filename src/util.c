@@ -36,6 +36,18 @@
 #include "atari.h"
 #include "util.h"
 
+int Util_chrieq(char c1, char c2)
+{
+	switch (c1 ^ c2) {
+	case 0x00:
+		return TRUE;
+	case 0x20:
+		return (c1 >= 'A' && c1 <= 'Z') || (c1 >= 'a' && c1 <= 'z');
+	default:
+		return FALSE;
+	}
+}
+
 char *Util_stpcpy(char *dest, const char *src)
 {
 	size_t len = strlen(src);
