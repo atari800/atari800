@@ -24,6 +24,7 @@
    - sorts case-insensitively
    - sorts directories whose name begins with a dot
    - starts on the previously selected file
+   - you can move to a file by pressing its first letter (works in menus, too)
    - path of the listed directory is shown at the top of the screen
  * improved "save file" filename selection:
   - no longer limited to 32 characters
