@@ -858,7 +858,7 @@ static void boot_callback(void)
 	if (n_atari_files_dir > 0)
 		strcpy(dir, atari_files_dir[0]);
 	else
-		atari_files_dir[0] = '\0';
+		dir[0] = '\0';
 	auto_reboot = TRUE;
 	xv_set(chooser,
 		   FRAME_LABEL, "Disk Selector",
@@ -874,7 +874,7 @@ static void insert_callback(void)
 	if (n_atari_files_dir > 0)
 		strcpy(dir, atari_files_dir[0]);
 	else
-		atari_files_dir[0] = '\0';
+		dir[0] = '\0';
 	auto_reboot = FALSE;
 	xv_set(chooser,
 		   FRAME_LABEL, "Disk Selector",
@@ -939,7 +939,7 @@ static void insert_rom_callback(void)
 	if (n_atari_files_dir > 0)
 		strcpy(dir, atari_files_dir[0]);
 	else
-		atari_files_dir[0] = '\0';
+		dir[0] = '\0';
 	xv_set(chooser,
 		   FRAME_LABEL, "ROM Selector",
 		   FILE_CHOOSER_DIRECTORY, dir,
