@@ -40,8 +40,6 @@ HWND hWndMain;
 HINSTANCE myInstance;
 char issmartphone = 0;
 
-extern tUIDriver wince_ui_driver;
-
 extern int wince_main(int argc, char **argv);
 
 static char **gargv = NULL;
@@ -68,7 +66,6 @@ void wce_perror(char* s)
 DWORD WINAPI vloop(LPVOID p)
 {
 	srand(GetTickCount());
-	ui_driver = &wince_ui_driver;
 	wince_main(gargc, gargv);
 	atari_exit(0);
 	return 0;
@@ -114,7 +111,7 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
-		
+
 	case WM_SETFOCUS:
 	case WM_ACTIVATE:
 		gr_resume();
@@ -144,7 +141,7 @@ void MsgPump()
 static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 {
 	WNDCLASS wc;
-	
+
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc = WindowProc;
 	wc.cbClsExtra = 0;
@@ -156,7 +153,7 @@ static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 	wc.lpszMenuName = NULL;
 	wc.lpszClassName = myname;
 	RegisterClass(&wc);
-	
+
 	hWndMain = CreateWindow(myname,
 		myname,
 		WS_VISIBLE,
@@ -168,10 +165,10 @@ static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 		NULL,
 		hInstance,
 		NULL);
-	
+
 	if(!hWndMain)
 		return 1;
-	
+
 	SetWindowPos(hWndMain, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
 	return 0;
 }
@@ -182,7 +179,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	MSG msg;
 	HANDLE hth;
 #endif
-	
+
 	int i;
 	static int argc = 0;
 	static char args[0x400];
@@ -219,20 +216,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 		args[i] = 0;
 	}
 	argv[argc] = NULL;
-	
+
 	gargv = argv;
 	gargc = argc;
-	
+
 #ifdef MULTITHREADED
 	if((hth = CreateThread(NULL, 0x10000, vloop, NULL, 0, NULL)) == NULL)
 		return 1;
-	
+
 	while(GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-	
+
 	/* wait for the other thread to exit */
 	WaitForSingleObject((HANDLE)hth, INFINITE);
 	return msg.wParam;
