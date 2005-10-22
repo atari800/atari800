@@ -119,7 +119,6 @@ int refresh_rate = 1;
 int sprite_collisions_in_skipped_frames = FALSE;
 
 static double frametime = 0.1;
-double deltatime;
 double fps;
 int percent_atari_speed = 100;
 #ifdef BENCHMARK
@@ -1110,13 +1109,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
-#ifndef __PLUS
-	if (tv_mode == TV_PAL)
-		deltatime = (1.0 / 50.0);
-	else
-		deltatime = (1.0 / 60.0);
-#endif /* __PLUS */
-
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	Palette_Initialise(argc, argv);
 #endif
@@ -1470,11 +1462,10 @@ void atari_sync(void)
 		nextclock = curclock + (CLK_TCK / (tv_mode == TV_PAL ? 50 : 60));
 	}
 #else /* USE_CLOCK */
-	static double lasttime = 0, lastcurtime = 0;
-	double curtime;
-
-	if (deltatime > 0.0) {
-		curtime = Atari_time();
+	double deltatime = (tv_mode == TV_PAL) ? (1.0 / 50.0) : (1.0 / 60.0);
+	if (deltatime > 0.0) { /* TODO: implement fullspeed mode */
+		static double lasttime = 0, lastcurtime = 0;
+		double curtime = Atari_time();
 		Atari_sleep(lasttime + deltatime - curtime);
 		curtime = Atari_time();
 
@@ -1672,7 +1663,7 @@ void Atari800_Frame(void)
 #ifdef SOUND
 		Sound_Continue();
 #endif
-		frametime = deltatime;
+		/* frametime = deltatime; XXX? */
 		break;
 #ifndef CURSES_BASIC
 	case AKEY_SCREENSHOT:
@@ -1893,6 +1884,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.79  2005/10/22 18:11:58  pfusik
+allow changing tv_mode at run-time
+
 Revision 1.78  2005/10/19 21:33:48  pfusik
 moved things from rt-config
 
