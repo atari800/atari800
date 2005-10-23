@@ -117,8 +117,9 @@ static int Device_OpenDir(const char *filename)
 	if (dh != INVALID_HANDLE_VALUE)
 		FindClose(dh);
 	dh = FindFirstFile(FILENAME, &wfd);
-	/* FIXME: don't signal error here if the path is ok but no file matches */
-	return dh != INVALID_HANDLE_VALUE;
+	return (dh != INVALID_HANDLE_VALUE)
+		/* don't signal error here if the path is ok but no file matches */
+		|| (HRESULT_CODE(GetLastError()) == ERROR_FILE_NOT_FOUND);
 }
 
 static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
@@ -157,8 +158,10 @@ static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
 	if (size != NULL)
 		*size = (int) wfd.nFileSizeLow;
 	if (timetext != NULL) {
+		FILETIME lt;
 		SYSTEMTIME st;
-		if (FileTimeToSystemTime(&wfd.ftLastWriteTime, &st) != 0) {
+		if (FileTimeToLocalFileTime(&wfd.ftLastWriteTime, &lt) != 0
+		 && FileTimeToSystemTime(&lt, &st) != 0) {
 			int hour = st.wHour;
 			char ampm = 'a';
 			if (hour >= 12) {
@@ -1566,10 +1569,15 @@ static void Device_H_ChangeDirectory(void)
 
 static void Device_H_DiskInfo(void)
 {
-	static UBYTE info[17] = {
-		3, 0, 231, 3, 231, 3,
-		'H', 'D', 'I', 'S', 'K', '1' /* + devnum */, ' ', ' ',
-		1 /* + devnum */, 1 /* + devnum */, 0 };
+	static UBYTE info[16] = {
+		0x20,                                                  /* disk version: Sparta >= 2.0 */
+		0x00,                                                  /* sector size: 0x100 */
+		0xff, 0xff,                                            /* total sectors: 0xffff */
+		0xff, 0xff,                                            /* free sectors: 0xffff */
+		'H', 'D', 'I', 'S', 'K', '1' /* + devnum */, ' ', ' ', /* disk name */
+		1,                                                     /* seq. number (number of writes) */
+		1 /* + devnum */                                       /* random number (disk id) */
+	};
 	int devnum;
 
 	if (devbug)
@@ -1580,9 +1588,8 @@ static void Device_H_DiskInfo(void)
 		return;
 
 	info[11] = (UBYTE) ('1' + devnum);
-	info[14] = (UBYTE) (1 + devnum);
 	info[15] = (UBYTE) (1 + devnum);
-	CopyToMem(info, dGetWord(ICBLLZ), 17);
+	CopyToMem(info, dGetWord(ICBLLZ), 16);
 
 	regY = 1;
 	ClrN;
@@ -1599,17 +1606,30 @@ static void Device_H_ToAbsolutePath(void)
 	if (Device_GetHostPath(FALSE) == 0)
 		return;
 
-	/* FIXME: leading '>' ? */
-	bufadr = dGetWord(ICBLLZ);
-	for (p = atari_path; *p != '\0'; p++) {
-		if (*p == DIR_SEP_CHAR)
-			PutByte(bufadr, '>');
-		else
-			PutByte(bufadr, (UBYTE) *p);
-		bufadr++;
+	/* XXX: we sometimes check here for directories
+	   with a trailing DIR_SEP_CHAR. It seems to work on Win32 and DJGPP. */
+	if (!Util_direxists(host_path)) {
+		regY = 150;
+		SetN;
+		return;
 	}
-	/* FIXME: strip trailing '>' */
-	PutByte(bufadr, 0x9b);
+
+	bufadr = dGetWord(ICBLLZ);
+	if (atari_path[0] != '\0') {
+		PutByte(bufadr, '>');
+		bufadr++;
+		for (p = atari_path; *p != '\0'; p++) {
+			if (*p == DIR_SEP_CHAR) {
+				if (p[1] == '\0')
+					break;
+				PutByte(bufadr, '>');
+			}
+			else
+				PutByte(bufadr, (UBYTE) *p);
+			bufadr++;
+		}
+	}
+	PutByte(bufadr, 0x00);
 
 	regY = 1;
 	ClrN;
@@ -2400,6 +2420,12 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.48  2005/10/23 13:35:01  pfusik
+made H: functions 0x2f and 0x30 SpartaDOS-compatible; Win32 implementation
+of directory listing no longer fails when no file matches the mask;
+Win32 implementation of long directory listing reports local file times
+rather than UTC
+
 Revision 1.47  2005/10/22 18:11:07  pfusik
 Util_chrieq()
 
