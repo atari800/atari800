@@ -1,3 +1,16 @@
+2005-10-23  Piotr Fusik  <fox@scene.pl>
+* ui_basic.c: silenced a warning
+
+* devices.c, hdevtest.lst: made H: functions 0x2f and 0x30
+  SpartaDOS-compatible
+
+* devices.c, ui_basic.c: Win32 implementation of directory listing
+  no longer fails when no file matches the mask
+
+* devices.c: Win32 implementation of long directory listing
+  reports local file times rather than UTC
+
+
 2005-10-22  Piotr Fusik  <fox@scene.pl>
 * monitor.c: #include "pokeysnd.h" for stereo_sound (previously
   in rt-config.h)
