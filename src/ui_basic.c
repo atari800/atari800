@@ -543,7 +543,9 @@ static int BasicUIOpenDir(const char *dirname)
 #ifdef _WIN32_WCE
 	Util_splitpath(dirname, parentdir, NULL);
 #endif
-	return dh != INVALID_HANDLE_VALUE;
+	return (dh != INVALID_HANDLE_VALUE)
+		/* no error for an empty directory on WinCE */
+		|| (HRESULT_CODE(GetLastError()) == ERROR_FILE_NOT_FOUND);
 }
 
 static int BasicUIReadDir(char *filename, int *isdir)
@@ -616,16 +618,16 @@ static int BasicUIReadDir(char *filename, int *isdir)
 
 #ifdef DO_DIR
 
-static char **filenames;
+static const char **filenames;
 #define FILENAMES_INITIAL_SIZE 256 /* preallocate 1 KB */
 static int n_filenames;
 
 /* filename must be malloc'ed or strdup'ed */
-static void FilenamesAdd(char *filename)
+static void FilenamesAdd(const char *filename)
 {
 	if (n_filenames >= FILENAMES_INITIAL_SIZE && (n_filenames & (n_filenames - 1)) == 0) {
 		/* n_filenames is a power of two: allocate twice as much */
-		filenames = (char **) Util_realloc(filenames, 2 * n_filenames * sizeof(char *));
+		filenames = (const char **) Util_realloc((void *) filenames, 2 * n_filenames * sizeof(const char *));
 	}
 	filenames[n_filenames++] = filename;
 }
@@ -679,8 +681,8 @@ static void FilenamesSort(const char **start, const char **end)
 static void FilenamesFree(void)
 {
 	while (n_filenames > 0)
-		free(filenames[--n_filenames]);
-	free(filenames);
+		free((void *) filenames[--n_filenames]);
+	free((void *) filenames);
 }
 
 static void GetDirectory(const char *directory)
@@ -692,7 +694,7 @@ static void GetDirectory(const char *directory)
 	/* we do not need any of those 'hard-to-get' informations */
 #endif	/* DJGPP */
 
-	filenames = (char **) Util_malloc(FILENAMES_INITIAL_SIZE * sizeof(char *));
+	filenames = (const char **) Util_malloc(FILENAMES_INITIAL_SIZE * sizeof(const char *));
 	n_filenames = 0;
 
 	if (BasicUIOpenDir(directory)) {
@@ -721,7 +723,7 @@ static void GetDirectory(const char *directory)
 			FilenamesAdd(filename2);
 		}
 
-		FilenamesSort((const char **) filenames, (const char **) filenames + n_filenames);
+		FilenamesSort(filenames, filenames + n_filenames);
 	}
 	else {
 		Aprint("Error opening '%s' directory", directory);
@@ -1125,6 +1127,10 @@ tUIDriver basic_ui_driver = {
 
 /*
 $Log$
+Revision 1.41  2005/10/23 13:40:46  pfusik
+file selector no longer fails on an empty directory on WinCE;
+silenced a warning
+
 Revision 1.40  2005/10/22 18:13:02  pfusik
 another bunch of changes
 
