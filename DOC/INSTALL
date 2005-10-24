@@ -135,6 +135,14 @@ OR
    then you probably ignored step 1b.
 7. Copy atari800.exe to destination directory.
 
+I have also managed to compile Atari800 using the same Makefile
+and command-line tools shipped with Visual Studio .NET. If you have a choice,
+you should probably prefer the .NET compiler over MSVC 6.0, because it has
+less bugs and a better optimizer. The compiled executable seems to be
+a regular Win32 application that does not use .NET Framework. You may need
+to add include and lib paths for the Win32 SDK (windows.h and friends)
+which is not included in VS.NET (maybe just in my installation...).
+
 Building the Emulator for Falcon
 --------------------------------
 
