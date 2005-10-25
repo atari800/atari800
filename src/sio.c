@@ -161,7 +161,8 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			UnlinkTmp(diskno);
 			return FALSE;
 		}
-		/* XXX: status = ReadOnly; ? */
+		status = ReadOnly;
+		/* XXX: status = b_open_readonly ? ReadOnly : ReadWrite; */
 		break;
 	case 0x1f:
 		if (header.magic2 == 0x8b) {
@@ -175,7 +176,8 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 				UnlinkTmp(diskno);
 				return FALSE;
 			}
-			/* XXX: status = ReadOnly; ? */
+			status = ReadOnly;
+			/* XXX: status = b_open_readonly ? ReadOnly : ReadWrite; */
 		}
 		break;
 	default:
@@ -1230,6 +1232,9 @@ void SIOStateRead(void)
 
 /*
 $Log$
+Revision 1.40  2005/10/25 21:39:50  pfusik
+compressed disk images are now open read-only
+
 Revision 1.39  2005/10/19 21:41:19  pfusik
 initialize sio_filename[] with "Off" to match drive_status[]
 initialized with Off; simplified code by removing istmpfile[];
