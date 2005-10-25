@@ -70,7 +70,12 @@ void *Util_realloc(void *ptr, size_t size);
 char *Util_strdup(const char *s);
 
 
-/* File I/O -------------------------------------------------------------- */
+/* Filenames ------------------------------------------------------------- */
+
+/* I assume here that '\n' is not valid in filenames,
+   at least not as their first character. */
+#define FILENAME_NOT_SET               "\n"
+#define Util_filenamenotset(filename)  ((filename)[0] == '\n')
 
 #ifdef BACK_SLASH
 #define DIR_SEP_CHAR '\\'
@@ -88,6 +93,9 @@ void Util_splitpath(const char *path, char *dir_part, char *file_part);
    Places directory separator char between paths, unless path1 is empty
    or ends with the separator char, or path2 starts with the separator char. */
 void Util_catpath(char *result, const char *path1, const char *path2);
+
+
+/* File I/O -------------------------------------------------------------- */
 
 /* Returns TRUE if the specified file exists. */
 int Util_fileexists(const char *filename);
