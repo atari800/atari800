@@ -1,3 +1,26 @@
+2005-10-25  Piotr Fusik  <fox@scene.pl>
+* sio.c: compressed disk images are now open read-only.
+  Version 1.3.6 could open them in read-write mode, but the compressed
+  images were never modified, so changes were lost. It was commented
+  "this is a fake but some games need it", but, since read-only ATRs
+  (e.g. on a CD-ROM) cannot be open in read-write mode, why compressed
+  images should be?
+
+* antic.c, monitor.c: "VCOUNT" and "ypos" are now zero in the monitor
+  invoked outside ANTIC_Frame() (previously 0x9c and 312 respectively,
+  which doesn't make sense)
+
+* atari.[ch], devices.c, ui.c, util.h: Atari800 tries to guess ROM paths
+  that are not configured (no configuration file or no entries for ROM paths).
+  It checks in the current directory, "/usr/share/atari800" (only on Unix
+  and Linux), directory with the Atari800 binary and its "rom" and "ROM"
+  subdirectories. See source code of Atari800_FindROMImages() in atari.c
+  for the filenames that are checked. Note that only the presence of files
+  is checked here, not their contents. This is far from perfect, but probably
+  better than hard-coded default filenames (in the current directory)
+  as in Atari800 1.3.6 and earlier.
+
+
 2005-10-23  Piotr Fusik  <fox@scene.pl>
 * ui_basic.c: silenced a warning
 
