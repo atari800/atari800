@@ -1895,7 +1895,7 @@ int monitor(void)
 				   DMACTL, CHACTL, dlist & 0xff, dlist >> 8, HSCROL, VSCROL);
 			printf("PMBASE=%02X    CHBASE=%02X    VCOUNT=%02X    "
 				   "NMIEN= %02X    ypos=%4d\n",
-				   PMBASE, CHBASE, ypos >> 1, NMIEN, ypos);
+				   PMBASE, CHBASE, ANTIC_GetByte(_VCOUNT), NMIEN, ypos);
 		}
 		else if (strcmp(t, "PIA") == 0) {
 			printf("PACTL= %02X    PBCTL= %02X    PORTA= %02X    "
@@ -2024,6 +2024,9 @@ int monitor(void)
 
 /*
 $Log$
+Revision 1.35  2005/10/25 22:00:18  pfusik
+"VCOUNT" and "ypos" are now zero in the monitor invoked outside ANTIC_Frame()
+
 Revision 1.34  2005/10/22 18:08:43  pfusik
 #include "pokeysnd.h" for stereo_sound (previously in rt-config.h)
 

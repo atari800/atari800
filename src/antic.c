@@ -760,7 +760,7 @@ static void init_pm_lookup(void)
 		L_PM25, L_BLACK, L_BLACK, L_BLACK, L_PM25, L_BLACK, L_BLACK, L_BLACK }
 	};
 
-	static UBYTE multi_to_normal[] = {
+	static const UBYTE multi_to_normal[] = {
 		L_BAK,
 		L_PM0, L_PM1, L_PM0,
 		L_PM2, L_PM3, L_PM2,
@@ -1950,6 +1950,7 @@ static void draw_antic_9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, cons
 }
 
 /* ANTIC modes 9, b and c use BAK and PF0 colours only so they're not visible in GTIA modes */
+
 static void draw_antic_9_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
 	draw_antic_0();
@@ -3061,6 +3062,7 @@ void ANTIC_Frame(int draw_display)
 		POKEY_Scanline();		/* check and generate IRQ */
 		OVERSCREEN_LINE;
 	} while (ypos < max_ypos);
+	ypos = 0; /* just for monitor.c */
 }
 
 #ifdef NEW_CYCLE_EXACT
