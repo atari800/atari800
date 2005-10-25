@@ -897,39 +897,8 @@ static void AtariSettings(void)
 			break;
 		case 17:
 			Util_splitpath(atari_xlxe_filename, rom_dir, NULL);
-			if (ui_driver->fGetDirectoryPath(rom_dir)) {
-				static const char * const rom_filenames[] = {
-					"atariosa.rom", "atari_osa.rom", "atari_os_a.rom",
-					"ATARIOSA.ROM", "ATARI_OSA.ROM", "ATARI_OS_A.ROM",
-					NULL,
-					"atariosb.rom", "atari_osb.rom", "atari_os_b.rom",
-					"ATARIOSB.ROM", "ATARI_OSB.ROM", "ATARI_OS_B.ROM",
-					NULL,
-					"atarixlxe.rom", "atarixl.rom", "atari_xlxe.rom", "atari_xl_xe.rom",
-					"ATARIXLXE.ROM", "ATARIXL.ROM", "ATARI_XLXE.ROM", "ATARI_XL_XE.ROM",
-					NULL,
-					"atari5200.rom", "atar5200.rom", "5200.rom", "5200.bin", "atari_5200.rom",
-					"ATARI5200.ROM", "ATAR5200.ROM", "5200.ROM", "5200.BIN", "ATARI_5200.ROM",
-					NULL,
-					"ataribasic.rom", "ataribas.rom", "basic.rom", "atari_basic.rom",
-					"ATARIBASIC.ROM", "ATARIBAS.ROM", "BASIC.ROM", "ATARI_BASIC.ROM",
-					NULL
-				};
-				const char * const *rom_filename = rom_filenames;
-				int i;
-				for (i = 0; i < 5; i++) {
-					do {
-						char full_filename[FILENAME_MAX];
-						Util_catpath(full_filename, rom_dir, *rom_filename);
-						if (Util_fileexists(full_filename)) {
-							strcpy(menu_array[13 + i].item, full_filename);
-							while (*++rom_filename != NULL);
-							break;
-						}
-					} while (*++rom_filename != NULL);
-					rom_filename++;
-				}
-			}
+			if (ui_driver->fGetDirectoryPath(rom_dir))
+				Atari800_FindROMImages(rom_dir, FALSE);
 			break;
 		case 18:
 			ConfigureDirectories();
@@ -1478,6 +1447,9 @@ int CrashMenu(void)
 
 /*
 $Log$
+Revision 1.76  2005/10/25 22:05:33  pfusik
+try to guess ROM paths that are not configured
+
 Revision 1.75  2005/10/22 18:13:02  pfusik
 another bunch of changes
 

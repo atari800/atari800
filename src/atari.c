@@ -125,11 +125,11 @@ int percent_atari_speed = 100;
 static double benchmark_start_time;
 #endif
 
-char atari_osa_filename[FILENAME_MAX];
-char atari_osb_filename[FILENAME_MAX];
-char atari_xlxe_filename[FILENAME_MAX];
-char atari_basic_filename[FILENAME_MAX];
-char atari_5200_filename[FILENAME_MAX];
+char atari_osa_filename[FILENAME_MAX] = FILENAME_NOT_SET;
+char atari_osb_filename[FILENAME_MAX] = FILENAME_NOT_SET;
+char atari_xlxe_filename[FILENAME_MAX] = FILENAME_NOT_SET;
+char atari_5200_filename[FILENAME_MAX] = FILENAME_NOT_SET;
+char atari_basic_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 
@@ -569,6 +569,49 @@ int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly
 
 #ifndef __PLUS
 
+void Atari800_FindROMImages(const char *directory, int only_if_not_set)
+{
+	static char * const rom_filenames[5] = {
+		atari_osa_filename,
+		atari_osb_filename,
+		atari_xlxe_filename,
+		atari_5200_filename,
+		atari_basic_filename
+	};
+	static const char * const common_filenames[] = {
+		"atariosa.rom", "atari_osa.rom", "atari_os_a.rom",
+		"ATARIOSA.ROM", "ATARI_OSA.ROM", "ATARI_OS_A.ROM",
+		NULL,
+		"atariosb.rom", "atari_osb.rom", "atari_os_b.rom",
+		"ATARIOSB.ROM", "ATARI_OSB.ROM", "ATARI_OS_B.ROM",
+		NULL,
+		"atarixlxe.rom", "atarixl.rom", "atari_xlxe.rom", "atari_xl_xe.rom",
+		"ATARIXLXE.ROM", "ATARIXL.ROM", "ATARI_XLXE.ROM", "ATARI_XL_XE.ROM",
+		NULL,
+		"atari5200.rom", "atar5200.rom", "5200.rom", "5200.bin", "atari_5200.rom",
+		"ATARI5200.ROM", "ATAR5200.ROM", "5200.ROM", "5200.BIN", "ATARI_5200.ROM",
+		NULL,
+		"ataribasic.rom", "ataribas.rom", "basic.rom", "atari_basic.rom",
+		"ATARIBASIC.ROM", "ATARIBAS.ROM", "BASIC.ROM", "ATARI_BASIC.ROM",
+		NULL
+	};
+	const char * const *common_filename = common_filenames;
+	int i;
+	for (i = 0; i < 5; i++) {
+		if (!only_if_not_set || Util_filenamenotset(rom_filenames[i])) {
+			do {
+				char full_filename[FILENAME_MAX];
+				Util_catpath(full_filename, directory, *common_filename);
+				if (Util_fileexists(full_filename)) {
+					strcpy(rom_filenames[i], full_filename);
+					break;
+				}
+			} while (*++common_filename != NULL);
+		}
+		while (*common_filename++ != NULL);
+	}
+}
+
 /* If another default path config path is defined use it
    otherwise use the default one */
 #ifndef DEFAULT_CFG_NAME
@@ -589,17 +632,6 @@ int Atari800_ReadConfig(const char *alternate_config_filename)
 #ifndef BASIC
 	int was_obsolete_dir = FALSE;
 #endif
-
-	atari_osa_filename[0] = '\0';
-	atari_osb_filename[0] = '\0';
-	atari_xlxe_filename[0] = '\0';
-	atari_basic_filename[0] = '\0';
-	atari_5200_filename[0] = '\0';
-
-	atari_h_dir[0][0] = '\0';
-	atari_h_dir[1][0] = '\0';
-	atari_h_dir[2][0] = '\0';
-	atari_h_dir[3][0] = '\0';
 
 #ifdef SUPPORTS_ATARI_CONFIGINIT
 	Atari_ConfigInit();
@@ -927,6 +959,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 #else /* __PLUS */
 	const char *rtconfig_filename = NULL;
+	int got_config;
 	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
@@ -953,7 +986,44 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
-	if (!Atari800_ReadConfig(rtconfig_filename))
+	got_config = Atari800_ReadConfig(rtconfig_filename);
+
+	/* try to find ROM images if the configuration file is not found
+	   or it does not specify some ROM paths (blank paths count as specified) */
+	Atari800_FindROMImages("", TRUE); /* current directory */
+#if defined(unix) || defined(__unix__) || defined(__linux__)
+	Atari800_FindROMImages("/usr/share/atari800", TRUE);
+#endif
+	if (*argc > 0 && argv[0] != NULL) {
+		char atari800_exe_dir[FILENAME_MAX];
+		char atari800_exe_rom_dir[FILENAME_MAX];
+		/* the directory of the Atari800 program */
+		Util_splitpath(argv[0], atari800_exe_dir, NULL);
+		Atari800_FindROMImages(atari800_exe_dir, TRUE);
+		/* "rom" and "ROM" subdirectories of this directory */
+		Util_catpath(atari800_exe_rom_dir, atari800_exe_dir, "rom");
+		Atari800_FindROMImages(atari800_exe_rom_dir, TRUE);
+/* skip "ROM" on systems that are known to be case-insensitive */
+#if !defined(DJGPP) && !defined(WIN32)
+		Util_catpath(atari800_exe_rom_dir, atari800_exe_dir, "ROM");
+		Atari800_FindROMImages(atari800_exe_rom_dir, TRUE);
+#endif
+	}
+	/* finally if nothing is found, set some defaults to make
+	   the configuration file easier to edit */
+	if (Util_filenamenotset(atari_osa_filename))
+		strcpy(atari_osa_filename, "atariosa.rom");
+	if (Util_filenamenotset(atari_osb_filename))
+		strcpy(atari_osb_filename, "atariosb.rom");
+	if (Util_filenamenotset(atari_xlxe_filename))
+		strcpy(atari_xlxe_filename, "atarixl.rom");
+	if (Util_filenamenotset(atari_5200_filename))
+		strcpy(atari_5200_filename, "5200.rom");
+	if (Util_filenamenotset(atari_basic_filename))
+		strcpy(atari_basic_filename, "ataribas.rom");
+
+	/* if no configuration file read, try to save one with the defaults */
+	if (!got_config)
 		Atari800_WriteConfig();
 
 #endif /* __PLUS */
@@ -1884,6 +1954,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.80  2005/10/25 22:05:33  pfusik
+try to guess ROM paths that are not configured
+
 Revision 1.79  2005/10/22 18:11:58  pfusik
 allow changing tv_mode at run-time
 

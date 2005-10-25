@@ -96,8 +96,8 @@ extern int sprite_collisions_in_skipped_frames;
 extern char atari_osa_filename[FILENAME_MAX];
 extern char atari_osb_filename[FILENAME_MAX];
 extern char atari_xlxe_filename[FILENAME_MAX];
-extern char atari_basic_filename[FILENAME_MAX];
 extern char atari_5200_filename[FILENAME_MAX];
+extern char atari_basic_filename[FILENAME_MAX];
 
 /* Special key codes.
    Store in key_code. */
@@ -175,6 +175,12 @@ int Atari800_DetectFileType(const char *filename);
    diskno: drive number for disks (1-8)
    readonly: mount disks as read-only */
 int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly);
+
+/* Checks for "popular" filenames of ROM images in the specified directory
+   and sets atari_*_filename to the ones found.
+   If only_if_not_set is TRUE, then atari_*_filename is modified only when
+   Util_filenamenotset() is TRUE for it. */
+void Atari800_FindROMImages(const char *directory, int only_if_not_set);
 
 /* Load Atari800 text configuration file. */
 int Atari800_LoadConfig(const char *alternate_config_filename);
@@ -332,6 +338,9 @@ void atari_sync(void);
 
 /*
 $Log$
+Revision 1.58  2005/10/25 22:05:33  pfusik
+try to guess ROM paths that are not configured
+
 Revision 1.57  2005/10/22 18:14:48  pfusik
 version 1.4.0
 
