@@ -441,7 +441,7 @@ static UBYTE Device_RemoveDirectory(const char *filename)
 static int devbug = FALSE;
 
 /* host path for each H: unit */
-char atari_h_dir[4][FILENAME_MAX];
+char atari_h_dir[4][FILENAME_MAX] = { "", "", "", "" };
 
 /* read only mode for H: device */
 int h_read_only;
@@ -2420,6 +2420,9 @@ void Device_UpdatePatches(void)
 
 /*
 $Log$
+Revision 1.49  2005/10/25 21:51:11  pfusik
+initialize atari_h_dir[] just in case
+
 Revision 1.48  2005/10/23 13:35:01  pfusik
 made H: functions 0x2f and 0x30 SpartaDOS-compatible; Win32 implementation
 of directory listing no longer fails when no file matches the mask;
