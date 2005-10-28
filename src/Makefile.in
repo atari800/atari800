@@ -64,7 +64,7 @@ dep:
 	then echo warning: makedepend failed; fi
 
 clean:
-	rm -f *.o dos/*.o falcon/*.o win32/*.o $(TARGET) core *.bak *~
+	rm -f *.o dos/*.o falcon/*.o win32/*.o win32/*.ro $(TARGET) core *.bak *~
 
 distclean: clean
 	-rm -f Makefile configure config.log config.status config.h
