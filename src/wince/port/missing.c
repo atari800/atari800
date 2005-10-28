@@ -32,11 +32,13 @@ char *tmpnam(char *string)
 
 FILE *tmpfile()
 {
-	TCHAR pTemp[MAX_PATH+1];
-	if(!GetTempFileName(TEXT("."), TEXT("A8_"), 0, pTemp))
-		return _wfopen(pTemp, TEXT("w+b"));
-	else
-		return 0;
+	TCHAR pTemp[MAX_PATH+1], cwdw[MAX_PATH+1];
+	char cwd[MAX_PATH+1];
+
+	getcwd(cwd, MAX_PATH);
+	MultiByteToWideChar(CP_ACP, 0, cwd, -1, cwdw, MAX_PATH);
+	GetTempFileName(cwdw, TEXT("A8_"), 0, pTemp);
+	return _wfopen(pTemp, TEXT("w+b"));
 }
 
 char cwd[MAX_PATH+1] = "";

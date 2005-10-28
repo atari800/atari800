@@ -14,8 +14,6 @@
 #undef WIN32
 #define WIN32							1
 
-/* #define snprintf _snprintf */
-
 #define perror(s) wce_perror(s)
 void wce_perror(char *s);
 

@@ -35,6 +35,7 @@
 #include "screen.h"
 #include "sound.h"
 #include "ui.h"
+#include "pokeysnd.h"
 
 #include "keyboard.h"
 #include "main.h"
@@ -176,10 +177,10 @@ void Atari_ConfigInit(void)
 	strcpy(atari_xlxe_filename, "atarixl.rom");
 	strcpy(atari_basic_filename, "ataribas.rom");
 	strcpy(atari_5200_filename, "5200.rom");
-	strcpy(atari_disk_dirs[0], ".");
-	strcpy(atari_rom_dir, ".");
-	strcpy(atari_exe_dir, ".");
-	strcpy(atari_state_dir, ".");
+	strcpy(atari_files_dir[0], ".");
+	n_atari_files_dir = 1;
+	strcpy(saved_files_dir[0], ".");
+	n_saved_files_dir = 1;
 	enable_new_pokey = 0;
 	screen_visible_x1 = 24;
 	screen_visible_y1 = 10;
@@ -204,6 +205,46 @@ int Atari_Configure(char* option, char *parameters)
 void Atari_ConfigSave(FILE *fp)
 {
 	fprintf(fp, "WCE_LINEAR_FILTER=%d\n", smooth_filter);
+}
+
+void AboutPocketAtari(void)
+{
+	ui_driver->fInfoScreen("About Pocket Atari", issmartphone ?
+		"Pocket Atari for Smartphones\0"
+		"Built on: " __DATE__ "\0"
+		"\0"
+		"Ported by Kostas Nakos\0"
+		"(knakos@gmail.com)\0"
+		"http://users.uoa.gr/...               \0"
+		"             ...(tilde)knakos/atari800\0"
+		"\0"
+		"\0"
+		"Based on the PocketPC/WinCE port\0"
+		"by Vasyl Tsvirkunov\0"
+		"http://pocketatari.retrogames.com\0"
+		"\0"
+		"\0"
+		"Atari core for this version\0"
+		ATARI_TITLE "\0"
+		"http://atari800.sf.net\0"
+		"\n"
+	:
+		"Pocket Atari v.1.2 (" __DATE__ ")\0"
+		"by Vasyl Tsvirkunov (C) 2002\0"
+		"http://pocketatari.retrogames.com\0"
+		"\0"
+		"\0"
+		"This port is based on\0"
+		ATARI_TITLE "\0"
+		"http://atari800.sf.net\0"
+		"\0"
+		"PocketPC port update and\0"
+		"Smartphone port by Kostas Nakos\0"
+		"(knakos@gmail.com)\0"
+		"http://users.uoa.gr/...               \0"
+		"             ...(tilde)knakos/atari800\0"
+		"\n"
+	);
 }
 
 int wince_main(int argc, char **argv)
