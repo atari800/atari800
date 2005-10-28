@@ -1,11 +1,14 @@
 PocketAtari: The Windows CE Port of the Atari 800 Emulator.
 
+Last Update of this File: 28/10/05
+
 I. PURPOSE
 ------------------------------------------------------------------------------
 This file describes the installation and compilation procedure for the Windows
 CE port of the Atari800 emulator [1]. The port currently supports Pocket PC and
 Smartphone devices deployed with the 2002 version of the OS, also known as
-WCE300.
+WCE300. It has also been tested on devices featuring version 2003 of the OS and
+runs just fine. Your mileage may vary.
 
 II. NEWS
 ------------------------------------------------------------------------------
@@ -29,13 +32,22 @@ o (Optional) Older Windows CE devices also need GAPI from Microsoft [6]. Copy
   gx.dll into the folder as well.
 o Copy the Atari OS ROM files in the same folder (see the FAQ for the ROMs).
 o (Optional) Create a symbolic link to pocketatari.exe at 
-  (IPSM)  \Windows\Start Menu.
+  (IPSM)\Windows\Start Menu.
 o You're good to go!
 
 IV. USING
 ------------------------------------------------------------------------------
-a. Pocket PC
 Pocket Atari can operate in portrait, landscape and inverse landscape mode.
+Port-specific options in the Windows CE version are:
+
+o Virtual Joystick (in Controller Configuration, Pocket PC only)
+  Enable joystick emulation with stylus.
+o Enable Linear Filtering (in Display Settings)
+  Use filtering for better image quality.
+
+Controls for the different classes of devices:
+
+a. Pocket PC
 Use the displayed keyboard/menu to operate the emulator. In landscape modes
 tap the bottom right corner of the atari screen to display the keyboard/menu.
 
@@ -43,14 +55,16 @@ b. Smartphone
 Due to the lack of proper keyboard and pointing device, the emulated Atari features
 are limited. You can play the majority of games though. Use the following keys:
 
-Directional keys           : Simulate joystick 0
-Softkey A, Softkey B, 4, 6 : Fire joystick 0
+Directional keys           : Simulate joystick 0                   $
+Softkey A, Softkey B, 4, 6 : Fire joystick 0                       $
 0                          : Return key
 7                          : Option key
 8                          : Select key
 9                          : Start key
-*                          : Show emulator menu
+*                          : Show emulator menu                    $
 Talk/Call/Green key        : Switch between the 3 display modes
+
+For navigating the emulator menus use buttons marked with '$' above.
 
 NOTE: Functionality of Softkey A, Softkey B and * keys may be attributed
       differently according to the drivers of your cellphone.
@@ -68,7 +82,8 @@ and zlib.h in zlib/. Create two folders named arm and x86 (src/wince/zlib/arm
 and src/wince/zlib/x86). Copy the appropriate zlibce.lib files in these
 directories. Don't forget to upload gx.dll and zlibce.dll to your emulator.
 Also for Smartphones you'll have to compile yourself a version of the gx.dll
-using the GAPI emulator files. The Smartphone resolution is 176x220 pixels.
+using the GAPI emulator files. The Smartphone resolution is 176x220 pixels with
+16bpp (either 565 or 555 RGB configurations).
 
 VI. HISTORY
 ------------------------------------------------------------------------------
