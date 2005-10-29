@@ -132,6 +132,9 @@ char atari_5200_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 char atari_basic_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
+#ifdef ALTERNATE_SYNC_WITH_HOST
+double deltatime;
+#endif
 
 static double Atari_time(void);
 
@@ -1532,7 +1535,9 @@ void atari_sync(void)
 		nextclock = curclock + (CLK_TCK / (tv_mode == TV_PAL ? 50 : 60));
 	}
 #else /* USE_CLOCK */
+#ifndef ALTERNATE_SYNC_WITH_HOST
 	double deltatime = (tv_mode == TV_PAL) ? (1.0 / 50.0) : (1.0 / 60.0);
+#endif
 	if (deltatime > 0.0) { /* TODO: implement fullspeed mode */
 		static double lasttime = 0, lastcurtime = 0;
 		double curtime = Atari_time();
@@ -1715,6 +1720,9 @@ void Atari800_Frame(void)
 {
 #ifndef BASIC
 	static int refresh_counter = 0;
+#ifdef ALTERNATE_SYNC_WITH_HOST
+	deltatime = (((float)refresh_rate) / (tv_mode == TV_PAL ? 50.0f : 60.0f));
+#endif
 	switch (key_code) {
 	case AKEY_COLDSTART:
 		Coldstart();
@@ -1729,7 +1737,13 @@ void Atari800_Frame(void)
 #ifdef SOUND
 		Sound_Pause();
 #endif
+#ifdef ALTERNATE_SYNC_WITH_HOST
+		deltatime = 1.0f / (tv_mode == TV_PAL ? 50 : 60);
+#endif
 		ui();
+#ifdef ALTERNATE_SYNC_WITH_HOST
+	deltatime = (((float)refresh_rate) / (tv_mode == TV_PAL ? 50.0f : 60.0f));
+#endif
 #ifdef SOUND
 		Sound_Continue();
 #endif
@@ -1802,7 +1816,10 @@ void Atari800_Frame(void)
 #else
 
 #ifndef DONT_SYNC_WITH_HOST
-	atari_sync();
+#ifdef ALTERNATE_SYNC_WITH_HOST
+	if (refresh_counter == 0)
+#endif
+		atari_sync();
 #endif
 
 #endif /* BENCHMARK */
@@ -1954,6 +1971,9 @@ void MainStateRead(void)
 
 /*
 $Log$
+Revision 1.81  2005/10/29 15:44:33  knakos
+new ALTERNATE_SYNC_WITH_HOST scheme
+
 Revision 1.80  2005/10/25 22:05:33  pfusik
 try to guess ROM paths that are not configured
 

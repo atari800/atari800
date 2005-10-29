@@ -1,3 +1,11 @@
+2005-10-29  Kostas Nakos  <knakos@gmail.com>
+* atari.c: implementation of alternate host syncing scheme
+  With USE_CLOCK undefined, normal operation requires syncing (sleeping) for
+  each frame, even when refresh rate is > 1. By defining the
+  ALTERNATE_SYNC_WITH_HOST symbol results in calculating skipped and the drawn
+  frames, then sleeping once for a longer period. This scheme seems to yield
+  better results for slow devices.
+
 2005-10-25  Piotr Fusik  <fox@scene.pl>
 * sio.c: compressed disk images are now open read-only.
   Version 1.3.6 could open them in read-write mode, but the compressed
