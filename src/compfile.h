@@ -3,8 +3,7 @@
 
 #include <stdio.h>  /* FILE */
 
-FILE *opendcm(const char *infilename, char *outfilename);
-FILE *openzlib(const char *infilename, char *outfilename);
-int dcmtoatr(FILE *fin, FILE *fout, const char *input, char *output);
+int CompressedFile_ExtractGZ(const char *infilename, FILE *outfp);
+int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp);
 
 #endif /* _COMPFILE_H_ */
