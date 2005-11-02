@@ -64,12 +64,15 @@ typedef struct
 #define MENU_LABEL(item)                                    { ITEM_ACTION, -1, NULL, item, NULL }
 #define MENU_ACTION(retval, item)                           { ITEM_ACTION, retval, NULL, item, NULL }
 #define MENU_ACTION_PREFIX(retval, prefix, item)            { ITEM_ACTION, retval, prefix, item, NULL }
+#define MENU_ACTION_PREFIX_TIP(retval, prefix, item, tip)   { ITEM_ACTION | ITEM_TIP, retval, prefix, item, tip }
 #define MENU_ACTION_ACCEL(retval, item, keystroke)          { ITEM_ACTION, retval, NULL, item, MENU_ACCEL(keystroke) }
+#define MENU_ACTION_TIP(retval, item, tip)                  { ITEM_ACTION | ITEM_TIP, retval, NULL, item, tip }
 #define MENU_CHECK(retval, item)                            { ITEM_CHECK, retval, NULL, item, NULL }
 #define MENU_FILESEL(retval, item)                          { ITEM_FILESEL, retval, NULL, item, NULL }
 #define MENU_FILESEL_PREFIX(retval, prefix, item)           { ITEM_FILESEL, retval, prefix, item, NULL }
 #define MENU_FILESEL_PREFIX_TIP(retval, prefix, item, tip)  { ITEM_FILESEL | ITEM_TIP, retval, prefix, item, tip }
 #define MENU_FILESEL_ACCEL(retval, item, keystroke)         { ITEM_FILESEL, retval, NULL, item, MENU_ACCEL(keystroke) }
+#define MENU_FILESEL_TIP(retval, item, tip)                 { ITEM_FILESEL | ITEM_TIP, retval, NULL, item, tip }
 #define MENU_SUBMENU(retval, item)                          { ITEM_SUBMENU, retval, NULL, item, NULL }
 #define MENU_SUBMENU_SUFFIX(retval, item, suffix)           { ITEM_SUBMENU, retval, NULL, item, suffix }
 #define MENU_SUBMENU_ACCEL(retval, item, keystroke)         { ITEM_SUBMENU, retval, NULL, item, MENU_ACCEL(keystroke) }
