@@ -125,23 +125,23 @@ static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 	return 0;
 }
 
-int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#define MOUSE_CENTER_X  100
+#define MOUSE_CENTER_Y  100
+
+int main(int argc, char *argv[])
 {
+	STARTUPINFO si;
 	MSG msg;
 	POINT mouse;
-	static int mouse_center_x = 100;
-	static int mouse_center_y = 100;
 
-	myInstance = hInstance;
-	if (initwin(hInstance, nCmdShow))
+	myInstance = GetModuleHandle(NULL);
+	si.dwFlags = 0;
+	GetStartupInfo(&si);
+	if (initwin(myInstance, si.dwFlags & STARTF_USESHOWWINDOW ? si.wShowWindow : SW_SHOWDEFAULT))
 		return 1;
 
 	/* initialise Atari800 core */
-#ifdef _MSC_VER
-	if (!Atari800_Initialise(&__argc, __argv))
-#else
-	if (!Atari800_Initialise(&_argc, _argv))
-#endif
+	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
 	msg.message = WM_NULL;
@@ -163,10 +163,10 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		key_code = Atari_Keyboard();
 
 		GetCursorPos(&mouse);
-		mouse_delta_x = mouse.x - mouse_center_x;
-		mouse_delta_y = mouse.y - mouse_center_y;
+		mouse_delta_x = mouse.x - MOUSE_CENTER_X;
+		mouse_delta_y = mouse.y - MOUSE_CENTER_Y;
 		if (mouse_delta_x | mouse_delta_y)
-			SetCursorPos(mouse_center_x, mouse_center_y);
+			SetCursorPos(MOUSE_CENTER_X, MOUSE_CENTER_Y);
 
 		Atari800_Frame();
 		if (display_screen)
@@ -175,55 +175,3 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	return msg.wParam;
 }
-
-/*
-$Log$
-Revision 1.15  2005/10/19 21:19:24  pfusik
-removed Atari_DisplayScreen's argument; removed #include "rt-config.h";
-changed indenting to Atari800 standard
-
-Revision 1.14  2005/09/06 23:03:19  pfusik
-fixed MSVC warnings
-
-Revision 1.13  2005/05/13 23:31:28  emuslor
-Joystick support for DirectX
-
-Revision 1.12  2005/03/05 12:31:26  pfusik
-support for special AKEY_*, refresh rate control and atari_sync()
-moved to Atari800_Frame()
-
-Revision 1.11  2005/03/03 09:15:43  pfusik
-renamed win32/screen.[ch] to win32/screen_win32.[ch]
-
-Revision 1.10  2005/02/23 16:47:54  pfusik
-PNG screenshots
-
-Revision 1.9  2003/02/24 09:33:33  joy
-header cleanup
-
-Revision 1.8  2002/07/11 16:23:21  knik
-shutdown code moved from exit() to WindowProc()
-
-Revision 1.7  2002/07/10 16:59:54  knik
-Enabled and updated exit(). Atari exited without closing graphics and sound.
-Now should exit more nicely.
-
-Revision 1.6  2001/10/03 16:17:20  knik
-mouse input
-
-Revision 1.5  2001/09/25 17:38:27  knik
-added main loop; threading removed
-
-Revision 1.4  2001/08/27 04:48:28  knik
-_endthread() called without parameter
-
-Revision 1.3  2001/05/19 06:12:05  knik
-show window before display change
-
-Revision 1.2  2001/04/08 05:51:44  knik
-sound calls update
-
-Revision 1.1  2001/03/18 07:56:48  knik
-win32 port
-
-*/
