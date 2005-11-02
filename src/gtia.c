@@ -332,7 +332,7 @@ void update_pmpl_colls(void)
 }
 
 #else
-#define update_partial_pmpl_colls(a) do{}while(0)
+#define update_partial_pmpl_colls()
 #endif /* NEW_CYCLE_EXACT */
 
 /* Prepare PMG scanline ---------------------------------------------------- */
