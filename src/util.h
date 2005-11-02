@@ -114,9 +114,6 @@ int Util_direxists(const char *filename);
    May change the current position. */
 int Util_flen(FILE *fp);
 
-/* Opens a new temporary file and fills in filename with its name. */
-FILE *Util_tmpfile(char *filename, const char *mode);
-
 /* Deletes a file, returns 0 on success, -1 on failure. */
 #ifdef WIN32
 #ifdef UNICODE
@@ -129,5 +126,43 @@ int Util_unlink(const char *filename);
 #define Util_unlink  unlink
 #define HAVE_UTIL_UNLINK
 #endif /* defined(HAVE_UNLINK) */
+
+/* Creates a file that does not exist and fills in filename with its name. */
+FILE *Util_uniqopen(char *filename, const char *mode);
+
+/* Support for temporary files.
+
+   Util_tmpbufdef() defines storage for names of temporary files, if necessary.
+     Example use:
+     Util_tmpbufdef(static, mytmpbuf[4]) // four buffers with "static" storage
+   Util_fopen() opens a *non-temporary* file and marks tmpbuf
+   as *not containing* name of a temporary file.
+   Util_tmpopen() creates a temporary file with "wb+" mode.
+   Util_fclose() closes a file. If it was temporary, it gets deleted.
+
+   There are 3 implementations of the above:
+   - one that uses tmpfile() (preferred)
+   - one that stores names of temporary files and deletes them when they
+     are closed
+   - one that creates unique files but doesn't delete them
+     because Util_unlink is not available
+*/
+#ifdef HAVE_TMPFILE
+#define Util_tmpbufdef(modifier, def)
+#define Util_fopen(filename, mode, tmpbuf)  fopen(filename, mode)
+#define Util_tmpopen(tmpbuf)                tmpfile()
+#define Util_fclose(fp, tmpbuf)             fclose(fp)
+#elif defined(HAVE_UTIL_UNLINK)
+#define Util_tmpbufdef(modifier, def)       modifier char def [FILENAME_MAX];
+#define Util_fopen(filename, mode, tmpbuf)  (tmpbuf[0] = '\0', fopen(filename, mode))
+#define Util_tmpopen(tmpbuf)                Util_uniqopen(tmpbuf, "wb+")
+#define Util_fclose(fp, tmpbuf)             (fclose(fp), tmpbuf[0] != '\0' && Util_unlink(tmpbuf))
+#else
+/* if we can't delete the created file, leave it to the user */
+#define Util_tmpbufdef(modifier, def)
+#define Util_fopen(filename, mode, tmpbuf)  fopen(filename, mode)
+#define Util_tmpopen(tmpbuf)                Util_uniqopen(NULL, "wb+")
+#define Util_fclose(fp, tmpbuf)             fclose(fp)
+#endif
 
 #endif /* _UTIL_H_ */

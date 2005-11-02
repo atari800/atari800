@@ -297,10 +297,10 @@ int Util_flen(FILE *fp)
 	return (int) ftell(fp);
 }
 
-/* Opens a new temporary file and fills in filename with its name.
-   filename must point to FILENAME_MAX characters buffer, but doesn't need
+/* Creates a file that does not exist and fills in filename with its name.
+   filename must point to FILENAME_MAX characters buffer which doesn't need
    to be initialized. */
-FILE *Util_tmpfile(char *filename, const char *mode)
+FILE *Util_uniqopen(char *filename, const char *mode)
 {
 	/* We cannot simply call tmpfile(), because we don't want the file
 	   to be deleted when we close it, and we need the filename. */
