@@ -191,13 +191,3 @@ void uninitjoystick(void)
     }
   }
 }
-
-/*
-$Log$
-Revision 1.2  2005/09/06 23:03:19  pfusik
-fixed MSVC warnings
-
-Revision 1.1  2005/05/13 23:27:07  emuslor
-Joystick support for DirectX
-
-*/

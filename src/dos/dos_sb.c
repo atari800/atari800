@@ -1084,32 +1084,3 @@ int sb_startoutput(sbmix_t fillbuf)
 }
 
 #endif /* SOUND */
-
-/*
-** $Log$
-** Revision 1.5  2005/09/11 20:43:19  pfusik
-** fixed some of gcc -pedantic warnings; adapted to Atari800 coding style
-**
-** Revision 1.4  2005/08/14 08:38:23  pfusik
-** fixes for stereo: double output rate in stereo mode,
-** initialize mixer (dunno if necessary)
-**
-** Revision 1.3  2003/02/24 09:33:21  joy
-** header cleanup
-**
-** Revision 1.2  2001/04/08 06:02:13  knik
-** SOUND ifdef
-**
-** Revision 1.1.1.1  2000/10/10 13:27:18  joy
-** Imported using TkCVS
-**
-** Revision 1.6  2000/08/11 01:40:33  matt
-** major rewrite - far cleaner, and fixed an SB detection reboot bug =(
-**
-** Revision 1.5  2000/07/17 01:52:30  matt
-** made sure last line of all source files is a newline
-**
-** Revision 1.4  2000/06/09 15:12:27  matt
-** initial revision
-**
-*/

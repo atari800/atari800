@@ -179,16 +179,3 @@ void clearkb(void)
   pause_hit = 0;
   kbcode = 0;
 }
-
-/*
-$Log$
-Revision 1.3  2005/09/06 23:03:19  pfusik
-fixed MSVC warnings
-
-Revision 1.2  2003/02/24 09:33:32  joy
-header cleanup
-
-Revision 1.1  2001/03/18 07:56:48  knik
-win32 port
-
-*/
