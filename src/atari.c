@@ -283,6 +283,27 @@ void Atari800_PatchOS(void)
 
 void Warmstart(void)
 {
+	if (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB) {
+		/* RESET key in 400/800 does not reset chips,
+		   but only generates RNMI interrupt */
+		NMIST = 0x3f;
+		NMI();
+	}
+	else {
+		PIA_Reset();
+		ANTIC_Reset();
+		/* CPU_Reset() must be after PIA_Reset(),
+		   because Reset routine vector must be read from OS ROM */
+		CPU_Reset();
+		/* note: POKEY and GTIA have no Reset pin */
+	}
+#ifdef __PLUS
+	HandleResetEvent();
+#endif
+}
+
+void Coldstart(void)
+{
 	PIA_Reset();
 	ANTIC_Reset();
 	/* CPU_Reset() must be after PIA_Reset(),
@@ -292,11 +313,6 @@ void Warmstart(void)
 #ifdef __PLUS
 	HandleResetEvent();
 #endif
-}
-
-void Coldstart(void)
-{
-	Warmstart();
 	/* reset cartridge to power-up state */
 	CART_Start();
 	/* set Atari OS Coldstart flag */
@@ -1962,250 +1978,3 @@ void MainStateRead(void)
 }
 
 #endif
-
-/*
-$Log$
-Revision 1.82  2005/10/29 18:25:49  knakos
-simplified code based on Piotr's remarks for alt sync
-
-Revision 1.80  2005/10/25 22:05:33  pfusik
-try to guess ROM paths that are not configured
-
-Revision 1.79  2005/10/22 18:11:58  pfusik
-allow changing tv_mode at run-time
-
-Revision 1.78  2005/10/19 21:33:48  pfusik
-moved things from rt-config
-
-Revision 1.77  2005/09/18 15:02:14  pfusik
-size of auto-started XFD images must be multiple of 128 bytes;
-break_cim -> cim_encountered
-
-Revision 1.76  2005/09/14 20:23:48  pfusik
-prefer nanosleep() to usleep() and select(); prefer Sleep() on WIN32
-
-Revision 1.75  2005/09/11 07:21:10  pfusik
-fixed parse error in zlib-less compilation;
-removed unnecessary "Fatal Error" message
-
-Revision 1.74  2005/09/06 22:48:36  pfusik
-introduced util.[ch]
-
-Revision 1.73  2005/09/03 11:29:31  pfusik
-fixed the recently broken BASIC version
-
-Revision 1.72  2005/08/31 19:55:33  pfusik
-auto-starting any files supported by the emulator;
-support for Atari800Win PLus
-
-Revision 1.71  2005/08/27 10:32:15  pfusik
-BENCHMARK
-
-Revision 1.70  2005/08/24 21:04:41  pfusik
-load state files from the command line using "-state"
-
-Revision 1.69  2005/08/22 20:52:21  pfusik
-stripped 2k more from emuos;
-don't try to load BASIC ROM in 400/800 emuos mode
-
-Revision 1.68  2005/08/21 15:35:25  pfusik
-fixed loading of non-verbose state files;
-correct highlighting of Self Test menu on CURSES_BASIC;
-"--usage" and "--help" now work; Atari_tmpfile()
-
-Revision 1.67  2005/08/18 23:27:37  pfusik
-Screen_Initialise(); smaller emuos_h
-
-Revision 1.66  2005/08/17 22:21:41  pfusik
-auto-define USE_CLOCK as a last resort for Atari_time
-
-Revision 1.65  2005/08/15 20:36:25  pfusik
-allow no more than 8 disk images from the command line;
-back to #ifdef WIN32, __BEOS__, __EMX__
-
-Revision 1.64  2005/08/15 17:13:27  pfusik
-Basic loader; VOL_ONLY_SOUND in BASIC and CURSES_BASIC
-
-Revision 1.63  2005/08/13 08:42:33  pfusik
-CURSES_BASIC; generate curses screen basing on the DL
-
-Revision 1.62  2005/08/10 19:49:59  pfusik
-greatly improved BASIC and VERY_SLOW
-
-Revision 1.61  2005/08/07 13:45:18  pfusik
-removed zlib_capable()
-
-Revision 1.60  2005/08/06 18:14:07  pfusik
-if no sleep-like function available, fall back to time polling
-
-Revision 1.59  2005/08/04 22:51:33  pfusik
-use best time functions available - now checked by Configure,
-not hard-coded for platforms (almost...)
-
-Revision 1.58  2005/03/10 04:43:32  pfusik
-removed the unused "screen" parameter from ui() and SelectCartType()
-
-Revision 1.57  2005/03/08 04:48:19  pfusik
-tidied up a little
-
-Revision 1.56  2005/03/05 12:28:24  pfusik
-support for special AKEY_*, refresh rate control and atari_sync()
-moved to Atari800_Frame()
-
-Revision 1.55  2005/03/03 09:36:26  pfusik
-moved screen-related variables to the new "screen" module
-
-Revision 1.54  2005/02/23 16:45:30  pfusik
-PNG screenshots
-
-Revision 1.53  2003/12/16 18:30:34  pfusik
-check OS before applying C: patches
-
-Revision 1.52  2003/11/22 23:26:19  joy
-cassette support improved
-
-Revision 1.51  2003/10/25 18:40:54  joy
-various little updates for better MacOSX support
-
-Revision 1.50  2003/08/05 13:32:08  joy
-more options documented
-
-Revision 1.49  2003/08/05 13:22:56  joy
-security fix
-
-Revision 1.48  2003/05/28 19:54:58  joy
-R: device support (networking?)
-
-Revision 1.47  2003/03/07 11:38:40  pfusik
-oops, didn't updated to 1.45 before commiting 1.46
-
-Revision 1.46  2003/03/07 11:24:09  pfusik
-Warmstart() and Coldstart() cleanup
-
-Revision 1.45  2003/03/03 09:57:32  joy
-Ed improved autoconf again plus fixed some little things
-
-Revision 1.44  2003/02/24 09:32:32  joy
-header cleanup
-
-Revision 1.43  2003/02/10 11:22:32  joy
-preparing for 1.3.0 release
-
-Revision 1.42  2003/01/27 21:05:33  joy
-little BeOS support
-
-Revision 1.41  2002/11/05 23:01:21  joy
-OS/2 compatibility
-
-Revision 1.40  2002/08/07 07:59:24  joy
-displaying version (-v) fixed
-
-Revision 1.39  2002/08/07 07:23:02  joy
--help formatting fixed, crlf converted to lf
-
-Revision 1.38  2002/07/14 13:25:24  pfusik
-emulation of 576K and 1088K RAM machines
-
-Revision 1.37  2002/07/04 12:41:21  pfusik
-emulation of 16K RAM machines: 400 and 600XL
-
-Revision 1.36  2002/06/23 21:48:58  joy
-Atari800 does quit immediately when started with "-help" option.
-"-palette" moved to colours.c
-
-Revision 1.35  2002/06/20 20:59:37  joy
-missing header file included
-
-Revision 1.34  2002/03/30 06:19:28  vasyl
-Dirty rectangle scheme implementation part 2.
-All video memory accesses everywhere are going through the same macros
-in ANTIC.C. UI_BASIC does not require special handling anymore. Two new
-functions are exposed in ANTIC.H for writing to video memory.
-
-Revision 1.32  2001/12/04 22:28:16  joy
-the speed regulation when -DUSE_CLOCK is enabled so that key autorepeat in UI works.
-
-Revision 1.31  2001/11/11 22:11:53  joy
-wrong value for vertical position of disk led caused x11 port to crash badly.
-
-Revision 1.30  2001/10/26 05:42:44  fox
-made 130 XE state files compatible with previous versions
-
-Revision 1.29  2001/10/05 16:46:45  fox
-H: didn't worked until a patch was toggled
-
-Revision 1.28  2001/10/05 10:20:24  fox
-added Bounty Bob Strikes Back cartridge for 800/XL/XE
-
-Revision 1.27  2001/10/03 16:49:24  fox
-added screen_visible_* variables, Update_LED -> LED_Frame
-
-Revision 1.26  2001/10/03 16:40:17  fox
-rewritten escape codes handling
-
-Revision 1.25  2001/10/01 17:22:16  fox
-unused CRASH_MENU externs removed; Poke -> dPutByte;
-memcpy(memory + ...) -> dCopyToMem
-
-Revision 1.24  2001/09/27 22:36:39  fox
-called INPUT_DrawMousePointer
-
-Revision 1.23  2001/09/27 09:34:32  fox
-called INPUT_Initialise
-
-Revision 1.22  2001/09/21 17:09:05  fox
-main() is now in platform-dependent code, should call Atari800_Initialise
-and Atari800_Frame
-
-Revision 1.21  2001/09/21 17:00:57  fox
-part of keyboard handling moved to INPUT_Frame()
-
-Revision 1.20  2001/09/21 16:54:56  fox
-Atari800_Frame()
-
-Revision 1.19  2001/09/17 19:30:27  fox
-shortened state file of 130 XE, enable_c000_ram -> ram_size = 52
-
-Revision 1.18  2001/09/17 18:09:40  fox
-machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
-
-Revision 1.17  2001/09/17 07:39:50  fox
-Initialise_Atari... functions moved to atari.c
-
-Revision 1.16  2001/09/16 11:22:56  fox
-removed default_tv_mode
-
-Revision 1.15  2001/09/09 08:34:13  fox
-hold_option -> disable_basic
-
-Revision 1.14  2001/08/16 23:24:25  fox
-selecting cartridge type didn't worked in 5200 mode
-
-Revision 1.13  2001/08/06 13:11:19  fox
-hold_start support
-
-Revision 1.12  2001/08/03 12:48:55  fox
-cassette support
-
-Revision 1.11  2001/07/25 12:58:25  fox
-added SIO_Exit(), slight clean up
-
-Revision 1.10  2001/07/20 20:14:14  fox
-support for new rtime and cartridge modules
-
-Revision 1.8  2001/04/15 09:14:33  knik
-zlib_capable -> have_libz (autoconf compatibility)
-
-Revision 1.7  2001/04/08 05:57:12  knik
-sound calls update
-
-Revision 1.6  2001/04/03 05:43:36  knik
-reorganized sync code; new snailmeter
-
-Revision 1.5  2001/03/18 06:34:58  knik
-WIN32 conditionals removed
-
-Revision 1.4  2001/03/18 06:24:04  knik
-unused variable removed
-
-*/
