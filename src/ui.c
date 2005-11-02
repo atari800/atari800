@@ -32,6 +32,7 @@
 #include "binload.h"
 #include "cartridge.h"
 #include "cassette.h"
+#include "compfile.h"
 #include "cpu.h"
 #include "devices.h" /* Device_SetPrintCommand */
 #include "gtia.h"
@@ -210,6 +211,7 @@ static void DiskManagement(void)
 		MENU_FILESEL(9, "Load Disk Set"),
 		MENU_ACTION(10, "Rotate Disks"),
 		MENU_FILESEL(11, "Make Blank ATR Disk"),
+		MENU_FILESEL_TIP(12, "Uncompress Disk Image", "Convert GZ or DCM to ATR"),
 		MENU_END
 	};
 
@@ -285,6 +287,89 @@ static void DiskManagement(void)
 				MakeBlankDisk(fp);
 				fclose(fp);
 				Created(disk_filename);
+			}
+			break;
+		case 12:
+			if (ui_driver->fGetLoadFilename(disk_filename, atari_files_dir, n_atari_files_dir)) {
+				char uncompr_filename[FILENAME_MAX];
+				FILE *fp = fopen(disk_filename, "rb");
+				const char *p;
+				int success;
+				if (fp == NULL) {
+					CantLoad(disk_filename);
+					break;
+				}
+				/* propose an output filename to make user's life easier */
+				p = strrchr(disk_filename, '.');
+				if (p != NULL) {
+					char *q;
+					p++;
+					q = uncompr_filename + (p - disk_filename);
+					if (Util_stricmp(p, "atz") == 0) {
+						/* change last 'z' to 'r', preserving case */
+						p += 2;
+						q[2] = p[0] == 'z' ? 'r' : 'R';
+						q[3] = '\0';
+					}
+					else if (Util_stricmp(p, "xfz") == 0) {
+						/* change last 'z' to 'd', preserving case */
+						p += 2;
+						q[2] = p[0] == 'z' ? 'd' : 'D';
+						q[3] = '\0';
+					}
+					else if (Util_stricmp(p, "gz") == 0) {
+						/* strip ".gz" */
+						p--;
+						q[-1] = '\0';
+					}
+					else if (Util_stricmp(p, "atr") == 0) {
+						/* ".atr" ? Probably won't work, anyway cut the extension but leave the dot */
+						q[0] = '\0';
+					}
+					else {
+						/* replace extension with "atr", preserving case */
+						strcpy(q, p[0] <= 'Z' ? "ATR" : "atr");
+					}
+					memcpy(uncompr_filename, disk_filename, p - disk_filename);
+				}
+				else
+					/* was no extension -> propose no filename */
+					uncompr_filename[0] = '\0';
+				/* recognize file type and uncompress */
+				switch (fgetc(fp)) {
+				case 0x1f:
+					fclose(fp);
+					if (ui_driver->fGetSaveFilename(uncompr_filename, atari_files_dir, n_atari_files_dir)) {
+						FILE *fp2 = fopen(uncompr_filename, "wb");
+						if (fp2 == NULL) {
+							CantSave(uncompr_filename);
+							continue;
+						}
+						success = CompressedFile_ExtractGZ(disk_filename, fp2);
+						fclose(fp2);
+					}
+					break;
+				case 0xf9:
+				case 0xfa:
+					if (ui_driver->fGetSaveFilename(uncompr_filename, atari_files_dir, n_atari_files_dir)) {
+						FILE *fp2 = fopen(uncompr_filename, "wb");
+						if (fp2 == NULL) {
+							fclose(fp);
+							CantSave(uncompr_filename);
+							continue;
+						}
+						Util_rewind(fp);
+						success = CompressedFile_DCMtoATR(fp, fp2);
+						fclose(fp2);
+						fclose(fp);
+					}
+					break;
+				default:
+					fclose(fp);
+					success = FALSE;
+					break;
+				}
+				ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file");
 			}
 			break;
 		default:
@@ -626,6 +711,56 @@ static void LoadTape(void)
 	}
 }
 
+static void AdvancedHOptions(void)
+{
+	static char open_info[] = "0 currently open files";
+	static tMenuItem menu_array[] = {
+		MENU_ACTION(0, "Atari executables path"),
+		MENU_ACTION_TIP(1, open_info, NULL),
+		MENU_LABEL("Current directories:"),
+		MENU_ACTION_PREFIX_TIP(2, "H1:", h_current_dir[0], NULL),
+		MENU_ACTION_PREFIX_TIP(3, "H2:", h_current_dir[1], NULL),
+		MENU_ACTION_PREFIX_TIP(4, "H3:", h_current_dir[2], NULL),
+		MENU_ACTION_PREFIX_TIP(5, "H4:", h_current_dir[3], NULL),
+		MENU_END
+	};
+	int option = 0;
+	for (;;) {
+		int i;
+		int seltype;
+		i = Device_H_CountOpen();
+		open_info[0] = (char) ('0' + i);
+		open_info[21] = (i != 1) ? 's' : '\0';
+		menu_array[1].suffix = (i > 0) ? ((i == 1) ? "Backspace: close" : "Backspace: close all") : NULL;
+		for (i = 0; i < 4; i++)
+			menu_array[3 + i].suffix = h_current_dir[i][0] != '\0' ? "Backspace: reset to root" : NULL;
+		option = ui_driver->fSelect("Advanced H: options", 0, option, menu_array, &seltype);
+		switch (option) {
+		case 0:
+			{
+				char tmp_path[FILENAME_MAX];
+				strcpy(tmp_path, h_exe_path);
+				if (ui_driver->fEditString("Atari executables path", tmp_path, FILENAME_MAX))
+					strcpy(h_exe_path, tmp_path);
+			}
+			break;
+		case 1:
+			if (seltype == USER_DELETE)
+				Device_H_CloseAll();
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			if (seltype == USER_DELETE)
+				h_current_dir[option - 2][0] = '\0';
+			break;
+		default:
+			return;
+		}
+	}
+}
+
 static void ConfigureDirectories(void)
 {
 	static tMenuItem menu_array[] = {
@@ -806,6 +941,7 @@ static void AtariSettings(void)
 		MENU_FILESEL_PREFIX(8, "H2: ", atari_h_dir[1]),
 		MENU_FILESEL_PREFIX(9, "H3: ", atari_h_dir[2]),
 		MENU_FILESEL_PREFIX(10, "H4: ", atari_h_dir[3]),
+		MENU_SUBMENU(20, "Advanced H: options"),
 		MENU_ACTION_PREFIX(11, "Print command: ", print_command),
 		MENU_FILESEL_PREFIX(12, " OS/A ROM: ", atari_osa_filename),
 		MENU_FILESEL_PREFIX(13, " OS/B ROM: ", atari_osb_filename),
@@ -878,6 +1014,9 @@ static void AtariSettings(void)
 				menu_array[option].item[0] = '\0';
 			else
 				ui_driver->fGetDirectoryPath(menu_array[option].item);
+			break;
+		case 20:
+			AdvancedHOptions();
 			break;
 		case 11:
 			strcpy(tmp_command, print_command);
@@ -1443,228 +1582,3 @@ int CrashMenu(void)
 	}
 }
 #endif
-
-
-/*
-$Log$
-Revision 1.76  2005/10/25 22:05:33  pfusik
-try to guess ROM paths that are not configured
-
-Revision 1.75  2005/10/22 18:13:02  pfusik
-another bunch of changes
-
-Revision 1.74  2005/10/19 21:40:30  pfusik
-tons of changes, see ChangeLog
-
-Revision 1.73  2005/09/18 14:58:30  pfusik
-improved "Extract ROM image from Cartridge";
-don't exit emulator if "Update configuration file" failed
-
-Revision 1.72  2005/09/11 20:39:24  pfusik
-removed an opendir() call
-
-Revision 1.71  2005/09/07 21:54:02  pfusik
-improved "Save Disk Set" and "Make blank ATR disk"
-
-Revision 1.70  2005/09/06 22:54:20  pfusik
-improved "Create Cartridge from ROM image"; introduced util.[ch]
-
-Revision 1.69  2005/08/31 20:07:06  pfusik
-auto-starting any file supported by the emulator;
-MakeBlankDisk() now writes a blank Single Density disk
-rather than a 3-sector disk with useless executable loader
-
-Revision 1.68  2005/08/24 21:02:20  pfusik
-show_atari_speed, show_disk_led, show_sector_counter
-available in "Display Settings"
-
-Revision 1.67  2005/08/23 03:49:34  markgrebe
-Fixed typo in #if SERIO_SOUND
-
-Revision 1.66  2005/08/22 20:50:24  pfusik
-"Display Settings"
-
-Revision 1.65  2005/08/21 17:40:06  pfusik
-Atarimax cartridges; error messages for state load/save;
-DO_DIR -> HAVE_OPENDIR; minor clean up
-
-Revision 1.64  2005/08/18 23:34:00  pfusik
-shortcut keys in UI
-
-Revision 1.63  2005/08/17 22:47:54  pfusik
-compile without <dirent.h>; removed PILL
-
-Revision 1.62  2005/08/16 23:07:28  pfusik
-#include "config.h" before system headers
-
-Revision 1.61  2005/08/15 17:26:18  pfusik
-"Run BIN file" -> "Run Atari program"
-
-Revision 1.60  2005/08/13 08:53:09  pfusik
-CURSES_BASIC; no sound objects if SOUND disabled; no R: if not compiled in
-
-Revision 1.59  2005/08/10 19:39:24  pfusik
-hold_start_on_reboot moved to cassette.c;
-improved autogeneration of filenames for sound recording
-
-Revision 1.58  2005/08/07 13:44:08  pfusik
-display error messages for "Run BIN file", "Select tape",
-"Insert cartridge" and "Save screenshot"
-
-Revision 1.57  2005/08/06 18:25:40  pfusik
-changed () function signatures to (void)
-
-Revision 1.56  2005/05/15 07:03:52  emuslor
-Added configuration update to settings menu
-
-Revision 1.55  2005/04/30 13:46:42  joy
-indented properly
-
-Revision 1.54  2005/04/30 13:42:00  joy
-make blank boot disk
-
-Revision 1.53  2005/03/10 04:42:35  pfusik
-"Extract ROM image from Cartridge" should skip the CART header,
-not just copy the whole file;
-removed the unused "screen" parameter from ui() and SelectCartType()
-
-Revision 1.52  2005/02/23 16:45:35  pfusik
-PNG screenshots
-
-Revision 1.51  2003/12/16 18:26:30  pfusik
-new cartridge types: Phoenix and Blizzard
-
-Revision 1.50  2003/12/12 00:24:52  markgrebe
-Added enable for console and sio sound
-
-Revision 1.49  2003/11/22 23:26:19  joy
-cassette support improved
-
-Revision 1.48  2003/09/23 15:39:07  pfusik
-Rotate_Disks()
-
-Revision 1.47  2003/08/31 22:00:06  joy
-R: patch named as Atari850 emulation
-
-Revision 1.46  2003/05/28 19:54:58  joy
-R: device support (networking?)
-
-Revision 1.45  2003/03/03 10:16:01  joy
-multiple disk sets supported
-
-Revision 1.44  2003/02/27 17:42:08  pfusik
-new cartridge type
-
-Revision 1.43  2003/02/24 09:33:12  joy
-header cleanup
-
-Revision 1.42  2003/02/19 14:07:48  joy
-configure stuff cleanup
-
-Revision 1.41  2003/02/09 21:20:43  joy
-updated for global enable_new_pokey
-
-Revision 1.40  2003/02/09 13:17:29  joy
-switch Pokey cores on-the-fly
-
-Revision 1.39  2002/11/05 22:40:56  joy
-UI disk mounting fixes
-
-Revision 1.38  2002/09/16 11:22:06  pfusik
-five new cartridge types (Nir Dary)
-
-Revision 1.37  2002/09/05 08:35:11  pfusik
-seven new cartridge types (by Nir Dary)
-
-Revision 1.36  2002/08/15 16:57:20  pfusik
-1 MB XEGS cart
-
-Revision 1.34  2002/07/14 13:25:36  pfusik
-emulation of 576K and 1088K RAM machines
-
-Revision 1.33  2002/07/04 22:35:07  vasyl
-Added cassette support in main menu
-
-Revision 1.32  2002/07/04 12:41:38  pfusik
-emulation of 16K RAM machines: 400 and 600XL
-
-Revision 1.31  2002/06/23 21:42:09  joy
-SoundRecording() accessible from outside (atari_x11.c needs it)
-
-Revision 1.30  2002/03/30 06:19:28  vasyl
-Dirty rectangle scheme implementation part 2.
-All video memory accesses everywhere are going through the same macros
-in ANTIC.C. UI_BASIC does not require special handling anymore. Two new
-functions are exposed in ANTIC.H for writing to video memory.
-
-Revision 1.28  2002/01/10 16:46:42  joy
-new cartridge type added
-
-Revision 1.27  2001/11/18 19:35:59  fox
-fixed a bug: modification of string literals
-
-Revision 1.26  2001/11/04 23:31:39  fox
-right slot cartridge
-
-Revision 1.25  2001/10/26 05:43:17  fox
-current system is selected by default in SelectSystem()
-
-Revision 1.24  2001/10/12 07:56:15  fox
-added 8 KB and 4 KB cartridges for 5200
-
-Revision 1.23  2001/10/11 08:40:29  fox
-removed CURSES-specific code
-
-Revision 1.22  2001/10/10 21:35:00  fox
-corrected a typo
-
-Revision 1.21  2001/10/10 07:00:45  joy
-complete refactoring of UI by Vasyl
-
-Revision 1.20  2001/10/09 00:43:31  fox
-OSS 'M019' -> 'M091'
-
-Revision 1.19  2001/10/08 21:03:10  fox
-corrected stack bug (thanks Vasyl) and renamed some cartridge types
-
-Revision 1.18  2001/10/05 10:21:52  fox
-added Bounty Bob Strikes Back cartridge for 800/XL/XE
-
-Revision 1.17  2001/10/01 17:30:27  fox
-Atrax 128 KB cartridge, artif_init -> ANTIC_UpdateArtifacting;
-CURSES code cleanup (spaces, memory[], goto)
-
-Revision 1.16  2001/09/21 17:04:57  fox
-ANTIC_RunDisplayList -> ANTIC_Frame
-
-Revision 1.15  2001/09/21 16:58:03  fox
-included input.h
-
-Revision 1.14  2001/09/17 18:17:53  fox
-enable_c000_ram -> ram_size = 52
-
-Revision 1.13  2001/09/17 18:14:01  fox
-machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
-
-Revision 1.12  2001/09/09 08:38:02  fox
-hold_option -> disable_basic
-
-Revision 1.11  2001/09/08 07:52:30  knik
-used FILENAME_MAX instead of MAX_FILENAME_LEN
-
-Revision 1.10  2001/09/04 20:37:01  fox
-hold_option, enable_c000_ram and rtime_enabled available in menu
-
-Revision 1.9  2001/07/20 20:14:47  fox
-inserting, removing and converting of new cartridge types
-
-Revision 1.7  2001/03/25 06:57:36  knik
-open() replaced by fopen()
-
-Revision 1.6  2001/03/18 07:56:48  knik
-win32 port
-
-Revision 1.5  2001/03/18 06:34:58  knik
-WIN32 conditionals removed
-
-*/
