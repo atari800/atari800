@@ -134,6 +134,9 @@
 /* Define to 1 if you have the `modf' function. */
 #define HAVE_MODF 1
 
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
@@ -251,6 +254,9 @@
 /* Define to 1 if you have the <time.h> header file. */
 #define HAVE_TIME_H 1
 
+/* Define to 1 if you have the `tmpfile' function. */
+#define HAVE_TMPFILE 1
+
 /* Define to 1 if you have the `tmpnam' function. */
 #define HAVE_TMPNAM 1
 
@@ -291,6 +297,9 @@
 /* Define to activate BREAK command in monitor. */
 #undef MONITOR_BREAK
 
+/* Define to activate user-defined breakpoints. */
+#undef MONITOR_BREAKPOINTS
+
 /* Define to activate hints in disassembler. */
 #define MONITOR_HINTS 1
 
@@ -302,6 +311,9 @@
 
 /* Define to use page-based attribute array. */
 #undef PAGED_ATTRIB
+
+/* Target: Sony PlayStation 2. */
+#undef PS2
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
@@ -326,9 +338,6 @@
 
 /* Target: X11 with shared memory extensions. */
 #undef SHM
-
-/* The size of a `long', as computed by sizeof. */
-#define SIZEOF_LONG 4
 
 /* Define to activate sound support. */
 #define SOUND 1

@@ -361,7 +361,7 @@ AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
 AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkdir mkstemp mktemp])
 AC_CHECK_FUNCS([modf nanosleep opendir rename rewind rmdir select signal snprintf])
 AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
-AC_CHECK_FUNCS([strtol system time tmpnam uclock unlink usleep vsnprintf])
+AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink usleep vsnprintf])
 AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 
 
