@@ -117,9 +117,10 @@ d. Copy zlib.h and zconf.h to the Include directory of MSVC.
 e. Copy zlib.lib to the Lib directory of MSVC.
 2. Install the LIBPNG library:
 a. Download the source code from http://www.libpng.org
-b. Compile with "nmake /f scripts\makefile.vcwin32".
-c. Copy png.h and pngconf.h to the Include directory of MSVC.
-d. Copy libpng.lib to the Lib directory of MSVC.
+b. Replace -MD with -ML in CFLAGS in scripts\makefile.vcwin32
+c. Compile with "nmake /f scripts\makefile.vcwin32".
+d. Copy png.h and pngconf.h to the Include directory of MSVC.
+e. Copy libpng.lib to the Lib directory of MSVC.
 OR
 1&2. #undef HAVE_LIBPNG and HAVE_LIBZ in Atari800's src\win32\msc\config.h.
      The compiled emulator won't handle zlib-compressed disk images
@@ -132,7 +133,7 @@ OR
    the SDK. You should probably use short filenames - filenames with spaces
    didn't work for me, even though I wrapped them in quotes. Back to step 3.
 6. If you are getting linking errors saying something about MSVCRT
-   then you probably ignored step 1b.
+   then you probably ignored step 1b or 2b.
 7. Copy atari800.exe to destination directory.
 
 I have also managed to compile Atari800 using the same Makefile
