@@ -543,9 +543,15 @@ static int BasicUIOpenDir(const char *dirname)
 #ifdef _WIN32_WCE
 	Util_splitpath(dirname, parentdir, NULL);
 #endif
-	return (dh != INVALID_HANDLE_VALUE)
-		/* no error for an empty directory on WinCE */
-		|| (HRESULT_CODE(GetLastError()) == ERROR_FILE_NOT_FOUND);
+	if (dh == INVALID_HANDLE_VALUE) {
+		/* don't raise error if the path is ok but has no entries:
+		   Win98 returns ERROR_FILE_NOT_FOUND,
+		   WinCE returns ERROR_NO_MORE_FILES */
+		DWORD err = GetLastError();
+		if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES)
+			return FALSE;
+	}
+	return TRUE;
 }
 
 static int BasicUIReadDir(char *filename, int *isdir)
@@ -1124,133 +1130,3 @@ tUIDriver basic_ui_driver = {
 	&BasicUIInfoScreen,
 	&BasicUIInit
 };
-
-/*
-$Log$
-Revision 1.41  2005/10/23 13:40:46  pfusik
-file selector no longer fails on an empty directory on WinCE;
-silenced a warning
-
-Revision 1.40  2005/10/22 18:13:02  pfusik
-another bunch of changes
-
-Revision 1.39  2005/10/19 21:40:30  pfusik
-tons of changes, see ChangeLog
-
-Revision 1.38  2005/10/09 20:33:36  pfusik
-silenced a warning
-
-Revision 1.37  2005/09/27 21:41:08  pfusik
-UI's charset is now in ATASCII order; curses_putch()
-
-Revision 1.36  2005/09/18 15:08:03  pfusik
-fixed file selector: last directory entry wasn't sorted;
-saved a few bytes per tMenuItem
-
-Revision 1.35  2005/09/14 20:32:18  pfusik
-".." in Win32 API based file selector on WINCE;
-include B: in DOS_DRIVES; detect floppies on WIN32
-
-Revision 1.34  2005/09/11 20:38:43  pfusik
-implemented file selector on MSVC
-
-Revision 1.33  2005/09/11 07:19:22  pfusik
-fixed file selector which I broke yesterday;
-use Util_realloc() instead of realloc(); fixed a warning
-
-Revision 1.32  2005/09/10 12:37:25  pfusik
-char * -> const char *; Util_splitpath() and Util_catpath()
-
-Revision 1.31  2005/09/07 22:00:29  pfusik
-shorten the messages to fit on screen
-
-Revision 1.30  2005/09/06 22:58:29  pfusik
-improved file selector; fixed MSVC warnings
-
-Revision 1.29  2005/09/04 18:16:18  pfusik
-don't hide ATR/XFD file extensions in the file selector
-
-Revision 1.28  2005/08/27 10:36:07  pfusik
-MSVC declares getcwd() in <direct.h>
-
-Revision 1.27  2005/08/24 21:03:41  pfusik
-use stricmp() if there's no strcasecmp()
-
-Revision 1.26  2005/08/21 17:40:53  pfusik
-DO_DIR -> HAVE_OPENDIR
-
-Revision 1.25  2005/08/18 23:34:00  pfusik
-shortcut keys in UI
-
-Revision 1.24  2005/08/17 22:49:15  pfusik
-compile without <dirent.h>
-
-Revision 1.23  2005/08/16 23:07:28  pfusik
-#include "config.h" before system headers
-
-Revision 1.22  2005/08/15 17:27:00  pfusik
-char charset[] -> UBYTE charset[]
-
-Revision 1.21  2005/08/14 08:44:23  pfusik
-avoid negative array indexes with special keys pressed in UI;
-fixed indentation
-
-Revision 1.20  2005/08/13 08:53:42  pfusik
-CURSES_BASIC; fixed indentation
-
-Revision 1.19  2005/08/06 18:25:40  pfusik
-changed () function signatures to (void)
-
-Revision 1.18  2005/05/20 09:08:17  pfusik
-fixed some warnings
-
-Revision 1.17  2005/03/10 04:41:26  pfusik
-fixed a memory leak
-
-Revision 1.16  2005/03/08 04:32:46  pfusik
-killed gcc -W warnings
-
-Revision 1.15  2005/03/05 12:34:08  pfusik
-fixed "Error opening '' directory"
-
-Revision 1.14  2005/03/03 09:27:46  pfusik
-moved atari_screen to screen.h
-
-Revision 1.13  2004/09/24 15:28:40  sba
-Fixed NULL pointer access in filedialog, which happened if no files are within the directory.
-
-Revision 1.12  2004/08/08 08:41:47  joy
-copyright year increased
-
-Revision 1.11  2003/12/21 11:00:26  joy
-problem with opening invalid folders in UI identified
-
-Revision 1.10  2003/02/24 09:33:13  joy
-header cleanup
-
-Revision 1.9  2003/02/08 23:52:17  joy
-little cleanup
-
-Revision 1.8  2003/01/27 13:14:51  joy
-Jason's changes: either PAGED_ATTRIB support (mostly), or just clean up.
-
-Revision 1.7  2002/06/12 06:40:41  vasyl
-Fixed odd behavior of Up button on the first item in file selector
-
-Revision 1.6  2002/03/30 06:19:28  vasyl
-Dirty rectangle scheme implementation part 2.
-All video memory accesses everywhere are going through the same macros
-in ANTIC.C. UI_BASIC does not require special handling anymore. Two new
-functions are exposed in ANTIC.H for writing to video memory.
-
-Revision 1.5  2001/11/29 12:36:42  joy
-copyright notice updated
-
-Revision 1.4  2001/10/16 17:11:27  knik
-keyboard autorepeat rate changed
-
-Revision 1.3  2001/10/11 17:27:22  knik
-added atari_sync() call in keyboard loop--keyboard is sampled
-at reasonable rate
-
-*/
