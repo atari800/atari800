@@ -176,11 +176,10 @@ int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *
 	}
 	else {
 		/* raw file */
-		ULONG file_length;
+		int file_length = Util_flen(f);
+		blocks = ((file_length + 127) >> 7) + 1;
 		if (isCAS)
 			*isCAS = FALSE;
-		file_length = (ULONG) Util_flen(f);
-		blocks = (file_length + 127) / 128 + 1;
 	}
 	if (last_block)
 		*last_block = blocks;
