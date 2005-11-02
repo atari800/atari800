@@ -82,35 +82,3 @@ void Aflushlog(void)
 	}
 #endif
 }
-
-/*
-$Log$
-Revision 1.10  2005/08/31 20:00:47  pfusik
-support for Atari800Win PLus
-
-Revision 1.9  2005/08/16 23:06:41  pfusik
-#include "config.h" before system headers
-
-Revision 1.8  2005/02/23 16:40:00  pfusik
-use vsnprintf only if available
-
-Revision 1.7  2003/11/13 13:09:02  joy
-buffer overflow fixed
-
-Revision 1.6  2003/10/25 18:40:54  joy
-various little updates for better MacOSX support
-
-Revision 1.5  2003/02/24 09:33:01  joy
-header cleanup
-
-Revision 1.4  2002/04/07 05:44:47  vasyl
-Log buffer is completely hidden inside C file (no extern in header). This allows
-log-less ports to save extra 8K.
-
-Revision 1.3  2001/12/04 14:17:52  joy
-Aflushlog() should be always available though it does nothing when BUFFERED_LOG is undefined
-
-Revision 1.2  2001/03/18 06:34:58  knik
-WIN32 conditionals removed
-
-*/

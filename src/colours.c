@@ -256,32 +256,3 @@ void Palette_Initialise(int *argc, char *argv[])
 	if (adjust)
 		Palette_Adjust(black, white, colintens);
 }
-
-/*
-$Log$
-Revision 1.13  2005/09/06 22:48:36  pfusik
-introduced util.[ch]
-
-Revision 1.12  2005/08/31 20:21:20  pfusik
-support for Atari800Win PLus
-
-Revision 1.11  2005/02/23 16:35:30  pfusik
-*** empty log message ***
-
-Revision 1.10  2003/02/24 09:32:49  joy
-header cleanup
-
-Revision 1.9  2002/12/16 17:57:56  knik
-corrected color/BW conversion (Vasyl was right)
-palette generating code moved to separate function
-removed unused tables
-
-Revision 1.8  2002/06/23 21:50:51  joy
-"-palette" moved from atari.c to colours.c
-other changes to get "-palette" working correctly.
-
-Revision 1.6  2001/11/27 19:11:21  knik
-real palette used by default so COMPILED_PALETTE conditional not needed
-palette adjusting code improved and moved to Palette_Format function
-
-*/

@@ -98,7 +98,7 @@ static void GetGZErrorText(void)
 #endif /* HAVE_LIBZ */
  	Aprint("State file I/O failed.");
 }
-	
+
 /* Value is memory location of data, num is number of type to save */
 void SaveUBYTE(const UBYTE *data, int num)
 {
@@ -130,7 +130,7 @@ void SaveUWORD(const UWORD *data, int num)
 		return;
 
 	/* UWORDS are saved as 16bits, regardless of the size on this particular
-	   platform. Each byte of the UWORD will be pushed out individually in 
+	   platform. Each byte of the UWORD will be pushed out individually in
 	   LSB order. The shifts here and in the read routines will work for both
 	   LSB and MSB architectures. */
 	while (num > 0) {
@@ -204,28 +204,28 @@ void SaveINT(const int *data, int num)
 		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
 			break;
-		} 
+		}
 
 		temp >>= 8;
 		byte = temp & 0xff;
 		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
 			break;
-		} 
+		}
 
 		temp >>= 8;
 		byte = temp & 0xff;
 		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
 			break;
-		} 
+		}
 
 		temp >>= 8;
 		byte = (temp & 0x7f) | signbit;
 		if (GZWRITE(StateFile, &byte, 1) == 0) {
 			GetGZErrorText();
 			break;
-		} 
+		}
 
 		num--;
 	}
@@ -244,22 +244,22 @@ void ReadINT(int *data, int num)
 		if (GZREAD(StateFile, &byte1, 1) == 0) {
 			GetGZErrorText();
 			break;
-		} 
+		}
 
 		if (GZREAD(StateFile, &byte2, 1) == 0) {
 			GetGZErrorText();
 			break;
-		} 
+		}
 
 		if (GZREAD(StateFile, &byte3, 1) == 0) {
 			GetGZErrorText();
 			break;
-		} 
+		}
 
 		if (GZREAD(StateFile, &byte4, 1) == 0) {
 			GetGZErrorText();
 			break;
-		} 
+		}
 
 		signbit = byte4 & 0x80;
 		byte4 &= 0x7f;
@@ -279,7 +279,7 @@ void SaveFNAME(const char *filename)
 #ifdef HAVE_GETCWD
 	char dirname[FILENAME_MAX];
 
-	/* Check to see if file is in application tree, if so, just save as 
+	/* Check to see if file is in application tree, if so, just save as
 	   relative path....*/
 	getcwd(dirname, FILENAME_MAX);
 	if (strncmp(filename, dirname, strlen(dirname)) == 0)
@@ -418,44 +418,3 @@ int ReadAtariState(const char *filename, const char *mode)
 
 	return TRUE;
 }
-
-/*
-$Log$
-Revision 1.13  2005/08/27 10:36:07  pfusik
-MSVC declares getcwd() in <direct.h>
-
-Revision 1.12  2005/08/21 17:39:26  pfusik
-fixed loading of non-verbose state files;
-use #ifdef HAVE_STRERROR
-
-Revision 1.11  2005/08/16 23:07:28  pfusik
-#include "config.h" before system headers
-
-Revision 1.10  2005/08/15 17:25:34  pfusik
-fixed two warnings
-
-Revision 1.9  2005/08/13 08:51:39  pfusik
-added functions for filename save/read; fixed indentation
-
-Revision 1.8  2005/08/04 23:03:40  pfusik
-ReadDisabledROMs wasn't actually called!
-
-Revision 1.7  2003/10/26 18:49:40  joy
-new state file format for bankswitching
-
-Revision 1.6  2003/02/24 09:33:11  joy
-header cleanup
-
-Revision 1.5  2002/01/10 11:50:10  joy
-include zlib.h from the system include path and not from local directory
-
-Revision 1.4  2001/09/17 18:13:35  fox
-machine, mach_xlxe, Ram256, os, default_system -> machine_type, ram_size
-
-Revision 1.3  2001/04/15 09:14:33  knik
-zlib_capable -> have_libz (autoconf compatibility)
-
-Revision 1.2  2001/03/18 06:34:58  knik
-WIN32 conditionals removed
-
-*/
