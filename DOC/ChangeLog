@@ -1,3 +1,56 @@
+2005-11-02  Piotr Fusik  <fox@scene.pl>
+* atari.c: RESET key in 400/800 does not reset chips, but only generates
+  RNMI interrupt
+
+* gtia.c: pacified warnings in no-NEW_CYCLE_EXACT build
+
+* devices.c: pacified MSVCE warning in WORDS_BIGENDIAN build
+
+* ui_basic.c: file selector shows empty directories on WinCE
+
+* devices.c: H: directory listing with no matching entry now works on WinCE
+
+* devices.[ch], ui.[ch]: "Advanced H: options"
+
+* devices.c: fixed H: open mode 12 - now creates files that didn't exist;
+  added H: open mode 13 - append and read (most Atari DOSes don't support it,
+  but Sparta does)
+
+* devices.c: H: MyDOS Load Executable command now works on open files
+  (this is how MyDOS menu uses it)
+
+* configure.ac, amiga/config.h, win32/msc/config.h, util.[ch], devices.c,
+  sio.c: improved handling of temporary files:
+  - temporary files with H: directory listing are deleted on WinCE
+  - if available, tmpfile() is used for DCM and GZ disk images
+    (no need to store names of temporary files)
+
+* sio.c: fixed Aprint("%SIO... inside #ifdef DEBUG
+
+* sio.c: drive status command ('S') now reports the density configured
+  via PERCOM ('O') - MyDOS menu can reformat a disk with different sector size
+
+* compfile.[ch]: rewritten from scratch. New DCM code is partially inspired
+  by Ernest Schreurs' DCM2ATR utility:
+  - DCMs that aren't Single/Double/Enhanced Density are now supported
+    (example: double-sided disks)
+  - DCM sector coding type 0x42 is now supported
+  - DCM code is short, fast and clear (as opposed to old DCM code and DCM2ATR)
+
+* ui.c: "Uncompress Disk Image" converts XFD.GZ to XFD, ATR.GZ to ATR,
+  DCM to ATR
+
+* win32/main.c: replaced WinMain() with main() so that MSVC-compiled version
+  is a console application
+
+* atari.[ch], atari.h, atari_curses.c, atari_sdl.c, atari_svgalib.c,
+  colours.c, compfile.c, devices.c, log.c, memory.c, monitor.c, mzpokeysnd.c,
+  pia.c, platform.h, pokeysnd.c, sio.c, sound_unix.c, statesav.c, ui.c,
+  ui_basic.c, dos/dos_ints.h, dos/dos_sb.[ch], win32/atari_win32.c,
+  win32/joystick.c, win32/keyboard.c, win32/main.c, win32/screen_win32.c,
+  win32/sound.c: removed CVS log from file contents
+
+
 2005-10-29  Kostas Nakos  <knakos@gmail.com>
 * atari.c: implementation of alternate host syncing scheme
   With USE_CLOCK undefined, normal operation requires syncing (sleeping) for
@@ -5,6 +58,7 @@
   ALTERNATE_SYNC_WITH_HOST symbol results in calculating skipped and the drawn
   frames, then sleeping once for a longer period. This scheme seems to yield
   better results for slow devices.
+
 
 2005-10-25  Piotr Fusik  <fox@scene.pl>
 * sio.c: compressed disk images are now open read-only.
