@@ -117,9 +117,15 @@ static int Device_OpenDir(const char *filename)
 	if (dh != INVALID_HANDLE_VALUE)
 		FindClose(dh);
 	dh = FindFirstFile(FILENAME, &wfd);
-	return (dh != INVALID_HANDLE_VALUE)
-		/* don't signal error here if the path is ok but no file matches */
-		|| (HRESULT_CODE(GetLastError()) == ERROR_FILE_NOT_FOUND);
+	if (dh == INVALID_HANDLE_VALUE) {
+		/* don't raise error if the path is ok but no file matches:
+		   Win98 returns ERROR_FILE_NOT_FOUND,
+		   WinCE returns ERROR_NO_MORE_FILES */
+		DWORD err = GetLastError();
+		if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES)
+			return FALSE;
+	}
+	return TRUE;
 }
 
 static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
@@ -453,7 +459,7 @@ char h_exe_path[FILENAME_MAX] = DEFAULT_H_PATH;
 
 /* h_current_dir must be empty or terminated with DIR_SEP_CHAR;
    only DIR_SEP_CHAR can be used as a directory separator here */
-static char h_current_dir[4][FILENAME_MAX];
+char h_current_dir[4][FILENAME_MAX];
 
 /* stream open via H: device per IOCB */
 static FILE *h_fp[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
@@ -468,6 +474,8 @@ static int h_wascr[8];
 /* (this is needed to apply fseek(fp, 0, SEEK_CUR) between reads and writes
    in update (12) mode) */
 static char h_lastop[8];
+
+Util_tmpbufdef(static, h_tmpbuf[8])
 
 /* IOCB #, 0-7 */
 static int h_iocb;
@@ -489,20 +497,35 @@ static char atari_path[FILENAME_MAX];
 /* full filename for the current operation */
 static char host_path[FILENAME_MAX];
 
-static void Device_H_Init(void)
+int Device_H_CountOpen(void)
+{
+	int r = 0;
+	int i;
+	for (i = 0; i < 8; i++)
+		if (h_fp[i] != NULL)
+			r++;
+	return r;
+}
+
+void Device_H_CloseAll(void)
 {
 	int i;
+	for (i = 0; i < 8; i++)
+		if (h_fp[i] != NULL) {
+			Util_fclose(h_fp[i], h_tmpbuf[i]);
+			h_fp[i] = NULL;
+		}
+}
+
+static void Device_H_Init(void)
+{
 	if (devbug)
 		Aprint("HHINIT");
 	h_current_dir[0][0] = '\0';
 	h_current_dir[1][0] = '\0';
 	h_current_dir[2][0] = '\0';
 	h_current_dir[3][0] = '\0';
-	for (i = 0; i < 8; i++)
-		if (h_fp[i] != NULL) {
-			fclose(h_fp[i]);
-			h_fp[i] = NULL;
-		}
+	Device_H_CloseAll();
 }
 
 void Device_Initialise(int *argc, char *argv[])
@@ -724,7 +747,7 @@ static void Device_H_Open(void)
 		return;
 
 	if (h_fp[h_iocb] != NULL)
-		fclose(h_fp[h_iocb]);
+		Util_fclose(h_fp[h_iocb], h_tmpbuf[h_iocb]);
 
 #if 0
 	if (devbug)
@@ -740,7 +763,7 @@ static void Device_H_Open(void)
 	case 4:
 		/* don't bother using "r" for textmode:
 		   we want to support LF, CR/LF and CR, not only native EOLs */
-		fp = fopen(host_path, "rb");
+		fp = Util_fopen(host_path, "rb", h_tmpbuf[h_iocb]);
 		if (fp != NULL) {
 			regY = 1;
 			ClrN;
@@ -753,14 +776,14 @@ static void Device_H_Open(void)
 #ifdef DO_DIR
 	case 6:
 	case 7:
-		fp = tmpfile();
+		fp = Util_tmpopen(h_tmpbuf[h_iocb]);
 		if (fp == NULL) {
 			regY = 144; /* device done error */
 			SetN;
 			break;
 		}
 		if (!Device_OpenDir(host_path)) {
-			fclose(fp);
+			Util_fclose(fp, h_tmpbuf[h_iocb]);
 			fp = NULL;
 			regY = 144; /* device done error */
 			SetN;
@@ -835,36 +858,36 @@ static void Device_H_Open(void)
 		ClrN;
 		break;
 #endif /* DO_DIR */
-	case 8:
-	case 9: /* write at end of file (append) */
+	case 8: /* write: "w" */
+	case 9: /* write at end of file (append): "a" */
+	case 12: /* write and read (update): "r+" || "w+" */
+	case 13: /* append and read: "a+" */
 		if (h_read_only) {
 			regY = 163; /* disk write-protected */
 			SetN;
 			break;
 		}
-		fp = fopen(host_path, h_textmode[h_iocb] ? (aux1 == 9 ? "a" : "w") : (aux1 == 9 ? "ab" : "wb"));
+		{
+			char mode[4];
+			char *p = mode + 1;
+			mode[0] = (aux1 & 1) ? 'a' : (aux1 < 12) ? 'w' : 'r';
+			if (!h_textmode[h_iocb])
+				*p++ = 'b';
+			if (aux1 >= 12)
+				*p++ = '+';
+			*p = '\0';
+			fp = Util_fopen(host_path, mode, h_tmpbuf[h_iocb]);
+			if (fp == NULL && aux1 == 12) {
+				mode[0] = 'w';
+				fp = Util_fopen(host_path, mode, h_tmpbuf[h_iocb]);
+			}
+		}
 		if (fp != NULL) {
 			regY = 1;
 			ClrN;
 		}
 		else {
 			regY = 144; /* device done error */
-			SetN;
-		}
-		break;
-	case 12: /* read and write (update) */
-		if (h_read_only) {
-			regY = 163; /* disk write-protected */
-			SetN;
-			break;
-		}
-		fp = fopen(host_path, h_textmode[h_iocb] ? "r+" : "rb+");
-		if (fp != NULL) {
-			regY = 1;
-			ClrN;
-		}
-		else {
-			regY = 170; /* file not found */
 			SetN;
 		}
 		break;
@@ -883,7 +906,7 @@ static void Device_H_Close(void)
 	if (!Device_GetIOCB())
 		return;
 	if (h_fp[h_iocb] != NULL) {
-		fclose(h_fp[h_iocb]);
+		Util_fclose(h_fp[h_iocb], h_tmpbuf[h_iocb]);
 		h_fp[h_iocb] = NULL;
 	}
 	regY = 1;
@@ -1378,6 +1401,42 @@ static void Device_H_BinLoaderCont(void)
 	dPutByte(0x0300, 0x31);		/* for "Studio Dream" */
 }
 
+static void Device_H_LoadProceed(int mydos)
+{
+	/* Aprint("MyDOS %d, AX1 %d, AX2 %d", mydos, dGetByte(ICAX1Z), dGetByte(ICAX2Z)); */
+	if (mydos) {
+		switch (dGetByte(ICAX1Z) /* XXX: & 7 ? */) {
+		case 4:
+			runBinFile = TRUE;
+			initBinFile = TRUE;
+			break;
+		case 5:
+			runBinFile = TRUE;
+			initBinFile = FALSE;
+			break;
+		case 6:
+			runBinFile = FALSE;
+			initBinFile = TRUE;
+			break;
+		case 7:
+		default:
+			runBinFile = FALSE;
+			initBinFile = FALSE;
+			break;
+		}
+	}
+	else {
+		if (dGetByte(ICAX2Z) < 128)
+			runBinFile = TRUE;
+		else
+			runBinFile = FALSE;
+		initBinFile = TRUE;
+	}
+
+	start_binloading = TRUE;
+	Device_H_BinLoaderCont();
+}
+
 static void Device_H_Load(int mydos)
 {
 	const char *p;
@@ -1438,38 +1497,7 @@ static void Device_H_Load(int mydos)
 		return;
 	}
 
-	/* Aprint("MyDOS %d, AX1 %d, AX2 %d", mydos, dGetByte(ICAX1Z), dGetByte(ICAX2Z)); */
-	if (mydos) {
-		switch (dGetByte(ICAX1Z) /* XXX: & 7 ? */) {
-		case 4:
-			runBinFile = TRUE;
-			initBinFile = TRUE;
-			break;
-		case 5:
-			runBinFile = TRUE;
-			initBinFile = FALSE;
-			break;
-		case 6:
-			runBinFile = FALSE;
-			initBinFile = TRUE;
-			break;
-		case 7:
-		default:
-			runBinFile = FALSE;
-			initBinFile = FALSE;
-			break;
-		}
-	}
-	else {
-		if (dGetByte(ICAX2Z) < 128)
-			runBinFile = TRUE;
-		else
-			runBinFile = FALSE;
-		initBinFile = TRUE;
-	}
-
-	start_binloading = TRUE;
-	Device_H_BinLoaderCont();
+	Device_H_LoadProceed(mydos);
 }
 
 static void Device_H_FileLength(void)
@@ -1478,8 +1506,18 @@ static void Device_H_FileLength(void)
 		Aprint("Get File Length Command");
 	if (!Device_GetIOCB())
 		return;
-	/* if IOCB is open then assume it is a file length command */
-	if (h_fp[h_iocb] != NULL) {
+	/* if IOCB is closed then assume it is a MyDOS Load File command */
+	if (h_fp[h_iocb] == NULL)
+		Device_H_Load(TRUE);
+	/* if we are running MyDOS then assume it is a MyDOS Load File command */
+	else if (dGetByte(0x700) == 'M') {
+		/* XXX: if (binf != NULL) fclose(binf); ? */
+		binf = h_fp[h_iocb];
+		Device_H_LoadProceed(TRUE);
+		/* XXX: don't close binf when complete? */
+	}
+	/* otherwise assume it is a file length command */
+	else {
 		int iocb = IOCB0 + h_iocb * 16;
 		int filesize;
 #if 0
@@ -1489,8 +1527,7 @@ static void Device_H_FileLength(void)
 		filesize = fstatus.st_size;
 #else
 		FILE *fp = h_fp[h_iocb];
-		long currentpos;
-		currentpos = ftell(fp);
+		long currentpos = ftell(fp);
 		filesize = Util_flen(fp);
 		fseek(fp, currentpos, SEEK_SET);
 #endif
@@ -1500,9 +1537,6 @@ static void Device_H_FileLength(void)
 		regY = 1;
 		ClrN;
 	}
-	/* otherwise, we are going to assume it is a MyDOS Load File command */
-	else
-		Device_H_Load(TRUE);
 }
 
 #ifdef DO_MKDIR
@@ -1560,8 +1594,11 @@ static void Device_H_ChangeDirectory(void)
 
 	if (atari_path[0] == '\0')
 		h_current_dir[h_devnum][0] = '\0';
-	else
-		sprintf(h_current_dir[h_devnum], "%s" DIR_SEP_STR, atari_path);
+	else {
+		char *p = Util_stpcpy(h_current_dir[h_devnum], atari_path);
+		p[0] = DIR_SEP_CHAR;
+		p[1] = '\0';
+	}
 
 	regY = 1;
 	ClrN;
@@ -1589,7 +1626,7 @@ static void Device_H_DiskInfo(void)
 
 	info[11] = (UBYTE) ('1' + devnum);
 	info[15] = (UBYTE) (1 + devnum);
-	CopyToMem(info, dGetWord(ICBLLZ), 16);
+	CopyToMem(info, (UWORD) dGetWord(ICBLLZ), 16);
 
 	regY = 1;
 	ClrN;
@@ -1771,7 +1808,7 @@ static void Device_P_Open(void)
 	if (phf != NULL)
 		Device_P_Close();
 
-	phf = Util_tmpfile(spool_file, "w");
+	phf = Util_uniqopen(spool_file, "w");
 	if (phf != NULL) {
 		regY = 1;
 		ClrN;
@@ -2416,151 +2453,3 @@ void Device_UpdatePatches(void)
 	}
 #endif /* defined(R_IO_DEVICE) */
 }
-
-
-/*
-$Log$
-Revision 1.49  2005/10/25 21:51:11  pfusik
-initialize atari_h_dir[] just in case
-
-Revision 1.48  2005/10/23 13:35:01  pfusik
-made H: functions 0x2f and 0x30 SpartaDOS-compatible; Win32 implementation
-of directory listing no longer fails when no file matches the mask;
-Win32 implementation of long directory listing reports local file times
-rather than UTC
-
-Revision 1.47  2005/10/22 18:11:07  pfusik
-Util_chrieq()
-
-Revision 1.46  2005/10/19 21:42:53  pfusik
-atari_h_dir[], h_read_only, print_command, Device_SetPrintCommand(),
-enable_[hpr]_patch from rt-config
-
-Revision 1.45  2005/10/09 20:22:44  pfusik
-numerous improvements (see ChangeLog)
-
-Revision 1.44  2005/09/14 20:30:51  pfusik
-unlink() -> Util_unlink()
-
-Revision 1.43  2005/09/11 20:36:50  pfusik
-use Win32 API where available
-
-Revision 1.42  2005/09/11 07:22:02  pfusik
-replaced "-hdreadonly <onoff>" with "-hreadonly" / "-hreadwrite";
-Util_strupper() and Util_strlower();
-removed unnecessary "Fatal Error" message
-
-Revision 1.41  2005/09/10 12:36:05  pfusik
-Util_splitpath() and Util_catpath()
-
-Revision 1.40  2005/09/06 22:48:36  pfusik
-introduced util.[ch]
-
-Revision 1.39  2005/09/03 11:56:42  pfusik
-BASIC version: improved "K:" input and "E:" output
-
-Revision 1.38  2005/08/31 20:12:15  pfusik
-created Device_OpenDir() and Device_ReadDir(); improved H5:-H9;
-Device_HHSPEC_Disk_Info(), Device_HHSPEC_Current_Dir() no longer use dPutByte()
-
-Revision 1.37  2005/08/27 10:37:07  pfusik
-DEFAULT_H_PATH moved to devices.h
-
-Revision 1.36  2005/08/24 21:15:57  pfusik
-H: and R: work with PAGED_ATTRIB
-
-Revision 1.35  2005/08/23 03:50:19  markgrebe
-Fixed month on modification date on directory listing.  Should be 1-12, not 0-11
-
-Revision 1.34  2005/08/22 20:48:13  pfusik
-avoid <ctype.h>
-
-Revision 1.33  2005/08/21 15:42:10  pfusik
-Atari_tmpfile(); DO_DIR -> HAVE_OPENDIR;
-#ifdef HAVE_ERRNO_H; #ifdef HAVE_REWIND
-
-Revision 1.32  2005/08/17 22:32:34  pfusik
-direct.h and io.h on WIN32; fixed VC6 warnings
-
-Revision 1.31  2005/08/16 23:09:56  pfusik
-#include "config.h" before system headers;
-dirty workaround for lack of mktemp();
-#ifdef HAVE_LOCALTIME; #ifdef HAVE_SYSTEM
-
-Revision 1.30  2005/08/15 17:20:25  pfusik
-Basic loader; more characters valid in H: filenames
-
-Revision 1.29  2005/08/10 19:54:16  pfusik
-patching E: open doesn't make sense; fixed some warnings
-
-Revision 1.28  2005/08/07 13:43:32  pfusik
-MSVC headers have no S_IRUSR nor S_IWUSR
-empty Hx_DIR now refers to the current directory rather than the root
-
-Revision 1.27  2005/08/06 18:13:34  pfusik
-check for rename() and snprintf()
-fixed error codes
-fixed "unused" warnings
-other minor fixes
-
-Revision 1.26  2005/08/04 22:50:24  pfusik
-fancy I/O functions may be unavailable; got rid of numerous #ifdef BACK_SLASH
-
-Revision 1.25  2005/03/24 18:11:47  pfusik
-added "-help"
-
-Revision 1.24  2005/03/08 04:32:41  pfusik
-killed gcc -W warnings
-
-Revision 1.23  2004/07/02 11:28:27  sba
-Don't remove DO_DIR define when compiling for Amiga.
-
-Revision 1.22  2003/09/14 20:07:30  joy
-O_BINARY defined
-
-Revision 1.21  2003/09/14 19:30:32  joy
-mkstemp emulated if unavailable
-
-Revision 1.20  2003/08/31 21:57:44  joy
-rdevice module compiled in conditionally
-
-Revision 1.19  2003/05/28 19:54:58  joy
-R: device support (networking?)
-
-Revision 1.18  2003/03/03 09:57:33  joy
-Ed improved autoconf again plus fixed some little things
-
-Revision 1.17  2003/02/24 09:32:54  joy
-header cleanup
-
-Revision 1.16  2003/01/27 13:14:54  joy
-Jason's changes: either PAGED_ATTRIB support (mostly), or just clean up.
-
-Revision 1.15  2003/01/27 12:55:23  joy
-harddisk emulation now fully supports subdirectories.
-
-Revision 1.12  2001/10/03 16:40:54  fox
-rewritten escape codes handling,
-corrected Device_isvalid (isalnum((char) 0x9b) == 1 !)
-
-Revision 1.11  2001/10/01 17:10:34  fox
-#include "ui.h" for CRASH_MENU externs
-
-Revision 1.10  2001/09/21 16:54:11  fox
-removed unused variable
-
-Revision 1.9  2001/07/20 00:30:08  fox
-replaced K_Device with Device_KHREAD,
-replaced E_Device with Device_EHOPEN, Device_EHREAD and Device_EHWRITE,
-removed ESC_BREAK
-
-Revision 1.6  2001/03/25 06:57:35  knik
-open() replaced by fopen()
-
-Revision 1.5  2001/03/22 06:16:58  knik
-removed basic improvement
-
-Revision 1.4  2001/03/18 06:34:58  knik
-WIN32 conditionals removed
-
-*/
