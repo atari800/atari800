@@ -587,6 +587,7 @@ void SIO(void)
 	int realsize = 0;
 	int cmd = dGetByte(0x302);
 
+	/* FIXME: add dGetByte(0x300) and dGetByte(0x301) */
 	if (dGetByte(0x300) == 0x31 && unit < MAX_DRIVES) {	/* UBYTE range ! */
 #ifdef DEBUG
 		Aprint("SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
@@ -980,7 +981,7 @@ static UBYTE WriteSectorBack(void)
 	UWORD sector;
 	UBYTE unit;
 
-	sector = CommandFrame[2] | (((UWORD) CommandFrame[3]) << 8);
+	sector = CommandFrame[2] + (CommandFrame[3] << 8);
 	unit = CommandFrame[0] - '1';
 	if (unit >= MAX_DRIVES)		/* UBYTE range ! */
 		return 0;
@@ -1000,14 +1001,12 @@ static UBYTE WriteSectorBack(void)
 /* Put a byte that comes out of POKEY. So get it here... */
 void SIO_PutByte(int byte)
 {
-	UBYTE sum, result;
-
 	switch (TransferStatus) {
 	case SIO_CommandFrame:
 		if (CommandIndex < ExpectedBytes) {
 			CommandFrame[CommandIndex++] = byte;
 			if (CommandIndex >= ExpectedBytes) {
-				if (((CommandFrame[0] >= 0x31) && (CommandFrame[0] <= 0x38))) {
+				if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38) {
 					TransferStatus = SIO_StatusRead;
 					DELAYED_SERIN_IRQ = SERIN_INTERVAL + ACK_INTERVAL;
 				}
@@ -1024,9 +1023,9 @@ void SIO_PutByte(int byte)
 		if (DataIndex < ExpectedBytes) {
 			DataBuffer[DataIndex++] = byte;
 			if (DataIndex >= ExpectedBytes) {
-				sum = SIO_ChkSum(DataBuffer, ExpectedBytes - 1);
+				UBYTE sum = SIO_ChkSum(DataBuffer, ExpectedBytes - 1);
 				if (sum == DataBuffer[ExpectedBytes - 1]) {
-					result = WriteSectorBack();
+					UBYTE result = WriteSectorBack();
 					if (result != 0) {
 						DataBuffer[0] = 'A';
 						DataBuffer[1] = result;
@@ -1127,7 +1126,7 @@ int Rotate_Disks(void)
 
 	for (i = 1; i < MAX_DRIVES; i++) {
 		if (strcmp(tmp_filenames[i], "None") && strcmp(tmp_filenames[i], "Off") && strcmp(tmp_filenames[i], "Empty") ) {
-			if (SIO_Mount(i, tmp_filenames[i], FALSE) == FALSE) /* Note that this is NOT i-1 because SIO_Mount is 1 indexed */
+			if (!SIO_Mount(i, tmp_filenames[i], FALSE)) /* Note that this is NOT i-1 because SIO_Mount is 1 indexed */
 				bSuccess = FALSE;
 		}
 	}
@@ -1138,7 +1137,7 @@ int Rotate_Disks(void)
 	}
 
 	if (i > -1)	{
-		if (SIO_Mount(i + 1, tmp_filenames[0], FALSE ) == FALSE)
+		if (!SIO_Mount(i + 1, tmp_filenames[0], FALSE))
 			bSuccess = FALSE;
 	}
 
@@ -1177,12 +1176,10 @@ void SIOStateRead(void)
 		   mount the disk */
 		switch (saved_drive_status) {
 		case ReadOnly:
-			SIO_Dismount(i + 1);
-			SIO_Mount(i + 1, filename, 1);
+			SIO_Mount(i + 1, filename, TRUE);
 			break;
 		case ReadWrite:
-			SIO_Dismount(i + 1);
-			SIO_Mount(i + 1, filename, 0);
+			SIO_Mount(i + 1, filename, FALSE);
 			break;
 		default:
 			break;
