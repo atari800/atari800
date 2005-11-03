@@ -294,7 +294,6 @@ static void DiskManagement(void)
 				char uncompr_filename[FILENAME_MAX];
 				FILE *fp = fopen(disk_filename, "rb");
 				const char *p;
-				int success;
 				if (fp == NULL) {
 					CantLoad(disk_filename);
 					break;
@@ -341,18 +340,21 @@ static void DiskManagement(void)
 					fclose(fp);
 					if (ui_driver->fGetSaveFilename(uncompr_filename, atari_files_dir, n_atari_files_dir)) {
 						FILE *fp2 = fopen(uncompr_filename, "wb");
+						int success;
 						if (fp2 == NULL) {
 							CantSave(uncompr_filename);
 							continue;
 						}
 						success = CompressedFile_ExtractGZ(disk_filename, fp2);
 						fclose(fp2);
+						ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file");
 					}
 					break;
 				case 0xf9:
 				case 0xfa:
 					if (ui_driver->fGetSaveFilename(uncompr_filename, atari_files_dir, n_atari_files_dir)) {
 						FILE *fp2 = fopen(uncompr_filename, "wb");
+						int success;
 						if (fp2 == NULL) {
 							fclose(fp);
 							CantSave(uncompr_filename);
@@ -362,14 +364,14 @@ static void DiskManagement(void)
 						success = CompressedFile_DCMtoATR(fp, fp2);
 						fclose(fp2);
 						fclose(fp);
+						ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file");
 					}
 					break;
 				default:
 					fclose(fp);
-					success = FALSE;
+					ui_driver->fMessage("This is not a compressed disk image");
 					break;
 				}
-				ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file");
 			}
 			break;
 		default:
