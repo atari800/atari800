@@ -1,3 +1,10 @@
+2005-11-03  Piotr Fusik  <fox@scene.pl>
+* ui.c: "Uncompress disk image": there was a random message when the user
+  cancelled output file selection
+
+* sio.c: removed superfluous SIO_Dismount() - SIO_Mount() calls it
+
+
 2005-11-02  Piotr Fusik  <fox@scene.pl>
 * atari.c: RESET key in 400/800 does not reset chips, but only generates
   RNMI interrupt
