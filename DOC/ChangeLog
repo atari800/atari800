@@ -1,3 +1,7 @@
+2005-11-04  Piotr Fusik  <fox@scene.pl>
+* monitor.c: pacified warnings on 64-bit CPUs
+
+
 2005-11-03  Piotr Fusik  <fox@scene.pl>
 * ui.c: "Uncompress disk image": there was a random message when the user
   cancelled output file selection
