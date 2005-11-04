@@ -680,13 +680,13 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 		if (*p == '1') {
 			value = dGetByte(pc++);
 			nchars = fprintf(fp, "%04X: %02X %02X     " /*"%Xcyc  "*/ "%.*s$%02X%s",
-			                 pc - 2, insn, value, /*cycles[insn],*/ p - mnemonic, mnemonic, value, p + 1);
+			                 pc - 2, insn, value, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
 			break;
 		}
 		if (*p == '2') {
 			value = dGetWord(pc);
 			nchars = fprintf(fp, "%04X: %02X %02X %02X  " /*"%Xcyc  "*/ "%.*s$%04X%s",
-			                 pc - 1, insn, value & 0xff, value >> 8, /*cycles[insn],*/ p - mnemonic, mnemonic, value, p + 1);
+			                 pc - 1, insn, value & 0xff, value >> 8, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
 			pc += 2;
 			break;
 		}
