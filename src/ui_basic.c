@@ -620,7 +620,26 @@ static int BasicUIReadDir(char *filename, int *isdir)
 
 #define DO_DIR
 
-#endif /* defined(HAVE_OPENDIR) */
+#elif defined(PS2)
+
+int Atari_OpenDir(const char *filename);
+
+static int BasicUIOpenDir(const char *dirname)
+{
+	char filename[FILENAME_MAX];
+	Util_catpath(filename, dirname, "*");
+	return Atari_OpenDir(filename);
+}
+
+int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
+                  int *readonly, int *size, char *timetext);
+
+#define BasicUIReadDir(filename, isdir)  Atari_ReadDir(NULL, filename, isdir, NULL, NULL, NULL)
+
+#define DO_DIR
+
+#endif /* defined(PS2) */
+
 
 #ifdef DO_DIR
 

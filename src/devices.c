@@ -320,7 +320,35 @@ static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
 
 #define DO_DIR
 
-#endif /* defined(HAVE_OPENDIR) */
+#elif defined(PS2)
+
+extern char dir_path[FILENAME_MAX];
+
+int Atari_OpenDir(const char *filename);
+
+#define Device_OpenDir Atari_OpenDir
+
+int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
+                  int *readonly, int *size, char *timetext);
+
+static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
+                          int *readonly, int *size, char *timetext)
+{
+	char tmp_filename[FILENAME_MAX];
+	if (filename == NULL)
+		filename = tmp_filename;
+	do {
+		if (!Atari_ReadDir(fullpath, filename, isdir, readonly, size, timetext))
+			return FALSE;
+		/* reject "." and ".." */
+	} while (filename[0] == '.' &&
+	         (filename[1] == '\0' || (filename[1] == '.' && filename[2] == '\0')));
+	return TRUE;
+}
+
+#define DO_DIR
+
+#endif /* defined(PS2) */
 
 
 /* Rename File/Directory abstraction layer ------------------------------- */

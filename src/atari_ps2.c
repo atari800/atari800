@@ -619,6 +619,64 @@ int Atari_TRIG(int num)
 	return 1;
 }
 
+char dir_path[FILENAME_MAX];
+
+static int dir_n;
+static int dir_i;
+
+// XXX: use followup calls to get directory entries one-by-one?
+
+#define MAX_FILES_PER_DIR 1000
+
+static mcTable mcDir[MAX_FILES_PER_DIR];
+
+int Atari_OpenDir(const char *filename)
+{
+	// TODO: support other devices
+	if (strncmp(filename, "mc0:/", 5) != 0)
+		return FALSE;
+	dir_n = mcGetDir(0, 0, filename + 4, 0 /* followup flag */, MAX_FILES_PER_DIR, mcDir);
+	if (dir_n < 0)
+		return FALSE;
+	dir_i = 0;
+	// XXX: does it know (and needs to know) that "mc0:/" is a root directory?
+	Util_splitpath(filename, dir_path, NULL);
+	return TRUE;
+}
+
+int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
+                  int *readonly, int *size, char *timetext)
+{
+	const mcTable *p;
+	if (dir_i >= dir_n)
+		return FALSE;
+	p = mcDir + dir_i;
+	if (fullpath != NULL)
+		Util_catpath(fullpath, dir_path, p->name);
+	if (filename != NULL)
+		strcpy(filename, p->name);
+	if (isdir != NULL)
+		*isdir = (p->attrFile & MC_ATTR_SUBDIR) ? TRUE : FALSE;
+	if (readonly != NULL)
+		*readonly = (p->attrFile & MC_ATTR_WRITEABLE) ? FALSE : TRUE; // XXX: MC_ATTR_PROTECTED ?
+	if (size != NULL)
+		*size = (int) (p->fileSizeByte);
+	if (timetext != NULL) {
+		int hour = p->_modify.hour;
+		char ampm = 'a';
+		if (hour >= 12) {
+			hour -= 12;
+			ampm = 'p';
+		}
+		if (hour == 0)
+			hour = 12;
+		sprintf(timetext, "%2d-%02d-%02d %2d:%02d%c",
+			p->_modify.month, p->_modify.day, p->_modify.year % 100, hour, p->_modify.sec, ampm);
+	}
+	dir_i++;
+	return TRUE;
+}
+
 int main(int argc, char **argv)
 {
 	loadModules();
