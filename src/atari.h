@@ -241,6 +241,32 @@ extern unsigned int screenline_cpu_clock;
 /* Current main clock value. */
 #define cpu_clock (screenline_cpu_clock + xpos)
 
+/* STAT_UNALIGNED_WORDS is solely for benchmarking purposes.
+   8-element arrays (stat_arr) represent number of accesses with the given
+   value of 3 least significant bits of address. This gives us information
+   about the ratio of aligned vs unaligned accesses. */
+#ifdef STAT_UNALIGNED_WORDS
+#define UNALIGNED_STAT_DEF(stat_arr)             unsigned int stat_arr[8];
+#define UNALIGNED_STAT_DECL(stat_arr)            extern unsigned int stat_arr[8];
+#define UNALIGNED_GET_WORD(ptr, stat_arr)        (stat_arr[(unsigned int) (ptr) & 7]++, *(const UWORD *) (ptr))
+#define UNALIGNED_PUT_WORD(ptr, value, stat_arr) (stat_arr[(unsigned int) (ptr) & 7]++, *(UWORD *) (ptr) = (value))
+#define UNALIGNED_GET_LONG(ptr, stat_arr)        (stat_arr[(unsigned int) (ptr) & 7]++, *(const ULONG *) (ptr))
+#define UNALIGNED_PUT_LONG(ptr, value, stat_arr) (stat_arr[(unsigned int) (ptr) & 7]++, *(ULONG *) (ptr) = (value))
+UNALIGNED_STAT_DECL(atari_screen_write_long_stat)
+UNALIGNED_STAT_DECL(pm_scanline_read_long_stat)
+UNALIGNED_STAT_DECL(memory_read_word_stat)
+UNALIGNED_STAT_DECL(memory_write_word_stat)
+UNALIGNED_STAT_DECL(memory_read_aligned_word_stat)
+UNALIGNED_STAT_DECL(memory_write_aligned_word_stat)
+#else
+#define UNALIGNED_STAT_DEF(stat_arr)
+#define UNALIGNED_STAT_DECL(stat_arr)
+#define UNALIGNED_GET_WORD(ptr, stat_arr)        (*(const UWORD *) (ptr))
+#define UNALIGNED_PUT_WORD(ptr, value, stat_arr) (*(UWORD *) (ptr) = (value))
+#define UNALIGNED_GET_LONG(ptr, stat_arr)        (*(const ULONG *) (ptr))
+#define UNALIGNED_PUT_LONG(ptr, value, stat_arr) (*(ULONG *) (ptr) = (value))
+#endif
+
 /* Escape codes used to mark places in 6502 code that must
    be handled specially by the emulator. An escape sequence
    is an illegal 6502 opcode 0xF2 or 0xD2 followed
