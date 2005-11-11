@@ -1,3 +1,20 @@
+2005-11-11  Piotr Fusik  <fox@scene.pl>
+* configure.ac, amiga/config.h, win32/msc/config.h, wince/port/config.h,
+  antic.c, cpu.c, memory.h, pokeysnd.c:
+  UNALIGNED_LONG_OK -> WORDS_UNALIGNED_OK
+
+* atari.[ch], antic.c, memory.h: STAT_UNALIGNED_WORDS
+
+* binload.c, devices.c: dGetWord -> dGetWordAligned,
+  dPutWord -> dPutWordAligned
+
+* configure.ac: WORDS_UNALIGNED_OK now bases on the built-in
+  CPU architecture database and can be overridden
+  with "--enable-unalignedwords" / "--disable-unalignedwords"
+
+* atari.c, atari_ps2.c: implemented Atari_time() and Atari_sleep() on PS2
+
+
 2005-11-08  Piotr Fusik  <fox@scene.pl>
 * atari_ps2.c, devices.c, ui_basic.c: support for directory listings on PS2
   ("mc0:" only)
