@@ -128,7 +128,7 @@ void CPU_PutStatus(void)
 #define PHPC                { UWORD tmp = PC - memory; PHW(tmp); }
 #define GET_CODE_BYTE()     (*PC++)
 #define PEEK_CODE_BYTE()    (*PC)
-#if !defined(WORDS_BIGENDIAN) && defined(UNALIGNED_LONG_OK)
+#if !defined(WORDS_BIGENDIAN) && defined(WORDS_UNALIGNED_OK)
 #define PEEK_CODE_WORD()    (*(const UWORD *) PC)
 #else
 #define PEEK_CODE_WORD()    (*PC + (PC[1] << 8))
@@ -245,8 +245,8 @@ unsigned int remember_jmp_curpos = 0;
 #define zGetWord(x) dGetWord(x)
 #endif
 #ifdef PREFETCH_CODE
-#if defined(WORDS_BIGENDIAN) || !defined(UNALIGNED_LONG_OK)
-#warning PREFETCH_CODE is efficient only on little-endian machines with UNALIGNED_LONG_OK
+#if defined(WORDS_BIGENDIAN) || !defined(WORDS_UNALIGNED_OK)
+#warning PREFETCH_CODE is efficient only on little-endian machines with WORDS_UNALIGNED_OK
 #endif
 #define OP_BYTE     ((UBYTE) addr)
 #define OP_WORD     addr
@@ -565,12 +565,12 @@ void GO(int limit)
 				PC -= 0x10000;
 			else {
 				/* the opcode is before 0x10000, but the operand is past */
-#ifdef UNALIGNED_LONG_OK
+#ifdef WORDS_UNALIGNED_OK
 				*(UWORD *) (memory + 0x10000) = *(UWORD *) memory;
 #else
 				memory[0x10000] = memory[0];
 				memory[0x10001] = memory[1];
-#endif /* UNALIGNED_LONG_OK */
+#endif /* WORDS_UNALIGNED_OK */
 			}
 		}
 #endif /* PC_PTR */

@@ -372,9 +372,6 @@
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
 
-/* Define if unaligned long access is ok. */
-#define UNALIGNED_LONG_OK 1
-
 /* Define to use clock() instead of gettimeofday(). */
 /* #undef USE_CLOCK */
 
@@ -396,6 +393,9 @@
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 /* #undef WORDS_BIGENDIAN */
+
+/* Define if unaligned word access is ok. */
+#define WORDS_UNALIGNED_OK 1
 
 /* Target: Standard X11. */
 /* #undef X11 */

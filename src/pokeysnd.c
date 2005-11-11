@@ -93,7 +93,7 @@
 #include "sound_win.h"
 #endif
 
-#ifdef UNALIGNED_LONG_OK
+#ifdef WORDS_UNALIGNED_OK
 #  define READ_U32(x)     (*(uint32 *) (x))
 #  define WRITE_U32(x, d) (*(uint32 *) (x) = (d))
 #else
