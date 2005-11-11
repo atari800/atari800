@@ -1342,6 +1342,13 @@ int Atari800_Initialise(int *argc, char *argv[])
 	return TRUE;
 }
 
+UNALIGNED_STAT_DEF(atari_screen_write_long_stat)
+UNALIGNED_STAT_DEF(pm_scanline_read_long_stat)
+UNALIGNED_STAT_DEF(memory_read_word_stat)
+UNALIGNED_STAT_DEF(memory_write_word_stat)
+UNALIGNED_STAT_DEF(memory_read_aligned_word_stat)
+UNALIGNED_STAT_DEF(memory_write_aligned_word_stat)
+
 int Atari800_Exit(int run_monitor)
 {
 	int restart;
@@ -1354,6 +1361,28 @@ int Atari800_Exit(int run_monitor)
 	if (verbose) {
 		Aprint("Current frames per second: %f", fps);
 	}
+#ifdef STAT_UNALIGNED_WORDS
+	printf("(ptr&7) atari_screen  pm_scanline  _____ memory ______  memory (aligned addr)\n");
+	printf("          32-bit W      32-bit R   16-bit R   16-bit W   16-bit R   16-bit W\n");
+	{
+		unsigned int sums[6] = {0, 0, 0, 0, 0, 0};
+		int i;
+		for (i = 0; i < 8; i++) {
+			printf("%6d%12u%14u%11u%11u%11u%11u\n", i,
+				atari_screen_write_long_stat[i], pm_scanline_read_long_stat[i],
+				memory_read_word_stat[i], memory_write_word_stat[i],
+				memory_read_aligned_word_stat[i], memory_write_aligned_word_stat[i]);
+			sums[0] += atari_screen_write_long_stat[i];
+			sums[1] += pm_scanline_read_long_stat[i];
+			sums[2] += memory_read_word_stat[i];
+			sums[3] += memory_write_word_stat[i];
+			sums[4] += memory_read_aligned_word_stat[i];
+			sums[5] += memory_write_aligned_word_stat[i];
+		}
+		printf("total:%12u%14u%11u%11u%11u%11u\n",
+			sums[0], sums[1], sums[2], sums[3], sums[4], sums[5]);
+	}
+#endif /* STAT_UNALIGNED_WORDS */
 	restart = Atari_Exit(run_monitor);
 #ifndef __PLUS
 	if (!restart) {
@@ -1468,6 +1497,13 @@ void Atari800_UpdatePatches(void)
 
 #ifndef __PLUS
 
+#ifdef PS2
+
+double Atari_time(void);
+void Atari_sleep(double s);
+
+#else /* PS2 */
+
 #ifndef USE_CLOCK
 
 static double Atari_time(void)
@@ -1532,6 +1568,8 @@ static void Atari_sleep(double s)
 }
 
 #endif /* USE_CLOCK */
+
+#endif /* PS2 */
 
 void atari_sync(void)
 {
