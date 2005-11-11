@@ -23,6 +23,8 @@
  */
 
 #include "config.h"
+#include <stdio.h>
+#include <string.h>
 #include <tamtypes.h>
 #include <loadfile.h>
 #include <fileio.h>
@@ -30,6 +32,7 @@
 #include <sifrpc.h>
 #include <kernel.h>
 #include <debug.h>
+#include <libmc.h>
 #include <libkbd.h>
 #include <libpad.h>
 #include <gsKit.h>
@@ -53,15 +56,107 @@ static GSGLOBAL *gsGlobal = NULL;
 
 static int clut[256] __attribute__((aligned(16)));
 
-//int PS2KbdCAPS=0;
-int PS2KbdSHIFT=0;
-int PS2KbdCONTROL=0;
+//int PS2KbdCAPS = 0;
+int PS2KbdSHIFT = 0;
+int PS2KbdCONTROL = 0;
 
 
 #define PAD_PORT 0
 #define PAD_SLOT 0
 
 static char padBuf[256] __attribute__((aligned(64)));
+
+/* We use T0 for Atari_time() and T1 for Atari_sleep().
+   Note that both timers are just 16-bit. */
+
+#define T0_COUNT  (*(volatile unsigned long *) 0x10000000)
+#define T0_MODE   (*(volatile unsigned long *) 0x10000010)
+#define T0_COMP   (*(volatile unsigned long *) 0x10000020)
+#define T1_COUNT  (*(volatile unsigned long *) 0x10000800)
+#define T1_MODE   (*(volatile unsigned long *) 0x10000810)
+#define T1_COMP   (*(volatile unsigned long *) 0x10000820)
+
+#define INTC_TIM0 9
+#define INTC_TIM1 10
+
+static int t0_interrupt_id = -1;
+static int t1_interrupt_id = -1;
+
+/* The range of int is enough for about 7 years
+   of continuous running. */
+static volatile int timer_interrupt_ticks = 0;
+
+static int sleeping_thread_id = 0;
+
+static int t0_interrupt_handler(int ca)
+{
+	timer_interrupt_ticks++;
+	T0_MODE |= 0x800; // clear overflow status
+	// __asm__ volatile("sync.l; ei"); // XXX: necessary?
+	return -1; // XXX: or 0? what does it mean?
+}
+
+static int t1_interrupt_handler(int ca)
+{
+	iWakeupThread(sleeping_thread_id);
+	T1_MODE = 0; // disable
+	// __asm__ volatile("sync.l; ei"); // XXX: necessary?
+	return -1; // XXX: or 0? what does it mean?
+}
+
+static void timer_initialize(void)
+{
+	T0_MODE = 0; // disable
+	timer_interrupt_id = AddIntcHandler(INTC_TIM0, t0_interrupt_handler, 0);
+	EnableIntc(INTC_TIM0);
+	T0_COUNT = 0;
+	T0_MODE = 0x002  // 576000 Hz clock
+			+ 0x080  // start counting
+			+ 0x200; // generate interrupt on overflow
+
+	T1_MODE = 0; // disable
+	timer_interrupt_id = AddIntcHandler(INTC_TIM1, t1_interrupt_handler, 0);
+	EnableIntc(INTC_TIM1);
+}
+
+static void timer_shutdown(void)
+{
+	T0_MODE = 0;
+	if (t0_interrupt_id >= 0) {
+		DisableIntc(INTC_TIM0);
+		RemoveIntcHandler(INTC_TIM0, t0_interrupt_id);
+		t0_interrupt_id = -1;
+	}
+	T1_MODE = 0;
+	if (t1_interrupt_id >= 0) {
+		DisableIntc(INTC_TIM1);
+		RemoveIntcHandler(INTC_TIM1, t1_interrupt_id);
+		t1_interrupt_id = -1;
+	}
+}
+
+double Atari_time(void)
+{
+	/* AFAIK, multiplication is faster than division,
+	   on every CPU architecture */
+	return (timer_interrupt_ticks * 65536.0 + T0_COUNT) * (1.0 / 576000);
+}
+
+/* this Atari_sleep() supports times only up to 0.11 sec,
+   which is enough for Atari800 purposes */
+void Atari_sleep(double s)
+{
+	unsigned long count = 65536 - (unsigned long) (s * 576000);
+	// do nothing if s is less than one T1 tick
+	if (count >= 65536)
+		return;
+	sleeping_thread_id = GetThreadId();
+	T1_COUNT = count;
+	T1_MODE = 0x002  // 576000 Hz clock
+			+ 0x080  // start counting
+			+ 0x200; // generate interrupt on overflow
+	SleepThread();
+}
 
 void loadModules(void)
 {
@@ -115,13 +210,14 @@ void Atari_Initialise(int *argc, char *argv[])
 	for (i = 0; i < 256; i++) {
 		int c = colortable[i];
 //		clut[i] = (c >> 16) + (c & 0xff00) + ((c & 0xff) << 16);
-	clut[(i ^ i * 2) & 16 ? i ^ 24 : i] = (c >> 16) + (c & 0xff00) + ((c & 0xff) << 16);
+		// swap bits 3 and 4 to workaround a bug in gsKit
+		clut[(i ^ i * 2) & 16 ? i ^ 24 : i] = (c >> 16) + (c & 0xff00) + ((c & 0xff) << 16);
 	}
 	// Clear debug from screen
 	init_scr();
 	// Initialize graphics
 	gsGlobal = gsKit_init_global(GS_MODE_NTSC);
-	dmaKit_init(D_CTRL_RELE_ON,D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC,
+	dmaKit_init(D_CTRL_RELE_ON, D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC,
 	            D_CTRL_STD_OFF, D_CTRL_RCYC_8);
 	dmaKit_chan_init(DMA_CHANNEL_GIF);
 	gsGlobal->PSM = GS_PSM_CT32;
@@ -130,6 +226,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	// Init joypad
 	padInit(0);
 	padPortOpen(PAD_PORT, PAD_SLOT, padBuf);
+	timer_initialize();
 }
 
 int Atari_Exit(int run_monitor)
@@ -142,6 +239,7 @@ int Atari_Exit(int run_monitor)
 		return TRUE;
 	}
 #endif
+	timer_shutdown();
 //zzz temp exit procedure
 //Hard coded to go back to ulaunch
 	fioExit();
@@ -165,8 +263,18 @@ void Atari_DisplayScreen(void)
 	// TODO: upload clut just once
 	gsKit_texture_upload(gsGlobal, &tex);
 	gsKit_prim_sprite_texture(gsGlobal, &tex, 0, 0, 32, 0, 640, 480, 32 + 320, 240, 0, 0x80808080);
-	// TODO: flip without vsync
+#if 0
 	gsKit_sync_flip(gsGlobal);
+#else
+	// flip without vsync
+	// this is a copy of gsKit_sync_flip() code with just gsKit_vsync() call removed
+	GS_SET_DISPFB2(gsGlobal->ScreenBuffer[gsGlobal->ActiveBuffer & 1] / 8192,
+		gsGlobal->Width / 64, gsGlobal->PSM, 0, 0 );
+	gsGlobal->ActiveBuffer ^= 1;
+	gsGlobal->PrimContext ^= 1;
+	gsGlobal->EvenOrOdd = ((GSREG *) GS_CSR)->FIELD;
+	gsKit_setactive(gsGlobal);
+#endif
 }
 
 static int PadButtons(void)
@@ -662,6 +770,7 @@ int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
 	if (size != NULL)
 		*size = (int) (p->fileSizeByte);
 	if (timetext != NULL) {
+		// FIXME: adjust from GMT to local time
 		int hour = p->_modify.hour;
 		char ampm = 'a';
 		if (hour >= 12) {
