@@ -198,21 +198,28 @@ void video_putbyte(UBYTE *ptr, UBYTE val)
 /* Some optimizations result in unaligned 32-bit accesses. These macros have
    been introduced for machines that don't allow unaligned memory accesses. */
 
-#ifdef UNALIGNED_LONG_OK
-#define IS_ZERO_ULONG(x) (! *(const ULONG *)(x))
-#define DO_GTIA_BYTE(p, l, x) { \
-		WRITE_VIDEO_LONG((ULONG*) (p),     (l)[(x) >> 4]); \
-		WRITE_VIDEO_LONG((ULONG*) (p) + 1, (l)[(x) & 0xf]); \
-	}
+#ifdef DIRTYRECT
+/* STAT_UNALIGNED_WORDS doesn't work with DIRTYRECT */
+#define WRITE_VIDEO_LONG_UNALIGNED  WRITE_VIDEO_LONG
 #else
+#define WRITE_VIDEO_LONG_UNALIGNED(ptr, val)  UNALIGNED_PUT_LONG((ptr), (val), atari_screen_write_long_stat)
+#endif
+
+#ifdef WORDS_UNALIGNED_OK
+#define IS_ZERO_ULONG(x) (! UNALIGNED_GET_LONG(x, pm_scanline_read_long_stat))
+#define DO_GTIA_BYTE(p, l, x) { \
+		WRITE_VIDEO_LONG_UNALIGNED((ULONG *) (p),     (l)[(x) >> 4]); \
+		WRITE_VIDEO_LONG_UNALIGNED((ULONG *) (p) + 1, (l)[(x) & 0xf]); \
+	}
+#else /* WORDS_UNALIGNED_OK */
 #define IS_ZERO_ULONG(x) (!((const UBYTE *)(x))[0] && !((const UBYTE *)(x))[1] && !((const UBYTE *)(x))[2] && !((const UBYTE *)(x))[3])
 #define DO_GTIA_BYTE(p, l, x) { \
-		WRITE_VIDEO((UWORD *)(p),     (UWORD) ((l)[(x) >> 4])); \
-		WRITE_VIDEO((UWORD *)(p) + 1, (UWORD) ((l)[(x) >> 4])); \
-		WRITE_VIDEO((UWORD *)(p) + 2, (UWORD) ((l)[(x) & 0xf])); \
-		WRITE_VIDEO((UWORD *)(p) + 3, (UWORD) ((l)[(x) & 0xf])); \
+		WRITE_VIDEO((UWORD *) (p),     (UWORD) ((l)[(x) >> 4])); \
+		WRITE_VIDEO((UWORD *) (p) + 1, (UWORD) ((l)[(x) >> 4])); \
+		WRITE_VIDEO((UWORD *) (p) + 2, (UWORD) ((l)[(x) & 0xf])); \
+		WRITE_VIDEO((UWORD *) (p) + 3, (UWORD) ((l)[(x) & 0xf])); \
 	}
-#endif
+#endif /* WORDS_UNALIGNED_OK */
 
 /* ANTIC Registers --------------------------------------------------------- */
 
@@ -599,20 +606,19 @@ UWORD cl_lookup[128];
    the platform doesn't allow unaligned long access.
    Artifacting also uses unaligned long access if it's supported. */
 
-#ifdef UNALIGNED_LONG_OK
+#ifdef WORDS_UNALIGNED_OK
 
 #define INIT_BACKGROUND_6 ULONG background = cl_lookup[C_PF2] | (((ULONG) cl_lookup[C_PF2]) << 16);
 #define INIT_BACKGROUND_8 ULONG background = lookup_gtia9[0];
 #define DRAW_BACKGROUND(colreg) { \
-		ULONG *l_ptr = (ULONG *) ptr; \
-		WRITE_VIDEO_LONG(l_ptr++, background); \
-		WRITE_VIDEO_LONG(l_ptr++, background); \
-		ptr = (UWORD *) l_ptr; \
+		WRITE_VIDEO_LONG_UNALIGNED((ULONG *) ptr, background); \
+		WRITE_VIDEO_LONG_UNALIGNED(((ULONG *) ptr) + 1, background); \
+		ptr += 4; \
 	}
-#define DRAW_ARTIF {\
-		WRITE_VIDEO_LONG((ULONG*) ptr, art_curtable[(UBYTE) (screendata_tally >> 10)]); \
-		WRITE_VIDEO_LONG(((ULONG*) ptr) + 1, art_curtable[(UBYTE) (screendata_tally >> 6)]); \
-		ptr += 4;\
+#define DRAW_ARTIF { \
+		WRITE_VIDEO_LONG_UNALIGNED((ULONG *) ptr, art_curtable[(UBYTE) (screendata_tally >> 10)]); \
+		WRITE_VIDEO_LONG_UNALIGNED(((ULONG *) ptr) + 1, art_curtable[(UBYTE) (screendata_tally >> 6)]); \
+		ptr += 4; \
 	}
 
 #else
@@ -633,7 +639,7 @@ UWORD cl_lookup[128];
 		WRITE_VIDEO(ptr++, ((UWORD *) art_curtable)[((screendata_tally & 0x003fc0) >> 5) + 1]); \
 	}
 
-#endif /* UNALIGNED_LONG_OK */
+#endif /* WORDS_UNALIGNED_OK */
 
 /* Hi-res modes optimizations
    Now hi-res modes are drawn with words, not bytes. Endianess defaults
@@ -1536,7 +1542,7 @@ static void draw_antic_2_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr
 
 static void draw_antic_2_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
-#ifdef UNALIGNED_LONG_OK
+#ifdef WORDS_UNALIGNED_OK
 	ULONG lookup_gtia10[16];
 #else
 	UWORD lookup_gtia10[16];
@@ -1548,7 +1554,7 @@ static void draw_antic_2_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 		return;
 	}
 
-#ifdef UNALIGNED_LONG_OK
+#ifdef WORDS_UNALIGNED_OK
 	lookup_gtia10[0] = cl_lookup[C_PM0] | (cl_lookup[C_PM0] << 16);
 	lookup_gtia10[1] = cl_lookup[C_PM1] | (cl_lookup[C_PM1] << 16);
 	lookup_gtia10[2] = cl_lookup[C_PM2] | (cl_lookup[C_PM2] << 16);
@@ -2264,7 +2270,7 @@ static void draw_antic_f_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr
 
 static void draw_antic_f_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
-#ifdef UNALIGNED_LONG_OK
+#ifdef WORDS_UNALIGNED_OK
 	ULONG lookup_gtia10[16];
 #else
 	UWORD lookup_gtia10[16];
@@ -2274,7 +2280,7 @@ static void draw_antic_f_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 		draw_an_gtia10(t_pm_scanline_ptr);
 		return;
 	}
-#ifdef UNALIGNED_LONG_OK
+#ifdef WORDS_UNALIGNED_OK
 	lookup_gtia10[0] = cl_lookup[C_PM0] | (cl_lookup[C_PM0] << 16);
 	lookup_gtia10[1] = cl_lookup[C_PM1] | (cl_lookup[C_PM1] << 16);
 	lookup_gtia10[2] = cl_lookup[C_PM2] | (cl_lookup[C_PM2] << 16);

@@ -1,28 +1,28 @@
 #ifndef _MEMORY_H_
 #define _MEMORY_H_
 
+#include "config.h"
 #include <string.h>	/* memcpy, memset */
 
-#include "atari.h" /* UBYTE, UWORD */
-#include "config.h"
+#include "atari.h"
 
 #define dGetByte(x)				(memory[x])
 #define dPutByte(x, y)			(memory[x] = y)
 
 #ifndef WORDS_BIGENDIAN
-#ifdef UNALIGNED_LONG_OK
-#define dGetWord(x)				(* (UWORD *) &memory[x])
-#define dPutWord(x, y)			(* (UWORD *) &memory[x] = (y))
-#define dGetWordAligned(x)		dGetWord(x)
-#define dPutWordAligned(x, y)	dPutWord(x, y)
-#else	/* UNALIGNED_LONG_OK */
+#ifdef WORDS_UNALIGNED_OK
+#define dGetWord(x)				UNALIGNED_GET_WORD(&memory[x], memory_read_word_stat)
+#define dPutWord(x, y)			UNALIGNED_PUT_WORD(&memory[x], (y), memory_write_word_stat)
+#define dGetWordAligned(x)		UNALIGNED_GET_WORD(&memory[x], memory_read_aligned_word_stat)
+#define dPutWordAligned(x, y)	UNALIGNED_PUT_WORD(&memory[x], (y), memory_write_aligned_word_stat)
+#else	/* WORDS_UNALIGNED_OK */
 #define dGetWord(x)				(memory[x] + (memory[(x) + 1] << 8))
 #define dPutWord(x, y)			(memory[x] = (UBYTE) (y), memory[(x) + 1] = (UBYTE) ((y) >> 8))
 /* faster versions of dGetWord and dPutWord for even addresses */
 /* TODO: guarantee that memory is UWORD-aligned and use UWORD access */
 #define dGetWordAligned(x)		dGetWord(x)
 #define dPutWordAligned(x, y)	dPutWord(x, y)
-#endif	/* UNALIGNED_LONG_OK */
+#endif	/* WORDS_UNALIGNED_OK */
 #else	/* WORDS_BIGENDIAN */
 /* can't do any word optimizations for big endian machines */
 #define dGetWord(x)				(memory[x] + (memory[(x) + 1] << 8))
