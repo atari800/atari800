@@ -235,7 +235,7 @@ case "$a8_target" in
         A8_NEED_LIB(kbd)
         A8_NEED_LIB(mc)
         A8_NEED_LIB(z)
-	A8_NEED_LIB(g)
+        A8_NEED_LIB(g)
         A8_NEED_LIB(c)
         OBJS="atari_ps2.o ps2kbd.s usbd.s"
         ;;
@@ -315,38 +315,59 @@ AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 
 
-dnl Check for validity of unaligned word accesses...
+dnl Set usage of unaligned word accesses...
 
-AC_CACHE_CHECK([for unaligned word access validity], ac_cv_unaligned_long_ok,
-[AC_TRY_RUN([
-#include <stdlib.h>
-#include <signal.h>
-#include <setjmp.h>
-jmp_buf jmpbuf;
-void bus_err()
-{
-    longjmp(jmpbuf, 1);
-}
-int main(void)
-{
-#ifndef SIGBUS
-    return 0;
-#else
-    int l[2];
-    if (setjmp(jmpbuf) == 0) {
-        signal(SIGBUS, bus_err);
-        *((int *) ((char *) l + 1)) = 1;
-        signal(SIGBUS, SIG_DFL);
-        return 0;
-    }
-    else {
-        signal(SIGBUS, SIG_DFL);
-        return 1;
-    }
-#endif
-}], ac_cv_unaligned_long_ok=yes, ac_cv_unaligned_long_ok=no, ac_cv_unaligned_long_ok=no)])
-if [[ "$ac_cv_unaligned_long_ok" = "yes" ]]; then
-    AC_DEFINE(UNALIGNED_LONG_OK,1,[Define if unaligned word access is ok.])
+AC_ARG_ENABLE(unalignedwords,AC_HELP_STRING(--enable-unalignedwords,[Override usage of unaligned words]))
+if [[ "$enable_unalignedwords" != "yes" -a "$enable_unalignedwords" != "no" ]]; then
+    case $host_cpu in
+        alpha* | arm* | hppa* | ia64 | mips* | sparc*)
+            enable_unalignedwords=no
+            ;;
+        i*86 | m68* | powerpc* | x86_64)
+            enable_unalignedwords=yes
+            ;;
+        *)
+            AC_MSG_WARN([$host_cpu architecture is unknown to this script.])
+            AC_MSG_WARN([Performance may be sub-optimal. Please contact Atari800 developers.])
+            enable_unalignedwords=no
+            ;;
+    esac
+fi
+
+if [[ "$enable_unalignedwords" = "yes" ]]; then
+    dnl Make sure it is allowed
+    AC_MSG_CHECKING([for unaligned word access validity])
+    AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM([[#include <stdio.h>]],[[
+            unsigned char test_data[] = "Hello, I test unaligned word access validity.";
+            unsigned char *p;
+            /* step through test_data as far as 4 bytes are available via p */
+            for (p = test_data; p[2] != '\0'; p++) {
+                unsigned int word_read = *(unsigned short *) p;
+                if (word_read != (p[0] + (p[1] << 8))
+                 && word_read != (p[1] + (p[0] << 8))) {
+                    printf("16-bit access at address %p yields bad data!\n"
+                           "Bytes: %02X %02X; Value read: %04X\n",
+                           p, p[0], p[1], word_read);
+                    return 1;
+                }
+                word_read = *(unsigned int *) p;
+                if (word_read != (p[0] + (p[1] << 8) + (p[2] << 16) + (p[3] << 24))
+                 && word_read != (p[3] + (p[2] << 8) + (p[1] << 16) + (p[0] << 24))) {
+                    printf("32-bit access at address %p yields bad data!\n"
+                           "Bytes: %02X %02X %02X %02X; Value read: %08X\n",
+                           p, p[0], p[1], p[2], p[3], word_read);
+                    return 1;
+                }
+            }
+        ]])],
+        AC_MSG_RESULT([yes]),
+        [enable_unalignedwords=no; AC_MSG_RESULT([failed! disabling unaligned word access])],
+        AC_MSG_RESULT([skipped because cross-compiling])
+    )
+    if [[ "$enable_unalignedwords" = "yes" ]]; then
+        AC_DEFINE(WORDS_UNALIGNED_OK,1,[Define if unaligned word access is ok.])
+    fi
 fi
 
 
@@ -681,5 +702,5 @@ if [[ "$WANT_VERY_SLOW" = "yes" ]]; then
 fi
 
 echo
-echo "Now run \"make\"."
+echo "Now run \"gmake\" or \"make\"."
 echo
