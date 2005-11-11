@@ -626,7 +626,7 @@ static int Device_IsValidForFilename(char ch)
 UWORD Device_SkipDeviceName(void)
 {
 	UWORD bufadr;
-	for (bufadr = dGetWord(ICBALZ); ; bufadr++) {
+	for (bufadr = dGetWordAligned(ICBALZ); ; bufadr++) {
 		char c = (char) dGetByte(bufadr);
 		if (c == ':')
 			return (UWORD) (bufadr + 1);
@@ -1350,7 +1350,7 @@ static int Device_H_BinReadWord(void)
 			return -1;
 		}
 		if (runBinFile)
-			regPC = dGetWord(0x2e0);
+			regPC = dGetWordAligned(0x2e0);
 		regY = 1;
 		ClrN;
 		return -1;
@@ -1391,7 +1391,7 @@ static void Device_H_BinLoaderCont(void)
 
 		if (start_binloading) {
 			if (runBinFile)
-				dPutWord(0x2e0, from);
+				dPutWordAligned(0x2e0, from);
 			start_binloading = FALSE;
 		}
 
@@ -1402,13 +1402,13 @@ static void Device_H_BinLoaderCont(void)
 				fclose(binf);
 				binf = NULL;
 				if (runBinFile)
-					regPC = dGetWord(0x2e0);
+					regPC = dGetWordAligned(0x2e0);
 				if (initBinFile && (dGetByte(0x2e3) != 0xd7)) {
 					/* run INIT routine which RTSes directly to RUN routine */
 					regPC--;
 					dPutByte(0x0100 + regS--, regPC >> 8);	/* high */
 					dPutByte(0x0100 + regS--, regPC & 0xff);	/* low */
-					regPC = dGetWord(0x2e2);
+					regPC = dGetWordAligned(0x2e2);
 				}
 				return;
 			}
@@ -1423,7 +1423,7 @@ static void Device_H_BinLoaderCont(void)
 	dPutByte(0x0100 + regS--, 0x01);	/* high */
 	dPutByte(0x0100 + regS, regS + 1);	/* low */
 	regS--;
-	regPC = dGetWord(0x2e2);
+	regPC = dGetWordAligned(0x2e2);
 	SetC;
 
 	dPutByte(0x0300, 0x31);		/* for "Studio Dream" */
@@ -1654,7 +1654,7 @@ static void Device_H_DiskInfo(void)
 
 	info[11] = (UBYTE) ('1' + devnum);
 	info[15] = (UBYTE) (1 + devnum);
-	CopyToMem(info, (UWORD) dGetWord(ICBLLZ), 16);
+	CopyToMem(info, (UWORD) dGetWordAligned(ICBLLZ), 16);
 
 	regY = 1;
 	ClrN;
@@ -1679,7 +1679,7 @@ static void Device_H_ToAbsolutePath(void)
 		return;
 	}
 
-	bufadr = dGetWord(ICBLLZ);
+	bufadr = dGetWordAligned(ICBLLZ);
 	if (atari_path[0] != '\0') {
 		PutByte(bufadr, '>');
 		bufadr++;

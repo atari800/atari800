@@ -49,7 +49,7 @@ static int BIN_read_word(void)
 			Aprint("binload: not valid BIN file");
 			return -1;
 		}
-		regPC = dGetWord(0x2e0);
+		regPC = dGetWordAligned(0x2e0);
 		return -1;
 	}
 	return buf[0] + (buf[1] << 8);
@@ -85,7 +85,7 @@ void BIN_loader_cont(void)
 		to = (UWORD) temp;
 
 		if (start_binloading) {
-			dPutWord(0x2e0, from);
+			dPutWordAligned(0x2e0, from);
 			start_binloading = FALSE;
 		}
 
@@ -95,13 +95,13 @@ void BIN_loader_cont(void)
 			if (byte == EOF) {
 				fclose(bin_file);
 				bin_file = NULL;
-				regPC = dGetWord(0x2e0);
+				regPC = dGetWordAligned(0x2e0);
 				if (dGetByte(0x2e3) != 0xd7) {
 					/* run INIT routine which RTSes directly to RUN routine */
 					regPC--;
 					dPutByte(0x0100 + regS--, regPC >> 8);		/* high */
 					dPutByte(0x0100 + regS--, regPC & 0xff);	/* low */
-					regPC = dGetWord(0x2e2);
+					regPC = dGetWordAligned(0x2e2);
 				}
 				return;
 			}
@@ -116,7 +116,7 @@ void BIN_loader_cont(void)
 	dPutByte(0x0100 + regS--, 0x01);	/* high */
 	dPutByte(0x0100 + regS, regS + 1);	/* low */
 	regS--;
-	regPC = dGetWord(0x2e2);
+	regPC = dGetWordAligned(0x2e2);
 	SetC;
 
 	dPutByte(0x0300, 0x31);	/* for "Studio Dream" */
