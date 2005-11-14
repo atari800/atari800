@@ -1,3 +1,14 @@
+2005-11-14  Piotr Fusik  <fox@scene.pl>
+* configure.ac: R: device disabled by default (use "--enable-riodevice"
+  at your own risk)
+
+* atari_ps2.c: fixed timer_interrupt_id, but the timer code probably
+  still won't work, so I wrapped it in USE_TIMERS
+
+* ui_basic.c: added "[mc0:]" to file selector on PS2;
+  use just one Win32 API call GetLogicalDrives() for all drive letters
+
+
 2005-11-11  Piotr Fusik  <fox@scene.pl>
 * configure.ac, amiga/config.h, win32/msc/config.h, wince/port/config.h,
   antic.c, cpu.c, memory.h, pokeysnd.c:
