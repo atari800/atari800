@@ -46,6 +46,9 @@
 #include "screen.h"
 #include "ui.h"
 
+// define to use T0 and T1 timers
+#define USE_TIMERS
+
 extern unsigned char usbd[];
 extern unsigned int size_usbd;
 
@@ -65,6 +68,8 @@ int PS2KbdCONTROL = 0;
 #define PAD_SLOT 0
 
 static char padBuf[256] __attribute__((aligned(64)));
+
+#ifdef USE_TIMERS
 
 /* We use T0 for Atari_time() and T1 for Atari_sleep().
    Note that both timers are just 16-bit. */
@@ -107,7 +112,7 @@ static int t1_interrupt_handler(int ca)
 static void timer_initialize(void)
 {
 	T0_MODE = 0; // disable
-	timer_interrupt_id = AddIntcHandler(INTC_TIM0, t0_interrupt_handler, 0);
+	t0_interrupt_id = AddIntcHandler(INTC_TIM0, t0_interrupt_handler, 0);
 	EnableIntc(INTC_TIM0);
 	T0_COUNT = 0;
 	T0_MODE = 0x002  // 576000 Hz clock
@@ -115,7 +120,7 @@ static void timer_initialize(void)
 			+ 0x200; // generate interrupt on overflow
 
 	T1_MODE = 0; // disable
-	timer_interrupt_id = AddIntcHandler(INTC_TIM1, t1_interrupt_handler, 0);
+	t1_interrupt_id = AddIntcHandler(INTC_TIM1, t1_interrupt_handler, 0);
 	EnableIntc(INTC_TIM1);
 }
 
@@ -135,17 +140,25 @@ static void timer_shutdown(void)
 	}
 }
 
+#endif /* USE_TIMERS */
+
 double Atari_time(void)
 {
+#ifdef USE_TIMERS
 	/* AFAIK, multiplication is faster than division,
 	   on every CPU architecture */
 	return (timer_interrupt_ticks * 65536.0 + T0_COUNT) * (1.0 / 576000);
+#else
+	static double fake_timer = 0;
+	return fake_timer++;
+#endif
 }
 
 /* this Atari_sleep() supports times only up to 0.11 sec,
    which is enough for Atari800 purposes */
 void Atari_sleep(double s)
 {
+#ifdef USE_TIMERS
 	unsigned long count = 65536 - (unsigned long) (s * 576000);
 	// do nothing if s is less than one T1 tick
 	if (count >= 65536)
@@ -156,6 +169,7 @@ void Atari_sleep(double s)
 			+ 0x080  // start counting
 			+ 0x200; // generate interrupt on overflow
 	SleepThread();
+#endif
 }
 
 void loadModules(void)
@@ -226,7 +240,9 @@ void Atari_Initialise(int *argc, char *argv[])
 	// Init joypad
 	padInit(0);
 	padPortOpen(PAD_PORT, PAD_SLOT, padBuf);
+#ifdef USE_TIMERS
 	timer_initialize();
+#endif
 }
 
 int Atari_Exit(int run_monitor)
@@ -239,7 +255,9 @@ int Atari_Exit(int run_monitor)
 		return TRUE;
 	}
 #endif
+#ifdef USE_TIMERS
 	timer_shutdown();
+#endif
 //zzz temp exit procedure
 //Hard coded to go back to ulaunch
 	fioExit();
