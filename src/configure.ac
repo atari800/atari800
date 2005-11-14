@@ -598,7 +598,7 @@ if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
 fi
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
-    A8_OPTION(riodevice,yes,
+    A8_OPTION(riodevice,no,
               [Use the R: networking device (Linux/Unix only) (default=ON)],
               R_IO_DEVICE,[Define to use R: device.]
              )
