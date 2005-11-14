@@ -753,10 +753,24 @@ static void GetDirectory(const char *directory)
 	else {
 		Aprint("Error opening '%s' directory", directory);
 	}
+#ifdef PS2
+	FilenamesAdd(Util_strdup("[mc0:]"));
+#endif
 #ifdef DOS_DRIVES
 	/* in DOS/Windows, add all existing disk letters */
 	{
 		char letter;
+#ifdef WIN32
+		DWORD drive_mask = GetLogicalDrives();
+		for (letter = 'A'; letter <= 'Z'; letter++) {
+			if (drive_mask & 1) {
+				static char drive2[5] = "[C:]";
+				drive2[1] = letter;
+				FilenamesAdd(Util_strdup(drive2));
+			}
+			drive_mask >>= 1;
+		}
+#else /* WIN32 */
 		for (letter = 'A'; letter <= 'Z'; letter++) {
 #ifdef __DJGPP__
 			static char drive[3] = "C:";
@@ -764,21 +778,14 @@ static void GetDirectory(const char *directory)
 			drive[0] = letter;
 			/* don't check floppies - it's slow */
 			if (letter < 'C' || (stat(drive, &st) == 0 && (st.st_mode & S_IXUSR) != 0))
-#elif defined(WIN32)
-#ifdef UNICODE
-			static WCHAR rootpath[4] = L"C:\\";
-#else
-			static char rootpath[4] = "C:\\";
-#endif
-			rootpath[0] = letter;
-			if (GetDriveType(rootpath) != DRIVE_NO_ROOT_DIR)
-#endif /* defined(WIN32) */
+#endif /* __DJGPP__ */
 			{
 				static char drive2[5] = "[C:]";
 				drive2[1] = letter;
 				FilenamesAdd(Util_strdup(drive2));
 			}
 		}
+#endif /* WIN32 */
 	}
 #endif /* DOS_DRIVES */
 #ifdef __DJGPP__
@@ -832,7 +839,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 		GetDirectory(current_dir);
 
 		if (n_filenames == 0) {
-			/* XXX: shouldn't happen: there should be at least ".." or a drive letter */
+			/* FIXME: change to a safe directory */
 			FilenamesFree();
 			BasicUIMessage("No files inside directory");
 			return FALSE;
@@ -914,6 +921,11 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 					/* go up */
 					Util_splitpath(current_dir, new_dir, NULL);
 				}
+#ifdef PS2
+				else if (strcmp(selected_filename, "[mc0:]") == 0) {
+					strcpy(new_dir, "mc0:/");
+				}
+#endif
 #ifdef DOS_DRIVES
 				else if (selected_filename[2] == ':' && selected_filename[3] == ']') {
 					/* disk selected */
