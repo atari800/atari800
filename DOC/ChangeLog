@@ -1,3 +1,15 @@
+2005-11-19  Piotr Fusik  <fox@scene.pl>
+* configure.ac, sound_oss.c, sound_unix.c: new OSS sound handling:
+  - renamed sound_unix.c to sound_oss.c
+  - added "-lossaudio" (necessary on NetBSD)
+  - removed some advanced tricks (including "-snddelay" option),
+    now writing samples for one Atari frame at once
+  - implemented Sound_Pause() using SNDCTL_DSP_POST
+
+* monitor.c: the output of "GTIA" command is now 7 lines instead of 5,
+  but is much more readable (sprite registers are aligned)
+
+
 2005-11-14  Piotr Fusik  <fox@scene.pl>
 * configure.ac: R: device disabled by default (use "--enable-riodevice"
   at your own risk)
