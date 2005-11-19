@@ -166,8 +166,8 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
-SUPPORTS_SOUND_UNIX=yes
-AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_UNIX=no)
+SUPPORTS_SOUND_OSS=yes
+AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_OSS=no)
 SUPPORTS_RDEVICE=yes
 AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no)
 
@@ -178,6 +178,7 @@ AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")
 AC_CHECK_LIB(z,gzopen)
 AC_CHECK_LIB(png,png_get_libpng_ver)
 AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
+AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
 
 
 dnl Set OBJS and libraries depending on host and target...
@@ -506,8 +507,8 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
                 OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
                 ;;
             *)
-                if [[ "$SUPPORTS_SOUND_UNIX" = "yes" ]]; then
-                    OBJS="$OBJS sound_unix.o"
+                if [[ "$SUPPORTS_SOUND_OSS" = "yes" ]]; then
+                    OBJS="$OBJS sound_oss.o"
                 else
                     AC_MSG_ERROR([Sound support not available, re-run configure with --disable-sound])
                 fi
