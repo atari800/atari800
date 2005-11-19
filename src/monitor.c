@@ -1902,37 +1902,32 @@ int monitor(void)
 				   "PORTB= %02X\n", PACTL, PBCTL, PORTA, PORTB);
 		}
 		else if (strcmp(t, "GTIA") == 0) {
-			printf("HPOSP0=%02X    HPOSP1=%02X    HPOSP2=%02X    "
-				   "HPOSP3=%02X    HPOSM0=%02X    HPOSM1=%02X\n",
-				   HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1);
-			printf("HPOSM2=%02X    HPOSM3=%02X    SIZEP0=%02X    "
-				   "SIZEP1=%02X    SIZEP2=%02X    SIZEP3=%02X\n",
-				   HPOSM2, HPOSM3, SIZEP0, SIZEP1, SIZEP2, SIZEP3);
-			printf("SIZEM= %02X    GRAFP0=%02X    GRAFP1=%02X    "
-				   "GRAFP2=%02X    GRAFP3=%02X    GRAFM= %02X\n",
-				   SIZEM, GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM);
-			printf("COLPM0=%02X    COLPM1=%02X    COLPM2=%02X    "
-				   "COLPM3=%02X    COLPF0=%02X    COLPF1=%02X\n",
-				   COLPM0, COLPM1, COLPM2, COLPM3, COLPF0, COLPF1);
-			printf("COLPF2=%02X    COLPF3=%02X    COLBK= %02X    "
-				   "PRIOR= %02X    VDELAY=%02X    GRACTL=%02X\n",
-				   COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL);
+			printf("HPOSP0=%02X    HPOSP1=%02X    HPOSP2=%02X    HPOSP3=%02X\n",
+				   HPOSP0, HPOSP1, HPOSP2, HPOSP3);
+			printf("HPOSM0=%02X    HPOSM1=%02X    HPOSM2=%02X    HPOSM3=%02X\n",
+				   HPOSM0, HPOSM1, HPOSM2, HPOSM3);
+			printf("SIZEP0=%02X    SIZEP1=%02X    SIZEP2=%02X    SIZEP3=%02X    SIZEM= %02X\n",
+				   SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM);
+			printf("GRAFP0=%02X    GRAFP1=%02X    GRAFP2=%02X    GRAFP3=%02X    GRAFM= %02X\n",
+				   GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM);
+			printf("COLPM0=%02X    COLPM1=%02X    COLPM2=%02X    COLPM3=%02X\n",
+				   COLPM0, COLPM1, COLPM2, COLPM3);
+			printf("COLPF0=%02X    COLPF1=%02X    COLPF2=%02X    COLPF3=%02X    COLBK= %02X\n",
+				   COLPF0, COLPF1, COLPF2, COLPF3, COLBK);
+			printf("PRIOR= %02X    VDELAY=%02X    GRACTL=%02X\n",
+				   PRIOR, VDELAY, GRACTL);
 		}
 		else if (strcmp(t, "POKEY") == 0) {
-			printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    "
-				   "AUDF4= %02X    AUDCTL=%02X    KBCODE=%02X\n",
+			printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    AUDF4= %02X    AUDCTL=%02X    KBCODE=%02X\n",
 				   AUDF[CHAN1], AUDF[CHAN2], AUDF[CHAN3], AUDF[CHAN4], AUDCTL[0], KBCODE);
-			printf("AUDC1= %02X    AUDC2= %02X    AUDC3= %02X    "
-				   "AUDC4= %02X    IRQEN= %02X    IRQST= %02X\n",
+			printf("AUDC1= %02X    AUDC2= %02X    AUDC3= %02X    AUDC4= %02X    IRQEN= %02X    IRQST= %02X\n",
 				   AUDC[CHAN1], AUDC[CHAN2], AUDC[CHAN3], AUDC[CHAN4], IRQEN, IRQST);
 #ifdef STEREO_SOUND
 			if (stereo_enabled) {
 				printf("Second chip:\n");
-				printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    "
-					   "AUDF4= %02X    AUDCTL=%02X\n",
+				printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    AUDF4= %02X    AUDCTL=%02X\n",
 					   AUDF[CHAN1 + CHIP2], AUDF[CHAN2 + CHIP2], AUDF[CHAN3 + CHIP2], AUDF[CHAN4 + CHIP2], AUDCTL[1]);
-				printf("AUDC1= %02X    AUDC2= %02X    AUDC3= %02X    "
-					   "AUDC4= %02X\n",
+				printf("AUDC1= %02X    AUDC2= %02X    AUDC3= %02X    AUDC4= %02X\n",
 					   AUDC[CHAN1 + CHIP2], AUDC[CHAN2 + CHIP2], AUDC[CHAN3 + CHIP2], AUDC[CHAN4 + CHIP2]);
 			}
 #endif
