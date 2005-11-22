@@ -45,10 +45,10 @@
 #include "monitor.h"
 #include "screen.h"
 #include "ui.h"
+#include "util.h"
 
 // define to use T0 and T1 timers
 #define USE_TIMERS
-
 extern unsigned char usbd[];
 extern unsigned int size_usbd;
 
@@ -168,14 +168,14 @@ void Atari_sleep(double s)
 	T1_MODE = 0x002  // 576000 Hz clock
 			+ 0x080  // start counting
 			+ 0x200; // generate interrupt on overflow
-	SleepThread();
+//	SleepThread();
 #endif
 }
 
 void loadModules(void)
 {
 	int ret;
-	init_scr();
+	//init_scr();
 
 	ret = SifLoadModule("rom0:SIO2MAN", 0, NULL);
 	if (ret < 0) {
@@ -196,25 +196,19 @@ void loadModules(void)
 		SleepThread();
 	}
 
-//	mcInit(MC_TYPE_MC);
+	mcInit(MC_TYPE_MC);
 
 //	cdinit(1);
 	SifInitRpc(0);
 
-#if 1
 	SifExecModuleBuffer(usbd, size_usbd, 0, NULL, &ret);
 	SifExecModuleBuffer(ps2kbd, size_ps2kbd, 0, NULL, &ret);
-#else
-	SifLoadModule("mc0:/ATARI/usbd.irx", 0, 0);
-	SifLoadModule("mc0:/ATARI/ps2kbd.irx", 0, 0);
-#endif
 
 	if (PS2KbdInit() == 0) {
 		Aprint("Failed to Init Keyboard.");
 	}
 	PS2KbdSetReadmode(PS2KBD_READMODE_RAW);
-//	PS2KbdSetReadmode(PS2KBD_READMODE_NORMAL);
-//	Aprint("keyboard read mode is %d", PS2KBD_READMODE_NORMAL);
+
 }
 
 void Atari_Initialise(int *argc, char *argv[])
@@ -293,6 +287,7 @@ void Atari_DisplayScreen(void)
 	gsGlobal->EvenOrOdd = ((GSREG *) GS_CSR)->FIELD;
 	gsKit_setactive(gsGlobal);
 #endif
+
 }
 
 static int PadButtons(void)
@@ -762,6 +757,7 @@ int Atari_OpenDir(const char *filename)
 	if (strncmp(filename, "mc0:/", 5) != 0)
 		return FALSE;
 	dir_n = mcGetDir(0, 0, filename + 4, 0 /* followup flag */, MAX_FILES_PER_DIR, mcDir);
+	mcSync(0,NULL,&dir_n);
 	if (dir_n < 0)
 		return FALSE;
 	dir_i = 0;
@@ -815,7 +811,7 @@ int main(int argc, char **argv)
 	for (;;) {
 		key_code = Atari_Keyboard();
 		Atari800_Frame();
-		if (display_screen)
-			Atari_DisplayScreen();
+		if (display_screen){
+			Atari_DisplayScreen();}
 	}
 }

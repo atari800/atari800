@@ -1000,8 +1000,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 		}
 	}
 
+	if(*argc > 1)
 	*argc = j;
-
 	got_config = Atari800_ReadConfig(rtconfig_filename);
 
 	/* try to find ROM images if the configuration file is not found
@@ -1227,7 +1227,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	/* Configure Atari System */
 	Atari800_InitialiseMachine();
-
 #else /* __PLUS */
 
 	if (!InitialiseMachine()) {
@@ -1338,7 +1337,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef BENCHMARK
 	benchmark_start_time = Atari_time();
 #endif
-
 	return TRUE;
 }
 
@@ -1499,7 +1497,7 @@ void Atari800_UpdatePatches(void)
 
 #ifdef PS2
 
-double Atari_time(void);
+static double Atari_time(void);
 void Atari_sleep(double s);
 
 #else /* PS2 */
@@ -1600,7 +1598,6 @@ void atari_sync(void)
 		double curtime = Atari_time();
 		Atari_sleep(lasttime + deltatime - curtime);
 		curtime = Atari_time();
-
 		/* make average time */
 		frametime = (frametime * 4.0 + curtime - lastcurtime) * 0.2;
 		fps = 1.0 / frametime;
@@ -1610,6 +1607,7 @@ void atari_sync(void)
 		if ((lasttime + deltatime) < curtime)
 			lasttime = curtime;
 	}
+
 	percent_atari_speed = (int) (100.0 * deltatime / frametime + 0.5);
 #endif /* USE_CLOCK */
 }
@@ -1792,6 +1790,7 @@ void Atari800_Frame(void)
 		Sound_Pause();
 #endif
 		ui();
+
 #ifdef SOUND
 		Sound_Continue();
 #endif
@@ -1850,10 +1849,8 @@ void Atari800_Frame(void)
 		display_screen = FALSE;
 	}
 #endif /* BASIC */
-
 	POKEY_Frame();
 	nframes++;
-
 #ifdef BENCHMARK
 	if (nframes >= BENCHMARK) {
 		double benchmark_time = Atari_time() - benchmark_start_time;

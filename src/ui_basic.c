@@ -817,6 +817,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 	if (current_dir[0] == '\0' || (current_dir[0] == '.' && current_dir[1] == '\0'))
 		getcwd(current_dir, FILENAME_MAX);
 #else
+	char directory[FILENAME_MAX];
 	if (directory[0] == '\0') {
 		directory[0] = '.';
 		directory[1] = '\0';
