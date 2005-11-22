@@ -235,8 +235,8 @@ case "$a8_target" in
         A8_NEED_LIB(pad)
         A8_NEED_LIB(kbd)
         A8_NEED_LIB(mc)
-        A8_NEED_LIB(z)
         A8_NEED_LIB(g)
+        A8_NEED_LIB(z)
         A8_NEED_LIB(c)
         OBJS="atari_ps2.o ps2kbd.s usbd.s"
         ;;
