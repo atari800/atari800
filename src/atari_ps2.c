@@ -370,7 +370,7 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 				return AKEY_TAB;
 			case 0x2C:
 				return AKEY_SPACE;
-			case 0x46:
+			case 0x46://Print Screen Button
 				return AKEY_SCREENSHOT;
 			case 0x4F:
 			    return AKEY_RIGHT;
@@ -395,7 +395,7 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 			case 0xE5:
 				PS2KbdSHIFT = 1;
 				return AKEY_NONE;
-			//todo: map the following keys
+			//TODO: map the following keys
 			//control <>: (suits)
 			//akey_clear
 			//AKEY_BREAK
@@ -403,7 +403,9 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 			//control-2 = bell (clear?)
 			//control-3 = error - 136? (break?)
 			//akey_caret && circumflex difference???
+			//ALT+key shortcut keys
 			//TODO:enable keyboard repeat when shift nor control pressed
+			
 			default:
 				break;
 			}
@@ -453,13 +455,13 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 				return AKEY_FULLSTOP;
 			case 0x38:
 				return AKEY_SLASH;
-			case 0x3A:
+			case 0x3A://F1
 				return AKEY_UI;
-			case 0x3E:
+			case 0x3E://F5
 				return AKEY_WARMSTART;
-			case 0x41:
+			case 0x42://F9
 				return AKEY_EXIT;
-			case 0x43:
+			case 0x43://F10
 				return AKEY_SCREENSHOT;
 			default:
 				break;
@@ -558,11 +560,13 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 				return AKEY_GREATER;
 			case 0x38:
 				return AKEY_QUESTION;
-			case 0x3E:
+			case 0x3E://Shift+F5
 				return AKEY_COLDSTART;
-			case 0x49:
+			case 0x43://Shift+F10
+				return AKEY_SCREENSHOT_INTERLACE;
+			case 0x49://Shift+Insert key
 				return AKEY_INSERT_LINE;
-			case 0x4C:
+			case 0x4C://Shift+Backspace Key
 				return AKEY_DELETE_LINE;
 			default:
 				break;
