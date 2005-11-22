@@ -53,8 +53,8 @@ typedef struct
 #define ITEM_CHECKED 0x10  /* The boolean value for ITEM_CHECK is true */
 #define ITEM_TIP     0x20  /* suffix is shown when the item is selected rather than on its right */
 
-#if defined(PS2) || defined(_WIN32_WCE)
-/* No function keys nor Alt+letter on PlayStation 2 and Windows CE */
+#if defined(_WIN32_WCE)
+/* No function keys nor Alt+letter on Windows CE */
 #define MENU_ACCEL(keystroke) NULL
 #else
 #define MENU_ACCEL(keystroke) keystroke
