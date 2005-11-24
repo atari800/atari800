@@ -21,7 +21,21 @@
  * along with Atari800; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+			//TODO: map the following keys
+			//control <>: (suits)
+			//akey_clear
+			//AKEY_BREAK
+			//Turn on/off caps lock LED.
+			//do capslock/capstoggle
+			//akey_caret && circumflex difference???
+			//ALT+key shortcut keys
+			//enable keyboard repeat (when shift nor control pressed)
+			//enable left joy for scrolling & limit pad to one directional per press
+			//enable mouse support
+			//autodetect pal vs ntsc
+			//allow user to map own keyboard keys to controller
+			//enable cdfs, hdd, and host support.
+ 
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
@@ -62,7 +76,7 @@ static int clut[256] __attribute__((aligned(16)));
 //int PS2KbdCAPS = 0;
 int PS2KbdSHIFT = 0;
 int PS2KbdCONTROL = 0;
-
+int PS2KbdALT = 0;
 
 #define PAD_PORT 0
 #define PAD_SLOT 0
@@ -156,7 +170,8 @@ double Atari_time(void)
 
 /* this Atari_sleep() supports times only up to 0.11 sec,
    which is enough for Atari800 purposes */
-void Atari_sleep(double s)
+
+/* void Atari_sleep(double s)
 {
 #ifdef USE_TIMERS
 	unsigned long count = 65536 - (unsigned long) (s * 576000);
@@ -171,6 +186,24 @@ void Atari_sleep(double s)
 //	SleepThread();
 #endif
 }
+*/
+volatile int locked = 1;
+
+void wakeup(s32 id, u16 time, void *arg)
+{
+        locked = 0;
+}
+
+void Atari_sleep(double s)
+{
+
+        /* 15734 is around 1 second on NTSC */
+	/* is about 1ms? */
+        SetAlarm(157 * s, wakeup, 0);
+        while (locked);
+	locked = 1;
+}
+
 
 void loadModules(void)
 {
@@ -363,7 +396,7 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 			case 0x28:
 				return AKEY_RETURN;
 			case 0x29:
-			    return AKEY_ESCAPE;
+				return AKEY_ESCAPE;
 			case 0x2A:
 				return AKEY_BACKSPACE;
 			case 0x2B:
@@ -392,26 +425,21 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 			case 0xE1:
 				PS2KbdSHIFT = 1;
 				return AKEY_NONE;
+			case 0xE2:
+				PS2KbdALT = 1;
+				return AKEY_NONE;
 			case 0xE5:
 				PS2KbdSHIFT = 1;
 				return AKEY_NONE;
-			//TODO: map the following keys
-			//control <>: (suits)
-			//akey_clear
-			//AKEY_BREAK
-			//control-1 = pause??(is this break?)
-			//control-2 = bell (clear?)
-			//control-3 = error - 136? (break?)
-			//akey_caret && circumflex difference???
-			//ALT+key shortcut keys
-			//TODO:enable keyboard repeat when shift nor control pressed
-			
+			case 0xE6:
+				PS2KbdALT = 1;
+				return AKEY_NONE;
 			default:
 				break;
 			}
 		}
 
-		if ((key.state == PS2KBD_RAWKEY_DOWN) && (!PS2KbdSHIFT)) {
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && !PS2KbdSHIFT && !PS2KbdALT) {
 			switch (key.key) {
 			case 0x1E:
 				return AKEY_1;
@@ -467,7 +495,7 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 				break;
 			}
 		}
-		if ((key.state == PS2KBD_RAWKEY_DOWN) && PS2KbdSHIFT && !PS2KbdCONTROL) {
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && PS2KbdSHIFT && !PS2KbdCONTROL && !PS2KbdALT) {
 			switch (key.key) {
 			case 0x4:
 				return AKEY_A;
@@ -572,7 +600,7 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 				break;
 			}
 		}
-		if ((key.state == PS2KBD_RAWKEY_DOWN) && !PS2KbdSHIFT && !PS2KbdCONTROL) {
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && !PS2KbdSHIFT && !PS2KbdCONTROL && !PS2KbdALT) {
 			switch (key.key) {
 			case 0x4:
 				return AKEY_a;
@@ -634,7 +662,7 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 				break;
 			}
 		}
-		if ((key.state == PS2KBD_RAWKEY_DOWN) && (PS2KbdCONTROL)) {
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && PS2KbdCONTROL && !PS2KbdALT) {
 			switch(key.key) {
 			case 0x4:
 				return AKEY_CTRL_a;
@@ -688,16 +716,72 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 				return AKEY_CTRL_y;
 			case 0x1D:
 				return AKEY_CTRL_z;
+			case 0x1E:
+				return AKEY_CTRL_1;
+			case 0x1F:
+				return AKEY_CTRL_2;
+			case 0x20:
+				return AKEY_CTRL_3;
+			case 0x21:
+				return AKEY_CTRL_4;
+			case 0x22:
+				return AKEY_CTRL_5;
+			case 0x23:
+				return AKEY_CTRL_6;
+			case 0x24:
+				return AKEY_CTRL_7;
+			case 0x25:
+				return AKEY_CTRL_8;
+			case 0x26:
+				return AKEY_CTRL_9;
+			case 0x27:
+				return AKEY_CTRL_0;
 			case 0x2B:
 				return AKEY_CLRTAB;
+			case 0x33:
+				return AKEY_SEMICOLON | AKEY_CTRL;
+			case 0x36:
+				return AKEY_LESS | AKEY_CTRL;
+			case 0x37:
+				return AKEY_GREATER | AKEY_CTRL;
 			default:
 				break;
 			}
 		}
+		if ((key.state == PS2KBD_RAWKEY_DOWN) && PS2KbdALT) {
+			switch(key.key) {
+			//case dcr ylsa
+			case 0x7:
+				alt_function = MENU_DISK;
+				return AKEY_UI;
+			case 0x6:
+				alt_function = MENU_CARTRIDGE;
+				return AKEY_UI;
+			case 0x15:
+				alt_function = MENU_RUN;
+				return AKEY_UI;
+			case 0x1C:
+				alt_function = MENU_SYSTEM;
+				return AKEY_UI;
+			case 0xF:
+				alt_function = MENU_LOADSTATE;
+				return AKEY_UI;
+			case 0x16:
+				alt_function = MENU_SAVESTATE;
+				return AKEY_UI;
+			case 0x4:
+				alt_function = MENU_ABOUT;
+				return AKEY_UI;
+			default:
+				break;
+			}
+		}
+
+
 		if (key.state == PS2KBD_RAWKEY_UP) {
 			switch (key.key) {
 			case 0x39:
-			//todo: Turn off caps lock LED.
+
 			return AKEY_CAPSTOGGLE;
 			case 0xE0:
 				PS2KbdCONTROL = 0;
@@ -708,8 +792,14 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 			case 0xE1:
 				PS2KbdSHIFT = 0;
 				return AKEY_NONE;
+			case 0xE2:
+				PS2KbdALT = 0;
+				return AKEY_NONE;
 			case 0xE5:
 				PS2KbdSHIFT = 0;
+				return AKEY_NONE;
+			case 0xE6:
+				PS2KbdALT = 0;
 				return AKEY_NONE;
 			default:
 				break;
