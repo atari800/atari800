@@ -92,29 +92,32 @@ static int ROTATE90 =0;
    keys are loaded from config file
    Here the defaults if there is no keymap in the config file... */
 
-int sdl_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
-int SDL_TRIG_0 = SDLK_LCTRL;
-int SDL_TRIG_0_B = SDLK_KP0;
-int SDL_JOY_0_LEFT = SDLK_KP4;
-int SDL_JOY_0_RIGHT = SDLK_KP6;
-int SDL_JOY_0_DOWN = SDLK_KP2;
-int SDL_JOY_0_UP = SDLK_KP8;
-int SDL_JOY_0_LEFTUP = SDLK_KP7;
-int SDL_JOY_0_RIGHTUP = SDLK_KP9;
-int SDL_JOY_0_LEFTDOWN = SDLK_KP1;
-int SDL_JOY_0_RIGHTDOWN = SDLK_KP3;
+/* a runtime switch for the _enabled vars is needed. DOS/VGA port uses
+ * the F7 key for this, and the ATARI_BREAK is mapped to gray End key */
+int kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
+int kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
 
-int sdl_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
-int SDL_TRIG_1 = SDLK_TAB;
-int SDL_TRIG_1_B = SDLK_LSHIFT;
-int SDL_JOY_1_LEFT = SDLK_a;
-int SDL_JOY_1_RIGHT = SDLK_d;
-int SDL_JOY_1_DOWN = SDLK_x;
-int SDL_JOY_1_UP = SDLK_w;
-int SDL_JOY_1_LEFTUP = SDLK_q;
-int SDL_JOY_1_RIGHTUP = SDLK_e;
-int SDL_JOY_1_LEFTDOWN = SDLK_z;
-int SDL_JOY_1_RIGHTDOWN = SDLK_c;
+int KBD_TRIG_0 = SDLK_LCTRL;
+int KBD_TRIG_0_B = SDLK_KP0;
+int KBD_STICK_0_LEFT = SDLK_KP4;
+int KBD_STICK_0_RIGHT = SDLK_KP6;
+int KBD_STICK_0_DOWN = SDLK_KP2;
+int KBD_STICK_0_UP = SDLK_KP8;
+int KBD_STICK_0_LEFTUP = SDLK_KP7;
+int KBD_STICK_0_RIGHTUP = SDLK_KP9;
+int KBD_STICK_0_LEFTDOWN = SDLK_KP1;
+int KBD_STICK_0_RIGHTDOWN = SDLK_KP3;
+
+int KBD_TRIG_1 = SDLK_TAB;
+int KBD_TRIG_1_B = SDLK_LSHIFT;
+int KBD_STICK_1_LEFT = SDLK_a;
+int KBD_STICK_1_RIGHT = SDLK_d;
+int KBD_STICK_1_DOWN = SDLK_x;
+int KBD_STICK_1_UP = SDLK_w;
+int KBD_STICK_1_LEFTUP = SDLK_q;
+int KBD_STICK_1_RIGHTUP = SDLK_e;
+int KBD_STICK_1_LEFTDOWN = SDLK_z;
+int KBD_STICK_1_RIGHTDOWN = SDLK_c;
 
 /* real joysticks */
 
@@ -176,45 +179,45 @@ int SDLKeyBind(int *retval, char *sdlKeySymIntStr)
 int Atari_Configure(char *option, char *parameters)
 {
 	if (strcmp(option, "SDL_TRIG_0") == 0)
-		return SDLKeyBind(&SDL_TRIG_0, parameters);
+		return SDLKeyBind(&KBD_TRIG_0, parameters);
 	else if (strcmp(option, "SDL_TRIG_0_B") == 0)
-		return SDLKeyBind(&SDL_TRIG_0_B, parameters);
+		return SDLKeyBind(&KBD_TRIG_0_B, parameters);
 	else if (strcmp(option, "SDL_JOY_0_LEFT") == 0)
-		return SDLKeyBind(&SDL_JOY_0_LEFT, parameters);
+		return SDLKeyBind(&KBD_STICK_0_LEFT, parameters);
 	else if (strcmp(option, "SDL_JOY_0_RIGHT") == 0)
-		return SDLKeyBind(&SDL_JOY_0_RIGHT, parameters);
+		return SDLKeyBind(&KBD_STICK_0_RIGHT, parameters);
 	else if (strcmp(option, "SDL_JOY_0_DOWN") == 0)
-		return SDLKeyBind(&SDL_JOY_0_DOWN, parameters);
+		return SDLKeyBind(&KBD_STICK_0_DOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_0_UP") == 0)
-		return SDLKeyBind(&SDL_JOY_0_UP, parameters);
+		return SDLKeyBind(&KBD_STICK_0_UP, parameters);
 	else if (strcmp(option, "SDL_JOY_0_LEFTUP") == 0)
-		return SDLKeyBind(&SDL_JOY_0_LEFTUP, parameters);
+		return SDLKeyBind(&KBD_STICK_0_LEFTUP, parameters);
 	else if (strcmp(option, "SDL_JOY_0_RIGHTUP") == 0)
-		return SDLKeyBind(&SDL_JOY_0_RIGHTUP, parameters);
+		return SDLKeyBind(&KBD_STICK_0_RIGHTUP, parameters);
 	else if (strcmp(option, "SDL_JOY_0_LEFTDOWN") == 0)
-		return SDLKeyBind(&SDL_JOY_0_LEFTDOWN, parameters);
+		return SDLKeyBind(&KBD_STICK_0_LEFTDOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_0_RIGHTDOWN") == 0)
-		return SDLKeyBind(&SDL_JOY_0_RIGHTDOWN, parameters);
+		return SDLKeyBind(&KBD_STICK_0_RIGHTDOWN, parameters);
 	else if (strcmp(option, "SDL_TRIG_1") == 0)
-		return SDLKeyBind(&SDL_TRIG_1, parameters);
+		return SDLKeyBind(&KBD_TRIG_1, parameters);
 	else if (strcmp(option, "SDL_TRIG_1_B") == 0)
-		return SDLKeyBind(&SDL_TRIG_1_B, parameters);
+		return SDLKeyBind(&KBD_TRIG_1_B, parameters);
 	else if (strcmp(option, "SDL_JOY_1_LEFT") == 0)
-		return SDLKeyBind(&SDL_JOY_1_LEFT, parameters);
+		return SDLKeyBind(&KBD_STICK_1_LEFT, parameters);
 	else if (strcmp(option, "SDL_JOY_1_RIGHT") == 0)
-		return SDLKeyBind(&SDL_JOY_1_RIGHT, parameters);
+		return SDLKeyBind(&KBD_STICK_1_RIGHT, parameters);
 	else if (strcmp(option, "SDL_JOY_1_DOWN") == 0)
-		return SDLKeyBind(&SDL_JOY_1_DOWN, parameters);
+		return SDLKeyBind(&KBD_STICK_1_DOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_1_UP") == 0)
-		return SDLKeyBind(&SDL_JOY_1_UP, parameters);
+		return SDLKeyBind(&KBD_STICK_1_UP, parameters);
 	else if (strcmp(option, "SDL_JOY_1_LEFTUP") == 0)
-		return SDLKeyBind(&SDL_JOY_1_LEFTUP, parameters);
+		return SDLKeyBind(&KBD_STICK_1_LEFTUP, parameters);
 	else if (strcmp(option, "SDL_JOY_1_RIGHTUP") == 0)
-		return SDLKeyBind(&SDL_JOY_1_RIGHTUP, parameters);
+		return SDLKeyBind(&KBD_STICK_1_RIGHTUP, parameters);
 	else if (strcmp(option, "SDL_JOY_1_LEFTDOWN") == 0)
-		return SDLKeyBind(&SDL_JOY_1_LEFTDOWN, parameters);
+		return SDLKeyBind(&KBD_STICK_1_LEFTDOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_1_RIGHTDOWN") == 0)
-		return SDLKeyBind(&SDL_JOY_1_RIGHTDOWN, parameters);
+		return SDLKeyBind(&KBD_STICK_1_RIGHTDOWN, parameters);
 	else
 		return FALSE;
 }
@@ -224,26 +227,26 @@ int Atari_Configure(char *option, char *parameters)
    cleaned up by joy */
 void Atari_ConfigSave(FILE *fp)
 {
-	fprintf(fp, "SDL_TRIG_0=%d\n", SDL_TRIG_0);
-	fprintf(fp, "SDL_TRIG_0_B=%d\n", SDL_TRIG_0_B);
-	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", SDL_JOY_0_LEFT);
-	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", SDL_JOY_0_RIGHT);
-	fprintf(fp, "SDL_JOY_0_UP=%d\n", SDL_JOY_0_UP);
-	fprintf(fp, "SDL_JOY_0_DOWN=%d\n", SDL_JOY_0_DOWN);
-	fprintf(fp, "SDL_JOY_0_LEFTUP=%d\n", SDL_JOY_0_LEFTUP);
-	fprintf(fp, "SDL_JOY_0_RIGHTUP=%d\n", SDL_JOY_0_RIGHTUP);
-	fprintf(fp, "SDL_JOY_0_LEFTDOWN=%d\n", SDL_JOY_0_LEFTDOWN);
-	fprintf(fp, "SDL_JOY_0_RIGHTDOWN=%d\n", SDL_JOY_0_RIGHTDOWN);
-	fprintf(fp, "SDL_TRIG_1=%d\n", SDL_TRIG_1);
-	fprintf(fp, "SDL_TRIG_1_B=%d\n", SDL_TRIG_1_B);
-	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", SDL_JOY_1_LEFT);
-	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", SDL_JOY_1_RIGHT);
-	fprintf(fp, "SDL_JOY_1_UP=%d\n", SDL_JOY_1_UP);
-	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", SDL_JOY_1_DOWN);
-	fprintf(fp, "SDL_JOY_1_LEFTUP=%d\n", SDL_JOY_1_LEFTUP);
-	fprintf(fp, "SDL_JOY_1_RIGHTUP=%d\n", SDL_JOY_1_RIGHTUP);
-	fprintf(fp, "SDL_JOY_1_LEFTDOWN=%d\n", SDL_JOY_1_LEFTDOWN);
-	fprintf(fp, "SDL_JOY_1_RIGHTDOWN=%d\n", SDL_JOY_1_RIGHTDOWN);
+	fprintf(fp, "SDL_TRIG_0=%d\n", KBD_TRIG_0);
+	fprintf(fp, "SDL_TRIG_0_B=%d\n", KBD_TRIG_0_B);
+	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
+	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
+	fprintf(fp, "SDL_JOY_0_UP=%d\n", KBD_STICK_0_UP);
+	fprintf(fp, "SDL_JOY_0_DOWN=%d\n", KBD_STICK_0_DOWN);
+	fprintf(fp, "SDL_JOY_0_LEFTUP=%d\n", KBD_STICK_0_LEFTUP);
+	fprintf(fp, "SDL_JOY_0_RIGHTUP=%d\n", KBD_STICK_0_RIGHTUP);
+	fprintf(fp, "SDL_JOY_0_LEFTDOWN=%d\n", KBD_STICK_0_LEFTDOWN);
+	fprintf(fp, "SDL_JOY_0_RIGHTDOWN=%d\n", KBD_STICK_0_RIGHTDOWN);
+	fprintf(fp, "SDL_TRIG_1=%d\n", KBD_TRIG_1);
+	fprintf(fp, "SDL_TRIG_1_B=%d\n", KBD_TRIG_1_B);
+	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", KBD_STICK_1_LEFT);
+	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
+	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
+	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", KBD_STICK_1_DOWN);
+	fprintf(fp, "SDL_JOY_1_LEFTUP=%d\n", KBD_STICK_1_LEFTUP);
+	fprintf(fp, "SDL_JOY_1_RIGHTUP=%d\n", KBD_STICK_1_RIGHTUP);
+	fprintf(fp, "SDL_JOY_1_LEFTDOWN=%d\n", KBD_STICK_1_LEFTDOWN);
+	fprintf(fp, "SDL_JOY_1_RIGHTDOWN=%d\n", KBD_STICK_1_RIGHTDOWN);
 }
 
 #ifdef SOUND
@@ -676,23 +679,23 @@ int Atari_Keyboard(void)
 	/* keyboard joysticks: don't pass the keypresses to emulation
 	 * as some games pause on a keypress (River Raid, Bruce Lee)
 	 */
-	if (sdl_joy_0_enabled) {
-		if (lastkey == SDL_JOY_0_LEFT || lastkey == SDL_JOY_0_RIGHT ||
-			lastkey == SDL_JOY_0_UP || lastkey == SDL_JOY_0_DOWN ||
-			lastkey == SDL_JOY_0_LEFTUP || lastkey == SDL_JOY_0_LEFTDOWN ||
-			lastkey == SDL_JOY_0_RIGHTUP || lastkey == SDL_JOY_0_RIGHTDOWN ||
-			lastkey == SDL_TRIG_0 || lastkey == SDL_TRIG_0_B) {
+	if (kbd_joy_0_enabled) {
+		if (lastkey == KBD_STICK_0_LEFT || lastkey == KBD_STICK_0_RIGHT ||
+			lastkey == KBD_STICK_0_UP || lastkey == KBD_STICK_0_DOWN ||
+			lastkey == KBD_STICK_0_LEFTUP || lastkey == KBD_STICK_0_LEFTDOWN ||
+			lastkey == KBD_STICK_0_RIGHTUP || lastkey == KBD_STICK_0_RIGHTDOWN ||
+			lastkey == KBD_TRIG_0 || lastkey == KBD_TRIG_0_B) {
 			key_pressed = 0;
 			return AKEY_NONE;
 		}
 	}
 
-	if (sdl_joy_1_enabled) {
-		if (lastkey == SDL_JOY_1_LEFT || lastkey == SDL_JOY_1_RIGHT ||
-			lastkey == SDL_JOY_1_UP || lastkey == SDL_JOY_1_DOWN ||
-			lastkey == SDL_JOY_1_LEFTUP || lastkey == SDL_JOY_1_LEFTDOWN ||
-			lastkey == SDL_JOY_1_RIGHTUP || lastkey == SDL_JOY_1_RIGHTDOWN ||
-			lastkey == SDL_TRIG_1 || lastkey == SDL_TRIG_1_B) {
+	if (kbd_joy_1_enabled) {
+		if (lastkey == KBD_STICK_1_LEFT || lastkey == KBD_STICK_1_RIGHT ||
+			lastkey == KBD_STICK_1_UP || lastkey == KBD_STICK_1_DOWN ||
+			lastkey == KBD_STICK_1_LEFTUP || lastkey == KBD_STICK_1_LEFTDOWN ||
+			lastkey == KBD_STICK_1_RIGHTUP || lastkey == KBD_STICK_1_RIGHTDOWN ||
+			lastkey == KBD_TRIG_1 || lastkey == KBD_TRIG_1_B) {
 			key_pressed = 0;
 			return AKEY_NONE;
 		}
@@ -1580,48 +1583,48 @@ void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 	int stick0, stick1;
 	stick0 = stick1 = STICK_CENTRE;
 
-	if (sdl_joy_0_enabled) {
-		if (kbhits[SDL_JOY_0_LEFT])
+	if (kbd_joy_0_enabled) {
+		if (kbhits[KBD_STICK_0_LEFT])
 			stick0 = STICK_LEFT;
-		if (kbhits[SDL_JOY_0_RIGHT])
+		if (kbhits[KBD_STICK_0_RIGHT])
 			stick0 = STICK_RIGHT;
-		if (kbhits[SDL_JOY_0_UP])
+		if (kbhits[KBD_STICK_0_UP])
 			stick0 = STICK_FORWARD;
-		if (kbhits[SDL_JOY_0_DOWN])
+		if (kbhits[KBD_STICK_0_DOWN])
 			stick0 = STICK_BACK;
-		if ((kbhits[SDL_JOY_0_LEFTUP])
-			|| ((kbhits[SDL_JOY_0_LEFT]) && (kbhits[SDL_JOY_0_UP])))
+		if ((kbhits[KBD_STICK_0_LEFTUP])
+			|| ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_UP])))
 			stick0 = STICK_UL;
-		if ((kbhits[SDL_JOY_0_LEFTDOWN])
-			|| ((kbhits[SDL_JOY_0_LEFT]) && (kbhits[SDL_JOY_0_DOWN])))
+		if ((kbhits[KBD_STICK_0_LEFTDOWN])
+			|| ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_DOWN])))
 			stick0 = STICK_LL;
-		if ((kbhits[SDL_JOY_0_RIGHTUP])
-			|| ((kbhits[SDL_JOY_0_RIGHT]) && (kbhits[SDL_JOY_0_UP])))
+		if ((kbhits[KBD_STICK_0_RIGHTUP])
+			|| ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_UP])))
 			stick0 = STICK_UR;
-		if ((kbhits[SDL_JOY_0_RIGHTDOWN])
-			|| ((kbhits[SDL_JOY_0_RIGHT]) && (kbhits[SDL_JOY_0_DOWN])))
+		if ((kbhits[KBD_STICK_0_RIGHTDOWN])
+			|| ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_DOWN])))
 			stick0 = STICK_LR;
 	}
-	if (sdl_joy_1_enabled) {
-		if (kbhits[SDL_JOY_1_LEFT])
+	if (kbd_joy_1_enabled) {
+		if (kbhits[KBD_STICK_1_LEFT])
 			stick1 = STICK_LEFT;
-		if (kbhits[SDL_JOY_1_RIGHT])
+		if (kbhits[KBD_STICK_1_RIGHT])
 			stick1 = STICK_RIGHT;
-		if (kbhits[SDL_JOY_1_UP])
+		if (kbhits[KBD_STICK_1_UP])
 			stick1 = STICK_FORWARD;
-		if (kbhits[SDL_JOY_1_DOWN])
+		if (kbhits[KBD_STICK_1_DOWN])
 			stick1 = STICK_BACK;
-		if ((kbhits[SDL_JOY_1_LEFTUP])
-			|| ((kbhits[SDL_JOY_1_LEFT]) && (kbhits[SDL_JOY_1_UP])))
+		if ((kbhits[KBD_STICK_1_LEFTUP])
+			|| ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_UP])))
 			stick1 = STICK_UL;
-		if ((kbhits[SDL_JOY_1_LEFTDOWN])
-			|| ((kbhits[SDL_JOY_1_LEFT]) && (kbhits[SDL_JOY_1_DOWN])))
+		if ((kbhits[KBD_STICK_1_LEFTDOWN])
+			|| ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_DOWN])))
 			stick1 = STICK_LL;
-		if ((kbhits[SDL_JOY_1_RIGHTUP])
-			|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_UP])))
+		if ((kbhits[KBD_STICK_1_RIGHTUP])
+			|| ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_UP])))
 			stick1 = STICK_UR;
-		if ((kbhits[SDL_JOY_1_RIGHTDOWN])
-			|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_DOWN])))
+		if ((kbhits[KBD_STICK_1_RIGHTDOWN])
+			|| ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_DOWN])))
 			stick1 = STICK_LR;
 	}
 
@@ -1655,12 +1658,12 @@ void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 	int trig0, trig1, i;
 	trig0 = trig1 = 1;
 
-	if (sdl_joy_0_enabled) {
-		trig0 = ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B])) ? 0 : 1;
+	if (kbd_joy_0_enabled) {
+		trig0 = ((kbhits[KBD_TRIG_0]) || (kbhits[KBD_TRIG_0_B])) ? 0 : 1;
 	}
 
-	if (sdl_joy_1_enabled) {
-		trig1 = ((kbhits[SDL_TRIG_1]) || (kbhits[SDL_TRIG_1_B])) ? 0 : 1;
+	if (kbd_joy_1_enabled) {
+		trig1 = ((kbhits[KBD_TRIG_1]) || (kbhits[KBD_TRIG_1_B])) ? 0 : 1;
 	}
 
 	if (SWAP_JOYSTICKS) {
