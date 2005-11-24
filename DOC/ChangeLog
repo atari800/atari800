@@ -1,3 +1,11 @@
+2005-11-24  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c: keyboard joysticks don't pause games anymore. However, a
+  runtime switch between keyboard joysticks and normal keyboard is needed.
+  DOS/VGA uses <F7>. Will SDL use that or something else? Also some sort 
+  of visual indication (similar to disk drives lights) is needed otherwise
+  users will get confused when half of their keyboard doesn't respond.
+
+
 2005-11-19  Piotr Fusik  <fox@scene.pl>
 * configure.ac, sound_oss.c, sound_unix.c: new OSS sound handling:
   - renamed sound_unix.c to sound_oss.c
