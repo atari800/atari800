@@ -92,6 +92,7 @@ static int ROTATE90 =0;
    keys are loaded from config file
    Here the defaults if there is no keymap in the config file... */
 
+int sdl_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
 int SDL_TRIG_0 = SDLK_LCTRL;
 int SDL_TRIG_0_B = SDLK_KP0;
 int SDL_JOY_0_LEFT = SDLK_KP4;
@@ -103,6 +104,7 @@ int SDL_JOY_0_RIGHTUP = SDLK_KP9;
 int SDL_JOY_0_LEFTDOWN = SDLK_KP1;
 int SDL_JOY_0_RIGHTDOWN = SDLK_KP3;
 
+int sdl_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
 int SDL_TRIG_1 = SDLK_TAB;
 int SDL_TRIG_1_B = SDLK_LSHIFT;
 int SDL_JOY_1_LEFT = SDLK_a;
@@ -671,10 +673,29 @@ int Atari_Keyboard(void)
 		return key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT_INTERLACE;
 	}
 
-	/* joystick keyboard */
-	if (lastkey >= SDLK_KP0 && lastkey <= SDLK_KP9) {
-		key_pressed = 0;
-		return AKEY_NONE;
+	/* keyboard joysticks: don't pass the keypresses to emulation
+	 * as some games pause on a keypress (River Raid, Bruce Lee)
+	 */
+	if (sdl_joy_0_enabled) {
+		if (lastkey == SDL_JOY_0_LEFT || lastkey == SDL_JOY_0_RIGHT ||
+			lastkey == SDL_JOY_0_UP || lastkey == SDL_JOY_0_DOWN ||
+			lastkey == SDL_JOY_0_LEFTUP || lastkey == SDL_JOY_0_LEFTDOWN ||
+			lastkey == SDL_JOY_0_RIGHTUP || lastkey == SDL_JOY_0_RIGHTDOWN ||
+			lastkey == SDL_TRIG_0 || lastkey == SDL_TRIG_0_B) {
+			key_pressed = 0;
+			return AKEY_NONE;
+		}
+	}
+
+	if (sdl_joy_1_enabled) {
+		if (lastkey == SDL_JOY_1_LEFT || lastkey == SDL_JOY_1_RIGHT ||
+			lastkey == SDL_JOY_1_UP || lastkey == SDL_JOY_1_DOWN ||
+			lastkey == SDL_JOY_1_LEFTUP || lastkey == SDL_JOY_1_LEFTDOWN ||
+			lastkey == SDL_JOY_1_RIGHTUP || lastkey == SDL_JOY_1_RIGHTDOWN ||
+			lastkey == SDL_TRIG_1 || lastkey == SDL_TRIG_1_B) {
+			key_pressed = 0;
+			return AKEY_NONE;
+		}
 	}
 
 	if (key_shift)
@@ -1557,49 +1578,52 @@ int get_LPT_joystick_state(int fd)
 void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 {
 	int stick0, stick1;
-	stick0 = STICK_CENTRE;
-	stick1 = STICK_CENTRE;
+	stick0 = stick1 = STICK_CENTRE;
 
-	if (kbhits[SDL_JOY_0_LEFT])
-		stick0 = STICK_LEFT;
-	if (kbhits[SDL_JOY_0_RIGHT])
-		stick0 = STICK_RIGHT;
-	if (kbhits[SDL_JOY_0_UP])
-		stick0 = STICK_FORWARD;
-	if (kbhits[SDL_JOY_0_DOWN])
-		stick0 = STICK_BACK;
-	if ((kbhits[SDL_JOY_0_LEFTUP])
-		|| ((kbhits[SDL_JOY_0_LEFT]) && (kbhits[SDL_JOY_0_UP])))
-		stick0 = STICK_UL;
-	if ((kbhits[SDL_JOY_0_LEFTDOWN])
-		|| ((kbhits[SDL_JOY_0_LEFT]) && (kbhits[SDL_JOY_0_DOWN])))
-		stick0 = STICK_LL;
-	if ((kbhits[SDL_JOY_0_RIGHTUP])
-		|| ((kbhits[SDL_JOY_0_RIGHT]) && (kbhits[SDL_JOY_0_UP])))
-		stick0 = STICK_UR;
-	if ((kbhits[SDL_JOY_0_RIGHTDOWN])
-		|| ((kbhits[SDL_JOY_0_RIGHT]) && (kbhits[SDL_JOY_0_DOWN])))
-		stick0 = STICK_LR;
-	if (kbhits[SDL_JOY_1_LEFT])
-		stick1 = STICK_LEFT;
-	if (kbhits[SDL_JOY_1_RIGHT])
-		stick1 = STICK_RIGHT;
-	if (kbhits[SDL_JOY_1_UP])
-		stick1 = STICK_FORWARD;
-	if (kbhits[SDL_JOY_1_DOWN])
-		stick1 = STICK_BACK;
-	if ((kbhits[SDL_JOY_1_LEFTUP])
-		|| ((kbhits[SDL_JOY_1_LEFT]) && (kbhits[SDL_JOY_1_UP])))
-		stick1 = STICK_UL;
-	if ((kbhits[SDL_JOY_1_LEFTDOWN])
-		|| ((kbhits[SDL_JOY_1_LEFT]) && (kbhits[SDL_JOY_1_DOWN])))
-		stick1 = STICK_LL;
-	if ((kbhits[SDL_JOY_1_RIGHTUP])
-		|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_UP])))
-		stick1 = STICK_UR;
-	if ((kbhits[SDL_JOY_1_RIGHTDOWN])
-		|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_DOWN])))
-		stick1 = STICK_LR;
+	if (sdl_joy_0_enabled) {
+		if (kbhits[SDL_JOY_0_LEFT])
+			stick0 = STICK_LEFT;
+		if (kbhits[SDL_JOY_0_RIGHT])
+			stick0 = STICK_RIGHT;
+		if (kbhits[SDL_JOY_0_UP])
+			stick0 = STICK_FORWARD;
+		if (kbhits[SDL_JOY_0_DOWN])
+			stick0 = STICK_BACK;
+		if ((kbhits[SDL_JOY_0_LEFTUP])
+			|| ((kbhits[SDL_JOY_0_LEFT]) && (kbhits[SDL_JOY_0_UP])))
+			stick0 = STICK_UL;
+		if ((kbhits[SDL_JOY_0_LEFTDOWN])
+			|| ((kbhits[SDL_JOY_0_LEFT]) && (kbhits[SDL_JOY_0_DOWN])))
+			stick0 = STICK_LL;
+		if ((kbhits[SDL_JOY_0_RIGHTUP])
+			|| ((kbhits[SDL_JOY_0_RIGHT]) && (kbhits[SDL_JOY_0_UP])))
+			stick0 = STICK_UR;
+		if ((kbhits[SDL_JOY_0_RIGHTDOWN])
+			|| ((kbhits[SDL_JOY_0_RIGHT]) && (kbhits[SDL_JOY_0_DOWN])))
+			stick0 = STICK_LR;
+	}
+	if (sdl_joy_1_enabled) {
+		if (kbhits[SDL_JOY_1_LEFT])
+			stick1 = STICK_LEFT;
+		if (kbhits[SDL_JOY_1_RIGHT])
+			stick1 = STICK_RIGHT;
+		if (kbhits[SDL_JOY_1_UP])
+			stick1 = STICK_FORWARD;
+		if (kbhits[SDL_JOY_1_DOWN])
+			stick1 = STICK_BACK;
+		if ((kbhits[SDL_JOY_1_LEFTUP])
+			|| ((kbhits[SDL_JOY_1_LEFT]) && (kbhits[SDL_JOY_1_UP])))
+			stick1 = STICK_UL;
+		if ((kbhits[SDL_JOY_1_LEFTDOWN])
+			|| ((kbhits[SDL_JOY_1_LEFT]) && (kbhits[SDL_JOY_1_DOWN])))
+			stick1 = STICK_LL;
+		if ((kbhits[SDL_JOY_1_RIGHTUP])
+			|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_UP])))
+			stick1 = STICK_UR;
+		if ((kbhits[SDL_JOY_1_RIGHTDOWN])
+			|| ((kbhits[SDL_JOY_1_RIGHT]) && (kbhits[SDL_JOY_1_DOWN])))
+			stick1 = STICK_LR;
+	}
 
 	if (SWAP_JOYSTICKS) {
 		*s1 = stick0;
@@ -1629,16 +1653,15 @@ void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 {
 	int trig0, trig1, i;
+	trig0 = trig1 = 1;
 
-	if ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B]))
-		trig0 = 0;
-	else
-		trig0 = 1;
+	if (sdl_joy_0_enabled) {
+		trig0 = ((kbhits[SDL_TRIG_0]) || (kbhits[SDL_TRIG_0_B])) ? 0 : 1;
+	}
 
-	if ((kbhits[SDL_TRIG_1]) || (kbhits[SDL_TRIG_1_B]))
-		trig1 = 0;
-	else
-		trig1 = 1;
+	if (sdl_joy_1_enabled) {
+		trig1 = ((kbhits[SDL_TRIG_1]) || (kbhits[SDL_TRIG_1_B])) ? 0 : 1;
+	}
 
 	if (SWAP_JOYSTICKS) {
 		*t1 = trig0;
@@ -1749,3 +1772,7 @@ int main(int argc, char **argv)
 			Atari_DisplayScreen();
 	}
 }
+
+/*
+vim:ts=4:sw=4:
+*/
