@@ -123,6 +123,7 @@ double fps;
 int percent_atari_speed = 100;
 #ifdef BENCHMARK
 static double benchmark_start_time;
+static double Atari_time(void);
 #endif
 
 char atari_osa_filename[FILENAME_MAX] = FILENAME_NOT_SET;
@@ -132,8 +133,6 @@ char atari_5200_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 char atari_basic_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
-
-static double Atari_time(void);
 
 #ifdef HAVE_SIGNAL
 RETSIGTYPE sigint_handler(int num)
@@ -234,21 +233,22 @@ void Atari800_PatchOS(void)
 	if (enable_sio_patch) {
 		UWORD addr_l;
 		UWORD addr_s;
-		UBYTE save_check_bytes[2];
+		UBYTE check_s_0;
+		UBYTE check_s_1;
 		/* patch Open() of C: so we know when a leader is processed */
 		switch (machine_type) {
 		case MACHINE_OSA:
 		case MACHINE_OSB:
 			addr_l = 0xef74;
 			addr_s = 0xefbc;
-			save_check_bytes[0] = 0xa0;
-			save_check_bytes[1] = 0x80;
+			check_s_0 = 0xa0;
+			check_s_1 = 0x80;
 			break;
 		case MACHINE_XLXE:
 			addr_l = 0xfd13;
 			addr_s = 0xfd60;
-			save_check_bytes[0] = 0xa9;
-			save_check_bytes[1] = 0x03;
+			check_s_0 = 0xa9;
+			check_s_1 = 0x03;
 			break;
 		default:
 			return;
@@ -257,8 +257,8 @@ void Atari800_PatchOS(void)
 		if (dGetByte(addr_l)     == 0xa9 && dGetByte(addr_l + 1) == 0x03
 		 && dGetByte(addr_l + 2) == 0x8d && dGetByte(addr_l + 3) == 0x2a
 		 && dGetByte(addr_l + 4) == 0x02
-		 && dGetByte(addr_s)     == save_check_bytes[0]
-		 && dGetByte(addr_s + 1) == save_check_bytes[1]
+		 && dGetByte(addr_s)     == check_s_0
+		 && dGetByte(addr_s + 1) == check_s_1
 		 && dGetByte(addr_s + 2) == 0x20 && dGetByte(addr_s + 3) == 0x5c
 		 && dGetByte(addr_s + 4) == 0xe4) {
 			Atari800_AddEsc(addr_l, ESC_COPENLOAD, CASSETTE_LeaderLoad);
@@ -339,7 +339,7 @@ static int load_image(const char *filename, UBYTE *buffer, int nbytes)
 
 	f = fopen(filename, "rb");
 	if (f == NULL) {
-		Aprint("Error loading rom: %s", filename);
+		Aprint("Error loading ROM image: %s", filename);
 		return FALSE;
 	}
 	len = fread(buffer, 1, nbytes, f);
@@ -438,7 +438,7 @@ int Atari800_DetectFileType(const char *filename)
 		if (header[1] == 0x8b) {
 #ifndef HAVE_LIBZ
 			fclose(fp);
-			Aprint("\"%s\" is a compressed file.");
+			Aprint("\"%s\" is a compressed file.", filename);
 			Aprint("This executable does not support compressed files. You can uncompress this file");
 			Aprint("with an external program that supports gzip (*.gz) files (e.g. gunzip)");
 			Aprint("and then load into this emulator.");
@@ -978,30 +978,30 @@ int Atari800_Initialise(int *argc, char *argv[])
 	int got_config;
 	int help_only = FALSE;
 
-	for (i = j = 1; i < *argc; i++) {
-		if (strcmp(argv[i], "-config") == 0) {
-			rtconfig_filename = argv[++i];
+	if (*argc > 1) {
+		for (i = j = 1; i < *argc; i++) {
+			if (strcmp(argv[i], "-config") == 0) {
+				rtconfig_filename = argv[++i];
+			}
+			else if (strcmp(argv[i], "-v") == 0 ||
+					 strcmp(argv[i], "-version") == 0 ||
+					 strcmp(argv[i], "--version") == 0) {
+				printf("%s\n", ATARI_TITLE);
+				return FALSE;
+			}
+			else if (strcmp(argv[i], "--usage") == 0 ||
+					 strcmp(argv[i], "--help") == 0) {
+				argv[j++] = "-help";
+			}
+			else if (strcmp(argv[i], "-verbose") == 0) {
+				verbose = TRUE;
+			}
+			else {
+				argv[j++] = argv[i];
+			}
 		}
-		else if (strcmp(argv[i], "-v") == 0 ||
-				 strcmp(argv[i], "-version") == 0 ||
-				 strcmp(argv[i], "--version") == 0) {
-			printf("%s\n", ATARI_TITLE);
-			return FALSE;
-		}
-		else if (strcmp(argv[i], "--usage") == 0 ||
-				 strcmp(argv[i], "--help") == 0) {
-			argv[j++] = "-help";
-		}
-		else if (strcmp(argv[i], "-verbose") == 0) {
-			verbose = TRUE;
-		}
-		else {
-			argv[j++] = argv[i];
-		}
+		*argc = j;
 	}
-
-	if(*argc > 1)
-	*argc = j;
 	got_config = Atari800_ReadConfig(rtconfig_filename);
 
 	/* try to find ROM images if the configuration file is not found
@@ -1497,7 +1497,7 @@ void Atari800_UpdatePatches(void)
 
 #ifdef PS2
 
-static double Atari_time(void);
+double Atari_time(void);
 void Atari_sleep(double s);
 
 #else /* PS2 */
@@ -1589,7 +1589,7 @@ void atari_sync(void)
 	if (ui_is_active)
 		deltatime = (tv_mode == TV_PAL) ? (1.0 / 50.0) : (1.0 / 60.0);
 	else
-		deltatime = (((float)refresh_rate) / (tv_mode == TV_PAL ? 50.0f : 60.0f));
+		deltatime = refresh_rate / (tv_mode == TV_PAL ? 50.0 : 60.0);
 #else
 	deltatime = (tv_mode == TV_PAL) ? (1.0 / 50.0) : (1.0 / 60.0);
 #endif
@@ -1790,7 +1790,6 @@ void Atari800_Frame(void)
 		Sound_Pause();
 #endif
 		ui();
-
 #ifdef SOUND
 		Sound_Continue();
 #endif
@@ -1882,8 +1881,6 @@ void MainStateSave(void)
 	int default_system = 3;
 	int pil_on = FALSE;
 
-	/* Possibly some compilers would handle an enumerated type differently,
-	   so convert these into unsigned bytes and save them out that way */
 	if (tv_mode == TV_PAL) {
 		temp = 0;
 		default_tv_mode = 1;
