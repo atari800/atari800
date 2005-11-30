@@ -1156,6 +1156,11 @@ static void DisplaySettings(void)
 
 #ifndef USE_CURSES
 
+#ifdef SDL
+extern int kbd_joy_0_enabled;
+extern int kbd_joy_1_enabled;
+#endif
+
 static void ControllerConfiguration(void)
 {
 #ifndef _WIN32_WCE
@@ -1185,6 +1190,10 @@ static void ControllerConfiguration(void)
 		MENU_SUBMENU_SUFFIX(3, "Mouse port:", mouse_port_status),
 		MENU_SUBMENU_SUFFIX(4, "Mouse speed:", mouse_speed_status),
 #endif
+#ifdef SDL
+		MENU_CHECK(5, "Enable keyboard joystick 1:"),
+		MENU_CHECK(6, "Enable keyboard joystick 2:"),
+#endif
 		MENU_END
 	};
 
@@ -1204,6 +1213,10 @@ static void ControllerConfiguration(void)
 		menu_array[2].suffix = mouse_mode_menu_array[mouse_mode].item;
 		mouse_port_status[0] = (char) ('1' + mouse_port);
 		mouse_speed_status[0] = (char) ('0' + mouse_speed);
+#endif
+#ifdef SDL
+		SetItemChecked(&menu_array[5], kbd_joy_0_enabled);
+		SetItemChecked(&menu_array[6], kbd_joy_1_enabled);
 #endif
 		option = ui_driver->fSelect("Controller Configuration", 0, option, menu_array, NULL);
 		switch (option) {
@@ -1238,6 +1251,14 @@ static void ControllerConfiguration(void)
 			break;
 		case 4:
 			mouse_speed = ui_driver->fSelectInt(mouse_speed, 1, 9);
+			break;
+#endif
+#ifdef SDL
+		case 5:
+			kbd_joy_0_enabled = !kbd_joy_0_enabled;
+			break;
+		case 6:
+			kbd_joy_1_enabled = !kbd_joy_1_enabled;
 			break;
 #endif
 		default:
