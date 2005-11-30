@@ -1,3 +1,7 @@
+2005-11-30  Piotr Skamruk  <jellonek@knip.pol.lublin.pl>
+* ui.c: options for enabling/disabling SDL keyboard joysticks
+
+
 2005-11-26  Piotr Fusik  <fox@scene.pl>
 * atari.c: fixed Atari_time() on the PS2
 
