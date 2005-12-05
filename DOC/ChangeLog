@@ -1,3 +1,7 @@
+2005-12-05  Piotr Fusik  <fox@scene.pl>
+* atari_ps2.c: sound support for the PS2
+
+
 2005-11-30  Piotr Skamruk  <jellonek@knip.pol.lublin.pl>
 * ui.c: options for enabling/disabling SDL keyboard joysticks
 
