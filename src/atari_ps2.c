@@ -35,7 +35,7 @@
 			//autodetect pal vs ntsc
 			//allow user to map own keyboard keys to controller
 			//enable cdfs, hdd, and host support.
- 
+
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
@@ -60,6 +60,14 @@
 #include "screen.h"
 #include "ui.h"
 #include "util.h"
+
+#ifdef SOUND
+#include <audsrv.h>
+#include "pokeysnd.h"
+#include "sound.h"
+extern unsigned char audsrv[];
+extern unsigned int size_audsrv;
+#endif
 
 // define to use T0 and T1 timers
 #define USE_TIMERS
@@ -242,6 +250,12 @@ void loadModules(void)
 	}
 	PS2KbdSetReadmode(PS2KBD_READMODE_RAW);
 
+#ifdef SOUND
+	ret = SifLoadModule("rom0:LIBSD", 0, NULL);
+
+	ret = SifExecModuleBuffer(audsrv, size_audsrv, 0, NULL, &ret);
+#endif
+
 }
 
 void Atari_Initialise(int *argc, char *argv[])
@@ -270,6 +284,9 @@ void Atari_Initialise(int *argc, char *argv[])
 #ifdef USE_TIMERS
 	timer_initialize();
 #endif
+#ifdef SOUND
+	Sound_Initialise(argc, argv);
+#endif
 }
 
 int Atari_Exit(int run_monitor)
@@ -284,6 +301,9 @@ int Atari_Exit(int run_monitor)
 #endif
 #ifdef USE_TIMERS
 	timer_shutdown();
+#endif
+#ifdef SOUND
+	Sound_Exit();
 #endif
 //zzz temp exit procedure
 //Hard coded to go back to ulaunch
@@ -893,6 +913,49 @@ int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
 	dir_i++;
 	return TRUE;
 }
+
+#ifdef SOUND
+
+void Sound_Initialise(int *argc, char *argv[])
+{
+	if (audsrv_init() != 0)
+		Aprint("failed to initialize audsrv: %s", audsrv_get_error_string());
+	else {
+		struct audsrv_fmt_t format;
+		format.bits = 8;
+		format.freq = 44100;
+		format.channels = 1;
+		audsrv_set_format(&format);
+		audsrv_set_volume(MAX_VOLUME);
+		Pokey_sound_init(FREQ_17_EXACT, 44100, 1, 0);
+	}
+}
+
+void Sound_Exit(void)
+{
+	audsrv_quit();
+}
+
+void Sound_Update(void)
+{
+	static char buffer[44100 / 50];
+	unsigned int nsamples = (tv_mode == TV_NTSC) ? (44100 / 60) : (44100 / 50);
+	Pokey_process(buffer, nsamples);
+	audsrv_wait_audio(nsamples);
+	audsrv_play_audio(buffer, nsamples);
+}
+
+void Sound_Pause(void)
+{
+	// TODO?
+}
+
+void Sound_Continue(void)
+{
+	// TODO?
+}
+
+#endif /* SOUND */
 
 int main(int argc, char **argv)
 {
