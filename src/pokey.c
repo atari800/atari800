@@ -318,13 +318,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 void POKEY_Initialise(int *argc, char *argv[])
 {
 	int i;
-	int j;
 	ULONG reg;
 
-	/*
-	 * Initialise Serial Port Interrupts
-	 */
-
+	/* Initialise Serial Port Interrupts */
 	DELAYED_SERIN_IRQ = 0;
 	DELAYED_SEROUT_IRQ = 0;
 	DELAYED_XMTDONE_IRQ = 0;
@@ -354,18 +350,14 @@ void POKEY_Initialise(int *argc, char *argv[])
 	/* initialise poly9_lookup */
 	reg = 0x1ff;
 	for (i = 0; i < 511; i++) {
-		poly9_lookup[i] = (UBYTE) (reg >> 1);
-		reg |= (((reg >> 5) ^ reg) & 1) << 9;
-		reg >>= 1;
+		reg = ((((reg >> 5) ^ reg) & 1) << 8) + (reg >> 1);
+		poly9_lookup[i] = (UBYTE) reg;
 	}
 	/* initialise poly17_lookup */
 	reg = 0x1ffff;
 	for (i = 0; i < 16385; i++) {
-		poly17_lookup[i] = (UBYTE) (reg >> 9);
-		for (j = 0; j < 8; j++) {
-			reg |= (((reg >> 5) ^ reg) & 1) << 17;
-			reg >>= 1;
-		}
+		reg = ((((reg >> 5) ^ reg) & 0xff) << 9) + (reg >> 8);
+		poly17_lookup[i] = (UBYTE) (reg >> 1);
 	}
 
 	random_scanline_counter =
