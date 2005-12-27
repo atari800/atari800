@@ -1,3 +1,11 @@
+2005-12-27  Piotr Fusik  <fox@scene.pl>
+* DOC/INSTALL.amiga: removed (completely obsolete)
+
+* DOC/TODO: reorganized and added my ideas
+
+* pokey.c: made initialization of poly17_lookup[] about 10 times faster
+
+
 2005-12-05  Piotr Fusik  <fox@scene.pl>
 * atari_ps2.c: sound support for the PS2
 
