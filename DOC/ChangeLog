@@ -1,3 +1,10 @@
+2005-12-28  Petr Stehlik  <pstehlik@sophics.cz>
+* sound_oss.c: handles situations when Pokey generated channels don't match
+  the output channels - for example when stereo Pokey is to play on mono only
+  card, or vice-versa. Also stereo Pokey compiled in but disabled at runtime
+  now plays from both channels (not just the left one).
+
+
 2005-12-27  Piotr Fusik  <fox@scene.pl>
 * DOC/INSTALL.amiga: removed (completely obsolete)
 
