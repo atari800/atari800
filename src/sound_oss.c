@@ -44,6 +44,8 @@ static int dsprate = 22050;
 
 static int sound_enabled = TRUE;
 static int dsp_fd;
+static int OSS_stereo_output = 1; /* set the device for sound in both channels */
+static int pokey_channels;
 
 void Sound_Initialise(int *argc, char *argv[])
 {
@@ -86,15 +88,18 @@ void Sound_Initialise(int *argc, char *argv[])
 		sound_enabled = FALSE;
 		return;
 	}
-#ifdef STEREO_SOUND
-	i = 1;
-	if (ioctl(dsp_fd, SNDCTL_DSP_STEREO, &i)) {
-		Aprint("%s: cannot enable stereo", dspname);
+
+	/* try to set the OSS device into stereo (dual channel) mode.
+	 * If the sound card happens to be mono only it should not fail
+	 * but just set the OSS_stereo_output to 0
+	 */
+	if (ioctl(dsp_fd, SNDCTL_DSP_STEREO, &OSS_stereo_output)) {
+		Aprint("%s: SNDCTL_DSP_STEREO(%1) failed", dspname, OSS_stereo_output);
 		close(dsp_fd);
 		sound_enabled = FALSE;
 		return;
 	}
-#endif
+
 	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &dsprate)) {
 		Aprint("%s: cannot set %d sample rate", dspname, dsprate);
 		close(dsp_fd);
@@ -109,10 +114,11 @@ void Sound_Initialise(int *argc, char *argv[])
 	}
 
 #ifdef STEREO_SOUND
-	Pokey_sound_init(FREQ_17_EXACT, dsprate, 2, 0);
+	pokey_channels = OSS_stereo_output ? 2 : 1;
 #else
-	Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, 0);
+	pokey_channels = 1; /* single pokey has always one channel */
 #endif
+	Pokey_sound_init(FREQ_17_EXACT, dsprate, pokey_channels, 0);
 }
 
 void Sound_Pause(void)
@@ -146,11 +152,8 @@ void Sound_Update(void)
 		return;
 	/* compute number of samples for one Atari frame
 	   (assuming 60Hz for NTSC and 50Hz for PAL) */
-	len = dsprate / (tv_mode == TV_NTSC ? 60 : 50)
-#ifdef STEREO_SOUND
-	      * 2
-#endif
-	;
+	len = dsprate / (tv_mode == TV_NTSC ? 60 : 50) * pokey_channels;
+
 #if 0
 	/* this code is not needed because buffer[] is big enough */
 	while (len > sizeof(buffer)) {
@@ -160,9 +163,9 @@ void Sound_Update(void)
 	}
 #endif
 	Pokey_process(buffer, len);
-#if 1
+#if 0
 	/* For some unknown reason, this is needed
-	   on my Red Hat 9, VT82C686 AC97 Audio Controller.
+	   on Piotr's Red Hat 9, VT82C686 AC97 Audio Controller.
 	   Not that the sound is just a bit silent without this,
 	   it is totally broken. */
 	{
@@ -171,7 +174,30 @@ void Sound_Update(void)
 			buffer[i] <<= 1;
 	}
 #endif
+
+	if (OSS_stereo_output) {
+		if (pokey_channels == 1) {
+			/* double the data in buffer - for sound in both channels */
+			int i;
+			for (i = len-1; i >= 0; i--) {
+				int pos = i * 2;
+				buffer[pos] = buffer[pos+1] = buffer[i];
+			}
+		}
+		else if (! stereo_enabled) {
+			/* copy left channel to right channel */
+			int i;
+			for (i = 0; i < len; i+=2) {
+				buffer[i+1] = buffer[i];
+			}
+		}
+	}
+
 	write(dsp_fd, buffer, len);
 }
 
 #endif	/* SOUND */
+
+/*
+vim:ts=4:sw=4:
+*/
