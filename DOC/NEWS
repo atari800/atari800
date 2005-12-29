@@ -1,3 +1,19 @@
+Version 1.4.0 (2005/12/30) - thanks to gorgeous work of Piotr Fusik
+
+ This release brings major source code clean up, numerous bug fixes and
+ many great new features and important improvements. 98% of changes since
+ last release have been made by Piotr Fusik - admire his dedication
+ to Atari800 project while you will be browsing through the impressive list
+ of changes below.
+
+ Important thing is that the Atari800 configuration file (.atari800.cfg)
+ lost several options and some new ones appeared. It is strongly recommended
+ to start Atari800 and to save the configuration from within the UI (press
+ [F1] key and then go to Emulator Configuration -> Save Configuration File).
+ Of course make sure you set the config options to match your setup before
+ you save the configuration. In particular pay attention to the new
+ Directories setup ([F1] -> Emulator Configuration -> Configure directories).
+
  Changes:
  --------
  * auto-starting any file supported by the emulator
@@ -69,6 +85,7 @@
      (smaller and faster executable), but can be enabled with "configure"
  * new experimental PlayStation 2 port
  * improved "configure" script
+ * SDL keyboard joysticks can be enabled/disabled in the UI (Controller Config)
  * many small fixes and major source code clean up
 
 

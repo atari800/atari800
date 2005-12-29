@@ -1,3 +1,26 @@
+** 1.4.0 released on 2005-12-30
+
+2005-12-29  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c: keyboard joysticks:
+  - removed secondary trigger key
+  - added functions that list currently assigned keyboard joystick keys (for
+    use in the UI to show user how the joystick is mapped)
+  - SDL_X_TRIG renamed to SDL_JOY_X_TRIGGER (old config name still supported)
+  - SDL_JOY_X_ENABLED added to config file (so you can enable/disable
+    the keyboard joysticks and save that for future)
+
+* ui.c: SDL keyboard joysticks: show how the joystick keys are mapped
+
+* config.{guess, sub}: updated to versions from August 2005
+
+* atari800.man: added -Hpath <path>
+
+* DOC/FAQ: listed my solutions for keyboard joysticks and sound problems
+  under SDL with GNOME ESD.
+
+* atari800.spec, README.1ST, DOC/{README, NEWS}: updated for new release
+
+
 2005-12-29  Piotr Fusik  <fox@scene.pl>
 * ui_basic.c: help line for the directory selector
 
