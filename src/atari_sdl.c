@@ -92,8 +92,7 @@ static int ROTATE90 =0;
    keys are loaded from config file
    Here the defaults if there is no keymap in the config file... */
 
-/* a runtime switch for the _enabled vars is needed. DOS/VGA port uses
- * the F7 key for this, and the ATARI_BREAK is mapped to gray End key */
+/* a runtime switch for the kbd_joy_X_enabled vars is in the UI */
 int kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
 int kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
 
@@ -176,8 +175,14 @@ int SDLKeyBind(int *retval, char *sdlKeySymIntStr)
    cleaned up by joy */
 int Atari_Configure(char *option, char *parameters)
 {
-	if (strcmp(option, "SDL_TRIG_0") == 0)
-		return SDLKeyBind(&KBD_TRIG_0, parameters);
+	if (strcmp(option, "SDL_JOY_0_ENABLED") == 0) {
+		kbd_joy_0_enabled = (parameters != NULL && parameters[0] != '0');
+		return TRUE;
+	}
+	else if (strcmp(option, "SDL_JOY_1_ENABLED") == 0) {
+		kbd_joy_1_enabled = (parameters != NULL && parameters[0] != '0');
+		return TRUE;
+	}
 	else if (strcmp(option, "SDL_JOY_0_LEFT") == 0)
 		return SDLKeyBind(&KBD_STICK_0_LEFT, parameters);
 	else if (strcmp(option, "SDL_JOY_0_RIGHT") == 0)
@@ -194,8 +199,10 @@ int Atari_Configure(char *option, char *parameters)
 		return SDLKeyBind(&KBD_STICK_0_LEFTDOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_0_RIGHTDOWN") == 0)
 		return SDLKeyBind(&KBD_STICK_0_RIGHTDOWN, parameters);
-	else if (strcmp(option, "SDL_TRIG_1") == 0)
-		return SDLKeyBind(&KBD_TRIG_1, parameters);
+	else if (strcmp(option, "SDL_TRIG_0") == 0) // obsolete
+		return SDLKeyBind(&KBD_TRIG_0, parameters);
+	else if (strcmp(option, "SDL_JOY_0_TRIGGER") == 0)
+		return SDLKeyBind(&KBD_TRIG_0, parameters);
 	else if (strcmp(option, "SDL_JOY_1_LEFT") == 0)
 		return SDLKeyBind(&KBD_STICK_1_LEFT, parameters);
 	else if (strcmp(option, "SDL_JOY_1_RIGHT") == 0)
@@ -212,10 +219,43 @@ int Atari_Configure(char *option, char *parameters)
 		return SDLKeyBind(&KBD_STICK_1_LEFTDOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_1_RIGHTDOWN") == 0)
 		return SDLKeyBind(&KBD_STICK_1_RIGHTDOWN, parameters);
+	else if (strcmp(option, "SDL_TRIG_1") == 0) // obsolete
+		return SDLKeyBind(&KBD_TRIG_1, parameters);
+	else if (strcmp(option, "SDL_JOY_1_TRIGGER") == 0)
+		return SDLKeyBind(&KBD_TRIG_1, parameters);
 	else
 		return FALSE;
 }
 
+/* Save the keybindings and the keybindapp options to the config file...
+   Authors: B.Schreiber, A.Martinez
+   cleaned up by joy */
+void Atari_ConfigSave(FILE *fp)
+{
+	fprintf(fp, "SDL_JOY_0_ENABLED=%d\n", kbd_joy_0_enabled);
+	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
+	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
+	fprintf(fp, "SDL_JOY_0_UP=%d\n", KBD_STICK_0_UP);
+	fprintf(fp, "SDL_JOY_0_DOWN=%d\n", KBD_STICK_0_DOWN);
+	fprintf(fp, "SDL_JOY_0_LEFTUP=%d\n", KBD_STICK_0_LEFTUP);
+	fprintf(fp, "SDL_JOY_0_RIGHTUP=%d\n", KBD_STICK_0_RIGHTUP);
+	fprintf(fp, "SDL_JOY_0_LEFTDOWN=%d\n", KBD_STICK_0_LEFTDOWN);
+	fprintf(fp, "SDL_JOY_0_RIGHTDOWN=%d\n", KBD_STICK_0_RIGHTDOWN);
+	fprintf(fp, "SDL_JOY_0_TRIGGER=%d\n", KBD_TRIG_0);
+
+	fprintf(fp, "SDL_JOY_1_ENABLED=%d\n", kbd_joy_1_enabled);
+	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", KBD_STICK_1_LEFT);
+	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
+	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
+	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", KBD_STICK_1_DOWN);
+	fprintf(fp, "SDL_JOY_1_LEFTUP=%d\n", KBD_STICK_1_LEFTUP);
+	fprintf(fp, "SDL_JOY_1_RIGHTUP=%d\n", KBD_STICK_1_RIGHTUP);
+	fprintf(fp, "SDL_JOY_1_LEFTDOWN=%d\n", KBD_STICK_1_LEFTDOWN);
+	fprintf(fp, "SDL_JOY_1_RIGHTDOWN=%d\n", KBD_STICK_1_RIGHTDOWN);
+	fprintf(fp, "SDL_JOY_1_TRIGGER=%d\n", KBD_TRIG_1);
+}
+
+/* used in UI to show how the keyboard joystick is mapped */
 char *joy_0_description(char *buffer, int maxsize)
 {
 	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
@@ -238,31 +278,6 @@ char *joy_1_description(char *buffer, int maxsize)
 			SDL_GetKeyName(KBD_TRIG_1)
 	);
 	return buffer;
-}
-
-/* Save the keybindings and the keybindapp options to the config file...
-   Authors: B.Schreiber, A.Martinez
-   cleaned up by joy */
-void Atari_ConfigSave(FILE *fp)
-{
-	fprintf(fp, "SDL_TRIG_0=%d\n", KBD_TRIG_0);
-	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
-	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
-	fprintf(fp, "SDL_JOY_0_UP=%d\n", KBD_STICK_0_UP);
-	fprintf(fp, "SDL_JOY_0_DOWN=%d\n", KBD_STICK_0_DOWN);
-	fprintf(fp, "SDL_JOY_0_LEFTUP=%d\n", KBD_STICK_0_LEFTUP);
-	fprintf(fp, "SDL_JOY_0_RIGHTUP=%d\n", KBD_STICK_0_RIGHTUP);
-	fprintf(fp, "SDL_JOY_0_LEFTDOWN=%d\n", KBD_STICK_0_LEFTDOWN);
-	fprintf(fp, "SDL_JOY_0_RIGHTDOWN=%d\n", KBD_STICK_0_RIGHTDOWN);
-	fprintf(fp, "SDL_TRIG_1=%d\n", KBD_TRIG_1);
-	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", KBD_STICK_1_LEFT);
-	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
-	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
-	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", KBD_STICK_1_DOWN);
-	fprintf(fp, "SDL_JOY_1_LEFTUP=%d\n", KBD_STICK_1_LEFTUP);
-	fprintf(fp, "SDL_JOY_1_RIGHTUP=%d\n", KBD_STICK_1_RIGHTUP);
-	fprintf(fp, "SDL_JOY_1_LEFTDOWN=%d\n", KBD_STICK_1_LEFTDOWN);
-	fprintf(fp, "SDL_JOY_1_RIGHTDOWN=%d\n", KBD_STICK_1_RIGHTDOWN);
 }
 
 #ifdef SOUND
