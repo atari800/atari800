@@ -256,7 +256,8 @@ static int Select(int default_item, int nitems, const char *item[],
                   const char *prefix[], const char *suffix[],
                   const char *tip[], const int nonselectable[],
                   int nrows, int ncolumns, int xoffset, int yoffset,
-                  int itemwidth, int drag, int *seltype)
+                  int itemwidth, int drag, const char *global_tip,
+                  int *seltype)
 {
 	int offset = 0;
 	int index = default_item;
@@ -269,7 +270,7 @@ static int Select(int default_item, int nitems, const char *item[],
 		int col;
 		int row;
 		int i;
-		const char *message = NULL;
+		const char *message = global_tip;
 
 		while (index < offset)
 			offset -= nrows;
@@ -464,7 +465,7 @@ int BasicUISelect(const char *title, int flags, int default_item, const tMenuIte
 	Box(0x9a, 0x94, x1, y1, x2, y2);
 	index = Select(index, nitems, item, prefix, suffix, tip, nonselectable,
 	                nitems, 1, x1 + 1, y1 + 1, w,
-	                (flags & SELECT_DRAG) ? TRUE : FALSE, seltype);
+	                (flags & SELECT_DRAG) ? TRUE : FALSE, NULL, seltype);
 	if (index < 0)
 		return index;
 	for (pmenu = menu; pmenu->item != NULL; pmenu++) {
@@ -509,7 +510,7 @@ int BasicUISelectInt(int default_value, int min_value, int max_value)
 	y2 = y1 + nrows + 1;
 	Box(0x9a, 0x94, x1, y1, x2, y2);
 	value = Select((default_value >= min_value && default_value <= max_value) ? default_value - min_value : 0,
-		nitems, items, NULL, NULL, NULL, NULL, nrows, ncolumns, x1 + 1, y1 + 1, 2, FALSE, NULL);
+		nitems, items, NULL, NULL, NULL, NULL, nrows, ncolumns, x1 + 1, y1 + 1, 2, FALSE, NULL, NULL);
 	return value >= 0 ? value + min_value : default_value;
 }
 
@@ -859,14 +860,13 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 			const char *selected_filename;
 
 			ClearScreen();
-#if 0
-			TitleScreen(select_dir ? "Space = select current directory" : "Select File");
-#else
 			TitleScreen(current_dir);
-#endif
 			Box(0x9a, 0x94, 0, 1, 39, 23);
 
-			index = Select(index, n_filenames, filenames, NULL, NULL, NULL, NULL, NROWS, NCOLUMNS, 1, 2, 37 / NCOLUMNS, FALSE, &seltype);
+			index = Select(index, n_filenames, filenames, NULL, NULL, NULL, NULL,
+			               NROWS, NCOLUMNS, 1, 2, 37 / NCOLUMNS, FALSE,
+			               select_dir ? "Space: select current directory" : NULL,
+			               &seltype);
 
 			if (index == -2) {
 				/* Tab = next favourite directory */
@@ -1105,7 +1105,7 @@ int BasicUIEditString(const char *title, char *string, int size)
 int BasicUIGetSaveFilename(char *filename, char directories[][FILENAME_MAX], int n_directories)
 {
 #ifdef DO_DIR
-	return EditFilename("Save as (<Tab> = directory locator)", filename, directories, n_directories);
+	return EditFilename("Save as ([Tab] = directory locator)", filename, directories, n_directories);
 #else
 	return EditFilename("Save as", filename, directories, n_directories);
 #endif

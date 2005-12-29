@@ -1,3 +1,7 @@
+2005-12-29  Piotr Fusik  <fox@scene.pl>
+* ui_basic.c: help line for the directory selector
+
+
 2005-12-28  Petr Stehlik  <pstehlik@sophics.cz>
 * sound_oss.c: handles situations when Pokey generated channels don't match
   the output channels - for example when stereo Pokey is to play on mono only
