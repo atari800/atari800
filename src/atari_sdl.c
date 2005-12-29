@@ -98,7 +98,6 @@ int kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
 int kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
 
 int KBD_TRIG_0 = SDLK_LCTRL;
-int KBD_TRIG_0_B = SDLK_KP0;
 int KBD_STICK_0_LEFT = SDLK_KP4;
 int KBD_STICK_0_RIGHT = SDLK_KP6;
 int KBD_STICK_0_DOWN = SDLK_KP2;
@@ -109,7 +108,6 @@ int KBD_STICK_0_LEFTDOWN = SDLK_KP1;
 int KBD_STICK_0_RIGHTDOWN = SDLK_KP3;
 
 int KBD_TRIG_1 = SDLK_TAB;
-int KBD_TRIG_1_B = SDLK_LSHIFT;
 int KBD_STICK_1_LEFT = SDLK_a;
 int KBD_STICK_1_RIGHT = SDLK_d;
 int KBD_STICK_1_DOWN = SDLK_x;
@@ -180,8 +178,6 @@ int Atari_Configure(char *option, char *parameters)
 {
 	if (strcmp(option, "SDL_TRIG_0") == 0)
 		return SDLKeyBind(&KBD_TRIG_0, parameters);
-	else if (strcmp(option, "SDL_TRIG_0_B") == 0)
-		return SDLKeyBind(&KBD_TRIG_0_B, parameters);
 	else if (strcmp(option, "SDL_JOY_0_LEFT") == 0)
 		return SDLKeyBind(&KBD_STICK_0_LEFT, parameters);
 	else if (strcmp(option, "SDL_JOY_0_RIGHT") == 0)
@@ -200,8 +196,6 @@ int Atari_Configure(char *option, char *parameters)
 		return SDLKeyBind(&KBD_STICK_0_RIGHTDOWN, parameters);
 	else if (strcmp(option, "SDL_TRIG_1") == 0)
 		return SDLKeyBind(&KBD_TRIG_1, parameters);
-	else if (strcmp(option, "SDL_TRIG_1_B") == 0)
-		return SDLKeyBind(&KBD_TRIG_1_B, parameters);
 	else if (strcmp(option, "SDL_JOY_1_LEFT") == 0)
 		return SDLKeyBind(&KBD_STICK_1_LEFT, parameters);
 	else if (strcmp(option, "SDL_JOY_1_RIGHT") == 0)
@@ -222,13 +216,36 @@ int Atari_Configure(char *option, char *parameters)
 		return FALSE;
 }
 
+char *joy_0_description(char *buffer, int maxsize)
+{
+	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
+			SDL_GetKeyName(KBD_STICK_0_LEFT),
+			SDL_GetKeyName(KBD_STICK_0_RIGHT),
+			SDL_GetKeyName(KBD_STICK_0_UP),
+			SDL_GetKeyName(KBD_STICK_0_DOWN),
+			SDL_GetKeyName(KBD_TRIG_0)
+	);
+	return buffer;
+}
+
+char *joy_1_description(char *buffer, int maxsize)
+{
+	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
+			SDL_GetKeyName(KBD_STICK_1_LEFT),
+			SDL_GetKeyName(KBD_STICK_1_RIGHT),
+			SDL_GetKeyName(KBD_STICK_1_UP),
+			SDL_GetKeyName(KBD_STICK_1_DOWN),
+			SDL_GetKeyName(KBD_TRIG_1)
+	);
+	return buffer;
+}
+
 /* Save the keybindings and the keybindapp options to the config file...
    Authors: B.Schreiber, A.Martinez
    cleaned up by joy */
 void Atari_ConfigSave(FILE *fp)
 {
 	fprintf(fp, "SDL_TRIG_0=%d\n", KBD_TRIG_0);
-	fprintf(fp, "SDL_TRIG_0_B=%d\n", KBD_TRIG_0_B);
 	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
 	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
 	fprintf(fp, "SDL_JOY_0_UP=%d\n", KBD_STICK_0_UP);
@@ -238,7 +255,6 @@ void Atari_ConfigSave(FILE *fp)
 	fprintf(fp, "SDL_JOY_0_LEFTDOWN=%d\n", KBD_STICK_0_LEFTDOWN);
 	fprintf(fp, "SDL_JOY_0_RIGHTDOWN=%d\n", KBD_STICK_0_RIGHTDOWN);
 	fprintf(fp, "SDL_TRIG_1=%d\n", KBD_TRIG_1);
-	fprintf(fp, "SDL_TRIG_1_B=%d\n", KBD_TRIG_1_B);
 	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", KBD_STICK_1_LEFT);
 	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
 	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
@@ -684,7 +700,7 @@ int Atari_Keyboard(void)
 			lastkey == KBD_STICK_0_UP || lastkey == KBD_STICK_0_DOWN ||
 			lastkey == KBD_STICK_0_LEFTUP || lastkey == KBD_STICK_0_LEFTDOWN ||
 			lastkey == KBD_STICK_0_RIGHTUP || lastkey == KBD_STICK_0_RIGHTDOWN ||
-			lastkey == KBD_TRIG_0 || lastkey == KBD_TRIG_0_B) {
+			lastkey == KBD_TRIG_0) {
 			key_pressed = 0;
 			return AKEY_NONE;
 		}
@@ -695,7 +711,7 @@ int Atari_Keyboard(void)
 			lastkey == KBD_STICK_1_UP || lastkey == KBD_STICK_1_DOWN ||
 			lastkey == KBD_STICK_1_LEFTUP || lastkey == KBD_STICK_1_LEFTDOWN ||
 			lastkey == KBD_STICK_1_RIGHTUP || lastkey == KBD_STICK_1_RIGHTDOWN ||
-			lastkey == KBD_TRIG_1 || lastkey == KBD_TRIG_1_B) {
+			lastkey == KBD_TRIG_1) {
 			key_pressed = 0;
 			return AKEY_NONE;
 		}
@@ -1659,11 +1675,11 @@ void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 	trig0 = trig1 = 1;
 
 	if (kbd_joy_0_enabled) {
-		trig0 = ((kbhits[KBD_TRIG_0]) || (kbhits[KBD_TRIG_0_B])) ? 0 : 1;
+		trig0 = kbhits[KBD_TRIG_0] ? 0 : 1;
 	}
 
 	if (kbd_joy_1_enabled) {
-		trig1 = ((kbhits[KBD_TRIG_1]) || (kbhits[KBD_TRIG_1_B])) ? 0 : 1;
+		trig1 = kbhits[KBD_TRIG_1] ? 0 : 1;
 	}
 
 	if (SWAP_JOYSTICKS) {
