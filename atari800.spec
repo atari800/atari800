@@ -1,5 +1,5 @@
 %define name	atari800
-%define ver	1.3.6
+%define ver	1.4.0
 %define rel	1
 %define copy	GPL
 %define ich Petr Stehlik <pstehlik@sophics.cz>
@@ -79,6 +79,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/doc/atari800/NEWS
 
 %changelog
+* Fri Dec 30 2005 Petr Stehlik <pstehlik@sophics.cz>
+Version increased. Long list of changes in the NEWS file.
 * Sat Apr 30 2005 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Changes documented in the NEWS.
 * Thu Dec 30 2004 Petr Stehlik <pstehlik@sophics.cz>
