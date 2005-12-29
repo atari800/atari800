@@ -1091,7 +1091,7 @@ static int EditFilename(const char *title, char *filename, char directories[][FI
 		}
 #endif
 	}
-	if (!EditString(0x9a, 0x94, title, edited_filename, FILENAME_MAX, 3, 11, 32, directories, n_directories))
+	if (!EditString(0x9a, 0x94, title, edited_filename, FILENAME_MAX, 1, 11, 36, directories, n_directories))
 		return FALSE;
 	strcpy(filename, edited_filename);
 	return TRUE;
@@ -1105,7 +1105,7 @@ int BasicUIEditString(const char *title, char *string, int size)
 int BasicUIGetSaveFilename(char *filename, char directories[][FILENAME_MAX], int n_directories)
 {
 #ifdef DO_DIR
-	return EditFilename("Save as (Tab=dir)", filename, directories, n_directories);
+	return EditFilename("Save as (<Tab> = directory locator)", filename, directories, n_directories);
 #else
 	return EditFilename("Save as", filename, directories, n_directories);
 #endif
