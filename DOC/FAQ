@@ -4,6 +4,7 @@ Frequently asked questions (with answers)
 0. Q: Where to get ROM files for the emulator?
    A: Download the xf25.zip from http://prdownloads.sf.net/atari800/xf25.zip
       You'll get three .ROM files - ATARIBAS.ROM, ATARIOSB.ROM and ATARIXL.ROM.
+      We cannot distribute them due to licensing and copyright issues. Sorry.
 
 1. Q: I want Windows version of Atari800 with Windows GUI.
    A: Try Atari800Win PLus: http://atariarea.histeria.pl/PLus/index_us.htm
@@ -12,4 +13,22 @@ Frequently asked questions (with answers)
       it often stops some games (e.g. Bruce Lee). What should I do?
    A: Press F7 to switch the keyboard into joy-only mode. Or better,
       use a real joystick (either PC or the old CX-40 Atari one).
+
+3. Q: How about keyboard joysticks in the SDL version?
+   A: Two keyboard joysticks are defined in the config file (once it is saved
+      from the UI). See SDL_JOY_xxx options. Their values are from
+      http://www.libsdl.org/cgi/cvsweb.cgi/SDL12/include/SDL_keysym.h file.
+      The joysticks can be enabled/disabled at runtime in the UI.
+      Selected joysticks' state is saved to config file.
+      Runtime configuration of keyboard joysticks mapping is not yet ready.
+
+4. Q: Sound problems in xxx
+   A: We know about problems with volume-only sound (digitized sound effects)
+      and we plan on fixing them. You can try disabling the new HIFI Pokey
+      emulation (in the UI go to Sound Settings and disable the HIFI there).
+
+      I also experienced sound problems in SDL on GNOME Linux with ESD
+      that were fixed by removing the libsdl1.2debian-esd library replacing
+      it with libsdl1.2debian-alsa library (this is applicable only if you
+      are using ALSA (http://alsa-project.org/) and GNOME with ESD, of course.
 
