@@ -1159,6 +1159,10 @@ static void DisplaySettings(void)
 #ifdef SDL
 extern int kbd_joy_0_enabled;
 extern int kbd_joy_1_enabled;
+extern char *joy_0_description(char *, int);
+extern char *joy_1_description(char *, int);
+static char joy_0_desc[40];
+static char joy_1_desc[40];
 #endif
 
 static void ControllerConfiguration(void)
@@ -1192,7 +1196,9 @@ static void ControllerConfiguration(void)
 #endif
 #ifdef SDL
 		MENU_CHECK(5, "Enable keyboard joystick 1:"),
-		MENU_CHECK(6, "Enable keyboard joystick 2:"),
+		MENU_LABEL(joy_0_desc),
+		MENU_CHECK(7, "Enable keyboard joystick 2:"),
+		MENU_LABEL(joy_1_desc),
 #endif
 		MENU_END
 	};
@@ -1216,7 +1222,9 @@ static void ControllerConfiguration(void)
 #endif
 #ifdef SDL
 		SetItemChecked(&menu_array[5], kbd_joy_0_enabled);
-		SetItemChecked(&menu_array[6], kbd_joy_1_enabled);
+		joy_0_description(joy_0_desc, sizeof(joy_0_desc));
+		SetItemChecked(&menu_array[7], kbd_joy_1_enabled);
+		joy_1_description(joy_1_desc, sizeof(joy_1_desc));
 #endif
 		option = ui_driver->fSelect("Controller Configuration", 0, option, menu_array, NULL);
 		switch (option) {
@@ -1257,7 +1265,7 @@ static void ControllerConfiguration(void)
 		case 5:
 			kbd_joy_0_enabled = !kbd_joy_0_enabled;
 			break;
-		case 6:
+		case 7:
 			kbd_joy_1_enabled = !kbd_joy_1_enabled;
 			break;
 #endif
