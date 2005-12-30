@@ -1,6 +1,7 @@
 /* config.h for Windows CE version of Atari800. */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Include Windows CE workarounds for each file of the emulator core */
 #include "missing.h"
 
 /* Define to use back slash as directory separator. */
@@ -427,3 +428,6 @@
 /* Define to empty if the keyword `volatile' does not work. Warning: valid
    code using `volatile' can become incorrect without. Disable with care. */
 #undef volatile
+
+/* Define to 1 for the alternate host syncing scheme. */
+#define ALTERNATE_SYNC_WITH_HOST	1
