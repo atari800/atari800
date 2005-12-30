@@ -26,7 +26,11 @@
 #include <stdlib.h>
 #include <math.h>
 
+#ifdef ASAP /* external project, see http://asap.sf.net */
+#include "asap_internal.h"
+#else
 #include "atari.h"
+#endif
 #include "mzpokeysnd.h"
 #include "pokeysnd.h"
 #include "remez.h"

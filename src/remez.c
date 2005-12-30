@@ -26,9 +26,13 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "log.h"
 #include "remez.h"
+#ifdef ASAP /* external project, see http://asap.sf.net */
+#include "asap_internal.h"
+#else
+#include "log.h"
 #include "util.h"
+#endif
 
 /*******************
  * CreateDenseGrid
@@ -587,9 +591,11 @@ void remez(double h[], int numtaps, int numband, double bands[],
 		if (isDone(r, Ext, E))
 			break;
 	}
+#ifndef ASAP
 	if (iter == MAXITERATIONS) {
 		Aprint("remez(): reached maximum iteration count. Results may be bad.");
 	}
+#endif
 
 	CalcParms(r, Ext, Grid, D, W, ad, x, y);
 

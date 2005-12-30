@@ -1,7 +1,11 @@
 #ifndef _POKEY_H_
 #define _POKEY_H_
 
+#ifdef ASAP /* external project, see http://asap.sf.net */
+#include "asap_internal.h"
+#else
 #include "atari.h"
+#endif
 
 #define _AUDF1 0x00
 #define _AUDC1 0x01
@@ -36,6 +40,8 @@
 
 #define _POKEY2 0x10			/* offset to second pokey chip (STEREO expansion) */
 
+#ifndef ASAP
+
 extern UBYTE KBCODE;
 extern UBYTE IRQST;
 extern UBYTE IRQEN;
@@ -53,6 +59,8 @@ void POKEY_PutByte(UWORD addr, UBYTE byte);
 void POKEY_Initialise(int *argc, char *argv[]);
 void POKEY_Frame(void);
 void POKEY_Scanline(void);
+
+#endif
 
 /* CONSTANT DEFINITIONS */
 

@@ -84,14 +84,18 @@
 
 #include "config.h"
 
+#ifdef ASAP /* external project, see http://asap.sf.net */
+#include "asap_internal.h"
+#else
 #include "atari.h"
-#include "mzpokeysnd.h"
-#include "pokeysnd.h"
 #ifndef __PLUS
 #include "sndsave.h"
 #else
 #include "sound_win.h"
 #endif
+#endif
+#include "mzpokeysnd.h"
+#include "pokeysnd.h"
 
 #ifdef WORDS_UNALIGNED_OK
 #  define READ_U32(x)     (*(uint32 *) (x))
@@ -328,7 +332,7 @@ void Pokey_set_mzquality(int quality)	/* specially for win32, perhaps not needed
 void Pokey_process(void *sndbuffer, unsigned int sndn)
 {
 	Pokey_process_ptr(sndbuffer, sndn);
-#ifndef __PLUS
+#if !defined(__PLUS) && !defined(ASAP)
 	WriteToSoundFile(sndbuffer, sndn);
 #endif
 }

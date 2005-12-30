@@ -1,5 +1,10 @@
 ** 1.4.0 released on 2005-12-30
 
+2005-12-30  Piotr Fusik  <fox@scene.pl>
+* cpu.[ch], mzpokeysnd.c, pokey.h, pokeysnd.c, remez.c: added conditional code
+  for an external project derived from Atari800, see http://asap.sf.net
+
+
 2005-12-29  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_sdl.c: keyboard joysticks:
   - removed secondary trigger key
