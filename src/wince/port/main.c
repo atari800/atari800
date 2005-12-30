@@ -147,7 +147,7 @@ static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInstance;
-	wc.hIcon = NULL; //LoadIcon(hInstance, IDI_APPLICATION);
+	wc.hIcon = NULL;
 	wc.hCursor = NULL;
 	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	wc.lpszMenuName = NULL;
@@ -169,7 +169,7 @@ static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 	if(!hWndMain)
 		return 1;
 
-	SetWindowPos(hWndMain, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+	SetWindowPos(hWndMain, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
 	return 0;
 }
 
@@ -193,8 +193,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 	}
 
 	if (SystemParametersInfo(SPI_GETPLATFORMTYPE, 100, platform, 0))
+	{
 		if (wcsstr(platform, _T("martphone")))
 			issmartphone = 1;
+	}
+	else
+		issmartphone = 1; /* it probably is a smartphone */
 
 	if(lpCmdLine)
 		WideCharToMultiByte(CP_ACP, 0, lpCmdLine, -1, args, 0x400, NULL, NULL);
