@@ -108,6 +108,7 @@ Command line options
 -dsprate <freq>       Set mixing frequency (Hz)
 -snddelay <time>      Set sound delay (milliseconds)
 
+
 Curses version options
 ----------------------
 -left                 Use columns 0 to 39
@@ -115,6 +116,7 @@ Curses version options
 -right                Use columns 40 to 79
 -wide1                Use columns 0 to 79 (spaces between characters)
 -wide2                Use columns 0 to 79 (as above but normal/reverse spaces)
+
 
 DOS/VGA version options
 -----------------------
@@ -133,6 +135,7 @@ DOS/VGA version options
 -keyboard 0           PC keyboard layout
 -keyboard 1           Atari keyboard layout
 
+
 Falcon version options
 ----------------------
 
@@ -142,6 +145,7 @@ Falcon version options
 -delta                Delta screen output (differences only)
 
 -joyswap              Swap joysticks
+
 
 SDL version options
 -------------------
@@ -159,10 +163,12 @@ SDL version options
 -joy0 </dev/lp0>      Define the device for LPTjoy
 -joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
 
+
 SVGALIB version options
 -----------------------
 
 -interlace            Generate screen with interlace
+
 
 X11 options
 -----------
@@ -181,6 +187,7 @@ X11 options
 -x11bug               Enable debug code in atari_x11.c
 
 -keypad               Keypad mode
+
 
 Keyboard, joystick and other controllers
 ========================================
@@ -215,10 +222,12 @@ ST/Amiga mouse, Atari trak-ball, joystick and Atari 5200 analog
 controller are emulated using mouse on ports that support it.
 See the options above for how to enable mouse.
 
+
 Amiga keyboard, joystick and other controllers
 ----------------------------------------------
 
 Please look into the supplied Atari800.guide.
+
 
 BASIC keyboard, joystick and other controllers
 ----------------------------------------------
@@ -226,6 +235,7 @@ BASIC keyboard, joystick and other controllers
 No function keys or Alt+letter shortcuts.
 Use Ctrl+C to enter the monitor.
 Controllers not supported in this version.
+
 
 Curses keyboard, joystick and other controllers
 -----------------------------------------------
@@ -237,6 +247,7 @@ can be typed. Control characters are displayed on the screen
 with the associated upper case character in bold.
 Controllers not supported in this version.
 
+
 DOS VGA keyboard, joystick and other controllers
 ------------------------------------------------
 
@@ -246,6 +257,7 @@ F7         Switch between Emulated joysticks mode and Normal keyboard
 Joysticks can be either real one connected to game port, or old 8-bit
 digital CX-40 joysticks connected to parallel port or keyboard joysticks
 (try out JOYCFG.EXE).
+
 
 Falcon keyboard, joystick and other controllers
 -----------------------------------------------
@@ -265,6 +277,7 @@ keypad has been enabled).
 
 Mouse not supported in this version.
 
+
 SDL keyboard, joystick and other controllers
 --------------------------------------------
 
@@ -274,11 +287,38 @@ LAlt+B     Switch BLACK-AND-WHITE
 LAlt+J     Swap _keyboard_emulated_ joysticks
 LAlt+E     Switch bpp (for debug only, will be removed soon)
 
-To redefine keys for joystick emulation you must modify SDL_TRIG_* and
-SDL_JOY_* in atari_sdl.c, then recompile Atari800. In source you can also turn
+Apart from standard joysticks (handled by the SDL) two keyboard joysticks
+are supported.
+
+Keyboard joystick 0 is operated by the numeric keypad.
+
+        7 8 9
+         \|/
+        4 5 6
+         /|\
+        1 2 3
+
+        And left control is the fire key.
+
+Keyboard joystick 1 is by default mapped on the following keys:
+
+        q w e
+         \|/
+        a s d
+         /|\
+        z x c
+
+        And Tab is the fire key.
+
+Keyboard joystick emulation can be enabled/disabled in the Controller Config.
+By default, joy 0 is enabled and joy 1 is disabled (to not steal normal
+qweadzxc keys in the emulator).
+
+To redefine keys for joystick emulation edit the Atari800 config file and
+modify the SDL_JOY_* options (see FAQ). You can also edit the default values
+in the atari_sdl.c, then recompile Atari800. In source you can also turn
 off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
 
-On Linux, standard joysticks are supported.
 
 SVGALIB keyboard, joystick and other controllers
 ------------------------------------------------
