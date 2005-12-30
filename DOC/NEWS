@@ -6,13 +6,17 @@ Version 1.4.0 (2005/12/30) - thanks to gorgeous work of Piotr Fusik
  to Atari800 project while you will be browsing through the impressive list
  of changes below.
 
- Important thing is that the Atari800 configuration file (.atari800.cfg)
- lost several options and some new ones appeared. It is strongly recommended
- to start Atari800 and to save the configuration from within the UI (press
- [F1] key and then go to Emulator Configuration -> Save Configuration File).
- Of course make sure you set the config options to match your setup before
- you save the configuration. In particular pay attention to the new
- Directories setup ([F1] -> Emulator Configuration -> Configure directories).
+ Run-time configuration (via the .atari800.cfg file) has been improved.
+ All configuration options are now available in the User Interface.
+ Remember to use "Save configuration file" when necessary.
+
+ If you are new to Atari800, press F1 and select "Emulator Configuration"
+ to configure the ROM images. This can be easily done with
+ "Find ROM images in a directory".
+
+ DISK_DIR, ROM_DIR, EXE_DIR and STATE_DIR configuration options are no longer
+ supported in this version. You need to re-select your directories
+ using "Emulator Configuration" -> "Configure directories".
 
  Changes:
  --------
