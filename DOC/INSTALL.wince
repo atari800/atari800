@@ -1,6 +1,6 @@
 PocketAtari: The Windows CE Port of the Atari 800 Emulator.
 
-Last Update of this File: 28/10/05
+Last Update of this File: 30/12/05
 
 I. PURPOSE
 ------------------------------------------------------------------------------
@@ -55,19 +55,27 @@ b. Smartphone
 Due to the lack of proper keyboard and pointing device, the emulated Atari features
 are limited. You can play the majority of games though. Use the following keys:
 
-Directional keys           : Simulate joystick 0                   $
-Softkey A, Softkey B, 4, 6 : Fire joystick 0                       $
-0                          : Return key
-7                          : Option key
-8                          : Select key
-9                          : Start key
-*                          : Show emulator menu                    $
-Talk/Call/Green key        : Switch between the 3 display modes
+Directional keys            : Simulate joystick 0                   $
+Softkey A, Softkey B, 4, 6  : Fire joystick 0                       $
+0                           : Return key
+7                           : Option key
+8                           : Select key
+9                           : Start key
+Softkey C (usually '*' key) : Show emulator menu                    $
+Talk/Call/Green key         : Switch between the 3 display modes
 
 For navigating the emulator menus use buttons marked with '$' above.
 
-NOTE: Functionality of Softkey A, Softkey B and * keys may be attributed
-      differently according to the drivers of your cellphone.
+NOTE 1 : Functionality of Softkey A, Softkey B and * keys may be attributed
+         differently according to the drivers of your cellphone.
+NOTE 2 : Until we get a fully modifiable controller configuration option in
+         Atari800, you have to live with the preassigned keys. As an exception,
+         some smartphones have reported problems with the simultaneous use of
+         the fire keys and the directional pad. I have included an option to
+         exchange the functionality of the Softkey B and C keys. This should be
+         considered as an UNSUPPORTED option which will go away in the future.
+         To enable it include the following line in your atari800.cfg file:
+         WCE_SMARTPHONE_KBHACK=1
 
 V. COMPILING
 ------------------------------------------------------------------------------
@@ -113,7 +121,7 @@ VIII. REFERENCES
 [2] Vasyl Tsvirkunov's Atari800 page
     http://pocketatari.retrogames.com
 [3] Kostas Nakos' Atari800 page
-    http://users.uoa.gr/~knakos/atari800
+    http://pocketatari.atari.org
 [4] GAPI emulation
     http://pocketfrog.droneship.com/
 [5] zlib for Windows CE
