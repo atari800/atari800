@@ -96,7 +96,6 @@ int Atari_Keyboard(void)
 	int keycode;
 
 	prockb();
-
 	keycode = get_last_key();
 
 	return keycode;
@@ -172,15 +171,6 @@ int Atari_TRIG(int num)
 
 void Atari_ConfigInit(void)
 {
-	strcpy(atari_osa_filename, "atariosa.rom");
-	strcpy(atari_osb_filename, "atariosb.rom");
-	strcpy(atari_xlxe_filename, "atarixl.rom");
-	strcpy(atari_basic_filename, "ataribas.rom");
-	strcpy(atari_5200_filename, "5200.rom");
-	strcpy(atari_files_dir[0], ".");
-	n_atari_files_dir = 1;
-	strcpy(saved_files_dir[0], ".");
-	n_saved_files_dir = 1;
 	enable_new_pokey = 0;
 	screen_visible_x1 = 24;
 	screen_visible_y1 = 10;
@@ -198,6 +188,16 @@ int Atari_Configure(char* option, char *parameters)
 		sscanf(parameters, "%d", &smooth_filter);
 		return 1;
 	}
+	else if (strcmp(option, "WCE_VIRTUAL_JOYSTICK") == 0)
+	{
+		sscanf(parameters, "%d", &virtual_joystick);
+		return 1;
+	}
+	else if (strcmp(option, "WCE_SMARTPHONE_KBHACK") == 0)
+	{
+		sscanf(parameters, "%d", &smkeyhack);
+		return 1;
+	}
 
 	return 0;
 }
@@ -205,6 +205,7 @@ int Atari_Configure(char* option, char *parameters)
 void Atari_ConfigSave(FILE *fp)
 {
 	fprintf(fp, "WCE_LINEAR_FILTER=%d\n", smooth_filter);
+	fprintf(fp, "WCE_VIRTUAL_JOYSTICK=%d\n", virtual_joystick);
 }
 
 void AboutPocketAtari(void)
@@ -215,8 +216,8 @@ void AboutPocketAtari(void)
 		"\0"
 		"Ported by Kostas Nakos\0"
 		"(knakos@gmail.com)\0"
-		"http://users.uoa.gr/...               \0"
-		"             ...(tilde)knakos/atari800\0"
+		"http://pocketatari.atari.org"
+		"\0"
 		"\0"
 		"\0"
 		"Based on the PocketPC/WinCE port\0"
@@ -241,8 +242,8 @@ void AboutPocketAtari(void)
 		"PocketPC port update and\0"
 		"Smartphone port by Kostas Nakos\0"
 		"(knakos@gmail.com)\0"
-		"http://users.uoa.gr/...               \0"
-		"             ...(tilde)knakos/atari800\0"
+		"http://pocketatari.atari.org"
+		"\0"
 		"\n"
 	);
 }
