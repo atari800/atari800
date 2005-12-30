@@ -30,4 +30,7 @@ extern unsigned long* kbd_image;
 /* Use virtual joystick */
 extern int virtual_joystick;
 
+/* Swap vkB + vkC keys for some smartphones */
+extern int smkeyhack;
+
 #endif /* _KEYBOARD_H_ */
