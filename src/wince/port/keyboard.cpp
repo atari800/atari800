@@ -34,6 +34,7 @@ extern "C"
 #include "ui.h"
 
 int virtual_joystick = 0;
+int smkeyhack = 0;
 };
 
 int currentKeyboardMode = 4;
@@ -436,7 +437,7 @@ void hitbutton(short code)
 		else if(code == joykey_map[get_screen_mode()][3])
 			kbcode = AKEY_RIGHT;
 		else if(code == klist.vkStart)
-			kbcode = AKEY_TAB;
+			kbcode = AKEY_BACKSPACE;
 		else if(code == klist.vkA)
 			kbcode = AKEY_SPACE;
 		else if(code == klist.vkB)
@@ -497,7 +498,7 @@ void releasebutton(short code)
 		else if(code == klist.vkRight)
 			kbcode = AKEY_RIGHT;
 		else if(code == klist.vkStart)
-			kbcode = AKEY_TAB;
+			kbcode = AKEY_BACKSPACE;
 		else if(code == klist.vkA)
 			kbcode = AKEY_SPACE;
 		else if(code == klist.vkB)
@@ -780,7 +781,6 @@ void dragscreen(short x, short y)
 	}
 }
 
-
 void push_key(short akey)
 {
 	switch(akey)
@@ -876,6 +876,13 @@ int initinput(void)
 	joykey_map[2][1] = klist.vkLeft;
 	joykey_map[2][2] = klist.vkUp;
 	joykey_map[2][3] = klist.vkDown;
+
+	if (smkeyhack)
+	{
+		klist.vkB ^= klist.vkC;
+		klist.vkC ^= klist.vkB;
+		klist.vkB ^= klist.vkC;
+	}
 
 	if (issmartphone)
 	{
