@@ -1,5 +1,5 @@
 %define name	atari800
-%define ver	1.4.0
+%define ver	2.0.0
 %define rel	1
 %define copy	GPL
 %define ich Petr Stehlik <pstehlik@sophics.cz>

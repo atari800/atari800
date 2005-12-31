@@ -1,8 +1,8 @@
 #!/bin/sh
 # This scripts helps with building the source .tar.gz file
 
-VER_MAJOR=1
-VER_MINOR=4
+VER_MAJOR=2
+VER_MINOR=0
 VER_MICRO=0
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO
