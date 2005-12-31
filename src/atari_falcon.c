@@ -27,7 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>		/* for free */
-#include <falcon.h>		/* for VsetRGB */
+#include <mint/falcon.h>	/* for VsetRGB */
 #include "falcon/xcb.h"		/* for NOVA screensaver */
 
 #include "atari.h"
@@ -344,6 +344,8 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	/* check for NOVA graphics card */
 	if (get_cookie('NOVA', &NOVA_xcb))
+		bitplanes = FALSE;
+	else if (get_cookie('fVDI', NULL))
 		bitplanes = FALSE;
 
 	/* GEM init */
