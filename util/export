@@ -53,6 +53,7 @@ cd atari800/src
 ./autogen.sh
 # remove leftovers from autogen process
 rm -f autogen.sh config.cache config.log configure.ac
+rm -rf autom4te.cache
 cd ../..
 mv atari800 $FOLDER
 GZIP=--best tar chozvf $FNAME $FOLDER
