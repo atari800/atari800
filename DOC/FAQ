@@ -5,6 +5,7 @@ Frequently asked questions (with answers)
    A: Download the xf25.zip from http://prdownloads.sf.net/atari800/xf25.zip
       You'll get three .ROM files - ATARIBAS.ROM, ATARIOSB.ROM and ATARIXL.ROM.
       We cannot distribute them due to licensing and copyright issues. Sorry.
+      In Atari800 UI there is an option to locate these ROM images.
 
 1. Q: I want Windows version of Atari800 with Windows GUI.
    A: Try Atari800Win PLus: http://atariarea.histeria.pl/PLus/index_us.htm
@@ -23,12 +24,14 @@ Frequently asked questions (with answers)
       Runtime configuration of keyboard joysticks mapping is not yet ready.
 
 4. Q: Sound problems in xxx
-   A: We know about problems with volume-only sound (digitized sound effects)
-      and we plan on fixing them. You can try disabling the new HIFI Pokey
+   A: We know about problems with volume-only sound (digitized sound effects).
+      See the BUGS file. You can try disabling the new HIFI Pokey
       emulation (in the UI go to Sound Settings and disable the HIFI there).
 
-      I also experienced sound problems in SDL on GNOME Linux with ESD
-      that were fixed by removing the libsdl1.2debian-esd library replacing
-      it with libsdl1.2debian-alsa library (this is applicable only if you
-      are using ALSA (http://alsa-project.org/) and GNOME with ESD, of course.
+      I also experienced sound problems in SDL on my Debian GNU/Linux with ESD
+      (a sound daemon coming with GNOME) that were fixed by installing
+      the libsdl1.2debian-alsa package (that is compiled to output sound 
+      directly to ALSA instead of going through the ESD (this is applicable
+      only if you are using ALSA (http://alsa-project.org/) and have ESD
+      running, of course).
 
