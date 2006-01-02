@@ -1133,6 +1133,12 @@
 * antic.c, sndsave.h, ui_basic.c: fixed an error and some warnings reported
   by GCC 4.0.0
 
+2005-05-13  James Wilkinson  <james@slor.net>
+* win32/atari_win32.c, win32/joystick.[ch], win32/main.c: added DirectX
+  joystick support
+
+* win32/atari_win32.c: cleaned up initialization with nonexistent config file
+ 
 
 ** 1.3.6 released on 2005-04-30
 
