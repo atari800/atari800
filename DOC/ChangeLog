@@ -1,3 +1,12 @@
+** 2.0.1 released on 2006-01-02
+
+2006-01-02  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c: keysym.unicode is not defined for KEYUP event (reported
+  by Patrice Mandin, the Atari libSDL port author)
+
+* various doc files: update for 2.0.1 bugfix release
+
+
 2006-01-02  Piotr Fusik  <fox@scene.pl>
 * devices.c: H: device defaults to read-only
 
