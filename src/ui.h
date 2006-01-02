@@ -60,7 +60,6 @@ typedef struct
 #define MENU_ACCEL(keystroke) keystroke
 #endif
 
-#define MENU_PLACEHOLDER                                    { ITEM_HIDDEN, -1, NULL, "", NULL }
 #define MENU_LABEL(item)                                    { ITEM_ACTION, -1, NULL, item, NULL }
 #define MENU_ACTION(retval, item)                           { ITEM_ACTION, retval, NULL, item, NULL }
 #define MENU_ACTION_PREFIX(retval, prefix, item)            { ITEM_ACTION, retval, prefix, item, NULL }
@@ -129,10 +128,10 @@ typedef struct
 {
 	fnSelect           fSelect;
 	fnSelectInt        fSelectInt;
-    fnEditString       fEditString;
+	fnEditString       fEditString;
 	fnGetSaveFilename  fGetSaveFilename;
 	fnGetLoadFilename  fGetLoadFilename;
-    fnGetDirectoryPath fGetDirectoryPath;
+	fnGetDirectoryPath fGetDirectoryPath;
 	fnMessage          fMessage;
 	fnInfoScreen       fInfoScreen;
 	fnInit             fInit;
