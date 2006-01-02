@@ -75,9 +75,16 @@ char saved_files_dir[MAX_DIRECTORIES][FILENAME_MAX];
 int n_atari_files_dir = 0;
 int n_saved_files_dir = 0;
 
-static void SetItemChecked(tMenuItem *mip, int checked)
+static tMenuItem *FindMenuItem(tMenuItem *mip, int option)
 {
-	mip->flags = checked ? (ITEM_CHECK | ITEM_CHECKED) : ITEM_CHECK;
+	while (mip->retval != option)
+		mip++;
+	return mip;
+}
+
+static void SetItemChecked(tMenuItem *mip, int option, int checked)
+{
+	FindMenuItem(mip, option)->flags = checked ? (ITEM_CHECK | ITEM_CHECKED) : ITEM_CHECK;
 }
 
 static void FilenameMessage(const char *format, const char *filename)
@@ -936,8 +943,6 @@ static void AtariSettings(void)
 		MENU_CHECK(5, "P: device (printer):"),
 #ifdef R_IO_DEVICE
 		MENU_CHECK(6, "R: device (Atari850 via net):"),
-#else
-		MENU_PLACEHOLDER,
 #endif
 		MENU_FILESEL_PREFIX(7, "H1: ", atari_h_dir[0]),
 		MENU_FILESEL_PREFIX(8, "H2: ", atari_h_dir[1]),
@@ -962,14 +967,14 @@ static void AtariSettings(void)
 
 	for (;;) {
 		int seltype;
-		SetItemChecked(&menu_array[0], disable_basic);
-		SetItemChecked(&menu_array[1], hold_start_on_reboot);
-		SetItemChecked(&menu_array[2], rtime_enabled);
-		SetItemChecked(&menu_array[3], enable_sio_patch);
+		SetItemChecked(menu_array, 0, disable_basic);
+		SetItemChecked(menu_array, 1, hold_start_on_reboot);
+		SetItemChecked(menu_array, 2, rtime_enabled);
+		SetItemChecked(menu_array, 3, enable_sio_patch);
 		menu_array[4].suffix = enable_h_patch ? (h_read_only ? "Read-only" : "Read/write") : "No ";
-		SetItemChecked(&menu_array[5], enable_p_patch);
+		SetItemChecked(menu_array, 5, enable_p_patch);
 #ifdef R_IO_DEVICE
-		SetItemChecked(&menu_array[6], enable_r_patch);
+		SetItemChecked(menu_array, 6, enable_r_patch);
 #endif
 
 		option = ui_driver->fSelect("Emulator Settings", 0, option, menu_array, &seltype);
@@ -1013,9 +1018,9 @@ static void AtariSettings(void)
 		case 9:
 		case 10:
 			if (seltype == USER_DELETE)
-				menu_array[option].item[0] = '\0';
+				FindMenuItem(menu_array, option)->item[0] = '\0';
 			else
-				ui_driver->fGetDirectoryPath(menu_array[option].item);
+				ui_driver->fGetDirectoryPath(FindMenuItem(menu_array, option)->item);
 			break;
 		case 20:
 			AdvancedHOptions();
@@ -1032,9 +1037,9 @@ static void AtariSettings(void)
 		case 15:
 		case 16:
 			if (seltype == USER_DELETE)
-				menu_array[option].item[0] = '\0';
+				FindMenuItem(menu_array, option)->item[0] = '\0';
 			else
-				ui_driver->fGetLoadFilename(menu_array[option].item, NULL, 0);
+				ui_driver->fGetLoadFilename(FindMenuItem(menu_array, option)->item, NULL, 0);
 			break;
 		case 17:
 			Util_splitpath(atari_xlxe_filename, rom_dir, NULL);
@@ -1108,10 +1113,10 @@ static void DisplaySettings(void)
 	for (;;) {
 		menu_array[0].suffix = artif_menu_array[global_artif_mode].item;
 		sprintf(refresh_status, "1:%-2d", refresh_rate);
-		SetItemChecked(&menu_array[2], sprite_collisions_in_skipped_frames);
-		SetItemChecked(&menu_array[3], show_atari_speed);
-		SetItemChecked(&menu_array[4], show_disk_led);
-		SetItemChecked(&menu_array[5], show_sector_counter);
+		SetItemChecked(menu_array, 2, sprite_collisions_in_skipped_frames);
+		SetItemChecked(menu_array, 3, show_atari_speed);
+		SetItemChecked(menu_array, 4, show_disk_led);
+		SetItemChecked(menu_array, 5, show_sector_counter);
 #ifdef _WIN32_WCE
 		menu_array[6].flags = filter_available ? (smooth_filter ? (ITEM_CHECK | ITEM_CHECKED) : ITEM_CHECK) : ITEM_HIDDEN;
 #endif
@@ -1211,19 +1216,19 @@ static void ControllerConfiguration(void)
 		menu_array[0].suffix = joy_autofire[0] == AUTOFIRE_FIRE ? "Fire"
 		                     : joy_autofire[0] == AUTOFIRE_CONT ? "Always"
 		                     : "No ";
-		SetItemChecked(&menu_array[1], joy_multijoy);
+		SetItemChecked(menu_array, 1, joy_multijoy);
 #ifdef _WIN32_WCE
 		/* XXX: not on smartphones? */
-		SetItemChecked(&menu_array[2], virtual_joystick);
+		SetItemChecked(menu_array, 5, virtual_joystick);
 #else
 		menu_array[2].suffix = mouse_mode_menu_array[mouse_mode].item;
 		mouse_port_status[0] = (char) ('1' + mouse_port);
 		mouse_speed_status[0] = (char) ('0' + mouse_speed);
 #endif
 #ifdef SDL
-		SetItemChecked(&menu_array[5], kbd_joy_0_enabled);
+		SetItemChecked(menu_array, 5, kbd_joy_0_enabled);
 		joy_0_description(joy_0_desc, sizeof(joy_0_desc));
-		SetItemChecked(&menu_array[7], kbd_joy_1_enabled);
+		SetItemChecked(menu_array, 7, kbd_joy_1_enabled);
 		joy_1_description(joy_1_desc, sizeof(joy_1_desc));
 #endif
 		option = ui_driver->fSelect("Controller Configuration", 0, option, menu_array, NULL);
@@ -1286,13 +1291,9 @@ static int SoundSettings(void)
 		MENU_CHECK(0, "High Fidelity POKEY:"),
 #ifdef STEREO_SOUND
 		MENU_CHECK(1, "Dual POKEY (Stereo):"),
-#else
-		MENU_PLACEHOLDER,
 #endif
 #ifdef CONSOLE_SOUND
 		MENU_CHECK(2, "Speaker (Key Click):"),
-#else
-		MENU_PLACEHOLDER,
 #endif
 #ifdef SERIO_SOUND
 		MENU_CHECK(3, "Serial IO Sound:"),
@@ -1303,15 +1304,15 @@ static int SoundSettings(void)
 	int option = 0;
 
 	for (;;) {
-		SetItemChecked(&menu_array[0], enable_new_pokey);
+		SetItemChecked(menu_array, 0, enable_new_pokey);
 #ifdef STEREO_SOUND
-		SetItemChecked(&menu_array[1], stereo_enabled);
+		SetItemChecked(menu_array, 1, stereo_enabled);
 #endif
 #ifdef CONSOLE_SOUND
-		SetItemChecked(&menu_array[2], console_sound_enabled);
+		SetItemChecked(menu_array, 2, console_sound_enabled);
 #endif
 #ifdef SERIO_SOUND
-		SetItemChecked(&menu_array[3], serio_sound_enabled);
+		SetItemChecked(menu_array, 3, serio_sound_enabled);
 #endif
 
 		option = ui_driver->fSelect(NULL, SELECT_POPUP, option, menu_array, NULL);
