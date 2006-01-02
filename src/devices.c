@@ -478,7 +478,7 @@ static int devbug = FALSE;
 char atari_h_dir[4][FILENAME_MAX] = { "", "", "", "" };
 
 /* read only mode for H: device */
-int h_read_only;
+int h_read_only = TRUE;
 
 /* ';'-separated list of Atari paths checked by the "load executable"
    command. if a path does not start with "Hn:", then the selected device
