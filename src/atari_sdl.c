@@ -709,7 +709,7 @@ int Atari_Keyboard(void)
 	/* keyboard joysticks: don't pass the keypresses to emulation
 	 * as some games pause on a keypress (River Raid, Bruce Lee)
 	 */
-	if (kbd_joy_0_enabled) {
+	if (!ui_is_active && kbd_joy_0_enabled) {
 		if (lastkey == KBD_STICK_0_LEFT || lastkey == KBD_STICK_0_RIGHT ||
 			lastkey == KBD_STICK_0_UP || lastkey == KBD_STICK_0_DOWN ||
 			lastkey == KBD_STICK_0_LEFTUP || lastkey == KBD_STICK_0_LEFTDOWN ||
@@ -720,7 +720,7 @@ int Atari_Keyboard(void)
 		}
 	}
 
-	if (kbd_joy_1_enabled) {
+	if (!ui_is_active && kbd_joy_1_enabled) {
 		if (lastkey == KBD_STICK_1_LEFT || lastkey == KBD_STICK_1_RIGHT ||
 			lastkey == KBD_STICK_1_UP || lastkey == KBD_STICK_1_DOWN ||
 			lastkey == KBD_STICK_1_LEFTUP || lastkey == KBD_STICK_1_LEFTDOWN ||
