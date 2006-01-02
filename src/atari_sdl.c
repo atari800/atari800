@@ -581,12 +581,11 @@ int Atari_Keyboard(void)
 			break;
 		case SDL_KEYUP:
 			lastkey = event.key.keysym.sym;
- 			lastuni = event.key.keysym.unicode;
+ 			lastuni = 0; /* event.key.keysym.unicode is not defined for KEYUP */
 			key_pressed = 0;
 			break;
 		case SDL_VIDEORESIZE:
-			SetNewVideoMode(event.resize.w, event.resize.h,
-							MainScreen->format->BitsPerPixel);
+			SetNewVideoMode(event.resize.w, event.resize.h, MainScreen->format->BitsPerPixel);
 			break;
 		case SDL_QUIT:
 			return AKEY_EXIT;
