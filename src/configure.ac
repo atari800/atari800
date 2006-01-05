@@ -228,6 +228,7 @@ case "$a8_target" in
         AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
         AC_DEFINE(DEFAULT_CFG_NAME,"mc0:/ATARI/ATARI800.CFG",[Alternate config filename due to 8+3 fs limit.])
         A8_NEED_LIB(kernel)
+	A8_NEED_LIB(audsrv)
         A8_NEED_LIB(debug)
         A8_NEED_LIB(syscall)
         A8_NEED_LIB(dmakit)
@@ -238,7 +239,7 @@ case "$a8_target" in
         A8_NEED_LIB(g)
         A8_NEED_LIB(z)
         A8_NEED_LIB(c)
-        OBJS="atari_ps2.o ps2kbd.s usbd.s"
+        OBJS="atari_ps2.o ps2kbd.s usbd.s audsrv.s"
         ;;
     sdl)
         AC_DEFINE(SDL,1,[Target: SDL library.])
