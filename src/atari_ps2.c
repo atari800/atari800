@@ -61,13 +61,13 @@
 #include "ui.h"
 #include "util.h"
 
-#ifdef SOUND
+//#ifdef SOUND
 #include <audsrv.h>
 #include "pokeysnd.h"
 #include "sound.h"
 extern unsigned char audsrv[];
 extern unsigned int size_audsrv;
-#endif
+//#endif
 
 // define to use T0 and T1 timers
 #define USE_TIMERS
@@ -195,21 +195,44 @@ double Atari_time(void)
 #endif
 }
 */
-volatile int locked = 1;
+//volatile int locked = 1;
 
-void wakeup(s32 id, u16 time, void *arg)
-{
-        locked = 0;
-}
-
+//void wakeup(s32 id, u16 time, void *arg)
+//{
+//        locked = 0;
+//}
+//
+//void Atari_sleep(double s)
+//{
+//
+//        /* 15734 is around 1 second on NTSC */
+//	/* is about 1ms? */
+//        SetAlarm(15734 * s, wakeup, 0);
+//        while (locked);
+//	locked = 1;
+//}
 void Atari_sleep(double s)
 {
 
-        /* 15734 is around 1 second on NTSC */
-	/* is about 1ms? */
-        SetAlarm(157 * s, wakeup, 0);
-        while (locked);
-	locked = 1;
+        int i,ret;
+        for (i=0;i<s * 100.0;i++){
+
+		ee_sema_t sema;
+                sema.attr = 0;
+                sema.count = 0;
+                sema.init_count = 0;
+                sema.max_count = 1;
+                ret = CreateSema(&sema);
+                if (ret <= 0) {
+                        //could not create sema, strange!  continue anyway.
+                        return;
+                }
+
+                iSignalSema(ret);
+                WaitSema(ret);
+                DeleteSema(ret);
+        }
+
 }
 
 
