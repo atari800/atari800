@@ -496,7 +496,7 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
 
     OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
 
-    if [[ "$a8_target" != "sdl" ]]; then
+    if [[ "$a8_target" != "ps2" -a "$a8_target" != "sdl" ]]; then
         case "$a8_host" in
             dos)
                 OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
