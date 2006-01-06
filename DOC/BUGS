@@ -21,10 +21,12 @@ o The cycle-exact ANTIC/GTIA/CPU timing is not 100%.
 o Non-bugs:
   - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
   - Mail Order Monsters (game)
-	 (some colour changes do not align with text, occurs on a real Atari)
+    (some colour changes do not align with text, occurs on a real Atari)
   - The Break (demo) (bugs on the left side of photo)
   - Star Raiders (game) (doesn't work on XL/XE, select OS/B)
   - Strip Poker (game) (Atari Basic must be enabled)
+  - Joust (Atari 5200 game) (the game sets all colors to black on PAL systems,
+    you need to switch the emulator to NTSC mode)
 
 o The following programs are improved by using the new cycle-exact code:
   - 8 Players Demo (demo)
