@@ -1,6 +1,6 @@
-PocketAtari: The Windows CE Port of the Atari 800 Emulator.
+        PocketAtari: The Windows CE Port of the Atari 800 Emulator.
 
-Last Update of this File: 30/12/05
+(Last Update of this File: 07 Jan 06)
 
 I. PURPOSE
 ------------------------------------------------------------------------------
@@ -15,6 +15,7 @@ II. NEWS
 The updated version of this port:
 
 o Adds support for Smartphone devices.
+  - Now supporting QVGA Smartphone devices.
 o Includes interpolating downsampling filter for Smartphone displays.
 o Uses zlib dynamic library for opening gzipped image files.
 o Adds initial support for keeping the backlight always on.
@@ -23,7 +24,8 @@ III. INSTALLING
 ------------------------------------------------------------------------------
 To intall PocketAtari on your PocketPC/Smartphone device:
 
-o Create a directory anywhere on your device.
+o Create a directory anywhere on your device (Smartphone users need a suitable
+  file explorer application; else you can create it in the Start Menu folder).
 o Copy the pocketatari.exe file there.
 o Grab the zlibce library from [5]. Copy the appropriate zlibce.dll into the
   folder you created earlier. (e.g. for arm architectures you need the file
@@ -58,6 +60,7 @@ are limited. You can play the majority of games though. Use the following keys:
 Directional keys            : Simulate joystick 0                   $
 Softkey A, Softkey B, 4, 6  : Fire joystick 0                       $
 0                           : Return key
+5                           : Shift key
 7                           : Option key
 8                           : Select key
 9                           : Start key
@@ -88,10 +91,14 @@ o The zlibce library [5].
 Create a folder named zlib inside the src/wince directory. Copy zconf.h
 and zlib.h in zlib/. Create two folders named arm and x86 (src/wince/zlib/arm
 and src/wince/zlib/x86). Copy the appropriate zlibce.lib files in these
-directories. Don't forget to upload gx.dll and zlibce.dll to your emulator.
-Also for Smartphones you'll have to compile yourself a version of the gx.dll
-using the GAPI emulator files. The Smartphone resolution is 176x220 pixels with
-16bpp (either 565 or 555 RGB configurations).
+directories. Don't forget to upload gx.dll (if needed) and zlibce.dll to your 
+emulator. Also for older Smartphones you'll have to compile yourself a version of
+the gx.dll using the GAPI emulator files. The Smartphone resolution is 176x220
+pixels with 16bpp (either 565 or 555 RGB configurations).
+
+NOTE : If you cannot open the project file "PocketAtari.vcp" from the source
+       tarball or CVS checkout, make sure that it is in CR+LF format (and not
+       just LF). A utility like unix2dos can do the trick.
 
 VI. HISTORY
 ------------------------------------------------------------------------------
@@ -130,4 +137,3 @@ VIII. REFERENCES
     http://www.microsoft.com/downloads/details.aspx?FamilyID=d9879b0e-4ef1-4049-9c61-e758933d84c4&displaylang=en
 [7] Microsoft eMbedded Visual Tools 3.0 
     http://msdn.microsoft.com/mobility/windowsmobile/downloads/default.aspx
-    
