@@ -1,3 +1,14 @@
+2006-01-07  Piotr Fusik  <fox@scene.pl>
+* atari.[ch], memory.c, ui.c: 192 KB RAM
+
+
+2006-01-06  Piotr Fusik  <fox@scene.pl>
+* configure.ac: small fix for sound on PS2
+
+* DOC/BUGS: 5200 Joust sets all colors to black on PAL machines
+  (not Atari800's bug)
+
+
 ** 2.0.1 released on 2006-01-02
 
 2006-01-02  Petr Stehlik  <pstehlik@sophics.cz>
