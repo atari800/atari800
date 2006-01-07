@@ -2,7 +2,7 @@
  * atari_wince.c - WinCE port specific code
  *
  * Copyright (C) 2001 Vasyl Tsvirkunov
- * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -255,10 +255,18 @@ int wince_main(int argc, char **argv)
 		return 3;
 
 	/* main loop */
-	for (;;) {
-		key_code = Atari_Keyboard();
-		Atari800_Frame();
-		if (display_screen)
-			Atari_DisplayScreen();
+	for (;;) 
+	{
+		if (emulator_active)
+		{
+			key_code = Atari_Keyboard();
+			Atari800_Frame();
+			if (display_screen)
+				Atari_DisplayScreen();
+		}
+		else
+		{
+			Sleep(100);
+		}
 	}
 }

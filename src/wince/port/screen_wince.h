@@ -23,5 +23,6 @@ void translate_kbd(short* px, short* py);
 
 extern int smooth_filter;
 extern int filter_available;
+extern int emulator_active;
 
 #endif /* _SCREEN_WINCE_H_ */
