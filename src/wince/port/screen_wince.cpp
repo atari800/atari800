@@ -2,7 +2,7 @@
  * screen.cpp - WinCE port specific code
  *
  * Copyright (C) 2001-2002 Vasyl Tsvirkunov
- * Copyright (C) 2002-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2002-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -38,6 +38,7 @@ extern "C"
 
 int smooth_filter = 1; /* default is YES */
 int filter_available = 0;
+int emulator_active;
 };
 
 extern "C" UBYTE *screen_dirty;
@@ -63,8 +64,8 @@ static int colorscale = 0;
 
 #define COLORCONVHICOLOR(r,g,b) ((((r)&0xf8)<<redshift)|(((g)&greenmask)<<(5-2))|(((b)&0xf8)>>3))
 #define COLORCONVMONO(r,g,b) ((((3*(r)>>3)+((g)>>1)+((b)>>3))>>colorscale)^invert)
-#define OPTCONVAVERAGE(pt1,pt2) ( (((optpalRedBlue[*pt1] + optpalRedBlue[*pt2]) >> 1) & optgreenmaskN) | (((optpalGreen[*pt1] + optpalGreen[*pt2]) >> 1) & optgreenmask) )
-#define OPTPIXAVERAGE(pix1,pix2) ( ((((pix1 & optgreenmaskN) + (pix2 & optgreenmaskN)) >> 1) & optgreenmaskN) | ((((pix1 & optgreenmask) + (pix2 & optgreenmask)) >> 1) & optgreenmask) )
+#define OPTCONVAVERAGE(pt1,pt2) ( ((unsigned short)(((int)optpalRedBlue[*pt1] + (int)optpalRedBlue[*pt2]) >> 1) & optgreenmaskN) | (((optpalGreen[*pt1] + optpalGreen[*pt2]) >> 1) & optgreenmask) )
+#define OPTPIXAVERAGE(pix1,pix2) ( ((unsigned short)(((int)(pix1 & optgreenmaskN) + (int)(pix2 & optgreenmaskN)) >> 1) & optgreenmaskN) | ((((pix1 & optgreenmask) + (pix2 & optgreenmask)) >> 1) & optgreenmask) )
 
 /* Using vectorized function to save on branches */
 typedef void (*tCls)();
@@ -95,20 +96,30 @@ static tDrawKbd    pDrawKbd    = NULL;
 // Acquire screen pointer every frame?
 #define FRAMEBASE
 
+// Legacy GAPI mode
+static bool legagy_gapi = true;
+
+void *RawBeginDraw(void);
+
+#define BEGIN_DRAW ( (legagy_gapi) ? (UBYTE*)GXBeginDraw() : (UBYTE*)RawBeginDraw() )
+#define END_DRAW {if (legagy_gapi) GXEndDraw();}
+
 #ifdef FRAMEBASE
-	#define GET_SCREEN_PTR() ((UBYTE*)GXBeginDraw())
-	#define RELEASE_SCREEN() (GXEndDraw())
+	#define GET_SCREEN_PTR() BEGIN_DRAW
+	#define RELEASE_SCREEN() END_DRAW
 #else
 	UBYTE* spScreen = NULL;
 	#define GET_SCREEN_PTR() (spScreen)
 	#define RELEASE_SCREEN()
 #endif
 
-
-/* */
+/* the following enables the linear filtering rout for portait.    *-
+-* it is left out at the moment, because of bad picture quality,   *-
+-* due to the integral downsampling factor & atari's "mostly"      *-
+-* double horizontal pixels                                        */
+#undef SMARTPHONE_FILTER_PORTRAIT
 
 GXDisplayProperties gxdp;
-int active;
 int kbd_image_ok = 0; /* flag to prevent extra redraws of non-overlay keyboard */
 
 struct tScreenGeometry
@@ -129,6 +140,38 @@ tScreenGeometry geom[3];
 int currentScreenMode = 0;
 int useMode = 0;
 int maxMode = 2;
+
+/* 
+   This is Microsoft's idea of consistent interfaces.
+   Looks like they sacked a lot of people in between OS versions.
+   The original team must really like this new way
+*/
+#define GETRAWFRAMEBUFFER   0x00020001
+
+#define FORMAT_565 1
+#define FORMAT_555 2
+#define FORMAT_OTHER 3
+// I believe this FORMAT_OTHER takes the cake.
+
+typedef struct _RawFrameBufferInfo
+{
+   WORD wFormat;
+   WORD wBPP;
+   VOID *pFramePointer;
+   int  cxStride;
+   int  cyStride;
+   int  cxPixels;
+   int  cyPixels;
+} RawFrameBufferInfo;
+
+void *RawBeginDraw(void)
+{
+	static RawFrameBufferInfo rfbi;
+	HDC hdc = GetDC(NULL);
+	ExtEscape(hdc, GETRAWFRAMEBUFFER, 0, NULL, sizeof(RawFrameBufferInfo), (char *) &rfbi);
+	ReleaseDC(NULL, hdc);
+	return rfbi.pFramePointer;
+}
 
 extern "C" void set_screen_mode(int mode)
 {
@@ -151,28 +194,28 @@ extern "C" int get_screen_mode()
 
 extern "C" void gr_suspend()
 {
-	if(active)
+	if(emulator_active)
 	{
 #ifndef FRAMEBASE
 		if(spScreen)
 		{
-			GXEndDraw();
+			END_DRAW;
 			spScreen = NULL;
 		}
 #endif
-		active = 0;
+		emulator_active = 0;
 		GXSuspend();
 	}
 }
 
 extern "C" void gr_resume()
 {
-	if(!active)
+	if(!emulator_active)
 	{
-		active = 1;
+		emulator_active = 1;
 		GXResume();
 #ifndef FRAMEBASE
-		spScreen = (UBYTE*)GXBeginDraw();
+		spScreen = BEGIN_DRAW;
 #endif
 	}
 	palette_update();
@@ -184,12 +227,12 @@ extern "C" void groff(void)
 #ifndef FRAMEBASE
 	if(spScreen)
 	{
-		GXEndDraw();
+		END_DRAW;
 		spScreen = NULL;
 	}
 #endif
 	GXCloseDisplay();
-	active = 0;
+	emulator_active = 0;
 }
 
 extern "C" int gron(int *argc, char *argv[])
@@ -197,6 +240,30 @@ extern "C" int gron(int *argc, char *argv[])
 	GXOpenDisplay(hWndMain, GX_FULLSCREEN);
 	
 	gxdp = GXGetDisplayProperties();
+
+	// let's see what type of device we got here
+	if (((unsigned int) GetSystemMetrics(SM_CXSCREEN) != gxdp.cxWidth) || ((unsigned int) GetSystemMetrics(SM_CYSCREEN) != gxdp.cyHeight))
+	{
+		// 2003SE+ and lying about the resolution. good luck.
+		legagy_gapi = false;
+
+		RawFrameBufferInfo rfbi;
+		HDC hdc = GetDC(NULL);
+		ExtEscape(hdc, GETRAWFRAMEBUFFER, 0, NULL, sizeof(RawFrameBufferInfo), (char *) &rfbi);
+		ReleaseDC(NULL, hdc);
+
+		if (rfbi.wFormat == FORMAT_565)
+			gxdp.ffFormat = kfDirect565;
+		else if (rfbi.wFormat == FORMAT_555)
+			gxdp.ffFormat = kfDirect555;
+		else
+			gxdp.ffFormat = 0;
+		gxdp.cBPP = rfbi.wBPP;
+		gxdp.cbxPitch = rfbi.cxStride;
+		gxdp.cbyPitch = rfbi.cyStride;
+		gxdp.cxWidth  = rfbi.cxPixels;
+		gxdp.cyHeight = rfbi.cyPixels;
+	}
 
 	if(gxdp.ffFormat & kfDirect565)
 	{
@@ -293,9 +360,13 @@ extern "C" int gron(int *argc, char *argv[])
 		geom[0].startoffset = geom[0].pixelstep * 8;
 		issmartphone = 1;
 	}
-	else
+	else if (issmartphone)
 	{
-		if(gxdp.cyHeight < 320)
+		pDrawKbd = null_DrawKbd;
+		geom[0].startoffset = geom[0].linestep * 30;
+	}
+	else if(gxdp.cyHeight < 320)
+	{
 			maxMode = 0; // portrait only!
 	}
 
@@ -308,11 +379,11 @@ extern "C" int gron(int *argc, char *argv[])
 	
 	palette_update();
 
-	active = 1;
+	emulator_active = 1;
 	kbd_image_ok = 0;
 
 #ifndef FRAMEBASE
-	spScreen = (UBYTE*)GXBeginDraw();
+	spScreen = BEGIN_DRAW;
 #endif
 
 	return 0;
@@ -524,7 +595,7 @@ void mono_Refresh(UBYTE * scr_ptr)
 	static UBYTE refbitmask;
 	static int   refbitshift;
 
-	if(!active)
+	if(!emulator_active)
 	{
 		Sleep(100);
 #ifndef MULTITHREADED
@@ -997,7 +1068,7 @@ void palette_Refresh(UBYTE* scr_ptr)
 	static UBYTE* src_ptr_next;
 	static UBYTE* dest_ptr;
 
-	if(!active)
+	if(!emulator_active)
 	{
 		Sleep(100);
 #ifndef MULTITHREADED
@@ -1139,7 +1210,7 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 	static UBYTE* src_ptr_next;
 	static UBYTE* dest_ptr;
 
-	if(!active)
+	if(!emulator_active)
 	{
 		Sleep(100);
 #ifndef MULTITHREADED
@@ -1372,7 +1443,7 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 	static unsigned short pixtop = 0;
 	static unsigned short pixbot = 0;
 
-	if(!active)
+	if(!emulator_active)
 	{
 		Sleep(100);
 #ifndef MULTITHREADED
@@ -1598,6 +1669,39 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 				}
 			}
 		}
+#ifdef SMARTPHONE_FILTER_PORTRAIT
+		else if (smooth_filter)
+		{
+		/* portait - filtering version: x -> 1/2 scale, y -> straight blit */
+			while(screen_dirty_ptr < screen_dirty_limit)
+			{
+				if(*screen_dirty_ptr)
+				{
+					if(xoffset >= low_limit && xoffset < high_limit)
+					{
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*(pixelstep>>1);
+						src_ptr = screen_line_ptr + xoffset;
+						src_ptr_next = src_ptr + 1;
+						*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next); dest_ptr += pixelstep;src_ptr+=2;src_ptr_next+=2;
+						*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next); dest_ptr += pixelstep;src_ptr+=2;src_ptr_next+=2;
+						*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next); dest_ptr += pixelstep;src_ptr+=2;src_ptr_next+=2;
+						*(unsigned short*)dest_ptr = OPTCONVAVERAGE(src_ptr,src_ptr_next);
+					}
+					*screen_dirty_ptr = 0;
+				}
+
+				xoffset += 8;
+				if(xoffset >= ATARI_WIDTH)
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestep;
+				}
+
+				screen_dirty_ptr ++;
+			}
+		}
+#endif
 		else
 		{
 		/* portait: x -> 1/2 scale, y -> straight blit */
