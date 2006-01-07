@@ -2,7 +2,7 @@
  * atari_wince.c - WinCE port specific code
  *
  * Copyright (C) 2001 Vasyl Tsvirkunov
- * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -458,8 +458,10 @@ void hitbutton(short code)
 			stick0 &= ~4;
 		else if(code == joykey_map[get_screen_mode()][3])
 			stick0 &= ~8;
-		else if(code == klist.vkA || code == klist.vkB || code == '4' || code == '6')
+		else if(code == klist.vkA || code == klist.vkB || ((code == '4' || code == '6') && issmartphone))
 			trig0 = 0;
+		else if(code == '5' && issmartphone)
+			kbcode = AKEY_SHFT;
 		else if(code == klist.vkC)
 			kbcode = AKEY_UI;
 		else if ((code == VK_F3) && (issmartphone))
@@ -518,8 +520,10 @@ void releasebutton(short code)
 			stick0 |= 4;
 		else if(code == joykey_map[get_screen_mode()][3])
 			stick0 |= 8;
-		else if(code == klist.vkA || code == klist.vkB || code == '4' || code == '6')
+		else if(code == klist.vkA || code == klist.vkB || ((code == '4' || code == '6') && issmartphone))
 			trig0 = 1;
+		else if(code == '5' && issmartphone)
+			kbcode = AKEY_SHFT;
 		else if(code == klist.vkC)
 			kbcode = AKEY_UI;
 		else
@@ -877,6 +881,7 @@ int initinput(void)
 	joykey_map[2][2] = klist.vkUp;
 	joykey_map[2][3] = klist.vkDown;
 
+	/* TODO: REMOVE THIS ASAP */
 	if (smkeyhack)
 	{
 		klist.vkB ^= klist.vkC;
