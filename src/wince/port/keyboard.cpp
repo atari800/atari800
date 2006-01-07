@@ -461,7 +461,7 @@ void hitbutton(short code)
 		else if(code == klist.vkA || code == klist.vkB || ((code == '4' || code == '6') && issmartphone))
 			trig0 = 0;
 		else if(code == '5' && issmartphone)
-			kbcode = AKEY_SHFT;
+			key_shift = 1;
 		else if(code == klist.vkC)
 			kbcode = AKEY_UI;
 		else if ((code == VK_F3) && (issmartphone))
@@ -523,7 +523,7 @@ void releasebutton(short code)
 		else if(code == klist.vkA || code == klist.vkB || ((code == '4' || code == '6') && issmartphone))
 			trig0 = 1;
 		else if(code == '5' && issmartphone)
-			kbcode = AKEY_SHFT;
+			key_shift = 0;
 		else if(code == klist.vkC)
 			kbcode = AKEY_UI;
 		else
