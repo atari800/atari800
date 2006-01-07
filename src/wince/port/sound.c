@@ -2,7 +2,7 @@
  * sound.c - WinCE port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -116,12 +116,12 @@ static int initsound_wav(void)
   if (err == WAVERR_BADFORMAT)
     {
       Aprint("wave output parameters unsupported\n");
-      exit(1);
+      return 1;
     }
   if (err != MMSYSERR_NOERROR)
     {
       Aprint("cannot open wave output (%x)\n", err);
-      exit(1);
+      return 1;
     }
 
   buffers = ((wf.nAvgBytesPerSec * snddelaywav / 1000) >> WAVSHIFT) + 1;
@@ -132,16 +132,16 @@ static int initsound_wav(void)
       if (!(waves[i].lpData = (uint8 *)malloc(WAVSIZE)))
 	{
 	  Aprint("could not get wave buffer memory\n");
-	  exit(1);
+	  return 1;
 	}
       waves[i].dwBufferLength = WAVSIZE;
       err = waveOutPrepareHeader(wout, &waves[i], sizeof(waves[i]));
       if (err != MMSYSERR_NOERROR)
 	{
 	  Aprint("cannot prepare wave header (%x)\n", err);
-	  exit(1);
+	  return 1;
 	}
-	  memset(waves[i].lpData, 128, WAVSIZE);	// kill clicking sounds at startup
+	  memset(waves[i].lpData, 128+0x28, WAVSIZE);	// kill clicking sounds at startup
       waves[i].dwFlags |= WHDR_DONE;
     }
 
