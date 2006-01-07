@@ -2,7 +2,7 @@
  * memory.c - memory emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -411,6 +411,9 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			switch (ram_size) {
 			case 128:
 				bank = ((byte & 0x0c) >> 2) + 1;
+				break;
+			case 192:
+				bank = (((byte & 0x0c) + ((byte & 0x40) >> 2)) >> 2) + 1;
 				break;
 			case RAM_320_RAMBO:
 				bank = (((byte & 0x0c) + ((byte & 0x60) >> 1)) >> 2) + 1;

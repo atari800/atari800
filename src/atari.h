@@ -45,7 +45,7 @@ extern int machine_type;
 
 /* RAM size in kilobytes.
    Valid values for MACHINE_OSA and MACHINE_OSB are: 16, 48, 52.
-   Valid values for MACHINE_XLXE are: 16, 64, 128, RAM_320_RAMBO,
+   Valid values for MACHINE_XLXE are: 16, 64, 128, 192, RAM_320_RAMBO,
    RAM_320_COMPY_SHOP, 576, 1088.
    The only valid value for MACHINE_5200 is 16. */
 #define RAM_320_RAMBO       320

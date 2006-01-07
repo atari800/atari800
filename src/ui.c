@@ -119,12 +119,13 @@ static void SelectSystem(void)
 		MENU_ACTION(6, "Atari 600XL (16 KB)"),
 		MENU_ACTION(7, "Atari 800XL (64 KB)"),
 		MENU_ACTION(8, "Atari 130XE (128 KB)"),
-		MENU_ACTION(9, "Atari 320XE (320 KB RAMBO)"),
-		MENU_ACTION(10, "Atari 320XE (320 KB COMPY SHOP)"),
-		MENU_ACTION(11, "Atari 576XE (576 KB)"),
-		MENU_ACTION(12, "Atari 1088XE (1088 KB)"),
-		MENU_ACTION(13, "Atari 5200 (16 KB)"),
-		MENU_ACTION(14, "Video system:"),
+		MENU_ACTION(9, "Atari XL/XE (192 KB)"),
+		MENU_ACTION(10, "Atari XL/XE (320 KB RAMBO)"),
+		MENU_ACTION(11, "Atari XL/XE (320 KB COMPY SHOP)"),
+		MENU_ACTION(12, "Atari XL/XE (576 KB)"),
+		MENU_ACTION(13, "Atari XL/XE (1088 KB)"),
+		MENU_ACTION(14, "Atari 5200 (16 KB)"),
+		MENU_ACTION(15, "Video system:"),
 		MENU_END
 	};
 
@@ -138,6 +139,7 @@ static void SelectSystem(void)
 		{ MACHINE_XLXE, 16 },
 		{ MACHINE_XLXE, 64 },
 		{ MACHINE_XLXE, 128 },
+		{ MACHINE_XLXE, 192 },
 		{ MACHINE_XLXE, RAM_320_RAMBO },
 		{ MACHINE_XLXE, RAM_320_COMPY_SHOP },
 		{ MACHINE_XLXE, 576 },
@@ -145,24 +147,24 @@ static void SelectSystem(void)
 		{ MACHINE_5200, 16 }
 	};
 
+#define N_MACHINES  ((int) (sizeof(machine) / sizeof(machine[0])))
+
 	int option = 0;
 	int old_tv_mode = tv_mode;
 
 	int i;
-	for (i = 0; i < sizeof(machine) / sizeof(machine[0]); i++)
+	for (i = 0; i < N_MACHINES; i++)
 		if (machine_type == machine[i].type && ram_size == machine[i].ram) {
 			option = i;
 			break;
 		}
 
 	for (;;) {
-		menu_array[14].suffix = (tv_mode == TV_PAL) ? "PAL" : "NTSC";
+		menu_array[N_MACHINES].suffix = (tv_mode == TV_PAL) ? "PAL" : "NTSC";
 		option = ui_driver->fSelect("Select System", 0, option, menu_array, NULL);
-		if (option == 14) {
-			tv_mode = (tv_mode == TV_PAL) ? TV_NTSC : TV_PAL;
-			continue;
-		}
-		break;
+		if (option < N_MACHINES)
+			break;
+		tv_mode = (tv_mode == TV_PAL) ? TV_NTSC : TV_PAL;
 	}
 	if (option >= 0) {
 		machine_type = machine[option].type;

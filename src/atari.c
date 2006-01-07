@@ -2,7 +2,7 @@
  * atari.c - main high-level routines
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -808,6 +808,8 @@ int Atari800_ReadConfig(const char *alternate_config_filename)
 					ram_size = 64;
 				else if (strcmp(ptr, "128") == 0)
 					ram_size = 128;
+				else if (strcmp(ptr, "192") == 0)
+					ram_size = 192;
 				else if (strcmp(ptr, "320 (RAMBO)") == 0)
 					ram_size = RAM_320_RAMBO;
 				else if (strcmp(ptr, "320 (COMPY SHOP)") == 0)
@@ -1916,6 +1918,10 @@ void MainStateSave(void)
 			temp = 2;
 			default_system = 4;
 			break;
+		case 192:
+			temp = 9;
+			default_system = 8;
+			break;
 		case RAM_320_RAMBO:
 		case RAM_320_COMPY_SHOP:
 			temp = 3;
@@ -1994,6 +2000,10 @@ void MainStateRead(void)
 	case 8:
 		machine_type = MACHINE_XLXE;
 		ram_size = 1088;
+		break;
+	case 9:
+		machine_type = MACHINE_XLXE;
+		ram_size = 192;
 		break;
 	default:
 		machine_type = MACHINE_XLXE;
