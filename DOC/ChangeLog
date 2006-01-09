@@ -1,3 +1,7 @@
+2006-01-09  Piotr Fusik  <fox@scene.pl>
+* pokeysnd.c: some fixes for stereo RF pokeysnd, essential for ASAP
+
+
 2006-01-07  Piotr Fusik  <fox@scene.pl>
 * atari.[ch], memory.c, ui.c: 192 KB RAM
 
