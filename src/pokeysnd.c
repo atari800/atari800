@@ -2,7 +2,7 @@
  * pokeysnd.c - POKEY sound chip emulation, v2.4
  *
  * Copyright (C) 1996-1998 Ron Fries
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -20,66 +20,6 @@
  * You should have received a copy of the GNU General Public License
  * along with Atari800; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
-
-/*
-   Revision History:
-
-   09/22/96 - Ron Fries - Initial Release
-   01/14/97 - Ron Fries - Corrected a minor problem to improve sound quality
-                          Also changed names from POKEY11.x to POKEY.x
-   01/17/97 - Ron Fries - Added support for multiple POKEY chips.
-   03/31/97 - Ron Fries - Made some minor mods for MAME (changed to signed
-                          8-bit sample, increased gain range, removed
-                          _disable() and _enable().)
-   04/06/97 - Brad Oliver - Some cross-platform modifications. Added
-                            big/little endian #defines, removed <dos.h>,
-                            conditional defines for TRUE/FALSE
-   01/19/98 - Ron Fries - Changed signed/unsigned sample support to a
-                          compile-time option.  Defaults to unsigned -
-                          define SIGNED_SAMPLES to create signed.
-   03/22/98 - Ron Fries - Added 'filter' support to channels 1 & 2.
-   09/29/99 - Krzysztof Nikiel - Changed Pokey_process main loop;
-                                 added output interpolation to reduce
-                                 DSP interference
-
-   V2.0 Detailed Changes
-   ---------------------
-
-   Now maintains both a POLY9 and POLY17 counter.  Though this slows the
-   emulator in general, it was required to support mutiple POKEYs since
-   each chip can individually select POLY9 or POLY17 operation.  Also,
-   eliminated the Poly17_size variable.
-
-   Changed address of POKEY chip.  In the original, the chip was fixed at
-   location D200 for compatibility with the Atari 800 line of 8-bit
-   computers. The update function now only examines the lower four bits, so
-   the location for all emulated chips is effectively xxx0 - xxx8.
-
-   The Update_pokey_sound function has two additional parameters which
-   selects the desired chip and selects the desired gain.
-
-   Added clipping to reduce distortion, configurable at compile-time.
-
-   The Pokey_sound_init function has an additional parameter which selects
-   the number of pokey chips to emulate.
-
-   The output will be amplified by gain/16.  If the output exceeds the
-   maximum value after the gain, it will be limited to reduce distortion.
-   The best value for the gain depends on the number of POKEYs emulated
-   and the maximum volume used.  The maximum possible output for each
-   channel is 15, making the maximum possible output for a single chip to
-   be 60.  Assuming all four channels on the chip are used at full volume,
-   a gain of 64 can be used without distortion.  If 4 POKEY chips are
-   emulated and all 16 channels are used at full volume, the gain must be
-   no more than 16 to prevent distortion.  Of course, if only a few of the
-   16 channels are used or not all channels are used at full volume, a
-   larger gain can be used.
-
-   The Pokey_process routine automatically processes and mixes all selected
-   chips/channels.  No additional calls or functions are required.
-
-   The unoptimized Pokey_process2() function has been removed.
 */
 
 #include "config.h"
@@ -190,8 +130,8 @@ int	sampbuf_last = 0;		/* last absolute time */
 int	sampbuf_AUDV[4 * MAXPOKEYS];	/* prev. channel volume */
 int	sampbuf_lastval = 0;		/* last volume */
 int	sampout;			/* last out volume */
-uint16	samp_freq;
-int	samp_consol_val=0;		/* actual value of console sound */
+uint16 samp_freq;
+int	samp_consol_val = 0;		/* actual value of console sound */
 #ifdef STEREO_SOUND
 int	sampbuf_val2[SAMPBUF_MAX];	/* volume values */
 int	sampbuf_cnt2[SAMPBUF_MAX];	/* relative start time */
@@ -213,7 +153,9 @@ int mz_clear_regs = 0;
 #endif
 
 int enable_new_pokey = TRUE;
+#ifndef ASAP
 int stereo_enabled = FALSE;
+#endif
 
 /* multiple sound engine interface */
 static void Pokey_process_8(void *sndbuffer, unsigned sndn);
@@ -357,10 +299,7 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 
 #ifdef VOL_ONLY_SOUND
 	samp_freq = playback_freq;
-#endif  /* VOL_ONLY_SOUND */
-
-	/* disable interrupts to handle critical sections */
-	/*    _disable(); */ /* RSF - removed for portability 31-MAR-97 */
+#endif
 
 	/* start all of the polynomial counters at zero */
 	P4 = 0;
@@ -387,8 +326,6 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 
 	/* set the number of pokey chips currently emulated */
 	Num_pokeys = num_pokeys;
-
-	/*    _enable(); */ /* RSF - removed for portability 31-MAR-97 */
 
 	return 0; /* OK */
 }
@@ -421,9 +358,6 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 	uint8 chan_mask;
 	uint8 chip_offs;
 
-	/* disable interrupts to handle critical sections */
-	/*    _disable(); */ /* RSF - removed for portability 31-MAR-97 */
-
 	/* calculate the chip_offs for the channel arrays */
 	chip_offs = chip << 2;
 
@@ -432,75 +366,59 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 	case _AUDF1:
 		/* AUDF[CHAN1 + chip_offs] = val; */
 		chan_mask = 1 << CHAN1;
-
 		if (AUDCTL[chip] & CH1_CH2)		/* if ch 1&2 tied together */
 			chan_mask |= 1 << CHAN2;	/* then also change on ch2 */
 		break;
-
 	case _AUDC1:
 		/* AUDC[CHAN1 + chip_offs] = val; */
-		/* RSF - changed gain (removed >> 4) 31-MAR-97 */
 		AUDV[CHAN1 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN1;
 		break;
-
 	case _AUDF2:
 		/* AUDF[CHAN2 + chip_offs] = val; */
 		chan_mask = 1 << CHAN2;
 		break;
-
 	case _AUDC2:
 		/* AUDC[CHAN2 + chip_offs] = val; */
-		/* RSF - changed gain (removed >> 4) 31-MAR-97 */
 		AUDV[CHAN2 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN2;
 		break;
-
 	case _AUDF3:
 		/* AUDF[CHAN3 + chip_offs] = val; */
 		chan_mask = 1 << CHAN3;
-
 		if (AUDCTL[chip] & CH3_CH4)		/* if ch 3&4 tied together */
 			chan_mask |= 1 << CHAN4;	/* then also change on ch4 */
 		break;
-
 	case _AUDC3:
 		/* AUDC[CHAN3 + chip_offs] = val; */
-		/* RSF - changed gain (removed >> 4) 31-MAR-97 */
 		AUDV[CHAN3 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN3;
 		break;
-
 	case _AUDF4:
 		/* AUDF[CHAN4 + chip_offs] = val; */
 		chan_mask = 1 << CHAN4;
 		break;
-
 	case _AUDC4:
 		/* AUDC[CHAN4 + chip_offs] = val; */
-		/* RSF - changed gain (removed >> 4) 31-MAR-97 */
 		AUDV[CHAN4 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN4;
 		break;
-
 	case _AUDCTL:
 		/* AUDCTL[chip] = val; */
 		chan_mask = 15;			/* all channels */
-
 		break;
-
 	default:
 		chan_mask = 0;
 		break;
 	}
 
-/************************************************************/
+	/************************************************************/
 	/* As defined in the manual, the exact Div_n_cnt values are */
 	/* different depending on the frequency and resolution:     */
 	/*    64 kHz or 15 kHz - AUDF + 1                           */
 	/*    1 MHz, 8-bit -     AUDF + 4                           */
 	/*    1 MHz, 16-bit -    AUDF[CHAN1]+256*AUDF[CHAN2] + 7    */
-/************************************************************/
+	/************************************************************/
 
 	/* only reset the channels that have changed */
 
@@ -717,12 +635,8 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 #else /* CLIP_SOUND */
 	register uint8 cur_val;		/* otherwise we'll simplify as 8-bit unsigned */
 #ifdef STEREO_SOUND
-#ifdef __PLUS
 	register uint8 cur_val2;
-#else
-	register int8 cur_val2; /* XXX: uint8 ? */
 #endif
-#endif /* STEREO_SOUND */
 #endif /* CLIP_SOUND */
 	register uint8 *out_ptr;
 	register uint8 audc;
@@ -866,7 +780,7 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 			} while (count);
 
 
-			WRITE_U32(samp_cnt_w_ptr,READ_U32(samp_cnt_w_ptr) - event_min);
+			WRITE_U32(samp_cnt_w_ptr, READ_U32(samp_cnt_w_ptr) - event_min);
 
 			/* since the polynomials require a mod (%) function which is
 			   division, I don't adjust the polynomials on the SAMPLE events,
@@ -1119,24 +1033,28 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 					*buffer++ = (uint8) iout2;
 			}
 #else /* __PLUS */
-			if ((stereo_enabled ? iout2 : iout) > SAMP_MAX) {	/* then check high limit */
-				*buffer++ = (uint8) SAMP_MAX;	/* and limit if greater */
-			}
-			else if ((stereo_enabled ? iout2 : iout) < SAMP_MIN) {		/* else check low limit */
-				*buffer++ = (uint8) SAMP_MIN;	/* and limit if less */
-			}
-			else {				/* otherwise use raw value */
-				*buffer++ = (uint8) (stereo_enabled ? iout2 : iout);
+			if (Num_pokeys > 1) {
+				if ((stereo_enabled ? iout2 : iout) > SAMP_MAX) {	/* then check high limit */
+					*buffer++ = (uint8) SAMP_MAX;	/* and limit if greater */
+				}
+				else if ((stereo_enabled ? iout2 : iout) < SAMP_MIN) {		/* else check low limit */
+					*buffer++ = (uint8) SAMP_MIN;	/* and limit if less */
+				}
+				else {				/* otherwise use raw value */
+					*buffer++ = (uint8) (stereo_enabled ? iout2 : iout);
+				}
 			}
 #endif /* __PLUS */
 #endif /* STEREO_SOUND */
 #else /* CLIP_SOUND */
 			*buffer++ = (uint8) iout;	/* clipping not selected, use value */
 #ifdef STEREO_SOUND
-#ifdef __PLUS
-			if (stereo_enabled)
+			if (Num_pokeys > 1)
+#ifdef ASAP
+				*buffer++ = (uint8) iout2;
+#else
+				*buffer++ = (uint8) (stereo_enabled ? iout2 : iout);
 #endif
-			*buffer++ = (uint8) (stereo_enabled ? iout2 : iout);
 #endif /* STEREO_SOUND */
 #endif /* CLIP_SOUND */
 
@@ -1151,7 +1069,8 @@ static void Pokey_process_8(void *sndbuffer, unsigned sndn)
 #ifdef __PLUS
 			if (stereo_enabled)
 #endif
-			n--;
+			if (Num_pokeys > 1)
+				n--;
 #endif
 		}
 	}
