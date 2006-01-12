@@ -214,25 +214,26 @@ double Atari_time(void)
 void Atari_sleep(double s)
 {
 
-        int i,ret;
-        for (i=0;i<s * 100.0;i++){
-
-		ee_sema_t sema;
-                sema.attr = 0;
-                sema.count = 0;
-                sema.init_count = 0;
-                sema.max_count = 1;
-                ret = CreateSema(&sema);
-                if (ret <= 0) {
-                        //could not create sema, strange!  continue anyway.
-                        return;
-                }
-
-                iSignalSema(ret);
-                WaitSema(ret);
-                DeleteSema(ret);
-        }
-
+	if (ui_is_active){
+	        int i,ret;
+	        for (i=0;i<s * 100.0;i++){
+	
+			ee_sema_t sema;
+	                sema.attr = 0;
+	                sema.count = 0;
+	                sema.init_count = 0;
+	                sema.max_count = 1;
+	                ret = CreateSema(&sema);
+	                if (ret <= 0) {
+	                        //could not create sema, strange!  continue anyway.
+	                        return;
+	                }
+	
+	                iSignalSema(ret);
+	                WaitSema(ret);
+	                DeleteSema(ret);
+	        }
+	}
 }
 
 
@@ -970,12 +971,21 @@ void Sound_Update(void)
 
 void Sound_Pause(void)
 {
-	// TODO?
+	audsrv_stop_audio();
 }
 
 void Sound_Continue(void)
 {
-	// TODO?
+	if (audsrv_init() != 0)
+		Aprint("failed to initialize audsrv: %s", audsrv_get_error_string());
+	else {
+		struct audsrv_fmt_t format;
+		format.bits = 8;
+		format.freq = 44100;
+		format.channels = 1;
+		audsrv_set_format(&format);
+		audsrv_set_volume(MAX_VOLUME);
+	}
 }
 
 #endif /* SOUND */
