@@ -1,3 +1,7 @@
+2006-01-11  Troy Ayers  <holiday42@gmail.com>
+* atari_ps2.c: Added routines for sound_pauses and sound resume for the PS2
+
+
 2006-01-09  Piotr Fusik  <fox@scene.pl>
 * pokeysnd.c: some fixes for stereo RF pokeysnd, essential for ASAP
 
