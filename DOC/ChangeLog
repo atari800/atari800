@@ -1,3 +1,8 @@
+2006-01-14  Piotr Fusik  <fox@scene.pl>
+* monitor.c: "D" command displayed FFFE and FFFF instruction addresses
+  as FFFFFFFE and FFFFFFFF respectively
+
+
 2006-01-11  Troy Ayers  <holiday42@gmail.com>
 * atari_ps2.c: Added routines for sound_pauses and sound resume for the PS2
 
