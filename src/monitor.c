@@ -668,6 +668,7 @@ static int get_attrib_range(UWORD *addr1, UWORD *addr2)
 
 static UWORD show_instruction(FILE *fp, UWORD pc)
 {
+	UWORD addr = pc;
 	UBYTE insn;
 	const char *mnemonic;
 	const char *p;
@@ -680,25 +681,25 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 		if (*p == '1') {
 			value = dGetByte(pc++);
 			nchars = fprintf(fp, "%04X: %02X %02X     " /*"%Xcyc  "*/ "%.*s$%02X%s",
-			                 pc - 2, insn, value, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
+			                 addr, insn, value, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
 			break;
 		}
 		if (*p == '2') {
 			value = dGetWord(pc);
 			nchars = fprintf(fp, "%04X: %02X %02X %02X  " /*"%Xcyc  "*/ "%.*s$%04X%s",
-			                 pc - 1, insn, value & 0xff, value >> 8, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
+			                 addr, insn, value & 0xff, value >> 8, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
 			pc += 2;
 			break;
 		}
 		if (*p == '0') {
 			UBYTE op = dGetByte(pc++);
 			value = (UWORD) (pc + (SBYTE) op);
-			nchars = fprintf(fp, "%04X: %02X %02X     " /*"3cyc  "*/ "%.4s$%04X", pc - 2, insn, op, mnemonic, value);
+			nchars = fprintf(fp, "%04X: %02X %02X     " /*"3cyc  "*/ "%.4s$%04X", addr, insn, op, mnemonic, value);
 			break;
 		}
 	}
 	if (*p == '\0') {
-		fprintf(fp, "%04X: %02X        " /*"%Xcyc  "*/ "%s\n", pc - 1, insn, /*cycles[insn],*/ mnemonic);
+		fprintf(fp, "%04X: %02X        " /*"%Xcyc  "*/ "%s\n", addr, insn, /*cycles[insn],*/ mnemonic);
 		return pc;
 	}
 #ifdef MONITOR_HINTS
