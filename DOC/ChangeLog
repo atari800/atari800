@@ -1,3 +1,9 @@
+2006-01-26  Piotr Fusik  <fox@scene.pl>
+* ui_basic.c: directory that has been left (via Backspace or "[..]")
+  is highlighted in the parent directory; display an error message
+  when cannot enter a directory
+
+
 2006-01-14  Piotr Fusik  <fox@scene.pl>
 * monitor.c: "D" command displayed FFFE and FFFF instruction addresses
   as FFFFFFFE and FFFFFFFF respectively
