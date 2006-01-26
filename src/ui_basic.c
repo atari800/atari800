@@ -794,13 +794,21 @@ static void GetDirectory(const char *directory)
 #endif
 }
 
+static void strcatchr(char *s, char c)
+{
+	while (*s != '\0')
+		s++;
+	s[0] = c;
+	s[1] = '\0';
+}
+
 /* Select file or directory.
    The result is returned in path and path is where selection begins (i.e. it must be initialized).
    pDirectories are "favourite" directories (there are nDirectories of them). */
 static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME_MAX], int nDirectories)
 {
 	char current_dir[FILENAME_MAX];
-	char highlighted_file[FILENAME_MAX];
+	char highlighted_file[FILENAME_MAX + 2]; /* +2 for square brackets */
 	highlighted_file[0] = '\0';
 	if (path[0] == '\0' && nDirectories > 0)
 		strcpy(current_dir, pDirectories[0]);
@@ -889,6 +897,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 						}
 					} while (i != current_index);
 				}
+				highlighted_file[0] = '\0';
 				break;
 			}
 			if (index < 0) {
@@ -899,11 +908,14 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 			if (seltype == USER_DELETE) {
 				/* Backspace = parent directory */
 				char new_dir[FILENAME_MAX];
-				Util_splitpath(current_dir, new_dir, NULL);
+				Util_splitpath(current_dir, new_dir, highlighted_file + 1);
 				if (Util_direxists(new_dir)) {
 					strcpy(current_dir, new_dir);
+					highlighted_file[0] = '[';
+					strcatchr(highlighted_file, ']');
 					break;
 				}
+				BasicUIMessage("Cannot enter parent directory");
 				continue;
 			}
 			if (seltype == USER_TOGGLE && select_dir) {
@@ -917,9 +929,12 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 				/* Change directory */
 				char new_dir[FILENAME_MAX];
 
+				highlighted_file[0] = '\0';
 				if (strcmp(selected_filename, "[..]") == 0) {
 					/* go up */
-					Util_splitpath(current_dir, new_dir, NULL);
+					Util_splitpath(current_dir, new_dir, highlighted_file + 1);
+					highlighted_file[0] = '[';
+					strcatchr(highlighted_file, ']');
 				}
 #ifdef PS2
 				else if (strcmp(selected_filename, "[mc0:]") == 0) {
@@ -948,6 +963,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 					strcpy(current_dir, new_dir);
 					break;
 				}
+				BasicUIMessage("Cannot enter selected directory");
 				continue;
 			}
 			if (!select_dir) {
@@ -959,7 +975,6 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 		}
 
 		FilenamesFree();
-		highlighted_file[0] = '\0';
 	}
 }
 
