@@ -556,7 +556,7 @@ void GO(int limit)
 
 	CPUCHECKIRQ;
 
-	while (xpos < limit) {
+	while (xpos < xpos_limit) {
 
 #ifdef MONITOR_BREAKPOINTS
 	breakpoint_return:

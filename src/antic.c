@@ -3151,6 +3151,18 @@ void update_scanline_blank(void)
 	cur_screen_pos = newpos;
 }
 
+void set_dmactl_bug(void){
+	need_load = FALSE;
+	saved_draw_antic_ptr = draw_antic_ptr;
+	draw_antic_ptr_changed = 1;
+	if (anticmode == 2 || anticmode == 3 || anticmode == 0xf) {
+		draw_antic_ptr = draw_antic_2_dmactl_bug;
+		dmactl_bug_chdata = (anticmode == 0xf) ? 0 : ANTIC_memory[ANTIC_margin + chars_read[md] - 1];
+	}
+	else {
+		draw_antic_ptr = draw_antic_0_dmactl_bug;
+	}
+}
 
 /* draw a partial scanline between point l and point r */
 /* l is the left hand word, r is the point one past the right-most word to draw */
@@ -3557,60 +3569,87 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 add support for wider->narrow glitches including the interesting mode 6
 glitch */
 #ifdef NEW_CYCLE_EXACT
-		dmactl_changed = 0;
-		/* DMACTL width changed to or from 0 */
-		if ((byte & 3) != (DMACTL & 3) && ((byte & 3) == 0 || (DMACTL & 3) == 0)) {
-			/* TODO: this is not 100% correct */
-			if (DRAWING_SCREEN) {
-				update_scanline();
-			}
-		/* DMACTL width has changed and not to 0 and not from 0 */
-		}
-		else if ((byte & 3) != (DMACTL & 3)) {
-			/* DMACTL width has increased and no HSCROL */
-			if (((byte & 3) > (DMACTL & 3)) && !(IR & 0x10)) {
-				int x; /* the change cycle */
-				int left_glitch_cycle = 0;
-				int right_glitch_cycle = 0;
-				x = XPOS;
-				if (((DMACTL & 3) == 2) && ((byte & 3) == 3)) { /* Normal->Wide */
-					left_glitch_cycle = 11;
-					right_glitch_cycle = 18;
+		dmactl_changed=0;
+		/* has DMACTL width changed?  */
+		if ((byte & 3) != (DMACTL & 3) ){
+			/* DMACTL width changed from 0 */
+			if ((DMACTL & 3) == 0) {
+				int glitch_cycle = (3 + 32) - 8*(byte & 3);
+				int x = XPOS;
+				if((IR & 0x10) && ((byte & 3) != 3)){
+					/*adjust for narrow or std HSCROL*/
+				       	glitch_cycle -= 8;
 				}
-				else if (((DMACTL & 3) == 1) && ((byte & 3) == 3)) { /* Narrow->Wide */
-					left_glitch_cycle = 11;
-					right_glitch_cycle = 26;
-				}
-				else if (((DMACTL & 3) == 1) && ((byte & 3) == 2)) { /* Narrow->Normal */
-					left_glitch_cycle = 19;
-					right_glitch_cycle = 27;
-				}
-				/* change occurs during drawing of line */
-				/* delay change till next line */
-				if (x > right_glitch_cycle) {
-					dmactl_changed = 1;
-					DELAYED_DMACTL = byte;
-					break;
-				/* change occurs during 'glitch' region */
-				}
-				else if (x >= left_glitch_cycle && x <= right_glitch_cycle && anticmode > 1) {
-					need_load = FALSE;
-					saved_draw_antic_ptr = draw_antic_ptr;
-					draw_antic_ptr_changed = 1;
-					if (anticmode == 2 || anticmode == 3 || anticmode == 0xf) {
-						draw_antic_ptr = draw_antic_2_dmactl_bug;
-						dmactl_bug_chdata = (anticmode == 0xf) ? 0 : ANTIC_memory[ANTIC_margin + chars_read[md] - 1];
+				/*ANTIC doesn't fetch and display data if the*/
+				/*DMACTL width changes from zero after this */
+				/*cycle.  Instead, it displays a blank scan */
+				/*line for modes other than 23F and for 23F */
+				/*it displays a glitched line after the change*/
+				if(x >= glitch_cycle){
+					if(DRAWING_SCREEN){
+						update_scanline();
+					        set_dmactl_bug();
 					}
-					else {
-						draw_antic_ptr = draw_antic_0_dmactl_bug;
+				}
+				else {
+					if (DRAWING_SCREEN) {
+						update_scanline();
 					}
 				}
 			}
-			else {
-				/* DMACTL width has decreased or HSCROL */
+			/* DMACTL width changed to 0 */
+			else if ((byte & 3)==0)  {
 				/* TODO: this is not 100% correct */
 				if (DRAWING_SCREEN) {
+					int antic_xpos = cpu2antic_ptr[xpos];
+					int antic_limit = cpu2antic_ptr[xpos_limit];
 					update_scanline();
+					/*fix for a minor glitch in fasteddie*/
+					/*don't steal cycles after DMACTL off*/
+					cpu2antic_ptr = &cpu2antic[0];
+					antic2cpu_ptr = &antic2cpu[0];
+					xpos = antic2cpu_ptr[antic_xpos];
+					xpos_limit = antic2cpu_ptr[antic_limit];
+				}
+			/* DMACTL width has changed and not to 0 and not from 0 */
+			}
+			else {
+				/* DMACTL width has increased and no HSCROL */
+				if (((byte & 3) > (DMACTL & 3)) && !(IR & 0x10)) {
+					int x; /* the change cycle */
+					int left_glitch_cycle = 0;
+					int right_glitch_cycle = 0;
+					x = XPOS;
+					if (((DMACTL & 3) == 2) && ((byte & 3) == 3)) { /* Normal->Wide */
+						left_glitch_cycle = 11;
+						right_glitch_cycle = 18;
+					}
+					else if (((DMACTL & 3) == 1) && ((byte & 3) == 3)) { /* Narrow->Wide */
+						left_glitch_cycle = 11;
+						right_glitch_cycle = 26;
+					}
+					else if (((DMACTL & 3) == 1) && ((byte & 3) == 2)) { /* Narrow->Normal */
+						left_glitch_cycle = 19;
+						right_glitch_cycle = 27;
+					}
+					/* change occurs during drawing of line */
+					/* delay change till next line */
+					if (x > right_glitch_cycle) {
+						dmactl_changed = 1;
+						DELAYED_DMACTL = byte;
+						break;
+					/* change occurs during 'glitch' region */
+					}
+					else if (x >= left_glitch_cycle && x <= right_glitch_cycle && anticmode > 1) {
+						set_dmactl_bug();
+					}
+				}
+				else {
+					/* DMACTL width has decreased or HSCROL */
+					/* TODO: this is not 100% correct */
+					if (DRAWING_SCREEN) {
+						update_scanline();
+					}
 				}
 			}
 		}
