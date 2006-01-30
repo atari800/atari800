@@ -2741,6 +2741,7 @@ void ANTIC_Frame(int draw_display)
 				if (IR & 0x40 && DMACTL & 0x20) {
 					dlist = ANTIC_GetDLWord(&dlist);
 					xpos += 2;
+					IR = 0;
 					anticmode = 0;
 					no_jvb = FALSE;
 				}
