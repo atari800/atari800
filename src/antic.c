@@ -3102,17 +3102,18 @@ void update_scanline_prior(UBYTE byte)
 void update_scanline_chbase(void)
 {
 	int antic_xpos = cpu2antic_ptr[xpos];
-	int hscrollsb_adj = (HSCROL & 1);
+	int hscrol_adj = (IR & 0x10) ? HSCROL : 0;
+	int hscrollsb_adj = (hscrol_adj & 1);
 	int newpos;
 	int fontfetch_adj;
 	/* antic fetches character font data every 2 or 4 cycles */
 	/* we want to delay the change until the next fetch */
 	/* empirically determinted: */
 	if (anticmode >= 2 && anticmode <= 5) {
-		fontfetch_adj = (((HSCROL >>1) - antic_xpos + 0) & 1) * 2 + 9;
+		fontfetch_adj = (((hscrol_adj >>1) - antic_xpos + 0) & 1) * 2 + 9;
 	}
 	else if (anticmode == 6 || anticmode == 7) {
-		fontfetch_adj = (((HSCROL >> 1) - antic_xpos + 2) & 3) * 2 + 9;
+		fontfetch_adj = (((hscrol_adj >> 1) - antic_xpos + 2) & 3) * 2 + 9;
 	}
 	else {
 		fontfetch_adj = 0;
@@ -3126,7 +3127,8 @@ void update_scanline_chbase(void)
 void update_scanline_invert(void)
 {
 	int antic_xpos = cpu2antic_ptr[xpos];
-	int hscrollsb_adj = (HSCROL & 1);
+	int hscrol_adj = (IR & 0x10) ? HSCROL : 0;
+	int hscrollsb_adj = (hscrol_adj & 1);
 	int newpos;
 
 	/* empirically determined: adjustment of 4 */
@@ -3139,7 +3141,8 @@ void update_scanline_invert(void)
 void update_scanline_blank(void)
 {
 	int antic_xpos = cpu2antic_ptr[xpos];
-	int hscrollsb_adj = (HSCROL & 1);
+	int hscrol_adj = (IR & 0x10) ? HSCROL : 0;
+	int hscrollsb_adj = (hscrol_adj & 1);
 	int newpos;
 
 	/* empirically determined: adjustment of 7 */
