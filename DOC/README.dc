@@ -1,0 +1,153 @@
+Atari800 for SEGA Dreamcast
+===========================
+
+Usage
+-----
+
+The 1st controller is used to provide the console keys (start, select,
+etc).
+The mapping is (for computers, not 5200)
+
+	    B		-	START
+	    Y		-	SELECT
+	    X		-	OPTION
+	    A		-	joystick button
+
+	    L		-	emulator menu
+	    R		-	while in menu: ESC (leave menu)
+					       (while in menu, B is
+					       also mapped to ESC)
+				not in menu: enter keyboard emulation
+					     screen
+
+	    Start	-	warm boot (reset key)
+	    Start + X	-	cold boot (power cycle)
+
+	    joypad	-	joystick directions
+
+L and R are mapped to Z and C buttons on the Arcade Stick.
+While in the emulator menu, pressing Start causes the Dreamcast to
+reboot.
+
+The Dreamcast keyboard is also supported:
+	    F1		-	emulator menu
+	    ESC		-	leave menu/go back
+
+	    F2		-	OPTION
+	    F3		-	SELECT
+	    F4		-	START
+
+	    F5		-	cold boot (power cycle)
+	    F12		-	Dreamcast reboot
+
+	    End		-	HELP
+	    Pause	-	break
+	    S3		-	Atari key
+
+In 5200 mode A, B, X, and Y are redefined:
+	    B		-	4 (starts some games)
+	    Y		-	Start key of the 1st 5200 controller
+	    X		-	joystick button #2
+	    A		-	joystick button #1
+
+In 800 mode up to 4 paddles are supported (only 2 tested by
+me). A is the paddle trigger.
+Also in 800 mode, X, Y, and B can be redefined to generate keys from
+the keyboard. If this is enabled, Option, Select, and Start keys can
+be entered in the keyboard emulation screen.
+In order to use paddles, you have to switch on the "Emulate paddles"
+setting in the "AtariDC Settings" menu.
+
+
+Compiling
+---------
+
+You will need a SH4 cross compiler and the KallistiOS library
+(http://cadcdev.sourceforge.net).
+
+Please follow the instructions at
+http://gamedev.allusion.net/softprj/kos/dcsetup.php to build the cross
+compiler and KOS library.
+
+After you have installed the cross compiler and compiled KOS, adapt
+src/dc/Makefile.dc to your environment. You'll probably have to change
+the SHBASE and KOS variables in dc/Makefile.dc to point to your
+compiler and KOS locations, respectively.
+
+Then you can build the executable, "atari800.elf". In the atari800 src
+directory type
+
+	make -f dc/Makefile.dc
+
+to compile it. Use GNU make.
+
+
+CD setup
+--------
+
+After you have compiled the atari800.elf file, you may want to make a
+CD image which contains the a8 binary files and disk images you'd like
+to use.
+
+If you don't want to burn a CD, but have a serial, broadband, or lan
+adapter, then you can use the dc-load tool to transfer the ELF
+executable to the Dreamcast and run it. (For dc-load see
+http://adk.napalm-x.com/dc.) You need to create a CD ISO image, as
+described below, and use the -i switch to dc-load, to emulate this
+image over the the dc-load connection.
+
+If you create a real CD, there is one more step needed additionally to
+the steps described below: You need to put the atari800 executable
+file as boot file onto the CD. For information to create Dreamcast
+bootable CDs see http://mc.pp.se/dc/cdr.html. Convert the atari800.elf
+to a plain binary file with something like "sh-elf-objcopy -O binary
+atari800.elf atari800.bin" and then scramble it.
+
+The CD must contain the atari800.cfg file in the root directory. If
+you use the supplied demo atari800.cfg file, the Atari BIOS ROMS also
+have to be in the CD root directory. If you don't like this layout,
+change it and adapt the atari800.cfg file accordingly.
+
+Please note that paths in the atari800.cfg must start with /cd to
+reference the CD, so for a /roms directory on the CD the atari800.cfg
+entry must be ROM_DIR=/cd/roms.
+
+If you like to have a .com/.exe/.atr to be started automatically, copy
+it into the CD root directory and name it autorun.com / autorun.exe /
+autorun.atr, respectively.
+
+
+Saving/restoring state to VMU
+-----------------------------
+
+Be careful, since the VMU code is only beta, use only VMUs where there
+are no important data files.
+
+
+Bugs/ToDos
+----------
+
+* There are still sound glitches on some games. Fix them.
+* Save state to vmu and/or run ATRs rw from vmu. (*** save state
+  implemented ***)
+* More than 2 controllers are not tested. The Dreamcast can use up to
+  4 controllers, so it should be possible to use 400/800 programs
+  which make use of them.
+* Improve keyboard support
+* Mouse support?
+
+
+Help/Problems/Bugs/Suggestions
+------------------------------
+
+Please contact me at chris@groessler.org or cpg@aladdin.de.
+
+The newest version is at
+
+    ftp://ftp.groessler.org/pub/chris/dreamcast/atari800dc
+
+
+In the mean time have fun with it,
+Christian Groessler
+chris@groessler.org, 01-Jan-2006
+

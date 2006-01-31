@@ -2,7 +2,7 @@
  * input.c - keyboard, joysticks and mouse emulation
  *
  * Copyright (C) 2001-2002 Piotr Fusik
- * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -41,6 +41,12 @@
 #endif
 #ifdef __PLUS
 #include "input_win.h"
+#endif
+
+#ifdef DREAMCAST
+extern int Atari_POT(int);
+#else
+#define Atari_POT(x) 228
 #endif
 
 int key_code = AKEY_NONE;
@@ -386,10 +392,19 @@ void INPUT_Frame(void)
 	/* handle analog joysticks in Atari 5200 */
 	if (machine_type != MACHINE_5200) {
 		for (i = 0; i < 8; i++)
-			POT_input[i] = 228;
+			POT_input[i] = Atari_POT(i);
 	}
 	else {
 		for (i = 0; i < 4; i++) {
+#ifdef DREAMCAST
+			/* first get analog js data */
+			POT_input[2 * i] = Atari_POT(2 * i);         /* x */
+			POT_input[2 * i + 1] = Atari_POT(2 * i + 1); /* y */
+			if (POT_input[2 * i] != joy_5200_center
+			 || POT_input[2 * i + 1] != joy_5200_center)
+				continue;
+			/* if analog js is unused, alternatively try keypad */
+#endif
 			if ((STICK[i] & (STICK_CENTRE ^ STICK_LEFT)) == 0)
 				POT_input[2 * i] = joy_5200_min;
 			else if ((STICK[i] & (STICK_CENTRE ^ STICK_RIGHT)) == 0)

@@ -5,9 +5,19 @@
 #include <stdio.h> /* FILENAME_MAX */
 #include "atari.h"
 
-/* Two legitimate entries to UI module. */
+/* Three legitimate entries to UI module. */
 int SelectCartType(int k);
 void ui(void);
+
+#ifdef KB_UI
+int kb_ui(const char *title, int layout);
+/* layout must be one of MACHINE_* values (see atari.h)
+   or -1 for base keyboard with no function keys */
+#endif
+
+#ifdef DREAMCAST
+extern const unsigned char key_to_ascii[256];
+#endif
 
 extern int ui_is_active;
 extern int alt_function;
@@ -53,8 +63,8 @@ typedef struct
 #define ITEM_CHECKED 0x10  /* The boolean value for ITEM_CHECK is true */
 #define ITEM_TIP     0x20  /* suffix is shown when the item is selected rather than on its right */
 
-#if defined(_WIN32_WCE)
-/* No function keys nor Alt+letter on Windows CE */
+#if defined(_WIN32_WCE) || defined(DREAMCAST)
+/* No function keys nor Alt+letter on Windows CE, Sega DC */
 #define MENU_ACCEL(keystroke) NULL
 #else
 #define MENU_ACCEL(keystroke) keystroke

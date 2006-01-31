@@ -108,6 +108,9 @@ extern char atari_basic_filename[FILENAME_MAX];
 #define AKEY_UI                    -7
 #define AKEY_SCREENSHOT            -8
 #define AKEY_SCREENSHOT_INTERLACE  -9
+#define AKEY_START                 -10
+#define AKEY_SELECT                -11
+#define AKEY_OPTION                -12
 
 /* Menu codes for Alt+letter shortcuts.
    Store in alt_function and put AKEY_UI in key_code. */

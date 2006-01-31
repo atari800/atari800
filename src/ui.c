@@ -55,7 +55,21 @@
 extern int smooth_filter;
 extern int filter_available;
 extern int virtual_joystick;
-void AboutPocketAtari(void);
+extern void AboutPocketAtari(void);
+#endif
+
+#ifdef DREAMCAST
+extern int db_mode;
+extern int screen_tv_mode;
+extern int emulate_paddles;
+extern int glob_snd_ena;
+extern void ButtonConfiguration(void);
+extern void AboutAtariDC(void);
+extern void update_vidmode(void);
+extern void update_screen_updater(void);
+#ifdef HZ_TEST
+extern void do_hz_test(void);
+#endif
 #endif
 
 tUIDriver *ui_driver = &basic_ui_driver;
@@ -677,7 +691,7 @@ static void CartManagement(void)
 	}
 }
 
-#ifdef SOUND
+#if defined(SOUND) && !defined(DREAMCAST)
 static void SoundRecording(void)
 {
 	if (!IsSoundFileOpen()) {
@@ -700,7 +714,7 @@ static void SoundRecording(void)
 		ui_driver->fMessage("Recording stopped");
 	}
 }
-#endif /* SOUND */
+#endif /* defined(SOUND) && !defined(DREAMCAST) */
 
 static int AutostartFile(void)
 {
@@ -1107,20 +1121,33 @@ static void DisplaySettings(void)
 #ifdef _WIN32_WCE
 		MENU_CHECK(6, "Enable linear filtering:"),
 #endif
+#ifdef DREAMCAST
+		MENU_CHECK(7, "Double buffer video data:"),
+		MENU_ACTION(8, "Emulator video mode:"),
+		MENU_ACTION(9, "Display video mode:"),
+#ifdef HZ_TEST
+		MENU_ACTION(10, "DO HZ TEST:"),
+#endif
+#endif
 		MENU_END
 	};
 
 	int option = 0;
 	int option2;
 	for (;;) {
-		menu_array[0].suffix = artif_menu_array[global_artif_mode].item;
+		FindMenuItem(menu_array, 0)->suffix = artif_menu_array[global_artif_mode].item;
 		sprintf(refresh_status, "1:%-2d", refresh_rate);
 		SetItemChecked(menu_array, 2, sprite_collisions_in_skipped_frames);
 		SetItemChecked(menu_array, 3, show_atari_speed);
 		SetItemChecked(menu_array, 4, show_disk_led);
 		SetItemChecked(menu_array, 5, show_sector_counter);
 #ifdef _WIN32_WCE
-		menu_array[6].flags = filter_available ? (smooth_filter ? (ITEM_CHECK | ITEM_CHECKED) : ITEM_CHECK) : ITEM_HIDDEN;
+		FindMenuItem(menu_array, 6)->flags = filter_available ? (smooth_filter ? (ITEM_CHECK | ITEM_CHECKED) : ITEM_CHECK) : ITEM_HIDDEN;
+#endif
+#ifdef DREAMCAST
+		SetItemChecked(menu_array, 7, db_mode);
+		FindMenuItem(menu_array, 8)->suffix = tv_mode == TV_NTSC ? "NTSC" : "PAL";
+		FindMenuItem(menu_array, 9)->suffix = screen_tv_mode == TV_NTSC ? "NTSC" : "PAL";
 #endif
 		option = ui_driver->fSelect("Display Settings", 0, option, menu_array, NULL);
 		switch (option) {
@@ -1153,6 +1180,36 @@ static void DisplaySettings(void)
 			smooth_filter = !smooth_filter;
 			break;
 #endif
+#ifdef DREAMCAST
+		case 7:
+			if (db_mode)
+				db_mode = FALSE;
+			else if (tv_mode == screen_tv_mode)
+				db_mode = TRUE;
+			update_screen_updater();
+			entire_screen_dirty();
+			break;
+		case 8:
+			tv_mode = (tv_mode == TV_PAL) ? TV_NTSC : TV_PAL;
+			if (tv_mode != screen_tv_mode) {
+				db_mode = FALSE;
+				update_screen_updater();
+			}
+			update_vidmode();
+			entire_screen_dirty();
+			break;
+		case 9:
+			tv_mode = screen_tv_mode = (screen_tv_mode == TV_PAL) ? TV_NTSC : TV_PAL;
+			update_vidmode();
+			entire_screen_dirty();
+			break;
+#ifdef HZ_TEST
+		case 10:
+			do_hz_test();
+			entire_screen_dirty();
+			break;
+#endif
+#endif /* DREAMCAST */
 		default:
 			return;
 		}
@@ -1174,7 +1231,7 @@ static char joy_1_desc[40];
 
 static void ControllerConfiguration(void)
 {
-#ifndef _WIN32_WCE
+#if !defined(_WIN32_WCE) && !defined(DREAMCAST)
 	static const tMenuItem mouse_mode_menu_array[] = {
 		MENU_ACTION(0, "None"),
 		MENU_ACTION(1, "Paddles"),
@@ -1194,8 +1251,11 @@ static void ControllerConfiguration(void)
 	static tMenuItem menu_array[] = {
 		MENU_ACTION(0, "Joystick autofire:"),
 		MENU_CHECK(1, "Enable MultiJoy4:"),
-#ifdef _WIN32_WCE
+#if defined(_WIN32_WCE)
 		MENU_CHECK(5, "Virtual joystick:"),
+#elif defined(DREAMCAST)
+		MENU_CHECK(9, "Emulate Paddles:"),
+		MENU_ACTION(10, "Button configuration"),
 #else
 		MENU_SUBMENU_SUFFIX(2, "Mouse device: ", NULL),
 		MENU_SUBMENU_SUFFIX(3, "Mouse port:", mouse_port_status),
@@ -1211,7 +1271,7 @@ static void ControllerConfiguration(void)
 	};
 
 	int option = 0;
-#ifndef _WIN32_WCE
+#if !defined(_WIN32_WCE) && !defined(DREAMCAST)
 	int option2;
 #endif
 	for (;;) {
@@ -1219,9 +1279,11 @@ static void ControllerConfiguration(void)
 		                     : joy_autofire[0] == AUTOFIRE_CONT ? "Always"
 		                     : "No ";
 		SetItemChecked(menu_array, 1, joy_multijoy);
-#ifdef _WIN32_WCE
+#if defined(_WIN32_WCE)
 		/* XXX: not on smartphones? */
 		SetItemChecked(menu_array, 5, virtual_joystick);
+#elif defined(DREAMCAST)
+		SetItemChecked(menu_array, 9, emulate_paddles);
 #else
 		menu_array[2].suffix = mouse_mode_menu_array[mouse_mode].item;
 		mouse_port_status[0] = (char) ('1' + mouse_port);
@@ -1251,9 +1313,16 @@ static void ControllerConfiguration(void)
 		case 1:
 			joy_multijoy = !joy_multijoy;
 			break;
-#ifdef _WIN32_WCE
+#if defined(_WIN32_WCE)
 		case 5:
 			virtual_joystick = !virtual_joystick;
+			break;
+#elif defined(DREAMCAST)
+		case 9:
+			emulate_paddles = !emulate_paddles;
+			break;
+		case 10:
+			ButtonConfiguration();
 			break;
 #else
 		case 2:
@@ -1300,6 +1369,9 @@ static int SoundSettings(void)
 #ifdef SERIO_SOUND
 		MENU_CHECK(3, "Serial IO Sound:"),
 #endif
+#ifdef DREAMCAST
+		MENU_CHECK(4, "Enable sound:"),
+#endif
 		MENU_END
 	};
 
@@ -1315,6 +1387,15 @@ static int SoundSettings(void)
 #endif
 #ifdef SERIO_SOUND
 		SetItemChecked(menu_array, 3, serio_sound_enabled);
+#endif
+#ifdef DREAMCAST
+		SetItemChecked(menu_array, 4, glob_snd_ena);
+#endif
+
+#if 0
+		option = ui_driver->fSelect(NULL, SELECT_POPUP, option, menu_array, NULL);
+#else
+		option = ui_driver->fSelect("Sound Settings", 0, option, menu_array, NULL);
 #endif
 
 		option = ui_driver->fSelect(NULL, SELECT_POPUP, option, menu_array, NULL);
@@ -1342,6 +1423,11 @@ static int SoundSettings(void)
 			serio_sound_enabled = !serio_sound_enabled;
 			break;
 #endif
+#ifdef DREAMCAST
+		case 4:
+			glob_snd_ena = !glob_snd_ena;
+			break;
+#endif
 		default:
 			return FALSE;
 		}
@@ -1350,7 +1436,7 @@ static int SoundSettings(void)
 
 #endif /* SOUND */
 
-#ifndef CURSES_BASIC
+#if !defined(CURSES_BASIC) && !defined(DREAMCAST)
 
 #ifdef USE_CURSES
 void curses_clear_screen(void);
@@ -1371,7 +1457,7 @@ static void Screenshot(int interlaced)
 	}
 }
 
-#endif /* CURSES_BASIC */
+#endif /* !defined(CURSES_BASIC) && !defined(DREAMCAST) */
 
 static void AboutEmulator(void)
 {
@@ -1405,7 +1491,9 @@ void ui(void)
 		MENU_SUBMENU_ACCEL(MENU_SYSTEM, "Select System", "Alt+Y"),
 #ifdef SOUND
 		MENU_SUBMENU_ACCEL(MENU_SOUND, "Sound Settings", "Alt+O"),
+#ifndef DREAMCAST
 		MENU_ACTION_ACCEL(MENU_SOUND_RECORDING, "Sound Recording Start/Stop", "Alt+W"),
+#endif
 #endif
 #ifndef CURSES_BASIC
 		MENU_SUBMENU(MENU_DISPLAY, "Display Settings"),
@@ -1416,7 +1504,7 @@ void ui(void)
 		MENU_SUBMENU(MENU_SETTINGS, "Emulator Configuration"),
 		MENU_FILESEL_ACCEL(MENU_SAVESTATE, "Save State", "Alt+S"),
 		MENU_FILESEL_ACCEL(MENU_LOADSTATE, "Load State", "Alt+L"),
-#ifndef CURSES_BASIC
+#if !defined(CURSES_BASIC) && !defined(DREAMCAST)
 #ifdef HAVE_LIBPNG
 		MENU_FILESEL_ACCEL(MENU_PCX, "Save Screenshot", "F10"),
 		/* there isn't enough space for "PNG/PCX Interlaced Screenshot Shift+F10" */
@@ -1429,8 +1517,10 @@ void ui(void)
 		MENU_ACTION_ACCEL(MENU_BACK, "Back to Emulated Atari", "Esc"),
 		MENU_ACTION_ACCEL(MENU_RESETW, "Reset (Warm Start)", "F5"),
 		MENU_ACTION_ACCEL(MENU_RESETC, "Reboot (Cold Start)", "Shift+F5"),
-#ifdef _WIN32_WCE
+#if defined(_WIN32_WCE)
 		MENU_ACTION(MENU_MONITOR, "About Pocket Atari"),
+#elif defined(DREAMCAST)
+		MENU_ACTION(MENU_MONITOR, "About AtariDC"),
 #else
 		MENU_ACTION_ACCEL(MENU_MONITOR, "Enter Monitor", "F8"),
 #endif
@@ -1496,9 +1586,11 @@ void ui(void)
 				done = TRUE;	/* reboot immediately */
 			}
 			break;
+#ifndef DREAMCAST
 		case MENU_SOUND_RECORDING:
 			SoundRecording();
 			break;
+#endif
 #endif
 		case MENU_SAVESTATE:
 			SaveState();
@@ -1512,12 +1604,14 @@ void ui(void)
 		case MENU_DISPLAY:
 			DisplaySettings();
 			break;
+#ifndef DREAMCAST
 		case MENU_PCX:
 			Screenshot(FALSE);
 			break;
 		case MENU_PCXI:
 			Screenshot(TRUE);
 			break;
+#endif
 #endif
 #ifndef USE_CURSES
 		case MENU_CONTROLLER:
@@ -1539,8 +1633,11 @@ void ui(void)
 			AboutEmulator();
 			break;
 		case MENU_MONITOR:
-#ifdef _WIN32_WCE
+#if defined(_WIN32_WCE)
 			AboutPocketAtari();
+			break;
+#elif defined(DREAMCAST)
+			AboutAtariDC();
 			break;
 #else
 			if (Atari_Exit(TRUE)) {
@@ -1573,7 +1670,7 @@ int CrashMenu(void)
 		MENU_ACTION_ACCEL(0, "Reset (Warm Start)", "F5"),
 		MENU_ACTION_ACCEL(1, "Reboot (Cold Start)", "Shift+F5"),
 		MENU_ACTION_ACCEL(2, "Menu", "F1"),
-#ifndef _WIN32_WCE
+#if !defined(_WIN32_WCE) && !defined(DREAMCAST)
 		MENU_ACTION_ACCEL(3, "Enter Monitor", "F8"),
 #endif
 		MENU_ACTION_ACCEL(4, "Continue After CIM", "Esc"),
@@ -1599,7 +1696,7 @@ int CrashMenu(void)
 			return FALSE;
 		case 2:				/* Menu */
 			return FALSE;
-#ifndef _WIN32_WCE
+#if !defined(_WIN32_WCE) && !defined(DREAMCAST)
 		case 3:				/* Monitor */
 			alt_function = MENU_MONITOR;
 			return FALSE;

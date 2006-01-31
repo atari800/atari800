@@ -1,8 +1,8 @@
 /*
- * ui_basic.c - main user interface
+ * ui_basic.c - Atari look&feel user interface driver
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -62,7 +62,10 @@ void curses_putch(int x, int y, int ascii, UBYTE fg, UBYTE bg);
 static int initialised = FALSE;
 static UBYTE charset[1024];
 
-static const unsigned char key_to_ascii[256] =
+#ifndef DREAMCAST
+static
+#endif
+const unsigned char key_to_ascii[256] =
 {
 	0x6C, 0x6A, 0x3B, 0x00, 0x00, 0x6B, 0x2B, 0x2A, 0x6F, 0x00, 0x70, 0x75, 0x9B, 0x69, 0x2D, 0x3D,
 	0x76, 0x00, 0x63, 0x00, 0x00, 0x62, 0x78, 0x7A, 0x34, 0x00, 0x33, 0x36, 0x1B, 0x35, 0x32, 0x31,
@@ -823,8 +826,12 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 		strcpy(current_dir, help_dir);
 	}
 #elif defined(HAVE_GETCWD)
-	if (current_dir[0] == '\0' || (current_dir[0] == '.' && current_dir[1] == '\0'))
-		getcwd(current_dir, FILENAME_MAX);
+	if (current_dir[0] == '\0' || (current_dir[0] == '.' && current_dir[1] == '\0')) {
+		if (getcwd(current_dir, FILENAME_MAX) == NULL) {
+			current_dir[0] = '/';
+			current_dir[1] = '\0';
+		}
+	}
 #else
 	if (current_dir[0] == '\0') {
 		current_dir[0] = '.';
@@ -1095,7 +1102,10 @@ static int EditFilename(const char *title, char *filename, char directories[][FI
 			strcpy(edited_filename, directories[0]);
 #ifdef HAVE_GETCWD
 		if (edited_filename[0] == '\0') {
-			getcwd(edited_filename, FILENAME_MAX);
+			if (getcwd(edited_filename, FILENAME_MAX) == NULL) {
+				edited_filename[0] = '/';
+				edited_filename[1] = '\0';
+			}
 			if (edited_filename[0] != '\0' && strlen(edited_filename) < FILENAME_MAX - 1) {
 				char *p = edited_filename + strlen(edited_filename) - 1;
 				if (*p != '/' && *p != '\\') {
@@ -1176,3 +1186,205 @@ tUIDriver basic_ui_driver = {
 	&BasicUIInfoScreen,
 	&BasicUIInit
 };
+
+#ifdef KB_UI
+
+int kb_ui(const char *title, int layout)
+{
+#define LAYOUT_LEFT    2
+#define LAYOUT_TOP     5
+#define LAYOUT_WIDTH   36
+#define LAYOUT_HEIGHT  6
+	const char *layout_lines[LAYOUT_HEIGHT];
+	static int modifiers = 0;
+	static int key_x = 0;
+	static int key_y = 1;
+
+	BasicUIInit();
+	ClearScreen();
+	TitleScreen(title != NULL ? title : "Keyboard emulator");
+	Box(0x9a, 0x94, 0, 1, 39, 23);
+#ifdef DREAMCAST
+	CenterPrint(0x9a, 0x94, "Dreamcast controller buttons:", 20);
+	if (title != NULL) {
+		CenterPrint(0x9a, 0x94, "A  --  leave with key selected", 21);
+		CenterPrint(0x9a, 0x94, "L, R, B  --  leave without selection", 22);
+	}
+	else {
+		CenterPrint(0x9a, 0x94, "A  --  leave with key pressed", 21);
+		CenterPrint(0x9a, 0x94, "L, R, B  --  leave without keypress", 22);
+	}
+#endif
+	modifiers &= AKEY_SHFT;
+	switch (layout) {
+	case MACHINE_OSA:
+	case MACHINE_OSB:
+		layout_lines[0] = "     Start Select Option Atari Break";
+		break;
+	case MACHINE_XLXE:
+		layout_lines[0] = "  Help Start Select Option Inv Break";
+		break;
+	case MACHINE_5200:
+		layout_lines[0] = NULL;
+		break;
+	default:
+		layout_lines[0] = NULL;
+		break;
+	}
+	for (;;) {
+		int x;
+		int y;
+		int code;
+		const char *layout_line;
+		if (layout == MACHINE_5200) {
+			layout_lines[1] = "        Start  Pause  Reset         ";
+			layout_lines[2] = "        --1--  --2--  --3--         ";
+			layout_lines[3] = "        --4--  --5--  --6--         ";
+			layout_lines[4] = "        --7--  --8--  --9--         ";
+			layout_lines[5] = "        --*--  --0--  --#--         ";
+		}
+		else {
+			if ((modifiers & AKEY_CTRL) == 0)
+				Print(0x9a, 0x94, "         ", 10, 17, 40);
+			else
+				Print(0x94, 0x9a, " CONTROL ", 10, 17, 40);
+			if ((modifiers & AKEY_SHFT) == 0) {
+				Print(0x9a, 0x94, "       ", 2, 17, 40);
+				layout_lines[1] = "-Esc 1 2 3 4 5 6 7 8 9 0 < > BackSpc";
+				layout_lines[2] = "-Tab- Q W E R T Y U I O P - = Return";
+				layout_lines[3] = "-Ctrl- A S D F G H J K L ; + * -Caps";
+				layout_lines[4] = "-Shift- Z X C V B N M , . / --Shift-";
+			}
+			else {
+				Print(0x94, 0x9a, " SHIFT ", 2, 17, 40);
+				layout_lines[1] = "-Esc ! \" # $ % & ' @ ( ) Clr Ins Del";
+				layout_lines[2] = "-Tab- Q W E R T Y U I O P _ | Return";
+				layout_lines[3] = "-Ctrl- A S D F G H J K L : \\ ^ -Caps";
+				layout_lines[4] = "-Shift- Z X C V B N M [ ] ? --Shift-";
+			}
+			layout_lines[5] = "        -------Space-------         ";
+		}
+		for (y = 0; y < LAYOUT_HEIGHT; y++)
+			if (layout_lines[y] != NULL)
+				Print(0x9a, 0x94, layout_lines[y], LAYOUT_LEFT, LAYOUT_TOP + 2 * y, LAYOUT_WIDTH);
+		if (layout_lines[key_y] == NULL)
+			key_y = 1;
+		layout_line = layout_lines[key_y];
+		x = key_x;
+		/* key_x normally points to inside of a key... */
+		if (layout_line[x] != ' ')
+			/* find the beginning of this key */
+			while (x > 0 && layout_line[x - 1] != ' ')
+				x--;
+		/* ... if it does not, take the first key in this line. */
+		else
+			for (x = 0; layout_line[x] == ' '; x++);
+		/* highlight the key */
+		do
+			Plot(0x94, 0x9a, layout_line[x], LAYOUT_LEFT + x, LAYOUT_TOP + 2 * key_y);
+		while (layout_line[++x] > ' ');
+		/* handle user input */
+		switch (GetKeyPress()) {
+		case 0x1c:
+			if (key_y == 0 || layout_lines[key_y - 1] == NULL)
+				break;
+			key_y--;
+			if (key_x > 0 && layout_lines[key_y][key_x] == ' ')
+				key_x--;
+			break;
+		case 0x1d:
+			if (key_y >= LAYOUT_HEIGHT - 1)
+				break;
+			key_y++;
+			if (layout_lines[key_y][key_x] == ' ' && layout_lines[key_y][key_x + 1] != ' ')
+				key_x++;
+			break;
+		case 0x1e:
+			while (x > 0) {
+				if (layout_line[--x] == ' ') {
+					while (x > 0) {
+						if (layout_line[--x] > ' ') {
+							key_x = x;
+							break;
+						}
+					}
+					break;
+				}
+			}
+			break;
+		case 0x1f:
+			while (layout_line[x] == ' ')
+				x++;
+			if (layout_line[x] > ' ')
+				key_x = x;
+			break;
+		case 0x1b:
+			return AKEY_NONE;
+		case 0x9b:
+			code = 0;
+			while (--x > 0) {
+				if (layout_line[x] == ' ') {
+					while (x > 0) {
+						if (layout_line[--x] > ' ') {
+							code++;
+							break;
+						}
+					}
+				}
+			}
+			if (layout == MACHINE_5200) {
+				static const UBYTE keycodes_5200[5][3] = {
+					{ AKEY_5200_START, AKEY_5200_PAUSE, AKEY_5200_RESET },
+					{ AKEY_5200_1, AKEY_5200_2, AKEY_5200_3 },
+					{ AKEY_5200_4, AKEY_5200_5, AKEY_5200_6 },
+					{ AKEY_5200_7, AKEY_5200_8, AKEY_5200_9 },
+					{ AKEY_5200_ASTERISK, AKEY_5200_0, AKEY_5200_HASH }
+				};
+				return keycodes_5200[key_y - 1][code];
+			}
+			else {
+				static const UBYTE keycodes_normal[4][14] = {
+					{ AKEY_ESCAPE, AKEY_1, AKEY_2, AKEY_3, AKEY_4, AKEY_5, AKEY_6,
+					  AKEY_7, AKEY_8, AKEY_9, AKEY_0, AKEY_LESS, AKEY_GREATER, AKEY_BACKSPACE },
+					{ AKEY_TAB, AKEY_q, AKEY_w, AKEY_e, AKEY_r, AKEY_t, AKEY_y,
+					  AKEY_u, AKEY_i, AKEY_o, AKEY_p, AKEY_MINUS, AKEY_EQUAL, AKEY_RETURN },
+					{ AKEY_CTRL, AKEY_a, AKEY_s, AKEY_d, AKEY_f, AKEY_g, AKEY_h,
+					  AKEY_j, AKEY_k, AKEY_l, AKEY_SEMICOLON, AKEY_PLUS, AKEY_ASTERISK, AKEY_CAPSTOGGLE },
+					{ AKEY_SHFT, AKEY_z, AKEY_x, AKEY_c, AKEY_v, AKEY_b, AKEY_n,
+					  AKEY_m, AKEY_COMMA, AKEY_FULLSTOP, AKEY_SLASH, AKEY_SHFT, AKEY_SHFT, AKEY_SHFT }
+				};
+				switch (key_y) {
+				case 0:
+					switch (code + (layout != MACHINE_XLXE ? 1 : 0)) {
+					case 0:
+						return AKEY_HELP ^ modifiers;
+					case 1:
+						return AKEY_START;
+					case 2:
+						return AKEY_SELECT;
+					case 3:
+						return AKEY_OPTION;
+					case 4:
+						return AKEY_ATARI ^ modifiers;
+					case 5:
+						return AKEY_BREAK;
+					}
+				case 5:
+					return AKEY_SPACE ^ modifiers;
+				default:
+					code = keycodes_normal[key_y - 1][code];
+					if (code == AKEY_SHFT || code == AKEY_CTRL)
+						modifiers ^= code;
+					else
+						return code ^ modifiers;
+					break;
+				}
+			}
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+#endif /* KB_UI */

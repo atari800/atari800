@@ -1,0 +1,96 @@
+# adapt the following variables to your environment
+SHBASE = /opt/dcgcc/sh-elf
+KOS = /local/kos-sand/kos
+
+# use assember screen update functions
+#ASSEMBLER = 1
+
+# include a romdisk in the executable
+#ROMDISK = 1
+
+# optimization settings
+CFLAGS=-ml -W -Wall -Wno-unused -m4-single-only -O2 -D_arch_dreamcast -fstrict-aliasing -fno-builtin -fomit-frame-pointer -funroll-loops -fexpensive-optimizations -fno-optimize-sibling-calls
+
+DEFS = -DDREAMCAST
+ifdef ASSEMBLER
+DEFS += -DASSEMBLER_SCREENUPDATE
+ADDOBJ += dc/displayscreen.o
+endif
+ifdef ROMDISK
+DEFS += -DROMDISK
+ADDOBJ += romdisk.o
+endif
+
+CC = $(SHBASE)/bin/sh-elf-gcc
+SHOBJCOPY = $(SHBASE)/bin/sh-elf-objcopy
+SHSTRIP   = $(SHBASE)/bin/sh-elf-strip
+
+INCLUDE=-I$(KOS)/../kos-ports/include -I$(KOS)/../kos-ports/include/zlib -I$(KOS)/include -I$(KOS)/kernel/arch/dreamcast/include -I$(KOS)/addons/include -I$(KOS)/kernel/arch/dreamcast/sound -Idc -I.
+LDFLAGS=-ml -m4-single-only -nostartfiles -nostdlib -Wl,-Ttext=0x8c010000 -L$(KOS)/lib/dreamcast -L$(KOS)/addons/lib/dreamcast -o $@ $(KOS)/kernel/arch/dreamcast/kernel/startup.o -Wl,-Map,atari800.map,--cref
+
+LIBS=-Wl,--start-group -lkallisti -lz -lbz2 -lm -lc -lgcc -Wl,--end-group
+
+OBJ =	atari.o \
+	cpu.o \
+	sio.o \
+	devices.o \
+	antic.o \
+	gtia.o \
+	pokey.o \
+	pia.o \
+	cartridge.o \
+	rtime.o \
+	ui.o \
+	ui_basic.o \
+	binload.o \
+	log.o \
+	compfile.o \
+	memory.o \
+	statesav.o \
+	colours.o \
+	mzpokeysnd.o \
+	remez.o \
+	pokeysnd.o \
+	sndsave.o \
+	cassette.o \
+	util.o \
+	screen.o \
+	dc/dc_chdir.o \
+	dc/vmu.o \
+	dc/atari_dc.o \
+	input.o
+
+OBJ += $(ADDOBJ)
+
+all: atari800.elf atari800.bin
+
+atari800.bin: atari800.elf
+	$(SHOBJCOPY) -R .stack -R .comment -R .bss -R .sbss -O binary $^ $@
+
+romdisk.o:
+	$(KOS)/utils/genromfs/genromfs -f romdisk.img -d romimg -v
+	KOS_ARCH=dreamcast KOS_AS=$(SHBASE)/bin/sh-elf-as KOS_OBJCOPY=$(SHBASE)/bin/sh-elf-objcopy KOS_LD=$(SHBASE)/bin/sh-elf-ld $(KOS)/utils/bin2o/bin2o romdisk.img romdisk romdisk.o
+
+%.o: %.S
+	$(CC) -c -o $@ $(DEFS) -DASSEMBLER $(INCLUDE) $(CFLAGS) $<
+
+%.o: %.c
+	$(CC) -c -o $@ $(DEFS) $(INCLUDE) $(CFLAGS) $<
+
+atari800.elf: $(OBJ)
+	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
+
+dc/atari_dc.o: dc/atari_dc.c dc/config.h
+	$(CC) -c -o $@ $(DEFS) $(INCLUDE) $(CFLAGS) $<
+
+dep:
+	@if ! makedepend -Y $(DEFS) $(INCLUDE) ${OBJ:.o=.c} 2>/dev/null; \
+	then echo warning: makedepend failed; fi
+
+clean:
+	rm -f $(OBJ) atari800.map atari800.elf atari800.bin atari800.scrambled
+	rm -f romdisk.img romdisk.o dc/displayscreen.o
+
+# Local Variables: #
+# mode: makefile #
+# End: #

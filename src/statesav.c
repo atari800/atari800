@@ -2,7 +2,7 @@
  * statesav.c - saving the emulator's state to a file
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -38,11 +38,19 @@
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
+#ifdef DREAMCAST
+#include <bzlib/bzlib.h>
+#define MEMCOMPR     /* compress in memory before writing */
+#include "vmu.h"
+#include "icon.h"
+#endif
+
 
 #include "atari.h"
 #include "log.h"
+#include "util.h"
 
-#define SAVE_VERSION_NUMBER	4
+#define SAVE_VERSION_NUMBER 4
 
 void AnticStateSave(void);
 void MainStateSave(void);
@@ -62,13 +70,23 @@ void POKEYStateRead(void);
 void CARTStateRead(void);
 void SIOStateRead(void);
 
-#ifdef HAVE_LIBZ
+#if defined(MEMCOMPR)
+static gzFile *mem_open(const char *name, const char *mode);
+static int mem_close(gzFile *stream);
+static size_t mem_read(void *buf, size_t len, gzFile *stream);
+static size_t mem_write(const void *buf, size_t len, gzFile *stream);
+#define GZOPEN(X, Y)     mem_open(X, Y)
+#define GZCLOSE(X)       mem_close(X)
+#define GZREAD(X, Y, Z)  mem_read(Y, Z, X)
+#define GZWRITE(X, Y, Z) mem_write(Y, Z, X)
+#undef GZERROR
+#elif defined(HAVE_LIBZ) /* above MEMCOMPR, below HAVE_LIBZ */
 #define GZOPEN(X, Y)     gzopen(X, Y)
 #define GZCLOSE(X)       gzclose(X)
 #define GZREAD(X, Y, Z)  gzread(X, Y, Z)
 #define GZWRITE(X, Y, Z) gzwrite(X, (const voidp) Y, Z)
 #define GZERROR(X, Y)    gzerror(X, Y)
-#else /* HAVE_LIBZ */
+#else
 #define GZOPEN(X, Y)     fopen(X, Y)
 #define GZCLOSE(X)       fclose(X)
 #define GZREAD(X, Y, Z)  fread(Y, Z, 1, X)
@@ -76,14 +94,14 @@ void SIOStateRead(void);
 #undef GZERROR
 #define gzFile  FILE
 #define Z_OK    0
-#endif /* HAVE_LIBZ */
+#endif
 
 static gzFile *StateFile = NULL;
 static int nFileError = Z_OK;
 
 static void GetGZErrorText(void)
 {
-#ifdef HAVE_LIBZ
+#ifdef GZERROR
 	const char *error = GZERROR(StateFile, &nFileError);
 	if (nFileError == Z_ERRNO) {
 #ifdef HAVE_STRERROR
@@ -95,8 +113,8 @@ static void GetGZErrorText(void)
 		return;
 	}
 	Aprint("ZLIB returned the following error: %s", error);
-#endif /* HAVE_LIBZ */
- 	Aprint("State file I/O failed.");
+#endif /* GZERROR */
+	Aprint("State file I/O failed.");
 }
 
 /* Value is memory location of data, num is number of type to save */
@@ -341,8 +359,14 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 	GTIAStateSave();
 	PIAStateSave();
 	POKEYStateSave();
+#ifdef DREAMCAST
+	DCStateSave();
+#endif
 
-	GZCLOSE(StateFile);
+	if (GZCLOSE(StateFile) != 0) {
+		StateFile = NULL;
+		return FALSE;
+	}
 	StateFile = NULL;
 
 	if (nFileError != Z_OK)
@@ -409,6 +433,9 @@ int ReadAtariState(const char *filename, const char *mode)
 	GTIAStateRead();
 	PIAStateRead();
 	POKEYStateRead();
+#ifdef DREAMCAST
+	DCStateRead();
+#endif
 
 	GZCLOSE(StateFile);
 	StateFile = NULL;
@@ -418,3 +445,124 @@ int ReadAtariState(const char *filename, const char *mode)
 
 	return TRUE;
 }
+
+
+/* hack to compress in memory before writing
+ * - for DREAMCAST only
+ * - 2 reasons for this:
+ * - use bzip2 instead of zip: better compression ratio (the DC VMUs are small)
+ * - write in DC specific file format to provide icon and description
+ */
+#ifdef MEMCOMPR
+
+static char * plainmembuf;
+static unsigned int plainmemoff;
+static char * comprmembuf;
+#define OM_READ  1
+#define OM_WRITE 2
+static int openmode;
+static unsigned int unclen;
+static char savename[FILENAME_MAX];
+#define HDR_LEN 640
+
+#define ALLOC_LEN 210000
+
+/* replacement for GZOPEN */
+static gzFile *mem_open(const char *name, const char *mode)
+{
+	if (*mode == 'w') {
+		/* open for write (save) */
+		openmode = OM_WRITE;
+		strcpy(savename, name); /* remember name */
+		plainmembuf = Util_malloc(ALLOC_LEN);
+		plainmemoff = 0; /*HDR_LEN;*/
+		return (gzFile *) plainmembuf;
+	}
+	else {
+		/* open for read (read) */
+		FILE *f;
+		size_t len;
+		openmode = OM_READ;
+		unclen = ALLOC_LEN;
+		f = fopen(name, mode);
+		if (f == NULL)
+			return NULL;
+		plainmembuf = Util_malloc(ALLOC_LEN);
+		comprmembuf = Util_malloc(ALLOC_LEN);
+		len = fread(comprmembuf, 1, ALLOC_LEN, f);
+		fclose(f);
+		/* XXX: does DREAMCAST's fread return ((size_t) -1) ? */
+		if (len != 0
+		 && BZ2_bzBuffToBuffDecompress(plainmembuf, &unclen, comprmembuf + HDR_LEN, len - HDR_LEN, 1, 0) == BZ_OK) {
+#ifdef DEBUG
+			printf("decompress: old len %lu, new len %lu\n",
+				   (unsigned long) len - 1024, (unsigned long) unclen);
+#endif
+			free(comprmembuf);
+			plainmemoff = 0;
+			return (gzFile *) plainmembuf;
+		}
+		free(comprmembuf);
+		free(plainmembuf);
+		return NULL;
+	}
+}
+
+/* replacement for GZCLOSE */
+static int mem_close(gzFile *stream)
+{
+	int status = -1;
+	unsigned int comprlen = ALLOC_LEN - HDR_LEN;
+	if (openmode != OM_WRITE) {
+		/* was opened for read */
+		free(plainmembuf);
+		return 0;
+	}
+	comprmembuf = Util_malloc(ALLOC_LEN);
+	if (BZ2_bzBuffToBuffCompress(comprmembuf + HDR_LEN, &comprlen, plainmembuf, plainmemoff, 9, 0, 0) == BZ_OK) {
+		FILE *f;
+		f = fopen(savename, "wb");
+		if (f != NULL) {
+			char icon[32 + 512];
+#ifdef DEBUG
+			printf("mem_close: plain len %lu, compr len %lu\n",
+			       (unsigned long) plainmemoff, (unsigned long) comprlen);
+#endif
+			memcpy(icon, palette, 32);
+			memcpy(icon + 32, bitmap, 512);
+			ndc_vmu_create_vmu_header(comprmembuf, "Atari800DC",
+			                          "Atari800DC saved state", comprlen, icon);
+			comprlen = (comprlen + HDR_LEN + 511) & ~511;
+			ndc_vmu_do_crc(comprmembuf, comprlen);
+			status = (fwrite(comprmembuf, 1, comprlen, f) == comprlen) ? 0 : -1;
+			status |= fclose(f);
+#ifdef DEBUG
+			if (status != 0)
+				printf("mem_close: fwrite: error!!\n");
+#endif
+		}
+	}
+	free(comprmembuf);
+	free(plainmembuf);
+	return status;
+}
+
+/* replacement for GZREAD */
+static size_t mem_read(void *buf, size_t len, gzFile *stream)
+{
+	if (plainmemoff + len > unclen) return 0;  /* shouldn't happen */
+	memcpy(buf, plainmembuf + plainmemoff, len);
+	plainmemoff += len;
+	return len;
+}
+
+/* replacement for GZWRITE */
+static size_t mem_write(const void *buf, size_t len, gzFile *stream)
+{
+	if (plainmemoff + len > ALLOC_LEN) return 0;  /* shouldn't happen */
+	memcpy(plainmembuf + plainmemoff, buf, len);
+	plainmemoff += len;
+	return len;
+}
+
+#endif /* #ifdef MEMCOMPR */

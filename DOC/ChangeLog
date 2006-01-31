@@ -1,3 +1,12 @@
+2006-01-31  Piotr Fusik  <fox@scene.pl>
+* win32/screen_win32.c: made DDERR_UNSUPPORTED user-friendly ;-)
+
+* atari.h, input.c, statesav.c, ui.c, ui.h, ui_basic.c, dc/atari_dc.c,
+  dc/atari800.cfg, dc/config.h, dc/dc_chdir.c, dc/icon.h, dc/Makefile.dc,
+  dc/version.h, dc/vmu.c, dc/vmu.h, DOC/CHANGES.dc, DOC/README.dc:
+  integrated Christian Groessler's SEGA Dreamcast port
+
+
 2006-01-26  Piotr Fusik  <fox@scene.pl>
 * ui_basic.c: directory that has been left (via Backspace or "[..]")
   is highlighted in the parent directory; display an error message

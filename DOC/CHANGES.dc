@@ -1,0 +1,112 @@
+17-Jan-2003	atari800dc v0.75
+
+	* use Atari800 cvs code base as of jan-11-2003
+	* reverted the sound changes which were introduced in the 0.72
+	  version - the sound should be similar to 0.71.
+	* saved states on the VMU now show a Atari icon. Due to a
+	  change in the layout of the state save file, saved states of
+	  previous versions aren't recognized.
+	* changing video mode of emulated Atari now doesn't change the
+          video mode used to drive the screen. These 2 video mode
+          settings (what the emulated Atari thinks the video mode is,
+          and the video mode used by the DC) can now be changed
+          independently.
+	  Setting them to different values will disable double
+          buffering, so best results are achieved if both settings are
+          the same.
+	* buttons B, X, Y on the 1st DC controller can now be
+          redefined to generate simulated key presses on the
+          keyboard. If they are redefined, the Start, Select, and
+          Option keys can be entered in the keyboard emulation
+          screen.
+
+21-Sep-2002	atari800dc v0.72
+
+	* use Atari800 cvs code base as of sep-17-2002
+	* changing CDs should now work more reliably
+	* load and save (VMU) state now display "please wait" messages
+	  and report if the save failed
+
+21-Jul-2002	atari800dc v0.71
+
+	* use Atari800 1.2.3 code base
+	* support to save/restore status on VMU.
+	  The status will be saved on the first VMU found, unless the
+	  configuration file contains an entry for STATE_DIR which is
+	  not empty and not ".".
+	* changing video mode of emulated Atari (PAL/NTSC) now changes
+	  the video refresh rate of the DC (50 for PAL/60 for
+	  NTSC). Since the timing of atari800dc now depends on the
+	  video refresh rate, the PAL/NTSC differences are better
+	  emulated.
+	* support for the Arcade Stick.
+	* implemented double buffered screen update with the
+	  possibility to switch at runtime between normal screen
+	  update and double buffered version
+
+17-May-2002	atari800dc v0.7
+
+	* support for autostarting executable files or atr images:
+	  place autorun.com or autorun.exe or autorun.atr into the
+	  root directory of the CD
+	  autorunning cartridges is not implemented (the emulator
+	  needs the cart type, and there is no way to tell him
+	  automatically)
+	* selecting (inserting) a cartridge will now start it
+	  immediately
+	* 800: added keyboard emulation using DC controller: now most
+	  keys can be generated with the standard DC controller
+	* 5200: added keypad emulation (only for the 1st 5200
+	  controller)
+	* 800: Option/Select/Start are now emulated with the DC
+	  keyboard (F2/F3/F4)
+	* support to change video mode of emulated Atari (PAL/NTSC)
+
+08-May-2002	atari800dc v0.65
+
+	* directory browsing on the CD implemented. Due to additional
+	  CD accesses needed for this, don't populate a directory with
+	  more than a few hundred files, otherwise entering the
+	  directory will become very slow.
+	* after startup, the CD can be exchanged.
+
+15-Apr-2002	atari800dc v0.61
+
+	* fix display glitch on the left side introduced in the last
+	  version
+	* in the crash menu one item wasn't centered
+
+11-Apr-2002	atari800dc v0.6
+
+	* speed increase: use new DIRTYRECT facility of the a800 main
+	  code
+	* 5200: controller joystick now generates 5200 controller
+	  compatible (analog) data.
+	* 800: controller joystick also generates joystick direction
+	  events (previously only the joypad did)
+	* customized ui
+	* support for ui switch "emulate paddle": must now be turned
+	  on when using paddles. Up to four paddles are supported
+	  (only 2 tested, don't have more controllers; makes sense in
+	  800 mode only, 5200 results are undefined :-)
+	* in ui, B button is now the same as R trigger (go back)
+
+05-Apr-2002	atari800dc v0.5
+
+	* sound fixed (reason of the large version jump)
+	* improved ui "keyrepeat"
+	* 800: simple paddle support
+	* 5200: Y key now generates "H" - some games want a "H" to
+	  start
+
+27-Mar-2002	atari800dc v0.2
+
+	* implemented "keyrepeat" while in the emulator ui (controller
+	  only)
+	* fixed crash when system was set to atari 800 (not XL) and
+	  less than 3 controllers were connected
+	* some sound changes (but they don't improve anything :-)
+	* added support for 5200 controller 2nd action button
+
+22-Mar-2002	atari800dc v0.1
+
