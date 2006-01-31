@@ -2,7 +2,7 @@
  * screen_win32.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -139,10 +139,11 @@ int gron(int *argc, char *argv[])
 		ddrval = IDirectDraw4_SetDisplayMode(lpDD, scrwidth, scrheight, 8, 0, 0);
 	}
 	if (FAILED(ddrval)) {
-		if (ddrval == DDERR_INVALIDMODE && !bltgfx && width != 640) {
-			/* 320x240 is not supported on my Win98SE / Radeon 9000 */
+		if ((ddrval == DDERR_INVALIDMODE || ddrval == DDERR_UNSUPPORTED) && !bltgfx && width != 640) {
+			/* 320x240 results in DDERR_INVALIDMODE on my Win98SE / Radeon 9000 */
+			/* 320x240 results in DDERR_UNSUPPORTED on my WinXP / Toshiba laptop */
 			MessageBox(hWndMain,
-				"DirectDraw does not support the requested mode.\n"
+				"DirectDraw does not support the requested display mode.\n"
 				"Try running with \"-blt\" or \"-width 640\" on the command line.",
 				myname, MB_OK);
 			groff();
