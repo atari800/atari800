@@ -5,6 +5,6 @@
 
 #define A800DCVERHI  0
 #define A800DCVERLO  76
-#define A800DCVERASC "0.76beta2"
+#define A800DCVERASC "0.76"
 
 #endif /* #ifndef __VERSIONDC_H_ */

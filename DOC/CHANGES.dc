@@ -1,3 +1,11 @@
+30-Jan-2006	atari800dc v0.76
+
+	* use Atari800 cvs code base as of jan-27-2006
+	* use KOS svn code base version 289
+	* unplugging/replugging controllers after atari800dc has started
+	  up works now
+	* screen update is now done by an assembler routine
+
 17-Jan-2003	atari800dc v0.75
 
 	* use Atari800 cvs code base as of jan-11-2003

@@ -4,26 +4,36 @@ Atari800 for SEGA Dreamcast
 Usage
 -----
 
-The 1st controller is used to provide the console keys (start, select,
-etc).
-The mapping is (for computers, not 5200)
+The mapping of the connected DC controllers to the Atari joysticks is
+as follows:
+
+The leftmost controller is joystick #1. Then, while going to the
+right, the next controller is joystick #2. The next one is joystick
+#3. Joystick #4 is the rightmost controller if all 4 controller jacks
+are in use.
+
+The 1st (leftmost) controller is used to provide the console keys
+(start, select, etc).
+
+The mapping for the 1st controller is as follows (for computers, not
+5200):
 
 	    B		-	START
+				(maps to ESC key while being in the
+				emulator menu)
 	    Y		-	SELECT
 	    X		-	OPTION
 	    A		-	joystick button
 
 	    L		-	emulator menu
-	    R		-	while in menu: ESC (leave menu)
-					       (while in menu, B is
-					       also mapped to ESC)
-				not in menu: enter keyboard emulation
-					     screen
+	    R		-	enter keyboard emulation screen
 
 	    Start	-	warm boot (reset key)
 	    Start + X	-	cold boot (power cycle)
 
 	    joypad	-	joystick directions
+
+On the other controllers only the joypad and A are used.
 
 L and R are mapped to Z and C buttons on the Arcade Stick.
 While in the emulator menu, pressing Start causes the Dreamcast to
@@ -44,17 +54,20 @@ The Dreamcast keyboard is also supported:
 	    Pause	-	break
 	    S3		-	Atari key
 
-In 5200 mode A, B, X, and Y are redefined:
-	    B		-	4 (starts some games)
-	    Y		-	Start key of the 1st 5200 controller
+In 5200 mode the A, B, X, and Y buttons of the controllers are
+redefined:
+	    Y		-	Start key (only the 1st controller)
+	    B		-	4 (starts some games, "  "  "  "  )
 	    X		-	joystick button #2
 	    A		-	joystick button #1
 
 In 800 mode up to 4 paddles are supported (only 2 tested by
 me). A is the paddle trigger.
+
 Also in 800 mode, X, Y, and B can be redefined to generate keys from
 the keyboard. If this is enabled, Option, Select, and Start keys can
 be entered in the keyboard emulation screen.
+
 In order to use paddles, you have to switch on the "Emulate paddles"
 setting in the "AtariDC Settings" menu.
 
@@ -130,9 +143,7 @@ Bugs/ToDos
 * There are still sound glitches on some games. Fix them.
 * Save state to vmu and/or run ATRs rw from vmu. (*** save state
   implemented ***)
-* More than 2 controllers are not tested. The Dreamcast can use up to
-  4 controllers, so it should be possible to use 400/800 programs
-  which make use of them.
+* More than 2 controllers are not well tested.
 * Improve keyboard support
 * Mouse support?
 
@@ -149,5 +160,5 @@ The newest version is at
 
 In the mean time have fun with it,
 Christian Groessler
-chris@groessler.org, 01-Jan-2006
+chris@groessler.org, 30-Jan-2006
 
