@@ -31,7 +31,7 @@
 
 #define REPEAT_DELAY 5000
 #define REPEAT_INI_DELAY (5 * REPEAT_DELAY)
-#define DEBUG
+/*#define DEBUG*/
 /*#define MY_RELEASE*/
 #ifndef DIRTYRECT
 #error need DIRTYRECT
@@ -51,7 +51,6 @@ static unsigned char *atari_screen_backup;
 static unsigned char *atari_screen_backup2;
 static uint8 mcont[4];
 static cont_cond_t mcond[4];
-static uint8 mkb;
 static int num_cont;   /* # of controllers found */
 static int su_first_call = TRUE;
 static int b_ui_leave = FALSE;
@@ -123,7 +122,7 @@ void update_vidmode(void)
 	mymode.cable_type = vid_check_cable();
 	vid_set_mode_ex(&mymode);
 
-	screen_vram = (uint16*)(0xA5000000);
+	screen_vram = (uint16*)0xA5000000;
 	/* point to current line of atari screen in display memory */
 	screen_vram += (vid_mode->height - ATARI_HEIGHT) / 2 * vid_mode->width;
 	/* adjust left column to screen resolution */
@@ -302,12 +301,32 @@ int Atari_Exit(int run_monitor)
 }
 
 /*
+ * update num_cont and mcont[]
+ */
+static void dc_controller_init(void)
+{
+	int p, u;
+
+	num_cont = 0;
+	for (p = 0; p < MAPLE_PORT_COUNT; p++) {
+		for (u = 0; u < MAPLE_UNIT_COUNT; u++) {
+			if (maple_device_func(p, u) & MAPLE_FUNC_CONTROLLER) {
+				mcont[num_cont++] = maple_addr(p, u);
+			}
+		}
+	}
+	return;
+}
+
+/*
  * update the in-core status of the controller buttons/settings
  */
 static void controller_update(void)
 {
 	int i;
-	for (i=0; i<num_cont; i++) {
+
+	dc_controller_init();  /* update dis-/reconnections */
+	for (i = 0; i < num_cont; i++) {
 		if (cont_get_cond(mcont[i], &mcond[i])) {
 #ifdef DEBUG
 			printf("controller_update: error getting controller status\n");
@@ -599,6 +618,7 @@ int Atari_Keyboard(void)
 			tray_closed = TRUE;
 			cdrom_init();
 			iso_reset();
+			chdir("/");
 			for (i=0; i<n_atari_files_dir; i++)
 				strcpy(atari_files_dir[i], "/");
 		}
@@ -1135,30 +1155,6 @@ int Atari_TRIG(int num)
 	return(1);
 }
 
-static void dc_controller_init(void)
-{
-	int p, u;
-
-	for (p=0; p<MAPLE_PORT_COUNT; p++) {
-		for (u=0; u<MAPLE_UNIT_COUNT; u++) {
-			if (maple_device_func(p, u) & MAPLE_FUNC_CONTROLLER) {
-				mcont[num_cont++] = maple_addr(p, u);
-#ifdef DEBUG
-				printf("dc_controller_init: found controller %d\n", mcont[num_cont-1]);
-#endif
-			}
-		}
-	}
-
-	mkb = maple_first_kb();
-
-#ifdef DEBUG
-	printf("dc_controller_init: controller%sfound, keyboard%sfound\n",
-	       mcont[0] ? " " : " not ", mkb ? " " : " not ");
-#endif
-	return;
-}
-
 #if 0
 /*
  * fill up unused (no entry in atari800.cfg) saved_files_dir
@@ -1241,13 +1237,15 @@ KOS_INIT_ROMDISK(romdisk);
 
 int main(int argc, char **argv)
 {
+	printf("Atari800DC main() starting\n");  /* workaound for fopen-before-printf kos bug */
+
 	/* initialize screen updater */
 	update_screen_updater();
 
 	/* initialize Atari800 core */
 	Atari800_Initialise(&argc, argv);
 
-	/* initialize dc controllers */
+	/* initialize dc controllers for the first time */
 	dc_controller_init();
 
 	/* initialize sound */
@@ -1395,17 +1393,27 @@ static void autostart(void)
 	}
 }
 
-static char mytmpnam[] = "tempname.oef";
+#if 0  /* not stable, KOS crashes sometimes with files on the ramdisk */
+static char mytmpnam[] = "/ram/tmpf";
 char *tmpnam(char *space)
 {
+	static int inc = 0;
+	char b[16];
 	if (space) {
 		strcpy(space, mytmpnam);
+		sprintf(b, ".%d\n", inc++);
+		strcat(space, b);
 		return(space);
 	}
 	else {
 		return(mytmpnam);
 	}
 }
+char *_tmpnam_r (struct reent *r, char *s)
+{
+	return tmpnam(s);
+}
+#endif
 
 /* parts taken from KOS' kernel/libc/koslib/opendir.c */
 static int odc;
@@ -1611,7 +1619,7 @@ void AboutAtariDC(void)
 {
 	ui_driver->fInfoScreen("About AtariDC",
 			       "AtariDC v" A800DCVERASC " ("__DATE__")\0"
-			       "(c) 2002,2003,2005 Christian Groessler\0"
+			       "(c) 2002-2006 Christian Groessler\0"
 			       "http://www.groessler.org/a800dc\0"
 			       "\0"
 			       "Please report all problems\0"
@@ -1622,7 +1630,12 @@ void AboutAtariDC(void)
 			       "http://atari800.atari.org\0"
 			       "\0"
 			       "It uses the KallistiOS library\0"
-			       "http://cadcdev.sourceforge.net\0\n");
+			       "http://cadcdev.sourceforge.net\0"
+			       "\0"
+#if defined(MY_RELEASE) && defined(ASSEMBLER_SCREENUPDATE)
+                               "ASSEMBLER\0\0"
+#endif
+                               "Dedicated to Tobias & Dominik\0\n");
 }
 
 
