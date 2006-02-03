@@ -998,7 +998,7 @@ void ANTIC_Reset(void)
 /* Border ------------------------------------------------------------------ */
 
 #define DO_BORDER_1 {\
-	if (!(*(const ULONG *) pm_scanline_ptr)) {\
+	if (IS_ZERO_ULONG(pm_scanline_ptr)) {\
 		ULONG *l_ptr = (ULONG *) ptr;\
 		WRITE_VIDEO_LONG(l_ptr++, background); \
 		WRITE_VIDEO_LONG(l_ptr++, background); \
@@ -1048,7 +1048,7 @@ static void do_border_gtia10(void)
 		DO_GTIA10_BORDER
 	WRITE_VIDEO(ptr, COLOUR(pm_lookup_ptr[*pm_scanline_ptr | 1]));
 	/* right border */
-	pm_scanline_ptr = &pm_scanline[right_border_start + 1];
+	pm_scanline_ptr = &pm_scanline[right_border_start];
 	if (pm_scanline_ptr < &pm_scanline[RBORDER_END]) {
 		ptr = &scrn_ptr[right_border_start + 1];
 		WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_scanline_ptr[1] | 1]));
