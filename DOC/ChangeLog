@@ -1,3 +1,10 @@
+2006-02-03  Piotr Fusik  <fox@scene.pl>
+* antic.c: a bug in do_border_gtia10 caused a crash on machines that don't
+  support unaligned words (problem reported by Mark Watson), on other machines
+  sprites on the right border in GTIA 10 modes were incorrectly shifted;
+  a pointer cast in DO_BORDER_1 replaced with IS_ZERO_ULONG, just in case
+
+
 2006-01-31  Piotr Fusik  <fox@scene.pl>
 * win32/screen_win32.c: made DDERR_UNSUPPORTED user-friendly ;-)
 
