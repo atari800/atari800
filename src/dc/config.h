@@ -28,7 +28,7 @@
 #undef CURSES_BASIC
 
 /* Alternate config filename due to 8+3 fs limit. */
-#define DEFAULT_CFG_NAME "/vmu/a1/atari800.cfg"
+/*#define DEFAULT_CFG_NAME "/vmu/a1/atari800.cfg"*/
 
 /* Target: Windows with DirectX. */
 #undef DIRECTX
@@ -257,7 +257,7 @@
 #undef HAVE_TIME_H /* ??? */
 
 /* Define to 1 if you have the `tmpfile' function. */
-#undef HAVE_TMPFILE /* ??? */
+#define HAVE_TMPFILE
 
 /* Define to 1 if you have the `tmpnam' function. */
 #undef HAVE_TMPNAM /* ??? */
@@ -452,8 +452,8 @@
 #define SIGNED_SAMPLES
 #define DIRTYRECT
 #define KB_UI
-#define SPEED_CHECK
-/*#define HZ_TEST*/
+#undef SPEED_CHECK
+#undef HZ_TEST
 
 #ifndef ASSEMBLER  /* don't include the following part in assember source files */
 extern void DCStateSave(void);
