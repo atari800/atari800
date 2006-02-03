@@ -3,7 +3,7 @@ SHBASE = /opt/dcgcc/sh-elf
 KOS = /local/kos-sand/kos
 
 # use assember screen update functions
-#ASSEMBLER = 1
+ASSEMBLER = 1
 
 # include a romdisk in the executable
 #ROMDISK = 1
