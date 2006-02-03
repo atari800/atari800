@@ -20,7 +20,7 @@ Emulation core:
 
 * precisely emulate serial I/O rates
 
-* emulate POKEY reset
+* emulate POKEY reset (via SKCTL)
 
 * more accurate frame rates (for example 49.8607456 instead of 50 Hz in PAL)
 
@@ -60,6 +60,8 @@ User Interface:
 * make sure all command-line options are available in UI and config file
 
 * error messages should appear on screen and not in the log
+
+* use a smaller font for low-resolution displays
 
 Clean up:
 
@@ -102,8 +104,13 @@ Speed optimizations:
 
 * automatic framedrop
 
+* generate 168x120 graphics for portable devices with low-res displays
+
 * boost memory bank switching by using hardware paging on systems
   that support it (for example, use mmap() on Linux)
+
+* boost memory bank switching by using Get/Put functions for the banked memory,
+  PC_PTR and some tweaks in antic.c
 
 * implement Dirty Spans (see HOWTO-DIRTYSPAN)
 
