@@ -67,7 +67,6 @@ static
 int emulate_paddles = FALSE;
 int glob_snd_ena = TRUE;
 int db_mode = FALSE;
-int in_fnedit = FALSE;
 int screen_tv_mode;    /* mode of connected tv set */
 
 int x_ovr = FALSE, y_ovr = FALSE, b_ovr = FALSE;
@@ -466,7 +465,7 @@ static int controller_kb(void)
 		return(AKEY_KEYB);
 	}
 	/* provide keyboard emulation to enter file name */
-	if (ui_is_active && in_fnedit && !in_kbui && (cond->rtrig > 250 || !(cond->buttons & CONT_C))) {
+	if (ui_is_active && !in_kbui && (cond->rtrig > 250 || !(cond->buttons & CONT_C))) {
 		int keycode;
 		controller_update();
 		in_kbui = TRUE;
@@ -1312,13 +1311,6 @@ int main(int argc, char **argv)
 		keycode = Atari_Keyboard();
 
 		switch (keycode) {
-#if 0 /* wrong! */
-		case AKEY_5200_RESET:
-			if (machine_type == MACHINE_5200) {
-				Coldstart();
-			}
-			break;
-#endif
 #ifdef KB_UI
 		case AKEY_KEYB:
 			Sound_Pause();
