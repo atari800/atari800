@@ -1398,8 +1398,6 @@ static int SoundSettings(void)
 		option = ui_driver->fSelect("Sound Settings", 0, option, menu_array, NULL);
 #endif
 
-		option = ui_driver->fSelect(NULL, SELECT_POPUP, option, menu_array, NULL);
-
 		switch (option) {
 		case 0:
 			enable_new_pokey = !enable_new_pokey;
