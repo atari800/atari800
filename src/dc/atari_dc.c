@@ -32,7 +32,6 @@
 #define REPEAT_DELAY 5000
 #define REPEAT_INI_DELAY (5 * REPEAT_DELAY)
 /*#define DEBUG*/
-/*#define MY_RELEASE*/
 #ifndef DIRTYRECT
 #error need DIRTYRECT
 #endif
@@ -1180,7 +1179,7 @@ static void setup_saved_files_dirs(void)
 }
 #endif
 
-#if defined(MY_RELEASE) || defined(HZ_TEST)
+#ifdef HZ_TEST
 static void cls(int xres, int yres)
 {
 	int x, y;
@@ -1200,9 +1199,7 @@ static void wait_a(void)
 
 	} while (cond.buttons & CONT_A);
 }
-#endif
 
-#ifdef HZ_TEST
 void do_hz_test(void)
 {
 	uint32 s, ms, s2, ms2, z;
@@ -1254,14 +1251,6 @@ int main(int argc, char **argv)
 	ser_console_init();
 	dbgio_init();
 	*/
-
-#ifdef MY_RELEASE
-	cls(320,240);
-	bfont_draw_str(vram_s+50*320+5, 320, 0, "Hallo Tobias und Dominik!");
-	bfont_draw_str(vram_s+57*320+5, 320, 0, "_________________________");
-	wait_a();
-	cls(320,240);
-#endif
 
 #ifdef DEBUG
 	printf("\nFor Tobias & Dominik\n");
@@ -1624,9 +1613,6 @@ void AboutAtariDC(void)
 			       "It uses the KallistiOS library\0"
 			       "http://cadcdev.sourceforge.net\0"
 			       "\0"
-#if defined(MY_RELEASE) && defined(ASSEMBLER_SCREENUPDATE)
-                               "ASSEMBLER\0\0"
-#endif
                                "Dedicated to Tobias & Dominik\0\n");
 }
 
