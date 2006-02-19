@@ -43,7 +43,7 @@
 
 static int kbjoy = 1;
 
-DWORD REG_bat, REG_ac, REG_disp;
+DWORD REG_bat, REG_ac, REG_disp, bat_timeout;
 
 /* WinCE port does not have console, no log either */
 void Aprint(char *format, ... ) {}
@@ -121,6 +121,8 @@ void Atari_Initialise(int *argc, char *argv[])
 	/* backlight */
 	REG_bat = REG_ac = REG_disp = 2 * 60 * 60 * 1000; /* 2hrs should do it */
 	backlight_xchg();
+	SystemParametersInfo(SPI_GETBATTERYIDLETIMEOUT, 0, (void *) &bat_timeout, 0);
+	SystemParametersInfo(SPI_SETBATTERYIDLETIMEOUT, 60 * 60 * 2, NULL, SPIF_SENDCHANGE);
 
 	clearkb();
 }
@@ -128,6 +130,7 @@ void Atari_Initialise(int *argc, char *argv[])
 int Atari_Exit(int run_monitor)
 {
 	backlight_xchg();	/* restore backlight settings */
+	SystemParametersInfo(SPI_SETBATTERYIDLETIMEOUT, bat_timeout, NULL, SPIF_SENDCHANGE);
 
 	/* monitor is not avaliable in this port */
 	if(run_monitor)
