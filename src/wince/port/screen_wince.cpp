@@ -47,8 +47,10 @@ extern "C" UBYTE *screen_dirty;
 static UBYTE palRed[MAX_CLR];
 static UBYTE palGreen[MAX_CLR];
 static UBYTE palBlue[MAX_CLR];
-static unsigned short pal[MAX_CLR];
 static unsigned short optpalRedBlue[MAX_CLR], optpalGreen[MAX_CLR];
+static unsigned short pal[MAX_CLR];
+static unsigned int paldouble[MAX_CLR];
+
 /* First 10 and last 10 colors on palettized devices require special treatment,
    this table will map all colors into 236-color space starting at 10 */
 static UBYTE staticTranslate[256];
@@ -89,6 +91,8 @@ void hicolor_DrawKbd(UBYTE*);
 void null_DrawKbd(UBYTE*);
 void smartphone_hicolor_Refresh(UBYTE*);
 
+void vga_hicolor_Refresh(UBYTE*);
+
 static tCls        pCls        = NULL;
 static tRefresh    pRefresh    = NULL;
 static tDrawKbd    pDrawKbd    = NULL;
@@ -98,6 +102,9 @@ static tDrawKbd    pDrawKbd    = NULL;
 
 // Legacy GAPI mode
 static bool legagy_gapi = true;
+
+// VGA device flag
+static bool res_VGA = false;
 
 void *RawBeginDraw(void);
 
@@ -140,6 +147,7 @@ tScreenGeometry geom[3];
 int currentScreenMode = 0;
 int useMode = 0;
 int maxMode = 2;
+static bool translatelandscape = false;
 
 /* 
    This is Microsoft's idea of consistent interfaces.
@@ -353,6 +361,7 @@ extern "C" int gron(int *argc, char *argv[])
 	geom[2].xLimit = 320; // no skip
 	geom[2].lineLimit = ATARI_WIDTH*240;
 
+	/* Fine tune the selection of blit routines */ 
 	if ((gxdp.cxWidth == 176) & (gxdp.cyHeight == 220) & (pRefresh == hicolor_Refresh))
 	{
 		pDrawKbd = null_DrawKbd;
@@ -362,12 +371,23 @@ extern "C" int gron(int *argc, char *argv[])
 	}
 	else if (issmartphone)
 	{
+		// implicit QVGA
 		pDrawKbd = null_DrawKbd;
 		geom[0].startoffset = geom[0].linestep * 30;
 	}
 	else if(gxdp.cyHeight < 320)
 	{
 			maxMode = 0; // portrait only!
+	}
+
+
+
+	if ((gxdp.cxWidth == 480) & (gxdp.cyHeight == 640) & (pRefresh == hicolor_Refresh))
+	{
+		res_VGA = true;
+		pRefresh = vga_hicolor_Refresh;
+		geom[0].xSkipMask = 3;	// fix incorrect detection
+		geom[2].startoffset = gxdp.cbxPitch*(gxdp.cxWidth-2);	// align to longword
 	}
 
 	for(int i = 0; i < MAX_CLR; i++)
@@ -405,6 +425,9 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 		pal[ent] = COLORCONVHICOLOR(r,g,b);
 	else if(gxdp.ffFormat & kfDirect)
 		pal[ent] = COLORCONVMONO(r,g,b);
+
+	if (res_VGA)
+		paldouble[ent] = (pal[ent] << 16) | pal[ent];
 }
 
 /* Find the best color match in the palette (limited to 'limit' entries) */
@@ -1405,6 +1428,232 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 	}
 }
 
+void vga_hicolor_Refresh(UBYTE* scr_ptr)
+{
+/* Mode-specific metrics */
+	static long pixelstep = geom[useMode].pixelstep;
+	static long linestep  = geom[useMode].linestep;
+	static long pixelstepdouble = pixelstep << 1;
+	static long linestepdouble = linestep << 1;
+	static long low_limit = geom[useMode].sourceoffset+24;
+	static long high_limit = low_limit + geom[useMode].xLimit;
+
+/* Addressing withing screen_dirty array. This implementation assumes that the
+   array does not get reallocated in runtime */
+	static UBYTE* screen_dirty_ptr;
+	static UBYTE* screen_dirty_limit = screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+
+/* Source base pointer */
+	static UBYTE* screen_line_ptr;
+/* Source/destination pixel offset */
+	static long xoffset;
+
+/* Destination base pointer */
+	static UBYTE* dest_line_ptr;
+
+/* Running source and destination pointers */
+	static UBYTE* src_ptr;
+	static UBYTE* src_ptr_next;
+	static UBYTE* dest_ptr;
+	static UBYTE* dest_ptr_next;
+
+	static unsigned int doublepixel;
+
+	if(!emulator_active)
+	{
+		Sleep(100);
+#ifndef MULTITHREADED
+		MsgPump();
+#endif
+		return;
+	}
+
+/* Update screen mode, also thread protection by doing this */
+	if(useMode != currentScreenMode)
+	{
+		useMode = currentScreenMode;
+
+		entire_screen_dirty();
+
+		pixelstep = geom[useMode].pixelstep;
+		linestep = geom[useMode].linestep;
+		pixelstepdouble = pixelstep << 1;
+		linestepdouble = linestep << 1;
+		low_limit = geom[useMode].sourceoffset+24;
+		high_limit = low_limit + geom[useMode].xLimit;
+	}
+	
+/* Ensure keyboard flag consistency */
+	if(currentScreenMode == 0)
+		currentKeyboardMode = 4;
+	
+/* Overlay keyboard in landscape modes */
+	if(currentKeyboardMode != 4)
+		overlay_kbd(scr_ptr);
+
+	dest_line_ptr = GET_SCREEN_PTR();
+	if(dest_line_ptr)
+	{
+		if(useMode == 0)
+			pDrawKbd(dest_line_ptr);
+		
+		screen_dirty_ptr = screen_dirty;
+		screen_line_ptr = (UBYTE*)atari_screen;
+		xoffset = 0;
+
+	/* Offset destination pointer to allow for rotation and particular screen geometry */
+		dest_line_ptr += geom[useMode].startoffset;
+
+	/* There are multiple versions of the internal loop based on screen geometry and settings */
+		if(geom[currentScreenMode].xSkipMask == 0xffffffff)
+		{
+		/* Regular 1:1 copy, with color conversion */
+			while(screen_dirty_ptr < screen_dirty_limit)
+			{
+				if(*screen_dirty_ptr)
+				{
+					if(xoffset >= low_limit && xoffset < high_limit)
+					{
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*pixelstepdouble;
+						dest_ptr_next = dest_ptr + pixelstep;
+						src_ptr = screen_line_ptr + xoffset;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr];
+					}
+					*screen_dirty_ptr = 0;
+				}
+
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestepdouble;
+				}
+
+				screen_dirty_ptr ++;
+			}
+		}
+		else if(smooth_filter || ui_is_active)
+		{
+		/* The most complex version of the internal loop does 3/4 linear filtering */
+			while(screen_dirty_ptr < screen_dirty_limit)
+			{
+				if(*screen_dirty_ptr)
+				{
+					if(xoffset >= low_limit && xoffset < high_limit)
+					{
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*3/4*pixelstepdouble;
+						dest_ptr_next = dest_ptr + linestep;
+						src_ptr = screen_line_ptr + xoffset;
+						src_ptr_next = src_ptr+1;
+
+						UBYTE r, g, b;
+						r = (3*palRed[*src_ptr] + palRed[*src_ptr_next])>>2;
+						g = (3*palGreen[*src_ptr] + palGreen[*src_ptr_next])>>2;
+						b = (3*palBlue[*src_ptr] + palBlue[*src_ptr_next])>>2;
+						doublepixel = COLORCONVHICOLOR(r,g,b); doublepixel = (doublepixel << 16) | doublepixel;
+						*(unsigned int*)dest_ptr = doublepixel; *(unsigned int*)dest_ptr_next = doublepixel;
+						dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						src_ptr++; src_ptr_next++;
+
+						r = (palRed[*src_ptr] + palRed[*src_ptr_next])>>1;
+						g = (palGreen[*src_ptr] + palGreen[*src_ptr_next])>>1;
+						b = (palBlue[*src_ptr] + palBlue[*src_ptr_next])>>1;
+						doublepixel = COLORCONVHICOLOR(r,g,b); doublepixel = (doublepixel << 16) | doublepixel;
+						*(unsigned int*)dest_ptr = doublepixel; *(unsigned int*)dest_ptr_next = doublepixel;
+						dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						src_ptr++; src_ptr_next++;
+
+						r = (palRed[*src_ptr] + 3*palRed[*src_ptr_next])>>2;
+						g = (palGreen[*src_ptr] + 3*palGreen[*src_ptr_next])>>2;
+						b = (palBlue[*src_ptr] + 3*palBlue[*src_ptr_next])>>2;
+						doublepixel = COLORCONVHICOLOR(r,g,b); doublepixel = (doublepixel << 16) | doublepixel;
+						*(unsigned int*)dest_ptr = doublepixel; *(unsigned int*)dest_ptr_next = doublepixel;
+						dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						src_ptr += 2; src_ptr_next += 2;
+
+						r = (3*palRed[*src_ptr] + palRed[*src_ptr_next])>>2;
+						g = (3*palGreen[*src_ptr] + palGreen[*src_ptr_next])>>2;
+						b = (3*palBlue[*src_ptr] + palBlue[*src_ptr_next])>>2;
+						doublepixel = COLORCONVHICOLOR(r,g,b); doublepixel = (doublepixel << 16) | doublepixel;
+						*(unsigned int*)dest_ptr = doublepixel; *(unsigned int*)dest_ptr_next = doublepixel;
+						dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						src_ptr++; src_ptr_next++;
+
+						r = (palRed[*src_ptr] + palRed[*src_ptr_next])>>1;
+						g = (palGreen[*src_ptr] + palGreen[*src_ptr_next])>>1;
+						b = (palBlue[*src_ptr] + palBlue[*src_ptr_next])>>1;
+						doublepixel = COLORCONVHICOLOR(r,g,b); doublepixel = (doublepixel << 16) | doublepixel;
+						*(unsigned int*)dest_ptr = doublepixel; *(unsigned int*)dest_ptr_next = doublepixel;
+						dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						src_ptr++; src_ptr_next++;
+
+						r = (palRed[*src_ptr] + 3*palRed[*src_ptr_next])>>2;
+						g = (palGreen[*src_ptr] + 3*palGreen[*src_ptr_next])>>2;
+						b = (palBlue[*src_ptr] + 3*palBlue[*src_ptr_next])>>2;
+						doublepixel = COLORCONVHICOLOR(r,g,b); doublepixel = (doublepixel << 16) | doublepixel;
+						*(unsigned int*)dest_ptr = doublepixel; *(unsigned int*)dest_ptr_next = doublepixel;
+					}
+					*screen_dirty_ptr = 0;
+				}
+
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestepdouble;
+				}
+
+				screen_dirty_ptr ++;
+			}
+		}
+		else
+		{
+		/* 3/4 pixel skip version. Not recommended anymore */
+			while(screen_dirty_ptr < screen_dirty_limit)
+			{
+				if(*screen_dirty_ptr)
+				{
+					if(xoffset >= low_limit && xoffset < high_limit)
+					{
+						dest_ptr = dest_line_ptr + (xoffset-low_limit)*3/4*pixelstepdouble;
+						dest_ptr_next = dest_ptr + linestep;
+						src_ptr = screen_line_ptr + xoffset;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						src_ptr ++;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr]; src_ptr++; dest_ptr += pixelstepdouble; dest_ptr_next += pixelstepdouble;
+						*(unsigned int*)dest_ptr = *(unsigned int*)dest_ptr_next = paldouble[*src_ptr];
+					}
+					*screen_dirty_ptr = 0;
+				}
+
+				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				{
+					xoffset = 0;
+					screen_line_ptr += ATARI_WIDTH;
+					dest_line_ptr += linestepdouble;
+				}
+
+				screen_dirty_ptr ++;
+			}
+		}
+
+		RELEASE_SCREEN();
+	}
+}
+
 
 void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 {
@@ -1985,7 +2234,7 @@ void hicolor_DrawKbd(UBYTE* scraddr)
 	static unsigned long* kbd_image_ptr;
 	static unsigned long curBit;
 	static int linestep, pixelstep;
-	static int colorOn, colorOff;
+	static unsigned int colorOn, colorOff;
 	static UBYTE* scraddr_limit;
 	static UBYTE* dest;
 	static UBYTE* dest_limit;
@@ -2004,41 +2253,75 @@ void hicolor_DrawKbd(UBYTE* scraddr)
 	
 	if(currentKeyboardColor)
 	{
-		colorOn = 0x0000;
-		colorOff = 0xffff;
+		colorOn = 0x00000000;
+		colorOff = 0xffffffff;
 	}
 	else
 	{
-		colorOn = 0xffff;
-		colorOff = 0x0000;
+		colorOn = 0xffffffff;
+		colorOff = 0x00000000;
 	}
 	
 	linestep = geom[0].linestep;
 	pixelstep = geom[0].pixelstep;
 	
-	scraddr += geom[0].startoffset + (geom[0].height-80)*linestep;
-	scraddr_limit = scraddr + linestep*80; /* note that linestep may be negative */
-	dest_limit = scraddr + pixelstep*240; /* again, pixelstep may be negative */
+	if (!res_VGA)
+	{
+		scraddr += geom[0].startoffset + (geom[0].height-80)*linestep;
+		scraddr_limit = scraddr + linestep*80; /* note that linestep may be negative */
+		dest_limit = scraddr + pixelstep*240; /* again, pixelstep may be negative */
+	}
+	else
+	{
+		scraddr += geom[0].startoffset + (geom[0].height-160)*linestep;
+		scraddr_limit = scraddr + linestep*160; /* note that linestep may be negative */
+		dest_limit = scraddr + pixelstep*480; /* again, pixelstep may be negative */
+		pixelstep <<= 1;
+		linestep <<= 1;
+	}
+
 	
 	kbd_image_ptr = kbd_image; /* word pointer in keyboard bitmap */
 	curBit = 1;  /* rotating bit pointer */
 	while(scraddr != scraddr_limit) /* note '!=' */
 	{
 		dest = scraddr;
-		while(dest != dest_limit)
+		if (!res_VGA)
 		{
-			if(*kbd_image_ptr & curBit)
-				*(unsigned short*)dest = colorOn;
-			else
-				*(unsigned short*)dest = colorOff;
-
-			dest += pixelstep;
-			curBit <<= 1;
-			if(curBit == 0) /* next dword? */
+			while(dest != dest_limit)
 			{
-				kbd_image_ptr ++;
-				curBit = 1;
+				if(*kbd_image_ptr & curBit)
+					*(unsigned short*)dest = colorOn;
+				else
+					*(unsigned short*)dest = colorOff;
+
+				dest += pixelstep;
+				curBit <<= 1;
+				if(curBit == 0) /* next dword? */
+				{
+					kbd_image_ptr ++;
+					curBit = 1;
+				}
 			}
+		}
+		else
+		{
+			while(dest != dest_limit)
+			{
+				if(*kbd_image_ptr & curBit)
+					*(unsigned int*)dest = colorOn;
+				else
+					*(unsigned int*)dest = colorOff;
+
+				dest += pixelstep;
+				curBit <<= 1;
+				if(curBit == 0) /* next dword? */
+				{
+					kbd_image_ptr ++;
+					curBit = 1;
+				}
+			}
+			memcpy(dest, scraddr, geom[0].linestep);
 		}
 		
 		/* Lines are dword aligned */
@@ -2054,6 +2337,7 @@ void hicolor_DrawKbd(UBYTE* scraddr)
 	kbd_image_ok = 1;
 }
 
+
 void null_DrawKbd(UBYTE* scraddr)
 {
 	return;
@@ -2063,6 +2347,19 @@ void null_DrawKbd(UBYTE* scraddr)
 extern "C" void translate_kbd(short* px, short* py)
 {
 	int x, y;
+
+	if (res_VGA)
+	{
+		*px >>= 1;
+		*py >>= 1;
+	}
+
+	if (translatelandscape)
+	{
+		*px ^= *py;
+		*py ^= *px;
+		*px ^= *py;
+	}
 	
 	switch(currentScreenMode)
 	{
@@ -2090,4 +2387,17 @@ extern "C" void translate_kbd(short* px, short* py)
 		*py = y;
 		break;
 	}
+}
+
+extern "C" void OrientationChanged(void)
+{
+	int w, h;
+
+	w = (unsigned int) GetSystemMetrics(SM_CXSCREEN);
+	h = (unsigned int) GetSystemMetrics(SM_CYSCREEN);
+
+	if (w < h)	//portrait
+		translatelandscape = false;
+	else
+		translatelandscape = true;
 }

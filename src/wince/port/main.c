@@ -44,6 +44,7 @@ extern int wince_main(int argc, char **argv);
 
 extern void entire_screen_dirty(void);
 extern UBYTE *screen_dirty;
+//extern void OrientationChanged(void);
 
 static char **gargv = NULL;
 static int gargc = 0;
@@ -123,6 +124,9 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 	case WM_HIBERNATE:
 		gr_suspend();
 		return 0;
+	case WM_SETTINGCHANGE:
+		OrientationChanged();
+		break;
 	}
 /* In the first version all other events were merrily dropped on floor in singlethreaded
    model. That caused some troubles with debugging and suspected to cause spurious key up
@@ -173,6 +177,7 @@ static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
 		return 1;
 
 	SetWindowPos(hWndMain, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+	UpdateWindow(hWndMain);
 	return 0;
 }
 

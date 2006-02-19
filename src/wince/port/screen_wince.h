@@ -13,6 +13,7 @@ void palette_update();
 
 void gr_suspend();
 void gr_resume();
+void OrientationChanged(void);
 
 /* meaning: 0 - portrait, 1 - left hand landscape, 2 - right hand landscape */
 void set_screen_mode(int mode);
