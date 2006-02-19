@@ -141,7 +141,7 @@ static int initsound_wav(void)
 	  Aprint("cannot prepare wave header (%x)\n", err);
 	  return 1;
 	}
-	  memset(waves[i].lpData, 128+0x28, WAVSIZE);	// kill clicking sounds at startup
+	  memset(waves[i].lpData, 0, WAVSIZE);	// kill clicking sounds at startup
       waves[i].dwFlags |= WHDR_DONE;
     }
 
