@@ -246,7 +246,7 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
         AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,1,[Save additional config file options.])
         LIBS="$LIBS `sdl-config --libs`"
-        OBJS="atari_sdl.o"
+        OBJS="atari_sdl.o atari_ntsc.o"
         ;;
     svgalib)
         AC_DEFINE(SVGALIB,1,[Target: Linux with SVGALib.])

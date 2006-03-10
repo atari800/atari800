@@ -65,6 +65,7 @@
 #include "pia.h"
 #include "log.h"
 #include "util.h"
+#include "atari_ntsc.h"
 
 /* you can set that variables in code, or change it when emulator is running
    I am not sure what to do with sound_enabled (can't turn it on inside
@@ -79,7 +80,12 @@ static int FULLSCREEN = 1;
 static int BW = 0;
 static int SWAP_JOYSTICKS = 0;
 static int WIDTH_MODE = 1;
-static int ROTATE90 =0;
+static int ROTATE90 = 0;
+static int ntscemu = 0;
+static int scanlines_percentage = 80;
+static atari_ntsc_t *the_ntscemu;
+/* making setup static conveniently clears all fields to 0 */
+static atari_ntsc_setup_t atari_ntsc_setup;
 #define SHORT_WIDTH_MODE 0
 #define DEFAULT_WIDTH_MODE 1
 #define FULL_WIDTH_MODE 2
@@ -400,7 +406,7 @@ void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
 
-	if (ROTATE90) {
+	if (ROTATE90||ntscemu) {
 		SetVideoMode(w, h, bpp);
 	}
 	else {
@@ -649,6 +655,104 @@ int Atari_Keyboard(void)
 				break;
 			case SDLK_c:
 				alt_function = MENU_CARTRIDGE;
+				break;
+			case SDLK_1:
+				key_pressed = 0;
+				atari_ntsc_setup.sharpness-=0.1;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_2:
+				key_pressed = 0;
+				atari_ntsc_setup.sharpness+=0.1;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_3:
+				key_pressed = 0;
+				atari_ntsc_setup.saturation-=0.1;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_4:
+				key_pressed = 0;
+				atari_ntsc_setup.saturation+=0.1;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_5:
+				key_pressed = 0;
+				atari_ntsc_setup.brightness-=0.1;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_6:
+				key_pressed = 0;
+				atari_ntsc_setup.brightness+=0.1;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_7:
+				key_pressed = 0;
+				atari_ntsc_setup.contrast-=0.1;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_8:
+				key_pressed = 0;
+				atari_ntsc_setup.contrast+=0.1;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_9:
+				key_pressed = 0;
+				atari_ntsc_setup.burst_phase-=.05;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_0:
+				key_pressed = 0;
+				atari_ntsc_setup.burst_phase+=.05;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_MINUS:
+				key_pressed = 0;
+				atari_ntsc_setup.gaussian_factor-=.2;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_EQUALS:
+				key_pressed = 0;
+				atari_ntsc_setup.gaussian_factor+=.2;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_LEFTBRACKET:
+				key_pressed = 0;
+				scanlines_percentage -= 5*(scanlines_percentage>=5);
+				break;
+			case SDLK_RIGHTBRACKET:
+				key_pressed = 0;
+				scanlines_percentage += 5*(scanlines_percentage<=100-5);
+				break;
+			case SDLK_SEMICOLON:
+				key_pressed = 0;
+				atari_ntsc_setup.hue-=.01;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_QUOTE:
+				key_pressed = 0;
+				atari_ntsc_setup.hue+=.01;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_COMMA:
+				key_pressed = 0;
+				atari_ntsc_setup.gamma_adj-=.05;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_PERIOD:
+				key_pressed = 0;
+				atari_ntsc_setup.gamma_adj+=.05;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_INSERT:
+				key_pressed = 0;
+				atari_ntsc_setup.saturation_ramp-=.05;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+				break;
+			case SDLK_DELETE:
+				key_pressed = 0;
+				atari_ntsc_setup.saturation_ramp+=.05;
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 				break;
 			}
 		}
@@ -1181,7 +1285,23 @@ void Atari_Initialise(int *argc, char *argv[])
 	bpp = SDL_ATARI_BPP;
 
 	for (i = j = 1; i < *argc; i++) {
-		if (strcmp(argv[i], "-rotate90") == 0) {
+		if (strcmp(argv[i], "-ntscemu") == 0) {
+			ntscemu = 1;
+			width = 640;
+			height = 480;
+			bpp = 16;
+			/* allocate memory for atari_ntsc and initialize */
+			the_ntscemu = (atari_ntsc_t*) malloc( sizeof (atari_ntsc_t) );
+			/* adjust default settings here: */
+			atari_ntsc_setup.sharpness = -0.5;
+			atari_ntsc_setup.saturation = -0.1;
+			atari_ntsc_setup.gamma_adj = -0.25;
+			atari_ntsc_setup.burst_phase = -0.60;
+			atari_ntsc_setup.saturation_ramp = 0.25;
+			atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+			Aprint("ntscemu mode");
+		}
+		else if (strcmp(argv[i], "-rotate90") == 0) {
 			ROTATE90 = 1;
 			width = 240;
 			height = 320;
@@ -1214,6 +1334,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
+				Aprint("\t-ntscemu         Emulate NTSC composite video");
 				Aprint("\t-rotate90        Display 240x320 screen");
 				Aprint("\t-nojoystick      Disable joystick");
 #ifdef LPTJOY
@@ -1301,6 +1422,115 @@ int Atari_Exit(int run_monitor)
 	Aflushlog();
 
 	return restart;
+}
+/* License of scanLines_16():*/
+/* This function has been altered from its original version */
+/* This license is a verbatim copy of the license of ZLib 
+ * http://www.gnu.org/licenses/license-list.html#GPLCompatibleLicenses
+ * This is a free software license, and compatible with the GPL. */
+/*****************************************************************************
+ ** $Source$
+ **
+ ** $Revision$
+ **
+ ** $Date$
+ ** $Date$
+ **
+ ** More info: http://www.bluemsx.com
+ **
+ ** Copyright (C) 2003-2004 Daniel Vik
+ **
+ **  This software is provided 'as-is', without any express or implied
+ **  warranty.  In no event will the authors be held liable for any damages
+ **  arising from the use of this software.
+ **
+ **  Permission is granted to anyone to use this software for any purpose,
+ **  including commercial applications, and to alter it and redistribute it
+ **  freely, subject to the following restrictions:
+ **
+ **  1. The origin of this software must not be misrepresented; you must not
+ **     claim that you wrote the original software. If you use this software
+ **     in a product, an acknowledgment in the product documentation would be
+ **     appreciated but is not required.
+ **  2. Altered source versions must be plainly marked as such, and must not be
+ **     misrepresented as being the original software.
+ **  3. This notice may not be removed or altered from any source distribution.
+ **
+ ******************************************************************************
+ */
+
+void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLinesPct)
+{
+    Uint32* pBuf = (Uint32*)(pBuffer+pitch);
+	Uint32* sBuf = (Uint32*)(pBuffer);
+    int w, h;
+	static int prev_scanLinesPct;
+
+    pitch = pitch * 2 / (int)sizeof(Uint32);
+    height /= 2;
+    width /= 2;
+
+    if (scanLinesPct == 0) {
+        if (prev_scanLinesPct != 100) {
+			/*clean dirty blank scanlines*/
+			prev_scanLinesPct = 100;
+			for (h = 0; h < height; h++) {
+				memset(pBuf, 0, width * sizeof(Uint32));
+				pBuf += pitch;
+			}
+		}
+		return;
+    }
+	prev_scanLinesPct = scanLinesPct;
+
+
+    if (scanLinesPct == 100) {
+	/* fill in blank scanlines */
+		for (h = 0; h < height; h++) {
+			memcpy(pBuf, sBuf, width * sizeof(Uint32));
+			sBuf += pitch;
+			pBuf += pitch;
+		}
+		return;
+    }
+    scanLinesPct = scanLinesPct * 32 / 100;
+
+    for (h = 0; h < height; h++) {
+		for (w = 0; w < width; w++) {
+			Uint32 pixel = sBuf[w];
+			Uint32 a = (((pixel & 0x07e0f81f) * scanLinesPct) & 0xfc1f03e0) >> 5;
+			Uint32 b = (((pixel >> 5) & 0x07c0f83f) * scanLinesPct) & 0xf81f07e0;
+			pBuf[w] = a | b;
+		}
+		sBuf += pitch;
+		pBuf += pitch;
+	}
+}
+
+void DisplayNTSCEmu640x480(UBYTE *screen)
+{
+	/* Number of overscan lines not shown */
+	enum { overscan_lines = 24 };
+	/* Change to 0 to clip the 8-pixel overscan borders off */
+	enum { overscan = 1 };
+
+	/* Atari active pixel area */
+	enum { atari_width = overscan ? atari_ntsc_full_in_width : atari_ntsc_min_in_width };
+	enum { atari_height = 240 -overscan_lines };
+
+	/* Output size */
+	enum { width = overscan ? atari_ntsc_full_out_width : atari_ntsc_min_out_width };
+	enum { height = atari_height * 2 };
+	enum { left_border_adj = ((640 - width)/2) & 0xfffffffc };
+	int const raw_width = ATARI_WIDTH; /* raw image has extra data */
+
+	int jumped = 24;
+	unsigned short *pixels = (unsigned short*)MainScreen->pixels + overscan_lines / 2 * MainScreen->pitch + left_border_adj;
+	/* blit atari image, doubled vertically */
+	atari_ntsc_blit( the_ntscemu, screen + jumped + overscan_lines / 2 * ATARI_WIDTH, raw_width, width, height / 2, pixels, MainScreen->pitch * 2 );
+	
+	scanLines_16((void *)pixels, width, height, MainScreen->pitch, scanlines_percentage);
+	
 }
 
 void DisplayRotated240x320(Uint8 *screen)
@@ -1515,8 +1745,11 @@ void Atari_DisplayScreen(void)
 		exit(-1);
 		break;
 	}
-
-	if (ROTATE90) {
+  	if (ntscemu) {
+  		DisplayNTSCEmu640x480((UBYTE *)atari_screen);
+  	}
+  
+  	else if (ROTATE90) {
 		DisplayRotated240x320((UBYTE *) atari_screen);
 	}
 	else if (MainScreen->w == width && MainScreen->h == ATARI_HEIGHT) {
