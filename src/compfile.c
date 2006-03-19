@@ -2,7 +2,7 @@
  * compfile.c - File I/O and ZLIB compression
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -94,10 +94,22 @@ static int fsave(void *buf, int size, FILE *fp)
 	return (int) fwrite(buf, 1, size, fp) == size;
 }
 
-static int write_atr_header(FILE *fp, int sectorcount, int sectorsize)
+typedef struct {
+	FILE *fp;
+	int sectorcount;
+	int sectorsize;
+	int current_sector;
+} ATR_Info;
+
+static int write_atr_header(const ATR_Info *pai)
 {
+	int sectorcount;
+	int sectorsize;
+	ULONG paras;
 	struct ATR_Header header;
-	ULONG paras = (sectorsize != 256 || sectorcount <= 3)
+	sectorcount = pai->sectorcount;
+	sectorsize = pai->sectorsize;
+	paras = (sectorsize != 256 || sectorcount <= 3)
 		? (sectorcount << 3) /* single density or only boot sectors: sectorcount * 128 / 16 */
 		: (sectorcount << 4) - 0x18; /* double density with 128-byte boot sectors: (sectorcount * 256 - 3 * 128) / 16 */
 	memset(&header, 0, sizeof(header));
@@ -109,18 +121,124 @@ static int write_atr_header(FILE *fp, int sectorcount, int sectorsize)
 	header.seccounthi = (UBYTE) (paras >> 8);
 	header.hiseccountlo = (UBYTE) (paras >> 16);
 	header.hiseccounthi = (UBYTE) (paras >> 24);
-	return fsave(&header, sizeof(header), fp);
+	return fsave(&header, sizeof(header), pai->fp);
+}
+
+static int write_atr_sector(ATR_Info *pai, UBYTE *buf)
+{
+	return fsave(buf, pai->current_sector++ <= 3 ? 128 : pai->sectorsize, pai->fp);
+}
+
+static int pad_till_sector(ATR_Info *pai, int till_sector)
+{
+	UBYTE zero_buf[256];
+	memset(zero_buf, 0, sizeof(zero_buf));
+	while (pai->current_sector < till_sector)
+		if (!write_atr_sector(pai, zero_buf))
+			return FALSE;
+	return TRUE;
+}
+
+static int dcm_pass(FILE *infp, ATR_Info *pai)
+{
+	UBYTE sector_buf[256];
+	memset(sector_buf, 0, sizeof(sector_buf));
+	for (;;) {
+		/* sector group */
+		int sector_no;
+		int sector_type;
+		sector_no = fgetw(infp);
+		sector_type = fgetc(infp);
+		if (sector_type == 0x45)
+			return TRUE;
+		if (sector_no < pai->current_sector) {
+			Aprint("Error: current sector is %d, next sector group at %d", pai->current_sector, sector_no);
+			return FALSE;
+		}
+		if (!pad_till_sector(pai, sector_no))
+			return FALSE;
+		for (;;) {
+			/* sector */
+			int i;
+			switch (sector_type & 0x7f) {
+			case 0x41:
+				i = fgetc(infp);
+				if (i == EOF)
+					return FALSE;
+				do {
+					int b = fgetc(infp);
+					if (b == EOF)
+						return FALSE;
+					sector_buf[i] = (UBYTE) b;
+				} while (i-- != 0);
+				break;
+			case 0x42:
+				if (!fload(sector_buf + 123, 5, infp))
+					return FALSE;
+				memset(sector_buf, sector_buf[123], 123);
+				break;
+			case 0x43:
+				i = 0;
+				do {
+					int j;
+					int c;
+					j = fgetc(infp);
+					if (j < i) {
+						if (j != 0)
+							return FALSE;
+						j = 256;
+					}
+					if (i < j && !fload(sector_buf + i, j - i, infp))
+						return FALSE;
+					if (j >= pai->sectorsize)
+						break;
+					i = fgetc(infp);
+					if (i < j) {
+						if (i != 0)
+							return FALSE;
+						i = 256;
+					}
+					c = fgetc(infp);
+					if (c == EOF)
+						return FALSE;
+					memset(sector_buf + j, c, i - j);
+				} while (i < pai->sectorsize);
+				break;
+			case 0x44:
+				i = fgetc(infp);
+				if (i == EOF || i >= pai->sectorsize)
+					return FALSE;
+				if (!fload(sector_buf + i, pai->sectorsize - i, infp))
+					return FALSE;
+				break;
+			case 0x46:
+				break;
+			case 0x47:
+				if (!fload(sector_buf, pai->sectorsize, infp))
+					return FALSE;
+				break;
+			default:
+				Aprint("Unrecognized sector coding type 0x%02X", sector_type);
+				return FALSE;
+			}
+			if (!write_atr_sector(pai, sector_buf))
+				return FALSE;
+			if (!(sector_type & 0x80))
+				break; /* goto sector group */
+			sector_type = fgetc(infp);
+			if (sector_type == 0x45)
+				return TRUE;
+		}
+	}
 }
 
 int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp)
 {
 	int archive_type;
 	int archive_flags;
-	int sectorcount;
-	int sectorsize;
-	UBYTE zero_buf[256];
+	ATR_Info ai;
 	int pass_flags;
-	int sector;
+	int last_sector;
 	archive_type = fgetc(infp);
 	if (archive_type != 0xf9 && archive_type != 0xfa) {
 		Aprint("This is not a DCM image");
@@ -130,123 +248,41 @@ int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp)
 	if ((archive_flags & 0x1f) != 1) {
 		Aprint("Expected pass one first");
 		if (archive_type == 0xf9)
-			Aprint("It seems that multi-file archive has been concatenated in wrong order");
+			Aprint("It seems that DCMs of a multi-file archive have been combined in wrong order");
 		return FALSE;
 	}
+	ai.fp = outfp;
+	ai.current_sector = 1;
 	switch ((archive_flags >> 5) & 3) {
 	case 0:
-		sectorcount = 720;
-		sectorsize = 128;
+		ai.sectorcount = 720;
+		ai.sectorsize = 128;
 		break;
 	case 1:
-		sectorcount = 720;
-		sectorsize = 256;
+		ai.sectorcount = 720;
+		ai.sectorsize = 256;
 		break;
 	case 2:
-		sectorcount = 1040;
-		sectorsize = 128;
+		ai.sectorcount = 1040;
+		ai.sectorsize = 128;
 		break;
 	default:
 		Aprint("Unrecognized density");
 		return FALSE;
 	}
-	if (!write_atr_header(outfp, sectorcount, sectorsize))
+	if (!write_atr_header(&ai))
 		return FALSE;
-	memset(zero_buf, 0, sizeof(zero_buf));
 	pass_flags = archive_flags;
-	sector = 1;
 	for (;;) {
 		/* pass */
-		UBYTE sector_buf[256];
-		int blocktype;
-		memset(sector_buf, 0, sizeof(sector_buf));
-		do {
-			/* sector group */
-			int next_sector = fgetw(infp);
-			if (next_sector < sector)
-				return FALSE;
-			while (sector < next_sector) {
-				if (!fsave(zero_buf, sector <= 3 ? 128 : sectorsize, outfp))
-					return FALSE;
-				sector++;
-			}
-			do {
-				/* sector */
-				int i;
-				blocktype = fgetc(infp);
-				if (blocktype == 0x45)
-					break;
-				switch (blocktype & 0x7f) {
-				case 0x41:
-					i = fgetc(infp);
-					if (i == EOF)
-						return FALSE;
-					do {
-						int b = fgetc(infp);
-						if (b == EOF)
-							return FALSE;
-						sector_buf[i] = (UBYTE) b;
-					} while (i-- != 0);
-					break;
-				case 0x42:
-					if (!fload(sector_buf + 123, 5, infp))
-						return FALSE;
-					memset(sector_buf, sector_buf[123], 123);
-					break;
-				case 0x43:
-					i = 0;
-					do {
-						int j;
-						int c;
-						j = fgetc(infp);
-						if (j < i) {
-							if (j != 0)
-								return FALSE;
-							j = 256;
-						}
-						if (i < j && !fload(sector_buf + i, j - i, infp))
-							return FALSE;
-						if (j >= sectorsize)
-							break;
-						i = fgetc(infp);
-						if (i < j) {
-							if (i != 0)
-								return FALSE;
-							i = 256;
-						}
-						c = fgetc(infp);
-						if (c == EOF)
-							return FALSE;
-						memset(sector_buf + j, c, i - j);
-					} while (i < sectorsize);
-					break;
-				case 0x44:
-					i = fgetc(infp);
-					if (i == EOF || i >= sectorsize)
-						return FALSE;
-					if (!fload(sector_buf + i, sectorsize - i, infp))
-						return FALSE;
-					break;
-				case 0x46:
-					break;
-				case 0x47:
-					if (!fload(sector_buf, sectorsize, infp))
-						return FALSE;
-					break;
-				default:
-					Aprint("Unrecognized block type 0x%02X", blocktype);
-					return FALSE;
-				}
-				if (!fsave(sector_buf, sector <= 3 ? 128 : sectorsize, outfp))
-					return FALSE;
-				sector++;
-			} while (blocktype & 0x80);
-		} while (blocktype != 0x45);
+		int block_type;
+		if (!dcm_pass(infp, &ai))
+			return FALSE;
 		if (pass_flags & 0x80)
 			break;
-		blocktype = fgetc(infp);
-		if (blocktype != archive_type) {
-			if (blocktype == EOF && archive_type == 0xf9) {
+		block_type = fgetc(infp);
+		if (block_type != archive_type) {
+			if (block_type == EOF && archive_type == 0xf9) {
 				Aprint("Multi-part archive error.");
 				Aprint("To process these files, you must first combine the files into a single file.");
 #if defined(WIN32) || defined(DJGPP)
@@ -264,18 +300,11 @@ int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp)
 		}
 		/* TODO: check pass number, this is tricky for >31 */
 	}
-	/* note: last written sector is (sector - 1) */
-	if (sector - 1 == sectorcount)
-		return TRUE;
-	if (sector - 1 < sectorcount) {
-		/* write remaining sectors */
-		do {
-			if (!fsave(zero_buf, sector <= 3 ? 128 : sectorsize, outfp))
-				return FALSE;
-		} while (sector++ < sectorcount);
-		return TRUE;
-	}
+	last_sector = ai.current_sector - 1;
+	if (last_sector <= ai.sectorcount)
+		return pad_till_sector(&ai, ai.sectorcount + 1);
 	/* more sectors written: update ATR header */
+	ai.sectorcount = last_sector;
 	Util_rewind(outfp);
-	return write_atr_header(outfp, sector - 1, sectorsize);
+	return write_atr_header(&ai);
 }

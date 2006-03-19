@@ -1,3 +1,8 @@
+2006-03-19  Piotr Fusik  <fox@scene.pl>
+* compfile.c: fixed DCM image handling - support 0x45 "End Of Pass" code
+  in an empty sector block starting at any sector (usually 0x0045)
+
+
 2006-02-03  Piotr Fusik  <fox@scene.pl>
 * antic.c: a bug in do_border_gtia10 caused a crash on machines that don't
   support unaligned words (problem reported by Mark Watson), on other machines
