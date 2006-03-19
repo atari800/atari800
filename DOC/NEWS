@@ -1,6 +1,15 @@
+ Changes:
+ --------
+ * small fixes in ANTIC/GTIA emulation
+ * fixed DCM image handling (broken in 2.0.0)
+ * added emulation of Atari XL/XE with 192 KB RAM
+ * integrated SEGA Dreamcast port
+ * some minor improvements
+
+
 Version 2.0.1 (2006/01/02)
 
- Just a quick UI bugfixes release. 
+ Just a quick UI bugfixes release.
 
 
 Version 2.0.0 (2005/12/31) - celebrating decade of Atari800 development!
