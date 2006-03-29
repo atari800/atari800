@@ -59,6 +59,8 @@ enum {
 	#define ATARI_NTSC_RGB_BITS 16
 #endif
 
+/* Atari800 Initialise fuction by perrym */
+void ATARI_NTSC_DEFAULTS_Initialise(int *argc, char *argv[], atari_ntsc_setup_t *atari_ntsc_setup);
 
 
 #endif

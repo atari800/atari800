@@ -656,104 +656,110 @@ int Atari_Keyboard(void)
 			case SDLK_c:
 				alt_function = MENU_CARTRIDGE;
 				break;
-			case SDLK_1:
-				key_pressed = 0;
-				atari_ntsc_setup.sharpness-=0.1;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_2:
-				key_pressed = 0;
-				atari_ntsc_setup.sharpness+=0.1;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_3:
-				key_pressed = 0;
-				atari_ntsc_setup.saturation-=0.1;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_4:
-				key_pressed = 0;
-				atari_ntsc_setup.saturation+=0.1;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_5:
-				key_pressed = 0;
-				atari_ntsc_setup.brightness-=0.1;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_6:
-				key_pressed = 0;
-				atari_ntsc_setup.brightness+=0.1;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_7:
-				key_pressed = 0;
-				atari_ntsc_setup.contrast-=0.1;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_8:
-				key_pressed = 0;
-				atari_ntsc_setup.contrast+=0.1;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_9:
-				key_pressed = 0;
-				atari_ntsc_setup.burst_phase-=.05;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_0:
-				key_pressed = 0;
-				atari_ntsc_setup.burst_phase+=.05;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_MINUS:
-				key_pressed = 0;
-				atari_ntsc_setup.gaussian_factor-=.2;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_EQUALS:
-				key_pressed = 0;
-				atari_ntsc_setup.gaussian_factor+=.2;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_LEFTBRACKET:
-				key_pressed = 0;
-				scanlines_percentage -= 5*(scanlines_percentage>=5);
-				break;
-			case SDLK_RIGHTBRACKET:
-				key_pressed = 0;
-				scanlines_percentage += 5*(scanlines_percentage<=100-5);
-				break;
-			case SDLK_SEMICOLON:
-				key_pressed = 0;
-				atari_ntsc_setup.hue-=.01;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_QUOTE:
-				key_pressed = 0;
-				atari_ntsc_setup.hue+=.01;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_COMMA:
-				key_pressed = 0;
-				atari_ntsc_setup.gamma_adj-=.05;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_PERIOD:
-				key_pressed = 0;
-				atari_ntsc_setup.gamma_adj+=.05;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_INSERT:
-				key_pressed = 0;
-				atari_ntsc_setup.saturation_ramp-=.05;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
-			case SDLK_DELETE:
-				key_pressed = 0;
-				atari_ntsc_setup.saturation_ramp+=.05;
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-				break;
+			default:
+				if(ntscemu){
+					switch(lastkey){
+					case SDLK_1:
+						key_pressed = 0;
+						atari_ntsc_setup.sharpness-=0.1;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_2:
+						key_pressed = 0;
+						atari_ntsc_setup.sharpness+=0.1;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_3:
+						key_pressed = 0;
+						atari_ntsc_setup.saturation-=0.1;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_4:
+						key_pressed = 0;
+						atari_ntsc_setup.saturation+=0.1;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_5:
+						key_pressed = 0;
+						atari_ntsc_setup.brightness-=0.1;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_6:
+						key_pressed = 0;
+						atari_ntsc_setup.brightness+=0.1;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_7:
+						key_pressed = 0;
+						atari_ntsc_setup.contrast-=0.1;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_8:
+						key_pressed = 0;
+						atari_ntsc_setup.contrast+=0.1;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_9:
+						key_pressed = 0;
+						atari_ntsc_setup.burst_phase-=.05;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_0:
+						key_pressed = 0;
+						atari_ntsc_setup.burst_phase+=.05;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_MINUS:
+						key_pressed = 0;
+						atari_ntsc_setup.gaussian_factor-=.2;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_EQUALS:
+						key_pressed = 0;
+						atari_ntsc_setup.gaussian_factor+=.2;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_LEFTBRACKET:
+						key_pressed = 0;
+						scanlines_percentage -= 5*(scanlines_percentage>=5);
+						break;
+					case SDLK_RIGHTBRACKET:
+						key_pressed = 0;
+						scanlines_percentage += 5*(scanlines_percentage<=100-5);
+						break;
+					case SDLK_SEMICOLON:
+						key_pressed = 0;
+						atari_ntsc_setup.hue-=.01;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_QUOTE:
+						key_pressed = 0;
+						atari_ntsc_setup.hue+=.01;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_COMMA:
+						key_pressed = 0;
+						atari_ntsc_setup.gamma_adj-=.05;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_PERIOD:
+						key_pressed = 0;
+						atari_ntsc_setup.gamma_adj+=.05;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_INSERT:
+						key_pressed = 0;
+						atari_ntsc_setup.saturation_ramp-=.05;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					case SDLK_DELETE:
+						key_pressed = 0;
+						atari_ntsc_setup.saturation_ramp+=.05;
+						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						break;
+					}
+				}
+			break;
 			}
 		}
 		if (alt_function != -1) {
@@ -1286,19 +1292,12 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-ntscemu") == 0) {
-			ntscemu = 1;
+			ntscemu = TRUE;
 			width = 640;
 			height = 480;
 			bpp = 16;
 			/* allocate memory for atari_ntsc and initialize */
 			the_ntscemu = (atari_ntsc_t*) malloc( sizeof (atari_ntsc_t) );
-			/* adjust default settings here: */
-			atari_ntsc_setup.sharpness = -0.5;
-			atari_ntsc_setup.saturation = -0.1;
-			atari_ntsc_setup.gamma_adj = -0.25;
-			atari_ntsc_setup.burst_phase = -0.60;
-			atari_ntsc_setup.saturation_ramp = 0.25;
-			atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 			Aprint("ntscemu mode");
 		}
 		else if (strcmp(argv[i], "-rotate90") == 0) {
@@ -1334,7 +1333,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-				Aprint("\t-ntscemu         Emulate NTSC composite video");
+				Aprint("\t-ntscemu         Emulate NTSC composite video (640x480x16)");
 				Aprint("\t-rotate90        Display 240x320 screen");
 				Aprint("\t-nojoystick      Disable joystick");
 #ifdef LPTJOY
@@ -1351,6 +1350,11 @@ void Atari_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
+
+	if (ntscemu || help_only){
+			ATARI_NTSC_DEFAULTS_Initialise(argc, argv, &atari_ntsc_setup);
+			if(ntscemu) atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+	}
 
 	i = SDL_INIT_VIDEO | SDL_INIT_JOYSTICK;
 #ifdef SOUND
@@ -1429,12 +1433,11 @@ int Atari_Exit(int run_monitor)
  * http://www.gnu.org/licenses/license-list.html#GPLCompatibleLicenses
  * This is a free software license, and compatible with the GPL. */
 /*****************************************************************************
- ** $Source$
+ ** Original Source: /cvsroot/bluemsx/blueMSX/Src/VideoRender/VideoRender.c,v 
  **
- ** $Revision$
+ ** Original Revision: 1.25 
  **
- ** $Date$
- ** $Date$
+ ** Original Date: 2006/01/17 08:49:34 
  **
  ** More info: http://www.bluemsx.com
  **
