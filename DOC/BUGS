@@ -2,7 +2,13 @@ Bugs and Known Problems
 -----------------------
 
 * Cosmic Balance (game) hangs before the intro screen. This is probably
-  due to inaccurate emulation of POKEY interrupts (see below).
+  due to inaccurate emulation of POKEY interrupts (see below). The program 
+  uses a hardware SIO loader as part of a presumed protection scheme.  
+  There is a bug in the code which activates the POKEY timers at an 
+  absurdly high frequency. This causes repeated interrupts which hangs the 
+  program.
+  Probably there is some interaction with SIO which prevents this on
+  a real Atari.
   A workaround is to invoke the monitor and type "c 10 40" and "cont".
 
 * new Pokey engine doesn't switch to mono output in STEREO_SOUND config
@@ -15,19 +21,33 @@ Bugs and Known Problems
 * The cycle-exact ANTIC/GTIA/CPU timing is not 100%.
   This causes display bugs in following programs:
   - Surf's up (game) (the horizon)
+  - Satan's Hollow (game) (horizon) (confirmed sta WSYNC at WSYNC_C bug)
   - Dimension X (game) (alignment problem)
   - Te.mod (demo) (small glitched pixel in the final credits on the bottom left)
   - Our 5oft Unity Part (demo) (cycle-alignment, probably WSYNC)
   - Isolation (demo) (vector animations)
   - 80 Random Moving Rectangles (demo) (top left of rectangles, screen data
-         is modified while drawing a scanline)
+    is modified while drawing a scanline)
+  - Sirius games: Scores and Text in Worm War I, Final Orbit, Spider City, 
+    Turmoil, Fantastic Voyage.  These games store screen data in page 0
+    and modify it each scan line.  They reuse the same data for each
+    scan line with an LMS on every line.  This makes the code look 
+    like 2600 code. Emulating this requires trapping writes to
+    page 0 and doing partial ANTIC loads. 
+  - Spider City has another bug in the map which is caused by player graphics
+    and HPOS being changed before the player is finished being drawn.  This
+    is only possible for wide players. 
 
 * Non-bugs:
   - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
   - Mail Order Monsters (game)
     (some colour changes do not align with text, occurs on a real Atari)
   - The Break (demo) (bugs on the left side of photo)
-  - Star Raiders (game) (doesn't work on XL/XE, select OS/B)
+  - Star Raiders (disk image) (game) (doesn't work on XL/XE, select OS/B)
+  - Many other disk images of cartridges that work on XL/XE require OS B
+    because a once-popular cart dumping program for the Atari 800 generates
+    an OS B-specific loader. IIRC it loads the image and jumps into the OS B
+    RESET vector location, which is changed on the XL.
   - Strip Poker (game) (Atari Basic must be enabled)
   - Joust (Atari 5200 game) (the game sets all colors to black on PAL systems,
     you need to switch the emulator to NTSC mode)
