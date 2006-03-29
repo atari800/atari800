@@ -82,7 +82,7 @@ static int SWAP_JOYSTICKS = 0;
 static int WIDTH_MODE = 1;
 static int ROTATE90 = 0;
 static int ntscemu = 0;
-static int scanlines_percentage = 80;
+static int scanlines_percentage = 20;
 static atari_ntsc_t *the_ntscemu;
 /* making setup static conveniently clears all fields to 0 */
 static atari_ntsc_setup_t atari_ntsc_setup;
@@ -722,10 +722,12 @@ int Atari_Keyboard(void)
 					case SDLK_LEFTBRACKET:
 						key_pressed = 0;
 						scanlines_percentage -= 5*(scanlines_percentage>=5);
+						Aprint("scanlines percentage:%d",scanlines_percentage);
 						break;
 					case SDLK_RIGHTBRACKET:
 						key_pressed = 0;
 						scanlines_percentage += 5*(scanlines_percentage<=100-5);
+						Aprint("scanlines percentage:%d",scanlines_percentage);
 						break;
 					case SDLK_SEMICOLON:
 						key_pressed = 0;
@@ -1300,6 +1302,10 @@ void Atari_Initialise(int *argc, char *argv[])
 			the_ntscemu = (atari_ntsc_t*) malloc( sizeof (atari_ntsc_t) );
 			Aprint("ntscemu mode");
 		}
+		else if (strcmp(argv[i], "-scanlines") == 0) {
+			scanlines_percentage  = Util_sscandec(argv[++i]);
+			Aprint("scanlines percentage set");
+		}
 		else if (strcmp(argv[i], "-rotate90") == 0) {
 			ROTATE90 = 1;
 			width = 240;
@@ -1334,6 +1340,7 @@ void Atari_Initialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				Aprint("\t-ntscemu         Emulate NTSC composite video (640x480x16)");
+				Aprint("\t-scanlines       Specify scanlines percentage (ntscemu only)");
 				Aprint("\t-rotate90        Display 240x320 screen");
 				Aprint("\t-nojoystick      Disable joystick");
 #ifdef LPTJOY
@@ -1473,7 +1480,10 @@ void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLines
     height /= 2;
     width /= 2;
 
-    if (scanLinesPct == 0) {
+	if (scanLinesPct < 0) scanLinesPct = 0;
+	if (scanLinesPct > 100) scanLinesPct = 100;
+
+    if (scanLinesPct == 100) {
         if (prev_scanLinesPct != 100) {
 			/*clean dirty blank scanlines*/
 			prev_scanLinesPct = 100;
@@ -1487,7 +1497,7 @@ void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLines
 	prev_scanLinesPct = scanLinesPct;
 
 
-    if (scanLinesPct == 100) {
+    if (scanLinesPct == 0) {
 	/* fill in blank scanlines */
 		for (h = 0; h < height; h++) {
 			memcpy(pBuf, sBuf, width * sizeof(Uint32));
@@ -1496,7 +1506,7 @@ void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLines
 		}
 		return;
     }
-    scanLinesPct = scanLinesPct * 32 / 100;
+    scanLinesPct = (100-scanLinesPct) * 32 / 100;
 
     for (h = 0; h < height; h++) {
 		for (w = 0; w < width; w++) {
