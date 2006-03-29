@@ -147,6 +147,9 @@ Mark Grebe <markgrebe@yahoo.com>
     - new state-file implementation supporting bank-switching cartridges
       and disk images
 
+Shay Green <gblargg@gmail.com>
+    - NTSC composite video emulator, based on NewRisingSun's algorithm
+
 Christian Groessler <chris@groessler.org>
     - Sega Dreamcast port
     - SVGAlib patch for joystick
