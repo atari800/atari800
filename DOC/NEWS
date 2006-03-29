@@ -1,10 +1,24 @@
+ There is a new NTSC emulator available thanks to Blargg (Shay Green) 
+ (http://www.slack.net/~ant) and NewRisingSun who made the original algorithm.
+ You can access it with -ntscemu in the SDL port only.  
+ Only 640x480x16 is supported and will be invoked automatically.
+ You will need a fast processor (~700 MHz or so).
+ This code should be considered experimental but I hope you
+ will try it and report any problems.  Please experiment with the 
+ many settings and compare them with a real NTSC Atari if you have one.
+ If you come up with better settings than the current defaults please provide
+ feedback. Try -ntsc_burst 0.70 in Drol, Choplifter and Ultima.
+ Please read doc/USAGE and check -help.
+
  Changes:
  --------
+ * Blargg's NTSC composite video emulator, based on NewRisingSun's Algorithm.
  * small fixes in ANTIC/GTIA emulation
  * fixed DCM image handling (broken in 2.0.0)
  * added emulation of Atari XL/XE with 192 KB RAM
  * integrated SEGA Dreamcast port
  * some minor improvements
+ * much more doc/TODO
 
 
 Version 2.0.1 (2006/01/02)
