@@ -8,7 +8,7 @@
  many settings and compare them with a real NTSC Atari if you have one.
  If you come up with better settings than the current defaults please provide
  feedback. Try -ntsc_burst 0.70 in Drol, Choplifter and Ultima.
- Please read doc/USAGE and check -help.
+ Please read DOC/USAGE and check -help.
 
  Changes:
  --------
@@ -18,7 +18,7 @@
  * added emulation of Atari XL/XE with 192 KB RAM
  * integrated SEGA Dreamcast port
  * some minor improvements
- * much more doc/TODO
+ * much more DOC/TODO
 
 
 Version 2.0.1 (2006/01/02)

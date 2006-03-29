@@ -1,10 +1,10 @@
 2006-03-29  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c, atari_ntsc.c: added command line options, help and rearranged
   code a bit in the NTSC emulator.
-* doc/USAGE updated for the NTSC emulator.
-* doc/BUGS added Satan's Hollow and Sirius games.
+* DOC/USAGE updated for the NTSC emulator.
+* DOC/BUGS added Satan's Hollow and Sirius games.
 * TODO updated to add NTSC emulator todos and a large number of other ideas.
-* doc/CREDITS added Shay Green as author the of NTSC emulator
+* DOC/CREDITS added Shay Green as author the of NTSC emulator
 
 
 2006-03-19  Piotr Fusik  <fox@scene.pl>
