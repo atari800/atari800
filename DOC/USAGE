@@ -176,6 +176,7 @@ SDL version options
 -ntsc_gamma <n>       Set NTSC gamma adjustment
 -ntsc_ramp <n>        Set NTSC saturation ramp factor (amount by which
                       bright colours become desaturated or washed out)
+-scanlines <n>        Set scanlines percentage (ntscemu only)
 
 
 SVGALIB version options
