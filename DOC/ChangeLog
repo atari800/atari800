@@ -1,6 +1,20 @@
+2006-03-29  Perry McFarlane  <perry_m@fastmail.fm>
+* atari_sdl.c, atari_ntsc.c: added command line options, help and rearranged
+  code a bit in the NTSC emulator.
+* doc/USAGE updated for the NTSC emulator.
+* doc/BUGS added Satan's Hollow and Sirius games.
+* TODO updated to add NTSC emulator todos and a large number of other ideas.
+* doc/CREDITS added Shay Green as author the of NTSC emulator
+
+
 2006-03-19  Piotr Fusik  <fox@scene.pl>
 * compfile.c: fixed DCM image handling - support 0x45 "End Of Pass" code
   in an empty sector block starting at any sector (usually 0x0045)
+
+
+2006-03-10  Perry McFarlane  <perry_m@fastmail.fm>
+* atari_sdl.c, atari_ntsc.c: Blargg's NTSC composite video emulator based on
+  NewRisingSun's algorithm. SDL port 640x480x16 only. Use -ntscemu.
 
 
 2006-02-03  Piotr Fusik  <fox@scene.pl>
@@ -17,6 +31,20 @@
   dc/atari800.cfg, dc/config.h, dc/dc_chdir.c, dc/icon.h, dc/Makefile.dc,
   dc/version.h, dc/vmu.c, dc/vmu.h, DOC/CHANGES.dc, DOC/README.dc:
   integrated Christian Groessler's SEGA Dreamcast port
+
+
+2006-01-30  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: fixes for Spider City and Fast Eddie
+  Don't display usual graphics if DMACTL width changed from 0 past a
+  certain cycle.  Also don't continue to steal cycles. Bug made Fast Eddie
+  bounce up and down one scan line in the demo mode and caused garbage lines
+  in Spider City.
+
+* antic.c: fix update_scanline_* to adjust for HSCROL only when IR&0x10 is
+  true.  I don't know if it caused any problems but it was wrong.
+
+* antic.c: fix for Final Orbit. Set IR = 0 after JVB instruction.  Bug made the
+  screen shake badly.
 
 
 2006-01-26  Piotr Fusik  <fox@scene.pl>
