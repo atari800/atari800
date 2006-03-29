@@ -163,6 +163,20 @@ SDL version options
 -joy0 </dev/lp0>      Define the device for LPTjoy
 -joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
 
+-ntscemu              Emulate NTSC composite video (640x480x16 only)
+-ntsc_hue <n>         Set NTSC hue -1..1 (like TV Tint control)
+-ntsc_sat <n>         Set NTSC saturation (like TV Colour control)
+-ntsc_cont <n>        Set NTSC contrast (also called white level)
+-ntsc_bright <n>      Set NTSC brightness (also called black level)
+-ntsc_sharp <n>       Set NTSC sharpness
+-ntsc_burst <n>       Set NTSC burst phase (artificating colours)
+                      (CTIA?) Drol, Choplifter, Ultima: 0.70
+-ntsc_gauss <n>       Set NTSC Gaussian factor 
+                      (can affect artifacting colours, sharpness and ghosting)
+-ntsc_gamma <n>       Set NTSC gamma adjustment
+-ntsc_ramp <n>        Set NTSC saturation ramp factor (amount by which
+                      bright colours become desaturated or washed out)
+
 
 SVGALIB version options
 -----------------------
@@ -286,6 +300,28 @@ LAlt+G     Switch WIDTH_MODE (so you can set 320x240)
 LAlt+B     Switch BLACK-AND-WHITE
 LAlt+J     Swap _keyboard_emulated_ joysticks
 LAlt+E     Switch bpp (for debug only, will be removed soon)
+
+These keys work with the NTSC composite video emualtion (-ntscemu):
+(This interface should be considered experimental and is subject to change)
+LAlt+1     Decrease NTSC sharpness 
+LAlt+2     Increase NTSC sharpness 
+LAlt+3     Decrease NTSC saturation (like TV Colour control)
+LAlt+4     Increase NTSC saturation
+LAlt+5     Decrease NTSC brightness (also called black level)
+LAlt+6     Increase NTSC brightness
+LAlt+7     Decrease NTSC contrast (also called white level) 
+LAlt+8     Increase NTSC contrast
+LAlt+9     Decrease NTSC burst phase (use this to change artifacting colours) 
+LAlt+0     Increase NTSC burst phase
+LAlt+-     Decrease NTSC Gaussian factor (ghosting, sharpness, artif colours)
+LAlt+=     Increase NTSC Gaussian factor (ghosting, sharpness, artif colours)
+LAlt+[     Decrease scanlines percentage (NTSC mode only)
+LAlt+]     Increase scanlines percentage (NTSC mode only)
+LAlt+;     Decrease NTSC hue (like TV Tint control)
+LAlt+'     Increase NTSC hue (like TV Tint control)
+LAlt+Ins   Decrease NTSC saturation ramp(reduce saturation for bright colours) 
+LAlt+Ins   Increase NTSC saturation ramp(reduce saturation for bright colours) 
+
 
 Apart from standard joysticks (handled by the SDL) two keyboard joysticks
 are supported.
