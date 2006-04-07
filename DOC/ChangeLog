@@ -1,3 +1,8 @@
+2006-04-06  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: removed IR = 0 and anticmode = 0. Added a check to ignore JVB
+  in the jump instruction instead.
+
+
 2006-03-29  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c, atari_ntsc.c: added command line options, help and rearranged
   code a bit in the NTSC emulator.
