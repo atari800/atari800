@@ -28,31 +28,37 @@ Emulation core:
 
 * copy-protected disk images (VAPI, ATP, PRO, copy-protected ATR)
 
-* emulate POKEY SIO shift register 
+* emulate POKEY SIO shift register
 
-* emulate SIO bus lines, and SIO cable data/audio cross-talk "feep" sound 
+* emulate SIO bus lines, and SIO cable data/audio cross-talk "feep" sound
+
+* emulate 1200XL (two programmable LEDs)
+
+* emulate XEGS (built-in cartridge and detachable keyboard)
+
+* Axlon memory expansions
 
 * emulate drives at the hardware level (810, 1050, XF551.) use code from other
-  emulators which does this.  (drive rotation, FM/MFM raw bits).  WDCxxxx 
-  controller.  RIOT chip.  6507.  Intel 8048-line chip for the XFD551.  
+  emulators which does this.  (drive rotation, FM/MFM raw bits).  WDCxxxx
+  controller.  RIOT chip.  6507.  Intel 8048-line chip for the XFD551.
   Use emulated SIO line for bit-banging.  Emulate Drive upgrades (Happy etc.)
   Emulate 3rd party drives (Rana etc.)
 
-* sound effects.  Drive retracking noise (BlueMSX has.)  Motor whine. 
+* sound effects.  Drive retracking noise (BlueMSX has.)  Motor whine.
   On/off switch sound.  Physical key-press sounds.  Cartridge slot sounds.
   Drive door sounds. Floppy rotation flap sound.
 
-* Atari vapourware emulation. 1400XL. 1450XLD. XEM (see below). 1090. 
-  1060 CP/M (sweet-pea.) 
+* Atari vapourware emulation. 1400XL. 1450XLD. XEM (see below). 1090.
+  1060 CP/M (sweet-pea.)
 
-* emulate the 850 interface at the hardware level. 
+* emulate the 850 interface at the hardware level.
 
 * ATR-8000 emulation.  ATR-8500.  Need schematics, ROM images, and Disk images.
   Adapt an existing CPM emulator.
 
-* XEP80 emulation. Slor is working on it, contact him first. 
+* XEP80 emulation. Slor is working on it, contact him first.
 
-* emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp and 
+* emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp and
   Austin-Franklin 80-Column Board.  Need ROM images and schematics.
 
 * PAL emulation. VICE has it, but it's not as complete as Blargg's emulation
@@ -73,37 +79,49 @@ Emulation core:
   of late 70's and 80's era TVs.
 
 * Document CTIA and emulate properly.  Emulate the players not aligning
-  with playfield bug/feature of CTIA which is said to exist. Need 
-  at least screenshots of a CTIA Atari showing all possible artifacts. 
+  with playfield bug/feature of CTIA which is said to exist. Need
+  at least screenshots of a CTIA Atari showing all possible artifacts.
 
 * Fix all remaining collision bugs in the ANTIC and GTIA code (border+scroll,
   player HPOS and GRAF changes, partial_scanline changes.) Use the technique
   of saving data that might generate false collisions, drawing, and then
   restoring the data (pm_scanline).
 
-* Fully emulate executing 6502 code from Hardware, cycle-exact ANTIC_load 
-  from hardware, cycle-exact PMG flickering bus data. 6502 BRK bug
+* 6502 BRK bug
+
+* Try to understand 6502's "unstable" opcodes (0x93, 0x9b, 0x9f) that seem
+  to have unpredictable (at least not easily predictable) results,
+  preferrably by studying 6502 schematics
+
+* An option to emulate the variant of 6502 used in new XE machines
+  (which lacks most of the undocumented opcodes of the classic 6502)
+
+* Fully emulate executing 6502 code from Hardware, cycle-exact ANTIC_load
+  from hardware, cycle-exact PMG flickering bus data
+
+* An option to detect undocumented 6502 opcodes to test for compatibility
+  of software with CPU upgrades (65816, etc)
 
 * Cycle-exact DMACTL and HSCROL including all glitches
 
-* Cassette emulation of WAV files.  Load a WAV file like WAV2CAS does. Save 
-  to a WAV file or real cassette like CAS2WAV does.  Load voice-and-data 
+* Cassette emulation of WAV files.  Load a WAV file like WAV2CAS does. Save
+  to a WAV file or real cassette like CAS2WAV does.  Load voice-and-data
   combined programmed audio tape images from WAV files.  Support compressed
   (lossless? lossy even?) tape sound images.
 
-* Disk auto-flip.  Examine screen data for text string "Insert Side B 
+* Disk auto-flip.  Examine screen data for text string "Insert Side B
   and press any key/fire/return." Flip disk, print on-screen message and
   optionally press key. More a core feature than UI. Requires a database.
 
 * Event history. Record a keypress/joystick event history.  Need a file format
-  that is good (compress?) Don't use cycle-exact RANDOM since that could 
+  that is good (compress?) Don't use cycle-exact RANDOM since that could
   change easily in future versions.  Use our own rand() (with option to use
-  true RANDOM. Provide all features that VICE has. Optionally calculate and 
+  true RANDOM. Provide all features that VICE has. Optionally calculate and
   store CRC-32 for each screen of pixels.  Verify playback in future revisions
-  of the emulator.  A very good regression test.  Have volunteers make 
+  of the emulator.  A very good regression test.  Have volunteers make
   recordings.
   There could be walk-throughs, high score contests like MAME Action Replay.
-  perry: I have code to do a basic recording and CRC-32 but I need a 
+  perry: I have code to do a basic recording and CRC-32 but I need a
   good file format.
 
 
@@ -131,9 +149,11 @@ Sound:
 * quadro POKEY
 
 * XEM AMY-1 Chip.  This is a huge project.  Schematics (netlist)
-  are said to exist. Prototyping software for the PC (connected to parallel 
-  port) is available online. Datasheet is online. Need netlist for AMY-1, 
+  are said to exist. Prototyping software for the PC (connected to parallel
+  port) is available online. Datasheet is online. Need netlist for AMY-1,
   schematics for XEM and any software.
+
+* SID chip
 
 User Interface:
 
@@ -150,8 +170,8 @@ User Interface:
 * on screen display, like a TV remote, for the NTSC (or other) screen filter.
 
 * a database to identify programs and choose appropriate settings.
-  OS version.  Memory size.  Memory expansion type.  Peripherals. 
-  Machine type.  Joystick/Trackball/Paddle etc. controller type. 
+  OS version.  Memory size.  Memory expansion type.  Peripherals.
+  Machine type.  Joystick/Trackball/Paddle etc. controller type.
   Artifacting mode.  SIO patch compatibility. Even if compatible with
   SIO patch, loading screen graphics are often interesting to watch, so
   give the user an option to view or ignore them if present. If not
@@ -160,10 +180,10 @@ User Interface:
   Provide documentation, box scan, label scan for the program
   PAL/NTSC mode. Database should indicate PAL/NTSC
   compatibility, and which system the program was originally designed for.
-  Allow PAL users to prefer PAL for NTSC-designed programs, but NTSC users 
+  Allow PAL users to prefer PAL for NTSC-designed programs, but NTSC users
   to prefer NTSC.  NTSC users get PAL (or fake NTSC-upgraded-to-PAL) for
   all PAL-designed programs (Except perhaps very old ones like English
-  Software titles that NTSC users might remember.) PAL users get NTSC 
+  Software titles that NTSC users might remember.) PAL users get NTSC
   video only for artifacting programs.
 
 Clean up:
@@ -221,6 +241,9 @@ Speed optimizations:
 
 * think about optimizations for the more and more common 64-bit CPUs so we
   can reach 256 times Atari speed sooner ;-)
+
+* an option to detect popular lengthy Atari decompression routines
+  and run equivalent C routines instead
 
 R: device:
 
