@@ -295,6 +295,9 @@ Mouse not supported in this version.
 
 SDL keyboard, joystick and other controllers
 --------------------------------------------
+`          Atari/Inverse key
+LSUPER     Atari/Inverse key (unusable under Windows)
+RSUPER     CapsToggle (+Shift = CapsLock)
 
 LAlt+F     Switch fullscreen (probably doesn't work in Windows)
 LAlt+G     Switch WIDTH_MODE (so you can set 320x240)
@@ -386,3 +389,4 @@ Alt        Atari/Inverse key (either Alt key will work)
 Joystick 0 is operated by the mouse position relative to the center of the
 screen. The mouse button acts as the trigger. On Linux, standard joysticks
 are also supported.
+
