@@ -1,3 +1,5 @@
+Version 2.0.2 (2006/04/08)
+
  There is a new NTSC emulator available thanks to Blargg (Shay Green) 
  (http://www.slack.net/~ant) and NewRisingSun who made the original algorithm.
  You can access it with -ntscemu in the SDL port only.  
@@ -17,6 +19,7 @@
  * fixed DCM image handling (broken in 2.0.0)
  * added emulation of Atari XL/XE with 192 KB RAM
  * integrated SEGA Dreamcast port
+ * Atari Inverse key mapped also to "`" (backquote) in SDL port (MS Win users)
  * some minor improvements
  * much more DOC/TODO
 

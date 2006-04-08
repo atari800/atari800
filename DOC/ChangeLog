@@ -1,3 +1,15 @@
+** 2.0.2 released on 2006-04-08
+
+2006-04-08  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_sdl.c: map ATARI key to SDL_BACKQUOTE key as well (similarly to DOS
+  port) since LSUPER key (the WINDOW key) is unusable in MS Windows (it
+  opens up the Start menu).
+
+* config.{guess,sub}: updated to version from 2006-02-23
+
+* atari800.{h,man},configure.ac,README*,atari800.spec: update for 2.0.2 release
+
+
 2006-04-06  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: removed IR = 0 and anticmode = 0. Added a check to ignore JVB
   in the jump instruction instead.
