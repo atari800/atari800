@@ -1,3 +1,13 @@
+atari800 (2.0.2-1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * New upstream source. (Closes: #297011, #288543)
+  * Replace build-dependency on xlibs-dev with an explicit build-dependency
+    on each required package. (Closes: #346876)
+  * Updated atari800.cfg example config file.
+ 
+ -- Petr Stehlik <pstehlik@sophics.cz>  Sat, 08 Apr 2006 14:51:07 +0200
+
 atari800 (1.3.2-1) unstable; urgency=low
 
   * New upstream source and new maintainer (closes: #226787).
