@@ -7,6 +7,8 @@
 
 * config.{guess,sub}: updated to version from 2006-02-23
 
+* debian/*: update for new release. Fixes bugs in Debian BTS (#346876, #288543)
+
 * atari800.{h,man},configure.ac,README*,atari800.spec: update for 2.0.2 release
 
 
