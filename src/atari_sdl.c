@@ -888,6 +888,7 @@ int Atari_Keyboard(void)
 		shiftctrl ^= AKEY_CTRL;
 
 	switch (lastkey) {
+	case SDLK_BACKQUOTE: /* fallthrough */
 	case SDLK_LSUPER:
 		return AKEY_ATARI ^ shiftctrl;
 	case SDLK_RSUPER:
