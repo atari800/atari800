@@ -1,14 +1,14 @@
         PocketAtari: The Windows CE Port of the Atari 800 Emulator.
 
-(Last Update of this File: 07 Jan 06)
+(Last Update of this File: 16 Apr 06)
 
 I. PURPOSE
 ------------------------------------------------------------------------------
 This file describes the installation and compilation procedure for the Windows
 CE port of the Atari800 emulator [1]. The port currently supports Pocket PC and
 Smartphone devices deployed with the 2002 version of the OS, also known as
-WCE300. It has also been tested on devices featuring version 2003 of the OS and
-runs just fine. Your mileage may vary.
+WCE300. It has also been tested on devices featuring version 2003 and Windows
+Mobile 5 of the OS and runs just fine. Your mileage may vary. 
 
 II. NEWS
 ------------------------------------------------------------------------------
@@ -16,9 +16,11 @@ The updated version of this port:
 
 o Adds support for Smartphone devices.
   - Now supporting QVGA Smartphone devices.
+  - Also supports VGA displays. [NEW in 2.0.2]
 o Includes interpolating downsampling filter for Smartphone displays.
-o Uses zlib dynamic library for opening gzipped image files.
-o Adds initial support for keeping the backlight always on.
+o Keeps the backlight always on.
+o REMOVED in 2.0.2: zlibce dependency. This library is not needed anymore, as
+  it's part of the executable (statically linked). You can remove it safely.
 
 III. INSTALLING
 ------------------------------------------------------------------------------
@@ -27,15 +29,16 @@ To intall PocketAtari on your PocketPC/Smartphone device:
 o Create a directory anywhere on your device (Smartphone users need a suitable
   file explorer application; else you can create it in the Start Menu folder).
 o Copy the pocketatari.exe file there.
-o Grab the zlibce library from [5]. Copy the appropriate zlibce.dll into the
-  folder you created earlier. (e.g. for arm architectures you need the file
-  at Wce300/Arm inside the zip).
 o (Optional) Older Windows CE devices also need GAPI from Microsoft [6]. Copy
   gx.dll into the folder as well.
 o Copy the Atari OS ROM files in the same folder (see the FAQ for the ROMs).
 o (Optional) Create a symbolic link to pocketatari.exe at 
   (IPSM)\Windows\Start Menu.
 o You're good to go!
+
+NOTE: The PocketAtari binary does not support older Palm devices (eg. wince 
+2.11), but the source code should compile and run with no problems. If you 
+can contribute a build for these devices contact me through [3].
 
 IV. USING
 ------------------------------------------------------------------------------
