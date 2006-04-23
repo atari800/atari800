@@ -27,6 +27,6 @@ USB Keyboard is supported.
 
 TODO is located in src/atari_ps2.c itself.
 
-Thanks Poitr of atari800!
+Thanks Piotr of atari800!
 Thanks ps2dev.org! Esp NeoVanglist, author of gsKi, and Oopo for the ps2dev toolchain.
 
