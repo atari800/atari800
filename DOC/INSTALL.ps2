@@ -1,0 +1,35 @@
+PS2 Specific installation guide
+
+
+Build atari800.elf from source (see BUILD.ps2) if you
+do not already have the pre-built binary.
+
+From Read DOC/INSTALL:
+***
+Irrespective of whether you are going to compile the emulator yourself
+or install a pre-compiled binary version you must obtain a copy of the
+Operating System ROMs.
+
+The ROM images are distributed within the PC Xformer 2.5 package (other
+versions of this program do not contain the ROMs in a suitable format)
+which can be downloaded from:-
+
+http://prdownloads.sf.net/atari800/xf25.zip
+***
+
+Now, on the PS2:
+Create an ATARI directory on memcard.
+Copy atari800.elf,Atari roms, and some atari executables/images to the 
+ATARI directory.
+launch atari800.elf.
+
+If your memcard is cramped for space, you should be able to run
+atari800.elf from HDD (via Ulaunch, etc) or other mass device.
+Note that currently atari800.elf only can look at MemCard for
+atari roms and executables/images, and is hard-coded to store
+the ATARI800.CFG file (the configuration file for atari800) there.
+
+Read README.ps2
+
+Thanks Poitr of atari800!
+Thanks ps2dev.org! Esp NeoVanglist, author of gsKi, and Oopo for the ps2dev toolchain.
