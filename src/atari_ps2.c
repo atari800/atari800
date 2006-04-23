@@ -25,16 +25,13 @@
 			//control <>: (suits)
 			//akey_clear
 			//AKEY_BREAK
-			//Turn on/off caps lock LED.
-			//do capslock/capstoggle
-			//akey_caret && circumflex difference???
-			//ALT+key shortcut keys
-			//enable keyboard repeat (when shift nor control pressed)
-			//enable left joy for scrolling & limit pad to one directional per press
-			//enable mouse support
+			//all ALT+key shortcut keys
+			//Atari OPTION key (temple of apshai, others?)
+			//keyboard repeat (when shift nor control pressed)
+			//mouse support
 			//autodetect pal vs ntsc
 			//allow user to map own keyboard keys to controller
-			//enable cdfs, hdd, and host support.
+			//enable cdfs, hdd, mass, and host support.
 
 #include "config.h"
 #include <stdio.h>
