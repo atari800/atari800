@@ -1,3 +1,14 @@
+2006-04-24  Piotr Fusik  <fox@scene.pl>
+* util/sethdr.pl, util/sethdr.txt: removed; the script hasn't been updated
+  for years (so it supported only half of current cartridge types),
+  wasn't portable, etc. "Create Cartridge from ROM image" in the emulator
+  basically does the job of the removed script.
+
+* util/makebb.bat: removed; anyone who is serious about making a ROM image
+  of "Bounty Bob Strikes Back 5200" by concatenating 3 files can read
+  DOC/cart.txt
+
+
 ** 2.0.2 released on 2006-04-08
 
 2006-04-08  Petr Stehlik  <pstehlik@sophics.cz>
@@ -303,7 +314,7 @@
 * win32/main.c: replaced WinMain() with main() so that MSVC-compiled version
   is a console application
 
-* atari.[ch], atari.h, atari_curses.c, atari_sdl.c, atari_svgalib.c,
+* atari.[ch], atari_curses.c, atari_sdl.c, atari_svgalib.c,
   colours.c, compfile.c, devices.c, log.c, memory.c, monitor.c, mzpokeysnd.c,
   pia.c, platform.h, pokeysnd.c, sio.c, sound_unix.c, statesav.c, ui.c,
   ui_basic.c, dos/dos_ints.h, dos/dos_sb.[ch], win32/atari_win32.c,
@@ -1061,7 +1072,7 @@
 
 * monitor.c: PENL -> PENV
 
-* cartridge.c, memory.[ch]: simplify code by defining SetROM and SetRAM
+* cartridge.c, memory.[ch]: code simplified by defining SetROM and SetRAM
   for PAGED_ATTRIB
 
 * devices.c: '!', '#', '$', '&', '(', ')', '-' and '@' are now valid
@@ -1775,21 +1786,21 @@
 
 
 2003-06-15  Petr Stehlik  <pstehlik@sophics.cz>
-* compfile.c - quick fix for non-zlib capable environments
+* compfile.c: quick fix for non-zlib capable environments
 
 
 2003-05-28  Petr Stehlik  <pstehlik@sophics.cz>
-* cpu_m68k.asm - major update, brings it to the 1.3.0+ level of cpu.c
+* cpu_m68k.asm: major update, brings it to the 1.3.0+ level of cpu.c
   Thanks Gerhard.
 
-* devices.c, atari.h, rdevice.[ch] - new R: device support (sockets).
+* devices.c, atari.h, rdevice.[ch]: new R: device support (sockets).
   Originally written by Tom Hunt. Fixed, updated and prepared for Atari800
   integration by Chris Martin <cmartin@ti.com>. Thanks Chris!
 
-* atari.c, ui.c, rt-config.[ch], Makefile.in - updated to allow run-time
+* atari.c, ui.c, rt-config.[ch], Makefile.in: updated to allow run-time
   configuration of the R: entry in HATABS.
 
-* DOC/sockets.txt - is an excerpt from mails I got from Chris. It may
+* DOC/sockets.txt: it's an excerpt from mails I got from Chris. It may
   explain some basic ideas about the R: device.
 
 
@@ -2012,7 +2023,7 @@
   statements.   T7.asm can be compiled with ATASM.
 
 * antic.c, gtia.c, cycle_map.c:
-  Cycle-exact changes to colours, player horiztonal positions, player
+  Cycle-exact changes to colours, player horizontal positions, player
   graphics.
   Basic idea: arrays cpu2antic and antic2cpu are created in
   cycle_map.c  Antic.c selects the correct cycle map
@@ -2513,7 +2524,7 @@ joy> Note that it may needs the same patches that were applied
 2001-09-26  Piotr Fusik  <fox@scene.pl>
 
 * input.c, input.h: added mouse_mode, mouse_port, 5200 key codes
-* antic.h, antic.c, platforma.h, atari_vga.c: light_pen_enabled, Atari_PEN ->
+* antic.h, antic.c, platform.h, atari_vga.c: light_pen_enabled, Atari_PEN ->
   mouse_mode==MOUSE_PEN, PENH_input, PENV_input (direct mouse support
   for light pen emulation)
 
