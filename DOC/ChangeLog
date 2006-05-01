@@ -1,3 +1,17 @@
+2006-05-01  Piotr Fusik  <fox@scene.pl>
+* util/act2html.*: replaced my old C program with a Perl script;
+  the Perl script keeps hues from different palettes together
+  which I think is better for palette comparisons
+
+* util/colors.asx, util/colors.xex: Atari program that displays all 256 colors
+
+* util/crlf.*, util/keyboard.txt, util/usage2html.pl: removed
+
+* util/readme.txt: updated
+
+* act/gray.act: 0x00,0x11,0x22,... instead of 0x00,0x10,0x20,...
+
+
 2006-04-24  Piotr Fusik  <fox@scene.pl>
 * util/sethdr.pl, util/sethdr.txt: removed; the script hasn't been updated
   for years (so it supported only half of current cartridge types),
