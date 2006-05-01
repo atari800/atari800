@@ -1,0 +1,47 @@
+; Displays 256 colors
+
+	org	$8000
+main
+	ldx	$d40b
+	rne
+	mwa	#dl	$230
+	mva	#$a1	$22f
+	asl	@
+	sta	$26f
+	mva	#$20	$d000
+	mva	#$c0	$d001
+	dex
+	txs
+	txa
+	ldy	#7
+	sta:rne	$d007,y-
+init
+	pha
+	pha
+	sbc	#$11
+	bcs	init
+	tya
+
+frame
+	ldy	#16
+	cpy	$d40b
+	rne
+	clc
+bar
+	ldy	#12
+	ldx	<dl+3
+line
+	sta	$d40a
+	stx	$d402
+	dey
+	bne	line
+	adc	#$10
+	sta	$d01a
+	bcc	bar
+	sty	$d400
+	bcs	frame
+
+dl
+	dta	$70,$70,$70,$4f,a($1e0)
+
+	run	main
