@@ -1,8 +1,21 @@
-makebb.bat  :batch file to make usable bb.bin from seperate bounty bob rom 
-             dumps for 5200 (for dos or windows)
+This directory contains various utility scripts, tests and graphics files:
 
-allegro.cfg :allegro configuration file for the allegro version with
-             default sound ouput rate set to 45454 for improved sound.
+act2html.pl: creates an HTML page from *.act palette files, for easy comparison
 
-crlf.exe :adds or strips DOS end-of-line characters. Use 'crlf -a README'
-          to get file with CR/LF as end-of-line chars.
+*.ico: Win32 icons
+
+bdata.c: converts binary file to Atari BASIC "DATA" statements
+
+benchmark.pl: tests emulator performance with different compile-time options
+
+colors.asx, colors.xex: displays all 256 colors
+
+export: helps with making a release
+
+hdevtest.lst: tests H: device
+
+keyboard.png: Atari XE keyboard picture drawn by Zdenek Eisenhammer
+
+pokeybench.c: tests POKEY sound emulation
+
+atari/t7.*: tests cycle-exact timing
