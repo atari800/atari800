@@ -1,7 +1,8 @@
-This is a list of things that need to be done
----------------------------------------------
+Plans for future versions
+=========================
 
-Keyboard and joysticks:
+Keyboard and joysticks
+----------------------
 
 * map host joysticks to Atari ports in the emulation core in order to make
   the configuration available in UI and config file
@@ -14,7 +15,9 @@ Keyboard and joysticks:
 
 * emulate POKEY keyboard scanning (with optional debouncing)
 
-Emulation core:
+
+Emulation core
+--------------
 
 * cycle-exact POKEY interrupts (timers, serial I/O, keyboard)
 
@@ -23,8 +26,6 @@ Emulation core:
 * emulate POKEY reset (via SKCTL)
 
 * more accurate frame rates (for example 49.8607456 instead of 50 Hz in PAL)
-
-* deinterlace: display average pixels of two last Atari frames
 
 * copy-protected disk images (VAPI, ATP, PRO, copy-protected ATR)
 
@@ -37,6 +38,13 @@ Emulation core:
 * emulate XEGS (built-in cartridge and detachable keyboard)
 
 * Axlon memory expansions
+
+* redirection of specific Dn: devices to Hn: (for software that insists
+  on using the D: device)
+
+* log POKEY audio writes, SIO commands (hardware level or DCB level),
+  executed DL commands, all activity to a defined range of adressess etc.
+  in a way similar to the 6502 trace
 
 * emulate drives at the hardware level (810, 1050, XF551.) use code from other
   emulators which does this.  (drive rotation, FM/MFM raw bits).  WDCxxxx
@@ -56,10 +64,76 @@ Emulation core:
 * ATR-8000 emulation.  ATR-8500.  Need schematics, ROM images, and Disk images.
   Adapt an existing CPM emulator.
 
-* XEP80 emulation. Slor is working on it, contact him first.
-
 * emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp and
   Austin-Franklin 80-Column Board.  Need ROM images and schematics.
+
+* 6502 BRK bug
+
+* Try to understand 6502's "unstable" opcodes (0x93, 0x9b, 0x9f) that seem
+  to have unpredictable (at least not easily predictable) results,
+  preferrably by studying 6502 schematics
+
+* An option to emulate the variant of 6502 used in new XE machines
+  (which lacks most of the undocumented opcodes of the classic 6502)
+
+* Fully emulate executing 6502 code from Hardware, cycle-exact ANTIC_load
+  from hardware, cycle-exact PMG flickering bus data
+
+* An option to detect undocumented 6502 opcodes to test for compatibility
+  of software with CPU upgrades (65816, etc)
+
+* CPU upgrades (65816, etc)
+
+* Emulate printer graphics (on screen or bitmap/PDF output): 1029, 1020, etc.
+  The Mac OS X port of Atari800 has lots of printer emulation routines.
+
+* RAM Carts (cartridges with battery-powered RAM). Are flash carts writable
+  from Ataris too?
+
+* serial "network" interfaces (e.g. 8 Ataris connected, is it GameLink?)
+
+* generate hard disk images or write directly to media that the 8-bit Ataris
+  can use, like CompactFlash or MyIDE/SmartIDE/BB
+
+* "Turbo" cassette upgrades (Turbo 2000 etc.)
+
+* Cassette emulation of WAV files.  Load a WAV file like WAV2CAS does. Save
+  to a WAV file or real cassette like CAS2WAV does.  Load voice-and-data
+  combined programmed audio tape images from WAV files.  Support compressed
+  (lossless? lossy even?) tape sound images.
+
+* Disk auto-flip.  Examine screen data for text string "Insert Side B
+  and press any key/fire/return." Flip disk, print on-screen message and
+  optionally press key. More a core feature than UI. Requires a database.
+
+* support physical floppy media (hard, port-specific and not very useful)
+
+* support physical Atari drives (hard, port-specific and not very useful)
+
+* Event history. Record a keypress/joystick event history.  Need a file format
+  that is good (compress?) Don't use cycle-exact RANDOM since that could
+  change easily in future versions.  Use our own rand() (with option to use
+  true RANDOM. Provide all features that VICE has. Optionally calculate and
+  store CRC-32 for each screen of pixels.  Verify playback in future revisions
+  of the emulator.  A very good regression test.  Have volunteers make
+  recordings.
+  There could be walk-throughs, high score contests like MAME Action Replay.
+  perry: I have code to do a basic recording and CRC-32 but I need a
+  good file format.
+
+
+Graphics
+--------
+
+* better color palettes
+
+* use different palettes for PAL and NTSC modes (and GTIA vs CTIA?)
+
+* "flicker fixer": display average pixel values of two last Atari frames
+
+* XEP80 emulation. Slor is working on it, contact him first.
+
+* Use YUV output if available. Will it help?
 
 * PAL emulation. VICE has it, but it's not as complete as Blargg's emulation
   of NTSC. PAL luma/chroma artifacts are missing (it is like S-Video).
@@ -82,50 +156,18 @@ Emulation core:
   with playfield bug/feature of CTIA which is said to exist. Need
   at least screenshots of a CTIA Atari showing all possible artifacts.
 
+* An option to emulate the buggy GTIA chip found in new XE machines.
+
 * Fix all remaining collision bugs in the ANTIC and GTIA code (border+scroll,
   player HPOS and GRAF changes, partial_scanline changes.) Use the technique
   of saving data that might generate false collisions, drawing, and then
   restoring the data (pm_scanline).
 
-* 6502 BRK bug
-
-* Try to understand 6502's "unstable" opcodes (0x93, 0x9b, 0x9f) that seem
-  to have unpredictable (at least not easily predictable) results,
-  preferrably by studying 6502 schematics
-
-* An option to emulate the variant of 6502 used in new XE machines
-  (which lacks most of the undocumented opcodes of the classic 6502)
-
-* Fully emulate executing 6502 code from Hardware, cycle-exact ANTIC_load
-  from hardware, cycle-exact PMG flickering bus data
-
-* An option to detect undocumented 6502 opcodes to test for compatibility
-  of software with CPU upgrades (65816, etc)
-
 * Cycle-exact DMACTL and HSCROL including all glitches
 
-* Cassette emulation of WAV files.  Load a WAV file like WAV2CAS does. Save
-  to a WAV file or real cassette like CAS2WAV does.  Load voice-and-data
-  combined programmed audio tape images from WAV files.  Support compressed
-  (lossless? lossy even?) tape sound images.
 
-* Disk auto-flip.  Examine screen data for text string "Insert Side B
-  and press any key/fire/return." Flip disk, print on-screen message and
-  optionally press key. More a core feature than UI. Requires a database.
-
-* Event history. Record a keypress/joystick event history.  Need a file format
-  that is good (compress?) Don't use cycle-exact RANDOM since that could
-  change easily in future versions.  Use our own rand() (with option to use
-  true RANDOM. Provide all features that VICE has. Optionally calculate and
-  store CRC-32 for each screen of pixels.  Verify playback in future revisions
-  of the emulator.  A very good regression test.  Have volunteers make
-  recordings.
-  There could be walk-throughs, high score contests like MAME Action Replay.
-  perry: I have code to do a basic recording and CRC-32 but I need a
-  good file format.
-
-
-Sound:
+Sound
+-----
 
 * get rid of VOL_ONLY_SOUND
 
@@ -146,7 +188,15 @@ Sound:
 
 * Covox
 
-* quadro POKEY
+* 2 POKEY mono, 4 POKEY stereo, 4 POKEY quad
+
+* MIDI <> serial port interface.  In it's simplest form there's only MIDI
+  output from the Atari.  The more complicated version is enabled by the motor
+  control line and includes two MIDI outputs selected by the command control
+  line and one MIDI input.  There is a MIDI composer program for Atari.
+
+* A/D Converter - 4-bit sampler that returns 0xf0-0xff in the 0xd500-0xd5ff
+  address space.
 
 * XEM AMY-1 Chip.  This is a huge project.  Schematics (netlist)
   are said to exist. Prototyping software for the PC (connected to parallel
@@ -155,7 +205,9 @@ Sound:
 
 * SID chip
 
-User Interface:
+
+User Interface
+--------------
 
 * if UI fileselector cannot open a folder either user should be alerted
   or the fileselector should open another folder and not sit there quietly
@@ -186,7 +238,9 @@ User Interface:
   Software titles that NTSC users might remember.) PAL users get NTSC
   video only for artifacting programs.
 
-Clean up:
+
+Clean up
+--------
 
 * clean up the "util" directory - remove obsolete files, write one-file
   documentation for all utils
@@ -194,9 +248,11 @@ Clean up:
 * make documentation consistent across systems, maybe using templates
 
 * further clean up in the directory structure - port specific files should
-  be hidden in their subfolders (falcon, amiga, ..)
+  be hidden in their subfolders (falcon, amiga, ...)
 
-Speed optimizations:
+
+Speed optimizations
+-------------------
 
 * use a boolean variable to disable 6502 history tracking and breakpoints
   (even with MONITOR_BREAKPOINTS and MONITOR_TRACE it should be
@@ -245,7 +301,9 @@ Speed optimizations:
 * an option to detect popular lengthy Atari decompression routines
   and run equivalent C routines instead
 
-R: device:
+
+R: device
+---------
 
 * clean up and comment the code
 
