@@ -359,12 +359,12 @@ _Atari_DisplayScreen_doubleb:
 		mov.l	cmp_val,r5	/* ATARI_HEIGHT * ATARI_WIDTH / 8 */
 		mov.l	sbase,r0
 		cmp/eq	#0,r0
+		mova	sbase,r0
 		bt/s	d_sbase_1
 		 nop
 
 /* sbase != 0 */
 
-		mova	sbase,r0
 		mov	#0,r8
 		mov.l	r8,@r0		/* sbase = 0 */
 
@@ -377,12 +377,13 @@ _Atari_DisplayScreen_doubleb:
 /* sbase == 0 */
 
 d_sbase_1:
-		mova	sbase,r0
 		mov.l	sbase2_start,r8
 		mov.l	r8,@r0		/* sbase = 1024 * 768 * 4 */
 
-		/*shar	r8*/
 		add	r8,r10		/* vram = screen_vram + sbase / 2 */
+					/* "/ 2" in the C code, since screen_vram is */
+					/* a uint16 pointer; here we operate on byte */
+					/* pointers */
 
 		mov.l	old_sd,r0
 		mov	r0,r3		/* nsd = old_sd[0] */
