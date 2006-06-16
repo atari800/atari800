@@ -357,16 +357,16 @@ _Atari_DisplayScreen_doubleb:
 		mov.l	@r10,r10	/* vram = screen_vram */
 		
 		mov.l	cmp_val,r5	/* ATARI_HEIGHT * ATARI_WIDTH / 8 */
-		mov.l	sbase,r7	/* r7: temp ptr to "sbase" (local_sbase) */
-		mov.l	@r7,r0		/* current sbase value */
+		mov.l	sbase,r0
 		cmp/eq	#0,r0
 		bt/s	d_sbase_1
 		 nop
 
 /* sbase != 0 */
 
+		mova	sbase,r0
 		mov	#0,r8
-		mov.l	r8,@r7		/* sbase = 0 */
+		mov.l	r8,@r0		/* sbase = 0 */
 
 		mov.l	old_sd,r0
 		mov	r0,r8		/* osd = old_sd[0] */
@@ -377,8 +377,9 @@ _Atari_DisplayScreen_doubleb:
 /* sbase == 0 */
 
 d_sbase_1:
+		mova	sbase,r0
 		mov.l	sbase2_start,r8
-		mov.l	r8,@r7		/* sbase = 1024 * 768 * 4 */
+		mov.l	r8,@r0		/* sbase = 1024 * 768 * 4 */
 
 		/*shar	r8*/
 		add	r8,r10		/* vram = screen_vram + sbase / 2 */
@@ -549,7 +550,6 @@ d_done:
 
 		mov.l	vid_set_start,r0
 		mov.l	sbase,r4
-		mov.l	@r4,r4
 		jsr	@r0		/* vid_set_start(sbase); */
 		 nop
 
@@ -588,12 +588,6 @@ vid_set_start:	.long	_vid_set_start
 
 sbase2_start:	.long	1024 * 768 * 4
 old_sd:		.long	_old_sd
-sbase:		.long	local_sbase
-
-
-.section	.bss
-
-local_sbase:	.ds.l	1
-
+sbase:		.long	0
 
 		.end
