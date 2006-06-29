@@ -5,7 +5,6 @@
 
 CC = cl
 RC = rc
-# DXSDK = D:\Progra~1\DX90SDK
 
 DEFS =
 LIBS = \
@@ -14,13 +13,8 @@ LIBS = \
 	user32.lib winmm.lib
 TARGET = atari800.exe
 
-CFLAGS = /nologo /Fo$@ /O2 /Oy /W3 /I win32\msc /I .
+CFLAGS = /nologo /Fo$@ /O2 /GS- /W3 /wd4996 /I win32\msc /I .
 LDFLAGS = /nologo
-
-!IFDEF DXSDK
-LIBS = $(LIBS) /link "/libpath:$(DXSDK)\Lib"
-CFLAGS = $(CFLAGS) /I "$(DXSDK)\Include"
-!ENDIF
 
 OBJS = \
 	antic.obj \

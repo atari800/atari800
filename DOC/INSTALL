@@ -107,42 +107,33 @@ Building the Emulator for Windows using Microsoft 32-bit C/C++ Compiler
 -----------------------------------------------------------------------
 
 Atari800 for Windows can be built using command-line tools
-from Microsoft Visual C++ 6.0:
+from Microsoft Visual C++ 2005.  Avoid older compilers such as VC++ 6
+because they are buggy (even with service packs) and unsupported.
+In addition to the compiler suite you need Windows Platform SDK
+and DirectX SDK.  Set "Path", "INCLUDE" and "LIB" environment variables
+to point to the correct locations in VC++, PSDK and DXSDK.
 
 1. Install the ZLIB library:
 a. Download the source code from http://www.zlib.org
-b. Replace -MD with -ML in CFLAGS in win32\Makefile.msc
+b. Remove -MD from CFLAGS in win32\Makefile.msc
 c. Compile with "nmake /f win32\Makefile.msc zlib.lib".
-d. Copy zlib.h and zconf.h to the Include directory of MSVC.
-e. Copy zlib.lib to the Lib directory of MSVC.
+d. Copy zlib.h and zconf.h to the Include directory of VC++.
+e. Copy zlib.lib to the Lib directory of VC++.
 2. Install the LIBPNG library:
 a. Download the source code from http://www.libpng.org
-b. Replace -MD with -ML in CFLAGS in scripts\makefile.vcwin32
+b. Remove -MD from CFLAGS in scripts\makefile.vcwin32
 c. Compile with "nmake /f scripts\makefile.vcwin32".
-d. Copy png.h and pngconf.h to the Include directory of MSVC.
-e. Copy libpng.lib to the Lib directory of MSVC.
+d. Copy png.h and pngconf.h to the Include directory of VC++.
+e. Copy libpng.lib to the Lib directory of VC++.
 OR
 1&2. #undef HAVE_LIBPNG and HAVE_LIBZ in Atari800's src\win32\msc\config.h.
      The compiled emulator won't handle zlib-compressed disk images
      and state files and won't produce PNG screenshots.
 3. Navigate to the src directory of Atari800 sources.
 4. Type "nmake /f win32\msc\Makefile".
-5. If you are getting compilation errors from win32\*.c, then you likely
-   have old DirectX headers. Download and install DirectX SDK from Microsoft.
-   Set DXSDK in win32\msc\Makefile to the directory where you installed
-   the SDK. You should probably use short filenames - filenames with spaces
-   didn't work for me, even though I wrapped them in quotes. Back to step 3.
-6. If you are getting linking errors saying something about MSVCRT
+5. If you are getting linking errors saying something about MSVCRT
    then you probably ignored step 1b or 2b.
-7. Copy atari800.exe to destination directory.
-
-I have also managed to compile Atari800 using the same Makefile
-and command-line tools shipped with Visual Studio .NET. If you have a choice,
-you should probably prefer the .NET compiler over MSVC 6.0, because it has
-less bugs and a better optimizer. The compiled executable seems to be
-a regular Win32 application that does not use .NET Framework. You may need
-to add include and lib paths for the Win32 SDK (windows.h and friends)
-which is not included in VS.NET (maybe just in my installation...).
+6. Copy atari800.exe to destination directory.
 
 Building the Emulator for Falcon
 --------------------------------

@@ -1,3 +1,8 @@
+2006-06-29  Piotr Fusik  <fox@scene.pl>
+* win32/msc/Makefile, win32/msc/config.h, DOC/INSTALL:
+  upgraded VC++ from 6.0 to 2005
+
+
 2006-05-01  Piotr Fusik  <fox@scene.pl>
 * util/act2html.*: replaced my old C program with a Perl script;
   the Perl script keeps hues from different palettes together

@@ -303,6 +303,12 @@
 /* Define to activate hints in disassembler. */
 #define MONITOR_HINTS 1
 
+/* Define to activate 6502 opcode profiling. */
+/* #undef MONITOR_PROFILE */
+
+/* Define to activate TRACE command in monitor. */
+/* #undef MONITOR_TRACE */
+
 /* Target: X11 with Motif. */
 /* #undef MOTIF */
 
