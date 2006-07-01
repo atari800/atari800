@@ -1113,6 +1113,7 @@ static void DisplaySettings(void)
 	static char refresh_status[16];
 	static tMenuItem menu_array[] = {
 		MENU_SUBMENU_SUFFIX(0, "Artifacting mode:", NULL),
+		MENU_CHECK(11, "Enable new artifacting:"),
 		MENU_SUBMENU_SUFFIX(1, "Current refresh rate:", refresh_status),
 		MENU_CHECK(2, "Accurate skipped frames:"),
 		MENU_CHECK(3, "Show percents of Atari speed:"),
@@ -1136,6 +1137,7 @@ static void DisplaySettings(void)
 	int option2;
 	for (;;) {
 		FindMenuItem(menu_array, 0)->suffix = artif_menu_array[global_artif_mode].item;
+		SetItemChecked(menu_array, 11, artif_new);
 		sprintf(refresh_status, "1:%-2d", refresh_rate);
 		SetItemChecked(menu_array, 2, sprite_collisions_in_skipped_frames);
 		SetItemChecked(menu_array, 3, show_atari_speed);
@@ -1157,6 +1159,10 @@ static void DisplaySettings(void)
 				global_artif_mode = option2;
 				ANTIC_UpdateArtifacting();
 			}
+			break;
+		case 11:
+			artif_new = !artif_new;
+			ANTIC_UpdateArtifacting();
 			break;
 		case 1:
 			refresh_rate = ui_driver->fSelectInt(refresh_rate, 1, 99);

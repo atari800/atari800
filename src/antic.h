@@ -41,6 +41,7 @@ extern UBYTE wsync_halt;
 #define NMI_C	12
 
 extern int global_artif_mode;
+extern int artif_new;
 
 extern UBYTE PENH_input;
 extern UBYTE PENV_input;
