@@ -1164,6 +1164,7 @@ static void draw_an_gtia9(const ULONG *t_pm_scanline_ptr)
 		WRITE_VIDEO_LONG((ULONG *) ptr, lookup_gtia9[pixel]);
 		pm_reg = pm_scanline[i];
 		if (pm_reg) {
+			pm_reg = pm_lookup_ptr[pm_reg];
 			if (pm_reg == L_PF3) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 				WRITE_VIDEO(ptr, colour_translation_table[pixel | COLPF3]);
@@ -1178,6 +1179,7 @@ static void draw_an_gtia9(const ULONG *t_pm_scanline_ptr)
 		i++;
 		pm_reg = pm_scanline[i];
 		if (pm_reg) {
+			pm_reg = pm_lookup_ptr[pm_reg];
 			if (pm_reg == L_PF3) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 				WRITE_VIDEO(ptr + 1, colour_translation_table[pixel | COLPF3]);
@@ -1248,11 +1250,12 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 		WRITE_VIDEO_LONG((ULONG *) ptr, lookup_gtia11[pixel]);
 		pm_reg = pm_scanline[i];
 		if (pm_reg) {
+			pm_reg = pm_lookup_ptr[pm_reg];
 			if (pm_reg == L_PF3) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 				WRITE_VIDEO(ptr, colour_translation_table[pixel ? pixel | COLPF3 : COLPF3 & 0xf0]);
 #else
-				WRITE_VIDEO(ptr, pixel ? pixel | (pixel << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
+				WRITE_VIDEO(ptr, pixel ? (pixel << 4) | (pixel << 12) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
 #endif
 			}
 			else {
@@ -1262,11 +1265,12 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 		i++;
 		pm_reg = pm_scanline[i];
 		if (pm_reg) {
+			pm_reg = pm_lookup_ptr[pm_reg];
 			if (pm_reg == L_PF3) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 				WRITE_VIDEO(ptr + 1, colour_translation_table[pixel ? pixel | COLPF3 : COLPF3 & 0xf0]);
 #else
-				WRITE_VIDEO(ptr + 1, pixel ? pixel | (pixel << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
+				WRITE_VIDEO(ptr + 1, pixel ? (pixel << 4) | (pixel << 12) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
 #endif
 			}
 			else {

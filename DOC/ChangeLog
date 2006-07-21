@@ -1,3 +1,7 @@
+2006-07-21  Piotr Fusik  <fox@scene.pl>
+* antic.c: corrected PMG in bizarre ANTIC/GTIA modes
+
+
 2006-07-01  Mark Grebe  <markgrebe@yahoo.com>
 * antic.[ch], ui.c: new style of artifacting
 
