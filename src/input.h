@@ -273,7 +273,7 @@ extern int mouse_mode;			/* device emulated with mouse */
 extern int mouse_port;			/* Atari port, to which the emulated device is attached */
 extern int mouse_delta_x;		/* x motion since last frame */
 extern int mouse_delta_y;		/* y motion since last frame */
-extern int mouse_buttons;		/* buttons (b0=1: first button pressed, b1=1: 2nd pressed, etc. */
+extern int mouse_buttons;		/* buttons pressed (b0: left, b1: right, b2: middle */
 extern int mouse_speed;			/* how fast the mouse pointer moves */
 extern int mouse_pot_min;		/* min. value of POKEY's POT register */
 extern int mouse_pot_max;		/* max. value of POKEY's POT register */

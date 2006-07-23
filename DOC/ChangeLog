@@ -1,3 +1,8 @@
+2006-07-23  Piotr Fusik  <fox@scene.pl>
+* input.[ch], atari_x11.c, win32/main.c: middle button support
+  for ST and Amiga mice
+
+
 2006-07-21  Piotr Fusik  <fox@scene.pl>
 * antic.c: corrected PMG in bizarre ANTIC/GTIA modes
 

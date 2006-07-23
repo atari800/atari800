@@ -2,7 +2,7 @@
  * main.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -74,10 +74,13 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 		break;
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
 	case WM_RBUTTONDOWN:
 	case WM_RBUTTONUP:
 		mouse_buttons = ((wParam & MK_LBUTTON) ? 1 : 0)
-		              | ((wParam & MK_RBUTTON) ? 2 : 0);
+		              | ((wParam & MK_RBUTTON) ? 2 : 0)
+		              | ((wParam & MK_MBUTTON) ? 4 : 0);
 		break;
 	case WM_SETCURSOR:
 		SetCursor(NULL);

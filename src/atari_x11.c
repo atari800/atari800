@@ -2,7 +2,7 @@
  * atari_x11.c - X11 specific port code
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -3015,7 +3015,8 @@ void Atari_Mouse(void)
 		mouse_delta_x = win_x_return - last_x;
 		mouse_delta_y = win_y_return - last_y;
 		mouse_buttons = (mask_return & Button1Mask ? 1 : 0)
-		              | (mask_return & Button3Mask ? 2 : 0);
+		              | (mask_return & Button3Mask ? 2 : 0)
+		              | (mask_return & Button2Mask ? 4 : 0);
 		last_x = win_x_return;
 		last_y = win_y_return;
 	}

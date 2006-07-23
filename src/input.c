@@ -514,6 +514,8 @@ void INPUT_Frame(void)
 			TRIG_input[mouse_port] = 0;
 		if (mouse_buttons & 2)
 			POT_input[mouse_port << 1] = 1;
+		if (mouse_buttons & 4)
+			POT_input[(mouse_port << 1) + 1] = 1;
 		break;
 	case MOUSE_JOY:
 		if (machine_type == MACHINE_5200) {
