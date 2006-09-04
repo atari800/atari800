@@ -75,6 +75,7 @@ Currently supported cartridge types:
 | 40 | 800/XL/XE |   16 | Blizzard 16 KB cartridge                          |
 | 41 | 800/XL/XE |  128 | Atarimax 128 KB Flash cartridge                   |
 | 42 | 800/XL/XE | 1024 | Atarimax 1 MB Flash cartridge                     |
+| 43 | 800/XL/XE |  128 | SpartaDos X 128 KB cartridge                      |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -84,8 +85,8 @@ Machine indicates if the cartridge is for Atari 8-bit Home Computers
 
 Size is length of image in kilobytes.
 
-Below are descriptions of all types. For bank-switched cartridges bank A
-stands for the first bank in the image, bank B is the second, etc.
+Below are descriptions of all types. For bank-switched cartridges banks
+are numbered in the order they appear in the image file, starting with 0.
 
 +---------------------------------------------------------------------------+
 | Type 1: Standard 8 KB cartridge                                           |
@@ -113,11 +114,11 @@ stands for the first bank in the image, bank B is the second, etc.
  significant.
 
  The '034M' scheme is the more complicated one.
- The main bank is D. An access to:
- $D5x0 or $D5x1 selects bank A.
- $D5x3 or $D5x7 selects bank B.
- $D5x4 or $D5x5 selects bank C.
- $D5x2 or $D5x6 is not useful. It disables ROM (there're $FF bytes
+ The main bank is 3. An access to:
+ $D5x0 or $D5x1 selects bank 0.
+ $D5x3 or $D5x7 selects bank 1.
+ $D5x4 or $D5x5 selects bank 2.
+ $D5x2 or $D5x6 is not useful. It disables ROM (there are $FF bytes
  in $A000-$AFFF).
  $D5x8-$D5xF disables whole cartridge (enables computer's memory in address
  space between $A000 and $BFFF).
@@ -133,9 +134,9 @@ stands for the first bank in the image, bank B is the second, etc.
 | Type 5: DB 32 KB cartridge                                                |
 +---------------------------------------------------------------------------+
 
- A 32 KB bank-switched cartridge. There are 4 banks. Bank D is mapped to
+ A 32 KB bank-switched cartridge. There are 4 banks. Bank 3 is mapped to
  $A000-$BFFF. Bank in $8000-$9FFF is selected by an access to $D500-$D5FF.
- Two lowest bits of address select bank A, B, C or D.
+ Two lowest bits of address select bank 0, 1, 2 or 3.
 
 +---------------------------------------------------------------------------+
 | Type 6: Two chip 16 KB 5200 cartridge                                     |
@@ -154,10 +155,10 @@ stands for the first bank in the image, bank B is the second, etc.
 
  The cartridge with "Bounty Bob Strikes Back" game uses very strange
  bank switching method:
- - Four 4 KB banks (A,B,C,D) are mapped into $4000-$4FFF. An access to $4FF6
-   selects bank A, $4FF7 - bank B, $4FF8 - bank C, $4FF9 - bank D.
- - Four 4 KB banks (E,F,G,H) are mapped into $5000-$5FFF. An access to $5FF6
-   selects bank E, $5FF7 - bank F, $5FF8 - bank G, $5FF9 - bank H.
+ - Four 4 KB banks (0,1,2,3) are mapped into $4000-$4FFF. An access to $4FF6
+   selects bank 0, $4FF7 - bank 1, $4FF8 - bank 2, $4FF9 - bank 3.
+ - Four 4 KB banks (4,5,6,7) are mapped into $5000-$5FFF. An access to $5FF6
+   selects bank 4, $5FF7 - bank 5, $5FF8 - bank 6, $5FF9 - bank 7.
  - The remaining 8 KB is mapped to upper 16 KB of cartridge address space
    in Atari 5200. That is, $8000-$9FFF and $A000-$BFFF contain same data.
 
@@ -166,7 +167,7 @@ stands for the first bank in the image, bank B is the second, etc.
 +---------------------------------------------------------------------------+
 
  The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D500 selects
- bank A, $D501 - bank B, etc. An access to $D508-$D50F disables
+ bank 0, $D501 - bank 1, etc. An access to $D508-$D50F disables
  the cartridge.
 
 +---------------------------------------------------------------------------+
@@ -174,7 +175,7 @@ stands for the first bank in the image, bank B is the second, etc.
 +---------------------------------------------------------------------------+
 
  The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D577 selects
- bank A, $D576 - bank B, etc. An access to $D578-$D57F disables
+ bank 0, $D576 - bank 1, etc. An access to $D578-$D57F disables
  the cartridge.
 
 +---------------------------------------------------------------------------+
@@ -182,7 +183,7 @@ stands for the first bank in the image, bank B is the second, etc.
 +---------------------------------------------------------------------------+
 
  The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D5D7 selects
- bank A, $D5D6 - bank B, etc. An access to $D5D8-$D5DF disables
+ bank 0, $D5D6 - bank 1, etc. An access to $D5D8-$D5DF disables
  the cartridge.
 
 +---------------------------------------------------------------------------+
@@ -190,7 +191,7 @@ stands for the first bank in the image, bank B is the second, etc.
 +---------------------------------------------------------------------------+
 
  The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D5E7 selects
- bank A, $D5E6 - bank B, etc. An access to $D5E8-$D5EF disables
+ bank 0, $D5E6 - bank 1, etc. An access to $D5E8-$D5EF disables
  the cartridge.
 
 +---------------------------------------------------------------------------+
@@ -199,7 +200,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each.
- Bank D (the last one) is always mapped to $A000-$BFFF. Two lowest bits of
+ Bank 3 (the last one) is always mapped to $A000-$BFFF. Two lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -208,7 +209,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
- Bank H (the last one) is always mapped to $A000-$BFFF. Three lowest bits of
+ Bank 7 (the last one) is always mapped to $A000-$BFFF. Three lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -217,7 +218,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
- Bank P (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
+ Bank 15 (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -226,10 +227,10 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This is the simpler one of OSS schemes. It uses only A0 and A3 address
  lines:
- A3=0, A0=0 - $A000-$AFFF: bank B, $B000-$BFFF: bank A
- A3=0, A0=1 - $A000-$AFFF: bank D, $B000-$BFFF: bank A
+ A3=0, A0=0 - $A000-$AFFF: bank 1, $B000-$BFFF: bank 0
+ A3=0, A0=1 - $A000-$AFFF: bank 3, $B000-$BFFF: bank 0
  A3=1, A0=0 - disable cartridge
- A3=1, A0=1 - $A000-$AFFF: bank C, $B000-$BFFF: bank A
+ A3=1, A0=1 - $A000-$AFFF: bank 2, $B000-$BFFF: bank 0
 
 +---------------------------------------------------------------------------+
 | Type 16: One chip 16 KB 5200 cartridge                                    |
@@ -253,10 +254,10 @@ stands for the first bank in the image, bank B is the second, etc.
 
  The cartridge with "Bounty Bob Strikes Back" game uses very strange
  bank switching method:
- - Four 4 KB banks (A,B,C,D) are mapped into $8000-$8FFF. An access to $8FF6
-   selects bank A, $8FF7 - bank B, $8FF8 - bank C, $8FF9 - bank D.
- - Four 4 KB banks (E,F,G,H) are mapped into $9000-$9FFF. An access to $9FF6
-   selects bank E, $9FF7 - bank F, $9FF8 - bank G, $9FF9 - bank H.
+ - Four 4 KB banks (0,1,2,3) are mapped into $8000-$8FFF. An access to $8FF6
+   selects bank 0, $8FF7 - bank 1, $8FF8 - bank 2, $8FF9 - bank 3.
+ - Four 4 KB banks (4,5,6,7) are mapped into $9000-$9FFF. An access to $9FF6
+   selects bank 4, $9FF7 - bank 5, $9FF8 - bank 6, $9FF9 - bank 7.
  - The remaining 8 KB is mapped to $A000-$BFFF.
 
 +---------------------------------------------------------------------------+
@@ -286,7 +287,7 @@ stands for the first bank in the image, bank B is the second, etc.
 +---------------------------------------------------------------------------+
 
  The cartridge has 4 banks mapped to $A000-$BFFF. An access to $D500 selects
- bank A, $D501 - bank B, etc. An access to $D508-$D50F disables
+ bank 0, $D501 - bank 1, etc. An access to $D508-$D50F disables
  the cartridge.
 
 +---------------------------------------------------------------------------+
@@ -378,7 +379,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each.
- Bank D (the last one) is always mapped to $A000-$BFFF. Two lowest bits of
+ Bank 3 (the last one) is always mapped to $A000-$BFFF. Two lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 
@@ -388,7 +389,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
- Bank H (the last one) is always mapped to $A000-$BFFF. Three lowest bits of
+ Bank 7 (the last one) is always mapped to $A000-$BFFF. Three lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 
@@ -398,7 +399,7 @@ stands for the first bank in the image, bank B is the second, etc.
 
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
- Bank P (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
+ Bank 15 (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
  bit 7 disables the cartridge.
 
@@ -464,3 +465,11 @@ stands for the first bank in the image, bank B is the second, etc.
  and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
  The seven lowest bits of the address written to $D500-$D57F select the bank
  mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 43: SpartaDOS X 128 KB cartridge                                     |
++---------------------------------------------------------------------------+
+
+ The cartridge has 16 banks mapped to $A000-$BFFF. First 8 banks are selected
+ by an access to $D5F7-$D5F0, the other 8 banks by an access to $D5E7-$D5E0.
+ An access to $D5E8-$D5EF or $D5F8-$D5FF disables the cartridge.

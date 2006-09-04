@@ -485,6 +485,7 @@ int SelectCartType(int k)
 		MENU_ACTION(40, "Blizzard 16 KB cartridge"),
 		MENU_ACTION(41, "Atarimax 128 KB Flash cartridge"),
 		MENU_ACTION(42, "Atarimax 1 MB Flash cartridge"),
+		MENU_ACTION(43, "SpartaDOS X 128 KB cartridge"),
 		MENU_END
 	};
 

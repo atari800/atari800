@@ -1,8 +1,8 @@
 /*
  * cartridge.c - cartridge emulation
  *
- * Copyright (C) 2001-2003 Piotr Fusik
- * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2006 Piotr Fusik
+ * Copyright (C) 2001-2006 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -40,48 +40,49 @@
 
 int cart_kb[CART_LAST_SUPPORTED + 1] = {
 	0,
-	8,  /* CART_STD_8 */
-	16, /* CART_STD_16 */
-	16, /* CART_OSS_16 */
-	32, /* CART_5200_32 */
-	32, /* CART_DB_32 */
-	16, /* CART_5200_EE_16 */
-	40, /* CART_5200_40 */
-	64, /* CART_WILL_64 */
-	64, /* CART_EXP_64 */
-	64, /* CART_DIAMOND_64 */
-	64, /* CART_SDX */
-	32, /* CART_XEGS_32 */
-	64, /* CART_XEGS_64 */
-	128,/* CART_XEGS_128 */
-	16, /* CART_OSS2_16 */
-	16, /* CART_5200_NS_16 */
-	128,/* CART_ATRAX_128 */
-	40, /* CART_BBSB_40 */
-	8,  /* CART_5200_8 */
-	4,  /* CART_5200_4 */
-	8,  /* CART_RIGHT_8 */
-	32, /* CART_WILL_32 */
-	256,/* CART_XEGS_256 */
-	512,/* CART_XEGS_512 */
-	1024,/* CART_XEGS_1024 */
-	16, /* CART_MEGA_16 */
-	32, /* CART_MEGA_32 */
-	64, /* CART_MEGA_64 */
-	128,/* CART_MEGA_128 */
-	256,/* CART_MEGA_256 */
-	512,/* CART_MEGA_512 */
-	1024,/* CART_MEGA_1024 */
-	32, /* CART_SWXEGS_32 */
-	64, /* CART_SWXEGS_64 */
-	128,/* CART_SWXEGS_128 */
-	256,/* CART_SWXEGS_256 */
-	512,/* CART_SWXEGS_512 */
-	1024,/* CART_SWXEGS_1024 */
-	8,  /* CART_PHOENIX_8 */
-	16, /* CART_BLIZZARD_16 */
-	128,/* CART_ATMAX_128 */
-	1024 /* CART_ATMAX_1024 */
+	8,    /* CART_STD_8 */
+	16,   /* CART_STD_16 */
+	16,   /* CART_OSS_16 */
+	32,   /* CART_5200_32 */
+	32,   /* CART_DB_32 */
+	16,   /* CART_5200_EE_16 */
+	40,   /* CART_5200_40 */
+	64,   /* CART_WILL_64 */
+	64,   /* CART_EXP_64 */
+	64,   /* CART_DIAMOND_64 */
+	64,   /* CART_SDX */
+	32,   /* CART_XEGS_32 */
+	64,   /* CART_XEGS_64 */
+	128,  /* CART_XEGS_128 */
+	16,   /* CART_OSS2_16 */
+	16,   /* CART_5200_NS_16 */
+	128,  /* CART_ATRAX_128 */
+	40,   /* CART_BBSB_40 */
+	8,    /* CART_5200_8 */
+	4,    /* CART_5200_4 */
+	8,    /* CART_RIGHT_8 */
+	32,   /* CART_WILL_32 */
+	256,  /* CART_XEGS_256 */
+	512,  /* CART_XEGS_512 */
+	1024, /* CART_XEGS_1024 */
+	16,   /* CART_MEGA_16 */
+	32,   /* CART_MEGA_32 */
+	64,   /* CART_MEGA_64 */
+	128,  /* CART_MEGA_128 */
+	256,  /* CART_MEGA_256 */
+	512,  /* CART_MEGA_512 */
+	1024, /* CART_MEGA_1024 */
+	32,   /* CART_SWXEGS_32 */
+	64,   /* CART_SWXEGS_64 */
+	128,  /* CART_SWXEGS_128 */
+	256,  /* CART_SWXEGS_256 */
+	512,  /* CART_SWXEGS_512 */
+	1024, /* CART_SWXEGS_1024 */
+	8,    /* CART_PHOENIX_8 */
+	16,   /* CART_BLIZZARD_16 */
+	128,  /* CART_ATMAX_128 */
+	1024, /* CART_ATMAX_1024 */
+	128   /* CART_SDX_128 */
 };
 
 int CART_IsFor5200(int type)
@@ -100,14 +101,14 @@ int CART_IsFor5200(int type)
 	return FALSE;
 }
 
-UBYTE *cart_image = NULL;		/* For cartridge memory */
+UBYTE *cart_image = NULL;		/* cartridge memory */
 char cart_filename[FILENAME_MAX];
 int cart_type = CART_NONE;
 
 static int bank;
 
-/* DB_32, XEGS_32, XEGS_64, XEGS_128, XEGS_256, XEGS_512, XEGS_1024 */
-/* SWXEGS_32, SWXEGS_64, SWXEGS_128, SWXEGS_256, SWXEGS_512, SWXEGS_1024 */
+/* DB_32, XEGS_32, XEGS_64, XEGS_128, XEGS_256, XEGS_512, XEGS_1024,
+   SWXEGS_32, SWXEGS_64, SWXEGS_128, SWXEGS_256, SWXEGS_512, SWXEGS_1024 */
 static void set_bank_809F(int b, int main)
 {
 	if (b != bank) {
@@ -142,69 +143,16 @@ static void set_bank_A0AF(int b, int main)
 	}
 }
 
-/* EXP_64, DIAMOND_64, SDX_64 */
-static void set_bank_A0BF(int b)
+/* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_1024,
+   ATRAX_128 */
+static void set_bank_A0BF(int b, int n)
 {
 	if (b != bank) {
-		if (b & 0x0008)
+		if (b & n)
 			CartA0BF_Disable();
 		else {
 			CartA0BF_Enable();
-			CopyROM(0xa000, 0xbfff, cart_image + (~b & 7) * 0x2000);
-		}
-		bank = b;
-	}
-}
-
-static void set_bank_A0BF_WILL64(int b)
-{
-	if (b != bank) {
-		if (b & 0x0008)
-			CartA0BF_Disable();
-		else {
-			CartA0BF_Enable();
-			CopyROM(0xa000, 0xbfff, cart_image + (b & 7) * 0x2000);
-		}
-		bank = b;
-	}
-}
-
-static void set_bank_A0BF_WILL32(int b)
-{
-	if (b != bank) {
-		if (b & 0x0008)
-			CartA0BF_Disable();
-		else {
-			CartA0BF_Enable();
-			CopyROM(0xa000, 0xbfff, cart_image + (b & 3) * 0x2000);
-		}
-		bank = b;
-	}
-}
-
-static void set_bank_A0BF_ATMAX128(int b)
-{
-	if (b != bank) {
-		if (b >= 0x20)
-			return;
-		else if (b >= 0x10)
-			CartA0BF_Disable();
-		else {
-			CartA0BF_Enable();
-			CopyROM(0xa000, 0xbfff, cart_image + b * 0x2000);
-		}
-		bank = b;
-	}
-}
-
-static void set_bank_A0BF_ATMAX1024(int b)
-{
-	if (b != bank) {
-		if (b >= 0x80)
-			CartA0BF_Disable();
-		else {
-			CartA0BF_Enable();
-			CopyROM(0xa000, 0xbfff, cart_image + b * 0x2000);
+			CopyROM(0xa000, 0xbfff, cart_image + (b & (n - 1)) * 0x2000);
 		}
 		bank = b;
 	}
@@ -259,22 +207,34 @@ static void CART_Access(UWORD addr)
 		set_bank_809F(addr & 0x03, 0x6000);
 		break;
 	case CART_WILL_64:
-		set_bank_A0BF_WILL64(addr);
+		set_bank_A0BF(addr, 8);
 		break;
 	case CART_WILL_32:
-		set_bank_A0BF_WILL32(addr);
+		set_bank_A0BF(addr & 0xb, 8);
 		break;
 	case CART_EXP_64:
 		if ((addr & 0xf0) == 0x70)
-			set_bank_A0BF(addr);
+			set_bank_A0BF(addr ^ 7, 8);
 		break;
 	case CART_DIAMOND_64:
 		if ((addr & 0xf0) == 0xd0)
-			set_bank_A0BF(addr);
+			set_bank_A0BF(addr ^ 7, 8);
 		break;
 	case CART_SDX_64:
 		if ((addr & 0xf0) == 0xe0)
-			set_bank_A0BF(addr);
+			set_bank_A0BF(addr ^ 7, 8);
+		break;
+	case CART_SDX_128:
+		if ((addr & 0xe0) == 0xe0 && addr != bank) {
+			if (addr & 8)
+				CartA0BF_Disable();
+			else {
+				CartA0BF_Enable();
+				CopyROM(0xa000, 0xbfff,
+					cart_image + (((addr & 7) + ((addr & 0x10) >> 1)) ^ 0xf) * 0x2000);
+			}
+			bank = addr;
+		}
 		break;
 	case CART_OSS2_16:
 		switch (addr & 0x09) {
@@ -301,10 +261,11 @@ static void CART_Access(UWORD addr)
 		CartA0BF_Disable();
 		break;
 	case CART_ATMAX_128:
-		set_bank_A0BF_ATMAX128(addr & 0xff);
+		if ((addr & 0xe0) == 0)
+			set_bank_A0BF(addr, 16);
 		break;
 	case CART_ATMAX_1024:
-		set_bank_A0BF_ATMAX1024(addr & 0xff);
+		set_bank_A0BF(addr, 128);
 		break;
 	default:
 		break;
@@ -347,20 +308,7 @@ void CART_PutByte(UWORD addr, UBYTE byte)
 		set_bank_809F(byte & 0x7f, 0xfe000);
 		break;
 	case CART_ATRAX_128:
-		if (byte & 0x80) {
-			if (bank >= 0) {
-				CartA0BF_Disable();
-				bank = -1;
-			}
-		}
-		else {
-			int b = byte & 0xf;
-			if (b != bank) {
-				CartA0BF_Enable();
-				CopyROM(0xa000, 0xbfff, cart_image + b * 0x2000);
-				bank = b;
-			}
-		}
+		set_bank_A0BF(addr & 0x8f, 128);
 		break;
 	case CART_MEGA_16:
 		set_bank_80BF(byte & 0x80);
@@ -674,6 +622,7 @@ void CART_Start(void) {
 		case CART_EXP_64:
 		case CART_DIAMOND_64:
 		case CART_SDX_64:
+		case CART_SDX_128:
 			Cart809F_Disable();
 			CartA0BF_Enable();
 			CopyROM(0xa000, 0xbfff, cart_image);

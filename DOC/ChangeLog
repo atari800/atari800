@@ -1,3 +1,9 @@
+2006-09-04  Piotr Fusik  <fox@scene.pl>
+* cartridge.[ch], ui.c, DOC/cart.txt: added 128 KB SpartaDOS X cartridge type,
+  by the way: shortened the cartridge code and replaced letters with numbers
+  for bank indexing in the documentation
+
+
 2006-07-23  Piotr Fusik  <fox@scene.pl>
 * input.[ch], atari_x11.c, win32/main.c: middle button support
   for ST and Amiga mice
