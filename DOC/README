@@ -56,7 +56,7 @@ joysticks (old CX-40, Atari800 compatible - not the new paddle-like ones).
 
 The SDL version should compile on Unix, Win32, BeOS, etc... It's optimized for
 8, 16 and 32 color depth. Of course it will work fastest in 8bit. If you use it
-in XFree86 - please set "Depth=8" in XF86Config to gain maximum speed. 
+in XFree86 - please set "Depth=8" in XF86Config to gain maximum speed.
 
 From version 0.7.0 all versions supporting bitmapped graphics have
 a User Interface implemented on the emulator's "screen". The User
@@ -93,7 +93,7 @@ o ATR, XFD, DCM, ATR.GZ and XFD.GZ disk images.
 
 o Direct loading of Atari executable files and Atari BASIC programs.
 
-o 42 cartridge types, raw and CART format.
+o 43 cartridge types, raw and CART format.
 
 o Cassette recorder, raw and CAS images.
 
