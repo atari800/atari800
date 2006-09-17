@@ -1,6 +1,9 @@
 Plans for future versions
 =========================
 
+High-priority items start with '*', low-priority items start with '-'.
+
+
 Keyboard and joysticks
 ----------------------
 
@@ -15,7 +18,7 @@ Keyboard and joysticks
 
 * emulate POKEY keyboard scanning (with optional debouncing)
 
-* Atari Keyboard Interface (AKI)
+- Atari Keyboard Interface (AKI)
 
 
 Emulation core
@@ -29,90 +32,89 @@ Emulation core
 
 * more accurate frame rates (for example 49.8607456 instead of 50 Hz in PAL)
 
-* copy-protected disk images (VAPI, ATP, PRO, copy-protected ATR)
+- copy-protected disk images (VAPI, ATP, PRO, copy-protected ATR)
 
 * emulate POKEY SIO shift register
 
-* emulate SIO bus lines, and SIO cable data/audio cross-talk "feep" sound
+- emulate SIO bus lines, and SIO cable data/audio cross-talk "feep" sound
 
-* emulate 1200XL (two programmable LEDs)
+- emulate 1200XL (two programmable LEDs)
 
-* emulate XEGS (built-in cartridge and detachable keyboard)
+- emulate XEGS (built-in cartridge and detachable keyboard)
 
-* Axlon memory expansions
+- Axlon memory expansions
 
-* redirection of specific Dn: devices to Hn: (for software that insists
+- redirection of specific Dn: devices to Hn: (for software that insists
   on using the D: device)
 
-* log POKEY audio writes, SIO commands (hardware level or DCB level),
+- log POKEY audio writes, SIO commands (hardware level or DCB level),
   executed DL commands, all activity to a defined range of adressess etc.
   in a way similar to the 6502 trace
 
-* emulate drives at the hardware level (810, 1050, XF551.) use code from other
+- log events that affect software compatibility: undocumented 6502 opcodes,
+  unofficial system calls (incl. 5200), extended memory access
+
+- emulate drives at the hardware level (810, 1050, XF551.) use code from other
   emulators which does this.  (drive rotation, FM/MFM raw bits).  WDCxxxx
   controller.  RIOT chip.  6507.  Intel 8048-line chip for the XFD551.
   Use emulated SIO line for bit-banging.  Emulate Drive upgrades (Happy etc.)
   Emulate 3rd party drives (Rana etc.)
 
-* sound effects.  Drive retracking noise (BlueMSX has.)  Motor whine.
+- sound effects.  Drive retracking noise (BlueMSX has.)  Motor whine.
   On/off switch sound.  Physical key-press sounds.  Cartridge slot sounds.
   Drive door sounds. Floppy rotation flap sound.
 
-* Atari vapourware emulation. 1400XL. 1450XLD. XEM (see below). 1090.
+- Atari vapourware emulation. 1400XL. 1450XLD. XEM (see below). 1090.
   1060 CP/M (sweet-pea.)
 
-* emulate the 850 interface at the hardware level.
+- emulate the 850 interface at the hardware level.
 
-* ATR-8000 emulation.  ATR-8500.  Need schematics, ROM images, and Disk images.
+- ATR-8000 emulation.  ATR-8500.  Need schematics, ROM images, and Disk images.
   Adapt an existing CPM emulator.
 
-* emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp and
+- emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp and
   Austin-Franklin 80-Column Board.  Need ROM images and schematics.
 
 * 6502 BRK bug
 
-* Try to understand 6502's "unstable" opcodes (0x93, 0x9b, 0x9f) that seem
+* try to understand 6502's "unstable" opcodes (0x93, 0x9b, 0x9f) that seem
   to have unpredictable (at least not easily predictable) results,
   preferrably by studying 6502 schematics
 
-* An option to emulate the variant of 6502 used in new XE machines
+* an option to emulate the variant of 6502 used in new XE machines
   (which lacks most of the undocumented opcodes of the classic 6502)
 
-* Fully emulate executing 6502 code from Hardware, cycle-exact ANTIC_load
+* fully emulate executing 6502 code from Hardware, cycle-exact ANTIC_load
   from hardware, cycle-exact PMG flickering bus data
 
-* An option to detect undocumented 6502 opcodes to test for compatibility
-  of software with CPU upgrades (65816, etc)
+- CPU upgrades (65816, etc)
 
-* CPU upgrades (65816, etc)
-
-* Emulate printer graphics (on screen or bitmap/PDF output): 1029, 1020, etc.
+- emulate printer graphics (on screen or bitmap/PDF output): 1029, 1020, etc.
   The Mac OS X port of Atari800 has lots of printer emulation routines.
 
-* RAM Carts (cartridges with battery-powered RAM). Are flash carts writable
-  from Ataris too?
+* RAM Carts (cartridges with battery-powered RAM), writes to flash carts
 
-* serial "network" interfaces (e.g. 8 Ataris connected, is it GameLink?)
+- serial "network" interfaces (e.g. 8 Ataris connected, is it GameLink?)
 
-* generate hard disk images or write directly to media that the 8-bit Ataris
+- generate hard disk images or write directly to media that the 8-bit Ataris
   can use, like CompactFlash or MyIDE/SmartIDE/BB
 
-* "Turbo" cassette upgrades (Turbo 2000 etc.)
+- "Turbo" cassette upgrades (Turbo 2000 etc.)
 
-* Cassette emulation of WAV files.  Load a WAV file like WAV2CAS does. Save
+- cassette emulation of WAV files.  Load a WAV file like WAV2CAS does. Save
   to a WAV file or real cassette like CAS2WAV does.  Load voice-and-data
   combined programmed audio tape images from WAV files.  Support compressed
   (lossless? lossy even?) tape sound images.
 
-* Disk auto-flip.  Examine screen data for text string "Insert Side B
+- disk auto-flip.  Examine screen data for text string "Insert Side B
   and press any key/fire/return." Flip disk, print on-screen message and
   optionally press key. More a core feature than UI. Requires a database.
 
-* support physical floppy media (hard, port-specific and not very useful)
+- support physical floppy media (hard, port-specific and not very useful)
 
-* support physical Atari drives (hard, port-specific and not very useful)
+- support physical Atari drives (hard, port-specific and not very useful)
 
-* Event history. Record a keypress/joystick event history.  Need a file format
+- event history. Record a keypress/joystick event history.  Need a file format
   that is good (compress?) Don't use cycle-exact RANDOM since that could
   change easily in future versions.  Use our own rand() (with option to use
   true RANDOM. Provide all features that VICE has. Optionally calculate and
@@ -133,9 +135,9 @@ Graphics
 
 * "flicker fixer": display average pixel values of two last Atari frames
 
-* XEP80 emulation. Slor is working on it, contact him first.
+- XEP80 emulation. Slor is working on it, contact him first.
 
-* Use YUV output if available. Will it help?
+* use YUV output if available. Will it help?
 
 * PAL emulation. VICE has it, but it's not as complete as Blargg's emulation
   of NTSC. PAL luma/chroma artifacts are missing (it is like S-Video).
@@ -144,28 +146,28 @@ Graphics
   I tried to make work for PAL.  But it isn't quite right and is way too slow.
   Ask me if you are interested.)
 
-* The NTSC emulator should support either 16 or 32 bpp and should support
+* the NTSC emulator should support either 16 or 32 bpp and should support
   other resolutions. It should be supported in all possible ports.
 
-* Fix the remaining bugs in the NTSC emulation.  Artificating colours are
+* fix the remaining bugs in the NTSC emulation.  Artificating colours are
   not quite right.  odd-even and even-odd combined artifacts (light red
   and light green) do not show unless Gaussian factor is changed a lot,
   which causes even worse artifacts.  Fully document the Atari's video
   output signal (might require a scope.)  Fully document NTSC decoding
   of late 70's and 80's era TVs.
 
-* Document CTIA and emulate properly.  Emulate the players not aligning
+* document CTIA and emulate properly.  Emulate the players not aligning
   with playfield bug/feature of CTIA which is said to exist. Need
   at least screenshots of a CTIA Atari showing all possible artifacts.
 
-* An option to emulate the buggy GTIA chip found in new XE machines.
+* an option to emulate the buggy GTIA chip found in new XE machines.
 
-* Fix all remaining collision bugs in the ANTIC and GTIA code (border+scroll,
+* fix all remaining collision bugs in the ANTIC and GTIA code (border+scroll,
   player HPOS and GRAF changes, partial_scanline changes.) Use the technique
   of saving data that might generate false collisions, drawing, and then
   restoring the data (pm_scanline).
 
-* Cycle-exact DMACTL and HSCROL including all glitches
+* cycle-exact DMACTL and HSCROL including all glitches
 
 
 Sound
@@ -186,26 +188,26 @@ Sound
 
 * support WAV files in configurations with no live sound
 
-* an option to auto-enable stereo when an Atari program uses it
+- an option to auto-enable stereo when an Atari program uses it
 
 * Covox
 
-* 2 POKEY mono, 4 POKEY stereo, 4 POKEY quad
+- 2 POKEY mono, 4 POKEY stereo, 4 POKEY quad
 
-* MIDI <> serial port interface.  In it's simplest form there's only MIDI
+- MIDI <> serial port interface.  In it's simplest form there's only MIDI
   output from the Atari.  The more complicated version is enabled by the motor
   control line and includes two MIDI outputs selected by the command control
   line and one MIDI input.  There is a MIDI composer program for Atari.
 
-* A/D Converter - 4-bit sampler that returns 0xf0-0xff in the 0xd500-0xd5ff
+- A/D Converter - 4-bit sampler that returns 0xf0-0xff in the 0xd500-0xd5ff
   address space.
 
-* XEM AMY-1 Chip.  This is a huge project.  Schematics (netlist)
+- XEM AMY-1 Chip.  This is a huge project.  Schematics (netlist)
   are said to exist. Prototyping software for the PC (connected to parallel
   port) is available online. Datasheet is online. Need netlist for AMY-1,
   schematics for XEM and any software.
 
-* SID chip
+- SID chip
 
 
 User Interface
@@ -219,11 +221,11 @@ User Interface
 
 * error messages should appear on screen and not in the log
 
-* use a smaller font for low-resolution displays
+- use a smaller font for low-resolution displays
 
-* on screen display, like a TV remote, for the NTSC (or other) screen filter.
+- on screen display, like a TV remote, for the NTSC (or other) screen filter.
 
-* a database to identify programs and choose appropriate settings.
+- a database to identify programs and choose appropriate settings.
   OS version.  Memory size.  Memory expansion type.  Peripherals.
   Machine type.  Joystick/Trackball/Paddle etc. controller type.
   Artifacting mode.  SIO patch compatibility. Even if compatible with
@@ -270,11 +272,9 @@ Speed optimizations
 
 * try merging N and Z flags into one variable
 
-* try putting the C flag as the 8th bit of the A variable
+- use patches for common routines such as OS interrupt handlers
 
-* use patches for common routines such as OS interrupt handlers
-
-* make some hardware registers directly available in memory[]
+- make some hardware registers directly available in memory[]
 
 * write versions of draw_antic_* functions for the common case when there are
   no sprites in the current scanline
@@ -285,39 +285,39 @@ Speed optimizations
 
 * automatic framedrop
 
-* generate 168x120 graphics for portable devices with low-res displays
+- generate 168x120 graphics for portable devices with low-res displays
 
-* boost memory bank switching by using hardware paging on systems
+- boost memory bank switching by using hardware paging on systems
   that support it (for example, use mmap() on Linux)
 
-* boost memory bank switching by using Get/Put functions for the banked memory,
+- boost memory bank switching by using Get/Put functions for the banked memory,
   PC_PTR and some tweaks in antic.c
 
-* implement Dirty Spans (see HOWTO-DIRTYSPAN)
+- implement Dirty Spans (see HOWTO-DIRTYSPAN)
 
-* think about using MMX and SSE (for display and sound probably)
+- think about using MMX and SSE (for display and sound probably)
 
-* think about optimizations for the more and more common 64-bit CPUs so we
-  can reach 256 times Atari speed sooner ;-)
+- think about optimizations for the more and more common 64-bit and multi-core
+  CPUs so we can reach 256 times Atari speed sooner ;-)
 
-* an option to detect popular lengthy Atari decompression routines
+- an option to detect popular lengthy Atari decompression routines
   and run equivalent C routines instead
 
 
 R: device
 ---------
 
-* clean up and comment the code
+- clean up and comment the code
 
-* improve portability
+- improve portability
 
-* documentation
+- documentation
 
-* automatic test (similar to hdevtest.lst for H:)
+- automatic test (similar to hdevtest.lst for H:)
 
-* identify security problems
+- identify security problems
 
-* TCP port should be configurable (currently hardwired to 9000). The switch
+- TCP port should be configurable (currently hardwired to 9000). The switch
   between real serial port and TCP port should be put there. Something
   along the following lines:
   R_SERIAL = 1
