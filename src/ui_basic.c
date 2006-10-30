@@ -1321,6 +1321,9 @@ int kb_ui(const char *title, int layout)
 		case 0x1b:
 			return AKEY_NONE;
 		case 0x9b:
+#ifdef _WIN32_WCE
+		case 0x20:
+#endif
 			code = 0;
 			while (--x > 0) {
 				if (layout_line[x] == ' ') {
