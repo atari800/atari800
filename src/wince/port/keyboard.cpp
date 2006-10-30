@@ -35,10 +35,14 @@ extern "C"
 
 int virtual_joystick = 0;
 int smkeyhack = 0;
+extern HWND hWndMain;
 };
 
 int currentKeyboardMode = 4;
 int currentKeyboardColor = 0;
+
+int ui_clearkey = FALSE;
+int kbui_timerset = FALSE;
 
 int stylus_down = 0;
 
@@ -351,6 +355,7 @@ sKeyTranslation kbd_translation[] =
 	{VK_DOWN, AKEY_DOWN},
 	{VK_LEFT, AKEY_LEFT},
 	{VK_RIGHT, AKEY_RIGHT},
+	{VK_RETURN, AKEY_RETURN}		// fallthrough case
 };
 
 #define KBDT_TRIGGER	0
@@ -420,14 +425,13 @@ void release_key(short akey);
 
 void hitbutton(short code)
 {
-	int kbcode;
+	int kbcode = AKEY_NONE;
 	
 	if(ui_is_active)
 	{
 		trig0 = 1;
 		stick0 = 0xff;
 
-		kbcode = AKEY_NONE;
 		if(code == joykey_map[get_screen_mode()][0])
 			kbcode = AKEY_UP;
 		else if(code == joykey_map[get_screen_mode()][1])
@@ -436,7 +440,7 @@ void hitbutton(short code)
 			kbcode = AKEY_LEFT;
 		else if(code == joykey_map[get_screen_mode()][3])
 			kbcode = AKEY_RIGHT;
-		else if(code == klist.vkStart)
+		else if(code == klist.vkStart && !issmartphone)
 			kbcode = AKEY_BACKSPACE;
 		else if(code == klist.vkA)
 			kbcode = AKEY_SPACE;
@@ -444,12 +448,16 @@ void hitbutton(short code)
 			kbcode = AKEY_RETURN;
 		else if(code == klist.vkC)
 			kbcode = AKEY_ESCAPE;
-		
-		push_key(kbcode);
+		else
+			for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
+				if(code == kbd_translation[i].winKey)
+				{
+					kbcode = kbd_translation[i].aKey;
+					break;
+				}
 	}
 	else
 	{
-		kbcode = AKEY_NONE;
 		if(code == joykey_map[get_screen_mode()][0])
 			stick0 &= ~1;
 		else if(code == joykey_map[get_screen_mode()][1])
@@ -460,56 +468,34 @@ void hitbutton(short code)
 			stick0 &= ~8;
 		else if(code == klist.vkA || code == klist.vkB || ((code == '4' || code == '6') && issmartphone))
 			trig0 = 0;
-		else if(code == '5' && issmartphone)
-			key_shift = 1;
 		else if(code == klist.vkC)
-			kbcode = AKEY_UI;
+		{
+			if (!kbui_timerset)
+			{
+				SetTimer(hWndMain, 1, 1000, NULL);
+				kbui_timerset = TRUE;
+			}
+		}
 		else if ((code == VK_F3) && (issmartphone))
 			set_screen_mode(get_screen_mode()+1); 
 		else
-		for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
-			if(code == kbd_translation[i].winKey)
-			{
-				kbcode = kbd_translation[i].aKey;
-				break;
-			}
-
-		if(kbcode != AKEY_NONE)
-			push_key(kbcode);
+			for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
+				if(code == kbd_translation[i].winKey)
+				{
+					kbcode = kbd_translation[i].aKey;
+					break;
+				}
 	}
-
-	/* The way current UI works, it is not compatible with keyboard implementation
-	in landscape mode */
-	if(kbcode == AKEY_UI)
-		set_screen_mode(0);
+	if(kbcode != AKEY_NONE)
+		push_key(kbcode);
 }
 
 void releasebutton(short code)
 {
-	int kbcode;
+	int kbcode = AKEY_NONE, temp_ui = -1;
 	
 	if(ui_is_active)
-	{
-		kbcode = AKEY_NONE;
-		if(code == klist.vkUp)
-			kbcode = AKEY_UP;
-		else if(code == klist.vkDown)
-			kbcode = AKEY_DOWN;
-		else if(code == klist.vkLeft)
-			kbcode = AKEY_LEFT;
-		else if(code == klist.vkRight)
-			kbcode = AKEY_RIGHT;
-		else if(code == klist.vkStart)
-			kbcode = AKEY_BACKSPACE;
-		else if(code == klist.vkA)
-			kbcode = AKEY_SPACE;
-		else if(code == klist.vkB)
-			kbcode = AKEY_RETURN;
-		else if(code == klist.vkC)
-			kbcode = AKEY_ESCAPE;
-		
 		release_key(kbcode);
-	}
 	else
 	{
 		if(code == joykey_map[get_screen_mode()][0])
@@ -522,24 +508,37 @@ void releasebutton(short code)
 			stick0 |= 8;
 		else if(code == klist.vkA || code == klist.vkB || ((code == '4' || code == '6') && issmartphone))
 			trig0 = 1;
-		else if(code == '5' && issmartphone)
-			key_shift = 0;
 		else if(code == klist.vkC)
-			kbcode = AKEY_UI;
-		else
-		for(int i=0; i<sizeof(kbd_translation)/sizeof(kbd_translation[0]); i++)
-			if(code == kbd_translation[i].winKey)
+			if (kbui_timerset)
 			{
-				kbcode = kbd_translation[i].aKey;
-				break;
+				KillTimer(hWndMain, 1);
+				kbui_timerset = FALSE;
+				set_screen_mode(0);
+				kbcode = AKEY_UI;
+				push_key(kbcode);
+				ui_clearkey = TRUE;
+				return;
 			}
-
-		
-		if(kbcode != AKEY_NONE)
-			release_key(kbcode);
 	}
+
+	release_key(kbcode);		// always release or the ui gets stuck
 }
 
+void Start_KBUI(void)
+{
+	int kbcode, temp_ui;
+	KillTimer(hWndMain, 1);
+	kbui_timerset = FALSE;
+	temp_ui = ui_is_active;
+	ui_is_active = TRUE;
+	kbcode = kb_ui("Select Atari key to inject once", machine_type);
+	if (kbcode != AKEY_NONE)
+		push_key(kbcode);
+	else
+		release_key(AKEY_NONE);
+	ui_is_active = temp_ui;
+	return;
+}
 
 void tapscreen(short x, short y)
 {
@@ -801,17 +800,21 @@ void push_key(short akey)
 		activeMod ^= 0x80;
 		break;
 	case AKEY_F2:
+	case AKEY_OPTION:
 		key_consol &= ~CONSOL_OPTION;
 		break;
 	case AKEY_F3:
+	case AKEY_SELECT:
 		key_consol &= ~CONSOL_SELECT;
 		break;
 	case AKEY_F4:
+	case AKEY_START:
 		key_consol &= ~CONSOL_START;
 		break;
 	default:
 		activeKey = akey|activeMod;
 		activeMod = 0;
+		key_shift = (activeKey & AKEY_SHFT) || (activeKey & AKEY_SHFTCTRL);
 	}
 }
 
@@ -819,11 +822,18 @@ void release_key(short akey)
 {
 	activeKey = AKEY_NONE;
 	key_consol = CONSOL_NONE;
+	key_shift = 0;
 }
 
 int get_last_key()
 {
-	if(activeKey != AKEY_BREAK)
+	if (ui_clearkey)
+	{
+		ui_clearkey = FALSE;
+		release_key(AKEY_UI);
+		return AKEY_UI;
+	}
+	else if(activeKey != AKEY_BREAK)
 		return activeKey;
 	else
 	{
@@ -881,7 +891,6 @@ int initinput(void)
 	joykey_map[2][2] = klist.vkUp;
 	joykey_map[2][3] = klist.vkDown;
 
-	/* TODO: REMOVE THIS ASAP */
 	if (smkeyhack)
 	{
 		klist.vkB ^= klist.vkC;

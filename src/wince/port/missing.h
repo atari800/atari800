@@ -11,8 +11,9 @@
 #define NO_YPOS_BREAK_FLICKER			1
 #define DIRTYRECT						1
 #define SUPPORTS_ATARI_CONFIGINIT		1
-#undef WIN32
+#undef  WIN32
 #define WIN32							1
+#define KB_UI							1
 
 #define perror(s) wce_perror(s)
 void wce_perror(char *s);

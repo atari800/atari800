@@ -13,6 +13,8 @@ void tapscreen(short x, short y);
 void untapscreen(short x, short y);
 void dragscreen(short x, short y);
 
+void Start_KBUI();
+
 extern int console;
 extern int trig0;
 extern int stick0;

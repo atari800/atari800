@@ -127,6 +127,9 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 	case WM_SETTINGCHANGE:
 		OrientationChanged();
 		break;
+	case WM_TIMER:
+		Start_KBUI();
+		return 0;
 	}
 /* In the first version all other events were merrily dropped on floor in singlethreaded
    model. That caused some troubles with debugging and suspected to cause spurious key up
