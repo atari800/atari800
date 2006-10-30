@@ -161,6 +161,7 @@ static bool translatelandscape = false;
 #define FORMAT_OTHER 3
 // I believe this FORMAT_OTHER takes the cake.
 
+#if _WIN32_WCE <= 300
 typedef struct _RawFrameBufferInfo
 {
    WORD wFormat;
@@ -171,6 +172,7 @@ typedef struct _RawFrameBufferInfo
    int  cxPixels;
    int  cyPixels;
 } RawFrameBufferInfo;
+#endif
 
 void *RawBeginDraw(void)
 {
@@ -373,14 +375,18 @@ extern "C" int gron(int *argc, char *argv[])
 	{
 		// implicit QVGA
 		pDrawKbd = null_DrawKbd;
-		geom[0].startoffset = geom[0].linestep * 30;
+		if (gxdp.cyHeight != 240)	// center "prortait" iff not landscape
+			geom[0].startoffset = geom[0].linestep * 30;
+		else
+		{
+			maxMode = 0;			// only portait available for landscape smartphones
+			smkeyhack = 1;			// vkC is missing in these devices
+		}
 	}
 	else if(gxdp.cyHeight < 320)
 	{
 			maxMode = 0; // portrait only!
 	}
-
-
 
 	if ((gxdp.cxWidth == 480) & (gxdp.cyHeight == 640) & (pRefresh == hicolor_Refresh))
 	{
