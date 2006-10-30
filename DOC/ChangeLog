@@ -1,3 +1,8 @@
+2006-10-30  Kostas Nakos  <knakos@gmail.com>
+* wince/port/*, ui_basic.c, DOC/INSTALL.wince: added support for QVGA landscape 
+  smartphones, added the virtual keyboard (kb_ui) and updated documentation.
+
+
 2006-09-04  Piotr Fusik  <fox@scene.pl>
 * cartridge.[ch], ui.c, DOC/cart.txt: added 128 KB SpartaDOS X cartridge type,
   by the way: shortened the cartridge code and replaced letters with numbers

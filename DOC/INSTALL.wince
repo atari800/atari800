@@ -1,6 +1,6 @@
         PocketAtari: The Windows CE Port of the Atari 800 Emulator.
 
-(Last Update of this File: 16 Apr 06)
+(Last Update of this File: 30 Oct 06)
 
 I. PURPOSE
 ------------------------------------------------------------------------------
@@ -16,11 +16,11 @@ The updated version of this port:
 
 o Adds support for Smartphone devices.
   - Now supporting QVGA Smartphone devices.
-  - Also supports VGA displays. [NEW in 2.0.2]
+  - Supports QVGA Landcape Smartphone devices. [NEW in 2.0.3]
+  - Adds a popup virtual keyboard. [NEW in 2.0.3]
+o Support for VGA displays.
 o Includes interpolating downsampling filter for Smartphone displays.
 o Keeps the backlight always on.
-o REMOVED in 2.0.2: zlibce dependency. This library is not needed anymore, as
-  it's part of the executable (statically linked). You can remove it safely.
 
 III. INSTALLING
 ------------------------------------------------------------------------------
@@ -63,7 +63,6 @@ are limited. You can play the majority of games though. Use the following keys:
 Directional keys            : Simulate joystick 0                   $
 Softkey A, Softkey B, 4, 6  : Fire joystick 0                       $
 0                           : Return key
-5                           : Shift key
 7                           : Option key
 8                           : Select key
 9                           : Start key
@@ -71,6 +70,14 @@ Softkey C (usually '*' key) : Show emulator menu                    $
 Talk/Call/Green key         : Switch between the 3 display modes
 
 For navigating the emulator menus use buttons marked with '$' above.
+
+Pressing and holding the Softkey C for more than one (1) second during emulation
+brings up the virtual Atari keyboard. Navigate with cursor keys to the desired
+key and press Softkey A or B to inject one keystroke into the emulator.
+
+TIP: In some demos, pressing the SHIFT key skips the current part. In the virtual
+     keyboard the SHIFT key is a toggle, so select also another key. The SHIFT
+     keycode will register just fine.
 
 NOTE 1 : Functionality of Softkey A, Softkey B and * keys may be attributed
          differently according to the drivers of your cellphone.
@@ -82,6 +89,8 @@ NOTE 2 : Until we get a fully modifiable controller configuration option in
          considered as an UNSUPPORTED option which will go away in the future.
          To enable it include the following line in your atari800.cfg file:
          WCE_SMARTPHONE_KBHACK=1
+         Also note that this behavior is enabled by default for QVGA Landscape
+         Smartphone devices, due to the possible lack of a Softkey C.
 
 V. COMPILING
 ------------------------------------------------------------------------------
@@ -99,9 +108,11 @@ emulator. Also for older Smartphones you'll have to compile yourself a version o
 the gx.dll using the GAPI emulator files. The Smartphone resolution is 176x220
 pixels with 16bpp (either 565 or 555 RGB configurations).
 
-NOTE : If you cannot open the project file "PocketAtari.vcp" from the source
-       tarball or CVS checkout, make sure that it is in CR+LF format (and not
-       just LF). A utility like unix2dos can do the trick.
+NOTE 1 : If you cannot open the project file "PocketAtari.vcp" from the source
+         tarball or CVS checkout, make sure that it is in CR+LF format (and not
+         just LF). A utility like unix2dos can do the trick.
+
+NOTE 2 : PocketAtari can also compile OK using evc4 or Visual Studio 2005.
 
 VI. HISTORY
 ------------------------------------------------------------------------------
