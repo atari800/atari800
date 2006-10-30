@@ -45,8 +45,20 @@ static int kbjoy = 1;
 
 DWORD REG_bat, REG_ac, REG_disp, bat_timeout;
 
-/* WinCE port does not have console, no log either */
-void Aprint(char *format, ... ) {}
+void Aprint(char *format, ... )
+{
+#ifdef DEBUG
+	char tmp1[512];
+	TCHAR tmp2[512];
+	va_list va;
+
+	va_start(va, format);
+	_vsnprintf(tmp1, 512, format, va);
+	va_end(va);
+	MultiByteToWideChar(CP_ACP, 0, tmp1, strlen(tmp1) + 1, tmp2, sizeof(tmp2));
+	OutputDebugString(tmp2);
+#endif
+}
 void Aflushlog(void) {}
 
 static DWORD reg_access(TCHAR *key, TCHAR *val, DWORD data)
