@@ -270,6 +270,11 @@ int Util_direxists(const char *filename)
 #endif /* UNICODE */
 	if (attr == 0xffffffff)
 		return FALSE;
+#ifdef _WIN32_WCE
+	/* WinCE: Make sure user does not up-dir from the root */
+	if (*filename == 0)
+		return FALSE;
+#endif
 	return (attr & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
 }
 
