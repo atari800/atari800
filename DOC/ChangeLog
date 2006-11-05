@@ -1,9 +1,13 @@
+2006-11-05  Piotr Fusik  <fox@scene.pl>
+* DOC/PORTING: an introduction to writing platform-specific part of Atari800
+
+
 2006-10-31  Kostas Nakos  <knakos@gmail.com>
 * util.c: Make sure user does not updir from the root in WinCE
 
 
 2006-10-30  Kostas Nakos  <knakos@gmail.com>
-* wince/port/*, ui_basic.c, DOC/INSTALL.wince: added support for QVGA landscape 
+* wince/port/*, ui_basic.c, DOC/INSTALL.wince: added support for QVGA landscape
   smartphones, added the virtual keyboard (kb_ui) and updated documentation.
 
 

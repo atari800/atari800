@@ -1,0 +1,223 @@
+How to port Atari800 to new platforms
+=====================================
+
+This is a guide for people who intend to create a new version of Atari800
+for their computer or operating system (called "target system" throughout
+this document).
+
+
+Prerequisites
+-------------
+
+The target system must have a raw computing power at least comparable
+to a Pentium 100, otherwise the emulator will run slower than the original
+8-bit Atari.  Other hardware requirements are usually easier to fulfill:
+a few megs RAM, a few megs disk space, a display, some keys and an audio
+output.
+
+You should have a working compiler of the C programming language
+for the target system.  The compiler, however, can run on another system
+(such as PC), which is called cross-compiling and is common when developing
+for small devices.
+
+You should understand at least the basics of programming in C.
+The more you know, the better.
+
+
+Getting started
+---------------
+
+Try compiling an existing version of Atari800 for a system different
+from your target system, just to learn how this works.
+See the INSTALL file for instructions.
+
+Try compiling something for your target system: a "Hello world" program
+or (preferrably) a game.  In case of problems, ask people who develop
+for your target system.  If you are not an expert of programming
+the target system, get in touch with more experienced developers,
+as you may need their advice sooner or later.
+
+
+Compile-time configuration
+--------------------------
+
+Before you start feeding your C compiler with *.c files,
+you need a file named "config.h".  This file specifies the system
+to compile for, the C library functions that are available and features
+to include.  There are two methods of creating this file: manually
+and using the configure script.
+
+Using the configure script is recommended, because it makes your port
+easier to maintain for people who have never seen your target system.
+Yet if you find it too hard to use the configure script, go on with
+editing config.h by hand and consider using the configure script later.
+The configure script is works well on Unix and GNU/Linux systems,
+but can be awkward to use on Windows, especially if you use
+an Integrated Development Environment and not command-line tools.
+
+The configure script is the file named "configure" that should be run
+by a Unix shell program such as "bash".  The file is hardly human-readable.
+It is generated from the source file "configure.ac" by a tool called
+"autoconf".  Another tool "autoheader" turns "configure.ac" into
+"config.h.in", which is a template for "config.h" used by "configure".
+"autogen.sh" is a shortcut that simply runs "autoheader" and "autoconf".
+
+If you opt to edit "config.h" by hand, make a copy of "config.h.in"
+under the name "config.h" and edit it changing some #undef's into #define's.
+Consult the comments and other config.h files created this way, in "dc",
+"win32/msc" and "wince/port" directories.
+
+
+Compiling for the first time
+----------------------------
+
+Try starting with something simple.  Disable sound emulation,
+either by passing "--disable-sound" to the configure script or by #undef'ing
+sound items in "config.h".
+
+The easiest way to start is to compile a simplified version of the emulator,
+called the "basic" version.  With the configure script you specify
+"--target=basic".  If editing "config.h", "#define BASIC 1" and figure out
+which files to compile.  The basic version uses only standard C library
+functions.
+
+The basic version does not support graphics or joysticks and has
+a very limited keyboard input.  Most likely it will appear as a blank screen
+when run.  That's fine.  Edit the runtime configuration file providing
+paths to Atari ROM images and change "DISABLE_BASIC" to "0".
+If you're lucky, you'll see the "READY" prompt of Atari BASIC.
+
+
+Implementing platform-specific part
+-----------------------------------
+
+Create a new source file with your platform-specific code.
+You have several examples to copy-and-paste from.
+
+The entry point to the program normally looks like this:
+
+int main(int argc, char **argv)
+{
+	/* initialise Atari800 core */
+	if (!Atari800_Initialise(&argc, argv))
+		return 3;
+
+	/* main loop */
+	for (;;) {
+		key_code = Atari_Keyboard();
+		Atari800_Frame();
+		if (display_screen)
+			Atari_DisplayScreen();
+	}
+}
+
+You need to implement functions specified in "platform.h".
+These functions should display graphics on screen and read keyboard
+and joysticks/mouse in a platform-specific way.
+
+
+Graphics
+--------
+
+Atari_Initialise() is the function that does platform-specific initialization.
+You may need to switch the graphics mode in this function.
+
+Atari_DisplayScreen() should update the screen with the contents
+of the atari_screen array.  atari_screen is declared in screen.h as (ULONG *),
+but it is really a pointer to a rectangular array of bytes.  There are
+240 (ATARI_HEIGHT) rows, 384 (ATARI_WIDTH) bytes each.  While there are exactly
+240 rows to display, only 336 middle columns of the 384 are meaningful.
+Do never display more than 336 middle columns!  Although the remaining columns
+may appear black when you start the emulator, there's no such guarantee
+when the emulator is running.
+
+It is fine to display only 320 middle columns if that's easier for you than 336.
+You can also crop the Atari graphics from the top and the bottom, because most
+programs use just the 192 middle lines.  If your display has considerably lower
+resolution, you need to provide your own bitmap rescaling.
+
+Bytes in atari_screen[] are Atari color codes (0-15 = shades of gray,
+16-31 = shades of brown/yellow, etc).  8-bit Ataris have a fixed palette
+of 256 colors.  You can get 8-bit RGB components of Atari colors
+with the macros Palette_GetR(code), Palette_GetG(code) and Palette_GetB(code),
+defined in "colours.h".
+
+
+Keyboard input
+--------------
+
+There are three variables that are read by the emulation core and should be
+set by your platform-specific code:
+
+int key_code;
+int key_shift;
+int key_consol;
+
+key_code is the Atari scancode of the currently pressed keystroke, or one
+of the emulator-defined special values, such as AKEY_NONE, AKEY_COLDSTART,
+AKEY_BREAK, etc.  Atari scancodes are 8-bit values with 6 low bits containing
+the code of a regular key and two high bits reflecting the status of Shift
+and Control modifiers.  See input.h or some Atari documentation for details.
+Codes that are special to the emulator are AKEY_NONE (which means no key
+pressed, or just the Shift or the Control) and AKEY_* values defined
+in "atari.h".
+
+key_shift should be TRUE when any Shift key is pressed, FALSE otherwise.
+
+In 8-bit Atari world the term "console keys" refers to the three function keys
+(Start, Select and Option) commonly used in games.  The keys are independent
+of each other and of all other keys.  The state of each console key should
+be reflected by one bit in key_consol (cleared if the key is pressed).
+See "input.h".
+
+
+Joystick input
+--------------
+
+Four Atari joysticks are emulated, but few Atari games support more than two.
+
+Each joystick has one fire button.  Your Atari_TRIG() is passed the joystick
+number (0-3) and should return 0 if the corresponding fire button is pressed
+and 1 if it's not.
+
+The joysticks are "digital", that is, they can be moved in one of 8 directions
+from the center position.  Joystick positions are passed in a bit obscure way.
+Atari_PORT(0) should return the position of joysticks 0 and 1, Atari_PORT(1)
+- the position of joysticks 2 and 3.  The returned values are 8-bit,
+four bits per joystick.  The acceptable values of the four bits are defined
+as STICK_* constants in "input.h".
+
+
+Mouse input
+-----------
+
+Nearly all Atari programs are controlled by keyboard or joysticks.
+Other controllers were much less popular.  However, it is easy to support
+them in your version of Atari800.
+
+Paddles, touch tablet, light pen and other devices can be emulated
+by a pointing device such as mouse.  In the main emulation loop your code
+should update the variables mouse_delta_x, mouse_delta_y and mouse_butons.
+mouse_delta_x and mouse_delta_y are *relative* positions, that is,
+how far the mouse was moved since last time.  mouse_buttons is composed
+of 3 bits that represent left, right and middle mouse button (1 = pressed).
+
+To test mouse input, select "Light pen" as the emulated device
+and press right mouse button to enable the mouse pointer maintained
+by the emulator.
+
+
+Final words
+-----------
+
+That's the end of this guide.  I hope it's useful for developers new
+to Atari800.  Suggestions about what to add or improve are welcome.
+
+If you are serious about porting Atari800, please join our mailing list.
+See the documentation or the web page for details.
+
+
+Happy hacking!
+
+Piotr Fusik
+November 5, 2006
