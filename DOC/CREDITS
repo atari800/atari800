@@ -208,6 +208,9 @@ Marcin Lewandowski <jaskier@atari8.info>
     - fixed incorrectly saved N flag when entering the monitor
     - found a memory leak in remez.c
 
+Paulo Lopes <paulo.lopes@ist.utl.pt>
+    - windowed mode for Win32
+
 maddoxik <maddoxik@funnyvoid.com>
     - "Make Blank Boot Disk" option added to Disk Management UI
 

@@ -1,3 +1,8 @@
+2006-12-07  Paulo Lopes  <paulo.lopes@ist.utl.pt>
+* win32/main.c, win32/screen_win32.[ch]: an option to run the emulator
+  in a window ("-windowed" on the command line)
+
+
 2006-11-05  Piotr Fusik  <fox@scene.pl>
 * DOC/PORTING: an introduction to writing platform-specific part of Atari800
 
