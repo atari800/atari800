@@ -39,6 +39,8 @@
 
 #define SHOWFRAME 0
 
+int windowed = FALSE;
+
 static LPDIRECTDRAW4 lpDD = NULL;
 static LPDIRECTDRAWSURFACE4 lpDDSPrimary = NULL;
 static LPDIRECTDRAWSURFACE4 lpDDSBack = NULL;
@@ -74,6 +76,42 @@ void groff(void)
 	}
 }
 
+LRESULT CALLBACK Atari_WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+static BOOL initwin(void)
+{
+	WNDCLASS wc;
+
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.lpfnWndProc = Atari_WindowProc;
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hInstance = myInstance;
+	wc.hIcon = LoadIcon(myInstance, IDI_APPLICATION);
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground = GetStockObject(BLACK_BRUSH);
+	wc.lpszMenuName = myname;
+	wc.lpszClassName = myname;
+	RegisterClass(&wc);
+
+	if (windowed) {
+		hWndMain = CreateWindowEx(
+			0, myname, myname, WS_TILEDWINDOW | WS_SIZEBOX | WS_DLGFRAME, CW_USEDEFAULT, CW_USEDEFAULT,
+			GetSystemMetrics(SM_CXSCREEN) / 2, GetSystemMetrics(SM_CYSCREEN) / 2,
+			NULL, NULL, myInstance, NULL);
+	}
+	else {
+		hWndMain = CreateWindowEx(
+			0, myname, myname, WS_POPUP, 0, 0,
+			GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+			NULL, NULL, myInstance, NULL);
+	}
+
+	if (!hWndMain)
+		return 1;
+	return 0;
+}
+
 static int initFail(HWND hwnd, const char *func, HRESULT hr)
 {
 	char txt[256];
@@ -94,22 +132,26 @@ int gron(int *argc, char *argv[])
 	int help = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
-		if (strcmp(argv[i], "-width") == 0)
+		if (strcmp(argv[i], "-windowed") == 0)
+			windowed = TRUE;
+		else if (strcmp(argv[i], "-width") == 0)
 			width = Util_sscandec(argv[++i]);
 		else if (strcmp(argv[i], "-blt") == 0)
 			bltgfx = TRUE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
+				Aprint("\t-windowed        Run in a window");
 				Aprint("\t-width <num>     Set display mode width");
 				Aprint("\t-blt             Use blitting to draw graphics");
 				help = TRUE;
 			}
 			argv[j++] = argv[i];
 		}
-		}
+	}
 	*argc = j;
 
-	if (help)
+	initwin();
+	if (help || windowed)
 		return 0;
 
 	if (width > 0) {
@@ -215,7 +257,76 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 	pal[ent].peFlags = 0;
 }
 
-void refreshv(UBYTE * scr_ptr)
+void refreshv_win32api(UBYTE *scr_ptr)
+{
+	PAINTSTRUCT ps;
+	HDC hdc;
+	HDC hCdc;
+	BITMAPINFO bi;
+	DWORD *bitmap_bits = NULL;
+	ULONG   ulWindowWidth, ulWindowHeight;      // window width/height
+	HBITMAP hBitmap;
+	RECT rt;
+	int i;
+	int j;
+
+	GetClientRect(hWndMain, &rt);
+	InvalidateRect(hWndMain, &rt, FALSE);
+	hdc = BeginPaint(hWndMain, &ps);
+	ulWindowWidth = rt.right - rt.left;
+	ulWindowHeight = rt.bottom - rt.top;
+
+	// make sure we have at least some window size
+	if ((!ulWindowWidth) || (!ulWindowHeight))
+		return;
+
+	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER); // structure size in bytes
+	bi.bmiHeader.biWidth = ATARI_WIDTH-48;
+	bi.bmiHeader.biHeight = ATARI_HEIGHT;
+	bi.bmiHeader.biPlanes = 1;
+	bi.bmiHeader.biBitCount = 32;
+	bi.bmiHeader.biCompression = BI_RGB; //BI_BITFIELDS OR BI_RGB???
+	bi.bmiHeader.biSizeImage = 0; // for BI_RGB set to 0
+	bi.bmiHeader.biXPelsPerMeter = 2952; //75dpi=2952bpm
+	bi.bmiHeader.biYPelsPerMeter = 2952; //75dpi=2952bpm
+	bi.bmiHeader.biClrUsed = 0;
+	bi.bmiHeader.biClrImportant = 0;
+
+	hCdc = CreateCompatibleDC(hdc);
+	hBitmap = CreateDIBSection(hCdc, &bi, DIB_RGB_COLORS, &bitmap_bits, NULL, 0);
+	if (!hBitmap) {
+		MessageBox(hWndMain, "Could not create bitmap", myname, MB_OK);
+		DestroyWindow(hWndMain);
+		return;
+	}
+
+	// Copying the atari screen to bitmap.
+	for (i = 0; i < ATARI_HEIGHT; i++) {
+		for (j = 0; j < ATARI_WIDTH - 48; j++) {
+			*bitmap_bits++ = colortable[*scr_ptr++];
+		}
+		// The last 48 columns of the screen are not used
+		scr_ptr+=48;
+	}
+
+	SelectObject(hCdc, hBitmap);
+
+	// Draw the bitmap on the screen. The image must be felliped vertically
+	if (!StretchBlt(hdc, 0, 0, ulWindowWidth, ulWindowHeight,
+			hCdc, 0, bi.bmiHeader.biHeight, bi.bmiHeader.biWidth, -bi.bmiHeader.biHeight, SRCCOPY)) {
+		MessageBox(hWndMain, "Could not StretchBlt", myname, MB_OK);
+		DestroyWindow(hWndMain);
+	}
+
+	DeleteDC(hCdc);
+	DeleteObject(hBitmap);
+
+	EndPaint(hWndMain, &ps);
+
+	ValidateRect(hWndMain, &rt);
+}
+
+void refreshv(UBYTE *scr_ptr)
 {
 	DDSURFACEDESC2 desc0;
 	int err;
@@ -224,6 +335,11 @@ void refreshv(UBYTE * scr_ptr)
 	ULONG *dst;
 	int h, w;
 	DDBLTFX ddbltfx;
+
+	if (windowed) {
+		refreshv_win32api(scr_ptr);
+		return;
+	}
 
 	desc0.dwSize = sizeof(desc0);
 	err = IDirectDrawSurface4_Lock(bltgfx ? lpDDSsrc : lpDDSBack,

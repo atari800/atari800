@@ -60,7 +60,7 @@ void exit(int code)
 }
 #endif
 
-static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK Atari_WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_ACTIVATEAPP:
@@ -83,8 +83,11 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 		              | ((wParam & MK_MBUTTON) ? 4 : 0);
 		break;
 	case WM_SETCURSOR:
-		SetCursor(NULL);
-		return TRUE;
+		if (!windowed) {
+			SetCursor(NULL);
+			return TRUE;
+		}
+		break;
 	case WM_CREATE:
 		break;
 	case WM_CLOSE:
@@ -102,46 +105,15 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-static BOOL initwin(HINSTANCE hInstance, int nCmdShow)
-{
-	WNDCLASS wc;
-
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WindowProc;
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = hInstance;
-	wc.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = GetStockObject(BLACK_BRUSH);
-	wc.lpszMenuName = myname;
-	wc.lpszClassName = myname;
-	RegisterClass(&wc);
-
-	hWndMain = CreateWindowEx(
-		0, myname, myname, WS_POPUP, 0, 0,
-		GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
-		NULL, NULL, hInstance, NULL);
-
-	if (!hWndMain)
-		return 1;
-	return 0;
-}
-
 #define MOUSE_CENTER_X  100
 #define MOUSE_CENTER_Y  100
 
 int main(int argc, char *argv[])
 {
-	STARTUPINFO si;
 	MSG msg;
 	POINT mouse;
 
 	myInstance = GetModuleHandle(NULL);
-	si.dwFlags = 0;
-	GetStartupInfo(&si);
-	if (initwin(myInstance, si.dwFlags & STARTF_USESHOWWINDOW ? si.wShowWindow : SW_SHOWDEFAULT))
-		return 1;
 
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
@@ -168,7 +140,7 @@ int main(int argc, char *argv[])
 		GetCursorPos(&mouse);
 		mouse_delta_x = mouse.x - MOUSE_CENTER_X;
 		mouse_delta_y = mouse.y - MOUSE_CENTER_Y;
-		if (mouse_delta_x | mouse_delta_y)
+		if (!windowed && (mouse_delta_x | mouse_delta_y))
 			SetCursorPos(MOUSE_CENTER_X, MOUSE_CENTER_Y);
 
 		Atari800_Frame();
