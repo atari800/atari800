@@ -402,13 +402,13 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
+	if (gron(argc, argv))
+		exit(1);
+
 #ifdef SOUND
 	if (usesnd)
 		Sound_Initialise(argc, argv);
 #endif
-
-	if (gron(argc, argv))
-		exit(1);
 
 	if (help_only)
 		return;
