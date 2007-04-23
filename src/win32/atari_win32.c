@@ -2,7 +2,7 @@
  * atari_win32.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2007 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -46,6 +46,7 @@
 static int usesnd = 1;
 
 static int kbjoy = 0;
+static int win32keys = FALSE;
 
 static const UBYTE joydefs[] =
 {
@@ -90,7 +91,214 @@ static int trig1 = 1;
 static int stick0 = STICK_CENTRE;
 static int stick1 = STICK_CENTRE;
 
-int Atari_Keyboard(void)
+#define KBSCAN(name) \
+		case DIK_##name: \
+			keycode |= (AKEY_##name & ~AKEY_SHFTCTRL); \
+			break;
+#define KBSCAN_5200(name) \
+			case DIK_##name: \
+				return AKEY_5200_##name + keycode;
+
+/*
+void gotoxy(int x, int y)
+{
+    COORD coord;
+    coord.X = x; coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+*/
+int Atari_Win32_keys()
+{
+	int keycode=0;
+	BYTE lpKeyState[256];
+	WORD buf[2];
+	char Asciikey;
+	UINT vk;
+
+	switch (kbcode) {
+		KBSCAN(ESCAPE)
+			KBSCAN(BACKSPACE)
+			KBSCAN(TAB)
+			KBSCAN(RETURN)
+			KBSCAN(CAPSLOCK)
+			KBSCAN(SPACE)
+		case DIK_UP:
+			keycode |= AKEY_UP;
+			break;
+		case DIK_DOWN:
+			keycode |= AKEY_DOWN;
+			break;
+		case DIK_LEFT:
+			keycode |= AKEY_LEFT;
+			break;
+		case DIK_RIGHT:
+			keycode |= AKEY_RIGHT;
+			break;
+		case DIK_DELETE:
+			if (key_shift)
+				keycode = AKEY_DELETE_LINE;
+			else
+				keycode |= AKEY_DELETE_CHAR;
+			break;
+		case DIK_INSERT:
+			if (key_shift)
+				keycode = AKEY_INSERT_LINE;
+			else
+				keycode |= AKEY_INSERT_CHAR;
+			break;
+		case DIK_HOME:
+			keycode = AKEY_CLEAR;
+			break;
+		case DIK_F6:
+		case DIK_END:
+			keycode = AKEY_HELP;
+			break;
+		default:
+		{
+
+			// get the win32 keyboard state
+			if(!GetKeyboardState(lpKeyState)) {
+				return AKEY_NONE;
+			}
+
+			/* Debug: To test keyboard codes
+			gotoxy(0,9);
+			AprintS("kbcode:%d\n   ",kbcode);
+
+			gotoxy(0,10);
+			for(i=0; i<256; i++) {
+				if (i%32==0) AprintS("\n%d:", i);
+				AprintS("%2x",lpKeyState[i]);
+			}
+			AprintS("\nA:%d   \n",lpKeyState[65]);
+			AprintS("B:%d   \n",lpKeyState[66]);
+			AprintS("C:%d   \n",lpKeyState[67]);
+			*/
+
+			// translates the scan code to a virtual key
+			vk = MapVirtualKey(kbcode,1);
+			// translates the virtual key to ascii
+			if(ToAscii(vk, kbcode, lpKeyState, buf, 0)<1) {
+				return AKEY_NONE;
+			}
+			Asciikey = (char)buf[0];
+
+			// Change Upper case with lower case due to the reverse effect of the CAPS key
+			// bit 0x80 in lpKeyState signal if the key is pressed, while bit 0x01 togles
+			// each time the key is pressed...
+			if (lpKeyState[VK_CAPITAL] && 0x01) {
+				if (isupper(Asciikey)) Asciikey=tolower(Asciikey);
+				else if (islower(Asciikey)) Asciikey=toupper(Asciikey);
+			}
+
+			switch (Asciikey) {
+		case '0': keycode |= AKEY_0; break;
+		case '1': keycode |= AKEY_1; break;
+		case '2': keycode |= AKEY_2; break;
+		case '3': keycode |= AKEY_3; break;
+		case '4': keycode |= AKEY_4; break;
+		case '5': keycode |= AKEY_5; break;
+		case '6': keycode |= AKEY_6; break;
+		case '7': keycode |= AKEY_7; break;
+		case '8': keycode |= AKEY_8; break;
+		case '9': keycode |= AKEY_9; break;
+
+		case 'a': keycode |= AKEY_a; break;
+		case 'b': keycode |= AKEY_b; break;
+		case 'c': keycode |= AKEY_c; break;
+		case 'd': keycode |= AKEY_d; break;
+		case 'e': keycode |= AKEY_e; break;
+		case 'f': keycode |= AKEY_f; break;
+		case 'g': keycode |= AKEY_g; break;
+		case 'h': keycode |= AKEY_h; break;
+		case 'i': keycode |= AKEY_i; break;
+		case 'j': keycode |= AKEY_j; break;
+		case 'k': keycode |= AKEY_k; break;
+		case 'l': keycode |= AKEY_l; break;
+		case 'm': keycode |= AKEY_m; break;
+		case 'n': keycode |= AKEY_n; break;
+		case 'o': keycode |= AKEY_o; break;
+		case 'p': keycode |= AKEY_p; break;
+		case 'q': keycode |= AKEY_q; break;
+		case 'r': keycode |= AKEY_r; break;
+		case 's': keycode |= AKEY_s; break;
+		case 't': keycode |= AKEY_t; break;
+		case 'u': keycode |= AKEY_u; break;
+		case 'v': keycode |= AKEY_v; break;
+		case 'w': keycode |= AKEY_w; break;
+		case 'x': keycode |= AKEY_x; break;
+		case 'y': keycode |= AKEY_y; break;
+		case 'z': keycode |= AKEY_z; break;
+
+		case 'A': keycode |= AKEY_A; break;
+		case 'B': keycode |= AKEY_B; break;
+		case 'C': keycode |= AKEY_C; break;
+		case 'D': keycode |= AKEY_D; break;
+		case 'E': keycode |= AKEY_E; break;
+		case 'F': keycode |= AKEY_F; break;
+		case 'G': keycode |= AKEY_G; break;
+		case 'H': keycode |= AKEY_H; break;
+		case 'I': keycode |= AKEY_I; break;
+		case 'J': keycode |= AKEY_J; break;
+		case 'K': keycode |= AKEY_K; break;
+		case 'L': keycode |= AKEY_L; break;
+		case 'M': keycode |= AKEY_M; break;
+		case 'N': keycode |= AKEY_N; break;
+		case 'O': keycode |= AKEY_O; break;
+		case 'P': keycode |= AKEY_P; break;
+		case 'Q': keycode |= AKEY_Q; break;
+		case 'R': keycode |= AKEY_R; break;
+		case 'S': keycode |= AKEY_S; break;
+		case 'T': keycode |= AKEY_T; break;
+		case 'U': keycode |= AKEY_U; break;
+		case 'V': keycode |= AKEY_V; break;
+		case 'W': keycode |= AKEY_W; break;
+		case 'X': keycode |= AKEY_X; break;
+		case 'Y': keycode |= AKEY_Y; break;
+		case 'Z': keycode |= AKEY_Z; break;
+
+		case '!': keycode |= AKEY_EXCLAMATION; break;
+		case '"': keycode |= AKEY_DBLQUOTE; break;
+		case '#': keycode |= AKEY_HASH; break;
+		case '$': keycode |= AKEY_DOLLAR; break;
+		case '%': keycode |= AKEY_PERCENT; break;
+		case '&': keycode |= AKEY_AMPERSAND; break;
+		case '\'': keycode |= AKEY_QUOTE; break;
+		case '(': keycode |= AKEY_PARENLEFT; break;
+		case ')': keycode |= AKEY_PARENRIGHT; break;
+		case '*': keycode |= AKEY_ASTERISK; break;
+		case '+': keycode |= AKEY_PLUS; break;
+		case ',': keycode |= AKEY_COMMA; break;
+		case '-': keycode |= AKEY_MINUS; break;
+		case '.': keycode |= AKEY_FULLSTOP; break;
+		case '/': keycode |= AKEY_SLASH; break;
+
+		case ':': keycode |= AKEY_COLON; break;
+		case ';': keycode |= AKEY_SEMICOLON; break;
+		case '<': keycode |= AKEY_LESS; break;
+		case '=': keycode |= AKEY_EQUAL; break;
+		case '>': keycode |= AKEY_GREATER; break;
+		case '?': keycode |= AKEY_QUESTION; break;
+		case '@': keycode |= AKEY_AT; break;
+		case '[': keycode |= AKEY_BRACKETLEFT; break;
+		case '\\': keycode |= AKEY_SLASH; break;
+		case ']': keycode |= AKEY_BRACKETRIGHT; break;
+		case '^': keycode |= AKEY_CIRCUMFLEX; break;
+		case '_': keycode |= AKEY_UNDERSCORE; break;
+		case '`': keycode |= AKEY_NONE; break;
+		case '{': keycode |= AKEY_NONE; break;
+		case '|': keycode |= AKEY_BAR; break;
+		case '}': keycode |= AKEY_NONE; break;
+		case '~': keycode |= AKEY_NONE; break;
+		default: keycode = AKEY_NONE;
+			} //switch (Asciikey)
+		} // default
+	} //switch (kbcode)
+
+ 	return keycode;
+ }
+
+ int Atari_Keyboard(void)
 {
 	int keycode;
 	int i;
@@ -201,9 +409,6 @@ int Atari_Keyboard(void)
 	if (machine_type == MACHINE_5200 && !ui_is_active) {
 		keycode = (key_shift ? 0x40 : 0);
 		switch (kbcode) {
-#define KBSCAN_5200(name) \
-			case DIK_##name: \
-				return AKEY_5200_##name + keycode;
 		case DIK_F4:
 			return AKEY_5200_START + keycode;
 		case DIK_P:
@@ -229,15 +434,15 @@ int Atari_Keyboard(void)
 		}
 	}
 
+	/* use win32 keys and international keyboard only for non control characters */
+	if (win32keys && !kbhits[DIK_LCONTROL] && !kbhits[DIK_RCONTROL])
+		return Atari_Win32_keys();
+
 	/* need to set shift mask here to avoid conflict with PC layout */
 	keycode = (key_shift ? 0x40 : 0)
 	        + ((kbhits[DIK_LCONTROL] | kbhits[DIK_RCONTROL]) ? 0x80 : 0);
 
 	switch (kbcode) {
-#define KBSCAN(name) \
-		case DIK_##name: \
-			keycode |= (AKEY_##name & ~AKEY_SHFTCTRL); \
-			break;
 	KBSCAN(ESCAPE)
 	KBSCAN(1)
 	case DIK_2:
@@ -391,12 +596,17 @@ void Atari_Initialise(int *argc, char *argv[])
 			kbjoy = 1;
 			Aprint("no joystick");
 		}
+		else if (strcmp(argv[i], "-win32keys") == 0) {
+			win32keys = TRUE;
+			Aprint("win32keys keys");
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				Aprint("\t-nojoystick      Disable joystick");
+				Aprint("\t-win32keys       Support for international keyboards");
 			}
-		argv[j++] = argv[i];
+			argv[j++] = argv[i];
 		}
 	}
 
