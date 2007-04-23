@@ -1,3 +1,15 @@
+2007-04-23  Piotr Fusik  <fox@scene.pl>
+* win32/msc/Makefile: fixed a problem that appeared when I switched to another
+  version of NMAKE ("fatal error U1100: macro '$@' is illegal in the context
+  of batch rule '.c.obj'")
+
+
+2006-04-23  Paulo Lopes  <paulo.lopes@ist.utl.pt>
+* win32/atari_win32.c: new command-line option "-win32keys" for keyboard
+  layouts different from US (the emulator relies on Win32 API to do scan code
+  translations)
+
+
 2006-12-07  Paulo Lopes  <paulo.lopes@ist.utl.pt>
 * win32/main.c, win32/screen_win32.[ch]: an option to run the emulator
   in a window ("-windowed" on the command line)
