@@ -13,7 +13,7 @@ LIBS = \
 	user32.lib winmm.lib
 TARGET = atari800.exe
 
-CFLAGS = /nologo /Fo$@ /O2 /GS- /W3 /wd4996 /I win32\msc /I .
+CFLAGS = /nologo /O2 /GS- /W3 /wd4996 /I win32\msc /I .
 LDFLAGS = /nologo
 
 OBJS = \
@@ -58,6 +58,10 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) /Fe$(TARGET) $(LDFLAGS) $(OBJS) $(LIBS)
+
+# the default .c.obj rule would place the object files in the src directory
+{win32\}.c{win32\}.obj:
+	$(CC) $(CFLAGS) /c /Fo$@ $**
 
 clean:
 	del *.obj
