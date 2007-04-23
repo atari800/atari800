@@ -4,7 +4,7 @@
   of batch rule '.c.obj'")
 
 
-2006-04-23  Paulo Lopes  <paulo.lopes@ist.utl.pt>
+2007-04-23  Paulo Lopes  <paulo.lopes@ist.utl.pt>
 * win32/atari_win32.c: new command-line option "-win32keys" for keyboard
   layouts different from US (the emulator relies on Win32 API to do scan code
   translations)
