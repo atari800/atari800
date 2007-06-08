@@ -1,7 +1,8 @@
 Plans for future versions
 =========================
 
-High-priority items start with '*', low-priority items start with '-'.
+'*' denotes items which are likely to be implemented in a 3.x.x version or earlier.
+'-' denotes items with little probability of being implemented.
 
 
 Keyboard and joysticks
@@ -24,6 +25,10 @@ Keyboard and joysticks
 Emulation core
 --------------
 
+* Java applet
+
+* Java midlet
+
 * cycle-exact POKEY interrupts (timers, serial I/O, keyboard)
 
 * precisely emulate serial I/O rates
@@ -34,7 +39,7 @@ Emulation core
 
 - copy-protected disk images (VAPI, ATP, PRO, copy-protected ATR)
 
-* emulate POKEY SIO shift register
+- emulate POKEY SIO shift register
 
 - emulate SIO bus lines, and SIO cable data/audio cross-talk "feep" sound
 
@@ -44,10 +49,10 @@ Emulation core
 
 - Axlon memory expansions
 
-- redirection of specific Dn: devices to Hn: (for software that insists
+* redirection of specific Dn: devices to Hn: (for software that insists
   on using the D: device)
 
-- log POKEY audio writes, SIO commands (hardware level or DCB level),
+* log POKEY audio writes, SIO commands (hardware level or DCB level),
   executed DL commands, all activity to a defined range of adressess etc.
   in a way similar to the 6502 trace
 
@@ -75,26 +80,32 @@ Emulation core
 - emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp and
   Austin-Franklin 80-Column Board.  Need ROM images and schematics.
 
-* 6502 BRK bug
+- 6502 BRK bug
 
-* try to understand 6502's "unstable" opcodes (0x93, 0x9b, 0x9f) that seem
+- try to understand 6502's "unstable" opcodes (0x93, 0x9b, 0x9f) that seem
   to have unpredictable (at least not easily predictable) results,
   preferrably by studying 6502 schematics
 
-* an option to emulate the variant of 6502 used in new XE machines
+- an option to emulate the variant of 6502 used in new XE machines
   (which lacks most of the undocumented opcodes of the classic 6502)
 
-* fully emulate executing 6502 code from Hardware, cycle-exact ANTIC_load
+- fully emulate executing 6502 code from Hardware, cycle-exact ANTIC_load
   from hardware, cycle-exact PMG flickering bus data
 
 - CPU upgrades (65816, etc)
 
+* improve emuos so it can boot disks and executables
+
+* create emuos for 5200
+
 - emulate printer graphics (on screen or bitmap/PDF output): 1029, 1020, etc.
   The Mac OS X port of Atari800 has lots of printer emulation routines.
 
-* RAM Carts (cartridges with battery-powered RAM), writes to flash carts
+- RAM Carts (cartridges with battery-powered RAM), writes to flash carts
 
 - serial "network" interfaces (e.g. 8 Ataris connected, is it GameLink?)
+
+* ability to play multi-player games across network
 
 - generate hard disk images or write directly to media that the 8-bit Ataris
   can use, like CompactFlash or MyIDE/SmartIDE/BB
@@ -133,11 +144,11 @@ Graphics
 
 * use different palettes for PAL and NTSC modes (and GTIA vs CTIA?)
 
-* "flicker fixer": display average pixel values of two last Atari frames
+* "flicker fixer": display average pixel values of last two Atari frames
 
 - XEP80 emulation. Slor is working on it, contact him first.
 
-* use YUV output if available. Will it help?
+- use YUV output if available. Will it help?
 
 * PAL emulation. VICE has it, but it's not as complete as Blargg's emulation
   of NTSC. PAL luma/chroma artifacts are missing (it is like S-Video).
@@ -156,18 +167,18 @@ Graphics
   output signal (might require a scope.)  Fully document NTSC decoding
   of late 70's and 80's era TVs.
 
-* document CTIA and emulate properly.  Emulate the players not aligning
+- document CTIA and emulate properly.  Emulate the players not aligning
   with playfield bug/feature of CTIA which is said to exist. Need
   at least screenshots of a CTIA Atari showing all possible artifacts.
 
-* an option to emulate the buggy GTIA chip found in new XE machines.
+- an option to emulate the buggy GTIA chip found in new XE machines.
 
 * fix all remaining collision bugs in the ANTIC and GTIA code (border+scroll,
   player HPOS and GRAF changes, partial_scanline changes.) Use the technique
   of saving data that might generate false collisions, drawing, and then
   restoring the data (pm_scanline).
 
-* cycle-exact DMACTL and HSCROL including all glitches
+- cycle-exact DMACTL and HSCROL including all glitches
 
 
 Sound
@@ -177,7 +188,7 @@ Sound
 
 * correctly emulate serial I/O sound
 
-* merge POKEY sound engines
+* one POKEY sound engine
 
 * POKEY sound should NOT be asynchronous to the rest of the emulation
   (for example, the contents of the generated WAVs should not depend
@@ -264,8 +275,6 @@ Speed optimizations
 
 * use function pointer table for hardware registers (like PAGED_ATTRIB does)
 
-* optimize the new POKEY sound engine
-
 * emulate 6502 during vertical blank in a single GO() call
 
 * prefer int to UWORD and UBYTE (especially in cpu.c)
@@ -281,24 +290,15 @@ Speed optimizations
 
 * update color lookup tables only when color registers change
 
-* put 6502 flags into local variables so they can be put in registers
+* put 6502 flags into local variables so they can be stored in registers
 
 * automatic framedrop
 
-- generate 168x120 graphics for portable devices with low-res displays
+* generate 168x120 graphics for portable devices with low-res displays
 
-- boost memory bank switching by using hardware paging on systems
-  that support it (for example, use mmap() on Linux)
+* fast bank switching (without memcpy)
 
-- boost memory bank switching by using Get/Put functions for the banked memory,
-  PC_PTR and some tweaks in antic.c
-
-- implement Dirty Spans (see HOWTO-DIRTYSPAN)
-
-- think about using MMX and SSE (for display and sound probably)
-
-- think about optimizations for the more and more common 64-bit and multi-core
-  CPUs so we can reach 256 times Atari speed sooner ;-)
+* implement Dirty Spans (see HOWTO-DIRTYSPAN)
 
 - an option to detect popular lengthy Atari decompression routines
   and run equivalent C routines instead
