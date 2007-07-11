@@ -15,7 +15,7 @@ FNAME=$FOLDER".tar.gz"
 echo "download from CVS? (y/N)"
 read key
 if [ "x"$key = "xy" ]; then
-	cvs -z9 -d:ext:joy@cvs.sourceforge.net:/cvsroot/atari800 export -r $TAG atari800
+	cvs -z9 -d:ext:joy@atari800.cvs.sourceforge.net:/cvsroot/atari800 export -r $TAG atari800
 fi
 #
 grep ATARI_TITLE atari800/src/atari.h | grep $VERSION >/dev/null
