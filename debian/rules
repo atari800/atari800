@@ -124,14 +124,19 @@ binary-arch:		checkroot build
 
 # install menu file
 #
-	install -d debian/tmp/usr/lib/menu
-	install -m 644 debian/menu debian/tmp/usr/lib/menu/$(P)
+	install -d debian/tmp/usr/share/menu
+	install -m 644 debian/menu debian/tmp/usr/share/menu/$(P)
 
 # install binaries
 #
 	install -d debian/tmp/usr/bin
 	install -s $(P).curses $(P).x11 debian/tmp/usr/bin
 	install -s $(P).sdl debian/tmp/usr/bin/$(P)
+
+	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P)
+	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P).x11
+	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P).curses
+
 #	(if [ "$(ARCH)" = "i386" ]; then install debian/$(P) debian/tmp/usr/bin; \
 #	else install debian/$(P).alt debian/tmp/usr/bin/$(P); fi)
 
