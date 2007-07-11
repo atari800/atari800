@@ -1,7 +1,7 @@
-.TH ATARI800 1 "April 8, 2006"
+.TH ATARI800 1 "July 11, 2007"
 
 .SH NAME
-atari800 \- Atari 800 Emulator, Version 2.0.2
+atari800 \- Atari 800 Emulator, Version 2.0.3
 
 .SH SYNOPSIS
 \fBatari800\fP [options] [files...]
