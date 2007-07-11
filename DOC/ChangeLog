@@ -1,3 +1,5 @@
+** 2.0.3 released on 2007-07-11
+
 2007-04-23  Piotr Fusik  <fox@scene.pl>
 * win32/msc/Makefile: fixed a problem that appeared when I switched to another
   version of NMAKE ("fatal error U1100: macro '$@' is illegal in the context

@@ -1,3 +1,21 @@
+Version 2.0.3 (2007/07/11)
+
+ This is probably the last release that is based on the source code
+ written by David Firth back in previous century.
+ A completely new Atari800, written from scratch, with even better
+ portability and maintainability is being planned so stay tuned!
+
+ Changes:
+ --------
+ * new style of artifacting
+ * corrected PMG in bizarre ANTIC/GTIA modes
+ * added 128 KB SpartaDOS X cartridge type
+ * added support for QVGA landscape smartphones, added the virtual keyboard
+ * new command-line option "-win32keys" for keyboard layouts different from US
+ * MS-Win: run the emulator in a window ("-windowed" on the command line)
+ * middle button support for ST and Amiga mice in X11 and MS-Win targets
+
+
 Version 2.0.2 (2006/04/08)
 
  There is a new NTSC emulator available thanks to Blargg (Shay Green) 
