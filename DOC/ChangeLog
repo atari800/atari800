@@ -1,3 +1,6 @@
+2006-04-06  Perry McFarlane  <perry_m@fastmail.fm>
+* configure.ac: fix for windows sdl version.  Don't require winmm or gdi32
+
 ** 2.0.3 released on 2007-07-11
 
 2007-04-23  Piotr Fusik  <fox@scene.pl>

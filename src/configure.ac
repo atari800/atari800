@@ -186,7 +186,7 @@ dnl Set OBJS and libraries depending on host and target...
 dnl OBJS is not an AC "precious" variable but is used in the Makefile, so
 dnl it must be explicitly AC_SUBST'ed at the end of this file.
 OBJS=
-if [[ "$a8_host" = "win" ]]; then
+if [[ "$a8_host" = "win" -a "$a8_target" != "sdl" ]]; then
     A8_NEED_LIB(gdi32)
     A8_NEED_LIB(winmm)
 fi
