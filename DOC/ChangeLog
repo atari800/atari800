@@ -1,4 +1,4 @@
-2006-07-30  Perry McFarlane  <perry_m@fastmail.fm>
+2007-07-30  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac: fix for windows sdl version.  Don't require winmm or gdi32
 
 ** 2.0.3 released on 2007-07-11
