@@ -149,6 +149,11 @@ case "$a8_target" in
         sdlcheck="X_`sdl-config --cflags`"
         if [[ "$sdlcheck" != "X_" ]]; then
             CFLAGS="$CFLAGS `sdl-config --cflags`"
+dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c  Otherwise
+dnl the autoconf tests don't work.
+            if [[ "$a8_host" = "win" ]]; then
+                CFLAGS=${CFLAGS/-Dmain=SDL_main/}
+            fi
         else
             AC_MSG_ERROR("No output from sdl-config!  Is sdl-config installed?")
         fi
@@ -250,14 +255,11 @@ case "$a8_target" in
         if [[ "$a8_host" = "win" ]]; then
 dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
 dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
-	    LIBS=${LIBS/-lSDLmain/}
-	    OBJS="$OBJS SDL_win32_main.o"
-	    CFLAGS="$CFLAGS -DNO_STDIO_REDIRECT"
-dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c  Otherwise
-dnl the autoconf tests don't work.
-	    CFLAGS=${CFLAGS/-Dmain=SDL_main/}
+            LIBS=${LIBS/-lSDLmain/}
+            OBJS="$OBJS SDL_win32_main.o"
+            CFLAGS="$CFLAGS -DNO_STDIO_REDIRECT"
 dnl Don't make this a windowed app, make it a console app.
-	    LIBS=${LIBS/-mwindows/}
+            LIBS=${LIBS/-mwindows/}
         fi
         ;;
     svgalib)
