@@ -1369,6 +1369,12 @@ void Atari_Initialise(int *argc, char *argv[])
 	if (!help_only)
 		i |= SDL_INIT_AUDIO;
 #endif
+#ifdef WIN32
+	/*Windows SDL version 1.2.10+ uses windib as the default, but it is slower*/
+	if (getenv("SDL_VIDEODRIVER")==NULL) {
+		putenv("SDL_VIDEODRIVER=directx");
+	}
+#endif
 	if (SDL_Init(i) != 0) {
 		Aprint("SDL_Init FAILED");
 		Aprint(SDL_GetError());
