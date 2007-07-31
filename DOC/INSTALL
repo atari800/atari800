@@ -148,8 +148,10 @@ file names (either minix-fs of MiNT, or VFAT of MagiC).
 Building the Emulator for SDL
 -----------------------------
 
-0. Please install (and configure) SDL library (http://www.libsdl.org).
-1. Type "./configure --target=sdl".
-2. Type "make".
-3. Type "make install".
-4. You can run atari800 anytime you want.
+1. Please install (and configure) SDL library (http://www.libsdl.org).
+2. If you are using MinGW or Cygwin, get the file SDL_win32_main.c from the SDL 
+   source (in src/main/win32) and copy it to the atari800 src directory.
+3. Type "./configure --target=sdl".
+4. Type "make".
+5. Type "make install".
+6. You can run atari800 anytime you want.

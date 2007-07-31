@@ -1,3 +1,9 @@
+2007-07-31  Perry McFarlane  <perry_m@fastmail.fm>
+* configure.ac, INSTALL: fix for windows sdl version.  Don't use -mwindows or
+  -Dmain=SDL_main and use -mno-cygwin on Cygwin.  SDL_win32_main.c is now 
+  required from the sdl source.  Update documentation in INSTALL. This fixes
+  the stdout.txt problem.
+
 2007-07-30  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac: fix for windows sdl version.  Don't require winmm or gdi32
 

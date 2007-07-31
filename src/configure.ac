@@ -74,7 +74,7 @@ case $host_os in
         a8_host="win"
         AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
-        if [[ "$a8_target" = "windx" ]]; then
+        if [[ "$a8_target" = "windx" -o "$a8_target" = "sdl" ]]; then
             CC="gcc -mno-cygwin"
             echo
             echo "Using CC=\"$CC\" to disable cygwin library...";
@@ -247,6 +247,18 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,1,[Save additional config file options.])
         LIBS="$LIBS `sdl-config --libs`"
         OBJS="atari_sdl.o atari_ntsc.o"
+        if [[ "$a8_host" = "win" ]]; then
+dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
+dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
+	    LIBS=${LIBS/-lSDLmain/}
+	    OBJS="$OBJS SDL_win32_main.o"
+	    CFLAGS="$CFLAGS -DNO_STDIO_REDIRECT"
+dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c  Otherwise
+dnl the autoconf tests don't work.
+	    CFLAGS=${CFLAGS/-Dmain=SDL_main/}
+dnl Don't make this a windowed app, make it a console app.
+	    LIBS=${LIBS/-mwindows/}
+        fi
         ;;
     svgalib)
         AC_DEFINE(SVGALIB,1,[Target: Linux with SVGALib.])
