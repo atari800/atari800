@@ -5,6 +5,8 @@
   the stdout.txt problem.
 * atari_sdl.c: fix for windows sdl version.  Make SDL_VIDEODRIVER=directx by
   default because it is much faster.  SDL 1.2.10+ uses windib as the default.
+* atari_sdl.c: added interpolated scanlines, made it the default, added
+  -scanlinesnoint option to disable it
 
 2007-07-30  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac: fix for windows sdl version.  Don't require winmm or gdi32

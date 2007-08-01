@@ -177,6 +177,7 @@ SDL version options
 -ntsc_ramp <n>        Set NTSC saturation ramp factor (amount by which
                       bright colours become desaturated or washed out)
 -scanlines <n>        Set scanlines percentage (ntscemu only)
+-scanlinesnoint       Disable scanlines interpolation (ntscemu only)
 
 
 SVGALIB version options

@@ -83,6 +83,7 @@ static int WIDTH_MODE = 1;
 static int ROTATE90 = 0;
 static int ntscemu = 0;
 static int scanlines_percentage = 20;
+static int scanlinesnoint = FALSE;
 static atari_ntsc_t *the_ntscemu;
 /* making setup static conveniently clears all fields to 0 */
 static atari_ntsc_setup_t atari_ntsc_setup;
@@ -1307,6 +1308,10 @@ void Atari_Initialise(int *argc, char *argv[])
 			scanlines_percentage  = Util_sscandec(argv[++i]);
 			Aprint("scanlines percentage set");
 		}
+		else if (strcmp(argv[i], "-scanlinesnoint") == 0) {
+			scanlinesnoint = TRUE;
+			Aprint("scanlines interpolation disabled");
+		}
 		else if (strcmp(argv[i], "-rotate90") == 0) {
 			ROTATE90 = 1;
 			width = 240;
@@ -1342,6 +1347,7 @@ void Atari_Initialise(int *argc, char *argv[])
 				help_only = TRUE;
 				Aprint("\t-ntscemu         Emulate NTSC composite video (640x480x16)");
 				Aprint("\t-scanlines       Specify scanlines percentage (ntscemu only)");
+				Aprint("\t-scanlinesnoint  Disable scanlines interpolation (ntscemu only)");
 				Aprint("\t-rotate90        Display 240x320 screen");
 				Aprint("\t-nojoystick      Disable joystick");
 #ifdef LPTJOY
@@ -1527,6 +1533,61 @@ void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLines
 	}
 }
 
+/* Modified version of the above, which uses interpolation (slower but better)*/
+void scanLines_16_interp(void* pBuffer, int width, int height, int pitch, int scanLinesPct)
+{
+    Uint32* pBuf = (Uint32*)(pBuffer+pitch);
+	Uint32* sBuf = (Uint32*)(pBuffer);
+	Uint32* tBuf = (Uint32*)(pBuffer+pitch*2);
+    int w, h;
+	static int prev_scanLinesPct;
+
+    pitch = pitch * 2 / (int)sizeof(Uint32);
+    height /= 2;
+    width /= 2;
+
+	if (scanLinesPct < 0) scanLinesPct = 0;
+	if (scanLinesPct > 100) scanLinesPct = 100;
+
+    if (scanLinesPct == 100) {
+        if (prev_scanLinesPct != 100) {
+			/*clean dirty blank scanlines*/
+			prev_scanLinesPct = 100;
+			for (h = 0; h < height; h++) {
+				memset(pBuf, 0, width * sizeof(Uint32));
+				pBuf += pitch;
+			}
+		}
+		return;
+    }
+	prev_scanLinesPct = scanLinesPct;
+
+
+    if (scanLinesPct == 0) {
+	/* fill in blank scanlines */
+		for (h = 0; h < height; h++) {
+			memcpy(pBuf, sBuf, width * sizeof(Uint32));
+			sBuf += pitch;
+			pBuf += pitch;
+		}
+		return;
+    }
+    scanLinesPct = (100-scanLinesPct) * 32 / 200;
+
+    for (h = 0; h < height-1; h++) {
+		for (w = 0; w < width; w++) {
+			Uint32 pixel = sBuf[w];
+			Uint32 pixel2 = tBuf[w];
+			Uint32 a = ((((pixel & 0x07e0f81f)+(pixel2 & 0x07e0f81f)) * scanLinesPct) & 0xfc1f03e0) >> 5;
+			Uint32 b = ((((pixel >> 5) & 0x07c0f83f)+((pixel2 >> 5) & 0x07c0f83f)) * scanLinesPct) & 0xf81f07e0;
+			pBuf[w] = a | b;
+		}
+		sBuf += pitch;
+		tBuf += pitch;
+		pBuf += pitch;
+	}
+}
+
 void DisplayNTSCEmu640x480(UBYTE *screen)
 {
 	/* Number of overscan lines not shown */
@@ -1549,8 +1610,11 @@ void DisplayNTSCEmu640x480(UBYTE *screen)
 	/* blit atari image, doubled vertically */
 	atari_ntsc_blit( the_ntscemu, screen + jumped + overscan_lines / 2 * ATARI_WIDTH, raw_width, width, height / 2, pixels, MainScreen->pitch * 2 );
 	
-	scanLines_16((void *)pixels, width, height, MainScreen->pitch, scanlines_percentage);
-	
+	if (!scanlinesnoint) {
+		scanLines_16_interp((void *)pixels, width, height, MainScreen->pitch, scanlines_percentage);
+	} else {
+		scanLines_16((void *)pixels, width, height, MainScreen->pitch, scanlines_percentage);
+	}
 }
 
 void DisplayRotated240x320(Uint8 *screen)
