@@ -82,7 +82,7 @@ static int SWAP_JOYSTICKS = 0;
 static int WIDTH_MODE = 1;
 static int ROTATE90 = 0;
 static int ntscemu = 0;
-static int scanlines_percentage = 20;
+static int scanlines_percentage = 5;
 static int scanlinesnoint = FALSE;
 static atari_ntsc_t *the_ntscemu;
 /* making setup static conveniently clears all fields to 0 */
