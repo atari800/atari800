@@ -1,3 +1,6 @@
+2007-08-02  Perry McFarlane  <perry_m@fastmail.fm>
+* atari_sdl.c: fix broken Caps Lock key handling
+
 2007-07-31  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac, INSTALL: fix for windows sdl version.  Don't use -mwindows or
   -Dmain=SDL_main and use -mno-cygwin on Cygwin.  SDL_win32_main.c is now 

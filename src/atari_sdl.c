@@ -574,10 +574,19 @@ void SDL_Sound_Initialise(int *argc, char *argv[])
 
 int Atari_Keyboard(void)
 {
-	static int lastkey = AKEY_NONE, key_pressed = 0, key_control = 0;
+	static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
  	static int lastuni = 0;
 	int shiftctrl = 0;
 
+	/* Very ugly fix for SDL CAPSLOCK brokenness.  This will let the user
+	 * press CAPSLOCK and get a brief keypress on the Atari but it is not
+	 * possible to emulate holding down CAPSLOCK for longer periods with
+	 * the broken SDL*/
+	if (lastkey == SDLK_CAPSLOCK) {
+		lastkey = SDLK_UNKNOWN;
+	   	key_pressed = 0;
+ 		lastuni = 0;
+	}
 	SDL_Event event;
 	if (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -590,6 +599,12 @@ int Atari_Keyboard(void)
 			lastkey = event.key.keysym.sym;
  			lastuni = 0; /* event.key.keysym.unicode is not defined for KEYUP */
 			key_pressed = 0;
+			/* ugly hack to fix broken SDL CAPSLOCK*/
+			/* Because SDL is only sending Keydown and keyup for every change
+			 * of state of the CAPSLOCK status, rather than the actual key.*/
+			if(lastkey == SDLK_CAPSLOCK) {
+				key_pressed = 1;
+			}
 			break;
 		case SDL_VIDEORESIZE:
 			SetNewVideoMode(event.resize.w, event.resize.h, MainScreen->format->BitsPerPixel);
@@ -890,6 +905,7 @@ int Atari_Keyboard(void)
 
 	switch (lastkey) {
 	case SDLK_BACKQUOTE: /* fallthrough */
+		/* These are the "Windows" keys, but they don't work on Windows*/
 	case SDLK_LSUPER:
 		return AKEY_ATARI ^ shiftctrl;
 	case SDLK_RSUPER:
@@ -910,7 +926,10 @@ int Atari_Keyboard(void)
 	case SDLK_F7:
 		return AKEY_BREAK;
 	case SDLK_CAPSLOCK:
-		return AKEY_CAPSLOCK;
+		if (key_shift)
+			return AKEY_CAPSLOCK;
+		else
+			return AKEY_CAPSTOGGLE;
 	case SDLK_SPACE:
 		return AKEY_SPACE ^ shiftctrl;
 	case SDLK_BACKSPACE:
@@ -975,7 +994,11 @@ int Atari_Keyboard(void)
 		}
 	}
 
-	/* Uses only UNICODE translation, no shift states */
+	/* Host Caps Lock will make lastuni switch case, so prevent this*/
+    if(lastuni>='A' && lastuni <= 'Z' && !key_shift) lastuni += 0x20;
+    if(lastuni>='a' && lastuni <= 'z' && key_shift) lastuni -= 0x20;
+	/* Uses only UNICODE translation, no shift states (this was added to
+	 * support non-US keyboard layouts)*/
 	switch (lastuni) {
 	case 1:
 		return AKEY_CTRL_a;
