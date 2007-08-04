@@ -323,10 +323,10 @@ void MemStateRead(UBYTE SaveVerbose)
 					break;
 				case 0xd6:
 					readmap[i] = PBIM1_GetByte;
-					readmap[i] = PBIM2_GetByte;
+					writemap[i] = PBIM1_PutByte;
 					break;
 				case 0xd7:
-					writemap[i] = PBIM1_PutByte;
+					readmap[i] = PBIM2_GetByte;
 					writemap[i] = PBIM2_PutByte;
 					break;
 				default:
