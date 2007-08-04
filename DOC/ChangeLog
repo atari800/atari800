@@ -1,3 +1,6 @@
+2007-08-04  Perry McFarlane  <perry_m@fastmail.fm>
+* memory.c: fix PBIM1/M2_Get/PutByte in MemStateRead
+
 2007-08-02  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c: fix broken Caps Lock key handling
 * atari_sdl.c: reduce default NTSC scanlines percentage from 20 to 5
