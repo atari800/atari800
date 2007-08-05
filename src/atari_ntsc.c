@@ -401,9 +401,10 @@ void ATARI_NTSC_DEFAULTS_Initialise(int *argc, char *argv[], atari_ntsc_setup_t 
 {
 	int i, j;
 	/* Adjust default values here */
+	atari_ntsc_setup->brightness = -0.1;
 	atari_ntsc_setup->sharpness = -0.5;
 	atari_ntsc_setup->saturation = -0.1;
-	atari_ntsc_setup->gamma_adj = -0.25;
+	atari_ntsc_setup->gamma_adj = -0.15;
 	atari_ntsc_setup->burst_phase = -0.60;
 	atari_ntsc_setup->saturation_ramp = 0.25;
 	for (i = j = 1; i < *argc; i++) {
