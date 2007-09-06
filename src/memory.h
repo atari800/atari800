@@ -92,4 +92,16 @@ void CartA0BF_Enable(void);
 #define CopyROM(addr1, addr2, src) memcpy(memory + (addr1), src, (addr2) - (addr1) + 1)
 void get_charset(UBYTE *cs);
 
+/* Mosaic and Axlon 400/800 RAM extensions */
+void MOSAIC_PutByte(UWORD addr, UBYTE byte);
+UBYTE MOSAIC_GetByte(UWORD addr);
+extern int mosaic_maxbank;
+extern int mosaic_enabled;
+void AXLON_PutByte(UWORD addr, UBYTE byte);
+UBYTE AXLON_GetByte(UWORD addr);
+extern int axlon_enabled;
+extern int axlon_0f_mirror;
+extern int axlon_bankmask;
+extern int axlon_curbank;
+
 #endif /* _MEMORY_H_ */

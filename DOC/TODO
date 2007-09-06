@@ -47,8 +47,6 @@ Emulation core
 
 - emulate XEGS (built-in cartridge and detachable keyboard)
 
-- Axlon memory expansions
-
 * redirection of specific Dn: devices to Hn: (for software that insists
   on using the D: device)
 

@@ -284,6 +284,9 @@ void Atari800_PatchOS(void)
 void Warmstart(void)
 {
 	if (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB) {
+		/* A real Axlon homebanks on reset */
+		/* XXX: what does Mosaic do? */
+		if (axlon_enabled) PutByte(0xcfff, 0);
 		/* RESET key in 400/800 does not reset chips,
 		   but only generates RNMI interrupt */
 		NMIST = 0x3f;
@@ -1125,6 +1128,36 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-run") == 0) {
 				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
 			}
+			else if (strcmp(argv[i], "-mosaic") == 0) {
+				mosaic_enabled = TRUE;
+				int total_ram = Util_sscandec(argv[++i]);
+				mosaic_maxbank = (total_ram - 48)/4 - 1;
+				if(((total_ram - 48)%4 != 0 ) || (mosaic_maxbank > 0x3e) || (mosaic_maxbank < 0)) {
+					Aprint("Invalid Mosaic total RAM size");
+					return FALSE;
+				}
+				if (axlon_enabled){
+					Aprint("Axlon and Mosaic can not both be enabled, because they are incompatible");
+					return FALSE;
+				}
+			}
+			else if (strcmp(argv[i], "-axlon") == 0) {
+				axlon_enabled = TRUE;
+				int total_ram = Util_sscandec(argv[++i]);
+				int banks = ((total_ram) - 32)/16;
+				if (((total_ram - 32) % 16 != 0 ) || ((banks != 8) && (banks != 16) && (banks != 32) && (banks != 64) && (banks != 128) && (banks != 256))) {
+					Aprint("Invalid Axlon total RAM size");
+					return FALSE;
+				}
+				if (mosaic_enabled){
+					Aprint("Axlon and Mosaic can not both be enabled, because they are incompatible");
+					return FALSE;
+				}
+				axlon_bankmask = banks - 1;
+			}
+			else if (strcmp(argv[i], "-axlon0f") == 0) {
+				axlon_0f_mirror = TRUE;
+			}
 #ifndef BASIC
 			/* The BASIC version does not support state files, because:
 			   1. It has no ability to save state files, because of lack of UI.
@@ -1180,6 +1213,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Aprint("\t-a               Use OS A");
 					Aprint("\t-b               Use OS B");
 					Aprint("\t-c               Enable RAM between 0xc000 and 0xcfff in Atari 800");
+					Aprint("\t-axlon <n>       Use Atari 800 Axlon memory expansion: <n> k total RAM");
+					Aprint("\t-axlon0f         Use Axlon shadow at 0x0fc0-0x0fff");
+					Aprint("\t-mosaic <n>      Use 400/800 Mosaic memory expansion: <n> k total RAM");
 					Aprint("\t-v               Show version/release number");
 				}
 
@@ -1427,6 +1463,13 @@ UBYTE Atari800_GetByte(UWORD addr)
 	case 0xd500:				/* bank-switching cartridges, RTIME-8 */
 		byte = CART_GetByte(addr);
 		break;
+	case 0xff00:				/* Mosaic memory expansion for 400/800 */
+		byte = MOSAIC_GetByte(addr);
+		break;
+	case 0xcf00:				/* Axlon memory expansion for 800 */
+	case 0x0f00:				/* Axlon shadow */
+		byte = AXLON_GetByte(addr);
+		break;
 	default:
 		break;
 	}
@@ -1462,6 +1505,13 @@ void Atari800_PutByte(UWORD addr, UBYTE byte)
 		break;
 	case 0xd500:				/* bank-switching cartridges, RTIME-8 */
 		CART_PutByte(addr, byte);
+		break;
+	case 0xff00:				/* Mosaic memory expansion for 400/800 */
+		MOSAIC_PutByte(addr,byte);
+		break;
+	case 0xcf00:				/* Axlon memory expansion for 800 */
+	case 0x0f00:				/* Axlon shadow */
+		AXLON_PutByte(addr,byte);
 		break;
 	default:
 		break;

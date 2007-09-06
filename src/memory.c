@@ -79,6 +79,56 @@ int have_basic = FALSE; /* Atari BASIC image has been successfully read (Atari 8
 
 extern const UBYTE *antic_xe_ptr;	/* Separate ANTIC access to extended memory */
 
+/* Axlon and Mosaic RAM expansions for Atari 400/800 only */
+static UBYTE *axlon_ram;
+static int axlon_ram_size = 0;
+int axlon_curbank = 0;
+int axlon_bankmask = 0x07;
+int axlon_enabled = FALSE;
+int axlon_0f_mirror = FALSE; /* The real Axlon had a mirror bank register at 0x0fc0-0x0fff, compatibles did not*/
+static UBYTE *mosaic_ram;
+static int mosaic_ram_size = 0;
+static int mosaic_curbank = 0x3f;
+int mosaic_maxbank = 0;
+int mosaic_enabled = FALSE;
+
+static void alloc_axlon_memory(void){
+	axlon_curbank = 0;
+	if (axlon_enabled && (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB )) {
+		int new_axlon_ram_size = (axlon_bankmask+1)*0x4000;
+		if ((axlon_ram == NULL) || (axlon_ram_size != new_axlon_ram_size)) {
+			axlon_ram_size = new_axlon_ram_size;
+			if (axlon_ram != NULL) free(axlon_ram);
+			axlon_ram = Util_malloc(axlon_ram_size);
+		}
+		memset(axlon_ram, 0, axlon_ram_size);
+	} else {
+		if (axlon_ram != NULL) {
+			free(axlon_ram);
+			axlon_ram_size = 0;
+		}
+	}
+}
+
+static void alloc_mosaic_memory(void){
+	mosaic_curbank = 0x3f;
+	if (mosaic_enabled && (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB)) {
+		int new_mosaic_ram_size = (mosaic_maxbank+1)*0x1000;
+		if ((mosaic_ram == NULL) || (mosaic_ram_size != new_mosaic_ram_size)) {
+			mosaic_ram_size = new_mosaic_ram_size;
+			if (mosaic_ram != NULL) free(mosaic_ram);
+			mosaic_ram = Util_malloc(mosaic_ram_size);
+		}
+		memset(mosaic_ram, 0, mosaic_ram_size);
+	} else {
+		if (mosaic_ram != NULL) {
+			free(mosaic_ram);
+			mosaic_ram_size = 0;
+		}
+	}
+
+}
+
 static void AllocXEMemory(void)
 {
 	if (ram_size > 64) {
@@ -115,8 +165,14 @@ void MEMORY_InitialiseMachine(void)
 			dFillMem(ram_size * 1024, 0xff, 0xd000 - ram_size * 1024);
 			SetROM(ram_size * 1024, 0xcfff);
 		}
+		SetROM(0xd800, 0xffff);
 #ifndef PAGED_ATTRIB
 		SetHARDWARE(0xd000, 0xd7ff);
+		if (mosaic_enabled) SetHARDWARE(0xffc0, 0xffff);
+		if (axlon_enabled) { 
+		       	SetHARDWARE(0xcfc0, 0xcfff);
+			if (axlon_0f_mirror) SetHARDWARE(0x0fc0, 0x0fff);
+		}
 #else
 		readmap[0xd0] = GTIA_GetByte;
 		readmap[0xd1] = PBI_GetByte;
@@ -134,8 +190,10 @@ void MEMORY_InitialiseMachine(void)
 		writemap[0xd5] = CART_PutByte;
 		writemap[0xd6] = PBIM1_PutByte;
 		writemap[0xd7] = PBIM2_PutByte;
+		if (mosaic_enabled) writemap[0xff] = MOSAIC_PutByte;
+		if (axlon_enabled) writemap[0xcf] = AXLON_PutByte;
+		if (axlon_enabled && axlon_0f_mirror) writemap[0x0f] = AXLON_PutByte;
 #endif
-		SetROM(0xd800, 0xffff);
 		break;
 	case MACHINE_XLXE:
 		memcpy(memory + 0xc000, atari_os, 0x4000);
@@ -195,6 +253,8 @@ void MEMORY_InitialiseMachine(void)
 		break;
 	}
 	AllocXEMemory();
+	alloc_axlon_memory();
+	alloc_mosaic_memory();
 	Coldstart();
 }
 
@@ -549,6 +609,83 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			selftest_enabled = TRUE;
 		}
 	}
+}
+
+/* Mosaic banking scheme: writing to 0xffc0+<n> selects ram bank <n>, if 
+ * that is past the last available bank, selects rom.  Banks are 4k, 
+ * located at 0xc000-0xcfff.  Tested: Rambrandt (drawing program), Topdos1.5.
+ * Reverse engineered from software that uses it.  May be incorrect in some
+ * details.  Unknown:  were there mirrors of the bank addresses?  Was the RAM
+ * enabled at coldstart? Did the Mosaic home-bank on reset?
+ * The Topdos 1.5 manual has some information.
+ */
+void MOSAIC_PutByte(UWORD addr, UBYTE byte)
+{
+	if (addr < 0xffc0) return;
+#ifdef DEBUG
+	Aprint("MOSAIC_PutByte:%4X:%2X",addr,byte);
+#endif
+	int newbank = addr-0xffc0;
+	if (newbank == mosaic_curbank || (newbank > mosaic_maxbank && mosaic_curbank > mosaic_maxbank)) return; /*same bank or rom -> rom*/
+	if (newbank > mosaic_maxbank && mosaic_curbank <= mosaic_maxbank){
+		/*ram ->rom*/
+		memcpy(mosaic_ram + mosaic_curbank*0x1000, memory + 0xc000,0x1000);
+		dFillMem(0xc000, 0xff, 0x1000);
+		SetROM(0xc000, 0xcfff);
+	}else if (newbank <= mosaic_maxbank && mosaic_curbank > mosaic_maxbank){
+		/*rom->ram*/
+		memcpy(memory + 0xc000, mosaic_ram+newbank*0x1000,0x1000);
+		SetRAM(0xc000, 0xcfff);
+	}else{
+		/*ram -> ram*/
+		memcpy(mosaic_ram + mosaic_curbank*0x1000, memory + 0xc000, 0x1000);
+		memcpy(memory + 0xc000, mosaic_ram + newbank*0x1000, 0x1000);
+		SetRAM(0xc000, 0xcfff);
+	}
+	mosaic_curbank = newbank;
+}
+
+UBYTE MOSAIC_GetByte(UWORD addr)
+{
+#ifdef DEBUG
+	Aprint("MOSAIC_GetByte%4X",addr);
+#endif
+	return memory[addr];
+}
+
+/* Axlon banking scheme: writing <n> to 0xcfc0-0xcfff selects a bank.  The Axlon
+ * used 3 bits, giving 8 banks.  Extended versions were constructed that
+ * used additional bits, for up to 256 banks.  Banks were 16k, at 0x4000-0x7fff.
+ * The total ram was 32+16*numbanks k.  The Axlon did homebank on reset,
+ * compatibles did not.  The Axlon had a shadow address at 0x0fc0-0x0fff.
+ * A possible explaination for the shadow address is that it allowed the
+ * Axlon to work in any 800 slot due to a hardware limitation.
+ * The shadow address could cause compatibility problems.  The compatibles
+ * did not implement that shadow address.
+ * Source: comp.sys.atari.8bit postings, Andreas Magenheimer's FAQ
+ */
+void AXLON_PutByte(UWORD addr, UBYTE byte)
+{
+	int newbank;
+	/*Write-through to RAM if it is the page 0x0f shadow*/
+	if ((addr&0xff00) == 0x0f00) memory[addr] = byte;
+	if ((addr&0xff) < 0xc0) return; /*0xffc0-0xffff and 0x0fc0-0x0fff only*/
+#ifdef DEBUG
+	Aprint("AXLON_PutByte:%4X:%2X", addr, byte);
+#endif
+	newbank = (byte&axlon_bankmask);
+	if (newbank == axlon_curbank) return;
+	memcpy(axlon_ram + axlon_curbank*0x4000, memory + 0x4000, 0x4000);
+	memcpy(memory + 0x4000, axlon_ram + newbank*0x4000, 0x4000);
+	axlon_curbank = newbank;
+}
+
+UBYTE AXLON_GetByte(UWORD addr)
+{
+#ifdef DEBUG
+	Aprint("AXLON_GetByte%4X",addr);
+#endif
+	return memory[addr];
 }
 
 static int cart809F_enabled = FALSE;

@@ -1,3 +1,7 @@
+2007-09-06  Perry McFarlane  <perry_m@fastmail.fm>
+* memory.[ch], atari.c, TODO, USAGE: add Axlon and Mosaic RAM expansions for the
+  400/800
+
 2007-08-04  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.c: fix PBIM1/M2_Get/PutByte in MemStateRead
 * atari_ntsc.c: tweak default parameters a bit
