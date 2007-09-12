@@ -1,3 +1,7 @@
+2007-09-12  Perry McFarlane  <perry_m@fastmail.fm>
+* memory.c: Fix PAGED_MEM error (missing break in switch) with POKEY in loading
+  saved states.
+
 2007-09-06  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.[ch], atari.c, TODO, USAGE: add Axlon and Mosaic RAM expansions for the
   400/800
