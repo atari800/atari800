@@ -369,6 +369,7 @@ void MemStateRead(UBYTE SaveVerbose)
 				case 0xeb:
 					readmap[i] = POKEY_GetByte;
 					writemap[i] = POKEY_PutByte;
+					break;
 				case 0xd3:
 					readmap[i] = PIA_GetByte;
 					writemap[i] = PIA_PutByte;
