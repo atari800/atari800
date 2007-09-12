@@ -1,6 +1,8 @@
 2007-09-12  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.c: Fix PAGED_MEM error (missing break in switch) with POKEY in loading
   saved states.
+* memory.[ch], statesav.c, cpu.c Support Axlon and Mosaic state saving.
+  SAVE_VERSION_NUMBER upgraded to from 4 to 5
 
 2007-09-06  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.[ch], atari.c, TODO, USAGE: add Axlon and Mosaic RAM expansions for the

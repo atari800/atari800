@@ -80,13 +80,13 @@ int have_basic = FALSE; /* Atari BASIC image has been successfully read (Atari 8
 extern const UBYTE *antic_xe_ptr;	/* Separate ANTIC access to extended memory */
 
 /* Axlon and Mosaic RAM expansions for Atari 400/800 only */
-static UBYTE *axlon_ram;
+static UBYTE *axlon_ram = NULL;
 static int axlon_ram_size = 0;
 int axlon_curbank = 0;
 int axlon_bankmask = 0x07;
 int axlon_enabled = FALSE;
 int axlon_0f_mirror = FALSE; /* The real Axlon had a mirror bank register at 0x0fc0-0x0fff, compatibles did not*/
-static UBYTE *mosaic_ram;
+static UBYTE *mosaic_ram = NULL;
 static int mosaic_ram_size = 0;
 static int mosaic_curbank = 0x3f;
 int mosaic_maxbank = 0;
@@ -168,10 +168,13 @@ void MEMORY_InitialiseMachine(void)
 		SetROM(0xd800, 0xffff);
 #ifndef PAGED_ATTRIB
 		SetHARDWARE(0xd000, 0xd7ff);
-		if (mosaic_enabled) SetHARDWARE(0xffc0, 0xffff);
+		if (mosaic_enabled) SetHARDWARE(0xff00, 0xffff); 
+		/* only 0xffc0-0xffff are used, but mark the whole  
+		 * page to make state saving easier */
 		if (axlon_enabled) { 
-		       	SetHARDWARE(0xcfc0, 0xcfff);
-			if (axlon_0f_mirror) SetHARDWARE(0x0fc0, 0x0fff);
+		       	SetHARDWARE(0xcf00, 0xcfff);
+			if (axlon_0f_mirror) SetHARDWARE(0x0f00, 0x0fff);
+			/* only ?fc0-?fff are used, but mark the whole page*/
 		}
 #else
 		readmap[0xd0] = GTIA_GetByte;
@@ -262,6 +265,25 @@ void MEMORY_InitialiseMachine(void)
 
 void MemStateSave(UBYTE SaveVerbose)
 {
+	/* Axlon/Mosaic for 400/800 */
+	if (machine_type == MACHINE_OSA  || machine_type == MACHINE_OSB) {
+		SaveINT(&axlon_enabled, 1);
+		if (axlon_enabled){
+			SaveINT(&axlon_curbank, 1);
+			SaveINT(&axlon_bankmask, 1);
+			SaveINT(&axlon_0f_mirror, 1);
+			SaveINT(&axlon_ram_size, 1);
+			SaveUBYTE(&axlon_ram[0], axlon_ram_size);
+		}
+		SaveINT(&mosaic_enabled, 1);
+		if (mosaic_enabled){
+			SaveINT(&mosaic_curbank, 1);
+			SaveINT(&mosaic_maxbank, 1);
+			SaveINT(&mosaic_ram_size, 1);
+			SaveUBYTE(&mosaic_ram[0], mosaic_ram_size);
+		}
+	}
+
 	SaveUBYTE(&memory[0], 65536);
 #ifndef PAGED_ATTRIB
 	SaveUBYTE(&attrib[0], 65536);
@@ -315,11 +337,31 @@ void MemStateSave(UBYTE SaveVerbose)
 				SaveUBYTE(&buffer[0], 256);
 		}
 	}
-
 }
 
-void MemStateRead(UBYTE SaveVerbose)
+void MemStateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 {
+	/* Axlon/Mosaic for 400/800 */
+	if ((machine_type == MACHINE_OSA  || machine_type == MACHINE_OSB) && StateVersion >= 5) {
+		ReadINT(&axlon_enabled, 1);
+		if (axlon_enabled){
+			ReadINT(&axlon_curbank, 1);
+			ReadINT(&axlon_bankmask, 1);
+			ReadINT(&axlon_0f_mirror, 1);
+			ReadINT(&axlon_ram_size, 1);
+			alloc_axlon_memory();
+			ReadUBYTE(&axlon_ram[0], axlon_ram_size);
+		}
+		ReadINT(&mosaic_enabled, 1);
+		if (mosaic_enabled){
+			ReadINT(&mosaic_curbank, 1);
+			ReadINT(&mosaic_maxbank, 1);
+			ReadINT(&mosaic_ram_size, 1);
+			alloc_mosaic_memory();
+			ReadUBYTE(&mosaic_ram[0], mosaic_ram_size);
+		}
+	}
+
 	ReadUBYTE(&memory[0], 65536);
 #ifndef PAGED_ATTRIB
 	ReadUBYTE(&attrib[0], 65536);
@@ -390,6 +432,15 @@ void MemStateRead(UBYTE SaveVerbose)
 					readmap[i] = PBIM2_GetByte;
 					writemap[i] = PBIM2_PutByte;
 					break;
+				case 0xff:
+					if (mosaic_enabled) writemap[0xff] = MOSAIC_PutByte;
+					break;
+				case 0xcf:
+					if (axlon_enabled) writemap[0xcf] = AXLON_PutByte;
+					break;
+				case 0x0f:
+					if (axlon_enabled && axlon_0f_mirror) writemap[0x0f] = AXLON_PutByte;
+					break;
 				default:
 					/* something's wrong, so we keep current values */
 					break;
@@ -426,7 +477,6 @@ void MemStateRead(UBYTE SaveVerbose)
 				ReadUBYTE(&buffer[0], 256);
 		}
 	}
-
 }
 
 #endif /* BASIC */

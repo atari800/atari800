@@ -50,7 +50,7 @@
 #include "log.h"
 #include "util.h"
 
-#define SAVE_VERSION_NUMBER 4
+#define SAVE_VERSION_NUMBER 5
 
 void AnticStateSave(void);
 void MainStateSave(void);
@@ -63,7 +63,7 @@ void SIOStateSave(void);
 
 void AnticStateRead(void);
 void MainStateRead(void);
-void CpuStateRead(UBYTE SaveVerbose);
+void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion);
 void GTIAStateRead(void);
 void PIAStateRead(void);
 void POKEYStateRead(void);
@@ -416,7 +416,7 @@ int ReadAtariState(const char *filename, const char *mode)
 		return FALSE;
 	}
 
-	if (StateVersion != SAVE_VERSION_NUMBER && StateVersion != 3) {
+	if (StateVersion != SAVE_VERSION_NUMBER && StateVersion < 3) {
 		Aprint("Cannot read this state file because it is an incompatible version.");
 		GZCLOSE(StateFile);
 		StateFile = NULL;
@@ -424,12 +424,12 @@ int ReadAtariState(const char *filename, const char *mode)
 	}
 
 	MainStateRead();
-	if (StateVersion != 3) {
+	if (StateVersion >= 4) {
 		CARTStateRead();
 		SIOStateRead();
 	}
 	AnticStateRead();
-	CpuStateRead(SaveVerbose);
+	CpuStateRead(SaveVerbose, StateVersion);
 	GTIAStateRead();
 	PIAStateRead();
 	POKEYStateRead();

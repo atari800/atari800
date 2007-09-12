@@ -2374,7 +2374,7 @@ void CpuStateSave(UBYTE SaveVerbose)
 	SaveUWORD(&regPC, 1);
 }
 
-void CpuStateRead(UBYTE SaveVerbose)
+void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 {
 	ReadUBYTE(&regA, 1);
 
@@ -2386,7 +2386,7 @@ void CpuStateRead(UBYTE SaveVerbose)
 	ReadUBYTE(&regY, 1);
 	ReadUBYTE(&IRQ, 1);
 
-	MemStateRead( SaveVerbose );
+	MemStateRead(SaveVerbose, StateVersion);
 
 	ReadUWORD(&regPC, 1);
 }

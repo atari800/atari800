@@ -81,7 +81,7 @@ extern int cartA0BF_enabled;
 
 void MEMORY_InitialiseMachine(void);
 void MemStateSave(UBYTE SaveVerbose);
-void MemStateRead(UBYTE SaveVerbose);
+void MemStateRead(UBYTE SaveVerbose, UBYTE StateVersion);
 void CopyFromMem(UWORD from, UBYTE *to, int size);
 void CopyToMem(const UBYTE *from, UWORD to, int size);
 void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval);
