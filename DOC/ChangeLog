@@ -1,3 +1,6 @@
+2007-09-29  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: Added better support for GTIA bug mode.
+
 2007-09-12  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.c: Fix PAGED_MEM error (missing break in switch) with POKEY in loading
   saved states.

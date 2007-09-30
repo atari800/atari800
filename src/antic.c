@@ -48,6 +48,7 @@
 #define RCHOP 3			/* do not build rightmost 0..3 characters in wide mode */
 
 int break_ypos = 999;
+int gtia_bug_active = FALSE; /* The GTIA bug mode is active */
 #ifdef NEW_CYCLE_EXACT
 void draw_partial_scanline(int l,int r);
 void update_scanline(void);
@@ -423,13 +424,19 @@ unsigned int screenline_cpu_clock = 0;
 #else
 #define UPDATE_DMACTL
 #endif /* NEW_CYCLE_EXACT */
+#define UPDATE_GTIA_BUG /* update GTIA if it was in bug mode */\
+	do{if(gtia_bug_active) {\
+		/* restore draw_antic_ptr for multi-line modes*/\
+		draw_antic_ptr = draw_antic_table[PRIOR >> 6][anticmode];\
+		gtia_bug_active = FALSE;\
+	}}while(0)
 #define GOEOL_CYCLE_EXACT  GO(antic2cpu_ptr[LINE_C]); \
 	xpos = cpu2antic_ptr[xpos]; \
 	xpos -= LINE_C; \
 	screenline_cpu_clock += LINE_C; \
 	ypos++; \
 	update_pmpl_colls();
-#define GOEOL GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL ypos++
+#define GOEOL GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL ypos++; UPDATE_GTIA_BUG
 #define OVERSCREEN_LINE	xpos += DMAR; GOEOL
 
 int xpos = 0;
@@ -1282,6 +1289,34 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 	do_border_gtia11();
 }
 
+static void draw_an_gtia_bug(const ULONG *t_pm_scanline_ptr)
+{
+	static const UBYTE gtia_bug_colreg[] = {L_PF0, L_PF1, L_PF2, L_PF3};
+	UWORD lookup_gtia_bug[16];
+	lookup_gtia_bug[0] = cl_lookup[C_PF0];
+	lookup_gtia_bug[1] = cl_lookup[C_PF1];
+	lookup_gtia_bug[2] = cl_lookup[C_PF2];
+	lookup_gtia_bug[3] = cl_lookup[C_PF3];
+	int i = ((const UBYTE *) t_pm_scanline_ptr - pm_scanline);
+	while (i < right_border_start) {
+		UWORD *ptr = scrn_ptr + i;
+		int pixel = an_scanline[i];
+		UBYTE pm_reg;
+		int colreg;
+		pm_reg = pm_scanline[i];
+		if (pm_reg) {
+			colreg = gtia_bug_colreg[pixel];
+			PF_COLLS(colreg) |= pm_reg;
+			WRITE_VIDEO(ptr, COLOUR(pm_lookup_ptr[pm_reg] | colreg));
+		}
+		else {
+			WRITE_VIDEO(ptr, lookup_gtia_bug[pixel]);
+		}
+		i++;
+	}
+	do_border();
+}
+
 #define DEFINE_DRAW_AN(anticmode) \
 	static void draw_antic_ ## anticmode ## _gtia9 (int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)\
 	{\
@@ -1742,6 +1777,13 @@ static void draw_antic_2_gtia11(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 		t_pm_scanline_ptr++;
 	CHAR_LOOP_END
 	do_border_gtia11();
+}
+
+static void draw_antic_2_gtia_bug(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
+{
+	prepare_an_antic_2(nchars, ANTIC_memptr, t_pm_scanline_ptr);
+	draw_an_gtia_bug(t_pm_scanline_ptr);
+	return;
 }
 
 static void draw_antic_4(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
@@ -3022,6 +3064,7 @@ void ANTIC_Frame(int draw_display)
 			GOEOL_CYCLE_EXACT;
 			draw_partial_scanline(cur_screen_pos, RBORDER_END);
 			UPDATE_DMACTL
+			UPDATE_GTIA_BUG;
 			cur_screen_pos = NOT_DRAWING;
 			YPOS_BREAK_FLICKER
 			scrn_ptr += ATARI_WIDTH / 2;
@@ -3035,6 +3078,7 @@ void ANTIC_Frame(int draw_display)
 		GOEOL_CYCLE_EXACT;
 		draw_partial_scanline(cur_screen_pos, RBORDER_END);
 		UPDATE_DMACTL
+		UPDATE_GTIA_BUG;
 		cur_screen_pos = NOT_DRAWING;
 
 #else /* NEW_CYCLE_EXACT not defined */
@@ -3682,8 +3726,12 @@ void set_prior(UBYTE byte)
 	}
 	pm_lookup_ptr = pm_lookup_table[prior_to_pm_lookup[byte & 0x3f]];
 	draw_antic_0_ptr = byte < 0x80 ? draw_antic_0 : byte < 0xc0 ? draw_antic_0_gtia10 : draw_antic_0_gtia11;
-	if (byte < 0x40 && (PRIOR >= 0x40 || draw_antic_ptr == draw_antic_f_gtia_bug) && anticmode == 0xf && XPOS >= ((DMACTL & 3) == 3 ? 16 : 18))
-		draw_antic_ptr = draw_antic_f_gtia_bug;
+	if (byte < 0x40 && (PRIOR >= 0x40 || gtia_bug_active) && (anticmode == 2 || anticmode == 3 || anticmode == 0xf) && XPOS >= ((DMACTL & 3) == 3 ? 16 : 18)) {
+		/* A GTIA Mode was active, and no longer is.  An ANTIC hi-res mode is being used. GTIA is no longer set in hi-res mode */
+		if (anticmode == 2 || anticmode == 3) draw_antic_ptr = draw_antic_2_gtia_bug;
+		else if (anticmode == 0xf) draw_antic_ptr = draw_antic_f_gtia_bug;
+		gtia_bug_active = TRUE;
+	}
 	else
 		draw_antic_ptr = draw_antic_table[byte >> 6][anticmode];
 }
