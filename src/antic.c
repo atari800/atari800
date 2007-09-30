@@ -1065,11 +1065,11 @@ static void do_border_gtia10(void)
 	/* left border */
 	for (kk = left_border_chars; kk; kk--)
 		DO_GTIA10_BORDER
-	WRITE_VIDEO(ptr, COLOUR(pm_lookup_ptr[*pm_scanline_ptr | 1]));
+	WRITE_VIDEO(ptr, COLOUR(pm_lookup_ptr[*pm_scanline_ptr | 1])); /* one extra pixel, because of the right shift of gtia10*/
 	/* right border */
 	pm_scanline_ptr = &pm_scanline[right_border_start];
 	if (pm_scanline_ptr < &pm_scanline[RBORDER_END]) {
-		ptr = &scrn_ptr[right_border_start + 1];
+		ptr = &scrn_ptr[right_border_start + 1]; /*start one pixel further right because of the right shift of gtia10*/
 		WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_scanline_ptr[1] | 1]));
 		WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_scanline_ptr[2] | 1]));
 		WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_scanline_ptr[3] | 1]));
@@ -2479,9 +2479,9 @@ static void draw_antic_f_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 			UBYTE t_screendata = screendata >> 4;
 			do {
 				colreg = gtia_10_lookup[t_screendata];
-				PF_COLLS(colreg) |= pm_pixel = *c_pm_scanline_ptr++;
-				pm_pixel |= gtia_10_pm[t_screendata];
-				WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_pixel] | colreg));
+				PF_COLLS(colreg) |= pm_pixel = *c_pm_scanline_ptr++; /*playfield colours can generate collisions*/
+				pm_pixel |= gtia_10_pm[t_screendata]; /*but player colours don't*/
+				WRITE_VIDEO(ptr++, COLOUR(pm_lookup_ptr[pm_pixel] | colreg)); /*although they mix with the real players*/
 				if (k == 3)
 					t_screendata = screendata & 0x0f;
 			} while (--k);
@@ -2536,6 +2536,22 @@ static void draw_antic_f_gtia11(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 If while drawing line in hi-res mode PRIOR is changed from 0x40..0xff to
 0x00..0x3f, GTIA doesn't back to hi-res, but starts generating mode similar
 to ANTIC's 0xe, but with colours PF0, PF1, PF2, PF3. */
+
+/* Technical explaination by perrym:
+ * in gtia.pdf there is a flip-flop at page 40, drawing location C3 with
+ * what looks like W and A on the gates
+ * This is set by AN2=0 AN1=1 AN0=1 durning HBLANK
+ * The middle input to the lower NOR gate is the inverted signal !NRM(?)
+ * (NRM means NORMAL?) which arrives from the top left of the page.
+ * This signal is defined on page 38, positions C2/B2
+ * where there is a NOR gate pointing downwards with 00 written to the
+ * right of its output.
+ * !NRM is the condition that PRIOR is not set to b7=0,b6=0.
+ * When PRIOR is not set to NRM, the flip-flip is always reset,
+ * which seems necessary for the proper operation of the GTIA modes.
+ * If PRIOR is reset to NRM then the flip-flop remains reset, and
+ * since ANTIC data in hi-res modes is sent as PF0-PF3, this data is used
+ * by GTIA directly.*/
 
 static void draw_antic_f_gtia_bug(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
@@ -3287,7 +3303,7 @@ void update_scanline_chbase(void)
 	int fontfetch_adj;
 	/* antic fetches character font data every 2 or 4 cycles */
 	/* we want to delay the change until the next fetch */
-	/* empirically determinted: */
+	/* empirically determined: */
 	if (anticmode >= 2 && anticmode <= 5) {
 		fontfetch_adj = (((hscrol_adj >>1) - antic_xpos + 0) & 1) * 2 + 9;
 	}
