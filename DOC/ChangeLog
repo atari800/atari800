@@ -1,5 +1,6 @@
 2007-10-02  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: cleaner macros
+* cycle_map.c: minor cleanup
 
 2007-09-30  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: Added better support for GTIA bug mode.

@@ -1,7 +1,7 @@
 /*
  * cycle_map.c - part of the ANTIC emulation
  *
- * Copyright (C) 1995-1998 David Firth
+ * Copyright (C) 1995-1998 Perry McFarlane
  * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
@@ -22,7 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include<stdio.h>
+#include <stdio.h>
 #include "cycle_map.h"
 
 int cpu2antic[CPU2ANTIC_SIZE * (17 * 7 + 1)];
@@ -75,7 +75,7 @@ void create_cycle_map(void)
 #endif
 	char antic_cycles[115];
 	int k = 0;
-	antic_steal_map(1, 0, 0, 0, 0, 0, antic_cycles, &cpu2antic[k], &antic2cpu[k]); /* blank line*/
+	antic_steal_map(1, 0, 0, 0, 0, 0, antic_cycles, &cpu2antic[k], &antic2cpu[k]); /* blank line, or mode 8-F following line*/
 	k = CPU2ANTIC_SIZE * (17 * 0 + 1);
 	try_all_scroll(0, 1, 1, 0, &cpu2antic[k], &antic2cpu[k]); /* mode 2,3,4,5 first line */
 	k = CPU2ANTIC_SIZE * (17 * 1 + 1);
@@ -85,11 +85,11 @@ void create_cycle_map(void)
 	k = CPU2ANTIC_SIZE * (17 * 3 + 1);
 	try_all_scroll(1, 0, 1, 0, &cpu2antic[k], &antic2cpu[k]); /* mode 6,7 following lines */
 	k = CPU2ANTIC_SIZE * (17 * 4 + 1);
-	try_all_scroll(0, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode 8,9 */
+	try_all_scroll(0, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode 8,9 first line */
 	k = CPU2ANTIC_SIZE * (17 * 5 + 1);
-	try_all_scroll(1, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode A,B,C */
+	try_all_scroll(1, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode A,B,C  first line */
 	k = CPU2ANTIC_SIZE * (17 * 6 + 1);
-	try_all_scroll(2, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode D,E,F */
+	try_all_scroll(2, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode D,E,F  first line */
 #ifdef TEST_CYCLE_MAP
 	for(j = 0; j < 17 * 7 + 1; j++) {
 		cpu_cycles = &cpu2antic[CPU2ANTIC_SIZE * j];
