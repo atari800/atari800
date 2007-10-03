@@ -1,4 +1,7 @@
-2007-09-29  Perry McFarlane  <perry_m@fastmail.fm>
+2007-10-02  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: cleaner macros
+
+2007-09-30  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: Added better support for GTIA bug mode.
 
 2007-09-12  Perry McFarlane  <perry_m@fastmail.fm>

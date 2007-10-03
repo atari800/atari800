@@ -413,16 +413,16 @@ These are all cases:
 unsigned int screenline_cpu_clock = 0;
 
 #ifdef NEW_CYCLE_EXACT
-#define UPDATE_DMACTL if (dmactl_changed) { \
+#define UPDATE_DMACTL do{if (dmactl_changed) { \
 		dmactl_changed = 0; \
 		ANTIC_PutByte(_DMACTL, DELAYED_DMACTL); \
 	} \
 	if (draw_antic_ptr_changed) { \
 		draw_antic_ptr_changed = 0; \
 		draw_antic_ptr = saved_draw_antic_ptr; \
-	}
+	}}while(0)
 #else
-#define UPDATE_DMACTL
+#define UPDATE_DMACTL do{}while(0)
 #endif /* NEW_CYCLE_EXACT */
 #define UPDATE_GTIA_BUG /* update GTIA if it was in bug mode */\
 	do{if(gtia_bug_active) {\
@@ -436,7 +436,7 @@ unsigned int screenline_cpu_clock = 0;
 	screenline_cpu_clock += LINE_C; \
 	ypos++; \
 	update_pmpl_colls();
-#define GOEOL GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL ypos++; UPDATE_GTIA_BUG
+#define GOEOL GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL; ypos++; UPDATE_GTIA_BUG
 #define OVERSCREEN_LINE	xpos += DMAR; GOEOL
 
 int xpos = 0;
@@ -3063,15 +3063,15 @@ void ANTIC_Frame(int draw_display)
 			continue;
 		}
 #ifndef NO_YPOS_BREAK_FLICKER
-#define YPOS_BREAK_FLICKER if (ypos == break_ypos - 1000) {\
+#define YPOS_BREAK_FLICKER do{if (ypos == break_ypos - 1000) {\
 				static int toggle;\
 				if (toggle == 1) {\
 					FILL_VIDEO(scrn_ptr + LBORDER_START, 0x0f0f, (RBORDER_END - LBORDER_START) * 2);\
 				}\
 				toggle = !toggle;\
-			}
+			}}while(0)
 #else
-#define YPOS_BREAK_FLICKER
+#define YPOS_BREAK_FLICKER do{}while(0)
 #endif /* NO_YPOS_BREAK_FLICKER */
 
 #ifdef NEW_CYCLE_EXACT
@@ -3079,10 +3079,10 @@ void ANTIC_Frame(int draw_display)
 		if (anticmode < 2 || (DMACTL & 3) == 0) {
 			GOEOL_CYCLE_EXACT;
 			draw_partial_scanline(cur_screen_pos, RBORDER_END);
-			UPDATE_DMACTL
+			UPDATE_DMACTL;
 			UPDATE_GTIA_BUG;
 			cur_screen_pos = NOT_DRAWING;
-			YPOS_BREAK_FLICKER
+			YPOS_BREAK_FLICKER;
 			scrn_ptr += ATARI_WIDTH / 2;
 			if (no_jvb) {
 				dctr++;
@@ -3093,7 +3093,7 @@ void ANTIC_Frame(int draw_display)
 
 		GOEOL_CYCLE_EXACT;
 		draw_partial_scanline(cur_screen_pos, RBORDER_END);
-		UPDATE_DMACTL
+		UPDATE_DMACTL;
 		UPDATE_GTIA_BUG;
 		cur_screen_pos = NOT_DRAWING;
 
@@ -3109,7 +3109,7 @@ void ANTIC_Frame(int draw_display)
 		if (anticmode < 2 || (DMACTL & 3) == 0) {
 			draw_antic_0_ptr();
 			GOEOL;
-			YPOS_BREAK_FLICKER
+			YPOS_BREAK_FLICKER;
 			scrn_ptr += ATARI_WIDTH / 2;
 			if (no_jvb) {
 				dctr++;
@@ -3243,7 +3243,7 @@ void ANTIC_Frame(int draw_display)
 #ifndef NEW_CYCLE_EXACT
 		GOEOL;
 #endif /* NEW_CYCLE_EXACT */
-		YPOS_BREAK_FLICKER
+		YPOS_BREAK_FLICKER;
 		scrn_ptr += ATARI_WIDTH / 2;
 		dctr++;
 		dctr &= 0xf;
