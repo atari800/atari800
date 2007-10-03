@@ -1480,7 +1480,7 @@ static void AboutEmulator(void)
 		"redistribute it and/or modify it under\0"
 		"the terms of the GNU General Public\0"
 		"License as published by the Free\0"
-		"Software Foundation; either version 1,\0"
+		"Software Foundation; either version 2,\0"
 		"or (at your option) any later version.\0"
 		"\n");
 }
