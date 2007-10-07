@@ -56,6 +56,7 @@ extern int ram_size;
    or ram_size! */
 
 /* Video system. */
+#define TV_UNSET 0
 #define TV_PAL 312
 #define TV_NTSC 262
 extern int tv_mode;

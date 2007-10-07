@@ -250,6 +250,7 @@ case "$a8_target" in
         AC_DEFINE(SDL,1,[Target: SDL library.])
         AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
         AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,1,[Save additional config file options.])
+        AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
         LIBS="$LIBS `sdl-config --libs`"
         OBJS="atari_sdl.o atari_ntsc.o"
         if [[ "$a8_host" = "win" ]]; then

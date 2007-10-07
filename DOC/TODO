@@ -140,7 +140,11 @@ Graphics
 
 * better color palettes
 
-* use different palettes for PAL and NTSC modes (and GTIA vs CTIA?)
+= investigate different palettes for different models such as GTIA vs CTIA
+  or 400/800, 1200XL, 800XL, XE, 5200, hardware modifications to the colour
+  circuts etc.
+
+= SECAM palette and video emulation.
 
 * "flicker fixer": display average pixel values of last two Atari frames
 

@@ -411,6 +411,9 @@ static int load_roms(void)
 
 int Atari800_InitialiseMachine(void)
 {
+#if !defined(BASIC) && !defined(CURSES_BASIC)
+	Palette_InitialiseMachine();
+#endif
 	Atari800_ClearAllEsc();
 	if (!load_roms())
 		return FALSE;

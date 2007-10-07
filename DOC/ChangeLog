@@ -1,3 +1,10 @@
+2007-10-04  Perry McFarlane  <perry_m@fastmail.fm>
+* colours.[ch], atari.[ch], platform.h, USAGE, atari_sdl.c, atari_ntsc.c,
+  configure.ac, TODO: added support for switching between NTSC and PAL palettes.
+  The platform-specific function Atari_PaletteUpdate is now required in those
+  ports which calculate their own palette from colortable.  The SDL version
+  is working but other ports will need to be updated.
+
 2007-10-02  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: cleaner macros
 * cycle_map.c: minor cleanup

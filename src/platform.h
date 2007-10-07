@@ -29,4 +29,12 @@ int Atari_Configure(char *option, char *parameters);
 void Atari_ConfigSave(FILE *fp);
 #endif
 
+#ifdef SUPPORTS_ATARI_PALETTEUPDATE
+/* This function updates the palette */
+/* If the platform does a conversion of colortable when it initialises
+ * and the user changes colortable (such as changing from PAL to NTSC)
+ * then this function should update the platform palette */
+void Atari_PaletteUpdate(void);
+#endif
+
 #endif /* _PLATFORM_H_ */

@@ -355,6 +355,11 @@ void CalcPalette(void)
 
 }
 
+void Atari_PaletteUpdate(void)
+{
+	CalcPalette();
+}
+
 void ModeInfo(void)
 {
 	char bwflag, fullflag, width, joyflag;

@@ -98,13 +98,19 @@ Command line options
 -multijoy             Emulate MultiJoy4 interface
 
 -refresh <rate>       Set screen refresh rate
--artif <mode>         Set artifacting mode 0-4 (0 = disable)
--palette <filename>   Read Atari colors from ACT file
--black <num>          Set black level 0-255
--while <num>          Set white level 0-255
--colors <num>         Set color intensity
--genpal               Generate artifical palette
--colshift <num>       Set color shift (-genpal only)
+-artif <mode>         Set artifacting mode 0-4 (0 = disable) (see also -ntscemu)
+-paletten <filename>  Read Atari NTSC colors from ACT file
+-palettep <filename>  Read Atari PAL colors from ACT file
+-blackn <num>         Set NTSC black level 0-255
+-blackp <num>         Set PAL black level 0-255
+-whiten <num>         Set NTSC white level 0-255
+-whitep <num>         Set PAL white level 0-255
+-colorsn <num>        Set NTSC color intensity
+-colorsp <num>        Set PAL color intensity
+-genpaln              Generate artificial NTSC palette
+-genpalp              Generate artificial PAL palette
+-colshiftn <num>      Set color shift (-genpaln only)
+-colshiftp <num>      Set color shift (-genpalp only)
 -screenshots <pattern>Set filename pattern for screenshots
 
 -sound                Enable sound
@@ -168,6 +174,10 @@ SDL version options
 -joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
 
 -ntscemu              Emulate NTSC composite video (640x480x16 only)
+This includes NTSC TV artifacts.  "-artif" is not needed in this mode and will
+not work.  This mode does not use a palette.  The video signal is emulated
+instead.  Palette options such as -genpaln have no effect in this mode.
+The following items are for -ntscemu only:
 -ntsc_hue <n>         Set NTSC hue -1..1 (like TV Tint control)
 -ntsc_sat <n>         Set NTSC saturation (like TV Colour control)
 -ntsc_cont <n>        Set NTSC contrast (also called white level)
