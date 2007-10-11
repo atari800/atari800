@@ -1,3 +1,6 @@
+2007-10-11  Perry McFarlane  <perry_m@fastmail.fm>
+* devices.h: make h_current_dir extern
+
 2007-10-04  Perry McFarlane  <perry_m@fastmail.fm>
 * colours.[ch], atari.[ch], platform.h, USAGE, atari_sdl.c, atari_ntsc.c,
   configure.ac, TODO: added support for switching between NTSC and PAL palettes.
