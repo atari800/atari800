@@ -1,5 +1,6 @@
 2007-10-11  Perry McFarlane  <perry_m@fastmail.fm>
 * devices.h: make h_current_dir extern
+* monitor.c: COLOUR -> COLOR
 
 2007-10-04  Perry McFarlane  <perry_m@fastmail.fm>
 * colours.[ch], atari.[ch], platform.h, USAGE, atari_sdl.c, atari_ntsc.c,

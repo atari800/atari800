@@ -130,7 +130,7 @@ static const symtable_rec symtable_builtin[] = {
 	{"TOPSTK",  0x0090}, {"TOPSTK+1",0x0091}, {"MEOLFLG", 0x0092}, {"POKADR",  0x0095},
 	{"POKADR+1",0x0096}, {"DATAD",   0x00b6}, {"DATALN",  0x00b7}, {"DATALN+1",0x00b8},
 	{"STOPLN",  0x00ba}, {"STOPLN+1",0x00bb}, {"SAVCUR",  0x00be}, {"IOCMD",   0x00c0},
-	{"IODVC",   0x00c1}, {"PROMPT",  0x00c2}, {"ERRSAVE", 0x00c3}, {"COLOUR",  0x00c8},
+	{"IODVC",   0x00c1}, {"PROMPT",  0x00c2}, {"ERRSAVE", 0x00c3}, {"COLOR",  0x00c8},
 	{"PTABW",   0x00c9}, {"LOADFLG", 0x00ca}, {"FR0",     0x00d4}, {"FR0+1",   0x00d5},
 	{"FR0+2",   0x00d6}, {"FR0+3",   0x00d7}, {"FR0+4",   0x00d8}, {"FR0+5",   0x00d9},
 	{"FRE",     0x00da}, {"FRE+1",   0x00db}, {"FRE+2",   0x00dc}, {"FRE+3",   0x00dd},
