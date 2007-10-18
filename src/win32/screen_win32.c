@@ -257,6 +257,18 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 	pal[ent].peFlags = 0;
 }
 
+/* Platform-specific function to update the palette if it changed */
+void Atari_PaletteUpdate(void)
+{
+	if(lpDDPal != NULL) {
+		int i;
+		for (i = 0; i < MAX_CLR; i++) {
+			palette(i, Palette_GetR(i), Palette_GetG(i), Palette_GetB(i));
+		}
+		palupd(0, MAX_CLR);
+	}
+}
+
 void refreshv_win32api(UBYTE *scr_ptr)
 {
 	PAINTSTRUCT ps;
