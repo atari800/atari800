@@ -37,4 +37,9 @@ void Atari_ConfigSave(FILE *fp);
 void Atari_PaletteUpdate(void);
 #endif
 
+#ifdef SUPPORTS_ATARI_SLEEP
+/* This function is for those ports that need their own version of sleep */
+void Atari_sleep(double s);
+#endif
+
 #endif /* _PLATFORM_H_ */

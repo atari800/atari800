@@ -3,7 +3,18 @@ RC = windres
 
 DEFS = @DEFS@
 LIBS = @LIBS@
-TARGET = atari800@EXEEXT@
+TARGET_BASE_NAME = atari800
+TARGET = $(TARGET_BASE_NAME)@EXEEXT@
+CONFIGURE_TARGET = @CONFIGURE_TARGET@
+ifeq (@EXEEXT@,.mips)
+	FINALTARGET = $(TARGET_BASE_NAME).class
+	JAVAFLAGS = @JAVAFLAGS@
+	JAVA = java
+	JAVACFLAGS = @JAVACFLAGS@
+	JAVAC = javac
+else
+	FINALTARGET = $(TARGET)
+endif
 
 CFLAGS = @CFLAGS@
 LDFLAGS = @LDFLAGS@
@@ -41,7 +52,7 @@ OBJS = \
 
 
 
-all: $(TARGET)
+all: $(FINALTARGET)
 
 %.o: %.c
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
@@ -56,6 +67,21 @@ all: $(TARGET)
 	cd $(<D); xgen -L1 $(@F) $(<F)
 	cd $(<D); gst2gcc gcc $(@F)
 
+ifeq ($(CONFIGURE_TARGET),javanvm)
+$(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class
+	$(JAVAC) -d . $(JAVAFLAGS) javanvm/$(TARGET_BASE_NAME).java
+RUNTIME = _runtime
+else
+RUNTIME =
+endif
+
+$(TARGET_BASE_NAME)$(RUNTIME).class: $(TARGET)
+	$(JAVA) $(JAVACFLAGS) org.ibex.nestedvm.Compiler -outfile $@ $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
+
+jar: all
+	echo -e "Manifest-Version: 1.0\nMain-Class: $(TARGET_BASE_NAME)\nClass-Path: unix_runtime.jar\n" > .manifest
+	jar cfm $(TARGET_BASE_NAME).jar .manifest *.class
+
 $(TARGET): $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
 
@@ -64,7 +90,7 @@ dep:
 	then echo warning: makedepend failed; fi
 
 clean:
-	rm -f *.o dos/*.o falcon/*.o win32/*.o win32/*.ro $(TARGET) core *.bak *~
+	rm -f *.o dos/*.o falcon/*.o win32/*.o win32/*.ro javanvm/*.o *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar core *.bak *~
 
 distclean: clean
 	-rm -f Makefile configure config.log config.status config.h

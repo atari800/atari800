@@ -125,10 +125,14 @@ void Screen_Initialise(int *argc, char *argv[])
 		if (strcmp(argv[i], "-screenshots") == 0) {
 			Screen_SetScreenshotFilenamePattern(argv[++i]);
 		}
+		if (strcmp(argv[i], "-showspeed") == 0) {
+			show_atari_speed = TRUE;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				Aprint("\t-screenshots <p> Set filename pattern for screenshots");
+				Aprint("\t-showspeed       Show percentage of actual speed");
 			}
 			argv[j++] = argv[i];
 		}

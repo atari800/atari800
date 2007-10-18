@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    basic | curses | ncurses | pdcurses | dosvga | falcon | ps2 | sdl | svgalib | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | curses | ncurses | pdcurses | dosvga | falcon | javanvm | javanvm-basic | ps2 | sdl | svgalib | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -48,6 +48,8 @@ case "$target" in
         echo "    pdcurses         (text mode using PDCurses library)"
         echo "    dosvga           (DOS only)"
         echo "    falcon           (Atari Falcon systems only)"
+        echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
+        echo "    javanvm-basic    (Java NestedVM text-mode: set --host=mips-unknown-elf)"
         echo "    ps2              (Sony PlayStation 2)"
         echo "    svgalib          (Linux system with SVGALib library)"
         echo "    sdl              (System with Simple Direct Media Layer library)"
@@ -62,6 +64,7 @@ case "$target" in
         ;;
 esac
 
+AC_CANONICAL_BUILD
 
 dnl Set a8_host...
 
@@ -228,6 +231,30 @@ case "$a8_target" in
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
         A8_NEED_LIB(gem)
         OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
+        ;;
+    javanvm)
+        AC_DEFINE(JAVANVM,1,[Target: Java NestedVM.])
+        AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        AC_DEFINE(SUPPORTS_ATARI_SLEEP,1,[Platform-specific sleep function.])
+        OBJS="javanvm/atari_javanvm.o"
+        EXEEXT=".mips"
+        enable_unalignedwords=no
+        enable_sound=no
+        if [[ "$build_os" = "cygwin" ]]; then
+            JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
+            JAVACFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
+        fi
+        ;;
+    javanvm-basic)
+        AC_DEFINE(BASIC,1,[Target: Java NestedVM standard I/O.])
+        OBJS="atari_basic.o"
+        EXEEXT=".mips"
+        enable_unalignedwords=no
+        enable_sound=no
+        if [[ "$build_os" = "cygwin" ]]; then
+            JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
+            JAVACFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
+        fi
         ;;
     ps2)
         AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
@@ -420,7 +447,7 @@ AC_DEFUN([A8_OPTION],[
     fi
 ])
 
-if [[ "$a8_target" != "basic" ]]; then
+if [[ "$a8_target" != "basic" -a "$a8_target" != "javanvm-basic" ]]; then
 
     dnl These objects are not compiled in BASIC target
     OBJS="$OBJS input.o statesav.o ui_basic.o ui.o"
@@ -628,6 +655,10 @@ fi
 dnl Wrapup: export OBJS and write Makefile...
 
 AC_SUBST(OBJS)
+AC_SUBST(JAVAFLAGS)
+AC_SUBST(JAVACFLAGS)
+CONFIGURE_TARGET="$target"
+AC_SUBST(CONFIGURE_TARGET)
 AC_CONFIG_FILES(Makefile)
 AC_OUTPUT
 
@@ -640,7 +671,7 @@ echo "-------------------------------------------------------"
 echo "Host OS...............................: $a8_host"
 echo "Target ...............................: $a8_target"
 echo
-if [[ "$a8_target" != "basic" ]]; then
+if [[ "$a8_target" != "basic" -a "$a8_target" != "javanvm-basic" ]]; then
     case "$a8_target" in
         *curses)
             echo "Using no bitmap graphics emulation?...: $WANT_CURSES_BASIC"

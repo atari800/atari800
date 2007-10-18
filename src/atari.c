@@ -1582,6 +1582,9 @@ static double Atari_time(void)
 
 #endif /* USE_CLOCK */
 
+/* FIXME: Ports should use SUPPORTS_ATARI_SLEEP and SUPPORTS_ATARI_TIME */
+/* and not this mess */
+#ifndef SUPPORTS_ATARI_SLEEP
 #ifndef USE_CLOCK
 
 static void Atari_sleep(double s)
@@ -1621,6 +1624,8 @@ static void Atari_sleep(double s)
 }
 
 #endif /* USE_CLOCK */
+
+#endif /* SUPPORTS_ATARI_SLEEP */
 
 #endif /* PS2 */
 

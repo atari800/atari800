@@ -112,6 +112,7 @@ Command line options
 -colshiftn <num>      Set color shift (-genpaln only)
 -colshiftp <num>      Set color shift (-genpalp only)
 -screenshots <pattern>Set filename pattern for screenshots
+-showspeed            Show percentage of actual speed
 
 -sound                Enable sound
 -nosound              Disable sound
@@ -155,6 +156,11 @@ Falcon version options
 -delta                Delta screen output (differences only)
 
 -joyswap              Swap joysticks
+
+
+Java NestedVM version options
+----------------------
+-scale <n>            Scale Width and height by <n>
 
 
 SDL version options
