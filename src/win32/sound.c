@@ -166,7 +166,12 @@ static void sound_update_dx(void)
   int d1;
   LPVOID pMem1, pMem2;
   DWORD dwSize1, dwSize2;
-  void *p1, *p2;
+  signed short *p1s;
+  signed short *p2s;
+  UBYTE *p1b;
+  UBYTE *p2b;
+  signed short *pbufs;
+  UBYTE *pbufb;
   int s1, s2;
   int err;
   int i;
@@ -214,8 +219,10 @@ static void sound_update_dx(void)
 
   s1 = dwSize1;
   s2 = dwSize2;
-  p1 = pMem1;
-  p2 = pMem2;
+  p1s = (signed short *)pMem1;
+  p2s = (signed short *)pMem2;
+  p1b = (UBYTE *)pMem1;
+  p2b = (UBYTE *)pMem2;
   bufpos += (s1 + s2);
   if (bufpos >= sbufsize)
     bufpos -= sbufsize;
@@ -229,24 +236,25 @@ static void sound_update_dx(void)
 
   Pokey_process(mixbuf, i);
 
-  i = (int) mixbuf;
+  pbufs = (signed short *)mixbuf;
+  pbufb = (UBYTE *)mixbuf;
   if (s1)
     {
       if (bit16)
       for (; s1; s1--)
-	  *((signed short *)p1)++ = *(((signed short *) i)++);
+	  *p1s++ = *pbufs++;
       else
 	for (; s1; s1--)
-	  *((UBYTE *)p1)++ = *(((UBYTE *) i)++);
+	  *p1b++ = *pbufb++;
     }
   if (s2)
     {
       if (bit16)
       for (; s2; s2--)
-	  *((signed short *)p2)++ = *(((signed short *) i)++);
+	  *p2s++ = *pbufs++;
       else
 	for (; s2; s2--)
-	  *((UBYTE *)p2)++ = *(((UBYTE *) i)++);
+	  *p2b++ = *pbufb++;
     }
 
   IDirectSoundBuffer_Unlock(pDSB, pMem1, dwSize1, pMem2, dwSize2);

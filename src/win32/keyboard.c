@@ -147,7 +147,7 @@ static int initkb(LPDIRECTINPUT pdi)
     }
 
   hRes = pdev->lpVtbl->QueryInterface(pdev, &IID_IDirectInputDevice2,
-				      (LPVOID *) & dikb0);
+				      (LPVOID *) (void*) & dikb0);
   if (hRes < 0)
     return 1;
   IDirectInputDevice_Release(pdev);

@@ -115,7 +115,7 @@ static BOOL initwin(void)
 static int initFail(HWND hwnd, const char *func, HRESULT hr)
 {
 	char txt[256];
-	sprintf(txt, "DirectDraw Init FAILED: %s returned 0x%x", func, hr);
+	sprintf(txt, "DirectDraw Init FAILED: %s returned 0x%x", func, (unsigned int)hr);
 	MessageBox(hwnd, txt, myname, MB_OK);
 	groff();
 	DestroyWindow(hwnd);
@@ -293,7 +293,7 @@ void refreshv_win32api(UBYTE *scr_ptr)
 	bi.bmiHeader.biClrImportant = 0;
 
 	hCdc = CreateCompatibleDC(hdc);
-	hBitmap = CreateDIBSection(hCdc, &bi, DIB_RGB_COLORS, &bitmap_bits, NULL, 0);
+	hBitmap = CreateDIBSection(hCdc, &bi, DIB_RGB_COLORS, (void *)&bitmap_bits, NULL, 0);
 	if (!hBitmap) {
 		MessageBox(hWndMain, "Could not create bitmap", myname, MB_OK);
 		DestroyWindow(hWndMain);
@@ -331,7 +331,8 @@ void refreshv(UBYTE *scr_ptr)
 	DDSURFACEDESC2 desc0;
 	int err;
 	int x, y;
-	UBYTE *src;
+	UBYTE *srcb;
+	ULONG *srcl;
 	ULONG *dst;
 	int h, w;
 	DDBLTFX ddbltfx;
@@ -353,9 +354,9 @@ void refreshv(UBYTE *scr_ptr)
 		if (bltgfx) {
 			for (y = 0; y < ATARI_HEIGHT; y++) {
 				dst = (ULONG *) (scraddr + y * linesize);
-				src = scr_ptr + y * ATARI_WIDTH;
+				srcb = scr_ptr + y * ATARI_WIDTH;
 				for (x = 0; x < scrwidth; x++)
-					*dst++ = colortable[*src++];
+					*dst++ = colortable[*srcb++];
 			}
 		}
 		else {
@@ -369,9 +370,9 @@ void refreshv(UBYTE *scr_ptr)
 				scraddr += linesize * h;
 			for (y = 0; y < ATARI_HEIGHT; y++) {
 				dst = (ULONG *) (scraddr + y * linesize);
-				src = scr_ptr + y * ATARI_WIDTH;
+				srcl = (ULONG *) (scr_ptr + y * ATARI_WIDTH);
 				for (x = (w >= 0) ? (336 >> 2) : (scrwidth >> 2); x > 0; x--)
-					*dst++ = *((ULONG *) src)++;
+					*dst++ = *srcl++;
 			}
 		}
 

@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dinput.h>
+#include <ctype.h>
 
 #include "atari.h"
 #include "input.h"
