@@ -4,7 +4,7 @@
   NestedVM port
 * screen.c, USAGE: -showspeed command line option
 * win32/*: suppress gcc warnings
-* win32/screen_win32.c: support Atari_PaletteUpdate
+* win32/screen_win32.c, configure.ac: support Atari_PaletteUpdate
 
 2007-10-11  Perry McFarlane  <perry_m@fastmail.fm>
 * devices.h: make h_current_dir extern
