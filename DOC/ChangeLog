@@ -1,3 +1,6 @@
+2007-10-19  Perry McFarlane  <perry_m@fastmail.fm>
+* javanvm/atari_javanvm.c: keypad fix 
+
 2007-10-18  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari_javanvm.[ch] javanvm/atari800.java added for Java NestedVM port
   configure.ac, Makefile.in, platform.h, INSTALL, USAGE: modified for
