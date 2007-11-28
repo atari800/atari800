@@ -308,7 +308,7 @@ void CART_PutByte(UWORD addr, UBYTE byte)
 		set_bank_809F(byte & 0x7f, 0xfe000);
 		break;
 	case CART_ATRAX_128:
-		set_bank_A0BF(addr & 0x8f, 128);
+		set_bank_A0BF(byte & 0x8f, 128);
 		break;
 	case CART_MEGA_16:
 		set_bank_80BF(byte & 0x80);
