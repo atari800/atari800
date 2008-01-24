@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>	/* for strcmp() */
 #include <math.h>
+#include <stdlib.h>
 #include "atari.h"
 #include "colours.h"
 #include "log.h"
