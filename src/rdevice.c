@@ -82,6 +82,7 @@
 #include <unistd.h>
 
 #include <sys/stat.h>
+#include <sys/param.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -143,6 +144,7 @@ int my_once = 1;
 
 int r_serial = 0;
 int bufend = 0;
+char r_device[MAXPATHLEN];
 
 //---------------------------------------------------------------------------
 // Host Support Function - If Disconnect signal is found, then close socket
@@ -583,6 +585,8 @@ void open_connection(char * address, int port)
 #define TTY_DEV_NAME "/dev/ttyS0"   /* Linux */
 #elif defined (__NetBSD__) && defined(__i386__)
 #define TTY_DEV_NAME "/dev/tty00"   /* NetBSD/x86 */
+#elif defined (__FreeBSD__) && defined(__i386__)
+#define TTY_DEV_NAME "/dev/ttyd1"   /* FreeBSD/x86 */
 #elif defined (__sun__)
 #define TTY_DEV_NAME "/dev/ttya"    /* Solaris */
 #else
@@ -594,18 +598,21 @@ void open_connection(char * address, int port)
 //---------------------------------------------------------------------------
 void open_connection_serial(int port)
 {
-  char dev_name[12] = TTY_DEV_NAME; /* reinitialize each time */
+  char dev_name[MAXPATHLEN] = TTY_DEV_NAME; /* reinitialize each time */
   struct termios options;
 
   if(connected)
     close(rdev_fd);
   do_once = 1;
 
+  if (r_device)  /* got a device name from command line */
+  {
+    strcpy(dev_name, r_device);
+  }
+
   dev_name[strlen(dev_name) - 1] += port - 1;
 
   rdev_fd = open(dev_name, O_RDWR | O_NOCTTY | O_NDELAY);
-  //rdev_fd = open("/dev/ttyS0", O_RDONLY | O_NOCTTY | O_NDELAY);
-  //rdev_fd = open("/dev/ttyS0", O_WRONLY | O_NOCTTY | O_NDELAY);
   if(rdev_fd == -1)
   {
     connected = 0;

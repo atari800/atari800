@@ -89,7 +89,10 @@
 #include "sndsave.h"
 #include "sound.h"
 #endif
-
+#ifdef R_IO_DEVICE
+#include <sys/param.h>
+#include "rdevice.h"
+#endif
 #ifdef __PLUS
 #ifdef _WX_
 #include "export.h"
@@ -1108,11 +1111,20 @@ int Atari800_Initialise(int *argc, char *argv[])
 		else {
 			/* parameters that take additional argument follow here */
 			int i_a = (i + 1 < *argc);		/* is argument available? */
-			int a_m = FALSE;				/* error, argument missing! */
+			int a_m = FALSE;			/* error, argument missing! */
 
 			if (strcmp(argv[i], "-osa_rom") == 0) {
 				if (i_a) Util_strlcpy(atari_osa_filename, argv[++i], sizeof(atari_osa_filename)); else a_m = TRUE;
 			}
+#ifdef R_IO_DEVICE
+			else if (strcmp(argv[i], "-rdevice") == 0) {
+				enable_r_patch = TRUE;
+				if (i_a && i + 2 < *argc && *argv[i + 1] != '-') {  /* optional serial device name */
+					Util_strlcpy(r_device, argv[++i], MAXPATHLEN);
+					r_serial = TRUE;
+				}
+			}
+#endif
 			else if (strcmp(argv[i], "-osb_rom") == 0) {
 				if (i_a) Util_strlcpy(atari_osb_filename, argv[++i], sizeof(atari_osb_filename)); else a_m = TRUE;
 			}
@@ -1219,6 +1231,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Aprint("\t-axlon <n>       Use Atari 800 Axlon memory expansion: <n> k total RAM");
 					Aprint("\t-axlon0f         Use Axlon shadow at 0x0fc0-0x0fff");
 					Aprint("\t-mosaic <n>      Use 400/800 Mosaic memory expansion: <n> k total RAM");
+#ifdef R_IO_DEVICE
+					Aprint("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
+#endif
 					Aprint("\t-v               Show version/release number");
 				}
 
