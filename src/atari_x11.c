@@ -1453,6 +1453,10 @@ void Atari_Initialise(int *argc, char *argv[])
 				printf("\t-clip_width <n>  Set window clip-width\n");
 				printf("\t-clip_y <n>      Set top offset for clipping\n");
 				printf("\t-clip_height <n> Set window clip-height\n");
+				printf("\t-private_cmap    Use private colormap\n");
+				printf("\t-fps             Show framerate\n");
+				printf("\t-sio             Show SIO monitor\n");
+				printf("\t-keypad          Keypad mode\n");
 			}
 			argv[j++] = argv[i];
 		}
