@@ -2,7 +2,7 @@
  * rdevice.c - Atari850 emulation
  *
  * Copyright (c) ???? Tom Hunt, Chris Martin
- * Copyright (c) 2003 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2003,2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -82,7 +82,6 @@
 #include <unistd.h>
 
 #include <sys/stat.h>
-#include <sys/param.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -144,7 +143,7 @@ int my_once = 1;
 
 int r_serial = 0;
 int bufend = 0;
-char r_device[MAXPATHLEN];
+char r_device[FILENAME_MAX];
 
 //---------------------------------------------------------------------------
 // Host Support Function - If Disconnect signal is found, then close socket
@@ -598,7 +597,7 @@ void open_connection(char * address, int port)
 //---------------------------------------------------------------------------
 void open_connection_serial(int port)
 {
-  char dev_name[MAXPATHLEN] = TTY_DEV_NAME; /* reinitialize each time */
+  char dev_name[FILENAME_MAX] = TTY_DEV_NAME; /* reinitialize each time */
   struct termios options;
 
   if(connected)

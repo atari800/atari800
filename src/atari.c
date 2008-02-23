@@ -90,7 +90,6 @@
 #include "sound.h"
 #endif
 #ifdef R_IO_DEVICE
-#include <sys/param.h>
 #include "rdevice.h"
 #endif
 #ifdef __PLUS
@@ -1120,7 +1119,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-rdevice") == 0) {
 				enable_r_patch = TRUE;
 				if (i_a && i + 2 < *argc && *argv[i + 1] != '-') {  /* optional serial device name */
-					Util_strlcpy(r_device, argv[++i], MAXPATHLEN);
+					Util_strlcpy(r_device, argv[++i], FILENAME_MAX);
 					r_serial = TRUE;
 				}
 			}
