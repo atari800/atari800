@@ -604,7 +604,7 @@ void open_connection_serial(int port)
     close(rdev_fd);
   do_once = 1;
 
-  if (r_device)  /* got a device name from command line */
+  if (*r_device)  /* got a device name from command line */
   {
     strcpy(dev_name, r_device);
   }
