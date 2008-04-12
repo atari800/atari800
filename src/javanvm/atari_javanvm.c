@@ -2,8 +2,8 @@
  * atari_javanvm.c - Java NestedVM port-specific code
  *
  * Copyright (c) 2001-2002 Jacek Poplawski (original atari_sdl.c)
- * Copyright (c) 2007 Perry McFarlane (javanvm port)
- * Copyright (C) 2001-2007 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2007-2008 Perry McFarlane (javanvm port)
+ * Copyright (C) 2001-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -116,6 +116,15 @@ static int JAVANVM_Sleep(int millis){
 static int JAVANVM_InitGraphics(void *config){
 	return _call_java(7, (int)config, 0, 0);
 }
+static int JAVANVM_InitSound(void *config){
+	return _call_java(8, (int)config, 0, 0);
+}
+static int JAVANVM_SoundAvailable(void){
+	return _call_java(9, 0, 0, 0);
+}
+static int JAVANVM_SoundWrite(void *buffer,int len){
+	return _call_java(10, (int)buffer, len, 0);
+}
 /* These constants are for use with arrays passed to and from the NestedVM runtime */
 #define JAVANVM_KeyEventType 0
 #define JAVANVM_KeyEventKeyCode 1
@@ -129,6 +138,39 @@ static int JAVANVM_InitGraphics(void *config){
 #define JAVANVM_InitGraphicsATARI_VISIBLE_WIDTH 4
 #define JAVANVM_InitGraphicsATARI_LEFT_MARGIN 5
 #define JAVANVM_InitGraphicsSIZE 6
+#define JAVANVM_InitSoundSampleRate 0
+#define JAVANVM_InitSoundBitsPerSample 1
+#define JAVANVM_InitSoundChannels 2
+#define JAVANVM_InitSoundSigned 3
+#define JAVANVM_InitSoundBigEndian 4
+#define JAVANVM_InitSoundSIZE 5
+
+#ifdef SOUND
+
+UBYTE *dsp_buffer;
+int line_buffer_size;
+int dsp_buffer_size;
+
+void Sound_Pause(void)
+{
+	/* stop audio output */
+}
+
+void Sound_Continue(void)
+{
+	/* start audio output */
+}
+
+void Sound_Update(void)
+{
+	int avail = JAVANVM_SoundAvailable();
+	avail -= (line_buffer_size-dsp_buffer_size);
+	if (avail<0) avail = 0;
+	Pokey_process(dsp_buffer, avail/2);
+	JAVANVM_SoundWrite((void *)dsp_buffer, avail);
+}
+
+#endif /* SOUND */
 
 void Atari_PaletteUpdate(void)
 {
@@ -702,6 +744,21 @@ void Atari_Initialise(int *argc, char *argv[])
         config[JAVANVM_InitGraphicsATARI_LEFT_MARGIN] = 24;
 		JAVANVM_InitGraphics((void *)&config[0]);
 		JAVANVM_InitPalette((void *)&colortable[0]);
+
+		int dsprate = 48000;
+		int sound_flags = 0;
+		sound_flags |= SND_BIT16;
+		int sconfig[JAVANVM_InitSoundSIZE];
+		sconfig[JAVANVM_InitSoundSampleRate] = dsprate;
+		sconfig[JAVANVM_InitSoundBitsPerSample] = 16;
+		sconfig[JAVANVM_InitSoundChannels] = 1;
+		sconfig[JAVANVM_InitSoundSigned] = TRUE;
+		sconfig[JAVANVM_InitSoundBigEndian] = TRUE;
+		line_buffer_size = JAVANVM_InitSound((void *)&sconfig[0]);
+		dsp_buffer_size = 4096; /*adjust this to fix skipping/latency*/
+		if (line_buffer_size<dsp_buffer_size) dsp_buffer_size = line_buffer_size;
+		dsp_buffer = (UBYTE*)malloc(dsp_buffer_size);
+		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, sound_flags);
 	}
 	return;
 }

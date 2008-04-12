@@ -1,6 +1,9 @@
+2008-04-08  Perry McFarlane  <perry_m@fastmail.fm>
+* javanvm/atari_javanvm.c, javanvm/atari800.java, configure.ac: sound support
+for the Java NestedVM port
+
 2007-11-28  Marcin Zukowski  <marcin.zukowski@gmail.com>
 * cartridge.c: fixed Atrax cartridge bank switching
-
 
 2007-10-19  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari_javanvm.c: keypad fix 

@@ -1,8 +1,8 @@
 /*
  * atari800.java - Java NestedVM port of atari800
  *
- * Copyright (C) 2007 Perry McFarlane
- * Copyright (C) 1998-2007 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2007-2008 Perry McFarlane
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -26,6 +26,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import java.util.*;
+import javax.sound.sampled.*;
 
 class AtariCanvas extends Canvas implements KeyListener {
 	byte pixels[];
@@ -186,6 +187,8 @@ class AtariCanvas extends Canvas implements KeyListener {
 public class atari800 {
 	static AtariCanvas canvas;
 	static Frame frame;
+	static SourceDataLine line;
+	static byte[] soundBuffer;
 
 	private static void initGraphics(int scalew, int scaleh, int atari_width, int atari_height, int atari_visible_width, int atari_left_margin){
 		canvas = new AtariCanvas();
@@ -212,6 +215,20 @@ public class atari800 {
 		frame.pack();
 		frame.setResizable(false);
 		frame.setVisible(true);
+	}
+
+	private static void initSound(int sampleRate, int bitsPerSample, int channels, boolean isSigned, boolean bigEndian){
+		AudioFormat format = new AudioFormat(sampleRate, bitsPerSample, channels, isSigned, bigEndian);
+		DataLine.Info info = new DataLine.Info(SourceDataLine.class,format);
+
+		try {
+			line = (SourceDataLine) AudioSystem.getLine(info);
+			line.open(format);
+			line.start();
+			soundBuffer = new byte[line.getBufferSize()];
+		} catch(Exception e) {
+			System.err.println(e);
+		}
 	}
 
 	public static void main(String[] args) {
@@ -280,6 +297,34 @@ public class atari800 {
 								System.err.println(e);
 							}
 							initGraphics(scaleh,scalew,atari_width,atari_height,atari_visible_width,atari_left_margin);
+							return 0;
+						case 8:
+							int sampleRate = 44100;
+							int bitsPerSample = 16;
+							int channels = 2;
+							boolean isSigned = true;
+							boolean bigEndian = true;
+							try {
+								sampleRate = rt.memRead(b+4*0);
+								bitsPerSample = rt.memRead(b+4*1);
+								channels = rt.memRead(b+4*2);
+								isSigned = (rt.memRead(b+4*3) != 0);
+								bigEndian = (rt.memRead(b+4*4) != 0);
+							} catch(Exception e) {
+								System.err.println(e);
+							}
+
+							initSound(sampleRate, bitsPerSample, channels, isSigned, bigEndian);
+							return line.getBufferSize();
+						case 9:
+							return line.available();
+						case 10:
+							try {
+								rt.copyin(b,soundBuffer,c);
+							} catch(Exception e) {
+								System.err.println(e);
+							}
+							line.write(soundBuffer,0,c);
 							return 0;
 						default:
 							return 0;
