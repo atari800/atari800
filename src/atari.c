@@ -2,7 +2,7 @@
  * atari.c - main high-level routines
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -1143,27 +1143,27 @@ int Atari800_Initialise(int *argc, char *argv[])
 				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-mosaic") == 0) {
-				mosaic_enabled = TRUE;
 				int total_ram = Util_sscandec(argv[++i]);
+				mosaic_enabled = TRUE;
 				mosaic_maxbank = (total_ram - 48)/4 - 1;
-				if(((total_ram - 48)%4 != 0 ) || (mosaic_maxbank > 0x3e) || (mosaic_maxbank < 0)) {
+				if (((total_ram - 48) % 4 != 0) || (mosaic_maxbank > 0x3e) || (mosaic_maxbank < 0)) {
 					Aprint("Invalid Mosaic total RAM size");
 					return FALSE;
 				}
-				if (axlon_enabled){
+				if (axlon_enabled) {
 					Aprint("Axlon and Mosaic can not both be enabled, because they are incompatible");
 					return FALSE;
 				}
 			}
 			else if (strcmp(argv[i], "-axlon") == 0) {
-				axlon_enabled = TRUE;
 				int total_ram = Util_sscandec(argv[++i]);
-				int banks = ((total_ram) - 32)/16;
-				if (((total_ram - 32) % 16 != 0 ) || ((banks != 8) && (banks != 16) && (banks != 32) && (banks != 64) && (banks != 128) && (banks != 256))) {
+				int banks = ((total_ram) - 32) / 16;
+				axlon_enabled = TRUE;
+				if (((total_ram - 32) % 16 != 0) || ((banks != 8) && (banks != 16) && (banks != 32) && (banks != 64) && (banks != 128) && (banks != 256))) {
 					Aprint("Invalid Axlon total RAM size");
 					return FALSE;
 				}
-				if (mosaic_enabled){
+				if (mosaic_enabled) {
 					Aprint("Axlon and Mosaic can not both be enabled, because they are incompatible");
 					return FALSE;
 				}

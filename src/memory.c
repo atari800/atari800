@@ -2,7 +2,7 @@
  * memory.c - memory emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -672,22 +672,25 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
  */
 void MOSAIC_PutByte(UWORD addr, UBYTE byte)
 {
+	int newbank;
 	if (addr < 0xffc0) return;
 #ifdef DEBUG
 	Aprint("MOSAIC_PutByte:%4X:%2X",addr,byte);
 #endif
-	int newbank = addr-0xffc0;
+	newbank = addr - 0xffc0;
 	if (newbank == mosaic_curbank || (newbank > mosaic_maxbank && mosaic_curbank > mosaic_maxbank)) return; /*same bank or rom -> rom*/
-	if (newbank > mosaic_maxbank && mosaic_curbank <= mosaic_maxbank){
+	if (newbank > mosaic_maxbank && mosaic_curbank <= mosaic_maxbank) {
 		/*ram ->rom*/
 		memcpy(mosaic_ram + mosaic_curbank*0x1000, memory + 0xc000,0x1000);
 		dFillMem(0xc000, 0xff, 0x1000);
 		SetROM(0xc000, 0xcfff);
-	}else if (newbank <= mosaic_maxbank && mosaic_curbank > mosaic_maxbank){
+	}
+	else if (newbank <= mosaic_maxbank && mosaic_curbank > mosaic_maxbank) {
 		/*rom->ram*/
 		memcpy(memory + 0xc000, mosaic_ram+newbank*0x1000,0x1000);
 		SetRAM(0xc000, 0xcfff);
-	}else{
+	}
+	else {
 		/*ram -> ram*/
 		memcpy(mosaic_ram + mosaic_curbank*0x1000, memory + 0xc000, 0x1000);
 		memcpy(memory + 0xc000, mosaic_ram + newbank*0x1000, 0x1000);

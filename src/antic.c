@@ -2,7 +2,7 @@
  * antic.c - ANTIC chip emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -1293,11 +1293,12 @@ static void draw_an_gtia_bug(const ULONG *t_pm_scanline_ptr)
 {
 	static const UBYTE gtia_bug_colreg[] = {L_PF0, L_PF1, L_PF2, L_PF3};
 	UWORD lookup_gtia_bug[16];
+	int i;
 	lookup_gtia_bug[0] = cl_lookup[C_PF0];
 	lookup_gtia_bug[1] = cl_lookup[C_PF1];
 	lookup_gtia_bug[2] = cl_lookup[C_PF2];
 	lookup_gtia_bug[3] = cl_lookup[C_PF3];
-	int i = ((const UBYTE *) t_pm_scanline_ptr - pm_scanline);
+	i = ((const UBYTE *) t_pm_scanline_ptr - pm_scanline);
 	while (i < right_border_start) {
 		UWORD *ptr = scrn_ptr + i;
 		int pixel = an_scanline[i];
