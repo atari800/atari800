@@ -2,7 +2,7 @@
  * sio.c - Serial I/O emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -700,6 +700,9 @@ void SIO(void)
 		case 0x52:	/* read */
 			/* set expected Gap */
 			CASSETTE_AddGap(gaps == 0 ? 2000 : 160);
+			sio_last_op = SIO_LAST_READ;
+			sio_last_drive = 0x61;
+			sio_last_op_time = 0x10;
 			/* get record from storage medium */
 			storagelength = CASSETTE_Read();
 			if (storagelength - 1 != length)	/* includes -1 as error */
@@ -714,6 +717,9 @@ void SIO(void)
 				CopyToMem(cassette_buffer, data, length);
 			break;
 		case 0x57:	/* write */
+			sio_last_op = SIO_LAST_WRITE;
+			sio_last_drive = 0x61;
+			sio_last_op_time = 0x10;
 			/* put record into buffer */
 			CopyFromMem(data, cassette_buffer, length);
 			/* eval checksum over buffer data */
@@ -931,10 +937,20 @@ void SIO_TapeMotor(int onoff)
 	if (onoff) {
 		/* set frame to cassette frame, if not */
 		/* in a transfer with an intelligent peripheral */
-		if (TransferStatus == SIO_NoFrame) {
-			TransferStatus = SIO_CasRead;
-			CASSETTE_TapeMotor(onoff);
-			DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
+		if (TransferStatus == SIO_NoFrame || (TransferStatus & 0xfe) == SIO_CasRead) {
+			if (CASSETTE_IsSaveFile()) {
+				TransferStatus = SIO_CasWrite;
+				CASSETTE_TapeMotor(onoff);
+				sio_last_op = SIO_LAST_WRITE;
+			}
+			else {
+				TransferStatus = SIO_CasRead;
+				CASSETTE_TapeMotor(onoff);
+				DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
+				sio_last_op = SIO_LAST_READ;
+			};
+			sio_last_drive = 0x60;
+			sio_last_op_time = 0x10;
 		}
 		else {
 			CASSETTE_TapeMotor(onoff);
@@ -942,7 +958,11 @@ void SIO_TapeMotor(int onoff)
 	}
 	else {
 		/* set frame to none */
-		if (TransferStatus == SIO_CasRead) {
+		if (TransferStatus == SIO_CasWrite) {
+			TransferStatus = SIO_NoFrame;
+			CASSETTE_TapeMotor(onoff);
+		}
+		else if (TransferStatus == SIO_CasRead) {
 			TransferStatus = SIO_NoFrame;
 			CASSETTE_TapeMotor(onoff);
 			DELAYED_SERIN_IRQ = 0; /* off */
@@ -951,6 +971,7 @@ void SIO_TapeMotor(int onoff)
 			CASSETTE_TapeMotor(onoff);
 			DELAYED_SERIN_IRQ = 0; /* off */
 		}
+		sio_last_op_time = 0;
 	}
 }
 
@@ -1050,8 +1071,11 @@ void SIO_PutByte(int byte)
 			Aprint("Invalid data frame!");
 		}
 		break;
+	case SIO_CasWrite:
+		CASSETTE_PutByte(byte);
+		break;
 	}
-	DELAYED_SEROUT_IRQ = SEROUT_INTERVAL;
+	/* DELAYED_SEROUT_IRQ = SEROUT_INTERVAL; */ /* already set in pokey.c */
 }
 
 /* Get a byte from the floppy to the pokey. */

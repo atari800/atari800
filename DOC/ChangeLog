@@ -1,12 +1,25 @@
+2008-04-16  Piotr Fusik  <fox@scene.pl>
+* antic.c, atari.c, memory.c: in C code local variable definitions should
+  precede statements
+
+
+2008-04-16  Achim Haertel  <achim.haertel@e-technik.tu-chemnitz.de>
+* cassette.[ch], pia.c, pokey.c, screen.c, sio.[ch]:
+  implemented writing to raw cassette files
+
+
 2008-04-08  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari_javanvm.c, javanvm/atari800.java, configure.ac: sound support
 for the Java NestedVM port
 
+
 2007-11-28  Marcin Zukowski  <marcin.zukowski@gmail.com>
 * cartridge.c: fixed Atrax cartridge bank switching
 
+
 2007-10-19  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari_javanvm.c: keypad fix 
+
 
 2007-10-18  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari_javanvm.[ch] javanvm/atari800.java added for Java NestedVM port
@@ -16,9 +29,11 @@ for the Java NestedVM port
 * win32/*: suppress gcc warnings
 * win32/screen_win32.c, configure.ac: support Atari_PaletteUpdate
 
+
 2007-10-11  Perry McFarlane  <perry_m@fastmail.fm>
 * devices.h: make h_current_dir extern
 * monitor.c: COLOUR -> COLOR
+
 
 2007-10-04  Perry McFarlane  <perry_m@fastmail.fm>
 * colours.[ch], atari.[ch], platform.h, USAGE, atari_sdl.c, atari_ntsc.c,
@@ -27,14 +42,17 @@ for the Java NestedVM port
   ports which calculate their own palette from colortable.  The SDL version
   is working but other ports will need to be updated.
 
+
 2007-10-02  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: cleaner macros
 * cycle_map.c: minor cleanup
 * ui.c, README, amiga/Atari800.guide: GPL version 2 now, not 1
 * most files: FSF address change in GPL notices.
 
+
 2007-09-30  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: Added better support for GTIA bug mode.
+
 
 2007-09-12  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.c: Fix PAGED_MEM error (missing break in switch) with POKEY in loading
@@ -42,17 +60,21 @@ for the Java NestedVM port
 * memory.[ch], statesav.c, cpu.c Support Axlon and Mosaic state saving.
   SAVE_VERSION_NUMBER upgraded to from 4 to 5
 
+
 2007-09-06  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.[ch], atari.c, TODO, USAGE: add Axlon and Mosaic RAM expansions for the
   400/800
+
 
 2007-08-04  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.c: fix PBIM1/M2_Get/PutByte in MemStateRead
 * atari_ntsc.c: tweak default parameters a bit
 
+
 2007-08-02  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c: fix broken Caps Lock key handling
 * atari_sdl.c: reduce default NTSC scanlines percentage from 20 to 5
+
 
 2007-07-31  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac, INSTALL: fix for windows sdl version.  Don't use -mwindows or
@@ -64,8 +86,10 @@ for the Java NestedVM port
 * atari_sdl.c: added interpolated scanlines, made it the default, added
   -scanlinesnoint option to disable it
 
+
 2007-07-30  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac: fix for windows sdl version.  Don't require winmm or gdi32
+
 
 ** 2.0.3 released on 2007-07-11
 

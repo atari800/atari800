@@ -2,7 +2,7 @@
  * pokey.c - POKEY sound chip emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -150,9 +150,11 @@ void Update_Counter(int chan_mask);
 
 static int POKEY_siocheck(void)
 {
-	return (AUDF[CHAN3] == 0x28 || AUDF[CHAN3] == 0x10
+	return (((AUDF[CHAN3] == 0x28 || AUDF[CHAN3] == 0x10
 	        || AUDF[CHAN3] == 0x08 || AUDF[CHAN3] == 0x0a)
-		&& AUDF[CHAN4] == 0x00 && (AUDCTL[0] & 0x28) == 0x28;
+		&& AUDF[CHAN4] == 0x00) /* intelligent peripherals speeds */
+		|| (SKCTLS & 0x78) == 0x28) /* cassette save mode */
+		&& (AUDCTL[0] & 0x28) == 0x28;
 }
 
 #ifndef SOUND_GAIN /* sound gain can be pre-defined in the configure/Makefile */
@@ -244,9 +246,28 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 	case _SEROUT:
 		if ((SKCTLS & 0x70) == 0x20 && POKEY_siocheck())
 			SIO_PutByte(byte);
-		DELAYED_SEROUT_IRQ = SEROUT_INTERVAL;
-		IRQST |= 0x08;
-		DELAYED_XMTDONE_IRQ = XMTDONE_INTERVAL;
+		/* check if cassette 2-tone mode has been enabled */
+		if ((SKCTLS & 0x08) == 0x00) {
+			/* intelligent device */
+			DELAYED_SEROUT_IRQ = SEROUT_INTERVAL;
+			IRQST |= 0x08;
+			DELAYED_XMTDONE_IRQ = XMTDONE_INTERVAL;
+		}
+		else {
+			/* cassette */
+			/* some savers patch the cassette baud rate, so we evaluate it here */
+			/* scanlines per second*10 bit*audiofrequency/(1.79 MHz/2) */
+                        DELAYED_SEROUT_IRQ = 312*50*10*(AUDF[CHAN3] + AUDF[CHAN4]*0x100)/895000;
+			/* safety check */
+			if (DELAYED_SEROUT_IRQ >= 3) {
+                        	IRQST |= 0x08;
+                        	DELAYED_XMTDONE_IRQ = 2*DELAYED_SEROUT_IRQ - 2;
+			}
+			else {
+				DELAYED_SEROUT_IRQ = 0;
+				DELAYED_XMTDONE_IRQ = 0;
+			}
+		};
 #ifdef SERIO_SOUND
 		Update_serio_sound(1, byte);
 #endif

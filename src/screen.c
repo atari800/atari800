@@ -2,7 +2,7 @@
  * screen.c - Atari screen handling
  *
  * Copyright (c) 2001 Robert Golias and Piotr Fusik
- * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -171,7 +171,7 @@ void Screen_Initialise(int *argc, char *argv[])
 
 static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2)
 {
-	static const UBYTE font[11][SMALLFONT_HEIGHT] = {
+	static const UBYTE font[12][SMALLFONT_HEIGHT] = {
 		{
 			SMALLFONT_____,
 			SMALLFONT__X__,
@@ -269,6 +269,15 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 			SMALLFONT__X__,
 			SMALLFONT_X___,
 			SMALLFONT_X_X_,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT__X__,
+			SMALLFONT_X_X_,
+			SMALLFONT_X___,
+			SMALLFONT_X_X_,
+			SMALLFONT__X__,
 			SMALLFONT_____
 		}
 	};
@@ -318,13 +327,21 @@ void Screen_DrawDiskLED(void)
 {
 	if (sio_last_op_time > 0) {
 		UBYTE *screen;
-		sio_last_op_time--;
+		if (sio_last_drive != 0x60)
+			sio_last_op_time--;
 		screen = (UBYTE *) atari_screen + screen_visible_x2 - SMALLFONT_WIDTH
 			+ (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
-		if (show_disk_led)
-			SmallFont_DrawChar(screen, sio_last_drive, 0x00, (UBYTE) (sio_last_op == SIO_LAST_READ ? 0xac : 0x2b));
-		if (show_sector_counter)
-			SmallFont_DrawInt(screen - SMALLFONT_WIDTH, sio_last_sector, 0x00, 0x88);
+		if (sio_last_drive == 0x60 || sio_last_drive == 0x61) {
+			if (show_disk_led)
+				SmallFont_DrawChar(screen, 11, 0x00, (UBYTE) (sio_last_op == SIO_LAST_READ ? 0xac : 0x2b));
+		}
+		else {
+			if (show_disk_led)
+				SmallFont_DrawChar(screen, sio_last_drive, 0x00, (UBYTE) (sio_last_op == SIO_LAST_READ ? 0xac : 0x2b));
+		
+			if (show_sector_counter)
+				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, sio_last_sector, 0x00, 0x88);
+		};
 	}
 }
 

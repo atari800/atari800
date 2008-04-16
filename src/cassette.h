@@ -31,6 +31,8 @@ int CASSETTE_Write(int length);
 int CASSETTE_IOLineStatus(void);
 int CASSETTE_GetByte(void);
 int CASSETTE_GetInputIRQDelay(void);
+int CASSETTE_IsSaveFile(void);
+void CASSETTE_PutByte(int byte);
 void CASSETTE_TapeMotor(int onoff);
 void CASSETTE_AddScanLine(void);
 extern UBYTE cassette_buffer[4096];

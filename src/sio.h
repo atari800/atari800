@@ -42,6 +42,7 @@ void SIO(void);
 #define SIO_FinalStatus     (0x05)
 #define SIO_FormatFrame     (0x06)
 #define SIO_CasRead         (0x60)
+#define SIO_CasWrite        (0x61)
 
 UBYTE SIO_ChkSum(const UBYTE *buffer, int length);
 void SIO_TapeMotor(int onoff);

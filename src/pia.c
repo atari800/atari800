@@ -2,7 +2,7 @@
  * pia.c - PIA chip emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -110,10 +110,9 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 	switch (addr & 0x03) {
 	case _PACTL:
                 /* This code is part of the cassette emulation */
-		if ((PACTL ^ byte) & 0x08) {
-			/* The motor status has changed */
-			SIO_TapeMotor(byte & 0x08 ? 0 : 1);
-		}
+		/* The motor status has changed */
+		SIO_TapeMotor(byte & 0x08 ? 0 : 1);
+	
 		PACTL = byte;
 		break;
 	case _PBCTL:
