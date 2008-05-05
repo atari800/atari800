@@ -212,8 +212,8 @@ public class atari800 {
 		canvas.setSize(new Dimension(canvas.width*scalew,canvas.height*scaleh));
 		canvas.scalew = scalew;
 		canvas.scaleh = scaleh;
-		frame.pack();
 		frame.setResizable(false);
+		frame.pack();
 		frame.setVisible(true);
 	}
 

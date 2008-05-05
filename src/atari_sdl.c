@@ -206,7 +206,7 @@ int Atari_Configure(char *option, char *parameters)
 		return SDLKeyBind(&KBD_STICK_0_LEFTDOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_0_RIGHTDOWN") == 0)
 		return SDLKeyBind(&KBD_STICK_0_RIGHTDOWN, parameters);
-	else if (strcmp(option, "SDL_TRIG_0") == 0) // obsolete
+	else if (strcmp(option, "SDL_TRIG_0") == 0) /* obsolete */
 		return SDLKeyBind(&KBD_TRIG_0, parameters);
 	else if (strcmp(option, "SDL_JOY_0_TRIGGER") == 0)
 		return SDLKeyBind(&KBD_TRIG_0, parameters);
@@ -226,7 +226,7 @@ int Atari_Configure(char *option, char *parameters)
 		return SDLKeyBind(&KBD_STICK_1_LEFTDOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_1_RIGHTDOWN") == 0)
 		return SDLKeyBind(&KBD_STICK_1_RIGHTDOWN, parameters);
-	else if (strcmp(option, "SDL_TRIG_1") == 0) // obsolete
+	else if (strcmp(option, "SDL_TRIG_1") == 0) /* obsolete */
 		return SDLKeyBind(&KBD_TRIG_1, parameters);
 	else if (strcmp(option, "SDL_JOY_1_TRIGGER") == 0)
 		return SDLKeyBind(&KBD_TRIG_1, parameters);

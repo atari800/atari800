@@ -1,3 +1,8 @@
+2008-05-08  Perry McFarlane  <perry_m@fastmail.fm>
+* javanvm/atari_javanvm.c, atari_sdl.c: remove // comments
+* javanvm/atari800.java: fix frame.pack()
+
+
 2008-04-16  Piotr Fusik  <fox@scene.pl>
 * antic.c, atari.c, memory.c: in C code local variable definitions should
   precede statements

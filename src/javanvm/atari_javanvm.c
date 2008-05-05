@@ -45,7 +45,6 @@
 #include "log.h"
 #include "util.h"
 #include "javanvm/atari_javanvm.h"
-//#include "atari_ntsc.h"
 
 /* joystick emulation */
 
@@ -215,19 +214,19 @@ int Atari_Keyboard(void)
 			switch (lastkey) {
 			case VK_F:
 				key_pressed = 0;
-				//SwitchFullscreen();
+				/*SwitchFullscreen();*/
 				break;
 			case VK_G:
 				key_pressed = 0;
-				//SwitchWidth();
+				/*SwitchWidth();*/
 				break;
 			case VK_B:
 				key_pressed = 0;
-				//SwitchBW();
+				/*SwitchBW();*/
 				break;
 			case VK_J:
 				key_pressed = 0;
-				//SwapJoysticks();
+				/*SwapJoysticks();*/
 				break;
 			case VK_R:
 				alt_function = MENU_RUN;
