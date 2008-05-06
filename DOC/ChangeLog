@@ -1,6 +1,8 @@
 2008-05-08  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari_javanvm.c, atari_sdl.c: remove // comments
 * javanvm/atari800.java: fix frame.pack()
+* Makefile.in, DOC/INSTALL: changed to make jar file by default for Java
+* Makefile.in: added comments to build from NestedVM javasource compiler
 
 
 2008-04-16  Piotr Fusik  <fox@scene.pl>

@@ -166,13 +166,7 @@ Building the Emulator for Java using NestedVM
    You might want to add --enable-veryslow --disable-monitorbreak to the above.
    For the basic version, use --target=javanvm-basic
 4. Type "make".
-5. To run use: java atari800
-   To run from Cygwin, use: java -classpath `cygpath -wp $CLASSPATH` atari800
-   To run in Windows outside Cygwin: add the output of cygpath -wp $CLASSPATH 
-   to your Windows CLASSPATH and use: java atari800 (or use -classpath)
-   Or you can use: java -classpath unix_runtime.jar;. atari800
-6. To make a jar file: make jar
-   atari800.jar requires unix_runtime.jar in the same directory. Copy it from
+5. atari800.jar requires unix_runtime.jar in the same directory. Copy it from
    the NestedVM directory where you made it using "make unix_runtime.jar" as 
    stated above.
-   Run with: java -jar atari800.jar
+6. To run use: java -jar atari800.jar

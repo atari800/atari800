@@ -7,7 +7,7 @@ TARGET_BASE_NAME = atari800
 TARGET = $(TARGET_BASE_NAME)@EXEEXT@
 CONFIGURE_TARGET = @CONFIGURE_TARGET@
 ifeq (@EXEEXT@,.mips)
-	FINALTARGET = $(TARGET_BASE_NAME).class
+	FINALTARGET = $(TARGET_BASE_NAME).jar
 	JAVAFLAGS = @JAVAFLAGS@
 	JAVA = java
 	JAVACFLAGS = @JAVACFLAGS@
@@ -77,8 +77,12 @@ endif
 
 $(TARGET_BASE_NAME)$(RUNTIME).class: $(TARGET)
 	$(JAVA) $(JAVACFLAGS) org.ibex.nestedvm.Compiler -outfile $@ $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
+##To compile using -outformat javasource:
+#	$(JAVA) $(JAVACFLAGS) org.ibex.nestedvm.Compiler -outformat javasource -outfile $(TARGET_BASE_NAME)$(RUNTIME).java $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
+#	$(JAVAC) -d . $(JAVAFLAGS) -J-Xmx128m $(TARGET_BASE_NAME)$(RUNTIME).java
+##Also, -o UnixRuntime will fix directory browsing but requires /c:/-style paths
 
-jar: all
+$(TARGET_BASE_NAME).jar: $(TARGET_BASE_NAME).class $(TARGET_BASE_NAME)$(RUNTIME).class
 	echo -e "Manifest-Version: 1.0\nMain-Class: $(TARGET_BASE_NAME)\nClass-Path: unix_runtime.jar\n" > .manifest
 	jar cfm $(TARGET_BASE_NAME).jar .manifest *.class
 
@@ -90,7 +94,7 @@ dep:
 	then echo warning: makedepend failed; fi
 
 clean:
-	rm -f *.o dos/*.o falcon/*.o win32/*.o win32/*.ro javanvm/*.o *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar core *.bak *~
+	rm -f *.o dos/*.o falcon/*.o win32/*.o win32/*.ro javanvm/*.o *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar $(TARGET_BASE_NAME)_runtime.java core *.bak *~
 
 distclean: clean
 	-rm -f Makefile configure config.log config.status config.h
