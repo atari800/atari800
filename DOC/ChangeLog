@@ -1,4 +1,9 @@
-2008-05-08  Perry McFarlane  <perry_m@fastmail.fm>
+2008-05-07  Perry McFarlane  <perry_m@fastmail.fm>
+* mzpokeysnd.c, configure.ac, pokey.h, pokeymix.inc: Nonlinear mixing, two-tone
+  filter, corrected STIMER.
+
+
+2008-05-05  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari_javanvm.c, atari_sdl.c: remove // comments
 * javanvm/atari800.java: fix frame.pack()
 * Makefile.in, DOC/INSTALL: changed to make jar file by default for Java

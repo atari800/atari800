@@ -245,7 +245,7 @@ case "$a8_target" in
         fi
         ;;
     javanvm-basic)
-        AC_DEFINE(BASIC,1,[Target: Java NestedVM standard I/O.])
+        AC_DEFINE(BASIC,1,[Target: standard I/O.])
         OBJS="atari_basic.o"
         EXEEXT=".mips"
         enable_unalignedwords=no
@@ -562,6 +562,11 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
                 ;;
         esac
     fi
+
+    A8_OPTION(nonlinear_mixing,no,
+              [Use nonlinear POKEY mixing (default=OFF)],
+              NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
+             )
 
     A8_OPTION(interpolatesound,yes,
               [Use sound interpolation (default=ON)],

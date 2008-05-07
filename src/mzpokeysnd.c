@@ -34,6 +34,12 @@
 #include "mzpokeysnd.h"
 #include "pokeysnd.h"
 #include "remez.h"
+#include "pokey.h"
+
+#ifdef NONLINEAR_MIXING
+#include "pokeymix.inc"
+static double *pokeymix = NULL; /* Nonlinear POKEY mixing array */
+#endif
 
 #define SND_FILTER_SIZE  2048
 
@@ -96,10 +102,15 @@ static unsigned char poly9tbl[511];
 
 struct stPokeyState;
 
-typedef unsigned char (*readout_t)(struct stPokeyState* ps);
+typedef int (*readout_t)(struct stPokeyState* ps);
 typedef void (*event_t)(struct stPokeyState* ps, char p5v, char p4v, char p917v);
 
-
+#ifdef NONLINEAR_MIXING
+/* Change queue event value type */
+typedef double qev_t;
+#else
+typedef unsigned char qev_t;
+#endif
 
 /* State variables for single Pokey Chip */
 typedef struct stPokeyState
@@ -111,9 +122,9 @@ typedef struct stPokeyState
     unsigned int poly9pos;
 
     /* Change queue */
-    unsigned char ovola;
+    qev_t ovola;
     int qet[1322]; /* maximal length of filter */
-    unsigned char qev[1322];
+    qev_t qev[1322];
     int qebeg;
     int qeend;
 
@@ -128,7 +139,7 @@ typedef struct stPokeyState
     unsigned char c3_f2;
 
     /* Main output state */
-    unsigned char outvol_all;
+    qev_t outvol_all;
     unsigned char forcero; /* Force readout */
 
     /* channel 0 state */
@@ -152,11 +163,13 @@ typedef struct stPokeyState
     unsigned char c0sw4;        /* hi-pass sw */
     unsigned char c0vo;         /* volume only */
 
+#ifndef NONLINEAR_MIXING
     unsigned char c0stop;       /* channel counter stopped */
+#endif
 
-    unsigned char vol0;
+    int vol0;
 
-    unsigned char outvol_0;
+    int outvol_0;
 
     /* channel 1 state */
 
@@ -178,11 +191,13 @@ typedef struct stPokeyState
     unsigned char c1sw4;
     unsigned char c1vo;
 
+#ifndef NONLINEAR_MIXING
     unsigned char c1stop;      /* channel counter stopped */
+#endif
 
-    unsigned char vol1;
+    int vol1;
 
-    unsigned char outvol_1;
+    int outvol_1;
 
     /* channel 2 state */
 
@@ -203,11 +218,13 @@ typedef struct stPokeyState
     unsigned char c2sw3;
     unsigned char c2vo;
 
+#ifndef NONLINEAR_MIXING
     unsigned char c2stop;          /* channel counter stopped */
+#endif
 
-    unsigned char vol2;
+    int vol2;
 
-    unsigned char outvol_2;
+    int outvol_2;
 
     /* channel 3 state */
 
@@ -227,11 +244,13 @@ typedef struct stPokeyState
     unsigned char c3sw3;
     unsigned char c3vo;
 
+#ifndef NONLINEAR_MIXING
     unsigned char c3stop;          /* channel counter stopped */
+#endif
 
-    unsigned char vol3;
+    int vol3;
 
-    unsigned char outvol_3;
+    int outvol_3;
 
 } PokeyState;
 
@@ -239,16 +258,16 @@ PokeyState pokey_states[NPOKEYS];
 
 /* Forward declarations for ResetPokeyState */
 
-static unsigned char readout0_normal(PokeyState* ps);
+static int readout0_normal(PokeyState* ps);
 static void event0_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
-static unsigned char readout1_normal(PokeyState* ps);
+static int readout1_normal(PokeyState* ps);
 static void event1_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
-static unsigned char readout2_normal(PokeyState* ps);
+static int readout2_normal(PokeyState* ps);
 static void event2_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
-static unsigned char readout3_normal(PokeyState* ps);
+static int readout3_normal(PokeyState* ps);
 static void event3_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
 
@@ -299,7 +318,9 @@ void ResetPokeyState(PokeyState* ps)
     ps->c0sw4 = 0;
     ps->c0vo = 1;
 
+#ifndef NONLINEAR_MIXING
     ps->c0stop = 1;
+#endif
 
     ps->vol0 = 0;
 
@@ -325,14 +346,15 @@ void ResetPokeyState(PokeyState* ps)
     ps->c1sw4 = 0;
     ps->c1vo = 1;
 
+#ifndef NONLINEAR_MIXING
     ps->c1stop = 1;
+#endif
 
     ps->vol1 = 0;
 
     ps->outvol_1 = 0;
 
     /* Channel 2 state */
-
     ps->readout_2 = readout2_normal;
     ps->event_2 = event2_pure;
 
@@ -351,9 +373,12 @@ void ResetPokeyState(PokeyState* ps)
 
     ps->c2vo = 0;
 
-    ps->c2stop = 0;
+#ifndef NONLINEAR_MIXING
+    ps->c2stop = 1;
+#endif
 
     ps->vol2 = 0;
+
     ps->outvol_2 = 0;
 
     /* Channel 3 state */
@@ -372,7 +397,11 @@ void ResetPokeyState(PokeyState* ps)
     ps->c3sw2 = 0;
     ps->c3sw3 = 0;
 
+    ps->c3vo = 0;
+
+#ifndef NONLINEAR_MIXING
     ps->c3stop = 1;
+#endif
 
     ps->vol3 = 0;
 
@@ -383,7 +412,7 @@ void ResetPokeyState(PokeyState* ps)
 double read_resam_all(PokeyState* ps)
 {
     int i = ps->qebeg;
-    unsigned char avol,bvol;
+    qev_t avol,bvol;
     double sum;
 
     if(ps->qebeg == ps->qeend)
@@ -420,7 +449,7 @@ double read_resam_all(PokeyState* ps)
     return sum;
 }
 
-static void add_change(PokeyState* ps, unsigned char a)
+static void add_change(PokeyState* ps, qev_t a)
 {
     ps->qev[ps->qeend] = a;
     ps->qet[ps->qeend] = 0;
@@ -533,19 +562,19 @@ static void advance_polies(PokeyState* ps, unsigned long tacts)
 
   ************************************/
 
-static unsigned char readout0_vo(PokeyState* ps)
+static int readout0_vo(PokeyState* ps)
 {
     return ps->vol0;
 }
 
-static unsigned char readout0_hipass(PokeyState* ps)
+static int readout0_hipass(PokeyState* ps)
 {
     if(ps->c0t2 ^ ps->c0t3)
         return ps->vol0;
     else return 0;
 }
 
-static unsigned char readout0_normal(PokeyState* ps)
+static int readout0_normal(PokeyState* ps)
 {
     if(ps->c0t2)
         return ps->vol0;
@@ -558,19 +587,19 @@ static unsigned char readout0_normal(PokeyState* ps)
 
   ************************************/
 
-static unsigned char readout1_vo(PokeyState* ps)
+static int readout1_vo(PokeyState* ps)
 {
     return ps->vol1;
 }
 
-static unsigned char readout1_hipass(PokeyState* ps)
+static int readout1_hipass(PokeyState* ps)
 {
     if(ps->c1t2 ^ ps->c1t3)
         return ps->vol1;
     else return 0;
 }
 
-static unsigned char readout1_normal(PokeyState* ps)
+static int readout1_normal(PokeyState* ps)
 {
     if(ps->c1t2)
         return ps->vol1;
@@ -583,12 +612,12 @@ static unsigned char readout1_normal(PokeyState* ps)
 
   ************************************/
 
-static unsigned char readout2_vo(PokeyState* ps)
+static int readout2_vo(PokeyState* ps)
 {
     return ps->vol2;
 }
 
-static unsigned char readout2_normal(PokeyState* ps)
+static int readout2_normal(PokeyState* ps)
 {
     if(ps->c2t2)
         return ps->vol2;
@@ -601,12 +630,12 @@ static unsigned char readout2_normal(PokeyState* ps)
 
   ************************************/
 
-static unsigned char readout3_vo(PokeyState* ps)
+static int readout3_vo(PokeyState* ps)
 {
     return ps->vol3;
 }
 
-static unsigned char readout3_normal(PokeyState* ps)
+static int readout3_normal(PokeyState* ps)
 {
     if(ps->c3t2)
         return ps->vol3;
@@ -823,7 +852,7 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
     unsigned long ta,tbe, tbe0, tbe1, tbe2, tbe3;
     char p5v,p4v,p917v;
 
-    unsigned char outvol_new;
+    qev_t outvol_new;
     unsigned char need0=0;
     unsigned char need1=0;
     unsigned char need2=0;
@@ -834,7 +863,11 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
     if(ps->forcero)
     {
         ps->forcero = 0;
+#ifdef NONLINEAR_MIXING
+        outvol_new = pokeymix[(ps->outvol_0)|(ps->outvol_1)|(ps->outvol_2)|(ps->outvol_3)];
+#else
         outvol_new = ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3;
+#endif
         if(outvol_new != ps->outvol_all)
         {
             ps->outvol_all = outvol_new;
@@ -851,6 +884,16 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
 
         tbe = ticks+1;
 
+#ifdef NONLINEAR_MIXING
+        if(tbe0 < tbe)
+            tbe = tbe0;
+        if(tbe1 < tbe)
+            tbe = tbe1;
+        if(tbe2 < tbe)
+            tbe = tbe2;
+        if(tbe3 < tbe)
+            tbe = tbe3;
+#else
         if(!ps->c0stop && tbe0 < tbe)
             tbe = tbe0;
         if(!ps->c1stop && tbe1 < tbe)
@@ -859,6 +902,7 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
             tbe = tbe2;
         if(!ps->c3stop && tbe3 < tbe)
             tbe = tbe3;
+#endif
 
         if(tbe>ticks)
             ta = ticks;
@@ -870,10 +914,17 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
 
         ticks -= ta;
 
+#ifdef NONLINEAR_MIXING
+        ps->c0divpos -= ta;
+        ps->c1divpos -= ta;
+        ps->c2divpos -= ta;
+        ps->c3divpos -= ta;
+#else
         if(!ps->c0stop) ps->c0divpos -= ta;
         if(!ps->c1stop) ps->c1divpos -= ta;
         if(!ps->c2stop) ps->c2divpos -= ta;
         if(!ps->c3stop) ps->c3divpos -= ta;
+#endif
 
         advance_polies(ps,ta);
         bump_qe_subticks(ps,ta);
@@ -887,21 +938,41 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
             else
                 p917v = poly17tbl[ps->poly17pos] & 1;
 
+#ifdef NONLINEAR_MIXING
+            if(ta == tbe0)
+#else
             if(!ps->c0stop && ta == tbe0)
+#endif
             {
                 ps->event_0(ps,p5v,p4v,p917v);
                 ps->c0divpos = ps->c0divstart;
                 need0 = 1;
             }
+#ifdef NONLINEAR_MIXING
+            if(ta == tbe1)
+#else
             if(!ps->c1stop && ta == tbe1)
+#endif
             {
                 ps->event_1(ps,p5v,p4v,p917v);
                 ps->c1divpos = ps->c1divstart;
                 if(ps->c1_f0)
                     ps->c0divpos = ps->c0divstart_p;
                 need1 = 1;
+                /*two-tone filter*/
+                /*use if send break is on and two-tone mode is on*/
+                /*reset channel 1 if channel 2 changed*/
+                if((SKCTLS & 0x88) == 0x88) {
+                    ps->c0divpos = ps->c0divstart;
+                    /* it doesn't change the output state */
+                    /*need0 = 1;*/
+                }
             }
+#ifdef NONLINEAR_MIXING
+            if(ta == tbe2)
+#else
             if(!ps->c2stop && ta == tbe2)
+#endif
             {
                 ps->event_2(ps,p5v,p4v,p917v);
                 ps->c2divpos = ps->c2divstart;
@@ -909,7 +980,11 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
                 if(ps->c0sw4)
                     need0 = 1;
             }
+#ifdef NONLINEAR_MIXING
+            if(ta == tbe3)
+#else
             if(!ps->c3stop && ta == tbe3)
+#endif
             {
                 ps->event_3(ps,p5v,p4v,p917v);
                 ps->c3divpos = ps->c3divstart;
@@ -922,22 +997,42 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
 
             if(need0)
             {
+#ifdef NONLINEAR_MIXING
+                ps->outvol_0 = ps->readout_0(ps);
+#else
                 ps->outvol_0 = 2*ps->readout_0(ps);
+#endif
             }
             if(need1)
             {
+#ifdef NONLINEAR_MIXING
+                ps->outvol_1 = ps->readout_1(ps);
+#else
                 ps->outvol_1 = 2*ps->readout_1(ps);
+#endif
             }
             if(need2)
             {
+#ifdef NONLINEAR_MIXING
+                ps->outvol_2 = ps->readout_2(ps);
+#else
                 ps->outvol_2 = 2*ps->readout_2(ps);
+#endif
             }
             if(need3)
             {
+#ifdef NONLINEAR_MIXING
+                ps->outvol_3 = ps->readout_3(ps);
+#else
                 ps->outvol_3 = 2*ps->readout_3(ps);
+#endif
             }
 
+#ifdef NONLINEAR_MIXING
+            outvol_new = pokeymix[(ps->outvol_0)|(ps->outvol_1)|(ps->outvol_2)|(ps->outvol_3)];
+#else
             outvol_new = ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3;
+#endif
             if(outvol_new != ps->outvol_all)
             {
                 ps->outvol_all = outvol_new;
@@ -1060,8 +1155,53 @@ found:
   return size;
 }
 
-
-
+#ifdef NONLINEAR_MIXING
+static void pokeymix_init()
+{
+    pokeymix = malloc(65536*sizeof(*pokeymix));
+    int v0_0, v1_0, v2_0, v3_0;
+    int v0_1, v1_1, v2_1, v3_1;
+    int v0_2, v1_2, v2_2, v3_2;
+    int v0_3, v1_3, v2_3, v3_3;
+    int count = 0;
+    double mix;
+    for(v3_0 = 0, v3_1 = 0, v3_2 = 0, v3_3 = 0; v3_0 < 16; v3_0++, v3_1+=0x10, v3_2+=0x100, v3_3+=0x1000) {
+        for(v2_0 = 0, v2_1 = 0, v2_2 = 0, v2_3 = 0; v2_0 <= v3_0; v2_0++, v2_1+=0x10, v2_2+=0x100, v2_3+=0x1000) {
+            for(v1_0 = 0, v1_1 = 0, v1_2 = 0, v1_3 = 0; v1_0 <= v2_0; v1_0++, v1_1+=0x10, v1_2+=0x100, v1_3+=0x1000) {
+                for(v0_0 = 0, v0_1 = 0, v0_2 = 0, v0_3 = 0; v0_0 <= v1_0; v0_0++, v0_1+=0x10, v0_2+=0x100, v0_3+=0x1000) {
+                    mix = 120.0*pokeymix3876[count];
+                    /* all 24 permutations, some may be redundant */
+                    pokeymix[v0_3|v1_2|v2_1|v3_0] = mix;
+                    pokeymix[v0_3|v1_2|v3_1|v2_0] = mix;
+                    pokeymix[v0_3|v2_2|v1_1|v3_0] = mix;
+                    pokeymix[v0_3|v2_2|v3_1|v1_0] = mix;
+                    pokeymix[v0_3|v3_2|v2_1|v1_0] = mix;
+                    pokeymix[v0_3|v3_2|v1_1|v2_0] = mix;
+                    pokeymix[v1_3|v0_2|v2_1|v3_0] = mix;
+                    pokeymix[v1_3|v0_2|v3_1|v2_0] = mix;
+                    pokeymix[v1_3|v2_2|v0_1|v3_0] = mix;
+                    pokeymix[v1_3|v2_2|v3_1|v0_0] = mix;
+                    pokeymix[v1_3|v3_2|v0_1|v2_0] = mix;
+                    pokeymix[v1_3|v3_2|v2_1|v0_0] = mix;
+                    pokeymix[v2_3|v0_2|v1_1|v3_0] = mix;
+                    pokeymix[v2_3|v0_2|v3_1|v1_0] = mix;
+                    pokeymix[v2_3|v1_2|v0_1|v3_0] = mix;
+                    pokeymix[v2_3|v1_2|v3_1|v0_0] = mix;
+                    pokeymix[v2_3|v3_2|v0_1|v1_0] = mix;
+                    pokeymix[v2_3|v3_2|v1_1|v0_0] = mix;
+                    pokeymix[v3_3|v0_2|v1_1|v2_0] = mix;
+                    pokeymix[v3_3|v0_2|v2_1|v1_0] = mix;
+                    pokeymix[v3_3|v1_2|v0_1|v2_0] = mix;
+                    pokeymix[v3_3|v1_2|v2_1|v0_0] = mix;
+                    pokeymix[v3_3|v2_2|v0_1|v1_0] = mix;
+                    pokeymix[v3_3|v2_2|v1_1|v0_0] = mix;
+                    count++;
+                }
+            }
+        }
+    }
+}
+#endif /* NONLINEAR_MIXING */
 
 /*****************************************************************************/
 /* Module:  Pokey_sound_init()                                               */
@@ -1118,6 +1258,12 @@ int Pokey_sound_init_mz(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
 #ifdef VOL_ONLY_SOUND
 	samp_freq=playback_freq;
 #endif  /* VOL_ONLY_SOUND */
+
+#ifdef NONLINEAR_MIXING
+    if (pokeymix == NULL) {
+        pokeymix_init();
+    }
+#endif
 
 	Pokey_process_ptr = (flags & SND_BIT16) ? Pokey_process_16 : Pokey_process_8;
 
@@ -1591,6 +1737,13 @@ static void Update_audctl(PokeyState* ps, unsigned char val)
     ps->mdivk = new_divk;
 }
 
+/* if using nonlinear mixing, don't stop ultrasounds */
+#ifdef NONLINEAR_MIXING
+#define Update_c0stop(a) do{}while(0)
+#define Update_c1stop(a) do{}while(0)
+#define Update_c2stop(a) do{}while(0)
+#define Update_c3stop(a) do{}while(0)
+#else
 static void Update_c0stop(PokeyState* ps)
 {
     unsigned long lim = pokey_frq/2/audible_frq;
@@ -1749,6 +1902,7 @@ static void Update_c3stop(PokeyState* ps)
     if(hfa)
         ps->outvol_3 = ps->vol3;
 }
+#endif /*NONLINEAR_MIXING*/
 
 static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain)
 {
@@ -1771,7 +1925,11 @@ static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain
         ps->c0sw1 = (val & 0x40) != 0;
         ps->c0sw2 = (val & 0x20) != 0;
         ps->c0sw3 = (val & 0x80) != 0;
-        ps->vol0 = val & 0xF;
+#ifdef NONLINEAR_MIXING
+        ps->vol0 = ((val & 0xF)<<12);
+#else
+        ps->vol0 = (val & 0xF);
+#endif
         ps->c0vo = (val & 0x10) != 0;
         Update_readout_0(ps);
         Update_event0(ps);
@@ -1793,7 +1951,11 @@ static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain
         ps->c1sw1 = (val & 0x40) != 0;
         ps->c1sw2 = (val & 0x20) != 0;
         ps->c1sw3 = (val & 0x80) != 0;
-        ps->vol1 = val & 0xF;
+#ifdef NONLINEAR_MIXING
+        ps->vol1 = ((val & 0xF)<<8);
+#else
+        ps->vol1 = (val & 0xF);
+#endif
         ps->c1vo = (val & 0x10) != 0;
         Update_readout_1(ps);
         Update_event1(ps);
@@ -1815,7 +1977,11 @@ static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain
         ps->c2sw1 = (val & 0x40) != 0;
         ps->c2sw2 = (val & 0x20) != 0;
         ps->c2sw3 = (val & 0x80) != 0;
-        ps->vol2 = val & 0xF;
+#ifdef NONLINEAR_MIXING
+        ps->vol2 = ((val & 0xF)<<4);
+#else
+        ps->vol2 = (val & 0xF);
+#endif
         ps->c2vo = (val & 0x10) != 0;
         Update_readout_2(ps);
         Update_event2(ps);
@@ -1873,10 +2039,12 @@ static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain
             ps->c2divpos = ps->c2divstart;
 
         ps->c3divpos = ps->c3divstart;
-        ps->c0t2 = 1;
-        ps->c1t2 = 1;
-        ps->c2t2 = 0;
-        ps->c3t2 = 0;
+        /*Documentation is wrong about which voices are on after STIMER*/
+        /*It is 3&4 which are on, tested on a real atari*/
+        ps->c0t2 = 0;
+        ps->c1t2 = 0;
+        ps->c2t2 = 1;
+        ps->c3t2 = 1;
         break;
     }
 }
