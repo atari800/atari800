@@ -1,3 +1,8 @@
+2008-05-08  Petr Stehlik  <pstehlik@sophics.cz>
+* atari.c: get rid of #ifdef USE_CLOCK and also #ifdef DONT_SYNC_WITH_HOST
+* configure.ac: get rid of USE_CLOCK for Falcon
+
+
 2008-05-07  Petr Stehlik  <pstehlik@sophics.cz>
 * screen.c: DrawAtariSpeed() now computes the real speed by itself and always
   shows it (if enabled) even if it is at 100% or around (previously it was
