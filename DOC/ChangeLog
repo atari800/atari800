@@ -1,6 +1,16 @@
+2008-05-07  Petr Stehlik  <pstehlik@sophics.cz>
+* screen.c: DrawAtariSpeed() now computes the real speed by itself and always
+  shows it (if enabled) even if it is at 100% or around (previously it was
+  hidden when in range 99% - 101%). It even shows speed < 100% (previously
+  it didn't) - hopefully this will help profiling various ./configure
+  options on slow Atari800 hosts.
+
+* atari.c: just some cleanup around the atari_sync(), no functional changes.
+
+
 2008-05-07  Perry McFarlane  <perry_m@fastmail.fm>
-* mzpokeysnd.c, configure.ac, pokey.h, pokeymix.inc: Nonlinear mixing, two-tone
-  filter, corrected STIMER.
+* mzpokeysnd.c, configure.ac, pokey.h, pokeymix.inc: Nonlinear mixing,
+  two-tone filter, corrected STIMER.
 
 
 2008-05-05  Perry McFarlane  <perry_m@fastmail.fm>
@@ -34,9 +44,10 @@ for the Java NestedVM port
 
 
 2007-10-18  Perry McFarlane  <perry_m@fastmail.fm>
-* javanvm/atari_javanvm.[ch] javanvm/atari800.java added for Java NestedVM port
-  configure.ac, Makefile.in, platform.h, INSTALL, USAGE: modified for
+* javanvm/atari_javanvm.[ch] javanvm/atari800.java added for Java NestedVM
+  port configure.ac, Makefile.in, platform.h, INSTALL, USAGE: modified for
   NestedVM port
+
 * screen.c, USAGE: -showspeed command line option
 * win32/*: suppress gcc warnings
 * win32/screen_win32.c, configure.ac: support Atari_PaletteUpdate
@@ -49,7 +60,8 @@ for the Java NestedVM port
 
 2007-10-04  Perry McFarlane  <perry_m@fastmail.fm>
 * colours.[ch], atari.[ch], platform.h, USAGE, atari_sdl.c, atari_ntsc.c,
-  configure.ac, TODO: added support for switching between NTSC and PAL palettes.
+  configure.ac, TODO: added support for switching between NTSC and PAL
+  palettes.
   The platform-specific function Atari_PaletteUpdate is now required in those
   ports which calculate their own palette from colortable.  The SDL version
   is working but other ports will need to be updated.
@@ -67,15 +79,16 @@ for the Java NestedVM port
 
 
 2007-09-12  Perry McFarlane  <perry_m@fastmail.fm>
-* memory.c: Fix PAGED_MEM error (missing break in switch) with POKEY in loading
-  saved states.
+* memory.c: Fix PAGED_MEM error (missing break in switch) with POKEY in
+  loading saved states.
+
 * memory.[ch], statesav.c, cpu.c Support Axlon and Mosaic state saving.
   SAVE_VERSION_NUMBER upgraded to from 4 to 5
 
 
 2007-09-06  Perry McFarlane  <perry_m@fastmail.fm>
-* memory.[ch], atari.c, TODO, USAGE: add Axlon and Mosaic RAM expansions for the
-  400/800
+* memory.[ch], atari.c, TODO, USAGE: add Axlon and Mosaic RAM expansions
+  for the 400/800.
 
 
 2007-08-04  Perry McFarlane  <perry_m@fastmail.fm>
@@ -93,8 +106,10 @@ for the Java NestedVM port
   -Dmain=SDL_main and use -mno-cygwin on Cygwin.  SDL_win32_main.c is now 
   required from the sdl source.  Update documentation in INSTALL. This fixes
   the stdout.txt problem.
+
 * atari_sdl.c: fix for windows sdl version.  Make SDL_VIDEODRIVER=directx by
   default because it is much faster.  SDL 1.2.10+ uses windib as the default.
+
 * atari_sdl.c: added interpolated scanlines, made it the default, added
   -scanlinesnoint option to disable it
 
