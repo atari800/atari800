@@ -1579,7 +1579,6 @@ static double Atari_time(void)
 #elif defined(HAVE_UCLOCK)
 	return uclock() * (1.0 / UCLOCKS_PER_SEC);
 #elif defined(HAVE_CLOCK)
-#define USE_CLOCK
 	return clock() * (1.0 / CLK_TCK);
 #else
 #error No function found for Atari_time()
@@ -1589,7 +1588,6 @@ static double Atari_time(void)
 /* FIXME: Ports should use SUPPORTS_ATARI_SLEEP and SUPPORTS_ATARI_TIME */
 /* and not this mess */
 #ifndef SUPPORTS_ATARI_SLEEP
-#ifndef USE_CLOCK
 
 static void Atari_sleep(double s)
 {
@@ -1627,27 +1625,12 @@ static void Atari_sleep(double s)
 	}
 }
 
-#endif /* USE_CLOCK */
-
 #endif /* SUPPORTS_ATARI_SLEEP */
 
 #endif /* PS2 */
 
 void atari_sync(void)
 {
-#ifdef USE_CLOCK
-	static ULONG nextclock = 1;	/* put here a non-zero value to enable speed regulator */
-	/* on Atari Falcon CLK_TCK = 200 (i.e. 5 ms granularity) */
-	/* on DOS (DJGPP) CLK_TCK = 91 (not too precise, but should work anyway) */
-	if (nextclock) {
-		ULONG curclock;
-		do {
-			curclock = clock();
-		} while (curclock < nextclock);
-
-		nextclock = curclock + (CLK_TCK / (tv_mode == TV_PAL ? 50 : 60));
-	}
-#else /* USE_CLOCK */
 	static double lasttime = 0;
 	double deltatime = 1.0 / ((tv_mode == TV_PAL) ? 50 : 60);
 #ifdef ALTERNATE_SYNC_WITH_HOST
@@ -1660,7 +1643,6 @@ void atari_sync(void)
 
 	if ((lasttime + deltatime) < curtime)
 		lasttime = curtime;
-#endif /* USE_CLOCK */
 }
 
 #ifdef USE_CURSES
@@ -1909,13 +1891,10 @@ void Atari800_Frame(void)
 	}
 #else
 
-#ifndef DONT_SYNC_WITH_HOST
 #ifdef ALTERNATE_SYNC_WITH_HOST
 	if (refresh_counter == 0)
 #endif
 		atari_sync();
-#endif
-
 #endif /* BENCHMARK */
 }
 

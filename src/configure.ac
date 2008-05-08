@@ -105,7 +105,6 @@ case $host_os in
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
-        AC_DEFINE(USE_CLOCK,1,[Define to use clock() instead of gettimeofday().])
         ;;
     *unix*)
         a8_host="unix"
