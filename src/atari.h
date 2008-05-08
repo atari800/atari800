@@ -82,10 +82,6 @@ extern int display_screen;
 /* Simply incremented by Atari800_Frame(). */
 extern int nframes;
 
-/* You can read it to see how fast is the emulator compared to real Atari
-   (100 if running at real Atari speed). */
-extern int percent_atari_speed;
-
 /* How often the screen is updated (1 = every Atari frame). */
 extern int refresh_rate;
 

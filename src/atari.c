@@ -120,9 +120,6 @@ int nframes = 0;
 int refresh_rate = 1;
 int sprite_collisions_in_skipped_frames = FALSE;
 
-static double frametime = 0.1;
-double fps;
-int percent_atari_speed = 100;
 #ifdef BENCHMARK
 static double benchmark_start_time;
 static double Atari_time(void);
@@ -1411,9 +1408,6 @@ int Atari800_Exit(int run_monitor)
 		g_ulAtariState |= ATARI_CRASHED;
 #endif
 
-	if (verbose) {
-		Aprint("Current frames per second: %f", fps);
-	}
 #ifdef STAT_UNALIGNED_WORDS
 	printf("(ptr&7) atari_screen  pm_scanline  _____ memory ______  memory (aligned addr)\n");
 	printf("          32-bit W      32-bit R   16-bit R   16-bit W   16-bit R   16-bit W\n");
@@ -1658,31 +1652,18 @@ void atari_sync(void)
 		nextclock = curclock + (CLK_TCK / (tv_mode == TV_PAL ? 50 : 60));
 	}
 #else /* USE_CLOCK */
-	double deltatime;
+	static double lasttime = 0;
+	double deltatime = 1.0 / ((tv_mode == TV_PAL) ? 50 : 60);
 #ifdef ALTERNATE_SYNC_WITH_HOST
-	if (ui_is_active)
-		deltatime = (tv_mode == TV_PAL) ? (1.0 / 50.0) : (1.0 / 60.0);
-	else
-		deltatime = refresh_rate / (tv_mode == TV_PAL ? 50.0 : 60.0);
-#else
-	deltatime = (tv_mode == TV_PAL) ? (1.0 / 50.0) : (1.0 / 60.0);
+	if (! ui_is_active)
+		deltatime *= refresh_rate;
 #endif
-	if (deltatime > 0.0) { /* TODO: implement fullspeed mode */
-		static double lasttime = 0, lastcurtime = 0;
-		double curtime = Atari_time();
-		Atari_sleep(lasttime + deltatime - curtime);
-		curtime = Atari_time();
-		/* make average time */
-		frametime = (frametime * 4.0 + curtime - lastcurtime) * 0.2;
-		fps = 1.0 / frametime;
-		lastcurtime = curtime;
+	lasttime += deltatime;
+	Atari_sleep(lasttime - Atari_time());
+	double curtime = Atari_time();
 
-		lasttime += deltatime;
-		if ((lasttime + deltatime) < curtime)
-			lasttime = curtime;
-	}
-
-	percent_atari_speed = (int) (100.0 * deltatime / frametime + 0.5);
+	if ((lasttime + deltatime) < curtime)
+		lasttime = curtime;
 #endif /* USE_CLOCK */
 }
 
@@ -1867,7 +1848,6 @@ void Atari800_Frame(void)
 #ifdef SOUND
 		Sound_Continue();
 #endif
-		/* frametime = deltatime; XXX? */
 		break;
 #ifndef CURSES_BASIC
 	case AKEY_SCREENSHOT:
@@ -1904,7 +1884,7 @@ void Atari800_Frame(void)
 #else
 		ANTIC_Frame(TRUE);
 		INPUT_DrawMousePointer();
-		Screen_DrawAtariSpeed();
+		Screen_DrawAtariSpeed(Atari_time());
 		Screen_DrawDiskLED();
 #endif /* CURSES_BASIC */
 #ifdef DONT_DISPLAY
