@@ -280,7 +280,7 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 			SMALLFONT__X__,
 			SMALLFONT_____
 		}
-	};
+	}
 	int y;
 	for (y = 0; y < SMALLFONT_HEIGHT; y++) {
 		int src;
@@ -303,23 +303,22 @@ static void SmallFont_DrawInt(UBYTE *screen, int n, UBYTE color1, UBYTE color2)
 	} while (n > 0);
 }
 
-void Screen_DrawAtariSpeed(void)
+void Screen_DrawAtariSpeed(double cur_time)
 {
 	if (show_atari_speed) {
 		static int percent_display = 100;
 		static int last_updated = 0;
-		if ((nframes - last_updated) >= 25) {
+		static double last_time = 0;
+		if ((cur_time - last_time) >= 0.5) {
+			percent_display = 100 * (nframes - last_updated) / (cur_time - last_time) / (tv_mode == TV_PAL ? 50 : 60);
 			last_updated = nframes;
-			percent_display = percent_atari_speed;
+			last_time = cur_time;
 		}
-		/* don't show if 99-101% */
-		if (percent_display < 99 || percent_display > 101) {
-			/* space for 5 digits - up to 99999% Atari speed */
-			UBYTE *screen = (UBYTE *) atari_screen + screen_visible_x1 + 5 * SMALLFONT_WIDTH
-				          + (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
-			SmallFont_DrawChar(screen, SMALLFONT_PERCENT, 0x0c, 0x00);
-			SmallFont_DrawInt(screen - SMALLFONT_WIDTH, percent_display, 0x0c, 0x00);
-		}
+		/* space for 5 digits - up to 99999% Atari speed */
+		UBYTE *screen = (UBYTE *) atari_screen + screen_visible_x1 + 5 * SMALLFONT_WIDTH
+			          + (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
+		SmallFont_DrawChar(screen, SMALLFONT_PERCENT, 0x0c, 0x00);
+		SmallFont_DrawInt(screen - SMALLFONT_WIDTH, percent_display, 0x0c, 0x00);
 	}
 }
 
@@ -341,7 +340,7 @@ void Screen_DrawDiskLED(void)
 		
 			if (show_sector_counter)
 				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, sio_last_sector, 0x00, 0x88);
-		};
+		}
 	}
 }
 

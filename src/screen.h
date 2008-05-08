@@ -28,7 +28,7 @@ extern int show_disk_led;
 extern int show_sector_counter;
 
 void Screen_Initialise(int *argc, char *argv[]);
-void Screen_DrawAtariSpeed(void);
+void Screen_DrawAtariSpeed(double);
 void Screen_DrawDiskLED(void);
 void Screen_FindScreenshotFilename(char *buffer);
 int Screen_SaveScreenshot(const char *filename, int interlaced);
