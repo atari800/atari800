@@ -1565,8 +1565,6 @@ void Atari_sleep(double s);
 
 #else /* PS2 */
 
-#ifndef USE_CLOCK
-
 static double Atari_time(void)
 {
 #ifdef WIN32
@@ -1587,8 +1585,6 @@ static double Atari_time(void)
 #error No function found for Atari_time()
 #endif
 }
-
-#endif /* USE_CLOCK */
 
 /* FIXME: Ports should use SUPPORTS_ATARI_SLEEP and SUPPORTS_ATARI_TIME */
 /* and not this mess */

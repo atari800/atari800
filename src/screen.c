@@ -280,7 +280,7 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 			SMALLFONT__X__,
 			SMALLFONT_____
 		}
-	}
+	};
 	int y;
 	for (y = 0; y < SMALLFONT_HEIGHT; y++) {
 		int src;
@@ -314,11 +314,14 @@ void Screen_DrawAtariSpeed(double cur_time)
 			last_updated = nframes;
 			last_time = cur_time;
 		}
-		/* space for 5 digits - up to 99999% Atari speed */
-		UBYTE *screen = (UBYTE *) atari_screen + screen_visible_x1 + 5 * SMALLFONT_WIDTH
-			          + (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
-		SmallFont_DrawChar(screen, SMALLFONT_PERCENT, 0x0c, 0x00);
-		SmallFont_DrawInt(screen - SMALLFONT_WIDTH, percent_display, 0x0c, 0x00);
+		/* if (percent_display < 99 || percent_display > 101) */
+		{
+			/* space for 5 digits - up to 99999% Atari speed */
+			UBYTE *screen = (UBYTE *) atari_screen + screen_visible_x1 + 5 * SMALLFONT_WIDTH
+			          	+ (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
+			SmallFont_DrawChar(screen, SMALLFONT_PERCENT, 0x0c, 0x00);
+			SmallFont_DrawInt(screen - SMALLFONT_WIDTH, percent_display, 0x0c, 0x00);
+		}
 	}
 }
 
