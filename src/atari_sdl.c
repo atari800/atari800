@@ -91,10 +91,6 @@ static atari_ntsc_setup_t atari_ntsc_setup;
 #define DEFAULT_WIDTH_MODE 1
 #define FULL_WIDTH_MODE 2
 
-/* you need to uncomment this to turn on fps counter */
-
-/* #define FPS_COUNTER = 1 */
-
 /* joystick emulation
    keys are loaded from config file
    Here the defaults if there is no keymap in the config file... */
@@ -2090,20 +2086,6 @@ void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 			}
 		}
 		*t1 = trig1;
-	}
-}
-
-void CountFPS(void)
-{
-	static int ticks1 = 0, ticks2, shortframes;
-	if (ticks1 == 0)
-		ticks1 = SDL_GetTicks();
-	ticks2 = SDL_GetTicks();
-	shortframes++;
-	if (ticks2 - ticks1 > 1000) {
-		ticks1 = ticks2;
-		Aprint("%d fps", shortframes);
-		shortframes = 0;
 	}
 }
 
