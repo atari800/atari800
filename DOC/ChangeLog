@@ -1,3 +1,7 @@
+2008-05-09  Perry McFarlane  <perry_m@fastmail.fm>
+* mzpokeysnd.c, pokey.c: fixed two-tone
+
+
 2008-05-08  Petr Stehlik  <pstehlik@sophics.cz>
 * atari.c: get rid of #ifdef USE_CLOCK and also #ifdef DONT_SYNC_WITH_HOST
 * configure.ac: get rid of USE_CLOCK for Falcon

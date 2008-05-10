@@ -34,7 +34,6 @@
 #include "mzpokeysnd.h"
 #include "pokeysnd.h"
 #include "remez.h"
-#include "pokey.h"
 
 #ifdef NONLINEAR_MIXING
 #include "pokeymix.inc"
@@ -137,6 +136,9 @@ typedef struct stPokeyState
     unsigned char c1_f0;
     unsigned char c2_hf;
     unsigned char c3_f2;
+
+    /* SKCTLS for two-tone mode */
+    int skctls;
 
     /* Main output state */
     qev_t outvol_all;
@@ -294,6 +296,9 @@ void ResetPokeyState(PokeyState* ps)
     ps->c1_f0 = 0;
     ps->c2_hf = 0;
     ps->c3_f2 = 0;
+
+    /* SKCTLS for two-tone mode */
+    ps->skctls = 0;
 
     ps->outvol_all = 0;
     ps->forcero = 0;
@@ -962,7 +967,7 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
                 /*two-tone filter*/
                 /*use if send break is on and two-tone mode is on*/
                 /*reset channel 1 if channel 2 changed*/
-                if((SKCTLS & 0x88) == 0x88) {
+                if((ps->skctls & 0x88) == 0x88) {
                     ps->c0divpos = ps->c0divstart;
                     /* it doesn't change the output state */
                     /*need0 = 1;*/
@@ -1737,6 +1742,12 @@ static void Update_audctl(PokeyState* ps, unsigned char val)
     ps->mdivk = new_divk;
 }
 
+/* SKCTLS for two-tone mode */
+static void Update_skctls(PokeyState* ps, unsigned char val)
+{
+    ps->skctls = val;
+}
+
 /* if using nonlinear mixing, don't stop ultrasounds */
 #ifdef NONLINEAR_MIXING
 #define Update_c0stop(a) do{}while(0)
@@ -2045,6 +2056,9 @@ static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain
         ps->c1t2 = 0;
         ps->c2t2 = 1;
         ps->c3t2 = 1;
+        break;
+    case _SKCTLS:
+        Update_skctls(ps,val);
         break;
     }
 }

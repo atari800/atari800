@@ -283,6 +283,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		break;
 	case _SKCTLS:
 		SKCTLS = byte;
+		Update_pokey_sound(_SKCTLS, byte, 0, SOUND_GAIN);
 		if (byte & 4)
 			pot_scanline = 228;	/* fast pot mode - return results immediately */
 		break;
@@ -331,6 +332,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		break;
 	case _STIMER + _POKEY2:
 		Update_pokey_sound(_STIMER, byte, 1, SOUND_GAIN);
+		break;
+	case _SKCTLS + _POKEY2:
+		Update_pokey_sound(_SKCTLS, byte, 1, SOUND_GAIN);
 		break;
 #endif
 	}
