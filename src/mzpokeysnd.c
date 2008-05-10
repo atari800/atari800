@@ -1174,7 +1174,7 @@ static void pokeymix_init()
         for(v2_0 = 0, v2_1 = 0, v2_2 = 0, v2_3 = 0; v2_0 <= v3_0; v2_0++, v2_1+=0x10, v2_2+=0x100, v2_3+=0x1000) {
             for(v1_0 = 0, v1_1 = 0, v1_2 = 0, v1_3 = 0; v1_0 <= v2_0; v1_0++, v1_1+=0x10, v1_2+=0x100, v1_3+=0x1000) {
                 for(v0_0 = 0, v0_1 = 0, v0_2 = 0, v0_3 = 0; v0_0 <= v1_0; v0_0++, v0_1+=0x10, v0_2+=0x100, v0_3+=0x1000) {
-                    mix = 120.0*pokeymix3876[count];
+                    mix = 120.0*((double)pokeymix3876[count]/65535.0);
                     /* all 24 permutations, some may be redundant */
                     pokeymix[v0_3|v1_2|v2_1|v3_0] = mix;
                     pokeymix[v0_3|v1_2|v3_1|v2_0] = mix;

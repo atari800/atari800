@@ -1,3 +1,7 @@
+2008-05-10  Perry McFarlane  <perry_m@fastmail.fm>
+* mzpokeysnd.c, pokyemix.inc: use shorts for smaller file size with table
+
+
 2008-05-09  Perry McFarlane  <perry_m@fastmail.fm>
 * mzpokeysnd.c, pokey.c: fixed two-tone
 
