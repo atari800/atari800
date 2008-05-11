@@ -125,8 +125,7 @@ static int initsound_dx(void)
 
   IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
 
-  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, 1,
-		   (stereo ? SND_STEREO : 0) + (bit16 ? SND_BIT16 : 0));
+  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, 1, (bit16 ? SND_BIT16 : 0));
 
   samples = dsprate * snddelay / 1000;
 
@@ -351,8 +350,7 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, 1,
-		   (stereo ? SND_STEREO : 0) + (bit16 ? SND_BIT16 : 0));
+  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, 1, (bit16 ? SND_BIT16 : 0));
 
   issound = SOUND_WAV;
   return 0;

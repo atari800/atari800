@@ -100,7 +100,6 @@ extern "C" {
 
 /* init flags */
 #define SND_BIT16	1
-#define SND_STEREO	2
 
 extern int32 snd_playback_freq;
 extern uint8 snd_num_pokeys;

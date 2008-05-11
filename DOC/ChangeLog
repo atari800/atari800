@@ -1,5 +1,7 @@
 2008-05-11  Perry McFarlane  <perry_m@fastmail.fm>
 * dos/atari_vga.c, configure.ac: Atari_PaletteUpdate
+* win32/sound.c, pokeysnd.h SND_STEREO removed (obsolete)
+
 
 2008-05-10  Perry McFarlane  <perry_m@fastmail.fm>
 * mzpokeysnd.c, pokyemix.inc: use shorts for smaller file size with table
