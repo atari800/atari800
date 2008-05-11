@@ -430,12 +430,31 @@ void key_delete(void)
 /* VGA HANDLING                                                               */
 /* -------------------------------------------------------------------------- */
 
-void SetupVgaEnvironment(void)
-{
+/* Set up the Palette */
+void Atari_PaletteUpdate(void) {
         int a, i;
-        union REGS rg;
         __dpmi_regs d_rg;
         UBYTE ctab[768];
+
+        /* setting all palette at once is faster....*/
+        for (a = 0, i = 0; a < 256; a++) {
+          ctab[i++]=(colortable[a] >> 18) & 0x3f;
+          ctab[i++]=(colortable[a] >> 10) & 0x3f;
+          ctab[i++]=(colortable[a] >> 2) & 0x3f;
+        }
+        /*copy ctab to djgpp transfer buffer in DOS memory*/
+        dosmemput(ctab,768,__tb&0xfffff);
+        d_rg.x.ax=0x1012;
+        d_rg.x.bx=0;
+        d_rg.x.cx=256;
+        d_rg.x.dx=__tb&0xf; /*offset of transfer buffer*/
+        d_rg.x.es=(__tb >> 4) & 0xffff;  /*segment of transfer buffer*/
+        __dpmi_int(0x10,&d_rg);  /*VGA set palette block*/
+}
+
+void SetupVgaEnvironment(void)
+{
+        union REGS rg;
 
         if (use_vesa)
         {
@@ -471,20 +490,7 @@ void SetupVgaEnvironment(void)
 
         vga_started = 1;
 
-        /* setting all palette at once is faster....*/
-        for (a = 0, i = 0; a < 256; a++) {
-          ctab[i++]=(colortable[a] >> 18) & 0x3f;
-          ctab[i++]=(colortable[a] >> 10) & 0x3f;
-          ctab[i++]=(colortable[a] >> 2) & 0x3f;
-        }
-        /*copy ctab to djgpp transfer buffer in DOS memory*/
-        dosmemput(ctab,768,__tb&0xfffff);
-        d_rg.x.ax=0x1012;
-        d_rg.x.bx=0;
-        d_rg.x.cx=256;
-        d_rg.x.dx=__tb&0xf; /*offset of transfer buffer*/
-        d_rg.x.es=(__tb >> 4) & 0xffff;  /*segment of transfer buffer*/
-        __dpmi_int(0x10,&d_rg);  /*VGA set palette block*/
+	Atari_PaletteUpdate();
 
 	/* initialize mouse */
 	if (mouse_mode != MOUSE_OFF) {

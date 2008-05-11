@@ -208,6 +208,7 @@ case "$a8_target" in
         fi
         AC_DEFINE(DOSVGA,1,[Target: DOS VGA.])
         AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
+        AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
         OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
         ;;
     curses)
