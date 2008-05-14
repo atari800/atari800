@@ -1,3 +1,7 @@
+2008-05-13  Perry McFarlane  <perry_m@fastmail.fm>
+* configure.ac: nonlinear mixing minor fix
+
+
 2008-05-11  Perry McFarlane  <perry_m@fastmail.fm>
 * dos/atari_vga.c, configure.ac: Atari_PaletteUpdate
 * win32/sound.c, pokeysnd.h SND_STEREO removed (obsolete)

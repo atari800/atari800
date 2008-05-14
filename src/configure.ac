@@ -601,6 +601,7 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
               CLIP_SOUND,[Define to allow sound clipping.]
              )
 else
+    WANT_NONLINEAR_MIXING="no"
     WANT_INTERPOLATE_SOUND="no"
     WANT_STEREO_SOUND="no"
     WANT_VOL_ONLY_SOUND="no"
@@ -702,6 +703,7 @@ echo "Using 6502 opcode profiling?..........: $WANT_MONITOR_PROFILE"
 echo "Using TRACE monitor command?..........: $WANT_MONITOR_TRACE"
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
+    echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
     echo "    Using sound interpolation?........: $WANT_INTERPOLATE_SOUND"
     echo "    Using stereo sound?...............: $WANT_STEREO_SOUND"
     echo "    Using volume only sound?..........: $WANT_VOL_ONLY_SOUND"
