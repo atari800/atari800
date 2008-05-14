@@ -24,6 +24,7 @@
 
 #include "config.h"
 #include <string.h>
+#include <stdlib.h> /* for exit() */
 #include "antic.h"
 #include "atari.h"
 #include "cassette.h"
