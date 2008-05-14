@@ -123,16 +123,7 @@ Emulation core
 
 - support physical Atari drives (hard, port-specific and not very useful)
 
-- event history. Record a keypress/joystick event history.  Need a file format
-  that is good (compress?) Don't use cycle-exact RANDOM since that could
-  change easily in future versions.  Use our own rand() (with option to use
-  true RANDOM. Provide all features that VICE has. Optionally calculate and
-  store CRC-32 for each screen of pixels.  Verify playback in future revisions
-  of the emulator.  A very good regression test.  Have volunteers make
-  recordings.
-  There could be walk-throughs, high score contests like MAME Action Replay.
-  perry: I have code to do a basic recording and CRC-32 but I need a
-  good file format.
+- improve the event recording.  Avoid cycle-exact RANDOM?
 
 
 Graphics

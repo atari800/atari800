@@ -285,10 +285,13 @@ extern int mouse_joy_inertia;	/* how long the mouse pointer can move (time in At
 /* Functions ----------------------------------------------------------- */
 
 void INPUT_Initialise(int *argc, char *argv[]);
+void INPUT_Exit(void);
 void INPUT_Frame(void);
 void INPUT_Scanline(void);
 void INPUT_SelectMultiJoy(int no);
 void INPUT_CenterMousePointer(void);
 void INPUT_DrawMousePointer(void);
+int INPUT_Recording(void);
+int INPUT_Playingback(void);
 
 #endif /* _INPUT_H_ */

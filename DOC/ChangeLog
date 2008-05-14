@@ -1,5 +1,6 @@
 2008-05-13  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac: nonlinear mixing minor fix
+* input.[ch], configure.ac, pokey.c, atari.c, TODO: event recording
 
 
 2008-05-11  Perry McFarlane  <perry_m@fastmail.fm>

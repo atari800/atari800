@@ -46,6 +46,7 @@
 #include "antic.h"
 #include "cassette.h"
 #include "log.h"
+#include "input.h"
 
 #ifdef POKEY_UPDATE
 void pokey_update(void);
@@ -385,7 +386,12 @@ void POKEY_Initialise(int *argc, char *argv[])
 		poly17_lookup[i] = (UBYTE) (reg >> 1);
 	}
 
-	random_scanline_counter =
+	/* don't use time when rec/play back because it's not deterministic */
+	if (INPUT_Recording() || INPUT_Playingback()) {
+		random_scanline_counter = 0;
+	}
+	else {
+		random_scanline_counter =
 #ifdef WIN32
 		GetTickCount() % POLY17_SIZE;
 #elif defined(HAVE_TIME)
@@ -393,6 +399,7 @@ void POKEY_Initialise(int *argc, char *argv[])
 #else
 		0;
 #endif
+	}
 }
 
 void POKEY_Frame(void)

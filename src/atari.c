@@ -1434,6 +1434,7 @@ int Atari800_Exit(int run_monitor)
 #ifndef __PLUS
 	if (!restart) {
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
+		INPUT_Exit();	/* finish event recording */
 #ifdef SOUND
 		CloseSoundFile();
 #endif

@@ -531,6 +531,14 @@ A8_OPTION(monitortrace,no,
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
+dnl we already checked for libz and added it to LIBS
+AC_CHECK_LIB(z,adler32,
+          [A8_OPTION(eventrecording,yes,
+                [Support event recording (default=ON)],
+                EVENT_RECORDING,[Define to enable event recording.]
+               )],
+	  WANT_EVENT_RECORDING="no"
+         )
 
 dnl Set sound support options...
 
@@ -701,6 +709,7 @@ echo "Using user-defined breakpoints?.......: $WANT_MONITOR_BREAKPOINTS"
 echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
 echo "Using 6502 opcode profiling?..........: $WANT_MONITOR_PROFILE"
 echo "Using TRACE monitor command?..........: $WANT_MONITOR_TRACE"
+echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"

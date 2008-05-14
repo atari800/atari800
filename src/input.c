@@ -42,6 +42,9 @@
 #ifdef __PLUS
 #include "input_win.h"
 #endif
+#ifdef EVENT_RECORDING
+#include <zlib.h>
+#endif
 
 #ifdef DREAMCAST
 extern int Atari_POT(int);
@@ -113,6 +116,19 @@ static int joy_multijoy_no = 0;	/* number of selected joy */
 static int max_scanline_counter;
 static int scanline_counter;
 
+#ifdef EVENT_RECORDING
+static gzFile *recordfp = NULL; /*output file for input recording*/
+static gzFile *playbackfp = NULL; /*input file for playback*/
+static int recording = FALSE;
+static int playingback = FALSE;
+static void update_adler32_of_screen(void);
+static unsigned int compute_adler32_of_screen(void);
+static int recording_version;
+#define GZBUFSIZE 256
+static char gzbuf[GZBUFSIZE+1];
+#define EVENT_RECORDING_VERSION 1
+#endif
+
 void INPUT_Initialise(int *argc, char *argv[])
 {
 	int i;
@@ -159,6 +175,38 @@ void INPUT_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-multijoy") == 0) {
 			joy_multijoy = 1;
 		}
+#ifdef EVENT_RECORDING
+		else if (strcmp(argv[i], "-record") == 0) {
+			char *recfilename = argv[++i];
+			if ((recordfp = gzopen(recfilename, "wb")) == NULL) {
+				Aprint("Cannot open record file");
+			}
+			else {
+				recording = TRUE;
+				gzprintf(recordfp, "Atari800 event recording, version: %d\n", EVENT_RECORDING_VERSION);
+			}
+		}
+ 		else if (strcmp(argv[i], "-playback") == 0) {
+			char *pbfilename = argv[++i];
+			if ((playbackfp = gzopen(pbfilename, "rb")) == NULL) {
+				Aprint("Cannot open playback file");
+			}
+			else {
+				playingback = TRUE;
+				gzgets(playbackfp, gzbuf, GZBUFSIZE);
+				if (sscanf(gzbuf, "Atari800 event recording, version: %d\n", &recording_version) != 1) {
+					Aprint("Invalid playback file");
+					playingback = FALSE;
+					gzclose(playbackfp);
+				}
+				else if (recording_version > EVENT_RECORDING_VERSION) {
+					Aprint("Newer version of playback file than this version of Atari800 can handle");
+					playingback = FALSE;
+					gzclose(playbackfp);
+				}
+			}
+		}
+#endif /* EVENT_RECORDING */
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Aprint("\t-mouse off       Do not use mouse");
@@ -174,6 +222,8 @@ void INPUT_Initialise(int *argc, char *argv[])
 				Aprint("\t-mouseport <n>   Set mouse port 1-4 (default 1)");
 				Aprint("\t-mousespeed <n>  Set mouse speed 1-9 (default 3)");
 				Aprint("\t-multijoy        Emulate MultiJoy4 interface");
+				Aprint("\t-record <file>   Record input to <file>");
+				Aprint("\t-playback <file> Playback input from <file>");
 			}
 			argv[j++] = argv[i];
 		}
@@ -181,6 +231,16 @@ void INPUT_Initialise(int *argc, char *argv[])
 
 	INPUT_CenterMousePointer();
 	*argc = j;
+}
+
+/* For event recording */
+void INPUT_Exit(void) {
+#ifdef EVENT_RECORDING
+	if (recording) {
+		gzclose(recordfp);
+		recording = FALSE;
+	}
+#endif
 }
 
 /* mouse_step is used in Amiga, ST, trak-ball and joystick modes.
@@ -309,6 +369,15 @@ void INPUT_Frame(void)
 	   (this is simply not emulated).
 	   key_code is used for keypad keys and key_shift is used for 2nd button.
 	*/
+#ifdef EVENT_RECORDING
+	if (playingback) {
+		gzgets(playbackfp, gzbuf, GZBUFSIZE);
+		sscanf(gzbuf, "%d %d %d ", &key_code, &key_shift, &key_consol);
+	}
+	if (recording) {
+		gzprintf(recordfp, "%d %d %d \n", key_code, key_shift, key_consol);
+	}
+#endif
 	i = machine_type == MACHINE_5200 ? key_shift : (key_code == AKEY_BREAK);
 	if (i && !last_key_break) {
 		if (IRQEN & 0x80) {
@@ -352,10 +421,35 @@ void INPUT_Frame(void)
 	}
 
 	/* handle joysticks */
-	i = Atari_PORT(0);
+#ifdef EVENT_RECORDING
+	if (playingback) {
+		gzgets(playbackfp, gzbuf, GZBUFSIZE);
+		sscanf(gzbuf,"%d ",&i);
+	} else {
+#endif
+		i = Atari_PORT(0);
+#ifdef EVENT_RECORDING
+	}
+	if (recording) {
+		gzprintf(recordfp,"%d \n",i);
+	}
+#endif
+
 	STICK[0] = i & 0x0f;
 	STICK[1] = (i >> 4) & 0x0f;
-	i = Atari_PORT(1);
+#ifdef EVENT_RECORDING
+	if (playingback) {
+		gzgets(playbackfp, gzbuf, GZBUFSIZE);
+		sscanf(gzbuf,"%d ",&i);
+	} else {
+#endif
+		i = Atari_PORT(1);
+#ifdef EVENT_RECORDING
+	}
+	if (recording) {
+		gzprintf(recordfp,"%d \n",i);
+	}
+#endif
 	STICK[2] = i & 0x0f;
 	STICK[3] = (i >> 4) & 0x0f;
 
@@ -384,7 +478,23 @@ void INPUT_Frame(void)
 		}
 		else
 			last_stick[i] = STICK[i];
-		TRIG_input[i] = Atari_TRIG(i);
+		/* Joystick Triggers */
+#ifdef EVENT_RECORDING
+		if(playingback){
+			int trigtemp;
+			gzgets(playbackfp, gzbuf, GZBUFSIZE);
+			sscanf(gzbuf,"%d ",&trigtemp);
+			TRIG_input[i] = trigtemp;
+
+		} else {
+#endif
+			TRIG_input[i] = Atari_TRIG(i);
+#ifdef EVENT_RECORDING
+		}
+		if(recording){
+			gzprintf(recordfp,"%d \n",TRIG_input[i]);
+		}
+#endif
 		if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG_input[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
 			TRIG_input[i] = (nframes & 2) ? 1 : 0;
 	}
@@ -576,6 +686,76 @@ void INPUT_Frame(void)
 		PORT_input[0] = (STICK[1] << 4) | STICK[0];
 		PORT_input[1] = (STICK[3] << 4) | STICK[2];
 	}
+
+#ifdef EVENT_RECORDING
+	update_adler32_of_screen();
+#endif
+}
+
+#ifdef EVENT_RECORDING
+static void update_adler32_of_screen(void)
+{
+	unsigned int adler32val = 0;
+	static unsigned int adler32_errors = 0;
+	static int first = TRUE;
+	if (first) { /* don't calculate the first frame */
+		first = FALSE;
+		adler32val = 0;
+	}
+	else if (recording || playingback){
+		adler32val = compute_adler32_of_screen();
+	}
+
+	if (recording) {
+		gzprintf(recordfp, "%08X \n", adler32val);
+	}
+	if (playingback) {
+		unsigned int pb_adler32val;
+		gzgets(playbackfp, gzbuf, GZBUFSIZE);
+		sscanf(gzbuf, "%08X ", &pb_adler32val);
+		if (pb_adler32val != adler32val){
+			Aprint("adler32 does not match");
+			adler32_errors++;
+		}
+		
+	}
+	if (playingback && gzeof(playbackfp)) {
+		playingback = FALSE;
+		gzclose(playbackfp);
+		Atari800_Exit(FALSE);
+		exit(adler32_errors > 0 ? 1 : 0); /* return code indicates errors*/
+	}
+}
+/* Compute the adler32 value of the visible screen */
+/* Note that the visible portion is 24..360 on the horizontal and */
+/* 0..ATARI_HEIGHT on the vertical */
+static unsigned int compute_adler32_of_screen(void)
+{
+	int y;
+	unsigned int adler = adler32(0L,Z_NULL,0);
+	for (y = 0; y < ATARI_HEIGHT; y++) {
+		adler = adler32(adler, (unsigned char*)atari_screen + 24 + ATARI_WIDTH*y, 360 - 24);
+	}
+	return adler;
+}
+#endif /* EVENT_RECORDING */
+
+int INPUT_Recording(void)
+{
+#ifdef EVENT_RECORDING
+	return recording;
+#else
+	return 0;
+#endif
+}
+
+int INPUT_Playingback(void)
+{
+#ifdef EVENT_RECORDING
+	return playingback;
+#else
+	return 0;
+#endif
 }
 
 void INPUT_Scanline(void)
