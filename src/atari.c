@@ -1115,10 +1115,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef R_IO_DEVICE
 			else if (strcmp(argv[i], "-rdevice") == 0) {
 				enable_r_patch = TRUE;
+#ifdef R_SERIAL
 				if (i_a && i + 2 < *argc && *argv[i + 1] != '-') {  /* optional serial device name */
 					Util_strlcpy(r_device, argv[++i], FILENAME_MAX);
 					r_serial = TRUE;
 				}
+#endif /* R_SERIAL */
 			}
 #endif
 			else if (strcmp(argv[i], "-osb_rom") == 0) {
@@ -1435,6 +1437,9 @@ int Atari800_Exit(int run_monitor)
 	if (!restart) {
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
 		INPUT_Exit();	/* finish event recording */
+#ifdef R_IO_DEVICE
+		Device_R_Exit(); /* R: Device cleanup */
+#endif
 #ifdef SOUND
 		CloseSoundFile();
 #endif

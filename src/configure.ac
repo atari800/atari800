@@ -176,7 +176,11 @@ AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h un
 SUPPORTS_SOUND_OSS=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_OSS=no)
 SUPPORTS_RDEVICE=yes
-AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no)
+if [[ "$a8_host" = "win" ]]; then
+    AC_CHECK_HEADERS([winsock2.h],,SUPPORTS_RDEVICE=no)
+else
+    AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no)
+fi
 
 
 dnl Check for libraries...
@@ -429,9 +433,11 @@ AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
 AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf])
 dnl select and usleep are broken on javanvm targets
 if [[ "$a8_target" != "javanvm" -a "$a8_target" != "javanvm-basic" ]]; then
-	AC_CHECK_FUNCS([select usleep])
+    AC_CHECK_FUNCS([select usleep])
 fi
-AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
+if [[ "$a8_host" != "win" ]]; then
+    AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
+fi
 
 
 dnl Select optional Atari800 features...
@@ -537,7 +543,7 @@ AC_CHECK_LIB(z,adler32,
                 [Support event recording (default=ON)],
                 EVENT_RECORDING,[Define to enable event recording.]
                )],
-	  WANT_EVENT_RECORDING="no"
+          WANT_EVENT_RECORDING="no"
          )
 
 dnl Set sound support options...
@@ -661,11 +667,20 @@ fi
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     A8_OPTION(riodevice,no,
-              [Use the R: networking device (Linux/Unix only) (default=ON)],
+              [Use the R: networking device (Linux/Unix/Win32) (default=OFF)],
               R_IO_DEVICE,[Define to use R: device.]
              )
     if [[ "$WANT_R_IO_DEVICE" = "yes" ]]; then
         OBJS="$OBJS rdevice.o"
+        if [[ "$a8_host" != "win" ]]; then
+            A8_OPTION(rserial,yes,
+                     [Use the host serial port with the R: networking device (Linux/Unix only) (default=ON)],
+                     R_SERIAL,[Define to use the host serial port with the R: device.]
+                    )
+        else
+            A8_NEED_LIB(ws2_32)
+            WANT_R_SERIAL="no"
+        fi
     fi
 fi
 
@@ -744,6 +759,9 @@ if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
 fi
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     echo "Using R: device?......................: $WANT_R_IO_DEVICE"
+        if [[ "$a8_host" != "win" -a "$WANT_R_IO_DEVICE" = "yes" ]]; then
+            echo "Using R: with the host serial port?...: $WANT_R_SERIAL"
+        fi
 fi
 echo
 echo "Main build variables:"

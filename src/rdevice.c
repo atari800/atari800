@@ -83,6 +83,51 @@
 
 #include <sys/stat.h>
 
+#ifdef WIN32
+#include <winsock2.h>
+   #define F_SETFL 0
+   #define O_NONBLOCK 0
+   #define WM_SOCKET (WM_USER+20)
+   #define inet_pton(fam,ip,addr) ((addr)->s_addr = inet_addr(ip), 0)
+static u_long ioctlsocket_non_block = 1; /* for ioctlsocket */
+#define perror(a) printf("%s:WSA error code:%d\n",a,WSAGetLastError())
+#define close(a) closesocket(a)
+typedef char *caddr_t;
+void catch_disconnect(int sig);
+static int rdevice_win32_read(SOCKET s, char *buf, int len) {
+  int r;
+  r = recv(s, buf, len, 0);
+  if (r <= 0 ) {
+    switch (WSAGetLastError()) {
+      case WSAECONNRESET:
+      case WSAECONNABORTED:
+      case WSAESHUTDOWN:
+        catch_disconnect(0);
+        break;
+    }
+  }
+  return r;
+}
+
+static int rdevice_win32_write(SOCKET s, char *buf, int len) {
+  int r;
+  r = send(s, buf, len, 0);
+  if (r <= 0 ) {
+    switch (WSAGetLastError()) {
+      case WSAECONNRESET:
+      case WSAECONNABORTED:
+      case WSAESHUTDOWN:
+        catch_disconnect(0);
+        break;
+    }
+  }
+  return r;
+}
+
+#define read(a,b,c) rdevice_win32_read(a,b,c)
+#define write(a,b,c) rdevice_win32_write(a,b,c)
+
+#else /* WIN32 not defined */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -90,7 +135,11 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#endif /* WIN32 */
+
+#ifdef R_SERIAL
 #include <termios.h>
+#endif /* R_SERIAL */
 
 #include "atari.h"
 #include "cpu.h"
@@ -128,7 +177,7 @@ char command_buf[256];
 //fd_set fd;
 //struct timeval tv;
 int retval;
-unsigned char bufout[256];
+char bufout[256];
 //unsigned char bufin[256];
 int concurrent;
 static char inetaddress[256];
@@ -141,7 +190,9 @@ int trans_cr = 0;
 int linefeeds = 1;
 int my_once = 1;
 
+#ifdef R_SERIAL
 int r_serial = 0;
+#endif
 int bufend = 0;
 char r_device[FILENAME_MAX];
 
@@ -172,36 +223,44 @@ void xio_34(void)
 {
   int temp;
   //int fid;
+#ifdef R_SERIAL
   struct termios options;
+#endif /* R_SERIAL */
   //int status;
 
   //fid = dGetByte(0x2e) >> 4;
   temp = dGetByte(ICAX1Z);
 
+#ifdef R_SERIAL
   if(r_serial)
   {
     tcgetattr(rdev_fd, &options);
     //ioctl(rdev_fd, TIOCMGET, &status);
   }
+#endif /* R_SERIAL */
 
   if(temp & 0x80)
   {
     if(temp & 0x40)
     {
       /* turn DTR on */
+#ifdef R_SERIAL
       if(r_serial)
       {
         //status |= TIOCM_DTR;
       }
+#endif /* R_SERIAL */
     }
     else
     {
       //Drop DTR
+#ifdef R_SERIAL
       if(r_serial)
       {
         cfsetispeed(&options, B0);
         cfsetospeed(&options, B0);
       }
+#endif /* R_SERIAL */
 
       if(connected != 0)
       {
@@ -213,6 +272,7 @@ void xio_34(void)
     }
   }
 
+#ifdef R_SERIAL
   if(r_serial)
   {
     // RTS Set/Clear
@@ -240,12 +300,15 @@ void xio_34(void)
       }
     }
   }
+#endif /* R_SERIAL */
 
+#ifdef R_SERIAL
   if(r_serial)
   {
     tcsetattr(rdev_fd, TCSANOW, &options);
     //ioctl(rdev_fd, TIOCMSET, &status);
   }
+#endif /* R_SERIAL */
 
   regA = 1;
   regY = 1;
@@ -260,11 +323,14 @@ void xio_34(void)
 void xio_36(void)
 {
   int aux1, aux2;
+#ifdef R_SERIAL
   struct termios options;
+#endif /* R_SERIAL */
 
   aux1 = dGetByte(ICAX1Z);
   aux2 = dGetByte(ICAX2Z);
 
+#ifdef R_SERIAL
   if(r_serial)
   {
     tcgetattr(rdev_fd, &options);
@@ -418,6 +484,7 @@ void xio_36(void)
 
     tcsetattr(rdev_fd, TCSANOW, &options);
   }
+#endif /* R_SERIAL */
 
   regA = 1;
   regY = 1;
@@ -433,13 +500,16 @@ void xio_36(void)
 void xio_38(void)
 {
   int aux1;
+#ifdef R_SERIAL
   struct termios options;
+#endif /* R_SERIAL */
 
   regA = 1;
   regY = 1;
   ClrN;
 
   aux1 = Peek(ICAX1Z);
+#ifdef R_SERIAL
   if(r_serial)
   {
     if(aux1 & 0x04)
@@ -464,6 +534,7 @@ void xio_38(void)
       tcsetattr(rdev_fd, TCSANOW, &options);
     }
   }
+#endif /* R_SERIAL */
 
   if(aux1 & 0x20)
   { // No Translation
@@ -525,6 +596,19 @@ void xio_40(void)
 void open_connection(char * address, int port)
 {
   struct hostent *host;
+#ifdef WIN32
+  static int winsock_started;
+  WSADATA wdata;
+  WORD ver = MAKEWORD(1,1);
+  int ret;
+  if (!winsock_started) {
+    ret = WSAStartup(ver, &wdata);
+    if (ret) {
+      printf("Error in WSAStartup,return code:%d\n", ret);
+    }
+    winsock_started = 1;
+  }
+#endif /* WIN32 */
   if((address != NULL) && (strlen(address) > 0))
   {
     close(rdev_fd);
@@ -534,7 +618,11 @@ void open_connection(char * address, int port)
     memset ( &peer_in, 0, sizeof ( struct sockaddr_in ) );
     //rdev_fd = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     rdev_fd = socket ( AF_INET, SOCK_STREAM, 0 );
+#ifdef WIN32
+    ioctlsocket(rdev_fd, FIONBIO, &ioctlsocket_non_block);
+#else
     fcntl( rdev_fd, F_SETFL, O_NONBLOCK);
+#endif
     peer_in.sin_family = AF_INET;
     if(inet_pton(AF_INET, address, &peer_in.sin_addr) == 0)
     { // invalid address if zero
@@ -565,11 +653,17 @@ void open_connection(char * address, int port)
     {
       perror("connect");
     }
+#ifndef WIN32
     signal(SIGPIPE, catch_disconnect); //Need to see if the other end disconnects...
     signal(SIGHUP, catch_disconnect); //Need to see if the other end disconnects...
+#endif /* WIN32 */
     sprintf(MESSAGE, "R*: Connecting to %s", address);
     Aprint(MESSAGE);
+#ifdef WIN32
+    ioctlsocket(rdev_fd, FIONBIO, &ioctlsocket_non_block);
+#else
     fcntl(rdev_fd, F_SETFL, O_NONBLOCK);
+#endif /* WIN32 */
 
     /* Telnet negotiation */
     sprintf(MESSAGE, "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
@@ -580,6 +674,7 @@ void open_connection(char * address, int port)
 }
 
 
+#ifdef R_SERIAL
 #ifdef __linux__
 #define TTY_DEV_NAME "/dev/ttyS0"   /* Linux */
 #elif defined (__NetBSD__) && defined(__i386__)
@@ -591,10 +686,12 @@ void open_connection(char * address, int port)
 #else
 #error tty name unknown!
 #endif
+#endif /* R_SERIAL */
 
 //---------------------------------------------------------------------------
 // Host Support Function - Serial Open Connection
 //---------------------------------------------------------------------------
+#ifdef R_SERIAL
 void open_connection_serial(int port)
 {
   char dev_name[FILENAME_MAX] = TTY_DEV_NAME; /* reinitialize each time */
@@ -652,6 +749,7 @@ void open_connection_serial(int port)
   }
 
 }
+#endif /* R_SERIAL */
 
 //---------------------------------------------------------------------------
 // Host Support Function - Retrieve address from open command:
@@ -709,12 +807,14 @@ void Device_ROPEN(void)
   if(direction & 0x08)
   {
     Aprint("R*: Open for Writing...");
+#ifdef R_SERIAL
     if(r_serial)
     {
       Aprint("R*: serial mode.");
       open_connection_serial(devnum);
     }
     else
+#endif /* R_SERIAL */
     {
       Aprint("R*: Socket mode.");
       Device_GetInetAddress();
@@ -810,7 +910,11 @@ void Device_RWRIT(void)
       out_char = 0x0d;
       if(linefeeds)
       {
+#ifdef R_SERIAL
         if((r_serial == 0) && (connected == 0))
+#else
+        if(connected == 0)
+#endif /* R_SERIAL */
         { /* local echo */
           bufend++;
           bufout[bufend-1] = out_char;
@@ -848,7 +952,11 @@ void Device_RWRIT(void)
   //}
   //if(retval == -1)
 
+#ifdef R_SERIAL
   if((r_serial == 0) && (connected == 0))
+#else
+  if(connected == 0)
+#endif /* R_SERIAL */
   { /* Local echo - only do if in socket mode */
     bufend++;
     bufout[bufend-1] = out_char;
@@ -923,7 +1031,7 @@ void Device_RWRIT(void)
 //---------------------------------------------------------------------------
 void Device_RSTAT(void)
 {
-  int len;
+  unsigned int len;
   int bytesread;
   unsigned char one;
   int devnum;
@@ -940,7 +1048,9 @@ void Device_RSTAT(void)
 
   if(connected == 0)
   {
+#ifdef R_SERIAL
     if(r_serial == 0)
+#endif /* R_SERIAL */
     {
       if(do_once == 0)
       {
@@ -958,11 +1068,15 @@ void Device_RSTAT(void)
         in.sin_addr.s_addr = INADDR_ANY;
         //in.sin_port = htons ( atoi ( PORT ) );
         in.sin_port = htons (portnum);
-        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on) ); // cmartin
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *) &on, sizeof(on) ); // cmartin
         if(bind ( sock, (struct sockaddr *)&in, sizeof ( struct sockaddr_in ) ) < 0) perror("bind");
         listen ( sock, 5 );
         /* sethostent(1); */
+#ifdef WIN32
+        retval = ioctlsocket(sock, FIONBIO, &ioctlsocket_non_block);
+#else
         retval = fcntl( sock, F_SETFL, O_NONBLOCK);
+#endif /* WIN32 */
         len = sizeof ( struct sockaddr_in );
         //bufend = 0;
         sprintf(MESSAGE, "R%d: Listening on port %d...", devnum, portnum);
@@ -989,9 +1103,15 @@ void Device_RSTAT(void)
           }
         }
         Aprint(MESSAGE);
+#ifndef WIN32
         signal(SIGPIPE, catch_disconnect); //Need to see if the other end disconnects...
         signal(SIGHUP, catch_disconnect); //Need to see if the other end disconnects...
+#endif /* WIN32 */
+#ifdef WIN32
+        retval = ioctlsocket(rdev_fd, FIONBIO, &ioctlsocket_non_block);
+#else
         retval = fcntl( rdev_fd, F_SETFL, O_NONBLOCK);
+#endif /* WIN32 */
 
         /* Telnet negotiation */
         sprintf(MESSAGE, "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
@@ -1022,7 +1142,11 @@ void Device_RSTAT(void)
       bytesread = read(rdev_fd, &one, 1);
       if(bytesread > 0)
       {
+#ifdef R_SERIAL
         if((r_serial == 0) && (one == 0xff))
+#else
+        if(one == 0xff)
+#endif /* R_SERIAL */
         {
           /* Start Telnet escape seq processing... */
           while(read(rdev_fd, telnet_command,2) != 2) {};
@@ -1159,4 +1283,9 @@ void Device_RINIT(void)
   ClrN;
 }
 
-
+void Device_R_Exit(void)
+{
+#ifdef WIN32
+  WSACleanup();
+#endif /* WIN32 */
+}

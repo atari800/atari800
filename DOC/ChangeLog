@@ -1,3 +1,7 @@
+2008-05-15  Perry McFarlane  <perry_m@fastmail.fm>
+* rdevice.[ch] atari.c configure.ac: Windows support for R: device.
+
+
 2008-05-14  Perry McFarlane  <perry_m@fastmail.fm>
 * input.c: stdlib for exit()
 
@@ -13,7 +17,7 @@
 
 
 2008-05-10  Perry McFarlane  <perry_m@fastmail.fm>
-* mzpokeysnd.c, pokyemix.inc: use shorts for smaller file size with table
+* mzpokeysnd.c, pokeymix.inc: use shorts for smaller file size with table
 
 
 2008-05-09  Perry McFarlane  <perry_m@fastmail.fm>

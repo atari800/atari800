@@ -36,4 +36,6 @@ extern void Device_RINIT(void);
 extern int r_serial;
 extern char r_device[];
 
+extern void Device_R_Exit(void);
+
 #endif /* _RDEVICE_H_ */
