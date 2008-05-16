@@ -1,5 +1,6 @@
 2008-05-15  Perry McFarlane  <perry_m@fastmail.fm>
 * rdevice.[ch] atari.c configure.ac: Windows support for R: device.
+* USAGE: added record/playback
 
 
 2008-05-14  Perry McFarlane  <perry_m@fastmail.fm>

@@ -97,6 +97,9 @@ Command line options
 -mousespeed <num>     Set mouse speed 1-9 (default 3)
 -multijoy             Emulate MultiJoy4 interface
 
+-record <filename>    Record input to <filename>
+-playback <filename>  Playback input from <filename>
+
 -refresh <rate>       Set screen refresh rate
 -artif <mode>         Set artifacting mode 0-4 (0 = disable) (see also -ntscemu)
 -paletten <filename>  Read Atari NTSC colors from ACT file
