@@ -1639,13 +1639,14 @@ void atari_sync(void)
 {
 	static double lasttime = 0;
 	double deltatime = 1.0 / ((tv_mode == TV_PAL) ? 50 : 60);
+	double curtime;
 #ifdef ALTERNATE_SYNC_WITH_HOST
 	if (! ui_is_active)
 		deltatime *= refresh_rate;
 #endif
 	lasttime += deltatime;
 	Atari_sleep(lasttime - Atari_time());
-	double curtime = Atari_time();
+	curtime = Atari_time();
 
 	if ((lasttime + deltatime) < curtime)
 		lasttime = curtime;
