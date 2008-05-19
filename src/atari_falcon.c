@@ -27,7 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>		/* for free */
-#include <mint/falcon.h>	/* for VsetRGB */
+#include <falcon.h>	/* for VsetRGB */
 #include "falcon/xcb.h"		/* for NOVA screensaver */
 
 #include "atari.h"
