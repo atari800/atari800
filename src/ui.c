@@ -2,7 +2,7 @@
  * ui.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -1470,7 +1470,7 @@ static void AboutEmulator(void)
 		ATARI_TITLE "\0"
 		"Copyright (c) 1995-1998 David Firth\0"
 		"and\0"
-		"(c)1998-2006 Atari800 Development Team\0"
+		"(c)1998-2008 Atari800 Development Team\0"
 		"See CREDITS file for details.\0"
 		"http://atari800.atari.org/\0"
 		"\0"
