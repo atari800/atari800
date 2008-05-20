@@ -63,9 +63,8 @@ all: $(FINALTARGET)
 %.o: %.cpp
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
 
-%.o: %.asm
-	cd $(<D); xgen -L1 $(@F) $(<F)
-	cd $(<D); gst2gcc gcc $(@F)
+%.o: %.S
+	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
 
 ifeq ($(CONFIGURE_TARGET),javanvm)
 $(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class
