@@ -1,22 +1,35 @@
-                                                                      Feb 2003
+                                                                      May 2008
 
-    Hi,
+    Hi all Atari users,
 
 this is the Atari 800XL/130XE emulator for Atari TT/Falcon range of computers.
 It should run on any computer with 68030 or higher CPU and a graphics
 capable of resolution 320x240 (or higher) in 256 colors.
 Atari800 contains special routines for direct VIDEL programming (for achieving
-336x240 resolution on VGA monitors) and also NOVA graphics card support.
+336x240 resolution on VGA monitors) and also dedicated NOVA graphics (ISA ATI
+Mach64) support.
 
-Atari800 has been developed by David Firth. Falcon port was done by me.
+Atari800 had originally been developed by David Firth though it's been
+a community project for more than 10 years already.
+The Falcon port was initially done by me and I still try to keep it updated.
 Empty Head (= Karel Rous) and Gerhard Janka wrote the 65C02 emulation
 in pure MC68030 assembler. Douglas Little's assembler routines for VIDEL
-were used for achieving maximal possible speed and compatibility.
+and IKBD from his game/demo Bad Mood (a DOOM clone) were used for achieving
+maximum possible speed and compatibility.
 
-ATARI800.TTP      - atari800 (full C source, GNU C -m68020-40 -O3)
+ATARI800.TTP      - atari800 (full C source, GNU C -m68020-60 -O3)
 ATARICPU.TTP      - atari800 (cpu.c rewritten in optimized MC68030 asm)
 
-Keyboard emulation works well:
+The following script might be used for rebuilding the fastest possible
+version:
+===========================================================================
+LDFLAGS="" CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall" ./configure --disable-newcycleexact --disable-sound --enable-veryslow --disable-monitorbreak --target=falcon
+make clean
+time make
+fixstk 256k atari800
+===========================================================================
+
+Keyboard emulation works just like in other Atari800 flavors:
 
 F1 = Configuration menu
 F2 = Option key

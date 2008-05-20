@@ -1,3 +1,12 @@
+2008-05-20  Petr Stehlik  <pstehlik@sophics.cz>
+* .asm->.S: Devpac syntax of asm files converted to gcc one
+* gst2gcc: removed, no longer needed
+* Makefike.in: updated for compiling/assembling the .S files
+* atari_falcon.c: corrected include path to "falcon.h"
+* atari.c: corrected C++-ism (my old gcc 2.91 didn't like it)
+* DOC/INSTALL.falcon updated (an optimized rebuild script added)
+
+
 2008-05-15  Perry McFarlane  <perry_m@fastmail.fm>
 * rdevice.[ch] atari.c configure.ac: Windows support for R: device.
 * USAGE: added record/playback
