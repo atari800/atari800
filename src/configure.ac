@@ -121,7 +121,7 @@ if [[ "X_$CFLAGS" = "X_" ]]; then
     CFLAGS="-O2 -Wall"
 fi
 if [[ "X_$LDFLAGS" = "X_" ]]; then
-    LDFLAGS="-s"
+    LDFLAGS=""
 fi
 if [[ "$a8_target" = "ps2" ]]; then
     CC="ee-gcc"
