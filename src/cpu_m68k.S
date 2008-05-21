@@ -176,7 +176,7 @@ _IRQ: ds.b 1
 |d0  contains usually address where we are working or temporary value
 |d7  contains is a working register or address
 
-LoHi: .macro p1    |change order of lo and hi byte (address)
+  .macro LoHi p1    |change order of lo and hi byte (address)
       ror.w #8,\p1
       .endm
 
@@ -185,13 +185,13 @@ LoHi: .macro p1    |change order of lo and hi byte (address)
 |  ==========================================================
 
 | regP=processor flags; regPC=PC; regA=A; regX=X; regY=Y
-UPDATE_GLOBAL_REGS: .macro
+  .macro UPDATE_GLOBAL_REGS
   sub.l   memory_pointer,PC6502
   movem.w d0/d2-d4/a2,regP | d0->regP, d2-d4 (A,X,Y) a2 (regPC)
   .endm
 
 | PC=regPC; A=regA; X=regX; Y=regY
-UPDATE_LOCAL_REGS: .macro
+  .macro UPDATE_LOCAL_REGS
   moveq   #0,d7
   move.w  regP,d0
   move.w  regA,d2
@@ -406,20 +406,20 @@ HIxTable:
   .byte HIxNone,HIxNone,HIxNone,HIxNone     | f8..b
   .byte HIxNone,HIxNone,HIxNone,HIxNone     | fc..f
 
-EXE_GETBYTE: .macro
+  .macro EXE_GETBYTE
 | move.l d7,-(a7)
   jsr    _Local_GetByte
 | addq.l #4,a7 ;put stack onto right place
   .endm
 
-EXE_PUTBYTE: .macro p1
+  .macro EXE_PUTBYTE p1
 | clr.l  -(a7)
 | move.b \p1,3(a7) ;byte
   jsr    _Local_PutByte
 | addq.l #8,a7
   .endm
 
-RMW_GETBYTE: .macro
+  .macro RMW_GETBYTE
  #ifdef CYCLE_EXACT
   move.w d7,d0
   and.w  #0xef1f,d0
@@ -524,24 +524,24 @@ _CPU_INIT:
 #define cy_RegPH  3   // push register to stack
 #define cy_RegPL  4   // pull register from stack
 
-SetI: .macro
+  .macro SetI
   ori.b  #I_FLAG,_regP
   .endm
 
-ClrI: .macro
+  .macro ClrI
   andi.b #I_FLAGN,_regP
   .endm
 
-SetB: .macro
+  .macro SetB
   ori.b  #B_FLAG,_regP
   .endm
 
-SetD: .macro
+  .macro SetD
   ori.b  #D_FLAG,_regP
   lea    OPMODE_TABLE_D,a3
   .endm
 
-ClrD: .macro
+  .macro ClrD
   andi.b #D_FLAGN,_regP
   lea    OPMODE_TABLE,a3
   .endm
@@ -576,7 +576,7 @@ ClrD: .macro
 | 68000  : ***XNZVC
 | _RegP  : NV*BDIZC
 
-ConvertSTATUS_RegP: .macro p1
+  .macro ConvertSTATUS_RegP p1
   move.b _regP,\p1 |put flag BDI into d0
   andi.b #VCZN_FLAGSN,\p1 | clear overflow, carry, zero & negative flag
   tst.b  CFLAG
@@ -598,7 +598,7 @@ onvertSTATUS_RegP_SETZ:\@
 onvertSTATUS_RegP_SETV:\@
   .endm
 
-ConvertSTATUS_RegP_destroy: .macro p1
+  .macro ConvertSTATUS_RegP_destroy p1
   move.b _regP,\p1 |put flag BDI into d0
   andi.b  #VCZN_FLAGSN,\p1 | clear overflow, carry, zero & negative flag
   lsr.b  #7,CFLAG
@@ -618,7 +618,7 @@ onvertSTATUS_RegP_destroy_SETZ:\@
 onvertSTATUS_RegP_destroy_SETV:\@
   .endm
 
-ConvertRegP_STATUS: .macro p1
+  .macro ConvertRegP_STATUS p1
   btst   #V_FLAGB,\p1
   sne    VFLAG
   btst   #C_FLAGB,\p1
@@ -629,7 +629,7 @@ ConvertRegP_STATUS: .macro p1
   seq    ZFLAG
   .endm
 
-Call_Atari800_RunEsc: .macro
+  .macro Call_Atari800_RunEsc
 | move.l d7,-(a7)   !!!TEST!!!
   clr.l  -(a7)     |!!!TEST!!!
   move.b d7,(3,a7) |!!!TEST!!!
@@ -641,7 +641,7 @@ Call_Atari800_RunEsc: .macro
   ConvertRegP_STATUS d0
   .endm
 
-Call_Atari800_Exit_true: .macro
+  .macro Call_Atari800_Exit_true
   pea    0x1.W
   jsr    _Atari800_Exit
   addq.l #4,a7
@@ -652,7 +652,7 @@ Call_Atari800_Exit_true: .macro
 all_Atari800_Exit_true_GOON:\@
   .endm
 
-PLW: .macro p1 p2
+  .macro PLW p1 p2
   moveq  #0,\p2
   move.w regS,\p2
   addq.b #2,\p2     | wrong way around
@@ -664,19 +664,19 @@ PLW: .macro p1 p2
   move.b \p2,_regS
   .endm
 
-SetVFLAG: .macro
+  .macro SetVFLAG
   st     VFLAG
   .endm
 
-ClrVFLAG: .macro
+  .macro ClrVFLAG
   clr.b  VFLAG
   .endm
 
-SetCFLAG: .macro
+  .macro SetCFLAG
   st     CFLAG
   .endm
 
-ClrCFLAG: .macro
+  .macro ClrCFLAG
   clr.b  CFLAG
   .endm
 
@@ -816,7 +816,7 @@ NO_WS_HALT:
 
 | addressing macros
 
-NCYCLES_XY: .macro p1
+  .macro NCYCLES_XY p1
   cmp.b  \p1,d7 | if ( (UBYTE) addr < X,Y ) ncycles++;
 | bpl.s  CYCLES_XY_NCY_XY_NC\@
   bcc.s  CYCLES_XY_NCY_XY_NC\@             | !!!
@@ -824,95 +824,95 @@ NCYCLES_XY: .macro p1
 CYCLES_XY_NCY_XY_NC:\@:
   .endm
 
-ABSOLUTE: .macro
+  .macro ABSOLUTE
   move.w (PC6502)+,d7
   LoHi d7 |d7 contains reversed value
   .endm
 
-ABSOLUTE_X: .macro
+  .macro ABSOLUTE_X
   ABSOLUTE
   add.w  X,d7
   .endm
 
-ABSOLUTE_X_NCY: .macro p1
+  .macro ABSOLUTE_X_NCY p1
   ABSOLUTE_X \p1
   NCYCLES_XY X
   .endm
 
-ABSOLUTE_Y: .macro
+  .macro ABSOLUTE_Y
   ABSOLUTE
   add.w  Y,d7
   .endm
 
-ABSOLUTE_Y_NCY: .macro p1
+  .macro ABSOLUTE_Y_NCY p1
   ABSOLUTE_Y \p1
   NCYCLES_XY Y
   .endm
 
-IMMEDIATE: .macro p1
+  .macro IMMEDIATE p1
   move.b (PC6502)+,\p1
   .endm
 
-INDIRECT_X: .macro
+  .macro INDIRECT_X
   move.b (PC6502)+,d7
   add.b  X,d7
   move.w (memory_pointer,d7.l),d7
   LoHi d7
   .endm
 
-INDIRECT_Y: .macro
+  .macro INDIRECT_Y
   move.b (PC6502)+,d7
   move.w (memory_pointer,d7.l),d7
   LoHi d7      |swap bytes
   add.w  Y,d7
   .endm
 
-INDIRECT_Y_NCY: .macro
+  .macro INDIRECT_Y_NCY
   INDIRECT_Y
   NCYCLES_XY Y
   .endm
 
-ZPAGE: .macro
+  .macro ZPAGE
   move.b (PC6502)+,d7
   .endm
 
-ZPAGE_X: .macro
+  .macro ZPAGE_X
   move.b (PC6502)+,d7
   add.b  X,d7
   .endm
 
-ZPAGE_Y: .macro
+  .macro ZPAGE_Y
   move.b (PC6502)+,d7
   add.b  Y,d7
   .endm
 
 | miscellaneous macros
 
-NEXTCHANGE_REG: .macro p1
+  .macro NEXTCHANGE_REG p1
   move.b \p1,ZFLAG
   bra.w  NEXTCHANGE_N
   .endm
 
 | command macros
 
-ROL_C: .macro p1
+  .macro ROL_C p1
   add.b  CFLAG,CFLAG
   addx.b \p1,\p1 |left
   scs    CFLAG
   .endm
 
-ROR_C: .macro p1
+  .macro ROR_C p1
   add.b  CFLAG,CFLAG
   roxr.b #1,\p1
   scs    CFLAG
   .endm
 
-ASL_C: .macro p1
+  .macro ASL_C p1
   add.b  \p1,\p1 |left
   scs    CFLAG
   .endm
 
-LSR_C: .macro p1
+  .macro LSR_C p1
   lsr.b  #1,\p1
   scs    CFLAG
   .endm
@@ -1121,7 +1121,7 @@ opcode_17: |/* ASO ab,x [unofficial - ASL then ORA with Acc] */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-ASO_C_CONT: .macro   |/* [unofficial - ASL Mem, then ORA with A] */
+  .macro ASO_C_CONT   |/* [unofficial - ASL Mem, then ORA with A] */
   move.b (attrib_pointer,d7.l),d0
   bne.s  ASO_Getbyte_ROMHW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1194,7 +1194,7 @@ opcode_37: |/* RLA ab,x [unofficial - ROL Mem, then AND with A] */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-RLA_C_CONT: .macro   |/* [unofficial - ROL Mem, then AND with A] */
+  .macro RLA_C_CONT   |/* [unofficial - ROL Mem, then AND with A] */
   move.b (attrib_pointer,d7.l),d0
   bne.w  RLA_Getbyte_ROMHW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1267,7 +1267,7 @@ opcode_57: |/* LSE ab,x [unofficial - LSR then EOR result with A] */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-LSE_C_CONT: .macro   |/* [unofficial - LSR Mem then EOR with A] */
+  .macro LSE_C_CONT   |/* [unofficial - LSR Mem then EOR with A] */
   move.b (attrib_pointer,d7.l),d0
   bne.s  LSE_Getbyte_ROMHW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1343,7 +1343,7 @@ opcode_77: |/* RRA ab,x [unofficial - ROR Mem, then ADC to Acc] */
   move.b d0,(memory_pointer,d7.l) | PUTZPBYTE
   bra.w  adc
 
-GETANYBYTE_RRA: .macro
+  .macro GETANYBYTE_RRA
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   bne    RRA_RAMROM
   RMW_GETBYTE
@@ -1441,7 +1441,7 @@ opcode_b7: |/* LAX ab,y [unofficial] - LDA + LDX */
   move.b A,X
   NEXTCHANGE_REG A
 
-GETANYBYTE_LAX: .macro
+  .macro GETANYBYTE_LAX
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  LAX_HW
   move.b (memory_pointer,d7.l),A  |get byte
@@ -1507,7 +1507,7 @@ opcode_d7: |/* DCM ab,x [unofficial - DEC Mem then CMP with Acc] */
   move.b d0,(memory_pointer,d7.l)
   bra.w  COMPARE_A
 
-DCM_C_CONT: .macro   |/* [unofficial - DEC Mem then CMP with Acc] */
+  .macro DCM_C_CONT   |/* [unofficial - DEC Mem then CMP with Acc] */
   tst.b  (attrib_pointer,d7.l)
   bne.s  DCM_ROM_HW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1580,7 +1580,7 @@ opcode_f7: |/* INS ab,x [unofficial] - INC Mem then SBC with Acc] */
   move.b d0,(memory_pointer,d7.l)
   bra sbc
 
-INS_C_CONT: .macro   |/* [unofficial - INC Mem then SBC with Acc] */
+  .macro INS_C_CONT   |/* [unofficial - INC Mem then SBC with Acc] */
   tst.b  (attrib_pointer,d7.l)
   bne.s  INS_ROM_HW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1817,7 +1817,7 @@ opcode_68: |/* PLA */
   move.b d7,_regS
   NEXTCHANGE_REG A
 
-OR_ANYBYTE: .macro
+  .macro OR_ANYBYTE
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  OR_HW
   or.b   (memory_pointer,d7.l),A
@@ -1876,7 +1876,7 @@ opcode_09: |/* ORA #ab */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-AND_ANYBYTE: .macro
+  .macro AND_ANYBYTE
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  AND_HW
   and.b  (memory_pointer,d7.l),A
@@ -1935,13 +1935,13 @@ opcode_29: |/* AND #ab */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-EOR_C_CONT: .macro
+  .macro EOR_C_CONT
   eor.b  d0,A
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
   .endm
 
-GETANYBYTE_EOR: .macro
+  .macro GETANYBYTE_EOR
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  EOR_HW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -2015,7 +2015,7 @@ opcode_16: |/* ASL ab,x */
   move.b ZFLAG,(memory_pointer,d7.l)   | PUTZPBYTE
   bra.w  NEXTCHANGE_N
 
-RPW_ASL_C: .macro
+  .macro RPW_ASL_C
   move.b  (attrib_pointer,d7.l),d0
   bne.s  RPW_HW_ASL
   move.b (memory_pointer,d7.l),ZFLAG |get byte
@@ -2070,7 +2070,7 @@ opcode_36: |/* ROL ab,x */
   move.b ZFLAG,(memory_pointer,d7.l)   | PUTZPBYTE
   bra.w  NEXTCHANGE_N
 
-RPW_ROL_C: .macro
+  .macro RPW_ROL_C
   move.b (attrib_pointer,d7.l),d0
   bne.s  RPW_HW_ROL
   move.b (memory_pointer,d7.l),ZFLAG |get byte
@@ -2132,7 +2132,7 @@ opcode_56: |/* LSR ab,x */
   move.b ZFLAG,(memory_pointer,d7.l)   | PUTZPBYTE
   bra.w  NEXTCHANGE_WITHOUT
 
-RPW_LSR_C: .macro
+  .macro RPW_LSR_C
   clr.w  NFLAG
   move.b (attrib_pointer,d7.l),d0
   bne.s  RPW_HW_LSR
@@ -2191,7 +2191,7 @@ opcode_76: |/* ROR ab,x */
   move.b ZFLAG,(memory_pointer,d7.l)   | PUTZPBYTE
   bra.w  NEXTCHANGE_N
 
-RPW_ROR_C: .macro
+  .macro RPW_ROR_C
   move.b (attrib_pointer,d7.l),d0
   bne.s  RPW_HW_ROR
   move.b (memory_pointer,d7.l),ZFLAG |get byte
@@ -2288,7 +2288,7 @@ opcode_f8: |/* SED */
   SetD
   bra.w  NEXTCHANGE_WITHOUT
 
-JMP_C: .macro
+  .macro JMP_C
   move.w (PC6502)+,d7
   LoHi d7   |(in d7 address where we want to jump)
   lea (memory_pointer,d7.l),PC6502
@@ -2459,7 +2459,7 @@ RTI_mb_end:
   #endif
   bra.w  NEXTCHANGE_WITHOUT
 
-BIT_C_CONT: .macro
+  .macro BIT_C_CONT
   ext.w  NFLAG
   btst   #V_FLAGB,ZFLAG
   sne    VFLAG
@@ -2483,7 +2483,7 @@ opcode_2c: |/* BIT abcd */
   move.b d0,ZFLAG
   BIT_C_CONT
 
-STOREANYBYTE_A: .macro
+  .macro STOREANYBYTE_A
   tst.b  (attrib_pointer,d7.l)
   bne.s  STA_HW
   move.b A,(memory_pointer,d7.l)
@@ -2531,7 +2531,7 @@ opcode_95: |/* STA ab,x */
   move.b A,(memory_pointer,d7.l)   | PUTZPBYTE
   bra.w  NEXTCHANGE_WITHOUT
 
-STOREANYBYTE: .macro p1
+  .macro STOREANYBYTE p1
   tst.b  (attrib_pointer,d7.l)
   bne.s  TOREANYBYTE_GO_PUTBYTE\@
   move.b \p1,(memory_pointer,d7.l)
@@ -2575,7 +2575,7 @@ opcode_94: |/* STY ab,x */
   move.b Y,(memory_pointer,d7.l)   | PUTZPBYTE
   bra.w  NEXTCHANGE_WITHOUT
 
-LOADANYBYTE_A: .macro
+  .macro LOADANYBYTE_A
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  LDA_HW
   move.b (memory_pointer,d7.l),A  |get byte
@@ -2631,7 +2631,7 @@ opcode_a9: |/* LDA #ab */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-LOADANYBYTE_X: .macro
+  .macro LOADANYBYTE_X
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  LDX_HW
   move.b (memory_pointer,d7.l),X  |get byte
@@ -2672,7 +2672,7 @@ opcode_a2: |/* LDX #ab */
   move.b X,ZFLAG
   bra.w  NEXTCHANGE_N
 
-LOADANYBYTE_Y: .macro
+  .macro LOADANYBYTE_Y
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  LDY_HW
   move.b (memory_pointer,d7.l),Y  |get byte
@@ -2891,7 +2891,7 @@ opcode_c8: |/* INY */
   addq.b #1,Y
   NEXTCHANGE_REG Y
 
-DONT_BRA: .macro
+  .macro DONT_BRA
   addq.l #cy_Bcc,CD
   addq.l #1,PC6502
   bra.w  NEXTCHANGE_WITHOUT
@@ -2953,7 +2953,7 @@ opcode_70: |/* BVS */
   bne.s  SOLVE
   DONT_BRA
 
-GETANYBYTE_ADC: .macro
+  .macro GETANYBYTE_ADC
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  ADC_HW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -3018,7 +3018,7 @@ opcode_69: |/* ADC #ab */
   IMMEDIATE d0
   bra.s  adcb
 
-GETANYBYTE_ADC_D: .macro
+  .macro GETANYBYTE_ADC_D
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  ADC_HW_D
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -3106,7 +3106,7 @@ opcode_69_D: |/* ADC #ab */
   IMMEDIATE d0
   bra.s  BCD_ADC
 
-GETANYBYTE_SBC: .macro
+  .macro GETANYBYTE_SBC
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  SBC_HW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -3172,7 +3172,7 @@ opcode_e9: |/* SBC #ab */
   IMMEDIATE d0
   bra.s  sbcb
 
-GETANYBYTE_SBC_D: .macro
+  .macro GETANYBYTE_SBC_D
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  SBC_HW_D
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -3292,7 +3292,7 @@ opcode_e0: |/* CPX #ab */
   move.b X,ZFLAG
   bra COMPARE
 
-GETANYBYTE_CMP: .macro
+  .macro GETANYBYTE_CMP
   cmp.b  #isHARDWARE,(attrib_pointer,d7.l)
   beq.s  CMP_HW
   move.b (memory_pointer,d7.l),d0 |get byte
