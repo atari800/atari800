@@ -101,8 +101,8 @@
 
  #ifdef MONITOR_BREAK
 
-rem_pc_steps: equ 64  | has to be equal to REMEMBER_PC_STEPS
-rem_jmp_steps: equ 16  | has to be equal to REMEMBER_JMP_STEPS
+#define rem_pc_steps 64  // has to be equal to REMEMBER_PC_STEPS
+#define rem_jmp_steps 16  // has to be equal to REMEMBER_JMP_STEPS
 
 remember_PC:
 _remember_PC:
@@ -126,7 +126,7 @@ _remember_jmp_curpos:
 
   #endif
 
-  even
+  .even
 
   .align	4         | doubleword alignment
 
@@ -159,19 +159,19 @@ _IRQ: ds.b 1
 
   even
 
-memory_pointer: equr a5
-attrib_pointer: equr a4
-PC6502: equr a2
+#define memory_pointer a5
+#define attrib_pointer a4
+#define PC6502 a2
 
-CD: equr a6 | cycles counter up
-ZFLAG: equr d1 | Bit 0..7
-NFLAG: equr d1 | Bit 8..15
-VFLAG: equr d6 | Bit 7
-DFLAG: equr d6 | Bit 15
-CFLAG: equr d5 | Bit 0..7, ( 1 = ff )
-A: equr d2
-X: equr d3
-Y: equr d4
+#define CD a6    /* cycles counter up */
+#define ZFLAG d1 /* Bit 0..7 */
+#define NFLAG d1 /* Bit 8..15 */
+#define VFLAG d6 /* Bit 7 */
+#define DFLAG d6 /* Bit 15 */
+#define CFLAG d5 /* Bit 0..7, ( 1 = ff ) */
+#define A d2
+#define X d3
+#define Y d4
 
 |d0  contains usually address where we are working or temporary value
 |d7  contains is a working register or address
@@ -331,16 +331,16 @@ PutCART:
   addq.l #8,a7
   rts
 
-HIxNone: equ 0
-HIxGTIA8: equ 1
-HIxGTIA5: equ 1
-HIxPOKEY8: equ 2
-HIxPOKEY5: equ 2
-HIxPIA8: equ 3
-HIxANTIC8: equ 4
-HIxCART: equ 5
-HIxBob1: equ 6
-HIxBob2: equ 7
+#define HIxNone 0
+#define HIxGTIA8 1
+#define HIxGTIA5 1
+#define HIxPOKEY8 2
+#define HIxPOKEY5 2
+#define HIxPIA8 3
+#define HIxANTIC8 4
+#define HIxCART 5
+#define HIxBob1 6
+#define HIxBob2 7
 
 HIxTable:
   .byte HIxNone,HIxNone,HIxNone,HIxNone     | 00..7
@@ -457,39 +457,77 @@ _CPU_INIT:
   rts
 
 |these are bit in MC68000 CCR register
-NB68: equ 3
-EB68: equ 4 |X
-ZB68: equ 2
-OB68: equ 1
-CB68: equ 0
+#define NB68 3
+#define EB68 4 // X
+#define ZB68 2
+#define OB68 1
+#define CB68 0
 
-WSYNC_C: equ 106
+#define WSYNC_C 106
 
-N_FLAG: equ 0x80
-N_FLAGN: equ 0x7f
-N_FLAGB: equ 7
-V_FLAG: equ 0x40
-V_FLAGN: equ 0xbf
-V_FLAGB: equ 6
-G_FLAG: equ 0x20
-G_FLAGB: equ 5
-B_FLAG: equ 0x10
-B_FLAGN: equ 0xef
-B_FLAGB: equ 4
-D_FLAG: equ 0x08
-D_FLAGN: equ 0xf7
-D_FLAGB: equ 3
-I_FLAG: equ 0x04
-I_FLAGN: equ 0xfb
-I_FLAGB: equ 2
-Z_FLAG: equ 0x02
-Z_FLAGN: equ 0xfd
-Z_FLAGB: equ 1
-C_FLAG: equ 0x01
-C_FLAGN: equ 0xfe
-C_FLAGB: equ 0
-VCZN_FLAGS: equ 0xc3
-VCZN_FLAGSN: equ 0x3c
+#define N_FLAG 0x80
+#define N_FLAGN 0x7f
+#define N_FLAGB 7
+#define V_FLAG 0x40
+#define V_FLAGN 0xbf
+#define V_FLAGB 6
+#define G_FLAG 0x20
+#define G_FLAGB 5
+#define B_FLAG 0x10
+#define B_FLAGN 0xef
+#define B_FLAGB 4
+#define D_FLAG 0x08
+#define D_FLAGN 0xf7
+#define D_FLAGB 3
+#define I_FLAG 0x04
+#define I_FLAGN 0xfb
+#define I_FLAGB 2
+#define Z_FLAG 0x02
+#define Z_FLAGN 0xfd
+#define Z_FLAGB 1
+#define C_FLAG 0x01
+#define C_FLAGN 0xfe
+#define C_FLAGB 0
+#define VCZN_FLAGS 0xc3
+#define VCZN_FLAGSN 0x3c
+
+/* cycles per instruction */
+#define cy_CIM  2
+#define cy_NOP  2
+#define cy_NOP2  2
+#define cy_NOP3  3
+#define cy_NOP4  4
+#define cy_SKW  4
+#define cy_BRK  7
+#define cy_Sub  6
+#define cy_Bcc  2
+#define cy_Bcc1  3
+#define cy_Bcc2  4
+#define cy_JmpAbs  3
+#define cy_JmpInd  5
+#define cy_IndX  6    // indirect X
+#define cy_IndY  5    // indirect Y
+#define cy_IndY2  6   // indirect Y (+)
+#define cy_IndX_RW  8 // indirect X read/write ( all inofficial )
+#define cy_IndY_RW  8 // indirect Y read/write ( all inofficial )
+#define cy_Abs  4     // absolute
+#define cy_Abs_RW  6  // absolute read/write
+#define cy_AbsX  4    // absolute X
+#define cy_AbsX2  5   // absolute X (+)
+#define cy_AbsX_RW  7 // absolute X read/write
+#define cy_AbsY  4    // absolute Y
+#define cy_AbsY2  5   // absolute X (+)
+#define cy_AbsY_RW  7 // absolute Y read/write ( all inofficial )
+#define cy_ZP  3      // zero page
+#define cy_ZP_RW  5   // zero page read/write
+#define cy_ZPX  4     // zero page X
+#define cy_ZPX_RW  6  // zero page X read/write
+#define cy_ZPY  4     // zero page X
+#define cy_Imm  2     // immediate
+#define cy_FlagCS  2  // flag clear/set
+#define cy_RegChg  2  // register only manipulation
+#define cy_RegPH  3   // push register to stack
+#define cy_RegPL  4   // pull register from stack
 
 SetI:
   .macro
@@ -523,9 +561,9 @@ ClrD:
 |static UBYTE  V;
 |static UBYTE  C;  /* zero (0) or one(1) */
 
-isRAM: equ 0
-isROM: equ 1
-isHARDWARE: equ 2
+#define isRAM 0
+#define isROM 1
+#define isHARDWARE 2
 
 |/*
 | * The following array is used for 6502 instruction profiling
@@ -3986,44 +4024,6 @@ OP_T_D:
 
 cycles:
 _cycles:   | dc.l for the world outside, equ for internal use
-
-cy_CIM: equ 2
-cy_NOP: equ 2
-cy_NOP2: equ 2
-cy_NOP3: equ 3
-cy_NOP4: equ 4
-cy_SKW: equ 4
-cy_BRK: equ 7
-cy_Sub: equ 6
-cy_Bcc: equ 2
-cy_Bcc1: equ 3
-cy_Bcc2: equ 4
-cy_JmpAbs: equ 3
-cy_JmpInd: equ 5
-cy_IndX: equ 6    | indirect X
-cy_IndY: equ 5    | indirect Y
-cy_IndY2: equ 6   | indirect Y (+)
-cy_IndX_RW: equ 8 | indirect X read/write ( all inofficial )
-cy_IndY_RW: equ 8 | indirect Y read/write ( all inofficial )
-cy_Abs: equ 4     | absolute
-cy_Abs_RW: equ 6  | absolute read/write
-cy_AbsX: equ 4    | absolute X
-cy_AbsX2: equ 5   | absolute X (+)
-cy_AbsX_RW: equ 7 | absolute X read/write
-cy_AbsY: equ 4    | absolute Y
-cy_AbsY2: equ 5   | absolute X (+)
-cy_AbsY_RW: equ 7 | absolute Y read/write ( all inofficial )
-cy_ZP: equ 3      | zero page
-cy_ZP_RW: equ 5   | zero page read/write
-cy_ZPX: equ 4     | zero page X
-cy_ZPX_RW: equ 6  | zero page X read/write
-cy_ZPY: equ 4     | zero page X
-cy_Imm: equ 2     | immediate
-cy_FlagCS: equ 2  | flag clear/set
-cy_RegChg: equ 2  | register only manipulation
-cy_RegPH: equ 3   | push register to stack
-cy_RegPL: equ 4   | pull register from stack
-
   .long cy_BRK,cy_IndX,cy_CIM,cy_IndX_RW,cy_NOP3,cy_ZP,cy_ZP_RW,cy_ZP_RW
   .long cy_RegPH,cy_Imm,cy_RegChg,cy_Imm,cy_SKW,cy_Abs,cy_Abs_RW,cy_Abs_RW
   .long cy_Bcc,cy_IndY,cy_CIM,cy_IndY_RW,cy_NOP4,cy_ZPX,cy_ZPX_RW,cy_ZPX_RW
