@@ -221,7 +221,6 @@ X11 options
 -clip_height          Height of the clipping area
 -private_cmap         Use private colormap
 
--fps                  Show framerate
 -sio                  Show SIO monitor
 -x11bug               Enable debug code in atari_x11.c
 

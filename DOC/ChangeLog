@@ -1,3 +1,8 @@
+2008-05-21  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_x11.c: removed "-fps" support, use "-showspeed" instead
+* USAGE, atari800.man: updated wrt. removed "-fps"
+
+
 2008-05-20  Petr Stehlik  <pstehlik@sophics.cz>
 * .asm->.S: Devpac syntax of asm files converted to gcc one
 * gst2gcc: removed, no longer needed

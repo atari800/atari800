@@ -386,8 +386,8 @@ Set the height of the clipping-area
 \fB-private_cmap
 Use private colormap
 .TP
-\fB-fps
-Show framerate
+\fB-showspeed
+Show real speed compared to original Atari800
 .TP
 \fB-sio
 Show SIO monitor

@@ -129,7 +129,6 @@ static WindowSize windowsize = Large;
 
 enum {
 	MONITOR_NOTHING,
-	MONITOR_FPS,
 	MONITOR_SIO
 } x11_monitor = MONITOR_NOTHING;
 
@@ -209,8 +208,6 @@ static XRectangle rectangles[NRECTS];
 
 static int keyboard_consol = CONSOL_NONE;
 static int menu_consol = CONSOL_NONE;
-
-extern double fps;
 
 static int autorepeat = 1;
 static int last_focus = FocusOut;
@@ -1429,8 +1426,6 @@ void Atari_Initialise(int *argc, char *argv[])
 			clipping_height = atoi(argv[++i]);
 		else if (strcmp(argv[i], "-x11bug") == 0)
 			x11bug = TRUE;
-		else if (strcmp(argv[i], "-fps") == 0)
-			x11_monitor = MONITOR_FPS;
 		else if (strcmp(argv[i], "-sio") == 0)
 			x11_monitor = MONITOR_SIO;
 		else if (strcmp(argv[i], "-private_cmap") == 0)
@@ -1454,7 +1449,6 @@ void Atari_Initialise(int *argc, char *argv[])
 				printf("\t-clip_y <n>      Set top offset for clipping\n");
 				printf("\t-clip_height <n> Set window clip-height\n");
 				printf("\t-private_cmap    Use private colormap\n");
-				printf("\t-fps             Show framerate\n");
 				printf("\t-sio             Show SIO monitor\n");
 				printf("\t-keypad          Keypad mode\n");
 			}
@@ -2632,16 +2626,6 @@ void Atari_DisplayScreen(void)
 		}
 		else {
 			update_status_line = FALSE;
-		}
-		break;
-	case MONITOR_FPS:
-		if ((nframes % 50) == 0) {
-#ifdef XVIEW
-			sprintf(status_line, "%.2f FPS", fps);
-#else
-			sprintf(status_line, "%s - %.2f FPS", ATARI_TITLE, fps);
-#endif
-			update_status_line = TRUE;
 		}
 		break;
 	default:
