@@ -2984,7 +2984,7 @@ GETANYBYTE_ADC:
   bra.s  adcb
   .endm
 
-adc:                         | !!! put it where it's needed !!!
+adc:
   btst   #D_FLAGB,_regP
   bne.w  BCD_ADC
   bra.w  adcb
@@ -3139,7 +3139,7 @@ GETANYBYTE_SBC:
   bra.s  sbcb
   .endm
 
-sbc:                         | !!! put it where it's needed !!!
+sbc:
   btst   #D_FLAGB,_regP
   bne.w  BCD_SBC
   bra.w  sbcb
