@@ -48,11 +48,11 @@
   .globl _Atari800_Exit
   .globl _exit
   .globl _wsync_halt |CPU is stopped
-  .ifd NEW_CYCLE_EXACT
+ #ifdef NEW_CYCLE_EXACT
   .globl _delayed_wsync
   .globl _antic2cpu_ptr
   .globl _cur_screen_pos
-  .endif
+  #endif
   .globl _xpos
   .globl _xpos_limit
   .globl _regPC
@@ -63,16 +63,16 @@
   .globl _regY
   .globl _memory
   .globl _attrib
-  .ifd PROFILE
+ #ifdef PROFILE
   .globl _instruction_count
-  .endif
-  .ifd MONITOR_BREAK
+  #endif
+ #ifdef MONITOR_BREAK
   .globl _remember_PC
   .globl _remember_PC_curpos
-  .ifd NEW_CYCLE_EXACT
+ #ifdef NEW_CYCLE_EXACT
   .globl _remember_xpos
   .globl _remember_xpos_curpos
-  .endif
+  #endif
   .globl _remember_JMP
   .globl _remember_jmp_curpos
   .globl _ypos_break_addr
@@ -84,12 +84,12 @@
   .globl _break_here
   .globl _brkhere
   .globl _ret_nesting
-  .endif
-  .ifd CRASH_MENU
+  #endif
+ #ifdef CRASH_MENU
   .globl _crash_code
   .globl _crash_address
   .globl _crash_afterCIM
-  .endif
+  #endif
   .globl _IRQ
   .globl _NMI
   .globl _RTI
@@ -99,7 +99,7 @@
   .globl _CPU_INIT
   .globl _cycles |temporarily needed outside :)
 
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
 
 rem_pc_steps: equ 64  | has to be equal to REMEMBER_PC_STEPS
 rem_jmp_steps: equ 16  | has to be equal to REMEMBER_JMP_STEPS
@@ -124,7 +124,7 @@ remember_jmp_curpos:
 _remember_jmp_curpos:
   ds.l 1
 
-  .endif
+  #endif
 
   even
 
@@ -287,9 +287,9 @@ PutGTIA:
   move.l d1,-(a7)
   move.b d7,d1
   move.l d1,-(a7)
-  .ifd CYCLE_EXACT
+ #ifdef CYCLE_EXACT
   move.l CD,_xpos
-  .endif
+  #endif
   jsr    _GTIA_PutByte
   addq.l #8,a7
   rts
@@ -298,9 +298,9 @@ PutPOKEY:
   move.l d1,-(a7)
   move.b d7,d1
   move.l d1,-(a7)
-  .ifd CYCLE_EXACT
+ #ifdef CYCLE_EXACT
   move.l CD,_xpos
-  .endif
+  #endif
   jsr    _POKEY_PutByte
   addq.l #8,a7
   rts
@@ -425,7 +425,7 @@ EXE_PUTBYTE:
 
 RMW_GETBYTE:
   .macro
-  .ifd CYCLE_EXACT
+ #ifdef CYCLE_EXACT
   move.w d7,d0
   and.w  #0xef1f,d0
   cmp.w  #0xc01a,d0
@@ -442,16 +442,16 @@ MW_GETBYTE_normal_get:
 MW_GETBYTE_end_rmw_get:
   .else
   EXE_GETBYTE
-  .endif
+  #endif
   .endm
 
 _CPU_INIT:
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   moveq  #0,d0
   move.l d0,_remember_PC_curpos
   move.l d0,_remember_xpos_curpos
   move.l d0,_remember_jmp_curpos
-  .endif
+  #endif
   moveq  #1,d0     | set regS to page 1
   move.b d0,regS
   rts
@@ -695,9 +695,9 @@ _NMI:
   LoHi d1
   move.w d1,_regPC
   addq.l #7,_xpos
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   addq.l #1,_ret_nesting
-  .endif
+  #endif
   rts
 
 _GO: |cycles (d0)
@@ -723,7 +723,7 @@ _GO: |cycles (d0)
 |*/
 
   move.l  4(a7),d0
-  .ifd NEW_CYCLE_EXACT
+ #ifdef NEW_CYCLE_EXACT
   tst.b   _wsync_halt
   beq.s   NO_WS_HALT
   moveq.l #WSYNC_C-1,d1  | TEST : no -1 if bpl.s
@@ -750,7 +750,7 @@ GO_now_cmp:
   addq.l  #1,d1          | TEST : not necessary if bpl.s
   move.l  d1,_xpos
   clr.b   _wsync_halt
-  .endif
+  #endif
 NO_WS_HALT:
   move.l  d0,_xpos_limit |  needed for WSYNC store inside ANTIC
   movem.l d2-d7/a2-a6,-(a7)
@@ -783,9 +783,9 @@ NO_WS_HALT:
   add.l   memory_pointer,PC6502
   addq.l  #7,CD
   clr.b   _IRQ |clear interrupt.....
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   addq.l  #1,_ret_nesting
-  .endif
+  #endif
   bra     NEXTCHANGE_WITHOUT
 
 |/*
@@ -1082,7 +1082,7 @@ opcode_b2:
   subq.w #1,PC6502
   ConvertSTATUS_RegP_destroy d0
   UPDATE_GLOBAL_REGS
-  .ifd CRASH_MENU
+ #ifdef CRASH_MENU
   move.w PC6502,_crash_address
   addq.w #1,PC6502
   move.w PC6502,crash_afterCIM
@@ -1090,15 +1090,15 @@ opcode_b2:
   move.l _atari_screen,-(sp)
   jsr    _ui
   .else
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   moveq  #1,d0
   move.l d0,_break_cim
   .else
   Call_Atari800_Exit_true
-  .endif
+  #endif
   UPDATE_LOCAL_REGS
   ConvertRegP_STATUS d0
-  .endif
+  #endif
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_07: |/* ASO ab [unofficial - ASL then ORA with Acc] */
@@ -1721,14 +1721,14 @@ opcode_fa:
 | official opcodes
 
 opcode_00: |/* BRK */
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   tst.l  _brkhere
   beq.s  pcode_00_oc_00_norm
   move.b #1,_break_here
   jsr    go_monitor
   bra.w  NEXTCHANGE_WITHOUT
 pcode_00_oc_00_norm:
-  .endif
+  #endif
   addq.l #cy_BRK,CD
 | btst   #I_FLAGB,_regP
 | bne.w  NEXTCHANGE_WITHOUT
@@ -1754,9 +1754,9 @@ pcode_00_oc_00_norm:
   LoHi d7
   move.l d7,PC6502
   add.l  memory_pointer,PC6502
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   addq.l #1,_ret_nesting
-  .endif
+  #endif
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_08: |/* PHP */
@@ -1803,9 +1803,9 @@ opcode_28: |/* PLP */
   move.l d7,PC6502
   add.l  memory_pointer,PC6502
   addq.l #7,CD
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   addq.l #1,_ret_nesting
-  .endif
+  #endif
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_48: |/* PHA */
@@ -2278,9 +2278,9 @@ opcode_58: |/* CLI */
   add.l  memory_pointer,PC6502
   clr.b  _IRQ
   addq.l #7,CD
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   addq.l #1,_ret_nesting
-  .endif
+  #endif
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_78: |/* SEI */
@@ -2312,7 +2312,7 @@ JMP_C:
   .endm
 
 opcode_4c: |/* JMP abcd */
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   move.l PC6502,d7 |current pointer
   sub.l  memory_pointer,d7
   subq.l #1,d7
@@ -2325,12 +2325,12 @@ opcode_4c: |/* JMP abcd */
   moveq  #0,d0
 pcode_4c_point_rem_jmp:
   move.l d0,_remember_jmp_curpos
-  .endif
+  #endif
   addq.l #cy_JmpAbs,CD
   JMP_C
 
 opcode_6c: |/* JMP (abcd) */
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   move.l PC6502,d7 |current pointer
   sub.l  memory_pointer,d7
   subq.l #1,d7
@@ -2343,10 +2343,10 @@ opcode_6c: |/* JMP (abcd) */
   moveq  #0,d0
 pcode_6c_point_rem_jmp:
   move.l d0,_remember_jmp_curpos
-  .endif
+  #endif
   move.w (PC6502)+,d7
   LoHi d7
-  .ifd P65C02
+ #ifdef P65C02
   move.w (memory_pointer,d7.l),d7
   LoHi d7
   lea    (memory_pointer,d7.l),PC6502
@@ -2367,7 +2367,7 @@ pcode_6c_PROBLEM_FOUND:
   LoHi d7
   move.b (memory_pointer,d0.l),d7
   lea    (memory_pointer,d7.l),PC6502
-  .endif
+  #endif
   addq.l #cy_JmpInd,CD
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -2375,7 +2375,7 @@ opcode_20: |/* JSR abcd */
   addq.l #cy_Sub,CD
   move.l PC6502,d7 |current pointer
   sub.l  memory_pointer,d7
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   subq.l #1,d7
   lea    _remember_JMP,a0
   move.l _remember_jmp_curpos,d0
@@ -2388,7 +2388,7 @@ opcode_20: |/* JSR abcd */
 pcode_20_point_rem_jmp:
   move.l d0,_remember_jmp_curpos
   addq.l #1,_ret_nesting
-  .endif
+  #endif
   addq.l #1,d7 | return address
   moveq  #0,d0                    | PHW
   move.w regS,d0
@@ -2405,7 +2405,7 @@ opcode_60: |/* RTS */
   addq.l #cy_Sub,CD
   PLW d7,d0
   lea    1(memory_pointer,d7.l),PC6502
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   tst.b _break_ret
   beq.s pcode_60_mb_end
   tst.l _ret_nesting
@@ -2413,7 +2413,7 @@ opcode_60: |/* RTS */
   move.b #1,_break_step
 pcode_60_mb_end:
   subq.l #1,_ret_nesting
-  .endif
+  #endif
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_40: |/* RTI */
@@ -2435,7 +2435,7 @@ _RTI:
   addq.b #1,d0
   move.b d0,_regS
   lea    (memory_pointer,d7.l),PC6502
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   tst.b _break_ret
   beq.s RTI_mb_end
   tst.l _ret_nesting
@@ -2443,7 +2443,7 @@ _RTI:
   move.b #1,_break_step
 RTI_mb_end:
   subq.l #1,_ret_nesting
-  .endif
+  #endif
   tst.b  _IRQ           | CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
   move.b _regP,d7
@@ -2470,9 +2470,9 @@ RTI_mb_end:
   move.l d7,PC6502
   add.l  memory_pointer,PC6502
   addq.l #7,CD
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   addq.l #1,_ret_nesting
-  .endif
+  #endif
   bra.w  NEXTCHANGE_WITHOUT
 
 BIT_C_CONT:
@@ -2773,7 +2773,7 @@ opcode_d2: |/* ESCRTS #ab (JAM) - on Atari is here instruction CIM
   PLW d7,d0
   lea (memory_pointer,d7.l),PC6502
   addq.l #1,PC6502
-  .ifd MONITOR_BREAK
+ #ifdef MONITOR_BREAK
   tst.b _break_ret
   beq.s pcode_d2_mb_end
   tst.l _ret_nesting
@@ -2781,7 +2781,7 @@ opcode_d2: |/* ESCRTS #ab (JAM) - on Atari is here instruction CIM
   move.b #1,_break_step
 pcode_d2_mb_end:
   subq.l #1,_ret_nesting
-  .endif
+  #endif
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_f2: |/* ESC #ab (JAM) - on Atari is here instruction CIM
@@ -3388,8 +3388,8 @@ NEXTCHANGE_WITHOUT:
   cmp.l _xpos_limit,CD
   bge.s END_OF_CYCLE
 ****************************************
-  .ifd MONITOR_BREAK  |following block of code allows you to enter
-                     |a break address
+ #ifdef MONITOR_BREAK
+| following block of code allows you to enter a break address
   move.l _remember_PC_curpos,d0
   lea    _remember_PC,a0
   move.l PC6502,d7
@@ -3401,7 +3401,7 @@ NEXTCHANGE_WITHOUT:
   moveq  #0,d0
 EXTCHANGE_WITHOUT_point_rem_pc:
   move.l d0,_remember_PC_curpos
-  .ifd NEW_CYCLE_EXACT
+ #ifdef NEW_CYCLE_EXACT
   moveq   #0,d0
   move.b  _ypos,d0
   asl.w   #8,d0
@@ -3424,7 +3424,7 @@ EXTCHANGE_WITHOUT_calc_all:
   moveq  #0,d0
 EXTCHANGE_WITHOUT_point_rem_xpos:
   move.l d0,_remember_xpos_curpos
-  .endif
+  #endif
   cmp.w  _break_addr,d7 | break address reached ?
   beq.s  EXTCHANGE_WITHOUT_go_monitor
   move.l _ypos,d0    | !!! or EXTCHANGE_WITHOUT_w ?
@@ -3435,14 +3435,14 @@ EXTCHANGE_WITHOUT_point_rem_xpos:
 EXTCHANGE_WITHOUT_go_monitor:
   bsr    go_monitor  |on break monitor is invoked
 EXTCHANGE_WITHOUT_get_first:
-  .endif
+  #endif
 ****************************************
   moveq  #0,d7
   move.b (PC6502)+,d7
-  .ifd PROFILE
+ #ifdef PROFILE
   lea    _instruction_count,a0
   addq.l #1,(a0,d7.l*4)
-  .endif
+  #endif
 | move.w (OPMODE_TABLE,PC,d7.l*2),d0
 | jmp    (OPMODE_TABLE,d0.w)
   move.w (a3,d7.l*2),d0
