@@ -1,6 +1,7 @@
 2008-05-21  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_x11.c: removed "-fps" support, use "-showspeed" instead
 * USAGE, atari800.man: updated wrt. removed "-fps"
+* cpu_m68k.S: added fresh conversion of 5 years outdated cpu_m68k.asm
 
 
 2008-05-20  Petr Stehlik  <pstehlik@sophics.cz>
