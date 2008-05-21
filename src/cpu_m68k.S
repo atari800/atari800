@@ -157,7 +157,7 @@ IRQ:
 _IRQ: ds.b 1
       ds.b 1    | dummy
 
-  even
+  .even
 
 #define memory_pointer a5
 #define attrib_pointer a4
@@ -187,7 +187,7 @@ _IRQ: ds.b 1
 | regP=processor flags; regPC=PC; regA=A; regX=X; regY=Y
   .macro UPDATE_GLOBAL_REGS
   sub.l   memory_pointer,PC6502
-  movem.w d0/d2-d4/a2,regP | d0->regP, d2-d4 (A,X,Y) a2 (regPC)
+  movem.w d0/d2-d4/a2,regP // d0->regP, d2-d4 (A,X,Y) a2 (regPC)
   .endm
 
 | PC=regPC; A=regA; X=regX; Y=regY
@@ -582,7 +582,7 @@ _CPU_INIT:
   tst.b  CFLAG
   beq.s  onvertSTATUS_RegP_SETC\@
   addq.b #1,\p1
-onvertSTATUS_RegP_SETC:\@
+onvertSTATUS_RegP_SETC\@
   tst.w  NFLAG
   bpl.s  onvertSTATUS_RegP_SETN\@
 | ori.b  #N_FLAG,\p1
@@ -623,7 +623,7 @@ onvertSTATUS_RegP_destroy_SETV:\@
   sne    VFLAG
   btst   #C_FLAGB,\p1
   sne    CFLAG
-  move.b \1,NFLAG
+  move.b \p1,NFLAG
   lsl.w  #8,NFLAG  | sets NFLAG and clears ZFLAG
   btst   #Z_FLAGB,\p1
   seq    ZFLAG
@@ -819,9 +819,9 @@ NO_WS_HALT:
   .macro NCYCLES_XY p1
   cmp.b  \p1,d7 | if ( (UBYTE) addr < X,Y ) ncycles++;
 | bpl.s  CYCLES_XY_NCY_XY_NC\@
-  bcc.s  CYCLES_XY_NCY_XY_NC\@             | !!!
+  bcc.s  CYCLES_XY_NCY_XY_NC\@
   addq.l #1,CD
-CYCLES_XY_NCY_XY_NC:\@:
+CYCLES_XY_NCY_XY_NC\@:
   .endm
 
   .macro ABSOLUTE
@@ -1121,7 +1121,7 @@ opcode_17: |/* ASO ab,x [unofficial - ASL then ORA with Acc] */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-  .macro ASO_C_CONT   |/* [unofficial - ASL Mem, then ORA with A] */
+  .macro ASO_C_CONT   /* [unofficial - ASL Mem, then ORA with A] */
   move.b (attrib_pointer,d7.l),d0
   bne.s  ASO_Getbyte_ROMHW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1174,7 +1174,7 @@ ASO_NOW_ORA:
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-opcode_27: |/* RLA ab [unofficial - ROL Mem, then AND with A] */
+opcode_27: /* RLA ab [unofficial - ROL Mem, then AND with A] */
   addq.l #cy_ZP_RW,CD
   ZPAGE
   move.b (memory_pointer,d7.l),d0 | GETZPBYTE
@@ -1184,7 +1184,7 @@ opcode_27: |/* RLA ab [unofficial - ROL Mem, then AND with A] */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-opcode_37: |/* RLA ab,x [unofficial - ROL Mem, then AND with A] */
+opcode_37: /* RLA ab,x [unofficial - ROL Mem, then AND with A] */
   addq.l #cy_ZPX_RW,CD
   ZPAGE_X
   move.b (memory_pointer,d7.l),d0 | GETZPBYTE
@@ -1194,7 +1194,7 @@ opcode_37: |/* RLA ab,x [unofficial - ROL Mem, then AND with A] */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-  .macro RLA_C_CONT   |/* [unofficial - ROL Mem, then AND with A] */
+  .macro RLA_C_CONT   /* [unofficial - ROL Mem, then AND with A] */
   move.b (attrib_pointer,d7.l),d0
   bne.w  RLA_Getbyte_ROMHW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1267,7 +1267,7 @@ opcode_57: |/* LSE ab,x [unofficial - LSR then EOR result with A] */
   move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
-  .macro LSE_C_CONT   |/* [unofficial - LSR Mem then EOR with A] */
+  .macro LSE_C_CONT   /* [unofficial - LSR Mem then EOR with A] */
   move.b (attrib_pointer,d7.l),d0
   bne.s  LSE_Getbyte_ROMHW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1507,7 +1507,7 @@ opcode_d7: |/* DCM ab,x [unofficial - DEC Mem then CMP with Acc] */
   move.b d0,(memory_pointer,d7.l)
   bra.w  COMPARE_A
 
-  .macro DCM_C_CONT   |/* [unofficial - DEC Mem then CMP with Acc] */
+  .macro DCM_C_CONT   /* [unofficial - DEC Mem then CMP with Acc] */
   tst.b  (attrib_pointer,d7.l)
   bne.s  DCM_ROM_HW
   move.b (memory_pointer,d7.l),d0 |get byte
@@ -1580,7 +1580,7 @@ opcode_f7: |/* INS ab,x [unofficial] - INC Mem then SBC with Acc] */
   move.b d0,(memory_pointer,d7.l)
   bra sbc
 
-  .macro INS_C_CONT   |/* [unofficial - INC Mem then SBC with Acc] */
+  .macro INS_C_CONT   /* [unofficial - INC Mem then SBC with Acc] */
   tst.b  (attrib_pointer,d7.l)
   bne.s  INS_ROM_HW
   move.b (memory_pointer,d7.l),d0 |get byte
