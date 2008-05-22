@@ -1,3 +1,13 @@
+2008-05-22  Petr Stehlik  <pstehlik@sophics.cz>
+* cpu_m68k.asm: made linkable (missing cim_encountered and rts_handler).
+  Surprisingly it is working (ATARI BASIC READY) eventhough it is 5 years
+  outdated and needs many changes to be in sync with cpu.c again.
+
+* cpu_m68k.S: made compilable and linkable. It even sort of works but
+  fails before reaching the ATARI BASIC READY prompt :-( The conversion
+  is still not correct but debugging it is hard...
+
+
 2008-05-21  Petr Stehlik  <pstehlik@sophics.cz>
 * atari_x11.c: removed "-fps" support, use "-showspeed" instead
 * USAGE, atari800.man: updated wrt. removed "-fps"
