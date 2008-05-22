@@ -202,9 +202,9 @@ _IRQ: ds.b 1
   add.l   d7,PC6502
   lea     OPMODE_TABLE,a3
   btst    #D_FLAGB,_regP
-  beq.s   PDATE_LOCAL_REGS_upd_end
+  beq.s   PDATE_LOCAL_REGS_upd_end\@
   lea     OPMODE_TABLE_D,a3
-PDATE_LOCAL_REGS_upd_end:
+PDATE_LOCAL_REGS_upd_end\@:
   .endm
 
 _Local_GetByte:
@@ -582,20 +582,20 @@ _CPU_INIT:
   tst.b  CFLAG
   beq.s  onvertSTATUS_RegP_SETC\@
   addq.b #1,\p1
-onvertSTATUS_RegP_SETC\@
+onvertSTATUS_RegP_SETC\@:
   tst.w  NFLAG
   bpl.s  onvertSTATUS_RegP_SETN\@
 | ori.b  #N_FLAG,\p1
   tas    \p1
-onvertSTATUS_RegP_SETN:\@
+onvertSTATUS_RegP_SETN\@:
   tst.b  ZFLAG
   bne.s  onvertSTATUS_RegP_SETZ\@   | beware! reverse compare is ok
   addq.b #2,\p1
-onvertSTATUS_RegP_SETZ:\@
+onvertSTATUS_RegP_SETZ\@:
   tst.b  VFLAG
   bpl.s  onvertSTATUS_RegP_SETV\@        | !!!
   ori.b  #V_FLAG,\p1
-onvertSTATUS_RegP_SETV:\@
+onvertSTATUS_RegP_SETV\@:
   .endm
 
   .macro ConvertSTATUS_RegP_destroy p1
@@ -607,15 +607,15 @@ onvertSTATUS_RegP_SETV:\@
   bpl.s  onvertSTATUS_RegP_destroy_SETN\@
 | ori.b  #N_FLAG,\p1
   tas    \p1
-onvertSTATUS_RegP_destroy_SETN:\@
+onvertSTATUS_RegP_destroy_SETN\@:
   tst.b  ZFLAG
   bne.s  onvertSTATUS_RegP_destroy_SETZ\@   | beware! reverse compare is ok
   addq.b #2,\p1
-onvertSTATUS_RegP_destroy_SETZ:\@
+onvertSTATUS_RegP_destroy_SETZ\@:
   tst.b  VFLAG
   bpl.s  onvertSTATUS_RegP_destroy_SETV\@        | !!!
   ori.b  #V_FLAG,\p1
-onvertSTATUS_RegP_destroy_SETV:\@
+onvertSTATUS_RegP_destroy_SETV\@:
   .endm
 
   .macro ConvertRegP_STATUS p1
@@ -649,7 +649,7 @@ onvertSTATUS_RegP_destroy_SETV:\@
   bne.s  all_Atari800_Exit_true_GOON\@
   clr.l  -(a7)
   jsr    _exit
-all_Atari800_Exit_true_GOON:\@
+all_Atari800_Exit_true_GOON\@:
   .endm
 
   .macro PLW p1 p2
@@ -2536,7 +2536,7 @@ opcode_95: |/* STA ab,x */
   bne.s  TOREANYBYTE_GO_PUTBYTE\@
   move.b \p1,(memory_pointer,d7.l)
   bra.w  NEXTCHANGE_WITHOUT
-TOREANYBYTE_GO_PUTBYTE:\@:
+TOREANYBYTE_GO_PUTBYTE\@:
   move.b \p1,d0
   bra.w  A800PUTB
   .endm
@@ -3068,7 +3068,7 @@ BCD_ADC:
   add.b  CFLAG,CFLAG
   abcd   d0,ZFLAG  | low nibble BCD add
   move.b A,d0
-  moveq  #0xf0,d7
+  move.b #0xf0,d7  /// PS! bylo moveq, ale pry operans mismatch
   and.b  d7,d0     | high nibble Add
   add.b  d0,ZFLAG
   move.w a0,d0
