@@ -99,6 +99,8 @@
   xdef _CPUPUT
   xdef _CPU_INIT
   xdef _cycles ;temporarily needed outside :)
+  xdef _cim_encountered
+  xdef _rts_handler
 
   ifd MONITOR_BREAK
 
@@ -157,6 +159,12 @@ _regS  ds.b 1   ; stack
 IRQ
 _IRQ  ds.b 1
       ds.b 1    ; dummy
+
+_cim_encountered
+      ds.b 1
+
+_rts_handler
+      ds.l 1
 
   even
 
