@@ -516,7 +516,7 @@ HIxTable:
 MW_GETBYTE_normal_get:
   EXE_GETBYTE
 MW_GETBYTE_end_rmw_get:
-  .else
+ #else
   EXE_GETBYTE
   #endif
   .endm
@@ -766,7 +766,7 @@ GO_now_cmp:
   move.l  d1,_xpos
   clr.b   _wsync_halt
   clr.l   _delayed_wsync
-  .else
+ #else
   tst.b   _wsync_halt
   beq.s   NO_WS_HALT
   moveq.l #WSYNC_C-1,d1  | TEST : no -1 if bpl.s
@@ -1097,11 +1097,11 @@ opcode_b2:
   move.l d7,_crash_code
   move.l _atari_screen,-(sp)
   jsr    _ui
-  .else
+ #else
  #ifdef MONITOR_BREAK
   moveq  #1,d0
   move.l d0,_break_cim
-  .else
+ #else
   Call_Atari800_Exit_true
   #endif
   UPDATE_LOCAL_REGS
@@ -2342,7 +2342,7 @@ pcode_6c_point_rem_jmp:
   move.w (memory_pointer,d7.l),d7
   LoHi d7
   lea    (memory_pointer,d7.l),PC6502
-  .else
+ #else
   |/* original 6502 had a bug in jmp (addr) when addr crossed page boundary */
   cmp.b  #0xff,d7
   beq.s  pcode_6c_PROBLEM_FOUND |when problematic jump is found
