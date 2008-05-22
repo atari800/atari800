@@ -98,6 +98,8 @@
   .globl _CPUPUT
   .globl _CPU_INIT
   .globl _cycles |temporarily needed outside :)
+  .globl _cim_encountered
+  .globl _rts_handler
 
  #ifdef MONITOR_BREAK
 
@@ -157,6 +159,12 @@ IRQ:
 _IRQ: ds.b 1
       ds.b 1    | dummy
 
+_cim_encountered:
+	ds.b	1
+
+_rts_handler:
+	ds.l	1
+
   .even
 
 #define memory_pointer a5
@@ -175,6 +183,79 @@ _IRQ: ds.b 1
 
 |d0  contains usually address where we are working or temporary value
 |d7  contains is a working register or address
+
+|these are bit in MC68000 CCR register
+#define NB68 3
+#define EB68 4 // X
+#define ZB68 2
+#define OB68 1
+#define CB68 0
+
+#define WSYNC_C 106
+
+#define N_FLAG 0x80
+#define N_FLAGN 0x7f
+#define N_FLAGB 7
+#define V_FLAG 0x40
+#define V_FLAGN 0xbf
+#define V_FLAGB 6
+#define G_FLAG 0x20
+#define G_FLAGB 5
+#define B_FLAG 0x10
+#define B_FLAGN 0xef
+#define B_FLAGB 4
+#define D_FLAG 0x08
+#define D_FLAGN 0xf7
+#define D_FLAGB 3
+#define I_FLAG 0x04
+#define I_FLAGN 0xfb
+#define I_FLAGB 2
+#define Z_FLAG 0x02
+#define Z_FLAGN 0xfd
+#define Z_FLAGB 1
+#define C_FLAG 0x01
+#define C_FLAGN 0xfe
+#define C_FLAGB 0
+#define VCZN_FLAGS 0xc3
+#define VCZN_FLAGSN 0x3c
+
+/* cycles per instruction */
+#define cy_CIM  2
+#define cy_NOP  2
+#define cy_NOP2  2
+#define cy_NOP3  3
+#define cy_NOP4  4
+#define cy_SKW  4
+#define cy_BRK  7
+#define cy_Sub  6
+#define cy_Bcc  2
+#define cy_Bcc1  3
+#define cy_Bcc2  4
+#define cy_JmpAbs  3
+#define cy_JmpInd  5
+#define cy_IndX  6    // indirect X
+#define cy_IndY  5    // indirect Y
+#define cy_IndY2  6   // indirect Y (+)
+#define cy_IndX_RW  8 // indirect X read/write ( all inofficial )
+#define cy_IndY_RW  8 // indirect Y read/write ( all inofficial )
+#define cy_Abs  4     // absolute
+#define cy_Abs_RW  6  // absolute read/write
+#define cy_AbsX  4    // absolute X
+#define cy_AbsX2  5   // absolute X (+)
+#define cy_AbsX_RW  7 // absolute X read/write
+#define cy_AbsY  4    // absolute Y
+#define cy_AbsY2  5   // absolute X (+)
+#define cy_AbsY_RW  7 // absolute Y read/write ( all inofficial )
+#define cy_ZP  3      // zero page
+#define cy_ZP_RW  5   // zero page read/write
+#define cy_ZPX  4     // zero page X
+#define cy_ZPX_RW  6  // zero page X read/write
+#define cy_ZPY  4     // zero page X
+#define cy_Imm  2     // immediate
+#define cy_FlagCS  2  // flag clear/set
+#define cy_RegChg  2  // register only manipulation
+#define cy_RegPH  3   // push register to stack
+#define cy_RegPL  4   // pull register from stack
 
   .macro LoHi p1    |change order of lo and hi byte (address)
       ror.w #8,\p1
@@ -450,79 +531,6 @@ _CPU_INIT:
   moveq  #1,d0     | set regS to page 1
   move.b d0,regS
   rts
-
-|these are bit in MC68000 CCR register
-#define NB68 3
-#define EB68 4 // X
-#define ZB68 2
-#define OB68 1
-#define CB68 0
-
-#define WSYNC_C 106
-
-#define N_FLAG 0x80
-#define N_FLAGN 0x7f
-#define N_FLAGB 7
-#define V_FLAG 0x40
-#define V_FLAGN 0xbf
-#define V_FLAGB 6
-#define G_FLAG 0x20
-#define G_FLAGB 5
-#define B_FLAG 0x10
-#define B_FLAGN 0xef
-#define B_FLAGB 4
-#define D_FLAG 0x08
-#define D_FLAGN 0xf7
-#define D_FLAGB 3
-#define I_FLAG 0x04
-#define I_FLAGN 0xfb
-#define I_FLAGB 2
-#define Z_FLAG 0x02
-#define Z_FLAGN 0xfd
-#define Z_FLAGB 1
-#define C_FLAG 0x01
-#define C_FLAGN 0xfe
-#define C_FLAGB 0
-#define VCZN_FLAGS 0xc3
-#define VCZN_FLAGSN 0x3c
-
-/* cycles per instruction */
-#define cy_CIM  2
-#define cy_NOP  2
-#define cy_NOP2  2
-#define cy_NOP3  3
-#define cy_NOP4  4
-#define cy_SKW  4
-#define cy_BRK  7
-#define cy_Sub  6
-#define cy_Bcc  2
-#define cy_Bcc1  3
-#define cy_Bcc2  4
-#define cy_JmpAbs  3
-#define cy_JmpInd  5
-#define cy_IndX  6    // indirect X
-#define cy_IndY  5    // indirect Y
-#define cy_IndY2  6   // indirect Y (+)
-#define cy_IndX_RW  8 // indirect X read/write ( all inofficial )
-#define cy_IndY_RW  8 // indirect Y read/write ( all inofficial )
-#define cy_Abs  4     // absolute
-#define cy_Abs_RW  6  // absolute read/write
-#define cy_AbsX  4    // absolute X
-#define cy_AbsX2  5   // absolute X (+)
-#define cy_AbsX_RW  7 // absolute X read/write
-#define cy_AbsY  4    // absolute Y
-#define cy_AbsY2  5   // absolute X (+)
-#define cy_AbsY_RW  7 // absolute Y read/write ( all inofficial )
-#define cy_ZP  3      // zero page
-#define cy_ZP_RW  5   // zero page read/write
-#define cy_ZPX  4     // zero page X
-#define cy_ZPX_RW  6  // zero page X read/write
-#define cy_ZPY  4     // zero page X
-#define cy_Imm  2     // immediate
-#define cy_FlagCS  2  // flag clear/set
-#define cy_RegChg  2  // register only manipulation
-#define cy_RegPH  3   // push register to stack
-#define cy_RegPL  4   // pull register from stack
 
   .macro SetI
   ori.b  #I_FLAG,_regP
