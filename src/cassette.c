@@ -57,7 +57,8 @@ int cassette_issavebuffer = FALSE;
 int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
 int cassette_putdelay = 0;	/* in ms, delay since last putbyte */
 int cassette_motor = 0;
-int cassette_baudrate = 600;	/* provisional: 600 baud */
+int cassette_baudrate = 600;	
+int cassette_baudblock[MAX_BLOCKS];
 
 int hold_start_on_reboot = 0;
 int hold_start = 0;
@@ -163,17 +164,26 @@ int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *
 
 		/* count number of blocks */
 		blocks = 0;
+		cassette_baudblock[0]=600;
 		do {
 			/* chunk header is always 8 bytes */
 			if (fread(&header, 1, 8, f) != 8)
 				break;
-			if (header.identifier[0] == 'd'
+			if (header.identifier[0] == 'b'
+			 && header.identifier[1] == 'a'
+			 && header.identifier[2] == 'u'
+			 && header.identifier[3] == 'd') {
+				cassette_baudrate=header.aux_lo + (header.aux_hi << 8);
+			}
+			else if (header.identifier[0] == 'd'
 			 && header.identifier[1] == 'a'
 			 && header.identifier[2] == 't'
 			 && header.identifier[3] == 'a') {
 				blocks++;
-				if (fp)
+				if (fp) {
 					cassette_block_offset[blocks] = ftell(f) - 4;
+					cassette_baudblock[blocks] = cassette_baudrate;
+				}
 			}
 			length = header.length_lo + (header.length_hi << 8);
 			/* skip possibly present data block */
@@ -266,6 +276,7 @@ int CASSETTE_Insert(const char *filename)
 	cassette_gapdelay = 0;
 	eof_of_tape = 0;
 	cassette_savefile = FALSE;
+	cassette_baudrate = 600;
 	return CASSETTE_CheckFile(filename, &cassette_file, cassette_description,
 		 &cassette_max_block, &cassette_isCAS);
 }
@@ -306,9 +317,8 @@ static UWORD ReadRecord_SIO(void)
 			/* add gaplength */
 			filegaptimes += header.aux_lo + (header.aux_hi << 8);
 			/* add time used by the data themselves
-			   atm, assumes a baud rate of 600 (a byte is encoded
-			   into 10 bits -> 60 bytes per second) */
-			filegaptimes += length * 1000 / 60;
+			   a byte is encoded into 10 bits */
+			filegaptimes += length * 10 * 1000 / cassette_baudblock[cassette_current_block];
 
 			fread(&cassette_buffer[0], 1, length, cassette_file);
 			cassette_current_block++;
@@ -464,7 +474,8 @@ static UWORD ReadRecord_POKEY(void)
 			cassette_nextirqevent = cassette_elapsedtime +
 				MSToScanLines(
 				header.aux_lo + (header.aux_hi << 8)
-				+ 10 * 1000 / cassette_baudrate);
+				+ 10 * 1000 / cassette_baudblock[
+				cassette_current_block]);
 			/* read block into buffer */
 			fread(&cassette_buffer[0], 1, length, cassette_file);
 			cassette_max_blockbytes = length;
@@ -505,12 +516,12 @@ static UWORD ReadRecord_POKEY(void)
 			/* on first block, length includes a leader */
 			cassette_nextirqevent = cassette_elapsedtime +
 				MSToScanLines(19200
-				+ 10 * 1000 / cassette_baudrate);
+				+ 10 * 1000 / 600); /* always 600 baud */
 		}
 		else {
 			cassette_nextirqevent = cassette_elapsedtime +
 				MSToScanLines(260
-				+ 10 * 1000 / cassette_baudrate);
+				+ 10 * 1000 / 600); /* always 600 baud */
 		}
 		cassette_max_blockbytes = length;
 		cassette_current_blockbyte = 0;
@@ -528,7 +539,8 @@ int SetNextByteTime_POKEY(int adjust)
 	/* if there are still bytes in the buffer, take next byte */
 	if (cassette_current_blockbyte < cassette_max_blockbytes) {
 		cassette_nextirqevent = cassette_elapsedtime + adjust
-		+ MSToScanLines(10 * 1000 / cassette_baudrate);
+			+ MSToScanLines(10 * 1000 / (cassette_isCAS?cassette_baudblock[
+			cassette_current_block-1]:600));
 		return 0;
 	}
 
@@ -567,9 +579,12 @@ int CASSETTE_IOLineStatus(void)
 
 	/* exam rate; if elapsed time > nextirq - duration of one byte */
 	if (cassette_elapsedtime >
-		(cassette_nextirqevent - 10 * 50 * 312 / cassette_baudrate + 1)) {
+		(cassette_nextirqevent - 10 * 50 * 312 / 
+		(cassette_isCAS?cassette_baudblock[cassette_current_block-1]:
+		600) + 1)) {
 		bit = (cassette_nextirqevent - cassette_elapsedtime)
-			/ (50 * 312 / cassette_baudrate);
+			/ (50 * 312 / (cassette_isCAS?cassette_baudblock[
+			cassette_current_block-1]:600));
 	}
 	else {
 		bit = 0;
@@ -613,7 +628,8 @@ int CASSETTE_GetInputIRQDelay(void)
 		timespan = cassette_nextirqevent - cassette_elapsedtime;
 	}
 	if (timespan < 40) {
-		timespan += ((312 * 50 - 1) / cassette_baudrate) * 10;
+		timespan += ((312 * 50 - 1) / (cassette_isCAS?cassette_baudblock[
+			cassette_current_block-1]:600)) * 10;
 	}
 
 	/* if still negative, return "failed" */

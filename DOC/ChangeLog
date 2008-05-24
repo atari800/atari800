@@ -1,3 +1,7 @@
+2008-05-24  Achim Haertel  <achim.haertel@e-technik.tu-chemnitz.de>
+* cassette.c: implemented loading with variable baud rate
+
+
 2008-05-22  Petr Stehlik  <pstehlik@sophics.cz>
 * cpu_m68k.asm: made linkable (missing cim_encountered and rts_handler).
   Surprisingly it is working (ATARI BASIC READY) eventhough it is 5 years
