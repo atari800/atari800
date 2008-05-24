@@ -310,7 +310,7 @@ void Screen_DrawAtariSpeed(double cur_time)
 		static int last_updated = 0;
 		static double last_time = 0;
 		if ((cur_time - last_time) >= 0.5) {
-			percent_display = 100 * (nframes - last_updated) / (cur_time - last_time) / (tv_mode == TV_PAL ? 50 : 60);
+			percent_display = (int) (100 * (nframes - last_updated) / (cur_time - last_time) / (tv_mode == TV_PAL ? 50 : 60));
 			last_updated = nframes;
 			last_time = cur_time;
 		}
