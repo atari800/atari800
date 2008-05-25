@@ -582,6 +582,12 @@ void SIO(void)
 {
 	int sector = dGetWordAligned(0x30a);
 	UBYTE unit = (dGetByte(0x300) + dGetByte(0x301) + 0xff ) - 0x31;
+	UBYTE result = 0x00;
+	UWORD data = dGetWordAligned(0x304);
+	int length = dGetWordAligned(0x308);
+	int realsize = 0;
+	int cmd = dGetByte(0x302);
+
 	if ((unsigned int)dGetByte(0x300) + (unsigned int)dGetByte(0x301) > 0xff) {
 		/* carry */
 		unit++;
@@ -590,12 +596,6 @@ void SIO(void)
 	/* XL OS: E99D: LDA $0300 ADC $0301 ADC #$FF STA 023A */
 	/* Disk 1 is ASCII '1' = 0x31 etc */
 	/* Disk 1 -> unit = 0 */
-	UBYTE result = 0x00;
-	UWORD data = dGetWordAligned(0x304);
-	int length = dGetWordAligned(0x308);
-	int realsize = 0;
-	int cmd = dGetByte(0x302);
-
 	if (dGetByte(0x300) != 0x60 && unit < MAX_DRIVES) {	/* UBYTE range ! */
 #ifdef DEBUG
 		Aprint("SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",

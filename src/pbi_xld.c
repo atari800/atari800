@@ -363,8 +363,8 @@ static void PIO_PutByte(int byte)
 /* Get a byte from the floppy to the parallel bus. */
 static int PIO_GetByte(void)
 {
-	D(printf("PIO_GetByte TransferStatus:%d\n",TransferStatus));
 	int byte = 0;
+	D(printf("PIO_GetByte TransferStatus:%d\n",TransferStatus));
 
 	switch (TransferStatus) {
 	case PIO_StatusRead:
@@ -672,6 +672,8 @@ static int samples_per_frame;
 /* called from Pokey_sound_init */
 void PBI_XLD_V_Init(int playback_freq, int num_pokeys, int b16)
 {
+	static struct VOTRAXSC01interface vi;
+	int temp_votrax_buffer_size;
 	if (!xld_v_enabled) return;
 	bit16 = b16;
 	dsprate = playback_freq;
@@ -679,13 +681,12 @@ void PBI_XLD_V_Init(int playback_freq, int num_pokeys, int b16)
 	if (num_pokeys != 1 && num_pokeys != 2) {
 		Aprint("PBI_XLD_V_Init: cannot handle num_pokeys=%d", num_pokeys);
 	}
-	static struct VOTRAXSC01interface vi;
 	vi.num = 1;
 	vi.BusyCallback[0] = votrax_busy_callback_async;
 	VOTRAXSC01_sh_start((void *)&vi);
 	samples_per_frame = dsprate/(tv_mode == TV_PAL ? 50 : 60);
 	ratio = (double)VOTRAX_RATE/(double)dsprate;
-	int temp_votrax_buffer_size = (int)(VOTRAX_BLOCK_SIZE*ratio + 10); /* +10 .. little extra? */
+	temp_votrax_buffer_size = (int)(VOTRAX_BLOCK_SIZE*ratio + 10); /* +10 .. little extra? */
 	temp_votrax_buffer = Util_malloc(temp_votrax_buffer_size*sizeof(SWORD));
 	votrax_buffer = Util_malloc(VOTRAX_BLOCK_SIZE*sizeof(SWORD));
 }
@@ -698,6 +699,10 @@ void votrax_process(SWORD *votrax_buffer, int len, SWORD *temp_votrax_buffer)
 	static double startpos;
 	static int have;
 	int max_left_sample_index = (int)(startpos + (double)(len - 1)*ratio);
+	int pos = 0;
+	double fraction = 0;
+	int i;
+	int floor_next_pos;
 
 	if (have == 2) {
 	    temp_votrax_buffer[0] = last_sample;
@@ -716,18 +721,18 @@ void votrax_process(SWORD *votrax_buffer, int len, SWORD *temp_votrax_buffer)
 		Votrax_Update(0, temp_votrax_buffer, max_left_sample_index + 1 + 1);
 	}
 
-	int pos = 0;
-	double fraction = 0;
-	int i;
-	for(i = 0; i < len; i++){
+	for (i = 0; i < len; i++) {
+		SWORD left_sample;
+		SWORD right_sample;
+		SWORD interp_sample;
 		pos = (int)(startpos + (double)i*ratio);
 		fraction = startpos + (double)i*ratio - (double)pos;
-		SWORD left_sample = temp_votrax_buffer[pos];
-		SWORD right_sample = temp_votrax_buffer[pos+1];
-		SWORD interp_sample = (int)(left_sample + fraction*(double)(right_sample-left_sample));
+		left_sample = temp_votrax_buffer[pos];
+		right_sample = temp_votrax_buffer[pos+1];
+		interp_sample = (int)(left_sample + fraction*(double)(right_sample-left_sample));
 		votrax_buffer[i] = interp_sample;
 	}
-	int floor_next_pos = (int)(startpos + (double)len*ratio);
+	floor_next_pos = (int)(startpos + (double)len*ratio);
 	startpos = (startpos + (double)len*ratio) - (double)floor_next_pos;
 	if (floor_next_pos == max_left_sample_index)
 	{ 
@@ -820,7 +825,7 @@ void PBI_XLD_V_Process(void *sndbuffer, int sndn)
 		votrax_process(votrax_buffer, amount, temp_votrax_buffer);
 		if (bit16) mix(sndbuffer, votrax_buffer, amount, 128/4);
 		else mix8(sndbuffer, votrax_buffer, amount, 128/4);
-		sndbuffer += VOTRAX_BLOCK_SIZE*(bit16 ? 2 : 1)*(stereo ? 2: 1);
+		sndbuffer = (char *) sndbuffer + VOTRAX_BLOCK_SIZE*(bit16 ? 2 : 1)*(stereo ? 2: 1);
 		sndn -= VOTRAX_BLOCK_SIZE;
 	}
 }
