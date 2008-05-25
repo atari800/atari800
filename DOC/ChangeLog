@@ -1,3 +1,9 @@
+2008-05-25  Piotr Fusik  <fox@scene.pl>
+* win32/msc/Makefile: added votrax and pbi_xld
+
+* sio.c, pbi_xld.c: made compilable with VC2005
+
+
 2008-05-25  Perry McFarlane  <perry_m@fastmail.fm>
 * votrax.[ch] vtxsmpls.inc pbi.[ch] pbi_xld.[ch] pbi_mio.[ch] pbi_bb.[ch]
 pbi_scsi.[ch] sio.[ch] atari.c configure.ac atari_sdl.c
