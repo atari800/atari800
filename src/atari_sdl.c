@@ -578,6 +578,7 @@ int Atari_Keyboard(void)
 	static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
  	static int lastuni = 0;
 	int shiftctrl = 0;
+	SDL_Event event;
 
 	/* Very ugly fix for SDL CAPSLOCK brokenness.  This will let the user
 	 * press CAPSLOCK and get a brief keypress on the Atari but it is not
@@ -588,7 +589,6 @@ int Atari_Keyboard(void)
 	   	key_pressed = 0;
  		lastuni = 0;
 	}
-	SDL_Event event;
 	if (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_KEYDOWN:
@@ -1510,7 +1510,7 @@ int Atari_Exit(int run_monitor)
 
 void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLinesPct)
 {
-    Uint32* pBuf = (Uint32*)(pBuffer+pitch);
+    Uint32* pBuf = (Uint32*)(pBuffer)+pitch/sizeof(Uint32);
 	Uint32* sBuf = (Uint32*)(pBuffer);
     int w, h;
 	static int prev_scanLinesPct;
@@ -1562,9 +1562,9 @@ void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLines
 /* Modified version of the above, which uses interpolation (slower but better)*/
 void scanLines_16_interp(void* pBuffer, int width, int height, int pitch, int scanLinesPct)
 {
-    Uint32* pBuf = (Uint32*)(pBuffer+pitch);
+    Uint32* pBuf = (Uint32*)(pBuffer)+pitch/sizeof(Uint32);
 	Uint32* sBuf = (Uint32*)(pBuffer);
-	Uint32* tBuf = (Uint32*)(pBuffer+pitch*2);
+	Uint32* tBuf = (Uint32*)(pBuffer)+pitch*2/sizeof(Uint32);
     int w, h;
 	static int prev_scanLinesPct;
 

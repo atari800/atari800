@@ -42,8 +42,8 @@
 #define MODEM_MASK (1 << MODEM_PBI_NUM)
 #define VOICE_MASK (1 << VOICE_PBI_NUM)
 
-static char *voicerom;
-static char *diskrom;
+static UBYTE *voicerom;
+static UBYTE *diskrom;
 static char xld_d_rom_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 static char xld_v_rom_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 

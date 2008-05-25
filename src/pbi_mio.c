@@ -127,9 +127,12 @@ UBYTE PBI_MIO_D1_GetByte(UWORD addr)
 /* $D1xx */
 void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
 {
-	addr &= 0xffe3; /* 7 mirrors */
+
 	int old_mio_ram_bank_offset = mio_ram_bank_offset;
 	int old_mio_ram_enabled = mio_ram_enabled;
+	int offset_changed;
+	int ram_enabled_changed;
+	addr &= 0xffe3; /* 7 mirrors */
 	if (addr == 0xd1e0) {
 		/* ram bank A15-A8 */
 		mio_ram_bank_offset &= 0xf0000;
@@ -169,8 +172,8 @@ void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
 		}
 		
 	}
-	int offset_changed = (old_mio_ram_bank_offset != mio_ram_bank_offset);
-	int ram_enabled_changed = (old_mio_ram_enabled != mio_ram_enabled);
+	offset_changed = (old_mio_ram_bank_offset != mio_ram_bank_offset);
+	ram_enabled_changed = (old_mio_ram_enabled != mio_ram_enabled);
 	if (mio_ram_enabled && ram_enabled_changed) {
 		/* Copy new page from buffer, overwrite ff page */
 		memcpy(memory + 0xd600, mio_ram + mio_ram_bank_offset, 0x100);

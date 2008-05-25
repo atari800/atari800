@@ -276,7 +276,7 @@ void refreshv_win32api(UBYTE *scr_ptr)
 	HDC hCdc;
 	BITMAPINFO bi;
 	DWORD *bitmap_bits = NULL;
-	ULONG   ulWindowWidth, ulWindowHeight;      // window width/height
+	ULONG   ulWindowWidth, ulWindowHeight;      /* window width/height */
 	HBITMAP hBitmap;
 	RECT rt;
 	int i;
@@ -288,19 +288,19 @@ void refreshv_win32api(UBYTE *scr_ptr)
 	ulWindowWidth = rt.right - rt.left;
 	ulWindowHeight = rt.bottom - rt.top;
 
-	// make sure we have at least some window size
+	/* make sure we have at least some window size */
 	if ((!ulWindowWidth) || (!ulWindowHeight))
 		return;
 
-	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER); // structure size in bytes
+	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER); /* structure size in bytes */
 	bi.bmiHeader.biWidth = ATARI_WIDTH-48;
 	bi.bmiHeader.biHeight = ATARI_HEIGHT;
 	bi.bmiHeader.biPlanes = 1;
 	bi.bmiHeader.biBitCount = 32;
-	bi.bmiHeader.biCompression = BI_RGB; //BI_BITFIELDS OR BI_RGB???
-	bi.bmiHeader.biSizeImage = 0; // for BI_RGB set to 0
-	bi.bmiHeader.biXPelsPerMeter = 2952; //75dpi=2952bpm
-	bi.bmiHeader.biYPelsPerMeter = 2952; //75dpi=2952bpm
+	bi.bmiHeader.biCompression = BI_RGB; /* BI_BITFIELDS OR BI_RGB??? */
+	bi.bmiHeader.biSizeImage = 0; /* for BI_RGB set to 0 */
+	bi.bmiHeader.biXPelsPerMeter = 2952; /* 75dpi=2952bpm */
+	bi.bmiHeader.biYPelsPerMeter = 2952; /* 75dpi=2952bpm */
 	bi.bmiHeader.biClrUsed = 0;
 	bi.bmiHeader.biClrImportant = 0;
 
@@ -312,18 +312,18 @@ void refreshv_win32api(UBYTE *scr_ptr)
 		return;
 	}
 
-	// Copying the atari screen to bitmap.
+	/* Copying the atari screen to bitmap. */
 	for (i = 0; i < ATARI_HEIGHT; i++) {
 		for (j = 0; j < ATARI_WIDTH - 48; j++) {
 			*bitmap_bits++ = colortable[*scr_ptr++];
 		}
-		// The last 48 columns of the screen are not used
+		/* The last 48 columns of the screen are not used */
 		scr_ptr+=48;
 	}
 
 	SelectObject(hCdc, hBitmap);
 
-	// Draw the bitmap on the screen. The image must be felliped vertically
+	/* Draw the bitmap on the screen. The image must be flipped vertically */
 	if (!StretchBlt(hdc, 0, 0, ulWindowWidth, ulWindowHeight,
 			hCdc, 0, bi.bmiHeader.biHeight, bi.bmiHeader.biWidth, -bi.bmiHeader.biHeight, SRCCOPY)) {
 		MessageBox(hWndMain, "Could not StretchBlt", myname, MB_OK);

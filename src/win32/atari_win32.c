@@ -157,7 +157,7 @@ int Atari_Win32_keys()
 		default:
 		{
 
-			// get the win32 keyboard state
+			/* get the win32 keyboard state */
 			if(!GetKeyboardState(lpKeyState)) {
 				return AKEY_NONE;
 			}
@@ -176,17 +176,17 @@ int Atari_Win32_keys()
 			AprintS("C:%d   \n",lpKeyState[67]);
 			*/
 
-			// translates the scan code to a virtual key
+			/* translates the scan code to a virtual key */
 			vk = MapVirtualKey(kbcode,1);
-			// translates the virtual key to ascii
+			/* translates the virtual key to ascii */
 			if(ToAscii(vk, kbcode, lpKeyState, buf, 0)<1) {
 				return AKEY_NONE;
 			}
 			Asciikey = (char)buf[0];
 
-			// Change Upper case with lower case due to the reverse effect of the CAPS key
-			// bit 0x80 in lpKeyState signal if the key is pressed, while bit 0x01 togles
-			// each time the key is pressed...
+			/* Change Upper case with lower case due to the reverse effect of the CAPS key */
+			/* bit 0x80 in lpKeyState signal if the key is pressed, while bit 0x01 togles */
+			/* each time the key is pressed... */
 			if (lpKeyState[VK_CAPITAL] && 0x01) {
 				if (isupper(Asciikey)) Asciikey=tolower(Asciikey);
 				else if (islower(Asciikey)) Asciikey=toupper(Asciikey);
@@ -292,9 +292,9 @@ int Atari_Win32_keys()
 		case '}': keycode |= AKEY_NONE; break;
 		case '~': keycode |= AKEY_NONE; break;
 		default: keycode = AKEY_NONE;
-			} //switch (Asciikey)
-		} // default
-	} //switch (kbcode)
+			} /* switch (Asciikey) */
+		} /* default */
+	} /* switch (kbcode) */
 
  	return keycode;
  }

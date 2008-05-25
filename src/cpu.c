@@ -103,7 +103,7 @@ void CPU_PutStatus(void)
 /* Windows headers define it */
 #undef ABSOLUTE
 
-#ifndef __GNUC__
+#if !defined(__GNUC__) || defined(__STRICT_ANSI__)
 #define NO_GOTO
 #endif
 
