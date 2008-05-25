@@ -1,3 +1,11 @@
+2008-05-25  Perry McFarlane  <perry_m@fastmail.fm>
+* votrax.[ch] vtxsmpls.inc pbi.[ch] pbi_xld.[ch] pbi_mio.[ch] pbi_bb.[ch]
+pbi_scsi.[ch] sio.[ch] atari.c configure.ac atari_sdl.c
+dos/atari_vga.c javanvm/atari_javanvm.c win32/atari_win32.c memory.c
+pokeysnd.c DOC/CREDITS DOC/README DOC/TODO DOC/USAGE:
+Added emulation of the 1400XL, 1450XLD, MIO and Black Box.
+
+
 2008-05-24  Achim Haertel  <achim.haertel@e-technik.tu-chemnitz.de>
 * cassette.c: implemented loading with variable baud rate
 

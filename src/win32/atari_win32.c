@@ -367,6 +367,8 @@ int Atari_Win32_keys()
 		case DIK_C:
 			alt_function = MENU_CARTRIDGE; /* ALT+C .. Cartridge management */
 			return AKEY_UI;
+		case DIK_BACKSLASH:
+			return AKEY_PBI_BB_MENU; /* BLACK BOX */
 		default:
 			break;
 		}

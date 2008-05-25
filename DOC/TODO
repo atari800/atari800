@@ -67,7 +67,7 @@ Emulation core
   On/off switch sound.  Physical key-press sounds.  Cartridge slot sounds.
   Drive door sounds. Floppy rotation flap sound.
 
-- Atari vapourware emulation. 1400XL. 1450XLD. XEM (see below). 1090.
+- Atari vapourware emulation. XEM (see below). 1090.
   1060 CP/M (sweet-pea.)
 
 - emulate the 850 interface at the hardware level.

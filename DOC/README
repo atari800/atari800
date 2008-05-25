@@ -76,6 +76,8 @@ o 130XE compatible memory expansions: 320K, 576K, 1088K.
 
 o Optional 4K RAM between 0xc000 and 0xcfff in 400/800 mode.
 
+o Axlon and Mosaic memory expansions for the 400/800
+
 o Cycle-exact 6502 emulation, all unofficial instructions.
 
 o Cycle-exact NMI interrupts, scanline-based POKEY interrupts.
@@ -127,3 +129,9 @@ o Sound output may be written to WAV files.
 o User interface on all versions supporting bitmapped graphics.
 
 o R: device (the Atari850 serial ports) mapped to net or real serial port.
+
+o Recording input events to a file and playing them back
+
+o MIO and Black Box emulation
+
+o 1400XL and 1450XLD emulation

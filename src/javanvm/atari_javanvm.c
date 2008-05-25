@@ -255,6 +255,9 @@ int Atari_Keyboard(void)
 			case VK_C:
 				alt_function = MENU_CARTRIDGE;
 				break;
+			case VK_BACK_SLASH:
+				return AKEY_PBI_BB_MENU;
+				break;
 			break;
 			}
 		}

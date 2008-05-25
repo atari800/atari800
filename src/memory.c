@@ -178,21 +178,21 @@ void MEMORY_InitialiseMachine(void)
 		}
 #else
 		readmap[0xd0] = GTIA_GetByte;
-		readmap[0xd1] = PBI_GetByte;
+		readmap[0xd1] = PBI_D1_GetByte;
 		readmap[0xd2] = POKEY_GetByte;
 		readmap[0xd3] = PIA_GetByte;
 		readmap[0xd4] = ANTIC_GetByte;
 		readmap[0xd5] = CART_GetByte;
-		readmap[0xd6] = PBIM1_GetByte;
-		readmap[0xd7] = PBIM2_GetByte;
+		readmap[0xd6] = PBI_D6_GetByte;
+		readmap[0xd7] = PBI_D7_GetByte;
 		writemap[0xd0] = GTIA_PutByte;
-		writemap[0xd1] = PBI_PutByte;
+		writemap[0xd1] = PBI_D1_PutByte;
 		writemap[0xd2] = POKEY_PutByte;
 		writemap[0xd3] = PIA_PutByte;
 		writemap[0xd4] = ANTIC_PutByte;
 		writemap[0xd5] = CART_PutByte;
-		writemap[0xd6] = PBIM1_PutByte;
-		writemap[0xd7] = PBIM2_PutByte;
+		writemap[0xd6] = PBI_D6_PutByte;
+		writemap[0xd7] = PBI_D7_PutByte;
 		if (mosaic_enabled) writemap[0xff] = MOSAIC_PutByte;
 		if (axlon_enabled) writemap[0xcf] = AXLON_PutByte;
 		if (axlon_enabled && axlon_0f_mirror) writemap[0x0f] = AXLON_PutByte;
@@ -215,21 +215,21 @@ void MEMORY_InitialiseMachine(void)
 		SetHARDWARE(0xd000, 0xd7ff);
 #else
 		readmap[0xd0] = GTIA_GetByte;
-		readmap[0xd1] = PBI_GetByte;
+		readmap[0xd1] = PBI_D1_GetByte;
 		readmap[0xd2] = POKEY_GetByte;
 		readmap[0xd3] = PIA_GetByte;
 		readmap[0xd4] = ANTIC_GetByte;
 		readmap[0xd5] = CART_GetByte;
-		readmap[0xd6] = PBIM1_GetByte;
-		readmap[0xd7] = PBIM2_GetByte;
+		readmap[0xd6] = PBI_D6_GetByte;
+		readmap[0xd7] = PBI_D7_GetByte;
 		writemap[0xd0] = GTIA_PutByte;
-		writemap[0xd1] = PBI_PutByte;
+		writemap[0xd1] = PBI_D1_PutByte;
 		writemap[0xd2] = POKEY_PutByte;
 		writemap[0xd3] = PIA_PutByte;
 		writemap[0xd4] = ANTIC_PutByte;
 		writemap[0xd5] = CART_PutByte;
-		writemap[0xd6] = PBIM1_PutByte;
-		writemap[0xd7] = PBIM2_PutByte;
+		writemap[0xd6] = PBI_D6_PutByte;
+		writemap[0xd7] = PBI_D7_PutByte;
 #endif
 		SetROM(0xd800, 0xffff);
 		break;
@@ -403,8 +403,8 @@ void MemStateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 					writemap[i] = GTIA_PutByte;
 					break;
 				case 0xd1:
-					readmap[i] = PBI_GetByte;
-					writemap[i] = PBI_PutByte;
+					readmap[i] = PBI_D1_GetByte;
+					writemap[i] = PBI_D1_PutByte;
 					break;
 				case 0xd2:
 				case 0xe8:
@@ -425,12 +425,12 @@ void MemStateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 					writemap[i] = CART_PutByte;
 					break;
 				case 0xd6:
-					readmap[i] = PBIM1_GetByte;
-					writemap[i] = PBIM1_PutByte;
+					readmap[i] = PBI_D6_GetByte;
+					writemap[i] = PBI_D6_PutByte;
 					break;
 				case 0xd7:
-					readmap[i] = PBIM2_GetByte;
-					writemap[i] = PBIM2_PutByte;
+					readmap[i] = PBI_D7_GetByte;
+					writemap[i] = PBI_D7_PutByte;
 					break;
 				case 0xff:
 					if (mosaic_enabled) writemap[0xff] = MOSAIC_PutByte;

@@ -108,6 +108,7 @@ extern char atari_basic_filename[FILENAME_MAX];
 #define AKEY_START                 -10
 #define AKEY_SELECT                -11
 #define AKEY_OPTION                -12
+#define AKEY_PBI_BB_MENU           -13
 
 /* Menu codes for Alt+letter shortcuts.
    Store in alt_function and put AKEY_UI in key_code. */
@@ -358,5 +359,8 @@ void Atari800_PatchOS(void);
 
 /* Sleeps until it's time to emulate next Atari frame. */
 void atari_sync(void);
+
+/* Load a ROM image filename of size nbytes into buffer */
+int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes);
 
 #endif /* _ATARI_H_ */

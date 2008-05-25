@@ -72,6 +72,7 @@
 #include "platform.h"
 #include "pokey.h"
 #include "rtime.h"
+#include "pbi.h"
 #include "sio.h"
 #include "util.h"
 #if !defined(BASIC) && !defined(CURSES_BASIC)
@@ -106,6 +107,8 @@
 #include "Helpers.h"
 #endif /* _WX_ */
 #endif /* __PLUS */
+#include "pbi_bb.h"
+#include "pbi_xld.h"
 
 int machine_type = MACHINE_XLXE;
 int ram_size = 64;
@@ -292,6 +295,7 @@ void Warmstart(void)
 		NMI();
 	}
 	else {
+		PBI_Reset();
 		PIA_Reset();
 		ANTIC_Reset();
 		/* CPU_Reset() must be after PIA_Reset(),
@@ -306,6 +310,7 @@ void Warmstart(void)
 
 void Coldstart(void)
 {
+	PBI_Reset();
 	PIA_Reset();
 	ANTIC_Reset();
 	/* CPU_Reset() must be after PIA_Reset(),
@@ -334,7 +339,7 @@ void Coldstart(void)
 	consol_table[1] = consol_table[2];
 }
 
-static int load_image(const char *filename, UBYTE *buffer, int nbytes)
+int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 {
 	FILE *f;
 	int len;
@@ -366,42 +371,42 @@ static int load_roms(void)
 	case MACHINE_OSA:
 		if (emuos_mode == 2)
 			COPY_EMUOS(0x0800);
-		else if (!load_image(atari_osa_filename, atari_os, 0x2800)) {
+		else if (!Atari800_LoadImage(atari_osa_filename, atari_os, 0x2800)) {
 			if (emuos_mode == 1)
 				COPY_EMUOS(0x0800);
 			else
 				return FALSE;
 		}
 		else
-			have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
+			have_basic = Atari800_LoadImage(atari_basic_filename, atari_basic, 0x2000);
 		break;
 	case MACHINE_OSB:
 		if (emuos_mode == 2)
 			COPY_EMUOS(0x0800);
-		else if (!load_image(atari_osb_filename, atari_os, 0x2800)) {
+		else if (!Atari800_LoadImage(atari_osb_filename, atari_os, 0x2800)) {
 			if (emuos_mode == 1)
 				COPY_EMUOS(0x0800);
 			else
 				return FALSE;
 		}
 		else
-			have_basic = load_image(atari_basic_filename, atari_basic, 0x2000);
+			have_basic = Atari800_LoadImage(atari_basic_filename, atari_basic, 0x2000);
 		break;
 	case MACHINE_XLXE:
 		if (emuos_mode == 2)
 			COPY_EMUOS(0x2000);
-		else if (!load_image(atari_xlxe_filename, atari_os, 0x4000)) {
+		else if (!Atari800_LoadImage(atari_xlxe_filename, atari_os, 0x4000)) {
 			if (emuos_mode == 1)
 				COPY_EMUOS(0x2000);
 			else
 				return FALSE;
 		}
-		else if (!load_image(atari_basic_filename, atari_basic, 0x2000))
+		else if (!Atari800_LoadImage(atari_basic_filename, atari_basic, 0x2000))
 			return FALSE;
 		xe_bank = 0;
 		break;
 	case MACHINE_5200:
-		if (!load_image(atari_5200_filename, atari_os, 0x800))
+		if (!Atari800_LoadImage(atari_5200_filename, atari_os, 0x800))
 			return FALSE;
 		break;
 	}
@@ -834,6 +839,9 @@ int Atari800_ReadConfig(const char *alternate_config_filename)
 				else
 					Aprint("Invalid TV Mode: %s", ptr);
 			}
+			/* Add module-specific configurations here */
+			else if (PBI_ReadConfig(string,ptr)) {
+			}
 			else {
 #ifdef SUPPORTS_ATARI_CONFIGURE
 				if (!Atari_Configure(string, ptr)) {
@@ -938,6 +946,8 @@ int Atari800_WriteConfig(void)
 	fprintf(fp, "SERIO_SOUND=%d\n", serio_sound_enabled);
 #endif
 #endif /* SOUND */
+	/* Add module-specific configurations here */
+	PBI_WriteConfig(fp);
 
 #ifdef SUPPORTS_ATARI_CONFIGSAVE
 	Atari_ConfigSave(fp);
@@ -1256,6 +1266,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	RTIME_Initialise(argc, argv);
 	SIO_Initialise (argc, argv);
 	CASSETTE_Initialise(argc, argv);
+	PBI_Initialise(argc,argv);
 #ifndef BASIC
 	INPUT_Initialise(argc, argv);
 #endif
@@ -1487,6 +1498,15 @@ UBYTE Atari800_GetByte(UWORD addr)
 	case 0x0f00:				/* Axlon shadow */
 		byte = AXLON_GetByte(addr);
 		break;
+	case 0xd100:				/* PBI page D1 */
+		byte = PBI_D1_GetByte(addr);
+		break;
+	case 0xd600:				/* PBI page D6 */
+		byte = PBI_D6_GetByte(addr);
+		break;
+	case 0xd700:				/* PBI page D7 */
+		byte = PBI_D7_GetByte(addr);
+		break;
 	default:
 		break;
 	}
@@ -1529,6 +1549,15 @@ void Atari800_PutByte(UWORD addr, UBYTE byte)
 	case 0xcf00:				/* Axlon memory expansion for 800 */
 	case 0x0f00:				/* Axlon shadow */
 		AXLON_PutByte(addr,byte);
+		break;
+	case 0xd100:				/* PBI page D1 */
+		PBI_D1_PutByte(addr, byte);
+		break;
+	case 0xd600:				/* PBI page D6 */
+		PBI_D6_PutByte(addr, byte);
+		break;
+	case 0xd700:				/* PBI page D7 */
+		PBI_D7_PutByte(addr, byte);
 		break;
 	default:
 		break;
@@ -1842,11 +1871,22 @@ void Atari800_Frame(void)
 		Screen_SaveNextScreenshot(TRUE);
 		break;
 #endif /* CURSES_BASIC */
+	case AKEY_PBI_BB_MENU:
+#ifdef PBI_BB
+		PBI_BB_Menu();
+#endif
+		break;
 	default:
 		break;
 	}
 #endif /* BASIC */
 
+#ifdef PBI_BB
+	PBI_BB_Frame(); /* just to make the menu key go up automatically */
+#endif
+#ifdef PBI_XLD
+	PBI_XLD_V_Frame(); /* for the Votrax */
+#endif
 	Device_Frame();
 #ifndef BASIC
 	INPUT_Frame();

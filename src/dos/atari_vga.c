@@ -1339,7 +1339,11 @@ int Atari_Keyboard(void)
                         keycode |= AKEY_ASTERISK;
                 else if (key_shift)
                         keycode = AKEY_BAR;
-                else
+                else if (alt_key)
+				{
+					keycode = AKEY_PBI_BB_MENU; /* Black Box */
+				}
+				else
                         keycode |= AKEY_BACKSLASH;
                 break;
 

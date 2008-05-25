@@ -25,6 +25,27 @@ Appending to existing tapes is not allowed. You have to re-insert (select
 again in the tape dialog) a just saved tape when you want to load from it
 in order to rewind it.
 
+MIO and Black Box
+==================
+You need ROM images (not provided.)
+Make a blank SCSI disk image (using dd for instance.)
+Set MIO_SCSI_DISK or BB_SCSI_DISK to the disk image name.
+Use 256 byte sectors for the Black Box.
+Don't use SASI.
+Use ALT-Backslash for the Black Box menu.
+Don't use the OS patches, use -nopatchall.  The patches conflict with D1xx
+
+1400XL/1450XLD
+==================
+You need ROM images (not provided.)
+Don't use the OS patches, use -nopatchall.  The patches conflict with D1xx
+The Self test can talk.
+You can use the V: device to talk.
+If you set the drives to empty, then a message appears on the 1450XLD screen
+asking you to insert a disk.
+If you press select when booting, the behavior of the 1450XLD disks is changed.
+I believe it slows down for compability.
+
 Command line options
 ====================
 
@@ -69,6 +90,11 @@ Command line options
 
 -tape <filename>      Attach cassette image (CAS format or raw file)
 -boottape <filename>  Attach cassette image and boot it
+
+-1400                 Emulate the Atari 1400XL
+-xld                  Emulate the Atari 1450XLD
+-bb                   Emulate the CSS Black Box
+-mio                  Emulate the ICD MIO board
 
 -nopatch              Don't patch SIO routine in OS
 -nopatchall           Don't patch OS at all, H: and P: devices won't work

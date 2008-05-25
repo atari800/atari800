@@ -673,6 +673,8 @@ int Atari_Keyboard(void)
 			case SDLK_c:
 				alt_function = MENU_CARTRIDGE;
 				break;
+			case SDLK_BACKSLASH:
+				return AKEY_PBI_BB_MENU;
 			default:
 				if(ntscemu){
 					switch(lastkey){

@@ -546,6 +546,28 @@ AC_CHECK_LIB(z,adler32,
           WANT_EVENT_RECORDING="no"
          )
 
+A8_OPTION(pbi_mio,yes,
+      [Emulate the MIO board (default=ON)],
+      PBI_MIO,[Define to emulate the MIO board.]
+     )
+
+if [[ "$WANT_PBI_MIO" = "yes" ]]; then
+    OBJS="$OBJS pbi_mio.o"
+fi
+
+A8_OPTION(pbi_bb,yes,
+      [Emulate the Black Box (default=ON)],
+      PBI_BB,[Define to emulate the Black Box.]
+     )
+
+if [[ "$WANT_PBI_BB" = "yes" ]]; then
+    OBJS="$OBJS pbi_bb.o"
+fi
+
+if [[ "$WANT_PBI_BB" = "yes" -o "$WANT_PBI_MIO" = "yes" ]]; then
+    OBJS="$OBJS pbi_scsi.o"
+fi
+
 dnl Set sound support options...
 
 A8_OPTION(sound,yes,
@@ -614,6 +636,13 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
               [Use sound clipping (default=OFF)],
               CLIP_SOUND,[Define to allow sound clipping.]
              )
+    A8_OPTION(pbi_xld,yes,
+              [Emulate 1450XLD (default=ON)],
+              PBI_XLD,[Define to emulate the 1400XL/1450XLD.]
+             )
+    if [[ "$WANT_PBI_XLD" = "yes" ]]; then
+        OBJS="$OBJS pbi_xld.o votrax.o"
+    fi
 else
     WANT_NONLINEAR_MIXING="no"
     WANT_INTERPOLATE_SOUND="no"
@@ -622,6 +651,7 @@ else
     WANT_CONSOLE_SOUND="no"
     WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
+    WANT_PBI_XLD_SOUND="no"
 fi
 
 
@@ -725,6 +755,8 @@ echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
 echo "Using 6502 opcode profiling?..........: $WANT_MONITOR_PROFILE"
 echo "Using TRACE monitor command?..........: $WANT_MONITOR_TRACE"
 echo "Using event recording?................: $WANT_EVENT_RECORDING"
+echo "Using MIO emulation?..................: $WANT_PBI_MIO"
+echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
@@ -737,6 +769,7 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
     else
         echo "        (Volume only sound sub-options disabled)"
     fi
+    echo "    Using 1400XL/1450XLD emulation?...: $WANT_PBI_XLD"
     echo "    Using sound clipping?.............: $WANT_CLIP_SOUND"
 else
     echo "    (Sound sub-options disabled)"
