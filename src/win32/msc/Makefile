@@ -34,6 +34,7 @@ OBJS = \
 	monitor.obj \
 	mzpokeysnd.obj \
 	pbi.obj \
+	pbi_xld.obj \
 	pia.obj \
 	pokey.obj \
 	pokeysnd.obj \
@@ -46,6 +47,7 @@ OBJS = \
 	ui.obj \
 	ui_basic.obj \
 	util.obj \
+	votrax.obj \
 	win32\atari_win32.obj \
 	win32\joystick.obj \
 	win32\keyboard.obj \
