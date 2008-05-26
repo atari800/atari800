@@ -31,6 +31,7 @@
 #include "log.h"
 #include "pokeysnd.h"
 #include "util.h"
+#include "sound.h"
 
 #include "dos_sb.h"
 

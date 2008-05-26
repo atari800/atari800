@@ -103,7 +103,7 @@ void CPU_PutStatus(void)
 /* Windows headers define it */
 #undef ABSOLUTE
 
-#if !defined(__GNUC__) || defined(__STRICT_ANSI__)
+#ifndef __GNUC__
 #define NO_GOTO
 #endif
 
@@ -396,6 +396,9 @@ static const int cycles[256] =
 };
 
 /* 6502 emulation routine */
+#ifndef NO_GOTO
+__extension__ /* suppress -ansi -pedantic warnings */
+#endif
 void GO(int limit)
 {
 #ifdef NO_GOTO

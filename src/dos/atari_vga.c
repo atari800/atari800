@@ -41,6 +41,7 @@
 #include "monitor.h"
 #include "pcjoy.h"
 #include "screen.h"
+#include "platform.h"
 
 #include "dos/vga_gfx.h"
 
@@ -77,7 +78,7 @@ static int vga_ptr_inc = 320;
 static int scr_ptr_inc = ATARI_WIDTH;
 
 #ifdef MONITOR_BREAK
-extern UBYTE break_step;  /* used to prevent switching to gfx mode while doing monitor 'step' command*/
+/* extern UBYTE break_step;*/  /* used to prevent switching to gfx mode while doing monitor 'step' command (defined in monitor.h)*/
 #endif
 
 static int video_mode=1;       /*video mode (0-3)*/
@@ -99,7 +100,7 @@ extern int ATKEYPRESSED;
 static int SHIFT_LEFT = FALSE;
 static int SHIFT_RIGHT = FALSE;
 static int alt_key = FALSE;
-extern int alt_function;
+/* extern int alt_function; */ /* defined in ui.h */
 static int norepkey = FALSE;    /* for "no repeat" of some keys !RS! */
 
 static int PC_keyboard = TRUE;
@@ -138,7 +139,7 @@ int joystick0(int *x, int *y);
 /* - moved to vga_asm.s */
 
 /*read analog joystick and set astick & atrig values*/
-void read_joystick(int centre_x, int centre_y)
+static void read_joystick(int centre_x, int centre_y)
 {
         const int threshold = 50;
         int jsx, jsy;
@@ -158,7 +159,7 @@ void read_joystick(int centre_x, int centre_y)
 }
 
 /*find port for given LPT joystick*/
-int test_LPTjoy(int portno,int *port)
+static int test_LPTjoy(int portno,int *port)
 {
         int addr;
 
@@ -173,7 +174,7 @@ int test_LPTjoy(int portno,int *port)
         return TRUE;
 }
 
-void read_LPTjoy(int port, int joyport)
+static void read_LPTjoy(int port, int joyport)
 {
         int state = STICK_CENTRE, trigger = 1, val;
 
@@ -234,7 +235,7 @@ static int extended_key_follows = FALSE;
 volatile static int key_leave=0;
 static int ki,kstick,ktrig,k_test; /*variables for key_handler*/
 
-void key_handler(void)
+static void key_handler(void)
 {
     asm("cli; pusha");
     raw_key_r = inportb(0x60);
@@ -396,7 +397,7 @@ void key_handler(void)
     asm("popa; sti");
 }
 
-void key_init(void)
+static void key_init(void)
 {
 	int i;
 	for (i=0;i<256;i++) keypush[i]=0; /*none key is pressed*/
@@ -411,7 +412,7 @@ void key_init(void)
 	keyboard_handler_replaced = TRUE;
 }
 
-void key_delete(void)
+static void key_delete(void)
 {
         if (keyboard_handler_replaced) {
                 int kflags;
@@ -452,7 +453,7 @@ void Atari_PaletteUpdate(void) {
         __dpmi_int(0x10,&d_rg);  /*VGA set palette block*/
 }
 
-void SetupVgaEnvironment(void)
+static void SetupVgaEnvironment(void)
 {
         union REGS rg;
 
@@ -506,7 +507,7 @@ void SetupVgaEnvironment(void)
         key_init(); /*initialize keyboard handler*/
 }
 
-void ShutdownVgaEnvironment(void)
+static void ShutdownVgaEnvironment(void)
 {
         union REGS rg;
 

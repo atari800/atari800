@@ -108,7 +108,7 @@ void gotoxy(int x, int y)
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 */
-int Atari_Win32_keys()
+static int Atari_Win32_keys(void)
 {
 	int keycode=0;
 	BYTE lpKeyState[256];

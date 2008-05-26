@@ -214,6 +214,7 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
         AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
         OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
+        CFLAGS="$CFLAGS -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         ;;
     curses)
         AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
@@ -247,6 +248,7 @@ case "$a8_target" in
             JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
             JAVACFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
         fi
+        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         ;;
     javanvm-basic)
         AC_DEFINE(BASIC,1,[Target: standard I/O.])
@@ -283,6 +285,7 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
         LIBS="$LIBS `sdl-config --libs`"
         OBJS="atari_sdl.o atari_ntsc.o"
+        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         if [[ "$a8_host" = "win" ]]; then
 dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
 dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
@@ -307,6 +310,7 @@ dnl Don't make this a windowed app, make it a console app.
         A8_NEED_LIB(dxguid)
         A8_NEED_LIB(ws2_32)
         OBJS="win32/atari_win32.o win32/screen_win32.o win32/main.o win32/keyboard.o win32/joystick.o win32/atari.ro"
+        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         ;;
     x11*)
         AC_DEFINE(X11,1,[Target: Standard X11.])

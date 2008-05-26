@@ -36,6 +36,7 @@
 
 #include "main.h"
 #include "screen_win32.h"
+#include "platform.h"
 
 #define SHOWFRAME 0
 
@@ -76,7 +77,7 @@ void groff(void)
 	}
 }
 
-LRESULT CALLBACK Atari_WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+/* LRESULT CALLBACK Atari_WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam); */  /* in main.c */
 
 static BOOL initwin(void)
 {
@@ -269,7 +270,7 @@ void Atari_PaletteUpdate(void)
 	}
 }
 
-void refreshv_win32api(UBYTE *scr_ptr)
+static void refreshv_win32api(UBYTE *scr_ptr)
 {
 	PAINTSTRUCT ps;
 	HDC hdc;

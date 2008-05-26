@@ -44,6 +44,7 @@
 #include "pia.h"
 #include "log.h"
 #include "util.h"
+#include "sound.h"
 #include "javanvm/atari_javanvm.h"
 
 /* joystick emulation */

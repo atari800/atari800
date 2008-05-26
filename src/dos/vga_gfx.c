@@ -28,6 +28,7 @@
 #include <string.h>
 #include "atari.h"
 #include "config.h"
+#include "vga_gfx.h"
 
 #ifdef AT_USE_ALLEGRO
 #include <allegro.h>
@@ -101,7 +102,7 @@ struct modeInfo
 
 
 /*functions for mapping physical memory and allocating the corresponding selector */
-UBYTE mapPhysicalMemory(ULONG addr,ULONG length,ULONG *linear)
+static UBYTE mapPhysicalMemory(ULONG addr,ULONG length,ULONG *linear)
 {
   __dpmi_meminfo meminfo;
 
@@ -120,7 +121,7 @@ UBYTE mapPhysicalMemory(ULONG addr,ULONG length,ULONG *linear)
                       so we suppose that the address remains the same*/
   return TRUE;
 }
-UBYTE unmapPhysicalMemory(ULONG *linear)
+static UBYTE unmapPhysicalMemory(ULONG *linear)
 {
   __dpmi_meminfo meminfo;
 
@@ -133,7 +134,7 @@ UBYTE unmapPhysicalMemory(ULONG *linear)
   *linear=0;
   return TRUE;
 }
-UBYTE createSelector(ULONG addr,ULONG length,int *selector)
+static UBYTE createSelector(ULONG addr,ULONG length,int *selector)
 {
   *selector=__dpmi_allocate_ldt_descriptors(1);
   if (*selector<0)
@@ -153,7 +154,9 @@ UBYTE createSelector(ULONG addr,ULONG length,int *selector)
   }
   return TRUE;
 }
-UBYTE freeSelector(int *selector)
+#if 0
+/* unused by our code, warning suppressed */
+static UBYTE freeSelector(int *selector)
 {
   if (*selector>0)
   {
@@ -162,8 +165,9 @@ UBYTE freeSelector(int *selector)
   }
   return TRUE;
 }
+#endif
 
-UBYTE getPhysicalMemory(ULONG addr,ULONG length,ULONG *linear,int *selector)
+static UBYTE getPhysicalMemory(ULONG addr,ULONG length,ULONG *linear,int *selector)
 {
   if (!mapPhysicalMemory(addr,length,linear))
   {
@@ -177,7 +181,7 @@ UBYTE getPhysicalMemory(ULONG addr,ULONG length,ULONG *linear,int *selector)
   }
   return TRUE;
 }
-UBYTE freePhysicalMemory(ULONG *linear,int *selector)
+static UBYTE freePhysicalMemory(ULONG *linear,int *selector)
 {
   unmapPhysicalMemory(linear);
   linear=0;

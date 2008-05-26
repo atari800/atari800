@@ -54,6 +54,15 @@ OBJS = \
 
 all: $(FINALTARGET)
 
+# A special rule for SDL_win32_main.c to suppress warnings since this file is
+# from SDL and should not have to be modified
+SDL_win32_main.o: SDL_win32_main.c
+	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) -Wno-missing-declarations -Wno-missing-prototypes $<
+
+# A special rule for win32 to not compile with -ansi -pedantic
+win32/%.o: win32/%.c
+	$(CC) -c -o $@ $(DEFS) -I. $($(CFLAGS:-ansi= ):-pedantic= ) $<
+
 %.o: %.c
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
 
