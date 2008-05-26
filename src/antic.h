@@ -62,6 +62,13 @@ void ANTIC_UpdateArtifacting(void);
 void video_memset(UBYTE *ptr, UBYTE val, ULONG size);
 void video_putbyte(UBYTE *ptr, UBYTE val);
 
+/* GTIA calls it on a write to PRIOR */
+void ANTIC_SetPrior(UBYTE prior);
+
+/* Saved states */
+void AnticStateSave(void);
+void AnticStateRead(void);
+
 #ifdef NEW_CYCLE_EXACT
 #define NOT_DRAWING -999
 #define DRAWING_SCREEN (cur_screen_pos!=NOT_DRAWING)

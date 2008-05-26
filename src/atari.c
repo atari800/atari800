@@ -137,7 +137,7 @@ char atari_basic_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 
 #ifdef HAVE_SIGNAL
-RETSIGTYPE sigint_handler(int num)
+static RETSIGTYPE sigint_handler(int num)
 {
 	int restart;
 
@@ -162,7 +162,7 @@ RETSIGTYPE sigint_handler(int num)
 static UWORD esc_address[256];
 static EscFunctionType esc_function[256];
 
-void Atari800_ClearAllEsc(void)
+static void Atari800_ClearAllEsc(void)
 {
 	int i;
 	for (i = 0; i < 256; i++)
@@ -650,7 +650,7 @@ void Atari800_FindROMImages(const char *directory, int only_if_not_set)
 
 static char rtconfig_filename[FILENAME_MAX];
 
-int Atari800_ReadConfig(const char *alternate_config_filename)
+static int Atari800_ReadConfig(const char *alternate_config_filename)
 {
 	FILE *fp;
 	const char *fname = rtconfig_filename;

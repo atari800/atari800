@@ -60,6 +60,8 @@ void POKEY_PutByte(UWORD addr, UBYTE byte);
 void POKEY_Initialise(int *argc, char *argv[]);
 void POKEY_Frame(void);
 void POKEY_Scanline(void);
+void POKEYStateSave(void);
+void POKEYStateRead(void);
 
 #endif
 

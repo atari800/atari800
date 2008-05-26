@@ -34,6 +34,7 @@
 
 #include "atari.h"
 #include "log.h"
+#include "rtime.h"
 
 int rtime_enabled = 1;
 

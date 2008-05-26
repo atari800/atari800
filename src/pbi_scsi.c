@@ -25,6 +25,7 @@
 #include "atari.h"
 #include "util.h"
 #include "log.h"
+#include "pbi_scsi.h"
 
 #ifdef PBI_DEBUG
 #define D(a) a

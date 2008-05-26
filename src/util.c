@@ -48,6 +48,34 @@ int Util_chrieq(char c1, char c2)
 	}
 }
 
+#ifdef __STRICT_ANSI__
+/*
+**  STRICMP.C - Comapres strings, case-insensitive.
+**
+**  public domain by Bob Stout
+**
+*/
+
+/* from http://c.snippets.org/code/stricmp.c */
+int Util_stricmp(const char *str1, const char *str2)
+{
+      int retval = 0;
+
+      while (1)
+      {
+            retval = tolower(*str1++) - tolower(*str2++);
+
+            if (retval)
+                  break;
+
+            if (*str1 && *str2)
+                  continue;
+            else  break;
+      }
+      return retval;
+}
+#endif
+
 char *Util_stpcpy(char *dest, const char *src)
 {
 	size_t len = strlen(src);
@@ -311,6 +339,9 @@ FILE *Util_uniqopen(char *filename, const char *mode)
 	   to be deleted when we close it, and we need the filename. */
 
 #if defined(HAVE_MKSTEMP) && defined(HAVE_FDOPEN)
+#ifdef __STRICT_ANSI__
+	FILE *fdopen(int fildes, const char *mode); /* suppress -ansi -pedantic warning with GCC */
+#endif
 	/* this is the only implementation without a race condition */
 	strcpy(filename, "a8XXXXXX");
 	/* mkstemp() modifies the 'X'es and returns an open descriptor */

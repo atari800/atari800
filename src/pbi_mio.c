@@ -58,7 +58,8 @@ void PBI_MIO_Initialise(int *argc, char *argv[])
 		if (strcmp(argv[i], "-mio") == 0) {
 			mio_rom = (UBYTE *)Util_malloc(0x4000);
 			if (!Atari800_LoadImage(mio_rom_filename, mio_rom, 0x4000)) {
-				exit(1);
+				free(mio_rom);
+				continue;
 			}
 			D(printf("Loaded mio rom image\n"));
 			PBI_MIO_enabled = TRUE;
@@ -66,12 +67,13 @@ void PBI_MIO_Initialise(int *argc, char *argv[])
 				SCSI_disk = fopen(mio_scsi_disk_filename, "rb+");
 				if (SCSI_disk == NULL) {
 					Aprint("Error opening SCSI disk image:%s", mio_scsi_disk_filename);
-					exit(1);
 				}
-				D(printf("Opened SCSI disk image\n"));
-				mio_scsi_enabled = TRUE;
+				else {
+					D(printf("Opened SCSI disk image\n"));
+					mio_scsi_enabled = TRUE;
+				}
 			}
-			else {
+			if (!mio_scsi_enabled) {
 				SCSI_BSY = TRUE; /* makes MIO give up easier */
 			}
 			mio_ram = (UBYTE *)Util_malloc(0x100000);

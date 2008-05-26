@@ -68,5 +68,7 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer);
 int SIO_DriveStatus(int unit, UBYTE *buffer);
 int SIO_WriteStatusBlock(int unit, const UBYTE *buffer);
 int SIO_WriteSector(int unit, int sector, const UBYTE *buffer);
+void SIOStateSave(void);
+void SIOStateRead(void);
 
 #endif	/* _SIO_H_ */

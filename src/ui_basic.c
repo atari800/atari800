@@ -249,7 +249,7 @@ static void TitleScreen(const char *title)
 	CenterPrint(0x9a, 0x94, title, 0);
 }
 
-void BasicUIMessage(const char *msg)
+static void BasicUIMessage(const char *msg)
 {
 	CenterPrint(0x94, 0x9a, msg, 22);
 	GetKeyPress();
@@ -391,7 +391,7 @@ static int Select(int default_item, int nitems, const char *item[],
 	}
 }
 
-int BasicUISelect(const char *title, int flags, int default_item, const tMenuItem *menu, int *seltype)
+static int BasicUISelect(const char *title, int flags, int default_item, const tMenuItem *menu, int *seltype)
 {
 	int nitems;
 	int index;
@@ -482,7 +482,7 @@ int BasicUISelect(const char *title, int flags, int default_item, const tMenuIte
 	return -1;
 }
 
-int BasicUISelectInt(int default_value, int min_value, int max_value)
+static int BasicUISelectInt(int default_value, int min_value, int max_value)
 {
 	static char item_values[100][4];
 	static const char *items[100];
@@ -1122,12 +1122,12 @@ static int EditFilename(const char *title, char *filename, char directories[][FI
 	return TRUE;
 }
 
-int BasicUIEditString(const char *title, char *string, int size)
+static int BasicUIEditString(const char *title, char *string, int size)
 {
 	return EditString(0x9a, 0x94, title, string, size, 3, 11, 32, NULL, -1);
 }
 
-int BasicUIGetSaveFilename(char *filename, char directories[][FILENAME_MAX], int n_directories)
+static int BasicUIGetSaveFilename(char *filename, char directories[][FILENAME_MAX], int n_directories)
 {
 #ifdef DO_DIR
 	return EditFilename("Save as ([Tab] = directory locator)", filename, directories, n_directories);
@@ -1136,7 +1136,7 @@ int BasicUIGetSaveFilename(char *filename, char directories[][FILENAME_MAX], int
 #endif
 }
 
-int BasicUIGetLoadFilename(char *filename, char directories[][FILENAME_MAX], int n_directories)
+static int BasicUIGetLoadFilename(char *filename, char directories[][FILENAME_MAX], int n_directories)
 {
 #ifdef DO_DIR
 	return FileSelector(filename, FALSE, directories, n_directories);
@@ -1145,7 +1145,7 @@ int BasicUIGetLoadFilename(char *filename, char directories[][FILENAME_MAX], int
 #endif
 }
 
-int BasicUIGetDirectoryPath(char *directory)
+static int BasicUIGetDirectoryPath(char *directory)
 {
 #ifdef DO_DIR
 	return FileSelector(directory, TRUE, NULL, 0);
@@ -1154,7 +1154,7 @@ int BasicUIGetDirectoryPath(char *directory)
 #endif
 }
 
-void BasicUIInfoScreen(const char *title, const char *message)
+static void BasicUIInfoScreen(const char *title, const char *message)
 {
 	int y = 2;
 	ClearScreen();
@@ -1167,7 +1167,7 @@ void BasicUIInfoScreen(const char *title, const char *message)
 	BasicUIMessage("Press any key to continue");
 }
 
-void BasicUIInit(void)
+static void BasicUIInit(void)
 {
 	if (!initialised) {
 		get_charset(charset);

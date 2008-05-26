@@ -205,7 +205,7 @@ extern UWORD hires_lookup_l[128];
 extern ULONG lookup_gtia9[16];
 extern ULONG lookup_gtia11[16];
 
-void setup_gtia9_11(void) {
+static void setup_gtia9_11(void) {
 	int i;
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 	UWORD temp;
@@ -266,7 +266,7 @@ void GTIA_Initialise(int *argc, char *argv[])
 
 /* generate updated PxPL and MxPL for part of a scanline */
 /* slow, but should be called rarely */
-void generate_partial_pmpl_colls(int l, int r)
+static void generate_partial_pmpl_colls(int l, int r)
 {
 	int i;
 	if (r < 0 || l >= (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0]))
@@ -297,7 +297,7 @@ void generate_partial_pmpl_colls(int l, int r)
 }
 
 /* update pm->pl collisions for a partial scanline */
-void update_partial_pmpl_colls(void)
+static void update_partial_pmpl_colls(void)
 {
 	int l = collision_curpos;
 	int r = XPOS * 2 - 37;
@@ -1138,7 +1138,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		prior_val_buf[prior_curpos] = byte;
 #endif
 #endif
-		set_prior(byte);
+		ANTIC_SetPrior(byte);
 		PRIOR = byte;
 		if (byte & 0x40)
 			setup_gtia9_11();

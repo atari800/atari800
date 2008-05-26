@@ -68,11 +68,12 @@ void PBI_BB_Initialise(int *argc, char *argv[])
 			fclose(bbfp);
 			if (bb_rom_size != 0x10000 && bb_rom_size != 0x4000) {
 				Aprint("Invalid black box rom size\n");
-				exit(1);
+				continue;
 			}
 			bb_rom = Util_malloc(bb_rom_size);
 			if (!Atari800_LoadImage(bb_rom_filename, bb_rom, bb_rom_size)) {
-				exit(1);
+				free(bb_rom);
+				continue;
 			}
 			D(printf("loaded black box rom image\n"));
 			PBI_BB_enabled = TRUE;
@@ -80,12 +81,13 @@ void PBI_BB_Initialise(int *argc, char *argv[])
 				SCSI_disk = fopen(bb_scsi_disk_filename, "rb+");
 				if (SCSI_disk == NULL) {
 					Aprint("Error opening BB SCSI disk image:%s", bb_scsi_disk_filename);
-					exit(1);
 				}
-				D(printf("Opened BB SCSI disk image\n"));
-				bb_scsi_enabled = TRUE;
+				else {
+					D(printf("Opened BB SCSI disk image\n"));
+					bb_scsi_enabled = TRUE;
+				}
 			}
-			else {
+			if (!bb_scsi_enabled) {
 				SCSI_BSY = TRUE; /* makes BB give up easier? */
 			}
 			bb_ram = (UBYTE *)Util_malloc(0x10000);

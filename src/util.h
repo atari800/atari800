@@ -4,6 +4,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -17,7 +18,11 @@
    in different case. */
 int Util_chrieq(char c1, char c2);
 
-#ifdef WIN32
+#ifdef __STRICT_ANSI__
+/* Returns a positive integer if str1>str2, negative if str1<str2
+ * 0 if str1 == str2, case insensitive */
+int Util_stricmp(const char *str1, const char *str2);
+#elif defined(WIN32)
 #define Util_stricmp _stricmp
 #elif defined(HAVE_STRCASECMP)
 #define Util_stricmp strcasecmp

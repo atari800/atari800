@@ -363,4 +363,10 @@ void atari_sync(void);
 /* Load a ROM image filename of size nbytes into buffer */
 int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes);
 
+/* Save State */
+void MainStateSave(void);
+
+/* Read State */
+void MainStateRead(void);
+
 #endif /* _ATARI_H_ */

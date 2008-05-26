@@ -26,5 +26,7 @@ void PIA_Initialise(int *argc, char *argv[]);
 void PIA_Reset(void);
 UBYTE PIA_GetByte(UWORD addr);
 void PIA_PutByte(UWORD addr, UBYTE byte);
+void PIAStateSave(void);
+void PIAStateRead(void);
 
 #endif /* _PIA_H_ */

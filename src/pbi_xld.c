@@ -167,7 +167,7 @@ UBYTE PBI_XLD_D1FF_GetByte()
 {
 	UBYTE result = 0;
 	/* VOTRAX BUSY IRQ bit */
-	if (!votraxsc01_status_r(0)) {
+	if (!votraxsc01_status_r()) {
 		result |= VOICE_MASK;
 	}
 	return result;
@@ -197,7 +197,7 @@ void PBI_XLD_D1_PutByte(UWORD addr, UBYTE byte)
 	}
 	else if ((addr & ~3) == 0xd100 )  {
 		/* votrax phoneme+irq-enable latch */
-		if ( !(votrax_latch & 0x80) && (byte & 0x80) && (!votraxsc01_status_r(0))) {
+		if ( !(votrax_latch & 0x80) && (byte & 0x80) && (!votraxsc01_status_r())) {
 			/* IRQ disabled -> enabled, and votrax idle: generate IRQ */
 			D(printf("votrax IRQ generated: IRQ enable changed and idle\n"));
 			GenerateIRQ();
@@ -692,7 +692,7 @@ void PBI_XLD_V_Init(int playback_freq, int num_pokeys, int b16)
 }
 
 /* process votrax and interpolate samples */
-void votrax_process(SWORD *votrax_buffer, int len, SWORD *temp_votrax_buffer)
+static void votrax_process(SWORD *votrax_buffer, int len, SWORD *temp_votrax_buffer)
 {
 	static SWORD last_sample;
 	static SWORD last_sample2;

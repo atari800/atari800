@@ -438,7 +438,7 @@ int CASSETTE_Write(int length)
 }
 
 /* convert milliseconds to scanlines */
-SLONG MSToScanLines(int ms)
+static SLONG MSToScanLines(int ms)
 {
 	/* for PAL resolution, deviation in NTSC is negligible */
 	return 312*50*ms/1000;
@@ -532,7 +532,7 @@ static UWORD ReadRecord_POKEY(void)
 
 /* sets the stamp of next irq and loads new record if necessary
    adjust is a value to correction of time of next irq*/
-int SetNextByteTime_POKEY(int adjust)
+static int SetNextByteTime_POKEY(int adjust)
 {
 	int length = 0;
 	cassette_current_blockbyte += 1;

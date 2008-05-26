@@ -275,7 +275,7 @@ static void event3_pure(PokeyState* ps, char p5v, char p4v, char p917v);
 
 
 
-void ResetPokeyState(PokeyState* ps)
+static void ResetPokeyState(PokeyState* ps)
 {
     /* Poly positions */
     ps->poly4pos = 0;
@@ -414,7 +414,7 @@ void ResetPokeyState(PokeyState* ps)
 }
 
 
-double read_resam_all(PokeyState* ps)
+static double read_resam_all(PokeyState* ps)
 {
     int i = ps->qebeg;
     qev_t avol,bvol;
@@ -2063,6 +2063,7 @@ static void Update_pokey_sound_mz(uint16 addr, uint8 val, uint8 chip, uint8 gain
     }
 }
 
+#if 0
 void Pokey_debugreset(uint8 chip)
 {
     PokeyState* ps = pokey_states+chip;
@@ -2083,6 +2084,7 @@ void Pokey_debugreset(uint8 chip)
     ps->c2t2 = 1;
     ps->c3t2 = 1;
 }
+#endif
 
 /**************************************************************
 

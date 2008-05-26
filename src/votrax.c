@@ -91,12 +91,12 @@ static const char *PhonemeNames[65] =
 int sample_rate[4] = {22050, 22050, 22050, 22050};
 
 /* converts milliseconds to a count of samples */
-INLINE int time_to_samples(int ms)
+static int time_to_samples(int ms)
 {
 	return sample_rate[votraxsc01_locals.actIntonation]*ms/1000;
 }
 
-void PrepareVoiceData(int nextPhoneme, int nextIntonation)
+static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 {
 	int iNextRemainingSamples;
 	INT16 *pNextPos, *lpHelp;

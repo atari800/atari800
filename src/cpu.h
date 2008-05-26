@@ -20,6 +20,8 @@ void CPU_Initialise(void);		/* used in the assembler version of cpu.c only */
 void CPU_GetStatus(void);
 void CPU_PutStatus(void);
 void CPU_Reset(void);
+void CpuStateSave(UBYTE SaveVerbose);
+void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion);
 void NMI(void);
 void GO(int limit);
 #define GenerateIRQ() (IRQ = 1)

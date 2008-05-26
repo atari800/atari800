@@ -81,7 +81,7 @@ int alt_function = -1;
 int crash_code = -1;
 UWORD crash_address;
 UWORD crash_afterCIM;
-int CrashMenu();
+int CrashMenu(void);
 #endif
 
 char atari_files_dir[MAX_DIRECTORIES][FILENAME_MAX];
@@ -1228,10 +1228,6 @@ static void DisplaySettings(void)
 #ifndef USE_CURSES
 
 #ifdef SDL
-extern int kbd_joy_0_enabled;
-extern int kbd_joy_1_enabled;
-extern char *joy_0_description(char *, int);
-extern char *joy_1_description(char *, int);
 static char joy_0_desc[40];
 static char joy_1_desc[40];
 #endif

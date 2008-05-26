@@ -42,4 +42,12 @@ void Atari_PaletteUpdate(void);
 void Atari_sleep(double s);
 #endif
 
+#ifdef SDL
+/* used in UI to show how the keyboard joystick is mapped */
+char *joy_0_description(char *buffer, int maxsize);
+char *joy_1_description(char *buffer, int maxsize);
+extern int kbd_joy_0_enabled;
+extern int kbd_joy_1_enabled;
+#endif
+
 #endif /* _PLATFORM_H_ */

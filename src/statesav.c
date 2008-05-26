@@ -49,11 +49,12 @@
 #include "atari.h"
 #include "log.h"
 #include "util.h"
+#include "statesav.h"
 
 #define SAVE_VERSION_NUMBER 5
 
 void AnticStateSave(void);
-void MainStateSave(void);
+/* void MainStateSave(void); declared in atari.h */
 void CpuStateSave(UBYTE SaveVerbose);
 void GTIAStateSave(void);
 void PIAStateSave(void);
@@ -62,7 +63,7 @@ void CARTStateSave(void);
 void SIOStateSave(void);
 
 void AnticStateRead(void);
-void MainStateRead(void);
+/* void MainStateRead(void); declared in atari.h */
 void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion);
 void GTIAStateRead(void);
 void PIAStateRead(void);

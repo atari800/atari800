@@ -1,3 +1,16 @@
+2008-05-26  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.[ch], atari.[ch], atari_sdl.c, cartridge.h, cassette.c, cpu.h,
+gtia.[ch], javanvm/atari_javanvm.c, mzpokeysnd.c, pbi_bb.c, pbi_mio.c, 
+pbi_scsi.c, pbi_xld.[ch], pia.h, platform.h, pokey.h, rtime.[ch], sio.h,
+statesav.c, ui.c, ui_basic.c, util.[ch], votrax.[ch]:
+I compiled with:
+CC = gcc -ansi -pedantic -Wall -Waggregate-return -Wmissing-declarations 
+-Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline 
+and I found missing headers and lack of static in many places.
+Black Box and MIO will now contiune with SCSI disabled if the disk image
+is not found.
+
+
 2008-05-25  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c, cpu.c, pbi_mio.c, pbi_xld.c, win32/atari_win32.c,
 win32/screen_win32.c: some gcc -ansi -pedantic fixes

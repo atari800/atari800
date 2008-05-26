@@ -69,6 +69,8 @@ UBYTE CART_GetByte(UWORD addr);
 void CART_PutByte(UWORD addr, UBYTE byte);
 void CART_BountyBob1(UWORD addr);
 void CART_BountyBob2(UWORD addr);
+void CARTStateSave(void);
+void CARTStateRead(void);
 #ifdef PAGED_ATTRIB
 UBYTE BountyBob1_GetByte(UWORD addr);
 UBYTE BountyBob2_GetByte(UWORD addr);

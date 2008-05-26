@@ -51,8 +51,6 @@ int break_ypos = 999;
 int gtia_bug_active = FALSE; /* The GTIA bug mode is active */
 #ifdef NEW_CYCLE_EXACT
 void draw_partial_scanline(int l,int r);
-void update_scanline(void);
-void update_scanline_prior(UBYTE byte);
 void update_scanline_chbase(void);
 void update_scanline_invert(void);
 void update_scanline_blank(void);
@@ -3347,7 +3345,7 @@ void update_scanline_blank(void)
 	cur_screen_pos = newpos;
 }
 
-void set_dmactl_bug(void){
+static void set_dmactl_bug(void){
 	need_load = FALSE;
 	saved_draw_antic_ptr = draw_antic_ptr;
 	draw_antic_ptr_changed = 1;
@@ -3601,7 +3599,7 @@ UBYTE ANTIC_GetByte(UWORD addr)
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 
 /* GTIA calls it on write to PRIOR */
-void set_prior(UBYTE byte)
+void ANTIC_SetPrior(UBYTE byte)
 {
 	if ((byte ^ PRIOR) & 0x0f) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE

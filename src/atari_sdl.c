@@ -71,6 +71,7 @@
    I am not sure what to do with sound_enabled (can't turn it on inside
    emulator, probably we need two variables or command line argument) */
 #ifdef SOUND
+#include "sound.h"
 static int sound_enabled = TRUE;
 static int sound_flags = 0;
 static int sound_bits = 8;
@@ -99,38 +100,37 @@ static atari_ntsc_setup_t atari_ntsc_setup;
 int kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
 int kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
 
-int KBD_TRIG_0 = SDLK_LCTRL;
-int KBD_STICK_0_LEFT = SDLK_KP4;
-int KBD_STICK_0_RIGHT = SDLK_KP6;
-int KBD_STICK_0_DOWN = SDLK_KP2;
-int KBD_STICK_0_UP = SDLK_KP8;
-int KBD_STICK_0_LEFTUP = SDLK_KP7;
-int KBD_STICK_0_RIGHTUP = SDLK_KP9;
-int KBD_STICK_0_LEFTDOWN = SDLK_KP1;
-int KBD_STICK_0_RIGHTDOWN = SDLK_KP3;
+static int KBD_TRIG_0 = SDLK_LCTRL;
+static int KBD_STICK_0_LEFT = SDLK_KP4;
+static int KBD_STICK_0_RIGHT = SDLK_KP6;
+static int KBD_STICK_0_DOWN = SDLK_KP2;
+static int KBD_STICK_0_UP = SDLK_KP8;
+static int KBD_STICK_0_LEFTUP = SDLK_KP7;
+static int KBD_STICK_0_RIGHTUP = SDLK_KP9;
+static int KBD_STICK_0_LEFTDOWN = SDLK_KP1;
+static int KBD_STICK_0_RIGHTDOWN = SDLK_KP3;
 
-int KBD_TRIG_1 = SDLK_TAB;
-int KBD_STICK_1_LEFT = SDLK_a;
-int KBD_STICK_1_RIGHT = SDLK_d;
-int KBD_STICK_1_DOWN = SDLK_x;
-int KBD_STICK_1_UP = SDLK_w;
-int KBD_STICK_1_LEFTUP = SDLK_q;
-int KBD_STICK_1_RIGHTUP = SDLK_e;
-int KBD_STICK_1_LEFTDOWN = SDLK_z;
-int KBD_STICK_1_RIGHTDOWN = SDLK_c;
+static int KBD_TRIG_1 = SDLK_TAB;
+static int KBD_STICK_1_LEFT = SDLK_a;
+static int KBD_STICK_1_RIGHT = SDLK_d;
+static int KBD_STICK_1_DOWN = SDLK_x;
+static int KBD_STICK_1_UP = SDLK_w;
+static int KBD_STICK_1_LEFTUP = SDLK_q;
+static int KBD_STICK_1_RIGHTUP = SDLK_e;
+static int KBD_STICK_1_LEFTDOWN = SDLK_z;
+static int KBD_STICK_1_RIGHTDOWN = SDLK_c;
 
 /* real joysticks */
 
-int fd_joystick0 = -1;
-int fd_joystick1 = -1;
+static int fd_joystick0 = -1;
+static int fd_joystick1 = -1;
 
-SDL_Joystick *joystick0 = NULL;
-SDL_Joystick *joystick1 = NULL;
-int joystick0_nbuttons, joystick1_nbuttons;
+static SDL_Joystick *joystick0 = NULL;
+static SDL_Joystick *joystick1 = NULL;
+static int joystick0_nbuttons;
+static int joystick1_nbuttons;
 
 #define minjoy 10000			/* real joystick tolerancy */
-
-extern int alt_function;
 
 #ifdef SOUND
 /* sound */
@@ -140,20 +140,20 @@ static int dsprate = 44100;
 #endif
 
 /* video */
-SDL_Surface *MainScreen = NULL;
-SDL_Color colors[256];			/* palette */
-Uint16 Palette16[256];			/* 16-bit palette */
-Uint32 Palette32[256];			/* 32-bit palette */
+static SDL_Surface *MainScreen = NULL;
+static SDL_Color colors[256];			/* palette */
+static Uint16 Palette16[256];			/* 16-bit palette */
+static Uint32 Palette32[256];			/* 32-bit palette */
 
 /* keyboard */
-Uint8 *kbhits;
+static Uint8 *kbhits;
 
 /* For better handling of the Atari_Configure-recognition...
    Takes a keySym as integer-string and fills the value
    into the retval referentially.
    Authors: B.Schreiber, A.Martinez
    fixed and cleaned up by joy */
-int SDLKeyBind(int *retval, char *sdlKeySymIntStr)
+static int SDLKeyBind(int *retval, char *sdlKeySymIntStr)
 {
 	int ksym;
 
@@ -313,7 +313,7 @@ static void SetPalette(void)
 	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
 }
 
-void CalcPalette(void)
+static void CalcPalette(void)
 {
 	int i, rgb;
 	float y;
@@ -356,7 +356,7 @@ void Atari_PaletteUpdate(void)
 	CalcPalette();
 }
 
-void ModeInfo(void)
+static void ModeInfo(void)
 {
 	char bwflag, fullflag, width, joyflag;
 	if (BW)
@@ -391,7 +391,7 @@ void ModeInfo(void)
 		 fullflag, bwflag, width, joyflag);
 }
 
-void SetVideoMode(int w, int h, int bpp)
+static void SetVideoMode(int w, int h, int bpp)
 {
 	if (FULLSCREEN)
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
@@ -404,7 +404,7 @@ void SetVideoMode(int w, int h, int bpp)
 	}
 }
 
-void SetNewVideoMode(int w, int h, int bpp)
+static void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
 
@@ -469,7 +469,7 @@ void SetNewVideoMode(int w, int h, int bpp)
 
 }
 
-void SwitchFullscreen(void)
+static void SwitchFullscreen(void)
 {
 	FULLSCREEN = 1 - FULLSCREEN;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
@@ -477,7 +477,7 @@ void SwitchFullscreen(void)
 	Atari_DisplayScreen();
 }
 
-void SwitchWidth(void)
+static void SwitchWidth(void)
 {
 	WIDTH_MODE++;
 	if (WIDTH_MODE > FULL_WIDTH_MODE)
@@ -487,7 +487,7 @@ void SwitchWidth(void)
 	Atari_DisplayScreen();
 }
 
-void SwitchBW(void)
+static void SwitchBW(void)
 {
 	BW = 1 - BW;
 	CalcPalette();
@@ -495,14 +495,14 @@ void SwitchBW(void)
 	ModeInfo();
 }
 
-void SwapJoysticks(void)
+static void SwapJoysticks(void)
 {
 	SWAP_JOYSTICKS = 1 - SWAP_JOYSTICKS;
 	ModeInfo();
 }
 
 #ifdef SOUND
-void SDL_Sound_Update(void *userdata, Uint8 *stream, int len)
+static void SDL_Sound_Update(void *userdata, Uint8 *stream, int len)
 {
 	Uint8 dsp_buffer[2 << FRAGSIZE]; /* x2, because 16bit buffers */
 	if (len > 1 << FRAGSIZE)
@@ -514,7 +514,7 @@ void SDL_Sound_Update(void *userdata, Uint8 *stream, int len)
 		SDL_MixAudio(stream, dsp_buffer, 2 * len, SOUND_VOLUME);
 }
 
-void SDL_Sound_Initialise(int *argc, char *argv[])
+static void SDL_Sound_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	SDL_AudioSpec desired, obtained;
@@ -1240,7 +1240,7 @@ int Atari_Keyboard(void)
 	return AKEY_NONE;
 }
 
-void Init_SDL_Joysticks(int first, int second)
+static void Init_SDL_Joysticks(int first, int second)
 {
 	if (first) {
 		joystick0 = SDL_JoystickOpen(0);
@@ -1264,7 +1264,7 @@ void Init_SDL_Joysticks(int first, int second)
 	}
 }
 
-void Init_Joysticks(int *argc, char *argv[])
+static void Init_Joysticks(int *argc, char *argv[])
 {
 #ifdef LPTJOY
 	char *lpt_joy0 = NULL;
@@ -1404,6 +1404,9 @@ void Atari_Initialise(int *argc, char *argv[])
 #ifdef WIN32
 	/*Windows SDL version 1.2.10+ uses windib as the default, but it is slower*/
 	if (getenv("SDL_VIDEODRIVER")==NULL) {
+#ifdef __STRICT_ANSI__
+		extern int putenv(char *string); /* suppress -ansi -pedantic warning */
+#endif
 		putenv("SDL_VIDEODRIVER=directx");
 	}
 #endif
@@ -1508,7 +1511,7 @@ int Atari_Exit(int run_monitor)
  ******************************************************************************
  */
 
-void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLinesPct)
+static void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLinesPct)
 {
     Uint32* pBuf = (Uint32*)(pBuffer)+pitch/sizeof(Uint32);
 	Uint32* sBuf = (Uint32*)(pBuffer);
@@ -1560,7 +1563,7 @@ void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLines
 }
 
 /* Modified version of the above, which uses interpolation (slower but better)*/
-void scanLines_16_interp(void* pBuffer, int width, int height, int pitch, int scanLinesPct)
+static void scanLines_16_interp(void* pBuffer, int width, int height, int pitch, int scanLinesPct)
 {
     Uint32* pBuf = (Uint32*)(pBuffer)+pitch/sizeof(Uint32);
 	Uint32* sBuf = (Uint32*)(pBuffer);
@@ -1614,7 +1617,7 @@ void scanLines_16_interp(void* pBuffer, int width, int height, int pitch, int sc
 	}
 }
 
-void DisplayNTSCEmu640x480(UBYTE *screen)
+static void DisplayNTSCEmu640x480(UBYTE *screen)
 {
 	/* Number of overscan lines not shown */
 	enum { overscan_lines = 24 };
@@ -1643,7 +1646,7 @@ void DisplayNTSCEmu640x480(UBYTE *screen)
 	}
 }
 
-void DisplayRotated240x320(Uint8 *screen)
+static void DisplayRotated240x320(Uint8 *screen)
 {
 	int i, j;
 	register Uint32 *start32;
@@ -1665,7 +1668,7 @@ void DisplayRotated240x320(Uint8 *screen)
 		}
 }
 
-void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
+static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 {
 	register Uint32 quad;
 	register Uint32 *start32;
@@ -1727,7 +1730,7 @@ void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 	}
 }
 
-void DisplayWithScaling(Uint8 *screen, int jumped, int width)
+static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 {
 	register Uint32 quad;
 	register int x;
@@ -1871,7 +1874,7 @@ void Atari_DisplayScreen(void)
 	SDL_Flip(MainScreen);
 }
 
-int get_SDL_joystick_state(SDL_Joystick *joystick)
+static int get_SDL_joystick_state(SDL_Joystick *joystick)
 {
 	int x;
 	int y;
@@ -1905,7 +1908,7 @@ int get_SDL_joystick_state(SDL_Joystick *joystick)
 	}
 }
 
-int get_LPT_joystick_state(int fd)
+static int get_LPT_joystick_state(int fd)
 {
 #ifdef LPTJOY
 	int status;
@@ -1951,7 +1954,7 @@ int get_LPT_joystick_state(int fd)
 #endif /* LPTJOY */
 }
 
-void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
+static void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 {
 	int stick0, stick1;
 	stick0 = stick1 = STICK_CENTRE;
@@ -2026,7 +2029,7 @@ void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 		*s1 = get_SDL_joystick_state(joystick1);
 }
 
-void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
+static void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 {
 	int trig0, trig1, i;
 	trig0 = trig1 = 1;

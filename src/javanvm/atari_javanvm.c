@@ -747,20 +747,22 @@ void Atari_Initialise(int *argc, char *argv[])
 		JAVANVM_InitGraphics((void *)&config[0]);
 		JAVANVM_InitPalette((void *)&colortable[0]);
 
-		int dsprate = 48000;
-		int sound_flags = 0;
-		sound_flags |= SND_BIT16;
-		int sconfig[JAVANVM_InitSoundSIZE];
-		sconfig[JAVANVM_InitSoundSampleRate] = dsprate;
-		sconfig[JAVANVM_InitSoundBitsPerSample] = 16;
-		sconfig[JAVANVM_InitSoundChannels] = 1;
-		sconfig[JAVANVM_InitSoundSigned] = TRUE;
-		sconfig[JAVANVM_InitSoundBigEndian] = TRUE;
-		line_buffer_size = JAVANVM_InitSound((void *)&sconfig[0]);
-		dsp_buffer_size = 4096; /*adjust this to fix skipping/latency*/
-		if (line_buffer_size<dsp_buffer_size) dsp_buffer_size = line_buffer_size;
-		dsp_buffer = (UBYTE*)malloc(dsp_buffer_size);
-		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, sound_flags);
+		{
+			int dsprate = 48000;
+			int sound_flags = 0;
+			int sconfig[JAVANVM_InitSoundSIZE];
+			sound_flags |= SND_BIT16;
+			sconfig[JAVANVM_InitSoundSampleRate] = dsprate;
+			sconfig[JAVANVM_InitSoundBitsPerSample] = 16;
+			sconfig[JAVANVM_InitSoundChannels] = 1;
+			sconfig[JAVANVM_InitSoundSigned] = TRUE;
+			sconfig[JAVANVM_InitSoundBigEndian] = TRUE;
+			line_buffer_size = JAVANVM_InitSound((void *)&sconfig[0]);
+			dsp_buffer_size = 4096; /*adjust this to fix skipping/latency*/
+			if (line_buffer_size<dsp_buffer_size) dsp_buffer_size = line_buffer_size;
+			dsp_buffer = (UBYTE*)malloc(dsp_buffer_size);
+			Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, sound_flags);
+		}
 	}
 	return;
 }
