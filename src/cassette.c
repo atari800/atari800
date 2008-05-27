@@ -407,7 +407,7 @@ void CASSETTE_LeaderSave(void)
     must be split and a baud chunk inserted inbetween) or -1 for error */
 int CASSETTE_Read(void)
 {
-	/* no file or blockpositions dont match anymore after saving */
+	/* no file or blockpositions don't match anymore after saving */
 	if ((cassette_file == NULL) || (cassette_savefile == TRUE))
 		return -1;
 	if (cassette_current_block > cassette_max_block)
@@ -423,7 +423,7 @@ int CASSETTE_Write(int length)
 	/* there must be a filename given for saving */
 	if (strcmp(cassette_filename, "None") == 0)
 		return -1;
-	/* if file doesnt exist (or has no records), create the header */
+	/* if file doesn't exist (or has no records), create the header */
 	if ((cassette_file == NULL || ftell(cassette_file) == 0) &&
 			(CASSETTE_CreateFile(cassette_filename,
 			&cassette_file,&cassette_isCAS) == FALSE))
@@ -452,7 +452,7 @@ static UWORD ReadRecord_POKEY(void)
 	UWORD length = 0;
 	if (cassette_isCAS) {
 		CAS_Header header;
-		/* no file or blockpositions dont match anymore after saving */
+		/* no file or blockpositions don't match anymore after saving */
 		if ((cassette_file == NULL) || (cassette_savefile == TRUE)) {
 			cassette_nextirqevent = -1;
 			length = -1;
@@ -571,7 +571,7 @@ int CASSETTE_IOLineStatus(void)
 {
 	int bit = 0;
 
-	/* if motor off and EOF return always 1 (eviqualent the mark tone) */
+	/* if motor off and EOF return always 1 (equivalent the mark tone) */
 	if ((cassette_motor == 0)
 		|| (eof_of_tape != 0)) {
 		return 1;

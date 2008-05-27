@@ -1055,7 +1055,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 	}\
 	else if (HPOSP##n <x && byte >= x) {\
 	/* case 3: new value is right, old value is left */\
-		/* redraw without clearning first */\
+		/* redraw without clearing first */\
 		/* note: a hack, we can get away with it unless another change occurs */\
 		/* before the original copy that wasn't erased due to changing */\
 		/* pm_dirty is drawn */\

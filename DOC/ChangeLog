@@ -1,3 +1,9 @@
+2008-05-27  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c, atari_ntsc.h, cassette.c, gtia.c, joycfg.c, monitor.c,
+mzpokeysnd.c, pbi.c, pokeysnd.c, screen.c, sio.c, votrax.c:
+Some spelling in comments corrected.
+
+
 2008-05-26  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.[ch], atari.[ch], atari_sdl.c, cartridge.h, cassette.c, cpu.h,
 gtia.[ch], javanvm/atari_javanvm.c, mzpokeysnd.c, pbi_bb.c, pbi_mio.c, 

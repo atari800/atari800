@@ -143,7 +143,7 @@ void Screen_Initialise(int *argc, char *argv[])
 	if (help_only)
 		return;
 
-	if (atari_screen == NULL) { /* platform-specific code can initalize it in theory */
+	if (atari_screen == NULL) { /* platform-specific code can initialize it in theory */
 		atari_screen = (ULONG *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH);
 #ifdef DIRTYRECT
 		screen_dirty = (UBYTE *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH / 8);

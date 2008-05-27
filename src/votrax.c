@@ -122,7 +122,7 @@ static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 	}
 
 	if ( PhonemeData[nextPhoneme].iType>=PT_VS ) {
-		/* 'stop phonemes' will stop playing until the next phoneme is send*/
+		/* 'stop phonemes' will stop playing until the next phoneme is sent*/
 		votraxsc01_locals.iRemainingSamples = 0;
 		return;
 	}
@@ -236,7 +236,7 @@ static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 		}
 
 		if ( !votraxsc01_locals.iDelay ) {
-			/* this is true if after a stop and a phoneme was send a second phoneme is send*/
+			/* this is true if after a stop and a phoneme was sent a second phoneme is sent*/
 			/* during the delay time of the chip. Ignore the first phoneme data*/
 			iFadeOutPos = 0;
 			iFadeOutSamples = 0;
@@ -446,13 +446,13 @@ int votraxsc01_samples(int currentP, int nextP, int cursamples)
 	int AdditionalSamples = 0;
 	int dwCount;
 	int delay = 0;
-	/* some phonenemes have a SecondStart */
+	/* some phonemes have a SecondStart */
 	if ( PhonemeData[currentP].iType>=PT_VS && currentP!=nextP) {
 		AdditionalSamples = PhonemeData[currentP].iSecondStart;
 	}
 
 	if ( PhonemeData[nextP].iType>=PT_VS ) {
-		/* 'stop phonemes' will stop playing until the next phoneme is send*/
+		/* 'stop phonemes' will stop playing until the next phoneme is sent*/
 		/* votraxsc01_locals.iRemainingSamples = 0; */
 		return cursamples;
 	}

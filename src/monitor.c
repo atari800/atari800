@@ -87,7 +87,7 @@ typedef struct {
 
  /* Symbol names taken from atari.equ - part of disassembler by Erich Bacher
     and from antic.h, gtia.h, pia.h and pokey.h.
-    Symbols must be sorted by address. If the adress has different names
+    Symbols must be sorted by address. If the address has different names
     when reading/writing to it, put the read name first. */
 
 static const symtable_rec symtable_builtin[] = {

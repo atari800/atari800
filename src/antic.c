@@ -44,7 +44,7 @@
 #include "cycle_map.h"
 #endif
 
-#define LCHOP 3			/* do not build lefmost 0..3 characters in wide mode */
+#define LCHOP 3			/* do not build leftmost 0..3 characters in wide mode */
 #define RCHOP 3			/* do not build rightmost 0..3 characters in wide mode */
 
 int break_ypos = 999;
@@ -64,13 +64,13 @@ UBYTE need_load;
 int dmactl_bug_chdata;
 #ifndef NO_GTIA11_DELAY
 /* the position in the ring buffer where the last change before */
-/* the previous line occured to PRIOR */
+/* the previous line occurred to PRIOR */
 int prevline_prior_pos = 0;
 /* the position in the ring buffer where the last change before */
-/* the current line occured to PRIOR */
+/* the current line occurred to PRIOR */
 int curline_prior_pos = 0;
 /* the current position in the ring buffer where the most recent */
-/* change to PRIOR occured */
+/* change to PRIOR occurred */
 int prior_curpos = 0;
 /* ring buffer to hold the previous values of PRIOR */
 UBYTE prior_val_buf[PRIOR_BUF_SIZE];
@@ -3158,23 +3158,23 @@ void ANTIC_Frame(int draw_display)
 /*     A   B  C              D     E    F      G   */
 /*     ^                     ^                 ^   */
 /* prevline_prior_pos  curline_prior_pos  prior_curpos  */
-/* G would be the most recent change which occured during drawing */
+/* G would be the most recent change which occurred during drawing */
 /* of the current line, D is the most recent */
 /* change before the current line was drawn, and A is the most recent */
 /* change before the previous line was drawn */
 /* curline_prior_pos is saved in old_curline_prior_pos */
 /* then the code will increase either curline_prior_pos or */
-/* prevline_prior_pos depending if the change at B or E occured */
+/* prevline_prior_pos depending if the change at B or E occurred */
 /* earlier in the scanline ignoring which scanline it was */
 /* eg: */
 /*                              A occurs on some previous scanline */
 /* prev:     B                      C                          D     */
 /* current:                     E                    F           G   */
-/* so from the left end of the screen, the changes occured in the order */
+/* so from the left end of the screen, the changes occurred in the order */
 /* B,E,C,F,D,G */
 /* then the code will read the values in that order, and each time it will */
 /* update prev_prior_val and cur_prior_val to be equal the the PRIOR values */
-/* "in effect" *before* those changes occured.  If those PRIOR values */
+/* "in effect" *before* those changes occurred.  If those PRIOR values */
 /* should cause a GTIA11_DELAY effect to occur then this is processed */
 /* for that portion of the scanline */
 /* At the end of processing, the buffer would look like: */
@@ -3401,7 +3401,7 @@ void draw_partial_scanline(int l, int r)
 	int sv_bufsize2 = 0;
 	/* number of 8,16,32pixel chars to draw in the playfield */
 	int nchars = 0;
-	/* adjusment to ch_index , it is the number of 8,16,32pixel chars */
+	/* adjustment to ch_index , it is the number of 8,16,32pixel chars */
 	/* that we do not draw on the left hand side that would usually be drawn */
 	/* for this mode */
 	int ch_adj = 0;
@@ -3462,7 +3462,7 @@ void draw_partial_scanline(int l, int r)
 			/* hand most 8pixel chars in the code in the later section */
 			/* further down, so there is a possibility that the 8pixels */
 			/* which are saved within the reference frame of the border */
-			/* are not enough to ensure that everyting gets saved */
+			/* are not enough to ensure that everything gets saved */
 			l_pfchar = (l - x_min[md]) / 4;
 			if (((l - x_min[md]) & 3) > sv_bufsize) {
 				sv_bufsize = ((l - x_min[md]) & 3);
@@ -3480,7 +3480,7 @@ void draw_partial_scanline(int l, int r)
 		sv_bufsize = ((l - x_min[md]) & 3); /* low bits have buf size */
 		sv_bufstart = l - sv_bufsize; /* difference gives start */
 		l_pfchar = (sv_bufstart - x_min[md]) / 4;
-		left_border_chars = 0; /* dont display left border */
+		left_border_chars = 0; /* don't display left border */
 	}
 	memcpy(sv_buf, scrn_ptr + sv_bufstart, sv_bufsize * sizeof(UWORD)); /* save part of screen */
 
@@ -3763,7 +3763,7 @@ void ANTIC_PutByte(UWORD addr, UBYTE byte)
 		dlist = (dlist & 0x00ff) | (byte << 8);
 		break;
 	case _DMACTL:
-/* TODO: make this truely cycle-exact, update cpu2antic and antic2cpu,
+/* TODO: make this truly cycle-exact, update cpu2antic and antic2cpu,
 add support for wider->narrow glitches including the interesting mode 6
 glitch */
 #ifdef NEW_CYCLE_EXACT
@@ -4112,7 +4112,7 @@ glitch */
 					/* antic does not steal the current cycle */
 /* note that if WSYNC_C is a stolen cycle, then antic2cpu_ptr[WSYNC_C+1]-1 corresponds
 to the last cpu cycle < WSYNC_C.  Then the cpu will see this cycle if WSYNC
-is not delayed, since it really occured one cycle after the STA WSYNC.  But if
+is not delayed, since it really occurred one cycle after the STA WSYNC.  But if
 WSYNC is "delayed" then xpos is the next cpu cycle after WSYNC_C (which was stolen
 ), so it is one greater than the above value.  EG if WSYNC_C=10 and is stolen
 (and let us say cycle 9,11 are also stolen, and 8,12 are not), then in the first

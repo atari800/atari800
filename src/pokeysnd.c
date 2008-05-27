@@ -78,7 +78,7 @@ static uint8 Outbit[4 * MAXPOKEYS];		/* current state of the output (high or low
 
 static uint8 Outvol[4 * MAXPOKEYS];		/* last output volume for each channel */
 
-/* Initialze the bit patterns for the polynomials. */
+/* Initialize the bit patterns for the polynomials. */
 
 /* The 4bit and 5bit patterns are the identical ones used in the pokey chip. */
 /* Though the patterns could be packed with 8 bits per byte, using only a */

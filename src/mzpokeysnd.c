@@ -805,7 +805,7 @@ static void event3_pure(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c3t2 = !ps->c3t2;
     ps->c3t1 = p5v;
-    /* high-pass closk for channel 1 */
+    /* high-pass clock for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -814,7 +814,7 @@ static void event3_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c3t1)
         ps->c3t2 = !ps->c3t2;
     ps->c3t1 = p5v;
-    /* high-pass closk for channel 1 */
+    /* high-pass clock for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -822,7 +822,7 @@ static void event3_p4(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c3t2 = p4v;
     ps->c3t1 = p5v;
-    /* high-pass closk for channel 1 */
+    /* high-pass clock for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -830,7 +830,7 @@ static void event3_p917(PokeyState* ps, char p5v, char p4v, char p917v)
 {
     ps->c3t2 = p917v;
     ps->c3t1 = p5v;
-    /* high-pass closk for channel 1 */
+    /* high-pass clock for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -839,7 +839,7 @@ static void event3_p4_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c3t1)
         ps->c3t2 = p4v;
     ps->c3t1 = p5v;
-    /* high-pass closk for channel 1 */
+    /* high-pass clock for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -848,7 +848,7 @@ static void event3_p917_p5(PokeyState* ps, char p5v, char p4v, char p917v)
     if(ps->c3t1)
         ps->c3t2 = p917v;
     ps->c3t1 = p5v;
-    /* high-pass closk for channel 1 */
+    /* high-pass clock for channel 1 */
     ps->c1t3 = ps->c1t2;
 }
 
@@ -1099,7 +1099,7 @@ static int remez_filter_table(double resamp_rate, /* output_rate/input_rate */
     }
   }
 
-  /* not found -- use shortest trasition */
+  /* not found -- use shortest transition */
   ripple--;
   order--;
 

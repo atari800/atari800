@@ -678,7 +678,7 @@ void SIO(void)
 					CopyToMem(DataBuffer, data, realsize);
 			}
 			else {
-				/* there are programs which send the format-command but dont wait for the result (eg xf-tools) */
+				/* there are programs which send the format-command but don't wait for the result (eg xf-tools) */
 				SIO_FormatDisk(unit, DataBuffer, realsize, SIO_format_sectorcount[unit]);
 				result = 'E';
 			}
@@ -751,7 +751,7 @@ void SIO(void)
 		regY = 138;
 		SetN;
 		break;
-	case 'A':					/* Device acknoledge */
+	case 'A':					/* Device acknowledge */
 	case 'C':					/* Operation complete */
 		regY = 1;
 		ClrN;
