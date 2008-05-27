@@ -1161,15 +1161,15 @@ found:
 }
 
 #ifdef NONLINEAR_MIXING
-static void pokeymix_init()
+static void pokeymix_init(void)
 {
-    pokeymix = malloc(65536*sizeof(*pokeymix));
     int v0_0, v1_0, v2_0, v3_0;
     int v0_1, v1_1, v2_1, v3_1;
     int v0_2, v1_2, v2_2, v3_2;
     int v0_3, v1_3, v2_3, v3_3;
     int count = 0;
     double mix;
+    pokeymix = malloc(65536*sizeof(*pokeymix));
     for(v3_0 = 0, v3_1 = 0, v3_2 = 0, v3_3 = 0; v3_0 < 16; v3_0++, v3_1+=0x10, v3_2+=0x100, v3_3+=0x1000) {
         for(v2_0 = 0, v2_1 = 0, v2_2 = 0, v2_3 = 0; v2_0 <= v3_0; v2_0++, v2_1+=0x10, v2_2+=0x100, v2_3+=0x1000) {
             for(v1_0 = 0, v1_1 = 0, v1_2 = 0, v1_3 = 0; v1_0 <= v2_0; v1_0++, v1_1+=0x10, v1_2+=0x100, v1_3+=0x1000) {
