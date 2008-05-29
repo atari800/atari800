@@ -30,6 +30,7 @@
 #include "cpu.h"
 #include "log.h"
 #include "util.h"
+#include <stdlib.h>
 #ifdef PBI_MIO
 #include "pbi_mio.h"
 #endif
@@ -39,7 +40,9 @@
 #ifdef PBI_XLD
 #include "pbi_xld.h"
 #endif
-#include <stdlib.h>
+#ifdef PBI_PROTO80
+#include "pbi_proto80.h"
+#endif
 
 /* stores the current state of the D1FF register, read hardware has 1
  * bit per device, the bits are on the devices themselves */
@@ -71,6 +74,9 @@ void PBI_Initialise(int *argc, char *argv[])
 #ifdef PBI_MIO
 	PBI_MIO_Initialise(argc, argv);
 #endif
+#ifdef PBI_PROTO80
+	PBI_PROTO80_Initialise(argc, argv);
+#endif
 }
 
 int PBI_ReadConfig(char *string, char *ptr)
@@ -89,6 +95,10 @@ int PBI_ReadConfig(char *string, char *ptr)
 	else if (PBI_BB_ReadConfig(string, ptr)) {
 	}
 #endif
+#ifdef PBI_PROTO80
+	else if (PBI_PROTO80_ReadConfig(string, ptr)) {
+	}
+#endif
 	else return FALSE; /* no match */
 	return TRUE; /* matched something */
 }
@@ -103,6 +113,9 @@ void PBI_WriteConfig(FILE *fp)
 #endif
 #ifdef PBI_XLD
 	PBI_XLD_WriteConfig(fp);
+#endif
+#ifdef PBI_PROTO80
+	PBI_PROTO80_WriteConfig(fp);
 #endif
 }
 
@@ -129,6 +142,9 @@ UBYTE PBI_D1_GetByte(UWORD addr)
 	/* Remaining PBI devices cooperate, following spec */
 #ifdef PBI_XLD
 	if (PBI_XLD_enabled) result = PBI_XLD_D1_GetByte(addr);
+#endif
+#ifdef PBI_PROTO80
+	if (result == PBI_NOT_HANDLED && PBI_PROTO80_enabled) result = PBI_PROTO80_D1_GetByte(addr);
 #endif
 	if(result != PBI_NOT_HANDLED) return (UBYTE)result;
 	/* Each bit of D1FF is set by one of the 8 PBI devices to signal IRQ */
@@ -168,6 +184,9 @@ void PBI_D1_PutByte(UWORD addr, UBYTE byte)
 #ifdef PBI_XLD
 		if (PBI_XLD_enabled) PBI_XLD_D1_PutByte(addr, byte);
 #endif
+#ifdef PBI_PROTO_80
+		if (PBI_PROTO80_enabled) PBI_PROTO80_D1_PutByte(addr, byte);
+#endif
 		/* add more devices here... */
 	}
 	else if (addr == 0xd1ff) {
@@ -183,6 +202,13 @@ void PBI_D1_PutByte(UWORD addr, UBYTE byte)
 			D1FF_LATCH = byte;
 #ifdef PBI_XLD
 			if (PBI_XLD_enabled && PBI_XLD_D1FF_PutByte(byte) != PBI_NOT_HANDLED) {
+				/* handled */
+				fp_active = FALSE;
+				return;
+			}
+#endif
+#ifdef PBI_PROTO80
+			if (PBI_PROTO80_enabled && PBI_PROTO80_D1FF_PutByte(byte) != PBI_NOT_HANDLED) {
 				/* handled */
 				fp_active = FALSE;
 				return;

@@ -227,6 +227,7 @@ The following items are for -ntscemu only:
                       bright colours become desaturated or washed out)
 -scanlines <n>        Set scanlines percentage (ntscemu only)
 -scanlinesnoint       Disable scanlines interpolation (ntscemu only)
+-proto80              Emulate a prototype 80 column board for the 1090
 
 
 SVGALIB version options

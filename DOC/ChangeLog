@@ -1,3 +1,9 @@
+2008-05-28  Perry McFarlane  <perry_m@fastmail.fm>
+* DOC/USAGE, atari_sdl.c, configure.ac, pbi.c, pbi_proto80.c, pbi_proto80.h,
+pbi_xld.c: added emulation of a prototype 80 column card for the Atari 1090
+expansion box (SDL version).  Also fixed a problem with LoadImage in pbi_xld.c
+
+
 2008-05-27  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c, atari_ntsc.h, cassette.c, gtia.c, joycfg.c, monitor.c,
 mzpokeysnd.c, pbi.c, pokeysnd.c, screen.c, sio.c, votrax.c:

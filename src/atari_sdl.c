@@ -66,6 +66,7 @@
 #include "log.h"
 #include "util.h"
 #include "atari_ntsc.h"
+#include "pbi_proto80.h"
 
 /* you can set that variables in code, or change it when emulator is running
    I am not sure what to do with sound_enabled (can't turn it on inside
@@ -408,7 +409,7 @@ static void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
 
-	if (ROTATE90||ntscemu) {
+	if (ROTATE90||ntscemu||PBI_PROTO80_enabled) {
 		SetVideoMode(w, h, bpp);
 	}
 	else {
@@ -1428,6 +1429,14 @@ void Atari_Initialise(int *argc, char *argv[])
 	if (help_only)
 		return;		/* return before changing the gfx mode */
 
+	/* Prototype 80 column adaptor */
+	if (PBI_PROTO80_enabled) {
+		width = 640;
+		height = 400;
+		bpp = 16;
+		Aprint("proto80 mode");
+	}
+
 	SetNewVideoMode(width, height, bpp);
 	CalcPalette();
 	SetPalette();
@@ -1646,6 +1655,34 @@ static void DisplayNTSCEmu640x480(UBYTE *screen)
 	}
 }
 
+static void DisplayProto80640x400(UBYTE *screen)
+{
+	UWORD white = 0xffff;
+	UWORD black = 0x0000;
+	int skip = MainScreen->pitch - 80*8;
+	Uint16 *start16 = (Uint16 *) MainScreen->pixels;
+
+	int scanline, column;
+	UBYTE pixels;
+	for (scanline = 0; scanline < 8*24; scanline++) {
+		for (column = 0; column < 80; column++) {
+			int i;
+			pixels = PBI_PROTO80_Pixels(scanline,column);
+			for (i = 0; i < 8; i++) {
+				if (pixels & 0x80) {
+					*start16++ = white;
+				}
+				else {
+					*start16++ = black;
+				}
+				pixels <<= 1;
+			}
+		}
+		start16 += skip;
+	}
+	scanLines_16_interp((void *)MainScreen->pixels, 640, 400, MainScreen->pitch, scanlines_percentage);
+}
+
 static void DisplayRotated240x320(Uint8 *screen)
 {
 	int i, j;
@@ -1860,6 +1897,9 @@ void Atari_DisplayScreen(void)
 	}
   	if (ntscemu) {
   		DisplayNTSCEmu640x480((UBYTE *)atari_screen);
+  	}
+	else if (PBI_PROTO80_enabled) {
+  		DisplayProto80640x400((UBYTE *)atari_screen);
   	}
   
   	else if (ROTATE90) {

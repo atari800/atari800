@@ -113,9 +113,14 @@ void PBI_XLD_Initialise(int *argc, char *argv[])
 
 	if (xld_v_enabled) {
 		voicerom = Util_malloc(0x1000);
-		Atari800_LoadImage(xld_v_rom_filename, voicerom, 0x1000);
-		printf("loaded XLD voice rom image\n");
-		PBI_D6D7ram = TRUE;
+		if (!Atari800_LoadImage(xld_v_rom_filename, voicerom, 0x1000)) {
+			free(voicerom);
+			xld_v_enabled = FALSE;
+		}
+		else {
+			printf("loaded XLD voice rom image\n");
+			PBI_D6D7ram = TRUE;
+		}
 	}
 
 	/* If you set the drive to empty in the UI, the message is displayed */
@@ -124,9 +129,14 @@ void PBI_XLD_Initialise(int *argc, char *argv[])
 	/* dskcnt6 works. dskcnt10 does not */
 	if (xld_d_enabled) {
 		diskrom = Util_malloc(0x800);
-		Atari800_LoadImage(xld_d_rom_filename, diskrom, 0x800);
-		D(printf("loaded 1450XLD D: device driver rom image\n"));
-		PBI_D6D7ram = TRUE;
+		if (!Atari800_LoadImage(xld_d_rom_filename, diskrom, 0x800)) {
+			free(diskrom);
+			xld_d_enabled = FALSE;
+		}
+		else {
+			D(printf("loaded 1450XLD D: device driver rom image\n"));
+			PBI_D6D7ram = TRUE;
+		}
 	}
 }
 

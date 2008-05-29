@@ -295,6 +295,8 @@ dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
 dnl Don't make this a windowed app, make it a console app.
             LIBS=${LIBS/-mwindows/}
         fi
+        AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
+        OBJS="$OBJS pbi_proto80.o"
         ;;
     svgalib)
         AC_DEFINE(SVGALIB,1,[Target: Linux with SVGALib.])
