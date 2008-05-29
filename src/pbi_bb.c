@@ -70,7 +70,7 @@ void PBI_BB_Initialise(int *argc, char *argv[])
 				Aprint("Invalid black box rom size\n");
 				continue;
 			}
-			bb_rom = Util_malloc(bb_rom_size);
+			bb_rom = (UBYTE *)Util_malloc(bb_rom_size);
 			if (!Atari800_LoadImage(bb_rom_filename, bb_rom, bb_rom_size)) {
 				free(bb_rom);
 				continue;

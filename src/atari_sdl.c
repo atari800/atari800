@@ -263,11 +263,11 @@ void Atari_ConfigSave(FILE *fp)
 char *joy_0_description(char *buffer, int maxsize)
 {
 	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
-			SDL_GetKeyName(KBD_STICK_0_LEFT),
-			SDL_GetKeyName(KBD_STICK_0_RIGHT),
-			SDL_GetKeyName(KBD_STICK_0_UP),
-			SDL_GetKeyName(KBD_STICK_0_DOWN),
-			SDL_GetKeyName(KBD_TRIG_0)
+			SDL_GetKeyName((SDLKey)KBD_STICK_0_LEFT),
+			SDL_GetKeyName((SDLKey)KBD_STICK_0_RIGHT),
+			SDL_GetKeyName((SDLKey)KBD_STICK_0_UP),
+			SDL_GetKeyName((SDLKey)KBD_STICK_0_DOWN),
+			SDL_GetKeyName((SDLKey)KBD_TRIG_0)
 	);
 	return buffer;
 }
@@ -275,11 +275,11 @@ char *joy_0_description(char *buffer, int maxsize)
 char *joy_1_description(char *buffer, int maxsize)
 {
 	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
-			SDL_GetKeyName(KBD_STICK_1_LEFT),
-			SDL_GetKeyName(KBD_STICK_1_RIGHT),
-			SDL_GetKeyName(KBD_STICK_1_UP),
-			SDL_GetKeyName(KBD_STICK_1_DOWN),
-			SDL_GetKeyName(KBD_TRIG_1)
+			SDL_GetKeyName((SDLKey)KBD_STICK_1_LEFT),
+			SDL_GetKeyName((SDLKey)KBD_STICK_1_RIGHT),
+			SDL_GetKeyName((SDLKey)KBD_STICK_1_UP),
+			SDL_GetKeyName((SDLKey)KBD_STICK_1_DOWN),
+			SDL_GetKeyName((SDLKey)KBD_TRIG_1)
 	);
 	return buffer;
 }
@@ -332,9 +332,9 @@ static void CalcPalette(void)
 			y = 0.299 * ((rgb & 0x00ff0000) >> 16) +
 				0.587 * ((rgb & 0x0000ff00) >> 8) +
 				0.114 * ((rgb & 0x000000ff) >> 0);
-			colors[i].r = y;
-			colors[i].g = y;
-			colors[i].b = y;
+			colors[i].r = (Uint8)y;
+			colors[i].g = (Uint8)y;
+			colors[i].b = (Uint8)y;
 		}
 	for (i = 0; i < 256; i++) {
 		c =
@@ -442,8 +442,8 @@ static void SetNewVideoMode(int w, int h, int bpp)
 				ww = hh * 1.6;
 			break;
 		}
-		w = ww;
-		h = hh;
+		w = (int)ww;
+		h = (int)hh;
 		w = w / 8;
 		w = w * 8;
 		h = h / 8;

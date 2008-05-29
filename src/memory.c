@@ -99,7 +99,7 @@ static void alloc_axlon_memory(void){
 		if ((axlon_ram == NULL) || (axlon_ram_size != new_axlon_ram_size)) {
 			axlon_ram_size = new_axlon_ram_size;
 			if (axlon_ram != NULL) free(axlon_ram);
-			axlon_ram = Util_malloc(axlon_ram_size);
+			axlon_ram = (UBYTE *)Util_malloc(axlon_ram_size);
 		}
 		memset(axlon_ram, 0, axlon_ram_size);
 	} else {
@@ -117,7 +117,7 @@ static void alloc_mosaic_memory(void){
 		if ((mosaic_ram == NULL) || (mosaic_ram_size != new_mosaic_ram_size)) {
 			mosaic_ram_size = new_mosaic_ram_size;
 			if (mosaic_ram != NULL) free(mosaic_ram);
-			mosaic_ram = Util_malloc(mosaic_ram_size);
+			mosaic_ram = (UBYTE *)Util_malloc(mosaic_ram_size);
 		}
 		memset(mosaic_ram, 0, mosaic_ram_size);
 	} else {

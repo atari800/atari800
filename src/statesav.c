@@ -97,7 +97,7 @@ static size_t mem_write(const void *buf, size_t len, gzFile *stream);
 #define Z_OK    0
 #endif
 
-static gzFile *StateFile = NULL;
+static gzFile StateFile = NULL;
 static int nFileError = Z_OK;
 
 static void GetGZErrorText(void)

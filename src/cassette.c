@@ -298,9 +298,9 @@ void CASSETTE_Remove(void)
 
 /* Read a record by SIO-patch
    returns block length (with checksum) */
-static UWORD ReadRecord_SIO(void)
+static int ReadRecord_SIO(void)
 {
-	UWORD length = 0;
+	int length = 0;
 	if (cassette_isCAS) {
 		CAS_Header header;
 		/* if waiting for gap was longer than gap of record, skip
@@ -447,9 +447,9 @@ static SLONG MSToScanLines(int ms)
 /* Support to read a record by POKEY-registers
    evals gap length
    returns block length (with checksum) */
-static UWORD ReadRecord_POKEY(void)
+static int ReadRecord_POKEY(void)
 {
-	UWORD length = 0;
+	int length = 0;
 	if (cassette_isCAS) {
 		CAS_Header header;
 		/* no file or blockpositions don't match anymore after saving */

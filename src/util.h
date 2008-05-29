@@ -121,11 +121,7 @@ int Util_flen(FILE *fp);
 
 /* Deletes a file, returns 0 on success, -1 on failure. */
 #ifdef WIN32
-#ifdef UNICODE
 int Util_unlink(const char *filename);
-#else
-#define Util_unlink(filename)  ((DeleteFile(filename) != 0) ? 0 : -1)
-#endif /* UNICODE */
 #define HAVE_UTIL_UNLINK
 #elif defined(HAVE_UNLINK)
 #define Util_unlink  unlink

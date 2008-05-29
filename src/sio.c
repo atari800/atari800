@@ -1198,7 +1198,7 @@ void SIOStateRead(void)
 		char filename[FILENAME_MAX];
 
 		ReadINT(&saved_drive_status, 1);
-		drive_status[i] = saved_drive_status;
+		drive_status[i] = (UnitStatus)saved_drive_status;
 
 		ReadFNAME(filename);
 		if (filename[0] == 0)

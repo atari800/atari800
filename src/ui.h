@@ -44,7 +44,7 @@ typedef struct
 	               /* < 0 means that item is strictly informative and cannot be selected */
 	char *prefix;  /* Text to prepend the item */
 	char *item;    /* Main item text */
-	char *suffix;  /* Optional text to show after the item text (e.g. key shortcut) */
+	const char *suffix;  /* Optional text to show after the item text (e.g. key shortcut) */
 	               /* or (if (flags & ITEM_TIP) != 0) "tooltip" */
 } tMenuItem;
 

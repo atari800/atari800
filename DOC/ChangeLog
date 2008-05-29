@@ -1,3 +1,10 @@
+2008-05-29  Perry McFarlane  <perry_m@fastmail.fm>
+* atari_sdl.c, cassette.c, input.c, memory.c, pbi_bb.c, pbi_proto80.c,
+pbi_xld.c, pokeysnd.c, sio.c, statesav.c, ui.h, util.[ch], votrax.c:
+made compilable with g++. Fixed some bugs, and a bugfix for pbi_xld.c,
+other minor fixes.
+
+
 2008-05-28  Perry McFarlane  <perry_m@fastmail.fm>
 * DOC/USAGE, atari_sdl.c, configure.ac, pbi.c, pbi_proto80.c, pbi_proto80.h,
 pbi_xld.c: added emulation of a prototype 80 column card for the Atari 1090

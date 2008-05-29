@@ -118,8 +118,8 @@ static int max_scanline_counter;
 static int scanline_counter;
 
 #ifdef EVENT_RECORDING
-static gzFile *recordfp = NULL; /*output file for input recording*/
-static gzFile *playbackfp = NULL; /*input file for playback*/
+static gzFile recordfp = NULL; /*output file for input recording*/
+static gzFile playbackfp = NULL; /*input file for playback*/
 static int recording = FALSE;
 static int playingback = FALSE;
 static void update_adler32_of_screen(void);

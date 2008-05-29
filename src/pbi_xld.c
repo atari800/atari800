@@ -68,16 +68,21 @@ static UBYTE DataBuffer[256 + 3];
 static int DataIndex = 0;
 static int TransferStatus = PIO_CommandFrame;
 static int ExpectedBytes = 5;
-
 static void PIO_PutByte(int byte);
 static int PIO_GetByte(void);
 static UBYTE PIO_Command_Frame(void);
 
+/* Votrax */
 static double ratio;
 static int bit16;
 #define VOTRAX_BLOCK_SIZE 1024 
-void *temp_votrax_buffer;
-void *votrax_buffer;
+SWORD *temp_votrax_buffer;
+SWORD *votrax_buffer;
+static int votrax_busy = FALSE;
+volatile static int votrax_written = FALSE;
+volatile static int votrax_written_byte = 0x3f;
+static int votrax_sync_samples;
+static void votrax_busy_callback(int busy_status);
 
 #ifdef PBI_DEBUG
 #define D(a) a
@@ -112,7 +117,7 @@ void PBI_XLD_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	if (xld_v_enabled) {
-		voicerom = Util_malloc(0x1000);
+		voicerom = (UBYTE *)Util_malloc(0x1000);
 		if (!Atari800_LoadImage(xld_v_rom_filename, voicerom, 0x1000)) {
 			free(voicerom);
 			xld_v_enabled = FALSE;
@@ -128,7 +133,7 @@ void PBI_XLD_Initialise(int *argc, char *argv[])
 	/* in order to increase compatibility. */
 	/* dskcnt6 works. dskcnt10 does not */
 	if (xld_d_enabled) {
-		diskrom = Util_malloc(0x800);
+		diskrom = (UBYTE *)Util_malloc(0x800);
 		if (!Atari800_LoadImage(xld_d_rom_filename, diskrom, 0x800)) {
 			free(diskrom);
 			xld_d_enabled = FALSE;
@@ -172,23 +177,19 @@ int PBI_XLD_D1_GetByte(UWORD addr)
 	return result;
 }
 
+
 /* D1FF: each bit indicates IRQ status of a device */
 UBYTE PBI_XLD_D1FF_GetByte()
 {
 	UBYTE result = 0;
 	/* VOTRAX BUSY IRQ bit */
-	if (!votraxsc01_status_r()) {
+	/*if (!votraxsc01_status_r()) {*/
+	if (!votrax_busy) {
 		result |= VOICE_MASK;
 	}
 	return result;
 }
 
-volatile static int votrax_written = FALSE;
-volatile static int votrax_written_byte = 0x3f;
-static int votrax_sync_samples;
-static int votrax_busy = FALSE;
-
-static void votrax_busy_callback(int busy_status);
 
 void PBI_XLD_D1_PutByte(UWORD addr, UBYTE byte)
 {
@@ -196,7 +197,6 @@ void PBI_XLD_D1_PutByte(UWORD addr, UBYTE byte)
 		/* XLD disk strobe line */
 		D(printf("votrax write:%4x\n",addr));
 		votrax_sync_samples = (int)((1.0/ratio)*(double)votraxsc01_samples(votrax_written_byte, votrax_latch & 0x3f, votrax_sync_samples));
-		/* write to both the sync and async */
 		votrax_written = TRUE;
 		votrax_written_byte = votrax_latch & 0x3f;
 		if (!votrax_busy) {
@@ -697,12 +697,12 @@ void PBI_XLD_V_Init(int playback_freq, int num_pokeys, int b16)
 	samples_per_frame = dsprate/(tv_mode == TV_PAL ? 50 : 60);
 	ratio = (double)VOTRAX_RATE/(double)dsprate;
 	temp_votrax_buffer_size = (int)(VOTRAX_BLOCK_SIZE*ratio + 10); /* +10 .. little extra? */
-	temp_votrax_buffer = Util_malloc(temp_votrax_buffer_size*sizeof(SWORD));
-	votrax_buffer = Util_malloc(VOTRAX_BLOCK_SIZE*sizeof(SWORD));
+	temp_votrax_buffer = (SWORD *)Util_malloc(temp_votrax_buffer_size*sizeof(SWORD));
+	votrax_buffer = (SWORD *)Util_malloc(VOTRAX_BLOCK_SIZE*sizeof(SWORD));
 }
 
 /* process votrax and interpolate samples */
-static void votrax_process(SWORD *votrax_buffer, int len, SWORD *temp_votrax_buffer)
+static void votrax_process(SWORD *v_buffer, int len, SWORD *temp_v_buffer)
 {
 	static SWORD last_sample;
 	static SWORD last_sample2;
@@ -715,20 +715,20 @@ static void votrax_process(SWORD *votrax_buffer, int len, SWORD *temp_votrax_buf
 	int floor_next_pos;
 
 	if (have == 2) {
-	    temp_votrax_buffer[0] = last_sample;
-		temp_votrax_buffer[1] = last_sample2;
-		Votrax_Update(0, temp_votrax_buffer + 2, (max_left_sample_index + 1 + 1) - 2);  
+	    temp_v_buffer[0] = last_sample;
+		temp_v_buffer[1] = last_sample2;
+		Votrax_Update(0, temp_v_buffer + 2, (max_left_sample_index + 1 + 1) - 2);
 	}
 	else if (have == 1) {
-	    temp_votrax_buffer[0] = last_sample;
-		Votrax_Update(0, temp_votrax_buffer + 1, (max_left_sample_index + 1 + 1) - 1);
+	    temp_v_buffer[0] = last_sample;
+		Votrax_Update(0, temp_v_buffer + 1, (max_left_sample_index + 1 + 1) - 1);
 	}
 	else if (have == 0) {
-		Votrax_Update(0, temp_votrax_buffer, max_left_sample_index + 1 + 1);
+		Votrax_Update(0, temp_v_buffer, max_left_sample_index + 1 + 1);
 	}
 	else if (have < 0) {
-		Votrax_Update(0, temp_votrax_buffer, -have);
-		Votrax_Update(0, temp_votrax_buffer, max_left_sample_index + 1 + 1);
+		Votrax_Update(0, temp_v_buffer, -have);
+		Votrax_Update(0, temp_v_buffer, max_left_sample_index + 1 + 1);
 	}
 
 	for (i = 0; i < len; i++) {
@@ -737,22 +737,22 @@ static void votrax_process(SWORD *votrax_buffer, int len, SWORD *temp_votrax_buf
 		SWORD interp_sample;
 		pos = (int)(startpos + (double)i*ratio);
 		fraction = startpos + (double)i*ratio - (double)pos;
-		left_sample = temp_votrax_buffer[pos];
-		right_sample = temp_votrax_buffer[pos+1];
+		left_sample = temp_v_buffer[pos];
+		right_sample = temp_v_buffer[pos+1];
 		interp_sample = (int)(left_sample + fraction*(double)(right_sample-left_sample));
-		votrax_buffer[i] = interp_sample;
+		v_buffer[i] = interp_sample;
 	}
 	floor_next_pos = (int)(startpos + (double)len*ratio);
 	startpos = (startpos + (double)len*ratio) - (double)floor_next_pos;
 	if (floor_next_pos == max_left_sample_index)
 	{ 
 		have = 2;
-		last_sample = temp_votrax_buffer[floor_next_pos];
-		last_sample2 = temp_votrax_buffer[floor_next_pos+1];
+		last_sample = temp_v_buffer[floor_next_pos];
+		last_sample2 = temp_v_buffer[floor_next_pos+1];
 	}
 	else if (floor_next_pos == max_left_sample_index + 1) {
 		have = 1;
-		last_sample = temp_votrax_buffer[floor_next_pos];
+		last_sample = temp_v_buffer[floor_next_pos];
 	}
 	else {
 		have = (floor_next_pos - (max_left_sample_index + 2));
@@ -833,8 +833,8 @@ void PBI_XLD_V_Process(void *sndbuffer, int sndn)
 	while (sndn > 0) {
 		int amount = ((sndn > VOTRAX_BLOCK_SIZE) ? VOTRAX_BLOCK_SIZE : sndn);
 		votrax_process(votrax_buffer, amount, temp_votrax_buffer);
-		if (bit16) mix(sndbuffer, votrax_buffer, amount, 128/4);
-		else mix8(sndbuffer, votrax_buffer, amount, 128/4);
+		if (bit16) mix((SWORD *)sndbuffer, votrax_buffer, amount, 128/4);
+		else mix8((UBYTE *)sndbuffer, votrax_buffer, amount, 128/4);
 		sndbuffer = (char *) sndbuffer + VOTRAX_BLOCK_SIZE*(bit16 ? 2 : 1)*(stereo ? 2: 1);
 		sndn -= VOTRAX_BLOCK_SIZE;
 	}

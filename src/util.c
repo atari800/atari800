@@ -385,4 +385,9 @@ int Util_unlink(const char *filename)
 		return -1;
 	return (DeleteFile(wfilename) != 0) ? 0 : -1;
 }
+#elif defined(WIN32) && !defined(UNICODE)
+int Util_unlink(const char *filename)
+{
+	return (DeleteFile(filename) != 0) ? 0 : -1;
+}
 #endif /* defined(WIN32) && defined(UNICODE) */
