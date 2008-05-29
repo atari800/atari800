@@ -386,9 +386,8 @@ void POKEY_Initialise(int *argc, char *argv[])
 		poly17_lookup[i] = (UBYTE) (reg >> 1);
 	}
 
-	/* don't use time when rec/play back because it's not deterministic */
-	if (INPUT_Recording() || INPUT_Playingback()) {
-		random_scanline_counter = 0;
+	if (INPUT_Playingback()) {
+		random_scanline_counter = INPUT_PlaybackInt();
 	}
 	else {
 		random_scanline_counter =
@@ -399,6 +398,9 @@ void POKEY_Initialise(int *argc, char *argv[])
 #else
 		0;
 #endif
+	}
+	if (INPUT_Recording()) {
+		INPUT_RecordInt(random_scanline_counter);
 	}
 }
 

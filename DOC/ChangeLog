@@ -2,6 +2,8 @@
 * DOC/USAGE, atari_sdl.c, configure.ac, pbi.c, pbi_proto80.c, pbi_proto80.h,
 pbi_xld.c: added emulation of a prototype 80 column card for the Atari 1090
 expansion box (SDL version).  Also fixed a problem with LoadImage in pbi_xld.c
+* DOC/INSTALL: Improved documentation a bit, suggested use of SDL.
+* input.[ch], pokey.c: record random_scanline_counter for event recording.
 
 
 2008-05-27  Perry McFarlane  <perry_m@fastmail.fm>

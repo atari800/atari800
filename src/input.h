@@ -293,5 +293,7 @@ void INPUT_CenterMousePointer(void);
 void INPUT_DrawMousePointer(void);
 int INPUT_Recording(void);
 int INPUT_Playingback(void);
+void INPUT_RecordInt(int i);
+int INPUT_PlaybackInt(void);
 
 #endif /* _INPUT_H_ */

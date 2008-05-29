@@ -40,16 +40,18 @@ The emulator can be compiled for the following systems (and probably
 many others with a little work):-
 
 1. X Window Version (including SUN OpenWindows) on a Unix Platform
-2. SVGALIB Version on Linux
+   (prefer the SDL version)
+2. SVGALIB Version on Linux (prefer the SDL version)
 3. CURSES version
-4. Graphical Version for the Amiga
+4. Graphical Version for the Amiga (not maintained)
 5. Graphical version for the Atari TT/Falcon and compatible computers
 6. BASIC version (No Graphics). Should be straightforward to configure
    for any 32-bit environment supporting ANSI C.
 7. VGA Version for DOS
-8. DirectX Version for Microsoft Windows
+8. DirectX Version for Microsoft Windows (also try the SDL version)
 9. SDL (Linux/Unix, Windows, BeOS)
 10. WinCE
+11. Java (various platforms)
 
 Installed zlib (compression library) enables building the emulator with
 compressed statesave images support. Additionally installed libpng
@@ -99,9 +101,13 @@ Building the Emulator for Windows using Cygwin
 Atari800 for Windows can be built using Cygwin environment:
 http://cygwin.com/
 
-1. Type "./configure --target=windx".
-2. Type "make".
-3. Copy atari800.exe to destination directory.
+1. Get and install at least one of SDL or DirectX for MinGW.
+2. For SDL, get the file SDL_win32_main.c from the SDL source that matches
+   your version and copy it into the Atari800 src directory.
+3. Type "./configure --target=sdl" for SDL and --target=windx for DirectX
+5. Type "make".
+5. Copy atari800.exe to destination directory.
+6. Copy the needed DLLs: /bin/mgwz.dll and (for SDL) sdl.dll
 
 Building the Emulator for Windows using Microsoft 32-bit C/C++ Compiler
 -----------------------------------------------------------------------
@@ -161,7 +167,7 @@ Building the Emulator for Java using NestedVM
 1. Get and build NestedVM (nestedvm.ibex.org). make env.sh and unix_runtime.jar
 2. source env.sh in the NestedVM directory.
 3. In the atari800 directory:
-   ./autogen.sh
+   ./autogen.sh (only if you don't have configure, such as a CVS build)
    ./configure --host=mips-unknown-elf --target=javanvm
    You might want to add --enable-veryslow --disable-monitorbreak to the above.
    For the basic version, use --target=javanvm-basic

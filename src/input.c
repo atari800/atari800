@@ -759,6 +759,27 @@ int INPUT_Playingback(void)
 #endif
 }
 
+void INPUT_RecordInt(int i)
+{
+#ifdef EVENT_RECORDING
+	if (recording) gzprintf(recordfp, "%d\n", i);
+#endif
+}
+
+int INPUT_PlaybackInt(void)
+{
+#ifdef EVENT_RECORDING
+	int i;
+	if (playingback) {
+		gzgets(playbackfp, gzbuf, GZBUFSIZE);
+		sscanf(gzbuf, "%d", &i);
+	}
+	return i;
+#else
+	return 0;
+#endif
+}
+
 void INPUT_Scanline(void)
 {
 	if (--scanline_counter == 0) {
