@@ -413,7 +413,7 @@ int VOTRAXSC01_sh_start(void *sound_interface)
 	memset(&votraxsc01_locals, 0x00, sizeof votraxsc01_locals);
 
 	/* copy interface */
-	votraxsc01_locals.intf = (VOTRAXSC01interface *)sound_interface;
+	votraxsc01_locals.intf = (struct VOTRAXSC01interface *)sound_interface;
 
 	votraxsc01_locals.actPhoneme = 0x3f;
 
