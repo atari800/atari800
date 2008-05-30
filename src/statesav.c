@@ -43,6 +43,7 @@
 #define MEMCOMPR     /* compress in memory before writing */
 #include "vmu.h"
 #include "icon.h"
+#include "version.h"
 #endif
 
 
