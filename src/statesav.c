@@ -2,7 +2,7 @@
  * statesav.c - saving the emulator's state to a file
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -532,7 +532,8 @@ static int mem_close(gzFile *stream)
 			memcpy(icon, palette, 32);
 			memcpy(icon + 32, bitmap, 512);
 			ndc_vmu_create_vmu_header(comprmembuf, "Atari800DC",
-			                          "Atari800DC saved state", comprlen, icon);
+						  "Atari800DC " A800DCVERASC " saved state",
+						  comprlen, icon);
 			comprlen = (comprlen + HDR_LEN + 511) & ~511;
 			ndc_vmu_do_crc(comprmembuf, comprlen);
 			status = (fwrite(comprmembuf, 1, comprlen, f) == comprlen) ? 0 : -1;
