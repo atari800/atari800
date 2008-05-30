@@ -108,6 +108,7 @@ extern int enable_new_pokey;
 extern int stereo_enabled;
 extern int serio_sound_enabled;
 extern int console_sound_enabled;
+extern int snd_bienias_fix;
 
 extern void (*Pokey_process_ptr)(void *sndbuffer, unsigned int sndn);
 extern void (*Update_pokey_sound)(uint16 addr, uint8 val, uint8 /*chip*/, uint8 gain);

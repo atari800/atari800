@@ -2,7 +2,7 @@
  * pokeysnd.c - POKEY sound chip emulation, v2.4
  *
  * Copyright (C) 1996-1998 Ron Fries
- * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -154,6 +154,12 @@ int mz_clear_regs = 0;
 #endif
 
 int enable_new_pokey = TRUE;
+int snd_bienias_fix = TRUE;  /* when TRUE, high frequencies get emulated: better sound but slower */
+#if defined(__PLUS) && !defined(_WX_)
+#define BIENIAS_FIX (g_Sound.nBieniasFix)
+#else
+#define BIENIAS_FIX snd_bienias_fix
+#endif
 #ifndef ASAP
 int stereo_enabled = FALSE;
 #endif
@@ -573,11 +579,7 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 			/* or the channel freq is greater than the playback freq */
 			if ( (AUDC[chan + chip_offs] & VOL_ONLY) ||
 				((AUDC[chan + chip_offs] & VOLUME_MASK) == 0)
-#if defined(__PLUS) && !defined(_WX_)
-				|| (!g_Sound.nBieniasFix && (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8)))
-#else
-				/* || (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))*/
-#endif
+				|| (!BIENIAS_FIX && (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8)))
 				) {
 				/* indicate the channel is 'on' */
 				Outvol[chan + chip_offs] = 1;
@@ -587,11 +589,7 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 					(chan == CHAN4 && !(AUDCTL[chip] & CH2_FILTER)) ||
 					(chan == CHAN1) ||
 					(chan == CHAN2)
-#if defined(__PLUS) && !defined(_WX_)
-					|| (!g_Sound.nBieniasFix && (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8)))
-#else
-					/* || (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8))*/
-#endif
+					|| (!BIENIAS_FIX && (Div_n_max[chan + chip_offs] < (Samp_n_max >> 8)))
 				) {
 					/* and set channel freq to max to reduce processing */
 					Div_n_max[chan + chip_offs] = 0x7fffffffL;

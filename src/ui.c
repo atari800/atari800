@@ -1372,8 +1372,9 @@ static int SoundSettings(void)
 #ifdef SERIO_SOUND
 		MENU_CHECK(3, "Serial IO Sound:"),
 #endif
+		MENU_ACTION(4, "Enable higher frequencies:"),
 #ifdef DREAMCAST
-		MENU_CHECK(4, "Enable sound:"),
+		MENU_CHECK(5, "Enable sound:"),
 #endif
 		MENU_END
 	};
@@ -1391,8 +1392,9 @@ static int SoundSettings(void)
 #ifdef SERIO_SOUND
 		SetItemChecked(menu_array, 3, serio_sound_enabled);
 #endif
+		FindMenuItem(menu_array, 4)->suffix = enable_new_pokey ? "N/A" : snd_bienias_fix ? "Yes" : "No ";
 #ifdef DREAMCAST
-		SetItemChecked(menu_array, 4, glob_snd_ena);
+		SetItemChecked(menu_array, 5, glob_snd_ena);
 #endif
 
 #if 0
@@ -1424,8 +1426,11 @@ static int SoundSettings(void)
 			serio_sound_enabled = !serio_sound_enabled;
 			break;
 #endif
-#ifdef DREAMCAST
 		case 4:
+			if (! enable_new_pokey) snd_bienias_fix = !snd_bienias_fix;
+			break;
+#ifdef DREAMCAST
+		case 5:
 			glob_snd_ena = !glob_snd_ena;
 			break;
 #endif
