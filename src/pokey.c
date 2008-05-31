@@ -386,10 +386,13 @@ void POKEY_Initialise(int *argc, char *argv[])
 		poly17_lookup[i] = (UBYTE) (reg >> 1);
 	}
 
+#ifndef BASIC
 	if (INPUT_Playingback()) {
 		random_scanline_counter = INPUT_PlaybackInt();
 	}
-	else {
+	else
+#endif
+	{
 		random_scanline_counter =
 #ifdef WIN32
 		GetTickCount() % POLY17_SIZE;
@@ -399,9 +402,11 @@ void POKEY_Initialise(int *argc, char *argv[])
 		0;
 #endif
 	}
+#ifndef BASIC
 	if (INPUT_Recording()) {
 		INPUT_RecordInt(random_scanline_counter);
 	}
+#endif
 }
 
 void POKEY_Frame(void)
