@@ -88,7 +88,19 @@
 #define DBG_APRINT(x)
 #endif
 
+#if 0  /* debug stuff */
+#ifdef R_NETWORK
+#warning R_NETWORK defined
+#endif
+#ifdef R_SERIAL
+#warning R_SERIAL defined
+#endif
+#endif
+
 #ifdef WIN32
+#ifndef R_NETWORK
+#error Windows version only supports network R: device
+#endif
 #include <winsock2.h>
    #define F_SETFL 0
    #define O_NONBLOCK 0
@@ -133,11 +145,16 @@ static int rdevice_win32_write(SOCKET s, char *buf, int len) {
 #define write(a,b,c) rdevice_win32_write(a,b,c)
 
 #else /* WIN32 not defined */
+#if !defined(R_SERIAL) && !defined(R_NETWORK)
+#error R: device needs serial or network or both
+#endif
+#ifdef R_NETWORK
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#endif /* R_NETWORK */
 #include <sys/types.h>
 #include <fcntl.h>
 #endif /* WIN32 */
@@ -164,28 +181,32 @@ static int rdevice_win32_write(SOCKET s, char *buf, int len) {
 static int connected;
 static int do_once;
 
+#ifdef R_NETWORK
 static struct sockaddr_in in;
 static struct sockaddr_in peer_in;
 static int sock;
+static int portnum = 9000;
+static char inetaddress[256];
+static char CONNECT_STRING[40] = "\r\n_CONNECT 2400\r\n";
+static int retval;
+#endif
 static int rdev_fd;
 
 static char MESSAGE[256];
 static char command_buf[256];
-static int retval;
 static char bufout[256];
 static int concurrent;
-static char inetaddress[256];
 
 static int command_end = 0;
-static char CONNECT_STRING[40] = "\r\n_CONNECT 2400\r\n";
-static int portnum = 9000;
 static int translation = 1;
 static int trans_cr = 0;
 static int linefeeds = 1;
 static int bufend = 0;
 
-#ifdef R_SERIAL
-int r_serial = 0;
+#ifndef R_NETWORK
+int r_serial = 1;
+#else
+int r_serial = 0;  /* Default to network, if enabled. Use parameter to -rdevice command line switch to enable serial mode. */
 #endif
 char r_device[FILENAME_MAX];
 
@@ -193,6 +214,7 @@ char r_device[FILENAME_MAX];
    Host Support Function - If Disconnect signal is found, then close socket
    and clean up.
 ---------------------------------------------------------------------------*/
+#ifdef R_NETWORK
 static void catch_disconnect(int sig)
 {
   DBG_APRINT("R*: Disconnected....");
@@ -207,6 +229,7 @@ static void catch_disconnect(int sig)
   Poke(748,0);
 #endif
 }
+#endif /* R_NETWORK */
 
 /*---------------------------------------------------------------------------
    Host Support Function - XIO 34 - Called from Device_RSPEC
@@ -584,6 +607,7 @@ static void xio_40(void)
 /*---------------------------------------------------------------------------
    Host Support Function - Internet Socket Open Connection
 ---------------------------------------------------------------------------*/
+#ifdef R_NETWORK
 static void open_connection(char * address, int port)
 {
   struct hostent *host;
@@ -622,7 +646,7 @@ static void open_connection(char * address, int port)
         host = gethostbyname(address);
         if(host != NULL)
         {
-          sprintf(MESSAGE, "R*: Host = '%s'.\n",  host->h_name);
+          sprintf(MESSAGE, "R*: Host = '%s'.",  host->h_name);
           DBG_APRINT(MESSAGE);
           memcpy((caddr_t)&peer_in.sin_addr, host->h_addr_list[0], host->h_length);
         }
@@ -644,7 +668,7 @@ static void open_connection(char * address, int port)
     if(connect(rdev_fd, (struct sockaddr *)&peer_in, sizeof(peer_in)) < 0)
     {
 #ifdef DEBUG
-      sprintf(MESSAGE, "R*: connect: '%s'\n", strerror(errno));
+      sprintf(MESSAGE, "R*: connect: '%s'", strerror(errno));
       DBG_APRINT(MESSAGE);
 #endif
     }
@@ -666,6 +690,7 @@ static void open_connection(char * address, int port)
     DBG_APRINT("R*: Negotiating Terminal Options...");
   }
 }
+#endif /* R_NETWORK */
 
 
 #ifdef R_SERIAL
@@ -701,6 +726,9 @@ static void open_connection_serial(int port)
   }
 
   dev_name[strlen(dev_name) - 1] += port - 1;
+
+  sprintf(MESSAGE, "R*: using serial device %s", dev_name);
+  DBG_APRINT(MESSAGE);
 
   rdev_fd = open(dev_name, O_RDWR | O_NOCTTY | O_NDELAY);
   if(rdev_fd == -1)
@@ -741,7 +769,6 @@ static void open_connection_serial(int port)
     cfsetospeed(&options, B115200);
     tcsetattr(rdev_fd, TCSANOW, &options);
   }
-
 }
 #endif /* R_SERIAL */
 
@@ -750,6 +777,7 @@ static void open_connection_serial(int port)
    From Basic: OPEN #1,8,23,"R:JYBOLAC.HOMELINUX.COM"
    Returns:    "jybolac.homelinux.com"
 ---------------------------------------------------------------------------*/
+#ifdef R_NETWORK
 static void Device_GetInetAddress(void)
 {
   UWORD bufadr = Device_SkipDeviceName();
@@ -773,6 +801,7 @@ static void Device_GetInetAddress(void)
   }
   *p = '\0';
 }
+#endif /* R_NETWORK */
 
 
 /*---------------------------------------------------------------------------
@@ -807,13 +836,17 @@ void Device_ROPEN(void)
       DBG_APRINT("R*: serial mode.");
       open_connection_serial(devnum);
     }
-    else
 #endif /* R_SERIAL */
+#if defined(R_SERIAL) && defined(R_NETWORK)
+    else
+#endif
+#ifdef R_NETWORK
     {
       DBG_APRINT("R*: Socket mode.");
       Device_GetInetAddress();
       open_connection(inetaddress, port);
     }
+#endif /* R_NETWORK */
   }
   if(direction & 0x01)
   {
@@ -888,8 +921,10 @@ void Device_RREAD(void)
 ---------------------------------------------------------------------------*/
 void Device_RWRIT(void)
 {
-  int port;
   unsigned char out_char;
+#ifdef R_NETWORK
+  int port;
+#endif
 
   regY = 1;
   ClrN;
@@ -904,11 +939,7 @@ void Device_RWRIT(void)
       out_char = 0x0d;
       if(linefeeds)
       {
-#ifdef R_SERIAL
         if((r_serial == 0) && (connected == 0))
-#else
-        if(connected == 0)
-#endif /* R_SERIAL */
         { /* local echo */
           bufend++;
           bufout[bufend-1] = out_char;
@@ -946,11 +977,8 @@ void Device_RWRIT(void)
   /*}*/
   /*if(retval == -1)*/
 
-#ifdef R_SERIAL
+#ifdef R_NETWORK
   if((r_serial == 0) && (connected == 0))
-#else
-  if(connected == 0)
-#endif /* R_SERIAL */
   { /* Local echo - only do if in socket mode */
     bufend++;
     bufout[bufend-1] = out_char;
@@ -1007,14 +1035,16 @@ void Device_RWRIT(void)
       }
     }
   }
-  else if((connected) && (write(rdev_fd, (char *)&out_char, 1) < 1))
-  { /* returns -1 if disconnected or 0 if could not send */
-    perror("write");
-    DBG_APRINT("R*: ERROR on write.");
-    SetN;
-    regY = 135;
-    /*bufend = 13;*/ /* To catch NO CARRIER message */
-  }
+  else
+#endif /* R_NETWORK */
+    if((connected) && (write(rdev_fd, (char *)&out_char, 1) < 1))
+      { /* returns -1 if disconnected or 0 if could not send */
+        perror("write");
+        DBG_APRINT("R*: ERROR on write.");
+        SetN;
+        regY = 135;
+        /*bufend = 13;*/ /* To catch NO CARRIER message */
+      }
 
 
   regA = 1;
@@ -1028,7 +1058,9 @@ void Device_RSTAT(void)
 #ifdef WIN32
   int len;
 #else
+#ifdef R_NETWORK
   unsigned int len;
+#endif
 #endif
   int bytesread;
   unsigned char one;
@@ -1044,11 +1076,10 @@ void Device_RSTAT(void)
   }
   devnum = dGetByte(ICDNOZ);
 
+#ifdef R_NETWORK
   if(connected == 0)
   {
-#ifdef R_SERIAL
     if(r_serial == 0)
-#endif /* R_SERIAL */
     {
       if(do_once == 0)
       {
@@ -1123,8 +1154,6 @@ void Device_RSTAT(void)
         retval = write(rdev_fd, &IACdontLinemode, 3);
         retval = write(rdev_fd, &IACwontLinemode, 3);
   */
-
-
         bufout[0] = 0;
         strcat(bufout, CONNECT_STRING);
         bufend = strlen(CONNECT_STRING);
@@ -1133,6 +1162,7 @@ void Device_RSTAT(void)
     }
   }
   else
+#endif /* R_NETWORK */
   {
     /* Actually reading and setting the Atari input buffer here */
     if(concurrent)
@@ -1140,11 +1170,7 @@ void Device_RSTAT(void)
       bytesread = read(rdev_fd, (char *)&one, 1);
       if(bytesread > 0)
       {
-#ifdef R_SERIAL
         if((r_serial == 0) && (one == 0xff))
-#else
-        if(one == 0xff)
-#endif /* R_SERIAL */
         {
           /* Start Telnet escape seq processing... */
           while(read(rdev_fd, (char *)telnet_command,2) != 2) {};
@@ -1199,10 +1225,8 @@ void Device_RSTAT(void)
           /*return;*/
         }
       }
-
     }
   }
-
 
   /* Set all values at all memory locations we modify on exit */
   Poke(746,0);
@@ -1221,7 +1245,6 @@ void Device_RSTAT(void)
     DBG_APRINT("R*: Not in concurrent mode....");
     /*Poke(747,8);*/
     Poke(747,(12+48+192)); /* Write 0xfc to address 747 */
-
   }
 }
 
