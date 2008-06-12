@@ -713,9 +713,14 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
                      [Use the host serial port with the R: networking device (Linux/Unix only) (default=ON)],
                      R_SERIAL,[Define to use the host serial port with the R: device.]
                     )
+            A8_OPTION(rnetwork,yes,
+                     [Use IP network connection with the R: networking device (Linux/Unix only) (default=ON)],
+                     R_NETWORK,[Define to use IP network connection with the R: device.]
+                    )
         else
             A8_NEED_LIB(ws2_32)
             WANT_R_SERIAL="no"
+            WANT_R_NETWORK="yes"
         fi
     fi
 fi
@@ -800,6 +805,7 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     echo "Using R: device?......................: $WANT_R_IO_DEVICE"
         if [[ "$a8_host" != "win" -a "$WANT_R_IO_DEVICE" = "yes" ]]; then
             echo "Using R: with the host serial port?...: $WANT_R_SERIAL"
+            echo "Using R: with IP network support......: $WANT_R_NETWORK"
         fi
 fi
 echo
