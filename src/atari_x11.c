@@ -2,7 +2,7 @@
  * atari_x11.c - X11 specific port code
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -2771,7 +2771,7 @@ static void mouse_joystick(int mode)
 	int root_y_return;
 	int win_x_return;
 	int win_y_return;
-	int mask_return;
+	unsigned int mask_return;
 
 	mouse_stick = 0x0f;
 
@@ -2941,7 +2941,7 @@ int Atari_TRIG(int num)
 		int root_y_return;
 		int win_x_return;
 		int win_y_return;
-		int mask_return;
+		unsigned int mask_return;
 
 		if (XQueryPointer(display, window, &root_return, &child_return,
 						  &root_x_return, &root_y_return,
@@ -2993,7 +2993,7 @@ void Atari_Mouse(void)
 	int root_y_return;
 	int win_x_return;
 	int win_y_return;
-	int mask_return;
+	unsigned int mask_return;
 
 	if (mouse_mode == MOUSE_OFF)
 		return;
