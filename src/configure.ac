@@ -708,19 +708,18 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
              )
     if [[ "$WANT_R_IO_DEVICE" = "yes" ]]; then
         OBJS="$OBJS rdevice.o"
+        A8_OPTION(rnetwork,yes,
+                 [Use IP network connection with the R: networking device (Linux/Unix/Win32) (default=ON)],
+                 R_NETWORK,[Define to use IP network connection with the R: device.]
+                )
         if [[ "$a8_host" != "win" ]]; then
             A8_OPTION(rserial,yes,
                      [Use the host serial port with the R: networking device (Linux/Unix only) (default=ON)],
                      R_SERIAL,[Define to use the host serial port with the R: device.]
                     )
-            A8_OPTION(rnetwork,yes,
-                     [Use IP network connection with the R: networking device (Linux/Unix only) (default=ON)],
-                     R_NETWORK,[Define to use IP network connection with the R: device.]
-                    )
         else
             A8_NEED_LIB(ws2_32)
             WANT_R_SERIAL="no"
-            WANT_R_NETWORK="yes"
         fi
     fi
 fi

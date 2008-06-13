@@ -1,3 +1,7 @@
+2008-06-13  Perry McFarlane  <perry_m@fastmail.fm>
+* rdevice.c, configure.ac: fix for win32 R: device
+
+
 2008-05-31  Piotr Fusik  <fox@scene.pl>
 * atari.c, pokey.c: made the BASIC version compilable
 

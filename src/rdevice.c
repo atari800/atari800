@@ -98,8 +98,11 @@
 #endif
 
 #ifdef WIN32
+#ifdef R_SERIAL
+#error The Windows version does not support the serial R: device
+#endif
 #ifndef R_NETWORK
-#error Windows version only supports network R: device
+#error R_NETWORK must be defined to use the Windows R: device
 #endif
 #include <winsock2.h>
    #define F_SETFL 0
@@ -110,7 +113,7 @@ static u_long ioctlsocket_non_block = 1; /* for ioctlsocket */
 #define perror(a) printf("%s:WSA error code:%d\n",a,WSAGetLastError())
 #define close(a) closesocket(a)
 typedef char *caddr_t;
-void catch_disconnect(int sig);
+static void catch_disconnect(int sig);
 static int rdevice_win32_read(SOCKET s, char *buf, int len) {
   int r;
   r = recv(s, buf, len, 0);
