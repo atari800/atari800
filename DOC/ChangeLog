@@ -4,6 +4,12 @@
 * pokeysnd.c: add #ifdef PBI_XLD
 
 
+2008-06-12  Christian Groessler  <chris@groessler.org>
+* rdevice.c, configure.ac: R: device now not longer inherently supports
+network (with serial as an additional option). Now serial-only,
+network-only, or both can be selected.
+
+
 2008-05-31  Piotr Fusik  <fox@scene.pl>
 * atari.c, pokey.c: made the BASIC version compilable
 
