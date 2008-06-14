@@ -1,5 +1,6 @@
 2008-06-13  Perry McFarlane  <perry_m@fastmail.fm>
 * rdevice.c, configure.ac: fix for win32 R: device
+* pokey.c: IRQEN fix
 
 
 2008-05-31  Piotr Fusik  <fox@scene.pl>

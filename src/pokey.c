@@ -47,6 +47,7 @@
 #include "cassette.h"
 #include "log.h"
 #include "input.h"
+#include "pbi.h"
 
 #ifdef POKEY_UPDATE
 void pokey_update(void);
@@ -234,8 +235,10 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 			if (delay > 0)
 				DELAYED_SERIN_IRQ = delay;
 		}
-		if ((~IRQST & IRQEN) == 0)
+		if ((~IRQST & IRQEN) == 0 && PBI_IRQ == 0)
 			IRQ = 0;
+		else
+			IRQ = 1;
 		break;
 	case _SKRES:
 		SKSTAT |= 0xe0;
