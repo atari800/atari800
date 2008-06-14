@@ -54,6 +54,7 @@ OBJ =	atari.o \
 	sndsave.o \
 	cassette.o \
 	util.o \
+	pbi.o \
 	screen.o \
 	dc/dc_chdir.o \
 	dc/vmu.o \
