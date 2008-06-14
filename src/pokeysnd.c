@@ -36,7 +36,9 @@
 #endif
 #include "mzpokeysnd.h"
 #include "pokeysnd.h"
+#ifdef PBI_XLD
 #include "pbi_xld.h"
+#endif
 
 #ifdef WORDS_UNALIGNED_OK
 #  define READ_U32(x)     (*(uint32 *) (x))
@@ -287,7 +289,9 @@ void Pokey_process(void *sndbuffer, unsigned int sndn)
 #if !defined(__PLUS) && !defined(ASAP)
 	WriteToSoundFile((const unsigned char *)sndbuffer, sndn);
 #endif
+#ifdef PBI_XLD
 	PBI_XLD_V_Process(sndbuffer,sndn);
+#endif
 }
 
 static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
