@@ -401,6 +401,14 @@ void INPUT_Frame(void)
 			last_key_code = AKEY_NONE;
 		}
 	}
+	/* Following keys cannot be read with both shift and control pressed:
+	   J K L ; + * Z X C V B F1 F2 F3 F4 HELP	 */
+	/* which are 0x00-0x07 and 0x10-0x17 */
+	/* This is caused by the keyboard itself, these keys generate 'ghost keys'
+	 * when pressed with shift and control */
+	if (machine_type != MACHINE_5200 && (key_code&~0x17) == AKEY_SHFTCTRL) {
+		key_code = AKEY_NONE;
+	}
 	if (key_code >= 0) {
 		/* The 5200 has only 4 of the 6 keyboard scan lines connected */
 		/* Pressing one 5200 key is like pressing 4 Atari 800 keys. */

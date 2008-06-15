@@ -1,5 +1,6 @@
 2008-06-14  Perry McFarlane  <perry_m@fastmail.fm>
 * input.c: 5200 bit 5 toggle fix (Star Trek)
+* atari_sdl.c, input.c: fix shift+control keys
 
 
 2008-06-13  Perry McFarlane  <perry_m@fastmail.fm>

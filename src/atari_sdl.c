@@ -894,12 +894,11 @@ int Atari_Keyboard(void)
 			return AKEY_5200_8 ^ shiftctrl;
 		case '9':
 			return AKEY_5200_9 ^ shiftctrl;
-		/* XXX: " ^ shiftctrl" harmful for '#' and '*' ? */
 		case '#':
 		case '=':
-			return AKEY_5200_HASH;
+			return AKEY_5200_HASH ^ shiftctrl;
 		case '*':
-			return AKEY_5200_ASTERISK;
+			return AKEY_5200_ASTERISK ^ shiftctrl;
 		}
 		return AKEY_NONE;
 	}
@@ -925,19 +924,19 @@ int Atari_Keyboard(void)
 	case SDLK_PAGEUP:
 		return AKEY_F1 | AKEY_SHFT;
 	case SDLK_HOME:
-		return AKEY_CLEAR;
+		return key_control ? AKEY_LESS|shiftctrl : AKEY_CLEAR;
 	case SDLK_PAUSE:
 	case SDLK_F7:
 		return AKEY_BREAK;
 	case SDLK_CAPSLOCK:
 		if (key_shift)
-			return AKEY_CAPSLOCK;
+			return AKEY_CAPSLOCK|shiftctrl;
 		else
-			return AKEY_CAPSTOGGLE;
+			return AKEY_CAPSTOGGLE|shiftctrl;
 	case SDLK_SPACE:
 		return AKEY_SPACE ^ shiftctrl;
 	case SDLK_BACKSPACE:
-		return AKEY_BACKSPACE;
+		return AKEY_BACKSPACE|shiftctrl;
 	case SDLK_RETURN:
 		return AKEY_RETURN ^ shiftctrl;
 	case SDLK_LEFT:
@@ -949,17 +948,18 @@ int Atari_Keyboard(void)
 	case SDLK_DOWN:
 		return AKEY_DOWN ^ shiftctrl;
 	case SDLK_ESCAPE:
+		/* Windows takes ctrl+esc and ctrl+shift+esc */
 		return AKEY_ESCAPE ^ shiftctrl;
 	case SDLK_TAB:
 		return AKEY_TAB ^ shiftctrl;
 	case SDLK_DELETE:
 		if (key_shift)
-			return AKEY_DELETE_LINE;
+			return AKEY_DELETE_LINE|shiftctrl;
 		else
 			return AKEY_DELETE_CHAR;
 	case SDLK_INSERT:
 		if (key_shift)
-			return AKEY_INSERT_LINE;
+			return AKEY_INSERT_LINE|shiftctrl;
 		else
 			return AKEY_INSERT_CHAR;
 	}
@@ -968,33 +968,41 @@ int Atari_Keyboard(void)
 	if (key_control) {
 		switch(lastuni) {
 		case '.':
-			return AKEY_FULLSTOP | AKEY_CTRL;
+			return AKEY_FULLSTOP|shiftctrl;
 		case ',':
-			return AKEY_COMMA | AKEY_CTRL;
+			return AKEY_COMMA|shiftctrl;
 		case ';':
-			return AKEY_SEMICOLON | AKEY_CTRL;
+			return AKEY_SEMICOLON|shiftctrl;
 		}
 		switch (lastkey) {
+		case SDLK_PERIOD:
+			return AKEY_FULLSTOP|shiftctrl;
+		case SDLK_COMMA:
+			return AKEY_COMMA|shiftctrl;
+		case SDLK_SEMICOLON:
+			return AKEY_SEMICOLON|shiftctrl;
+		case SDLK_SLASH:
+			return AKEY_SLASH|shiftctrl;
 		case SDLK_0:
-			return AKEY_CTRL_0;
+			return AKEY_CTRL_0|shiftctrl;
 		case SDLK_1:
-			return AKEY_CTRL_1;
+			return AKEY_CTRL_1|shiftctrl;
 		case SDLK_2:
-			return AKEY_CTRL_2;
+			return AKEY_CTRL_2|shiftctrl;
 		case SDLK_3:
-			return AKEY_CTRL_3;
+			return AKEY_CTRL_3|shiftctrl;
 		case SDLK_4:
-			return AKEY_CTRL_4;
+			return AKEY_CTRL_4|shiftctrl;
 		case SDLK_5:
-			return AKEY_CTRL_5;
+			return AKEY_CTRL_5|shiftctrl;
 		case SDLK_6:
-			return AKEY_CTRL_6;
+			return AKEY_CTRL_6|shiftctrl;
 		case SDLK_7:
-			return AKEY_CTRL_7;
+			return AKEY_CTRL_7|shiftctrl;
 		case SDLK_8:
-			return AKEY_CTRL_8;
+			return AKEY_CTRL_8|shiftctrl;
 		case SDLK_9:
-			return AKEY_CTRL_9;
+			return AKEY_CTRL_9|shiftctrl;
 		}
 	}
 
@@ -1003,59 +1011,60 @@ int Atari_Keyboard(void)
     if(lastuni>='a' && lastuni <= 'z' && key_shift) lastuni -= 0x20;
 	/* Uses only UNICODE translation, no shift states (this was added to
 	 * support non-US keyboard layouts)*/
+	/* input.c takes care of removing invalid shift+control keys */
 	switch (lastuni) {
 	case 1:
-		return AKEY_CTRL_a;
+		return AKEY_CTRL_a|shiftctrl;
 	case 2:
-		return AKEY_CTRL_b;
+		return AKEY_CTRL_b|shiftctrl;
 	case 3:
-		return AKEY_CTRL_c;
+		return AKEY_CTRL_c|shiftctrl;
 	case 4:
-		return AKEY_CTRL_d;
+		return AKEY_CTRL_d|shiftctrl;
 	case 5:
-		return AKEY_CTRL_e;
+		return AKEY_CTRL_e|shiftctrl;
 	case 6:
-		return AKEY_CTRL_f;
+		return AKEY_CTRL_f|shiftctrl;
 	case 7:
-		return AKEY_CTRL_g;
+		return AKEY_CTRL_g|shiftctrl;
 	case 8:
-		return AKEY_CTRL_h;
+		return AKEY_CTRL_h|shiftctrl;
 	case 9:
-		return AKEY_CTRL_i;
+		return AKEY_CTRL_i|shiftctrl;
 	case 10:
-		return AKEY_CTRL_j;
+		return AKEY_CTRL_j|shiftctrl;
 	case 11:
-		return AKEY_CTRL_k;
+		return AKEY_CTRL_k|shiftctrl;
 	case 12:
-		return AKEY_CTRL_l;
+		return AKEY_CTRL_l|shiftctrl;
 	case 13:
-		return AKEY_CTRL_m;
+		return AKEY_CTRL_m|shiftctrl;
 	case 14:
-		return AKEY_CTRL_n;
+		return AKEY_CTRL_n|shiftctrl;
 	case 15:
-		return AKEY_CTRL_o;
+		return AKEY_CTRL_o|shiftctrl;
 	case 16:
-		return AKEY_CTRL_p;
+		return AKEY_CTRL_p|shiftctrl;
 	case 17:
-		return AKEY_CTRL_q;
+		return AKEY_CTRL_q|shiftctrl;
 	case 18:
-		return AKEY_CTRL_r;
+		return AKEY_CTRL_r|shiftctrl;
 	case 19:
-		return AKEY_CTRL_s;
+		return AKEY_CTRL_s|shiftctrl;
 	case 20:
-		return AKEY_CTRL_t;
+		return AKEY_CTRL_t|shiftctrl;
 	case 21:
-		return AKEY_CTRL_u;
+		return AKEY_CTRL_u|shiftctrl;
 	case 22:
-		return AKEY_CTRL_v;
+		return AKEY_CTRL_v|shiftctrl;
 	case 23:
-		return AKEY_CTRL_w;
+		return AKEY_CTRL_w|shiftctrl;
 	case 24:
-		return AKEY_CTRL_x;
+		return AKEY_CTRL_x|shiftctrl;
 	case 25:
-		return AKEY_CTRL_y;
+		return AKEY_CTRL_y|shiftctrl;
 	case 26:
-		return AKEY_CTRL_z;
+		return AKEY_CTRL_z|shiftctrl;
 	case 'A':
 		return AKEY_A;
 	case 'B':
