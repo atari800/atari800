@@ -1,3 +1,7 @@
+2008-06-14  Perry McFarlane  <perry_m@fastmail.fm>
+* input.c: 5200 bit 5 toggle fix (Star Trek)
+
+
 2008-06-13  Perry McFarlane  <perry_m@fastmail.fm>
 * rdevice.c, configure.ac: fix for win32 R: device
 * pokey.c: IRQEN fix
