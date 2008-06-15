@@ -2,7 +2,7 @@
  * rdevice.c - Atari850 emulation
  *
  * Copyright (c) ???? Tom Hunt, Chris Martin
- * Copyright (c) 2003,2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2003-2005,2007-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -147,7 +147,16 @@ static int rdevice_win32_write(SOCKET s, char *buf, int len) {
 #define read(a,b,c) rdevice_win32_read(a,b,c)
 #define write(a,b,c) rdevice_win32_write(a,b,c)
 
-#else /* WIN32 not defined */
+#elif defined(DREAMCAST) /* above WIN32, below DREAMCAST */
+
+/* these functions reside in dc/atari_dc.c */
+extern void dc_init_serial(void);
+extern int dc_write_serial(unsigned char byte);
+extern int dc_read_serial(unsigned char *byte);
+extern void dc_set_baud(int baud);
+
+#else /* above DREAMCAST, below not WIN32 and not DREAMCAST */
+
 #if !defined(R_SERIAL) && !defined(R_NETWORK)
 #error R: device needs serial or network or both
 #endif
@@ -160,11 +169,11 @@ static int rdevice_win32_write(SOCKET s, char *buf, int len) {
 #endif /* R_NETWORK */
 #include <sys/types.h>
 #include <fcntl.h>
-#endif /* WIN32 */
+#endif /* not WIN32 and not DREAMCAST */
 
-#ifdef R_SERIAL
+#if defined(R_SERIAL) && !defined(DREAMCAST)
 #include <termios.h>
-#endif /* R_SERIAL */
+#endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
 #include "atari.h"
 #include "rdevice.h"
@@ -183,6 +192,7 @@ static int rdevice_win32_write(SOCKET s, char *buf, int len) {
 ---------------------------------------------------------------------------*/
 static int connected;
 static int do_once;
+static int rdev_fd;
 
 #ifdef R_NETWORK
 static struct sockaddr_in in;
@@ -192,8 +202,7 @@ static int portnum = 9000;
 static char inetaddress[256];
 static char CONNECT_STRING[40] = "\r\n_CONNECT 2400\r\n";
 static int retval;
-#endif
-static int rdev_fd;
+#endif /* R_NETWORK */
 
 static char MESSAGE[256];
 static char command_buf[256];
@@ -240,6 +249,7 @@ static void catch_disconnect(int sig)
 ---------------------------------------------------------------------------*/
 static void xio_34(void)
 {
+#ifndef DREAMCAST  /* Dreamcast port doesn't currently support handshake lines */
   int temp;
   /*int fid;*/
 #ifdef R_SERIAL
@@ -328,6 +338,7 @@ static void xio_34(void)
     /*ioctl(rdev_fd, TIOCMSET, &status);*/
   }
 #endif /* R_SERIAL */
+#endif /* not defined DREAMCAST */
 
   regA = 1;
   regY = 1;
@@ -342,9 +353,9 @@ static void xio_34(void)
 static void xio_36(void)
 {
   int aux1, aux2;
-#ifdef R_SERIAL
+#if defined(R_SERIAL) && !defined(DREAMCAST)
   struct termios options;
-#endif /* R_SERIAL */
+#endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
   aux1 = dGetByte(ICAX1Z);
   aux2 = dGetByte(ICAX2Z);
@@ -352,6 +363,7 @@ static void xio_36(void)
 #ifdef R_SERIAL
   if(r_serial)
   {
+#ifndef DREAMCAST
     tcgetattr(rdev_fd, &options);
 
     /*Set Stop bits*/
@@ -502,6 +514,110 @@ static void xio_36(void)
     }
 
     tcsetattr(rdev_fd, TCSANOW, &options);
+#else /* below DREAMCAST, above not; both R_SERIAL */
+    /* Set Stop bits */
+    if(aux1 & 0x80)
+    { /* 2 Stop bits */
+      /* currently not supported on DC */
+    }
+    else
+    { /* 1 Stop bit */
+      /* currently not supported on DC */
+    }
+
+    /* Set word size */
+    if((aux1 & 0x30) == 0)
+    { /* 8 bit word size */
+      /* currently not supported on DC */
+    }
+    else if((aux1 & 0x30) == 0x10)
+    { /* 7 bit word size */
+      /* currently not supported on DC */
+    }
+    else if((aux1 & 0x30) == 0x20)
+    { /* 6 bit word size */
+      /* currently not supported on DC */
+    }
+    else if((aux1 & 0x30) == 0x30)
+    { /* 5 bit word size */
+      /* currently not supported on DC */
+    }
+    else
+    { /* 8 bit word size */
+      /* currently not supported on DC */
+    }
+
+    /* Set Baud Rate */
+    if((aux1 & 0x0f) == 0)
+    { /* 300 Baud */
+      dc_set_baud(300);
+    }
+    else if((aux1 & 0x0f) == 1)
+    { /* 45.5 Baud (unsupported) - now 57600 */
+      dc_set_baud(57600);
+    }
+    else if ((aux1 & 0x0f) == 2)
+    { /* 50 Baud */
+      dc_set_baud(50);
+    }
+    else if ((aux1 & 0x0f) == 3)
+    { /* 56.875 Baud (unsupported) - now 115200 */
+      dc_set_baud(115200);
+    }
+    else if((aux1 & 0x0f) == 4)
+    { /* 75 Baud */
+      dc_set_baud(75);
+    }
+    else if((aux1 & 0x0f) == 5)
+    { /* 110 Baud */
+      dc_set_baud(110);
+    }
+    else if((aux1 & 0x0f) == 6)
+    { /* 134.5 Baud */
+      dc_set_baud(134);
+    }
+    else if((aux1 & 0x0f) == 7)
+    { /* 150 Baud */
+      dc_set_baud(150);
+    }
+    else if((aux1 & 0x0f) == 8)
+    { /* 300 Baud */
+      dc_set_baud(300);
+    }
+    else if((aux1 & 0x0f) == 9)
+    { /* 600 Baud */
+      dc_set_baud(600);
+    }
+    else if((aux1 & 0x0f) == 10)
+    { /* 1200 Baud */
+      dc_set_baud(1200);
+    }
+    else if((aux1 & 0x0f) == 12)
+    { /* 2400 Baud */
+      dc_set_baud(2400);
+    }
+    else if((aux1 & 0x0f) == 13)
+    { /* 4800 Baud */
+      dc_set_baud(4800);
+    }
+    else if((aux1 & 0x0f) == 14)
+    { /* 9600 Baud */
+      dc_set_baud(9600);
+    }
+    else if((aux1 & 0x0f) == 15)
+    { /* 19200 Baud */
+      dc_set_baud(19200);
+    }
+    else
+    { /* 115200 Baud (can add 38400, 76800 if wanted) */
+      dc_set_baud(115200);
+    }
+
+    if(aux1 & 0x40)
+    { /*  230400 Baud */
+      dc_set_baud(230400);
+    }
+#endif /* DREAMCAST */
   }
 #endif /* R_SERIAL */
 
@@ -517,16 +633,16 @@ static void xio_36(void)
 static void xio_38(void)
 {
   int aux1;
-#ifdef R_SERIAL
+#if defined(R_SERIAL) && !defined(DREAMCAST)
   struct termios options;
-#endif /* R_SERIAL */
+#endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
   regA = 1;
   regY = 1;
   ClrN;
 
   aux1 = Peek(ICAX1Z);
-#ifdef R_SERIAL
+#if defined(R_SERIAL) && !defined(DREAMCAST)
   if(r_serial)
   {
     if(aux1 & 0x04)
@@ -551,7 +667,7 @@ static void xio_38(void)
       tcsetattr(rdev_fd, TCSANOW, &options);
     }
   }
-#endif /* R_SERIAL */
+#endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
   if(aux1 & 0x20)
   { /* No Translation */
@@ -696,7 +812,7 @@ static void open_connection(char * address, int port)
 #endif /* R_NETWORK */
 
 
-#ifdef R_SERIAL
+#if defined(R_SERIAL) && !defined(DREAMCAST)
 #ifdef __linux__
 #define TTY_DEV_NAME "/dev/ttyS0"   /* Linux */
 #elif defined (__NetBSD__) && defined(__i386__)
@@ -708,7 +824,7 @@ static void open_connection(char * address, int port)
 #else
 #error tty name unknown!
 #endif
-#endif /* R_SERIAL */
+#endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
 /*---------------------------------------------------------------------------
    Host Support Function - Serial Open Connection
@@ -716,6 +832,10 @@ static void open_connection(char * address, int port)
 #ifdef R_SERIAL
 static void open_connection_serial(int port)
 {
+#ifdef DREAMCAST
+  dc_init_serial();
+  connected = 1;
+#else /* above DREAMCAST, below not */
   char dev_name[FILENAME_MAX] = TTY_DEV_NAME; /* reinitialize each time */
   struct termios options;
 
@@ -772,6 +892,7 @@ static void open_connection_serial(int port)
     cfsetospeed(&options, B115200);
     tcsetattr(rdev_fd, TCSANOW, &options);
   }
+#endif /* not DREAMCAST */
 }
 #endif /* R_SERIAL */
 
@@ -956,7 +1077,11 @@ void Device_RWRIT(void)
         }
         else
         {
+#ifndef DREAMCAST
           write(rdev_fd, (char *)&out_char, 1); /* Write return */
+#else
+          dc_write_serial(out_char);
+#endif
         }
         out_char = 0x0a;  /*set char for line feed to be output later....*/
       }
@@ -1040,15 +1165,26 @@ void Device_RWRIT(void)
   }
   else
 #endif /* R_NETWORK */
+#ifndef DREAMCAST
     if((connected) && (write(rdev_fd, (char *)&out_char, 1) < 1))
-      { /* returns -1 if disconnected or 0 if could not send */
-        perror("write");
-        DBG_APRINT("R*: ERROR on write.");
-        SetN;
-        regY = 135;
-        /*bufend = 13;*/ /* To catch NO CARRIER message */
-      }
-
+    { /* returns -1 if disconnected or 0 if could not send */
+      perror("write");
+      DBG_APRINT("R*: ERROR on write.");
+      SetN;
+      regY = 135;
+      /*bufend = 13;*/ /* To catch NO CARRIER message */
+    }
+#else
+  if (connected)
+  {
+    if (dc_write_serial(out_char) != 1)
+    {
+      Aprint("R*: ERROR on write.");
+      SetN;
+      regY = 135;
+    }
+  }
+#endif
 
   regA = 1;
 }
@@ -1170,7 +1306,11 @@ void Device_RSTAT(void)
     /* Actually reading and setting the Atari input buffer here */
     if(concurrent)
     {
+#ifndef DREAMCAST
       bytesread = read(rdev_fd, (char *)&one, 1);
+#else
+      bytesread = dc_read_serial(&one);
+#endif
       if(bytesread > 0)
       {
         if((r_serial == 0) && (one == 0xff))

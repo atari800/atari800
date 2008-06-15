@@ -342,7 +342,7 @@
 #undef RETSIGTYPE
 
 /* Define to use R: device. */
-#undef R_IO_DEVICE
+/*#undef R_IO_DEVICE*/
 
 /* Target: SDL library. */
 #undef SDL

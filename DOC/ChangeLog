@@ -1,3 +1,8 @@
+2008-06-15  Christian Groessler  <chris@groessler.org>
+* rdevice.c, dc/Makefile.dc, dc/config.h, dc/atari_dc.c: add serial R:
+support for Dreamcast
+
+
 2008-06-14  Perry McFarlane  <perry_m@fastmail.fm>
 * input.c: 5200 bit 5 toggle fix (Star Trek)
 * atari_sdl.c, input.c: fix shift+control keys

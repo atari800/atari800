@@ -1231,6 +1231,39 @@ extern uint8 romdisk[];
 KOS_INIT_ROMDISK(romdisk);
 #endif
 
+void dc_init_serial(void)
+{
+	dbgio_disable();
+	scif_set_parameters(9600, 1);
+	scif_init();
+	scif_set_irq_usage(1);
+}
+
+void dc_set_baud(int baud)
+{
+	scif_set_parameters(baud, 1);
+	scif_init();
+	scif_set_irq_usage(1);
+#ifdef DEBUG
+	printf("setting baud rate: %d\n", baud);
+#endif
+}
+
+int dc_write_serial(unsigned char byte)
+{
+	if (scif_write_buffer(&byte, 1, 0) == 1)
+		return 1;
+	return 0;
+}
+
+int dc_read_serial(unsigned char *byte)
+{
+	int c = scif_read();
+	if (c == -1) return 0;
+	*byte = c;
+	return 1;
+}
+
 int main(int argc, char **argv)
 {
 	printf("Atari800DC main() starting\n");  /* workaound for fopen-before-printf kos bug */

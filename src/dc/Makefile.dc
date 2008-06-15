@@ -1,9 +1,12 @@
 # adapt the following variables to your environment
-SHBASE = /opt/dcgcc/sh-elf
+SHBASE = /opt/local/dcchain/dc/sh-elf
 KOS = /local/kos-sand/kos
 
-# use assember screen update functions
+# use assembler screen update functions
 ASSEMBLER = 1
+
+# include R: device emulation
+R_DEVICE = 1
 
 # include a romdisk in the executable
 #ROMDISK = 1
@@ -19,6 +22,10 @@ endif
 ifdef ROMDISK
 DEFS += -DROMDISK
 ADDOBJ += romdisk.o
+endif
+ifdef R_DEVICE
+DEFS += -DR_IO_DEVICE -DR_SERIAL
+ADDOBJ += rdevice.o
 endif
 
 CC = $(SHBASE)/bin/sh-elf-gcc
