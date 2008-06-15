@@ -449,7 +449,7 @@ static int Atari_Win32_keys(void)
 	KBSCAN(ESCAPE)
 	KBSCAN(1)
 	case DIK_2:
-		if (key_shift)
+		if (key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_AT;
 		else
 			keycode |= AKEY_2;
@@ -458,19 +458,19 @@ static int Atari_Win32_keys(void)
 	KBSCAN(4)
 	KBSCAN(5)
 	case DIK_6:
-		if (key_shift)
+		if (key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_CARET;
 		else
 			keycode |= AKEY_6;
 		break;
 	case DIK_7:
-		if (key_shift)
+		if (key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_AMPERSAND;
 		else
 			keycode |= AKEY_7;
 		break;
 	case DIK_8:
-		if (key_shift)
+		if (key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_ASTERISK;
 		else
 			keycode |= AKEY_8;
@@ -523,7 +523,9 @@ static int Atari_Win32_keys(void)
 		keycode |= AKEY_ATARI;
 		break;
 	case DIK_BACKSLASH:
-		if (key_shift)
+		if (keycode & AKEY_CTRL)
+			keycode |= AKEY_ESCAPE;
+		else if (key_shift)
 			keycode = AKEY_BAR;
 		else
 			keycode |= AKEY_BACKSLASH;
@@ -536,13 +538,13 @@ static int Atari_Win32_keys(void)
 	KBSCAN(N)
 	KBSCAN(M)
 	case DIK_COMMA:
-		if (key_shift)
+		if (key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_LESS;
 		else
 			keycode |= AKEY_COMMA;
 		break;
 	case DIK_PERIOD:
-		if (key_shift)
+		if (key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_GREATER;
 		else
 			keycode |= AKEY_FULLSTOP;
@@ -551,35 +553,35 @@ static int Atari_Win32_keys(void)
 	KBSCAN(SPACE)
 	KBSCAN(CAPSLOCK)
 	case DIK_UP:
-		keycode ^= AKEY_UP;
+		keycode ^= (key_shift ? AKEY_MINUS : AKEY_UP);
 		break;
 	case DIK_DOWN:
-		keycode ^= AKEY_DOWN;
+		keycode ^= (key_shift ? AKEY_EQUAL : AKEY_DOWN);
 		break;
 	case DIK_LEFT:
-		keycode ^= AKEY_LEFT;
+		keycode ^= (key_shift ? AKEY_PLUS : AKEY_LEFT);
 		break;
 	case DIK_RIGHT:
-		keycode ^= AKEY_RIGHT;
+		keycode ^= (key_shift ? AKEY_ASTERISK : AKEY_RIGHT);
 		break;
 	case DIK_DELETE:
 		if (key_shift)
-			keycode = AKEY_DELETE_LINE;
+			keycode |= AKEY_DELETE_LINE;
 		else
 			keycode |= AKEY_DELETE_CHAR;
 		break;
 	case DIK_INSERT:
 		if (key_shift)
-			keycode = AKEY_INSERT_LINE;
+			keycode |= AKEY_INSERT_LINE;
 		else
 			keycode |= AKEY_INSERT_CHAR;
 		break;
 	case DIK_HOME:
-		keycode = AKEY_CLEAR;
+		keycode |= ((keycode & AKEY_CTRL) ? AKEY_LESS : AKEY_CLEAR);
 		break;
 	case DIK_F6:
 	case DIK_END:
-		keycode = AKEY_HELP;
+		keycode |= AKEY_HELP;
 		break;
 	default:
 		keycode = AKEY_NONE;

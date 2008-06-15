@@ -940,13 +940,13 @@ int Atari_Keyboard(void)
 	case SDLK_RETURN:
 		return AKEY_RETURN ^ shiftctrl;
 	case SDLK_LEFT:
-		return AKEY_LEFT ^ shiftctrl;
+		return (key_shift ? AKEY_PLUS : AKEY_LEFT) ^ shiftctrl;
 	case SDLK_RIGHT:
-		return AKEY_RIGHT ^ shiftctrl;
+		return (key_shift ? AKEY_ASTERISK : AKEY_RIGHT) ^ shiftctrl;
 	case SDLK_UP:
-		return AKEY_UP ^ shiftctrl;
+		return (key_shift ? AKEY_MINUS : AKEY_UP) ^ shiftctrl;
 	case SDLK_DOWN:
-		return AKEY_DOWN ^ shiftctrl;
+		return (key_shift ? AKEY_EQUAL : AKEY_DOWN) ^ shiftctrl;
 	case SDLK_ESCAPE:
 		/* Windows takes ctrl+esc and ctrl+shift+esc */
 		return AKEY_ESCAPE ^ shiftctrl;
@@ -964,7 +964,7 @@ int Atari_Keyboard(void)
 			return AKEY_INSERT_CHAR;
 	}
 
-	/* Handle CTRL-0 to CTRL-9 */
+	/* Handle CTRL-0 to CTRL-9 and other control characters */
 	if (key_control) {
 		switch(lastuni) {
 		case '.':
@@ -983,6 +983,9 @@ int Atari_Keyboard(void)
 			return AKEY_SEMICOLON|shiftctrl;
 		case SDLK_SLASH:
 			return AKEY_SLASH|shiftctrl;
+		case SDLK_BACKSLASH:
+			/* work-around for Windows */
+			return AKEY_ESCAPE|shiftctrl;
 		case SDLK_0:
 			return AKEY_CTRL_0|shiftctrl;
 		case SDLK_1:

@@ -1,6 +1,10 @@
 2008-06-14  Perry McFarlane  <perry_m@fastmail.fm>
 * input.c: 5200 bit 5 toggle fix (Star Trek)
 * atari_sdl.c, input.c: fix shift+control keys
+* atari_sdl.c, dos/atari_vga.c, javanvm/atari_javanvm.c,
+  win32/atari_win32.c: further shift+control fixes
+* USAGE: updated keyboard
+* statesav.c: fix gzFile
 
 
 2008-06-13  Perry McFarlane  <perry_m@fastmail.fm>

@@ -260,27 +260,56 @@ Keyboard, joystick and other controllers
 Unlike PC Xformer, I have not tried to emulate the exact keyboard layout,
 instead, I have tried to make your native keyboard work as normal.
 
-F1         Built in user interface
-F2         Option key
-F3         Select key
-F4         Start key
-F5         Reset key ("warm reset")
-Shift+F5   Reboot ("cold reset")
-F6         Help key (XL/XE only)
-F7         Break key
-F8         Enter monitor
-F9         Exit emulator
-F10        Save screenshot
-Shift+F10  Save interlaced screenshot
-Alt+R      Run Atari program
-Alt+D      Disk management
-Alt+C      Cartridge management
-Alt+Y      Select system
-Alt+O      Sound settings
-Alt+W      Sound recording start/stop
-Alt+S      Save state file
-Alt+L      Load state file
-Alt+A      About the emulator
+F1                   Built in user interface
+F2                   Option key
+F3                   Select key
+F4                   Start key
+F5                   Reset key ("warm reset")
+Shift+F5             Reboot ("cold reset")
+F6                   Help key (XL/XE only)
+F7                   Break key
+F8                   Enter monitor
+F9                   Exit emulator
+F10                  Save screenshot
+Shift+F10            Save interlaced screenshot
+Alt+R                Run Atari program
+Alt+D                Disk management
+Alt+C                Cartridge management
+Alt+Y                Select system
+Alt+O                Sound settings
+Alt+W                Sound recording start/stop
+Alt+S                Save state file
+Alt+L                Load state file
+Alt+A                About the emulator
+Insert               Insert line (Atari Shift+'>')
+Ctrl+Insert          Insert character (Atari Ctrl+'>')
+Shift+Ctrl+Insert    Shift+Ctrl+'>'
+Delete               Delete line (Atari Shift+Backspace)
+Shift+Backspace      Delete line (Atari Shift+Backspace)
+Ctrl+Delete          Delete character (Atari Ctrl+Backspace)
+Ctrl+Backspace       Delete character (Atari Ctrl+Backspace)
+Shift+Ctrl+Delete    Shift+Ctrl+Backspace
+Shift+Ctrl+Backspace Shift+Ctrl+Backspace
+Home                 Clear (Atari Shift+'<')
+Ctrl+Home            Ctrl+'<' (also clears screen)
+Shift+Ctrl+Home      Shift+Ctrl+'<'
+~                    Inverse video
+Up                   Up (Atari Ctrl+'-')
+Down                 Down (Atari Ctrl+'=')
+Left                 Left (Atari ctrl+'+')
+Right                Right (Atari ctrl+'*')
+Ctrl+Up              -
+Ctrl+Down            =
+Ctrl+Left            +
+Ctrl+Right           *
+Shift+Up             _ (Atari Shift+'-')
+Shift+Down           | (Atari Shift+'=')
+Shift+Left           \ (Atari Shift+'+')
+Shift+Right          ^ (Atari Shift+'*')
+Shift+Ctrl+Up        Shift+Ctrl+-
+Shift+Ctrl+Down      Shift+Ctrl+=
+Ctrl+'\'             Ctrl+Esc  (Workaround for Windows)
+Shift+Ctrl+'\'       Shift+Ctrl+Esc (Workaround for Windows)
 
 Paddles, Atari touch tablet, Koala pad, light pen, light gun,
 ST/Amiga mouse, Atari trak-ball, joystick and Atari 5200 analog

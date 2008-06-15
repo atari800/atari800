@@ -1032,6 +1032,7 @@ int Atari_Keyboard(void)
                         keycode = AKEY_UI;
                 break;
         case 0xCF:                                      /* gray END*/
+        case 0xC5:                                      /* Pause/Break */
                 keycode = AKEY_BREAK;
                 break;
         case 0x44:                                      /* F10 */
@@ -1074,7 +1075,7 @@ int Atari_Keyboard(void)
         case 0xD0:
         case 0x50:
                 if (PC_keyboard)
-                        keycode = AKEY_DOWN;
+                        keycode ^= (key_shift ? AKEY_EQUAL : AKEY_DOWN);
                 else {
                         keycode |= AKEY_EQUAL;
                         keycode ^= shift_mask;
@@ -1083,7 +1084,7 @@ int Atari_Keyboard(void)
         case 0xCB:
         case 0x4b:
                 if (PC_keyboard)
-                        keycode = AKEY_LEFT;
+                        keycode ^= (key_shift ? AKEY_PLUS : AKEY_LEFT);
                 else {
                         keycode |= AKEY_PLUS;
                         keycode ^= shift_mask;
@@ -1092,7 +1093,7 @@ int Atari_Keyboard(void)
         case 0xCD:
         case 0x4d:
                 if (PC_keyboard)
-                        keycode = AKEY_RIGHT;
+                        keycode ^= (key_shift ? AKEY_ASTERISK : AKEY_RIGHT);
                 else {
                         keycode |= AKEY_ASTERISK;
                         keycode ^= shift_mask;
@@ -1101,7 +1102,7 @@ int Atari_Keyboard(void)
         case 0xC8:
         case 0x48:
                 if (PC_keyboard)
-                        keycode = AKEY_UP;
+                        keycode ^= (key_shift ? AKEY_MINUS : AKEY_UP);
                 else {
                         keycode |= AKEY_MINUS;
                         keycode ^= shift_mask;
@@ -1119,7 +1120,7 @@ int Atari_Keyboard(void)
         case 0x03:
                 if (!PC_keyboard)
                         keycode |= AKEY_2;
-                else if (key_shift)
+                else if (key_shift && !control)
                         keycode = AKEY_AT;
                 else
                         keycode |= AKEY_2;      /* 2,@ */
@@ -1136,7 +1137,7 @@ int Atari_Keyboard(void)
         case 0x07:
                 if (!PC_keyboard)
                         keycode |= AKEY_6;
-                else if (key_shift)
+                else if (key_shift && !control)
                         keycode = AKEY_CIRCUMFLEX;      /* 6,^ */
                 else
                         keycode |= AKEY_6;
@@ -1144,7 +1145,7 @@ int Atari_Keyboard(void)
         case 0x08:
                 if (!PC_keyboard)
                         keycode |= AKEY_7;
-                else if (key_shift)
+                else if (key_shift && !control)
                         keycode = AKEY_AMPERSAND;       /* 7,& */
                 else
                         keycode |= AKEY_7;
@@ -1152,7 +1153,7 @@ int Atari_Keyboard(void)
         case 0x09:
                 if (!PC_keyboard)
                         keycode |= AKEY_8;
-                else if (key_shift)
+                else if (key_shift && !control)
                         keycode = AKEY_ASTERISK;        /* 8,* */
                 else
                         keycode |= AKEY_8;
@@ -1160,7 +1161,7 @@ int Atari_Keyboard(void)
         case 0x0a:
                 if (!PC_keyboard)
                         keycode |= AKEY_9;
-                else if (key_shift)
+                else if (key_shift && !control)
                         keycode = AKEY_PARENLEFT;
                 else
                         keycode |= AKEY_9;      /* 9,( */
@@ -1168,7 +1169,7 @@ int Atari_Keyboard(void)
         case 0x0b:
                 if (!PC_keyboard)
                         keycode |= AKEY_0;
-                else if (key_shift)
+                else if (key_shift && !control)
                         keycode = AKEY_PARENRIGHT;      /* 0,) */
                 else
                         keycode |= AKEY_0;
@@ -1338,14 +1339,14 @@ int Atari_Keyboard(void)
         case 0x56:                                      /* PC key "\,|" */
                 if (!PC_keyboard)
                         keycode |= AKEY_ASTERISK;
-                else if (key_shift)
+                else if (key_shift && !control)
                         keycode = AKEY_BAR;
                 else if (alt_key)
 				{
 					keycode = AKEY_PBI_BB_MENU; /* Black Box */
 				}
 				else
-                        keycode |= AKEY_BACKSLASH;
+                        keycode |= (control ? AKEY_ESCAPE : AKEY_BACKSLASH);
                 break;
 
 
@@ -1401,17 +1402,17 @@ int Atari_Keyboard(void)
 
 
         case 0xc7:                                      /* HOME key */
-                keycode |= AKEY_CLEAR;
+                keycode |= (control ? AKEY_LESS : AKEY_CLEAR);
                 break;
         case 0xd2:                                      /* INSERT key */
                 if (key_shift)
-                        keycode = AKEY_INSERT_LINE;
+                        keycode |= AKEY_INSERT_LINE;
                 else
                         keycode = AKEY_INSERT_CHAR;
                 break;
         case 0xd3:                                      /* DELETE key */
                 if (key_shift)
-                        keycode = AKEY_DELETE_LINE;
+                        keycode |= AKEY_DELETE_LINE;
                 else
                         keycode = AKEY_DELETE_CHAR;
                 break;

@@ -94,7 +94,7 @@ static size_t mem_write(const void *buf, size_t len, gzFile *stream);
 #define GZREAD(X, Y, Z)  fread(Y, Z, 1, X)
 #define GZWRITE(X, Y, Z) fwrite(Y, Z, 1, X)
 #undef GZERROR
-#define gzFile  FILE
+#define gzFile  FILE *
 #define Z_OK    0
 #endif
 
