@@ -1,6 +1,6 @@
 /*
  * SEGA Dreamcast support using KallistiOS (http://cadcdev.sourceforge.net)
- * (c) 2002-2005 Christian Groessler (chris@groessler.org)
+ * (c) 2002-2006,2008 Christian Groessler (chris@groessler.org)
  */
 
 #include <stdarg.h>
@@ -658,6 +658,9 @@ int Atari_Keyboard(void)
 
 	case 0x1b:  /* ESC */
 		keycode = AKEY_ESCAPE;
+		break;
+	case 9:  /* TAB */
+		keycode = AKEY_TAB;
 		break;
 	case '`':
 		keycode = AKEY_CAPSTOGGLE;
