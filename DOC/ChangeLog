@@ -6,7 +6,8 @@ part.
 indicating whether to wait for a key press. Display a "please wait"
 message in SaveState and LoadState.
 * ui_basic.c: adapt to fMessage change. Change BasicUIMessage to use
-the new parameter.
+the new parameter and clear status line before writing the new
+message.
 
 
 2008-06-15  Christian Groessler  <chris@groessler.org>
