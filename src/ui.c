@@ -1084,8 +1084,6 @@ static void SaveState(void)
 		ui_driver->fMessage("Please wait while saving...", 0);
 		if (!SaveAtariState(state_filename, "wb", TRUE))
 			CantSave(state_filename);
-		else
-			CantSave(state_filename);
 	}
 }
 
@@ -1094,8 +1092,6 @@ static void LoadState(void)
 	if (ui_driver->fGetLoadFilename(state_filename, saved_files_dir, n_saved_files_dir)) {
 		ui_driver->fMessage("Please wait while loading...", 0);
 		if (!ReadAtariState(state_filename, "rb"))
-			CantLoad(state_filename);
-		else
 			CantLoad(state_filename);
 	}
 }
