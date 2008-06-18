@@ -105,7 +105,7 @@ static void FilenameMessage(const char *format, const char *filename)
 {
 	char msg[FILENAME_MAX + 30];
 	sprintf(msg, format, filename);
-	ui_driver->fMessage(msg);
+	ui_driver->fMessage(msg, 1);
 }
 
 static const char * const cant_load = "Can't load \"%s\"";
@@ -370,7 +370,7 @@ static void DiskManagement(void)
 						}
 						success = CompressedFile_ExtractGZ(disk_filename, fp2);
 						fclose(fp2);
-						ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file");
+						ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file", 1);
 					}
 					break;
 				case 0xf9:
@@ -387,12 +387,12 @@ static void DiskManagement(void)
 						success = CompressedFile_DCMtoATR(fp, fp2);
 						fclose(fp2);
 						fclose(fp);
-						ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file");
+						ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file", 1);
 					}
 					break;
 				default:
 					fclose(fp);
-					ui_driver->fMessage("This is not a compressed disk image");
+					ui_driver->fMessage("This is not a compressed disk image", 1);
 					break;
 				}
 			}
@@ -555,7 +555,7 @@ static void CartManagement(void)
 				nbytes = Util_flen(f);
 				if ((nbytes & 0x3ff) != 0) {
 					fclose(f);
-					ui_driver->fMessage("ROM image must be full kilobytes long");
+					ui_driver->fMessage("ROM image must be full kilobytes long", 1);
 					break;
 				}
 				type = SelectCartType(nbytes >> 10);
@@ -623,7 +623,7 @@ static void CartManagement(void)
 				if (nbytes <= 0 || fread(&header, 1, sizeof(header), f) != sizeof(header)
 				 || header.id[0] != 'C' || header.id[1] != 'A' || header.id[2] != 'R' || header.id[3] != 'T') {
 					fclose(f);
-					ui_driver->fMessage("Not a CART file");
+					ui_driver->fMessage("Not a CART file", 1);
 					break;
 				}
 				image = (UBYTE *) Util_malloc(nbytes);
@@ -652,10 +652,10 @@ static void CartManagement(void)
 					CantLoad(cart_filename);
 					break;
 				case CART_BAD_FORMAT:
-					ui_driver->fMessage("Unknown cartridge format");
+					ui_driver->fMessage("Unknown cartridge format", 1);
 					break;
 				case CART_BAD_CHECKSUM:
-					ui_driver->fMessage("Warning: bad CART checksum");
+					ui_driver->fMessage("Warning: bad CART checksum", 1);
 					break;
 				case 0:
 					/* ok */
@@ -708,11 +708,11 @@ static void SoundRecording(void)
 				return;
 			}
 		} while (++no < 1000);
-		ui_driver->fMessage("All atariXXX.wav files exist!");
+		ui_driver->fMessage("All atariXXX.wav files exist!", 1);
 	}
 	else {
 		CloseSoundFile();
-		ui_driver->fMessage("Recording stopped");
+		ui_driver->fMessage("Recording stopped", 1);
 	}
 }
 #endif /* defined(SOUND) && !defined(DREAMCAST) */
@@ -1046,7 +1046,7 @@ static void AtariSettings(void)
 			strcpy(tmp_command, print_command);
 			if (ui_driver->fEditString("Print command", tmp_command, sizeof(tmp_command)))
 				if (!Device_SetPrintCommand(tmp_command))
-					ui_driver->fMessage("Specified command is not allowed");
+					ui_driver->fMessage("Specified command is not allowed", 1);
 			break;
 		case 12:
 		case 13:
@@ -1067,7 +1067,7 @@ static void AtariSettings(void)
 			ConfigureDirectories();
 			break;
 		case 19:
-			ui_driver->fMessage(Atari800_WriteConfig() ? "Configuration file updated" : "Error writing configuration file");
+			ui_driver->fMessage(Atari800_WriteConfig() ? "Configuration file updated" : "Error writing configuration file", 1);
 			break;
 		default:
 			Atari800_UpdatePatches();
@@ -1081,7 +1081,10 @@ static char state_filename[FILENAME_MAX] = "";
 static void SaveState(void)
 {
 	if (ui_driver->fGetSaveFilename(state_filename, saved_files_dir, n_saved_files_dir)) {
+		ui_driver->fMessage("Please wait while saving...", 0);
 		if (!SaveAtariState(state_filename, "wb", TRUE))
+			CantSave(state_filename);
+		else
 			CantSave(state_filename);
 	}
 }
@@ -1089,7 +1092,10 @@ static void SaveState(void)
 static void LoadState(void)
 {
 	if (ui_driver->fGetLoadFilename(state_filename, saved_files_dir, n_saved_files_dir)) {
+		ui_driver->fMessage("Please wait while loading...", 0);
 		if (!ReadAtariState(state_filename, "rb"))
+			CantLoad(state_filename);
+		else
 			CantLoad(state_filename);
 	}
 }
@@ -1170,7 +1176,7 @@ static void DisplaySettings(void)
 			break;
 		case 2:
 			if (refresh_rate == 1)
-				ui_driver->fMessage("No effect with refresh rate 1");
+				ui_driver->fMessage("No effect with refresh rate 1", 1);
 			sprite_collisions_in_skipped_frames = !sprite_collisions_in_skipped_frames;
 			break;
 		case 3:
@@ -1409,7 +1415,7 @@ static int SoundSettings(void)
 			Pokey_DoInit();
 			/* According to the PokeySnd doc the POKEY switch can occur on
 			   a cold-restart only */
-			ui_driver->fMessage("Will reboot to apply the change");
+			ui_driver->fMessage("Will reboot to apply the change", 1);
 			return TRUE; /* reboot required */
 #ifdef STEREO_SOUND
 		case 1:

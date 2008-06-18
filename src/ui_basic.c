@@ -2,7 +2,7 @@
  * ui_basic.c - Atari look&feel user interface driver
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -249,10 +249,14 @@ static void TitleScreen(const char *title)
 	CenterPrint(0x9a, 0x94, title, 0);
 }
 
-static void BasicUIMessage(const char *msg)
+static void BasicUIMessage(const char *msg, int waitforkey)
 {
+	ClearRectangle(0x94, 1, 22, 38, 22);
 	CenterPrint(0x94, 0x9a, msg, 22);
-	GetKeyPress();
+	if (waitforkey)
+		GetKeyPress();
+	else
+		Atari_DisplayScreen();
 }
 
 static int Select(int default_item, int nitems, const char *item[],
@@ -857,7 +861,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 		if (n_filenames == 0) {
 			/* FIXME: change to a safe directory */
 			FilenamesFree();
-			BasicUIMessage("No files inside directory");
+			BasicUIMessage("No files inside directory", 1);
 			return FALSE;
 		}
 
@@ -922,7 +926,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 					strcatchr(highlighted_file, ']');
 					break;
 				}
-				BasicUIMessage("Cannot enter parent directory");
+				BasicUIMessage("Cannot enter parent directory", 1);
 				continue;
 			}
 			if (seltype == USER_TOGGLE && select_dir) {
@@ -970,7 +974,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 					strcpy(current_dir, new_dir);
 					break;
 				}
-				BasicUIMessage("Cannot enter selected directory");
+				BasicUIMessage("Cannot enter selected directory", 1);
 				continue;
 			}
 			if (!select_dir) {
@@ -1164,7 +1168,7 @@ static void BasicUIInfoScreen(const char *title, const char *message)
 		CenterPrint(0x9a, 0x94, message, y++);
 		while (*message++ != '\0');
 	}
-	BasicUIMessage("Press any key to continue");
+	BasicUIMessage("Press any key to continue", 1);
 }
 
 static void BasicUIInit(void)

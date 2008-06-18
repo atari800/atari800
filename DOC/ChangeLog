@@ -1,3 +1,14 @@
+2008-06-18  Christian Groessler  <chris@groessler.org>
+* dc/atari_dc.c (Atari_Keyboard): recognize TAB key.
+* atari_x11.c (Atari_DisplayScreen): add missing XSync call in not-SHM
+part.
+* ui.c, ui.h: add additional parameter to the fMessage function,
+indicating whether to wait for a key press. Display a "please wait"
+message in SaveState and LoadState.
+* ui_basic.c: adapt to fMessage change. Change BasicUIMessage to use
+the new parameter.
+
+
 2008-06-15  Christian Groessler  <chris@groessler.org>
 * rdevice.c, dc/Makefile.dc, dc/config.h, dc/atari_dc.c: add serial R:
 support for Dreamcast
