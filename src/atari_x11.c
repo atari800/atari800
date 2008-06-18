@@ -2605,6 +2605,7 @@ void Atari_DisplayScreen(void)
 		if (modified) {
 			XCopyArea(display, pixmap, window, gc, 0, 0,
 					  window_width, window_height, 0, 0);
+			XSync(display, FALSE);
 			modified = FALSE;
 		}
 
