@@ -50,4 +50,11 @@ extern int kbd_joy_0_enabled;
 extern int kbd_joy_1_enabled;
 #endif
 
+#ifdef XEP80_EMULATION
+/* Switch between the Atari and XEP80 screen */
+void Atari_SwitchXep80(void);
+/* TRUE if the XEP80 screen is visible */
+extern int Atari_xep80;
+#endif
+
 #endif /* _PLATFORM_H_ */

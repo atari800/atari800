@@ -283,6 +283,7 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
         AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,1,[Save additional config file options.])
         AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
+	WANT_XEP80_EMULATION=yes
         LIBS="$LIBS `sdl-config --libs`"
         OBJS="atari_sdl.o atari_ntsc.o"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
@@ -699,6 +700,11 @@ if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
               [Using cursor/ctrl keys for keyboard joystick (svgalib/windx targets only) (default=OFF)],
               USE_CURSORBLOCK,[Define for using cursor/ctrl keys for keyboard joystick.]
              )
+fi
+
+if [[ "$WANT_XEP80_EMULATION" = "yes" ]]; then
+    AC_DEFINE(XEP80_EMULATION,1,[Emulate the XEP80.])
+    OBJS="$OBJS xep80.o xep80_fonts.o"
 fi
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then

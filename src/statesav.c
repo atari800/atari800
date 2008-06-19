@@ -52,7 +52,7 @@
 #include "util.h"
 #include "statesav.h"
 
-#define SAVE_VERSION_NUMBER 5
+#define SAVE_VERSION_NUMBER 6
 
 void AnticStateSave(void);
 /* void MainStateSave(void); declared in atari.h */
@@ -62,6 +62,9 @@ void PIAStateSave(void);
 void POKEYStateSave(void);
 void CARTStateSave(void);
 void SIOStateSave(void);
+#ifdef XEP80_EMULATION
+void XEP80StateSave(void);
+#endif
 
 void AnticStateRead(void);
 /* void MainStateRead(void); declared in atari.h */
@@ -71,6 +74,9 @@ void PIAStateRead(void);
 void POKEYStateRead(void);
 void CARTStateRead(void);
 void SIOStateRead(void);
+#ifdef XEP80_EMULATION
+void XEP80StateRead(void);
+#endif
 
 #if defined(MEMCOMPR)
 static gzFile *mem_open(const char *name, const char *mode);
@@ -364,6 +370,14 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 #ifdef DREAMCAST
 	DCStateSave();
 #endif
+#ifdef XEP80_EMULATION
+	XEP80StateSave();
+#else
+	{
+		int local_xep80_enabled = FALSE;
+		SaveINT(&local_xep80_enabled, 1);
+	}
+#endif
 
 	if (GZCLOSE(StateFile) != 0) {
 		StateFile = NULL;
@@ -438,6 +452,20 @@ int ReadAtariState(const char *filename, const char *mode)
 #ifdef DREAMCAST
 	DCStateRead();
 #endif
+	if (StateVersion >= 6) {
+#ifdef XEP80_EMULATION
+		XEP80StateRead();
+#else
+		int local_xep80_enabled;
+		ReadINT(&local_xep80_enabled,1);
+		if (local_xep80_enabled) {
+			Aprint("Cannot read this state file because this version does not support XEP80.");
+			GZCLOSE(StateFile);
+			StateFile = NULL;
+			return FALSE;
+		}
+#endif
+	}
 
 	GZCLOSE(StateFile);
 	StateFile = NULL;

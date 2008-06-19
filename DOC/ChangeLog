@@ -1,3 +1,9 @@
+2008-06-18  Perry McFarlane  <perry_m@fastmail.fm>
+* DOC/CREDITS, DOC/TODO, USAGE, atari.c, atari_sdl.c, configure.ac, pia.c,
+platform.h, statesav.c, ui.c, xep80.[ch], xep80_fonts.[ch]:
+Added XEP80 emulation by Mark Grebe to the SDL version, from Atari800MacX
+
+
 2008-06-18  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c (Atari_Keyboard): recognize TAB key.
 * atari_x11.c (Atari_DisplayScreen): add missing XSync call in not-SHM

@@ -29,6 +29,9 @@
 #include "memory.h"
 #include "pia.h"
 #include "sio.h"
+#ifdef XEP80_EMULATION
+#include "xep80.h"
+#endif
 #ifndef BASIC
 #include "input.h"
 #include "statesav.h"
@@ -84,6 +87,11 @@ UBYTE PIA_GetByte(UWORD addr)
 		}
 		else {
 			/* port state */
+#ifdef XEP80_EMULATION
+			if (XEP80_enabled) {
+				return(XEP80_GetBit() & PORT_input[0] & (PORTA | PORTA_mask));
+			}
+#endif /* XEP80_EMULATION */
 			return PORT_input[0] & (PORTA | PORTA_mask);
 		}
 	case _PORTB:
@@ -130,6 +138,11 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 		}
 		else {
 			/* set output register */
+#ifdef XEP80_EMULATION
+			if (XEP80_enabled && (~PORTA_mask & 0x11)) {
+				XEP80_PutBit(byte);
+			}
+#endif /* XEP80_EMULATION */
 			PORTA = byte;		/* change from thor */
 		}
 #ifndef BASIC

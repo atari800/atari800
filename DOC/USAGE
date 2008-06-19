@@ -228,6 +228,8 @@ The following items are for -ntscemu only:
 -scanlines <n>        Set scanlines percentage (ntscemu only)
 -scanlinesnoint       Disable scanlines interpolation (ntscemu only)
 -proto80              Emulate a prototype 80 column board for the 1090
+-xep80                Emulate the XEP80
+-xep80port <n>        Use XEP80 on joystick port <n>
 
 
 SVGALIB version options
@@ -404,6 +406,8 @@ LAlt+;     Decrease NTSC hue (like TV Tint control)
 LAlt+'     Increase NTSC hue (like TV Tint control)
 LAlt+Ins   Decrease NTSC saturation ramp(reduce saturation for bright colours) 
 LAlt+Ins   Increase NTSC saturation ramp(reduce saturation for bright colours) 
+
+LAlt+Shift+X Enable/disable XEP80 screen (use with -xep80)
 
 
 Apart from standard joysticks (handled by the SDL) two keyboard joysticks

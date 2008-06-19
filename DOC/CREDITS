@@ -146,6 +146,7 @@ Mark Grebe <markgrebe@yahoo.com>
     - Multiple Disk Set support
     - new state-file implementation supporting bank-switching cartridges
       and disk images
+    - XEP80
 
 Shay Green <gblargg@gmail.com>
     - NTSC composite video emulator, based on NewRisingSun's algorithm

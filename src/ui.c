@@ -1539,6 +1539,12 @@ void ui(void)
 
 	int option = MENU_RUN;
 	int done = FALSE;
+#ifdef XEP80_EMULATION
+	int saved_xep80 = Atari_xep80;
+	if (Atari_xep80) {
+		Atari_SwitchXep80();
+	}
+#endif
 
 	ui_is_active = TRUE;
 
@@ -1665,6 +1671,12 @@ void ui(void)
 	while (Atari_Keyboard() != AKEY_NONE)
 		atari_sync();
 	alt_function = -1;
+	/* restore XEP80 screen */
+#ifdef XEP80_EMULATION
+	if (saved_xep80 != Atari_xep80) {
+		Atari_SwitchXep80();
+	}
+#endif
 }
 
 

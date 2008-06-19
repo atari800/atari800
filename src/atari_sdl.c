@@ -67,6 +67,8 @@
 #include "util.h"
 #include "atari_ntsc.h"
 #include "pbi_proto80.h"
+#include "xep80.h"
+#include "xep80_fonts.h"
 
 /* you can set that variables in code, or change it when emulator is running
    I am not sure what to do with sound_enabled (can't turn it on inside
@@ -145,6 +147,7 @@ static SDL_Surface *MainScreen = NULL;
 static SDL_Color colors[256];			/* palette */
 static Uint16 Palette16[256];			/* 16-bit palette */
 static Uint32 Palette32[256];			/* 32-bit palette */
+int Atari_xep80 = FALSE; 	/* is the XEP80 screen displayed? */
 
 /* keyboard */
 static Uint8 *kbhits;
@@ -409,7 +412,8 @@ static void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
 
-	if (ROTATE90||ntscemu||PBI_PROTO80_enabled) {
+	if ((ROTATE90||ntscemu||PBI_PROTO80_enabled||Atari_xep80))
+	{
 		SetVideoMode(w, h, bpp);
 	}
 	else {
@@ -475,6 +479,31 @@ static void SwitchFullscreen(void)
 	FULLSCREEN = 1 - FULLSCREEN;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
 					MainScreen->format->BitsPerPixel);
+	Atari_DisplayScreen();
+}
+
+void Atari_SwitchXep80(void)
+{
+	static int saved_w, saved_h, saved_bpp;
+	Atari_xep80 = 1 - Atari_xep80;
+#if 0
+		if (Atari_xep80) {
+			w = XEP80_SCRN_WIDTH;
+			h = XEP80_SCRN_HEIGHT;
+			bpp = 8;
+		}
+	SetNewVideoMode(MainScreen->w, MainScreen->h,
+					MainScreen->format->BitsPerPixel);
+#endif
+	if (Atari_xep80) {
+		saved_w = MainScreen->w;
+		saved_h = MainScreen->h;
+		saved_bpp = MainScreen->format->BitsPerPixel;
+		SetNewVideoMode(XEP80_SCRN_WIDTH, XEP80_SCRN_HEIGHT, 8);
+	}
+	else {
+		SetNewVideoMode(saved_w, saved_h, saved_bpp);
+	}
 	Atari_DisplayScreen();
 }
 
@@ -609,7 +638,14 @@ int Atari_Keyboard(void)
 			}
 			break;
 		case SDL_VIDEORESIZE:
-			SetNewVideoMode(event.resize.w, event.resize.h, MainScreen->format->BitsPerPixel);
+			if (!(ROTATE90||ntscemu||PBI_PROTO80_enabled||Atari_xep80)) {
+				SetNewVideoMode(event.resize.w, event.resize.h, MainScreen->format->BitsPerPixel);
+			}
+			else {
+				/* resizing TODO */
+				SetNewVideoMode(MainScreen->w, MainScreen->h,
+					MainScreen->format->BitsPerPixel);
+			}
 			break;
 		case SDL_QUIT:
 			return AKEY_EXIT;
@@ -634,6 +670,12 @@ int Atari_Keyboard(void)
 			case SDLK_f:
 				key_pressed = 0;
 				SwitchFullscreen();
+				break;
+			case SDLK_x:
+				if (key_shift && XEP80_enabled) {
+					key_pressed = 0;
+					Atari_SwitchXep80();
+				}
 				break;
 			case SDLK_g:
 				key_pressed = 0;
@@ -1638,6 +1680,33 @@ static void scanLines_16_interp(void* pBuffer, int width, int height, int pitch,
 	}
 }
 
+static void DisplayXEP80(UBYTE *screen)
+{
+	static int xep80Frame = 0;
+	Uint32 *start32;
+	int pitch4;
+	int i;
+	xep80Frame++;
+	if (xep80Frame == 60) xep80Frame = 0;
+	if (xep80Frame > 29) {
+		screen = XEP80_screen_1;
+	}
+	else {
+		screen = XEP80_screen_2;
+	}
+
+	pitch4 = MainScreen->pitch / 4;
+	start32 = (Uint32 *) MainScreen->pixels;
+
+	i = MainScreen->h;
+	while (i > 0) {
+		memcpy(start32, screen, XEP80_SCRN_WIDTH);
+		screen += XEP80_SCRN_WIDTH;
+		start32 += pitch4;
+		i--;
+	}
+}
+
 static void DisplayNTSCEmu640x480(UBYTE *screen)
 {
 	/* Number of overscan lines not shown */
@@ -1907,13 +1976,15 @@ void Atari_DisplayScreen(void)
 		exit(-1);
 		break;
 	}
-  	if (ntscemu) {
+	if (Atari_xep80) {
+		DisplayXEP80((UBYTE *)atari_screen);
+	}
+	else if (ntscemu) {
   		DisplayNTSCEmu640x480((UBYTE *)atari_screen);
   	}
 	else if (PBI_PROTO80_enabled) {
   		DisplayProto80640x400((UBYTE *)atari_screen);
   	}
-  
   	else if (ROTATE90) {
 		DisplayRotated240x320((UBYTE *) atari_screen);
 	}

@@ -110,8 +110,15 @@
 #include "Helpers.h"
 #endif /* _WX_ */
 #endif /* __PLUS */
+#ifdef PBI_BB
 #include "pbi_bb.h"
+#endif
+#ifdef PBI_XLD
 #include "pbi_xld.h"
+#endif
+#ifdef XEP80_EMULATION
+#include "xep80.h"
+#endif
 
 int machine_type = MACHINE_XLXE;
 int ram_size = 64;
@@ -1277,6 +1284,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 	PBI_Initialise(argc,argv);
 #ifndef BASIC
 	INPUT_Initialise(argc, argv);
+#endif
+#ifdef XEP80_EMULATION
+	XEP80_Initialise(argc, argv);
 #endif
 #ifndef DONT_DISPLAY
 	/* Platform Specific Initialisation */

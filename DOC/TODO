@@ -139,8 +139,6 @@ Graphics
 
 * "flicker fixer": display average pixel values of last two Atari frames
 
-- XEP80 emulation. Slor is working on it, contact him first.
-
 - use YUV output if available. Will it help?
 
 * PAL emulation. VICE has it, but it's not as complete as Blargg's emulation
