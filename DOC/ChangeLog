@@ -1,3 +1,7 @@
+2008-06-19  Perry McFarlane  <perry_m@fastmail.fm>
+* ui.c, xep80.c: improve XEP80 state saving
+
+
 2008-06-18  Perry McFarlane  <perry_m@fastmail.fm>
 * DOC/CREDITS, DOC/TODO, USAGE, atari.c, atari_sdl.c, configure.ac, pia.c,
 platform.h, statesav.c, ui.c, xep80.[ch], xep80_fonts.[ch]:

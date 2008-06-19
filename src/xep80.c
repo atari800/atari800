@@ -1982,14 +1982,20 @@ void XEP80StateRead(void)
 			XEP80_BlitChar(xcur, ycur, TRUE);
 			}
 		XEP80_enabled = TRUE;
+		/* not correct for SDL version */
+#if 0
 		if (Atari_xep80 != local_xep80)
 			Atari_SwitchXep80();
+#endif
 		Atari_xep80 = local_xep80;
 		}
 	else {
 		XEP80_enabled = FALSE;
+		/* not correct for SDL version */
+#if 0
 		if (Atari_xep80)
 			Atari_SwitchXep80();
+#endif
 		}
 }
 

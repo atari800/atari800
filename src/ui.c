@@ -88,6 +88,9 @@ char atari_files_dir[MAX_DIRECTORIES][FILENAME_MAX];
 char saved_files_dir[MAX_DIRECTORIES][FILENAME_MAX];
 int n_atari_files_dir = 0;
 int n_saved_files_dir = 0;
+#ifdef XEP80_EMULATION
+static int saved_xep80;
+#endif
 
 static tMenuItem *FindMenuItem(tMenuItem *mip, int option)
 {
@@ -1081,8 +1084,17 @@ static char state_filename[FILENAME_MAX] = "";
 static void SaveState(void)
 {
 	if (ui_driver->fGetSaveFilename(state_filename, saved_files_dir, n_saved_files_dir)) {
+		int result;
 		ui_driver->fMessage("Please wait while saving...", 0);
-		if (!SaveAtariState(state_filename, "wb", TRUE))
+#ifdef XEP80_EMULATION
+		/* Save true XEP80 state */
+		Atari_xep80 = saved_xep80;
+#endif
+		result = SaveAtariState(state_filename, "wb", TRUE);
+#ifdef XEP80_EMULATION
+		Atari_xep80 = FALSE;
+#endif
+		if (!result)
 			CantSave(state_filename);
 	}
 }
@@ -1094,6 +1106,10 @@ static void LoadState(void)
 		if (!ReadAtariState(state_filename, "rb"))
 			CantLoad(state_filename);
 	}
+#ifdef XEP80_EMULATION
+	saved_xep80 = Atari_xep80;
+	Atari_xep80 = FALSE;
+#endif
 }
 
 /* CURSES_BASIC doesn't use artifacting or sprite_collisions_in_skipped_frames,
@@ -1540,7 +1556,7 @@ void ui(void)
 	int option = MENU_RUN;
 	int done = FALSE;
 #ifdef XEP80_EMULATION
-	int saved_xep80 = Atari_xep80;
+	saved_xep80 = Atari_xep80;
 	if (Atari_xep80) {
 		Atari_SwitchXep80();
 	}
