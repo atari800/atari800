@@ -32,7 +32,8 @@
 #include "pokey.h"
 #include "cpu.h"
 #include "memory.h"
-#include "stdlib.h"
+#include "statesav.h"
+#include <stdlib.h>
 
 #define DISK_PBI_NUM 0
 #define MODEM_PBI_NUM 1
@@ -76,13 +77,16 @@ static UBYTE PIO_Command_Frame(void);
 static double ratio;
 static int bit16;
 #define VOTRAX_BLOCK_SIZE 1024 
-SWORD *temp_votrax_buffer;
-SWORD *votrax_buffer;
+SWORD *temp_votrax_buffer = NULL;
+SWORD *votrax_buffer = NULL;
 static int votrax_busy = FALSE;
 volatile static int votrax_written = FALSE;
 volatile static int votrax_written_byte = 0x3f;
 static int votrax_sync_samples;
 static void votrax_busy_callback(int busy_status);
+static int dsprate;
+static int num_pokeys;
+static int samples_per_frame;
 
 #ifdef PBI_DEBUG
 #define D(a) a
@@ -91,6 +95,36 @@ static void votrax_busy_callback(int busy_status);
 #endif
 
 #define VOTRAX_RATE 24500
+
+static void init_xld_v(void)
+{
+	free(voicerom);
+	voicerom = (UBYTE *)Util_malloc(0x1000);
+	if (!Atari800_LoadImage(xld_v_rom_filename, voicerom, 0x1000)) {
+		free(voicerom);
+		xld_v_enabled = FALSE;
+	}
+	else {
+		printf("loaded XLD voice rom image\n");
+		PBI_D6D7ram = TRUE;
+	}
+	votrax_busy = FALSE;
+	votrax_sync_samples = 0;
+}
+
+static void init_xld_d(void)
+{
+	free(diskrom);
+	diskrom = (UBYTE *)Util_malloc(0x800);
+	if (!Atari800_LoadImage(xld_d_rom_filename, diskrom, 0x800)) {
+		free(diskrom);
+		xld_d_enabled = FALSE;
+	}
+	else {
+		D(printf("loaded 1450XLD D: device driver rom image\n"));
+		PBI_D6D7ram = TRUE;
+	}
+}
 
 void PBI_XLD_Initialise(int *argc, char *argv[])
 {
@@ -117,15 +151,7 @@ void PBI_XLD_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	if (xld_v_enabled) {
-		voicerom = (UBYTE *)Util_malloc(0x1000);
-		if (!Atari800_LoadImage(xld_v_rom_filename, voicerom, 0x1000)) {
-			free(voicerom);
-			xld_v_enabled = FALSE;
-		}
-		else {
-			printf("loaded XLD voice rom image\n");
-			PBI_D6D7ram = TRUE;
-		}
+		init_xld_v();
 	}
 
 	/* If you set the drive to empty in the UI, the message is displayed */
@@ -133,15 +159,7 @@ void PBI_XLD_Initialise(int *argc, char *argv[])
 	/* in order to increase compatibility. */
 	/* dskcnt6 works. dskcnt10 does not */
 	if (xld_d_enabled) {
-		diskrom = (UBYTE *)Util_malloc(0x800);
-		if (!Atari800_LoadImage(xld_d_rom_filename, diskrom, 0x800)) {
-			free(diskrom);
-			xld_d_enabled = FALSE;
-		}
-		else {
-			D(printf("loaded 1450XLD D: device driver rom image\n"));
-			PBI_D6D7ram = TRUE;
-		}
+		init_xld_d();
 	}
 }
 
@@ -675,29 +693,30 @@ static UBYTE PIO_Command_Frame(void)
 	}
 }
 
-static int dsprate;
-static int stereo;
-static int samples_per_frame;
-
 /* called from Pokey_sound_init */
-void PBI_XLD_V_Init(int playback_freq, int num_pokeys, int b16)
+void PBI_XLD_V_Init(int playback_freq, int n_pokeys, int b16)
 {
 	static struct VOTRAXSC01interface vi;
 	int temp_votrax_buffer_size;
-	if (!xld_v_enabled) return;
 	bit16 = b16;
 	dsprate = playback_freq;
-	stereo = (num_pokeys == 2);
+	num_pokeys = n_pokeys;
+	if (!xld_v_enabled) return;
 	if (num_pokeys != 1 && num_pokeys != 2) {
 		Aprint("PBI_XLD_V_Init: cannot handle num_pokeys=%d", num_pokeys);
+		xld_v_enabled = FALSE;
+		return;
 	}
 	vi.num = 1;
 	vi.BusyCallback[0] = votrax_busy_callback_async;
+	VOTRAXSC01_sh_stop();
 	VOTRAXSC01_sh_start((void *)&vi);
 	samples_per_frame = dsprate/(tv_mode == TV_PAL ? 50 : 60);
 	ratio = (double)VOTRAX_RATE/(double)dsprate;
 	temp_votrax_buffer_size = (int)(VOTRAX_BLOCK_SIZE*ratio + 10); /* +10 .. little extra? */
+	free(temp_votrax_buffer);
 	temp_votrax_buffer = (SWORD *)Util_malloc(temp_votrax_buffer_size*sizeof(SWORD));
+	free(votrax_buffer);
 	votrax_buffer = (SWORD *)Util_malloc(VOTRAX_BLOCK_SIZE*sizeof(SWORD));
 }
 
@@ -775,7 +794,7 @@ static void mix(SWORD *dst, SWORD *src, int sndn, int volume)
 		if (val > 32767) val = 32767;
 		if (val < -32768) val = -32768;
 		*dst++ = val;
-		if (stereo) {
+		if (num_pokeys == 2) {
 			if (!channel) {
 				channel = !channel;
 				sndn++;
@@ -801,7 +820,7 @@ static void mix8(UBYTE *dst, SWORD *src, int sndn, int volume)
 		if (val > 32767) val = 32767;
 		if (val < -32768) val = -32768;
 		*dst++ = (UBYTE)((val/256) + 0x80);
-		if (stereo) {
+		if (num_pokeys == 2) {
 			if (!channel) {
 				channel = !channel;
 				sndn++;
@@ -835,8 +854,59 @@ void PBI_XLD_V_Process(void *sndbuffer, int sndn)
 		votrax_process(votrax_buffer, amount, temp_votrax_buffer);
 		if (bit16) mix((SWORD *)sndbuffer, votrax_buffer, amount, 128/4);
 		else mix8((UBYTE *)sndbuffer, votrax_buffer, amount, 128/4);
-		sndbuffer = (char *) sndbuffer + VOTRAX_BLOCK_SIZE*(bit16 ? 2 : 1)*(stereo ? 2: 1);
+		sndbuffer = (char *) sndbuffer + VOTRAX_BLOCK_SIZE*(bit16 ? 2 : 1)*((num_pokeys == 2) ? 2: 1);
 		sndn -= VOTRAX_BLOCK_SIZE;
+	}
+}
+
+void PBI_XLDStateSave(void)
+{
+	SaveINT(&PBI_XLD_enabled, 1);
+	if (PBI_XLD_enabled) {
+		SaveINT(&xld_v_enabled, 1);
+		SaveINT(&xld_d_enabled, 1);
+		SaveFNAME(xld_d_rom_filename);
+		SaveFNAME(xld_v_rom_filename);
+
+		SaveUBYTE(&votrax_latch, 1);
+		SaveUBYTE(&modem_latch, 1);
+		SaveUBYTE(CommandFrame, sizeof(CommandFrame));
+		SaveINT(&CommandIndex, 1);
+		SaveUBYTE(DataBuffer, sizeof(DataBuffer));
+		SaveINT(&DataIndex, 1);
+		SaveINT(&TransferStatus, 1);
+		SaveINT(&ExpectedBytes, 1);
+		SaveINT(&votrax_busy, 1);
+	}
+}
+
+void PBI_XLDStateRead(void)
+{
+	ReadINT(&PBI_XLD_enabled, 1);
+	if (PBI_XLD_enabled) {
+		/* UI should have paused sound while doing this */
+		ReadINT(&xld_v_enabled, 1);
+		ReadINT(&xld_d_enabled, 1);
+		ReadFNAME(xld_d_rom_filename);
+		ReadFNAME(xld_v_rom_filename);
+		if (xld_v_enabled) {
+			init_xld_v();
+			if (dsprate) PBI_XLD_V_Init(dsprate, num_pokeys, bit16);
+		}
+		if (xld_d_enabled) init_xld_d();
+		ReadUBYTE(&votrax_latch, 1);
+		ReadUBYTE(&modem_latch, 1);
+		ReadUBYTE(CommandFrame, sizeof(CommandFrame));
+		ReadINT(&CommandIndex, 1);
+		ReadUBYTE(DataBuffer, sizeof(DataBuffer));
+		ReadINT(&DataIndex, 1);
+		ReadINT(&TransferStatus, 1);
+		ReadINT(&ExpectedBytes, 1);
+		ReadINT(&votrax_busy, 1);
+	}
+	else {
+		xld_v_enabled = FALSE;
+		xld_d_enabled = FALSE;
 	}
 }
 

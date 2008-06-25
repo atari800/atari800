@@ -14,5 +14,7 @@ UBYTE PBI_BB_D6_GetByte(UWORD addr);
 void PBI_BB_D6_PutByte(UWORD addr, UBYTE byte);
 int PBI_BB_ReadConfig(char *string, char *ptr);
 void PBI_BB_WriteConfig(FILE *fp);
+void PBI_BBStateSave(void);
+void PBI_BBStateRead(void);
 
 #endif /* _PBI_BB_H_ */

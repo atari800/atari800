@@ -14,5 +14,7 @@ extern int PBI_XLD_enabled;
 void PBI_XLD_V_Init(int playback_freq, int num_pokeys, int bit16);
 void PBI_XLD_V_Frame(void);
 void PBI_XLD_V_Process(void *sndbuffer, int sndn);
+void PBI_XLDStateSave(void);
+void PBI_XLDStateRead(void);
 
 #endif /* _PBI_XLD_H_ */

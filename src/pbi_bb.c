@@ -32,6 +32,7 @@
 #include "pokey.h"
 #include "cpu.h"
 #include "pbi_scsi.h"
+#include "statesav.h"
 #include <stdlib.h>
 
 #ifdef PBI_DEBUG
@@ -49,6 +50,7 @@ int PBI_BB_enabled = FALSE;
 static UBYTE *bb_rom;
 static int bb_ram_bank_offset = 0;
 static UBYTE *bb_ram;
+#define BB_RAM_SIZE 0x10000
 static UBYTE bb_rom_bank = 0;
 static int bb_rom_size;
 static int bb_rom_high_bit = 0x00;/*0x10*/
@@ -57,41 +59,47 @@ static UBYTE bb_PCR = 0; /* VIA Peripheral control register*/
 static int bb_scsi_enabled = FALSE;
 static char bb_scsi_disk_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 
+static void init_bb(void)
+{
+	FILE *bbfp;
+	bbfp = fopen(bb_rom_filename,"rb");
+	bb_rom_size = Util_flen(bbfp);
+	fclose(bbfp);
+	if (bb_rom_size != 0x10000 && bb_rom_size != 0x4000) {
+		Aprint("Invalid black box rom size\n");
+		return;
+	}
+	bb_rom = (UBYTE *)Util_malloc(bb_rom_size);
+	if (!Atari800_LoadImage(bb_rom_filename, bb_rom, bb_rom_size)) {
+		free(bb_rom);
+		return;
+	}
+	D(printf("loaded black box rom image\n"));
+	PBI_BB_enabled = TRUE;
+	if (SCSI_disk != NULL) fclose(SCSI_disk);
+	if (strcmp(bb_scsi_disk_filename, FILENAME_NOT_SET)) {
+		SCSI_disk = fopen(bb_scsi_disk_filename, "rb+");
+		if (SCSI_disk == NULL) {
+			Aprint("Error opening BB SCSI disk image:%s", bb_scsi_disk_filename);
+		}
+		else {
+			D(printf("Opened BB SCSI disk image\n"));
+			bb_scsi_enabled = TRUE;
+		}
+	}
+	if (!bb_scsi_enabled) {
+		SCSI_BSY = TRUE; /* makes BB give up easier? */
+	}
+	bb_ram = (UBYTE *)Util_malloc(BB_RAM_SIZE);
+	memset(bb_ram,0,BB_RAM_SIZE);
+}
+
 void PBI_BB_Initialise(int *argc, char *argv[])
 {
 	int i, j;
-	FILE *bbfp;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-bb") == 0) {
-			bbfp = fopen(bb_rom_filename,"rb");
-			bb_rom_size = Util_flen(bbfp);
-			fclose(bbfp);
-			if (bb_rom_size != 0x10000 && bb_rom_size != 0x4000) {
-				Aprint("Invalid black box rom size\n");
-				continue;
-			}
-			bb_rom = (UBYTE *)Util_malloc(bb_rom_size);
-			if (!Atari800_LoadImage(bb_rom_filename, bb_rom, bb_rom_size)) {
-				free(bb_rom);
-				continue;
-			}
-			D(printf("loaded black box rom image\n"));
-			PBI_BB_enabled = TRUE;
-			if (strcmp(bb_scsi_disk_filename, FILENAME_NOT_SET)) {
-				SCSI_disk = fopen(bb_scsi_disk_filename, "rb+");
-				if (SCSI_disk == NULL) {
-					Aprint("Error opening BB SCSI disk image:%s", bb_scsi_disk_filename);
-				}
-				else {
-					D(printf("Opened BB SCSI disk image\n"));
-					bb_scsi_enabled = TRUE;
-				}
-			}
-			if (!bb_scsi_enabled) {
-				SCSI_BSY = TRUE; /* makes BB give up easier? */
-			}
-			bb_ram = (UBYTE *)Util_malloc(0x10000);
-			memset(bb_ram,0,0x10000);
+			init_bb();
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
@@ -101,7 +109,6 @@ void PBI_BB_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
-	SCSI_disk = fopen("bb_disk.img","rb+");
 }
 
 int PBI_BB_ReadConfig(char *string, char *ptr) 
@@ -262,6 +269,36 @@ void PBI_BB_Frame(void)
 			buttondown = FALSE;
 			count = 0;
 		}
+	}
+}
+
+void PBI_BBStateSave(void)
+{
+	SaveINT(&PBI_BB_enabled, 1);
+	if (PBI_BB_enabled) {
+		SaveFNAME(bb_scsi_disk_filename);
+		SaveFNAME(bb_rom_filename);
+
+		SaveINT(&bb_ram_bank_offset, 1);
+		SaveUBYTE(bb_ram, BB_RAM_SIZE);
+		SaveUBYTE(&bb_rom_bank, 1);
+		SaveINT(&bb_rom_high_bit, 1);
+		SaveUBYTE(&bb_PCR, 1);
+	}
+}
+
+void PBI_BBStateRead(void)
+{
+	ReadINT(&PBI_BB_enabled, 1);
+	if (PBI_BB_enabled) {
+		ReadFNAME(bb_scsi_disk_filename);
+		ReadFNAME(bb_rom_filename);
+		init_bb();
+		ReadINT(&bb_ram_bank_offset, 1);
+		ReadUBYTE(bb_ram, BB_RAM_SIZE);
+		ReadUBYTE(&bb_rom_bank, 1);
+		ReadINT(&bb_rom_high_bit, 1);
+		ReadUBYTE(&bb_PCR, 1);
 	}
 }
 

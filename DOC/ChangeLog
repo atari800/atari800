@@ -1,3 +1,8 @@
+2008-06-24  Perry McFarlane  <perry_m@fastmail.fm>
+* pbi.[ch], pbi_xld.[ch], pbi_bb.[ch], pbi_mio.[ch], statesav.c: state saving
+for MIO, Black Box, XLD.
+
+
 2008-06-19  Perry McFarlane  <perry_m@fastmail.fm>
 * ui.c, xep80.c: improve XEP80 state saving
 

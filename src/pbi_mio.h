@@ -13,5 +13,7 @@ UBYTE PBI_MIO_D6_GetByte(UWORD addr);
 void PBI_MIO_D6_PutByte(UWORD addr, UBYTE byte);
 int PBI_MIO_ReadConfig(char *string, char *ptr);
 void PBI_MIO_WriteConfig(FILE *fp);
+void PBI_MIOStateSave(void);
+void PBI_MIOStateRead(void);
 
 #endif /* _PBI_MIO_H_ */

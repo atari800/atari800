@@ -62,6 +62,16 @@ void PIAStateSave(void);
 void POKEYStateSave(void);
 void CARTStateSave(void);
 void SIOStateSave(void);
+void PBIStateSave(void);
+#ifdef PBI_MIO
+void PBI_MIOStateSave(void);
+#endif
+#ifdef PBI_BB
+void PBI_BBStateSave(void);
+#endif
+#ifdef PBI_XLD
+void PBI_XLDStateSave(void);
+#endif
 #ifdef XEP80_EMULATION
 void XEP80StateSave(void);
 #endif
@@ -74,6 +84,16 @@ void PIAStateRead(void);
 void POKEYStateRead(void);
 void CARTStateRead(void);
 void SIOStateRead(void);
+void PBIStateRead(void);
+#ifdef PBI_MIO
+void PBI_MIOStateRead(void);
+#endif
+#ifdef PBI_BB
+void PBI_BBStateRead(void);
+#endif
+#ifdef PBI_XLD
+void PBI_XLDStateRead(void);
+#endif
 #ifdef XEP80_EMULATION
 void XEP80StateRead(void);
 #endif
@@ -367,9 +387,6 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 	GTIAStateSave();
 	PIAStateSave();
 	POKEYStateSave();
-#ifdef DREAMCAST
-	DCStateSave();
-#endif
 #ifdef XEP80_EMULATION
 	XEP80StateSave();
 #else
@@ -377,6 +394,34 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 		int local_xep80_enabled = FALSE;
 		SaveINT(&local_xep80_enabled, 1);
 	}
+#endif /* XEP80_EMULATION */
+	PBIStateSave();
+#ifdef PBI_MIO
+	PBI_MIOStateSave();
+#else
+	{
+		int local_mio_enabled = FALSE;
+		SaveINT(&local_mio_enabled, 1);
+	}
+#endif /* PBI_MIO */
+#ifdef PBI_BB
+	PBI_BBStateSave();
+#else
+	{
+		int local_bb_enabled = FALSE;
+		SaveINT(&local_bb_enabled, 1);
+	}
+#endif /* PBI_BB */
+#ifdef PBI_XLD
+	PBI_XLDStateSave();
+#else
+	{
+		int local_xld_enabled = FALSE;
+		SaveINT(&local_xld_enabled, 1);
+	}
+#endif /* PBI_XLD */
+#ifdef DREAMCAST
+	DCStateSave();
 #endif
 
 	if (GZCLOSE(StateFile) != 0) {
@@ -449,9 +494,6 @@ int ReadAtariState(const char *filename, const char *mode)
 	GTIAStateRead();
 	PIAStateRead();
 	POKEYStateRead();
-#ifdef DREAMCAST
-	DCStateRead();
-#endif
 	if (StateVersion >= 6) {
 #ifdef XEP80_EMULATION
 		XEP80StateRead();
@@ -464,8 +506,54 @@ int ReadAtariState(const char *filename, const char *mode)
 			StateFile = NULL;
 			return FALSE;
 		}
-#endif
+#endif /* XEP80_EMULATION */
+		PBIStateRead();
+#ifdef PBI_MIO
+		PBI_MIOStateRead();
+#else
+		{
+			int local_mio_enabled;
+			ReadINT(&local_mio_enabled,1);
+			if (local_mio_enabled) {
+				Aprint("Cannot read this state file because this version does not support MIO.");
+				GZCLOSE(StateFile);
+				StateFile = NULL;
+				return FALSE;
+			}
+		}
+#endif /* PBI_MIO */
+#ifdef PBI_BB
+		PBI_BBStateRead();
+#else
+		{
+			int local_bb_enabled;
+			ReadINT(&local_bb_enabled,1);
+			if (local_bb_enabled) {
+				Aprint("Cannot read this state file because this version does not support the Black Box.");
+				GZCLOSE(StateFile);
+				StateFile = NULL;
+				return FALSE;
+			}
+		}
+#endif /* PBI_BB */
+#ifdef PBI_XLD
+		PBI_XLDStateRead();
+#else
+		{
+			int local_xld_enabled;
+			ReadINT(&local_xld_enabled,1);
+			if (local_xld_enabled) {
+				Aprint("Cannot read this state file because this version does not support the 1400XL/1450XLD.");
+				GZCLOSE(StateFile);
+				StateFile = NULL;
+				return FALSE;
+			}
+		}
+#endif /* PBI_XLD */
 	}
+#ifdef DREAMCAST
+	DCStateRead();
+#endif
 
 	GZCLOSE(StateFile);
 	StateFile = NULL;

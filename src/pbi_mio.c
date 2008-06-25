@@ -32,6 +32,7 @@
 #include "cpu.h"
 #include "stdlib.h"
 #include "pbi_scsi.h"
+#include "statesav.h"
 
 #ifdef PBI_DEBUG
 #define D(a) a
@@ -42,13 +43,44 @@
 int PBI_MIO_enabled = FALSE;
 
 static UBYTE *mio_rom;
+static int mio_rom_size = 0x4000;
 static int mio_ram_bank_offset = 0;
 static UBYTE *mio_ram;
+static int mio_ram_size = 0x100000;
 static UBYTE mio_rom_bank = 0;
 static int mio_ram_enabled = FALSE;
 static char mio_rom_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 static char mio_scsi_disk_filename[FILENAME_MAX] = FILENAME_NOT_SET;
 static int mio_scsi_enabled = FALSE;
+
+static void init_mio(void)
+{
+	free(mio_rom);
+	mio_rom = (UBYTE *)Util_malloc(mio_rom_size);
+	if (!Atari800_LoadImage(mio_rom_filename, mio_rom, mio_rom_size)) {
+		free(mio_rom);
+		return;
+	}
+	D(printf("Loaded mio rom image\n"));
+	PBI_MIO_enabled = TRUE;
+	if (SCSI_disk != NULL) fclose(SCSI_disk);
+	if (strcmp(mio_scsi_disk_filename, FILENAME_NOT_SET)) {
+		SCSI_disk = fopen(mio_scsi_disk_filename, "rb+");
+		if (SCSI_disk == NULL) {
+			Aprint("Error opening SCSI disk image:%s", mio_scsi_disk_filename);
+		}
+		else {
+			D(printf("Opened SCSI disk image\n"));
+			mio_scsi_enabled = TRUE;
+		}
+	}
+	if (!mio_scsi_enabled) {
+		SCSI_BSY = TRUE; /* makes MIO give up easier */
+	}
+	free(mio_ram);
+	mio_ram = (UBYTE *)Util_malloc(mio_ram_size);
+	memset(mio_ram, 0, mio_ram_size);
+}
 
 
 void PBI_MIO_Initialise(int *argc, char *argv[])
@@ -56,28 +88,7 @@ void PBI_MIO_Initialise(int *argc, char *argv[])
 	int i, j;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-mio") == 0) {
-			mio_rom = (UBYTE *)Util_malloc(0x4000);
-			if (!Atari800_LoadImage(mio_rom_filename, mio_rom, 0x4000)) {
-				free(mio_rom);
-				continue;
-			}
-			D(printf("Loaded mio rom image\n"));
-			PBI_MIO_enabled = TRUE;
-			if (strcmp(mio_scsi_disk_filename, FILENAME_NOT_SET)) {
-				SCSI_disk = fopen(mio_scsi_disk_filename, "rb+");
-				if (SCSI_disk == NULL) {
-					Aprint("Error opening SCSI disk image:%s", mio_scsi_disk_filename);
-				}
-				else {
-					D(printf("Opened SCSI disk image\n"));
-					mio_scsi_enabled = TRUE;
-				}
-			}
-			if (!mio_scsi_enabled) {
-				SCSI_BSY = TRUE; /* makes MIO give up easier */
-			}
-			mio_ram = (UBYTE *)Util_malloc(0x100000);
-			memset(mio_ram, 0, 0x100000);
+			init_mio();
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
@@ -129,7 +140,6 @@ UBYTE PBI_MIO_D1_GetByte(UWORD addr)
 /* $D1xx */
 void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
 {
-
 	int old_mio_ram_bank_offset = mio_ram_bank_offset;
 	int old_mio_ram_enabled = mio_ram_enabled;
 	int offset_changed;
@@ -205,6 +215,36 @@ void PBI_MIO_D6_PutByte(UWORD addr, UBYTE byte)
 {
 	if (!mio_ram_enabled) return;
 	memory[addr]=byte;
+}
+
+void PBI_MIOStateSave(void)
+{
+	SaveINT(&PBI_MIO_enabled, 1);
+	if (PBI_MIO_enabled) {
+		SaveFNAME(mio_scsi_disk_filename);
+		SaveFNAME(mio_rom_filename);
+		SaveINT(&mio_ram_size, 1);
+
+		SaveINT(&mio_ram_bank_offset, 1);
+		SaveUBYTE(mio_ram, mio_ram_size);
+		SaveUBYTE(&mio_rom_bank, 1);
+		SaveINT(&mio_ram_enabled, 1);
+	}
+}
+
+void PBI_MIOStateRead(void)
+{
+	ReadINT(&PBI_MIO_enabled, 1);
+	if (PBI_MIO_enabled) {
+		ReadFNAME(mio_scsi_disk_filename);
+		ReadFNAME(mio_rom_filename);
+		ReadINT(&mio_ram_size, 1);
+		init_mio();
+		ReadINT(&mio_ram_bank_offset, 1);
+		ReadUBYTE(mio_ram, mio_ram_size);
+		ReadUBYTE(&mio_rom_bank, 1);
+		ReadINT(&mio_ram_enabled, 1);
+	}
 }
 
 /*

@@ -30,6 +30,7 @@
 #include "cpu.h"
 #include "log.h"
 #include "util.h"
+#include "statesav.h"
 #include <stdlib.h>
 #ifdef PBI_MIO
 #include "pbi_mio.h"
@@ -44,7 +45,7 @@
 #include "pbi_proto80.h"
 #endif
 
-/* stores the current state of the D1FF register, read hardware has 1
+/* stores the current state of the D1FF register, real hardware has 1
  * bit per device, the bits are on the devices themselves */
 static UBYTE D1FF_LATCH = 0;
 
@@ -273,6 +274,20 @@ void PBI_D7_PutByte(UWORD addr, UBYTE byte)
 {
 	D(printf("PBI_D7_PutByte:%4x <- %2x\n",addr,byte));
 	if (PBI_D6D7ram) memory[addr]=byte;
+}
+
+void PBIStateSave(void)
+{
+	SaveUBYTE(&D1FF_LATCH, 1);
+	SaveINT(&PBI_D6D7ram, 1);
+	SaveINT(&PBI_IRQ, 1);
+}
+
+void PBIStateRead(void)
+{
+	ReadUBYTE(&D1FF_LATCH, 1);
+	ReadINT(&PBI_D6D7ram, 1);
+	ReadINT(&PBI_IRQ, 1);
 }
 
 
