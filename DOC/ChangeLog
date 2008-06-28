@@ -1,3 +1,7 @@
+2008-06-28  Perry McFarlane  <perry_m@fastmail.fm>
+* memory.h: suppress PAGED_MEM warning
+
+
 2008-06-27  Perry McFarlane  <perry_m@fastmail.fm>
 * atari.c: add -basic_rom none
 * Makefile.in fix javanvm variables
