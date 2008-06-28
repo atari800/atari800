@@ -125,6 +125,16 @@ static int JAVANVM_SoundAvailable(void){
 static int JAVANVM_SoundWrite(void *buffer,int len){
 	return _call_java(10, (int)buffer, len, 0);
 }
+static int JAVANVM_SoundPause(void){
+	return _call_java(11, 0, 0, 0);
+}
+static int JAVANVM_SoundContinue(void){
+	return _call_java(12, 0, 0, 0);
+}
+static int JAVANVM_CheckThreadStatus(void){
+	return _call_java(13, 0, 0, 0);
+}
+
 /* These constants are for use with arrays passed to and from the NestedVM runtime */
 #define JAVANVM_KeyEventType 0
 #define JAVANVM_KeyEventKeyCode 1
@@ -154,11 +164,13 @@ int dsp_buffer_size;
 void Sound_Pause(void)
 {
 	/* stop audio output */
+	JAVANVM_SoundPause();
 }
 
 void Sound_Continue(void)
 {
 	/* start audio output */
+	JAVANVM_SoundContinue();
 }
 
 void Sound_Update(void)
@@ -773,7 +785,13 @@ void Atari_Initialise(int *argc, char *argv[])
 int Atari_Exit(int run_monitor){
 	int restart;
 	if (run_monitor) {
+#ifdef SOUND
+		Sound_Pause();
+#endif
 		restart = monitor();
+#ifdef SOUND
+		Sound_Continue();
+#endif
 	}
    	else {
 		restart = FALSE;
@@ -919,6 +937,10 @@ int main(int argc, char **argv)
 		Atari800_Frame();
 		if (display_screen)
 			Atari_DisplayScreen();
+		if (JAVANVM_CheckThreadStatus()) {
+		   	Atari800_Exit(FALSE);
+			exit(0);
+		}
 	}
 }
 

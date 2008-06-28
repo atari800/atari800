@@ -77,17 +77,17 @@ win32/%.o: win32/%.c
 
 ifeq ($(CONFIGURE_TARGET),javanvm)
 $(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class
-	$(JAVAC) -d . $(JAVAFLAGS) javanvm/$(TARGET_BASE_NAME).java
+	$(JAVAC) -d . $(JAVACFLAGS) javanvm/$(TARGET_BASE_NAME).java
 RUNTIME = _runtime
 else
 RUNTIME =
 endif
 
 $(TARGET_BASE_NAME)$(RUNTIME).class: $(TARGET)
-	$(JAVA) $(JAVACFLAGS) org.ibex.nestedvm.Compiler -outfile $@ $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
+	$(JAVA) $(JAVAFLAGS) org.ibex.nestedvm.Compiler -outfile $@ $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
 ##To compile using -outformat javasource:
-#	$(JAVA) $(JAVACFLAGS) org.ibex.nestedvm.Compiler -outformat javasource -outfile $(TARGET_BASE_NAME)$(RUNTIME).java $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
-#	$(JAVAC) -d . $(JAVAFLAGS) -J-Xmx128m $(TARGET_BASE_NAME)$(RUNTIME).java
+#	$(JAVA) $(JAVAFLAGS) org.ibex.nestedvm.Compiler -outformat javasource -outfile $(TARGET_BASE_NAME)$(RUNTIME).java $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
+#	$(JAVAC) -d . $(JAVACFLAGS) -J-Xmx128m $(TARGET_BASE_NAME)$(RUNTIME).java
 ##Also, -o UnixRuntime will fix directory browsing but requires /c:/-style paths
 
 $(TARGET_BASE_NAME).jar: $(TARGET_BASE_NAME).class $(TARGET_BASE_NAME)$(RUNTIME).class

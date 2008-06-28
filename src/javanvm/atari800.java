@@ -27,6 +27,7 @@ import java.awt.event.*;
 import java.awt.image.*;
 import java.util.*;
 import javax.sound.sampled.*;
+import java.applet.*;
 
 class AtariCanvas extends Canvas implements KeyListener {
 	byte pixels[];
@@ -184,13 +185,27 @@ class AtariCanvas extends Canvas implements KeyListener {
 	}
 }
 
-public class atari800 {
-	static AtariCanvas canvas;
-	static Frame frame;
-	static SourceDataLine line;
-	static byte[] soundBuffer;
+public class atari800 extends Applet implements Runnable {
+	AtariCanvas canvas;
+	Frame frame;
+	SourceDataLine line;
+	byte[] soundBuffer;
+	boolean isApplet;
+	Thread thread;
+	private volatile boolean threadSuspended;
 
-	private static void initGraphics(int scalew, int scaleh, int atari_width, int atari_height, int atari_visible_width, int atari_left_margin){
+	//Applet constructor:
+	public atari800() {
+		isApplet = true;
+	}
+
+	//Application constructor:
+	public atari800(Frame f) {
+		isApplet = false;
+		frame = f;
+	}
+
+	private void initGraphics(int scalew, int scaleh, int atari_width, int atari_height, int atari_visible_width, int atari_left_margin){
 		canvas = new AtariCanvas();
 		canvas.atari_width = atari_width;
 		canvas.atari_height = atari_height;
@@ -199,25 +214,32 @@ public class atari800 {
 		canvas.init();
 		canvas.setFocusTraversalKeysEnabled(false); //allow Tab key to work
 		canvas.setFocusable(true);
-		frame.add(canvas);
-		frame.addWindowListener(new WindowAdapter() {
-			public void windowsGainedFocus(WindowEvent e) {
-				canvas.requestFocusInWindow();
-			}
-			public void windowClosing(WindowEvent e) {
-				canvas.setWindowClosed();
-			}
-		});
+		if (!isApplet) {
+			frame.addWindowListener(new WindowAdapter() {
+				public void windowsGainedFocus(WindowEvent e) {
+					canvas.requestFocusInWindow();
+				}
+				public void windowClosing(WindowEvent e) {
+					canvas.setWindowClosed();
+				}
+			});
+		}
 		canvas.requestFocusInWindow();
 		canvas.setSize(new Dimension(canvas.width*scalew,canvas.height*scaleh));
 		canvas.scalew = scalew;
 		canvas.scaleh = scaleh;
-		frame.setResizable(false);
-		frame.pack();
-		frame.setVisible(true);
+		if (isApplet) {
+			this.add(canvas);
+		}
+		else {
+			frame.add(canvas);
+			frame.setResizable(false);
+			frame.pack();
+			frame.setVisible(true);
+		}
 	}
 
-	private static void initSound(int sampleRate, int bitsPerSample, int channels, boolean isSigned, boolean bigEndian){
+	private void initSound(int sampleRate, int bitsPerSample, int channels, boolean isSigned, boolean bigEndian){
 		AudioFormat format = new AudioFormat(sampleRate, bitsPerSample, channels, isSigned, bigEndian);
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class,format);
 
@@ -231,13 +253,64 @@ public class atari800 {
 		}
 	}
 
-	public static void main(String[] args) {
-		frame = new Frame();
-		frame.setTitle("atari800");
+	//Applet init
+	public void init() {
+		//System.out.println("init()");
+		setLayout(null);
+	}
 
+	//Applet start
+	public synchronized void start() {
+		//System.out.println("start()");
+		if (thread == null) {
+			thread = new Thread(this);
+			thread.start();
+		}
+		threadSuspended = false;
+		thread.interrupt();
+	}
+
+	//Applet stop
+	public synchronized void stop() {
+		//System.out.println("stop()");
+		threadSuspended = true;
+	}
+
+	//Applet destroy
+	public void destroy() {
+		//System.out.println("destroy()");
+		if (line!=null) line.close();
+		if (canvas!=null) this.remove(canvas);
+		Thread dead = thread;
+		thread = null;
+		dead.interrupt();
+	}
+
+	//Applet run thread
+	public void run() {
+		//System.out.println("run()");
+		String args = getParameter("args");
+		this.main2(args.split("\\s"));
+	}
+
+	public void paint(Graphics g) {
+		//System.out.println("paint");
+		if (canvas!=null) canvas.paint(g);
+	}
+
+	public static void main(String[] args) {
+		Frame f = new Frame();
+		final atari800 app = new atari800(f);
+		f.setTitle("atari800");
+		app.main2(args);
+	}
+
+	// used by both Application and Applet
+	public void main2(String[] args) {
 		//Place holder for command line arguments
 		String[] appArgs = new String[args.length +1];
 		try {
+			final Thread thisThread = Thread.currentThread();
 			//Application name
 			appArgs[0] = "atari800";
 			//Fill in the rest of the command line arguments
@@ -263,23 +336,44 @@ public class atari800 {
 				public int call(int a, int b, int c, int d) {
 					switch(a) {
 						case 1: 
+							/*static void JAVANVM_DisplayScreen(void *as){
+								_call_java(1, (int)as, 0, 0);
+							}*/
 							canvas.displayScreen(rt,b);
 							return 0;
 						case 2:
+							/*static void JAVANVM_InitPalette(void *ct){
+								_call_java(2, (int)ct, 0, 0);
+							}*/
 							canvas.initPalette(rt, b);
 							return 0;
 						case 3:
+							/*static int JAVANVM_Kbhits(int key, int loc){
+								return _call_java(3, key, loc, 0);
+							}*/
 							return canvas.getKbhits(b, c);
 						case 4:
+							/*static int JAVANVM_PollKeyEvent(void *event){
+								return _call_java(4, (int)event, 0, 0);
+							}*/
 							return canvas.pollKeyEvent(rt, b);
 						case 5:
+							/*static int JAVANVM_GetWindowClosed(void){
+								return _call_java(5, 0, 0, 0);
+							}*/
 							return canvas.getWindowClosed();
 						case 6:
+							/*static int JAVANVM_Sleep(int millis){
+								return _call_java(6, millis, 0, 0);
+							}*/
 							try {
 								Thread.sleep((long)b);
 							} catch(Exception e) {}
 							return 0;
 						case 7:
+							/*static int JAVANVM_InitGraphics(void *config){
+								return _call_java(7, (int)config, 0, 0);
+							}*/
 							int scaleh = 2;
 							int scalew = 2;
 							int atari_width = 384;
@@ -299,6 +393,9 @@ public class atari800 {
 							initGraphics(scaleh,scalew,atari_width,atari_height,atari_visible_width,atari_left_margin);
 							return 0;
 						case 8:
+							/*static int JAVANVM_InitSound(void *config){
+								return _call_java(8, (int)config, 0, 0);
+							}*/
 							int sampleRate = 44100;
 							int bitsPerSample = 16;
 							int channels = 2;
@@ -317,8 +414,14 @@ public class atari800 {
 							initSound(sampleRate, bitsPerSample, channels, isSigned, bigEndian);
 							return line.getBufferSize();
 						case 9:
+							/*static int JAVANVM_SoundAvailable(void){
+								return _call_java(9, 0, 0, 0);
+							}*/
 							return line.available();
 						case 10:
+							/*static int JAVANVM_SoundWrite(void *buffer,int len){
+								return _call_java(10, (int)buffer, len, 0);
+							}*/
 							try {
 								rt.copyin(b,soundBuffer,c);
 							} catch(Exception e) {
@@ -326,13 +429,50 @@ public class atari800 {
 							}
 							line.write(soundBuffer,0,c);
 							return 0;
+						case 11:
+							/*static int JAVANVM_SoundPause(void){
+								return _call_java(11, 0, 0, 0);
+							}*/
+							line.stop();
+							return 0;
+						case 12:
+							/*static int JAVANVM_SoundContinue(void){
+								return _call_java(12, 0, 0, 0);
+							}*/
+							line.start();
+							return 0;
+						case 13:
+							/*static int JAVANVM_CheckThreadStatus(void){
+								return _call_java(13, 0, 0, 0);
+							}*/
+							if (isApplet && threadSuspended) {
+								if (line!=null) line.stop();
+								try {
+									synchronized(this) {
+										while (threadSuspended && thread == thisThread) {
+										   	wait();
+										}
+									}
+								} catch (InterruptedException e) {}
+								if (thread != thisThread) {
+									return 1;
+								}
+								if (line!=null) line.start();
+							}
+							return 0;
 						default:
 							return 0;
 					}
 				 }
 			});
+			if (isApplet) {
+			}
 			//Run the emulator:
-			System.exit(rt.run(appArgs));
+			if (!isApplet) {
+				System.exit(rt.run(appArgs));
+			} else {
+				rt.run(appArgs);
+			}
 		} catch(Exception e) {
 			System.err.println(e);
 		}

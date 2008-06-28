@@ -360,7 +360,7 @@ static UWORD WriteRecord(int len)
 	/* always append */
 	fseek(cassette_file, 0, SEEK_END);
 	/* write recordheader */
-	strncpy(header.identifier, "data", 4);
+	Util_strncpy(header.identifier, "data", 4);
 	header.length_lo = len & 0xFF;
 	header.length_hi = (len >> 8) & 0xFF;
 	header.aux_lo = cassette_gapdelay & 0xff;

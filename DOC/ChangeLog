@@ -1,3 +1,10 @@
+2008-06-27  Perry McFarlane  <perry_m@fastmail.fm>
+* atari.c: add -basic_rom none
+* Makefile.in fix javanvm variables
+* util.[ch] cassette.c, configure.ac: Util_strncpy to fix javanvm bug
+* INSTALL, UnixRuntime.patch, atari800.java, atari_javanvm.c: Java applet
+
+
 2008-06-24  Perry McFarlane  <perry_m@fastmail.fm>
 * pbi.[ch], pbi_xld.[ch], pbi_bb.[ch], pbi_mio.[ch], statesav.c: state saving
 for MIO, Black Box, XLD.

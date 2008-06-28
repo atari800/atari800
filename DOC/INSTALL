@@ -176,3 +176,22 @@ Building the Emulator for Java using NestedVM
    the NestedVM directory where you made it using "make unix_runtime.jar" as 
    stated above.
 6. To run use: java -jar atari800.jar
+Add -o UnixRuntime to the NestedVM compiler options to enable directory
+browsing.
+This requires changing Windows paths to the form: /c:/file in all configuration
+files and on the command line.  It will look for .atari800.cfg in your
+Windows home directory.
+Applet version:
+You must compile with -o UnixRuntime
+Apply UnixRuntime.patch to NestedVM.
+To use:
+<APPLET CODE="atari800.class" WIDTH=672 HEIGHT=480 ARCHIVE="atari800.jar, unix_runtime.jar">
+<PARAM name=args value="-config /resource/http://atari800_applet.cfg -xlxe_rom /resource/http://ospp.rom -basic_rom none -nobasic -nopatchall /resource/http://disk.atr">
+</APPLET>
+All files should have /resource/http:// in front of their names.
+Edit atari800_applet.cfg and add /resource/http:// to all rom files, even those
+you are not providing.
+Legal distribution of Atari800 as an applet cannot include the OS and BASIC
+ROM Files.  You can run without BASIC by using -basic_rom none and Thomas
+Richter's Os++.
+

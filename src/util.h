@@ -34,6 +34,13 @@ int Util_stricmp(const char *str1, const char *str2);
    and returns a pointer to the trailing NUL in dest. */
 char *Util_stpcpy(char *dest, const char *src);
 
+/* NestedVM strncpy from newlib has a bug */
+#ifdef HAVE_STRNCPY
+#define Util_strncpy strncpy
+#else
+char *Util_strncpy(char *dest, const char *src, size_t size);
+#endif
+
 /* Same as strlcpy() in some C libraries: copies src to dest
    and terminates the string. Never writes more than size characters
    to dest (the result may be truncated). Returns dest. */

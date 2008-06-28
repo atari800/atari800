@@ -83,9 +83,21 @@ char *Util_stpcpy(char *dest, const char *src)
 	return dest + len;
 }
 
+#ifndef HAVE_STRNCPY
+char *Util_strncpy(char *dest, const char *src, size_t size) {
+	while (size-- > 0) {
+		if ((*dest++ = *src++) == '\0')
+			break;
+	}
+	while (size-- > 0)
+		*dest++ = '\0';
+	return dest;
+}
+#endif
+
 char *Util_strlcpy(char *dest, const char *src, size_t size)
 {
-	strncpy(dest, src, size);
+	Util_strncpy(dest, src, size);
 	dest[size - 1] = '\0';
 	return dest;
 }

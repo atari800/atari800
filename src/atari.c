@@ -411,8 +411,13 @@ static int load_roms(void)
 			else
 				return FALSE;
 		}
-		else if (!Atari800_LoadImage(atari_basic_filename, atari_basic, 0x2000))
-			return FALSE;
+		else {
+			/* if you really don't want built-in BASIC */
+			if (!strcmp(atari_basic_filename,"none"))
+				memset(atari_basic, 0, 0x2000);
+			else if (!Atari800_LoadImage(atari_basic_filename, atari_basic, 0x2000))
+				return FALSE;
+		}
 		xe_bank = 0;
 		break;
 	case MACHINE_5200:

@@ -1,0 +1,28 @@
+diff -rN -u old-nestedvm/src/org/ibex/nestedvm/UnixRuntime.java new-nestedvm/src/org/ibex/nestedvm/UnixRuntime.java
+--- old-nestedvm/src/org/ibex/nestedvm/UnixRuntime.java	2008-06-27 17:29:32.437400000 -0400
++++ new-nestedvm/src/org/ibex/nestedvm/UnixRuntime.java	2008-06-27 17:29:32.650400000 -0400
+@@ -9,6 +9,7 @@
+ import java.util.*;
+ import java.net.*;
+ import java.lang.reflect.*; // For lazily linked RuntimeCompiler
++import java.security.AccessControlException;
+ 
+ // FEATURE: vfork
+ 
+@@ -1169,6 +1170,7 @@
+             tasks = new UnixRuntime[maxProcs+1];
+             if(defaultMounts) {
+                 File root = null;
++		try {
+                 if(Platform.getProperty("nestedvm.root") != null) {
+                     root = new File(Platform.getProperty("nestedvm.root"));
+                     if(!root.isDirectory()) throw new IllegalArgumentException("nestedvm.root is not a directory");
+@@ -1189,6 +1191,7 @@
+                         addMount("/" + name.toLowerCase(),new HostFS(roots[i]));
+                     }
+                 }
++		} catch (AccessControlException e) {}
+                 
+                 addMount("/dev",new DevFS());
+                 addMount("/resource",new ResourceFS());
+
