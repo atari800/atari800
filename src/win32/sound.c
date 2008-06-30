@@ -93,10 +93,14 @@ static int initsound_dx(void)
   dsBD.lpwfxFormat = &wfx;
 
   wfx.wFormatTag = WAVE_FORMAT_PCM;
+#ifdef STEREO_SOUND
   wfx.nChannels = stereo_enabled ? 2 : 1;
+#else
+  wfx.nChannels = 1;
+#endif /* STEREO_SOUND */
   wfx.nSamplesPerSec = dsprate;
   wfx.nAvgBytesPerSec = dsprate * wfx.nChannels * (bit16 ? 2 : 1);
-  wfx.nBlockAlign = (stereo_enabled ? 2 : 1) * (bit16 ? 2 : 1);
+  wfx.nBlockAlign = wfx.nChannels * (bit16 ? 2 : 1);
   wfx.wBitsPerSample = bit16 ? 16 : 8;
   wfx.cbSize = 0;
 
@@ -120,7 +124,7 @@ static int initsound_dx(void)
 
   IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
 
-  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, (stereo_enabled ? 2 : 1), (bit16 ? SND_BIT16 : 0));
+  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, wfx.nChannels, (bit16 ? SND_BIT16 : 0));
 
   samples = dsprate * snddelay / 1000;
 
@@ -305,10 +309,14 @@ static int initsound_wav(void)
   memset(&wfx, 0, sizeof(wfx));
 
   wfx.wFormatTag = WAVE_FORMAT_PCM;
+#ifdef STEREO_SOUND
   wfx.nChannels = stereo_enabled ? 2 : 1;
+#else
+  wfx.nChannels = 1;
+#endif /* STEREO_SOUND */
   wfx.nSamplesPerSec = dsprate;
   wfx.nAvgBytesPerSec = dsprate * wfx.nChannels * (bit16 ? 2 : 1);
-  wfx.nBlockAlign = (stereo_enabled ? 2 : 1) * (bit16 ? 2 : 1);
+  wfx.nBlockAlign = wfx.nChannels * (bit16 ? 2 : 1);
   wfx.wBitsPerSample = bit16 ? 16 : 8;
   wfx.cbSize = 0;
 
@@ -344,7 +352,7 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, (stereo_enabled ? 2 : 1), (bit16 ? SND_BIT16 : 0));
+  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, wfx.nChannels, (bit16 ? SND_BIT16 : 0));
 
   issound = SOUND_WAV;
   return 0;
