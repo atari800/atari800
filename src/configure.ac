@@ -246,7 +246,7 @@ case "$a8_target" in
         enable_unalignedwords=no
         if [[ "$build_os" = "cygwin" ]]; then
             JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
-            JAVACFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
+            JAVACFLAGS="-source 1.4 -classpath '""`cygpath -wp $CLASSPATH`'"
         fi
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         ;;
