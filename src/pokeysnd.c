@@ -617,7 +617,9 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip,
 /*                                                                           */
 /* Inputs:  *buffer - pointer to the buffer where the audio output will      */
 /*                    be placed                                              */
-/*          n - size of the playback buffer                                  */
+/*          sndn - for mono, size of the playback buffer in samples          */
+/*                 for stereo, size of the playback buffer in left samples   */
+/*                    plus right samples.                                    */
 /*          num_pokeys - number of currently active pokeys to process        */
 /*                                                                           */
 /* Outputs: the buffer will be filled with n bytes of audio - no return val  */

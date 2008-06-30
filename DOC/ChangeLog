@@ -1,3 +1,10 @@
+2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>
+* atari.c, atari_sdl.c, configure.ac, javanvm/atari800.java,
+javanvm/atari_javanvm.c, pokeysnd.c, sound.h, ui.c, win32/sound.c:
+add support for stereo, new sound.h function Sound_Reint on some platforms,
+fixes to sdl sound, minor fixes.
+
+
 2008-06-29  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac: -source 1.4 to suppress javac warnings
 

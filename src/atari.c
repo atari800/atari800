@@ -1221,7 +1221,15 @@ int Atari800_Initialise(int *argc, char *argv[])
 				else
 					a_m = TRUE;
 			}
-#endif
+#endif /* BASIC */
+#ifdef STEREO_SOUND
+			else if (strcmp(argv[i], "-stereo") == 0) {
+				stereo_enabled = TRUE;
+			}
+			else if (strcmp(argv[i], "-nostereo") == 0) {
+				stereo_enabled = FALSE;
+			}
+#endif /* STEREO_SOUND */
 			else {
 				/* all options known to main module tried but none matched */
 

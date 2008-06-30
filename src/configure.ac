@@ -241,6 +241,7 @@ case "$a8_target" in
         AC_DEFINE(JAVANVM,1,[Target: Java NestedVM.])
         AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(SUPPORTS_ATARI_SLEEP,1,[Platform-specific sleep function.])
+        AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
         OBJS="javanvm/atari_javanvm.o"
         EXEEXT=".mips"
         enable_unalignedwords=no
@@ -283,6 +284,7 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
         AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,1,[Save additional config file options.])
         AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
 	WANT_XEP80_EMULATION=yes
         LIBS="$LIBS `sdl-config --libs`"
         OBJS="atari_sdl.o atari_ntsc.o"
@@ -307,6 +309,7 @@ dnl Don't make this a windowed app, make it a console app.
     windx)
         AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])
         AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
         A8_NEED_LIB(ddraw)
         A8_NEED_LIB(dinput)
         A8_NEED_LIB(dsound)

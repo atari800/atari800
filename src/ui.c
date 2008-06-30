@@ -49,6 +49,7 @@
 #ifdef SOUND
 #include "pokeysnd.h"
 #include "sndsave.h"
+#include "sound.h"
 #endif
 
 #ifdef _WIN32_WCE
@@ -1432,6 +1433,9 @@ static int SoundSettings(void)
 #ifdef STEREO_SOUND
 		case 1:
 			stereo_enabled = !stereo_enabled;
+#ifdef SUPPORTS_SOUND_REINIT
+			Sound_Reinit();
+#endif
 			break;
 #endif
 #ifdef CONSOLE_SOUND

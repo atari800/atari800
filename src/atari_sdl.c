@@ -137,8 +137,10 @@ static int joystick1_nbuttons;
 
 #ifdef SOUND
 /* sound */
-#define FRAGSIZE        10		/* 1<<FRAGSIZE is size of sound buffer */
-static int SOUND_VOLUME = SDL_MIX_MAXVOLUME / 4;
+#define FRAGSIZE        10		/* 1<<FRAGSIZE is size of sound buffer in samples */
+static int dsp_buffer_samps = (1 << FRAGSIZE);
+static int dsp_buffer_bytes;
+static Uint8 *dsp_buffer = NULL;
 static int dsprate = 44100;
 #endif
 
@@ -486,15 +488,6 @@ void Atari_SwitchXep80(void)
 {
 	static int saved_w, saved_h, saved_bpp;
 	Atari_xep80 = 1 - Atari_xep80;
-#if 0
-		if (Atari_xep80) {
-			w = XEP80_SCRN_WIDTH;
-			h = XEP80_SCRN_HEIGHT;
-			bpp = 8;
-		}
-	SetNewVideoMode(MainScreen->w, MainScreen->h,
-					MainScreen->format->BitsPerPixel);
-#endif
 	if (Atari_xep80) {
 		saved_w = MainScreen->w;
 		saved_h = MainScreen->h;
@@ -532,22 +525,63 @@ static void SwapJoysticks(void)
 }
 
 #ifdef SOUND
-static void SDL_Sound_Update(void *userdata, Uint8 *stream, int len)
+static void SoundUpdate(void *userdata, Uint8 *stream, int len)
 {
-	Uint8 dsp_buffer[2 << FRAGSIZE]; /* x2, because 16bit buffers */
-	if (len > 1 << FRAGSIZE)
-		len = 1 << FRAGSIZE;
-	Pokey_process(dsp_buffer, len);
-	if (sound_bits == 8)
-		SDL_MixAudio(stream, dsp_buffer, len, SOUND_VOLUME);
-	else
-		SDL_MixAudio(stream, dsp_buffer, 2 * len, SOUND_VOLUME);
+	int sndn = (sound_bits == 8 ? len : len/2);
+	/* in mono, sndn is the number of samples (8 or 16 bit) */
+	/* in stereo, 2*sndn is the number of sample pairs */
+	Pokey_process(dsp_buffer, sndn);
+	memcpy(stream, dsp_buffer, len);
 }
 
-static void SDL_Sound_Initialise(int *argc, char *argv[])
+static void SoundSetup(void)
+{
+	SDL_AudioSpec desired, obtained;
+	if (sound_enabled) {
+		desired.freq = dsprate;
+		if (sound_bits == 8)
+			desired.format = AUDIO_U8;
+		else if (sound_bits == 16)
+			desired.format = AUDIO_U16;
+		else {
+			Aprint("unknown sound_bits");
+			Atari800_Exit(FALSE);
+			Aflushlog();
+		}
+
+		desired.samples = dsp_buffer_samps;
+		desired.callback = SoundUpdate;
+		desired.userdata = NULL;
+#ifdef STEREO_SOUND
+		desired.channels = stereo_enabled ? 2 : 1;
+#else
+		desired.channels = 1;
+#endif /* STEREO_SOUND*/
+
+		if (SDL_OpenAudio(&desired, &obtained) < 0) {
+			Aprint("Problem with audio: %s", SDL_GetError());
+			Aprint("Sound is disabled.");
+			sound_enabled = FALSE;
+			return;
+		}
+
+		free(dsp_buffer);
+		dsp_buffer_bytes = desired.channels*dsp_buffer_samps*(sound_bits == 8 ? 1 : 2);
+		dsp_buffer = (Uint8 *)Util_malloc(dsp_buffer_bytes);
+		Pokey_sound_init(FREQ_17_EXACT, dsprate, desired.channels, sound_flags);
+		SDL_PauseAudio(0);
+	}
+}
+
+void Sound_Reinit(void)
+{
+	SDL_CloseAudio();
+	SoundSetup();
+}
+
+static void SoundInitialise(int *argc, char *argv[])
 {
 	int i, j;
-	SDL_AudioSpec desired, obtained;
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-sound") == 0)
@@ -573,33 +607,7 @@ static void SDL_Sound_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	if (sound_enabled) {
-		desired.freq = dsprate;
-		if (sound_bits == 8)
-			desired.format = AUDIO_U8;
-		else if (sound_bits == 16)
-			desired.format = AUDIO_U16;
-		else {
-			Aprint("unknown sound_bits");
-			Atari800_Exit(FALSE);
-			Aflushlog();
-		}
-
-		desired.samples = 1 << FRAGSIZE;
-		desired.callback = SDL_Sound_Update;
-		desired.userdata = NULL;
-		desired.channels = 1;
-
-		if (SDL_OpenAudio(&desired, &obtained) < 0) {
-			Aprint("Problem with audio: %s", SDL_GetError());
-			Aprint("Sound is disabled.");
-			sound_enabled = FALSE;
-			return;
-		}
-
-		Pokey_sound_init(FREQ_17_EXACT, dsprate, 1, sound_flags);
-		SDL_PauseAudio(0);
-	}
+	SoundSetup();
 }
 #endif /* SOUND */
 
@@ -1477,7 +1485,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	SDL_WM_SetCaption(ATARI_TITLE, "Atari800");
 
 #ifdef SOUND
-	SDL_Sound_Initialise(argc, argv);
+	SoundInitialise(argc, argv);
 #endif
 
 	if (help_only)

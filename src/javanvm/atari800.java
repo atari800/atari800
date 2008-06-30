@@ -244,6 +244,7 @@ public class atari800 extends Applet implements Runnable {
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class,format);
 
 		try {
+			if (line != null) line.close();
 			line = (SourceDataLine) AudioSystem.getLine(info);
 			line.open(format);
 			line.start();
