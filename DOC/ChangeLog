@@ -18,6 +18,8 @@ Aflushlog -> Log_flushlog.
 matches the filename.
 * xep80_fonts.[ch] xep80.c: rename externals with XEP80_Fonts_.
 * votrax.[ch], pbi_xld.c: rename externals with Votrax_, UINT16 -> SWORD.
+* binload.[ch], atari.c, cartridge.c, devices.c, sio.c: rename externals with
+BINLOAD_
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>

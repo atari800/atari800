@@ -293,7 +293,7 @@ void SIO_SizeOfSector(UBYTE unit, int sector, int *sz, ULONG *ofs)
 	int size;
 	ULONG offset;
 
-	if (start_binloading) {
+	if (BINLOAD_start_binloading) {
 		if (sz)
 			*sz = 128;
 		if (ofs)
@@ -335,8 +335,8 @@ static int SeekSector(int unit, int sector)
 int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 {
 	int size;
-	if (start_binloading)
-		return BIN_loader_start(buffer);
+	if (BINLOAD_start_binloading)
+		return BINLOAD_loader_start(buffer);
 
 	io_success[unit] = -1;
 	if (drive_status[unit] == Off)
@@ -543,7 +543,7 @@ int SIO_ReadStatusBlock(int unit, UBYTE *buffer)
  */
 int SIO_DriveStatus(int unit, UBYTE *buffer)
 {
-	if (start_binloading) {
+	if (BINLOAD_start_binloading) {
 		buffer[0] = 16 + 8;
 		buffer[1] = 255;
 		buffer[2] = 1;

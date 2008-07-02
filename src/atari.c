@@ -338,7 +338,7 @@ void Coldstart(void)
 	   and Start key (boot from cassette) */
 	consol_index = 2;
 	consol_table[2] = 0x0f;
-	if (disable_basic && !loading_basic) {
+	if (disable_basic && !BINLOAD_loading_basic) {
 		/* hold Option during reboot */
 		consol_table[2] &= ~CONSOL_OPTION;
 	}
@@ -570,7 +570,7 @@ int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly
 	case AFILE_XEX:
 	case AFILE_BAS:
 	case AFILE_LST:
-		if (!BIN_loader(filename))
+		if (!BINLOAD_loader(filename))
 			return AFILE_ERROR;
 		break;
 	case AFILE_CART:
@@ -1404,7 +1404,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	/* Load Atari executable, if any */
 	if (run_direct != NULL)
-		BIN_loader(run_direct);
+		BINLOAD_loader(run_direct);
 
 #ifndef BASIC
 	/* Load state file */

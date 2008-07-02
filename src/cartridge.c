@@ -28,7 +28,7 @@
 #include <string.h>
 
 #include "atari.h"
-#include "binload.h" /* loading_basic */
+#include "binload.h" /* BINLOAD_loading_basic */
 #include "cartridge.h"
 #include "memory.h"
 #include "pia.h"
@@ -709,7 +709,7 @@ void CART_Start(void) {
 			if (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB) {
 				Cart809F_Enable();
 				CopyROM(0x8000, 0x9fff, cart_image);
-				if ((!disable_basic || loading_basic) && have_basic) {
+				if ((!disable_basic || BINLOAD_loading_basic) && have_basic) {
 					CartA0BF_Enable();
 					CopyROM(0xa000, 0xbfff, atari_basic);
 					break;
@@ -748,7 +748,7 @@ void CART_Start(void) {
 		default:
 			Cart809F_Disable();
 			if ((machine_type == MACHINE_OSA || machine_type == MACHINE_OSB)
-			 && (!disable_basic || loading_basic) && have_basic) {
+			 && (!disable_basic || BINLOAD_loading_basic) && have_basic) {
 				CartA0BF_Enable();
 				CopyROM(0xa000, 0xbfff, atari_basic);
 				break;

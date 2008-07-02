@@ -1342,8 +1342,8 @@ static int Device_H_BinReadWord(void)
 	if (fread(buf, 1, 2, binf) != 2) {
 		fclose(binf);
 		binf = NULL;
-		if (start_binloading) {
-			start_binloading = FALSE;
+		if (BINLOAD_start_binloading) {
+			BINLOAD_start_binloading = FALSE;
 			Log_print("binload: not valid BIN file");
 			regY = 180; /* MyDOS: not a binary file */
 			SetN;
@@ -1362,7 +1362,7 @@ static void Device_H_BinLoaderCont(void)
 {
 	if (binf == NULL)
 		return;
-	if (start_binloading) {
+	if (BINLOAD_start_binloading) {
 		dPutByte(0x244, 0);
 		dPutByte(0x09, 1);
 	}
@@ -1389,10 +1389,10 @@ static void Device_H_BinLoaderCont(void)
 		if (devbug)
 			Log_print("H: Load: From %04X to %04X", from, to);
 
-		if (start_binloading) {
+		if (BINLOAD_start_binloading) {
 			if (runBinFile)
 				dPutWordAligned(0x2e0, from);
-			start_binloading = FALSE;
+			BINLOAD_start_binloading = FALSE;
 		}
 
 		to++;
@@ -1461,7 +1461,7 @@ static void Device_H_LoadProceed(int mydos)
 		initBinFile = TRUE;
 	}
 
-	start_binloading = TRUE;
+	BINLOAD_start_binloading = TRUE;
 	Device_H_BinLoaderCont();
 }
 
@@ -2046,15 +2046,15 @@ static void Device_IgnoreReady(void)
 #else
 			rts_handler = Device_RestoreEHWRIT;
 #endif
-			if (loading_basic == LOADING_BASIC_SAVED) {
+			if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_SAVED) {
 				basic_command_ptr = (const UBYTE *) "RUN \"E:\"\x9b";
 				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
 			}
-			else if (loading_basic == LOADING_BASIC_LISTED) {
+			else if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_LISTED) {
 				basic_command_ptr = (const UBYTE *) "ENTER \"E:\"\x9b";
 				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
 			}
-			else if (loading_basic == LOADING_BASIC_RUN) {
+			else if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_RUN) {
 				basic_command_ptr = (const UBYTE *) "RUN\x9b";
 				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
 			}
@@ -2064,9 +2064,9 @@ static void Device_IgnoreReady(void)
 		return;
 	}
 	/* not "READY" (maybe "BOOT ERROR" or a DOS message) */
-	if (loading_basic == LOADING_BASIC_RUN) {
+	if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_RUN) {
 		/* don't "RUN" if no "READY" (probably "ERROR") */
-		loading_basic = 0;
+		BINLOAD_loading_basic = 0;
 		ready_ptr = NULL;
 	}
 	if (ready_ptr != NULL) {
@@ -2096,7 +2096,7 @@ static void Device_GetBasicCommand(void)
 		ClrN;
 		if (*basic_command_ptr != '\0')
 			return;
-		if (loading_basic == LOADING_BASIC_SAVED || loading_basic == LOADING_BASIC_LISTED)
+		if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_SAVED || BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_LISTED)
 			Atari800_AddEscRts(ehopen_addr, ESC_EHOPEN, Device_OpenBasicFile);
 		basic_command_ptr = NULL;
 	}
@@ -2111,8 +2111,8 @@ static void Device_GetBasicCommand(void)
 
 static void Device_OpenBasicFile(void)
 {
-	if (bin_file != NULL) {
-		fseek(bin_file, 0, SEEK_SET);
+	if (BINLOAD_bin_file != NULL) {
+		fseek(BINLOAD_bin_file, 0, SEEK_SET);
 		Atari800_AddEscRts(ehclos_addr, ESC_EHCLOS, Device_CloseBasicFile);
 		Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_ReadBasicFile);
 		regY = 1;
@@ -2125,42 +2125,42 @@ static void Device_OpenBasicFile(void)
 
 static void Device_ReadBasicFile(void)
 {
-	if (bin_file != NULL) {
-		int ch = fgetc(bin_file);
+	if (BINLOAD_bin_file != NULL) {
+		int ch = fgetc(BINLOAD_bin_file);
 		if (ch == EOF) {
 			regY = 136;
 			SetN;
 			return;
 		}
-		switch (loading_basic) {
-		case LOADING_BASIC_LISTED:
+		switch (BINLOAD_loading_basic) {
+		case BINLOAD_LOADING_BASIC_LISTED:
 			switch (ch) {
 			case 0x9b:
-				loading_basic = LOADING_BASIC_LISTED_ATARI;
+				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_ATARI;
 				break;
 			case 0x0a:
-				loading_basic = LOADING_BASIC_LISTED_LF;
+				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_LF;
 				ch = 0x9b;
 				break;
 			case 0x0d:
-				loading_basic = LOADING_BASIC_LISTED_CR_OR_CRLF;
+				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CR_OR_CRLF;
 				ch = 0x9b;
 				break;
 			default:
 				break;
 			}
 			break;
-		case LOADING_BASIC_LISTED_CR:
+		case BINLOAD_LOADING_BASIC_LISTED_CR:
 			if (ch == 0x0d)
 				ch = 0x9b;
 			break;
-		case LOADING_BASIC_LISTED_LF:
+		case BINLOAD_LOADING_BASIC_LISTED_LF:
 			if (ch == 0x0a)
 				ch = 0x9b;
 			break;
-		case LOADING_BASIC_LISTED_CRLF:
+		case BINLOAD_LOADING_BASIC_LISTED_CRLF:
 			if (ch == 0x0a) {
-				ch = fgetc(bin_file);
+				ch = fgetc(BINLOAD_bin_file);
 				if (ch == EOF) {
 					regY = 136;
 					SetN;
@@ -2170,10 +2170,10 @@ static void Device_ReadBasicFile(void)
 			if (ch == 0x0d)
 				ch = 0x9b;
 			break;
-		case LOADING_BASIC_LISTED_CR_OR_CRLF:
+		case BINLOAD_LOADING_BASIC_LISTED_CR_OR_CRLF:
 			if (ch == 0x0a) {
-				loading_basic = LOADING_BASIC_LISTED_CRLF;
-				ch = fgetc(bin_file);
+				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CRLF;
+				ch = fgetc(BINLOAD_bin_file);
 				if (ch == EOF) {
 					regY = 136;
 					SetN;
@@ -2181,12 +2181,12 @@ static void Device_ReadBasicFile(void)
 				}
 			}
 			else
-				loading_basic = LOADING_BASIC_LISTED_CR;
+				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CR;
 			if (ch == 0x0d)
 				ch = 0x9b;
 			break;
-		case LOADING_BASIC_SAVED:
-		case LOADING_BASIC_LISTED_ATARI:
+		case BINLOAD_LOADING_BASIC_SAVED:
+		case BINLOAD_LOADING_BASIC_LISTED_ATARI:
 		default:
 			break;
 		}
@@ -2200,17 +2200,17 @@ static void Device_ReadBasicFile(void)
 
 static void Device_CloseBasicFile(void)
 {
-	if (bin_file != NULL) {
-		fclose(bin_file);
-		bin_file = NULL;
+	if (BINLOAD_bin_file != NULL) {
+		fclose(BINLOAD_bin_file);
+		BINLOAD_bin_file = NULL;
 		/* "RUN" ENTERed program */
-		if (loading_basic != 0 && loading_basic != LOADING_BASIC_SAVED) {
+		if (BINLOAD_loading_basic != 0 && BINLOAD_loading_basic != BINLOAD_LOADING_BASIC_SAVED) {
 			ready_ptr = ready_prompt;
 			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
-			loading_basic = LOADING_BASIC_RUN;
+			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_RUN;
 		}
 		else
-			loading_basic = 0;
+			BINLOAD_loading_basic = 0;
 	}
 #ifdef BASIC
 	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_E_Read);
@@ -2284,7 +2284,7 @@ int Device_PatchOS(void)
 #endif
 
 		case 'E':
-			if (loading_basic) {
+			if (BINLOAD_loading_basic) {
 				ehopen_addr = dGetWord(devtab + DEVICE_TABLE_OPEN) + 1;
 				ehclos_addr = dGetWord(devtab + DEVICE_TABLE_CLOS) + 1;
 				ehread_addr = dGetWord(devtab + DEVICE_TABLE_READ) + 1;

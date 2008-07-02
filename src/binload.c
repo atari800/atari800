@@ -33,19 +33,19 @@
 #include "memory.h"
 #include "sio.h"
 
-int start_binloading = FALSE;
-int loading_basic = 0;
-FILE *bin_file = NULL;
+int BINLOAD_start_binloading = FALSE;
+int BINLOAD_loading_basic = 0;
+FILE *BINLOAD_bin_file = NULL;
 
 /* Read a word from file */
-static int BIN_read_word(void)
+static int read_word(void)
 {
 	UBYTE buf[2];
-	if (fread(buf, 1, 2, bin_file) != 2) {
-		fclose(bin_file);
-		bin_file = NULL;
-		if (start_binloading) {
-			start_binloading = FALSE;
+	if (fread(buf, 1, 2, BINLOAD_bin_file) != 2) {
+		fclose(BINLOAD_bin_file);
+		BINLOAD_bin_file = NULL;
+		if (BINLOAD_start_binloading) {
+			BINLOAD_start_binloading = FALSE;
 			Log_print("binload: not valid BIN file");
 			return -1;
 		}
@@ -56,11 +56,11 @@ static int BIN_read_word(void)
 }
 
 /* Start or continue loading */
-void BIN_loader_cont(void)
+void BINLOAD_loader_cont(void)
 {
-	if (bin_file == NULL)
+	if (BINLOAD_bin_file == NULL)
 		return;
-	if (start_binloading) {
+	if (BINLOAD_start_binloading) {
 		dPutByte(0x244, 0);
 		dPutByte(0x09, 1);
 	}
@@ -73,28 +73,28 @@ void BIN_loader_cont(void)
 		UWORD from;
 		UWORD to;
 		do
-			temp = BIN_read_word();
+			temp = read_word();
 		while (temp == 0xffff);
 		if (temp < 0)
 			return;
 		from = (UWORD) temp;
 
-		temp = BIN_read_word();
+		temp = read_word();
 		if (temp < 0)
 			return;
 		to = (UWORD) temp;
 
-		if (start_binloading) {
+		if (BINLOAD_start_binloading) {
 			dPutWordAligned(0x2e0, from);
-			start_binloading = FALSE;
+			BINLOAD_start_binloading = FALSE;
 		}
 
 		to++;
 		do {
-			int byte = fgetc(bin_file);
+			int byte = fgetc(BINLOAD_bin_file);
 			if (byte == EOF) {
-				fclose(bin_file);
-				bin_file = NULL;
+				fclose(BINLOAD_bin_file);
+				BINLOAD_bin_file = NULL;
 				regPC = dGetWordAligned(0x2e0);
 				if (dGetByte(0x2e3) != 0xd7) {
 					/* run INIT routine which RTSes directly to RUN routine */
@@ -111,7 +111,7 @@ void BIN_loader_cont(void)
 	} while (dGetByte(0x2e3) == 0xd7);
 
 	regS--;
-	Atari800_AddEsc((UWORD) (0x100 + regS), ESC_BINLOADER_CONT, BIN_loader_cont);
+	Atari800_AddEsc((UWORD) (0x100 + regS), ESC_BINLOADER_CONT, BINLOAD_loader_cont);
 	regS--;
 	dPutByte(0x0100 + regS--, 0x01);	/* high */
 	dPutByte(0x0100 + regS, regS + 1);	/* low */
@@ -122,8 +122,8 @@ void BIN_loader_cont(void)
 	dPutByte(0x0300, 0x31);	/* for "Studio Dream" */
 }
 
-/* Fake boot sector to call BIN_loader_cont at boot time */
-int BIN_loader_start(UBYTE *buffer)
+/* Fake boot sector to call BINLOAD_loader_cont at boot time */
+int BINLOAD_loader_start(UBYTE *buffer)
 {
 	buffer[0] = 0x00;	/* ignored */
 	buffer[1] = 0x01;	/* one boot sector */
@@ -133,52 +133,52 @@ int BIN_loader_start(UBYTE *buffer)
 	buffer[5] = 0xe4;
 	buffer[6] = 0xf2;	/* ESC */
 	buffer[7] = ESC_BINLOADER_CONT;
-	Atari800_AddEsc(0x706, ESC_BINLOADER_CONT, BIN_loader_cont);
+	Atari800_AddEsc(0x706, ESC_BINLOADER_CONT, BINLOAD_loader_cont);
 	return 'C';
 }
 
 /* Load BIN file, returns TRUE if ok */
-int BIN_loader(const char *filename)
+int BINLOAD_loader(const char *filename)
 {
 	UBYTE buf[2];
-	if (bin_file != NULL) {		/* close previously open file */
-		fclose(bin_file);
-		bin_file = NULL;
-		loading_basic = 0;
+	if (BINLOAD_bin_file != NULL) {		/* close previously open file */
+		fclose(BINLOAD_bin_file);
+		BINLOAD_bin_file = NULL;
+		BINLOAD_loading_basic = 0;
 	}
 	if (machine_type == MACHINE_5200) {
 		Log_print("binload: can't run Atari programs directly on the 5200");
 		return FALSE;
 	}
-	bin_file = fopen(filename, "rb");
-	if (bin_file == NULL) {	/* open */
+	BINLOAD_bin_file = fopen(filename, "rb");
+	if (BINLOAD_bin_file == NULL) {	/* open */
 		Log_print("binload: can't open \"%s\"", filename);
 		return FALSE;
 	}
 	/* Avoid "BOOT ERROR" when loading a BASIC program */
 	if (drive_status[0] == NoDisk)
 		SIO_DisableDrive(1);
-	if (fread(buf, 1, 2, bin_file) == 2) {
+	if (fread(buf, 1, 2, BINLOAD_bin_file) == 2) {
 		if (buf[0] == 0xff && buf[1] == 0xff) {
-			start_binloading = TRUE; /* force SIO to call BIN_loader_start at boot */
+			BINLOAD_start_binloading = TRUE; /* force SIO to call BINLOAD_loader_start at boot */
 			Coldstart();             /* reboot */
 			return TRUE;
 		}
 		else if (buf[0] == 0 && buf[1] == 0) {
-			loading_basic = LOADING_BASIC_SAVED;
+			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_SAVED;
 			Device_PatchOS();
 			Coldstart();
 			return TRUE;
 		}
 		else if (buf[0] >= '0' && buf[0] <= '9') {
-			loading_basic = LOADING_BASIC_LISTED;
+			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED;
 			Device_PatchOS();
 			Coldstart();
 			return TRUE;
 		}
 	}
-	fclose(bin_file);
-	bin_file = NULL;
+	fclose(BINLOAD_bin_file);
+	BINLOAD_bin_file = NULL;
 	Log_print("binload: \"%s\" not recognized as a DOS or BASIC program", filename);
 	return FALSE;
 }
