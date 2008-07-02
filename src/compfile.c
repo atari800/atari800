@@ -39,7 +39,7 @@
 
 /* Opens a GZIP compressed file and decompresses its contents to outfp.
    Returns TRUE on success. */
-int CompressedFile_ExtractGZ(const char *infilename, FILE *outfp)
+int CompFile_ExtractGZ(const char *infilename, FILE *outfp)
 {
 #ifndef HAVE_LIBZ
 	Log_print("This executable cannot decompress ZLIB files");
@@ -232,7 +232,7 @@ static int dcm_pass(FILE *infp, ATR_Info *pai)
 	}
 }
 
-int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp)
+int CompFile_DCMtoATR(FILE *infp, FILE *outfp)
 {
 	int archive_type;
 	int archive_flags;

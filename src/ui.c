@@ -372,7 +372,7 @@ static void DiskManagement(void)
 							CantSave(uncompr_filename);
 							continue;
 						}
-						success = CompressedFile_ExtractGZ(disk_filename, fp2);
+						success = CompFile_ExtractGZ(disk_filename, fp2);
 						fclose(fp2);
 						ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file", 1);
 					}
@@ -388,7 +388,7 @@ static void DiskManagement(void)
 							continue;
 						}
 						Util_rewind(fp);
-						success = CompressedFile_DCMtoATR(fp, fp2);
+						success = CompFile_DCMtoATR(fp, fp2);
 						fclose(fp2);
 						fclose(fp);
 						ui_driver->fMessage(success ? "Conversion successful" : "Cannot convert this file", 1);

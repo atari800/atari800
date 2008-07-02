@@ -3,7 +3,7 @@
 
 #include <stdio.h>  /* FILE */
 
-int CompressedFile_ExtractGZ(const char *infilename, FILE *outfp);
-int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp);
+int CompFile_ExtractGZ(const char *infilename, FILE *outfp);
+int CompFile_DCMtoATR(FILE *infp, FILE *outfp);
 
 #endif /* _COMPFILE_H_ */

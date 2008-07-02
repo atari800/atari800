@@ -147,7 +147,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			if (f2 == NULL)
 				return FALSE;
 			Util_rewind(f);
-			if (!CompressedFile_DCMtoATR(f, f2)) {
+			if (!CompFile_DCMtoATR(f, f2)) {
 				Util_fclose(f2, sio_tmpbuf[diskno - 1]);
 				fclose(f);
 				return FALSE;
@@ -170,7 +170,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			f = Util_tmpopen(sio_tmpbuf[diskno - 1]);
 			if (f == NULL)
 				return FALSE;
-			if (!CompressedFile_ExtractGZ(filename, f)) {
+			if (!CompFile_ExtractGZ(filename, f)) {
 				Util_fclose(f, sio_tmpbuf[diskno - 1]);
 				return FALSE;
 			}

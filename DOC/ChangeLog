@@ -14,6 +14,8 @@ sound_oss.c, statesav.c, ui_basic.c, win32/atari_win32.c, win32/joystick.c,
 win32/screen_win32.c, win32/sound.c, wince/port/atari_wince.c,
 wince/port/sound.c, xep80.c: rename externals with Log_, Aprint -> Log_print
 Aflushlog -> Log_flushlog.
+* compfile.[ch], sio.c, ui.c rename CompressedFile_ to CompFile_ so that it
+matches the filename.
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>
