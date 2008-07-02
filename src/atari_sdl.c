@@ -79,12 +79,12 @@ static int sound_enabled = TRUE;
 static int sound_flags = 0;
 static int sound_bits = 8;
 #endif
-static int SDL_ATARI_BPP = 0;	/* 0 - autodetect */
-static int FULLSCREEN = 1;
-static int BW = 0;
-static int SWAP_JOYSTICKS = 0;
-static int WIDTH_MODE = 1;
-static int ROTATE90 = 0;
+static int default_bpp = 0;	/* 0 - autodetect */
+static int fullscreen = 1;
+static int bw = 0;
+static int swap_joysticks = 0;
+static int width_mode = 1;
+static int rotate90 = 0;
 static int ntscemu = 0;
 static int scanlines_percentage = 5;
 static int scanlinesnoint = FALSE;
@@ -324,7 +324,7 @@ static void CalcPalette(void)
 	int i, rgb;
 	float y;
 	Uint32 c;
-	if (BW == 0)
+	if (bw == 0)
 		for (i = 0; i < 256; i++) {
 			rgb = colortable[i];
 			colors[i].r = (rgb & 0x00ff0000) >> 16;
@@ -365,15 +365,15 @@ void Atari_PaletteUpdate(void)
 static void ModeInfo(void)
 {
 	char bwflag, fullflag, width, joyflag;
-	if (BW)
+	if (bw)
 		bwflag = '*';
 	else
 		bwflag = ' ';
-	if (FULLSCREEN)
+	if (fullscreen)
 		fullflag = '*';
 	else
 		fullflag = ' ';
-	switch (WIDTH_MODE) {
+	switch (width_mode) {
 	case FULL_WIDTH_MODE:
 		width = 'f';
 		break;
@@ -387,19 +387,19 @@ static void ModeInfo(void)
 		width = '?';
 		break;
 	}
-	if (SWAP_JOYSTICKS)
+	if (swap_joysticks)
 		joyflag = '*';
 	else
 		joyflag = ' ';
 	Aprint("Video Mode: %dx%dx%d", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel);
-	Aprint("[%c] FULLSCREEN  [%c] BW  [%c] WIDTH MODE  [%c] JOYSTICKS SWAPPED",
+	Aprint("[%c] Full screen  [%c] BW  [%c] Width Mode  [%c] Joysticks Swapped",
 		 fullflag, bwflag, width, joyflag);
 }
 
 static void SetVideoMode(int w, int h, int bpp)
 {
-	if (FULLSCREEN)
+	if (fullscreen)
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
 	else
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_RESIZABLE);
@@ -414,7 +414,7 @@ static void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
 
-	if ((ROTATE90||ntscemu||PBI_PROTO80_enabled||Atari_xep80))
+	if ((rotate90||ntscemu||PBI_PROTO80_enabled||Atari_xep80))
 	{
 		SetVideoMode(w, h, bpp);
 	}
@@ -428,7 +428,7 @@ static void SetNewVideoMode(int w, int h, int bpp)
 		/* aspect ratio, floats needed */
 		ww = w;
 		hh = h;
-		switch (WIDTH_MODE) {
+		switch (width_mode) {
 		case SHORT_WIDTH_MODE:
 			if (ww * 0.75 < hh)
 				hh = ww * 0.75;
@@ -457,11 +457,11 @@ static void SetNewVideoMode(int w, int h, int bpp)
 
 		SetVideoMode(w, h, bpp);
 
-		SDL_ATARI_BPP = MainScreen->format->BitsPerPixel;
+		default_bpp = MainScreen->format->BitsPerPixel;
 		if (bpp == 0) {
-			Aprint("detected %dbpp", SDL_ATARI_BPP);
-			if ((SDL_ATARI_BPP != 8) && (SDL_ATARI_BPP != 16)
-				&& (SDL_ATARI_BPP != 32)) {
+			Aprint("detected %dbpp", default_bpp);
+			if ((default_bpp != 8) && (default_bpp != 16)
+				&& (default_bpp != 32)) {
 				Aprint("it's unsupported, so setting 8bit mode (slow conversion)");
 				SetVideoMode(w, h, 8);
 			}
@@ -478,7 +478,7 @@ static void SetNewVideoMode(int w, int h, int bpp)
 
 static void SwitchFullscreen(void)
 {
-	FULLSCREEN = 1 - FULLSCREEN;
+	fullscreen = 1 - fullscreen;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
 					MainScreen->format->BitsPerPixel);
 	Atari_DisplayScreen();
@@ -502,9 +502,9 @@ void Atari_SwitchXep80(void)
 
 static void SwitchWidth(void)
 {
-	WIDTH_MODE++;
-	if (WIDTH_MODE > FULL_WIDTH_MODE)
-		WIDTH_MODE = SHORT_WIDTH_MODE;
+	width_mode++;
+	if (width_mode > FULL_WIDTH_MODE)
+		width_mode = SHORT_WIDTH_MODE;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
 					MainScreen->format->BitsPerPixel);
 	Atari_DisplayScreen();
@@ -512,7 +512,7 @@ static void SwitchWidth(void)
 
 static void SwitchBW(void)
 {
-	BW = 1 - BW;
+	bw = 1 - bw;
 	CalcPalette();
 	SetPalette();
 	ModeInfo();
@@ -520,12 +520,12 @@ static void SwitchBW(void)
 
 static void SwapJoysticks(void)
 {
-	SWAP_JOYSTICKS = 1 - SWAP_JOYSTICKS;
+	swap_joysticks = 1 - swap_joysticks;
 	ModeInfo();
 }
 
 #ifdef SOUND
-static void SoundUpdate(void *userdata, Uint8 *stream, int len)
+static void SoundCallback(void *userdata, Uint8 *stream, int len)
 {
 	int sndn = (sound_bits == 8 ? len : len/2);
 	/* in mono, sndn is the number of samples (8 or 16 bit) */
@@ -550,7 +550,7 @@ static void SoundSetup(void)
 		}
 
 		desired.samples = dsp_buffer_samps;
-		desired.callback = SoundUpdate;
+		desired.callback = SoundCallback;
 		desired.userdata = NULL;
 #ifdef STEREO_SOUND
 		desired.channels = stereo_enabled ? 2 : 1;
@@ -646,7 +646,7 @@ int Atari_Keyboard(void)
 			}
 			break;
 		case SDL_VIDEORESIZE:
-			if (!(ROTATE90||ntscemu||PBI_PROTO80_enabled||Atari_xep80)) {
+			if (!(rotate90||ntscemu||PBI_PROTO80_enabled||Atari_xep80)) {
 				SetNewVideoMode(event.resize.w, event.resize.h, MainScreen->format->BitsPerPixel);
 			}
 			else {
@@ -1312,7 +1312,7 @@ static void Init_SDL_Joysticks(int first, int second)
 		else {
 			Aprint("joystick 0 found!");
 			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
-			SWAP_JOYSTICKS = 1;		/* real joy is STICK(0) and numblock is STICK(1) */
+			swap_joysticks = 1;		/* real joy is STICK(0) and numblock is STICK(1) */
 		}
 	}
 
@@ -1381,7 +1381,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	no_joystick = 0;
 	width = ATARI_WIDTH;
 	height = ATARI_HEIGHT;
-	bpp = SDL_ATARI_BPP;
+	bpp = default_bpp;
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-ntscemu") == 0) {
@@ -1402,7 +1402,7 @@ void Atari_Initialise(int *argc, char *argv[])
 			Aprint("scanlines interpolation disabled");
 		}
 		else if (strcmp(argv[i], "-rotate90") == 0) {
-			ROTATE90 = 1;
+			rotate90 = 1;
 			width = 240;
 			height = 320;
 			bpp = 16;
@@ -1426,10 +1426,10 @@ void Atari_Initialise(int *argc, char *argv[])
 			Aprint("bpp set");
 		}
 		else if (strcmp(argv[i], "-fullscreen") == 0) {
-			FULLSCREEN = 1;
+			fullscreen = 1;
 		}
 		else if (strcmp(argv[i], "-windowed") == 0) {
-			FULLSCREEN = 0;
+			fullscreen = 0;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -1514,11 +1514,11 @@ void Atari_Initialise(int *argc, char *argv[])
 int Atari_Exit(int run_monitor)
 {
 	int restart;
-	int original_fullscreen = FULLSCREEN;
+	int original_fullscreen = fullscreen;
 
 	if (run_monitor) {
 		/* disable graphics, set alpha mode */
-		if (FULLSCREEN) {
+		if (fullscreen) {
 			SwitchFullscreen();
 		}
 #ifdef SOUND
@@ -1535,7 +1535,7 @@ int Atari_Exit(int run_monitor)
 
 	if (restart) {
 		/* set up graphics and all the stuff */
-		if (original_fullscreen != FULLSCREEN) {
+		if (original_fullscreen != fullscreen) {
 			SwitchFullscreen();
 		}
 		return 1;
@@ -1850,7 +1850,7 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 		break;
 	default:
 		Aprint("unsupported color depth %d", MainScreen->format->BitsPerPixel);
-		Aprint("please set SDL_ATARI_BPP to 8 or 16 and recompile atari_sdl");
+		Aprint("please set default_bpp to 8 or 16 and recompile atari_sdl");
 		Aflushlog();
 		exit(-1);
 	}
@@ -1955,7 +1955,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 		break;
 	default:
 		Aprint("unsupported color depth %d", MainScreen->format->BitsPerPixel);
-		Aprint("please set SDL_ATARI_BPP to 8 or 16 or 32 and recompile atari_sdl");
+		Aprint("please set default_bpp to 8 or 16 or 32 and recompile atari_sdl");
 		Aflushlog();
 		exit(-1);
 	}
@@ -1965,7 +1965,7 @@ void Atari_DisplayScreen(void)
 {
 	int width, jumped;
 
-	switch (WIDTH_MODE) {
+	switch (width_mode) {
 	case SHORT_WIDTH_MODE:
 		width = ATARI_WIDTH - 2 * 24 - 2 * 8;
 		jumped = 24 + 8;
@@ -1979,7 +1979,7 @@ void Atari_DisplayScreen(void)
 		jumped = 0;
 		break;
 	default:
-		Aprint("unsupported WIDTH_MODE");
+		Aprint("unsupported width_mode");
 		Aflushlog();
 		exit(-1);
 		break;
@@ -1993,7 +1993,7 @@ void Atari_DisplayScreen(void)
 	else if (PBI_PROTO80_enabled) {
   		DisplayProto80640x400((UBYTE *)atari_screen);
   	}
-  	else if (ROTATE90) {
+  	else if (rotate90) {
 		DisplayRotated240x320((UBYTE *) atari_screen);
 	}
 	else if (MainScreen->w == width && MainScreen->h == ATARI_HEIGHT) {
@@ -2085,7 +2085,7 @@ static int get_LPT_joystick_state(int fd)
 #endif /* LPTJOY */
 }
 
-static void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
+static void get_Atari_PORT(Uint8 *s0, Uint8 *s1)
 {
 	int stick0, stick1;
 	stick0 = stick1 = STICK_CENTRE;
@@ -2135,7 +2135,7 @@ static void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 			stick1 = STICK_LR;
 	}
 
-	if (SWAP_JOYSTICKS) {
+	if (swap_joysticks) {
 		*s1 = stick0;
 		*s0 = stick1;
 	}
@@ -2160,7 +2160,7 @@ static void SDL_Atari_PORT(Uint8 *s0, Uint8 *s1)
 		*s1 = get_SDL_joystick_state(joystick1);
 }
 
-static void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
+static void get_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 {
 	int trig0, trig1, i;
 	trig0 = trig1 = 1;
@@ -2173,7 +2173,7 @@ static void SDL_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 		trig1 = kbhits[KBD_TRIG_1] ? 0 : 1;
 	}
 
-	if (SWAP_JOYSTICKS) {
+	if (swap_joysticks) {
 		*t1 = trig0;
 		*t0 = trig1;
 	}
@@ -2230,7 +2230,7 @@ int Atari_PORT(int num)
 #ifndef DONT_DISPLAY
 	if (num == 0) {
 		UBYTE a, b;
-		SDL_Atari_PORT(&a, &b);
+		get_Atari_PORT(&a, &b);
 		return (b << 4) | (a & 0x0f);
 	}
 #endif
@@ -2241,7 +2241,7 @@ int Atari_TRIG(int num)
 {
 #ifndef DONT_DISPLAY
 	UBYTE a, b;
-	SDL_Atari_TRIG(&a, &b);
+	get_Atari_TRIG(&a, &b);
 	switch (num) {
 	case 0:
 		return a;
