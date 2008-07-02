@@ -40,22 +40,22 @@ static void write32(long x)
 	fputc((x >> 24) & 0xff, sndoutput);
 }
 
-/* IsSoundFileOpen simply returns true if the sound file is currently open and able to receive writes
+/* SndSave_IsSoundFileOpen simply returns true if the sound file is currently open and able to receive writes
    RETURNS: TRUE is file is open, FALSE if it is not */
-int IsSoundFileOpen(void)
+int SndSave_IsSoundFileOpen(void)
 {
 	return sndoutput != NULL;
 }
 
 
-/* CloseSoundFile should be called when the program is exiting, or when all data required has been
-   written to the file. CloseSoundFile will also be called automatically when a call is made to
-   OpenSoundFile, or an error is made in WriteToSoundFile. Note that CloseSoundFile has to back track
-   to the header written out in OpenSoundFile and update it with the length of samples written
+/* SndSave_CloseSoundFile should be called when the program is exiting, or when all data required has been
+   written to the file. SndSave_CloseSoundFile will also be called automatically when a call is made to
+   SndSave_OpenSoundFile, or an error is made in SndSave_WriteToSoundFile. Note that CloseSoundFile has to back track
+   to the header written out in SndSave_OpenSoundFile and update it with the length of samples written
 
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close */
 
-int CloseSoundFile(void)
+int SndSave_CloseSoundFile(void)
 {
 	int bSuccess = TRUE;
 
@@ -79,14 +79,14 @@ int CloseSoundFile(void)
 }
 
 
-/* OpenSoundFile will start a new sound file and write out the header. If an existing sound file is
+/* SndSave_OpenSoundFile will start a new sound file and write out the header. If an existing sound file is
    already open it will be closed first, and the new file opened in it's place
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open */
 
-int OpenSoundFile(const char *szFileName)
+int SndSave_OpenSoundFile(const char *szFileName)
 {
-	CloseSoundFile();
+	SndSave_CloseSoundFile();
 
 	sndoutput = fopen(szFileName, "wb");
 
@@ -142,12 +142,12 @@ int OpenSoundFile(const char *szFileName)
 	return TRUE;
 }
 
-/* WriteToSoundFile will dump PCM data to the WAV file. The best way to do this for Atari800 is
+/* SndSave_WriteToSoundFile will dump PCM data to the WAV file. The best way to do this for Atari800 is
    probably to call it directly after Pokey_Process(buffer, size) with the same values (buffer, size)
 
    RETURNS: the number of bytes written to the file (should be equivalent to the input uiSize parm) */
 
-int WriteToSoundFile(const unsigned char *ucBuffer, unsigned int uiSize)
+int SndSave_WriteToSoundFile(const unsigned char *ucBuffer, unsigned int uiSize)
 {
 	if (sndoutput && ucBuffer && uiSize) {
 		int result = fwrite(ucBuffer, 1, uiSize, sndoutput);

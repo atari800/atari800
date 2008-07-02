@@ -287,7 +287,7 @@ void Pokey_process(void *sndbuffer, unsigned int sndn)
 {
 	Pokey_process_ptr(sndbuffer, sndn);
 #if !defined(__PLUS) && !defined(ASAP)
-	WriteToSoundFile((const unsigned char *)sndbuffer, sndn);
+	SndSave_WriteToSoundFile((const unsigned char *)sndbuffer, sndn);
 #endif
 #ifdef PBI_XLD
 	PBI_XLD_V_Process(sndbuffer,sndn);

@@ -1485,7 +1485,7 @@ int Atari800_Exit(int run_monitor)
 		Device_R_Exit(); /* R: Device cleanup */
 #endif
 #ifdef SOUND
-		CloseSoundFile();
+		SndSave_CloseSoundFile();
 #endif
 	}
 #endif /* __PLUS */

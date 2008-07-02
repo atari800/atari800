@@ -699,14 +699,14 @@ static void CartManagement(void)
 #if defined(SOUND) && !defined(DREAMCAST)
 static void SoundRecording(void)
 {
-	if (!IsSoundFileOpen()) {
+	if (!SndSave_IsSoundFileOpen()) {
 		int no = 0;
 		do {
 			char buffer[32];
 			sprintf(buffer, "atari%03d.wav", no);
 			if (!Util_fileexists(buffer)) {
 				/* file does not exist - we can create it */
-				FilenameMessage(OpenSoundFile(buffer)
+				FilenameMessage(SndSave_OpenSoundFile(buffer)
 					? "Recording sound to file \"%s\""
 					: "Can't write to file \"%s\"", buffer);
 				return;
@@ -715,7 +715,7 @@ static void SoundRecording(void)
 		ui_driver->fMessage("All atariXXX.wav files exist!", 1);
 	}
 	else {
-		CloseSoundFile();
+		SndSave_CloseSoundFile();
 		ui_driver->fMessage("Recording stopped", 1);
 	}
 }
