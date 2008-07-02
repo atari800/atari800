@@ -202,7 +202,7 @@ static UBYTE xep80_graph_data[XEP80_GRAPH_HEIGHT][XEP80_GRAPH_WIDTH/8];
 UBYTE XEP80_screen_1[XEP80_SCRN_WIDTH*XEP80_SCRN_HEIGHT];
 UBYTE XEP80_screen_2[XEP80_SCRN_WIDTH*XEP80_SCRN_HEIGHT];
 
-UBYTE (*font)[XEP80_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
+UBYTE (*font)[XEP80_FONTS_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
 
 static int tab_stops[256] = 
 {0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,
@@ -783,8 +783,8 @@ static void XEP80_MasterReset(void)
     font_b_blank = FALSE;
     font_b_blink = FALSE;
 	memset(xep80_data,ATARI_EOL,XEP80_WIDTH*XEP80_HEIGHT);
-    if (!xep80_fonts_inited)
-        XEP80_InitFonts();
+    if (!XEP80_Fonts_inited)
+        XEP80_Fonts_InitFonts();
 	for (i=0;i<XEP80_HEIGHT;i++)
 		eol_at_margin[i] = FALSE;
     XEP80_BlitScreen();
@@ -899,13 +899,13 @@ static void XEP80_SetAttributeA(UBYTE attrib)
 
     font_a_index = 0;
     if (attrib_a & 0x01) {
-        font_a_index |= REV_FONT_BIT;
+        font_a_index |= XEP80_FONTS_REV_FONT_BIT;
     }
     if (attrib_a & 0x20) {
-        font_a_index |= UNDER_FONT_BIT;
+        font_a_index |= XEP80_FONTS_UNDER_FONT_BIT;
     }
     if (attrib_a & 0x80) {
-        font_a_index |= BLK_FONT_BIT;
+        font_a_index |= XEP80_FONTS_BLK_FONT_BIT;
     }
     if (attrib_a & 0x10) {
         font_a_double = TRUE;
@@ -934,13 +934,13 @@ static void XEP80_SetAttributeB(UBYTE attrib)
 
     font_b_index = 0;
     if (attrib_b & 0x01) {
-        font_b_index |= REV_FONT_BIT;
+        font_b_index |= XEP80_FONTS_REV_FONT_BIT;
     }
     if (attrib_b & 0x20) {
-        font_b_index |= UNDER_FONT_BIT;
+        font_b_index |= XEP80_FONTS_UNDER_FONT_BIT;
     }
     if (attrib_b & 0x80) {
-        font_b_index |= BLK_FONT_BIT;
+        font_b_index |= XEP80_FONTS_BLK_FONT_BIT;
     }
     if (attrib_b & 0x10) {
         font_b_double = TRUE;
@@ -1466,7 +1466,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
     ch = xep80_data[y][x];
 	
 	/* Dispaly Atari EOL's as spaces */
-	if (ch == ATARI_EOL && ((font_a_index & BLK_FONT_BIT) == 0) 
+	if (ch == ATARI_EOL && ((font_a_index & XEP80_FONTS_BLK_FONT_BIT) == 0) 
         && char_set != CHAR_SET_INTERNAL)
 		ch = 0x20;
 	
@@ -1483,7 +1483,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
         font_blink = font_a_blink;
     }
 	
-	if (font_blink && blink_reverse && (font_index & REV_FONT_BIT)) {
+	if (font_blink && blink_reverse && (font_index & XEP80_FONTS_REV_FONT_BIT)) {
 		blink_rev = TRUE;
 	}
 	else {
@@ -1491,15 +1491,15 @@ static void XEP80_BlitChar(int x, int y, int cur)
 	}
 	
     if (inverse_mode) {
-		font_index ^= REV_FONT_BIT;
+		font_index ^= XEP80_FONTS_REV_FONT_BIT;
     }
 	
     if (ch==ATARI_EOL) {
         if (inverse_mode) {
-            font_index |= REV_FONT_BIT;
+            font_index |= XEP80_FONTS_REV_FONT_BIT;
         }
         else {
-            font_index &= ~REV_FONT_BIT;
+            font_index &= ~XEP80_FONTS_REV_FONT_BIT;
         }
     }
 
@@ -1535,15 +1535,15 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		XEP80_last_row = y*XEP80_CHAR_HEIGHT + XEP80_CHAR_HEIGHT - 1;
 
     if (inverse_mode) {
-        on = xep80_offcolor;
-        off = xep80_oncolor;
+        on = XEP80_Fonts_offcolor;
+        off = XEP80_Fonts_oncolor;
     }
     else {
-        on = xep80_oncolor;
-        off = xep80_offcolor;
+        on = XEP80_Fonts_oncolor;
+        off = XEP80_Fonts_offcolor;
     }
 
-	if (font_index & REV_FONT_BIT) {
+	if (font_index & XEP80_FONTS_REV_FONT_BIT) {
 		blink = on;
 		}
 	else {
@@ -1556,7 +1556,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
         to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
                              screen_col * XEP80_CHAR_WIDTH];
         for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
-            if (cur || (font_index & REV_FONT_BIT)) {
+            if (cur || (font_index & XEP80_FONTS_REV_FONT_BIT)) {
 				color = on;
             }
             else {
@@ -1577,7 +1577,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
         to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
                              screen_col * XEP80_CHAR_WIDTH];
         for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
-            if ((cur && !cursor_blink) || (font_index & REV_FONT_BIT)) {
+            if ((cur && !cursor_blink) || (font_index & XEP80_FONTS_REV_FONT_BIT)) {
 				color = on;
             }
             else {
@@ -1606,7 +1606,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
         to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
                              screen_col * XEP80_CHAR_WIDTH];
         for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
-            from = atari_fonts[char_set][font_index][ch][font_row];
+            from = XEP80_Fonts_atari_fonts[char_set][font_index][ch][font_row];
 
             for (font_col=0; font_col < width; font_col++) {
                 *to++ = *from;
@@ -1619,13 +1619,13 @@ static void XEP80_BlitChar(int x, int y, int cur)
                              screen_col * XEP80_CHAR_WIDTH];
         for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
 			if (blink_rev)
-				from = atari_fonts[char_set][font_index ^ REV_FONT_BIT][ch][font_row];
+				from = XEP80_Fonts_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
 			else
-				from = atari_fonts[char_set][font_index][ch][font_row];
+				from = XEP80_Fonts_atari_fonts[char_set][font_index][ch][font_row];
 
             for (font_col=0; font_col < width; font_col++) {
                 if (font_blink && !cur && !blink_rev) {
-					if ((font_index & UNDER_FONT_BIT) && font_row == XEP80_UNDER_ROW) {
+					if ((font_index & XEP80_FONTS_UNDER_FONT_BIT) && font_row == XEP80_FONTS_UNDER_ROW) {
 						*to++ = *from;
 						*to++ = *from++;
 					}
@@ -1681,7 +1681,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
         to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
                              screen_col * XEP80_CHAR_WIDTH];
 		for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
-			from = atari_fonts[char_set][font_index ^ REV_FONT_BIT][ch][font_row] + start_col;
+			from = XEP80_Fonts_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row] + start_col;
 			if (first_half)
 				*to++ = *from++;
 			for (font_col=start_col; font_col < end_col; font_col++) {
@@ -1696,10 +1696,10 @@ static void XEP80_BlitChar(int x, int y, int cur)
                              screen_col * XEP80_CHAR_WIDTH];
 		for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
 			if (!cursor_blink) {
-				from = atari_fonts[char_set][font_index ^ REV_FONT_BIT][ch][font_row] + start_col;
+				from = XEP80_Fonts_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row] + start_col;
 			}
 			else {
-				from = atari_fonts[char_set][font_index][ch][font_row] + start_col;
+				from = XEP80_Fonts_atari_fonts[char_set][font_index][ch][font_row] + start_col;
 			}
 			if (first_half)
 				*to++ = *from++;
@@ -1726,10 +1726,10 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		else {
 			for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
 				if (cur) {
-					from = atari_fonts[char_set][font_index ^ REV_FONT_BIT][ch][font_row];
+					from = XEP80_Fonts_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
 				}
 				else {
-					from = atari_fonts[char_set][font_index][ch][font_row];
+					from = XEP80_Fonts_atari_fonts[char_set][font_index][ch][font_row];
 				}
 
 				for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
@@ -1762,17 +1762,17 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		else {
 			for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
 				if (cur && !cursor_blink) {
-					from = atari_fonts[char_set][font_index ^ REV_FONT_BIT][ch][font_row];
+					from = XEP80_Fonts_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
 				}
 				else {
 					if (blink_rev)
-						from = atari_fonts[char_set][font_index ^ REV_FONT_BIT][ch][font_row];
+						from = XEP80_Fonts_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
 					else
-						from = atari_fonts[char_set][font_index][ch][font_row];
+						from = XEP80_Fonts_atari_fonts[char_set][font_index][ch][font_row];
 				}
 				for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
 					if (font_blink && !cur) {
-						if ((font_index & UNDER_FONT_BIT) && font_row == XEP80_UNDER_ROW) {
+						if ((font_index & XEP80_FONTS_UNDER_FONT_BIT) && font_row == XEP80_FONTS_UNDER_ROW) {
 							*to++ = *from++;
 						}
 						else {
@@ -1822,12 +1822,12 @@ static void XEP80_BlitGraphChar(x, y)
     UBYTE on, off;
 
     if (inverse_mode) {
-        on = xep80_offcolor;
-        off = xep80_oncolor;
+        on = XEP80_Fonts_offcolor;
+        off = XEP80_Fonts_oncolor;
     }
     else {
-        on = xep80_oncolor;
-        off = xep80_offcolor;
+        on = XEP80_Fonts_oncolor;
+        off = XEP80_Fonts_offcolor;
     }
 	
 	if (y + XEP80_GRAPH_Y_OFFSET < XEP80_first_row)
@@ -1865,7 +1865,7 @@ static void XEP80_BlitGraphScreen(void)
 
 void XEP80_ChangeColors(void)
 {
-	XEP80_InitFonts();
+	XEP80_Fonts_InitFonts();
 	if (graphics_mode)
 		XEP80_BlitGraphScreen();
 	else {
@@ -1973,8 +1973,8 @@ void XEP80StateRead(void)
 		StateSav_ReadINT(&font_b_blink, 1);
 		StateSav_ReadUBYTE(&xep80_data[0][0], XEP80_HEIGHT * XEP80_WIDTH);
 		StateSav_ReadUBYTE(&xep80_graph_data[0][0], XEP80_GRAPH_HEIGHT*XEP80_GRAPH_WIDTH/8);
-		if (!xep80_fonts_inited)
-			XEP80_InitFonts();
+		if (!XEP80_Fonts_inited)
+			XEP80_Fonts_InitFonts();
 		if (graphics_mode)
 			XEP80_BlitGraphScreen();
 		else {

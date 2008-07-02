@@ -28,17 +28,17 @@
 #include <string.h>
 
 #define NORM_FONT			0
-#define REV_FONT            REV_FONT_BIT
-#define UNDER_FONT          UNDER_FONT_BIT
-#define REV_UNDER_FONT      (REV_FONT_BIT | UNDER_FONT_BIT)
-#define BLK_FONT            BLK_FONT_BIT
-#define REV_BLK_FONT        (REV_FONT_BIT | BLK_FONT_BIT)
-#define UNDER_BLK_FONT      (UNDER_FONT_BIT | BLK_FONT_BIT)
-#define REV_UNDER_BLK_FONT  (REV_FONT_BIT | UNDER_FONT_BIT | BLK_FONT_BIT)
+#define REV_FONT            XEP80_FONTS_REV_FONT_BIT
+#define UNDER_FONT          XEP80_FONTS_UNDER_FONT_BIT
+#define REV_UNDER_FONT      (XEP80_FONTS_REV_FONT_BIT | XEP80_FONTS_UNDER_FONT_BIT)
+#define BLK_FONT            XEP80_FONTS_BLK_FONT_BIT
+#define REV_BLK_FONT        (XEP80_FONTS_REV_FONT_BIT | XEP80_FONTS_BLK_FONT_BIT)
+#define UNDER_BLK_FONT      (XEP80_FONTS_UNDER_FONT_BIT | XEP80_FONTS_BLK_FONT_BIT)
+#define REV_UNDER_BLK_FONT  (XEP80_FONTS_REV_FONT_BIT | XEP80_FONTS_UNDER_FONT_BIT | XEP80_FONTS_BLK_FONT_BIT)
 
-int xep80_fonts_inited = FALSE;
+int XEP80_Fonts_inited = FALSE;
 
-UBYTE atari_font[XEP_NUM_FONT_SETS][XEP80_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH] =
+UBYTE atari_font[XEP80_FONTS_NUM_FONT_SETS][XEP80_FONTS_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH] =
 
 {{
 {{0,0,0,0,0,0,0,}, /* Character 0 */
@@ -9267,7 +9267,7 @@ UBYTE atari_font[XEP_NUM_FONT_SETS][XEP80_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_C
 }
 };
 
-UBYTE block_font[XEP80_CHAR_COUNT/2][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH] =
+UBYTE block_font[XEP80_FONTS_CHAR_COUNT/2][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH] =
 {
 {{0,0,0,0,0,0,0,}, /* Character 0 */
  {0,0,0,0,0,0,0,},
@@ -10808,64 +10808,64 @@ UBYTE block_font[XEP80_CHAR_COUNT/2][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH] =
 };
 
 
-UBYTE atari_fonts[XEP_NUM_FONT_SETS][XEP_NUM_FONTS][XEP80_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
+UBYTE XEP80_Fonts_atari_fonts[XEP80_FONTS_NUM_FONT_SETS][XEP80_FONTS_NUM_FONTS][XEP80_FONTS_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
 
-UBYTE xep80_oncolor = 15;
-UBYTE xep80_offcolor = 0;
+UBYTE XEP80_Fonts_oncolor = 15;
+UBYTE XEP80_Fonts_offcolor = 0;
 
-void XEP80_InitFonts(void)
+void XEP80_Fonts_InitFonts(void)
 {
 	int char_no, char_row, char_col, font_set;
 
     /* Normal Fonts */
-    for (font_set=0;font_set<XEP_NUM_FONT_SETS;font_set++) {
-        for (char_no = 0;char_no<XEP80_CHAR_COUNT;char_no++) {
+    for (font_set=0;font_set<XEP80_FONTS_NUM_FONT_SETS;font_set++) {
+        for (char_no = 0;char_no<XEP80_FONTS_CHAR_COUNT;char_no++) {
             for (char_row=0;char_row<XEP80_CHAR_HEIGHT;char_row++) {
                 for (char_col=0;char_col<XEP80_CHAR_WIDTH;char_col++) {
                     if (atari_font[font_set][char_no][char_row][char_col]) {
-                        atari_fonts[font_set][NORM_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                        XEP80_Fonts_atari_fonts[font_set][NORM_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                     }
                     else {
-                        atari_fonts[font_set][NORM_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                        XEP80_Fonts_atari_fonts[font_set][NORM_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                     }
                 }
             }
         }
     }
     /* Inverse Fonts */
-    for (font_set=0;font_set<XEP_NUM_FONT_SETS;font_set++) {
-        for (char_no = 0;char_no<XEP80_CHAR_COUNT;char_no++) {
+    for (font_set=0;font_set<XEP80_FONTS_NUM_FONT_SETS;font_set++) {
+        for (char_no = 0;char_no<XEP80_FONTS_CHAR_COUNT;char_no++) {
             for (char_row=0;char_row<XEP80_CHAR_HEIGHT;char_row++) {
                 for (char_col=0;char_col<XEP80_CHAR_WIDTH;char_col++) {
                     if (atari_font[font_set][char_no][char_row][char_col]) {
-                        atari_fonts[font_set][REV_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                        XEP80_Fonts_atari_fonts[font_set][REV_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                     }
                     else {
-                        atari_fonts[font_set][REV_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                        XEP80_Fonts_atari_fonts[font_set][REV_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                     }
                 }
             }
         }
     }
     /* Normal Underline Fonts */
-    for (font_set=0;font_set<XEP_NUM_FONT_SETS;font_set++) {
-        for (char_no = 0;char_no<XEP80_CHAR_COUNT;char_no++) {
+    for (font_set=0;font_set<XEP80_FONTS_NUM_FONT_SETS;font_set++) {
+        for (char_no = 0;char_no<XEP80_FONTS_CHAR_COUNT;char_no++) {
             for (char_row=0;char_row<XEP80_CHAR_HEIGHT;char_row++) {
                 for (char_col=0;char_col<XEP80_CHAR_WIDTH;char_col++) {
-                    if (char_row != XEP80_UNDER_ROW) {
+                    if (char_row != XEP80_FONTS_UNDER_ROW) {
                         if (atari_font[font_set][char_no][char_row][char_col]) {
-                            atari_fonts[font_set][UNDER_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                            XEP80_Fonts_atari_fonts[font_set][UNDER_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                         }
                         else {
-                            atari_fonts[font_set][UNDER_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                            XEP80_Fonts_atari_fonts[font_set][UNDER_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                         }
                     }
                     else {
                         if (char_no<128) {
-                            atari_fonts[font_set][UNDER_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                            XEP80_Fonts_atari_fonts[font_set][UNDER_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                         }
                         else {
-                            atari_fonts[font_set][UNDER_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                            XEP80_Fonts_atari_fonts[font_set][UNDER_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                         }
                     }
                 }
@@ -10873,24 +10873,24 @@ void XEP80_InitFonts(void)
         }
     }
     /* Rev Underline Fonts */
-    for (font_set=0;font_set<XEP_NUM_FONT_SETS;font_set++) {
-        for (char_no = 0;char_no<XEP80_CHAR_COUNT;char_no++) {
+    for (font_set=0;font_set<XEP80_FONTS_NUM_FONT_SETS;font_set++) {
+        for (char_no = 0;char_no<XEP80_FONTS_CHAR_COUNT;char_no++) {
             for (char_row=0;char_row<XEP80_CHAR_HEIGHT;char_row++) {
                 for (char_col=0;char_col<XEP80_CHAR_WIDTH;char_col++) {
-                    if (char_row != XEP80_UNDER_ROW) {
+                    if (char_row != XEP80_FONTS_UNDER_ROW) {
                         if (atari_font[font_set][char_no][char_row][char_col]) {
-                            atari_fonts[font_set][REV_UNDER_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                            XEP80_Fonts_atari_fonts[font_set][REV_UNDER_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                         }
                         else {
-                            atari_fonts[font_set][REV_UNDER_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                            XEP80_Fonts_atari_fonts[font_set][REV_UNDER_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                         }
                     }
                     else {
                         if (char_no<128) {
-                            atari_fonts[font_set][REV_UNDER_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                            XEP80_Fonts_atari_fonts[font_set][REV_UNDER_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                         }
                         else {
-                            atari_fonts[font_set][REV_UNDER_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                            XEP80_Fonts_atari_fonts[font_set][REV_UNDER_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                         }
                     }
                 }
@@ -10898,90 +10898,90 @@ void XEP80_InitFonts(void)
         }
     }
     /* Block Fonts */
-    for (char_no = 0;char_no<XEP80_CHAR_COUNT/2;char_no++) {
+    for (char_no = 0;char_no<XEP80_FONTS_CHAR_COUNT/2;char_no++) {
         for (char_row=0;char_row<XEP80_CHAR_HEIGHT;char_row++) {
             for (char_col=0;char_col<XEP80_CHAR_WIDTH;char_col++) {
                 if (block_font[char_no][char_row][char_col]) {
-                    atari_fonts[0][BLK_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                    XEP80_Fonts_atari_fonts[0][BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                 }
                 else {
-                    atari_fonts[0][BLK_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                    XEP80_Fonts_atari_fonts[0][BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                 }
             }
         }
     }
-    memcpy(atari_fonts[0][BLK_FONT][XEP80_CHAR_COUNT/2], atari_fonts[0][BLK_FONT][0],
-           XEP80_CHAR_COUNT/2*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
+    memcpy(XEP80_Fonts_atari_fonts[0][BLK_FONT][XEP80_FONTS_CHAR_COUNT/2], XEP80_Fonts_atari_fonts[0][BLK_FONT][0],
+           XEP80_FONTS_CHAR_COUNT/2*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
     /* Inverse Block Fonts */
-    for (char_no = 0;char_no<XEP80_CHAR_COUNT/2;char_no++) {
+    for (char_no = 0;char_no<XEP80_FONTS_CHAR_COUNT/2;char_no++) {
         for (char_row=0;char_row<XEP80_CHAR_HEIGHT;char_row++) {
             for (char_col=0;char_col<XEP80_CHAR_WIDTH;char_col++) {
                 if (block_font[char_no][char_row][char_col]) {
-                    atari_fonts[0][REV_BLK_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                    XEP80_Fonts_atari_fonts[0][REV_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                 }
                 else {
-                    atari_fonts[0][REV_BLK_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                    XEP80_Fonts_atari_fonts[0][REV_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                 }
             }
         }
     }
-    memcpy(atari_fonts[0][REV_BLK_FONT][XEP80_CHAR_COUNT/2], atari_fonts[0][REV_BLK_FONT][0],
-          XEP80_CHAR_COUNT/2*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
+    memcpy(XEP80_Fonts_atari_fonts[0][REV_BLK_FONT][XEP80_FONTS_CHAR_COUNT/2], XEP80_Fonts_atari_fonts[0][REV_BLK_FONT][0],
+          XEP80_FONTS_CHAR_COUNT/2*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
     /* Normal Underline Block Fonts */
-    for (char_no = 0;char_no<XEP80_CHAR_COUNT/2;char_no++) {
+    for (char_no = 0;char_no<XEP80_FONTS_CHAR_COUNT/2;char_no++) {
         for (char_row=0;char_row<XEP80_CHAR_HEIGHT;char_row++) {
             for (char_col=0;char_col<XEP80_CHAR_WIDTH;char_col++) {
-                if (char_row != XEP80_UNDER_ROW) {
+                if (char_row != XEP80_FONTS_UNDER_ROW) {
                     if (block_font[char_no][char_row][char_col]) {
-                        atari_fonts[0][UNDER_BLK_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                        XEP80_Fonts_atari_fonts[0][UNDER_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                     }
                     else {
-                        atari_fonts[0][UNDER_BLK_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                        XEP80_Fonts_atari_fonts[0][UNDER_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                     }
                 }
                 else {
                     if (char_no<128) {
-                        atari_fonts[0][UNDER_BLK_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                        XEP80_Fonts_atari_fonts[0][UNDER_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                     }
                     else {
-                        atari_fonts[0][UNDER_BLK_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                        XEP80_Fonts_atari_fonts[0][UNDER_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                     }
                 }
             }
         }
     }
-    memcpy(atari_fonts[0][UNDER_BLK_FONT][XEP80_CHAR_COUNT/2], atari_fonts[0][UNDER_BLK_FONT][0],
-          XEP80_CHAR_COUNT/2*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
+    memcpy(XEP80_Fonts_atari_fonts[0][UNDER_BLK_FONT][XEP80_FONTS_CHAR_COUNT/2], XEP80_Fonts_atari_fonts[0][UNDER_BLK_FONT][0],
+          XEP80_FONTS_CHAR_COUNT/2*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
     /* Rev Underline Block Fonts */
-    for (char_no = 0;char_no<XEP80_CHAR_COUNT/2;char_no++) {
+    for (char_no = 0;char_no<XEP80_FONTS_CHAR_COUNT/2;char_no++) {
         for (char_row=0;char_row<XEP80_CHAR_HEIGHT;char_row++) {
             for (char_col=0;char_col<XEP80_CHAR_WIDTH;char_col++) {
-                if (char_row != XEP80_UNDER_ROW) {
+                if (char_row != XEP80_FONTS_UNDER_ROW) {
                     if (block_font[char_no][char_row][char_col]) {
-                        atari_fonts[0][REV_UNDER_BLK_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                        XEP80_Fonts_atari_fonts[0][REV_UNDER_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                     }
                     else {
-                        atari_fonts[0][REV_UNDER_BLK_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                        XEP80_Fonts_atari_fonts[0][REV_UNDER_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                     }
                 }
                 else {
                     if (char_no<128) {
-                        atari_fonts[0][REV_UNDER_BLK_FONT][char_no][char_row][char_col] = xep80_offcolor;
+                        XEP80_Fonts_atari_fonts[0][REV_UNDER_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_offcolor;
                     }
                     else {
-                        atari_fonts[0][REV_UNDER_BLK_FONT][char_no][char_row][char_col] = xep80_oncolor;
+                        XEP80_Fonts_atari_fonts[0][REV_UNDER_BLK_FONT][char_no][char_row][char_col] = XEP80_Fonts_oncolor;
                     }
                 }
             }
         }
     }
-    memcpy(atari_fonts[0][REV_UNDER_BLK_FONT][XEP80_CHAR_COUNT/2], atari_fonts[0][REV_UNDER_BLK_FONT][0],
-          XEP80_CHAR_COUNT/2*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
+    memcpy(XEP80_Fonts_atari_fonts[0][REV_UNDER_BLK_FONT][XEP80_FONTS_CHAR_COUNT/2], XEP80_Fonts_atari_fonts[0][REV_UNDER_BLK_FONT][0],
+          XEP80_FONTS_CHAR_COUNT/2*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
     /* Copy Block fonts to international fonts */
-    memcpy(atari_fonts[1][4], atari_fonts[0][4],
-           4*XEP80_CHAR_COUNT*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
+    memcpy(XEP80_Fonts_atari_fonts[1][4], XEP80_Fonts_atari_fonts[0][4],
+           4*XEP80_FONTS_CHAR_COUNT*XEP80_CHAR_HEIGHT*XEP80_CHAR_WIDTH); 
 
-    xep80_fonts_inited = TRUE;
+    XEP80_Fonts_inited = TRUE;
 }
 #endif /* XEP80 */
 
