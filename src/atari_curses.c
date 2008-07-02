@@ -70,7 +70,7 @@ void Atari_Initialise(int *argc, char *argv[])
 			curses_mode = CURSES_WIDE_2;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-central         Center emulated screen\n"
+				Log_print("\t-central         Center emulated screen\n"
 				       "\t-left            Align left\n"
 				       "\t-right           Align right (on 80 columns)\n"
 				       "\t-wide1           Use 80 columns\n"
@@ -99,7 +99,7 @@ int Atari_Exit(int run_monitor)
 {
 	curs_set(1);
 	endwin();
-	Aflushlog();
+	Log_flushlog();
 
 	if (run_monitor && monitor()) {
 		curs_set(0);

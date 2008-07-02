@@ -133,16 +133,16 @@ static void GetGZErrorText(void)
 	const char *error = GZERROR(StateFile, &nFileError);
 	if (nFileError == Z_ERRNO) {
 #ifdef HAVE_STRERROR
-		Aprint("The following general file I/O error occurred:");
-		Aprint(strerror(errno));
+		Log_print("The following general file I/O error occurred:");
+		Log_print(strerror(errno));
 #else
-		Aprint("A file I/O error occurred");
+		Log_print("A file I/O error occurred");
 #endif
 		return;
 	}
-	Aprint("ZLIB returned the following error: %s", error);
+	Log_print("ZLIB returned the following error: %s", error);
 #endif /* GZERROR */
-	Aprint("State file I/O failed.");
+	Log_print("State file I/O failed.");
 }
 
 /* Value is memory location of data, num is number of type to save */
@@ -345,7 +345,7 @@ void StateSav_ReadFNAME(char *filename)
 
 	StateSav_ReadUWORD(&namelen, 1);
 	if (namelen >= FILENAME_MAX) {
-		Aprint("Filenames of %d characters not supported on this platform", (int) namelen);
+		Log_print("Filenames of %d characters not supported on this platform", (int) namelen);
 		return;
 	}
 	StateSav_ReadUBYTE((UBYTE *) filename, namelen);
@@ -364,7 +364,7 @@ int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVe
 
 	StateFile = GZOPEN(filename, mode);
 	if (StateFile == NULL) {
-		Aprint("Could not open %s for state save.", filename);
+		Log_print("Could not open %s for state save.", filename);
 		GetGZErrorText();
 		return FALSE;
 	}
@@ -450,7 +450,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 
 	StateFile = GZOPEN(filename, mode);
 	if (StateFile == NULL) {
-		Aprint("Could not open %s for state read.", filename);
+		Log_print("Could not open %s for state read.", filename);
 		GetGZErrorText();
 		return FALSE;
 	}
@@ -462,7 +462,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 		return FALSE;
 	}
 	if (memcmp(header_string, "ATARI800", 8) != 0) {
-		Aprint("This is not an Atari800 state save file.");
+		Log_print("This is not an Atari800 state save file.");
 		GZCLOSE(StateFile);
 		StateFile = NULL;
 		return FALSE;
@@ -470,7 +470,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 
 	if (GZREAD(StateFile, &StateVersion, 1) == 0
 	 || GZREAD(StateFile, &SaveVerbose, 1) == 0) {
-		Aprint("Failed read from Atari state file.");
+		Log_print("Failed read from Atari state file.");
 		GetGZErrorText();
 		GZCLOSE(StateFile);
 		StateFile = NULL;
@@ -478,7 +478,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 	}
 
 	if (StateVersion != SAVE_VERSION_NUMBER && StateVersion < 3) {
-		Aprint("Cannot read this state file because it is an incompatible version.");
+		Log_print("Cannot read this state file because it is an incompatible version.");
 		GZCLOSE(StateFile);
 		StateFile = NULL;
 		return FALSE;
@@ -501,7 +501,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 		int local_xep80_enabled;
 		StateSav_ReadINT(&local_xep80_enabled,1);
 		if (local_xep80_enabled) {
-			Aprint("Cannot read this state file because this version does not support XEP80.");
+			Log_print("Cannot read this state file because this version does not support XEP80.");
 			GZCLOSE(StateFile);
 			StateFile = NULL;
 			return FALSE;
@@ -515,7 +515,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 			int local_mio_enabled;
 			StateSav_ReadINT(&local_mio_enabled,1);
 			if (local_mio_enabled) {
-				Aprint("Cannot read this state file because this version does not support MIO.");
+				Log_print("Cannot read this state file because this version does not support MIO.");
 				GZCLOSE(StateFile);
 				StateFile = NULL;
 				return FALSE;
@@ -529,7 +529,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 			int local_bb_enabled;
 			StateSav_ReadINT(&local_bb_enabled,1);
 			if (local_bb_enabled) {
-				Aprint("Cannot read this state file because this version does not support the Black Box.");
+				Log_print("Cannot read this state file because this version does not support the Black Box.");
 				GZCLOSE(StateFile);
 				StateFile = NULL;
 				return FALSE;
@@ -543,7 +543,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 			int local_xld_enabled;
 			StateSav_ReadINT(&local_xld_enabled,1);
 			if (local_xld_enabled) {
-				Aprint("Cannot read this state file because this version does not support the 1400XL/1450XLD.");
+				Log_print("Cannot read this state file because this version does not support the 1400XL/1450XLD.");
 				GZCLOSE(StateFile);
 				StateFile = NULL;
 				return FALSE;

@@ -162,14 +162,14 @@ void INPUT_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-mouseport") == 0) {
 			mouse_port = Util_sscandec(argv[++i]) - 1;
 			if (mouse_port < 0 || mouse_port > 3) {
-				Aprint("Invalid mouse port, using 1");
+				Log_print("Invalid mouse port, using 1");
 				mouse_port = 0;
 			}
 		}
 		else if (strcmp(argv[i], "-mousespeed") == 0) {
 			mouse_speed = Util_sscandec(argv[++i]);
 			if (mouse_speed < 1 || mouse_speed > 9) {
-				Aprint("Invalid mouse speed, using 3");
+				Log_print("Invalid mouse speed, using 3");
 				mouse_speed = 3;
 			}
 		}
@@ -180,7 +180,7 @@ void INPUT_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-record") == 0) {
 			char *recfilename = argv[++i];
 			if ((recordfp = gzopen(recfilename, "wb")) == NULL) {
-				Aprint("Cannot open record file");
+				Log_print("Cannot open record file");
 			}
 			else {
 				recording = TRUE;
@@ -190,18 +190,18 @@ void INPUT_Initialise(int *argc, char *argv[])
  		else if (strcmp(argv[i], "-playback") == 0) {
 			char *pbfilename = argv[++i];
 			if ((playbackfp = gzopen(pbfilename, "rb")) == NULL) {
-				Aprint("Cannot open playback file");
+				Log_print("Cannot open playback file");
 			}
 			else {
 				playingback = TRUE;
 				gzgets(playbackfp, gzbuf, GZBUFSIZE);
 				if (sscanf(gzbuf, "Atari800 event recording, version: %d\n", &recording_version) != 1) {
-					Aprint("Invalid playback file");
+					Log_print("Invalid playback file");
 					playingback = FALSE;
 					gzclose(playbackfp);
 				}
 				else if (recording_version > EVENT_RECORDING_VERSION) {
-					Aprint("Newer version of playback file than this version of Atari800 can handle");
+					Log_print("Newer version of playback file than this version of Atari800 can handle");
 					playingback = FALSE;
 					gzclose(playbackfp);
 				}
@@ -210,21 +210,21 @@ void INPUT_Initialise(int *argc, char *argv[])
 #endif /* EVENT_RECORDING */
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-mouse off       Do not use mouse");
-				Aprint("\t-mouse pad       Emulate paddles");
-				Aprint("\t-mouse touch     Emulate Atari Touch Tablet");
-				Aprint("\t-mouse koala     Emulate Koala Pad");
-				Aprint("\t-mouse pen       Emulate Light Pen");
-				Aprint("\t-mouse gun       Emulate Light Gun");
-				Aprint("\t-mouse amiga     Emulate Amiga mouse");
-				Aprint("\t-mouse st        Emulate Atari ST mouse");
-				Aprint("\t-mouse trak      Emulate Atari Trak-Ball");
-				Aprint("\t-mouse joy       Emulate joystick using mouse");
-				Aprint("\t-mouseport <n>   Set mouse port 1-4 (default 1)");
-				Aprint("\t-mousespeed <n>  Set mouse speed 1-9 (default 3)");
-				Aprint("\t-multijoy        Emulate MultiJoy4 interface");
-				Aprint("\t-record <file>   Record input to <file>");
-				Aprint("\t-playback <file> Playback input from <file>");
+				Log_print("\t-mouse off       Do not use mouse");
+				Log_print("\t-mouse pad       Emulate paddles");
+				Log_print("\t-mouse touch     Emulate Atari Touch Tablet");
+				Log_print("\t-mouse koala     Emulate Koala Pad");
+				Log_print("\t-mouse pen       Emulate Light Pen");
+				Log_print("\t-mouse gun       Emulate Light Gun");
+				Log_print("\t-mouse amiga     Emulate Amiga mouse");
+				Log_print("\t-mouse st        Emulate Atari ST mouse");
+				Log_print("\t-mouse trak      Emulate Atari Trak-Ball");
+				Log_print("\t-mouse joy       Emulate joystick using mouse");
+				Log_print("\t-mouseport <n>   Set mouse port 1-4 (default 1)");
+				Log_print("\t-mousespeed <n>  Set mouse speed 1-9 (default 3)");
+				Log_print("\t-multijoy        Emulate MultiJoy4 interface");
+				Log_print("\t-record <file>   Record input to <file>");
+				Log_print("\t-playback <file> Playback input from <file>");
 			}
 			argv[j++] = argv[i];
 		}
@@ -747,7 +747,7 @@ static void update_adler32_of_screen(void)
 		gzgets(playbackfp, gzbuf, GZBUFSIZE);
 		sscanf(gzbuf, "%08X ", &pb_adler32val);
 		if (pb_adler32val != adler32val){
-			Aprint("adler32 does not match");
+			Log_print("adler32 does not match");
 			adler32_errors++;
 		}
 		

@@ -241,20 +241,20 @@ void loadModules(void)
 
 	ret = SifLoadModule("rom0:SIO2MAN", 0, NULL);
 	if (ret < 0) {
-		Aprint("Sio2man loading failed: %d", ret);
+		Log_print("Sio2man loading failed: %d", ret);
 		SleepThread();
 	}
 
-//	Aprint("mcman");
+//	Log_print("mcman");
 	SifLoadModule("rom0:MCMAN", 0, NULL);
 
-//	Aprint("mcserv");
+//	Log_print("mcserv");
 	SifLoadModule("rom0:MCSERV", 0, NULL);
 
-//	Aprint("padman");
+//	Log_print("padman");
 	ret = SifLoadModule("rom0:PADMAN", 0, NULL);
 	if (ret < 0) {
-		Aprint("Padman loading failed: %d", ret);
+		Log_print("Padman loading failed: %d", ret);
 		SleepThread();
 	}
 
@@ -267,7 +267,7 @@ void loadModules(void)
 	SifExecModuleBuffer(ps2kbd, size_ps2kbd, 0, NULL, &ret);
 
 	if (PS2KbdInit() == 0) {
-		Aprint("Failed to Init Keyboard.");
+		Log_print("Failed to Init Keyboard.");
 	}
 	PS2KbdSetReadmode(PS2KBD_READMODE_RAW);
 
@@ -313,7 +313,7 @@ void Atari_Initialise(int *argc, char *argv[])
 int Atari_Exit(int run_monitor)
 {
 	// TODO: shutdown graphics mode
-	Aflushlog();
+	Log_flushlog();
 #if 0
 	if (run_monitor && monitor()) {
 		// TODO: reinitialize graphics mode
@@ -940,7 +940,7 @@ int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
 void Sound_Initialise(int *argc, char *argv[])
 {
 	if (audsrv_init() != 0)
-		Aprint("failed to initialize audsrv: %s", audsrv_get_error_string());
+		Log_print("failed to initialize audsrv: %s", audsrv_get_error_string());
 	else {
 		struct audsrv_fmt_t format;
 		format.bits = 8;
@@ -974,7 +974,7 @@ void Sound_Pause(void)
 void Sound_Continue(void)
 {
 	if (audsrv_init() != 0)
-		Aprint("failed to initialize audsrv: %s", audsrv_get_error_string());
+		Log_print("failed to initialize audsrv: %s", audsrv_get_error_string());
 	else {
 		struct audsrv_fmt_t format;
 		format.bits = 8;

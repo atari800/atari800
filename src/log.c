@@ -36,10 +36,10 @@
 #endif
 
 #ifdef BUFFERED_LOG
-char memory_log[MAX_LOG_SIZE] = "";
+char Log_buffer[LOG_BUFFER_SIZE] = "";
 #endif
 
-void Aprint(char *format, ...)
+void Log_print(char *format, ...)
 {
 	va_list args;
 	char buffer[8192];
@@ -64,21 +64,21 @@ void Aprint(char *format, ...)
 #ifdef BUFFERED_LOG
 	buflen = strlen(buffer);
 
-	if ((strlen(memory_log) + strlen(buffer) + 1) > MAX_LOG_SIZE)
-		*memory_log = 0;
+	if ((strlen(Log_buffer) + strlen(buffer) + 1) > LOG_BUFFER_SIZE)
+		*Log_buffer = 0;
 
-	strcat(memory_log, buffer);
+	strcat(Log_buffer, buffer);
 #else
 	PRINT(buffer);
 #endif
 }
 
-void Aflushlog(void)
+void Log_flushlog(void)
 {
 #ifdef BUFFERED_LOG
-	if (*memory_log) {
-		PRINT(memory_log);
-		*memory_log = 0;
+	if (*Log_buffer) {
+		PRINT(Log_buffer);
+		*Log_buffer = 0;
 	}
 #endif
 }

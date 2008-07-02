@@ -67,7 +67,7 @@ static void init_mio(void)
 	if (strcmp(mio_scsi_disk_filename, FILENAME_NOT_SET)) {
 		SCSI_disk = fopen(mio_scsi_disk_filename, "rb+");
 		if (SCSI_disk == NULL) {
-			Aprint("Error opening SCSI disk image:%s", mio_scsi_disk_filename);
+			Log_print("Error opening SCSI disk image:%s", mio_scsi_disk_filename);
 		}
 		else {
 			D(printf("Opened SCSI disk image\n"));
@@ -92,7 +92,7 @@ void PBI_MIO_Initialise(int *argc, char *argv[])
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-mio             Emulate the ICD MIO board");
+				Log_print("\t-mio             Emulate the ICD MIO board");
 			}
 			argv[j++] = argv[i];
 		}

@@ -106,8 +106,8 @@ void CASSETTE_Initialise(int *argc, char *argv[])
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-tape <file>     Insert cassette image");
-				Aprint("\t-boottape <file> Insert cassette image and boot it");
+				Log_print("\t-tape <file>     Insert cassette image");
+				Log_print("\t-boottape <file> Insert cassette image and boot it");
 			}
 			argv[j++] = argv[i];
 		}

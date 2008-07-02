@@ -141,9 +141,9 @@ int gron(int *argc, char *argv[])
 			bltgfx = TRUE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-windowed        Run in a window");
-				Aprint("\t-width <num>     Set display mode width");
-				Aprint("\t-blt             Use blitting to draw graphics");
+				Log_print("\t-windowed        Run in a window");
+				Log_print("\t-width <num>     Set display mode width");
+				Log_print("\t-blt             Use blitting to draw graphics");
 				help = TRUE;
 			}
 			argv[j++] = argv[i];

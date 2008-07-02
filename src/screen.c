@@ -110,7 +110,7 @@ static void Screen_SetScreenshotFilenamePattern(const char *p)
 			return; /* ok */
 		p++;
 	}
-	Aprint("Invalid filename pattern for screenshots, using default.");
+	Log_print("Invalid filename pattern for screenshots, using default.");
 	strcpy(screenshot_filename_format, DEFAULT_SCREENSHOT_FILENAME_FORMAT);
 	screenshot_no_max = 1000;
 }
@@ -131,8 +131,8 @@ void Screen_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-				Aprint("\t-screenshots <p> Set filename pattern for screenshots");
-				Aprint("\t-showspeed       Show percentage of actual speed");
+				Log_print("\t-screenshots <p> Set filename pattern for screenshots");
+				Log_print("\t-showspeed       Show percentage of actual speed");
 			}
 			argv[j++] = argv[i];
 		}

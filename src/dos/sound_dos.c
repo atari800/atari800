@@ -63,10 +63,10 @@ void Sound_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				sound_enabled = FALSE;
-				Aprint("\t-sound           Enable sound");
-				Aprint("\t-nosound         Disable sound");
-				Aprint("\t-dsprate <freq>  Set mixing frequency (Hz)");
-				Aprint("\t-bufsize         Set sound buffer size");
+				Log_print("\t-sound           Enable sound");
+				Log_print("\t-nosound         Disable sound");
+				Log_print("\t-dsprate <freq>  Set mixing frequency (Hz)");
+				Log_print("\t-bufsize         Set sound buffer size");
 			}
 			argv[j++] = argv[i];
 		}
@@ -76,7 +76,7 @@ void Sound_Initialise(int *argc, char *argv[])
 
 	if (sound_enabled) {
 		if (sb_init(&playback_freq, &bps, &buffersize, &stereo) < 0) {
-			Aprint("Cannot init sound card");
+			Log_print("Cannot init sound card");
 			sound_enabled = FALSE;
 		}
 		else {

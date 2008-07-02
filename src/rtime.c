@@ -58,8 +58,8 @@ void RTIME_Initialise(int *argc, char *argv[])
 			rtime_enabled = FALSE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-rtime           Enable R-Time 8 emulation");
-				Aprint("\t-nortime         Disable R-Time 8 emulation");
+				Log_print("\t-rtime           Enable R-Time 8 emulation");
+				Log_print("\t-nortime         Disable R-Time 8 emulation");
 			}
 			argv[j++] = argv[i];
 		}
@@ -130,7 +130,7 @@ UBYTE RTIME_GetByte(void)
 {
 	switch (rtime_state) {
 	case 0:
-		/* Aprint("pretending rtime not busy, returning 0"); */
+		/* Log_print("pretending rtime not busy, returning 0"); */
 		return 0;
 	case 1:
 		rtime_state = 2;

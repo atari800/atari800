@@ -232,14 +232,14 @@ void XEP80_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-xep80port") == 0) {
 			XEP80_port = Util_sscandec(argv[++i]);
 			if (XEP80_port != 0 && XEP80_port != 1) {
-				Aprint("Invalid XEP80 port #");
+				Log_print("Invalid XEP80 port #");
 				XEP80_port = 0;
 			}
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-xep80           Emulate the XEP80");
-				Aprint("\t-xep80port <n>   Use XEP80 on joystick port <n>");
+				Log_print("\t-xep80           Emulate the XEP80");
+				Log_print("\t-xep80port <n>   Use XEP80 on joystick port <n>");
 			}
 			argv[j++] = argv[i];
 		}

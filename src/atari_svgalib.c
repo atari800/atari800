@@ -499,7 +499,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-interlace       Generate screen with interlace");
+				Log_print("\t-interlace       Generate screen with interlace");
 			}
 			argv[j++] = argv[i];
 		}
@@ -638,7 +638,7 @@ int Atari_Exit(int run_monitor)
 		Sound_Exit();
 #endif
 
-		Aflushlog();
+		Log_flushlog();
 	}
 
 	return restart;

@@ -42,7 +42,7 @@
 int CompressedFile_ExtractGZ(const char *infilename, FILE *outfp)
 {
 #ifndef HAVE_LIBZ
-	Aprint("This executable cannot decompress ZLIB files");
+	Log_print("This executable cannot decompress ZLIB files");
 	return FALSE;
 #else
 	/* TODO: replace gz* with low-level light-weight ZLIB functions. */
@@ -50,7 +50,7 @@ int CompressedFile_ExtractGZ(const char *infilename, FILE *outfp)
 	void *buf;
 	int result;
 	if (gzf == NULL) {
-		Aprint("ZLIB could not open file %s", infilename);
+		Log_print("ZLIB could not open file %s", infilename);
 		return FALSE;
 	}
 #define UNCOMPRESS_BUFFER_SIZE 32768
@@ -152,7 +152,7 @@ static int dcm_pass(FILE *infp, ATR_Info *pai)
 		if (sector_type == 0x45)
 			return TRUE;
 		if (sector_no < pai->current_sector) {
-			Aprint("Error: current sector is %d, next sector group at %d", pai->current_sector, sector_no);
+			Log_print("Error: current sector is %d, next sector group at %d", pai->current_sector, sector_no);
 			return FALSE;
 		}
 		if (!pad_till_sector(pai, sector_no))
@@ -218,7 +218,7 @@ static int dcm_pass(FILE *infp, ATR_Info *pai)
 					return FALSE;
 				break;
 			default:
-				Aprint("Unrecognized sector coding type 0x%02X", sector_type);
+				Log_print("Unrecognized sector coding type 0x%02X", sector_type);
 				return FALSE;
 			}
 			if (!write_atr_sector(pai, sector_buf))
@@ -241,14 +241,14 @@ int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp)
 	int last_sector;
 	archive_type = fgetc(infp);
 	if (archive_type != 0xf9 && archive_type != 0xfa) {
-		Aprint("This is not a DCM image");
+		Log_print("This is not a DCM image");
 		return FALSE;
 	}
 	archive_flags = fgetc(infp);
 	if ((archive_flags & 0x1f) != 1) {
-		Aprint("Expected pass one first");
+		Log_print("Expected pass one first");
 		if (archive_type == 0xf9)
-			Aprint("It seems that DCMs of a multi-file archive have been combined in wrong order");
+			Log_print("It seems that DCMs of a multi-file archive have been combined in wrong order");
 		return FALSE;
 	}
 	ai.fp = outfp;
@@ -267,7 +267,7 @@ int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp)
 		ai.sectorsize = 128;
 		break;
 	default:
-		Aprint("Unrecognized density");
+		Log_print("Unrecognized density");
 		return FALSE;
 	}
 	if (!write_atr_header(&ai))
@@ -283,19 +283,19 @@ int CompressedFile_DCMtoATR(FILE *infp, FILE *outfp)
 		block_type = fgetc(infp);
 		if (block_type != archive_type) {
 			if (block_type == EOF && archive_type == 0xf9) {
-				Aprint("Multi-part archive error.");
-				Aprint("To process these files, you must first combine the files into a single file.");
+				Log_print("Multi-part archive error.");
+				Log_print("To process these files, you must first combine the files into a single file.");
 #if defined(WIN32) || defined(DJGPP)
-				Aprint("COPY /B file1.dcm+file2.dcm+file3.dcm newfile.dcm from the DOS prompt");
+				Log_print("COPY /B file1.dcm+file2.dcm+file3.dcm newfile.dcm from the DOS prompt");
 #elif defined(linux) || defined(unix)
-				Aprint("cat file1.dcm file2.dcm file3.dcm >newfile.dcm from the shell");
+				Log_print("cat file1.dcm file2.dcm file3.dcm >newfile.dcm from the shell");
 #endif
 			}
 			return FALSE;
 		}
 		pass_flags = fgetc(infp);
 		if ((pass_flags ^ archive_flags) & 0x60) {
-			Aprint("Density changed inside DCM archive?");
+			Log_print("Density changed inside DCM archive?");
 			return FALSE;
 		}
 		/* TODO: check pass number, this is tricky for >31 */

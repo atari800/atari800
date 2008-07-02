@@ -62,7 +62,7 @@ void Sound_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-				Aprint("\t-sound           Enable sound\n"
+				Log_print("\t-sound           Enable sound\n"
 				       "\t-nosound         Disable sound\n"
 				       "\t-dsprate <rate>  Set sample rate in Hz"
 				      );
@@ -83,7 +83,7 @@ void Sound_Initialise(int *argc, char *argv[])
 	}
 	i = AFMT_U8;
 	if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &i)) {
-		Aprint("%s: cannot set 8-bit unsigned samples", dspname);
+		Log_print("%s: cannot set 8-bit unsigned samples", dspname);
 		close(dsp_fd);
 		sound_enabled = FALSE;
 		return;
@@ -100,20 +100,20 @@ void Sound_Initialise(int *argc, char *argv[])
 	output_channels = 1;
 #endif
 	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &output_channels)) {
-		Aprint("%s: SNDCTL_DSP_CHANNELS(%1) failed", dspname, output_channels);
+		Log_print("%s: SNDCTL_DSP_CHANNELS(%1) failed", dspname, output_channels);
 		close(dsp_fd);
 		sound_enabled = FALSE;
 		return;
 	}
 
 	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &dsprate)) {
-		Aprint("%s: cannot set %d sample rate", dspname, dsprate);
+		Log_print("%s: cannot set %d sample rate", dspname, dsprate);
 		close(dsp_fd);
 		sound_enabled = FALSE;
 		return;
 	}
 	if (dsprate < 1000 || dsprate > 65535) {
-		Aprint("%s: %d sample rate is not supported", dspname, dsprate);
+		Log_print("%s: %d sample rate is not supported", dspname, dsprate);
 		close(dsp_fd);
 		sound_enabled = FALSE;
 		return;

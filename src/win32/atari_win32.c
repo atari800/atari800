@@ -164,16 +164,16 @@ static int Atari_Win32_keys(void)
 
 			/* Debug: To test keyboard codes
 			gotoxy(0,9);
-			AprintS("kbcode:%d\n   ",kbcode);
+			Log_printS("kbcode:%d\n   ",kbcode);
 
 			gotoxy(0,10);
 			for(i=0; i<256; i++) {
-				if (i%32==0) AprintS("\n%d:", i);
-				AprintS("%2x",lpKeyState[i]);
+				if (i%32==0) Log_printS("\n%d:", i);
+				Log_printS("%2x",lpKeyState[i]);
 			}
-			AprintS("\nA:%d   \n",lpKeyState[65]);
-			AprintS("B:%d   \n",lpKeyState[66]);
-			AprintS("C:%d   \n",lpKeyState[67]);
+			Log_printS("\nA:%d   \n",lpKeyState[65]);
+			Log_printS("B:%d   \n",lpKeyState[66]);
+			Log_printS("C:%d   \n",lpKeyState[67]);
 			*/
 
 			/* translates the scan code to a virtual key */
@@ -599,17 +599,17 @@ void Atari_Initialise(int *argc, char *argv[])
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-nojoystick") == 0) {
 			kbjoy = 1;
-			Aprint("no joystick");
+			Log_print("no joystick");
 		}
 		else if (strcmp(argv[i], "-win32keys") == 0) {
 			win32keys = TRUE;
-			Aprint("win32keys keys");
+			Log_print("win32keys keys");
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-				Aprint("\t-nojoystick      Disable joystick");
-				Aprint("\t-win32keys       Support for international keyboards");
+				Log_print("\t-nojoystick      Disable joystick");
+				Log_print("\t-win32keys       Support for international keyboards");
 			}
 			argv[j++] = argv[i];
 		}
@@ -638,7 +638,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	if (!kbjoy) {
 		if (initjoystick()) {
 			kbjoy = 1;
-			Aprint("joystick not found");
+			Log_print("joystick not found");
 		}
 	}
 
@@ -651,7 +651,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 int Atari_Exit(int run_monitor)
 {
-	Aflushlog();
+	Log_flushlog();
 
 	if (run_monitor) {
 		int i;

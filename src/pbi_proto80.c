@@ -49,12 +49,12 @@ void PBI_PROTO80_Initialise(int *argc, char *argv[])
 	int i, j;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-proto80") == 0) {
-			Aprint("proto80 enabled");
+			Log_print("proto80 enabled");
 			PBI_PROTO80_enabled = TRUE;
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-proto80         Emulate a prototype 80 column board for the 1090");
+				Log_print("\t-proto80         Emulate a prototype 80 column board for the 1090");
 			}
 			argv[j++] = argv[i];
 		}

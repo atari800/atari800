@@ -774,7 +774,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-				Aprint("\t-scale <n>       Scale width and height by <n>");
+				Log_print("\t-scale <n>       Scale width and height by <n>");
 			}
 			argv[j++] = argv[i];
 		}

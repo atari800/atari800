@@ -323,12 +323,12 @@ static int initsound_wav(void)
   err = waveOutOpen(&wout, WAVE_MAPPER, &wfx, (int)event, 0, CALLBACK_EVENT);
   if (err == WAVERR_BADFORMAT)
     {
-      Aprint("wave output parameters unsupported\n");
+      Log_print("wave output parameters unsupported\n");
       exit(1);
     }
   if (err != MMSYSERR_NOERROR)
     {
-      Aprint("cannot open wave output (%x)\n", err);
+      Log_print("cannot open wave output (%x)\n", err);
       exit(1);
     }
 
@@ -339,14 +339,14 @@ static int initsound_wav(void)
       memset(&waves[i], 0, sizeof (waves[i]));
       if (!(waves[i].lpData = (uint8 *)malloc(WAVSIZE)))
 	{
-	  Aprint("could not get wave buffer memory\n");
+	  Log_print("could not get wave buffer memory\n");
 	  exit(1);
 	}
       waves[i].dwBufferLength = WAVSIZE;
       err = waveOutPrepareHeader(wout, &waves[i], sizeof(waves[i]));
       if (err != MMSYSERR_NOERROR)
 	{
-	  Aprint("cannot prepare wave header (%x)\n", err);
+	  Log_print("cannot prepare wave header (%x)\n", err);
 	  exit(1);
 	}
       waves[i].dwFlags |= WHDR_DONE;
@@ -400,7 +400,7 @@ void Sound_Initialise(int *argc, char *argv[])
       {
 	if (strcmp(argv[i], "-help") == 0)
 	{
-	  Aprint("\t-sound           Enable sound\n"
+	  Log_print("\t-sound           Enable sound\n"
 		 "\t-nosound         Disable sound\n"
 #ifdef DIRECTX
 		 "\t-wavonly         Disable direct sound\n"
@@ -492,7 +492,7 @@ void Sound_Update(void)
       err = waveOutWrite(wout, wh, sizeof(*wh));
       if (err != MMSYSERR_NOERROR)
       {
-	Aprint("cannot write wave output (%x)\n", err);
+	Log_print("cannot write wave output (%x)\n", err);
 	return;
       }
     }

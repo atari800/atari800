@@ -957,13 +957,13 @@ void ANTIC_Initialise(int *argc, char *argv[])
 		if (strcmp(argv[i], "-artif") == 0) {
 			global_artif_mode = Util_sscandec(argv[++i]);
 			if (global_artif_mode < 0 || global_artif_mode > 4) {
-				Aprint("Invalid artifacting mode, using default.");
+				Log_print("Invalid artifacting mode, using default.");
 				global_artif_mode = 0;
 			}
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-artif <num>     Set artifacting mode 0-4 (0 = disable)");
+				Log_print("\t-artif <num>     Set artifacting mode 0-4 (0 = disable)");
 			}
 			argv[j++] = argv[i];
 		}

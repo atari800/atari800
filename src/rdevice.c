@@ -83,7 +83,7 @@
 #include <sys/stat.h>
 
 #ifdef DEBUG
-#define DBG_APRINT(x) Aprint(x)
+#define DBG_APRINT(x) Log_print(x)
 #else
 #define DBG_APRINT(x)
 #endif
@@ -1179,7 +1179,7 @@ void Device_RWRIT(void)
   {
     if (dc_write_serial(out_char) != 1)
     {
-      Aprint("R*: ERROR on write.");
+      Log_print("R*: ERROR on write.");
       SetN;
       regY = 135;
     }

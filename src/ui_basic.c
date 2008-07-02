@@ -759,7 +759,7 @@ static void GetDirectory(const char *directory)
 		FilenamesSort(filenames, filenames + n_filenames);
 	}
 	else {
-		Aprint("Error opening '%s' directory", directory);
+		Log_print("Error opening '%s' directory", directory);
 	}
 #ifdef PS2
 	FilenamesAdd(Util_strdup("[mc0:]"));

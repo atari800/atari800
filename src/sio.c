@@ -260,7 +260,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 	}
 
 #ifdef DEBUG
-	Aprint("sectorcount = %d, sectorsize = %d",
+	Log_print("sectorcount = %d, sectorsize = %d",
 		   sectorcount[diskno - 1], sectorsize[diskno - 1]);
 #endif
 	SIO_format_sectorsize[diskno - 1] = sectorsize[diskno - 1];
@@ -406,7 +406,7 @@ int SIO_FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 	SIO_Dismount(unit + 1);
 	f = fopen(fname, "wb");
 	if (f == NULL) {
-		Aprint("SIO_FormatDisk: failed to open %s for writing", fname);
+		Log_print("SIO_FormatDisk: failed to open %s for writing", fname);
 		return 'E';
 	}
 	/* Write ATR header if necessary */
@@ -455,7 +455,7 @@ int SIO_WriteStatusBlock(int unit, const UBYTE *buffer)
 {
 	int size;
 #ifdef DEBUG
-	Aprint("Write Status-Block: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+	Log_print("Write Status-Block: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
 		buffer[0], buffer[1], buffer[2], buffer[3],
 		buffer[4], buffer[5], buffer[6], buffer[7],
 		buffer[8], buffer[9], buffer[10], buffer[11]);
@@ -598,7 +598,7 @@ void SIO(void)
 	/* Disk 1 -> unit = 0 */
 	if (dGetByte(0x300) != 0x60 && unit < MAX_DRIVES) {	/* UBYTE range ! */
 #ifdef DEBUG
-		Aprint("SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
+		Log_print("SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
 			cmd, dGetByte(0x303), dGetByte(0x304), dGetByte(0x305), dGetByte(0x306),
 			dGetByte(0x308), dGetByte(0x309), dGetByte(0x30a), dGetByte(0x30b),
 			dGetByte(0x30c), dGetByte(0x30d));
@@ -805,7 +805,7 @@ static UBYTE Command_Frame(void)
 
 	if (unit < 0 || unit >= MAX_DRIVES) {
 		/* Unknown device */
-		Aprint("Unknown command frame: %02x %02x %02x %02x %02x",
+		Log_print("Unknown command frame: %02x %02x %02x %02x %02x",
 			   CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			   CommandFrame[3], CommandFrame[4]);
 		TransferStatus = SIO_NoFrame;
@@ -814,7 +814,7 @@ static UBYTE Command_Frame(void)
 	switch (CommandFrame[1]) {
 	case 0x4e:				/* Read Status */
 #ifdef DEBUG
-		Aprint("Read-status frame: %02x %02x %02x %02x %02x",
+		Log_print("Read-status frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -827,7 +827,7 @@ static UBYTE Command_Frame(void)
 		return 'A';
 	case 0x4f:				/* Write status */
 #ifdef DEBUG
-		Aprint("Write-status frame: %02x %02x %02x %02x %02x",
+		Log_print("Write-status frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -840,7 +840,7 @@ static UBYTE Command_Frame(void)
 	case 0xD0:				/* xf551 hispeed */
 	case 0xD7:
 #ifdef DEBUG
-		Aprint("Write-sector frame: %02x %02x %02x %02x %02x",
+		Log_print("Write-sector frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -855,7 +855,7 @@ static UBYTE Command_Frame(void)
 	case 0x52:				/* Read */
 	case 0xD2:				/* xf551 hispeed */
 #ifdef DEBUG
-		Aprint("Read-sector frame: %02x %02x %02x %02x %02x",
+		Log_print("Read-sector frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -883,7 +883,7 @@ static UBYTE Command_Frame(void)
 		return 'A';
 	case 0x53:				/* Status */
 #ifdef DEBUG
-		Aprint("Status frame: %02x %02x %02x %02x %02x",
+		Log_print("Status frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -898,7 +898,7 @@ static UBYTE Command_Frame(void)
 	case 0x21:				/* Format Disk */
 	case 0xa1:				/* xf551 hispeed */
 #ifdef DEBUG
-		Aprint("Format-disk frame: %02x %02x %02x %02x %02x",
+		Log_print("Format-disk frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -913,7 +913,7 @@ static UBYTE Command_Frame(void)
 	case 0x22:				/* Dual Density Format */
 	case 0xa2:				/* xf551 hispeed */
 #ifdef DEBUG
-		Aprint("Format-Medium frame: %02x %02x %02x %02x %02x",
+		Log_print("Format-Medium frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -927,7 +927,7 @@ static UBYTE Command_Frame(void)
 	default:
 		/* Unknown command for a disk drive */
 #ifdef DEBUG
-		Aprint("Command frame: %02x %02x %02x %02x %02x",
+		Log_print("Command frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -988,7 +988,7 @@ void SwitchCommandFrame(int onoff)
 {
 	if (onoff) {				/* Enabled */
 		if (TransferStatus != SIO_NoFrame)
-			Aprint("Unexpected command frame at state %x.", TransferStatus);
+			Log_print("Unexpected command frame at state %x.", TransferStatus);
 		CommandIndex = 0;
 		DataIndex = 0;
 		ExpectedBytes = 5;
@@ -998,7 +998,7 @@ void SwitchCommandFrame(int onoff)
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
 			if (!(TransferStatus == SIO_CommandFrame && CommandIndex == 0))
-				Aprint("Command frame %02x unfinished.", TransferStatus);
+				Log_print("Command frame %02x unfinished.", TransferStatus);
 			TransferStatus = SIO_NoFrame;
 		}
 		CommandIndex = 0;
@@ -1044,7 +1044,7 @@ void SIO_PutByte(int byte)
 			}
 		}
 		else {
-			Aprint("Invalid command frame!");
+			Log_print("Invalid command frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -1076,7 +1076,7 @@ void SIO_PutByte(int byte)
 			}
 		}
 		else {
-			Aprint("Invalid data frame!");
+			Log_print("Invalid data frame!");
 		}
 		break;
 	case SIO_CasWrite:
@@ -1112,7 +1112,7 @@ int SIO_GetByte(void)
 			}
 		}
 		else {
-			Aprint("Invalid read frame!");
+			Log_print("Invalid read frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -1130,7 +1130,7 @@ int SIO_GetByte(void)
 			}
 		}
 		else {
-			Aprint("Invalid read frame!");
+			Log_print("Invalid read frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;

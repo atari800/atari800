@@ -140,8 +140,8 @@ void PBI_XLD_Initialise(int *argc, char *argv[])
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-1400            Emulate the Atari 1400XL");
-				Aprint("\t-xld             Emulate the Atari 1450XLD");
+				Log_print("\t-1400            Emulate the Atari 1400XL");
+				Log_print("\t-xld             Emulate the Atari 1450XLD");
 			}
 
 			argv[j++] = argv[i];
@@ -349,7 +349,7 @@ static void PIO_PutByte(int byte)
 			}
 		}
 		else {
-			Aprint("Invalid command frame!");
+			Log_print("Invalid command frame!");
 			TransferStatus = PIO_NoFrame;
 		}
 		break;
@@ -381,7 +381,7 @@ static void PIO_PutByte(int byte)
 			}
 		}
 		else {
-			Aprint("Invalid data frame!");
+			Log_print("Invalid data frame!");
 		}
 		break;
 	}
@@ -416,7 +416,7 @@ static int PIO_GetByte(void)
 			}
 		}
 		else {
-			Aprint("Invalid read frame!");
+			Log_print("Invalid read frame!");
 			TransferStatus = PIO_NoFrame;
 		}
 		break;
@@ -434,7 +434,7 @@ static int PIO_GetByte(void)
 			}
 		}
 		else {
-			Aprint("Invalid read frame!");
+			Log_print("Invalid read frame!");
 			TransferStatus = PIO_NoFrame;
 		}
 		break;
@@ -455,7 +455,7 @@ static UBYTE PIO_Command_Frame(void)
 
 	if (unit < 0 || unit >= MAX_DRIVES) {
 		/* Unknown device */
-		Aprint("Unknown command frame: %02x %02x %02x %02x %02x",
+		Log_print("Unknown command frame: %02x %02x %02x %02x %02x",
 			   CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			   CommandFrame[3], CommandFrame[4]);
 		TransferStatus = PIO_NoFrame;
@@ -463,20 +463,20 @@ static UBYTE PIO_Command_Frame(void)
 	}
 	switch (CommandFrame[1]) {
 	case 0x01:
-		Aprint("PIO DISK: Set large mode (unimplemented)");
+		Log_print("PIO DISK: Set large mode (unimplemented)");
 		return 'E';
 	case 0x02:
-		Aprint("PIO DISK: Set small mode (unimplemented)");
+		Log_print("PIO DISK: Set small mode (unimplemented)");
 		return 'E';
 	case 0x23:
-		Aprint("PIO DISK: Drive Diagnostic In (unimplemented)");
+		Log_print("PIO DISK: Drive Diagnostic In (unimplemented)");
 		return 'E';
 	case 0x24:
-		Aprint("PIO DISK: Drive Diagnostic Out (unimplemented)");
+		Log_print("PIO DISK: Drive Diagnostic Out (unimplemented)");
 		return 'E';
 	case 0x4e:				/* Read Status */
 #ifdef PBI_DEBUG
-		Aprint("PIO DISK: Read-status frame: %02x %02x %02x %02x %02x",
+		Log_print("PIO DISK: Read-status frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -489,7 +489,7 @@ static UBYTE PIO_Command_Frame(void)
 		return 'A';
 	case 0x4f:				/* Write status */
 #ifdef PBI_DEBUG
-		Aprint("PIO DISK: Write-status frame: %02x %02x %02x %02x %02x",
+		Log_print("PIO DISK: Write-status frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -500,7 +500,7 @@ static UBYTE PIO_Command_Frame(void)
 	case 0x50:				/* Write */
 	case 0x57:
 #ifdef PBI_DEBUG
-		Aprint("PIO DISK: Write-sector frame: %02x %02x %02x %02x %02x",
+		Log_print("PIO DISK: Write-sector frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -514,7 +514,7 @@ static UBYTE PIO_Command_Frame(void)
 		return 'A';
 	case 0x52:				/* Read */
 #ifdef PBI_DEBUG
-		Aprint("PIO DISK: Read-sector frame: %02x %02x %02x %02x %02x",
+		Log_print("PIO DISK: Read-sector frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -623,7 +623,7 @@ static UBYTE PIO_Command_Frame(void)
  */
 
 #ifdef PBI_DEBUG
-		Aprint("PIO DISK: Status frame: %02x %02x %02x %02x %02x",
+		Log_print("PIO DISK: Status frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -643,7 +643,7 @@ static UBYTE PIO_Command_Frame(void)
 		return 'A';
 	case 0x21:				/* Format Disk */
 #ifdef PBI_DEBUG
-		Aprint("PIO DISK: Format-disk frame: %02x %02x %02x %02x %02x",
+		Log_print("PIO DISK: Format-disk frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -657,7 +657,7 @@ static UBYTE PIO_Command_Frame(void)
 		return 'A';
 	case 0x22:				/* Dual Density Format */
 #ifdef PBI_DEBUG
-		Aprint("PIO DISK: Format-Medium frame: %02x %02x %02x %02x %02x",
+		Log_print("PIO DISK: Format-Medium frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -674,17 +674,17 @@ static UBYTE PIO_Command_Frame(void)
 			$B2 for internal use. These COMMAND BYTES may not
 			be used by any other drivers.*/
 	case 0xb1:
-		Aprint("PIO DISK: Internal Command 0xb1 (unimplemented)");
+		Log_print("PIO DISK: Internal Command 0xb1 (unimplemented)");
 		return 'E';
 	case 0xb2:
-		Aprint("PIO DISK: Internal Command 0xb2 (unimplemented)");
+		Log_print("PIO DISK: Internal Command 0xb2 (unimplemented)");
 		return 'E';
 
 
 	default:
 		/* Unknown command for a disk drive */
 #ifdef PBI_DEBUG
-		Aprint("PIO DISK: Unknown Command frame: %02x %02x %02x %02x %02x",
+		Log_print("PIO DISK: Unknown Command frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
@@ -703,7 +703,7 @@ void PBI_XLD_V_Init(int playback_freq, int n_pokeys, int b16)
 	num_pokeys = n_pokeys;
 	if (!xld_v_enabled) return;
 	if (num_pokeys != 1 && num_pokeys != 2) {
-		Aprint("PBI_XLD_V_Init: cannot handle num_pokeys=%d", num_pokeys);
+		Log_print("PBI_XLD_V_Init: cannot handle num_pokeys=%d", num_pokeys);
 		xld_v_enabled = FALSE;
 		return;
 	}

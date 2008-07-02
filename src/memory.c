@@ -675,7 +675,7 @@ void MOSAIC_PutByte(UWORD addr, UBYTE byte)
 	int newbank;
 	if (addr < 0xffc0) return;
 #ifdef DEBUG
-	Aprint("MOSAIC_PutByte:%4X:%2X",addr,byte);
+	Log_print("MOSAIC_PutByte:%4X:%2X",addr,byte);
 #endif
 	newbank = addr - 0xffc0;
 	if (newbank == mosaic_curbank || (newbank > mosaic_maxbank && mosaic_curbank > mosaic_maxbank)) return; /*same bank or rom -> rom*/
@@ -702,7 +702,7 @@ void MOSAIC_PutByte(UWORD addr, UBYTE byte)
 UBYTE MOSAIC_GetByte(UWORD addr)
 {
 #ifdef DEBUG
-	Aprint("MOSAIC_GetByte%4X",addr);
+	Log_print("MOSAIC_GetByte%4X",addr);
 #endif
 	return memory[addr];
 }
@@ -725,7 +725,7 @@ void AXLON_PutByte(UWORD addr, UBYTE byte)
 	if ((addr&0xff00) == 0x0f00) memory[addr] = byte;
 	if ((addr&0xff) < 0xc0) return; /*0xffc0-0xffff and 0x0fc0-0x0fff only*/
 #ifdef DEBUG
-	Aprint("AXLON_PutByte:%4X:%2X", addr, byte);
+	Log_print("AXLON_PutByte:%4X:%2X", addr, byte);
 #endif
 	newbank = (byte&axlon_bankmask);
 	if (newbank == axlon_curbank) return;
@@ -737,7 +737,7 @@ void AXLON_PutByte(UWORD addr, UBYTE byte)
 UBYTE AXLON_GetByte(UWORD addr)
 {
 #ifdef DEBUG
-	Aprint("AXLON_GetByte%4X",addr);
+	Log_print("AXLON_GetByte%4X",addr);
 #endif
 	return memory[addr];
 }

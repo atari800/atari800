@@ -45,7 +45,7 @@
 
 /* customize this logging routine as needed */
 #include "log.h"
-#define  log_printf  Aprint
+#define  log_printf  Log_print
 
 #include "dos_sb.h"
 #include "dos_ints.h"

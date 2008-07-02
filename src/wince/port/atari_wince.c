@@ -45,7 +45,8 @@ static int kbjoy = 1;
 
 DWORD REG_bat, REG_ac, REG_disp, bat_timeout;
 
-void Aprint(char *format, ... )
+/* XXX: don't define Log_print, use a platform-specific output in log.c */
+void Log_print(char *format, ... )
 {
 #ifdef DEBUG
 	char tmp1[512];
@@ -59,7 +60,7 @@ void Aprint(char *format, ... )
 	OutputDebugString(tmp2);
 #endif
 }
-void Aflushlog(void) {}
+void Log_flushlog(void) {}
 
 static DWORD reg_access(TCHAR *key, TCHAR *val, DWORD data)
 {
@@ -149,7 +150,7 @@ int Atari_Exit(int run_monitor)
 		return 1;
 
 #ifdef BUFFERED_LOG
-	Aflushlog();
+	Log_flushlog();
 #endif
 
 	uninitinput();

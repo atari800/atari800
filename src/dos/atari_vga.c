@@ -499,7 +499,7 @@ static void SetupVgaEnvironment(void)
 		rg.x.ax = 0;
 		int86(0x33, &rg, &rg);
 		if (rg.x.ax != 0xffff) {
-			Aprint("Can't find mouse!");
+			Log_print("Can't find mouse!");
 			mouse_mode = MOUSE_OFF;
 		}
 	}
@@ -628,7 +628,7 @@ void Atari_Initialise(int *argc, char *argv[])
                   video_mode=atoi(argv[i]);
                   if (video_mode<0 || video_mode>3)
                   {
-                    Aprint("Invalid video mode, using default.");
+                    Log_print("Invalid video mode, using default.");
                     video_mode=0;
                   }
                 }
@@ -651,19 +651,19 @@ void Atari_Initialise(int *argc, char *argv[])
                 else {
                         if (strcmp(argv[i], "-help") == 0) {
                                 help_only = TRUE;
-                                Aprint("\t-interlace       Generate screen with interlace");
-                                Aprint("\t-LPTjoy1         Read joystick connected to LPT1");
-                                Aprint("\t-LPTjoy2         Read joystick connected to LPT2");
-                                Aprint("\t-LPTjoy3         Read joystick connected to LPT3");
-                                Aprint("\t-joyswap         Swap joysticks");
-                                Aprint("\t-video x         Set video mode:");
-                                Aprint("\t\t0 - 320x200\n\t\t1 - 320x240");
-                                Aprint("\t\t2 - 320x240, interlaced with black lines");
-                                Aprint("\t\t3 - 320x240, interlaced with darker lines (slower!)");
-                                Aprint("\t-novesa          Do not use vesa2 videomodes");
-                                Aprint("\t-vretrace        Use vertical retrace control");
-                                Aprint("\t-keyboard 0      PC keyboard layout");
-                                Aprint("\t-keyboard 1      Atari keyboard layout");
+                                Log_print("\t-interlace       Generate screen with interlace");
+                                Log_print("\t-LPTjoy1         Read joystick connected to LPT1");
+                                Log_print("\t-LPTjoy2         Read joystick connected to LPT2");
+                                Log_print("\t-LPTjoy3         Read joystick connected to LPT3");
+                                Log_print("\t-joyswap         Swap joysticks");
+                                Log_print("\t-video x         Set video mode:");
+                                Log_print("\t\t0 - 320x200\n\t\t1 - 320x240");
+                                Log_print("\t\t2 - 320x240, interlaced with black lines");
+                                Log_print("\t\t3 - 320x240, interlaced with darker lines (slower!)");
+                                Log_print("\t-novesa          Do not use vesa2 videomodes");
+                                Log_print("\t-vretrace        Use vertical retrace control");
+                                Log_print("\t-keyboard 0      PC keyboard layout");
+                                Log_print("\t-keyboard 1      Atari keyboard layout");
                         }
                         argv[j++] = argv[i];
                 }
@@ -688,7 +688,7 @@ void Atari_Initialise(int *argc, char *argv[])
         if (joy_in)
                 joystick0(&js0_centre_x, &js0_centre_y);
         if (! joy_in)
-                Aprint("Sorry, I see no joystick. Use numeric pad");
+                Log_print("Sorry, I see no joystick. Use numeric pad");
 
         /*find number of VESA2 video mode*/
         if (use_vesa)

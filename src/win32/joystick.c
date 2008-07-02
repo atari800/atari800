@@ -154,7 +154,7 @@ static BOOL CALLBACK joycallback(LPCDIDEVICEINSTANCE pdevinst, LPVOID pv)
   if (hRes < 0)
     return DIENUM_STOP;
   joyreacquire(i);
-  Aprint("joystick %d found!", i);
+  Log_print("joystick %d found!", i);
   i ++;
   return DIENUM_CONTINUE;
 }

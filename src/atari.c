@@ -229,7 +229,7 @@ void Atari800_RunEsc(UBYTE esc_code)
 	ui();
 #else /* CRASH_MENU */
 	cim_encountered = 1;
-	Aprint("Invalid ESC code %02x at address %04x", esc_code, regPC - 2);
+	Log_print("Invalid ESC code %02x at address %04x", esc_code, regPC - 2);
 #ifndef __PLUS
 	if (!Atari800_Exit(TRUE))
 		exit(0);
@@ -356,13 +356,13 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 
 	f = fopen(filename, "rb");
 	if (f == NULL) {
-		Aprint("Error loading ROM image: %s", filename);
+		Log_print("Error loading ROM image: %s", filename);
 		return FALSE;
 	}
 	len = fread(buffer, 1, nbytes, f);
 	fclose(f);
 	if (len != nbytes) {
-		Aprint("Error reading %s", filename);
+		Log_print("Error reading %s", filename);
 		return FALSE;
 	}
 	return TRUE;
@@ -463,10 +463,10 @@ int Atari800_DetectFileType(const char *filename)
 		if (header[1] == 0x8b) {
 #ifndef HAVE_LIBZ
 			fclose(fp);
-			Aprint("\"%s\" is a compressed file.", filename);
-			Aprint("This executable does not support compressed files. You can uncompress this file");
-			Aprint("with an external program that supports gzip (*.gz) files (e.g. gunzip)");
-			Aprint("and then load into this emulator.");
+			Log_print("\"%s\" is a compressed file.", filename);
+			Log_print("This executable does not support compressed files. You can uncompress this file");
+			Log_print("with an external program that supports gzip (*.gz) files (e.g. gunzip)");
+			Log_print("and then load into this emulator.");
 			return AFILE_ERROR;
 #else /* HAVE_LIBZ */
 			gzFile gzf;
@@ -593,7 +593,7 @@ int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly
 	case AFILE_STATE:
 	case AFILE_STATE_GZ:
 #ifdef BASIC
-		Aprint("State files are not supported in BASIC version");
+		Log_print("State files are not supported in BASIC version");
 		return AFILE_ERROR;
 #else
 		if (!StateSav_ReadAtariState(filename, "rb"))
@@ -693,23 +693,23 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 
 	fp = fopen(fname, "r");
 	if (fp == NULL) {
-		Aprint("User config file '%s' not found.", rtconfig_filename);
+		Log_print("User config file '%s' not found.", rtconfig_filename);
 
 #ifdef SYSTEM_WIDE_CFG_FILE
 		/* try system wide config file */
 		fname = SYSTEM_WIDE_CFG_FILE;
-		Aprint("Trying system wide config file: %s", fname);
+		Log_print("Trying system wide config file: %s", fname);
 		fp = fopen(fname, "r");
 #endif
 		if (fp == NULL) {
-			Aprint("No configuration file found, will create fresh one from scratch:");
+			Log_print("No configuration file found, will create fresh one from scratch:");
 			return FALSE;
 		}
 	}
 
 	fgets(string, sizeof(string), fp);
 
-	Aprint("Using Atari800 config file: %s\nCreated by %s", fname, string);
+	Log_print("Using Atari800 config file: %s\nCreated by %s", fname, string);
 
 	while (fgets(string, sizeof(string), fp)) {
 		char *ptr;
@@ -739,13 +739,13 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 #else
 			else if (strcmp(string, "ATARI_FILES_DIR") == 0) {
 				if (n_atari_files_dir >= MAX_DIRECTORIES)
-					Aprint("All ATARI_FILES_DIR slots used!");
+					Log_print("All ATARI_FILES_DIR slots used!");
 				else
 					Util_strlcpy(atari_files_dir[n_atari_files_dir++], ptr, FILENAME_MAX);
 			}
 			else if (strcmp(string, "SAVED_FILES_DIR") == 0) {
 				if (n_saved_files_dir >= MAX_DIRECTORIES)
-					Aprint("All SAVED_FILES_DIR slots used!");
+					Log_print("All SAVED_FILES_DIR slots used!");
 				else
 					Util_strlcpy(saved_files_dir[n_saved_files_dir++], ptr, FILENAME_MAX);
 			}
@@ -769,7 +769,7 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 
 			else if (strcmp(string, "PRINT_COMMAND") == 0) {
 				if (!Device_SetPrintCommand(ptr))
-					Aprint("Unsafe PRINT_COMMAND ignored");
+					Log_print("Unsafe PRINT_COMMAND ignored");
 			}
 
 			else if (strcmp(string, "SCREEN_REFRESH_RATIO") == 0)
@@ -820,7 +820,7 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 				else if (strcmp(ptr, "Atari 5200") == 0)
 					machine_type = MACHINE_5200;
 				else
-					Aprint("Invalid machine type: %s", ptr);
+					Log_print("Invalid machine type: %s", ptr);
 			}
 			else if (strcmp(string, "RAM_SIZE") == 0) {
 				if (strcmp(ptr, "16") == 0)
@@ -844,7 +844,7 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 				else if (strcmp(ptr, "1088") == 0)
 					ram_size = 1088;
 				else
-					Aprint("Invalid RAM size: %s", ptr);
+					Log_print("Invalid RAM size: %s", ptr);
 			}
 			else if (strcmp(string, "DEFAULT_TV_MODE") == 0) {
 				if (strcmp(ptr, "PAL") == 0)
@@ -852,7 +852,7 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 				else if (strcmp(ptr, "NTSC") == 0)
 					tv_mode = TV_NTSC;
 				else
-					Aprint("Invalid TV Mode: %s", ptr);
+					Log_print("Invalid TV Mode: %s", ptr);
 			}
 			/* Add module-specific configurations here */
 			else if (PBI_ReadConfig(string,ptr)) {
@@ -860,22 +860,22 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 			else {
 #ifdef SUPPORTS_ATARI_CONFIGURE
 				if (!Atari_Configure(string, ptr)) {
-					Aprint("Unrecognized variable or bad parameters: '%s=%s'", string, ptr);
+					Log_print("Unrecognized variable or bad parameters: '%s=%s'", string, ptr);
 				}
 #else
-				Aprint("Unrecognized variable: %s", string);
+				Log_print("Unrecognized variable: %s", string);
 #endif
 			}
 		}
 		else {
-			Aprint("Ignored config line: %s", string);
+			Log_print("Ignored config line: %s", string);
 		}
 	}
 
 	fclose(fp);
 #ifndef BASIC
 	if (was_obsolete_dir) {
-		Aprint(
+		Log_print(
 			"DISK_DIR, ROM_DIR, EXE_DIR and STATE_DIR configuration options\n"
 			"are no longer supported. Please use ATARI_FILES_DIR\n"
 			"and SAVED_FILES_DIR in your Atari800 configuration file.");
@@ -895,10 +895,10 @@ int Atari800_WriteConfig(void)
 	fp = fopen(rtconfig_filename, "w");
 	if (fp == NULL) {
 		perror(rtconfig_filename);
-		Aprint("Cannot write to config file: %s", rtconfig_filename);
+		Log_print("Cannot write to config file: %s", rtconfig_filename);
 		return FALSE;
 	}
-	Aprint("Writing config file: %s", rtconfig_filename);
+	Log_print("Writing config file: %s", rtconfig_filename);
 
 	fprintf(fp, "%s\n", ATARI_TITLE);
 	fprintf(fp, "OS/A_ROM=%s\n", atari_osa_filename);
@@ -1176,11 +1176,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 				mosaic_enabled = TRUE;
 				mosaic_maxbank = (total_ram - 48)/4 - 1;
 				if (((total_ram - 48) % 4 != 0) || (mosaic_maxbank > 0x3e) || (mosaic_maxbank < 0)) {
-					Aprint("Invalid Mosaic total RAM size");
+					Log_print("Invalid Mosaic total RAM size");
 					return FALSE;
 				}
 				if (axlon_enabled) {
-					Aprint("Axlon and Mosaic can not both be enabled, because they are incompatible");
+					Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
 					return FALSE;
 				}
 			}
@@ -1189,11 +1189,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 				int banks = ((total_ram) - 32) / 16;
 				axlon_enabled = TRUE;
 				if (((total_ram - 32) % 16 != 0) || ((banks != 8) && (banks != 16) && (banks != 32) && (banks != 64) && (banks != 128) && (banks != 256))) {
-					Aprint("Invalid Axlon total RAM size");
+					Log_print("Invalid Axlon total RAM size");
 					return FALSE;
 				}
 				if (mosaic_enabled) {
-					Aprint("Axlon and Mosaic can not both be enabled, because they are incompatible");
+					Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
 					return FALSE;
 				}
 				axlon_bankmask = banks - 1;
@@ -1214,7 +1214,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 				if (i_a) {
 					refresh_rate = Util_sscandec(argv[++i]);
 					if (refresh_rate < 1) {
-						Aprint("Invalid refresh rate, using 1");
+						Log_print("Invalid refresh rate, using 1");
 						refresh_rate = 1;
 					}
 				}
@@ -1236,41 +1236,41 @@ int Atari800_Initialise(int *argc, char *argv[])
 				if (strcmp(argv[i], "-help") == 0) {
 #ifndef __PLUS
 					help_only = TRUE;
-					Aprint("\t-config <file>   Specify Alternate Configuration File");
+					Log_print("\t-config <file>   Specify Alternate Configuration File");
 #endif
-					Aprint("\t-atari           Emulate Atari 800");
-					Aprint("\t-xl              Emulate Atari 800XL");
-					Aprint("\t-xe              Emulate Atari 130XE");
-					Aprint("\t-320xe           Emulate Atari 320XE (COMPY SHOP)");
-					Aprint("\t-rambo           Emulate Atari 320XE (RAMBO)");
-					Aprint("\t-5200            Emulate Atari 5200 Games System");
-					Aprint("\t-nobasic         Turn off Atari BASIC ROM");
-					Aprint("\t-basic           Turn on Atari BASIC ROM");
-					Aprint("\t-pal             Enable PAL TV mode");
-					Aprint("\t-ntsc            Enable NTSC TV mode");
-					Aprint("\t-osa_rom <file>  Load OS A ROM from file");
-					Aprint("\t-osb_rom <file>  Load OS B ROM from file");
-					Aprint("\t-xlxe_rom <file> Load XL/XE ROM from file");
-					Aprint("\t-5200_rom <file> Load 5200 ROM from file");
-					Aprint("\t-basic_rom <fil> Load BASIC ROM from file");
-					Aprint("\t-cart <file>     Install cartridge (raw or CART format)");
-					Aprint("\t-run <file>      Run Atari program (COM, EXE, XEX, BAS, LST)");
+					Log_print("\t-atari           Emulate Atari 800");
+					Log_print("\t-xl              Emulate Atari 800XL");
+					Log_print("\t-xe              Emulate Atari 130XE");
+					Log_print("\t-320xe           Emulate Atari 320XE (COMPY SHOP)");
+					Log_print("\t-rambo           Emulate Atari 320XE (RAMBO)");
+					Log_print("\t-5200            Emulate Atari 5200 Games System");
+					Log_print("\t-nobasic         Turn off Atari BASIC ROM");
+					Log_print("\t-basic           Turn on Atari BASIC ROM");
+					Log_print("\t-pal             Enable PAL TV mode");
+					Log_print("\t-ntsc            Enable NTSC TV mode");
+					Log_print("\t-osa_rom <file>  Load OS A ROM from file");
+					Log_print("\t-osb_rom <file>  Load OS B ROM from file");
+					Log_print("\t-xlxe_rom <file> Load XL/XE ROM from file");
+					Log_print("\t-5200_rom <file> Load 5200 ROM from file");
+					Log_print("\t-basic_rom <fil> Load BASIC ROM from file");
+					Log_print("\t-cart <file>     Install cartridge (raw or CART format)");
+					Log_print("\t-run <file>      Run Atari program (COM, EXE, XEX, BAS, LST)");
 #ifndef BASIC
-					Aprint("\t-state <file>    Load saved-state file");
-					Aprint("\t-refresh <rate>  Specify screen refresh rate");
+					Log_print("\t-state <file>    Load saved-state file");
+					Log_print("\t-refresh <rate>  Specify screen refresh rate");
 #endif
-					Aprint("\t-nopatch         Don't patch SIO routine in OS");
-					Aprint("\t-nopatchall      Don't patch OS at all, H: device won't work");
-					Aprint("\t-a               Use OS A");
-					Aprint("\t-b               Use OS B");
-					Aprint("\t-c               Enable RAM between 0xc000 and 0xcfff in Atari 800");
-					Aprint("\t-axlon <n>       Use Atari 800 Axlon memory expansion: <n> k total RAM");
-					Aprint("\t-axlon0f         Use Axlon shadow at 0x0fc0-0x0fff");
-					Aprint("\t-mosaic <n>      Use 400/800 Mosaic memory expansion: <n> k total RAM");
+					Log_print("\t-nopatch         Don't patch SIO routine in OS");
+					Log_print("\t-nopatchall      Don't patch OS at all, H: device won't work");
+					Log_print("\t-a               Use OS A");
+					Log_print("\t-b               Use OS B");
+					Log_print("\t-c               Enable RAM between 0xc000 and 0xcfff in Atari 800");
+					Log_print("\t-axlon <n>       Use Atari 800 Axlon memory expansion: <n> k total RAM");
+					Log_print("\t-axlon0f         Use Axlon shadow at 0x0fc0-0x0fff");
+					Log_print("\t-mosaic <n>      Use 400/800 Mosaic memory expansion: <n> k total RAM");
 #ifdef R_IO_DEVICE
-					Aprint("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
+					Log_print("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
 #endif
-					Aprint("\t-v               Show version/release number");
+					Log_print("\t-v               Show version/release number");
 				}
 
 				/* copy this option for platform/module specific evaluation */
@@ -1340,12 +1340,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 	for (i = 1; i < *argc; i++) {
 		if (j > 8) {
 			/* The remaining arguments are not necessary disk images, but ignore them... */
-			Aprint("Too many disk image filenames on the command line (max. 8).");
+			Log_print("Too many disk image filenames on the command line (max. 8).");
 			break;
 		}
 		switch (Atari800_OpenFile(argv[i], i == 1, j, FALSE)) {
 		case AFILE_ERROR:
-			Aprint("Error opening \"%s\"", argv[i]);
+			Log_print("Error opening \"%s\"", argv[i]);
 			break;
 		case AFILE_ATR:
 		case AFILE_XFD:
@@ -1363,7 +1363,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	if (rom_filename) {
 		int r = CART_Insert(rom_filename);
 		if (r < 0) {
-			Aprint("Error inserting cartridge \"%s\": %s", rom_filename,
+			Log_print("Error inserting cartridge \"%s\": %s", rom_filename,
 			r == CART_CANT_OPEN ? "Can't open file" :
 			r == CART_BAD_FORMAT ? "Bad format" :
 			r == CART_BAD_CHECKSUM ? "Bad checksum" :
@@ -1371,7 +1371,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		}
 		if (r > 0) {
 #ifdef BASIC
-			Aprint("Raw cartridge images not supported in BASIC version!");
+			Log_print("Raw cartridge images not supported in BASIC version!");
 #else /* BASIC */
 
 #ifndef __PLUS
@@ -2115,7 +2115,7 @@ void MainStateRead(void)
 	default:
 		machine_type = MACHINE_XLXE;
 		ram_size = 64;
-		Aprint("Warning: Bad machine type read in from state save, defaulting to 800 XL");
+		Log_print("Warning: Bad machine type read in from state save, defaulting to 800 XL");
 		break;
 	}
 

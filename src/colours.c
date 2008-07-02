@@ -284,7 +284,7 @@ void Palette_SetVideoSystem(int mode) {
 	}
 	else {
 		Atari800_Exit(FALSE);
-		Aprint("Interal error: Invalid tv_mode\n");
+		Log_print("Interal error: Invalid tv_mode\n");
 		exit(1);
 	}
 }
@@ -372,18 +372,18 @@ void Palette_Initialise(int *argc, char *argv[])
 			Palette_Read(argv[++i], colortable_pal);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Aprint("\t-paletten <file> Use external NTSC palette");
-				Aprint("\t-palettep <file> Use external PAL palette");
-				Aprint("\t-blackn <0-255>  Set NTSC palette black level");
-				Aprint("\t-blackp <0-255>  Set PAL palette black level");
-				Aprint("\t-whiten <0-255>  Set NTSC palette white level");
-				Aprint("\t-whitep <0-255>  Set PAL palette white level");
-				Aprint("\t-colorsn <num>   Set NTSC palette colors saturation");
-				Aprint("\t-colorsp <num>   Set PAL palette colors saturation");
-				Aprint("\t-genpaln         Generate artificial NTSC palette");
-				Aprint("\t-genpalp         Generate artificial PAL palette");
-				Aprint("\t-colshiftn <num> Set NTSC palette color shift (-genpaln only)");
-				Aprint("\t-colshiftp <num> Set PAL palette color shift (-genpalp only)");
+				Log_print("\t-paletten <file> Use external NTSC palette");
+				Log_print("\t-palettep <file> Use external PAL palette");
+				Log_print("\t-blackn <0-255>  Set NTSC palette black level");
+				Log_print("\t-blackp <0-255>  Set PAL palette black level");
+				Log_print("\t-whiten <0-255>  Set NTSC palette white level");
+				Log_print("\t-whitep <0-255>  Set PAL palette white level");
+				Log_print("\t-colorsn <num>   Set NTSC palette colors saturation");
+				Log_print("\t-colorsp <num>   Set PAL palette colors saturation");
+				Log_print("\t-genpaln         Generate artificial NTSC palette");
+				Log_print("\t-genpalp         Generate artificial PAL palette");
+				Log_print("\t-colshiftn <num> Set NTSC palette color shift (-genpaln only)");
+				Log_print("\t-colshiftp <num> Set PAL palette color shift (-genpalp only)");
 			}
 			argv[j++] = argv[i];
 		}

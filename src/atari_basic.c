@@ -39,7 +39,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 int Atari_Exit(int run_monitor)
 {
-	Aflushlog();
+	Log_flushlog();
 
 	if (run_monitor && monitor())
 		return TRUE;
