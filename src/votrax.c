@@ -18,10 +18,10 @@ of Atari800, MAME and PinMAME. */
 
 **************************************************************************
 
-VOTRAXSC01_sh_start  - Start emulation, load samples from Votrax subdirectory
-VOTRAXSC01_sh_stop   - End emulation, free memory used for samples
-votraxsc01_w         - Write data to votrax port
-votraxsc01_status_r  - Return busy status (1 = busy)
+Votrax_Start         - Start emulation, load samples from Votrax subdirectory
+Votrax_Stop          - End emulation, free memory used for samples
+Votrax_PutByte       - Write data to votrax port
+Votrax_GetStatus     - Return busy status (1 = busy)
 
 **************************************************************************/
 
@@ -48,19 +48,21 @@ static struct {
 	int actPhoneme;
 	int actIntonation;
 
-	struct VOTRAXSC01interface *intf;
+	struct Votrax_interface *intf;
 
-	INT16* pActPos;
+	SWORD* pActPos;
 	int	iRemainingSamples;
 
-	INT16 *lpBuffer;
-	INT16* pBufferPos;
+	SWORD *lpBuffer;
+	SWORD* pBufferPos;
 
 	int   iSamplesInBuffer;
 	int	  iDelay;  /* a count of samples to output '0' in a Delay state */
 
 } votraxsc01_locals;
 
+#define INT16 SWORD
+#define UINT16 UWORD
 #include "vtxsmpls.inc"
 
 #if VERBOSE
@@ -88,7 +90,7 @@ static const char *PhonemeNames[65] =
 #define PT_FS 6
 
 
-int sample_rate[4] = {22050, 22050, 22050, 22050};
+static int sample_rate[4] = {22050, 22050, 22050, 22050};
 
 /* converts milliseconds to a count of samples */
 static int time_to_samples(int ms)
@@ -99,7 +101,7 @@ static int time_to_samples(int ms)
 static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 {
 	int iNextRemainingSamples;
-	INT16 *pNextPos, *lpHelp;
+	SWORD *pNextPos, *lpHelp;
 
 	int iFadeOutSamples;
 	int iFadeOutPos;
@@ -113,7 +115,7 @@ static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 	/* dwCount is the length of samples to produce in ms from iLengthms */
 	int dwCount, i;
 
-	INT16 data;
+	SWORD data;
 
 	AdditionalSamples = 0;
 	/* some phonenemes have a SecondStart */
@@ -133,7 +135,7 @@ static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 	votraxsc01_locals.iSamplesInBuffer = dwCount+AdditionalSamples;
 
 	if ( AdditionalSamples )
-		memcpy(votraxsc01_locals.lpBuffer, PhonemeData[votraxsc01_locals.actPhoneme].lpStart[votraxsc01_locals.actIntonation], AdditionalSamples*sizeof(INT16));
+		memcpy(votraxsc01_locals.lpBuffer, PhonemeData[votraxsc01_locals.actPhoneme].lpStart[votraxsc01_locals.actIntonation], AdditionalSamples*sizeof(SWORD));
 
 	lpHelp = votraxsc01_locals.lpBuffer + AdditionalSamples;
 
@@ -266,7 +268,7 @@ static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 				votraxsc01_locals.pActPos = PhonemeData[votraxsc01_locals.actPhoneme].lpStart[votraxsc01_locals.actIntonation];
 			}
 
-			data = (INT16) (*votraxsc01_locals.pActPos++ * dFadeOut);
+			data = (SWORD) (*votraxsc01_locals.pActPos++ * dFadeOut);
 
 			votraxsc01_locals.iRemainingSamples--;
 			iFadeOutPos++;
@@ -287,7 +289,7 @@ static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 				pNextPos = PhonemeData[nextPhoneme].lpStart[nextIntonation];
 			}
 
-			data += (INT16) (*pNextPos++ * dFadeIn);
+			data += (SWORD) (*pNextPos++ * dFadeIn);
 			
 			iNextRemainingSamples--;
 		}
@@ -302,7 +304,7 @@ static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 	votraxsc01_locals.iRemainingSamples = iNextRemainingSamples;
 }
 
-void votraxsc01_w(UBYTE data)
+void Votrax_PutByte(UBYTE data)
 {
 	int Phoneme, Intonation;
 
@@ -324,27 +326,27 @@ void votraxsc01_w(UBYTE data)
 	if ( !votraxsc01_locals.busy ) 
 	{
 		votraxsc01_locals.busy = 1;
-		if ( votraxsc01_locals.intf->BusyCallback[0] )
-			(*votraxsc01_locals.intf->BusyCallback[0])(votraxsc01_locals.busy);
+		if ( votraxsc01_locals.intf->BusyCallback )
+			(*votraxsc01_locals.intf->BusyCallback)(votraxsc01_locals.busy);
 	}
 
 	votraxsc01_locals.actPhoneme = Phoneme;
 	votraxsc01_locals.actIntonation = Intonation;
 }
 
-UBYTE votraxsc01_status_r(void)
+UBYTE Votrax_GetStatus(void)
 {
 	return votraxsc01_locals.busy;
 }
 
-void Votrax_Update(int num, INT16 *buffer, int length)
+void Votrax_Update(int num, SWORD *buffer, int length)
 {
 	int samplesToCopy;
 
 	/* if it is a different intonation */
 	if ( num!=votraxsc01_locals.actIntonation ) {
 		/* clear buffer */
-		memset(buffer, 0x00, length*sizeof(INT16));
+		memset(buffer, 0x00, length*sizeof(SWORD));
 		return;
 	}
 
@@ -353,7 +355,7 @@ void Votrax_Update(int num, INT16 *buffer, int length)
 		if ( votraxsc01_locals.iDelay ) {
 			samplesToCopy = (length<=votraxsc01_locals.iDelay)?length:votraxsc01_locals.iDelay;
 
-			memset(buffer, 0x00, samplesToCopy*sizeof(INT16));
+			memset(buffer, 0x00, samplesToCopy*sizeof(SWORD));
 			buffer += samplesToCopy;
 
 			votraxsc01_locals.iDelay -= samplesToCopy;
@@ -364,8 +366,8 @@ void Votrax_Update(int num, INT16 *buffer, int length)
 			if ( votraxsc01_locals.busy ) {
 				/* busy -> idle */
 				votraxsc01_locals.busy = 0;
-				if ( votraxsc01_locals.intf->BusyCallback[0] )
-					(*votraxsc01_locals.intf->BusyCallback[0])(votraxsc01_locals.busy);
+				if ( votraxsc01_locals.intf->BusyCallback )
+					(*votraxsc01_locals.intf->BusyCallback)(votraxsc01_locals.busy);
 			}
 
 			if ( votraxsc01_locals.iRemainingSamples==0 ) {
@@ -383,7 +385,7 @@ void Votrax_Update(int num, INT16 *buffer, int length)
 			/* if there aren't enough remaining, reduce the amount */
 			samplesToCopy = (length<=votraxsc01_locals.iRemainingSamples)?length:votraxsc01_locals.iRemainingSamples;
 
-			memcpy(buffer, votraxsc01_locals.pActPos, samplesToCopy*sizeof(INT16));
+			memcpy(buffer, votraxsc01_locals.pActPos, samplesToCopy*sizeof(SWORD));
 			buffer += samplesToCopy;
 
 			votraxsc01_locals.pActPos += samplesToCopy;
@@ -395,7 +397,7 @@ void Votrax_Update(int num, INT16 *buffer, int length)
 		else {
 			samplesToCopy = (length<=votraxsc01_locals.iSamplesInBuffer)?length:votraxsc01_locals.iSamplesInBuffer;
 
-			memcpy(buffer, votraxsc01_locals.pBufferPos, samplesToCopy*sizeof(INT16));
+			memcpy(buffer, votraxsc01_locals.pBufferPos, samplesToCopy*sizeof(SWORD));
 			buffer += samplesToCopy;
 
 			votraxsc01_locals.pBufferPos += samplesToCopy;
@@ -406,14 +408,14 @@ void Votrax_Update(int num, INT16 *buffer, int length)
 	}
 }
 
-int VOTRAXSC01_sh_start(void *sound_interface)
+int Votrax_Start(void *sound_interface)
 {
 	int i, buffer_size;
 	/* clear local variables */
 	memset(&votraxsc01_locals, 0x00, sizeof votraxsc01_locals);
 
 	/* copy interface */
-	votraxsc01_locals.intf = (struct VOTRAXSC01interface *)sound_interface;
+	votraxsc01_locals.intf = (struct Votrax_interface *)sound_interface;
 
 	votraxsc01_locals.actPhoneme = 0x3f;
 
@@ -428,12 +430,12 @@ int VOTRAXSC01_sh_start(void *sound_interface)
 		size = dwCount + AdditionalSamples;
 		if (size > buffer_size)  buffer_size = size;
 	}
-	votraxsc01_locals.lpBuffer = (INT16*) Util_malloc(buffer_size*sizeof(INT16));
+	votraxsc01_locals.lpBuffer = (SWORD*) Util_malloc(buffer_size*sizeof(SWORD));
 	PrepareVoiceData(votraxsc01_locals.actPhoneme, votraxsc01_locals.actIntonation);
 	return 0;
 }
 
-void VOTRAXSC01_sh_stop(void)
+void Votrax_Stop(void)
 {
 	if ( votraxsc01_locals.lpBuffer ) {
 		free(votraxsc01_locals.lpBuffer);
@@ -441,7 +443,7 @@ void VOTRAXSC01_sh_stop(void)
 	}
 }
 
-int votraxsc01_samples(int currentP, int nextP, int cursamples)
+int Votrax_Samples(int currentP, int nextP, int cursamples)
 {
 	int AdditionalSamples = 0;
 	int dwCount;

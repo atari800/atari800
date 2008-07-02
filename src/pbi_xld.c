@@ -76,7 +76,7 @@ static UBYTE PIO_Command_Frame(void);
 /* Votrax */
 static double ratio;
 static int bit16;
-#define VOTRAX_BLOCK_SIZE 1024 
+#define VTRX_BLOCK_SIZE 1024
 SWORD *temp_votrax_buffer = NULL;
 SWORD *votrax_buffer = NULL;
 static int votrax_busy = FALSE;
@@ -94,7 +94,7 @@ static int samples_per_frame;
 #define D(a) do{}while(0)
 #endif
 
-#define VOTRAX_RATE 24500
+#define VTRX_RATE 24500
 
 static void init_xld_v(void)
 {
@@ -214,7 +214,7 @@ void PBI_XLD_D1_PutByte(UWORD addr, UBYTE byte)
 	if ((addr & ~3) == 0xd104)  {
 		/* XLD disk strobe line */
 		D(printf("votrax write:%4x\n",addr));
-		votrax_sync_samples = (int)((1.0/ratio)*(double)votraxsc01_samples(votrax_written_byte, votrax_latch & 0x3f, votrax_sync_samples));
+		votrax_sync_samples = (int)((1.0/ratio)*(double)Votrax_Samples(votrax_written_byte, votrax_latch & 0x3f, votrax_sync_samples));
 		votrax_written = TRUE;
 		votrax_written_byte = votrax_latch & 0x3f;
 		if (!votrax_busy) {
@@ -225,7 +225,7 @@ void PBI_XLD_D1_PutByte(UWORD addr, UBYTE byte)
 	}
 	else if ((addr & ~3) == 0xd100 )  {
 		/* votrax phoneme+irq-enable latch */
-		if ( !(votrax_latch & 0x80) && (byte & 0x80) && (!votraxsc01_status_r())) {
+		if ( !(votrax_latch & 0x80) && (byte & 0x80) && (!Votrax_GetStatus())) {
 			/* IRQ disabled -> enabled, and votrax idle: generate IRQ */
 			D(printf("votrax IRQ generated: IRQ enable changed and idle\n"));
 			GenerateIRQ();
@@ -696,7 +696,7 @@ static UBYTE PIO_Command_Frame(void)
 /* called from Pokey_sound_init */
 void PBI_XLD_V_Init(int playback_freq, int n_pokeys, int b16)
 {
-	static struct VOTRAXSC01interface vi;
+	static struct Votrax_interface vi;
 	int temp_votrax_buffer_size;
 	bit16 = b16;
 	dsprate = playback_freq;
@@ -708,16 +708,16 @@ void PBI_XLD_V_Init(int playback_freq, int n_pokeys, int b16)
 		return;
 	}
 	vi.num = 1;
-	vi.BusyCallback[0] = votrax_busy_callback_async;
-	VOTRAXSC01_sh_stop();
-	VOTRAXSC01_sh_start((void *)&vi);
+	vi.BusyCallback = votrax_busy_callback_async;
+	Votrax_Stop();
+	Votrax_Start((void *)&vi);
 	samples_per_frame = dsprate/(tv_mode == TV_PAL ? 50 : 60);
-	ratio = (double)VOTRAX_RATE/(double)dsprate;
-	temp_votrax_buffer_size = (int)(VOTRAX_BLOCK_SIZE*ratio + 10); /* +10 .. little extra? */
+	ratio = (double)VTRX_RATE/(double)dsprate;
+	temp_votrax_buffer_size = (int)(VTRX_BLOCK_SIZE*ratio + 10); /* +10 .. little extra? */
 	free(temp_votrax_buffer);
 	temp_votrax_buffer = (SWORD *)Util_malloc(temp_votrax_buffer_size*sizeof(SWORD));
 	free(votrax_buffer);
-	votrax_buffer = (SWORD *)Util_malloc(VOTRAX_BLOCK_SIZE*sizeof(SWORD));
+	votrax_buffer = (SWORD *)Util_malloc(VTRX_BLOCK_SIZE*sizeof(SWORD));
 }
 
 /* process votrax and interpolate samples */
@@ -847,15 +847,15 @@ void PBI_XLD_V_Process(void *sndbuffer, int sndn)
 
 	if(votrax_written) {
 		votrax_written = FALSE;
-		votraxsc01_w(votrax_written_byte);
+		Votrax_PutByte(votrax_written_byte);
 	}
 	while (sndn > 0) {
-		int amount = ((sndn > VOTRAX_BLOCK_SIZE) ? VOTRAX_BLOCK_SIZE : sndn);
+		int amount = ((sndn > VTRX_BLOCK_SIZE) ? VTRX_BLOCK_SIZE : sndn);
 		votrax_process(votrax_buffer, amount, temp_votrax_buffer);
 		if (bit16) mix((SWORD *)sndbuffer, votrax_buffer, amount, 128/4);
 		else mix8((UBYTE *)sndbuffer, votrax_buffer, amount, 128/4);
-		sndbuffer = (char *) sndbuffer + VOTRAX_BLOCK_SIZE*(bit16 ? 2 : 1)*((num_pokeys == 2) ? 2: 1);
-		sndn -= VOTRAX_BLOCK_SIZE;
+		sndbuffer = (char *) sndbuffer + VTRX_BLOCK_SIZE*(bit16 ? 2 : 1)*((num_pokeys == 2) ? 2: 1);
+		sndn -= VTRX_BLOCK_SIZE;
 	}
 }
 

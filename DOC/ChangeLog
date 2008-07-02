@@ -17,6 +17,7 @@ Aflushlog -> Log_flushlog.
 * compfile.[ch], sio.c, ui.c rename CompressedFile_ to CompFile_ so that it
 matches the filename.
 * xep80_fonts.[ch] xep80.c: rename externals with XEP80_Fonts_.
+* votrax.[ch], pbi_xld.c: rename externals with Votrax_, UINT16 -> SWORD.
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>

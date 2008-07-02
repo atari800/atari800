@@ -1,28 +1,23 @@
 #ifndef VOTRAX_H
 #define VOTRAX_H
 
-#define MAX_VOTRAXSC01 1
 #include "atari.h"
 
-#define INT16 SWORD
-#define UINT16 UWORD
-#define INLINE
+typedef void (*Votrax_BusyCallBack)(int);
 
-typedef void (*VOTRAXSC01_BUSYCALLBACK)(int);
-
-struct VOTRAXSC01interface
+struct Votrax_interface
 {
         int num;	/* total number of chips */
-	VOTRAXSC01_BUSYCALLBACK BusyCallback[MAX_VOTRAXSC01];	/* callback function when busy signal changes */
+	Votrax_BusyCallBack BusyCallback;	/* callback function when busy signal changes */
 };
 
-int VOTRAXSC01_sh_start(void *sound_interface);
-void VOTRAXSC01_sh_stop(void);
+int Votrax_Start(void *sound_interface);
+void Votrax_Stop(void);
 
-void votraxsc01_w(UBYTE data);
-UBYTE votraxsc01_status_r(void);
+void Votrax_PutByte(UBYTE data);
+UBYTE Votrax_GetStatus(void);
 
-void Votrax_Update(int num, INT16 *buffer, int length);
-int votraxsc01_samples(int currentP, int nextP, int cursamples);
+void Votrax_Update(int num, SWORD *buffer, int length);
+int Votrax_Samples(int currentP, int nextP, int cursamples);
 
 #endif
