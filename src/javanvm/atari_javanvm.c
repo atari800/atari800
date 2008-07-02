@@ -735,6 +735,7 @@ int Atari_Keyboard(void)
 	return AKEY_NONE;
 }
 
+#ifdef SOUND
 static void SoundSetup(void)
 {
 	int dsprate = 48000;
@@ -759,6 +760,7 @@ void Sound_Reinit(void)
 {
 	SoundSetup();
 }
+#endif /* SOUND */
 
 void Atari_Initialise(int *argc, char *argv[])
 {
@@ -789,7 +791,9 @@ void Atari_Initialise(int *argc, char *argv[])
         config[JAVANVM_InitGraphicsATARI_LEFT_MARGIN] = 24;
 		JAVANVM_InitGraphics((void *)&config[0]);
 		JAVANVM_InitPalette((void *)&colortable[0]);
+#ifdef SOUND
 		SoundSetup();
+#endif
 	}
 	return;
 }

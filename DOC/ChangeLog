@@ -1,3 +1,7 @@
+2008-07-02  Perry McFarlane  <perry_m@fastmail.fm>
+* javanvm/atari_javanvm.c: compile without SOUND
+
+
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>
 * atari.c, atari_sdl.c, configure.ac, javanvm/atari800.java,
 javanvm/atari_javanvm.c, pokeysnd.c, sound.h, ui.c, win32/sound.c:
