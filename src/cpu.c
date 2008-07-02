@@ -2362,36 +2362,36 @@ void CPU_Reset(void)
 
 void CpuStateSave(UBYTE SaveVerbose)
 {
-	SaveUBYTE(&regA, 1);
+	StateSav_SaveUBYTE(&regA, 1);
 
 	CPU_GetStatus();	/* Make sure flags are all updated */
-	SaveUBYTE(&regP, 1);
+	StateSav_SaveUBYTE(&regP, 1);
 
-	SaveUBYTE(&regS, 1);
-	SaveUBYTE(&regX, 1);
-	SaveUBYTE(&regY, 1);
-	SaveUBYTE(&IRQ, 1);
+	StateSav_SaveUBYTE(&regS, 1);
+	StateSav_SaveUBYTE(&regX, 1);
+	StateSav_SaveUBYTE(&regY, 1);
+	StateSav_SaveUBYTE(&IRQ, 1);
 
 	MemStateSave(SaveVerbose);
 
-	SaveUWORD(&regPC, 1);
+	StateSav_SaveUWORD(&regPC, 1);
 }
 
 void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 {
-	ReadUBYTE(&regA, 1);
+	StateSav_ReadUBYTE(&regA, 1);
 
-	ReadUBYTE(&regP, 1);
+	StateSav_ReadUBYTE(&regP, 1);
 	CPU_PutStatus();	/* Make sure flags are all updated */
 
-	ReadUBYTE(&regS, 1);
-	ReadUBYTE(&regX, 1);
-	ReadUBYTE(&regY, 1);
-	ReadUBYTE(&IRQ, 1);
+	StateSav_ReadUBYTE(&regS, 1);
+	StateSav_ReadUBYTE(&regX, 1);
+	StateSav_ReadUBYTE(&regY, 1);
+	StateSav_ReadUBYTE(&IRQ, 1);
 
 	MemStateRead(SaveVerbose, StateVersion);
 
-	ReadUWORD(&regPC, 1);
+	StateSav_ReadUWORD(&regPC, 1);
 }
 
 #endif

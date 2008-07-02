@@ -1091,7 +1091,7 @@ static void SaveState(void)
 		/* Save true XEP80 state */
 		Atari_xep80 = saved_xep80;
 #endif
-		result = SaveAtariState(state_filename, "wb", TRUE);
+		result = StateSav_SaveAtariState(state_filename, "wb", TRUE);
 #ifdef XEP80_EMULATION
 		Atari_xep80 = FALSE;
 #endif
@@ -1104,7 +1104,7 @@ static void LoadState(void)
 {
 	if (ui_driver->fGetLoadFilename(state_filename, saved_files_dir, n_saved_files_dir)) {
 		ui_driver->fMessage("Please wait while loading...", 0);
-		if (!ReadAtariState(state_filename, "rb"))
+		if (!StateSav_ReadAtariState(state_filename, "rb"))
 			CantLoad(state_filename);
 	}
 #ifdef XEP80_EMULATION

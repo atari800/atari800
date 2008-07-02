@@ -278,16 +278,16 @@ void PBI_D7_PutByte(UWORD addr, UBYTE byte)
 
 void PBIStateSave(void)
 {
-	SaveUBYTE(&D1FF_LATCH, 1);
-	SaveINT(&PBI_D6D7ram, 1);
-	SaveINT(&PBI_IRQ, 1);
+	StateSav_SaveUBYTE(&D1FF_LATCH, 1);
+	StateSav_SaveINT(&PBI_D6D7ram, 1);
+	StateSav_SaveINT(&PBI_IRQ, 1);
 }
 
 void PBIStateRead(void)
 {
-	ReadUBYTE(&D1FF_LATCH, 1);
-	ReadINT(&PBI_D6D7ram, 1);
-	ReadINT(&PBI_IRQ, 1);
+	StateSav_ReadUBYTE(&D1FF_LATCH, 1);
+	StateSav_ReadINT(&PBI_D6D7ram, 1);
+	StateSav_ReadINT(&PBI_IRQ, 1);
 }
 
 

@@ -767,10 +767,10 @@ void CARTStateRead(void)
 
 	/* Read the cart type from the file.  If there is no cart type, becaused we have
 	   reached the end of the file, this will just default to CART_NONE */
-	ReadINT(&savedCartType, 1);
+	StateSav_ReadINT(&savedCartType, 1);
 	if (savedCartType != CART_NONE) {
 		char filename[FILENAME_MAX];
-		ReadFNAME(filename);
+		StateSav_ReadFNAME(filename);
 		if (filename[0]) {
 			/* Insert the cartridge... */
 			if (CART_Insert(filename) >= 0) {
@@ -785,9 +785,9 @@ void CARTStateRead(void)
 void CARTStateSave(void)
 {
 	/* Save the cartridge type, or CART_NONE if there isn't one...*/
-	SaveINT(&cart_type, 1);
+	StateSav_SaveINT(&cart_type, 1);
 	if (cart_type != CART_NONE) {
-		SaveFNAME(cart_filename);
+		StateSav_SaveFNAME(cart_filename);
 	}
 }
 

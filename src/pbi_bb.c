@@ -274,31 +274,31 @@ void PBI_BB_Frame(void)
 
 void PBI_BBStateSave(void)
 {
-	SaveINT(&PBI_BB_enabled, 1);
+	StateSav_SaveINT(&PBI_BB_enabled, 1);
 	if (PBI_BB_enabled) {
-		SaveFNAME(bb_scsi_disk_filename);
-		SaveFNAME(bb_rom_filename);
+		StateSav_SaveFNAME(bb_scsi_disk_filename);
+		StateSav_SaveFNAME(bb_rom_filename);
 
-		SaveINT(&bb_ram_bank_offset, 1);
-		SaveUBYTE(bb_ram, BB_RAM_SIZE);
-		SaveUBYTE(&bb_rom_bank, 1);
-		SaveINT(&bb_rom_high_bit, 1);
-		SaveUBYTE(&bb_PCR, 1);
+		StateSav_SaveINT(&bb_ram_bank_offset, 1);
+		StateSav_SaveUBYTE(bb_ram, BB_RAM_SIZE);
+		StateSav_SaveUBYTE(&bb_rom_bank, 1);
+		StateSav_SaveINT(&bb_rom_high_bit, 1);
+		StateSav_SaveUBYTE(&bb_PCR, 1);
 	}
 }
 
 void PBI_BBStateRead(void)
 {
-	ReadINT(&PBI_BB_enabled, 1);
+	StateSav_ReadINT(&PBI_BB_enabled, 1);
 	if (PBI_BB_enabled) {
-		ReadFNAME(bb_scsi_disk_filename);
-		ReadFNAME(bb_rom_filename);
+		StateSav_ReadFNAME(bb_scsi_disk_filename);
+		StateSav_ReadFNAME(bb_rom_filename);
 		init_bb();
-		ReadINT(&bb_ram_bank_offset, 1);
-		ReadUBYTE(bb_ram, BB_RAM_SIZE);
-		ReadUBYTE(&bb_rom_bank, 1);
-		ReadINT(&bb_rom_high_bit, 1);
-		ReadUBYTE(&bb_PCR, 1);
+		StateSav_ReadINT(&bb_ram_bank_offset, 1);
+		StateSav_ReadUBYTE(bb_ram, BB_RAM_SIZE);
+		StateSav_ReadUBYTE(&bb_rom_bank, 1);
+		StateSav_ReadINT(&bb_rom_high_bit, 1);
+		StateSav_ReadUBYTE(&bb_PCR, 1);
 	}
 }
 

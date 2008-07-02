@@ -186,41 +186,41 @@ void PIAStateSave(void)
 	else if (ram_size == RAM_320_COMPY_SHOP)
 		Ram256 = 2;
 
-	SaveUBYTE( &PACTL, 1 );
-	SaveUBYTE( &PBCTL, 1 );
-	SaveUBYTE( &PORTA, 1 );
-	SaveUBYTE( &PORTB, 1 );
+	StateSav_SaveUBYTE( &PACTL, 1 );
+	StateSav_SaveUBYTE( &PBCTL, 1 );
+	StateSav_SaveUBYTE( &PORTA, 1 );
+	StateSav_SaveUBYTE( &PORTB, 1 );
 
-	SaveINT( &xe_bank, 1 );
-	SaveINT( &selftest_enabled, 1 );
-	SaveINT( &Ram256, 1 );
+	StateSav_SaveINT( &xe_bank, 1 );
+	StateSav_SaveINT( &selftest_enabled, 1 );
+	StateSav_SaveINT( &Ram256, 1 );
 
-	SaveINT( &cartA0BF_enabled, 1 );
+	StateSav_SaveINT( &cartA0BF_enabled, 1 );
 
-	SaveUBYTE( &PORTA_mask, 1 );
-	SaveUBYTE( &PORTB_mask, 1 );
+	StateSav_SaveUBYTE( &PORTA_mask, 1 );
+	StateSav_SaveUBYTE( &PORTB_mask, 1 );
 }
 
 void PIAStateRead(void)
 {
 	int Ram256 = 0;
 
-	ReadUBYTE( &PACTL, 1 );
-	ReadUBYTE( &PBCTL, 1 );
-	ReadUBYTE( &PORTA, 1 );
-	ReadUBYTE( &PORTB, 1 );
+	StateSav_ReadUBYTE( &PACTL, 1 );
+	StateSav_ReadUBYTE( &PBCTL, 1 );
+	StateSav_ReadUBYTE( &PORTA, 1 );
+	StateSav_ReadUBYTE( &PORTB, 1 );
 
-	ReadINT( &xe_bank, 1 );
-	ReadINT( &selftest_enabled, 1 );
-	ReadINT( &Ram256, 1 );
+	StateSav_ReadINT( &xe_bank, 1 );
+	StateSav_ReadINT( &selftest_enabled, 1 );
+	StateSav_ReadINT( &Ram256, 1 );
 
 	if (Ram256 == 1 && machine_type == MACHINE_XLXE && ram_size == RAM_320_COMPY_SHOP)
 		ram_size = RAM_320_RAMBO;
 
-	ReadINT( &cartA0BF_enabled, 1 );
+	StateSav_ReadINT( &cartA0BF_enabled, 1 );
 
-	ReadUBYTE( &PORTA_mask, 1 );
-	ReadUBYTE( &PORTB_mask, 1 );
+	StateSav_ReadUBYTE( &PORTA_mask, 1 );
+	StateSav_ReadUBYTE( &PORTB_mask, 1 );
 }
 
 #endif /* BASIC */

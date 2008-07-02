@@ -4164,52 +4164,52 @@ case we have cpu2antic_ptr[WSYNC_C+1]-1 = 8 and in the 2nd =12  */
 
 void AnticStateSave(void)
 {
-	SaveUBYTE(&DMACTL, 1);
-	SaveUBYTE(&CHACTL, 1);
-	SaveUBYTE(&HSCROL, 1);
-	SaveUBYTE(&VSCROL, 1);
-	SaveUBYTE(&PMBASE, 1);
-	SaveUBYTE(&CHBASE, 1);
-	SaveUBYTE(&NMIEN, 1);
-	SaveUBYTE(&NMIST, 1);
-	SaveUBYTE(&IR, 1);
-	SaveUBYTE(&anticmode, 1);
-	SaveUBYTE(&dctr, 1);
-	SaveUBYTE(&lastline, 1);
-	SaveUBYTE(&need_dl, 1);
-	SaveUBYTE(&vscrol_off, 1);
+	StateSav_SaveUBYTE(&DMACTL, 1);
+	StateSav_SaveUBYTE(&CHACTL, 1);
+	StateSav_SaveUBYTE(&HSCROL, 1);
+	StateSav_SaveUBYTE(&VSCROL, 1);
+	StateSav_SaveUBYTE(&PMBASE, 1);
+	StateSav_SaveUBYTE(&CHBASE, 1);
+	StateSav_SaveUBYTE(&NMIEN, 1);
+	StateSav_SaveUBYTE(&NMIST, 1);
+	StateSav_SaveUBYTE(&IR, 1);
+	StateSav_SaveUBYTE(&anticmode, 1);
+	StateSav_SaveUBYTE(&dctr, 1);
+	StateSav_SaveUBYTE(&lastline, 1);
+	StateSav_SaveUBYTE(&need_dl, 1);
+	StateSav_SaveUBYTE(&vscrol_off, 1);
 
-	SaveUWORD(&dlist, 1);
-	SaveUWORD(&screenaddr, 1);
+	StateSav_SaveUWORD(&dlist, 1);
+	StateSav_SaveUWORD(&screenaddr, 1);
 
-	SaveINT(&xpos, 1);
-	SaveINT(&xpos_limit, 1);
-	SaveINT(&ypos, 1);
+	StateSav_SaveINT(&xpos, 1);
+	StateSav_SaveINT(&xpos_limit, 1);
+	StateSav_SaveINT(&ypos, 1);
 }
 
 void AnticStateRead(void)
 {
-	ReadUBYTE(&DMACTL, 1);
-	ReadUBYTE(&CHACTL, 1);
-	ReadUBYTE(&HSCROL, 1);
-	ReadUBYTE(&VSCROL, 1);
-	ReadUBYTE(&PMBASE, 1);
-	ReadUBYTE(&CHBASE, 1);
-	ReadUBYTE(&NMIEN, 1);
-	ReadUBYTE(&NMIST, 1);
-	ReadUBYTE(&IR, 1);
-	ReadUBYTE(&anticmode, 1);
-	ReadUBYTE(&dctr, 1);
-	ReadUBYTE(&lastline, 1);
-	ReadUBYTE(&need_dl, 1);
-	ReadUBYTE(&vscrol_off, 1);
+	StateSav_ReadUBYTE(&DMACTL, 1);
+	StateSav_ReadUBYTE(&CHACTL, 1);
+	StateSav_ReadUBYTE(&HSCROL, 1);
+	StateSav_ReadUBYTE(&VSCROL, 1);
+	StateSav_ReadUBYTE(&PMBASE, 1);
+	StateSav_ReadUBYTE(&CHBASE, 1);
+	StateSav_ReadUBYTE(&NMIEN, 1);
+	StateSav_ReadUBYTE(&NMIST, 1);
+	StateSav_ReadUBYTE(&IR, 1);
+	StateSav_ReadUBYTE(&anticmode, 1);
+	StateSav_ReadUBYTE(&dctr, 1);
+	StateSav_ReadUBYTE(&lastline, 1);
+	StateSav_ReadUBYTE(&need_dl, 1);
+	StateSav_ReadUBYTE(&vscrol_off, 1);
 
-	ReadUWORD(&dlist, 1);
-	ReadUWORD(&screenaddr, 1);
+	StateSav_ReadUWORD(&dlist, 1);
+	StateSav_ReadUWORD(&screenaddr, 1);
 
-	ReadINT(&xpos, 1);
-	ReadINT(&xpos_limit, 1);
-	ReadINT(&ypos, 1);
+	StateSav_ReadINT(&xpos, 1);
+	StateSav_ReadINT(&xpos_limit, 1);
+	StateSav_ReadINT(&ypos, 1);
 
 	ANTIC_PutByte(_DMACTL, DMACTL);
 	ANTIC_PutByte(_CHACTL, CHACTL);

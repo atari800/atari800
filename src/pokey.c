@@ -610,24 +610,24 @@ void POKEYStateSave(void)
 	int SHIFT_KEY = 0;
 	int KEYPRESSED = 0;
 
-	SaveUBYTE(&KBCODE, 1);
-	SaveUBYTE(&IRQST, 1);
-	SaveUBYTE(&IRQEN, 1);
-	SaveUBYTE(&SKCTLS, 1);
+	StateSav_SaveUBYTE(&KBCODE, 1);
+	StateSav_SaveUBYTE(&IRQST, 1);
+	StateSav_SaveUBYTE(&IRQEN, 1);
+	StateSav_SaveUBYTE(&SKCTLS, 1);
 
-	SaveINT(&SHIFT_KEY, 1);
-	SaveINT(&KEYPRESSED, 1);
-	SaveINT(&DELAYED_SERIN_IRQ, 1);
-	SaveINT(&DELAYED_SEROUT_IRQ, 1);
-	SaveINT(&DELAYED_XMTDONE_IRQ, 1);
+	StateSav_SaveINT(&SHIFT_KEY, 1);
+	StateSav_SaveINT(&KEYPRESSED, 1);
+	StateSav_SaveINT(&DELAYED_SERIN_IRQ, 1);
+	StateSav_SaveINT(&DELAYED_SEROUT_IRQ, 1);
+	StateSav_SaveINT(&DELAYED_XMTDONE_IRQ, 1);
 
-	SaveUBYTE(&AUDF[0], 4);
-	SaveUBYTE(&AUDC[0], 4);
-	SaveUBYTE(&AUDCTL[0], 1);
+	StateSav_SaveUBYTE(&AUDF[0], 4);
+	StateSav_SaveUBYTE(&AUDC[0], 4);
+	StateSav_SaveUBYTE(&AUDCTL[0], 1);
 
-	SaveINT(&DivNIRQ[0], 4);
-	SaveINT(&DivNMax[0], 4);
-	SaveINT(&Base_mult[0], 1);
+	StateSav_SaveINT(&DivNIRQ[0], 4);
+	StateSav_SaveINT(&DivNMax[0], 4);
+	StateSav_SaveINT(&Base_mult[0], 1);
 }
 
 void POKEYStateRead(void)
@@ -636,29 +636,29 @@ void POKEYStateRead(void)
 	int SHIFT_KEY;
 	int KEYPRESSED;
 
-	ReadUBYTE(&KBCODE, 1);
-	ReadUBYTE(&IRQST, 1);
-	ReadUBYTE(&IRQEN, 1);
-	ReadUBYTE(&SKCTLS, 1);
+	StateSav_ReadUBYTE(&KBCODE, 1);
+	StateSav_ReadUBYTE(&IRQST, 1);
+	StateSav_ReadUBYTE(&IRQEN, 1);
+	StateSav_ReadUBYTE(&SKCTLS, 1);
 
-	ReadINT(&SHIFT_KEY, 1);
-	ReadINT(&KEYPRESSED, 1);
-	ReadINT(&DELAYED_SERIN_IRQ, 1);
-	ReadINT(&DELAYED_SEROUT_IRQ, 1);
-	ReadINT(&DELAYED_XMTDONE_IRQ, 1);
+	StateSav_ReadINT(&SHIFT_KEY, 1);
+	StateSav_ReadINT(&KEYPRESSED, 1);
+	StateSav_ReadINT(&DELAYED_SERIN_IRQ, 1);
+	StateSav_ReadINT(&DELAYED_SEROUT_IRQ, 1);
+	StateSav_ReadINT(&DELAYED_XMTDONE_IRQ, 1);
 
-	ReadUBYTE(&AUDF[0], 4);
-	ReadUBYTE(&AUDC[0], 4);
-	ReadUBYTE(&AUDCTL[0], 1);
+	StateSav_ReadUBYTE(&AUDF[0], 4);
+	StateSav_ReadUBYTE(&AUDC[0], 4);
+	StateSav_ReadUBYTE(&AUDCTL[0], 1);
 	for (i = 0; i < 4; i++) {
 		POKEY_PutByte((UWORD) (_AUDF1 + i * 2), AUDF[i]);
 		POKEY_PutByte((UWORD) (_AUDC1 + i * 2), AUDC[i]);
 	}
 	POKEY_PutByte(_AUDCTL, AUDCTL[0]);
 
-	ReadINT(&DivNIRQ[0], 4);
-	ReadINT(&DivNMax[0], 4);
-	ReadINT(&Base_mult[0], 1);
+	StateSav_ReadINT(&DivNIRQ[0], 4);
+	StateSav_ReadINT(&DivNMax[0], 4);
+	StateSav_ReadINT(&Base_mult[0], 1);
 }
 
 #endif

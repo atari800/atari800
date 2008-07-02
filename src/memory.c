@@ -267,31 +267,31 @@ void MemStateSave(UBYTE SaveVerbose)
 {
 	/* Axlon/Mosaic for 400/800 */
 	if (machine_type == MACHINE_OSA  || machine_type == MACHINE_OSB) {
-		SaveINT(&axlon_enabled, 1);
+		StateSav_SaveINT(&axlon_enabled, 1);
 		if (axlon_enabled){
-			SaveINT(&axlon_curbank, 1);
-			SaveINT(&axlon_bankmask, 1);
-			SaveINT(&axlon_0f_mirror, 1);
-			SaveINT(&axlon_ram_size, 1);
-			SaveUBYTE(&axlon_ram[0], axlon_ram_size);
+			StateSav_SaveINT(&axlon_curbank, 1);
+			StateSav_SaveINT(&axlon_bankmask, 1);
+			StateSav_SaveINT(&axlon_0f_mirror, 1);
+			StateSav_SaveINT(&axlon_ram_size, 1);
+			StateSav_SaveUBYTE(&axlon_ram[0], axlon_ram_size);
 		}
-		SaveINT(&mosaic_enabled, 1);
+		StateSav_SaveINT(&mosaic_enabled, 1);
 		if (mosaic_enabled){
-			SaveINT(&mosaic_curbank, 1);
-			SaveINT(&mosaic_maxbank, 1);
-			SaveINT(&mosaic_ram_size, 1);
-			SaveUBYTE(&mosaic_ram[0], mosaic_ram_size);
+			StateSav_SaveINT(&mosaic_curbank, 1);
+			StateSav_SaveINT(&mosaic_maxbank, 1);
+			StateSav_SaveINT(&mosaic_ram_size, 1);
+			StateSav_SaveUBYTE(&mosaic_ram[0], mosaic_ram_size);
 		}
 	}
 
-	SaveUBYTE(&memory[0], 65536);
+	StateSav_SaveUBYTE(&memory[0], 65536);
 #ifndef PAGED_ATTRIB
-	SaveUBYTE(&attrib[0], 65536);
+	StateSav_SaveUBYTE(&attrib[0], 65536);
 #else
 	{
-		/* I assume here that consecutive calls to SaveUBYTE()
+		/* I assume here that consecutive calls to StateSav_SaveUBYTE()
 		   are equivalent to a single call with all the values
-		   (i.e. SaveUBYTE() doesn't write any headers). */
+		   (i.e. StateSav_SaveUBYTE() doesn't write any headers). */
 		UBYTE attrib_page[256];
 		int i;
 		for (i = 0; i < 256; i++) {
@@ -310,23 +310,23 @@ void MemStateSave(UBYTE SaveVerbose)
 			else {
 				memset(attrib_page, HARDWARE, 256);
 			}
-			SaveUBYTE(&attrib_page[0], 256);
+			StateSav_SaveUBYTE(&attrib_page[0], 256);
 		}
 	}
 #endif
 
 	if (machine_type == MACHINE_XLXE) {
 		if (SaveVerbose != 0)
-			SaveUBYTE(&atari_basic[0], 8192);
-		SaveUBYTE(&under_atari_basic[0], 8192);
+			StateSav_SaveUBYTE(&atari_basic[0], 8192);
+		StateSav_SaveUBYTE(&under_atari_basic[0], 8192);
 
 		if (SaveVerbose != 0)
-			SaveUBYTE(&atari_os[0], 16384);
-		SaveUBYTE(&under_atarixl_os[0], 16384);
+			StateSav_SaveUBYTE(&atari_os[0], 16384);
+		StateSav_SaveUBYTE(&under_atarixl_os[0], 16384);
 	}
 
 	if (ram_size > 64) {
-		SaveUBYTE(&atarixe_memory[0], atarixe_memory_size);
+		StateSav_SaveUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		/* a hack that makes state files compatible with previous versions:
            for 130 XE there's written 192 KB of unused data */
 		if (ram_size == 128) {
@@ -334,7 +334,7 @@ void MemStateSave(UBYTE SaveVerbose)
 			int i;
 			memset(buffer, 0, 256);
 			for (i = 0; i < 192 * 4; i++)
-				SaveUBYTE(&buffer[0], 256);
+				StateSav_SaveUBYTE(&buffer[0], 256);
 		}
 	}
 }
@@ -343,34 +343,34 @@ void MemStateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 {
 	/* Axlon/Mosaic for 400/800 */
 	if ((machine_type == MACHINE_OSA  || machine_type == MACHINE_OSB) && StateVersion >= 5) {
-		ReadINT(&axlon_enabled, 1);
+		StateSav_ReadINT(&axlon_enabled, 1);
 		if (axlon_enabled){
-			ReadINT(&axlon_curbank, 1);
-			ReadINT(&axlon_bankmask, 1);
-			ReadINT(&axlon_0f_mirror, 1);
-			ReadINT(&axlon_ram_size, 1);
+			StateSav_ReadINT(&axlon_curbank, 1);
+			StateSav_ReadINT(&axlon_bankmask, 1);
+			StateSav_ReadINT(&axlon_0f_mirror, 1);
+			StateSav_ReadINT(&axlon_ram_size, 1);
 			alloc_axlon_memory();
-			ReadUBYTE(&axlon_ram[0], axlon_ram_size);
+			StateSav_ReadUBYTE(&axlon_ram[0], axlon_ram_size);
 		}
-		ReadINT(&mosaic_enabled, 1);
+		StateSav_ReadINT(&mosaic_enabled, 1);
 		if (mosaic_enabled){
-			ReadINT(&mosaic_curbank, 1);
-			ReadINT(&mosaic_maxbank, 1);
-			ReadINT(&mosaic_ram_size, 1);
+			StateSav_ReadINT(&mosaic_curbank, 1);
+			StateSav_ReadINT(&mosaic_maxbank, 1);
+			StateSav_ReadINT(&mosaic_ram_size, 1);
 			alloc_mosaic_memory();
-			ReadUBYTE(&mosaic_ram[0], mosaic_ram_size);
+			StateSav_ReadUBYTE(&mosaic_ram[0], mosaic_ram_size);
 		}
 	}
 
-	ReadUBYTE(&memory[0], 65536);
+	StateSav_ReadUBYTE(&memory[0], 65536);
 #ifndef PAGED_ATTRIB
-	ReadUBYTE(&attrib[0], 65536);
+	StateSav_ReadUBYTE(&attrib[0], 65536);
 #else
 	{
 		UBYTE attrib_page[256];
 		int i;
 		for (i = 0; i < 256; i++) {
-			ReadUBYTE(&attrib_page[0], 256);
+			StateSav_ReadUBYTE(&attrib_page[0], 256);
 			/* note: 0x40 is intentional here:
 			   we want ROM on page 0xd1 if H: patches are enabled */
 			switch (attrib_page[0x40]) {
@@ -456,25 +456,25 @@ void MemStateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 
 	if (machine_type == MACHINE_XLXE) {
 		if (SaveVerbose != 0)
-			ReadUBYTE(&atari_basic[0], 8192);
-		ReadUBYTE(&under_atari_basic[0], 8192);
+			StateSav_ReadUBYTE(&atari_basic[0], 8192);
+		StateSav_ReadUBYTE(&under_atari_basic[0], 8192);
 
 		if (SaveVerbose != 0)
-			ReadUBYTE(&atari_os[0], 16384);
-		ReadUBYTE(&under_atarixl_os[0], 16384);
+			StateSav_ReadUBYTE(&atari_os[0], 16384);
+		StateSav_ReadUBYTE(&under_atarixl_os[0], 16384);
 	}
 
 	antic_xe_ptr = NULL;
 	AllocXEMemory();
 	if (ram_size > 64) {
-		ReadUBYTE(&atarixe_memory[0], atarixe_memory_size);
+		StateSav_ReadUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		/* a hack that makes state files compatible with previous versions:
            for 130 XE there's written 192 KB of unused data */
 		if (ram_size == 128) {
 			UBYTE buffer[256];
 			int i;
 			for (i = 0; i < 192 * 4; i++)
-				ReadUBYTE(&buffer[0], 256);
+				StateSav_ReadUBYTE(&buffer[0], 256);
 		}
 	}
 }

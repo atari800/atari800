@@ -146,7 +146,7 @@ static void GetGZErrorText(void)
 }
 
 /* Value is memory location of data, num is number of type to save */
-void SaveUBYTE(const UBYTE *data, int num)
+void StateSav_SaveUBYTE(const UBYTE *data, int num)
 {
 	if (!StateFile || nFileError != Z_OK)
 		return;
@@ -160,7 +160,7 @@ void SaveUBYTE(const UBYTE *data, int num)
 }
 
 /* Value is memory location of data, num is number of type to save */
-void ReadUBYTE(UBYTE *data, int num)
+void StateSav_ReadUBYTE(UBYTE *data, int num)
 {
 	if (!StateFile || nFileError != Z_OK)
 		return;
@@ -170,7 +170,7 @@ void ReadUBYTE(UBYTE *data, int num)
 }
 
 /* Value is memory location of data, num is number of type to save */
-void SaveUWORD(const UWORD *data, int num)
+void StateSav_SaveUWORD(const UWORD *data, int num)
 {
 	if (!StateFile || nFileError != Z_OK)
 		return;
@@ -201,7 +201,7 @@ void SaveUWORD(const UWORD *data, int num)
 }
 
 /* Value is memory location of data, num is number of type to save */
-void ReadUWORD(UWORD *data, int num)
+void StateSav_ReadUWORD(UWORD *data, int num)
 {
 	if (!StateFile || nFileError != Z_OK)
 		return;
@@ -224,7 +224,7 @@ void ReadUWORD(UWORD *data, int num)
 	}
 }
 
-void SaveINT(const int *data, int num)
+void StateSav_SaveINT(const int *data, int num)
 {
 	if (!StateFile || nFileError != Z_OK)
 		return;
@@ -277,7 +277,7 @@ void SaveINT(const int *data, int num)
 	}
 }
 
-void ReadINT(int *data, int num)
+void StateSav_ReadINT(int *data, int num)
 {
 	if (!StateFile || nFileError != Z_OK)
 		return;
@@ -319,7 +319,7 @@ void ReadINT(int *data, int num)
 	}
 }
 
-void SaveFNAME(const char *filename)
+void StateSav_SaveFNAME(const char *filename)
 {
 	UWORD namelen;
 #ifdef HAVE_GETCWD
@@ -335,24 +335,24 @@ void SaveFNAME(const char *filename)
 
 	namelen = strlen(filename);
 	/* Save the length of the filename, followed by the filename */
-	SaveUWORD(&namelen, 1);
-	SaveUBYTE((const UBYTE *) filename, namelen);
+	StateSav_SaveUWORD(&namelen, 1);
+	StateSav_SaveUBYTE((const UBYTE *) filename, namelen);
 }
 
-void ReadFNAME(char *filename)
+void StateSav_ReadFNAME(char *filename)
 {
 	UWORD namelen = 0;
 
-	ReadUWORD(&namelen, 1);
+	StateSav_ReadUWORD(&namelen, 1);
 	if (namelen >= FILENAME_MAX) {
 		Aprint("Filenames of %d characters not supported on this platform", (int) namelen);
 		return;
 	}
-	ReadUBYTE((UBYTE *) filename, namelen);
+	StateSav_ReadUBYTE((UBYTE *) filename, namelen);
 	filename[namelen] = 0;
 }
 
-int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
+int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 {
 	UBYTE StateVersion = SAVE_VERSION_NUMBER;
 
@@ -375,8 +375,8 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 		return FALSE;
 	}
 
-	SaveUBYTE(&StateVersion, 1);
-	SaveUBYTE(&SaveVerbose, 1);
+	StateSav_SaveUBYTE(&StateVersion, 1);
+	StateSav_SaveUBYTE(&SaveVerbose, 1);
 	/* The order here is important. Main must be first because it saves the machine type, and
 	   decisions on what to save/not save are made based off that later in the process */
 	MainStateSave();
@@ -392,7 +392,7 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 #else
 	{
 		int local_xep80_enabled = FALSE;
-		SaveINT(&local_xep80_enabled, 1);
+		StateSav_SaveINT(&local_xep80_enabled, 1);
 	}
 #endif /* XEP80_EMULATION */
 	PBIStateSave();
@@ -401,7 +401,7 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 #else
 	{
 		int local_mio_enabled = FALSE;
-		SaveINT(&local_mio_enabled, 1);
+		StateSav_SaveINT(&local_mio_enabled, 1);
 	}
 #endif /* PBI_MIO */
 #ifdef PBI_BB
@@ -409,7 +409,7 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 #else
 	{
 		int local_bb_enabled = FALSE;
-		SaveINT(&local_bb_enabled, 1);
+		StateSav_SaveINT(&local_bb_enabled, 1);
 	}
 #endif /* PBI_BB */
 #ifdef PBI_XLD
@@ -417,7 +417,7 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 #else
 	{
 		int local_xld_enabled = FALSE;
-		SaveINT(&local_xld_enabled, 1);
+		StateSav_SaveINT(&local_xld_enabled, 1);
 	}
 #endif /* PBI_XLD */
 #ifdef DREAMCAST
@@ -436,7 +436,7 @@ int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose)
 	return TRUE;
 }
 
-int ReadAtariState(const char *filename, const char *mode)
+int StateSav_ReadAtariState(const char *filename, const char *mode)
 {
 	char header_string[8];
 	UBYTE StateVersion = 0;  /* The version of the save file */
@@ -499,7 +499,7 @@ int ReadAtariState(const char *filename, const char *mode)
 		XEP80StateRead();
 #else
 		int local_xep80_enabled;
-		ReadINT(&local_xep80_enabled,1);
+		StateSav_ReadINT(&local_xep80_enabled,1);
 		if (local_xep80_enabled) {
 			Aprint("Cannot read this state file because this version does not support XEP80.");
 			GZCLOSE(StateFile);
@@ -513,7 +513,7 @@ int ReadAtariState(const char *filename, const char *mode)
 #else
 		{
 			int local_mio_enabled;
-			ReadINT(&local_mio_enabled,1);
+			StateSav_ReadINT(&local_mio_enabled,1);
 			if (local_mio_enabled) {
 				Aprint("Cannot read this state file because this version does not support MIO.");
 				GZCLOSE(StateFile);
@@ -527,7 +527,7 @@ int ReadAtariState(const char *filename, const char *mode)
 #else
 		{
 			int local_bb_enabled;
-			ReadINT(&local_bb_enabled,1);
+			StateSav_ReadINT(&local_bb_enabled,1);
 			if (local_bb_enabled) {
 				Aprint("Cannot read this state file because this version does not support the Black Box.");
 				GZCLOSE(StateFile);
@@ -541,7 +541,7 @@ int ReadAtariState(const char *filename, const char *mode)
 #else
 		{
 			int local_xld_enabled;
-			ReadINT(&local_xld_enabled,1);
+			StateSav_ReadINT(&local_xld_enabled,1);
 			if (local_xld_enabled) {
 				Aprint("Cannot read this state file because this version does not support the 1400XL/1450XLD.");
 				GZCLOSE(StateFile);

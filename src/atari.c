@@ -596,7 +596,7 @@ int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly
 		Aprint("State files are not supported in BASIC version");
 		return AFILE_ERROR;
 #else
-		if (!ReadAtariState(filename, "rb"))
+		if (!StateSav_ReadAtariState(filename, "rb"))
 			return AFILE_ERROR;
 		/* Don't press Option */
 		consol_table[1] = consol_table[2] = 0xf;
@@ -1409,7 +1409,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifndef BASIC
 	/* Load state file */
 	if (state_file != NULL) {
-		if (ReadAtariState(state_file, "rb"))
+		if (StateSav_ReadAtariState(state_file, "rb"))
 			/* Don't press Option */
 			consol_table[1] = consol_table[2] = 0x0f;
 	}
@@ -1998,7 +1998,7 @@ void MainStateSave(void)
 		temp = 1;
 		default_tv_mode = 2;
 	}
-	SaveUBYTE(&temp, 1);
+	StateSav_SaveUBYTE(&temp, 1);
 
 	switch (machine_type) {
 	case MACHINE_OSA:
@@ -2049,12 +2049,12 @@ void MainStateSave(void)
 		default_system = 6;
 		break;
 	}
-	SaveUBYTE(&temp, 1);
+	StateSav_SaveUBYTE(&temp, 1);
 
-	SaveINT(&os, 1);
-	SaveINT(&pil_on, 1);
-	SaveINT(&default_tv_mode, 1);
-	SaveINT(&default_system, 1);
+	StateSav_SaveINT(&os, 1);
+	StateSav_SaveINT(&pil_on, 1);
+	StateSav_SaveINT(&default_tv_mode, 1);
+	StateSav_SaveINT(&default_system, 1);
 }
 
 void MainStateRead(void)
@@ -2066,11 +2066,11 @@ void MainStateRead(void)
 	int default_system;
 	int pil_on;
 
-	ReadUBYTE(&temp, 1);
+	StateSav_ReadUBYTE(&temp, 1);
 	tv_mode = (temp == 0) ? TV_PAL : TV_NTSC;
 
-	ReadUBYTE(&temp, 1);
-	ReadINT(&os, 1);
+	StateSav_ReadUBYTE(&temp, 1);
+	StateSav_ReadINT(&os, 1);
 	switch (temp) {
 	case 0:
 		machine_type = os == 1 ? MACHINE_OSA : MACHINE_OSB;
@@ -2119,9 +2119,9 @@ void MainStateRead(void)
 		break;
 	}
 
-	ReadINT(&pil_on, 1);
-	ReadINT(&default_tv_mode, 1);
-	ReadINT(&default_system, 1);
+	StateSav_ReadINT(&pil_on, 1);
+	StateSav_ReadINT(&default_tv_mode, 1);
+	StateSav_ReadINT(&default_system, 1);
 	load_roms();
 	/* XXX: what about patches? */
 }

@@ -3,17 +3,17 @@
 
 #include "atari.h"
 
-int SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose);
-int ReadAtariState(const char *filename, const char *mode);
+int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVerbose);
+int StateSav_ReadAtariState(const char *filename, const char *mode);
 
-void SaveUBYTE(const UBYTE *data, int num);
-void SaveUWORD(const UWORD *data, int num);
-void SaveINT(const int *data, int num);
-void SaveFNAME(const char *filename);
+void StateSav_SaveUBYTE(const UBYTE *data, int num);
+void StateSav_SaveUWORD(const UWORD *data, int num);
+void StateSav_SaveINT(const int *data, int num);
+void StateSav_SaveFNAME(const char *filename);
 
-void ReadUBYTE(UBYTE *data, int num);
-void ReadUWORD(UWORD *data, int num);
-void ReadINT(int *data, int num);
-void ReadFNAME(char *filename);
+void StateSav_ReadUBYTE(UBYTE *data, int num);
+void StateSav_ReadUWORD(UWORD *data, int num);
+void StateSav_ReadINT(int *data, int num);
+void StateSav_ReadFNAME(char *filename);
 
 #endif

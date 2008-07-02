@@ -2,6 +2,9 @@
 * javanvm/atari_javanvm.c: compile without SOUND
 * atari_sdl.c: name changes
 * sndsave.[ch], atari.c, pokeysnd.c, ui.c: rename externals with SndSave_
+* statesav.[ch], antic.c, atari.c, cartridge.c, cpu.c, dc/atari_dc.c, gtia.c,
+memory.c, pbi.c, pbi_bb.c, pbi_mio.c, pbi_xld.c, pia.c, pokey.c, sio.c, ui.c,
+xep80.c: rename externals with StateSav_
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>

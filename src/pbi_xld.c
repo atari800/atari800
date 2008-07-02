@@ -861,48 +861,48 @@ void PBI_XLD_V_Process(void *sndbuffer, int sndn)
 
 void PBI_XLDStateSave(void)
 {
-	SaveINT(&PBI_XLD_enabled, 1);
+	StateSav_SaveINT(&PBI_XLD_enabled, 1);
 	if (PBI_XLD_enabled) {
-		SaveINT(&xld_v_enabled, 1);
-		SaveINT(&xld_d_enabled, 1);
-		SaveFNAME(xld_d_rom_filename);
-		SaveFNAME(xld_v_rom_filename);
+		StateSav_SaveINT(&xld_v_enabled, 1);
+		StateSav_SaveINT(&xld_d_enabled, 1);
+		StateSav_SaveFNAME(xld_d_rom_filename);
+		StateSav_SaveFNAME(xld_v_rom_filename);
 
-		SaveUBYTE(&votrax_latch, 1);
-		SaveUBYTE(&modem_latch, 1);
-		SaveUBYTE(CommandFrame, sizeof(CommandFrame));
-		SaveINT(&CommandIndex, 1);
-		SaveUBYTE(DataBuffer, sizeof(DataBuffer));
-		SaveINT(&DataIndex, 1);
-		SaveINT(&TransferStatus, 1);
-		SaveINT(&ExpectedBytes, 1);
-		SaveINT(&votrax_busy, 1);
+		StateSav_SaveUBYTE(&votrax_latch, 1);
+		StateSav_SaveUBYTE(&modem_latch, 1);
+		StateSav_SaveUBYTE(CommandFrame, sizeof(CommandFrame));
+		StateSav_SaveINT(&CommandIndex, 1);
+		StateSav_SaveUBYTE(DataBuffer, sizeof(DataBuffer));
+		StateSav_SaveINT(&DataIndex, 1);
+		StateSav_SaveINT(&TransferStatus, 1);
+		StateSav_SaveINT(&ExpectedBytes, 1);
+		StateSav_SaveINT(&votrax_busy, 1);
 	}
 }
 
 void PBI_XLDStateRead(void)
 {
-	ReadINT(&PBI_XLD_enabled, 1);
+	StateSav_ReadINT(&PBI_XLD_enabled, 1);
 	if (PBI_XLD_enabled) {
 		/* UI should have paused sound while doing this */
-		ReadINT(&xld_v_enabled, 1);
-		ReadINT(&xld_d_enabled, 1);
-		ReadFNAME(xld_d_rom_filename);
-		ReadFNAME(xld_v_rom_filename);
+		StateSav_ReadINT(&xld_v_enabled, 1);
+		StateSav_ReadINT(&xld_d_enabled, 1);
+		StateSav_ReadFNAME(xld_d_rom_filename);
+		StateSav_ReadFNAME(xld_v_rom_filename);
 		if (xld_v_enabled) {
 			init_xld_v();
 			if (dsprate) PBI_XLD_V_Init(dsprate, num_pokeys, bit16);
 		}
 		if (xld_d_enabled) init_xld_d();
-		ReadUBYTE(&votrax_latch, 1);
-		ReadUBYTE(&modem_latch, 1);
-		ReadUBYTE(CommandFrame, sizeof(CommandFrame));
-		ReadINT(&CommandIndex, 1);
-		ReadUBYTE(DataBuffer, sizeof(DataBuffer));
-		ReadINT(&DataIndex, 1);
-		ReadINT(&TransferStatus, 1);
-		ReadINT(&ExpectedBytes, 1);
-		ReadINT(&votrax_busy, 1);
+		StateSav_ReadUBYTE(&votrax_latch, 1);
+		StateSav_ReadUBYTE(&modem_latch, 1);
+		StateSav_ReadUBYTE(CommandFrame, sizeof(CommandFrame));
+		StateSav_ReadINT(&CommandIndex, 1);
+		StateSav_ReadUBYTE(DataBuffer, sizeof(DataBuffer));
+		StateSav_ReadINT(&DataIndex, 1);
+		StateSav_ReadINT(&TransferStatus, 1);
+		StateSav_ReadINT(&ExpectedBytes, 1);
+		StateSav_ReadINT(&votrax_busy, 1);
 	}
 	else {
 		xld_v_enabled = FALSE;

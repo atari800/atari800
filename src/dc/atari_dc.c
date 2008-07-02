@@ -1586,19 +1586,19 @@ void DCStateSave(void)
 {
 	unsigned int i, f = 0;
 
-	SaveINT(&screen_tv_mode, 1);
-	SaveINT(&tv_mode, 1);
-	SaveINT(&x_ovr, 1);
-	SaveINT(&x_key, 1);
-	SaveINT(&y_ovr, 1);
-	SaveINT(&y_key, 1);
-	SaveINT(&b_ovr, 1);
-	SaveINT(&b_key, 1);
-	SaveINT(&emulate_paddles, 1);
-	SaveINT(&glob_snd_ena, 1);
-	SaveINT(&db_mode, 1);
-	SaveINT(&joy_autofire[0], 1);
-	for (i=0; i<16; i++) SaveINT(&f, 1);  /* future stuff */
+	StateSav_SaveINT(&screen_tv_mode, 1);
+	StateSav_SaveINT(&tv_mode, 1);
+	StateSav_SaveINT(&x_ovr, 1);
+	StateSav_SaveINT(&x_key, 1);
+	StateSav_SaveINT(&y_ovr, 1);
+	StateSav_SaveINT(&y_key, 1);
+	StateSav_SaveINT(&b_ovr, 1);
+	StateSav_SaveINT(&b_key, 1);
+	StateSav_SaveINT(&emulate_paddles, 1);
+	StateSav_SaveINT(&glob_snd_ena, 1);
+	StateSav_SaveINT(&db_mode, 1);
+	StateSav_SaveINT(&joy_autofire[0], 1);
+	for (i=0; i<16; i++) StateSav_SaveINT(&f, 1);  /* future stuff */
 
 #ifdef DEBUG
         printf("DCStateSave: tv_mode = %d, screen_tv_mode = %d, db_mode = %d\n",
@@ -1608,18 +1608,18 @@ void DCStateSave(void)
 
 void DCStateRead(void)
 {
-	ReadINT(&screen_tv_mode, 1);
-	ReadINT(&tv_mode, 1);
-	ReadINT(&x_ovr, 1);
-	ReadINT(&x_key, 1);
-	ReadINT(&y_ovr, 1);
-	ReadINT(&y_key, 1);
-	ReadINT(&b_ovr, 1);
-	ReadINT(&b_key, 1);
-	ReadINT(&emulate_paddles, 1);
-	ReadINT(&glob_snd_ena, 1);
-	ReadINT(&db_mode, 1);
-	ReadINT(&joy_autofire[0], 1);
+	StateSav_ReadINT(&screen_tv_mode, 1);
+	StateSav_ReadINT(&tv_mode, 1);
+	StateSav_ReadINT(&x_ovr, 1);
+	StateSav_ReadINT(&x_key, 1);
+	StateSav_ReadINT(&y_ovr, 1);
+	StateSav_ReadINT(&y_key, 1);
+	StateSav_ReadINT(&b_ovr, 1);
+	StateSav_ReadINT(&b_key, 1);
+	StateSav_ReadINT(&emulate_paddles, 1);
+	StateSav_ReadINT(&glob_snd_ena, 1);
+	StateSav_ReadINT(&db_mode, 1);
+	StateSav_ReadINT(&joy_autofire[0], 1);
 #ifdef DEBUG
         printf("DCStateRead: tv_mode = %d, screen_tv_mode = %d, db_mode = %d\n",
                tv_mode, screen_tv_mode, db_mode);

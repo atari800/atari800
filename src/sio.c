@@ -1184,8 +1184,8 @@ void SIOStateSave(void)
 	int i;
 
 	for (i = 0; i < 8; i++) {
-		SaveINT((int *) &drive_status[i], 1);
-		SaveFNAME(sio_filename[i]);
+		StateSav_SaveINT((int *) &drive_status[i], 1);
+		StateSav_SaveFNAME(sio_filename[i]);
 	}
 }
 
@@ -1197,10 +1197,10 @@ void SIOStateRead(void)
 		int saved_drive_status;
 		char filename[FILENAME_MAX];
 
-		ReadINT(&saved_drive_status, 1);
+		StateSav_ReadINT(&saved_drive_status, 1);
 		drive_status[i] = (UnitStatus)saved_drive_status;
 
-		ReadFNAME(filename);
+		StateSav_ReadFNAME(filename);
 		if (filename[0] == 0)
 			continue;
 

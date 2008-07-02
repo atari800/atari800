@@ -219,31 +219,31 @@ void PBI_MIO_D6_PutByte(UWORD addr, UBYTE byte)
 
 void PBI_MIOStateSave(void)
 {
-	SaveINT(&PBI_MIO_enabled, 1);
+	StateSav_SaveINT(&PBI_MIO_enabled, 1);
 	if (PBI_MIO_enabled) {
-		SaveFNAME(mio_scsi_disk_filename);
-		SaveFNAME(mio_rom_filename);
-		SaveINT(&mio_ram_size, 1);
+		StateSav_SaveFNAME(mio_scsi_disk_filename);
+		StateSav_SaveFNAME(mio_rom_filename);
+		StateSav_SaveINT(&mio_ram_size, 1);
 
-		SaveINT(&mio_ram_bank_offset, 1);
-		SaveUBYTE(mio_ram, mio_ram_size);
-		SaveUBYTE(&mio_rom_bank, 1);
-		SaveINT(&mio_ram_enabled, 1);
+		StateSav_SaveINT(&mio_ram_bank_offset, 1);
+		StateSav_SaveUBYTE(mio_ram, mio_ram_size);
+		StateSav_SaveUBYTE(&mio_rom_bank, 1);
+		StateSav_SaveINT(&mio_ram_enabled, 1);
 	}
 }
 
 void PBI_MIOStateRead(void)
 {
-	ReadINT(&PBI_MIO_enabled, 1);
+	StateSav_ReadINT(&PBI_MIO_enabled, 1);
 	if (PBI_MIO_enabled) {
-		ReadFNAME(mio_scsi_disk_filename);
-		ReadFNAME(mio_rom_filename);
-		ReadINT(&mio_ram_size, 1);
+		StateSav_ReadFNAME(mio_scsi_disk_filename);
+		StateSav_ReadFNAME(mio_rom_filename);
+		StateSav_ReadINT(&mio_ram_size, 1);
 		init_mio();
-		ReadINT(&mio_ram_bank_offset, 1);
-		ReadUBYTE(mio_ram, mio_ram_size);
-		ReadUBYTE(&mio_rom_bank, 1);
-		ReadINT(&mio_ram_enabled, 1);
+		StateSav_ReadINT(&mio_ram_bank_offset, 1);
+		StateSav_ReadUBYTE(mio_ram, mio_ram_size);
+		StateSav_ReadUBYTE(&mio_rom_bank, 1);
+		StateSav_ReadINT(&mio_ram_enabled, 1);
 	}
 }
 
