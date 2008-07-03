@@ -721,15 +721,15 @@ void Monitor_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
 {
 	fprintf(fp, "%3d %3d A=%02X X=%02X Y=%02X S=%02X P=%c%c*-%c%c%c%c PC=",
 		ypos, xpos, a, x, y, s,
-		n, v, (regP & D_FLAG) ? 'D' : '-', (regP & I_FLAG) ? 'I' : '-', z, c);
+		n, v, (CPU_regP & CPU_D_FLAG) ? 'D' : '-', (CPU_regP & CPU_I_FLAG) ? 'I' : '-', z, c);
 	show_instruction(fp, pc);
 }
 
 static void show_state(void)
 {
-	Monitor_ShowState(stdout, regPC, regA, regX, regY, regS,
-		(char) ((regP & N_FLAG) ? 'N' : '-'), (char) ((regP & V_FLAG) ? 'V' : '-'),
-		(char) ((regP & Z_FLAG) ? 'Z' : '-'), (char) ((regP & C_FLAG) ? 'C' : '-'));
+	Monitor_ShowState(stdout, CPU_regPC, CPU_regA, CPU_regX, CPU_regY, CPU_regS,
+		(char) ((CPU_regP & CPU_N_FLAG) ? 'N' : '-'), (char) ((CPU_regP & CPU_V_FLAG) ? 'V' : '-'),
+		(char) ((CPU_regP & CPU_Z_FLAG) ? 'Z' : '-'), (char) ((CPU_regP & CPU_C_FLAG) ? 'C' : '-'));
 }
 
 static UWORD disassemble(UWORD addr)
@@ -895,22 +895,22 @@ int Monitor_breakpoints_enabled = TRUE;
 static void breakpoint_print_flag(int flagmask)
 {
 	switch (flagmask) {
-	case N_FLAG:
+	case CPU_N_FLAG:
 		putchar('N');
 		break;
-	case V_FLAG:
+	case CPU_V_FLAG:
 		putchar('V');
 		break;
-	case D_FLAG:
+	case CPU_D_FLAG:
 		putchar('D');
 		break;
-	case I_FLAG:
+	case CPU_I_FLAG:
 		putchar('I');
 		break;
-	case Z_FLAG:
+	case CPU_Z_FLAG:
 		putchar('Z');
 		break;
-	case C_FLAG:
+	case CPU_C_FLAG:
 		putchar('C');
 		break;
 	}
@@ -920,17 +920,17 @@ static int breakpoint_scan_flag(char c)
 {
 	switch (c) {
 	case 'N':
-		return N_FLAG;
+		return CPU_N_FLAG;
 	case 'V':
-		return V_FLAG;
+		return CPU_V_FLAG;
 	case 'D':
-		return D_FLAG;
+		return CPU_D_FLAG;
 	case 'I':
-		return I_FLAG;
+		return CPU_I_FLAG;
 	case 'Z':
-		return Z_FLAG;
+		return CPU_Z_FLAG;
 	case 'C':
-		return C_FLAG;
+		return CPU_C_FLAG;
 	default:
 		return -1;
 	}
@@ -1229,13 +1229,13 @@ int Monitor_Run(void)
 		return TRUE;
 #endif
 
-	addr = regPC;
+	addr = CPU_regPC;
 
 	CPU_GetStatus();
 
-	if (cim_encountered) {
+	if (CPU_cim_encountered) {
 		printf("(CIM encountered)\n");
-		cim_encountered = FALSE;
+		CPU_cim_encountered = FALSE;
 	}
 
 #ifdef MONITOR_BREAK
@@ -1244,7 +1244,7 @@ int Monitor_Run(void)
 		Monitor_break_addr = 0xd000;
 		break_over = FALSE;
 	}
-	else if (regPC == Monitor_break_addr)
+	else if (CPU_regPC == Monitor_break_addr)
 		printf("(breakpoint at %04X)\n", (unsigned int) Monitor_break_addr);
 	else if (ypos == break_ypos)
 		printf("(breakpoint at scanline %d)\n", break_ypos);
@@ -1292,7 +1292,7 @@ int Monitor_Run(void)
 
 		if (strcmp(t, "CONT") == 0) {
 #ifdef MONITOR_PROFILE
-			memset(instruction_count, 0, sizeof(instruction_count));
+			memset(CPU_instruction_count, 0, sizeof(CPU_instruction_count));
 #endif
 			PLUS_EXIT_MONITOR;
 			return TRUE;
@@ -1318,17 +1318,17 @@ int Monitor_Run(void)
 		}
 		else if (strcmp(t, "HISTORY") == 0 || strcmp(t, "H") == 0) {
 			int i;
-			for (i = 0; i < REMEMBER_PC_STEPS; i++) {
+			for (i = 0; i < CPU_REMEMBER_PC_STEPS; i++) {
 				int j;
-				j = remember_xpos[(remember_PC_curpos + i) % REMEMBER_PC_STEPS];
+				j = CPU_remember_xpos[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS];
 				printf("%3d %3d ", j >> 8, j & 0xff);
-				show_instruction(stdout, remember_PC[(remember_PC_curpos + i) % REMEMBER_PC_STEPS]);
+				show_instruction(stdout, CPU_remember_PC[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS]);
 			}
 		}
 		else if (strcmp(t, "JUMPS") == 0) {
 			int i;
-			for (i = 0; i < REMEMBER_JMP_STEPS; i++)
-				show_instruction(stdout, remember_JMP[(remember_jmp_curpos + i) % REMEMBER_JMP_STEPS]);
+			for (i = 0; i < CPU_REMEMBER_JMP_STEPS; i++)
+				show_instruction(stdout, CPU_remember_JMP[(CPU_remember_jmp_curpos + i) % CPU_REMEMBER_JMP_STEPS]);
 		}
 #endif
 #if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
@@ -1470,56 +1470,56 @@ int Monitor_Run(void)
 #endif
 		}
 		else if (strcmp(t, "SETPC") == 0)
-			get_uword(&regPC);
+			get_uword(&CPU_regPC);
 		else if (strcmp(t, "SETS") == 0)
-			get_ubyte(&regS);
+			get_ubyte(&CPU_regS);
 		else if (strcmp(t, "SETA") == 0)
-			get_ubyte(&regA);
+			get_ubyte(&CPU_regA);
 		else if (strcmp(t, "SETX") == 0)
-			get_ubyte(&regX);
+			get_ubyte(&CPU_regX);
 		else if (strcmp(t, "SETY") == 0)
-			get_ubyte(&regY);
+			get_ubyte(&CPU_regY);
 		else if (strcmp(t, "SETN") == 0) {
 			int val = get_bool();
 			if (val == 0)
-				ClrN;
+				CPU_ClrN;
 			else if (val == 1)
-				SetN;
+				CPU_SetN;
 		}
 		else if (strcmp(t, "SETV") == 0) {
 			int val = get_bool();
 			if (val == 0)
-				ClrV;
+				CPU_ClrV;
 			else if (val == 1)
-				SetV;
+				CPU_SetV;
 		}
 		else if (strcmp(t, "SETD") == 0) {
 			int val = get_bool();
 			if (val == 0)
-				ClrD;
+				CPU_ClrD;
 			else if (val == 1)
-				SetD;
+				CPU_SetD;
 		}
 		else if (strcmp(t, "SETI") == 0) {
 			int val = get_bool();
 			if (val == 0)
-				ClrI;
+				CPU_ClrI;
 			else if (val == 1)
-				SetI;
+				CPU_SetI;
 		}
 		else if (strcmp(t, "SETZ") == 0) {
 			int val = get_bool();
 			if (val == 0)
-				ClrZ;
+				CPU_ClrZ;
 			else if (val == 1)
-				SetZ;
+				CPU_SetZ;
 		}
 		else if (strcmp(t, "SETC") == 0) {
 			int val = get_bool();
 			if (val == 0)
-				ClrC;
+				CPU_ClrC;
 			else if (val == 1)
-				SetC;
+				CPU_SetC;
 		}
 #ifdef MONITOR_TRACE
 		else if (strcmp(t, "TRACE") == 0) {
@@ -1544,17 +1544,17 @@ int Monitor_Run(void)
 			for (i = 0; i < 24; i++) {
 				int max, instr;
 				int j;
-				max = instruction_count[0];
+				max = CPU_instruction_count[0];
 				instr = 0;
 				for (j = 1; j < 256; j++) {
-					if (instruction_count[j] > max) {
-						max = instruction_count[j];
+					if (CPU_instruction_count[j] > max) {
+						max = CPU_instruction_count[j];
 						instr = j;
 					}
 				}
 				if (max <= 0)
 					break;
-				instruction_count[instr] = 0;
+				CPU_instruction_count[instr] = 0;
 				printf("Opcode %02X: %-9s has been executed %d times\n",
 					   instr, instr6502[instr], max);
 			}
@@ -1564,7 +1564,7 @@ int Monitor_Run(void)
 			show_state();
 		else if (strcmp(t, "STACK") == 0) {
 			int ts;
-			for (ts = 0x101 + regS; ts < 0x200; ) {
+			for (ts = 0x101 + CPU_regS; ts < 0x200; ) {
 				if (ts < 0x1ff) {
 					UWORD ta = (UWORD) (dGetWord(ts) - 2);
 					if (dGetByte(ta) == 0x20) {
@@ -1771,10 +1771,10 @@ int Monitor_Run(void)
 			return TRUE;
 		}
 		else if (strcmp(t, "O") == 0) {
-			UBYTE opcode = dGetByte(regPC);
+			UBYTE opcode = dGetByte(CPU_regPC);
 			if ((opcode & 0x1f) == 0x10 || opcode == 0x20) {
 				/* branch or JSR: set breakpoint after it */
-				Monitor_break_addr = regPC + (Monitor_optype6502[dGetByte(regPC)] & 0x3);
+				Monitor_break_addr = CPU_regPC + (Monitor_optype6502[dGetByte(CPU_regPC)] & 0x3);
 				break_over = TRUE;
 			}
 			else
@@ -1970,9 +1970,9 @@ int Monitor_Run(void)
 				"BPC [addr]                     - Set breakpoint at address\n"
 				"BLINE [ypos] or [1000+ypos]    - Break at scanline or blink scanline\n"
 				"BBRK ON or OFF                 - Breakpoint on BRK on/off\n"
-				"HISTORY or H                   - List last %d executed instructions\n", REMEMBER_PC_STEPS);
+				"HISTORY or H                   - List last %d executed instructions\n", CPU_REMEMBER_PC_STEPS);
 			printf(
-				"JUMPS                          - List last %d executed JMP/JSR\n", REMEMBER_JMP_STEPS);
+				"JUMPS                          - List last %d executed JMP/JSR\n", CPU_REMEMBER_JMP_STEPS);
 			printf("Press return to continue: ");
 			{
 				char buf[100];

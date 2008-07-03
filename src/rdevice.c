@@ -61,7 +61,7 @@
  *       non-concurrent mode error reporting to 747
  *       error bits in location 746
  *       implement xio 32?
- *       error reporting to regY
+ *       error reporting to CPU_regY
  *       heavy ASCII translation
  *       controlling DTR, RTS, & XMT - xio 34
  *
@@ -340,9 +340,9 @@ static void xio_34(void)
 #endif /* R_SERIAL */
 #endif /* not defined DREAMCAST */
 
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
 
 }
 
@@ -621,9 +621,9 @@ static void xio_36(void)
   }
 #endif /* R_SERIAL */
 
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
 }
 
 /*---------------------------------------------------------------------------
@@ -637,9 +637,9 @@ static void xio_38(void)
   struct termios options;
 #endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
 
   aux1 = Peek(Devices_ICAX1Z);
 #if defined(R_SERIAL) && !defined(DREAMCAST)
@@ -703,9 +703,9 @@ static void xio_40(void)
     if(connected == 0)
       Poke(747,0);
 */
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
 
   aux1 = Peek(Devices_ICAX1Z);
 
@@ -937,9 +937,9 @@ void RDevice_OPEN(void)
   int  direction;
   int  devnum;
 
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
 
   bufend = 0;
 
@@ -984,9 +984,9 @@ void RDevice_OPEN(void)
 ---------------------------------------------------------------------------*/
 void RDevice_CLOS(void)
 {
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
   concurrent = 0;
   bufend = 0;
   close(rdev_fd);
@@ -1008,12 +1008,12 @@ void RDevice_READ(void)
     {
       if(bufout[0] == 0x0d)
       {
-        regA = 0x9b;
+        CPU_regA = 0x9b;
       }
     }
     else
     {
-      regA = bufout[0];
+      CPU_regA = bufout[0];
     }
 
     bufend--;
@@ -1034,8 +1034,8 @@ void RDevice_READ(void)
     /*return; ???*/
 /*  } */
 
-  regY = 1;
-  ClrN;
+  CPU_regY = 1;
+  CPU_ClrN;
 }
 
 
@@ -1050,15 +1050,15 @@ void RDevice_WRIT(void)
   int port;
 #endif
 
-  regY = 1;
-  ClrN;
+  CPU_regY = 1;
+  CPU_ClrN;
 
   /*bufend = Peek(747);*/
 
   /* Translation mode */
   if(translation)
   {
-    if(regA == 0x9b)
+    if(CPU_regA == 0x9b)
     {
       out_char = 0x0d;
       if(linefeeds)
@@ -1089,7 +1089,7 @@ void RDevice_WRIT(void)
   }
   else
   {
-    out_char = regA;
+    out_char = CPU_regA;
   }
 
   /* Translate the CR to a LF for telnet, ftp, etc */
@@ -1170,8 +1170,8 @@ void RDevice_WRIT(void)
     { /* returns -1 if disconnected or 0 if could not send */
       perror("write");
       DBG_APRINT("R*: ERROR on write.");
-      SetN;
-      regY = 135;
+      CPU_SetN;
+      CPU_regY = 135;
       /*bufend = 13;*/ /* To catch NO CARRIER message */
     }
 #else
@@ -1180,13 +1180,13 @@ void RDevice_WRIT(void)
     if (dc_write_serial(out_char) != 1)
     {
       Log_print("R*: ERROR on write.");
-      SetN;
-      regY = 135;
+      CPU_SetN;
+      CPU_regY = 135;
     }
   }
 #endif
 
-  regA = 1;
+  CPU_regA = 1;
 }
 
 /*---------------------------------------------------------------------------
@@ -1375,9 +1375,9 @@ void RDevice_STAT(void)
   Poke(746,0);
   Poke(748,0);
   Poke(749,0);
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
 
   if(concurrent)
   {
@@ -1429,9 +1429,9 @@ void RDevice_SPEC(void)
       break;
   }
 /*
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
 */
 
 }
@@ -1442,9 +1442,9 @@ void RDevice_SPEC(void)
 void RDevice_INIT(void)
 {
   DBG_APRINT("R*: INIT");
-  regA = 1;
-  regY = 1;
-  ClrN;
+  CPU_regA = 1;
+  CPU_regY = 1;
+  CPU_ClrN;
 }
 
 void RDevice_Exit(void)

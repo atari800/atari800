@@ -123,7 +123,7 @@ UBYTE PBI_MIO_D1_GetByte(UWORD addr)
 {
 	UBYTE result = 0x00;/*ff*/;
 	addr &= 0xffe3; /* 7 mirrors */
-	D(printf("MIO Read:%4x  PC:%4x\n", addr, remember_PC[(remember_PC_curpos-1)%REMEMBER_PC_STEPS]));
+	D(printf("MIO Read:%4x  PC:%4x\n", addr, CPU_remember_PC[(CPU_remember_PC_curpos-1)%CPU_REMEMBER_PC_STEPS]));
 	if (addr == 0xd1e2) {
 		result = ((!SCSI_CD) | (!SCSI_MSG<<1) | (!SCSI_IO<<2) | (!SCSI_BSY<<5) | (!SCSI_REQ<<7));
 	}
@@ -198,7 +198,7 @@ void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
 		memcpy(mio_ram + old_mio_ram_bank_offset, memory + 0xd600, 0x100);
 		memset(memory + 0xd600, 0xff, 0x100);
 	}
-	D(printf("MIO Write addr:%4x byte:%2x, cpu:%4x\n", addr, byte,remember_PC[(remember_PC_curpos-1)%REMEMBER_PC_STEPS]));
+	D(printf("MIO Write addr:%4x byte:%2x, cpu:%4x\n", addr, byte,CPU_remember_PC[(CPU_remember_PC_curpos-1)%CPU_REMEMBER_PC_STEPS]));
 }
 
 /* MIO RAM page at D600-D6ff */

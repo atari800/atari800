@@ -260,7 +260,7 @@ const UBYTE *antic_xe_ptr = NULL;
 NOTE: this information was written before NEW_CYCLE_EXACT was introduced!
 
 I've introduced global variable xpos, which contains current number of cycle
-in a line. This simplifies ANTIC/CPU timing much. The GO() function which
+in a line. This simplifies ANTIC/CPU timing much. The CPU_GO() function which
 emulates CPU is now void and is called with xpos limit, below which CPU can go.
 
 All strange variables holding 'unused cycles', 'DMA cycles', 'allocated cycles'
@@ -353,10 +353,10 @@ How WSYNC is now implemented:
 * On writing WSYNC:
   - if xpos <= WSYNC_C && xpos_limit >= WSYNC_C,
     we only change xpos to WSYNC_C - that's all
-  - otherwise we set wsync_halt and change xpos to xpos_limit causing GO()
+  - otherwise we set wsync_halt and change xpos to xpos_limit causing CPU_GO()
     to return
 
-* At the beginning of GO() (CPU emulation), when wsync_halt is set:
+* At the beginning of CPU_GO() (CPU emulation), when wsync_halt is set:
   - if xpos_limit < WSYNC_C we return
   - else we set xpos to WSYNC_C, reset wsync_halt and emulate some cycles
 
@@ -421,13 +421,13 @@ unsigned int screenline_cpu_clock = 0;
 		draw_antic_ptr = draw_antic_table[PRIOR >> 6][anticmode];\
 		gtia_bug_active = FALSE;\
 	}}while(0)
-#define GOEOL_CYCLE_EXACT  GO(antic2cpu_ptr[LINE_C]); \
+#define GOEOL_CYCLE_EXACT  CPU_GO(antic2cpu_ptr[LINE_C]); \
 	xpos = cpu2antic_ptr[xpos]; \
 	xpos -= LINE_C; \
 	screenline_cpu_clock += LINE_C; \
 	ypos++; \
 	update_pmpl_colls();
-#define GOEOL GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL; ypos++; UPDATE_GTIA_BUG
+#define GOEOL CPU_GO(LINE_C); xpos -= LINE_C; screenline_cpu_clock += LINE_C; UPDATE_DMACTL; ypos++; UPDATE_GTIA_BUG
 #define OVERSCREEN_LINE	xpos += DMAR; GOEOL
 
 int xpos = 0;
@@ -2898,13 +2898,13 @@ void ANTIC_Frame(int draw_display)
 				if (player_flickering) {
 					UBYTE hold = ypos & 1 ? 0 : VDELAY;
 					if ((hold & 0x10) == 0)
-						GRAFP0 = dGetByte((UWORD) (regPC - xpos + 8));
+						GRAFP0 = dGetByte((UWORD) (CPU_regPC - xpos + 8));
 					if ((hold & 0x20) == 0)
-						GRAFP1 = dGetByte((UWORD) (regPC - xpos + 9));
+						GRAFP1 = dGetByte((UWORD) (CPU_regPC - xpos + 9));
 					if ((hold & 0x40) == 0)
-						GRAFP2 = dGetByte((UWORD) (regPC - xpos + 10));
+						GRAFP2 = dGetByte((UWORD) (CPU_regPC - xpos + 10));
 					if ((hold & 0x80) == 0)
-						GRAFP3 = dGetByte((UWORD) (regPC - xpos + 11));
+						GRAFP3 = dGetByte((UWORD) (CPU_regPC - xpos + 11));
 				}
 			}
 			else
@@ -2941,7 +2941,7 @@ void ANTIC_Frame(int draw_display)
 				lastline = normal_lastline[anticmode];
 				if (IR & 0x20) {
 					if (!vscrol_flag) {
-						GO(VSCON_C);
+						CPU_GO(VSCON_C);
 						dctr = VSCROL;
 						vscrol_flag = TRUE;
 					}
@@ -3009,11 +3009,11 @@ void ANTIC_Frame(int draw_display)
 				if (no_jvb)
 					need_dl = TRUE;
 				if (IR & 0x80) {
-					GO(antic2cpu_ptr[NMIST_C]);
+					CPU_GO(antic2cpu_ptr[NMIST_C]);
 					NMIST = 0x9f;
 					if (NMIEN & 0x80) {
-						GO(antic2cpu_ptr[NMI_C]);
-						NMI();
+						CPU_GO(antic2cpu_ptr[NMI_C]);
+						CPU_NMI();
 					}
 				}
 			}
@@ -3024,11 +3024,11 @@ void ANTIC_Frame(int draw_display)
 			if (no_jvb)
 				need_dl = TRUE;
 			if (IR & 0x80) {
-				GO(NMIST_C);
+				CPU_GO(NMIST_C);
 				NMIST = 0x9f;
 				if (NMIEN & 0x80) {
-					GO(NMI_C);
-					NMI();
+					CPU_GO(NMI_C);
+					CPU_NMI();
 				}
 			}
 		}
@@ -3093,7 +3093,7 @@ void ANTIC_Frame(int draw_display)
 		if (need_load && anticmode <= 5 && DMACTL & 3)
 			xpos += before_cycles[md];
 
-		GO(SCR_C);
+		CPU_GO(SCR_C);
 		new_pm_scanline();
 
 		xpos += DMAR;
@@ -3243,11 +3243,11 @@ void ANTIC_Frame(int draw_display)
 
 /* TODO: cycle-exact overscreen lines */
 	POKEY_Scanline();		/* check and generate IRQ */
-	GO(NMIST_C);
+	CPU_GO(NMIST_C);
 	NMIST = 0x5f;				/* Set VBLANK */
 	if (NMIEN & 0x40) {
-		GO(NMI_C);
-		NMI();
+		CPU_GO(NMI_C);
+		CPU_NMI();
 	}
 	xpos += DMAR;
 	GOEOL;

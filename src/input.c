@@ -447,7 +447,7 @@ void INPUT_Frame(void)
 				else {
 					/* keyboard over-run */
 					SKSTAT &= ~0x40;
-					/* assert(IRQ != 0); */
+					/* assert(CPU_IRQ != 0); */
 				}
 			}
 		}

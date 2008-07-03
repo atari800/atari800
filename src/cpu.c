@@ -77,7 +77,7 @@
 
 #ifdef FALCON_CPUASM
 
-extern UBYTE IRQ;
+extern UBYTE CPU_IRQ;
 
 #ifdef PAGED_MEM
 #error cpu_m68k.asm cannot work with paged memory
@@ -180,17 +180,17 @@ void CPU_PutStatus(void)
 #endif /* NEW_CYCLE_EXACT */
 
 /* 6502 registers. */
-UWORD regPC;
-UBYTE regA;
-UBYTE regX;
-UBYTE regY;
-UBYTE regP;						/* Processor Status Byte (Partial) */
-UBYTE regS;
-UBYTE IRQ;
+UWORD CPU_regPC;
+UBYTE CPU_regA;
+UBYTE CPU_regX;
+UBYTE CPU_regY;
+UBYTE CPU_regP;						/* Processor Status Byte (Partial) */
+UBYTE CPU_regS;
+UBYTE CPU_IRQ;
 
-/* Transfer 6502 registers between global variables and local variables inside GO() */
-#define UPDATE_GLOBAL_REGS  regPC = GET_PC(); regS = S; regA = A; regX = X; regY = Y
-#define UPDATE_LOCAL_REGS   SET_PC(regPC); S = regS; A = regA; X = regX; Y = regY
+/* Transfer 6502 registers between global variables and local variables inside CPU_GO() */
+#define UPDATE_GLOBAL_REGS  CPU_regPC = GET_PC(); CPU_regS = S; CPU_regA = A; CPU_regX = X; CPU_regY = Y
+#define UPDATE_LOCAL_REGS   SET_PC(CPU_regPC); S = CPU_regS; A = CPU_regA; X = CPU_regX; Y = CPU_regY
 
 /* 6502 flags local to this module */
 static UBYTE N;					/* bit7 set => N flag set */
@@ -199,44 +199,44 @@ static UBYTE V;                 /* non-zero => V flag set */
 #endif
 static UBYTE Z;					/* zero     => Z flag set */
 static UBYTE C;					/* must be 0 or 1 */
-/* B, D, I are always in regP */
+/* B, D, I are always in CPU_regP */
 
 void CPU_GetStatus(void)
 {
 #ifndef NO_V_FLAG_VARIABLE
-	regP = (N & 0x80) + (V ? 0x40 : 0) + (regP & 0x3c) + ((Z == 0) ? 0x02 : 0) + C;
+	CPU_regP = (N & 0x80) + (V ? 0x40 : 0) + (CPU_regP & 0x3c) + ((Z == 0) ? 0x02 : 0) + C;
 #else
-	regP = (N & 0x80) + (regP & 0x7c) + ((Z == 0) ? 0x02 : 0) + C;
+	CPU_regP = (N & 0x80) + (CPU_regP & 0x7c) + ((Z == 0) ? 0x02 : 0) + C;
 #endif
 }
 
 void CPU_PutStatus(void)
 {
-	N = regP;
+	N = CPU_regP;
 #ifndef NO_V_FLAG_VARIABLE
-	V = (regP & 0x40);
+	V = (CPU_regP & 0x40);
 #endif
-	Z = (regP & 0x02) ^ 0x02;
-	C = (regP & 0x01);
+	Z = (CPU_regP & 0x02) ^ 0x02;
+	C = (CPU_regP & 0x01);
 }
 
 /* For Atari Basic loader */
-void (*rts_handler)(void) = NULL;
+void (*CPU_rts_handler)(void) = NULL;
 
 /* 6502 instruction profiling */
 #ifdef MONITOR_PROFILE
-int instruction_count[256];
+int CPU_instruction_count[256];
 #endif
 
-UBYTE cim_encountered = FALSE;
+UBYTE CPU_cim_encountered = FALSE;
 
 /* Execution history */
 #ifdef MONITOR_BREAK
-UWORD remember_PC[REMEMBER_PC_STEPS];
-unsigned int remember_PC_curpos = 0;
-int remember_xpos[REMEMBER_PC_STEPS];
-UWORD remember_JMP[REMEMBER_JMP_STEPS];
-unsigned int remember_jmp_curpos = 0;
+UWORD CPU_remember_PC[CPU_REMEMBER_PC_STEPS];
+unsigned int CPU_remember_PC_curpos = 0;
+int CPU_remember_xpos[CPU_REMEMBER_PC_STEPS];
+UWORD CPU_remember_JMP[CPU_REMEMBER_JMP_STEPS];
+unsigned int CPU_remember_jmp_curpos = 0;
 #define INC_RET_NESTING Monitor_ret_nesting++
 #else /* MONITOR_BREAK */
 #define INC_RET_NESTING
@@ -288,15 +288,15 @@ unsigned int remember_jmp_curpos = 0;
 #define LDY(t_data) Z = N = Y = t_data
 #define ORA(t_data) Z = N = A |= t_data
 #ifndef NO_V_FLAG_VARIABLE
-#define PHP(x)      data = (N & 0x80) + (V ? 0x40 : 0) + (regP & (x)) + ((Z == 0) ? 0x02 : 0) + C; PH(data)
+#define PHP(x)      data = (N & 0x80) + (V ? 0x40 : 0) + (CPU_regP & (x)) + ((Z == 0) ? 0x02 : 0) + C; PH(data)
 #define PHPB0       PHP(0x2c)  /* push flags with B flag clear (NMI, IRQ) */
 #define PHPB1       PHP(0x3c)  /* push flags with B flag set (PHP, BRK) */
-#define PLP         data = PL; N = data; V = (data & 0x40); Z = (data & 0x02) ^ 0x02; C = (data & 0x01); regP = (data & 0x0c) + 0x30
+#define PLP         data = PL; N = data; V = (data & 0x40); Z = (data & 0x02) ^ 0x02; C = (data & 0x01); CPU_regP = (data & 0x0c) + 0x30
 #else /* NO_V_FLAG_VARIABLE */
-#define PHP(x)      data = (N & 0x80) + (regP & (x)) + ((Z == 0) ? 0x02 : 0) + C; PH(data)
+#define PHP(x)      data = (N & 0x80) + (CPU_regP & (x)) + ((Z == 0) ? 0x02 : 0) + C; PH(data)
 #define PHPB0       PHP(0x6c)  /* push flags with B flag clear (NMI, IRQ) */
 #define PHPB1       PHP(0x7c)  /* push flags with B flag set (PHP, BRK) */
-#define PLP         data = PL; N = data; Z = (data & 0x02) ^ 0x02; C = (data & 0x01); regP = (data & 0x4c) + 0x30
+#define PLP         data = PL; N = data; Z = (data & 0x02) ^ 0x02; C = (data & 0x01); CPU_regP = (data & 0x4c) + 0x30
 #endif /* NO_V_FLAG_VARIABLE */
 /* 1 or 2 extra cycles for conditional jumps */
 #if 0
@@ -332,26 +332,26 @@ unsigned int remember_jmp_curpos = 0;
 #define NCYCLES_Y   if ((UBYTE) addr < Y) xpos++
 
 /* Triggers a Non-Maskable Interrupt */
-void NMI(void)
+void CPU_NMI(void)
 {
-	UBYTE S = regS;
+	UBYTE S = CPU_regS;
 	UBYTE data;
 
-	PHW(regPC);
+	PHW(CPU_regPC);
 	PHPB0;
-	SetI;
-	regPC = dGetWordAligned(0xfffa);
-	regS = S;
+	CPU_SetI;
+	CPU_regPC = dGetWordAligned(0xfffa);
+	CPU_regS = S;
 	xpos += 7; /* handling an interrupt by 6502 takes 7 cycles */
 	INC_RET_NESTING;
 }
 
 /* Check pending IRQ, helps in (not only) Lucasfilm games */
 #define CPUCHECKIRQ \
-	if (IRQ && !(regP & I_FLAG) && xpos < xpos_limit) { \
+	if (CPU_IRQ && !(CPU_regP & CPU_I_FLAG) && xpos < xpos_limit) { \
 		PHPC; \
 		PHPB0; \
-		SetI; \
+		CPU_SetI; \
 		SET_PC(dGetWordAligned(0xfffe)); \
 		xpos += 7; \
 		INC_RET_NESTING; \
@@ -399,7 +399,7 @@ static const int cycles[256] =
 #ifndef NO_GOTO
 __extension__ /* suppress -ansi -pedantic warnings */
 #endif
-void GO(int limit)
+void CPU_GO(int limit)
 {
 #ifdef NO_GOTO
 #define OPCODE_ALIAS(code)	case 0x##code:
@@ -589,7 +589,7 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 				V ? 'V' : '-',
 #else
-				(regP & V_FLAG) ? 'V' : '-',
+				(CPU_regP & CPU_V_FLAG) ? 'V' : '-',
 #endif
 				(Z == 0) ? 'Z' : '-',
 				(C != 0) ? 'C' : '-');
@@ -597,14 +597,14 @@ void GO(int limit)
 #endif
 
 #ifdef MONITOR_BREAK
-		remember_PC[remember_PC_curpos] = GET_PC();
+		CPU_remember_PC[CPU_remember_PC_curpos] = GET_PC();
 #ifdef NEW_CYCLE_EXACT
 		if (DRAWING_SCREEN)
-			remember_xpos[remember_PC_curpos] = cpu2antic_ptr[xpos] + (ypos << 8);
+			CPU_remember_xpos[CPU_remember_PC_curpos] = cpu2antic_ptr[xpos] + (ypos << 8);
 		else
 #endif
-			remember_xpos[remember_PC_curpos] = xpos + (ypos << 8);
-		remember_PC_curpos = (remember_PC_curpos + 1) % REMEMBER_PC_STEPS;
+			CPU_remember_xpos[CPU_remember_PC_curpos] = xpos + (ypos << 8);
+		CPU_remember_PC_curpos = (CPU_remember_PC_curpos + 1) % CPU_REMEMBER_PC_STEPS;
 
 		if (Monitor_break_addr == GET_PC() || break_ypos == ypos) {
 			DO_BREAK;
@@ -664,52 +664,52 @@ void GO(int limit)
 				value = Monitor_breakpoint_table[i].value;
 				if (cond == MONITOR_BREAKPOINT_FLAG_CLEAR) {
 					switch (value) {
-					case N_FLAG:
+					case CPU_N_FLAG:
 						if ((N & 0x80) == 0)
 							continue;
 						break;
 #ifndef NO_V_FLAG_VARIABLE
-					case V_FLAG:
+					case CPU_V_FLAG:
 						if (V == 0)
 							continue;
 						break;
 #endif
-					case Z_FLAG:
+					case CPU_Z_FLAG:
 						if (Z != 0)
 							continue;
 						break;
-					case C_FLAG:
+					case CPU_C_FLAG:
 						if (C == 0)
 							continue;
 						break;
 					default:
-						if ((regP & value) == 0)
+						if ((CPU_regP & value) == 0)
 							continue;
 						break;
 					}
 				}
 				else if (cond == MONITOR_BREAKPOINT_FLAG_SET) {
 					switch (value) {
-					case N_FLAG:
+					case CPU_N_FLAG:
 						if ((N & 0x80) != 0)
 							continue;
 						break;
 #ifndef NO_V_FLAG_VARIABLE
-					case V_FLAG:
+					case CPU_V_FLAG:
 						if (V != 0)
 							continue;
 						break;
 #endif
-					case Z_FLAG:
+					case CPU_Z_FLAG:
 						if (Z == 0)
 							continue;
 						break;
-					case C_FLAG:
+					case CPU_C_FLAG:
 						if (C != 0)
 							continue;
 						break;
 					default:
-						if ((regP & value) != 0)
+						if ((CPU_regP & value) != 0)
 							continue;
 						break;
 					}
@@ -781,7 +781,7 @@ void GO(int limit)
 #endif
 
 #ifdef MONITOR_PROFILE
-		instruction_count[insn]++;
+		CPU_instruction_count[insn]++;
 #endif
 
 #ifdef PREFETCH_CODE
@@ -805,7 +805,7 @@ void GO(int limit)
 			PC++;
 			PHPC;
 			PHPB1;
-			SetI;
+			CPU_SetI;
 			SET_PC(dGetWordAligned(0xfffe));
 			INC_RET_NESTING;
 		}
@@ -991,8 +991,8 @@ void GO(int limit)
 		{
 			UWORD retaddr = GET_PC() + 1;
 #ifdef MONITOR_BREAK
-			remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
-			remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
+			CPU_remember_JMP[CPU_remember_jmp_curpos] = GET_PC() - 1;
+			CPU_remember_jmp_curpos = (CPU_remember_jmp_curpos + 1) % CPU_REMEMBER_JMP_STEPS;
 			Monitor_ret_nesting++;
 #endif
 			PHW(retaddr);
@@ -1028,7 +1028,7 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 		V = N & 0x40;
 #else
-		regP = (regP & 0xbf) + (N & 0x40);
+		CPU_regP = (CPU_regP & 0xbf) + (N & 0x40);
 #endif
 		Z = (A & N);
 		DONE
@@ -1084,7 +1084,7 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 		V = N & 0x40;
 #else
-		regP = (regP & 0xbf) + (N & 0x40);
+		CPU_regP = (CPU_regP & 0xbf) + (N & 0x40);
 #endif
 		Z = (A & N);
 		DONE
@@ -1241,8 +1241,8 @@ void GO(int limit)
 
 	OPCODE(4c)				/* JMP abcd */
 #ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
-		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
+		CPU_remember_JMP[CPU_remember_jmp_curpos] = GET_PC() - 1;
+		CPU_remember_jmp_curpos = (CPU_remember_jmp_curpos + 1) % CPU_REMEMBER_JMP_STEPS;
 #endif
 		SET_PC(OP_WORD);
 		DONE
@@ -1269,7 +1269,7 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 		BRANCH(!V)
 #else
-		BRANCH(!(regP & 0x40))
+		BRANCH(!(CPU_regP & 0x40))
 #endif
 
 	OPCODE(51)				/* EOR (ab),y */
@@ -1301,7 +1301,7 @@ void GO(int limit)
 		goto lse_zpage;
 
 	OPCODE(58)				/* CLI */
-		ClrI;
+		CPU_ClrI;
 		CPUCHECKIRQ;
 		DONE
 
@@ -1341,9 +1341,9 @@ void GO(int limit)
 		if (Monitor_break_ret && --Monitor_ret_nesting <= 0)
 			Monitor_break_step = TRUE;
 #endif
-		if (rts_handler != NULL) {
-			rts_handler();
-			rts_handler = NULL;
+		if (CPU_rts_handler != NULL) {
+			CPU_rts_handler();
+			CPU_rts_handler = NULL;
 		}
 		DONE
 
@@ -1415,13 +1415,13 @@ void GO(int limit)
 		/* It does some 'BCD fixup' if D flag is set */
 		/* MPC 05/24/00 */
 		data = A & IMMEDIATE;
-		if (regP & D_FLAG) {
+		if (CPU_regP & CPU_D_FLAG) {
 			UBYTE temp = (data >> 1) + (C << 7);
 			Z = N = temp;
 #ifndef NO_V_FLAG_VARIABLE
 			V = ((temp ^ data) & 0x40);
 #else
-			regP = (regP & 0xbf) + ((temp ^ data) & 0x40);
+			CPU_regP = (CPU_regP & 0xbf) + ((temp ^ data) & 0x40);
 #endif
 			if ((data & 0x0F) + (data & 0x01) > 5)
 				temp = (temp & 0xF0) + ((temp + 0x6) & 0x0F);
@@ -1439,15 +1439,15 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 			V = C ^ ((A >> 5) & 1);
 #else
-			regP = (regP & 0xbf) + ((A ^ data) & 0x40);
+			CPU_regP = (CPU_regP & 0xbf) + ((A ^ data) & 0x40);
 #endif
 		}
 		DONE
 
 	OPCODE(6c)				/* JMP (abcd) */
 #ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
-		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
+		CPU_remember_JMP[CPU_remember_jmp_curpos] = GET_PC() - 1;
+		CPU_remember_jmp_curpos = (CPU_remember_jmp_curpos + 1) % CPU_REMEMBER_JMP_STEPS;
 #endif
 		ABSOLUTE;
 #ifdef CPU65C02
@@ -1483,7 +1483,7 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 		BRANCH(V)
 #else
-		BRANCH(regP & 0x40)
+		BRANCH(CPU_regP & 0x40)
 #endif
 
 	OPCODE(71)				/* ADC (ab),y */
@@ -1514,7 +1514,7 @@ void GO(int limit)
 		goto rra_zpage;
 
 	OPCODE(78)				/* SEI */
-		SetI;
+		CPU_SetI;
 		DONE
 
 	OPCODE(79)				/* ADC abcd,y */
@@ -1817,7 +1817,7 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 		V = 0;
 #else
-		ClrV;
+		CPU_ClrV;
 #endif
 		DONE
 
@@ -1985,7 +1985,7 @@ void GO(int limit)
 		goto dcm_zpage;
 
 	OPCODE(d8)				/* CLD */
-		ClrD;
+		CPU_ClrD;
 		DONE
 
 	OPCODE(d9)				/* CMP abcd,y */
@@ -2125,7 +2125,7 @@ void GO(int limit)
 		goto ins_zpage;
 
 	OPCODE(f8)				/* SED */
-		SetD;
+		CPU_SetD;
 		DONE
 
 	OPCODE(f9)				/* SBC abcd,y */
@@ -2219,7 +2219,7 @@ void GO(int limit)
 		crash_code = insn;
 		ui();
 #else
-		cim_encountered = TRUE;
+		CPU_cim_encountered = TRUE;
 		ENTER_MONITOR;
 #endif /* CRASH_MENU */
 
@@ -2233,7 +2233,7 @@ void GO(int limit)
 /* ADC and SBC routines */
 
 	adc:
-		if (!(regP & D_FLAG)) {
+		if (!(CPU_regP & CPU_D_FLAG)) {
 			/* Binary mode */
 			unsigned int tmp;
 			tmp = A + data + C;
@@ -2242,9 +2242,9 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 			V = !((A ^ data) & 0x80) && ((data ^ tmp) & 0x80);
 #else
-			ClrV;
+			CPU_ClrV;
 			if (!((A ^ data) & 0x80) && ((data ^ tmp) & 0x80))
-				SetV;
+				CPU_SetV;
 #endif
 			Z = N = A = (UBYTE) tmp;
 	    }
@@ -2261,9 +2261,9 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 			V = !((A ^ data) & 0x80) && ((data ^ tmp) & 0x80);
 #else
-			ClrV;
+			CPU_ClrV;
 			if (!((A ^ data) & 0x80) && ((data ^ tmp) & 0x80))
-				SetV;
+				CPU_SetV;
 #endif
 
 			if (tmp > 0x9f)
@@ -2274,7 +2274,7 @@ void GO(int limit)
 		DONE
 
 	sbc:
-		if (!(regP & D_FLAG)) {
+		if (!(CPU_regP & CPU_D_FLAG)) {
 			/* Binary mode */
 			unsigned int tmp;
 			/* tmp = A - data - !C; */
@@ -2283,9 +2283,9 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
 #else
-			ClrV;
+			CPU_ClrV;
 			if (((A ^ tmp) & 0x80) && ((A ^ data) & 0x80))
-				SetV;
+				CPU_SetV;
 #endif
 			Z = N = A = (UBYTE) tmp;
 		}
@@ -2308,9 +2308,9 @@ void GO(int limit)
 #ifndef NO_V_FLAG_VARIABLE
 			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
 #else
-			ClrV;
+			CPU_ClrV;
 			if (((A ^ tmp) & 0x80) && ((A ^ data) & 0x80))
-				SetV;
+				CPU_SetV;
 #endif
 			Z = N = (UBYTE) tmp;
 
@@ -2347,51 +2347,51 @@ void CPU_Initialise(void)
 void CPU_Reset(void)
 {
 #ifdef MONITOR_PROFILE
-	memset(instruction_count, 0, sizeof(instruction_count));
+	memset(CPU_instruction_count, 0, sizeof(CPU_instruction_count));
 #endif
 
-	IRQ = 0;
+	CPU_IRQ = 0;
 
-	regP = 0x34;				/* The unused bit is always 1, I flag set! */
+	CPU_regP = 0x34;				/* The unused bit is always 1, I flag set! */
 	CPU_PutStatus();	/* Make sure flags are all updated */
-	regS = 0xff;
-	regPC = dGetWordAligned(0xfffc);
+	CPU_regS = 0xff;
+	CPU_regPC = dGetWordAligned(0xfffc);
 }
 
 #if !defined(BASIC) && !defined(ASAP)
 
 void CpuStateSave(UBYTE SaveVerbose)
 {
-	StateSav_SaveUBYTE(&regA, 1);
+	StateSav_SaveUBYTE(&CPU_regA, 1);
 
 	CPU_GetStatus();	/* Make sure flags are all updated */
-	StateSav_SaveUBYTE(&regP, 1);
+	StateSav_SaveUBYTE(&CPU_regP, 1);
 
-	StateSav_SaveUBYTE(&regS, 1);
-	StateSav_SaveUBYTE(&regX, 1);
-	StateSav_SaveUBYTE(&regY, 1);
-	StateSav_SaveUBYTE(&IRQ, 1);
+	StateSav_SaveUBYTE(&CPU_regS, 1);
+	StateSav_SaveUBYTE(&CPU_regX, 1);
+	StateSav_SaveUBYTE(&CPU_regY, 1);
+	StateSav_SaveUBYTE(&CPU_IRQ, 1);
 
 	MemStateSave(SaveVerbose);
 
-	StateSav_SaveUWORD(&regPC, 1);
+	StateSav_SaveUWORD(&CPU_regPC, 1);
 }
 
 void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 {
-	StateSav_ReadUBYTE(&regA, 1);
+	StateSav_ReadUBYTE(&CPU_regA, 1);
 
-	StateSav_ReadUBYTE(&regP, 1);
+	StateSav_ReadUBYTE(&CPU_regP, 1);
 	CPU_PutStatus();	/* Make sure flags are all updated */
 
-	StateSav_ReadUBYTE(&regS, 1);
-	StateSav_ReadUBYTE(&regX, 1);
-	StateSav_ReadUBYTE(&regY, 1);
-	StateSav_ReadUBYTE(&IRQ, 1);
+	StateSav_ReadUBYTE(&CPU_regS, 1);
+	StateSav_ReadUBYTE(&CPU_regX, 1);
+	StateSav_ReadUBYTE(&CPU_regY, 1);
+	StateSav_ReadUBYTE(&CPU_IRQ, 1);
 
 	MemStateRead(SaveVerbose, StateVersion);
 
-	StateSav_ReadUWORD(&regPC, 1);
+	StateSav_ReadUWORD(&CPU_regPC, 1);
 }
 
 #endif

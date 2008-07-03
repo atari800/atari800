@@ -217,19 +217,19 @@ void Atari800_RemoveEsc(UBYTE esc_code)
 
 void Atari800_RunEsc(UBYTE esc_code)
 {
-	if (esc_address[esc_code] == regPC - 2 && esc_function[esc_code] != NULL) {
+	if (esc_address[esc_code] == CPU_regPC - 2 && esc_function[esc_code] != NULL) {
 		esc_function[esc_code]();
 		return;
 	}
 #ifdef CRASH_MENU
-	regPC -= 2;
-	crash_address = regPC;
-	crash_afterCIM = regPC + 2;
+	CPU_regPC -= 2;
+	crash_address = CPU_regPC;
+	crash_afterCIM = CPU_regPC + 2;
 	crash_code = dGetByte(crash_address);
 	ui();
 #else /* CRASH_MENU */
-	cim_encountered = 1;
-	Log_print("Invalid ESC code %02x at address %04x", esc_code, regPC - 2);
+	CPU_cim_encountered = 1;
+	Log_print("Invalid ESC code %02x at address %04x", esc_code, CPU_regPC - 2);
 #ifndef __PLUS
 	if (!Atari800_Exit(TRUE))
 		exit(0);
@@ -302,7 +302,7 @@ void Warmstart(void)
 		/* RESET key in 400/800 does not reset chips,
 		   but only generates RNMI interrupt */
 		NMIST = 0x3f;
-		NMI();
+		CPU_NMI();
 	}
 	else {
 		PBI_Reset();
@@ -1448,7 +1448,7 @@ int Atari800_Exit(int run_monitor)
 	int restart;
 
 #ifdef __PLUS
-	if (cim_encountered)
+	if (CPU_cim_encountered)
 		g_ulAtariState |= ATARI_CRASHED;
 #endif
 
@@ -1800,11 +1800,11 @@ static void basic_antic_scanline(void)
 		}
 	}
 	if (scanlines_to_dl == 1 && (IR & 0x80)) {
-		GO(NMIST_C);
+		CPU_GO(NMIST_C);
 		NMIST = 0x9f;
 		if (NMIEN & 0x80) {
-			GO(NMI_C);
-			NMI();
+			CPU_GO(NMI_C);
+			CPU_NMI();
 		}
 	}
 #ifdef CURSES_BASIC
@@ -1835,7 +1835,7 @@ static void basic_antic_scanline(void)
 	}
 }
 
-#define BASIC_LINE GO(LINE_C); xpos -= LINE_C - DMAR; screenline_cpu_clock += LINE_C; ypos++
+#define BASIC_LINE CPU_GO(LINE_C); xpos -= LINE_C - DMAR; screenline_cpu_clock += LINE_C; ypos++
 
 static void basic_frame(void)
 {
@@ -1856,11 +1856,11 @@ static void basic_frame(void)
 
 	/* scanline 248 */
 	POKEY_Scanline();			/* check and generate IRQ */
-	GO(NMIST_C);
+	CPU_GO(NMIST_C);
 	NMIST = 0x5f;				/* Set VBLANK */
 	if (NMIEN & 0x40) {
-		GO(NMI_C);
-		NMI();
+		CPU_GO(NMI_C);
+		CPU_NMI();
 	}
 	BASIC_LINE;
 

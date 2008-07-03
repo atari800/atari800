@@ -2,6 +2,9 @@
 * remez.[ch], mzpokeysnd.c: rename Remez_, remez -> Remez_CreateFilter.
 * devices.[ch], atari.c, binload.c, rdevice.c, ui.c: rename Devices_, Device_
 -> Devices.
+* cpu.[ch], antic.c, atari.c, binload.c, cassette.c, cpu.c, cpu.h, devices.c,
+input.c, monitor.c, pbi.c, pbi_bb.c, pbi_mio.c, pokey.c, rdevice.c, sio.c,
+ui.c: rename CPU_.
 
 
 2008-07-02  Perry McFarlane  <perry_m@fastmail.fm>

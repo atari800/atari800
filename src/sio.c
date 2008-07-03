@@ -642,7 +642,7 @@ void SIO(void)
 						last_ypos = ypos;
 						delay_counter--;
 					}
-					regPC = 0xe459;	/* stay at SIO patch */
+					CPU_regPC = 0xe459;	/* stay at SIO patch */
 					return;
 				}
 				delay_counter = SECTOR_DELAY;
@@ -748,28 +748,28 @@ void SIO(void)
 
 	switch (result) {
 	case 0x00:					/* Device disabled, generate timeout */
-		regY = 138;
-		SetN;
+		CPU_regY = 138;
+		CPU_SetN;
 		break;
 	case 'A':					/* Device acknowledge */
 	case 'C':					/* Operation complete */
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 		break;
 	case 'N':					/* Device NAK */
-		regY = 144;
-		SetN;
+		CPU_regY = 144;
+		CPU_SetN;
 		break;
 	case 'E':					/* Device error */
 	default:
-		regY = 146;
-		SetN;
+		CPU_regY = 146;
+		CPU_SetN;
 		break;
 	}
-	regA = 0;	/* MMM */
-	dPutByte(0x0303, regY);
+	CPU_regA = 0;	/* MMM */
+	dPutByte(0x0303, CPU_regY);
 	dPutByte(0x42,0);
-	SetC;
+	CPU_SetC;
 }
 
 UBYTE SIO_ChkSum(const UBYTE *buffer, int length)

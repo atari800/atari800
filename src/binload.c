@@ -49,7 +49,7 @@ static int read_word(void)
 			Log_print("binload: not valid BIN file");
 			return -1;
 		}
-		regPC = dGetWordAligned(0x2e0);
+		CPU_regPC = dGetWordAligned(0x2e0);
 		return -1;
 	}
 	return buf[0] + (buf[1] << 8);
@@ -65,7 +65,7 @@ void BINLOAD_loader_cont(void)
 		dPutByte(0x09, 1);
 	}
 	else
-		regS += 2;	/* pop ESC code */
+		CPU_regS += 2;	/* pop ESC code */
 
 	dPutByte(0x2e3, 0xd7);
 	do {
@@ -95,13 +95,13 @@ void BINLOAD_loader_cont(void)
 			if (byte == EOF) {
 				fclose(BINLOAD_bin_file);
 				BINLOAD_bin_file = NULL;
-				regPC = dGetWordAligned(0x2e0);
+				CPU_regPC = dGetWordAligned(0x2e0);
 				if (dGetByte(0x2e3) != 0xd7) {
 					/* run INIT routine which RTSes directly to RUN routine */
-					regPC--;
-					dPutByte(0x0100 + regS--, regPC >> 8);		/* high */
-					dPutByte(0x0100 + regS--, regPC & 0xff);	/* low */
-					regPC = dGetWordAligned(0x2e2);
+					CPU_regPC--;
+					dPutByte(0x0100 + CPU_regS--, CPU_regPC >> 8);		/* high */
+					dPutByte(0x0100 + CPU_regS--, CPU_regPC & 0xff);	/* low */
+					CPU_regPC = dGetWordAligned(0x2e2);
 				}
 				return;
 			}
@@ -110,14 +110,14 @@ void BINLOAD_loader_cont(void)
 		} while (from != to);
 	} while (dGetByte(0x2e3) == 0xd7);
 
-	regS--;
-	Atari800_AddEsc((UWORD) (0x100 + regS), ESC_BINLOADER_CONT, BINLOAD_loader_cont);
-	regS--;
-	dPutByte(0x0100 + regS--, 0x01);	/* high */
-	dPutByte(0x0100 + regS, regS + 1);	/* low */
-	regS--;
-	regPC = dGetWordAligned(0x2e2);
-	SetC;
+	CPU_regS--;
+	Atari800_AddEsc((UWORD) (0x100 + CPU_regS), ESC_BINLOADER_CONT, BINLOAD_loader_cont);
+	CPU_regS--;
+	dPutByte(0x0100 + CPU_regS--, 0x01);	/* high */
+	dPutByte(0x0100 + CPU_regS, CPU_regS + 1);	/* low */
+	CPU_regS--;
+	CPU_regPC = dGetWordAligned(0x2e2);
+	CPU_SetC;
 
 	dPutByte(0x0300, 0x31);	/* for "Studio Dream" */
 }

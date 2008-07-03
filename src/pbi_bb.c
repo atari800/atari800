@@ -153,13 +153,13 @@ UBYTE PBI_BB_D1_GetByte(UWORD addr)
 		result = 0x02;
 	}
 	else if (addr == 0xd1ff) result = PBI_IRQ ? (0x08 | 0x02) : 0 ;
-	D(if (addr!=0xd1ff) printf("BB Read:%4x  PC:%4x byte=%2x\n", addr, remember_PC[(remember_PC_curpos-1)%REMEMBER_PC_STEPS], result));
+	D(if (addr!=0xd1ff) printf("BB Read:%4x  PC:%4x byte=%2x\n", addr, CPU_remember_PC[(CPU_remember_PC_curpos-1)%CPU_REMEMBER_PC_STEPS], result));
 	return result;
 }
 
 void PBI_BB_D1_PutByte(UWORD addr, UBYTE byte)
 {
-	D(printf("BB Write addr:%4x byte:%2x, cpu:%4x\n", addr, byte, remember_PC[(remember_PC_curpos-1)%REMEMBER_PC_STEPS]));
+	D(printf("BB Write addr:%4x byte:%2x, cpu:%4x\n", addr, byte, CPU_remember_PC[(CPU_remember_PC_curpos-1)%CPU_REMEMBER_PC_STEPS]));
 	if (addr == 0xd170) {
 		if (bb_scsi_enabled) SCSI_PutSEL(!(byte&0x04));
 	}

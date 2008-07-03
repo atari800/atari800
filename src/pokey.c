@@ -236,9 +236,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 				DELAYED_SERIN_IRQ = delay;
 		}
 		if ((~IRQST & IRQEN) == 0 && PBI_IRQ == 0)
-			IRQ = 0;
+			CPU_IRQ = 0;
 		else
-			IRQ = 1;
+			GenerateIRQ();
 		break;
 	case _SKRES:
 		SKSTAT |= 0xe0;

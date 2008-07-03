@@ -669,8 +669,8 @@ static UWORD Devices_GetAtariPath(int devnum, char *p)
 					 || (*q == '.' && q[1] == '.' && (q[2] == '\0' || IS_DIR_SEP(q[2])))) {
 						/* "<" or "..": parent directory */
 						if (p == atari_path) {
-							regY = 150; /* Sparta: directory not found */
-							SetN;
+							CPU_regY = 150; /* Sparta: directory not found */
+							CPU_SetN;
 							return 0;
 						}
 						do
@@ -686,14 +686,14 @@ static UWORD Devices_GetAtariPath(int devnum, char *p)
 					}
 					if (IS_DIR_SEP(*q)) {
 						/* duplicate DIR_SEP */
-						regY = 165; /* bad filename */
-						SetN;
+						CPU_regY = 165; /* bad filename */
+						CPU_SetN;
 						return 0;
 					}
 					do {
 						if (p >= atari_path + sizeof(atari_path) - 1) {
-							regY = 165; /* bad filename */
-							SetN;
+							CPU_regY = 165; /* bad filename */
+							CPU_SetN;
 							return 0;
 						}
 						*p++ = *q;
@@ -707,19 +707,19 @@ static UWORD Devices_GetAtariPath(int devnum, char *p)
 			}
 		}
 	}
-	regY = 165; /* bad filename */
-	SetN;
+	CPU_regY = 165; /* bad filename */
+	CPU_SetN;
 	return 0;
 }
 
 static int Devices_GetIOCB(void)
 {
-	if ((regX & 0x8f) != 0) {
-		regY = 134; /* invalid IOCB number */
-		SetN;
+	if ((CPU_regX & 0x8f) != 0) {
+		CPU_regY = 134; /* invalid IOCB number */
+		CPU_SetN;
 		return FALSE;
 	}
-	h_iocb = regX >> 4;
+	h_iocb = CPU_regX >> 4;
 	return TRUE;
 }
 
@@ -730,8 +730,8 @@ static int Devices_GetNumber(int set_textmode)
 		return -1;
 	devnum = dGetByte(Devices_ICDNOZ);
 	if (devnum > 9 || devnum == 0 || devnum == 5) {
-		regY = 160; /* invalid unit/drive number */
-		SetN;
+		CPU_regY = 160; /* invalid unit/drive number */
+		CPU_SetN;
 		return -1;
 	}
 	if (devnum < 5) {
@@ -795,12 +795,12 @@ static void Devices_H_Open(void)
 		   we want to support LF, CR/LF and CR, not only native EOLs */
 		fp = Util_fopen(host_path, "rb", h_tmpbuf[h_iocb]);
 		if (fp != NULL) {
-			regY = 1;
-			ClrN;
+			CPU_regY = 1;
+			CPU_ClrN;
 		}
 		else {
-			regY = 170; /* file not found */
-			SetN;
+			CPU_regY = 170; /* file not found */
+			CPU_SetN;
 		}
 		break;
 #ifdef DO_DIR
@@ -808,15 +808,15 @@ static void Devices_H_Open(void)
 	case 7:
 		fp = Util_tmpopen(h_tmpbuf[h_iocb]);
 		if (fp == NULL) {
-			regY = 144; /* device done error */
-			SetN;
+			CPU_regY = 144; /* device done error */
+			CPU_SetN;
 			break;
 		}
 		if (!Devices_OpenDir(host_path)) {
 			Util_fclose(fp, h_tmpbuf[h_iocb]);
 			fp = NULL;
-			regY = 144; /* device done error */
-			SetN;
+			CPU_regY = 144; /* device done error */
+			CPU_SetN;
 			break;
 		}
 		aux2 = dGetByte(Devices_ICAX2Z);
@@ -884,8 +884,8 @@ static void Devices_H_Open(void)
 
 		Util_rewind(fp);
 		h_textmode[h_iocb] = TRUE;
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 		break;
 #endif /* DO_DIR */
 	case 8: /* write: "w" */
@@ -893,8 +893,8 @@ static void Devices_H_Open(void)
 	case 12: /* write and read (update): "r+" || "w+" */
 	case 13: /* append and read: "a+" */
 		if (Devices_h_read_only) {
-			regY = 163; /* disk write-protected */
-			SetN;
+			CPU_regY = 163; /* disk write-protected */
+			CPU_SetN;
 			break;
 		}
 		{
@@ -913,17 +913,17 @@ static void Devices_H_Open(void)
 			}
 		}
 		if (fp != NULL) {
-			regY = 1;
-			ClrN;
+			CPU_regY = 1;
+			CPU_ClrN;
 		}
 		else {
-			regY = 144; /* device done error */
-			SetN;
+			CPU_regY = 144; /* device done error */
+			CPU_SetN;
 		}
 		break;
 	default:
-		regY = 168; /* invalid device command */
-		SetN;
+		CPU_regY = 168; /* invalid device command */
+		CPU_SetN;
 		break;
 	}
 	h_fp[h_iocb] = fp;
@@ -939,8 +939,8 @@ static void Devices_H_Close(void)
 		Util_fclose(h_fp[h_iocb], h_tmpbuf[h_iocb]);
 		h_fp[h_iocb] = NULL;
 	}
-	regY = 1;
-	ClrN;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 static void Devices_H_Read(void)
@@ -975,8 +975,8 @@ static void Devices_H_Read(void)
 								h_wascr[h_iocb] = FALSE;
 						}
 						else {
-							regY = 136; /* end of file */
-							SetN;
+							CPU_regY = 136; /* end of file */
+							CPU_SetN;
 							break;
 						}
 					}
@@ -988,18 +988,18 @@ static void Devices_H_Read(void)
 					break;
 				}
 			}
-			regA = (UBYTE) ch;
-			regY = 1;
-			ClrN;
+			CPU_regA = (UBYTE) ch;
+			CPU_regY = 1;
+			CPU_ClrN;
 		}
 		else {
-			regY = 136; /* end of file */
-			SetN;
+			CPU_regY = 136; /* end of file */
+			CPU_SetN;
 		}
 	}
 	else {
-		regY = 136; /* end of file; XXX: this seems to be what Atari DOSes return */
-		SetN;
+		CPU_regY = 136; /* end of file; XXX: this seems to be what Atari DOSes return */
+		CPU_SetN;
 	}
 }
 
@@ -1014,17 +1014,17 @@ static void Devices_H_Write(void)
 		if (h_lastop[h_iocb] == 'r')
 			fseek(h_fp[h_iocb], 0, SEEK_CUR);
 		h_lastop[h_iocb] = 'w';
-		ch = regA;
+		ch = CPU_regA;
 		if (ch == 0x9b && h_textmode[h_iocb])
 			ch = '\n';
 		fputc(ch, h_fp[h_iocb]);
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
 	else {
-		regY = 135; /* attempted to write to a read-only device */
+		CPU_regY = 135; /* attempted to write to a read-only device */
 		            /* XXX: this seems to be what Atari DOSes return */
-		SetN;
+		CPU_SetN;
 	}
 }
 
@@ -1033,14 +1033,14 @@ static void Devices_H_Status(void)
 	if (devbug)
 		Log_print("HHSTAT");
 
-	regY = 146; /* function not implemented in handler; XXX: check file existence? */
-	SetN;
+	CPU_regY = 146; /* function not implemented in handler; XXX: check file existence? */
+	CPU_SetN;
 }
 
 #define CHECK_READ_ONLY \
 	if (Devices_h_read_only) { \
-		regY = 163; \
-		SetN; \
+		CPU_regY = 163; \
+		CPU_SetN; \
 		return; \
 	}
 
@@ -1095,8 +1095,8 @@ static void Devices_H_Rename(void)
 		if (Devices_IsValidForFilename(c))
 			break;
 		if (c == '\0' || (UBYTE) c > 0x80 || IS_DIR_SEP(c)) {
-			regY = 165; /* bad filename */
-			SetN;
+			CPU_regY = 165; /* bad filename */
+			CPU_SetN;
 			return;
 		}
 		bufadr++;
@@ -1105,8 +1105,8 @@ static void Devices_H_Rename(void)
 	p = new_filename;
 	do {
 		if (p >= new_filename + sizeof(new_filename) - 1) {
-			regY = 165; /* bad filename */
-			SetN;
+			CPU_regY = 165; /* bad filename */
+			CPU_SetN;
 			return;
 		}
 		*p++ = c;
@@ -1117,8 +1117,8 @@ static void Devices_H_Rename(void)
 
 #ifdef DO_DIR
 	if (!Devices_OpenDir(host_path)) {
-		regY = 170; /* file not found */
-		SetN;
+		CPU_regY = 170; /* file not found */
+		CPU_SetN;
 		return;
 	}
 	while (Devices_ReadDir(host_path, NULL, NULL, &readonly, NULL, NULL))
@@ -1151,16 +1151,16 @@ static void Devices_H_Rename(void)
 		       num_changed, num_failed, num_locked);
 
 	if (num_locked) {
-		regY = 167; /* file locked */
-		SetN;
+		CPU_regY = 167; /* file locked */
+		CPU_SetN;
 	}
 	else if (num_failed != 0 || num_changed == 0) {
-		regY = 170; /* file not found */
-		SetN;
+		CPU_regY = 170; /* file not found */
+		CPU_SetN;
 	}
 	else {
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
 }
 
@@ -1184,8 +1184,8 @@ static void Devices_H_Delete(void)
 
 #ifdef DO_DIR
 	if (!Devices_OpenDir(host_path)) {
-		regY = 170; /* file not found */
-		SetN;
+		CPU_regY = 170; /* file not found */
+		CPU_SetN;
 		return;
 	}
 	while (Devices_ReadDir(host_path, NULL, NULL, &readonly, NULL, NULL))
@@ -1209,16 +1209,16 @@ static void Devices_H_Delete(void)
 		       num_deleted, num_failed, num_locked);
 
 	if (num_locked) {
-		regY = 167; /* file locked */
-		SetN;
+		CPU_regY = 167; /* file locked */
+		CPU_SetN;
 	}
 	else if (num_failed != 0 || num_deleted == 0) {
-		regY = 170; /* file not found */
-		SetN;
+		CPU_regY = 170; /* file not found */
+		CPU_SetN;
 	}
 	else {
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
 }
 
@@ -1238,8 +1238,8 @@ static void Devices_H_LockUnlock(int readonly)
 
 #ifdef DO_DIR
 	if (!Devices_OpenDir(host_path)) {
-		regY = 170; /* file not found */
-		SetN;
+		CPU_regY = 170; /* file not found */
+		CPU_SetN;
 		return;
 	}
 	while (Devices_ReadDir(host_path, NULL, NULL, NULL, NULL, NULL))
@@ -1256,12 +1256,12 @@ static void Devices_H_LockUnlock(int readonly)
 		       num_changed, num_failed);
 
 	if (num_failed != 0 || num_changed == 0) {
-		regY = 170; /* file not found */
-		SetN;
+		CPU_regY = 170; /* file not found */
+		CPU_SetN;
 	}
 	else {
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
 }
 
@@ -1294,17 +1294,17 @@ static void Devices_H_Note(void)
 			dPutByte(iocb + Devices_ICAX5, (UBYTE) pos);
 			dPutByte(iocb + Devices_ICAX3, (UBYTE) (pos >> 8));
 			dPutByte(iocb + Devices_ICAX4, (UBYTE) (pos >> 16));
-			regY = 1;
-			ClrN;
+			CPU_regY = 1;
+			CPU_ClrN;
 		}
 		else {
-			regY = 144; /* device done error */
-			SetN;
+			CPU_regY = 144; /* device done error */
+			CPU_SetN;
 		}
 	}
 	else {
-		regY = 130; /* specified device does not exist; XXX: correct? */
-		SetN;
+		CPU_regY = 130; /* specified device does not exist; XXX: correct? */
+		CPU_SetN;
 	}
 }
 
@@ -1319,17 +1319,17 @@ static void Devices_H_Point(void)
 		long pos = (dGetByte(iocb + Devices_ICAX4) << 16) +
 			(dGetByte(iocb + Devices_ICAX3) << 8) + (dGetByte(iocb + Devices_ICAX5));
 		if (fseek(h_fp[h_iocb], pos, SEEK_SET) == 0) {
-			regY = 1;
-			ClrN;
+			CPU_regY = 1;
+			CPU_ClrN;
 		}
 		else {
-			regY = 166; /* invalid POINT request */
-			SetN;
+			CPU_regY = 166; /* invalid POINT request */
+			CPU_SetN;
 		}
 	}
 	else {
-		regY = 130; /* specified device does not exist; XXX: correct? */
-		SetN;
+		CPU_regY = 130; /* specified device does not exist; XXX: correct? */
+		CPU_SetN;
 	}
 }
 
@@ -1347,14 +1347,14 @@ static int Devices_H_BinReadWord(void)
 		if (BINLOAD_start_binloading) {
 			BINLOAD_start_binloading = FALSE;
 			Log_print("binload: not valid BIN file");
-			regY = 180; /* MyDOS: not a binary file */
-			SetN;
+			CPU_regY = 180; /* MyDOS: not a binary file */
+			CPU_SetN;
 			return -1;
 		}
 		if (runBinFile)
-			regPC = dGetWordAligned(0x2e0);
-		regY = 1;
-		ClrN;
+			CPU_regPC = dGetWordAligned(0x2e0);
+		CPU_regY = 1;
+		CPU_ClrN;
 		return -1;
 	}
 	return buf[0] + (buf[1] << 8);
@@ -1369,7 +1369,7 @@ static void Devices_H_BinLoaderCont(void)
 		dPutByte(0x09, 1);
 	}
 	else
-		regS += 2;				/* pop ESC code */
+		CPU_regS += 2;				/* pop ESC code */
 
 	dPutByte(0x2e3, 0xd7);
 	do {
@@ -1404,13 +1404,13 @@ static void Devices_H_BinLoaderCont(void)
 				fclose(binf);
 				binf = NULL;
 				if (runBinFile)
-					regPC = dGetWordAligned(0x2e0);
+					CPU_regPC = dGetWordAligned(0x2e0);
 				if (initBinFile && (dGetByte(0x2e3) != 0xd7)) {
 					/* run INIT routine which RTSes directly to RUN routine */
-					regPC--;
-					dPutByte(0x0100 + regS--, regPC >> 8);	/* high */
-					dPutByte(0x0100 + regS--, regPC & 0xff);	/* low */
-					regPC = dGetWordAligned(0x2e2);
+					CPU_regPC--;
+					dPutByte(0x0100 + CPU_regS--, CPU_regPC >> 8);	/* high */
+					dPutByte(0x0100 + CPU_regS--, CPU_regPC & 0xff);	/* low */
+					CPU_regPC = dGetWordAligned(0x2e2);
 				}
 				return;
 			}
@@ -1419,14 +1419,14 @@ static void Devices_H_BinLoaderCont(void)
 		} while (from != to);
 	} while (!initBinFile || dGetByte(0x2e3) == 0xd7);
 
-	regS--;
-	Atari800_AddEsc((UWORD) (0x100 + regS), ESC_BINLOADER_CONT, Devices_H_BinLoaderCont);
-	regS--;
-	dPutByte(0x0100 + regS--, 0x01);	/* high */
-	dPutByte(0x0100 + regS, regS + 1);	/* low */
-	regS--;
-	regPC = dGetWordAligned(0x2e2);
-	SetC;
+	CPU_regS--;
+	Atari800_AddEsc((UWORD) (0x100 + CPU_regS), ESC_BINLOADER_CONT, Devices_H_BinLoaderCont);
+	CPU_regS--;
+	dPutByte(0x0100 + CPU_regS--, 0x01);	/* high */
+	dPutByte(0x0100 + CPU_regS, CPU_regS + 1);	/* low */
+	CPU_regS--;
+	CPU_regPC = dGetWordAligned(0x2e2);
+	CPU_SetC;
 
 	dPutByte(0x0300, 0x31);		/* for "Studio Dream" */
 }
@@ -1511,8 +1511,8 @@ static void Devices_H_Load(int mydos)
 		Util_catpath(host_path, Devices_atari_h_dir[h_devnum], atari_path);
 		binf = fopen(host_path, "rb");
 		if (binf == NULL) {
-			regY = 170;
-			SetN;
+			CPU_regY = 170;
+			CPU_SetN;
 			return;
 		}
 	}
@@ -1522,8 +1522,8 @@ static void Devices_H_Load(int mydos)
 		fclose(binf);
 		binf = NULL;
 		Log_print("H: load: not valid BIN file");
-		regY = 180;
-		SetN;
+		CPU_regY = 180;
+		CPU_SetN;
 		return;
 	}
 
@@ -1564,8 +1564,8 @@ static void Devices_H_FileLength(void)
 		dPutByte(iocb + Devices_ICAX3, (UBYTE) filesize);
 		dPutByte(iocb + Devices_ICAX4, (UBYTE) (filesize >> 8));
 		dPutByte(iocb + Devices_ICAX5, (UBYTE) (filesize >> 16));
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
 }
 
@@ -1580,12 +1580,12 @@ static void Devices_H_MakeDirectory(void)
 		return;
 
 	if (Devices_MakeDirectory(host_path)) {
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
 	else {
-		regY = 144; /* device done error */
-		SetN;
+		CPU_regY = 144; /* device done error */
+		CPU_SetN;
 	}
 }
 #endif
@@ -1600,11 +1600,11 @@ static void Devices_H_RemoveDirectory(void)
 	if (Devices_GetHostPath(FALSE) == 0)
 		return;
 
-	regY = Devices_RemoveDirectory(host_path);
-	if (regY >= 128)
-		SetN;
+	CPU_regY = Devices_RemoveDirectory(host_path);
+	if (CPU_regY >= 128)
+		CPU_SetN;
 	else
-		ClrN;
+		CPU_ClrN;
 }
 #endif
 
@@ -1617,8 +1617,8 @@ static void Devices_H_ChangeDirectory(void)
 		return;
 
 	if (!Util_direxists(host_path)) {
-		regY = 150;
-		SetN;
+		CPU_regY = 150;
+		CPU_SetN;
 		return;
 	}
 
@@ -1630,8 +1630,8 @@ static void Devices_H_ChangeDirectory(void)
 		p[1] = '\0';
 	}
 
-	regY = 1;
-	ClrN;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 static void Devices_H_DiskInfo(void)
@@ -1658,8 +1658,8 @@ static void Devices_H_DiskInfo(void)
 	info[15] = (UBYTE) (1 + devnum);
 	CopyToMem(info, (UWORD) dGetWordAligned(Devices_ICBLLZ), 16);
 
-	regY = 1;
-	ClrN;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 static void Devices_H_ToAbsolutePath(void)
@@ -1676,8 +1676,8 @@ static void Devices_H_ToAbsolutePath(void)
 	/* XXX: we sometimes check here for directories
 	   with a trailing DIR_SEP_CHAR. It seems to work on Win32 and DJGPP. */
 	if (!Util_direxists(host_path)) {
-		regY = 150;
-		SetN;
+		CPU_regY = 150;
+		CPU_SetN;
 		return;
 	}
 
@@ -1698,8 +1698,8 @@ static void Devices_H_ToAbsolutePath(void)
 	}
 	PutByte(bufadr, 0x00);
 
-	regY = 1;
-	ClrN;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 static void Devices_H_Special(void)
@@ -1769,8 +1769,8 @@ static void Devices_H_Special(void)
 		break;
 	}
 
-	regY = 168; /* invalid device command */
-	SetN;
+	CPU_regY = 168; /* invalid device command */
+	CPU_SetN;
 }
 
 
@@ -1826,8 +1826,8 @@ static void Devices_P_Close(void)
 #endif
 		}
 	}
-	regY = 1;
-	ClrN;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 static void Devices_P_Open(void)
@@ -1840,12 +1840,12 @@ static void Devices_P_Open(void)
 
 	phf = Util_uniqopen(spool_file, "w");
 	if (phf != NULL) {
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
 	else {
-		regY = 144; /* device done error */
-		SetN;
+		CPU_regY = 144; /* device done error */
+		CPU_SetN;
 	}
 }
 
@@ -1856,13 +1856,13 @@ static void Devices_P_Write(void)
 	if (devbug)
 		Log_print("PHWRIT");
 
-	byte = regA;
+	byte = CPU_regA;
 	if (byte == 0x9b)
 		byte = '\n';
 
 	fputc(byte, phf);
-	regY = 1;
-	ClrN;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 static void Devices_P_Status(void)
@@ -1883,8 +1883,8 @@ static void Devices_P_Init(void)
 		Util_unlink(spool_file);
 #endif
 	}
-	regY = 1;
-	ClrN;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 #endif /* HAVE_SYSTEM */
@@ -1910,16 +1910,16 @@ static void Devices_E_Read(void)
 	default:
 		break;
 	}
-	regA = (UBYTE) ch;
-	regY = 1;
-	ClrN;
+	CPU_regA = (UBYTE) ch;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 static void Devices_E_Write(void)
 {
 	UBYTE ch;
 
-	ch = regA;
+	ch = CPU_regA;
 	/* XXX: are '\f', '\b' and '\a' fully portable? */
 	switch (ch) {
 	case 0x7d: /* Clear Screen */
@@ -1942,8 +1942,8 @@ static void Devices_E_Write(void)
 			putchar(ch);
 		break;
 	}
-	regY = 1;
-	ClrN;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 static void Devices_K_Read(void)
@@ -1967,9 +1967,9 @@ static void Devices_K_Read(void)
 		while (ch2 != EOF && ch2 != '\n');
 		break;
 	}
-	regA = (UBYTE) ch;
-	regY = 1;
-	ClrN;
+	CPU_regA = (UBYTE) ch;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 #endif /* BASIC */
@@ -2038,7 +2038,7 @@ static const UBYTE *basic_command_ptr = NULL;
 
 static void Devices_IgnoreReady(void)
 {
-	if (ready_ptr != NULL && regA == *ready_ptr) {
+	if (ready_ptr != NULL && CPU_regA == *ready_ptr) {
 		ready_ptr++;
 		if (*ready_ptr == '\0') {
 			ready_ptr = NULL;
@@ -2046,7 +2046,7 @@ static void Devices_IgnoreReady(void)
 #ifdef BASIC
 			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Devices_E_Write);
 #else
-			rts_handler = Devices_RestoreEHWRIT;
+			CPU_rts_handler = Devices_RestoreEHWRIT;
 #endif
 			if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_SAVED) {
 				basic_command_ptr = (const UBYTE *) "RUN \"E:\"\x9b";
@@ -2061,8 +2061,8 @@ static void Devices_IgnoreReady(void)
 				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_GetBasicCommand);
 			}
 		}
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 		return;
 	}
 	/* not "READY" (maybe "BOOT ERROR" or a DOS message) */
@@ -2081,9 +2081,9 @@ static void Devices_IgnoreReady(void)
 #ifdef BASIC
 	Devices_E_Write();
 #else
-	rts_handler = Devices_InstallIgnoreReady;
+	CPU_rts_handler = Devices_InstallIgnoreReady;
 	Devices_RestoreEHWRIT();
-	regPC = ehwrit_addr;
+	CPU_regPC = ehwrit_addr;
 #endif
 }
 
@@ -2093,9 +2093,9 @@ static void Devices_IgnoreReady(void)
 static void Devices_GetBasicCommand(void)
 {
 	if (basic_command_ptr != NULL) {
-		regA = *basic_command_ptr++;
-		regY = 1;
-		ClrN;
+		CPU_regA = *basic_command_ptr++;
+		CPU_regY = 1;
+		CPU_ClrN;
 		if (*basic_command_ptr != '\0')
 			return;
 		if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_SAVED || BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_LISTED)
@@ -2105,7 +2105,7 @@ static void Devices_GetBasicCommand(void)
 #ifdef BASIC
 	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_E_Read);
 #else
-	rts_handler = Devices_RestoreEHREAD;
+	CPU_rts_handler = Devices_RestoreEHREAD;
 #endif
 }
 
@@ -2117,10 +2117,10 @@ static void Devices_OpenBasicFile(void)
 		fseek(BINLOAD_bin_file, 0, SEEK_SET);
 		Atari800_AddEscRts(ehclos_addr, ESC_EHCLOS, Devices_CloseBasicFile);
 		Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_ReadBasicFile);
-		regY = 1;
-		ClrN;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
-	rts_handler = Devices_RestoreEHOPEN;
+	CPU_rts_handler = Devices_RestoreEHOPEN;
 }
 
 /* Atari Basic loader step 4: read byte */
@@ -2130,8 +2130,8 @@ static void Devices_ReadBasicFile(void)
 	if (BINLOAD_bin_file != NULL) {
 		int ch = fgetc(BINLOAD_bin_file);
 		if (ch == EOF) {
-			regY = 136;
-			SetN;
+			CPU_regY = 136;
+			CPU_SetN;
 			return;
 		}
 		switch (BINLOAD_loading_basic) {
@@ -2164,8 +2164,8 @@ static void Devices_ReadBasicFile(void)
 			if (ch == 0x0a) {
 				ch = fgetc(BINLOAD_bin_file);
 				if (ch == EOF) {
-					regY = 136;
-					SetN;
+					CPU_regY = 136;
+					CPU_SetN;
 					return;
 				}
 			}
@@ -2177,8 +2177,8 @@ static void Devices_ReadBasicFile(void)
 				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CRLF;
 				ch = fgetc(BINLOAD_bin_file);
 				if (ch == EOF) {
-					regY = 136;
-					SetN;
+					CPU_regY = 136;
+					CPU_SetN;
 					return;
 				}
 			}
@@ -2192,9 +2192,9 @@ static void Devices_ReadBasicFile(void)
 		default:
 			break;
 		}
-		regA = (UBYTE) ch;
-		regY = 1;
-		ClrN;
+		CPU_regA = (UBYTE) ch;
+		CPU_regY = 1;
+		CPU_ClrN;
 	}
 }
 
@@ -2219,9 +2219,9 @@ static void Devices_CloseBasicFile(void)
 #else
 	Devices_RestoreEHREAD();
 #endif
-	rts_handler = Devices_RestoreEHCLOS;
-	regY = 1;
-	ClrN;
+	CPU_rts_handler = Devices_RestoreEHCLOS;
+	CPU_regY = 1;
+	CPU_ClrN;
 }
 
 

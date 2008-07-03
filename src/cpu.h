@@ -8,13 +8,13 @@
 #include "atari.h"
 #endif
 
-#define N_FLAG 0x80
-#define V_FLAG 0x40
-#define B_FLAG 0x10
-#define D_FLAG 0x08
-#define I_FLAG 0x04
-#define Z_FLAG 0x02
-#define C_FLAG 0x01
+#define CPU_N_FLAG 0x80
+#define CPU_V_FLAG 0x40
+#define CPU_B_FLAG 0x10
+#define CPU_D_FLAG 0x08
+#define CPU_I_FLAG 0x04
+#define CPU_Z_FLAG 0x02
+#define CPU_C_FLAG 0x01
 
 void CPU_Initialise(void);		/* used in the assembler version of cpu.c only */
 void CPU_GetStatus(void);
@@ -22,9 +22,9 @@ void CPU_PutStatus(void);
 void CPU_Reset(void);
 void CpuStateSave(UBYTE SaveVerbose);
 void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion);
-void NMI(void);
-void GO(int limit);
-#define GenerateIRQ() (IRQ = 1)
+void CPU_NMI(void);
+void CPU_GO(int limit);
+#define GenerateIRQ() (CPU_IRQ = 1)
 
 #ifdef FALCON_CPUASM
 extern void CPU_INIT(void);
@@ -32,47 +32,45 @@ extern void CPUGET(void);		/* put from CCR, N & Z FLAG into regP */
 extern void CPUPUT(void);		/* put from regP into CCR, N & Z FLAG */
 #endif
 
-extern UWORD regPC;
-extern UBYTE regA;
-extern UBYTE regP;
-extern UBYTE regS;
-extern UBYTE regY;
-extern UBYTE regX;
+extern UWORD CPU_regPC;
+extern UBYTE CPU_regA;
+extern UBYTE CPU_regP;
+extern UBYTE CPU_regS;
+extern UBYTE CPU_regY;
+extern UBYTE CPU_regX;
 
-#define SetN regP |= N_FLAG
-#define ClrN regP &= (~N_FLAG)
-#define SetV regP |= V_FLAG
-#define ClrV regP &= (~V_FLAG)
-#define SetB regP |= B_FLAG
-#define ClrB regP &= (~B_FLAG)
-#define SetD regP |= D_FLAG
-#define ClrD regP &= (~D_FLAG)
-#define SetI regP |= I_FLAG
-#define ClrI regP &= (~I_FLAG)
-#define SetZ regP |= Z_FLAG
-#define ClrZ regP &= (~Z_FLAG)
-#define SetC regP |= C_FLAG
-#define ClrC regP &= (~C_FLAG)
+#define CPU_SetN CPU_regP |= CPU_N_FLAG
+#define CPU_ClrN CPU_regP &= (~CPU_N_FLAG)
+#define CPU_SetV CPU_regP |= CPU_V_FLAG
+#define CPU_ClrV CPU_regP &= (~CPU_V_FLAG)
+#define CPU_SetB CPU_regP |= CPU_B_FLAG
+#define CPU_ClrB CPU_regP &= (~CPU_B_FLAG)
+#define CPU_SetD CPU_regP |= CPU_D_FLAG
+#define CPU_ClrD CPU_regP &= (~CPU_D_FLAG)
+#define CPU_SetI CPU_regP |= CPU_I_FLAG
+#define CPU_ClrI CPU_regP &= (~CPU_I_FLAG)
+#define CPU_SetZ CPU_regP |= CPU_Z_FLAG
+#define CPU_ClrZ CPU_regP &= (~CPU_Z_FLAG)
+#define CPU_SetC CPU_regP |= CPU_C_FLAG
+#define CPU_ClrC CPU_regP &= (~CPU_C_FLAG)
 
-extern UBYTE IRQ;
+extern UBYTE CPU_IRQ;
 
-extern void (*rts_handler)(void);
+extern void (*CPU_rts_handler)(void);
 
-extern UBYTE cim_encountered;
+extern UBYTE CPU_cim_encountered;
 
-#define REMEMBER_PC_STEPS 64
-extern UWORD remember_PC[REMEMBER_PC_STEPS];
-extern unsigned int remember_PC_curpos;
-extern int remember_xpos[REMEMBER_PC_STEPS];
+#define CPU_REMEMBER_PC_STEPS 64
+extern UWORD CPU_remember_PC[CPU_REMEMBER_PC_STEPS];
+extern unsigned int CPU_remember_PC_curpos;
+extern int CPU_remember_xpos[CPU_REMEMBER_PC_STEPS];
 
-#define REMEMBER_JMP_STEPS 16
-extern UWORD remember_JMP[REMEMBER_JMP_STEPS];
-extern unsigned int remember_jmp_curpos;
-
-/* extern const int cycles[256]; */
+#define CPU_REMEMBER_JMP_STEPS 16
+extern UWORD CPU_remember_JMP[CPU_REMEMBER_JMP_STEPS];
+extern unsigned int CPU_remember_jmp_curpos;
 
 #ifdef MONITOR_PROFILE
-extern int instruction_count[256];
+extern int CPU_instruction_count[256];
 #endif
 
 #endif /* _CPU_H_ */

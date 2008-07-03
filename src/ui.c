@@ -1744,7 +1744,7 @@ int CrashMenu(void)
 		case -2:
 		case -1:			/* ESC key */
 		case 4:				/* Continue after CIM */
-			regPC = crash_afterCIM;
+			CPU_regPC = crash_afterCIM;
 			return TRUE;
 		case 5:				/* Exit */
 			alt_function = MENU_EXIT;

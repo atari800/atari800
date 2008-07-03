@@ -160,7 +160,7 @@ UBYTE PBI_D1_GetByte(UWORD addr)
 		return result;
 	}
 	/* addr was not handled: */
-	D(printf("PBI_GetByte:%4x:%2x PC:%4x IRQ:%d\n",addr,result,regPC,IRQ));
+	D(printf("PBI_GetByte:%4x:%2x PC:%4x IRQ:%d\n",addr,result,CPU_regPC,IRQ));
 	return result; /* 0xff */
 }
 

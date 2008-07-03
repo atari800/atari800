@@ -385,9 +385,9 @@ void CASSETTE_LeaderLoad(void)
 {
 	cassette_gapdelay = 9600;
 	/* registers for SETVBV: third system timer, ~0.1 sec */
-	regA = 3;
-	regX = 0;
-	regY = 5;
+	CPU_regA = 3;
+	CPU_regX = 0;
+	CPU_regY = 5;
 }
 
 /* indicates that a save leader is written by the OS */
@@ -395,9 +395,9 @@ void CASSETTE_LeaderSave(void)
 {
 	cassette_gapdelay = 19200;
 	/* registers for SETVBV: third system timer, ~0.1 sec */
-	regA = 3;
-	regX = 0;
-	regY = 5;
+	CPU_regA = 3;
+	CPU_regX = 0;
+	CPU_regY = 5;
 }
 
 /* Read Cassette Record from Storage medium
