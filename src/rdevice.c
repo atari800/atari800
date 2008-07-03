@@ -216,11 +216,11 @@ static int linefeeds = 1;
 static int bufend = 0;
 
 #ifndef R_NETWORK
-int r_serial = 1;
+int RDevice_serial_enabled = 1;
 #else
-int r_serial = 0;  /* Default to network, if enabled. Use parameter to -rdevice command line switch to enable serial mode. */
+int RDevice_serial_enabled = 0;  /* Default to network, if enabled. Use parameter to -rdevice command line switch to enable serial mode. */
 #endif
-char r_device[FILENAME_MAX];
+char RDevice_serial_device[FILENAME_MAX];
 
 /*---------------------------------------------------------------------------
    Host Support Function - If Disconnect signal is found, then close socket
@@ -244,7 +244,7 @@ static void catch_disconnect(int sig)
 #endif /* R_NETWORK */
 
 /*---------------------------------------------------------------------------
-   Host Support Function - XIO 34 - Called from Device_RSPEC
+   Host Support Function - XIO 34 - Called from RDevice_SPEC
    Controls handshake lines DTR, RTS, SD
 ---------------------------------------------------------------------------*/
 static void xio_34(void)
@@ -261,7 +261,7 @@ static void xio_34(void)
   temp = dGetByte(ICAX1Z);
 
 #ifdef R_SERIAL
-  if(r_serial)
+  if(RDevice_serial_enabled)
   {
     tcgetattr(rdev_fd, &options);
     /*ioctl(rdev_fd, TIOCMGET, &status);*/
@@ -274,7 +274,7 @@ static void xio_34(void)
     {
       /* turn DTR on */
 #ifdef R_SERIAL
-      if(r_serial)
+      if(RDevice_serial_enabled)
       {
         /*status |= TIOCM_DTR;*/
       }
@@ -284,7 +284,7 @@ static void xio_34(void)
     {
       /*Drop DTR*/
 #ifdef R_SERIAL
-      if(r_serial)
+      if(RDevice_serial_enabled)
       {
         cfsetispeed(&options, B0);
         cfsetospeed(&options, B0);
@@ -302,7 +302,7 @@ static void xio_34(void)
   }
 
 #ifdef R_SERIAL
-  if(r_serial)
+  if(RDevice_serial_enabled)
   {
     /* RTS Set/Clear*/
     if(temp & 0x20)
@@ -332,7 +332,7 @@ static void xio_34(void)
 #endif /* R_SERIAL */
 
 #ifdef R_SERIAL
-  if(r_serial)
+  if(RDevice_serial_enabled)
   {
     tcsetattr(rdev_fd, TCSANOW, &options);
     /*ioctl(rdev_fd, TIOCMSET, &status);*/
@@ -347,7 +347,7 @@ static void xio_34(void)
 }
 
 /*---------------------------------------------------------------------------
-   Host Support Function - XIO 36 - Called from Device_RSPEC
+   Host Support Function - XIO 36 - Called from RDevice_SPEC
    Sets baud, stop bits, and ready monitoring.
 ---------------------------------------------------------------------------*/
 static void xio_36(void)
@@ -361,7 +361,7 @@ static void xio_36(void)
   aux2 = dGetByte(ICAX2Z);
 
 #ifdef R_SERIAL
-  if(r_serial)
+  if(RDevice_serial_enabled)
   {
 #ifndef DREAMCAST
     tcgetattr(rdev_fd, &options);
@@ -627,7 +627,7 @@ static void xio_36(void)
 }
 
 /*---------------------------------------------------------------------------
-   Host Support Function - XIO 38 - Called from Device_RSPEC
+   Host Support Function - XIO 38 - Called from RDevice_SPEC
    Sets Translation and parity
 ---------------------------------------------------------------------------*/
 static void xio_38(void)
@@ -643,7 +643,7 @@ static void xio_38(void)
 
   aux1 = Peek(ICAX1Z);
 #if defined(R_SERIAL) && !defined(DREAMCAST)
-  if(r_serial)
+  if(RDevice_serial_enabled)
   {
     if(aux1 & 0x04)
     { /*Odd Parity*/
@@ -692,7 +692,7 @@ static void xio_38(void)
 }
 
 /*---------------------------------------------------------------------------
-   Host Support Function - XIO 40 - Called from Device_RSPEC
+   Host Support Function - XIO 40 - Called from RDevice_SPEC
    Sets concurrent mode.  Also checks for dropped carrier.
 ---------------------------------------------------------------------------*/
 static void xio_40(void)
@@ -843,9 +843,9 @@ static void open_connection_serial(int port)
     close(rdev_fd);
   do_once = 1;
 
-  if (*r_device)  /* got a device name from command line */
+  if (*RDevice_serial_device)  /* got a device name from command line */
   {
-    strcpy(dev_name, r_device);
+    strcpy(dev_name, RDevice_serial_device);
   }
 
   dev_name[strlen(dev_name) - 1] += port - 1;
@@ -902,7 +902,7 @@ static void open_connection_serial(int port)
    Returns:    "jybolac.homelinux.com"
 ---------------------------------------------------------------------------*/
 #ifdef R_NETWORK
-static void Device_GetInetAddress(void)
+static void RDevice_GetInetAddress(void)
 {
   UWORD bufadr = Device_SkipDeviceName();
   char *p;
@@ -931,7 +931,7 @@ static void Device_GetInetAddress(void)
 /*---------------------------------------------------------------------------
    R Device OPEN vector - called from Atari OS Device Handler Address Table
 ---------------------------------------------------------------------------*/
-void Device_ROPEN(void)
+void RDevice_OPEN(void)
 {
   int  port;
   int  direction;
@@ -955,7 +955,7 @@ void Device_ROPEN(void)
   {
     DBG_APRINT("R*: Open for Writing...");
 #ifdef R_SERIAL
-    if(r_serial)
+    if(RDevice_serial_enabled)
     {
       DBG_APRINT("R*: serial mode.");
       open_connection_serial(devnum);
@@ -967,7 +967,7 @@ void Device_ROPEN(void)
 #ifdef R_NETWORK
     {
       DBG_APRINT("R*: Socket mode.");
-      Device_GetInetAddress();
+      RDevice_GetInetAddress();
       open_connection(inetaddress, port);
     }
 #endif /* R_NETWORK */
@@ -982,7 +982,7 @@ void Device_ROPEN(void)
 /*---------------------------------------------------------------------------
    R Device CLOSE vector - called from Atari OS Device Handler Address Table
 ---------------------------------------------------------------------------*/
-void Device_RCLOS(void)
+void RDevice_CLOS(void)
 {
   regA = 1;
   regY = 1;
@@ -995,7 +995,7 @@ void Device_RCLOS(void)
 /*---------------------------------------------------------------------------
    R Device READ vector - called from Atari OS Device Handler Address Table
 ---------------------------------------------------------------------------*/
-void Device_RREAD(void)
+void RDevice_READ(void)
 {
   int j;
 
@@ -1043,7 +1043,7 @@ void Device_RREAD(void)
 /*---------------------------------------------------------------------------
    R Device WRITE vector - called from Atari OS Device Handler Address Table
 ---------------------------------------------------------------------------*/
-void Device_RWRIT(void)
+void RDevice_WRIT(void)
 {
   unsigned char out_char;
 #ifdef R_NETWORK
@@ -1063,7 +1063,7 @@ void Device_RWRIT(void)
       out_char = 0x0d;
       if(linefeeds)
       {
-        if((r_serial == 0) && (connected == 0))
+        if((RDevice_serial_enabled == 0) && (connected == 0))
         { /* local echo */
           bufend++;
           bufout[bufend-1] = out_char;
@@ -1098,7 +1098,7 @@ void Device_RWRIT(void)
     out_char = 0x0a;
   }
 
-  /*if((r_serial == 0) && (out_char == 255))*/
+  /*if((RDevice_serial_enabled == 0) && (out_char == 255))*/
   /*{*/
   /*  DBG_APRINT("R: Writing IAC..."); */
   /*  retval = write(rdev_fd, &out_char, 1);*/ /* IAC escape sequence */ 
@@ -1106,7 +1106,7 @@ void Device_RWRIT(void)
   /*if(retval == -1)*/
 
 #ifdef R_NETWORK
-  if((r_serial == 0) && (connected == 0))
+  if((RDevice_serial_enabled == 0) && (connected == 0))
   { /* Local echo - only do if in socket mode */
     bufend++;
     bufout[bufend-1] = out_char;
@@ -1192,7 +1192,7 @@ void Device_RWRIT(void)
 /*---------------------------------------------------------------------------
    R Device GET STATUS vector - called from Device Handler Address Table
 ---------------------------------------------------------------------------*/
-void Device_RSTAT(void)
+void RDevice_STAT(void)
 {
 #ifdef WIN32
   int len;
@@ -1218,7 +1218,7 @@ void Device_RSTAT(void)
 #ifdef R_NETWORK
   if(connected == 0)
   {
-    if(r_serial == 0)
+    if(RDevice_serial_enabled == 0)
     {
       if(do_once == 0)
       {
@@ -1313,7 +1313,7 @@ void Device_RSTAT(void)
 #endif
       if(bytesread > 0)
       {
-        if((r_serial == 0) && (one == 0xff))
+        if((RDevice_serial_enabled == 0) && (one == 0xff))
         {
           /* Start Telnet escape seq processing... */
           while(read(rdev_fd, (char *)telnet_command,2) != 2) {};
@@ -1394,7 +1394,7 @@ void Device_RSTAT(void)
 /*---------------------------------------------------------------------------
    R Device SPECIAL vector - called from Atari OS Device Handler Address Table
 ---------------------------------------------------------------------------*/
-void Device_RSPEC(void)
+void RDevice_SPEC(void)
 {
   int iccom;
 
@@ -1439,7 +1439,7 @@ void Device_RSPEC(void)
 /*---------------------------------------------------------------------------
    R Device INIT vector - called from Atari OS Device Handler Address Table
 ---------------------------------------------------------------------------*/
-void Device_RINIT(void)
+void RDevice_INIT(void)
 {
   DBG_APRINT("R*: INIT");
   regA = 1;
@@ -1447,7 +1447,7 @@ void Device_RINIT(void)
   ClrN;
 }
 
-void Device_R_Exit(void)
+void RDevice_Exit(void)
 {
 #ifdef WIN32
   WSACleanup();

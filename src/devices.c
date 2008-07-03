@@ -2457,13 +2457,13 @@ void Device_UpdatePatches(void)
 		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_SPEC, R_PATCH_SPEC - 1);
 		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_INIT, R_PATCH_INIT - 1);
 		/* set patches */
-		Atari800_AddEscRts(R_PATCH_OPEN, ESC_ROPEN, Device_ROPEN);
-		Atari800_AddEscRts(R_PATCH_CLOS, ESC_RCLOS, Device_RCLOS);
-		Atari800_AddEscRts(R_PATCH_READ, ESC_RREAD, Device_RREAD);
-		Atari800_AddEscRts(R_PATCH_WRIT, ESC_RWRIT, Device_RWRIT);
-		Atari800_AddEscRts(R_PATCH_STAT, ESC_RSTAT, Device_RSTAT);
-		Atari800_AddEscRts(R_PATCH_SPEC, ESC_RSPEC, Device_RSPEC);
-		Atari800_AddEscRts(R_PATCH_INIT, ESC_RINIT, Device_RINIT);
+		Atari800_AddEscRts(R_PATCH_OPEN, ESC_ROPEN, RDevice_OPEN);
+		Atari800_AddEscRts(R_PATCH_CLOS, ESC_RCLOS, RDevice_CLOS);
+		Atari800_AddEscRts(R_PATCH_READ, ESC_RREAD, RDevice_READ);
+		Atari800_AddEscRts(R_PATCH_WRIT, ESC_RWRIT, RDevice_WRIT);
+		Atari800_AddEscRts(R_PATCH_STAT, ESC_RSTAT, RDevice_STAT);
+		Atari800_AddEscRts(R_PATCH_SPEC, ESC_RSPEC, RDevice_SPEC);
+		Atari800_AddEscRts(R_PATCH_INIT, ESC_RINIT, RDevice_INIT);
 		/* R: in HATABS will be added next frame by Device_Frame */
 	}
 	else {						/* disable R: device */

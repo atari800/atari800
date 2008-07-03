@@ -25,17 +25,17 @@
 #ifndef _RDEVICE_H_
 #define _RDEVICE_H_
 
-extern void Device_ROPEN(void);
-extern void Device_RCLOS(void);
-extern void Device_RREAD(void);
-extern void Device_RWRIT(void);
-extern void Device_RSTAT(void);
-extern void Device_RSPEC(void);
-extern void Device_RINIT(void);
+extern void RDevice_OPEN(void);
+extern void RDevice_CLOS(void);
+extern void RDevice_READ(void);
+extern void RDevice_WRIT(void);
+extern void RDevice_STAT(void);
+extern void RDevice_SPEC(void);
+extern void RDevice_INIT(void);
 
-extern int r_serial;
-extern char r_device[];
+extern int RDevice_serial_enabled;
+extern char RDevice_serial_device[];
 
-extern void Device_R_Exit(void);
+extern void RDevice_Exit(void);
 
 #endif /* _RDEVICE_H_ */

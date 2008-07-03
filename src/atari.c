@@ -1145,8 +1145,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 					struct stat statbuf;
 					if (! stat(argv[i + 1], &statbuf)) {
 						if (S_ISCHR(statbuf.st_mode)) { /* only accept devices as serial device */
-							Util_strlcpy(r_device, argv[++i], FILENAME_MAX);
-							r_serial = TRUE;
+							Util_strlcpy(RDevice_serial_device, argv[++i], FILENAME_MAX);
+							RDevice_serial_enabled = TRUE;
 						}
 					}
 				}
@@ -1482,7 +1482,7 @@ int Atari800_Exit(int run_monitor)
 		INPUT_Exit();	/* finish event recording */
 #endif
 #ifdef R_IO_DEVICE
-		Device_R_Exit(); /* R: Device cleanup */
+		RDevice_Exit(); /* R: Device cleanup */
 #endif
 #ifdef SOUND
 		SndSave_CloseSoundFile();

@@ -34,6 +34,7 @@ Screen_EntireDirty.
 * rtime.[ch], cartridge.c, ui.c: rename rtime_enabled -> RTIME_enabled
 * cassette.[ch], atari.c, gtia.c, input.c, sio.c, ui.c, rename CASSETTE_, make
 some vars static.
+* rdevice.[ch], devices.c, atari.c: rename RDevice_
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>
