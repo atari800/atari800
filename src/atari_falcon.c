@@ -448,7 +448,7 @@ int Atari_Exit(int run_monitor)
 #endif
 
 	if (run_monitor) {
-		if (monitor()) {
+		if (Monitor_Run()) {
 			SetupEmulatedEnvironment();
 
 			return 1;			/* go back to emulation */

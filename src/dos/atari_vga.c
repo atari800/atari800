@@ -867,7 +867,7 @@ int Atari_Exit(int run_monitor)
 #ifdef SOUND
                 Sound_Pause();
 #endif
-                if (monitor()) {
+                if (Monitor_Run()) {
 #ifdef MONITOR_BREAK
                         if (!break_step)       /*do not enter videomode when stepping through the code*/
 #endif

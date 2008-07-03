@@ -237,7 +237,7 @@ unsigned int remember_PC_curpos = 0;
 int remember_xpos[REMEMBER_PC_STEPS];
 UWORD remember_JMP[REMEMBER_JMP_STEPS];
 unsigned int remember_jmp_curpos = 0;
-#define INC_RET_NESTING ret_nesting++
+#define INC_RET_NESTING Monitor_ret_nesting++
 #else /* MONITOR_BREAK */
 #define INC_RET_NESTING
 #endif /* MONITOR_BREAK */
@@ -583,8 +583,8 @@ void GO(int limit)
 #endif /* PC_PTR */
 
 #ifdef MONITOR_TRACE
-		if (trace_file != NULL) {
-			show_state(trace_file, GET_PC(), A, X, Y, S,
+		if (Monitor_trace_file != NULL) {
+			Monitor_ShowState(Monitor_trace_file, GET_PC(), A, X, Y, S,
 				(N & 0x80) ? 'N' : '-',
 #ifndef NO_V_FLAG_VARIABLE
 				V ? 'V' : '-',
@@ -606,7 +606,7 @@ void GO(int limit)
 			remember_xpos[remember_PC_curpos] = xpos + (ypos << 8);
 		remember_PC_curpos = (remember_PC_curpos + 1) % REMEMBER_PC_STEPS;
 
-		if (break_addr == GET_PC() || break_ypos == ypos) {
+		if (Monitor_break_addr == GET_PC() || break_ypos == ypos) {
 			DO_BREAK;
 		}
 #endif /* MONITOR_BREAK */
@@ -618,8 +618,8 @@ void GO(int limit)
 		insn = GET_CODE_BYTE();
 
 #ifdef MONITOR_BREAKPOINTS
-		if (breakpoint_table_size > 0 && breakpoints_enabled) {
-			UBYTE optype = optype6502[insn];
+		if (Monitor_breakpoint_table_size > 0 && Monitor_breakpoints_enabled) {
+			UBYTE optype = Monitor_optype6502[insn];
 			int i;
 			switch (optype >> 4) {
 			case 1:
@@ -653,16 +653,16 @@ void GO(int limit)
 				addr = 0;
 				break;
 			}
-			for (i = 0; i < breakpoint_table_size; i++) {
+			for (i = 0; i < Monitor_breakpoint_table_size; i++) {
 				int cond;
 				int value;
-				if (!breakpoint_table[i].enabled)
+				if (!Monitor_breakpoint_table[i].enabled)
 					continue; /* skip */
-				cond = breakpoint_table[i].condition;
-				if (cond == BREAKPOINT_OR)
+				cond = Monitor_breakpoint_table[i].condition;
+				if (cond == MONITOR_BREAKPOINT_OR)
 					break; /* fire */
-				value = breakpoint_table[i].value;
-				if (cond == BREAKPOINT_FLAG_CLEAR) {
+				value = Monitor_breakpoint_table[i].value;
+				if (cond == MONITOR_BREAKPOINT_FLAG_CLEAR) {
 					switch (value) {
 					case N_FLAG:
 						if ((N & 0x80) == 0)
@@ -688,7 +688,7 @@ void GO(int limit)
 						break;
 					}
 				}
-				else if (cond == BREAKPOINT_FLAG_SET) {
+				else if (cond == MONITOR_BREAKPOINT_FLAG_SET) {
 					switch (value) {
 					case N_FLAG:
 						if ((N & 0x80) != 0)
@@ -717,32 +717,32 @@ void GO(int limit)
 				else {
 					int val;
 					switch (cond >> 3) {
-					case BREAKPOINT_PC >> 3:
+					case MONITOR_BREAKPOINT_PC >> 3:
 						val = GET_PC() - 1;
 						break;
-					case BREAKPOINT_A >> 3:
+					case MONITOR_BREAKPOINT_A >> 3:
 						val = A;
 						break;
-					case BREAKPOINT_X >> 3:
+					case MONITOR_BREAKPOINT_X >> 3:
 						val = X;
 						break;
-					case BREAKPOINT_Y >> 3:
+					case MONITOR_BREAKPOINT_Y >> 3:
 						val = Y;
 						break;
-					case BREAKPOINT_S >> 3:
+					case MONITOR_BREAKPOINT_S >> 3:
 						val = S;
 						break;
-					case BREAKPOINT_READ >> 3:
+					case MONITOR_BREAKPOINT_READ >> 3:
 						if ((optype & 4) == 0)
 							goto cond_failed;
 						val = addr;
 						break;
-					case BREAKPOINT_WRITE >> 3:
+					case MONITOR_BREAKPOINT_WRITE >> 3:
 						if ((optype & 8) == 0)
 							goto cond_failed;
 						val = addr;
 						break;
-					case BREAKPOINT_ACCESS >> 3:
+					case MONITOR_BREAKPOINT_ACCESS >> 3:
 						if ((optype & 12) == 0)
 							goto cond_failed;
 						val = addr;
@@ -751,11 +751,11 @@ void GO(int limit)
 						/* shouldn't happen */
 						continue;
 					}
-					if ((cond & BREAKPOINT_LESS) != 0 && val < value)
+					if ((cond & MONITOR_BREAKPOINT_LESS) != 0 && val < value)
 						continue;
-					if ((cond & BREAKPOINT_EQUAL) != 0 && val == value)
+					if ((cond & MONITOR_BREAKPOINT_EQUAL) != 0 && val == value)
 						continue;
-					if ((cond & BREAKPOINT_GREATER) != 0 && val > value)
+					if ((cond & MONITOR_BREAKPOINT_GREATER) != 0 && val > value)
 						continue;
 				cond_failed:
 					;
@@ -763,9 +763,9 @@ void GO(int limit)
 				/* a condition failed */
 				/* quickly skip AND-connected conditions */
 				do {
-					if (++i >= breakpoint_table_size)
+					if (++i >= Monitor_breakpoint_table_size)
 						goto no_breakpoint;
-				} while (breakpoint_table[i].condition != BREAKPOINT_OR || !breakpoint_table[i].enabled);
+				} while (Monitor_breakpoint_table[i].condition != MONITOR_BREAKPOINT_OR || !Monitor_breakpoint_table[i].enabled);
 			}
 			/* fire breakpoint */
 			PC--;
@@ -796,7 +796,7 @@ void GO(int limit)
 
 	OPCODE(00)				/* BRK */
 #ifdef MONITOR_BREAK
-		if (break_brk) {
+		if (Monitor_break_brk) {
 			DO_BREAK;
 		}
 		else
@@ -993,7 +993,7 @@ void GO(int limit)
 #ifdef MONITOR_BREAK
 			remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
 			remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
-			ret_nesting++;
+			Monitor_ret_nesting++;
 #endif
 			PHW(retaddr);
 		}
@@ -1174,8 +1174,8 @@ void GO(int limit)
 		SET_PC((PL << 8) + data);
 		CPUCHECKIRQ;
 #ifdef MONITOR_BREAK
-		if (break_ret && --ret_nesting <= 0)
-			break_step = TRUE;
+		if (Monitor_break_ret && --Monitor_ret_nesting <= 0)
+			Monitor_break_step = TRUE;
 #endif
 		DONE
 
@@ -1338,8 +1338,8 @@ void GO(int limit)
 		data = PL;
 		SET_PC((PL << 8) + data + 1);
 #ifdef MONITOR_BREAK
-		if (break_ret && --ret_nesting <= 0)
-			break_step = TRUE;
+		if (Monitor_break_ret && --Monitor_ret_nesting <= 0)
+			Monitor_break_step = TRUE;
 #endif
 		if (rts_handler != NULL) {
 			rts_handler();
@@ -2172,8 +2172,8 @@ void GO(int limit)
 		data = PL;
 		SET_PC((PL << 8) + data + 1);
 #ifdef MONITOR_BREAK
-		if (break_ret && --ret_nesting <= 0)
-			break_step = TRUE;
+		if (Monitor_break_ret && --Monitor_ret_nesting <= 0)
+			Monitor_break_step = TRUE;
 #endif
 		DONE
 
@@ -2325,7 +2325,7 @@ void GO(int limit)
 #endif
 
 #ifdef MONITOR_BREAK
-		if (break_step) {
+		if (Monitor_break_step) {
 			DO_BREAK;
 		}
 #endif

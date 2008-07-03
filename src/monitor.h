@@ -6,57 +6,57 @@
 
 #include "atari.h"
 
-int monitor(void);
+int Monitor_Run(void);
 
 #ifdef MONITOR_TRACE
-extern FILE *trace_file;
+extern FILE *Monitor_trace_file;
 #endif
 
 #ifdef MONITOR_BREAK
-extern UWORD break_addr;
-extern UBYTE break_step;
-extern UBYTE break_ret;
-extern UBYTE break_brk;
-extern int ret_nesting;
+extern UWORD Monitor_break_addr;
+extern UBYTE Monitor_break_step;
+extern UBYTE Monitor_break_ret;
+extern UBYTE Monitor_break_brk;
+extern int Monitor_ret_nesting;
 #endif
 
-extern const UBYTE optype6502[256];
+extern const UBYTE Monitor_optype6502[256];
 
-void show_state(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
+void Monitor_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
                 char n, char v, char z, char c);
 
 #ifdef MONITOR_BREAKPOINTS
 
 /* Breakpoint conditions */
 
-#define BREAKPOINT_OR          1
-#define BREAKPOINT_FLAG_CLEAR  2
-#define BREAKPOINT_FLAG_SET    3
+#define MONITOR_BREAKPOINT_OR          1
+#define MONITOR_BREAKPOINT_FLAG_CLEAR  2
+#define MONITOR_BREAKPOINT_FLAG_SET    3
 
-/* these three may be ORed together and must be ORed with BREAKPOINT_PC .. BREAKPOINT_WRITE */
-#define BREAKPOINT_LESS        1
-#define BREAKPOINT_EQUAL       2
-#define BREAKPOINT_GREATER     4
+/* these three may be ORed together and must be ORed with MONITOR_BREAKPOINT_PC .. MONITOR_BREAKPOINT_WRITE */
+#define MONITOR_BREAKPOINT_LESS        1
+#define MONITOR_BREAKPOINT_EQUAL       2
+#define MONITOR_BREAKPOINT_GREATER     4
 
-#define BREAKPOINT_PC          8
-#define BREAKPOINT_A           16
-#define BREAKPOINT_X           32
-#define BREAKPOINT_Y           40
-#define BREAKPOINT_S           48
-#define BREAKPOINT_READ        64
-#define BREAKPOINT_WRITE       128
-#define BREAKPOINT_ACCESS      (BREAKPOINT_READ | BREAKPOINT_WRITE)
+#define MONITOR_BREAKPOINT_PC          8
+#define MONITOR_BREAKPOINT_A           16
+#define MONITOR_BREAKPOINT_X           32
+#define MONITOR_BREAKPOINT_Y           40
+#define MONITOR_BREAKPOINT_S           48
+#define MONITOR_BREAKPOINT_READ        64
+#define MONITOR_BREAKPOINT_WRITE       128
+#define MONITOR_BREAKPOINT_ACCESS      (MONITOR_BREAKPOINT_READ | MONITOR_BREAKPOINT_WRITE)
 
 typedef struct {
 	UBYTE enabled;
 	UBYTE condition;
 	UWORD value;
-} breakpoint_cond;
+} Monitor_breakpoint_cond;
 
-#define BREAKPOINT_TABLE_MAX  20
-extern breakpoint_cond breakpoint_table[BREAKPOINT_TABLE_MAX];
-extern int breakpoint_table_size;
-extern int breakpoints_enabled;
+#define MONITOR_BREAKPOINT_TABLE_MAX  20
+extern Monitor_breakpoint_cond Monitor_breakpoint_table[MONITOR_BREAKPOINT_TABLE_MAX];
+extern int Monitor_breakpoint_table_size;
+extern int Monitor_breakpoints_enabled;
 
 #endif /* MONITOR_BREAKPOINTS */
 

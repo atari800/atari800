@@ -2300,7 +2300,7 @@ int Atari_Exit(int run_monitor)
 	Log_flushlog();
 	if (run_monitor) {
 		autorepeat_restore();
-		restart = monitor();
+		restart = Monitor_Run();
 		autorepeat_off();
 	}
 	else

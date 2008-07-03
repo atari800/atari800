@@ -315,7 +315,7 @@ int Atari_Exit(int run_monitor)
 	// TODO: shutdown graphics mode
 	Log_flushlog();
 #if 0
-	if (run_monitor && monitor()) {
+	if (run_monitor && Monitor_Run()) {
 		// TODO: reinitialize graphics mode
 		return TRUE;
 	}

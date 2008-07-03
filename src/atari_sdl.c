@@ -1524,7 +1524,7 @@ int Atari_Exit(int run_monitor)
 #ifdef SOUND
 		Sound_Pause();
 #endif
-		restart = monitor();
+		restart = Monitor_Run();
 #ifdef SOUND
 		Sound_Continue();
 #endif

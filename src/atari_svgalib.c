@@ -592,7 +592,7 @@ int Atari_Exit(int run_monitor)
 	vga_setmode(TEXT);
 
 	if (run_monitor)
-		restart = monitor();
+		restart = Monitor_Run();
 	else
 		restart = FALSE;
 

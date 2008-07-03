@@ -659,7 +659,7 @@ int Atari_Exit(int run_monitor)
 		Sound_Pause();
 #endif
 		ShowWindow(hWndMain, SW_MINIMIZE);
-		i = monitor();
+		i = Monitor_Run();
 		ShowWindow(hWndMain, SW_RESTORE);
 #ifdef SOUND
 		Sound_Continue();

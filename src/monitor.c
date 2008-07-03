@@ -75,7 +75,7 @@ void monitor_printf(const char *format, ...)
 #endif /* __PLUS */
 
 #ifdef MONITOR_TRACE
-FILE *trace_file = NULL;
+FILE *Monitor_trace_file = NULL;
 #endif
 
 #ifdef MONITOR_HINTS
@@ -509,7 +509,7 @@ static const char instr6502[256][10] = {
      D = INDIRECT (JMP () )
      E = ESCRTS
      F = ESCAPE */
-const UBYTE optype6502[256] = {
+const UBYTE Monitor_optype6502[256] = {
 	0x01, 0x56, 0x01, 0x5e, 0x22, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x17, 0x1f, 0x1f,
 	0x92, 0x66, 0x01, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f,
 	0x13, 0x56, 0x01, 0x5e, 0x26, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x17, 0x17, 0x1f, 0x1f,
@@ -705,7 +705,7 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 #ifdef MONITOR_HINTS
 	if (p[-1] != '#') {
 		/* different names when reading/writing memory */
-		const char *label = find_label_name((UWORD) value, (optype6502[insn] & 0x08) != 0);
+		const char *label = find_label_name((UWORD) value, (Monitor_optype6502[insn] & 0x08) != 0);
 		if (label != NULL) {
 			fprintf(fp, "%*s;%s\n", 28 - nchars, "", label);
 			return pc;
@@ -716,7 +716,7 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 	return pc;
 }
 
-void show_state(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
+void Monitor_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
                 char n, char v, char z, char c)
 {
 	fprintf(fp, "%3d %3d A=%02X X=%02X Y=%02X S=%02X P=%c%c*-%c%c%c%c PC=",
@@ -725,9 +725,9 @@ void show_state(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
 	show_instruction(fp, pc);
 }
 
-static void monitor_show_state(void)
+static void show_state(void)
 {
-	show_state(stdout, regPC, regA, regX, regY, regS,
+	Monitor_ShowState(stdout, regPC, regA, regX, regY, regS,
 		(char) ((regP & N_FLAG) ? 'N' : '-'), (char) ((regP & V_FLAG) ? 'V' : '-'),
 		(char) ((regP & Z_FLAG) ? 'Z' : '-'), (char) ((regP & C_FLAG) ? 'C' : '-'));
 }
@@ -878,19 +878,19 @@ static UWORD assembler(UWORD addr)
 #endif /* MONITOR_ASSEMBLER */
 
 #ifdef MONITOR_BREAK
-UWORD break_addr = 0xd000;
-UBYTE break_step = FALSE;
+UWORD Monitor_break_addr = 0xd000;
+UBYTE Monitor_break_step = FALSE;
 static UBYTE break_over = FALSE;
-UBYTE break_ret = FALSE;
-UBYTE break_brk = FALSE;
-int ret_nesting = 0;
+UBYTE Monitor_break_ret = FALSE;
+UBYTE Monitor_break_brk = FALSE;
+int Monitor_ret_nesting = 0;
 #endif
 
 #ifdef MONITOR_BREAKPOINTS
 
-breakpoint_cond breakpoint_table[BREAKPOINT_TABLE_MAX];
-int breakpoint_table_size = 0;
-int breakpoints_enabled = TRUE;
+Monitor_breakpoint_cond Monitor_breakpoint_table[MONITOR_BREAKPOINT_TABLE_MAX];
+int Monitor_breakpoint_table_size = 0;
+int Monitor_breakpoints_enabled = TRUE;
 
 static void breakpoint_print_flag(int flagmask)
 {
@@ -941,12 +941,12 @@ static void breakpoints_set(int enabled)
 	int i;
 	if (get_dec(&i)) {
 		do {
-			if (/*i >= 0 &&*/ i < breakpoint_table_size)
-				breakpoint_table[i].enabled = (UBYTE) enabled;
+			if (/*i >= 0 &&*/ i < Monitor_breakpoint_table_size)
+				Monitor_breakpoint_table[i].enabled = (UBYTE) enabled;
 		} while (get_dec(&i));
 	}
 	else
-		breakpoints_enabled = enabled;
+		Monitor_breakpoints_enabled = enabled;
 }
 
 static void monitor_breakpoints(void)
@@ -954,77 +954,77 @@ static void monitor_breakpoints(void)
 	char *t = get_token();
 	if (t == NULL) {
 		int i;
-		if (breakpoint_table_size == 0) {
+		if (Monitor_breakpoint_table_size == 0) {
 			printf("No breakpoints defined\n");
 			return;
 		}
-		printf("Breakpoints are %sabled\n", breakpoints_enabled ? "en" : "dis");
-		for (i = 0; i < breakpoint_table_size; i++) {
+		printf("Breakpoints are %sabled\n", Monitor_breakpoints_enabled ? "en" : "dis");
+		for (i = 0; i < Monitor_breakpoint_table_size; i++) {
 			printf("%2d: ", i);
-			if (!breakpoint_table[i].enabled)
+			if (!Monitor_breakpoint_table[i].enabled)
 				printf("OFF ");
-			switch (breakpoint_table[i].condition) {
-			case BREAKPOINT_OR:
+			switch (Monitor_breakpoint_table[i].condition) {
+			case MONITOR_BREAKPOINT_OR:
 				printf("OR");
 				break;
-			case BREAKPOINT_FLAG_CLEAR:
+			case MONITOR_BREAKPOINT_FLAG_CLEAR:
 				printf("CLR");
-				breakpoint_print_flag(breakpoint_table[i].value);
+				breakpoint_print_flag(Monitor_breakpoint_table[i].value);
 				break;
-			case BREAKPOINT_FLAG_SET:
+			case MONITOR_BREAKPOINT_FLAG_SET:
 				printf("SET");
-				breakpoint_print_flag(breakpoint_table[i].value);
+				breakpoint_print_flag(Monitor_breakpoint_table[i].value);
 				break;
 			default:
 				{
 					const char *op;
-					switch (breakpoint_table[i].condition & 7) {
-					case BREAKPOINT_LESS:
+					switch (Monitor_breakpoint_table[i].condition & 7) {
+					case MONITOR_BREAKPOINT_LESS:
 						op = "<";
 						break;
-					case BREAKPOINT_EQUAL:
+					case MONITOR_BREAKPOINT_EQUAL:
 						op = "=";
 						break;
-					case BREAKPOINT_LESS | BREAKPOINT_EQUAL:
+					case MONITOR_BREAKPOINT_LESS | MONITOR_BREAKPOINT_EQUAL:
 						op = "<=";
 						break;
-					case BREAKPOINT_GREATER:
+					case MONITOR_BREAKPOINT_GREATER:
 						op = ">";
 						break;
-					case BREAKPOINT_GREATER | BREAKPOINT_EQUAL:
+					case MONITOR_BREAKPOINT_GREATER | MONITOR_BREAKPOINT_EQUAL:
 						op = ">=";
 						break;
-					case BREAKPOINT_LESS | BREAKPOINT_GREATER:
+					case MONITOR_BREAKPOINT_LESS | MONITOR_BREAKPOINT_GREATER:
 						op = "!=";
 						break;
 					default:
 						op = "?";
 						break;
 					}
-					switch (breakpoint_table[i].condition >> 3) {
-					case BREAKPOINT_PC >> 3:
-						printf("PC%s%04X", op, breakpoint_table[i].value);
+					switch (Monitor_breakpoint_table[i].condition >> 3) {
+					case MONITOR_BREAKPOINT_PC >> 3:
+						printf("PC%s%04X", op, Monitor_breakpoint_table[i].value);
 						break;
-					case BREAKPOINT_A >> 3:
-						printf("A%s%02X", op, breakpoint_table[i].value);
+					case MONITOR_BREAKPOINT_A >> 3:
+						printf("A%s%02X", op, Monitor_breakpoint_table[i].value);
 						break;
-					case BREAKPOINT_X >> 3:
-						printf("X%s%02X", op, breakpoint_table[i].value);
+					case MONITOR_BREAKPOINT_X >> 3:
+						printf("X%s%02X", op, Monitor_breakpoint_table[i].value);
 						break;
-					case BREAKPOINT_Y >> 3:
-						printf("A%s%02X", op, breakpoint_table[i].value);
+					case MONITOR_BREAKPOINT_Y >> 3:
+						printf("A%s%02X", op, Monitor_breakpoint_table[i].value);
 						break;
-					case BREAKPOINT_S >> 3:
-						printf("S%s%02X", op, breakpoint_table[i].value);
+					case MONITOR_BREAKPOINT_S >> 3:
+						printf("S%s%02X", op, Monitor_breakpoint_table[i].value);
 						break;
-					case BREAKPOINT_READ >> 3:
-						printf("READ%s%04X", op, breakpoint_table[i].value);
+					case MONITOR_BREAKPOINT_READ >> 3:
+						printf("READ%s%04X", op, Monitor_breakpoint_table[i].value);
 						break;
-					case BREAKPOINT_WRITE >> 3:
-						printf("WRITE%s%04X", op, breakpoint_table[i].value);
+					case MONITOR_BREAKPOINT_WRITE >> 3:
+						printf("WRITE%s%04X", op, Monitor_breakpoint_table[i].value);
 						break;
-					case BREAKPOINT_ACCESS >> 3:
-						printf("ACCESS%s%04X", op, breakpoint_table[i].value);
+					case MONITOR_BREAKPOINT_ACCESS >> 3:
+						printf("ACCESS%s%04X", op, Monitor_breakpoint_table[i].value);
 						break;
 					default:
 						printf("???");
@@ -1064,15 +1064,15 @@ static void monitor_breakpoints(void)
 	}
 	Util_strupper(t);
 	if (strcmp(t, "C") == 0) {
-		breakpoint_table_size = 0;
+		Monitor_breakpoint_table_size = 0;
 		printf("Breakpoint table cleared\n");
 	}
 	else if (strcmp(t, "D") == 0) {
 		int i;
-		if (get_dec(&i) && /*i >= 0 &&*/ i < breakpoint_table_size) {
-			breakpoint_table_size--;
-			while (i < breakpoint_table_size) {
-				breakpoint_table[i] = breakpoint_table[i + 1];
+		if (get_dec(&i) && /*i >= 0 &&*/ i < Monitor_breakpoint_table_size) {
+			Monitor_breakpoint_table_size--;
+			while (i < Monitor_breakpoint_table_size) {
+				Monitor_breakpoint_table[i] = Monitor_breakpoint_table[i + 1];
 				i++;
 			}
 			printf("Entry deleted\n");
@@ -1090,7 +1090,7 @@ static void monitor_breakpoints(void)
 		int i;
 		if (t[0] >= '0' && t[0] <= '9') {
 			i = Util_sscandec(t);
-			if (i < 0 || i > breakpoint_table_size) {
+			if (i < 0 || i > Monitor_breakpoint_table_size) {
 				printf("Bad argument\n");
 				return;
 			}
@@ -1101,21 +1101,21 @@ static void monitor_breakpoints(void)
 			}
 		}
 		else
-			i = breakpoint_table_size;
-		while (breakpoint_table_size < BREAKPOINT_TABLE_MAX) {
+			i = Monitor_breakpoint_table_size;
+		while (Monitor_breakpoint_table_size < MONITOR_BREAKPOINT_TABLE_MAX) {
 			UBYTE condition;
 			int value;
 			int j;
 			if (strcmp(t, "OR") == 0) {
-				condition = BREAKPOINT_OR;
+				condition = MONITOR_BREAKPOINT_OR;
 				value = 0;
 			}
 			else if (strncmp(t, "CLR", 3) == 0) {
-				condition = BREAKPOINT_FLAG_CLEAR;
+				condition = MONITOR_BREAKPOINT_FLAG_CLEAR;
 				value = breakpoint_scan_flag(t[3]);
 			}
 			else if (strncmp(t, "SET", 3) == 0) {
-				condition = BREAKPOINT_FLAG_SET;
+				condition = MONITOR_BREAKPOINT_FLAG_SET;
 				value = breakpoint_scan_flag(t[3]);
 			}
 			else {
@@ -1123,41 +1123,41 @@ static void monitor_breakpoints(void)
 				switch (t[0]) {
 				case 'A':
 					if (strncmp(t, "ACCESS", 6) == 0) {
-						condition = BREAKPOINT_ACCESS;
+						condition = MONITOR_BREAKPOINT_ACCESS;
 						t += 6;
 					}
 					else {
-						condition = BREAKPOINT_A;
+						condition = MONITOR_BREAKPOINT_A;
 						t++;
 					}
 					break;
 				case 'X':
-					condition = BREAKPOINT_X;
+					condition = MONITOR_BREAKPOINT_X;
 					t++;
 					break;
 				case 'Y':
-					condition = BREAKPOINT_Y;
+					condition = MONITOR_BREAKPOINT_Y;
 					t++;
 					break;
 				case 'P':
 					if (t[1] == 'C') {
-						condition = BREAKPOINT_PC;
+						condition = MONITOR_BREAKPOINT_PC;
 						t += 2;
 					}
 					break;
 				case 'R':
 					if (strncmp(t, "READ", 4) == 0) {
-						condition = BREAKPOINT_READ;
+						condition = MONITOR_BREAKPOINT_READ;
 						t += 4;
 					}
 					break;
 				case 'S':
-					condition = BREAKPOINT_S;
+					condition = MONITOR_BREAKPOINT_S;
 					t++;
 					break;
 				case 'W':
 					if (strncmp(t, "WRITE", 5) == 0) {
-						condition = BREAKPOINT_WRITE;
+						condition = MONITOR_BREAKPOINT_WRITE;
 						t += 5;
 					}
 					break;
@@ -1165,20 +1165,20 @@ static void monitor_breakpoints(void)
 					break;
 				}
 				if (t[0] == '!' && t[1] == '=') {
-					condition += BREAKPOINT_LESS | BREAKPOINT_GREATER;
+					condition += MONITOR_BREAKPOINT_LESS | MONITOR_BREAKPOINT_GREATER;
 					t += 2;
 				}
 				else {
 					if (*t == '<') {
-						condition += BREAKPOINT_LESS;
+						condition += MONITOR_BREAKPOINT_LESS;
 						t++;
 					}
 					if (*t == '>') {
-						condition += BREAKPOINT_GREATER;
+						condition += MONITOR_BREAKPOINT_GREATER;
 						t++;
 					}
 					if (*t == '=') {
-						condition += BREAKPOINT_EQUAL;
+						condition += MONITOR_BREAKPOINT_EQUAL;
 						t++;
 						if (*t == '=')
 							t++;
@@ -1200,13 +1200,13 @@ static void monitor_breakpoints(void)
 				printf("Bad argument\n");
 				return;
 			}
-			for (j = breakpoint_table_size; j > i; j--)
-				breakpoint_table[j] = breakpoint_table[j - 1];
-			breakpoint_table[i].enabled = TRUE;
-			breakpoint_table[i].condition = condition;
-			breakpoint_table[i].value = (UWORD) value;
+			for (j = Monitor_breakpoint_table_size; j > i; j--)
+				Monitor_breakpoint_table[j] = Monitor_breakpoint_table[j - 1];
+			Monitor_breakpoint_table[i].enabled = TRUE;
+			Monitor_breakpoint_table[i].condition = condition;
+			Monitor_breakpoint_table[i].value = (UWORD) value;
 			i++;
-			breakpoint_table_size++;
+			Monitor_breakpoint_table_size++;
 			t = get_token();
 			if (t == NULL) {
 				printf("Breakpoint(s) added\n");
@@ -1220,7 +1220,7 @@ static void monitor_breakpoints(void)
 
 #endif /* MONITOR_BREAKPOINTS */
 
-int monitor(void)
+int Monitor_Run(void)
 {
 	UWORD addr;
 
@@ -1241,20 +1241,20 @@ int monitor(void)
 #ifdef MONITOR_BREAK
 	if (break_over) {
 		/* "O" command was active */
-		break_addr = 0xd000;
+		Monitor_break_addr = 0xd000;
 		break_over = FALSE;
 	}
-	else if (regPC == break_addr)
-		printf("(breakpoint at %04X)\n", (unsigned int) break_addr);
+	else if (regPC == Monitor_break_addr)
+		printf("(breakpoint at %04X)\n", (unsigned int) Monitor_break_addr);
 	else if (ypos == break_ypos)
 		printf("(breakpoint at scanline %d)\n", break_ypos);
-	else if (break_ret && ret_nesting <= 0)
+	else if (Monitor_break_ret && Monitor_ret_nesting <= 0)
 		printf("(returned)\n");
-	break_step = FALSE;
-	break_ret = FALSE;
+	Monitor_break_step = FALSE;
+	Monitor_break_ret = FALSE;
 #endif /* MONITOR_BREAK */
 
-	monitor_show_state();
+	show_state();
 
 	for (;;) {
 		char s[128];
@@ -1301,20 +1301,20 @@ int monitor(void)
 		else if (strcmp(t, "BBRK") == 0) {
 			t = get_token();
 			if (t == NULL)
-				printf("Break on BRK is %sabled\n", break_brk ? "en" : "dis");
+				printf("Break on BRK is %sabled\n", Monitor_break_brk ? "en" : "dis");
 			else if (Util_stricmp(t, "ON") == 0)
-				break_brk = TRUE;
+				Monitor_break_brk = TRUE;
 			else if (Util_stricmp(t, "OFF") == 0)
-				break_brk = FALSE;
+				Monitor_break_brk = FALSE;
 			else
 				printf("Invalid argument. Usage: BBRK ON or OFF\n");
 		}
 		else if (strcmp(t, "BPC") == 0) {
-			get_hex(&break_addr);
-			if (break_addr >= 0xd000 && break_addr <= 0xd7ff)
+			get_hex(&Monitor_break_addr);
+			if (Monitor_break_addr >= 0xd000 && Monitor_break_addr <= 0xd7ff)
 				printf("PC breakpoint disabled\n");
 			else
-				printf("Breakpoint at PC=%04X\n", break_addr);
+				printf("Breakpoint at PC=%04X\n", Monitor_break_addr);
 		}
 		else if (strcmp(t, "HISTORY") == 0 || strcmp(t, "H") == 0) {
 			int i;
@@ -1524,14 +1524,14 @@ int monitor(void)
 #ifdef MONITOR_TRACE
 		else if (strcmp(t, "TRACE") == 0) {
 			const char *filename = get_token();
-			if (trace_file != NULL) {
-				fclose(trace_file);
+			if (Monitor_trace_file != NULL) {
+				fclose(Monitor_trace_file);
 				printf("Trace file closed\n");
-				trace_file = NULL;
+				Monitor_trace_file = NULL;
 			}
 			if (filename != NULL) {
-				trace_file = fopen(filename, "w");
-				if (trace_file != NULL)
+				Monitor_trace_file = fopen(filename, "w");
+				if (Monitor_trace_file != NULL)
 					printf("Trace file open\n");
 				else
 					perror(filename);
@@ -1561,7 +1561,7 @@ int monitor(void)
 		}
 #endif /* MONITOR_PROFILE */
 		else if (strcmp(t, "SHOW") == 0)
-			monitor_show_state();
+			show_state();
 		else if (strcmp(t, "STACK") == 0) {
 			int ts;
 			for (ts = 0x101 + regS; ts < 0x200; ) {
@@ -1760,13 +1760,13 @@ int monitor(void)
 #endif
 #ifdef MONITOR_BREAK
 		else if (strcmp(t, "G") == 0) {
-			break_step = TRUE;
+			Monitor_break_step = TRUE;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
 		else if (strcmp(t, "R") == 0 ) {
-			break_ret = TRUE;
-			ret_nesting = 1;
+			Monitor_break_ret = TRUE;
+			Monitor_ret_nesting = 1;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
@@ -1774,11 +1774,11 @@ int monitor(void)
 			UBYTE opcode = dGetByte(regPC);
 			if ((opcode & 0x1f) == 0x10 || opcode == 0x20) {
 				/* branch or JSR: set breakpoint after it */
-				break_addr = regPC + (optype6502[dGetByte(regPC)] & 0x3);
+				Monitor_break_addr = regPC + (Monitor_optype6502[dGetByte(regPC)] & 0x3);
 				break_over = TRUE;
 			}
 			else
-				break_step = TRUE;
+				Monitor_break_step = TRUE;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
@@ -1810,7 +1810,7 @@ int monitor(void)
 						break;
 					}
 				}
-				caddr += optype6502[opcode] & 3;
+				caddr += Monitor_optype6502[opcode] & 3;
 			}
 		}
 #ifdef MONITOR_HINTS

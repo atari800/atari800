@@ -101,7 +101,7 @@ int Atari_Exit(int run_monitor)
 	endwin();
 	Log_flushlog();
 
-	if (run_monitor && monitor()) {
+	if (run_monitor && Monitor_Run()) {
 		curs_set(0);
 		return TRUE;
 	}

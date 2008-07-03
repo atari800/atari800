@@ -35,6 +35,9 @@ Screen_EntireDirty.
 * cassette.[ch], atari.c, gtia.c, input.c, sio.c, ui.c, rename CASSETTE_, make
 some vars static.
 * rdevice.[ch], devices.c, atari.c: rename RDevice_
+* monitor.[ch], atari_basic.c, atari_curses.c, atari_falcon.c, atari_ps2.c,
+atari_sdl.c, atari_svgalib.c, atari_x11.c, cpu.c, dos/atari_vga.c,
+monitor.[ch], win32/atari_win32.c: rename Monitor_
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>

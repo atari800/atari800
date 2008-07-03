@@ -41,7 +41,7 @@ int Atari_Exit(int run_monitor)
 {
 	Log_flushlog();
 
-	if (run_monitor && monitor())
+	if (run_monitor && Monitor_Run())
 		return TRUE;
 
 #ifdef SOUND
