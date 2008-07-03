@@ -1473,10 +1473,10 @@ void Atari_Initialise(int *argc, char *argv[])
 		clipping_width = ATARI_WIDTH - clipping_x;
 	if ((clipping_height <= 0) || (clipping_y + clipping_height > ATARI_HEIGHT))
 		clipping_height = ATARI_HEIGHT - clipping_y;
-	screen_visible_x1 = clipping_x;
-	screen_visible_x2 = clipping_x + clipping_width;
-	screen_visible_y1 = clipping_y;
-	screen_visible_y2 = clipping_y + clipping_height;
+	Screen_visible_x1 = clipping_x;
+	Screen_visible_x2 = clipping_x + clipping_width;
+	Screen_visible_y1 = clipping_y;
+	Screen_visible_y2 = clipping_y + clipping_height;
 	switch (windowsize) {
 	case Small:
 		clipping_factor = 1;
@@ -2349,7 +2349,7 @@ void Atari_DisplayScreen(void)
 	int update_status_line = FALSE;
 
 	if (!invisible) {
-		const UBYTE *ptr2 = (const UBYTE *) atari_screen + clipping_y * ATARI_WIDTH + clipping_x;
+		const UBYTE *ptr2 = (const UBYTE *) Screen_atari + clipping_y * ATARI_WIDTH + clipping_x;
 
 #ifdef SHM
 

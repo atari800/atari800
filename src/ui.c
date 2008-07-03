@@ -1160,9 +1160,9 @@ static void DisplaySettings(void)
 		SetItemChecked(menu_array, 11, artif_new);
 		sprintf(refresh_status, "1:%-2d", refresh_rate);
 		SetItemChecked(menu_array, 2, sprite_collisions_in_skipped_frames);
-		SetItemChecked(menu_array, 3, show_atari_speed);
-		SetItemChecked(menu_array, 4, show_disk_led);
-		SetItemChecked(menu_array, 5, show_sector_counter);
+		SetItemChecked(menu_array, 3, Screen_show_atari_speed);
+		SetItemChecked(menu_array, 4, Screen_show_disk_led);
+		SetItemChecked(menu_array, 5, Screen_show_sector_counter);
 #ifdef _WIN32_WCE
 		FindMenuItem(menu_array, 6)->flags = filter_available ? (smooth_filter ? (ITEM_CHECK | ITEM_CHECKED) : ITEM_CHECK) : ITEM_HIDDEN;
 #endif
@@ -1193,13 +1193,13 @@ static void DisplaySettings(void)
 			sprite_collisions_in_skipped_frames = !sprite_collisions_in_skipped_frames;
 			break;
 		case 3:
-			show_atari_speed = !show_atari_speed;
+			Screen_show_atari_speed = !Screen_show_atari_speed;
 			break;
 		case 4:
-			show_disk_led = !show_disk_led;
+			Screen_show_disk_led = !Screen_show_disk_led;
 			break;
 		case 5:
-			show_sector_counter = !show_sector_counter;
+			Screen_show_sector_counter = !Screen_show_sector_counter;
 			break;
 #ifdef _WIN32_WCE
 		case 6:
@@ -1213,7 +1213,7 @@ static void DisplaySettings(void)
 			else if (tv_mode == screen_tv_mode)
 				db_mode = TRUE;
 			update_screen_updater();
-			entire_screen_dirty();
+			Screen_EntireDirty();
 			break;
 		case 8:
 			tv_mode = (tv_mode == TV_PAL) ? TV_NTSC : TV_PAL;
@@ -1222,17 +1222,17 @@ static void DisplaySettings(void)
 				update_screen_updater();
 			}
 			update_vidmode();
-			entire_screen_dirty();
+			Screen_EntireDirty();
 			break;
 		case 9:
 			tv_mode = screen_tv_mode = (screen_tv_mode == TV_PAL) ? TV_NTSC : TV_PAL;
 			update_vidmode();
-			entire_screen_dirty();
+			Screen_EntireDirty();
 			break;
 #ifdef HZ_TEST
 		case 10:
 			do_hz_test();
-			entire_screen_dirty();
+			Screen_EntireDirty();
 			break;
 #endif
 #endif /* DREAMCAST */

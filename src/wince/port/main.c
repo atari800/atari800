@@ -42,8 +42,8 @@ char issmartphone = 0;
 
 extern int wince_main(int argc, char **argv);
 
-extern void entire_screen_dirty(void);
-extern UBYTE *screen_dirty;
+extern void Screen_EntireDirty(void);
+extern UBYTE *Screen_dirty;
 //extern void OrientationChanged(void);
 
 static char **gargv = NULL;
@@ -117,7 +117,7 @@ static long FAR PASCAL WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 		return 0;
 	case WM_SETFOCUS:
 	case WM_ACTIVATE:
-		if (screen_dirty) entire_screen_dirty();
+		if (Screen_dirty) Screen_EntireDirty();
 		gr_resume();
 		return 0;
 	case WM_KILLFOCUS:

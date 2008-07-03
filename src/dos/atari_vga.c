@@ -478,15 +478,15 @@ static void SetupVgaEnvironment(void)
               break;
           }
 
-	screen_visible_x1 = first_col;
-	screen_visible_x2 = first_col + 320;
+	Screen_visible_x1 = first_col;
+	Screen_visible_x2 = first_col + 320;
 	if (video_mode == 0) {
-		screen_visible_y1 = first_lno;
-		screen_visible_y2 = first_lno + 200;
+		Screen_visible_y1 = first_lno;
+		Screen_visible_y2 = first_lno + 200;
 	}
 	else {
-		screen_visible_y1 = 0;
-		screen_visible_y2 = 240;
+		Screen_visible_y1 = 0;
+		Screen_visible_y2 = 240;
 	}
 
         vga_started = 1;
@@ -525,7 +525,7 @@ static void ShutdownVgaEnvironment(void)
 
 void Atari_DisplayScreen(void)
 {
-        UBYTE *ascreen = (UBYTE *) atari_screen;
+        UBYTE *ascreen = (UBYTE *) Screen_atari;
         static int lace = 0;
         unsigned long vga_ptr;
 

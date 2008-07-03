@@ -38,7 +38,7 @@
 #include "pokey.h"
 #include "util.h"
 #ifndef CURSES_BASIC
-#include "screen.h" /* for atari_screen */
+#include "screen.h" /* for Screen_atari */
 #endif
 #ifdef __PLUS
 #include "input_win.h"
@@ -767,7 +767,7 @@ static unsigned int compute_adler32_of_screen(void)
 	int y;
 	unsigned int adler = adler32(0L,Z_NULL,0);
 	for (y = 0; y < ATARI_HEIGHT; y++) {
-		adler = adler32(adler, (unsigned char*)atari_screen + 24 + ATARI_WIDTH*y, 360 - 24);
+		adler = adler32(adler, (unsigned char*)Screen_atari + 24 + ATARI_WIDTH*y, 360 - 24);
 	}
 	return adler;
 }
@@ -880,7 +880,7 @@ void INPUT_DrawMousePointer(void)
 		int x = mouse_x >> MOUSE_SHIFT;
 		int y = mouse_y >> MOUSE_SHIFT;
 		if (x >= 0 && x <= 167 && y >= 0 && y <= 119) {
-			UWORD *ptr = & ((UWORD *) atari_screen)[12 + x + ATARI_WIDTH * y];
+			UWORD *ptr = & ((UWORD *) Screen_atari)[12 + x + ATARI_WIDTH * y];
 			PLOT(-2, 0);
 			PLOT(-1, 0);
 			PLOT(1, 0);

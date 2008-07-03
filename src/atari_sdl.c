@@ -1985,22 +1985,22 @@ void Atari_DisplayScreen(void)
 		break;
 	}
 	if (Atari_xep80) {
-		DisplayXEP80((UBYTE *)atari_screen);
+		DisplayXEP80((UBYTE *)Screen_atari);
 	}
 	else if (ntscemu) {
-  		DisplayNTSCEmu640x480((UBYTE *)atari_screen);
+  		DisplayNTSCEmu640x480((UBYTE *)Screen_atari);
   	}
 	else if (PBI_PROTO80_enabled) {
-  		DisplayProto80640x400((UBYTE *)atari_screen);
+  		DisplayProto80640x400((UBYTE *)Screen_atari);
   	}
   	else if (rotate90) {
-		DisplayRotated240x320((UBYTE *) atari_screen);
+		DisplayRotated240x320((UBYTE *) Screen_atari);
 	}
 	else if (MainScreen->w == width && MainScreen->h == ATARI_HEIGHT) {
-		DisplayWithoutScaling((UBYTE *) atari_screen, jumped, width);
+		DisplayWithoutScaling((UBYTE *) Screen_atari, jumped, width);
 	}
 	else {
-		DisplayWithScaling((UBYTE *) atari_screen, jumped, width);
+		DisplayWithScaling((UBYTE *) Screen_atari, jumped, width);
 	}
 	SDL_Flip(MainScreen);
 }

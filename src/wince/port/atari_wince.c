@@ -165,7 +165,7 @@ int Atari_Exit(int run_monitor)
 
 void Atari_DisplayScreen(void)
 {
-	refreshv((UBYTE *) atari_screen + 24);
+	refreshv((UBYTE *) Screen_atari + 24);
 }
 
 int Atari_PORT(int num)
@@ -188,13 +188,13 @@ int Atari_TRIG(int num)
 void Atari_ConfigInit(void)
 {
 	enable_new_pokey = 0;
-	screen_visible_x1 = 24;
-	screen_visible_y1 = 10;
-	screen_visible_x2 = 344;
-	screen_visible_y2 = 230;
-	show_disk_led = 1;
-	show_sector_counter = 1;
-	show_atari_speed = 1;
+	Screen_visible_x1 = 24;
+	Screen_visible_y1 = 10;
+	Screen_visible_x2 = 344;
+	Screen_visible_y2 = 230;
+	Screen_show_disk_led = 1;
+	Screen_show_sector_counter = 1;
+	Screen_show_atari_speed = 1;
 }
 
 int Atari_Configure(char* option, char *parameters)

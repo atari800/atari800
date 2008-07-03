@@ -41,7 +41,7 @@ int filter_available = 0;
 int emulator_active;
 };
 
-extern "C" UBYTE *screen_dirty;
+extern "C" UBYTE *Screen_dirty;
 
 #define MAX_CLR         0x100
 static UBYTE palRed[MAX_CLR];
@@ -194,7 +194,7 @@ extern "C" void set_screen_mode(int mode)
 	
 	kbd_image_ok = 0;
 
-	entire_screen_dirty();
+	Screen_EntireDirty();
 }
 
 extern "C" int get_screen_mode()
@@ -491,7 +491,7 @@ void palette_update()
 void cls()
 {
 	pCls();
-	entire_screen_dirty();
+	Screen_EntireDirty();
 }
 
 void mono_Cls()
@@ -671,7 +671,7 @@ void mono_Refresh(UBYTE * scr_ptr)
 			scr_ptr += geom[useMode].sourceoffset;
 			scr_ptr_limit = scr_ptr + geom[useMode].lineLimit;
 			src_limit = scr_ptr + geom[useMode].xLimit;
-			dirty_ptr_line = screen_dirty + ((ULONG)scr_ptr-(ULONG)atari_screen)/8;
+			dirty_ptr_line = Screen_dirty + ((ULONG)scr_ptr-(ULONG)Screen_atari)/8;
 			dirty_ptr;
 
 			/* Internal pixel loops */
@@ -849,7 +849,7 @@ void mono_Refresh(UBYTE * scr_ptr)
 			scr_ptr += geom[useMode].sourceoffset;
 			scr_ptr_limit = scr_ptr + geom[useMode].lineLimit;
 			src_limit = scr_ptr + geom[useMode].xLimit;
-			dirty_ptr_line = screen_dirty + ((ULONG)scr_ptr-(ULONG)atari_screen)/8;
+			dirty_ptr_line = Screen_dirty + ((ULONG)scr_ptr-(ULONG)Screen_atari)/8;
 
 			if(skipmask == 0x00000003)
 			{
@@ -1079,10 +1079,10 @@ void palette_Refresh(UBYTE* scr_ptr)
 	static long low_limit = geom[useMode].sourceoffset+24;
 	static long high_limit = low_limit + geom[useMode].xLimit;
 
-/* Addressing withing screen_dirty array. This implementation assumes that the
+/* Addressing withing Screen_dirty array. This implementation assumes that the
    array does not get reallocated in runtime */
 	static UBYTE* screen_dirty_ptr;
-	static UBYTE* screen_dirty_limit = screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+	static UBYTE* screen_dirty_limit = Screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
 
 /* Source base pointer */
 	static UBYTE* screen_line_ptr;
@@ -1111,7 +1111,7 @@ void palette_Refresh(UBYTE* scr_ptr)
 	{
 		useMode = currentScreenMode;
 
-		entire_screen_dirty();
+		Screen_EntireDirty();
 
 		pixelstep = geom[useMode].pixelstep;
 		linestep = geom[useMode].linestep;
@@ -1133,8 +1133,8 @@ void palette_Refresh(UBYTE* scr_ptr)
 		if(useMode == 0)
 			pDrawKbd(dest_line_ptr);
 		
-		screen_dirty_ptr = screen_dirty;
-		screen_line_ptr = (UBYTE*)atari_screen;
+		screen_dirty_ptr = Screen_dirty;
+		screen_line_ptr = (UBYTE*)Screen_atari;
 		xoffset = 0;
 
 	/* Offset destination pointer to allow for rotation and particular screen geometry */
@@ -1164,7 +1164,7 @@ void palette_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
@@ -1197,7 +1197,7 @@ void palette_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
@@ -1221,10 +1221,10 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 	static long low_limit = geom[useMode].sourceoffset+24;
 	static long high_limit = low_limit + geom[useMode].xLimit;
 
-/* Addressing withing screen_dirty array. This implementation assumes that the
+/* Addressing withing Screen_dirty array. This implementation assumes that the
    array does not get reallocated in runtime */
 	static UBYTE* screen_dirty_ptr;
-	static UBYTE* screen_dirty_limit = screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+	static UBYTE* screen_dirty_limit = Screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
 
 /* Source base pointer */
 	static UBYTE* screen_line_ptr;
@@ -1253,7 +1253,7 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 	{
 		useMode = currentScreenMode;
 
-		entire_screen_dirty();
+		Screen_EntireDirty();
 
 		pixelstep = geom[useMode].pixelstep;
 		linestep = geom[useMode].linestep;
@@ -1275,8 +1275,8 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 		if(useMode == 0)
 			pDrawKbd(dest_line_ptr);
 		
-		screen_dirty_ptr = screen_dirty;
-		screen_line_ptr = (UBYTE*)atari_screen;
+		screen_dirty_ptr = Screen_dirty;
+		screen_line_ptr = (UBYTE*)Screen_atari;
 		xoffset = 0;
 
 	/* Offset destination pointer to allow for rotation and particular screen geometry */
@@ -1306,7 +1306,7 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
@@ -1385,7 +1385,7 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
@@ -1418,7 +1418,7 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
@@ -1444,10 +1444,10 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 	static long low_limit = geom[useMode].sourceoffset+24;
 	static long high_limit = low_limit + geom[useMode].xLimit;
 
-/* Addressing withing screen_dirty array. This implementation assumes that the
+/* Addressing withing Screen_dirty array. This implementation assumes that the
    array does not get reallocated in runtime */
 	static UBYTE* screen_dirty_ptr;
-	static UBYTE* screen_dirty_limit = screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+	static UBYTE* screen_dirty_limit = Screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
 
 /* Source base pointer */
 	static UBYTE* screen_line_ptr;
@@ -1479,7 +1479,7 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 	{
 		useMode = currentScreenMode;
 
-		entire_screen_dirty();
+		Screen_EntireDirty();
 
 		pixelstep = geom[useMode].pixelstep;
 		linestep = geom[useMode].linestep;
@@ -1503,8 +1503,8 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 		if(useMode == 0)
 			pDrawKbd(dest_line_ptr);
 		
-		screen_dirty_ptr = screen_dirty;
-		screen_line_ptr = (UBYTE*)atari_screen;
+		screen_dirty_ptr = Screen_dirty;
+		screen_line_ptr = (UBYTE*)Screen_atari;
 		xoffset = 0;
 
 	/* Offset destination pointer to allow for rotation and particular screen geometry */
@@ -1535,7 +1535,7 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
@@ -1610,7 +1610,7 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
@@ -1644,7 +1644,7 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
@@ -1669,11 +1669,11 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 	static long low_limit = geom[useMode].sourceoffset+24;
 	static long high_limit = low_limit + geom[useMode].xLimit;
 
-/* Addressing withing screen_dirty array. This implementation assumes that the
+/* Addressing withing Screen_dirty array. This implementation assumes that the
    array does not get reallocated in runtime */
 	static UBYTE* screen_dirty_ptr;
 	static UBYTE* screen_dirty_ptr_nextline;
-	static UBYTE* screen_dirty_limit = screen_dirty + (ATARI_HEIGHT-10)*ATARI_WIDTH/8;
+	static UBYTE* screen_dirty_limit = Screen_dirty + (ATARI_HEIGHT-10)*ATARI_WIDTH/8;
 
 /* Source base pointer */
 	static UBYTE* screen_line_ptr;
@@ -1712,7 +1712,7 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 	{
 		useMode = currentScreenMode;
 
-		entire_screen_dirty();
+		Screen_EntireDirty();
 		pCls();
 
 		pixelstep = geom[useMode].pixelstep;
@@ -1728,8 +1728,8 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 	if(dest_line_ptr)
 	{
 		
-		screen_dirty_ptr = screen_dirty + DRTYSKIP;
-		screen_line_ptr = (UBYTE*)atari_screen + SCRYSKIP;
+		screen_dirty_ptr = Screen_dirty + DRTYSKIP;
+		screen_line_ptr = (UBYTE*)Screen_atari + SCRYSKIP;
 		xoffset = 0;
 		linecnt = 0;
 
@@ -1976,7 +1976,7 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 					*screen_dirty_ptr = 0;
 				}
 
-				xoffset += 8; /* One screen_dirty item corresponds to 8 pixels */
+				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
 				if(xoffset >= ATARI_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;

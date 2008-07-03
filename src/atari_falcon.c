@@ -252,8 +252,8 @@ void SetupEmulatedEnvironment(void)
 
 #ifdef BITPL_SCR
 	if (delta_screen) {
-		if (atari_screen_b != NULL) {
-			memset(atari_screen_b, 0, (ATARI_HEIGHT * ATARI_WIDTH));
+		if (Screen_atari_b != NULL) {
+			memset(Screen_atari_b, 0, (ATARI_HEIGHT * ATARI_WIDTH));
 		}
 	}
 #endif
@@ -497,7 +497,7 @@ inline long DoubleSizeIt(short data)
 
 void Atari_DisplayScreen(void)
 {
-	UBYTE *screen = (UBYTE *) atari_screen;
+	UBYTE *screen = (UBYTE *) Screen_atari;
 	static int i = 0;
 
 /*
@@ -519,17 +519,17 @@ void Atari_DisplayScreen(void)
 	odkud = screen;
 	kam = Logbase();
 #ifdef BITPL_SCR
-	oldscreen = atari_screen_b;
+	oldscreen = Screen_atari_b;
 
 	if (delta_screen) {
 		/* switch between screens to enable delta output */
-		if (atari_screen==atari_screen1) {
-			atari_screen = atari_screen2;
-			atari_screen_b = atari_screen1;
+		if (Screen_atari==Screen_atari1) {
+			Screen_atari = Screen_atari2;
+			Screen_atari_b = Screen_atari1;
 		}
 		else {
-			atari_screen = atari_screen1;
-			atari_screen_b = atari_screen2;
+			Screen_atari = Screen_atari1;
+			Screen_atari_b = Screen_atari2;
 		}
 	}
 #endif

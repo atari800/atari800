@@ -42,31 +42,31 @@
 #define ATARI_VISIBLE_WIDTH 336
 #define ATARI_LEFT_MARGIN 24
 
-ULONG *atari_screen = NULL;
+ULONG *Screen_atari = NULL;
 #ifdef DIRTYRECT
-UBYTE *screen_dirty = NULL;
+UBYTE *Screen_dirty = NULL;
 #endif
 #ifdef BITPL_SCR
-ULONG *atari_screen_b = NULL;
-ULONG *atari_screen1 = NULL;
-ULONG *atari_screen2 = NULL;
+ULONG *Screen_atari_b = NULL;
+ULONG *Screen_atari1 = NULL;
+ULONG *Screen_atari2 = NULL;
 #endif
 
-/* The area that can been seen is screen_visible_x1 <= x < screen_visible_x2,
-   screen_visible_y1 <= y < screen_visible_y2.
+/* The area that can been seen is Screen_visible_x1 <= x < Screen_visible_x2,
+   Screen_visible_y1 <= y < Screen_visible_y2.
    Full Atari screen is 336x240. ATARI_WIDTH is 384 only because
    the code in antic.c sometimes draws more than 336 bytes in a line.
-   Currently screen_visible variables are used only to place
+   Currently Screen_visible variables are used only to place
    disk led and snailmeter in the corners of the screen.
 */
-int screen_visible_x1 = 24;				/* 0 .. ATARI_WIDTH */
-int screen_visible_y1 = 0;				/* 0 .. ATARI_HEIGHT */
-int screen_visible_x2 = 360;			/* 0 .. ATARI_WIDTH */
-int screen_visible_y2 = ATARI_HEIGHT;	/* 0 .. ATARI_HEIGHT */
+int Screen_visible_x1 = 24;				/* 0 .. ATARI_WIDTH */
+int Screen_visible_y1 = 0;				/* 0 .. ATARI_HEIGHT */
+int Screen_visible_x2 = 360;			/* 0 .. ATARI_WIDTH */
+int Screen_visible_y2 = ATARI_HEIGHT;	/* 0 .. ATARI_HEIGHT */
 
-int show_atari_speed = FALSE;
-int show_disk_led = TRUE;
-int show_sector_counter = FALSE;
+int Screen_show_atari_speed = FALSE;
+int Screen_show_disk_led = TRUE;
+int Screen_show_sector_counter = FALSE;
 
 #ifdef HAVE_LIBPNG
 #define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.png"
@@ -126,7 +126,7 @@ void Screen_Initialise(int *argc, char *argv[])
 			Screen_SetScreenshotFilenamePattern(argv[++i]);
 		}
 		if (strcmp(argv[i], "-showspeed") == 0) {
-			show_atari_speed = TRUE;
+			Screen_show_atari_speed = TRUE;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -139,20 +139,20 @@ void Screen_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	/* don't bother mallocing atari_screen with just "-help" */
+	/* don't bother mallocing Screen_atari with just "-help" */
 	if (help_only)
 		return;
 
-	if (atari_screen == NULL) { /* platform-specific code can initialize it in theory */
-		atari_screen = (ULONG *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH);
+	if (Screen_atari == NULL) { /* platform-specific code can initialize it in theory */
+		Screen_atari = (ULONG *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH);
 #ifdef DIRTYRECT
-		screen_dirty = (UBYTE *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH / 8);
-		entire_screen_dirty();
+		Screen_dirty = (UBYTE *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH / 8);
+		Screen_EntireDirty();
 #endif
 #ifdef BITPL_SCR
-		atari_screen_b = (ULONG *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH);
-		atari_screen1 = atari_screen;
-		atari_screen2 = atari_screen_b;
+		Screen_atari_b = (ULONG *) Util_malloc(ATARI_HEIGHT * ATARI_WIDTH);
+		Screen_atari1 = Screen_atari;
+		Screen_atari2 = Screen_atari_b;
 #endif
 	}
 }
@@ -305,7 +305,7 @@ static void SmallFont_DrawInt(UBYTE *screen, int n, UBYTE color1, UBYTE color2)
 
 void Screen_DrawAtariSpeed(double cur_time)
 {
-	if (show_atari_speed) {
+	if (Screen_show_atari_speed) {
 		static int percent_display = 100;
 		static int last_updated = 0;
 		static double last_time = 0;
@@ -317,8 +317,8 @@ void Screen_DrawAtariSpeed(double cur_time)
 		/* if (percent_display < 99 || percent_display > 101) */
 		{
 			/* space for 5 digits - up to 99999% Atari speed */
-			UBYTE *screen = (UBYTE *) atari_screen + screen_visible_x1 + 5 * SMALLFONT_WIDTH
-			          	+ (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
+			UBYTE *screen = (UBYTE *) Screen_atari + Screen_visible_x1 + 5 * SMALLFONT_WIDTH
+			          	+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
 			SmallFont_DrawChar(screen, SMALLFONT_PERCENT, 0x0c, 0x00);
 			SmallFont_DrawInt(screen - SMALLFONT_WIDTH, percent_display, 0x0c, 0x00);
 		}
@@ -331,17 +331,17 @@ void Screen_DrawDiskLED(void)
 		UBYTE *screen;
 		if (sio_last_drive != 0x60)
 			sio_last_op_time--;
-		screen = (UBYTE *) atari_screen + screen_visible_x2 - SMALLFONT_WIDTH
-			+ (screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
+		screen = (UBYTE *) Screen_atari + Screen_visible_x2 - SMALLFONT_WIDTH
+			+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
 		if (sio_last_drive == 0x60 || sio_last_drive == 0x61) {
-			if (show_disk_led)
+			if (Screen_show_disk_led)
 				SmallFont_DrawChar(screen, 11, 0x00, (UBYTE) (sio_last_op == SIO_LAST_READ ? 0xac : 0x2b));
 		}
 		else {
-			if (show_disk_led)
+			if (Screen_show_disk_led)
 				SmallFont_DrawChar(screen, sio_last_drive, 0x00, (UBYTE) (sio_last_op == SIO_LAST_READ ? 0xac : 0x2b));
 		
-			if (show_sector_counter)
+			if (Screen_show_sector_counter)
 				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, sio_last_sector, 0x00, 0x88);
 		}
 	}
@@ -522,7 +522,7 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 {
 	int is_png;
 	FILE *fp;
-	ULONG *main_atari_screen;
+	ULONG *main_screen_atari;
 	UBYTE *ptr1;
 	UBYTE *ptr2;
 	if (striendswith(filename, ".pcx"))
@@ -536,12 +536,12 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 	fp = fopen(filename, "wb");
 	if (fp == NULL)
 		return FALSE;
-	main_atari_screen = atari_screen;
-	ptr1 = (UBYTE *) atari_screen + ATARI_LEFT_MARGIN;
+	main_screen_atari = Screen_atari;
+	ptr1 = (UBYTE *) Screen_atari + ATARI_LEFT_MARGIN;
 	if (interlaced) {
-		atari_screen = (ULONG *) Util_malloc(ATARI_WIDTH * ATARI_HEIGHT);
-		ptr2 = (UBYTE *) atari_screen + ATARI_LEFT_MARGIN;
-		ANTIC_Frame(TRUE); /* draw on atari_screen */
+		Screen_atari = (ULONG *) Util_malloc(ATARI_WIDTH * ATARI_HEIGHT);
+		ptr2 = (UBYTE *) Screen_atari + ATARI_LEFT_MARGIN;
+		ANTIC_Frame(TRUE); /* draw on Screen_atari */
 	}
 	else {
 		ptr2 = NULL;
@@ -554,8 +554,8 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 		Screen_SavePCX(fp, ptr1, ptr2);
 	fclose(fp);
 	if (interlaced) {
-		free(atari_screen);
-		atari_screen = main_atari_screen;
+		free(Screen_atari);
+		Screen_atari = main_screen_atari;
 	}
 	return TRUE;
 }
@@ -565,4 +565,11 @@ void Screen_SaveNextScreenshot(int interlaced)
 	char filename[FILENAME_MAX];
 	Screen_FindScreenshotFilename(filename);
 	Screen_SaveScreenshot(filename, interlaced);
+}
+
+void Screen_EntireDirty(void)
+{
+#ifdef DIRTYRECT
+	memset(Screen_dirty, 1, ATARI_WIDTH * ATARI_HEIGHT / 8);
+#endif /* DIRTYRECT */
 }

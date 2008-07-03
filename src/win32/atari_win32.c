@@ -673,7 +673,7 @@ int Atari_Exit(int run_monitor)
 
 void Atari_DisplayScreen(void)
 {
-	refreshv((UBYTE *) atari_screen + 24);
+	refreshv((UBYTE *) Screen_atari + 24);
 }
 
 int Atari_PORT(int num)

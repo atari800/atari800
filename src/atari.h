@@ -67,8 +67,8 @@ extern int disable_basic;
 /* TRUE to enable patched (fast) Serial I/O. */
 extern int enable_sio_patch;
 
-/* Dimensions of atari_screen.
-   atari_screen is ATARI_WIDTH * ATARI_HEIGHT bytes.
+/* Dimensions of Screen_atari.
+   Screen_atari is ATARI_WIDTH * ATARI_HEIGHT bytes.
    Each byte is an Atari color code - use Colours_Get[RGB] functions
    to get actual RGB codes.
    You should never display anything outside the middle 336 columns. */
@@ -76,7 +76,7 @@ extern int enable_sio_patch;
 #define ATARI_HEIGHT 240
 
 /* If Atari800_Frame() sets it to TRUE, then the current contents
-   of atari_screen should be displayed. */
+   of Screen_atari should be displayed. */
 extern int display_screen;
 
 /* Simply incremented by Atari800_Frame(). */
@@ -253,7 +253,7 @@ extern unsigned int screenline_cpu_clock;
 #define UNALIGNED_PUT_WORD(ptr, value, stat_arr) (stat_arr[(unsigned int) (ptr) & 7]++, *(UWORD *) (ptr) = (value))
 #define UNALIGNED_GET_LONG(ptr, stat_arr)        (stat_arr[(unsigned int) (ptr) & 7]++, *(const ULONG *) (ptr))
 #define UNALIGNED_PUT_LONG(ptr, value, stat_arr) (stat_arr[(unsigned int) (ptr) & 7]++, *(ULONG *) (ptr) = (value))
-UNALIGNED_STAT_DECL(atari_screen_write_long_stat)
+UNALIGNED_STAT_DECL(Screen_atari_write_long_stat)
 UNALIGNED_STAT_DECL(pm_scanline_read_long_stat)
 UNALIGNED_STAT_DECL(memory_read_word_stat)
 UNALIGNED_STAT_DECL(memory_write_word_stat)

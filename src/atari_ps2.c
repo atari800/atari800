@@ -341,7 +341,7 @@ void Atari_DisplayScreen(void)
 	tex.Width = ATARI_WIDTH;
 	tex.Height = ATARI_HEIGHT;
 	tex.PSM = GS_PSM_T8;
-	tex.Mem = (UBYTE *) atari_screen;
+	tex.Mem = (UBYTE *) Screen_atari;
 	tex.Clut = clut;
 	tex.Vram = 0x200000;
 	tex.VramClut = 0x280000;

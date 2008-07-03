@@ -192,13 +192,13 @@ static void Atari_DisplayScreen_doubleb(UBYTE *screen)
 	}
 
 	for (m=START_VAL/8, x=START_VAL; m < ATARI_HEIGHT * ATARI_WIDTH / 8; m++) {
-		nsd[m] = screen_dirty[m];  /* remember for other page */
-		if (screen_dirty[m] || osd[m]) {
+		nsd[m] = Screen_dirty[m];  /* remember for other page */
+		if (Screen_dirty[m] || osd[m]) {
 			/* Draw eight pixels (x,y), (x+1,y),...,(x+7,y) here */
 			for (j=0; j<8; j++) {
 				*(vram + x + j) = mypal[*(screen + x + j)];
 			}
-			screen_dirty[m] = 0;
+			Screen_dirty[m] = 0;
 		}
 		x += 8;
 		if (x >= 320 + (ATARI_WIDTH - 320) / 2) { /* end of visible part of line */
@@ -232,12 +232,12 @@ static void Atari_DisplayScreen_singleb(UBYTE *screen)
 	vid_border_color(0, 0, 0);
 #endif
 	for (m=START_VAL/8, x=START_VAL; m < ATARI_HEIGHT * ATARI_WIDTH / 8; m++) {
-		if (screen_dirty[m]) {
+		if (Screen_dirty[m]) {
 			/* Draw eight pixels (x,y), (x+1,y),...,(x+7,y) here */
 			for (j=0; j<8; j++) {
 				*(vram + x + j) = mypal[*(screen + x + j)];
 			}
-			screen_dirty[m] = 0;
+			Screen_dirty[m] = 0;
 		}
 		x += 8;
 		if (x >= 320 + (ATARI_WIDTH - 320) / 2) { /* end of visible part of line */
@@ -431,7 +431,7 @@ int get_emkey(UBYTE *title)
 	memcpy(atari_screen_backup, atari_screen, ATARI_HEIGHT * ATARI_WIDTH);
 	keycode = kb_ui(title, -1);
 	memcpy(atari_screen, atari_screen_backup, ATARI_HEIGHT * ATARI_WIDTH);
-	entire_screen_dirty();
+	Screen_EntireDirty();
 	Atari_DisplayScreen();
 	in_kbui = FALSE;
 	return keycode;
@@ -471,7 +471,7 @@ static int controller_kb(void)
 		memcpy(atari_screen_backup, atari_screen, ATARI_HEIGHT * ATARI_WIDTH);
 		keycode = kb_ui(NULL, -1);
 		memcpy(atari_screen, atari_screen_backup, ATARI_HEIGHT * ATARI_WIDTH);
-		entire_screen_dirty();
+		Screen_EntireDirty();
 		Atari_DisplayScreen();
 		in_kbui = FALSE;
 		return keycode;

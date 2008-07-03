@@ -96,37 +96,37 @@ static UBYTE scratchUByte;
 #define WRITE_VIDEO(ptr, val) \
 	do { \
 		scratchUWordPtr = (ptr); \
-		screen_dirty[((ULONG) scratchUWordPtr - (ULONG) atari_screen) >> 3] = 1; \
+		Screen_dirty[((ULONG) scratchUWordPtr - (ULONG) Screen_atari) >> 3] = 1; \
 		*scratchUWordPtr = (val); \
 	} while (0);
 #define WRITE_VIDEO_LONG(ptr, val) \
 	do { \
 		scratchULongPtr = (ptr); \
-		screen_dirty[((ULONG) scratchULongPtr - (ULONG) atari_screen) >> 3] = 1; \
+		Screen_dirty[((ULONG) scratchULongPtr - (ULONG) Screen_atari) >> 3] = 1; \
 		*scratchULongPtr = (val); \
 	} while (0)
 #define WRITE_VIDEO_BYTE(ptr, val) \
 	do { \
 		scratchUBytePtr = (ptr); \
-		screen_dirty[((ULONG) scratchUBytePtr - (ULONG) atari_screen) >> 3] = 1; \
+		Screen_dirty[((ULONG) scratchUBytePtr - (ULONG) Screen_atari) >> 3] = 1; \
 		*scratchUBytePtr = (val); \
 	} while (0)
 #define FILL_VIDEO(ptr, val, size) \
 	do { \
 		scratchUBytePtr = (UBYTE*) (ptr); \
 		scratchULong = (ULONG) (size); \
-		memset(screen_dirty + (((ULONG) scratchUBytePtr - (ULONG) atari_screen) >> 3), 1, scratchULong >> 3); \
+		memset(Screen_dirty + (((ULONG) scratchUBytePtr - (ULONG) Screen_atari) >> 3), 1, scratchULong >> 3); \
 		memset(scratchUBytePtr, (val), scratchULong); \
 	} while (0)
 
-#else /* NODIRTYCOMPARE */
+#else /* NODIRTYCOMPARE not defined: */
 
 #define WRITE_VIDEO(ptr, val) \
 	do { \
 		scratchUWordPtr = (ptr); \
 		scratchUWord = (val); \
 		if (*scratchUWordPtr != scratchUWord) { \
-			screen_dirty[((ULONG) scratchUWordPtr - (ULONG) atari_screen) >> 3] = 1; \
+			Screen_dirty[((ULONG) scratchUWordPtr - (ULONG) Screen_atari) >> 3] = 1; \
 			*scratchUWordPtr = scratchUWord; \
 		} \
 	} while (0)
@@ -135,7 +135,7 @@ static UBYTE scratchUByte;
 		scratchULongPtr = (ptr); \
 		scratchULong = (val); \
 		if (*scratchULongPtr != scratchULong) { \
-			screen_dirty[((ULONG) scratchULongPtr - (ULONG) atari_screen) >> 3] = 1; \
+			Screen_dirty[((ULONG) scratchULongPtr - (ULONG) Screen_atari) >> 3] = 1; \
 			*scratchULongPtr = scratchULong; \
 		} \
 	} while (0)
@@ -144,7 +144,7 @@ static UBYTE scratchUByte;
 		scratchUBytePtr = (ptr); \
 		scratchUByte = (val); \
 		if (*scratchUBytePtr != scratchUByte) { \
-			screen_dirty[((ULONG) scratchUBytePtr - (ULONG) atari_screen) >> 3] = 1; \
+			Screen_dirty[((ULONG) scratchUBytePtr - (ULONG) Screen_atari) >> 3] = 1; \
 			*scratchUBytePtr = scratchUByte; \
 		} \
 	} while (0)
@@ -156,7 +156,7 @@ static UBYTE *scratchFillLimit;
 		scratchFillLimit = scratchUBytePtr + (size); \
 		for (; scratchUBytePtr < scratchFillLimit; scratchUBytePtr++) { \
 			if (*scratchUBytePtr != scratchUByte) { \
-				screen_dirty[((ULONG) scratchUBytePtr - (ULONG) atari_screen) >> 3] = 1; \
+				Screen_dirty[((ULONG) scratchUBytePtr - (ULONG) Screen_atari) >> 3] = 1; \
 				*scratchUBytePtr = scratchUByte; \
 			} \
 		} \
@@ -164,19 +164,12 @@ static UBYTE *scratchFillLimit;
 
 #endif /* NODIRTYCOMPARE */
 
-void entire_screen_dirty(void)
-{
-	memset(screen_dirty, 1, ATARI_WIDTH * ATARI_HEIGHT / 8);
-}
-
-#else /* DIRTYRECT */
+#else /* DIRTYRECT not defined: */
 
 #define WRITE_VIDEO(ptr, val) (*(ptr) = val)
 #define WRITE_VIDEO_LONG(ptr, val) (*(ptr) = val)
 #define WRITE_VIDEO_BYTE(ptr, val) (*(ptr) = val)
 #define FILL_VIDEO(ptr, val, size) memset(ptr, val, size)
-
-void entire_screen_dirty(void) {}
 
 #endif /* DIRTYRECT */
 
@@ -201,7 +194,7 @@ void video_putbyte(UBYTE *ptr, UBYTE val)
 /* STAT_UNALIGNED_WORDS doesn't work with DIRTYRECT */
 #define WRITE_VIDEO_LONG_UNALIGNED  WRITE_VIDEO_LONG
 #else
-#define WRITE_VIDEO_LONG_UNALIGNED(ptr, val)  UNALIGNED_PUT_LONG((ptr), (val), atari_screen_write_long_stat)
+#define WRITE_VIDEO_LONG_UNALIGNED(ptr, val)  UNALIGNED_PUT_LONG((ptr), (val), Screen_atari_write_long_stat)
 #endif
 
 #ifdef WORDS_UNALIGNED_OK
@@ -2834,7 +2827,7 @@ void curses_display_line(int anticmode, const UBYTE *screendata);
 static int scanlines_to_curses_display = 0;
 #endif
 
-/* This function emulates one frame drawing screen at atari_screen */
+/* This function emulates one frame drawing screen at Screen_atari */
 void ANTIC_Frame(int draw_display)
 {
 	static const UBYTE mode_type[32] = {
@@ -2872,7 +2865,7 @@ void ANTIC_Frame(int draw_display)
 		OVERSCREEN_LINE;
 	} while (ypos < 8);
 
-	scrn_ptr = (UWORD *) atari_screen;
+	scrn_ptr = (UWORD *) Screen_atari;
 #ifdef NEW_CYCLE_EXACT
 	cur_screen_pos = NOT_DRAWING;
 #endif

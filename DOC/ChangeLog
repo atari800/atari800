@@ -24,6 +24,12 @@ BINLOAD_
 atari_svgalib.c, atari_x11.c, dc/atari_dc.c, dos/atari_vga.c, atari_javanvm.c,
 screen.c, win32/screen_win32.c, wince/port/screen_wince.cpp: rename externals
 with Colours_, Palette -> Colours_ so that it matches the filename.
+* screen.[ch], antic.c, atari.[ch], atari_falcon.c, atari_ps2.c, atari_sdl.c,
+atari_x11.c, dc/atari_dc.c, dos/atari_vga.c, input.c, screen.[ch], ui.c,
+ui_basic.c, win32/atari_win32.c, wince/port/atari_wince.c, wince/port/main.c,
+wince/port/screen_wince.cpp: rename externals to Screen_, atari_screen ->
+Screen_atari, etc. move entire_screen_dirty from antic.c to screen.c, rename
+Screen_EntireDirty.
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>

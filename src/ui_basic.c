@@ -49,7 +49,7 @@
 #include "log.h"
 #include "memory.h"
 #include "platform.h"
-#include "screen.h" /* atari_screen */
+#include "screen.h" /* Screen_atari */
 #include "ui.h"
 #include "util.h"
 
@@ -152,7 +152,7 @@ static void Plot(int fg, int bg, int ch, int x, int y)
 	curses_putch(x, y, ch, (UBYTE) fg, (UBYTE) bg);
 #else /* USE_CURSES */
 	const UBYTE *font_ptr = charset + (ch & 0x7f) * 8;
-	UBYTE *ptr = (UBYTE *) atari_screen + 24 * ATARI_WIDTH + 32 + y * (8 * ATARI_WIDTH) + x * 8;
+	UBYTE *ptr = (UBYTE *) Screen_atari + 24 * ATARI_WIDTH + 32 + y * (8 * ATARI_WIDTH) + x * 8;
 	int i;
 	int j;
 
@@ -216,9 +216,9 @@ static void ClearRectangle(int bg, int x1, int y1, int x2, int y2)
 #ifdef USE_CURSES
 	curses_clear_rectangle(x1, y1, x2, y2);
 #else
-	UBYTE *ptr = (UBYTE *) atari_screen + ATARI_WIDTH * 24 + 32 + x1 * 8 + y1 * (ATARI_WIDTH * 8);
+	UBYTE *ptr = (UBYTE *) Screen_atari + ATARI_WIDTH * 24 + 32 + x1 * 8 + y1 * (ATARI_WIDTH * 8);
 	int bytesperline = (x2 - x1 + 1) << 3;
-	UBYTE *end_ptr = (UBYTE *) atari_screen + ATARI_WIDTH * 32 + 32 + y2 * (ATARI_WIDTH * 8);
+	UBYTE *end_ptr = (UBYTE *) Screen_atari + ATARI_WIDTH * 32 + 32 + y2 * (ATARI_WIDTH * 8);
 	while (ptr < end_ptr) {
 #ifdef USE_COLOUR_TRANSLATION_TABLE
 		video_memset(ptr, (UBYTE) colour_translation_table[bg], bytesperline);
@@ -236,9 +236,9 @@ static void ClearScreen(void)
 	curses_clear_screen();
 #else
 #ifdef USE_COLOUR_TRANSLATION_TABLE
-	video_memset((UBYTE *) atari_screen, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
+	video_memset((UBYTE *) Screen_atari, colour_translation_table[0x00], ATARI_HEIGHT * ATARI_WIDTH);
 #else
-	video_memset((UBYTE *) atari_screen, 0x00, ATARI_HEIGHT * ATARI_WIDTH);
+	video_memset((UBYTE *) Screen_atari, 0x00, ATARI_HEIGHT * ATARI_WIDTH);
 #endif
 	ClearRectangle(0x94, 0, 0, 39, 23);
 #endif /* USE_CURSES */
