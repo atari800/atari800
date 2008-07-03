@@ -342,7 +342,7 @@ void Coldstart(void)
 		/* hold Option during reboot */
 		consol_table[2] &= ~CONSOL_OPTION;
 	}
-	if (hold_start) {
+	if (CASSETTE_hold_start) {
 		/* hold Start during reboot */
 		consol_table[2] &= ~CONSOL_START;
 	}
@@ -586,7 +586,7 @@ int Atari800_OpenFile(const char *filename, int reboot, int diskno, int readonly
 		if (!CASSETTE_Insert(filename))
 			return AFILE_ERROR;
 		if (reboot) {
-			hold_start = TRUE;
+			CASSETTE_hold_start = TRUE;
 			Coldstart();
 		}
 		break;

@@ -533,10 +533,10 @@ UBYTE GTIA_GetByte(UWORD addr)
 			UBYTE byte = consol_table[consol_index] & consol_mask;
 			if (consol_index > 0) {
 				consol_index--;
-				if (consol_index == 0 && hold_start) {
+				if (consol_index == 0 && CASSETTE_hold_start) {
 					/* press Space after Start to start cassette boot */
-					press_space = 1;
-					hold_start = hold_start_on_reboot;
+					CASSETTE_press_space = 1;
+					CASSETTE_hold_start = CASSETTE_hold_start_on_reboot;
 				}
 			}
 			return byte;

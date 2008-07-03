@@ -718,20 +718,20 @@ void SIO(void)
 			else
 				result = 'C';
 			/* check checksum */
-			if (cassette_buffer[length] != SIO_ChkSum(cassette_buffer, length))
+			if (CASSETTE_buffer[length] != SIO_ChkSum(CASSETTE_buffer, length))
 				result = 'E';
 			/* if all went ok, copy to Atari */
 			if (result == 'C')
-				CopyToMem(cassette_buffer, data, length);
+				CopyToMem(CASSETTE_buffer, data, length);
 			break;
 		case 0x57:	/* write */
 			sio_last_op = SIO_LAST_WRITE;
 			sio_last_drive = 0x61;
 			sio_last_op_time = 0x10;
 			/* put record into buffer */
-			CopyFromMem(data, cassette_buffer, length);
+			CopyFromMem(data, CASSETTE_buffer, length);
 			/* eval checksum over buffer data */
-			cassette_buffer[length] = SIO_ChkSum(cassette_buffer, length);
+			CASSETTE_buffer[length] = SIO_ChkSum(CASSETTE_buffer, length);
 			/* add pregap length */
 			CASSETTE_AddGap(gaps == 0 ? 3000 : 260);
 			/* write full record to storage medium */

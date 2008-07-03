@@ -39,31 +39,30 @@
 
 static FILE *cassette_file = NULL;
 static int cassette_isCAS;
-UBYTE cassette_buffer[4096];
+UBYTE CASSETTE_buffer[4096];
 static ULONG cassette_block_offset[MAX_BLOCKS];
 static SLONG cassette_elapsedtime;  /* elapsed time since begin of file */
                                     /* in scanlines */
 static SLONG cassette_savetime;	    /* helper for cas save */
 static SLONG cassette_nextirqevent; /* timestamp of next irq in scanlines */
 
-char cassette_filename[FILENAME_MAX];
-char cassette_description[CASSETTE_DESCRIPTION_MAX];
-int cassette_current_blockbyte = 0;
-int cassette_current_block;
-int cassette_max_blockbytes = 0;
-int cassette_max_block = 0;
-int cassette_savefile = FALSE;
-int cassette_issavebuffer = FALSE;
-int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
-int cassette_putdelay = 0;	/* in ms, delay since last putbyte */
-int cassette_motor = 0;
-int cassette_baudrate = 600;	
-int cassette_baudblock[MAX_BLOCKS];
+static char cassette_filename[FILENAME_MAX];
+static char cassette_description[CASSETTE_DESCRIPTION_MAX];
+static int cassette_current_blockbyte = 0;
+static int cassette_current_block;
+static int cassette_max_blockbytes = 0;
+static int cassette_max_block = 0;
+static int cassette_savefile = FALSE;
+static int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
+static int cassette_putdelay = 0;	/* in ms, delay since last putbyte */
+static int cassette_motor = 0;
+static int cassette_baudrate = 600;
+static int cassette_baudblock[MAX_BLOCKS];
 
-int hold_start_on_reboot = 0;
-int hold_start = 0;
-int press_space = 0;
-int eof_of_tape = 0;
+int CASSETTE_hold_start_on_reboot = 0;
+int CASSETTE_hold_start = 0;
+int CASSETTE_press_space = 0;
+static int eof_of_tape = 0;
 
 typedef struct {
 	char identifier[4];
@@ -102,7 +101,7 @@ void CASSETTE_Initialise(int *argc, char *argv[])
 			CASSETTE_Insert(argv[++i]);
 		else if (strcmp(argv[i], "-boottape") == 0) {
 			CASSETTE_Insert(argv[++i]);
-			hold_start = 1;
+			CASSETTE_hold_start = 1;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -320,33 +319,33 @@ static int ReadRecord_SIO(void)
 			   a byte is encoded into 10 bits */
 			filegaptimes += length * 10 * 1000 / cassette_baudblock[cassette_current_block];
 
-			fread(&cassette_buffer[0], 1, length, cassette_file);
+			fread(&CASSETTE_buffer[0], 1, length, cassette_file);
 			cassette_current_block++;
 		}
 		cassette_gapdelay = 0;
 	}
 	else {
 		length = 132;
-		cassette_buffer[0] = 0x55;
-		cassette_buffer[1] = 0x55;
+		CASSETTE_buffer[0] = 0x55;
+		CASSETTE_buffer[1] = 0x55;
 		if (cassette_current_block >= cassette_max_block) {
 			/* EOF record */
-			cassette_buffer[2] = 0xfe;
-			memset(cassette_buffer + 3, 0, 128);
+			CASSETTE_buffer[2] = 0xfe;
+			memset(CASSETTE_buffer + 3, 0, 128);
 		}
 		else {
 			int bytes;
 			fseek(cassette_file, (cassette_current_block - 1) * 128, SEEK_SET);
-			bytes = fread(cassette_buffer + 3, 1, 128, cassette_file);
+			bytes = fread(CASSETTE_buffer + 3, 1, 128, cassette_file);
 			if (bytes < 128) {
-				cassette_buffer[2] = 0xfa;	/* non-full record */
-				memset(cassette_buffer + 3 + bytes, 0, 127 - bytes);
-				cassette_buffer[0x82] = bytes;
+				CASSETTE_buffer[2] = 0xfa;	/* non-full record */
+				memset(CASSETTE_buffer + 3 + bytes, 0, 127 - bytes);
+				CASSETTE_buffer[0x82] = bytes;
 			}
 			else
-				cassette_buffer[2] = 0xfc;	/* full record */
+				CASSETTE_buffer[2] = 0xfc;	/* full record */
 		}
-		cassette_buffer[0x83] = SIO_ChkSum(cassette_buffer, 0x83);
+		CASSETTE_buffer[0x83] = SIO_ChkSum(CASSETTE_buffer, 0x83);
 		cassette_current_block++;
 	}
 	return length;
@@ -370,7 +369,7 @@ static UWORD WriteRecord(int len)
 	cassette_max_block++;
 	cassette_current_block++;
 	/* write record */
-	return fwrite(&cassette_buffer, 1, len, cassette_file);
+	return fwrite(&CASSETTE_buffer, 1, len, cassette_file);
 }
 
 int CASSETTE_AddGap(int gaptime)
@@ -477,7 +476,7 @@ static int ReadRecord_POKEY(void)
 				+ 10 * 1000 / cassette_baudblock[
 				cassette_current_block]);
 			/* read block into buffer */
-			fread(&cassette_buffer[0], 1, length, cassette_file);
+			fread(&CASSETTE_buffer[0], 1, length, cassette_file);
 			cassette_max_blockbytes = length;
 			cassette_current_blockbyte = 0;
 			cassette_current_block++;
@@ -485,12 +484,12 @@ static int ReadRecord_POKEY(void)
 	}
 	else {
 		length = 132;
-		cassette_buffer[0] = 0x55;
-		cassette_buffer[1] = 0x55;
+		CASSETTE_buffer[0] = 0x55;
+		CASSETTE_buffer[1] = 0x55;
 		if (cassette_current_block >= cassette_max_block) {
 			/* EOF record */
-			cassette_buffer[2] = 0xfe;
-			memset(cassette_buffer + 3, 0, 128);
+			CASSETTE_buffer[2] = 0xfe;
+			memset(CASSETTE_buffer + 3, 0, 128);
 			if (cassette_current_block > cassette_max_block) {
 				eof_of_tape = 1;
 			}
@@ -499,18 +498,18 @@ static int ReadRecord_POKEY(void)
 			int bytes;
 			fseek(cassette_file,
 				(cassette_current_block - 1) * 128, SEEK_SET);
-			bytes = fread(cassette_buffer + 3, 1, 128,
+			bytes = fread(CASSETTE_buffer + 3, 1, 128,
 				cassette_file);
 			if (bytes < 128) {
-				cassette_buffer[2] = 0xfa; /* non-full record */
-				memset(cassette_buffer + 3 + bytes, 0,
+				CASSETTE_buffer[2] = 0xfa; /* non-full record */
+				memset(CASSETTE_buffer + 3 + bytes, 0,
 					127 - bytes);
-				cassette_buffer[0x82] = bytes;
+				CASSETTE_buffer[0x82] = bytes;
 			}
 			else
-				cassette_buffer[2] = 0xfc; /* full record */
+				CASSETTE_buffer[2] = 0xfc; /* full record */
 		}
-		cassette_buffer[0x83] = SIO_ChkSum(cassette_buffer, 0x83);
+		CASSETTE_buffer[0x83] = SIO_ChkSum(CASSETTE_buffer, 0x83);
 		/* eval time to first byte coming out of pokey */
 		if (cassette_current_block == 1) {
 			/* on first block, length includes a leader */
@@ -559,7 +558,7 @@ static int SetNextByteTime_POKEY(int adjust)
 int CASSETTE_GetByte(void)
 {
 	/* there are programs which load 2 blocks as one */
-	return cassette_buffer[cassette_current_blockbyte];
+	return CASSETTE_buffer[cassette_current_blockbyte];
 }
 
 /* Check status of I/O-line
@@ -666,7 +665,7 @@ void CASSETTE_PutByte(int byte)
 		cassette_gapdelay += cassette_putdelay;
 	}
 	/* put byte into buffer */
-	cassette_buffer[cassette_current_blockbyte] = byte;
+	CASSETTE_buffer[cassette_current_blockbyte] = byte;
 	cassette_current_blockbyte++;
 	/* set new last byte-put time */
 	cassette_savetime = cassette_elapsedtime;

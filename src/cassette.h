@@ -13,15 +13,10 @@ int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *
 int CASSETTE_CreateFile(const char *filename, FILE **fp, int *isCAS);
 int CASSETTE_Insert(const char *filename);
 void CASSETTE_Remove(void);
-extern char cassette_filename[FILENAME_MAX];
-extern char cassette_description[CASSETTE_DESCRIPTION_MAX];
 
-extern int cassette_current_block;
-extern int cassette_max_block;
-
-extern int hold_start;
-extern int hold_start_on_reboot; /* preserve hold_start after reboot */
-extern int press_space;
+extern int CASSETTE_hold_start;
+extern int CASSETTE_hold_start_on_reboot; /* preserve hold_start after reboot */
+extern int CASSETTE_press_space;
 
 int CASSETTE_AddGap(int gaptime);
 void CASSETTE_LeaderLoad(void);
@@ -35,6 +30,6 @@ int CASSETTE_IsSaveFile(void);
 void CASSETTE_PutByte(int byte);
 void CASSETTE_TapeMotor(int onoff);
 void CASSETTE_AddScanLine(void);
-extern UBYTE cassette_buffer[4096];
+extern UBYTE CASSETTE_buffer[4096];
 
 #endif /* _CASSETTE_H_ */

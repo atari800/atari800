@@ -393,9 +393,9 @@ void INPUT_Frame(void)
 		SKSTAT &= ~8;
 
 	if (key_code < 0) {
-		if (press_space) {
+		if (CASSETTE_press_space) {
 			key_code = AKEY_SPACE;
-			press_space = 0;
+			CASSETTE_press_space = 0;
 		}
 		else {
 			last_key_code = AKEY_NONE;

@@ -32,6 +32,8 @@ Screen_atari, etc. move entire_screen_dirty from antic.c to screen.c, rename
 Screen_EntireDirty.
 * xep80.[ch]: rename ATARI_EOL -> XEP80_ATARI_EOL
 * rtime.[ch], cartridge.c, ui.c: rename rtime_enabled -> RTIME_enabled
+* cassette.[ch], atari.c, gtia.c, input.c, sio.c, ui.c, rename CASSETTE_, make
+some vars static.
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>
