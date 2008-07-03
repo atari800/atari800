@@ -2215,7 +2215,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	for (i = 0; i < 256; i += colorstep) {
 		XColor colour;
 
-		int rgb = colortable[i];
+		int rgb = Colours_table[i];
 		int status;
 
 		colour.red = (rgb & 0x00ff0000) >> 8;

@@ -326,14 +326,14 @@ static void CalcPalette(void)
 	Uint32 c;
 	if (bw == 0)
 		for (i = 0; i < 256; i++) {
-			rgb = colortable[i];
+			rgb = Colours_table[i];
 			colors[i].r = (rgb & 0x00ff0000) >> 16;
 			colors[i].g = (rgb & 0x0000ff00) >> 8;
 			colors[i].b = (rgb & 0x000000ff) >> 0;
 		}
 	else
 		for (i = 0; i < 256; i++) {
-			rgb = colortable[i];
+			rgb = Colours_table[i];
 			y = 0.299 * ((rgb & 0x00ff0000) >> 16) +
 				0.587 * ((rgb & 0x0000ff00) >> 8) +
 				0.114 * ((rgb & 0x000000ff) >> 0);

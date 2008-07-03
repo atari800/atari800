@@ -313,9 +313,9 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	/* recalculate color tables */
 	for (i = 0; i < 256; i++) {
-		int r = (colortable[i] >> 18) & 0x3f;
-		int g = (colortable[i] >> 10) & 0x3f;
-		int b = (colortable[i] >> 2) & 0x3f;
+		int r = (Colours_table[i] >> 18) & 0x3f;
+		int g = (Colours_table[i] >> 10) & 0x3f;
+		int b = (Colours_table[i] >> 2) & 0x3f;
 		f030coltable[i] = (r << 26) | (g << 18) | (b << 2);
 		RGBcoltable[i] = (r << 16) | (g << 8) | b;
 		coltable[i][0] = r * 1000 / 64;

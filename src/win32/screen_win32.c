@@ -234,7 +234,7 @@ int gron(int *argc, char *argv[])
 	}
 	else {
 		for (i = 0; i < MAX_CLR; i++)
-			palette(i, Palette_GetR(i), Palette_GetG(i), Palette_GetB(i));
+			palette(i, Colours_GetR(i), Colours_GetG(i), Colours_GetB(i));
 		IDirectDraw4_CreatePalette(lpDD, DDPCAPS_8BIT, pal, &lpDDPal, NULL);
 		if (lpDDPal)
 			IDirectDrawSurface4_SetPalette(lpDDSPrimary, lpDDPal);
@@ -264,7 +264,7 @@ void Atari_PaletteUpdate(void)
 	if(lpDDPal != NULL) {
 		int i;
 		for (i = 0; i < MAX_CLR; i++) {
-			palette(i, Palette_GetR(i), Palette_GetG(i), Palette_GetB(i));
+			palette(i, Colours_GetR(i), Colours_GetG(i), Colours_GetB(i));
 		}
 		palupd(0, MAX_CLR);
 	}
@@ -316,7 +316,7 @@ static void refreshv_win32api(UBYTE *scr_ptr)
 	/* Copying the atari screen to bitmap. */
 	for (i = 0; i < ATARI_HEIGHT; i++) {
 		for (j = 0; j < ATARI_WIDTH - 48; j++) {
-			*bitmap_bits++ = colortable[*scr_ptr++];
+			*bitmap_bits++ = Colours_table[*scr_ptr++];
 		}
 		/* The last 48 columns of the screen are not used */
 		scr_ptr+=48;
@@ -369,7 +369,7 @@ void refreshv(UBYTE *scr_ptr)
 				dst = (ULONG *) (scraddr + y * linesize);
 				srcb = scr_ptr + y * ATARI_WIDTH;
 				for (x = 0; x < scrwidth; x++)
-					*dst++ = colortable[*srcb++];
+					*dst++ = Colours_table[*srcb++];
 			}
 		}
 		else {

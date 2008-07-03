@@ -45,9 +45,9 @@
 #define PALETTE_B(x,c) ((UBYTE) c[x])
 #define PALETTE_Y(x,c) (0.30 * PALETTE_R(x,c) + 0.59 * PALETTE_G(x,c) + 0.11 * PALETTE_B(x,c))
 
-int *colortable;
+int *Colours_table;
 
-int colortable_ntsc[256] = {
+static int colortable_ntsc[256] = {
  0x000000, 0x101010, 0x1f1f1f, 0x2f2f2f,
  0x3e3e3e, 0x4e4e4e, 0x5e5e5e, 0x6e6e6e,
  0x797979, 0x8a8a8a, 0x9c9c9c, 0xadadad,
@@ -114,7 +114,7 @@ int colortable_ntsc[256] = {
  0xdbc263, 0xedd679, 0xffe98f, 0xffffa8
 };
 
-int colortable_pal[256] = {
+static int colortable_pal[256] = {
  0x2d2d2d, 0x3b3b3b, 0x494949, 0x575757,
  0x656565, 0x737373, 0x818181, 0x8f8f8f,
  0x9d9d9d, 0xababab, 0xb9b9b9, 0xc7c7c7,
@@ -181,7 +181,7 @@ int colortable_pal[256] = {
  0xeedb6d, 0xfce97b, 0xfff789, 0xffff97
 };
 
-void Palette_SetRGB(int i, int r, int g, int b, int *colortable_ptr)
+void Colours_SetRGB(int i, int r, int g, int b, int *colortable_ptr)
 {
 	if (r < 0)
 		r = 0;
@@ -198,7 +198,7 @@ void Palette_SetRGB(int i, int r, int g, int b, int *colortable_ptr)
 	colortable_ptr[i] = (r << 16) + (g << 8) + b;
 }
 
-int Palette_Read(const char *filename, int *colortable_ptr)
+int Colours_Read(const char *filename, int *colortable_ptr)
 {
 	FILE *fp;
 	int i;
@@ -221,7 +221,7 @@ int Palette_Read(const char *filename, int *colortable_ptr)
 	return TRUE;
 }
 
-void Palette_Generate(int black, int white, int colshift, int *colortable_ptr)
+void Colours_Generate(int black, int white, int colshift, int *colortable_ptr)
 {
 	int i;
 	int j;
@@ -242,12 +242,12 @@ void Palette_Generate(int black, int white, int colshift, int *colortable_ptr)
 		for (j = 0; j < 16; j++) {
 			int y;
 			y = black + white * j / 15;
-			Palette_SetRGB(i * 16 + j, y + r, y + g, y + b, colortable_ptr);
+			Colours_SetRGB(i * 16 + j, y + r, y + g, y + b, colortable_ptr);
 		}
 	}
 }
 
-void Palette_Adjust(int black, int white, int colintens, int *colortable_ptr)
+void Colours_Adjust(int black, int white, int colintens, int *colortable_ptr)
 {
 	double black_in;
 	double white_in;
@@ -271,16 +271,16 @@ void Palette_Adjust(int black, int white, int colintens, int *colortable_ptr)
 		r = y + r * colorfix;
 		g = y + g * colorfix;
 		b = y + b * colorfix;
-		Palette_SetRGB(i, (int) r, (int) g, (int) b, colortable_ptr);
+		Colours_SetRGB(i, (int) r, (int) g, (int) b, colortable_ptr);
 	}
 }
 
-void Palette_SetVideoSystem(int mode) {
+void Colours_SetVideoSystem(int mode) {
 	if (mode == TV_NTSC) {
-		colortable = colortable_ntsc;
+		Colours_table = colortable_ntsc;
 	}
        	else if (mode == TV_PAL) {
-		colortable = colortable_pal;
+		Colours_table = colortable_pal;
 	}
 	else {
 		Atari800_Exit(FALSE);
@@ -289,24 +289,24 @@ void Palette_SetVideoSystem(int mode) {
 	}
 }
 
-void Palette_InitialiseMachine(void)
+void Colours_InitialiseMachine(void)
 {
 	static int saved_tv_mode = TV_UNSET;
 	if (saved_tv_mode == TV_UNSET) {
-		/* Palette_SetVideoSystem was already called in initialisation*/
+		/* Colours_SetVideoSystem was already called in initialisation*/
 		saved_tv_mode = tv_mode;
 	}
 	else if (saved_tv_mode != tv_mode) {
 		/* tv_mode has changed */
 		saved_tv_mode = tv_mode;
-		Palette_SetVideoSystem(tv_mode);
+		Colours_SetVideoSystem(tv_mode);
 #if SUPPORTS_ATARI_PALETTEUPDATE
 		Atari_PaletteUpdate();
 #endif
 	}
 }
 
-void Palette_Initialise(int *argc, char *argv[])
+void Colours_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -367,9 +367,9 @@ void Palette_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-genpalp") == 0)
 			generate_pal = TRUE;
 		else if (strcmp(argv[i], "-paletten") == 0)
-			Palette_Read(argv[++i], colortable_ntsc);
+			Colours_Read(argv[++i], colortable_ntsc);
 		else if (strcmp(argv[i], "-palettep") == 0)
-			Palette_Read(argv[++i], colortable_pal);
+			Colours_Read(argv[++i], colortable_pal);
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-paletten <file> Use external NTSC palette");
@@ -391,16 +391,16 @@ void Palette_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	if (generate_ntsc) {
-		Palette_Generate(black_ntsc, white_ntsc, colshift_ntsc, colortable_ntsc);
+		Colours_Generate(black_ntsc, white_ntsc, colshift_ntsc, colortable_ntsc);
 	}
 	if (generate_pal) {
-		Palette_Generate(black_pal, white_pal, colshift_pal, colortable_pal);
+		Colours_Generate(black_pal, white_pal, colshift_pal, colortable_pal);
 	}
 	if (adjust_ntsc) {
-		Palette_Adjust(black_ntsc, white_ntsc, colintens_ntsc, colortable_ntsc);
+		Colours_Adjust(black_ntsc, white_ntsc, colintens_ntsc, colortable_ntsc);
 	}
 	if (adjust_pal) {
-		Palette_Adjust(black_pal, white_pal, colintens_pal, colortable_pal);
+		Colours_Adjust(black_pal, white_pal, colintens_pal, colortable_pal);
 	}
-	Palette_SetVideoSystem(tv_mode); /* tv_mode is set before calling Palette_Initialise */
+	Colours_SetVideoSystem(tv_mode); /* tv_mode is set before calling Colours_Initialise */
 }

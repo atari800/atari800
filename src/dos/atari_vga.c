@@ -439,9 +439,9 @@ void Atari_PaletteUpdate(void) {
 
         /* setting all palette at once is faster....*/
         for (a = 0, i = 0; a < 256; a++) {
-          ctab[i++]=(colortable[a] >> 18) & 0x3f;
-          ctab[i++]=(colortable[a] >> 10) & 0x3f;
-          ctab[i++]=(colortable[a] >> 2) & 0x3f;
+          ctab[i++]=(Colours_table[a] >> 18) & 0x3f;
+          ctab[i++]=(Colours_table[a] >> 10) & 0x3f;
+          ctab[i++]=(Colours_table[a] >> 2) & 0x3f;
         }
         /*copy ctab to djgpp transfer buffer in DOS memory*/
         dosmemput(ctab,768,__tb&0xfffff);

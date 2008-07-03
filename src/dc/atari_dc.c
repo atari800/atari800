@@ -141,9 +141,9 @@ static void calc_palette(void)
 	int i;
 
 	for (i = 0; i < 256; i++) {
-		mypal[i] = ((Palette_GetR(i) >> 3) << 11) |
-			((Palette_GetG(i) >> 2) << 5) |
-			(Palette_GetB(i) >> 3);
+		mypal[i] = ((Colours_GetR(i) >> 3) << 11) |
+			((Colours_GetG(i) >> 2) << 5) |
+			(Colours_GetB(i) >> 3);
 	}
 }
 

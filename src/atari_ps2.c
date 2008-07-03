@@ -284,7 +284,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	// Swap Red and Blue components
 	int i;
 	for (i = 0; i < 256; i++) {
-		int c = colortable[i];
+		int c = Colours_table[i];
 //		clut[i] = (c >> 16) + (c & 0xff00) + ((c & 0xff) << 16);
 		// swap bits 3 and 4 to workaround a bug in gsKit
 		clut[(i ^ i * 2) & 16 ? i ^ 24 : i] = (c >> 16) + (c & 0xff00) + ((c & 0xff) << 16);

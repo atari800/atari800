@@ -404,7 +404,7 @@ static void Screen_SavePCX(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	for (y = 0; y < ATARI_HEIGHT; ) {
 		x = 0;
 		do {
-			last = ptr2 != NULL ? (((colortable[*ptr1] >> plane) & 0xff) + ((colortable[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1;
+			last = ptr2 != NULL ? (((Colours_table[*ptr1] >> plane) & 0xff) + ((Colours_table[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1;
 			count = 0xc0;
 			do {
 				ptr1++;
@@ -412,7 +412,7 @@ static void Screen_SavePCX(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 					ptr2++;
 				count++;
 				x++;
-			} while (last == (ptr2 != NULL ? (((colortable[*ptr1] >> plane) & 0xff) + ((colortable[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1)
+			} while (last == (ptr2 != NULL ? (((Colours_table[*ptr1] >> plane) & 0xff) + ((Colours_table[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1)
 						&& count < 0xff && x < ATARI_VISIBLE_WIDTH);
 			if (count > 0xc1 || last >= 0xc0)
 				fputc(count, fp);
@@ -438,9 +438,9 @@ static void Screen_SavePCX(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		/* write palette */
 		fputc(0xc, fp);
 		for (i = 0; i < 256; i++) {
-			fputc(Palette_GetR(i), fp);
-			fputc(Palette_GetG(i), fp);
-			fputc(Palette_GetB(i), fp);
+			fputc(Colours_GetR(i), fp);
+			fputc(Colours_GetG(i), fp);
+			fputc(Colours_GetB(i), fp);
 		}
 	}
 }
@@ -482,9 +482,9 @@ static void Screen_SavePNG(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		int i;
 		png_color palette[256];
 		for (i = 0; i < 256; i++) {
-			palette[i].red = Palette_GetR(i);
-			palette[i].green = Palette_GetG(i);
-			palette[i].blue = Palette_GetB(i);
+			palette[i].red = Colours_GetR(i);
+			palette[i].green = Colours_GetG(i);
+			palette[i].blue = Colours_GetB(i);
 		}
 		png_set_PLTE(png_ptr, info_ptr, palette, 256);
 		for (i = 0; i < ATARI_HEIGHT; i++) {
@@ -500,9 +500,9 @@ static void Screen_SavePNG(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		for (y = 0; y < ATARI_HEIGHT; y++) {
 			rows[y] = ptr3;
 			for (x = 0; x < ATARI_VISIBLE_WIDTH; x++) {
-				*ptr3++ = (png_byte) ((Palette_GetR(*ptr1) + Palette_GetR(*ptr2)) >> 1);
-				*ptr3++ = (png_byte) ((Palette_GetG(*ptr1) + Palette_GetG(*ptr2)) >> 1);
-				*ptr3++ = (png_byte) ((Palette_GetB(*ptr1) + Palette_GetB(*ptr2)) >> 1);
+				*ptr3++ = (png_byte) ((Colours_GetR(*ptr1) + Colours_GetR(*ptr2)) >> 1);
+				*ptr3++ = (png_byte) ((Colours_GetG(*ptr1) + Colours_GetG(*ptr2)) >> 1);
+				*ptr3++ = (png_byte) ((Colours_GetB(*ptr1) + Colours_GetB(*ptr2)) >> 1);
 				ptr1++;
 				ptr2++;
 			}

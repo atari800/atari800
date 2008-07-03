@@ -20,6 +20,10 @@ matches the filename.
 * votrax.[ch], pbi_xld.c: rename externals with Votrax_, UINT16 -> SWORD.
 * binload.[ch], atari.c, cartridge.c, devices.c, sio.c: rename externals with
 BINLOAD_
+* colours.[ch], atari.[ch], atari_falcon.c, atari_ps2.c, atari_sdl.c,
+atari_svgalib.c, atari_x11.c, dc/atari_dc.c, dos/atari_vga.c, atari_javanvm.c,
+screen.c, win32/screen_win32.c, wince/port/screen_wince.cpp: rename externals
+with Colours_, Palette -> Colours_ so that it matches the filename.
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>

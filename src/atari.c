@@ -431,7 +431,7 @@ static int load_roms(void)
 int Atari800_InitialiseMachine(void)
 {
 #if !defined(BASIC) && !defined(CURSES_BASIC)
-	Palette_InitialiseMachine();
+	Colours_InitialiseMachine();
 #endif
 	Atari800_ClearAllEsc();
 	if (!load_roms())
@@ -1288,7 +1288,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 #if !defined(BASIC) && !defined(CURSES_BASIC)
-	Palette_Initialise(argc, argv);
+	Colours_Initialise(argc, argv);
 #endif
 	Device_Initialise(argc, argv);
 	RTIME_Initialise(argc, argv);

@@ -189,7 +189,7 @@ void Sound_Update(void)
 
 void Atari_PaletteUpdate(void)
 {
-	JAVANVM_InitPalette((void *)&colortable[0]);
+	JAVANVM_InitPalette((void *)&Colours_table[0]);
 }
 
 int Atari_Keyboard(void)
@@ -790,7 +790,7 @@ void Atari_Initialise(int *argc, char *argv[])
         config[JAVANVM_InitGraphicsATARI_VISIBLE_WIDTH] = 336;
         config[JAVANVM_InitGraphicsATARI_LEFT_MARGIN] = 24;
 		JAVANVM_InitGraphics((void *)&config[0]);
-		JAVANVM_InitPalette((void *)&colortable[0]);
+		JAVANVM_InitPalette((void *)&Colours_table[0]);
 #ifdef SOUND
 		SoundSetup();
 #endif

@@ -69,7 +69,7 @@ extern int enable_sio_patch;
 
 /* Dimensions of atari_screen.
    atari_screen is ATARI_WIDTH * ATARI_HEIGHT bytes.
-   Each byte is an Atari color code - use Palette_Get[RGB] functions
+   Each byte is an Atari color code - use Colours_Get[RGB] functions
    to get actual RGB codes.
    You should never display anything outside the middle 336 columns. */
 #define ATARI_WIDTH  384

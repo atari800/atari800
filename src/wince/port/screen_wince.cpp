@@ -398,9 +398,9 @@ extern "C" int gron(int *argc, char *argv[])
 
 	for(int i = 0; i < MAX_CLR; i++)
 	{
-		palette(i,  (colortable[i] >> 16) & 0xff,
-			(colortable[i] >> 8) & 0xff,
-			(colortable[i]) & 0xff);
+		palette(i,  (Colours_table[i] >> 16) & 0xff,
+			(Colours_table[i] >> 8) & 0xff,
+			(Colours_table[i]) & 0xff);
 	}
 	
 	palette_update();

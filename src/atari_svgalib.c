@@ -565,7 +565,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	initkb();
 
 	for (i = 0; i < 256; i++) {
-		int rgb = colortable[i];
+		int rgb = Colours_table[i];
 		int red;
 		int green;
 		int blue;
@@ -609,7 +609,7 @@ int Atari_Exit(int run_monitor)
 		initkb();
 
 		for (i = 0; i < 256; i++) {
-			int rgb = colortable[i];
+			int rgb = Colours_table[i];
 			int red;
 			int green;
 			int blue;
