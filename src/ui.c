@@ -990,7 +990,7 @@ static void AtariSettings(void)
 		int seltype;
 		SetItemChecked(menu_array, 0, disable_basic);
 		SetItemChecked(menu_array, 1, hold_start_on_reboot);
-		SetItemChecked(menu_array, 2, rtime_enabled);
+		SetItemChecked(menu_array, 2, RTIME_enabled);
 		SetItemChecked(menu_array, 3, enable_sio_patch);
 		menu_array[4].suffix = enable_h_patch ? (h_read_only ? "Read-only" : "Read/write") : "No ";
 		SetItemChecked(menu_array, 5, enable_p_patch);
@@ -1009,7 +1009,7 @@ static void AtariSettings(void)
 			hold_start = hold_start_on_reboot;
 			break;
 		case 2:
-			rtime_enabled = !rtime_enabled;
+			RTIME_enabled = !RTIME_enabled;
 			break;
 		case 3:
 			enable_sio_patch = !enable_sio_patch;

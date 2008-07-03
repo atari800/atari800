@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  
 
 #include "atari.h"
 
-extern int rtime_enabled;
+extern int RTIME_enabled;
 
 void RTIME_Initialise(int *argc, char *argv[]);
 UBYTE RTIME_GetByte(void);

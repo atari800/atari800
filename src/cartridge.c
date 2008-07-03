@@ -275,7 +275,7 @@ static void CART_Access(UWORD addr)
 /* a read from D500-D5FF area */
 UBYTE CART_GetByte(UWORD addr)
 {
-	if (rtime_enabled && (addr == 0xd5b8 || addr == 0xd5b9))
+	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9))
 		return RTIME_GetByte();
 	CART_Access(addr);
 	return 0xff;
@@ -284,7 +284,7 @@ UBYTE CART_GetByte(UWORD addr)
 /* a write to D500-D5FF area */
 void CART_PutByte(UWORD addr, UBYTE byte)
 {
-	if (rtime_enabled && (addr == 0xd5b8 || addr == 0xd5b9)) {
+	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9)) {
 		RTIME_PutByte(byte);
 		return;
 	}

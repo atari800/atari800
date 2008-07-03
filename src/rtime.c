@@ -36,7 +36,7 @@
 #include "log.h"
 #include "rtime.h"
 
-int rtime_enabled = 1;
+int RTIME_enabled = 1;
 
 static int rtime_state = 0;
 				/* 0 = waiting for register # */
@@ -53,9 +53,9 @@ void RTIME_Initialise(int *argc, char *argv[])
 	int j;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-rtime") == 0)
-			rtime_enabled = TRUE;
+			RTIME_enabled = TRUE;
 		else if (strcmp(argv[i], "-nortime") == 0)
-			rtime_enabled = FALSE;
+			RTIME_enabled = FALSE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-rtime           Enable R-Time 8 emulation");

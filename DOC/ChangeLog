@@ -31,6 +31,7 @@ wince/port/screen_wince.cpp: rename externals to Screen_, atari_screen ->
 Screen_atari, etc. move entire_screen_dirty from antic.c to screen.c, rename
 Screen_EntireDirty.
 * xep80.[ch]: rename ATARI_EOL -> XEP80_ATARI_EOL
+* rtime.[ch], cartridge.c, ui.c: rename rtime_enabled -> RTIME_enabled
 
 
 2008-06-30  Perry McFarlane  <perry_m@fastmail.fm>
