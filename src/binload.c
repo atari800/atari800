@@ -166,13 +166,13 @@ int BINLOAD_loader(const char *filename)
 		}
 		else if (buf[0] == 0 && buf[1] == 0) {
 			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_SAVED;
-			Device_PatchOS();
+			Devices_PatchOS();
 			Coldstart();
 			return TRUE;
 		}
 		else if (buf[0] >= '0' && buf[0] <= '9') {
 			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED;
-			Device_PatchOS();
+			Devices_PatchOS();
 			Coldstart();
 			return TRUE;
 		}

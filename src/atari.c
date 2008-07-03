@@ -165,7 +165,7 @@ static RETSIGTYPE sigint_handler(int num)
    has been set by the emulator and is not a CIM in Atari program.
    Also switch() for escape codes has been changed to array of pointers
    to functions. This allows adding port-specific patches (e.g. modem device)
-   using Atari800_AddEsc, Device_UpdateHATABSEntry etc. without modifying
+   using Atari800_AddEsc, Devices_UpdateHATABSEntry etc. without modifying
    atari.c/devices.c. Unfortunately it can't be done for patches in Atari OS,
    because the OS in XL/XE can be disabled.
 */
@@ -241,7 +241,7 @@ void Atari800_RunEsc(UBYTE esc_code)
 
 void Atari800_PatchOS(void)
 {
-	int patched = Device_PatchOS();
+	int patched = Devices_PatchOS();
 	if (enable_sio_patch) {
 		UWORD addr_l;
 		UWORD addr_s;
@@ -437,7 +437,7 @@ int Atari800_InitialiseMachine(void)
 	if (!load_roms())
 		return FALSE;
 	MEMORY_InitialiseMachine();
-	Device_UpdatePatches();
+	Devices_UpdatePatches();
 	return TRUE;
 }
 
@@ -757,18 +757,18 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 			}
 #endif
 			else if (strcmp(string, "H1_DIR") == 0)
-				Util_strlcpy(atari_h_dir[0], ptr, FILENAME_MAX);
+				Util_strlcpy(Devices_atari_h_dir[0], ptr, FILENAME_MAX);
 			else if (strcmp(string, "H2_DIR") == 0)
-				Util_strlcpy(atari_h_dir[1], ptr, FILENAME_MAX);
+				Util_strlcpy(Devices_atari_h_dir[1], ptr, FILENAME_MAX);
 			else if (strcmp(string, "H3_DIR") == 0)
-				Util_strlcpy(atari_h_dir[2], ptr, FILENAME_MAX);
+				Util_strlcpy(Devices_atari_h_dir[2], ptr, FILENAME_MAX);
 			else if (strcmp(string, "H4_DIR") == 0)
-				Util_strlcpy(atari_h_dir[3], ptr, FILENAME_MAX);
+				Util_strlcpy(Devices_atari_h_dir[3], ptr, FILENAME_MAX);
 			else if (strcmp(string, "HD_READ_ONLY") == 0)
-				h_read_only = Util_sscandec(ptr);
+				Devices_h_read_only = Util_sscandec(ptr);
 
 			else if (strcmp(string, "PRINT_COMMAND") == 0) {
-				if (!Device_SetPrintCommand(ptr))
+				if (!Devices_SetPrintCommand(ptr))
 					Log_print("Unsafe PRINT_COMMAND ignored");
 			}
 
@@ -781,13 +781,13 @@ static int Atari800_ReadConfig(const char *alternate_config_filename)
 				enable_sio_patch = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "ENABLE_H_PATCH") == 0) {
-				enable_h_patch = Util_sscanbool(ptr);
+				Devices_enable_h_patch = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "ENABLE_P_PATCH") == 0) {
-				enable_p_patch = Util_sscanbool(ptr);
+				Devices_enable_p_patch = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "ENABLE_R_PATCH") == 0) {
-				enable_r_patch = Util_sscanbool(ptr);
+				Devices_enable_r_patch = Util_sscanbool(ptr);
 			}
 
 			else if (strcmp(string, "ENABLE_NEW_POKEY") == 0) {
@@ -913,11 +913,11 @@ int Atari800_WriteConfig(void)
 		fprintf(fp, "SAVED_FILES_DIR=%s\n", saved_files_dir[i]);
 #endif
 	for (i = 0; i < 4; i++)
-		fprintf(fp, "H%c_DIR=%s\n", '1' + i, atari_h_dir[i]);
-	fprintf(fp, "HD_READ_ONLY=%d\n", h_read_only);
+		fprintf(fp, "H%c_DIR=%s\n", '1' + i, Devices_atari_h_dir[i]);
+	fprintf(fp, "HD_READ_ONLY=%d\n", Devices_h_read_only);
 
 #ifdef HAVE_SYSTEM
-	fprintf(fp, "PRINT_COMMAND=%s\n", print_command);
+	fprintf(fp, "PRINT_COMMAND=%s\n", Devices_print_command);
 #endif
 
 #ifndef BASIC
@@ -943,10 +943,10 @@ int Atari800_WriteConfig(void)
 
 	fprintf(fp, "DISABLE_BASIC=%d\n", disable_basic);
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", enable_sio_patch);
-	fprintf(fp, "ENABLE_H_PATCH=%d\n", enable_h_patch);
-	fprintf(fp, "ENABLE_P_PATCH=%d\n", enable_p_patch);
+	fprintf(fp, "ENABLE_H_PATCH=%d\n", Devices_enable_h_patch);
+	fprintf(fp, "ENABLE_P_PATCH=%d\n", Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
-	fprintf(fp, "ENABLE_R_PATCH=%d\n", enable_r_patch);
+	fprintf(fp, "ENABLE_R_PATCH=%d\n", Devices_enable_r_patch);
 #endif
 
 #ifdef SOUND
@@ -1110,7 +1110,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-nopatch") == 0)
 			enable_sio_patch = FALSE;
 		else if (strcmp(argv[i], "-nopatchall") == 0)
-			enable_sio_patch = enable_h_patch = enable_p_patch = enable_r_patch = FALSE;
+			enable_sio_patch = Devices_enable_h_patch = Devices_enable_p_patch = Devices_enable_r_patch = FALSE;
 		else if (strcmp(argv[i], "-pal") == 0)
 			tv_mode = TV_PAL;
 		else if (strcmp(argv[i], "-ntsc") == 0)
@@ -1139,7 +1139,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			}
 #ifdef R_IO_DEVICE
 			else if (strcmp(argv[i], "-rdevice") == 0) {
-				enable_r_patch = TRUE;
+				Devices_enable_r_patch = TRUE;
 #ifdef R_SERIAL
 				if (i_a && i + 2 < *argc && *argv[i + 1] != '-') {  /* optional serial device name */
 					struct stat statbuf;
@@ -1290,7 +1290,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	Colours_Initialise(argc, argv);
 #endif
-	Device_Initialise(argc, argv);
+	Devices_Initialise(argc, argv);
 	RTIME_Initialise(argc, argv);
 	SIO_Initialise (argc, argv);
 	CASSETTE_Initialise(argc, argv);
@@ -1606,7 +1606,7 @@ void Atari800_UpdatePatches(void)
 		dCopyToMem(atari_os, 0xd800, 0x2800);
 		/* Set patches */
 		Atari800_PatchOS();
-		Device_UpdatePatches();
+		Devices_UpdatePatches();
 		break;
 	case MACHINE_XLXE:
 		/* Don't patch if OS disabled */
@@ -1617,7 +1617,7 @@ void Atari800_UpdatePatches(void)
 		dCopyToMem(atari_os + 0x1800, 0xd800, 0x2800);
 		/* Set patches */
 		Atari800_PatchOS();
-		Device_UpdatePatches();
+		Devices_UpdatePatches();
 		break;
 	default:
 		break;
@@ -1920,7 +1920,7 @@ void Atari800_Frame(void)
 #ifdef PBI_XLD
 	PBI_XLD_V_Frame(); /* for the Votrax */
 #endif
-	Device_Frame();
+	Devices_Frame();
 #ifndef BASIC
 	INPUT_Frame();
 #endif

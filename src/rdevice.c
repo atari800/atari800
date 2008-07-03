@@ -258,7 +258,7 @@ static void xio_34(void)
   /*int status;*/
 
   /*fid = dGetByte(0x2e) >> 4;*/
-  temp = dGetByte(ICAX1Z);
+  temp = dGetByte(Devices_ICAX1Z);
 
 #ifdef R_SERIAL
   if(RDevice_serial_enabled)
@@ -357,8 +357,8 @@ static void xio_36(void)
   struct termios options;
 #endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
-  aux1 = dGetByte(ICAX1Z);
-  aux2 = dGetByte(ICAX2Z);
+  aux1 = dGetByte(Devices_ICAX1Z);
+  aux2 = dGetByte(Devices_ICAX2Z);
 
 #ifdef R_SERIAL
   if(RDevice_serial_enabled)
@@ -641,7 +641,7 @@ static void xio_38(void)
   regY = 1;
   ClrN;
 
-  aux1 = Peek(ICAX1Z);
+  aux1 = Peek(Devices_ICAX1Z);
 #if defined(R_SERIAL) && !defined(DREAMCAST)
   if(RDevice_serial_enabled)
   {
@@ -707,7 +707,7 @@ static void xio_40(void)
   regY = 1;
   ClrN;
 
-  aux1 = Peek(ICAX1Z);
+  aux1 = Peek(Devices_ICAX1Z);
 
   if(aux1 >= 12)
   {
@@ -904,7 +904,7 @@ static void open_connection_serial(int port)
 #ifdef R_NETWORK
 static void RDevice_GetInetAddress(void)
 {
-  UWORD bufadr = Device_SkipDeviceName();
+  UWORD bufadr = Devices_SkipDeviceName();
   char *p;
 
   if (bufadr == 0) {
@@ -943,9 +943,9 @@ void RDevice_OPEN(void)
 
   bufend = 0;
 
-  port = Peek(ICAX2Z);
-  direction = Peek(ICAX1Z);
-  devnum = dGetByte(ICDNOZ);
+  port = Peek(Devices_ICAX2Z);
+  direction = Peek(Devices_ICAX1Z);
+  devnum = dGetByte(Devices_ICDNOZ);
   if(direction & 0x04)
   {
     DBG_APRINT("R*: Open for Reading...");
@@ -1213,7 +1213,7 @@ void RDevice_STAT(void)
   { /* Hack for Ice-T Terminal program to work! */
     Poke(764, 255);
   }
-  devnum = dGetByte(ICDNOZ);
+  devnum = dGetByte(Devices_ICDNOZ);
 
 #ifdef R_NETWORK
   if(connected == 0)
@@ -1398,14 +1398,14 @@ void RDevice_SPEC(void)
 {
   int iccom;
 
-  iccom = Peek(ICCOMZ);
+  iccom = Peek(Devices_ICCOMZ);
   sprintf(MESSAGE, "R*: XIO %d", iccom);
   DBG_APRINT(MESSAGE);
 
 /*
-  DBG_APRINT("ICCOMZ =");
+  DBG_APRINT("Devices_ICCOMZ =");
   DBG_APRINT("%d",iccom);
-  DBG_APRINT("^^ in ICCOMZ");
+  DBG_APRINT("^^ in Devices_ICCOMZ");
 */
 
   switch (iccom)

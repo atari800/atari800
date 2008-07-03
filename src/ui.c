@@ -34,7 +34,7 @@
 #include "cassette.h"
 #include "compfile.h"
 #include "cpu.h"
-#include "devices.h" /* Device_SetPrintCommand */
+#include "devices.h" /* Devices_SetPrintCommand */
 #include "gtia.h"
 #include "input.h"
 #include "log.h"
@@ -748,42 +748,42 @@ static void AdvancedHOptions(void)
 		MENU_ACTION(0, "Atari executables path"),
 		MENU_ACTION_TIP(1, open_info, NULL),
 		MENU_LABEL("Current directories:"),
-		MENU_ACTION_PREFIX_TIP(2, "H1:", h_current_dir[0], NULL),
-		MENU_ACTION_PREFIX_TIP(3, "H2:", h_current_dir[1], NULL),
-		MENU_ACTION_PREFIX_TIP(4, "H3:", h_current_dir[2], NULL),
-		MENU_ACTION_PREFIX_TIP(5, "H4:", h_current_dir[3], NULL),
+		MENU_ACTION_PREFIX_TIP(2, "H1:", Devices_h_current_dir[0], NULL),
+		MENU_ACTION_PREFIX_TIP(3, "H2:", Devices_h_current_dir[1], NULL),
+		MENU_ACTION_PREFIX_TIP(4, "H3:", Devices_h_current_dir[2], NULL),
+		MENU_ACTION_PREFIX_TIP(5, "H4:", Devices_h_current_dir[3], NULL),
 		MENU_END
 	};
 	int option = 0;
 	for (;;) {
 		int i;
 		int seltype;
-		i = Device_H_CountOpen();
+		i = Devices_H_CountOpen();
 		open_info[0] = (char) ('0' + i);
 		open_info[21] = (i != 1) ? 's' : '\0';
 		menu_array[1].suffix = (i > 0) ? ((i == 1) ? "Backspace: close" : "Backspace: close all") : NULL;
 		for (i = 0; i < 4; i++)
-			menu_array[3 + i].suffix = h_current_dir[i][0] != '\0' ? "Backspace: reset to root" : NULL;
+			menu_array[3 + i].suffix = Devices_h_current_dir[i][0] != '\0' ? "Backspace: reset to root" : NULL;
 		option = ui_driver->fSelect("Advanced H: options", 0, option, menu_array, &seltype);
 		switch (option) {
 		case 0:
 			{
 				char tmp_path[FILENAME_MAX];
-				strcpy(tmp_path, h_exe_path);
+				strcpy(tmp_path, Devices_h_exe_path);
 				if (ui_driver->fEditString("Atari executables path", tmp_path, FILENAME_MAX))
-					strcpy(h_exe_path, tmp_path);
+					strcpy(Devices_h_exe_path, tmp_path);
 			}
 			break;
 		case 1:
 			if (seltype == USER_DELETE)
-				Device_H_CloseAll();
+				Devices_H_CloseAll();
 			break;
 		case 2:
 		case 3:
 		case 4:
 		case 5:
 			if (seltype == USER_DELETE)
-				h_current_dir[option - 2][0] = '\0';
+				Devices_h_current_dir[option - 2][0] = '\0';
 			break;
 		default:
 			return;
@@ -965,12 +965,12 @@ static void AtariSettings(void)
 #ifdef R_IO_DEVICE
 		MENU_CHECK(6, "R: device (Atari850 via net):"),
 #endif
-		MENU_FILESEL_PREFIX(7, "H1: ", atari_h_dir[0]),
-		MENU_FILESEL_PREFIX(8, "H2: ", atari_h_dir[1]),
-		MENU_FILESEL_PREFIX(9, "H3: ", atari_h_dir[2]),
-		MENU_FILESEL_PREFIX(10, "H4: ", atari_h_dir[3]),
+		MENU_FILESEL_PREFIX(7, "H1: ", Devices_atari_h_dir[0]),
+		MENU_FILESEL_PREFIX(8, "H2: ", Devices_atari_h_dir[1]),
+		MENU_FILESEL_PREFIX(9, "H3: ", Devices_atari_h_dir[2]),
+		MENU_FILESEL_PREFIX(10, "H4: ", Devices_atari_h_dir[3]),
 		MENU_SUBMENU(20, "Advanced H: options"),
-		MENU_ACTION_PREFIX(11, "Print command: ", print_command),
+		MENU_ACTION_PREFIX(11, "Print command: ", Devices_print_command),
 		MENU_FILESEL_PREFIX(12, " OS/A ROM: ", atari_osa_filename),
 		MENU_FILESEL_PREFIX(13, " OS/B ROM: ", atari_osb_filename),
 		MENU_FILESEL_PREFIX(14, "XL/XE ROM: ", atari_xlxe_filename),
@@ -992,10 +992,10 @@ static void AtariSettings(void)
 		SetItemChecked(menu_array, 1, CASSETTE_hold_start_on_reboot);
 		SetItemChecked(menu_array, 2, RTIME_enabled);
 		SetItemChecked(menu_array, 3, enable_sio_patch);
-		menu_array[4].suffix = enable_h_patch ? (h_read_only ? "Read-only" : "Read/write") : "No ";
-		SetItemChecked(menu_array, 5, enable_p_patch);
+		menu_array[4].suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
+		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
-		SetItemChecked(menu_array, 6, enable_r_patch);
+		SetItemChecked(menu_array, 6, Devices_enable_r_patch);
 #endif
 
 		option = ui_driver->fSelect("Emulator Settings", 0, option, menu_array, &seltype);
@@ -1015,23 +1015,23 @@ static void AtariSettings(void)
 			enable_sio_patch = !enable_sio_patch;
 			break;
 		case 4:
-			if (!enable_h_patch) {
-				enable_h_patch = TRUE;
-				h_read_only = TRUE;
+			if (!Devices_enable_h_patch) {
+				Devices_enable_h_patch = TRUE;
+				Devices_h_read_only = TRUE;
 			}
-			else if (h_read_only)
-				h_read_only = FALSE;
+			else if (Devices_h_read_only)
+				Devices_h_read_only = FALSE;
 			else {
-				enable_h_patch = FALSE;
-				h_read_only = TRUE;
+				Devices_enable_h_patch = FALSE;
+				Devices_h_read_only = TRUE;
 			}
 			break;
 		case 5:
-			enable_p_patch = !enable_p_patch;
+			Devices_enable_p_patch = !Devices_enable_p_patch;
 			break;
 #ifdef R_IO_DEVICE
 		case 6:
-			enable_r_patch = !enable_r_patch;
+			Devices_enable_r_patch = !Devices_enable_r_patch;
 			break;
 #endif
 		case 7:
@@ -1047,9 +1047,9 @@ static void AtariSettings(void)
 			AdvancedHOptions();
 			break;
 		case 11:
-			strcpy(tmp_command, print_command);
+			strcpy(tmp_command, Devices_print_command);
 			if (ui_driver->fEditString("Print command", tmp_command, sizeof(tmp_command)))
-				if (!Device_SetPrintCommand(tmp_command))
+				if (!Devices_SetPrintCommand(tmp_command))
 					ui_driver->fMessage("Specified command is not allowed", 1);
 			break;
 		case 12:

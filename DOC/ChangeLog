@@ -1,5 +1,7 @@
 2008-07-03  Perry McFarlane  <perry_m@fastmail.fm>
 * remez.[ch], mzpokeysnd.c: rename Remez_, remez -> Remez_CreateFilter.
+* devices.[ch], atari.c, binload.c, rdevice.c, ui.c: rename Devices_, Device_
+-> Devices.
 
 
 2008-07-02  Perry McFarlane  <perry_m@fastmail.fm>
@@ -21,7 +23,7 @@ Aflushlog -> Log_flushlog.
 * compfile.[ch], sio.c, ui.c rename CompressedFile_ to CompFile_ so that it
 matches the filename.
 * xep80_fonts.[ch] xep80.c: rename externals with XEP80_Fonts_.
-* votrax.[ch], pbi_xld.c: rename externals with Votrax_, UINT16 -> SWORD.
+* votrax.[ch], pbi_xld.c: rename externals with Votrax_, INT16 -> SWORD.
 * binload.[ch], atari.c, cartridge.c, devices.c, sio.c: rename externals with
 BINLOAD_
 * colours.[ch], atari.[ch], atari_falcon.c, atari_ps2.c, atari_sdl.c,

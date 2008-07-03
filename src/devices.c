@@ -110,7 +110,7 @@ static char dir_path[FILENAME_MAX];
 static WIN32_FIND_DATA wfd;
 static HANDLE dh = INVALID_HANDLE_VALUE;
 
-static int Device_OpenDir(const char *filename)
+static int Devices_OpenDir(const char *filename)
 {
 	FILENAME_CONV;
 	Util_splitpath(filename, dir_path, NULL);
@@ -128,7 +128,7 @@ static int Device_OpenDir(const char *filename)
 	return TRUE;
 }
 
-static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
+static int Devices_ReadDir(char *fullpath, char *filename, int *isdir,
                           int *readonly, int *size, char *timetext)
 {
 #ifdef UNICODE
@@ -231,7 +231,7 @@ static char dir_path[FILENAME_MAX];
 static char filename_pattern[FILENAME_MAX];
 static DIR *dp = NULL;
 
-static int Device_OpenDir(const char *filename)
+static int Devices_OpenDir(const char *filename)
 {
 	Util_splitpath(filename, dir_path, filename_pattern);
 	if (dp != NULL)
@@ -240,7 +240,7 @@ static int Device_OpenDir(const char *filename)
 	return dp != NULL;
 }
 
-static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
+static int Devices_ReadDir(char *fullpath, char *filename, int *isdir,
                           int *readonly, int *size, char *timetext)
 {
 	struct dirent *entry;
@@ -326,12 +326,12 @@ extern char dir_path[FILENAME_MAX];
 
 int Atari_OpenDir(const char *filename);
 
-#define Device_OpenDir Atari_OpenDir
+#define Devices_OpenDir Atari_OpenDir
 
 int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
                   int *readonly, int *size, char *timetext);
 
-static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
+static int Devices_ReadDir(char *fullpath, char *filename, int *isdir,
                           int *readonly, int *size, char *timetext)
 {
 	char tmp_filename[FILENAME_MAX];
@@ -355,7 +355,7 @@ static int Device_ReadDir(char *fullpath, char *filename, int *isdir,
 
 #ifdef WIN32
 
-static int Device_Rename(const char *oldname, const char *newname)
+static int Devices_Rename(const char *oldname, const char *newname)
 {
 #ifdef UNICODE
 	WCHAR woldname[FILENAME_MAX];
@@ -373,7 +373,7 @@ static int Device_Rename(const char *oldname, const char *newname)
 
 #elif defined(HAVE_RENAME)
 
-static int Device_Rename(const char *oldname, const char *newname)
+static int Devices_Rename(const char *oldname, const char *newname)
 {
 	return rename(oldname, newname) == 0;
 }
@@ -388,7 +388,7 @@ static int Device_Rename(const char *oldname, const char *newname)
 #ifdef WIN32
 
 /* Enables/disables read-only mode for the file. Returns TRUE on success. */
-static int Device_SetReadOnly(const char *filename, int readonly)
+static int Devices_SetReadOnly(const char *filename, int readonly)
 {
 	DWORD attr;
 	FILENAME_CONV;
@@ -404,7 +404,7 @@ static int Device_SetReadOnly(const char *filename, int readonly)
 
 #elif defined(HAVE_CHMOD)
 
-static int Device_SetReadOnly(const char *filename, int readonly)
+static int Devices_SetReadOnly(const char *filename, int readonly)
 {
 	return chmod(filename, readonly ? S_IREAD : (S_IREAD | S_IWRITE)) == 0;
 }
@@ -418,7 +418,7 @@ static int Device_SetReadOnly(const char *filename, int readonly)
 
 #ifdef WIN32
 
-static int Device_MakeDirectory(const char *filename)
+static int Devices_MakeDirectory(const char *filename)
 {
 	FILENAME_CONV;
 	return CreateDirectory(FILENAME, NULL) != 0;
@@ -428,7 +428,7 @@ static int Device_MakeDirectory(const char *filename)
 
 #elif defined(HAVE_MKDIR)
 
-static int Device_MakeDirectory(const char *filename)
+static int Devices_MakeDirectory(const char *filename)
 {
 	/* XXX: I don't see any good reason why umask() and limited permissions were used. */
 	/* umask(S_IWGRP | S_IWOTH); */
@@ -445,7 +445,7 @@ static int Device_MakeDirectory(const char *filename)
 
 #ifdef WIN32
 
-static UBYTE Device_RemoveDirectory(const char *filename)
+static UBYTE Devices_RemoveDirectory(const char *filename)
 {
 	FILENAME_CONV;
 	if (RemoveDirectory(FILENAME) != 0)
@@ -457,7 +457,7 @@ static UBYTE Device_RemoveDirectory(const char *filename)
 
 #elif defined(HAVE_RMDIR)
 
-static UBYTE Device_RemoveDirectory(const char *filename)
+static UBYTE Devices_RemoveDirectory(const char *filename)
 {
 	if (rmdir(filename) == 0)
 		return 1;
@@ -471,23 +471,25 @@ static UBYTE Device_RemoveDirectory(const char *filename)
 
 /* H: device emulation --------------------------------------------------- */
 
+#define DEFAULT_H_PATH  "H1:>DOS;>DOS"
+
 /* emulator debugging mode */
 static int devbug = FALSE;
 
 /* host path for each H: unit */
-char atari_h_dir[4][FILENAME_MAX] = { "", "", "", "" };
+char Devices_atari_h_dir[4][FILENAME_MAX] = { "", "", "", "" };
 
 /* read only mode for H: device */
-int h_read_only = TRUE;
+int Devices_h_read_only = TRUE;
 
 /* ';'-separated list of Atari paths checked by the "load executable"
    command. if a path does not start with "Hn:", then the selected device
    is used. */
-char h_exe_path[FILENAME_MAX] = DEFAULT_H_PATH;
+char Devices_h_exe_path[FILENAME_MAX] = DEFAULT_H_PATH;
 
-/* h_current_dir must be empty or terminated with DIR_SEP_CHAR;
+/* Devices_h_current_dir must be empty or terminated with DIR_SEP_CHAR;
    only DIR_SEP_CHAR can be used as a directory separator here */
-char h_current_dir[4][FILENAME_MAX];
+char Devices_h_current_dir[4][FILENAME_MAX];
 
 /* stream open via H: device per IOCB */
 static FILE *h_fp[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
@@ -525,7 +527,7 @@ static char atari_path[FILENAME_MAX];
 /* full filename for the current operation */
 static char host_path[FILENAME_MAX];
 
-int Device_H_CountOpen(void)
+int Devices_H_CountOpen(void)
 {
 	int r = 0;
 	int i;
@@ -535,7 +537,7 @@ int Device_H_CountOpen(void)
 	return r;
 }
 
-void Device_H_CloseAll(void)
+void Devices_H_CloseAll(void)
 {
 	int i;
 	for (i = 0; i < 8; i++)
@@ -545,36 +547,36 @@ void Device_H_CloseAll(void)
 		}
 }
 
-static void Device_H_Init(void)
+static void Devices_H_Init(void)
 {
 	if (devbug)
 		Log_print("HHINIT");
-	h_current_dir[0][0] = '\0';
-	h_current_dir[1][0] = '\0';
-	h_current_dir[2][0] = '\0';
-	h_current_dir[3][0] = '\0';
-	Device_H_CloseAll();
+	Devices_h_current_dir[0][0] = '\0';
+	Devices_h_current_dir[1][0] = '\0';
+	Devices_h_current_dir[2][0] = '\0';
+	Devices_h_current_dir[3][0] = '\0';
+	Devices_H_CloseAll();
 }
 
-void Device_Initialise(int *argc, char *argv[])
+void Devices_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-H1") == 0)
-			Util_strlcpy(atari_h_dir[0], argv[++i], FILENAME_MAX);
+			Util_strlcpy(Devices_atari_h_dir[0], argv[++i], FILENAME_MAX);
 		else if (strcmp(argv[i], "-H2") == 0)
-			Util_strlcpy(atari_h_dir[1], argv[++i], FILENAME_MAX);
+			Util_strlcpy(Devices_atari_h_dir[1], argv[++i], FILENAME_MAX);
 		else if (strcmp(argv[i], "-H3") == 0)
-			Util_strlcpy(atari_h_dir[2], argv[++i], FILENAME_MAX);
+			Util_strlcpy(Devices_atari_h_dir[2], argv[++i], FILENAME_MAX);
 		else if (strcmp(argv[i], "-H4") == 0)
-			Util_strlcpy(atari_h_dir[3], argv[++i], FILENAME_MAX);
+			Util_strlcpy(Devices_atari_h_dir[3], argv[++i], FILENAME_MAX);
 		else if (strcmp(argv[i], "-Hpath") == 0)
-			Util_strlcpy(h_exe_path, argv[++i], FILENAME_MAX);
+			Util_strlcpy(Devices_h_exe_path, argv[++i], FILENAME_MAX);
 		else if (strcmp(argv[i], "-hreadonly") == 0)
-			h_read_only = TRUE;
+			Devices_h_read_only = TRUE;
 		else if (strcmp(argv[i], "-hreadwrite") == 0)
-			h_read_only = FALSE;
+			Devices_h_read_only = FALSE;
 		else if (strcmp(argv[i], "-devbug") == 0)
 			devbug = TRUE;
 		else {
@@ -592,12 +594,12 @@ void Device_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
-	Device_H_Init();
+	Devices_H_Init();
 }
 
 #define IS_DIR_SEP(c) ((c) == '/' || (c) == '\\' || (c) == ':' || (c) == '>')
 
-static int Device_IsValidForFilename(char ch)
+static int Devices_IsValidForFilename(char ch)
 {
 	if ((ch >= 'A' && ch <= 'Z')
 	 || (ch >= 'a' && ch <= 'z')
@@ -623,10 +625,10 @@ static int Device_IsValidForFilename(char ch)
 	}
 }
 
-UWORD Device_SkipDeviceName(void)
+UWORD Devices_SkipDeviceName(void)
 {
 	UWORD bufadr;
-	for (bufadr = dGetWordAligned(ICBALZ); ; bufadr++) {
+	for (bufadr = dGetWordAligned(Devices_ICBALZ); ; bufadr++) {
 		char c = (char) dGetByte(bufadr);
 		if (c == ':')
 			return (UWORD) (bufadr + 1);
@@ -636,19 +638,19 @@ UWORD Device_SkipDeviceName(void)
 }
 
 /* devnum must be 0-3; p must point inside atari_filename */
-static UWORD Device_GetAtariPath(int devnum, char *p)
+static UWORD Devices_GetAtariPath(int devnum, char *p)
 {
-	UWORD bufadr = Device_SkipDeviceName();
+	UWORD bufadr = Devices_SkipDeviceName();
 	if (bufadr != 0) {
 		while (p < atari_filename + sizeof(atari_filename) - 1) {
 			char c = (char) dGetByte(bufadr);
-			if (Device_IsValidForFilename(c) || IS_DIR_SEP(c) || c == '<') {
+			if (Devices_IsValidForFilename(c) || IS_DIR_SEP(c) || c == '<') {
 				*p++ = c;
 				bufadr++;
 			}
 			else {
 				/* end of filename */
-				/* now apply it to h_current_dir */
+				/* now apply it to Devices_h_current_dir */
 				const char *q = atari_filename;
 				*p = '\0';
 				if (IS_DIR_SEP(*q)) {
@@ -657,7 +659,7 @@ static UWORD Device_GetAtariPath(int devnum, char *p)
 					p = atari_path;
 				}
 				else {
-					strcpy(atari_path, h_current_dir[devnum]);
+					strcpy(atari_path, Devices_h_current_dir[devnum]);
 					p = atari_path + strlen(atari_path);
 				}
 				for (;;) {
@@ -710,7 +712,7 @@ static UWORD Device_GetAtariPath(int devnum, char *p)
 	return 0;
 }
 
-static int Device_GetIOCB(void)
+static int Devices_GetIOCB(void)
 {
 	if ((regX & 0x8f) != 0) {
 		regY = 134; /* invalid IOCB number */
@@ -721,12 +723,12 @@ static int Device_GetIOCB(void)
 	return TRUE;
 }
 
-static int Device_GetNumber(int set_textmode)
+static int Devices_GetNumber(int set_textmode)
 {
 	int devnum;
-	if (!Device_GetIOCB())
+	if (!Devices_GetIOCB())
 		return -1;
-	devnum = dGetByte(ICDNOZ);
+	devnum = dGetByte(Devices_ICDNOZ);
 	if (devnum > 9 || devnum == 0 || devnum == 5) {
 		regY = 160; /* invalid unit/drive number */
 		SetN;
@@ -742,20 +744,20 @@ static int Device_GetNumber(int set_textmode)
 	return devnum - 6;
 }
 
-static UWORD Device_GetHostPath(int set_textmode)
+static UWORD Devices_GetHostPath(int set_textmode)
 {
 	UWORD bufadr;
-	h_devnum = Device_GetNumber(set_textmode);
+	h_devnum = Devices_GetNumber(set_textmode);
 	if (h_devnum < 0)
 		return 0;
-	bufadr = Device_GetAtariPath(h_devnum, atari_filename);
+	bufadr = Devices_GetAtariPath(h_devnum, atari_filename);
 	if (bufadr == 0)
 		return 0;
-	Util_catpath(host_path, atari_h_dir[h_devnum], atari_path);
+	Util_catpath(host_path, Devices_atari_h_dir[h_devnum], atari_path);
 	return bufadr;
 }
 
-static void Device_H_Open(void)
+static void Devices_H_Open(void)
 {
 	FILE *fp;
 	UBYTE aux1;
@@ -771,7 +773,7 @@ static void Device_H_Open(void)
 	if (devbug)
 		Log_print("HHOPEN");
 
-	if (Device_GetHostPath(TRUE) == 0)
+	if (Devices_GetHostPath(TRUE) == 0)
 		return;
 
 	if (h_fp[h_iocb] != NULL)
@@ -786,7 +788,7 @@ static void Device_H_Open(void)
 	h_wascr[h_iocb] = FALSE;
 	h_lastop[h_iocb] = 'o';
 
-	aux1 = dGetByte(ICAX1Z);
+	aux1 = dGetByte(Devices_ICAX1Z);
 	switch (aux1) {
 	case 4:
 		/* don't bother using "r" for textmode:
@@ -810,17 +812,17 @@ static void Device_H_Open(void)
 			SetN;
 			break;
 		}
-		if (!Device_OpenDir(host_path)) {
+		if (!Devices_OpenDir(host_path)) {
 			Util_fclose(fp, h_tmpbuf[h_iocb]);
 			fp = NULL;
 			regY = 144; /* device done error */
 			SetN;
 			break;
 		}
-		aux2 = dGetByte(ICAX2Z);
+		aux2 = dGetByte(Devices_ICAX2Z);
 		if (aux2 >= 128) {
 			fprintf(fp, "\nVolume:    HDISK%c\nDirectory: ", '1' + h_devnum);
-			/* if (strcmp(dir_path, atari_h_dir[h_devnum]) == 0) */
+			/* if (strcmp(dir_path, Devices_atari_h_dir[h_devnum]) == 0) */
 			if (strchr(atari_path, DIR_SEP_CHAR) == NULL)
 				fprintf(fp, "MAIN\n\n");
 			else {
@@ -830,7 +832,7 @@ static void Device_H_Open(void)
 			}
 		}
 
-		while (Device_ReadDir(NULL, entryname, &isdir, &readonly, &size,
+		while (Devices_ReadDir(NULL, entryname, &isdir, &readonly, &size,
 		                      (aux2 >= 128) ? timetext : NULL)) {
 			char *ext;
 			/* Util_strupper(entryname); */
@@ -890,7 +892,7 @@ static void Device_H_Open(void)
 	case 9: /* write at end of file (append): "a" */
 	case 12: /* write and read (update): "r+" || "w+" */
 	case 13: /* append and read: "a+" */
-		if (h_read_only) {
+		if (Devices_h_read_only) {
 			regY = 163; /* disk write-protected */
 			SetN;
 			break;
@@ -927,11 +929,11 @@ static void Device_H_Open(void)
 	h_fp[h_iocb] = fp;
 }
 
-static void Device_H_Close(void)
+static void Devices_H_Close(void)
 {
 	if (devbug)
 		Log_print("HHCLOS");
-	if (!Device_GetIOCB())
+	if (!Devices_GetIOCB())
 		return;
 	if (h_fp[h_iocb] != NULL) {
 		Util_fclose(h_fp[h_iocb], h_tmpbuf[h_iocb]);
@@ -941,11 +943,11 @@ static void Device_H_Close(void)
 	ClrN;
 }
 
-static void Device_H_Read(void)
+static void Devices_H_Read(void)
 {
 	if (devbug)
 		Log_print("HHREAD");
-	if (!Device_GetIOCB())
+	if (!Devices_GetIOCB())
 		return;
 	if (h_fp[h_iocb] != NULL) {
 		int ch;
@@ -1001,11 +1003,11 @@ static void Device_H_Read(void)
 	}
 }
 
-static void Device_H_Write(void)
+static void Devices_H_Write(void)
 {
 	if (devbug)
 		Log_print("HHWRIT");
-	if (!Device_GetIOCB())
+	if (!Devices_GetIOCB())
 		return;
 	if (h_fp[h_iocb] != NULL) {
 		int ch;
@@ -1026,7 +1028,7 @@ static void Device_H_Write(void)
 	}
 }
 
-static void Device_H_Status(void)
+static void Devices_H_Status(void)
 {
 	if (devbug)
 		Log_print("HHSTAT");
@@ -1036,7 +1038,7 @@ static void Device_H_Status(void)
 }
 
 #define CHECK_READ_ONLY \
-	if (h_read_only) { \
+	if (Devices_h_read_only) { \
 		regY = 163; \
 		SetN; \
 		return; \
@@ -1070,7 +1072,7 @@ static void fillin(const char *pattern, char *filename)
 	}
 }
 
-static void Device_H_Rename(void)
+static void Devices_H_Rename(void)
 {
 	UWORD bufadr;
 	char c;
@@ -1084,13 +1086,13 @@ static void Device_H_Rename(void)
 		Log_print("RENAME Command");
 	CHECK_READ_ONLY;
 
-	bufadr = Device_GetHostPath(FALSE);
+	bufadr = Devices_GetHostPath(FALSE);
 	if (bufadr == 0)
 		return;
 	/* skip space between filenames */
 	for (;;) {
 		c = (char) dGetByte(bufadr);
-		if (Device_IsValidForFilename(c))
+		if (Devices_IsValidForFilename(c))
 			break;
 		if (c == '\0' || (UBYTE) c > 0x80 || IS_DIR_SEP(c)) {
 			regY = 165; /* bad filename */
@@ -1110,16 +1112,16 @@ static void Device_H_Rename(void)
 		*p++ = c;
 		bufadr++;
 		c = (char) dGetByte(bufadr);
-	} while (Device_IsValidForFilename(c));
+	} while (Devices_IsValidForFilename(c));
 	*p = '\0';
 
 #ifdef DO_DIR
-	if (!Device_OpenDir(host_path)) {
+	if (!Devices_OpenDir(host_path)) {
 		regY = 170; /* file not found */
 		SetN;
 		return;
 	}
-	while (Device_ReadDir(host_path, NULL, NULL, &readonly, NULL, NULL))
+	while (Devices_ReadDir(host_path, NULL, NULL, &readonly, NULL, NULL))
 #endif /* DO_DIR */
 	{
 		/* Check file write permission to mimic Atari
@@ -1137,7 +1139,7 @@ static void Device_H_Rename(void)
 			fillin(new_filename, new_filepart);
 			/* combine new filepath */
 			Util_catpath(new_path, new_dirpart, new_filepart);
-			if (Device_Rename(host_path, new_path))
+			if (Devices_Rename(host_path, new_path))
 				num_changed++;
 			else
 				num_failed++;
@@ -1166,7 +1168,7 @@ static void Device_H_Rename(void)
 
 #ifdef HAVE_UTIL_UNLINK
 
-static void Device_H_Delete(void)
+static void Devices_H_Delete(void)
 {
 	int num_deleted = 0;
 	int num_failed = 0;
@@ -1177,16 +1179,16 @@ static void Device_H_Delete(void)
 		Log_print("DELETE Command");
 	CHECK_READ_ONLY;
 
-	if (Device_GetHostPath(FALSE) == 0)
+	if (Devices_GetHostPath(FALSE) == 0)
 		return;
 
 #ifdef DO_DIR
-	if (!Device_OpenDir(host_path)) {
+	if (!Devices_OpenDir(host_path)) {
 		regY = 170; /* file not found */
 		SetN;
 		return;
 	}
-	while (Device_ReadDir(host_path, NULL, NULL, &readonly, NULL, NULL))
+	while (Devices_ReadDir(host_path, NULL, NULL, &readonly, NULL, NULL))
 #endif /* DO_DIR */
 	{
 		/* Check file write permission to mimic Atari
@@ -1224,26 +1226,26 @@ static void Device_H_Delete(void)
 
 #ifdef DO_LOCK
 
-static void Device_H_LockUnlock(int readonly)
+static void Devices_H_LockUnlock(int readonly)
 {
 	int num_changed = 0;
 	int num_failed = 0;
 
 	CHECK_READ_ONLY;
 
-	if (Device_GetHostPath(FALSE) == 0)
+	if (Devices_GetHostPath(FALSE) == 0)
 		return;
 
 #ifdef DO_DIR
-	if (!Device_OpenDir(host_path)) {
+	if (!Devices_OpenDir(host_path)) {
 		regY = 170; /* file not found */
 		SetN;
 		return;
 	}
-	while (Device_ReadDir(host_path, NULL, NULL, NULL, NULL, NULL))
+	while (Devices_ReadDir(host_path, NULL, NULL, NULL, NULL, NULL))
 #endif /* DO_DIR */
 	{
-		if (Device_SetReadOnly(host_path, readonly))
+		if (Devices_SetReadOnly(host_path, readonly))
 			num_changed++;
 		else
 			num_failed++;
@@ -1263,35 +1265,35 @@ static void Device_H_LockUnlock(int readonly)
 	}
 }
 
-static void Device_H_Lock(void)
+static void Devices_H_Lock(void)
 {
 	if (devbug)
 		Log_print("LOCK Command");
-	Device_H_LockUnlock(TRUE);
+	Devices_H_LockUnlock(TRUE);
 }
 
-static void Device_H_Unlock(void)
+static void Devices_H_Unlock(void)
 {
 	if (devbug)
 		Log_print("UNLOCK Command");
-	Device_H_LockUnlock(FALSE);
+	Devices_H_LockUnlock(FALSE);
 }
 
 #endif /* DO_LOCK */
 
-static void Device_H_Note(void)
+static void Devices_H_Note(void)
 {
 	if (devbug)
 		Log_print("NOTE Command");
-	if (!Device_GetIOCB())
+	if (!Devices_GetIOCB())
 		return;
 	if (h_fp[h_iocb] != NULL) {
 		long pos = ftell(h_fp[h_iocb]);
 		if (pos >= 0) {
-			int iocb = IOCB0 + h_iocb * 16;
-			dPutByte(iocb + ICAX5, (UBYTE) pos);
-			dPutByte(iocb + ICAX3, (UBYTE) (pos >> 8));
-			dPutByte(iocb + ICAX4, (UBYTE) (pos >> 16));
+			int iocb = Devices_IOCB0 + h_iocb * 16;
+			dPutByte(iocb + Devices_ICAX5, (UBYTE) pos);
+			dPutByte(iocb + Devices_ICAX3, (UBYTE) (pos >> 8));
+			dPutByte(iocb + Devices_ICAX4, (UBYTE) (pos >> 16));
 			regY = 1;
 			ClrN;
 		}
@@ -1306,16 +1308,16 @@ static void Device_H_Note(void)
 	}
 }
 
-static void Device_H_Point(void)
+static void Devices_H_Point(void)
 {
 	if (devbug)
 		Log_print("POINT Command");
-	if (!Device_GetIOCB())
+	if (!Devices_GetIOCB())
 		return;
 	if (h_fp[h_iocb] != NULL) {
-		int iocb = IOCB0 + h_iocb * 16;
-		long pos = (dGetByte(iocb + ICAX4) << 16) +
-			(dGetByte(iocb + ICAX3) << 8) + (dGetByte(iocb + ICAX5));
+		int iocb = Devices_IOCB0 + h_iocb * 16;
+		long pos = (dGetByte(iocb + Devices_ICAX4) << 16) +
+			(dGetByte(iocb + Devices_ICAX3) << 8) + (dGetByte(iocb + Devices_ICAX5));
 		if (fseek(h_fp[h_iocb], pos, SEEK_SET) == 0) {
 			regY = 1;
 			ClrN;
@@ -1336,7 +1338,7 @@ static int runBinFile;
 static int initBinFile;
 
 /* Read a word from file */
-static int Device_H_BinReadWord(void)
+static int Devices_H_BinReadWord(void)
 {
 	UBYTE buf[2];
 	if (fread(buf, 1, 2, binf) != 2) {
@@ -1358,7 +1360,7 @@ static int Device_H_BinReadWord(void)
 	return buf[0] + (buf[1] << 8);
 }
 
-static void Device_H_BinLoaderCont(void)
+static void Devices_H_BinLoaderCont(void)
 {
 	if (binf == NULL)
 		return;
@@ -1375,13 +1377,13 @@ static void Device_H_BinLoaderCont(void)
 		UWORD from;
 		UWORD to;
 		do
-			temp = Device_H_BinReadWord();
+			temp = Devices_H_BinReadWord();
 		while (temp == 0xffff);
 		if (temp < 0)
 			return;
 		from = (UWORD) temp;
 
-		temp = Device_H_BinReadWord();
+		temp = Devices_H_BinReadWord();
 		if (temp < 0)
 			return;
 		to = (UWORD) temp;
@@ -1418,7 +1420,7 @@ static void Device_H_BinLoaderCont(void)
 	} while (!initBinFile || dGetByte(0x2e3) == 0xd7);
 
 	regS--;
-	Atari800_AddEsc((UWORD) (0x100 + regS), ESC_BINLOADER_CONT, Device_H_BinLoaderCont);
+	Atari800_AddEsc((UWORD) (0x100 + regS), ESC_BINLOADER_CONT, Devices_H_BinLoaderCont);
 	regS--;
 	dPutByte(0x0100 + regS--, 0x01);	/* high */
 	dPutByte(0x0100 + regS, regS + 1);	/* low */
@@ -1429,11 +1431,11 @@ static void Device_H_BinLoaderCont(void)
 	dPutByte(0x0300, 0x31);		/* for "Studio Dream" */
 }
 
-static void Device_H_LoadProceed(int mydos)
+static void Devices_H_LoadProceed(int mydos)
 {
-	/* Log_print("MyDOS %d, AX1 %d, AX2 %d", mydos, dGetByte(ICAX1Z), dGetByte(ICAX2Z)); */
+	/* Log_print("MyDOS %d, AX1 %d, AX2 %d", mydos, dGetByte(Devices_ICAX1Z), dGetByte(Devices_ICAX2Z)); */
 	if (mydos) {
-		switch (dGetByte(ICAX1Z) /* XXX: & 7 ? */) {
+		switch (dGetByte(Devices_ICAX1Z) /* XXX: & 7 ? */) {
 		case 4:
 			runBinFile = TRUE;
 			initBinFile = TRUE;
@@ -1454,7 +1456,7 @@ static void Device_H_LoadProceed(int mydos)
 		}
 	}
 	else {
-		if (dGetByte(ICAX2Z) < 128)
+		if (dGetByte(Devices_ICAX2Z) < 128)
 			runBinFile = TRUE;
 		else
 			runBinFile = FALSE;
@@ -1462,21 +1464,21 @@ static void Device_H_LoadProceed(int mydos)
 	}
 
 	BINLOAD_start_binloading = TRUE;
-	Device_H_BinLoaderCont();
+	Devices_H_BinLoaderCont();
 }
 
-static void Device_H_Load(int mydos)
+static void Devices_H_Load(int mydos)
 {
 	const char *p;
 	UBYTE buf[2];
 	if (devbug)
 		Log_print("LOAD Command");
-	h_devnum = Device_GetNumber(FALSE);
+	h_devnum = Devices_GetNumber(FALSE);
 	if (h_devnum < 0)
 		return;
 
-	/* search for program on h_exe_path */
-	for (p = h_exe_path; *p != '\0'; ) {
+	/* search for program on Devices_h_exe_path */
+	for (p = Devices_h_exe_path; *p != '\0'; ) {
 		int devnum;
 		const char *q;
 		char *r;
@@ -1493,9 +1495,9 @@ static void Device_H_Load(int mydos)
 			if (!IS_DIR_SEP(q[-1]))
 				*r++ = '>';
 		}
-		if (Device_GetAtariPath(devnum, r) == 0)
+		if (Devices_GetAtariPath(devnum, r) == 0)
 			return;
-		Util_catpath(host_path, atari_h_dir[devnum], atari_path);
+		Util_catpath(host_path, Devices_atari_h_dir[devnum], atari_path);
 		binf = fopen(host_path, "rb");
 		if (binf != NULL || *q == '\0')
 			break;
@@ -1504,9 +1506,9 @@ static void Device_H_Load(int mydos)
 
 	if (binf == NULL) {
 		/* open from the specified location */
-		if (Device_GetAtariPath(h_devnum, atari_filename) == 0)
+		if (Devices_GetAtariPath(h_devnum, atari_filename) == 0)
 			return;
-		Util_catpath(host_path, atari_h_dir[h_devnum], atari_path);
+		Util_catpath(host_path, Devices_atari_h_dir[h_devnum], atari_path);
 		binf = fopen(host_path, "rb");
 		if (binf == NULL) {
 			regY = 170;
@@ -1525,28 +1527,28 @@ static void Device_H_Load(int mydos)
 		return;
 	}
 
-	Device_H_LoadProceed(mydos);
+	Devices_H_LoadProceed(mydos);
 }
 
-static void Device_H_FileLength(void)
+static void Devices_H_FileLength(void)
 {
 	if (devbug)
 		Log_print("Get File Length Command");
-	if (!Device_GetIOCB())
+	if (!Devices_GetIOCB())
 		return;
 	/* if IOCB is closed then assume it is a MyDOS Load File command */
 	if (h_fp[h_iocb] == NULL)
-		Device_H_Load(TRUE);
+		Devices_H_Load(TRUE);
 	/* if we are running MyDOS then assume it is a MyDOS Load File command */
 	else if (dGetByte(0x700) == 'M') {
 		/* XXX: if (binf != NULL) fclose(binf); ? */
 		binf = h_fp[h_iocb];
-		Device_H_LoadProceed(TRUE);
+		Devices_H_LoadProceed(TRUE);
 		/* XXX: don't close binf when complete? */
 	}
 	/* otherwise assume it is a file length command */
 	else {
-		int iocb = IOCB0 + h_iocb * 16;
+		int iocb = Devices_IOCB0 + h_iocb * 16;
 		int filesize;
 #if 0
 		/* old, less portable implementation */
@@ -1559,25 +1561,25 @@ static void Device_H_FileLength(void)
 		filesize = Util_flen(fp);
 		fseek(fp, currentpos, SEEK_SET);
 #endif
-		dPutByte(iocb + ICAX3, (UBYTE) filesize);
-		dPutByte(iocb + ICAX4, (UBYTE) (filesize >> 8));
-		dPutByte(iocb + ICAX5, (UBYTE) (filesize >> 16));
+		dPutByte(iocb + Devices_ICAX3, (UBYTE) filesize);
+		dPutByte(iocb + Devices_ICAX4, (UBYTE) (filesize >> 8));
+		dPutByte(iocb + Devices_ICAX5, (UBYTE) (filesize >> 16));
 		regY = 1;
 		ClrN;
 	}
 }
 
 #ifdef DO_MKDIR
-static void Device_H_MakeDirectory(void)
+static void Devices_H_MakeDirectory(void)
 {
 	if (devbug)
 		Log_print("MKDIR Command");
 	CHECK_READ_ONLY;
 
-	if (Device_GetHostPath(FALSE) == 0)
+	if (Devices_GetHostPath(FALSE) == 0)
 		return;
 
-	if (Device_MakeDirectory(host_path)) {
+	if (Devices_MakeDirectory(host_path)) {
 		regY = 1;
 		ClrN;
 	}
@@ -1589,16 +1591,16 @@ static void Device_H_MakeDirectory(void)
 #endif
 
 #ifdef DO_RMDIR
-static void Device_H_RemoveDirectory(void)
+static void Devices_H_RemoveDirectory(void)
 {
 	if (devbug)
 		Log_print("RMDIR Command");
 	CHECK_READ_ONLY;
 
-	if (Device_GetHostPath(FALSE) == 0)
+	if (Devices_GetHostPath(FALSE) == 0)
 		return;
 
-	regY = Device_RemoveDirectory(host_path);
+	regY = Devices_RemoveDirectory(host_path);
 	if (regY >= 128)
 		SetN;
 	else
@@ -1606,12 +1608,12 @@ static void Device_H_RemoveDirectory(void)
 }
 #endif
 
-static void Device_H_ChangeDirectory(void)
+static void Devices_H_ChangeDirectory(void)
 {
 	if (devbug)
 		Log_print("CD Command");
 
-	if (Device_GetHostPath(FALSE) == 0)
+	if (Devices_GetHostPath(FALSE) == 0)
 		return;
 
 	if (!Util_direxists(host_path)) {
@@ -1621,9 +1623,9 @@ static void Device_H_ChangeDirectory(void)
 	}
 
 	if (atari_path[0] == '\0')
-		h_current_dir[h_devnum][0] = '\0';
+		Devices_h_current_dir[h_devnum][0] = '\0';
 	else {
-		char *p = Util_stpcpy(h_current_dir[h_devnum], atari_path);
+		char *p = Util_stpcpy(Devices_h_current_dir[h_devnum], atari_path);
 		p[0] = DIR_SEP_CHAR;
 		p[1] = '\0';
 	}
@@ -1632,7 +1634,7 @@ static void Device_H_ChangeDirectory(void)
 	ClrN;
 }
 
-static void Device_H_DiskInfo(void)
+static void Devices_H_DiskInfo(void)
 {
 	static UBYTE info[16] = {
 		0x20,                                                  /* disk version: Sparta >= 2.0 */
@@ -1648,19 +1650,19 @@ static void Device_H_DiskInfo(void)
 	if (devbug)
 		Log_print("Get Disk Information Command");
 
-	devnum = Device_GetNumber(FALSE);
+	devnum = Devices_GetNumber(FALSE);
 	if (devnum < 0)
 		return;
 
 	info[11] = (UBYTE) ('1' + devnum);
 	info[15] = (UBYTE) (1 + devnum);
-	CopyToMem(info, (UWORD) dGetWordAligned(ICBLLZ), 16);
+	CopyToMem(info, (UWORD) dGetWordAligned(Devices_ICBLLZ), 16);
 
 	regY = 1;
 	ClrN;
 }
 
-static void Device_H_ToAbsolutePath(void)
+static void Devices_H_ToAbsolutePath(void)
 {
 	UWORD bufadr;
 	const char *p;
@@ -1668,7 +1670,7 @@ static void Device_H_ToAbsolutePath(void)
 	if (devbug)
 		Log_print("To Absolute Path Command");
 
-	if (Device_GetHostPath(FALSE) == 0)
+	if (Devices_GetHostPath(FALSE) == 0)
 		return;
 
 	/* XXX: we sometimes check here for directories
@@ -1679,7 +1681,7 @@ static void Device_H_ToAbsolutePath(void)
 		return;
 	}
 
-	bufadr = dGetWordAligned(ICBLLZ);
+	bufadr = dGetWordAligned(Devices_ICBLLZ);
 	if (atari_path[0] != '\0') {
 		PutByte(bufadr, '>');
 		bufadr++;
@@ -1700,62 +1702,62 @@ static void Device_H_ToAbsolutePath(void)
 	ClrN;
 }
 
-static void Device_H_Special(void)
+static void Devices_H_Special(void)
 {
 	if (devbug)
 		Log_print("HHSPEC");
 
-	switch (dGetByte(ICCOMZ)) {
+	switch (dGetByte(Devices_ICCOMZ)) {
 #ifdef DO_RENAME
 	case 0x20:
-		Device_H_Rename();
+		Devices_H_Rename();
 		return;
 #endif
 #ifdef HAVE_UTIL_UNLINK
 	case 0x21:
-		Device_H_Delete();
+		Devices_H_Delete();
 		return;
 #endif
 #ifdef DO_LOCK
 	case 0x23:
-		Device_H_Lock();
+		Devices_H_Lock();
 		return;
 	case 0x24:
-		Device_H_Unlock();
+		Devices_H_Unlock();
 		return;
 #endif
 	case 0x26:
-		Device_H_Note();
+		Devices_H_Note();
 		return;
 	case 0x25:
-		Device_H_Point();
+		Devices_H_Point();
 		return;
 	case 0x27: /* Sparta, MyDOS=Load */
-		Device_H_FileLength();
+		Devices_H_FileLength();
 		return;
 	case 0x28: /* Sparta */
-		Device_H_Load(FALSE);
+		Devices_H_Load(FALSE);
 		return;
 #ifdef DO_MKDIR
 	case 0x22: /* MyDOS */
 	case 0x2a: /* MyDOS, Sparta */
-		Device_H_MakeDirectory();
+		Devices_H_MakeDirectory();
 		return;
 #endif
 #ifdef DO_RMDIR
 	case 0x2b: /* Sparta */
-		Device_H_RemoveDirectory();
+		Devices_H_RemoveDirectory();
 		return;
 #endif
 	case 0x29: /* MyDOS */
 	case 0x2c: /* Sparta */
-		Device_H_ChangeDirectory();
+		Devices_H_ChangeDirectory();
 		return;
 	case 0x2f: /* Sparta */
-		Device_H_DiskInfo();
+		Devices_H_DiskInfo();
 		return;
 	case 0x30: /* Sparta */
-		Device_H_ToAbsolutePath();
+		Devices_H_ToAbsolutePath();
 		return;
 	case 0xfe:
 		if (devbug)
@@ -1763,7 +1765,7 @@ static void Device_H_Special(void)
 		break;
 	default:
 		if (devbug)
-			Log_print("UNKNOWN Command %02X", dGetByte(ICCOMZ));
+			Log_print("UNKNOWN Command %02X", dGetByte(Devices_ICCOMZ));
 		break;
 	}
 
@@ -1774,9 +1776,9 @@ static void Device_H_Special(void)
 
 /* P: device emulation --------------------------------------------------- */
 
-char print_command[256] = "lpr %s";
+char Devices_print_command[256] = "lpr %s";
 
-int Device_SetPrintCommand(const char *command)
+int Devices_SetPrintCommand(const char *command)
 {
 	const char *p = command;
 	int was_percent_s = FALSE;
@@ -1792,7 +1794,7 @@ int Device_SetPrintCommand(const char *command)
 			return FALSE;
 		}
 	}
-	strcpy(print_command, command);
+	strcpy(Devices_print_command, command);
 	return TRUE;
 }
 
@@ -1801,7 +1803,7 @@ int Device_SetPrintCommand(const char *command)
 static FILE *phf = NULL;
 static char spool_file[FILENAME_MAX];
 
-static void Device_P_Close(void)
+static void Devices_P_Close(void)
 {
 	if (devbug)
 		Log_print("PHCLOS");
@@ -1814,8 +1816,8 @@ static void Device_P_Close(void)
 		if (!Misc_ExecutePrintCmd(spool_file))
 #endif
 		{
-			char command[256 + FILENAME_MAX]; /* 256 for print_command + FILENAME_MAX for spool_file */
-			sprintf(command, print_command, spool_file);
+			char command[256 + FILENAME_MAX]; /* 256 for Devices_print_command + FILENAME_MAX for spool_file */
+			sprintf(command, Devices_print_command, spool_file);
 			system(command);
 #if defined(HAVE_UTIL_UNLINK) && !defined(VMS) && !defined(MACOSX)
 			if (Util_unlink(spool_file) != 0) {
@@ -1828,13 +1830,13 @@ static void Device_P_Close(void)
 	ClrN;
 }
 
-static void Device_P_Open(void)
+static void Devices_P_Open(void)
 {
 	if (devbug)
 		Log_print("PHOPEN");
 
 	if (phf != NULL)
-		Device_P_Close();
+		Devices_P_Close();
 
 	phf = Util_uniqopen(spool_file, "w");
 	if (phf != NULL) {
@@ -1847,7 +1849,7 @@ static void Device_P_Open(void)
 	}
 }
 
-static void Device_P_Write(void)
+static void Devices_P_Write(void)
 {
 	UBYTE byte;
 
@@ -1863,13 +1865,13 @@ static void Device_P_Write(void)
 	ClrN;
 }
 
-static void Device_P_Status(void)
+static void Devices_P_Status(void)
 {
 	if (devbug)
 		Log_print("PHSTAT");
 }
 
-static void Device_P_Init(void)
+static void Devices_P_Init(void)
 {
 	if (devbug)
 		Log_print("PHINIT");
@@ -1892,7 +1894,7 @@ static void Device_P_Init(void)
 
 #ifdef BASIC
 
-static void Device_E_Read(void)
+static void Devices_E_Read(void)
 {
 	int ch;
 
@@ -1913,7 +1915,7 @@ static void Device_E_Read(void)
 	ClrN;
 }
 
-static void Device_E_Write(void)
+static void Devices_E_Write(void)
 {
 	UBYTE ch;
 
@@ -1944,7 +1946,7 @@ static void Device_E_Write(void)
 	ClrN;
 }
 
-static void Device_K_Read(void)
+static void Devices_K_Read(void)
 {
 	int ch;
 	int ch2;
@@ -1980,13 +1982,13 @@ static UWORD ehclos_addr = 0;
 static UWORD ehread_addr = 0;
 static UWORD ehwrit_addr = 0;
 
-static void Device_IgnoreReady(void);
-static void Device_GetBasicCommand(void);
-static void Device_OpenBasicFile(void);
-static void Device_ReadBasicFile(void);
-static void Device_CloseBasicFile(void);
+static void Devices_IgnoreReady(void);
+static void Devices_GetBasicCommand(void);
+static void Devices_OpenBasicFile(void);
+static void Devices_ReadBasicFile(void);
+static void Devices_CloseBasicFile(void);
 
-static void Device_RestoreHandler(UWORD address, UBYTE esc_code)
+static void Devices_RestoreHandler(UWORD address, UBYTE esc_code)
 {
 	Atari800_RemoveEsc(esc_code);
 	/* restore original OS code */
@@ -1996,31 +1998,31 @@ static void Device_RestoreHandler(UWORD address, UBYTE esc_code)
 	           address, 3);
 }
 
-static void Device_RestoreEHOPEN(void)
+static void Devices_RestoreEHOPEN(void)
 {
-	Device_RestoreHandler(ehopen_addr, ESC_EHOPEN);
+	Devices_RestoreHandler(ehopen_addr, ESC_EHOPEN);
 }
 
-static void Device_RestoreEHCLOS(void)
+static void Devices_RestoreEHCLOS(void)
 {
-	Device_RestoreHandler(ehclos_addr, ESC_EHCLOS);
+	Devices_RestoreHandler(ehclos_addr, ESC_EHCLOS);
 }
 
 #ifndef BASIC
 
-static void Device_RestoreEHREAD(void)
+static void Devices_RestoreEHREAD(void)
 {
-	Device_RestoreHandler(ehread_addr, ESC_EHREAD);
+	Devices_RestoreHandler(ehread_addr, ESC_EHREAD);
 }
 
-static void Device_RestoreEHWRIT(void)
+static void Devices_RestoreEHWRIT(void)
 {
-	Device_RestoreHandler(ehwrit_addr, ESC_EHWRIT);
+	Devices_RestoreHandler(ehwrit_addr, ESC_EHWRIT);
 }
 
-static void Device_InstallIgnoreReady(void)
+static void Devices_InstallIgnoreReady(void)
 {
-	Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
+	Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Devices_IgnoreReady);
 }
 
 #endif
@@ -2034,7 +2036,7 @@ static const UBYTE *ready_ptr = NULL;
 
 static const UBYTE *basic_command_ptr = NULL;
 
-static void Device_IgnoreReady(void)
+static void Devices_IgnoreReady(void)
 {
 	if (ready_ptr != NULL && regA == *ready_ptr) {
 		ready_ptr++;
@@ -2042,21 +2044,21 @@ static void Device_IgnoreReady(void)
 			ready_ptr = NULL;
 			/* uninstall patch */
 #ifdef BASIC
-			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_E_Write);
+			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Devices_E_Write);
 #else
-			rts_handler = Device_RestoreEHWRIT;
+			rts_handler = Devices_RestoreEHWRIT;
 #endif
 			if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_SAVED) {
 				basic_command_ptr = (const UBYTE *) "RUN \"E:\"\x9b";
-				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
+				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_GetBasicCommand);
 			}
 			else if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_LISTED) {
 				basic_command_ptr = (const UBYTE *) "ENTER \"E:\"\x9b";
-				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
+				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_GetBasicCommand);
 			}
 			else if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_RUN) {
 				basic_command_ptr = (const UBYTE *) "RUN\x9b";
-				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
+				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_GetBasicCommand);
 			}
 		}
 		regY = 1;
@@ -2077,10 +2079,10 @@ static void Device_IgnoreReady(void)
 	}
 	/* call original handler */
 #ifdef BASIC
-	Device_E_Write();
+	Devices_E_Write();
 #else
-	rts_handler = Device_InstallIgnoreReady;
-	Device_RestoreEHWRIT();
+	rts_handler = Devices_InstallIgnoreReady;
+	Devices_RestoreEHWRIT();
 	regPC = ehwrit_addr;
 #endif
 }
@@ -2088,7 +2090,7 @@ static void Device_IgnoreReady(void)
 /* Atari Basic loader step 2: type command to load file from E: */
 /* or step 7: type "RUN" for ENTERed program */
 
-static void Device_GetBasicCommand(void)
+static void Devices_GetBasicCommand(void)
 {
 	if (basic_command_ptr != NULL) {
 		regA = *basic_command_ptr++;
@@ -2097,33 +2099,33 @@ static void Device_GetBasicCommand(void)
 		if (*basic_command_ptr != '\0')
 			return;
 		if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_SAVED || BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_LISTED)
-			Atari800_AddEscRts(ehopen_addr, ESC_EHOPEN, Device_OpenBasicFile);
+			Atari800_AddEscRts(ehopen_addr, ESC_EHOPEN, Devices_OpenBasicFile);
 		basic_command_ptr = NULL;
 	}
 #ifdef BASIC
-	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_E_Read);
+	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_E_Read);
 #else
-	rts_handler = Device_RestoreEHREAD;
+	rts_handler = Devices_RestoreEHREAD;
 #endif
 }
 
 /* Atari Basic loader step 3: open file */
 
-static void Device_OpenBasicFile(void)
+static void Devices_OpenBasicFile(void)
 {
 	if (BINLOAD_bin_file != NULL) {
 		fseek(BINLOAD_bin_file, 0, SEEK_SET);
-		Atari800_AddEscRts(ehclos_addr, ESC_EHCLOS, Device_CloseBasicFile);
-		Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_ReadBasicFile);
+		Atari800_AddEscRts(ehclos_addr, ESC_EHCLOS, Devices_CloseBasicFile);
+		Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_ReadBasicFile);
 		regY = 1;
 		ClrN;
 	}
-	rts_handler = Device_RestoreEHOPEN;
+	rts_handler = Devices_RestoreEHOPEN;
 }
 
 /* Atari Basic loader step 4: read byte */
 
-static void Device_ReadBasicFile(void)
+static void Devices_ReadBasicFile(void)
 {
 	if (BINLOAD_bin_file != NULL) {
 		int ch = fgetc(BINLOAD_bin_file);
@@ -2198,7 +2200,7 @@ static void Device_ReadBasicFile(void)
 
 /* Atari Basic loader step 5: close file */
 
-static void Device_CloseBasicFile(void)
+static void Devices_CloseBasicFile(void)
 {
 	if (BINLOAD_bin_file != NULL) {
 		fclose(BINLOAD_bin_file);
@@ -2206,18 +2208,18 @@ static void Device_CloseBasicFile(void)
 		/* "RUN" ENTERed program */
 		if (BINLOAD_loading_basic != 0 && BINLOAD_loading_basic != BINLOAD_LOADING_BASIC_SAVED) {
 			ready_ptr = ready_prompt;
-			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
+			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Devices_IgnoreReady);
 			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_RUN;
 		}
 		else
 			BINLOAD_loading_basic = 0;
 	}
 #ifdef BASIC
-	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_E_Read);
+	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Devices_E_Read);
 #else
-	Device_RestoreEHREAD();
+	Devices_RestoreEHREAD();
 #endif
-	rts_handler = Device_RestoreEHCLOS;
+	rts_handler = Devices_RestoreEHCLOS;
 	regY = 1;
 	ClrN;
 }
@@ -2225,11 +2227,11 @@ static void Device_CloseBasicFile(void)
 
 /* Patches management ---------------------------------------------------- */
 
-int enable_h_patch = TRUE;
-int enable_p_patch = TRUE;
-int enable_r_patch = FALSE;
+int Devices_enable_h_patch = TRUE;
+int Devices_enable_p_patch = TRUE;
+int Devices_enable_r_patch = FALSE;
 
-/* Device_PatchOS is called by Atari800_PatchOS to modify standard device
+/* Devices_PatchOS is called by Atari800_PatchOS to modify standard device
    handlers in Atari OS. It puts escape codes at beginnings of OS routines,
    so the patches work even if they are called directly, without CIO.
    Returns TRUE if something has been patched.
@@ -2237,7 +2239,7 @@ int enable_r_patch = FALSE;
    We don't replace C: with H: now, so the cassette works even
    if H: is enabled.
 */
-int Device_PatchOS(void)
+int Devices_PatchOS(void)
 {
 	UWORD addr;
 	int i;
@@ -2260,17 +2262,17 @@ int Device_PatchOS(void)
 		switch (dGetByte(addr)) {
 #ifdef HAVE_SYSTEM
 		case 'P':
-			if (enable_p_patch) {
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_OPEN) + 1),
-				                   ESC_PHOPEN, Device_P_Open);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_CLOS) + 1),
-				                   ESC_PHCLOS, Device_P_Close);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_WRIT) + 1),
-				                   ESC_PHWRIT, Device_P_Write);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_STAT) + 1),
-				                   ESC_PHSTAT, Device_P_Status);
-				Atari800_AddEscRts2((UWORD) (devtab + DEVICE_TABLE_INIT), ESC_PHINIT,
-				                    Device_P_Init);
+			if (Devices_enable_p_patch) {
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + Devices_TABLE_OPEN) + 1),
+				                   ESC_PHOPEN, Devices_P_Open);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + Devices_TABLE_CLOS) + 1),
+				                   ESC_PHCLOS, Devices_P_Close);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + Devices_TABLE_WRIT) + 1),
+				                   ESC_PHWRIT, Devices_P_Write);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + Devices_TABLE_STAT) + 1),
+				                   ESC_PHSTAT, Devices_P_Status);
+				Atari800_AddEscRts2((UWORD) (devtab + Devices_TABLE_INIT), ESC_PHINIT,
+				                    Devices_P_Init);
 				patched = TRUE;
 			}
 			else {
@@ -2285,25 +2287,25 @@ int Device_PatchOS(void)
 
 		case 'E':
 			if (BINLOAD_loading_basic) {
-				ehopen_addr = dGetWord(devtab + DEVICE_TABLE_OPEN) + 1;
-				ehclos_addr = dGetWord(devtab + DEVICE_TABLE_CLOS) + 1;
-				ehread_addr = dGetWord(devtab + DEVICE_TABLE_READ) + 1;
-				ehwrit_addr = dGetWord(devtab + DEVICE_TABLE_WRIT) + 1;
+				ehopen_addr = dGetWord(devtab + Devices_TABLE_OPEN) + 1;
+				ehclos_addr = dGetWord(devtab + Devices_TABLE_CLOS) + 1;
+				ehread_addr = dGetWord(devtab + Devices_TABLE_READ) + 1;
+				ehwrit_addr = dGetWord(devtab + Devices_TABLE_WRIT) + 1;
 				ready_ptr = ready_prompt;
-				Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
+				Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Devices_IgnoreReady);
 				patched = TRUE;
 			}
 #ifdef BASIC
 			else
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_WRIT) + 1),
-				                   ESC_EHWRIT, Device_E_Write);
-			Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_READ) + 1),
-			                   ESC_EHREAD, Device_E_Read);
+				Atari800_AddEscRts((UWORD) (dGetWord(devtab + Devices_TABLE_WRIT) + 1),
+				                   ESC_EHWRIT, Devices_E_Write);
+			Atari800_AddEscRts((UWORD) (dGetWord(devtab + Devices_TABLE_READ) + 1),
+			                   ESC_EHREAD, Devices_E_Read);
 			patched = TRUE;
 			break;
 		case 'K':
-			Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_READ) + 1),
-			                   ESC_KHREAD, Device_K_Read);
+			Atari800_AddEscRts((UWORD) (dGetWord(devtab + Devices_TABLE_READ) + 1),
+			                   ESC_KHREAD, Devices_K_Read);
 			patched = TRUE;
 			break;
 #endif
@@ -2322,19 +2324,19 @@ int Device_PatchOS(void)
    (0xd100-0xd1ff), which is meant for 'new devices' (like hard disk).
    We have to continuously check if our H: is still in HATABS,
    because RESET routine in Atari OS clears HATABS and initializes it
-   using a table in ROM (see Device_PatchOS).
+   using a table in ROM (see Devices_PatchOS).
    Before we put H: entry in HATABS, we must make sure that HATABS is there.
    For example a program that doesn't use Atari OS can use this memory area
    for its own data, and we shouldn't place 'H' there.
    We also allow an Atari program to change address of H: device table.
    So after we put H: entry in HATABS, we only check if 'H' is still where
    we put it (h_entry_address).
-   Device_UpdateHATABSEntry and Device_RemoveHATABSEntry can be used to add
+   Devices_UpdateHATABSEntry and Devices_RemoveHATABSEntry can be used to add
    other devices than H:. */
 
 #define HATABS 0x31a
 
-UWORD Device_UpdateHATABSEntry(char device, UWORD entry_address,
+UWORD Devices_UpdateHATABSEntry(char device, UWORD entry_address,
 							   UWORD table_address)
 {
 	UWORD address;
@@ -2357,7 +2359,7 @@ UWORD Device_UpdateHATABSEntry(char device, UWORD entry_address,
 	return entry_address;
 }
 
-void Device_RemoveHATABSEntry(char device, UWORD entry_address,
+void Devices_RemoveHATABSEntry(char device, UWORD entry_address,
 							  UWORD table_address)
 {
 	if (entry_address != 0 && dGetByte(entry_address) == device
@@ -2395,43 +2397,43 @@ static UWORD r_entry_address = 0;
 #define R_DEVICE_END    0xd1b5
 #endif
 
-void Device_Frame(void)
+void Devices_Frame(void)
 {
-	if (enable_h_patch)
-		h_entry_address = Device_UpdateHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
+	if (Devices_enable_h_patch)
+		h_entry_address = Devices_UpdateHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
 
 #ifdef R_IO_DEVICE
-	if (enable_r_patch)
-		r_entry_address = Device_UpdateHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
+	if (Devices_enable_r_patch)
+		r_entry_address = Devices_UpdateHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
 #endif
 }
 
-/* this is called when enable_h_patch is toggled */
-void Device_UpdatePatches(void)
+/* this is called when Devices_enable_h_patch is toggled */
+void Devices_UpdatePatches(void)
 {
-	if (enable_h_patch) {		/* enable H: device */
+	if (Devices_enable_h_patch) {		/* enable H: device */
 		/* change memory attributes for the area, where we put
 		   the H: handler table and patches */
 		SetROM(H_DEVICE_BEGIN, H_DEVICE_END);
 		/* set handler table */
-		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_OPEN, H_PATCH_OPEN - 1);
-		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_CLOS, H_PATCH_CLOS - 1);
-		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_READ, H_PATCH_READ - 1);
-		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_WRIT, H_PATCH_WRIT - 1);
-		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_STAT, H_PATCH_STAT - 1);
-		dPutWord(H_TABLE_ADDRESS + DEVICE_TABLE_SPEC, H_PATCH_SPEC - 1);
+		dPutWord(H_TABLE_ADDRESS + Devices_TABLE_OPEN, H_PATCH_OPEN - 1);
+		dPutWord(H_TABLE_ADDRESS + Devices_TABLE_CLOS, H_PATCH_CLOS - 1);
+		dPutWord(H_TABLE_ADDRESS + Devices_TABLE_READ, H_PATCH_READ - 1);
+		dPutWord(H_TABLE_ADDRESS + Devices_TABLE_WRIT, H_PATCH_WRIT - 1);
+		dPutWord(H_TABLE_ADDRESS + Devices_TABLE_STAT, H_PATCH_STAT - 1);
+		dPutWord(H_TABLE_ADDRESS + Devices_TABLE_SPEC, H_PATCH_SPEC - 1);
 		/* set patches */
-		Atari800_AddEscRts(H_PATCH_OPEN, ESC_HHOPEN, Device_H_Open);
-		Atari800_AddEscRts(H_PATCH_CLOS, ESC_HHCLOS, Device_H_Close);
-		Atari800_AddEscRts(H_PATCH_READ, ESC_HHREAD, Device_H_Read);
-		Atari800_AddEscRts(H_PATCH_WRIT, ESC_HHWRIT, Device_H_Write);
-		Atari800_AddEscRts(H_PATCH_STAT, ESC_HHSTAT, Device_H_Status);
-		Atari800_AddEscRts(H_PATCH_SPEC, ESC_HHSPEC, Device_H_Special);
-		/* H: in HATABS will be added next frame by Device_Frame */
+		Atari800_AddEscRts(H_PATCH_OPEN, ESC_HHOPEN, Devices_H_Open);
+		Atari800_AddEscRts(H_PATCH_CLOS, ESC_HHCLOS, Devices_H_Close);
+		Atari800_AddEscRts(H_PATCH_READ, ESC_HHREAD, Devices_H_Read);
+		Atari800_AddEscRts(H_PATCH_WRIT, ESC_HHWRIT, Devices_H_Write);
+		Atari800_AddEscRts(H_PATCH_STAT, ESC_HHSTAT, Devices_H_Status);
+		Atari800_AddEscRts(H_PATCH_SPEC, ESC_HHSPEC, Devices_H_Special);
+		/* H: in HATABS will be added next frame by Devices_Frame */
 	}
 	else {						/* disable H: device */
 		/* remove H: entry from HATABS */
-		Device_RemoveHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
+		Devices_RemoveHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
 		/* remove patches */
 		Atari800_RemoveEsc(ESC_HHOPEN);
 		Atari800_RemoveEsc(ESC_HHCLOS);
@@ -2444,18 +2446,18 @@ void Device_UpdatePatches(void)
 	}
 
 #ifdef R_IO_DEVICE
-	if (enable_r_patch) {		/* enable R: device */
+	if (Devices_enable_r_patch) {		/* enable R: device */
 		/* change memory attributes for the area, where we put
 		   the R: handler table and patches */
 		SetROM(R_DEVICE_BEGIN, R_DEVICE_END);
 		/* set handler table */
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_OPEN, R_PATCH_OPEN - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_CLOS, R_PATCH_CLOS - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_READ, R_PATCH_READ - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_WRIT, R_PATCH_WRIT - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_STAT, R_PATCH_STAT - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_SPEC, R_PATCH_SPEC - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_INIT, R_PATCH_INIT - 1);
+		dPutWord(R_TABLE_ADDRESS + Devices_TABLE_OPEN, R_PATCH_OPEN - 1);
+		dPutWord(R_TABLE_ADDRESS + Devices_TABLE_CLOS, R_PATCH_CLOS - 1);
+		dPutWord(R_TABLE_ADDRESS + Devices_TABLE_READ, R_PATCH_READ - 1);
+		dPutWord(R_TABLE_ADDRESS + Devices_TABLE_WRIT, R_PATCH_WRIT - 1);
+		dPutWord(R_TABLE_ADDRESS + Devices_TABLE_STAT, R_PATCH_STAT - 1);
+		dPutWord(R_TABLE_ADDRESS + Devices_TABLE_SPEC, R_PATCH_SPEC - 1);
+		dPutWord(R_TABLE_ADDRESS + Devices_TABLE_INIT, R_PATCH_INIT - 1);
 		/* set patches */
 		Atari800_AddEscRts(R_PATCH_OPEN, ESC_ROPEN, RDevice_OPEN);
 		Atari800_AddEscRts(R_PATCH_CLOS, ESC_RCLOS, RDevice_CLOS);
@@ -2464,11 +2466,11 @@ void Device_UpdatePatches(void)
 		Atari800_AddEscRts(R_PATCH_STAT, ESC_RSTAT, RDevice_STAT);
 		Atari800_AddEscRts(R_PATCH_SPEC, ESC_RSPEC, RDevice_SPEC);
 		Atari800_AddEscRts(R_PATCH_INIT, ESC_RINIT, RDevice_INIT);
-		/* R: in HATABS will be added next frame by Device_Frame */
+		/* R: in HATABS will be added next frame by Devices_Frame */
 	}
 	else {						/* disable R: device */
 		/* remove R: entry from HATABS */
-		Device_RemoveHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
+		Devices_RemoveHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
 		/* remove patches */
 		Atari800_RemoveEsc(ESC_ROPEN);
 		Atari800_RemoveEsc(ESC_RCLOS);
