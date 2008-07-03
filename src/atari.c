@@ -276,7 +276,7 @@ void Atari800_PatchOS(void)
 			Atari800_AddEsc(addr_l, ESC_COPENLOAD, CASSETTE_LeaderLoad);
 			Atari800_AddEsc(addr_s, ESC_COPENSAVE, CASSETTE_LeaderSave);
 		}
-		Atari800_AddEscRts(0xe459, ESC_SIOV, SIO);
+		Atari800_AddEscRts(0xe459, ESC_SIOV, SIO_Handler);
 		patched = TRUE;
 	}
 	else {

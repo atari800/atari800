@@ -156,7 +156,7 @@ int BINLOAD_loader(const char *filename)
 		return FALSE;
 	}
 	/* Avoid "BOOT ERROR" when loading a BASIC program */
-	if (drive_status[0] == NoDisk)
+	if (SIO_drive_status[0] == NoDisk)
 		SIO_DisableDrive(1);
 	if (fread(buf, 1, 2, BINLOAD_bin_file) == 2) {
 		if (buf[0] == 0xff && buf[1] == 0xff) {

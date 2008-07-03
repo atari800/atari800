@@ -312,7 +312,7 @@ static UBYTE WriteSectorBack(void)
 
 	sector = CommandFrame[2] + (CommandFrame[3] << 8);
 	unit = CommandFrame[0] - '1';
-	if (unit >= MAX_DRIVES)		/* UBYTE range ! */
+	if (unit >= SIO_MAX_DRIVES)		/* UBYTE range ! */
 		return 0;
 	switch (CommandFrame[1]) {
 	case 0x4f:				/* Write Status Block */
@@ -453,7 +453,7 @@ static UBYTE PIO_Command_Frame(void)
 	sector = CommandFrame[2] | (((UWORD) CommandFrame[3]) << 8);
 	unit = CommandFrame[0] - '1';
 
-	if (unit < 0 || unit >= MAX_DRIVES) {
+	if (unit < 0 || unit >= SIO_MAX_DRIVES) {
 		/* Unknown device */
 		Log_print("Unknown command frame: %02x %02x %02x %02x %02x",
 			   CommandFrame[0], CommandFrame[1], CommandFrame[2],
@@ -508,9 +508,9 @@ static UBYTE PIO_Command_Frame(void)
 		ExpectedBytes = realsize + 1;
 		DataIndex = 0;
 		TransferStatus = PIO_WriteFrame;
-		sio_last_op = SIO_LAST_WRITE;
-		sio_last_op_time = 10;
-		sio_last_drive = unit + 1;
+		SIO_last_op = SIO_LAST_WRITE;
+		SIO_last_op_time = 10;
+		SIO_last_drive = unit + 1;
 		return 'A';
 	case 0x52:				/* Read */
 #ifdef PBI_DEBUG
@@ -537,9 +537,9 @@ static UBYTE PIO_Command_Frame(void)
 			delay_counter = 0;
 		}
 #endif*/
-		sio_last_op = SIO_LAST_READ;
-		sio_last_op_time = 10;
-		sio_last_drive = unit + 1;
+		SIO_last_op = SIO_LAST_READ;
+		SIO_last_op_time = 10;
+		SIO_last_drive = unit + 1;
 		return 'A';
 	case 0x53:				/* Status */
 		/*
@@ -627,11 +627,11 @@ static UBYTE PIO_Command_Frame(void)
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
-		/*if (drive_status[unit]==Off) drive_status[unit]=NoDisk;*/
+		/*if (SIO_drive_status[unit]==Off) SIO_drive_status[unit]=NoDisk;*/
 		/*need to modify the line below also for  Off==NoDisk*/
 		DataBuffer[0] = SIO_DriveStatus(unit, DataBuffer + 1);
 		DataBuffer[2] = 0xff;/*/1;//SIO_DriveStatus(unit, DataBuffer + 1);*/
-		if (drive_status[unit]==NoDisk || drive_status[unit]==Off){
+		if (SIO_drive_status[unit]==NoDisk || SIO_drive_status[unit]==Off){
 		/*Can't turn 1450XLD drives off, so make Off==NoDisk*/
 			DataBuffer[2]=0x7f;
 		}

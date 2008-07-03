@@ -253,9 +253,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		/* check if cassette 2-tone mode has been enabled */
 		if ((SKCTLS & 0x08) == 0x00) {
 			/* intelligent device */
-			DELAYED_SEROUT_IRQ = SEROUT_INTERVAL;
+			DELAYED_SEROUT_IRQ = SIO_SEROUT_INTERVAL;
 			IRQST |= 0x08;
-			DELAYED_XMTDONE_IRQ = XMTDONE_INTERVAL;
+			DELAYED_XMTDONE_IRQ = SIO_XMTDONE_INTERVAL;
 		}
 		else {
 			/* cassette */

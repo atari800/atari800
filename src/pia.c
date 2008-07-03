@@ -127,7 +127,7 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 		/* This code is part of the serial I/O emulation */
 		if ((PBCTL ^ byte) & 0x08) {
 			/* The command line status has changed */
-			SwitchCommandFrame(byte & 0x08 ? 0 : 1);
+			SIO_SwitchCommandFrame(byte & 0x08 ? 0 : 1);
 		}
 		PBCTL = byte;
 		break;

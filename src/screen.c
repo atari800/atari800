@@ -327,22 +327,22 @@ void Screen_DrawAtariSpeed(double cur_time)
 
 void Screen_DrawDiskLED(void)
 {
-	if (sio_last_op_time > 0) {
+	if (SIO_last_op_time > 0) {
 		UBYTE *screen;
-		if (sio_last_drive != 0x60)
-			sio_last_op_time--;
+		if (SIO_last_drive != 0x60)
+			SIO_last_op_time--;
 		screen = (UBYTE *) Screen_atari + Screen_visible_x2 - SMALLFONT_WIDTH
 			+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * ATARI_WIDTH;
-		if (sio_last_drive == 0x60 || sio_last_drive == 0x61) {
+		if (SIO_last_drive == 0x60 || SIO_last_drive == 0x61) {
 			if (Screen_show_disk_led)
-				SmallFont_DrawChar(screen, 11, 0x00, (UBYTE) (sio_last_op == SIO_LAST_READ ? 0xac : 0x2b));
+				SmallFont_DrawChar(screen, 11, 0x00, (UBYTE) (SIO_last_op == SIO_LAST_READ ? 0xac : 0x2b));
 		}
 		else {
 			if (Screen_show_disk_led)
-				SmallFont_DrawChar(screen, sio_last_drive, 0x00, (UBYTE) (sio_last_op == SIO_LAST_READ ? 0xac : 0x2b));
+				SmallFont_DrawChar(screen, SIO_last_drive, 0x00, (UBYTE) (SIO_last_op == SIO_LAST_READ ? 0xac : 0x2b));
 		
 			if (Screen_show_sector_counter)
-				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, sio_last_sector, 0x00, 0x88);
+				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, SIO_last_sector, 0x00, 0x88);
 		}
 	}
 }

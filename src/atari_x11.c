@@ -2615,14 +2615,14 @@ void Atari_DisplayScreen(void)
 
 	switch (x11_monitor) {
 	case MONITOR_SIO:
-		if (sio_status[0] != '\0') {
+		if (SIO_status[0] != '\0') {
 #ifdef XVIEW
-			strcpy(status_line, sio_status);
+			strcpy(status_line, SIO_status);
 #else
 			sprintf(status_line, "%s - %s",
-					ATARI_TITLE, sio_status);
+					ATARI_TITLE, SIO_status);
 #endif
-			sio_status[0] = '\0';
+			SIO_status[0] = '\0';
 			update_status_line = TRUE;
 		}
 		else {

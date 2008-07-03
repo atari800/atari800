@@ -226,14 +226,14 @@ static void DiskManagement(void)
 	static char drive_array[8][5] = { " D1:", " D2:", " D3:", " D4:", " D5:", " D6:", " D7:", " D8:" };
 
 	static tMenuItem menu_array[] = {
-		MENU_FILESEL_PREFIX_TIP(0, drive_array[0], sio_filename[0], NULL),
-		MENU_FILESEL_PREFIX_TIP(1, drive_array[1], sio_filename[1], NULL),
-		MENU_FILESEL_PREFIX_TIP(2, drive_array[2], sio_filename[2], NULL),
-		MENU_FILESEL_PREFIX_TIP(3, drive_array[3], sio_filename[3], NULL),
-		MENU_FILESEL_PREFIX_TIP(4, drive_array[4], sio_filename[4], NULL),
-		MENU_FILESEL_PREFIX_TIP(5, drive_array[5], sio_filename[5], NULL),
-		MENU_FILESEL_PREFIX_TIP(6, drive_array[6], sio_filename[6], NULL),
-		MENU_FILESEL_PREFIX_TIP(7, drive_array[7], sio_filename[7], NULL),
+		MENU_FILESEL_PREFIX_TIP(0, drive_array[0], SIO_filename[0], NULL),
+		MENU_FILESEL_PREFIX_TIP(1, drive_array[1], SIO_filename[1], NULL),
+		MENU_FILESEL_PREFIX_TIP(2, drive_array[2], SIO_filename[2], NULL),
+		MENU_FILESEL_PREFIX_TIP(3, drive_array[3], SIO_filename[3], NULL),
+		MENU_FILESEL_PREFIX_TIP(4, drive_array[4], SIO_filename[4], NULL),
+		MENU_FILESEL_PREFIX_TIP(5, drive_array[5], SIO_filename[5], NULL),
+		MENU_FILESEL_PREFIX_TIP(6, drive_array[6], SIO_filename[6], NULL),
+		MENU_FILESEL_PREFIX_TIP(7, drive_array[7], SIO_filename[7], NULL),
 		MENU_FILESEL(8, "Save Disk Set"),
 		MENU_FILESEL(9, "Load Disk Set"),
 		MENU_ACTION(10, "Rotate Disks"),
@@ -252,7 +252,7 @@ static void DiskManagement(void)
 
 		for (i = 0; i < 8; i++) {
 			drive_array[i][0] = ' ';
-			switch (drive_status[i]) {
+			switch (SIO_drive_status[i]) {
 			case Off:
 				menu_array[i].suffix = "Return:insert";
 				break;
@@ -279,7 +279,7 @@ static void DiskManagement(void)
 					break;
 				}
 				for (i = 0; i < 8; i++)
-					fprintf(fp, "%s\n", sio_filename[i]);
+					fprintf(fp, "%s\n", SIO_filename[i]);
 				fclose(fp);
 				Created(set_filename);
 			}
@@ -302,7 +302,7 @@ static void DiskManagement(void)
 			}
 			break;
 		case 10:
-			Rotate_Disks();
+			SIO_Rotate_Disks();
 			break;
 		case 11:
 			if (ui_driver->fGetSaveFilename(disk_filename, atari_files_dir, n_atari_files_dir)) {
@@ -407,20 +407,20 @@ static void DiskManagement(void)
 			/* dsknum = 0..7 */
 			switch (seltype) {
 			case USER_SELECT: /* "Enter" */
-				if (drive_status[dsknum] != Off && drive_status[dsknum] != NoDisk)
-					strcpy(disk_filename, sio_filename[dsknum]);
+				if (SIO_drive_status[dsknum] != Off && SIO_drive_status[dsknum] != NoDisk)
+					strcpy(disk_filename, SIO_filename[dsknum]);
 				if (ui_driver->fGetLoadFilename(disk_filename, atari_files_dir, n_atari_files_dir))
 					if (!SIO_Mount(dsknum + 1, disk_filename, FALSE))
 						CantLoad(disk_filename);
 				break;
 			case USER_TOGGLE: /* "Space" */
 				i = FALSE;
-				switch (drive_status[dsknum]) {
+				switch (SIO_drive_status[dsknum]) {
 				case ReadWrite:
 					i = TRUE;
 					/* FALLTHROUGH */
 				case ReadOnly:
-					strcpy(disk_filename, sio_filename[dsknum]);
+					strcpy(disk_filename, SIO_filename[dsknum]);
 					SIO_Mount(dsknum + 1, disk_filename, i);
 					break;
 				default:
@@ -428,7 +428,7 @@ static void DiskManagement(void)
 				}
 				break;
 			default: /* Backspace */
-				switch (drive_status[dsknum]) {
+				switch (SIO_drive_status[dsknum]) {
 				case Off:
 					break;
 				case NoDisk:
