@@ -14,7 +14,7 @@
 #define XEP80_SCRN_WIDTH	(XEP80_LINE_LEN * XEP80_CHAR_WIDTH)
 #define XEP80_SCRN_HEIGHT	(XEP80_HEIGHT * XEP80_CHAR_HEIGHT)
 
-#define ATARI_EOL			0x9b
+#define XEP80_ATARI_EOL			0x9b
 
 extern int XEP80_enabled;
 extern int XEP80_port;

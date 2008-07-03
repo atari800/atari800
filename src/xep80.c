@@ -527,7 +527,7 @@ static void XEP80_ReceiveChar(UBYTE byte)
 	}
 	/* List mode prints control chars like escape mode, except for EOL */
 	else if (list_mode) {
-		if (byte == ATARI_EOL) {
+		if (byte == XEP80_ATARI_EOL) {
 			XEP80_AddEOL();
 		}
 		else {
@@ -543,7 +543,7 @@ static void XEP80_ReceiveChar(UBYTE byte)
 		/* If we are on the status line, only allow Delete Line and char adds */
         if (ycur == 24) {
             if (byte == 0x9c) { /* Delete Line */
-				memset(xep80_data[ycur],ATARI_EOL,XEP80_WIDTH);
+				memset(xep80_data[ycur],XEP80_ATARI_EOL,XEP80_WIDTH);
             }
             else {
                 XEP80_AddCharAtCursor(byte);
@@ -575,7 +575,7 @@ static void XEP80_ReceiveChar(UBYTE byte)
 			case 0x7f: /* Tab */
 				XEP80_GoToNextTab();
 				break;
-			case ATARI_EOL: /* Atari EOL */
+			case XEP80_ATARI_EOL: /* Atari EOL */
 				XEP80_AddEOL();
 				break;
 			case 0x9c: /* Delete Line */
@@ -709,7 +709,7 @@ static void XEP80_GetChar(void)
     static int at_eol_at_margin = FALSE;
 
     if (xcur == rmargin && at_eol_at_margin) {
-        XEP80_InputWord(ATARI_EOL);
+        XEP80_InputWord(XEP80_ATARI_EOL);
         at_eol_at_margin = FALSE;
     } else {
         XEP80_InputWord(xep80_data[ycur][xcur]);
@@ -782,7 +782,7 @@ static void XEP80_MasterReset(void)
     font_b_double = FALSE;
     font_b_blank = FALSE;
     font_b_blink = FALSE;
-	memset(xep80_data,ATARI_EOL,XEP80_WIDTH*XEP80_HEIGHT);
+	memset(xep80_data,XEP80_ATARI_EOL,XEP80_WIDTH*XEP80_HEIGHT);
     if (!XEP80_Fonts_inited)
         XEP80_Fonts_InitFonts();
 	for (i=0;i<XEP80_HEIGHT;i++)
@@ -1051,7 +1051,7 @@ static void XEP80_CursorLeft(void)
 
 static void XEP80_CursorRight(void)
 {
-	if (xep80_data[ycur][xcur] == ATARI_EOL) {
+	if (xep80_data[ycur][xcur] == XEP80_ATARI_EOL) {
 		xep80_data[ycur][xcur] = 0x20;
 	}
 	new_xcur = xcur + 1;
@@ -1068,7 +1068,7 @@ static void	XEP80_ClearScreen(void)
 	int y;
 
 	for (y=0;y<XEP80_HEIGHT-1;y++) {
-		memset(&xep80_data[y][xscroll],ATARI_EOL,XEP80_LINE_LEN);
+		memset(&xep80_data[y][xscroll],XEP80_ATARI_EOL,XEP80_LINE_LEN);
 		eol_at_margin[y] = FALSE;
 	}
 	XEP80_BlitScreen();
@@ -1115,11 +1115,11 @@ static void XEP80_DeleteChar(void)
     while(x_del != x_end || y_del != y_end) {
         if (x_del == rmargin) {
             if (y_del == XEP80_HEIGHT-2) {
-                xep80_data[y_del][x_del] = ATARI_EOL;
+                xep80_data[y_del][x_del] = XEP80_ATARI_EOL;
                 break;
             }
             xep80_data[y_del][x_del] = xep80_data[y_del+1][lmargin];
-            if (xep80_data[y_del+1][lmargin+1] == ATARI_EOL) {
+            if (xep80_data[y_del+1][lmargin+1] == XEP80_ATARI_EOL) {
                 XEP80_ScrollUp(y_del+1, y_del+1);
 				eol_at_margin[y_del] = TRUE;
                break;
@@ -1130,7 +1130,7 @@ static void XEP80_DeleteChar(void)
         else {
             xep80_data[y_del][x_del] = xep80_data[y_del][x_del+1];
 			if (x_del == rmargin-1 && eol_at_margin[y_del]) {
-				xep80_data[y_del][x_del+1] = ATARI_EOL;
+				xep80_data[y_del][x_del+1] = XEP80_ATARI_EOL;
 				eol_at_margin[y_del] = FALSE;
 			}
 			x_del++;
@@ -1161,15 +1161,15 @@ static void XEP80_InsertChar(void)
                 XEP80_ScrollUpLast();
                 y_ins--;
                 eol_at_margin[y_end-1] = FALSE;
-                xep80_data[y_end][lmargin] = ATARI_EOL;
+                xep80_data[y_end][lmargin] = XEP80_ATARI_EOL;
             } else {
                 XEP80_ScrollDown(y_ins+1);
                 eol_at_margin[y_end] = FALSE;
                 y_end++;
-                xep80_data[y_end][lmargin] = ATARI_EOL;
+                xep80_data[y_end][lmargin] = XEP80_ATARI_EOL;
             }
 			}
-		else if (xep80_data[y_end][x_end] == ATARI_EOL) {
+		else if (xep80_data[y_end][x_end] == XEP80_ATARI_EOL) {
 			x_ins--;
 			eol_at_margin[y_end] = TRUE;
 		}
@@ -1239,7 +1239,7 @@ static void XEP80_AddEOL(void)
 	int y_end = ycur;
 
 	XEP80_FindEndLogicalLine(&x_end,&y_end);
-	xep80_data[y_end][x_end] = ATARI_EOL;
+	xep80_data[y_end][x_end] = XEP80_ATARI_EOL;
 	new_xcur = lmargin;
 	if (y_end == XEP80_HEIGHT-2) {
 		new_ycur = y_end;
@@ -1291,7 +1291,7 @@ static void XEP80_ScrollUpLast(void)
 		eol_at_margin[row-1] = eol_at_margin[row] ;
     }
     
-    memset(xep80_data[23],ATARI_EOL,XEP80_WIDTH);
+    memset(xep80_data[23],XEP80_ATARI_EOL,XEP80_WIDTH);
 	eol_at_margin[23] = FALSE ;
     
     XEP80_BlitScreen();
@@ -1321,7 +1321,7 @@ static void XEP80_ScrollDown(int y)
 		eol_at_margin[row+1] = eol_at_margin[row] ;
     }
     
-    memset(xep80_data[y],ATARI_EOL,XEP80_WIDTH);
+    memset(xep80_data[y],XEP80_ATARI_EOL,XEP80_WIDTH);
 	eol_at_margin[y] = FALSE ;
     
     XEP80_BlitRows(y,23);
@@ -1353,7 +1353,7 @@ static void XEP80_ScrollUp(int y_start, int y_end)
     }
     
 	for (row=24-num_rows; row < 24; row++) {
-		memset(xep80_data[row],ATARI_EOL,XEP80_WIDTH);
+		memset(xep80_data[row],XEP80_ATARI_EOL,XEP80_WIDTH);
 		eol_at_margin[row] = FALSE;
 		}
 
@@ -1374,7 +1374,7 @@ static void XEP80_FindEndLogicalLine(int *x, int *y)
 	
 	while(1) {
 		while(x_search<=rmargin) {
-			if (xep80_data[y_search][x_search] == ATARI_EOL) {
+			if (xep80_data[y_search][x_search] == XEP80_ATARI_EOL) {
 				found = TRUE;
 				break;
 			}
@@ -1423,7 +1423,7 @@ static void XEP80_FindStartLogicalLine(int *x, int *y)
 	y_search--;
 	while(1) {
 		while(x_search>=lmargin) {
-			if (xep80_data[y_search][x_search] == ATARI_EOL) {
+			if (xep80_data[y_search][x_search] == XEP80_ATARI_EOL) {
 				found = TRUE;
 				break;
 			}
@@ -1466,7 +1466,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
     ch = xep80_data[y][x];
 	
 	/* Dispaly Atari EOL's as spaces */
-	if (ch == ATARI_EOL && ((font_a_index & XEP80_FONTS_BLK_FONT_BIT) == 0) 
+	if (ch == XEP80_ATARI_EOL && ((font_a_index & XEP80_FONTS_BLK_FONT_BIT) == 0) 
         && char_set != CHAR_SET_INTERNAL)
 		ch = 0x20;
 	
@@ -1494,7 +1494,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		font_index ^= XEP80_FONTS_REV_FONT_BIT;
     }
 	
-    if (ch==ATARI_EOL) {
+    if (ch==XEP80_ATARI_EOL) {
         if (inverse_mode) {
             font_index |= XEP80_FONTS_REV_FONT_BIT;
         }
