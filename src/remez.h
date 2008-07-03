@@ -21,22 +21,13 @@
 #ifndef _REMEZ_H_
 #define _REMEZ_H_
 
-#define BANDPASS       1
-#define DIFFERENTIATOR 2
-#define HILBERT        3
+#define REMEZ_BANDPASS       1
+#define REMEZ_DIFFERENTIATOR 2
+#define REMEZ_HILBERT        3
 
-#define NEGATIVE       0
-#define POSITIVE       1
-
-#define Pi             3.1415926535897932
-#define Pi2            6.2831853071795865
-
-#define GRIDDENSITY    16
-#define MAXITERATIONS  40
-
-/* Function prototype for remez() - the only function that should need be
+/* Function prototype for Remez_CreateFilter() - the only function that should need be
  * called from external code */
-void remez(double h[], int numtaps,
+void Remez_CreateFilter(double h[], int numtaps,
            int numband, double bands[], const double des[], const double weight[],
            int type);
 

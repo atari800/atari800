@@ -1,3 +1,7 @@
+2008-07-03  Perry McFarlane  <perry_m@fastmail.fm>
+* remez.[ch], mzpokeysnd.c: rename Remez_, remez -> Remez_CreateFilter.
+
+
 2008-07-02  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari_javanvm.c: compile without SOUND
 * atari_sdl.c: name changes

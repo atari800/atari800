@@ -34,6 +34,15 @@
 #include "util.h"
 #endif
 
+#define NEGATIVE       0
+#define POSITIVE       1
+
+#define Pi             3.1415926535897932
+#define Pi2            6.2831853071795865
+
+#define GRIDDENSITY    16
+#define MAXITERATIONS  40
+
 /*******************
  * CreateDenseGrid
  *=================
@@ -480,7 +489,7 @@ static int isDone(int r, const int Ext[], const double E[])
 }
 
 /********************
- * remez
+ * Remez_CreateFilter
  *=======
  * Calculates the optimal (in the Chebyshev/minimax sense)
  * FIR filter impulse response given a set of band edges,
@@ -501,7 +510,7 @@ static int isDone(int r, const int Ext[], const double E[])
  * double h[]      - Impulse response of final filter [numtaps]
  ********************/
 
-void remez(double h[], int numtaps, int numband, double bands[],
+void Remez_CreateFilter(double h[], int numtaps, int numband, double bands[],
            const double des[], const double weight[], int type)
 {
 	double *Grid, *W, *D, *E;
@@ -510,7 +519,7 @@ void remez(double h[], int numtaps, int numband, double bands[],
 	double *x, *y, *ad;
 	int    symmetry;
 
-	if (type == BANDPASS)
+	if (type == REMEZ_BANDPASS)
 		symmetry = POSITIVE;
 	else
 		symmetry = NEGATIVE;
@@ -547,7 +556,7 @@ void remez(double h[], int numtaps, int numband, double bands[],
 	InitialGuess(r, Ext, gridsize);
 
 	/* For Differentiator: (fix grid) */
-	if (type == DIFFERENTIATOR) {
+	if (type == REMEZ_DIFFERENTIATOR) {
 		for (i = 0; i < gridsize; i++) {
 			/* D[i] = D[i] * Grid[i]; */
 			if (D[i] > 0.0001)

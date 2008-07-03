@@ -1132,7 +1132,7 @@ found:
 
   bands[1] *= (double)interlevel;
   bands[2] *= (double)interlevel;
-  remez(filter_data, (size / interlevel) + 1, 2, bands, desired, weights, BANDPASS);
+  Remez_CreateFilter(filter_data, (size / interlevel) + 1, 2, bands, desired, weights, REMEZ_BANDPASS);
   for (i = size - interlevel; i >= 0; i -= interlevel)
   {
     int s;
