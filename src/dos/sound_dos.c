@@ -37,7 +37,7 @@
 
 static int sound_enabled = TRUE;
 
-static int playback_freq = FREQ_17_APPROX / 28 / 3;
+static int playback_freq = POKEYSND_FREQ_17_APPROX / 28 / 3;
 #ifdef STEREO_SOUND
 static int buffersize = 880;
 static int stereo = TRUE;
@@ -80,8 +80,8 @@ void Sound_Initialise(int *argc, char *argv[])
 			sound_enabled = FALSE;
 		}
 		else {
-			Pokey_sound_init(FREQ_17_APPROX, playback_freq, stereo ? 2 : 1, 0);
-			sb_startoutput((sbmix_t) Pokey_process);
+			POKEYSND_Init(POKEYSND_FREQ_17_APPROX, playback_freq, stereo ? 2 : 1, 0);
+			sb_startoutput((sbmix_t) POKEYSND_Process);
 		}
 	}
 }
@@ -95,7 +95,7 @@ void Sound_Pause(void)
 void Sound_Continue(void)
 {
 	if (sound_enabled)
-		sb_startoutput((sbmix_t) Pokey_process);
+		sb_startoutput((sbmix_t) POKEYSND_Process);
 }
 
 void Sound_Update(void)

@@ -51,6 +51,7 @@
 
 /* Atari800 includes */
 #include "input.h"
+#include "akey.h"
 #include "colours.h"
 #include "monitor.h"
 #include "platform.h"
@@ -100,8 +101,8 @@ static atari_ntsc_setup_t atari_ntsc_setup;
    Here the defaults if there is no keymap in the config file... */
 
 /* a runtime switch for the kbd_joy_X_enabled vars is in the UI */
-int kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
-int kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
+int PLATFORM_kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
+int PLATFORM_kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
 
 static int KBD_TRIG_0 = SDLK_LCTRL;
 static int KBD_STICK_0_LEFT = SDLK_KP4;
@@ -149,12 +150,12 @@ static SDL_Surface *MainScreen = NULL;
 static SDL_Color colors[256];			/* palette */
 static Uint16 Palette16[256];			/* 16-bit palette */
 static Uint32 Palette32[256];			/* 32-bit palette */
-int Atari_xep80 = FALSE; 	/* is the XEP80 screen displayed? */
+int PLATFORM_xep80 = FALSE; 	/* is the XEP80 screen displayed? */
 
 /* keyboard */
 static Uint8 *kbhits;
 
-/* For better handling of the Atari_Configure-recognition...
+/* For better handling of the PLATFORM_Configure-recognition...
    Takes a keySym as integer-string and fills the value
    into the retval referentially.
    Authors: B.Schreiber, A.Martinez
@@ -182,14 +183,14 @@ static int SDLKeyBind(int *retval, char *sdlKeySymIntStr)
 /* For getting sdl key map out of the config...
    Authors: B.Schreiber, A.Martinez
    cleaned up by joy */
-int Atari_Configure(char *option, char *parameters)
+int PLATFORM_Configure(char *option, char *parameters)
 {
 	if (strcmp(option, "SDL_JOY_0_ENABLED") == 0) {
-		kbd_joy_0_enabled = (parameters != NULL && parameters[0] != '0');
+		PLATFORM_kbd_joy_0_enabled = (parameters != NULL && parameters[0] != '0');
 		return TRUE;
 	}
 	else if (strcmp(option, "SDL_JOY_1_ENABLED") == 0) {
-		kbd_joy_1_enabled = (parameters != NULL && parameters[0] != '0');
+		PLATFORM_kbd_joy_1_enabled = (parameters != NULL && parameters[0] != '0');
 		return TRUE;
 	}
 	else if (strcmp(option, "SDL_JOY_0_LEFT") == 0)
@@ -239,9 +240,9 @@ int Atari_Configure(char *option, char *parameters)
 /* Save the keybindings and the keybindapp options to the config file...
    Authors: B.Schreiber, A.Martinez
    cleaned up by joy */
-void Atari_ConfigSave(FILE *fp)
+void PLATFORM_ConfigSave(FILE *fp)
 {
-	fprintf(fp, "SDL_JOY_0_ENABLED=%d\n", kbd_joy_0_enabled);
+	fprintf(fp, "SDL_JOY_0_ENABLED=%d\n", PLATFORM_kbd_joy_0_enabled);
 	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
 	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
 	fprintf(fp, "SDL_JOY_0_UP=%d\n", KBD_STICK_0_UP);
@@ -252,7 +253,7 @@ void Atari_ConfigSave(FILE *fp)
 	fprintf(fp, "SDL_JOY_0_RIGHTDOWN=%d\n", KBD_STICK_0_RIGHTDOWN);
 	fprintf(fp, "SDL_JOY_0_TRIGGER=%d\n", KBD_TRIG_0);
 
-	fprintf(fp, "SDL_JOY_1_ENABLED=%d\n", kbd_joy_1_enabled);
+	fprintf(fp, "SDL_JOY_1_ENABLED=%d\n", PLATFORM_kbd_joy_1_enabled);
 	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", KBD_STICK_1_LEFT);
 	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
 	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
@@ -265,7 +266,7 @@ void Atari_ConfigSave(FILE *fp)
 }
 
 /* used in UI to show how the keyboard joystick is mapped */
-char *joy_0_description(char *buffer, int maxsize)
+char *PLATFORM_Joy0Description(char *buffer, int maxsize)
 {
 	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
 			SDL_GetKeyName((SDLKey)KBD_STICK_0_LEFT),
@@ -277,7 +278,7 @@ char *joy_0_description(char *buffer, int maxsize)
 	return buffer;
 }
 
-char *joy_1_description(char *buffer, int maxsize)
+char *PLATFORM_Joy1Description(char *buffer, int maxsize)
 {
 	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
 			SDL_GetKeyName((SDLKey)KBD_STICK_1_LEFT),
@@ -357,7 +358,7 @@ static void CalcPalette(void)
 
 }
 
-void Atari_PaletteUpdate(void)
+void PLATFORM_PaletteUpdate(void)
 {
 	CalcPalette();
 }
@@ -414,15 +415,15 @@ static void SetNewVideoMode(int w, int h, int bpp)
 {
 	float ww, hh;
 
-	if ((rotate90||ntscemu||PBI_PROTO80_enabled||Atari_xep80))
+	if ((rotate90||ntscemu||PBI_PROTO80_enabled||PLATFORM_xep80))
 	{
 		SetVideoMode(w, h, bpp);
 	}
 	else {
 
-		if ((h < ATARI_HEIGHT) || (w < ATARI_WIDTH)) {
-			h = ATARI_HEIGHT;
-			w = ATARI_WIDTH;
+		if ((h < Screen_HEIGHT) || (w < Screen_WIDTH)) {
+			h = Screen_HEIGHT;
+			w = Screen_WIDTH;
 		}
 
 		/* aspect ratio, floats needed */
@@ -481,14 +482,14 @@ static void SwitchFullscreen(void)
 	fullscreen = 1 - fullscreen;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
 					MainScreen->format->BitsPerPixel);
-	Atari_DisplayScreen();
+	PLATFORM_DisplayScreen();
 }
 
-void Atari_SwitchXep80(void)
+void PLATFORM_SwitchXep80(void)
 {
 	static int saved_w, saved_h, saved_bpp;
-	Atari_xep80 = 1 - Atari_xep80;
-	if (Atari_xep80) {
+	PLATFORM_xep80 = 1 - PLATFORM_xep80;
+	if (PLATFORM_xep80) {
 		saved_w = MainScreen->w;
 		saved_h = MainScreen->h;
 		saved_bpp = MainScreen->format->BitsPerPixel;
@@ -497,7 +498,7 @@ void Atari_SwitchXep80(void)
 	else {
 		SetNewVideoMode(saved_w, saved_h, saved_bpp);
 	}
-	Atari_DisplayScreen();
+	PLATFORM_DisplayScreen();
 }
 
 static void SwitchWidth(void)
@@ -507,7 +508,7 @@ static void SwitchWidth(void)
 		width_mode = SHORT_WIDTH_MODE;
 	SetNewVideoMode(MainScreen->w, MainScreen->h,
 					MainScreen->format->BitsPerPixel);
-	Atari_DisplayScreen();
+	PLATFORM_DisplayScreen();
 }
 
 static void SwitchBW(void)
@@ -530,7 +531,7 @@ static void SoundCallback(void *userdata, Uint8 *stream, int len)
 	int sndn = (sound_bits == 8 ? len : len/2);
 	/* in mono, sndn is the number of samples (8 or 16 bit) */
 	/* in stereo, 2*sndn is the number of sample pairs */
-	Pokey_process(dsp_buffer, sndn);
+	POKEYSND_Process(dsp_buffer, sndn);
 	memcpy(stream, dsp_buffer, len);
 }
 
@@ -553,7 +554,7 @@ static void SoundSetup(void)
 		desired.callback = SoundCallback;
 		desired.userdata = NULL;
 #ifdef STEREO_SOUND
-		desired.channels = stereo_enabled ? 2 : 1;
+		desired.channels = POKEYSND_stereo_enabled ? 2 : 1;
 #else
 		desired.channels = 1;
 #endif /* STEREO_SOUND*/
@@ -568,7 +569,7 @@ static void SoundSetup(void)
 		free(dsp_buffer);
 		dsp_buffer_bytes = desired.channels*dsp_buffer_samps*(sound_bits == 8 ? 1 : 2);
 		dsp_buffer = (Uint8 *)Util_malloc(dsp_buffer_bytes);
-		Pokey_sound_init(FREQ_17_EXACT, dsprate, desired.channels, sound_flags);
+		POKEYSND_Init(POKEYSND_FREQ_17_EXACT, dsprate, desired.channels, sound_flags);
 		SDL_PauseAudio(0);
 	}
 }
@@ -590,7 +591,7 @@ static void SoundInitialise(int *argc, char *argv[])
 			sound_enabled = FALSE;
 		else if (strcmp(argv[i], "-audio16") == 0) {
 			Log_print("audio 16bit enabled");
-			sound_flags |= SND_BIT16;
+			sound_flags |= POKEYSND_BIT16;
 			sound_bits = 16;
 		}
 		else if (strcmp(argv[i], "-dsprate") == 0)
@@ -611,7 +612,7 @@ static void SoundInitialise(int *argc, char *argv[])
 }
 #endif /* SOUND */
 
-int Atari_Keyboard(void)
+int PLATFORM_Keyboard(void)
 {
 	static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
  	static int lastuni = 0;
@@ -646,7 +647,7 @@ int Atari_Keyboard(void)
 			}
 			break;
 		case SDL_VIDEORESIZE:
-			if (!(rotate90||ntscemu||PBI_PROTO80_enabled||Atari_xep80)) {
+			if (!(rotate90||ntscemu||PBI_PROTO80_enabled||PLATFORM_xep80)) {
 				SetNewVideoMode(event.resize.w, event.resize.h, MainScreen->format->BitsPerPixel);
 			}
 			else {
@@ -671,7 +672,7 @@ int Atari_Keyboard(void)
 		exit(-1);
 	}
 
-	alt_function = -1;
+	UI_alt_function = -1;
 	if (kbhits[SDLK_LALT]) {
 		if (key_pressed) {
 			switch (lastkey) {
@@ -680,9 +681,9 @@ int Atari_Keyboard(void)
 				SwitchFullscreen();
 				break;
 			case SDLK_x:
-				if (key_shift && XEP80_enabled) {
+				if (INPUT_key_shift && XEP80_enabled) {
 					key_pressed = 0;
-					Atari_SwitchXep80();
+					PLATFORM_SwitchXep80();
 				}
 				break;
 			case SDLK_g:
@@ -698,31 +699,31 @@ int Atari_Keyboard(void)
 				SwapJoysticks();
 				break;
 			case SDLK_r:
-				alt_function = MENU_RUN;
+				UI_alt_function = UI_MENU_RUN;
 				break;
 			case SDLK_y:
-				alt_function = MENU_SYSTEM;
+				UI_alt_function = UI_MENU_SYSTEM;
 				break;
 			case SDLK_o:
-				alt_function = MENU_SOUND;
+				UI_alt_function = UI_MENU_SOUND;
 				break;
 			case SDLK_w:
-				alt_function = MENU_SOUND_RECORDING;
+				UI_alt_function = UI_MENU_SOUND_RECORDING;
 				break;
 			case SDLK_a:
-				alt_function = MENU_ABOUT;
+				UI_alt_function = UI_MENU_ABOUT;
 				break;
 			case SDLK_s:
-				alt_function = MENU_SAVESTATE;
+				UI_alt_function = UI_MENU_SAVESTATE;
 				break;
 			case SDLK_d:
-				alt_function = MENU_DISK;
+				UI_alt_function = UI_MENU_DISK;
 				break;
 			case SDLK_l:
-				alt_function = MENU_LOADSTATE;
+				UI_alt_function = UI_MENU_LOADSTATE;
 				break;
 			case SDLK_c:
-				alt_function = MENU_CARTRIDGE;
+				UI_alt_function = UI_MENU_CARTRIDGE;
 				break;
 			case SDLK_BACKSLASH:
 				return AKEY_PBI_BB_MENU;
@@ -834,7 +835,7 @@ int Atari_Keyboard(void)
 			break;
 			}
 		}
-		if (alt_function != -1) {
+		if (UI_alt_function != -1) {
 			key_pressed = 0;
 			return AKEY_UI;
 		}
@@ -842,9 +843,9 @@ int Atari_Keyboard(void)
 
 	/* SHIFT STATE */
 	if ((kbhits[SDLK_LSHIFT]) || (kbhits[SDLK_RSHIFT]))
-		key_shift = 1;
+		INPUT_key_shift = 1;
 	else
-		key_shift = 0;
+		INPUT_key_shift = 0;
 
     /* CONTROL STATE */
 	if ((kbhits[SDLK_LCTRL]) || (kbhits[SDLK_RCTRL]))
@@ -854,18 +855,18 @@ int Atari_Keyboard(void)
 
 	/*
 	if (event.type == 2 || event.type == 3) {
-		Log_print("E:%x S:%x C:%x K:%x U:%x M:%x",event.type,key_shift,key_control,lastkey,event.key.keysym.unicode,event.key.keysym.mod);
+		Log_print("E:%x S:%x C:%x K:%x U:%x M:%x",event.type,INPUT_key_shift,key_control,lastkey,event.key.keysym.unicode,event.key.keysym.mod);
 	}
 	*/
 
 	/* OPTION / SELECT / START keys */
-	key_consol = CONSOL_NONE;
+	INPUT_key_consol = INPUT_CONSOL_NONE;
 	if (kbhits[SDLK_F2])
-		key_consol &= (~CONSOL_OPTION);
+		INPUT_key_consol &= (~INPUT_CONSOL_OPTION);
 	if (kbhits[SDLK_F3])
-		key_consol &= (~CONSOL_SELECT);
+		INPUT_key_consol &= (~INPUT_CONSOL_SELECT);
 	if (kbhits[SDLK_F4])
-		key_consol &= (~CONSOL_START);
+		INPUT_key_consol &= (~INPUT_CONSOL_START);
 
 	if (key_pressed == 0)
 		return AKEY_NONE;
@@ -877,21 +878,21 @@ int Atari_Keyboard(void)
 		return AKEY_UI;
 	case SDLK_F5:
 		key_pressed = 0;
-		return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
+		return INPUT_key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
 	case SDLK_F8:
 		key_pressed = 0;
-		return (Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT);
+		return (PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT);
 	case SDLK_F9:
 		return AKEY_EXIT;
 	case SDLK_F10:
 		key_pressed = 0;
-		return key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT_INTERLACE;
+		return INPUT_key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT_INTERLACE;
 	}
 
 	/* keyboard joysticks: don't pass the keypresses to emulation
 	 * as some games pause on a keypress (River Raid, Bruce Lee)
 	 */
-	if (!ui_is_active && kbd_joy_0_enabled) {
+	if (!UI_is_active && PLATFORM_kbd_joy_0_enabled) {
 		if (lastkey == KBD_STICK_0_LEFT || lastkey == KBD_STICK_0_RIGHT ||
 			lastkey == KBD_STICK_0_UP || lastkey == KBD_STICK_0_DOWN ||
 			lastkey == KBD_STICK_0_LEFTUP || lastkey == KBD_STICK_0_LEFTDOWN ||
@@ -902,7 +903,7 @@ int Atari_Keyboard(void)
 		}
 	}
 
-	if (!ui_is_active && kbd_joy_1_enabled) {
+	if (!UI_is_active && PLATFORM_kbd_joy_1_enabled) {
 		if (lastkey == KBD_STICK_1_LEFT || lastkey == KBD_STICK_1_RIGHT ||
 			lastkey == KBD_STICK_1_UP || lastkey == KBD_STICK_1_DOWN ||
 			lastkey == KBD_STICK_1_LEFTUP || lastkey == KBD_STICK_1_LEFTDOWN ||
@@ -913,10 +914,10 @@ int Atari_Keyboard(void)
 		}
 	}
 
-	if (key_shift)
+	if (INPUT_key_shift)
 		shiftctrl ^= AKEY_SHFT;
 
-	if (machine_type == MACHINE_5200 && !ui_is_active) {
+	if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active) {
 		if (lastkey == SDLK_F4)
 			return AKEY_5200_START ^ shiftctrl;
 		switch (lastuni) {
@@ -962,7 +963,7 @@ int Atari_Keyboard(void)
 	case SDLK_LSUPER:
 		return AKEY_ATARI ^ shiftctrl;
 	case SDLK_RSUPER:
-		if (key_shift)
+		if (INPUT_key_shift)
 			return AKEY_CAPSLOCK;
 		else
 			return AKEY_CAPSTOGGLE;
@@ -979,7 +980,7 @@ int Atari_Keyboard(void)
 	case SDLK_F7:
 		return AKEY_BREAK;
 	case SDLK_CAPSLOCK:
-		if (key_shift)
+		if (INPUT_key_shift)
 			return AKEY_CAPSLOCK|shiftctrl;
 		else
 			return AKEY_CAPSTOGGLE|shiftctrl;
@@ -990,25 +991,25 @@ int Atari_Keyboard(void)
 	case SDLK_RETURN:
 		return AKEY_RETURN ^ shiftctrl;
 	case SDLK_LEFT:
-		return (key_shift ? AKEY_PLUS : AKEY_LEFT) ^ shiftctrl;
+		return (INPUT_key_shift ? AKEY_PLUS : AKEY_LEFT) ^ shiftctrl;
 	case SDLK_RIGHT:
-		return (key_shift ? AKEY_ASTERISK : AKEY_RIGHT) ^ shiftctrl;
+		return (INPUT_key_shift ? AKEY_ASTERISK : AKEY_RIGHT) ^ shiftctrl;
 	case SDLK_UP:
-		return (key_shift ? AKEY_MINUS : AKEY_UP) ^ shiftctrl;
+		return (INPUT_key_shift ? AKEY_MINUS : AKEY_UP) ^ shiftctrl;
 	case SDLK_DOWN:
-		return (key_shift ? AKEY_EQUAL : AKEY_DOWN) ^ shiftctrl;
+		return (INPUT_key_shift ? AKEY_EQUAL : AKEY_DOWN) ^ shiftctrl;
 	case SDLK_ESCAPE:
 		/* Windows takes ctrl+esc and ctrl+shift+esc */
 		return AKEY_ESCAPE ^ shiftctrl;
 	case SDLK_TAB:
 		return AKEY_TAB ^ shiftctrl;
 	case SDLK_DELETE:
-		if (key_shift)
+		if (INPUT_key_shift)
 			return AKEY_DELETE_LINE|shiftctrl;
 		else
 			return AKEY_DELETE_CHAR;
 	case SDLK_INSERT:
-		if (key_shift)
+		if (INPUT_key_shift)
 			return AKEY_INSERT_LINE|shiftctrl;
 		else
 			return AKEY_INSERT_CHAR;
@@ -1060,8 +1061,8 @@ int Atari_Keyboard(void)
 	}
 
 	/* Host Caps Lock will make lastuni switch case, so prevent this*/
-    if(lastuni>='A' && lastuni <= 'Z' && !key_shift) lastuni += 0x20;
-    if(lastuni>='a' && lastuni <= 'z' && key_shift) lastuni -= 0x20;
+    if(lastuni>='A' && lastuni <= 'Z' && !INPUT_key_shift) lastuni += 0x20;
+    if(lastuni>='a' && lastuni <= 'z' && INPUT_key_shift) lastuni -= 0x20;
 	/* Uses only UNICODE translation, no shift states (this was added to
 	 * support non-US keyboard layouts)*/
 	/* input.c takes care of removing invalid shift+control keys */
@@ -1371,7 +1372,7 @@ static void Init_Joysticks(int *argc, char *argv[])
 }
 
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	int no_joystick;
@@ -1379,8 +1380,8 @@ void Atari_Initialise(int *argc, char *argv[])
 	int help_only = FALSE;
 
 	no_joystick = 0;
-	width = ATARI_WIDTH;
-	height = ATARI_HEIGHT;
+	width = Screen_WIDTH;
+	height = Screen_HEIGHT;
 	bpp = default_bpp;
 
 	for (i = j = 1; i < *argc; i++) {
@@ -1482,7 +1483,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	atexit(SDL_Quit);
 
 	/* SDL_WM_SetIcon("/usr/local/atari800/atarixe.ICO"), NULL); */
-	SDL_WM_SetCaption(ATARI_TITLE, "Atari800");
+	SDL_WM_SetCaption(Atari800_TITLE, "Atari800");
 
 #ifdef SOUND
 	SoundInitialise(argc, argv);
@@ -1511,7 +1512,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	SDL_EnableUNICODE(1);
 }
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	int restart;
 	int original_fullscreen = fullscreen;
@@ -1524,7 +1525,7 @@ int Atari_Exit(int run_monitor)
 #ifdef SOUND
 		Sound_Pause();
 #endif
-		restart = Monitor_Run();
+		restart = MONITOR_Run();
 #ifdef SOUND
 		Sound_Continue();
 #endif
@@ -1730,12 +1731,12 @@ static void DisplayNTSCEmu640x480(UBYTE *screen)
 	enum { width = overscan ? atari_ntsc_full_out_width : atari_ntsc_min_out_width };
 	enum { height = atari_height * 2 };
 	enum { left_border_adj = ((640 - width)/2) & 0xfffffffc };
-	int const raw_width = ATARI_WIDTH; /* raw image has extra data */
+	int const raw_width = Screen_WIDTH; /* raw image has extra data */
 
 	int jumped = 24;
 	unsigned short *pixels = (unsigned short*)MainScreen->pixels + overscan_lines / 2 * MainScreen->pitch + left_border_adj;
 	/* blit atari image, doubled vertically */
-	atari_ntsc_blit( the_ntscemu, screen + jumped + overscan_lines / 2 * ATARI_WIDTH, raw_width, width, height / 2, pixels, MainScreen->pitch * 2 );
+	atari_ntsc_blit( the_ntscemu, screen + jumped + overscan_lines / 2 * Screen_WIDTH, raw_width, width, height / 2, pixels, MainScreen->pitch * 2 );
 	
 	if (!scanlinesnoint) {
 		scanLines_16_interp((void *)pixels, width, height, MainScreen->pitch, scanlines_percentage);
@@ -1756,7 +1757,7 @@ static void DisplayProto80640x400(UBYTE *screen)
 	for (scanline = 0; scanline < 8*24; scanline++) {
 		for (column = 0; column < 80; column++) {
 			int i;
-			pixels = PBI_PROTO80_Pixels(scanline,column);
+			pixels = PBI_PROTO80_GetPixels(scanline,column);
 			for (i = 0; i < 8; i++) {
 				if (pixels & 0x80) {
 					*start16++ = white;
@@ -1784,8 +1785,8 @@ static void DisplayRotated240x320(Uint8 *screen)
 	start32 = (Uint32 *) MainScreen->pixels;
 	for (j = 0; j < MainScreen->h; j++)
 		for (i = 0; i < MainScreen->w / 2; i++) {
-			Uint8 left = screen[ATARI_WIDTH * (i * 2) + 32 + 320 - j];
-			Uint8 right = screen[ATARI_WIDTH * (i * 2 + 1) + 32 + 320 - j];
+			Uint8 left = screen[Screen_WIDTH * (i * 2) + 32 + 320 - j];
+			Uint8 right = screen[Screen_WIDTH * (i * 2 + 1) + 32 + 320 - j];
 #ifdef WORDS_BIGENDIAN
 			*start32++ = (Palette16[left] << 16) + Palette16[right];
 #else
@@ -1812,7 +1813,7 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 	case 8:
 		while (i > 0) {
 			memcpy(start32, screen, width);
-			screen += ATARI_WIDTH;
+			screen += Screen_WIDTH;
 			start32 += pitch4;
 			i--;
 		}
@@ -1829,7 +1830,7 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 				start32[pos >> 1] = quad;
 				pos--;
 			}
-			screen += ATARI_WIDTH;
+			screen += Screen_WIDTH;
 			start32 += pitch4;
 			i--;
 		}
@@ -1843,7 +1844,7 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 				start32[pos] = quad;
 				pos--;
 			}
-			screen += ATARI_WIDTH;
+			screen += Screen_WIDTH;
 			start32 += pitch4;
 			i--;
 		}
@@ -1876,7 +1877,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 	start32 = (Uint32 *) MainScreen->pixels;
 
 	w = (width) << 16;
-	h = (ATARI_HEIGHT) << 16;
+	h = (Screen_HEIGHT) << 16;
 	dx = w / MainScreen->w;
 	dy = h / MainScreen->h;
 	w1 = MainScreen->w - 1;
@@ -1891,7 +1892,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 		while (i > 0) {
 			x = (width + jumped) << 16;
 			pos = w4;
-			yy = ATARI_WIDTH * (y >> 16);
+			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
 				quad = (ss[yy + (x >> 16)] << 24);
 				x = x - dx;
@@ -1915,7 +1916,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 		while (i > 0) {
 			x = (width + jumped) << 16;
 			pos = w2;
-			yy = ATARI_WIDTH * (y >> 16);
+			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
 
 				c = ss[yy + (x >> 16)];
@@ -1937,7 +1938,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 		while (i > 0) {
 			x = (width + jumped) << 16;
 			pos = w1;
-			yy = ATARI_WIDTH * (y >> 16);
+			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
 
 				c = ss[yy + (x >> 16)];
@@ -1961,21 +1962,21 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 	}
 }
 
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
 	int width, jumped;
 
 	switch (width_mode) {
 	case SHORT_WIDTH_MODE:
-		width = ATARI_WIDTH - 2 * 24 - 2 * 8;
+		width = Screen_WIDTH - 2 * 24 - 2 * 8;
 		jumped = 24 + 8;
 		break;
 	case DEFAULT_WIDTH_MODE:
-		width = ATARI_WIDTH - 2 * 24;
+		width = Screen_WIDTH - 2 * 24;
 		jumped = 24;
 		break;
 	case FULL_WIDTH_MODE:
-		width = ATARI_WIDTH;
+		width = Screen_WIDTH;
 		jumped = 0;
 		break;
 	default:
@@ -1984,7 +1985,7 @@ void Atari_DisplayScreen(void)
 		exit(-1);
 		break;
 	}
-	if (Atari_xep80) {
+	if (PLATFORM_xep80) {
 		DisplayXEP80((UBYTE *)Screen_atari);
 	}
 	else if (ntscemu) {
@@ -1996,7 +1997,7 @@ void Atari_DisplayScreen(void)
   	else if (rotate90) {
 		DisplayRotated240x320((UBYTE *) Screen_atari);
 	}
-	else if (MainScreen->w == width && MainScreen->h == ATARI_HEIGHT) {
+	else if (MainScreen->w == width && MainScreen->h == Screen_HEIGHT) {
 		DisplayWithoutScaling((UBYTE *) Screen_atari, jumped, width);
 	}
 	else {
@@ -2015,27 +2016,27 @@ static int get_SDL_joystick_state(SDL_Joystick *joystick)
 
 	if (x > minjoy) {
 		if (y < -minjoy)
-			return STICK_UR;
+			return INPUT_STICK_UR;
 		else if (y > minjoy)
-			return STICK_LR;
+			return INPUT_STICK_LR;
 		else
-			return STICK_RIGHT;
+			return INPUT_STICK_RIGHT;
 	}
 	else if (x < -minjoy) {
 		if (y < -minjoy)
-			return STICK_UL;
+			return INPUT_STICK_UL;
 		else if (y > minjoy)
-			return STICK_LL;
+			return INPUT_STICK_LL;
 		else
-			return STICK_LEFT;
+			return INPUT_STICK_LEFT;
 	}
 	else {
 		if (y < -minjoy)
-			return STICK_FORWARD;
+			return INPUT_STICK_FORWARD;
 		else if (y > minjoy)
-			return STICK_BACK;
+			return INPUT_STICK_BACK;
 		else
-			return STICK_CENTRE;
+			return INPUT_STICK_CENTRE;
 	}
 }
 
@@ -2049,35 +2050,35 @@ static int get_LPT_joystick_state(int fd)
 
 	if (status & 0x40) {			/* right */
 		if (status & 0x10) {		/* up */
-			return STICK_UR;
+			return INPUT_STICK_UR;
 		}
 		else if (status & 0x20) {	/* down */
-			return STICK_LR;
+			return INPUT_STICK_LR;
 		}
 		else {
-			return STICK_RIGHT;
+			return INPUT_STICK_RIGHT;
 		}
 	}
 	else if (status & 0x80) {		/* left */
 		if (status & 0x10) {		/* up */
-			return STICK_UL;
+			return INPUT_STICK_UL;
 		}
 		else if (status & 0x20) {	/* down */
-			return STICK_LL;
+			return INPUT_STICK_LL;
 		}
 		else {
-			return STICK_LEFT;
+			return INPUT_STICK_LEFT;
 		}
 	}
 	else {
 		if (status & 0x10) {		/* up */
-			return STICK_FORWARD;
+			return INPUT_STICK_FORWARD;
 		}
 		else if (status & 0x20) {	/* down */
-			return STICK_BACK;
+			return INPUT_STICK_BACK;
 		}
 		else {
-			return STICK_CENTRE;
+			return INPUT_STICK_CENTRE;
 		}
 	}
 #else
@@ -2085,54 +2086,54 @@ static int get_LPT_joystick_state(int fd)
 #endif /* LPTJOY */
 }
 
-static void get_Atari_PORT(Uint8 *s0, Uint8 *s1)
+static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
 {
 	int stick0, stick1;
-	stick0 = stick1 = STICK_CENTRE;
+	stick0 = stick1 = INPUT_STICK_CENTRE;
 
-	if (kbd_joy_0_enabled) {
+	if (PLATFORM_kbd_joy_0_enabled) {
 		if (kbhits[KBD_STICK_0_LEFT])
-			stick0 = STICK_LEFT;
+			stick0 = INPUT_STICK_LEFT;
 		if (kbhits[KBD_STICK_0_RIGHT])
-			stick0 = STICK_RIGHT;
+			stick0 = INPUT_STICK_RIGHT;
 		if (kbhits[KBD_STICK_0_UP])
-			stick0 = STICK_FORWARD;
+			stick0 = INPUT_STICK_FORWARD;
 		if (kbhits[KBD_STICK_0_DOWN])
-			stick0 = STICK_BACK;
+			stick0 = INPUT_STICK_BACK;
 		if ((kbhits[KBD_STICK_0_LEFTUP])
 			|| ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_UP])))
-			stick0 = STICK_UL;
+			stick0 = INPUT_STICK_UL;
 		if ((kbhits[KBD_STICK_0_LEFTDOWN])
 			|| ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_DOWN])))
-			stick0 = STICK_LL;
+			stick0 = INPUT_STICK_LL;
 		if ((kbhits[KBD_STICK_0_RIGHTUP])
 			|| ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_UP])))
-			stick0 = STICK_UR;
+			stick0 = INPUT_STICK_UR;
 		if ((kbhits[KBD_STICK_0_RIGHTDOWN])
 			|| ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_DOWN])))
-			stick0 = STICK_LR;
+			stick0 = INPUT_STICK_LR;
 	}
-	if (kbd_joy_1_enabled) {
+	if (PLATFORM_kbd_joy_1_enabled) {
 		if (kbhits[KBD_STICK_1_LEFT])
-			stick1 = STICK_LEFT;
+			stick1 = INPUT_STICK_LEFT;
 		if (kbhits[KBD_STICK_1_RIGHT])
-			stick1 = STICK_RIGHT;
+			stick1 = INPUT_STICK_RIGHT;
 		if (kbhits[KBD_STICK_1_UP])
-			stick1 = STICK_FORWARD;
+			stick1 = INPUT_STICK_FORWARD;
 		if (kbhits[KBD_STICK_1_DOWN])
-			stick1 = STICK_BACK;
+			stick1 = INPUT_STICK_BACK;
 		if ((kbhits[KBD_STICK_1_LEFTUP])
 			|| ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_UP])))
-			stick1 = STICK_UL;
+			stick1 = INPUT_STICK_UL;
 		if ((kbhits[KBD_STICK_1_LEFTDOWN])
 			|| ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_DOWN])))
-			stick1 = STICK_LL;
+			stick1 = INPUT_STICK_LL;
 		if ((kbhits[KBD_STICK_1_RIGHTUP])
 			|| ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_UP])))
-			stick1 = STICK_UR;
+			stick1 = INPUT_STICK_UR;
 		if ((kbhits[KBD_STICK_1_RIGHTDOWN])
 			|| ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_DOWN])))
-			stick1 = STICK_LR;
+			stick1 = INPUT_STICK_LR;
 	}
 
 	if (swap_joysticks) {
@@ -2160,16 +2161,16 @@ static void get_Atari_PORT(Uint8 *s0, Uint8 *s1)
 		*s1 = get_SDL_joystick_state(joystick1);
 }
 
-static void get_Atari_TRIG(Uint8 *t0, Uint8 *t1)
+static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 {
 	int trig0, trig1, i;
 	trig0 = trig1 = 1;
 
-	if (kbd_joy_0_enabled) {
+	if (PLATFORM_kbd_joy_0_enabled) {
 		trig0 = kbhits[KBD_TRIG_0] ? 0 : 1;
 	}
 
-	if (kbd_joy_1_enabled) {
+	if (PLATFORM_kbd_joy_1_enabled) {
 		trig1 = kbhits[KBD_TRIG_1] ? 0 : 1;
 	}
 
@@ -2225,23 +2226,23 @@ static void get_Atari_TRIG(Uint8 *t0, Uint8 *t1)
 	}
 }
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 #ifndef DONT_DISPLAY
 	if (num == 0) {
 		UBYTE a, b;
-		get_Atari_PORT(&a, &b);
+		get_platform_PORT(&a, &b);
 		return (b << 4) | (a & 0x0f);
 	}
 #endif
 	return 0xff;
 }
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 #ifndef DONT_DISPLAY
 	UBYTE a, b;
-	get_Atari_TRIG(&a, &b);
+	get_platform_TRIG(&a, &b);
 	switch (num) {
 	case 0:
 		return a;
@@ -2262,10 +2263,10 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	for (;;) {
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 		Atari800_Frame();
-		if (display_screen)
-			Atari_DisplayScreen();
+		if (Atari800_display_screen)
+			PLATFORM_DisplayScreen();
 	}
 }
 

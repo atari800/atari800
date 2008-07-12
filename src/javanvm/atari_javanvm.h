@@ -1,5 +1,5 @@
-#ifndef _ATARI_JAVANVM_H_
-#define _ATARI_JAVANVM_H_
+#ifndef ATARI_JAVANVM_H_
+#define ATARI_JAVANVM_H_
 
 /* Java Keys */
 #define CHAR_UNDEFINED 65535
@@ -200,4 +200,4 @@
 #define VK_Y 89
 #define VK_Z 90
 
-#endif /*_ATARI_JAVANVM_H_*/
+#endif /*ATARI_JAVANVM_H_*/

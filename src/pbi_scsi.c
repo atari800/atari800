@@ -33,16 +33,16 @@
 #define D(a) do{}while(0)
 #endif
 
-int SCSI_CD = FALSE;
-int SCSI_MSG = FALSE;
-int SCSI_IO = FALSE;
-int SCSI_BSY = FALSE;
-int SCSI_REQ = FALSE;
-int SCSI_ACK = FALSE;
+int PBI_SCSI_CD = FALSE;
+int PBI_SCSI_MSG = FALSE;
+int PBI_SCSI_IO = FALSE;
+int PBI_SCSI_BSY = FALSE;
+int PBI_SCSI_REQ = FALSE;
+int PBI_SCSI_ACK = FALSE;
 
-int SCSI_SEL = FALSE;
+int PBI_SCSI_SEL = FALSE;
 
-static UBYTE SCSI_byte;
+static UBYTE scsi_byte;
 
 #define SCSI_PHASE_SELECTION 0
 #define SCSI_PHASE_DATAIN 1
@@ -51,189 +51,189 @@ static UBYTE SCSI_byte;
 #define SCSI_PHASE_STATUS 4 
 #define SCSI_PHASE_MSGIN 5
 
-static int SCSI_phase = SCSI_PHASE_SELECTION;
-static int SCSI_bufpos = 0;
-static UBYTE SCSI_buffer[256];
-static int SCSI_count = 0;
+static int scsi_phase = SCSI_PHASE_SELECTION;
+static int scsi_bufpos = 0;
+static UBYTE scsi_buffer[256];
+static int scsi_count = 0;
 
-FILE *SCSI_disk = NULL;
+FILE *PBI_SCSI_disk = NULL;
 
-static void SCSI_changephase(int phase)
+static void scsi_changephase(int phase)
 {
-	D(printf("SCSI_changephase:%d\n",phase));
+	D(printf("scsi_changephase:%d\n",phase));
 	switch(phase) {
 		case SCSI_PHASE_SELECTION:
-				SCSI_REQ = FALSE;
-				SCSI_BSY = FALSE;
-				SCSI_CD = FALSE;
-				SCSI_IO = FALSE;
-				SCSI_MSG = FALSE;
+				PBI_SCSI_REQ = FALSE;
+				PBI_SCSI_BSY = FALSE;
+				PBI_SCSI_CD = FALSE;
+				PBI_SCSI_IO = FALSE;
+				PBI_SCSI_MSG = FALSE;
 				break;
 		case SCSI_PHASE_DATAOUT:
-				SCSI_REQ = TRUE;
-				SCSI_BSY = TRUE;
-				SCSI_CD = FALSE;
-				SCSI_IO = FALSE;
-				SCSI_MSG = FALSE;
+				PBI_SCSI_REQ = TRUE;
+				PBI_SCSI_BSY = TRUE;
+				PBI_SCSI_CD = FALSE;
+				PBI_SCSI_IO = FALSE;
+				PBI_SCSI_MSG = FALSE;
 				break;
 		case SCSI_PHASE_DATAIN:
-				SCSI_REQ = TRUE;
-				SCSI_BSY = TRUE;
-				SCSI_CD = FALSE;
-				SCSI_IO = TRUE;
-				SCSI_MSG = FALSE;
+				PBI_SCSI_REQ = TRUE;
+				PBI_SCSI_BSY = TRUE;
+				PBI_SCSI_CD = FALSE;
+				PBI_SCSI_IO = TRUE;
+				PBI_SCSI_MSG = FALSE;
 				break;
 		case SCSI_PHASE_COMMAND:
-				SCSI_REQ = TRUE;
-				SCSI_BSY = TRUE;
-				SCSI_CD = TRUE;
-				SCSI_IO = FALSE;
-				SCSI_MSG = FALSE;
+				PBI_SCSI_REQ = TRUE;
+				PBI_SCSI_BSY = TRUE;
+				PBI_SCSI_CD = TRUE;
+				PBI_SCSI_IO = FALSE;
+				PBI_SCSI_MSG = FALSE;
 				break;
 		case SCSI_PHASE_STATUS:
-				SCSI_REQ = TRUE;
-				SCSI_BSY = TRUE;
-				SCSI_CD = TRUE;
-				SCSI_IO = TRUE;
-				SCSI_MSG = FALSE;
+				PBI_SCSI_REQ = TRUE;
+				PBI_SCSI_BSY = TRUE;
+				PBI_SCSI_CD = TRUE;
+				PBI_SCSI_IO = TRUE;
+				PBI_SCSI_MSG = FALSE;
 				break;
 		case SCSI_PHASE_MSGIN:
-				SCSI_REQ = TRUE;
-				SCSI_BSY = TRUE;
-				SCSI_CD = TRUE;
-				SCSI_IO = FALSE;
-				SCSI_MSG = TRUE;
+				PBI_SCSI_REQ = TRUE;
+				PBI_SCSI_BSY = TRUE;
+				PBI_SCSI_CD = TRUE;
+				PBI_SCSI_IO = FALSE;
+				PBI_SCSI_MSG = TRUE;
 				break;
 	}
-	SCSI_bufpos = 0;
-	SCSI_phase = phase;
+	scsi_bufpos = 0;
+	scsi_phase = phase;
 }
 
-static void SCSI_process_command(void)
+static void scsi_process_command(void)
 {
 	int i;
 	int lba;
 	int lun;
 	D(printf("SCSI command:"));
 	for (i = 0; i < 6; i++) {
-		D(printf(" %02x",SCSI_buffer[i]));
+		D(printf(" %02x",scsi_buffer[i]));
 	}
 	D(printf("\n"));
-	switch (SCSI_buffer[0]) {
+	switch (scsi_buffer[0]) {
 		case 0x00:
 			/* test unit ready */
 			D(printf("SCSI: test unit ready\n"));
-			SCSI_changephase(SCSI_PHASE_STATUS);
-			SCSI_buffer[0] = 0;
+			scsi_changephase(SCSI_PHASE_STATUS);
+			scsi_buffer[0] = 0;
 			break;
 		case 0x03:
 			/* request sense */
 			D(printf("SCSI: request sense\n"));
-			SCSI_changephase(SCSI_PHASE_DATAIN);
-			memset(SCSI_buffer,0,1);
-			SCSI_count = 4;
+			scsi_changephase(SCSI_PHASE_DATAIN);
+			memset(scsi_buffer,0,1);
+			scsi_count = 4;
 			break;
 		case 0x08:
 			/* read */
-			lun = ((SCSI_buffer[1]&0xe0)>>5);
-			lba = (((SCSI_buffer[1]&0x1f)<<16)|(SCSI_buffer[2]<<8)|(SCSI_buffer[3]));
+			lun = ((scsi_buffer[1]&0xe0)>>5);
+			lba = (((scsi_buffer[1]&0x1f)<<16)|(scsi_buffer[2]<<8)|(scsi_buffer[3]));
 			D(printf("SCSI: read lun:%d lba:%d\n",lun,lba));
-			fseek(SCSI_disk, lba*256, SEEK_SET);
-			fread(SCSI_buffer, 1, 256, SCSI_disk);
-			SCSI_changephase(SCSI_PHASE_DATAIN);
-			SCSI_count = 256;
+			fseek(PBI_SCSI_disk, lba*256, SEEK_SET);
+			fread(scsi_buffer, 1, 256, PBI_SCSI_disk);
+			scsi_changephase(SCSI_PHASE_DATAIN);
+			scsi_count = 256;
 			break;
 		case 0x0a:
 			/* write */
-			lun = ((SCSI_buffer[1]&0xe0)>>5);
-			lba = (((SCSI_buffer[1]&0x1f)<<16)|(SCSI_buffer[2]<<8)|(SCSI_buffer[3]));
+			lun = ((scsi_buffer[1]&0xe0)>>5);
+			lba = (((scsi_buffer[1]&0x1f)<<16)|(scsi_buffer[2]<<8)|(scsi_buffer[3]));
 			D(printf("SCSI: write lun:%d lba:%d\n",lun,lba));
-			fseek(SCSI_disk, lba*256, SEEK_SET);
-			SCSI_changephase(SCSI_PHASE_DATAOUT);
-			SCSI_count = 256;
+			fseek(PBI_SCSI_disk, lba*256, SEEK_SET);
+			scsi_changephase(SCSI_PHASE_DATAOUT);
+			scsi_count = 256;
 			break;
 		default:
-			D(printf("SCSI: unknown command:%2x\n", SCSI_buffer[0]));
-			SCSI_changephase(SCSI_PHASE_SELECTION);
+			D(printf("SCSI: unknown command:%2x\n", scsi_buffer[0]));
+			scsi_changephase(SCSI_PHASE_SELECTION);
 			break;
 	}
 }
 
-static void SCSI_nextbyte(void)
+static void scsi_nextbyte(void)
 {
-	if (SCSI_phase == SCSI_PHASE_DATAIN) {
-		SCSI_bufpos++;
-		if (SCSI_bufpos >= SCSI_count) {
-			SCSI_changephase(SCSI_PHASE_STATUS);
-			SCSI_buffer[0] = 0;
+	if (scsi_phase == SCSI_PHASE_DATAIN) {
+		scsi_bufpos++;
+		if (scsi_bufpos >= scsi_count) {
+			scsi_changephase(SCSI_PHASE_STATUS);
+			scsi_buffer[0] = 0;
 		}
 	}
-	else if (SCSI_phase == SCSI_PHASE_STATUS) {
+	else if (scsi_phase == SCSI_PHASE_STATUS) {
 		D(printf("SCSI status\n"));
-		SCSI_changephase(SCSI_PHASE_MSGIN);
-		SCSI_buffer[0] = 0;
+		scsi_changephase(SCSI_PHASE_MSGIN);
+		scsi_buffer[0] = 0;
 	}
-	else if (SCSI_phase == SCSI_PHASE_MSGIN) {
+	else if (scsi_phase == SCSI_PHASE_MSGIN) {
 		D(printf("SCSI msg\n"));
-		SCSI_changephase(SCSI_PHASE_SELECTION);
+		scsi_changephase(SCSI_PHASE_SELECTION);
 	}
-	else if (SCSI_phase == SCSI_PHASE_COMMAND) {
-		SCSI_buffer[SCSI_bufpos++] = SCSI_byte;
-		if (SCSI_bufpos >= 0x06) {
-			SCSI_process_command();
-			SCSI_bufpos = 0;
+	else if (scsi_phase == SCSI_PHASE_COMMAND) {
+		scsi_buffer[scsi_bufpos++] = scsi_byte;
+		if (scsi_bufpos >= 0x06) {
+			scsi_process_command();
+			scsi_bufpos = 0;
 		}
 	}
-	else if (SCSI_phase == SCSI_PHASE_DATAOUT) {
-		D(printf("SCSI data out:%2x\n", SCSI_byte));
-		SCSI_buffer[SCSI_bufpos++] = SCSI_byte;
-		if (SCSI_bufpos >= SCSI_count) {
-			fwrite(SCSI_buffer, 1, 256, SCSI_disk);
-			SCSI_changephase(SCSI_PHASE_STATUS);
-			SCSI_buffer[0] = 0;
+	else if (scsi_phase == SCSI_PHASE_DATAOUT) {
+		D(printf("SCSI data out:%2x\n", scsi_byte));
+		scsi_buffer[scsi_bufpos++] = scsi_byte;
+		if (scsi_bufpos >= scsi_count) {
+			fwrite(scsi_buffer, 1, 256, PBI_SCSI_disk);
+			scsi_changephase(SCSI_PHASE_STATUS);
+			scsi_buffer[0] = 0;
 		}
 	}
 }
 
-void SCSI_PutSEL(int newsel)
+void PBI_SCSI_PutSEL(int newsel)
 {
-	if (newsel != SCSI_SEL) {
+	if (newsel != PBI_SCSI_SEL) {
 		/* SEL changed state */
-		SCSI_SEL = newsel;
-		if (SCSI_SEL && SCSI_phase == SCSI_PHASE_SELECTION && SCSI_byte == 0x01) {
-			SCSI_changephase(SCSI_PHASE_COMMAND);
+		PBI_SCSI_SEL = newsel;
+		if (PBI_SCSI_SEL && scsi_phase == SCSI_PHASE_SELECTION && scsi_byte == 0x01) {
+			scsi_changephase(SCSI_PHASE_COMMAND);
 		}
-		D(printf("changed SEL:%d  SCSI_byte:%2x\n",SCSI_SEL, SCSI_byte));
+		D(printf("changed SEL:%d  scsi_byte:%2x\n",PBI_SCSI_SEL, scsi_byte));
 	}
 }
 
-void SCSI_PutACK(int newack)
+void PBI_SCSI_PutACK(int newack)
 {
-	if (newack != SCSI_ACK) {
+	if (newack != PBI_SCSI_ACK) {
 		/* ACK changed state */
-		SCSI_ACK = newack;
-		if (SCSI_ACK) {
+		PBI_SCSI_ACK = newack;
+		if (PBI_SCSI_ACK) {
 			/* REQ goes false when ACK goes true */
-			SCSI_REQ = FALSE;
+			PBI_SCSI_REQ = FALSE;
 		}
 		else {
 			/* falling ACK triggers next byte */
-			if (SCSI_phase != SCSI_PHASE_SELECTION) {
-				SCSI_REQ = TRUE;
-				SCSI_nextbyte();
+			if (scsi_phase != SCSI_PHASE_SELECTION) {
+				PBI_SCSI_REQ = TRUE;
+				scsi_nextbyte();
 			}
 		}
 	}
 }
 
-UBYTE SCSI_GetByte(void)
+UBYTE PBI_SCSI_GetByte(void)
 {
-	return (SCSI_buffer[SCSI_bufpos]);
+	return (scsi_buffer[scsi_bufpos]);
 }
 
-void SCSI_PutByte(UBYTE byte)
+void PBI_SCSI_PutByte(UBYTE byte)
 {
-	SCSI_byte = byte;
+	scsi_byte = byte;
 }
 
 /*

@@ -33,8 +33,9 @@
 #include "atari.h"
 #include "cpu.h"
 #include "colours.h"
-#include "ui.h"         /* for ui_is_active */
+#include "ui.h"         /* for UI_is_active */
 #include "input.h"
+#include "akey.h"
 #include "screen.h"
 #include "antic.h"		/* for BITPL_SCR */
 #include "platform.h"
@@ -253,7 +254,7 @@ void SetupEmulatedEnvironment(void)
 #ifdef BITPL_SCR
 	if (delta_screen) {
 		if (Screen_atari_b != NULL) {
-			memset(Screen_atari_b, 0, (ATARI_HEIGHT * ATARI_WIDTH));
+			memset(Screen_atari_b, 0, (Screen_HEIGHT * Screen_WIDTH));
 		}
 	}
 #endif
@@ -276,7 +277,7 @@ void ShutdownEmulatedEnvironment(void)
 	Bconout(4, 8);		/* joystick disable */
 }
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -374,7 +375,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		p_str_p = (ULONG *) original_videl_settings;
 		Supexec(save_r);
 
-		if ((new_videoram = (UBYTE *)Mxalloc((336UL*ATARI_HEIGHT), 0)) == NULL) {
+		if ((new_videoram = (UBYTE *)Mxalloc((336UL*Screen_HEIGHT), 0)) == NULL) {
 			form_alert(1, "[1][Error allocating video memory ][ OK ]");
 			exit(-1);
 		}
@@ -382,9 +383,9 @@ void Atari_Initialise(int *argc, char *argv[])
 		/* create new graphics mode 336x240 in 256 colors */
 		reprogram_VIDEL = 1;
 		vramw = screenw = 336;
-		vramh = screenh = ATARI_HEIGHT;
+		vramh = screenh = Screen_HEIGHT;
 	}
-	else if (HOST_PLANES == 8 && HOST_WIDTH >= 320 && HOST_HEIGHT >= ATARI_HEIGHT) {
+	else if (HOST_PLANES == 8 && HOST_WIDTH >= 320 && HOST_HEIGHT >= Screen_HEIGHT) {
 		/* current resolution is OK */
 		vramw = HOST_WIDTH;
 		vramh = HOST_HEIGHT;
@@ -395,7 +396,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		else
 */
 			screenw = 320;
-		screenh = ATARI_HEIGHT;
+		screenh = Screen_HEIGHT;
 	}
 	else {
 		/* we may also try to switch into proper resolution using XBios call and then
@@ -439,7 +440,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 /* -------------------------------------------------------------------------- */
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	ShutdownEmulatedEnvironment();
 
@@ -448,7 +449,7 @@ int Atari_Exit(int run_monitor)
 #endif
 
 	if (run_monitor) {
-		if (Monitor_Run()) {
+		if (MONITOR_Run()) {
 			SetupEmulatedEnvironment();
 
 			return 1;			/* go back to emulation */
@@ -495,7 +496,7 @@ inline long DoubleSizeIt(short data)
 	return result;
 }
 
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
 	UBYTE *screen = (UBYTE *) Screen_atari;
 	static int i = 0;
@@ -536,7 +537,7 @@ void Atari_DisplayScreen(void)
 
 	if (bitplanes) {
 #ifdef BITPL_SCR
-		if (delta_screen && !ui_is_active)
+		if (delta_screen && !UI_is_active)
 			rplanes_delta();
 		else
 #endif
@@ -548,7 +549,7 @@ void Atari_DisplayScreen(void)
 		UBYTE *ptr_dest = kam + CENTER;
 		int j;
 
-		for (j = 0; j < ATARI_HEIGHT; j++) {
+		for (j = 0; j < Screen_HEIGHT; j++) {
 			short cycles;
 			long *long_ptr_from = ptr_from;
 			long *long_ptr_mirror = ptr_mirror;
@@ -557,7 +558,7 @@ void Atari_DisplayScreen(void)
 			if (NOVA_double_size) {
 				cycles = 83;
 
-				if (delta_screen && !ui_is_active) {
+				if (delta_screen && !UI_is_active) {
 					do {
 						long data = *long_ptr_from++;
 						if (data == *long_ptr_mirror++)
@@ -587,7 +588,7 @@ void Atari_DisplayScreen(void)
 			}
 			else {
 				cycles = 20;
-				if (delta_screen && !ui_is_active) {
+				if (delta_screen && !UI_is_active) {
 					do {
 						long data;
 #define	CHECK_AND_WRITE									\
@@ -613,8 +614,8 @@ void Atari_DisplayScreen(void)
 				}
 			}
 
-			ptr_from += ATARI_WIDTH;
-			ptr_mirror += ATARI_WIDTH;
+			ptr_from += Screen_WIDTH;
+			ptr_mirror += Screen_WIDTH;
 			ptr_dest += HOST_WIDTH;
 		}
 	}
@@ -637,16 +638,16 @@ void Atari_Set_LED(int how)
 /* -------------------------------------------------------------------------- */
 
 // extern int KEYPRESSED;
-extern int alt_function;
+extern int UI_alt_function;
 
-int Atari_Keyboard(void)
+int PLATFORM_Keyboard(void)
 {
 	UBYTE shift_key, control_key;
 	int scancode, keycode;
 	int i;
 
 	trig0 = 1;
-	stick0 = STICK_CENTRE;
+	stick0 = INPUT_STICK_CENTRE;
 
 	shift_key = (key_buf[0x2a] || key_buf[0x36]);
 	control_key = key_buf[0x1d];
@@ -655,18 +656,18 @@ int Atari_Keyboard(void)
 		if (key_buf[0x70])
 			trig0 = 0;
 		if (key_buf[0x6d] || key_buf[0x6e] || key_buf[0x6f])
-			stick0 -= (STICK_CENTRE - STICK_BACK);
+			stick0 -= (INPUT_STICK_CENTRE - INPUT_STICK_BACK);
 		if (key_buf[0x6f] || key_buf[0x6c] || key_buf[0x69])
-			stick0 -= (STICK_CENTRE - STICK_RIGHT);
+			stick0 -= (INPUT_STICK_CENTRE - INPUT_STICK_RIGHT);
 		if (key_buf[0x6d] || key_buf[0x6a] || key_buf[0x67])
-			stick0 -= (STICK_CENTRE - STICK_LEFT);
+			stick0 -= (INPUT_STICK_CENTRE - INPUT_STICK_LEFT);
 		if (key_buf[0x67] || key_buf[0x68] || key_buf[0x69])
-			stick0 -= (STICK_CENTRE - STICK_FORWARD);
+			stick0 -= (INPUT_STICK_CENTRE - INPUT_STICK_FORWARD);
 	}
 
 	scancode = 0;
 
-	if (stick0 == STICK_CENTRE && trig0 == 1) {
+	if (stick0 == INPUT_STICK_CENTRE && trig0 == 1) {
 		for (i = 1; i <= 0x72; i++)	{	/* search for pressed key */
 			if (key_buf[i]) {
 				if (i == 0x1d || i == 0x2a || i == 0x36		/* Shift, Control skip */
@@ -693,41 +694,41 @@ int Atari_Keyboard(void)
 #define SCANCODE_L			0x26
 #define SCANCODE_C			0x2e
 
-	alt_function = -1;		/* no alt function */
+	UI_alt_function = -1;		/* no alt function */
 	if (key_buf[0x38]) {		/* left Alt key is pressed */
 		if (scancode == SCANCODE_R)
-			alt_function = MENU_RUN;		/* ALT+R .. Run file */
+			UI_alt_function = UI_MENU_RUN;		/* ALT+R .. Run file */
 		else if (scancode == SCANCODE_Y)
-			alt_function = MENU_SYSTEM;		/* ALT+Y .. Select system */
+			UI_alt_function = UI_MENU_SYSTEM;		/* ALT+Y .. Select system */
 		else if (scancode == SCANCODE_O)
-			alt_function = MENU_SOUND;		/* ALT+O .. mono/stereo sound */
+			UI_alt_function = UI_MENU_SOUND;		/* ALT+O .. mono/stereo sound */
 		else if (scancode == SCANCODE_A)
-			alt_function = MENU_ABOUT;		/* ALT+A .. About */
+			UI_alt_function = UI_MENU_ABOUT;		/* ALT+A .. About */
 		else if (scancode == SCANCODE_S)
-			alt_function = MENU_SAVESTATE;	/* ALT+S .. Save state */
+			UI_alt_function = UI_MENU_SAVESTATE;	/* ALT+S .. Save state */
 		else if (scancode == SCANCODE_D)
-			alt_function = MENU_DISK;		/* ALT+D .. Disk management */
+			UI_alt_function = UI_MENU_DISK;		/* ALT+D .. Disk management */
 		else if (scancode == SCANCODE_L)
-			alt_function = MENU_LOADSTATE;	/* ALT+L .. Load state */
+			UI_alt_function = UI_MENU_LOADSTATE;	/* ALT+L .. Load state */
 		else if (scancode == SCANCODE_C)
-			alt_function = MENU_CARTRIDGE;	/* ALT+C .. Cartridge management */
+			UI_alt_function = UI_MENU_CARTRIDGE;	/* ALT+C .. Cartridge management */
 	}
-		if (alt_function != -1)
+		if (UI_alt_function != -1)
 			return AKEY_UI;
 
 
 	if (key_buf[0x3c])	/* F2 */
-		key_consol &= ~CONSOL_OPTION;	/* OPTION key ON */
+		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;	/* OPTION key ON */
 	else
-		key_consol |= CONSOL_OPTION;	/* OPTION key OFF */
+		INPUT_key_consol |= INPUT_CONSOL_OPTION;	/* OPTION key OFF */
 	if (key_buf[0x3d])	/* F3 */
-		key_consol &= ~CONSOL_SELECT;	/* SELECT key ON */
+		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;	/* SELECT key ON */
 	else
-		key_consol |= CONSOL_SELECT;	/* SELECT key OFF */
+		INPUT_key_consol |= INPUT_CONSOL_SELECT;	/* SELECT key OFF */
 	if (key_buf[0x3e])	/* F4 */
-		key_consol &= ~CONSOL_START;	/* START key ON */
+		INPUT_key_consol &= ~INPUT_CONSOL_START;	/* START key ON */
 	else
-		key_consol |= CONSOL_START;	/* START key OFF */
+		INPUT_key_consol |= INPUT_CONSOL_START;	/* START key OFF */
 
 	if (scancode) {
 		/* read ASCII code of pressed key */
@@ -1131,7 +1132,7 @@ int Atari_Keyboard(void)
 				keycode = AKEY_BREAK;
 				break;
 			case 0x42:			/* F8 */
-				keycode = Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT;	/* invoke monitor */
+				keycode = PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT;	/* invoke monitor */
 				break;
 			case 0x43:			/* F9 */
 				keycode = AKEY_EXIT;
@@ -1171,10 +1172,10 @@ int Atari_Keyboard(void)
 
 /* -------------------------------------------------------------------------- */
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 	if (num == 0) {
-		if (stick0 == STICK_CENTRE && trig0 == 1)
+		if (stick0 == INPUT_STICK_CENTRE && trig0 == 1)
 			return (((~joy1 << 4) & 0xf0) | ((~joy0) & 0x0f));
 		else {
 			if (joyswap)
@@ -1189,7 +1190,7 @@ int Atari_PORT(int num)
 
 /* -------------------------------------------------------------------------- */
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 	switch (num) {
 	case 0:
@@ -1213,9 +1214,9 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	for (;;) {
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 		Atari800_Frame();
-		if (display_screen)
-			Atari_DisplayScreen();
+		if (Atari800_display_screen)
+			PLATFORM_DisplayScreen();
 	}
 }

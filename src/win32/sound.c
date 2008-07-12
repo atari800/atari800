@@ -94,7 +94,7 @@ static int initsound_dx(void)
 
   wfx.wFormatTag = WAVE_FORMAT_PCM;
 #ifdef STEREO_SOUND
-  wfx.nChannels = stereo_enabled ? 2 : 1;
+  wfx.nChannels = POKEYSND_stereo_enabled ? 2 : 1;
 #else
   wfx.nChannels = 1;
 #endif /* STEREO_SOUND */
@@ -124,7 +124,7 @@ static int initsound_dx(void)
 
   IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
 
-  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, wfx.nChannels, (bit16 ? SND_BIT16 : 0));
+  POKEYSND_Init(POKEYSND_FREQ_17_EXACT, (UWORD) dsprate, wfx.nChannels, (bit16 ? POKEYSND_BIT16 : 0));
 
   samples = dsprate * snddelay / 1000;
 
@@ -176,7 +176,7 @@ static void sound_update_dx(void)
   int samplesize = bit16 ? 2 : 1;
 
 #ifdef STEREO_SOUND
-  if (stereo_enabled) samplesize *= 2;
+  if (POKEYSND_stereo_enabled) samplesize *= 2;
 #endif
 
   if (issound != SOUND_DX)
@@ -231,7 +231,7 @@ static void sound_update_dx(void)
   }
   i = s1 + s2;
 
-  Pokey_process(mixbuf, i);
+  POKEYSND_Process(mixbuf, i);
 
   pbufs = (signed short *)mixbuf;
   pbufb = (UBYTE *)mixbuf;
@@ -310,7 +310,7 @@ static int initsound_wav(void)
 
   wfx.wFormatTag = WAVE_FORMAT_PCM;
 #ifdef STEREO_SOUND
-  wfx.nChannels = stereo_enabled ? 2 : 1;
+  wfx.nChannels = POKEYSND_stereo_enabled ? 2 : 1;
 #else
   wfx.nChannels = 1;
 #endif /* STEREO_SOUND */
@@ -337,7 +337,7 @@ static int initsound_wav(void)
   for (i = 0; i < buffers; i++)
     {
       memset(&waves[i], 0, sizeof (waves[i]));
-      if (!(waves[i].lpData = (uint8 *)malloc(WAVSIZE)))
+      if (!(waves[i].lpData = (UBYTE *)malloc(WAVSIZE)))
 	{
 	  Log_print("could not get wave buffer memory\n");
 	  exit(1);
@@ -352,7 +352,7 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  Pokey_sound_init(FREQ_17_EXACT, (uint16) dsprate, wfx.nChannels, (bit16 ? SND_BIT16 : 0));
+  POKEYSND_Init(POKEYSND_FREQ_17_EXACT, (UWORD) dsprate, wfx.nChannels, (bit16 ? POKEYSND_BIT16 : 0));
 
   issound = SOUND_WAV;
   return 0;
@@ -386,11 +386,11 @@ void Sound_Initialise(int *argc, char *argv[])
 	int quality;
 	sscanf(argv[++i], "%d", &quality);
 	if (quality > 1) {
-	  Pokey_set_mzquality(quality - 1);
-	  enable_new_pokey = 1;
+	  POKEYSND_SetMzQuality(quality - 1);
+	  POKEYSND_enable_new_pokey = 1;
 	}
 	else
-	  enable_new_pokey = 0;
+	  POKEYSND_enable_new_pokey = 0;
       }
 #ifdef DIRECTX
       else if (strcmp(argv[i], "-wavonly") == 0)
@@ -488,7 +488,7 @@ void Sound_Update(void)
   case SOUND_WAV:
     while ((wh = getwave()))
     {
-      Pokey_process(wh->lpData, wh->dwBufferLength >> (bit16 ? 1 : 0));
+      POKEYSND_Process(wh->lpData, wh->dwBufferLength >> (bit16 ? 1 : 0));
       err = waveOutWrite(wout, wh, sizeof(*wh));
       if (err != MMSYSERR_NOERROR)
       {

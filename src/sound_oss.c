@@ -124,7 +124,7 @@ void Sound_Initialise(int *argc, char *argv[])
 #else
 	pokey_chips = 1;
 #endif
-	Pokey_sound_init(FREQ_17_EXACT, dsprate, pokey_chips, 0);
+	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, dsprate, pokey_chips, 0);
 }
 
 void Sound_Pause(void)
@@ -158,18 +158,18 @@ void Sound_Update(void)
 		return;
 	/* compute number of samples for one Atari frame
 	   (assuming 60Hz for NTSC and 50Hz for PAL) */
-	len = dsprate / (tv_mode == TV_NTSC ? 60 : 50) * pokey_chips;
+	len = dsprate / (Atari800_tv_mode == Atari800_TV_NTSC ? 60 : 50) * pokey_chips;
 
 #if 0
 	/* this code is not needed because buffer[] is big enough */
 	while (len > sizeof(buffer)) {
-		Pokey_process(buffer, sizeof(buffer));
+		POKEYSND_Process(buffer, sizeof(buffer));
 		write(dsp_fd, buffer, sizeof(buffer));
 		len -= sizeof(buffer);
 	}
 #endif
 
-	Pokey_process(buffer, len);
+	POKEYSND_Process(buffer, len);
 
 #if 0
 	/* For some unknown reason, this is needed
@@ -197,7 +197,7 @@ void Sound_Update(void)
 				buffer[pos] = buffer[pos+1] = buffer[i];
 			}
 		}
-		else if (! stereo_enabled) {
+		else if (! POKEYSND_stereo_enabled) {
 			/* only single Pokey plays - copy left channel to right channel */
 			int i;
 			for (i = 0; i < len; i+=2) {
@@ -212,7 +212,7 @@ void Sound_Update(void)
 			int i;
 			for (i = 0; i < len/2; i++) {
 				int pos = i * 2;
-				buffer[i] = (stereo_enabled ? buffer[pos]/2 + buffer[pos+1]/2 :
+				buffer[i] = (POKEYSND_stereo_enabled ? buffer[pos]/2 + buffer[pos+1]/2 :
 							 buffer[pos]);
 			}
 		}

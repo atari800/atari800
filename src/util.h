@@ -1,5 +1,5 @@
-#ifndef _UTIL_H_
-#define _UTIL_H_
+#ifndef UTIL_H_
+#define UTIL_H_
 
 #include "config.h"
 #include <stdio.h>
@@ -86,15 +86,15 @@ char *Util_strdup(const char *s);
 
 /* I assume here that '\n' is not valid in filenames,
    at least not as their first character. */
-#define FILENAME_NOT_SET               "\n"
+#define Util_FILENAME_NOT_SET               "\n"
 #define Util_filenamenotset(filename)  ((filename)[0] == '\n')
 
-#ifdef BACK_SLASH
-#define DIR_SEP_CHAR '\\'
-#define DIR_SEP_STR  "\\"
+#ifdef DIR_SEP_BACKSLASH
+#define Util_DIR_SEP_CHAR '\\'
+#define Util_DIR_SEP_STR  "\\"
 #else
-#define DIR_SEP_CHAR '/'
-#define DIR_SEP_STR  "/"
+#define Util_DIR_SEP_CHAR '/'
+#define Util_DIR_SEP_STR  "/"
 #endif
 
 /* Splits a filename into directory part and file part. */
@@ -173,4 +173,4 @@ FILE *Util_uniqopen(char *filename, const char *mode);
 #define Util_fclose(fp, tmpbuf)             fclose(fp)
 #endif
 
-#endif /* _UTIL_H_ */
+#endif /* UTIL_H_ */

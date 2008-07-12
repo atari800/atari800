@@ -25,8 +25,8 @@
 #include <stdio.h>
 #include "cycle_map.h"
 
-int cpu2antic[CPU2ANTIC_SIZE * (17 * 7 + 1)];
-int antic2cpu[CPU2ANTIC_SIZE * (17 * 7 + 1)];
+int CYCLE_MAP_cpu2antic[CYCLE_MAP_SIZE * (17 * 7 + 1)];
+int CYCLE_MAP_antic2cpu[CYCLE_MAP_SIZE * (17 * 7 + 1)];
 static void try_all_scroll(int md, int use_char_index,
 	int use_font, int use_bitmap, int *cpu2antic, int *antic2cpu);
 static void antic_steal_map(int width, int md, int scroll_offset, int use_char_index,
@@ -38,7 +38,7 @@ static void cpu_cycle_map(char *antic_cycles_orig, int *cpu_cycles, int *actual_
 #ifdef TEST_CYCLE_MAP
 int main()
 {
-	create_cycle_map();
+	CYCLE_MAP_Create();
 	return 0;
 };
 #endif
@@ -46,16 +46,16 @@ int main()
 static void cpu_cycle_map(char *antic_cycles_orig, int *cpu_cycles, int *actual_cycles)
 {
 	int i;
-	char antic_cycles[CPU2ANTIC_SIZE];
+	char antic_cycles[CYCLE_MAP_SIZE];
 	int antic_xpos;
 	int cpu_xpos = 0;
 	for (i = 0; i <= 113; i++)
 		antic_cycles[i] = antic_cycles_orig[i];
-	for (i = 114; i < CPU2ANTIC_SIZE; i++)
+	for (i = 114; i < CYCLE_MAP_SIZE; i++)
 		antic_cycles[i] = '.';
-	for (i = 0; i < CPU2ANTIC_SIZE; i++)
+	for (i = 0; i < CYCLE_MAP_SIZE; i++)
 		cpu_cycles[i]=-1;
-	for (antic_xpos = 0; antic_xpos < CPU2ANTIC_SIZE; antic_xpos++) {
+	for (antic_xpos = 0; antic_xpos < CYCLE_MAP_SIZE; antic_xpos++) {
 		char c = antic_cycles[antic_xpos];
 		actual_cycles[antic_xpos] = cpu_xpos;
 		if (c != 'R' && c != 'S' && c != 'F' && c != 'I') {
@@ -66,7 +66,7 @@ static void cpu_cycle_map(char *antic_cycles_orig, int *cpu_cycles, int *actual_
 	}
 }
 
-void create_cycle_map(void)
+void CYCLE_MAP_Create(void)
 {
 #ifdef TEST_CYCLE_MAP
 	int i, j;
@@ -75,25 +75,25 @@ void create_cycle_map(void)
 #endif
 	char antic_cycles[115];
 	int k = 0;
-	antic_steal_map(1, 0, 0, 0, 0, 0, antic_cycles, &cpu2antic[k], &antic2cpu[k]); /* blank line, or mode 8-F following line*/
-	k = CPU2ANTIC_SIZE * (17 * 0 + 1);
-	try_all_scroll(0, 1, 1, 0, &cpu2antic[k], &antic2cpu[k]); /* mode 2,3,4,5 first line */
-	k = CPU2ANTIC_SIZE * (17 * 1 + 1);
-	try_all_scroll(0, 0, 1, 0, &cpu2antic[k], &antic2cpu[k]); /* mode 2,3,4,5 following lines */
-	k = CPU2ANTIC_SIZE * (17 * 2 + 1);
-	try_all_scroll(1, 1, 1, 0, &cpu2antic[k], &antic2cpu[k]); /* mode 6,7 first line */
-	k = CPU2ANTIC_SIZE * (17 * 3 + 1);
-	try_all_scroll(1, 0, 1, 0, &cpu2antic[k], &antic2cpu[k]); /* mode 6,7 following lines */
-	k = CPU2ANTIC_SIZE * (17 * 4 + 1);
-	try_all_scroll(0, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode 8,9 first line */
-	k = CPU2ANTIC_SIZE * (17 * 5 + 1);
-	try_all_scroll(1, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode A,B,C  first line */
-	k = CPU2ANTIC_SIZE * (17 * 6 + 1);
-	try_all_scroll(2, 0, 0, 1, &cpu2antic[k], &antic2cpu[k]); /* mode D,E,F  first line */
+	antic_steal_map(1, 0, 0, 0, 0, 0, antic_cycles, &CYCLE_MAP_cpu2antic[k], &CYCLE_MAP_antic2cpu[k]); /* blank line, or mode 8-F following line*/
+	k = CYCLE_MAP_SIZE * (17 * 0 + 1);
+	try_all_scroll(0, 1, 1, 0, &CYCLE_MAP_cpu2antic[k], &CYCLE_MAP_antic2cpu[k]); /* mode 2,3,4,5 first line */
+	k = CYCLE_MAP_SIZE * (17 * 1 + 1);
+	try_all_scroll(0, 0, 1, 0, &CYCLE_MAP_cpu2antic[k], &CYCLE_MAP_antic2cpu[k]); /* mode 2,3,4,5 following lines */
+	k = CYCLE_MAP_SIZE * (17 * 2 + 1);
+	try_all_scroll(1, 1, 1, 0, &CYCLE_MAP_cpu2antic[k], &CYCLE_MAP_antic2cpu[k]); /* mode 6,7 first line */
+	k = CYCLE_MAP_SIZE * (17 * 3 + 1);
+	try_all_scroll(1, 0, 1, 0, &CYCLE_MAP_cpu2antic[k], &CYCLE_MAP_antic2cpu[k]); /* mode 6,7 following lines */
+	k = CYCLE_MAP_SIZE * (17 * 4 + 1);
+	try_all_scroll(0, 0, 0, 1, &CYCLE_MAP_cpu2antic[k], &CYCLE_MAP_antic2cpu[k]); /* mode 8,9 first line */
+	k = CYCLE_MAP_SIZE * (17 * 5 + 1);
+	try_all_scroll(1, 0, 0, 1, &CYCLE_MAP_cpu2antic[k], &CYCLE_MAP_antic2cpu[k]); /* mode A,B,C  first line */
+	k = CYCLE_MAP_SIZE * (17 * 6 + 1);
+	try_all_scroll(2, 0, 0, 1, &CYCLE_MAP_cpu2antic[k], &CYCLE_MAP_antic2cpu[k]); /* mode D,E,F  first line */
 #ifdef TEST_CYCLE_MAP
 	for(j = 0; j < 17 * 7 + 1; j++) {
-		cpu_cycles = &cpu2antic[CPU2ANTIC_SIZE * j];
-		actual_cycles = &antic2cpu[CPU2ANTIC_SIZE * j];
+		cpu_cycles = &CYCLE_MAP_cpu2antic[CYCLE_MAP_SIZE * j];
+		actual_cycles = &CYCLE_MAP_antic2cpu[CYCLE_MAP_SIZE * j];
 		printf("%3d ", actual_cycles[114]);
 		for(i = 0; i <= actual_cycles[114] + 6; i++)
 			printf("%3d, ", cpu_cycles[i]);
@@ -110,18 +110,18 @@ static void try_all_scroll(int md, int use_char_index,
 	int scroll_offset = 0;
 	width = 1; /* narrow width without scroll*/
 	antic_steal_map(width, md, scroll_offset, use_char_index, use_font,
-		use_bitmap, antic_cycles, &cpu2antic[CPU2ANTIC_SIZE * 0], &antic2cpu[CPU2ANTIC_SIZE * 0]);
+		use_bitmap, antic_cycles, &cpu2antic[CYCLE_MAP_SIZE * 0], &antic2cpu[CYCLE_MAP_SIZE * 0]);
 	width = 2; /* standard without scroll or narrow with scroll */
 	for (scroll_offset = 0; scroll_offset <= 7; scroll_offset++) {
 		antic_steal_map(width, md, scroll_offset, use_char_index, use_font,
-			use_bitmap, antic_cycles, &cpu2antic[CPU2ANTIC_SIZE * (1 + scroll_offset)],
-			&antic2cpu[CPU2ANTIC_SIZE * (1 + scroll_offset)]);
+			use_bitmap, antic_cycles, &cpu2antic[CYCLE_MAP_SIZE * (1 + scroll_offset)],
+			&antic2cpu[CYCLE_MAP_SIZE * (1 + scroll_offset)]);
 	}
 	width = 3; /* standard with scroll or wide */
 	for (scroll_offset = 0; scroll_offset <= 7; scroll_offset++) {
 		antic_steal_map(width, md, scroll_offset, use_char_index, use_font,
-			use_bitmap, antic_cycles, &cpu2antic[CPU2ANTIC_SIZE * (9 + scroll_offset)],
-			&antic2cpu[CPU2ANTIC_SIZE * (9 + scroll_offset)]);
+			use_bitmap, antic_cycles, &cpu2antic[CYCLE_MAP_SIZE * (9 + scroll_offset)],
+			&antic2cpu[CYCLE_MAP_SIZE * (9 + scroll_offset)]);
 	}
 }
 

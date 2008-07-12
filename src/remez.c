@@ -489,7 +489,7 @@ static int isDone(int r, const int Ext[], const double E[])
 }
 
 /********************
- * Remez_CreateFilter
+ * REMEZ_CreateFilter
  *=======
  * Calculates the optimal (in the Chebyshev/minimax sense)
  * FIR filter impulse response given a set of band edges,
@@ -510,7 +510,7 @@ static int isDone(int r, const int Ext[], const double E[])
  * double h[]      - Impulse response of final filter [numtaps]
  ********************/
 
-void Remez_CreateFilter(double h[], int numtaps, int numband, double bands[],
+void REMEZ_CreateFilter(double h[], int numtaps, int numband, double bands[],
            const double des[], const double weight[], int type)
 {
 	double *Grid, *W, *D, *E;

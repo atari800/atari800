@@ -28,6 +28,7 @@
 extern "C"
 {
 #include "input.h"
+#include "akey.h"
 #include "main.h"
 #include "keyboard.h"
 #include "screen_wince.h"
@@ -377,7 +378,7 @@ sKeyTranslation kbd_translation[] =
 
 void reset_kbd()
 {
-	if(machine_type == MACHINE_5200)
+	if(Atari800_machine_type == Atari800_MACHINE_5200)
 	{
 		kbd_image = kbd_image_5200;
 		kbd_struct = kbd_struct_5200;
@@ -427,7 +428,7 @@ void hitbutton(short code)
 {
 	int kbcode = AKEY_NONE;
 	
-	if(ui_is_active)
+	if(UI_is_active)
 	{
 		trig0 = 1;
 		stick0 = 0xff;
@@ -494,7 +495,7 @@ void releasebutton(short code)
 {
 	int kbcode = AKEY_NONE, temp_ui = -1;
 	
-	if(ui_is_active)
+	if(UI_is_active)
 		release_key(kbcode);
 	else
 	{
@@ -529,14 +530,14 @@ void Start_KBUI(void)
 	int kbcode, temp_ui;
 	KillTimer(hWndMain, 1);
 	kbui_timerset = FALSE;
-	temp_ui = ui_is_active;
-	ui_is_active = TRUE;
-	kbcode = kb_ui("Select Atari key to inject once", machine_type);
+	temp_ui = UI_is_active;
+	UI_is_active = TRUE;
+	kbcode = UI_BASIC_OnScreenKeyboard("Select Atari key to inject once", Atari800_machine_type);
 	if (kbcode != AKEY_NONE)
 		push_key(kbcode);
 	else
 		release_key(AKEY_NONE);
-	ui_is_active = temp_ui;
+	UI_is_active = temp_ui;
 	return;
 }
 
@@ -547,7 +548,7 @@ void tapscreen(short x, short y)
 	stylus_down = 1;
 
 	/* On-screen joystick */
-	if(virtual_joystick && !ui_is_active && currentKeyboardMode == 4 && y < 240)
+	if(virtual_joystick && !UI_is_active && currentKeyboardMode == 4 && y < 240)
 	{
 		stick0 = 0xff;
 		trig0 = 1;
@@ -587,9 +588,9 @@ void tapscreen(short x, short y)
 		set_screen_mode(0);
 	
 	/* Special translation to make on-screen UI easier to use */
-	if(ui_is_active)
+	if(UI_is_active)
 	{
-		if(machine_type == MACHINE_5200)
+		if(Atari800_machine_type == Atari800_MACHINE_5200)
 		{
 			switch(kbcode)
 			{
@@ -649,7 +650,7 @@ void untapscreen(short x, short y)
 	stylus_down = 0;
 
 	/* On-screen joystick */
-	if(virtual_joystick && !ui_is_active && currentKeyboardMode == 4 && y < 240)
+	if(virtual_joystick && !UI_is_active && currentKeyboardMode == 4 && y < 240)
 	{
 		stick0 = 0xff;
 		trig0 = 1;
@@ -662,9 +663,9 @@ void untapscreen(short x, short y)
 	/* In landscape - show keyboard if clicked bottom right corner */
 	if(get_screen_mode() && currentKeyboardMode == 4)
 	{
-		if(x > 300 && y > 220 && !ui_is_active)
+		if(x > 300 && y > 220 && !UI_is_active)
 			currentKeyboardMode = 3;
-		else if(ui_is_active)
+		else if(UI_is_active)
 			set_screen_mode(0);
 		return;
 	}
@@ -690,7 +691,7 @@ void untapscreen(short x, short y)
 	switch(kbcode)
 	{
 	case KBD_ROTATE:
-		if(!ui_is_active)
+		if(!UI_is_active)
 			set_screen_mode(get_screen_mode()+1);
 		return;
 	case KBD_NEGATE:
@@ -703,9 +704,9 @@ void untapscreen(short x, short y)
 	}
 	
 	/* Special translation to make on-screen UI easier to use */
-	if(ui_is_active)
+	if(UI_is_active)
 	{
-		if(machine_type == MACHINE_5200)
+		if(Atari800_machine_type == Atari800_MACHINE_5200)
 		{
 			switch(kbcode)
 			{
@@ -760,7 +761,7 @@ void untapscreen(short x, short y)
 
 void dragscreen(short x, short y)
 {
-	if(stylus_down && virtual_joystick && !ui_is_active && currentKeyboardMode == 4 && y < 240)
+	if(stylus_down && virtual_joystick && !UI_is_active && currentKeyboardMode == 4 && y < 240)
 	{
 		translate_kbd(&x, &y);
 		
@@ -801,28 +802,28 @@ void push_key(short akey)
 		break;
 	case AKEY_F2:
 	case AKEY_OPTION:
-		key_consol &= ~CONSOL_OPTION;
+		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
 		break;
 	case AKEY_F3:
 	case AKEY_SELECT:
-		key_consol &= ~CONSOL_SELECT;
+		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
 		break;
 	case AKEY_F4:
 	case AKEY_START:
-		key_consol &= ~CONSOL_START;
+		INPUT_key_consol &= ~INPUT_CONSOL_START;
 		break;
 	default:
 		activeKey = akey|activeMod;
 		activeMod = 0;
-		key_shift = (activeKey & AKEY_SHFT) || (activeKey & AKEY_SHFTCTRL);
+		INPUT_key_shift = (activeKey & AKEY_SHFT) || (activeKey & AKEY_SHFTCTRL);
 	}
 }
 
 void release_key(short akey)
 {
 	activeKey = AKEY_NONE;
-	key_consol = CONSOL_NONE;
-	key_shift = 0;
+	INPUT_key_consol = INPUT_CONSOL_NONE;
+	INPUT_key_shift = 0;
 }
 
 int get_last_key()
@@ -850,7 +851,7 @@ int prockb(void)
 	MsgPump();
 #endif
 /* UI.C violates the rest of architecture */
-	if(ui_is_active && framectr++ == 5)
+	if(UI_is_active && framectr++ == 5)
 	{
 		reset_kbd();
 		refresh_kbd();
@@ -929,7 +930,7 @@ void clearkb(void)
 {
 	activeKey = AKEY_NONE;
 	activeMod = 0;
-	key_consol = CONSOL_NONE;
+	INPUT_key_consol = INPUT_CONSOL_NONE;
 	stick0 = 0xff;
 	trig0 = 1;
 }

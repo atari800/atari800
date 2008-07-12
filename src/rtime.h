@@ -1,5 +1,5 @@
-#ifndef _RTIME_H_
-#define _RTIME_H_
+#ifndef RTIME_H_
+#define RTIME_H_
 /* Emulate ICD R-Time 8 cartridge
    Copyright 2000 Jason Duerstock <jason@cluephone.com>
 
@@ -24,4 +24,4 @@ extern int RTIME_enabled;
 void RTIME_Initialise(int *argc, char *argv[]);
 UBYTE RTIME_GetByte(void);
 void RTIME_PutByte(UBYTE byte);
-#endif /* _RTIME_H_ */
+#endif /* RTIME_H_ */

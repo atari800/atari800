@@ -30,18 +30,18 @@
 #include "sound.h"
 #endif
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 #ifdef SOUND
 	Sound_Initialise(argc, argv);
 #endif
 }
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	Log_flushlog();
 
-	if (run_monitor && Monitor_Run())
+	if (run_monitor && MONITOR_Run())
 		return TRUE;
 
 #ifdef SOUND

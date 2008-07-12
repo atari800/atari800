@@ -32,11 +32,12 @@
 
 #include "antic.h" /* ypos */
 #include "atari.h"
-#include "gtia.h" /* COLPFx */
+#include "gtia.h" /* GTIA_COLPFx */
 #include "input.h"
+#include "akey.h"
 #include "log.h"
 #include "monitor.h"
-#include "ui.h" /* alt_function */
+#include "ui.h" /* UI_alt_function */
 
 #ifdef SOUND
 #include "sound.h"
@@ -52,7 +53,7 @@ static int curses_mode = CURSES_LEFT;
 
 static int curses_screen[24][40];
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -95,13 +96,13 @@ void Atari_Initialise(int *argc, char *argv[])
 #endif
 }
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	curs_set(1);
 	endwin();
 	Log_flushlog();
 
-	if (run_monitor && Monitor_Run()) {
+	if (run_monitor && MONITOR_Run()) {
 		curs_set(0);
 		return TRUE;
 	}
@@ -161,16 +162,16 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 	int y;
 	int *p;
 	int w;
-	if (ypos < 32 || ypos >= 224)
+	if (ANTIC_ypos < 32 || ANTIC_ypos >= 224)
 		return;
-	y = (ypos >> 3) - 4;
+	y = (ANTIC_ypos >> 3) - 4;
 	p = &(curses_screen[y][0]);
 	switch (anticmode) {
 	case 2:
 	case 3:
 	case 4:
 	case 5:
-		switch (DMACTL & 3) {
+		switch (ANTIC_DMACTL & 3) {
 		case 1:
 			p += 4;
 			w = 32;
@@ -211,7 +212,7 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 		break;
 	case 6:
 	case 7:
-		switch (DMACTL & 3) {
+		switch (ANTIC_DMACTL & 3) {
 		case 1:
 			p += 12;
 			w = 16;
@@ -230,10 +231,10 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 		{
 #define LIGHT_THRESHOLD 0x0c
 			int light[4];
-			light[0] = (COLPF0 & 0x0e) >= LIGHT_THRESHOLD ? 0x20 + A_BOLD : 0x20;
-			light[1] = (COLPF1 & 0x0e) >= LIGHT_THRESHOLD ? -0x40 + 0x20 + A_BOLD : -0x40 + 0x20;
-			light[2] = (COLPF2 & 0x0e) >= LIGHT_THRESHOLD ? -0x80 + 0x20 + A_BOLD : -0x80 + 0x20;
-			light[3] = (COLPF3 & 0x0e) >= LIGHT_THRESHOLD ? -0xc0 + 0x20 + A_BOLD : -0xc0 + 0x20;
+			light[0] = (GTIA_COLPF0 & 0x0e) >= LIGHT_THRESHOLD ? 0x20 + A_BOLD : 0x20;
+			light[1] = (GTIA_COLPF1 & 0x0e) >= LIGHT_THRESHOLD ? -0x40 + 0x20 + A_BOLD : -0x40 + 0x20;
+			light[2] = (GTIA_COLPF2 & 0x0e) >= LIGHT_THRESHOLD ? -0x80 + 0x20 + A_BOLD : -0x80 + 0x20;
+			light[3] = (GTIA_COLPF3 & 0x0e) >= LIGHT_THRESHOLD ? -0xc0 + 0x20 + A_BOLD : -0xc0 + 0x20;
 			do {
 				*p++ = *screendata + light[*screendata >> 6];
 				screendata++;
@@ -245,7 +246,7 @@ void curses_display_line(int anticmode, const UBYTE *screendata)
 	}
 }
 
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
 	int x;
 	int y;
@@ -278,7 +279,7 @@ void Atari_DisplayScreen(void)
 	refresh();
 }
 
-int Atari_Keyboard(void)
+int PLATFORM_Keyboard(void)
 {
 	int keycode = getch();
 
@@ -291,7 +292,7 @@ int Atari_Keyboard(void)
 	}
 #endif
 
-	key_consol = CONSOL_NONE;
+	INPUT_key_consol = INPUT_CONSOL_NONE;
 
 	switch (keycode) {
 	case 0x01:
@@ -673,15 +674,15 @@ int Atari_Keyboard(void)
 		keycode = AKEY_UI;
 		break;
 	case KEY_F0 + 2:
-		key_consol &= ~CONSOL_OPTION;
+		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 3:
-		key_consol &= ~CONSOL_SELECT;
+		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 4:
-		key_consol &= ~CONSOL_START;
+		INPUT_key_consol &= ~INPUT_CONSOL_START;
 		keycode = AKEY_NONE;
 		break;
 	case KEY_F0 + 5:
@@ -706,7 +707,7 @@ int Atari_Keyboard(void)
 		keycode = AKEY_BREAK;
 		break;
 	case KEY_F0 + 8:
-		keycode = Atari_Exit(TRUE) ? AKEY_NONE : AKEY_EXIT;
+		keycode = PLATFORM_Exit(TRUE) ? AKEY_NONE : AKEY_EXIT;
 		break;
 	case KEY_F0 + 9:
 		keycode = AKEY_EXIT;
@@ -785,39 +786,39 @@ int Atari_Keyboard(void)
 #ifdef ALT_A
 	/* PDCurses specific */
 	case ALT_A:
-		alt_function = MENU_ABOUT;
+		UI_alt_function = UI_MENU_ABOUT;
 		keycode = AKEY_UI;
 		break;
 	case ALT_C:
-		alt_function = MENU_CARTRIDGE;
+		UI_alt_function = UI_MENU_CARTRIDGE;
 		keycode = AKEY_UI;
 		break;
 	case ALT_D:
-		alt_function = MENU_DISK;
+		UI_alt_function = UI_MENU_DISK;
 		keycode = AKEY_UI;
 		break;
 	case ALT_L:
-		alt_function = MENU_LOADSTATE;
+		UI_alt_function = UI_MENU_LOADSTATE;
 		keycode = AKEY_UI;
 		break;
 	case ALT_O:
-		alt_function = MENU_SOUND;
+		UI_alt_function = UI_MENU_SOUND;
 		keycode = AKEY_UI;
 		break;
 	case ALT_R:
-		alt_function = MENU_RUN;
+		UI_alt_function = UI_MENU_RUN;
 		keycode = AKEY_UI;
 		break;
 	case ALT_S:
-		alt_function = MENU_SAVESTATE;
+		UI_alt_function = UI_MENU_SAVESTATE;
 		keycode = AKEY_UI;
 		break;
 	case ALT_W:
-		alt_function = MENU_SOUND_RECORDING;
+		UI_alt_function = UI_MENU_SOUND_RECORDING;
 		keycode = AKEY_UI;
 		break;
 	case ALT_Y:
-		alt_function = MENU_SYSTEM;
+		UI_alt_function = UI_MENU_SYSTEM;
 		keycode = AKEY_UI;
 		break;
 #endif
@@ -828,12 +829,12 @@ int Atari_Keyboard(void)
 	return keycode;
 }
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 	return 0xff;
 }
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 	return 1;
 }
@@ -846,9 +847,9 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	for (;;) {
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 		Atari800_Frame();
-		if (display_screen)
-			Atari_DisplayScreen();
+		if (Atari800_display_screen)
+			PLATFORM_DisplayScreen();
 	}
 }

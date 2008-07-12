@@ -1,3 +1,9 @@
+2008-07-12  Perry McFarlane  <perry_m@fastmail.fm>
+* most files: finished renaming globals.  New files: akey.h, (AKEY_*),
+esc.[ch](patches), afile.[ch](file loading), cfg.[ch] (configuration),
+ui_basic.h
+
+
 2008-07-03  Perry McFarlane  <perry_m@fastmail.fm>
 * remez.[ch], mzpokeysnd.c: rename Remez_, remez -> Remez_CreateFilter.
 * devices.[ch], atari.c, binload.c, rdevice.c, ui.c: rename Devices_, Device_

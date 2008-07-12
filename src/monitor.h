@@ -1,28 +1,28 @@
-#ifndef _MONITOR_H_
-#define _MONITOR_H_
+#ifndef MONITOR_H_
+#define MONITOR_H_
 
 #include "config.h"
 #include <stdio.h>
 
 #include "atari.h"
 
-int Monitor_Run(void);
+int MONITOR_Run(void);
 
 #ifdef MONITOR_TRACE
-extern FILE *Monitor_trace_file;
+extern FILE *MONITOR_trace_file;
 #endif
 
 #ifdef MONITOR_BREAK
-extern UWORD Monitor_break_addr;
-extern UBYTE Monitor_break_step;
-extern UBYTE Monitor_break_ret;
-extern UBYTE Monitor_break_brk;
-extern int Monitor_ret_nesting;
+extern UWORD MONITOR_break_addr;
+extern UBYTE MONITOR_break_step;
+extern UBYTE MONITOR_break_ret;
+extern UBYTE MONITOR_break_brk;
+extern int MONITOR_ret_nesting;
 #endif
 
-extern const UBYTE Monitor_optype6502[256];
+extern const UBYTE MONITOR_optype6502[256];
 
-void Monitor_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
+void MONITOR_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
                 char n, char v, char z, char c);
 
 #ifdef MONITOR_BREAKPOINTS
@@ -51,13 +51,13 @@ typedef struct {
 	UBYTE enabled;
 	UBYTE condition;
 	UWORD value;
-} Monitor_breakpoint_cond;
+} MONITOR_breakpoint_cond;
 
 #define MONITOR_BREAKPOINT_TABLE_MAX  20
-extern Monitor_breakpoint_cond Monitor_breakpoint_table[MONITOR_BREAKPOINT_TABLE_MAX];
-extern int Monitor_breakpoint_table_size;
-extern int Monitor_breakpoints_enabled;
+extern MONITOR_breakpoint_cond MONITOR_breakpoint_table[MONITOR_BREAKPOINT_TABLE_MAX];
+extern int MONITOR_breakpoint_table_size;
+extern int MONITOR_breakpoints_enabled;
 
 #endif /* MONITOR_BREAKPOINTS */
 
-#endif /* _MONITOR_H_ */
+#endif /* MONITOR_H_ */

@@ -1,6 +1,5 @@
-
-#ifndef _XEP80_FONTS_H_
-#define _XEP80_FONTS_H_
+#ifndef XEP80_FONTS_H_
+#define XEP80_FONTS_H_
 
 #include "config.h"
 #include "atari.h"
@@ -16,12 +15,12 @@
 
 #define XEP80_FONTS_UNDER_ROW     10
 
-extern UBYTE XEP80_Fonts_atari_fonts[XEP80_FONTS_NUM_FONT_SETS][XEP80_FONTS_NUM_FONTS][XEP80_FONTS_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
-extern UBYTE XEP80_Fonts_oncolor;
-extern UBYTE XEP80_Fonts_offcolor;
+extern UBYTE XEP80_FONTS_atari_fonts[XEP80_FONTS_NUM_FONT_SETS][XEP80_FONTS_NUM_FONTS][XEP80_FONTS_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
+extern UBYTE XEP80_FONTS_oncolor;
+extern UBYTE XEP80_FONTS_offcolor;
 
-extern int XEP80_Fonts_inited;
+extern int XEP80_FONTS_inited;
 
-void XEP80_Fonts_InitFonts(void);
+void XEP80_FONTS_InitFonts(void);
 
-#endif /* _XEP80_FONTS_H_ */
+#endif /* XEP80_FONTS_H_ */

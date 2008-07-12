@@ -82,8 +82,10 @@ static int motif_disk_sel = 1;
 #include "cartridge.h"
 #include "colours.h"
 #include "input.h"
+#include "akey.h"
 #include "log.h"
 #include "monitor.h"
+#include "memory.h"
 #include "screen.h"
 #include "sio.h"
 #include "sound.h"
@@ -136,13 +138,13 @@ static int x11bug = FALSE;
 static int private_cmap = FALSE;
 
 static int window_width = 336;
-static int window_height = ATARI_HEIGHT;
+static int window_height = Screen_HEIGHT;
 
 static int clipping_factor = 1;
 static int clipping_x = 24;
 static int clipping_y = 0;
 static int clipping_width = 336;
-static int clipping_height = ATARI_HEIGHT;
+static int clipping_height = Screen_HEIGHT;
 
 
 static Display *display = NULL;
@@ -206,8 +208,8 @@ static XPoint points[NPOINTS];
 static XRectangle rectangles[NRECTS];
 #endif
 
-static int keyboard_consol = CONSOL_NONE;
-static int menu_consol = CONSOL_NONE;
+static int keyboard_consol = INPUT_CONSOL_NONE;
+static int menu_consol = INPUT_CONSOL_NONE;
 
 static int autorepeat = 1;
 static int last_focus = FocusOut;
@@ -235,7 +237,7 @@ static void autorepeat_restore(void)
 
 static void segmentationfault(int x)
 {
-	Atari_Exit(0);
+	PLATFORM_Exit(0);
 	exit(0);
 }
 
@@ -279,7 +281,7 @@ static int GetKeyCode(XEvent *event)
 		case XK_Shift_L:
 		case XK_Shift_R:
 			SHIFT = AKEY_SHFT;
-			key_shift = 1;
+			INPUT_key_shift = 1;
 			break;
 		case XK_Control_L:
 			keypad_trig = 0;
@@ -295,7 +297,7 @@ static int GetKeyCode(XEvent *event)
 			keycode = SHIFT ? AKEY_COLDSTART : AKEY_WARMSTART;
 			break;
 		case XK_F8:
-			keycode = Atari_Exit(TRUE) ? AKEY_NONE : AKEY_EXIT;
+			keycode = PLATFORM_Exit(TRUE) ? AKEY_NONE : AKEY_EXIT;
 			break;
 		case XK_F9:
 			keycode = AKEY_EXIT;
@@ -306,62 +308,62 @@ static int GetKeyCode(XEvent *event)
 			break;
 		case XK_Left:
 			keycode = AKEY_LEFT;
-			keypad_stick &= STICK_LEFT;
+			keypad_stick &= INPUT_STICK_LEFT;
 			break;
 		case XK_Up:
 			keycode = AKEY_UP;
-			keypad_stick &= STICK_FORWARD;
+			keypad_stick &= INPUT_STICK_FORWARD;
 			break;
 		case XK_Right:
 			keycode = AKEY_RIGHT;
-			keypad_stick &= STICK_RIGHT;
+			keypad_stick &= INPUT_STICK_RIGHT;
 			break;
 		case XK_Down:
 			keycode = AKEY_DOWN;
-			keypad_stick &= STICK_BACK;
+			keypad_stick &= INPUT_STICK_BACK;
 			break;
 		case XK_KP_0:
 			keypad_trig = 0;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_1:
-			keypad_stick = STICK_LL;
+			keypad_stick = INPUT_STICK_LL;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_2:
-			keypad_stick &= STICK_BACK;
+			keypad_stick &= INPUT_STICK_BACK;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_3:
-			keypad_stick = STICK_LR;
+			keypad_stick = INPUT_STICK_LR;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_4:
-			keypad_stick &= STICK_LEFT;
+			keypad_stick &= INPUT_STICK_LEFT;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_5:
-			keypad_stick = STICK_CENTRE;
+			keypad_stick = INPUT_STICK_CENTRE;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_6:
-			keypad_stick &= STICK_RIGHT;
+			keypad_stick &= INPUT_STICK_RIGHT;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_7:
-			keypad_stick = STICK_UL;
+			keypad_stick = INPUT_STICK_UL;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_8:
-			keypad_stick &= STICK_FORWARD;
+			keypad_stick &= INPUT_STICK_FORWARD;
 			keycode = AKEY_NONE;
 			break;
 		case XK_KP_9:
-			keypad_stick = STICK_UR;
+			keypad_stick = INPUT_STICK_UR;
 			keycode = AKEY_NONE;
 			break;
 		}
-		if (machine_type == MACHINE_5200 && !ui_is_active) {
+		if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active) {
 			switch (keysym) {
 			case XK_F4:
 				keycode = SHIFT | AKEY_5200_START;
@@ -428,15 +430,15 @@ static int GetKeyCode(XEvent *event)
 			keycode = AKEY_ATARI;
 			break;
 		case XK_F2:
-			keyboard_consol &= (~CONSOL_OPTION);
+			keyboard_consol &= (~INPUT_CONSOL_OPTION);
 			keycode = AKEY_NONE;
 			break;
 		case XK_F3:
-			keyboard_consol &= (~CONSOL_SELECT);
+			keyboard_consol &= (~INPUT_CONSOL_SELECT);
 			keycode = AKEY_NONE;
 			break;
 		case XK_F4:
-			keyboard_consol &= (~CONSOL_START);
+			keyboard_consol &= (~INPUT_CONSOL_START);
 			keycode = AKEY_NONE;
 			break;
 		case XK_F6:
@@ -570,7 +572,7 @@ static int GetKeyCode(XEvent *event)
 			break;
 		case XK_Return:
 			keycode = SHIFT | CONTROL | AKEY_RETURN;
-			keypad_stick = STICK_CENTRE;
+			keypad_stick = INPUT_STICK_CENTRE;
 			break;
 		case XK_0:
 			keycode = CONTROL | AKEY_0;
@@ -717,7 +719,7 @@ static int GetKeyCode(XEvent *event)
 		switch (keysym) {
 		case XK_Shift_L:
 		case XK_Shift_R:
-			key_shift = 0;
+			INPUT_key_shift = 0;
 			SHIFT = 0x00;
 			break;
 		case XK_Control_L:
@@ -731,13 +733,13 @@ static int GetKeyCode(XEvent *event)
 				printf("XK_Shift_Lock\n");
 			break;
 		case XK_F2:
-			keyboard_consol |= CONSOL_OPTION;
+			keyboard_consol |= INPUT_CONSOL_OPTION;
 			break;
 		case XK_F3:
-			keyboard_consol |= CONSOL_SELECT;
+			keyboard_consol |= INPUT_CONSOL_SELECT;
 			break;
 		case XK_F4:
-			keyboard_consol |= CONSOL_START;
+			keyboard_consol |= INPUT_CONSOL_START;
 			break;
 		case XK_space:
 		case XK_KP_0:
@@ -745,26 +747,26 @@ static int GetKeyCode(XEvent *event)
 			break;
 		case XK_Down:
 		case XK_KP_2:
-			keypad_stick |= STICK_CENTRE ^ STICK_BACK;
+			keypad_stick |= INPUT_STICK_CENTRE ^ INPUT_STICK_BACK;
 			break;
 		case XK_Left:
 		case XK_KP_4:
-			keypad_stick |= STICK_CENTRE ^ STICK_LEFT;
+			keypad_stick |= INPUT_STICK_CENTRE ^ INPUT_STICK_LEFT;
 			break;
 		case XK_Right:
 		case XK_KP_6:
-			keypad_stick |= STICK_CENTRE ^ STICK_RIGHT;
+			keypad_stick |= INPUT_STICK_CENTRE ^ INPUT_STICK_RIGHT;
 			break;
 		case XK_Up:
 		case XK_KP_8:
-			keypad_stick |= STICK_CENTRE ^ STICK_FORWARD;
+			keypad_stick |= INPUT_STICK_CENTRE ^ INPUT_STICK_FORWARD;
 			break;
 		case XK_KP_1:
 		case XK_KP_3:
 		case XK_KP_5:
 		case XK_KP_7:
 		case XK_KP_9:
-			keypad_stick = STICK_CENTRE;
+			keypad_stick = INPUT_STICK_CENTRE;
 			break;
 		default:
 			break;
@@ -780,18 +782,18 @@ static int insert_rom(const char *filename)
 {
 	int r;
 	int i;
-	r = CART_Insert(filename);
+	r = CARTRIDGE_Insert(filename);
 	if (r < 0)
 		return FALSE;
 	if (r == 0) {
-		Coldstart();
+		Atari800_Coldstart();
 		return TRUE;
 	}
 	/* TODO: select cartridge type */
-	for (i = 1; i < CART_LAST_SUPPORTED; i++) {
-		if (cart_kb[i] == r) {
-			cart_type = i;
-			Coldstart();
+	for (i = 1; i < CARTRIDGE_LAST_SUPPORTED; i++) {
+		if (CARTRIDGE_kb[i] == r) {
+			CARTRIDGE_type = i;
+			Atari800_Coldstart();
 			return TRUE;
 		}
 	}
@@ -842,7 +844,7 @@ static int disk_change(char *a, char *full_filename, char *filename)
 		status = XV_ERROR;
 	else {
 		if (auto_reboot)
-			Coldstart();
+			Atari800_Coldstart();
 		status = XV_OK;
 	}
 
@@ -852,8 +854,8 @@ static int disk_change(char *a, char *full_filename, char *filename)
 static void boot_callback(void)
 {
 	static char dir[FILENAME_MAX];
-	if (n_atari_files_dir > 0)
-		strcpy(dir, atari_files_dir[0]);
+	if (UI_n_atari_files_dir > 0)
+		strcpy(dir, UI_atari_files_dir[0]);
 	else
 		dir[0] = '\0';
 	auto_reboot = TRUE;
@@ -868,8 +870,8 @@ static void boot_callback(void)
 static void insert_callback(void)
 {
 	static char dir[FILENAME_MAX];
-	if (n_atari_files_dir > 0)
-		strcpy(dir, atari_files_dir[0]);
+	if (UI_n_atari_files_dir > 0)
+		strcpy(dir, UI_atari_files_dir[0]);
 	else
 		dir[0] = '\0';
 	auto_reboot = FALSE;
@@ -933,8 +935,8 @@ static int rom_change(char *a, char *full_filename, char *filename)
 static void insert_rom_callback(void)
 {
 	static char dir[FILENAME_MAX];
-	if (n_atari_files_dir > 0)
-		strcpy(dir, atari_files_dir[0]);
+	if (UI_n_atari_files_dir > 0)
+		strcpy(dir, UI_atari_files_dir[0]);
 	else
 		dir[0] = '\0';
 	xv_set(chooser,
@@ -947,45 +949,45 @@ static void insert_rom_callback(void)
 
 static void remove_rom_callback(void)
 {
-	CART_Remove();
-	Coldstart();
+	CARTRIDGE_Remove();
+	Atari800_Coldstart();
 }
 
 static void exit_callback(void)
 {
-	Atari_Exit(FALSE);
+	PLATFORM_Exit(FALSE);
 	exit(1);
 }
 
 static void option_callback(void)
 {
-	menu_consol &= (~CONSOL_OPTION);
+	menu_consol &= (~INPUT_CONSOL_OPTION);
 }
 
 static void select_callback(void)
 {
-	menu_consol &= (~CONSOL_SELECT);
+	menu_consol &= (~INPUT_CONSOL_SELECT);
 }
 
 static void start_callback(void)
 {
-	menu_consol &= (~CONSOL_START);
+	menu_consol &= (~INPUT_CONSOL_START);
 }
 
 static void reset_callback(void)
 {
-	Warmstart();
+	Atari800_Warmstart();
 }
 
 static void coldstart_callback(void)
 {
-	Coldstart();
+	Atari800_Coldstart();
 }
 
 static void coldstart_sys(int machtype, int ram, const char *errmsg)
 {
-	machine_type = machtype;
-	ram_size = ram;
+	Atari800_machine_type = machtype;
+	MEMORY_ram_size = ram;
 	if (!Atari800_InitialiseMachine()) {
 		notice_prompt(panel, NULL,
 					  NOTICE_MESSAGE_STRINGS,
@@ -998,27 +1000,27 @@ static void coldstart_sys(int machtype, int ram, const char *errmsg)
 
 static void coldstart_osa_callback(void)
 {
-	coldstart_sys(MACHINE_OSA, 48, "Sorry, OS/A ROM Unavailable");
+	coldstart_sys(Atari800_MACHINE_OSA, 48, "Sorry, OS/A ROM Unavailable");
 }
 
 static void coldstart_osb_callback(void)
 {
-	coldstart_sys(MACHINE_OSB, 48, "Sorry, OS/B ROM Unavailable");
+	coldstart_sys(Atari800_MACHINE_OSB, 48, "Sorry, OS/B ROM Unavailable");
 }
 
 static void coldstart_xl_callback(void)
 {
-	coldstart_sys(MACHINE_XLXE, 64, "Sorry, XL/XE ROM Unavailable");
+	coldstart_sys(Atari800_MACHINE_XLXE, 64, "Sorry, XL/XE ROM Unavailable");
 }
 
 static void coldstart_xe_callback(void)
 {
-	coldstart_sys(MACHINE_XLXE, 128, "Sorry, XL/XE ROM Unavailable");
+	coldstart_sys(Atari800_MACHINE_XLXE, 128, "Sorry, XL/XE ROM Unavailable");
 }
 
 static void coldstart_5200_callback(void)
 {
-	coldstart_sys(MACHINE_5200, 16, "Sorry, 5200 ROM Unavailable");
+	coldstart_sys(Atari800_MACHINE_5200, 16, "Sorry, 5200 ROM Unavailable");
 }
 
 static void controllers_ok_callback(void)
@@ -1140,7 +1142,7 @@ static void performance_callback(void)
 
 static void refresh_callback(Panel_item item, int value, Event * event)
 {
-	refresh_rate = value;
+	Atari800_refresh_rate = value;
 }
 
 #endif /* XVIEW */
@@ -1178,7 +1180,7 @@ static void motif_boot_disk(Widget fs, XtPointer client_data,
 		if (*filename) {
 			SIO_Dismount(1);
 			if (SIO_Mount(1, filename, FALSE))
-				Coldstart();
+				Atari800_Coldstart();
 		}
 		XtFree(filename);
 	}
@@ -1279,40 +1281,40 @@ static void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 		XtPopup(XtParent(fsel_r), XtGrabNone);
 		break;
 	case 5:
-		CART_Remove();
-		Coldstart();
+		CARTRIDGE_Remove();
+		Atari800_Coldstart();
 		break;
 	case 6:
-		machine_type = MACHINE_OSA;
-		ram_size = 48;
+		Atari800_machine_type = Atari800_MACHINE_OSA;
+		MEMORY_ram_size = 48;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, OS/A ROM Unavailable";
 		break;
 	case 7:
-		machine_type = MACHINE_OSB;
-		ram_size = 48;
+		Atari800_machine_type = Atari800_MACHINE_OSB;
+		MEMORY_ram_size = 48;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, OS/B ROM Unavailable";
 		break;
 	case 8:
-		machine_type = MACHINE_XLXE;
-		ram_size = 64;
+		Atari800_machine_type = Atari800_MACHINE_XLXE;
+		MEMORY_ram_size = 64;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, XL/XE ROM Unavailable";
 		break;
 	case 9:
-		machine_type = MACHINE_XLXE;
-		ram_size = 128;
+		Atari800_machine_type = Atari800_MACHINE_XLXE;
+		MEMORY_ram_size = 128;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, XL/XE ROM Unavailable";
 		break;
 	case 10:
-		machine_type = MACHINE_5200;
-		ram_size = 16;
+		Atari800_machine_type = Atari800_MACHINE_5200;
+		MEMORY_ram_size = 16;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, 5200 ROM Unavailable";
@@ -1350,19 +1352,19 @@ static void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
 {
 	switch ((int) item_no) {
 	case 0:
-		menu_consol &= (~CONSOL_OPTION);
+		menu_consol &= (~INPUT_CONSOL_OPTION);
 		break;
 	case 1:
-		menu_consol &= (~CONSOL_SELECT);
+		menu_consol &= (~INPUT_CONSOL_SELECT);
 		break;
 	case 2:
-		menu_consol &= (~CONSOL_START);
+		menu_consol &= (~INPUT_CONSOL_START);
 		break;
 	case 3:
-		Warmstart();
+		Atari800_Warmstart();
 		break;
 	case 4:
-		Coldstart();
+		Atari800_Coldstart();
 		break;
 	}
 }
@@ -1381,7 +1383,7 @@ static void motif_exposure(Widget w, XtPointer client_data, XEvent *event,
 
 #endif /* MOTIF */
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 #if !defined(XVIEW) && !defined(MOTIF)
 	XSetWindowAttributes xswda;
@@ -1405,7 +1407,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	toplevel = XtVaAppInitialize(&app, "Atari800",
 								 NULL, 0,
 								 argc, argv, NULL,
-								 XtNtitle, ATARI_TITLE,
+								 XtNtitle, Atari800_TITLE,
 								 NULL);
 #endif
 
@@ -1465,14 +1467,14 @@ void Atari_Initialise(int *argc, char *argv[])
 	if (help_only)
 		return;
 
-	if ((clipping_x < 0) || (clipping_x >= ATARI_WIDTH))
+	if ((clipping_x < 0) || (clipping_x >= Screen_WIDTH))
 		clipping_x = 0;
-	if ((clipping_y < 0) || (clipping_y >= ATARI_HEIGHT))
+	if ((clipping_y < 0) || (clipping_y >= Screen_HEIGHT))
 		clipping_y = 0;
-	if ((clipping_width <= 0) || (clipping_x + clipping_width > ATARI_WIDTH))
-		clipping_width = ATARI_WIDTH - clipping_x;
-	if ((clipping_height <= 0) || (clipping_y + clipping_height > ATARI_HEIGHT))
-		clipping_height = ATARI_HEIGHT - clipping_y;
+	if ((clipping_width <= 0) || (clipping_x + clipping_width > Screen_WIDTH))
+		clipping_width = Screen_WIDTH - clipping_x;
+	if ((clipping_height <= 0) || (clipping_y + clipping_height > Screen_HEIGHT))
+		clipping_height = Screen_HEIGHT - clipping_y;
 	Screen_visible_x1 = clipping_x;
 	Screen_visible_x2 = clipping_x + clipping_width;
 	Screen_visible_y1 = clipping_y;
@@ -1540,7 +1542,7 @@ void Atari_Initialise(int *argc, char *argv[])
 
 #ifdef XVIEW
 	frame = (Frame) xv_create((Xv_opaque) NULL, FRAME,
-							  FRAME_LABEL, ATARI_TITLE,
+							  FRAME_LABEL, Atari800_TITLE,
 							  FRAME_SHOW_RESIZE_CORNER, FALSE,
 							  XV_WIDTH, window_width,
 							  XV_HEIGHT, window_height + 27,
@@ -1767,7 +1769,7 @@ void Atari_Initialise(int *argc, char *argv[])
 											PANEL_VALUE_Y, ypos,
 											PANEL_LAYOUT, PANEL_HORIZONTAL,
 											PANEL_LABEL_STRING, "Screen Refresh Rate",
-											PANEL_VALUE, refresh_rate,
+											PANEL_VALUE, Atari800_refresh_rate,
 											PANEL_MIN_VALUE, 1,
 											PANEL_MAX_VALUE, 32,
 											PANEL_SLIDER_WIDTH, 100,
@@ -2034,9 +2036,9 @@ void Atari_Initialise(int *argc, char *argv[])
 		XtAddCallback(fsel_r, XmNokCallback, motif_insert_rom, NULL);
 		XtAddCallback(fsel_r, XmNcancelCallback, motif_fs_cancel, NULL);
 
-		if (n_atari_files_dir > 0) {
-			tmpstr = (char *) XtMalloc(strlen(atari_files_dir[0] + 3));
-			strcpy(Util_stpcpy(tmpstr, atari_files_dir[0]), "/*");
+		if (UI_n_atari_files_dir > 0) {
+			tmpstr = (char *) XtMalloc(strlen(UI_atari_files_dir[0] + 3));
+			strcpy(Util_stpcpy(tmpstr, UI_atari_files_dir[0]), "/*");
 		}
 		else {
 			tmpstr = (char *) XtMalloc(4);
@@ -2169,7 +2171,7 @@ void Atari_Initialise(int *argc, char *argv[])
 						   CWEventMask | CWBackPixel | CWColormap,
 						   &xswda);
 
-	XStoreName(display, window, ATARI_TITLE);
+	XStoreName(display, window, Atari800_TITLE);
 #endif /* !defined(XVIEW) && !defined(MOTIF) */
 
 #ifdef SHM
@@ -2270,9 +2272,9 @@ void Atari_Initialise(int *argc, char *argv[])
    Storage for Atari 800 Screen
    ============================
  */
-	image_data = (UBYTE *) Util_malloc(ATARI_WIDTH * ATARI_HEIGHT);
+	image_data = (UBYTE *) Util_malloc(Screen_WIDTH * Screen_HEIGHT);
 
-	keyboard_consol = CONSOL_NONE;
+	keyboard_consol = INPUT_CONSOL_NONE;
 
 	if (x11bug) {
 		printf("Initial X11 controller configuration\n");
@@ -2293,14 +2295,14 @@ void Atari_Initialise(int *argc, char *argv[])
 	signal(SIGSEGV, segmentationfault);
 }
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	int restart;
 
 	Log_flushlog();
 	if (run_monitor) {
 		autorepeat_restore();
-		restart = Monitor_Run();
+		restart = MONITOR_Run();
 		autorepeat_off();
 	}
 	else
@@ -2343,19 +2345,19 @@ int Atari_Exit(int run_monitor)
 	return restart;
 }
 
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
 	static char status_line[64];
 	int update_status_line = FALSE;
 
 	if (!invisible) {
-		const UBYTE *ptr2 = (const UBYTE *) Screen_atari + clipping_y * ATARI_WIDTH + clipping_x;
+		const UBYTE *ptr2 = (const UBYTE *) Screen_atari + clipping_y * Screen_WIDTH + clipping_x;
 
 #ifdef SHM
 
-		int first_x = ATARI_WIDTH;
+		int first_x = Screen_WIDTH;
 		int last_x = -1000;
-		int first_y = ATARI_HEIGHT;
+		int first_y = Screen_HEIGHT;
 		int last_y = -1000;
 		int x;
 		int y;
@@ -2382,7 +2384,7 @@ void Atari_DisplayScreen(void)
 					} \
 					if (first_y > last_y && last_y >= 0) \
 						first_y = last_y; \
-					ptr2 += ATARI_WIDTH - clipping_width; \
+					ptr2 += Screen_WIDTH - clipping_width; \
 				} \
 			} \
 			else if (windowsize == Large) { \
@@ -2402,7 +2404,7 @@ void Atari_DisplayScreen(void)
 					} \
 					if (first_y > last_y && last_y >= 0) \
 						first_y = last_y; \
-					ptr2 += ATARI_WIDTH - clipping_width; \
+					ptr2 += Screen_WIDTH - clipping_width; \
 					ptr += window_width; \
 				} \
 			} \
@@ -2430,7 +2432,7 @@ void Atari_DisplayScreen(void)
 					} \
 					if (first_y > last_y && last_y >= 0) \
 						first_y = last_y; \
-					ptr2 += ATARI_WIDTH - clipping_width; \
+					ptr2 += Screen_WIDTH - clipping_width; \
 					ptr += window_width + window_width; \
 				} \
 			}
@@ -2483,7 +2485,7 @@ void Atari_DisplayScreen(void)
 
 #else /* SHM */
 
-		UBYTE *ptr = image_data + clipping_y * ATARI_WIDTH + clipping_x;
+		UBYTE *ptr = image_data + clipping_y * Screen_WIDTH + clipping_x;
 		int n = 0;
 		int last_colour = -1;
 		int x;
@@ -2511,8 +2513,8 @@ void Atari_DisplayScreen(void)
 					}
 					ptr++;
 				}
-				ptr += ATARI_WIDTH - clipping_width;
-				ptr2 += ATARI_WIDTH - clipping_width;
+				ptr += Screen_WIDTH - clipping_width;
+				ptr2 += Screen_WIDTH - clipping_width;
 			}
 			if (n > 0) {
 				XDrawPoints(display, pixmap, gc_colour[last_colour],
@@ -2551,8 +2553,8 @@ void Atari_DisplayScreen(void)
 					ptr++;
 					x += 2;
 				}
-				ptr += ATARI_WIDTH - clipping_width;
-				ptr2 += ATARI_WIDTH - clipping_width;
+				ptr += Screen_WIDTH - clipping_width;
+				ptr2 += Screen_WIDTH - clipping_width;
 			}
 			if (n > 0) {
 				XFillRectangles(display, pixmap, gc_colour[last_colour],
@@ -2591,8 +2593,8 @@ void Atari_DisplayScreen(void)
 					ptr++;
 					x += 3;
 				}
-				ptr2 += ATARI_WIDTH - clipping_width;
-				ptr += ATARI_WIDTH - clipping_width;
+				ptr2 += Screen_WIDTH - clipping_width;
+				ptr += Screen_WIDTH - clipping_width;
 			}
 			if (n > 0) {
 				XFillRectangles(display, pixmap, gc_colour[last_colour],
@@ -2620,7 +2622,7 @@ void Atari_DisplayScreen(void)
 			strcpy(status_line, SIO_status);
 #else
 			sprintf(status_line, "%s - %s",
-					ATARI_TITLE, SIO_status);
+					Atari800_TITLE, SIO_status);
 #endif
 			SIO_status[0] = '\0';
 			update_status_line = TRUE;
@@ -2652,7 +2654,7 @@ void Atari_DisplayScreen(void)
 
 }
 
-int Atari_Keyboard(void)
+int PLATFORM_Keyboard(void)
 {
 	static int keycode = AKEY_NONE;
 
@@ -2848,7 +2850,7 @@ static void read_joystick(int js, int centre_x, int centre_y)
 }
 #endif
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 	int nibble_0 = 0x0f;
 	int nibble_1 = 0x0f;
@@ -2859,7 +2861,7 @@ int Atari_PORT(int num)
 		else if (keypad_mode == 1)
 			nibble_1 = keypad_stick;
 
-		if (mouse_mode == MOUSE_OFF) {
+		if (INPUT_mouse_mode == INPUT_MOUSE_OFF) {
 			if (xmouse_mode == 0) {
 				mouse_joystick(xmouse_mode);
 				nibble_0 = mouse_stick;
@@ -2894,7 +2896,7 @@ int Atari_PORT(int num)
 		else if (keypad_mode == 3)
 			nibble_1 = keypad_stick;
 
-		if (mouse_mode == MOUSE_OFF) {
+		if (INPUT_mouse_mode == INPUT_MOUSE_OFF) {
 			if (xmouse_mode == 2) {
 				mouse_joystick(xmouse_mode);
 				nibble_0 = mouse_stick;
@@ -2928,7 +2930,7 @@ int Atari_PORT(int num)
 	return (nibble_1 << 4) | nibble_0;
 }
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 	int trig = 1;				/* Trigger not pressed */
 
@@ -2996,14 +2998,14 @@ void Atari_Mouse(void)
 	int win_y_return;
 	unsigned int mask_return;
 
-	if (mouse_mode == MOUSE_OFF)
+	if (INPUT_mouse_mode == INPUT_MOUSE_OFF)
 		return;
 	if (XQueryPointer(display, window, &root_return,
 					  &child_return, &root_x_return, &root_y_return,
 					  &win_x_return, &win_y_return, &mask_return)) {
-		mouse_delta_x = win_x_return - last_x;
-		mouse_delta_y = win_y_return - last_y;
-		mouse_buttons = (mask_return & Button1Mask ? 1 : 0)
+		INPUT_mouse_delta_x = win_x_return - last_x;
+		INPUT_mouse_delta_y = win_y_return - last_y;
+		INPUT_mouse_buttons = (mask_return & Button1Mask ? 1 : 0)
 		              | (mask_return & Button3Mask ? 2 : 0)
 		              | (mask_return & Button2Mask ? 4 : 0);
 		last_x = win_x_return;
@@ -3019,19 +3021,19 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	for (;;) {
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 
-		if (menu_consol != CONSOL_NONE) {
-			key_consol = menu_consol;
-			menu_consol = CONSOL_NONE;
+		if (menu_consol != INPUT_CONSOL_NONE) {
+			INPUT_key_consol = menu_consol;
+			menu_consol = INPUT_CONSOL_NONE;
 		}
 		else
-			key_consol = keyboard_consol;
+			INPUT_key_consol = keyboard_consol;
 
 		Atari_Mouse();
 
 		Atari800_Frame();
-		if (display_screen)
-			Atari_DisplayScreen();
+		if (Atari800_display_screen)
+			PLATFORM_DisplayScreen();
 	}
 }

@@ -46,57 +46,32 @@
 #include "version.h"
 #endif
 
-
 #include "atari.h"
-#include "log.h"
-#include "util.h"
 #include "statesav.h"
+#include "antic.h"
+#include "cartridge.h"
+#include "cpu.h"
+#include "gtia.h"
+#include "log.h"
+#include "pbi.h"
+#include "pia.h"
+#include "pokey.h"
+#include "sio.h"
+#include "util.h"
+#ifdef PBI_MIO
+#include "pbi_mio.h"
+#endif
+#ifdef PBI_BB
+#include "pbi_bb.h"
+#endif
+#ifdef PBI_XLD
+#include "pbi_xld.h"
+#endif
+#ifdef XEP80_EMULATION
+#include "xep80.h"
+#endif
 
 #define SAVE_VERSION_NUMBER 6
-
-void AnticStateSave(void);
-/* void MainStateSave(void); declared in atari.h */
-void CpuStateSave(UBYTE SaveVerbose);
-void GTIAStateSave(void);
-void PIAStateSave(void);
-void POKEYStateSave(void);
-void CARTStateSave(void);
-void SIOStateSave(void);
-void PBIStateSave(void);
-#ifdef PBI_MIO
-void PBI_MIOStateSave(void);
-#endif
-#ifdef PBI_BB
-void PBI_BBStateSave(void);
-#endif
-#ifdef PBI_XLD
-void PBI_XLDStateSave(void);
-#endif
-#ifdef XEP80_EMULATION
-void XEP80StateSave(void);
-#endif
-
-void AnticStateRead(void);
-/* void MainStateRead(void); declared in atari.h */
-void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion);
-void GTIAStateRead(void);
-void PIAStateRead(void);
-void POKEYStateRead(void);
-void CARTStateRead(void);
-void SIOStateRead(void);
-void PBIStateRead(void);
-#ifdef PBI_MIO
-void PBI_MIOStateRead(void);
-#endif
-#ifdef PBI_BB
-void PBI_BBStateRead(void);
-#endif
-#ifdef PBI_XLD
-void PBI_XLDStateRead(void);
-#endif
-#ifdef XEP80_EMULATION
-void XEP80StateRead(void);
-#endif
 
 #if defined(MEMCOMPR)
 static gzFile *mem_open(const char *name, const char *mode);
@@ -377,27 +352,27 @@ int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVe
 
 	StateSav_SaveUBYTE(&StateVersion, 1);
 	StateSav_SaveUBYTE(&SaveVerbose, 1);
-	/* The order here is important. Main must be first because it saves the machine type, and
+	/* The order here is important. Atari800_StateSave must be first because it saves the machine type, and
 	   decisions on what to save/not save are made based off that later in the process */
-	MainStateSave();
-	CARTStateSave();
-	SIOStateSave();
-	AnticStateSave();
-	CpuStateSave(SaveVerbose);
-	GTIAStateSave();
-	PIAStateSave();
-	POKEYStateSave();
+	Atari800_StateSave();
+	CARTRIDGE_StateSave();
+	SIO_StateSave();
+	ANTIC_StateSave();
+	CPU_StateSave(SaveVerbose);
+	GTIA_StateSave();
+	PIA_StateSave();
+	POKEY_StateSave();
 #ifdef XEP80_EMULATION
-	XEP80StateSave();
+	XEP80_StateSave();
 #else
 	{
 		int local_xep80_enabled = FALSE;
 		StateSav_SaveINT(&local_xep80_enabled, 1);
 	}
 #endif /* XEP80_EMULATION */
-	PBIStateSave();
+	PBI_StateSave();
 #ifdef PBI_MIO
-	PBI_MIOStateSave();
+	PBI_MIO_StateSave();
 #else
 	{
 		int local_mio_enabled = FALSE;
@@ -405,7 +380,7 @@ int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVe
 	}
 #endif /* PBI_MIO */
 #ifdef PBI_BB
-	PBI_BBStateSave();
+	PBI_BB_StateSave();
 #else
 	{
 		int local_bb_enabled = FALSE;
@@ -413,7 +388,7 @@ int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVe
 	}
 #endif /* PBI_BB */
 #ifdef PBI_XLD
-	PBI_XLDStateSave();
+	PBI_XLD_StateSave();
 #else
 	{
 		int local_xld_enabled = FALSE;
@@ -484,19 +459,19 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 		return FALSE;
 	}
 
-	MainStateRead();
+	Atari800_StateRead();
 	if (StateVersion >= 4) {
-		CARTStateRead();
-		SIOStateRead();
+		CARTRIDGE_StateRead();
+		SIO_StateRead();
 	}
-	AnticStateRead();
-	CpuStateRead(SaveVerbose, StateVersion);
-	GTIAStateRead();
-	PIAStateRead();
-	POKEYStateRead();
+	ANTIC_StateRead();
+	CPU_StateRead(SaveVerbose, StateVersion);
+	GTIA_StateRead();
+	PIA_StateRead();
+	POKEY_StateRead();
 	if (StateVersion >= 6) {
 #ifdef XEP80_EMULATION
-		XEP80StateRead();
+		XEP80_StateRead();
 #else
 		int local_xep80_enabled;
 		StateSav_ReadINT(&local_xep80_enabled,1);
@@ -507,9 +482,9 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 			return FALSE;
 		}
 #endif /* XEP80_EMULATION */
-		PBIStateRead();
+		PBI_StateRead();
 #ifdef PBI_MIO
-		PBI_MIOStateRead();
+		PBI_MIO_StateRead();
 #else
 		{
 			int local_mio_enabled;
@@ -523,7 +498,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 		}
 #endif /* PBI_MIO */
 #ifdef PBI_BB
-		PBI_BBStateRead();
+		PBI_BB_StateRead();
 #else
 		{
 			int local_bb_enabled;
@@ -537,7 +512,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 		}
 #endif /* PBI_BB */
 #ifdef PBI_XLD
-		PBI_XLDStateRead();
+		PBI_XLD_StateRead();
 #else
 		{
 			int local_xld_enabled;

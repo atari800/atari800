@@ -1,5 +1,5 @@
-#ifndef _EMUOS_H_
-#define _EMUOS_H_
+#ifndef EMUOS_H_
+#define EMUOS_H_
 
 static const UBYTE emuos_h[8192] =
 {
@@ -1029,4 +1029,4 @@ static const UBYTE emuos_h[8192] =
 	0x00,0x00,0xfb,0xfc,0x00,0xf8,0xbc,0xfd
 };
 
-#endif /* _EMUOS_H_ */
+#endif /* EMUOS_H_ */

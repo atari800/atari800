@@ -124,12 +124,12 @@ int SndSave_OpenSoundFile(const char *szFileName)
 		return FALSE;
 	}
 
-	fputc(snd_num_pokeys, sndoutput);
+	fputc(POKEYSND_num_pokeys, sndoutput);
 	fputc(0, sndoutput);
-	write32(snd_playback_freq);
-	write32(snd_playback_freq * snd_num_pokeys);
+	write32(POKEYSND_playback_freq);
+	write32(POKEYSND_playback_freq * POKEYSND_num_pokeys);
 
-	fputc(snd_num_pokeys, sndoutput);
+	fputc(POKEYSND_num_pokeys, sndoutput);
 
 	/* XXX FIXME: signed/unsigned samples; 16-bit (byte order!) */
 	if (fwrite("\0\x08\0data\0\0\0\0", 1, 7, sndoutput) != 7) {
@@ -143,7 +143,7 @@ int SndSave_OpenSoundFile(const char *szFileName)
 }
 
 /* SndSave_WriteToSoundFile will dump PCM data to the WAV file. The best way to do this for Atari800 is
-   probably to call it directly after Pokey_Process(buffer, size) with the same values (buffer, size)
+   probably to call it directly after POKEYSND_Process(buffer, size) with the same values (buffer, size)
 
    RETURNS: the number of bytes written to the file (should be equivalent to the input uiSize parm) */
 

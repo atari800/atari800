@@ -451,7 +451,7 @@
 
 #define SIGNED_SAMPLES
 #define DIRTYRECT
-#define KB_UI
+#define USE_UI_BASIC_ONSCREEN_KEYBOARD
 #undef SPEED_CHECK
 #undef HZ_TEST
 

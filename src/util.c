@@ -23,7 +23,14 @@
 */
 
 #include "config.h"
+/* suppress -ansi -pedantic warning for fdopen: */
+#ifdef __STRICT_ANSI__
+#undef __STRICT_ANSI__
 #include <stdio.h>
+#define __STRICT_ANSI__ 1
+#else
+#include <stdio.h>
+#endif /* __STRICT_ANSI__ */
 #include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_SYS_STAT_H
@@ -243,10 +250,10 @@ char *Util_strdup(const char *s)
 void Util_splitpath(const char *path, char *dir_part, char *file_part)
 {
 	const char *p;
-	/* find the last DIR_SEP_CHAR except the last character */
+	/* find the last Util_DIR_SEP_CHAR except the last character */
 	for (p = path + strlen(path) - 2; p >= path; p--) {
-		if (*p == DIR_SEP_CHAR
-#ifdef BACK_SLASH
+		if (*p == Util_DIR_SEP_CHAR
+#ifdef DIR_SEP_BACKSLASH
 /* on DOSish systems slash can be also used as a directory separator */
 		 || *p == '/'
 #endif
@@ -254,7 +261,7 @@ void Util_splitpath(const char *path, char *dir_part, char *file_part)
 			if (dir_part != NULL) {
 				int len = p - path;
 				if (p == path || (p == path + 2 && path[1] == ':'))
-					/* root dir: include DIR_SEP_CHAR in dir_part */
+					/* root dir: include Util_DIR_SEP_CHAR in dir_part */
 					len++;
 				memcpy(dir_part, path, len);
 				dir_part[len] = '\0';
@@ -264,7 +271,7 @@ void Util_splitpath(const char *path, char *dir_part, char *file_part)
 			return;
 		}
 	}
-	/* no DIR_SEP_CHAR: current dir */
+	/* no Util_DIR_SEP_CHAR: current dir */
 	if (dir_part != NULL)
 		dir_part[0] = '\0';
 	if (file_part != NULL)
@@ -278,11 +285,11 @@ void Util_catpath(char *result, const char *path1, const char *path2)
 #else
 	sprintf(result,
 #endif
-		path1[0] == '\0' || path2[0] == DIR_SEP_CHAR || path1[strlen(path1) - 1] == DIR_SEP_CHAR
-#ifdef BACK_SLASH
+		path1[0] == '\0' || path2[0] == Util_DIR_SEP_CHAR || path1[strlen(path1) - 1] == Util_DIR_SEP_CHAR
+#ifdef DIR_SEP_BACKSLASH
 		 || path2[0] == '/' || path1[strlen(path1) - 1] == '/'
 #endif
-			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
+			? "%s%s" : "%s" Util_DIR_SEP_STR "%s", path1, path2);
 }
 
 int Util_fileexists(const char *filename)
@@ -351,9 +358,6 @@ FILE *Util_uniqopen(char *filename, const char *mode)
 	   to be deleted when we close it, and we need the filename. */
 
 #if defined(HAVE_MKSTEMP) && defined(HAVE_FDOPEN)
-#ifdef __STRICT_ANSI__
-	FILE *fdopen(int fildes, const char *mode); /* suppress -ansi -pedantic warning with GCC */
-#endif
 	/* this is the only implementation without a race condition */
 	strcpy(filename, "a8XXXXXX");
 	/* mkstemp() modifies the 'X'es and returns an open descriptor */

@@ -1,5 +1,5 @@
-#ifndef _KEYBOARD_H_
-#define _KEYBOARD_H_
+#ifndef KEYBOARD_H_
+#define KEYBOARD_H_
 
 #define SHOWKBCODES	0
 #define KBCODES 	0x100
@@ -18,4 +18,4 @@ HRESULT
 SetDIDwordProperty(LPDIRECTINPUTDEVICE pdev, REFGUID guidProperty,
 		   DWORD dwObject, DWORD dwHow, DWORD dwValue);
 
-#endif /* _KEYBOARD_H_ */
+#endif /* KEYBOARD_H_ */

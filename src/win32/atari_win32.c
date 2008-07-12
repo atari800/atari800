@@ -32,6 +32,7 @@
 
 #include "atari.h"
 #include "input.h"
+#include "akey.h"
 #include "log.h"
 #include "monitor.h"
 #include "platform.h"
@@ -70,27 +71,27 @@ static const UBYTE joydefs[] =
 
 static const UBYTE joymask[] =
 {
-	STICK_CENTRE,  /* not used */
-	STICK_UL,      /* up/left */
-	STICK_FORWARD, /* up */
-	STICK_UR,      /* up/right */
-	STICK_LEFT,    /* left */
-	STICK_RIGHT,   /* right */
-	STICK_LL,      /* down/left */
-	STICK_BACK,    /* down */
-	STICK_LR,      /* down/right */
+	INPUT_STICK_CENTRE,  /* not used */
+	INPUT_STICK_UL,      /* up/left */
+	INPUT_STICK_FORWARD, /* up */
+	INPUT_STICK_UR,      /* up/right */
+	INPUT_STICK_LEFT,    /* left */
+	INPUT_STICK_RIGHT,   /* right */
+	INPUT_STICK_LL,      /* down/left */
+	INPUT_STICK_BACK,    /* down */
+	INPUT_STICK_LR,      /* down/right */
 #ifdef USE_CURSORBLOCK
-	STICK_FORWARD, /* up */
-	STICK_LEFT,    /* left */
-	STICK_RIGHT,   /* right */
-	STICK_BACK,    /* down */
+	INPUT_STICK_FORWARD, /* up */
+	INPUT_STICK_LEFT,    /* left */
+	INPUT_STICK_RIGHT,   /* right */
+	INPUT_STICK_BACK,    /* down */
 #endif
 };
 
 static int trig0 = 1;
 static int trig1 = 1;
-static int stick0 = STICK_CENTRE;
-static int stick1 = STICK_CENTRE;
+static int stick0 = INPUT_STICK_CENTRE;
+static int stick1 = INPUT_STICK_CENTRE;
 
 #define KBSCAN(name) \
 		case DIK_##name: \
@@ -136,13 +137,13 @@ static int Atari_Win32_keys(void)
 			keycode |= AKEY_RIGHT;
 			break;
 		case DIK_DELETE:
-			if (key_shift)
+			if (INPUT_key_shift)
 				keycode = AKEY_DELETE_LINE;
 			else
 				keycode |= AKEY_DELETE_CHAR;
 			break;
 		case DIK_INSERT:
-			if (key_shift)
+			if (INPUT_key_shift)
 				keycode = AKEY_INSERT_LINE;
 			else
 				keycode |= AKEY_INSERT_CHAR;
@@ -299,15 +300,15 @@ static int Atari_Win32_keys(void)
  	return keycode;
  }
 
- int Atari_Keyboard(void)
+ int PLATFORM_Keyboard(void)
 {
 	int keycode;
 	int i;
 
 	prockb();
 
-	stick0 = STICK_CENTRE;
-	stick1 = STICK_CENTRE;
+	stick0 = INPUT_STICK_CENTRE;
+	stick1 = INPUT_STICK_CENTRE;
 	if (kbjoy) {
 		/* fire */
 #ifdef USE_CURSORBLOCK
@@ -330,42 +331,42 @@ static int Atari_Win32_keys(void)
 		}
 	}
 
-	key_consol = (kbhits[DIK_F2] ? 0 : CONSOL_OPTION)
-	           + (kbhits[DIK_F3] ? 0 : CONSOL_SELECT)
-	           + (kbhits[DIK_F4] ? 0 : CONSOL_START);
+	INPUT_key_consol = (kbhits[DIK_F2] ? 0 : INPUT_CONSOL_OPTION)
+	           + (kbhits[DIK_F3] ? 0 : INPUT_CONSOL_SELECT)
+	           + (kbhits[DIK_F4] ? 0 : INPUT_CONSOL_START);
 
 	if (pause_hit) {
 		pause_hit = 0;
 		return AKEY_BREAK;
 	}
 
-	key_shift = (kbhits[DIK_LSHIFT] | kbhits[DIK_RSHIFT]) ? 1 : 0;
+	INPUT_key_shift = (kbhits[DIK_LSHIFT] | kbhits[DIK_RSHIFT]) ? 1 : 0;
 
 	if (kbhits[DIK_LMENU]) { /* left Alt key is pressed */
 		switch (kbcode) {
 		case DIK_R:
-			alt_function = MENU_RUN;       /* ALT+R .. Run file */
+			UI_alt_function = UI_MENU_RUN;       /* ALT+R .. Run file */
 			return AKEY_UI;
 		case DIK_Y:
-			alt_function = MENU_SYSTEM;    /* ALT+Y .. Select system */
+			UI_alt_function = UI_MENU_SYSTEM;    /* ALT+Y .. Select system */
 			return AKEY_UI;
 		case DIK_O:
-			alt_function = MENU_SOUND;     /* ALT+O .. mono/stereo sound */
+			UI_alt_function = UI_MENU_SOUND;     /* ALT+O .. mono/stereo sound */
 			return AKEY_UI;
 		case DIK_A:
-			alt_function = MENU_ABOUT;     /* ALT+A .. About */
+			UI_alt_function = UI_MENU_ABOUT;     /* ALT+A .. About */
 			return AKEY_UI;
 		case DIK_S:
-			alt_function = MENU_SAVESTATE; /* ALT+S .. Save state */
+			UI_alt_function = UI_MENU_SAVESTATE; /* ALT+S .. Save state */
 			return AKEY_UI;
 		case DIK_D:
-			alt_function = MENU_DISK;      /* ALT+D .. Disk management */
+			UI_alt_function = UI_MENU_DISK;      /* ALT+D .. Disk management */
 			return AKEY_UI;
 		case DIK_L:
-			alt_function = MENU_LOADSTATE; /* ALT+L .. Load state */
+			UI_alt_function = UI_MENU_LOADSTATE; /* ALT+L .. Load state */
 			return AKEY_UI;
 		case DIK_C:
-			alt_function = MENU_CARTRIDGE; /* ALT+C .. Cartridge management */
+			UI_alt_function = UI_MENU_CARTRIDGE; /* ALT+C .. Cartridge management */
 			return AKEY_UI;
 		case DIK_BACKSLASH:
 			return AKEY_PBI_BB_MENU; /* BLACK BOX */
@@ -378,11 +379,11 @@ static int Atari_Win32_keys(void)
 	case DIK_F1:
 		return AKEY_UI;
 	case DIK_F5:
-		return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
+		return INPUT_key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
 	case DIK_F7:
 		return AKEY_BREAK;
 	case DIK_F8:
-		keycode = Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT;
+		keycode = PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT;
 		kbcode = 0;
 		return keycode;
 	case DIK_F9:
@@ -390,11 +391,11 @@ static int Atari_Win32_keys(void)
 	case DIK_SYSRQ:
 	case DIK_F10:
 		kbcode = 0;
-		return key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
+		return INPUT_key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
 	case DIK_F11:
 		for (i = 0; i < 4; i++) {
-			if (++joy_autofire[i] > 2)
-				joy_autofire[i] = 0;
+			if (++INPUT_joy_autofire[i] > 2)
+				INPUT_joy_autofire[i] = 0;
 		}
 		kbcode = 0;
 		return AKEY_NONE;
@@ -409,8 +410,8 @@ static int Atari_Win32_keys(void)
 		break;
 	}
 
-	if (machine_type == MACHINE_5200 && !ui_is_active) {
-		keycode = (key_shift ? 0x40 : 0);
+	if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active) {
+		keycode = (INPUT_key_shift ? 0x40 : 0);
 		switch (kbcode) {
 		case DIK_F4:
 			return AKEY_5200_START + keycode;
@@ -421,13 +422,13 @@ static int Atari_Win32_keys(void)
 		KBSCAN_5200(1)
 		KBSCAN_5200(2)
 		case DIK_3:
-			return key_shift ? AKEY_5200_HASH : AKEY_5200_3;
+			return INPUT_key_shift ? AKEY_5200_HASH : AKEY_5200_3;
 		KBSCAN_5200(4)
 		KBSCAN_5200(5)
 		KBSCAN_5200(6)
 		KBSCAN_5200(7)
 		case DIK_8:
-			return key_shift ? AKEY_5200_ASTERISK : AKEY_5200_8;
+			return INPUT_key_shift ? AKEY_5200_ASTERISK : AKEY_5200_8;
 		KBSCAN_5200(9)
 		KBSCAN_5200(0)
 		case DIK_EQUALS:
@@ -442,14 +443,14 @@ static int Atari_Win32_keys(void)
 		return Atari_Win32_keys();
 
 	/* need to set shift mask here to avoid conflict with PC layout */
-	keycode = (key_shift ? 0x40 : 0)
+	keycode = (INPUT_key_shift ? 0x40 : 0)
 	        + ((kbhits[DIK_LCONTROL] | kbhits[DIK_RCONTROL]) ? 0x80 : 0);
 
 	switch (kbcode) {
 	KBSCAN(ESCAPE)
 	KBSCAN(1)
 	case DIK_2:
-		if (key_shift && !(keycode & AKEY_CTRL))
+		if (INPUT_key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_AT;
 		else
 			keycode |= AKEY_2;
@@ -458,19 +459,19 @@ static int Atari_Win32_keys(void)
 	KBSCAN(4)
 	KBSCAN(5)
 	case DIK_6:
-		if (key_shift && !(keycode & AKEY_CTRL))
+		if (INPUT_key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_CARET;
 		else
 			keycode |= AKEY_6;
 		break;
 	case DIK_7:
-		if (key_shift && !(keycode & AKEY_CTRL))
+		if (INPUT_key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_AMPERSAND;
 		else
 			keycode |= AKEY_7;
 		break;
 	case DIK_8:
-		if (key_shift && !(keycode & AKEY_CTRL))
+		if (INPUT_key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_ASTERISK;
 		else
 			keycode |= AKEY_8;
@@ -479,7 +480,7 @@ static int Atari_Win32_keys(void)
 	KBSCAN(0)
 	KBSCAN(MINUS)
 	case DIK_EQUALS:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_PLUS;
 		else
 			keycode |= AKEY_EQUAL;
@@ -514,7 +515,7 @@ static int Atari_Win32_keys(void)
 	KBSCAN(L)
 	KBSCAN(SEMICOLON)
 	case DIK_APOSTROPHE:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_DBLQUOTE;
 		else
 			keycode |= AKEY_QUOTE;
@@ -525,7 +526,7 @@ static int Atari_Win32_keys(void)
 	case DIK_BACKSLASH:
 		if (keycode & AKEY_CTRL)
 			keycode |= AKEY_ESCAPE;
-		else if (key_shift)
+		else if (INPUT_key_shift)
 			keycode = AKEY_BAR;
 		else
 			keycode |= AKEY_BACKSLASH;
@@ -538,13 +539,13 @@ static int Atari_Win32_keys(void)
 	KBSCAN(N)
 	KBSCAN(M)
 	case DIK_COMMA:
-		if (key_shift && !(keycode & AKEY_CTRL))
+		if (INPUT_key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_LESS;
 		else
 			keycode |= AKEY_COMMA;
 		break;
 	case DIK_PERIOD:
-		if (key_shift && !(keycode & AKEY_CTRL))
+		if (INPUT_key_shift && !(keycode & AKEY_CTRL))
 			keycode = AKEY_GREATER;
 		else
 			keycode |= AKEY_FULLSTOP;
@@ -553,25 +554,25 @@ static int Atari_Win32_keys(void)
 	KBSCAN(SPACE)
 	KBSCAN(CAPSLOCK)
 	case DIK_UP:
-		keycode ^= (key_shift ? AKEY_MINUS : AKEY_UP);
+		keycode ^= (INPUT_key_shift ? AKEY_MINUS : AKEY_UP);
 		break;
 	case DIK_DOWN:
-		keycode ^= (key_shift ? AKEY_EQUAL : AKEY_DOWN);
+		keycode ^= (INPUT_key_shift ? AKEY_EQUAL : AKEY_DOWN);
 		break;
 	case DIK_LEFT:
-		keycode ^= (key_shift ? AKEY_PLUS : AKEY_LEFT);
+		keycode ^= (INPUT_key_shift ? AKEY_PLUS : AKEY_LEFT);
 		break;
 	case DIK_RIGHT:
-		keycode ^= (key_shift ? AKEY_ASTERISK : AKEY_RIGHT);
+		keycode ^= (INPUT_key_shift ? AKEY_ASTERISK : AKEY_RIGHT);
 		break;
 	case DIK_DELETE:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode |= AKEY_DELETE_LINE;
 		else
 			keycode |= AKEY_DELETE_CHAR;
 		break;
 	case DIK_INSERT:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode |= AKEY_INSERT_LINE;
 		else
 			keycode |= AKEY_INSERT_CHAR;
@@ -590,7 +591,7 @@ static int Atari_Win32_keys(void)
 	return keycode;
 }
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -644,12 +645,12 @@ void Atari_Initialise(int *argc, char *argv[])
 
 	trig0 = 1;
 	stick0 = 15;
-	key_consol = CONSOL_NONE;
+	INPUT_key_consol = INPUT_CONSOL_NONE;
 
 	ShowWindow(hWndMain, SW_RESTORE);
 }
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	Log_flushlog();
 
@@ -659,7 +660,7 @@ int Atari_Exit(int run_monitor)
 		Sound_Pause();
 #endif
 		ShowWindow(hWndMain, SW_MINIMIZE);
-		i = Monitor_Run();
+		i = MONITOR_Run();
 		ShowWindow(hWndMain, SW_RESTORE);
 #ifdef SOUND
 		Sound_Continue();
@@ -671,19 +672,19 @@ int Atari_Exit(int run_monitor)
 	return FALSE;
 }
 
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
 	refreshv((UBYTE *) Screen_atari + 24);
 }
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 	if (num == 0)
 		return (stick1 << 4) | stick0;
 	return 0xff;
 }
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 	switch (num) {
 	case 0:

@@ -45,8 +45,8 @@
 
 static UBYTE *voicerom;
 static UBYTE *diskrom;
-static char xld_d_rom_filename[FILENAME_MAX] = FILENAME_NOT_SET;
-static char xld_v_rom_filename[FILENAME_MAX] = FILENAME_NOT_SET;
+static char xld_d_rom_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
+static char xld_v_rom_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
 
 static UBYTE votrax_latch = 0;
 static UBYTE modem_latch = 0;
@@ -80,8 +80,8 @@ static int bit16;
 SWORD *temp_votrax_buffer = NULL;
 SWORD *votrax_buffer = NULL;
 static int votrax_busy = FALSE;
-volatile static int votrax_written = FALSE;
-volatile static int votrax_written_byte = 0x3f;
+static volatile int votrax_written = FALSE;
+static volatile int votrax_written_byte = 0x3f;
 static int votrax_sync_samples;
 static void votrax_busy_callback(int busy_status);
 static int dsprate;
@@ -184,7 +184,7 @@ void PBI_XLD_Reset(void)
 	votrax_latch = 0;
 }
 
-int PBI_XLD_D1_GetByte(UWORD addr)
+int PBI_XLD_D1GetByte(UWORD addr)
 {
 	int result = PBI_NOT_HANDLED;
 	if (xld_d_enabled && addr == 0xd114) {
@@ -197,7 +197,7 @@ int PBI_XLD_D1_GetByte(UWORD addr)
 
 
 /* D1FF: each bit indicates IRQ status of a device */
-UBYTE PBI_XLD_D1FF_GetByte()
+UBYTE PBI_XLD_D1ffGetByte()
 {
 	UBYTE result = 0;
 	/* VOTRAX BUSY IRQ bit */
@@ -209,7 +209,7 @@ UBYTE PBI_XLD_D1FF_GetByte()
 }
 
 
-void PBI_XLD_D1_PutByte(UWORD addr, UBYTE byte)
+void PBI_XLD_D1PutByte(UWORD addr, UBYTE byte)
 {
 	if ((addr & ~3) == 0xd104)  {
 		/* XLD disk strobe line */
@@ -228,13 +228,13 @@ void PBI_XLD_D1_PutByte(UWORD addr, UBYTE byte)
 		if ( !(votrax_latch & 0x80) && (byte & 0x80) && (!Votrax_GetStatus())) {
 			/* IRQ disabled -> enabled, and votrax idle: generate IRQ */
 			D(printf("votrax IRQ generated: IRQ enable changed and idle\n"));
-			GenerateIRQ();
+			CPU_GenerateIRQ();
 			PBI_IRQ |= VOICE_MASK;
 		} else if ((votrax_latch & 0x80) && !(byte & 0x80) ){
 			/* IRQ enabled -> disabled : stop IRQ */
 			PBI_IRQ &= ~VOICE_MASK;
 			/* update pokey IRQ status */
-			POKEY_PutByte(_IRQEN, IRQEN);
+			POKEY_PutByte(POKEY_OFFSET_IRQEN, POKEY_IRQEN);
 		}
 		votrax_latch = byte;
 	}
@@ -263,19 +263,19 @@ void PBI_XLD_D1_PutByte(UWORD addr, UBYTE byte)
 	}
 }
 
-int PBI_XLD_D1FF_PutByte(UBYTE byte)
+int PBI_XLD_D1ffPutByte(UBYTE byte)
 {
 	int result = 0; /* handled */
 	if (xld_d_enabled && byte == DISK_MASK) {
-		memcpy(memory + 0xd800, diskrom, 0x800);
+		memcpy(MEMORY_mem + 0xd800, diskrom, 0x800);
 		D(printf("DISK rom activated\n"));
 	} 
 	else if (byte == MODEM_MASK) {
-		memcpy(memory + 0xd800, voicerom + 0x800, 0x800);
+		memcpy(MEMORY_mem + 0xd800, voicerom + 0x800, 0x800);
 		D(printf("MODEM rom activated\n"));
 	} 
 	else if (byte == VOICE_MASK) { 
-		memcpy(memory + 0xd800, voicerom, 0x800);
+		memcpy(MEMORY_mem + 0xd800, voicerom, 0x800);
 		D(printf("VOICE rom activated\n"));
 	}
 	else result = PBI_NOT_HANDLED;
@@ -287,14 +287,14 @@ static void votrax_busy_callback(int busy_status)
 	if (!busy_status && (votrax_latch & 0x80)){
 		/* busy->idle and IRQ enabled */
 		D(printf("votrax IRQ generated\n"));
-		GenerateIRQ();		
+		CPU_GenerateIRQ();		
 		PBI_IRQ |= VOICE_MASK;
 	}
 	else if (busy_status && (PBI_IRQ & VOICE_MASK)) {
 		/* idle->busy and PBI_IRQ set */
 		PBI_IRQ &= ~VOICE_MASK;
 		/* update pokey IRQ status */
-		POKEY_PutByte(_IRQEN, IRQEN);
+		POKEY_PutByte(POKEY_OFFSET_IRQEN, POKEY_IRQEN);
 	}
 }
 
@@ -409,11 +409,11 @@ static int PIO_GetByte(void)
 			if (DataIndex >= ExpectedBytes) {
 				TransferStatus = PIO_NoFrame;
 			}
-			else {
+			/*else {*/
 				/* set delay using the expected transfer speed */
 				/*DELAYED_SERIN_IRQ = (DataIndex == 1) ? SERIN_INTERVAL*/
 					/*: ((SERIN_INTERVAL * AUDF[CHAN3] - 1) / 0x28 + 1);*/
-			}
+			/*}*/
 		}
 		else {
 			Log_print("Invalid read frame!");
@@ -426,12 +426,12 @@ static int PIO_GetByte(void)
 			if (DataIndex >= ExpectedBytes) {
 				TransferStatus = PIO_NoFrame;
 			}
-			else {
+			/*else {
 				if (DataIndex == 0)
-				;	/*DELAYED_SERIN_IRQ = SERIN_INTERVAL + ACK_INTERVAL;*/
+					DELAYED_SERIN_IRQ = SERIN_INTERVAL + ACK_INTERVAL;
 				else
-				;	/*DELAYED_SERIN_IRQ = SERIN_INTERVAL;*/
-			}
+					DELAYED_SERIN_IRQ = SERIN_INTERVAL;
+			}*/
 		}
 		else {
 			Log_print("Invalid read frame!");
@@ -627,12 +627,12 @@ static UBYTE PIO_Command_Frame(void)
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
-		/*if (SIO_drive_status[unit]==Off) SIO_drive_status[unit]=NoDisk;*/
-		/*need to modify the line below also for  Off==NoDisk*/
+		/*if (SIO_drive_status[unit]==SIO_OFF) SIO_drive_status[unit]=SIO_NO_DISK;*/
+		/*need to modify the line below also for  SIO_OFF==SIO_NO_DISK*/
 		DataBuffer[0] = SIO_DriveStatus(unit, DataBuffer + 1);
 		DataBuffer[2] = 0xff;/*/1;//SIO_DriveStatus(unit, DataBuffer + 1);*/
-		if (SIO_drive_status[unit]==NoDisk || SIO_drive_status[unit]==Off){
-		/*Can't turn 1450XLD drives off, so make Off==NoDisk*/
+		if (SIO_drive_status[unit]==SIO_NO_DISK || SIO_drive_status[unit]==SIO_OFF){
+		/*Can't turn 1450XLD drives off, so make SIO_OFF==SIO_NO_DISK*/
 			DataBuffer[2]=0x7f;
 		}
 		DataBuffer[1 + 4] = SIO_ChkSum(DataBuffer + 1, 4);
@@ -693,8 +693,8 @@ static UBYTE PIO_Command_Frame(void)
 	}
 }
 
-/* called from Pokey_sound_init */
-void PBI_XLD_V_Init(int playback_freq, int n_pokeys, int b16)
+/* called from POKEYSND_Init */
+void PBI_XLD_VInit(int playback_freq, int n_pokeys, int b16)
 {
 	static struct Votrax_interface vi;
 	int temp_votrax_buffer_size;
@@ -703,7 +703,7 @@ void PBI_XLD_V_Init(int playback_freq, int n_pokeys, int b16)
 	num_pokeys = n_pokeys;
 	if (!xld_v_enabled) return;
 	if (num_pokeys != 1 && num_pokeys != 2) {
-		Log_print("PBI_XLD_V_Init: cannot handle num_pokeys=%d", num_pokeys);
+		Log_print("PBI_XLD_VInit: cannot handle num_pokeys=%d", num_pokeys);
 		xld_v_enabled = FALSE;
 		return;
 	}
@@ -711,7 +711,7 @@ void PBI_XLD_V_Init(int playback_freq, int n_pokeys, int b16)
 	vi.BusyCallback = votrax_busy_callback_async;
 	Votrax_Stop();
 	Votrax_Start((void *)&vi);
-	samples_per_frame = dsprate/(tv_mode == TV_PAL ? 50 : 60);
+	samples_per_frame = dsprate/(Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60);
 	ratio = (double)VTRX_RATE/(double)dsprate;
 	temp_votrax_buffer_size = (int)(VTRX_BLOCK_SIZE*ratio + 10); /* +10 .. little extra? */
 	free(temp_votrax_buffer);
@@ -830,7 +830,7 @@ static void mix8(UBYTE *dst, SWORD *src, int sndn, int volume)
 	}
 }
 
-void PBI_XLD_V_Frame(void)
+void PBI_XLD_VFrame(void)
 {
 	if (!xld_v_enabled) return;
 	votrax_sync_samples -= samples_per_frame;
@@ -841,7 +841,7 @@ void PBI_XLD_V_Frame(void)
 	}
 }
 
-void PBI_XLD_V_Process(void *sndbuffer, int sndn)
+void PBI_XLD_VProcess(void *sndbuffer, int sndn)
 {
 	if (!xld_v_enabled) return;
 
@@ -859,7 +859,9 @@ void PBI_XLD_V_Process(void *sndbuffer, int sndn)
 	}
 }
 
-void PBI_XLDStateSave(void)
+#ifndef BASIC
+
+void PBI_XLD_StateSave(void)
 {
 	StateSav_SaveINT(&PBI_XLD_enabled, 1);
 	if (PBI_XLD_enabled) {
@@ -880,7 +882,7 @@ void PBI_XLDStateSave(void)
 	}
 }
 
-void PBI_XLDStateRead(void)
+void PBI_XLD_StateRead(void)
 {
 	StateSav_ReadINT(&PBI_XLD_enabled, 1);
 	if (PBI_XLD_enabled) {
@@ -891,7 +893,7 @@ void PBI_XLDStateRead(void)
 		StateSav_ReadFNAME(xld_v_rom_filename);
 		if (xld_v_enabled) {
 			init_xld_v();
-			if (dsprate) PBI_XLD_V_Init(dsprate, num_pokeys, bit16);
+			if (dsprate) PBI_XLD_VInit(dsprate, num_pokeys, bit16);
 		}
 		if (xld_d_enabled) init_xld_d();
 		StateSav_ReadUBYTE(&votrax_latch, 1);
@@ -910,6 +912,7 @@ void PBI_XLDStateRead(void)
 	}
 }
 
+#endif /* #ifndef BASIC */
 
 /*
 vim:ts=4:sw=4:

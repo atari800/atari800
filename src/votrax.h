@@ -1,5 +1,5 @@
-#ifndef VOTRAX_H
-#define VOTRAX_H
+#ifndef VOTRAX_H_
+#define VOTRAX_H_
 
 #include "atari.h"
 
@@ -20,4 +20,4 @@ UBYTE Votrax_GetStatus(void);
 void Votrax_Update(int num, SWORD *buffer, int length);
 int Votrax_Samples(int currentP, int nextP, int cursamples);
 
-#endif
+#endif /* VOTRAX_H_ */

@@ -1,5 +1,5 @@
-#ifndef _VGA_GFX_H_
-#define _VGA_GFX_H_
+#ifndef VGA_GFX_H_
+#define VGA_GFX_H_
 
 #include "atari.h"
 
@@ -43,4 +43,4 @@ extern void make_darker(void *target,void *source,int bytes);
 /*vertical retrace control*/
 extern void v_ret(void);
 
-#endif /* _VGA_GFX_H_ */
+#endif /* VGA_GFX_H_ */

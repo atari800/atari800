@@ -183,9 +183,9 @@ extern void dc_set_baud(int baud);
 #include "memory.h"
 #include "util.h"
 
-#define Peek(a)    dGetByte(a)
-#define DPeek(a)   dGetWord(a)
-#define Poke(x,y)  dPutByte(x, y)
+#define Peek(a)    MEMORY_dGetByte(a)
+#define DPeek(a)   MEMORY_dGetWord(a)
+#define Poke(x,y)  MEMORY_dPutByte(x, y)
 
 /*---------------------------------------------------------------------------
   Global Variables
@@ -257,8 +257,8 @@ static void xio_34(void)
 #endif /* R_SERIAL */
   /*int status;*/
 
-  /*fid = dGetByte(0x2e) >> 4;*/
-  temp = dGetByte(Devices_ICAX1Z);
+  /*fid = MEMORY_dGetByte(0x2e) >> 4;*/
+  temp = MEMORY_dGetByte(Devices_ICAX1Z);
 
 #ifdef R_SERIAL
   if(RDevice_serial_enabled)
@@ -357,8 +357,8 @@ static void xio_36(void)
   struct termios options;
 #endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
-  aux1 = dGetByte(Devices_ICAX1Z);
-  aux2 = dGetByte(Devices_ICAX2Z);
+  aux1 = MEMORY_dGetByte(Devices_ICAX1Z);
+  aux2 = MEMORY_dGetByte(Devices_ICAX2Z);
 
 #ifdef R_SERIAL
   if(RDevice_serial_enabled)
@@ -915,7 +915,7 @@ static void RDevice_GetInetAddress(void)
 
   p = inetaddress;
   while (p < inetaddress + sizeof(inetaddress) - 1) {
-    char c = (char) dGetByte(bufadr);
+    char c = (char) MEMORY_dGetByte(bufadr);
     if (c < '!' || c > '\x7e')
       break;
     if (c >= 'A' && c <= 'Z')
@@ -945,7 +945,7 @@ void RDevice_OPEN(void)
 
   port = Peek(Devices_ICAX2Z);
   direction = Peek(Devices_ICAX1Z);
-  devnum = dGetByte(Devices_ICDNOZ);
+  devnum = MEMORY_dGetByte(Devices_ICDNOZ);
   if(direction & 0x04)
   {
     DBG_APRINT("R*: Open for Reading...");
@@ -1213,7 +1213,7 @@ void RDevice_STAT(void)
   { /* Hack for Ice-T Terminal program to work! */
     Poke(764, 255);
   }
-  devnum = dGetByte(Devices_ICDNOZ);
+  devnum = MEMORY_dGetByte(Devices_ICDNOZ);
 
 #ifdef R_NETWORK
   if(connected == 0)

@@ -1,5 +1,5 @@
-#ifndef _XEP80_H_
-#define _XEP80_H_
+#ifndef XEP80_H_
+#define XEP80_H_
 
 #include "config.h"
 #include "atari.h"
@@ -28,8 +28,8 @@ extern int XEP80_last_row;
 UBYTE XEP80_GetBit(void);
 void XEP80_PutBit(UBYTE byte);
 void XEP80_ChangeColors(void);
-void XEP80StateSave(void);
-void XEP80StateRead(void);
+void XEP80_StateSave(void);
+void XEP80_StateRead(void);
 void XEP80_Initialise(int *argc, char *argv[]);
 
-#endif /* _XEP80_H_ */
+#endif /* XEP80_H_ */

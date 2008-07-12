@@ -339,7 +339,7 @@ extern "C" int gron(int *argc, char *argv[])
 	geom[0].pixelstep = gxdp.cbxPitch;
 	geom[0].xSkipMask = gxdp.cxWidth < 320 ? 0x00000003 : 0xffffffff;
 	geom[0].xLimit = 320; // skip 1/4
-	geom[0].lineLimit = ATARI_WIDTH*240;
+	geom[0].lineLimit = Screen_WIDTH*240;
 	
 	// left handed landscape
 	geom[1].width = gxdp.cyHeight; // 320
@@ -350,7 +350,7 @@ extern "C" int gron(int *argc, char *argv[])
 	geom[1].pixelstep = -gxdp.cbyPitch;
 	geom[1].xSkipMask = 0xffffffff;
 	geom[1].xLimit = 320; // no skip
-	geom[1].lineLimit = ATARI_WIDTH*240;
+	geom[1].lineLimit = Screen_WIDTH*240;
 	
 	// right handed landscape
 	geom[2].width = gxdp.cyHeight; // 320
@@ -361,7 +361,7 @@ extern "C" int gron(int *argc, char *argv[])
 	geom[2].pixelstep = gxdp.cbyPitch;
 	geom[2].xSkipMask = 0xffffffff;
 	geom[2].xLimit = 320; // no skip
-	geom[2].lineLimit = ATARI_WIDTH*240;
+	geom[2].lineLimit = Screen_WIDTH*240;
 
 	/* Fine tune the selection of blit routines */ 
 	if ((gxdp.cxWidth == 176) & (gxdp.cyHeight == 220) & (pRefresh == hicolor_Refresh))
@@ -675,7 +675,7 @@ void mono_Refresh(UBYTE * scr_ptr)
 			dirty_ptr;
 
 			/* Internal pixel loops */
-			if(skipmask == 3 && (smooth_filter || ui_is_active) && gxdp.cBPP >= 4)
+			if(skipmask == 3 && (smooth_filter || UI_is_active) && gxdp.cBPP >= 4)
 			{
 				while(scr_ptr < scr_ptr_limit)
 				{
@@ -746,9 +746,9 @@ void mono_Refresh(UBYTE * scr_ptr)
 
 					ADVANCE_PARTIAL(scraddr, linestep);
 
-					scr_ptr += ATARI_WIDTH;
-					src_limit += ATARI_WIDTH;
-					dirty_ptr_line += ATARI_WIDTH/8;
+					scr_ptr += Screen_WIDTH;
+					src_limit += Screen_WIDTH;
+					dirty_ptr_line += Screen_WIDTH/8;
 				}
 			}
 			else if(skipmask == 0x00000003)
@@ -785,9 +785,9 @@ void mono_Refresh(UBYTE * scr_ptr)
 
 					ADVANCE_PARTIAL(scraddr, linestep);
 
-					scr_ptr += ATARI_WIDTH;
-					src_limit += ATARI_WIDTH;
-					dirty_ptr_line += ATARI_WIDTH/8;
+					scr_ptr += Screen_WIDTH;
+					src_limit += Screen_WIDTH;
+					dirty_ptr_line += Screen_WIDTH/8;
 				}
 			}
 			else if(skipmask == 0xffffffff) /* sanity check */
@@ -828,9 +828,9 @@ void mono_Refresh(UBYTE * scr_ptr)
 
 					ADVANCE_PARTIAL(scraddr, linestep);
 
-					scr_ptr += ATARI_WIDTH;
-					src_limit += ATARI_WIDTH;
-					dirty_ptr_line += ATARI_WIDTH/8;
+					scr_ptr += Screen_WIDTH;
+					src_limit += Screen_WIDTH;
+					dirty_ptr_line += Screen_WIDTH/8;
 				}
 			}
 		}
@@ -898,9 +898,9 @@ void mono_Refresh(UBYTE * scr_ptr)
 
 						scraddr += linestep;
 
-						scr_ptr += ATARI_WIDTH;
-						src_limit += ATARI_WIDTH;
-						dirty_ptr_line += ATARI_WIDTH/8;
+						scr_ptr += Screen_WIDTH;
+						src_limit += Screen_WIDTH;
+						dirty_ptr_line += Screen_WIDTH/8;
 					}
 				}
 				else
@@ -946,9 +946,9 @@ void mono_Refresh(UBYTE * scr_ptr)
 
 						scraddr += linestep;
 
-						scr_ptr += ATARI_WIDTH;
-						src_limit += ATARI_WIDTH;
-						dirty_ptr_line += ATARI_WIDTH/8;
+						scr_ptr += Screen_WIDTH;
+						src_limit += Screen_WIDTH;
+						dirty_ptr_line += Screen_WIDTH/8;
 					}
 				}
 			}
@@ -1005,9 +1005,9 @@ void mono_Refresh(UBYTE * scr_ptr)
 
 						scraddr += linestep;
 
-						scr_ptr += ATARI_WIDTH;
-						src_limit += ATARI_WIDTH;
-						dirty_ptr_line += ATARI_WIDTH/8;
+						scr_ptr += Screen_WIDTH;
+						src_limit += Screen_WIDTH;
+						dirty_ptr_line += Screen_WIDTH/8;
 					}
 				}
 				else
@@ -1059,9 +1059,9 @@ void mono_Refresh(UBYTE * scr_ptr)
 
 						scraddr += linestep;
 
-						scr_ptr += ATARI_WIDTH;
-						src_limit += ATARI_WIDTH;
-						dirty_ptr_line += ATARI_WIDTH/8;
+						scr_ptr += Screen_WIDTH;
+						src_limit += Screen_WIDTH;
+						dirty_ptr_line += Screen_WIDTH/8;
 					}
 				}
 			}
@@ -1082,7 +1082,7 @@ void palette_Refresh(UBYTE* scr_ptr)
 /* Addressing withing Screen_dirty array. This implementation assumes that the
    array does not get reallocated in runtime */
 	static UBYTE* screen_dirty_ptr;
-	static UBYTE* screen_dirty_limit = Screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+	static UBYTE* screen_dirty_limit = Screen_dirty + Screen_HEIGHT*Screen_WIDTH/8;
 
 /* Source base pointer */
 	static UBYTE* screen_line_ptr;
@@ -1165,10 +1165,10 @@ void palette_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 				}
 
@@ -1198,10 +1198,10 @@ void palette_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 				}
 
@@ -1224,7 +1224,7 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 /* Addressing withing Screen_dirty array. This implementation assumes that the
    array does not get reallocated in runtime */
 	static UBYTE* screen_dirty_ptr;
-	static UBYTE* screen_dirty_limit = Screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+	static UBYTE* screen_dirty_limit = Screen_dirty + Screen_HEIGHT*Screen_WIDTH/8;
 
 /* Source base pointer */
 	static UBYTE* screen_line_ptr;
@@ -1307,17 +1307,17 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 				}
 
 				screen_dirty_ptr ++;
 			}
 		}
-		else if(smooth_filter || ui_is_active)
+		else if(smooth_filter || UI_is_active)
 		{
 		/* The most complex version of the internal loop does 3/4 linear filtering */
 			while(screen_dirty_ptr < screen_dirty_limit)
@@ -1386,10 +1386,10 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 				}
 
@@ -1419,10 +1419,10 @@ void hicolor_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 				}
 
@@ -1447,7 +1447,7 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 /* Addressing withing Screen_dirty array. This implementation assumes that the
    array does not get reallocated in runtime */
 	static UBYTE* screen_dirty_ptr;
-	static UBYTE* screen_dirty_limit = Screen_dirty + ATARI_HEIGHT*ATARI_WIDTH/8;
+	static UBYTE* screen_dirty_limit = Screen_dirty + Screen_HEIGHT*Screen_WIDTH/8;
 
 /* Source base pointer */
 	static UBYTE* screen_line_ptr;
@@ -1536,17 +1536,17 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestepdouble;
 				}
 
 				screen_dirty_ptr ++;
 			}
 		}
-		else if(smooth_filter || ui_is_active)
+		else if(smooth_filter || UI_is_active)
 		{
 		/* The most complex version of the internal loop does 3/4 linear filtering */
 			while(screen_dirty_ptr < screen_dirty_limit)
@@ -1611,10 +1611,10 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestepdouble;
 				}
 
@@ -1645,10 +1645,10 @@ void vga_hicolor_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestepdouble;
 				}
 
@@ -1673,7 +1673,7 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
    array does not get reallocated in runtime */
 	static UBYTE* screen_dirty_ptr;
 	static UBYTE* screen_dirty_ptr_nextline;
-	static UBYTE* screen_dirty_limit = Screen_dirty + (ATARI_HEIGHT-10)*ATARI_WIDTH/8;
+	static UBYTE* screen_dirty_limit = Screen_dirty + (Screen_HEIGHT-10)*Screen_WIDTH/8;
 
 /* Source base pointer */
 	static UBYTE* screen_line_ptr;
@@ -1690,8 +1690,8 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 	static UBYTE* src_ptr_next_nextline;
 	static UBYTE* dest_ptr;
 
-	#define SCRYSKIP 10*ATARI_WIDTH;
-	#define DRTYSKIP 10*ATARI_WIDTH/8;
+	#define SCRYSKIP 10*Screen_WIDTH;
+	#define DRTYSKIP 10*Screen_WIDTH/8;
 	static UBYTE linecnt = 0;
 	static long scalepixelstep = (geom[useMode].pixelstep * 11) >> 4;
 	static long scalepixelstephalf = geom[useMode].pixelstep * 5;
@@ -1779,15 +1779,15 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 				xoffset += 16;
 				screen_dirty_ptr ++;
 
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 					if ( (linecnt++ & 3) == 3 )
 					{
-						screen_line_ptr += ATARI_WIDTH;
-						screen_dirty_ptr += ATARI_WIDTH/8;
+						screen_line_ptr += Screen_WIDTH;
+						screen_dirty_ptr += Screen_WIDTH/8;
 					}
 				}
 			}
@@ -1840,7 +1840,7 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 				else
 				{
 					/* average w/ skipped line */
-					screen_dirty_ptr_nextline = screen_dirty_ptr + ATARI_WIDTH/8;
+					screen_dirty_ptr_nextline = screen_dirty_ptr + Screen_WIDTH/8;
 					/* 1/2 */
 					if ( *screen_dirty_ptr | *screen_dirty_ptr_nextline)
 					{
@@ -1849,7 +1849,7 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 							/*     *<**<**<     */
 							dest_ptr = dest_line_ptr + (xoffset-low_limit)*scalepixelstep;
 							src_ptr = screen_line_ptr + xoffset;
-							src_ptr_nextline = src_ptr + ATARI_WIDTH;
+							src_ptr_nextline = src_ptr + Screen_WIDTH;
 							src_ptr_next = src_ptr + 1;
 							src_ptr_next_nextline = src_ptr_nextline + 1;
 
@@ -1884,7 +1884,7 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 							/*     **<**<**     */
 							dest_ptr = dest_line_ptr + (xoffset-low_limit)*scalepixelstep  + scalepixelstephalf;
 							src_ptr = screen_line_ptr + xoffset + 8;
-							src_ptr_nextline = src_ptr + ATARI_WIDTH;
+							src_ptr_nextline = src_ptr + Screen_WIDTH;
 							src_ptr_next = src_ptr + 2;
 							src_ptr_next_nextline = src_ptr_nextline + 2;
 
@@ -1911,15 +1911,15 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 
 				xoffset += 16;
 				screen_dirty_ptr ++;
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 					if ( (linecnt++ & 3) == 3 )
 					{
-						screen_line_ptr += ATARI_WIDTH;
-						screen_dirty_ptr += ATARI_WIDTH/8;
+						screen_line_ptr += Screen_WIDTH;
+						screen_dirty_ptr += Screen_WIDTH/8;
 					}
 				}
 			}
@@ -1946,10 +1946,10 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8;
-				if(xoffset >= ATARI_WIDTH)
+				if(xoffset >= Screen_WIDTH)
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 				}
 
@@ -1977,10 +1977,10 @@ void smartphone_hicolor_Refresh(UBYTE* scr_ptr)
 				}
 
 				xoffset += 8; /* One Screen_dirty item corresponds to 8 pixels */
-				if(xoffset >= ATARI_WIDTH) /* move to the next line */
+				if(xoffset >= Screen_WIDTH) /* move to the next line */
 				{
 					xoffset = 0;
-					screen_line_ptr += ATARI_WIDTH;
+					screen_line_ptr += Screen_WIDTH;
 					dest_line_ptr += linestep;
 				}
 
@@ -2030,9 +2030,9 @@ void overlay_kbd(UBYTE* scr_ptr)
 	if(currentKeyboardMode & 1)
 		scr_ptr += (320-240); /* offset horizontally */
 	if(currentKeyboardMode & 2)
-		scr_ptr += (240-80)*ATARI_WIDTH; /* offset vertically */
+		scr_ptr += (240-80)*Screen_WIDTH; /* offset vertically */
 	
-	scr_ptr_limit = scr_ptr + 80*ATARI_WIDTH;
+	scr_ptr_limit = scr_ptr + 80*Screen_WIDTH;
 	dest_limit = scr_ptr + 240;
 	
 	kbd_image_ptr = kbd_image; /* dword pointer in keyboard bitmap */
@@ -2058,8 +2058,8 @@ void overlay_kbd(UBYTE* scr_ptr)
 			kbd_image_ptr ++;
 			curBit = 1;
 		}
-		scr_ptr += ATARI_WIDTH;
-		dest_limit += ATARI_WIDTH;
+		scr_ptr += Screen_WIDTH;
+		dest_limit += Screen_WIDTH;
 	}
 }
 

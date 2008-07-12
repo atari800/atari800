@@ -52,6 +52,7 @@
 #include "atari.h"
 #include "colours.h"
 #include "input.h"
+#include "akey.h"
 #include "log.h"
 #include "monitor.h"
 #include "screen.h"
@@ -211,7 +212,7 @@ double Atari_time(void)
 void Atari_sleep(double s)
 {
 
-	if (ui_is_active){
+	if (UI_is_active){
 	        int i,ret;
 	        for (i=0;i<s * 100.0;i++){
 	
@@ -279,7 +280,7 @@ void loadModules(void)
 
 }
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 	// Swap Red and Blue components
 	int i;
@@ -310,12 +311,12 @@ void Atari_Initialise(int *argc, char *argv[])
 #endif
 }
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	// TODO: shutdown graphics mode
 	Log_flushlog();
 #if 0
-	if (run_monitor && Monitor_Run()) {
+	if (run_monitor && MONITOR_Run()) {
 		// TODO: reinitialize graphics mode
 		return TRUE;
 	}
@@ -335,11 +336,11 @@ int Atari_Exit(int run_monitor)
 	return FALSE;
 }
 
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
 	GSTEXTURE tex;
-	tex.Width = ATARI_WIDTH;
-	tex.Height = ATARI_HEIGHT;
+	tex.Width = Screen_WIDTH;
+	tex.Height = Screen_HEIGHT;
 	tex.PSM = GS_PSM_T8;
 	tex.Mem = (UBYTE *) Screen_atari;
 	tex.Clut = clut;
@@ -378,13 +379,13 @@ static int PadButtons(void)
 	return ~buttons.btns;
 }
 
-int Atari_Keyboard(void)
+int PLATFORM_Keyboard(void)
 {
 	int new_pad = PadButtons();
 	PS2KbdRawKey key;
-	key_consol = CONSOL_NONE;
+	INPUT_key_consol = INPUT_CONSOL_NONE;
 
-	if (ui_is_active) {
+	if (UI_is_active) {
 		if (new_pad & PAD_CROSS)
 			return AKEY_RETURN;
 		if (new_pad & PAD_CIRCLE)
@@ -402,7 +403,7 @@ int Atari_Keyboard(void)
 		if (new_pad & PAD_R1)
 			return AKEY_WARMSTART;
 	}
-	//PAD_CROSS is used for Atari_TRIG().
+	//PAD_CROSS is used for PLATFORM_TRIG().
 	if (new_pad & PAD_TRIANGLE)
 		return AKEY_UI;
 	if (new_pad & PAD_SQUARE)
@@ -413,19 +414,19 @@ int Atari_Keyboard(void)
 		return AKEY_COLDSTART;
 	if (new_pad & PAD_R1)
 		return AKEY_WARMSTART;
-	if (machine_type == MACHINE_5200) {
+	if (Atari800_machine_type == Atari800_MACHINE_5200) {
 		if (new_pad & PAD_START)
 			return AKEY_5200_START;
 	}
 	else {
 		if (new_pad & PAD_START)
-			key_consol ^= CONSOL_START;
+			INPUT_key_consol ^= INPUT_CONSOL_START;
 		if (new_pad & PAD_SELECT)
-			key_consol ^= CONSOL_SELECT;
+			INPUT_key_consol ^= INPUT_CONSOL_SELECT;
 		if (new_pad & PAD_CROSS)
 			return AKEY_HELP;
 	}
-if (machine_type != MACHINE_5200 || ui_is_active) {
+if (Atari800_machine_type != Atari800_MACHINE_5200 || UI_is_active) {
 
 	while (PS2KbdReadRaw(&key) != 0) {
 		if (key.state == PS2KBD_RAWKEY_DOWN) {
@@ -793,25 +794,25 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 			switch(key.key) {
 			//case dcr ylsa
 			case 0x7:
-				alt_function = MENU_DISK;
+				UI_alt_function = UI_MENU_DISK;
 				return AKEY_UI;
 			case 0x6:
-				alt_function = MENU_CARTRIDGE;
+				UI_alt_function = UI_MENU_CARTRIDGE;
 				return AKEY_UI;
 			case 0x15:
-				alt_function = MENU_RUN;
+				UI_alt_function = UI_MENU_RUN;
 				return AKEY_UI;
 			case 0x1C:
-				alt_function = MENU_SYSTEM;
+				UI_alt_function = UI_MENU_SYSTEM;
 				return AKEY_UI;
 			case 0xF:
-				alt_function = MENU_LOADSTATE;
+				UI_alt_function = UI_MENU_LOADSTATE;
 				return AKEY_UI;
 			case 0x16:
-				alt_function = MENU_SAVESTATE;
+				UI_alt_function = UI_MENU_SAVESTATE;
 				return AKEY_UI;
 			case 0x4:
-				alt_function = MENU_ABOUT;
+				UI_alt_function = UI_MENU_ABOUT;
 				return AKEY_UI;
 			default:
 				break;
@@ -851,24 +852,24 @@ if (machine_type != MACHINE_5200 || ui_is_active) {
 	return AKEY_NONE;
 }
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 	int ret = 0xff;
 	if (num == 0) {
 		int pad = PadButtons();
 		if (pad & PAD_LEFT)
-			ret &= 0xf0 | STICK_LEFT;
+			ret &= 0xf0 | INPUT_STICK_LEFT;
 		if (pad & PAD_RIGHT)
-			ret &= 0xf0 | STICK_RIGHT;
+			ret &= 0xf0 | INPUT_STICK_RIGHT;
 		if (pad & PAD_UP)
-			ret &= 0xf0 | STICK_FORWARD;
+			ret &= 0xf0 | INPUT_STICK_FORWARD;
 		if (pad & PAD_DOWN)
-			ret &= 0xf0 | STICK_BACK;
+			ret &= 0xf0 | INPUT_STICK_BACK;
 	}
 	return ret;
 }
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 	if (num == 0 && PadButtons() & PAD_CROSS)
 		return 0;
@@ -948,7 +949,7 @@ void Sound_Initialise(int *argc, char *argv[])
 		format.channels = 1;
 		audsrv_set_format(&format);
 		audsrv_set_volume(MAX_VOLUME);
-		Pokey_sound_init(FREQ_17_EXACT, 44100, 1, 0);
+		POKEYSND_Init(POKEYSND_FREQ_17_EXACT, 44100, 1, 0);
 	}
 }
 
@@ -960,8 +961,8 @@ void Sound_Exit(void)
 void Sound_Update(void)
 {
 	static char buffer[44100 / 50];
-	unsigned int nsamples = (tv_mode == TV_NTSC) ? (44100 / 60) : (44100 / 50);
-	Pokey_process(buffer, nsamples);
+	unsigned int nsamples = (Atari800_tv_mode == Atari800_TV_NTSC) ? (44100 / 60) : (44100 / 50);
+	POKEYSND_Process(buffer, nsamples);
 	audsrv_wait_audio(nsamples);
 	audsrv_play_audio(buffer, nsamples);
 }
@@ -996,9 +997,9 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	for (;;) {
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 		Atari800_Frame();
-		if (display_screen){
-			Atari_DisplayScreen();}
+		if (Atari800_display_screen){
+			PLATFORM_DisplayScreen();}
 	}
 }

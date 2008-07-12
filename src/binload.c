@@ -29,6 +29,7 @@
 #include "binload.h"
 #include "cpu.h"
 #include "devices.h"
+#include "esc.h"
 #include "log.h"
 #include "memory.h"
 #include "sio.h"
@@ -49,25 +50,25 @@ static int read_word(void)
 			Log_print("binload: not valid BIN file");
 			return -1;
 		}
-		CPU_regPC = dGetWordAligned(0x2e0);
+		CPU_regPC = MEMORY_dGetWordAligned(0x2e0);
 		return -1;
 	}
 	return buf[0] + (buf[1] << 8);
 }
 
 /* Start or continue loading */
-void BINLOAD_loader_cont(void)
+static void loader_cont(void)
 {
 	if (BINLOAD_bin_file == NULL)
 		return;
 	if (BINLOAD_start_binloading) {
-		dPutByte(0x244, 0);
-		dPutByte(0x09, 1);
+		MEMORY_dPutByte(0x244, 0);
+		MEMORY_dPutByte(0x09, 1);
 	}
 	else
 		CPU_regS += 2;	/* pop ESC code */
 
-	dPutByte(0x2e3, 0xd7);
+	MEMORY_dPutByte(0x2e3, 0xd7);
 	do {
 		int temp;
 		UWORD from;
@@ -85,7 +86,7 @@ void BINLOAD_loader_cont(void)
 		to = (UWORD) temp;
 
 		if (BINLOAD_start_binloading) {
-			dPutWordAligned(0x2e0, from);
+			MEMORY_dPutWordAligned(0x2e0, from);
 			BINLOAD_start_binloading = FALSE;
 		}
 
@@ -95,35 +96,35 @@ void BINLOAD_loader_cont(void)
 			if (byte == EOF) {
 				fclose(BINLOAD_bin_file);
 				BINLOAD_bin_file = NULL;
-				CPU_regPC = dGetWordAligned(0x2e0);
-				if (dGetByte(0x2e3) != 0xd7) {
+				CPU_regPC = MEMORY_dGetWordAligned(0x2e0);
+				if (MEMORY_dGetByte(0x2e3) != 0xd7) {
 					/* run INIT routine which RTSes directly to RUN routine */
 					CPU_regPC--;
-					dPutByte(0x0100 + CPU_regS--, CPU_regPC >> 8);		/* high */
-					dPutByte(0x0100 + CPU_regS--, CPU_regPC & 0xff);	/* low */
-					CPU_regPC = dGetWordAligned(0x2e2);
+					MEMORY_dPutByte(0x0100 + CPU_regS--, CPU_regPC >> 8);		/* high */
+					MEMORY_dPutByte(0x0100 + CPU_regS--, CPU_regPC & 0xff);	/* low */
+					CPU_regPC = MEMORY_dGetWordAligned(0x2e2);
 				}
 				return;
 			}
-			PutByte(from, (UBYTE) byte);
+			MEMORY_PutByte(from, (UBYTE) byte);
 			from++;
 		} while (from != to);
-	} while (dGetByte(0x2e3) == 0xd7);
+	} while (MEMORY_dGetByte(0x2e3) == 0xd7);
 
 	CPU_regS--;
-	Atari800_AddEsc((UWORD) (0x100 + CPU_regS), ESC_BINLOADER_CONT, BINLOAD_loader_cont);
+	ESC_Add((UWORD) (0x100 + CPU_regS), ESC_BINLOADER_CONT, loader_cont);
 	CPU_regS--;
-	dPutByte(0x0100 + CPU_regS--, 0x01);	/* high */
-	dPutByte(0x0100 + CPU_regS, CPU_regS + 1);	/* low */
+	MEMORY_dPutByte(0x0100 + CPU_regS--, 0x01);	/* high */
+	MEMORY_dPutByte(0x0100 + CPU_regS, CPU_regS + 1);	/* low */
 	CPU_regS--;
-	CPU_regPC = dGetWordAligned(0x2e2);
+	CPU_regPC = MEMORY_dGetWordAligned(0x2e2);
 	CPU_SetC;
 
-	dPutByte(0x0300, 0x31);	/* for "Studio Dream" */
+	MEMORY_dPutByte(0x0300, 0x31);	/* for "Studio Dream" */
 }
 
-/* Fake boot sector to call BINLOAD_loader_cont at boot time */
-int BINLOAD_loader_start(UBYTE *buffer)
+/* Fake boot sector to call loader_cont at boot time */
+int BINLOAD_LoaderStart(UBYTE *buffer)
 {
 	buffer[0] = 0x00;	/* ignored */
 	buffer[1] = 0x01;	/* one boot sector */
@@ -133,12 +134,12 @@ int BINLOAD_loader_start(UBYTE *buffer)
 	buffer[5] = 0xe4;
 	buffer[6] = 0xf2;	/* ESC */
 	buffer[7] = ESC_BINLOADER_CONT;
-	Atari800_AddEsc(0x706, ESC_BINLOADER_CONT, BINLOAD_loader_cont);
+	ESC_Add(0x706, ESC_BINLOADER_CONT, loader_cont);
 	return 'C';
 }
 
 /* Load BIN file, returns TRUE if ok */
-int BINLOAD_loader(const char *filename)
+int BINLOAD_Loader(const char *filename)
 {
 	UBYTE buf[2];
 	if (BINLOAD_bin_file != NULL) {		/* close previously open file */
@@ -146,7 +147,7 @@ int BINLOAD_loader(const char *filename)
 		BINLOAD_bin_file = NULL;
 		BINLOAD_loading_basic = 0;
 	}
-	if (machine_type == MACHINE_5200) {
+	if (Atari800_machine_type == Atari800_MACHINE_5200) {
 		Log_print("binload: can't run Atari programs directly on the 5200");
 		return FALSE;
 	}
@@ -156,24 +157,24 @@ int BINLOAD_loader(const char *filename)
 		return FALSE;
 	}
 	/* Avoid "BOOT ERROR" when loading a BASIC program */
-	if (SIO_drive_status[0] == NoDisk)
+	if (SIO_drive_status[0] == SIO_NO_DISK)
 		SIO_DisableDrive(1);
 	if (fread(buf, 1, 2, BINLOAD_bin_file) == 2) {
 		if (buf[0] == 0xff && buf[1] == 0xff) {
-			BINLOAD_start_binloading = TRUE; /* force SIO to call BINLOAD_loader_start at boot */
-			Coldstart();             /* reboot */
+			BINLOAD_start_binloading = TRUE; /* force SIO to call BINLOAD_LoaderStart at boot */
+			Atari800_Coldstart();             /* reboot */
 			return TRUE;
 		}
 		else if (buf[0] == 0 && buf[1] == 0) {
 			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_SAVED;
 			Devices_PatchOS();
-			Coldstart();
+			Atari800_Coldstart();
 			return TRUE;
 		}
 		else if (buf[0] >= '0' && buf[0] <= '9') {
 			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED;
 			Devices_PatchOS();
-			Coldstart();
+			Atari800_Coldstart();
 			return TRUE;
 		}
 	}

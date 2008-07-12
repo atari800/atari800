@@ -1,6 +1,6 @@
 /* $Id$ */
-#ifndef _SIO_H_
-#define _SIO_H_
+#ifndef SIO_H_
+#define SIO_H_
 
 #include "config.h"
 
@@ -11,10 +11,10 @@
 #define SIO_MAX_DRIVES 8
 
 typedef enum SIO_tagUnitStatus {
-	Off,
-	NoDisk,
-	ReadOnly,
-	ReadWrite
+	SIO_OFF,
+	SIO_NO_DISK,
+	SIO_READ_ONLY,
+	SIO_READ_WRITE
 } SIO_UnitStatus;
 
 extern char SIO_status[256];
@@ -31,18 +31,8 @@ extern int SIO_last_sector;
 int SIO_Mount(int diskno, const char *filename, int b_open_readonly);
 void SIO_Dismount(int diskno);
 void SIO_DisableDrive(int diskno);
-int SIO_Rotate_Disks(void);
+int SIO_RotateDisks(void);
 void SIO_Handler(void);
-
-#define SIO_NoFrame         (0x00)
-#define SIO_CommandFrame    (0x01)
-#define SIO_StatusRead      (0x02)
-#define SIO_ReadFrame       (0x03)
-#define SIO_WriteFrame      (0x04)
-#define SIO_FinalStatus     (0x05)
-#define SIO_FormatFrame     (0x06)
-#define SIO_CasRead         (0x60)
-#define SIO_CasWrite        (0x61)
 
 UBYTE SIO_ChkSum(const UBYTE *buffer, int length);
 void SIO_TapeMotor(int onoff);
@@ -68,7 +58,7 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer);
 int SIO_DriveStatus(int unit, UBYTE *buffer);
 int SIO_WriteStatusBlock(int unit, const UBYTE *buffer);
 int SIO_WriteSector(int unit, int sector, const UBYTE *buffer);
-void SIOStateSave(void);
-void SIOStateRead(void);
+void SIO_StateSave(void);
+void SIO_StateRead(void);
 
-#endif	/* _SIO_H_ */
+#endif	/* SIO_H_ */

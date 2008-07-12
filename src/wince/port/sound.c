@@ -145,7 +145,7 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  Pokey_sound_init(FREQ_17_EXACT,(uint16) dsprate, 1, 0);
+  POKEYSND_Init(FREQ_17_EXACT,(uint16) dsprate, 1, 0);
 
   issound = SOUND_WAV;
   return 0;
@@ -229,7 +229,7 @@ void Sound_Update(void)
 		if (waves[i].dwFlags & WHDR_DONE)
 		{
 			wh = &waves[i];
-			Pokey_process(wh->lpData, wh->dwBufferLength);
+			POKEYSND_Process(wh->lpData, wh->dwBufferLength);
 			waveOutWrite(wout, wh, sizeof(*wh));
 		}
   }

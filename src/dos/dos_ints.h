@@ -1,5 +1,5 @@
-#ifndef _DOS_INTS_H_
-#define _DOS_INTS_H_
+#ifndef DOS_INTS_H_
+#define DOS_INTS_H_
 
 /* Thanks, Allegro! */
 #define  BPS_TO_TIMER(x)            (1193182L / (long)(x))
@@ -11,4 +11,4 @@
 #define  DISABLE_INTS()             __asm__ __volatile__ ("cli")
 #define  ENABLE_INTS()              __asm__ __volatile__ ("sti")
 
-#endif /* _DOS_INTS_H_ */
+#endif /* DOS_INTS_H_ */

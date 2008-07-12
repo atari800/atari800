@@ -123,29 +123,29 @@ void PBI_WriteConfig(FILE *fp)
 void PBI_Reset(void)
 {
 	/* Reset all PBI ROMs */
-	PBI_D1_PutByte(0xd1ff, 0);
+	PBI_D1PutByte(0xd1ff, 0);
 #ifdef PBI_XLD
 	if (PBI_XLD_enabled) PBI_XLD_Reset();
 #endif
 	PBI_IRQ = 0;
 }
 
-UBYTE PBI_D1_GetByte(UWORD addr)
+UBYTE PBI_D1GetByte(UWORD addr)
 {
 	int result = 0xff;
 	/* MIO and BB do not follow the spec, they take over the bus: */
 #ifdef PBI_MIO
-	if (PBI_MIO_enabled) return PBI_MIO_D1_GetByte(addr);
+	if (PBI_MIO_enabled) return PBI_MIO_D1GetByte(addr);
 #endif
 #ifdef PBI_BB
-	if (PBI_BB_enabled) return PBI_BB_D1_GetByte(addr);
+	if (PBI_BB_enabled) return PBI_BB_D1GetByte(addr);
 #endif
 	/* Remaining PBI devices cooperate, following spec */
 #ifdef PBI_XLD
-	if (PBI_XLD_enabled) result = PBI_XLD_D1_GetByte(addr);
+	if (PBI_XLD_enabled) result = PBI_XLD_D1GetByte(addr);
 #endif
 #ifdef PBI_PROTO80
-	if (result == PBI_NOT_HANDLED && PBI_PROTO80_enabled) result = PBI_PROTO80_D1_GetByte(addr);
+	if (result == PBI_NOT_HANDLED && PBI_PROTO80_enabled) result = PBI_PROTO80_D1GetByte(addr);
 #endif
 	if(result != PBI_NOT_HANDLED) return (UBYTE)result;
 	/* Each bit of D1FF is set by one of the 8 PBI devices to signal IRQ */
@@ -154,7 +154,7 @@ UBYTE PBI_D1_GetByte(UWORD addr)
 	/* D1FF IRQ status: */
 		result = 0;
 #ifdef PBI_XLD
-		if (PBI_XLD_enabled) result |= PBI_XLD_D1FF_GetByte();
+		if (PBI_XLD_enabled) result |= PBI_XLD_D1ffGetByte();
 #endif
 		/* add more devices here... */
 		return result;
@@ -164,18 +164,18 @@ UBYTE PBI_D1_GetByte(UWORD addr)
 	return result; /* 0xff */
 }
 
-void PBI_D1_PutByte(UWORD addr, UBYTE byte)
+void PBI_D1PutByte(UWORD addr, UBYTE byte)
 {
 	static int fp_active = TRUE;
 #ifdef PBI_MIO
 	if (PBI_MIO_enabled) {
-		PBI_MIO_D1_PutByte(addr, byte);
+		PBI_MIO_D1PutByte(addr, byte);
 		return;
 	}
 #endif
 #ifdef PBI_BB
 	if (PBI_BB_enabled) {
-		PBI_BB_D1_PutByte(addr, byte);
+		PBI_BB_D1PutByte(addr, byte);
 		return;
 	}
 #endif
@@ -183,10 +183,10 @@ void PBI_D1_PutByte(UWORD addr, UBYTE byte)
 	if (addr != 0xd1ff) {
 		D(printf("PBI_PutByte:%4x <- %2x\n", addr, byte));
 #ifdef PBI_XLD
-		if (PBI_XLD_enabled) PBI_XLD_D1_PutByte(addr, byte);
+		if (PBI_XLD_enabled) PBI_XLD_D1PutByte(addr, byte);
 #endif
 #ifdef PBI_PROTO_80
-		if (PBI_PROTO80_enabled) PBI_PROTO80_D1_PutByte(addr, byte);
+		if (PBI_PROTO80_enabled) PBI_PROTO80_D1PutByte(addr, byte);
 #endif
 		/* add more devices here... */
 	}
@@ -202,14 +202,14 @@ void PBI_D1_PutByte(UWORD addr, UBYTE byte)
 			/* otherwise, update the latch */
 			D1FF_LATCH = byte;
 #ifdef PBI_XLD
-			if (PBI_XLD_enabled && PBI_XLD_D1FF_PutByte(byte) != PBI_NOT_HANDLED) {
+			if (PBI_XLD_enabled && PBI_XLD_D1ffPutByte(byte) != PBI_NOT_HANDLED) {
 				/* handled */
 				fp_active = FALSE;
 				return;
 			}
 #endif
 #ifdef PBI_PROTO80
-			if (PBI_PROTO80_enabled && PBI_PROTO80_D1FF_PutByte(byte) != PBI_NOT_HANDLED) {
+			if (PBI_PROTO80_enabled && PBI_PROTO80_D1ffPutByte(byte) != PBI_NOT_HANDLED) {
 				/* handled */
 				fp_active = FALSE;
 				return;
@@ -218,7 +218,7 @@ void PBI_D1_PutByte(UWORD addr, UBYTE byte)
 		    /* add more devices here... */
 			/* reactivate the floating point rom */
 			if (!fp_active) {
-				memcpy(memory + 0xd800, atari_os + 0x1800, 0x800);
+				memcpy(MEMORY_mem + 0xd800, MEMORY_os + 0x1800, 0x800);
 				D(printf("Floating point rom activated\n"));
 				fp_active = TRUE;
 			}
@@ -227,69 +227,72 @@ void PBI_D1_PutByte(UWORD addr, UBYTE byte)
 }
 
 /* $D6xx */
-UBYTE PBI_D6_GetByte(UWORD addr)
+UBYTE PBI_D6GetByte(UWORD addr)
 {
 #ifdef PBI_MIO
-	if (PBI_MIO_enabled) return PBI_MIO_D6_GetByte(addr);
+	if (PBI_MIO_enabled) return PBI_MIO_D6GetByte(addr);
 #endif
 #ifdef PBI_BB
-	if(PBI_BB_enabled) return PBI_BB_D6_GetByte(addr);
+	if(PBI_BB_enabled) return PBI_BB_D6GetByte(addr);
 #endif
 	/* XLD/1090 has ram here */
-	if (PBI_D6D7ram) return memory[addr];
+	if (PBI_D6D7ram) return MEMORY_mem[addr];
 	else return 0xff;
 }
 
 /* $D6xx */
-void PBI_D6_PutByte(UWORD addr, UBYTE byte)
+void PBI_D6PutByte(UWORD addr, UBYTE byte)
 {
 #ifdef PBI_MIO
 	if (PBI_MIO_enabled) {
-		PBI_MIO_D6_PutByte(addr,byte);
+		PBI_MIO_D6PutByte(addr,byte);
 		return;
 	}
 #endif
 #ifdef PBI_BB
 	if(PBI_BB_enabled) {
-		PBI_BB_D6_PutByte(addr,byte);
+		PBI_BB_D6PutByte(addr,byte);
 		return;
 	}
 #endif
 	/* XLD/1090 has ram here */
-	if (PBI_D6D7ram) memory[addr]=byte;
+	if (PBI_D6D7ram) MEMORY_mem[addr]=byte;
 }
 
 /* read page $D7xx */
 /* XLD/1090 has ram here */
-UBYTE PBI_D7_GetByte(UWORD addr)
+UBYTE PBI_D7GetByte(UWORD addr)
 {
-	D(printf("PBI_D7_GetByte:%4x\n",addr));
-	if (PBI_D6D7ram) return memory[addr];
+	D(printf("PBI_D7GetByte:%4x\n",addr));
+	if (PBI_D6D7ram) return MEMORY_mem[addr];
 	else return 0xff;
 }
 
 /* write page $D7xx */
 /* XLD/1090 has ram here */
-void PBI_D7_PutByte(UWORD addr, UBYTE byte)
+void PBI_D7PutByte(UWORD addr, UBYTE byte)
 {
-	D(printf("PBI_D7_PutByte:%4x <- %2x\n",addr,byte));
-	if (PBI_D6D7ram) memory[addr]=byte;
+	D(printf("PBI_D7PutByte:%4x <- %2x\n",addr,byte));
+	if (PBI_D6D7ram) MEMORY_mem[addr]=byte;
 }
 
-void PBIStateSave(void)
+#ifndef BASIC
+
+void PBI_StateSave(void)
 {
 	StateSav_SaveUBYTE(&D1FF_LATCH, 1);
 	StateSav_SaveINT(&PBI_D6D7ram, 1);
 	StateSav_SaveINT(&PBI_IRQ, 1);
 }
 
-void PBIStateRead(void)
+void PBI_StateRead(void)
 {
 	StateSav_ReadUBYTE(&D1FF_LATCH, 1);
 	StateSav_ReadINT(&PBI_D6D7ram, 1);
 	StateSav_ReadINT(&PBI_IRQ, 1);
 }
 
+#endif /* #ifndef BASIC */
 
 /*
 vim:ts=4:sw=4:

@@ -30,6 +30,7 @@
 #include <zlib.h>
 #endif
 
+#include "afile.h"
 #include "atari.h"
 #include "compfile.h"
 #include "log.h"
@@ -106,15 +107,15 @@ static int write_atr_header(const ATR_Info *pai)
 	int sectorcount;
 	int sectorsize;
 	ULONG paras;
-	struct ATR_Header header;
+	struct AFILE_ATR_Header header;
 	sectorcount = pai->sectorcount;
 	sectorsize = pai->sectorsize;
 	paras = (sectorsize != 256 || sectorcount <= 3)
 		? (sectorcount << 3) /* single density or only boot sectors: sectorcount * 128 / 16 */
 		: (sectorcount << 4) - 0x18; /* double density with 128-byte boot sectors: (sectorcount * 256 - 3 * 128) / 16 */
 	memset(&header, 0, sizeof(header));
-	header.magic1 = MAGIC1;
-	header.magic2 = MAGIC2;
+	header.magic1 = AFILE_ATR_MAGIC1;
+	header.magic2 = AFILE_ATR_MAGIC2;
 	header.secsizelo = (UBYTE) sectorsize;
 	header.secsizehi = (UBYTE) (sectorsize >> 8);
 	header.seccountlo = (UBYTE) paras;

@@ -651,7 +651,7 @@ void CASSETTE_PutByte(int byte)
 	/* get time since last byte-put resp. motor on */
 	cassette_putdelay = 1000*(cassette_elapsedtime-cassette_savetime)/312/50;
 	/* subtract one byte-duration from put delay */
-	cassette_putdelay -= 1000 * 10 * (AUDF[CHAN3] + AUDF[CHAN4]*0x100)/895000;
+	cassette_putdelay -= 1000 * 10 * (POKEY_AUDF[POKEY_CHAN3] + POKEY_AUDF[POKEY_CHAN4]*0x100)/895000;
 	/* if putdelay > 5 (ms) */
 	if (cassette_putdelay > 05) {
 
@@ -683,7 +683,7 @@ void CASSETTE_TapeMotor(int onoff)
 					/* get time since last byte-put resp. motor on */
 					cassette_putdelay = 1000*(cassette_elapsedtime-cassette_savetime)/312/50;
 					/* subtract one byte-duration from put delay */
-					cassette_putdelay -= 1000*10 * (AUDF[CHAN3] + AUDF[CHAN4]*0x100)/895000;
+					cassette_putdelay -= 1000*10 * (POKEY_AUDF[POKEY_CHAN3] + POKEY_AUDF[POKEY_CHAN4]*0x100)/895000;
 					/* set putdelay non-negative */
         				if (cassette_putdelay < 0) {
 						cassette_putdelay = 0;

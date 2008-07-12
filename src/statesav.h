@@ -1,5 +1,5 @@
-#ifndef _STATESAV_H_
-#define _STATESAV_H_
+#ifndef STATESAV_H_
+#define STATESAV_H_
 
 #include "atari.h"
 
@@ -16,4 +16,4 @@ void StateSav_ReadUWORD(UWORD *data, int num);
 void StateSav_ReadINT(int *data, int num);
 void StateSav_ReadFNAME(char *filename);
 
-#endif
+#endif /* STATESAV_H_ */

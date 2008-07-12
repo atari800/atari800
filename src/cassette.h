@@ -1,5 +1,5 @@
-#ifndef _CASSETTE_H_
-#define _CASSETTE_H_
+#ifndef CASSETTE_H_
+#define CASSETTE_H_
 
 #include <stdio.h>		/* for FILE and FILENAME_MAX */
 
@@ -32,4 +32,4 @@ void CASSETTE_TapeMotor(int onoff);
 void CASSETTE_AddScanLine(void);
 extern UBYTE CASSETTE_buffer[4096];
 
-#endif /* _CASSETTE_H_ */
+#endif /* CASSETTE_H_ */

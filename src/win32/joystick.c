@@ -71,21 +71,21 @@ int procjoy(int num)
   joystat.trig = (js.rgbButtons[ 0 ] & 0x80) ? 1 : 0;
   if (js.lX == 0)
   {
-    if (js.lY == 0) joystat.stick = STICK_CENTRE;
-    else if (js.lY < 0) joystat.stick = STICK_FORWARD;
-    else joystat.stick = STICK_BACK;
+    if (js.lY == 0) joystat.stick = INPUT_STICK_CENTRE;
+    else if (js.lY < 0) joystat.stick = INPUT_STICK_FORWARD;
+    else joystat.stick = INPUT_STICK_BACK;
   }
   else if (js.lX < 0)
   {
-    if (js.lY == 0) joystat.stick = STICK_LEFT;
-    else if (js.lY < 0) joystat.stick = STICK_UL;
-    else joystat.stick = STICK_LL;
+    if (js.lY == 0) joystat.stick = INPUT_STICK_LEFT;
+    else if (js.lY < 0) joystat.stick = INPUT_STICK_UL;
+    else joystat.stick = INPUT_STICK_LL;
   }
   else
   {
-    if (js.lY == 0) joystat.stick = STICK_RIGHT;
-    else if (js.lY < 0) joystat.stick = STICK_UR;
-    else joystat.stick = STICK_LR;
+    if (js.lY == 0) joystat.stick = INPUT_STICK_RIGHT;
+    else if (js.lY < 0) joystat.stick = INPUT_STICK_UR;
+    else joystat.stick = INPUT_STICK_LR;
   }
 
   return 0;

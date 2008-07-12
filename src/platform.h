@@ -1,60 +1,60 @@
-#ifndef _PLATFORM_H_
-#define _PLATFORM_H_
+#ifndef PLATFORM_H_
+#define PLATFORM_H_
 
 #include "config.h"
 #include <stdio.h>
 
 /* This include file defines prototypes for platform-specific functions. */
 
-void Atari_Initialise(int *argc, char *argv[]);
-int Atari_Exit(int run_monitor);
-int Atari_Keyboard(void);
-void Atari_DisplayScreen(void);
+void PLATFORM_Initialise(int *argc, char *argv[]);
+int PLATFORM_Exit(int run_monitor);
+int PLATFORM_Keyboard(void);
+void PLATFORM_DisplayScreen(void);
 
-int Atari_PORT(int num);
-int Atari_TRIG(int num);
+int PLATFORM_PORT(int num);
+int PLATFORM_TRIG(int num);
 
-#ifdef SUPPORTS_ATARI_CONFIGINIT
+#ifdef SUPPORTS_PLATFORM_CONFIGINIT
 /* This function sets the configuration parameters to default values */
-void Atari_ConfigInit(void);
+void PLATFORM_ConfigInit(void);
 #endif
 
-#ifdef SUPPORTS_ATARI_CONFIGURE
+#ifdef SUPPORTS_PLATFORM_CONFIGURE
 /* This procedure processes lines not recognized by RtConfigLoad. */
-int Atari_Configure(char *option, char *parameters);
+int PLATFORM_Configure(char *option, char *parameters);
 #endif
 
-#ifdef SUPPORTS_ATARI_CONFIGSAVE
+#ifdef SUPPORTS_PLATFORM_CONFIGSAVE
 /* This function saves additional config lines */
-void Atari_ConfigSave(FILE *fp);
+void PLATFORM_ConfigSave(FILE *fp);
 #endif
 
-#ifdef SUPPORTS_ATARI_PALETTEUPDATE
+#ifdef SUPPORTS_PLATFORM_PALETTEUPDATE
 /* This function updates the palette */
 /* If the platform does a conversion of colortable when it initialises
  * and the user changes colortable (such as changing from PAL to NTSC)
  * then this function should update the platform palette */
-void Atari_PaletteUpdate(void);
+void PLATFORM_PaletteUpdate(void);
 #endif
 
-#ifdef SUPPORTS_ATARI_SLEEP
+#ifdef SUPPORTS_PLATFORM_SLEEP
 /* This function is for those ports that need their own version of sleep */
-void Atari_sleep(double s);
+void PLATFORM_Sleep(double s);
 #endif
 
 #ifdef SDL
 /* used in UI to show how the keyboard joystick is mapped */
-char *joy_0_description(char *buffer, int maxsize);
-char *joy_1_description(char *buffer, int maxsize);
-extern int kbd_joy_0_enabled;
-extern int kbd_joy_1_enabled;
+char *PLATFORM_Joy0Description(char *buffer, int maxsize);
+char *PLATFORM_Joy1Description(char *buffer, int maxsize);
+extern int PLATFORM_kbd_joy_0_enabled;
+extern int PLATFORM_kbd_joy_1_enabled;
 #endif
 
 #ifdef XEP80_EMULATION
 /* Switch between the Atari and XEP80 screen */
-void Atari_SwitchXep80(void);
+void PLATFORM_SwitchXep80(void);
 /* TRUE if the XEP80 screen is visible */
-extern int Atari_xep80;
+extern int PLATFORM_xep80;
 #endif
 
-#endif /* _PLATFORM_H_ */
+#endif /* PLATFORM_H_ */

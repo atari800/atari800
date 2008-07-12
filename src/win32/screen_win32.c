@@ -32,6 +32,7 @@
 #include "atari.h"
 #include "colours.h"
 #include "log.h"
+#include "screen.h"
 #include "util.h"
 
 #include "main.h"
@@ -259,7 +260,7 @@ void palette(int ent, UBYTE r, UBYTE g, UBYTE b)
 }
 
 /* Platform-specific function to update the palette if it changed */
-void Atari_PaletteUpdate(void)
+void PLATFORM_PaletteUpdate(void)
 {
 	if(lpDDPal != NULL) {
 		int i;
@@ -294,8 +295,8 @@ static void refreshv_win32api(UBYTE *scr_ptr)
 		return;
 
 	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER); /* structure size in bytes */
-	bi.bmiHeader.biWidth = ATARI_WIDTH-48;
-	bi.bmiHeader.biHeight = ATARI_HEIGHT;
+	bi.bmiHeader.biWidth = Screen_WIDTH-48;
+	bi.bmiHeader.biHeight = Screen_HEIGHT;
 	bi.bmiHeader.biPlanes = 1;
 	bi.bmiHeader.biBitCount = 32;
 	bi.bmiHeader.biCompression = BI_RGB; /* BI_BITFIELDS OR BI_RGB??? */
@@ -314,8 +315,8 @@ static void refreshv_win32api(UBYTE *scr_ptr)
 	}
 
 	/* Copying the atari screen to bitmap. */
-	for (i = 0; i < ATARI_HEIGHT; i++) {
-		for (j = 0; j < ATARI_WIDTH - 48; j++) {
+	for (i = 0; i < Screen_HEIGHT; i++) {
+		for (j = 0; j < Screen_WIDTH - 48; j++) {
 			*bitmap_bits++ = Colours_table[*scr_ptr++];
 		}
 		/* The last 48 columns of the screen are not used */
@@ -365,25 +366,25 @@ void refreshv(UBYTE *scr_ptr)
 		scraddr = (UBYTE *) desc0.lpSurface + (bltgfx ? linesize * 6 : 0);
 
 		if (bltgfx) {
-			for (y = 0; y < ATARI_HEIGHT; y++) {
+			for (y = 0; y < Screen_HEIGHT; y++) {
 				dst = (ULONG *) (scraddr + y * linesize);
-				srcb = scr_ptr + y * ATARI_WIDTH;
+				srcb = scr_ptr + y * Screen_WIDTH;
 				for (x = 0; x < scrwidth; x++)
 					*dst++ = Colours_table[*srcb++];
 			}
 		}
 		else {
 			w = (scrwidth - 336) / 2;
-			h = (scrheight - ATARI_HEIGHT) / 2;
+			h = (scrheight - Screen_HEIGHT) / 2;
 			if (w > 0)
 				scraddr += w;
 			else if (w < 0)
 				scr_ptr -= w;
 			if (h > 0)
 				scraddr += linesize * h;
-			for (y = 0; y < ATARI_HEIGHT; y++) {
+			for (y = 0; y < Screen_HEIGHT; y++) {
 				dst = (ULONG *) (scraddr + y * linesize);
-				srcl = (ULONG *) (scr_ptr + y * ATARI_WIDTH);
+				srcl = (ULONG *) (scr_ptr + y * Screen_WIDTH);
 				for (x = (w >= 0) ? (336 >> 2) : (scrwidth >> 2); x > 0; x--)
 					*dst++ = *srcl++;
 			}

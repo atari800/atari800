@@ -75,7 +75,7 @@ case $host_os in
         ;;
     cygwin)
         a8_host="win"
-        AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
+        AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         if [[ "$a8_target" = "windx" -o "$a8_target" = "sdl" ]]; then
             CC="gcc -mno-cygwin"
@@ -86,12 +86,12 @@ case $host_os in
         ;;
     mingw32)
         a8_host="win"
-        AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
+        AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         ;;
     msdosdjgpp)
         a8_host="dos"
-        AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
+        AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
@@ -101,7 +101,7 @@ case $host_os in
         ;;
     mint)
         a8_host="falcon"
-        AC_DEFINE(BACK_SLASH,1,[Define to use back slash as directory separator.])
+        AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
@@ -205,14 +205,15 @@ case "$a8_target" in
     basic)
         AC_DEFINE(BASIC,1,[Target: standard I/O.])
         OBJS="atari_basic.o"
+	WANT_EVENT_RECORDING=no
         ;;
     dosvga)
         if [[ "$a8_host" != "dos" ]]; then
             AC_MSG_ERROR("the dosvga target is valid only on a DOS system!")
         fi
         AC_DEFINE(DOSVGA,1,[Target: DOS VGA.])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
-        AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
+        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
         CFLAGS="$CFLAGS -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         ;;
@@ -220,17 +221,20 @@ case "$a8_target" in
         AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
         A8_NEED_LIB(curses)
         OBJS="atari_curses.o"
+	WANT_EVENT_RECORDING=no
         ;;
     ncurses)
         AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
         AC_DEFINE(USE_NCURSES,1,[Target: Ncurses library.])
         A8_NEED_LIB(ncurses)
         OBJS="atari_curses.o"
+	WANT_EVENT_RECORDING=no
         ;;
     pdcurses)
         AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
         A8_NEED_LIB(pdcurses)
         OBJS="atari_curses.o"
+	WANT_EVENT_RECORDING=no
         ;;
     falcon)
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
@@ -239,8 +243,8 @@ case "$a8_target" in
         ;;
     javanvm)
         AC_DEFINE(JAVANVM,1,[Target: Java NestedVM.])
-        AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
-        AC_DEFINE(SUPPORTS_ATARI_SLEEP,1,[Platform-specific sleep function.])
+        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
         AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
         OBJS="javanvm/atari_javanvm.o"
         EXEEXT=".mips"
@@ -281,9 +285,9 @@ case "$a8_target" in
         ;;
     sdl)
         AC_DEFINE(SDL,1,[Target: SDL library.])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGURE,1,[Additional config file options.])
-        AC_DEFINE(SUPPORTS_ATARI_CONFIGSAVE,1,[Save additional config file options.])
-        AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
+        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
+        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
 	WANT_XEP80_EMULATION=yes
         LIBS="$LIBS `sdl-config --libs`"
@@ -308,7 +312,7 @@ dnl Don't make this a windowed app, make it a console app.
         ;;
     windx)
         AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])
-        AC_DEFINE(SUPPORTS_ATARI_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
         A8_NEED_LIB(ddraw)
         A8_NEED_LIB(dinput)
@@ -547,14 +551,16 @@ A8_OPTION(monitortrace,no,
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
+if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
 dnl we already checked for libz and added it to LIBS
-AC_CHECK_LIB(z,adler32,
-          [A8_OPTION(eventrecording,yes,
-                [Support event recording (default=ON)],
-                EVENT_RECORDING,[Define to enable event recording.]
-               )],
-          WANT_EVENT_RECORDING="no"
-         )
+    AC_CHECK_LIB(z,adler32,
+              [A8_OPTION(eventrecording,yes,
+                    [Support event recording (default=ON)],
+                    EVENT_RECORDING,[Define to enable event recording.]
+                   )],
+              WANT_EVENT_RECORDING="no"
+             )
+fi
 
 A8_OPTION(pbi_mio,yes,
       [Emulate the MIO board (default=ON)],

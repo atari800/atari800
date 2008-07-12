@@ -36,7 +36,7 @@
 #endif
 
 #ifdef BUFFERED_LOG
-char Log_buffer[LOG_BUFFER_SIZE] = "";
+char Log_buffer[Log_BUFFER_SIZE] = "";
 #endif
 
 void Log_print(char *format, ...)
@@ -64,7 +64,7 @@ void Log_print(char *format, ...)
 #ifdef BUFFERED_LOG
 	buflen = strlen(buffer);
 
-	if ((strlen(Log_buffer) + strlen(buffer) + 1) > LOG_BUFFER_SIZE)
+	if ((strlen(Log_buffer) + strlen(buffer) + 1) > Log_BUFFER_SIZE)
 		*Log_buffer = 0;
 
 	strcat(Log_buffer, buffer);

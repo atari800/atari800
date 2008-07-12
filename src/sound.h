@@ -1,5 +1,5 @@
-#ifndef _sound_h
-#define _sound_h
+#ifndef SOUND_H_
+#define SOUND_H_
 
 void Sound_Initialise(int *argc, char *argv[]);
 void Sound_Exit(void);
@@ -10,4 +10,4 @@ void Sound_Continue(void);
 void Sound_Reinit(void);
 #endif
 
-#endif /* _sound_h */
+#endif /* SOUND_H_ */

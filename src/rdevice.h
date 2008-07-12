@@ -22,8 +22,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _RDEVICE_H_
-#define _RDEVICE_H_
+#ifndef RDEVICE_H_
+#define RDEVICE_H_
 
 extern void RDevice_OPEN(void);
 extern void RDevice_CLOS(void);
@@ -38,4 +38,4 @@ extern char RDevice_serial_device[];
 
 extern void RDevice_Exit(void);
 
-#endif /* _RDEVICE_H_ */
+#endif /* RDEVICE_H_ */

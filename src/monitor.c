@@ -75,7 +75,7 @@ void monitor_printf(const char *format, ...)
 #endif /* __PLUS */
 
 #ifdef MONITOR_TRACE
-FILE *Monitor_trace_file = NULL;
+FILE *MONITOR_trace_file = NULL;
 #endif
 
 #ifdef MONITOR_HINTS
@@ -301,7 +301,7 @@ static int symtable_builtin_enable = TRUE;
 static symtable_rec *symtable_user = NULL;
 static int symtable_user_size = 0;
 
-static const char *find_label_name(UWORD addr, int write)
+static const char *find_label_name(UWORD addr, int is_write)
 {
 	int i;
 	for (i = 0; i < symtable_user_size; i++) {
@@ -312,7 +312,7 @@ static const char *find_label_name(UWORD addr, int write)
 		const symtable_rec *p;
 		for (p = symtable_builtin; p->name != NULL; p++) {
 			if (p->addr == addr) {
-				if (write && p[1].addr == addr)
+				if (is_write && p[1].addr == addr)
 					p++;
 				return p->name;
 			}
@@ -509,7 +509,7 @@ static const char instr6502[256][10] = {
      D = INDIRECT (JMP () )
      E = ESCRTS
      F = ESCAPE */
-const UBYTE Monitor_optype6502[256] = {
+const UBYTE MONITOR_optype6502[256] = {
 	0x01, 0x56, 0x01, 0x5e, 0x22, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x13, 0x17, 0x1f, 0x1f,
 	0x92, 0x66, 0x01, 0x6e, 0x72, 0x76, 0x7e, 0x7e, 0x01, 0x47, 0x01, 0x4f, 0x33, 0x37, 0x3f, 0x3f,
 	0x13, 0x56, 0x01, 0x5e, 0x26, 0x26, 0x2e, 0x2e, 0x01, 0xa2, 0x01, 0xa2, 0x17, 0x17, 0x1f, 0x1f,
@@ -675,24 +675,24 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 	int value = 0;
 	int nchars = 0;
 
-	insn = dGetByte(pc++);
+	insn = MEMORY_dGetByte(pc++);
 	mnemonic = instr6502[insn];
 	for (p = mnemonic + 3; *p != '\0'; p++) {
 		if (*p == '1') {
-			value = dGetByte(pc++);
+			value = MEMORY_dGetByte(pc++);
 			nchars = fprintf(fp, "%04X: %02X %02X     " /*"%Xcyc  "*/ "%.*s$%02X%s",
 			                 addr, insn, value, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
 			break;
 		}
 		if (*p == '2') {
-			value = dGetWord(pc);
+			value = MEMORY_dGetWord(pc);
 			nchars = fprintf(fp, "%04X: %02X %02X %02X  " /*"%Xcyc  "*/ "%.*s$%04X%s",
 			                 addr, insn, value & 0xff, value >> 8, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
 			pc += 2;
 			break;
 		}
 		if (*p == '0') {
-			UBYTE op = dGetByte(pc++);
+			UBYTE op = MEMORY_dGetByte(pc++);
 			value = (UWORD) (pc + (SBYTE) op);
 			nchars = fprintf(fp, "%04X: %02X %02X     " /*"3cyc  "*/ "%.4s$%04X", addr, insn, op, mnemonic, value);
 			break;
@@ -705,7 +705,7 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 #ifdef MONITOR_HINTS
 	if (p[-1] != '#') {
 		/* different names when reading/writing memory */
-		const char *label = find_label_name((UWORD) value, (Monitor_optype6502[insn] & 0x08) != 0);
+		const char *label = find_label_name((UWORD) value, (MONITOR_optype6502[insn] & 0x08) != 0);
 		if (label != NULL) {
 			fprintf(fp, "%*s;%s\n", 28 - nchars, "", label);
 			return pc;
@@ -716,18 +716,18 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 	return pc;
 }
 
-void Monitor_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
+void MONITOR_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
                 char n, char v, char z, char c)
 {
 	fprintf(fp, "%3d %3d A=%02X X=%02X Y=%02X S=%02X P=%c%c*-%c%c%c%c PC=",
-		ypos, xpos, a, x, y, s,
+		ANTIC_ypos, ANTIC_xpos, a, x, y, s,
 		n, v, (CPU_regP & CPU_D_FLAG) ? 'D' : '-', (CPU_regP & CPU_I_FLAG) ? 'I' : '-', z, c);
 	show_instruction(fp, pc);
 }
 
 static void show_state(void)
 {
-	Monitor_ShowState(stdout, CPU_regPC, CPU_regA, CPU_regX, CPU_regY, CPU_regS,
+	MONITOR_ShowState(stdout, CPU_regPC, CPU_regA, CPU_regX, CPU_regY, CPU_regS,
 		(char) ((CPU_regP & CPU_N_FLAG) ? 'N' : '-'), (char) ((CPU_regP & CPU_V_FLAG) ? 'V' : '-'),
 		(char) ((CPU_regP & CPU_Z_FLAG) ? 'Z' : '-'), (char) ((CPU_regP & CPU_C_FLAG) ? 'C' : '-'));
 }
@@ -826,7 +826,7 @@ static UWORD assembler(UWORD addr)
 			for (i = 0; i < 256; i++) {
 				if (strcmp(instr6502[i], c) == 0) {
 					if (tp == NULL) {
-						dPutByte(addr, (UBYTE) i);
+						MEMORY_dPutByte(addr, (UBYTE) i);
 						addr++;
 					}
 					else if (*tp == '0') {
@@ -834,9 +834,9 @@ static UWORD assembler(UWORD addr)
 						if ((SWORD) value < -128 || (SWORD) value > 127)
 							printf("Branch out of range!\n");
 						else {
-							dPutByte(addr, (UBYTE) i);
+							MEMORY_dPutByte(addr, (UBYTE) i);
 							addr++;
-							dPutByte(addr, (UBYTE) value);
+							MEMORY_dPutByte(addr, (UBYTE) value);
 							addr++;
 						}
 					}
@@ -848,16 +848,16 @@ static UWORD assembler(UWORD addr)
 							       "Use \"%s\" for accumulator mode or \"%s 0A\" for zeropage mode.\n", c, c, c);
 						}
 						else {
-							dPutByte(addr, (UBYTE) i);
+							MEMORY_dPutByte(addr, (UBYTE) i);
 							addr++;
-							dPutByte(addr, (UBYTE) value);
+							MEMORY_dPutByte(addr, (UBYTE) value);
 							addr++;
 						}
 					}
 					else { /* *tp == '2' */
-						dPutByte(addr, (UBYTE) i);
+						MEMORY_dPutByte(addr, (UBYTE) i);
 						addr++;
-						dPutWord(addr, value);
+						MEMORY_dPutWord(addr, value);
 						addr += 2;
 					}
 					goto next_instr;
@@ -878,19 +878,19 @@ static UWORD assembler(UWORD addr)
 #endif /* MONITOR_ASSEMBLER */
 
 #ifdef MONITOR_BREAK
-UWORD Monitor_break_addr = 0xd000;
-UBYTE Monitor_break_step = FALSE;
+UWORD MONITOR_break_addr = 0xd000;
+UBYTE MONITOR_break_step = FALSE;
 static UBYTE break_over = FALSE;
-UBYTE Monitor_break_ret = FALSE;
-UBYTE Monitor_break_brk = FALSE;
-int Monitor_ret_nesting = 0;
+UBYTE MONITOR_break_ret = FALSE;
+UBYTE MONITOR_break_brk = FALSE;
+int MONITOR_ret_nesting = 0;
 #endif
 
 #ifdef MONITOR_BREAKPOINTS
 
-Monitor_breakpoint_cond Monitor_breakpoint_table[MONITOR_BREAKPOINT_TABLE_MAX];
-int Monitor_breakpoint_table_size = 0;
-int Monitor_breakpoints_enabled = TRUE;
+MONITOR_breakpoint_cond MONITOR_breakpoint_table[MONITOR_BREAKPOINT_TABLE_MAX];
+int MONITOR_breakpoint_table_size = 0;
+int MONITOR_breakpoints_enabled = TRUE;
 
 static void breakpoint_print_flag(int flagmask)
 {
@@ -941,12 +941,12 @@ static void breakpoints_set(int enabled)
 	int i;
 	if (get_dec(&i)) {
 		do {
-			if (/*i >= 0 &&*/ i < Monitor_breakpoint_table_size)
-				Monitor_breakpoint_table[i].enabled = (UBYTE) enabled;
+			if (/*i >= 0 &&*/ i < MONITOR_breakpoint_table_size)
+				MONITOR_breakpoint_table[i].enabled = (UBYTE) enabled;
 		} while (get_dec(&i));
 	}
 	else
-		Monitor_breakpoints_enabled = enabled;
+		MONITOR_breakpoints_enabled = enabled;
 }
 
 static void monitor_breakpoints(void)
@@ -954,31 +954,31 @@ static void monitor_breakpoints(void)
 	char *t = get_token();
 	if (t == NULL) {
 		int i;
-		if (Monitor_breakpoint_table_size == 0) {
+		if (MONITOR_breakpoint_table_size == 0) {
 			printf("No breakpoints defined\n");
 			return;
 		}
-		printf("Breakpoints are %sabled\n", Monitor_breakpoints_enabled ? "en" : "dis");
-		for (i = 0; i < Monitor_breakpoint_table_size; i++) {
+		printf("Breakpoints are %sabled\n", MONITOR_breakpoints_enabled ? "en" : "dis");
+		for (i = 0; i < MONITOR_breakpoint_table_size; i++) {
 			printf("%2d: ", i);
-			if (!Monitor_breakpoint_table[i].enabled)
+			if (!MONITOR_breakpoint_table[i].enabled)
 				printf("OFF ");
-			switch (Monitor_breakpoint_table[i].condition) {
+			switch (MONITOR_breakpoint_table[i].condition) {
 			case MONITOR_BREAKPOINT_OR:
 				printf("OR");
 				break;
 			case MONITOR_BREAKPOINT_FLAG_CLEAR:
 				printf("CLR");
-				breakpoint_print_flag(Monitor_breakpoint_table[i].value);
+				breakpoint_print_flag(MONITOR_breakpoint_table[i].value);
 				break;
 			case MONITOR_BREAKPOINT_FLAG_SET:
 				printf("SET");
-				breakpoint_print_flag(Monitor_breakpoint_table[i].value);
+				breakpoint_print_flag(MONITOR_breakpoint_table[i].value);
 				break;
 			default:
 				{
 					const char *op;
-					switch (Monitor_breakpoint_table[i].condition & 7) {
+					switch (MONITOR_breakpoint_table[i].condition & 7) {
 					case MONITOR_BREAKPOINT_LESS:
 						op = "<";
 						break;
@@ -1001,30 +1001,30 @@ static void monitor_breakpoints(void)
 						op = "?";
 						break;
 					}
-					switch (Monitor_breakpoint_table[i].condition >> 3) {
+					switch (MONITOR_breakpoint_table[i].condition >> 3) {
 					case MONITOR_BREAKPOINT_PC >> 3:
-						printf("PC%s%04X", op, Monitor_breakpoint_table[i].value);
+						printf("PC%s%04X", op, MONITOR_breakpoint_table[i].value);
 						break;
 					case MONITOR_BREAKPOINT_A >> 3:
-						printf("A%s%02X", op, Monitor_breakpoint_table[i].value);
+						printf("A%s%02X", op, MONITOR_breakpoint_table[i].value);
 						break;
 					case MONITOR_BREAKPOINT_X >> 3:
-						printf("X%s%02X", op, Monitor_breakpoint_table[i].value);
+						printf("X%s%02X", op, MONITOR_breakpoint_table[i].value);
 						break;
 					case MONITOR_BREAKPOINT_Y >> 3:
-						printf("A%s%02X", op, Monitor_breakpoint_table[i].value);
+						printf("A%s%02X", op, MONITOR_breakpoint_table[i].value);
 						break;
 					case MONITOR_BREAKPOINT_S >> 3:
-						printf("S%s%02X", op, Monitor_breakpoint_table[i].value);
+						printf("S%s%02X", op, MONITOR_breakpoint_table[i].value);
 						break;
 					case MONITOR_BREAKPOINT_READ >> 3:
-						printf("READ%s%04X", op, Monitor_breakpoint_table[i].value);
+						printf("READ%s%04X", op, MONITOR_breakpoint_table[i].value);
 						break;
 					case MONITOR_BREAKPOINT_WRITE >> 3:
-						printf("WRITE%s%04X", op, Monitor_breakpoint_table[i].value);
+						printf("WRITE%s%04X", op, MONITOR_breakpoint_table[i].value);
 						break;
 					case MONITOR_BREAKPOINT_ACCESS >> 3:
-						printf("ACCESS%s%04X", op, Monitor_breakpoint_table[i].value);
+						printf("ACCESS%s%04X", op, MONITOR_breakpoint_table[i].value);
 						break;
 					default:
 						printf("???");
@@ -1064,15 +1064,15 @@ static void monitor_breakpoints(void)
 	}
 	Util_strupper(t);
 	if (strcmp(t, "C") == 0) {
-		Monitor_breakpoint_table_size = 0;
+		MONITOR_breakpoint_table_size = 0;
 		printf("Breakpoint table cleared\n");
 	}
 	else if (strcmp(t, "D") == 0) {
 		int i;
-		if (get_dec(&i) && /*i >= 0 &&*/ i < Monitor_breakpoint_table_size) {
-			Monitor_breakpoint_table_size--;
-			while (i < Monitor_breakpoint_table_size) {
-				Monitor_breakpoint_table[i] = Monitor_breakpoint_table[i + 1];
+		if (get_dec(&i) && /*i >= 0 &&*/ i < MONITOR_breakpoint_table_size) {
+			MONITOR_breakpoint_table_size--;
+			while (i < MONITOR_breakpoint_table_size) {
+				MONITOR_breakpoint_table[i] = MONITOR_breakpoint_table[i + 1];
 				i++;
 			}
 			printf("Entry deleted\n");
@@ -1090,7 +1090,7 @@ static void monitor_breakpoints(void)
 		int i;
 		if (t[0] >= '0' && t[0] <= '9') {
 			i = Util_sscandec(t);
-			if (i < 0 || i > Monitor_breakpoint_table_size) {
+			if (i < 0 || i > MONITOR_breakpoint_table_size) {
 				printf("Bad argument\n");
 				return;
 			}
@@ -1101,8 +1101,8 @@ static void monitor_breakpoints(void)
 			}
 		}
 		else
-			i = Monitor_breakpoint_table_size;
-		while (Monitor_breakpoint_table_size < MONITOR_BREAKPOINT_TABLE_MAX) {
+			i = MONITOR_breakpoint_table_size;
+		while (MONITOR_breakpoint_table_size < MONITOR_BREAKPOINT_TABLE_MAX) {
 			UBYTE condition;
 			int value;
 			int j;
@@ -1200,13 +1200,13 @@ static void monitor_breakpoints(void)
 				printf("Bad argument\n");
 				return;
 			}
-			for (j = Monitor_breakpoint_table_size; j > i; j--)
-				Monitor_breakpoint_table[j] = Monitor_breakpoint_table[j - 1];
-			Monitor_breakpoint_table[i].enabled = TRUE;
-			Monitor_breakpoint_table[i].condition = condition;
-			Monitor_breakpoint_table[i].value = (UWORD) value;
+			for (j = MONITOR_breakpoint_table_size; j > i; j--)
+				MONITOR_breakpoint_table[j] = MONITOR_breakpoint_table[j - 1];
+			MONITOR_breakpoint_table[i].enabled = TRUE;
+			MONITOR_breakpoint_table[i].condition = condition;
+			MONITOR_breakpoint_table[i].value = (UWORD) value;
 			i++;
-			Monitor_breakpoint_table_size++;
+			MONITOR_breakpoint_table_size++;
 			t = get_token();
 			if (t == NULL) {
 				printf("Breakpoint(s) added\n");
@@ -1220,7 +1220,7 @@ static void monitor_breakpoints(void)
 
 #endif /* MONITOR_BREAKPOINTS */
 
-int Monitor_Run(void)
+int MONITOR_Run(void)
 {
 	UWORD addr;
 
@@ -1241,17 +1241,17 @@ int Monitor_Run(void)
 #ifdef MONITOR_BREAK
 	if (break_over) {
 		/* "O" command was active */
-		Monitor_break_addr = 0xd000;
+		MONITOR_break_addr = 0xd000;
 		break_over = FALSE;
 	}
-	else if (CPU_regPC == Monitor_break_addr)
-		printf("(breakpoint at %04X)\n", (unsigned int) Monitor_break_addr);
-	else if (ypos == break_ypos)
-		printf("(breakpoint at scanline %d)\n", break_ypos);
-	else if (Monitor_break_ret && Monitor_ret_nesting <= 0)
+	else if (CPU_regPC == MONITOR_break_addr)
+		printf("(breakpoint at %04X)\n", (unsigned int) MONITOR_break_addr);
+	else if (ANTIC_ypos == ANTIC_break_ypos)
+		printf("(breakpoint at scanline %d)\n", ANTIC_break_ypos);
+	else if (MONITOR_break_ret && MONITOR_ret_nesting <= 0)
 		printf("(returned)\n");
-	Monitor_break_step = FALSE;
-	Monitor_break_ret = FALSE;
+	MONITOR_break_step = FALSE;
+	MONITOR_break_ret = FALSE;
 #endif /* MONITOR_BREAK */
 
 	show_state();
@@ -1301,20 +1301,20 @@ int Monitor_Run(void)
 		else if (strcmp(t, "BBRK") == 0) {
 			t = get_token();
 			if (t == NULL)
-				printf("Break on BRK is %sabled\n", Monitor_break_brk ? "en" : "dis");
+				printf("Break on BRK is %sabled\n", MONITOR_break_brk ? "en" : "dis");
 			else if (Util_stricmp(t, "ON") == 0)
-				Monitor_break_brk = TRUE;
+				MONITOR_break_brk = TRUE;
 			else if (Util_stricmp(t, "OFF") == 0)
-				Monitor_break_brk = FALSE;
+				MONITOR_break_brk = FALSE;
 			else
 				printf("Invalid argument. Usage: BBRK ON or OFF\n");
 		}
 		else if (strcmp(t, "BPC") == 0) {
-			get_hex(&Monitor_break_addr);
-			if (Monitor_break_addr >= 0xd000 && Monitor_break_addr <= 0xd7ff)
+			get_hex(&MONITOR_break_addr);
+			if (MONITOR_break_addr >= 0xd000 && MONITOR_break_addr <= 0xd7ff)
 				printf("PC breakpoint disabled\n");
 			else
-				printf("Breakpoint at PC=%04X\n", Monitor_break_addr);
+				printf("Breakpoint at PC=%04X\n", MONITOR_break_addr);
 		}
 		else if (strcmp(t, "HISTORY") == 0 || strcmp(t, "H") == 0) {
 			int i;
@@ -1333,12 +1333,12 @@ int Monitor_Run(void)
 #endif
 #if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
 		else if (strcmp(t, "BLINE") == 0) {
-			get_dec(&break_ypos);
-			if (break_ypos >= 1008 && break_ypos <= 1247)
-				printf("Blinking scanline %d\n", break_ypos - 1000);
+			get_dec(&ANTIC_break_ypos);
+			if (ANTIC_break_ypos >= 1008 && ANTIC_break_ypos <= 1247)
+				printf("Blinking scanline %d\n", ANTIC_break_ypos - 1000);
 #ifdef MONITOR_BREAK
-			else if (break_ypos >= 0 && break_ypos <= 311)
-				printf("Breakpoint set at scanline %d\n", break_ypos);
+			else if (ANTIC_break_ypos >= 0 && ANTIC_break_ypos <= 311)
+				printf("Breakpoint set at scanline %d\n", ANTIC_break_ypos);
 #endif
 			else
 				printf("BLINE disabled\n");
@@ -1387,7 +1387,7 @@ int Monitor_Run(void)
 			}
 #else
 /* group identical instructions */
-			UWORD tdlist = dlist;
+			UWORD tdlist = ANTIC_dlist;
 			UWORD new_tdlist;
 			UBYTE IR;
 			int scrnaddr = -1;
@@ -1524,14 +1524,14 @@ int Monitor_Run(void)
 #ifdef MONITOR_TRACE
 		else if (strcmp(t, "TRACE") == 0) {
 			const char *filename = get_token();
-			if (Monitor_trace_file != NULL) {
-				fclose(Monitor_trace_file);
+			if (MONITOR_trace_file != NULL) {
+				fclose(MONITOR_trace_file);
 				printf("Trace file closed\n");
-				Monitor_trace_file = NULL;
+				MONITOR_trace_file = NULL;
 			}
 			if (filename != NULL) {
-				Monitor_trace_file = fopen(filename, "w");
-				if (Monitor_trace_file != NULL)
+				MONITOR_trace_file = fopen(filename, "w");
+				if (MONITOR_trace_file != NULL)
 					printf("Trace file open\n");
 				else
 					perror(filename);
@@ -1566,16 +1566,16 @@ int Monitor_Run(void)
 			int ts;
 			for (ts = 0x101 + CPU_regS; ts < 0x200; ) {
 				if (ts < 0x1ff) {
-					UWORD ta = (UWORD) (dGetWord(ts) - 2);
-					if (dGetByte(ta) == 0x20) {
+					UWORD ta = (UWORD) (MEMORY_dGetWord(ts) - 2);
+					if (MEMORY_dGetByte(ta) == 0x20) {
 						printf("%04X: %02X %02X  %04X: JSR %04X\n",
-							ts, dGetByte(ts), dGetByte(ts + 1), ta,
-							dGetWord(ta + 1));
+							ts, MEMORY_dGetByte(ts), MEMORY_dGetByte(ts + 1), ta,
+							MEMORY_dGetWord(ta + 1));
 						ts += 2;
 						continue;
 					}
 				}
-				printf("%04X: %02X\n", ts, dGetByte(ts));
+				printf("%04X: %02X\n", ts, MEMORY_dGetByte(ts));
 				ts++;
 			}
 		}
@@ -1583,7 +1583,7 @@ int Monitor_Run(void)
 			UWORD addr1;
 			UWORD addr2;
 			if (get_attrib_range(&addr1, &addr2)) {
-				SetROM(addr1, addr2);
+				MEMORY_SetROM(addr1, addr2);
 				printf("Changed memory from %04X to %04X into ROM\n",
 					   addr1, addr2);
 			}
@@ -1592,7 +1592,7 @@ int Monitor_Run(void)
 			UWORD addr1;
 			UWORD addr2;
 			if (get_attrib_range(&addr1, &addr2)) {
-				SetRAM(addr1, addr2);
+				MEMORY_SetRAM(addr1, addr2);
 				printf("Changed memory from %04X to %04X into RAM\n",
 					   addr1, addr2);
 			}
@@ -1602,19 +1602,19 @@ int Monitor_Run(void)
 			UWORD addr1;
 			UWORD addr2;
 			if (get_attrib_range(&addr1, &addr2)) {
-				SetHARDWARE(addr1, addr2);
+				MEMORY_SetHARDWARE(addr1, addr2);
 				printf("Changed memory from %04X to %04X into HARDWARE\n",
 					   addr1, addr2);
 			}
 		}
 #endif
 		else if (strcmp(t, "COLDSTART") == 0) {
-			Coldstart();
+			Atari800_Coldstart();
 			PLUS_EXIT_MONITOR;
 			return TRUE;	/* perform reboot immediately */
 		}
 		else if (strcmp(t, "WARMSTART") == 0) {
-			Warmstart();
+			Atari800_Warmstart();
 			PLUS_EXIT_MONITOR;
 			return TRUE;	/* perform reboot immediately */
 		}
@@ -1629,7 +1629,7 @@ int Monitor_Run(void)
 					if (f == NULL)
 						perror(filename);
 					else {
-						if (fread(&memory[addr], 1, nbytes, f) == 0)
+						if (fread(&MEMORY_mem[addr], 1, nbytes, f) == 0)
 							perror(filename);
 						fclose(f);
 					}
@@ -1650,7 +1650,7 @@ int Monitor_Run(void)
 					perror(filename);
 				else {
 					size_t nbytes = addr2 - addr1 + 1;
-					if (fwrite(&memory[addr1], 1, addr2 - addr1 + 1, f) < nbytes)
+					if (fwrite(&MEMORY_mem[addr1], 1, addr2 - addr1 + 1, f) < nbytes)
 						perror(filename);
 					fclose(f);
 				}
@@ -1664,7 +1664,7 @@ int Monitor_Run(void)
 				int sum = 0;
 				int i;
 				for (i = addr1; i <= addr2; i++)
-					sum += dGetByte(i);
+					sum += MEMORY_dGetByte(i);
 				printf("SUM: %X\n", sum);
 			}
 		}
@@ -1675,11 +1675,11 @@ int Monitor_Run(void)
 				int i;
 				printf("%04X: ", addr);
 				for (i = 0; i < 16; i++)
-					printf("%02X ", GetByte((UWORD) (addr + i)));
+					printf("%02X ", MEMORY_GetByte((UWORD) (addr + i)));
 				putchar(' ');
 				for (i = 0; i < 16; i++) {
 					UBYTE c;
-					c = GetByte(addr);
+					c = MEMORY_GetByte(addr);
 					addr++;
 					putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
 				}
@@ -1693,9 +1693,9 @@ int Monitor_Run(void)
 			UWORD hexval;
 			if (get_hex3(&addr1, &addr2, &hexval)) {
 				/* use int to avoid endless loop with addr2==0xffff */
-				int addr;
-				for (addr = addr1; addr <= addr2; addr++)
-					dPutByte(addr, (UBYTE) hexval);
+				int a;
+				for (a = addr1; a <= addr2; a++)
+					MEMORY_dPutByte(a, (UBYTE) hexval);
 			}
 		}
 #endif
@@ -1715,13 +1715,13 @@ int Monitor_Run(void)
 				} while (n < 64 && get_hex(&hexval));
 			}
 			if (n > 0) {
-				int addr;
-				for (addr = addr1; addr <= addr2; addr++) {
+				int a;
+				for (a = addr1; a <= addr2; a++) {
 					int i = 0;
-					while (GetByte((UWORD) (addr + i)) == tab[i]) {
+					while (MEMORY_GetByte((UWORD) (a + i)) == tab[i]) {
 						i++;
 						if (i >= n) {
-							printf("Found at %04X\n", addr);
+							printf("Found at %04X\n", a);
 							break;
 						}
 					}
@@ -1734,25 +1734,25 @@ int Monitor_Run(void)
 			get_hex(&addr);
 			while (get_hex(&temp)) {
 #ifdef PAGED_ATTRIB
-				if (writemap[addr >> 8] != NULL && writemap[addr >> 8] != ROM_PutByte)
-					(*writemap[addr >> 8])(addr, (UBYTE) temp);
+				if (MEMORY_writemap[addr >> 8] != NULL && MEMORY_writemap[addr >> 8] != MEMORY_ROM_PutByte)
+					(*MEMORY_writemap[addr >> 8])(addr, (UBYTE) temp);
 #else
-				if (attrib[addr] == HARDWARE)
-					Atari800_PutByte(addr, (UBYTE) temp);
+				if (MEMORY_attrib[addr] == MEMORY_HARDWARE)
+					MEMORY_HwPutByte(addr, (UBYTE) temp);
 #endif
 				else /* RAM, ROM */
-					dPutByte(addr, (UBYTE) temp);
+					MEMORY_dPutByte(addr, (UBYTE) temp);
 				addr++;
 				if (temp > 0xff) {
 #ifdef PAGED_ATTRIB
-					if (writemap[addr >> 8] != NULL && writemap[addr >> 8] != ROM_PutByte)
-						(*writemap[addr >> 8])(addr, (UBYTE) (temp >> 8));
+					if (MEMORY_writemap[addr >> 8] != NULL && MEMORY_writemap[addr >> 8] != MEMORY_ROM_PutByte)
+						(*MEMORY_writemap[addr >> 8])(addr, (UBYTE) (temp >> 8));
 #else
-					if (attrib[addr] == HARDWARE)
-						Atari800_PutByte(addr, (UBYTE) (temp >> 8));
+					if (MEMORY_attrib[addr] == MEMORY_HARDWARE)
+						MEMORY_HwPutByte(addr, (UBYTE) (temp >> 8));
 #endif
 					else /* RAM, ROM */
-						dPutByte(addr, (UBYTE) (temp >> 8));
+						MEMORY_dPutByte(addr, (UBYTE) (temp >> 8));
 					addr++;
 				}
 			}
@@ -1760,25 +1760,25 @@ int Monitor_Run(void)
 #endif
 #ifdef MONITOR_BREAK
 		else if (strcmp(t, "G") == 0) {
-			Monitor_break_step = TRUE;
+			MONITOR_break_step = TRUE;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
 		else if (strcmp(t, "R") == 0 ) {
-			Monitor_break_ret = TRUE;
-			Monitor_ret_nesting = 1;
+			MONITOR_break_ret = TRUE;
+			MONITOR_ret_nesting = 1;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
 		else if (strcmp(t, "O") == 0) {
-			UBYTE opcode = dGetByte(CPU_regPC);
+			UBYTE opcode = MEMORY_dGetByte(CPU_regPC);
 			if ((opcode & 0x1f) == 0x10 || opcode == 0x20) {
 				/* branch or JSR: set breakpoint after it */
-				Monitor_break_addr = CPU_regPC + (Monitor_optype6502[dGetByte(CPU_regPC)] & 0x3);
+				MONITOR_break_addr = CPU_regPC + (MONITOR_optype6502[MEMORY_dGetByte(CPU_regPC)] & 0x3);
 				break_over = TRUE;
 			}
 			else
-				Monitor_break_step = TRUE;
+				MONITOR_break_step = TRUE;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
@@ -1801,16 +1801,16 @@ int Monitor_Run(void)
 					printf("Conditional loop containing instruction at %04X not detected\n", addr);
 					break;
 				}
-				opcode = dGetByte(caddr);
+				opcode = MEMORY_dGetByte(caddr);
 				if ((opcode & 0x1f) == 0x10) {
 					/* branch */
-					UWORD target = caddr + 2 + (SBYTE) dGetByte(caddr + 1);
+					UWORD target = caddr + 2 + (SBYTE) MEMORY_dGetByte(caddr + 1);
 					if (target <= addr) {
 						addr = disassemble(target);
 						break;
 					}
 				}
-				caddr += Monitor_optype6502[opcode] & 3;
+				caddr += MONITOR_optype6502[opcode] & 3;
 			}
 		}
 #ifdef MONITOR_HINTS
@@ -1893,43 +1893,43 @@ int Monitor_Run(void)
 		else if (strcmp(t, "ANTIC") == 0) {
 			printf("DMACTL=%02X    CHACTL=%02X    DLISTL=%02X    "
 				   "DLISTH=%02X    HSCROL=%02X    VSCROL=%02X\n",
-				   DMACTL, CHACTL, dlist & 0xff, dlist >> 8, HSCROL, VSCROL);
+				   ANTIC_DMACTL, ANTIC_CHACTL, ANTIC_dlist & 0xff, ANTIC_dlist >> 8, ANTIC_HSCROL, ANTIC_VSCROL);
 			printf("PMBASE=%02X    CHBASE=%02X    VCOUNT=%02X    "
 				   "NMIEN= %02X    ypos=%4d\n",
-				   PMBASE, CHBASE, ANTIC_GetByte(_VCOUNT), NMIEN, ypos);
+				   ANTIC_PMBASE, ANTIC_CHBASE, ANTIC_GetByte(ANTIC_OFFSET_VCOUNT), ANTIC_NMIEN, ANTIC_ypos);
 		}
 		else if (strcmp(t, "PIA") == 0) {
 			printf("PACTL= %02X    PBCTL= %02X    PORTA= %02X    "
-				   "PORTB= %02X\n", PACTL, PBCTL, PORTA, PORTB);
+				   "PORTB= %02X\n", PIA_PACTL, PIA_PBCTL, PIA_PORTA, PIA_PORTB);
 		}
 		else if (strcmp(t, "GTIA") == 0) {
 			printf("HPOSP0=%02X    HPOSP1=%02X    HPOSP2=%02X    HPOSP3=%02X\n",
-				   HPOSP0, HPOSP1, HPOSP2, HPOSP3);
+				   GTIA_HPOSP0, GTIA_HPOSP1, GTIA_HPOSP2, GTIA_HPOSP3);
 			printf("HPOSM0=%02X    HPOSM1=%02X    HPOSM2=%02X    HPOSM3=%02X\n",
-				   HPOSM0, HPOSM1, HPOSM2, HPOSM3);
+				   GTIA_HPOSM0, GTIA_HPOSM1, GTIA_HPOSM2, GTIA_HPOSM3);
 			printf("SIZEP0=%02X    SIZEP1=%02X    SIZEP2=%02X    SIZEP3=%02X    SIZEM= %02X\n",
-				   SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM);
+				   GTIA_SIZEP0, GTIA_SIZEP1, GTIA_SIZEP2, GTIA_SIZEP3, GTIA_SIZEM);
 			printf("GRAFP0=%02X    GRAFP1=%02X    GRAFP2=%02X    GRAFP3=%02X    GRAFM= %02X\n",
-				   GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM);
+				   GTIA_GRAFP0, GTIA_GRAFP1, GTIA_GRAFP2, GTIA_GRAFP3, GTIA_GRAFM);
 			printf("COLPM0=%02X    COLPM1=%02X    COLPM2=%02X    COLPM3=%02X\n",
-				   COLPM0, COLPM1, COLPM2, COLPM3);
+				   GTIA_COLPM0, GTIA_COLPM1, GTIA_COLPM2, GTIA_COLPM3);
 			printf("COLPF0=%02X    COLPF1=%02X    COLPF2=%02X    COLPF3=%02X    COLBK= %02X\n",
-				   COLPF0, COLPF1, COLPF2, COLPF3, COLBK);
+				   GTIA_COLPF0, GTIA_COLPF1, GTIA_COLPF2, GTIA_COLPF3, GTIA_COLBK);
 			printf("PRIOR= %02X    VDELAY=%02X    GRACTL=%02X\n",
-				   PRIOR, VDELAY, GRACTL);
+				   GTIA_PRIOR, GTIA_VDELAY, GTIA_GRACTL);
 		}
 		else if (strcmp(t, "POKEY") == 0) {
 			printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    AUDF4= %02X    AUDCTL=%02X    KBCODE=%02X\n",
-				   AUDF[CHAN1], AUDF[CHAN2], AUDF[CHAN3], AUDF[CHAN4], AUDCTL[0], KBCODE);
+				   POKEY_AUDF[POKEY_CHAN1], POKEY_AUDF[POKEY_CHAN2], POKEY_AUDF[POKEY_CHAN3], POKEY_AUDF[POKEY_CHAN4], POKEY_AUDCTL[0], POKEY_KBCODE);
 			printf("AUDC1= %02X    AUDC2= %02X    AUDC3= %02X    AUDC4= %02X    IRQEN= %02X    IRQST= %02X\n",
-				   AUDC[CHAN1], AUDC[CHAN2], AUDC[CHAN3], AUDC[CHAN4], IRQEN, IRQST);
+				   POKEY_AUDC[POKEY_CHAN1], POKEY_AUDC[POKEY_CHAN2], POKEY_AUDC[POKEY_CHAN3], POKEY_AUDC[POKEY_CHAN4], POKEY_IRQEN, POKEY_IRQST);
 #ifdef STEREO_SOUND
-			if (stereo_enabled) {
+			if (POKEYSND_stereo_enabled) {
 				printf("Second chip:\n");
 				printf("AUDF1= %02X    AUDF2= %02X    AUDF3= %02X    AUDF4= %02X    AUDCTL=%02X\n",
-					   AUDF[CHAN1 + CHIP2], AUDF[CHAN2 + CHIP2], AUDF[CHAN3 + CHIP2], AUDF[CHAN4 + CHIP2], AUDCTL[1]);
+					   POKEY_AUDF[POKEY_CHAN1 + POKEY_CHIP2], POKEY_AUDF[POKEY_CHAN2 + POKEY_CHIP2], POKEY_AUDF[POKEY_CHAN3 + POKEY_CHIP2], POKEY_AUDF[POKEY_CHAN4 + POKEY_CHIP2], POKEY_AUDCTL[1]);
 				printf("AUDC1= %02X    AUDC2= %02X    AUDC3= %02X    AUDC4= %02X\n",
-					   AUDC[CHAN1 + CHIP2], AUDC[CHAN2 + CHIP2], AUDC[CHAN3 + CHIP2], AUDC[CHAN4 + CHIP2]);
+					   POKEY_AUDC[POKEY_CHAN1 + POKEY_CHIP2], POKEY_AUDC[POKEY_CHAN2 + POKEY_CHIP2], POKEY_AUDC[POKEY_CHAN3 + POKEY_CHIP2], POKEY_AUDC[POKEY_CHAN4 + POKEY_CHIP2]);
 			}
 #endif
 		}

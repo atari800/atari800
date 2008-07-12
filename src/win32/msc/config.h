@@ -355,10 +355,10 @@
 /* #undef STEREO_SOUND */ /* TODO */
 
 /* Save additional config file options. */
-/* #undef SUPPORTS_ATARI_CONFIGSAVE */
+/* #undef SUPPORTS_PLATFORM_CONFIGSAVE */
 
 /* Additional config file options. */
-/* #undef SUPPORTS_ATARI_CONFIGURE */
+/* #undef SUPPORTS_PLATFORM_CONFIGURE */
 
 /* Target: Linux with SVGALib. */
 /* #undef SVGALIB */

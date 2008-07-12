@@ -29,12 +29,13 @@
 #include "util.h"
 #include "log.h"
 #include "memory.h"
+#include <stdlib.h>
 
 #define PROTO80_PBI_NUM 2
 #define PROTO80_MASK (1 << PROTO80_PBI_NUM)
 
 static UBYTE *proto80rom;
-static char proto80_rom_filename[FILENAME_MAX] = FILENAME_NOT_SET;
+static char proto80_rom_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
 
 int PBI_PROTO80_enabled = FALSE;
 
@@ -87,7 +88,7 @@ void PBI_PROTO80_WriteConfig(FILE *fp)
 	fprintf(fp, "PROTO80_ROM=%s\n", proto80_rom_filename);
 }
 
-int PBI_PROTO80_D1_GetByte(UWORD addr)
+int PBI_PROTO80_D1GetByte(UWORD addr)
 {
 	int result = PBI_NOT_HANDLED;
 	if (PBI_PROTO80_enabled) {
@@ -95,23 +96,23 @@ int PBI_PROTO80_D1_GetByte(UWORD addr)
 	return result;
 }
 
-void PBI_PROTO80_D1_PutByte(UWORD addr, UBYTE byte)
+void PBI_PROTO80_D1PutByte(UWORD addr, UBYTE byte)
 {
 
 }
 
-int PBI_PROTO80_D1FF_PutByte(UBYTE byte)
+int PBI_PROTO80_D1ffPutByte(UBYTE byte)
 {
 	int result = 0; /* handled */
 	if (PBI_PROTO80_enabled && byte == PROTO80_MASK) {
-		memcpy(memory + 0xd800, proto80rom, 0x800);
+		memcpy(MEMORY_mem + 0xd800, proto80rom, 0x800);
 		D(printf("PROTO80 rom activated\n"));
 	}
 	else result = PBI_NOT_HANDLED;
 	return result;
 }
 
-UBYTE PBI_PROTO80_Pixels(int scanline, int column)
+UBYTE PBI_PROTO80_GetPixels(int scanline, int column)
 {
 #define PROTO80_ROWS 24
 #define PROTO80_CELL_HEIGHT 8
@@ -123,13 +124,13 @@ UBYTE PBI_PROTO80_Pixels(int scanline, int column)
 	if (row  >= PROTO80_ROWS) {
 		return 0;
 	}
-	character = memory[0x9800 + row*80 + column];
+	character = MEMORY_mem[0x9800 + row*80 + column];
 	invert = 0x00;
 	if (character & 0x80) {
 		invert = 0xff;
 		character &= 0x7f;
 	}
-	font_data = memory[0xe000 + character*8 + line];
+	font_data = MEMORY_mem[0xe000 + character*8 + line];
 	font_data ^= invert;
 	return font_data;
 }

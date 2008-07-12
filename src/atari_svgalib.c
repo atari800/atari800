@@ -33,6 +33,7 @@
 
 #include "atari.h"
 #include "input.h"
+#include "akey.h"
 #include "colours.h"
 #include "monitor.h"
 #include "sound.h"
@@ -69,7 +70,7 @@ static struct JS_DATA_TYPE js_data;
 #include <linux/keyboard.h>
 #include <vgakeyboard.h>
 
-extern int alt_function;
+extern int UI_alt_function;
 static int pause_hit = 0;
 static UBYTE kbhits[NR_KEYS];
 static int kbcode = 0;
@@ -132,7 +133,7 @@ static int invisible = 0;
 
 static int ypos_inc = 1;
 static int svga_ptr_inc = 320;
-static int scrn_ptr_inc = ATARI_WIDTH;
+static int scrn_ptr_inc = Screen_WIDTH;
 
 
 /****************************************************************************/
@@ -171,7 +172,7 @@ static void initkb(void)
 	keyboard_seteventhandler(kbhandler);
 }
 
-int Atari_Keyboard(void)
+int PLATFORM_Keyboard(void)
 {
 	int keycode;
 	int i;
@@ -191,35 +192,35 @@ int Atari_Keyboard(void)
 				cstick &= joymask[i];
 	}
 
-	key_shift = (kbhits[SCANCODE_LEFTSHIFT]
+	INPUT_key_shift = (kbhits[SCANCODE_LEFTSHIFT]
 	           | kbhits[SCANCODE_RIGHTSHIFT]) ? 1 : 0;
 
-	alt_function = -1;		/* no alt function */
+	UI_alt_function = -1;		/* no alt function */
 	if (kbhits[0x38]) {		/* left Alt key is pressed */
 		if (kbcode == SCANCODE_R)
-			alt_function = MENU_RUN;		/* ALT+R .. Run file */
+			UI_alt_function = UI_MENU_RUN;		/* ALT+R .. Run file */
 		else if (kbcode == SCANCODE_Y)
-			alt_function = MENU_SYSTEM;		/* ALT+Y .. Select system */
+			UI_alt_function = UI_MENU_SYSTEM;		/* ALT+Y .. Select system */
 		else if (kbcode == SCANCODE_O)
-			alt_function = MENU_SOUND;		/* ALT+O .. mono/stereo sound */
+			UI_alt_function = UI_MENU_SOUND;		/* ALT+O .. mono/stereo sound */
 		else if (kbcode == SCANCODE_W)
-			alt_function = MENU_SOUND_RECORDING;	/* ALT+W .. record sound */
+			UI_alt_function = UI_MENU_SOUND_RECORDING;	/* ALT+W .. record sound */
 		else if (kbcode == SCANCODE_A)
-			alt_function = MENU_ABOUT;		/* ALT+A .. About */
+			UI_alt_function = UI_MENU_ABOUT;		/* ALT+A .. About */
 		else if (kbcode == SCANCODE_S)
-			alt_function = MENU_SAVESTATE;	/* ALT+S .. Save state */
+			UI_alt_function = UI_MENU_SAVESTATE;	/* ALT+S .. Save state */
 		else if (kbcode == SCANCODE_D)
-			alt_function = MENU_DISK;		/* ALT+D .. Disk management */
+			UI_alt_function = UI_MENU_DISK;		/* ALT+D .. Disk management */
 		else if (kbcode == SCANCODE_L)
-			alt_function = MENU_LOADSTATE;	/* ALT+L .. Load state */
+			UI_alt_function = UI_MENU_LOADSTATE;	/* ALT+L .. Load state */
 		else if (kbcode == SCANCODE_C)
-			alt_function = MENU_CARTRIDGE;	/* ALT+C .. Cartridge management */
+			UI_alt_function = UI_MENU_CARTRIDGE;	/* ALT+C .. Cartridge management */
 	}
-	if (alt_function != -1)
+	if (UI_alt_function != -1)
 		return AKEY_UI;
 
 	/* need to set shift mask here to avoid conflict with PC layout */
-	keycode = (key_shift ? 0x40 : 0)
+	keycode = (INPUT_key_shift ? 0x40 : 0)
 	        | ((kbhits[SCANCODE_LEFTCONTROL]
 	          | kbhits[SCANCODE_RIGHTCONTROL]) ? 0x80 : 0);
 
@@ -228,7 +229,7 @@ int Atari_Keyboard(void)
 		return AKEY_EXIT;
 	case SCANCODE_F8:
 		kbcode = 0;
-		return Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT;
+		return PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT;
 	case SCANCODE_SCROLLLOCK: /* pause */
 		while (kbhits[SCANCODE_SCROLLLOCK])
 			keyboard_update();
@@ -239,11 +240,11 @@ int Atari_Keyboard(void)
 	case SCANCODE_PRINTSCREEN:
 	case SCANCODE_F10:
 		kbcode = 0;
-		return key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
+		return INPUT_key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
 	case SCANCODE_F1:
 		return AKEY_UI;
 	case SCANCODE_F5:
-		return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
+		return INPUT_key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
 	case SCANCODE_F11:
 		for (i = 0; i < 4; i++) {
 			if (++joy_autofire[i] > 2)
@@ -255,7 +256,7 @@ int Atari_Keyboard(void)
 		break;
 	}
 
-	if (machine_type == MACHINE_5200 && !ui_is_active) {
+	if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active) {
 		switch (kbcode) {
 		case SCANCODE_F4:
 			keycode |= AKEY_5200_START;
@@ -276,7 +277,7 @@ int Atari_Keyboard(void)
 			keycode |= AKEY_5200_2;
 			break;
 		case SCANCODE_3:
-			keycode = key_shift ? AKEY_5200_HASH : AKEY_5200_3;
+			keycode = INPUT_key_shift ? AKEY_5200_HASH : AKEY_5200_3;
 			break;
 		case SCANCODE_4:
 			keycode |= AKEY_5200_4;
@@ -291,7 +292,7 @@ int Atari_Keyboard(void)
 			keycode |= AKEY_5200_7;
 			break;
 		case SCANCODE_8:
-			keycode = key_shift ? AKEY_5200_ASTERISK : AKEY_5200_8;
+			keycode = INPUT_key_shift ? AKEY_5200_ASTERISK : AKEY_5200_8;
 			break;
 		case SCANCODE_9:
 			keycode |= AKEY_5200_9;
@@ -306,9 +307,9 @@ int Atari_Keyboard(void)
 		return keycode;
 	}
 
-	key_consol = (kbhits[SCANCODE_F2] ? 0 : CONSOL_OPTION)
-	           | (kbhits[SCANCODE_F3] ? 0 : CONSOL_SELECT)
-	           | (kbhits[SCANCODE_F4] ? 0 : CONSOL_START);
+	INPUT_key_consol = (kbhits[SCANCODE_F2] ? 0 : INPUT_CONSOL_OPTION)
+	           | (kbhits[SCANCODE_F3] ? 0 : INPUT_CONSOL_SELECT)
+	           | (kbhits[SCANCODE_F4] ? 0 : INPUT_CONSOL_START);
 
 	if (pause_hit) {
 		pause_hit = 0;
@@ -327,7 +328,7 @@ int Atari_Keyboard(void)
 	KBSCAN(ESCAPE)
 	KBSCAN(1)
 	case SCANCODE_2:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_AT;
 		else
 			keycode |= AKEY_2;
@@ -336,19 +337,19 @@ int Atari_Keyboard(void)
 	KBSCAN(4)
 	KBSCAN(5)
 	case SCANCODE_6:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_CARET;
 		else
 			keycode |= AKEY_6;
 		break;
 	case SCANCODE_7:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_AMPERSAND;
 		else
 			keycode |= AKEY_7;
 		break;
 	case SCANCODE_8:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_ASTERISK;
 		else
 			keycode |= AKEY_8;
@@ -357,7 +358,7 @@ int Atari_Keyboard(void)
 	KBSCAN(0)
 	KBSCAN(MINUS)
 	case SCANCODE_EQUAL:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_PLUS;
 		else
 			keycode |= AKEY_EQUAL;
@@ -394,7 +395,7 @@ int Atari_Keyboard(void)
 	KBSCAN(L)
 	KBSCAN(SEMICOLON)
 	case SCANCODE_APOSTROPHE:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_DBLQUOTE;
 		else
 			keycode |= AKEY_QUOTE;
@@ -403,7 +404,7 @@ int Atari_Keyboard(void)
 		keycode |= AKEY_ATARI;
 		break;
 	case SCANCODE_BACKSLASH:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_BAR;
 		else
 			keycode |= AKEY_BACKSLASH;
@@ -416,13 +417,13 @@ int Atari_Keyboard(void)
 	KBSCAN(N)
 	KBSCAN(M)
 	case SCANCODE_COMMA:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_LESS;
 		else
 			keycode |= AKEY_COMMA;
 		break;
 	case SCANCODE_PERIOD:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_GREATER;
 		else
 			keycode |= AKEY_FULLSTOP;
@@ -443,13 +444,13 @@ int Atari_Keyboard(void)
 		keycode = AKEY_RIGHT;
 		break;
 	case SCANCODE_REMOVE:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_DELETE_LINE;
 		else
 			keycode |= AKEY_DELETE_CHAR;
 		break;
 	case SCANCODE_INSERT:
-		if (key_shift)
+		if (INPUT_key_shift)
 			keycode = AKEY_INSERT_LINE;
 		else
 			keycode |= AKEY_INSERT_CHAR;
@@ -480,7 +481,7 @@ void invisible_stop(void)
 	invisible = 0;
 }
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int VGAMODE = G320x240x256;
 
@@ -495,7 +496,7 @@ void Atari_Initialise(int *argc, char *argv[])
 		if (strcmp(argv[i], "-interlace") == 0) {
 			ypos_inc = 2;
 			svga_ptr_inc = 320 + 320;
-			scrn_ptr_inc = ATARI_WIDTH + ATARI_WIDTH;
+			scrn_ptr_inc = Screen_WIDTH + Screen_WIDTH;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -581,10 +582,10 @@ void Atari_Initialise(int *argc, char *argv[])
 	cstick = 15;
 	atrig = 1;
 	astick = 15;
-	key_consol = CONSOL_NONE;
+	INPUT_key_consol = INPUT_CONSOL_NONE;
 }
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	int restart;
 
@@ -592,7 +593,7 @@ int Atari_Exit(int run_monitor)
 	vga_setmode(TEXT);
 
 	if (run_monitor)
-		restart = Monitor_Run();
+		restart = MONITOR_Run();
 	else
 		restart = FALSE;
 
@@ -644,7 +645,7 @@ int Atari_Exit(int run_monitor)
 	return restart;
 }
 
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
 	UBYTE *vbuf = (UBYTE *) atari_screen + 32;
 
@@ -652,15 +653,15 @@ void Atari_DisplayScreen(void)
 		return;
 
 #ifdef SVGA_SPEEDUP
-	if (!ui_is_active) {
+	if (!UI_is_active) {
 		static int writestrip = 0;
 		int y1;
 		int y2;
-		if (writestrip >= refresh_rate)
+		if (writestrip >= Atari800_refresh_rate)
 			writestrip = 0;
-		y1 = 240 * writestrip / refresh_rate;
-		y2 = 240 * (writestrip + 1) / refresh_rate;
-		vga_copytoplanar256(vbuf + ATARI_WIDTH * y1, ATARI_WIDTH,
+		y1 = 240 * writestrip / Atari800_refresh_rate;
+		y2 = 240 * (writestrip + 1) / Atari800_refresh_rate;
+		vga_copytoplanar256(vbuf + Screen_WIDTH * y1, Screen_WIDTH,
 		                    (320 >> 2) * y1,
 		                    320 >> 2, 320, y2 - y1);
 		vga_setdisplaystart(0);
@@ -670,7 +671,7 @@ void Atari_DisplayScreen(void)
 #endif
 	{
 		static int writepage = 0;
-		vga_copytoplanar256(vbuf, ATARI_WIDTH,
+		vga_copytoplanar256(vbuf, Screen_WIDTH,
 		                   ((320 * 240) >> 2) * writepage,
 		                   320 >> 2, 320, 240);
 		vga_setdisplaystart(320 * 240 * writepage);
@@ -732,7 +733,7 @@ void read_joystick(int js, int centre_x, int centre_y)
 #endif
 
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 	if (num == 0) {
 /* sorry, no time for this now
@@ -752,7 +753,7 @@ int Atari_PORT(int num)
 }
 
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 	if (num == 0)
 		return ctrig;
@@ -798,11 +799,11 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	for (;;) {
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 		Atari800_Frame();
 #ifndef SVGA_SPEEDUP
-		if (display_screen)
+		if (Atari800_display_screen)
 #endif
-			Atari_DisplayScreen();
+			PLATFORM_DisplayScreen();
 	}
 }

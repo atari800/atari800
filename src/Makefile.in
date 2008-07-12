@@ -30,14 +30,17 @@ DOC_DIR = @prefix@/share/doc/atari800
 DESTDIR =
 
 OBJS = \
+	afile.o \
 	antic.o \
 	atari.o \
 	binload.o \
 	cartridge.o \
 	cassette.o \
 	compfile.o \
+	cfg.o \
 	cpu.o \
 	devices.o \
+	esc.o \
 	gtia.o \
 	log.o \
 	memory.o \

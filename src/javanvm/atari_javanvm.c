@@ -30,6 +30,7 @@
 
 /* Atari800 includes */
 #include "input.h"
+#include "akey.h"
 #include "colours.h"
 #include "monitor.h"
 #include "platform.h"
@@ -150,8 +151,8 @@ static int JAVANVM_CheckThreadStatus(void){
 #define JAVANVM_KeyEventSIZE 4
 #define JAVANVM_InitGraphicsScalew 0
 #define JAVANVM_InitGraphicsScaleh 1
-#define JAVANVM_InitGraphicsATARI_WIDTH 2
-#define JAVANVM_InitGraphicsATARI_HEIGHT 3
+#define JAVANVM_InitGraphicsScreen_WIDTH 2
+#define JAVANVM_InitGraphicsScreen_HEIGHT 3
 #define JAVANVM_InitGraphicsATARI_VISIBLE_WIDTH 4
 #define JAVANVM_InitGraphicsATARI_LEFT_MARGIN 5
 #define JAVANVM_InitGraphicsSIZE 6
@@ -181,18 +182,18 @@ void Sound_Update(void)
 	int avail = JAVANVM_SoundAvailable();
 	avail -= (line_buffer_size-dsp_buffer_size);
 	if (avail<0) avail = 0;
-	Pokey_process(dsp_buffer, avail/2);
+	POKEYSND_Process(dsp_buffer, avail/2);
 	JAVANVM_SoundWrite((void *)dsp_buffer, avail);
 }
 
 #endif /* SOUND */
 
-void Atari_PaletteUpdate(void)
+void PLATFORM_PaletteUpdate(void)
 {
 	JAVANVM_InitPalette((void *)&Colours_table[0]);
 }
 
-int Atari_Keyboard(void)
+int PLATFORM_Keyboard(void)
 {
 	static int lastkey = 0, key_pressed = 0, key_control = 0;
  	static int lastuni = 0;
@@ -224,7 +225,7 @@ int Atari_Keyboard(void)
 	else if (!key_pressed)
 		return AKEY_NONE;
 
-	alt_function = -1;
+	UI_alt_function = -1;
 	if (JAVANVM_Kbhits(VK_ALT,KEY_LOCATION_LEFT)) {
 		if (key_pressed) {
 			switch (lastkey) {
@@ -245,31 +246,31 @@ int Atari_Keyboard(void)
 				/*SwapJoysticks();*/
 				break;
 			case VK_R:
-				alt_function = MENU_RUN;
+				UI_alt_function = UI_MENU_RUN;
 				break;
 			case VK_Y:
-				alt_function = MENU_SYSTEM;
+				UI_alt_function = UI_MENU_SYSTEM;
 				break;
 			case VK_O:
-				alt_function = MENU_SOUND;
+				UI_alt_function = UI_MENU_SOUND;
 				break;
 			case VK_W:
-				alt_function = MENU_SOUND_RECORDING;
+				UI_alt_function = UI_MENU_SOUND_RECORDING;
 				break;
 			case VK_A:
-				alt_function = MENU_ABOUT;
+				UI_alt_function = UI_MENU_ABOUT;
 				break;
 			case VK_S:
-				alt_function = MENU_SAVESTATE;
+				UI_alt_function = UI_MENU_SAVESTATE;
 				break;
 			case VK_D:
-				alt_function = MENU_DISK;
+				UI_alt_function = UI_MENU_DISK;
 				break;
 			case VK_L:
-				alt_function = MENU_LOADSTATE;
+				UI_alt_function = UI_MENU_LOADSTATE;
 				break;
 			case VK_C:
-				alt_function = MENU_CARTRIDGE;
+				UI_alt_function = UI_MENU_CARTRIDGE;
 				break;
 			case VK_BACK_SLASH:
 				return AKEY_PBI_BB_MENU;
@@ -277,16 +278,16 @@ int Atari_Keyboard(void)
 			break;
 			}
 		}
-		if (alt_function != -1) {
+		if (UI_alt_function != -1) {
 			key_pressed = 0;
 			return AKEY_UI;
 		}
 	}
 	/* SHIFT STATE */
 	if ((JAVANVM_Kbhits(VK_SHIFT,KEY_LOCATION_LEFT)) || (JAVANVM_Kbhits(VK_SHIFT,KEY_LOCATION_RIGHT)))
-		key_shift = 1;
+		INPUT_key_shift = 1;
 	else
-		key_shift = 0;
+		INPUT_key_shift = 0;
 
     /* CONTROL STATE */
 	if ((JAVANVM_Kbhits(VK_CONTROL,KEY_LOCATION_LEFT)) || (JAVANVM_Kbhits(VK_CONTROL,KEY_LOCATION_RIGHT)))
@@ -295,13 +296,13 @@ int Atari_Keyboard(void)
 		key_control = 0;
 
 	/* OPTION / SELECT / START keys */
-	key_consol = CONSOL_NONE;
+	INPUT_key_consol = INPUT_CONSOL_NONE;
 	if (JAVANVM_Kbhits(VK_F2,KEY_LOCATION_STANDARD))
-		key_consol &= (~CONSOL_OPTION);
+		INPUT_key_consol &= (~INPUT_CONSOL_OPTION);
 	if (JAVANVM_Kbhits(VK_F3,KEY_LOCATION_STANDARD))
-		key_consol &= (~CONSOL_SELECT);
+		INPUT_key_consol &= (~INPUT_CONSOL_SELECT);
 	if (JAVANVM_Kbhits(VK_F4,KEY_LOCATION_STANDARD))
-		key_consol &= (~CONSOL_START);
+		INPUT_key_consol &= (~INPUT_CONSOL_START);
 
 	if (key_pressed == 0)
 		return AKEY_NONE;
@@ -313,21 +314,21 @@ int Atari_Keyboard(void)
 		return AKEY_UI;
 	case VK_F5:
 		key_pressed = 0;
-		return key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
+		return INPUT_key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
 	case VK_F8:
 		key_pressed = 0;
-		return (Atari_Exit(1) ? AKEY_NONE : AKEY_EXIT);
+		return (PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT);
 	case VK_F9:
 		return AKEY_EXIT;
 	case VK_F10:
 		key_pressed = 0;
-		return key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT_INTERLACE;
+		return INPUT_key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT_INTERLACE;
 	}
 	/* keyboard joysticks: don't pass the keypresses to emulation
 	 * as some games pause on a keypress (River Raid, Bruce Lee)
 	 */
 #define LQE(x) (lastkey == KBD_##x && lastloc == KBD_##x##_LOC)
-	if (!ui_is_active && kbd_joy_0_enabled) {
+	if (!UI_is_active && kbd_joy_0_enabled) {
 		if (LQE(STICK_0_LEFT) || LQE(STICK_0_RIGHT) ||
 			LQE(STICK_0_UP) || LQE(STICK_0_DOWN) ||
 			LQE(STICK_0_LEFTUP) || LQE(STICK_0_LEFTDOWN) ||
@@ -338,7 +339,7 @@ int Atari_Keyboard(void)
 		}
 	}
 
-	if (!ui_is_active && kbd_joy_1_enabled) {
+	if (!UI_is_active && kbd_joy_1_enabled) {
 		if (LQE(STICK_1_LEFT) || LQE(STICK_1_RIGHT) ||
 			LQE(STICK_1_UP) || LQE(STICK_1_DOWN) ||
 			LQE(STICK_1_LEFTUP) || LQE(STICK_1_LEFTDOWN) ||
@@ -350,10 +351,10 @@ int Atari_Keyboard(void)
 	}
 #undef LQE
 
-	if (key_shift)
+	if (INPUT_key_shift)
 		shiftctrl ^= AKEY_SHFT;
 
-	if (machine_type == MACHINE_5200 && !ui_is_active && lastloc == KEY_LOCATION_STANDARD) {
+	if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active && lastloc == KEY_LOCATION_STANDARD) {
 		if (lastkey == VK_F4)
 			return AKEY_5200_START ^ shiftctrl;
 		switch (lastuni) {
@@ -409,7 +410,7 @@ int Atari_Keyboard(void)
 	case VK_F7:
 		return AKEY_BREAK;
 	case VK_CAPS_LOCK:
-		if (key_shift)
+		if (INPUT_key_shift)
 			return AKEY_CAPSLOCK|shiftctrl;
 		else
 			return AKEY_CAPSTOGGLE|shiftctrl;
@@ -420,24 +421,24 @@ int Atari_Keyboard(void)
 	case VK_ENTER:
 		return AKEY_RETURN ^ shiftctrl;
 	case VK_LEFT:
-		return (key_shift ? AKEY_PLUS : AKEY_LEFT) ^ shiftctrl;
+		return (INPUT_key_shift ? AKEY_PLUS : AKEY_LEFT) ^ shiftctrl;
 	case VK_RIGHT:
-		return (key_shift ? AKEY_ASTERISK : AKEY_RIGHT) ^ shiftctrl;
+		return (INPUT_key_shift ? AKEY_ASTERISK : AKEY_RIGHT) ^ shiftctrl;
 	case VK_UP:
-		return (key_shift ? AKEY_MINUS : AKEY_UP) ^ shiftctrl;
+		return (INPUT_key_shift ? AKEY_MINUS : AKEY_UP) ^ shiftctrl;
 	case VK_DOWN:
-		return (key_shift ? AKEY_EQUAL : AKEY_DOWN) ^ shiftctrl;
+		return (INPUT_key_shift ? AKEY_EQUAL : AKEY_DOWN) ^ shiftctrl;
 	case VK_ESCAPE:
 		return AKEY_ESCAPE ^ shiftctrl;
 	case VK_TAB:
 		return AKEY_TAB ^ shiftctrl;
 	case VK_DELETE:
-		if (key_shift)
+		if (INPUT_key_shift)
 			return AKEY_DELETE_LINE|shiftctrl;
 		else
 			return AKEY_DELETE_CHAR;
 	case VK_INSERT:
-		if (key_shift)
+		if (INPUT_key_shift)
 			return AKEY_INSERT_LINE|shiftctrl;
 		else
 			return AKEY_INSERT_CHAR;
@@ -491,8 +492,8 @@ int Atari_Keyboard(void)
 	}
 
 	/* Host Caps Lock will make lastuni switch case, so prevent this*/
-    if(lastuni>='A' && lastuni <= 'Z' && !key_shift) lastuni += 0x20;
-    if(lastuni>='a' && lastuni <= 'z' && key_shift) lastuni -= 0x20;
+    if(lastuni>='A' && lastuni <= 'Z' && !INPUT_key_shift) lastuni += 0x20;
+    if(lastuni>='a' && lastuni <= 'z' && INPUT_key_shift) lastuni -= 0x20;
 	/* Uses only UNICODE translation, no shift states (this was added to
 	 * support non-US keyboard layouts)*/
 	if (lastloc == KEY_LOCATION_STANDARD) {
@@ -741,19 +742,19 @@ static void SoundSetup(void)
 	int dsprate = 48000;
 	int sound_flags = 0;
 	int sconfig[JAVANVM_InitSoundSIZE];
-	sound_flags |= SND_BIT16;
+	sound_flags |= POKEYSND_BIT16;
 	sconfig[JAVANVM_InitSoundSampleRate] = dsprate;
 	sconfig[JAVANVM_InitSoundBitsPerSample] = 16;
-	sconfig[JAVANVM_InitSoundChannels] = stereo_enabled ? 2 : 1;
+	sconfig[JAVANVM_InitSoundChannels] = POKEYSND_stereo_enabled ? 2 : 1;
 	sconfig[JAVANVM_InitSoundSigned] = TRUE;
 	sconfig[JAVANVM_InitSoundBigEndian] = TRUE;
 	line_buffer_size = JAVANVM_InitSound((void *)&sconfig[0]);
 	dsp_buffer_size = 4096; /*adjust this to fix skipping/latency*/
-	if (stereo_enabled) dsp_buffer_size *= 2;
+	if (POKEYSND_stereo_enabled) dsp_buffer_size *= 2;
 	if (line_buffer_size < dsp_buffer_size) dsp_buffer_size = line_buffer_size;
 	free(dsp_buffer);
 	dsp_buffer = (UBYTE*)malloc(dsp_buffer_size);
-	Pokey_sound_init(FREQ_17_EXACT, dsprate, (stereo_enabled ? 2 : 1) , sound_flags);
+	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, dsprate, (POKEYSND_stereo_enabled ? 2 : 1) , sound_flags);
 }
 
 void Sound_Reinit(void)
@@ -762,7 +763,7 @@ void Sound_Reinit(void)
 }
 #endif /* SOUND */
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	int help_only = FALSE;
@@ -785,8 +786,8 @@ void Atari_Initialise(int *argc, char *argv[])
         int config[JAVANVM_InitGraphicsSIZE];
         config[JAVANVM_InitGraphicsScalew] = scale;
         config[JAVANVM_InitGraphicsScaleh] = scale;
-        config[JAVANVM_InitGraphicsATARI_WIDTH] = ATARI_WIDTH;
-        config[JAVANVM_InitGraphicsATARI_HEIGHT] = ATARI_HEIGHT;
+        config[JAVANVM_InitGraphicsScreen_WIDTH] = Screen_WIDTH;
+        config[JAVANVM_InitGraphicsScreen_HEIGHT] = Screen_HEIGHT;
         config[JAVANVM_InitGraphicsATARI_VISIBLE_WIDTH] = 336;
         config[JAVANVM_InitGraphicsATARI_LEFT_MARGIN] = 24;
 		JAVANVM_InitGraphics((void *)&config[0]);
@@ -798,13 +799,13 @@ void Atari_Initialise(int *argc, char *argv[])
 	return;
 }
 
-int Atari_Exit(int run_monitor){
+int PLATFORM_Exit(int run_monitor){
 	int restart;
 	if (run_monitor) {
 #ifdef SOUND
 		Sound_Pause();
 #endif
-		restart = monitor();
+		restart = MONITOR_Run();
 #ifdef SOUND
 		Sound_Continue();
 #endif
@@ -818,60 +819,60 @@ int Atari_Exit(int run_monitor){
 	return restart;
 }
 
-void Atari_DisplayScreen(void){
-	JAVANVM_DisplayScreen((void *)atari_screen);
+void PLATFORM_DisplayScreen(void){
+	JAVANVM_DisplayScreen((void *)Screen_atari);
 	return;
 }
 
-static void do_Atari_PORT(UBYTE *s0, UBYTE *s1)
+static void do_platform_PORT(UBYTE *s0, UBYTE *s1)
 {
 #define KBHITS(x) (JAVANVM_Kbhits(x,x##_LOC))
 	int stick0, stick1;
-	stick0 = stick1 = STICK_CENTRE;
+	stick0 = stick1 = INPUT_STICK_CENTRE;
 
 	if (kbd_joy_0_enabled) {
 		if (KBHITS(KBD_STICK_0_LEFT))
-			stick0 = STICK_LEFT;
+			stick0 = INPUT_STICK_LEFT;
 		if (KBHITS(KBD_STICK_0_RIGHT))
-			stick0 = STICK_RIGHT;
+			stick0 = INPUT_STICK_RIGHT;
 		if (KBHITS(KBD_STICK_0_UP))
-			stick0 = STICK_FORWARD;
+			stick0 = INPUT_STICK_FORWARD;
 		if (KBHITS(KBD_STICK_0_DOWN))
-			stick0 = STICK_BACK;
+			stick0 = INPUT_STICK_BACK;
 		if ((KBHITS(KBD_STICK_0_LEFTUP))
 			|| ((KBHITS(KBD_STICK_0_LEFT)) && (KBHITS(KBD_STICK_0_UP))))
-			stick0 = STICK_UL;
+			stick0 = INPUT_STICK_UL;
 		if ((KBHITS(KBD_STICK_0_LEFTDOWN))
 			|| ((KBHITS(KBD_STICK_0_LEFT)) && (KBHITS(KBD_STICK_0_DOWN))))
-			stick0 = STICK_LL;
+			stick0 = INPUT_STICK_LL;
 		if ((KBHITS(KBD_STICK_0_RIGHTUP))
 			|| ((KBHITS(KBD_STICK_0_RIGHT)) && (KBHITS(KBD_STICK_0_UP))))
-			stick0 = STICK_UR;
+			stick0 = INPUT_STICK_UR;
 		if ((KBHITS(KBD_STICK_0_RIGHTDOWN))
 			|| ((KBHITS(KBD_STICK_0_RIGHT)) && (KBHITS(KBD_STICK_0_DOWN))))
-			stick0 = STICK_LR;
+			stick0 = INPUT_STICK_LR;
 	}
 	if (kbd_joy_1_enabled) {
 		if (KBHITS(KBD_STICK_1_LEFT))
-			stick1 = STICK_LEFT;
+			stick1 = INPUT_STICK_LEFT;
 		if (KBHITS(KBD_STICK_1_RIGHT))
-			stick1 = STICK_RIGHT;
+			stick1 = INPUT_STICK_RIGHT;
 		if (KBHITS(KBD_STICK_1_UP))
-			stick1 = STICK_FORWARD;
+			stick1 = INPUT_STICK_FORWARD;
 		if (KBHITS(KBD_STICK_1_DOWN))
-			stick1 = STICK_BACK;
+			stick1 = INPUT_STICK_BACK;
 		if ((KBHITS(KBD_STICK_1_LEFTUP))
 			|| ((KBHITS(KBD_STICK_1_LEFT)) && (KBHITS(KBD_STICK_1_UP))))
-			stick1 = STICK_UL;
+			stick1 = INPUT_STICK_UL;
 		if ((KBHITS(KBD_STICK_1_LEFTDOWN))
 			|| ((KBHITS(KBD_STICK_1_LEFT)) && (KBHITS(KBD_STICK_1_DOWN))))
-			stick1 = STICK_LL;
+			stick1 = INPUT_STICK_LL;
 		if ((KBHITS(KBD_STICK_1_RIGHTUP))
 			|| ((KBHITS(KBD_STICK_1_RIGHT)) && (KBHITS(KBD_STICK_1_UP))))
-			stick1 = STICK_UR;
+			stick1 = INPUT_STICK_UR;
 		if ((KBHITS(KBD_STICK_1_RIGHTDOWN))
 			|| ((KBHITS(KBD_STICK_1_RIGHT)) && (KBHITS(KBD_STICK_1_DOWN))))
-			stick1 = STICK_LR;
+			stick1 = INPUT_STICK_LR;
 	}
 
 	if (swap_joysticks) {
@@ -884,7 +885,7 @@ static void do_Atari_PORT(UBYTE *s0, UBYTE *s1)
 	}
 }
 
-static void do_Atari_TRIG(UBYTE *t0, UBYTE *t1)
+static void do_platform_TRIG(UBYTE *t0, UBYTE *t1)
 {
 	int trig0, trig1, i;
 	trig0 = trig1 = 1;
@@ -908,23 +909,23 @@ static void do_Atari_TRIG(UBYTE *t0, UBYTE *t1)
 }
 #undef KBHITS
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 #ifndef DONT_DISPLAY
 	if (num == 0) {
 		UBYTE a, b;
-		do_Atari_PORT(&a, &b);
+		do_platform_PORT(&a, &b);
 		return (b << 4) | (a & 0x0f);
 	}
 #endif
 	return 0xff;
 }
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 #ifndef DONT_DISPLAY
 	UBYTE a, b;
-	do_Atari_TRIG(&a, &b);
+	do_platform_TRIG(&a, &b);
 	switch (num) {
 	case 0:
 		return a;
@@ -937,7 +938,7 @@ int Atari_TRIG(int num)
 	return 1;
 }
 
-void Atari_sleep(double s){
+void PLATFORM_Sleep(double s){
 	JAVANVM_Sleep((int)(s*1e3));
 }
 
@@ -949,10 +950,10 @@ int main(int argc, char **argv)
 
 	/* main loop */
 	for (;;) {
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 		Atari800_Frame();
-		if (display_screen)
-			Atari_DisplayScreen();
+		if (Atari800_display_screen)
+			PLATFORM_DisplayScreen();
 		if (JAVANVM_CheckThreadStatus()) {
 		   	Atari800_Exit(FALSE);
 			exit(0);

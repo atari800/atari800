@@ -37,75 +37,69 @@
 #include "statesav.h"
 #endif
 
-UBYTE PACTL;
-UBYTE PBCTL;
-UBYTE PORTA;
-UBYTE PORTB;
-UBYTE PORT_input[2];
+UBYTE PIA_PACTL;
+UBYTE PIA_PBCTL;
+UBYTE PIA_PORTA;
+UBYTE PIA_PORTB;
+UBYTE PIA_PORT_input[2];
 
-int xe_bank = 0;
-int selftest_enabled = 0;
-
-UBYTE atari_basic[8192];
-UBYTE atari_os[16384];
-
-UBYTE PORTA_mask;
-UBYTE PORTB_mask;
+UBYTE PIA_PORTA_mask;
+UBYTE PIA_PORTB_mask;
 
 void PIA_Initialise(int *argc, char *argv[])
 {
-	PACTL = 0x3f;
-	PBCTL = 0x3f;
-	PORTA = 0xff;
-	PORTB = 0xff;
-	PORTA_mask = 0xff;
-	PORTB_mask = 0xff;
-	PORT_input[0] = 0xff;
-	PORT_input[1] = 0xff;
+	PIA_PACTL = 0x3f;
+	PIA_PBCTL = 0x3f;
+	PIA_PORTA = 0xff;
+	PIA_PORTB = 0xff;
+	PIA_PORTA_mask = 0xff;
+	PIA_PORTB_mask = 0xff;
+	PIA_PORT_input[0] = 0xff;
+	PIA_PORT_input[1] = 0xff;
 }
 
 void PIA_Reset(void)
 {
-	PORTA = 0xff;
-	if (machine_type == MACHINE_XLXE) {
-		MEMORY_HandlePORTB(0xff, (UBYTE) (PORTB | PORTB_mask));
+	PIA_PORTA = 0xff;
+	if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+		MEMORY_HandlePORTB(0xff, (UBYTE) (PIA_PORTB | PIA_PORTB_mask));
 	}
-	PORTB = 0xff;
+	PIA_PORTB = 0xff;
 }
 
 UBYTE PIA_GetByte(UWORD addr)
 {
 	switch (addr & 0x03) {
-	case _PACTL:
-		return PACTL & 0x3f;
-	case _PBCTL:
-		return PBCTL & 0x3f;
-	case _PORTA:
-		if ((PACTL & 0x04) == 0) {
+	case PIA_OFFSET_PACTL:
+		return PIA_PACTL & 0x3f;
+	case PIA_OFFSET_PBCTL:
+		return PIA_PBCTL & 0x3f;
+	case PIA_OFFSET_PORTA:
+		if ((PIA_PACTL & 0x04) == 0) {
 			/* direction register */
-			return ~PORTA_mask;
+			return ~PIA_PORTA_mask;
 		}
 		else {
 			/* port state */
 #ifdef XEP80_EMULATION
 			if (XEP80_enabled) {
-				return(XEP80_GetBit() & PORT_input[0] & (PORTA | PORTA_mask));
+				return(XEP80_GetBit() & PIA_PORT_input[0] & (PIA_PORTA | PIA_PORTA_mask));
 			}
 #endif /* XEP80_EMULATION */
-			return PORT_input[0] & (PORTA | PORTA_mask);
+			return PIA_PORT_input[0] & (PIA_PORTA | PIA_PORTA_mask);
 		}
-	case _PORTB:
-		if ((PBCTL & 0x04) == 0) {
+	case PIA_OFFSET_PORTB:
+		if ((PIA_PBCTL & 0x04) == 0) {
 			/* direction register */
-			return ~PORTB_mask;
+			return ~PIA_PORTB_mask;
 		}
 		else {
 			/* port state */
-			if (machine_type == MACHINE_XLXE) {
-				return PORTB | PORTB_mask;
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+				return PIA_PORTB | PIA_PORTB_mask;
 			}
 			else {
-				return PORT_input[1] & (PORTB | PORTB_mask);
+				return PIA_PORT_input[1] & (PIA_PORTB | PIA_PORTB_mask);
 			}
 		}
 	}
@@ -116,60 +110,60 @@ UBYTE PIA_GetByte(UWORD addr)
 void PIA_PutByte(UWORD addr, UBYTE byte)
 {
 	switch (addr & 0x03) {
-	case _PACTL:
+	case PIA_OFFSET_PACTL:
                 /* This code is part of the cassette emulation */
 		/* The motor status has changed */
 		SIO_TapeMotor(byte & 0x08 ? 0 : 1);
 	
-		PACTL = byte;
+		PIA_PACTL = byte;
 		break;
-	case _PBCTL:
+	case PIA_OFFSET_PBCTL:
 		/* This code is part of the serial I/O emulation */
-		if ((PBCTL ^ byte) & 0x08) {
+		if ((PIA_PBCTL ^ byte) & 0x08) {
 			/* The command line status has changed */
 			SIO_SwitchCommandFrame(byte & 0x08 ? 0 : 1);
 		}
-		PBCTL = byte;
+		PIA_PBCTL = byte;
 		break;
-	case _PORTA:
-		if ((PACTL & 0x04) == 0) {
+	case PIA_OFFSET_PORTA:
+		if ((PIA_PACTL & 0x04) == 0) {
 			/* set direction register */
- 			PORTA_mask = ~byte;
+ 			PIA_PORTA_mask = ~byte;
 		}
 		else {
 			/* set output register */
 #ifdef XEP80_EMULATION
-			if (XEP80_enabled && (~PORTA_mask & 0x11)) {
+			if (XEP80_enabled && (~PIA_PORTA_mask & 0x11)) {
 				XEP80_PutBit(byte);
 			}
 #endif /* XEP80_EMULATION */
-			PORTA = byte;		/* change from thor */
+			PIA_PORTA = byte;		/* change from thor */
 		}
 #ifndef BASIC
-		INPUT_SelectMultiJoy((PORTA | PORTA_mask) >> 4);
+		INPUT_SelectMultiJoy((PIA_PORTA | PIA_PORTA_mask) >> 4);
 #endif
 		break;
-	case _PORTB:
-		if (machine_type == MACHINE_XLXE) {
-			if ((PBCTL & 0x04) == 0) {
+	case PIA_OFFSET_PORTB:
+		if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+			if ((PIA_PBCTL & 0x04) == 0) {
 				/* direction register */
-				MEMORY_HandlePORTB((UBYTE) (PORTB | ~byte), (UBYTE) (PORTB | PORTB_mask));
-				PORTB_mask = ~byte;
+				MEMORY_HandlePORTB((UBYTE) (PIA_PORTB | ~byte), (UBYTE) (PIA_PORTB | PIA_PORTB_mask));
+				PIA_PORTB_mask = ~byte;
 			}
 			else {
 				/* output register */
-				MEMORY_HandlePORTB((UBYTE) (byte | PORTB_mask), (UBYTE) (PORTB | PORTB_mask));
-				PORTB = byte;
+				MEMORY_HandlePORTB((UBYTE) (byte | PIA_PORTB_mask), (UBYTE) (PIA_PORTB | PIA_PORTB_mask));
+				PIA_PORTB = byte;
 			}
 		}
 		else {
-			if ((PBCTL & 0x04) == 0) {
+			if ((PIA_PBCTL & 0x04) == 0) {
 				/* direction register */
-				PORTB_mask = ~byte;
+				PIA_PORTB_mask = ~byte;
 			}
 			else {
 				/* output register */
-				PORTB = byte;
+				PIA_PORTB = byte;
 			}
 		}
 		break;
@@ -178,49 +172,49 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 
 #ifndef BASIC
 
-void PIAStateSave(void)
+void PIA_StateSave(void)
 {
 	int Ram256 = 0;
-	if (ram_size == RAM_320_RAMBO)
+	if (MEMORY_ram_size == MEMORY_RAM_320_RAMBO)
 		Ram256 = 1;
-	else if (ram_size == RAM_320_COMPY_SHOP)
+	else if (MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
 		Ram256 = 2;
 
-	StateSav_SaveUBYTE( &PACTL, 1 );
-	StateSav_SaveUBYTE( &PBCTL, 1 );
-	StateSav_SaveUBYTE( &PORTA, 1 );
-	StateSav_SaveUBYTE( &PORTB, 1 );
+	StateSav_SaveUBYTE( &PIA_PACTL, 1 );
+	StateSav_SaveUBYTE( &PIA_PBCTL, 1 );
+	StateSav_SaveUBYTE( &PIA_PORTA, 1 );
+	StateSav_SaveUBYTE( &PIA_PORTB, 1 );
 
-	StateSav_SaveINT( &xe_bank, 1 );
-	StateSav_SaveINT( &selftest_enabled, 1 );
+	StateSav_SaveINT( &MEMORY_xe_bank, 1 );
+	StateSav_SaveINT( &MEMORY_selftest_enabled, 1 );
 	StateSav_SaveINT( &Ram256, 1 );
 
-	StateSav_SaveINT( &cartA0BF_enabled, 1 );
+	StateSav_SaveINT( &MEMORY_cartA0BF_enabled, 1 );
 
-	StateSav_SaveUBYTE( &PORTA_mask, 1 );
-	StateSav_SaveUBYTE( &PORTB_mask, 1 );
+	StateSav_SaveUBYTE( &PIA_PORTA_mask, 1 );
+	StateSav_SaveUBYTE( &PIA_PORTB_mask, 1 );
 }
 
-void PIAStateRead(void)
+void PIA_StateRead(void)
 {
 	int Ram256 = 0;
 
-	StateSav_ReadUBYTE( &PACTL, 1 );
-	StateSav_ReadUBYTE( &PBCTL, 1 );
-	StateSav_ReadUBYTE( &PORTA, 1 );
-	StateSav_ReadUBYTE( &PORTB, 1 );
+	StateSav_ReadUBYTE( &PIA_PACTL, 1 );
+	StateSav_ReadUBYTE( &PIA_PBCTL, 1 );
+	StateSav_ReadUBYTE( &PIA_PORTA, 1 );
+	StateSav_ReadUBYTE( &PIA_PORTB, 1 );
 
-	StateSav_ReadINT( &xe_bank, 1 );
-	StateSav_ReadINT( &selftest_enabled, 1 );
+	StateSav_ReadINT( &MEMORY_xe_bank, 1 );
+	StateSav_ReadINT( &MEMORY_selftest_enabled, 1 );
 	StateSav_ReadINT( &Ram256, 1 );
 
-	if (Ram256 == 1 && machine_type == MACHINE_XLXE && ram_size == RAM_320_COMPY_SHOP)
-		ram_size = RAM_320_RAMBO;
+	if (Ram256 == 1 && Atari800_machine_type == Atari800_MACHINE_XLXE && MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
+		MEMORY_ram_size = MEMORY_RAM_320_RAMBO;
 
-	StateSav_ReadINT( &cartA0BF_enabled, 1 );
+	StateSav_ReadINT( &MEMORY_cartA0BF_enabled, 1 );
 
-	StateSav_ReadUBYTE( &PORTA_mask, 1 );
-	StateSav_ReadUBYTE( &PORTB_mask, 1 );
+	StateSav_ReadUBYTE( &PIA_PORTA_mask, 1 );
+	StateSav_ReadUBYTE( &PIA_PORTB_mask, 1 );
 }
 
 #endif /* BASIC */

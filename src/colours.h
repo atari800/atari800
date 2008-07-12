@@ -1,5 +1,5 @@
-#ifndef _COLOURS_H_
-#define _COLOURS_H_
+#ifndef COLOURS_H_
+#define COLOURS_H_
 
 extern int *Colours_table;
 
@@ -16,4 +16,4 @@ void Colours_SetVideoSystem(int mode);
 void Colours_InitialiseMachine(void);
 void Colours_Initialise(int *argc, char *argv[]);
 
-#endif /* _COLOURS_H_ */
+#endif /* COLOURS_H_ */

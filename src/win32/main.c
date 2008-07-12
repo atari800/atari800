@@ -78,7 +78,7 @@ LRESULT CALLBACK Atari_WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 	case WM_MBUTTONUP:
 	case WM_RBUTTONDOWN:
 	case WM_RBUTTONUP:
-		mouse_buttons = ((wParam & MK_LBUTTON) ? 1 : 0)
+		INPUT_mouse_buttons = ((wParam & MK_LBUTTON) ? 1 : 0)
 		              | ((wParam & MK_RBUTTON) ? 2 : 0)
 		              | ((wParam & MK_MBUTTON) ? 4 : 0);
 		break;
@@ -135,17 +135,17 @@ int main(int argc, char *argv[])
 		if (!bActive)
 			continue;
 
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 
 		GetCursorPos(&mouse);
-		mouse_delta_x = mouse.x - MOUSE_CENTER_X;
-		mouse_delta_y = mouse.y - MOUSE_CENTER_Y;
-		if (!windowed && (mouse_delta_x | mouse_delta_y))
+		INPUT_mouse_delta_x = mouse.x - MOUSE_CENTER_X;
+		INPUT_mouse_delta_y = mouse.y - MOUSE_CENTER_Y;
+		if (!windowed && (INPUT_mouse_delta_x | INPUT_mouse_delta_y))
 			SetCursorPos(MOUSE_CENTER_X, MOUSE_CENTER_Y);
 
 		Atari800_Frame();
-		if (display_screen)
-			Atari_DisplayScreen();
+		if (Atari800_display_screen)
+			PLATFORM_DisplayScreen();
 	}
 
 	return msg.wParam;

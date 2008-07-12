@@ -104,7 +104,7 @@ static void backlight_xchg(void)
 	}
 }
 
-int Atari_Keyboard(void)
+int PLATFORM_Keyboard(void)
 {
 	int keycode;
 
@@ -114,7 +114,7 @@ int Atari_Keyboard(void)
 	return keycode;
 }
 
-void Atari_Initialise(int *argc, char *argv[])
+void PLATFORM_Initialise(int *argc, char *argv[])
 {
 #ifdef SOUND
 	Sound_Initialise(argc, argv);
@@ -140,7 +140,7 @@ void Atari_Initialise(int *argc, char *argv[])
 	clearkb();
 }
 
-int Atari_Exit(int run_monitor)
+int PLATFORM_Exit(int run_monitor)
 {
 	backlight_xchg();	/* restore backlight settings */
 	SystemParametersInfo(SPI_SETBATTERYIDLETIMEOUT, bat_timeout, NULL, SPIF_SENDCHANGE);
@@ -163,12 +163,12 @@ int Atari_Exit(int run_monitor)
 	return 0;
 }
 
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
 	refreshv((UBYTE *) Screen_atari + 24);
 }
 
-int Atari_PORT(int num)
+int PLATFORM_PORT(int num)
 {
 	if (num == 0)
 		return stick0;
@@ -177,7 +177,7 @@ int Atari_PORT(int num)
 }
 
 
-int Atari_TRIG(int num)
+int PLATFORM_TRIG(int num)
 {
 	if (num == 0)
 		return trig0;
@@ -185,7 +185,7 @@ int Atari_TRIG(int num)
 		return 1;
 }
 
-void Atari_ConfigInit(void)
+void PLATFORM_ConfigInit(void)
 {
 	enable_new_pokey = 0;
 	Screen_visible_x1 = 24;
@@ -197,7 +197,7 @@ void Atari_ConfigInit(void)
 	Screen_show_atari_speed = 1;
 }
 
-int Atari_Configure(char* option, char *parameters)
+int PLATFORM_Configure(char* option, char *parameters)
 {
 	if (strcmp(option, "WCE_LINEAR_FILTER") == 0)
 	{
@@ -218,7 +218,7 @@ int Atari_Configure(char* option, char *parameters)
 	return 0;
 }
 
-void Atari_ConfigSave(FILE *fp)
+void PLATFORM_ConfigSave(FILE *fp)
 {
 	fprintf(fp, "WCE_LINEAR_FILTER=%d\n", smooth_filter);
 	fprintf(fp, "WCE_VIRTUAL_JOYSTICK=%d\n", virtual_joystick);
@@ -242,7 +242,7 @@ void AboutPocketAtari(void)
 		"\0"
 		"\0"
 		"Atari core for this version\0"
-		ATARI_TITLE "\0"
+		Atari800_TITLE "\0"
 		"http://atari800.sf.net\0"
 		"\n"
 	:
@@ -252,7 +252,7 @@ void AboutPocketAtari(void)
 		"\0"
 		"\0"
 		"This port is based on\0"
-		ATARI_TITLE "\0"
+		Atari800_TITLE "\0"
 		"http://atari800.sf.net\0"
 		"\0"
 		"PocketPC port update and\0"
@@ -275,10 +275,10 @@ int wince_main(int argc, char **argv)
 	{
 		if (emulator_active)
 		{
-			key_code = Atari_Keyboard();
+			INPUT_key_code = PLATFORM_Keyboard();
 			Atari800_Frame();
-			if (display_screen)
-				Atari_DisplayScreen();
+			if (Atari800_display_screen)
+				PLATFORM_DisplayScreen();
 		}
 		else
 		{

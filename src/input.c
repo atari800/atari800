@@ -31,6 +31,7 @@
 #include "cpu.h"
 #include "gtia.h"
 #include "input.h"
+#include "akey.h"
 #include "log.h"
 #include "memory.h"
 #include "pia.h"
@@ -53,28 +54,28 @@ extern int Atari_POT(int);
 #define Atari_POT(x) 228
 #endif
 
-int key_code = AKEY_NONE;
-int key_shift = 0;
-int key_consol = CONSOL_NONE;
+int INPUT_key_code = AKEY_NONE;
+int INPUT_key_shift = 0;
+int INPUT_key_consol = INPUT_CONSOL_NONE;
 
-int joy_autofire[4] = {AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF};
+int INPUT_joy_autofire[4] = {INPUT_AUTOFIRE_OFF, INPUT_AUTOFIRE_OFF, INPUT_AUTOFIRE_OFF, INPUT_AUTOFIRE_OFF};
 
-int joy_block_opposite_directions = 1;
+int INPUT_joy_block_opposite_directions = 1;
 
-int joy_multijoy = 0;
+int INPUT_joy_multijoy = 0;
 
-int joy_5200_min = 6;
-int joy_5200_center = 114;
-int joy_5200_max = 220;
+int INPUT_joy_5200_min = 6;
+int INPUT_joy_5200_center = 114;
+int INPUT_joy_5200_max = 220;
 
-int mouse_mode = MOUSE_OFF;
-int mouse_port = 0;
-int mouse_delta_x = 0;
-int mouse_delta_y = 0;
-int mouse_buttons = 0;
-int mouse_speed = 3;
-int mouse_pot_min = 1;
-int mouse_pot_max = 228;
+int INPUT_mouse_mode = INPUT_MOUSE_OFF;
+int INPUT_mouse_port = 0;
+int INPUT_mouse_delta_x = 0;
+int INPUT_mouse_delta_y = 0;
+int INPUT_mouse_buttons = 0;
+int INPUT_mouse_speed = 3;
+int INPUT_mouse_pot_min = 1;		/* min. value of POKEY's POT register */
+int INPUT_mouse_pot_max = 228;		/* max. value of POKEY's POT register */
 /* There should be UI or options for light pen/gun offsets.
    Below are best offsets for different programs:
    AtariGraphics: H = 0..32, V = 0 (there's calibration in the program)
@@ -82,9 +83,9 @@ int mouse_pot_max = 228;
    Barnyard Blaster: H = 40, V = 0
    Operation Blood (light gun version): H = 40, V = 4
  */
-int mouse_pen_ofs_h = 42;
-int mouse_pen_ofs_v = 2;
-int mouse_joy_inertia = 10;
+int INPUT_mouse_pen_ofs_h = 42;
+int INPUT_mouse_pen_ofs_v = 2;
+int INPUT_mouse_joy_inertia = 10;
 
 #ifndef MOUSE_SHIFT
 #define MOUSE_SHIFT 4
@@ -139,42 +140,42 @@ void INPUT_Initialise(int *argc, char *argv[])
 		if (strcmp(argv[i], "-mouse") == 0) {
 			char *mode = argv[++i];
 			if (strcmp(mode, "off") == 0)
-				mouse_mode = MOUSE_OFF;
+				INPUT_mouse_mode = INPUT_MOUSE_OFF;
 			else if (strcmp(mode, "pad") == 0)
-				mouse_mode = MOUSE_PAD;
+				INPUT_mouse_mode = INPUT_MOUSE_PAD;
 			else if (strcmp(mode, "touch") == 0)
-				mouse_mode = MOUSE_TOUCH;
+				INPUT_mouse_mode = INPUT_MOUSE_TOUCH;
 			else if (strcmp(mode, "koala") == 0)
-				mouse_mode = MOUSE_KOALA;
+				INPUT_mouse_mode = INPUT_MOUSE_KOALA;
 			else if (strcmp(mode, "pen") == 0)
-				mouse_mode = MOUSE_PEN;
+				INPUT_mouse_mode = INPUT_MOUSE_PEN;
 			else if (strcmp(mode, "gun") == 0)
-				mouse_mode = MOUSE_GUN;
+				INPUT_mouse_mode = INPUT_MOUSE_GUN;
 			else if (strcmp(mode, "amiga") == 0)
-				mouse_mode = MOUSE_AMIGA;
+				INPUT_mouse_mode = INPUT_MOUSE_AMIGA;
 			else if (strcmp(mode, "st") == 0)
-				mouse_mode = MOUSE_ST;
+				INPUT_mouse_mode = INPUT_MOUSE_ST;
 			else if (strcmp(mode, "trak") == 0)
-				mouse_mode = MOUSE_TRAK;
+				INPUT_mouse_mode = INPUT_MOUSE_TRAK;
 			else if (strcmp(mode, "joy") == 0)
-				mouse_mode = MOUSE_JOY;
+				INPUT_mouse_mode = INPUT_MOUSE_JOY;
 		}
 		else if (strcmp(argv[i], "-mouseport") == 0) {
-			mouse_port = Util_sscandec(argv[++i]) - 1;
-			if (mouse_port < 0 || mouse_port > 3) {
+			INPUT_mouse_port = Util_sscandec(argv[++i]) - 1;
+			if (INPUT_mouse_port < 0 || INPUT_mouse_port > 3) {
 				Log_print("Invalid mouse port, using 1");
-				mouse_port = 0;
+				INPUT_mouse_port = 0;
 			}
 		}
 		else if (strcmp(argv[i], "-mousespeed") == 0) {
-			mouse_speed = Util_sscandec(argv[++i]);
-			if (mouse_speed < 1 || mouse_speed > 9) {
+			INPUT_mouse_speed = Util_sscandec(argv[++i]);
+			if (INPUT_mouse_speed < 1 || INPUT_mouse_speed > 9) {
 				Log_print("Invalid mouse speed, using 3");
-				mouse_speed = 3;
+				INPUT_mouse_speed = 3;
 			}
 		}
 		else if (strcmp(argv[i], "-multijoy") == 0) {
-			joy_multijoy = 1;
+			INPUT_joy_multijoy = 1;
 		}
 #ifdef EVENT_RECORDING
 		else if (strcmp(argv[i], "-record") == 0) {
@@ -271,21 +272,21 @@ void INPUT_Exit(void) {
 static UBYTE mouse_step(void)
 {
 	static int e = 0;
-	UBYTE r = STICK_CENTRE;
+	UBYTE r = INPUT_STICK_CENTRE;
 	int dx = mouse_move_x >= 0 ? mouse_move_x : -mouse_move_x;
 	int dy = mouse_move_y >= 0 ? mouse_move_y : -mouse_move_y;
 	if (dx >= dy) {
 		if (mouse_move_x == 0)
 			return r;
 		if (mouse_move_x < 0) {
-			r &= STICK_LEFT;
+			r &= INPUT_STICK_LEFT;
 			mouse_x--;
 			mouse_move_x += 1 << MOUSE_SHIFT;
 			if (mouse_move_x > 0)
 				mouse_move_x = 0;
 		}
 		else {
-			r &= STICK_RIGHT;
+			r &= INPUT_STICK_RIGHT;
 			mouse_x++;
 			mouse_move_x -= 1 << MOUSE_SHIFT;
 			if (mouse_move_x < 0)
@@ -295,14 +296,14 @@ static UBYTE mouse_step(void)
 		if (e < 0) {
 			e += dx;
 			if (mouse_move_y < 0) {
-				r &= STICK_FORWARD;
+				r &= INPUT_STICK_FORWARD;
 				mouse_y--;
 				mouse_move_y += 1 << MOUSE_SHIFT;
 				if (mouse_move_y > 0)
 					mouse_move_y = 0;
 			}
 			else {
-				r &= STICK_BACK;
+				r &= INPUT_STICK_BACK;
 				mouse_y++;
 				mouse_move_y -= 1 << MOUSE_SHIFT;
 				if (mouse_move_y < 0)
@@ -312,14 +313,14 @@ static UBYTE mouse_step(void)
 	}
 	else {
 		if (mouse_move_y < 0) {
-			r &= STICK_FORWARD;
+			r &= INPUT_STICK_FORWARD;
 			mouse_y--;
 			mouse_move_y += 1 << MOUSE_SHIFT;
 			if (mouse_move_y > 0)
 				mouse_move_y = 0;
 		}
 		else {
-			r &= STICK_BACK;
+			r &= INPUT_STICK_BACK;
 			mouse_y++;
 			mouse_move_y -= 1 << MOUSE_SHIFT;
 			if (mouse_move_y < 0)
@@ -329,14 +330,14 @@ static UBYTE mouse_step(void)
 		if (e < 0) {
 			e += dy;
 			if (mouse_move_x < 0) {
-				r &= STICK_LEFT;
+				r &= INPUT_STICK_LEFT;
 				mouse_x--;
 				mouse_move_x += 1 << MOUSE_SHIFT;
 				if (mouse_move_x > 0)
 					mouse_move_x = 0;
 			}
 			else {
-				r &= STICK_RIGHT;
+				r &= INPUT_STICK_RIGHT;
 				mouse_x++;
 				mouse_move_x -= 1 << MOUSE_SHIFT;
 				if (mouse_move_x < 0)
@@ -352,7 +353,7 @@ void INPUT_Frame(void)
 	int i;
 	static int last_key_code = AKEY_NONE;
 	static int last_key_break = 0;
-	static UBYTE last_stick[4] = {STICK_CENTRE, STICK_CENTRE, STICK_CENTRE, STICK_CENTRE};
+	static UBYTE last_stick[4] = {INPUT_STICK_CENTRE, INPUT_STICK_CENTRE, INPUT_STICK_CENTRE, INPUT_STICK_CENTRE};
 	static int last_mouse_buttons = 0;
 
 	scanline_counter = 10000;	/* do nothing in INPUT_Scanline() */
@@ -368,33 +369,33 @@ void INPUT_Frame(void)
 	   it in all the controllers simultaneously. Normally the port to read
 	   keypad & 2nd button is selected with the CONSOL register in GTIA
 	   (this is simply not emulated).
-	   key_code is used for keypad keys and key_shift is used for 2nd button.
+	   INPUT_key_code is used for keypad keys and INPUT_key_shift is used for 2nd button.
 	*/
 #ifdef EVENT_RECORDING
 	if (playingback) {
 		gzgets(playbackfp, gzbuf, GZBUFSIZE);
-		sscanf(gzbuf, "%d %d %d ", &key_code, &key_shift, &key_consol);
+		sscanf(gzbuf, "%d %d %d ", &INPUT_key_code, &INPUT_key_shift, &INPUT_key_consol);
 	}
 	if (recording) {
-		gzprintf(recordfp, "%d %d %d \n", key_code, key_shift, key_consol);
+		gzprintf(recordfp, "%d %d %d \n", INPUT_key_code, INPUT_key_shift, INPUT_key_consol);
 	}
 #endif
-	i = machine_type == MACHINE_5200 ? key_shift : (key_code == AKEY_BREAK);
+	i = Atari800_machine_type == Atari800_MACHINE_5200 ? INPUT_key_shift : (INPUT_key_code == AKEY_BREAK);
 	if (i && !last_key_break) {
-		if (IRQEN & 0x80) {
-			IRQST &= ~0x80;
-			GenerateIRQ();
+		if (POKEY_IRQEN & 0x80) {
+			POKEY_IRQST &= ~0x80;
+			CPU_GenerateIRQ();
 		}
 	}
 	last_key_break = i;
 
-	SKSTAT |= 0xc;
-	if (key_shift)
-		SKSTAT &= ~8;
+	POKEY_SKSTAT |= 0xc;
+	if (INPUT_key_shift)
+		POKEY_SKSTAT &= ~8;
 
-	if (key_code < 0) {
+	if (INPUT_key_code < 0) {
 		if (CASSETTE_press_space) {
-			key_code = AKEY_SPACE;
+			INPUT_key_code = AKEY_SPACE;
 			CASSETTE_press_space = 0;
 		}
 		else {
@@ -406,10 +407,10 @@ void INPUT_Frame(void)
 	/* which are 0x00-0x07 and 0x10-0x17 */
 	/* This is caused by the keyboard itself, these keys generate 'ghost keys'
 	 * when pressed with shift and control */
-	if (machine_type != MACHINE_5200 && (key_code&~0x17) == AKEY_SHFTCTRL) {
-		key_code = AKEY_NONE;
+	if (Atari800_machine_type != Atari800_MACHINE_5200 && (INPUT_key_code&~0x17) == AKEY_SHFTCTRL) {
+		INPUT_key_code = AKEY_NONE;
 	}
-	if (key_code >= 0) {
+	if (INPUT_key_code >= 0) {
 		/* The 5200 has only 4 of the 6 keyboard scan lines connected */
 		/* Pressing one 5200 key is like pressing 4 Atari 800 keys. */
 		/* The LSB (bit 0) and bit 5 are the two missing lines. */
@@ -423,30 +424,30 @@ void INPUT_Frame(void)
 		 * but this code only does one every frame. */
 		/* Bit 5 is different for each keypress because it is one
 		 * of the missing lines. */
-		if (machine_type == MACHINE_5200) {
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
 			static int bit5_5200 = 0;
 			if (bit5_5200) {
-				key_code &= ~0x20;
+				INPUT_key_code &= ~0x20;
 			}
 			bit5_5200 = !bit5_5200;
 			/* 5200 2nd fire button generates CTRL as well */
-			if (key_shift) {
-				key_code |= AKEY_SHFTCTRL;
+			if (INPUT_key_shift) {
+				INPUT_key_code |= AKEY_SHFTCTRL;
 			}
 		}
-		SKSTAT &= ~4;
-		if ((key_code ^ last_key_code) & ~AKEY_SHFTCTRL) {
+		POKEY_SKSTAT &= ~4;
+		if ((INPUT_key_code ^ last_key_code) & ~AKEY_SHFTCTRL) {
 		/* ignore if only shift or control has changed its state */
-			last_key_code = key_code;
-			KBCODE = (UBYTE) key_code;
-			if (IRQEN & 0x40) {
-				if (IRQST & 0x40) {
-					IRQST &= ~0x40;
-					GenerateIRQ();
+			last_key_code = INPUT_key_code;
+			POKEY_KBCODE = (UBYTE) INPUT_key_code;
+			if (POKEY_IRQEN & 0x40) {
+				if (POKEY_IRQST & 0x40) {
+					POKEY_IRQST &= ~0x40;
+					CPU_GenerateIRQ();
 				}
 				else {
 					/* keyboard over-run */
-					SKSTAT &= ~0x40;
+					POKEY_SKSTAT &= ~0x40;
 					/* assert(CPU_IRQ != 0); */
 				}
 			}
@@ -460,7 +461,7 @@ void INPUT_Frame(void)
 		sscanf(gzbuf,"%d ",&i);
 	} else {
 #endif
-		i = Atari_PORT(0);
+		i = PLATFORM_PORT(0);
 #ifdef EVENT_RECORDING
 	}
 	if (recording) {
@@ -476,7 +477,7 @@ void INPUT_Frame(void)
 		sscanf(gzbuf,"%d ",&i);
 	} else {
 #endif
-		i = Atari_PORT(1);
+		i = PLATFORM_PORT(1);
 #ifdef EVENT_RECORDING
 	}
 	if (recording) {
@@ -487,7 +488,7 @@ void INPUT_Frame(void)
 	STICK[3] = (i >> 4) & 0x0f;
 
 	for (i = 0; i < 4; i++) {
-		if (joy_block_opposite_directions) {
+		if (INPUT_joy_block_opposite_directions) {
 			if ((STICK[i] & 0x0c) == 0) {	/* right and left simultaneously */
 				if (last_stick[i] & 0x04)	/* if wasn't left before, move left */
 					STICK[i] |= 0x08;
@@ -521,45 +522,45 @@ void INPUT_Frame(void)
 
 		} else {
 #endif
-			TRIG_input[i] = Atari_TRIG(i);
+			TRIG_input[i] = PLATFORM_TRIG(i);
 #ifdef EVENT_RECORDING
 		}
 		if(recording){
 			gzprintf(recordfp,"%d \n",TRIG_input[i]);
 		}
 #endif
-		if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG_input[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
-			TRIG_input[i] = (nframes & 2) ? 1 : 0;
+		if ((INPUT_joy_autofire[i] == INPUT_AUTOFIRE_FIRE && !TRIG_input[i]) || (INPUT_joy_autofire[i] == INPUT_AUTOFIRE_CONT))
+			TRIG_input[i] = (Atari800_nframes & 2) ? 1 : 0;
 	}
 
 	/* handle analog joysticks in Atari 5200 */
-	if (machine_type != MACHINE_5200) {
+	if (Atari800_machine_type != Atari800_MACHINE_5200) {
 		for (i = 0; i < 8; i++)
-			POT_input[i] = Atari_POT(i);
+			POKEY_POT_input[i] = Atari_POT(i);
 	}
 	else {
 		for (i = 0; i < 4; i++) {
 #ifdef DREAMCAST
 			/* first get analog js data */
-			POT_input[2 * i] = Atari_POT(2 * i);         /* x */
-			POT_input[2 * i + 1] = Atari_POT(2 * i + 1); /* y */
-			if (POT_input[2 * i] != joy_5200_center
-			 || POT_input[2 * i + 1] != joy_5200_center)
+			POKEY_POT_input[2 * i] = Atari_POT(2 * i);         /* x */
+			POKEY_POT_input[2 * i + 1] = Atari_POT(2 * i + 1); /* y */
+			if (POKEY_POT_input[2 * i] != INPUT_joy_5200_center
+			 || POKEY_POT_input[2 * i + 1] != INPUT_joy_5200_center)
 				continue;
 			/* if analog js is unused, alternatively try keypad */
 #endif
-			if ((STICK[i] & (STICK_CENTRE ^ STICK_LEFT)) == 0)
-				POT_input[2 * i] = joy_5200_min;
-			else if ((STICK[i] & (STICK_CENTRE ^ STICK_RIGHT)) == 0)
-				POT_input[2 * i] = joy_5200_max;
+			if ((STICK[i] & (INPUT_STICK_CENTRE ^ INPUT_STICK_LEFT)) == 0)
+				POKEY_POT_input[2 * i] = INPUT_joy_5200_min;
+			else if ((STICK[i] & (INPUT_STICK_CENTRE ^ INPUT_STICK_RIGHT)) == 0)
+				POKEY_POT_input[2 * i] = INPUT_joy_5200_max;
 			else
-				POT_input[2 * i] = joy_5200_center;
-			if ((STICK[i] & (STICK_CENTRE ^ STICK_FORWARD)) == 0)
-				POT_input[2 * i + 1] = joy_5200_min;
-			else if ((STICK[i] & (STICK_CENTRE ^ STICK_BACK)) == 0)
-				POT_input[2 * i + 1] = joy_5200_max;
+				POKEY_POT_input[2 * i] = INPUT_joy_5200_center;
+			if ((STICK[i] & (INPUT_STICK_CENTRE ^ INPUT_STICK_FORWARD)) == 0)
+				POKEY_POT_input[2 * i + 1] = INPUT_joy_5200_min;
+			else if ((STICK[i] & (INPUT_STICK_CENTRE ^ INPUT_STICK_BACK)) == 0)
+				POKEY_POT_input[2 * i + 1] = INPUT_joy_5200_max;
 			else
-				POT_input[2 * i + 1] = joy_5200_center;
+				POKEY_POT_input[2 * i + 1] = INPUT_joy_5200_center;
 		}
 	}
 
@@ -567,61 +568,61 @@ void INPUT_Frame(void)
 #ifdef __PLUS
 	if (g_Input.ulState & IS_CAPTURE_MOUSE)
 #endif
-	switch (mouse_mode) {
-	case MOUSE_PAD:
-	case MOUSE_TOUCH:
-	case MOUSE_KOALA:
-		if (mouse_mode != MOUSE_PAD || machine_type == MACHINE_5200)
-			mouse_x += mouse_delta_x * mouse_speed;
+	switch (INPUT_mouse_mode) {
+	case INPUT_MOUSE_PAD:
+	case INPUT_MOUSE_TOUCH:
+	case INPUT_MOUSE_KOALA:
+		if (INPUT_mouse_mode != INPUT_MOUSE_PAD || Atari800_machine_type == Atari800_MACHINE_5200)
+			mouse_x += INPUT_mouse_delta_x * INPUT_mouse_speed;
 		else
-			mouse_x -= mouse_delta_x * mouse_speed;
-		if (mouse_x < mouse_pot_min << MOUSE_SHIFT)
-			mouse_x = mouse_pot_min << MOUSE_SHIFT;
-		else if (mouse_x > mouse_pot_max << MOUSE_SHIFT)
-			mouse_x = mouse_pot_max << MOUSE_SHIFT;
-		if (mouse_mode == MOUSE_KOALA || machine_type == MACHINE_5200)
-			mouse_y += mouse_delta_y * mouse_speed;
+			mouse_x -= INPUT_mouse_delta_x * INPUT_mouse_speed;
+		if (mouse_x < INPUT_mouse_pot_min << MOUSE_SHIFT)
+			mouse_x = INPUT_mouse_pot_min << MOUSE_SHIFT;
+		else if (mouse_x > INPUT_mouse_pot_max << MOUSE_SHIFT)
+			mouse_x = INPUT_mouse_pot_max << MOUSE_SHIFT;
+		if (INPUT_mouse_mode == INPUT_MOUSE_KOALA || Atari800_machine_type == Atari800_MACHINE_5200)
+			mouse_y += INPUT_mouse_delta_y * INPUT_mouse_speed;
 		else
-			mouse_y -= mouse_delta_y * mouse_speed;
-		if (mouse_y < mouse_pot_min << MOUSE_SHIFT)
-			mouse_y = mouse_pot_min << MOUSE_SHIFT;
-		else if (mouse_y > mouse_pot_max << MOUSE_SHIFT)
-			mouse_y = mouse_pot_max << MOUSE_SHIFT;
-		POT_input[mouse_port << 1] = mouse_x >> MOUSE_SHIFT;
-		POT_input[(mouse_port << 1) + 1] = mouse_y >> MOUSE_SHIFT;
-		if (machine_type == MACHINE_5200) {
-			if (mouse_buttons & 1)
-				TRIG_input[mouse_port] = 0;
-			if (mouse_buttons & 2)
-				SKSTAT &= ~8;
+			mouse_y -= INPUT_mouse_delta_y * INPUT_mouse_speed;
+		if (mouse_y < INPUT_mouse_pot_min << MOUSE_SHIFT)
+			mouse_y = INPUT_mouse_pot_min << MOUSE_SHIFT;
+		else if (mouse_y > INPUT_mouse_pot_max << MOUSE_SHIFT)
+			mouse_y = INPUT_mouse_pot_max << MOUSE_SHIFT;
+		POKEY_POT_input[INPUT_mouse_port << 1] = mouse_x >> MOUSE_SHIFT;
+		POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = mouse_y >> MOUSE_SHIFT;
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
+			if (INPUT_mouse_buttons & 1)
+				TRIG_input[INPUT_mouse_port] = 0;
+			if (INPUT_mouse_buttons & 2)
+				POKEY_SKSTAT &= ~8;
 		}
 		else
-			STICK[mouse_port] &= ~(mouse_buttons << 2);
+			STICK[INPUT_mouse_port] &= ~(INPUT_mouse_buttons << 2);
 		break;
-	case MOUSE_PEN:
-	case MOUSE_GUN:
-		mouse_x += mouse_delta_x * mouse_speed;
+	case INPUT_MOUSE_PEN:
+	case INPUT_MOUSE_GUN:
+		mouse_x += INPUT_mouse_delta_x * INPUT_mouse_speed;
 		if (mouse_x < 0)
 			mouse_x = 0;
 		else if (mouse_x > 167 << MOUSE_SHIFT)
 			mouse_x = 167 << MOUSE_SHIFT;
-		mouse_y += mouse_delta_y * mouse_speed;
+		mouse_y += INPUT_mouse_delta_y * INPUT_mouse_speed;
 		if (mouse_y < 0)
 			mouse_y = 0;
 		else if (mouse_y > 119 << MOUSE_SHIFT)
 			mouse_y = 119 << MOUSE_SHIFT;
-		PENH_input = 44 + mouse_pen_ofs_h + (mouse_x >> MOUSE_SHIFT);
-		PENV_input = 4 + mouse_pen_ofs_v + (mouse_y >> MOUSE_SHIFT);
-		if ((mouse_buttons & 1) == (mouse_mode == MOUSE_PEN))
-			STICK[mouse_port] &= ~1;
-		if ((mouse_buttons & 2) && !(last_mouse_buttons & 2))
+		ANTIC_PENH_input = 44 + INPUT_mouse_pen_ofs_h + (mouse_x >> MOUSE_SHIFT);
+		ANTIC_PENV_input = 4 + INPUT_mouse_pen_ofs_v + (mouse_y >> MOUSE_SHIFT);
+		if ((INPUT_mouse_buttons & 1) == (INPUT_mouse_mode == INPUT_MOUSE_PEN))
+			STICK[INPUT_mouse_port] &= ~1;
+		if ((INPUT_mouse_buttons & 2) && !(last_mouse_buttons & 2))
 			mouse_pen_show_pointer = !mouse_pen_show_pointer;
 		break;
-	case MOUSE_AMIGA:
-	case MOUSE_ST:
-	case MOUSE_TRAK:
-		mouse_move_x += (mouse_delta_x * mouse_speed) >> 1;
-		mouse_move_y += (mouse_delta_y * mouse_speed) >> 1;
+	case INPUT_MOUSE_AMIGA:
+	case INPUT_MOUSE_ST:
+	case INPUT_MOUSE_TRAK:
+		mouse_move_x += (INPUT_mouse_delta_x * INPUT_mouse_speed) >> 1;
+		mouse_move_y += (INPUT_mouse_delta_y * INPUT_mouse_speed) >> 1;
 
 		/* i = max(abs(mouse_move_x), abs(mouse_move_y)); */
 		i = mouse_move_x >= 0 ? mouse_move_x : -mouse_move_x;
@@ -631,93 +632,93 @@ void INPUT_Frame(void)
 			i = -mouse_move_y;
 
 		{
-			UBYTE stick = STICK_CENTRE;
+			UBYTE stick = INPUT_STICK_CENTRE;
 			if (i > 0) {
 				i += (1 << MOUSE_SHIFT) - 1;
 				i >>= MOUSE_SHIFT;
 				if (i > 50)
 					max_scanline_counter = scanline_counter = 5;
 				else
-					max_scanline_counter = scanline_counter = max_ypos / i;
+					max_scanline_counter = scanline_counter = Atari800_tv_mode / i;
 				stick = mouse_step();
 			}
-			if (mouse_mode == MOUSE_TRAK) {
+			if (INPUT_mouse_mode == INPUT_MOUSE_TRAK) {
 				/* bit 3 toggles - vertical movement, bit 2 = 0 - up */
 				/* bit 1 toggles - horizontal movement, bit 0 = 0 - left */
-				STICK[mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
+				STICK[INPUT_mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
 									| ((mouse_x & 1) << 1) | ((stick & 4) >> 2);
 			}
 			else {
-				STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
+				STICK[INPUT_mouse_port] = (INPUT_mouse_mode == INPUT_MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
 									[(mouse_y & 3) * 4 + (mouse_x & 3)];
 			}
 		}
 
-		if (mouse_buttons & 1)
-			TRIG_input[mouse_port] = 0;
-		if (mouse_buttons & 2)
-			POT_input[mouse_port << 1] = 1;
-		if (mouse_buttons & 4)
-			POT_input[(mouse_port << 1) + 1] = 1;
+		if (INPUT_mouse_buttons & 1)
+			TRIG_input[INPUT_mouse_port] = 0;
+		if (INPUT_mouse_buttons & 2)
+			POKEY_POT_input[INPUT_mouse_port << 1] = 1;
+		if (INPUT_mouse_buttons & 4)
+			POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = 1;
 		break;
-	case MOUSE_JOY:
-		if (machine_type == MACHINE_5200) {
-			/* 2 * mouse_speed is ok for Super Breakout, for Ballblazer you need more */
-			int val = joy_5200_center + ((mouse_delta_x * 2 * mouse_speed) >> MOUSE_SHIFT);
-			if (val < joy_5200_min)
-				val = joy_5200_min;
-			else if (val > joy_5200_max)
-				val = joy_5200_max;
-			POT_input[mouse_port << 1] = val;
-			val = joy_5200_center + ((mouse_delta_y * 2 * mouse_speed) >> MOUSE_SHIFT);
-			if (val < joy_5200_min)
-				val = joy_5200_min;
-			else if (val > joy_5200_max)
-				val = joy_5200_max;
-			POT_input[(mouse_port << 1) + 1] = val;
-			if (mouse_buttons & 2)
-				SKSTAT &= ~8;
+	case INPUT_MOUSE_JOY:
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
+			/* 2 * INPUT_mouse_speed is ok for Super Breakout, for Ballblazer you need more */
+			int val = INPUT_joy_5200_center + ((INPUT_mouse_delta_x * 2 * INPUT_mouse_speed) >> MOUSE_SHIFT);
+			if (val < INPUT_joy_5200_min)
+				val = INPUT_joy_5200_min;
+			else if (val > INPUT_joy_5200_max)
+				val = INPUT_joy_5200_max;
+			POKEY_POT_input[INPUT_mouse_port << 1] = val;
+			val = INPUT_joy_5200_center + ((INPUT_mouse_delta_y * 2 * INPUT_mouse_speed) >> MOUSE_SHIFT);
+			if (val < INPUT_joy_5200_min)
+				val = INPUT_joy_5200_min;
+			else if (val > INPUT_joy_5200_max)
+				val = INPUT_joy_5200_max;
+			POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = val;
+			if (INPUT_mouse_buttons & 2)
+				POKEY_SKSTAT &= ~8;
 		}
 		else {
-			mouse_move_x += mouse_delta_x * mouse_speed;
-			mouse_move_y += mouse_delta_y * mouse_speed;
-			if (mouse_move_x < -mouse_joy_inertia << MOUSE_SHIFT ||
-				mouse_move_x > mouse_joy_inertia << MOUSE_SHIFT ||
-				mouse_move_y < -mouse_joy_inertia << MOUSE_SHIFT ||
-				mouse_move_y > mouse_joy_inertia << MOUSE_SHIFT) {
+			mouse_move_x += INPUT_mouse_delta_x * INPUT_mouse_speed;
+			mouse_move_y += INPUT_mouse_delta_y * INPUT_mouse_speed;
+			if (mouse_move_x < -INPUT_mouse_joy_inertia << MOUSE_SHIFT ||
+				mouse_move_x > INPUT_mouse_joy_inertia << MOUSE_SHIFT ||
+				mouse_move_y < -INPUT_mouse_joy_inertia << MOUSE_SHIFT ||
+				mouse_move_y > INPUT_mouse_joy_inertia << MOUSE_SHIFT) {
 				mouse_move_x >>= 1;
 				mouse_move_y >>= 1;
 			}
-			STICK[mouse_port] &= mouse_step();
+			STICK[INPUT_mouse_port] &= mouse_step();
 		}
-		if (mouse_buttons & 1)
-			TRIG_input[mouse_port] = 0;
+		if (INPUT_mouse_buttons & 1)
+			TRIG_input[INPUT_mouse_port] = 0;
 		break;
 	default:
 		break;
 	}
-	last_mouse_buttons = mouse_buttons;
+	last_mouse_buttons = INPUT_mouse_buttons;
 
-	if (joy_multijoy && machine_type != MACHINE_5200) {
-		PORT_input[0] = 0xf0 | STICK[joy_multijoy_no];
-		PORT_input[1] = 0xff;
-		TRIG[0] = TRIG_input[joy_multijoy_no];
-		TRIG[2] = TRIG[1] = 1;
-		TRIG[3] = machine_type == MACHINE_XLXE ? cartA0BF_enabled : 1;
+	if (INPUT_joy_multijoy && Atari800_machine_type != Atari800_MACHINE_5200) {
+		PIA_PORT_input[0] = 0xf0 | STICK[joy_multijoy_no];
+		PIA_PORT_input[1] = 0xff;
+		GTIA_TRIG[0] = TRIG_input[joy_multijoy_no];
+		GTIA_TRIG[2] = GTIA_TRIG[1] = 1;
+		GTIA_TRIG[3] = Atari800_machine_type == Atari800_MACHINE_XLXE ? MEMORY_cartA0BF_enabled : 1;
 	}
 	else {
-		TRIG[0] = TRIG_input[0];
-		TRIG[1] = TRIG_input[1];
-		if (machine_type == MACHINE_XLXE) {
-			TRIG[2] = 1;
-			TRIG[3] = cartA0BF_enabled;
+		GTIA_TRIG[0] = TRIG_input[0];
+		GTIA_TRIG[1] = TRIG_input[1];
+		if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+			GTIA_TRIG[2] = 1;
+			GTIA_TRIG[3] = MEMORY_cartA0BF_enabled;
 		}
 		else {
-			TRIG[2] = TRIG_input[2];
-			TRIG[3] = TRIG_input[3];
+			GTIA_TRIG[2] = TRIG_input[2];
+			GTIA_TRIG[3] = TRIG_input[3];
 		}
-		PORT_input[0] = (STICK[1] << 4) | STICK[0];
-		PORT_input[1] = (STICK[3] << 4) | STICK[2];
+		PIA_PORT_input[0] = (STICK[1] << 4) | STICK[0];
+		PIA_PORT_input[1] = (STICK[3] << 4) | STICK[2];
 	}
 
 #ifdef EVENT_RECORDING
@@ -761,13 +762,13 @@ static void update_adler32_of_screen(void)
 }
 /* Compute the adler32 value of the visible screen */
 /* Note that the visible portion is 24..360 on the horizontal and */
-/* 0..ATARI_HEIGHT on the vertical */
+/* 0..Screen_HEIGHT on the vertical */
 static unsigned int compute_adler32_of_screen(void)
 {
 	int y;
 	unsigned int adler = adler32(0L,Z_NULL,0);
-	for (y = 0; y < ATARI_HEIGHT; y++) {
-		adler = adler32(adler, (unsigned char*)Screen_atari + 24 + ATARI_WIDTH*y, 360 - 24);
+	for (y = 0; y < Screen_HEIGHT; y++) {
+		adler = adler32(adler, (unsigned char*)Screen_atari + 24 + Screen_WIDTH*y, 360 - 24);
 	}
 	return adler;
 }
@@ -816,18 +817,18 @@ void INPUT_Scanline(void)
 {
 	if (--scanline_counter == 0) {
 		UBYTE stick = mouse_step();
-		if (mouse_mode == MOUSE_TRAK) {
+		if (INPUT_mouse_mode == INPUT_MOUSE_TRAK) {
 			/* bit 3 toggles - vertical movement, bit 2 = 0 - up */
 			/* bit 1 toggles - horizontal movement, bit 0 = 0 - left */
-			STICK[mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
+			STICK[INPUT_mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
 								| ((mouse_x & 1) << 1) | ((stick & 4) >> 2);
 		}
 		else {
-			STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
+			STICK[INPUT_mouse_port] = (INPUT_mouse_mode == INPUT_MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
 								[(mouse_y & 3) * 4 + (mouse_x & 3)];
 		}
-		PORT_input[0] = (STICK[1] << 4) | STICK[0];
-		PORT_input[1] = (STICK[3] << 4) | STICK[2];
+		PIA_PORT_input[0] = (STICK[1] << 4) | STICK[0];
+		PIA_PORT_input[1] = (STICK[3] << 4) | STICK[2];
 		scanline_counter = max_scanline_counter;
 	}
 }
@@ -836,30 +837,30 @@ void INPUT_SelectMultiJoy(int no)
 {
 	no &= 3;
 	joy_multijoy_no = no;
-	if (joy_multijoy && machine_type != MACHINE_5200) {
-		PORT_input[0] = 0xf0 | STICK[no];
-		TRIG[0] = TRIG_input[no];
+	if (INPUT_joy_multijoy && Atari800_machine_type != Atari800_MACHINE_5200) {
+		PIA_PORT_input[0] = 0xf0 | STICK[no];
+		GTIA_TRIG[0] = TRIG_input[no];
 	}
 }
 
 void INPUT_CenterMousePointer(void)
 {
-	switch (mouse_mode) {
-	case MOUSE_PAD:
-	case MOUSE_TOUCH:
-	case MOUSE_KOALA:
+	switch (INPUT_mouse_mode) {
+	case INPUT_MOUSE_PAD:
+	case INPUT_MOUSE_TOUCH:
+	case INPUT_MOUSE_KOALA:
 		mouse_x = 114 << MOUSE_SHIFT;
 		mouse_y = 114 << MOUSE_SHIFT;
 		break;
-	case MOUSE_PEN:
-	case MOUSE_GUN:
+	case INPUT_MOUSE_PEN:
+	case INPUT_MOUSE_GUN:
 		mouse_x = 84 << MOUSE_SHIFT;
 		mouse_y = 60 << MOUSE_SHIFT;
 		break;
-	case MOUSE_AMIGA:
-	case MOUSE_ST:
-	case MOUSE_TRAK:
-	case MOUSE_JOY:
+	case INPUT_MOUSE_AMIGA:
+	case INPUT_MOUSE_ST:
+	case INPUT_MOUSE_TRAK:
+	case INPUT_MOUSE_JOY:
 		mouse_move_x = 0;
 		mouse_move_y = 0;
 		break;
@@ -869,18 +870,18 @@ void INPUT_CenterMousePointer(void)
 #ifndef CURSES_BASIC
 
 #define PLOT(dx, dy)	do {\
-							ptr[(dx) + ATARI_WIDTH * (dy)] ^= 0x0f0f;\
-							ptr[(dx) + ATARI_WIDTH * (dy) + ATARI_WIDTH / 2] ^= 0x0f0f;\
+							ptr[(dx) + Screen_WIDTH * (dy)] ^= 0x0f0f;\
+							ptr[(dx) + Screen_WIDTH * (dy) + Screen_WIDTH / 2] ^= 0x0f0f;\
 						} while (0)
 
 /* draw light pen cursor */
 void INPUT_DrawMousePointer(void)
 {
-	if ((mouse_mode == MOUSE_PEN || mouse_mode == MOUSE_GUN) && mouse_pen_show_pointer) {
+	if ((INPUT_mouse_mode == INPUT_MOUSE_PEN || INPUT_mouse_mode == INPUT_MOUSE_GUN) && mouse_pen_show_pointer) {
 		int x = mouse_x >> MOUSE_SHIFT;
 		int y = mouse_y >> MOUSE_SHIFT;
 		if (x >= 0 && x <= 167 && y >= 0 && y <= 119) {
-			UWORD *ptr = & ((UWORD *) Screen_atari)[12 + x + ATARI_WIDTH * y];
+			UWORD *ptr = & ((UWORD *) Screen_atari)[12 + x + Screen_WIDTH * y];
 			PLOT(-2, 0);
 			PLOT(-1, 0);
 			PLOT(1, 0);

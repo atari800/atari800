@@ -1,5 +1,5 @@
-#ifndef _DEVICES_H_
-#define _DEVICES_H_
+#ifndef DEVICES_H_
+#define DEVICES_H_
 
 #include <stdio.h> /* FILENAME_MAX */
 #include "atari.h" /* UWORD */
@@ -71,4 +71,4 @@ int Devices_SetPrintCommand(const char *command);
 UWORD Devices_UpdateHATABSEntry(char device, UWORD entry_address, UWORD table_address);
 void Devices_RemoveHATABSEntry(char device, UWORD entry_address, UWORD table_address);
 
-#endif /* _DEVICES_H_ */
+#endif /* DEVICES_H_ */

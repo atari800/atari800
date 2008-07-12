@@ -1,5 +1,5 @@
-#ifndef _SCREEN_H_
-#define _SCREEN_H_
+#ifndef SCREEN_H_
+#define SCREEN_H_
 
 #include "atari.h"  /* UBYTE */
 
@@ -10,6 +10,14 @@ extern UBYTE *Screen_dirty;
 #endif /* DIRTYRECT */
 
 extern ULONG *Screen_atari;
+
+/* Dimensions of Screen_atari.
+   Screen_atari is Screen_WIDTH * Screen_HEIGHT bytes.
+   Each byte is an Atari color code - use Colours_Get[RGB] functions
+   to get actual RGB codes.
+   You should never display anything outside the middle 336 columns. */
+#define Screen_WIDTH  384
+#define Screen_HEIGHT 240
 
 #ifdef BITPL_SCR
 extern ULONG *Screen_atari_b;
@@ -34,4 +42,4 @@ int Screen_SaveScreenshot(const char *filename, int interlaced);
 void Screen_SaveNextScreenshot(int interlaced);
 void Screen_EntireDirty(void);
 
-#endif /* _SCREEN_H_ */
+#endif /* SCREEN_H_ */

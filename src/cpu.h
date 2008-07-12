@@ -1,5 +1,5 @@
-#ifndef _CPU_H_
-#define _CPU_H_
+#ifndef CPU_H_
+#define CPU_H_
 
 #include "config.h"
 #ifdef ASAP /* external project, see http://asap.sf.net */
@@ -20,16 +20,16 @@ void CPU_Initialise(void);		/* used in the assembler version of cpu.c only */
 void CPU_GetStatus(void);
 void CPU_PutStatus(void);
 void CPU_Reset(void);
-void CpuStateSave(UBYTE SaveVerbose);
-void CpuStateRead(UBYTE SaveVerbose, UBYTE StateVersion);
+void CPU_StateSave(UBYTE SaveVerbose);
+void CPU_StateRead(UBYTE SaveVerbose, UBYTE StateVersion);
 void CPU_NMI(void);
 void CPU_GO(int limit);
-#define GenerateIRQ() (CPU_IRQ = 1)
+#define CPU_GenerateIRQ() (CPU_IRQ = 1)
 
 #ifdef FALCON_CPUASM
 extern void CPU_INIT(void);
-extern void CPUGET(void);		/* put from CCR, N & Z FLAG into regP */
-extern void CPUPUT(void);		/* put from regP into CCR, N & Z FLAG */
+extern void CPU_GET(void);		/* put from CCR, N & Z FLAG into regP */
+extern void CPU_PUT(void);		/* put from regP into CCR, N & Z FLAG */
 #endif
 
 extern UWORD CPU_regPC;
@@ -73,4 +73,4 @@ extern unsigned int CPU_remember_jmp_curpos;
 extern int CPU_instruction_count[256];
 #endif
 
-#endif /* _CPU_H_ */
+#endif /* CPU_H_ */

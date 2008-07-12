@@ -276,32 +276,32 @@ void Colours_Adjust(int black, int white, int colintens, int *colortable_ptr)
 }
 
 void Colours_SetVideoSystem(int mode) {
-	if (mode == TV_NTSC) {
+	if (mode == Atari800_TV_NTSC) {
 		Colours_table = colortable_ntsc;
 	}
-       	else if (mode == TV_PAL) {
+       	else if (mode == Atari800_TV_PAL) {
 		Colours_table = colortable_pal;
 	}
 	else {
 		Atari800_Exit(FALSE);
-		Log_print("Interal error: Invalid tv_mode\n");
+		Log_print("Interal error: Invalid Atari800_tv_mode\n");
 		exit(1);
 	}
 }
 
 void Colours_InitialiseMachine(void)
 {
-	static int saved_tv_mode = TV_UNSET;
-	if (saved_tv_mode == TV_UNSET) {
+	static int saved_tv_mode = Atari800_TV_UNSET;
+	if (saved_tv_mode == Atari800_TV_UNSET) {
 		/* Colours_SetVideoSystem was already called in initialisation*/
-		saved_tv_mode = tv_mode;
+		saved_tv_mode = Atari800_tv_mode;
 	}
-	else if (saved_tv_mode != tv_mode) {
-		/* tv_mode has changed */
-		saved_tv_mode = tv_mode;
-		Colours_SetVideoSystem(tv_mode);
-#if SUPPORTS_ATARI_PALETTEUPDATE
-		Atari_PaletteUpdate();
+	else if (saved_tv_mode != Atari800_tv_mode) {
+		/* Atari800_tv_mode has changed */
+		saved_tv_mode = Atari800_tv_mode;
+		Colours_SetVideoSystem(Atari800_tv_mode);
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
+		PLATFORM_PaletteUpdate();
 #endif
 	}
 }
@@ -402,5 +402,5 @@ void Colours_Initialise(int *argc, char *argv[])
 	if (adjust_pal) {
 		Colours_Adjust(black_pal, white_pal, colintens_pal, colortable_pal);
 	}
-	Colours_SetVideoSystem(tv_mode); /* tv_mode is set before calling Colours_Initialise */
+	Colours_SetVideoSystem(Atari800_tv_mode); /* Atari800_tv_mode is set before calling Colours_Initialise */
 }

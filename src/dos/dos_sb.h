@@ -1,5 +1,5 @@
-#ifndef _DOS_SB_H_
-#define _DOS_SB_H_
+#ifndef DOS_SB_H_
+#define DOS_SB_H_
 
 typedef void (*sbmix_t)(void *buffer, int size);
 
@@ -17,4 +17,4 @@ extern void sb_setrate(int rate);
 }
 #endif /* __cplusplus */
 
-#endif /* _DOS_SB_H_ */
+#endif /* DOS_SB_H_ */

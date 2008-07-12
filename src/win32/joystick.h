@@ -1,5 +1,5 @@
-#ifndef _JOYSTICK_H_
-#define _JOYSTICK_H_
+#ifndef JOYSTICK_H_
+#define JOYSTICK_H_
 
 #define NUM_STICKS 2
 
@@ -16,4 +16,4 @@ typedef struct
 } tjoystat;
 extern tjoystat joystat;
 
-#endif /* _JOYSTICK_H_ */
+#endif /* JOYSTICK_H_ */

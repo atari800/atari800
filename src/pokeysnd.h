@@ -37,31 +37,11 @@
 /*                                                                           */
 /*****************************************************************************/
 
-#ifndef _POKEYSOUND_H
-#define _POKEYSOUND_H
+#ifndef POKEYSND_H_
+#define POKEYSND_H_
 
 #include "config.h"
 #include "pokey.h"
-
-#ifndef _TYPEDEF_H
-#define _TYPEDEF_H
-
-/* define some data types to keep it platform independent */
-#ifdef COMP16					/* if 16-bit compiler defined */
-#define int8  char
-#define int16 int
-#define int32 long
-#else							/* else default to 32-bit compiler */
-#define int8  char
-#define int16 short
-#define int32 int
-#endif
-
-#define uint8  unsigned int8
-#define uint16 unsigned int16
-#define uint32 unsigned int32
-
-#endif
 
 /* CONSTANT DEFINITIONS */
 
@@ -79,8 +59,8 @@
    the pitch of the output.  With these numbers, the pitch will be low
    by 0.127%.  (More than likely, an actual unit will vary by this much!) */
 
-#define FREQ_17_EXACT     1789790	/* exact 1.79 MHz clock freq */
-#define FREQ_17_APPROX    1787520	/* approximate 1.79 MHz clock freq */
+#define POKEYSND_FREQ_17_EXACT     1789790	/* exact 1.79 MHz clock freq */
+#define POKEYSND_FREQ_17_APPROX    1787520	/* approximate 1.79 MHz clock freq */
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,46 +68,62 @@ extern "C" {
 
 	/* #define SIGNED_SAMPLES */ /* define for signed output */
 
-#ifdef  SIGNED_SAMPLES			/* if signed output selected */
-#define SAMP_MAX 127			/* then set signed 8-bit clipping ranges */
-#define SAMP_MIN -128
-#define SAMP_MID 0
+#ifdef  POKEYSND_SIGNED_SAMPLES			/* if signed output selected */
+#define POKEYSND_SAMP_MAX 127			/* then set signed 8-bit clipping ranges */
+#define POKEYSND_SAMP_MIN -128
+#define POKEYSND_SAMP_MID 0
 #else
-#define SAMP_MAX 255			/* else set unsigned 8-bit clip ranges */
-#define SAMP_MIN 0
-#define SAMP_MID 128
+#define POKEYSND_SAMP_MAX 255			/* else set unsigned 8-bit clip ranges */
+#define POKEYSND_SAMP_MIN 0
+#define POKEYSND_SAMP_MID 128
 #endif
 
 /* init flags */
-#define SND_BIT16	1
+#define POKEYSND_BIT16	1
 
-extern int32 snd_playback_freq;
-extern uint8 snd_num_pokeys;
+extern SLONG POKEYSND_playback_freq;
+extern UBYTE POKEYSND_num_pokeys;
 
-extern int enable_new_pokey;
-extern int stereo_enabled;
-extern int serio_sound_enabled;
-extern int console_sound_enabled;
-extern int snd_bienias_fix;
+extern int POKEYSND_enable_new_pokey;
+extern int POKEYSND_stereo_enabled;
+extern int POKEYSND_serio_sound_enabled;
+extern int POKEYSND_console_sound_enabled;
+extern int POKEYSND_bienias_fix;
 
-extern void (*Pokey_process_ptr)(void *sndbuffer, unsigned int sndn);
-extern void (*Update_pokey_sound)(uint16 addr, uint8 val, uint8 /*chip*/, uint8 gain);
-extern void (*Update_serio_sound)(int out, UBYTE data);
-extern void (*Update_consol_sound)(int set);
-extern void (*Update_vol_only_sound)(void);
+extern void (*POKEYSND_Process_ptr)(void *sndbuffer, int sndn);
+extern void (*POKEYSND_Update)(UWORD addr, UBYTE val, UBYTE /*chip*/, UBYTE gain);
+extern void (*POKEYSND_UpdateSerio)(int out, UBYTE data);
+extern void (*POKEYSND_UpdateConsol)(int set);
+extern void (*POKEYSND_UpdateVolOnly)(void);
 
-int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
-                     unsigned int flags
+int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
+                     int flags
 #ifdef __PLUS
                      , int clear_regs
 #endif
                      );
-void Pokey_process(void *sndbuffer, unsigned int sndn);
-int Pokey_DoInit(void);
-void Pokey_set_mzquality(int quality);
+void POKEYSND_Process(void *sndbuffer, int sndn);
+int POKEYSND_DoInit(void);
+void POKEYSND_SetMzQuality(int quality);
+
+/* Volume only emulations declarations */
+#ifdef VOL_ONLY_SOUND
+
+#define	SAMPBUF_MAX	2000
+extern int	POKEYSND_sampbuf_val[SAMPBUF_MAX];	/* volume values */
+extern int	POKEYSND_sampbuf_cnt[SAMPBUF_MAX];	/* relative start time */
+extern int	POKEYSND_sampbuf_ptr;                    /* pointer to sampbuf */
+extern int	POKEYSND_sampbuf_rptr;                   /* pointer to read from sampbuf */
+extern int	POKEYSND_sampbuf_last;                   /* last absolute time */
+extern int	POKEYSND_sampbuf_AUDV[4 * POKEY_MAXPOKEYS];	/* prev. channel volume */
+extern int	POKEYSND_sampbuf_lastval;		/* last volume */
+extern int	POKEYSND_sampout;			/* last out volume */
+extern int	POKEYSND_samp_freq;
+extern int	POKEYSND_samp_consol_val;		/* actual value of console sound */
+#endif  /* VOL_ONLY_SOUND */
 
 #ifdef __cplusplus
 }
 
 #endif
-#endif
+#endif /* POKEYSND_H_ */

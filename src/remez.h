@@ -18,17 +18,17 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  *************************************************************************/
-#ifndef _REMEZ_H_
-#define _REMEZ_H_
+#ifndef REMEZ_H_
+#define REMEZ_H_
 
 #define REMEZ_BANDPASS       1
 #define REMEZ_DIFFERENTIATOR 2
 #define REMEZ_HILBERT        3
 
-/* Function prototype for Remez_CreateFilter() - the only function that should need be
+/* Function prototype for REMEZ_CreateFilter() - the only function that should need be
  * called from external code */
-void Remez_CreateFilter(double h[], int numtaps,
+void REMEZ_CreateFilter(double h[], int numtaps,
            int numband, double bands[], const double des[], const double weight[],
            int type);
 
-#endif /* _REMEZ_H_ */
+#endif /* REMEZ_H_ */

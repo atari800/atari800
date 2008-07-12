@@ -49,8 +49,8 @@ static UBYTE *mio_ram;
 static int mio_ram_size = 0x100000;
 static UBYTE mio_rom_bank = 0;
 static int mio_ram_enabled = FALSE;
-static char mio_rom_filename[FILENAME_MAX] = FILENAME_NOT_SET;
-static char mio_scsi_disk_filename[FILENAME_MAX] = FILENAME_NOT_SET;
+static char mio_rom_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
+static char mio_scsi_disk_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
 static int mio_scsi_enabled = FALSE;
 
 static void init_mio(void)
@@ -63,10 +63,10 @@ static void init_mio(void)
 	}
 	D(printf("Loaded mio rom image\n"));
 	PBI_MIO_enabled = TRUE;
-	if (SCSI_disk != NULL) fclose(SCSI_disk);
-	if (strcmp(mio_scsi_disk_filename, FILENAME_NOT_SET)) {
-		SCSI_disk = fopen(mio_scsi_disk_filename, "rb+");
-		if (SCSI_disk == NULL) {
+	if (PBI_SCSI_disk != NULL) fclose(PBI_SCSI_disk);
+	if (Util_filenamenotset(mio_scsi_disk_filename)) {
+		PBI_SCSI_disk = fopen(mio_scsi_disk_filename, "rb+");
+		if (PBI_SCSI_disk == NULL) {
 			Log_print("Error opening SCSI disk image:%s", mio_scsi_disk_filename);
 		}
 		else {
@@ -75,7 +75,7 @@ static void init_mio(void)
 		}
 	}
 	if (!mio_scsi_enabled) {
-		SCSI_BSY = TRUE; /* makes MIO give up easier */
+		PBI_SCSI_BSY = TRUE; /* makes MIO give up easier */
 	}
 	free(mio_ram);
 	mio_ram = (UBYTE *)Util_malloc(mio_ram_size);
@@ -113,32 +113,32 @@ int PBI_MIO_ReadConfig(char *string, char *ptr)
 void PBI_MIO_WriteConfig(FILE *fp)
 {
 	fprintf(fp, "MIO_ROM=%s\n", mio_rom_filename);
-	if (strcmp(mio_scsi_disk_filename, FILENAME_NOT_SET)) {
+	if (Util_filenamenotset(mio_scsi_disk_filename)) {
 		fprintf(fp, "MIO_SCSI_DISK=%s\n", mio_scsi_disk_filename);
 	}
 }
 
 /* $D1xx */
-UBYTE PBI_MIO_D1_GetByte(UWORD addr)
+UBYTE PBI_MIO_D1GetByte(UWORD addr)
 {
 	UBYTE result = 0x00;/*ff*/;
 	addr &= 0xffe3; /* 7 mirrors */
 	D(printf("MIO Read:%4x  PC:%4x\n", addr, CPU_remember_PC[(CPU_remember_PC_curpos-1)%CPU_REMEMBER_PC_STEPS]));
 	if (addr == 0xd1e2) {
-		result = ((!SCSI_CD) | (!SCSI_MSG<<1) | (!SCSI_IO<<2) | (!SCSI_BSY<<5) | (!SCSI_REQ<<7));
+		result = ((!PBI_SCSI_CD) | (!PBI_SCSI_MSG<<1) | (!PBI_SCSI_IO<<2) | (!PBI_SCSI_BSY<<5) | (!PBI_SCSI_REQ<<7));
 	}
 	else if (addr == 0xd1e1) {
 		if (mio_scsi_enabled) {
-			result = SCSI_GetByte()^0xff;
-			SCSI_PutACK(1);
-			SCSI_PutACK(0);
+			result = PBI_SCSI_GetByte()^0xff;
+			PBI_SCSI_PutACK(1);
+			PBI_SCSI_PutACK(0);
 		}
 	}
 	return result;
 }
 
 /* $D1xx */
-void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
+void PBI_MIO_D1PutByte(UWORD addr, UBYTE byte)
 {
 	int old_mio_ram_bank_offset = mio_ram_bank_offset;
 	int old_mio_ram_enabled = mio_ram_enabled;
@@ -152,9 +152,9 @@ void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
 	}
 	else if (addr == 0xd1e1) {
 		if (mio_scsi_enabled) {
-			SCSI_PutByte(byte^0xff);
-			SCSI_PutACK(1);
-			SCSI_PutACK(0);
+			PBI_SCSI_PutByte(byte^0xff);
+			PBI_SCSI_PutACK(1);
+			PBI_SCSI_PutACK(0);
 		}
 	}
 	else if (addr == 0xd1e2) {
@@ -162,7 +162,7 @@ void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
 		mio_ram_bank_offset &= 0x0ffff;
 		mio_ram_bank_offset |= ( (byte & 0x0f) <<  16);
 		mio_ram_enabled = (byte & 0x20);
-		if (mio_scsi_enabled) SCSI_PutSEL(!!(byte & 0x10));
+		if (mio_scsi_enabled) PBI_SCSI_PutSEL(!!(byte & 0x10));
 	}
 	else if (addr == 0xd1e3) {
 		/* or 0xd1ff. rom bank. */
@@ -173,10 +173,10 @@ void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
 			else if (byte == 0x10) offset = 0x3000;
 			else if (byte == 0x20) offset = 0x3800;
 			if (offset != -1) {
-				memcpy(memory + 0xd800, mio_rom+offset, 0x800);
+				memcpy(MEMORY_mem + 0xd800, mio_rom+offset, 0x800);
 				D(printf("mio bank:%2x activated\n", byte));
 			}else{
-				memcpy(memory + 0xd800, atari_os + 0x1800, 0x800);
+				memcpy(MEMORY_mem + 0xd800, MEMORY_os + 0x1800, 0x800);
 				D(printf("Floating point rom activated\n"));
 
 			}
@@ -188,36 +188,38 @@ void PBI_MIO_D1_PutByte(UWORD addr, UBYTE byte)
 	ram_enabled_changed = (old_mio_ram_enabled != mio_ram_enabled);
 	if (mio_ram_enabled && ram_enabled_changed) {
 		/* Copy new page from buffer, overwrite ff page */
-		memcpy(memory + 0xd600, mio_ram + mio_ram_bank_offset, 0x100);
+		memcpy(MEMORY_mem + 0xd600, mio_ram + mio_ram_bank_offset, 0x100);
 	} else if (mio_ram_enabled && offset_changed) {
 		/* Copy old page to buffer, copy new page from buffer */
-		memcpy(mio_ram + old_mio_ram_bank_offset,memory + 0xd600, 0x100);
-		memcpy(memory + 0xd600, mio_ram + mio_ram_bank_offset, 0x100);
+		memcpy(mio_ram + old_mio_ram_bank_offset,MEMORY_mem + 0xd600, 0x100);
+		memcpy(MEMORY_mem + 0xd600, mio_ram + mio_ram_bank_offset, 0x100);
 	} else if (!mio_ram_enabled && ram_enabled_changed) {
 		/* Copy old page to buffer, set new page to ff */
-		memcpy(mio_ram + old_mio_ram_bank_offset, memory + 0xd600, 0x100);
-		memset(memory + 0xd600, 0xff, 0x100);
+		memcpy(mio_ram + old_mio_ram_bank_offset, MEMORY_mem + 0xd600, 0x100);
+		memset(MEMORY_mem + 0xd600, 0xff, 0x100);
 	}
 	D(printf("MIO Write addr:%4x byte:%2x, cpu:%4x\n", addr, byte,CPU_remember_PC[(CPU_remember_PC_curpos-1)%CPU_REMEMBER_PC_STEPS]));
 }
 
 /* MIO RAM page at D600-D6ff */
-/* Possible to put code in this ram, so we can't avoid using memory[] */
+/* Possible to put code in this ram, so we can't avoid using MEMORY_mem[] */
 /* because opcode fetch doesn't call this function */
-UBYTE PBI_MIO_D6_GetByte(UWORD addr)
+UBYTE PBI_MIO_D6GetByte(UWORD addr)
 {
 	if (!mio_ram_enabled) return 0xff;
-	return memory[addr];
+	return MEMORY_mem[addr];
 }
 
 /* $D6xx */
-void PBI_MIO_D6_PutByte(UWORD addr, UBYTE byte)
+void PBI_MIO_D6PutByte(UWORD addr, UBYTE byte)
 {
 	if (!mio_ram_enabled) return;
-	memory[addr]=byte;
+	MEMORY_mem[addr]=byte;
 }
 
-void PBI_MIOStateSave(void)
+#ifndef BASIC
+
+void PBI_MIO_StateSave(void)
 {
 	StateSav_SaveINT(&PBI_MIO_enabled, 1);
 	if (PBI_MIO_enabled) {
@@ -232,7 +234,7 @@ void PBI_MIOStateSave(void)
 	}
 }
 
-void PBI_MIOStateRead(void)
+void PBI_MIO_StateRead(void)
 {
 	StateSav_ReadINT(&PBI_MIO_enabled, 1);
 	if (PBI_MIO_enabled) {
@@ -246,6 +248,8 @@ void PBI_MIOStateRead(void)
 		StateSav_ReadINT(&mio_ram_enabled, 1);
 	}
 }
+
+#endif /* #ifndef BASIC */
 
 /*
 vim:ts=4:sw=4:
