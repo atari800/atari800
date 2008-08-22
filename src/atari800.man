@@ -349,12 +349,6 @@ Define path to device used in LPTjoy 0. Available on linux-ia32 only.
 \fB-joy1 path-to-device
 Define path to device used in LPTjoy 1. Available on linux-ia32 only.
 
-.SS SVGALIB Options
-
-.TP
-\fB-interlace
-Enable screen interlace option
-
 .SS X11 Options
 
 .TP
@@ -541,31 +535,6 @@ SDL_JOY_* in atari_sdl.c, then recompile Atari800. In source you can also turn
 off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
 
 On Linux, standard joysticks are supported.
-
-.SS SVGALIB
-
-.TP
-\fBF11
-Joystick autofire on/off
-.TP
-\fB`
-Caps key
-
-.PP
-The Ctrl+Shift keyboard combinations are implemented using the left Alt key.
-
-Joystick 0 is operated by the numeric keypad (make sure that the numeric
-keypad has been enabled).
-
-        7 8 9
-         \\|/
-        4 5 6
-         /|\\
-        1 2 3
-
-        And 0 is the fire key.
-
-Mouse not supported in this version.
 
 .SS X11
 

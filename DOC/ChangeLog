@@ -1,3 +1,9 @@
+2008-08-22  Petr Stehlik  <pstehlik@sophics.cz>
+* atari_svgalib.c, configure.ac, Makefile.in, DOC/*: SVGAlib target dropped
+  definitely. SVGAlib is long time dead and running programs setuid 'root'
+  is so dangerous. Use/improve the SDL target instead!
+
+
 2008-07-12  Perry McFarlane  <perry_m@fastmail.fm>
 * most files: finished renaming globals.  New files: akey.h, (AKEY_*),
 esc.[ch](patches), afile.[ch](file loading), cfg.[ch] (configuration),

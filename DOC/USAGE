@@ -232,12 +232,6 @@ The following items are for -ntscemu only:
 -xep80port <n>        Use XEP80 on joystick port <n>
 
 
-SVGALIB version options
------------------------
-
--interlace            Generate screen with interlace
-
-
 X11 options
 -----------
 
@@ -442,27 +436,6 @@ modify the SDL_JOY_* options (see FAQ). You can also edit the default values
 in the atari_sdl.c, then recompile Atari800. In source you can also turn
 off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
 
-
-SVGALIB keyboard, joystick and other controllers
-------------------------------------------------
-
-F11        Joystick autofire on/off
-`          Caps key
-
-The Ctrl+Shift keyboard combinations are implemented using the left Alt key.
-
-Joystick 0 is operated by the numeric keypad (make sure that the numeric
-keypad has been enabled).
-
-        7 8 9
-         \|/
-        4 5 6
-         /|\
-        1 2 3
-
-        And 0 is the fire key.
-
-Mouse not supported in this version.
 
 X11 keyboard, joystick and other controllers
 --------------------------------------------

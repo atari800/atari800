@@ -118,7 +118,7 @@ else {
 
 # supported targets
 my @targets = qw(
-	basic curses ncurses pdcurses dosvga falcon svgalib sdl windx
+	basic curses ncurses pdcurses dosvga falcon sdl windx
 	x11 x11-motif x11-shm x11-xview x11-xview-shm motif shm xview xview-shm
 );
 

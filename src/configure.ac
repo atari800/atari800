@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    basic | curses | ncurses | pdcurses | dosvga | falcon | javanvm | javanvm-basic | ps2 | sdl | svgalib | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | curses | ncurses | pdcurses | dosvga | falcon | javanvm | javanvm-basic | ps2 | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -51,7 +51,6 @@ case "$target" in
         echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
         echo "    javanvm-basic    (Java NestedVM text-mode: set --host=mips-unknown-elf)"
         echo "    ps2              (Sony PlayStation 2)"
-        echo "    svgalib          (Linux system with SVGALib library)"
         echo "    sdl              (System with Simple Direct Media Layer library)"
         echo "    windx            (Windows with DirectX only)"
         echo "    x11              (Standard X11)"
@@ -304,11 +303,6 @@ dnl Don't make this a windowed app, make it a console app.
         fi
         AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
         OBJS="$OBJS pbi_proto80.o"
-        ;;
-    svgalib)
-        AC_DEFINE(SVGALIB,1,[Target: Linux with SVGALib.])
-        A8_NEED_LIB(vga)
-        OBJS="atari_svgalib.o"
         ;;
     windx)
         AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])
@@ -685,28 +679,17 @@ fi
 
 if [[ "$a8_host" = "linux" ]]; then
     case "$a8_target" in
-        svgalib | x11*)
+        x11*)
             A8_OPTION(linuxjoystick,yes,
-                      [Use LINUX joystick (linux svgalib/x11 targets only) (default=ON)],
+                      [Use LINUX joystick (linux x11 targets only) (default=ON)],
                       LINUX_JOYSTICK,[Define to use LINUX joystick.]
                       )
     esac
 fi
 
-if [[ "$a8_target" = "svgalib" ]]; then
-    A8_OPTION(svgaspeedup,no,
-              [Drawing every 1/50 sec only 1/refresh of screen (svgalib target only) (default=OFF)],
-              SVGA_SPEEDUP,[Define for drawing every 1/50 sec only 1/refresh of screen.]
-             )
-    A8_OPTION(svgajoymouse,no,
-              [Using Toshiba Joystick Mouse support (svgalib target only) (default=OFF)],
-              SVGA_JOYMOUSE,[Define to use Toshiba Joystick Mouse support.]
-             )
-fi
-
-if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
+if [[ "$a8_target" = "windx" ]]; then
     A8_OPTION(cursorblock,no,
-              [Using cursor/ctrl keys for keyboard joystick (svgalib/windx targets only) (default=OFF)],
+              [Using cursor/ctrl keys for keyboard joystick (windx targets only) (default=OFF)],
               USE_CURSORBLOCK,[Define for using cursor/ctrl keys for keyboard joystick.]
              )
 fi
@@ -804,15 +787,11 @@ if [[ "$a8_target" = "falcon" ]]; then
 fi
 if [[ "$a8_host" = "linux" ]]; then
     case "$a8_target" in
-        svgalib | x11*)
+        x11*)
             echo "Using Linux joystick?.................: $WANT_LINUX_JOYSTICK"
     esac
 fi
-if [[ "$a8_target" = "svgalib" ]]; then
-    echo "Using SVGA speedups?..................: $WANT_SVGA_SPEEDUP"
-    echo "Using Toshiba Joystick mouse?.........: $WANT_SVGA_JOYMOUSE"
-fi
-if [[ "$a8_target" = "svgalib" -o "$a8_target" = "windx" ]]; then
+if [[ "$a8_target" = "windx" ]]; then
     echo "Using cursor/ctrl keys?...............: $WANT_USE_CURSORBLOCK"
 fi
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then

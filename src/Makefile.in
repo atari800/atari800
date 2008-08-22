@@ -122,10 +122,6 @@ install: $(TARGET) installdirs
 	$(INSTALL_DATA) ../DOC/USAGE   ${DESTDIR}${DOC_DIR}/USAGE
 	$(INSTALL_DATA) ../DOC/NEWS    ${DESTDIR}${DOC_DIR}/NEWS
 
-install-svgalib: install
-	chown root.root ${DESTDIR}${BIN_DIR}/$(TARGET)
-	chmod 4755 ${DESTDIR}${BIN_DIR}/$(TARGET)
-
 readme.html: $(TARGET)
 	./$(TARGET) -help </dev/null | ../util/usage2html.pl \
 		../DOC/readme.html.in ../DOC/USAGE ./atari.h > $@
