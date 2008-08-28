@@ -38,8 +38,23 @@
 #include "gtia.h"
 
 #ifdef NONLINEAR_MIXING
-#include "pokeymix.inc"
-static double *pokeymix = NULL; /* Nonlinear POKEY mixing array */
+static const double pokeymix[61] = { /* Nonlinear POKEY mixing array */
+0.000000, 5.169146, 10.157015, 15.166247,
+20.073793, 24.927443, 29.728237, 34.495266,
+39.181262, 43.839780, 48.429508, 52.932530,
+57.327319, 61.586304, 65.673220, 69.547672,
+73.207846, 76.594474, 79.739231, 82.631161,
+85.300361, 87.750638, 90.020656, 92.108334,
+94.051256, 95.848478, 97.521287, 99.080719,
+100.540674, 101.902750, 103.185339, 104.375596,
+105.491149, 106.523735, 107.473511, 108.361458,
+109.185669, 109.962251, 110.685574, 111.367150,
+112.008476, 112.612760, 113.185603, 113.722735,
+114.227904, 114.712206, 115.171007, 115.605730,
+116.024396, 116.416097, 116.803169, 117.155108,
+117.532921, 117.835494, 118.196180, 118.502785,
+118.825177, 119.138170, 119.421378, 119.734493,
+120.000000};
 #endif
 
 #define SND_FILTER_SIZE  2048
@@ -856,7 +871,7 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
     {
         ps->forcero = 0;
 #ifdef NONLINEAR_MIXING
-        outvol_new = pokeymix[(ps->outvol_0)|(ps->outvol_1)|(ps->outvol_2)|(ps->outvol_3)];
+        outvol_new = pokeymix[ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3];
 #else
         outvol_new = ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3;
 #endif
@@ -1021,7 +1036,7 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
             }
 
 #ifdef NONLINEAR_MIXING
-            outvol_new = pokeymix[(ps->outvol_0)|(ps->outvol_1)|(ps->outvol_2)|(ps->outvol_3)];
+            outvol_new = pokeymix[ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3];
 #else
             outvol_new = ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3;
 #endif
@@ -1147,54 +1162,6 @@ found:
   return size;
 }
 
-#ifdef NONLINEAR_MIXING
-static void pokeymix_init(void)
-{
-    int v0_0, v1_0, v2_0, v3_0;
-    int v0_1, v1_1, v2_1, v3_1;
-    int v0_2, v1_2, v2_2, v3_2;
-    int v0_3, v1_3, v2_3, v3_3;
-    int count = 0;
-    double mix;
-    pokeymix = malloc(65536*sizeof(*pokeymix));
-    for(v3_0 = 0, v3_1 = 0, v3_2 = 0, v3_3 = 0; v3_0 < 16; v3_0++, v3_1+=0x10, v3_2+=0x100, v3_3+=0x1000) {
-        for(v2_0 = 0, v2_1 = 0, v2_2 = 0, v2_3 = 0; v2_0 <= v3_0; v2_0++, v2_1+=0x10, v2_2+=0x100, v2_3+=0x1000) {
-            for(v1_0 = 0, v1_1 = 0, v1_2 = 0, v1_3 = 0; v1_0 <= v2_0; v1_0++, v1_1+=0x10, v1_2+=0x100, v1_3+=0x1000) {
-                for(v0_0 = 0, v0_1 = 0, v0_2 = 0, v0_3 = 0; v0_0 <= v1_0; v0_0++, v0_1+=0x10, v0_2+=0x100, v0_3+=0x1000) {
-                    mix = 120.0*((double)pokeymix3876[count]/65535.0);
-                    /* all 24 permutations, some may be redundant */
-                    pokeymix[v0_3|v1_2|v2_1|v3_0] = mix;
-                    pokeymix[v0_3|v1_2|v3_1|v2_0] = mix;
-                    pokeymix[v0_3|v2_2|v1_1|v3_0] = mix;
-                    pokeymix[v0_3|v2_2|v3_1|v1_0] = mix;
-                    pokeymix[v0_3|v3_2|v2_1|v1_0] = mix;
-                    pokeymix[v0_3|v3_2|v1_1|v2_0] = mix;
-                    pokeymix[v1_3|v0_2|v2_1|v3_0] = mix;
-                    pokeymix[v1_3|v0_2|v3_1|v2_0] = mix;
-                    pokeymix[v1_3|v2_2|v0_1|v3_0] = mix;
-                    pokeymix[v1_3|v2_2|v3_1|v0_0] = mix;
-                    pokeymix[v1_3|v3_2|v0_1|v2_0] = mix;
-                    pokeymix[v1_3|v3_2|v2_1|v0_0] = mix;
-                    pokeymix[v2_3|v0_2|v1_1|v3_0] = mix;
-                    pokeymix[v2_3|v0_2|v3_1|v1_0] = mix;
-                    pokeymix[v2_3|v1_2|v0_1|v3_0] = mix;
-                    pokeymix[v2_3|v1_2|v3_1|v0_0] = mix;
-                    pokeymix[v2_3|v3_2|v0_1|v1_0] = mix;
-                    pokeymix[v2_3|v3_2|v1_1|v0_0] = mix;
-                    pokeymix[v3_3|v0_2|v1_1|v2_0] = mix;
-                    pokeymix[v3_3|v0_2|v2_1|v1_0] = mix;
-                    pokeymix[v3_3|v1_2|v0_1|v2_0] = mix;
-                    pokeymix[v3_3|v1_2|v2_1|v0_0] = mix;
-                    pokeymix[v3_3|v2_2|v0_1|v1_0] = mix;
-                    pokeymix[v3_3|v2_2|v1_1|v0_0] = mix;
-                    count++;
-                }
-            }
-        }
-    }
-}
-#endif /* NONLINEAR_MIXING */
-
 static void mzpokeysnd_process_8(void* sndbuffer, int sndn);
 static void mzpokeysnd_process_16(void* sndbuffer, int sndn);
 static void Update_pokey_sound_mz(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain);
@@ -1250,12 +1217,6 @@ int MZPOKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 #ifdef VOL_ONLY_SOUND
 	POKEYSND_samp_freq=playback_freq;
 #endif  /* VOL_ONLY_SOUND */
-
-#ifdef NONLINEAR_MIXING
-    if (pokeymix == NULL) {
-        pokeymix_init();
-    }
-#endif
 
 	POKEYSND_Process_ptr = (flags & POKEYSND_BIT16) ? mzpokeysnd_process_16 : mzpokeysnd_process_8;
 
@@ -1924,11 +1885,7 @@ static void Update_pokey_sound_mz(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
         ps->c0sw1 = (val & 0x40) != 0;
         ps->c0sw2 = (val & 0x20) != 0;
         ps->c0sw3 = (val & 0x80) != 0;
-#ifdef NONLINEAR_MIXING
-        ps->vol0 = ((val & 0xF)<<12);
-#else
         ps->vol0 = (val & 0xF);
-#endif
         ps->c0vo = (val & 0x10) != 0;
         Update_readout_0(ps);
         Update_event0(ps);
@@ -1950,11 +1907,7 @@ static void Update_pokey_sound_mz(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
         ps->c1sw1 = (val & 0x40) != 0;
         ps->c1sw2 = (val & 0x20) != 0;
         ps->c1sw3 = (val & 0x80) != 0;
-#ifdef NONLINEAR_MIXING
-        ps->vol1 = ((val & 0xF)<<8);
-#else
         ps->vol1 = (val & 0xF);
-#endif
         ps->c1vo = (val & 0x10) != 0;
         Update_readout_1(ps);
         Update_event1(ps);
@@ -1976,11 +1929,7 @@ static void Update_pokey_sound_mz(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
         ps->c2sw1 = (val & 0x40) != 0;
         ps->c2sw2 = (val & 0x20) != 0;
         ps->c2sw3 = (val & 0x80) != 0;
-#ifdef NONLINEAR_MIXING
-        ps->vol2 = ((val & 0xF)<<4);
-#else
         ps->vol2 = (val & 0xF);
-#endif
         ps->c2vo = (val & 0x10) != 0;
         Update_readout_2(ps);
         Update_event2(ps);
@@ -2263,7 +2212,7 @@ static void mzpokeysnd_process_8(void* sndbuffer, int sndn)
             while(  (l=POKEYSND_sampbuf_cnt[POKEYSND_sampbuf_rptr])<=0 )
                 {	POKEYSND_sampout=POKEYSND_sampbuf_val[POKEYSND_sampbuf_rptr];
                         POKEYSND_sampbuf_rptr++;
-                        if( POKEYSND_sampbuf_rptr>=SAMPBUF_MAX )
+                        if( POKEYSND_sampbuf_rptr>=POKEYSND_SAMPBUF_MAX )
                                 POKEYSND_sampbuf_rptr=0;
                         if( POKEYSND_sampbuf_rptr!=POKEYSND_sampbuf_ptr )
                             {
@@ -2312,7 +2261,7 @@ static void mzpokeysnd_process_16(void* sndbuffer, int sndn)
             while(  (l=POKEYSND_sampbuf_cnt[POKEYSND_sampbuf_rptr])<=0 )
                 {	POKEYSND_sampout=POKEYSND_sampbuf_val[POKEYSND_sampbuf_rptr];
                         POKEYSND_sampbuf_rptr++;
-                        if( POKEYSND_sampbuf_rptr>=SAMPBUF_MAX )
+                        if( POKEYSND_sampbuf_rptr>=POKEYSND_SAMPBUF_MAX )
                                 POKEYSND_sampbuf_rptr=0;
                         if( POKEYSND_sampbuf_rptr!=POKEYSND_sampbuf_ptr )
                             {
@@ -2360,11 +2309,11 @@ static void Update_serio_sound_mz( int out, UBYTE data )
 		(ANTIC_CPU_CLOCK+future-POKEYSND_sampbuf_last)*128*POKEYSND_samp_freq/178979;
 	POKEYSND_sampbuf_last=ANTIC_CPU_CLOCK+future;
 	POKEYSND_sampbuf_ptr++;
-	if( POKEYSND_sampbuf_ptr>=SAMPBUF_MAX )
+	if( POKEYSND_sampbuf_ptr>=POKEYSND_SAMPBUF_MAX )
 		POKEYSND_sampbuf_ptr=0;
 	if( POKEYSND_sampbuf_ptr==POKEYSND_sampbuf_rptr )
 	{	POKEYSND_sampbuf_rptr++;
-		if( POKEYSND_sampbuf_rptr>=SAMPBUF_MAX )
+		if( POKEYSND_sampbuf_rptr>=POKEYSND_SAMPBUF_MAX )
 			POKEYSND_sampbuf_rptr=0;
 	}
 			/* 1789790/19200 = 93 */
@@ -2409,11 +2358,11 @@ static void Update_consol_sound_mz( int set )
 		(ANTIC_CPU_CLOCK-POKEYSND_sampbuf_last)*128*POKEYSND_samp_freq/178979;
 	POKEYSND_sampbuf_last=ANTIC_CPU_CLOCK;
 	POKEYSND_sampbuf_ptr++;
-	if( POKEYSND_sampbuf_ptr>=SAMPBUF_MAX )
+	if( POKEYSND_sampbuf_ptr>=POKEYSND_SAMPBUF_MAX )
 		POKEYSND_sampbuf_ptr=0;
 	if( POKEYSND_sampbuf_ptr==POKEYSND_sampbuf_rptr )
 	{	POKEYSND_sampbuf_rptr++;
-		if( POKEYSND_sampbuf_rptr>=SAMPBUF_MAX )
+		if( POKEYSND_sampbuf_rptr>=POKEYSND_SAMPBUF_MAX )
 			POKEYSND_sampbuf_rptr=0;
 	}
 #endif  /* VOL_ONLY_SOUND */

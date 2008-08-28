@@ -1814,7 +1814,7 @@ static void XEP80_BlitRows(int y_start, int y_end)
     }
 }
 
-static void XEP80_BlitGraphChar(x, y)
+static void XEP80_BlitGraphChar(int x, int y)
 {
     int graph_col;
     UBYTE *to1,*to2;

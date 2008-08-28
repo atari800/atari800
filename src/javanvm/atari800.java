@@ -230,6 +230,7 @@ public class atari800 extends Applet implements Runnable {
 		canvas.scaleh = scaleh;
 		if (isApplet) {
 			this.add(canvas);
+			canvas.requestFocus();
 		}
 		else {
 			frame.add(canvas);

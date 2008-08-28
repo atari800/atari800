@@ -109,9 +109,9 @@ void POKEYSND_SetMzQuality(int quality);
 /* Volume only emulations declarations */
 #ifdef VOL_ONLY_SOUND
 
-#define	SAMPBUF_MAX	2000
-extern int	POKEYSND_sampbuf_val[SAMPBUF_MAX];	/* volume values */
-extern int	POKEYSND_sampbuf_cnt[SAMPBUF_MAX];	/* relative start time */
+#define	POKEYSND_SAMPBUF_MAX	2000
+extern int	POKEYSND_sampbuf_val[POKEYSND_SAMPBUF_MAX];	/* volume values */
+extern int	POKEYSND_sampbuf_cnt[POKEYSND_SAMPBUF_MAX];	/* relative start time */
 extern int	POKEYSND_sampbuf_ptr;                    /* pointer to sampbuf */
 extern int	POKEYSND_sampbuf_rptr;                   /* pointer to read from sampbuf */
 extern int	POKEYSND_sampbuf_last;                   /* last absolute time */

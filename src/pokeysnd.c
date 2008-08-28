@@ -124,8 +124,8 @@ static UWORD last_val2 = 0;	/* last output value */
 /* Volume only emulations declarations */
 #ifdef VOL_ONLY_SOUND
 
-int	POKEYSND_sampbuf_val[SAMPBUF_MAX];	/* volume values */
-int	POKEYSND_sampbuf_cnt[SAMPBUF_MAX];	/* relative start time */
+int	POKEYSND_sampbuf_val[POKEYSND_SAMPBUF_MAX];	/* volume values */
+int	POKEYSND_sampbuf_cnt[POKEYSND_SAMPBUF_MAX];	/* relative start time */
 int	POKEYSND_sampbuf_ptr = 0;		/* pointer to sampbuf */
 int	POKEYSND_sampbuf_rptr = 0;		/* pointer to read from sampbuf */
 int	POKEYSND_sampbuf_last = 0;		/* last absolute time */
@@ -135,8 +135,8 @@ int	POKEYSND_sampout;			/* last out volume */
 int	POKEYSND_samp_freq;
 int	POKEYSND_samp_consol_val = 0;		/* actual value of console sound */
 #ifdef STEREO_SOUND
-static int	sampbuf_val2[SAMPBUF_MAX];	/* volume values */
-static int	sampbuf_cnt2[SAMPBUF_MAX];	/* relative start time */
+static int	sampbuf_val2[POKEYSND_SAMPBUF_MAX];	/* volume values */
+static int	sampbuf_cnt2[POKEYSND_SAMPBUF_MAX];	/* relative start time */
 static int	sampbuf_ptr2 = 0;		/* pointer to sampbuf */
 static int	sampbuf_rptr2 = 0;		/* pointer to read from sampbuf */
 static int	sampbuf_last2 = 0;		/* last absolute time */
@@ -540,11 +540,11 @@ static void Update_pokey_sound_rf(UWORD addr, UBYTE val, UBYTE chip,
 						(ANTIC_CPU_CLOCK - sampbuf_last2) * 128 * POKEYSND_samp_freq / 178979;
 					sampbuf_last2 = ANTIC_CPU_CLOCK;
 					sampbuf_ptr2++;
-					if (sampbuf_ptr2 >= SAMPBUF_MAX)
+					if (sampbuf_ptr2 >= POKEYSND_SAMPBUF_MAX)
 						sampbuf_ptr2 = 0;
 					if (sampbuf_ptr2 == sampbuf_rptr2) {
 						sampbuf_rptr2++;
-						if (sampbuf_rptr2 >= SAMPBUF_MAX)
+						if (sampbuf_rptr2 >= POKEYSND_SAMPBUF_MAX)
 							sampbuf_rptr2 = 0;
 					}
 				}
@@ -560,11 +560,11 @@ static void Update_pokey_sound_rf(UWORD addr, UBYTE val, UBYTE chip,
 						(ANTIC_CPU_CLOCK - POKEYSND_sampbuf_last) * 128 * POKEYSND_samp_freq / 178979;
 					POKEYSND_sampbuf_last = ANTIC_CPU_CLOCK;
 					POKEYSND_sampbuf_ptr++;
-					if (POKEYSND_sampbuf_ptr >= SAMPBUF_MAX)
+					if (POKEYSND_sampbuf_ptr >= POKEYSND_SAMPBUF_MAX)
 						POKEYSND_sampbuf_ptr = 0;
 					if (POKEYSND_sampbuf_ptr == POKEYSND_sampbuf_rptr) {
 						POKEYSND_sampbuf_rptr++;
-						if (POKEYSND_sampbuf_rptr >= SAMPBUF_MAX)
+						if (POKEYSND_sampbuf_rptr >= POKEYSND_SAMPBUF_MAX)
 							POKEYSND_sampbuf_rptr = 0;
 					}
 				}
@@ -985,7 +985,7 @@ static void pokeysnd_process_8(void *sndbuffer, int sndn)
 					while ((l = POKEYSND_sampbuf_cnt[POKEYSND_sampbuf_rptr]) <= 0) {
 						POKEYSND_sampout = POKEYSND_sampbuf_val[POKEYSND_sampbuf_rptr];
 						POKEYSND_sampbuf_rptr++;
-						if (POKEYSND_sampbuf_rptr >= SAMPBUF_MAX)
+						if (POKEYSND_sampbuf_rptr >= POKEYSND_SAMPBUF_MAX)
 							POKEYSND_sampbuf_rptr = 0;
 						if (POKEYSND_sampbuf_rptr != POKEYSND_sampbuf_ptr)
 							POKEYSND_sampbuf_cnt[POKEYSND_sampbuf_rptr] += l;
@@ -1006,7 +1006,7 @@ static void pokeysnd_process_8(void *sndbuffer, int sndn)
 						while ((l = sampbuf_cnt2[sampbuf_rptr2]) <= 0) {
 							sampout2 = sampbuf_val2[sampbuf_rptr2];
 							sampbuf_rptr2++;
-							if (sampbuf_rptr2 >= SAMPBUF_MAX)
+							if (sampbuf_rptr2 >= POKEYSND_SAMPBUF_MAX)
 								sampbuf_rptr2 = 0;
 							if (sampbuf_rptr2 != sampbuf_ptr2)
 								sampbuf_cnt2[sampbuf_rptr2] += l;
@@ -1124,11 +1124,11 @@ static void Update_serio_sound_rf(int out, UBYTE data)
 		(ANTIC_CPU_CLOCK + future-POKEYSND_sampbuf_last) * 128 * POKEYSND_samp_freq / 178979;
 	POKEYSND_sampbuf_last = ANTIC_CPU_CLOCK + future;
 	POKEYSND_sampbuf_ptr++;
-	if (POKEYSND_sampbuf_ptr >= SAMPBUF_MAX )
+	if (POKEYSND_sampbuf_ptr >= POKEYSND_SAMPBUF_MAX )
 		POKEYSND_sampbuf_ptr = 0;
 	if (POKEYSND_sampbuf_ptr == POKEYSND_sampbuf_rptr ) {
 		POKEYSND_sampbuf_rptr++;
-		if (POKEYSND_sampbuf_rptr >= SAMPBUF_MAX)
+		if (POKEYSND_sampbuf_rptr >= POKEYSND_SAMPBUF_MAX)
 			POKEYSND_sampbuf_rptr = 0;
 	}
 		/* 1789790/19200 = 93 */
@@ -1203,11 +1203,11 @@ static void Update_consol_sound_rf(int set)
 		(ANTIC_CPU_CLOCK - POKEYSND_sampbuf_last) * 128 * POKEYSND_samp_freq / 178979;
 	POKEYSND_sampbuf_last = ANTIC_CPU_CLOCK;
 	POKEYSND_sampbuf_ptr++;
-	if (POKEYSND_sampbuf_ptr >= SAMPBUF_MAX)
+	if (POKEYSND_sampbuf_ptr >= POKEYSND_SAMPBUF_MAX)
 		POKEYSND_sampbuf_ptr = 0;
 	if (POKEYSND_sampbuf_ptr == POKEYSND_sampbuf_rptr) {
 		POKEYSND_sampbuf_rptr++;
-		if (POKEYSND_sampbuf_rptr >= SAMPBUF_MAX)
+		if (POKEYSND_sampbuf_rptr >= POKEYSND_SAMPBUF_MAX)
 			POKEYSND_sampbuf_rptr = 0;
 	}
 #endif  /* VOL_ONLY_SOUND */

@@ -1,4 +1,3 @@
-/* $Id$ */
 #ifndef SIO_H_
 #define SIO_H_
 
