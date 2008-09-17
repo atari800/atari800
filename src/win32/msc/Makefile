@@ -17,16 +17,19 @@ CFLAGS = /nologo /O2 /GS- /W3 /wd4996 /I win32\msc /I .
 LDFLAGS = /nologo
 
 OBJS = \
+	afile.obj \
 	antic.obj \
 	atari.obj \
 	binload.obj \
 	cartridge.obj \
 	cassette.obj \
+	cfg.obj \
 	colours.obj \
 	compfile.obj \
 	cpu.obj \
 	cycle_map.obj \
 	devices.obj \
+	esc.obj \
 	gtia.obj \
 	input.obj \
 	log.obj \
