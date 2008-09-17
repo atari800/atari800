@@ -1,3 +1,13 @@
+2008-09-17  Piotr Fusik  <fox@scene.pl>
+* win32/msc/Makefile: added new source files
+
+
+2008-09-17  B Watson  <yalhcru@gmail.com>
+* configure.ac, monitor.c: --enable-readline option for the configure script
+  - the monitor supports arrow keys (including up-arrow for command history),
+  home/end, etc. using the "readline" library
+
+
 2008-08-28  Perry McFarlane  <perry_m@fastmail.fm>
 * javanvm/atari800.java: gain applet focus
 * sio.h: remove Id tag

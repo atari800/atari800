@@ -40,6 +40,11 @@
 #include "pokeysnd.h"
 #endif
 
+#ifdef MONITOR_READLINE
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif
+
 #ifdef __PLUS
 
 #include <stdarg.h>
@@ -534,7 +539,19 @@ static void safe_gets(char *buffer, size_t size)
 #ifdef HAVE_FFLUSH
 	fflush(stdout);
 #endif
+
+#ifdef MONITOR_READLINE
+	{
+		char *got = readline("");
+		if (got) {
+			strncpy(buffer, got, size);
+			if (*got)
+				add_history(got);
+		}
+	}
+#else
 	fgets(buffer, size, stdin);
+#endif
 	Util_chomp(buffer);
 }
 

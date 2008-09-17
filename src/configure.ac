@@ -545,6 +545,15 @@ A8_OPTION(monitortrace,no,
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
+A8_OPTION(readline,no,
+          [Support readline in the monitor (default=OFF)],
+          MONITOR_READLINE,[Define to activate readline support in monitor.]
+         )
+
+if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
+	LIBS="-lreadline -ltermcap $LIBS"
+fi
+
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
 dnl we already checked for libz and added it to LIBS
     AC_CHECK_LIB(z,adler32,
