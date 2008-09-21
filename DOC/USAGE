@@ -379,7 +379,7 @@ RSUPER     CapsToggle (+Shift = CapsLock)
 LAlt+F     Switch fullscreen (probably doesn't work in Windows)
 LAlt+G     Switch WIDTH_MODE (so you can set 320x240)
 LAlt+B     Switch BLACK-AND-WHITE
-LAlt+J     Swap _keyboard_emulated_ joysticks
+LAlt+J     Swap joysticks 0 and 1
 LAlt+E     Switch bpp (for debug only, will be removed soon)
 LAlt+M     Grab mouse (prevents mouse pointer from leaving the window)
 
@@ -403,41 +403,14 @@ LAlt+;     Decrease NTSC hue (like TV Tint control)
 LAlt+'     Increase NTSC hue (like TV Tint control)
 LAlt+Ins   Decrease NTSC saturation ramp(reduce saturation for bright colours) 
 LAlt+Ins   Increase NTSC saturation ramp(reduce saturation for bright colours) 
-
 LAlt+Shift+X Enable/disable XEP80 screen (use with -xep80)
 
-
-Apart from standard joysticks (handled by the SDL) two keyboard joysticks
-are supported.
-
-Keyboard joystick 0 is operated by the numeric keypad.
-
-        7 8 9
-         \|/
-        4 5 6
-         /|\
-        1 2 3
-
-        And left control is the fire key.
-
-Keyboard joystick 1 is by default mapped on the following keys:
-
-        q w e
-         \|/
-        a s d
-         /|\
-        z x c
-
-        And Tab is the fire key.
-
+Apart from standard joysticks (handled by the SDL) up to two keyboard joysticks
+are supported. The keys used for joystick directions and the trigger can be
+freely defined in the config UI (Controller Config -> Define layout).
 Keyboard joystick emulation can be enabled/disabled in the Controller Config.
 By default, joy 0 is enabled and joy 1 is disabled (to not steal normal
-qweadzxc keys in the emulator).
-
-To redefine keys for joystick emulation edit the Atari800 config file and
-modify the SDL_JOY_* options (see FAQ). You can also edit the default values
-in the atari_sdl.c, then recompile Atari800. In source you can also turn
-off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
+AWDS keys in the emulator).
 
 
 X11 keyboard, joystick and other controllers

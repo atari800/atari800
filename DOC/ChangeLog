@@ -1,3 +1,14 @@
+2008-09-21  Petr Stehlik  <pstehlik@sophics.cz>
+* ui.c: visual configuration of keyboard joysticks layout, at long last!
+  Currently for the SDL target only. Also default joystick mapping
+  changed to num pad 4,8,6,5 + right ctrl and A,W,D,S + left ctrl keys.
+  Feel free to set up your own mapping and then save the configuration.
+
+* atari_sdl.c: removed keys for combined joystick directions (left+up, etc.)
+
+* util.[ch]: safe_strncpy() added
+
+
 2008-09-21  B Watson  <yalhcru@gmail.com>
 * input.[ch]: "-directmouse" added (directly converting the mouse's absolute
   X/Y position to the POKEY pot. Used only for "-mouse pad", "-mouse koala",
