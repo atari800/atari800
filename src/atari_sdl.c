@@ -27,7 +27,6 @@
 
    TODO:
    - implement all Atari800 parameters
-   - use mouse and real joystick
    - turn off fullscreen when error happen
 */
 
@@ -105,25 +104,16 @@ static atari_ntsc_setup_t atari_ntsc_setup;
 int PLATFORM_kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
 int PLATFORM_kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
 
-static int KBD_TRIG_0 = SDLK_LCTRL;
+static int KBD_TRIG_0 = SDLK_RCTRL;
 static int KBD_STICK_0_LEFT = SDLK_KP4;
 static int KBD_STICK_0_RIGHT = SDLK_KP6;
-static int KBD_STICK_0_DOWN = SDLK_KP2;
+static int KBD_STICK_0_DOWN = SDLK_KP5;
 static int KBD_STICK_0_UP = SDLK_KP8;
-static int KBD_STICK_0_LEFTUP = SDLK_KP7;
-static int KBD_STICK_0_RIGHTUP = SDLK_KP9;
-static int KBD_STICK_0_LEFTDOWN = SDLK_KP1;
-static int KBD_STICK_0_RIGHTDOWN = SDLK_KP3;
-
-static int KBD_TRIG_1 = SDLK_TAB;
+static int KBD_TRIG_1 = SDLK_LCTRL;
 static int KBD_STICK_1_LEFT = SDLK_a;
 static int KBD_STICK_1_RIGHT = SDLK_d;
-static int KBD_STICK_1_DOWN = SDLK_x;
+static int KBD_STICK_1_DOWN = SDLK_s;
 static int KBD_STICK_1_UP = SDLK_w;
-static int KBD_STICK_1_LEFTUP = SDLK_q;
-static int KBD_STICK_1_RIGHTUP = SDLK_e;
-static int KBD_STICK_1_LEFTDOWN = SDLK_z;
-static int KBD_STICK_1_RIGHTDOWN = SDLK_c;
 
 /* real joysticks */
 
@@ -202,16 +192,6 @@ int PLATFORM_Configure(char *option, char *parameters)
 		return SDLKeyBind(&KBD_STICK_0_DOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_0_UP") == 0)
 		return SDLKeyBind(&KBD_STICK_0_UP, parameters);
-	else if (strcmp(option, "SDL_JOY_0_LEFTUP") == 0)
-		return SDLKeyBind(&KBD_STICK_0_LEFTUP, parameters);
-	else if (strcmp(option, "SDL_JOY_0_RIGHTUP") == 0)
-		return SDLKeyBind(&KBD_STICK_0_RIGHTUP, parameters);
-	else if (strcmp(option, "SDL_JOY_0_LEFTDOWN") == 0)
-		return SDLKeyBind(&KBD_STICK_0_LEFTDOWN, parameters);
-	else if (strcmp(option, "SDL_JOY_0_RIGHTDOWN") == 0)
-		return SDLKeyBind(&KBD_STICK_0_RIGHTDOWN, parameters);
-	else if (strcmp(option, "SDL_TRIG_0") == 0) /* obsolete */
-		return SDLKeyBind(&KBD_TRIG_0, parameters);
 	else if (strcmp(option, "SDL_JOY_0_TRIGGER") == 0)
 		return SDLKeyBind(&KBD_TRIG_0, parameters);
 	else if (strcmp(option, "SDL_JOY_1_LEFT") == 0)
@@ -222,16 +202,6 @@ int PLATFORM_Configure(char *option, char *parameters)
 		return SDLKeyBind(&KBD_STICK_1_DOWN, parameters);
 	else if (strcmp(option, "SDL_JOY_1_UP") == 0)
 		return SDLKeyBind(&KBD_STICK_1_UP, parameters);
-	else if (strcmp(option, "SDL_JOY_1_LEFTUP") == 0)
-		return SDLKeyBind(&KBD_STICK_1_LEFTUP, parameters);
-	else if (strcmp(option, "SDL_JOY_1_RIGHTUP") == 0)
-		return SDLKeyBind(&KBD_STICK_1_RIGHTUP, parameters);
-	else if (strcmp(option, "SDL_JOY_1_LEFTDOWN") == 0)
-		return SDLKeyBind(&KBD_STICK_1_LEFTDOWN, parameters);
-	else if (strcmp(option, "SDL_JOY_1_RIGHTDOWN") == 0)
-		return SDLKeyBind(&KBD_STICK_1_RIGHTDOWN, parameters);
-	else if (strcmp(option, "SDL_TRIG_1") == 0) /* obsolete */
-		return SDLKeyBind(&KBD_TRIG_1, parameters);
 	else if (strcmp(option, "SDL_JOY_1_TRIGGER") == 0)
 		return SDLKeyBind(&KBD_TRIG_1, parameters);
 	else
@@ -248,10 +218,6 @@ void PLATFORM_ConfigSave(FILE *fp)
 	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
 	fprintf(fp, "SDL_JOY_0_UP=%d\n", KBD_STICK_0_UP);
 	fprintf(fp, "SDL_JOY_0_DOWN=%d\n", KBD_STICK_0_DOWN);
-	fprintf(fp, "SDL_JOY_0_LEFTUP=%d\n", KBD_STICK_0_LEFTUP);
-	fprintf(fp, "SDL_JOY_0_RIGHTUP=%d\n", KBD_STICK_0_RIGHTUP);
-	fprintf(fp, "SDL_JOY_0_LEFTDOWN=%d\n", KBD_STICK_0_LEFTDOWN);
-	fprintf(fp, "SDL_JOY_0_RIGHTDOWN=%d\n", KBD_STICK_0_RIGHTDOWN);
 	fprintf(fp, "SDL_JOY_0_TRIGGER=%d\n", KBD_TRIG_0);
 
 	fprintf(fp, "SDL_JOY_1_ENABLED=%d\n", PLATFORM_kbd_joy_1_enabled);
@@ -259,36 +225,48 @@ void PLATFORM_ConfigSave(FILE *fp)
 	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
 	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
 	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", KBD_STICK_1_DOWN);
-	fprintf(fp, "SDL_JOY_1_LEFTUP=%d\n", KBD_STICK_1_LEFTUP);
-	fprintf(fp, "SDL_JOY_1_RIGHTUP=%d\n", KBD_STICK_1_RIGHTUP);
-	fprintf(fp, "SDL_JOY_1_LEFTDOWN=%d\n", KBD_STICK_1_LEFTDOWN);
-	fprintf(fp, "SDL_JOY_1_RIGHTDOWN=%d\n", KBD_STICK_1_RIGHTDOWN);
 	fprintf(fp, "SDL_JOY_1_TRIGGER=%d\n", KBD_TRIG_1);
 }
 
-/* used in UI to show how the keyboard joystick is mapped */
-char *PLATFORM_Joy0Description(char *buffer, int maxsize)
+void PLATFORM_SetJoystickKey(int joystick, int direction, int value)
 {
-	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
-			SDL_GetKeyName((SDLKey)KBD_STICK_0_LEFT),
-			SDL_GetKeyName((SDLKey)KBD_STICK_0_RIGHT),
-			SDL_GetKeyName((SDLKey)KBD_STICK_0_UP),
-			SDL_GetKeyName((SDLKey)KBD_STICK_0_DOWN),
-			SDL_GetKeyName((SDLKey)KBD_TRIG_0)
-	);
-	return buffer;
+	if (joystick == 0) {
+		switch(direction) {
+			case 0: KBD_STICK_0_LEFT = value; break;
+			case 1: KBD_STICK_0_UP = value; break;
+			case 2: KBD_STICK_0_RIGHT = value; break;
+			case 3: KBD_STICK_0_DOWN = value; break;
+			case 4: KBD_TRIG_0 = value; break;
+		}
+	}
+	else {
+		switch(direction) {
+			case 0: KBD_STICK_1_LEFT = value; break;
+			case 1: KBD_STICK_1_UP = value; break;
+			case 2: KBD_STICK_1_RIGHT = value; break;
+			case 3: KBD_STICK_1_DOWN = value; break;
+			case 4: KBD_TRIG_1 = value; break;
+		}
+	}
 }
 
-char *PLATFORM_Joy1Description(char *buffer, int maxsize)
+void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int bufsize)
 {
-	snprintf(buffer, maxsize, " (L=%s R=%s U=%s D=%s B=%s)",
-			SDL_GetKeyName((SDLKey)KBD_STICK_1_LEFT),
-			SDL_GetKeyName((SDLKey)KBD_STICK_1_RIGHT),
-			SDL_GetKeyName((SDLKey)KBD_STICK_1_UP),
-			SDL_GetKeyName((SDLKey)KBD_STICK_1_DOWN),
-			SDL_GetKeyName((SDLKey)KBD_TRIG_1)
-	);
-	return buffer;
+	char *key = "";
+	switch(direction) {
+		case 0: key = SDL_GetKeyName((SDLKey)(joystick == 0 ? KBD_STICK_0_LEFT : KBD_STICK_1_LEFT));
+			break;
+		case 1: key = SDL_GetKeyName((SDLKey)(joystick == 0 ? KBD_STICK_0_UP : KBD_STICK_1_UP));
+			break;
+		case 2: key = SDL_GetKeyName((SDLKey)(joystick == 0 ? KBD_STICK_0_RIGHT : KBD_STICK_1_RIGHT));
+			break;
+		case 3: key = SDL_GetKeyName((SDLKey)(joystick == 0 ? KBD_STICK_0_DOWN : KBD_STICK_1_DOWN));
+			break;
+		case 4: key = SDL_GetKeyName((SDLKey)(joystick == 0 ? KBD_TRIG_0 : KBD_TRIG_1));
+			break;
+	}
+	snprintf(buffer, bufsize, "%11s", key);
+	buffer[bufsize-1] = '\0';
 }
 
 #ifdef SOUND
@@ -613,6 +591,20 @@ static void SoundInitialise(int *argc, char *argv[])
 }
 #endif /* SOUND */
 
+int PLATFORM_GetRawKey(void)
+{
+	while(TRUE)
+	{
+		SDL_Event event;
+		if (SDL_PollEvent(&event)) {
+			switch (event.type) {
+			case SDL_KEYDOWN:
+				return event.key.keysym.sym;
+			}
+		}
+	}
+}
+
 int PLATFORM_Keyboard(void)
 {
 	static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
@@ -900,10 +892,7 @@ int PLATFORM_Keyboard(void)
 	 */
 	if (!UI_is_active && PLATFORM_kbd_joy_0_enabled) {
 		if (lastkey == KBD_STICK_0_LEFT || lastkey == KBD_STICK_0_RIGHT ||
-			lastkey == KBD_STICK_0_UP || lastkey == KBD_STICK_0_DOWN ||
-			lastkey == KBD_STICK_0_LEFTUP || lastkey == KBD_STICK_0_LEFTDOWN ||
-			lastkey == KBD_STICK_0_RIGHTUP || lastkey == KBD_STICK_0_RIGHTDOWN ||
-			lastkey == KBD_TRIG_0) {
+			lastkey == KBD_STICK_0_UP || lastkey == KBD_STICK_0_DOWN || lastkey == KBD_TRIG_0) {
 			key_pressed = 0;
 			return AKEY_NONE;
 		}
@@ -911,10 +900,7 @@ int PLATFORM_Keyboard(void)
 
 	if (!UI_is_active && PLATFORM_kbd_joy_1_enabled) {
 		if (lastkey == KBD_STICK_1_LEFT || lastkey == KBD_STICK_1_RIGHT ||
-			lastkey == KBD_STICK_1_UP || lastkey == KBD_STICK_1_DOWN ||
-			lastkey == KBD_STICK_1_LEFTUP || lastkey == KBD_STICK_1_LEFTDOWN ||
-			lastkey == KBD_STICK_1_RIGHTUP || lastkey == KBD_STICK_1_RIGHTDOWN ||
-			lastkey == KBD_TRIG_1) {
+			lastkey == KBD_STICK_1_UP || lastkey == KBD_STICK_1_DOWN || lastkey == KBD_TRIG_1) {
 			key_pressed = 0;
 			return AKEY_NONE;
 		}
@@ -1345,7 +1331,7 @@ static void Init_SDL_Joysticks(int first, int second)
 		else {
 			Log_print("joystick 0 found!");
 			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
-			swap_joysticks = 1;		/* real joy is STICK(0) and numblock is STICK(1) */
+			swap_joysticks = 1;
 		}
 	}
 
@@ -2141,17 +2127,13 @@ static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
 			stick0 = INPUT_STICK_FORWARD;
 		if (kbhits[KBD_STICK_0_DOWN])
 			stick0 = INPUT_STICK_BACK;
-		if ((kbhits[KBD_STICK_0_LEFTUP])
-			|| ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_UP])))
+		if ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_UP]))
 			stick0 = INPUT_STICK_UL;
-		if ((kbhits[KBD_STICK_0_LEFTDOWN])
-			|| ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_DOWN])))
+		if ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_DOWN]))
 			stick0 = INPUT_STICK_LL;
-		if ((kbhits[KBD_STICK_0_RIGHTUP])
-			|| ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_UP])))
+		if ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_UP]))
 			stick0 = INPUT_STICK_UR;
-		if ((kbhits[KBD_STICK_0_RIGHTDOWN])
-			|| ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_DOWN])))
+		if ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_DOWN]))
 			stick0 = INPUT_STICK_LR;
 	}
 	if (PLATFORM_kbd_joy_1_enabled) {
@@ -2163,17 +2145,13 @@ static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
 			stick1 = INPUT_STICK_FORWARD;
 		if (kbhits[KBD_STICK_1_DOWN])
 			stick1 = INPUT_STICK_BACK;
-		if ((kbhits[KBD_STICK_1_LEFTUP])
-			|| ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_UP])))
+		if ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_UP]))
 			stick1 = INPUT_STICK_UL;
-		if ((kbhits[KBD_STICK_1_LEFTDOWN])
-			|| ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_DOWN])))
+		if ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_DOWN]))
 			stick1 = INPUT_STICK_LL;
-		if ((kbhits[KBD_STICK_1_RIGHTUP])
-			|| ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_UP])))
+		if ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_UP]))
 			stick1 = INPUT_STICK_UR;
-		if ((kbhits[KBD_STICK_1_RIGHTDOWN])
-			|| ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_DOWN])))
+		if ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_DOWN]))
 			stick1 = INPUT_STICK_LR;
 	}
 
