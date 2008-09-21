@@ -214,7 +214,6 @@ static int menu_consol = INPUT_CONSOL_NONE;
 
 static int autorepeat = 1;
 static int last_focus = FocusOut;
-static int grab_mouse = 0;
 
 static void autorepeat_get(void)
 {
