@@ -69,6 +69,8 @@ int Util_sscanhex(const char *s);
 /* Likewise, but allows only 0 and 1. */
 int Util_sscanbool(const char *s);
 
+/* safe_strncpy guarantees that the dest. buffer ends with '\0' */
+char *safe_strncpy(char *, const char *, int);
 
 /* Memory management ----------------------------------------------------- */
 

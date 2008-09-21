@@ -102,6 +102,16 @@ char *Util_strncpy(char *dest, const char *src, size_t size) {
 }
 #endif
 
+char *safe_strncpy(char *buffer, const char *source, int bufsize)
+{
+	if (buffer == NULL) return NULL;
+	if (bufsize > 0) {
+		strncpy(buffer, source != NULL ? source : "", bufsize);
+		buffer[bufsize-1] = '\0';
+	}
+	return buffer;
+}
+
 char *Util_strlcpy(char *dest, const char *src, size_t size)
 {
 	Util_strncpy(dest, src, size);
