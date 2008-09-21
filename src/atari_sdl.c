@@ -82,6 +82,7 @@ static int sound_bits = 8;
 #endif
 static int default_bpp = 0;	/* 0 - autodetect */
 static int fullscreen = 1;
+static int grab_mouse = 0;
 static int bw = 0;
 static int swap_joysticks = 0;
 static int width_mode = 1;
@@ -727,6 +728,11 @@ int PLATFORM_Keyboard(void)
 				break;
 			case SDLK_BACKSLASH:
 				return AKEY_PBI_BB_MENU;
+			case SDLK_m:
+				grab_mouse = !grab_mouse;
+				SDL_WM_GrabInput(grab_mouse ? SDL_GRAB_ON : SDL_GRAB_OFF);
+				key_pressed = 0;
+				break;
 			default:
 				if(ntscemu){
 					switch(lastkey){
@@ -1304,6 +1310,32 @@ int PLATFORM_Keyboard(void)
 	return AKEY_NONE;
 }
 
+static void PLATFORM_Mouse(void)
+{
+	Uint8 buttons;
+
+	if(INPUT_direct_mouse) {
+		int potx, poty;
+
+		buttons = SDL_GetMouseState(&potx, &poty);
+		if(potx < 0) potx = 0;
+		if(poty < 0) poty = 0;
+		potx = (double)potx * (228.0 / (double)MainScreen->w);
+		poty = (double)poty * (228.0 / (double)MainScreen->h);
+		if(potx > 227) potx = 227;
+		if(poty > 227) poty = 227;
+		POKEY_POT_input[INPUT_mouse_port << 1] = 227 - potx;
+		POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = 227 - poty;
+	} else {
+		buttons = SDL_GetRelativeMouseState(&INPUT_mouse_delta_x, &INPUT_mouse_delta_y);
+	}
+
+	INPUT_mouse_buttons =
+		((buttons & SDL_BUTTON(1)) ? 1 : 0) |
+		((buttons & SDL_BUTTON(2)) ? 2 : 0) |
+		((buttons & SDL_BUTTON(3)) ? 4 : 0);
+}
+
 static void Init_SDL_Joysticks(int first, int second)
 {
 	if (first) {
@@ -1432,6 +1464,9 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-windowed") == 0) {
 			fullscreen = 0;
 		}
+		else if (strcmp(argv[i], "-grabmouse") == 0) {
+			grab_mouse = 1;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
@@ -1449,6 +1484,7 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 				Log_print("\t-bpp <num>       Host color depth");
 				Log_print("\t-fullscreen      Run fullscreen");
 				Log_print("\t-windowed        Run in window");
+				Log_print("\t-grabmouse       Prevent mouse pointer from leaving window");
 			}
 			argv[j++] = argv[i];
 		}
@@ -1510,6 +1546,9 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 		Init_Joysticks(argc, argv);
 
 	SDL_EnableUNICODE(1);
+
+	if(grab_mouse)
+		SDL_WM_GrabInput(SDL_GRAB_ON);
 }
 
 int PLATFORM_Exit(int run_monitor)
@@ -1517,6 +1556,7 @@ int PLATFORM_Exit(int run_monitor)
 	int restart;
 	int original_fullscreen = fullscreen;
 
+	SDL_WM_GrabInput(SDL_GRAB_OFF);
 	if (run_monitor) {
 		/* disable graphics, set alpha mode */
 		if (fullscreen) {
@@ -1539,6 +1579,7 @@ int PLATFORM_Exit(int run_monitor)
 		if (original_fullscreen != fullscreen) {
 			SwitchFullscreen();
 		}
+		if(grab_mouse) SDL_WM_GrabInput(SDL_GRAB_ON);
 		return 1;
 	}
 
@@ -2264,6 +2305,7 @@ int main(int argc, char **argv)
 	/* main loop */
 	for (;;) {
 		INPUT_key_code = PLATFORM_Keyboard();
+		PLATFORM_Mouse();
 		Atari800_Frame();
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
