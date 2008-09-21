@@ -86,6 +86,7 @@ int INPUT_mouse_pot_max = 228;		/* max. value of POKEY's POT register */
 int INPUT_mouse_pen_ofs_h = 42;
 int INPUT_mouse_pen_ofs_v = 2;
 int INPUT_mouse_joy_inertia = 10;
+int INPUT_direct_mouse = 0;
 
 #ifndef MOUSE_SHIFT
 #define MOUSE_SHIFT 4
@@ -209,6 +210,9 @@ void INPUT_Initialise(int *argc, char *argv[])
 			}
 		}
 #endif /* EVENT_RECORDING */
+ 		else if (strcmp(argv[i], "-directmouse") == 0) {
+			INPUT_direct_mouse = 1;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-mouse off       Do not use mouse");
@@ -223,12 +227,21 @@ void INPUT_Initialise(int *argc, char *argv[])
 				Log_print("\t-mouse joy       Emulate joystick using mouse");
 				Log_print("\t-mouseport <n>   Set mouse port 1-4 (default 1)");
 				Log_print("\t-mousespeed <n>  Set mouse speed 1-9 (default 3)");
+				Log_print("\t-directmouse     Use absolute X/Y mouse coords");
 				Log_print("\t-multijoy        Emulate MultiJoy4 interface");
 				Log_print("\t-record <file>   Record input to <file>");
 				Log_print("\t-playback <file> Playback input from <file>");
 			}
 			argv[j++] = argv[i];
 		}
+	}
+
+	if(INPUT_direct_mouse && !(
+				INPUT_mouse_mode == INPUT_MOUSE_PAD ||
+				INPUT_mouse_mode == INPUT_MOUSE_TOUCH ||
+				INPUT_mouse_mode == INPUT_MOUSE_KOALA)) {
+		Log_print("-directmouse only valid with -mouse pad|touch|koala, disabling");
+		INPUT_direct_mouse = 0;
 	}
 
 	INPUT_CenterMousePointer();
@@ -535,8 +548,9 @@ void INPUT_Frame(void)
 
 	/* handle analog joysticks in Atari 5200 */
 	if (Atari800_machine_type != Atari800_MACHINE_5200) {
-		for (i = 0; i < 8; i++)
-			POKEY_POT_input[i] = Atari_POT(i);
+		if(!INPUT_direct_mouse)
+			for (i = 0; i < 8; i++)
+				POKEY_POT_input[i] = Atari_POT(i);
 	}
 	else {
 		for (i = 0; i < 4; i++) {
@@ -572,24 +586,26 @@ void INPUT_Frame(void)
 	case INPUT_MOUSE_PAD:
 	case INPUT_MOUSE_TOUCH:
 	case INPUT_MOUSE_KOALA:
-		if (INPUT_mouse_mode != INPUT_MOUSE_PAD || Atari800_machine_type == Atari800_MACHINE_5200)
-			mouse_x += INPUT_mouse_delta_x * INPUT_mouse_speed;
-		else
-			mouse_x -= INPUT_mouse_delta_x * INPUT_mouse_speed;
-		if (mouse_x < INPUT_mouse_pot_min << MOUSE_SHIFT)
-			mouse_x = INPUT_mouse_pot_min << MOUSE_SHIFT;
-		else if (mouse_x > INPUT_mouse_pot_max << MOUSE_SHIFT)
-			mouse_x = INPUT_mouse_pot_max << MOUSE_SHIFT;
-		if (INPUT_mouse_mode == INPUT_MOUSE_KOALA || Atari800_machine_type == Atari800_MACHINE_5200)
-			mouse_y += INPUT_mouse_delta_y * INPUT_mouse_speed;
-		else
-			mouse_y -= INPUT_mouse_delta_y * INPUT_mouse_speed;
-		if (mouse_y < INPUT_mouse_pot_min << MOUSE_SHIFT)
-			mouse_y = INPUT_mouse_pot_min << MOUSE_SHIFT;
-		else if (mouse_y > INPUT_mouse_pot_max << MOUSE_SHIFT)
-			mouse_y = INPUT_mouse_pot_max << MOUSE_SHIFT;
-		POKEY_POT_input[INPUT_mouse_port << 1] = mouse_x >> MOUSE_SHIFT;
-		POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = mouse_y >> MOUSE_SHIFT;
+		if(!INPUT_direct_mouse) {
+			if (INPUT_mouse_mode != INPUT_MOUSE_PAD || Atari800_machine_type == Atari800_MACHINE_5200)
+				mouse_x += INPUT_mouse_delta_x * INPUT_mouse_speed;
+			else
+				mouse_x -= INPUT_mouse_delta_x * INPUT_mouse_speed;
+			if (mouse_x < INPUT_mouse_pot_min << MOUSE_SHIFT)
+				mouse_x = INPUT_mouse_pot_min << MOUSE_SHIFT;
+			else if (mouse_x > INPUT_mouse_pot_max << MOUSE_SHIFT)
+				mouse_x = INPUT_mouse_pot_max << MOUSE_SHIFT;
+			if (INPUT_mouse_mode == INPUT_MOUSE_KOALA || Atari800_machine_type == Atari800_MACHINE_5200)
+				mouse_y += INPUT_mouse_delta_y * INPUT_mouse_speed;
+			else
+				mouse_y -= INPUT_mouse_delta_y * INPUT_mouse_speed;
+			if (mouse_y < INPUT_mouse_pot_min << MOUSE_SHIFT)
+				mouse_y = INPUT_mouse_pot_min << MOUSE_SHIFT;
+			else if (mouse_y > INPUT_mouse_pot_max << MOUSE_SHIFT)
+				mouse_y = INPUT_mouse_pot_max << MOUSE_SHIFT;
+			POKEY_POT_input[INPUT_mouse_port << 1] = mouse_x >> MOUSE_SHIFT;
+			POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = mouse_y >> MOUSE_SHIFT;
+		}
 		if (Atari800_machine_type == Atari800_MACHINE_5200) {
 			if (INPUT_mouse_buttons & 1)
 				TRIG_input[INPUT_mouse_port] = 0;

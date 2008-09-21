@@ -28,6 +28,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "pokey.h"
 
 #ifdef VMS
 #include <stat.h>
@@ -213,6 +214,7 @@ static int menu_consol = INPUT_CONSOL_NONE;
 
 static int autorepeat = 1;
 static int last_focus = FocusOut;
+static int grab_mouse = 0;
 
 static void autorepeat_get(void)
 {
@@ -3003,13 +3005,26 @@ void Atari_Mouse(void)
 	if (XQueryPointer(display, window, &root_return,
 					  &child_return, &root_x_return, &root_y_return,
 					  &win_x_return, &win_y_return, &mask_return)) {
-		INPUT_mouse_delta_x = win_x_return - last_x;
-		INPUT_mouse_delta_y = win_y_return - last_y;
+		if(INPUT_direct_mouse) {
+			int potx = win_x_return, poty = win_y_return;
+			if(potx < 0) potx = 0;
+			if(poty < 0) poty = 0;
+			potx = (double)potx * (228.0 / (double)window_width);
+			poty = (double)poty * (228.0 / (double)window_height);
+			if(potx > 227) potx = 227;
+			if(poty > 227) poty = 227;
+			POKEY_POT_input[INPUT_mouse_port << 1] = 227 - potx;
+			POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = 227 - poty;
+		} else {
+			INPUT_mouse_delta_x = win_x_return - last_x;
+			INPUT_mouse_delta_y = win_y_return - last_y;
+			last_x = win_x_return;
+			last_y = win_y_return;
+		}
+
 		INPUT_mouse_buttons = (mask_return & Button1Mask ? 1 : 0)
 		              | (mask_return & Button3Mask ? 2 : 0)
 		              | (mask_return & Button2Mask ? 4 : 0);
-		last_x = win_x_return;
-		last_y = win_y_return;
 	}
 }
 

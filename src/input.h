@@ -72,6 +72,8 @@ extern int INPUT_mouse_pen_ofs_h;		/* light pen/gun horizontal offset (for calib
 extern int INPUT_mouse_pen_ofs_v;		/* light pen/gun vertical offset (for calibration) */
 extern int INPUT_mouse_joy_inertia;	/* how long the mouse pointer can move (time in Atari frames)
 								   after a fast motion of mouse */
+extern int INPUT_direct_mouse;      /* When true, convert the mouse pointer
+													position directly into POKEY POT values */
 
 /* Functions ----------------------------------------------------------- */
 
