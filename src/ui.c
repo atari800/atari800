@@ -1253,8 +1253,45 @@ static void DisplaySettings(void)
 #ifndef USE_CURSES
 
 #ifdef SDL
-static char joy_0_desc[40];
-static char joy_1_desc[40];
+static char joys[2][5][16];
+static const UI_tMenuItem joy0_menu_array[] = {
+	UI_MENU_LABEL("Select joy direction"),
+	UI_MENU_LABEL(""),
+	UI_MENU_SUBMENU_SUFFIX(0, "Left   : ", joys[0][0]),
+	UI_MENU_SUBMENU_SUFFIX(1, "Up     : ", joys[0][1]),
+	UI_MENU_SUBMENU_SUFFIX(2, "Right  : ", joys[0][2]),
+	UI_MENU_SUBMENU_SUFFIX(3, "Down   : ", joys[0][3]),
+	UI_MENU_SUBMENU_SUFFIX(4, "Trigger: ", joys[0][4]),
+	UI_MENU_END
+};
+static const UI_tMenuItem joy1_menu_array[] = {
+	UI_MENU_LABEL("Select joy direction"),
+	UI_MENU_LABEL(""),
+	UI_MENU_SUBMENU_SUFFIX(0, "Left   : ", joys[1][0]),
+	UI_MENU_SUBMENU_SUFFIX(1, "Up     : ", joys[1][1]),
+	UI_MENU_SUBMENU_SUFFIX(2, "Right  : ", joys[1][2]),
+	UI_MENU_SUBMENU_SUFFIX(3, "Down   : ", joys[1][3]),
+	UI_MENU_SUBMENU_SUFFIX(4, "Trigger: ", joys[1][4]),
+	UI_MENU_END
+};
+
+static void KeyboardJoystickConfiguration(int joystick)
+{
+	char title[40];
+	int option2 = 0;
+	snprintf(title, sizeof(title), "Define keys for joystick %d", joystick);
+	for(;;) {
+		int j0d;
+		for(j0d = 0; j0d <= 4; j0d++)
+			PLATFORM_GetJoystickKeyName(joystick, j0d, joys[joystick][j0d], sizeof(joys[joystick][j0d]));
+		option2 = UI_driver->fSelect(title, UI_SELECT_POPUP, option2, joystick == 0 ? joy0_menu_array : joy1_menu_array, NULL);
+		if (option2 >= 0 && option2 <= 4) {
+			PLATFORM_SetJoystickKey(joystick, option2, GetRawKey());
+		}
+		if (option2 < 0) break;
+		if (++option2 > 4) option2 = 0;
+	}
+}
 #endif
 
 static void ControllerConfiguration(void)
@@ -1291,9 +1328,9 @@ static void ControllerConfiguration(void)
 #endif
 #ifdef SDL
 		UI_MENU_CHECK(5, "Enable keyboard joystick 1:"),
-		UI_MENU_LABEL(joy_0_desc),
+		UI_MENU_SUBMENU(6, "Define layout of keyboard joystick 1"),
 		UI_MENU_CHECK(7, "Enable keyboard joystick 2:"),
-		UI_MENU_LABEL(joy_1_desc),
+		UI_MENU_SUBMENU(8, "Define layout of keyboard joystick 2"),
 #endif
 		UI_MENU_END
 	};
@@ -1319,9 +1356,7 @@ static void ControllerConfiguration(void)
 #endif
 #ifdef SDL
 		SetItemChecked(menu_array, 5, PLATFORM_kbd_joy_0_enabled);
-		PLATFORM_Joy0Description(joy_0_desc, sizeof(joy_0_desc));
 		SetItemChecked(menu_array, 7, PLATFORM_kbd_joy_1_enabled);
-		PLATFORM_Joy1Description(joy_1_desc, sizeof(joy_1_desc));
 #endif
 		option = UI_driver->fSelect("Controller Configuration", 0, option, menu_array, NULL);
 		switch (option) {
@@ -1369,8 +1404,14 @@ static void ControllerConfiguration(void)
 		case 5:
 			PLATFORM_kbd_joy_0_enabled = !PLATFORM_kbd_joy_0_enabled;
 			break;
+		case 6:
+			KeyboardJoystickConfiguration(0);
+			break;
 		case 7:
 			PLATFORM_kbd_joy_1_enabled = !PLATFORM_kbd_joy_1_enabled;
+			break;
+		case 8:
+			KeyboardJoystickConfiguration(1);
 			break;
 #endif
 		default:

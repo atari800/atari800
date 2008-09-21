@@ -44,10 +44,9 @@ void PLATFORM_Sleep(double s);
 
 #ifdef SDL
 /* used in UI to show how the keyboard joystick is mapped */
-char *PLATFORM_Joy0Description(char *buffer, int maxsize);
-char *PLATFORM_Joy1Description(char *buffer, int maxsize);
 extern int PLATFORM_kbd_joy_0_enabled;
 extern int PLATFORM_kbd_joy_1_enabled;
+int PLATFORM_GetRawKey(void);
 #endif
 
 #ifdef XEP80_EMULATION

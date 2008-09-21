@@ -257,6 +257,17 @@ static void BasicUIMessage(const char *msg, int waitforkey)
 		PLATFORM_DisplayScreen();
 }
 
+#ifdef SDL
+int GetRawKey(void)
+{
+	ClearRectangle(0x94, 13, 11, 25, 13);
+	Box(0x9a, 0x94, 13, 11, 25, 13);
+	CenterPrint(0x94, 0x9a, "Press a key", 12);
+	PLATFORM_DisplayScreen();
+	return PLATFORM_GetRawKey();
+}
+#endif
+
 static int Select(int default_item, int nitems, const char *item[],
                   const char *prefix[], const char *suffix[],
                   const char *tip[], const int nonselectable[],

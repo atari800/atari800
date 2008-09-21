@@ -48,6 +48,12 @@ extern char UI_saved_files_dir[UI_MAX_DIRECTORIES][FILENAME_MAX];
 extern int UI_n_atari_files_dir;
 extern int UI_n_saved_files_dir;
 
+#ifdef SDL
+void PLATFORM_SetJoystickKey(int joystick, int direction, int value);
+void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int bufsize);
+int GetRawKey(void);
+#endif
+
 /* Menu codes for Alt+letter shortcuts.
    Store in UI_alt_function and put AKEY_UI in INPUT_key_code. */
 #define UI_MENU_DISK             0
