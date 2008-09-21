@@ -122,6 +122,8 @@ Command line options
 -mouseport <num>      Set mouse port 1-4 (default 1)
 -mousespeed <num>     Set mouse speed 1-9 (default 3)
 -multijoy             Emulate MultiJoy4 interface
+-directmouse          Use mouse's absolute position
+-grabmouse            SDL only, prevent mouse pointer from leaving the window
 
 -record <filename>    Record input to <filename>
 -playback <filename>  Playback input from <filename>
@@ -379,6 +381,7 @@ LAlt+G     Switch WIDTH_MODE (so you can set 320x240)
 LAlt+B     Switch BLACK-AND-WHITE
 LAlt+J     Swap _keyboard_emulated_ joysticks
 LAlt+E     Switch bpp (for debug only, will be removed soon)
+LAlt+M     Grab mouse (prevents mouse pointer from leaving the window)
 
 These keys work with the NTSC composite video emualtion (-ntscemu):
 (This interface should be considered experimental and is subject to change)

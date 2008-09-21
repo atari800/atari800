@@ -1,3 +1,16 @@
+2008-09-21  B Watson  <yalhcru@gmail.com>
+* input.[ch]: "-directmouse" added (directly converting the mouse's absolute
+  X/Y position to the POKEY pot. Used only for "-mouse pad", "-mouse koala",
+  or "-mouse touch". The "-mousespeed" option does nothing when "-directmouse"
+  is enabled.
+
+* atari_sdl.c: mouse support ("-mouse xxx", "-mousespeed N") added, including
+  the direct mouse support. Also adds a new "-grabmouse" command line option
+  and a new keystroke, alt-M, to grab/ungrab the mouse.
+
+* atari_x11.c: direct mouse support added
+
+
 2008-09-17  Piotr Fusik  <fox@scene.pl>
 * win32/msc/Makefile: added new source files
 

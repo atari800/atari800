@@ -345,3 +345,7 @@ Marcin Zukowski <eru@ibb.waw.pl>
 Mike Coates <Mike@Dissfulfils.co.uk>
 Tom Haukap <Tom.Haukap@t-online.de>
     - Votrax SC-01
+
+B Watson  <yalhcru@gmail.com>
+    - mouse support for SDL
+    - direct mouse support (SDL and X11)
