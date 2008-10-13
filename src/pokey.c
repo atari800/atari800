@@ -108,7 +108,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		{
 			int i;
 			for (i = 0; i < 8; i++)
-				if (POKEY_POT_input[addr] <= pot_scanline)
+				if (POKEY_POT_input[i] <= pot_scanline)
 					byte &= ~(1 << i);		/* reset bit if pot value known */
 		}
 		break;

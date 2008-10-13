@@ -1,3 +1,8 @@
+2008-10-13  Matthias Reichl  <hias@horus.com>
+* pokey.c: fixed the ALLPOT register - it didn't work
+  and there was an access outside array bounds
+
+
 2008-09-21  Petr Stehlik  <pstehlik@sophics.cz>
 * ui.c: visual configuration of keyboard joysticks layout, at long last!
   Currently for the SDL target only. Also default joystick mapping
