@@ -4,6 +4,7 @@
 * pbi_bb.c, pbi_mio.c: correct Util_filenamenotset error.
 * mzpokeysnd.c, pokey.c, pokey.h: rename SKCTLS -> SKCTL
 * monitor.c: 5200 equates.
+* DOC/BUGS: add Extract demo.
 
 
 2008-10-13  Matthias Reichl  <hias@horus.com>

@@ -37,6 +37,7 @@ Bugs and Known Problems
   - Spider City has another bug in the map which is caused by player graphics
     and HPOS being changed before the player is finished being drawn.  This
     is only possible for wide players. 
+  - Extract (demo) (face)
 
 * Non-bugs:
   - Ergo Bibamus (demo) (one pixel of the flower above the perspective scroll)
