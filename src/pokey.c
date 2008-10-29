@@ -59,7 +59,7 @@ UBYTE POKEY_SERIN;
 UBYTE POKEY_IRQST;
 UBYTE POKEY_IRQEN;
 UBYTE POKEY_SKSTAT;
-UBYTE POKEY_SKCTLS;
+UBYTE POKEY_SKCTL;
 int POKEY_DELAYED_SERIN_IRQ;
 int POKEY_DELAYED_SEROUT_IRQ;
 int POKEY_DELAYED_XMTDONE_IRQ;
@@ -116,7 +116,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		byte = POKEY_KBCODE;
 		break;
 	case POKEY_OFFSET_RANDOM:
-		if ((POKEY_SKCTLS & 0x03) != 0) {
+		if ((POKEY_SKCTL & 0x03) != 0) {
 			int i = random_scanline_counter + ANTIC_XPOS;
 			if (POKEY_AUDCTL[0] & POKEY_POLY9)
 				byte = POKEY_poly9_lookup[i % POKEY_POLY9_SIZE];
@@ -156,7 +156,7 @@ static int POKEY_siocheck(void)
 	return (((POKEY_AUDF[POKEY_CHAN3] == 0x28 || POKEY_AUDF[POKEY_CHAN3] == 0x10
 	        || POKEY_AUDF[POKEY_CHAN3] == 0x08 || POKEY_AUDF[POKEY_CHAN3] == 0x0a)
 		&& POKEY_AUDF[POKEY_CHAN4] == 0x00) /* intelligent peripherals speeds */
-		|| (POKEY_SKCTLS & 0x78) == 0x28) /* cassette save mode */
+		|| (POKEY_SKCTL & 0x78) == 0x28) /* cassette save mode */
 		&& (POKEY_AUDCTL[0] & 0x28) == 0x28;
 }
 
@@ -245,14 +245,14 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		POKEY_SKSTAT |= 0xe0;
 		break;
 	case POKEY_OFFSET_POTGO:
-		if (!(POKEY_SKCTLS & 4))
+		if (!(POKEY_SKCTL & 4))
 			pot_scanline = 0;	/* slow pot mode */
 		break;
 	case POKEY_OFFSET_SEROUT:
-		if ((POKEY_SKCTLS & 0x70) == 0x20 && POKEY_siocheck())
+		if ((POKEY_SKCTL & 0x70) == 0x20 && POKEY_siocheck())
 			SIO_PutByte(byte);
 		/* check if cassette 2-tone mode has been enabled */
-		if ((POKEY_SKCTLS & 0x08) == 0x00) {
+		if ((POKEY_SKCTL & 0x08) == 0x00) {
 			/* intelligent device */
 			POKEY_DELAYED_SEROUT_IRQ = SIO_SEROUT_INTERVAL;
 			POKEY_IRQST |= 0x08;
@@ -286,9 +286,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		printf("WR: STIMER = %x\n", byte);
 #endif
 		break;
-	case POKEY_OFFSET_SKCTLS:
-		POKEY_SKCTLS = byte;
-		POKEYSND_Update(POKEY_OFFSET_SKCTLS, byte, 0, SOUND_GAIN);
+	case POKEY_OFFSET_SKCTL:
+		POKEY_SKCTL = byte;
+		POKEYSND_Update(POKEY_OFFSET_SKCTL, byte, 0, SOUND_GAIN);
 		if (byte & 4)
 			pot_scanline = 228;	/* fast pot mode - return results immediately */
 		break;
@@ -338,8 +338,8 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 	case POKEY_OFFSET_STIMER + POKEY_OFFSET_POKEY2:
 		POKEYSND_Update(POKEY_OFFSET_STIMER, byte, 1, SOUND_GAIN);
 		break;
-	case POKEY_OFFSET_SKCTLS + POKEY_OFFSET_POKEY2:
-		POKEYSND_Update(POKEY_OFFSET_SKCTLS, byte, 1, SOUND_GAIN);
+	case POKEY_OFFSET_SKCTL + POKEY_OFFSET_POKEY2:
+		POKEYSND_Update(POKEY_OFFSET_SKCTL, byte, 1, SOUND_GAIN);
 		break;
 #endif
 	}
@@ -360,7 +360,7 @@ void POKEY_Initialise(int *argc, char *argv[])
 	POKEY_IRQST = 0xff;
 	POKEY_IRQEN = 0x00;
 	POKEY_SKSTAT = 0xef;
-	POKEY_SKCTLS = 0x00;
+	POKEY_SKCTL = 0x00;
 
 	for (i = 0; i < (POKEY_MAXPOKEYS * 4); i++) {
 		POKEY_AUDC[i] = 0;
@@ -614,7 +614,7 @@ void POKEY_StateSave(void)
 	StateSav_SaveUBYTE(&POKEY_KBCODE, 1);
 	StateSav_SaveUBYTE(&POKEY_IRQST, 1);
 	StateSav_SaveUBYTE(&POKEY_IRQEN, 1);
-	StateSav_SaveUBYTE(&POKEY_SKCTLS, 1);
+	StateSav_SaveUBYTE(&POKEY_SKCTL, 1);
 
 	StateSav_SaveINT(&shift_key, 1);
 	StateSav_SaveINT(&keypressed, 1);
@@ -640,7 +640,7 @@ void POKEY_StateRead(void)
 	StateSav_ReadUBYTE(&POKEY_KBCODE, 1);
 	StateSav_ReadUBYTE(&POKEY_IRQST, 1);
 	StateSav_ReadUBYTE(&POKEY_IRQEN, 1);
-	StateSav_ReadUBYTE(&POKEY_SKCTLS, 1);
+	StateSav_ReadUBYTE(&POKEY_SKCTL, 1);
 
 	StateSav_ReadINT(&shift_key, 1);
 	StateSav_ReadINT(&keypressed, 1);

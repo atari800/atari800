@@ -139,8 +139,8 @@ typedef struct stPokeyState
     unsigned char c2_hf;
     unsigned char c3_f2;
 
-    /* SKCTLS for two-tone mode */
-    int skctls;
+    /* SKCTL for two-tone mode */
+    int skctl;
 
     /* Main output state */
     qev_t outvol_all;
@@ -299,8 +299,8 @@ static void ResetPokeyState(PokeyState* ps)
     ps->c2_hf = 0;
     ps->c3_f2 = 0;
 
-    /* SKCTLS for two-tone mode */
-    ps->skctls = 0;
+    /* SKCTL for two-tone mode */
+    ps->skctl = 0;
 
     ps->outvol_all = 0;
     ps->forcero = 0;
@@ -969,7 +969,7 @@ static void advance_ticks(PokeyState* ps, unsigned long ticks)
                 /*two-tone filter*/
                 /*use if send break is on and two-tone mode is on*/
                 /*reset channel 1 if channel 2 changed*/
-                if((ps->skctls & 0x88) == 0x88) {
+                if((ps->skctl & 0x88) == 0x88) {
                     ps->c0divpos = ps->c0divstart;
                     /* it doesn't change the output state */
                     /*need0 = 1;*/
@@ -1679,10 +1679,10 @@ static void Update_audctl(PokeyState* ps, unsigned char val)
     ps->mdivk = new_divk;
 }
 
-/* SKCTLS for two-tone mode */
-static void Update_skctls(PokeyState* ps, unsigned char val)
+/* SKCTL for two-tone mode */
+static void Update_skctl(PokeyState* ps, unsigned char val)
 {
-    ps->skctls = val;
+    ps->skctl = val;
 }
 
 /* if using nonlinear mixing, don't stop ultrasounds */
@@ -1994,8 +1994,8 @@ static void Update_pokey_sound_mz(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
         ps->c2t2 = 1;
         ps->c3t2 = 1;
         break;
-    case POKEY_OFFSET_SKCTLS:
-        Update_skctls(ps,val);
+    case POKEY_OFFSET_SKCTL:
+        Update_skctl(ps,val);
         break;
     }
 }
