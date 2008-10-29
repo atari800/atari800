@@ -1,7 +1,7 @@
 #ifndef AFILE_H_
 #define AFILE_H_
 
-/* File types returned by Atari800_DetectFileType() and Atari800_OpenFile(). */
+/* File types returned by AFILE_DetectFileType() and AFILE_OpenFile(). */
 #define AFILE_ERROR      0
 #define AFILE_ATR        1
 #define AFILE_XFD        2
@@ -17,6 +17,7 @@
 #define AFILE_BOOT_TAPE  12
 #define AFILE_STATE      13
 #define AFILE_STATE_GZ   14
+#define AFILE_PRO        15
 
 /* ATR format header */
 struct AFILE_ATR_Header {

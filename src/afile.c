@@ -137,6 +137,16 @@ int AFILE_DetectFileType(const char *filename)
 	}
 	file_length = Util_flen(fp);
 	fclose(fp);
+	/* Detect .pro images */
+	/* # of sectors is in header */
+	if ((file_length-16)%(128+12) == 0 &&
+			header[0]*256 + header[1] == (file_length-16)/(128+12) &&
+			header[2] == 'P') {
+#ifdef DEBUG_PRO
+		Log_print(".pro file detected");
+#endif
+		return AFILE_PRO;
+	}
 	/* 40K or a-power-of-two between 4K and CARTRIDGE_MAX_SIZE */
 	if (file_length >= 4 * 1024 && file_length <= CARTRIDGE_MAX_SIZE
 	 && ((file_length & (file_length - 1)) == 0 || file_length == 40 * 1024))
@@ -158,6 +168,7 @@ int AFILE_OpenFile(const char *filename, int reboot, int diskno, int readonly)
 	case AFILE_ATR_GZ:
 	case AFILE_XFD_GZ:
 	case AFILE_DCM:
+	case AFILE_PRO:
 		if (!SIO_Mount(diskno, filename, readonly))
 			return AFILE_ERROR;
 		if (reboot)

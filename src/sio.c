@@ -60,7 +60,10 @@
 #define BOOT_SECTORS_SIO2PC		2
 static int boot_sectors_type[SIO_MAX_DRIVES];
 
-static int header_size[SIO_MAX_DRIVES];
+static int image_type[SIO_MAX_DRIVES];
+#define IMAGE_TYPE_XFD 0
+#define IMAGE_TYPE_ATR 1
+#define IMAGE_TYPE_PRO 2
 static FILE *disk[SIO_MAX_DRIVES] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 static int sectorcount[SIO_MAX_DRIVES];
 static int sectorsize[SIO_MAX_DRIVES];
@@ -68,6 +71,12 @@ static int sectorsize[SIO_MAX_DRIVES];
 int SIO_format_sectorcount[SIO_MAX_DRIVES];
 int SIO_format_sectorsize[SIO_MAX_DRIVES];
 static int io_success[SIO_MAX_DRIVES];
+/* stores dup sector counter for PRO images */
+typedef struct tagpro_additional_info_t {
+	int max_sector;
+	unsigned char *count;
+} pro_additional_info_t;
+static void *additional_info[SIO_MAX_DRIVES];
 
 SIO_UnitStatus SIO_drive_status[SIO_MAX_DRIVES];
 char SIO_filename[SIO_MAX_DRIVES][FILENAME_MAX];
@@ -202,7 +211,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 
 	if (header.magic1 == AFILE_ATR_MAGIC1 && header.magic2 == AFILE_ATR_MAGIC2) {
 		/* ATR (may be temporary from DCM or ATR/ATR.GZ) */
-		header_size[diskno - 1] = 16;
+		image_type[diskno - 1] = IMAGE_TYPE_ATR;
 
 		sectorsize[diskno - 1] = (header.secsizehi << 8) + header.secsizelo;
 		if (sectorsize[diskno - 1] != 128 && sectorsize[diskno - 1] != 256) {
@@ -248,25 +257,57 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		}
 	}
 	else {
-		/* XFD (may be temporary from XFZ/XFD.GZ) */
 		int file_length = Util_flen(f);
-
-		header_size[diskno - 1] = 0;
-
-		if (file_length <= (1040 * 128)) {
-			/* single density */
+		/* check for PRO */
+		if ((file_length-16)%(128+12) == 0 &&
+				(header.magic1*256 + header.magic2 == (file_length-16)/(128+12)) &&
+				header.seccountlo == 'P') {
+			pro_additional_info_t *info;
+			/* .pro is read only for now */
+			if (!b_open_readonly) {
+				fclose(f);
+				f = Util_fopen(filename, "rb", sio_tmpbuf[diskno - 1]);
+				if (f == NULL)
+					return FALSE;
+				status = SIO_READ_ONLY;
+			}
+			image_type[diskno - 1] = IMAGE_TYPE_PRO;
 			sectorsize[diskno - 1] = 128;
-			sectorcount[diskno - 1] = file_length >> 7;
+			if (file_length >= 1040*(128+12)+16) {
+				/* assume enhanced density */
+				sectorcount[diskno - 1] = 1040;
+			}
+			else {
+				/* assume single density */
+				sectorcount[diskno - 1] = 720;
+			}
+
+			info = Util_malloc(sizeof(pro_additional_info_t));
+			additional_info[diskno-1] = info;
+			info->count = Util_malloc(sectorcount[diskno - 1]);
+			memset(info->count, 0, sectorcount[diskno -1]);
+			info->max_sector = (file_length-16)/(128+12);
 		}
 		else {
-			/* double density */
-			sectorsize[diskno - 1] = 256;
-			if ((file_length & 0xff) == 0) {
-				boot_sectors_type[diskno - 1] = BOOT_SECTORS_PHYSICAL;
-				sectorcount[diskno - 1] = file_length >> 8;
+			/* XFD (may be temporary from XFZ/XFD.GZ) */
+
+			image_type[diskno - 1] = IMAGE_TYPE_XFD;
+
+			if (file_length <= (1040 * 128)) {
+				/* single density */
+				sectorsize[diskno - 1] = 128;
+				sectorcount[diskno - 1] = file_length >> 7;
 			}
-			else
-				sectorcount[diskno - 1] = (file_length + 0x180) >> 8;
+			else {
+				/* double density */
+				sectorsize[diskno - 1] = 256;
+				if ((file_length & 0xff) == 0) {
+					boot_sectors_type[diskno - 1] = BOOT_SECTORS_PHYSICAL;
+					sectorcount[diskno - 1] = file_length >> 8;
+				}
+				else
+					sectorcount[diskno - 1] = (file_length + 0x180) >> 8;
+			}
 		}
 	}
 
@@ -289,6 +330,11 @@ void SIO_Dismount(int diskno)
 		disk[diskno - 1] = NULL;
 		SIO_drive_status[diskno - 1] = SIO_NO_DISK;
 		strcpy(SIO_filename[diskno - 1], "Empty");
+		if (image_type[diskno - 1] == IMAGE_TYPE_PRO) {
+			free(((pro_additional_info_t *)additional_info[diskno-1])->count);
+		}
+		free(additional_info[diskno - 1]);
+		additional_info[diskno - 1] = 0;
 	}
 }
 
@@ -303,6 +349,7 @@ void SIO_SizeOfSector(UBYTE unit, int sector, int *sz, ULONG *ofs)
 {
 	int size;
 	ULONG offset;
+	int header_size = (image_type[unit] == IMAGE_TYPE_ATR ? 16 : 0);
 
 	if (BINLOAD_start_binloading) {
 		if (sz)
@@ -312,14 +359,18 @@ void SIO_SizeOfSector(UBYTE unit, int sector, int *sz, ULONG *ofs)
 		return;
 	}
 
-	if (sector < 4) {
+	if (image_type[unit] == IMAGE_TYPE_PRO) {
+		size = 128;
+		offset = 16 + (128+12)*(sector -1); /* returns offset of header */
+	}
+	else if (sector < 4) {
 		/* special case for first three sectors in ATR and XFD image */
 		size = 128;
-		offset = header_size[unit] + (sector - 1) * (boot_sectors_type[unit] == BOOT_SECTORS_PHYSICAL ? 256 : 128);
+		offset = header_size + (sector - 1) * (boot_sectors_type[unit] == BOOT_SECTORS_PHYSICAL ? 256 : 128);
 	}
 	else {
 		size = sectorsize[unit];
-		offset = header_size[unit] + (boot_sectors_type[unit] == BOOT_SECTORS_LOGICAL ? 0x180 : 0x300) + (sector - 4) * size;
+		offset = header_size + (boot_sectors_type[unit] == BOOT_SECTORS_LOGICAL ? 0x180 : 0x300) + (sector - 4) * size;
 	}
 
 	if (sz)
@@ -361,6 +412,41 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 	SIO_last_drive = unit + 1;
 	/* FIXME: what sector size did the user expect? */
 	size = SeekSector(unit, sector);
+	if (image_type[unit] == IMAGE_TYPE_PRO) {
+		pro_additional_info_t *info;
+		unsigned char *count;
+		info = (pro_additional_info_t *)additional_info[unit];
+		count = info->count;
+		fread(buffer, 1, 12, disk[unit]);
+		/* handle duplicate sectors */
+		if (buffer[5] != 0) {
+			int dupnum = count[sector];
+#ifdef DEBUG_PRO
+			Log_print("duplicate sector:%d dupnum:%d",sector, dupnum);
+#endif
+			count[sector] = (count[sector]+1) % (buffer[5]+1);
+			if (dupnum != 0)  {
+				sector = sectorcount[unit] + buffer[6+dupnum];
+				/* can dupnum be 5? */
+				if (dupnum > 4 || sector <= 0 || sector > info->max_sector) {
+					Log_print("Error in .pro image: sector:%d dupnum:%d", sector, dupnum);
+					return 'E';
+				}
+				size = SeekSector(unit, sector);
+				/* read sector header */
+				fread(buffer, 1, 12, disk[unit]);
+			}
+		}
+		/* bad sector */
+		if (buffer[1] != 0xff) {
+			fread(buffer, 1, size, disk[unit]);
+			io_success[unit] = sector;
+#ifdef DEBUG_PRO
+			Log_print("bad sector:%d", sector);
+#endif
+			return 'E';
+		}
+	}
 	fread(buffer, 1, size, disk[unit]);
 	io_success[unit] = 0;
 	return 'C';
@@ -407,7 +493,7 @@ int SIO_FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 	   First get the information about the disk image, because we are going
 	   to umount it. */
 	memcpy(fname, SIO_filename[unit], FILENAME_MAX);
-	is_atr = (header_size[unit] == 16);
+	is_atr = (image_type[unit] == IMAGE_TYPE_ATR);
 	save_boot_sectors_type = boot_sectors_type[unit];
 	bootsectsize = 128;
 	if (sectsize == 256 && save_boot_sectors_type != BOOT_SECTORS_LOGICAL)
@@ -564,6 +650,14 @@ int SIO_DriveStatus(int unit, UBYTE *buffer)
 
 	if (SIO_drive_status[unit] == SIO_OFF)
 		return 0;
+
+	/* .PRO contains status information in the sector header */
+	if (io_success[unit] != 0  && image_type[unit] == IMAGE_TYPE_PRO) {
+		int sector = io_success[unit];
+		SeekSector(unit, sector);
+		fread(buffer, 1, 4, disk[unit]);
+		return 'C';
+	}
 	buffer[0] = 16;         /* drive active */
 	buffer[1] = disk[unit] != NULL ? 255 /* WD 177x OK */ : 127 /* no disk */;
 	if (io_success[unit] != 0)

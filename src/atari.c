@@ -676,18 +676,19 @@ int Atari800_Initialise(int *argc, char *argv[])
 			break;
 		}
 		switch (AFILE_OpenFile(argv[i], i == 1, j, FALSE)) {
-		case AFILE_ERROR:
-			Log_print("Error opening \"%s\"", argv[i]);
-			break;
-		case AFILE_ATR:
-		case AFILE_XFD:
-		case AFILE_ATR_GZ:
-		case AFILE_XFD_GZ:
-		case AFILE_DCM:
-			j++;
-			break;
-		default:
-			break;
+			case AFILE_ERROR:
+				Log_print("Error opening \"%s\"", argv[i]);
+				break;
+			case AFILE_ATR:
+			case AFILE_XFD:
+			case AFILE_ATR_GZ:
+			case AFILE_XFD_GZ:
+			case AFILE_DCM:
+			case AFILE_PRO:
+				j++;
+				break;
+			default:
+				break;
 		}
 	}
 
