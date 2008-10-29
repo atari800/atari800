@@ -1256,7 +1256,7 @@ static void DisplaySettings(void)
 static char joys[2][5][16];
 static const UI_tMenuItem joy0_menu_array[] = {
 	UI_MENU_LABEL("Select joy direction"),
-	UI_MENU_LABEL(""),
+	UI_MENU_LABEL("\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022"),
 	UI_MENU_SUBMENU_SUFFIX(0, "Left   : ", joys[0][0]),
 	UI_MENU_SUBMENU_SUFFIX(1, "Up     : ", joys[0][1]),
 	UI_MENU_SUBMENU_SUFFIX(2, "Right  : ", joys[0][2]),
@@ -1266,7 +1266,7 @@ static const UI_tMenuItem joy0_menu_array[] = {
 };
 static const UI_tMenuItem joy1_menu_array[] = {
 	UI_MENU_LABEL("Select joy direction"),
-	UI_MENU_LABEL(""),
+	UI_MENU_LABEL("\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022"),
 	UI_MENU_SUBMENU_SUFFIX(0, "Left   : ", joys[1][0]),
 	UI_MENU_SUBMENU_SUFFIX(1, "Up     : ", joys[1][1]),
 	UI_MENU_SUBMENU_SUFFIX(2, "Right  : ", joys[1][2]),
