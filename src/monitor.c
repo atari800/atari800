@@ -301,6 +301,54 @@ static const symtable_rec symtable_builtin[] = {
 	{NULL,    0x0000}
 };
 
+static const symtable_rec symtable_builtin_5200[] = {
+	{"POKMSK",  0x0000}, {"RTCLOKH",  0x0001}, {"RTCLOKL",0x0002}, {"CRITIC",   0x0003},
+	{"ATRACT", 0x0004}, {"SDLSTL",  0x0005}, {"SDLSTH",   0x0006}, {"SDMCTL",  0x0007},
+	{"PCOLR0",    0x0008}, {"PCOLR1",  0x0009}, {"PCOLR2",0x000a}, {"PCOLR3",  0x000b},
+	{"COLOR0",0x000c}, {"COLOR1",  0x000d}, {"COLOR2",0x000e}, {"COLOR3",  0x000f},
+	{"COLOR4",  0x0010}, {"PADDL0",  0x0011}, {"PADDL1",0x0012}, {"PADDL2",0x0013},
+	{"PADDL3",  0x0014}, {"PADDL4",0x0015}, {"PADDL5",  0x0016}, {"PADDL6",  0x0017},
+	{"PADDL7",0x0018},
+
+	{"VIMIRQ",  0x0200}, {"VIMIRQ+1",0x0201}, {"VVBLKI",  0x0202}, {"VVBLKI+1",0x0203},
+	{"VVBLKD",  0x0204}, {"VVBLKD+1",0x0205}, {"VDSLST",  0x0206}, {"VDSLST+1",0x0207},
+	{"VKEYBD",  0x0208}, {"VKEYBD+1",0x0209}, {"VKPD",  0x020a}, {"VKPD+1",0x020b},
+	{"BRKKY",  0x020c}, {"BRKKY+1",0x020d}, {"VBREAK",  0x020e}, {"VBREAK+1",0x020f},
+	{"VSERIN",  0x0210}, {"VSERIN+1",0x0211}, {"VSEROR",  0x0212}, {"VSEROR+1",0x0213},
+	{"VSEROC",  0x0214}, {"VSEROC+1",0x0215}, {"VTIMR1",  0x0216}, {"VTIMR1+1",0x0217},
+	{"VTIMR2",  0x0218}, {"VTIMR2+1",0x0219}, {"VTIMR4",  0x021a}, {"VTIMR4+1",0x021b},
+
+	{"M0PF",  0xc000}, {"HPOSP0",0xc000}, {"M1PF",  0xc001}, {"HPOSP1",0xc001},
+	{"M2PF",  0xc002}, {"HPOSP2",0xc002}, {"M3PF",  0xc003}, {"HPOSP3",0xc003},
+	{"P0PF",  0xc004}, {"HPOSM0",0xc004}, {"P1PF",  0xc005}, {"HPOSM1",0xc005},
+	{"P2PF",  0xc006}, {"HPOSM2",0xc006}, {"P3PF",  0xc007}, {"HPOSM3",0xc007},
+	{"M0PL",  0xc008}, {"SIZEP0",0xc008}, {"M1PL",  0xc009}, {"SIZEP1",0xc009},
+	{"M2PL",  0xc00a}, {"SIZEP2",0xc00a}, {"M3PL",  0xc00b}, {"SIZEP3",0xc00b},
+	{"P0PL",  0xc00c}, {"SIZEM", 0xc00c}, {"P1PL",  0xc00d}, {"GRAFP0",0xc00d},
+	{"P2PL",  0xc00e}, {"GRAFP1",0xc00e}, {"P3PL",  0xc00f}, {"GRAFP2",0xc00f},
+	{"TRIG0", 0xc010}, {"GRAFP3",0xc010}, {"TRIG1", 0xc011}, {"GRAFM", 0xc011},
+	{"TRIG2", 0xc012}, {"COLPM0",0xc012}, {"TRIG3", 0xc013}, {"COLPM1",0xc013},
+	{"PAL",   0xc014}, {"COLPM2",0xc014}, {"COLPM3",0xc015}, {"COLPF0",0xc016},
+	{"COLPF1",0xc017},
+	{"COLPF2",0xc018}, {"COLPF3",0xc019}, {"COLBK", 0xc01a}, {"PRIOR", 0xc01b},
+	{"VDELAY",0xc01c}, {"GRACTL",0xc01d}, {"HITCLR",0xc01e}, {"CONSOL",0xc01f},
+	{"DMACTL",0xd400}, {"CHACTL",0xd401}, {"DLISTL",0xd402}, {"DLISTH",0xd403},
+	{"HSCROL",0xd404}, {"VSCROL",0xd405}, {"PMBASE",0xd407}, {"CHBASE",0xd409},
+	{"WSYNC", 0xd40a}, {"VCOUNT",0xd40b}, {"PENH",  0xd40c}, {"PENV",  0xd40d},
+	{"NMIEN", 0xd40e}, {"NMIST", 0xd40f}, {"NMIRES",0xd40f},
+
+	{"POT0",  0xe800}, {"AUDF1", 0xe800}, {"POT1",  0xe801}, {"AUDC1", 0xe801},
+	{"POT2",  0xe802}, {"AUDF2", 0xe802}, {"POT3",  0xe803}, {"AUDC2", 0xe803},
+	{"POT4",  0xe804}, {"AUDF3", 0xe804}, {"POT5",  0xe805}, {"AUDC3", 0xe805},
+	{"POT6",  0xe806}, {"AUDF4", 0xe806}, {"POT7",  0xe807}, {"AUDC4", 0xe807},
+	{"ALLPOT",0xe808}, {"AUDCTL",0xe808}, {"KBCODE",0xe809}, {"STIMER",0xe809},
+	{"RANDOM",0xe80a}, {"SKREST",0xe80a}, {"POTGO", 0xe80b},
+	{"SERIN", 0xe80d}, {"SEROUT",0xe80d}, {"IRQST", 0xe80e}, {"IRQEN", 0xe80e},
+	{"SKSTAT",0xe80f}, {"SKCTL", 0xe80f},
+
+	{NULL,    0x0000}
+};
+
 static int symtable_builtin_enable = TRUE;
 
 static symtable_rec *symtable_user = NULL;
@@ -315,7 +363,7 @@ static const char *find_label_name(UWORD addr, int is_write)
 	}
 	if (symtable_builtin_enable) {
 		const symtable_rec *p;
-		for (p = symtable_builtin; p->name != NULL; p++) {
+		for (p = (Atari800_machine_type == Atari800_MACHINE_5200 ? symtable_builtin_5200 : symtable_builtin); p->name != NULL; p++) {
 			if (p->addr == addr) {
 				if (is_write && p[1].addr == addr)
 					p++;
@@ -342,7 +390,7 @@ static int find_label_value(const char *name)
 	if (p != NULL)
 		return p->addr;
 	if (symtable_builtin_enable) {
-		for (p = symtable_builtin; p->name != NULL; p++) {
+		for (p = (Atari800_machine_type == Atari800_MACHINE_5200 ? symtable_builtin_5200 : symtable_builtin); p->name != NULL; p++) {
 			if (Util_stricmp(p->name, name) == 0)
 				return p->addr;
 		}

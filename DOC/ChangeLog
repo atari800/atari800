@@ -3,6 +3,7 @@
 * ui.c: replace ^R in source with \022
 * pbi_bb.c, pbi_mio.c: correct Util_filenamenotset error.
 * mzpokeysnd.c, pokey.c, pokey.h: rename SKCTLS -> SKCTL
+* monitor.c: 5200 equates.
 
 
 2008-10-13  Matthias Reichl  <hias@horus.com>
