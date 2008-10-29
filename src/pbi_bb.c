@@ -78,7 +78,7 @@ static void init_bb(void)
 	D(printf("loaded black box rom image\n"));
 	PBI_BB_enabled = TRUE;
 	if (PBI_SCSI_disk != NULL) fclose(PBI_SCSI_disk);
-	if (Util_filenamenotset(bb_scsi_disk_filename)) {
+	if (!Util_filenamenotset(bb_scsi_disk_filename)) {
 		PBI_SCSI_disk = fopen(bb_scsi_disk_filename, "rb+");
 		if (PBI_SCSI_disk == NULL) {
 			Log_print("Error opening BB SCSI disk image:%s", bb_scsi_disk_filename);
@@ -125,7 +125,7 @@ int PBI_BB_ReadConfig(char *string, char *ptr)
 void PBI_BB_WriteConfig(FILE *fp)
 {
 	fprintf(fp, "BLACK_BOX_ROM=%s\n", bb_rom_filename);
-	if (Util_filenamenotset(bb_scsi_disk_filename)) {
+	if (!Util_filenamenotset(bb_scsi_disk_filename)) {
 		fprintf(fp, "BB_SCSI_DISK=%s\n", bb_scsi_disk_filename);
 	}
 }

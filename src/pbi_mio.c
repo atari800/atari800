@@ -64,7 +64,7 @@ static void init_mio(void)
 	D(printf("Loaded mio rom image\n"));
 	PBI_MIO_enabled = TRUE;
 	if (PBI_SCSI_disk != NULL) fclose(PBI_SCSI_disk);
-	if (Util_filenamenotset(mio_scsi_disk_filename)) {
+	if (!Util_filenamenotset(mio_scsi_disk_filename)) {
 		PBI_SCSI_disk = fopen(mio_scsi_disk_filename, "rb+");
 		if (PBI_SCSI_disk == NULL) {
 			Log_print("Error opening SCSI disk image:%s", mio_scsi_disk_filename);
@@ -113,7 +113,7 @@ int PBI_MIO_ReadConfig(char *string, char *ptr)
 void PBI_MIO_WriteConfig(FILE *fp)
 {
 	fprintf(fp, "MIO_ROM=%s\n", mio_rom_filename);
-	if (Util_filenamenotset(mio_scsi_disk_filename)) {
+	if (!Util_filenamenotset(mio_scsi_disk_filename)) {
 		fprintf(fp, "MIO_SCSI_DISK=%s\n", mio_scsi_disk_filename);
 	}
 }
