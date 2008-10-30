@@ -87,11 +87,11 @@ RUNTIME =
 endif
 
 $(TARGET_BASE_NAME)$(RUNTIME).class: $(TARGET)
-	$(JAVA) $(JAVAFLAGS) org.ibex.nestedvm.Compiler -outfile $@ $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
-##To compile using -outformat javasource:
-#	$(JAVA) $(JAVAFLAGS) org.ibex.nestedvm.Compiler -outformat javasource -outfile $(TARGET_BASE_NAME)$(RUNTIME).java $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
-#	$(JAVAC) -d . $(JAVACFLAGS) -J-Xmx128m $(TARGET_BASE_NAME)$(RUNTIME).java
-##Also, -o UnixRuntime will fix directory browsing but requires /c:/-style paths
+#To compile using java bytecode directly:
+#	$(JAVA) $(JAVAFLAGS) org.ibex.nestedvm.Compiler -o UnixRuntime -outfile $@ $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
+	$(JAVA) $(JAVAFLAGS) org.ibex.nestedvm.Compiler -o UnixRuntime -outformat javasource -outfile $(TARGET_BASE_NAME)$(RUNTIME).java $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
+	$(JAVAC) -d . $(JAVACFLAGS) -J-Xmx128m $(TARGET_BASE_NAME)$(RUNTIME).java
+##Also, -o UnixRuntime fixes directory browsing but requires /c:/-style paths
 
 $(TARGET_BASE_NAME).jar: $(TARGET_BASE_NAME).class $(TARGET_BASE_NAME)$(RUNTIME).class
 	echo -e "Manifest-Version: 1.0\nMain-Class: $(TARGET_BASE_NAME)\nClass-Path: unix_runtime.jar\n" > .manifest
