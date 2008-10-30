@@ -6,6 +6,7 @@
 * monitor.c: 5200 equates.
 * DOC/BUGS: add Extract demo.
 * Makefile.in: use NestedVM javasource and UnixRuntime by default
+* monitor.c: SKCTL and SKSTAT in pokey state output.
 
 
 2008-10-13  Matthias Reichl  <hias@horus.com>
