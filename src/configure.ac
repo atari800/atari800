@@ -68,20 +68,20 @@ AC_CANONICAL_BUILD
 dnl Set a8_host...
 
 AC_CANONICAL_HOST
+
+if [[ $host_os="cygwin" ]]; then
+    if [[ "$a8_target" = "windx" -o "$a8_target" = "sdl" ]]; then
+        CC="gcc -mno-cygwin"
+        echo
+        echo "Using CC=\"$CC\" to disable cygwin library...";
+        echo
+        host_os="mingw32"
+    fi
+fi
+
 case $host_os in
     i386-pc-os2-emx)
         a8_host="os/2"
-        ;;
-    cygwin)
-        a8_host="win"
-        AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
-        AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
-        if [[ "$a8_target" = "windx" -o "$a8_target" = "sdl" ]]; then
-            CC="gcc -mno-cygwin"
-            echo
-            echo "Using CC=\"$CC\" to disable cygwin library...";
-            echo
-        fi
         ;;
     mingw32)
         a8_host="win"

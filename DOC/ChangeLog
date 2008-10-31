@@ -1,5 +1,6 @@
 2008-10-30  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.c: 5200 GTIA c000-cfff and POKEY e800-efff mirrors.
+* configure.ac: minor fix for Cygwin.
 
 
 2008-10-29  Perry McFarlane  <perry_m@fastmail.fm>
