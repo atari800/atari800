@@ -1,3 +1,7 @@
+2008-10-30  Perry McFarlane  <perry_m@fastmail.fm>
+* memory.c: 5200 GTIA c000-cfff and POKEY e800-efff mirrors.
+
+
 2008-10-29  Perry McFarlane  <perry_m@fastmail.fm>
 * afile.[ch], atari.c, sio.c:  Support .pro images
 * ui.c: replace ^R in source with \022

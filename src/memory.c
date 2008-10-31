@@ -250,19 +250,61 @@ void MEMORY_InitialiseMachine(void)
 		MEMORY_SetRAM(0x0000, 0x3fff);
 		MEMORY_SetROM(0x4000, 0xffff);
 #ifndef PAGED_ATTRIB
-		MEMORY_SetHARDWARE(0xc000, 0xc0ff);	/* 5200 GTIA Chip */
+		MEMORY_SetHARDWARE(0xc000, 0xcfff);	/* 5200 GTIA Chip */
 		MEMORY_SetHARDWARE(0xd400, 0xd4ff);	/* 5200 ANTIC Chip */
-		MEMORY_SetHARDWARE(0xe800, 0xe8ff);	/* 5200 POKEY Chip */
-		MEMORY_SetHARDWARE(0xeb00, 0xebff);	/* 5200 POKEY Chip */
+		MEMORY_SetHARDWARE(0xe800, 0xefff);	/* 5200 POKEY Chip */
 #else
 		MEMORY_readmap[0xc0] = GTIA_GetByte;
+		MEMORY_readmap[0xc1] = GTIA_GetByte;
+		MEMORY_readmap[0xc2] = GTIA_GetByte;
+		MEMORY_readmap[0xc3] = GTIA_GetByte;
+		MEMORY_readmap[0xc4] = GTIA_GetByte;
+		MEMORY_readmap[0xc5] = GTIA_GetByte;
+		MEMORY_readmap[0xc6] = GTIA_GetByte;
+		MEMORY_readmap[0xc7] = GTIA_GetByte;
+		MEMORY_readmap[0xc8] = GTIA_GetByte;
+		MEMORY_readmap[0xc9] = GTIA_GetByte;
+		MEMORY_readmap[0xca] = GTIA_GetByte;
+		MEMORY_readmap[0xcb] = GTIA_GetByte;
+		MEMORY_readmap[0xcc] = GTIA_GetByte;
+		MEMORY_readmap[0xcd] = GTIA_GetByte;
+		MEMORY_readmap[0xce] = GTIA_GetByte;
+		MEMORY_readmap[0xcf] = GTIA_GetByte;
 		MEMORY_readmap[0xd4] = ANTIC_GetByte;
 		MEMORY_readmap[0xe8] = POKEY_GetByte;
+		MEMORY_readmap[0xe9] = POKEY_GetByte;
+		MEMORY_readmap[0xea] = POKEY_GetByte;
 		MEMORY_readmap[0xeb] = POKEY_GetByte;
+		MEMORY_readmap[0xec] = POKEY_GetByte;
+		MEMORY_readmap[0xed] = POKEY_GetByte;
+		MEMORY_readmap[0xee] = POKEY_GetByte;
+		MEMORY_readmap[0xef] = POKEY_GetByte;
+
 		MEMORY_writemap[0xc0] = GTIA_PutByte;
+		MEMORY_writemap[0xc1] = GTIA_PutByte;
+		MEMORY_writemap[0xc2] = GTIA_PutByte;
+		MEMORY_writemap[0xc3] = GTIA_PutByte;
+		MEMORY_writemap[0xc4] = GTIA_PutByte;
+		MEMORY_writemap[0xc5] = GTIA_PutByte;
+		MEMORY_writemap[0xc6] = GTIA_PutByte;
+		MEMORY_writemap[0xc7] = GTIA_PutByte;
+		MEMORY_writemap[0xc8] = GTIA_PutByte;
+		MEMORY_writemap[0xc9] = GTIA_PutByte;
+		MEMORY_writemap[0xca] = GTIA_PutByte;
+		MEMORY_writemap[0xcb] = GTIA_PutByte;
+		MEMORY_writemap[0xcc] = GTIA_PutByte;
+		MEMORY_writemap[0xcd] = GTIA_PutByte;
+		MEMORY_writemap[0xce] = GTIA_PutByte;
+		MEMORY_writemap[0xcf] = GTIA_PutByte;
 		MEMORY_writemap[0xd4] = ANTIC_PutByte;
 		MEMORY_writemap[0xe8] = POKEY_PutByte;
+		MEMORY_writemap[0xe9] = POKEY_PutByte;
+		MEMORY_writemap[0xea] = POKEY_PutByte;
 		MEMORY_writemap[0xeb] = POKEY_PutByte;
+		MEMORY_writemap[0xec] = POKEY_PutByte;
+		MEMORY_writemap[0xed] = POKEY_PutByte;
+		MEMORY_writemap[0xee] = POKEY_PutByte;
+		MEMORY_writemap[0xef] = POKEY_PutByte;
 #endif
 		break;
 	}
@@ -864,11 +906,31 @@ UBYTE MEMORY_HwGetByte(UWORD addr)
 		break;
 	case 0xd000:				/* GTIA */
 	case 0xc000:				/* GTIA - 5200 */
+	case 0xc100:				/* GTIA - 5200 */
+	case 0xc200:				/* GTIA - 5200 */
+	case 0xc300:				/* GTIA - 5200 */
+	case 0xc400:				/* GTIA - 5200 */
+	case 0xc500:				/* GTIA - 5200 */
+	case 0xc600:				/* GTIA - 5200 */
+	case 0xc700:				/* GTIA - 5200 */
+	case 0xc800:				/* GTIA - 5200 */
+	case 0xc900:				/* GTIA - 5200 */
+	case 0xca00:				/* GTIA - 5200 */
+	case 0xcb00:				/* GTIA - 5200 */
+	case 0xcc00:				/* GTIA - 5200 */
+	case 0xcd00:				/* GTIA - 5200 */
+	case 0xce00:				/* GTIA - 5200 */
 		byte = GTIA_GetByte(addr);
 		break;
 	case 0xd200:				/* POKEY */
 	case 0xe800:				/* POKEY - 5200 */
+	case 0xe900:				/* POKEY - 5200 */
+	case 0xea00:				/* POKEY - 5200 */
 	case 0xeb00:				/* POKEY - 5200 */
+	case 0xec00:				/* POKEY - 5200 */
+	case 0xed00:				/* POKEY - 5200 */
+	case 0xee00:				/* POKEY - 5200 */
+	case 0xef00:				/* POKEY - 5200 */
 		byte = POKEY_GetByte(addr);
 		break;
 	case 0xd300:				/* PIA */
@@ -885,7 +947,12 @@ UBYTE MEMORY_HwGetByte(UWORD addr)
 		break;
 	case 0xcf00:				/* Axlon memory expansion for 800 */
 	case 0x0f00:				/* Axlon shadow */
-		byte = AxlonGetByte(addr);
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
+			byte = GTIA_GetByte(addr); /* GTIA-5200 cfxx */
+		}
+		else {
+			byte = AxlonGetByte(addr);
+		}
 		break;
 	case 0xd100:				/* PBI page D1 */
 		byte = PBI_D1GetByte(addr);
@@ -916,11 +983,31 @@ void MEMORY_HwPutByte(UWORD addr, UBYTE byte)
 		break;
 	case 0xd000:				/* GTIA */
 	case 0xc000:				/* GTIA - 5200 */
+	case 0xc100:				/* GTIA - 5200 */
+	case 0xc200:				/* GTIA - 5200 */
+	case 0xc300:				/* GTIA - 5200 */
+	case 0xc400:				/* GTIA - 5200 */
+	case 0xc500:				/* GTIA - 5200 */
+	case 0xc600:				/* GTIA - 5200 */
+	case 0xc700:				/* GTIA - 5200 */
+	case 0xc800:				/* GTIA - 5200 */
+	case 0xc900:				/* GTIA - 5200 */
+	case 0xca00:				/* GTIA - 5200 */
+	case 0xcb00:				/* GTIA - 5200 */
+	case 0xcc00:				/* GTIA - 5200 */
+	case 0xcd00:				/* GTIA - 5200 */
+	case 0xce00:				/* GTIA - 5200 */
 		GTIA_PutByte(addr, byte);
 		break;
 	case 0xd200:				/* POKEY */
-	case 0xe800:				/* POKEY - 5200 AAA added other pokey space */
+	case 0xe800:				/* POKEY - 5200 */
+	case 0xe900:				/* POKEY - 5200 */
+	case 0xea00:				/* POKEY - 5200 */
 	case 0xeb00:				/* POKEY - 5200 */
+	case 0xec00:				/* POKEY - 5200 */
+	case 0xed00:				/* POKEY - 5200 */
+	case 0xee00:				/* POKEY - 5200 */
+	case 0xef00:				/* POKEY - 5200 */
 		POKEY_PutByte(addr, byte);
 		break;
 	case 0xd300:				/* PIA */
@@ -937,7 +1024,12 @@ void MEMORY_HwPutByte(UWORD addr, UBYTE byte)
 		break;
 	case 0xcf00:				/* Axlon memory expansion for 800 */
 	case 0x0f00:				/* Axlon shadow */
-		AxlonPutByte(addr,byte);
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
+			GTIA_PutByte(addr, byte); /* GTIA-5200 cfxx */
+		}
+		else {
+			AxlonPutByte(addr,byte);
+		}
 		break;
 	case 0xd100:				/* PBI page D1 */
 		PBI_D1PutByte(addr, byte);
