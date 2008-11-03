@@ -69,7 +69,7 @@ dnl Set a8_host...
 
 AC_CANONICAL_HOST
 
-if [[ $host_os="cygwin" ]]; then
+if [[ "$host_os" = "cygwin" ]]; then
     if [[ "$a8_target" = "windx" -o "$a8_target" = "sdl" ]]; then
         CC="gcc -mno-cygwin"
         echo

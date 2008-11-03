@@ -1,3 +1,7 @@
+2008-11-03  Perry McFarlane  <perry_m@fastmail.fm>
+* configure.ac: fix syntax error
+
+
 2008-10-30  Perry McFarlane  <perry_m@fastmail.fm>
 * memory.c: 5200 GTIA c000-cfff and POKEY e800-efff mirrors.
 * configure.ac: minor fix for Cygwin.
