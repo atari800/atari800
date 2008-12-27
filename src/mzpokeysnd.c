@@ -2293,7 +2293,7 @@ static void Update_serio_sound_mz( int out, UBYTE data )
 {
 #ifdef VOL_ONLY_SOUND
    int bits,pv,future;
-        if (!serio_sound_enabled) return;
+        if (!POKEYSND_serio_sound_enabled) return;
 
 	pv=0;
 	future=0;

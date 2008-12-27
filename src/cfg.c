@@ -239,7 +239,7 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			}
 			else if (strcmp(string, "SERIO_SOUND") == 0) {
 #ifdef SERIO_SOUND
-				serio_sound_enabled = Util_sscanbool(ptr);
+				POKEYSND_serio_sound_enabled = Util_sscanbool(ptr);
 #endif
 			}
 			else if (strcmp(string, "MACHINE_TYPE") == 0) {
@@ -390,7 +390,7 @@ int CFG_WriteConfig(void)
 	fprintf(fp, "SPEAKER_SOUND=%d\n", POKEYSND_console_sound_enabled);
 #endif
 #ifdef SERIO_SOUND
-	fprintf(fp, "SERIO_SOUND=%d\n", serio_sound_enabled);
+	fprintf(fp, "SERIO_SOUND=%d\n", POKEYSND_serio_sound_enabled);
 #endif
 #endif /* SOUND */
 	/* Add module-specific configurations here */

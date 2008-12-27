@@ -1456,7 +1456,7 @@ static int SoundSettings(void)
 		SetItemChecked(menu_array, 2, POKEYSND_console_sound_enabled);
 #endif
 #ifdef SERIO_SOUND
-		SetItemChecked(menu_array, 3, serio_sound_enabled);
+		SetItemChecked(menu_array, 3, POKEYSND_serio_sound_enabled);
 #endif
 		FindMenuItem(menu_array, 4)->suffix = POKEYSND_enable_new_pokey ? "N/A" : POKEYSND_bienias_fix ? "Yes" : "No ";
 #ifdef DREAMCAST
@@ -1492,7 +1492,7 @@ static int SoundSettings(void)
 #endif
 #ifdef SERIO_SOUND
 		case 3:
-			serio_sound_enabled = !serio_sound_enabled;
+			POKEYSND_serio_sound_enabled = !POKEYSND_serio_sound_enabled;
 			break;
 #endif
 		case 4:

@@ -179,8 +179,8 @@ void (*POKEYSND_Update) (UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
 #ifdef SERIO_SOUND
 static void Update_serio_sound_rf(int out, UBYTE data);
 static void null_serio_sound(int out, UBYTE data) {}
-void (*Update_serio_sound)(int out, UBYTE data) = null_serio_sound;
-int serio_sound_enabled = 1;
+void (*POKEYSND_UpdateSerio)(int out, UBYTE data) = null_serio_sound;
+int POKEYSND_serio_sound_enabled = 1;
 #endif
 
 #ifdef CONSOLE_SOUND
@@ -1108,7 +1108,7 @@ static void Update_serio_sound_rf(int out, UBYTE data)
 	if (g_Sound.nDigitized) {
 #endif
 	int bits, pv, future;
-	if (!serio_sound_enabled) return;
+	if (!POKEYSND_serio_sound_enabled) return;
 
 	pv = 0;
 	future = 0;
