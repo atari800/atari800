@@ -1264,6 +1264,7 @@ void Atari800_StateSave(void)
 
 void Atari800_StateRead(void)
 {
+	int new_tv_mode;
 	/* these are all for compatibility with previous versions */
 	UBYTE temp;
 	int default_tv_mode;
@@ -1272,7 +1273,11 @@ void Atari800_StateRead(void)
 	int pil_on;
 
 	StateSav_ReadUBYTE(&temp, 1);
-	Atari800_tv_mode = (temp == 0) ? Atari800_TV_PAL : Atari800_TV_NTSC;
+	new_tv_mode = (temp == 0) ? Atari800_TV_PAL : Atari800_TV_NTSC;
+	if (new_tv_mode != Atari800_tv_mode) {
+		Atari800_tv_mode = new_tv_mode;
+		Colours_InitialiseMachine();
+	}
 
 	StateSav_ReadUBYTE(&temp, 1);
 	StateSav_ReadINT(&os, 1);
