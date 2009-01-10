@@ -83,6 +83,7 @@ extern "C" {
 
 extern SLONG POKEYSND_playback_freq;
 extern UBYTE POKEYSND_num_pokeys;
+extern int POKEYSND_snd_flags;
 
 extern int POKEYSND_enable_new_pokey;
 extern int POKEYSND_stereo_enabled;

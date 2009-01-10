@@ -522,7 +522,7 @@ static void SoundSetup(void)
 		if (sound_bits == 8)
 			desired.format = AUDIO_U8;
 		else if (sound_bits == 16)
-			desired.format = AUDIO_U16;
+			desired.format = AUDIO_S16;
 		else {
 			Log_print("unknown sound_bits");
 			Atari800_Exit(FALSE);
@@ -579,6 +579,7 @@ static void SoundInitialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-sound           Enable sound");
 				Log_print("\t-nosound         Disable sound");
+				Log_print("\t-audio16         Enable 16-bit sound output");
 				Log_print("\t-dsprate <rate>  Set DSP rate in Hz");
 				sound_enabled = FALSE;
 			}

@@ -58,17 +58,33 @@ int SndSave_IsSoundFileOpen(void)
 int SndSave_CloseSoundFile(void)
 {
 	int bSuccess = TRUE;
+	char aligned = 0;
 
 	if (sndoutput != NULL) {
-		/* Sound file is finished, so modify header and close it. */
-		if (fseek(sndoutput, 4, SEEK_SET) != 0)	/* Seek past RIFF */
-			bSuccess = FALSE;
-		else {
-			write32(byteswritten + 36);
-			if (fseek(sndoutput, 40, SEEK_SET) != 0)
+		/* A RIFF file's chunks must be word-aligned. So let's align. */
+		if (byteswritten & 1) {
+			if (putc(0, sndoutput) == EOF)
+				bSuccess = FALSE;
+			else
+				aligned = 1;
+		}
+
+		if (bSuccess) {
+			/* Sound file is finished, so modify header and close it. */
+			if (fseek(sndoutput, 4, SEEK_SET) != 0)	/* Seek past RIFF */
 				bSuccess = FALSE;
 			else {
-				write32(byteswritten);
+				/* RIFF header's size field must equal the size of all chunks
+				 * with alignment, so the alignment byte is added.
+				 */
+				write32(byteswritten + 36 + aligned);
+				if (fseek(sndoutput, 40, SEEK_SET) != 0)
+					bSuccess = FALSE;
+				else {
+					/* But in the "data" chunk size field, the alignment byte
+					 * should be ignored. */
+					write32(byteswritten);
+				}
 			}
 		}
 		fclose(sndoutput);
@@ -116,6 +132,10 @@ int SndSave_OpenSoundFile(const char *szFileName)
 	  36      4 bytes  'data'
 	  40      4 bytes  <length of the data block>
 	  44        bytes  <sample data>
+
+	All chunks must be word-aligned.
+
+	Good description of WAVE format: http://www.sonicspot.com/guide/wavefiles.html
 	*/
 
 	if (fwrite("RIFF\0\0\0\0WAVEfmt \x10\0\0\0\1\0", 1, 22, sndoutput) != 22) {
@@ -127,12 +147,16 @@ int SndSave_OpenSoundFile(const char *szFileName)
 	fputc(POKEYSND_num_pokeys, sndoutput);
 	fputc(0, sndoutput);
 	write32(POKEYSND_playback_freq);
-	write32(POKEYSND_playback_freq * POKEYSND_num_pokeys);
 
-	fputc(POKEYSND_num_pokeys, sndoutput);
 
-	/* XXX FIXME: signed/unsigned samples; 16-bit (byte order!) */
-	if (fwrite("\0\x08\0data\0\0\0\0", 1, 7, sndoutput) != 7) {
+	write32(POKEYSND_playback_freq * (POKEYSND_snd_flags & POKEYSND_BIT16 ? POKEYSND_num_pokeys << 1 : POKEYSND_num_pokeys));
+
+	fputc(POKEYSND_snd_flags & POKEYSND_BIT16 ? POKEYSND_num_pokeys << 1 : POKEYSND_num_pokeys, sndoutput);
+	fputc(0, sndoutput);
+
+	fputc(POKEYSND_snd_flags & POKEYSND_BIT16? 16: 8, sndoutput);
+
+	if (fwrite("\0data\0\0\0\0", 1, 9, sndoutput) != 9) {
 		fclose(sndoutput);
 		sndoutput = NULL;
 		return FALSE;
@@ -149,9 +173,17 @@ int SndSave_OpenSoundFile(const char *szFileName)
 
 int SndSave_WriteToSoundFile(const unsigned char *ucBuffer, unsigned int uiSize)
 {
+	/* XXX FIXME: doesn't work with big-endian architectures */
 	if (sndoutput && ucBuffer && uiSize) {
-		int result = fwrite(ucBuffer, 1, uiSize, sndoutput);
+		int result;
+		if (POKEYSND_snd_flags & POKEYSND_BIT16)
+			uiSize <<= 1;
+		result = fwrite(ucBuffer, 1, uiSize, sndoutput);
 		byteswritten += result;
+		if (result != uiSize) {
+			SndSave_CloseSoundFile();
+		}
+
 		return result;
 	}
 

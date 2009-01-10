@@ -148,7 +148,7 @@ static int	sampout2;			/* last out volume */
 static ULONG snd_freq17 = POKEYSND_FREQ_17_EXACT;
 int POKEYSND_playback_freq = 44100;
 UBYTE POKEYSND_num_pokeys = 1;
-static int snd_flags = 0;
+int POKEYSND_snd_flags = 0;
 static int mz_quality = 0;		/* default quality for mzpokeysnd */
 #ifdef __PLUS
 int mz_clear_regs = 0;
@@ -244,16 +244,17 @@ static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
 
 int POKEYSND_DoInit(void)
 {
+	SndSave_CloseSoundFile();
 	if (POKEYSND_enable_new_pokey)
 		return MZPOKEYSND_Init(snd_freq17, POKEYSND_playback_freq,
-				POKEYSND_num_pokeys, snd_flags, mz_quality
+				POKEYSND_num_pokeys, POKEYSND_snd_flags, mz_quality
 #ifdef __PLUS
 				, mz_clear_regs
 #endif
 		);
 	else
 		return pokeysnd_init_rf(snd_freq17, POKEYSND_playback_freq,
-				POKEYSND_num_pokeys, snd_flags);
+				POKEYSND_num_pokeys, POKEYSND_snd_flags);
 }
 
 int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
@@ -266,7 +267,7 @@ int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 	snd_freq17 = freq17;
 	POKEYSND_playback_freq = playback_freq;
 	POKEYSND_num_pokeys = num_pokeys;
-	snd_flags = flags;
+	POKEYSND_snd_flags = flags;
 #ifdef __PLUS
 	mz_clear_regs = clear_regs;
 #endif
@@ -285,11 +286,11 @@ void POKEYSND_SetMzQuality(int quality)	/* specially for win32, perhaps not need
 void POKEYSND_Process(void *sndbuffer, int sndn)
 {
 	POKEYSND_Process_ptr(sndbuffer, sndn);
-#if !defined(__PLUS) && !defined(ASAP)
-	SndSave_WriteToSoundFile((const unsigned char *)sndbuffer, sndn);
-#endif
 #ifdef PBI_XLD
 	PBI_XLD_VProcess(sndbuffer,sndn);
+#endif
+#if !defined(__PLUS) && !defined(ASAP)
+	SndSave_WriteToSoundFile((const unsigned char *)sndbuffer, sndn);
 #endif
 }
 

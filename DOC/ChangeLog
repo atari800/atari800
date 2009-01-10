@@ -1,3 +1,11 @@
+2009-01-11  Petr Stehlik <pstehlik@sophics.cz>
+  Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
+* atari_sdl.c: -audio16 fixed
+* pokeysnd.[ch]: Sound recording must stop when POKEY is reinitialised
+* sndsave.c: Chunks in WAV format must be word-aligned,
+             16-bit sound recording fixed.
+
+
 2008-12-27  Petr Stehlik <pstehlik@sophics.cz>
   Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
 * atari.c: initialize color palette after loading saved state
