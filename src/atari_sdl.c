@@ -79,14 +79,11 @@ static int sound_enabled = TRUE;
 static int sound_flags = 0;
 static int sound_bits = 8;
 #endif
-static int default_bpp = 0;	/* 0 - autodetect */
 static int fullscreen = 1;
 static int grab_mouse = 0;
 static int bw = 0;
 static int swap_joysticks = 0;
 static int width_mode = 1;
-static int rotate90 = 0;
-static int ntscemu = 0;
 static int scanlines_percentage = 5;
 static int scanlinesnoint = FALSE;
 static atari_ntsc_t *the_ntscemu;
@@ -142,6 +139,68 @@ static SDL_Color colors[256];			/* palette */
 static Uint16 Palette16[256];			/* 16-bit palette */
 static Uint32 Palette32[256];			/* 32-bit palette */
 int PLATFORM_xep80 = FALSE; 	/* is the XEP80 screen displayed? */
+
+/* SDL port supports 5 "display modes":
+   - normal,
+   - rotated 9 degrees,
+   - ntscemu - emulation of NTSC composite video,
+   - xep80 emulation,
+   - proto80 - emulation of 80 column board for 1090XL.
+   The structure below is used to hold settings and functions used by a single
+   display mode. */
+struct display_mode_data_t {
+	int w;
+	int h;
+	int bpp;
+	void (*set_video_mode_func)(int, int); /* see below */
+	void (*display_screen_func)(Uint8 *); /* see below */
+};
+
+/* set_video_mode_func - these functions reset the SDL screen to the given
+   width and height. SetNewVideoModeNormal remembers the given W and H
+   parameters and sets the screen accordingly, while SetNewVideoModeIgnore
+   ignores W and H and sets the screen according to default parameters defined
+   in the DISPLAY_MODES table below. */
+static void SetNewVideoModeNormal(int w, int h);
+static void SetNewVideoModeIgnore(int w, int h);
+
+/* display_screen_func - these functions fill the given SCREEN buffer with
+   screen data, differently for each display mode. */
+static void DisplayNormal(Uint8 *screen);
+static void DisplayRotated240x320(Uint8 *screen);
+static void DisplayNTSCEmu640x480(Uint8 *screen);
+static void DisplayXEP80(Uint8 *screen);
+static void DisplayProto80640x400(Uint8 *screen);
+
+/* This table holds default settings for all display modes. */
+static struct display_mode_data_t display_modes[] = {
+	/* Normal */
+	{ Screen_WIDTH, Screen_HEIGHT, 0, /* bpp = 0 - autodetect */
+	  &SetNewVideoModeNormal, &DisplayNormal },
+	/* Rotated */
+	{ 240, 320, 16,
+	  &SetNewVideoModeIgnore, &DisplayRotated240x320 },
+	/* NTSCEmu */
+	{ 640, 480, 16,
+	  &SetNewVideoModeIgnore, &DisplayNTSCEmu640x480 },
+	/* XEP80 */
+	{ XEP80_SCRN_WIDTH, XEP80_SCRN_HEIGHT, 8,
+	  &SetNewVideoModeIgnore, &DisplayXEP80 },
+	/* Proto80 */
+	{ 640, 400, 16,
+	  &SetNewVideoModeIgnore, &DisplayProto80640x400 }
+};
+
+/* An enumerator to switch display modes comfortably. */
+enum display_mode_t {
+	display_normal,
+	display_rotated,
+	display_ntscemu,
+	display_xep80,
+	display_proto80
+};
+/* Indicates current display mode */
+static enum display_mode_t current_display_mode = display_normal;
 
 /* keyboard */
 static Uint8 *kbhits;
@@ -390,93 +449,120 @@ static void SetVideoMode(int w, int h, int bpp)
 	}
 }
 
-static void SetNewVideoMode(int w, int h, int bpp)
+static void SetNewVideoModeNormal(int w, int h)
 {
+	int bpp = display_modes[current_display_mode].bpp;
 	float ww, hh;
 
-	if ((rotate90||ntscemu||PBI_PROTO80_enabled||PLATFORM_xep80))
-	{
-		SetVideoMode(w, h, bpp);
-	}
-	else {
-
-		if ((h < Screen_HEIGHT) || (w < Screen_WIDTH)) {
-			h = Screen_HEIGHT;
-			w = Screen_WIDTH;
-		}
-
-		/* aspect ratio, floats needed */
-		ww = w;
-		hh = h;
-		switch (width_mode) {
-		case SHORT_WIDTH_MODE:
-			if (ww * 0.75 < hh)
-				hh = ww * 0.75;
-			else
-				ww = hh / 0.75;
-			break;
-		case DEFAULT_WIDTH_MODE:
-			if (ww / 1.4 < hh)
-				hh = ww / 1.4;
-			else
-				ww = hh * 1.4;
-			break;
-		case FULL_WIDTH_MODE:
-			if (ww / 1.6 < hh)
-				hh = ww / 1.6;
-			else
-				ww = hh * 1.6;
-			break;
-		}
-		w = (int)ww;
-		h = (int)hh;
-		w = w / 8;
-		w = w * 8;
-		h = h / 8;
-		h = h * 8;
-
-		SetVideoMode(w, h, bpp);
-
-		default_bpp = MainScreen->format->BitsPerPixel;
-		if (bpp == 0) {
-			Log_print("detected %dbpp", default_bpp);
-			if ((default_bpp != 8) && (default_bpp != 16)
-				&& (default_bpp != 32)) {
-				Log_print("it's unsupported, so setting 8bit mode (slow conversion)");
-				SetVideoMode(w, h, 8);
-			}
-		}
+	if ((h < Screen_HEIGHT) || (w < Screen_WIDTH)) {
+		h = Screen_HEIGHT;
+		w = Screen_WIDTH;
 	}
 
+	/* aspect ratio, floats needed */
+	ww = w;
+	hh = h;
+	switch (width_mode) {
+	case SHORT_WIDTH_MODE:
+		if (ww * 0.75 < hh)
+			hh = ww * 0.75;
+		else
+			ww = hh / 0.75;
+		break;
+	case DEFAULT_WIDTH_MODE:
+		if (ww / 1.4 < hh)
+			hh = ww / 1.4;
+		else
+			ww = hh * 1.4;
+		break;
+	case FULL_WIDTH_MODE:
+		if (ww / 1.6 < hh)
+			hh = ww / 1.6;
+		else
+			ww = hh * 1.6;
+		break;
+	}
+	w = (int)ww;
+	h = (int)hh;
+	w /= 8;
+	w *= 8;
+	h /= 8;
+	h *= 8;
+
+	display_modes[current_display_mode].w = w;
+	display_modes[current_display_mode].h = h;
+
+	/* Only the BPPs below are supported. Default to 8 bits otherwise. */
+	if (bpp != 0 && bpp != 8 && bpp != 16 && bpp != 32) {
+		Log_print("BPP %d unsupported, so setting 8bit mode (slow conversion)", bpp);
+		bpp = 8;
+	}
+	SetVideoMode(w, h, bpp);
+	if (bpp == 0) {
+		bpp = MainScreen->format->BitsPerPixel;
+		Log_print("detected %dbpp", bpp);
+		if ((bpp != 8) && (bpp != 16)
+			&& (bpp != 32)) {
+			Log_print("it's unsupported, so setting 8bit mode (slow conversion)");
+			bpp = 8;
+			SetVideoMode(w, h, 8);
+		}
+	}
+
+	/* Save bpp in case it changed above */
+	display_modes[current_display_mode].bpp = bpp;
+}
+
+static void SetNewVideoModeIgnore(int w, int h)
+{
+	SetVideoMode(display_modes[current_display_mode].w,
+	             display_modes[current_display_mode].h,
+	             display_modes[current_display_mode].bpp);
+}
+
+/* Reinitialises the SDL screen using current_display_mode and its parameters.
+ */
+static void ResetDisplay(void)
+{
+	(*display_modes[current_display_mode].set_video_mode_func)(display_modes[current_display_mode].w,
+	                                                           display_modes[current_display_mode].h);
 	SetPalette();
 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
 
 	ModeInfo();
+}
 
+/* Resizes the SDL screen using current_display_mode and the given Width and
+   Height. */
+static void ResizeDisplay(int w, int h)
+{
+	(*display_modes[current_display_mode].set_video_mode_func)(w, h);
+	SetPalette();
+
+	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
+
+	ModeInfo();
 }
 
 static void SwitchFullscreen(void)
 {
 	fullscreen = 1 - fullscreen;
-	SetNewVideoMode(MainScreen->w, MainScreen->h,
-					MainScreen->format->BitsPerPixel);
+	ResetDisplay();
 	PLATFORM_DisplayScreen();
 }
 
 void PLATFORM_SwitchXep80(void)
 {
-	static int saved_w, saved_h, saved_bpp;
+	static enum display_mode_t saved_display_mode;
 	PLATFORM_xep80 = 1 - PLATFORM_xep80;
 	if (PLATFORM_xep80) {
-		saved_w = MainScreen->w;
-		saved_h = MainScreen->h;
-		saved_bpp = MainScreen->format->BitsPerPixel;
-		SetNewVideoMode(XEP80_SCRN_WIDTH, XEP80_SCRN_HEIGHT, 8);
+		saved_display_mode = current_display_mode;
+		current_display_mode = display_xep80;
 	}
-	else {
-		SetNewVideoMode(saved_w, saved_h, saved_bpp);
-	}
+	else
+		current_display_mode = saved_display_mode;
+	ResetDisplay();
 	PLATFORM_DisplayScreen();
 }
 
@@ -485,8 +571,8 @@ static void SwitchWidth(void)
 	width_mode++;
 	if (width_mode > FULL_WIDTH_MODE)
 		width_mode = SHORT_WIDTH_MODE;
-	SetNewVideoMode(MainScreen->w, MainScreen->h,
-					MainScreen->format->BitsPerPixel);
+
+	ResetDisplay();
 	PLATFORM_DisplayScreen();
 }
 
@@ -641,14 +727,7 @@ int PLATFORM_Keyboard(void)
 			}
 			break;
 		case SDL_VIDEORESIZE:
-			if (!(rotate90||ntscemu||PBI_PROTO80_enabled||PLATFORM_xep80)) {
-				SetNewVideoMode(event.resize.w, event.resize.h, MainScreen->format->BitsPerPixel);
-			}
-			else {
-				/* resizing TODO */
-				SetNewVideoMode(MainScreen->w, MainScreen->h,
-					MainScreen->format->BitsPerPixel);
-			}
+			ResizeDisplay(event.resize.w, event.resize.h);
 			break;
 		case SDL_QUIT:
 			return AKEY_EXIT;
@@ -727,7 +806,7 @@ int PLATFORM_Keyboard(void)
 				key_pressed = 0;
 				break;
 			default:
-				if(ntscemu){
+				if(current_display_mode == display_ntscemu){
 					switch(lastkey){
 					case SDLK_1:
 						key_pressed = 0;
@@ -1395,20 +1474,13 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	int no_joystick;
-	int width, height, bpp;
 	int help_only = FALSE;
 
 	no_joystick = 0;
-	width = Screen_WIDTH;
-	height = Screen_HEIGHT;
-	bpp = default_bpp;
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-ntscemu") == 0) {
-			ntscemu = TRUE;
-			width = 640;
-			height = 480;
-			bpp = 16;
+			current_display_mode = display_ntscemu;
 			/* allocate memory for atari_ntsc and initialize */
 			the_ntscemu = (atari_ntsc_t*) malloc( sizeof (atari_ntsc_t) );
 			Log_print("ntscemu mode");
@@ -1422,10 +1494,7 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 			Log_print("scanlines interpolation disabled");
 		}
 		else if (strcmp(argv[i], "-rotate90") == 0) {
-			rotate90 = 1;
-			width = 240;
-			height = 320;
-			bpp = 16;
+			current_display_mode = display_rotated;
 			no_joystick = 1;
 			Log_print("rotate90 mode");
 		}
@@ -1434,15 +1503,15 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 			Log_print("no joystick");
 		}
 		else if (strcmp(argv[i], "-width") == 0) {
-			width = Util_sscandec(argv[++i]);
-			Log_print("width set", width);
+			display_modes[display_normal].w = Util_sscandec(argv[++i]);
+			Log_print("width set");
 		}
 		else if (strcmp(argv[i], "-height") == 0) {
-			height = Util_sscandec(argv[++i]);
+			display_modes[display_normal].h = Util_sscandec(argv[++i]);
 			Log_print("height set");
 		}
 		else if (strcmp(argv[i], "-bpp") == 0) {
-			bpp = Util_sscandec(argv[++i]);
+			display_modes[display_normal].bpp = Util_sscandec(argv[++i]);
 			Log_print("bpp set");
 		}
 		else if (strcmp(argv[i], "-fullscreen") == 0) {
@@ -1478,9 +1547,10 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	if (ntscemu || help_only){
+	if (current_display_mode == display_ntscemu || help_only){
 			ATARI_NTSC_DEFAULTS_Initialise(argc, argv, &atari_ntsc_setup);
-			if(ntscemu) atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+			if (current_display_mode == display_ntscemu)
+				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 	}
 
 	i = SDL_INIT_VIDEO | SDL_INIT_JOYSTICK;
@@ -1517,13 +1587,11 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 
 	/* Prototype 80 column adaptor */
 	if (PBI_PROTO80_enabled) {
-		width = 640;
-		height = 400;
-		bpp = 16;
+		current_display_mode = display_proto80;
 		Log_print("proto80 mode");
 	}
 
-	SetNewVideoMode(width, height, bpp);
+	ResetDisplay();
 	CalcPalette();
 	SetPalette();
 
@@ -1838,6 +1906,8 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 	screen = screen + jumped;
 	i = MainScreen->h;
 	switch (MainScreen->format->BitsPerPixel) {
+	/* Possible values are 8, 16 and 32, as checked earlier in the
+	 * SetNewVideoModeNormal() function. */
 	case 8:
 		while (i > 0) {
 			memcpy(start32, screen, width);
@@ -1863,7 +1933,8 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 			i--;
 		}
 		break;
-	case 32:
+	default:
+		/* MainScreen->format->BitsPerPixel = 32 */
 		while (i > 0) {
 			pos = width - 1;
 			while (pos > 0) {
@@ -1876,12 +1947,6 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 			start32 += pitch4;
 			i--;
 		}
-		break;
-	default:
-		Log_print("unsupported color depth %d", MainScreen->format->BitsPerPixel);
-		Log_print("please set default_bpp to 8 or 16 and recompile atari_sdl");
-		Log_flushlog();
-		exit(-1);
 	}
 }
 
@@ -1916,6 +1981,8 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 	i = MainScreen->h;
 
 	switch (MainScreen->format->BitsPerPixel) {
+	/* Possible values are 8, 16 and 32, as checked earlier in the
+	 * SetNewVideoModeNormal() function. */
 	case 8:
 		while (i > 0) {
 			x = (width + jumped) << 16;
@@ -1962,7 +2029,8 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 			i--;
 		}
 		break;
-	case 32:
+	default:
+		/* MainScreen->format->BitsPerPixel = 32 */
 		while (i > 0) {
 			x = (width + jumped) << 16;
 			pos = w1;
@@ -1980,17 +2048,10 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 			y = y + dy;
 			i--;
 		}
-
-		break;
-	default:
-		Log_print("unsupported color depth %d", MainScreen->format->BitsPerPixel);
-		Log_print("please set default_bpp to 8 or 16 or 32 and recompile atari_sdl");
-		Log_flushlog();
-		exit(-1);
 	}
 }
 
-void PLATFORM_DisplayScreen(void)
+void DisplayNormal(Uint8 *screen)
 {
 	int width, jumped;
 
@@ -2013,24 +2074,18 @@ void PLATFORM_DisplayScreen(void)
 		exit(-1);
 		break;
 	}
-	if (PLATFORM_xep80) {
-		DisplayXEP80((UBYTE *)Screen_atari);
-	}
-	else if (ntscemu) {
-  		DisplayNTSCEmu640x480((UBYTE *)Screen_atari);
-  	}
-	else if (PBI_PROTO80_enabled) {
-  		DisplayProto80640x400((UBYTE *)Screen_atari);
-  	}
-  	else if (rotate90) {
-		DisplayRotated240x320((UBYTE *) Screen_atari);
-	}
-	else if (MainScreen->w == width && MainScreen->h == Screen_HEIGHT) {
-		DisplayWithoutScaling((UBYTE *) Screen_atari, jumped, width);
+	if (MainScreen->w == width && MainScreen->h == Screen_HEIGHT) {
+		DisplayWithoutScaling(screen, jumped, width);
 	}
 	else {
-		DisplayWithScaling((UBYTE *) Screen_atari, jumped, width);
+		DisplayWithScaling(screen, jumped, width);
 	}
+}
+
+void PLATFORM_DisplayScreen(void)
+{
+	/* Use function corresponding to the current_display_mode. */
+	(*display_modes[current_display_mode].display_screen_func)((UBYTE *)Screen_atari);
 	SDL_Flip(MainScreen);
 }
 

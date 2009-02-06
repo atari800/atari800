@@ -1,3 +1,8 @@
+2009-02-05  Perry McFarlane  <perry_m@fastmail.fm>
+  Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
+* atari_sdl.c: cleaned up display modes.
+
+
 2009-01-11  Petr Stehlik <pstehlik@sophics.cz>
   Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
 * atari_sdl.c: -audio16 fixed
