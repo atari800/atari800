@@ -26,6 +26,8 @@
 #include "xep80.h"
 #include "xep80_fonts.h"
 #include "statesav.h"
+#include "atari.h"
+#include "antic.h"
 #include <string.h>
 #include "platform.h"
 #include "util.h"
@@ -102,7 +104,6 @@ int XEP80_last_row = 0;
 
 /* Local procedures */
 static void XEP80_InputWord(int word);
-static int XEP80_NextInputWord(void);
 static void XEP80_OutputWord(int word);
 static void XEP80_ReceiveChar(UBYTE byte);
 static void	XEP80_SendCursorStatus(void);
@@ -118,7 +119,7 @@ static void XEP80_GetChar(void);
 static void XEP80_GetXCur(void);
 static void XEP80_MasterReset(void);
 static void XEP80_GetPrinterStatus(void);
-static void XEP80_FillMem(UBYTE c);
+static void XEP80_FillMem(UBYTE c, int output);
 static void XEP80_SetList(int list);
 static void XEP80_SetOutputDevice(int screen, int burst);
 static void XEP80_SetCharSet(int set);
@@ -157,11 +158,11 @@ static void XEP80_BlitGraphChar(int x, int y);
 /* Local state variables */
 static int output_state = -1;
 static int output_word = 0;
-static int input_state = -1;
-static int input_word = 0;
+
 static UWORD input_queue[IN_QUEUE_SIZE];
-static int input_queue_read = 0;
-static int input_queue_write = 0;
+static int input_count = 0;
+static int input_bit = 0;
+static int input_first = TRUE;
 
 static int xcur = 0;
 static int xscroll = 0;
@@ -249,51 +250,82 @@ void XEP80_Initialise(int *argc, char *argv[])
 
 static void XEP80_InputWord(int word)
 {
-	/* If we aren't already sending a word..*/
-    if (input_state == -1) {
-        input_word = word;
-        input_state = 0;
+	input_queue[input_count] = word;
+	input_count++;
+	input_bit = 0;
+	input_first = TRUE;
     }
-	/* Otherwise put it on the queue */
-    else {
-        input_queue[input_queue_write++] = word;
-        if (input_queue_write >= IN_QUEUE_SIZE) {
-            input_queue_write = 0;
-        }
-    }
-}
 
-static int XEP80_NextInputWord(void)
+static float XEP80_DeltaXYPos(float a, float b)
 {
-	/* If there is nothing on the queue */
-    if (input_queue_read == input_queue_write) {
-        return(-1);
-    }
-	/* Otherwise get the next word off of the queue */
-    else {
-        input_word = input_queue[input_queue_read++];
-        if (input_queue_read >= IN_QUEUE_SIZE) {
-            input_queue_read = 0;
-        }
-        return(0);
-    }
+	if (b > a)
+		return (b-a);
+	else
+		return(((float) Atari800_tv_mode) - a + b);
 }
 
 UBYTE XEP80_GetBit(void) 
 {
-	UBYTE ret;
+	UBYTE ret = 0xFF;
+	int word_bit_num;
+	int input_word;
+	int input_word_num;
+	static float last_xypos;
+	/* This calculates the number of scan lines between bit
+	 *	reads.  A scan line is the same time duration as a
+	 *	XEP80 Bit period */
+	float xypos = ANTIC_ypos + 
+                        ((float) ANTIC_xpos)/
+                        ((float) ANTIC_xpos_limit);
 	
-    /* Shift input words into the Atari for each read */
-	switch(input_state) {
-    case -1:
-        ret = 0xFF;
-		break;
-		return(0xff);
-    case 0:
+	/* If there is not input to be sent, just return */
+	if (input_count == 0)
+		return(ret);
+	
+	/* If this is the first time, do nothing, start with bit 0 */
+	if (input_first)
+	{
+		input_first = FALSE;
+	}
+	else
+	{
+		/* If we are more than half a bit period since the last
+		 * read, assume it should be the next bit.  If it's less
+		 *  do nothing, as SpartaDos driver does multiple reads at
+		 *  times */
+		if (XEP80_DeltaXYPos(last_xypos, xypos) > 0.5)
+			input_bit++;
+		/* If it is the stop bit on the first or second character
+		 * to be sent, and we have taken more than a scan line to
+		 * read it, then skip it and go to the next start bit.
+		 * This is required to not confuse the stock AtariDOS 
+		 * driver. */
+		if ((XEP80_DeltaXYPos(last_xypos, xypos) > 1.1) &&
+			(input_bit == 10 || input_bit == 20))
+			input_bit++;
+	}
+	
+	/* Figure out which word of the queue it is in based on bit */
+	input_word_num = (input_bit / 11) + 1;
+
+    /* If it is greater than we have, then clear queue and return */
+	if (input_word_num > (input_count))
+		{
+		input_count = 0;
+		return(ret);
+		}
+	
+	/* Get the word from the queue, and calculate which bit of the
+	 * word we are sending */
+	input_word = input_queue[input_word_num - 1];
+	word_bit_num = input_bit % 11;
+
+    /* Send the return value based on the bit */
+	switch(word_bit_num) {
+    case 0: /* Start Bit - 0 */
 		ret = 0xFF & ~input_mask[XEP80_port];
-        input_state++;
 		break;
-    case 1:
+    case 1: /* 9 Data Bits */
     case 2:
     case 3:
     case 4:
@@ -302,21 +334,22 @@ UBYTE XEP80_GetBit(void)
     case 7:
     case 8:
 	case 9:
-        if (input_word & (1 << (input_state-1))) {
+        if (input_word & (1 << (word_bit_num-1))) {
             ret = 0xFF;
         }
         else {
             ret = 0xFF & ~input_mask[XEP80_port];
         }
-        input_state++;
-		/* Get a new word if there is one */
-		if (input_state == 10)
-			input_state = XEP80_NextInputWord();
 		break;
-	default:
-		return(0xFF);
+	case 10: /* Stop Bit - 1 */
+		ret = 0xFF;
 		break;
     }
+	
+	last_xypos = xypos;
+	/* If we are done with all bits, clear the queue */
+	if (input_bit >= ((input_count * 11) - 2))
+		input_count = 0;
 	return(ret);
 }
 
@@ -324,7 +357,7 @@ void XEP80_PutBit(UBYTE byte)
 {
     byte &= output_mask[XEP80_port];
 
-    /* Shift output words from the Atari for each read */
+    /* Shift output words from the Atari for each write */
 	switch(output_state) {
     case -1:
         if (!byte) {
@@ -348,6 +381,8 @@ void XEP80_PutBit(UBYTE byte)
         break;
     case 9:
         output_state = -1;
+		/* Clear any unread input from last command */
+		input_count = 0;
         if (byte) {
 			/* Handle the new word */
             XEP80_OutputWord(output_word);
@@ -430,13 +465,13 @@ static void XEP80_OutputWord(int word)
                 XEP80_GetPrinterStatus();
                 break;
             case CMD_FILL_PREV:
-                XEP80_FillMem(lastChar);
+                XEP80_FillMem(lastChar, TRUE);
                 break;
             case CMD_FILL_SPACE:
-                XEP80_FillMem(0x20);
+                XEP80_FillMem(0x20, TRUE);
                 break;
             case CMD_FILL_EOL:
-                XEP80_FillMem(0x9B);
+                XEP80_FillMem(0x9B, TRUE);
                 break;
             case CMD_CLR_LIST:
                 XEP80_SetList(FALSE);
@@ -617,7 +652,7 @@ static void	XEP80_SendCursorStatus()
 			XEP80_InputWord(0x150);
 		}
 		else {
-			XEP80_InputWord(0x100 | (xcur & 0x4F));
+			XEP80_InputWord(0x100 | (xcur & 0x7F));
 		}
 		}
 	/* Send Y cursor only */
@@ -630,7 +665,7 @@ static void	XEP80_SendCursorStatus()
 			XEP80_InputWord(0x1D0);
 			}
 		else {
-			XEP80_InputWord(0x180 | (xcur & 0x4F));
+			XEP80_InputWord(0x180 | (xcur & 0x7F));
 			}
 		XEP80_InputWord(0x1E0 | (ycur & 0x1F));
 		}
@@ -641,6 +676,7 @@ static void XEP80_SetXCur(UBYTE cursor)
 	new_xcur = cursor;
     new_ycur = ycur;
     XEP80_UpdateCursor();
+	XEP80_SendCursorStatus();
 }
 
 static void XEP80_SetXCurHigh(UBYTE cursor)
@@ -648,6 +684,7 @@ static void XEP80_SetXCurHigh(UBYTE cursor)
 	new_xcur = ((UBYTE)xcur & 0x3f) | (cursor << 4);
     new_ycur = ycur;
     XEP80_UpdateCursor();
+	XEP80_SendCursorStatus();
 }
 
 static void XEP80_SetLeftMarginLow(UBYTE margin)
@@ -665,6 +702,7 @@ static void XEP80_SetYCur(UBYTE cursor)
     new_xcur = xcur;
 	new_ycur = cursor;
     XEP80_UpdateCursor();
+	XEP80_SendCursorStatus();
 }
 
 static void XEP80_SetScreenMode(int graphics, int pal)
@@ -676,7 +714,7 @@ static void XEP80_SetScreenMode(int graphics, int pal)
         ycur = 0;
 		burst_mode = TRUE;
         /* Clear the old text screen */
-		XEP80_FillMem(0x20);
+		XEP80_FillMem(0x20, FALSE);
         XEP80_BlitScreen();
         /* Clear the graphics memory */
         memset(xep80_graph_data,0,
@@ -686,7 +724,7 @@ static void XEP80_SetScreenMode(int graphics, int pal)
         xcur = 0;
         ycur = 0;
 		burst_mode = FALSE;
-		XEP80_FillMem(0x9b);
+		XEP80_FillMem(0x9b, FALSE);
         XEP80_BlitScreen();
         new_xcur = xcur;
         new_ycur = ycur;
@@ -746,9 +784,7 @@ static void XEP80_MasterReset(void)
 {
 	int i;
 	
-	input_state = -1;
-	input_queue_read = 0;
-	input_queue_write = 0;
+	input_count = 0;
 
 	xcur = 0;
 	xscroll = 0;
@@ -797,7 +833,7 @@ static void XEP80_GetPrinterStatus(void)
 	XEP80_InputWord(0x01);
 }
 
-static void XEP80_FillMem(UBYTE c)
+static void XEP80_FillMem(UBYTE c, int output)
 {
 	int i;
 	
@@ -805,6 +841,7 @@ static void XEP80_FillMem(UBYTE c)
 		eol_at_margin[i] = FALSE;
 
 	memset(xep80_data,c,XEP80_WIDTH*XEP80_HEIGHT);
+	if (output)
 	XEP80_InputWord(0x01);
 }
 
@@ -847,6 +884,7 @@ static void XEP80_SetXCurStart(void)
     new_xcur = x_start;
     new_ycur = y_start;
     XEP80_UpdateCursor();
+	XEP80_SendCursorStatus();
 }
 
 static void XEP80_SetScrollWindow(void)
@@ -1882,11 +1920,11 @@ void XEP80_StateSave(void)
 		StateSav_SaveINT(&PLATFORM_xep80, 1);
 		StateSav_SaveINT(&output_state, 1);
 		StateSav_SaveINT(&output_word, 1);
-		StateSav_SaveINT(&input_state, 1);
-		StateSav_SaveINT(&input_word, 1);
+		StateSav_SaveINT(&input_count, 1);
+		StateSav_SaveINT(&input_bit, 1);
 		StateSav_SaveUWORD(input_queue, IN_QUEUE_SIZE);
-		StateSav_SaveINT(&input_queue_read, 1);
-		StateSav_SaveINT(&input_queue_write, 1);
+		StateSav_SaveINT(&input_first, 1);
+		StateSav_SaveINT(&input_first, 1);
 
 		StateSav_SaveINT(&xcur, 1);
 		StateSav_SaveINT(&xscroll, 1);
@@ -1935,11 +1973,11 @@ void XEP80_StateRead(void)
 		StateSav_ReadINT(&local_xep80, 1);
 		StateSav_ReadINT(&output_state, 1);
 		StateSav_ReadINT(&output_word, 1);
-		StateSav_ReadINT(&input_state, 1);
-		StateSav_ReadINT(&input_word, 1);
+		StateSav_ReadINT(&input_count, 1);
+		StateSav_ReadINT(&input_bit, 1);
 		StateSav_ReadUWORD(input_queue, IN_QUEUE_SIZE);
-		StateSav_ReadINT(&input_queue_read, 1);
-		StateSav_ReadINT(&input_queue_write, 1);
+		StateSav_ReadINT(&input_first, 1);
+		StateSav_ReadINT(&input_first, 1);
 
 		StateSav_ReadINT(&xcur, 1);
 		StateSav_ReadINT(&xscroll, 1);
