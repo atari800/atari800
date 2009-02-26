@@ -56,4 +56,20 @@ void PLATFORM_SwitchXep80(void);
 extern int PLATFORM_xep80;
 #endif
 
+#ifdef NTSC_FILTER
+enum PLATFORM_filter_t {
+	PLATFORM_FILTER_NONE,
+	PLATFORM_FILTER_NTSC
+};
+
+/* Represents whether the NTSC filter is turned on. Don't set this value
+   directly. */
+extern enum PLATFORM_filter_t PLATFORM_filter;
+
+/* This function turns the NTSC filter on or off. Changing the
+   PLATFORM_filter variable directly is not allowed; use this function
+   instead. */
+void PLATFORM_SetFilter(const enum PLATFORM_filter_t filter);
+#endif /* NTSC_FILTER */
+
 #endif /* PLATFORM_H_ */

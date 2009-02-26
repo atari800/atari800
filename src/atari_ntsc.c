@@ -396,51 +396,58 @@ void atari_ntsc_blit( atari_ntsc_t const* emu, unsigned char const* in, long in_
 	}
 }
 
-/* added for Atari800, by perrym*/
-void ATARI_NTSC_DEFAULTS_Initialise(int *argc, char *argv[], atari_ntsc_setup_t *atari_ntsc_setup)
+/* Atari800-specific: */
+
+/* Adjust default values here */
+atari_ntsc_setup_t atari_ntsc_setup = {
+	0.f, /* hue */
+	-0.1f, /* saturation */
+	0.f, /* contrast */
+	-0.1f, /* brightness */
+	-0.5f, /* sharpness */
+	-0.6f, /* burst phase */
+	0.f, /* gaussian factor */
+	-0.15, /* gamma adjustment */
+	0.25 /* satutration ramp */
+};
+
+void atari_ntsc_Initialise(int *argc, char *argv[])
 {
 	int i, j;
-	/* Adjust default values here */
-	atari_ntsc_setup->brightness = -0.1;
-	atari_ntsc_setup->sharpness = -0.5;
-	atari_ntsc_setup->saturation = -0.1;
-	atari_ntsc_setup->gamma_adj = -0.15;
-	atari_ntsc_setup->burst_phase = -0.60;
-	atari_ntsc_setup->saturation_ramp = 0.25;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-ntsc_hue") == 0) {
-			atari_ntsc_setup->hue = atof(argv[++i]);
+			atari_ntsc_setup.hue = atof(argv[++i]);
 		}else if (strcmp(argv[i], "-ntsc_sat") == 0){
-			atari_ntsc_setup->saturation = atof(argv[++i]);
+			atari_ntsc_setup.saturation = atof(argv[++i]);
 		}else if (strcmp(argv[i], "-ntsc_cont") == 0){
-			atari_ntsc_setup->contrast = atof(argv[++i]);
+			atari_ntsc_setup.contrast = atof(argv[++i]);
 		}else if (strcmp(argv[i], "-ntsc_bright") == 0){
-			atari_ntsc_setup->brightness = atof(argv[++i]);
+			atari_ntsc_setup.brightness = atof(argv[++i]);
 		}else if (strcmp(argv[i], "-ntsc_sharp") == 0){
-			atari_ntsc_setup->sharpness = atof(argv[++i]);
+			atari_ntsc_setup.sharpness = atof(argv[++i]);
 		}else if (strcmp(argv[i], "-ntsc_burst") == 0){
-			atari_ntsc_setup->burst_phase = atof(argv[++i]);
+			atari_ntsc_setup.burst_phase = atof(argv[++i]);
 		}else if (strcmp(argv[i], "-ntsc_gauss") == 0){
-			atari_ntsc_setup->gaussian_factor = atof(argv[++i]);
+			atari_ntsc_setup.gaussian_factor = atof(argv[++i]);
 		}else if (strcmp(argv[i], "-ntsc_gamma") == 0){
-			atari_ntsc_setup->gamma_adj = atof(argv[++i]);
+			atari_ntsc_setup.gamma_adj = atof(argv[++i]);
 		}else if (strcmp(argv[i], "-ntsc_ramp") == 0){
-			atari_ntsc_setup->saturation_ramp = atof(argv[++i]);
+			atari_ntsc_setup.saturation_ramp = atof(argv[++i]);
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
-				Log_print("\t-ntsc_hue <n>    Set NTSC hue -1..1 (default %.2g) (-ntsc_emu only)",atari_ntsc_setup->hue);
-				Log_print("\t-ntsc_sat <n>    Set NTSC saturation (default %.2g) (-ntsc_emu only)",atari_ntsc_setup->saturation);
-				Log_print("\t-ntsc_cont <n>   Set NTSC contrast (default %.2g) (-ntsc_emu only)",atari_ntsc_setup->contrast);
-				Log_print("\t-ntsc_bright <n> Set NTSC brightness (default %.2g) (-ntsc_emu only)",atari_ntsc_setup->brightness);
-				Log_print("\t-ntsc_sharp <n>  Set NTSC sharpness (default %.2g) (-ntsc_emu only)",atari_ntsc_setup->sharpness);
-				Log_print("\t-ntsc_burst <n>  Set NTSC burst phase -1..1 (artif colours)(def: %.2g)",atari_ntsc_setup->burst_phase);
+				Log_print("\t-ntsc_hue <n>    Set NTSC hue -1..1 (default %.2g) (-ntsc_emu only)", atari_ntsc_setup.hue);
+				Log_print("\t-ntsc_sat <n>    Set NTSC saturation (default %.2g) (-ntsc_emu only)", atari_ntsc_setup.saturation);
+				Log_print("\t-ntsc_cont <n>   Set NTSC contrast (default %.2g) (-ntsc_emu only)", atari_ntsc_setup.contrast);
+				Log_print("\t-ntsc_bright <n> Set NTSC brightness (default %.2g) (-ntsc_emu only)", atari_ntsc_setup.brightness);
+				Log_print("\t-ntsc_sharp <n>  Set NTSC sharpness (default %.2g) (-ntsc_emu only)", atari_ntsc_setup.sharpness);
+				Log_print("\t-ntsc_burst <n>  Set NTSC burst phase -1..1 (artif colours)(def: %.2g)", atari_ntsc_setup.burst_phase);
 				Log_print("\t                 (-ntsc_emu only)");
-				Log_print("\t-ntsc_gauss <n>  Set NTSC Gaussian factor (default %.2g)",atari_ntsc_setup->gaussian_factor);
+				Log_print("\t-ntsc_gauss <n>  Set NTSC Gaussian factor (default %.2g)", atari_ntsc_setup.gaussian_factor);
 				Log_print("\t                 (-ntsc_emu only)");
-				Log_print("\t-ntsc_gamma <n>  Set NTSC gamma adjustment (default %.2g)",atari_ntsc_setup->gamma_adj);
+				Log_print("\t-ntsc_gamma <n>  Set NTSC gamma adjustment (default %.2g)", atari_ntsc_setup.gamma_adj);
 				Log_print("\t                 (-ntsc_emu only)");
-				Log_print("\t-ntsc_ramp <n>   Set NTSC saturation ramp factor (default %.2g)",atari_ntsc_setup->saturation_ramp);
+				Log_print("\t-ntsc_ramp <n>   Set NTSC saturation ramp factor (default %.2g)", atari_ntsc_setup.saturation_ramp);
 				Log_print("\t                 (-ntsc_emu only)");
 			}
 
@@ -450,5 +457,4 @@ void ATARI_NTSC_DEFAULTS_Initialise(int *argc, char *argv[], atari_ntsc_setup_t 
 	}
 	*argc = j;
 }
-
 

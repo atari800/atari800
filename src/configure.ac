@@ -289,8 +289,9 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
 	WANT_XEP80_EMULATION=yes
+	WANT_NTSC_FILTER=yes
         LIBS="$LIBS `sdl-config --libs`"
-        OBJS="atari_sdl.o atari_ntsc.o"
+        OBJS="atari_sdl.o"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         if [[ "$a8_host" = "win" ]]; then
 dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
@@ -706,6 +707,11 @@ fi
 if [[ "$WANT_XEP80_EMULATION" = "yes" ]]; then
     AC_DEFINE(XEP80_EMULATION,1,[Emulate the XEP80.])
     OBJS="$OBJS xep80.o xep80_fonts.o"
+fi
+
+if [[ "$WANT_NTSC_FILTER" = "yes" ]]; then
+	AC_DEFINE(NTSC_FILTER,1,[Use NTSC video filter.])
+    OBJS="$OBJS atari_ntsc.o"
 fi
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then

@@ -123,6 +123,9 @@
 #ifdef XEP80_EMULATION
 #include "xep80.h"
 #endif
+#ifdef NTSC_FILTER
+#include "atari_ntsc.h"
+#endif
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
 int Atari800_tv_mode = Atari800_TV_PAL;
@@ -632,6 +635,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif
 #ifdef XEP80_EMULATION
 	XEP80_Initialise(argc, argv);
+#endif
+#ifdef NTSC_FILTER
+	atari_ntsc_Initialise(argc, argv);
 #endif
 #ifndef DONT_DISPLAY
 	/* Platform Specific Initialisation */
@@ -1276,7 +1282,9 @@ void Atari800_StateRead(void)
 	new_tv_mode = (temp == 0) ? Atari800_TV_PAL : Atari800_TV_NTSC;
 	if (new_tv_mode != Atari800_tv_mode) {
 		Atari800_tv_mode = new_tv_mode;
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 		Colours_InitialiseMachine();
+#endif
 	}
 
 	StateSav_ReadUBYTE(&temp, 1);

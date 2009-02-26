@@ -1128,18 +1128,26 @@ static void LoadState(void)
 
 static void DisplaySettings(void)
 {
-	static const UI_tMenuItem artif_menu_array[] = {
-		UI_MENU_ACTION(0, "none"),
-		UI_MENU_ACTION(1, "blue/brown 1"),
-		UI_MENU_ACTION(2, "blue/brown 2"),
-		UI_MENU_ACTION(3, "GTIA"),
-		UI_MENU_ACTION(4, "CTIA"),
+	static const UI_tMenuItem artif_quality_menu_array[] = {
+		UI_MENU_ACTION(0, "off"),
+		UI_MENU_ACTION(1, "original"),
+		UI_MENU_ACTION(2, "new"),
+#ifdef NTSC_FILTER
+		UI_MENU_ACTION(3, "NTSC filter"),
+#endif
+		UI_MENU_END
+	};
+	static const UI_tMenuItem artif_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "blue/brown 1"),
+		UI_MENU_ACTION(1, "blue/brown 2"),
+		UI_MENU_ACTION(2, "GTIA"),
+		UI_MENU_ACTION(3, "CTIA"),
 		UI_MENU_END
 	};
 	static char refresh_status[16];
 	static UI_tMenuItem menu_array[] = {
-		UI_MENU_SUBMENU_SUFFIX(0, "Artifacting mode:", NULL),
-		UI_MENU_CHECK(11, "Enable new artifacting:"),
+		UI_MENU_SUBMENU_SUFFIX(0, "NTSC artifacting quality:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(11, "NTSC artifacting mode:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(1, "Current refresh rate:", refresh_status),
 		UI_MENU_CHECK(2, "Accurate skipped frames:"),
 		UI_MENU_CHECK(3, "Show percents of Atari speed:"),
@@ -1161,9 +1169,30 @@ static void DisplaySettings(void)
 
 	int option = 0;
 	int option2;
+
+	/* Current artifacting quality, computed from
+	   PLATFORM_artifacting and ANTIC_artif_new */
+	int artif_quality;
 	for (;;) {
-		FindMenuItem(menu_array, 0)->suffix = artif_menu_array[ANTIC_artif_mode].item;
-		SetItemChecked(menu_array, 11, ANTIC_artif_new);
+		/* Computing current artifacting quality... */
+#ifdef NTSC_FILTER
+		if (PLATFORM_filter != PLATFORM_FILTER_NONE) {
+			/* NTSC filter is on */
+			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[2 + PLATFORM_filter].item;
+			FindMenuItem(menu_array, 11)->suffix = "N/A";
+			artif_quality = 2 + PLATFORM_filter;
+		} else
+#endif
+		if (ANTIC_artif_mode == 0) { /* artifacting is off */
+			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[0].item;
+			FindMenuItem(menu_array, 11)->suffix = "N/A";
+			artif_quality = 0;
+		} else { /* ANTIC artifacting is on */
+			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[1 + ANTIC_artif_new].item;
+			FindMenuItem(menu_array, 11)->suffix = artif_mode_menu_array[ANTIC_artif_mode - 1].item;
+			artif_quality = 1 + ANTIC_artif_new;
+		}
+
 		sprintf(refresh_status, "1:%-2d", Atari800_refresh_rate);
 		SetItemChecked(menu_array, 2, Atari800_collisions_in_skipped_frames);
 		SetItemChecked(menu_array, 3, Screen_show_atari_speed);
@@ -1180,15 +1209,42 @@ static void DisplaySettings(void)
 		option = UI_driver->fSelect("Display Settings", 0, option, menu_array, NULL);
 		switch (option) {
 		case 0:
-			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, ANTIC_artif_mode, artif_menu_array, NULL);
-			if (option2 >= 0) {
-				ANTIC_artif_mode = option2;
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, artif_quality, artif_quality_menu_array, NULL);
+			if (option2 >= 0)
+			{
+#ifdef NTSC_FILTER
+				/* If switched between non-filter and NTSC filter,
+				   PLATFORM_filter must be updated. */
+				if (option2 >= 3 && artif_quality < 3)
+					PLATFORM_SetFilter(option2 - 2);
+				else if (option2 < 3 && artif_quality >= 3)
+					PLATFORM_SetFilter(PLATFORM_FILTER_NONE);
+#endif
+				/* ANTIC artifacting settings cannot be turned on
+				   when artifacting is off or NTSC filter. */
+				if (option2 == 0 || option2 >= 3) {
+					ANTIC_artif_new = ANTIC_artif_mode = 0;
+				} else {
+					/* Do not reset artifacting mode when switched between original and new. */
+					if (artif_quality >= 3 || artif_quality == 0)
+						/* switched from off/ntsc filter to ANTIC artifacting */
+						ANTIC_artif_mode = 1;
+
+					ANTIC_artif_new = option2 - 1;
+				}
 				ANTIC_UpdateArtifacting();
 			}
 			break;
 		case 11:
-			ANTIC_artif_new = !ANTIC_artif_new;
-			ANTIC_UpdateArtifacting();
+			/* The artifacting mode option is only active for ANTIC artifacting. */
+			if (artif_quality > 0 && artif_quality < 3)
+			{
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, ANTIC_artif_mode - 1, artif_mode_menu_array, NULL);
+				if (option2 >= 0) {
+					ANTIC_artif_mode = option2 + 1;
+					ANTIC_UpdateArtifacting();
+				}
+			}
 			break;
 		case 1:
 			Atari800_refresh_rate = UI_driver->fSelectInt(Atari800_refresh_rate, 1, 99);

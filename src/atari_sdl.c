@@ -86,9 +86,7 @@ static int swap_joysticks = 0;
 static int width_mode = 1;
 static int scanlines_percentage = 5;
 static int scanlinesnoint = FALSE;
-static atari_ntsc_t *the_ntscemu;
-/* making setup static conveniently clears all fields to 0 */
-static atari_ntsc_setup_t atari_ntsc_setup;
+static atari_ntsc_t *the_ntscemu = NULL;
 #define SHORT_WIDTH_MODE 0
 #define DEFAULT_WIDTH_MODE 1
 #define FULL_WIDTH_MODE 2
@@ -139,6 +137,7 @@ static SDL_Color colors[256];			/* palette */
 static Uint16 Palette16[256];			/* 16-bit palette */
 static Uint32 Palette32[256];			/* 32-bit palette */
 int PLATFORM_xep80 = FALSE; 	/* is the XEP80 screen displayed? */
+enum PLATFORM_filter_t PLATFORM_filter = PLATFORM_FILTER_NONE;
 
 /* SDL port supports 5 "display modes":
    - normal,
@@ -201,6 +200,8 @@ enum display_mode_t {
 };
 /* Indicates current display mode */
 static enum display_mode_t current_display_mode = display_normal;
+/* Display mode which should be reverted to, when XEP80 mode is turned off */
+static enum display_mode_t xep80_return_display_mode = display_normal;
 
 /* keyboard */
 static Uint8 *kbhits;
@@ -526,6 +527,7 @@ static void ResetDisplay(void)
 {
 	(*display_modes[current_display_mode].set_video_mode_func)(display_modes[current_display_mode].w,
 	                                                           display_modes[current_display_mode].h);
+	CalcPalette();
 	SetPalette();
 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
@@ -552,16 +554,59 @@ static void SwitchFullscreen(void)
 	PLATFORM_DisplayScreen();
 }
 
+void PLATFORM_SetFilter(const enum PLATFORM_filter_t filter)
+{
+	/* Mode to return when filter is turned off */
+	static enum display_mode_t saved_display_mode;
+
+	/* When the display is in XEP80 mode, the filter should not be
+	   switched on/off immediately. It should be switched only when
+	   XEP80 mode is turned off. The variable below indicates which is
+	   the case. */
+	int change_later = (current_display_mode == display_xep80);
+
+	/* Currently switching filter makes no sense when the emulator
+	   is running in PROTO80 mode. */
+	if (current_display_mode == display_proto80)
+		return;
+
+	PLATFORM_filter = filter;
+
+	if (filter == PLATFORM_FILTER_NONE && the_ntscemu != NULL) {
+		/* Turning filter off */
+		free(the_ntscemu);
+		the_ntscemu = NULL;
+		if (change_later)
+			xep80_return_display_mode = saved_display_mode;
+		else {
+			current_display_mode = saved_display_mode;
+			ResetDisplay();
+		}
+	}
+	else if (filter == PLATFORM_FILTER_NTSC && the_ntscemu == NULL) {
+		/* Turning filter on */
+		the_ntscemu = (atari_ntsc_t*) Util_malloc(sizeof(atari_ntsc_t));
+		atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+		if (change_later) {
+			saved_display_mode = xep80_return_display_mode;
+			xep80_return_display_mode = display_ntscemu;
+		} else {
+			saved_display_mode = current_display_mode;
+			current_display_mode = display_ntscemu;
+			ResetDisplay();
+		}
+	}
+}
+
 void PLATFORM_SwitchXep80(void)
 {
-	static enum display_mode_t saved_display_mode;
 	PLATFORM_xep80 = 1 - PLATFORM_xep80;
 	if (PLATFORM_xep80) {
-		saved_display_mode = current_display_mode;
+		xep80_return_display_mode = current_display_mode;
 		current_display_mode = display_xep80;
 	}
 	else
-		current_display_mode = saved_display_mode;
+		current_display_mode = xep80_return_display_mode;
 	ResetDisplay();
 	PLATFORM_DisplayScreen();
 }
@@ -1480,10 +1525,7 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-ntscemu") == 0) {
-			current_display_mode = display_ntscemu;
-			/* allocate memory for atari_ntsc and initialize */
-			the_ntscemu = (atari_ntsc_t*) malloc( sizeof (atari_ntsc_t) );
-			Log_print("ntscemu mode");
+			PLATFORM_filter = PLATFORM_FILTER_NTSC;
 		}
 		else if (strcmp(argv[i], "-scanlines") == 0) {
 			scanlines_percentage  = Util_sscandec(argv[++i]);
@@ -1547,12 +1589,6 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	if (current_display_mode == display_ntscemu || help_only){
-			ATARI_NTSC_DEFAULTS_Initialise(argc, argv, &atari_ntsc_setup);
-			if (current_display_mode == display_ntscemu)
-				atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-	}
-
 	i = SDL_INIT_VIDEO | SDL_INIT_JOYSTICK;
 #ifdef SOUND
 	if (!help_only)
@@ -1591,9 +1627,9 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 		Log_print("proto80 mode");
 	}
 
+	if (PLATFORM_filter != PLATFORM_FILTER_NONE)
+		PLATFORM_SetFilter(PLATFORM_filter);
 	ResetDisplay();
-	CalcPalette();
-	SetPalette();
 
 	Log_print("video initialized");
 

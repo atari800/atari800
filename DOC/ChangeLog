@@ -1,3 +1,9 @@
+2009-02-25  Perry McFarlane  <perry_m@fastmail.fm>
+  Commiting patch submitted by Krótki with my changes <kr0tki@poczta.onet.pl>
+* atari.c atari_sdl.c atari_ntsc.[ch] configure.ac platform.h ui.c: NTSC
+Filter option in the UI.
+
+
 2009-02-05  Perry McFarlane  <perry_m@fastmail.fm>
   Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
 * atari_sdl.c: cleaned up display modes.
