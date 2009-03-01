@@ -123,6 +123,7 @@ Command line options
 -mousespeed <num>     Set mouse speed 1-9 (default 3)
 -multijoy             Emulate MultiJoy4 interface
 -directmouse          Use mouse's absolute position
+-cx85                 Emulate CX85 numeric keypad
 -grabmouse            SDL only, prevent mouse pointer from leaving the window
 
 -record <filename>    Record input to <filename>
@@ -308,6 +309,14 @@ Shift+Ctrl+Up        Shift+Ctrl+-
 Shift+Ctrl+Down      Shift+Ctrl+=
 Ctrl+'\'             Ctrl+Esc  (Workaround for Windows)
 Shift+Ctrl+'\'       Shift+Ctrl+Esc (Workaround for Windows)
+
+CX85 Keypad (if enabled):
+host keypad 0123456789-.   0123456789-.
+host keypad /              NO
+host keypad Ctrl+/         ESCAPE
+host keypad *              DELETE
+host keypad +              YES
+host keypad Enter          +ENTER
 
 Paddles, Atari touch tablet, Koala pad, light pen, light gun,
 ST/Amiga mouse, Atari trak-ball, joystick and Atari 5200 analog

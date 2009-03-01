@@ -87,6 +87,7 @@ int INPUT_mouse_pen_ofs_h = 42;
 int INPUT_mouse_pen_ofs_v = 2;
 int INPUT_mouse_joy_inertia = 10;
 int INPUT_direct_mouse = 0;
+int INPUT_cx85 = 0;
 
 #ifndef MOUSE_SHIFT
 #define MOUSE_SHIFT 4
@@ -213,6 +214,9 @@ void INPUT_Initialise(int *argc, char *argv[])
  		else if (strcmp(argv[i], "-directmouse") == 0) {
 			INPUT_direct_mouse = 1;
 		}
+ 		else if (strcmp(argv[i], "-cx85") == 0) {
+			INPUT_cx85 = 1;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-mouse off       Do not use mouse");
@@ -228,6 +232,7 @@ void INPUT_Initialise(int *argc, char *argv[])
 				Log_print("\t-mouseport <n>   Set mouse port 1-4 (default 1)");
 				Log_print("\t-mousespeed <n>  Set mouse speed 1-9 (default 3)");
 				Log_print("\t-directmouse     Use absolute X/Y mouse coords");
+				Log_print("\t-cx85            Emulate CX85 numeric keypad");
 				Log_print("\t-multijoy        Emulate MultiJoy4 interface");
 				Log_print("\t-record <file>   Record input to <file>");
 				Log_print("\t-playback <file> Playback input from <file>");
@@ -715,6 +720,67 @@ void INPUT_Frame(void)
 	}
 	last_mouse_buttons = INPUT_mouse_buttons;
 
+	if (INPUT_key_code <= AKEY_CX85_1 && INPUT_key_code >= AKEY_CX85_YES) {
+		int val = 0;
+		switch (INPUT_key_code) {
+			case AKEY_CX85_1:
+				val = 0x19;
+				break;
+			case AKEY_CX85_2:
+				val = 0x1a;
+				break;
+			case AKEY_CX85_3:
+				val = 0x1b;
+				break;
+			case AKEY_CX85_4:
+				val = 0x11;
+				break;
+			case AKEY_CX85_5:
+				val = 0x12;
+				break;
+			case AKEY_CX85_6:
+				val = 0x13;
+				break;
+			case AKEY_CX85_7:
+				val = 0x15;
+				break;
+			case AKEY_CX85_8:
+				val = 0x16;
+				break;
+			case AKEY_CX85_9:
+				val = 0x17;
+				break;
+			case AKEY_CX85_0:
+				val = 0x1c;
+				break;
+			case AKEY_CX85_PERIOD:
+				val = 0x1d;
+				break;
+			case AKEY_CX85_MINUS:
+				val = 0x1f;
+				break;
+			case AKEY_CX85_PLUS_ENTER:
+				val = 0x1e;
+				break;
+			case AKEY_CX85_ESCAPE:
+				val = 0x0c;
+				break;
+			case AKEY_CX85_NO:
+				val = 0x14;
+				break;
+			case AKEY_CX85_DELETE:
+				val = 0x10;
+				break;
+			case AKEY_CX85_YES:
+				val = 0x18;
+				break;
+		}
+		if (val > 0) {
+			STICK[1] = (val&0x0f);
+			POKEY_POT_input[3] = ((val&0x10) ? 0 : 228);
+			TRIG_input[1] = 0;
+		}
+	}
 	if (INPUT_joy_multijoy && Atari800_machine_type != Atari800_MACHINE_5200) {
 		PIA_PORT_input[0] = 0xf0 | STICK[joy_multijoy_no];
 		PIA_PORT_input[1] = 0xff;

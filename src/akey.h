@@ -17,6 +17,23 @@
 #define AKEY_SELECT                -11
 #define AKEY_OPTION                -12
 #define AKEY_PBI_BB_MENU           -13
+#define AKEY_CX85_1                -14
+#define AKEY_CX85_2                -15
+#define AKEY_CX85_3                -16
+#define AKEY_CX85_4                -17
+#define AKEY_CX85_5                -18
+#define AKEY_CX85_6                -19
+#define AKEY_CX85_7                -20
+#define AKEY_CX85_8                -21
+#define AKEY_CX85_9                -22
+#define AKEY_CX85_0                -23
+#define AKEY_CX85_PERIOD           -24
+#define AKEY_CX85_MINUS            -25
+#define AKEY_CX85_PLUS_ENTER       -26
+#define AKEY_CX85_ESCAPE           -27
+#define AKEY_CX85_NO               -28
+#define AKEY_CX85_DELETE           -29
+#define AKEY_CX85_YES              -30
 
 #define AKEY_SHFT 0x40
 #define AKEY_CTRL 0x80

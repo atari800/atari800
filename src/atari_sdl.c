@@ -794,6 +794,9 @@ int PLATFORM_Keyboard(void)
 	if (kbhits[SDLK_LALT]) {
 		if (key_pressed) {
 			switch (lastkey) {
+			case SDLK_e:
+				return AKEY_CX85_1;
+				break;
 			case SDLK_f:
 				key_pressed = 0;
 				SwitchFullscreen();
@@ -1130,6 +1133,40 @@ int PLATFORM_Keyboard(void)
 			return AKEY_INSERT_LINE|shiftctrl;
 		else
 			return AKEY_INSERT_CHAR;
+	}
+	if (INPUT_cx85) switch (lastkey) {
+	case SDLK_KP1:
+		return AKEY_CX85_1;
+	case SDLK_KP2:
+		return AKEY_CX85_2;
+	case SDLK_KP3:
+		return AKEY_CX85_3;
+	case SDLK_KP4:
+		return AKEY_CX85_4;
+	case SDLK_KP5:
+		return AKEY_CX85_5;
+	case SDLK_KP6:
+		return AKEY_CX85_6;
+	case SDLK_KP7:
+		return AKEY_CX85_7;
+	case SDLK_KP8:
+		return AKEY_CX85_8;
+	case SDLK_KP9:
+		return AKEY_CX85_9;
+	case SDLK_KP0:
+		return AKEY_CX85_0;
+	case SDLK_KP_PERIOD:
+		return AKEY_CX85_PERIOD;
+	case SDLK_KP_MINUS:
+		return AKEY_CX85_MINUS;
+	case SDLK_KP_ENTER:
+		return AKEY_CX85_PLUS_ENTER;
+	case SDLK_KP_DIVIDE:
+		return (key_control ? AKEY_CX85_ESCAPE : AKEY_CX85_NO);
+	case SDLK_KP_MULTIPLY:
+		return AKEY_CX85_DELETE;
+	case SDLK_KP_PLUS:
+		return AKEY_CX85_YES;
 	}
 
 	/* Handle CTRL-0 to CTRL-9 and other control characters */
@@ -1512,6 +1549,9 @@ static void Init_Joysticks(int *argc, char *argv[])
 	}
 #endif /* LPTJOY */
 	Init_SDL_Joysticks(fd_joystick0 == -1, fd_joystick1 == -1);
+	if (INPUT_cx85) { /* disable keyboard joystick if using CX85 numpad */
+		PLATFORM_kbd_joy_0_enabled = 0;
+	}
 }
 
 

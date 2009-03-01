@@ -75,6 +75,7 @@ extern int INPUT_mouse_joy_inertia;	/* how long the mouse pointer can move (time
 extern int INPUT_direct_mouse;      /* When true, convert the mouse pointer
 													position directly into POKEY POT values */
 
+extern int INPUT_cx85;      /* emulate CX85 numeric keypad */
 /* Functions ----------------------------------------------------------- */
 
 void INPUT_Initialise(int *argc, char *argv[]);

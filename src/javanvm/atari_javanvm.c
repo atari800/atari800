@@ -394,7 +394,7 @@ int PLATFORM_Keyboard(void)
 	if (key_control)
 		shiftctrl ^= AKEY_CTRL;
 
-	switch (lastkey) {
+	if (lastloc == KEY_LOCATION_STANDARD) switch (lastkey) {
 	case VK_BACK_QUOTE:
 		return AKEY_ATARI ^ shiftctrl;
 	case VK_END:
@@ -442,6 +442,40 @@ int PLATFORM_Keyboard(void)
 			return AKEY_INSERT_LINE|shiftctrl;
 		else
 			return AKEY_INSERT_CHAR;
+	}
+	if (INPUT_cx85 && lastloc == KEY_LOCATION_NUMPAD) switch (lastkey) {
+	case VK_NUMPAD1:
+		return AKEY_CX85_1;
+	case VK_NUMPAD2:
+		return AKEY_CX85_2;
+	case VK_NUMPAD3:
+		return AKEY_CX85_3;
+	case VK_NUMPAD4:
+		return AKEY_CX85_4;
+	case VK_NUMPAD5:
+		return AKEY_CX85_5;
+	case VK_NUMPAD6:
+		return AKEY_CX85_6;
+	case VK_NUMPAD7:
+		return AKEY_CX85_7;
+	case VK_NUMPAD8:
+		return AKEY_CX85_8;
+	case VK_NUMPAD9:
+		return AKEY_CX85_9;
+	case VK_NUMPAD0:
+		return AKEY_CX85_0;
+	case VK_DECIMAL:
+		return AKEY_CX85_PERIOD;
+	case VK_SUBTRACT:
+		return AKEY_CX85_MINUS;
+	case VK_ENTER:
+		return AKEY_CX85_PLUS_ENTER;
+	case VK_DIVIDE:
+		return (key_control ? AKEY_CX85_ESCAPE : AKEY_CX85_NO);
+	case VK_MULTIPLY:
+		return AKEY_CX85_DELETE;
+	case VK_ADD:
+		return AKEY_CX85_YES;
 	}
 
 	/* Handle CTRL-0 to CTRL-9 and others */
@@ -782,7 +816,7 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	if(!help_only) {
+	if (!help_only) {
         int config[JAVANVM_InitGraphicsSIZE];
         config[JAVANVM_InitGraphicsScalew] = scale;
         config[JAVANVM_InitGraphicsScaleh] = scale;
@@ -795,6 +829,9 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 #ifdef SOUND
 		SoundSetup();
 #endif
+	}
+	if (INPUT_cx85) {
+		kbd_joy_0_enabled = FALSE;
 	}
 	return;
 }
