@@ -123,7 +123,7 @@ Command line options
 -mousespeed <num>     Set mouse speed 1-9 (default 3)
 -multijoy             Emulate MultiJoy4 interface
 -directmouse          Use mouse's absolute position
--cx85                 Emulate CX85 numeric keypad
+-cx85 <num>           Emulate CX85 numeric keypad on port <num>
 -grabmouse            SDL only, prevent mouse pointer from leaving the window
 
 -record <filename>    Record input to <filename>

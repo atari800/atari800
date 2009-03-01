@@ -1,3 +1,7 @@
+2009-03-01  Perry McFarlane  <perry_m@fastmail.fm>
+* DOC/USAGE, input.c: specify CX85 port
+
+
 2009-02-28  Perry McFarlane  <perry_m@fastmail.fm>
 * /DOC/USAGE akey.h atari_sdl.c javanvm/atari_javanvm.c input.[ch]: Emulate CX85 numeric keypad
 

@@ -68,6 +68,8 @@ int INPUT_joy_5200_min = 6;
 int INPUT_joy_5200_center = 114;
 int INPUT_joy_5200_max = 220;
 
+int INPUT_cx85 = 0;
+
 int INPUT_mouse_mode = INPUT_MOUSE_OFF;
 int INPUT_mouse_port = 0;
 int INPUT_mouse_delta_x = 0;
@@ -87,7 +89,6 @@ int INPUT_mouse_pen_ofs_h = 42;
 int INPUT_mouse_pen_ofs_v = 2;
 int INPUT_mouse_joy_inertia = 10;
 int INPUT_direct_mouse = 0;
-int INPUT_cx85 = 0;
 
 #ifndef MOUSE_SHIFT
 #define MOUSE_SHIFT 4
@@ -116,6 +117,8 @@ static UBYTE STICK[4];
 static UBYTE TRIG_input[4];
 
 static int joy_multijoy_no = 0;	/* number of selected joy */
+
+static int cx85_port = 1;
 
 static int max_scanline_counter;
 static int scanline_counter;
@@ -214,8 +217,13 @@ void INPUT_Initialise(int *argc, char *argv[])
  		else if (strcmp(argv[i], "-directmouse") == 0) {
 			INPUT_direct_mouse = 1;
 		}
- 		else if (strcmp(argv[i], "-cx85") == 0) {
+		else if (strcmp(argv[i], "-cx85") == 0) {
 			INPUT_cx85 = 1;
+			cx85_port = Util_sscandec(argv[++i]) - 1;
+			if (cx85_port < 0 || cx85_port > 3) {
+				Log_print("Invalid cx85 port, using 2");
+				cx85_port = 1;
+			}
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -232,7 +240,7 @@ void INPUT_Initialise(int *argc, char *argv[])
 				Log_print("\t-mouseport <n>   Set mouse port 1-4 (default 1)");
 				Log_print("\t-mousespeed <n>  Set mouse speed 1-9 (default 3)");
 				Log_print("\t-directmouse     Use absolute X/Y mouse coords");
-				Log_print("\t-cx85            Emulate CX85 numeric keypad");
+				Log_print("\t-cx85 <n>        Emulate CX85 numeric keypad on port <n>");
 				Log_print("\t-multijoy        Emulate MultiJoy4 interface");
 				Log_print("\t-record <file>   Record input to <file>");
 				Log_print("\t-playback <file> Playback input from <file>");
@@ -720,6 +728,7 @@ void INPUT_Frame(void)
 	}
 	last_mouse_buttons = INPUT_mouse_buttons;
 
+	/* CX85 numeric keypad */
 	if (INPUT_key_code <= AKEY_CX85_1 && INPUT_key_code >= AKEY_CX85_YES) {
 		int val = 0;
 		switch (INPUT_key_code) {
@@ -776,11 +785,12 @@ void INPUT_Frame(void)
 				break;
 		}
 		if (val > 0) {
-			STICK[1] = (val&0x0f);
-			POKEY_POT_input[3] = ((val&0x10) ? 0 : 228);
-			TRIG_input[1] = 0;
+			STICK[cx85_port] = (val&0x0f);
+			POKEY_POT_input[cx85_port*2+1] = ((val&0x10) ? 0 : 228);
+			TRIG_input[cx85_port] = 0;
 		}
 	}
+
 	if (INPUT_joy_multijoy && Atari800_machine_type != Atari800_MACHINE_5200) {
 		PIA_PORT_input[0] = 0xf0 | STICK[joy_multijoy_no];
 		PIA_PORT_input[1] = 0xff;
