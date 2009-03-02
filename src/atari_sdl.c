@@ -794,9 +794,6 @@ int PLATFORM_Keyboard(void)
 	if (kbhits[SDLK_LALT]) {
 		if (key_pressed) {
 			switch (lastkey) {
-			case SDLK_e:
-				return AKEY_CX85_1;
-				break;
 			case SDLK_f:
 				key_pressed = 0;
 				SwitchFullscreen();
