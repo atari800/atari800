@@ -1,3 +1,7 @@
+2009-03-16  Perry McFarlane  <perry_m@fastmail.fm>
+* antic.c: fix for Ilusia demo
+
+
 2009-03-01  Perry McFarlane  <perry_m@fastmail.fm>
 * DOC/USAGE, input.c: specify CX85 port
 * atari_sdl.c: minor fix for CX85

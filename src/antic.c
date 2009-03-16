@@ -1863,9 +1863,9 @@ static void prepare_an_antic_4(int nchars, const UBYTE *antic_memptr, const ULON
 		UBYTE an;
 		UBYTE chdata;
 #ifdef PAGED_MEM
-		chdata = MEMORY_dGetByte(t_chbase + ((UWORD) (screendata & 0x3f) << 3));
+		chdata = MEMORY_dGetByte(t_chbase + ((UWORD) (screendata & 0x7f) << 3));
 #else
-		chdata = chptr[(screendata & 0x3f) << 3];
+		chdata = chptr[(screendata & 0x7f) << 3];
 #endif
 		an = mode_e_an_lookup[chdata & 0xc0];
 		*an_ptr++ = (an == 2 && screendata & 0x80) ? 3 : an;
