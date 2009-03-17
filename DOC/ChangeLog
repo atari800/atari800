@@ -1,3 +1,7 @@
+2009-03-17  Piotr Fusik  <fox@scene.pl>
+* colours.c, win32/sound.c: killed MSVC 2008 warnings
+
+
 2009-03-16  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.c: fix for Ilusia demo
 

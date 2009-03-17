@@ -124,7 +124,7 @@ static int initsound_dx(void)
 
   IDirectSoundBuffer_Play(pDSB, 0, 0, DSBPLAY_LOOPING);
 
-  POKEYSND_Init(POKEYSND_FREQ_17_EXACT, (UWORD) dsprate, wfx.nChannels, (bit16 ? POKEYSND_BIT16 : 0));
+  POKEYSND_Init(POKEYSND_FREQ_17_EXACT, (UWORD) dsprate, (UBYTE) wfx.nChannels, (bit16 ? POKEYSND_BIT16 : 0));
 
   samples = dsprate * snddelay / 1000;
 
@@ -352,7 +352,7 @@ static int initsound_wav(void)
       waves[i].dwFlags |= WHDR_DONE;
     }
 
-  POKEYSND_Init(POKEYSND_FREQ_17_EXACT, (UWORD) dsprate, wfx.nChannels, (bit16 ? POKEYSND_BIT16 : 0));
+  POKEYSND_Init(POKEYSND_FREQ_17_EXACT, (UWORD) dsprate, (UBYTE) wfx.nChannels, (bit16 ? POKEYSND_BIT16 : 0));
 
   issound = SOUND_WAV;
   return 0;
