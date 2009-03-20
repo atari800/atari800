@@ -64,7 +64,7 @@ enum {
 
 extern atari_ntsc_setup_t atari_ntsc_setup;
 
-void atari_ntsc_Initialise(int *argc, char *argv[]);
+int atari_ntsc_Initialise(int *argc, char *argv[]);
 
 
 #endif

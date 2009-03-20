@@ -115,15 +115,20 @@ static void Screen_SetScreenshotFilenamePattern(const char *p)
 	screenshot_no_max = 1000;
 }
 
-void Screen_Initialise(int *argc, char *argv[])
+int Screen_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
 	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-screenshots") == 0) {
-			Screen_SetScreenshotFilenamePattern(argv[++i]);
+			if (i_a)
+				Screen_SetScreenshotFilenamePattern(argv[++i]);
+			else a_m = TRUE;
 		}
 		if (strcmp(argv[i], "-showspeed") == 0) {
 			Screen_show_atari_speed = TRUE;
@@ -136,12 +141,17 @@ void Screen_Initialise(int *argc, char *argv[])
 			}
 			argv[j++] = argv[i];
 		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
 	}
 	*argc = j;
 
 	/* don't bother mallocing Screen_atari with just "-help" */
 	if (help_only)
-		return;
+		return TRUE;
 
 	if (Screen_atari == NULL) { /* platform-specific code can initialize it in theory */
 		Screen_atari = (ULONG *) Util_malloc(Screen_HEIGHT * Screen_WIDTH);
@@ -155,6 +165,8 @@ void Screen_Initialise(int *argc, char *argv[])
 		Screen_atari2 = Screen_atari_b;
 #endif
 	}
+
+	return TRUE;
 }
 
 #define SMALLFONT_WIDTH    5

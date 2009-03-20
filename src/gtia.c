@@ -219,7 +219,7 @@ static void setup_gtia9_11(void) {
 
 /* Initialization ---------------------------------------------------------- */
 
-void GTIA_Initialise(int *argc, char *argv[])
+int GTIA_Initialise(int *argc, char *argv[])
 {
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	int i;
@@ -247,6 +247,8 @@ void GTIA_Initialise(int *argc, char *argv[])
 	for (i = 0; i < 32; i++)
 		GTIA_PutByte((UWORD) i, 0);
 #endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
+
+	return TRUE;
 }
 
 #ifdef NEW_CYCLE_EXACT

@@ -108,7 +108,7 @@ static int ExpectedBytes = 0;
 
 int ignore_header_writeprotect = FALSE;
 
-void SIO_Initialise(int *argc, char *argv[])
+int SIO_Initialise(int *argc, char *argv[])
 {
 	int i;
 	for (i = 0; i < SIO_MAX_DRIVES; i++) {
@@ -118,6 +118,8 @@ void SIO_Initialise(int *argc, char *argv[])
 		SIO_format_sectorcount[i] = 720;
 	}
 	TransferStatus = SIO_NoFrame;
+
+	return TRUE;
 }
 
 /* umount disks so temporary files are deleted */

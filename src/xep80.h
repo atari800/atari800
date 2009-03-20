@@ -30,6 +30,6 @@ void XEP80_PutBit(UBYTE byte);
 void XEP80_ChangeColors(void);
 void XEP80_StateSave(void);
 void XEP80_StateRead(void);
-void XEP80_Initialise(int *argc, char *argv[]);
+int XEP80_Initialise(int *argc, char *argv[]);
 
 #endif /* XEP80_H_ */

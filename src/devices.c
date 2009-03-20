@@ -558,21 +558,39 @@ static void Devices_H_Init(void)
 	Devices_H_CloseAll();
 }
 
-void Devices_Initialise(int *argc, char *argv[])
+int Devices_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
 	for (i = j = 1; i < *argc; i++) {
-		if (strcmp(argv[i], "-H1") == 0)
-			Util_strlcpy(Devices_atari_h_dir[0], argv[++i], FILENAME_MAX);
-		else if (strcmp(argv[i], "-H2") == 0)
-			Util_strlcpy(Devices_atari_h_dir[1], argv[++i], FILENAME_MAX);
-		else if (strcmp(argv[i], "-H3") == 0)
-			Util_strlcpy(Devices_atari_h_dir[2], argv[++i], FILENAME_MAX);
-		else if (strcmp(argv[i], "-H4") == 0)
-			Util_strlcpy(Devices_atari_h_dir[3], argv[++i], FILENAME_MAX);
-		else if (strcmp(argv[i], "-Hpath") == 0)
-			Util_strlcpy(Devices_h_exe_path, argv[++i], FILENAME_MAX);
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+
+		if (strcmp(argv[i], "-H1") == 0) {
+			if (i_a)
+				Util_strlcpy(Devices_atari_h_dir[0], argv[++i], FILENAME_MAX);
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-H2") == 0) {
+			if (i_a)
+				Util_strlcpy(Devices_atari_h_dir[1], argv[++i], FILENAME_MAX);
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-H3") == 0) {
+			if (i_a)
+				Util_strlcpy(Devices_atari_h_dir[2], argv[++i], FILENAME_MAX);
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-H4") == 0) {
+			if (i_a)
+				Util_strlcpy(Devices_atari_h_dir[3], argv[++i], FILENAME_MAX);
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-Hpath") == 0) {
+			if (i_a)
+				Util_strlcpy(Devices_h_exe_path, argv[++i], FILENAME_MAX);
+			else a_m = TRUE;
+		}
 		else if (strcmp(argv[i], "-hreadonly") == 0)
 			Devices_h_read_only = TRUE;
 		else if (strcmp(argv[i], "-hreadwrite") == 0)
@@ -592,9 +610,16 @@ void Devices_Initialise(int *argc, char *argv[])
 			}
 			argv[j++] = argv[i];
 		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
 	}
 	*argc = j;
 	Devices_H_Init();
+
+	return TRUE;
 }
 
 #define IS_DIR_SEP(c) ((c) == '/' || (c) == '\\' || (c) == ':' || (c) == '>')

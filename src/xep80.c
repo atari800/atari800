@@ -223,19 +223,25 @@ static int tab_stops[256] =
 static int eol_at_margin[XEP80_HEIGHT] = 
 {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-void XEP80_Initialise(int *argc, char *argv[])
+int XEP80_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-xep80") == 0) {
 			XEP80_enabled = TRUE;
 		}
 		else if (strcmp(argv[i], "-xep80port") == 0) {
-			XEP80_port = Util_sscandec(argv[++i]);
-			if (XEP80_port != 0 && XEP80_port != 1) {
-				Log_print("Invalid XEP80 port #");
-				XEP80_port = 0;
+			if (i_a) {
+				XEP80_port = Util_sscandec(argv[++i]);
+				if (XEP80_port != 0 && XEP80_port != 1) {
+					Log_print("Invalid XEP80 port - should be 0 or 1");
+					return FALSE;
+				}
 			}
+			else a_m = TRUE;
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
@@ -244,8 +250,15 @@ void XEP80_Initialise(int *argc, char *argv[])
 			}
 			argv[j++] = argv[i];
 		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
 	}
 	*argc = j;
+
+	return TRUE;
 }
 
 static void XEP80_InputWord(int word)

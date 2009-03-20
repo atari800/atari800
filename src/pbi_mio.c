@@ -83,7 +83,7 @@ static void init_mio(void)
 }
 
 
-void PBI_MIO_Initialise(int *argc, char *argv[])
+int PBI_MIO_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	for (i = j = 1; i < *argc; i++) {
@@ -98,6 +98,8 @@ void PBI_MIO_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
+
+	return TRUE;
 }
 
 int PBI_MIO_ReadConfig(char *string, char *ptr) 

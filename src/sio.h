@@ -38,7 +38,7 @@ void SIO_TapeMotor(int onoff);
 void SIO_SwitchCommandFrame(int onoff);
 void SIO_PutByte(int byte);
 int SIO_GetByte(void);
-void SIO_Initialise(int *argc, char *argv[]);
+int SIO_Initialise(int *argc, char *argv[]);
 void SIO_Exit(void);
 
 /* Some defines about the serial I/O timing. Currently fixed! */

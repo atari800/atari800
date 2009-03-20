@@ -14,6 +14,6 @@ void Colours_Generate(int black, int white, int colshift, int *colortable_ptr);
 void Colours_Adjust(int black, int white, int colintens, int *colortable_ptr);
 void Colours_SetVideoSystem(int mode);
 void Colours_InitialiseMachine(void);
-void Colours_Initialise(int *argc, char *argv[]);
+int Colours_Initialise(int *argc, char *argv[]);
 
 #endif /* COLOURS_H_ */

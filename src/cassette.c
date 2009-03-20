@@ -88,7 +88,7 @@ $84 as used by the OS), aux is length of mark tone (including leader and gaps)
 just before the record data in milliseconds.
 */
 
-void CASSETTE_Initialise(int *argc, char *argv[])
+int CASSETTE_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -97,11 +97,20 @@ void CASSETTE_Initialise(int *argc, char *argv[])
 	memset(cassette_description, 0, sizeof(cassette_description));
 
 	for (i = j = 1; i < *argc; i++) {
-		if (strcmp(argv[i], "-tape") == 0)
-			CASSETTE_Insert(argv[++i]);
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+
+		if (strcmp(argv[i], "-tape") == 0) {
+			if (i_a)
+				CASSETTE_Insert(argv[++i]);
+			else a_m = TRUE;
+		}
 		else if (strcmp(argv[i], "-boottape") == 0) {
-			CASSETTE_Insert(argv[++i]);
-			CASSETTE_hold_start = 1;
+			if (i_a) {
+				CASSETTE_Insert(argv[++i]);
+				CASSETTE_hold_start = 1;
+			}
+			else a_m = TRUE;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -110,9 +119,16 @@ void CASSETTE_Initialise(int *argc, char *argv[])
 			}
 			argv[j++] = argv[i];
 		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
 	}
 
 	*argc = j;
+
+	return TRUE;
 }
 
 /* Gets information about the cassette image. Returns TRUE if ok.

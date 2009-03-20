@@ -46,7 +46,7 @@ UBYTE PIA_PORT_input[2];
 UBYTE PIA_PORTA_mask;
 UBYTE PIA_PORTB_mask;
 
-void PIA_Initialise(int *argc, char *argv[])
+int PIA_Initialise(int *argc, char *argv[])
 {
 	PIA_PACTL = 0x3f;
 	PIA_PBCTL = 0x3f;
@@ -56,6 +56,8 @@ void PIA_Initialise(int *argc, char *argv[])
 	PIA_PORTB_mask = 0xff;
 	PIA_PORT_input[0] = 0xff;
 	PIA_PORT_input[1] = 0xff;
+
+	return TRUE;
 }
 
 void PIA_Reset(void)

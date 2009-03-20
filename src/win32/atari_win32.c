@@ -591,7 +591,7 @@ static int Atari_Win32_keys(void)
 	return keycode;
 }
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -648,6 +648,8 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	INPUT_key_consol = INPUT_CONSOL_NONE;
 
 	ShowWindow(hWndMain, SW_RESTORE);
+
+	return TRUE;
 }
 
 int PLATFORM_Exit(int run_monitor)

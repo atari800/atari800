@@ -125,7 +125,7 @@ extern int GTIA_consol_index;
 extern UBYTE GTIA_consol_table[3];
 extern int GTIA_speaker;
 
-void GTIA_Initialise(int *argc, char *argv[]);
+int GTIA_Initialise(int *argc, char *argv[]);
 void GTIA_Frame(void);
 void GTIA_NewPmScanline(void);
 UBYTE GTIA_GetByte(UWORD addr);

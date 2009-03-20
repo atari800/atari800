@@ -114,7 +114,7 @@ int PLATFORM_Keyboard(void)
 	return keycode;
 }
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 #ifdef SOUND
 	Sound_Initialise(argc, argv);
@@ -138,6 +138,8 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	SystemParametersInfo(SPI_SETBATTERYIDLETIMEOUT, 60 * 60 * 2, NULL, SPIF_SENDCHANGE);
 
 	clearkb();
+
+	return TRUE;
 }
 
 int PLATFORM_Exit(int run_monitor)

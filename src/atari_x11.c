@@ -1384,7 +1384,7 @@ static void motif_exposure(Widget w, XtPointer client_data, XEvent *event,
 
 #endif /* MOTIF */
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 #if !defined(XVIEW) && !defined(MOTIF)
 	XSetWindowAttributes xswda;
@@ -1413,6 +1413,9 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 #endif
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-small") == 0)
 			windowsize = Small;
 		else if (strcmp(argv[i], "-large") == 0)
@@ -1420,13 +1423,21 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-huge") == 0)
 			windowsize = Huge;
 		else if (strcmp(argv[i], "-clip_x") == 0)
-			clipping_x = atoi(argv[++i]);
+			if (i_a)
+				clipping_x = atoi(argv[++i]);
+			else a_m = TRUE;
 		else if (strcmp(argv[i], "-clip_y") == 0)
-			clipping_y = atoi(argv[++i]);
+			if (i_a)
+				clipping_y = atoi(argv[++i]);
+			else a_m = TRUE;
 		else if (strcmp(argv[i], "-clip_width") == 0)
-			clipping_width = atoi(argv[++i]);
+			if (i_a)
+				clipping_width = atoi(argv[++i]);
+			else a_m = TRUE;
 		else if (strcmp(argv[i], "-clip_height") == 0)
-			clipping_height = atoi(argv[++i]);
+			if (i_a)
+				clipping_height = atoi(argv[++i]);
+			else a_m = TRUE;
 		else if (strcmp(argv[i], "-x11bug") == 0)
 			x11bug = TRUE;
 		else if (strcmp(argv[i], "-sio") == 0)
@@ -1466,7 +1477,7 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 #endif
 
 	if (help_only)
-		return;
+		return TRUE;
 
 	if ((clipping_x < 0) || (clipping_x >= Screen_WIDTH))
 		clipping_x = 0;
@@ -2294,6 +2305,8 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 		printf("\n");
 	}
 	signal(SIGSEGV, segmentationfault);
+
+	return TRUE;
 }
 
 int PLATFORM_Exit(int run_monitor)

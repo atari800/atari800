@@ -275,7 +275,7 @@ void update_screen_updater(void)
 	}
 }
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	static int fc = TRUE;
 
@@ -291,6 +291,8 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	/* Set the video mode */
 	update_vidmode();
 	calc_palette();
+
+	return TRUE;
 }
 
 int PLATFORM_Exit(int run_monitor)

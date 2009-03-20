@@ -4,7 +4,7 @@
 #include "atari.h"
 #include <stdio.h>
 
-void PBI_Initialise(int *argc, char *argv[]);
+int PBI_Initialise(int *argc, char *argv[]);
 int PBI_ReadConfig(char *string, char *ptr);
 void PBI_WriteConfig(FILE *fp);
 void PBI_Reset(void);

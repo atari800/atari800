@@ -1552,7 +1552,7 @@ static void Init_Joysticks(int *argc, char *argv[])
 }
 
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	int no_joystick;
@@ -1561,12 +1561,18 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	no_joystick = 0;
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-ntscemu") == 0) {
 			PLATFORM_filter = PLATFORM_FILTER_NTSC;
 		}
 		else if (strcmp(argv[i], "-scanlines") == 0) {
-			scanlines_percentage  = Util_sscandec(argv[++i]);
-			Log_print("scanlines percentage set");
+			if (i_a) {
+				scanlines_percentage  = Util_sscandec(argv[++i]);
+				Log_print("scanlines percentage set");
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-scanlinesnoint") == 0) {
 			scanlinesnoint = TRUE;
@@ -1582,16 +1588,25 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 			Log_print("no joystick");
 		}
 		else if (strcmp(argv[i], "-width") == 0) {
-			display_modes[display_normal].w = Util_sscandec(argv[++i]);
-			Log_print("width set");
+			if (i_a) {
+				display_modes[display_normal].w = Util_sscandec(argv[++i]);
+				Log_print("width set");
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-height") == 0) {
-			display_modes[display_normal].h = Util_sscandec(argv[++i]);
-			Log_print("height set");
+			if (i_a) {
+				display_modes[display_normal].h = Util_sscandec(argv[++i]);
+				Log_print("height set");
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-bpp") == 0) {
-			display_modes[display_normal].bpp = Util_sscandec(argv[++i]);
-			Log_print("bpp set");
+			if (i_a) {
+				display_modes[display_normal].bpp = Util_sscandec(argv[++i]);
+				Log_print("bpp set");
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-fullscreen") == 0) {
 			fullscreen = 1;
@@ -1622,6 +1637,11 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 				Log_print("\t-grabmouse       Prevent mouse pointer from leaving window");
 			}
 			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
 		}
 	}
 	*argc = j;
@@ -1677,6 +1697,8 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 
 	if(grab_mouse)
 		SDL_WM_GrabInput(SDL_GRAB_ON);
+
+	return TRUE;
 }
 
 int PLATFORM_Exit(int run_monitor)

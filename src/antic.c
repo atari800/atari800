@@ -942,24 +942,35 @@ static void setup_art_colours(void)
 
 /* Initialization ---------------------------------------------------------- */
 
-void ANTIC_Initialise(int *argc, char *argv[])
+int ANTIC_Initialise(int *argc, char *argv[])
 {
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	int i, j;
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-artif") == 0) {
-			ANTIC_artif_mode = Util_sscandec(argv[++i]);
-			if (ANTIC_artif_mode < 0 || ANTIC_artif_mode > 4) {
-				Log_print("Invalid artifacting mode, using default.");
-				ANTIC_artif_mode = 0;
+			if (i_a) {
+				ANTIC_artif_mode = Util_sscandec(argv[++i]);
+				if (ANTIC_artif_mode < 0 || ANTIC_artif_mode > 4) {
+					Log_print("Invalid artifacting mode, using default.");
+					ANTIC_artif_mode = 0;
+				}
 			}
+			else a_m = TRUE;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-artif <num>     Set artifacting mode 0-4 (0 = disable)");
 			}
 			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
 		}
 	}
 	*argc = j;
@@ -995,6 +1006,8 @@ void ANTIC_Initialise(int *argc, char *argv[])
 #endif /* NEW_CYCLE_EXACT */
 
 #endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
+
+	return TRUE;
 }
 
 void ANTIC_Reset(void)

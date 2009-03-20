@@ -78,7 +78,7 @@ extern int INPUT_direct_mouse;      /* When true, convert the mouse pointer
 extern int INPUT_cx85;      /* emulate CX85 numeric keypad */
 /* Functions ----------------------------------------------------------- */
 
-void INPUT_Initialise(int *argc, char *argv[]);
+int INPUT_Initialise(int *argc, char *argv[]);
 void INPUT_Exit(void);
 void INPUT_Frame(void);
 void INPUT_Scanline(void);

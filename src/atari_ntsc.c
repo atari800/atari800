@@ -411,28 +411,49 @@ atari_ntsc_setup_t atari_ntsc_setup = {
 	0.25 /* satutration ramp */
 };
 
-void atari_ntsc_Initialise(int *argc, char *argv[])
+int atari_ntsc_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = 0;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-ntsc_hue") == 0) {
-			atari_ntsc_setup.hue = atof(argv[++i]);
-		}else if (strcmp(argv[i], "-ntsc_sat") == 0){
-			atari_ntsc_setup.saturation = atof(argv[++i]);
-		}else if (strcmp(argv[i], "-ntsc_cont") == 0){
-			atari_ntsc_setup.contrast = atof(argv[++i]);
-		}else if (strcmp(argv[i], "-ntsc_bright") == 0){
-			atari_ntsc_setup.brightness = atof(argv[++i]);
-		}else if (strcmp(argv[i], "-ntsc_sharp") == 0){
-			atari_ntsc_setup.sharpness = atof(argv[++i]);
-		}else if (strcmp(argv[i], "-ntsc_burst") == 0){
-			atari_ntsc_setup.burst_phase = atof(argv[++i]);
-		}else if (strcmp(argv[i], "-ntsc_gauss") == 0){
-			atari_ntsc_setup.gaussian_factor = atof(argv[++i]);
-		}else if (strcmp(argv[i], "-ntsc_gamma") == 0){
-			atari_ntsc_setup.gamma_adj = atof(argv[++i]);
-		}else if (strcmp(argv[i], "-ntsc_ramp") == 0){
-			atari_ntsc_setup.saturation_ramp = atof(argv[++i]);
+			if (i_a)
+				atari_ntsc_setup.hue = atof(argv[++i]);
+			else a_m = 1;
+		} else if (strcmp(argv[i], "-ntsc_sat") == 0) {
+			if (i_a)
+				atari_ntsc_setup.saturation = atof(argv[++i]);
+			else a_m = 1;
+		} else if (strcmp(argv[i], "-ntsc_cont") == 0) {
+			if (i_a)
+				atari_ntsc_setup.contrast = atof(argv[++i]);
+			else a_m = 1;
+		} else if (strcmp(argv[i], "-ntsc_bright") == 0) {
+			if (i_a)
+				atari_ntsc_setup.brightness = atof(argv[++i]);
+			else a_m = 1;
+		} else if (strcmp(argv[i], "-ntsc_sharp") == 0) {
+			if (i_a)
+				atari_ntsc_setup.sharpness = atof(argv[++i]);
+			else a_m = 1;
+		} else if (strcmp(argv[i], "-ntsc_burst") == 0) {
+			if (i_a)
+				atari_ntsc_setup.burst_phase = atof(argv[++i]);
+			else a_m = 1;
+		} else if (strcmp(argv[i], "-ntsc_gauss") == 0) {
+			if (i_a)
+				atari_ntsc_setup.gaussian_factor = atof(argv[++i]);
+			else a_m = 1;
+		} else if (strcmp(argv[i], "-ntsc_gamma") == 0) {
+			if (i_a)
+				atari_ntsc_setup.gamma_adj = atof(argv[++i]);
+			else a_m = 1;
+		} else if (strcmp(argv[i], "-ntsc_ramp") == 0) {
+			if (i_a)
+				atari_ntsc_setup.saturation_ramp = atof(argv[++i]);
+			else a_m = 1;
 		}
 		else {
 		 	if (strcmp(argv[i], "-help") == 0) {
@@ -454,7 +475,13 @@ void atari_ntsc_Initialise(int *argc, char *argv[])
 			argv[j++] = argv[i];
 		}
 
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return 0;
+		}
 	}
 	*argc = j;
+
+	return 1;
 }
 

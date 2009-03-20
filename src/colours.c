@@ -307,7 +307,7 @@ void Colours_InitialiseMachine(void)
 	}
 }
 
-void Colours_Initialise(int *argc, char *argv[])
+int Colours_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -335,42 +335,71 @@ void Colours_Initialise(int *argc, char *argv[])
 	int adjust_pal = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-blackn") == 0) {
-			black_ntsc = Util_sscandec(argv[++i]);
-			adjust_ntsc = TRUE;
+			if (i_a) {
+				black_ntsc = Util_sscandec(argv[++i]);
+				adjust_ntsc = TRUE;
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-blackp") == 0) {
-			black_pal = Util_sscandec(argv[++i]);
-			adjust_pal = TRUE;
+			if (i_a) {
+				black_pal = Util_sscandec(argv[++i]);
+				adjust_pal = TRUE;
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-whiten") == 0) {
-			white_ntsc = Util_sscandec(argv[++i]);
-			adjust_ntsc = TRUE;
+			if (i_a) {
+				white_ntsc = Util_sscandec(argv[++i]);
+				adjust_ntsc = TRUE;
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-whitep") == 0) {
-			white_pal = Util_sscandec(argv[++i]);
-			adjust_pal = TRUE;
+			if (i_a) {
+				white_pal = Util_sscandec(argv[++i]);
+				adjust_pal = TRUE;
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-colorsn") == 0) {
-			colintens_ntsc = Util_sscandec(argv[++i]);
-			adjust_ntsc = TRUE;
+			if (i_a) {
+				colintens_ntsc = Util_sscandec(argv[++i]);
+				adjust_ntsc = TRUE;
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-colorsp") == 0) {
-			colintens_pal = Util_sscandec(argv[++i]);
-			adjust_pal = TRUE;
+			if (i_a) {
+				colintens_pal = Util_sscandec(argv[++i]);
+				adjust_pal = TRUE;
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-colshiftn") == 0)
-			colshift_ntsc = Util_sscandec(argv[++i]);
+			if (i_a)
+				colshift_ntsc = Util_sscandec(argv[++i]);
+			else a_m = TRUE;
 		else if (strcmp(argv[i], "-colshiftp") == 0)
-			colshift_pal = Util_sscandec(argv[++i]);
+			if (i_a)
+				colshift_pal = Util_sscandec(argv[++i]);
+			else a_m = TRUE;
 		else if (strcmp(argv[i], "-genpaln") == 0)
 			generate_ntsc = TRUE;
 		else if (strcmp(argv[i], "-genpalp") == 0)
 			generate_pal = TRUE;
 		else if (strcmp(argv[i], "-paletten") == 0)
-			Colours_Read(argv[++i], colortable_ntsc);
+			if (i_a)
+				Colours_Read(argv[++i], colortable_ntsc);
+			else a_m = TRUE;
 		else if (strcmp(argv[i], "-palettep") == 0)
-			Colours_Read(argv[++i], colortable_pal);
+			if (i_a)
+				Colours_Read(argv[++i], colortable_pal);
+			else a_m = TRUE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-paletten <file> Use external NTSC palette");
@@ -388,6 +417,11 @@ void Colours_Initialise(int *argc, char *argv[])
 			}
 			argv[j++] = argv[i];
 		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
 	}
 	*argc = j;
 
@@ -404,4 +438,6 @@ void Colours_Initialise(int *argc, char *argv[])
 		Colours_Adjust(black_pal, white_pal, colintens_pal, colortable_pal);
 	}
 	Colours_SetVideoSystem(Atari800_tv_mode); /* Atari800_tv_mode is set before calling Colours_Initialise */
+
+	return TRUE;
 }

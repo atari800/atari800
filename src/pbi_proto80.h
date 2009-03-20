@@ -2,7 +2,7 @@
 #define PBI_PROTO80_H_
 
 #include "atari.h"
-void PBI_PROTO80_Initialise(int *argc, char *argv[]);
+int PBI_PROTO80_Initialise(int *argc, char *argv[]);
 int PBI_PROTO80_ReadConfig(char *string, char *ptr);
 void PBI_PROTO80_WriteConfig(FILE *fp);
 int PBI_PROTO80_D1GetByte(UWORD addr);

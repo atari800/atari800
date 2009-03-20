@@ -64,20 +64,22 @@ int PBI_IRQ = 0;
 #define D(a) do{}while(0)
 #endif
 
-void PBI_Initialise(int *argc, char *argv[])
+int PBI_Initialise(int *argc, char *argv[])
 {
+	return TRUE
 #ifdef PBI_XLD
-	PBI_XLD_Initialise(argc, argv);
+		&& PBI_XLD_Initialise(argc, argv)
 #endif
 #ifdef PBI_BB
-	PBI_BB_Initialise(argc, argv);
+		&& PBI_BB_Initialise(argc, argv)
 #endif
 #ifdef PBI_MIO
-	PBI_MIO_Initialise(argc, argv);
+		&& PBI_MIO_Initialise(argc, argv)
 #endif
 #ifdef PBI_PROTO80
-	PBI_PROTO80_Initialise(argc, argv);
+		&& PBI_PROTO80_Initialise(argc, argv)
 #endif
+	;
 }
 
 int PBI_ReadConfig(char *string, char *ptr)

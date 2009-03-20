@@ -126,7 +126,7 @@ static void init_xld_d(void)
 	}
 }
 
-void PBI_XLD_Initialise(int *argc, char *argv[])
+int PBI_XLD_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	for (i = j = 1; i < *argc; i++) {
@@ -161,6 +161,8 @@ void PBI_XLD_Initialise(int *argc, char *argv[])
 	if (xld_d_enabled) {
 		init_xld_d();
 	}
+
+	return TRUE;
 }
 
 int PBI_XLD_ReadConfig(char *string, char *ptr) 

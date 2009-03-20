@@ -277,7 +277,7 @@ void ShutdownEmulatedEnvironment(void)
 	Bconout(4, 8);		/* joystick disable */
 }
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -287,8 +287,13 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	int video_hardware;
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-interlace") == 0) {
-			skip_N_frames = Util_sscandec(argv[++i]);
+			if (i_a)
+				skip_N_frames = Util_sscandec(argv[++i]);
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-joyswap") == 0)
 			joyswap = TRUE;
@@ -307,6 +312,11 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 			}
 
 			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
 		}
 	}
 
@@ -436,6 +446,8 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 #endif
 
 	SetupEmulatedEnvironment();
+
+	return TRUE;
 }
 
 /* -------------------------------------------------------------------------- */

@@ -797,14 +797,19 @@ void Sound_Reinit(void)
 }
 #endif /* SOUND */
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	int help_only = FALSE;
 	int scale = 2;
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
 		if (strcmp(argv[i], "-scale") == 0) {
-			scale = Util_sscandec(argv[++i]);
+			if (i_a)
+				scale = Util_sscandec(argv[++i]);
+			else a_m = TRUE;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -812,6 +817,11 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 				Log_print("\t-scale <n>       Scale width and height by <n>");
 			}
 			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
 		}
 	}
 	*argc = j;
@@ -833,7 +843,7 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 	if (INPUT_cx85) {
 		kbd_joy_0_enabled = FALSE;
 	}
-	return;
+	return TRUE;
 }
 
 int PLATFORM_Exit(int run_monitor){

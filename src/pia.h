@@ -16,7 +16,7 @@ extern UBYTE PIA_PORTA_mask;
 extern UBYTE PIA_PORTB_mask;
 extern UBYTE PIA_PORT_input[2];
 
-void PIA_Initialise(int *argc, char *argv[]);
+int PIA_Initialise(int *argc, char *argv[]);
 void PIA_Reset(void);
 UBYTE PIA_GetByte(UWORD addr);
 void PIA_PutByte(UWORD addr, UBYTE byte);

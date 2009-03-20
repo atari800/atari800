@@ -47,7 +47,7 @@ static int rtime_tmp2 = 0;
 
 static UBYTE regset[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-void RTIME_Initialise(int *argc, char *argv[])
+int RTIME_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -65,6 +65,8 @@ void RTIME_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
+
+	return TRUE;
 }
 
 #if defined(WIN32) || (defined(HAVE_TIME) && defined(HAVE_LOCALTIME))

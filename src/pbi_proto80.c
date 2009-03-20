@@ -45,7 +45,7 @@ int PBI_PROTO80_enabled = FALSE;
 #define D(a) do{}while(0)
 #endif
 
-void PBI_PROTO80_Initialise(int *argc, char *argv[])
+int PBI_PROTO80_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	for (i = j = 1; i < *argc; i++) {
@@ -67,12 +67,16 @@ void PBI_PROTO80_Initialise(int *argc, char *argv[])
 		if (!Atari800_LoadImage(proto80_rom_filename, proto80rom, 0x800)) {
 			free(proto80rom);
 			PBI_PROTO80_enabled = FALSE;
+			Log_print("Couldn't load proto80 rom image");
+			return FALSE;
 		}
 		else {
-			printf("loaded proto80 rom image\n");
+			Log_print("loaded proto80 rom image");
 			PBI_D6D7ram = TRUE;
 		}
 	}
+
+	return TRUE;
 }
 
 int PBI_PROTO80_ReadConfig(char *string, char *ptr)

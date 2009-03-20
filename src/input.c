@@ -136,94 +136,119 @@ static char gzbuf[GZBUFSIZE+1];
 #define EVENT_RECORDING_VERSION 1
 #endif
 
-void INPUT_Initialise(int *argc, char *argv[])
+int INPUT_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+
 		if (strcmp(argv[i], "-mouse") == 0) {
-			char *mode = argv[++i];
-			if (strcmp(mode, "off") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_OFF;
-			else if (strcmp(mode, "pad") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_PAD;
-			else if (strcmp(mode, "touch") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_TOUCH;
-			else if (strcmp(mode, "koala") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_KOALA;
-			else if (strcmp(mode, "pen") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_PEN;
-			else if (strcmp(mode, "gun") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_GUN;
-			else if (strcmp(mode, "amiga") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_AMIGA;
-			else if (strcmp(mode, "st") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_ST;
-			else if (strcmp(mode, "trak") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_TRAK;
-			else if (strcmp(mode, "joy") == 0)
-				INPUT_mouse_mode = INPUT_MOUSE_JOY;
+			if (i_a) {
+				char *mode = argv[++i];
+				if (strcmp(mode, "off") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_OFF;
+				else if (strcmp(mode, "pad") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_PAD;
+				else if (strcmp(mode, "touch") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_TOUCH;
+				else if (strcmp(mode, "koala") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_KOALA;
+				else if (strcmp(mode, "pen") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_PEN;
+				else if (strcmp(mode, "gun") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_GUN;
+				else if (strcmp(mode, "amiga") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_AMIGA;
+				else if (strcmp(mode, "st") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_ST;
+				else if (strcmp(mode, "trak") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_TRAK;
+				else if (strcmp(mode, "joy") == 0)
+					INPUT_mouse_mode = INPUT_MOUSE_JOY;
+			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-mouseport") == 0) {
-			INPUT_mouse_port = Util_sscandec(argv[++i]) - 1;
-			if (INPUT_mouse_port < 0 || INPUT_mouse_port > 3) {
-				Log_print("Invalid mouse port, using 1");
-				INPUT_mouse_port = 0;
+			if (i_a) {
+				INPUT_mouse_port = Util_sscandec(argv[++i]) - 1;
+				if (INPUT_mouse_port < 0 || INPUT_mouse_port > 3) {
+					Log_print("Invalid mouse port number - should be between 0 and 3");
+					return FALSE;
+				}
 			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-mousespeed") == 0) {
-			INPUT_mouse_speed = Util_sscandec(argv[++i]);
-			if (INPUT_mouse_speed < 1 || INPUT_mouse_speed > 9) {
-				Log_print("Invalid mouse speed, using 3");
-				INPUT_mouse_speed = 3;
+			if (i_a) {
+				INPUT_mouse_speed = Util_sscandec(argv[++i]);
+				if (INPUT_mouse_speed < 1 || INPUT_mouse_speed > 9) {
+					Log_print("Invalid mouse speed - should be between 1 and 9");
+					return FALSE;
+				}
 			}
+			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-multijoy") == 0) {
 			INPUT_joy_multijoy = 1;
 		}
 #ifdef EVENT_RECORDING
 		else if (strcmp(argv[i], "-record") == 0) {
-			char *recfilename = argv[++i];
-			if ((recordfp = gzopen(recfilename, "wb")) == NULL) {
-				Log_print("Cannot open record file");
+			if (i_a) {
+				char *recfilename = argv[++i];
+				if ((recordfp = gzopen(recfilename, "wb")) == NULL) {
+					Log_print("Cannot open record file");
+					return FALSE;
+				}
+				else {
+					recording = TRUE;
+					gzprintf(recordfp, "Atari800 event recording, version: %d\n", EVENT_RECORDING_VERSION);
+				}
 			}
-			else {
-				recording = TRUE;
-				gzprintf(recordfp, "Atari800 event recording, version: %d\n", EVENT_RECORDING_VERSION);
-			}
+			else a_m = TRUE;
 		}
- 		else if (strcmp(argv[i], "-playback") == 0) {
-			char *pbfilename = argv[++i];
-			if ((playbackfp = gzopen(pbfilename, "rb")) == NULL) {
-				Log_print("Cannot open playback file");
-			}
-			else {
-				playingback = TRUE;
-				gzgets(playbackfp, gzbuf, GZBUFSIZE);
-				if (sscanf(gzbuf, "Atari800 event recording, version: %d\n", &recording_version) != 1) {
-					Log_print("Invalid playback file");
-					playingback = FALSE;
-					gzclose(playbackfp);
+		else if (strcmp(argv[i], "-playback") == 0) {
+			if (i_a) {
+				char *pbfilename = argv[++i];
+				if ((playbackfp = gzopen(pbfilename, "rb")) == NULL) {
+					Log_print("Cannot open playback file");
+					return FALSE;
 				}
-				else if (recording_version > EVENT_RECORDING_VERSION) {
-					Log_print("Newer version of playback file than this version of Atari800 can handle");
-					playingback = FALSE;
-					gzclose(playbackfp);
+				else {
+					playingback = TRUE;
+					gzgets(playbackfp, gzbuf, GZBUFSIZE);
+					if (sscanf(gzbuf, "Atari800 event recording, version: %d\n", &recording_version) != 1) {
+						Log_print("Invalid playback file");
+						playingback = FALSE;
+						gzclose(playbackfp);
+						return FALSE;
+					}
+					else if (recording_version > EVENT_RECORDING_VERSION) {
+						Log_print("Newer version of playback file than this version of Atari800 can handle");
+						playingback = FALSE;
+						gzclose(playbackfp);
+						return FALSE;
+					}
 				}
 			}
+			else a_m = TRUE;
 		}
 #endif /* EVENT_RECORDING */
  		else if (strcmp(argv[i], "-directmouse") == 0) {
 			INPUT_direct_mouse = 1;
 		}
 		else if (strcmp(argv[i], "-cx85") == 0) {
-			INPUT_cx85 = 1;
-			cx85_port = Util_sscandec(argv[++i]) - 1;
-			if (cx85_port < 0 || cx85_port > 3) {
-				Log_print("Invalid cx85 port, using 2");
-				cx85_port = 1;
+			if (i_a) {
+				INPUT_cx85 = 1;
+				cx85_port = Util_sscandec(argv[++i]) - 1;
+				if (cx85_port < 0 || cx85_port > 3) {
+					Log_print("Invalid cx85 port - should be between 0 and 3");
+					return FALSE;
+				}
 			}
+			else a_m = TRUE;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -247,18 +272,26 @@ void INPUT_Initialise(int *argc, char *argv[])
 			}
 			argv[j++] = argv[i];
 		}
+
+		/* this is the end of the additional argument check */
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
 	}
 
 	if(INPUT_direct_mouse && !(
 				INPUT_mouse_mode == INPUT_MOUSE_PAD ||
 				INPUT_mouse_mode == INPUT_MOUSE_TOUCH ||
 				INPUT_mouse_mode == INPUT_MOUSE_KOALA)) {
-		Log_print("-directmouse only valid with -mouse pad|touch|koala, disabling");
-		INPUT_direct_mouse = 0;
+		Log_print("-directmouse only valid with -mouse pad|touch|koala");
+		return FALSE;
 	}
 
 	INPUT_CenterMousePointer();
 	*argc = j;
+
+	return TRUE;
 }
 
 /* For event recording */

@@ -348,7 +348,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 	if (*argc > 1) {
 		for (i = j = 1; i < *argc; i++) {
 			if (strcmp(argv[i], "-config") == 0) {
-				rtconfig_filename = argv[++i];
+				if (i + 1 < *argc)
+					rtconfig_filename = argv[++i];
+				else {
+					Log_print("Missing argument for '%s'", argv[i]);
+					return FALSE;
+				}
 			}
 			else if (strcmp(argv[i], "-v") == 0 ||
 					 strcmp(argv[i], "-version") == 0 ||
@@ -464,6 +469,17 @@ int Atari800_Initialise(int *argc, char *argv[])
 			if (MEMORY_ram_size == 48)
 				MEMORY_ram_size = 52;
 		}
+		else if (strcmp(argv[i], "-axlon0f") == 0) {
+			MEMORY_axlon_0f_mirror = TRUE;
+		}
+#ifdef STEREO_SOUND
+		else if (strcmp(argv[i], "-stereo") == 0) {
+			POKEYSND_stereo_enabled = TRUE;
+		}
+		else if (strcmp(argv[i], "-nostereo") == 0) {
+			POKEYSND_stereo_enabled = FALSE;
+		}
+#endif /* STEREO_SOUND */
 		else {
 			/* parameters that take additional argument follow here */
 			int i_a = (i + 1 < *argc);		/* is argument available? */
@@ -507,34 +523,37 @@ int Atari800_Initialise(int *argc, char *argv[])
 				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-mosaic") == 0) {
-				int total_ram = Util_sscandec(argv[++i]);
-				MEMORY_mosaic_enabled = TRUE;
-				MEMORY_mosaic_maxbank = (total_ram - 48)/4 - 1;
-				if (((total_ram - 48) % 4 != 0) || (MEMORY_mosaic_maxbank > 0x3e) || (MEMORY_mosaic_maxbank < 0)) {
-					Log_print("Invalid Mosaic total RAM size");
-					return FALSE;
+				if (i_a) {
+					int total_ram = Util_sscandec(argv[++i]);
+					MEMORY_mosaic_enabled = TRUE;
+					MEMORY_mosaic_maxbank = (total_ram - 48)/4 - 1;
+					if (((total_ram - 48) % 4 != 0) || (MEMORY_mosaic_maxbank > 0x3e) || (MEMORY_mosaic_maxbank < 0)) {
+						Log_print("Invalid Mosaic total RAM size");
+						return FALSE;
+					}
+					if (MEMORY_axlon_enabled) {
+						Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
+						return FALSE;
+					}
 				}
-				if (MEMORY_axlon_enabled) {
-					Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
-					return FALSE;
-				}
+				else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-axlon") == 0) {
-				int total_ram = Util_sscandec(argv[++i]);
-				int banks = ((total_ram) - 32) / 16;
-				MEMORY_axlon_enabled = TRUE;
-				if (((total_ram - 32) % 16 != 0) || ((banks != 8) && (banks != 16) && (banks != 32) && (banks != 64) && (banks != 128) && (banks != 256))) {
-					Log_print("Invalid Axlon total RAM size");
-					return FALSE;
+				if (i_a) {
+					int total_ram = Util_sscandec(argv[++i]);
+					int banks = ((total_ram) - 32) / 16;
+					MEMORY_axlon_enabled = TRUE;
+					if (((total_ram - 32) % 16 != 0) || ((banks != 8) && (banks != 16) && (banks != 32) && (banks != 64) && (banks != 128) && (banks != 256))) {
+						Log_print("Invalid Axlon total RAM size");
+						return FALSE;
+					}
+					if (MEMORY_mosaic_enabled) {
+						Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
+						return FALSE;
+					}
+					MEMORY_axlon_bankmask = banks - 1;
 				}
-				if (MEMORY_mosaic_enabled) {
-					Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
-					return FALSE;
-				}
-				MEMORY_axlon_bankmask = banks - 1;
-			}
-			else if (strcmp(argv[i], "-axlon0f") == 0) {
-				MEMORY_axlon_0f_mirror = TRUE;
+				else a_m = TRUE;
 			}
 #ifndef BASIC
 			/* The BASIC version does not support state files, because:
@@ -557,14 +576,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 					a_m = TRUE;
 			}
 #endif /* BASIC */
-#ifdef STEREO_SOUND
-			else if (strcmp(argv[i], "-stereo") == 0) {
-				POKEYSND_stereo_enabled = TRUE;
-			}
-			else if (strcmp(argv[i], "-nostereo") == 0) {
-				POKEYSND_stereo_enabled = FALSE;
-			}
-#endif /* STEREO_SOUND */
 			else {
 				/* all options known to main module tried but none matched */
 
@@ -621,36 +632,38 @@ int Atari800_Initialise(int *argc, char *argv[])
 	}
 
 	*argc = j;
-
+	if (
 #if !defined(BASIC) && !defined(CURSES_BASIC)
-	Colours_Initialise(argc, argv);
+		!Colours_Initialise(argc, argv)
 #endif
-	Devices_Initialise(argc, argv);
-	RTIME_Initialise(argc, argv);
-	SIO_Initialise (argc, argv);
-	CASSETTE_Initialise(argc, argv);
-	PBI_Initialise(argc,argv);
+		|| !Devices_Initialise(argc, argv)
+		|| !RTIME_Initialise(argc, argv)
+		|| !SIO_Initialise (argc, argv)
+		|| !CASSETTE_Initialise(argc, argv)
+		|| !PBI_Initialise(argc,argv)
 #ifndef BASIC
-	INPUT_Initialise(argc, argv);
+		|| !INPUT_Initialise(argc, argv)
 #endif
 #ifdef XEP80_EMULATION
-	XEP80_Initialise(argc, argv);
+		|| !XEP80_Initialise(argc, argv)
 #endif
 #ifdef NTSC_FILTER
-	atari_ntsc_Initialise(argc, argv);
+		|| !atari_ntsc_Initialise(argc, argv)
 #endif
 #ifndef DONT_DISPLAY
-	/* Platform Specific Initialisation */
-	PLATFORM_Initialise(argc, argv);
+		/* Platform Specific Initialisation */
+		|| !PLATFORM_Initialise(argc, argv)
 #endif
 #if !defined(BASIC) && !defined(CURSES_BASIC)
-	Screen_Initialise(argc, argv);
+		|| !Screen_Initialise(argc, argv)
 #endif
-	/* Initialise Custom Chips */
-	ANTIC_Initialise(argc, argv);
-	GTIA_Initialise(argc, argv);
-	PIA_Initialise(argc, argv);
-	POKEY_Initialise(argc, argv);
+		/* Initialise Custom Chips */
+		|| !ANTIC_Initialise(argc, argv)
+		|| !GTIA_Initialise(argc, argv)
+		|| !PIA_Initialise(argc, argv)
+		|| !POKEY_Initialise(argc, argv)
+	)
+		return FALSE;
 
 #ifndef __PLUS
 

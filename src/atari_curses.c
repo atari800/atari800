@@ -53,7 +53,7 @@ static int curses_mode = CURSES_LEFT;
 
 static int curses_screen[24][40];
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
@@ -94,6 +94,8 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 #ifdef SOUND
 	Sound_Initialise(argc, argv);
 #endif
+
+	return TRUE;
 }
 
 int PLATFORM_Exit(int run_monitor)

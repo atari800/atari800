@@ -71,7 +71,7 @@ extern int ANTIC_artif_new;
 extern UBYTE ANTIC_PENH_input;
 extern UBYTE ANTIC_PENV_input;
 
-void ANTIC_Initialise(int *argc, char *argv[]);
+int ANTIC_Initialise(int *argc, char *argv[]);
 void ANTIC_Reset(void);
 void ANTIC_Frame(int draw_display);
 UBYTE ANTIC_GetByte(UWORD addr);

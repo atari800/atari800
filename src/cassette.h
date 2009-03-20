@@ -7,7 +7,7 @@
 
 #define CASSETTE_DESCRIPTION_MAX 256
 
-void CASSETTE_Initialise(int *argc, char *argv[]);
+int CASSETTE_Initialise(int *argc, char *argv[]);
 
 int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *last_block, int *isCAS);
 int CASSETTE_CreateFile(const char *filename, FILE **fp, int *isCAS);

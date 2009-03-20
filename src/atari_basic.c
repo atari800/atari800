@@ -30,11 +30,13 @@
 #include "sound.h"
 #endif
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
 #ifdef SOUND
 	Sound_Initialise(argc, argv);
 #endif
+
+	return TRUE;
 }
 
 int PLATFORM_Exit(int run_monitor)

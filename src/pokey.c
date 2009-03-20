@@ -345,7 +345,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 	}
 }
 
-void POKEY_Initialise(int *argc, char *argv[])
+int POKEY_Initialise(int *argc, char *argv[])
 {
 	int i;
 	ULONG reg;
@@ -411,6 +411,8 @@ void POKEY_Initialise(int *argc, char *argv[])
 		INPUT_RecordInt(random_scanline_counter);
 	}
 #endif
+
+	return TRUE;
 }
 
 void POKEY_Frame(void)

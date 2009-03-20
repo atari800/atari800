@@ -600,7 +600,7 @@ void PLATFORM_DisplayScreen(void)
 /* CONFIG & INITIALISATION                                                    */
 /* -------------------------------------------------------------------------- */
 
-void PLATFORM_Initialise(int *argc, char *argv[])
+int PLATFORM_Initialise(int *argc, char *argv[])
 {
         int i;
         int j;
@@ -608,6 +608,9 @@ void PLATFORM_Initialise(int *argc, char *argv[])
         int help_only = FALSE;
 
         for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		
                 if (strcmp(argv[i], "-interlace") == 0) {
                         ypos_inc = 2;
                         vga_ptr_inc = 320 + 320;
@@ -623,15 +626,16 @@ void PLATFORM_Initialise(int *argc, char *argv[])
                 else if (strcmp(argv[i], "-joyswap") == 0)
                         joyswap = TRUE;
 
-                else if (strcmp(argv[i], "-video") == 0)
-                {
-                  i++;
-                  video_mode=atoi(argv[i]);
-                  if (video_mode<0 || video_mode>3)
-                  {
-                    Log_print("Invalid video mode, using default.");
-                    video_mode=0;
-                  }
+                else if (strcmp(argv[i], "-video") == 0) {
+			if (i_a) {
+				i++;
+				video_mode=atoi(argv[i]);
+				if (video_mode<0 || video_mode>3) {
+					Log_print("Invalid video mode - should be between 0 and 3");
+					return FALSE;
+				}
+			}
+			else a_m = TRUE;
                 }
                 else if (strcmp(argv[i],"-novesa") == 0)
                 {
@@ -641,13 +645,15 @@ void PLATFORM_Initialise(int *argc, char *argv[])
                 {
                   use_vret=TRUE;
                 }
-		else if (strcmp(argv[i],"-keyboard") == 0)
-		{
-			i++;
-			if (strcmp(argv[i],"0") == 0)
-				PC_keyboard = TRUE;
-			else
-				PC_keyboard = FALSE;
+		else if (strcmp(argv[i],"-keyboard") == 0) {
+			if (i_a) {
+				i++;
+				if (strcmp(argv[i],"0") == 0)
+					PC_keyboard = TRUE;
+				else
+					PC_keyboard = FALSE;
+			}
+			else a_m = TRUE;
 		}
                 else {
                         if (strcmp(argv[i], "-help") == 0) {
@@ -668,6 +674,11 @@ void PLATFORM_Initialise(int *argc, char *argv[])
                         }
                         argv[j++] = argv[i];
                 }
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
         }
 
         *argc = j;
@@ -678,7 +689,7 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 #endif
 
         if (help_only)
-                return;
+                return TRUE;
 
         /* check if joystick is connected */
         printf("Joystick is checked...\n");
@@ -776,6 +787,7 @@ void PLATFORM_Initialise(int *argc, char *argv[])
 
         SetupVgaEnvironment();
 
+	return TRUE;
 }
 
 /* -------------------------------------------------------------------------- */
