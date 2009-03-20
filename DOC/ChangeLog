@@ -287,19 +287,24 @@ Some spelling in comments corrected.
 gtia.[ch], javanvm/atari_javanvm.c, mzpokeysnd.c, pbi_bb.c, pbi_mio.c, 
 pbi_scsi.c, pbi_xld.[ch], pia.h, platform.h, pokey.h, rtime.[ch], sio.h,
 statesav.c, ui.c, ui_basic.c, util.[ch], votrax.[ch]:
-I compiled with:
-CC = gcc -ansi -pedantic -Wall -Waggregate-return -Wmissing-declarations 
--Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline 
-and I found missing headers and lack of static in many places.
-Black Box and MIO will now contiune with SCSI disabled if the disk image
-is not found.
+  I compiled with:
+  CC = gcc -ansi -pedantic -Wall -Waggregate-return -Wmissing-declarations 
+  -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline 
+  and I found missing headers and lack of static in many places.
+  Black Box and MIO will now continue with SCSI disabled if the disk image
+  is not found.
+
 * Makefile.in, configure.ac, cpu.c, atari_vga.c, sound_dos.c, vga_gfx.c,
 javanvm/atari_javanvm.c, rdevice.c, win32/atari_win32.c, win32/keyboard.h,
 win32/main.h, win32/screen_win32.c:
-Made windx, sdl, and javanvm compile with -ansi -pedantic. Fixed more
-warnings. rdevice.c: removed // comments and warnings. Made improved
-gcc warnings the default for windx, sdl, javanvm, and dosvga. cpu.c:
-gcc will use goto and use of __extension__ will avoid -pedantic warnings.
+  Made windx, sdl, and javanvm compile with -ansi -pedantic. Fixed more
+  warnings. Made improved gcc warnings the default for windx, sdl, javanvm
+  and dosvga.
+
+* rdevice.c: removed // comments and warnings.
+
+* cpu.c: gcc will use goto and use of __extension__ will avoid -pedantic
+  warnings.
 
 
 2008-05-25  Perry McFarlane  <perry_m@fastmail.fm>
