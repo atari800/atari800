@@ -1,3 +1,10 @@
+2009-03-20  Petr Stehlik <pstehlik@sophics.cz>
+  Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
+* too_many_files: check for existence of required parameter of some command
+  line options before using it. Let all *_Initialise() functions return
+  status (FALSE in case something failed).
+
+
 2009-03-17  Piotr Fusik  <fox@scene.pl>
 * colours.c, win32/sound.c: killed MSVC 2008 warnings
 
@@ -20,11 +27,6 @@
 * atari.c atari_sdl.c atari_ntsc.[ch] configure.ac platform.h ui.c: NTSC
 Filter option in the UI.
 
-M ./DOC/USAGE +9
-M ./src/akey.h +17
-M ./src/atari_sdl.c +40
-M ./src/input.c +66
-M ./src/input.h +1
 
 2009-02-05  Perry McFarlane  <perry_m@fastmail.fm>
   Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
