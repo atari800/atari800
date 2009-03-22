@@ -25,8 +25,6 @@ Keyboard and joysticks
 Emulation core
 --------------
 
-* Java applet
-
 * Java midlet
 
 * cycle-exact POKEY interrupts (timers, serial I/O, keyboard)
@@ -37,7 +35,7 @@ Emulation core
 
 * more accurate frame rates (for example 49.8607456 instead of 50 Hz in PAL)
 
-- copy-protected disk images (VAPI, ATP, PRO, copy-protected ATR)
+- VAPI support, improved .PRO support, (ATP - obsolete, copy-protected ATR?)
 
 - emulate POKEY SIO shift register
 
@@ -72,7 +70,7 @@ Emulation core
 
 - emulate the 850 interface at the hardware level.
 
-- ATR-8000 emulation.  ATR-8500.  Need schematics, ROM images, and Disk images.
+- ATR-8000 emulation.  ATR-8500.  BIOS image?
   Adapt an existing CPM emulator.
 
 - emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp and

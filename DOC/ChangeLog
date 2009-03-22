@@ -1,6 +1,7 @@
 2009-03-22  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c: fix warning
 * atari.c: fix basic/curses version compile error
+* DOC/TODO: update
 
 
 2009-03-20  Petr Stehlik <pstehlik@sophics.cz>
