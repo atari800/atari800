@@ -1,3 +1,8 @@
+2009-03-22  Perry McFarlane  <perry_m@fastmail.fm>
+* atari_sdl.c: fix warning
+* atari.c: fix basic/curses version compile error
+
+
 2009-03-20  Petr Stehlik <pstehlik@sophics.cz>
   Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
 * too_many_files: check for existence of required parameter of some command

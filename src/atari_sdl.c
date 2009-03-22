@@ -1676,7 +1676,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 #endif
 
 	if (help_only)
-		return;		/* return before changing the gfx mode */
+		return TRUE;		/* return before changing the gfx mode */
 
 	/* Prototype 80 column adaptor */
 	if (PBI_PROTO80_enabled) {

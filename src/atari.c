@@ -634,9 +634,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 	*argc = j;
 	if (
 #if !defined(BASIC) && !defined(CURSES_BASIC)
-		!Colours_Initialise(argc, argv)
+		!Colours_Initialise(argc, argv) ||
 #endif
-		|| !Devices_Initialise(argc, argv)
+		!Devices_Initialise(argc, argv)
 		|| !RTIME_Initialise(argc, argv)
 		|| !SIO_Initialise (argc, argv)
 		|| !CASSETTE_Initialise(argc, argv)
