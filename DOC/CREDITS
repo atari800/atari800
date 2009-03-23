@@ -156,11 +156,15 @@ Christian Groessler <chris@groessler.org>
     - SVGAlib patch for joystick
     - BRKHERE command
     - missing autorepeat in Atari800 debugger under X11 fixed
+    - missing XSync calls in X11
+    - UI improvements ("Please Wait" message for slow operations)
+    - improved R: device support (serial/network/both)
 
 Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
     - XF551 highspeed transfer emulation
-    - greatly improved cassette loading
+    - greatly improved standard cassette loading
     - implemented cassette writing
+    - cassette loading with variable baud rate
 
 Nathan Hartwell <mage@magelair.com>
     - Win32 fixes
@@ -229,6 +233,19 @@ Perry McFarlane <ce596@freenet.toronto.on.ca>
     - colour artifacting
     - "digital sound" emulation in DOS port
     - complete cycle-exact ANTIC/GTIA emulation
+    - SDL on MS Windows fixes
+    - interpolated scanlines (for SDL)
+    - various SDL fixes (Caps Lock)
+    - Axlon and Mosaic RAM expansions for Atari400/800
+    - support for switching between NTSC and PAL color palettes
+    - Java port (NestedVM)
+    - sound improvements: nonlinear mixing, two-tone filter
+    - emulation of the 1400XL, 1450XLD, MIO and Black Box
+    - XEP80 emulation by Mark Grebe
+    - CX85 numeric keypad
+    - SIO: support for .pro images
+    - various bugfixes in all areas of Atari800
+    - and much much more, including general source clean up in 2.1.0
 
 Petr Mojzisek <mojzisek@bimbo.fjfi.cvut.cz>
     - rawkey support for svgalib
@@ -341,6 +358,7 @@ Marek Zelem <marek@formax.elf.stuba.sk>
 Marcin Zukowski <eru@ibb.waw.pl>
     - fix in ANTIC, GTIA
     - slight monitor improvement
+    - fix in Atrax cartridge bank switching
 
 Mike Coates <Mike@Dissfulfils.co.uk>
 Tom Haukap <Tom.Haukap@t-online.de>
@@ -349,3 +367,14 @@ Tom Haukap <Tom.Haukap@t-online.de>
 B Watson  <yalhcru@gmail.com>
     - mouse support for SDL
     - direct mouse support (SDL and X11)
+    - readline support for the internal monitor (including command history)
+
+Krótki <kr0tki@poczta.onet.pl>
+    - NTSC filter option added to UI
+    - SDL display modes cleanup
+    - audio fixes (WAV, -audio16)
+    - restore state fixes (color palette reinit)
+    - check for ARGV additional parameters
+
+Matthias Reichl  <hias@horus.com>
+    - POKEY ALLPOT register fix 
