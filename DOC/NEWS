@@ -12,7 +12,8 @@ Version 2.1.0 (2009/03/2x)
     * added emulation of XEP80 (SDL only currently)
     * added emulation of CX85 numeric keyboard (Java+SDL only)
     * R: can be serial-only, network-only or both (selectable)
-    * monitor can support arrow keys (readline library)
+    * monitor can support arrow keys - try key up for history...
+    * event recording added
     * -directmouse added
     * ALLPOT register fixed
     * .pro images supported
