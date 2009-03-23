@@ -17,7 +17,7 @@ Version 2.1.0 (2009/03/2x)
     * ALLPOT register fixed
     * .pro images supported
     * various Atari5200 fixes
-    * sound recording to WAV fixed,
+    * sound recording to WAV fixed
     * major source code cleanup, compiles with -pedantic etc.
 
  Graphics:
@@ -35,7 +35,7 @@ Version 2.1.0 (2009/03/2x)
 
  Cassettes:
     * implemented loading with variable bitrates
-    * implemented writing to raw cassette files
+    * implemented raw writing to cassette files
 
  Save State:
     * fixed PBIM12 restoring
@@ -53,9 +53,6 @@ Version 2.1.0 (2009/03/2x)
         default mapping changed to 4,8,6,5 and A,W,D,S 
     * -audio16 fixed
       
- Java version:
-    * keypad fix, sound support in NestedVM
-
  MS Windows version:
     * added R: device support
     * Shift+Control fixes
@@ -67,11 +64,14 @@ Version 2.1.0 (2009/03/2x)
  Atari Falcon/TT version:
     * removed Devpac dependency in asm files (now gcc/gas friendly)
 
+ Java version:
+    * a completely new port to Java, running also as an applet
+
  Authors of this long time awaited version and the number of their ChangeLog
  entries (which is not an accurate indicator yet it shows clearly that
  this release is based mainly on Perry's work):
 
-     46   Perry McFarlane
+     47   Perry McFarlane
       7   Petr Stehlik
       5   Krótki
       5   Piotr Fusik
