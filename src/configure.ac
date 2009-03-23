@@ -190,7 +190,6 @@ AC_CHECK_LIB(png,png_get_libpng_ver)
 AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
 AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
 
-
 dnl Set OBJS and libraries depending on host and target...
 
 dnl OBJS is not an AC "precious" variable but is used in the Makefile, so
@@ -546,10 +545,15 @@ A8_OPTION(monitortrace,no,
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
-A8_OPTION(readline,no,
-          [Support readline in the monitor (default=OFF)],
-          MONITOR_READLINE,[Define to activate readline support in monitor.]
-         )
+if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
+	AC_CHECK_LIB(readline,readline,
+		[A8_OPTION(readline,yes,
+          		[Support readline in the monitor (default=ON)],
+          		MONITOR_READLINE,[Define to activate readline support in monitor.]
+			)],
+		WANT_MONITOR_READLINE="no"
+	)
+fi
 
 if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
 	LIBS="-lreadline -ltermcap $LIBS"
@@ -777,6 +781,7 @@ echo "Using user-defined breakpoints?.......: $WANT_MONITOR_BREAKPOINTS"
 echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
 echo "Using 6502 opcode profiling?..........: $WANT_MONITOR_PROFILE"
 echo "Using TRACE monitor command?..........: $WANT_MONITOR_TRACE"
+echo "Using readline support in monitor?....: $WANT_MONITOR_READLINE"
 echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"

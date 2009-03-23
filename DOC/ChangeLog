@@ -1,3 +1,9 @@
+2009-03-23  Petr Stehlik <pstehlik@sophics.cz>
+* NEWS, CREDITS: updated for upcoming release
+* configure.ac: readline support in monitor enabled by default,
+  simple Autoconf readline check added.
+
+
 2009-03-22  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c: fix warning
 * atari.c: fix basic/curses version compile error
