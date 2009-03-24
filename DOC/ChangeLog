@@ -11,7 +11,7 @@
 
 
 2009-03-20  Petr Stehlik <pstehlik@sophics.cz>
-  Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
+  Commiting patch submitted by Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * too_many_files: check for existence of required parameter of some command
   line options before using it. Let all *_Initialise() functions return
   status (FALSE in case something failed).
@@ -35,18 +35,18 @@
 
 
 2009-02-25  Perry McFarlane  <perry_m@fastmail.fm>
-  Commiting patch submitted by Krótki with my changes <kr0tki@poczta.onet.pl>
+  Commiting patch submitted by Tomasz Krasuski <kr0tki@poczta.onet.pl> with my changes 
 * atari.c atari_sdl.c atari_ntsc.[ch] configure.ac platform.h ui.c: NTSC
 Filter option in the UI.
 
 
 2009-02-05  Perry McFarlane  <perry_m@fastmail.fm>
-  Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
+  Commiting patch submitted by Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * atari_sdl.c: cleaned up display modes.
 
 
 2009-01-11  Petr Stehlik <pstehlik@sophics.cz>
-  Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
+  Commiting patch submitted by Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * atari_sdl.c: -audio16 fixed
 * pokeysnd.[ch]: Sound recording must stop when POKEY is reinitialised
 * sndsave.c: Chunks in WAV format must be word-aligned,
@@ -54,7 +54,7 @@ Filter option in the UI.
 
 
 2008-12-27  Petr Stehlik <pstehlik@sophics.cz>
-  Commiting patch submitted by Krótki <kr0tki@poczta.onet.pl>
+  Commiting patch submitted by Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * atari.c: initialize color palette after loading saved state
 * cfg.c, mzpokeysnd.c, pokeysnd.c, ui.c: serio_sound* -> POKEYSND_serio_sound*
 
