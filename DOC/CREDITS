@@ -2,6 +2,7 @@ Current active members of the Atari800 development team:
 --------------------------------------------------------
 
     Petr Stehlik     (maintainer)
+    Perry McFarlane  (core developer)
     Piotr Fusik      (core developer)
     Mark Grebe       (Mac OSX)
     Kostas Nakos     (Windows CE)
@@ -192,6 +193,13 @@ Ed Kaminski <ekamins@ibm.net>
 Jari Karppinen <jakarppi@mail.student.oulu.fi>
     - fixed some warnings and bugs such as "void main()" in joycfg
 
+Tomasz Krasuski <kr0tki@poczta.onet.pl>
+    - NTSC filter option added to UI
+    - SDL display modes cleanup
+    - audio fixes (WAV, -audio16)
+    - restore state fixes (color palette reinit)
+    - check for ARGV additional parameters
+
 Kuba <kubad@zeus.polsl.gliwice.pl>
     - vertical retrace control in DOS port
 
@@ -281,6 +289,9 @@ Jacek Poplawski <jpopl@interia.pl>
 Erhard Puetz <erhard-puetz@wtal.de>
     - reported inaccurate PERCOM emulation
 
+Matthias Reichl  <hias@horus.com>
+    - POKEY ALLPOT register fix
+
 Thomas Richter <thor@math.tu-berlin.de>
     - GTIA collisions and third colour of players
     - new SIO code with formatting support
@@ -368,13 +379,3 @@ B Watson  <yalhcru@gmail.com>
     - mouse support for SDL
     - direct mouse support (SDL and X11)
     - readline support for the internal monitor (including command history)
-
-Krótki <kr0tki@poczta.onet.pl>
-    - NTSC filter option added to UI
-    - SDL display modes cleanup
-    - audio fixes (WAV, -audio16)
-    - restore state fixes (color palette reinit)
-    - check for ARGV additional parameters
-
-Matthias Reichl  <hias@horus.com>
-    - POKEY ALLPOT register fix 
