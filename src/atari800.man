@@ -1,7 +1,7 @@
-.TH ATARI800 1 "July 11, 2007"
+.TH ATARI800 1 "March 26, 2009"
 
 .SH NAME
-atari800 \- Atari 800 Emulator, Version 2.0.3
+atari800 \- Atari 800 Emulator, Version 2.1.0
 
 .SH SYNOPSIS
 \fBatari800\fP [options] [files...]
@@ -79,6 +79,16 @@ Use Atari OS/B for Atari 800
 Enable RAM between 0xc000 and 0xcfff in Atari 800
 
 .TP
+\fB-axlon <n>
+Use Atari 800 Axlon memory expansion: <n> k total RAM
+.TP
+\fB-axlon0f
+Use Axlon shadow at 0x0fc0-0x0fff
+.TP
+\fB-mosaic <n>
+Use 400/800 Mosaic memory expansion: <n> k total RAM
+
+.TP
 \fB-pal
 Emulate PAL TV mode
 .TP
@@ -110,6 +120,19 @@ Attach cassette image (CAS format or raw file)
 Attach cassette image and boot it
 
 .TP
+\fB-1400
+Emulate the Atari 1400XL
+.TP
+\fB-xld
+Emulate the Atari 1450XLD
+.TP
+\fB-bb
+Emulate the CSS Black Box
+.TP
+\fB-mio
+Emulate the ICD MIO board
+
+.TP
 \fB-nopatch
 Normally the OS is patched giving very fast I/O. This options prevents
 the patch from being applied so that the OS accesses the serial port
@@ -118,7 +141,7 @@ programs that access the serial hardware should work even if the OS
 has been patched.
 .TP
 \fB-nopatchall
-Don't patch OS at all, H: and P: devices won't work
+Don't patch OS at all, H:, P: and R: devices won't work
 
 .TP
 \fB-H1 <path>
@@ -151,6 +174,12 @@ Enable R-Time 8 emulation
 .TP
 \fB-nortime
 Disable R-Time 8 emulation
+
+.TP
+\fBrdevice [<dev>]
+Enable R: device. If <dev> is specified then it's used as host serial device
+name (e.g. /dev/ttyS0 on linux). If there is no <dev> specified then R:
+is directed to network.
 
 .TP
 \fB-mouse off
@@ -191,6 +220,23 @@ Set mouse speed 1-9 (default 3)
 .TP
 \fB-multijoy
 Emulate MultiJoy4 interface
+.TP
+\fB-directmouse
+Use mouse's absolute position
+.TP
+\fB-cx85 <num>
+Emulate CX85 numeric keypad on port <num>
+.TP
+\fB-grabmouse
+SDL only, prevent mouse pointer from leaving the window
+
+.TP
+\fB-record <filename>
+Record all input events to <filename>. Can be used for gaming contests
+(highest score etc).
+.TP
+\fB-playback <filename>
+Playback input events from <filename>. Watch an expert play the game.
 
 .TP
 \fB-refresh
@@ -210,7 +256,7 @@ Read Atari colors from ACT file
 \fB-black <num>
 Set black level 0-255
 .TP
-\fB-while <num>
+\fB-white <num>
 Set white level 0-255
 .TP
 \fB-colors <num>
@@ -227,6 +273,10 @@ Set filename pattern for screenshots. Use to override the default
 atari000.png, atari001.png etc. filenames. Hashes are replaced with
 raising numbers. Existing files are overwritten only if all the files
 defined by the pattern exist.
+
+.TP
+\fB-showspeed
+Show percentage of actual speed
 
 .TP
 \fB-sound
@@ -312,6 +362,15 @@ Double the screen size on NOVA
 .TP
 \fB-delta
 Delta screen output (differences only)
+.TP
+\fB-joyswap
+Swap joysticks
+
+.SS Java NestedVM
+
+.TP
+\fB-scale <n>
+Scale width and height by <n>
 
 .SS SDL Options
 
@@ -348,6 +407,61 @@ Define path to device used in LPTjoy 0. Available on linux-ia32 only.
 .TP
 \fB-joy1 path-to-device
 Define path to device used in LPTjoy 1. Available on linux-ia32 only.
+
+.TP
+\fB-ntscemu
+Emulate NTSC composite video (640x480x16 only)
+This includes NTSC TV artifacts.  "-artif" is not needed in this mode and will
+not work.  This mode does not use a palette.  The video signal is emulated
+instead.  Palette options such as -genpaln have no effect in this mode.
+The following items are for -ntscemu only:
+
+.TP
+\fB-ntsc_hue <n>
+Set NTSC hue -1..1 (like TV Tint control)
+.TP
+\fB-ntsc_sat <n>
+Set NTSC saturation (like TV Colour control)
+.TP
+\fB-ntsc_cont <n>
+Set NTSC contrast (also called white level)
+.TP
+\fB-ntsc_bright <n>
+Set NTSC brightness (also called black level)
+.TP
+\fB-ntsc_sharp <n>
+Set NTSC sharpness
+.TP
+\fB-ntsc_burst <n>
+Set NTSC burst phase (artificating colours) (CTIA?) Drol, Choplifter,
+Ultima: 0.70
+.TP
+\fB-ntsc_gauss <n>
+Set NTSC Gaussian factor (can affect artifacting colours, sharpness and
+ghosting)
+.TP
+\fB-ntsc_gamma <n>
+Set NTSC gamma adjustment
+.TP
+\fB-ntsc_ramp <n>
+Set NTSC saturation ramp factor (amount by which bright colours become
+desaturated or washed out)
+.TP
+\fB-scanlines <n>
+Set scanlines percentage (ntscemu only)
+.TP
+\fB-scanlinesnoint
+Disable scanlines interpolation (ntscemu only)
+.TP
+\fB-proto80
+Emulate a prototype 80 column board for the 1090
+.TP
+\fB-xep80
+Emulate the XEP80
+.TP
+\fB-xep80port <n>
+Use XEP80 on joystick port <n>
+
 
 .SS X11 Options
 
