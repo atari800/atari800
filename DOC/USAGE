@@ -194,7 +194,7 @@ Falcon version options
 
 Java NestedVM version options
 ----------------------
--scale <n>            Scale Width and height by <n>
+-scale <n>            Scale width and height by <n>
 
 
 SDL version options
