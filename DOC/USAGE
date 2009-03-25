@@ -97,7 +97,7 @@ Command line options
 -mio                  Emulate the ICD MIO board
 
 -nopatch              Don't patch SIO routine in OS
--nopatchall           Don't patch OS at all, H: and P: devices won't work
+-nopatchall           Don't patch OS at all, H:, P: and R: devices won't work
 -H1 <path>            Set path for H1: device
 -H2 <path>            Set path for H2: device
 -H3 <path>            Set path for H3: device
@@ -108,6 +108,8 @@ Command line options
 
 -rtime                Enable R-Time 8 emulation
 -nortime              Disable R-Time 8 emulation
+
+-rdevice [<dev>]      Enable R: device (<dev> can be host serial device name)
 
 -mouse off            Do not use mouse
 -mouse pad            Emulate paddles
