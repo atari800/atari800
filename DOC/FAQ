@@ -16,12 +16,14 @@ Frequently asked questions (with answers)
       use a real joystick (either PC or the old CX-40 Atari one).
 
 3. Q: How about keyboard joysticks in the SDL version?
-   A: Two keyboard joysticks are defined in the config file (once it is saved
-      from the UI). See SDL_JOY_xxx options. Their values are from
-      http://www.libsdl.org/cgi/cvsweb.cgi/SDL12/include/SDL_keysym.h file.
-      The joysticks can be enabled/disabled at runtime in the UI.
-      Selected joysticks' state is saved to config file.
-      Runtime configuration of keyboard joysticks mapping is not yet ready.
+   A: Up to two keyboard joysticks can be freely defined and enabled/disabled
+      on-the-fly in the UI (user interface). Press F1 to enter the UI, then
+      enter "Controller Configuration" and then "Define layout of ...".
+      There you can choose which keys will be used as joystick directions
+      and the fire button. Don't forget to enable the joysticks before
+      gaming and to disable it before using your keyboard in BASIC, DOS
+      or a text editor. When you're satisfied with your keyboard joystick
+      mapping you can save the settings.
 
 4. Q: Sound problems in xxx
    A: We know about problems with volume-only sound (digitized sound effects).
