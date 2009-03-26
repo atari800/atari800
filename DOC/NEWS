@@ -11,12 +11,14 @@ Version 2.1.0 (2009/03/27)
     * added emulation of XEP80 (SDL only currently)
     * added emulation of CX85 numeric keyboard (Java+SDL only)
     * monitor supports arrow keys - try e.g. key up for history...
-    * event recording added (-record, -play) - for game contests? :-)
+    * event recording added (-record, -play): save your game walkthrough
+      using the "-record mygame.dat" and later impress your friends by
+      your game skills or highest score using the "-play mygame.dat"
     * -directmouse added to SDL and X11 (used for -mouse pad or koala)
-    * .pro images supported
+    * .PRO images supported
     * added switching between NTSC and PAL color palettes
     * NTSC Filter option added to UI
-    * Sound: nonlinear mixing, two-tone filter
+    * Sound: nonlinear mixing (not enabled by default), two-tone filter
     * Cassettes: implemented loading with variable bitrates and also
                  raw writing to cassette files
     * SDL: interpolated scanlines (use -scanlinesnoint to disable)

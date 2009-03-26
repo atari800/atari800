@@ -1,5 +1,6 @@
 2009-03-26  Petr Stehlik <pstehlik@sophics.cz>
-* NEWS, atari800.man: updated for upcoming release
+* NEWS, CREDITS, atari800.man, atari.spec, README: updated for release
+* configure.ac, atari.h, util/export: version increased
 
 
 2009-03-23  Petr Stehlik <pstehlik@sophics.cz>
