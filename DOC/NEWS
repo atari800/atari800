@@ -1,89 +1,57 @@
-Version 2.1.0 (2009/03/2x)
+Version 2.1.0 (2009/03/27)
 
- The promised completely new next-gen Atari800 was postponed so here
- we come with another pretty big update of our good old Atari800 :-)
- Read below what we have bugfixed and improved in last 20 months:
+ The promised completely new next-gen Atari800 was postponed so this
+ is another incremental update of the good old Atari800. Let's see
+ what we have added and improved in last 20 months:
 
- Changes:
- --------
+ New features:
+ -------------
     * added Axlon and Mosaic RAM expansions for Atari 400/800
-    * -showspeed fixed, now shows speed <= 100% correctly
     * added emulation of 1400XL, 1450XLD, MIO and Black Box
     * added emulation of XEP80 (SDL only currently)
     * added emulation of CX85 numeric keyboard (Java+SDL only)
-    * R: can be serial-only, network-only or both (selectable)
-    * monitor can support arrow keys - try key up for history...
-    * event recording added
-    * -directmouse added
-    * ALLPOT register fixed
+    * monitor supports arrow keys - try e.g. key up for history...
+    * event recording added (-record, -play) - for game contests? :-)
+    * -directmouse added to SDL and X11 (used for -mouse pad or koala)
     * .pro images supported
-    * various Atari5200 fixes
-    * sound recording to WAV fixed
-    * major source code cleanup, compiles with -pedantic etc.
-
- Graphics:
-    * better GTIA bug mode emulation
     * added switching between NTSC and PAL color palettes
     * NTSC Filter option added to UI
+    * Sound: nonlinear mixing, two-tone filter
+    * Cassettes: implemented loading with variable bitrates and also
+                 raw writing to cassette files
+    * SDL: interpolated scanlines (use -scanlinesnoint to disable)
+    * SDL: using DirectX driver on MS Windows (much faster)
+    * SDL: added -mouse, -mousespeed, -grabmouse (also Alt+M)
+    * SDL: visual configuration of keyboard joysticks layout in the UI
+           default mapping changed to 4,8,6,5 and A,W,D,S 
+    * R: device can be serial-only, network-only or both (selectable)
+    * R: device now supported on MS Windows and Dreamcast as well
+    * a completely new port to Java, running also as an applet
+    * Falcon/TT: removed Devpac dependency in asm files (now gcc friendly)
+
+ Fixes:
+ ------
+    * -showspeed fixed, now shows speed <= 100% correctly
+    * ALLPOT register fixed
+    * various Atari5200 fixes
+    * sound recording to WAV fixed
     * fix for Ilusia demo
-
- Sound:
-    * nonlinear mixing, two-tone filter, corrected STIMER
     * IRQEN fix in POKEY
-
- Cartridges:
+    * corrected STIMER
+    * better GTIA bug mode emulation
+    * major source code cleanup, compiles with -pedantic etc.
+    * Save State: added support for Axlon and Mosaic (version increased to 5)
+                  fixed PBIM12 restoring, fixed PAGED_MEM error with POKEY
+                  color palette restoring fixed
+    * SDL: fixed stdout.txt on MS Windows
+    * SDL: fixed broken Caps Lock key handling
+    * SDL: -audio16 fixed
+    * Dreamcast recognizes the TAB key
+    * MS-Windows: Shift+Control fixes
     * fixed Atrax cartridge bank switching
 
- Cassettes:
-    * implemented loading with variable bitrates
-    * implemented raw writing to cassette files
-
- Save State:
-    * fixed PBIM12 restoring
-    * added support for Axlon and Mosaic (version increased to 5)
-    * fixed PAGED_MEM error with POKEY
-    * color palette restore fixed
-
- SDL:
-    * interpolated scanlines (use -scanlinesnoint to disable)
-    * use directx driver on MS Windows (much faster)
-    * fixed stdout.txt on MS Windows
-    * fixed broken Caps Lock key handling
-    * -mouse, -mousespeed, -directmouse added
-    * visual configuration of keyboard joysticks layout
-        default mapping changed to 4,8,6,5 and A,W,D,S 
-    * -audio16 fixed
-      
- MS Windows version:
-    * added R: device support
-    * Shift+Control fixes
-
- Dreamcast version:
-    * added R: device support
-    * recognize TAB key
-
- Atari Falcon/TT version:
-    * removed Devpac dependency in asm files (now gcc/gas friendly)
-
- Java version:
-    * a completely new port to Java, running also as an applet
-
- Authors of this long time awaited version and the number of their ChangeLog
- entries (which is not an accurate indicator yet it shows clearly that
- this release is based mainly on Perry's work):
-
-     47   Perry McFarlane
-      7   Petr Stehlik
-      5   Krótki
-      5   Piotr Fusik
-      3   Christian Groessler
-      2   Achim Haertel
-      2   B Watson
-      1   Marcin Zukowski
-      1   Matthias Reichl
-
- Thanks to all of them for their contributions, and enjoy Atari800!
-
+ Thanks to Perry and other developers for their contributions to
+ this release. Enjoy Atari800!
 
 
 Version 2.0.3 (2007/07/11)

@@ -1,3 +1,7 @@
+2009-03-26  Petr Stehlik <pstehlik@sophics.cz>
+* NEWS, atari800.man: updated for upcoming release
+
+
 2009-03-23  Petr Stehlik <pstehlik@sophics.cz>
 * NEWS, CREDITS: updated for upcoming release
 * configure.ac: readline support in monitor enabled by default,
@@ -430,7 +434,7 @@ Added emulation of the 1400XL, 1450XLD, MIO and Black Box.
 
 2008-04-16  Achim Haertel  <achim.haertel@e-technik.tu-chemnitz.de>
 * cassette.[ch], pia.c, pokey.c, screen.c, sio.[ch]:
-  implemented writing to raw cassette files
+  implemented raw writing (via HW registers, not SIO) to cassette files
 
 
 2008-04-08  Perry McFarlane  <perry_m@fastmail.fm>
