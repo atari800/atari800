@@ -11,9 +11,9 @@ Version 2.1.0 (2009/03/27)
     * added emulation of XEP80 (SDL only currently)
     * added emulation of CX85 numeric keyboard (Java+SDL only)
     * monitor supports arrow keys - try e.g. key up for history...
-    * event recording added (-record, -play): save your game walkthrough
+    * event recording added (-record, -playback): save your game walkthrough
       using the "-record mygame.dat" and later impress your friends by
-      your game skills or highest score using the "-play mygame.dat"
+      your game skills or highest score using the "-playback mygame.dat"
     * -directmouse added to SDL and X11 (used for -mouse pad or koala)
     * .PRO images supported
     * added switching between NTSC and PAL color palettes
