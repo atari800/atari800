@@ -1,8 +1,8 @@
-  Free and portable Atari 800 Emulator for everybody, Version 2.0.3
+  Free and portable Atari 800 Emulator for everybody, Version 2.1.0
   -----------------------------------------------------------------
 
     Copyright (C) 1995 David Firth. E-Mail: david@signus.demon.co.uk
-    Copyright (C) 1998-2008 Atari800 Development Team.
+    Copyright (C) 1998-2009 Atari800 Development Team.
                             http://atari800.sourceforge.net/
 
     This program is free software; you can redistribute it and/or modify
@@ -10,7 +10,7 @@
     the Free Software Foundation; either version 2, or (at your option)
     any later version.
 
-This is the version 2.0.3 of the Atari 800, 800XL, 130XE and 5200 emulator
+This is the version 2.1.0 of the Atari 800, 800XL, 130XE and 5200 emulator
 for Unix, Linux, Amiga, MS-DOS, Atari TT/Falcon, MS Windows, MS WinCE
 and systems running the SDL library. Our main objective is to create
 a freely distributable portable emulator (i.e. with source code available).
@@ -20,11 +20,13 @@ It can be configured to run in the following ways :-
 	2. CURSES Mode
 	3. X Window + Optional XVIEW or MOTIF User Interface
 	4. CBM Amiga
- 	5. MS-DOS
+ 	5. MS-DOS (DJGPP)
 	6. Atari Falcon/TT and compatible machines
-	7. MS Windows
-	8. SDL
+	7. MS Windows (DirectX)
+	8. SDL (running on _many_ platforms)
 	9. WinCE
+       10. Sega Dreamcast
+       11. JVM (Java applet)
 
 The basic mode is only useful for running programs such as MAC65,
 Atari Basic etc. I have had this version running on Linux,
@@ -88,7 +90,7 @@ o Exact POKEY shift registers (sound and random number generator).
 o 8 disk drives, emulated at computer-to-drive communication
   and fast patched SIO levels.
 
-o ATR, XFD, DCM, ATR.GZ and XFD.GZ disk images.
+o ATR, XFD, DCM, ATR.GZ, XFD.GZ and .PRO disk images.
 
 o Direct loading of Atari executable files and Atari BASIC programs.
 
