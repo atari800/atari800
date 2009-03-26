@@ -1,3 +1,9 @@
+** 2.1.0 tagged on 2009-03-27
+
+2009-03-27  Petr Stehlik <pstehlik@sophics.cz>
+* FAQ: updated for release
+
+
 2009-03-26  Petr Stehlik <pstehlik@sophics.cz>
 * NEWS, CREDITS, atari800.man, atari.spec, README: updated for release
 * configure.ac, atari.h, util/export: version increased
