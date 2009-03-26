@@ -23,7 +23,8 @@ Version 2.1.0 (2009/03/27)
     * SDL: using DirectX driver on MS Windows (much faster)
     * SDL: added -mouse, -mousespeed, -grabmouse (also Alt+M)
     * SDL: visual configuration of keyboard joysticks layout in the UI
-           default mapping changed to 4,8,6,5 and A,W,D,S 
+           (F1 -> Controller Configuration -> Define layout)
+           default mapping changed to 4,8,6,5 (joy0) and A,W,D,S (joy1)
     * R: device can be serial-only, network-only or both (selectable)
     * R: device now supported on MS Windows and Dreamcast as well
     * a completely new port to Java, running also as an applet
@@ -44,8 +45,8 @@ Version 2.1.0 (2009/03/27)
                   fixed PBIM12 restoring, fixed PAGED_MEM error with POKEY
                   color palette restoring fixed
     * SDL: fixed stdout.txt on MS Windows
-    * SDL: fixed broken Caps Lock key handling
-    * SDL: -audio16 fixed
+           fixed broken Caps Lock key handling
+           -audio16 fixed
     * Dreamcast recognizes the TAB key
     * MS-Windows: Shift+Control fixes
     * fixed Atrax cartridge bank switching
