@@ -250,22 +250,22 @@ less frequently updated screen.
 \fB-artif <mode>
 Set artifacting mode 0-4 (0 = disable)
 .TP
-\fB-palette <filename>
-Read Atari colors from ACT file
+\fB-paletten/p <filename>
+Read Atari NTSC/PAL colors from ACT file
 .TP
-\fB-black <num>
-Set black level 0-255
+\fB-blackn/p <num>
+Set NTSC/PAL black level 0-255
 .TP
-\fB-white <num>
-Set white level 0-255
+\fB-whiten/p <num>
+Set NTSC/PAL white level 0-255
 .TP
-\fB-colors <num>
-Set color intensity
+\fB-colorsn/p <num>
+Set NTSC/PAL color intensity
 .TP
-\fB-genpal
-Generate artifical palette
+\fB-genpaln/p
+Generate artifical NTSC/PAL palette
 .TP
-\fB-colshift <num>
+\fB-colshiftn/p <num>
 Set color shift (-genpal only)
 .TP
 \fB-screenshots <pattern>
@@ -311,42 +311,6 @@ are used. The odd locations are filled with spaces.
 Use columns 0 to 79. This mode is similar to \fB-wide1\fP except that
 the spaces are in reverse video if the previous character was also
 in reverse video.
-
-.SS DOS/VGA Options
-
-.TP
-\fB-interlace
-Generate screen with interlace
-.TP
-\fB-video <mode>
-0=320x200, 1=320x240, 2=320x480 interlaced with black lines,
-3=320x480 interlaced with darker lines
-.TP
-\fB-novesa
-Do not use VESA 2 video modes
-.TP
-\fB-vretrace
-Use vertical retrace control
-
-.TP
-\fB-LPTjoy1
-Read joystick connected to LPT1
-.TP
-\fB-LPTjoy2
-Read joystick connected to LPT2
-.TP
-\fB-LPTjoy3
-Read joystick connected to LPT3
-.TP
-\fB-joyswap
-Swap joysticks
-
-.TP
-\fB-keyboard 0
-PC keyboard layout
-.TP
-\fB-keyboard 1
-Atari keyboard layout
 
 .SS Falcon Options
 
@@ -494,9 +458,6 @@ Set the height of the clipping-area
 \fB-private_cmap
 Use private colormap
 .TP
-\fB-showspeed
-Show real speed compared to original Atari800
-.TP
 \fB-sio
 Show SIO monitor
 .TP
@@ -574,12 +535,126 @@ Load state file
 .TP
 \fBAlt+A
 About the emulator
+.TP
+\fBInsert
+Insert line (Atari Shift+'>')
+.TP
+\fBCtrl+Insert
+Insert character (Atari Ctrl+'>')
+.TP
+\fBShift+Ctrl+Insert
+Shift+Ctrl+'>'
+.TP
+\fBDelete
+Delete line (Atari Shift+Backspace)
+.TP
+\fBShift+Backspace
+Delete line (Atari Shift+Backspace)
+.TP
+\fBCtrl+Delete
+Delete character (Atari Ctrl+Backspace)
+.TP
+\fBCtrl+Backspace
+Delete character (Atari Ctrl+Backspace)
+.TP
+\fBShift+Ctrl+Delete
+Shift+Ctrl+Backspace
+.TP
+\fBShift+Ctrl+Backspace
+Shift+Ctrl+Backspace
+.TP
+\fBHome
+Clear (Atari Shift+'<')
+.TP
+\fBCtrl+Home
+Ctrl+'<' (also clears screen)
+.TP
+\fBShift+Ctrl+Home
+Shift+Ctrl+'<'
+.TP
+\fB~
+Inverse video
+.TP
+\fBUp
+Up (Atari Ctrl+'-')
+.TP
+\fBDown
+Down (Atari Ctrl+'=')
+.TP
+\fBLeft
+Left (Atari ctrl+'+')
+.TP
+\fBRight
+Right (Atari ctrl+'*')
+.TP
+\fBCtrl+Up
+-
+.TP
+\fBCtrl+Down
+=
+.TP
+\fBCtrl+Left
++
+.TP
+\fBCtrl+Right
+*
+.TP
+\fBShift+Up
+_ (Atari Shift+'-')
+.TP
+\fBShift+Down
+| (Atari Shift+'=')
+.TP
+\fBShift+Left
+\ (Atari Shift+'+')
+.TP
+\fBShift+Right
+^ (Atari Shift+'*')
+.TP
+\fBShift+Ctrl+Up
+Shift+Ctrl+-
+.TP
+\fBShift+Ctrl+Down
+Shift+Ctrl+=
+.TP
+\fBCtrl+'\\'
+Ctrl+Esc  (Workaround for Windows)
+.TP
+\fBShift+Ctrl+'\\'
+Shift+Ctrl+Esc (Workaround for Windows)
+
+.PP
+CX85 Keypad (if enabled):
+.TP
+\fBhost keypad 0123456789-.
+0123456789-.
+.TP
+\fBhost keypad /
+NO
+.TP
+\fBhost keypad Ctrl+/
+ESCAPE
+.TP
+\fBhost keypad *
+DELETE
+.TP
+\fBhost keypad +
+YES
+.TP
+\fBhost keypad Enter
++ENTER
 
 .PP
 Paddles, Atari touch tablet, Koala pad, light pen, light gun,
 ST/Amiga mouse, Atari trak-ball, joystick and Atari 5200 analog
 controller are emulated using mouse on ports that support it.
 See the options above for how to enable mouse.
+
+.SS Basic
+
+No function keys or Alt+letter shortcuts.
+Use Ctrl+C to enter the monitor.
+Controllers not supported in this version.
 
 .SS Curses
 
@@ -590,20 +665,6 @@ can be typed. Control characters are displayed on the screen
 with the associated upper case character in bold.
 
 Controllers not supported in this version.
-
-.SS DOS/VGA
-
-.TP
-\fBF7
-Switch between Emulated joysticks mode and Normal keyboard
-.TP
-\fB`
-Atari/Inverse key
-
-.PP
-Joysticks can be either real one connected to game port, or old 8-bit
-digital CX-40 joysticks connected to parallel port or keyboard joysticks
-(try out JOYCFG.EXE).
 
 .SS Falcon
 
@@ -628,6 +689,16 @@ Mouse not supported in this version.
 .SS SDL
 
 .TP
+\fB`
+Atari/Inverse key
+.TP
+\fBLSUPER
+Atari/Inverse key (unusable under Windows)
+.TP
+\fBRSUPER
+CapsToggle (+Shift = CapsLock)
+
+.TP
 \fBLAlt+F
 Switch fullscreen (probably doesn't work in Windows)
 .TP
@@ -642,13 +713,78 @@ Swap \fBkeyboard_emulated\fP joysticks
 .TP
 \fBLAlt+E
 Switch bpp (for debug only, will be removed soon)
+.TP
+\fBLAlt+M
+Grab mouse (prevents mouse pointer from leaving the window)
+
+These keys work with the NTSC composite video emualtion (-ntscemu):
+(This interface should be considered experimental and is subject to change)
+.TP
+\fBLAlt+1
+Decrease NTSC sharpness 
+.TP
+\fBLAlt+2
+Increase NTSC sharpness 
+.TP
+\fBLAlt+3
+Decrease NTSC saturation (like TV Colour control)
+.TP
+\fBLAlt+4
+Increase NTSC saturation
+.TP
+\fBLAlt+5
+Decrease NTSC brightness (also called black level)
+.TP
+\fBLAlt+6
+Increase NTSC brightness
+.TP
+\fBLAlt+7
+Decrease NTSC contrast (also called white level) 
+.TP
+\fBLAlt+8
+Increase NTSC contrast
+.TP
+\fBLAlt+9
+Decrease NTSC burst phase (use this to change artifacting colours) 
+.TP
+\fBLAlt+0
+Increase NTSC burst phase
+.TP
+\fBLAlt+-
+Decrease NTSC Gaussian factor (ghosting, sharpness, artif colours)
+.TP
+\fBLAlt+=
+Increase NTSC Gaussian factor (ghosting, sharpness, artif colours)
+.TP
+\fBLAlt+[
+Decrease scanlines percentage (NTSC mode only)
+.TP
+\fBLAlt+]
+Increase scanlines percentage (NTSC mode only)
+.TP
+\fBLAlt+;
+Decrease NTSC hue (like TV Tint control)
+.TP
+\fBLAlt+'
+Increase NTSC hue (like TV Tint control)
+.TP
+\fBLAlt+Ins
+Decrease NTSC saturation ramp(reduce saturation for bright colours) 
+.TP
+\fBLAlt+Ins
+Increase NTSC saturation ramp(reduce saturation for bright colours) 
+.TP
+\fBLAlt+Shift+X
+Enable/disable XEP80 screen (use with -xep80)
+
 
 .PP
-To redefine keys for joystick emulation you must modify SDL_TRIG_* and
-SDL_JOY_* in atari_sdl.c, then recompile Atari800. In source you can also turn
-off sound or change defaults (FULLSCREEN, BW, SWAP_JOYSTICKS, WIDTH_MODE).
-
-On Linux, standard joysticks are supported.
+Apart from standard joysticks (handled by the SDL) up to two keyboard joysticks
+are supported. The keys used for joystick directions and the trigger can be
+freely defined in the config UI (Controller Config -> Define layout).
+Keyboard joystick emulation can be enabled/disabled in the Controller Config.
+By default, joy 0 is enabled and joy 1 is disabled (to not steal normal
+AWDS keys in the emulator).
 
 .SS X11
 
