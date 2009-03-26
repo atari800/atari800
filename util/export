@@ -18,7 +18,7 @@ if [ "x"$key = "xy" ]; then
 	cvs -z9 -d:ext:joy@atari800.cvs.sourceforge.net:/cvsroot/atari800 export -r $TAG atari800
 fi
 #
-grep ATARI_TITLE atari800/src/atari.h | grep $VERSION >/dev/null
+grep Atari800_TITLE atari800/src/atari.h | grep $VERSION >/dev/null
 if [ $? -ne 0 ]; then
 	echo "ERROR: increase version in src/atari.h"
 	exit 1
