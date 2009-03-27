@@ -12,10 +12,12 @@
 %define maintarget sdl
 Requires:	SDL >= 1.2.10
 BuildRequires:	SDL-devel >= 1.2.10
-Requires:	readline
-BuildRequires:	readline-devel
 Requires:	ncurses
 BuildRequires:	ncurses-devel
+Requires:	zlib
+BuildRequires:	zlib-devel
+Requires:	readline
+BuildRequires:	readline-devel
 Summary:	An emulator of 8-bit Atari personal computers.
 Name:		%{name}
 Version:	%{ver}
