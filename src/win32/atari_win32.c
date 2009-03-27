@@ -2,7 +2,7 @@
  * atari_win32.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2007 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2009 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -627,7 +627,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 #endif
 
 	if (help_only)
-		return;
+		return TRUE;
 
 	if (initinput()) {
 		MessageBox(hWndMain, "DirectInput Init FAILED",
