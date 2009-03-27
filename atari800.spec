@@ -86,8 +86,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Fri Mar 27 2009 Petr Stehlik <pstehlik@sophics.cz>
-New upstream release.
-* Wen Jul 11 2007 Petr Stehlik <pstehlik@sophics.cz>
+New upstream release. Requires and BuildRequires added.
+* Wed Jul 11 2007 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Changes documented in the NEWS file.
 * Sat Apr 08 2006 Petr Stehlik <pstehlik@sophics.cz>
 Version increased. Changes documented in the NEWS file.
