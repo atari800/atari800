@@ -10,7 +10,7 @@ Version 2.1.0 (2009/03/27)
     * added emulation of 1400XL, 1450XLD, MIO and Black Box
     * added support of .PRO copy-protected disk images
     * implemented tape loading with variable bitrates
-    * implemented raw writing to cassette files
+    * implemented cassette writing via hardware registers
     * added switching between NTSC and PAL color palettes
     * added emulation of XEP80 and a prototype 80 column card
       for the Atari 1090 (SDL only currently)
