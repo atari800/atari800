@@ -2,7 +2,7 @@
 ;  emuos.lis - OS bootstrapping code
 ;
 ;  Copyright (C) 1995-1998 David Firth
-;  Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
+;  Copyright (C) 2001-2009 Atari800 development team (see DOC/CREDITS)
 ;
 ;  This file is part of the Atari800 emulator project which emulates
 ;  the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -441,7 +441,7 @@ DLIST
 HALTMSG
     .SBYTE "      Atari800/OS Emulation Halted      "
     .SBYTE "   Copyright (c) 1997 David J. Firth    "
-    .SBYTE "(c) 1998-2005 Atari800 Development Team "
+    .SBYTE "(c) 1998-2009 Atari800 Development Team "
     .SBYTE "                                        "
     .SBYTE "       http://atari800.atari.org/       "
     .SBYTE "                                        "
