@@ -1,24 +1,25 @@
 ** 2.1.0 released on 2009-03-27
 
+2009-03-27  Petr Stehlik <pstehlik@sophics.cz>
+* atari800.spec: added dependencies to SDL, ncurses, zlib and readline
+* debian/control: added dependency to libreadline5-dev
+* debian/changelog, debian/atari800.cfg: updated for release
+* emuos.{h,lis}: (c) 2005 -> 2009
+* DOC/FAQ: updated for release (SDL keyboard joysticks are configurable now)
+* DOC/NEWS: yet another update (thanks Piotr for help with final editing)
+
+
 2009-03-27  Piotr Fusik  <fox@scene.pl>
 * DOC/TODO: updated
 
 
-2009-03-27  Petr Stehlik <pstehlik@sophics.cz>
-* FAQ: updated for release (SDL keyboard joysticks are configurable now)
-* atari800.spec: added dependencies to SDL, ncurses and readline
-* debian/control: added dependency to libreadline5-dev
-* debian/changelog, debian/atari800.cfg: updated for release
-* emuos.{h,lis}: (c) 2005 -> 2009
-
-
 2009-03-26  Petr Stehlik <pstehlik@sophics.cz>
-* NEWS, CREDITS, atari800.man, atari.spec, README: updated for release
+* DOC/NEWS, DOC/CREDITS, atari800.man, atari.spec, README: release update
 * configure.ac, atari.h, util/export: version increased
 
 
 2009-03-23  Petr Stehlik <pstehlik@sophics.cz>
-* NEWS, CREDITS: updated for upcoming release
+* DOC/NEWS, DOC/CREDITS: updated for upcoming release
 * configure.ac: readline support in monitor enabled by default,
   simple Autoconf readline check added.
 

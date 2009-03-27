@@ -2,59 +2,59 @@ Version 2.1.0 (2009/03/27)
 
  The promised completely new next-gen Atari800 was postponed so this
  is another incremental update of the good old Atari800. Let's see
- what we have added and improved in last 20 months:
+ what we have added and improved in the last 20 months:
 
  New features:
  -------------
     * added Axlon and Mosaic RAM expansions for Atari 400/800
     * added emulation of 1400XL, 1450XLD, MIO and Black Box
-    * added emulation of XEP80 (SDL only currently)
-    * added emulation of CX85 numeric keyboard (Java+SDL only)
-    * monitor supports arrow keys - try e.g. key up for history...
+    * added support of .PRO copy-protected disk images
+    * implemented tape loading with variable bitrates
+    * implemented raw writing to cassette files
+    * added switching between NTSC and PAL color palettes
+    * added emulation of XEP80 and a prototype 80 column card
+      for the Atari 1090 (SDL only currently)
+    * added emulation of CX85 numeric keyboard (Java and SDL only)
     * event recording added (-record, -playback): save your game walkthrough
       using the "-record mygame.dat" and later impress your friends by
       your game skills or highest score using the "-playback mygame.dat"
-    * -directmouse added to SDL and X11 (used for -mouse pad or koala)
-    * .PRO images supported
-    * added switching between NTSC and PAL color palettes
     * NTSC Filter option added to UI
-    * Sound: nonlinear mixing (not enabled by default), two-tone filter
-    * Cassettes: implemented loading with variable bitrates and also
-                 raw writing to cassette files
+    * -directmouse added to SDL and X11 (used for -mouse pad or koala)
+    * monitor supports arrow keys - e.g. up-arrow for history
     * SDL: interpolated scanlines (use -scanlinesnoint to disable)
-    * SDL: using DirectX driver on MS Windows (much faster)
     * SDL: added -mouse, -mousespeed, -grabmouse (also Alt+M)
     * SDL: visual configuration of keyboard joysticks layout in the UI
            (F1 -> Controller Configuration -> Define layout)
            default mapping changed to 4,8,6,5 (joy0) and A,W,D,S (joy1)
     * R: device can be serial-only, network-only or both (selectable)
     * R: device now supported on MS Windows and Dreamcast as well
-    * a completely new port to Java, running also as an applet
+    * a completely new port to Java using NestedVM, running also as an applet
     * Falcon/TT: removed Devpac dependency in asm files (now gcc friendly)
 
  Fixes:
  ------
-    * -showspeed fixed, now shows speed <= 100% correctly
-    * ALLPOT register fixed
-    * various Atari5200 fixes
-    * sound recording to WAV fixed
-    * fix for Ilusia demo
-    * IRQEN fix in POKEY
-    * corrected STIMER
+    * fix for "Ilusia" demo
     * better GTIA bug mode emulation
+    * POKEY sound: nonlinear mixing (not enabled by default), two-tone filter
+    * fixed POKEY registers: ALLPOT, IRQEN and STIMER
+    * various Atari5200 fixes
+    * fixed Atrax cartridge bank switching
+    * fixed sound recording to WAV
+    * -showspeed fixed, now shows speed <= 100% correctly
     * major source code cleanup, compiles with -pedantic etc.
-    * Save State: added support for Axlon and Mosaic (version increased to 5)
-                  fixed PBIM12 restoring, fixed PAGED_MEM error with POKEY
+    * Save State: added support for Axlon and Mosaic (version increased to 5),
+                  fixed PBIM12 restoring, fixed PAGED_MEM error with POKEY,
                   color palette restoring fixed
-    * SDL: fixed stdout.txt on MS Windows
-           fixed broken Caps Lock key handling
+    * SDL: using DirectX driver on MS Windows (much faster),
+           fixed stdout.txt on MS Windows,
+           fixed broken Caps Lock key handling,
            -audio16 fixed
     * Dreamcast recognizes the TAB key
     * MS-Windows: Shift+Control fixes
-    * fixed Atrax cartridge bank switching
+    * dropped SVGAlib target - use SDL instead
 
- Thanks to Perry and other developers for their contributions to
- this release. Enjoy Atari800!
+ Thanks to Perry McFarlane and other developers for their contributions
+ to this release. Enjoy Atari800!
 
 
 Version 2.0.3 (2007/07/11)
