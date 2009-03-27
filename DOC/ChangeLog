@@ -1,6 +1,8 @@
 2009-03-27  Piotr Fusik  <fox@scene.pl>
 * win32/atari_win32.c: missing return value in PLATFORM_Initialise
 
+* win32/.cvsignore: atari.res
+
 
 ** 2.1.0 released on 2009-03-27
 
