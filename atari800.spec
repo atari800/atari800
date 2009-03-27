@@ -10,6 +10,12 @@
 ## If you change the targets, you'll have to change the files list at the
 ## bottom of this file as well
 %define maintarget sdl
+Requires:	SDL >= 1.2.10
+BuildRequires:	SDL-devel >= 1.2.10
+Requires:	readline
+BuildRequires:	readline-devel
+Requires:	ncurses
+BuildRequires:	ncurses-devel
 Summary:	An emulator of 8-bit Atari personal computers.
 Name:		%{name}
 Version:	%{ver}
