@@ -1,7 +1,11 @@
-** 2.1.0 tagged on 2009-03-27
+** 2.1.0 released on 2009-03-27
 
 2009-03-27  Petr Stehlik <pstehlik@sophics.cz>
-* FAQ: updated for release
+* FAQ: updated for release (SDL keyboard joysticks are configurable now)
+* atari800.spec: added dependencies to SDL, ncurses and readline
+* debian/control: added dependency to libreadline5-dev
+* debian/changelog, debian/atari800.cfg: updated for release
+* emuos.{h,lis}: (c) 2005 -> 2009
 
 
 2009-03-26  Petr Stehlik <pstehlik@sophics.cz>
@@ -42,11 +46,12 @@
 
 
 2009-02-28  Perry McFarlane  <perry_m@fastmail.fm>
-* /DOC/USAGE akey.h atari_sdl.c javanvm/atari_javanvm.c input.[ch]: Emulate CX85 numeric keypad
+* /DOC/USAGE akey.h atari_sdl.c javanvm/atari_javanvm.c input.[ch]: Emulate
+  CX85 numeric keypad
 
 
 2009-02-25  Perry McFarlane  <perry_m@fastmail.fm>
-  Commiting patch submitted by Tomasz Krasuski <kr0tki@poczta.onet.pl> with my changes 
+  Commiting patch submitted by Tomasz <kr0tki@poczta.onet.pl> with my changes
 * atari.c atari_sdl.c atari_ntsc.[ch] configure.ac platform.h ui.c: NTSC
 Filter option in the UI.
 
