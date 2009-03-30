@@ -127,13 +127,13 @@ int collision_curpos;
  */
 int hitclr_pos;
 #else
-#define P1PL_T P1PL
-#define P2PL_T P2PL
-#define P3PL_T P3PL
-#define M0PL_T M0PL
-#define M1PL_T M1PL
-#define M2PL_T M2PL
-#define M3PL_T M3PL
+#define P1PL_T GTIA_P1PL
+#define P2PL_T GTIA_P2PL
+#define P3PL_T GTIA_P3PL
+#define M0PL_T GTIA_M0PL
+#define M1PL_T GTIA_M1PL
+#define M2PL_T GTIA_M2PL
+#define M3PL_T GTIA_M3PL
 #endif /* NEW_CYCLE_EXACT */
 
 static UBYTE *hposp_ptr[4];

@@ -1,3 +1,7 @@
+2009-03-30  Perry McFarlane  <perry_m@fastmail.fm>
+* gtia.c: compile without NEW_CYCLE_EXACT
+
+
 2009-03-30  Petr Stehlik <pstehlik@sophics.cz>
 * atari800.spec: png library added to dependencies.
 
