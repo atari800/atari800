@@ -16,6 +16,8 @@ Requires:	ncurses
 BuildRequires:	ncurses-devel
 Requires:	zlib
 BuildRequires:	zlib-devel
+Requires:	png
+BuildRequires:	png-devel
 Requires:	readline
 BuildRequires:	readline-devel
 Summary:	An emulator of 8-bit Atari personal computers.
@@ -87,6 +89,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/doc/atari800/NEWS
 
 %changelog
+* Mon Mar 30 2009 Petr Stehlik <pstehlik@sophics.cz>
+Requires and BuildRequires also the png library.
 * Fri Mar 27 2009 Petr Stehlik <pstehlik@sophics.cz>
 New upstream release. Requires and BuildRequires added.
 * Wed Jul 11 2007 Petr Stehlik <pstehlik@sophics.cz>
