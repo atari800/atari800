@@ -169,6 +169,11 @@ Graphics
 
 * cycle-exact DMACTL and HSCROL including all glitches
 
+* ANTIC glitch:
+  POKE 39974,18:POKE 39975,8:POKE 54276,15
+  or
+  POKE 39974,18:POKE 39975,40:POKE 54276,15:POKE 54277,15
+
 * Video Board XE emulation
 
 
