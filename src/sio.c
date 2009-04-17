@@ -703,7 +703,7 @@ void SIO_Handler(void)
 	/* XL OS: E99D: LDA $0300 ADC $0301 ADC #$FF STA 023A */
 	/* Disk 1 is ASCII '1' = 0x31 etc */
 	/* Disk 1 -> unit = 0 */
-	if (MEMORY_dGetByte(0x300) != 0x60 && unit < SIO_MAX_DRIVES) {	/* UBYTE range ! */
+	if (MEMORY_dGetByte(0x300) != 0x60 && unit < SIO_MAX_DRIVES && SIO_drive_status[unit] != SIO_OFF) {	/* UBYTE range ! */
 #ifdef DEBUG
 		Log_print("SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
 			cmd, MEMORY_dGetByte(0x303), MEMORY_dGetByte(0x304), MEMORY_dGetByte(0x305), MEMORY_dGetByte(0x306),
@@ -770,7 +770,9 @@ void SIO_Handler(void)
 		case 0x53:				/* Status */
 			if (4 == length) {
 				result = SIO_DriveStatus(unit, DataBuffer);
-				MEMORY_CopyToMem(DataBuffer, data, 4);
+				if (result == 'C') {
+					MEMORY_CopyToMem(DataBuffer, data, 4);
+				}
 			}
 			else
 				result = 'E';
@@ -1142,7 +1144,7 @@ void SIO_PutByte(int byte)
 		if (CommandIndex < ExpectedBytes) {
 			CommandFrame[CommandIndex++] = byte;
 			if (CommandIndex >= ExpectedBytes) {
-				if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38) {
+				if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38 && SIO_drive_status[CommandFrame[0]-0x31] != SIO_OFF) {
 					TransferStatus = SIO_StatusRead;
 					POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL + SIO_ACK_INTERVAL;
 				}

@@ -1,3 +1,7 @@
+2009-04-17  Perry McFarlane  <perry_m@fastmail.fm>
+* sio.c: fix sio for AMS music player
+
+
 2009-03-30  Perry McFarlane  <perry_m@fastmail.fm>
 * gtia.c: compile without NEW_CYCLE_EXACT
 
