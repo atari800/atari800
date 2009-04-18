@@ -1,3 +1,7 @@
+2009-04-18  Perry McFarlane  <perry_m@fastmail.fm>
+* sio.c: sio fix broke BINLOAD
+
+
 2009-04-17  Perry McFarlane  <perry_m@fastmail.fm>
 * sio.c: fix sio for AMS music player
 

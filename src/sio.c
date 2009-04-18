@@ -1144,7 +1144,7 @@ void SIO_PutByte(int byte)
 		if (CommandIndex < ExpectedBytes) {
 			CommandFrame[CommandIndex++] = byte;
 			if (CommandIndex >= ExpectedBytes) {
-				if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38 && SIO_drive_status[CommandFrame[0]-0x31] != SIO_OFF) {
+				if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38 && (SIO_drive_status[CommandFrame[0]-0x31] != SIO_OFF || BINLOAD_start_binloading)) {
 					TransferStatus = SIO_StatusRead;
 					POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL + SIO_ACK_INTERVAL;
 				}
