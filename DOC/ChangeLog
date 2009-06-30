@@ -1,3 +1,8 @@
+2009-06-30  Piotr Fusik  <fox@scene.pl>
+  Commiting patch submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
+* atari_sdl.c, compfile.c: changed "#ifdef linux" to "#ifdef __linux__"
+
+
 2009-04-18  Perry McFarlane  <perry_m@fastmail.fm>
 * sio.c: sio fix broke BINLOAD
 

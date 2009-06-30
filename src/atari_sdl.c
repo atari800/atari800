@@ -2,7 +2,7 @@
  * atari_sdl.c - SDL library specific port code
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
- * Copyright (C) 2001-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2009 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef linux
+#ifdef __linux__
 #define LPTJOY	1
 #endif
 
