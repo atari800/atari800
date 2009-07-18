@@ -1,3 +1,7 @@
+2009-07-18  Petr Stehlik <pstehlik@sophics.cz>
+* configure.ac: patch from Patrice Mandin for gemlib autodetection
+
+
 2009-06-30  Piotr Fusik  <fox@scene.pl>
   Commiting patch submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
 * atari_sdl.c, compfile.c: changed "#ifdef linux" to "#ifdef __linux__"
