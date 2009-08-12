@@ -98,15 +98,17 @@ static int mouse_y = 0;
 static int mouse_move_x = 0;
 static int mouse_move_y = 0;
 static int mouse_pen_show_pointer = 0;
+static int mouse_last_right = 0;
+static int mouse_last_down = 0;
 
-static UBYTE mouse_amiga_codes[16] = {
+static const UBYTE mouse_amiga_codes[16] = {
 	0x00, 0x02, 0x0a, 0x08,
 	0x01, 0x03, 0x0b, 0x09,
 	0x05, 0x07, 0x0f, 0x0d,
 	0x04, 0x06, 0x0e, 0x0c
 };
 
-static UBYTE mouse_st_codes[16] = {
+static const UBYTE mouse_st_codes[16] = {
 	0x00, 0x02, 0x03, 0x01,
 	0x08, 0x0a, 0x0b, 0x09,
 	0x0c, 0x0e, 0x0f, 0x0d,
@@ -339,6 +341,7 @@ static UBYTE mouse_step(void)
 			return r;
 		if (mouse_move_x < 0) {
 			r &= INPUT_STICK_LEFT;
+			mouse_last_right = 0;
 			mouse_x--;
 			mouse_move_x += 1 << MOUSE_SHIFT;
 			if (mouse_move_x > 0)
@@ -346,6 +349,7 @@ static UBYTE mouse_step(void)
 		}
 		else {
 			r &= INPUT_STICK_RIGHT;
+			mouse_last_right = 1;
 			mouse_x++;
 			mouse_move_x -= 1 << MOUSE_SHIFT;
 			if (mouse_move_x < 0)
@@ -356,6 +360,7 @@ static UBYTE mouse_step(void)
 			e += dx;
 			if (mouse_move_y < 0) {
 				r &= INPUT_STICK_FORWARD;
+				mouse_last_down = 0;
 				mouse_y--;
 				mouse_move_y += 1 << MOUSE_SHIFT;
 				if (mouse_move_y > 0)
@@ -363,6 +368,7 @@ static UBYTE mouse_step(void)
 			}
 			else {
 				r &= INPUT_STICK_BACK;
+				mouse_last_down = 1;
 				mouse_y++;
 				mouse_move_y -= 1 << MOUSE_SHIFT;
 				if (mouse_move_y < 0)
@@ -373,6 +379,7 @@ static UBYTE mouse_step(void)
 	else {
 		if (mouse_move_y < 0) {
 			r &= INPUT_STICK_FORWARD;
+			mouse_last_down = 0;
 			mouse_y--;
 			mouse_move_y += 1 << MOUSE_SHIFT;
 			if (mouse_move_y > 0)
@@ -380,6 +387,7 @@ static UBYTE mouse_step(void)
 		}
 		else {
 			r &= INPUT_STICK_BACK;
+			mouse_last_down = 1;
 			mouse_y++;
 			mouse_move_y -= 1 << MOUSE_SHIFT;
 			if (mouse_move_y < 0)
@@ -390,6 +398,7 @@ static UBYTE mouse_step(void)
 			e += dy;
 			if (mouse_move_x < 0) {
 				r &= INPUT_STICK_LEFT;
+				mouse_last_right = 0;
 				mouse_x--;
 				mouse_move_x += 1 << MOUSE_SHIFT;
 				if (mouse_move_x > 0)
@@ -397,6 +406,7 @@ static UBYTE mouse_step(void)
 			}
 			else {
 				r &= INPUT_STICK_RIGHT;
+				mouse_last_right = 1;
 				mouse_x++;
 				mouse_move_x -= 1 << MOUSE_SHIFT;
 				if (mouse_move_x < 0)
@@ -707,8 +717,8 @@ void INPUT_Frame(void)
 			if (INPUT_mouse_mode == INPUT_MOUSE_TRAK) {
 				/* bit 3 toggles - vertical movement, bit 2 = 0 - up */
 				/* bit 1 toggles - horizontal movement, bit 0 = 0 - left */
-				STICK[INPUT_mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
-									| ((mouse_x & 1) << 1) | ((stick & 4) >> 2);
+				STICK[INPUT_mouse_port] = ((mouse_y & 1) << 3) | (mouse_last_down << 2)
+									| ((mouse_x & 1) << 1) | mouse_last_right;
 			}
 			else {
 				STICK[INPUT_mouse_port] = (INPUT_mouse_mode == INPUT_MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
@@ -945,8 +955,8 @@ void INPUT_Scanline(void)
 		if (INPUT_mouse_mode == INPUT_MOUSE_TRAK) {
 			/* bit 3 toggles - vertical movement, bit 2 = 0 - up */
 			/* bit 1 toggles - horizontal movement, bit 0 = 0 - left */
-			STICK[INPUT_mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
-								| ((mouse_x & 1) << 1) | ((stick & 4) >> 2);
+			STICK[INPUT_mouse_port] = ((mouse_y & 1) << 3) | (mouse_last_down << 2)
+								| ((mouse_x & 1) << 1) | mouse_last_right;
 		}
 		else {
 			STICK[INPUT_mouse_port] = (INPUT_mouse_mode == INPUT_MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
