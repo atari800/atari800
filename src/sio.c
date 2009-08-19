@@ -703,7 +703,7 @@ void SIO_Handler(void)
 	/* XL OS: E99D: LDA $0300 ADC $0301 ADC #$FF STA 023A */
 	/* Disk 1 is ASCII '1' = 0x31 etc */
 	/* Disk 1 -> unit = 0 */
-	if (MEMORY_dGetByte(0x300) != 0x60 && unit < SIO_MAX_DRIVES && SIO_drive_status[unit] != SIO_OFF) {	/* UBYTE range ! */
+	if (MEMORY_dGetByte(0x300) != 0x60 && unit < SIO_MAX_DRIVES && (SIO_drive_status[unit] != SIO_OFF || BINLOAD_start_binloading)) {	/* UBYTE range ! */
 #ifdef DEBUG
 		Log_print("SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
 			cmd, MEMORY_dGetByte(0x303), MEMORY_dGetByte(0x304), MEMORY_dGetByte(0x305), MEMORY_dGetByte(0x306),
