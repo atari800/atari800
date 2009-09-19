@@ -224,8 +224,10 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 
 			else if (strcmp(string, "ENABLE_NEW_POKEY") == 0) {
 #ifdef SOUND
+#ifndef SYNCHRONIZED_SOUND
 				POKEYSND_enable_new_pokey = Util_sscanbool(ptr);
-#endif
+#endif /* SYNCHRONIZED_SOUND */
+#endif /* SOUND */
 			}
 			else if (strcmp(string, "STEREO_POKEY") == 0) {
 #ifdef STEREO_SOUND
@@ -382,7 +384,9 @@ int CFG_WriteConfig(void)
 #endif
 
 #ifdef SOUND
+#ifndef SYNCHRONIZED_SOUND
 	fprintf(fp, "ENABLE_NEW_POKEY=%d\n", POKEYSND_enable_new_pokey);
+#endif /* SYNCHRONIZED_SOUND */
 #ifdef STEREO_SOUND
 	fprintf(fp, "STEREO_POKEY=%d\n", POKEYSND_stereo_enabled);
 #endif

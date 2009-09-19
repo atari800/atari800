@@ -287,6 +287,7 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
+        SUPPORTS_SYNCHRONIZED_SOUND="yes"
 	WANT_XEP80_EMULATION=yes
 	WANT_NTSC_FILTER=yes
         LIBS="$LIBS `sdl-config --libs`"
@@ -623,10 +624,24 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
         esac
     fi
 
-    A8_OPTION(nonlinear_mixing,no,
-              [Use nonlinear POKEY mixing (default=OFF)],
-              NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
-             )
+    if [[ "$SUPPORTS_SYNCHRONIZED_SOUND" = "yes" ]]; then
+        A8_OPTION(synchronized_sound,yes,
+                  [Use synchronized sound (default=ON)],
+                  SYNCHRONIZED_SOUND,[Define to use synchronized sound.]
+                 )
+
+        A8_OPTION(nonlinear_mixing,yes,
+                  [Use nonlinear POKEY mixing (default=ON)],
+                  NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
+                 )
+    else
+
+        A8_OPTION(nonlinear_mixing,no,
+                  [Use nonlinear POKEY mixing (default=OFF)],
+                  NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
+                 )
+        WANT_SYNCHRONIZED_SOUND="no"
+    fi
 
     A8_OPTION(interpolatesound,yes,
               [Use sound interpolation (default=ON)],
@@ -669,6 +684,7 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
     fi
 else
     WANT_NONLINEAR_MIXING="no"
+    WANT_SYNCHRONIZED_SOUND="no"
     WANT_INTERPOLATE_SOUND="no"
     WANT_STEREO_SOUND="no"
     WANT_VOL_ONLY_SOUND="no"
@@ -788,6 +804,7 @@ echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
+    echo "    Using synchronized sound?..........: $WANT_SYNCHRONIZED_SOUND"
     echo "    Using sound interpolation?........: $WANT_INTERPOLATE_SOUND"
     echo "    Using stereo sound?...............: $WANT_STEREO_SOUND"
     echo "    Using volume only sound?..........: $WANT_VOL_ONLY_SOUND"

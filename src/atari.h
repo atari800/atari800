@@ -50,6 +50,10 @@ extern int Atari800_machine_type;
 #define Atari800_TV_UNSET 0
 #define Atari800_TV_PAL 312
 #define Atari800_TV_NTSC 262
+#define Atari800_FPS_PAL 49.8607597
+/*49.8607597 = (4.43361875*(4/5)*1000000)/(312*228)*/
+#define Atari800_FPS_NTSC 59.9227434
+/*59.9227434 = (3.579545*1000000)/(262*228)*/
 
 /* Video system / Number of scanlines per frame. */
 extern int Atari800_tv_mode;

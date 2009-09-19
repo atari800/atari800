@@ -80,13 +80,16 @@ static int bit16;
 SWORD *temp_votrax_buffer = NULL;
 SWORD *votrax_buffer = NULL;
 static int votrax_busy = FALSE;
-static volatile int votrax_written = FALSE;
-static volatile int votrax_written_byte = 0x3f;
 static int votrax_sync_samples;
 static void votrax_busy_callback(int busy_status);
 static int dsprate;
 static int num_pokeys;
 static int samples_per_frame;
+/*if SYNCHRONIZED_SOUND is not used and the sound generation runs in a
+ * separate thread, then these variables are accessed in two different
+ * threads: */
+static int votrax_written = FALSE;
+static int votrax_written_byte = 0x3f;
 
 #ifdef PBI_DEBUG
 #define D(a) a
@@ -785,7 +788,6 @@ static void mix(SWORD *dst, SWORD *src, int sndn, int volume)
 {
 	SWORD s1, s2;
 	int val;
-	int channel = 0;
 
 	while (sndn--) {
 		s1 = *src;
@@ -797,11 +799,7 @@ static void mix(SWORD *dst, SWORD *src, int sndn, int volume)
 		if (val < -32768) val = -32768;
 		*dst++ = val;
 		if (num_pokeys == 2) {
-			if (!channel) {
-				channel = !channel;
-				sndn++;
-				src--;
-			}
+			dst++;
 		}
 	}
 }
@@ -811,7 +809,6 @@ static void mix8(UBYTE *dst, SWORD *src, int sndn, int volume)
 {
 	SWORD s1, s2;
 	int val;
-	int channel = 0;
 
 	while (sndn--) {
 		s1 = *src;
@@ -823,11 +820,7 @@ static void mix8(UBYTE *dst, SWORD *src, int sndn, int volume)
 		if (val < -32768) val = -32768;
 		*dst++ = (UBYTE)((val/256) + 0x80);
 		if (num_pokeys == 2) {
-			if (!channel) {
-				channel = !channel;
-				sndn++;
-				src--;
-			}
+			dst++;
 		}
 	}
 }
@@ -851,6 +844,7 @@ void PBI_XLD_VProcess(void *sndbuffer, int sndn)
 		votrax_written = FALSE;
 		Votrax_PutByte(votrax_written_byte);
 	}
+	sndn /= num_pokeys;
 	while (sndn > 0) {
 		int amount = ((sndn > VTRX_BLOCK_SIZE) ? VTRX_BLOCK_SIZE : sndn);
 		votrax_process(votrax_buffer, amount, temp_votrax_buffer);

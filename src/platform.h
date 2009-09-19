@@ -72,4 +72,10 @@ extern enum PLATFORM_filter_t PLATFORM_filter;
 void PLATFORM_SetFilter(const enum PLATFORM_filter_t filter);
 #endif /* NTSC_FILTER */
 
+#ifdef SYNCHRONIZED_SOUND
+/* This function returns a number which is used to adjust the speed
+ * of execution to synchronize with the sound output */
+double PLATFORM_AdjustSpeed(void);
+#endif /* SYNCHRONIZED SOUND */
+
 #endif /* PLATFORM_H_ */

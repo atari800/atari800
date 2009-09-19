@@ -207,7 +207,8 @@ SDL version options
 -height y             Set mode height
 -bpp b                Set mode bits per pixel
 
--audio16              Enable 16-bit sound
+-audio16              Use 16-bit sound
+-audio8               Use 8-bit sound
 
 -nojoystick           Do not initialize joysticks
 -joy0 </dev/lp0>      Define the device for LPTjoy

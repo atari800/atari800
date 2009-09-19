@@ -59,6 +59,9 @@
 #ifdef R_SERIAL
 #include <sys/stat.h>
 #endif
+#ifdef SDL
+#include "SDL.h"
+#endif
 
 #include "akey.h"
 #include "antic.h"
@@ -855,7 +858,9 @@ void Atari_sleep(double s);
 
 static double Atari_time(void)
 {
-#ifdef WIN32
+#ifdef SDL
+	return SDL_GetTicks() * 1e-3;
+#elif defined(WIN32)
 	return GetTickCount() * 1e-3;
 #elif defined(DJGPP)
 	/* DJGPP has gettimeofday, but it's not more accurate than uclock */
@@ -920,8 +925,11 @@ static void Atari_sleep(double s)
 void Atari800_Sync(void)
 {
 	static double lasttime = 0;
-	double deltatime = 1.0 / ((Atari800_tv_mode == Atari800_TV_PAL) ? 50 : 60);
+	double deltatime = 1.0 / ((Atari800_tv_mode == Atari800_TV_PAL) ? Atari800_FPS_PAL : Atari800_FPS_NTSC);
 	double curtime;
+#ifdef SYNCHRONIZED_SOUND
+	deltatime *= PLATFORM_AdjustSpeed();
+#endif
 #ifdef ALTERNATE_SYNC_WITH_HOST
 	if (! UI_is_active)
 		deltatime *= Atari800_refresh_rate;
@@ -1149,9 +1157,6 @@ void Atari800_Frame(void)
 	INPUT_Frame();
 #endif
 	GTIA_Frame();
-#ifdef SOUND
-	Sound_Update();
-#endif
 
 #ifdef BASIC
 	basic_frame();
@@ -1185,6 +1190,9 @@ void Atari800_Frame(void)
 	}
 #endif /* BASIC */
 	POKEY_Frame();
+#ifdef SOUND
+	Sound_Update();
+#endif
 	Atari800_nframes++;
 #ifdef BENCHMARK
 	if (Atari800_nframes >= BENCHMARK) {

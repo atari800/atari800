@@ -189,6 +189,7 @@ static void SelectSystem(void)
 		if (option < N_MACHINES)
 			break;
 		Atari800_tv_mode = (Atari800_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
+		Sound_Reinit();
 	}
 	if (option >= 0) {
 		Atari800_machine_type = machine[option].type;
@@ -1335,7 +1336,11 @@ static void KeyboardJoystickConfiguration(int joystick)
 {
 	char title[40];
 	int option2 = 0;
+#ifdef HAVE_SNPRINTF
 	snprintf(title, sizeof(title), "Define keys for joystick %d", joystick);
+#else
+	sprintf(title, "Define keys for joystick %d", joystick);
+#endif
 	for(;;) {
 		int j0d;
 		for(j0d = 0; j0d <= 4; j0d++)
@@ -1484,7 +1489,9 @@ static int SoundSettings(void)
 {
 	static UI_tMenuItem menu_array[] = {
 		/* XXX: don't allow on smartphones? */
+#ifndef SYNCHRONIZED_SOUND
 		UI_MENU_CHECK(0, "High Fidelity POKEY:"),
+#endif
 #ifdef STEREO_SOUND
 		UI_MENU_CHECK(1, "Dual POKEY (Stereo):"),
 #endif
@@ -1494,7 +1501,9 @@ static int SoundSettings(void)
 #ifdef SERIO_SOUND
 		UI_MENU_CHECK(3, "Serial IO Sound:"),
 #endif
+#ifndef SYNCHRONIZED_SOUND
 		UI_MENU_ACTION(4, "Enable higher frequencies:"),
+#endif
 #ifdef DREAMCAST
 		UI_MENU_CHECK(5, "Enable sound:"),
 #endif
@@ -1504,7 +1513,9 @@ static int SoundSettings(void)
 	int option = 0;
 
 	for (;;) {
+#ifndef SYNCHRONIZED_SOUND
 		SetItemChecked(menu_array, 0, POKEYSND_enable_new_pokey);
+#endif
 #ifdef STEREO_SOUND
 		SetItemChecked(menu_array, 1, POKEYSND_stereo_enabled);
 #endif
@@ -1514,7 +1525,9 @@ static int SoundSettings(void)
 #ifdef SERIO_SOUND
 		SetItemChecked(menu_array, 3, POKEYSND_serio_sound_enabled);
 #endif
+#ifndef SYNCHRONIZED_SOUND
 		FindMenuItem(menu_array, 4)->suffix = POKEYSND_enable_new_pokey ? "N/A" : POKEYSND_bienias_fix ? "Yes" : "No ";
+#endif
 #ifdef DREAMCAST
 		SetItemChecked(menu_array, 5, glob_snd_ena);
 #endif
@@ -1526,6 +1539,7 @@ static int SoundSettings(void)
 #endif
 
 		switch (option) {
+#ifndef SYNCHRONIZED_SOUND
 		case 0:
 			POKEYSND_enable_new_pokey = !POKEYSND_enable_new_pokey;
 			POKEYSND_DoInit();
@@ -1533,6 +1547,7 @@ static int SoundSettings(void)
 			   a cold-restart only */
 			UI_driver->fMessage("Will reboot to apply the change", 1);
 			return TRUE; /* reboot required */
+#endif
 #ifdef STEREO_SOUND
 		case 1:
 			POKEYSND_stereo_enabled = !POKEYSND_stereo_enabled;
@@ -1551,9 +1566,11 @@ static int SoundSettings(void)
 			POKEYSND_serio_sound_enabled = !POKEYSND_serio_sound_enabled;
 			break;
 #endif
+#ifndef SYNCHRONIZED_SOUND
 		case 4:
 			if (! POKEYSND_enable_new_pokey) POKEYSND_bienias_fix = !POKEYSND_bienias_fix;
 			break;
+#endif
 #ifdef DREAMCAST
 		case 5:
 			glob_snd_ena = !glob_snd_ena;

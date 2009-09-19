@@ -1,3 +1,15 @@
+2009-09-18  Perry McFarlane  <perry_m@fastmail.fm>
+* DOC/BUGS, atari.[ch], atari_sdl.c, cfg.c, configure.ac, mzpokeysnd.[ch],
+pbi_xld.c, platform.h, ui.c USAGE : added synchronized sound for the SDL
+version.
+Sound can now be generated in sync with the rest of the emulation and not in a
+separate thread.  VOL_ONLY_SOUND is no longer needed.  GTIA and POKEY
+digisounds now work properly.  The old pokeysnd.c will not work with
+synchronized sound, only mzpokeysnd will be supported. 16 bit sound is now
+the default for SDL.  Use -audio8 for 8 bit SDL sound.
+Improved mzpokeysnd speed somewhat.
+
+
 2009-08-12  Piotr Fusik  <fox@scene.pl>
   Commiting a modified patch from Magnus Lind <magli143@gmail.com>
 * input.c: fix for trak-ball (cx22) emulation: bits 0 and 3 keep
