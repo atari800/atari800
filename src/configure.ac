@@ -236,7 +236,7 @@ case "$a8_target" in
         ;;
     falcon)
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
-        A8_NEED_LIB(gem)
+        AC_CHECK_LIB(gem, appl_init)
         OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
         ;;
     javanvm)
