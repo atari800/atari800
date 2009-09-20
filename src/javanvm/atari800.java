@@ -236,6 +236,8 @@ public class atari800 extends Applet implements Runnable {
 			frame.add(canvas);
 			frame.setResizable(false);
 			frame.pack();
+			Insets insets = frame.getInsets();
+			frame.setSize(new Dimension(canvas.width*scalew+insets.left+insets.right, canvas.height*scaleh+insets.top+insets.bottom));
 			frame.setVisible(true);
 		}
 	}

@@ -3,6 +3,7 @@
 * Makefile.in: use more memory for javac for javanvm version
 * input.c: remove unused result variable from call to mouse_step() to
 suppress warning.
+* javanvm/atari800.java: fix an issue with the screen sometimes not showing.
 
 
 2009-09-18  Perry McFarlane  <perry_m@fastmail.fm>
