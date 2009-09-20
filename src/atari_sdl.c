@@ -408,13 +408,17 @@ void Sound_Update(void)
 {
 #ifdef SYNCHRONIZED_SOUND
 	int bytes_written = 0;
-	/* produce samples from the sound emulation */
-	int samples_written = MZPOKEYSND_UpdateProcessBuffer();
+	int samples_written;
 	int gap;
 	int newpos;
-	int bytes_per_sample = (POKEYSND_stereo_enabled ? 2 : 1)*((sound_bits == 16) ? 2:1);
-	double bytes_per_ms = (bytes_per_sample)*(dsprate/1000.0);
+	int bytes_per_sample;
+	double bytes_per_ms;
 
+	if (!sound_enabled) return;
+	/* produce samples from the sound emulation */
+	samples_written = MZPOKEYSND_UpdateProcessBuffer();
+	bytes_per_sample = (POKEYSND_stereo_enabled ? 2 : 1)*((sound_bits == 16) ? 2:1);
+	bytes_per_ms = (bytes_per_sample)*(dsprate/1000.0);
 	bytes_written = (sound_bits == 8 ? samples_written : samples_written*2);
 	SDL_LockAudio();
 	/* this is the gap as of the most recent callback */
