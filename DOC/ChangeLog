@@ -1,6 +1,8 @@
 2009-09-20  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c: fix support of -nosound with SYNCHRONIZED_SOUND
 * Makefile.in: use more memory for javac for javanvm version
+* input.c: remove unused result variable from call to mouse_step() to
+suppress warning.
 
 
 2009-09-18  Perry McFarlane  <perry_m@fastmail.fm>

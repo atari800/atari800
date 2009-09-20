@@ -951,7 +951,7 @@ int INPUT_PlaybackInt(void)
 void INPUT_Scanline(void)
 {
 	if (--scanline_counter == 0) {
-		UBYTE stick = mouse_step();
+		mouse_step();
 		if (INPUT_mouse_mode == INPUT_MOUSE_TRAK) {
 			/* bit 3 toggles - vertical movement, bit 2 = 0 - up */
 			/* bit 1 toggles - horizontal movement, bit 0 = 0 - left */
