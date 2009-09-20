@@ -90,7 +90,7 @@ $(TARGET_BASE_NAME)$(RUNTIME).class: $(TARGET)
 #To compile using java bytecode directly:
 #	$(JAVA) $(JAVAFLAGS) org.ibex.nestedvm.Compiler -o UnixRuntime -outfile $@ $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
 	$(JAVA) $(JAVAFLAGS) org.ibex.nestedvm.Compiler -o UnixRuntime -outformat javasource -outfile $(TARGET_BASE_NAME)$(RUNTIME).java $(TARGET_BASE_NAME)$(RUNTIME) $(TARGET)
-	$(JAVAC) -d . $(JAVACFLAGS) -J-Xmx128m $(TARGET_BASE_NAME)$(RUNTIME).java
+	$(JAVAC) -d . $(JAVACFLAGS) -J-Xmx256m $(TARGET_BASE_NAME)$(RUNTIME).java
 ##Also, -o UnixRuntime fixes directory browsing but requires /c:/-style paths
 
 $(TARGET_BASE_NAME).jar: $(TARGET_BASE_NAME).class $(TARGET_BASE_NAME)$(RUNTIME).class
