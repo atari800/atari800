@@ -1,3 +1,7 @@
+2009-09-29  Piotr Fusik  <fox@scene.pl>
+* ui.c: sf.net bug #2868897 "Build fails on platforms without sound"
+
+
 2009-09-20  Perry McFarlane  <perry_m@fastmail.fm>
 * atari_sdl.c: fix support of -nosound with SYNCHRONIZED_SOUND
 * Makefile.in: use more memory for javac for javanvm version
