@@ -2194,16 +2194,16 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 		break;
 	case 16:
 		while (i > 0) {
-			pos = width - 1;
-			while (pos > 0) {
+			pos = width;
+			do {
+				pos--;
 				c = screen[pos];
 				quad = Palette16[c] << 16;
 				pos--;
 				c = screen[pos];
 				quad += Palette16[c];
 				start32[pos >> 1] = quad;
-				pos--;
-			}
+			} while (pos > 0);
 			screen += Screen_WIDTH;
 			start32 += pitch4;
 			i--;
@@ -2212,13 +2212,13 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 	default:
 		/* MainScreen->format->BitsPerPixel = 32 */
 		while (i > 0) {
-			pos = width - 1;
-			while (pos > 0) {
+			pos = width;
+			do {
+				pos--;
 				c = screen[pos];
 				quad = Palette32[c];
 				start32[pos] = quad;
-				pos--;
-			}
+			} while (pos > 0);
 			screen += Screen_WIDTH;
 			start32 += pitch4;
 			i--;

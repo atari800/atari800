@@ -1,3 +1,8 @@
+2009-10-08  Piotr Fusik  <fox@scene.pl>
+  Commiting patch submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
+* atari_sdl.c: fixed missing leftmost column in 16bpp and 32bpp modes
+
+
 2009-09-29  Piotr Fusik  <fox@scene.pl>
 * ui.c: sf.net bug #2868897 "Build fails on platforms without sound"
 
