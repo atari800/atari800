@@ -18,6 +18,7 @@
 #define AFILE_STATE      13
 #define AFILE_STATE_GZ   14
 #define AFILE_PRO        15
+#define AFILE_ATX        16
 
 /* ATR format header */
 struct AFILE_ATR_Header {

@@ -103,6 +103,10 @@ int AFILE_DetectFileType(const char *filename)
 			fclose(fp);
 			return AFILE_STATE;
 		}
+		if (header[1] == 'T' && header[2] == '8' && header[3] == 'X') {
+			fclose(fp);
+			return AFILE_ATX;
+		}
 		break;
 	case 'C':
 		if (header[1] == 'A' && header[2] == 'R' && header[3] == 'T') {
@@ -164,6 +168,7 @@ int AFILE_OpenFile(const char *filename, int reboot, int diskno, int readonly)
 	int type = AFILE_DetectFileType(filename);
 	switch (type) {
 	case AFILE_ATR:
+	case AFILE_ATX:
 	case AFILE_XFD:
 	case AFILE_ATR_GZ:
 	case AFILE_XFD_GZ:

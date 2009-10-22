@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "afile.h"
 #include "antic.h"  /* ANTIC_ypos */
@@ -46,6 +47,9 @@
 #include "statesav.h"
 #endif
 
+#undef DEBUG_PRO
+#undef DEBUG_VAPI
+
 /* If ATR image is in double density (256 bytes per sector),
    then the boot sectors (sectors 1-3) can be:
    - logical (as seen by Atari) - 128 bytes in each sector
@@ -61,9 +65,10 @@
 static int boot_sectors_type[SIO_MAX_DRIVES];
 
 static int image_type[SIO_MAX_DRIVES];
-#define IMAGE_TYPE_XFD 0
-#define IMAGE_TYPE_ATR 1
-#define IMAGE_TYPE_PRO 2
+#define IMAGE_TYPE_XFD  0
+#define IMAGE_TYPE_ATR  1
+#define IMAGE_TYPE_PRO  2
+#define IMAGE_TYPE_VAPI 3
 static FILE *disk[SIO_MAX_DRIVES] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 static int sectorcount[SIO_MAX_DRIVES];
 static int sectorsize[SIO_MAX_DRIVES];
@@ -76,6 +81,71 @@ typedef struct tagpro_additional_info_t {
 	int max_sector;
 	unsigned char *count;
 } pro_additional_info_t;
+
+#define MAX_VAPI_PHANTOM_SEC  		40
+#define VAPI_BYTES_PER_TRACK        26042.0 
+#define VAPI_CYCLES_PER_ROT 		372706
+#define VAPI_CYCLES_PER_TRACK_STEP 	35780 /*70937*/
+#define VAPI_CYCLES_HEAD_SETTLE 	70134
+#define VAPI_CYCLES_TRACK_READ_DELTA 1426
+#define VAPI_CYCLES_CMD_ACK_TRANS 	3188
+#define VAPI_CYCLES_SECTOR_READ 	29014
+#define VAPI_CYCLES_MISSING_SECTOR	(2*VAPI_CYCLES_PER_ROT + 14453)
+#define VAPI_CYCLES_BAD_SECTOR_NUM	1521
+
+/* stores dup sector information for VAPI images */
+typedef struct tagvapi_sec_info_t {
+	unsigned int sec_count;
+	unsigned int sec_offset[MAX_VAPI_PHANTOM_SEC];
+	unsigned char sec_status[MAX_VAPI_PHANTOM_SEC];
+	unsigned int sec_rot_pos[MAX_VAPI_PHANTOM_SEC];
+} vapi_sec_info_t;
+
+typedef struct tagvapi_additional_info_t {
+	vapi_sec_info_t *sectors;
+	int sec_stat_buff[4];
+	int vapi_delay_time;
+} vapi_additional_info_t;
+
+/* VAPI Format Header */
+typedef struct tagvapi_file_header_t {
+	unsigned char signature[4];
+	unsigned char majorver;
+	unsigned char minorver;
+	unsigned char reserved1[22];
+	unsigned char startdata[4];
+	unsigned char reserved[16];
+} vapi_file_header_t;
+
+typedef struct tagvapi_track_header_t {
+	unsigned char  next[4];
+	unsigned char  type[2];
+	unsigned char  reserved1[2];
+	unsigned char  tracknum;
+	unsigned char  reserved2;
+	unsigned char  sectorcnt[2];
+	unsigned char  reserved3[8];
+	unsigned char  startdata[4];
+	unsigned char  reserved4[8];
+} vapi_track_header_t;
+
+typedef struct tagvapi_sector_list_header_t {
+	unsigned char  sizelist[4];
+	unsigned char  type;
+	unsigned char  reserved[3];
+} vapi_sector_list_header_t;
+
+typedef struct tagvapi_sector_header_t {
+	unsigned char  sectornum;
+	unsigned char  sectorstatus;
+	unsigned char  sectorpos[2];
+	unsigned char  startdata[4];
+} vapi_sector_header_t;
+
+#define VAPI_32(x) (x[0] + (x[1] << 8) + (x[2] << 16) + (x[3] << 24))
+#define VAPI_16(x) (x[0] + (x[1] << 8))
+
+/* Additional Info for all copy protected disk types */
 static void *additional_info[SIO_MAX_DRIVES];
 
 SIO_UnitStatus SIO_drive_status[SIO_MAX_DRIVES];
@@ -258,6 +328,162 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 			sectorcount[diskno - 1] >>= 1;
 		}
 	}
+	else if (header.magic1 == 'A' && header.magic2 == 'T' && header.seccountlo == '8' &&
+		 header.seccounthi == 'X') {
+		int file_length = Util_flen(f);
+		vapi_additional_info_t *info;
+		vapi_file_header_t fileheader;
+		vapi_track_header_t trackheader;
+		ULONG trackoffset, totalsectors;
+
+		/* .atx is read only for now */
+#ifndef VAPI_WRITE_ENABLE
+		if (!b_open_readonly) {
+			fclose(f);
+			f = Util_fopen(filename, "rb", sio_tmpbuf[diskno - 1]);
+			if (f == NULL)
+				return FALSE;
+			status = SIO_READ_ONLY;
+		}
+#endif
+		
+		image_type[diskno - 1] = IMAGE_TYPE_VAPI;
+		sectorsize[diskno - 1] = 128;
+		sectorcount[diskno - 1] = 720;
+		fseek(f,0,SEEK_SET);
+		if (fread(&fileheader,1,sizeof(fileheader),f) != sizeof(fileheader)) {
+			Util_fclose(f, sio_tmpbuf[diskno - 1]);
+			Log_print("VAPI: Bad File Header");
+			return(FALSE);
+			}
+		trackoffset = VAPI_32(fileheader.startdata);	
+		if (trackoffset > file_length) {
+			Util_fclose(f, sio_tmpbuf[diskno - 1]);
+			Log_print("VAPI: Bad Track Offset");
+			return(FALSE);
+			}
+#ifdef DEBUG_VAPI
+		Log_print("VAPI File Version %d.%d",fileheader.majorver,fileheader.minorver);
+#endif
+		/* Read all of the track headers to get the total sector count */
+		totalsectors = 0;
+		while (trackoffset > 0 && trackoffset < file_length) {
+			ULONG next;
+			UWORD tracktype;
+
+			fseek(f,trackoffset,SEEK_SET);
+			if (fread(&trackheader,1,sizeof(trackheader),f) != sizeof(trackheader)) {
+				Util_fclose(f, sio_tmpbuf[diskno - 1]);
+				Log_print("VAPI: Bad Track Header");
+				return(FALSE);
+				}
+			next = VAPI_32(trackheader.next);
+			tracktype = VAPI_16(trackheader.type);
+			if (tracktype == 0) {
+				totalsectors += VAPI_16(trackheader.sectorcnt);
+				}
+			trackoffset += next;
+		}
+
+		info = Util_malloc(sizeof(vapi_additional_info_t));
+		additional_info[diskno-1] = info;
+		info->sectors = Util_malloc(sectorcount[diskno - 1] * 
+ 					    sizeof(vapi_sec_info_t));
+		memset(info->sectors, 0, sectorcount[diskno - 1] * 
+ 					 sizeof(vapi_sec_info_t));
+
+		/* Now read all the sector data */
+		trackoffset = VAPI_32(fileheader.startdata);
+		while (trackoffset > 0 && trackoffset < file_length) {
+			ULONG sectorcnt, seclistdata,next;
+			vapi_sector_list_header_t sectorlist;
+			vapi_sector_header_t sectorheader;
+			vapi_sec_info_t *sector;
+			UWORD tracktype;
+			int j;
+
+			fseek(f,trackoffset,SEEK_SET);
+			if (fread(&trackheader,1,sizeof(trackheader),f) != sizeof(trackheader)) {
+				free(info->sectors);
+				free(info);
+				Util_fclose(f, sio_tmpbuf[diskno - 1]);
+				Log_print("VAPI: Bad Track Header while reading sectors");
+				return(FALSE);
+				}
+			next = VAPI_32(trackheader.next);
+			sectorcnt = VAPI_16(trackheader.sectorcnt);
+			tracktype = VAPI_16(trackheader.type);
+			seclistdata = VAPI_32(trackheader.startdata) + trackoffset;
+#ifdef DEBUG_VAPI
+			Log_print("Track %d: next %x type %d seccnt %d secdata %x",trackheader.tracknum,
+				trackoffset + next,VAPI_16(trackheader.type),sectorcnt,seclistdata);
+#endif
+			if (tracktype == 0) {
+				if (seclistdata > file_length) {
+					free(info->sectors);
+					free(info);
+					Util_fclose(f, sio_tmpbuf[diskno - 1]);
+					Log_print("VAPI: Bad Sector List Offset");
+					return(FALSE);
+					}
+				fseek(f,seclistdata,SEEK_SET);
+				if (fread(&sectorlist,1,sizeof(sectorlist),f) != sizeof(sectorlist)) {
+					free(info->sectors);
+					free(info);
+					Util_fclose(f, sio_tmpbuf[diskno - 1]);
+					Log_print("VAPI: Bad Sector List");
+					return(FALSE);
+					}
+#ifdef DEBUG_VAPI
+				Log_print("Size sec list %x type %d",VAPI_32(sectorlist.sizelist),sectorlist.type);
+#endif
+				for (j=0;j<sectorcnt;j++) {
+					double percent_rot;
+
+					if (fread(&sectorheader,1,sizeof(sectorheader),f) != sizeof(sectorheader)) {
+						free(info->sectors);
+						free(info);
+						Util_fclose(f, sio_tmpbuf[diskno - 1]);
+						Log_print("VAPI: Bad Sector Header");
+						return(FALSE);
+						}
+					if (sectorheader.sectornum > 18)  {
+						Util_fclose(f, sio_tmpbuf[diskno - 1]);
+						Log_print("VAPI: Bad Sector Index: Track %d Sec Num %d Index %d",
+								trackheader.tracknum,j,sectorheader.sectornum);
+						return(FALSE);
+						}
+					sector = &info->sectors[trackheader.tracknum * 18 + sectorheader.sectornum - 1];
+
+					percent_rot = ((double) VAPI_16(sectorheader.sectorpos))/VAPI_BYTES_PER_TRACK;
+					sector->sec_rot_pos[sector->sec_count] = (unsigned int) (percent_rot * VAPI_CYCLES_PER_ROT);
+					sector->sec_offset[sector->sec_count] = VAPI_32(sectorheader.startdata) + trackoffset;
+					sector->sec_status[sector->sec_count] = ~sectorheader.sectorstatus;
+					sector->sec_count++;
+					if (sector->sec_count > MAX_VAPI_PHANTOM_SEC) {
+						free(info->sectors);
+						free(info);
+						Util_fclose(f, sio_tmpbuf[diskno - 1]);
+						Log_print("VAPI: Too many Phantom Sectors");
+						return(FALSE);
+						}
+#ifdef DEBUG_VAPI
+					Log_print("Sector %d status %x position %f %d %d data %x",sectorheader.sectornum,
+						sector->sec_status[sector->sec_count-1],percent_rot,
+						sector->sec_rot_pos[sector->sec_count-1],
+						VAPI_16(sectorheader.sectorpos),
+						sector->sec_offset[sector->sec_count-1]);				
+#endif				
+				}
+#ifdef DEBUG_VAPI
+				Log_flushlog();
+#endif
+			} else {
+				Log_print("Unknown VAPI track type Track:%d Type:%d",trackheader.tracknum,tracktype);
+			}
+			trackoffset += next;
+		}			
+	}
 	else {
 		int file_length = Util_flen(f);
 		/* check for PRO */
@@ -335,6 +561,9 @@ void SIO_Dismount(int diskno)
 		if (image_type[diskno - 1] == IMAGE_TYPE_PRO) {
 			free(((pro_additional_info_t *)additional_info[diskno-1])->count);
 		}
+		else if (image_type[diskno - 1] == IMAGE_TYPE_VAPI) {
+			free(((vapi_additional_info_t *)additional_info[diskno-1])->sectors);
+		}
 		free(additional_info[diskno - 1]);
 		additional_info[diskno - 1] = 0;
 	}
@@ -364,6 +593,24 @@ void SIO_SizeOfSector(UBYTE unit, int sector, int *sz, ULONG *ofs)
 	if (image_type[unit] == IMAGE_TYPE_PRO) {
 		size = 128;
 		offset = 16 + (128+12)*(sector -1); /* returns offset of header */
+	}
+	else if (image_type[unit] == IMAGE_TYPE_VAPI) {
+		vapi_additional_info_t *info;
+		vapi_sec_info_t *secinfo;
+
+		size = 128;
+		info = additional_info[unit];
+		if (info == NULL)
+			offset = 0;
+		else if (sector > sectorcount[unit])
+			offset = 0;
+		else {
+			secinfo = &info->sectors[sector-1];
+			if (secinfo->sec_count == 0  )
+				offset = 0;
+			else
+				offset = secinfo->sec_offset[0];
+		}
 	}
 	else if (sector < 4) {
 		/* special case for first three sectors in ATR and XFD image */
@@ -449,7 +696,117 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 			return 'E';
 		}
 	}
-	fread(buffer, 1, size, disk[unit]);
+	else if (image_type[unit] == IMAGE_TYPE_VAPI) {
+		vapi_additional_info_t *info;
+		vapi_sec_info_t *secinfo;
+		ULONG secindex = 0;
+		static int lasttrack = 0;
+		unsigned int currpos, time, delay, rotations, bestdelay;
+		unsigned char beststatus;
+		int fromtrack, trackstostep, j;
+
+		info = (vapi_additional_info_t *)additional_info[unit];
+		info->vapi_delay_time = 0;
+
+		if (sector > sectorcount[unit]) {
+#ifdef DEBUG_VAPI
+			Log_print("bad sector num:%d", sector);
+#endif
+			info->sec_stat_buff[0] = 9;
+			info->sec_stat_buff[1] = 0xFF; 
+			info->sec_stat_buff[2] = 0xe0;
+			info->sec_stat_buff[3] = 0;
+			info->vapi_delay_time= VAPI_CYCLES_BAD_SECTOR_NUM;
+			return 'E';
+		}
+
+		secinfo = &info->sectors[sector-1];
+		fromtrack = lasttrack;
+		lasttrack = (sector-1)/18;
+
+		if (secinfo->sec_count == 0) {
+#ifdef DEBUG_VAPI
+			Log_print("missing sector:%d", sector);
+#endif
+			info->sec_stat_buff[0] = 0xC;
+			info->sec_stat_buff[1] = 0xEF; 
+			info->sec_stat_buff[2] = 0xe0;
+			info->sec_stat_buff[3] = 0;
+			info->vapi_delay_time= VAPI_CYCLES_MISSING_SECTOR;
+			return 'E';
+		}
+
+		trackstostep = abs((sector-1)/18 - fromtrack);
+		time = (unsigned int) ANTIC_CPU_CLOCK;
+		if (trackstostep)
+			time += trackstostep * VAPI_CYCLES_PER_TRACK_STEP + VAPI_CYCLES_HEAD_SETTLE ;
+		time += VAPI_CYCLES_CMD_ACK_TRANS;
+		rotations = time/VAPI_CYCLES_PER_ROT;
+		currpos = time - rotations*VAPI_CYCLES_PER_ROT;
+
+#ifdef DEBUG_VAPI
+		Log_print(" sector:%d sector count :%d time %d", sector,secinfo->sec_count,ANTIC_CPU_CLOCK);
+#endif
+
+		bestdelay = 10 * VAPI_CYCLES_PER_ROT;
+		beststatus = 0;
+		for (j=0;j<secinfo->sec_count;j++) {
+			if (secinfo->sec_rot_pos[j]  < currpos)
+				delay = (VAPI_CYCLES_PER_ROT - currpos) + secinfo->sec_rot_pos[j];
+			else
+				delay = secinfo->sec_rot_pos[j] - currpos; 
+#ifdef DEBUG_VAPI
+			Log_print("%d %d %d %d %d %x",j,secinfo->sec_rot_pos[j],
+					  ((unsigned int) ANTIC_CPU_CLOCK) - ((((unsigned int) ANTIC_CPU_CLOCK)/VAPI_CYCLES_PER_ROT)*VAPI_CYCLES_PER_ROT),
+					  currpos,delay,secinfo->sec_status[j]);
+#endif
+			if (delay < bestdelay) {
+				bestdelay = delay;
+				beststatus = secinfo->sec_status[j];
+				secindex = j;
+			}
+		}
+		if (trackstostep)
+			info->vapi_delay_time = bestdelay + trackstostep * VAPI_CYCLES_PER_TRACK_STEP + 
+				     VAPI_CYCLES_HEAD_SETTLE   +  VAPI_CYCLES_TRACK_READ_DELTA +
+						       VAPI_CYCLES_CMD_ACK_TRANS + VAPI_CYCLES_SECTOR_READ;
+		else
+			info->vapi_delay_time = bestdelay + 
+						       VAPI_CYCLES_CMD_ACK_TRANS + VAPI_CYCLES_SECTOR_READ;
+#ifdef DEBUG_VAPI
+		Log_print("Bestdelay = %d VapiDelay = %d",bestdelay,info->vapi_delay_time);
+		if (secinfo->sec_count > 1)
+			Log_print("duplicate sector:%d dupnum:%d delay:%d",sector, secindex,info->vapi_delay_time);
+#endif
+		fseek(disk[unit],secinfo->sec_offset[secindex],SEEK_SET);
+		info->sec_stat_buff[0] = 0x8 | ((secinfo->sec_status[secindex] == 0xFF) ? 0 : 0x04);
+		info->sec_stat_buff[1] = secinfo->sec_status[secindex];
+		info->sec_stat_buff[2] = 0xe0;
+		info->sec_stat_buff[3] = 0;
+		if (secinfo->sec_status[secindex] != 0xFF) {
+			fread(buffer, 1, size, disk[unit]);
+			io_success[unit] = sector;
+			info->vapi_delay_time += VAPI_CYCLES_PER_ROT + 10000;
+#ifdef DEBUG_VAPI
+			Log_print("bad sector:%d 0x%0X delay:%d", sector, secinfo->sec_status[secindex],info->vapi_delay_time );
+#endif
+			{
+			int i;
+				if (secinfo->sec_status[secindex] == 0xB7) {
+					for (i=0;i<128;i++) {
+						Log_print("0x%02x",buffer[i]);
+						if (buffer[i] == 0x33)
+							buffer[i] = random() & 0xFF;
+					}
+				}
+			}
+			return 'E';
+		}
+#ifdef DEBUG_VAPI
+		Log_flushlog();
+#endif		
+	}
+	fread(buffer, 1, size, disk[unit]);	
 	io_success[unit] = 0;
 	return 'C';
 }
@@ -467,6 +824,47 @@ int SIO_WriteSector(int unit, int sector, const UBYTE *buffer)
 	SIO_last_op = SIO_LAST_WRITE;
 	SIO_last_op_time = 1;
 	SIO_last_drive = unit + 1;
+#ifdef VAPI_WRITE_ENABLE 	
+ 	if (image_type[unit] == IMAGE_TYPE_VAPI) {
+		vapi_additional_info_t *info;
+		vapi_sec_info_t *secinfo;
+
+		info = (vapi_additional_info_t *)additional_info[unit];
+		secinfo = &info->sectors[sector-1];
+		
+		if (secinfo->sec_count != 1) {
+			// No writes to sectors with duplicates or missing sectors
+			return 'E';
+		}
+		
+		if (secinfo->sec_status[0] != 0xFF) {
+			// No writes to bad sectors
+			return 'E';
+		}
+		
+		size = SeekSector(unit, sector);
+		fseek(disk[unit],secinfo->sec_offset[0],SEEK_SET);
+		fwrite(buffer, 1, size, disk[unit]);
+		io_success[unit] = 0;
+		return 'C';
+#if 0		
+	} else if (image_type[unit] == IMAGE_TYPE_PRO) {
+		pro_additional_info_t *info;
+		pro_phantom_sec_info_t *phantom;
+		
+		info = (pro_additional_info_t *)additional_info[unit];
+		phantom = &info->phantom[sector-1];
+		
+		if (phantom->phantom_count != 0) {
+			// No writes to sectors with duplicates 
+			return 'E';
+		}
+		
+		size = SeekSector(unit, sector);
+		if (buffer[1] != 0xff) {
+#endif			
+	} 
+#endif
 	size = SeekSector(unit, sector);
 	fwrite(buffer, 1, size, disk[unit]);
 	io_success[unit] = 0;
@@ -660,6 +1058,17 @@ int SIO_DriveStatus(int unit, UBYTE *buffer)
 		fread(buffer, 1, 4, disk[unit]);
 		return 'C';
 	}
+	else if (io_success[unit] != 0  && image_type[unit] == IMAGE_TYPE_VAPI &&
+			 SIO_drive_status[unit] != SIO_NO_DISK) {
+		vapi_additional_info_t *info;
+		info = (vapi_additional_info_t *)additional_info[unit];
+		buffer[0] = info->sec_stat_buff[0];
+		buffer[1] = info->sec_stat_buff[1];
+		buffer[2] = info->sec_stat_buff[2];
+		buffer[3] = info->sec_stat_buff[3];
+		Log_print("Drive Status unit %d %x %x %x %x",unit,buffer[0], buffer[1], buffer[2], buffer[3]);
+		return 'C';
+	}	
 	buffer[0] = 16;         /* drive active */
 	buffer[1] = disk[unit] != NULL ? 255 /* WD 177x OK */ : 127 /* no disk */;
 	if (io_success[unit] != 0)
@@ -976,9 +1385,17 @@ static UBYTE Command_Frame(void)
 		TransferStatus = SIO_ReadFrame;
 		/* wait longer before confirmation because bytes could be lost */
 		/* before the buffer was set (see $E9FB & $EA37 in XL-OS) */
-		POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 2;
+		POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 2; 
+		if (image_type[unit] == IMAGE_TYPE_VAPI) {
+			vapi_additional_info_t *info;
+			info = (vapi_additional_info_t *)additional_info[unit];
+			if (info == NULL)
+				POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 2; 
+			else
+				POKEY_DELAYED_SERIN_IRQ = ((info->vapi_delay_time + 114/2) / 114) - 12;
+		} 
 #ifndef NO_SECTOR_DELAY
-		if (sector == 1) {
+		else if (sector == 1) {
 			POKEY_DELAYED_SERIN_IRQ += delay_counter;
 			delay_counter = SECTOR_DELAY;
 		}
