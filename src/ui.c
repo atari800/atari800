@@ -528,27 +528,43 @@ int UI_SelectCartType(int k)
 
 static void CartManagement(void)
 {
-	static const UI_tMenuItem menu_array[] = {
+	static UI_tMenuItem menu_array_sdx[] = {
+		UI_MENU_FILESEL(0, "Create Cartridge from ROM image"),
+		UI_MENU_FILESEL(1, "Extract ROM image from Cartridge"),
+		UI_MENU_FILESEL(2, "Insert Cartridge"),
+		UI_MENU_ACTION(3, "Remove Cartridge"),
+		UI_MENU_FILESEL(4, "Insert SDX Piggyback Cartridge"),
+		UI_MENU_ACTION(5, "Remove SDX Piggyback Cartridge"),
+		UI_MENU_END
+	};
+	
+	static UI_tMenuItem menu_array[] = {
 		UI_MENU_FILESEL(0, "Create Cartridge from ROM image"),
 		UI_MENU_FILESEL(1, "Extract ROM image from Cartridge"),
 		UI_MENU_FILESEL(2, "Insert Cartridge"),
 		UI_MENU_ACTION(3, "Remove Cartridge"),
 		UI_MENU_END
 	};
-
+	
 	typedef struct {
 		UBYTE id[4];
 		UBYTE type[4];
 		UBYTE checksum[4];
 		UBYTE gash[4];
 	} Header;
-
+	
 	int option = 2;
 
 	for (;;) {
 		static char cart_filename[FILENAME_MAX] = "";
-
-		option = UI_driver->fSelect("Cartridge Management", 0, option, menu_array, NULL);
+		
+		if (CARTRIDGE_type != CARTRIDGE_SDX_64 && CARTRIDGE_type != CARTRIDGE_SDX_128) {
+			option = UI_driver->fSelect("Cartridge Management", 0, option, menu_array, NULL);
+		}
+		else
+		{
+			option = UI_driver->fSelect("Cartridge Management", 0, option, menu_array_sdx, NULL);
+		}
 
 		switch (option) {
 		case 0:
@@ -699,8 +715,34 @@ static void CartManagement(void)
 			CARTRIDGE_Remove();
 			Atari800_Coldstart();
 			return;
+		case 4:
+			if (UI_driver->fGetLoadFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+				int r = CARTRIDGE_Insert_Second(cart_filename);
+				switch (r) {
+				case CARTRIDGE_CANT_OPEN:
+					CantLoad(cart_filename);
+					break;
+				case CARTRIDGE_BAD_FORMAT:
+					UI_driver->fMessage("Unknown cartridge format", 1);
+					break;
+				case CARTRIDGE_BAD_CHECKSUM:
+					UI_driver->fMessage("Warning: bad CART checksum", 1);
+					break;
+				case 0:
+					/* ok */
+					break;
+				default:
+					/* r > 0 */
+					CARTRIDGE_second_type = UI_SelectCartType(r);
+					break;
+				}
+				return;
+		case 5:
+			CARTRIDGE_Remove_Second();
+			return;
 		default:
 			return;
+			}
 		}
 	}
 }

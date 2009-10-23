@@ -53,6 +53,7 @@
 #define CARTRIDGE_MAX_SIZE	(1024 * 1024)
 extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 extern int CARTRIDGE_type;
+extern int CARTRIDGE_second_type;
 
 int CARTRIDGE_IsFor5200(int type);
 int CARTRIDGE_Checksum(const UBYTE *image, int nbytes);
@@ -61,8 +62,10 @@ int CARTRIDGE_Checksum(const UBYTE *image, int nbytes);
 #define CARTRIDGE_BAD_FORMAT		-2	/* Unknown cartridge format */
 #define CARTRIDGE_BAD_CHECKSUM	-3	/* Warning: bad CART checksum */
 int CARTRIDGE_Insert(const char *filename);
+int CARTRIDGE_Insert_Second(const char *filename);
 
 void CARTRIDGE_Remove(void);
+void CARTRIDGE_Remove_Second(void);
 
 void CARTRIDGE_Start(void);
 UBYTE CARTRIDGE_GetByte(UWORD addr);

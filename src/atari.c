@@ -316,6 +316,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	const char *rom_filename = NULL;
+	const char *rom2_filename = NULL;
 	const char *run_direct = NULL;
 #ifndef BASIC
 	const char *state_file = NULL;
@@ -521,6 +522,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 			}
 			else if (strcmp(argv[i], "-cart") == 0) {
 				if (i_a) rom_filename = argv[++i]; else a_m = TRUE;
+			}
+			else if (strcmp(argv[i], "-cart2") == 0) {
+				if (i_a) rom2_filename = argv[++i]; else a_m = TRUE;
 			}
 			else if (strcmp(argv[i], "-run") == 0) {
 				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
@@ -757,6 +761,32 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif /* __PLUS */
 	}
 
+	/* Install requested second ROM cartridge, if first is SpartaX */
+	if (((CARTRIDGE_type == CARTRIDGE_SDX_64) || (CARTRIDGE_type == CARTRIDGE_SDX_128)) && rom2_filename) {
+		int r = CARTRIDGE_Insert_Second(rom2_filename);
+		if (r < 0) {
+			Log_print("Error inserting cartridge \"%s\": %s", rom2_filename,
+			r == CARTRIDGE_CANT_OPEN ? "Can't open file" :
+			r == CARTRIDGE_BAD_FORMAT ? "Bad format" :
+			r == CARTRIDGE_BAD_CHECKSUM ? "Bad checksum" :
+			"Unknown error");
+		}
+		if (r > 0) {
+#ifdef BASIC
+			Log_print("Raw cartridge images not supported in BASIC version!");
+#else /* BASIC */
+
+#ifndef __PLUS
+			UI_is_active = TRUE;
+			CARTRIDGE_second_type = UI_SelectCartType(r);
+			UI_is_active = FALSE;
+#else /* __PLUS */
+			CARTRIDGE_second_type = (CARTRIDGE_NONE == nCartType ? SelectCartType(r) : nCartType);
+#endif /* __PLUS */
+#endif /* BASIC */
+		}
+	}
+	
 	/* Load Atari executable, if any */
 	if (run_direct != NULL)
 		BINLOAD_Loader(run_direct);

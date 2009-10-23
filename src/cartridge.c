@@ -102,10 +102,16 @@ int CARTRIDGE_IsFor5200(int type)
 }
 
 static UBYTE *cart_image = NULL;		/* cartridge memory */
+static UBYTE *second_cart_image = NULL; /* Pass through cartridge memory for SpartaDOSX */
+static UBYTE *first_cart_image = NULL; /* Pointer for orignal cart image will using pass through */
 static char cart_filename[FILENAME_MAX];
+static char second_cart_filename[FILENAME_MAX];
 int CARTRIDGE_type = CARTRIDGE_NONE;
+int CARTRIDGE_second_type = CARTRIDGE_NONE;
+static int cart_pass_through = FALSE;
 
 static int bank;
+static void CARTRIDGE_Start_Local(int curr_cart_type);
 
 /* DB_32, XEGS_32, XEGS_64, XEGS_128, XEGS_256, XEGS_512, XEGS_1024,
    SWXEGS_32, SWXEGS_64, SWXEGS_128, SWXEGS_256, SWXEGS_512, SWXEGS_1024 */
@@ -174,11 +180,23 @@ static void set_bank_80BF(int b)
 	}
 }
 
+static void set_bank_SDX_128(UWORD addr)
+{
+	if (addr & 8)
+		MEMORY_CartA0bfDisable();
+	else {
+		MEMORY_CartA0bfEnable();
+		MEMORY_CopyROM(0xa000, 0xbfff,
+			cart_image + (((addr & 7) + ((addr & 0x10) >> 1)) ^ 0xf) * 0x2000);
+	}
+	bank = addr;
+}
+
 /* an access (read or write) to D500-D5FF area */
-static void access_D5(UWORD addr)
+static void access_D5(int curr_cart_type,UWORD addr)
 {
 	int b = bank;
-	switch (CARTRIDGE_type) {
+	switch (curr_cart_type) {
 	case CARTRIDGE_OSS_16:
 		if (addr & 0x08)
 			b = -1;
@@ -221,19 +239,65 @@ static void access_D5(UWORD addr)
 			set_bank_A0BF(addr ^ 7, 8);
 		break;
 	case CARTRIDGE_SDX_64:
-		if ((addr & 0xf0) == 0xe0)
-			set_bank_A0BF(addr ^ 7, 8);
+		if (cart_pass_through) {
+			if ((addr & 0xff) == 8) {
+				cart_pass_through = FALSE;
+				cart_image = first_cart_image;
+				MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
+				MEMORY_CartA0bfDisable();
+			}
+			else if ((addr & 0xf0) == 0xe0) {
+				cart_pass_through = FALSE;
+				cart_image = first_cart_image;
+				set_bank_A0BF(addr ^ 7, 8);
+			}
+			else {
+				access_D5(CARTRIDGE_second_type, addr);
+		        }
+		}
+		else {
+			if ((addr & 0xf0) == 0xe0) {
+				set_bank_A0BF(addr ^ 7, 8);
+			}
+			else if ((addr & 0xff) == 0) {
+				cart_pass_through = TRUE;
+				first_cart_image = cart_image;
+				if (second_cart_image) {
+				    cart_image = second_cart_image;
+				    CARTRIDGE_Start_Local(CARTRIDGE_second_type);
+				}
+			}
+		}
 		break;
 	case CARTRIDGE_SDX_128:
-		if ((addr & 0xe0) == 0xe0 && addr != bank) {
-			if (addr & 8)
-				MEMORY_CartA0bfDisable();
-			else {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xa000, 0xbfff,
-					cart_image + (((addr & 7) + ((addr & 0x10) >> 1)) ^ 0xf) * 0x2000);
+		if (cart_pass_through) {
+			if ((addr & 0xff) == 8) {
+				cart_pass_through = FALSE;
+				cart_image = first_cart_image;
+				set_bank_SDX_128(0);
 			}
-			bank = addr;
+			else if ((addr & 0xe0) == 0xe0) {
+				cart_pass_through = FALSE;
+				cart_image = first_cart_image;
+				set_bank_SDX_128(addr);
+			}
+			else {
+				access_D5(CARTRIDGE_second_type, addr);
+		        }
+		}
+		else {
+			if ((addr & 0xe0) == 0xe0)  {
+				if (addr != bank)
+					set_bank_SDX_128(addr);
+			}
+			else if ((addr & 0xff) == 0) {
+				cart_pass_through = TRUE;
+				first_cart_image = cart_image;
+				if (second_cart_image) {
+				    cart_image = second_cart_image;
+				    CARTRIDGE_Start_Local(CARTRIDGE_second_type);
+				}
+			}
 		}
 		break;
 	case CARTRIDGE_OSS2_16:
@@ -277,18 +341,26 @@ UBYTE CARTRIDGE_GetByte(UWORD addr)
 {
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9))
 		return RTIME_GetByte();
-	access_D5(addr);
+	access_D5(CARTRIDGE_type, addr);
 	return 0xff;
 }
 
 /* a write to D500-D5FF area */
 void CARTRIDGE_PutByte(UWORD addr, UBYTE byte)
 {
+	int curr_cart_type;
+	
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9)) {
 		RTIME_PutByte(byte);
 		return;
 	}
-	switch (CARTRIDGE_type) {
+	
+	if (cart_pass_through)
+	    curr_cart_type = CARTRIDGE_second_type;
+	else
+		curr_cart_type = CARTRIDGE_type;
+		
+	switch (curr_cart_type) {
 	case CARTRIDGE_XEGS_32:
 		set_bank_809F(byte & 0x03, 0x6000);
 		break;
@@ -350,7 +422,7 @@ void CARTRIDGE_PutByte(UWORD addr, UBYTE byte)
 		set_bank_809F(byte, 0xfe000);
 		break;
 	default:
-		access_D5(addr);
+		access_D5(CARTRIDGE_type, addr);
 		break;
 	}
 }
@@ -532,8 +604,83 @@ int CARTRIDGE_Insert(const char *filename)
 	return CARTRIDGE_BAD_FORMAT;
 }
 
+int CARTRIDGE_Insert_Second(const char *filename)
+{
+	FILE *fp;
+	int len;
+	int type;
+	UBYTE header[16];
+
+	/* remove currently inserted cart */
+	CARTRIDGE_Remove_Second();
+
+	/* open file */
+	fp = fopen(filename, "rb");
+	if (fp == NULL)
+		return CARTRIDGE_CANT_OPEN;
+	/* check file length */
+	len = Util_flen(fp);
+	Util_rewind(fp);
+
+	/* Save Filename for state save */
+	strcpy(second_cart_filename, filename);
+
+	/* if full kilobytes, assume it is raw image */
+	if ((len & 0x3ff) == 0) {
+		/* alloc memory and read data */
+		second_cart_image = (UBYTE *) Util_malloc(len);
+		fread(second_cart_image, 1, len, fp);
+		fclose(fp);
+		/* find cart type */
+		CARTRIDGE_second_type = CARTRIDGE_NONE;
+		len >>= 10;	/* number of kilobytes */
+		for (type = 1; type <= CARTRIDGE_LAST_SUPPORTED; type++)
+			if (CARTRIDGE_kb[type] == len) {
+				if (CARTRIDGE_second_type == CARTRIDGE_NONE)
+					CARTRIDGE_second_type = type;
+				else
+					return len;	/* more than one cartridge type of such length - user must select */
+			}
+		if (CARTRIDGE_second_type != CARTRIDGE_NONE) {
+			return 0;	/* ok */
+		}
+		free(second_cart_image);
+		second_cart_image = NULL;
+		return CARTRIDGE_BAD_FORMAT;
+	}
+	/* if not full kilobytes, assume it is CART file */
+	fread(header, 1, 16, fp);
+	if ((header[0] == 'C') &&
+		(header[1] == 'A') &&
+		(header[2] == 'R') &&
+		(header[3] == 'T')) {
+		type = (header[4] << 24) |
+			(header[5] << 16) |
+			(header[6] << 8) |
+			header[7];
+		if (type >= 1 && type <= CARTRIDGE_LAST_SUPPORTED) {
+			int checksum;
+			len = CARTRIDGE_kb[type] << 10;
+			/* alloc memory and read data */
+			second_cart_image = (UBYTE *) Util_malloc(len);
+			fread(second_cart_image, 1, len, fp);
+			fclose(fp);
+			checksum = (header[8] << 24) |
+				(header[9] << 16) |
+				(header[10] << 8) |
+				header[11];
+			CARTRIDGE_second_type = type;
+			return checksum == CARTRIDGE_Checksum(second_cart_image, len) ? 0 : CARTRIDGE_BAD_CHECKSUM;
+		}
+	}
+	fclose(fp);
+	return CARTRIDGE_BAD_FORMAT;
+}
+
 void CARTRIDGE_Remove(void)
 {
+	if (CARTRIDGE_second_type != CARTRIDGE_NONE)
+		CARTRIDGE_Remove_Second();
 	CARTRIDGE_type = CARTRIDGE_NONE;
 	if (cart_image != NULL) {
 		free(cart_image);
@@ -542,11 +689,34 @@ void CARTRIDGE_Remove(void)
 	CARTRIDGE_Start();
 }
 
+void CARTRIDGE_Remove_Second(void)
+{
+	CARTRIDGE_second_type = CARTRIDGE_NONE;
+	if (second_cart_image != NULL) {
+		free(second_cart_image);
+		second_cart_image = NULL;
+	}
+	if (cart_pass_through) {
+		cart_pass_through = FALSE;
+		cart_image = first_cart_image;
+		MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
+		Atari800_Warmstart();
+		}
+}
+
 void CARTRIDGE_Start(void) {
+	if (cart_pass_through) {
+		cart_image = first_cart_image;
+		cart_pass_through = FALSE;
+		}
+        CARTRIDGE_Start_Local(CARTRIDGE_type);
+	}
+
+static void CARTRIDGE_Start_Local(int curr_cart_type) {
 	if (Atari800_machine_type == Atari800_MACHINE_5200) {
 		MEMORY_SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
 		MEMORY_SetROM(0x5ff6, 0x5ff9);
-		switch (CARTRIDGE_type) {
+		switch (curr_cart_type) {
 		case CARTRIDGE_5200_32:
 			MEMORY_CopyROM(0x4000, 0xbfff, cart_image);
 			break;
@@ -590,7 +760,7 @@ void CARTRIDGE_Start(void) {
 		}
 	}
 	else {
-		switch (CARTRIDGE_type) {
+		switch (curr_cart_type) {
 		case CARTRIDGE_STD_8:
 		case CARTRIDGE_PHOENIX_8:
 			MEMORY_Cart809fDisable();
@@ -764,12 +934,39 @@ void CARTRIDGE_Start(void) {
 void CARTRIDGE_StateRead(void)
 {
 	int savedCartType = CARTRIDGE_NONE;
+	char filename[FILENAME_MAX];
 
 	/* Read the cart type from the file.  If there is no cart type, becaused we have
-	   reached the end of the file, this will just default to CARTRIDGE_NONE */
+	   reached the end of the file, this will just default to CART_NONE */
 	StateSav_ReadINT(&savedCartType, 1);
-	if (savedCartType != CARTRIDGE_NONE) {
-		char filename[FILENAME_MAX];
+	if (savedCartType < 0) {
+		savedCartType = -savedCartType;
+		StateSav_ReadFNAME(filename);
+		if (filename[0]) {
+			/* Insert the cartridge... */
+			if (CARTRIDGE_Insert(filename) >= 0) {
+				/* And set the type to the saved type, in case it was a raw cartridge image */
+				CARTRIDGE_type = savedCartType;
+				CARTRIDGE_Start();
+			}
+		}
+		StateSav_ReadINT(&savedCartType, 1);
+		StateSav_ReadFNAME(filename);
+		if (filename[0]) {
+			/* Insert the cartridge... */
+			if (CARTRIDGE_Insert_Second(filename) >= 0) {
+				/* And set the type to the saved type, in case it was a raw cartridge image */
+				CARTRIDGE_second_type = savedCartType;
+				CARTRIDGE_Start();
+			}
+		}
+		/* Get the state of the first/second cart active flag */
+		StateSav_ReadINT(&cart_pass_through, 1);
+		if (cart_pass_through) {
+			first_cart_image = cart_image;
+			cart_image = second_cart_image;
+		}
+	} else if (savedCartType != CARTRIDGE_NONE) {
 		StateSav_ReadFNAME(filename);
 		if (filename[0]) {
 			/* Insert the cartridge... */
@@ -784,11 +981,30 @@ void CARTRIDGE_StateRead(void)
 
 void CARTRIDGE_StateSave(void)
 {
-	/* Save the cartridge type, or CARTRIDGE_NONE if there isn't one...*/
-	StateSav_SaveINT(&CARTRIDGE_type, 1);
-	if (CARTRIDGE_type != CARTRIDGE_NONE) {
-		StateSav_SaveFNAME(cart_filename);
+	int cart_save;
+	
+	if (CARTRIDGE_second_type == CARTRIDGE_NONE) {
+		/* Save the cartridge type, or CARTRIDGE_NONE if there isn't one...*/
+		StateSav_SaveINT(&CARTRIDGE_type, 1);
+		if (CARTRIDGE_type != CARTRIDGE_NONE) {
+			StateSav_SaveFNAME(cart_filename);
+		}
+	} else {
+		/* Save the cart type as negative, to indicate to CARTStateRead that there is a 
+		   second cartridge */
+		cart_save = -CARTRIDGE_type;
+		/* Save the cartridge type and name*/
+		StateSav_SaveINT(&cart_save, 1);
+		if (CARTRIDGE_type != CARTRIDGE_NONE) {
+			StateSav_SaveFNAME(cart_filename);
+		}
+		/* Save the second cartridge type and name*/
+		StateSav_SaveINT(&CARTRIDGE_second_type, 1);
+		StateSav_SaveFNAME(second_cart_filename);
+		/* Save the state of the first/second cart active flag */
+		StateSav_SaveINT(&cart_pass_through, 1);
 	}
+
 }
 
 #endif
