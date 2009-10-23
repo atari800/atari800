@@ -7,7 +7,7 @@ atari800 [options] [filenames]
 where:
 "filenames" are names of files supported by the emulator.
 The following file types are currently supported:
-- disk images: ATR, XFD, ATR.GZ/ATZ, XFD.GZ/XFZ, DCM
+- disk images: ATR, XFD, ATR.GZ/ATZ, XFD.GZ/XFZ, DCM, PRO, ATX
 - programs: COM/EXE/XEX, BAS, LST
 - cartridge images: CAR/CART, ROM (raw)
 - tape images: CAS, raw bootable programs
@@ -83,6 +83,8 @@ Command line options
 -basic                Turn on Atari BASIC ROM
 
 -cart <filename>      Insert cartridge (CART or raw format)
+-cart2 <filename>     Insert second cartridge (CART or raw format)
+                        Only if first cartridge is SpartaDOS X (64 or 128)
 
 -run <filename>       Run Atari program (EXE, COM, XEX, BAS, LST)
 
