@@ -1,5 +1,11 @@
 2009-11-21  Perry McFarlane  <perry_m@fastmail.fm>
 * sio.c: replace random with rand for portability
+  Commiting patch submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
+* DOC/USAGE, Makefile.in, atari.c, atari800.man, atari_ntsc.[ch] (removed),
+  atari_ntsc/atari_ntsc.[ch], atari_ntsc/atari_ntsc.config.h,
+  atari_ntsc/atari_ntsc_impl.h, atari_sdl.c, configure.ac:
+  Update to atari_ntsc based on Blargg's nes_ntsc 0.2.2, correct colour phases,
+  other fixes.
 
 
 2009-10-08  Piotr Fusik  <fox@scene.pl>

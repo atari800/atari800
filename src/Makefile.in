@@ -106,6 +106,7 @@ dep:
 
 clean:
 	rm -f *.o dos/*.o falcon/*.o win32/*.o win32/*.ro javanvm/*.o *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar $(TARGET_BASE_NAME)_runtime.java core *.bak *~
+	rm -f atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
 
 distclean: clean
 	-rm -f Makefile configure config.log config.status config.h

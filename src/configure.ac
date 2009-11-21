@@ -731,7 +731,7 @@ fi
 
 if [[ "$WANT_NTSC_FILTER" = "yes" ]]; then
 	AC_DEFINE(NTSC_FILTER,1,[Use NTSC video filter.])
-    OBJS="$OBJS atari_ntsc.o"
+    OBJS="$OBJS atari_ntsc/atari_ntsc.o"
 fi
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then

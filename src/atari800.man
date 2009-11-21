@@ -400,16 +400,23 @@ Set NTSC sharpness
 Set NTSC burst phase (artificating colours) (CTIA?) Drol, Choplifter,
 Ultima: 0.70
 .TP
-\fB-ntsc_gauss <n>
-Set NTSC Gaussian factor (can affect artifacting colours, sharpness and
-ghosting)
-.TP
 \fB-ntsc_gamma <n>
 Set NTSC gamma adjustment
 .TP
-\fB-ntsc_ramp <n>
-Set NTSC saturation ramp factor (amount by which bright colours become
-desaturated or washed out)
+\fB-ntsc_res <n>
+Set NTSC resolution
+.TP
+\fB-ntsc_artif <n>
+Set NTSC artifacting
+.TP
+\fB-ntsc_fring <n>
+Set NTSC fringing
+.TP
+\fB-ntsc_bleed <n>
+Set NTSC bleed
+.TP
+\fB-ntsc_delay <n>
+Set NTSC GTIA color delay
 .TP
 \fB-scanlines <n>
 Set scanlines percentage (ntscemu only)
@@ -720,59 +727,92 @@ Grab mouse (prevents mouse pointer from leaving the window)
 These keys work with the NTSC composite video emualtion (-ntscemu):
 (This interface should be considered experimental and is subject to change)
 .TP
-\fBLAlt+1
-Decrease NTSC sharpness 
-.TP
-\fBLAlt+2
-Increase NTSC sharpness 
-.TP
-\fBLAlt+3
-Decrease NTSC saturation (like TV Colour control)
-.TP
-\fBLAlt+4
-Increase NTSC saturation
-.TP
-\fBLAlt+5
-Decrease NTSC brightness (also called black level)
-.TP
-\fBLAlt+6
-Increase NTSC brightness
-.TP
-\fBLAlt+7
-Decrease NTSC contrast (also called white level) 
-.TP
-\fBLAlt+8
-Increase NTSC contrast
-.TP
-\fBLAlt+9
-Decrease NTSC burst phase (use this to change artifacting colours) 
-.TP
-\fBLAlt+0
-Increase NTSC burst phase
-.TP
-\fBLAlt+-
-Decrease NTSC Gaussian factor (ghosting, sharpness, artif colours)
-.TP
-\fBLAlt+=
-Increase NTSC Gaussian factor (ghosting, sharpness, artif colours)
-.TP
-\fBLAlt+[
-Decrease scanlines percentage (NTSC mode only)
-.TP
-\fBLAlt+]
-Increase scanlines percentage (NTSC mode only)
-.TP
-\fBLAlt+;
+\fBLAlt+LShift+1
 Decrease NTSC hue (like TV Tint control)
 .TP
-\fBLAlt+'
+\fBLAlt+1
 Increase NTSC hue (like TV Tint control)
 .TP
-\fBLAlt+Ins
-Decrease NTSC saturation ramp(reduce saturation for bright colours) 
+\fBLAlt+LShift+2
+Decrease NTSC saturation (like TV Colour control)
 .TP
-\fBLAlt+Ins
-Increase NTSC saturation ramp(reduce saturation for bright colours) 
+\fBLAlt+2
+Increase NTSC saturation
+.TP
+\fBLAlt+LShift+3
+Decrease NTSC contrast (also called white level)
+.TP
+\fBLAlt+3
+Increase NTSC contrast
+.TP
+\fBLAlt+LShift+4
+Decrease NTSC brightness (also called black level)
+.TP
+\fBLAlt+4
+Increase NTSC brightness
+.TP
+\fBLAlt+LShift+5
+Decrease NTSC sharpness
+.TP
+\fBLAlt+5
+Increase NTSC sharpness
+.TP
+\fBLAlt+LShift+6
+Decrease NTSC gamma adjustment
+.TP
+\fBLAlt+6
+Increase NTSC gamma adjustment
+.TP
+\fBLAlt+LShift+6
+Decrease NTSC gamma adjustment
+.TP
+\fBLAlt+6
+Increase NTSC gamma adjustment
+.TP
+\fBLAlt+LShift+7
+Decrease NTSC resolution
+.TP
+\fBLAlt+7
+Increase NTSC resolution
+.TP
+\fBLAlt+LShift+8
+Decrease NTSC artifacts
+.TP
+\fBLAlt+8
+Increase NTSC artifacts
+.TP
+\fBLAlt+LShift+9
+Decrease NTSC fringing
+.TP
+\fBLAlt+9
+Increase NTSC fringing
+.TP
+\fBLAlt+LShift+0
+Decrease NTSC bleed
+.TP
+\fBLAlt+0
+Increase NTSC bleed
+.TP
+\fBLAlt+LShift+-
+Decrease NTSC burst phase (use this to change artifacting colours)
+.TP
+\fBLAlt+-
+Increase NTSC burst phase
+.TP
+\fBLAlt+LShift+=
+Decrease NTSC GTIA color delay
+.TP
+\fBLAlt+=
+Increase NTSC GTIA color delay
+.TP
+\fBLAlt+LShift+[
+Decrease scanlines percentage (NTSC mode only)
+.TP
+\fBLAlt+[
+Increase scanlines percentage (NTSC mode only)
+.TP
+\fBLAlt+]
+Toggle NTSC composite/S-Video/RGB/monochrome settings
 .TP
 \fBLAlt+Shift+X
 Enable/disable XEP80 screen (use with -xep80)

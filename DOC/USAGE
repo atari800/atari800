@@ -228,11 +228,12 @@ The following items are for -ntscemu only:
 -ntsc_sharp <n>       Set NTSC sharpness
 -ntsc_burst <n>       Set NTSC burst phase (artificating colours)
                       (CTIA?) Drol, Choplifter, Ultima: 0.70
--ntsc_gauss <n>       Set NTSC Gaussian factor 
-                      (can affect artifacting colours, sharpness and ghosting)
 -ntsc_gamma <n>       Set NTSC gamma adjustment
--ntsc_ramp <n>        Set NTSC saturation ramp factor (amount by which
-                      bright colours become desaturated or washed out)
+-ntsc_res <n>         Set NTSC resolution
+-ntsc_artif <n>       Set NTSC artifacting
+-ntsc_fring <n>       Set NTSC fringing
+-ntsc_bleed <n>       Set NTSC bleed
+-ntsc_delay <n>       Set NTSC GTIA color delay
 -scanlines <n>        Set scanlines percentage (ntscemu only)
 -scanlinesnoint       Disable scanlines interpolation (ntscemu only)
 -proto80              Emulate a prototype 80 column board for the 1090
@@ -399,25 +400,36 @@ LAlt+M     Grab mouse (prevents mouse pointer from leaving the window)
 
 These keys work with the NTSC composite video emualtion (-ntscemu):
 (This interface should be considered experimental and is subject to change)
-LAlt+1     Decrease NTSC sharpness 
-LAlt+2     Increase NTSC sharpness 
-LAlt+3     Decrease NTSC saturation (like TV Colour control)
-LAlt+4     Increase NTSC saturation
-LAlt+5     Decrease NTSC brightness (also called black level)
-LAlt+6     Increase NTSC brightness
-LAlt+7     Decrease NTSC contrast (also called white level) 
-LAlt+8     Increase NTSC contrast
-LAlt+9     Decrease NTSC burst phase (use this to change artifacting colours) 
-LAlt+0     Increase NTSC burst phase
-LAlt+-     Decrease NTSC Gaussian factor (ghosting, sharpness, artif colours)
-LAlt+=     Increase NTSC Gaussian factor (ghosting, sharpness, artif colours)
-LAlt+[     Decrease scanlines percentage (NTSC mode only)
-LAlt+]     Increase scanlines percentage (NTSC mode only)
-LAlt+;     Decrease NTSC hue (like TV Tint control)
-LAlt+'     Increase NTSC hue (like TV Tint control)
-LAlt+Ins   Decrease NTSC saturation ramp(reduce saturation for bright colours) 
-LAlt+Ins   Increase NTSC saturation ramp(reduce saturation for bright colours) 
-LAlt+Shift+X Enable/disable XEP80 screen (use with -xep80)
+LAlt+LShift+1     Decrease NTSC hue (like TV Tint control)
+LAlt+1            Increase NTSC hue (like TV Tint control)
+LAlt+LShift+2     Decrease NTSC saturation (like TV Colour control)
+LAlt+2            Increase NTSC saturation
+LAlt+LShift+3     Decrease NTSC contrast (also called white level)
+LAlt+3            Increase NTSC contrast
+LAlt+LShift+4     Decrease NTSC brightness (also called black level)
+LAlt+4            Increase NTSC brightness
+LAlt+LShift+5     Decrease NTSC sharpness
+LAlt+5            Increase NTSC sharpness
+LAlt+LShift+6     Decrease NTSC gamma adjustment
+LAlt+6            Increase NTSC gamma adjustment
+LAlt+LShift+6     Decrease NTSC gamma adjustment
+LAlt+6            Increase NTSC gamma adjustment
+LAlt+LShift+7     Decrease NTSC resolution
+LAlt+7            Increase NTSC resolution
+LAlt+LShift+8     Decrease NTSC artifacts
+LAlt+8            Increase NTSC artifacts
+LAlt+LShift+9     Decrease NTSC fringing
+LAlt+9            Increase NTSC fringing
+LAlt+LShift+0     Decrease NTSC bleed
+LAlt+0            Increase NTSC bleed
+LAlt+LShift+-     Decrease NTSC burst phase (use this to change artifacting colours)
+LAlt+-            Increase NTSC burst phase
+LAlt+LShift+=     Decrease NTSC GTIA color delay
+LAlt+=            Increase NTSC GTIA color delay
+LAlt+LShift+[     Decrease scanlines percentage (NTSC mode only)
+LAlt+[            Increase scanlines percentage (NTSC mode only)
+LAlt+]            Toggle NTSC composite/S-Video/RGB/monochrome settings
+LAlt+Shift+X      Enable/disable XEP80 screen (use with -xep80)
 
 Apart from standard joysticks (handled by the SDL) up to two keyboard joysticks
 are supported. The keys used for joystick directions and the trigger can be

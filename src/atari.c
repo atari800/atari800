@@ -127,7 +127,7 @@
 #include "xep80.h"
 #endif
 #ifdef NTSC_FILTER
-#include "atari_ntsc.h"
+#include "atari_ntsc/atari_ntsc.h"
 #endif
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;

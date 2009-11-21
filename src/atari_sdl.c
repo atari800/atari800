@@ -66,7 +66,7 @@
 #include "pia.h"
 #include "log.h"
 #include "util.h"
-#include "atari_ntsc.h"
+#include "atari_ntsc/atari_ntsc.h"
 #include "pbi_proto80.h"
 #include "xep80.h"
 #include "xep80_fonts.h"
@@ -198,7 +198,7 @@ static struct display_mode_data_t display_modes[] = {
 	{ 240, 320, 16,
 	  &SetNewVideoModeIgnore, &DisplayRotated240x320 },
 	/* NTSCEmu */
-	{ 640, 480, 16,
+	{ 640, 480, ATARI_NTSC_OUT_DEPTH,
 	  &SetNewVideoModeIgnore, &DisplayNTSCEmu640x480 },
 	/* XEP80 */
 	{ XEP80_SCRN_WIDTH, XEP80_SCRN_HEIGHT, 8,
@@ -1036,103 +1036,123 @@ int PLATFORM_Keyboard(void)
 					switch(lastkey){
 					case SDLK_1:
 						key_pressed = 0;
-						atari_ntsc_setup.sharpness-=0.1;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.hue-=0.1;
+						else
+							atari_ntsc_setup.hue+=0.1;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_2:
 						key_pressed = 0;
-						atari_ntsc_setup.sharpness+=0.1;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.saturation-=0.1;
+						else
+							atari_ntsc_setup.saturation+=0.1;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_3:
 						key_pressed = 0;
-						atari_ntsc_setup.saturation-=0.1;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.contrast-=0.1;
+						else
+							atari_ntsc_setup.contrast+=0.1;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_4:
 						key_pressed = 0;
-						atari_ntsc_setup.saturation+=0.1;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.brightness-=0.1;
+						else
+							atari_ntsc_setup.brightness+=0.1;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_5:
 						key_pressed = 0;
-						atari_ntsc_setup.brightness-=0.1;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.sharpness-=0.1;
+						else
+							atari_ntsc_setup.sharpness+=0.1;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_6:
 						key_pressed = 0;
-						atari_ntsc_setup.brightness+=0.1;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.gamma-=.05;
+						else
+							atari_ntsc_setup.gamma+=.05;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_7:
 						key_pressed = 0;
-						atari_ntsc_setup.contrast-=0.1;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.resolution-=.05;
+						else
+							atari_ntsc_setup.resolution+=.05;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_8:
 						key_pressed = 0;
-						atari_ntsc_setup.contrast+=0.1;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.artifacts-=.05;
+						else
+							atari_ntsc_setup.artifacts+=.05;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_9:
 						key_pressed = 0;
-						atari_ntsc_setup.burst_phase-=.05;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.fringing-=.05;
+						else
+							atari_ntsc_setup.fringing+=.05;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_0:
 						key_pressed = 0;
-						atari_ntsc_setup.burst_phase+=.05;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.bleed-=.05;
+						else
+							atari_ntsc_setup.bleed+=.05;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_MINUS:
 						key_pressed = 0;
-						atari_ntsc_setup.gaussian_factor-=.2;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.burst_phase-=0.1;
+						else
+							atari_ntsc_setup.burst_phase+=0.1;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_EQUALS:
 						key_pressed = 0;
-						atari_ntsc_setup.gaussian_factor+=.2;
+						if (kbhits[SDLK_LSHIFT])
+							atari_ntsc_setup.color_delay-=.05;
+						else
+							atari_ntsc_setup.color_delay+=.05;
 						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
 						break;
 					case SDLK_LEFTBRACKET:
 						key_pressed = 0;
-						scanlines_percentage -= 5*(scanlines_percentage>=5);
+						if (kbhits[SDLK_LSHIFT])
+							scanlines_percentage -= 5*(scanlines_percentage>=5);
+						else
+							scanlines_percentage += 5*(scanlines_percentage<=100-5);
 						Log_print("scanlines percentage:%d",scanlines_percentage);
 						break;
 					case SDLK_RIGHTBRACKET:
 						key_pressed = 0;
-						scanlines_percentage += 5*(scanlines_percentage<=100-5);
-						Log_print("scanlines percentage:%d",scanlines_percentage);
-						break;
-					case SDLK_SEMICOLON:
-						key_pressed = 0;
-						atari_ntsc_setup.hue-=.01;
-						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-						break;
-					case SDLK_QUOTE:
-						key_pressed = 0;
-						atari_ntsc_setup.hue+=.01;
-						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-						break;
-					case SDLK_COMMA:
-						key_pressed = 0;
-						atari_ntsc_setup.gamma_adj-=.05;
-						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-						break;
-					case SDLK_PERIOD:
-						key_pressed = 0;
-						atari_ntsc_setup.gamma_adj+=.05;
-						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-						break;
-					case SDLK_INSERT:
-						key_pressed = 0;
-						atari_ntsc_setup.saturation_ramp-=.05;
-						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
-						break;
-					case SDLK_DELETE:
-						key_pressed = 0;
-						atari_ntsc_setup.saturation_ramp+=.05;
-						atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+						{
+							static atari_ntsc_setup_t const *preset = &atari_ntsc_svideo;
+							atari_ntsc_setup = *preset;
+							atari_ntsc_init( the_ntscemu, &atari_ntsc_setup );
+							/* Rotate the preset pointer */
+							if (preset == &atari_ntsc_composite)
+								preset = &atari_ntsc_svideo;
+							else if (preset == &atari_ntsc_svideo)
+								preset = &atari_ntsc_rgb;
+							else if (preset == &atari_ntsc_rgb)
+								preset = &atari_ntsc_monochrome;
+							else preset = &atari_ntsc_composite;
+						}
 						break;
 					}
 				}
@@ -2096,24 +2116,30 @@ static void DisplayNTSCEmu640x480(UBYTE *screen)
 	enum { overscan = 1 };
 
 	/* Atari active pixel area */
-	enum { atari_width = overscan ? atari_ntsc_full_in_width : atari_ntsc_min_in_width };
+	enum { atari_width = overscan ? atari_ntsc_640_in_width : atari_ntsc_min_in_width };
 	enum { atari_height = 240 -overscan_lines };
 
 	/* Output size */
-	enum { width = overscan ? atari_ntsc_full_out_width : atari_ntsc_min_out_width };
-	enum { height = atari_height * 2 };
-	enum { left_border_adj = ((640 - width)/2) & 0xfffffffc };
+	enum { out_width = overscan ? atari_ntsc_640_out_width : atari_ntsc_min_out_width };
+	enum { out_height = atari_height * 2 };
+	enum { left_border_adj = ((640 - out_width)/2) & 0xfffffffc };
 	int const raw_width = Screen_WIDTH; /* raw image has extra data */
 
 	int jumped = 24;
 	unsigned short *pixels = (unsigned short*)MainScreen->pixels + overscan_lines / 2 * MainScreen->pitch + left_border_adj;
 	/* blit atari image, doubled vertically */
-	atari_ntsc_blit( the_ntscemu, screen + jumped + overscan_lines / 2 * Screen_WIDTH, raw_width, width, height / 2, pixels, MainScreen->pitch * 2 );
-	
+
+	atari_ntsc_blit( the_ntscemu,
+			 (ATARI_NTSC_IN_T *) (screen + jumped + overscan_lines / 2 * Screen_WIDTH),
+			 raw_width,
+			 atari_width,
+			 atari_height,
+			 pixels,
+			 MainScreen->pitch * 2 );
 	if (!scanlinesnoint) {
-		scanLines_16_interp((void *)pixels, width, height, MainScreen->pitch, scanlines_percentage);
+		scanLines_16_interp((void *)pixels, out_width, out_height, MainScreen->pitch, scanlines_percentage);
 	} else {
-		scanLines_16((void *)pixels, width, height, MainScreen->pitch, scanlines_percentage);
+		scanLines_16((void *)pixels, out_width, out_height, MainScreen->pitch, scanlines_percentage);
 	}
 }
 
