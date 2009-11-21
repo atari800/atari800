@@ -1,3 +1,7 @@
+2009-11-21  Perry McFarlane  <perry_m@fastmail.fm>
+* sio.c: replace random with rand for portability
+
+
 2009-10-08  Piotr Fusik  <fox@scene.pl>
   Commiting patch submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
 * atari_sdl.c: fixed missing leftmost column in 16bpp and 32bpp modes

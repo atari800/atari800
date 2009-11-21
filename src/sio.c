@@ -796,7 +796,7 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 					for (i=0;i<128;i++) {
 						Log_print("0x%02x",buffer[i]);
 						if (buffer[i] == 0x33)
-							buffer[i] = random() & 0xFF;
+							buffer[i] = rand() & 0xFF;
 					}
 				}
 			}
