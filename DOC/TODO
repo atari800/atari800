@@ -35,7 +35,7 @@ Emulation core
 
 * more accurate frame rates (for example 49.8607456 instead of 50 Hz in PAL)
 
-* VAPI support, improved .PRO support, (ATP - obsolete, copy-protected ATR?)
+* improve VAPI and .PRO support
 
 * emulate POKEY SIO shift register
 
@@ -70,11 +70,11 @@ Emulation core
 
 * emulate the 850 interface at the hardware level.
 
-* ATR-8000 emulation.  ATR-8500.  BIOS image?
+* ATR-8000 emulation.  ATR-8500.
   Adapt an existing CPM emulator.
 
-* emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp and
-  Austin-Franklin 80-Column Board.  Need ROM images and schematics.
+* emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp
+  Need ROM images and schematics.
 
 * 6502 BRK bug
 
@@ -180,15 +180,9 @@ Graphics
 Sound
 -----
 
-* get rid of VOL_ONLY_SOUND
-
 * correctly emulate serial I/O sound
 
 * one POKEY sound engine
-
-* POKEY sound should NOT be asynchronous to the rest of the emulation
-  (for example, the contents of the generated WAVs should not depend
-  on the speed of the emulation)
 
 * include sound settings in the emulation core (command line options,
   config file, UI) and make it possible to change them at runtime
@@ -198,8 +192,6 @@ Sound
 * an option to auto-enable stereo when an Atari program uses it
 
 * Covox emulation
-
-* improve GTIA click
 
 * 2 POKEY mono, 4 POKEY stereo, 4 POKEY quad
 

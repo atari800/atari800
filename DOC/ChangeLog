@@ -1,8 +1,9 @@
 2009-12-07  Perry McFarlane  <perry_m@fastmail.fm>
 * USAGE, af80.[ch], atari.c, atari_sdl.c, cartridge.c, cfg.c, configure.ac,
-cpu.[ch], monitor.c, pbi.c:
+cpu.[ch], monitor.c, pbi.c, TODO:
   Austin Franklin 80 Column card
   Execution history now stores opcode data.
+  update TODO
 
 
 2009-11-21  Perry McFarlane  <perry_m@fastmail.fm>
