@@ -163,7 +163,6 @@ int AF80_Initialise(int *argc, char *argv[])
 
 		/* swap palette */
 		for (i=0; i<16; i++ ) {
-			/*j = (i^0x0f);*/
 			j=i;
 			j = (j&0x0a) + ((j&0x01) << 2) + ((j&0x04) >> 2);
 			swapped_palette[i] = rgbi_palette[j];
@@ -339,7 +338,7 @@ UBYTE AF80_GetPixels(int scanline, int column, int *colour, int blink)
 		screen_pos = row*80+column + table_start;
 	}
 	character = af80_screen[screen_pos];
-	attrib = af80_attrib[(row*80+column + table_start) % (80*25)];
+	attrib = af80_attrib[screen_pos];
 	font_data = af80_charset[character*16 + line];
 	if (attrib & 0x01) {
 	   	font_data ^= 0xff; /* invert */
@@ -350,7 +349,7 @@ UBYTE AF80_GetPixels(int scanline, int column, int *colour, int blink)
 	if (line+1 == AF80_CELL_HEIGHT && (attrib & 0x04)) {
 		font_data = 0xff; /* underline */
 	}
-	if (row == crtreg[0x18] && column == crtreg[0x19] && blink) {
+	if (row == crtreg[0x18] && column == crtreg[0x19] && !blink) {
 		font_data = 0xff; /* cursor */
 	}
 	*colour = swapped_palette[attrib>>4]; /* rgbi colour */
