@@ -37,6 +37,9 @@
 #ifndef BASIC
 #include "statesav.h"
 #endif
+#ifdef AF80
+#include "af80.h"
+#endif
 
 int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	0,
@@ -339,6 +342,11 @@ static void access_D5(int curr_cart_type,UWORD addr)
 /* a read from D500-D5FF area */
 UBYTE CARTRIDGE_GetByte(UWORD addr)
 {
+#ifdef AF80
+	if (AF80_enabled) {
+		return AF80_D5GetByte(addr);
+	}
+#endif
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9))
 		return RTIME_GetByte();
 	access_D5(CARTRIDGE_type, addr);
@@ -350,6 +358,12 @@ void CARTRIDGE_PutByte(UWORD addr, UBYTE byte)
 {
 	int curr_cart_type;
 	
+#ifdef AF80
+	if (AF80_enabled) {
+		AF80_D5PutByte(addr,byte);
+		return;
+	}
+#endif
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9)) {
 		RTIME_PutByte(byte);
 		return;

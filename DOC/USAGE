@@ -239,6 +239,7 @@ The following items are for -ntscemu only:
 -proto80              Emulate a prototype 80 column board for the 1090
 -xep80                Emulate the XEP80
 -xep80port <n>        Use XEP80 on joystick port <n>
+-af80                 Emulate the Austin Franklin 80 column board
 
 
 X11 options

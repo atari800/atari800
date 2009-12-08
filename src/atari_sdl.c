@@ -70,6 +70,7 @@
 #include "pbi_proto80.h"
 #include "xep80.h"
 #include "xep80_fonts.h"
+#include "af80.h"
 
 /* you can set that variables in code, or change it when emulator is running
    I am not sure what to do with sound_enabled (can't turn it on inside
@@ -188,6 +189,7 @@ static void DisplayRotated240x320(Uint8 *screen);
 static void DisplayNTSCEmu640x480(Uint8 *screen);
 static void DisplayXEP80(Uint8 *screen);
 static void DisplayProto80640x400(Uint8 *screen);
+static void DisplayAF80640x500(Uint8 *screen);
 
 /* This table holds default settings for all display modes. */
 static struct display_mode_data_t display_modes[] = {
@@ -205,7 +207,10 @@ static struct display_mode_data_t display_modes[] = {
 	  &SetNewVideoModeIgnore, &DisplayXEP80 },
 	/* Proto80 */
 	{ 640, 400, 16,
-	  &SetNewVideoModeIgnore, &DisplayProto80640x400 }
+	  &SetNewVideoModeIgnore, &DisplayProto80640x400 },
+	/* AF80 */
+	{ 640, 500, 16,
+	  &SetNewVideoModeIgnore, &DisplayAF80640x500 }
 };
 
 /* An enumerator to switch display modes comfortably. */
@@ -214,7 +219,8 @@ enum display_mode_t {
 	display_rotated,
 	display_ntscemu,
 	display_xep80,
-	display_proto80
+	display_proto80,
+	display_af80
 };
 /* Indicates current display mode */
 static enum display_mode_t current_display_mode = display_normal;
@@ -1884,6 +1890,11 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		current_display_mode = display_proto80;
 		Log_print("proto80 mode");
 	}
+	/* Austin Franklin 80 column adaptor */
+	if (AF80_enabled) {
+		current_display_mode = display_af80;
+		Log_print("Austin Franklin 80 column mode");
+	}
 
 	if (PLATFORM_filter != PLATFORM_FILTER_NONE)
 		PLATFORM_SetFilter(PLATFORM_filter);
@@ -2169,6 +2180,46 @@ static void DisplayProto80640x400(UBYTE *screen)
 		start16 += skip;
 	}
 	scanLines_16_interp((void *)MainScreen->pixels, 640, 400, MainScreen->pitch, scanlines_percentage);
+}
+
+static void DisplayAF80640x500(UBYTE *screen)
+{
+	UWORD black = 0x0000;
+	int skip = MainScreen->pitch - 80*8;
+	Uint16 *start16 = (Uint16 *) MainScreen->pixels;
+
+	int scanline, column;
+	UBYTE pixels;
+
+	static int AF80Frame = 0;
+	int blink;
+	AF80Frame++;
+	if (AF80Frame == 60) AF80Frame = 0;
+	if (AF80Frame > 29) {
+		blink = TRUE;
+	}
+	else {
+		blink = FALSE;
+	}
+
+	for (scanline = 0; scanline < 10*25; scanline++) {
+		for (column = 0; column < 80; column++) {
+			int i;
+			int colour;
+			pixels = AF80_GetPixels(scanline, column, &colour, blink);
+			for (i = 0; i < 8; i++) {
+				if (pixels & 0x01) {
+					*start16++ = SDL_MapRGB(MainScreen->format, (colour>>16), ((colour>>8)&0xff), (colour&0xff));
+				}
+				else {
+					*start16++ = black;
+				}
+				pixels >>= 1;
+			}
+		}
+		start16 += skip;
+	}
+	scanLines_16_interp((void *)MainScreen->pixels, 640, 500, MainScreen->pitch, scanlines_percentage);
 }
 
 static void DisplayRotated240x320(Uint8 *screen)

@@ -234,6 +234,7 @@ UBYTE CPU_cim_encountered = FALSE;
 /* Execution history */
 #ifdef MONITOR_BREAK
 UWORD CPU_remember_PC[CPU_REMEMBER_PC_STEPS];
+UBYTE CPU_remember_op[CPU_REMEMBER_PC_STEPS][3];
 unsigned int CPU_remember_PC_curpos = 0;
 int CPU_remember_xpos[CPU_REMEMBER_PC_STEPS];
 UWORD CPU_remember_JMP[CPU_REMEMBER_JMP_STEPS];
@@ -599,6 +600,9 @@ void CPU_GO(int limit)
 
 #ifdef MONITOR_BREAK
 		CPU_remember_PC[CPU_remember_PC_curpos] = GET_PC();
+		CPU_remember_op[CPU_remember_PC_curpos][0] = MEMORY_dGetByte(GET_PC());
+		CPU_remember_op[CPU_remember_PC_curpos][1] = MEMORY_dGetByte(GET_PC()+1);
+		CPU_remember_op[CPU_remember_PC_curpos][2] = MEMORY_dGetByte(GET_PC()+2);
 #ifdef NEW_CYCLE_EXACT
 		if (ANTIC_DRAWING_SCREEN)
 			CPU_remember_xpos[CPU_remember_PC_curpos] = ANTIC_cpu2antic_ptr[ANTIC_xpos] + (ANTIC_ypos << 8);

@@ -126,6 +126,9 @@
 #ifdef XEP80_EMULATION
 #include "xep80.h"
 #endif
+#ifdef AF80
+#include "af80.h"
+#endif
 #ifdef NTSC_FILTER
 #include "atari_ntsc/atari_ntsc.h"
 #endif
@@ -654,6 +657,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef XEP80_EMULATION
 		|| !XEP80_Initialise(argc, argv)
 #endif
+#ifdef AF80
+		|| !AF80_Initialise(argc, argv)
+#endif
 #ifdef NTSC_FILTER
 		|| !atari_ntsc_Initialise(argc, argv)
 #endif
@@ -786,6 +792,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif /* BASIC */
 		}
 	}
+#ifdef AF80
+	/* Insert Austin Franklin 80 column cartridge */
+		if (AF80_enabled) {
+			AF80_InsertRightCartridge();
+		}
+#endif
 	
 	/* Load Atari executable, if any */
 	if (run_direct != NULL)

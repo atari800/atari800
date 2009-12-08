@@ -30,6 +30,9 @@
 #include "log.h"
 #include "memory.h"
 #include "pbi.h"
+#ifdef AF80
+#include "af80.h"
+#endif
 #include "platform.h"
 #include "pokeysnd.h"
 #include "ui.h"
@@ -291,6 +294,10 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			/* Add module-specific configurations here */
 			else if (PBI_ReadConfig(string,ptr)) {
 			}
+#ifdef AF80
+			else if (AF80_ReadConfig(string,ptr)) {
+			}
+#endif
 			else {
 #ifdef SUPPORTS_PLATFORM_CONFIGURE
 				if (!PLATFORM_Configure(string, ptr)) {

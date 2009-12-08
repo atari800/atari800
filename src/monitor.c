@@ -1385,9 +1385,19 @@ int MONITOR_Run(void)
 			int i;
 			for (i = 0; i < CPU_REMEMBER_PC_STEPS; i++) {
 				int j;
+				int k;
+				UWORD saved_cpu = CPU_remember_PC[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS];
+				UBYTE save_op[3];
 				j = CPU_remember_xpos[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS];
 				printf("%3d %3d ", j >> 8, j & 0xff);
+				for (k = 0; k < 3; k++) {
+					save_op[k] = MEMORY_dGetByte(saved_cpu + k);
+					MEMORY_dPutByte(saved_cpu + k, CPU_remember_op[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS][k]);
+				}
 				show_instruction(stdout, CPU_remember_PC[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS]);
+				for (k = 0; k < 3; k++) {
+					MEMORY_dPutByte(saved_cpu + k, save_op[k]);
+				}
 			}
 		}
 		else if (strcmp(t, "JUMPS") == 0) {

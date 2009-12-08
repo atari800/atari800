@@ -304,6 +304,8 @@ dnl Don't make this a windowed app, make it a console app.
         fi
         AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
         OBJS="$OBJS pbi_proto80.o"
+        AC_DEFINE(AF80,1,[The Austin Franklin 80 column card.])
+        OBJS="$OBJS af80.o"
         ;;
     windx)
         AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])

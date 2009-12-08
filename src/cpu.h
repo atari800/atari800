@@ -62,6 +62,7 @@ extern UBYTE CPU_cim_encountered;
 
 #define CPU_REMEMBER_PC_STEPS 64
 extern UWORD CPU_remember_PC[CPU_REMEMBER_PC_STEPS];
+extern UBYTE CPU_remember_op[CPU_REMEMBER_PC_STEPS][3];
 extern unsigned int CPU_remember_PC_curpos;
 extern int CPU_remember_xpos[CPU_REMEMBER_PC_STEPS];
 
