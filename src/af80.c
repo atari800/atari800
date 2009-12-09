@@ -337,6 +337,7 @@ UBYTE AF80_GetPixels(int scanline, int column, int *colour, int blink)
 	else {
 		screen_pos = row*80+column + table_start;
 	}
+	screen_pos &= 0x7ff;
 	character = af80_screen[screen_pos];
 	attrib = af80_attrib[screen_pos];
 	font_data = af80_charset[character*16 + line];
