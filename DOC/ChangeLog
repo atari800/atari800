@@ -1,3 +1,10 @@
+2009-12-13  Perry McFarlane  <perry_m@fastmail.fm>
+* /DOC/USAGE, atari_sdl.c, platform.h, ui.c, xep80.c:
+  All 80 column modes work like XEP80 with alt-shift-X to switch screens.
+  Rename PLATFORM_SwitchXep80() to PLATFORM_Switch80(), PLATFORM_xep80 to
+  PLATFORM_show_80.
+
+
 2009-12-07  Perry McFarlane  <perry_m@fastmail.fm>
 * USAGE, af80.[ch], atari.c, atari_sdl.c, cartridge.c, cfg.c, configure.ac,
 cpu.[ch], monitor.c, pbi.c, TODO:

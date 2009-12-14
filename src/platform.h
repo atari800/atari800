@@ -49,11 +49,11 @@ extern int PLATFORM_kbd_joy_1_enabled;
 int PLATFORM_GetRawKey(void);
 #endif
 
-#ifdef XEP80_EMULATION
-/* Switch between the Atari and XEP80 screen */
-void PLATFORM_SwitchXep80(void);
-/* TRUE if the XEP80 screen is visible */
-extern int PLATFORM_xep80;
+#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
+/* Switch between the Atari and AF80, PBI_PROTO80, or XEP80 screen */
+void PLATFORM_Switch80(void);
+/* TRUE if the AF80, PBI_PROTO80, or XEP80 screen is visible */
+extern int PLATFORM_show_80;
 #endif
 
 #ifdef NTSC_FILTER

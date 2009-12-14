@@ -95,8 +95,8 @@ char UI_atari_files_dir[UI_MAX_DIRECTORIES][FILENAME_MAX];
 char UI_saved_files_dir[UI_MAX_DIRECTORIES][FILENAME_MAX];
 int UI_n_atari_files_dir = 0;
 int UI_n_saved_files_dir = 0;
-#ifdef XEP80_EMULATION
-static int saved_xep80;
+#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
+static int saved_show_80;
 #endif
 
 static UI_tMenuItem *FindMenuItem(UI_tMenuItem *mip, int option)
@@ -1138,13 +1138,13 @@ static void SaveState(void)
 	if (UI_driver->fGetSaveFilename(state_filename, UI_saved_files_dir, UI_n_saved_files_dir)) {
 		int result;
 		UI_driver->fMessage("Please wait while saving...", 0);
-#ifdef XEP80_EMULATION
-		/* Save true XEP80 state */
-		PLATFORM_xep80 = saved_xep80;
+#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
+		/* Save true 80 column state */
+		PLATFORM_show_80 = saved_show_80;
 #endif
 		result = StateSav_SaveAtariState(state_filename, "wb", TRUE);
-#ifdef XEP80_EMULATION
-		PLATFORM_xep80 = FALSE;
+#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
+		PLATFORM_show_80 = FALSE;
 #endif
 		if (!result)
 			CantSave(state_filename);
@@ -1158,9 +1158,9 @@ static void LoadState(void)
 		if (!StateSav_ReadAtariState(state_filename, "rb"))
 			CantLoad(state_filename);
 	}
-#ifdef XEP80_EMULATION
-	saved_xep80 = PLATFORM_xep80;
-	PLATFORM_xep80 = FALSE;
+#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
+	saved_show_80 = PLATFORM_show_80;
+	PLATFORM_show_80 = FALSE;
 #endif
 }
 
@@ -1723,10 +1723,10 @@ void UI_Run(void)
 
 	int option = UI_MENU_RUN;
 	int done = FALSE;
-#ifdef XEP80_EMULATION
-	saved_xep80 = PLATFORM_xep80;
-	if (PLATFORM_xep80) {
-		PLATFORM_SwitchXep80();
+#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
+	saved_show_80 = PLATFORM_show_80;
+	if (PLATFORM_show_80) {
+		PLATFORM_Switch80();
 	}
 #endif
 
@@ -1855,10 +1855,10 @@ void UI_Run(void)
 	while (PLATFORM_Keyboard() != AKEY_NONE)
 		Atari800_Sync();
 	UI_alt_function = -1;
-	/* restore XEP80 screen */
-#ifdef XEP80_EMULATION
-	if (saved_xep80 != PLATFORM_xep80) {
-		PLATFORM_SwitchXep80();
+	/* restore 80 column screen */
+#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
+	if (saved_show_80 != PLATFORM_show_80) {
+		PLATFORM_Switch80();
 	}
 #endif
 }

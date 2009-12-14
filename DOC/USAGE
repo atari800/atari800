@@ -430,7 +430,7 @@ LAlt+=            Increase NTSC GTIA color delay
 LAlt+LShift+[     Decrease scanlines percentage (NTSC mode only)
 LAlt+[            Increase scanlines percentage (NTSC mode only)
 LAlt+]            Toggle NTSC composite/S-Video/RGB/monochrome settings
-LAlt+Shift+X      Enable/disable XEP80 screen (use with -xep80)
+LAlt+Shift+X      Enable/disable 80 column screen (for -xep80/-af80/-proto80)
 
 Apart from standard joysticks (handled by the SDL) up to two keyboard joysticks
 are supported. The keys used for joystick directions and the trigger can be

@@ -155,7 +155,7 @@ static SDL_Surface *MainScreen = NULL;
 static SDL_Color colors[256];			/* palette */
 static Uint16 Palette16[256];			/* 16-bit palette */
 static Uint32 Palette32[256];			/* 32-bit palette */
-int PLATFORM_xep80 = FALSE; 	/* is the XEP80 screen displayed? */
+int PLATFORM_show_80 = FALSE; 	/* is the 80 column screen displayed? */
 enum PLATFORM_filter_t PLATFORM_filter = PLATFORM_FILTER_NONE;
 
 /* SDL port supports 5 "display modes":
@@ -720,12 +720,18 @@ void PLATFORM_SetFilter(const enum PLATFORM_filter_t filter)
 	}
 }
 
-void PLATFORM_SwitchXep80(void)
+void PLATFORM_Switch80(void)
 {
-	PLATFORM_xep80 = 1 - PLATFORM_xep80;
-	if (PLATFORM_xep80) {
+	PLATFORM_show_80 = 1 - PLATFORM_show_80;
+	if (PLATFORM_show_80) {
 		xep80_return_display_mode = current_display_mode;
-		current_display_mode = display_xep80;
+		if (AF80_enabled) {
+			current_display_mode = display_af80;
+		} else if (PBI_PROTO80_enabled) {
+			current_display_mode = display_proto80;
+		} else if (XEP80_enabled) {
+			current_display_mode = display_xep80;
+		}
 	}
 	else
 		current_display_mode = xep80_return_display_mode;
@@ -986,9 +992,9 @@ int PLATFORM_Keyboard(void)
 				SwitchFullscreen();
 				break;
 			case SDLK_x:
-				if (INPUT_key_shift && XEP80_enabled) {
+				if (INPUT_key_shift && (AF80_enabled || XEP80_enabled || PBI_PROTO80_enabled)) {
 					key_pressed = 0;
-					PLATFORM_SwitchXep80();
+					PLATFORM_Switch80();
 				}
 				break;
 			case SDLK_g:
@@ -1885,15 +1891,9 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	if (help_only)
 		return TRUE;		/* return before changing the gfx mode */
 
-	/* Prototype 80 column adaptor */
-	if (PBI_PROTO80_enabled) {
-		current_display_mode = display_proto80;
-		Log_print("proto80 mode");
-	}
-	/* Austin Franklin 80 column adaptor */
-	if (AF80_enabled) {
-		current_display_mode = display_af80;
-		Log_print("Austin Franklin 80 column mode");
+	/* 80 column devices */
+	if (PBI_PROTO80_enabled || AF80_enabled || XEP80_enabled) {
+		PLATFORM_Switch80();
 	}
 
 	if (PLATFORM_filter != PLATFORM_FILTER_NONE)
