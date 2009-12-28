@@ -5,6 +5,10 @@
 #include "colours.h"
 #include "colours_external.h"
 
+#ifndef M_PI
+# define M_PI 3.141592653589793
+#endif
+
 /* Contains NTSC-specific controls for palette adjustment. */
 typedef struct COLOURS_NTSC_setup_t {
 	double hue; /* Like TV tint control */
