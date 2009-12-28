@@ -1,4 +1,8 @@
 2009-12-28  Piotr Fusik  <fox@scene.pl>
+* configure.ac, devices.c: MKDIR_TAKES_ONE_ARG for MinGW
+
+* colours_ntsc.h: M_PI for MinGW
+
   Commiting patch submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
 * DOC/USAGE, atari.c, atari800.man, atari_sdl.c, colours.[ch],
   colours_external.[ch], colours_ntsc.[ch], colours_pal.[ch] filter_ntsc.[ch],

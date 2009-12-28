@@ -430,10 +430,11 @@ static int Devices_MakeDirectory(const char *filename)
 
 static int Devices_MakeDirectory(const char *filename)
 {
-	/* XXX: I don't see any good reason why umask() and limited permissions were used. */
-	/* umask(S_IWGRP | S_IWOTH); */
-	return (mkdir(filename, 0777
-		 /* S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH */) == 0);
+	return mkdir(filename
+#ifndef MKDIR_TAKES_ONE_ARG
+		, 0777
+#endif
+		) == 0;
 }
 
 #define DO_MKDIR

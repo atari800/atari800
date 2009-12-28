@@ -432,16 +432,35 @@ fi
 
 dnl Check for library functions...
 
+# from "Autoconf Archive":
+AC_DEFUN([AX_FUNC_MKDIR],
+[AC_CHECK_FUNCS([mkdir _mkdir])
+AC_CACHE_CHECK([whether mkdir takes one argument],
+               [ac_cv_mkdir_takes_one_arg],
+[AC_TRY_COMPILE([
+#include <sys/stat.h>
+#if HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
+], [mkdir (".");],
+[ac_cv_mkdir_takes_one_arg=yes], [ac_cv_mkdir_takes_one_arg=no])])
+if test x"$ac_cv_mkdir_takes_one_arg" = xyes; then
+  AC_DEFINE([MKDIR_TAKES_ONE_ARG], 1,
+            [Define if mkdir takes only one argument.])
+fi
+])
+
 AC_FUNC_CLOSEDIR_VOID
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
-AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkdir mkstemp mktemp])
+AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkstemp mktemp])
 AC_CHECK_FUNCS([modf nanosleep opendir rename rewind rmdir signal snprintf])
 AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
 AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf])
+AX_FUNC_MKDIR
 dnl select usleep strncpy are broken on javanvm targets
 if [[ "$a8_target" != "javanvm" -a "$a8_target" != "javanvm-basic" ]]; then
     AC_CHECK_FUNCS([select usleep strncpy])
