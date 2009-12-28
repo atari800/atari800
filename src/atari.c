@@ -130,7 +130,7 @@
 #include "af80.h"
 #endif
 #ifdef NTSC_FILTER
-#include "atari_ntsc/atari_ntsc.h"
+#include "filter_ntsc.h"
 #endif
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
@@ -661,7 +661,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		|| !AF80_Initialise(argc, argv)
 #endif
 #ifdef NTSC_FILTER
-		|| !atari_ntsc_Initialise(argc, argv)
+		|| !FILTER_NTSC_Initialise(argc, argv)
 #endif
 #ifndef DONT_DISPLAY
 		/* Platform Specific Initialisation */

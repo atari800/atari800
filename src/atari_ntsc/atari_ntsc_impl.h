@@ -240,7 +240,7 @@ static void init( init_t* impl, atari_ntsc_setup_t const* setup )
 		   conclude that the colorburst angle is 180+33 in YIQ.
 		   (See http://en.wikipedia.org/wiki/YUV and
 		   http://en.wikipedia.org/wiki/YIQ) */
-		float const colorburst_angle = (213.0f) * PI / 180.0f;
+		static float const colorburst_angle = (213.0f) * PI / 180.0f;
 		float hue = (float) setup->hue * PI + PI / 180 * ext_decoder_hue - PI * setup->burst_phase - colorburst_angle;
 		float sat = (float) setup->saturation + 1;
 		float const* decoder = setup->decoder_matrix;
@@ -281,10 +281,12 @@ static void init( init_t* impl, atari_ntsc_setup_t const* setup )
 
 /* kernel generation */
 
+/* Atari change: more accurate values taken from
+   http://en.wikipedia.org/wiki/YIQ */
 #define RGB_TO_YIQ( r, g, b, y, i ) (\
 	(y = (r) * 0.299f + (g) * 0.587f + (b) * 0.114f),\
-	(i = (r) * 0.596f - (g) * 0.275f - (b) * 0.321f),\
-	((r) * 0.212f - (g) * 0.523f + (b) * 0.311f)\
+	(i = (r) * 0.595716f - (g) * 0.274453f - (b) * 0.321263f),\
+	((r) * 0.211456f - (g) * 0.522591f + (b) * 0.311135f)\
 )
 
 #define YIQ_TO_RGB( y, i, q, to_rgb, type, r, g ) (\

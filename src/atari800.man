@@ -249,24 +249,48 @@ less frequently updated screen.
 .TP
 \fB-artif <mode>
 Set artifacting mode 0-4 (0 = disable)
+
 .TP
-\fB-paletten/p <filename>
+\fB-saturation <n>
+Set screen color saturation (like TV Colour control)
+.TP
+\fB-ntsc-saturation <n>\fR, \fB-pal-saturation <n>\fR
+Set saturation only for NTSC or PAL, respectively
+.TP
+\fB-contrast <n>
+Set screen contrast (also called white level)
+.TP
+\fB-ntsc-contrast <n>\fR, \fB-pal-contrast <n>\fR
+Set contrast only for NTSC or PAL, respectively
+.TP
+\fB-brightness <n>
+Set screen brightness (also called black level)
+.TP
+\fB-ntsc-brightness <n>\fR, \fB-pal-brightness <n>\fR
+Set brightness only for NTSC or PAL, respectively
+.TP
+\fB-gamma <n>
+Set screen gamma correction
+.TP
+\fB-ntsc-gamma <n>\fR, \fB-pal-gamma <n>\fR
+Set gamma adjustment only for NTSC or PAL, respectively
+.TP
+\fB-hue <n>
+Set hue -1..1 (like TV Tint control). Only for NTSC.
+.TP
+\fB-colordelay <n>
+Set GTIA color delay. This emulates adjusting the potentiometer visible at
+the bottom of Atari computers, which adjusts hues of colors produced by
+the computer. Only for NTSC.
+
+.TP
+\fB-paletten <filename>\fR, \fB-palettep <filename>\fR
 Read Atari NTSC/PAL colors from ACT file
 .TP
-\fB-blackn/p <num>
-Set NTSC/PAL black level 0-255
-.TP
-\fB-whiten/p <num>
-Set NTSC/PAL white level 0-255
-.TP
-\fB-colorsn/p <num>
-Set NTSC/PAL color intensity
-.TP
-\fB-genpaln/p
-Generate artifical NTSC/PAL palette
-.TP
-\fB-colshiftn/p <num>
-Set color shift (-genpal only)
+\fB-paletten-adjust\fR, \fB-palettep-adjust\fR
+Apply colour adjustments (brightness, contrast etc.) to the loaded NTSC/PAL
+palette (by default the loaded palette is displayed unmodified).
+
 .TP
 \fB-screenshots <pattern>
 Set filename pattern for screenshots. Use to override the default
@@ -374,55 +398,34 @@ Define path to device used in LPTjoy 1. Available on linux-ia32 only.
 
 .TP
 \fB-ntscemu
-Emulate NTSC composite video (640x480x16 only)
-This includes NTSC TV artifacts.  "-artif" is not needed in this mode and will
-not work.  This mode does not use a palette.  The video signal is emulated
-instead.  Palette options such as -genpaln have no effect in this mode.
-The following items are for -ntscemu only:
-
+Activate NTSC filter (640x480x16 only). This faithfully emulates NTSC composite
+video artifacts. "-artif" is not needed in this mode and will not work.
 .TP
-\fB-ntsc_hue <n>
-Set NTSC hue -1..1 (like TV Tint control)
+\fB-ntsc-sharpness <n>
+Set sharpness of the NTSC filter.
 .TP
-\fB-ntsc_sat <n>
-Set NTSC saturation (like TV Colour control)
+\fB-ntsc-resolution <n>
+Set resolution of the NTSC filter.
 .TP
-\fB-ntsc_cont <n>
-Set NTSC contrast (also called white level)
+\fB-ntsc-artifacts <n>
+Set artifacts of the NTSC filter.
 .TP
-\fB-ntsc_bright <n>
-Set NTSC brightness (also called black level)
+\fB-ntsc-fringing <n>
+Set fringing of the NTSC filter.
 .TP
-\fB-ntsc_sharp <n>
-Set NTSC sharpness
+\fB-ntsc-bleed <n>
+Set bleed of the NTSC filter.
 .TP
-\fB-ntsc_burst <n>
-Set NTSC burst phase (artificating colours) (CTIA?) Drol, Choplifter,
-Ultima: 0.70
-.TP
-\fB-ntsc_gamma <n>
-Set NTSC gamma adjustment
-.TP
-\fB-ntsc_res <n>
-Set NTSC resolution
-.TP
-\fB-ntsc_artif <n>
-Set NTSC artifacting
-.TP
-\fB-ntsc_fring <n>
-Set NTSC fringing
-.TP
-\fB-ntsc_bleed <n>
-Set NTSC bleed
-.TP
-\fB-ntsc_delay <n>
-Set NTSC GTIA color delay
+\fB-ntsc-burstphase <n>
+Set burst phase of the NTSC filter. This changes colors of artifacts. The best
+values are 0, 0.5, 1, 1.5.
 .TP
 \fB-scanlines <n>
-Set scanlines percentage (ntscemu only)
+Set visibility of scanlines in NTSC filter (0..100).
 .TP
 \fB-scanlinesnoint
-Disable scanlines interpolation (ntscemu only)
+Disable NTSC filter scanlines interpolation (may give better performance).
+
 .TP
 \fB-proto80
 Emulate a prototype 80 column board for the 1090
@@ -724,95 +727,91 @@ Switch bpp (for debug only, will be removed soon)
 \fBLAlt+M
 Grab mouse (prevents mouse pointer from leaving the window)
 
-These keys work with the NTSC composite video emualtion (-ntscemu):
-(This interface should be considered experimental and is subject to change)
 .TP
 \fBLAlt+LShift+1
-Decrease NTSC hue (like TV Tint control)
+Decrease hue (like TV Tint control, only NTSC)
 .TP
 \fBLAlt+1
-Increase NTSC hue (like TV Tint control)
+Increase hue
 .TP
 \fBLAlt+LShift+2
-Decrease NTSC saturation (like TV Colour control)
+Decrease saturation (like TV Colour control)
 .TP
 \fBLAlt+2
-Increase NTSC saturation
+Increase saturation
 .TP
 \fBLAlt+LShift+3
-Decrease NTSC contrast (also called white level)
+Decrease contrast (also called white level)
 .TP
 \fBLAlt+3
-Increase NTSC contrast
+Increase contrast
 .TP
 \fBLAlt+LShift+4
-Decrease NTSC brightness (also called black level)
+Decrease brightness (also called black level)
 .TP
 \fBLAlt+4
-Increase NTSC brightness
+Increase brightness
 .TP
 \fBLAlt+LShift+5
-Decrease NTSC sharpness
+Decrease gamma adjustment
 .TP
 \fBLAlt+5
-Increase NTSC sharpness
+Increase gamma adjustment
 .TP
 \fBLAlt+LShift+6
-Decrease NTSC gamma adjustment
+Decrease color delay (Atari color adjustment potentiometer, only NTSC)
 .TP
 \fBLAlt+6
-Increase NTSC gamma adjustment
-.TP
-\fBLAlt+LShift+6
-Decrease NTSC gamma adjustment
-.TP
-\fBLAlt+6
-Increase NTSC gamma adjustment
+Increase color delay
+
+These keys work only in the NTSC filter mode (-ntscemu):
 .TP
 \fBLAlt+LShift+7
-Decrease NTSC resolution
+Decrease sharpness
 .TP
 \fBLAlt+7
-Increase NTSC resolution
+Increase sharpness
 .TP
 \fBLAlt+LShift+8
-Decrease NTSC artifacts
+Decrease resolution
 .TP
 \fBLAlt+8
-Increase NTSC artifacts
+Increase resolution
 .TP
 \fBLAlt+LShift+9
-Decrease NTSC fringing
+Decrease artifacts
 .TP
 \fBLAlt+9
-Increase NTSC fringing
+Increase artifacts
 .TP
 \fBLAlt+LShift+0
-Decrease NTSC bleed
+Decrease fringing
 .TP
 \fBLAlt+0
-Increase NTSC bleed
+Increase fringing
 .TP
 \fBLAlt+LShift+-
-Decrease NTSC burst phase (use this to change artifacting colours)
+Decrease bleed
 .TP
 \fBLAlt+-
-Increase NTSC burst phase
+Increase bleed
 .TP
 \fBLAlt+LShift+=
-Decrease NTSC GTIA color delay
+Decrease NTSC burst phase (use this to change artifacting colours)
 .TP
 \fBLAlt+=
-Increase NTSC GTIA color delay
+Increase NTSC burst phase
 .TP
 \fBLAlt+LShift+[
-Decrease scanlines percentage (NTSC mode only)
+Decrease scanlines percentage
 .TP
 \fBLAlt+[
-Increase scanlines percentage (NTSC mode only)
+Increase scanlines percentage
 .TP
 \fBLAlt+]
 Toggle NTSC composite/S-Video/RGB/monochrome settings
+
+
 .TP
 \fBLAlt+Shift+X
 Enable/disable XEP80 screen (use with -xep80)

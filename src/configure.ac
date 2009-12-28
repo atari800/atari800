@@ -485,7 +485,7 @@ if [[ "$a8_target" != "basic" -a "$a8_target" != "javanvm-basic" ]]; then
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
 
         dnl These objects are not compiled in BASIC nor CURSES_BASIC target
-        OBJS="$OBJS colours.o screen.o"
+        OBJS="$OBJS colours.o colours_ntsc.o colours_pal.o colours_external.o screen.o"
 
         A8_OPTION(newcycleexact,yes,
                   [Allow color changes inside a scanline (default=ON)],
@@ -733,7 +733,7 @@ fi
 
 if [[ "$WANT_NTSC_FILTER" = "yes" ]]; then
 	AC_DEFINE(NTSC_FILTER,1,[Use NTSC video filter.])
-    OBJS="$OBJS atari_ntsc/atari_ntsc.o"
+    OBJS="$OBJS filter_ntsc.o atari_ntsc/atari_ntsc.o"
 fi
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then

@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Atari800; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ */
 
 #include "config.h"
 #include <stdio.h>
@@ -33,11 +33,19 @@
 #include "binload.h"
 #include "cartridge.h"
 #include "cassette.h"
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
+#include "colours.h"
+#include "colours_external.h"
+#include "colours_ntsc.h"
+#endif
 #include "compfile.h"
 #include "cfg.h"
 #include "cpu.h"
 #include "devices.h" /* Devices_SetPrintCommand */
 #include "esc.h"
+#if NTSC_FILTER
+#include "filter_ntsc.h"
+#endif
 #include "gtia.h"
 #include "input.h"
 #include "akey.h"
@@ -1171,13 +1179,119 @@ static void LoadState(void)
    CURSES_BASIC: it is visible on the screenshots (yes, they are bitmaps). */
 #ifndef CURSES_BASIC
 
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
+/* An array of pointers to colour controls (brightness, contrast, NTSC filter
+   controls, etc.). Used to display values of controls in GUI. */
+static struct {
+	double *setting; /* Pointer to a setup value */
+	char string[10]; /* string representation, for displaying */
+} colour_controls[12];
+
+/* Updates the string representation of a single colour control. */
+static void UpdateColourControl(const int idx)
+{
+	snprintf(colour_controls[idx].string,
+		 sizeof(colour_controls[0].string) - 1,
+		 "%f",
+		 *(colour_controls[idx].setting));
+}
+
+/* Sets pointers to colour controls properly, and hides/shows the Hue and
+   Color delay controls, which are applicable only for NTSC. */
+static void UpdateColourControls(UI_tMenuItem menu_array[])
+{
+	int i;
+	colour_controls[0].setting = &Colours_setup->brightness;
+	colour_controls[1].setting = &Colours_setup->contrast;
+	colour_controls[2].setting = &Colours_setup->saturation;
+	colour_controls[3].setting = &COLOURS_NTSC_specific_setup.hue;
+	colour_controls[4].setting = &Colours_setup->gamma;
+	colour_controls[5].setting = &COLOURS_NTSC_specific_setup.color_delay;
+	for (i = 0; i < 6; i ++)
+		UpdateColourControl(i);
+	/* Hide/show Hue and Color delay. */
+	if (Atari800_tv_mode == Atari800_TV_NTSC) {
+		FindMenuItem(menu_array, 15)->flags = UI_ITEM_ACTION;
+		FindMenuItem(menu_array, 17)->flags = UI_ITEM_ACTION;
+	} else {
+		FindMenuItem(menu_array, 15)->flags = UI_ITEM_HIDDEN;
+		FindMenuItem(menu_array, 17)->flags = UI_ITEM_HIDDEN;
+	}
+}
+
+#if NTSC_FILTER
+/* Submenu with controls for NTSC filter. */
+static void NTSCFilterSettings(void)
+{
+	int i;
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_ACTION_PREFIX(0, "Sharpness: ", colour_controls[6].string),
+		UI_MENU_ACTION_PREFIX(1, "Resolution: ", colour_controls[7].string),
+		UI_MENU_ACTION_PREFIX(2, "Artifacts: ", colour_controls[8].string),
+		UI_MENU_ACTION_PREFIX(3, "Fringing: ", colour_controls[9].string),
+		UI_MENU_ACTION_PREFIX(4, "Bleed: ", colour_controls[10].string),
+		UI_MENU_ACTION_PREFIX(5, "Burst phase: ", colour_controls[11].string),
+		UI_MENU_END
+	};
+
+	int option = 0;
+
+	/* Set pointers to colour controls. */
+	colour_controls[6].setting = &FILTER_NTSC_setup.sharpness;
+	colour_controls[7].setting = &FILTER_NTSC_setup.resolution;
+	colour_controls[8].setting = &FILTER_NTSC_setup.artifacts;
+	colour_controls[9].setting = &FILTER_NTSC_setup.fringing;
+	colour_controls[10].setting = &FILTER_NTSC_setup.bleed;
+	colour_controls[11].setting = &FILTER_NTSC_setup.burst_phase;
+	for (i = 6; i < 12; i ++)
+		UpdateColourControl(i);
+
+	for (;;) {
+		option = UI_driver->fSelect("NTSC Filter Settings", 0, option, menu_array, NULL);
+		switch (option) {
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			{
+				char buffer[10]; /* same size as in colour_controls[0].string */
+				memcpy(buffer, colour_controls[option + 6].string, sizeof(buffer));
+				if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
+					*(colour_controls[option + 6].setting) = atof(buffer);
+					UpdateColourControl(option + 6);
+					Colours_Update();
+				}
+			}
+			break;
+		default:
+			return;
+		}
+	}
+}
+#endif /* NTSC_FILTER */
+
+/* Saves the current colours, including adjustments, in a palette file chosen
+   by user. */
+static void SavePalette(void)
+{
+	static char filename[FILENAME_MAX] = "";
+	if (UI_driver->fGetSaveFilename(filename, UI_saved_files_dir, UI_n_saved_files_dir)) {
+		UI_driver->fMessage("Please wait while saving...", 0);
+		if (!Colours_Save(filename))
+			CantSave(filename);
+	}
+}
+#endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
+
 static void DisplaySettings(void)
 {
 	static const UI_tMenuItem artif_quality_menu_array[] = {
 		UI_MENU_ACTION(0, "off"),
 		UI_MENU_ACTION(1, "original"),
 		UI_MENU_ACTION(2, "new"),
-#ifdef NTSC_FILTER
+#if NTSC_FILTER
 		UI_MENU_ACTION(3, "NTSC filter"),
 #endif
 		UI_MENU_END
@@ -1209,25 +1323,52 @@ static void DisplaySettings(void)
 		UI_MENU_ACTION(10, "DO HZ TEST:"),
 #endif
 #endif
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
+		UI_MENU_ACTION_PREFIX(12, "Brightness: ", colour_controls[0].string),
+		UI_MENU_ACTION_PREFIX(13, "Contrast: ", colour_controls[1].string),
+		UI_MENU_ACTION_PREFIX(14, "Saturation: ", colour_controls[2].string),
+		UI_MENU_ACTION_PREFIX(15, "Hue: ", colour_controls[3].string),
+		UI_MENU_ACTION_PREFIX(16, "Gamma: ", colour_controls[4].string),
+		UI_MENU_ACTION_PREFIX(17, "GTIA delay: ", colour_controls[5].string),
+#if NTSC_FILTER
+		UI_MENU_SUBMENU(18, "NTSC filter settings"),
+#endif
+		UI_MENU_ACTION(19, "Restore default colors"),
+		UI_MENU_FILESEL_PREFIX_TIP(20, "External palette: ", NULL, NULL),
+		UI_MENU_CHECK(21, "Also adjust external palette: "),
+		UI_MENU_FILESEL(22, "Save current palette"),
+#endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
 		UI_MENU_END
 	};
 
 	int option = 0;
 	int option2;
+	int seltype;
 
 	/* Current artifacting quality, computed from
 	   PLATFORM_artifacting and ANTIC_artif_new */
 	int artif_quality;
+
+	UpdateColourControls(menu_array);
+
 	for (;;) {
+#if NTSC_FILTER
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
+		/* Show NTSC filter option only if necessary. */
+		if (PLATFORM_filter == PLATFORM_FILTER_NTSC)
+			FindMenuItem(menu_array, 18)->flags = UI_ITEM_SUBMENU;
+		else
+			FindMenuItem(menu_array, 18)->flags = UI_ITEM_HIDDEN;
+#endif
+
 		/* Computing current artifacting quality... */
-#ifdef NTSC_FILTER
 		if (PLATFORM_filter != PLATFORM_FILTER_NONE) {
 			/* NTSC filter is on */
 			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[2 + PLATFORM_filter].item;
 			FindMenuItem(menu_array, 11)->suffix = "N/A";
 			artif_quality = 2 + PLATFORM_filter;
 		} else
-#endif
+#endif /* NTSC_FILTER */
 		if (ANTIC_artif_mode == 0) { /* artifacting is off */
 			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[0].item;
 			FindMenuItem(menu_array, 11)->suffix = "N/A";
@@ -1237,6 +1378,21 @@ static void DisplaySettings(void)
 			FindMenuItem(menu_array, 11)->suffix = artif_mode_menu_array[ANTIC_artif_mode - 1].item;
 			artif_quality = 1 + ANTIC_artif_new;
 		}
+
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
+		/* Set the palette file description */
+		if (Colours_external->loaded) {
+			FindMenuItem(menu_array, 20)->item = Colours_external->filename;
+			FindMenuItem(menu_array, 20)->suffix = "Return:load Backspace:remove";
+			FindMenuItem(menu_array, 21)->flags = UI_ITEM_CHECK;
+			SetItemChecked(menu_array, 21, Colours_external->adjust);
+		} else {
+			FindMenuItem(menu_array, 20)->item = "None";
+			FindMenuItem(menu_array, 20)->suffix = "Return:load";
+			FindMenuItem(menu_array, 21)->flags = UI_ITEM_ACTION;
+			FindMenuItem(menu_array, 21)->suffix = "N/A";
+		}
+#endif
 
 		sprintf(refresh_status, "1:%-2d", Atari800_refresh_rate);
 		SetItemChecked(menu_array, 2, Atari800_collisions_in_skipped_frames);
@@ -1251,13 +1407,13 @@ static void DisplaySettings(void)
 		FindMenuItem(menu_array, 8)->suffix = Atari800_tv_mode == Atari800_TV_NTSC ? "NTSC" : "PAL";
 		FindMenuItem(menu_array, 9)->suffix = screen_tv_mode == Atari800_TV_NTSC ? "NTSC" : "PAL";
 #endif
-		option = UI_driver->fSelect("Display Settings", 0, option, menu_array, NULL);
+		option = UI_driver->fSelect("Display Settings", 0, option, menu_array, &seltype);
 		switch (option) {
 		case 0:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, artif_quality, artif_quality_menu_array, NULL);
 			if (option2 >= 0)
 			{
-#ifdef NTSC_FILTER
+#if NTSC_FILTER
 				/* If switched between non-filter and NTSC filter,
 				   PLATFORM_filter must be updated. */
 				if (option2 >= 3 && artif_quality < 3)
@@ -1343,6 +1499,63 @@ static void DisplaySettings(void)
 			break;
 #endif
 #endif /* DREAMCAST */
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
+		case 12:
+		case 13:
+		case 14:
+		case 15:
+		case 16:
+		case 17:
+			{
+				char buffer[10]; /* same size as in colour_controls[0].string */
+				memcpy(buffer, colour_controls[option - 12].string, sizeof(buffer));
+				if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
+					*(colour_controls[option - 12].setting) = atof(buffer);
+					UpdateColourControl(option - 12);
+					Colours_Update();
+				}
+			}
+			break;
+#if NTSC_FILTER
+		case 18:
+			NTSCFilterSettings();
+			break;
+#endif
+		case 19:
+			Colours_RestoreDefaults();
+#if NTSC_FILTER
+			if (PLATFORM_filter == PLATFORM_FILTER_NTSC)
+				FILTER_NTSC_RestoreDefaults();
+#endif
+			UpdateColourControls(menu_array);
+			Colours_Update();
+			break;
+		case 20:
+			switch (seltype) {
+			case UI_USER_SELECT:
+				if (UI_driver->fGetLoadFilename(Colours_external->filename, UI_saved_files_dir, UI_n_saved_files_dir)) {
+					if (COLOURS_EXTERNAL_Read(Colours_external))
+						Colours_Update();
+					else
+						CantLoad(Colours_external->filename);
+				}
+				break;
+			case UI_USER_DELETE: /* Backspace */
+				COLOURS_EXTERNAL_Remove(Colours_external);
+				Colours_Update();
+				break;
+			}
+			break;
+		case 21:
+			if (Colours_external->loaded) {
+				Colours_external->adjust = !Colours_external->adjust;
+				Colours_Update();
+			}
+			break;
+		case 22:
+			SavePalette();
+			break;
+#endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
 		default:
 			return;
 		}

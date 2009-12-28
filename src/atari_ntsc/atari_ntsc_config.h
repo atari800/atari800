@@ -3,9 +3,7 @@
 #ifndef ATARI_NTSC_CONFIG_H
 #define ATARI_NTSC_CONFIG_H
 
-/* Uncomment to enable emphasis support and use a 512 color palette instead
-of the base 64 color palette. */
-/*#define ATARI_NTSC_EMPHASIS 1 */
+/* Atari change: remove NES-specific emphasis support */
 
 /* The following affect the built-in blitter only; a custom blitter can
 handle things however it wants. */

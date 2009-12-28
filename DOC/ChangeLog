@@ -1,3 +1,45 @@
+2009-12-28  Piotr Fusik  <fox@scene.pl>
+  Commiting patch submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
+* DOC/USAGE, atari.c, atari800.man, atari_sdl.c, colours.[ch],
+  colours_external.[ch], colours_ntsc.[ch], colours_pal.[ch] filter_ntsc.[ch],
+  configure.ac, ui.c, atari_ntsc/atari_ntsc.[ch],
+  atari_ntsc/atari_ntsc_config.h, atari_ntsc/atari_ntsc_impl.h:
+  1. Removed Atari800-specific code from the atari_ntsc library, and placed it
+  in a new module, FILTER_NTSC. This new module serves as an interface between
+  Atari800 and Blargg's library.
+  2. Removed the palette generation code from atari_ntsc and placed it in a new
+  module, COLOURS_NTSC. Palette generation is from now on used both in
+  "standard" mode and in NTSC-filtered mode. Old default palettes have been
+  removed from the COLOURS module.
+  3. Introduced a new module, COLOURS_PAL, that includes improved routines for
+  PAL palette generation. PAL Ataris produce colours in a similar way to NTSC
+  ones; the only difference lies in phases of hues in YIQ (or YUV) colourspace.
+  Unfortunately, while differences between hue phases are constant in NTSC,
+  it's not the case in PAL. I have failed in trying to develop a formula that
+  lies behind PAL hue phases, so I gave up on that; instead I measured PAL hue
+  phases based on several screenshots, and stuffed them in the colour_angles
+  table (see colours_pal.c->GeneratePalette()). The result looks very plausible
+  and accurately represents colours of my 65XE, at least.
+  4. Controls for contrast, brightness, saturation, gamma, hue and colordelay
+  now apply to both NTSC and PAL palettes (hue and colordelay only to NTSC),
+  regardless of NTSC filter. Palette generation is now on by default, therefore
+  parameters -genpaln/p are not needed anymore.
+  5. Support for externally-loaded palettes has moved to a new module,
+  COLOURS_EXTERNAL. Brightness, contrast, saturation and gamma can now be
+  applied also to external palettes (-paletten-adjust and -palettep-adjust
+  parameters).
+  6. NTSC filter also supports external palettes.
+  7. Added new and changed a few of existing colour-related command-line
+  parameters.
+  8. Keyboard shortcuts in SDL have been shuffled a bit, so that controls
+  usable only for NTSC filter lie next to each other.
+  9. Display Settings menu has been expanded - now it includes controls for
+  adjusting all colour settings (including NTSC filter settings), and also
+  loading and unloading of external palettes.
+  10. A new functionality has been added - saving the current colours (with
+  adjustments) to a palette file. See Display Settings->Save current palette.
+
+
 2009-12-13  Perry McFarlane  <perry_m@fastmail.fm>
 * /DOC/USAGE, atari_sdl.c, platform.h, ui.c, xep80.c:
   All 80 column modes work like XEP80 with alt-shift-X to switch screens.
@@ -407,12 +449,12 @@ Some spelling in comments corrected.
 
 2008-05-26  Perry McFarlane  <perry_m@fastmail.fm>
 * antic.[ch], atari.[ch], atari_sdl.c, cartridge.h, cassette.c, cpu.h,
-gtia.[ch], javanvm/atari_javanvm.c, mzpokeysnd.c, pbi_bb.c, pbi_mio.c, 
+gtia.[ch], javanvm/atari_javanvm.c, mzpokeysnd.c, pbi_bb.c, pbi_mio.c,
 pbi_scsi.c, pbi_xld.[ch], pia.h, platform.h, pokey.h, rtime.[ch], sio.h,
 statesav.c, ui.c, ui_basic.c, util.[ch], votrax.[ch]:
   I compiled with:
-  CC = gcc -ansi -pedantic -Wall -Waggregate-return -Wmissing-declarations 
-  -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline 
+  CC = gcc -ansi -pedantic -Wall -Waggregate-return -Wmissing-declarations
+  -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline
   and I found missing headers and lack of static in many places.
   Black Box and MIO will now continue with SCSI disabled if the disk image
   is not found.
@@ -554,7 +596,7 @@ for the Java NestedVM port
 
 
 2007-10-19  Perry McFarlane  <perry_m@fastmail.fm>
-* javanvm/atari_javanvm.c: keypad fix 
+* javanvm/atari_javanvm.c: keypad fix
 
 
 2007-10-18  Perry McFarlane  <perry_m@fastmail.fm>
@@ -617,7 +659,7 @@ for the Java NestedVM port
 
 2007-07-31  Perry McFarlane  <perry_m@fastmail.fm>
 * configure.ac, INSTALL: fix for windows sdl version.  Don't use -mwindows or
-  -Dmain=SDL_main and use -mno-cygwin on Cygwin.  SDL_win32_main.c is now 
+  -Dmain=SDL_main and use -mno-cygwin on Cygwin.  SDL_win32_main.c is now
   required from the sdl source.  Update documentation in INSTALL. This fixes
   the stdout.txt problem.
 

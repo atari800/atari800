@@ -39,12 +39,10 @@ typedef struct atari_ntsc_setup_t
 /* Atari change: only one palette - remove base_palette field. */
 
 /* Atari change: additional setup fields */
-	float burst_phase; /* Phase at which colorburst signal is turned on;
+	double burst_phase; /* Phase at which colorburst signal is turned on;
 	                      this defines colors of artifacts.
 			      In radians; -1.0 = -180 degrees, 1.0 = +180 degrees */
-	float color_delay; /* Delay between phases of two consecutive chromas, in nanoseconds; normally 21 */
-	int black_level; /* 0..255. ITU-R Recommendation BT.601 advises it to be 16. */
-	int white_level; /* 0..255. ITU-R Recommendation BT.601 advises it to be 235. */
+	double *yiq_palette;
 } atari_ntsc_setup_t;
 
 /* Video format presets */
@@ -196,12 +194,6 @@ enum { atari_ntsc_full_overscan_right = atari_ntsc_full_in_width - atari_ntsc_mi
 	if ( bits == 0 )\
 		rgb_out = raw_ << x;\
 }
-
-/* Atari800-specific: */
-
-extern atari_ntsc_setup_t atari_ntsc_setup;
-
-int atari_ntsc_Initialise(int *argc, char *argv[]);
 
 #ifdef __cplusplus
 	}

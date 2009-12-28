@@ -135,18 +135,28 @@ Command line options
 
 -refresh <rate>       Set screen refresh rate
 -artif <mode>         Set artifacting mode 0-4 (0 = disable) (see also -ntscemu)
+
+-saturation <n>       Set screen color saturation (like TV Colour control)
+-contrast <n>         Set screen contrast (also called white level)
+-brightness <n>       Set screen brightness (also called black level)
+-gamma <n>            Set screen gamma correction
+-ntsc-saturation <n>  Set saturation only for NTSC
+-ntsc-contrast <n>    Set contrast only for NTSC
+-ntsc-brightness <n>  Set brightness only for NTSC
+-ntsc-gamma <n>       Set gamma adjustment only for NTSC
+-hue <n>              Set hue -1..1 (like TV Tint control, NTSC only)
+-colordelay <n>       Set GTIA color delay (emulates the potentiometer at the
+                      bottom of Atari computers, that adjusts colors; NTSC only)
+-pal-saturation <n>   Set saturation only for PAL
+-pal-contrast <n>     Set contrast only for PAL
+-pal-brightness <n>   Set brightness only for PAL
+-pal-gamma <n>        Set gamma adjustment only for PAL
+
 -paletten <filename>  Read Atari NTSC colors from ACT file
+-paletten-adjust      Apply the colour adjustments to the loaded NTSC palette
 -palettep <filename>  Read Atari PAL colors from ACT file
--blackn <num>         Set NTSC black level 0-255
--blackp <num>         Set PAL black level 0-255
--whiten <num>         Set NTSC white level 0-255
--whitep <num>         Set PAL white level 0-255
--colorsn <num>        Set NTSC color intensity
--colorsp <num>        Set PAL color intensity
--genpaln              Generate artificial NTSC palette
--genpalp              Generate artificial PAL palette
--colshiftn <num>      Set color shift (-genpaln only)
--colshiftp <num>      Set color shift (-genpalp only)
+-palettep-adjust      Apply the colour adjustments to the loaded PAL palette
+
 -screenshots <pattern>Set filename pattern for screenshots
 -showspeed            Show percentage of actual speed
 
@@ -218,24 +228,18 @@ SDL version options
 
 -ntscemu              Emulate NTSC composite video (640x480x16 only)
 This includes NTSC TV artifacts.  "-artif" is not needed in this mode and will
-not work.  This mode does not use a palette.  The video signal is emulated
-instead.  Palette options such as -genpaln have no effect in this mode.
-The following items are for -ntscemu only:
--ntsc_hue <n>         Set NTSC hue -1..1 (like TV Tint control)
--ntsc_sat <n>         Set NTSC saturation (like TV Colour control)
--ntsc_cont <n>        Set NTSC contrast (also called white level)
--ntsc_bright <n>      Set NTSC brightness (also called black level)
--ntsc_sharp <n>       Set NTSC sharpness
--ntsc_burst <n>       Set NTSC burst phase (artificating colours)
-                      (CTIA?) Drol, Choplifter, Ultima: 0.70
--ntsc_gamma <n>       Set NTSC gamma adjustment
--ntsc_res <n>         Set NTSC resolution
--ntsc_artif <n>       Set NTSC artifacting
--ntsc_fring <n>       Set NTSC fringing
--ntsc_bleed <n>       Set NTSC bleed
--ntsc_delay <n>       Set NTSC GTIA color delay
--scanlines <n>        Set scanlines percentage (ntscemu only)
--scanlinesnoint       Disable scanlines interpolation (ntscemu only)
+not work.
+The following 8 items are for -ntscemu only:
+-ntsc-sharpness <n>   Set sharpness
+-ntsc-resolution <n>  Set resolution
+-ntsc-artifacts <n>   Set artifacts
+-ntsc-fringing <n>    Set fringing
+-ntsc-bleed <n>       Set bleed
+-ntsc-burstphase <n>  Set burst phase. This changes colors of artifacts.
+                      The best values are 0, 0.5, 1, 1.5
+-scanlines <n>        Set scanlines percentage
+-scanlinesnoint       Disable scanlines interpolation
+
 -proto80              Emulate a prototype 80 column board for the 1090
 -xep80                Emulate the XEP80
 -xep80port <n>        Use XEP80 on joystick port <n>
@@ -399,37 +403,36 @@ LAlt+J     Swap joysticks 0 and 1
 LAlt+E     Switch bpp (for debug only, will be removed soon)
 LAlt+M     Grab mouse (prevents mouse pointer from leaving the window)
 
-These keys work with the NTSC composite video emualtion (-ntscemu):
-(This interface should be considered experimental and is subject to change)
-LAlt+LShift+1     Decrease NTSC hue (like TV Tint control)
-LAlt+1            Increase NTSC hue (like TV Tint control)
-LAlt+LShift+2     Decrease NTSC saturation (like TV Colour control)
-LAlt+2            Increase NTSC saturation
-LAlt+LShift+3     Decrease NTSC contrast (also called white level)
-LAlt+3            Increase NTSC contrast
-LAlt+LShift+4     Decrease NTSC brightness (also called black level)
-LAlt+4            Increase NTSC brightness
-LAlt+LShift+5     Decrease NTSC sharpness
-LAlt+5            Increase NTSC sharpness
-LAlt+LShift+6     Decrease NTSC gamma adjustment
-LAlt+6            Increase NTSC gamma adjustment
-LAlt+LShift+6     Decrease NTSC gamma adjustment
-LAlt+6            Increase NTSC gamma adjustment
-LAlt+LShift+7     Decrease NTSC resolution
-LAlt+7            Increase NTSC resolution
-LAlt+LShift+8     Decrease NTSC artifacts
-LAlt+8            Increase NTSC artifacts
-LAlt+LShift+9     Decrease NTSC fringing
-LAlt+9            Increase NTSC fringing
-LAlt+LShift+0     Decrease NTSC bleed
-LAlt+0            Increase NTSC bleed
-LAlt+LShift+-     Decrease NTSC burst phase (use this to change artifacting colours)
-LAlt+-            Increase NTSC burst phase
-LAlt+LShift+=     Decrease NTSC GTIA color delay
-LAlt+=            Increase NTSC GTIA color delay
-LAlt+LShift+[     Decrease scanlines percentage (NTSC mode only)
-LAlt+[            Increase scanlines percentage (NTSC mode only)
+LAlt+LShift+1     Decrease hue (like TV Tint control, only NTSC)
+LAlt+1            Increase hue
+LAlt+LShift+2     Decrease saturation (like TV Colour control)
+LAlt+2            Increase saturation
+LAlt+LShift+3     Decrease contrast (also called white level)
+LAlt+3            Increase contrast
+LAlt+LShift+4     Decrease brightness (also called black level)
+LAlt+4            Increase brightness
+LAlt+LShift+5     Decrease gamma adjustment
+LAlt+5            Increase gamma adjustment
+LAlt+LShift+6     Decrease color delay (Atari color adjustment potentiometer, only NTSC)
+LAlt+6            Increase color delay
+
+The following keys work only in the NTSC filter mode (-ntscemu):
+LAlt+LShift+7     Decrease sharpness
+LAlt+7            Increase sharpness
+LAlt+LShift+8     Decrease resolution
+LAlt+8            Increase resolution
+LAlt+LShift+9     Decrease artifacts
+LAlt+9            Increase artifacts
+LAlt+LShift+0     Decrease fringing
+LAlt+0            Increase fringing
+LAlt+LShift+-     Decrease bleed
+LAlt+-            Increase bleed
+LAlt+LShift+=     Decrease burst phase (use this to change artifacting colours)
+LAlt+=            Increase burst phase
+LAlt+LShift+[     Decrease scanlines percentage
+LAlt+[            Increase scanlines percentage
 LAlt+]            Toggle NTSC composite/S-Video/RGB/monochrome settings
+ 
 LAlt+Shift+X      Enable/disable 80 column screen (for -xep80/-af80/-proto80)
 
 Apart from standard joysticks (handled by the SDL) up to two keyboard joysticks
