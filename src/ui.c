@@ -197,7 +197,7 @@ static void SelectSystem(void)
 		if (option < N_MACHINES)
 			break;
 		Atari800_tv_mode = (Atari800_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
-#ifdef SOUND
+#if defined(SOUND) && defined(SUPPORTS_SOUND_REINIT)
 		Sound_Reinit();
 #endif
 	}
