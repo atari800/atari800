@@ -1,7 +1,7 @@
 /*
  * colours_ntsc.c - Atari NTSC colour palette generation and adjustment
  *
- * Copyright (C) 2009 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2009-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -189,7 +189,7 @@ static void YIQ2RGB(int colourtable[256], const double yiq_table[768])
 		r = y + 0.9563 * i + 0.6210 * q;
 		g = y - 0.2721 * i - 0.6474 * q;
 		b = y - 1.1070 * i + 1.7046 * q;
-		Colours_SetRGB(n, r * 255, g * 255, b * 255, colourtable);
+		Colours_SetRGB(n, (int) (r * 255), (int) (g * 255), (int) (b * 255), colourtable);
 	}
 }
 

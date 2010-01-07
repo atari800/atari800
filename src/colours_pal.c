@@ -1,7 +1,7 @@
 /*
  * colours_pal.c - Atari PAL colour palette generation and adjustment
  *
- * Copyright (C) 2009 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2009-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -64,7 +64,7 @@ static void AdjustExternal(int colourtable[256])
 		g = y - 0.39465 * u - 0.58060 * v;
 		b = y + 2.03211 * u;
 
-		Colours_SetRGB(n, r * 255, g * 255, b * 255, colourtable);
+		Colours_SetRGB(n, (int) (r * 255), (int) (g * 255), (int) (b * 255), colourtable);
 	}
 }
 
@@ -118,7 +118,7 @@ static void GeneratePalette(int colourtable[256])
 			r = y + 1.13983 * v;
 			g = y - 0.39465 * u - 0.58060 * v;
 			b = y + 2.03211 * u;
-			Colours_SetRGB(cr * 16 + lm, r * 255, g * 255, b * 255, colourtable);
+			Colours_SetRGB(cr * 16 + lm, (int) (r * 255), (int) (g * 255), (int) (b * 255), colourtable);
 		}
 	}
 }

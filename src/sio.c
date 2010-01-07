@@ -2,7 +2,7 @@
  * sio.c - Serial I/O emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -95,7 +95,7 @@ typedef struct tagpro_additional_info_t {
 
 /* stores dup sector information for VAPI images */
 typedef struct tagvapi_sec_info_t {
-	unsigned int sec_count;
+	int sec_count;
 	unsigned int sec_offset[MAX_VAPI_PHANTOM_SEC];
 	unsigned char sec_status[MAX_VAPI_PHANTOM_SEC];
 	unsigned int sec_rot_pos[MAX_VAPI_PHANTOM_SEC];
@@ -334,7 +334,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		vapi_additional_info_t *info;
 		vapi_file_header_t fileheader;
 		vapi_track_header_t trackheader;
-		ULONG trackoffset, totalsectors;
+		int trackoffset, totalsectors;
 
 		/* .atx is read only for now */
 #ifndef VAPI_WRITE_ENABLE
@@ -395,7 +395,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		/* Now read all the sector data */
 		trackoffset = VAPI_32(fileheader.startdata);
 		while (trackoffset > 0 && trackoffset < file_length) {
-			ULONG sectorcnt, seclistdata,next;
+			int sectorcnt, seclistdata,next;
 			vapi_sector_list_header_t sectorlist;
 			vapi_sector_header_t sectorheader;
 			vapi_sec_info_t *sector;
