@@ -49,6 +49,10 @@ extern int PLATFORM_kbd_joy_1_enabled;
 int PLATFORM_GetRawKey(void);
 #endif
 
+#ifdef WIN32
+int PLATFORM_GetKeyName(void);
+#endif
+
 #if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
 /* Switch between the Atari and AF80, PBI_PROTO80, or XEP80 screen */
 void PLATFORM_Switch80(void);

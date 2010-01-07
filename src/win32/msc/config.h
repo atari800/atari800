@@ -1,9 +1,6 @@
 /* config.h for DirectX version of Atari800 compiled with MSVC 6. */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to use back slash as directory separator. */
-#define BACK_SLASH 1
-
 /* Target: standard I/O. */
 /* #undef BASIC */
 
@@ -30,6 +27,9 @@
 
 /* Target: Windows with DirectX. */
 #define DIRECTX 1
+
+/* Define to use back slash as directory separator. */
+#define DIR_SEP_BACKSLASH 1
 
 /* Target: DOS VGA. */
 /* #undef DOSVGA */
@@ -123,7 +123,7 @@
 #define HAVE_MEMSET 1
 
 /* Define to 1 if you have the `mkdir' function. */
-/* #undef HAVE_MKDIR */ /* yes, but non-standard (one argument) */
+#define HAVE_MKDIR 1
 
 /* Define to 1 if you have the `mkstemp' function. */
 /* #undef HAVE_MKSTEMP */
@@ -291,10 +291,13 @@
    slash. */
 /* #undef LSTAT_FOLLOWS_SLASHED_SYMLINK */
 
+/* Define if mkdir takes only one argument. */
+#define MKDIR_TAKES_ONE_ARG 1
+
 /* Define to activate assembler in monitor. */
 #define MONITOR_ASSEMBLER 1
 
-/* Define to activate BREAK command in monitor. */
+/* Define to activate code breakpoints and execution history. */
 #define MONITOR_BREAK 1
 
 /* Define to activate user-defined breakpoints. */
@@ -355,10 +358,10 @@
 /* #undef STEREO_SOUND */ /* TODO */
 
 /* Save additional config file options. */
-/* #undef SUPPORTS_PLATFORM_CONFIGSAVE */
+#define SUPPORTS_PLATFORM_CONFIGSAVE
 
 /* Additional config file options. */
-/* #undef SUPPORTS_PLATFORM_CONFIGURE */
+#define SUPPORTS_PLATFORM_CONFIGURE
 
 /* Target: Linux with SVGALib. */
 /* #undef SVGALIB */

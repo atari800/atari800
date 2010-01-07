@@ -54,6 +54,12 @@ void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int 
 int GetRawKey(void);
 #endif
 
+#ifdef WIN32
+void PLATFORM_GetButtonAssignments(int stick, int button, char *buffer, int bufsize);
+void PLATFORM_SetButtonAssignment(int stick, int button, int value);
+int GetKeyName(void);
+#endif
+
 /* Menu codes for Alt+letter shortcuts.
    Store in UI_alt_function and put AKEY_UI in INPUT_key_code. */
 #define UI_MENU_DISK             0

@@ -2,7 +2,7 @@
  * ui_basic.c - Atari look&feel user interface driver
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -98,7 +98,8 @@ static int GetKeyPress(void)
 
 	PLATFORM_DisplayScreen();
 
-	for (;;) {
+	for (;;) {  
+		
 		static int rep = KB_DELAY;
 		if (PLATFORM_Keyboard() == AKEY_NONE) {
 			rep = KB_DELAY;
@@ -112,7 +113,27 @@ static int GetKeyPress(void)
 		Atari800_Sync();
 	}
 
-	do {
+	do { 
+#ifdef WIN32
+		MSG msg;
+		msg.message = WM_NULL;
+		/* Keep UI responsive to system events */
+		PLATFORM_DisplayScreen();
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) 
+		{
+			if (msg.message == WM_QUIT) 
+			{
+				PostQuitMessage(10);
+				Atari800_Exit(FALSE);
+				exit(0);
+			}
+			else
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+#endif	
 		Atari800_Sync();
 		keycode = PLATFORM_Keyboard();
 		switch (keycode) {
@@ -265,6 +286,17 @@ int GetRawKey(void)
 	CenterPrint(0x94, 0x9a, "Press a key", 12);
 	PLATFORM_DisplayScreen();
 	return PLATFORM_GetRawKey();
+}
+#endif
+
+#ifdef WIN32
+int GetKeyName(void)
+{
+	ClearRectangle(0x94, 13, 11, 25, 13);
+	Box(0x9a, 0x94, 13, 11, 25, 13);
+	CenterPrint(0x94, 0x9a, "Press a key", 12);
+	PLATFORM_DisplayScreen();
+	return PLATFORM_GetKeyName();
 }
 #endif
 

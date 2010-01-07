@@ -2,7 +2,7 @@
  * ui.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -65,6 +65,37 @@
 #include "sound.h"
 #endif
 
+
+#ifdef WIN32
+#include "win32\joystick.h"
+#include "win32\screen_win32.h"
+
+/* Display Settings */
+RENDERMODE rendermode;
+FRAMEPARAMS frameparams;
+DISPLAYMODE displaymode;
+FSRESOLUTION fsresolution;
+SCREENMODE screenmode;
+ASPECTMODE aspectmode;
+BOOL usecustomfsresolution;
+BOOL showcursor;
+int windowscale;
+int fullscreenWidth;
+int fullscreenHeight;
+int origScreenWidth;
+int origScreenHeight;
+
+/* Controller Settings */
+KEYJOYMODE keyboardJoystickMode;
+ALTJOYMODE alternateJoystickMode;
+BOOL mapController1Buttons;
+BOOL mapController2Buttons;
+
+/* local variables */
+static char desktopreslabel[30];
+static char medreslabel[30];
+static char lowreslabel[30];
+#endif
 
 #ifdef _WIN32_WCE
 extern int smooth_filter;
@@ -1303,6 +1334,60 @@ static void DisplaySettings(void)
 		UI_MENU_ACTION(3, "CTIA"),
 		UI_MENU_END
 	};
+	
+#ifdef WIN32
+	static const UI_tMenuItem screen_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "Fullscreen"),
+		UI_MENU_ACTION(1, "Windowed"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem display_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "GDI"),
+		UI_MENU_ACTION(1, "GDI+/Bilinear"),
+		UI_MENU_ACTION(2, "GDI+/Bilinear(HQ)"),
+		UI_MENU_ACTION(3, "GDI+/Bicubic(HQ)"),
+		UI_MENU_ACTION(4, "Direct3D"),
+		UI_MENU_ACTION(5, "Direct3D/Bilinear"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem window_scale_menu_array[] = {
+		UI_MENU_ACTION(0, "100% (320x240)"),
+		UI_MENU_ACTION(1, "150% (480x360)"),
+		UI_MENU_ACTION(2, "200% (640x480)"),
+		UI_MENU_ACTION(3, "250% (800x600)"),
+		UI_MENU_ACTION(4, "300% (960x720)"),
+		UI_MENU_ACTION(5, "350% (1120x840)"),
+		UI_MENU_ACTION(6, "400% (1280x960)"),
+		UI_MENU_ACTION(7, "450% (1440x1080)"),
+		UI_MENU_ACTION(8, "500% (1600x1200)"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem fsresolution_menu_array[] = {
+		UI_MENU_ACTION(0, lowreslabel),
+		UI_MENU_ACTION(1, medreslabel),
+		UI_MENU_ACTION(2, desktopreslabel),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem aspect_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "Off"),
+		UI_MENU_ACTION(1, "Normal"),
+		UI_MENU_ACTION(2, "Smart"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem scanline_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "Off"),
+		UI_MENU_ACTION(1, "Low"),
+		UI_MENU_ACTION(2, "Medium"),
+		UI_MENU_ACTION(3, "High"),
+		UI_MENU_END
+	};
+#endif
+
 	static char refresh_status[16];
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_SUBMENU_SUFFIX(0, "NTSC artifacting quality:", NULL),
@@ -1338,18 +1423,35 @@ static void DisplaySettings(void)
 		UI_MENU_CHECK(21, "Also adjust external palette: "),
 		UI_MENU_FILESEL(22, "Save current palette"),
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
+#ifdef WIN32
+	    UI_MENU_SUBMENU_SUFFIX(23, "Display rendering: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(24, "Screen mode: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(25, "Window scale: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(26, "Fullscreen resolution:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(27, "Aspect ratio control mode:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(28, "Scanline mode:", NULL),
+		UI_MENU_CHECK(29, "Show cursor in fullscreen:"),
+#endif
 		UI_MENU_END
 	};
 
 	int option = 0;
 	int option2;
 	int seltype;
+#ifdef WIN32
+	int prev_option2;
+	char winscale[5];
+	char displaymodename[20];
+	int i;
+#endif
 
 	/* Current artifacting quality, computed from
 	   PLATFORM_artifacting and ANTIC_artif_new */
 	int artif_quality;
 
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
 	UpdateColourControls(menu_array);
+#endif
 
 	for (;;) {
 #if NTSC_FILTER
@@ -1406,6 +1508,30 @@ static void DisplaySettings(void)
 		SetItemChecked(menu_array, 7, db_mode);
 		FindMenuItem(menu_array, 8)->suffix = Atari800_tv_mode == Atari800_TV_NTSC ? "NTSC" : "PAL";
 		FindMenuItem(menu_array, 9)->suffix = screen_tv_mode == Atari800_TV_NTSC ? "NTSC" : "PAL";
+#endif
+#ifdef WIN32
+		if (rendermode == DIRECTDRAW) {
+			for (i = 23; i <= 29; i++) {
+				FindMenuItem(menu_array, i)->suffix = "N/A";
+			}
+		}
+		else  {
+			GetDisplayModeName(displaymodename);
+			FindMenuItem(menu_array, 23)->suffix = displaymodename; 
+			FindMenuItem(menu_array, 24)->suffix = screen_mode_menu_array[screenmode].item;
+			memcpy(winscale, window_scale_menu_array[(int)((windowscale/100.0f-1)*2)].item, 5);
+			winscale[4] = '\0';
+			FindMenuItem(menu_array, 25)->suffix = winscale;
+			if (fsresolution == LOWRES)
+				FindMenuItem(menu_array, 26)->suffix = "VGA";
+			else if (fsresolution == MEDRES)
+				FindMenuItem(menu_array, 26)->suffix = "VGA x2";
+			else	
+				FindMenuItem(menu_array, 26)->suffix = "Desktop";
+			FindMenuItem(menu_array, 27)->suffix = aspect_mode_menu_array[aspectmode].item;
+			FindMenuItem(menu_array, 28)->suffix = scanline_mode_menu_array[frameparams.scanlinemode - 1].item;
+			SetItemChecked(menu_array, 29, showcursor);
+		}
 #endif
 		option = UI_driver->fSelect("Display Settings", 0, option, menu_array, &seltype);
 		switch (option) {
@@ -1556,6 +1682,87 @@ static void DisplaySettings(void)
 			SavePalette();
 			break;
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
+#ifdef WIN32		
+		case 23:
+			if (rendermode != DIRECTDRAW) {
+				prev_option2 = displaymode;
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, displaymode, display_mode_menu_array, NULL);
+				if (option2 >= 0) {
+					displaymode = option2;					
+					if (prev_option2 != option2)
+						UI_driver->fMessage("Save the config and restart emulator", 1);
+				}
+			}
+			break;
+		case 24:
+			if (rendermode != DIRECTDRAW) {
+				prev_option2 = screenmode;
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, screenmode, screen_mode_menu_array, NULL);
+				if (option2 >= 0)
+					if (prev_option2 != option2)
+						togglewindowstate();
+			}
+			break;
+		case 25:
+			if (rendermode != DIRECTDRAW) {
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, (int)((windowscale/100.0f-1)*2), window_scale_menu_array, NULL);
+				if (option2 >= 0) {
+					changewindowsize(SET, (int)((option2/2.0f+1)*100));
+					prev_option2 = windowscale;
+					windowscale = (int)((option2/2.0f+1)*100);
+					if (windowscale != prev_option2) {
+						if (screenmode == WINDOW)
+							UI_driver->fMessage("Cannot display at this resolution", 1);
+						else
+							UI_driver->fMessage("Cannot preview in fullscreen mode", 1);
+					}
+				}
+			}
+			break;
+		case 26:
+			if (rendermode != DIRECTDRAW) {
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, fsresolution, fsresolution_menu_array, NULL);
+				if (option2 >= 0)
+					fsresolution = option2;
+				if (fsresolution == DESKTOPRES)
+					usecustomfsresolution = FALSE;
+				else if (fsresolution == MEDRES) {
+					usecustomfsresolution = TRUE;
+					fullscreenWidth = MEDRESWIDTH;
+					fullscreenHeight = MEDRESHEIGHT;
+				}
+				else if (fsresolution == LOWRES) {
+					usecustomfsresolution = TRUE;
+					fullscreenWidth = LOWRESWIDTH;
+					fullscreenHeight = LOWRESHEIGHT;
+				}
+			}
+			break;
+		case 27:
+			if (rendermode != DIRECTDRAW) {
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, aspectmode, aspect_mode_menu_array, NULL);
+				if (option2 >= 0) {
+					aspectmode = option2;
+					refreshframe();
+				}
+			}
+			break;
+		case 28:
+			if (rendermode != DIRECTDRAW)  {
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, frameparams.scanlinemode - 1, scanline_mode_menu_array, NULL);
+				if (option2 >= 0) {
+					frameparams.scanlinemode = option2 + 1;
+					refreshframe();
+				}
+			}
+			break;
+		case 29:
+			if (rendermode != DIRECTDRAW) {
+				showcursor = !showcursor;
+				setcursor();
+			}
+			break;
+#endif
 		default:
 			return;
 		}
@@ -1612,8 +1819,74 @@ static void KeyboardJoystickConfiguration(int joystick)
 }
 #endif
 
+#ifdef WIN32
+static char buttons[9][2][16];
+static const UI_tMenuItem joy0_menu_array[] = {
+	UI_MENU_LABEL("Select button to map"),
+	UI_MENU_LABEL("\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022"),
+	UI_MENU_SUBMENU_SUFFIX(0, "Button 2  : ", buttons[0][0]),
+	UI_MENU_SUBMENU_SUFFIX(1, "Button 3  : ", buttons[0][1]),
+	UI_MENU_SUBMENU_SUFFIX(2, "Button 4  : ", buttons[0][2]),
+	UI_MENU_SUBMENU_SUFFIX(3, "Button 5  : ", buttons[0][3]),
+	UI_MENU_SUBMENU_SUFFIX(4, "Button 6  : ", buttons[0][4]),
+	UI_MENU_SUBMENU_SUFFIX(5, "Button 7  : ", buttons[0][5]),
+	UI_MENU_SUBMENU_SUFFIX(6, "Button 8  : ", buttons[0][6]),
+	UI_MENU_SUBMENU_SUFFIX(7, "Button 9  : ", buttons[0][7]),
+	UI_MENU_SUBMENU_SUFFIX(8, "Button 10 : ", buttons[0][8]),
+	UI_MENU_END
+};
+static const UI_tMenuItem joy1_menu_array[] = {
+	UI_MENU_LABEL("Select button to map"),
+	UI_MENU_LABEL("\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022"),
+	UI_MENU_SUBMENU_SUFFIX(0, "Button 2  : ", buttons[1][0]),
+	UI_MENU_SUBMENU_SUFFIX(1, "Button 3  : ", buttons[1][1]),
+	UI_MENU_SUBMENU_SUFFIX(2, "Button 4  : ", buttons[1][2]),
+	UI_MENU_SUBMENU_SUFFIX(3, "Button 5  : ", buttons[1][3]),
+	UI_MENU_SUBMENU_SUFFIX(4, "Button 6  : ", buttons[1][4]),
+	UI_MENU_SUBMENU_SUFFIX(5, "Button 7  : ", buttons[1][5]),
+	UI_MENU_SUBMENU_SUFFIX(6, "Button 8  : ", buttons[1][6]),
+	UI_MENU_SUBMENU_SUFFIX(7, "Button 9  : ", buttons[1][7]),
+	UI_MENU_SUBMENU_SUFFIX(8, "Button 10 : ", buttons[1][8]),
+	UI_MENU_END
+};
+
+static void ConfigureControllerButtons(int stick)
+{
+	int i;
+	char title[40];
+	int option2 = 0;
+	
+	sprintf(title, "Define keys for controller %d", stick + 1);
+	for(;;) {
+		for(i = 0; i <= 8; i++) 
+			PLATFORM_GetButtonAssignments(stick, i, buttons[stick][i], sizeof(buttons[stick][i]));
+		option2 = UI_driver->fSelect(title, UI_SELECT_POPUP, option2, stick == 0 ? joy0_menu_array : joy1_menu_array, NULL);
+		if (option2 >= 0 && option2 <= 8)
+			PLATFORM_SetButtonAssignment(stick, option2, GetKeyName());
+		if (option2 < 0) break;
+		if (++option2 > 8) option2 = 0;
+	}
+}
+#endif
+
 static void ControllerConfiguration(void)
 {
+#ifdef WIN32
+	static const UI_tMenuItem keyboard_joystick_mode_array[] = {
+		UI_MENU_ACTION(0, "Keypad"),
+		UI_MENU_ACTION(1, "Keypad+"),
+		UI_MENU_ACTION(2, "Arrows"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem alternate_joystick_mode_array[] = {
+		UI_MENU_ACTION(0, "Normal"),
+		UI_MENU_ACTION(1, "Dual"),
+		UI_MENU_ACTION(2, "Shared"),
+		UI_MENU_END
+	};
+#endif
+
 #if !defined(_WIN32_WCE) && !defined(DREAMCAST)
 	static const UI_tMenuItem mouse_mode_menu_array[] = {
 		UI_MENU_ACTION(0, "None"),
@@ -1650,12 +1923,23 @@ static void ControllerConfiguration(void)
 		UI_MENU_CHECK(7, "Enable keyboard joystick 2:"),
 		UI_MENU_SUBMENU(8, "Define layout of keyboard joystick 2"),
 #endif
+#ifdef WIN32
+		UI_MENU_SUBMENU_SUFFIX(5, "Keyboard joystick mode: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(6, "Alternate joystick mode: ", NULL),
+		UI_MENU_CHECK(7, "Enable custom buttons (joy 1):"),
+		UI_MENU_SUBMENU(8, "Assign custom buttons (joy 1):"),
+		UI_MENU_CHECK(9, "Enable custom buttons (joy 2):"),
+		UI_MENU_SUBMENU(10, "Assign custom buttons (joy 2):"),
+#endif
 		UI_MENU_END
 	};
 
 	int option = 0;
 #if !defined(_WIN32_WCE) && !defined(DREAMCAST)
 	int option2;
+#endif
+#ifdef WIN32
+    int prev_option;
 #endif
 	for (;;) {
 		menu_array[0].suffix = INPUT_joy_autofire[0] == INPUT_AUTOFIRE_FIRE ? "Fire"
@@ -1675,6 +1959,12 @@ static void ControllerConfiguration(void)
 #ifdef SDL
 		SetItemChecked(menu_array, 5, PLATFORM_kbd_joy_0_enabled);
 		SetItemChecked(menu_array, 7, PLATFORM_kbd_joy_1_enabled);
+#endif
+#ifdef WIN32
+		menu_array[5].suffix = keyboard_joystick_mode_array[keyboardJoystickMode].item;
+		menu_array[6].suffix = alternate_joystick_mode_array[alternateJoystickMode].item;
+		SetItemChecked(menu_array, 7, mapController1Buttons);
+		SetItemChecked(menu_array, 9, mapController2Buttons);
 #endif
 		option = UI_driver->fSelect("Controller Configuration", 0, option, menu_array, NULL);
 		switch (option) {
@@ -1730,6 +2020,31 @@ static void ControllerConfiguration(void)
 			break;
 		case 8:
 			KeyboardJoystickConfiguration(1);
+			break;
+#endif
+#ifdef WIN32
+		case 5:
+		    prev_option = keyboardJoystickMode;
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, keyboardJoystickMode, keyboard_joystick_mode_array, NULL);
+			if (option2 >= 0)
+				keyboardJoystickMode = option2;
+			break;
+		case 6:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, alternateJoystickMode, alternate_joystick_mode_array, NULL);
+			if (option2 >= 0)
+				alternateJoystickMode = option2;
+			break;
+		case 7:
+			mapController1Buttons = !mapController1Buttons;
+			break;
+		case 8:
+			ConfigureControllerButtons(0);
+			break;
+		case 9:
+			mapController2Buttons = !mapController2Buttons;
+			break;
+		case 10:
+			ConfigureControllerButtons(1);
 			break;
 #endif
 		default:
@@ -1870,7 +2185,7 @@ static void AboutEmulator(void)
 		Atari800_TITLE "\0"
 		"Copyright (c) 1995-1998 David Firth\0"
 		"and\0"
-		"(c)1998-2008 Atari800 Development Team\0"
+		"(c)1998-2010 Atari800 Development Team\0"
 		"See CREDITS file for details.\0"
 		"http://atari800.atari.org/\0"
 		"\0"
@@ -1943,6 +2258,11 @@ void UI_Run(void)
 	}
 #endif
 
+#ifdef WIN32
+	sprintf(lowreslabel, "VGA     (%dx%d)", LOWRESWIDTH, LOWRESHEIGHT);
+	sprintf(medreslabel, "VGA x2  (%dx%d)", MEDRESWIDTH, MEDRESHEIGHT);
+	sprintf(desktopreslabel, "Desktop (%dx%d)", origScreenWidth, origScreenHeight);
+#endif
 	UI_is_active = TRUE;
 
 	/* Sound_Active(FALSE); */
