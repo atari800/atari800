@@ -57,19 +57,19 @@ static int bltgfx = 0;
 static int scrwidth = SCREENWIDTH;
 static int scrheight = SCREENHEIGHT;
 
-extern RENDERMODE rendermode = GDI;
-extern DISPLAYMODE displaymode = GDI_NEARESTNEIGHBOR;
-extern FSRESOLUTION fsresolution = LOWRES;
-extern SCREENMODE screenmode = WINDOW;
-extern ASPECTMODE aspectmode = SMART;
-extern FRAMEPARAMS frameparams;
-extern BOOL showcursor = TRUE;
-extern BOOL usecustomfsresolution = FALSE;
-extern int windowscale = 200;
-extern int fullscreenWidth = 0;
-extern int fullscreenHeight = 0;
-extern int origScreenWidth = 0;
-extern int origScreenHeight = 0; 
+RENDERMODE rendermode = GDI;
+DISPLAYMODE displaymode = GDI_NEARESTNEIGHBOR;
+FSRESOLUTION fsresolution = LOWRES;
+SCREENMODE screenmode = WINDOW;
+ASPECTMODE aspectmode = SMART;
+FRAMEPARAMS frameparams;
+BOOL showcursor = TRUE;
+BOOL usecustomfsresolution = FALSE;
+int windowscale = 200;
+int fullscreenWidth = 0;
+int fullscreenHeight = 0;
+int origScreenWidth = 0;
+int origScreenHeight = 0; 
 
 void groff(void)
 {
