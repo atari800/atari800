@@ -8,3 +8,4 @@ void shutdowndirectdraw(void);
 void refreshv_directdraw(UBYTE *scr_ptr, BOOL bltgfx);
 
 #endif
+

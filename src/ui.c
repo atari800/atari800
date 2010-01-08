@@ -71,25 +71,25 @@
 #include "win32\screen_win32.h"
 
 /* Display Settings */
-RENDERMODE rendermode;
-FRAMEPARAMS frameparams;
-DISPLAYMODE displaymode;
-FSRESOLUTION fsresolution;
-SCREENMODE screenmode;
-ASPECTMODE aspectmode;
-BOOL usecustomfsresolution;
-BOOL showcursor;
-int windowscale;
-int fullscreenWidth;
-int fullscreenHeight;
-int origScreenWidth;
-int origScreenHeight;
+extern RENDERMODE rendermode;
+extern FRAMEPARAMS frameparams;
+extern DISPLAYMODE displaymode;
+extern FSRESOLUTION fsresolution;
+extern SCREENMODE screenmode;
+extern ASPECTMODE aspectmode;
+extern BOOL usecustomfsresolution;
+extern BOOL showcursor;
+extern int windowscale;
+extern int fullscreenWidth;
+extern int fullscreenHeight;
+extern int origScreenWidth;
+extern int origScreenHeight;
 
 /* Controller Settings */
-KEYJOYMODE keyboardJoystickMode;
-ALTJOYMODE alternateJoystickMode;
-BOOL mapController1Buttons;
-BOOL mapController2Buttons;
+extern KEYJOYMODE keyboardJoystickMode;
+extern ALTJOYMODE alternateJoystickMode;
+extern BOOL mapController1Buttons;
+extern BOOL mapController2Buttons;
 
 /* local variables */
 static char desktopreslabel[30];

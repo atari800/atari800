@@ -12,14 +12,14 @@
 typedef enum KEYJOYMODE_ {
 	KEYPAD_MODE,
 	KEYPAD_PLUS_MODE,
-	ARROW_MODE,
+	ARROW_MODE
 } KEYJOYMODE;
 
 /* alternate joystick modes */
 typedef enum ALTJOYMODE_ {
 	JOY_NORMAL_MODE,
 	JOY_DUAL_MODE,
-	JOY_SHARED_MODE,
+	JOY_SHARED_MODE
 } ALTJOYMODE;
 
 int procjoy(int num);

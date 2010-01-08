@@ -53,20 +53,20 @@ static int win32keys = FALSE;
 
 /* default configuration options */
 /* declared in ui.c              */
-extern alternateJoystickMode = JOY_NORMAL_MODE;
-extern mapController1Buttons = FALSE;
-extern mapController2Buttons = FALSE;
-extern keyboardJoystickMode = KEYPAD_MODE;
+alternateJoystickMode = JOY_NORMAL_MODE;
+mapController1Buttons = FALSE;
+mapController2Buttons = FALSE;
+keyboardJoystickMode = KEYPAD_MODE;
 
-extern FRAMEPARAMS frameparams;
-extern FSRESOLUTION fsresolution;
-extern SCREENMODE screenmode;
-extern ASPECTMODE aspectmode;
-extern BOOL usecustomfsresolution;
-extern BOOL showcursor;
-extern int windowscale;
-extern int fullscreenWidth;
-extern int fullscreenHeight;
+FRAMEPARAMS frameparams;
+FSRESOLUTION fsresolution;
+SCREENMODE screenmode;
+ASPECTMODE aspectmode;
+BOOL usecustomfsresolution;
+BOOL showcursor;
+int windowscale;
+int fullscreenWidth;
+int fullscreenHeight;
 
 /* This is an early init called once from main.cpp */
 /* before primary system initialization.           */

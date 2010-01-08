@@ -22,3 +22,4 @@ void initdevice(SCANLINEMODE scanlinemode, FILTER filter);
 
 #endif
 #endif
+

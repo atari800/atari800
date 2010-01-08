@@ -17,3 +17,4 @@ void refreshv_gdiplus(UBYTE *scr_ptr, FRAMEPARAMS *fp);
 
 
 #endif /* _RENDER_GDIPLUS_H_ */
+

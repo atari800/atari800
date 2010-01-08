@@ -152,7 +152,7 @@ int WINAPI WinMain(HINSTANCE hinstance,
    	int argc = 1;
 
 	char *app_path = new char[MAX_PATH];
-   	strcpy_s(app_path, MAX_PATH, GetCommandLine());
+   	strcpy(app_path, GetCommandLine());
    	if (app_path[0] == '\"')
    	{
 		app_path = (app_path+1);

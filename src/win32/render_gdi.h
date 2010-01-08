@@ -6,3 +6,4 @@
 void refreshv_gdi(UBYTE *scr_ptr, FRAMEPARAMS *fp);
 
 #endif
+
