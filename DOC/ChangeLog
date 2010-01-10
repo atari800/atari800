@@ -1,3 +1,8 @@
+2010-01-10  Piotr Fusik  <fox@scene.pl>
+* util/colormix.asx, util/colormix.xex: program for testing PAL delay line;
+  use arrow keys and space
+
+
 2010-01-07  Piotr Fusik  <fox@scene.pl>
 * ui.c: wrapped UpdateColourControls into ifdef
 

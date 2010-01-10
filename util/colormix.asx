@@ -1,0 +1,109 @@
+; Displays all pairs of hues
+; to test PAL delay line
+
+	org	$8000
+main
+	ldx	$d40b
+	rne
+	stx	$2c6
+	mwa	#dl	$230
+	mva	#$a1	$22f
+	mva	#$20	$d000
+	mva	#$c0	$d001
+	mva	#$28	$d002
+	dex
+	txs
+	txa
+	ldy	#8
+	sta:rne	$d007,y-
+	sec
+init
+	pha
+	pha
+	sbc	#$11
+	bcs	init
+
+frame
+	lda	$2fc
+	and	#$3f
+
+	ldx	hlum+1
+	cmp	#$06
+	bne	nohdec
+	dex:dex
+	bpl	seth
+nohdec
+	cmp	#$07
+	bne	nohinc
+	cpx	#$e
+	bcs	nokey
+	inx:inx
+seth
+	stx	hlum+1
+	mvy	hex,x	txt+18
+nohinc
+
+	ldx	vlum+1
+	cmp	#$0e
+	bne	novdec
+	dex:dex
+	bpl	setv
+novdec
+	cmp	#$0f
+	bne	novinc
+	cpx	#$e
+	bcs	nokey
+	inx:inx
+setv
+	stx	vlum+1
+	mvy	hex,x	txt+25
+novinc
+
+	cmp	#$21
+	bne	nolin
+	lda	<dl2^dl
+	eor:sta	$230
+	lda	<$d40a^$d40b
+	eor:sta	delay+1
+	lda	#1
+	eor:sta	txt+31
+nolin
+nokey
+	mva	#$ff	$2fc
+
+hlum
+	lda	#$08
+	ldy	#15
+	cpy	$d40b
+	rne
+delay
+	sta	$d40b
+	clc
+bar
+	ldy	#6
+line
+	sta	$d40a
+	sta	$d01a
+	sta	$d014
+	mvx	#$00	$d01b
+	sta	$d40a
+vlum
+	mvx	#$08	$d01a
+	stx	$d014
+	mvx	#$c0	$d01b
+	dey
+	bne	line
+	adc	#$10
+	bcc	bar
+	sty	$d400
+	sty	$d014
+	jmp	frame
+
+dl2	dta	0
+dl
+	dta	$70,$42,a(txt),$70
+dll	dta	$4f,a($1e0),1,a(dll)
+txt	dta	d'ColorMix 1.0 HLum:8 VLum:8 Lin:0'
+hex	dta	d'0123456789ABCDEF'
+
+	run	main
