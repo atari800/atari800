@@ -76,6 +76,8 @@ hlum
 	ldy	#15
 	cpy	$d40b
 	rne
+	sei
+	mvx	#1	dle
 delay
 	sta	$d40b
 	clc
@@ -95,14 +97,17 @@ vlum
 	bne	line
 	adc	#$10
 	bcc	bar
-	sty	$d400
+	mva	#$41	dle
+	sta	$d40a
 	sty	$d014
+	cli
 	jmp	frame
 
 dl2	dta	0
 dl
 	dta	$70,$42,a(txt),$70
-dll	dta	$4f,a($1e0),1,a(dll)
+dll	dta	$4f,a($1e0)
+dle	dta	1,a(dll)
 txt	dta	d'ColorMix 1.0 HLum:8 VLum:8 Lin:0'
 hex	dta	d'0123456789ABCDEF'
 
