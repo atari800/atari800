@@ -86,8 +86,6 @@ extern int origScreenWidth;
 extern int origScreenHeight;
 
 /* Controller Settings */
-extern KEYJOYMODE keyboardJoystickMode;
-extern ALTJOYMODE alternateJoystickMode;
 extern BOOL mapController1Buttons;
 extern BOOL mapController2Buttons;
 

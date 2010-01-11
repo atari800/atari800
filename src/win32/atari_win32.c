@@ -53,10 +53,10 @@ static int win32keys = FALSE;
 
 /* default configuration options */
 /* declared in ui.c              */
-alternateJoystickMode = JOY_NORMAL_MODE;
-mapController1Buttons = FALSE;
-mapController2Buttons = FALSE;
-keyboardJoystickMode = KEYPAD_MODE;
+ALTJOYMODE alternateJoystickMode = JOY_NORMAL_MODE;
+KEYJOYMODE keyboardJoystickMode = KEYPAD_MODE;
+BOOL mapController1Buttons = FALSE;
+BOOL mapController2Buttons = FALSE;
 
 FRAMEPARAMS frameparams;
 FSRESOLUTION fsresolution;

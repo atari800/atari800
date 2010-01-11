@@ -77,11 +77,11 @@ typedef struct FRAMEPARAMS_ {
 	HDC hdc;
 	INT width;	
 	INT height;		
-	INT vertoffset;		// vertical offset to center screen in window
-	INT horizoffset;	// horizontal offset to center screen in window
+	INT vertoffset;		/* vertical offset to center screen in window */
+	INT horizoffset;	/* horizontal offset to center screen in window */
 	float d3dWidth;
 	float d3dHeight;
-	BOOL d3dRefresh;	// determines whether vertex buffer should be refreshed
+	BOOL d3dRefresh;	/* determines whether vertex buffer should be refreshed */
 	SCANLINEMODE scanlinemode;
 	FILTER filter;
 	TILTLEVEL tiltlevel;
@@ -96,19 +96,19 @@ void groff(void);
 void palupd(int beg, int cnt);
 void palette(int ent, UBYTE r, UBYTE g, UBYTE b);
 void refreshv(UBYTE * scr_ptr);
-void togglewindowstate();
+void togglewindowstate(void);
 void changewindowsize(CHANGEWINDOWSIZE, int);
 void getscaledrect(RECT *rect);
-void refreshframe();
-void changescanlinemode();
-void togglescreensaver();
-void changetiltlevel();
+void refreshframe(void);
+void changescanlinemode(void);
+void togglescreensaver(void);
+void changetiltlevel(void);
 void getcenteredcoords(RECT rect, int* x, int* y);
-void setcursor();
+void setcursor(void);
 
-RENDERMODE GetRenderMode();
-DISPLAYMODE GetDisplayMode();
-DISPLAYMODE GetActiveDisplayMode();
+RENDERMODE GetRenderMode(void);
+DISPLAYMODE GetDisplayMode(void);
+DISPLAYMODE GetActiveDisplayMode(void);
 void SetDisplayMode(DISPLAYMODE dm);
 void GetDisplayModeName(char *name);
 

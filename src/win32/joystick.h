@@ -40,6 +40,8 @@ typedef struct
 } tjoystat;
 extern tjoystat joystat;
 
-extern int alternateJoystickMode;
+extern KEYJOYMODE keyboardJoystickMode;
+extern ALTJOYMODE alternateJoystickMode;
 
 #endif /* JOYSTICK_H_ */
+
