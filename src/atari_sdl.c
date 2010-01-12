@@ -2338,7 +2338,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 	 * SetNewVideoModeNormal() function. */
 	case 8:
 		while (i > 0) {
-			x = (width + jumped) << 16 - 0x4000;
+			x = ((width + jumped) << 16) - 0x4000;
 			pos = w4;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
@@ -2362,7 +2362,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 		break;
 	case 16:
 		while (i > 0) {
-			x = (width + jumped) << 16 - 0x4000;
+			x = ((width + jumped) << 16) - 0x4000;
 			pos = w2;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
