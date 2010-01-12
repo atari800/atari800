@@ -192,6 +192,8 @@ static void DisplayXEP80(Uint8 *screen);
 static void DisplayProto80640x400(Uint8 *screen);
 static void DisplayAF80640x500(Uint8 *screen);
 
+static void FindClosestMode(int* w, int* h);
+
 /* This table holds default settings for all display modes. */
 static struct display_mode_data_t display_modes[] = {
 	/* Normal */
@@ -564,8 +566,10 @@ static void ModeInfo(void)
 
 static void SetVideoMode(int w, int h, int bpp)
 {
-	if (fullscreen)
+	if (fullscreen) {
+		FindClosestMode(&w, &h);
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
+	}
 	else
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_RESIZABLE);
 	if (MainScreen == NULL) {
@@ -2334,7 +2338,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 	 * SetNewVideoModeNormal() function. */
 	case 8:
 		while (i > 0) {
-			x = (width + jumped) << 16;
+			x = (width + jumped) << 16 - 0x4000;
 			pos = w4;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
@@ -2358,7 +2362,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 		break;
 	case 16:
 		while (i > 0) {
-			x = (width + jumped) << 16;
+			x = (width + jumped) << 16 - 0x4000;
 			pos = w2;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
@@ -2381,7 +2385,7 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 	default:
 		/* MainScreen->format->BitsPerPixel = 32 */
 		while (i > 0) {
-			x = (width + jumped) << 16;
+			x = ((width + jumped) << 16) - 0x4000;
 			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
@@ -2469,6 +2473,60 @@ static int get_SDL_joystick_state(SDL_Joystick *joystick)
 			return INPUT_STICK_BACK;
 		else
 			return INPUT_STICK_CENTRE;
+	}
+}
+
+void FindClosestMode(int* w, int* h)
+{
+	SDL_Rect** modes;
+
+	modes = SDL_ListModes(NULL, SDL_FULLSCREEN);
+
+	if (!modes || (int) modes == -1) {
+#ifdef DEBUG
+		Log_print("SDL: All modes may be available");
+#endif
+	} else {
+		int wbest, hbest;
+		int wcur, hcur;
+		int mode;
+
+		wbest = modes[0]->w;
+		hbest = modes[0]->h;
+		for (mode=0; modes[mode]; mode++) {
+			wcur = modes[mode]->w;
+			hcur = modes[mode]->h;
+#ifdef DEBUG
+			Log_print("SDL: Found mode %dx%d", wcur, hcur);
+#endif
+
+			/* If exact resolution, take it */
+			if (wcur == *w && hcur == *h) {
+				wbest = wcur;
+				hbest = hcur;
+				break;
+			}
+
+			/* If too small, skip to next mode */
+			if (wcur < *w || hcur < *h) {
+				continue;
+			}
+
+			/* If smaller than current best, keep it */
+			if (wcur < wbest || hcur < hbest) {
+				wbest = wcur;
+				hbest = hcur;
+			}
+		}
+		/* If no good mode found, try requested mode */
+		if (wbest > *w || hbest > *h)
+		{
+			*w = wbest;
+			*h = hbest;
+		}
+#ifdef DEBUG
+		Log_print("SDL: Closest mode = %dx%d", *w, *h);
+#endif
 	}
 }
 
