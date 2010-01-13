@@ -92,3 +92,4 @@ extern "C" void refreshv_gdiplus(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 	delete graphics;
 	delete bitmap;
 }
+

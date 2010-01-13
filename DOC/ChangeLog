@@ -1,3 +1,8 @@
+20010-01-13  James Wilkinson <james@slor.net>
+* configure.ac, ui.c, win32/render_*.*, win32/screen_win32.[ch], win32/main.*:
+  Changes to support new DirectX code under gcc.
+  First part of change from WIN32 to DIRECTX and HAVE_WINDOWS_H definitions.
+
 20010-01-12  James Wilkinson <james@slor.net>
 * atari_sdl.c:
   Committed patch by Tomaz Krasuski to fix DirectX default for Win32 SDL driver.

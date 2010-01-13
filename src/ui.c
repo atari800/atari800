@@ -66,7 +66,7 @@
 #endif
 
 
-#ifdef WIN32
+#ifdef DIRECTX
 #include "win32\joystick.h"
 #include "win32\screen_win32.h"
 
@@ -1333,7 +1333,7 @@ static void DisplaySettings(void)
 		UI_MENU_END
 	};
 	
-#ifdef WIN32
+#ifdef DIRECTX
 	static const UI_tMenuItem screen_mode_menu_array[] = {
 		UI_MENU_ACTION(0, "Fullscreen"),
 		UI_MENU_ACTION(1, "Windowed"),
@@ -1421,7 +1421,7 @@ static void DisplaySettings(void)
 		UI_MENU_CHECK(21, "Also adjust external palette: "),
 		UI_MENU_FILESEL(22, "Save current palette"),
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
-#ifdef WIN32
+#ifdef DIRECTX
 	    UI_MENU_SUBMENU_SUFFIX(23, "Display rendering: ", NULL),
 		UI_MENU_SUBMENU_SUFFIX(24, "Screen mode: ", NULL),
 		UI_MENU_SUBMENU_SUFFIX(25, "Window scale: ", NULL),
@@ -1436,7 +1436,7 @@ static void DisplaySettings(void)
 	int option = 0;
 	int option2;
 	int seltype;
-#ifdef WIN32
+#ifdef DIRECTX
 	int prev_option2;
 	char winscale[5];
 	char displaymodename[20];
@@ -1507,7 +1507,7 @@ static void DisplaySettings(void)
 		FindMenuItem(menu_array, 8)->suffix = Atari800_tv_mode == Atari800_TV_NTSC ? "NTSC" : "PAL";
 		FindMenuItem(menu_array, 9)->suffix = screen_tv_mode == Atari800_TV_NTSC ? "NTSC" : "PAL";
 #endif
-#ifdef WIN32
+#ifdef DIRECTX
 		if (rendermode == DIRECTDRAW) {
 			for (i = 23; i <= 29; i++) {
 				FindMenuItem(menu_array, i)->suffix = "N/A";
@@ -1680,7 +1680,7 @@ static void DisplaySettings(void)
 			SavePalette();
 			break;
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
-#ifdef WIN32		
+#ifdef DIRECTX
 		case 23:
 			if (rendermode != DIRECTDRAW) {
 				prev_option2 = displaymode;
@@ -1817,7 +1817,7 @@ static void KeyboardJoystickConfiguration(int joystick)
 }
 #endif
 
-#ifdef WIN32
+#ifdef DIRECTX
 static char buttons[9][2][16];
 static const UI_tMenuItem joy0_menu_array[] = {
 	UI_MENU_LABEL("Select button to map"),
@@ -1869,7 +1869,7 @@ static void ConfigureControllerButtons(int stick)
 
 static void ControllerConfiguration(void)
 {
-#ifdef WIN32
+#ifdef DIRECTX
 	static const UI_tMenuItem keyboard_joystick_mode_array[] = {
 		UI_MENU_ACTION(0, "Keypad"),
 		UI_MENU_ACTION(1, "Keypad+"),
@@ -1921,7 +1921,7 @@ static void ControllerConfiguration(void)
 		UI_MENU_CHECK(7, "Enable keyboard joystick 2:"),
 		UI_MENU_SUBMENU(8, "Define layout of keyboard joystick 2"),
 #endif
-#ifdef WIN32
+#ifdef DIRECTX
 		UI_MENU_SUBMENU_SUFFIX(5, "Keyboard joystick mode: ", NULL),
 		UI_MENU_SUBMENU_SUFFIX(6, "Alternate joystick mode: ", NULL),
 		UI_MENU_CHECK(7, "Enable custom buttons (joy 1):"),
@@ -1936,7 +1936,7 @@ static void ControllerConfiguration(void)
 #if !defined(_WIN32_WCE) && !defined(DREAMCAST)
 	int option2;
 #endif
-#ifdef WIN32
+#ifdef DIRECTX
     int prev_option;
 #endif
 	for (;;) {
@@ -1958,7 +1958,7 @@ static void ControllerConfiguration(void)
 		SetItemChecked(menu_array, 5, PLATFORM_kbd_joy_0_enabled);
 		SetItemChecked(menu_array, 7, PLATFORM_kbd_joy_1_enabled);
 #endif
-#ifdef WIN32
+#ifdef DIRECTX
 		menu_array[5].suffix = keyboard_joystick_mode_array[keyboardJoystickMode].item;
 		menu_array[6].suffix = alternate_joystick_mode_array[alternateJoystickMode].item;
 		SetItemChecked(menu_array, 7, mapController1Buttons);
@@ -2020,7 +2020,7 @@ static void ControllerConfiguration(void)
 			KeyboardJoystickConfiguration(1);
 			break;
 #endif
-#ifdef WIN32
+#ifdef DIRECTX
 		case 5:
 		    prev_option = keyboardJoystickMode;
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, keyboardJoystickMode, keyboard_joystick_mode_array, NULL);
@@ -2256,7 +2256,7 @@ void UI_Run(void)
 	}
 #endif
 
-#ifdef WIN32
+#ifdef DIRECTX
 	sprintf(lowreslabel, "VGA     (%dx%d)", LOWRESWIDTH, LOWRESHEIGHT);
 	sprintf(medreslabel, "VGA x2  (%dx%d)", MEDRESWIDTH, MEDRESHEIGHT);
 	sprintf(desktopreslabel, "Desktop (%dx%d)", origScreenWidth, origScreenHeight);
