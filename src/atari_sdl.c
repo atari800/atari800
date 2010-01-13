@@ -567,7 +567,7 @@ static void ModeInfo(void)
 static void SetVideoMode(int w, int h, int bpp)
 {
 	if (fullscreen) {
-		FindClosestMode(&w, &h);
+	/*	FindClosestMode(&w, &h);	*/
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
 	}
 	else
@@ -1864,14 +1864,12 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	if (!help_only)
 		i |= SDL_INIT_AUDIO;
 #endif
-#ifdef WIN32
-	/*Windows SDL version 1.2.10+ uses windib as the default, but it is slower*/
-	if (getenv("SDL_VIDEODRIVER")==NULL) {
-#ifdef __STRICT_ANSI__
-		extern int putenv(char *string); /* suppress -ansi -pedantic warning */
-#endif
-		putenv("SDL_VIDEODRIVER=directx");
-	}
+#ifdef __WIN32__
+	/* Windows SDL version 1.2.10+ uses windib as the default, but it is slower.
+	   Additionally on some graphic cards it doesn't work properly in low
+	   resolutions like Atari800's default of 336x240. */
+	if (SDL_getenv("SDL_VIDEODRIVER")==NULL)
+		SDL_putenv("SDL_VIDEODRIVER=directx");
 #endif
 	if (SDL_Init(i) != 0) {
 		Log_print("SDL_Init FAILED");

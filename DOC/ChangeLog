@@ -1,3 +1,9 @@
+20010-01-12  James Wilkinson <james@slor.net>
+* atari_sdl.c:
+  Committed patch by Tomaz Krasuski to fix DirectX default for Win32 SDL driver.
+  Also made change to correct garbage column in some scaling modes.
+
+
 2010-01-10  Piotr Fusik  <fox@scene.pl>
 * util/colormix.asx, util/colormix.xex: program for testing PAL delay line;
   use arrow keys and space
