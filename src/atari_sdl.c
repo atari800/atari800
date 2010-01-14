@@ -192,7 +192,9 @@ static void DisplayXEP80(Uint8 *screen);
 static void DisplayProto80640x400(Uint8 *screen);
 static void DisplayAF80640x500(Uint8 *screen);
 
+#ifdef FINDMODE_TEST
 static void FindClosestMode(int* w, int* h);
+#endif
 
 /* This table holds default settings for all display modes. */
 static struct display_mode_data_t display_modes[] = {
@@ -567,7 +569,9 @@ static void ModeInfo(void)
 static void SetVideoMode(int w, int h, int bpp)
 {
 	if (fullscreen) {
-	/*	FindClosestMode(&w, &h);	*/
+#ifdef FINDMODE_TEST
+		FindClosestMode(&w, &h);
+#endif
 		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
 	}
 	else
@@ -2474,6 +2478,7 @@ static int get_SDL_joystick_state(SDL_Joystick *joystick)
 	}
 }
 
+#ifdef FINDMODE_TEST
 void FindClosestMode(int* w, int* h)
 {
 	SDL_Rect** modes;
@@ -2527,6 +2532,7 @@ void FindClosestMode(int* w, int* h)
 #endif
 	}
 }
+#endif
 
 static int get_LPT_joystick_state(int fd)
 {
