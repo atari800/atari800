@@ -836,7 +836,7 @@ echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
-    echo "    Using synchronized sound?..........: $WANT_SYNCHRONIZED_SOUND"
+    echo "    Using synchronized sound?.........: $WANT_SYNCHRONIZED_SOUND"
     echo "    Using sound interpolation?........: $WANT_INTERPOLATE_SOUND"
     echo "    Using stereo sound?...............: $WANT_STEREO_SOUND"
     echo "    Using volume only sound?..........: $WANT_VOL_ONLY_SOUND"
