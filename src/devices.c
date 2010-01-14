@@ -81,7 +81,7 @@
 #define S_IWRITE S_IWUSR
 #endif
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 
 #include <windows.h>
 
@@ -99,12 +99,12 @@
 #define FILENAME filename
 #endif /* UNICODE */
 
-#endif /* WIN32 */
+#endif /* HAVE_WINDOWS_H */
 
 
 /* Read Directory abstraction layer -------------------------------------- */
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 
 static char dir_path[FILENAME_MAX];
 static WIN32_FIND_DATA wfd;
@@ -353,7 +353,7 @@ static int Devices_ReadDir(char *fullpath, char *filename, int *isdir,
 
 /* Rename File/Directory abstraction layer ------------------------------- */
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 
 static int Devices_Rename(const char *oldname, const char *newname)
 {
@@ -385,7 +385,7 @@ static int Devices_Rename(const char *oldname, const char *newname)
 
 /* Set/Reset Read-Only Attribute abstraction layer ----------------------- */
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 
 /* Enables/disables read-only mode for the file. Returns TRUE on success. */
 static int Devices_SetReadOnly(const char *filename, int readonly)
@@ -416,7 +416,7 @@ static int Devices_SetReadOnly(const char *filename, int readonly)
 
 /* Make Directory abstraction layer -------------------------------------- */
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 
 static int Devices_MakeDirectory(const char *filename)
 {
@@ -444,7 +444,7 @@ static int Devices_MakeDirectory(const char *filename)
 
 /* Remove Directory abstraction layer ------------------------------------ */
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 
 static UBYTE Devices_RemoveDirectory(const char *filename)
 {

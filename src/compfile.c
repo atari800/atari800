@@ -286,7 +286,7 @@ int CompFile_DCMtoATR(FILE *infp, FILE *outfp)
 			if (block_type == EOF && archive_type == 0xf9) {
 				Log_print("Multi-part archive error.");
 				Log_print("To process these files, you must first combine the files into a single file.");
-#if defined(WIN32) || defined(DJGPP)
+#if defined(HAVE_WINDOWS_H) || defined(DJGPP)
 				Log_print("COPY /B file1.dcm+file2.dcm+file3.dcm newfile.dcm from the DOS prompt");
 #elif defined(__linux__) || defined(__unix__)
 				Log_print("cat file1.dcm file2.dcm file3.dcm >newfile.dcm from the shell");

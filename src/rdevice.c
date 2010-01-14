@@ -97,7 +97,7 @@
 #endif
 #endif
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 #ifdef R_SERIAL
 #error The Windows version does not support the serial R: device
 #endif
@@ -730,7 +730,7 @@ static void xio_40(void)
 static void open_connection(char * address, int port)
 {
   struct hostent *host;
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
   static int winsock_started;
   WSADATA wdata;
   WORD ver = MAKEWORD(1,1);
@@ -742,7 +742,7 @@ static void open_connection(char * address, int port)
     }
     winsock_started = 1;
   }
-#endif /* WIN32 */
+#endif /* HAVE_WINDOWS_H */
   if((address != NULL) && (strlen(address) > 0))
   {
     close(rdev_fd);
@@ -752,7 +752,7 @@ static void open_connection(char * address, int port)
     memset ( &peer_in, 0, sizeof ( struct sockaddr_in ) );
     /*rdev_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);*/
     rdev_fd = socket(AF_INET, SOCK_STREAM, 0);
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
     ioctlsocket(rdev_fd, FIONBIO, &ioctlsocket_non_block);
 #else
     fcntl(rdev_fd, F_SETFL, O_NONBLOCK);
@@ -791,17 +791,17 @@ static void open_connection(char * address, int port)
       DBG_APRINT(MESSAGE);
 #endif
     }
-#ifndef WIN32
+#ifndef HAVE_WINDOWS_H
     signal(SIGPIPE, catch_disconnect); /*Need to see if the other end disconnects...*/
     signal(SIGHUP, catch_disconnect); /*Need to see if the other end disconnects...*/
-#endif /* WIN32 */
+#endif /* HAVE_WINDOWS_H */
     sprintf(MESSAGE, "R*: Connecting to %s", address);
     DBG_APRINT(MESSAGE);
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
     ioctlsocket(rdev_fd, FIONBIO, &ioctlsocket_non_block);
 #else
     fcntl(rdev_fd, F_SETFL, O_NONBLOCK);
-#endif /* WIN32 */
+#endif /* HAVE_WINDOWS_H */
 
     /* Telnet negotiation */
     sprintf(MESSAGE, "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
@@ -1194,7 +1194,7 @@ void RDevice_WRIT(void)
 ---------------------------------------------------------------------------*/
 void RDevice_STAT(void)
 {
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
   int len;
 #else
 #ifdef R_NETWORK
@@ -1240,11 +1240,11 @@ void RDevice_STAT(void)
         if(bind ( sock, (struct sockaddr *)&in, sizeof ( struct sockaddr_in ) ) < 0) perror("bind");
         listen ( sock, 5 );
         /* sethostent(1); */
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
         retval = ioctlsocket(sock, FIONBIO, &ioctlsocket_non_block);
 #else
         retval = fcntl( sock, F_SETFL, O_NONBLOCK);
-#endif /* WIN32 */
+#endif /* HAVE_WINDOWS_H */
         len = sizeof ( struct sockaddr_in );
         /*bufend = 0;*/
         sprintf(MESSAGE, "R%d: Listening on port %d...", devnum, portnum);
@@ -1271,15 +1271,15 @@ void RDevice_STAT(void)
           }
         }
         DBG_APRINT(MESSAGE);
-#ifndef WIN32
+#ifndef HAVE_WINDOWS_H
         signal(SIGPIPE, catch_disconnect); /*Need to see if the other end disconnects...*/
         signal(SIGHUP, catch_disconnect); /*Need to see if the other end disconnects...*/
-#endif /* WIN32 */
-#ifdef WIN32
+#endif /* HAVE_WINDOWS_H */
+#ifdef HAVE_WINDOWS_H
         retval = ioctlsocket(rdev_fd, FIONBIO, &ioctlsocket_non_block);
 #else
         retval = fcntl( rdev_fd, F_SETFL, O_NONBLOCK);
-#endif /* WIN32 */
+#endif /* HAVE_WINDOWS_H */
 
         /* Telnet negotiation */
         sprintf(MESSAGE, "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
@@ -1449,7 +1449,7 @@ void RDevice_INIT(void)
 
 void RDevice_Exit(void)
 {
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
   WSACleanup();
-#endif /* WIN32 */
+#endif /* HAVE_WINDOWS_H */
 }

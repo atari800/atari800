@@ -39,7 +39,7 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
 
@@ -114,7 +114,7 @@ static int GetKeyPress(void)
 	}
 
 	do { 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 		MSG msg;
 		msg.message = WM_NULL;
 		/* Keep UI responsive to system events */
@@ -289,7 +289,7 @@ int GetRawKey(void)
 }
 #endif
 
-#ifdef WIN32
+#ifdef DIRECTX
 int GetKeyName(void)
 {
 	ClearRectangle(0x94, 13, 11, 25, 13);
@@ -562,7 +562,7 @@ static int BasicUISelectInt(int default_value, int min_value, int max_value)
 	return value >= 0 ? value + min_value : default_value;
 }
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 
 static WIN32_FIND_DATA wfd;
 static HANDLE dh = INVALID_HANDLE_VALUE;
@@ -809,7 +809,7 @@ static void GetDirectory(const char *directory)
 	/* in DOS/Windows, add all existing disk letters */
 	{
 		char letter;
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 		DWORD drive_mask = GetLogicalDrives();
 		for (letter = 'A'; letter <= 'Z'; letter++) {
 			if (drive_mask & 1) {
@@ -819,7 +819,7 @@ static void GetDirectory(const char *directory)
 			}
 			drive_mask >>= 1;
 		}
-#else /* WIN32 */
+#else /* HAVE_WINDOWS_H */
 		for (letter = 'A'; letter <= 'Z'; letter++) {
 #ifdef __DJGPP__
 			static char drive[3] = "C:";
@@ -834,7 +834,7 @@ static void GetDirectory(const char *directory)
 				FilenamesAdd(Util_strdup(drive2));
 			}
 		}
-#endif /* WIN32 */
+#endif /* HAVE_WINDOWS_H */
 	}
 #endif /* DOS_DRIVES */
 #ifdef __DJGPP__

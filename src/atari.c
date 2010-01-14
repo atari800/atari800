@@ -43,7 +43,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
 #ifdef __EMX__
@@ -399,7 +399,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		Util_catpath(atari800_exe_rom_dir, atari800_exe_dir, "rom");
 		CFG_FindROMImages(atari800_exe_rom_dir, TRUE);
 /* skip "ROM" on systems that are known to be case-insensitive */
-#if !defined(DJGPP) && !defined(WIN32)
+#if !defined(DJGPP) && !defined(HAVE_WINDOWS_H)
 		Util_catpath(atari800_exe_rom_dir, atari800_exe_dir, "ROM");
 		CFG_FindROMImages(atari800_exe_rom_dir, TRUE);
 #endif
@@ -902,7 +902,7 @@ static double Atari_time(void)
 {
 #ifdef SDL
 	return SDL_GetTicks() * 1e-3;
-#elif defined(WIN32)
+#elif defined(HAVE_WINDOWS_H)
 	return GetTickCount() * 1e-3;
 #elif defined(DJGPP)
 	/* DJGPP has gettimeofday, but it's not more accurate than uclock */
@@ -927,7 +927,7 @@ static double Atari_time(void)
 static void Atari_sleep(double s)
 {
 	if (s > 0) {
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 		Sleep((DWORD) (s * 1e3));
 #elif defined(DJGPP)
 		/* DJGPP has usleep and select, but they don't work that good */

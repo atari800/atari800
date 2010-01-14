@@ -3,7 +3,7 @@
 
 #include "config.h"
 #include <stdio.h> /* FILENAME_MAX */
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
 
@@ -26,7 +26,7 @@
 #define SLONG signed int
 #define UBYTE unsigned char
 #define UWORD unsigned short
-#ifndef WIN32
+#ifndef HAVE_WINDOWS_H
 /* Windows headers typedef ULONG */
 #define ULONG unsigned int
 #endif

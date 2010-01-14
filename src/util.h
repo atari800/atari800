@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -22,7 +22,7 @@ int Util_chrieq(char c1, char c2);
 /* Returns a positive integer if str1>str2, negative if str1<str2
  * 0 if str1 == str2, case insensitive */
 int Util_stricmp(const char *str1, const char *str2);
-#elif defined(WIN32)
+#elif defined(HAVE_WINDOWS_H)
 #define Util_stricmp _stricmp
 #elif defined(HAVE_STRCASECMP)
 #define Util_stricmp strcasecmp
@@ -129,7 +129,7 @@ int Util_direxists(const char *filename);
 int Util_flen(FILE *fp);
 
 /* Deletes a file, returns 0 on success, -1 on failure. */
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 int Util_unlink(const char *filename);
 #define HAVE_UTIL_UNLINK
 #elif defined(HAVE_UNLINK)

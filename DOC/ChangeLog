@@ -1,7 +1,13 @@
 20010-01-13  James Wilkinson <james@slor.net>
+* atari.[ch], atari_sdl.c, compfile.c, devices.c, platform.h, pokey.c, rdevice.c, rtime.c, ui.[ch], ui_basic.c, util.[ch], wince/port/missing.h:
+  Remaining changes for DIRECTX and HAVE_WINDOWS_H definitions.
+
+
+20010-01-13  James Wilkinson <james@slor.net>
 * configure.ac, ui.c, win32/render_*.*, win32/screen_win32.[ch], win32/main.*:
   Changes to support new DirectX code under gcc.
   First part of change from WIN32 to DIRECTX and HAVE_WINDOWS_H definitions.
+
 
 20010-01-12  James Wilkinson <james@slor.net>
 * atari_sdl.c:

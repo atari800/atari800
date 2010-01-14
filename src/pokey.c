@@ -26,7 +26,7 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
 
@@ -398,7 +398,7 @@ int POKEY_Initialise(int *argc, char *argv[])
 #endif
 	{
 		random_scanline_counter =
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 		GetTickCount() % POKEY_POLY17_SIZE;
 #elif defined(HAVE_TIME)
 		time(NULL) % POKEY_POLY17_SIZE;

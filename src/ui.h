@@ -54,7 +54,7 @@ void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int 
 int GetRawKey(void);
 #endif
 
-#ifdef WIN32
+#ifdef DIRECTX
 void PLATFORM_GetButtonAssignments(int stick, int button, char *buffer, int bufsize);
 void PLATFORM_SetButtonAssignment(int stick, int button, int value);
 int GetKeyName(void);

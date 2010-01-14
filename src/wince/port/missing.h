@@ -11,8 +11,9 @@
 #define NO_YPOS_BREAK_FLICKER			1
 #define DIRTYRECT						1
 #define SUPPORTS_ATARI_CONFIGINIT		1
-#undef  WIN32
-#define WIN32							1
+#ifndef HAVE_WINDOWS_H
+#define HAVE_WINDOWS_H						1
+#endif
 #define USE_UI_BASIC_ONSCREEN_KEYBOARD				1
 
 #define perror(s) wce_perror(s)

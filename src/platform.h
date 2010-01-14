@@ -49,7 +49,7 @@ extern int PLATFORM_kbd_joy_1_enabled;
 int PLATFORM_GetRawKey(void);
 #endif
 
-#ifdef WIN32
+#ifdef DIRECTX
 int PLATFORM_GetKeyName(void);
 #endif
 

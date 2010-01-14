@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
 
@@ -312,7 +312,7 @@ int Util_fileexists(const char *filename)
 	return TRUE;
 }
 
-#ifdef WIN32
+#ifdef HAVE_WINDOWS_H
 
 int Util_direxists(const char *filename)
 {
@@ -392,7 +392,7 @@ FILE *Util_uniqopen(char *filename, const char *mode)
 #endif
 }
 
-#if defined(WIN32) && defined(UNICODE)
+#if defined(HAVE_WINDOWS_H) && defined(UNICODE)
 int Util_unlink(const char *filename)
 {
 	WCHAR wfilename[FILENAME_MAX];
@@ -411,9 +411,9 @@ int Util_unlink(const char *filename)
 		return -1;
 	return (DeleteFile(wfilename) != 0) ? 0 : -1;
 }
-#elif defined(WIN32) && !defined(UNICODE)
+#elif defined(HAVE_WINDOWS_H) && !defined(UNICODE)
 int Util_unlink(const char *filename)
 {
 	return (DeleteFile(filename) != 0) ? 0 : -1;
 }
-#endif /* defined(WIN32) && defined(UNICODE) */
+#endif /* defined(HAVE_WINDOWS_H) && defined(UNICODE) */

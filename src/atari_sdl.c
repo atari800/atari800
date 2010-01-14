@@ -1864,7 +1864,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	if (!help_only)
 		i |= SDL_INIT_AUDIO;
 #endif
-#ifdef __WIN32__
+#ifdef HAVE_WINDOWS_H
 	/* Windows SDL version 1.2.10+ uses windib as the default, but it is slower.
 	   Additionally on some graphic cards it doesn't work properly in low
 	   resolutions like Atari800's default of 336x240. */
