@@ -1,8 +1,12 @@
+2010-01-14  Piotr Fusik  <fox@scene.pl>
+* win32/msc/config.h: #define WIN32 -> HAVE_WINDOWS_H
+
+* win32/render_gdi.obj: was incidentally committed
+
+
 2010-01-13  James Wilkinson <james@slor.net>
 * configure.ac: removed -Wredundant-decls for BeOS
 
-
-2010-01-13  James Wilkinson <james@slor.net>
 * configure.ac, ui.c, win32/render_*.*, win32/screen_win32.[ch], win32/main.*:
   Changes to support new DirectX code under gcc.
 

@@ -281,6 +281,12 @@
 /* Define to 1 if you have the `vsnprintf' function. */
 /* #undef HAVE_VSNPRINTF */
 
+/* Define to 1 if you have the <windows.h> header file. */
+#define HAVE_WINDOWS_H 1
+
+/* Define to 1 if you have the <winsock2.h> header file. */
+#define HAVE_WINSOCK2_H 1
+
 /* Define to allow sound interpolation. */
 #define INTERPOLATE_SOUND 1
 
@@ -427,8 +433,6 @@
 /* #undef volatile */
 
 /***************************************************************************/
-
-#define WIN32 1
 
 /* use our exit() instead of libc's */
 #define exit main_exit
