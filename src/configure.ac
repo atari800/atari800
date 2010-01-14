@@ -105,6 +105,9 @@ case $host_os in
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
         ;;
+    beos)
+        a8_host="beos"
+        ;;
     *unix*)
         a8_host="unix"
         ;;
@@ -292,7 +295,11 @@ case "$a8_target" in
 	WANT_NTSC_FILTER=yes
         LIBS="$LIBS `sdl-config --libs`"
         OBJS="atari_sdl.o"
-        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
+        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
+        if [[ "$a8_host" != "beos" ]]; then
+dnl BeOS has a real issue with redundant-decls
+            CFLAGS="$CFLAGS -Wredundant-decls"
+        fi
         if [[ "$a8_host" = "win" ]]; then
 dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
 dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
