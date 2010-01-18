@@ -1253,6 +1253,9 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			mapController2Buttons = TRUE;
 			Log_print("using mapped controller 2 buttons");
 		}
+		else if (strcmp(argv[i], "-noconsole") == 0) {
+			Log_print("console off");
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
