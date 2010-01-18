@@ -1,3 +1,7 @@
+2010-01-17  James Wilkinson <james@slor.net>
+* configure.ac: define SUPPORTS_PLATFORM_CONFIGSAVE and SUPPORTS_PLATFORM_CONFIGURE for DirectX build.
+
+
 2010-01-14  Piotr Fusik  <fox@scene.pl>
 * win32/msc/config.h: #define WIN32 -> HAVE_WINDOWS_H
 

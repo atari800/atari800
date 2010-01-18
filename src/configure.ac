@@ -316,6 +316,8 @@ dnl Don't make this a windowed app, make it a console app.
         ;;
     windx)
         AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])
+        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
+        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
         A8_NEED_LIB(ddraw)
