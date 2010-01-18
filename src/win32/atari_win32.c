@@ -62,6 +62,7 @@ FRAMEPARAMS frameparams;
 FSRESOLUTION fsresolution;
 SCREENMODE screenmode;
 ASPECTMODE aspectmode;
+ASPECTRATIO aspectratio;
 BOOL usecustomfsresolution;
 BOOL showcursor;
 int windowscale;
@@ -99,6 +100,10 @@ int PLATFORM_Configure(char *option, char *parameters)
 	if (strcmp(option, "DISPLAY_MODE") == 0) {
 		if (strcmp(parameters,"GDI_NEARESTNEIGHBOR")==0) {
 			SetDisplayMode(GDI_NEARESTNEIGHBOR);
+			return TRUE;
+		}
+		if (strcmp(parameters,"GDIPLUS_NEARESTNEIGHBOR")==0) {
+			SetDisplayMode(GDIPLUS_NEARESTNEIGHBOR);
 			return TRUE;
 		}
 		if (strcmp(parameters,"GDIPLUS_BILINEAR")==0) {
@@ -150,25 +155,52 @@ int PLATFORM_Configure(char *option, char *parameters)
 			aspectmode = NORMAL;
 			return TRUE;
 		}
-		if (strcmp(parameters,"SMART")==0) {
-			aspectmode = SMART;
+		if (strcmp(parameters,"ADAPTIVE")==0) {
+			aspectmode = ADAPTIVE;
+			return TRUE;
+		}
+		return FALSE;
+	}
+	
+	if (strcmp(option, "ASPECT_RATIO") == 0) {
+		if (strcmp(parameters,"HYBRID")==0) {
+			aspectratio = HYBRID;  // normal 7:5 ratio
+			return TRUE;
+		}
+		if (strcmp(parameters,"WIDE")==0) {
+			aspectratio = WIDE;  // cropped 4:3 ratio
+			return TRUE;
+		}
+		if (strcmp(parameters,"CROPPED")==0) {
+			aspectratio = CROPPED;  // normal 7:5 ratio
+			return TRUE;
+		}
+		if (strcmp(parameters,"COMPRESSED")==0) {
+			aspectratio = COMPRESSED;  // cropped 4:3 ratio
 			return TRUE;
 		}
 		return FALSE;
 	}
 	
 	if (strcmp(option, "FULLSCREEN_RESOLUTION") == 0) {
-		if (strcmp(parameters,"LOWRES")==0) {
-			fsresolution = LOWRES;			
-			fullscreenWidth = LOWRESWIDTH;
-			fullscreenHeight = LOWRESHEIGHT;
+		if (strcmp(parameters,"VGA")==0) {
+			fsresolution = VGA;			
+			fullscreenWidth = 640;
+			fullscreenHeight = 480;
 			usecustomfsresolution = TRUE;
 			return TRUE;
 		}
-		if (strcmp(parameters,"MEDRES")==0) {
-			fsresolution = MEDRES;			
-			fullscreenWidth = MEDRESWIDTH;
-			fullscreenHeight = MEDRESHEIGHT;
+		if (strcmp(parameters,"SXGA")==0) {
+			fsresolution = SXGA;			
+			fullscreenWidth = 1280;
+			fullscreenHeight = 960;
+			usecustomfsresolution = TRUE;
+			return TRUE;
+		}
+		if (strcmp(parameters,"UXGA")==0) {
+			fsresolution = UXGA;			
+			fullscreenWidth = 1600;
+			fullscreenHeight = 1200;
 			usecustomfsresolution = TRUE;
 			return TRUE;
 		}
@@ -298,6 +330,9 @@ void PLATFORM_ConfigSave(FILE *fp)
 		case GDI_NEARESTNEIGHBOR:
 			fprintf(fp, "DISPLAY_MODE=GDI_NEARESTNEIGHBOR\n");
 			break;
+		case GDIPLUS_NEARESTNEIGHBOR:
+			fprintf(fp, "DISPLAY_MODE=GDIPLUS_NEARESTNEIGHBOR\n");
+			break;
 		case GDIPLUS_BILINEAR:
 			fprintf(fp, "DISPLAY_MODE=GDIPLUS_BILINEAR\n");
 			break;
@@ -333,17 +368,35 @@ void PLATFORM_ConfigSave(FILE *fp)
 		case NORMAL:
 			fprintf(fp, "ASPECT_MODE=NORMAL\n");
 			break;
-		case SMART:
-			fprintf(fp, "ASPECT_MODE=SMART\n");
+		case ADAPTIVE:
+			fprintf(fp, "ASPECT_MODE=ADAPTIVE\n");
+			break;
+	}
+	
+	switch (aspectratio) {
+		case HYBRID:
+			fprintf(fp, "ASPECT_RATIO=HYBRID\n");
+			break;
+		case WIDE:
+			fprintf(fp, "ASPECT_RATIO=WIDE\n");
+			break;
+		case CROPPED:
+			fprintf(fp, "ASPECT_RATIO=CROPPED\n");
+			break;
+		case COMPRESSED:
+			fprintf(fp, "ASPECT_RATIO=COMPRESSED\n");
 			break;
 	}
 	
 	switch (fsresolution) {
-		case LOWRES:
-			fprintf(fp, "FULLSCREEN_RESOLUTION=LOWRES\n");
+		case VGA:
+			fprintf(fp, "FULLSCREEN_RESOLUTION=VGA\n");
 			break;
-		case MEDRES:
-			fprintf(fp, "FULLSCREEN_RESOLUTION=MEDRES\n");
+		case SXGA:
+			fprintf(fp, "FULLSCREEN_RESOLUTION=SXGA\n");
+			break;
+		case UXGA:
+			fprintf(fp, "FULLSCREEN_RESOLUTION=UXGA\n");
 			break;
 		case DESKTOPRES:
 			fprintf(fp, "FULLSCREEN_RESOLUTION=DESKTOPRES\n");

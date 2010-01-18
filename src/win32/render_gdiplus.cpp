@@ -33,7 +33,7 @@ extern "C" void refreshv_gdiplus(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 	int i, j, k, cycles;
 	UINT* pixels;
 	int scanlinelength;
-	int bmWidth = Screen_WIDTH - 48;
+	int bmWidth = Screen_WIDTH - 48 - (fp->cropamount * 2);
 	int bmHeight = Screen_HEIGHT;
 	InterpolationMode im;
 	COLORREF cr;
@@ -71,6 +71,9 @@ extern "C" void refreshv_gdiplus(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 	pixels = (UINT*)bitmapData.Scan0;
 	scanlinelength = bitmapData.Stride / 4;
 
+	// indent screen buffer if cropping
+    scr_ptr += fp->cropamount;
+	
 	// Copy the atari screen buffer to bitmap and add scanlines if specified.	
 	fp->scanlinemode == NONE ? cycles = 1 : cycles = fp->scanlinemode - 1;
 	for (i = 0; i < bmHeight; i+=fp->scanlinemode) {
@@ -80,7 +83,7 @@ extern "C" void refreshv_gdiplus(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 				pixels[(i + k) * scanlinelength + j] = cr;
 			}
 		}
-		scr_ptr+=48;
+		scr_ptr += 48 + (fp->cropamount * 2);
 	}
 
 	bitmap->UnlockBits(&bitmapData);

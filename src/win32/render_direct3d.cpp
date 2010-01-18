@@ -27,7 +27,7 @@ static float texturehorizclip = 0.0f;
 static float texturevertclip = 0.0f; 
 
 extern "C" void startupdirect3d(int screenwidth, int screenheight, BOOL windowed,
-                                SCANLINEMODE scanlinemode, FILTER filter)
+                                SCANLINEMODE scanlinemode, FILTER filter, int cropamount)
 {	
 	d3d = Direct3DCreate9(D3D_SDK_VERSION);
 
@@ -41,19 +41,19 @@ extern "C" void startupdirect3d(int screenwidth, int screenheight, BOOL windowed
 					  &d3dpp,
 					  &d3d_device);
 	
-	initdevice(scanlinemode, filter);
+	initdevice(scanlinemode, filter, cropamount);
 
     return;
 }
 
 // Function used when we need to change present params
 void resetdevice(int screenwidth, int screenheight, BOOL windowed, 
-                 SCANLINEMODE scanlinemode, FILTER filter)
+                 SCANLINEMODE scanlinemode, FILTER filter, int cropamount)
 {	
 	texture_buffer->Release();    // close and release the texture
 	initpresentparams(screenwidth, screenheight, windowed);
 	d3d_device->Reset(&d3dpp);	
- 	initdevice(scanlinemode, filter);
+ 	initdevice(scanlinemode, filter, cropamount);
 	return;
 }
 
@@ -76,11 +76,12 @@ void initpresentparams(int screenwidth, int screenheight, BOOL windowed)
 	return;
 }
 
-void initdevice(SCANLINEMODE scanlinemode, FILTER filter)
+void initdevice(SCANLINEMODE scanlinemode, FILTER filter, int cropamount)
 {
 	UINT texturesize; 
 	D3DTEXTUREFILTERTYPE filtertype;
-
+    int bufferoffset = 48 + (cropamount * 2);
+	
 	// set the type of interpolation filtering selected by the user
 	// only bilinear or none are available.
 	if (filter == BILINEAR)
@@ -105,22 +106,22 @@ void initdevice(SCANLINEMODE scanlinemode, FILTER filter)
 	{
 		case NONE:   // we are just mapping the standard 320x240 Atari screen bitmap.
 			texturesize = 512;
-			texturehorizclip = ((Screen_WIDTH - 48) / (float)texturesize);
+			texturehorizclip = ((Screen_WIDTH - bufferoffset) / (float)texturesize);
 			texturevertclip = (Screen_HEIGHT / (float)texturesize);
 			break;
 		case LOW:    // LOW res scanlines produces a 320x480 pixel bitmap	
 			texturesize = 512;
-			texturehorizclip = ((Screen_WIDTH - 48) / (float)texturesize);
+			texturehorizclip = ((Screen_WIDTH - bufferoffset) / (float)texturesize);
 			texturevertclip = ((Screen_HEIGHT * 2 + 1) / (float)texturesize);
 			break;
 		case MEDIUM: // MEDIUM res scanlines produces a 320x720 pixel bitmap
 			texturesize = 1024;
-			texturehorizclip = ((Screen_WIDTH - 48) / (float)texturesize);
+			texturehorizclip = ((Screen_WIDTH - bufferoffset) / (float)texturesize);
 			texturevertclip = ((Screen_HEIGHT * 3 + 2) / (float)texturesize);
 			break;
 		case HIGH:   // HIGH res canlines produces a 320x960 pixel bitmap
 			texturesize = 1024;
-			texturehorizclip = ((Screen_WIDTH - 48) / (float)texturesize);
+			texturehorizclip = ((Screen_WIDTH - bufferoffset) / (float)texturesize);
 			texturevertclip = ((Screen_HEIGHT * 4 + 3) / (float)texturesize);
 			break;
 			
@@ -319,7 +320,7 @@ void refresh_frame(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 {
 	int i, j, k, cycles;
 	COLORREF cr;
-	int bmWidth = Screen_WIDTH - 48;
+	int bmWidth = Screen_WIDTH - 48 - (fp->cropamount * 2);;
 	int bmHeight = Screen_HEIGHT;
 	
     D3DLOCKED_RECT d3dlr;
@@ -329,6 +330,9 @@ void refresh_frame(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 	int scanlinelength = d3dlr.Pitch / 4;
 	bmHeight *= fp->scanlinemode;
 
+	// indent screen buffer if cropping
+    scr_ptr += fp->cropamount;
+	
 	// write to the texture map, inserting scanlines as appropriate
 	fp->scanlinemode == NONE ? cycles = 1 : cycles = fp->scanlinemode - 1;
 	for (i = 0; i < bmHeight; i+=fp->scanlinemode) {
@@ -338,7 +342,7 @@ void refresh_frame(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 				pixels[(i + k) * scanlinelength + j] = cr;
 			}
 		}
-		scr_ptr+=48;
+		scr_ptr += 48 + (fp->cropamount * 2);;
 	}
 
 	texture_buffer->UnlockRect(0);

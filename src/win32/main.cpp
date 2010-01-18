@@ -206,6 +206,7 @@ int WINAPI WinMain(HINSTANCE hinstance,
 			useconsole = FALSE;
 		}
 		else if (strcmp(argv[i], "-help") == 0) {	
+
 			help_only = TRUE;
 		}
 	}

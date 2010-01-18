@@ -77,6 +77,7 @@ extern DISPLAYMODE displaymode;
 extern FSRESOLUTION fsresolution;
 extern SCREENMODE screenmode;
 extern ASPECTMODE aspectmode;
+extern ASPECTRATIO aspectratio;
 extern BOOL usecustomfsresolution;
 extern BOOL showcursor;
 extern int windowscale;
@@ -84,6 +85,7 @@ extern int fullscreenWidth;
 extern int fullscreenHeight;
 extern int origScreenWidth;
 extern int origScreenHeight;
+extern int origScreenDepth;
 
 /* Controller Settings */
 extern BOOL mapController1Buttons;
@@ -1333,59 +1335,6 @@ static void DisplaySettings(void)
 		UI_MENU_END
 	};
 	
-#ifdef DIRECTX
-	static const UI_tMenuItem screen_mode_menu_array[] = {
-		UI_MENU_ACTION(0, "Fullscreen"),
-		UI_MENU_ACTION(1, "Windowed"),
-		UI_MENU_END
-	};
-	
-	static const UI_tMenuItem display_mode_menu_array[] = {
-		UI_MENU_ACTION(0, "GDI"),
-		UI_MENU_ACTION(1, "GDI+/Bilinear"),
-		UI_MENU_ACTION(2, "GDI+/Bilinear(HQ)"),
-		UI_MENU_ACTION(3, "GDI+/Bicubic(HQ)"),
-		UI_MENU_ACTION(4, "Direct3D"),
-		UI_MENU_ACTION(5, "Direct3D/Bilinear"),
-		UI_MENU_END
-	};
-	
-	static const UI_tMenuItem window_scale_menu_array[] = {
-		UI_MENU_ACTION(0, "100% (320x240)"),
-		UI_MENU_ACTION(1, "150% (480x360)"),
-		UI_MENU_ACTION(2, "200% (640x480)"),
-		UI_MENU_ACTION(3, "250% (800x600)"),
-		UI_MENU_ACTION(4, "300% (960x720)"),
-		UI_MENU_ACTION(5, "350% (1120x840)"),
-		UI_MENU_ACTION(6, "400% (1280x960)"),
-		UI_MENU_ACTION(7, "450% (1440x1080)"),
-		UI_MENU_ACTION(8, "500% (1600x1200)"),
-		UI_MENU_END
-	};
-	
-	static const UI_tMenuItem fsresolution_menu_array[] = {
-		UI_MENU_ACTION(0, lowreslabel),
-		UI_MENU_ACTION(1, medreslabel),
-		UI_MENU_ACTION(2, desktopreslabel),
-		UI_MENU_END
-	};
-	
-	static const UI_tMenuItem aspect_mode_menu_array[] = {
-		UI_MENU_ACTION(0, "Off"),
-		UI_MENU_ACTION(1, "Normal"),
-		UI_MENU_ACTION(2, "Smart"),
-		UI_MENU_END
-	};
-	
-	static const UI_tMenuItem scanline_mode_menu_array[] = {
-		UI_MENU_ACTION(0, "Off"),
-		UI_MENU_ACTION(1, "Low"),
-		UI_MENU_ACTION(2, "Medium"),
-		UI_MENU_ACTION(3, "High"),
-		UI_MENU_END
-	};
-#endif
-
 	static char refresh_status[16];
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_SUBMENU_SUFFIX(0, "NTSC artifacting quality:", NULL),
@@ -1421,27 +1370,12 @@ static void DisplaySettings(void)
 		UI_MENU_CHECK(21, "Also adjust external palette: "),
 		UI_MENU_FILESEL(22, "Save current palette"),
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
-#ifdef DIRECTX
-	    UI_MENU_SUBMENU_SUFFIX(23, "Display rendering: ", NULL),
-		UI_MENU_SUBMENU_SUFFIX(24, "Screen mode: ", NULL),
-		UI_MENU_SUBMENU_SUFFIX(25, "Window scale: ", NULL),
-		UI_MENU_SUBMENU_SUFFIX(26, "Fullscreen resolution:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(27, "Aspect ratio control mode:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(28, "Scanline mode:", NULL),
-		UI_MENU_CHECK(29, "Show cursor in fullscreen:"),
-#endif
 		UI_MENU_END
 	};
 
 	int option = 0;
 	int option2;
 	int seltype;
-#ifdef DIRECTX
-	int prev_option2;
-	char winscale[5];
-	char displaymodename[20];
-	int i;
-#endif
 
 	/* Current artifacting quality, computed from
 	   PLATFORM_artifacting and ANTIC_artif_new */
@@ -1506,30 +1440,6 @@ static void DisplaySettings(void)
 		SetItemChecked(menu_array, 7, db_mode);
 		FindMenuItem(menu_array, 8)->suffix = Atari800_tv_mode == Atari800_TV_NTSC ? "NTSC" : "PAL";
 		FindMenuItem(menu_array, 9)->suffix = screen_tv_mode == Atari800_TV_NTSC ? "NTSC" : "PAL";
-#endif
-#ifdef DIRECTX
-		if (rendermode == DIRECTDRAW) {
-			for (i = 23; i <= 29; i++) {
-				FindMenuItem(menu_array, i)->suffix = "N/A";
-			}
-		}
-		else  {
-			GetDisplayModeName(displaymodename);
-			FindMenuItem(menu_array, 23)->suffix = displaymodename; 
-			FindMenuItem(menu_array, 24)->suffix = screen_mode_menu_array[screenmode].item;
-			memcpy(winscale, window_scale_menu_array[(int)((windowscale/100.0f-1)*2)].item, 5);
-			winscale[4] = '\0';
-			FindMenuItem(menu_array, 25)->suffix = winscale;
-			if (fsresolution == LOWRES)
-				FindMenuItem(menu_array, 26)->suffix = "VGA";
-			else if (fsresolution == MEDRES)
-				FindMenuItem(menu_array, 26)->suffix = "VGA x2";
-			else	
-				FindMenuItem(menu_array, 26)->suffix = "Desktop";
-			FindMenuItem(menu_array, 27)->suffix = aspect_mode_menu_array[aspectmode].item;
-			FindMenuItem(menu_array, 28)->suffix = scanline_mode_menu_array[frameparams.scanlinemode - 1].item;
-			SetItemChecked(menu_array, 29, showcursor);
-		}
 #endif
 		option = UI_driver->fSelect("Display Settings", 0, option, menu_array, &seltype);
 		switch (option) {
@@ -1680,8 +1590,148 @@ static void DisplaySettings(void)
 			SavePalette();
 			break;
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
+
+		default:
+			return;
+		}
+	}
+}
+
 #ifdef DIRECTX
-		case 23:
+static void WindowsOptions(void)
+{
+	static const UI_tMenuItem screen_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "Fullscreen"),
+		UI_MENU_ACTION(1, "Windowed"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem display_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "GDI"),
+		UI_MENU_ACTION(1, "GDI+"),
+		UI_MENU_ACTION(2, "GDI+/Bilinear"),
+		UI_MENU_ACTION(3, "GDI+/Bilinear(HQ)"),
+		UI_MENU_ACTION(4, "GDI+/Bicubic(HQ)"),
+		UI_MENU_ACTION(5, "Direct3D"),
+		UI_MENU_ACTION(6, "Direct3D/Bilinear"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem window_scale_menu_array[] = {
+		UI_MENU_ACTION(0, "100% [320x240]"),
+		UI_MENU_ACTION(1, "150% [480x360]"),
+		UI_MENU_ACTION(2, "200% [640x480]"),
+		UI_MENU_ACTION(3, "250% [800x600]"),
+		UI_MENU_ACTION(4, "300% [960x720]"),
+		UI_MENU_ACTION(5, "350% [1120x840]"),
+		UI_MENU_ACTION(6, "400% [1280x960]"),
+		UI_MENU_ACTION(7, "450% [1440x1080]"),
+		UI_MENU_ACTION(8, "500% [1600x1200]"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem fsresolution_menu_array[] = {
+		UI_MENU_ACTION(0, "VGA     [640x480]   (2x)"),
+		UI_MENU_ACTION(1, "SXGA    [1280x960]  (4x)"),
+		UI_MENU_ACTION(2, "UXGA    [1600x1200] (5x)"),
+		UI_MENU_ACTION(3, desktopreslabel),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem aspect_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "Off"),
+		UI_MENU_ACTION(1, "Normal"),
+		UI_MENU_ACTION(2, "Adaptive"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem aspect_ratio_menu_array[] = {
+		UI_MENU_ACTION(0, "Hybrid     [7:5/4:3])"),
+		UI_MENU_ACTION(1, "Wide       [7:5]"),
+		UI_MENU_ACTION(2, "Cropped    [4:3]"),
+		UI_MENU_ACTION(3, "Compressed [4:3]"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem scanline_mode_menu_array[] = {
+		UI_MENU_ACTION(0, "Off"),
+		UI_MENU_ACTION(1, "Low     [1x]"),
+		UI_MENU_ACTION(2, "Medium  [2x]"),
+		UI_MENU_ACTION(3, "High    [3x]"),
+		UI_MENU_END
+	};
+
+	static char refresh_status[16];
+	static UI_tMenuItem menu_array[] = {
+	    UI_MENU_SUBMENU_SUFFIX(0, "Display rendering: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(1, "Screen mode: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(2, "Window scale: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(3, "Fullscreen resolution:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(4, "Aspect control mode:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(5, "Aspect ratio:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(6, "Scanline mode:", NULL),
+		UI_MENU_CHECK(7, "Show cursor in fullscreen:"),
+		UI_MENU_END
+	};
+
+	int option = 0;
+	int option2;
+	int seltype;
+	int prev_option2;
+	char winscale[5];
+	char displaymodename[20];
+	int i;
+
+	for (;;) {
+		if (rendermode == DIRECTDRAW) {
+			for (i = 0; i <= 7; i++) {
+				FindMenuItem(menu_array, i)->suffix = "N/A";
+			}
+		}
+		else  {
+			GetDisplayModeName(displaymodename);
+			FindMenuItem(menu_array, 0)->suffix = displaymodename; 
+			FindMenuItem(menu_array, 1)->suffix = screen_mode_menu_array[screenmode].item;
+			memcpy(winscale, window_scale_menu_array[(int)((windowscale/100.0f-1)*2)].item, 5);
+			winscale[4] = '\0';
+			
+			FindMenuItem(menu_array, 2)->suffix = winscale;
+			
+			if (fsresolution == VGA)
+				FindMenuItem(menu_array, 3)->suffix = "VGA";
+			else if (fsresolution == SXGA)
+				FindMenuItem(menu_array, 3)->suffix = "SXGA";
+			else if (fsresolution == UXGA)
+				FindMenuItem(menu_array, 3)->suffix = "UXGA";
+			else	
+				FindMenuItem(menu_array, 3)->suffix = "Desktop";
+			
+			FindMenuItem(menu_array, 4)->suffix = aspect_mode_menu_array[aspectmode].item;
+			
+			if (aspectratio == HYBRID)
+				FindMenuItem(menu_array, 5)->suffix = "Hybrid";
+			else if (aspectratio == WIDE)
+				FindMenuItem(menu_array, 5)->suffix = "Wide";
+			else if (aspectratio == CROPPED)
+				FindMenuItem(menu_array, 5)->suffix = "Cropped";
+			else if (aspectratio == COMPRESSED)
+				FindMenuItem(menu_array, 5)->suffix = "Compressed";
+
+			if (frameparams.scanlinemode == NONE)
+				FindMenuItem(menu_array, 6)->suffix = "Off";
+			else if (frameparams.scanlinemode == LOW)
+				FindMenuItem(menu_array, 6)->suffix = "Low";
+			else if (frameparams.scanlinemode == MEDIUM)
+				FindMenuItem(menu_array, 6)->suffix = "Medium";
+			else if (frameparams.scanlinemode == HIGH)
+				FindMenuItem(menu_array, 6)->suffix = "High";
+			SetItemChecked(menu_array, 7, showcursor);
+		}
+
+		option = UI_driver->fSelect("Windows Display Options", 0, option, menu_array, &seltype);
+		switch (option) {
+
+		case 0:
 			if (rendermode != DIRECTDRAW) {
 				prev_option2 = displaymode;
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, displaymode, display_mode_menu_array, NULL);
@@ -1692,7 +1742,7 @@ static void DisplaySettings(void)
 				}
 			}
 			break;
-		case 24:
+		case 1:
 			if (rendermode != DIRECTDRAW) {
 				prev_option2 = screenmode;
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, screenmode, screen_mode_menu_array, NULL);
@@ -1701,7 +1751,7 @@ static void DisplaySettings(void)
 						togglewindowstate();
 			}
 			break;
-		case 25:
+		case 2:
 			if (rendermode != DIRECTDRAW) {
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, (int)((windowscale/100.0f-1)*2), window_scale_menu_array, NULL);
 				if (option2 >= 0) {
@@ -1717,26 +1767,31 @@ static void DisplaySettings(void)
 				}
 			}
 			break;
-		case 26:
+		case 3:
 			if (rendermode != DIRECTDRAW) {
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, fsresolution, fsresolution_menu_array, NULL);
 				if (option2 >= 0)
 					fsresolution = option2;
 				if (fsresolution == DESKTOPRES)
 					usecustomfsresolution = FALSE;
-				else if (fsresolution == MEDRES) {
+				else if (fsresolution == UXGA) {
 					usecustomfsresolution = TRUE;
-					fullscreenWidth = MEDRESWIDTH;
-					fullscreenHeight = MEDRESHEIGHT;
+					fullscreenWidth = 1600;
+					fullscreenHeight = 1200;
 				}
-				else if (fsresolution == LOWRES) {
+				else if (fsresolution == SXGA) {
 					usecustomfsresolution = TRUE;
-					fullscreenWidth = LOWRESWIDTH;
-					fullscreenHeight = LOWRESHEIGHT;
+					fullscreenWidth = 1280;
+					fullscreenHeight = 960;
+				}
+				else if (fsresolution == VGA) {
+					usecustomfsresolution = TRUE;
+					fullscreenWidth = 640;
+					fullscreenHeight = 480;
 				}
 			}
 			break;
-		case 27:
+		case 4:
 			if (rendermode != DIRECTDRAW) {
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, aspectmode, aspect_mode_menu_array, NULL);
 				if (option2 >= 0) {
@@ -1745,7 +1800,17 @@ static void DisplaySettings(void)
 				}
 			}
 			break;
-		case 28:
+		case 5:
+			if (rendermode != DIRECTDRAW) {
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, aspectratio, aspect_ratio_menu_array, NULL);
+				if (option2 >= 0) {
+					aspectratio = option2;
+					changewindowsize(RESET, 0);
+					refreshframe();					
+				}
+			}
+			break;
+		case 6:
 			if (rendermode != DIRECTDRAW)  {
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, frameparams.scanlinemode - 1, scanline_mode_menu_array, NULL);
 				if (option2 >= 0) {
@@ -1754,18 +1819,19 @@ static void DisplaySettings(void)
 				}
 			}
 			break;
-		case 29:
+		case 7:
 			if (rendermode != DIRECTDRAW) {
 				showcursor = !showcursor;
 				setcursor();
 			}
 			break;
-#endif
+
 		default:
 			return;
 		}
 	}
 }
+#endif /* DIRECTX */
 
 #endif /* CURSES_BASIC */
 
@@ -2216,6 +2282,9 @@ void UI_Run(void)
 #ifndef CURSES_BASIC
 		UI_MENU_SUBMENU(UI_MENU_DISPLAY, "Display Settings"),
 #endif
+#ifdef DIRECTX
+		UI_MENU_SUBMENU(UI_MENU_WINDOWS, "Windows Display Options"),
+#endif
 #ifndef USE_CURSES
 		UI_MENU_SUBMENU(MENU_CONTROLLER, "Controller Configuration"),
 #endif
@@ -2257,8 +2326,6 @@ void UI_Run(void)
 #endif
 
 #ifdef DIRECTX
-	sprintf(lowreslabel, "VGA     (%dx%d)", LOWRESWIDTH, LOWRESHEIGHT);
-	sprintf(medreslabel, "VGA x2  (%dx%d)", MEDRESWIDTH, MEDRESHEIGHT);
 	sprintf(desktopreslabel, "Desktop (%dx%d)", origScreenWidth, origScreenHeight);
 #endif
 	UI_is_active = TRUE;
@@ -2341,6 +2408,11 @@ void UI_Run(void)
 			Screenshot(TRUE);
 			break;
 #endif
+#endif
+#ifdef DIRECTX
+		case UI_MENU_WINDOWS:
+			WindowsOptions();
+			break;
 #endif
 #ifndef USE_CURSES
 		case MENU_CONTROLLER:

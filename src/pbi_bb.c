@@ -55,7 +55,7 @@ static UBYTE *bb_ram;
 static UBYTE bb_rom_bank = 0;
 static int bb_rom_size;
 static int bb_rom_high_bit = 0x00;/*0x10*/
-static char bb_rom_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
+static char bb_rom_filename[FILENAME_MAX] = "";
 static UBYTE bb_PCR = 0; /* VIA Peripheral control register*/
 static int bb_scsi_enabled = FALSE;
 static char bb_scsi_disk_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;

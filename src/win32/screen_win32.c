@@ -29,6 +29,8 @@
 #define WIN32_LEAN_AND_MEAN
 #define DW_WINDOWSTYLE WS_TILEDWINDOW | WS_SIZEBOX | WS_DLGFRAME
 
+#define DISP_CHANGE_NOMODE -6
+
 #include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -59,9 +61,10 @@ static int scrheight = SCREENHEIGHT;
 
 RENDERMODE rendermode = GDI;
 DISPLAYMODE displaymode = GDI_NEARESTNEIGHBOR;
-FSRESOLUTION fsresolution = LOWRES;
+FSRESOLUTION fsresolution = VGA;
 SCREENMODE screenmode = WINDOW;
-ASPECTMODE aspectmode = SMART;
+ASPECTMODE aspectmode = NORMAL;
+ASPECTRATIO aspectratio = HYBRID;
 FRAMEPARAMS frameparams;
 BOOL showcursor = TRUE;
 BOOL usecustomfsresolution = FALSE;
@@ -69,7 +72,8 @@ int windowscale = 200;
 int fullscreenWidth = 0;
 int fullscreenHeight = 0;
 int origScreenWidth = 0;
-int origScreenHeight = 0; 
+int origScreenHeight = 0;
+int origScreenDepth = 0; 
 
 void groff(void)
 {
@@ -114,6 +118,9 @@ void GetDisplayModeName(char *name) {
 		case GDI_NEARESTNEIGHBOR:
 			sprintf(name, "%s", "GDI");
 			break;
+		case GDIPLUS_NEARESTNEIGHBOR:
+			sprintf(name, "%s", "GDI+");
+			break;
 		case GDIPLUS_BILINEAR:
 			sprintf(name, "%s", "GDI+/Bilinear");
 			break;
@@ -125,9 +132,6 @@ void GetDisplayModeName(char *name) {
 			break;
 		case DIRECT3D_BILINEAR:
 			sprintf(name, "%s", "Direct3D/Bilinear");
-			break;
-		case GDIPLUS_NEARESTNEIGHBOR:
-			sprintf(name, "%s", "GDI+");
 			break;
 		case GDIPLUS_HQBILINEAR:
 			sprintf(name, "%s", "GDI+/Bilinear(HQ)");
@@ -144,6 +148,8 @@ DISPLAYMODE GetActiveDisplayMode() {
 	
 	if (rendermode == GDI && frameparams.filter == NEARESTNEIGHBOR)
 		retval = GDI_NEARESTNEIGHBOR;
+	else if (rendermode == GDIPLUS && frameparams.filter == NEARESTNEIGHBOR)
+		retval = GDIPLUS_NEARESTNEIGHBOR;
 	else if (rendermode == GDIPLUS && frameparams.filter == BILINEAR)
 		retval = GDIPLUS_BILINEAR;
 	else if (rendermode == GDIPLUS && frameparams.filter == HQBICUBIC)
@@ -152,8 +158,6 @@ DISPLAYMODE GetActiveDisplayMode() {
 		retval = DIRECT3D_NEARESTNEIGHBOR;
 	else if (rendermode == DIRECT3D && frameparams.filter == BILINEAR)
 		retval = DIRECT3D_BILINEAR;
-	else if (rendermode == GDIPLUS && frameparams.filter == NEARESTNEIGHBOR)
-		retval = GDIPLUS_NEARESTNEIGHBOR;
 	else if (rendermode == GDIPLUS && frameparams.filter == HQBILINEAR)
 		retval = GDIPLUS_HQBILINEAR;
 	else if (rendermode == GDIPLUS && frameparams.filter == BICUBIC)
@@ -171,6 +175,10 @@ void SetDisplayMode(DISPLAYMODE dm) {
 			rendermode = GDI;
 			frameparams.filter = NEARESTNEIGHBOR;
 			break;
+		case GDIPLUS_NEARESTNEIGHBOR:
+			rendermode = GDIPLUS;
+			frameparams.filter = NEARESTNEIGHBOR;
+			break;
 		case GDIPLUS_BILINEAR:
 			rendermode = GDIPLUS;
 			frameparams.filter = BILINEAR;
@@ -186,10 +194,6 @@ void SetDisplayMode(DISPLAYMODE dm) {
 		case DIRECT3D_BILINEAR:
 			rendermode = DIRECT3D;
 			frameparams.filter = BILINEAR;
-			break;
-		case GDIPLUS_NEARESTNEIGHBOR:
-			rendermode = GDIPLUS;
-			frameparams.filter = NEARESTNEIGHBOR;
 			break;
 		case GDIPLUS_HQBILINEAR:
 			rendermode = GDIPLUS;
@@ -231,28 +235,22 @@ static BOOL initwin(void)
 		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dmDevMode);
 		origScreenWidth = dmDevMode.dmPelsWidth;
 		origScreenHeight = dmDevMode.dmPelsHeight;
+		origScreenDepth = dmDevMode.dmBitsPerPel;
 	}
 
-	if (rendermode != DIRECTDRAW && screenmode == WINDOW) // display to a window
+	// display to a window
+	if (rendermode != DIRECTDRAW && screenmode == WINDOW) 
 	{
 		// If the screen resolution has changed (due, perhaps, to switching into 
 		// fullscreen mode), return to the original screen resolution.
-		EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dmDevMode);
-		if (!(dmDevMode.dmPelsWidth == origScreenWidth) &&
-		    !(dmDevMode.dmPelsHeight == origScreenHeight))
-		{
-			dmDevMode.dmPelsWidth = origScreenWidth;
-		      	dmDevMode.dmPelsHeight = origScreenHeight;
-
-			retval = ChangeDisplaySettings(&dmDevMode, 0);
-		}
+		retval = ChangeDisplaySettings(NULL, 0);
 		
-		// compute a properly scaled client rect
+		// compute a properly scaled client rect for our new window
 		getscaledrect(&windowRect);
 		scaledWidth = windowRect.right - windowRect.left;
 		scaledHeight = windowRect.bottom - windowRect.top;
 
-		// center the screen
+		// get the coordinates necessary to center the rectangle
 		getcenteredcoords(windowRect, &xpos, &ypos);
 	
 		//initmenu();
@@ -262,17 +260,36 @@ static BOOL initwin(void)
 	}
 	else  // display as fullscreen
 	{
-		if (usecustomfsresolution) // user has specified a custom screen resolution
-		{
-			// Change to the requested screen resolution
-			dmDevMode.dmPelsWidth = fullscreenWidth;
-			dmDevMode.dmPelsHeight = fullscreenHeight;
+		// User has specified a custom fullscreen screen resolution.
+		// Scan all supported graphics mode for the one that best
+		// matches the requested resolution.
+		if (usecustomfsresolution) {		
+			int  i, nModeExists;			
 
-			// Change the resolution now.
-			// Using CDS_FULLSCREEN means that this resolution is temporary, so Windows 
-			// rather than us, will take care of resetting this back to the default when we
-			// exit the application.
-			retval = ChangeDisplaySettings(&dmDevMode, CDS_FULLSCREEN);
+			for (i=0; ;i++) {
+				nModeExists = EnumDisplaySettings(NULL, i, &dmDevMode);
+				
+				if (!nModeExists) {
+					// we've reached the end of the list
+					retval = DISP_CHANGE_NOMODE;
+					break;
+				}
+				else {
+					// look for a graphics mode that matches our requested resolution
+					// and has a pixel depth equal to the original screen mode.
+				    if (dmDevMode.dmPelsWidth == fullscreenWidth &&
+					    dmDevMode.dmPelsHeight == fullscreenHeight &&
+					    dmDevMode.dmBitsPerPel == origScreenDepth)	{
+						
+						// Change the resolution now.
+						// Using CDS_FULLSCREEN means that this resolution is temporary, so Windows 
+						// rather than us, will take care of resetting this back to the default when we
+						// exit the application.
+						retval = ChangeDisplaySettings(&dmDevMode, CDS_FULLSCREEN);
+						break;
+					}
+				}
+			}
 		}
 		else  // no custom screen resolution was specified.
 		{
@@ -289,34 +306,19 @@ static BOOL initwin(void)
 			NULL, NULL, myInstance, NULL);
 		
 		// If we were unsuccessful in changing the resolution, report this to the user,
-		// Then attempt to recover by using original screen resolution.
+		// Then attempt to recover by returning to window mode.
 		if (retval != DISP_CHANGE_SUCCESSFUL) {
-			sprintf(msgbuffer, "Could not change resolution\nto requested size: %dx%d.\n\nForcing resolution to %dx%d.\nPlease check your settings.",
-					dmDevMode.dmPelsWidth, dmDevMode.dmPelsHeight,origScreenWidth,origScreenHeight);
+			sprintf(msgbuffer, "Error %d.\n\nCould not change resolution\nto requested size: %dx%d.\n\nReturning to window mode.\nPlease check your settings.",
+					retval, fullscreenWidth, fullscreenHeight);
 			MessageBox(hWndMain, msgbuffer, myname, MB_OK);
 			
-			DestroyWindow(hWndMain);
+			// Restore screen to window state
+			screenmode = WINDOW;
+			retval = ChangeDisplaySettings(NULL, 0);
 			
-			// Change to the original desktop screen resolution
-			dmDevMode.dmPelsWidth = origScreenWidth;
-			dmDevMode.dmPelsHeight = origScreenHeight;
-			fullscreenWidth = dmDevMode.dmPelsWidth;
-			fullscreenHeight = dmDevMode.dmPelsHeight;
-			fsresolution = DESKTOPRES;			
-			usecustomfsresolution = FALSE;
-			
-			retval = ChangeDisplaySettings(&dmDevMode, CDS_FULLSCREEN);
-			
-			hWndMain = CreateWindowEx(
-				WS_EX_TOPMOST, myname, myname, WS_POPUP, 0, 0,
-				origScreenWidth, origScreenHeight,
-				NULL, NULL, myInstance, NULL);
-			
-			if (retval != DISP_CHANGE_SUCCESSFUL) {
-				sprintf(msgbuffer, "Could not change resolution\nto requested size: %dx%d.",
-				    dmDevMode.dmPelsWidth, dmDevMode.dmPelsHeight);
-				MessageBox(hWndMain, msgbuffer, myname, MB_OK);
-			}
+			getcenteredcoords(windowRect, &xpos, &ypos);
+			hWndMain = CreateWindowEx(0, myname, myname, DW_WINDOWSTYLE, xpos, ypos,
+			                  scaledWidth, scaledHeight, NULL, hMainMenu, myInstance, NULL );							  
 		}
 
 		// hide the cursor if -nocursor commandline option was specified
@@ -348,6 +350,12 @@ static BOOL initmenu(void)
 // helper function that creates a scaled rectangle with the exact client area that we want.
 void getscaledrect(RECT *rect)
 {
+	// Sizing of rectangle must correspond with aspect ratio
+	if (aspectratio == WIDE || (aspectratio == HYBRID && screenmode == WINDOW))
+		scrwidth = SCREENWIDTH;
+	else // all other window modes are 4:3
+		scrwidth = CROPPEDWIDTH;
+
 	// calculate the scaled screen metrics 
 	scaledWidth = (int)(scrwidth * windowscale / 100.0f);
 	scaledHeight = (int)(scrheight * windowscale / 100.0f);
@@ -438,7 +446,6 @@ void togglewindowstate()
 
 		screenmode = FULLSCREEN;  /* keep screenmode sync'ed with mode */
 	}
-
  
 	SuppressNextQuitMessage(); // prevents DestroyWindow from closing the application
 	DestroyWindow(hWndMain);
@@ -451,11 +458,11 @@ void togglewindowstate()
 
 		if (screenmode == FULLSCREEN)
 			startupdirect3d(fullscreenWidth, fullscreenHeight, FALSE,
-				        frameparams.scanlinemode, frameparams.filter);
+				        frameparams.scanlinemode, frameparams.filter, frameparams.cropamount);
 		else 
 			startupdirect3d(currentwindowrect.right - currentwindowrect.left,
 					currentwindowrect.bottom - currentwindowrect.top, 
-					TRUE, frameparams.scanlinemode, frameparams.filter);
+					TRUE, frameparams.scanlinemode, frameparams.filter, frameparams.cropamount);
 	}
 
 	// if we're returning to windowed mode, restore it to its previous size and location.
@@ -463,11 +470,13 @@ void togglewindowstate()
 	if (screenmode == WINDOW && currentwindowrect.bottom && currentwindowrect.right) 
 	{
 		MoveWindow(hWndMain, currentwindowrect.left, currentwindowrect.top,
-			   currentwindowrect.right - currentwindowrect.left,
+				   currentwindowrect.right - currentwindowrect.left,
 		    	   currentwindowrect.bottom - currentwindowrect.top, TRUE);
 		
 		if (currentwindowstate.showCmd == SW_SHOWMAXIMIZED)
-			   showCmd = SW_MAXIMIZE;				
+			   showCmd = SW_MAXIMIZE;	
+
+		changewindowsize(RESET, 0);
 	}
     
 	ShowWindow(hWndMain, showCmd);
@@ -486,7 +495,9 @@ void togglewindowstate()
 
 /* 'scale' is expressed as a percentage (100 = 100%)     */
 /* CHANGEWINDOWSIZE indicates whether to STEPUP or STEPDOWN */
-/* by the scale percentage, or to just simply SET it.         */
+/* by the scale percentage, or to just simply SET or RESET it. */
+/* Note that when the RESET parameter is used, the scale parameter */
+/* is ignored. */
 void changewindowsize(CHANGEWINDOWSIZE cws, int scale)
 {
 	RECT rect = {0,0,0,0};
@@ -504,6 +515,9 @@ void changewindowsize(CHANGEWINDOWSIZE cws, int scale)
 	if (wndpl.showCmd == SW_SHOWMAXIMIZED || wndpl.showCmd == SW_SHOWMINIMIZED || screenmode == FULLSCREEN)
 		return;		
 
+	// Note that the RESET parameter is not explicitly handled here since it is not
+	// used to induce a scale change.  Rather, RESET is used when the the window size must
+	// change, but not the scale--such as when the aspect ratio is changed.
 	switch (cws)
 	{
 		case STEPUP:
@@ -535,12 +549,17 @@ void changewindowsize(CHANGEWINDOWSIZE cws, int scale)
 		return;
 	}
 
-	// Center the screen
-	getcenteredcoords(rect, &xpos, &ypos);
-
+	// Position the new resized window relative to previous window position
+	xpos = wndpl.rcNormalPosition.left+
+	       (((wndpl.rcNormalPosition.right-wndpl.rcNormalPosition.left)-
+		   (rect.right-rect.left))/2);
+	
+	ypos = wndpl.rcNormalPosition.top+
+	       (((wndpl.rcNormalPosition.bottom-wndpl.rcNormalPosition.top)-
+		   (rect.bottom-rect.top))/2);
+	
 	MoveWindow(hWndMain, xpos, ypos,
-		   rect.right - rect.left,
-		   rect.bottom - rect.top, TRUE);	
+	           rect.right - rect.left, rect.bottom - rect.top, TRUE);
 
 	return;
 }
@@ -655,8 +674,21 @@ int gron(int *argc, char *argv[])
 				aspectmode = OFF;
 			else if (strcmp(argv[i], "normal") == 0) 
 				aspectmode = NORMAL;
-			else if (strcmp(argv[i], "smart") == 0)
-				aspectmode = SMART;
+			else if (strcmp(argv[i], "adaptive") == 0)
+				aspectmode = ADAPTIVE;
+		}
+		else if (strcmp(argv[i], "-ratio") == 0) 
+		{
+			if (!checkparamarg(argv[++i]))
+				cmdlineFail(argv[i-1]);
+			else if (strcmp(argv[i], "hybrid") == 0)
+				aspectratio = HYBRID;
+			else if (strcmp(argv[i], "wide") == 0) 
+				aspectratio = WIDE;
+			else if (strcmp(argv[i], "cropped") == 0) 
+				aspectratio = CROPPED;
+			else if (strcmp(argv[i], "compressed") == 0) 
+				aspectratio = COMPRESSED;
 		}
 		else if (strcmp(argv[i], "-fsres") == 0) {	
 			getres(argv[++i], &fullscreenWidth, &fullscreenHeight);
@@ -670,10 +702,11 @@ int gron(int *argc, char *argv[])
 				Log_print("\t-nocursor        Do not show mouse cursor in fullscreen");
 				Log_print("\t-fullscreen      Run in fullscreen");
 				Log_print("\t-winscale <size> Default window size <100> <200> <300>... etc.");
-				Log_print("\t-scanlines <%%>   Scanline mode <low> <medium> <high>");
+				Log_print("\t-scanlines <%%>  Scanline mode <low> <medium> <high>");
 				Log_print("\t-render <mode>   Render mode <ddraw> <gdi> <gdiplus> <direct3d>");
 				Log_print("\t-filter <mode>   Filter <bilinear> <bicubic> <hqbilinear> <hqbicubic>");
-				Log_print("\t-aspect <mode>   Aspect control mode <off> <normal> <smart>");
+				Log_print("\t-aspect <mode>   Aspect control mode <off> <normal> <adaptive>");
+				Log_print("\t-ratio <mode>    Aspect ratio <hybrid> <wide> <cropped> <compressed>");
 				Log_print("\t-fsres <res>     Fullscale resolution <widthxheight> viz. <640x480>");
 				help_only = TRUE;
 			}
@@ -703,7 +736,7 @@ int gron(int *argc, char *argv[])
 			if (rendermode != DIRECTDRAW && screenmode == WINDOW) 
 			{
 				startupdirect3d(scaledWidth, scaledHeight, TRUE,
-                                frameparams.scanlinemode, frameparams.filter);
+                                frameparams.scanlinemode, frameparams.filter, 0);
 			
 				// Direct3D overrides the creation of the Window, so we must
 				// manually rescale it to ensure it is the exact size we want.
@@ -715,7 +748,7 @@ int gron(int *argc, char *argv[])
 			else if (screenmode == FULLSCREEN) 
 			{
 				startupdirect3d(fullscreenWidth, fullscreenHeight, FALSE,
-			                    frameparams.scanlinemode, frameparams.filter);
+			                    frameparams.scanlinemode, frameparams.filter, 0);
 			}
 			break;
 	}
@@ -726,6 +759,7 @@ int gron(int *argc, char *argv[])
 // Refresh the frame -- called on every frame
 void refreshv(UBYTE *scr_ptr)
 {
+	float fHorizAspect, fVertAspect;
 	PAINTSTRUCT ps;
 	INT nRectWidth, nRectHeight;
 	RECT rt;
@@ -760,22 +794,45 @@ void refreshv(UBYTE *scr_ptr)
 		frameparams.vertoffset = 0;
 		frameparams.horizoffset = 0;
 		frameparams.d3dRefresh = TRUE;
+		frameparams.cropamount = 0;
 
 		// Compute correct aspect ratio
 		if (aspectmode)
 		{
-			if (screenmode == FULLSCREEN && aspectmode == SMART)
+			// Set any cropping.
+	        if (aspectratio == CROPPED || (aspectratio == HYBRID && screenmode == FULLSCREEN)) 
+	        {       
+		        frameparams.cropamount = 8; // 8 pixel cropping
+			}
+
+			// Set the *display* aspect ratio.  
+			if (aspectratio == WIDE || (aspectratio == HYBRID && screenmode == WINDOW)) 
+			{       
+				fHorizAspect = 7.0f;
+				fVertAspect = 5.0f;
+			}
+			else // aspect must be COMPRESSED, CROPPED, or HYBRID/FULLSCREEN               
 			{
-				// SMART Aspect Ratio processing:
-				// In full screen mode, we may need to compensate for non-square
-				// pixels if the monitor stretches these lower resolutions.
-				// Base the compensated aspect ratio on the assumption that the original
-				// screen resolution is the native resolution -- or at least one that 
-				// has square (or nearly square) pixels. 
+				fHorizAspect = 4.0f;
+				fVertAspect = 3.0f;
+			}
+		
+			if (screenmode == FULLSCREEN && aspectmode == ADAPTIVE)
+			{
+				// ADAPTIVE Aspect Ratio processing - 
+				// ** Strictly intended for widescreen monitors in stretch mode **:
+				// In fullscreen legacy (4:3) resolutions like VGA running on a 
+				// widescreen monitor, some users may want to squeeze the screen back into a 
+				// more normalized aspect if (and only if) the monitor stretches these resolutions. 
+				// To do this, we create a compensation aspect ratio based on the assumption 
+				// that the original screen resolution is the native resolution --  
+				// or at least one that has square (or nearly square) pixels. 
+				// Note that this mode is a convenience feature.  It is much preferred for
+				// users to use a true widescreen resolution on their widescreen monitor.
 
 				float fOrigAspect = (float)origScreenWidth / (float)origScreenHeight;
 				float fFullAspect = (float)fullscreenWidth / (float)fullscreenHeight;
-				float fAdjustedAspect = fFullAspect * 4.0f/3.0f;
+				float fAdjustedAspect = fFullAspect * fHorizAspect/fVertAspect;
 				float fCompensationAspect = fAdjustedAspect / fOrigAspect; 
 				float fCompensatedWidth = (float)fullscreenHeight * fCompensationAspect;
 
@@ -786,18 +843,18 @@ void refreshv(UBYTE *scr_ptr)
 			else  // we're in either a window or fullscreen with NORMAL aspect processing
 			{
 				// we have a tall narrow window, so pin to the width and
-				// adjust the height to force the 3:4 aspect ratio.
-				if (nRectHeight >= nRectWidth * 3.0f/4.0f)
+				// adjust the height to force the aspect ratio.
+				if (nRectHeight >= nRectWidth * fVertAspect/fHorizAspect)
 				{
-					frameparams.height = (int)(nRectWidth * 3.0f/4.0f);
+					frameparams.height = (int)(nRectWidth * fVertAspect/fHorizAspect);
 					frameparams.width = nRectWidth;
 					frameparams.vertoffset = (int)((nRectHeight - frameparams.height) / 2.0f); 
 				}
 				// we have a wide, fat window, so pin to the height and 
-				// adjust the width to force the 3:4 aspect ratio. 
+				// adjust the width to force the aspect ratio. 
 				else
 				{
-					frameparams.width = (int)(nRectHeight * 4.0f/3.0f);
+					frameparams.width = (int)(nRectHeight * fHorizAspect/fVertAspect);
 					frameparams.height = nRectHeight;
 					frameparams.horizoffset = (int)((nRectWidth - frameparams.width) / 2.0f);
 				}
@@ -810,14 +867,15 @@ void refreshv(UBYTE *scr_ptr)
 		{	
 			// Update window dimensions 
 			frameparams.d3dWidth = (float)frameparams.width / nRectWidth;
-			frameparams.d3dHeight = 1.0f;
+			frameparams.d3dHeight = (float)frameparams.height / nRectHeight;
 		
 			// Although Direct3D can handle window resizing with no intervention, it is not 
 			// optimal since it does not automatically change the backbuffer size to match the new
 			// window size.  This can result in lower quality after a resize.  However, if we take
 			// the time to manually reset the device and change the backbuffer size, we can maintain
 			// a high quality image.
-			resetdevice(nRectWidth, nRectHeight, screenmode, frameparams.scanlinemode, frameparams.filter);
+			resetdevice(nRectWidth, nRectHeight, screenmode, frameparams.scanlinemode,
+   			            frameparams.filter, frameparams.cropamount);
 		}
 
 		// Update the title bar with resolution, scale, scanline information
@@ -834,13 +892,13 @@ void refreshv(UBYTE *scr_ptr)
 					strcpy(scanlinetxt, "");
 					break;
 				case LOW:
-					strcpy(scanlinetxt, "; Scanlines: Low");
+					strcpy(scanlinetxt, "; Scanlines: Low (1x");
 					break;
 				case MEDIUM:
-					strcpy(scanlinetxt, "; Scanlines: Medium");
+					strcpy(scanlinetxt, "; Scanlines: Medium (2x)");
 					break;
 				case HIGH:
-					strcpy(scanlinetxt, "; Scanlines: High");
+					strcpy(scanlinetxt, "; Scanlines: High (3x)");
 					break;
 			}
 			

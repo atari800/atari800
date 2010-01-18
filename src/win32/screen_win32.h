@@ -2,18 +2,16 @@
 #define _SCREEN_WIN32_H_
 
 #include "atari.h"
-#define SCREENWIDTH 320
+#define SCREENWIDTH 336
 #define SCREENHEIGHT 240
-#define LOWRESWIDTH 640
-#define LOWRESHEIGHT 480
-#define MEDRESWIDTH 1280
-#define MEDRESHEIGHT 960
+#define CROPPEDWIDTH 320
 #define CLR_BACK	0x44
 
 typedef enum CHANGEWINDOWSIZE_ {
 	STEPUP,
 	STEPDOWN,
-	SET
+	SET,
+	RESET
 } CHANGEWINDOWSIZE;
 
 typedef enum TILTLEVEL_ {
@@ -33,8 +31,15 @@ typedef enum SCANLINEMODE_ {
 typedef enum ASPECTMODE_ {
 	OFF,
 	NORMAL,
-	SMART
+	ADAPTIVE
 } ASPECTMODE;
+
+typedef enum ASPECTRATIO_ {
+	HYBRID,
+	WIDE,
+	CROPPED,
+	COMPRESSED
+} ASPECTRATIO;
 
 typedef enum RENDERMODE_ {
 	DIRECTDRAW,
@@ -53,12 +58,12 @@ typedef enum FILTER_ {
 
 typedef enum DISPLAYMODE_ {
 	GDI_NEARESTNEIGHBOR,
+	GDIPLUS_NEARESTNEIGHBOR,
 	GDIPLUS_BILINEAR,
 	GDIPLUS_HQBILINEAR,
 	GDIPLUS_HQBICUBIC,
 	DIRECT3D_NEARESTNEIGHBOR,
 	DIRECT3D_BILINEAR,
-	GDIPLUS_NEARESTNEIGHBOR,
 	GDIPLUS_BICUBIC
 } DISPLAYMODE;
 
@@ -68,9 +73,10 @@ typedef enum SCREENMODE_ {
 } SCREENMODE;
 
 typedef enum FSRESOLUTION_ {
-	LOWRES,
-	MEDRES,
-	DESKTOPRES
+	VGA,         /* 4:3   [640x480]   (2x)     */
+	SXGA,        /* 4:3   [1280x960]  (4x)     */
+	UXGA,        /* 4:3   [1600x1200] (5x)     */
+	DESKTOPRES   /* Current Desktop Resolution */
 } FSRESOLUTION;
 
 typedef struct FRAMEPARAMS_ {
@@ -86,6 +92,7 @@ typedef struct FRAMEPARAMS_ {
 	FILTER filter;
 	TILTLEVEL tiltlevel;
 	BOOL screensaver;
+    INT cropamount;
 } FRAMEPARAMS; 
 
 extern BOOL checkparamarg(char arg[]);

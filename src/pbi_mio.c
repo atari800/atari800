@@ -49,7 +49,7 @@ static UBYTE *mio_ram;
 static int mio_ram_size = 0x100000;
 static UBYTE mio_rom_bank = 0;
 static int mio_ram_enabled = FALSE;
-static char mio_rom_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
+static char mio_rom_filename[FILENAME_MAX] = "";
 static char mio_scsi_disk_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
 static int mio_scsi_enabled = FALSE;
 

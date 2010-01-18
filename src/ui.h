@@ -81,6 +81,7 @@ int GetKeyName(void);
 #define UI_MENU_ABOUT            16
 #define UI_MENU_EXIT             17
 #define UI_MENU_CASSETTE         18
+#define UI_MENU_WINDOWS	         20
 
 /* Structure of menu item. Each menu is just an array of items of this structure
    terminated by UI_MENU_END */
