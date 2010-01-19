@@ -46,6 +46,7 @@ int buffers = 0;
 
 enum {SOUND_NONE, SOUND_DX, SOUND_WAV};
 
+static int usesound = TRUE;
 static int issound = SOUND_NONE;
 static int dsprate = 44100;
 static int snddelay = 40;	/* delay in milliseconds */
@@ -361,7 +362,6 @@ static int initsound_wav(void)
 void Sound_Initialise(int *argc, char *argv[])
 {
   int i, j;
-  int usesound = TRUE;
   int help = FALSE;
 
   if (issound != SOUND_NONE)
@@ -437,6 +437,8 @@ void Sound_Initialise(int *argc, char *argv[])
 
 void Sound_Reinit(void)
 {
+  if (usesound)
+  {
   Sound_Exit();
 #ifdef DIRECTX
   if (!wavonly)
@@ -447,6 +449,7 @@ void Sound_Reinit(void)
   }
 #endif
   initsound_wav();
+  }
   return;
 }
 

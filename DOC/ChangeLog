@@ -1,3 +1,15 @@
+2010-01-18  James Wilkinson <james@slor.net>
+* pbi_proto80.c: prevent extra carriage return in config file setting.
+
+* win32/sound.c: don't try to reinit sound (causes crash) if -nosound was used.
+
+
+2010-01-18  James Wilkinson <james@slor.net>
+* ui.[ch], win32/atari_win32.c, win32/render_direct3d.*, win32/render_gdi.c, win32/render_gdiplus.cpp, win32/screen_win32.[ch]: committed updated DirectX display enhancements from David Dahlstrom.
+
+* pbi_bb.c, pbi_mio.c, pbi_xld.c: prevent extra carriage returns in config file rom settings.
+
+
 2010-01-17  James Wilkinson <james@slor.net>
 * configure.ac: define SUPPORTS_PLATFORM_CONFIGSAVE and SUPPORTS_PLATFORM_CONFIGURE for DirectX build.
 
