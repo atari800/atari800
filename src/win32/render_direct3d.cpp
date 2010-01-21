@@ -9,7 +9,12 @@
 extern "C" HWND hWndMain;
 extern "C" {
 #include "colours.h"
+#include "log.h"
 }
+
+typedef D3DXMATRIX* (WINAPI* D3DXMatrixLookAtLHFunc)(D3DXMATRIX*, CONST D3DXVECTOR3*, CONST D3DXVECTOR3*, CONST D3DXVECTOR3*);
+typedef D3DXMATRIX* (WINAPI* D3DXMatrixPerspectiveFovLHFunc)(D3DXMATRIX*, FLOAT, FLOAT, FLOAT, FLOAT);
+typedef D3DXMATRIX* (WINAPI* D3DXMatrixRotationYFunc)(D3DXMATRIX*, FLOAT);
 
 // D3D declarations
 static LPDIRECT3D9 d3d;    
@@ -26,9 +31,33 @@ static float const pi = 3.141592653589793238462643383279502884197169399375105820
 static float texturehorizclip = 0.0f;
 static float texturevertclip = 0.0f; 
 
+static HMODULE hD3DX = NULL;
+static D3DXMatrixLookAtLHFunc D3DXMatrixLookAtLHPtr = NULL;
+static D3DXMatrixPerspectiveFovLHFunc D3DXMatrixPerspectiveFovLHPtr = NULL;
+static D3DXMatrixRotationYFunc D3DXMatrixRotationYPtr = NULL;
+
 extern "C" void startupdirect3d(int screenwidth, int screenheight, BOOL windowed,
                                 SCANLINEMODE scanlinemode, FILTER filter, int cropamount)
 {	
+	// look for the newest, oldest, then generic versions
+	if ((hD3DX = LoadLibrary("d3dx9_42.dll")) != NULL || (hD3DX = LoadLibrary("d3dx9_24.dll")) != NULL || (hD3DX = LoadLibrary("d3dx9.dll")) != NULL)
+	{
+		D3DXMatrixLookAtLHPtr = (D3DXMatrixLookAtLHFunc) GetProcAddress(hD3DX, "D3DXMatrixLookAtLH");
+		D3DXMatrixPerspectiveFovLHPtr = (D3DXMatrixPerspectiveFovLHFunc) GetProcAddress(hD3DX, "D3DXMatrixPerspectiveFovLH");
+		D3DXMatrixRotationYPtr = (D3DXMatrixRotationYFunc) GetProcAddress(hD3DX, "D3DXMatrixRotationY");
+		// unlikely failure to load function pointers
+		if (D3DXMatrixLookAtLHPtr == NULL || D3DXMatrixPerspectiveFovLHPtr == NULL || D3DXMatrixRotationYPtr == NULL)
+		{
+			FreeLibrary(hD3DX);
+			hD3DX = NULL;
+			Log_print("Extended Direct3D functions disabled - load failure");
+		}
+	}
+	else
+	{
+		Log_print("Extended Direct3D functions disabled - updated DirectX runtime needed");
+	}
+
 	d3d = Direct3DCreate9(D3D_SDK_VERSION);
 
 	initpresentparams(screenwidth, screenheight, windowed);
@@ -179,7 +208,14 @@ void refreshv_direct3d(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 	// In these cases we will re-init the vertices prior to building the frame.
 	if (fp->d3dRefresh) 
 	{
-		init_vertices(fp->d3dWidth, 0, fp->d3dHeight);
+    		if (hD3DX != NULL)
+		{
+			init_vertices(fp->d3dWidth, 0, fp->d3dHeight);
+		}
+		else
+		{
+			init_vertices(fp->d3dWidth, fp->d3dHeight, 0);
+		}
 		fp->d3dRefresh = FALSE;
 	}
    
@@ -206,8 +242,10 @@ void refreshv_direct3d(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 	// and remove all statements from here to the end of this
 	// 3D Matrix Transformations section.
 	//***********************************************************************
+    if (hD3DX != NULL)
+    {
 
-    D3DXMATRIX matView;    
+	D3DXMATRIX matView;    
 	
 	static float index = pi;    // rotation amount
 	static float cy = 2.41f;    // amount of zoom
@@ -267,7 +305,7 @@ void refreshv_direct3d(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 	}    	
 
  	// Create the transform matView
-	D3DXMatrixLookAtLH(&matView,
+	D3DXMatrixLookAtLHPtr(&matView,
     			   &D3DXVECTOR3 (0.0f, cy, cz),        // tilt & zoom the camera
     			   &D3DXVECTOR3 (0.0f, by, 0.0f),    // raise & lower the camera
     			   &D3DXVECTOR3 (0.0f, 1.0, 0.0f));    // flip the camera	
@@ -276,7 +314,7 @@ void refreshv_direct3d(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 
 	// set the projection transform
 	D3DXMATRIX matProjection;    // the projection transform matrix
-	D3DXMatrixPerspectiveFovLH(&matProjection,
+	D3DXMatrixPerspectiveFovLHPtr(&matProjection,
 							   D3DXToRadian(45),    // the horizontal field of view
 							   1.0f,   // aspect ratio
 							   1.0f,   // the near view-plane
@@ -285,8 +323,9 @@ void refreshv_direct3d(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 
 	// set the world transform 
 	D3DXMATRIX matRotateY;    // a matrix to store the rotation for each triangle
-	D3DXMatrixRotationY(&matRotateY, index);    // the rotation matrix
+	D3DXMatrixRotationYPtr(&matRotateY, index);    // the rotation matrix
 	d3d_device->SetTransform(D3DTS_WORLD, &(matRotateY));    // set the world transform
+    }
 
 	//***********************************************************************
 	// End 3D transformations
@@ -311,6 +350,12 @@ extern "C" void shutdowndirect3d(void)
 	texture_buffer->Release();    // close and release the texture
 	d3d_device->Release();    // close and release the 3D device
 	d3d->Release();    // close and release Direct3D
+
+	if (hD3DX != NULL)
+	{
+		FreeLibrary(hD3DX);
+		hD3DX = NULL;
+	}
 
 	return;
 }

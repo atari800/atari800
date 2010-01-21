@@ -324,9 +324,8 @@ dnl Don't make this a windowed app, make it a console app.
         A8_NEED_LIB(dinput)
         A8_NEED_LIB(dsound)
         A8_NEED_LIB(dxguid)
-	A8_NEED_LIB(d3d9)
-	A8_NEED_LIB(d3dx9)
-	A8_NEED_LIB(gdiplus)
+        A8_NEED_LIB(d3d9)
+        A8_NEED_LIB(gdiplus)
         A8_NEED_LIB(stdc++)
         A8_NEED_LIB(ws2_32)
         OBJS="win32/atari_win32.o win32/screen_win32.o win32/render_direct3d.o win32/render_directdraw.o win32/render_gdi.o win32/render_gdiplus.o win32/main.o win32/keyboard.o win32/joystick.o win32/atari.ro"

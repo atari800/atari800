@@ -1,3 +1,9 @@
+2010-01-21  James Wilkinson <james@slor.net>
+* win32/render_direct3d.cpp: disable extended functions if supporting runtime not installed.
+
+* configure.ac: remove dependency on libd3dx9.
+
+
 2010-01-18  James Wilkinson <james@slor.net>
 * pbi_proto80.c: prevent extra carriage return in config file setting.
 
