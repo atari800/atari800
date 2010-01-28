@@ -1,3 +1,7 @@
+2010-01-27  Perry McFarlane  <perry_m@fastmail.fm>
+* af80.[ch], atari.c: fix coldstart for AF80.
+
+
 2010-01-21  James Wilkinson <james@slor.net>
 * win32/render_direct3d.cpp: disable extended functions if supporting runtime not installed.
 

@@ -154,12 +154,8 @@ int AF80_Initialise(int *argc, char *argv[])
 			Log_print("loaded Austin Franklin charset image");
 		}
 		af80_screen = (UBYTE *)Util_malloc(0x800);
-		memset(af80_screen,0,0x800);
 		af80_attrib = (UBYTE *)Util_malloc(0x800);
-		memset(af80_attrib,0,0x800);
-		rom_bank_select = 0;
-		not_rom_output_enable = 0;
-		not_right_cartridge_rd4_control = 0;
+		AF80_Reset();
 
 		/* swap palette */
 		for (i=0; i<16; i++ ) {
@@ -355,6 +351,21 @@ UBYTE AF80_GetPixels(int scanline, int column, int *colour, int blink)
 	}
 	*colour = swapped_palette[attrib>>4]; /* rgbi colour */
 	return font_data;
+}
+
+void AF80_Reset(void)
+{
+	memset(af80_screen, 0, 0x800);
+	memset(af80_attrib, 0, 0x800);
+	rom_bank_select = 0;
+	not_rom_output_enable = 0;
+	not_right_cartridge_rd4_control = 0;
+	not_enable_2k_character_ram = 0;
+	not_enable_2k_attribute_ram = 0;
+	not_enable_crtc_registers = 0;
+	not_enable_80_column_output = 0;
+	video_bank_select = 0;
+	memset(crtreg, 0, 0x40);
 }
 
 /*

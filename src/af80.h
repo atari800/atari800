@@ -12,5 +12,6 @@ int AF80_D6GetByte(UWORD addr);
 void AF80_D6PutByte(UWORD addr, UBYTE byte);
 UBYTE AF80_GetPixels(int scanline, int column, int *colour, int blink);
 extern int AF80_enabled;
+void AF80_Reset(void);
 
 #endif /* AF80_H_ */

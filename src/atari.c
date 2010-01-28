@@ -220,6 +220,12 @@ void Atari800_Coldstart(void)
 		GTIA_consol_table[2] &= ~INPUT_CONSOL_START;
 	}
 	GTIA_consol_table[1] = GTIA_consol_table[2];
+#ifdef AF80
+	if (AF80_enabled) {
+		AF80_Reset();
+		AF80_InsertRightCartridge();
+	}
+#endif
 }
 
 int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
