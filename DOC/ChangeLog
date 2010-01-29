@@ -1,3 +1,7 @@
+2010-01-29  Piotr Fusik  <fox@scene.pl>
+* ui.h, ui_basic.c: changed source code from CRLF to LF
+
+
 2010-01-27  Perry McFarlane  <perry_m@fastmail.fm>
 * af80.[ch], atari.c: fix coldstart for AF80.
 
