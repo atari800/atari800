@@ -38,7 +38,9 @@
 #include "gtia.h"
 #include "util.h"
 #ifdef SYNCHRONIZED_SOUND
-#include "pbi_xld.h"
+#if defined(PBI_XLD) || defined (VOICEBOX)
+#include "votraxsnd.h"
+#endif
 #include "sndsave.h"
 #endif
 
@@ -2496,8 +2498,8 @@ int MZPOKEYSND_UpdateProcessBuffer(void)
     tick_pos = tick_pos - ticks_per_frame;
     result = start_sample;
     start_sample = 0;
-#ifdef PBI_XLD
-    PBI_XLD_VProcess(MZPOKEYSND_process_buffer,result);
+#if defined(PBI_XLD) || defined (VOICEBOX)
+    VOTRAXSND_Process(MZPOKEYSND_process_buffer,result);
 #endif
 #if !defined(__PLUS) && !defined(ASAP)
     SndSave_WriteToSoundFile((const unsigned char *)MZPOKEYSND_process_buffer, result);

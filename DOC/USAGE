@@ -98,6 +98,9 @@ Command line options
 -bb                   Emulate the CSS Black Box
 -mio                  Emulate the ICD MIO board
 
+-voicebox             Emulate the Alien Group Voice Box I
+-voiceboxii           Emulate the Alien Group Voice Box II
+
 -nopatch              Don't patch SIO routine in OS
 -nopatchall           Don't patch OS at all, H:, P: and R: devices won't work
 -H1 <path>            Set path for H1: device

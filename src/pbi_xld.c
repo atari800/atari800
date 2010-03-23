@@ -33,6 +33,7 @@
 #include "cpu.h"
 #include "memory.h"
 #include "statesav.h"
+#include "votraxsnd.h"
 #include <stdlib.h>
 
 #define DISK_PBI_NUM 0
@@ -52,7 +53,7 @@ static UBYTE votrax_latch = 0;
 static UBYTE modem_latch = 0;
 
 int PBI_XLD_enabled = FALSE;
-static int xld_v_enabled = FALSE;
+int PBI_XLD_v_enabled = FALSE;
 static int xld_d_enabled = FALSE;
 
 /* Parallel Disk I/O emulation support */
@@ -73,31 +74,11 @@ static void PIO_PutByte(int byte);
 static int PIO_GetByte(void);
 static UBYTE PIO_Command_Frame(void);
 
-/* Votrax */
-static double ratio;
-static int bit16;
-#define VTRX_BLOCK_SIZE 1024
-SWORD *temp_votrax_buffer = NULL;
-SWORD *votrax_buffer = NULL;
-static int votrax_busy = FALSE;
-static int votrax_sync_samples;
-static void votrax_busy_callback(int busy_status);
-static int dsprate;
-static int num_pokeys;
-static int samples_per_frame;
-/*if SYNCHRONIZED_SOUND is not used and the sound generation runs in a
- * separate thread, then these variables are accessed in two different
- * threads: */
-static int votrax_written = FALSE;
-static int votrax_written_byte = 0x3f;
-
 #ifdef PBI_DEBUG
 #define D(a) a
 #else
 #define D(a) do{}while(0)
 #endif
-
-#define VTRX_RATE 24500
 
 static void init_xld_v(void)
 {
@@ -105,14 +86,12 @@ static void init_xld_v(void)
 	voicerom = (UBYTE *)Util_malloc(0x1000);
 	if (!Atari800_LoadImage(xld_v_rom_filename, voicerom, 0x1000)) {
 		free(voicerom);
-		xld_v_enabled = FALSE;
+		PBI_XLD_v_enabled = FALSE;
 	}
 	else {
 		printf("loaded XLD voice rom image\n");
 		PBI_D6D7ram = TRUE;
 	}
-	votrax_busy = FALSE;
-	votrax_sync_samples = 0;
 }
 
 static void init_xld_d(void)
@@ -134,10 +113,10 @@ int PBI_XLD_Initialise(int *argc, char *argv[])
 	int i, j;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-1400") == 0) {
-			xld_v_enabled = TRUE;
+			PBI_XLD_v_enabled = TRUE;
 			PBI_XLD_enabled = TRUE;
 		}else if (strcmp(argv[i], "-xld") == 0){
-			xld_v_enabled = TRUE;
+			PBI_XLD_v_enabled = TRUE;
 			xld_d_enabled = TRUE;
 			PBI_XLD_enabled = TRUE;
 		}
@@ -153,7 +132,7 @@ int PBI_XLD_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	if (xld_v_enabled) {
+	if (PBI_XLD_v_enabled) {
 		init_xld_v();
 	}
 
@@ -207,25 +186,21 @@ UBYTE PBI_XLD_D1ffGetByte()
 	UBYTE result = 0;
 	/* VOTRAX BUSY IRQ bit */
 	/*if (!votraxsc01_status_r()) {*/
-	if (!votrax_busy) {
+	if (!VOTRAXSND_busy) {
 		result |= VOICE_MASK;
 	}
 	return result;
 }
-
 
 void PBI_XLD_D1PutByte(UWORD addr, UBYTE byte)
 {
 	if ((addr & ~3) == 0xd104)  {
 		/* XLD disk strobe line */
 		D(printf("votrax write:%4x\n",addr));
-		votrax_sync_samples = (int)((1.0/ratio)*(double)Votrax_Samples(votrax_written_byte, votrax_latch & 0x3f, votrax_sync_samples));
-		votrax_written = TRUE;
-		votrax_written_byte = votrax_latch & 0x3f;
-		if (!votrax_busy) {
-			votrax_busy = TRUE;
-			votrax_busy_callback(TRUE); /* idle -> busy */
+		if (VOTRAXSND_busy) {
+			PBI_XLD_votrax_busy_callback(TRUE); /* idle -> busy */
 		}
+		VOTRAXSND_PutByte(votrax_latch & 0x3f);
 
 	}
 	else if ((addr & ~3) == 0xd100 )  {
@@ -287,7 +262,7 @@ int PBI_XLD_D1ffPutByte(UBYTE byte)
 	return result;
 }
 
-static void votrax_busy_callback(int busy_status)
+void PBI_XLD_votrax_busy_callback(int busy_status)
 {
 	if (!busy_status && (votrax_latch & 0x80)){
 		/* busy->idle and IRQ enabled */
@@ -301,12 +276,6 @@ static void votrax_busy_callback(int busy_status)
 		/* update pokey IRQ status */
 		POKEY_PutByte(POKEY_OFFSET_IRQEN, POKEY_IRQEN);
 	}
-}
-
-static void votrax_busy_callback_async(int busy_status)
-{
-	return;
-	/* do nothing */
 }
 
 /* from sio.c */
@@ -698,162 +667,6 @@ static UBYTE PIO_Command_Frame(void)
 	}
 }
 
-/* called from POKEYSND_Init */
-void PBI_XLD_VInit(int playback_freq, int n_pokeys, int b16)
-{
-	static struct Votrax_interface vi;
-	int temp_votrax_buffer_size;
-	bit16 = b16;
-	dsprate = playback_freq;
-	num_pokeys = n_pokeys;
-	if (!xld_v_enabled) return;
-	if (num_pokeys != 1 && num_pokeys != 2) {
-		Log_print("PBI_XLD_VInit: cannot handle num_pokeys=%d", num_pokeys);
-		xld_v_enabled = FALSE;
-		return;
-	}
-	vi.num = 1;
-	vi.BusyCallback = votrax_busy_callback_async;
-	Votrax_Stop();
-	Votrax_Start((void *)&vi);
-	samples_per_frame = dsprate/(Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60);
-	ratio = (double)VTRX_RATE/(double)dsprate;
-	temp_votrax_buffer_size = (int)(VTRX_BLOCK_SIZE*ratio + 10); /* +10 .. little extra? */
-	free(temp_votrax_buffer);
-	temp_votrax_buffer = (SWORD *)Util_malloc(temp_votrax_buffer_size*sizeof(SWORD));
-	free(votrax_buffer);
-	votrax_buffer = (SWORD *)Util_malloc(VTRX_BLOCK_SIZE*sizeof(SWORD));
-}
-
-/* process votrax and interpolate samples */
-static void votrax_process(SWORD *v_buffer, int len, SWORD *temp_v_buffer)
-{
-	static SWORD last_sample;
-	static SWORD last_sample2;
-	static double startpos;
-	static int have;
-	int max_left_sample_index = (int)(startpos + (double)(len - 1)*ratio);
-	int pos = 0;
-	double fraction = 0;
-	int i;
-	int floor_next_pos;
-
-	if (have == 2) {
-	    temp_v_buffer[0] = last_sample;
-		temp_v_buffer[1] = last_sample2;
-		Votrax_Update(0, temp_v_buffer + 2, (max_left_sample_index + 1 + 1) - 2);
-	}
-	else if (have == 1) {
-	    temp_v_buffer[0] = last_sample;
-		Votrax_Update(0, temp_v_buffer + 1, (max_left_sample_index + 1 + 1) - 1);
-	}
-	else if (have == 0) {
-		Votrax_Update(0, temp_v_buffer, max_left_sample_index + 1 + 1);
-	}
-	else if (have < 0) {
-		Votrax_Update(0, temp_v_buffer, -have);
-		Votrax_Update(0, temp_v_buffer, max_left_sample_index + 1 + 1);
-	}
-
-	for (i = 0; i < len; i++) {
-		SWORD left_sample;
-		SWORD right_sample;
-		SWORD interp_sample;
-		pos = (int)(startpos + (double)i*ratio);
-		fraction = startpos + (double)i*ratio - (double)pos;
-		left_sample = temp_v_buffer[pos];
-		right_sample = temp_v_buffer[pos+1];
-		interp_sample = (int)(left_sample + fraction*(double)(right_sample-left_sample));
-		v_buffer[i] = interp_sample;
-	}
-	floor_next_pos = (int)(startpos + (double)len*ratio);
-	startpos = (startpos + (double)len*ratio) - (double)floor_next_pos;
-	if (floor_next_pos == max_left_sample_index)
-	{ 
-		have = 2;
-		last_sample = temp_v_buffer[floor_next_pos];
-		last_sample2 = temp_v_buffer[floor_next_pos+1];
-	}
-	else if (floor_next_pos == max_left_sample_index + 1) {
-		have = 1;
-		last_sample = temp_v_buffer[floor_next_pos];
-	}
-	else {
-		have = (floor_next_pos - (max_left_sample_index + 2));
-	}
-}
-
-/* 16 bit mixing */
-static void mix(SWORD *dst, SWORD *src, int sndn, int volume)
-{
-	SWORD s1, s2;
-	int val;
-
-	while (sndn--) {
-		s1 = *src;
-		s1 = s1*volume/128;
-		s2 = *dst;
-		src++;
-		val = s1 + s2;
-		if (val > 32767) val = 32767;
-		if (val < -32768) val = -32768;
-		*dst++ = val;
-		if (num_pokeys == 2) {
-			dst++;
-		}
-	}
-}
-
-/* 8 bit mixing */
-static void mix8(UBYTE *dst, SWORD *src, int sndn, int volume)
-{
-	SWORD s1, s2;
-	int val;
-
-	while (sndn--) {
-		s1 = *src;
-		s1 = s1*volume/128;
-		s2 = ((int)(*dst) - 0x80)*256;
-		src++;
-		val = s1 + s2;
-		if (val > 32767) val = 32767;
-		if (val < -32768) val = -32768;
-		*dst++ = (UBYTE)((val/256) + 0x80);
-		if (num_pokeys == 2) {
-			dst++;
-		}
-	}
-}
-
-void PBI_XLD_VFrame(void)
-{
-	if (!xld_v_enabled) return;
-	votrax_sync_samples -= samples_per_frame;
-	if (votrax_sync_samples <= 0 ) {
-		votrax_sync_samples = 0;
-		votrax_busy = FALSE;
-		votrax_busy_callback(FALSE); /* busy -> idle */
-	}
-}
-
-void PBI_XLD_VProcess(void *sndbuffer, int sndn)
-{
-	if (!xld_v_enabled) return;
-
-	if(votrax_written) {
-		votrax_written = FALSE;
-		Votrax_PutByte(votrax_written_byte);
-	}
-	sndn /= num_pokeys;
-	while (sndn > 0) {
-		int amount = ((sndn > VTRX_BLOCK_SIZE) ? VTRX_BLOCK_SIZE : sndn);
-		votrax_process(votrax_buffer, amount, temp_votrax_buffer);
-		if (bit16) mix((SWORD *)sndbuffer, votrax_buffer, amount, 128/4);
-		else mix8((UBYTE *)sndbuffer, votrax_buffer, amount, 128/4);
-		sndbuffer = (char *) sndbuffer + VTRX_BLOCK_SIZE*(bit16 ? 2 : 1)*((num_pokeys == 2) ? 2: 1);
-		sndn -= VTRX_BLOCK_SIZE;
-	}
-}
 
 #ifndef BASIC
 
@@ -861,7 +674,7 @@ void PBI_XLD_StateSave(void)
 {
 	StateSav_SaveINT(&PBI_XLD_enabled, 1);
 	if (PBI_XLD_enabled) {
-		StateSav_SaveINT(&xld_v_enabled, 1);
+		StateSav_SaveINT(&PBI_XLD_v_enabled, 1);
 		StateSav_SaveINT(&xld_d_enabled, 1);
 		StateSav_SaveFNAME(xld_d_rom_filename);
 		StateSav_SaveFNAME(xld_v_rom_filename);
@@ -874,7 +687,7 @@ void PBI_XLD_StateSave(void)
 		StateSav_SaveINT(&DataIndex, 1);
 		StateSav_SaveINT(&TransferStatus, 1);
 		StateSav_SaveINT(&ExpectedBytes, 1);
-		StateSav_SaveINT(&votrax_busy, 1);
+		StateSav_SaveINT(&VOTRAXSND_busy, 1);
 	}
 }
 
@@ -883,13 +696,13 @@ void PBI_XLD_StateRead(void)
 	StateSav_ReadINT(&PBI_XLD_enabled, 1);
 	if (PBI_XLD_enabled) {
 		/* UI should have paused sound while doing this */
-		StateSav_ReadINT(&xld_v_enabled, 1);
+		StateSav_ReadINT(&PBI_XLD_v_enabled, 1);
 		StateSav_ReadINT(&xld_d_enabled, 1);
 		StateSav_ReadFNAME(xld_d_rom_filename);
 		StateSav_ReadFNAME(xld_v_rom_filename);
-		if (xld_v_enabled) {
+		if (PBI_XLD_v_enabled) {
 			init_xld_v();
-			if (dsprate) PBI_XLD_VInit(dsprate, num_pokeys, bit16);
+			VOTRAXSND_Reinit();
 		}
 		if (xld_d_enabled) init_xld_d();
 		StateSav_ReadUBYTE(&votrax_latch, 1);
@@ -900,10 +713,10 @@ void PBI_XLD_StateRead(void)
 		StateSav_ReadINT(&DataIndex, 1);
 		StateSav_ReadINT(&TransferStatus, 1);
 		StateSav_ReadINT(&ExpectedBytes, 1);
-		StateSav_ReadINT(&votrax_busy, 1);
+		StateSav_ReadINT(&VOTRAXSND_busy, 1);
 	}
 	else {
-		xld_v_enabled = FALSE;
+		PBI_XLD_v_enabled = FALSE;
 		xld_d_enabled = FALSE;
 	}
 }

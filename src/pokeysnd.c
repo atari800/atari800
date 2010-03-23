@@ -36,8 +36,8 @@
 #endif
 #include "mzpokeysnd.h"
 #include "pokeysnd.h"
-#ifdef PBI_XLD
-#include "pbi_xld.h"
+#if defined(PBI_XLD) || defined (VOICEBOX)
+#include "votraxsnd.h"
 #endif
 #include "antic.h"
 #include "gtia.h"
@@ -272,8 +272,8 @@ int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 	mz_clear_regs = clear_regs;
 #endif
 
-#ifdef PBI_XLD
-	PBI_XLD_VInit(playback_freq, num_pokeys, (flags & POKEYSND_BIT16));
+#if defined(PBI_XLD) || defined (VOICEBOX)
+	VOTRAXSND_Init(playback_freq, num_pokeys, (flags & POKEYSND_BIT16));
 #endif
 	return POKEYSND_DoInit();
 }
@@ -286,8 +286,8 @@ void POKEYSND_SetMzQuality(int quality)	/* specially for win32, perhaps not need
 void POKEYSND_Process(void *sndbuffer, int sndn)
 {
 	POKEYSND_Process_ptr(sndbuffer, sndn);
-#ifdef PBI_XLD
-	PBI_XLD_VProcess(sndbuffer,sndn);
+#if defined(PBI_XLD) || defined (VOICEBOX)
+	VOTRAXSND_Process(sndbuffer,sndn);
 #endif
 #if !defined(__PLUS) && !defined(ASAP)
 	SndSave_WriteToSoundFile((const unsigned char *)sndbuffer, sndn);

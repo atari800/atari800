@@ -1,3 +1,9 @@
+2010-03-23  Perry McFarlane  <perry_m@fastmail.fm>
+* DOC/USAGE, atari.c, configure.ac, mzpokeysnd.c, pbi.c, pbi_xld.[ch],
+pokey.c, pokeysnd.c, votrax.c, new files: voicebox.[ch], votraxsnd.[ch]:
+emulate the Alien Group Voice Box I and II
+
+
 2010-01-29  Piotr Fusik  <fox@scene.pl>
 * ui.h, ui_basic.c: changed source code from CRLF to LF
 

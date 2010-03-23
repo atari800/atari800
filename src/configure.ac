@@ -712,8 +712,18 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
               [Emulate 1450XLD (default=ON)],
               PBI_XLD,[Define to emulate the 1400XL/1450XLD.]
              )
+    A8_OPTION(voicebox,yes,
+              [Emulate the Alien Group Voice Box (default=ON)],
+              VOICEBOX,[Define to emulate the Alien Group Voice Box.]
+             )
     if [[ "$WANT_PBI_XLD" = "yes" ]]; then
-        OBJS="$OBJS pbi_xld.o votrax.o"
+        OBJS="$OBJS pbi_xld.o"
+    fi
+    if [[ "$WANT_VOICEBOX" = "yes" ]]; then
+        OBJS="$OBJS voicebox.o"
+    fi
+    if [[ "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes" ]]; then
+        OBJS="$OBJS votrax.o votraxsnd.o"
     fi
 else
     WANT_NONLINEAR_MIXING="no"

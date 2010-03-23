@@ -343,12 +343,14 @@ void Votrax_Update(int num, SWORD *buffer, int length)
 {
 	int samplesToCopy;
 
+#if 0
 	/* if it is a different intonation */
 	if ( num!=votraxsc01_locals.actIntonation ) {
 		/* clear buffer */
 		memset(buffer, 0x00, length*sizeof(SWORD));
 		return;
 	}
+#endif
 
 	while ( length ) {
 		/* Case 1: if in a delay state, output 0's*/

@@ -120,8 +120,8 @@
 #ifdef PBI_BB
 #include "pbi_bb.h"
 #endif
-#ifdef PBI_XLD
-#include "pbi_xld.h"
+#if defined(PBI_XLD) || defined (VOICEBOX)
+#include "votraxsnd.h"
 #endif
 #ifdef XEP80_EMULATION
 #include "xep80.h"
@@ -131,6 +131,9 @@
 #endif
 #ifdef NTSC_FILTER
 #include "filter_ntsc.h"
+#endif
+#ifdef VOICEBOX
+#include "voicebox.h"
 #endif
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
@@ -657,6 +660,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 		|| !SIO_Initialise (argc, argv)
 		|| !CASSETTE_Initialise(argc, argv)
 		|| !PBI_Initialise(argc,argv)
+#ifdef VOICEBOX
+		|| !VOICEBOX_Initialise(argc, argv)
+#endif
 #ifndef BASIC
 		|| !INPUT_Initialise(argc, argv)
 #endif
@@ -1197,8 +1203,8 @@ void Atari800_Frame(void)
 #ifdef PBI_BB
 	PBI_BB_Frame(); /* just to make the menu key go up automatically */
 #endif
-#ifdef PBI_XLD
-	PBI_XLD_VFrame(); /* for the Votrax */
+#if defined(PBI_XLD) || defined (VOICEBOX)
+	VOTRAXSND_Frame(); /* for the Votrax */
 #endif
 	Devices_Frame();
 #ifndef BASIC
