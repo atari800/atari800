@@ -18,7 +18,7 @@ emulate the Alien Group Voice Box I and II
 * configure.ac: remove dependency on libd3dx9.
 
 
-2010-01-18  James Wilkinson <james@slor.net>
+2010-01-19  James Wilkinson <james@slor.net>
 * pbi_proto80.c: prevent extra carriage return in config file setting.
 
 * win32/sound.c: don't try to reinit sound (causes crash) if -nosound was used.
