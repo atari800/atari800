@@ -1362,25 +1362,28 @@ void Atari800_Frame32(void)
 	switch (INPUT_key_code)
 	{	
 		case AKEY32_WINDOWSIZEUP:
+			kbcode = 0;
 			changewindowsize(STEPUP, 50);
 			break;
 		case AKEY32_WINDOWSIZEDOWN:
+			kbcode = 0;
 			changewindowsize(STEPDOWN, 50);
 			break;  
 		case AKEY32_TOGGLESCANLINEMODE:
+			kbcode = 0;
 			changescanlinemode();
 			break;
 		case AKEY32_TOGGLESCREENSAVER:
+			kbcode = 0;
 			togglescreensaver();
 			break;
 		case AKEY32_TILTSCREEN:
+			kbcode = 0;
 			changetiltlevel();
 			break;
 		case AKEY32_TOGGLEFULLSCREEN:
+			kbcode = 0;
 			togglewindowstate();
 			break;			
 	}
-
-	kbcode = 0;  // supress key repetition
-
 }
