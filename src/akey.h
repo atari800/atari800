@@ -34,6 +34,7 @@
 #define AKEY_CX85_NO               -28
 #define AKEY_CX85_DELETE           -29
 #define AKEY_CX85_YES              -30
+#define AKEY_TURBO                 -31
 
 #define AKEY_SHFT 0x40
 #define AKEY_CTRL 0x80

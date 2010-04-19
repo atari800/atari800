@@ -146,6 +146,7 @@ int Atari800_display_screen = FALSE;
 int Atari800_nframes = 0;
 int Atari800_refresh_rate = 1;
 int Atari800_collisions_in_skipped_frames = FALSE;
+int Atari800_turbo = FALSE;
 
 #ifdef BENCHMARK
 static double benchmark_start_time;
@@ -496,6 +497,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 			POKEYSND_stereo_enabled = FALSE;
 		}
 #endif /* STEREO_SOUND */
+		else if (strcmp(argv[i], "-turbo") == 0) {
+			Atari800_turbo = TRUE;
+		}
 		else {
 			/* parameters that take additional argument follow here */
 			int i_a = (i + 1 < *argc);		/* is argument available? */
@@ -635,6 +639,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef R_IO_DEVICE
 					Log_print("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
 #endif
+					Log_print("\t-turbo           Run emulated Atari as fast as possible");
 					Log_print("\t-v               Show version/release number");
 				}
 
@@ -1173,6 +1178,9 @@ void Atari800_Frame(void)
 	case AKEY_EXIT:
 		Atari800_Exit(FALSE);
 		exit(0);
+	case AKEY_TURBO:
+		Atari800_turbo = !Atari800_turbo;
+		break;
 	case AKEY_UI:
 #ifdef SOUND
 		Sound_Pause();
@@ -1260,7 +1268,7 @@ void Atari800_Frame(void)
 #ifdef ALTERNATE_SYNC_WITH_HOST
 	if (refresh_counter == 0)
 #endif
-		Atari800_Sync();
+		if (Atari800_turbo == FALSE) Atari800_Sync();
 #endif /* BENCHMARK */
 }
 

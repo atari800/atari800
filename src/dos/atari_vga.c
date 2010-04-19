@@ -1082,6 +1082,10 @@ int PLATFORM_Keyboard(void)
 		 		}
 		 		raw_key = 0;	/* avoid continuous change */
 		 		break;
+        case 0x58:					/* F12 */
+                keycode = AKEY_TURBO;
+                raw_key = 0;
+                break;
         case 0x01:
                 keycode |= AKEY_ESCAPE;
                 break;

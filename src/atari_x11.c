@@ -307,6 +307,9 @@ static int GetKeyCode(XEvent *event)
 		case XK_L10:
 			keycode = SHIFT ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
 			break;
+		case XK_F12:
+			keycode = AKEY_TURBO;
+			break;
 		case XK_Left:
 			keycode = AKEY_LEFT;
 			keypad_stick &= INPUT_STICK_LEFT;

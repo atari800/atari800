@@ -1050,6 +1050,7 @@ static void AtariSettings(void)
 		UI_MENU_CHECK(1, "Boot from tape (hold Start):"),
 		UI_MENU_CHECK(2, "Enable R-Time 8:"),
 		UI_MENU_CHECK(3, "SIO patch (fast disk access):"),
+		UI_MENU_CHECK(21, "Turbo (F12):"),
 		UI_MENU_ACTION(4, "H: device (hard disk):"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
 #ifdef R_IO_DEVICE
@@ -1082,6 +1083,7 @@ static void AtariSettings(void)
 		SetItemChecked(menu_array, 1, CASSETTE_hold_start_on_reboot);
 		SetItemChecked(menu_array, 2, RTIME_enabled);
 		SetItemChecked(menu_array, 3, ESC_enable_sio_patch);
+		SetItemChecked(menu_array, 21, Atari800_turbo);
 		menu_array[4].suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
 		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
@@ -1162,6 +1164,9 @@ static void AtariSettings(void)
 			break;
 		case 19:
 			UI_driver->fMessage(CFG_WriteConfig() ? "Configuration file updated" : "Error writing configuration file", 1);
+			break;
+		case 21:
+			Atari800_turbo = !Atari800_turbo;
 			break;
 		default:
 			ESC_UpdatePatches();

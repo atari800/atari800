@@ -956,6 +956,9 @@ int PLATFORM_GetKeyName(void)
 			}
 			kbcode = 0;
 			return AKEY_NONE;
+		case DIK_F12:
+			kbcode = 0;
+			return AKEY_TURBO;
 		case DIK_SCROLL: /* Scroll Lock = pause */
 			while (kbhits[DIK_SCROLL])
 				prockb();

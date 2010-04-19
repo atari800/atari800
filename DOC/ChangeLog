@@ -1,5 +1,12 @@
+2010-04-19  James Wilkinson  <james@slor.net>
+* akey.h, atari.[ch], atari_sdl.c, atari_x11.c, ui.c,
+dos/atari_vga.c, win32/atari_win32.c:
+Add support for F12 turbo mode.
+
+
 2010-04-16  James Wilkinson  <james@slor.net>
 * win32/atari_win32.c: correct keystroke auto-repeat
+
 
 2010-03-23  Perry McFarlane  <perry_m@fastmail.fm>
 * DOC/USAGE, atari.c, configure.ac, mzpokeysnd.c, pbi.c, pbi_xld.[ch],

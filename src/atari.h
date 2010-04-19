@@ -75,6 +75,9 @@ extern int Atari800_refresh_rate;
    Set to FALSE for accurate emulation with Atari800_refresh_rate > 1. */
 extern int Atari800_collisions_in_skipped_frames;
 
+/* Set to TRUE to run emulated Atari as fast as possible */
+extern int Atari800_turbo;
+
 /* Initializes Atari800 emulation core. */
 int Atari800_Initialise(int *argc, char *argv[]);
 
