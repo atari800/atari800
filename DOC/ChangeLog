@@ -1,7 +1,8 @@
 2010-04-19  James Wilkinson  <james@slor.net>
-* akey.h, atari.[ch], atari_sdl.c, atari_x11.c, ui.c,
-dos/atari_vga.c, win32/atari_win32.c:
-Add support for F12 turbo mode.
+* akey.h, atari.[ch], atari_sdl.c, atari_x11.c, ui.c, dos/atari_vga.c, win32/atari_win32.c:
+  Added support for F12 turbo mode.
+
+* win32/joystick.c: do not stop joystick enumeration on dual stick settings failure
 
 
 2010-04-16  James Wilkinson  <james@slor.net>
@@ -35,7 +36,8 @@ emulate the Alien Group Voice Box I and II
 
 
 2010-01-18  James Wilkinson  <james@slor.net>
-* ui.[ch], win32/atari_win32.c, win32/render_direct3d.*, win32/render_gdi.c, win32/render_gdiplus.cpp, win32/screen_win32.[ch]: committed updated DirectX display enhancements from David Dahlstrom.
+* ui.[ch], win32/atari_win32.c, win32/render_direct3d.*, win32/render_gdi.c, win32/render_gdiplus.cpp, win32/screen_win32.[ch]:
+  Committed updated DirectX display enhancements from David Dahlstrom.
 
 * pbi_bb.c, pbi_mio.c, pbi_xld.c: prevent extra carriage returns in config file rom settings.
 

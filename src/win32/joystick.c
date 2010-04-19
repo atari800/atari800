@@ -141,6 +141,7 @@ static BOOL CALLBACK joycallback(LPCDIDEVICEINSTANCE pdevinst, LPVOID pv)
     {
       return DIENUM_STOP;
     }
+
   if (IDirectInputDevice_SetDataFormat(pdev, &c_dfDIJoystick) != DI_OK)
     {
       IDirectInputDevice_Release(pdev);
@@ -186,37 +187,18 @@ static BOOL CALLBACK joycallback(LPCDIDEVICEINSTANCE pdevinst, LPVOID pv)
   }
   
   /* Initialize the Z and Z-Rotation axis for dual stick mode */  
+  /* No reason to stop if these fail, even if GetCapabilities says they should not */
 
   dipr.diph.dwObj = DIJOFS_Z;
-
-  if (IDirectInputDevice_SetProperty(pdev, DIPROP_RANGE, &dipr.diph) != DI_OK)
-  {
-	IDirectInputDevice_Release(pdev);
-	return DIENUM_STOP;
-  }
-  
+  IDirectInputDevice_SetProperty(pdev, DIPROP_RANGE, &dipr.diph);
   dipr.diph.dwObj = DIJOFS_RZ;
-
-  if (IDirectInputDevice_SetProperty(pdev, DIPROP_RANGE, &dipr.diph) != DI_OK)
-  {
-	IDirectInputDevice_Release(pdev);
-	return DIENUM_STOP;
-  }
-  
-  if (SetDIDwordProperty(pdev, DIPROP_DEADZONE, DIJOFS_Z, DIPH_BYOFFSET, 5000) != DI_OK)
-  {
-	IDirectInputDevice_Release(pdev);
-	return DIENUM_STOP;
-  }
-  if (SetDIDwordProperty(pdev, DIPROP_DEADZONE, DIJOFS_RZ, DIPH_BYOFFSET, 5000) != DI_OK)
-  {
-	IDirectInputDevice_Release(pdev);
-	return DIENUM_STOP;
-  }
+  IDirectInputDevice_SetProperty(pdev, DIPROP_RANGE, &dipr.diph);
+  SetDIDwordProperty(pdev, DIPROP_DEADZONE, DIJOFS_Z, DIPH_BYOFFSET, 5000);
+  SetDIDwordProperty(pdev, DIPROP_DEADZONE, DIJOFS_RZ, DIPH_BYOFFSET, 5000);
 
   /* End Z and Z-Rotation axis initialization */
   
-  hRes = pdev->lpVtbl->QueryInterface(pdev, &IID_IDirectInputDevice2,
+  hRes = IDirectInputDevice_QueryInterface(pdev, &IID_IDirectInputDevice2,
 				      (LPVOID*) &dijoy[i]);
   IDirectInputDevice_Release(pdev);
   if (hRes < 0)
