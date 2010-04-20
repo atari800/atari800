@@ -79,6 +79,9 @@ void monitor_printf(const char *format, ...)
 
 #endif /* __PLUS */
 
+unsigned char *trainer_memory = NULL;
+unsigned char *trainer_flags = NULL;
+
 #ifdef MONITOR_TRACE
 FILE *MONITOR_trace_file = NULL;
 #endif
@@ -779,6 +782,15 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 #endif
 	fputc('\n', fp);
 	return pc;
+}
+
+void MONITOR_Exit(void)
+{
+	if (trainer_memory != NULL) {
+		free(trainer_memory);
+		trainer_memory=NULL;
+		trainer_flags=NULL;
+	}
 }
 
 void MONITOR_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
@@ -1761,6 +1773,109 @@ int MONITOR_Run(void)
 				putchar('\n');
 			} while (--count > 0);
 		}
+		else if (strcmp(t, "TSS") == 0) {
+			UWORD trainer_value = 0;
+			int value_valid = get_hex(&trainer_value);
+
+			/* alloc needed memory at first use */
+			if (trainer_memory == NULL) {
+				trainer_memory = malloc(65536*2);
+				if (trainer_memory != NULL) {
+					trainer_flags = trainer_memory + 65536;
+				} else {
+					printf("Memory allocation failed!\n"
+					"Trainer not available.\n");
+				}
+			}
+			if (trainer_memory != NULL) {
+				/* copy memory into shadow buffer at first use */
+				long int count = 65535;
+				do {
+					*(trainer_memory+count) = MEMORY_GetByte((UWORD) count);
+					*(trainer_flags+count) = 0xff;
+				} while (--count > -1);
+				if (value_valid) {
+					count = 65535;
+					do {
+						if (trainer_value != *(trainer_memory+count)) {
+							*(trainer_flags+count) = 0;
+						}
+					} while (--count > -1);
+				}
+			}
+		}
+		else if (strcmp(t, "TSN") == 0) {
+			UWORD trainer_value = 0;
+			int value_valid = get_hex(&trainer_value);
+
+			if (trainer_memory != NULL) {
+				long int count = 65535;
+				do {
+					if (value_valid) {
+						if (trainer_value != MEMORY_GetByte((UWORD) count)) {
+							*(trainer_flags+count) = 0;
+						}
+					} else {
+						if (*(trainer_memory+count) != MEMORY_GetByte((UWORD) count)) {
+							*(trainer_flags+count) = 0;
+						}
+					}
+					*(trainer_memory+count) = MEMORY_GetByte((UWORD) count);
+				} while (--count > -1);
+			} else {
+				printf("Use tss first.\n");
+			}
+		}
+		else if (strcmp(t, "TSC") == 0) {
+			UWORD trainer_value = 0;
+			int value_valid = get_hex(&trainer_value);
+
+			if (trainer_memory != NULL) {
+				long int count = 65535;
+				do {
+					if (value_valid) {
+						if (trainer_value != MEMORY_GetByte((UWORD) count)) {
+							*(trainer_flags+count) = 0;
+						}
+					} else {
+						if (*(trainer_memory+count) == MEMORY_GetByte((UWORD) count)) {
+							*(trainer_flags+count) = 0;
+						}
+					};
+					*(trainer_memory+count) = MEMORY_GetByte((UWORD) count);
+				} while (--count > -1);
+			} else {
+				printf("Use tss first.\n");
+			}
+		}
+		else if (strcmp(t, "TSP") == 0) {
+			UWORD addr_count_max = 0;
+			int addr_valid = get_hex(&addr_count_max);
+
+			/* default print size is 8*8 adresses */
+			if (!addr_valid) {
+				addr_count_max = 64;
+			}
+
+			if (trainer_memory != NULL) {
+				long int count = 0;
+				ULONG addr_count = 0;
+				int i = 0;
+				do {
+					if (*(trainer_flags+count) != 0) {
+						printf("%04X ", (UWORD) count);
+						addr_count++;
+						if (++i == 8) {
+							printf("\n");
+							i = 0;
+						};
+					};
+				} while ((++count < 65536) && (addr_count < addr_count_max));
+			printf("\n");
+			} else {
+				printf("Use tss first.\n");
+			}
+		}
 #ifndef PAGED_MEM
 		else if (strcmp(t, "F") == 0) {
 			UWORD addr1;
@@ -2078,6 +2193,12 @@ int MONITOR_Run(void)
 #ifdef MONITOR_HINTS
 				"LABELS [command] [filename]    - Configure labels\n"
 #endif
+				"TSS [value]                    - Start trainer search\n"
+				"TSC [value]                    - Perform when trainer value has changed\n"
+				"TSN [value]                    - Perform when trainer value has NOT changed\n"
+				"                                 Without [value], perform a deep trainer search\n"
+				"TSP [count]                    - Print [count] possible trainer addresses\n");
+			printf(
 				"COLDSTART, WARMSTART           - Perform system coldstart/warmstart\n"
 #ifdef HAVE_SYSTEM
 				"!command                       - Execute shell command\n"

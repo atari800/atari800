@@ -1,3 +1,7 @@
+2010-04-20  James Wilkinson  <james@slor.net>
+* atari.c, monitor.[ch] DOC/trainer.txt, 2010-04-20: committed trainer searcher by Achim Haertel.
+
+
 2010-04-19  James Wilkinson  <james@slor.net>
 * akey.h, atari.[ch], atari_sdl.c, atari_x11.c, ui.c, dos/atari_vga.c, win32/atari_win32.c:
   Added support for F12 turbo mode.

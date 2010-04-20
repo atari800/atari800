@@ -1,0 +1,18 @@
+Trainer searcher
+================
+The trainer searcher is a set of four commands (TSS, TSC, TSN and TSP) to find interesting ram addresses.
+
+You have two options of either a conventional trainer or of a deep trainer, but in either case you will have to put the game into a state first where the lifes are being displayed (means: starting a trainer search for lifes in the title screen yields an unreliable result).
+
+In both trainers, TSS serves to break an old search and initialize a new one by copying the currently active Atari800 memory to a shadow buffer and setting a flag for each storage cell to "could be a desired location". 
+When giving a number as argument to TSS, then for all memory locations which do not match the number the flag will be set to "is not a desired location". In the process also the other commands TSC and TSN will sort out memory adresses whose values do not satisfy the requirements of the commands.
+
+In a normal trainer, just create with the current number of your lifes as parameter the command TSS <number>, then change your lives and use then with the changed value TSC <new value> (TSN <new value> does here the same). Print the possible addresses with TSP and look if there are few enough. TSP defaults to a list of the first 64 adresses to print, but may be adapted to your needs by an argument of the maximum count of addresses to print. If there are still more possible life-addresses left than you want to scan manually, repeat losing or gaining a life and executing the TSC <new number> afterwards. E.g. Jet Set Willy fits in this category.
+
+In a deep trainer you have no clue what the trainer value might be, although it has one commonality - the effect uses one memory location.
+So start the trainer with TSS (without any number as you dont know it), run around a bit, and lets say you have still all lifes. So you should choose TSN now, return to the game, then lose a life and use TSC, and so on. Alternating use of TSC and TSN yields the best results. Like in the normal trainer, TSP <number> prints a maximum number of possible candidates. Save a state of the game, change one candidate and look what happens. If it has not been the life counter you hoped for load the saved state and change the value of the next address. E.g. the life counter address of Domain of the Undead can only be found by a deep trainer search.
+
+The search goes through the currently active memory layout of the Atari800. It does not switch ram banks on its own. So if you presume that a trainer address lies not in the currently active memory layout you must switch the memory banks by their respective control adresses before using the trainer searcher commands (and of course, before continuing the game, switch back to the memory banks the running program expects!).
+
+It is on purpose that the trainer searcher state is not influenced by resets as there are some very changelling searches which require resets (like e.g. the search for the treasure finding ability of Alternate Reality).
+

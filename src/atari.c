@@ -901,6 +901,7 @@ int Atari800_Exit(int run_monitor)
 #ifdef SOUND
 		SndSave_CloseSoundFile();
 #endif
+		MONITOR_Exit();
 	}
 #endif /* __PLUS */
 	return restart;
