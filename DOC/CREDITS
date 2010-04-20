@@ -56,6 +56,9 @@ Preston Crow <preston.crow@dancer.dartmouth.edu>
     - corrected calculation of ATR sector count
     - UI enhancement (folders in disk management)
 
+David Dahlstrom
+    - DirectX input and display enhancements
+
 Nir Dary <ndary@bigfoot.com>
     - detailed information about OSS, Williams, XEGS and MegaCart cartridges
 
@@ -167,6 +170,7 @@ Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
     - greatly improved standard cassette loading
     - implemented cassette writing
     - cassette loading with variable baud rate
+    - trainer searcher
 
 Nathan Hartwell <mage@magelair.com>
     - Win32 fixes
@@ -197,7 +201,7 @@ Jari Karppinen <jakarppi@mail.student.oulu.fi>
 Tomasz Krasuski <kr0tki@poczta.onet.pl>
     - NTSC filter option added to UI
     - SDL display modes cleanup
-    - audio fixes (WAV, -audio16)
+    - audio fixes (WAV, -audio16, TV mode)
     - restore state fixes (color palette reinit)
     - check for ARGV additional parameters
 
@@ -350,7 +354,7 @@ and Wrathchild <atari@mkeates.f9.co.uk>
 
 James Wilkinson <james@slor.net>
     - DirectX joystick support
-    - minor enhancements and bug fixes
+    - various enhancements and bug fixes
 
 Piotr Wiszowaty
     - LPTjoy support for Linux
@@ -380,3 +384,4 @@ B Watson  <yalhcru@gmail.com>
     - mouse support for SDL
     - direct mouse support (SDL and X11)
     - readline support for the internal monitor (including command history)
+    - turbo mode
