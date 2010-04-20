@@ -160,7 +160,7 @@ int initinput(void)
   int i;
   LPDIRECTINPUT pdi;
 
-  if (DirectInputCreate(myInstance, 0x0300, &pdi, NULL) != DI_OK)
+  if (DirectInputCreate(myInstance, DIRECTINPUT_VERSION, &pdi, NULL) != DI_OK)
     {
       return 1;
     }

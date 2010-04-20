@@ -6,6 +6,8 @@
 
 * emuos.h, emuos.lis: update for 2010
 
+* win32/atari_win32.h, win32/keyboard.c: DirectInput cleanup
+
 
 2010-04-16  James Wilkinson  <james@slor.net>
 * win32/atari_win32.c: correct keystroke auto-repeat
