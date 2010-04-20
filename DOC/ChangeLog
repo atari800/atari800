@@ -1,5 +1,7 @@
 2010-04-20  James Wilkinson  <james@slor.net>
-* atari.c, monitor.[ch] DOC/trainer.txt, 2010-04-20: committed trainer searcher by Achim Haertel.
+* atari.c, monitor.[ch] DOC/trainer.txt: committed trainer searcher by Achim Haertel.
+
+* atari.[ch], ui.c: committed savestate sound patch by Tomasz Krasuski.
 
 
 2010-04-19  James Wilkinson  <james@slor.net>

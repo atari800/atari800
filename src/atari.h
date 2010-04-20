@@ -55,7 +55,8 @@ extern int Atari800_machine_type;
 #define Atari800_FPS_NTSC 59.9227434
 /*59.9227434 = (3.579545*1000000)/(262*228)*/
 
-/* Video system / Number of scanlines per frame. */
+/* Video system / Number of scanlines per frame. Do not set this variable
+   directly; instead use Atari800_SetTVMode(). */
 extern int Atari800_tv_mode;
 
 /* TRUE to disable Atari BASIC when booting Atari (hold Option in XL/XE). */
@@ -138,5 +139,8 @@ void Atari800_StateSave(void);
 
 /* Read State */
 void Atari800_StateRead(void);
+
+/* Change TV mode. */
+void Atari800_SetTVMode(int mode);
 
 #endif /* ATARI_H_ */

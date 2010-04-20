@@ -213,7 +213,7 @@ static void SelectSystem(void)
 #define N_MACHINES  ((int) (sizeof(machine) / sizeof(machine[0])))
 
 	int option = 0;
-	int old_tv_mode = Atari800_tv_mode;
+	int new_tv_mode = Atari800_tv_mode;
 
 	int i;
 	for (i = 0; i < N_MACHINES; i++)
@@ -223,22 +223,21 @@ static void SelectSystem(void)
 		}
 
 	for (;;) {
-		menu_array[N_MACHINES].suffix = (Atari800_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
+		menu_array[N_MACHINES].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
 		option = UI_driver->fSelect("Select System", 0, option, menu_array, NULL);
 		if (option < N_MACHINES)
 			break;
-		Atari800_tv_mode = (Atari800_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
-#if defined(SOUND) && defined(SUPPORTS_SOUND_REINIT)
-		Sound_Reinit();
-#endif
+		new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
 	}
 	if (option >= 0) {
 		Atari800_machine_type = machine[option].type;
 		MEMORY_ram_size = machine[option].ram;
 		Atari800_InitialiseMachine();
 	}
-	else if (Atari800_tv_mode != old_tv_mode)
+	else if (new_tv_mode != Atari800_tv_mode) {
+		Atari800_SetTVMode(new_tv_mode);
 		Atari800_InitialiseMachine(); /* XXX: Atari800_Coldstart() is probably enough */
+	}
 }
 
 /* Inspired by LNG (lng.sourceforge.net) */

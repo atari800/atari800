@@ -1364,12 +1364,7 @@ void Atari800_StateRead(void)
 
 	StateSav_ReadUBYTE(&temp, 1);
 	new_tv_mode = (temp == 0) ? Atari800_TV_PAL : Atari800_TV_NTSC;
-	if (new_tv_mode != Atari800_tv_mode) {
-		Atari800_tv_mode = new_tv_mode;
-#if !defined(BASIC) && !defined(CURSES_BASIC)
-		Colours_InitialiseMachine();
-#endif
-	}
+	Atari800_SetTVMode(new_tv_mode);
 
 	StateSav_ReadUBYTE(&temp, 1);
 	StateSav_ReadINT(&os, 1);
@@ -1429,3 +1424,16 @@ void Atari800_StateRead(void)
 }
 
 #endif
+
+void Atari800_SetTVMode(int mode)
+{
+	if (mode != Atari800_tv_mode) {
+		Atari800_tv_mode = mode;
+#if !defined(BASIC) && !defined(CURSES_BASIC)
+		Colours_SetVideoSystem(mode);
+#endif
+#if defined(SOUND) && defined(SUPPORTS_SOUND_REINIT)
+		Sound_Reinit();
+#endif
+	}
+}
