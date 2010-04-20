@@ -4,6 +4,8 @@
 
 * win32/joystick.c: do not stop joystick enumeration on dual stick settings failure
 
+* emuos.h, emuos.lis: update for 2010
+
 
 2010-04-16  James Wilkinson  <james@slor.net>
 * win32/atari_win32.c: correct keystroke auto-repeat

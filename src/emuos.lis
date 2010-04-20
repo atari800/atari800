@@ -441,7 +441,7 @@ DLIST
 HALTMSG
     .SBYTE "      Atari800/OS Emulation Halted      "
     .SBYTE "   Copyright (c) 1997 David J. Firth    "
-    .SBYTE "(c) 1998-2009 Atari800 Development Team "
+    .SBYTE "(c) 1998-2010 Atari800 Development Team "
     .SBYTE "                                        "
     .SBYTE "       http://atari800.atari.org/       "
     .SBYTE "                                        "
