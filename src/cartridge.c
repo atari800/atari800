@@ -31,6 +31,7 @@
 #include "binload.h" /* BINLOAD_loading_basic */
 #include "cartridge.h"
 #include "memory.h"
+#include "ide.h"
 #include "pia.h"
 #include "rtime.h"
 #include "util.h"
@@ -349,6 +350,8 @@ UBYTE CARTRIDGE_GetByte(UWORD addr)
 #endif
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9))
 		return RTIME_GetByte();
+	if (IDE_enabled && (addr <= 0xd50f))
+		return IDE_GetByte(addr);
 	access_D5(CARTRIDGE_type, addr);
 	return 0xff;
 }
@@ -366,6 +369,10 @@ void CARTRIDGE_PutByte(UWORD addr, UBYTE byte)
 #endif
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9)) {
 		RTIME_PutByte(byte);
+		return;
+	}
+	if (IDE_enabled && (addr <= 0xd50f)) {
+		IDE_PutByte(addr,byte);
 		return;
 	}
 	

@@ -1,3 +1,11 @@
+2010-04-27  Ivo van Poorten  <ivop@euronet.nl>
+Implementation of both 8- and 16-bit IDE. If the MSB's are ignored, 
+the interface is compatible with MyIDE (tested mainly with MYIDE44E.ROM).
+Some advanced features, like SMART and DVD/CDROM support, are not there yet, 
+but this is more than enough to write and test low level IDE Microdrive/CF 
+code. For harddisks it might be beneficial to emulate a couple of busy cycles.
+
+
 2010-04-26  James Wilkinson  <james@slor.net>
 * ui.c: corrected H: error caused by turbo patch
 

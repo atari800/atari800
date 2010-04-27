@@ -167,6 +167,8 @@ Command line options
 -nosound              Disable sound
 -dsprate <freq>       Set mixing frequency (Hz)
 -snddelay <time>      Set sound delay (milliseconds)
+-ide <file>           Enable IDE emulation
+-ide_debug            Enable IDE Debug output
 
 
 Curses version options

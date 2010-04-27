@@ -280,13 +280,14 @@ Krzysztof Nikiel <krzych00@priv.onet.pl>
 Chris Palmer <crpalmer@solo.uwaterloo.ca>
     - spotted incorrect declaration of atari_basic[8129] in pia.c
 
-Ivo van Poorten <ipoorten@cs.vu.nl>
+Ivo van Poorten <ivop@euronet.nl> <ivop@free.fr>
     - added X11 window Expose Event
     - made hardware registers repeat within their page
     - control characters in CURSES version
     - Makefile targets for FreeBSD systems
     - modification to Curses character attributes handling (for FreeBSD)
     - ported emulator to DOS using DJGPP
+    - IDE support
 
 Jacek Poplawski <jpopl@interia.pl>
     - SDL port of Atari800
