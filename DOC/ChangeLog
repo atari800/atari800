@@ -1,6 +1,8 @@
 2010-04-26  James Wilkinson  <james@slor.net>
 * ui.c: corrected H: error caused by turbo patch
 
+* atari.c, colours.c: correct blank screen on platforms that do not support palette update
+
 
 2010-04-20  James Wilkinson  <james@slor.net>
 * atari.c, monitor.[ch] DOC/trainer.txt: committed trainer searcher by Achim Haertel.

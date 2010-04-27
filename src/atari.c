@@ -313,9 +313,6 @@ static int load_roms(void)
 
 int Atari800_InitialiseMachine(void)
 {
-#if !defined(BASIC) && !defined(CURSES_BASIC)
-	Colours_InitialiseMachine();
-#endif
 	ESC_ClearAll();
 	if (!load_roms())
 		return FALSE;

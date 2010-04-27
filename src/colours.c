@@ -74,23 +74,14 @@ void Colours_SetRGB(int i, int r, int g, int b, int *colortable_ptr)
 	colortable_ptr[i] = (r << 16) + (g << 8) + b;
 }
 
-void Colours_InitialiseMachine(void)
+static void UpdateModeDependentPointers(int tv_mode)
 {
-	static int saved_tv_mode = Atari800_TV_UNSET;
-	if (saved_tv_mode != Atari800_tv_mode) {
-		/* TV mode has changed */
-		saved_tv_mode = Atari800_tv_mode;
-		Colours_SetVideoSystem(Atari800_tv_mode);
-	}
-}
-
-void Colours_SetVideoSystem(int mode) {
 	/* Set pointers to the currnt setup and external palette */
-	if (mode == Atari800_TV_NTSC) {
+	if (tv_mode == Atari800_TV_NTSC) {
 		Colours_setup = &COLOURS_NTSC_setup;
 		Colours_external = &COLOURS_NTSC_external;
 	}
-       	else if (mode == Atari800_TV_PAL) {
+       	else if (tv_mode == Atari800_TV_PAL) {
 		Colours_setup = &COLOURS_PAL_setup;
 		Colours_external = &COLOURS_PAL_external;
 	}
@@ -99,6 +90,11 @@ void Colours_SetVideoSystem(int mode) {
 		Log_print("Interal error: Invalid Atari800_tv_mode\n");
 		exit(1);
 	}
+}
+
+void Colours_SetVideoSystem(int mode)
+{
+	UpdateModeDependentPointers(mode);
 	/* Apply changes */
 	Colours_Update();
 }
@@ -113,7 +109,8 @@ static void CopyExternalWithoutAdjustments(void)
 		Colours_SetRGB(i, *ext_ptr, *(ext_ptr + 1), *(ext_ptr + 2), Colours_table);
 }
 
-void Colours_Update(void)
+/* Updates contents of Colours_table. */
+static void UpdatePalette(void)
 {
 	if (Colours_external->loaded && !Colours_external->adjust)
 		CopyExternalWithoutAdjustments();
@@ -121,6 +118,11 @@ void Colours_Update(void)
 		COLOURS_NTSC_Update(Colours_table);
 	else /* PAL */
 		COLOURS_PAL_Update(Colours_table);
+}
+
+void Colours_Update(void)
+{
+	UpdatePalette();
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 	PLATFORM_PaletteUpdate();
 #endif
@@ -212,5 +214,8 @@ int Colours_Initialise(int *argc, char *argv[])
 	    !COLOURS_PAL_Initialise(argc, argv))
 		return FALSE;
 
+	/* Assume that Atari800_tv_mode has been already initialised. */
+	UpdateModeDependentPointers(Atari800_tv_mode);
+	UpdatePalette();
 	return TRUE;
 }
