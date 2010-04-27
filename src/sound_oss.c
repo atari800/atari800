@@ -154,7 +154,7 @@ void Sound_Update(void)
 	   - pokeysnd currently supports only up to 65535Hz */
 	static unsigned char buffer[4096];
 	unsigned int len;
-	if (!sound_enabled)
+	if (!sound_enabled || Atari800_turbo)
 		return;
 	/* compute number of samples for one Atari frame
 	   (assuming 60Hz for NTSC and 50Hz for PAL) */

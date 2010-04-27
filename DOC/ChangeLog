@@ -3,7 +3,7 @@
 
 * atari.c, colours.c: correct blank screen on platforms that do not support palette update
 
-* atari_sdl.c: improve turbo mode for SDL build with synchronized sound
+* atari_sdl.c, sound_oss.c: improve turbo mode for SDL build with synchronized sound and OSS sound
 
 
 2010-04-20  James Wilkinson  <james@slor.net>
