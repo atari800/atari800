@@ -425,7 +425,7 @@ void Sound_Update(void)
 	int bytes_per_sample;
 	double bytes_per_ms;
 
-	if (!sound_enabled) return;
+	if (!sound_enabled || Atari800_turbo) return;
 	/* produce samples from the sound emulation */
 	samples_written = MZPOKEYSND_UpdateProcessBuffer();
 	bytes_per_sample = (POKEYSND_stereo_enabled ? 2 : 1)*((sound_bits == 16) ? 2:1);

@@ -3,6 +3,8 @@
 
 * atari.c, colours.c: correct blank screen on platforms that do not support palette update
 
+* atari_sdl.c: improve turbo mode for SDL build with synchronized sound
+
 
 2010-04-20  James Wilkinson  <james@slor.net>
 * atari.c, monitor.[ch] DOC/trainer.txt: committed trainer searcher by Achim Haertel.
