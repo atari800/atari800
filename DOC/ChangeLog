@@ -1,3 +1,7 @@
+2010-04-28  James Wilkinson  <james@slor.net>
+* ide.[ch], ide_internal.h: build fixes for Windows/BeOS fseek/ftell and compiler complaints
+
+
 2010-04-27  Ivo van Poorten  <ivop@euronet.nl>
 Implementation of both 8- and 16-bit IDE. If the MSB's are ignored, 
 the interface is compatible with MyIDE (tested mainly with MYIDE44E.ROM).

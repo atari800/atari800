@@ -46,15 +46,21 @@
 #define _XOPEN_SOURCE 500
 
 #include "config.h"
+// allow non-ansi fseek/ftell functions
+#ifdef __STRICT_ANSI__
+#  undef __STRICT_ANSI__
+#  include <stdio.h>
+#  define __STRICT_ANSI__ 1
+#else
+#  include <stdio.h>
+#endif
 #include "ide.h"
 #include "atari.h"
 #include "log.h"
 #include "util.h"
 #include "ide_internal.h"
 
-#include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -64,6 +70,14 @@
 #define STD_HEADS   16          
 #define STD_SECTORS 63
 
+#if defined (__BEOS__)
+#  define fseeko _fseek
+#  define ftello _ftell
+#elif defined (HAVE_WINDOWS_H)
+#  define fseeko fseeko64
+#  define ftello ftello64
+#endif
+
 int IDE_enabled = 0, IDE_debug = 0;
 
 struct ide_device device;
@@ -71,7 +85,8 @@ struct ide_device device;
 static int count = 0;     // for debug stuff
 
 static inline void padstr(uint8_t *str, const char *src, int len) {
-    for(int i = 0; i < len; i++)
+    int i;
+    for(i = 0; i < len; i++)
         str[i^1] = *src ? *src++ : ' ';
 }
 
@@ -188,7 +203,11 @@ static int ide_init_drive(struct ide_device *s, char *filename) {
     s->filesize = ftello(s->file);
 
     if (IDE_debug)
+#ifdef __BEOS__
+        fprintf(stderr, "ide: filesize: %lld\n", (int64_t)s->filesize);
+#else
         fprintf(stderr, "ide: filesize: %"PRId64"\n", (int64_t)s->filesize);
+#endif
 
     if (!s->io_buffer) {
         s->io_buffer_size = SECTOR_SIZE * MAX_MULT_SECTORS;
@@ -291,7 +310,11 @@ static int64_t ide_get_sector(struct ide_device *s) {
                       (s->sector - 1);
 
         if (IDE_debug)
+#ifdef __BEOS__
+            fprintf(stderr, "get_sector: large: hcyl %02x  lcyl %02x  heads %02x  sectors %02x  select&f %1x  sector-1 %d  sector_num %lld\n", s->hcyl, s->lcyl, s->heads, s->sectors, s->select&0x0f, s->sector-1, sector_num);
+#else
             fprintf(stderr, "get_sector: large: hcyl %02x  lcyl %02x  heads %02x  sectors %02x  select&f %1x  sector-1 %d  sector_num %"PRId64"\n", s->hcyl, s->lcyl, s->heads, s->sectors, s->select&0x0f, s->sector-1, sector_num);
+#endif
 
     }
     return sector_num;
@@ -359,7 +382,11 @@ static void ide_sector_read(struct ide_device *s) {
         ide_transfer_stop(s);
     } else {
         if (IDE_debug)
+#ifdef __BEOS__
+            fprintf(stderr, "IDE: read sector=%lld\n", sector_num);
+#else
             fprintf(stderr, "IDE: read sector=%" PRId64 "\n", sector_num);
+#endif
 
         if (n > s->req_nb_sectors)
             n = s->req_nb_sectors;
@@ -390,7 +417,11 @@ static void ide_sector_write(struct ide_device *s) {
     sector_num = ide_get_sector(s);
 
     if (IDE_debug)
+#ifdef __BEOS__
+        fprintf(stderr, "IDE: write sector=%lld\n", sector_num);
+#else
         fprintf(stderr, "IDE: write sector=%" PRId64 "\n", sector_num);
+#endif
 
     n = s->nsector;
     if (n > s->req_nb_sectors)

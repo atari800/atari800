@@ -1,7 +1,7 @@
 #ifndef IDE_INTERNAL_H
 #define IDE_INTERNAL_H
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <unistd.h>
 
 struct ide_device;

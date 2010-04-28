@@ -2,7 +2,7 @@
 #define IDE_H_
 
 #include "atari.h"
-#include <stdint.h>
+#include <inttypes.h>
 
 extern int IDE_enabled;
 
