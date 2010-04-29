@@ -1,8 +1,12 @@
 #ifndef IDE_INTERNAL_H
 #define IDE_INTERNAL_H
 
-#include <inttypes.h>
-#include <unistd.h>
+#ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
 
 struct ide_device;
 

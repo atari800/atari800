@@ -1,5 +1,5 @@
 2010-04-28  James Wilkinson  <james@slor.net>
-* ide.[ch], ide_internal.h: build fixes for Windows/BeOS fseek/ftell and compiler complaints
+* ide.[ch], ide_internal.h: build fixes for Windows/BeOS/DOS fseek/ftell and compiler complaints
 
 
 2010-04-27  Ivo van Poorten  <ivop@euronet.nl>

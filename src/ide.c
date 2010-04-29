@@ -61,21 +61,28 @@
 #include "ide_internal.h"
 
 #include <string.h>
-#include <inttypes.h>
+#ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
 #include <stdlib.h>
 #include <errno.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
 
 #define SECTOR_SIZE 512
 #define STD_HEADS   16          
 #define STD_SECTORS 63
 
-#if defined (__BEOS__)
-#  define fseeko _fseek
-#  define ftello _ftell
-#elif defined (HAVE_WINDOWS_H)
+#if defined (HAVE_WINDOWS_H)
 #  define fseeko fseeko64
 #  define ftello ftello64
+#elif defined (__BEOS__)
+#  define fseeko _fseek
+#  define ftello _ftell
+#elif defined (__DJGPP__)
+#  define fseeko fseek
+#  define ftello ftell
 #endif
 
 int IDE_enabled = 0, IDE_debug = 0;
@@ -203,7 +210,7 @@ static int ide_init_drive(struct ide_device *s, char *filename) {
     s->filesize = ftello(s->file);
 
     if (IDE_debug)
-#ifdef __BEOS__
+#if defined (__BEOS__) || defined (__DJGPP__)
         fprintf(stderr, "ide: filesize: %lld\n", (int64_t)s->filesize);
 #else
         fprintf(stderr, "ide: filesize: %"PRId64"\n", (int64_t)s->filesize);
@@ -310,7 +317,7 @@ static int64_t ide_get_sector(struct ide_device *s) {
                       (s->sector - 1);
 
         if (IDE_debug)
-#ifdef __BEOS__
+#if defined (__BEOS__) || defined (__DJGPP__)
             fprintf(stderr, "get_sector: large: hcyl %02x  lcyl %02x  heads %02x  sectors %02x  select&f %1x  sector-1 %d  sector_num %lld\n", s->hcyl, s->lcyl, s->heads, s->sectors, s->select&0x0f, s->sector-1, sector_num);
 #else
             fprintf(stderr, "get_sector: large: hcyl %02x  lcyl %02x  heads %02x  sectors %02x  select&f %1x  sector-1 %d  sector_num %"PRId64"\n", s->hcyl, s->lcyl, s->heads, s->sectors, s->select&0x0f, s->sector-1, sector_num);
@@ -382,7 +389,7 @@ static void ide_sector_read(struct ide_device *s) {
         ide_transfer_stop(s);
     } else {
         if (IDE_debug)
-#ifdef __BEOS__
+#if defined (__BEOS__) || defined (__DJGPP__)
             fprintf(stderr, "IDE: read sector=%lld\n", sector_num);
 #else
             fprintf(stderr, "IDE: read sector=%" PRId64 "\n", sector_num);
@@ -417,7 +424,7 @@ static void ide_sector_write(struct ide_device *s) {
     sector_num = ide_get_sector(s);
 
     if (IDE_debug)
-#ifdef __BEOS__
+#if defined (__BEOS__) || defined (__DJGPP__)
         fprintf(stderr, "IDE: write sector=%lld\n", sector_num);
 #else
         fprintf(stderr, "IDE: write sector=%" PRId64 "\n", sector_num);
