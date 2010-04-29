@@ -65,7 +65,7 @@ SDL_win32_main.o: SDL_win32_main.c
 
 # A special rule for win32 to not compile with -ansi -pedantic
 win32/%.o: win32/%.c
-	$(CC) -c -o $@ $(DEFS) -I. $($(CFLAGS:-ansi= ):-pedantic= ) $<
+	$(CC) -c -o $@ $(DEFS) -I. $(patsubst -pedantic,,$(patsubst -ansi,,$(CFLAGS))) $<
 
 ide.o: ide.c ide.h ide_internal.h
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS:-ansi=-std=c99) $<

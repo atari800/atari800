@@ -1,3 +1,7 @@
+2010-04-29  James Wilkinson  <james@slor.net>
+* Makefile.in: switched to patsubst long form in win32 rule because compound short form did not work as expected with at least some compilers
+
+
 2010-04-28  James Wilkinson  <james@slor.net>
 * ide.[ch], ide_internal.h: build fixes for Windows/BeOS/DOS fseek/ftell and compiler complaints
 
