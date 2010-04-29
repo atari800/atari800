@@ -80,9 +80,11 @@
 #elif defined (__BEOS__)
 #  define fseeko _fseek
 #  define ftello _ftell
+#  define PRId64 "lld"
 #elif defined (__DJGPP__)
 #  define fseeko fseek
 #  define ftello ftell
+#  define PRId64 "lld"
 #endif
 
 int IDE_enabled = 0, IDE_debug = 0;
@@ -210,11 +212,7 @@ static int ide_init_drive(struct ide_device *s, char *filename) {
     s->filesize = ftello(s->file);
 
     if (IDE_debug)
-#if defined (__BEOS__) || defined (__DJGPP__)
-        fprintf(stderr, "ide: filesize: %lld\n", (int64_t)s->filesize);
-#else
         fprintf(stderr, "ide: filesize: %"PRId64"\n", (int64_t)s->filesize);
-#endif
 
     if (!s->io_buffer) {
         s->io_buffer_size = SECTOR_SIZE * MAX_MULT_SECTORS;
@@ -317,11 +315,7 @@ static int64_t ide_get_sector(struct ide_device *s) {
                       (s->sector - 1);
 
         if (IDE_debug)
-#if defined (__BEOS__) || defined (__DJGPP__)
-            fprintf(stderr, "get_sector: large: hcyl %02x  lcyl %02x  heads %02x  sectors %02x  select&f %1x  sector-1 %d  sector_num %lld\n", s->hcyl, s->lcyl, s->heads, s->sectors, s->select&0x0f, s->sector-1, sector_num);
-#else
             fprintf(stderr, "get_sector: large: hcyl %02x  lcyl %02x  heads %02x  sectors %02x  select&f %1x  sector-1 %d  sector_num %"PRId64"\n", s->hcyl, s->lcyl, s->heads, s->sectors, s->select&0x0f, s->sector-1, sector_num);
-#endif
 
     }
     return sector_num;
@@ -389,11 +383,7 @@ static void ide_sector_read(struct ide_device *s) {
         ide_transfer_stop(s);
     } else {
         if (IDE_debug)
-#if defined (__BEOS__) || defined (__DJGPP__)
-            fprintf(stderr, "IDE: read sector=%lld\n", sector_num);
-#else
             fprintf(stderr, "IDE: read sector=%" PRId64 "\n", sector_num);
-#endif
 
         if (n > s->req_nb_sectors)
             n = s->req_nb_sectors;
@@ -424,11 +414,7 @@ static void ide_sector_write(struct ide_device *s) {
     sector_num = ide_get_sector(s);
 
     if (IDE_debug)
-#if defined (__BEOS__) || defined (__DJGPP__)
-        fprintf(stderr, "IDE: write sector=%lld\n", sector_num);
-#else
         fprintf(stderr, "IDE: write sector=%" PRId64 "\n", sector_num);
-#endif
 
     n = s->nsector;
     if (n > s->req_nb_sectors)
