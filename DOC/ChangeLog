@@ -1,6 +1,8 @@
 2010-04-29  James Wilkinson  <james@slor.net>
 * Makefile.in: switched to patsubst long form in win32 rule because compound short form did not work as expected with at least some compilers
 
+* win32/atari_win32.h: corrected prototype to remove compiler warning
+
 
 2010-04-28  James Wilkinson  <james@slor.net>
 * ide.[ch], ide_internal.h: build fixes for Windows/BeOS/DOS fseek/ftell and compiler complaints

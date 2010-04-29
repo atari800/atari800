@@ -123,7 +123,7 @@ static const UBYTE joymask_arrow[] =
 void Atari800_Frame32(void);
 int getkeyvalue(char *name);
 void getkeyname(int value, char *name);
-void Win32_Init();
+void Win32_Init(void);
 
 #endif /* _ATARI_WIN32_H_ */
 
