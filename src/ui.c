@@ -67,6 +67,7 @@
 
 
 #ifdef DIRECTX
+#include "win32\main.h"
 #include "win32\joystick.h"
 #include "win32\screen_win32.h"
 
@@ -76,10 +77,14 @@ extern FRAMEPARAMS frameparams;
 extern DISPLAYMODE displaymode;
 extern FSRESOLUTION fsresolution;
 extern SCREENMODE screenmode;
-extern ASPECTMODE aspectmode;
-extern ASPECTRATIO aspectratio;
+extern ASPECTMODE scalingmethod;
+extern ASPECTRATIO aspectmode;
+extern CROP crop;
+extern OFFSET offset;
 extern BOOL usecustomfsresolution;
-extern BOOL showcursor;
+extern BOOL hidecursor;
+extern BOOL lockaspect;
+extern BOOL showmenu;
 extern int windowscale;
 extern int fullscreenWidth;
 extern int fullscreenHeight;
@@ -93,8 +98,13 @@ extern BOOL mapController2Buttons;
 
 /* local variables */
 static char desktopreslabel[30];
-static char medreslabel[30];
-static char lowreslabel[30];
+static char hcrop_label[4];
+static char vcrop_label[4];
+static char hshift_label[4];
+static char vshift_label[4];
+static char monitor_label[40];
+static char native_width_label[10];
+static char native_height_label[20];
 #endif
 
 #ifdef _WIN32_WCE
@@ -118,10 +128,15 @@ extern void do_hz_test(void);
 #endif
 #endif
 
+#if SUPPORTS_PLATFORM_PALETTEUPDATE
+COLOURS_VIDEO_PROFILE calibration_profile;
+#endif
+
 UI_tDriver *UI_driver = &UI_BASIC_driver;
 
 int UI_is_active = FALSE;
 int UI_alt_function = -1;
+int UI_current_function = -1;
 
 #ifdef CRASH_MENU
 int UI_crash_code = -1;
@@ -1338,6 +1353,15 @@ static void DisplaySettings(void)
 		UI_MENU_ACTION(3, "CTIA"),
 		UI_MENU_END
 	};
+
+#if SUPPORTS_PLATFORM_PALETTEUPDATE	
+	static const UI_tMenuItem calibration_profile_menu_array[] = {
+		UI_MENU_ACTION(0, "Standard [Atari Raster Standard]"),
+		UI_MENU_ACTION(1, "Classic  [Black-Level Optimized]"),
+		UI_MENU_ACTION(2, "Arcade   [Levels & Color Enhanced]"),
+		UI_MENU_END
+	};
+#endif
 	
 	static char refresh_status[16];
 	static UI_tMenuItem menu_array[] = {
@@ -1360,25 +1384,26 @@ static void DisplaySettings(void)
 #endif
 #endif
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
-		UI_MENU_ACTION_PREFIX(12, "Brightness: ", colour_controls[0].string),
-		UI_MENU_ACTION_PREFIX(13, "Contrast: ", colour_controls[1].string),
-		UI_MENU_ACTION_PREFIX(14, "Saturation: ", colour_controls[2].string),
-		UI_MENU_ACTION_PREFIX(15, "Hue: ", colour_controls[3].string),
-		UI_MENU_ACTION_PREFIX(16, "Gamma: ", colour_controls[4].string),
-		UI_MENU_ACTION_PREFIX(17, "GTIA delay: ", colour_controls[5].string),
+	    UI_MENU_SUBMENU_SUFFIX(12, "Video Calibration Profile: ", NULL),
+		UI_MENU_ACTION_PREFIX(13, " Brightness: ", colour_controls[0].string),
+		UI_MENU_ACTION_PREFIX(14, " Contrast: ", colour_controls[1].string),
+		UI_MENU_ACTION_PREFIX(15, " Saturation: ", colour_controls[2].string),
+		UI_MENU_ACTION_PREFIX(16, " Hue: ", colour_controls[3].string),
+		UI_MENU_ACTION_PREFIX(17, " Gamma: ", colour_controls[4].string),
+		UI_MENU_ACTION_PREFIX(18, " GTIA delay: ", colour_controls[5].string),
 #if NTSC_FILTER
-		UI_MENU_SUBMENU(18, "NTSC filter settings"),
+		UI_MENU_SUBMENU(19, "NTSC filter settings"),
 #endif
-		UI_MENU_ACTION(19, "Restore default colors"),
-		UI_MENU_FILESEL_PREFIX_TIP(20, "External palette: ", NULL, NULL),
-		UI_MENU_CHECK(21, "Also adjust external palette: "),
-		UI_MENU_FILESEL(22, "Save current palette"),
+		UI_MENU_ACTION(20, "Restore default colors"),
+		UI_MENU_FILESEL_PREFIX_TIP(21, "External palette: ", NULL, NULL),
+		UI_MENU_CHECK(22, "Also adjust external palette: "),
+		UI_MENU_FILESEL(23, "Save current palette"),
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
 		UI_MENU_END
 	};
 
 	int option = 0;
-	int option2;
+	int option2, i;
 	int seltype;
 
 	/* Current artifacting quality, computed from
@@ -1394,9 +1419,9 @@ static void DisplaySettings(void)
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 		/* Show NTSC filter option only if necessary. */
 		if (PLATFORM_filter == PLATFORM_FILTER_NTSC)
-			FindMenuItem(menu_array, 18)->flags = UI_ITEM_SUBMENU;
+			FindMenuItem(menu_array, 19)->flags = UI_ITEM_SUBMENU;
 		else
-			FindMenuItem(menu_array, 18)->flags = UI_ITEM_HIDDEN;
+			FindMenuItem(menu_array, 19)->flags = UI_ITEM_HIDDEN;
 #endif
 
 		/* Computing current artifacting quality... */
@@ -1418,17 +1443,27 @@ static void DisplaySettings(void)
 		}
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
+		calibration_profile = Colours_Get_Calibration_Profile();
+		if (calibration_profile == COLOURS_CUSTOM)
+			FindMenuItem(menu_array, 12)->suffix = "Custom"; 
+		else if (calibration_profile == COLOURS_STANDARD)
+			FindMenuItem(menu_array, 12)->suffix = "Standard";
+		else if (calibration_profile == COLOURS_CLASSIC)
+			FindMenuItem(menu_array, 12)->suffix = "Classic";
+		else if (calibration_profile == COLOURS_ARCADE)
+			FindMenuItem(menu_array, 12)->suffix = "Arcade";
+		
 		/* Set the palette file description */
 		if (Colours_external->loaded) {
-			FindMenuItem(menu_array, 20)->item = Colours_external->filename;
-			FindMenuItem(menu_array, 20)->suffix = "Return:load Backspace:remove";
-			FindMenuItem(menu_array, 21)->flags = UI_ITEM_CHECK;
-			SetItemChecked(menu_array, 21, Colours_external->adjust);
+			FindMenuItem(menu_array, 21)->item = Colours_external->filename;
+			FindMenuItem(menu_array, 21)->suffix = "Return:load Backspace:remove";
+			FindMenuItem(menu_array, 22)->flags = UI_ITEM_CHECK;
+			SetItemChecked(menu_array, 22, Colours_external->adjust);
 		} else {
-			FindMenuItem(menu_array, 20)->item = "None";
-			FindMenuItem(menu_array, 20)->suffix = "Return:load";
-			FindMenuItem(menu_array, 21)->flags = UI_ITEM_ACTION;
-			FindMenuItem(menu_array, 21)->suffix = "N/A";
+			FindMenuItem(menu_array, 21)->item = "None";
+			FindMenuItem(menu_array, 21)->suffix = "Return:load";
+			FindMenuItem(menu_array, 22)->flags = UI_ITEM_ACTION;
+			FindMenuItem(menu_array, 22)->suffix = "N/A";
 		}
 #endif
 
@@ -1539,27 +1574,37 @@ static void DisplaySettings(void)
 #endif /* DREAMCAST */
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 		case 12:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, calibration_profile, calibration_profile_menu_array, NULL);
+			if (option2 >= 0) {
+				Colours_Set_Calibration_Profile(option2);
+				Colours_Update();
+				for (i=0; i<6; i++) {
+					UpdateColourControl(i);
+				}					
+			}	
+			break;
 		case 13:
 		case 14:
 		case 15:
 		case 16:
 		case 17:
+		case 18:
 			{
 				char buffer[10]; /* same size as in colour_controls[0].string */
-				memcpy(buffer, colour_controls[option - 12].string, sizeof(buffer));
+				memcpy(buffer, colour_controls[option - 13].string, sizeof(buffer));
 				if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
-					*(colour_controls[option - 12].setting) = atof(buffer);
-					UpdateColourControl(option - 12);
+					*(colour_controls[option - 13].setting) = atof(buffer);
+					UpdateColourControl(option - 13);
 					Colours_Update();
 				}
 			}
 			break;
 #if NTSC_FILTER
-		case 18:
+		case 19:
 			NTSCFilterSettings();
 			break;
 #endif
-		case 19:
+		case 20:
 			Colours_RestoreDefaults();
 #if NTSC_FILTER
 			if (PLATFORM_filter == PLATFORM_FILTER_NTSC)
@@ -1568,7 +1613,7 @@ static void DisplaySettings(void)
 			UpdateColourControls(menu_array);
 			Colours_Update();
 			break;
-		case 20:
+		case 21:
 			switch (seltype) {
 			case UI_USER_SELECT:
 				if (UI_driver->fGetLoadFilename(Colours_external->filename, UI_saved_files_dir, UI_n_saved_files_dir)) {
@@ -1584,13 +1629,13 @@ static void DisplaySettings(void)
 				break;
 			}
 			break;
-		case 21:
+		case 22:
 			if (Colours_external->loaded) {
 				Colours_external->adjust = !Colours_external->adjust;
 				Colours_Update();
 			}
 			break;
-		case 22:
+		case 23:
 			SavePalette();
 			break;
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
@@ -1606,7 +1651,7 @@ static void WindowsOptions(void)
 {
 	static const UI_tMenuItem screen_mode_menu_array[] = {
 		UI_MENU_ACTION(0, "Fullscreen"),
-		UI_MENU_ACTION(1, "Windowed"),
+		UI_MENU_ACTION(1, "Window"),
 		UI_MENU_END
 	};
 	
@@ -1635,22 +1680,23 @@ static void WindowsOptions(void)
 	};
 	
 	static const UI_tMenuItem fsresolution_menu_array[] = {
-		UI_MENU_ACTION(0, "VGA     [640x480]   (2x)"),
-		UI_MENU_ACTION(1, "SXGA    [1280x960]  (4x)"),
-		UI_MENU_ACTION(2, "UXGA    [1600x1200] (5x)"),
-		UI_MENU_ACTION(3, desktopreslabel),
+		UI_MENU_ACTION(0, desktopreslabel),
+		UI_MENU_ACTION(1, "VGA     [640x480]   (2x)"),
+		UI_MENU_ACTION(2, "SXGA    [1280x960]  (4x)"),
+		UI_MENU_ACTION(3, "UXGA    [1600x1200] (5x)"),
+		UI_MENU_END
+	};
+	
+	static const UI_tMenuItem scaling_method_menu_array[] = {
+		UI_MENU_ACTION(0, "Off"),
+		UI_MENU_ACTION(1, "Normal"),
+		UI_MENU_ACTION(2, "Simple"),
+		UI_MENU_ACTION(3, "Adaptive"),
 		UI_MENU_END
 	};
 	
 	static const UI_tMenuItem aspect_mode_menu_array[] = {
-		UI_MENU_ACTION(0, "Off"),
-		UI_MENU_ACTION(1, "Normal"),
-		UI_MENU_ACTION(2, "Adaptive"),
-		UI_MENU_END
-	};
-	
-	static const UI_tMenuItem aspect_ratio_menu_array[] = {
-		UI_MENU_ACTION(0, "Hybrid     [7:5/4:3])"),
+		UI_MENU_ACTION(0, "Auto       [7:5/4:3]"),
 		UI_MENU_ACTION(1, "Wide       [7:5]"),
 		UI_MENU_ACTION(2, "Cropped    [4:3]"),
 		UI_MENU_ACTION(3, "Compressed [4:3]"),
@@ -1671,18 +1717,24 @@ static void WindowsOptions(void)
 		UI_MENU_SUBMENU_SUFFIX(1, "Screen mode: ", NULL),
 		UI_MENU_SUBMENU_SUFFIX(2, "Window scale: ", NULL),
 		UI_MENU_SUBMENU_SUFFIX(3, "Fullscreen resolution:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(4, "Aspect control mode:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(5, "Aspect ratio:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(6, "Scanline mode:", NULL),
-		UI_MENU_CHECK(7, "Show cursor in fullscreen:"),
+		UI_MENU_SUBMENU_SUFFIX(4, "Scaling method:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(5, "Aspect mode:", NULL),		
+		UI_MENU_ACTION_PREFIX(6, "Horizontal crop: ", native_width_label),		
+		UI_MENU_ACTION_PREFIX(7, "Vertical crop:   ", native_height_label),
+		UI_MENU_CHECK(8, "Lock aspect mode when cropping:"),
+		UI_MENU_SUBMENU_SUFFIX(9, "Horizontal offset: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(10, "Vertical offset: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(11, "Scanline mode:", NULL),
+		UI_MENU_CHECK(12, "Hide cursor in fullscreen UI:"),
+		UI_MENU_CHECK(13, "Show menu in window mode:"),
 		UI_MENU_END
 	};
 
 	int option = 0;
 	int option2;
 	int seltype;
-	int prev_option2;
-	char winscale[5];
+	int prev_value;
+	char current_scale[5], trim_value[4], shift_value[4];
 	char displaymodename[20];
 	int i;
 
@@ -1692,14 +1744,15 @@ static void WindowsOptions(void)
 				FindMenuItem(menu_array, i)->suffix = "N/A";
 			}
 		}
-		else  {
+		else {
+			/*SetDisplayMode(GetActiveDisplayMode());*/
 			GetDisplayModeName(displaymodename);
 			FindMenuItem(menu_array, 0)->suffix = displaymodename; 
 			FindMenuItem(menu_array, 1)->suffix = screen_mode_menu_array[screenmode].item;
-			memcpy(winscale, window_scale_menu_array[(int)((windowscale/100.0f-1)*2)].item, 5);
-			winscale[4] = '\0';
+			memcpy(current_scale, window_scale_menu_array[(int)((windowscale/100.0f-1)*2)].item, 5);
+			current_scale[4] = '\0'; 
 			
-			FindMenuItem(menu_array, 2)->suffix = winscale;
+			FindMenuItem(menu_array, 2)->suffix = current_scale;
 			
 			if (fsresolution == VGA)
 				FindMenuItem(menu_array, 3)->suffix = "VGA";
@@ -1710,26 +1763,39 @@ static void WindowsOptions(void)
 			else	
 				FindMenuItem(menu_array, 3)->suffix = "Desktop";
 			
-			FindMenuItem(menu_array, 4)->suffix = aspect_mode_menu_array[aspectmode].item;
+			FindMenuItem(menu_array, 4)->suffix = scaling_method_menu_array[scalingmethod].item;
 			
-			if (aspectratio == HYBRID)
-				FindMenuItem(menu_array, 5)->suffix = "Hybrid";
-			else if (aspectratio == WIDE)
+			if (aspectmode == AUTO)
+				FindMenuItem(menu_array, 5)->suffix = "Auto";
+			else if (aspectmode == WIDE)
 				FindMenuItem(menu_array, 5)->suffix = "Wide";
-			else if (aspectratio == CROPPED)
+			else if (aspectmode == CROPPED)
 				FindMenuItem(menu_array, 5)->suffix = "Cropped";
-			else if (aspectratio == COMPRESSED)
+			else if (aspectmode == COMPRESSED)
 				FindMenuItem(menu_array, 5)->suffix = "Compressed";
 
+			sprintf(hcrop_label, "%d", crop.horizontal);
+			sprintf(vcrop_label, "%d", crop.vertical);
+		    FindMenuItem(menu_array, 6)->suffix = hcrop_label;
+			FindMenuItem(menu_array, 7)->suffix = vcrop_label; 
+			
+			SetItemChecked(menu_array, 8, lockaspect);
+			sprintf(hshift_label, "%d", offset.horizontal);
+			sprintf(vshift_label, "%d", offset.vertical);
+			FindMenuItem(menu_array, 9)->suffix = hshift_label;
+			FindMenuItem(menu_array, 10)->suffix = vshift_label;
+			
 			if (frameparams.scanlinemode == NONE)
-				FindMenuItem(menu_array, 6)->suffix = "Off";
+				FindMenuItem(menu_array, 11)->suffix = "Off";
 			else if (frameparams.scanlinemode == LOW)
-				FindMenuItem(menu_array, 6)->suffix = "Low";
+				FindMenuItem(menu_array, 11)->suffix = "Low";
 			else if (frameparams.scanlinemode == MEDIUM)
-				FindMenuItem(menu_array, 6)->suffix = "Medium";
+				FindMenuItem(menu_array, 11)->suffix = "Medium";
 			else if (frameparams.scanlinemode == HIGH)
-				FindMenuItem(menu_array, 6)->suffix = "High";
-			SetItemChecked(menu_array, 7, showcursor);
+				FindMenuItem(menu_array, 11)->suffix = "High";
+				
+			SetItemChecked(menu_array, 12, hidecursor);
+			SetItemChecked(menu_array, 13, showmenu);
 		}
 
 		option = UI_driver->fSelect("Windows Display Options", 0, option, menu_array, &seltype);
@@ -1737,34 +1803,34 @@ static void WindowsOptions(void)
 
 		case 0:
 			if (rendermode != DIRECTDRAW) {
-				prev_option2 = displaymode;
+				prev_value = displaymode;
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, displaymode, display_mode_menu_array, NULL);
 				if (option2 >= 0) {
 					displaymode = option2;					
-					if (prev_option2 != option2)
+					if (prev_value != option2)
 						UI_driver->fMessage("Save the config and restart emulator", 1);
 				}
 			}
 			break;
 		case 1:
 			if (rendermode != DIRECTDRAW) {
-				prev_option2 = screenmode;
+				prev_value = screenmode;
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, screenmode, screen_mode_menu_array, NULL);
 				if (option2 >= 0)
-					if (prev_option2 != option2)
+					if (prev_value != option2)
 						togglewindowstate();
 			}
 			break;
 		case 2:
 			if (rendermode != DIRECTDRAW) {
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, (int)((windowscale/100.0f-1)*2), window_scale_menu_array, NULL);
-				if (option2 >= 0) {
+				if (option2 >= 0) {					
 					changewindowsize(SET, (int)((option2/2.0f+1)*100));
-					prev_option2 = windowscale;
+					prev_value = windowscale;
 					windowscale = (int)((option2/2.0f+1)*100);
-					if (windowscale != prev_option2) {
+					if (windowscale != prev_value) {
 						if (screenmode == WINDOW)
-							UI_driver->fMessage("Cannot display at this resolution", 1);
+							UI_driver->fMessage("Cannot display at this size", 1);
 						else
 							UI_driver->fMessage("Cannot preview in fullscreen mode", 1);
 					}
@@ -1776,7 +1842,7 @@ static void WindowsOptions(void)
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, fsresolution, fsresolution_menu_array, NULL);
 				if (option2 >= 0)
 					fsresolution = option2;
-				if (fsresolution == DESKTOPRES)
+				if (fsresolution == DESKTOP)
 					usecustomfsresolution = FALSE;
 				else if (fsresolution == UXGA) {
 					usecustomfsresolution = TRUE;
@@ -1797,39 +1863,123 @@ static void WindowsOptions(void)
 			break;
 		case 4:
 			if (rendermode != DIRECTDRAW) {
-				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, aspectmode, aspect_mode_menu_array, NULL);
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, scalingmethod, scaling_method_menu_array, NULL);
 				if (option2 >= 0) {
-					aspectmode = option2;
+					scalingmethod = option2;
+					changewindowsize(RESET, 0);
 					refreshframe();
 				}
 			}
 			break;
 		case 5:
 			if (rendermode != DIRECTDRAW) {
-				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, aspectratio, aspect_ratio_menu_array, NULL);
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, aspectmode, aspect_mode_menu_array, NULL);
 				if (option2 >= 0) {
-					aspectratio = option2;
+					aspectmode = option2;					
 					changewindowsize(RESET, 0);
-					refreshframe();					
+					refreshframe();
+					PLATFORM_DisplayScreen(); /* force rebuild of the clipping frame */
+					sprintf(native_height_label, "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
+					sprintf(native_width_label, "[Width:  %d]", frameparams.view.right - frameparams.view.left);
 				}
 			}
 			break;
 		case 6:
 			if (rendermode != DIRECTDRAW)  {
-				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, frameparams.scanlinemode - 1, scanline_mode_menu_array, NULL);
-				if (option2 >= 0) {
-					frameparams.scanlinemode = option2 + 1;
-					refreshframe();
+				sprintf(trim_value, "%d", crop.horizontal);
+				if (UI_driver->fEditString("Enter value", trim_value, sizeof(trim_value))) {
+					if (atoi(trim_value) > 150) 
+						UI_driver->fMessage("Maximum X-Trim value is 150", 1);
+					else if (atoi(trim_value) < -24) 
+						UI_driver->fMessage("Minimum X-Trim value is -24", 1);
+					else {
+						crop.horizontal = atoi(trim_value);	
+						changewindowsize(RESET, 0);
+						refreshframe();
+						PLATFORM_DisplayScreen(); /* force rebuild of the clipping frame */
+						sprintf(native_width_label, "[Width:  %d]", frameparams.view.right - frameparams.view.left);
+					}
 				}
 			}
 			break;
 		case 7:
+			if (rendermode != DIRECTDRAW)  {
+				sprintf(trim_value, "%d", crop.vertical);
+				if (UI_driver->fEditString("Enter value", trim_value, sizeof(trim_value))) {
+					if (atoi(trim_value) < 0) 
+						UI_driver->fMessage("Minimum Y-Trim value is 0", 1);
+					else if (atoi(trim_value) > 108)
+						UI_driver->fMessage("Maximum Y-Trim value is 108", 1);
+					else {
+						crop.vertical = atoi(trim_value);
+						changewindowsize(RESET, 0);
+						refreshframe();
+						PLATFORM_DisplayScreen(); /* force rebuild of the clipping frame */
+						sprintf(native_height_label, "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
+					}
+				}
+			}
+			break;
+		case 8:
 			if (rendermode != DIRECTDRAW) {
-				showcursor = !showcursor;
+				lockaspect = !lockaspect;
+				changewindowsize(RESET, 0);
+				refreshframe();
+			}
+			break;
+		case 9:
+			if (rendermode != DIRECTDRAW)  {
+				sprintf(shift_value, "%d", offset.horizontal);
+				if (UI_driver->fEditString("Enter value", shift_value, sizeof(shift_value))) {
+					if (atoi(shift_value) > 24) 
+						UI_driver->fMessage("Maximum horizontal offset is 24", 1);
+					else if (atoi(shift_value) < -24) 
+						UI_driver->fMessage("Minimum horizontal offset is -24", 1);
+					else {
+						offset.horizontal = atoi(shift_value);						
+						changewindowsize(RESET, 0);
+						refreshframe();
+					}
+				}
+			}
+			break;
+		case 10:
+			if (rendermode != DIRECTDRAW)  {
+				sprintf(shift_value, "%d", offset.vertical);
+				if (UI_driver->fEditString("Enter value", shift_value, sizeof(shift_value))) {
+					if (atoi(shift_value) > 50) 
+						UI_driver->fMessage("Maximum vertical offset is 50", 1);
+					else if (atoi(shift_value) < -50) 
+						UI_driver->fMessage("Minimum vertical offset is 50", 1);
+					else {
+						offset.vertical = atoi(shift_value);					
+						changewindowsize(RESET, 0);
+						refreshframe();
+					}
+				}
+			}
+			break;
+		case 11:
+			if (rendermode != DIRECTDRAW)  {
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, frameparams.scanlinemode, scanline_mode_menu_array, NULL);
+				if (option2 >= 0) {
+					frameparams.scanlinemode = option2;
+					refreshframe();
+				}
+			}
+			break;
+		case 12:
+			if (rendermode != DIRECTDRAW) {
+				hidecursor = !hidecursor;
 				setcursor();
 			}
 			break;
-
+		case 13:
+			if (rendermode != DIRECTDRAW) {
+				togglemenustate();
+			}
+			break;
+			
 		default:
 			return;
 		}
@@ -2268,9 +2418,52 @@ static void AboutEmulator(void)
 		"\n");
 }
 
+#ifdef DIRECTX
+static void FunctionKeyHelp(void)
+{
+	UI_driver->fInfoScreen("Function Key List",
+		Atari800_TITLE "\0"
+		"\0"
+		"Function Key Assignments   \0"
+		"------------------------   \0"
+		"\0"
+		"F1  - User Interface       \0"
+		"F2  - Option key           \0"
+		"F3  - Select key           \0"
+		"F4  - Start key            \0"
+		"F5  - Reset key            \0"
+		"F6  - Help key (XL/XE only)\0"
+		"F7  - Break key            \0"
+		"F8  - Enter monitor        \0"
+		"      (-console required)  \0"
+		"F9  - Exit emulator        \0"
+		"F10 - Save screenshot      \0"
+		"\n");
+}
+
+static void HotKeyHelp(void)
+{
+	UI_driver->fInfoScreen("Hot Key List",
+		Atari800_TITLE "\0"
+		"\0"
+		"Hot Key Assignments \0"
+		"------------------- \0"
+		"\0"
+		"Alt+Enter - Toggle Fullscreen/Window\0"
+		"Alt+PgUp  - Increase window size    \0"
+		"Alt+PgDn  - Decrease window size    \0"
+		"Alt+I     - Next scanline mode      \0"
+		"Alt+M     - Hide/Show main menu     \0"
+		"Alt+T     - 3D Tilt                 \0"
+		"            (Direct3D modes only)   \0"
+		"Alt+Z     - 3D Screensaver          \0"
+		"            (Direct3D modes only)   \0"
+		"\n");
+}
+#endif
+
 void UI_Run(void)
 {
-#define MENU_CONTROLLER 19
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_FILESEL_ACCEL(UI_MENU_RUN, "Run Atari Program", "Alt+R"),
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_DISK, "Disk Management", "Alt+D"),
@@ -2290,7 +2483,7 @@ void UI_Run(void)
 		UI_MENU_SUBMENU(UI_MENU_WINDOWS, "Windows Display Options"),
 #endif
 #ifndef USE_CURSES
-		UI_MENU_SUBMENU(MENU_CONTROLLER, "Controller Configuration"),
+		UI_MENU_SUBMENU(UI_MENU_CONTROLLER, "Controller Configuration"),
 #endif
 		UI_MENU_SUBMENU(UI_MENU_SETTINGS, "Emulator Configuration"),
 		UI_MENU_FILESEL_ACCEL(UI_MENU_SAVESTATE, "Save State", "Alt+S"),
@@ -2312,6 +2505,8 @@ void UI_Run(void)
 		UI_MENU_ACTION(UI_MENU_MONITOR, "About Pocket Atari"),
 #elif defined(DREAMCAST)
 		UI_MENU_ACTION(UI_MENU_MONITOR, "About AtariDC"),
+#elif defined(DIRECTX)
+		UI_MENU_ACTION_ACCEL(UI_MENU_MONITOR, monitor_label, "F8"),
 #else
 		UI_MENU_ACTION_ACCEL(UI_MENU_MONITOR, "Enter Monitor", "F8"),
 #endif
@@ -2329,10 +2524,23 @@ void UI_Run(void)
 	}
 #endif
 
-#ifdef DIRECTX
-	sprintf(desktopreslabel, "Desktop (%dx%d)", origScreenWidth, origScreenHeight);
-#endif
 	UI_is_active = TRUE;
+
+#ifdef DIRECTX
+	setcursor();
+	sprintf(desktopreslabel, "Desktop [%dx%d]", origScreenWidth, origScreenHeight);
+	sprintf(hcrop_label, "%d", crop.horizontal);
+	sprintf(vcrop_label, "%d", crop.vertical);
+	sprintf(hshift_label, "%d", offset.horizontal);
+	sprintf(vshift_label, "%d", offset.vertical);
+	sprintf(native_width_label, "[Width:  %d]", frameparams.view.right - frameparams.view.left);
+	sprintf(native_height_label, "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
+	if (useconsole)
+		strcpy(monitor_label, "Enter Monitor");
+	else
+		strcpy(monitor_label, "Enter Monitor (need -console)"); 
+#endif
+	
 
 	/* Sound_Active(FALSE); */
 	UI_driver->fInit();
@@ -2345,7 +2553,9 @@ void UI_Run(void)
 #endif
 
 	while (!done) {
-
+		
+		if (UI_alt_function != -1)
+			UI_current_function = UI_alt_function;		
 		if (UI_alt_function < 0)
 			option = UI_driver->fSelect(Atari800_TITLE, 0, option, menu_array, NULL);
 		if (UI_alt_function >= 0) {
@@ -2417,9 +2627,12 @@ void UI_Run(void)
 		case UI_MENU_WINDOWS:
 			WindowsOptions();
 			break;
+		case UI_MENU_SAVE_CONFIG:
+			CFG_WriteConfig();
+			return;
 #endif
 #ifndef USE_CURSES
-		case MENU_CONTROLLER:
+		case UI_MENU_CONTROLLER:
 			ControllerConfiguration();
 			break;
 #endif
@@ -2437,6 +2650,14 @@ void UI_Run(void)
 		case UI_MENU_ABOUT:
 			AboutEmulator();
 			break;
+#ifdef DIRECTX
+		case UI_MENU_FUNCT_KEY_HELP:
+			FunctionKeyHelp();
+			break;
+		case UI_MENU_HOT_KEY_HELP:
+			HotKeyHelp();
+			break;
+#endif
 		case UI_MENU_MONITOR:
 #if defined(_WIN32_WCE)
 			AboutPocketAtari();
@@ -2444,6 +2665,16 @@ void UI_Run(void)
 #elif defined(DREAMCAST)
 			AboutAtariDC();
 			break;
+#elif defined(DIRECTX)
+			if (useconsole) {
+				if (PLATFORM_Exit(TRUE)) 
+					done = TRUE;
+					break;
+			}
+			else {
+				UI_driver->fMessage("Console required for monitor", 1);
+				break;
+			}				
 #else
 			if (PLATFORM_Exit(TRUE)) {
 				done = TRUE;
@@ -2456,12 +2687,18 @@ void UI_Run(void)
 			exit(0);
 		}
 	}
+
 	/* Sound_Active(TRUE); */
 	UI_is_active = FALSE;
+#ifdef DIRECTX
+	setcursor();
+#endif
+	
 	/* flush keypresses */
 	while (PLATFORM_Keyboard() != AKEY_NONE)
 		Atari800_Sync();
-	UI_alt_function = -1;
+
+	UI_alt_function = UI_current_function = -1;
 	/* restore 80 column screen */
 #if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
 	if (saved_show_80 != PLATFORM_show_80) {
@@ -2481,8 +2718,11 @@ int CrashMenu(void)
 		UI_MENU_ACTION_ACCEL(0, "Reset (Warm Start)", "F5"),
 		UI_MENU_ACTION_ACCEL(1, "Reboot (Cold Start)", "Shift+F5"),
 		UI_MENU_ACTION_ACCEL(2, "Menu", "F1"),
-#if !defined(_WIN32_WCE) && !defined(DREAMCAST)
+#if !defined(_WIN32_WCE) && !defined(DREAMCAST) && !defined(DIRECTX)
 		UI_MENU_ACTION_ACCEL(3, "Enter Monitor", "F8"),
+#endif
+#ifdef DIRECTX
+		UI_MENU_ACTION_ACCEL(3, monitor_label, "F8"),
 #endif
 		UI_MENU_ACTION_ACCEL(4, "Continue After CIM", "Esc"),
 		UI_MENU_ACTION_ACCEL(5, "Exit Emulator", "F9"),

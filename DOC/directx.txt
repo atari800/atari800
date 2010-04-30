@@ -1,0 +1,225 @@
+This file documents new options that I have personally
+added to the Windows DX port of the emulator since 2.1.
+The major goal of these enhancements is to allow the
+emulator to perform better on modern display and game
+controller technology, including widescreen monitors,
+TVs, gamepads, and HTPC/kiosk setups. A secondary 
+goal is to make usability improvements to the emulator
+shell including main menu and internal mouse support. 
+
+
+Windows DX: Windows Display Options
+===================================
+Note: Defaults are shown in [brackets].
+Note: All settings (except -console) can be saved in the UI.
+
+Display Rendering
+-----------------
+[GDI]                 Software pixel scaling. Fast. 
+GDI+                  Software pixel scaling. Moderate.
+GDI+/Bilinear         Software bilinear scaling. Slow.
+GDI+/Bilinear (HQ)    Software HQ bilinear scaling. Very slow.
+GDI+/Bicubic (HQ)     Software HQ bicubic scaling. Slow
+Direct3D              Hardware pixel scaling. Fast.
+Direct3D/Bilinear     Hardware bilinear scaling. Fast. 
+
+Note: Emulator must be restarted to activate a rendering 
+      mode change.
+
+Hint: For softer pixels and resolution-independent aliasing 
+      control, choose Direct3D/Bilinear mode.
+
+Fullscreen Resolution
+---------------------
+[Desktop]             Use the current desktop resolution. 
+VGA                   640x480. 2x native pixel resolution.
+SXGA                  1280x960. 4x native pixel resolution.
+UXGA                  1600x1200. 5x native pixel resolution.
+
+Hint: Use -fsres command line to use a custom resolution that
+      does not appear in this list.
+
+Scaling Method
+--------------
+Off                   Stretch unconstrained to window boundary
+[Normal]              Scale dynamically while enforcing aspect. 
+Simple                Scale to exact multiple of native screen. 
+Adaptive              Compensate for widescreen stretching.
+
+Note: Adaptive mode is "experimental" and not fully compatible
+      with all combinations of settings. 
+
+Aspect Mode
+-----------
+[Auto]                7:5 or 4:3 crop depending on screen metrics.
+Wide                  Display 336x240 pixel matrix in 7:5 aspect. 
+Cropped               Display 320x240 pixel matrix in 4:3 aspect. 
+Compressed            Display 336x240 pixel matrix in 4:3 aspect.
+
+Note: Scaling method must be set to "Normal" or "Simple" for these
+      settings to be effective.
+
+
+Custom Crop Options
+-------------------
+Horizontal crop       Symmetrically crop width by # of pixels. [0]
+Vertical crop         Symmetrically crop height by # of pixels. [0]
+Lock aspect mode      Force current aspect mode ratio on crop.[No]
+
+Hint: Cropping can be used to effectively zoom or stretch. To zoom
+      without distortion while using a 4:3 resolution in fullscreen, 
+      set horizontal and vertical crop to equal values. To zoom 
+      when using a widescreen display and resolution in fullscreen, 
+      you typically only need to set a vertical crop value. 
+
+Note: Be aware that using vertical crop will clip the notification
+      area of the screen sometimes used to display frame rates or
+      disk activity.
+
+
+Other Settings
+--------------
+Screen mode           Switch between Fullscreen and [Windowed] modes.
+Window scale          Set size of window as percent of native. [200]
+Scanline mode         Three resolutions of simulated scanlines. [Off]
+Horizontal offset     Shift screen horizontally <-24..24>. [0]
+Vertical offset       Shift screen vertically <-50..50>. [0]
+Always hide cursor    Hide mouse cursor in fullscreen UI. [No]
+Show menu             Show or hide the Windows main menu. [Yes]
+
+
+Windows DX: Display Settings
+============================
+
+Video Calibration Profile
+-------------------------
+[Standard]            Rec. 601 raster standard. Digital 16 blacks.
+Classic               Black-level optimized. Digital 0 blacks.
+Arcade                Color and Black-level Enhanced. Digital 0 blacks.
+
+Hint: Changing video settings (i.e. brightness, contrast, etc.) from 
+      one of the base profile settings will cause the profile name  
+      to read "Custom".
+
+
+Windows DX: Controller Configuration
+====================================
+
+Keyboard Joystick Modes
+-----------------------
+Keypad                Keypad is joystick. 0 key is trigger.
+Keypad+               Keypad is joystick. 5=down. 0, left ctrl=trigger. 
+[Arrows]              Use cursor block as joystick. Left ctrl=trigger.
+
+Alternate Joystick Modes
+------------------------
+[Normal]              Normal joystick functions.
+Dual                  Double-map player 2 stick to Z/Z-Rotation axis. 
+Shared                Double-map player 2 stick to player 1 stick. 
+
+Hint: Use "Dual" on two-stick gamepads for two joystick games like
+      Robotron and Space Dungeon. Use "Shared" to share a single
+      joystick between two players on games that normally require
+      two joysticks.
+
+Custom Button Options
+---------------------
+Use "Enable custom buttons" to turn on custom joystickbutton feature.
+Use "Assign custom buttons" to assign keystrokes to joystick buttons.
+
+The following buttons may be mapped.
+
+  * All numbers.
+  * All alphabet keys in upper & lower case.
+  * Atari Option, Select, and Start (press F2, F3, or F4).
+  * Space
+  * Return
+
+
+Windows DX Menu Operation
+=========================
+Configuration options may be accessed through either the
+main menu or by pressing F1.  The main menu is only available
+when the emulator is run in a window.
+
+Mouse Operations
+----------------
+Inside the configuration menus, mouse ops are as follows.
+
+Click:         Selects item
+Double click:  Activates item (Enter)
+Right click:   Back (Esc)
+Wheel up:      Up
+Wheel down:    Down
+Wheel left:    Left
+Wheel right:   Right
+
+
+Windows DX keyboard hot-keys
+============================
+Alt+Enter             Toggles between windowed and fullscreen modes
+Alt+PageUp            Increases the size of the window
+Alt+PageDown          Decreases the size of the window  
+Alt+I                 Advances to the next scanline (interleave) mode 
+Alt+M                 Toggles Windows main menu on or off.
+Alt+T                 3D "tilt screen". (Direct3D modes only)
+Alt+Z                 3D "screensaver". (Direct3D modes only)
+
+Hint: Use of Alt-T & Alt-Z may require running the "DirectX 9 Updater"
+from microsoft.com.  Google or Bing the quoted text to find it.
+
+
+Windows DX: Command Line Options
+================================
+-help                 Show all help options (including these)
+
+-console              Send debug output to a console instead of 
+                      atari800.txt. Required for debug monitor. 
+
+-keyjoy <mode>        Keyboard joystick mode. 
+                        <keypad>, <keypadplus>, <arrow>
+-altjoy <mode>        Alternate joystick mode. 
+                        <normal>, <dual>, <shared>
+-mapjoy1buttons       Use custom button mappings for joystick 1.
+-mapjoy2buttons       Use custom button mappings for joystick 2.    
+ 
+-render <mode>        Rendering engine to use. 
+                        <ddraw>, <gdi>, <gdiplus>, <direct3d>
+-filter <mode>        Scaling filter. 
+                        <bilinear>, <bicubic>, <hqbilinear>, <hqbicubic>
+-scaling <mode>       Scaling method. 
+                        <off>, <normal>, <simple>, <adaptive>
+-aspect <mode>        Aspect mode.  
+                        <auto>, <wide>, <cropped>, <compressed>
+-winscale <scale>     Window size as a percent of native Atari screen.
+                        <100>, <200>, <250>, etc.
+-fullscreen           Force fullscreen mode at startup.
+-windowed             Force windowed mode at startup.
+-fsres <dim>          Custom fullscreen resolution. <widthxheight> 
+                        i.e. <640x480>, <800x600>, <1024x768>, etc.
+-scanlines <mode>     Scanline mode. 
+                        <low>, <medium>, <high>
+-hcrop <amt>          Crop the screen horizontally. 
+                        <number of atari pixels>
+-vcrop <amt>          Crop the screen vertically.
+                        <number of atari pixels>
+-crop <amt>           Crop the screen horizonally & vertically.
+                        <number of atari pixels>
+-lockaspect           Lock current aspect mode when trimming.
+-hoffset <amt>        Shift screen horizontally.
+                        <number of atari pixels>
+-voffset <amt>        Shift screen vertically.
+                        <number of atari pixels>
+-hidecursor           Hide mouse cursor in fullscreen UI mode.
+-hidemenu             Hide the Windows main menu.
+
+-video-profile        Video calibration profile to use.
+                        <standard>, <classic>, <arcade>
+
+-width                Set display mode width (ddraw only).
+-blt                  Use blitting to draw graphics (ddraw only).
+
+
+
+David Dahlstrom
+2010-04-29

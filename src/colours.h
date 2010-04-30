@@ -5,6 +5,13 @@
 
 extern int Colours_table[256];
 
+typedef enum VIDEO_PROFILE_ {
+	COLOURS_STANDARD,
+	COLOURS_CLASSIC,
+	COLOURS_ARCADE,
+	COLOURS_CUSTOM
+} COLOURS_VIDEO_PROFILE;
+
 /* Contains controls for palette adjustment. These controls are available for
    NTSC and PAL palettes. */
 typedef struct Colours_setup_t {
@@ -50,5 +57,14 @@ extern COLOURS_EXTERNAL_t *Colours_external;
 
 /* Colours initialisation and processing of command-line arguments. */
 int Colours_Initialise(int *argc, char *argv[]);
+
+/* Functions for setting and getting the color calibration profile */
+void Colours_Set_Calibration_Profile(COLOURS_VIDEO_PROFILE cp);
+COLOURS_VIDEO_PROFILE Colours_Get_Calibration_Profile(void);
+
+#ifdef DIRECTX
+/* Support PLATFORM_Configure */
+extern COLOURS_VIDEO_PROFILE Colours_video_profile;
+#endif
 
 #endif /* COLOURS_H_ */

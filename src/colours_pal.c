@@ -110,11 +110,12 @@ static void GeneratePalette(int colourtable[256])
 			/* Scale the Y signal's range from 0..1 to
 			* scaled_black_level..scaled_white_level */
 			y = y * (scaled_white_level - scaled_black_level) + scaled_black_level;
+			/*
 			if (y < scaled_black_level)
 				y = scaled_black_level;
 			else if (y > scaled_white_level)
 				y = scaled_white_level;
-			
+			*/
 			r = y + 1.13983 * v;
 			g = y - 0.39465 * u - 0.58060 * v;
 			b = y + 2.03211 * u;

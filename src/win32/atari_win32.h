@@ -1,12 +1,7 @@
 #ifndef _ATARI_WIN32_H_
 #define _ATARI_WIN32_H_
 
-#define AKEY32_WINDOWSIZEUP       	-100
-#define AKEY32_WINDOWSIZEDOWN		-101
-#define AKEY32_TOGGLESCANLINEMODE	-102
-#define AKEY32_TOGGLESCREENSAVER	-103
-#define AKEY32_TILTSCREEN		-104
-#define AKEY32_TOGGLEFULLSCREEN   	-105
+#define DIRECTINPUT_VERSION	    0x0500
 
 #include <dinput.h>
 #include "akey.h"
@@ -120,7 +115,7 @@ static const UBYTE joymask_arrow[] =
 	INPUT_STICK_BACK,    /* down */
 };
 
-void Atari800_Frame32(void);
+void Process_Hotkeys(void);
 int getkeyvalue(char *name);
 void getkeyname(int value, char *name);
 void Win32_Init(void);

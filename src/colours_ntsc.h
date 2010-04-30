@@ -40,4 +40,8 @@ void COLOURS_NTSC_GetYIQ(double yiq_table[768], const double start_angle);
 /* NTSC Colours initialisation and processing of command-line arguments. */
 int COLOURS_NTSC_Initialise(int *argc, char *argv[]);
 
+/* Functions for setting and getting the NTSC color calibration profile */
+void COLOURS_NTSC_Set_Calibration_Profile(COLOURS_VIDEO_PROFILE cp);
+COLOURS_VIDEO_PROFILE COLOURS_NTSC_Get_Calibration_Profile(void);
+
 #endif /* COLOURS_NTSC_H_ */

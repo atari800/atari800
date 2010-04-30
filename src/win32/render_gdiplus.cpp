@@ -29,15 +29,27 @@ extern "C" void shutdowngdiplus(void)
 
 // GDI+ specific frame rendering code 
 extern "C" void refreshv_gdiplus(UBYTE *scr_ptr, FRAMEPARAMS *fp)
-{
-	int i, j, k, cycles;
+{	
 	UINT* pixels;
+	int pixel = 0;
+	int i, x, y;
 	int scanlinelength;
-	int bmWidth = Screen_WIDTH - 48 - (fp->cropamount * 2);
-	int bmHeight = Screen_HEIGHT;
 	InterpolationMode im;
-	COLORREF cr;
-
+	int h_adj = 0;
+	int v_adj = 0;
+	
+	// calculate bitmap height & width 
+	int bmWidth = fp->view.right - fp->view.left;
+	int bmHeight = fp->view.bottom - fp->view.top;
+	
+	bmHeight *= fp->scanlinemode + 1;
+	
+	// gdiplus specific window fill adjustment
+	if (!fp->scanlinemode) {
+		v_adj = 1;
+		h_adj = 1;
+	}
+	
 	// Choose the appropriate interpolation filter
 	switch (fp->filter)
 	{
@@ -60,8 +72,6 @@ extern "C" void refreshv_gdiplus(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 			im = InterpolationModeNearestNeighbor;
 	}
 	
-	bmHeight *= fp->scanlinemode;		   
-
 	Rect r(0, 0 , bmWidth, bmHeight);	
 	
 	Bitmap* bitmap = new Bitmap(bmWidth, bmHeight, PixelFormat32bppRGB);
@@ -71,26 +81,31 @@ extern "C" void refreshv_gdiplus(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 	pixels = (UINT*)bitmapData.Scan0;
 	scanlinelength = bitmapData.Stride / 4;
 
-	// indent screen buffer if cropping
-    scr_ptr += fp->cropamount;
-	
-	// Copy the atari screen buffer to bitmap and add scanlines if specified.	
-	fp->scanlinemode == NONE ? cycles = 1 : cycles = fp->scanlinemode - 1;
-	for (i = 0; i < bmHeight; i+=fp->scanlinemode) {
-		for (j = 0; j < bmWidth; j++) {
-			cr = Colours_table[*scr_ptr++];
-			for (k = 0; k < cycles ; k++) {			
-				pixels[(i + k) * scanlinelength + j] = cr;
-			}
+	// copy screen buffer to the bitmap
+	scr_ptr += fp->view.top * Screen_WIDTH + fp->view.left;
+	for (y = fp->view.top; y < fp->view.bottom; y++) {
+		for (x = fp->view.left; x < fp->view.right; x++) {
+			if (y < 0 || y >= Screen_HEIGHT || x < 0 || x >= Screen_WIDTH)
+				pixels[pixel] = Colours_table[0];
+			else
+				pixels[pixel] = Colours_table[*scr_ptr];
+				
+				for (i = 0; i < fp->scanlinemode; i++) {
+					pixels[pixel + i * scanlinelength] = pixels[pixel]; 
+				}
+				
+			scr_ptr++;
+			pixel++;
 		}
-		scr_ptr += 48 + (fp->cropamount * 2);
+		scr_ptr += Screen_WIDTH - bmWidth;
+	    pixel += scanlinelength * fp->scanlinemode;
 	}
 
 	bitmap->UnlockBits(&bitmapData);
 
 	Graphics* graphics = new Graphics(fp->hdc);
 	graphics->SetInterpolationMode(im);
-	graphics->DrawImage(bitmap, fp->horizoffset, fp->vertoffset, fp->width, fp->height);
+	graphics->DrawImage(bitmap, fp->x_origin, fp->y_origin, fp->width + h_adj, fp->height + v_adj);
 
 	delete graphics;
 	delete bitmap;

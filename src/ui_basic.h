@@ -17,4 +17,10 @@ int UI_BASIC_OnScreenKeyboard(const char *title, int layout);
 /* used only in the Dreamcast port */
 extern const unsigned char UI_BASIC_key_to_ascii[256];
 
+#ifdef DIRECTX	
+	#define DX_MENU_ITEM_HEIGHT  8
+	extern POINT UI_mouse_click;
+	void SetMouseIndex(int x, int y);
+#endif
+
 #endif /* UI_BASIC_H_ */

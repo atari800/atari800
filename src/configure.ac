@@ -330,6 +330,7 @@ dnl Don't make this a windowed app, make it a console app.
         A8_NEED_LIB(ws2_32)
         OBJS="win32/atari_win32.o win32/screen_win32.o win32/render_direct3d.o win32/render_directdraw.o win32/render_gdi.o win32/render_gdiplus.o win32/main.o win32/keyboard.o win32/joystick.o win32/atari.ro"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
+        LDFLAGS="$LDFLAGS -mwindows"
         ;;
     x11*)
         AC_DEFINE(X11,1,[Target: Standard X11.])
@@ -345,7 +346,6 @@ dnl Don't make this a windowed app, make it a console app.
                 AC_DEFINE(XVIEW,1,[Target: X11 with XView.])
                 dnl Dunno if this is the right way...
                 CFLAGS="$CFLAGS -I/usr/openwin/include"
-                LDFLAGS="$LDFLAGS -L/usr/openwin/lib"
                 dnl -lxview must come before -lolgx, otherwise it does not link.
                 dnl Note that AC_CHECK_LIB (and therefore A8_NEED_LIB) _prepends_
                 dnl the found library to LIBS.

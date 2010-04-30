@@ -146,11 +146,12 @@ static void UpdateYIQTableFromGenerated(double yiq_table[768], const double star
 			/* Scale the Y signal's range from 0..1 to
 			* scaled_black_level..scaled_white_level */
 			y = y * (scaled_white_level - scaled_black_level) + scaled_black_level;
+			/*
 			if (y < scaled_black_level)
 				y = scaled_black_level;
 			else if (y > scaled_white_level)
 				y = scaled_white_level;
-			
+			*/
 			*yiq_table++ = y;
 			*yiq_table++ = i;
 			*yiq_table++ = q;
@@ -203,6 +204,19 @@ void COLOURS_NTSC_Update(int colourtable[256])
 void COLOURS_NTSC_RestoreDefaults(void)
 {
 	COLOURS_NTSC_specific_setup = default_setup;
+}
+
+void COLOURS_NTSC_Set_Calibration_Profile(COLOURS_VIDEO_PROFILE cp)
+{	
+	if (cp == COLOURS_STANDARD)
+		COLOURS_NTSC_specific_setup = default_setup;
+}
+
+COLOURS_VIDEO_PROFILE COLOURS_NTSC_Get_Calibration_Profile()
+{
+	if (COLOURS_NTSC_specific_setup.hue == default_setup.hue &&
+		COLOURS_NTSC_specific_setup.color_delay == default_setup.color_delay)
+		return COLOURS_STANDARD; 
 }
 
 int COLOURS_NTSC_Initialise(int *argc, char *argv[])

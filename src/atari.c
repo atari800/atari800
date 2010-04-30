@@ -1434,5 +1434,8 @@ void Atari800_SetTVMode(int mode)
 #if defined(SOUND) && defined(SUPPORTS_SOUND_REINIT)
 		Sound_Reinit();
 #endif
+#if defined(DIRECTX)
+		SetTVModeMenuItem(mode);
+#endif
 	}
 }

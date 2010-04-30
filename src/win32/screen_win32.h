@@ -2,9 +2,11 @@
 #define _SCREEN_WIN32_H_
 
 #include "atari.h"
-#define SCREENWIDTH 336
+#define SCREENWIDTH  336
 #define SCREENHEIGHT 240
 #define CROPPEDWIDTH 320
+#define STD_CROP       8
+#define STD_INDENT    24
 #define CLR_BACK	0x44
 
 typedef enum CHANGEWINDOWSIZE_ {
@@ -22,7 +24,7 @@ typedef enum TILTLEVEL_ {
 } TILTLEVEL;
 
 typedef enum SCANLINEMODE_ {
-	NONE = 1,
+	NONE,
 	LOW,
 	MEDIUM,
 	HIGH
@@ -31,11 +33,12 @@ typedef enum SCANLINEMODE_ {
 typedef enum ASPECTMODE_ {
 	OFF,
 	NORMAL,
+	SIMPLE,
 	ADAPTIVE
 } ASPECTMODE;
 
 typedef enum ASPECTRATIO_ {
-	HYBRID,
+	AUTO,
 	WIDE,
 	CROPPED,
 	COMPRESSED
@@ -73,27 +76,37 @@ typedef enum SCREENMODE_ {
 } SCREENMODE;
 
 typedef enum FSRESOLUTION_ {
+    DESKTOP,  /* Current Desktop Resolution */
 	VGA,         /* 4:3   [640x480]   (2x)     */
 	SXGA,        /* 4:3   [1280x960]  (4x)     */
-	UXGA,        /* 4:3   [1600x1200] (5x)     */
-	DESKTOPRES   /* Current Desktop Resolution */
+	UXGA         /* 4:3   [1600x1200] (5x)     */
 } FSRESOLUTION;
 
 typedef struct FRAMEPARAMS_ {
 	HDC hdc;
-	INT width;	
-	INT height;		
-	INT vertoffset;		/* vertical offset to center screen in window */
-	INT horizoffset;	/* horizontal offset to center screen in window */
-	float d3dWidth;
-	float d3dHeight;
+	RECT view;			/* viewport frame relative to the screen buffer */
+	int width;	        /* window width */
+	int height;		    /* window height */
+	int x_origin;	    /* x origin within the window */
+	int y_origin;		/* y origin within the window */
+	float d3dWidth;     /* specialized width for use by direct3d only */
+	float d3dHeight;    /* specialized height for use by direct3d only */
 	BOOL d3dRefresh;	/* determines whether vertex buffer should be refreshed */
-	SCANLINEMODE scanlinemode;
-	FILTER filter;
-	TILTLEVEL tiltlevel;
-	BOOL screensaver;
-    INT cropamount;
+	SCANLINEMODE scanlinemode;  /* scanline mode */
+	FILTER filter;              /* render mode filter, i.e. bilinear, etc. */
+	TILTLEVEL tiltlevel;        /* level of 3D tilt */
+	BOOL screensaver;           /* 3D screensaver on/off */
 } FRAMEPARAMS; 
+
+typedef struct CROP_ {
+	int horizontal;
+	int vertical;
+} CROP;
+
+typedef struct OFFSET_ {
+	int horizontal;
+	int vertical;
+} OFFSET;
 
 extern BOOL checkparamarg(char arg[]);
 
@@ -112,10 +125,18 @@ void togglescreensaver(void);
 void changetiltlevel(void);
 void getcenteredcoords(RECT rect, int* x, int* y);
 void setcursor(void);
+void destroymenu(void);
+void initmenu(void);
+void setmenu(void);
+void restoremenu(void);
+void togglemenustate(void);
+void getnativecoords(int mx, int my, int* nx, int* ny);
 
 RENDERMODE GetRenderMode(void);
 DISPLAYMODE GetDisplayMode(void);
 DISPLAYMODE GetActiveDisplayMode(void);
+SCREENMODE GetScreenMode(void);
+
 void SetDisplayMode(DISPLAYMODE dm);
 void GetDisplayModeName(char *name);
 

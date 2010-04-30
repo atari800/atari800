@@ -11,23 +11,30 @@ void refreshv_gdi(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 {
 	HDC hCdc;
 	BITMAPINFO bi;
-	DWORD *pixels = NULL;
-	COLORREF cr;
 	HBITMAP hBitmap;
-	int i, j, k; 
-	int cycles = 1;
-	int bmWidth = Screen_WIDTH - 48 - (fp->cropamount * 2);
-	int bmHeight = Screen_HEIGHT;
+	DWORD *pixels = NULL;
+	int pixel = 0;
+	int i, x, y; 
+	int v_adj = 0;
 	
-	bmHeight *= fp->scanlinemode;
+	// calculate bitmap height & width
+	int bmWidth = fp->view.right - fp->view.left;
+	int bmHeight = fp->view.bottom - fp->view.top;
+	
+	bmHeight *= fp->scanlinemode + 1;	
+	
+    // GDI specific window fill adjustment
+	if (!fp->scanlinemode) {
+		v_adj = (int) fp->height / bmHeight;
+	}
                
-	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER); // structure size in bytes
+	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER); 
 	bi.bmiHeader.biWidth = bmWidth; 
 	bi.bmiHeader.biHeight = bmHeight; 
 	bi.bmiHeader.biPlanes = 1;
 	bi.bmiHeader.biBitCount = 32;
-	bi.bmiHeader.biCompression = BI_RGB; //BI_BITFIELDS OR BI_RGB???
-	bi.bmiHeader.biSizeImage = 0; // for BI_RGB set to 0
+	bi.bmiHeader.biCompression = BI_RGB; 
+	bi.bmiHeader.biSizeImage = 0; 
 	bi.bmiHeader.biXPelsPerMeter = 0; 
 	bi.bmiHeader.biYPelsPerMeter = 0; 
 	bi.bmiHeader.biClrUsed = 0;
@@ -41,27 +48,30 @@ void refreshv_gdi(UBYTE *scr_ptr, FRAMEPARAMS *fp)
 		return;
 	}
 
-	// Copy the atari screen buffer to bitmap and add scanlines if specified.
-	if (fp->scanlinemode != NONE)
-		cycles = fp->scanlinemode - 1;
-
-    // indent screen buffer if cropping
-    scr_ptr += fp->cropamount;
-
-	for (i = 0; i < bmHeight; i+=fp->scanlinemode) {
-	   for (j = 0; j < bmWidth; j++) {
-	      cr = Colours_table[*scr_ptr++];
-	      for (k = 0; k < cycles ; k++) {			
-	         pixels[(i + k) * bmWidth + j] = cr;
-	      }
-	   }
-	   scr_ptr += 48 + (fp->cropamount * 2);
+	// copy screen buffer to the bitmap
+	scr_ptr += fp->view.top * Screen_WIDTH + fp->view.left;
+	for (y = fp->view.top; y < fp->view.bottom; y++) {
+		for (x = fp->view.left; x < fp->view.right; x++) {
+			if (y < 0 || y >= Screen_HEIGHT || x < 0 || x >= Screen_WIDTH)
+				pixels[pixel] = Colours_table[0];
+			else
+				pixels[pixel] = Colours_table[*scr_ptr];
+			
+				for (i = 0; i < fp->scanlinemode; i++) {
+					pixels[pixel + i * bmWidth] = pixels[pixel]; 
+				}
+				
+			scr_ptr++;
+			pixel++;
+		}
+		scr_ptr += Screen_WIDTH - bmWidth;
+	    pixel += bmWidth * fp->scanlinemode;
 	}
-
+	
 	SelectObject(hCdc, hBitmap);
 
 	// Draw the bitmap on the screen. The image must be flipped vertically
-	if (!StretchBlt(fp->hdc, fp->horizoffset, fp->vertoffset+1, fp->width, fp->height,
+	if (!StretchBlt(fp->hdc, fp->x_origin, fp->y_origin, fp->width, fp->height + v_adj,
 		hCdc, 0, bi.bmiHeader.biHeight, bi.bmiHeader.biWidth, -bi.bmiHeader.biHeight, SRCCOPY)) 
 	{
 		MessageBox(hWndMain, "Could not StretchBlt", myname, MB_OK);

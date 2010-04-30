@@ -1,3 +1,12 @@
+2010-04-30  James Wilkinson  <james@slor.net>
+* akey.h, atari.c, colours.[ch], colours_ntsc.[ch], colours_pal.c, configure.ac,
+  ui.[ch], ui_basic.[ch], win32/atari_win32.[ch], win32/main.cpp, win32/main.h,
+  win32/main_menu.h, win32/render_direct3d.cpp, win32/render_direct3d.h,
+  win32/render_gdi.c, win32/render_gdiplus.cpp, win32/screen_win32.[ch],
+  DOC/directx.txt:
+  Committed DirectX display enhancements by David Dahlstrom <ddahlstrom@charter.net>
+
+
 2010-04-29  James Wilkinson  <james@slor.net>
 * Makefile.in: switched to patsubst long form in win32 rule because compound short form did not work as expected with at least some compilers
 

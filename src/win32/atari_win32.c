@@ -39,6 +39,7 @@
 #include "sound.h"
 #include "ui.h"
 #include "util.h"
+#include "colours.h"
 
 #include "main.h"
 #include "joystick.h"
@@ -47,31 +48,35 @@
 #include "atari_win32.h"
 
 static int usesnd = 1;
-
 static int kbjoy = 0;
 static int win32keys = FALSE;
 
 /* default configuration options */
-/* declared in ui.c              */
+COLOURS_VIDEO_PROFILE Colours_video_profile = COLOURS_STANDARD;
+
 ALTJOYMODE alternateJoystickMode = JOY_NORMAL_MODE;
-KEYJOYMODE keyboardJoystickMode = KEYPAD_MODE;
+KEYJOYMODE keyboardJoystickMode = ARROW_MODE;
 BOOL mapController1Buttons = FALSE;
 BOOL mapController2Buttons = FALSE;
 
 FRAMEPARAMS frameparams;
 FSRESOLUTION fsresolution;
 SCREENMODE screenmode;
-ASPECTMODE aspectmode;
-ASPECTRATIO aspectratio;
+ASPECTMODE scalingmethod;
+ASPECTRATIO aspectmode;
+CROP crop;
+OFFSET offset;
 BOOL usecustomfsresolution;
-BOOL showcursor;
+BOOL hidecursor;
+BOOL lockaspect;
+BOOL showmenu;
 int windowscale;
 int fullscreenWidth;
 int fullscreenHeight;
 
 /* This is an early init called once from main.cpp */
 /* before primary system initialization.           */
-void Win32_Init() {
+void Win32_Init(void) {
 
 	int i;
 
@@ -89,6 +94,12 @@ void Win32_Init() {
 	frameparams.d3dRefresh = TRUE;
 	frameparams.screensaver = FALSE;
 	frameparams.tiltlevel = TILTLEVEL0;
+	
+	crop.horizontal = 0;
+	crop.vertical = 0;
+	
+	offset.vertical = 0;
+	offset.horizontal = 0;
 }
 
 int PLATFORM_Configure(char *option, char *parameters)
@@ -129,8 +140,44 @@ int PLATFORM_Configure(char *option, char *parameters)
 		return FALSE;
 	}
 	
+	if (strcmp(option, "VIDEO_PROFILE") == 0) {
+		if (strcmp(parameters,"STANDARD")==0) {
+			Colours_video_profile = COLOURS_STANDARD;
+			return TRUE;
+		}
+		if (strcmp(parameters,"CLASSIC")==0) {
+			Colours_video_profile = COLOURS_CLASSIC;
+			return TRUE;
+		}
+		if (strcmp(parameters,"ARCADE")==0) {
+			Colours_video_profile = COLOURS_ARCADE;
+			return TRUE;
+		}
+		return FALSE;
+	}
+	
 	if (strcmp(option, "WINDOW_SCALE") == 0) {
 			windowscale = Util_sscandec(parameters);
+			return TRUE;
+	}
+	
+	if (strcmp(option, "VERTICAL_CROP") == 0) {
+			crop.vertical = Util_sscandec(parameters);
+			return TRUE;
+	}
+	
+	if (strcmp(option, "HORIZONTAL_CROP") == 0) {
+			crop.horizontal = Util_sscandec(parameters);
+			return TRUE;
+	}
+	
+	if (strcmp(option, "VERTICAL_OFFSET") == 0) {
+			offset.vertical = Util_sscandec(parameters);
+			return TRUE;
+	}
+	
+	if (strcmp(option, "HORIZONTAL_OFFSET") == 0) {
+			offset.horizontal = Util_sscandec(parameters);
 			return TRUE;
 	}
 	
@@ -148,35 +195,39 @@ int PLATFORM_Configure(char *option, char *parameters)
 	
 	if (strcmp(option, "ASPECT_MODE") == 0) {
 		if (strcmp(parameters,"OFF")==0) {
-			aspectmode = OFF;
+			scalingmethod = OFF;
 			return TRUE;
 		}
 		if (strcmp(parameters,"NORMAL")==0) {
-			aspectmode = NORMAL;
+			scalingmethod = NORMAL;
+			return TRUE;
+		}
+		if (strcmp(parameters,"SIMPLE")==0) {
+			scalingmethod = SIMPLE;
 			return TRUE;
 		}
 		if (strcmp(parameters,"ADAPTIVE")==0) {
-			aspectmode = ADAPTIVE;
+			scalingmethod = ADAPTIVE;
 			return TRUE;
 		}
 		return FALSE;
 	}
 	
 	if (strcmp(option, "ASPECT_RATIO") == 0) {
-		if (strcmp(parameters,"HYBRID")==0) {
-			aspectratio = HYBRID;  // normal 7:5 ratio
+		if (strcmp(parameters,"AUTO")==0) {
+			aspectmode = AUTO;  // normal 7:5 ratio
 			return TRUE;
 		}
 		if (strcmp(parameters,"WIDE")==0) {
-			aspectratio = WIDE;  // cropped 4:3 ratio
+			aspectmode = WIDE;  // cropped 4:3 ratio
 			return TRUE;
 		}
 		if (strcmp(parameters,"CROPPED")==0) {
-			aspectratio = CROPPED;  // normal 7:5 ratio
+			aspectmode = CROPPED;  // normal 7:5 ratio
 			return TRUE;
 		}
 		if (strcmp(parameters,"COMPRESSED")==0) {
-			aspectratio = COMPRESSED;  // cropped 4:3 ratio
+			aspectmode = COMPRESSED;  // cropped 4:3 ratio
 			return TRUE;
 		}
 		return FALSE;
@@ -204,8 +255,8 @@ int PLATFORM_Configure(char *option, char *parameters)
 			usecustomfsresolution = TRUE;
 			return TRUE;
 		}
-		if (strcmp(parameters,"DESKTOPRES")==0) {
-			fsresolution = DESKTOPRES;			
+		if (strcmp(parameters,"DESKTOP")==0) {
+			fsresolution = DESKTOP;			
 			usecustomfsresolution = FALSE;
 			return TRUE;
 		}
@@ -234,11 +285,35 @@ int PLATFORM_Configure(char *option, char *parameters)
 	
 	if (strcmp(option, "SHOW_CURSOR") == 0) {
 		if (strcmp(parameters,"1") == 0) {
-			showcursor = TRUE;
+			hidecursor = TRUE;
 			return TRUE;
 		}
 		if (strcmp(parameters,"0") == 0) {
-			showcursor = FALSE;
+			hidecursor = FALSE;
+			return TRUE;
+		}
+		return FALSE;
+	}
+	
+	if (strcmp(option, "SHOW_MENU") == 0) {
+		if (strcmp(parameters,"1") == 0) {
+			showmenu = TRUE;
+			return TRUE;
+		}
+		if (strcmp(parameters,"0") == 0) {
+			showmenu = FALSE;
+			return TRUE;
+		}
+		return FALSE;
+	}
+	
+	if (strcmp(option, "PRESERVE_ASPECT") == 0) {
+		if (strcmp(parameters,"1") == 0) {
+			lockaspect = TRUE;
+			return TRUE;
+		}
+		if (strcmp(parameters,"0") == 0) {
+			lockaspect = FALSE;
 			return TRUE;
 		}
 		return FALSE;
@@ -350,6 +425,18 @@ void PLATFORM_ConfigSave(FILE *fp)
 			break;
 	}
 	
+	switch (Colours_video_profile) {
+		case COLOURS_STANDARD:
+			fprintf(fp, "VIDEO_PROFILE=STANDARD\n");
+			break;
+		case COLOURS_CLASSIC:
+			fprintf(fp, "VIDEO_PROFILE=CLASSIC\n");
+			break;
+		case COLOURS_ARCADE:
+			fprintf(fp, "VIDEO_PROFILE=ARCADE\n");
+			break;
+	}
+	
 	switch (screenmode) {
 		case WINDOW:
 			fprintf(fp, "SCREEN_MODE=WINDOW\n");
@@ -361,21 +448,30 @@ void PLATFORM_ConfigSave(FILE *fp)
 	
 	fprintf(fp, "WINDOW_SCALE=%d\n", windowscale);
 	
-	switch (aspectmode) {
+	fprintf(fp, "VERTICAL_CROP=%d\n", crop.vertical);
+	fprintf(fp, "HORIZONTAL_CROP=%d\n", crop.horizontal);
+	
+	fprintf(fp, "VERTICAL_OFFSET=%d\n", offset.vertical);
+	fprintf(fp, "HORIZONTAL_OFFSET=%d\n", offset.horizontal);
+	
+	switch (scalingmethod) {
 		case OFF:
 			fprintf(fp, "ASPECT_MODE=OFF\n");
 			break;
 		case NORMAL:
 			fprintf(fp, "ASPECT_MODE=NORMAL\n");
 			break;
+		case SIMPLE:
+			fprintf(fp, "ASPECT_MODE=SIMPLE\n");
+			break;
 		case ADAPTIVE:
 			fprintf(fp, "ASPECT_MODE=ADAPTIVE\n");
 			break;
 	}
 	
-	switch (aspectratio) {
-		case HYBRID:
-			fprintf(fp, "ASPECT_RATIO=HYBRID\n");
+	switch (aspectmode) {
+		case AUTO:
+			fprintf(fp, "ASPECT_RATIO=AUTO\n");
 			break;
 		case WIDE:
 			fprintf(fp, "ASPECT_RATIO=WIDE\n");
@@ -398,8 +494,8 @@ void PLATFORM_ConfigSave(FILE *fp)
 		case UXGA:
 			fprintf(fp, "FULLSCREEN_RESOLUTION=UXGA\n");
 			break;
-		case DESKTOPRES:
-			fprintf(fp, "FULLSCREEN_RESOLUTION=DESKTOPRES\n");
+		case DESKTOP:
+			fprintf(fp, "FULLSCREEN_RESOLUTION=DESKTOP\n");
 			break;
 	}
 	
@@ -418,7 +514,9 @@ void PLATFORM_ConfigSave(FILE *fp)
 			break;
 	}
 	
-	fprintf(fp, "SHOW_CURSOR=%d\n", showcursor);
+	fprintf(fp, "SHOW_CURSOR=%d\n", hidecursor);
+	fprintf(fp, "SHOW_MENU=%d\n", showmenu);
+	fprintf(fp, "PRESERVE_ASPECT=%d\n", lockaspect);
 	
 	switch (alternateJoystickMode) {
 		case JOY_NORMAL_MODE:
@@ -799,9 +897,17 @@ int PLATFORM_GetKeyName(void)
 {
 	int keycode;
 	int i;
+	keycommand_t commandkey;
+	
+	/* get any command "keystrokes" from the menu */
+	GetCommandKey(&commandkey);
+	if (commandkey.keystroke != AKEY_NONE) {
+		UI_alt_function = commandkey.function;
+		return commandkey.keystroke;
+	}
 
 	prockb();
-
+	
 	stick0 = INPUT_STICK_CENTRE;
 	stick1 = INPUT_STICK_CENTRE;
 	
@@ -871,7 +977,7 @@ int PLATFORM_GetKeyName(void)
 	INPUT_key_consol = (kbhits[DIK_F2] ? 0 : INPUT_CONSOL_OPTION)
 	                 + (kbhits[DIK_F3] ? 0 : INPUT_CONSOL_SELECT)
 	                 + (kbhits[DIK_F4] ? 0 : INPUT_CONSOL_START);
-
+		
 	if (pause_hit) {
 		pause_hit = 0;
 		return AKEY_BREAK;
@@ -924,9 +1030,11 @@ int PLATFORM_GetKeyName(void)
 			case DIK_Z:
 				return AKEY32_TOGGLESCREENSAVER;  	/* ALT+Z .. Toggle "screensaver" mode */ 
 			case DIK_T:
-				return AKEY32_TILTSCREEN;  		/* ALT+T .. Toggle Tilt mode */ 
+				return AKEY32_TILTSCREEN;  			/* ALT+T .. Toggle Tilt mode */ 
 			case DIK_RETURN:
 				return AKEY32_TOGGLEFULLSCREEN;  	/* ALT+ENTER .. Toggle fullscreen mode*/ 
+			case DIK_M:
+				return AKEY32_TOGGLEMENU;			/* ALT+M .. Toggle menu on/off */
 			default:
 				break;
 		}
@@ -940,9 +1048,14 @@ int PLATFORM_GetKeyName(void)
 		case DIK_F7:
 			return AKEY_BREAK;
 		case DIK_F8:
-			keycode = PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT;
+		    if (useconsole) { // only permit F8 if a console is available.
+				keycode = PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT;
+				kbcode = 0;
+				return keycode;
+			}
+			Log_print("F8 not available without console. Use -useconsole.");
 			kbcode = 0;
-			return keycode;
+			return AKEY_NONE;
 		case DIK_F9:
 			return AKEY_EXIT;
 		case DIK_SYSRQ:
@@ -1184,6 +1297,7 @@ int PLATFORM_GetKeyName(void)
 		keycode = AKEY_NONE;
 		break;
 	}
+
 	return keycode;
 }
 
@@ -1256,8 +1370,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			mapController2Buttons = TRUE;
 			Log_print("using mapped controller 2 buttons");
 		}
-		else if (strcmp(argv[i], "-noconsole") == 0) {
-			Log_print("console off");
+		else if (strcmp(argv[i], "-console") == 0) {
+			Log_print("console active");
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -1334,7 +1448,7 @@ int PLATFORM_Exit(int run_monitor)
 
 void PLATFORM_DisplayScreen(void)
 {
-	refreshv((UBYTE *) Screen_atari + 24);
+	refreshv((UBYTE *) Screen_atari);
 }
 
 int PLATFORM_PORT(int num)
@@ -1359,7 +1473,7 @@ int PLATFORM_TRIG(int num)
 	}
 }
 
-void Atari800_Frame32(void)
+void Process_Hotkeys(void)
 {
 	// Process Win32-specific hot-key presses
 	switch (INPUT_key_code)
@@ -1387,6 +1501,10 @@ void Atari800_Frame32(void)
 		case AKEY32_TOGGLEFULLSCREEN:
 			kbcode = 0;
 			togglewindowstate();
-			break;			
+			break;	
+		case AKEY32_TOGGLEMENU:
+			kbcode = 0;
+			togglemenustate();
+			break;
 	}
 }

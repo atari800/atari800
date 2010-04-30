@@ -34,6 +34,7 @@ void UI_Run(void);
 
 extern int UI_is_active;
 extern int UI_alt_function;
+extern int UI_current_function;
 
 #ifdef CRASH_MENU
 extern int UI_crash_code;
@@ -81,7 +82,14 @@ int GetKeyName(void);
 #define UI_MENU_ABOUT            16
 #define UI_MENU_EXIT             17
 #define UI_MENU_CASSETTE         18
+#define UI_MENU_CONTROLLER       19
 #define UI_MENU_WINDOWS	         20
+
+#ifdef DIRECTX
+	#define UI_MENU_SAVE_CONFIG      21
+	#define UI_MENU_FUNCT_KEY_HELP   22
+	#define UI_MENU_HOT_KEY_HELP     23
+#endif
 
 /* Structure of menu item. Each menu is just an array of items of this structure
    terminated by UI_MENU_END */
