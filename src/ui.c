@@ -1403,7 +1403,7 @@ static void DisplaySettings(void)
 	};
 
 	int option = 0;
-	int option2, i;
+	int option2;
 	int seltype;
 
 	/* Current artifacting quality, computed from
@@ -1411,6 +1411,7 @@ static void DisplaySettings(void)
 	int artif_quality;
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
+	int i;
 	UpdateColourControls(menu_array);
 #endif
 
