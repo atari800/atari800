@@ -386,3 +386,6 @@ B Watson  <yalhcru@gmail.com>
     - direct mouse support (SDL and X11)
     - readline support for the internal monitor (including command history)
     - turbo mode
+
+John Oyler <john.m.oyler@gmail.com>
+    - atari2.svg and atari2.png icons

@@ -1,6 +1,10 @@
 2010-05-17  Petr Stehlik <pstehlik@sophics.cz>
 * colours.c: write file in binary mode (thanks Tomasz Krasuski for the patch)
 * ide.c: read file in binary mode
+* data folder added
+* icon files moved from util to data folder
+* atari2.svg and atari2.png added to data folder (credits to John Oyler,
+  thanks to Brian Watson)
 
 
 2010-04-30  James Wilkinson  <james@slor.net>
