@@ -201,7 +201,7 @@ static void ide_reset(struct ide_device *s) {
 }
 
 static int ide_init_drive(struct ide_device *s, char *filename) {
-    if (!(s->file = fopen(filename, "r+"))) {
+    if (!(s->file = fopen(filename, "rb+"))) {
         Log_print("%s: %s", filename, strerror(errno));
         return FALSE;
     }

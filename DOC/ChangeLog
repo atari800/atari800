@@ -1,3 +1,8 @@
+2010-05-17  Petr Stehlik <pstehlik@sophics.cz>
+* colours.c: write file in binary mode (thanks Tomasz Krasuski for the patch)
+* ide.c: read file in binary mode
+
+
 2010-04-30  James Wilkinson  <james@slor.net>
 * akey.h, atari.c, colours.[ch], colours_ntsc.[ch], colours_pal.c, configure.ac,
   ui.[ch], ui_basic.[ch], win32/atari_win32.[ch], win32/main.cpp, win32/main.h,

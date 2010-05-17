@@ -246,7 +246,7 @@ int Colours_Save(const char *filename)
 	FILE *fp;
 	int i;
 
-	fp = fopen(filename, "w");
+	fp = fopen(filename, "wb");
 	if (fp == NULL) {
 		return FALSE;
 	}
