@@ -217,6 +217,7 @@ COLOURS_VIDEO_PROFILE COLOURS_NTSC_Get_Calibration_Profile()
 	if (COLOURS_NTSC_specific_setup.hue == default_setup.hue &&
 		COLOURS_NTSC_specific_setup.color_delay == default_setup.color_delay)
 		return COLOURS_STANDARD; 
+	return COLOURS_CUSTOM;
 }
 
 int COLOURS_NTSC_Initialise(int *argc, char *argv[])
