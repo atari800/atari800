@@ -9,7 +9,7 @@
 
 /* Fundamental declarations ---------------------------------------------- */
 
-#define Atari800_TITLE  "Atari 800 Emulator, Version 2.1.0"
+#define Atari800_TITLE  "Atari 800 Emulator, Version 2.2.0rc1"
 
 #ifndef FALSE
 #define FALSE  0
