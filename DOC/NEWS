@@ -1,3 +1,24 @@
+Version 2.2.0 (2010/05/??)
+
+ Another update after 14 months. A lot of changes and improvements:
+
+ New features:
+ -------------
+    * SDL features synchronized sound (GTIA and POKEY digisounds work properly now)
+    * NTSC and PAL colours
+    * Austin Franklin 80 Column card
+    * emulate the Alien Group Voice Box I and II
+    * DirectX display enhancements
+    * Added support for F12 turbo mode.
+    * IDE emulation (compatible with MyIDE)
+
+ Fixes:
+ ------
+    * trak-ball (cx22) emulation fixed
+    * SDL: leftmost column missing in 16/32bpp fixed
+    * DirectX default for Win32 SDL
+
+
 Version 2.1.0 (2009/03/27)
 
  The promised completely new next-gen Atari800 was postponed so this

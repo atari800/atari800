@@ -7,6 +7,8 @@
 
 * atari.h: version increased to 2.2.0rc1
 
+* atari800.spec, README.1ST, DOC/NEWS: updated for upcoming release
+
 
 2010-05-17  Petr Stehlik <pstehlik@sophics.cz>
 * colours.c: write file in binary mode (thanks Tomasz Krasuski for the patch)
