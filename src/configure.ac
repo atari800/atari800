@@ -21,7 +21,7 @@ dnl   along with Atari800; if not, write to the Free Software
 dnl   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 AC_PREREQ(2.57)
-AC_INIT(Atari800, 2.1.0, pstehlik@sophics.cz)
+AC_INIT(Atari800, 2.2.0, pstehlik@sophics.cz)
 AC_CONFIG_SRCDIR(atari.c)
 AC_CONFIG_HEADER(config.h)
 
@@ -65,6 +65,8 @@ esac
 
 AC_CANONICAL_BUILD
 
+WANT_IDE="yes"
+
 dnl Set a8_host...
 
 AC_CANONICAL_HOST
@@ -104,6 +106,7 @@ case $host_os in
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
+	WANT_IDE="no"
         ;;
     beos)
         a8_host="beos"
@@ -737,6 +740,15 @@ else
     WANT_PBI_XLD_SOUND="no"
 fi
 
+A8_OPTION(ide,$WANT_IDE,
+          [Provide IDE emulation (default=ON)],
+          IDE,[Define to add IDE harddisk emulation.]
+         )
+if [[ "$WANT_IDE" == "yes" ]]; then
+    AC_SYS_LARGEFILE
+    AC_FUNC_FSEEKO
+    OBJS="$OBJS ide.o"
+fi
 
 dnl Select host/target specific features...
 
@@ -844,6 +856,7 @@ echo "Using readline support in monitor?....: $WANT_MONITOR_READLINE"
 echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
+echo "Using IDE emulation?..................: $WANT_IDE"
 echo "Using sound?..........................: $WANT_SOUND"
 if [[ "$WANT_SOUND" = "yes" ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"

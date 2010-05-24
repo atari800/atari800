@@ -78,7 +78,9 @@
 #include "log.h"
 #include "memory.h"
 #include "monitor.h"
-#include "ide.h"
+#ifdef IDE
+#  include "ide.h"
+#endif
 #include "pia.h"
 #include "platform.h"
 #include "pokey.h"
@@ -660,7 +662,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif
 		!Devices_Initialise(argc, argv)
 		|| !RTIME_Initialise(argc, argv)
+#ifdef IDE
 		|| !IDE_Initialise(argc, argv)
+#endif
 		|| !SIO_Initialise (argc, argv)
 		|| !CASSETTE_Initialise(argc, argv)
 		|| !PBI_Initialise(argc,argv)

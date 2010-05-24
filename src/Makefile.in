@@ -45,7 +45,6 @@ OBJS = \
 	log.o \
 	memory.o \
 	monitor.o \
-	ide.o \
 	pbi.o \
 	pia.o \
 	pokey.o \
