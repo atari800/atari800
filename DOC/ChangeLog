@@ -1,3 +1,13 @@
+2010-05-24  Petr Stehlik <pstehlik@sophics.cz>
+* atari.c, cartridge.c, configure.ac, Makefile.in: make IDE emulation optional
+  though enabled by default (use --disable-ide configure option if it doesn't
+  compile on your platform)
+
+* colours_ntsc.c: fixed missing default return
+
+* atari.h: version increased to 2.2.0rc1
+
+
 2010-05-17  Petr Stehlik <pstehlik@sophics.cz>
 * colours.c: write file in binary mode (thanks Tomasz Krasuski for the patch)
 * ide.c: read file in binary mode
