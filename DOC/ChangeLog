@@ -1,3 +1,7 @@
+2010-10-95  James Wilkinson  <james@slor.net>
+* ui_basic.c: change #ifdef to DIRECTX for DoEvents() call.
+
+
 2010-05-24  Petr Stehlik <pstehlik@sophics.cz>
 * atari.c, cartridge.c, configure.ac, Makefile.in: make IDE emulation optional
   though enabled by default (use --disable-ide configure option if it doesn't

@@ -123,7 +123,7 @@ static int GetKeyPress(void)
 	}
 
 	do { 
-#ifdef HAVE_WINDOWS_H
+#ifdef DIRECTX
 		DoEvents();
 #endif	
 		Atari800_Sync();
