@@ -4,7 +4,7 @@ Version 2.2.0 (2010/05/??)
 
  New features:
  -------------
-    * SDL features synchronized sound (GTIA and POKEY digisounds work properly now)
+    * SDL features synchronized sound (GTIA+POKEY digisounds play properly now)
     * NTSC and PAL colours
     * Austin Franklin 80 Column card
     * emulate the Alien Group Voice Box I and II

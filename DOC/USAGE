@@ -162,6 +162,7 @@ Command line options
 
 -screenshots <pattern>Set filename pattern for screenshots
 -showspeed            Show percentage of actual speed
+-turbo                Run at max speed (Turbo mode)
 
 -sound                Enable sound
 -nosound              Disable sound
@@ -287,6 +288,7 @@ F8                   Enter monitor
 F9                   Exit emulator
 F10                  Save screenshot
 Shift+F10            Save interlaced screenshot
+F12                  Turbo mode
 Alt+R                Run Atari program
 Alt+D                Disk management
 Alt+C                Cartridge management
