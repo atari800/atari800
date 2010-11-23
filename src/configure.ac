@@ -85,7 +85,7 @@ case $host_os in
     i386-pc-os2-emx)
         a8_host="os/2"
         ;;
-    mingw32)
+    mingw32*)
         a8_host="win"
         AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
@@ -125,6 +125,7 @@ dnl Set CFLAGS and LDFLAGS...
 if [[ "X_$CFLAGS" = "X_" ]]; then
     CFLAGS="-O2 -Wall"
 fi
+CFLAGS="$CFLAGS $CPPFLAGS"
 if [[ "X_$LDFLAGS" = "X_" ]]; then
     LDFLAGS=""
 fi
