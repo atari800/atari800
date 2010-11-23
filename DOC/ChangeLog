@@ -6,6 +6,8 @@
     LDFLAGS="-L/opt/mingw/libz-1.2.5/lib" \
     ./configure --target=sdl --host=i586-mingw32msvc
 
+* ui.c: Tomasz Krasuski's patch for hiding proper Display entries in PAL mode
+
 
 2010-10-05  James Wilkinson  <james@slor.net>
 * ui_basic.c: change #ifdef to DIRECTX for DoEvents() call (thanks Matthias)

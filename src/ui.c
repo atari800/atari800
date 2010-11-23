@@ -1261,11 +1261,11 @@ static void UpdateColourControls(UI_tMenuItem menu_array[])
 		UpdateColourControl(i);
 	/* Hide/show Hue and Color delay. */
 	if (Atari800_tv_mode == Atari800_TV_NTSC) {
-		FindMenuItem(menu_array, 15)->flags = UI_ITEM_ACTION;
-		FindMenuItem(menu_array, 17)->flags = UI_ITEM_ACTION;
+		FindMenuItem(menu_array, 16)->flags = UI_ITEM_ACTION;
+		FindMenuItem(menu_array, 18)->flags = UI_ITEM_ACTION;
 	} else {
-		FindMenuItem(menu_array, 15)->flags = UI_ITEM_HIDDEN;
-		FindMenuItem(menu_array, 17)->flags = UI_ITEM_HIDDEN;
+		FindMenuItem(menu_array, 16)->flags = UI_ITEM_HIDDEN;
+		FindMenuItem(menu_array, 18)->flags = UI_ITEM_HIDDEN;
 	}
 }
 
