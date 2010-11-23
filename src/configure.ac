@@ -583,19 +583,54 @@ A8_OPTION(monitortrace,no,
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
-if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
-	AC_CHECK_LIB(readline,readline,
-		[A8_OPTION(readline,yes,
-          		[Support readline in the monitor (default=ON)],
-          		MONITOR_READLINE,[Define to activate readline support in monitor.]
-			)],
-		WANT_MONITOR_READLINE="no"
-	)
+AC_ARG_ENABLE(monitor-readline,
+              AC_HELP_STRING(--disable-monitor-readline,[Don't use Readline for input in monitor]),
+              WANT_MONITOR_READLINE=$enableval,
+              WANT_MONITOR_READLINE=yes)
+
+# Check for existence of the readline library and headers.
+if [[ "$WANT_MONITOR_READLINE" = yes ]]; then
+# Readline uses termcap internally. Termcap's functionality is nowadays
+# provided by several libraries (eg. ncurses). However, on some environments,
+# Readline is not linked to a Termcap-providing library at compile-time.
+# So, we check whether Readline is already linked to such library, by checking
+# existence of the tgetent symbol in readline. If not, we search for tgetent
+# in a few other libraries. All done with a single AC_SEARCH_LIBS statement.
+    have_tgetent=no
+    have_readline=no
+    AC_SEARCH_LIBS(tgetent, [readline ncursesw ncurses curses termcap], have_tgetent=yes)
+    if [[ "$have_tgetent" = yes ]]; then
+        AC_SEARCH_LIBS(readline, readline, have_readline=yes)
+        if [[ "$have_readline" = yes ]]; then
+            AC_CHECK_HEADERS([readline/readline.h],[],have_readline=no)
+        else
+            AC_MSG_WARN([Unable to find readline, which is needed for requested features.])
+            WANT_MONITOR_READLINE=no
+        fi
+    else
+        AC_MSG_WARN([Unable to properly link the readline library, which is needed for requested features.
+        Readline needs a library that provides termcap functionality; such library was not found.
+        Try installing one of ncursew, ncurses, curses, termcap.])
+        WANT_MONITOR_READLINE=no
+    fi
 fi
 
-if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
-	LIBS="-lreadline -ltermcap $LIBS"
+if [[ "$WANT_MONITOR_READLINE" = yes ]]; then
+    AC_DEFINE(MONITOR_READLINE, 1, [Define to activate readline support in monitor.])
 fi
+#if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
+#	AC_CHECK_LIB(readline,readline,
+#		[A8_OPTION(readline,yes,
+#          		[Support readline in the monitor (default=ON)],
+#          		MONITOR_READLINE,[Define to activate readline support in monitor.]
+#			)],
+#		WANT_MONITOR_READLINE="no"
+#	)
+#fi
+#
+#if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
+#	LIBS="-lreadline -ltermcap $LIBS"
+#fi
 
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
 dnl we already checked for libz and added it to LIBS

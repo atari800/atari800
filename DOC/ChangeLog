@@ -8,6 +8,9 @@
 
 * ui.c: Tomasz Krasuski's patch for hiding proper Display entries in PAL mode
 
+* configure.ac: Tomasz Krasuski's patch for termcap being available in other
+  libraries (readline, ncurses)
+
 
 2010-10-05  James Wilkinson  <james@slor.net>
 * ui_basic.c: change #ifdef to DIRECTX for DoEvents() call (thanks Matthias)
