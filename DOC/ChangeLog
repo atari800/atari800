@@ -1,5 +1,14 @@
-2010-10-95  James Wilkinson  <james@slor.net>
-* ui_basic.c: change #ifdef to DIRECTX for DoEvents() call.
+2010-11-23  Petr Stehlik <pstehlik@sophics.cz>
+* configure.ac: Matthias Reichl's patches for cross-compilation of the Windows
+  version under Debian. Use as follows:
+    PATH="/opt/mingw/SDL-1.2.14/bin:${PATH}" \
+    CPPFLAGS="-I/opt/mingw/libz-1.2.5/include" \
+    LDFLAGS="-L/opt/mingw/libz-1.2.5/lib" \
+    ./configure --target=sdl --host=i586-mingw32msvc
+
+
+2010-10-05  James Wilkinson  <james@slor.net>
+* ui_basic.c: change #ifdef to DIRECTX for DoEvents() call (thanks Matthias)
 
 
 2010-05-24  Petr Stehlik <pstehlik@sophics.cz>
