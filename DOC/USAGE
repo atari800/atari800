@@ -220,11 +220,41 @@ SDL version options
 
 -fullscreen           Start in fullscreen mode
 -windowed             Start in windowed mode
--rotate90             Useful for devices with 240x320 screen (handhelds)
--width x              Set mode width
--height y             Set mode height
--bpp b                Set mode bits per pixel
-
+-rotate90             Rotate display (useful for devices with 240x320 screen)
+-norotate90           Don't rotate display (the default)
+-fs-width <x>         Set horizontal fullscreen resolution
+-fs-height <y>        Set vertical fullscreen resolution
+-win-width <x>        Set window's horizontal size
+-win-height <y>       Set window's vertical size
+-bpp <n>              Set mode bits per pixel
+-horiz-area narrow|normal|full|<number>
+                      Set visible horizontal area:
+                      narrow - 320 pixels,
+                      normal - 336 pixels,
+                      full - 380 pixels,
+                      or a number between 160 and 384.
+-vert-area short|normal|full|<number>
+                      Set visible vertical area:
+                      short - 200 pixels,
+                      normal - 216 or 240 pixels (depending on TV system),
+                      full - 240 pixels,
+                      or a number between 100 and 240.
+-stretch none|integer|full
+                      Set method for screen stretching:
+                      none - no stretching at all,
+                      integer - stretch only by integer multipler
+                      full - unrestricted stretching, fill entire screen
+-keep-aspect none|1to1|real
+                      Set how to correct screen aspect ratio:
+                      none - no correction, screen stretching unrestricted,
+                      1to1 - width and height stretched by the same multipler
+                      real - real TV's aspect ratio (depending on TV system)
+-host-aspect-ratio <x>:<y>
+                      Set host display's aspect ratio. Used to correctly
+                      compute aspect ratio when -keep-aspect is "real".
+-80column             Display output of 80 column hardware. Usable only in
+                      conjunction with one of -xep80, -proto80, -af80
+-no80column           Display normal screen instead of 80 column output
 -audio16              Use 16-bit sound
 -audio8               Use 8-bit sound
 
@@ -232,9 +262,10 @@ SDL version options
 -joy0 </dev/lp0>      Define the device for LPTjoy
 -joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
 
--ntscemu              Emulate NTSC composite video (640x480x16 only)
+-ntscemu              Emulate NTSC composite video (16 bpp only)
 This includes NTSC TV artifacts.  "-artif" is not needed in this mode and will
 not work.
+-nontscemu            Disable emulation of NTSC composite video
 The following 8 items are for -ntscemu only:
 -ntsc-sharpness <n>   Set sharpness
 -ntsc-resolution <n>  Set resolution
@@ -403,11 +434,9 @@ SDL keyboard, joystick and other controllers
 LSUPER     Atari/Inverse key (unusable under Windows)
 RSUPER     CapsToggle (+Shift = CapsLock)
 
-LAlt+F     Switch fullscreen (probably doesn't work in Windows)
-LAlt+G     Switch WIDTH_MODE (so you can set 320x240)
-LAlt+B     Switch BLACK-AND-WHITE
+LAlt+F     Switch fullscreen
+LAlt+G     Switch visible horizontal area. See -horizontal-area.
 LAlt+J     Swap joysticks 0 and 1
-LAlt+E     Switch bpp (for debug only, will be removed soon)
 LAlt+M     Grab mouse (prevents mouse pointer from leaving the window)
 
 LAlt+LShift+1     Decrease hue (like TV Tint control, only NTSC)

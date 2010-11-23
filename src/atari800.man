@@ -364,23 +364,78 @@ Scale width and height by <n>
 
 .TP
 \fB-fullscreen
-Start in fullscreen mode (tries to switch to 336x240 resolution)
+Start in fullscreen mode. The default resolution is 336x240 and can be later changed.
 .TP
 \fB-windowed
-Start in a window (does not change your working resolution)
+Start in a window.
 .TP
 \fB-rotate90
-Run the emulator with rotated display (useful for devices with 240x320
-screen)
+Rotate display (useful for devices with 240x320 screen).
 .TP
-\fB-width number-of-pixels
-Host horizontal resolution for fullscreen
+\fB-norotate90
+Don't rotate display (the default).
 .TP
-\fB-height number-of-pixels
-Host vertical resolution for fullscreen
+\fB-fs-width <number-of-pixels>
+Host horizontal resolution for fullscreen.
 .TP
-\fB-bpp number-of-bits
-Host color depth for running in fullscreen
+\fB-fs-height <number-of-pixels>
+Host vertical resolution for fullscreen.
+.TP
+\fB-win-width <number-of-pixels>
+Set horizontal size of the window. The window can be later resized manually.
+.TP
+\fB-win-height <number-of-pixels>
+Set vertical size of the window. The window can be later resized nanually.
+.TP
+\fB-bpp <number-of-bits>
+Host color depth for running in fullscreen.
+.TP
+\fB-horiz-area narrow|normal|full|<number>
+Set amount of visible screen horizontally. "Narrow" shows 320 pixels, "Normal" shows
+336 pixels, and "Full" shows 384 pixels. A different value can be set by providing
+a number between 160 and 384.
+.TP
+\fB-vertical-area short|normal|full|<number>
+Set amount of visible screen vertically. "Short" shows 200 pixels, "Normal" shows
+224 or 240 pixels (depending on current TV system, as in NTSC some lines from top
+and bottom of the screen are not visible), and "Full" shows 240 pixels.
+A different value can be set by providing a number between 100 and 240.
+.TP
+\fB-horiz-offset <number>
+When the visible horizontal area is not set to "full", this option specifies the
+screen's area that will be visible. Values higher than 0 will cause showing more
+of the right side of the screen, while values lower than 0 will cause showing
+more of the left side.
+\fB-vert-offset <number>
+Analogically to -horiz-offset: when the visible vertical area is not set to "full",
+this option specifies the screen's area that will be visible. Values higher than 0
+will cause showing more of the bottom part of the screen, while values lower than 0
+will cause showing more of the top part.
+.TP
+\fB-stretch none|integer|full
+Choose method of stretching of the screen. "None" means that the screen won't be
+stretched at all; "Integer" means that the screen will be stretched only by integer
+multiplier; "Full" means that the screen will fill the entire screen's/window's area.
+.TP
+\fB-keep-aspect none|1to1|real
+Choose how the screen's aspect ratio should be corrected when stretching. "None"
+means that the screen will be stretched unrestricted, and aspect ratio won't be corrected;
+"1to1" means that aspect ratio will be preserved, and the screen will be stretched by
+the same amount horizontally and vertically; "Real" recreates the pixel aspect ratio of
+a real TV set (for NTSC it's about 0.857, for PAL about 1.039 - pixels are not square).
+.TP
+\fB-host-aspect-ratio <x>:<y>
+Set the host monitor's aspect ratio. Expects values like 4:3, 16:9, 1.25:1 ...
+This value is used to properly compute screen's pixel aspect ratio when having
+-keep-aspect set to "real".
+.TP
+\fB-80column
+Shows output of an 80 column hardware, when it is available. It has effect only if
+an 80 column hardware is activated, using one of the parameters -af80, -proto80 or -af80.
+.TP
+\fB-no80column
+Deactivates showing output of an 80 column hardware.
+
 
 .TP
 \fB-audio16
@@ -398,8 +453,11 @@ Define path to device used in LPTjoy 1. Available on linux-ia32 only.
 
 .TP
 \fB-ntscemu
-Activate NTSC filter (640x480x16 only). This faithfully emulates NTSC composite
+Activate NTSC filter (16 bpp only). This faithfully emulates NTSC composite
 video artifacts. "-artif" is not needed in this mode and will not work.
+.TP
+\fB-nontscemu
+Disable NTSC filter.
 .TP
 \fB-ntsc-sharpness <n>
 Set sharpness of the NTSC filter.
@@ -435,6 +493,9 @@ Emulate the XEP80
 .TP
 \fB-xep80port <n>
 Use XEP80 on joystick port <n>
+.TP
+\fB-af80
+Emulate the Austin Franklin 80 comun daughterboard for Atari 800.
 
 
 .SS X11 Options
@@ -710,19 +771,13 @@ CapsToggle (+Shift = CapsLock)
 
 .TP
 \fBLAlt+F
-Switch fullscreen (probably doesn't work in Windows)
+Switch fullscreen/windowed display.
 .TP
 \fBLAlt+G
-Switch WIDTH_MODE (so you can set 320x240)
-.TP
-\fBLAlt+B
-Switch BLACK-AND-WHITE
+Switch visible horizontal area. See -horizontal-area.
 .TP
 \fBLAlt+J
 Swap \fBkeyboard_emulated\fP joysticks
-.TP
-\fBLAlt+E
-Switch bpp (for debug only, will be removed soon)
 .TP
 \fBLAlt+M
 Grab mouse (prevents mouse pointer from leaving the window)
@@ -814,7 +869,7 @@ Toggle NTSC composite/S-Video/RGB/monochrome settings
 
 .TP
 \fBLAlt+Shift+X
-Enable/disable XEP80 screen (use with -xep80)
+Enable/disable output of a 80 column hardware (use with -xep80, -proto80 or -af80).
 
 
 .PP

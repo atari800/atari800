@@ -138,6 +138,9 @@
 #ifdef VOICEBOX
 #include "voicebox.h"
 #endif
+#if SUPPORTS_CHANGE_VIDEOMODE
+#include "videomode.h"
+#endif
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
 int Atari800_tv_mode = Atari800_TV_PAL;
@@ -690,6 +693,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		|| !Screen_Initialise(argc, argv)
 #endif
+#if SUPPORTS_CHANGE_VIDEOMODE
+		|| !VIDEOMODE_Initialise(argc, argv)
+#endif
 		/* Initialise Custom Chips */
 		|| !ANTIC_Initialise(argc, argv)
 		|| !GTIA_Initialise(argc, argv)
@@ -705,6 +711,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 		return FALSE;
 	}
 
+#if SUPPORTS_CHANGE_VIDEOMODE
+	if (!VIDEOMODE_InitialiseDisplay()) {
+		Atari800_Exit(FALSE);
+		return FALSE;
+	}
+#endif
 	/* Configure Atari System */
 	Atari800_InitialiseMachine();
 #else /* __PLUS */
@@ -903,6 +915,9 @@ int Atari800_Exit(int run_monitor)
 #endif
 #ifdef SOUND
 		SndSave_CloseSoundFile();
+#endif
+#if SUPPORTS_CHANGE_VIDEOMODE
+		VIDEOMODE_Exit();
 #endif
 		MONITOR_Exit();
 	}
@@ -1434,6 +1449,9 @@ void Atari800_SetTVMode(int mode)
 		Atari800_tv_mode = mode;
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		Colours_SetVideoSystem(mode);
+#endif
+#if SUPPORTS_CHANGE_VIDEOMODE
+		VIDEOMODE_SetVideoSystem(mode);
 #endif
 #if defined(SOUND) && defined(SUPPORTS_SOUND_REINIT)
 		Sound_Reinit();

@@ -37,6 +37,9 @@
 #include "pokeysnd.h"
 #include "ui.h"
 #include "util.h"
+#if SUPPORTS_CHANGE_VIDEOMODE
+#include "videomode.h"
+#endif
 
 char CFG_osa_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
 char CFG_osb_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
@@ -298,6 +301,10 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			else if (AF80_ReadConfig(string,ptr)) {
 			}
 #endif
+#if SUPPORTS_CHANGE_VIDEOMODE
+			else if (VIDEOMODE_ReadConfig(string, ptr)) {
+			}
+#endif
 			else {
 #ifdef SUPPORTS_PLATFORM_CONFIGURE
 				if (!PLATFORM_Configure(string, ptr)) {
@@ -406,11 +413,26 @@ int CFG_WriteConfig(void)
 #endif /* SOUND */
 	/* Add module-specific configurations here */
 	PBI_WriteConfig(fp);
-
+#ifdef AF80
+	AF80_WriteConfig(fp);
+#endif
+#if SUPPORTS_CHANGE_VIDEOMODE
+	VIDEOMODE_WriteConfig(fp);
+#endif
 #ifdef SUPPORTS_PLATFORM_CONFIGSAVE
 	PLATFORM_ConfigSave(fp);
 #endif
-
 	fclose(fp);
 	return TRUE;
+}
+
+int CFG_MatchTextParameter(char const *param, char const * const cfg_strings[], int cfg_strings_size)
+{
+	int i;
+	for (i = 0; i < cfg_strings_size; i ++) {
+		if (Util_stricmp(param, cfg_strings[i]) == 0)
+			return i;
+	}
+	/* Unrecognised value */
+	return -1;
 }

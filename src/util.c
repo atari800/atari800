@@ -56,30 +56,21 @@ int Util_chrieq(char c1, char c2)
 }
 
 #ifdef __STRICT_ANSI__
-/*
-**  STRICMP.C - Comapres strings, case-insensitive.
-**
-**  public domain by Bob Stout
-**
-*/
-
-/* from http://c.snippets.org/code/stricmp.c */
 int Util_stricmp(const char *str1, const char *str2)
 {
-      int retval = 0;
+	int retval = 0;
 
-      while (1)
-      {
-            retval = tolower(*str1++) - tolower(*str2++);
+	for (;;)
+	{
+		retval = tolower(*str1++) - tolower(*str2++);
 
-            if (retval)
-                  break;
+		if (retval)
+			break;
 
-            if (*str1 && *str2)
-                  continue;
-            else  break;
-      }
-      return retval;
+		if (*str1 == '\0' && *str2 == '\0')
+			break;
+	}
+	return retval;
 }
 #endif
 
@@ -194,6 +185,24 @@ int Util_sscandec(const char *s)
 			return -1;
 		s++;
 	}
+}
+
+int Util_sscansdec(char const *s, int *dest)
+{
+	int minus = FALSE;
+	switch(*s) {
+	case '-':
+		minus = TRUE;
+		/* Fallthrough! */
+	case '+':
+		++s;
+	}
+	*dest = Util_sscandec(s);
+	if (*dest == -1)
+		return FALSE;
+	if (minus)
+		*dest = -*dest;
+	return TRUE;
 }
 
 int Util_sscanhex(const char *s)

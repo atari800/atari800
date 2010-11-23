@@ -294,11 +294,13 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
+        AC_DEFINE(SUPPORTS_CHANGE_VIDEOMODE,1,[Can change video modes on the fly.])
+        AC_DEFINE(SUPPORTS_ROTATE_VIDEOMODE,1,[Can display the screen rotated sideways.])
         SUPPORTS_SYNCHRONIZED_SOUND="yes"
 	WANT_XEP80_EMULATION=yes
 	WANT_NTSC_FILTER=yes
         LIBS="$LIBS `sdl-config --libs`"
-        OBJS="atari_sdl.o"
+        OBJS="atari_sdl.o videomode.o"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
         if [[ "$a8_host" != "beos" ]]; then
 dnl BeOS has a real issue with redundant-decls

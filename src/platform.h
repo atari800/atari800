@@ -3,6 +3,9 @@
 
 #include "config.h"
 #include <stdio.h>
+#if SUPPORTS_CHANGE_VIDEOMODE
+#include "videomode.h"
+#endif
 
 /* This include file defines prototypes for platform-specific functions. */
 
@@ -53,33 +56,25 @@ int PLATFORM_GetRawKey(void);
 int PLATFORM_GetKeyName(void);
 #endif
 
-#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
-/* Switch between the Atari and AF80, PBI_PROTO80, or XEP80 screen */
-void PLATFORM_Switch80(void);
-/* TRUE if the AF80, PBI_PROTO80, or XEP80 screen is visible */
-extern int PLATFORM_show_80;
-#endif
-
-#ifdef NTSC_FILTER
-enum PLATFORM_filter_t {
-	PLATFORM_FILTER_NONE,
-	PLATFORM_FILTER_NTSC
-};
-
-/* Represents whether the NTSC filter is turned on. Don't set this value
-   directly. */
-extern enum PLATFORM_filter_t PLATFORM_filter;
-
-/* This function turns the NTSC filter on or off. Changing the
-   PLATFORM_filter variable directly is not allowed; use this function
-   instead. */
-void PLATFORM_SetFilter(const enum PLATFORM_filter_t filter);
-#endif /* NTSC_FILTER */
-
 #ifdef SYNCHRONIZED_SOUND
 /* This function returns a number which is used to adjust the speed
  * of execution to synchronize with the sound output */
 double PLATFORM_AdjustSpeed(void);
 #endif /* SYNCHRONIZED SOUND */
+
+#if SUPPORTS_CHANGE_VIDEOMODE
+/* Returns whether the platform-specific code support the given display mode, MODE,
+   with/without stretching and with/without rotation. */
+int PLATFORM_SupportsVideomode(VIDEOMODE_MODE_t mode, int stretch, int rotate90);
+/* Sets the screen (or window) to resolution RES and selects the display mode, MODE,
+   and rotation. */
+void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90);
+/* Returns list of all available resolutions. The result points to a newly
+   allocated memory. If no resolutions are found, the result is NULL and no
+   memory is allocated. */
+VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size);
+/* Returns the current desktop resolution. Used to compute pixel aspect ratio in windowed modes. */
+VIDEOMODE_resolution_t *PLATFORM_DesktopResolution(void);
+#endif /* SUPPORTS_CHANGE_VIDEOMODE */
 
 #endif /* PLATFORM_H_ */

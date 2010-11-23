@@ -1929,8 +1929,13 @@ void XEP80_StateSave(void)
 {
 	StateSav_SaveINT(&XEP80_enabled, 1);
 	if (XEP80_enabled) {
+#if SUPPORTS_CHANGE_VIDEOMODE
+		int local_xep80 = VIDEOMODE_80_column;
+#else
+		int local_xep80 = 1;
+#endif
 		StateSav_SaveINT(&XEP80_port, 1);
-		StateSav_SaveINT(&PLATFORM_show_80, 1);
+		StateSav_SaveINT(&local_xep80, 1);
 		StateSav_SaveINT(&output_state, 1);
 		StateSav_SaveINT(&output_word, 1);
 		StateSav_SaveINT(&input_count, 1);
@@ -2033,21 +2038,13 @@ void XEP80_StateRead(void)
 			XEP80_BlitChar(xcur, ycur, TRUE);
 			}
 		XEP80_enabled = TRUE;
-		/* not correct for SDL version */
-#if 0
-		if (PLATFORM_show_80 != local_xep80)
-			PLATFORM_Switch80();
+#if SUPPORTS_CHANGE_VIDEOMODE
+		VIDEOMODE_Set80Column(local_xep80);
 #endif
-		PLATFORM_show_80 = local_xep80;
-		}
+	}
 	else {
 		XEP80_enabled = FALSE;
-		/* not correct for SDL version */
-#if 0
-		if (PLATFORM_show_80)
-			PLATFORM_Switch80();
-#endif
-		}
+	}
 }
 
 #endif /* XEP80 */

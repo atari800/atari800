@@ -25,6 +25,13 @@ extern ULONG *Screen_atari1;
 extern ULONG *Screen_atari2;
 #endif
 
+/* The area that can been seen is Screen_visible_x1 <= x < Screen_visible_x2,
+   Screen_visible_y1 <= y < Screen_visible_y2.
+   Full Atari screen is 336x240. Screen_WIDTH is 384 only because
+   the code in antic.c sometimes draws more than 336 bytes in a line.
+   Currently Screen_visible variables are used only to place
+   disk led and snailmeter in the corners of the screen.
+*/
 extern int Screen_visible_x1;
 extern int Screen_visible_y1;
 extern int Screen_visible_x2;

@@ -594,9 +594,14 @@ static int BasicUISelect(const char *title, int flags, int default_item, const U
 		y2 = 23;
 	}
 
+	if (y1 < 0)
+		y1 = 0;
+	if (y2 > 23)
+		y2 = 23;
+
 	Box(0x9a, 0x94, x1, y1, x2, y2);
 	index = Select(index, nitems, item, prefix, suffix, tip, nonselectable,
-	                nitems, 1, x1 + 1, y1 + 1, w,
+	                y2 - y1 - 1, 1, x1 + 1, y1 + 1, w,
 	                (flags & UI_SELECT_DRAG) ? TRUE : FALSE, NULL, seltype);
 	if (index < 0)
 		return index;

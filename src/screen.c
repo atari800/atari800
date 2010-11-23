@@ -155,12 +155,15 @@ int Screen_Initialise(int *argc, char *argv[])
 
 	if (Screen_atari == NULL) { /* platform-specific code can initialize it in theory */
 		Screen_atari = (ULONG *) Util_malloc(Screen_HEIGHT * Screen_WIDTH);
+		/* Clear the screen. */
+		memset(Screen_atari, 0, Screen_HEIGHT * Screen_WIDTH);
 #ifdef DIRTYRECT
 		Screen_dirty = (UBYTE *) Util_malloc(Screen_HEIGHT * Screen_WIDTH / 8);
 		Screen_EntireDirty();
 #endif
 #ifdef BITPL_SCR
 		Screen_atari_b = (ULONG *) Util_malloc(Screen_HEIGHT * Screen_WIDTH);
+		memset(Screen_atari_b, 0, Screen_HEIGHT * Screen_WIDTH);
 		Screen_atari1 = Screen_atari;
 		Screen_atari2 = Screen_atari_b;
 #endif

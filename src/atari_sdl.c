@@ -67,6 +67,7 @@
 #include "pia.h"
 #include "log.h"
 #include "util.h"
+#include "videomode.h"
 #include "filter_ntsc.h"
 #include "pbi_proto80.h"
 #include "xep80.h"
@@ -85,15 +86,10 @@ static int sound_bits = 16;
 #endif
 static int fullscreen = 1;
 static int grab_mouse = 0;
-static int bw = 0;
 static int swap_joysticks = 0;
-static int width_mode = 1;
 static int scanlines_percentage = 5;
 static int scanlinesnoint = FALSE;
 static atari_ntsc_t *the_ntscemu = NULL;
-#define SHORT_WIDTH_MODE 0
-#define DEFAULT_WIDTH_MODE 1
-#define FULL_WIDTH_MODE 2
 
 /* joystick emulation
    keys are loaded from config file
@@ -156,81 +152,53 @@ static SDL_Surface *MainScreen = NULL;
 static SDL_Color colors[256];			/* palette */
 static Uint16 Palette16[256];			/* 16-bit palette */
 static Uint32 Palette32[256];			/* 32-bit palette */
-int PLATFORM_show_80 = FALSE; 	/* is the 80 column screen displayed? */
-enum PLATFORM_filter_t PLATFORM_filter = PLATFORM_FILTER_NONE;
+
+static VIDEOMODE_resolution_t desktop_resolution;
 
 /* SDL port supports 5 "display modes":
    - normal,
-   - rotated 9 degrees,
    - ntscemu - emulation of NTSC composite video,
    - xep80 emulation,
-   - proto80 - emulation of 80 column board for 1090XL.
+   - proto80 - emulation of 80 column board for 1090XL,
+   - af80 - Austin Franklin 80 column card.
    The structure below is used to hold settings and functions used by a single
    display mode. */
 struct display_mode_data_t {
-	int w;
-	int h;
 	int bpp;
-	void (*set_video_mode_func)(int, int); /* see below */
 	void (*display_screen_func)(Uint8 *); /* see below */
 };
 
-/* set_video_mode_func - these functions reset the SDL screen to the given
-   width and height. SetNewVideoModeNormal remembers the given W and H
-   parameters and sets the screen accordingly, while SetNewVideoModeIgnore
-   ignores W and H and sets the screen according to default parameters defined
-   in the DISPLAY_MODES table below. */
-static void SetNewVideoModeNormal(int w, int h);
-static void SetNewVideoModeIgnore(int w, int h);
-
 /* display_screen_func - these functions fill the given SCREEN buffer with
    screen data, differently for each display mode. */
-static void DisplayNormal(Uint8 *screen);
-static void DisplayRotated240x320(Uint8 *screen);
-static void DisplayNTSCEmu640x480(Uint8 *screen);
+static void DisplayWithoutScaling(Uint8 *screen);
+static void DisplayWithScaling(Uint8 *screen);
+static void DisplayRotated(Uint8 *screen);
+static void DisplayNTSCEmu(Uint8 *screen);
 static void DisplayXEP80(Uint8 *screen);
-static void DisplayProto80640x400(Uint8 *screen);
-static void DisplayAF80640x500(Uint8 *screen);
-
-#ifdef FINDMODE_TEST
-static void FindClosestMode(int* w, int* h);
-#endif
+static void DisplayProto80(Uint8 *screen);
+static void DisplayAF80(Uint8 *screen);
 
 /* This table holds default settings for all display modes. */
-static struct display_mode_data_t display_modes[] = {
+static struct display_mode_data_t display_modes[VIDEOMODE_MODE_SIZE] = {
 	/* Normal */
-	{ Screen_WIDTH, Screen_HEIGHT, 0, /* bpp = 0 - autodetect */
-	  &SetNewVideoModeNormal, &DisplayNormal },
-	/* Rotated */
-	{ 240, 320, 16,
-	  &SetNewVideoModeIgnore, &DisplayRotated240x320 },
-	/* NTSCEmu */
-	{ 640, 480, ATARI_NTSC_OUT_DEPTH,
-	  &SetNewVideoModeIgnore, &DisplayNTSCEmu640x480 },
+	{ 0, /* bpp = 0 - autodetect */
+	  &DisplayWithoutScaling },
+	/* NTSC Filter */
+	{ ATARI_NTSC_OUT_DEPTH,
+	  &DisplayNTSCEmu },
 	/* XEP80 */
-	{ XEP80_SCRN_WIDTH, XEP80_SCRN_HEIGHT, 8,
-	  &SetNewVideoModeIgnore, &DisplayXEP80 },
+	{ 8,
+	  &DisplayXEP80 },
 	/* Proto80 */
-	{ 640, 400, 16,
-	  &SetNewVideoModeIgnore, &DisplayProto80640x400 },
+	{ 16,
+	  &DisplayProto80 },
 	/* AF80 */
-	{ 640, 500, 16,
-	  &SetNewVideoModeIgnore, &DisplayAF80640x500 }
+	{ 16,
+	  &DisplayAF80 }
 };
 
-/* An enumerator to switch display modes comfortably. */
-enum display_mode_t {
-	display_normal,
-	display_rotated,
-	display_ntscemu,
-	display_xep80,
-	display_proto80,
-	display_af80
-};
 /* Indicates current display mode */
-static enum display_mode_t current_display_mode = display_normal;
-/* Display mode which should be reverted to, when XEP80 mode is turned off */
-static enum display_mode_t xep80_return_display_mode = display_normal;
+static VIDEOMODE_MODE_t current_display_mode = VIDEOMODE_MODE_NORMAL;
 
 /* keyboard */
 static Uint8 *kbhits;
@@ -489,25 +457,13 @@ static void SetPalette(void)
 static void CalcPalette(void)
 {
 	int i, rgb;
-	float y;
 	Uint32 c;
-	if (bw == 0)
-		for (i = 0; i < 256; i++) {
-			rgb = Colours_table[i];
-			colors[i].r = (rgb & 0x00ff0000) >> 16;
-			colors[i].g = (rgb & 0x0000ff00) >> 8;
-			colors[i].b = (rgb & 0x000000ff) >> 0;
-		}
-	else
-		for (i = 0; i < 256; i++) {
-			rgb = Colours_table[i];
-			y = 0.299 * ((rgb & 0x00ff0000) >> 16) +
-				0.587 * ((rgb & 0x0000ff00) >> 8) +
-				0.114 * ((rgb & 0x000000ff) >> 0);
-			colors[i].r = (Uint8)y;
-			colors[i].g = (Uint8)y;
-			colors[i].b = (Uint8)y;
-		}
+	for (i = 0; i < 256; i++) {
+		rgb = Colours_table[i];
+		colors[i].r = (rgb & 0x00ff0000) >> 16;
+		colors[i].g = (rgb & 0x0000ff00) >> 8;
+		colors[i].b = (rgb & 0x000000ff) >> 0;
+	}
 	for (i = 0; i < 256; i++) {
 		c =
 			SDL_MapRGB(MainScreen->format, colors[i].r, colors[i].g,
@@ -527,29 +483,26 @@ static void CalcPalette(void)
 void PLATFORM_PaletteUpdate(void)
 {
 	CalcPalette();
-	if (current_display_mode == display_ntscemu)
+	if (current_display_mode == VIDEOMODE_MODE_NTSC_FILTER)
 		FILTER_NTSC_Update(the_ntscemu);
+	SetPalette();
 }
 
 static void ModeInfo(void)
 {
-	char bwflag, fullflag, width, joyflag;
-	if (bw)
-		bwflag = '*';
-	else
-		bwflag = ' ';
+	char fullflag, width, joyflag;
 	if (fullscreen)
 		fullflag = '*';
 	else
 		fullflag = ' ';
-	switch (width_mode) {
-	case FULL_WIDTH_MODE:
+	switch (VIDEOMODE_horizontal_area) {
+	case VIDEOMODE_HORIZONTAL_FULL:
 		width = 'f';
 		break;
-	case DEFAULT_WIDTH_MODE:
+	case VIDEOMODE_HORIZONTAL_NORMAL:
 		width = 'd';
 		break;
-	case SHORT_WIDTH_MODE:
+	case VIDEOMODE_HORIZONTAL_NARROW:
 		width = 's';
 		break;
 	default:
@@ -562,76 +515,52 @@ static void ModeInfo(void)
 		joyflag = ' ';
 	Log_print("Video Mode: %dx%dx%d", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel);
-	Log_print("[%c] Full screen  [%c] BW  [%c] Width Mode  [%c] Joysticks Swapped",
-		 fullflag, bwflag, width, joyflag);
+	Log_print("[%c] Full screen  [%c] Width Mode  [%c] Joysticks Swapped",
+		 fullflag, width, joyflag);
 }
 
 static void SetVideoMode(int w, int h, int bpp)
 {
-	if (fullscreen) {
-#ifdef FINDMODE_TEST
-		FindClosestMode(&w, &h);
-#endif
-		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_FULLSCREEN);
-	}
-	else
-		MainScreen = SDL_SetVideoMode(w, h, bpp, SDL_RESIZABLE);
+	Uint32 flags = fullscreen ? SDL_FULLSCREEN : SDL_RESIZABLE;
+	int update_palette = (MainScreen == NULL || MainScreen->format->BitsPerPixel != bpp);
+	MainScreen = SDL_SetVideoMode(w, h, bpp, flags);
 	if (MainScreen == NULL) {
 		Log_print("Setting Video Mode: %dx%dx%d FAILED", w, h, bpp);
 		Log_flushlog();
 		exit(-1);
 	}
+	/* Clear the screen. */
+	SDL_FillRect(MainScreen, NULL, 0);
+	SDL_Flip(MainScreen);
+
+	if (update_palette) {
+		CalcPalette();
+		SetPalette();
+	}
 }
 
-static void SetNewVideoModeNormal(int w, int h)
+static void UpdateNtscFilter(VIDEOMODE_MODE_t mode)
 {
-	int bpp = display_modes[current_display_mode].bpp;
-	float ww, hh;
-
-	if ((h < Screen_HEIGHT) || (w < Screen_WIDTH)) {
-		h = Screen_HEIGHT;
-		w = Screen_WIDTH;
+	if (mode != VIDEOMODE_MODE_NTSC_FILTER && the_ntscemu != NULL) {
+		/* Turning filter off */
+		FILTER_NTSC_Delete(the_ntscemu);
+		the_ntscemu = NULL;
 	}
-
-	/* aspect ratio, floats needed */
-	ww = w;
-	hh = h;
-	switch (width_mode) {
-	case SHORT_WIDTH_MODE:
-		if (ww * 0.75 < hh)
-			hh = ww * 0.75;
-		else
-			ww = hh / 0.75;
-		break;
-	case DEFAULT_WIDTH_MODE:
-		if (ww / 1.4 < hh)
-			hh = ww / 1.4;
-		else
-			ww = hh * 1.4;
-		break;
-	case FULL_WIDTH_MODE:
-		if (ww / 1.6 < hh)
-			hh = ww / 1.6;
-		else
-			ww = hh * 1.6;
-		break;
+	else if (mode == VIDEOMODE_MODE_NTSC_FILTER && the_ntscemu == NULL) {
+		/* Turning filter on */
+		the_ntscemu = FILTER_NTSC_New();
+		FILTER_NTSC_Update(the_ntscemu);
 	}
-	w = (int)ww;
-	h = (int)hh;
-	w /= 8;
-	w *= 8;
-	h /= 8;
-	h *= 8;
+}
 
-	display_modes[current_display_mode].w = w;
-	display_modes[current_display_mode].h = h;
+void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
+{
+	int bpp = (rotate90 ? 16 : display_modes[mode].bpp);
+	fullscreen = !windowed;
+	UpdateNtscFilter(mode);
+	current_display_mode = mode;
 
-	/* Only the BPPs below are supported. Default to 8 bits otherwise. */
-	if (bpp != 0 && bpp != 8 && bpp != 16 && bpp != 32) {
-		Log_print("BPP %d unsupported, so setting 8bit mode (slow conversion)", bpp);
-		bpp = 8;
-	}
-	SetVideoMode(w, h, bpp);
+	SetVideoMode(res->width, res->height, bpp);
 	if (bpp == 0) {
 		bpp = MainScreen->format->BitsPerPixel;
 		Log_print("detected %dbpp", bpp);
@@ -639,134 +568,61 @@ static void SetNewVideoModeNormal(int w, int h)
 			&& (bpp != 32)) {
 			Log_print("it's unsupported, so setting 8bit mode (slow conversion)");
 			bpp = 8;
-			SetVideoMode(w, h, 8);
+			SetVideoMode(res->width, res->height, 8);
 		}
+		display_modes[mode].bpp = bpp;
 	}
-
-	/* Save bpp in case it changed above */
-	display_modes[current_display_mode].bpp = bpp;
-}
-
-static void SetNewVideoModeIgnore(int w, int h)
-{
-	SetVideoMode(display_modes[current_display_mode].w,
-	             display_modes[current_display_mode].h,
-	             display_modes[current_display_mode].bpp);
-}
-
-/* Reinitialises the SDL screen using current_display_mode and its parameters.
- */
-static void ResetDisplay(void)
-{
-	(*display_modes[current_display_mode].set_video_mode_func)(display_modes[current_display_mode].w,
-	                                                           display_modes[current_display_mode].h);
-	CalcPalette();
-	SetPalette();
 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
-
 	ModeInfo();
-}
 
-/* Resizes the SDL screen using current_display_mode and the given Width and
-   Height. */
-static void ResizeDisplay(int w, int h)
-{
-	(*display_modes[current_display_mode].set_video_mode_func)(w, h);
-	SetPalette();
-
-	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
-
-	ModeInfo();
-}
-
-static void SwitchFullscreen(void)
-{
-	fullscreen = 1 - fullscreen;
-	ResetDisplay();
+	if (current_display_mode == VIDEOMODE_MODE_NORMAL) {
+		if (rotate90)
+			display_modes[0].display_screen_func = &DisplayRotated;
+		else if (VIDEOMODE_src_width == VIDEOMODE_dest_width && VIDEOMODE_src_height == VIDEOMODE_dest_height)
+			display_modes[0].display_screen_func = &DisplayWithoutScaling;
+		else
+			display_modes[0].display_screen_func = &DisplayWithScaling;
+	}
 	PLATFORM_DisplayScreen();
 }
 
-void PLATFORM_SetFilter(const enum PLATFORM_filter_t filter)
+VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size)
 {
-	/* Mode to return when filter is turned off */
-	static enum display_mode_t saved_display_mode;
+	SDL_Rect **modes = SDL_ListModes(NULL, SDL_FULLSCREEN);
+	VIDEOMODE_resolution_t *resolutions;
+	unsigned int num_modes;
+	unsigned int i;
+	if (modes == (SDL_Rect**)0 || modes == (SDL_Rect**)-1)
+		return NULL;
+	/* Determine number of available modes. */
+	for (num_modes = 0; modes[num_modes] != NULL; ++num_modes);
 
-	/* When the display is in XEP80 mode, the filter should not be
-	   switched on/off immediately. It should be switched only when
-	   XEP80 mode is turned off. The variable below indicates which is
-	   the case. */
-	int change_later = (current_display_mode == display_xep80);
-
-	/* Currently switching filter makes no sense when the emulator
-	   is running in PROTO80 mode. */
-	if (current_display_mode == display_proto80)
-		return;
-
-	PLATFORM_filter = filter;
-
-	if (filter == PLATFORM_FILTER_NONE && the_ntscemu != NULL) {
-		/* Turning filter off */
-		FILTER_NTSC_Delete(the_ntscemu);
-		the_ntscemu = NULL;
-		if (change_later)
-			xep80_return_display_mode = saved_display_mode;
-		else {
-			current_display_mode = saved_display_mode;
-			ResetDisplay();
-		}
+	resolutions = Util_malloc(num_modes * sizeof(VIDEOMODE_resolution_t));
+	for (i = 0; i < num_modes; i++) {
+		resolutions[i].width = modes[i]->w;
+		resolutions[i].height = modes[i]->h;
 	}
-	else if (filter == PLATFORM_FILTER_NTSC && the_ntscemu == NULL) {
-		/* Turning filter on */
-		the_ntscemu = FILTER_NTSC_New();
-		FILTER_NTSC_Update(the_ntscemu);
-		if (change_later) {
-			saved_display_mode = xep80_return_display_mode;
-			xep80_return_display_mode = display_ntscemu;
-		} else {
-			saved_display_mode = current_display_mode;
-			current_display_mode = display_ntscemu;
-			ResetDisplay();
-		}
-	}
+	*size = num_modes;
+
+	return resolutions;
 }
 
-void PLATFORM_Switch80(void)
+VIDEOMODE_resolution_t *PLATFORM_DesktopResolution(void)
 {
-	PLATFORM_show_80 = 1 - PLATFORM_show_80;
-	if (PLATFORM_show_80) {
-		xep80_return_display_mode = current_display_mode;
-		if (AF80_enabled) {
-			current_display_mode = display_af80;
-		} else if (PBI_PROTO80_enabled) {
-			current_display_mode = display_proto80;
-		} else if (XEP80_enabled) {
-			current_display_mode = display_xep80;
-		}
-	}
-	else
-		current_display_mode = xep80_return_display_mode;
-	ResetDisplay();
-	PLATFORM_DisplayScreen();
+	return &desktop_resolution;
 }
 
-static void SwitchWidth(void)
+int PLATFORM_SupportsVideomode(VIDEOMODE_MODE_t mode, int stretch, int rotate90)
 {
-	width_mode++;
-	if (width_mode > FULL_WIDTH_MODE)
-		width_mode = SHORT_WIDTH_MODE;
-
-	ResetDisplay();
-	PLATFORM_DisplayScreen();
+	if (mode == VIDEOMODE_MODE_NORMAL) {
+		/* Normal mode doesn't support stretching together with rotation. */
+		return !(stretch && rotate90);
+	} else
+		/* Other modes don't support stretching or rotation at all. */
+		return !stretch && !rotate90;
 }
 
-static void SwitchBW(void)
-{
-	bw = 1 - bw;
-	CalcPalette();
-	SetPalette();
-	ModeInfo();
-}
 
 static void SwapJoysticks(void)
 {
@@ -885,6 +741,7 @@ void Sound_Reinit(void)
 static void SoundInitialise(int *argc, char *argv[])
 {
 	int i, j;
+	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-sound") == 0)
@@ -909,6 +766,7 @@ static void SoundInitialise(int *argc, char *argv[])
 #endif
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
 				Log_print("\t-sound           Enable sound");
 				Log_print("\t-nosound         Disable sound");
 				Log_print("\t-audio16         Use 16-bit sound output");
@@ -921,6 +779,9 @@ static void SoundInitialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
+
+	if (help_only)
+		return;
 
 	SoundSetup();
 	SDL_PauseAudio(0);
@@ -976,7 +837,7 @@ int PLATFORM_Keyboard(void)
 			}
 			break;
 		case SDL_VIDEORESIZE:
-			ResizeDisplay(event.resize.w, event.resize.h);
+			VIDEOMODE_SetWindowSize(event.resize.w, event.resize.h);
 			break;
 		case SDL_QUIT:
 			return AKEY_EXIT;
@@ -1000,21 +861,17 @@ int PLATFORM_Keyboard(void)
 			switch (lastkey) {
 			case SDLK_f:
 				key_pressed = 0;
-				SwitchFullscreen();
+				VIDEOMODE_ToggleWindowed();
 				break;
 			case SDLK_x:
-				if (INPUT_key_shift && (AF80_enabled || XEP80_enabled || PBI_PROTO80_enabled)) {
+				if (INPUT_key_shift) {
 					key_pressed = 0;
-					PLATFORM_Switch80();
+					VIDEOMODE_Toggle80Column();
 				}
 				break;
 			case SDLK_g:
 				key_pressed = 0;
-				SwitchWidth();
-				break;
-			case SDLK_b:
-				key_pressed = 0;
-				SwitchBW();
+				VIDEOMODE_ToggleHorizontalArea();
 				break;
 			case SDLK_j:
 				key_pressed = 0;
@@ -1107,7 +964,7 @@ int PLATFORM_Keyboard(void)
 				}
 				break;
 			default:
-				if(current_display_mode == display_ntscemu){
+				if(current_display_mode == VIDEOMODE_MODE_NTSC_FILTER){
 					switch(lastkey){
 					case SDLK_7:
 						key_pressed = 0;
@@ -1784,10 +1641,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
 		
-		if (strcmp(argv[i], "-ntscemu") == 0) {
-			PLATFORM_filter = PLATFORM_FILTER_NTSC;
-		}
-		else if (strcmp(argv[i], "-scanlines") == 0) {
+		if (strcmp(argv[i], "-scanlines") == 0) {
 			if (i_a) {
 				scanlines_percentage  = Util_sscandec(argv[++i]);
 				Log_print("scanlines percentage set");
@@ -1798,41 +1652,19 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			scanlinesnoint = TRUE;
 			Log_print("scanlines interpolation disabled");
 		}
-		else if (strcmp(argv[i], "-rotate90") == 0) {
-			current_display_mode = display_rotated;
-			no_joystick = 1;
-			Log_print("rotate90 mode");
-		}
 		else if (strcmp(argv[i], "-nojoystick") == 0) {
 			no_joystick = 1;
 			Log_print("no joystick");
 		}
-		else if (strcmp(argv[i], "-width") == 0) {
-			if (i_a) {
-				display_modes[display_normal].w = Util_sscandec(argv[++i]);
-				Log_print("width set");
-			}
-			else a_m = TRUE;
-		}
-		else if (strcmp(argv[i], "-height") == 0) {
-			if (i_a) {
-				display_modes[display_normal].h = Util_sscandec(argv[++i]);
-				Log_print("height set");
-			}
-			else a_m = TRUE;
-		}
 		else if (strcmp(argv[i], "-bpp") == 0) {
 			if (i_a) {
-				display_modes[display_normal].bpp = Util_sscandec(argv[++i]);
-				Log_print("bpp set");
+				int bpp = display_modes[VIDEOMODE_MODE_NORMAL].bpp = Util_sscandec(argv[++i]);
+				if (bpp != 0 && bpp != 8 && bpp != 16 && bpp != 32) {
+					Log_print("Invalid BPP value %d", bpp);
+					return FALSE;
+				}
 			}
 			else a_m = TRUE;
-		}
-		else if (strcmp(argv[i], "-fullscreen") == 0) {
-			fullscreen = 1;
-		}
-		else if (strcmp(argv[i], "-windowed") == 0) {
-			fullscreen = 0;
 		}
 		else if (strcmp(argv[i], "-grabmouse") == 0) {
 			grab_mouse = 1;
@@ -1840,20 +1672,14 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-				Log_print("\t-ntscemu         Emulate NTSC composite video (640x480x16)");
 				Log_print("\t-scanlines       Specify scanlines percentage (ntscemu only)");
 				Log_print("\t-scanlinesnoint  Disable scanlines interpolation (ntscemu only)");
-				Log_print("\t-rotate90        Display 240x320 screen");
 				Log_print("\t-nojoystick      Disable joystick");
 #ifdef LPTJOY
 				Log_print("\t-joy0 <pathname> Select LPTjoy0 device");
 				Log_print("\t-joy1 <pathname> Select LPTjoy0 device");
 #endif /* LPTJOY */
-				Log_print("\t-width <num>     Host screen width");
-				Log_print("\t-height <num>    Host screen height");
-				Log_print("\t-bpp <num>       Host color depth");
-				Log_print("\t-fullscreen      Run fullscreen");
-				Log_print("\t-windowed        Run in window");
+				Log_print("\t-bpp <num>       Host color depth (0 = autodetect)");
 				Log_print("\t-grabmouse       Prevent mouse pointer from leaving window");
 			}
 			argv[j++] = argv[i];
@@ -1866,46 +1692,42 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	i = SDL_INIT_VIDEO | SDL_INIT_JOYSTICK;
+	if (!help_only) {
+		i = SDL_INIT_VIDEO | SDL_INIT_JOYSTICK;
 #ifdef SOUND
-	if (!help_only)
 		i |= SDL_INIT_AUDIO;
 #endif
 #ifdef HAVE_WINDOWS_H
-	/* Windows SDL version 1.2.10+ uses windib as the default, but it is slower.
-	   Additionally on some graphic cards it doesn't work properly in low
-	   resolutions like Atari800's default of 336x240. */
-	if (SDL_getenv("SDL_VIDEODRIVER")==NULL)
-		SDL_putenv("SDL_VIDEODRIVER=directx");
+		/* Windows SDL version 1.2.10+ uses windib as the default, but it is slower.
+		   Additionally on some graphic cards it doesn't work properly in low
+		   resolutions like Atari800's default of 336x240. */
+		if (SDL_getenv("SDL_VIDEODRIVER")==NULL)
+			SDL_putenv("SDL_VIDEODRIVER=directx");
 #endif
-	if (SDL_Init(i) != 0) {
-		Log_print("SDL_Init FAILED");
-		Log_print(SDL_GetError());
-		Log_flushlog();
-		exit(-1);
+		if (SDL_Init(i) != 0) {
+			Log_print("SDL_Init FAILED");
+			Log_print(SDL_GetError());
+			Log_flushlog();
+			exit(-1);
+		}
+		atexit(SDL_Quit);
+		/* SDL_WM_SetIcon("/usr/local/atari800/atarixe.ICO"), NULL); */
+		SDL_WM_SetCaption(Atari800_TITLE, "Atari800");
 	}
-	atexit(SDL_Quit);
-
-	/* SDL_WM_SetIcon("/usr/local/atari800/atarixe.ICO"), NULL); */
-	SDL_WM_SetCaption(Atari800_TITLE, "Atari800");
 
 #ifdef SOUND
 	SoundInitialise(argc, argv);
 #endif
 
 	if (help_only)
-		return TRUE;		/* return before changing the gfx mode */
+		return TRUE; /* return before initialising SDL */
 
-	/* 80 column devices */
-	if (PBI_PROTO80_enabled || AF80_enabled || XEP80_enabled) {
-		PLATFORM_Switch80();
+	/* Get the desktop resolution */
+	{
+		SDL_VideoInfo const * const info = SDL_GetVideoInfo();
+		desktop_resolution.width = info->current_w;
+		desktop_resolution.height = info->current_h;
 	}
-
-	if (PLATFORM_filter != PLATFORM_FILTER_NONE)
-		PLATFORM_SetFilter(PLATFORM_filter);
-	ResetDisplay();
-
-	Log_print("video initialized");
 
 	if (no_joystick == 0)
 		Init_Joysticks(argc, argv);
@@ -1921,14 +1743,11 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 int PLATFORM_Exit(int run_monitor)
 {
 	int restart;
-	int original_fullscreen = fullscreen;
 
 	SDL_WM_GrabInput(SDL_GRAB_OFF);
 	if (run_monitor) {
 		/* disable graphics, set alpha mode */
-		if (fullscreen) {
-			SwitchFullscreen();
-		}
+		VIDEOMODE_ForceWindowed(TRUE);
 #ifdef SOUND
 		Sound_Pause();
 #endif
@@ -1943,9 +1762,7 @@ int PLATFORM_Exit(int run_monitor)
 
 	if (restart) {
 		/* set up graphics and all the stuff */
-		if (original_fullscreen != fullscreen) {
-			SwitchFullscreen();
-		}
+		VIDEOMODE_ForceWindowed(FALSE);
 		if(grab_mouse) SDL_WM_GrabInput(SDL_GRAB_ON);
 		return 1;
 	}
@@ -2113,44 +1930,32 @@ static void DisplayXEP80(UBYTE *screen)
 	}
 
 	pitch4 = MainScreen->pitch / 4;
-	start32 = (Uint32 *) MainScreen->pixels;
+	start32 = (Uint32 *) MainScreen->pixels + pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 4;
 
-	i = MainScreen->h;
+	i = VIDEOMODE_src_height;
 	while (i > 0) {
-		memcpy(start32, screen, XEP80_SCRN_WIDTH);
+		memcpy(start32, screen, VIDEOMODE_src_width);
 		screen += XEP80_SCRN_WIDTH;
 		start32 += pitch4;
 		i--;
 	}
 }
 
-static void DisplayNTSCEmu640x480(UBYTE *screen)
+static void DisplayNTSCEmu(UBYTE *screen)
 {
-	/* Number of overscan lines not shown */
-	enum { overscan_lines = 24 };
-	/* Change to 0 to clip the 8-pixel overscan borders off */
-	enum { overscan = 1 };
-
-	/* Atari active pixel area */
-	enum { atari_width = overscan ? atari_ntsc_640_in_width : atari_ntsc_min_in_width };
-	enum { atari_height = 240 -overscan_lines };
-
 	/* Output size */
-	enum { out_width = overscan ? atari_ntsc_640_out_width : atari_ntsc_min_out_width };
-	enum { out_height = atari_height * 2 };
-	enum { left_border_adj = ((640 - out_width)/2) & 0xfffffffc };
-	int const raw_width = Screen_WIDTH; /* raw image has extra data */
+	unsigned int out_width = ATARI_NTSC_OUT_WIDTH(VIDEOMODE_src_width);
+	unsigned int out_height = VIDEOMODE_src_height * 2;
 
-	int jumped = 24;
-	unsigned short *pixels = (unsigned short*)MainScreen->pixels + overscan_lines / 2 * MainScreen->pitch + left_border_adj;
+	unsigned short *pixels = (unsigned short*)MainScreen->pixels + MainScreen->pitch / 2 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
 	/* blit atari image, doubled vertically */
-	atari_ntsc_blit( the_ntscemu,
-			 (ATARI_NTSC_IN_T *) (screen + jumped + overscan_lines / 2 * Screen_WIDTH),
-			 raw_width,
-			 atari_width,
-			 atari_height,
-			 pixels,
-			 MainScreen->pitch * 2 );
+	atari_ntsc_blit(the_ntscemu,
+	                (ATARI_NTSC_IN_T *) (screen + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left),
+	                Screen_WIDTH,
+	                VIDEOMODE_src_width,
+	                VIDEOMODE_src_height,
+	                pixels,
+	                MainScreen->pitch * 2);
 	
 	if (!scanlinesnoint) {
 		scanLines_16_interp((void *)pixels, out_width, out_height, MainScreen->pitch, scanlines_percentage);
@@ -2159,17 +1964,21 @@ static void DisplayNTSCEmu640x480(UBYTE *screen)
 	}
 }
 
-static void DisplayProto80640x400(UBYTE *screen)
+static void DisplayProto80(UBYTE *screen)
 {
 	UWORD white = 0xffff;
 	UWORD black = 0x0000;
-	int skip = MainScreen->pitch - 80*8;
-	Uint16 *start16 = (Uint16 *) MainScreen->pixels;
+	unsigned int first_column = (VIDEOMODE_src_offset_left+7) / 8;
+	unsigned int last_column = (VIDEOMODE_src_offset_left + VIDEOMODE_src_width) / 8;
+	int skip = MainScreen->pitch - (last_column - first_column)*8;
+	Uint16 *start16 = (Uint16 *) MainScreen->pixels + MainScreen->pitch / 2 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
+	Uint16 *copy_start16 = start16;
 
-	int scanline, column;
+	unsigned int scanline, column;
 	UBYTE pixels;
-	for (scanline = 0; scanline < 8*24; scanline++) {
-		for (column = 0; column < 80; column++) {
+	unsigned int last_scanline = VIDEOMODE_src_offset_top + VIDEOMODE_src_height;
+	for (scanline = VIDEOMODE_src_offset_top; scanline < last_scanline; scanline++) {
+		for (column = first_column; column < last_column; column++) {
 			int i;
 			pixels = PBI_PROTO80_GetPixels(scanline,column);
 			for (i = 0; i < 8; i++) {
@@ -2184,17 +1993,21 @@ static void DisplayProto80640x400(UBYTE *screen)
 		}
 		start16 += skip;
 	}
-	scanLines_16_interp((void *)MainScreen->pixels, 640, 400, MainScreen->pitch, scanlines_percentage);
+	scanLines_16_interp((void *)copy_start16, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, scanlines_percentage);
 }
 
-static void DisplayAF80640x500(UBYTE *screen)
+static void DisplayAF80(UBYTE *screen)
 {
 	UWORD black = 0x0000;
-	int skip = MainScreen->pitch - 80*8;
-	Uint16 *start16 = (Uint16 *) MainScreen->pixels;
+	unsigned int first_column = (VIDEOMODE_src_offset_left+7) / 8;
+	unsigned int last_column = (VIDEOMODE_src_offset_left + VIDEOMODE_src_width) / 8;
+	int skip = MainScreen->pitch - (last_column - first_column)*8;
+	Uint16 *start16 = (Uint16 *) MainScreen->pixels + MainScreen->pitch / 2 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
+	Uint16 *copy_start16 = start16;
 
-	int scanline, column;
+	unsigned int scanline, column;
 	UBYTE pixels;
+	unsigned int last_scanline = VIDEOMODE_src_offset_top + VIDEOMODE_src_height;
 
 	static int AF80Frame = 0;
 	int blink;
@@ -2207,8 +2020,8 @@ static void DisplayAF80640x500(UBYTE *screen)
 		blink = FALSE;
 	}
 
-	for (scanline = 0; scanline < 10*25; scanline++) {
-		for (column = 0; column < 80; column++) {
+	for (scanline = VIDEOMODE_src_offset_top; scanline < last_scanline; scanline++) {
+		for (column = first_column; column < last_column; column++) {
 			int i;
 			int colour;
 			pixels = AF80_GetPixels(scanline, column, &colour, blink);
@@ -2224,32 +2037,30 @@ static void DisplayAF80640x500(UBYTE *screen)
 		}
 		start16 += skip;
 	}
-	scanLines_16_interp((void *)MainScreen->pixels, 640, 500, MainScreen->pitch, scanlines_percentage);
+	scanLines_16_interp((void *)copy_start16, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, scanlines_percentage);
 }
 
-static void DisplayRotated240x320(Uint8 *screen)
+static void DisplayRotated(Uint8 *screen)
 {
-	int i, j;
-	register Uint32 *start32;
-	if (MainScreen->format->BitsPerPixel != 16) {
-		Log_print("rotated display works only for bpp=16 right now");
-		Log_flushlog();
-		exit(-1);
-	}
-	start32 = (Uint32 *) MainScreen->pixels;
-	for (j = 0; j < MainScreen->h; j++)
-		for (i = 0; i < MainScreen->w / 2; i++) {
-			Uint8 left = screen[Screen_WIDTH * (i * 2) + 32 + 320 - j];
-			Uint8 right = screen[Screen_WIDTH * (i * 2 + 1) + 32 + 320 - j];
+	unsigned int x, y;
+	register Uint32 *start32 = (Uint32 *) MainScreen->pixels + MainScreen->pitch / 4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
+	int pitch4 = MainScreen->pitch / 4 - VIDEOMODE_dest_width / 2;
+	screen += Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	for (y = 0; y < VIDEOMODE_dest_height; y++) {
+		for (x = 0; x < VIDEOMODE_dest_width / 2; x++) {
+			Uint8 left = screen[Screen_WIDTH * (x * 2) + VIDEOMODE_src_width - y];
+			Uint8 right = screen[Screen_WIDTH * (x * 2 + 1) + VIDEOMODE_src_width - y];
 #ifdef WORDS_BIGENDIAN
 			*start32++ = (Palette16[left] << 16) + Palette16[right];
 #else
 			*start32++ = (Palette16[right] << 16) + Palette16[left];
 #endif
 		}
+		start32 += pitch4;
+	}
 }
 
-static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
+static void DisplayWithoutScaling(Uint8 *screen)
 {
 	register Uint32 quad;
 	register Uint32 *start32;
@@ -2261,22 +2072,24 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 	pitch4 = MainScreen->pitch / 4;
 	start32 = (Uint32 *) MainScreen->pixels;
 
-	screen = screen + jumped;
-	i = MainScreen->h;
+	screen += Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	i = VIDEOMODE_src_height;
 	switch (MainScreen->format->BitsPerPixel) {
 	/* Possible values are 8, 16 and 32, as checked earlier in the
-	 * SetNewVideoModeNormal() function. */
+	 * PLATFORM_SetVideoMode() function. */
 	case 8:
+		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 4;
 		while (i > 0) {
-			memcpy(start32, screen, width);
+			memcpy(start32, screen, VIDEOMODE_src_width);
 			screen += Screen_WIDTH;
 			start32 += pitch4;
 			i--;
 		}
 		break;
 	case 16:
+		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
 		while (i > 0) {
-			pos = width;
+			pos = VIDEOMODE_src_width;
 			do {
 				pos--;
 				c = screen[pos];
@@ -2293,8 +2106,9 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 		break;
 	default:
 		/* MainScreen->format->BitsPerPixel = 32 */
+		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
 		while (i > 0) {
-			pos = width;
+			pos = VIDEOMODE_src_width;
 			do {
 				pos--;
 				c = screen[pos];
@@ -2308,43 +2122,43 @@ static void DisplayWithoutScaling(Uint8 *screen, int jumped, int width)
 	}
 }
 
-static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
+static void DisplayWithScaling(Uint8 *screen)
 {
 	register Uint32 quad;
 	register int x;
 	register int dx;
 	register int yy;
-	register Uint8 *ss;
+	register Uint8 *ss = screen;
 	register Uint32 *start32;
 	int i;
 	int y;
-	int w1, w2, w4;
+	int w1;
 	int w, h;
 	int pos;
 	int pitch4;
 	int dy;
+	int init_x = ((VIDEOMODE_src_width + VIDEOMODE_src_offset_left) << 16) - 0x4000;
+
 	Uint8 c;
 	pitch4 = MainScreen->pitch / 4;
 	start32 = (Uint32 *) MainScreen->pixels;
 
-	w = (width) << 16;
-	h = (Screen_HEIGHT) << 16;
-	dx = w / MainScreen->w;
-	dy = h / MainScreen->h;
-	w1 = MainScreen->w - 1;
-	w2 = MainScreen->w / 2 - 1;
-	w4 = MainScreen->w / 4 - 1;
-	ss = screen;
-	y = (0) << 16;
-	i = MainScreen->h;
+	w = (VIDEOMODE_src_width) << 16;
+	h = (VIDEOMODE_src_height) << 16;
+	dx = w / VIDEOMODE_dest_width;
+	dy = h / VIDEOMODE_dest_height;
+	y = (VIDEOMODE_src_offset_top) << 16;
+	i = VIDEOMODE_dest_height;
 
 	switch (MainScreen->format->BitsPerPixel) {
 	/* Possible values are 8, 16 and 32, as checked earlier in the
-	 * SetNewVideoModeNormal() function. */
+	 * PLATFORM_SetVideoMode() function. */
 	case 8:
+		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 4;
+		w1 = VIDEOMODE_dest_width / 4 - 1;
 		while (i > 0) {
-			x = ((width + jumped) << 16) - 0x4000;
-			pos = w4;
+			x = init_x;
+			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
 				quad = (ss[yy + (x >> 16)] << 24);
@@ -2366,12 +2180,13 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 		}
 		break;
 	case 16:
+		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
+		w1 = VIDEOMODE_dest_width / 2 - 1;
 		while (i > 0) {
-			x = ((width + jumped) << 16) - 0x4000;
-			pos = w2;
+			x = init_x;
+			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
-
 				c = ss[yy + (x >> 16)];
 				quad = Palette16[c] << 16;
 				x = x - dx;
@@ -2380,7 +2195,6 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 				x = x - dx;
 				start32[pos] = quad;
 				pos--;
-
 			}
 			start32 += pitch4;
 			y = y + dy;
@@ -2388,55 +2202,24 @@ static void DisplayWithScaling(Uint8 *screen, int jumped, int width)
 		}
 		break;
 	default:
+		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
+		w1 = VIDEOMODE_dest_width - 1;
 		/* MainScreen->format->BitsPerPixel = 32 */
 		while (i > 0) {
-			x = ((width + jumped) << 16) - 0x4000;
+			x = init_x;
 			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
-
 				c = ss[yy + (x >> 16)];
 				quad = Palette32[c];
 				x = x - dx;
 				start32[pos] = quad;
 				pos--;
-
 			}
 			start32 += pitch4;
 			y = y + dy;
 			i--;
 		}
-	}
-}
-
-void DisplayNormal(Uint8 *screen)
-{
-	int width, jumped;
-
-	switch (width_mode) {
-	case SHORT_WIDTH_MODE:
-		width = Screen_WIDTH - 2 * 24 - 2 * 8;
-		jumped = 24 + 8;
-		break;
-	case DEFAULT_WIDTH_MODE:
-		width = Screen_WIDTH - 2 * 24;
-		jumped = 24;
-		break;
-	case FULL_WIDTH_MODE:
-		width = Screen_WIDTH;
-		jumped = 0;
-		break;
-	default:
-		Log_print("unsupported width_mode");
-		Log_flushlog();
-		exit(-1);
-		break;
-	}
-	if (MainScreen->w == width && MainScreen->h == Screen_HEIGHT) {
-		DisplayWithoutScaling(screen, jumped, width);
-	}
-	else {
-		DisplayWithScaling(screen, jumped, width);
 	}
 }
 
@@ -2444,7 +2227,10 @@ void PLATFORM_DisplayScreen(void)
 {
 	/* Use function corresponding to the current_display_mode. */
 	(*display_modes[current_display_mode].display_screen_func)((UBYTE *)Screen_atari);
-	SDL_Flip(MainScreen);
+	/* SDL_UpdateRect is faster than SDL_Flip, because it updates only
+	   the relevant part of the screen. */
+/*	SDL_Flip(MainScreen);*/
+	SDL_UpdateRect(MainScreen, VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
 }
 
 static int get_SDL_joystick_state(SDL_Joystick *joystick)
@@ -2480,62 +2266,6 @@ static int get_SDL_joystick_state(SDL_Joystick *joystick)
 			return INPUT_STICK_CENTRE;
 	}
 }
-
-#ifdef FINDMODE_TEST
-void FindClosestMode(int* w, int* h)
-{
-	SDL_Rect** modes;
-
-	modes = SDL_ListModes(NULL, SDL_FULLSCREEN);
-
-	if (!modes || (int) modes == -1) {
-#ifdef DEBUG
-		Log_print("SDL: All modes may be available");
-#endif
-	} else {
-		int wbest, hbest;
-		int wcur, hcur;
-		int mode;
-
-		wbest = modes[0]->w;
-		hbest = modes[0]->h;
-		for (mode=0; modes[mode]; mode++) {
-			wcur = modes[mode]->w;
-			hcur = modes[mode]->h;
-#ifdef DEBUG
-			Log_print("SDL: Found mode %dx%d", wcur, hcur);
-#endif
-
-			/* If exact resolution, take it */
-			if (wcur == *w && hcur == *h) {
-				wbest = wcur;
-				hbest = hcur;
-				break;
-			}
-
-			/* If too small, skip to next mode */
-			if (wcur < *w || hcur < *h) {
-				continue;
-			}
-
-			/* If smaller than current best, keep it */
-			if (wcur < wbest || hcur < hbest) {
-				wbest = wcur;
-				hbest = hcur;
-			}
-		}
-		/* If no good mode found, try requested mode */
-		if (wbest > *w || hbest > *h)
-		{
-			*w = wbest;
-			*h = hbest;
-		}
-#ifdef DEBUG
-		Log_print("SDL: Closest mode = %dx%d", *w, *h);
-#endif
-	}
-}
-#endif
 
 static int get_LPT_joystick_state(int fd)
 {

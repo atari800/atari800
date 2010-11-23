@@ -64,12 +64,13 @@
 #include "sndsave.h"
 #include "sound.h"
 #endif
-
-
 #ifdef DIRECTX
 #include "win32\main.h"
 #include "win32\joystick.h"
 #include "win32\screen_win32.h"
+#if SUPPORTS_CHANGE_VIDEOMODE
+#include "videomode.h"
+#endif /* SUPPORTS_CHANGE_VIDEOMODE */
 
 /* Display Settings */
 extern RENDERMODE rendermode;
@@ -149,9 +150,6 @@ char UI_atari_files_dir[UI_MAX_DIRECTORIES][FILENAME_MAX];
 char UI_saved_files_dir[UI_MAX_DIRECTORIES][FILENAME_MAX];
 int UI_n_atari_files_dir = 0;
 int UI_n_saved_files_dir = 0;
-#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
-static int saved_show_80;
-#endif
 
 static UI_tMenuItem *FindMenuItem(UI_tMenuItem *mip, int option)
 {
@@ -1196,14 +1194,7 @@ static void SaveState(void)
 	if (UI_driver->fGetSaveFilename(state_filename, UI_saved_files_dir, UI_n_saved_files_dir)) {
 		int result;
 		UI_driver->fMessage("Please wait while saving...", 0);
-#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
-		/* Save true 80 column state */
-		PLATFORM_show_80 = saved_show_80;
-#endif
 		result = StateSav_SaveAtariState(state_filename, "wb", TRUE);
-#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
-		PLATFORM_show_80 = FALSE;
-#endif
 		if (!result)
 			CantSave(state_filename);
 	}
@@ -1216,10 +1207,6 @@ static void LoadState(void)
 		if (!StateSav_ReadAtariState(state_filename, "rb"))
 			CantLoad(state_filename);
 	}
-#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
-	saved_show_80 = PLATFORM_show_80;
-	PLATFORM_show_80 = FALSE;
-#endif
 }
 
 /* CURSES_BASIC doesn't use artifacting or Atari800_collisions_in_skipped_frames,
@@ -1228,6 +1215,227 @@ static void LoadState(void)
    In case you wonder how artifacting affects CURSES version without
    CURSES_BASIC: it is visible on the screenshots (yes, they are bitmaps). */
 #ifndef CURSES_BASIC
+
+#if SUPPORTS_CHANGE_VIDEOMODE
+static int ChooseVideoResolution(int current_res)
+{
+	UI_tMenuItem *menu_array;
+	char (*res_strings)[10];
+	int num_res = VIDEOMODE_NumAvailableResolutions();
+
+	unsigned int i;
+
+	menu_array = Util_malloc((num_res+1) * sizeof(UI_tMenuItem));
+	res_strings = Util_malloc(num_res * sizeof(char(*[10])));
+
+	for (i = 0; i < num_res; i ++) {
+		VIDEOMODE_CopyResolutionName(i, res_strings[i], 10);
+		menu_array[i].flags = UI_ITEM_ACTION;
+		menu_array[i].retval = i;
+		menu_array[i].prefix = NULL;
+		menu_array[i].item = res_strings[i];
+		menu_array[i].suffix = NULL;
+	}
+	menu_array[num_res].flags = UI_ITEM_HIDDEN;
+	menu_array[num_res].retval = 0;
+	menu_array[i].prefix = NULL;
+	menu_array[i].item = NULL;
+	menu_array[i].suffix = NULL;
+
+	current_res = UI_driver->fSelect(NULL, UI_SELECT_POPUP, current_res, menu_array, NULL);
+	free(res_strings);
+	free(menu_array);
+	return current_res;
+}
+
+static void VideoModeSettings(void)
+{
+	static const UI_tMenuItem stretch_menu_array[] = {
+		UI_MENU_ACTION(0, "none"),
+		UI_MENU_ACTION(1, "integer multiples"),
+		UI_MENU_ACTION(2, "full"),
+		UI_MENU_END
+	};
+	static const UI_tMenuItem aspect_menu_array[] = {
+		UI_MENU_ACTION(0, "disabled"),
+		UI_MENU_ACTION(1, "1:1"),
+		UI_MENU_ACTION(2, "like real TV"),
+		UI_MENU_END
+	};
+	static const UI_tMenuItem width_menu_array[] = {
+		UI_MENU_ACTION(0, "narrow"),
+		UI_MENU_ACTION(1, "normal"),
+		UI_MENU_ACTION(2, "full"),
+		UI_MENU_ACTION(3, "custom"),
+		UI_MENU_END
+	};
+	char horiz_area_string[4];
+	static const UI_tMenuItem height_menu_array[] = {
+		UI_MENU_ACTION(0, "short"),
+		UI_MENU_ACTION(1, "normal"),
+		UI_MENU_ACTION(2, "full"),
+		UI_MENU_ACTION(3, "custom"),
+		UI_MENU_END
+	};
+	char vert_area_string[4];
+	static char res_string[10];
+	static char ratio_string[10];
+	static char horiz_offset_string[4];
+	static char vert_offset_string[4];
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_SUBMENU_SUFFIX(0, "Fullscreen resolution:", res_string),
+		UI_MENU_CHECK(1, "Fullscreen:"),
+#if SUPPORTS_ROTATE_VIDEOMODE
+		UI_MENU_CHECK(2, "Rotate sideways:"),
+#endif
+		UI_MENU_SUBMENU_SUFFIX(3, "Stretch:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(4, "Keep aspect ratio:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(5, "Host display aspect ratio:", ratio_string),
+		UI_MENU_SUBMENU_SUFFIX(6, "Horizontal view area:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(7, "Vertical view area:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(8, "Horizontal offset:", horiz_offset_string),
+		UI_MENU_SUBMENU_SUFFIX(9, "Vertical offset:", vert_offset_string),
+		UI_MENU_END
+	};
+	int option = 0;
+	int option2 = 0;
+	int seltype;
+
+	for (;;) {
+		VIDEOMODE_CopyResolutionName(VIDEOMODE_GetFullscreenResolution(), res_string, 10);
+		SetItemChecked(menu_array, 1, !VIDEOMODE_windowed);
+#if SUPPORTS_ROTATE_VIDEOMODE
+		SetItemChecked(menu_array, 2, VIDEOMODE_rotate90);
+#endif
+		FindMenuItem(menu_array, 3)->suffix = stretch_menu_array[VIDEOMODE_stretch].item;
+		FindMenuItem(menu_array, 4)->suffix = aspect_menu_array[VIDEOMODE_keep_aspect].item;
+		VIDEOMODE_CopyHostAspect(ratio_string, 10);
+		if (VIDEOMODE_horizontal_area < VIDEOMODE_HORIZONTAL_SIZE)
+			FindMenuItem(menu_array, 6)->suffix = width_menu_array[VIDEOMODE_horizontal_area].item;
+		else {
+			FindMenuItem(menu_array, 6)->suffix = horiz_area_string;
+#ifdef HAVE_SNPRINTF
+			snprintf(horiz_area_string, sizeof(horiz_area_string), "%d", VIDEOMODE_custom_horizontal_area);
+#else
+			sprintf(horiz_area_string, "%d", VIDEOMODE_custom_horizontal_area);
+#endif
+		}
+		if (VIDEOMODE_vertical_area < VIDEOMODE_VERTICAL_SIZE)
+			FindMenuItem(menu_array, 7)->suffix = height_menu_array[VIDEOMODE_vertical_area].item;
+		else {
+			FindMenuItem(menu_array, 7)->suffix = vert_area_string;
+#ifdef HAVE_SNPRINTF
+			snprintf(vert_area_string, sizeof(vert_area_string), "%d", VIDEOMODE_custom_vertical_area);
+#else
+			sprintf(vert_area_string, "%d", VIDEOMODE_custom_vertical_area);
+#endif
+		}
+#ifdef HAVE_SNPRINTF
+		snprintf(horiz_offset_string, sizeof(horiz_offset_string), "%d", VIDEOMODE_horizontal_offset);
+		snprintf(vert_offset_string, sizeof(vert_offset_string), "%d", VIDEOMODE_vertical_offset);
+#else
+		sprintf(horiz_offset_string, "%d", VIDEOMODE_horizontal_offset);
+		sprintf(vert_offset_string, "%d", VIDEOMODE_vertical_offset);
+#endif
+
+		option = UI_driver->fSelect("Video Mode Settings", 0, option, menu_array, &seltype);
+		switch (option) {
+		case 0:
+			option2 = ChooseVideoResolution(VIDEOMODE_GetFullscreenResolution());
+			if (option2 >= 0)
+				VIDEOMODE_SetFullscreenResolution(option2);
+			break;
+		case 1:
+			VIDEOMODE_ToggleWindowed();
+			break;
+#if SUPPORTS_ROTATE_VIDEOMODE
+		case 2:
+			VIDEOMODE_ToggleRotate90();
+			break;
+#endif
+		case 3:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_stretch, stretch_menu_array, NULL);
+			if (option2 >= 0)
+				VIDEOMODE_SetStretch(option2);
+			break;
+		case 4:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_keep_aspect, aspect_menu_array, NULL);
+			if (option2 >= 0)
+				VIDEOMODE_SetKeepAspect(option2);
+			break;
+		case 5:
+			{
+				char buffer[10]; /* same size as in colour_controls[0].string */
+				memcpy(buffer, ratio_string, sizeof(buffer));
+				if (UI_driver->fEditString("Enter value in x:y format", buffer, sizeof(buffer))) {
+					VIDEOMODE_SetHostAspectString(buffer);
+				}
+			}
+			break;
+		case 6:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_horizontal_area, width_menu_array, NULL);
+			if (option2 >= 0) {
+				if (option2 < VIDEOMODE_HORIZONTAL_SIZE)
+					VIDEOMODE_SetHorizontalArea(option2);
+				else {
+					char buffer[4]; /* same size as horiz_area_string */
+#ifdef HAVE_SNPRINTF
+					snprintf(buffer, sizeof(buffer), "%d", VIDEOMODE_custom_horizontal_area);
+#else
+					sprintf(buffer, "%d", VIDEOMODE_custom_horizontal_area);
+#endif
+					if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
+						int area = atof(buffer);
+						VIDEOMODE_SetCustomHorizontalArea(area);
+					}
+				}
+			}
+			break;
+		case 7:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_vertical_area, height_menu_array, NULL);
+			if (option2 >= 0) {
+				if (option2 < VIDEOMODE_VERTICAL_SIZE)
+					VIDEOMODE_SetVerticalArea(option2);
+				else {
+					char buffer[4]; /* same size as vert_area_string */
+#ifdef HAVE_SNPRINTF
+					snprintf(buffer, sizeof(buffer), "%d", VIDEOMODE_custom_vertical_area);
+#else
+					sprintf(buffer, "%d", VIDEOMODE_custom_vertical_area);
+#endif
+					if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
+						int area = atof(buffer);
+						VIDEOMODE_SetCustomVerticalArea(area);
+					}
+				}
+			}
+			break;
+		case 8:
+			{
+				char buffer[4]; /* same size as horiz_offset_string */
+				memcpy(buffer, horiz_offset_string, sizeof(buffer));
+				if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
+					int offset = atof(buffer);
+					VIDEOMODE_SetHorizontalOffset(offset);
+				}
+			}
+			break;
+		case 9:
+			{
+				char buffer[4]; /* same size as vert_offset_string */
+				memcpy(buffer, vert_offset_string, sizeof(buffer));
+				if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
+					int offset = atof(buffer);
+					VIDEOMODE_SetVerticalOffset(offset);
+				}
+			}
+			break;
+		default:
+			return;
+		}
+	}
+}
+#endif /* SUPPORTS_CHANGE_VIDEOMODE */
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 /* An array of pointers to colour controls (brightness, contrast, NTSC filter
@@ -1365,8 +1573,14 @@ static void DisplaySettings(void)
 	
 	static char refresh_status[16];
 	static UI_tMenuItem menu_array[] = {
+#if SUPPORTS_CHANGE_VIDEOMODE
+		UI_MENU_SUBMENU(24, "Video mode settings"),
+#endif /* SUPPORTS_CHANGE_VIDEOMODE */
 		UI_MENU_SUBMENU_SUFFIX(0, "NTSC artifacting quality:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(11, "NTSC artifacting mode:", NULL),
+#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
+		UI_MENU_CHECK(25, "80 column display if available:"),
+#endif
 		UI_MENU_SUBMENU_SUFFIX(1, "Current refresh rate:", refresh_status),
 		UI_MENU_CHECK(2, "Accurate skipped frames:"),
 		UI_MENU_CHECK(3, "Show percents of Atari speed:"),
@@ -1402,7 +1616,11 @@ static void DisplaySettings(void)
 		UI_MENU_END
 	};
 
+#if SUPPORTS_CHANGE_VIDEOMODE
+	int option = 24;
+#else
 	int option = 0;
+#endif
 	int option2;
 	int seltype;
 
@@ -1419,18 +1637,18 @@ static void DisplaySettings(void)
 #if NTSC_FILTER
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 		/* Show NTSC filter option only if necessary. */
-		if (PLATFORM_filter == PLATFORM_FILTER_NTSC)
+		if (VIDEOMODE_ntsc_filter)
 			FindMenuItem(menu_array, 19)->flags = UI_ITEM_SUBMENU;
 		else
 			FindMenuItem(menu_array, 19)->flags = UI_ITEM_HIDDEN;
 #endif
 
 		/* Computing current artifacting quality... */
-		if (PLATFORM_filter != PLATFORM_FILTER_NONE) {
+		if (VIDEOMODE_ntsc_filter) {
 			/* NTSC filter is on */
-			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[2 + PLATFORM_filter].item;
+			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[3].item;
 			FindMenuItem(menu_array, 11)->suffix = "N/A";
-			artif_quality = 2 + PLATFORM_filter;
+			artif_quality = 3;
 		} else
 #endif /* NTSC_FILTER */
 		if (ANTIC_artif_mode == 0) { /* artifacting is off */
@@ -1468,6 +1686,9 @@ static void DisplaySettings(void)
 		}
 #endif
 
+#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
+		SetItemChecked(menu_array, 25, VIDEOMODE_80_column);
+#endif
 		sprintf(refresh_status, "1:%-2d", Atari800_refresh_rate);
 		SetItemChecked(menu_array, 2, Atari800_collisions_in_skipped_frames);
 		SetItemChecked(menu_array, 3, Screen_show_atari_speed);
@@ -1483,18 +1704,23 @@ static void DisplaySettings(void)
 #endif
 		option = UI_driver->fSelect("Display Settings", 0, option, menu_array, &seltype);
 		switch (option) {
+#if SUPPORTS_CHANGE_VIDEOMODE
+		case 24:
+			VideoModeSettings();
+			break;
+#endif
 		case 0:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, artif_quality, artif_quality_menu_array, NULL);
 			if (option2 >= 0)
 			{
-#if NTSC_FILTER
+#if NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE
 				/* If switched between non-filter and NTSC filter,
-				   PLATFORM_filter must be updated. */
+				   VIDEOMODE_ntsc_filter must be updated. */
 				if (option2 >= 3 && artif_quality < 3)
-					PLATFORM_SetFilter(option2 - 2);
+					VIDEOMODE_SetNtscFilter(TRUE);
 				else if (option2 < 3 && artif_quality >= 3)
-					PLATFORM_SetFilter(PLATFORM_FILTER_NONE);
-#endif
+					VIDEOMODE_SetNtscFilter(FALSE);
+#endif /* NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE */
 				/* ANTIC artifacting settings cannot be turned on
 				   when artifacting is off or NTSC filter. */
 				if (option2 == 0 || option2 >= 3) {
@@ -1521,6 +1747,11 @@ static void DisplaySettings(void)
 				}
 			}
 			break;
+#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
+		case 25:
+			VIDEOMODE_Toggle80Column();
+			break;
+#endif /* SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80)) */
 		case 1:
 			Atari800_refresh_rate = UI_driver->fSelectInt(Atari800_refresh_rate, 1, 99);
 			break;
@@ -1608,7 +1839,7 @@ static void DisplaySettings(void)
 		case 20:
 			Colours_RestoreDefaults();
 #if NTSC_FILTER
-			if (PLATFORM_filter == PLATFORM_FILTER_NTSC)
+			if (VIDEOMODE_ntsc_filter)
 				FILTER_NTSC_RestoreDefaults();
 #endif
 			UpdateColourControls(menu_array);
@@ -1640,7 +1871,6 @@ static void DisplaySettings(void)
 			SavePalette();
 			break;
 #endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
-
 		default:
 			return;
 		}
@@ -2518,11 +2748,8 @@ void UI_Run(void)
 
 	int option = UI_MENU_RUN;
 	int done = FALSE;
-#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
-	saved_show_80 = PLATFORM_show_80;
-	if (PLATFORM_show_80) {
-		PLATFORM_Switch80();
-	}
+#if SUPPORTS_CHANGE_VIDEOMODE
+	VIDEOMODE_ForceStandardScreen(TRUE);
 #endif
 
 	UI_is_active = TRUE;
@@ -2701,10 +2928,8 @@ void UI_Run(void)
 
 	UI_alt_function = UI_current_function = -1;
 	/* restore 80 column screen */
-#if defined(XEP80_EMULATION) || defined(AF80) || defined(PBI_PROTO80)
-	if (saved_show_80 != PLATFORM_show_80) {
-		PLATFORM_Switch80();
-	}
+#if SUPPORTS_CHANGE_VIDEOMODE
+	VIDEOMODE_ForceStandardScreen(FALSE);
 #endif
 }
 

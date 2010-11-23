@@ -1,14 +1,15 @@
-Version 2.2.0 (2010/05/??)
+Version 2.2.0 (2010/11/??)
 
- Another update after 14 months. A lot of changes and improvements:
+ Another update after 20 months. A lot of changes and major improvements:
 
  New features:
  -------------
     * SDL features synchronized sound (GTIA+POKEY digisounds play properly now)
+    * DirectX display enhancements
+    * SDL display enhancements
     * NTSC and PAL colours
     * Austin Franklin 80 Column card
     * emulate the Alien Group Voice Box I and II
-    * DirectX display enhancements
     * Added support for F12 turbo mode.
     * IDE emulation (compatible with MyIDE)
 
@@ -17,6 +18,65 @@ Version 2.2.0 (2010/05/??)
     * trak-ball (cx22) emulation fixed
     * SDL: leftmost column missing in 16/32bpp fixed
     * DirectX default for Win32 SDL
+
+  SDL Display enhancements:
+  -------------------------
+1. Fullscreen resolution - this gives a list of all available resolutions from 
+which a user chooses one. The default resolution is the next-bigger-than 
+336x240.
+2. Fullscreen: yes/no - obvious. Window size is independent from the chosen 
+fullscreen resolution and can be changed by resizing the window.
+3. Rotate sideways: yes/no - rotates the screen by 90 deg. Works as earlier, 
+ie. only for "standard" display (no NTSC filter, no 80 column card).
+4. Stretch - this option controls how display stretching (scaling) is 
+performed. We can select one of:
+a) none - no stretching at all
+b) integer multiples (default) - width and height will be resized by 1x, 2x, 
+3x etc.
+c) full - stretching is unrestricted, display will cover the entire screen.
+5. Keep aspect ratio - this option controls how the display's aspect ratio is 
+corrected. 3 options available:
+a) disabled - no aspect ratio correction, display will fill entire 
+screen/window,
+b) 1:1 (default) - width and height will be multipled by the same value
+c) like real TV - display will be resized to reflect pixel aspect ratio of a 
+real Atari connected to a TV. Atari pixels are not square; pixel width-to-
+height ratio is about 0.857 for NTSC and 1.039 for PAL. This option reflects 
+that.
+6. Host display aspect ratio - here the user enters aspect ratio of his 
+monitor. This value is used to properly compute display aspect ratio when 
+"Keep aspect ratio" is set to "like real TV". Set it to 4:3 (default), 16:9, 
+1.78:1 etc.
+7. Horizontal view area - this option sets the size of Atari screen area 
+visible horizontally. Choose one of:
+a) narrow - 320 columns wide,
+b) normal (default) - 336 columns wide,
+c) full - 384 columns
+d) custom - lets the user enter any value between 160 and 384.
+8. Vertical view area - similar to above:
+a) short - 200 lines high
+b) normal (default) - this setting is TV-system-dependent. In PAL this makes 
+all 240 lines visible, while in NTSC top and bottom 8 lines are hidden, which 
+leaves 224 lines visible. I've made this as such because apparently on NTSC 
+TVs not all 240 lines are visible. The value of 224 was taken by taking full 
+NTSC height (480, divided by 2) and cutting top and bottom 3.5% (different 
+sources say 3.5% is the "action-safe" overscan area).
+c) full - 240 lines high
+d) custom - any value between 100 and 240.
+9. Horizontal offset - when amount of columns displayed is less than 384, this 
+option "shifts" the visible screen area. Setting to higher than 0 shows more 
+of the right side, and lower than 0 shows more of the left side.
+10. Vertical offset - similar to above.
+
+Additionally, the Alt+Shift+X shortcut that switches beetween standard<->80 
+column display is now also available as "Display settings->80 column display 
+if available: yes/no".
+
+The Alt+B switch however has been removed - since setting black/white colours 
+can be done in Display settings anyway.
+
+All new options are also available from command line and are saveable in 
+configuration.
 
 
 Version 2.1.0 (2009/03/27)

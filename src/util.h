@@ -69,6 +69,10 @@ int Util_sscanhex(const char *s);
 /* Likewise, but allows only 0 and 1. */
 int Util_sscanbool(const char *s);
 
+/* Converts the string S to a signed integer *DEST and returns a success flag.
+   The string must be a decimal number optionally preceded by a + or - sign. */
+int Util_sscansdec(char const *s, int *dest);
+
 /* safe_strncpy guarantees that the dest. buffer ends with '\0' */
 char *safe_strncpy(char *, const char *, int);
 
