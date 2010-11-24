@@ -2,6 +2,8 @@
 * many files: Tomasz Krasuski's large patch that implements major SDL video
   output improvements - see "Display settings" -> "Video mode settings".
 
+* util.c: fixed Util_stricmp() implementation (was broken for empty strings)
+
 
 2010-11-23  Petr Stehlik <pstehlik@sophics.cz>
 * configure.ac: Matthias Reichl's patches for cross-compilation of the Windows

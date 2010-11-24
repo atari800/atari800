@@ -58,16 +58,11 @@ int Util_chrieq(char c1, char c2)
 #ifdef __STRICT_ANSI__
 int Util_stricmp(const char *str1, const char *str2)
 {
-	int retval = 0;
+	int retval;
 
-	for (;;)
+	while((retval = tolower(*str1) - tolower(*str2++)) == 0)
 	{
-		retval = tolower(*str1++) - tolower(*str2++);
-
-		if (retval)
-			break;
-
-		if (*str1 == '\0' && *str2 == '\0')
+		if (*str1++ == '\0')
 			break;
 	}
 	return retval;
