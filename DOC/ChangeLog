@@ -1,3 +1,11 @@
+2010-11-25  Petr Stehlik <pstehlik@sophics.cz>
+* cartridge.c, cassette.c, cfg.c, devices.c, monitor.c, pbi_scsi.c, sio.c,
+  sound_oss.c, statesav.c, ui.c: GCC warnings about unused results fixed
+  (mostly return values of fread() and similar libc functions).
+
+* atari.c: fixed benchmarking with SDL (DONT_DISPLAY)
+
+
 2010-11-24  Petr Stehlik <pstehlik@sophics.cz>
 * many files: Tomasz Krasuski's large patch that implements major SDL video
   output improvements - see "Display settings" -> "Video mode settings".
