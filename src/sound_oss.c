@@ -2,7 +2,7 @@
  * sound_oss.c - Open Sound System driver
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -218,7 +218,10 @@ void Sound_Update(void)
 		}
 	}
 
-	write(dsp_fd, buffer, len);
+	int wlen = write(dsp_fd, buffer, len);
+	if (wlen < len) {
+		/* handle problem */
+	}
 }
 
 #endif	/* SOUND */

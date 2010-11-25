@@ -666,7 +666,10 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 		unsigned char *count;
 		info = (pro_additional_info_t *)additional_info[unit];
 		count = info->count;
-		fread(buffer, 1, 12, disk[unit]);
+		if (fread(buffer, 1, 12, disk[unit]) < 12) {
+			Log_print("Error in header of .pro image: sector:%d", sector);
+			return 'E';
+		}
 		/* handle duplicate sectors */
 		if (buffer[5] != 0) {
 			int dupnum = count[sector];
@@ -683,12 +686,17 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 				}
 				size = SeekSector(unit, sector);
 				/* read sector header */
-				fread(buffer, 1, 12, disk[unit]);
+				if (fread(buffer, 1, 12, disk[unit]) < 12) {
+					Log_print("Error in header2 of .pro image: sector:%d dupnum:%d", sector, dupnum);
+					return 'E';
+				}
 			}
 		}
 		/* bad sector */
 		if (buffer[1] != 0xff) {
-			fread(buffer, 1, size, disk[unit]);
+			if (fread(buffer, 1, size, disk[unit]) < size) {
+				Log_print("Error in bad sector of .pro image: sector:%d", sector);
+			}
 			io_success[unit] = sector;
 #ifdef DEBUG_PRO
 			Log_print("bad sector:%d", sector);
@@ -784,7 +792,9 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 		info->sec_stat_buff[2] = 0xe0;
 		info->sec_stat_buff[3] = 0;
 		if (secinfo->sec_status[secindex] != 0xFF) {
-			fread(buffer, 1, size, disk[unit]);
+			if (fread(buffer, 1, size, disk[unit]) < size) {
+				Log_print("error reading sector:%d", sector);
+			}
 			io_success[unit] = sector;
 			info->vapi_delay_time += VAPI_CYCLES_PER_ROT + 10000;
 #ifdef DEBUG_VAPI
@@ -806,7 +816,9 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 		Log_flushlog();
 #endif		
 	}
-	fread(buffer, 1, size, disk[unit]);	
+	if (fread(buffer, 1, size, disk[unit]) < size) {
+		Log_print("incomplete sector num:%d", sector);
+	}
 	io_success[unit] = 0;
 	return 'C';
 }
@@ -1055,7 +1067,9 @@ int SIO_DriveStatus(int unit, UBYTE *buffer)
 	if (io_success[unit] != 0  && image_type[unit] == IMAGE_TYPE_PRO) {
 		int sector = io_success[unit];
 		SeekSector(unit, sector);
-		fread(buffer, 1, 4, disk[unit]);
+		if (fread(buffer, 1, 4, disk[unit]) < 4) {
+			Log_print("SIO_DriveStatus: failed to read sector header");
+		}
 		return 'C';
 	}
 	else if (io_success[unit] != 0  && image_type[unit] == IMAGE_TYPE_VAPI &&
@@ -1746,3 +1760,7 @@ void SIO_StateRead(void)
 }
 
 #endif /* BASIC */
+
+/*
+vim:ts=4:sw=4:
+*/

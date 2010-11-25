@@ -2,7 +2,7 @@
  * devices.c - emulation of H:, P:, E: and K: Atari devices
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -1843,8 +1843,9 @@ static void Devices_P_Close(void)
 #endif
 		{
 			char command[256 + FILENAME_MAX]; /* 256 for Devices_print_command + FILENAME_MAX for spool_file */
+			int retval;
 			sprintf(command, Devices_print_command, spool_file);
-			system(command);
+			retval = system(command);
 #if defined(HAVE_UTIL_UNLINK) && !defined(VMS) && !defined(MACOSX)
 			if (Util_unlink(spool_file) != 0) {
 				perror(spool_file);
@@ -2509,3 +2510,7 @@ void Devices_UpdatePatches(void)
 	}
 #endif /* defined(R_IO_DEVICE) */
 }
+
+/*
+vim:ts=4:sw=4:
+*/

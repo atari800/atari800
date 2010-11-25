@@ -353,10 +353,11 @@ static void DiskManagement(void)
 				}
 				for (i = 0; i < 8; i++) {
 					char filename[FILENAME_MAX];
-					fgets(filename, FILENAME_MAX, fp);
-					Util_chomp(filename);
-					if (strcmp(filename, "Empty") != 0 && strcmp(filename, "Off") != 0)
-						SIO_Mount(i + 1, filename, FALSE);
+					if (fgets(filename, FILENAME_MAX, fp) != NULL) {
+						Util_chomp(filename);
+						if (strcmp(filename, "Empty") != 0 && strcmp(filename, "Off") != 0)
+							SIO_Mount(i + 1, filename, FALSE);
+					}
 				}
 				fclose(fp);
 			}
@@ -707,7 +708,10 @@ static void CartManagement(void)
 					break;
 				}
 				image = (UBYTE *) Util_malloc(nbytes);
-				fread(image, 1, nbytes, f);
+				if (fread(image, 1, nbytes, f) < nbytes) {
+					UI_driver->fMessage("Error reading CART file", 1);
+					break;
+				}
 				fclose(f);
 
 				if (!UI_driver->fGetSaveFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir))
@@ -2990,3 +2994,7 @@ int CrashMenu(void)
 	}
 }
 #endif
+
+/*
+vim:ts=4:sw=4:
+*/

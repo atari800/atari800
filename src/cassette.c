@@ -2,7 +2,7 @@
  * cassette.c - cassette emulation
  *
  * Copyright (C) 2001 Piotr Fusik
- * Copyright (C) 2001-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -173,7 +173,9 @@ int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *
 				skip = 0;
 			else
 				skip -= CASSETTE_DESCRIPTION_MAX - 1;
-			fread(description, 1, length - skip, f);
+			if (fread(description, 1, length - skip, f) < (length - skip)) {
+				Log_print("Error reading cassette file.\n");
+			}
 		}
 		fseek(f, skip, SEEK_CUR);
 
@@ -327,7 +329,9 @@ static int ReadRecord_SIO(void)
 				break;
 			};
 			fseek(cassette_file, cassette_block_offset[cassette_current_block], SEEK_SET);
-			fread(&header.length_lo, 1, 4, cassette_file);
+			if (fread(&header.length_lo, 1, 4, cassette_file) < 4) {
+				Log_print("Error reading cassette file.\n");
+			}
 			length = header.length_lo + (header.length_hi << 8);
 			/* add gaplength */
 			filegaptimes += header.aux_lo + (header.aux_hi << 8);
@@ -335,7 +339,9 @@ static int ReadRecord_SIO(void)
 			   a byte is encoded into 10 bits */
 			filegaptimes += length * 10 * 1000 / cassette_baudblock[cassette_current_block];
 
-			fread(&CASSETTE_buffer[0], 1, length, cassette_file);
+			if (fread(&CASSETTE_buffer[0], 1, length, cassette_file) < length) {
+				Log_print("Error reading cassette file.\n");
+			}
 			cassette_current_block++;
 		}
 		cassette_gapdelay = 0;
@@ -483,7 +489,9 @@ static int ReadRecord_POKEY(void)
 		else {
 			fseek(cassette_file, cassette_block_offset[
 				cassette_current_block], SEEK_SET);
-			fread(&header.length_lo, 1, 4, cassette_file);
+			if (fread(&header.length_lo, 1, 4, cassette_file) < 4) {
+				Log_print("Error reading cassette file.\n");
+			}
 			length = header.length_lo + (header.length_hi << 8);
 			/* eval total length as pregap + 1 byte */
 			cassette_nextirqevent = cassette_elapsedtime +
@@ -492,7 +500,9 @@ static int ReadRecord_POKEY(void)
 				+ 10 * 1000 / cassette_baudblock[
 				cassette_current_block]);
 			/* read block into buffer */
-			fread(&CASSETTE_buffer[0], 1, length, cassette_file);
+			if (fread(&CASSETTE_buffer[0], 1, length, cassette_file) < length) {
+				Log_print("Error reading cassette file.\n");
+			}
 			cassette_max_blockbytes = length;
 			cassette_current_blockbyte = 0;
 			cassette_current_block++;
@@ -750,3 +760,7 @@ void CASSETTE_AddScanLine(void)
 		}
 	}
 }
+
+/*
+vim:ts=4:sw=4:
+*/

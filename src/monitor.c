@@ -2,7 +2,7 @@
  * monitor.c - Implements a builtin system monitor for debugging
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -1355,7 +1355,9 @@ int MONITOR_Run(void)
 		}
 #ifdef HAVE_SYSTEM
 		if (s[0] == '!') {
-			system(s + 1);
+			if (system(s + 1) == -1) {
+				printf("Error executing '%s'\n", s+1);
+			}
 			continue;
 		}
 #endif
@@ -2214,3 +2216,7 @@ int MONITOR_Run(void)
 			printf("Invalid command!\n");
 	}
 }
+
+/*
+vim:ts=4:sw=4:
+*/

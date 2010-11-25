@@ -139,9 +139,9 @@ static void scsi_process_command(void)
 			lba = (((scsi_buffer[1]&0x1f)<<16)|(scsi_buffer[2]<<8)|(scsi_buffer[3]));
 			D(printf("SCSI: read lun:%d lba:%d\n",lun,lba));
 			fseek(PBI_SCSI_disk, lba*256, SEEK_SET);
-			fread(scsi_buffer, 1, 256, PBI_SCSI_disk);
+			scsi_count = fread(scsi_buffer, 1, 256, PBI_SCSI_disk);
 			scsi_changephase(SCSI_PHASE_DATAIN);
-			scsi_count = 256;
+			/* scsi_count = 256; */
 			break;
 		case 0x0a:
 			/* write */

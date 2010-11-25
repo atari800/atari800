@@ -1,8 +1,8 @@
 /*
  * cartridge.c - cartridge emulation
  *
- * Copyright (C) 2001-2006 Piotr Fusik
- * Copyright (C) 2001-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2010 Piotr Fusik
+ * Copyright (C) 2001-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -43,6 +43,7 @@
 #ifdef AF80
 #include "af80.h"
 #endif
+#include "log.h"
 
 int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	0,
@@ -581,7 +582,9 @@ int CARTRIDGE_Insert(const char *filename)
 	if ((len & 0x3ff) == 0) {
 		/* alloc memory and read data */
 		cart_image = (UBYTE *) Util_malloc(len);
-		fread(cart_image, 1, len, fp);
+		if (fread(cart_image, 1, len, fp) < len) {
+			Log_print("Error reading cartridge.\n");
+		}
 		fclose(fp);
 		/* find cart type */
 		CARTRIDGE_type = CARTRIDGE_NONE;
@@ -602,7 +605,9 @@ int CARTRIDGE_Insert(const char *filename)
 		return CARTRIDGE_BAD_FORMAT;
 	}
 	/* if not full kilobytes, assume it is CART file */
-	fread(header, 1, 16, fp);
+	if (fread(header, 1, 16, fp) < 16) {
+		Log_print("Error reading cartridge.\n");
+	}
 	if ((header[0] == 'C') &&
 		(header[1] == 'A') &&
 		(header[2] == 'R') &&
@@ -616,7 +621,9 @@ int CARTRIDGE_Insert(const char *filename)
 			len = CARTRIDGE_kb[type] << 10;
 			/* alloc memory and read data */
 			cart_image = (UBYTE *) Util_malloc(len);
-			fread(cart_image, 1, len, fp);
+			if (fread(cart_image, 1, len, fp) < len) {
+				Log_print("Error reading cartridge.\n");
+			}
 			fclose(fp);
 			checksum = (header[8] << 24) |
 				(header[9] << 16) |
@@ -656,7 +663,9 @@ int CARTRIDGE_Insert_Second(const char *filename)
 	if ((len & 0x3ff) == 0) {
 		/* alloc memory and read data */
 		second_cart_image = (UBYTE *) Util_malloc(len);
-		fread(second_cart_image, 1, len, fp);
+		if (fread(second_cart_image, 1, len, fp) < len) {
+			Log_print("Error reading cartridge.\n");
+		}
 		fclose(fp);
 		/* find cart type */
 		CARTRIDGE_second_type = CARTRIDGE_NONE;
@@ -676,7 +685,9 @@ int CARTRIDGE_Insert_Second(const char *filename)
 		return CARTRIDGE_BAD_FORMAT;
 	}
 	/* if not full kilobytes, assume it is CART file */
-	fread(header, 1, 16, fp);
+	if (fread(header, 1, 16, fp) < 16) {
+		Log_print("Error reading cartridge.\n");
+	}
 	if ((header[0] == 'C') &&
 		(header[1] == 'A') &&
 		(header[2] == 'R') &&
@@ -690,7 +701,9 @@ int CARTRIDGE_Insert_Second(const char *filename)
 			len = CARTRIDGE_kb[type] << 10;
 			/* alloc memory and read data */
 			second_cart_image = (UBYTE *) Util_malloc(len);
-			fread(second_cart_image, 1, len, fp);
+			if (fread(second_cart_image, 1, len, fp) < len) {
+				Log_print("Error reading cartridge.\n");
+			}
 			fclose(fp);
 			checksum = (header[8] << 24) |
 				(header[9] << 16) |
@@ -1035,3 +1048,7 @@ void CARTRIDGE_StateSave(void)
 }
 
 #endif
+
+/*
+vim:ts=4:sw=4:
+*/

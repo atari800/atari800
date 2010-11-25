@@ -2,7 +2,7 @@
  * cfg.c - Emulator Configuration
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -145,9 +145,9 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 		}
 	}
 
-	fgets(string, sizeof(string), fp);
-
-	Log_print("Using Atari800 config file: %s\nCreated by %s", fname, string);
+	if (fgets(string, sizeof(string), fp) != NULL) {
+		Log_print("Using Atari800 config file: %s\nCreated by %s", fname, string);
+	}
 
 	while (fgets(string, sizeof(string), fp)) {
 		char *ptr;
@@ -436,3 +436,7 @@ int CFG_MatchTextParameter(char const *param, char const * const cfg_strings[], 
 	/* Unrecognised value */
 	return -1;
 }
+
+/*
+vim:ts=4:sw=4:
+*/

@@ -2,7 +2,7 @@
  * statesav.c - saving the emulator's state to a file
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -298,14 +298,15 @@ void StateSav_SaveFNAME(const char *filename)
 {
 	UWORD namelen;
 #ifdef HAVE_GETCWD
-	char dirname[FILENAME_MAX];
+	char dirname[FILENAME_MAX]="";
 
 	/* Check to see if file is in application tree, if so, just save as
 	   relative path....*/
-	getcwd(dirname, FILENAME_MAX);
-	if (strncmp(filename, dirname, strlen(dirname)) == 0)
-		/* XXX: check if '/' or '\\' follows dirname in filename? */
-		filename += strlen(dirname) + 1;
+	if (getcwd(dirname, FILENAME_MAX) != NULL) {
+		if (strncmp(filename, dirname, strlen(dirname)) == 0)
+			/* XXX: check if '/' or '\\' follows dirname in filename? */
+			filename += strlen(dirname) + 1;
+	}
 #endif
 
 	namelen = strlen(filename);
@@ -660,3 +661,7 @@ static size_t mem_write(const void *buf, size_t len, gzFile *stream)
 }
 
 #endif /* #ifdef MEMCOMPR */
+
+/*
+vim:ts=4:sw=4:
+*/
