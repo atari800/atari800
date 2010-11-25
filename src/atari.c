@@ -712,10 +712,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 	}
 
 #if SUPPORTS_CHANGE_VIDEOMODE
+#ifndef DONT_DISPLAY
 	if (!VIDEOMODE_InitialiseDisplay()) {
 		Atari800_Exit(FALSE);
 		return FALSE;
 	}
+#endif
 #endif
 	/* Configure Atari System */
 	Atari800_InitialiseMachine();
