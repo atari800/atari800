@@ -66,12 +66,15 @@ double PLATFORM_AdjustSpeed(void);
 /* Returns whether the platform-specific code support the given display mode, MODE,
    with/without stretching and with/without rotation. */
 int PLATFORM_SupportsVideomode(VIDEOMODE_MODE_t mode, int stretch, int rotate90);
-/* Sets the screen (or window) to resolution RES and selects the display mode, MODE,
-   and rotation. */
-void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90);
+/* Sets the screen (or window, if WINDOWED is TRUE) to resolution RES and
+   selects the display mode, MODE. If ROTATE90 is TRUE, then the display area
+   is rotated 90 degrees counter-clockwise. If WINDOW_RESIZED is TRUE, then
+   this call to PLATFORM_SetVideoMode was caused by a user resising
+   the window. */
+void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90, int window_resized);
 /* Returns list of all available resolutions. The result points to a newly
    allocated memory. If no resolutions are found, the result is NULL and no
-   memory is allocated. */
+   memory is allocated. Entries on the list may repeat.*/
 VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size);
 /* Returns the current desktop resolution. Used to compute pixel aspect ratio in windowed modes. */
 VIDEOMODE_resolution_t *PLATFORM_DesktopResolution(void);

@@ -67,6 +67,17 @@ void atari_ntsc_blit( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
 		long in_row_width, int in_width, int in_height,
 		void* rgb_out, long out_pitch );
 
+/* Atari change: added blitters for 16bpp, 32bpp(ARGB), and 24bpp(0RGB) screen formats. */
+void atari_ntsc_blit16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
+		long in_row_width, int in_width, int in_height,
+		void* rgb_out, long out_pitch );
+void atari_ntsc_blit32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
+		long in_row_width, int in_width, int in_height,
+		void* rgb_out, long out_pitch );
+void atari_ntsc_blit24( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
+		long in_row_width, int in_width, int in_height,
+		void* rgb_out, long out_pitch );
+
 /* Number of output pixels written by blitter for given input width. Width might
 be rounded down slightly; use ATARI_NTSC_IN_WIDTH() on result to find rounded
 value. Guaranteed not to round 256 down at all. */
@@ -184,14 +195,19 @@ enum { atari_ntsc_full_overscan_right = atari_ntsc_full_in_width - atari_ntsc_mi
 }
 
 /* x is always zero except in snes_ntsc library */
+/* Atari change: modified 32-bit format from 0x00RRGGBB to 0xffRRGGBB,
+   because downloading a texture in OpenGL is faster when the alpha channel is
+   set to 0xff (fully opaque). */
 #define ATARI_NTSC_RGB_OUT_( rgb_out, bits, x ) {\
 	if ( bits == 16 )\
 		rgb_out = (raw_>>(13-x)& 0xF800)|(raw_>>(8-x)&0x07E0)|(raw_>>(4-x)&0x001F);\
-	if ( bits == 24 || bits == 32 )\
+	else if ( bits == 32 )\
+		rgb_out = (raw_>>(5-x)&0xFF0000)|(raw_>>(3-x)&0xFF00)|(raw_>>(1-x)&0xFF) | 0xFF000000;\
+	else if ( bits == 24 )\
 		rgb_out = (raw_>>(5-x)&0xFF0000)|(raw_>>(3-x)&0xFF00)|(raw_>>(1-x)&0xFF);\
-	if ( bits == 15 )\
+	else if ( bits == 15 )\
 		rgb_out = (raw_>>(14-x)& 0x7C00)|(raw_>>(9-x)&0x03E0)|(raw_>>(4-x)&0x001F);\
-	if ( bits == 0 )\
+	else if ( bits == 0 )\
 		rgb_out = raw_ << x;\
 }
 

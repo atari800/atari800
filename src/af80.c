@@ -50,7 +50,7 @@ static int not_enable_crtc_registers;
 static int not_enable_80_column_output;
 static int video_bank_select; /* bits 0-3 of d5f6, $0-$f 16 banks */
 static int crtreg[0x40];
-static int rgbi_palette[16] = {
+static int const rgbi_palette[16] = {
 	0x000000, /* black */
 	0x0000AA, /* blue */
 	0x00AA00, /* green */
@@ -68,7 +68,7 @@ static int rgbi_palette[16] = {
 	0xFFFF55, /* yellow */
 	0xFFFFFF  /* white (high intensity) */
 };
-static int swapped_palette[16];
+int AF80_palette[16];
 
 #ifdef AF80_DEBUG
 #define D(a) a
@@ -161,7 +161,7 @@ int AF80_Initialise(int *argc, char *argv[])
 		for (i=0; i<16; i++ ) {
 			j=i;
 			j = (j&0x0a) + ((j&0x01) << 2) + ((j&0x04) >> 2);
-			swapped_palette[i] = rgbi_palette[j];
+			AF80_palette[i] = rgbi_palette[j];
 		}
 	}
 
@@ -349,7 +349,7 @@ UBYTE AF80_GetPixels(int scanline, int column, int *colour, int blink)
 	if (row == crtreg[0x18] && column == crtreg[0x19] && !blink) {
 		font_data = 0xff; /* cursor */
 	}
-	*colour = swapped_palette[attrib>>4]; /* rgbi colour */
+	*colour = attrib>>4; /* set number of palette entry */
 	return font_data;
 }
 

@@ -108,7 +108,12 @@ dep:
 	then echo warning: makedepend failed; fi
 
 clean:
-	rm -f *.o dos/*.o falcon/*.o win32/*.o win32/*.ro javanvm/*.o *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar $(TARGET_BASE_NAME)_runtime.java core *.bak *~
+	rm -f *.o *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar $(TARGET_BASE_NAME)_runtime.java core *.bak *~
+	rm -f dos/*.o dos/*.bak dos/*~
+	rm -f falcon/*.o falcon/*.bak falcon/*~
+	rm -f sdl/*.o sdl/*.bak sdl/*~
+	rm -f win32/*.o win32/*.ro win32/*.bak win32/*~
+	rm -f javanvm/*.o javanvm/*.bak javanvm/*~
 	rm -f atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
 
 distclean: clean

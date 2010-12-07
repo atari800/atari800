@@ -146,8 +146,8 @@ Graphics
   I tried to make work for PAL.  But it isn't quite right and is way too slow.
   Ask me if you are interested.)
 
-* the NTSC emulator should support either 16 or 32 bpp and should support
-  other resolutions. It should be supported in all possible ports.
+* the NTSC emulator should support other resolutions. It should be supported
+  in all possible ports.
 
 * fix the remaining bugs in the NTSC emulation.  Artificating colours are
   not quite right.  odd-even and even-odd combined artifacts (light red

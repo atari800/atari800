@@ -364,7 +364,8 @@ Scale width and height by <n>
 
 .TP
 \fB-fullscreen
-Start in fullscreen mode. The default resolution is 336x240 and can be later changed.
+Start in fullscreen mode. The default resolution is 336x240 and can be later
+changed.
 .TP
 \fB-windowed
 Start in a window.
@@ -372,7 +373,7 @@ Start in a window.
 \fB-rotate90
 Rotate display (useful for devices with 240x320 screen).
 .TP
-\fB-norotate90
+\fB-no-rotate90
 Don't rotate display (the default).
 .TP
 \fB-fs-width <number-of-pixels>
@@ -388,41 +389,53 @@ Set horizontal size of the window. The window can be later resized manually.
 Set vertical size of the window. The window can be later resized nanually.
 .TP
 \fB-bpp <number-of-bits>
-Host color depth for running in fullscreen.
+Host color depth for running in fullscreen. Accepted values are: 0 (use desktop
+depth), 8, 16 and 32.
 .TP
-\fB-horiz-area narrow|normal|full|<number>
-Set amount of visible screen horizontally. "Narrow" shows 320 pixels, "Normal" shows
-336 pixels, and "Full" shows 384 pixels. A different value can be set by providing
+\fB-horiz-area narrow|tv|full|<number>
+Set amount of visible screen horizontally. "Narrow" shows 320 pixels, "Tv"
+shows area visible on a standard TV (336 pixels), and "Full" shows full
+overscan area (384 pixels). An exact horizontal size can be set by providing
 a number between 160 and 384.
 .TP
-\fB-vertical-area short|normal|full|<number>
-Set amount of visible screen vertically. "Short" shows 200 pixels, "Normal" shows
-224 or 240 pixels (depending on current TV system, as in NTSC some lines from top
-and bottom of the screen are not visible), and "Full" shows 240 pixels.
-A different value can be set by providing a number between 100 and 240.
+\fB-vertical-area short|tv|full|<number>
+Set amount of visible screen vertically. "Short" shows 200 pixels, "Tv" shows
+area visible on a standard TV (224 or 240 pixels, depending on current TV
+system), and "Full" shows full overscan area of 275 pixels. Note that when
+displaying output of an XEP80 or Austin Franklin 80 column card, the "Tv"
+setting will crop the top and bottom parts of text area.
+An exact number of visible scanlines can be set by providing a number between
+100 and 275.
 .TP
 \fB-horiz-offset <number>
-When the visible horizontal area is not set to "full", this option specifies the
-screen's area that will be visible. Values higher than 0 will cause showing more
-of the right side of the screen, while values lower than 0 will cause showing
-more of the left side.
+When the visible horizontal area is not set to "full", this option specifies
+the screen's area that will be visible. Values higher than 0 will cause
+showing more of the right side of the screen, while values lower than 0 will
+cause showing more of the left side.
 \fB-vert-offset <number>
-Analogically to -horiz-offset: when the visible vertical area is not set to "full",
-this option specifies the screen's area that will be visible. Values higher than 0
-will cause showing more of the bottom part of the screen, while values lower than 0
-will cause showing more of the top part.
+Analogically to -horiz-offset: when the visible vertical area is not set to
+"full", this option specifies the screen's area that will be visible. Values
+higher than 0 will cause showing more of the bottom part of the screen, while
+values lower than 0 will cause showing more of the top part.
 .TP
-\fB-stretch none|integer|full
-Choose method of stretching of the screen. "None" means that the screen won't be
-stretched at all; "Integer" means that the screen will be stretched only by integer
-multiplier; "Full" means that the screen will fill the entire screen's/window's area.
+\fB-stretch none|integer|full|<number>
+Choose method of stretching of the screen. "None" means that the screen won't
+be stretched at all; "Integer" means that the screen will be fit to screen but
+stretched only by integer multiplier; "Full" means that the screen will fit
+the entire screen's/window's area. A custom multiplier (floating point number)
+can be also provided to precisely set the zoom factor.
+.TP
+\fB-fit-screen width|height|both
+When stretching to fit the screen, stretch so that: whole width must fit the
+screen; whole height must fit; or both width and height must fit the screen.
 .TP
 \fB-keep-aspect none|1to1|real
-Choose how the screen's aspect ratio should be corrected when stretching. "None"
-means that the screen will be stretched unrestricted, and aspect ratio won't be corrected;
-"1to1" means that aspect ratio will be preserved, and the screen will be stretched by
-the same amount horizontally and vertically; "Real" recreates the pixel aspect ratio of
-a real TV set (for NTSC it's about 0.857, for PAL about 1.039 - pixels are not square).
+Choose how the screen's aspect ratio should be corrected when stretching.
+"None" means that the screen will be stretched unrestricted, and aspect ratio
+won't be corrected; "1to1" means that aspect ratio will be preserved, and the
+screen will be stretched by the same amount horizontally and vertically;
+"Real" recreates the pixel aspect ratio of a real TV set (for NTSC it's about
+0.857, for PAL about 1.039 - pixels are not square).
 .TP
 \fB-host-aspect-ratio <x>:<y>
 Set the host monitor's aspect ratio. Expects values like 4:3, 16:9, 1.25:1 ...
@@ -430,10 +443,11 @@ This value is used to properly compute screen's pixel aspect ratio when having
 -keep-aspect set to "real".
 .TP
 \fB-80column
-Shows output of an 80 column hardware, when it is available. It has effect only if
-an 80 column hardware is activated, using one of the parameters -af80, -proto80 or -af80.
+Shows output of an 80 column hardware, when it is available. It has effect
+only if an 80 column hardware is activated, using one of the parameters -af80,
+-proto80 or -af80.
 .TP
-\fB-no80column
+\fB-no-80column
 Deactivates showing output of an 80 column hardware.
 
 
@@ -453,10 +467,10 @@ Define path to device used in LPTjoy 1. Available on linux-ia32 only.
 
 .TP
 \fB-ntscemu
-Activate NTSC filter (16 bpp only). This faithfully emulates NTSC composite
+Activate NTSC filter. This faithfully emulates NTSC composite
 video artifacts. "-artif" is not needed in this mode and will not work.
 .TP
-\fB-nontscemu
+\fB-no-ntscemu
 Disable NTSC filter.
 .TP
 \fB-ntsc-sharpness <n>
@@ -479,11 +493,30 @@ Set burst phase of the NTSC filter. This changes colors of artifacts. The best
 values are 0, 0.5, 1, 1.5.
 .TP
 \fB-scanlines <n>
-Set visibility of scanlines in NTSC filter (0..100).
+Set visibility of scanlines (0..100).
 .TP
-\fB-scanlinesnoint
-Disable NTSC filter scanlines interpolation (may give better performance).
-
+\fB-scanlinesint
+Enable scanlines interpolation (looks nicer).
+.TP
+\fB-no-scanlinesint
+Disable scanlines interpolation (in software modes may give better performance).
+.TP
+\fB-opengl
+Enable OpenGL hardware acceleration. This uses OpenGL for speed up displaying
+and stretching the screen.
+.TP
+\fB-no-opengl
+Disable OpenGL hardware acceleration.
+.TP
+\fB-bilinear-filter
+Enable bilinear filtering of the screen in OpenGL modes.
+.TP
+\fB-no-bilinear-filter
+Disable bilinear filtering in OpenGL modes.
+.TP
+\fb-opengl-lib <path>
+Provide a custom OpenGL shared library. If not given, Atari800 will use
+a default system-specific library (typically opengl32.dll or libGL.so).
 .TP
 \fB-proto80
 Emulate a prototype 80 column board for the 1090
@@ -495,7 +528,7 @@ Emulate the XEP80
 Use XEP80 on joystick port <n>
 .TP
 \fB-af80
-Emulate the Austin Franklin 80 comun daughterboard for Atari 800.
+Emulate the Austin Franklin 80 column daughterboard for Atari 800.
 
 
 .SS X11 Options
@@ -774,7 +807,7 @@ CapsToggle (+Shift = CapsLock)
 Switch fullscreen/windowed display.
 .TP
 \fBLAlt+G
-Switch visible horizontal area. See -horizontal-area.
+Switch visible horizontal area. See -horiz-area.
 .TP
 \fBLAlt+J
 Swap \fBkeyboard_emulated\fP joysticks

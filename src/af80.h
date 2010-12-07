@@ -2,6 +2,9 @@
 #define AF80_H_
 
 #include "atari.h"
+#include <stdio.h>
+
+extern int AF80_palette[16];
 int AF80_Initialise(int *argc, char *argv[]);
 void AF80_InsertRightCartridge(void);
 int AF80_ReadConfig(char *string, char *ptr);

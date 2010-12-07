@@ -300,7 +300,7 @@ case "$a8_target" in
 	WANT_XEP80_EMULATION=yes
 	WANT_NTSC_FILTER=yes
         LIBS="$LIBS `sdl-config --libs`"
-        OBJS="atari_sdl.o videomode.o"
+        OBJS="videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
         if [[ "$a8_host" != "beos" ]]; then
 dnl BeOS has a real issue with redundant-decls
@@ -677,16 +677,25 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
 
     OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
 
-    if [[ "$a8_target" != "ps2" -a "$a8_target" != "sdl" -a "$a8_target" != "javanvm" ]]; then
+    if [[ "$a8_target" != "ps2" -a "$a8_target" != "javanvm" ]]; then
         case "$a8_host" in
             dos)
                 OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
                 ;;
             win)
-                OBJS="$OBJS win32/sound.o"
+                if [[ "$a8_target" = "sdl" ]]; then
+                    OBJS="$OBJS sdl/sound.o"
+                else
+                    OBJS="$OBJS win32/sound.o"
+                fi
                 ;;
             falcon)
                 OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
+                ;;
+            linux)
+                if [[ "$a8_target" = "sdl" ]]; then
+                    OBJS="$OBJS sdl/sound.o"
+                fi
                 ;;
             *)
                 if [[ "$SUPPORTS_SOUND_OSS" = "yes" ]]; then
@@ -850,6 +859,46 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     fi
 fi
 
+dnl Set SDL-OpenGL availability
+
+AC_ARG_ENABLE(opengl,
+    AC_HELP_STRING(--enable-opengl,[Use OpenGL for graphics - only in SDL target (default=on if OpenGL installed)]),
+    WANT_OPENGL="$enableval",
+    WANT_OPENGL=maybe
+)
+if [[ "$a8_target" = sdl ]]; then
+    AC_MSG_CHECKING(for OpenGL)
+    if [[ "$WANT_OPENGL" != no ]]; then
+        found_opengl=no
+        AC_TRY_COMPILE([
+ #include "SDL_opengl.h"
+        ],[],[found_opengl=yes])
+    fi
+
+    if [[ "$WANT_OPENGL" != "no" ]]; then
+        if [[ "$found_opengl" = yes ]]; then
+            WANT_OPENGL=yes
+            OBJS="$OBJS sdl/video_gl.o"
+        else
+            if [[ "$WANT_OPENGL" = yes ]]; then
+                AC_MSG_ERROR([Building with OpenGL was requested, but OpenGL is not installed on your system.])
+            else # WANT_OPENGL is "maybe"
+                WANT_OPENGL=no
+            fi
+        fi
+        AC_MSG_RESULT($found_opengl)
+    else
+        AC_MSG_RESULT(disabled by user)
+    fi
+else
+    if [[ "$WANT_OPENGL" = "yes" ]]; then
+        AC_MSG_ERROR("Option --enable-opengl not supported in this target!")
+    fi
+    WANT_OPENGL=no
+fi
+if [[ "$WANT_OPENGL" = "yes" ]]; then
+    AC_DEFINE(HAVE_OPENGL, 1, [Support for OpenGL graphics acceleration.])
+fi
 
 dnl Wrapup: export OBJS and write Makefile...
 
@@ -931,6 +980,9 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
             echo "Using R: with the host serial port?...: $WANT_R_SERIAL"
             echo "Using R: with IP network support......: $WANT_R_NETWORK"
         fi
+fi
+if [[ "$a8_target" = "sdl" ]]; then
+    echo "Using OpenGL?.........................: $WANT_OPENGL"
 fi
 echo
 echo "Main build variables:"

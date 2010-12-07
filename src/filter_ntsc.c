@@ -33,6 +33,8 @@
 
 atari_ntsc_setup_t FILTER_NTSC_setup;
 
+atari_ntsc_t *FILTER_NTSC_emu = NULL;
+
 atari_ntsc_t *FILTER_NTSC_New(void)
 {
 	atari_ntsc_t *filter = (atari_ntsc_t*) Util_malloc(sizeof(atari_ntsc_t));

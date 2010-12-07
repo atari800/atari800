@@ -156,10 +156,18 @@ Building the Emulator for SDL
 1. Please install (and configure) SDL library (http://www.libsdl.org).
 2. If you are using MinGW or Cygwin, get the file SDL_win32_main.c from the SDL 
    source (in src/main/win32) and copy it to the atari800 src directory.
-3. Type "./configure --target=sdl".
-4. Type "make".
-5. Type "make install".
-6. You can run atari800 anytime you want.
+3. If you want to build an OpenGL-capable version, you'll need OpenGL headers
+   installed. They should support OpenGL version 2.1 (support for the Pixel
+   Buffer Object extension). The result binary however will only need OpenGL
+   version 1.1 (PBOs simply won't be used). The same binary will work on
+   machines without OpenGL support - only software modes will be available.
+   For MinGW, get the OpenGL headers at
+   http://www.libsdl.org/extras/win32/common/opengl-devel.tar.gz
+   See also http://www.libsdl.org/extras/win32/mingw32/README.txt
+4. Type "./configure --target=sdl".
+5. Type "make".
+6. Type "make install".
+7. You can run atari800 anytime you want.
 
 Building the Emulator for Java using NestedVM
 ---------------------------------------------

@@ -5,6 +5,10 @@
 
 /* Contains controls used to adjust the palette in the NTSC filter. */
 extern atari_ntsc_setup_t FILTER_NTSC_setup;
+/* Pointer to the NTSC filter structure. Initialise it by setting it to value
+   returned by FILTER_NTSC_New(). */
+extern atari_ntsc_t *FILTER_NTSC_emu;
+
 
 /* Allocates memory for a new NTSC filter. */
 atari_ntsc_t *FILTER_NTSC_New(void);

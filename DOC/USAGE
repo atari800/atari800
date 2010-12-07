@@ -221,40 +221,47 @@ SDL version options
 -fullscreen           Start in fullscreen mode
 -windowed             Start in windowed mode
 -rotate90             Rotate display (useful for devices with 240x320 screen)
--norotate90           Don't rotate display (the default)
+-no-rotate90          Don't rotate display (the default)
 -fs-width <x>         Set horizontal fullscreen resolution
 -fs-height <y>        Set vertical fullscreen resolution
 -win-width <x>        Set window's horizontal size
 -win-height <y>       Set window's vertical size
--bpp <n>              Set mode bits per pixel
--horiz-area narrow|normal|full|<number>
+-bpp <n>              Set mode bits per pixel (0=desktop depth, 8, 16, 32)
+-horiz-area narrow|tv|full|<number>
                       Set visible horizontal area:
-                      narrow - 320 pixels,
-                      normal - 336 pixels,
-                      full - 380 pixels,
-                      or a number between 160 and 384.
--vert-area short|normal|full|<number>
+                      narrow: 320 pixels,
+                      tv: similar to real tv - 336 pixels,
+                      full: full overscan - 384 pixels,
+                      or provide a number between 160 and 384.
+-vert-area short|tv|full|<number>
                       Set visible vertical area:
-                      short - 200 pixels,
-                      normal - 216 or 240 pixels (depending on TV system),
-                      full - 240 pixels,
-                      or a number between 100 and 240.
--stretch none|integer|full
+                      short: 200 pixels,
+                      tv: similar to real tv - 224 or 240 pixels (depending on
+                      TV system),
+                      full: full overscan - 275 pixels,
+                      or provide a number between 100 and 275.
+-horiz-offset <n>     Set horizontal offset of the visible area (-384..384)
+-vert-offset <n>      Set vertical offset of the visible area (-275..275)
+-stretch none|integer|full|<number>
                       Set method for screen stretching:
-                      none - no stretching at all,
-                      integer - stretch only by integer multipler
-                      full - unrestricted stretching, fill entire screen
+                      none: no stretching at all,
+                      integer: fit to screen, stretch by integer multiplier
+                      full: fit to screen, unrestricted stretching
+                      or provide a custom multiplier (e.g. 2, 3, 2.5, ...)
+-fit-screen width|height|both
+                      Set method of fitting the display to screen/window.
 -keep-aspect none|1to1|real
-                      Set how to correct screen aspect ratio:
-                      none - no correction, screen stretching unrestricted,
-                      1to1 - width and height stretched by the same multipler
-                      real - real TV's aspect ratio (depending on TV system)
+                      How to correct screen aspect ratio when stretching:
+                      none: no correction, screen stretching unrestricted,
+                      1to1: width and height stretched by the same multipler
+                      real: real TV's aspect ratio (depending on TV system)
 -host-aspect-ratio <x>:<y>
                       Set host display's aspect ratio. Used to correctly
                       compute aspect ratio when -keep-aspect is "real".
 -80column             Display output of 80 column hardware. Usable only in
                       conjunction with one of -xep80, -proto80, -af80
--no80column           Display normal screen instead of 80 column output
+-no-80column          Display normal screen instead of 80 column output
+
 -audio16              Use 16-bit sound
 -audio8               Use 8-bit sound
 
@@ -262,10 +269,10 @@ SDL version options
 -joy0 </dev/lp0>      Define the device for LPTjoy
 -joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
 
--ntscemu              Emulate NTSC composite video (16 bpp only)
+-ntscemu              Emulate NTSC composite video
 This includes NTSC TV artifacts.  "-artif" is not needed in this mode and will
 not work.
--nontscemu            Disable emulation of NTSC composite video
+-no-ntscemu            Disable emulation of NTSC composite video
 The following 8 items are for -ntscemu only:
 -ntsc-sharpness <n>   Set sharpness
 -ntsc-resolution <n>  Set resolution
@@ -274,9 +281,14 @@ The following 8 items are for -ntscemu only:
 -ntsc-bleed <n>       Set bleed
 -ntsc-burstphase <n>  Set burst phase. This changes colors of artifacts.
                       The best values are 0, 0.5, 1, 1.5
--scanlines <n>        Set scanlines percentage
--scanlinesnoint       Disable scanlines interpolation
-
+-scanlines <n>        Set visibility of scanlines (0-100)
+-scanlinesint         Enable scanlines interpolation
+-no-scanlinesint      Disable scanlines interpolation
+-opengl               Enable OpenGL hardware acceleration
+-no-opengl            Disable OpenGL hardware acceleration
+-bilinear-filter      Enable OpenGL bilinear filtering
+-no-bilinear-filter   Disable OpenGL bilinear filtering
+-opengl-lib <path>    Use a custom OpenGL shared library
 -proto80              Emulate a prototype 80 column board for the 1090
 -xep80                Emulate the XEP80
 -xep80port <n>        Use XEP80 on joystick port <n>
@@ -435,7 +447,7 @@ LSUPER     Atari/Inverse key (unusable under Windows)
 RSUPER     CapsToggle (+Shift = CapsLock)
 
 LAlt+F     Switch fullscreen
-LAlt+G     Switch visible horizontal area. See -horizontal-area.
+LAlt+G     Switch visible horizontal area. See -horiz-area.
 LAlt+J     Swap joysticks 0 and 1
 LAlt+M     Grab mouse (prevents mouse pointer from leaving the window)
 

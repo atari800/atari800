@@ -10,31 +10,44 @@ typedef struct VIDEOMODE_resolution_t {
 	unsigned int height;
 } VIDEOMODE_resolution_t;
 
-/* The following 8 values describe geometry of the visible screen area.
-   SRC means the source Atari screen.
-   DEST means the screen surface on which the source screen will be displayed.
+/* The following 9 values describe geometry of the visible screen area.
    Do not change these values by hand. They are changed when needed, and after
    each change a call to PLATFORM_SetVideoMode() is made. Platform-specific
    parts should base their screen-drawing on these values. */
-/* SRC_OFFSET values describe the left-top corner of the visible Atari screen area.
-   SRC_WIDTH/HEIGHT describe the size of the visible area.
+
+/* VIDEOMODE_src* values define visible area of the "source" Atari screen
+   (Screen_ATARI, XEP80_screen etc.)
+   SRC_OFFSET values describe the left-top corner of the area.
+   SRC_WIDTH/HEIGHT describe the size of the area.
    Effectively, these values define amount of crop on all four sides of screen. */
 extern unsigned int VIDEOMODE_src_offset_left;
 extern unsigned int VIDEOMODE_src_offset_top;
 extern unsigned int VIDEOMODE_src_width;
 extern unsigned int VIDEOMODE_src_height;
-/* DEST_OFFSET values describe the left-top corner of the screen surface,
-   DEST_WIDTH/HEIGHT describe the screen area into which the source screen should
-   be copied.
-   When combined, these values describe position and amount of screen stretching
-   of the displayed screen. */
+
+/* This value contains the actual width of the source screen. Typically it is
+   equal to VIDEOMODE_src_width, but in one case (NTSC-filtered display mode)
+   the "actual" width is 1.75x larger than the "source" width (each source
+   pixel is scaled horizontally by 1.75 in the NTSC-filtered mode). */
+extern unsigned int VIDEOMODE_actual_width;
+/* There is no equivalent variable for "actual height", because no display
+   mode scales the source screen vertically. Use VIDEOMODE_src_height instead. */
+
+/* VIDEOMODE_dest* values define area of the host screen, on which the Atari
+   screen shall be displayed.
+   DEST_OFFSET values describe the left-top corner,
+   DEST_WIDTH/HEIGHT describe the size of the screen area.
+   Effectively, these values define position and amount of screen stretching. */
 extern unsigned int VIDEOMODE_dest_offset_left;
 extern unsigned int VIDEOMODE_dest_offset_top;
 extern unsigned int VIDEOMODE_dest_width;
 extern unsigned int VIDEOMODE_dest_height;
 
+/* Updates the video mode according to current settings. */
+int VIDEOMODE_Update(void);
+
 /* Get/set fullscreen/windowed mode. */
-/* Don't change this variable directly; instead use VIDEOMODE_SetWindowed(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetWindowed() instead. */
 extern int VIDEOMODE_windowed;
 int VIDEOMODE_SetWindowed(int value);
 int VIDEOMODE_ToggleWindowed(void);
@@ -44,60 +57,78 @@ void VIDEOMODE_ForceWindowed(int value);
 /* Get/set visible horizontal screen area. */
 enum {
 	VIDEOMODE_HORIZONTAL_NARROW,
-	VIDEOMODE_HORIZONTAL_NORMAL,
+	VIDEOMODE_HORIZONTAL_TV,
 	VIDEOMODE_HORIZONTAL_FULL,
-	/* Number of values in enumerator */
-	VIDEOMODE_HORIZONTAL_SIZE,
-	VIDEOMODE_HORIZONTAL_CUSTOM = VIDEOMODE_HORIZONTAL_SIZE
+	VIDEOMODE_HORIZONTAL_CUSTOM,
+	/* Number of "normal" (not including CUSTOM) values in enumerator */
+	VIDEOMODE_HORIZONTAL_SIZE = VIDEOMODE_HORIZONTAL_CUSTOM
 };
-/* Don't change this variable directly; instead use VIDEOMODE_SetHorizontalArea(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetHorizontalArea() instead. */
 extern int VIDEOMODE_horizontal_area;
 int VIDEOMODE_SetHorizontalArea(int value);
 int VIDEOMODE_ToggleHorizontalArea(void);
-/* Don't change this variable directly; instead use VIDEOMODE_SetCustomHorizontalArea(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetCustomHorizontalArea() instead. */
 extern unsigned int VIDEOMODE_custom_horizontal_area;
 int VIDEOMODE_SetCustomHorizontalArea(unsigned int value);
 
 /* Get/set visible vertical screen area. */
 enum {
 	VIDEOMODE_VERTICAL_SHORT,
-	VIDEOMODE_VERTICAL_NORMAL,
+	VIDEOMODE_VERTICAL_TV,
 	VIDEOMODE_VERTICAL_FULL,
-	/* Number of values in enumerator */
-	VIDEOMODE_VERTICAL_SIZE,
-	VIDEOMODE_VERTICAL_CUSTOM = VIDEOMODE_VERTICAL_SIZE
+	VIDEOMODE_VERTICAL_CUSTOM,
+	/* Number of "normal" (not including CUSTOM) values in enumerator */
+	VIDEOMODE_VERTICAL_SIZE = VIDEOMODE_VERTICAL_CUSTOM
 };
-/* Don't change this variable directly; instead use VIDEOMODE_SetVerticalArea(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetVerticalArea() instead. */
 extern int VIDEOMODE_vertical_area;
 int VIDEOMODE_SetVerticalArea(int value);
 int VIDEOMODE_ToggleVerticalArea(void);
-/* Don't change this variable directly; instead use VIDEOMODE_SetCustomVerticalArea(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetCustomVerticalArea() instead. */
 extern unsigned int VIDEOMODE_custom_vertical_area;
 int VIDEOMODE_SetCustomVerticalArea(unsigned int value);
 
 /* Get/set vertical offset. */
-/* Don't change this variable directly; instead use VIDEOMODE_SetHorizontalOffset(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetHorizontalOffset() instead. */
 extern int VIDEOMODE_horizontal_offset;
 int VIDEOMODE_SetHorizontalOffset(int value);
 
 /* Get/set vertical offset. */
-/* Don't change this variable directly; instead use VIDEOMODE_SetVerticalOffset(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetVerticalOffset() instead. */
 extern int VIDEOMODE_vertical_offset;
 int VIDEOMODE_SetVerticalOffset(int value);
 
 /* Get/set type of screen stretching. */
 enum {
 	VIDEOMODE_STRETCH_NONE,
+	VIDEOMODE_STRETCH_2X,
+	VIDEOMODE_STRETCH_3X,
 	VIDEOMODE_STRETCH_INTEGER,
 	VIDEOMODE_STRETCH_FULL,
-	/* Number of values in enumerator */
-	VIDEOMODE_STRETCH_SIZE
+	VIDEOMODE_STRETCH_CUSTOM,
+	/* Number of "normal" (not including CUSTOM) values in enumerator */
+	VIDEOMODE_STRETCH_SIZE = VIDEOMODE_STRETCH_CUSTOM
 };
 
-/* Don't change this variable directly; instead use VIDEOMODE_SetStretch(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetStretch() instead. */
 extern int VIDEOMODE_stretch;
 int VIDEOMODE_SetStretch(int value);
 int VIDEOMODE_ToggleStretch(void);
+extern double VIDEOMODE_custom_stretch;
+int VIDEOMODE_SetCustomStretch(double value);
+
+/* Get/set method of fit-to-screen when VIDEOMODE_stretch is INTEGER or FULL. */
+enum {
+	VIDEOMODE_FIT_WIDTH,
+	VIDEOMODE_FIT_HEIGHT,
+	VIDEOMODE_FIT_BOTH,
+	/* Number of values in enumerator */
+	VIDEOMODE_FIT_SIZE
+};
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetFit() instead. */
+extern int VIDEOMODE_fit;
+int VIDEOMODE_SetFit(int value);
+int VIDEOMODE_ToggleFit(void);
 
 /* Get/set method of keeping screen aspect ratio. */
 enum {
@@ -107,21 +138,21 @@ enum {
 	/* Number of values in enumerator */
 	VIDEOMODE_KEEP_ASPECT_SIZE
 };
-/* Don't change this variable directly; instead use VIDEOMODE_SetKeepAspect(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetKeepAspect() instead. */
 extern int VIDEOMODE_keep_aspect;
 int VIDEOMODE_SetKeepAspect(int value);
 int VIDEOMODE_ToggleKeepAspect(void);
 
 #if SUPPORTS_ROTATE_VIDEOMODE
 /* Get/set screen rotation. */
-/* Don't change this variable directly; instead use VIDEOMODE_SetRotate90(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetRotate90() instead. */
 extern int VIDEOMODE_rotate90;
 int VIDEOMODE_SetRotate90(int value);
 int VIDEOMODE_ToggleRotate90(void);
 #endif /* SUPPORTS_ROTATE_VIDEOMODE */
 
 /* Get/set the host display's aspect ratio (4:3, 16:9 etc.) */
-/* Don't change these two variables directly; instead use VIDEOMODE_SetHostAspect(). */
+/* Call VIDEOMODE_Update() after changing these two variables, or use VIDEOMODE_SetHostAspect() instead. */
 extern double VIDEOMODE_host_aspect_ratio_w;
 extern double VIDEOMODE_host_aspect_ratio_h;
 int VIDEOMODE_SetHostAspect(double w, double h);
@@ -165,7 +196,7 @@ typedef enum {
 } VIDEOMODE_MODE_t;
 #if NTSC_FILTER
 /* Get/set state of NTSC filtering. */
-/* Don't change this variable directly; instead use VIDEOMODE_SetNtscFilter(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetNtscFilter() instead. */
 extern int VIDEOMODE_ntsc_filter;
 int VIDEOMODE_SetNtscFilter(int value);
 int VIDEOMODE_ToggleNtscFilter(void);
@@ -173,7 +204,7 @@ int VIDEOMODE_ToggleNtscFilter(void);
 #if defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80)
 /* Indicates that 80 column display should be active when a 80 column card is available.
    Setting to TRUE does not switch to 80 column display when no 80 column card is present. */
-/* Don't change this variable directly; instead use VIDEOMODE_Set80Column(). */
+/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_Set80Column() instead. */
 extern int VIDEOMODE_80_column;
 int VIDEOMODE_Set80Column(int value);
 int VIDEOMODE_Toggle80Column(void);

@@ -33,6 +33,7 @@
 #endif /* __STRICT_ANSI__ */
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -198,6 +199,19 @@ int Util_sscansdec(char const *s, int *dest)
 	if (minus)
 		*dest = -*dest;
 	return TRUE;
+}
+
+int Util_sscandouble(char const *s, double *dest)
+{
+	char *endptr;
+	double result;
+
+	result = strtod(s, &endptr);
+	if (endptr[0] != '\0' || errno == ERANGE)
+		return FALSE;
+	*dest = result;
+	return TRUE;
+	
 }
 
 int Util_sscanhex(const char *s)

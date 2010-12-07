@@ -1930,12 +1930,12 @@ void XEP80_StateSave(void)
 	StateSav_SaveINT(&XEP80_enabled, 1);
 	if (XEP80_enabled) {
 #if SUPPORTS_CHANGE_VIDEOMODE
-		int local_xep80 = VIDEOMODE_80_column;
+		int show_xep80 = VIDEOMODE_80_column;
 #else
-		int local_xep80 = 1;
-#endif
+		int show_xep80 = 1;
+#endif /* SUPPORTS_CHANGE_VIDEOMODE */
 		StateSav_SaveINT(&XEP80_port, 1);
-		StateSav_SaveINT(&local_xep80, 1);
+		StateSav_SaveINT(&show_xep80, 1);
 		StateSav_SaveINT(&output_state, 1);
 		StateSav_SaveINT(&output_word, 1);
 		StateSav_SaveINT(&input_count, 1);
