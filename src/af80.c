@@ -31,9 +31,9 @@
 #include <stdlib.h>
 
 static UBYTE *af80_rom;
-static char af80_rom_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
+static char af80_rom_filename[FILENAME_MAX] = "";
 static UBYTE *af80_charset;
-static char af80_charset_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
+static char af80_charset_filename[FILENAME_MAX] = "";
 
 static UBYTE *af80_screen;
 static UBYTE *af80_attrib;

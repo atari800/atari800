@@ -1,3 +1,7 @@
+2010-12-09  James Wilkinson  <james@slor.net>
+* af80.c: prevent extra carriage return in config file setting.
+
+
 2010-11-25  Petr Stehlik <pstehlik@sophics.cz>
 * cartridge.c, cassette.c, cfg.c, devices.c, monitor.c, pbi_scsi.c, sio.c,
   sound_oss.c, statesav.c, ui.c: GCC warnings about unused results fixed
