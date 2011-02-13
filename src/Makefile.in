@@ -12,6 +12,8 @@ ifeq (@EXEEXT@,.mips)
 	JAVA = java
 	JAVACFLAGS = @JAVACFLAGS@
 	JAVAC = javac
+else ifeq (@CONFIGURE_TARGET@,android)
+	FINALTARGET = android
 else
 	FINALTARGET = $(TARGET)
 endif
@@ -100,6 +102,12 @@ $(TARGET_BASE_NAME).jar: $(TARGET_BASE_NAME).class $(TARGET_BASE_NAME)$(RUNTIME)
 	echo -e "Manifest-Version: 1.0\nMain-Class: $(TARGET_BASE_NAME)\nClass-Path: unix_runtime.jar\n" > .manifest
 	jar cfm $(TARGET_BASE_NAME).jar .manifest *.class
 
+# Allow parallel execution in sub-make with '+'
+android:
+	+ ndk-build -C android
+	ant -f android/build.xml debug
+.PHONY: android
+
 $(TARGET): $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
 
@@ -115,9 +123,11 @@ clean:
 	rm -f win32/*.o win32/*.ro win32/*.bak win32/*~
 	rm -f javanvm/*.o javanvm/*.bak javanvm/*~
 	rm -f atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
+	rm -rf android/libs android/obj android/bin android/gen
+
 
 distclean: clean
-	-rm -f Makefile configure config.log config.status config.h
+	-rm -f Makefile configure config.log config.status config.h android/jni/Android.mk
 	-rm -rf autom4te.cache
 
 install: $(TARGET) installdirs

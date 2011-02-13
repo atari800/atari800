@@ -100,7 +100,7 @@ static UBYTE scratchUByte;
 		scratchUWordPtr = (ptr); \
 		Screen_dirty[((ULONG) scratchUWordPtr - (ULONG) Screen_atari) >> 3] = 1; \
 		*scratchUWordPtr = (val); \
-	} while (0);
+	} while (0)
 #define WRITE_VIDEO_LONG(ptr, val) \
 	do { \
 		scratchULongPtr = (ptr); \
@@ -132,6 +132,7 @@ static UBYTE scratchUByte;
 			*scratchUWordPtr = scratchUWord; \
 		} \
 	} while (0)
+#ifndef WORDS_UNALIGNED_OK
 #define WRITE_VIDEO_LONG(ptr, val) \
 	do { \
 		scratchULongPtr = (ptr); \
@@ -141,6 +142,18 @@ static UBYTE scratchUByte;
 			*scratchULongPtr = scratchULong; \
 		} \
 	} while (0)
+#else
+#define WRITE_VIDEO_LONG(ptr, val) \
+	do { \
+		scratchULongPtr = (ptr); \
+		scratchULong = (val); \
+		if (*scratchULongPtr != scratchULong) { \
+			Screen_dirty[((ULONG) scratchULongPtr - (ULONG) Screen_atari) >> 3] = 1; \
+			Screen_dirty[((ULONG) scratchULongPtr - (ULONG) Screen_atari + 2) >> 3] = 1; \
+			*scratchULongPtr = scratchULong; \
+		} \
+	} while (0)
+#endif
 #define WRITE_VIDEO_BYTE(ptr, val) \
 	do { \
 		scratchUBytePtr = (ptr); \

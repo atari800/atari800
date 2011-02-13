@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string-array name="aspect">
+		<item>@string/none</item>
+		<item>@string/asp_portrait</item>
+		<item>@string/asp_landscape</item>
+		<item>@string/asp_both</item>
+	</string-array>
+	<string-array name="aspect_values">
+		<item>0</item>
+		<item>1</item>
+		<item>2</item>
+		<item>3</item>
+	</string-array>
+
+	<string-array name="artifact">
+		<item>@string/none</item>
+		<item>@string/art_bluebrown1</item>
+		<item>@string/art_bluebrown2</item>
+		<item>@string/art_gtia</item>
+		<item>@string/art_ctia</item>
+	</string-array>
+	<string-array name="artifact_values">
+		<item>0</item>
+		<item>1</item>
+		<item>2</item>
+		<item>3</item>
+		<item>4</item>
+	</string-array>
+
+	<string-array name="machine">
+		<item>Atari OS/A (16 KB)</item>
+		<item>Atari OS/A (48 KB)</item>
+		<item>Atari OS/A (52 KB)</item>
+		<item>Atari OS/B (16 KB)</item>
+		<item>Atari OS/B (48 KB)</item>
+		<item>Atari OS/B (52 KB)</item>
+		<item>Atari 600XL (16 KB)</item>
+		<item>Atari 800XL (64 KB)</item>
+		<item>Atari 130XE (128 KB)</item>
+		<item>Atari XL/XE (192 KB)</item>
+		<item>Atari XL/XE (320 KB RAMBO)</item>
+		<item>Atari XL/XE (320 KB COMPY SHOP)</item>
+		<item>Atari XL/XE (576 KB)</item>
+		<item>Atari XL/XE (1088 KB)</item>
+		<item>Atari 5200 (16 KB)</item>
+	</string-array>
+	<string-array name="machine_values">
+		<item>0</item>
+		<item>1</item>
+		<item>2</item>
+		<item>3</item>
+		<item>4</item>
+		<item>5</item>
+		<item>6</item>
+		<item>7</item>
+		<item>8</item>
+		<item>9</item>
+		<item>10</item>
+		<item>11</item>
+		<item>12</item>
+		<item>13</item>
+		<item>14</item>
+		<item>15</item>
+	</string-array>
+
+	<string-array name="frameskip">
+		<item>@string/skip0</item>
+		<item>@string/skip1</item>
+		<item>@string/skip2</item>
+		<item>@string/skip3</item>
+		<item>@string/skip4</item>
+		<item>@string/skip5</item>
+	</string-array>
+	<string-array name="frameskip_values">
+		<item>0</item>
+		<item>1</item>
+		<item>2</item>
+		<item>3</item>
+		<item>4</item>
+		<item>5</item>
+	</string-array>
+
+	<string-array name="mixrate">
+		<item>44100 Hz</item>
+		<item>22050 Hz</item>
+		<item>11025 Hz</item>
+	</string-array>
+	<string-array name="mixrate_values">
+		<item>44100</item>
+		<item>22050</item>
+		<item>11025</item>
+	</string-array>
+</resources>

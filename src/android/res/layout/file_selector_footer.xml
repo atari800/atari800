@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+	<ListView
+		android:id="@id/android:list"
+		android:layout_width="match_parent"
+		android:layout_height="fill_parent"
+		android:layout_alignParentTop="true"
+		android:layout_above="@+id/footer"/>
+	<LinearLayout
+		android:id="@+id/footer"
+		android:background="@android:color/darker_gray"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_alignParentBottom="true"
+		android:orientation="horizontal"
+		android:padding="5dp">
+		<Button
+			android:id="@+id/fsel_ok"
+			android:text="@string/selectdir"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"/>
+		<Button
+			android:id="@+id/fsel_cancel"
+			android:text="@string/cancel"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"/>
+	</LinearLayout>
+</RelativeLayout>

@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    basic | curses | ncurses | pdcurses | dosvga | falcon | javanvm | javanvm-basic | ps2 | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | curses | ncurses | pdcurses | dosvga | falcon | javanvm | javanvm-basic | ps2 | android | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -42,6 +42,7 @@ case "$target" in
         echo "The '--target' option is required.  Use '--help' to see other available"
         echo "options, including Atari800 specific '--enable' options.  Possible values"
         echo "for the '--target' option are:"
+        echo "    android          (Android devices)"
         echo "    basic            (text mode using standard I/O)"
         echo "    curses           (text mode using Curses library)"
         echo "    ncurses          (text mode using NCurses library)"
@@ -140,6 +141,17 @@ if [[ "$a8_target" = "ps2" ]]; then
     LDFLAGS="$LDFLAGS -L${PS2SDK}/ee/lib -L${GSKITSRC}/lib -L${PS2DEV}/ee/lib/gcc-lib/ee/3.2.2"
     LDFLAGS="$LDFLAGS -L${PS2SDK}/ports/lib"
 fi
+if [[ "$a8_target" = "android" ]]; then
+	CC="arm-eabi-gcc"
+	CPP="arm-eabi-cpp"
+	AC_NO_EXECUTABLES
+	CFLAGS="$CFLAGS -I$ANDROID_NDK_ROOT/build/platforms/android-8/arch-arm/usr/include"
+	CPPFLAGS="-I$ANDROID_NDK_ROOT/build/platforms/android-8/arch-arm/usr/include"
+	WANT_IDE=no
+	WANT_MONITOR_READLINE=no
+	WANT_EVENT_RECORDING=no
+	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
+fi
 
 
 dnl Check for programs...
@@ -151,7 +163,9 @@ AC_PROG_INSTALL
 dnl Check for header files...
 
 dnl Beware: AC_PATH_X must NOT be inside "case"!
-AC_PATH_X
+if [[ "$a8_target" != "android" ]]; then
+	AC_PATH_X
+fi
 case "$a8_target" in
     sdl)
         sdlcheck="X_`sdl-config --cflags`"
@@ -175,7 +189,12 @@ dnl the autoconf tests don't work.
         fi
         ;;
 esac
-AC_HEADER_DIRENT
+if [[ "$a8_target" = "android" ]]; then
+    echo "hardcoding dirent.h header"
+    AC_DEFINE(HAVE_DIRENT_H)
+else
+    AC_HEADER_DIRENT
+fi
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
@@ -192,10 +211,17 @@ fi
 dnl Check for libraries...
 
 AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
-AC_CHECK_LIB(z,gzopen)
-AC_CHECK_LIB(png,png_get_libpng_ver)
-AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
-AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
+if [[ "$a8_target" = "android" ]]; then
+    echo "hardcoding libz"
+    LIBS="-lz $LIBS"
+    AC_DEFINE(HAVE_LIBZ)
+    dnl libm is automatically appended by the build system
+else
+	AC_CHECK_LIB(z,gzopen)
+	AC_CHECK_LIB(png,png_get_libpng_ver)
+	AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
+	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
+fi
 
 dnl Set OBJS and libraries depending on host and target...
 
@@ -288,6 +314,12 @@ case "$a8_target" in
         A8_NEED_LIB(c)
         OBJS="atari_ps2.o ps2kbd.s usbd.s audsrv.s"
         ;;
+	android)
+        AC_DEFINE(ANDROID,1,[Target: Android])
+        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        AC_DEFINE(DIRTYRECT,1,[Define to use dirty screen partial repaints.])
+        dnl AC_DEFINE(NODIRTYCOMPARE,1,[Define to skip memory comparisons - Requires DIRTYRECT.])
+		;;
     sdl)
         AC_DEFINE(SDL,1,[Target: SDL library.])
         AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
@@ -297,8 +329,8 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_CHANGE_VIDEOMODE,1,[Can change video modes on the fly.])
         AC_DEFINE(SUPPORTS_ROTATE_VIDEOMODE,1,[Can display the screen rotated sideways.])
         SUPPORTS_SYNCHRONIZED_SOUND="yes"
-	WANT_XEP80_EMULATION=yes
-	WANT_NTSC_FILTER=yes
+        WANT_XEP80_EMULATION=yes
+        WANT_NTSC_FILTER=yes
         LIBS="$LIBS `sdl-config --libs`"
         OBJS="videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
@@ -472,18 +504,34 @@ AC_FUNC_CLOSEDIR_VOID
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STAT
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
-AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkstemp mktemp])
-AC_CHECK_FUNCS([modf nanosleep opendir rename rewind rmdir signal snprintf])
-AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
-AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf])
-AX_FUNC_MKDIR
+if [[ "$a8_target" = "android" ]]; then
+    echo "hardcoding libc funcs"
+    AC_DEFINE(HAVE_VPRINTF) AC_DEFINE(HAVE_ATEXIT) AC_DEFINE(HAVE_CHMOD) AC_DEFINE(HAVE_FDOPEN)
+    AC_DEFINE(HAVE_FFLUSH) AC_DEFINE(HAVE_FLOOR) AC_DEFINE(HAVE_FSTAT) AC_DEFINE(HAVE_GETCWD)
+    AC_DEFINE(HAVE_GETTIMEOFDAY) AC_DEFINE(HAVE_LOCALTIME) AC_DEFINE(HAVE_MEMMOVE) AC_DEFINE(HAVE_MEMSET)
+    AC_DEFINE(HAVE_MKSTEMP) AC_DEFINE(HAVE_MKTEMP) AC_DEFINE(HAVE_MODF) AC_DEFINE(HAVE_NANOSLEEP)
+    AC_DEFINE(HAVE_OPENDIR) AC_DEFINE(HAVE_RENAME) AC_DEFINE(HAVE_REWIND) AC_DEFINE(HAVE_RMDIR)
+    AC_DEFINE(HAVE_SIGNAL) AC_DEFINE(HAVE_SNPRINTF) AC_DEFINE(HAVE_STAT) AC_DEFINE(HAVE_STRCASECMP)
+    AC_DEFINE(HAVE_STRCHR) AC_DEFINE(HAVE_STRDUP) AC_DEFINE(HAVE_STRERROR) AC_DEFINE(HAVE_STRRCHR)
+    AC_DEFINE(HAVE_STRSTR) AC_DEFINE(HAVE_STRTOL) AC_DEFINE(HAVE_SYSTEM) AC_DEFINE(HAVE_TIME)
+    AC_DEFINE(HAVE_TMPNAM) AC_DEFINE(HAVE_UCLOCK) AC_DEFINE(HAVE_UNLINK)
+    AC_DEFINE(HAVE_VSNPRINTF) AC_DEFINE(HAVE_MKDIR)
+    AC_DEFINE(HAVE_SELECT) AC_DEFINE(HAVE_USLEEP) AC_DEFINE(HAVE_STRNCPY)
+	dnl Leave out tmpfile to force creation of temp files to external
+else
+    AC_FUNC_VPRINTF
+    AC_CHECK_FUNCS([atexit chmod clock fdopen fflush floor fstat getcwd])
+    AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkstemp mktemp])
+    AC_CHECK_FUNCS([modf nanosleep opendir rename rewind rmdir signal snprintf])
+    AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
+    AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf])
+    AX_FUNC_MKDIR
+fi
 dnl select usleep strncpy are broken on javanvm targets
-if [[ "$a8_target" != "javanvm" -a "$a8_target" != "javanvm-basic" ]]; then
+if [[ "$a8_target" != "javanvm" -a "$a8_target" != "javanvm-basic" -a "$a8_target" != "android" ]]; then
     AC_CHECK_FUNCS([select usleep strncpy])
 fi
-if [[ "$a8_host" != "win" ]]; then
+if [[ "$a8_host" != "win" -a "$a8_target" != "android" ]]; then
     AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 fi
 
@@ -677,7 +725,7 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
 
     OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
 
-    if [[ "$a8_target" != "ps2" -a "$a8_target" != "javanvm" ]]; then
+    if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" -a "$a8_target" != "javanvm" ]]; then
         case "$a8_host" in
             dos)
                 OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
@@ -908,6 +956,9 @@ AC_SUBST(JAVACFLAGS)
 CONFIGURE_TARGET="$target"
 AC_SUBST(CONFIGURE_TARGET)
 AC_CONFIG_FILES(Makefile)
+if [[ "$a8_target" = "android" ]]; then
+	AC_CONFIG_FILES(android/jni/Android.mk)
+fi
 AC_OUTPUT
 
 

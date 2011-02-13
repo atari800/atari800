@@ -1,3 +1,9 @@
+2011-02-13  Kostas Nakos  <knakos@gmail.com>
+* log.c, atari.c, screen.c, configure.ac, Makefile.in, android/*: Imported the
+  android port
+* antic.c: Fix dirty screen updates with WORDS_UNALIGNED_OK
+
+
 2010-12-09  James Wilkinson  <james@slor.net>
 * af80.c: prevent extra carriage return in config file setting.
 

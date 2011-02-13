@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Atari800</string>
+    <string name="menu_quit">Quit</string>
+    <string name="menu_softkbd">Keyboard</string>
+    <string name="menu_open">Open</string>
+    <string name="menu_nextdisk">Next Side</string>
+    <string name="fsel_openfile">Open File:</string>
+    <string name="fsel_opendir">Open Dir:</string>
+    <string name="warning">Warning</string>
+    <string name="mountnodisk">File %s is not a disk image.\nContinue?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="mountnextdisk">Image %s inserted</string>
+    <string name="mountnonextdisk">No next disk image found</string>
+    <string name="diskboot">Booting image %s</string>
+    <string name="none">None</string>
+	<string name="menu_preferences">Preferences</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+	<string name="cimcrash">The Atari computer has crashed.\n
+							\nReset the machine or boot another image.</string>
+	<string name="noromfound">Failed to initialize machine. Required ROM not found.\n
+							  \nYour machine change has been reverted.</string>
+    <string name="pressback">Press \'Back\' once more to exit</string>
+    <string name="welcome">Welcome to Atari800!</string>
+	<string name="welcomenote">Hello,\n
+							   \nJust a few tips to get you going:
+							   \n1) Left hand joystick, right hand trigger (or search button).
+							   \n2) Tap the top-right corner for console keys.
+							   \n3) Long-press in the file selector to insert an image and not boot it.
+							   \n4) Use the WiiController or the keyboard for accuracy.
+							   \n5) Hit \'Menu\' for preferences and more.\n
+							   \nFirst though, setup the Atari ROM path in the next dialog.\n
+							   \nHave fun! </string>
+    <string name="pathsetup">Atari ROM Path</string>
+	<string name="pathsetupmsg"><![CDATA[
+		The emulator requires the original Atari ROM images.<br><br>
+								Touch <b>OK</b> to use the file selector to point to the folder containing
+								the ROM images.<br>
+								Touch <b>Cancel</b> to quit to the OS.<br><br>
+								Try the
+								<a href="http://atari800.sourceforge.net/download.html">Atari800 site</a>
+								for the XL ROMs.<br>
+								Valid ROM filenames are:<br>
+								atariosa.rom - OS/A,
+								atariosb.rom - OS/B,
+								atarixl.rom - XL,
+								ataribas.rom - XL Basic,
+								5200.rom - 5200
+								]]></string>
+    <string name="loadingdir">Loading directory. Please wait...</string>
+    <string name="selectdir">Select directory</string>
+	<string name="rompatherror">Failed to initialize machine.\n
+							  \nRequired ROM not found or path not accessible.</string>
+	<string name="about">Atari800</string>
+	<string name="aboutmsg"><![CDATA[
+							<html><head></head><body>
+							<p align="right"><font size="-1"><b>Package version:</b>%s<br>
+								<b>Core version:</b>%s</font></p>
+							<p align="center">Android port by <i>Kostas Nakos</i><br>
+								<a href="http://pocketatari.atari.org/android">
+										http://pocketatari.atari.org/android</a><br>
+								Copyright &copy; 1995-1998 <i>David Firth</i><br>
+								Copyright &copy; 1998-2011 <i>Atari800 Development Team</i><br>
+								<a href="http://atari800.atari.org">http://atari800.atari.org</a></p>
+							<p align="justify"><font size="-1">This program is free software; you can
+								redistribute it	and/or modify it under the terms of the GNU General 
+								Public License as published by the Free Software Foundation; either
+								version 2, or (at your option) any later version.</font></p>
+							<p align="center">New Features? Translations? Bugs?<br>
+								<a href="mailto:knakos@gmail.com>Email me</a></p>
+							</body></html>
+							]]></string>
+
+	<!-- Preferences -->
+	<string name="preftitle_graphics">Graphics</string>
+	<string name="preftitle_emulation">Emulation</string>
+	<string name="preftitle_input">Input</string>
+	<string name="preftitle_sound">Sound</string>
+	<string name="preftitle_about">About</string>
+    <string name="pref_aspect">Aspect</string>
+    <string name="pref_aspect_sum">Maintain aspect for scaling the screen</string>
+    <string name="asp_portrait">Portrait</string>
+    <string name="asp_landscape">Landscape</string>
+    <string name="asp_both">Both</string>
+    <string name="pref_bilinear">Bilinear Scaling</string>
+    <string name="pref_bilinear_sum">Filter scaled screen</string>
+    <string name="pref_artifact">Artifacting</string>
+	<string name="pref_artifact_sum">Emulate TV artifacts</string>
+	<string name="art_brownblue">Brown/Blue</string>
+	<string name="art_bluebrown1">Blue/Brown 1</string>
+	<string name="art_bluebrown2">Blue/Brown 2</string>
+	<string name="art_gtia">GTIA</string>
+	<string name="art_ctia">CTIA</string>
+    <string name="pref_machine">Machine Type</string>
+    <string name="pref_machine_sum">Select machine to emulate</string>
+    <string name="pref_speed">Show Atari Speed</string>
+    <string name="pref_speed_sum">Percentage of real Atari speed</string>
+    <string name="pref_disk">Show Drive Access</string>
+    <string name="pref_disk_sum">Display disk drive number for ongoing accesses</string>
+    <string name="pref_sector">Show Sector Access</string>
+    <string name="pref_sector_sum">Display disk sector number for ongoing accesses</string>
+    <string name="pref_frameskip">Frameskip</string>
+    <string name="pref_frameskip_sum">Screen repaint frequency</string>
+    <string name="skip0">Each frame</string>
+    <string name="skip1">Alternate frames (Skip 1)</string>
+    <string name="skip2">Skip 2 frames</string>
+    <string name="skip3">Skip 3 frames</string>
+    <string name="skip4">Skip 4 frames</string>
+    <string name="skip5">Skip 5 frames</string>
+    <string name="pref_collisions">Accurate Collisions</string>
+    <string name="pref_collisions_sum">Calculate collisions in skipped frames</string>
+    <string name="pref_basic">Disable BASIC</string>
+    <string name="pref_basic_sum">Simulate holding OPTION key down when booting</string>
+    <string name="pref_softjoy">Keyboard Joystick</string>
+	<string name="pref_softjoy_sum">Emulate joystick w/ hardware keyboard/Wii Remote</string>
+	<string name="pref_keydefscr">Configure Keyboard</string>
+	<string name="pref_keydefscr_sum">Define keyboard joystick keys</string>
+	<string name="pref_up">Up</string>
+	<string name="pref_down">Down</string>
+	<string name="pref_left">Left</string>
+	<string name="pref_right">Right</string>
+	<string name="pref_fire">Fire</string>
+	<string name="pref_joysize">Joystick Area Size</string>
+	<string name="pref_joysize_sum">Enlarge/Shrink on-screen joystick</string>
+	<string name="pref_joyvisible">Joystick Visible</string>
+	<string name="pref_joyvisible_sum">Show the on-screen joystick</string>
+	<string name="pref_joyrighth">Right-Handed Joystick</string>
+	<string name="pref_joyrighth_sum">Exchange on-screen joystick/fire button areas</string>
+	<string name="pref_joydeadband">Joystick Deadband</string>
+	<string name="pref_joydeadband_sum">Joystick deflections lower than this will not register</string>
+	<string name="pref_joymidx">Joystick Screen Split</string>
+	<string name="pref_joymidx_sum">Horizontal percentage of screen allocated to on-screen joystick</string>
+	<string name="pref_joyopacity">Joystick Opacity</string>
+	<string name="pref_joyopacity_sum">Alpha blend factor for the on-screen joystick</string>
+	<string name="pref_sound">Sound</string>
+	<string name="pref_sound_sum">Enable sound emulation</string>
+	<string name="pref_mixrate">Mix Rate</string>
+	<string name="pref_mixrate_sum">Sound generation frquency</string>
+	<string name="pref_sound16bit">16bit Sound</string>
+	<string name="pref_sound16bit_sum">Toggle between 8bit/16bit sound generation</string>
+	<string name="pref_hqpokey">High Quality Sound</string>
+	<string name="pref_hqpokey_sum">Use high quality POKEY emulation</string>
+	<string name="pref_romdir">ROMs directory</string>
+	<string name="pref_romdir_sum">Set directory where Atari ROMs reside</string>
+	<string name="pref_keymapmsg">Press the key to assign to this action</string>
+	<string name="pref_keymapdupmsg">This key is already used for another action.\n\nWould you like to swap
+									 the mapping between these two keys? (\'No\' will keep current
+									 assignments)</string>
+	<string name="pref_mixbufsize">Sound Buffer Size</string>
+	<string name="pref_mixbufsize_sum">Lower for lower latency, higher to get rid of clicks</string>
+	<string name="pref_rompath">Atari ROM Path</string>
+	<string name="pref_rompath_sum">Set directory containing the ROM images</string>
+	<string name="pref_about">About</string>
+	<string name="pref_about_sum">Atari800 credits</string>
+	<string name="pref_help">Help</string>
+	<string name="pref_help_sum">Android port instructions</string>
+	<string name="pref_anchor">Anchor Joystick</string>
+	<string name="pref_anchor_sum">Fix on-screen joystick to current position</string>
+</resources>

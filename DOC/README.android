@@ -1,0 +1,34 @@
+Build instructions for the Android port
+---------------------------------------
+
+If you are looking for instructions on how to use the Android port, what the
+preferences mean etc. you should check out instead:
+
+http://pocketatari.atari.org/android
+
+To compile the android port, you are going to need:
+
+* The Android SDK
+* The Android NDK
+* The Java JDK
+* A working autotools/make environment (i.e. Cygwin on Windows)
+
+Setup the environment correctly: create an environment variable called
+ANDROID_NDK_ROOT which points to the root of the NDK
+(f.ex.:export ANDROID_NDK_ROOT="/android-ndk/").
+Next, add the NDK root, gcc and android tools paths to PATH (f.ex. export PATH=
+"$ANDROID_NDK_ROOT:$ANDROID_NDK_ROOT/build/prebuilt/windows/arm-eabi-4.4.0/bin/:
+/android-sdk-windows/tools/:$PATH").
+Don't forget to also add the proper Java environment vars too:
+export PATH="/ant/bin:$PATH"; export JAVA_HOME='c:\Java\jdk1.6.0_21\';
+
+Unpack the source tarball or get the CVS module. Go to the src directory and
+update the project thusly:
+android update project --path android/
+Configure the build. I use this setup:
+autoheader && autoconf && ./configure --target=android --disable-monitorbreak --enable-pagedattrib --enable-seriosound --disable-crashmenu --disable-monitorasm --disable-monitorhints --disable-monitor-readline
+Then just type make and your apk package should appear in:
+android/bin/atari800-debug.apk
+
+Cheers,
+Kostas

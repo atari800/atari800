@@ -394,7 +394,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 		}
 		*argc = j;
 	}
+#ifndef ANDROID
 	got_config = CFG_LoadConfig(rtconfig_filename);
+#else
+	got_config = TRUE; /* pretend we got a config file -- not needed in Android */
+#endif
 
 	/* try to find ROM images if the configuration file is not found
 	   or it does not specify some ROM paths (blank paths count as specified) */

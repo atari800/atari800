@@ -26,11 +26,16 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 #include "log.h"
 
 #ifdef MACOSX
 #  define PRINT(a) ControlManagerMessagePrint(a)
+#elif defined(ANDROID)
+#  define PRINT(a) __android_log_write(ANDROID_LOG_DEBUG, "A800Core", a)
 #else
 #  define PRINT(a) printf("%s", a)
 #endif

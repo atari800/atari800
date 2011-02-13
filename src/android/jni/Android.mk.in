@@ -1,0 +1,43 @@
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := atari800
+
+A800_CORE_OBJS  := \
+	afile.o \
+	antic.o \
+	atari.o \
+	binload.o \
+	cartridge.o \
+	cassette.o \
+	compfile.o \
+	cfg.o \
+	cpu.o \
+	devices.o \
+	esc.o \
+	gtia.o \
+	log.o \
+	memory.o \
+	monitor.o \
+	pbi.o \
+	pia.o \
+	pokey.o \
+	rtime.o \
+	sio.o \
+	util.o \
+	@OBJS@
+A800_CORE_LIBS   := @LIBS@
+
+ANDROID_SRCS     := platform.c \
+					sound.c \
+					graphics.c \
+					jni.c \
+					androidinput.c
+ANDROID_LIBS     := -llog -lGLESv1_CM
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/../..
+LOCAL_SRC_FILES  := $(A800_CORE_OBJS:%.o=../../%.c) $(ANDROID_SRCS)
+LOCAL_LDLIBS     := $(A800_CORE_LIBS) $(ANDROID_LIBS)
+
+include $(BUILD_SHARED_LIBRARY)

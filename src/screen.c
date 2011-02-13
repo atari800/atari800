@@ -585,6 +585,7 @@ void Screen_SaveNextScreenshot(int interlaced)
 void Screen_EntireDirty(void)
 {
 #ifdef DIRTYRECT
-	memset(Screen_dirty, 1, Screen_WIDTH * Screen_HEIGHT / 8);
+	if (Screen_dirty)
+		memset(Screen_dirty, 1, Screen_WIDTH * Screen_HEIGHT / 8);
 #endif /* DIRTYRECT */
 }

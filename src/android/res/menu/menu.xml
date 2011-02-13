@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_open"
+		android:title="@string/menu_open"
+		android:icon="@drawable/ic_menu_archive"/>
+    <item android:id="@+id/menu_nextdisk"
+		android:title="@string/menu_nextdisk"
+		android:icon="@drawable/ic_menu_rotate"/>
+    <item android:id="@+id/menu_softkbd"
+		android:title="@string/menu_softkbd"
+		android:icon="@drawable/keyboard"/>
+    <item android:id="@+id/menu_preferences"
+		android:title="@string/menu_preferences"
+		android:icon="@drawable/ic_menu_preferences"/>
+    <item android:id="@+id/menu_quit"
+		android:title="@string/menu_quit"
+		android:icon="@drawable/ic_menu_close_clear_cancel"/>
+</menu>
