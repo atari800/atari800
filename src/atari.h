@@ -72,6 +72,9 @@ extern int Atari800_nframes;
 /* How often the screen is updated (1 = every Atari frame). */
 extern int Atari800_refresh_rate;
 
+/* If TRUE, will try to maintain the emulation speed to 100% */
+extern int Atari800_auto_frameskip;
+
 /* Set to TRUE for faster emulation with Atari800_refresh_rate > 1.
    Set to FALSE for accurate emulation with Atari800_refresh_rate > 1. */
 extern int Atari800_collisions_in_skipped_frames;

@@ -103,7 +103,8 @@
     <string name="pref_sector_sum">Display disk sector number for ongoing accesses</string>
     <string name="pref_frameskip">Frameskip</string>
     <string name="pref_frameskip_sum">Screen repaint frequency</string>
-    <string name="skip0">Each frame</string>
+    <string name="skipauto">Auto</string>
+    <string name="skip0">Each frame (Skip 0)</string>
     <string name="skip1">Alternate frames (Skip 1)</string>
     <string name="skip2">Skip 2 frames</string>
     <string name="skip3">Skip 3 frames</string>

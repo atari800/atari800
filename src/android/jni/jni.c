@@ -228,7 +228,13 @@ static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolea
 	Android_Bilinear = bilinear;
 	ANTIC_artif_mode = artifact;
 	ANTIC_UpdateArtifacting();
-	Atari800_refresh_rate = frameskip + 1;
+	if (frameskip == 0) {
+		Atari800_refresh_rate = 1;
+		Atari800_auto_frameskip = TRUE;
+	} else {
+		Atari800_auto_frameskip = FALSE;
+		Atari800_refresh_rate = frameskip;
+	}
 	Atari800_collisions_in_skipped_frames = collisions;
 }
 

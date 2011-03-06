@@ -65,6 +65,7 @@
 	</string-array>
 
 	<string-array name="frameskip">
+		<item>@string/skipauto</item>
 		<item>@string/skip0</item>
 		<item>@string/skip1</item>
 		<item>@string/skip2</item>
@@ -79,6 +80,7 @@
 		<item>3</item>
 		<item>4</item>
 		<item>5</item>
+		<item>6</item>
 	</string-array>
 
 	<string-array name="mixrate">
