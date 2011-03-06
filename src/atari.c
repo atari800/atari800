@@ -1021,23 +1021,17 @@ static void autoframeskip(double curtime, double lasttime)
 		afs_realtime = curtime - afs_lasttime;
 		afs_speedpct = 100.0 * afs_ataritime / afs_realtime;
 		afs_sleeppct = 100.0 * afs_sleeptime / afs_realtime;
-		/*Log_print("AFS: Speed %.2f%% - Slept %.2f%%", afs_speedpct, afs_sleeppct);*/
 
 		if (afs_discard < 3 && (afs_realtime > 2.0 * afs_ataritime)) {
 			afs_discard++;
-			/*Log_print("AFS: Discard sample %d", afs_discard);*/
 		} else {
 			afs_discard = 0;
 			if (afs_speedpct < 90.0) {
-				if (Atari800_refresh_rate < 4) {
+				if (Atari800_refresh_rate < 4)
 					Atari800_refresh_rate++;
-					Log_print("AFS: Increment frameskip to %d", Atari800_refresh_rate);
-				}
 			} else {
-				if (afs_sleeppct > 20.0 && Atari800_refresh_rate > 1) {
+				if (afs_sleeppct > 20.0 && Atari800_refresh_rate > 1)
 					Atari800_refresh_rate--;
-					Log_print("AFS: Decrement frameskip to %d", Atari800_refresh_rate);
-				}
 			}
 		}
 
