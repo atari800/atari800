@@ -277,11 +277,12 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 
 	private native boolean NativeIsDisk(String img);
 
-	private static final Set<String> EXTENSIONS = new HashSet<String>(11);
+	private static final Set<String> EXTENSIONS = new HashSet<String>(13);
 	static {
 		EXTENSIONS.add("atr");	EXTENSIONS.add("atz");	EXTENSIONS.add("xfd");
 		EXTENSIONS.add("dcm");	EXTENSIONS.add("xfz");	EXTENSIONS.add("xex");
 		EXTENSIONS.add("cas");	EXTENSIONS.add("rom");	EXTENSIONS.add("bin");
-		EXTENSIONS.add("car");	EXTENSIONS.add("a8s");
+		EXTENSIONS.add("car");	EXTENSIONS.add("a8s");	EXTENSIONS.add("com");
+		EXTENSIONS.add("exe");
 	}
 }
