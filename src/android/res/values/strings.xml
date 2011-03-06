@@ -159,4 +159,6 @@
 	<string name="pref_help_sum">Android port instructions</string>
 	<string name="pref_anchor">Anchor Joystick</string>
 	<string name="pref_anchor_sum">Fix on-screen joystick to current position</string>
+	<string name="pref_joygrace">Joystick Grace Area</string>
+	<string name="pref_joygrace_sum">Area extension around the joystick which results in no recentering</string>
 </resources>

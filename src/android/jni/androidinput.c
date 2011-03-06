@@ -192,11 +192,12 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		dy2 = (jovl->joyarea.b - jovl->joyarea.t) >> 1;
 		dx  = dx2 - dx2 * jovl->deadarea;
 		dy  = dy2 - dy2 * jovl->deadarea;
+		dx2 = (jovl->joyarea.r - jovl->joyarea.l) * jovl->gracearea;
 
-		if ( (newtc[PTRJOY].x >= jovl->joyarea.l &&
-			  newtc[PTRJOY].x <= jovl->joyarea.r &&
-			  newtc[PTRJOY].y >= jovl->joyarea.t &&
-			  newtc[PTRJOY].y <= jovl->joyarea.b) ||
+		if ( (newtc[PTRJOY].x >= jovl->joyarea.l - dx2 &&
+			  newtc[PTRJOY].x <= jovl->joyarea.r + dx2 &&
+			  newtc[PTRJOY].y >= jovl->joyarea.t - dx2 &&
+			  newtc[PTRJOY].y <= jovl->joyarea.b + dx2) ||
 			 jovl->anchor ) {
 
 			if (newtc[PTRJOY].x <= jovl->joyarea.l + dx) {
@@ -208,6 +209,25 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 				newjoy &= INPUT_STICK_FORWARD;
 			} else if (newtc[PTRJOY].y >= jovl->joyarea.b - dy) {
 				newjoy &= INPUT_STICK_BACK;
+			}
+
+			if (newtc[PTRJOY].x > jovl->joyarea.r) {		/* grace area */
+				dx = newtc[PTRJOY].x - jovl->joyarea.r;
+				jovl->joyarea.l += dx;
+				jovl->joyarea.r += dx;
+			} else if (newtc[PTRJOY].x < jovl->joyarea.l) {
+				dx = jovl->joyarea.l - newtc[PTRJOY].x;
+				jovl->joyarea.r -= dx;
+				jovl->joyarea.l -= dx;
+			}
+			if (newtc[PTRJOY].y > jovl->joyarea.b) {
+				dy = newtc[PTRJOY].y - jovl->joyarea.b;
+				jovl->joyarea.t += dy;
+				jovl->joyarea.b += dy;
+			} else if (newtc[PTRJOY].y < jovl->joyarea.t) {
+				dy = jovl->joyarea.t - newtc[PTRJOY].y;
+				jovl->joyarea.b -= dy;
+				jovl->joyarea.t -= dy;
 			}
 
 			jovl->joystick.x = newtc[PTRJOY].x;
@@ -339,6 +359,7 @@ void Input_Initialize(void)
 	AndroidInput_JoyOvl.ovl_visible = 1;
 	AndroidInput_JoyOvl.areaopacitycur = AndroidInput_JoyOvl.areaopacityset = 0.25f;
 	AndroidInput_JoyOvl.deadarea = 0.3f;
+	AndroidInput_JoyOvl.gracearea = 0.3f;
 	AndroidInput_JoyOvl.joyarea.t = AndroidInput_JoyOvl.joyarea.l = 10;
 	AndroidInput_JoyOvl.joyarea.b = AndroidInput_JoyOvl.joyarea.r = 74;
 	AndroidInput_JoyOvl.anchor = 0;

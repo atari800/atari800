@@ -28,6 +28,7 @@ struct joy_overlay_state
 	int    areaopacityfrm;
 	int    anchor;
 	float  deadarea;
+	float  gracearea;
 
 	struct POINT joystick;
 	float  stickopacity;

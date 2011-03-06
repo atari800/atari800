@@ -374,7 +374,7 @@ public final class MainActivity extends Activity
 			aspect, bilinear, artifact, frameskip, collisions, machine, basic, speed,
 			disk, sector, softjoy, up, down, left, right, fire, joyvisible, joysize,
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
-			hqpokey, mixbufsize, version, rompath, anchor, anchorstr
+			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -446,7 +446,9 @@ public final class MainActivity extends Activity
 						   Boolean.parseBoolean(_newvalues.get(PreferenceName.joyrighth)),
 						   Integer.parseInt(_newvalues.get(PreferenceName.joydeadband)),
 						   Integer.parseInt(_newvalues.get(PreferenceName.joymidx)),
-						   Boolean.parseBoolean(_newvalues.get(PreferenceName.anchor)), x, y );
+						   Boolean.parseBoolean(_newvalues.get(PreferenceName.anchor)),
+						   x, y,
+						   Integer.parseInt(_newvalues.get(PreferenceName.joygrace)) );
 
 			if ( changed(PreferenceName.mixrate) || changed(PreferenceName.sound16bit) ||
 				 changed(PreferenceName.hqpokey) )
@@ -529,7 +531,7 @@ public final class MainActivity extends Activity
 	private static native void NativePrefSoftjoy(boolean softjoy, int up, int down, int left,
 												 int right, int fire);
 	private static native void NativePrefOvl(boolean visible, int size, int opacity, boolean righth,
-										int deadband, int midx, boolean anchor, int anchorx, int anchory);
+						int deadband, int midx, boolean anchor, int anchorx, int anchory, int grace);
 	private static native void NativePrefSound(int mixrate, boolean sound16bit, boolean hqpokey);
 	private static native boolean NativeSetROMPath(String path);
 	private static native String NativeGetJoypos();

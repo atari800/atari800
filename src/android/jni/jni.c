@@ -288,7 +288,7 @@ static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjo
 }
 
 static void JNICALL NativePrefOvl(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
-					jboolean righth, int deadband, jboolean midx, int anchor, int anchorx, int anchory)
+	jboolean righth, int deadband, jboolean midx, int anchor, int anchorx, int anchory, int grace)
 {
 	AndroidInput_JoyOvl.ovl_visible = visible;
 	AndroidInput_JoyOvl.areaopacityset = 0.01f * opacity;
@@ -296,6 +296,7 @@ static void JNICALL NativePrefOvl(JNIEnv *env, jobject this, jboolean visible, i
 	Android_Joyleft = !righth;
 	Android_Splitpct = 0.01f * midx;
 	AndroidInput_JoyOvl.deadarea = 0.01f * deadband;
+	AndroidInput_JoyOvl.gracearea = 0.02f * grace;
 	AndroidInput_JoyOvl.anchor = anchor;
 	if (anchor) {
 		AndroidInput_JoyOvl.joyarea.l = anchorx;
@@ -342,7 +343,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativePrefMachine",		"(I)Z",						NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZ)V",					NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIII)V",				NativePrefSoftjoy	  },
-		{ "NativePrefOvl",			"(ZIIZIIZII)V",				NativePrefOvl		  },
+		{ "NativePrefOvl",			"(ZIIZIIZIII)V",			NativePrefOvl		  },
 		{ "NativePrefSound",		"(IZZ)V",					NativePrefSound		  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",	NativeSetROMPath	  },
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",		NativeGetJoypos		  },

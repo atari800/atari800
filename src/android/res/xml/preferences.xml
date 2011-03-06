@@ -157,6 +157,13 @@
 			android:defaultValue="30"
 			jub:min="20"
 			jub:max="60"/>
+		<name.nick.jubanka.atari800.SliderPreference
+			android:key="joygrace"
+			android:title="@string/pref_joygrace"
+			android:summary="@string/pref_joygrace_sum"
+			android:defaultValue="50"
+			jub:min="10"
+			jub:max="99"/>
 	</PreferenceCategory>
 
 	<PreferenceCategory android:title="@string/preftitle_sound">
