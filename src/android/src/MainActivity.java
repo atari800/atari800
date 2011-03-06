@@ -81,9 +81,9 @@ public final class MainActivity extends Activity
 		_coreversion = NativeInit();
 	}
 	
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 
 		_view = new A800view(this);
 		setContentView(_view);
@@ -103,7 +103,7 @@ public final class MainActivity extends Activity
 			_settings.commit();
 			soundInit(false);
 		}
-    }
+	}
 
 	private void bootupMsgs() {
 		String instver = _settings.get(false, "version");
@@ -214,8 +214,8 @@ public final class MainActivity extends Activity
 	}
 
 	public void pauseEmulation(boolean pause) {
-		_audio.pause(pause);
-		_view.pause(pause);
+		if (_audio != null)	_audio.pause(pause);
+		if (_view != null)	_view.pause(pause);
 	}
 
 	@Override
