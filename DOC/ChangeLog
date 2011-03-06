@@ -1,6 +1,7 @@
 2011-03-06  Kostas Nakos  <knakos@gmail.com>
 * atari.[ch], android/*: Implemented autoframeskip functionality
 * android/*: Added .com & .exe to supported extensions
+             Bugfix crash when sound disabled
 
 2011-02-13  Kostas Nakos  <knakos@gmail.com>
 * log.c, atari.c, screen.c, configure.ac, Makefile.in, android/*: Imported the

@@ -95,8 +95,8 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 		}
 	}
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		ListView lv = getListView();
