@@ -211,23 +211,25 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 				newjoy &= INPUT_STICK_BACK;
 			}
 
-			if (newtc[PTRJOY].x > jovl->joyarea.r) {		/* grace area */
-				dx = newtc[PTRJOY].x - jovl->joyarea.r;
-				jovl->joyarea.l += dx;
-				jovl->joyarea.r += dx;
-			} else if (newtc[PTRJOY].x < jovl->joyarea.l) {
-				dx = jovl->joyarea.l - newtc[PTRJOY].x;
-				jovl->joyarea.r -= dx;
-				jovl->joyarea.l -= dx;
-			}
-			if (newtc[PTRJOY].y > jovl->joyarea.b) {
-				dy = newtc[PTRJOY].y - jovl->joyarea.b;
-				jovl->joyarea.t += dy;
-				jovl->joyarea.b += dy;
-			} else if (newtc[PTRJOY].y < jovl->joyarea.t) {
-				dy = jovl->joyarea.t - newtc[PTRJOY].y;
-				jovl->joyarea.b -= dy;
-				jovl->joyarea.t -= dy;
+			if (!jovl->anchor) {
+				if (newtc[PTRJOY].x > jovl->joyarea.r) {		/* grace area */
+					dx = newtc[PTRJOY].x - jovl->joyarea.r;
+					jovl->joyarea.l += dx;
+					jovl->joyarea.r += dx;
+				} else if (newtc[PTRJOY].x < jovl->joyarea.l) {
+					dx = jovl->joyarea.l - newtc[PTRJOY].x;
+					jovl->joyarea.r -= dx;
+					jovl->joyarea.l -= dx;
+				}
+				if (newtc[PTRJOY].y > jovl->joyarea.b) {
+					dy = newtc[PTRJOY].y - jovl->joyarea.b;
+					jovl->joyarea.t += dy;
+					jovl->joyarea.b += dy;
+				} else if (newtc[PTRJOY].y < jovl->joyarea.t) {
+					dy = jovl->joyarea.t - newtc[PTRJOY].y;
+					jovl->joyarea.b -= dy;
+					jovl->joyarea.t -= dy;
+				}
 			}
 
 			jovl->joystick.x = newtc[PTRJOY].x;

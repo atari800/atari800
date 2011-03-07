@@ -72,12 +72,15 @@
 								<a href="mailto:knakos@gmail.com>Email me</a></p>
 							</body></html>
 							]]></string>
-	<string name="changesv1_1"><![CDATA[
-							<i>Changed in this version:</i><br>
+	<string name="changesv1_1a"><![CDATA[
+							<i>Changes for version 1.1a:</i>
+							<br>This version is a quick fix for a regression to the <i>Anchor Joystick</i>
+								preference, introduced in v1.1.<br><br>
+							<i>Version 1.1 changelog follows:</i>
 							<br><b>*</b> Fix a crash when sound was switched off
 							<br><b>*</b> Added support for .com and .exe files
 							<br><b>*</b> Added the auto frameskip option
-							<br><b>*</b> Added the new <i>Joystick Grace Area</i> preference<br>
+							<br><b>*</b> Added the new <i>Joystick Grace Area</i> preference
 							<br>Thanks to the bug/feature reporters!
 							]]></string>
 	<string name="atariupdate">Atari800 Update</string>

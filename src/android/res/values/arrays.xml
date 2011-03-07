@@ -95,9 +95,9 @@
 	</string-array>
 
 	<string-array name="changes_strings">
-		<item>@string/changesv1_1</item>
+		<item>@string/changesv1_1a</item>
 	</string-array>
 	<integer-array name="changes_versions">
-		<item>2</item>
+		<item>3</item>
 	</integer-array>
 </resources>
