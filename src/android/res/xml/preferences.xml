@@ -154,7 +154,7 @@
 			android:key="joydeadband"
 			android:title="@string/pref_joydeadband"
 			android:summary="@string/pref_joydeadband_sum"
-			android:defaultValue="30"
+			android:defaultValue="35"
 			jub:min="20"
 			jub:max="60"/>
 		<name.nick.jubanka.atari800.SliderPreference
