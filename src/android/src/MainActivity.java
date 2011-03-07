@@ -65,6 +65,7 @@ public final class MainActivity extends Activity
 	private static final int ACTIVITY_PREFS = 2;
 	private static final int DLG_WELCOME = 0;
 	private static final int DLG_PATHSETUP = 1;
+	private static final int DLG_CHANGES = 2;
 
 	public static String _pkgversion;
 	public static String _coreversion;
@@ -119,6 +120,13 @@ public final class MainActivity extends Activity
 			pauseEmulation(true);
 			_bootupconfig = true;
 			showDialog(DLG_PATHSETUP);
+			return;
+		}
+
+		if (Integer.parseInt(instver) != getPInfo().versionCode) {
+			_bootupconfig = true;
+			pauseEmulation(true);
+			showDialog(DLG_CHANGES);
 		}
 	}
 
@@ -183,9 +191,41 @@ public final class MainActivity extends Activity
 						.create();
 			break;
 
+		case DLG_CHANGES:
+			t = new TextView(this);
+			int[] vs = getResources().getIntArray(R.array.changes_versions);
+			int instver = getPInfo().versionCode;
+			for (int i = 0; i < vs.length; i++)
+				if (vs[i] == instver) {
+					t.setText(Html.fromHtml(getResources().getStringArray(R.array.changes_strings)[i]));
+					break;
+				}
+			t.setTextAppearance(this, android.R.style.TextAppearance_Small_Inverse);
+			t.setBackgroundResource(android.R.color.background_light);
+			t.setMovementMethod(LinkMovementMethod.getInstance());
+			s = new ScrollView(this);
+			s.addView(t);
+			d = new AlertDialog.Builder(this)
+						.setTitle(R.string.atariupdate)
+						.setView(s)
+						.setInverseBackgroundForced(true)
+						.setCancelable(false)
+						.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								_settings.putInt("version", getPInfo().versionCode);
+								_bootupconfig = false;
+								pauseEmulation(false);
+								dismissDialog(DLG_CHANGES);
+							}
+							})
+						.create();
+			break;
+
 		default:
 			d = null;
 		}
+
 		return d;
 	}
 
