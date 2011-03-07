@@ -35,7 +35,7 @@
 							   \nHave fun! </string>
     <string name="pathsetup">Atari ROM Path</string>
 	<string name="pathsetupmsg"><![CDATA[
-		The emulator requires the original Atari ROM images.<br><br>
+								The emulator requires the original Atari ROM images.<br><br>
 								Touch <b>OK</b> to use the file selector to point to the folder containing
 								the ROM images.<br>
 								Touch <b>Cancel</b> to quit to the OS.<br><br>
@@ -72,6 +72,15 @@
 								<a href="mailto:knakos@gmail.com>Email me</a></p>
 							</body></html>
 							]]></string>
+	<string name="changesv1_1"><![CDATA[
+							<i>Changed in this version:</i><br>
+							<br><b>*</b> Fix a crash when sound was switched off
+							<br><b>*</b> Added support for .com and .exe files
+							<br><b>*</b> Added the auto frameskip option
+							<br><b>*</b> Added the new <i>Joystick Grace Area</i> preference<br>
+							<br>Thanks to the bug/feature reporters!
+							]]></string>
+	<string name="atariupdate">Atari800 Update</string>
 
 	<!-- Preferences -->
 	<string name="preftitle_graphics">Graphics</string>
