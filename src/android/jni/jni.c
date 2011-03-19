@@ -50,8 +50,11 @@ int ovl_texh;
 #ifdef USE_SOUND_MUTEX
 static pthread_mutex_t sound_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
-static jbyteArray sndarray;
-static pthread_key_t sndbuf = NULL;
+struct audiothread {
+	UBYTE *sndbuf;
+	jbyteArray sndarray;
+};
+static pthread_key_t audiothread_data = NULL;
 
 extern void SoundThread_Update(void *buf, int offs, int len);
 extern void Android_SoundInit(int rate, int bit16, int hq);
@@ -96,8 +99,8 @@ static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 	char av = '\0';
 	char *avp = &av;
 
-	pthread_key_create(&sndbuf, NULL);
-	pthread_setspecific(sndbuf, NULL);
+	pthread_key_create(&audiothread_data, NULL);
+	pthread_setspecific(audiothread_data, NULL);
 
 	Atari800_Initialise(&ac, &avp);
 
@@ -180,50 +183,57 @@ static void JNICALL NativeSoundInit(JNIEnv *env, jobject this, jint size)
 	jclass cls;
 	jfieldID fid;
 	jintArray arr;
-	UBYTE *buf;
+	struct audiothread *at;
 
 	Log_print("Audio init with buffer size %d", size);
+
+	if (pthread_getspecific(audiothread_data))
+		Log_print("Audiothread data already allocated for current thread");
+	at = (struct audiothread *) malloc(sizeof(struct audiothread));
 
 	cls = (*env)->GetObjectClass(env, this);
 	fid = (*env)->GetFieldID(env, cls, "_buffer", "[B");
 	arr = (*env)->GetObjectField(env, this, fid);
-	sndarray = (*env)->NewGlobalRef(env, arr);
+	at->sndarray = (*env)->NewGlobalRef(env, arr);
 
-	if (pthread_getspecific(sndbuf)) Log_print("sndbuf already allocated!");
-	buf = malloc(size);
-	if (buf == NULL)
-		Log_print("Cannot allocate memory for sound buffer");
-	else
-		pthread_setspecific(sndbuf, buf);
+	at->sndbuf = malloc(size);
+	if (!at->sndbuf)	Log_print("Cannot allocate memory for sound buffer");
+
+	pthread_setspecific(audiothread_data, at);
 }
 
 static void JNICALL NativeSoundUpdate(JNIEnv *env, jobject this, jint offset, jint length)
 {
-	UBYTE *buf;
+	struct audiothread *at;
 
-	if ( !(buf = (UBYTE *) pthread_getspecific(sndbuf)) )
+	if ( !(at = (struct audiothread *) pthread_getspecific(audiothread_data)) )
 		return;
 	/* guard sound generation */
 #ifdef USE_SOUND_MUTEX
 	pthread_mutex_lock(&sound_mutex);
 #endif
-	SoundThread_Update(buf, offset, length);
+	SoundThread_Update(at->sndbuf, offset, length);
 #ifdef USE_SOUND_MUTEX
 	pthread_mutex_unlock(&sound_mutex);
 #endif
-	(*env)->SetByteArrayRegion(env, sndarray, offset, length, buf + offset);
+	(*env)->SetByteArrayRegion(env, at->sndarray, offset, length, at->sndbuf + offset);
 }
 
 static void JNICALL NativeSoundExit(JNIEnv *env, jobject this)
 {
-	UBYTE *buf;
+	struct audiothread *at;
 
 	Log_print("Audio exit");
-	(*env)->DeleteGlobalRef(env, sndarray);
-	if ( !(buf = (UBYTE *) pthread_getspecific(sndbuf)) )
+
+	if ( !(at = (struct audiothread *) pthread_getspecific(audiothread_data)) )
 		return;
-	free(buf);
-	pthread_setspecific(sndbuf, NULL);
+
+	(*env)->DeleteGlobalRef(env, at->sndarray);
+	if (at->sndbuf)
+		free(at->sndbuf);
+
+	free(at);
+	pthread_setspecific(audiothread_data, NULL);
 }
 
 static void JNICALL NativeKey(JNIEnv *env, jobject this, int k, int s)
