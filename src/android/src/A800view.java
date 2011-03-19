@@ -46,6 +46,7 @@ public final class A800view extends GLSurfaceView
 	public static final int KEY_RIGHT     = 251;
 	public static final int KEY_FIRE      = 250;
 	public static final int KEY_ENTER     = 249;
+	public static final int KEY_ESCAPE    = 248;
 
 	private static final String TAG = "A800View";
 	private A800Renderer _renderer;
@@ -194,7 +195,7 @@ public final class A800view extends GLSurfaceView
 			_key = KEY_BACKSPACE;
 			break;
 		case KeyEvent.KEYCODE_DPAD_CENTER:
-			_key = KEY_ENTER;
+			_key = KEY_ESCAPE;
 			break;
 		default:
 			_meta = ev.getMetaState();
