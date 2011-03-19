@@ -61,7 +61,6 @@ public final class AudioThread extends Thread
 				  ) );
 		_quit = false;
 		_pause = false;
-		NativeSoundInit(_bufsize);
 		this.setDaemon(true);
 		if (_at.getState() != AudioTrack.STATE_INITIALIZED) {
 			Log.e(TAG, "Cannot initialize audio");
@@ -74,6 +73,7 @@ public final class AudioThread extends Thread
 		synchronized(this) {
 			_pause = p;
 		}
+		if (!_initok)	return;
 		if (p) {
 			_at.pause();
 			Log.d(TAG, "Audio paused");
@@ -89,6 +89,8 @@ public final class AudioThread extends Thread
 		boolean pause;
 
 		if (!_initok)	return;
+
+		NativeSoundInit(_bufsize);
 		_at.play();
 		chunk = _chunk / 2;
 
