@@ -70,9 +70,7 @@ public final class AudioThread extends Thread
 	}
 
 	public void pause(boolean p) {
-		synchronized(this) {
-			_pause = p;
-		}
+		_pause = p;
 		if (!_initok)	return;
 		if (p) {
 			_at.pause();
@@ -86,7 +84,6 @@ public final class AudioThread extends Thread
 	public void run() {
 		int offset = 0;
 		int len, w, chunk;
-		boolean pause;
 
 		if (!_initok)	return;
 
@@ -96,11 +93,8 @@ public final class AudioThread extends Thread
 
 		try {
 		while (!_quit) {
-			synchronized(this) {
-				pause = _pause;
-			}
-			if (pause) {
-				sleep(10);
+			if (_pause) {
+				sleep(100);
 				continue;
 			}
 
