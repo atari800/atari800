@@ -80,6 +80,7 @@ static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 	['Z'] = AKEY_Z,
 
 	['\e'] = AKEY_ESCAPE,
+	['~']  = AKEY_ESCAPE,
 	['\t'] = AKEY_TAB,
 	['\n'] = AKEY_RETURN,
 	[' ']  = AKEY_SPACE,

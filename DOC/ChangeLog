@@ -1,5 +1,5 @@
 2011-03-19  Kostas Nakos  <knakos@gmail.com>
-* android/*: Map dpad-center to Atari's escape key,
+* android/*: Map dpad-center and ~ to Atari's escape key,
              fix a couple of races when restarting, pausing/resuming the audio
 
 2011-03-06  Kostas Nakos  <knakos@gmail.com>
