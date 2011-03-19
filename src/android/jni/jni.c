@@ -51,7 +51,7 @@ int ovl_texh;
 static pthread_mutex_t sound_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 static jbyteArray sndarray;
-static UBYTE *sndbuf = NULL;
+static pthread_key_t sndbuf = NULL;
 
 extern void SoundThread_Update(void *buf, int offs, int len);
 extern void Android_SoundInit(int rate, int bit16, int hq);
@@ -95,6 +95,9 @@ static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 	int ac = 1;
 	char av = '\0';
 	char *avp = &av;
+
+	pthread_key_create(&sndbuf, NULL);
+	pthread_setspecific(sndbuf, NULL);
 
 	Atari800_Initialise(&ac, &avp);
 
@@ -177,36 +180,50 @@ static void JNICALL NativeSoundInit(JNIEnv *env, jobject this, jint size)
 	jclass cls;
 	jfieldID fid;
 	jintArray arr;
+	UBYTE *buf;
+
+	Log_print("Audio init with buffer size %d", size);
 
 	cls = (*env)->GetObjectClass(env, this);
 	fid = (*env)->GetFieldID(env, cls, "_buffer", "[B");
 	arr = (*env)->GetObjectField(env, this, fid);
 	sndarray = (*env)->NewGlobalRef(env, arr);
 
-	sndbuf = malloc(size);
-	if (sndbuf == NULL) Log_print("Cannot allocate memory for sound buffer");
+	if (pthread_getspecific(sndbuf)) Log_print("sndbuf already allocated!");
+	buf = malloc(size);
+	if (buf == NULL)
+		Log_print("Cannot allocate memory for sound buffer");
+	else
+		pthread_setspecific(sndbuf, buf);
 }
 
 static void JNICALL NativeSoundUpdate(JNIEnv *env, jobject this, jint offset, jint length)
 {
+	UBYTE *buf;
+
+	if ( !(buf = (UBYTE *) pthread_getspecific(sndbuf)) )
+		return;
 	/* guard sound generation */
 #ifdef USE_SOUND_MUTEX
 	pthread_mutex_lock(&sound_mutex);
 #endif
-	SoundThread_Update(sndbuf, offset, length);
+	SoundThread_Update(buf, offset, length);
 #ifdef USE_SOUND_MUTEX
 	pthread_mutex_unlock(&sound_mutex);
 #endif
-	(*env)->SetByteArrayRegion(env, sndarray, offset, length, sndbuf + offset);
+	(*env)->SetByteArrayRegion(env, sndarray, offset, length, buf + offset);
 }
 
 static void JNICALL NativeSoundExit(JNIEnv *env, jobject this)
 {
+	UBYTE *buf;
+
+	Log_print("Audio exit");
 	(*env)->DeleteGlobalRef(env, sndarray);
-	if (sndbuf) {
-		free(sndbuf);
-		sndbuf = NULL;
-	}
+	if ( !(buf = (UBYTE *) pthread_getspecific(sndbuf)) )
+		return;
+	free(buf);
+	pthread_setspecific(sndbuf, NULL);
 }
 
 static void JNICALL NativeKey(JNIEnv *env, jobject this, int k, int s)
