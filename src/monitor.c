@@ -1389,11 +1389,18 @@ int MONITOR_Run(void)
 				printf("Invalid argument. Usage: BBRK ON or OFF\n");
 		}
 		else if (strcmp(t, "BPC") == 0) {
-			get_hex(&MONITOR_break_addr);
-			if (MONITOR_break_addr >= 0xd000 && MONITOR_break_addr <= 0xd7ff)
-				printf("PC breakpoint disabled\n");
+			int addr_valid = get_hex(&MONITOR_break_addr);
+			if (addr_valid)
+			{
+				if (MONITOR_break_addr >= 0xd000 && MONITOR_break_addr <= 0xd7ff)
+					printf("PC breakpoint disabled\n");
+				else
+					printf("Breakpoint set at PC=%04X\n", MONITOR_break_addr);
+			}
 			else
-				printf("Breakpoint at PC=%04X\n", MONITOR_break_addr);
+			{
+				printf("Breakpoint is at PC=%04X\n", MONITOR_break_addr);
+			}
 		}
 		else if (strcmp(t, "HISTORY") == 0 || strcmp(t, "H") == 0) {
 			int i;

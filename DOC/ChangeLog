@@ -1,4 +1,6 @@
 2011-04-02  Petr Stehlik <pstehlik@sophics.cz>
+  Commiting patches submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
+  and Achim Haertel <aha_33@t-online.de>:
 * many files: Tomasz Krasuski's large patch that adds a new control to the GUI,
   a slider which allows to adjust a numeric value using left and right arrows.
   The slider is used in the colour controls (brightness, contrast etc.) and in
@@ -17,6 +19,9 @@
   are now also available in the DirectX port.
   Simplified the code for processing Win32-specific hotkeys. Now there's less
   platfrom-specific code scattered around. Functionality remains unchanged.
+
+* monitor.c: Achim Haertel's patch adds a minor change to the monitor:
+  BPC without argument shows now the current breakpoint location.
 
 
 2011-03-19  Kostas Nakos  <knakos@gmail.com>
