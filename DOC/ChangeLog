@@ -28,7 +28,9 @@
 * atari800.spec: X11 and ncurses dropped. libGL should be added
   as a recommended library.
 
-* README.1ST, ChangeLog, NEWS, util/export: updated for a new release
+* README.1ST, README, ChangeLog, NEWS, util/export: updated for a new release
+
+* sdl/video_sw.c: disabled an annoying debug print
 
 
 2011-04-02  Kostas Nakos  <knakos@gmail.com>
