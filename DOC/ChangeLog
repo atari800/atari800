@@ -1,7 +1,4 @@
-2011-03-19  Kostas Nakos  <knakos@gmail.com>
-* android/*: Implement a simple disk management menu
-* ui.c: Rearranged an #include to silence a redefinition warning
-
+** 2.2.0 released on 2011-04-02 at Atariada in Prostejov
 
 2011-04-02  Petr Stehlik <pstehlik@sophics.cz>
   Commiting patches submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
@@ -27,6 +24,16 @@
 
 * monitor.c: Achim Haertel's patch adds a minor change to the monitor:
   BPC without argument shows now the current breakpoint location.
+
+* atari800.spec: X11 and ncurses dropped. libGL should be added
+  as a recommended library.
+
+* README.1ST, ChangeLog, NEWS, util/export: updated for a new release
+
+
+2011-04-02  Kostas Nakos  <knakos@gmail.com>
+* android/*: Implement a simple disk management menu
+* ui.c: Rearranged an #include to silence a redefinition warning
 
 
 2011-03-19  Kostas Nakos  <knakos@gmail.com>

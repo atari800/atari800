@@ -2,7 +2,7 @@
 # This scripts helps with building the source .tar.gz file
 
 VER_MAJOR=2
-VER_MINOR=1
+VER_MINOR=2
 VER_MICRO=0
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO

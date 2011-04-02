@@ -1,6 +1,6 @@
 Version 2.2.0 (2011/04/02)
 
- Another update after two years. A lot of changes and major improvements:
+ Another update after two long years. A lot of changes and major improvements:
 
  New features:
  -------------
@@ -89,20 +89,20 @@ can be done in Display settings anyway.
 All new options are also available from command line and are saveable in 
 configuration.
 
-
   New Android port features:
   -------------------------
-- efficient performance
+- Efficient performance
 - Uses Opengl ES to handle scaling of the graphics
-- Runs on android 1.6+
-- Novel (afaik) on screen touch joystick control for less hand cramps & 
-intuitive control
+- Runs on Android 1.6+
+- Novel on screen touch joystick control for less hand cramps & intuitive 
+  control
 - Supports multi touch input
 - Supports hardware keyboard with key remapping for joystick input
 - Supports the Wii Controller for joystick input
 - Supports the "move to SD" feature
 - Sound emulation very good but not perfect yet
-- Bypasses the emulator ui menu completely - goes 'the android way' about it-
+- Bypasses the emulator UI menu completely - goes 'the android way' about it
+- Available in the App Market: market://details?id=name.nick.jubanka.atari800
 
 
 Version 2.1.0 (2009/03/27)
