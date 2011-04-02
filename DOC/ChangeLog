@@ -1,3 +1,7 @@
+2011-03-19  Kostas Nakos  <knakos@gmail.com>
+* android/*: Implement a simple disk management menu
+
+
 2011-04-02  Petr Stehlik <pstehlik@sophics.cz>
   Commiting patches submitted by Tomasz Krasuski <tomasz.krasuski@interia.pl>
   and Achim Haertel <aha_33@t-online.de>:

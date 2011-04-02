@@ -343,14 +343,13 @@ public final class MainActivity extends Activity
 				break;
 			}
 			_curDiskFname = data.getData().getPath();
-			NativeRunAtariProgram(_curDiskFname,
-					(data.getAction().equals(ACTION_INSERT_REBOOT)) ? 1 : 0);
-			Toast.makeText(this, String.format(getString(
-					(data.getAction().equals(ACTION_INSERT_REBOOT)) ?
-												R.string.diskboot : R.string.mountnextdisk),
-								_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
-						   Toast.LENGTH_SHORT)
-				 .show();
+			if (data.getAction().equals(ACTION_INSERT_REBOOT)) {
+				NativeRunAtariProgram(_curDiskFname, 1, 1);
+				Toast.makeText(this, String.format(getString(R.string.diskboot),
+									_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
+							   Toast.LENGTH_SHORT)
+					 .show();
+			}
 			break;
 		case ACTIVITY_PREFS:
 			_settings.fetchApplySettings();
@@ -385,7 +384,7 @@ public final class MainActivity extends Activity
 				Log.d(TAG, "Trying loop " + f.getName());
 					if (f.exists()) {
 						_curDiskFname = f.getPath();
-						NativeRunAtariProgram(_curDiskFname, 0);
+						NativeRunAtariProgram(_curDiskFname, 1, 0);
 						Toast.makeText(this,
 									   String.format(getString(R.string.mountnextdisk), f.getName()),
 									   Toast.LENGTH_SHORT)
@@ -402,7 +401,7 @@ public final class MainActivity extends Activity
 		Toast.makeText(this, R.string.mountnonextdisk, Toast.LENGTH_SHORT).show();
 	}
 
-	private native void NativeRunAtariProgram(String img, int reboot);
+	private native void NativeRunAtariProgram(String img, int drive, int reboot);
 	private native void NativeExit();
 	private static native String NativeInit();
 

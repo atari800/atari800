@@ -11,7 +11,10 @@
     <string name="mountnodisk">File %s is not a disk image.\nContinue?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="mountdisk">Mount Image to Drive</string>
+    <string name="unmountall">Unmount all drives</string>
     <string name="mountnextdisk">Image %s inserted</string>
+    <string name="mountinsertdisk">Image %s inserted into drive D%d:</string>
     <string name="mountnonextdisk">No next disk image found</string>
     <string name="diskboot">Booting image %s</string>
     <string name="none">None</string>

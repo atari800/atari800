@@ -34,12 +34,13 @@
 #include "cpu.h"
 #include "antic.h"
 #include "../../memory.h"	/* override system header */
+#include "sio.h"
 
 #include "platform.h"
 #include "graphics.h"
 #include "androidinput.h"
 
-//#define USE_SOUND_MUTEX
+/*#define USE_SOUND_MUTEX*/
 #undef USE_SOUND_MUTEX
 
 /* exported functions/parameters */
@@ -54,7 +55,7 @@ struct audiothread {
 	UBYTE *sndbuf;
 	jbyteArray sndarray;
 };
-static pthread_key_t audiothread_data = NULL;
+static pthread_key_t audiothread_data;
 
 extern void SoundThread_Update(void *buf, int offs, int len);
 extern void Android_SoundInit(int rate, int bit16, int hq);
@@ -107,16 +108,44 @@ static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 	return (*env)->NewStringUTF(env, Atari800_TITLE);
 }
 
-static void JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this, jstring img, jint reboot)
+static void JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this, jstring img, jint drv,
+											jint reboot)
 {
 	const jbyte *img_utf = NULL;
 
 	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
-	if (!AFILE_OpenFile(img_utf, reboot, 1, FALSE))
+	if (!AFILE_OpenFile(img_utf, reboot, drv, FALSE))
 		Log_print("Cannot start image: %s", img_utf);
 	else
 		CPU_cim_encountered = FALSE;
 	(*env)->ReleaseStringUTFChars(env, img, img_utf);
+}
+
+static jobjectArray JNICALL NativeGetDrvFnames(JNIEnv *env, jobject this)
+{
+	jobjectArray arr;
+	int i;
+	char tmp[FILENAME_MAX + 3], fname[FILENAME_MAX];
+	jstring str;
+
+	arr = (*env)->NewObjectArray(env, 4, (*env)->FindClass(env, "java/lang/String"), NULL);
+	for (i = 0; i < 4; i++) {
+		Util_splitpath(SIO_filename[i], NULL, fname);
+		sprintf(tmp, "D%d:%s", i + 1, fname);
+		str = (*env)->NewStringUTF(env, tmp);
+		(*env)->SetObjectArrayElement(env, arr, i, str);
+		(*env)->DeleteLocalRef(env, str);
+	}
+
+	return arr;
+}
+
+static void JNICALL NativeUnmountAll(JNIEnv *env, jobject this)
+{
+	int i;
+
+	for (i = 1; i <= 4; i++)
+		SIO_DisableDrive(i);
 }
 
 static jboolean JNICALL NativeIsDisk(JNIEnv *env, jobject this, jstring img)
@@ -365,7 +394,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
 	JNINativeMethod main_methods[] = {
 		{ "NativeExit",				"()V",						NativeExit			  },
-		{ "NativeRunAtariProgram",	"(Ljava/lang/String;I)V",	NativeRunAtariProgram },
+		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",	NativeRunAtariProgram },
 		{ "NativePrefGfx",			"(IZIIZ)V",					NativePrefGfx		  },
 		{ "NativePrefMachine",		"(I)Z",						NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZ)V",					NativePrefEmulation	  },
@@ -392,6 +421,9 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	};
 	JNINativeMethod fsel_methods[] = {
 		{ "NativeIsDisk",			"(Ljava/lang/String;)Z",	NativeIsDisk		  },
+		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",	NativeRunAtariProgram },
+		{ "NativeGetDrvFnames",		"()[Ljava/lang/String;",	NativeGetDrvFnames	  },
+		{ "NativeUnmountAll",		"()V",						NativeUnmountAll	  },
 	};
 	JNIEnv *env;
 	jclass cls;

@@ -51,6 +51,8 @@ import android.app.AlertDialog;
 import android.util.Log;
 import android.app.ProgressDialog;
 import android.os.AsyncTask;
+import android.app.Dialog;
+import android.widget.Toast;
 
 
 public final class FileSelector extends ListActivity implements AdapterView.OnItemLongClickListener,
@@ -63,10 +65,15 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 	private static final String SAVED_PATH = "SavedPath";
 	private static final String SAVED_POS = "SavedPos";
 
+	private static final int DLG_MOUNT = 0;
+	private static final int DLG_WARNING = 1;
+
 	private IconArrayAdapter _ad = null;
 	private File _curdir;
 	private ListDirTask _task = null;
 	private boolean _pathsel = false;
+	private static String _mntfname = null;
+	private static String _drive1fname = null;
 
 	private final class IconArrayAdapter extends ArrayAdapter<String> {
 
@@ -173,30 +180,101 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 
 	@Override
 	public boolean onItemLongClick(AdapterView<?> l, View v, final int pos, long id) {
-		final String fname = _ad.getItem(pos);
-		if (fname.endsWith("/"))
+		_mntfname = _ad.getItem(pos);
+		if (_mntfname.endsWith("/"))
 			return true;
-		if (!NativeIsDisk(_curdir + "/" + fname)) {
-			new AlertDialog.Builder(FileSelector.this)
-				.setTitle(R.string.warning)
-				.setIcon(android.R.drawable.ic_dialog_alert)
-				.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface d, int i) {
-						d.dismiss();
-						setResult(Activity.RESULT_OK, new Intent(MainActivity.ACTION_INSERT_ONLY,
-														Uri.fromFile(new File(_curdir, fname))));
-						finish();
-					}
-					})
-				.setNegativeButton(R.string.no, null)
-				.setMessage(String.format(getString(R.string.mountnodisk), fname))
-				.show();
+		if (!NativeIsDisk(_curdir + "/" + _mntfname)) {
+			showDialog(DLG_WARNING);
 			return true;
 		}
-		setResult(Activity.RESULT_OK, new Intent(MainActivity.ACTION_INSERT_ONLY,
-				  Uri.fromFile(new File(_curdir, fname))));
-		finish();
+		showDialog(DLG_MOUNT);
 		return true;
+	}
+
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		Dialog d;
+
+		switch (id) {
+		case DLG_MOUNT:
+			CharSequence[] items = new CharSequence[5];
+			String[] drives = NativeGetDrvFnames();
+			for (int i = 0; i < 4; i++)
+				items[i] = new StringBuilder(drives[i]);
+			items[4] = getString(R.string.unmountall);
+			d = new AlertDialog.Builder(this)
+						.setTitle(R.string.mountdisk)
+						.setCancelable(true)
+						.setItems(items, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								if (i < 4) {
+									NativeRunAtariProgram(_curdir + "/" + _mntfname, i + 1, 0);
+									if (i == 0)
+										_drive1fname = _curdir + "/" + _mntfname;
+									Toast.makeText(FileSelector.this,
+											String.format(getString(R.string.mountinsertdisk), _mntfname, i + 1),
+											Toast.LENGTH_SHORT)
+										 .show();
+								} else {
+									NativeUnmountAll();
+									_drive1fname = null;
+								}
+								_mntfname = null;
+								dismissDialog(DLG_MOUNT);
+							}
+							})
+						.create();
+			break;
+
+		case DLG_WARNING:
+			d = new AlertDialog.Builder(FileSelector.this)
+						.setTitle(R.string.warning)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								dismissDialog(DLG_WARNING);
+								showDialog(DLG_MOUNT);
+							}
+							})
+						.setNegativeButton(R.string.no, null)
+						.setMessage(String.format(getString(R.string.mountnodisk), _mntfname))
+						.create();
+			break;
+
+		default:
+			d = null;
+		}
+
+		return d;
+	}
+
+	@Override
+	protected void onPrepareDialog(int id, Dialog d) {
+		switch (id) {
+		case DLG_MOUNT:
+			String[] drives = NativeGetDrvFnames();
+			StringBuilder itemtxt;
+			for (int i = 0; i < 4; i++) {
+				itemtxt = (StringBuilder) ((AlertDialog) d).getListView().getAdapter().getItem(i);
+				itemtxt.delete(0, itemtxt.length());
+				itemtxt.append(drives[i]);
+			}
+			((AlertDialog) d).getListView().invalidateViews();
+			break;
+		}
+	}
+
+	@Override
+	public void finish() {
+		if (!_pathsel) {
+			if (_drive1fname != null) {
+				setResult(Activity.RESULT_OK, new Intent(MainActivity.ACTION_INSERT_ONLY,
+												Uri.fromFile(new File(_drive1fname))));
+			}
+		}
+		super.finish();
 	}
 
 	private void listDirectory(File dir, int pos) {
@@ -276,6 +354,9 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 
 
 	private native boolean NativeIsDisk(String img);
+	private native void NativeRunAtariProgram(String img, int drive, int reboot);
+	private native String[] NativeGetDrvFnames();
+	private native void NativeUnmountAll();
 
 	private static final Set<String> EXTENSIONS = new HashSet<String>(13);
 	static {
