@@ -40,17 +40,11 @@
 #include "graphics.h"
 #include "androidinput.h"
 
-/*#define USE_SOUND_MUTEX*/
-#undef USE_SOUND_MUTEX
-
 /* exported functions/parameters */
 int *ovl_texpix;
 int ovl_texw;
 int ovl_texh;
 
-#ifdef USE_SOUND_MUTEX
-static pthread_mutex_t sound_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
 struct audiothread {
 	UBYTE *sndbuf;
 	jbyteArray sndarray;
@@ -183,17 +177,10 @@ static jboolean JNICALL NativeRunFrame(JNIEnv *env, jobject this)
 	do {
 		INPUT_key_code = PLATFORM_Keyboard();
 
-		/* guard emulation */
-#ifdef USE_SOUND_MUTEX
-		pthread_mutex_lock(&sound_mutex);
-#endif
 		if (!CPU_cim_encountered)
 			Atari800_Frame();
 		else
 			Atari800_display_screen = TRUE;
-#ifdef USE_SOUND_MUTEX
-		pthread_mutex_unlock(&sound_mutex);
-#endif
 
 		if (Atari800_display_screen || CPU_cim_encountered)
 			PLATFORM_DisplayScreen();
@@ -237,14 +224,7 @@ static void JNICALL NativeSoundUpdate(JNIEnv *env, jobject this, jint offset, ji
 
 	if ( !(at = (struct audiothread *) pthread_getspecific(audiothread_data)) )
 		return;
-	/* guard sound generation */
-#ifdef USE_SOUND_MUTEX
-	pthread_mutex_lock(&sound_mutex);
-#endif
 	SoundThread_Update(at->sndbuf, offset, length);
-#ifdef USE_SOUND_MUTEX
-	pthread_mutex_unlock(&sound_mutex);
-#endif
 	(*env)->SetByteArrayRegion(env, at->sndarray, offset, length, at->sndbuf + offset);
 }
 
