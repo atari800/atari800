@@ -1,19 +1,17 @@
 %define name	atari800
-%define ver	2.2.0rc1
+%define ver	2.2.0
 %define rel	1
 %define copy	GPL
 %define ich Petr Stehlik <pstehlik@sophics.cz>
 %define group	Console/Emulators
 %define realname atari800-%{ver}
 %define src atari800-%{ver}.tar.gz
-%define targets ncurses x11 sdl
+%define targets sdl
 ## If you change the targets, you'll have to change the files list at the
 ## bottom of this file as well
 %define maintarget sdl
 Requires:	SDL >= 1.2.10
 BuildRequires:	SDL-devel >= 1.2.10
-Requires:	ncurses
-BuildRequires:	ncurses-devel
 Requires:	zlib
 BuildRequires:	zlib-devel
 Requires:	png
@@ -77,8 +75,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 /usr/bin/atari800
-/usr/bin/atari800-x11
-/usr/bin/atari800-ncurses
 /usr/bin/atari800-sdl
 /usr/share/man/man1/atari800.1.gz
 /usr/share/doc/atari800/COPYING
@@ -89,6 +85,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/doc/atari800/NEWS
 
 %changelog
+* Sat Apr 02 2011 Petr Stehlik <pstehlik@sophics.cz>
+New upstream release. Dropped X11 and ncurses targets.
 * Mon Mar 30 2009 Petr Stehlik <pstehlik@sophics.cz>
 Requires and BuildRequires also the png library.
 * Fri Mar 27 2009 Petr Stehlik <pstehlik@sophics.cz>
