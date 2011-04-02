@@ -117,8 +117,10 @@ static void ModeInfo(void)
 		fullstring = "fullscreen";
 	else
 		fullstring = "windowed";
+/* this keeps printing over and over when windowed mode is maximized
 	Log_print("Video Mode: %dx%dx%d %s", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel, fullstring);
+*/
 }
 
 static void SetVideoMode(int w, int h, int bpp)
