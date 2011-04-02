@@ -158,6 +158,19 @@ typedef int (*UI_fnSelect)(const char *title, int flags, int default_item, const
 /* SelectInt returns an integer chosen by the user from the range min_value..max_value.
    default_value is the initial selection and the value returned if the selection is cancelled. */
 typedef int (*UI_fnSelectInt)(int default_value, int min_value, int max_value);
+/* SelectSlider selects integer chosen by user from the range 0..max_value.
+   start_value is the slider's initial value. The label displayed at the slider is created
+   by calling label_fun. This function takes three parameters:
+   - *label - a buffer into which the label shuld be written to (not longer than 10 chars,
+     excluding the trailing \0);
+   - value - the slider's current value, on which the label should be based;
+   - *user_data - a pointer to any data provided by user in SelectSlider's
+     *user_data parameter.
+   Returns -1 when the user has cancelled.
+   The return value should be converted by user to a usable range. */
+typedef int (*UI_fnSelectSlider)(char const *title, int start_value, int max_value,
+				 void (*label_fun)(char *label, int value, void *user_data),
+				 void *user_data);
 /* EditString provides string input. pString is shown initially and can be modified by the user.
    It won't exceed nSize characters, including NUL. Note that pString may be modified even
    when the user pressed Esc. */
@@ -194,6 +207,7 @@ typedef struct
 {
 	UI_fnSelect           fSelect;
 	UI_fnSelectInt        fSelectInt;
+	UI_fnSelectSlider     fSelectSlider;
 	UI_fnEditString       fEditString;
 	UI_fnGetSaveFilename  fGetSaveFilename;
 	UI_fnGetLoadFilename  fGetLoadFilename;

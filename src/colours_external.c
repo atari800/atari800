@@ -26,6 +26,7 @@
 
 #include "atari.h" /* for TRUE/FALSE */
 #include "colours_external.h"
+#include "util.h"
 
 int COLOURS_EXTERNAL_Read(COLOURS_EXTERNAL_t *colours)
 {
@@ -59,7 +60,6 @@ void COLOURS_EXTERNAL_Remove(COLOURS_EXTERNAL_t *colours)
 
 int COLOURS_EXTERNAL_ReadFilename(COLOURS_EXTERNAL_t *colours, char *filename)
 {
-	strncpy(colours->filename, filename, FILENAME_MAX);
-	colours->filename[FILENAME_MAX - 1] = '\0';
+	Util_strlcpy(colours->filename, filename, FILENAME_MAX);
 	return COLOURS_EXTERNAL_Read(colours);
 }

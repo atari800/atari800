@@ -13,6 +13,10 @@ extern COLOURS_EXTERNAL_t COLOURS_PAL_external;
    or loading/unloading an external palette. */
 void COLOURS_PAL_Update(int colourtable[256]);
 
+/* Read/write to configuration file. */
+int COLOURS_PAL_ReadConfig(char *option, char *ptr);
+void COLOURS_PAL_WriteConfig(FILE *fp);
+
 /* PAL Colours initialisation and processing of command-line arguments. */
 int COLOURS_PAL_Initialise(int *argc, char *argv[]);
 

@@ -60,7 +60,7 @@
 #include <sys/stat.h>
 #endif
 #ifdef SDL
-#include "SDL.h"
+#include <SDL.h>
 #endif
 
 #include "akey.h"
@@ -140,6 +140,9 @@
 #endif
 #if SUPPORTS_CHANGE_VIDEOMODE
 #include "videomode.h"
+#endif
+#ifdef DIRECTX
+#include "win32\main.h"
 #endif
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
@@ -328,6 +331,16 @@ int Atari800_InitialiseMachine(void)
 	return TRUE;
 }
 
+/* Initialise any modules before loading the config file. */
+static void PreInitialise(void)
+{
+#if !defined(BASIC) && !defined(CURSES_BASIC)
+	Colours_PreInitialise();
+#endif
+#ifdef NTSC_FILTER
+	FILTER_NTSC_PreInitialise();
+#endif
+}
 
 int Atari800_Initialise(int *argc, char *argv[])
 {
@@ -360,11 +373,13 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	g_ulAtariState = ATARI_UNINITIALIZED;
 #endif /* _WX_ */
-
+	PreInitialise();
 #else /* __PLUS */
 	const char *rtconfig_filename = NULL;
 	int got_config;
 	int help_only = FALSE;
+
+	PreInitialise();
 
 	if (*argc > 1) {
 		for (i = j = 1; i < *argc; i++) {

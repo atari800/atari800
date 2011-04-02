@@ -534,7 +534,6 @@ int WINAPI WinMain(HINSTANCE hinstance,
 		}
 			
 		Atari800_Frame();
-		Process_Hotkeys();  
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
 	}

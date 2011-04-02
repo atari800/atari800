@@ -244,6 +244,13 @@ int Util_sscanbool(const char *s)
 	return -1;
 }
 
+#if !HAVE_ROUND
+double Util_round(double x)
+{
+	return floor(x + 0.5);
+}
+#endif
+
 void *Util_malloc(size_t size)
 {
 	void *ptr = malloc(size);

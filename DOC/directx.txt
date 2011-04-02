@@ -91,11 +91,15 @@ Show menu             Show or hide the Windows main menu. [Yes]
 Windows DX: Display Settings
 ============================
 
-Video Calibration Profile
+Color preset
 -------------------------
-[Standard]            Rec. 601 raster standard. Digital 16 blacks.
-Classic               Black-level optimized. Digital 0 blacks.
-Arcade                Color and Black-level Enhanced. Digital 0 blacks.
+[Standard]            Standard color adjustments as seen on a real TV or
+                      monitor. Accurately represents full spectrum of colors.
+Deep black            Adjusted to allow producing pure black color (unlike the
+                      Standard preset). May look more pleasant, although is
+                      less accurate when representing the darkest colors.
+Vibrant               Arcade-like vibrant colors. Enhanced color saturation
+                      and black-level.
 
 Hint: Changing video settings (i.e. brightness, contrast, etc.) from 
       one of the base profile settings will cause the profile name  
@@ -108,7 +112,7 @@ Windows DX: Controller Configuration
 Keyboard Joystick Modes
 -----------------------
 Keypad                Keypad is joystick. 0 key is trigger.
-Keypad+               Keypad is joystick. 5=down. 0, left ctrl=trigger. 
+Keypad+               Keypad is joystick. 5=down. 0, left ctrl=trigger.
 [Arrows]              Use cursor block as joystick. Left ctrl=trigger.
 
 Alternate Joystick Modes
@@ -213,8 +217,8 @@ Windows DX: Command Line Options
 -hidecursor           Hide mouse cursor in fullscreen UI mode.
 -hidemenu             Hide the Windows main menu.
 
--video-profile        Video calibration profile to use.
-                        <standard>, <classic>, <arcade>
+-colors-preset        Use one of predefined color adjustments.
+                        <standard>, <deep-black>, <vibrant>
 
 -width                Set display mode width (ddraw only).
 -blt                  Use blitting to draw graphics (ddraw only).

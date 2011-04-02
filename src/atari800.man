@@ -251,6 +251,9 @@ less frequently updated screen.
 Set artifacting mode 0-4 (0 = disable)
 
 .TP
+\fB-colors-preset standard|deep-black|vibrant
+Use one of predefined colour adjustments
+.TP
 \fB-saturation <n>
 Set screen color saturation (like TV Colour control)
 .TP
@@ -472,6 +475,9 @@ video artifacts. "-artif" is not needed in this mode and will not work.
 .TP
 \fB-no-ntscemu
 Disable NTSC filter.
+.TP
+\fB-ntsc-filter-preset composite|svideo|rgb|monochrome
+Use one of predefined NTSC filter adjustments.
 .TP
 \fB-ntsc-sharpness <n>
 Set sharpness of the NTSC filter.

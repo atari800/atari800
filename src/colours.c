@@ -29,6 +29,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "atari.h"
+#include "cfg.h"
 #include "colours.h"
 #include "colours_external.h"
 #include "colours_ntsc.h"
@@ -44,36 +45,16 @@
 Colours_setup_t *Colours_setup;
 COLOURS_EXTERNAL_t *Colours_external;
 
-/* Settings for "Standard", Rec. 601 analog video raster standard */
-static const Colours_setup_t default_setup = {
-	0.0, /* saturation */
-	0.0, /* contrast */
-	0.0, /* brightness */
-	0.3, /* gamma adjustment */
-	16,  /* black level */
-	235  /* white level */
+static Colours_setup_t const presets[] = {
+	/* Saturation, Contrast, Brightness, Gamm adjustment, Black level, White level */
+	{ 0.0, 0.0, 0.0, 0.3, 16, 235 }, /* Standard preset */
+	{ 0.0, 0.2, -0.16, 0.5, 16, 235 }, /* Deep blacks preset */
+	{ 0.26, 0.72, -0.16, 0.16, 16, 235 } /* Vibrant colours & levels preset */
 };
-
-/* Settings for "Classic" black blacks style calibration */
-static const Colours_setup_t classic_setup = {
-	/* The above 16..235 range is taken from http://en.wikipedia.org/wiki/Rec._601 */
-	0.0,   /* saturation */
-	0.2,   /* contrast */
-	-0.15, /* brightness */
-	0.5,   /* gamma adjustment */
-	16,    /* black level */
-	235    /* white level */
-};
-
-/* Settings for vibrant "Arcade" style calibration */
-static const Colours_setup_t arcade_setup = {
-	0.25,  /* saturation */
-	0.7,   /* contrast */
-	-0.15, /* brightness */
-	0.15,  /* gamma adjustment */
-	16,    /* black level */
-	235    /* white level */
-	/* The above 16..235 range is taken from http://en.wikipedia.org/wiki/Rec._601 */
+static char const * const preset_cfg_strings[COLOURS_PRESET_SIZE] = {
+	"STANDARD",
+	"DEEP-BLACK",
+	"VIBRANT"
 };
 
 int Colours_table[256];
@@ -151,94 +132,41 @@ void Colours_Update(void)
 
 void Colours_RestoreDefaults(void)
 {
-	*Colours_setup = default_setup;
+	*Colours_setup = presets[COLOURS_PRESET_STANDARD];
 	if (Atari800_tv_mode == Atari800_TV_NTSC)
 		COLOURS_NTSC_RestoreDefaults();
 }
 
 /* Sets the video calibration profile to the user preference */
-void Colours_Set_Calibration_Profile(COLOURS_VIDEO_PROFILE cp)
+void Colours_SetPreset(Colours_preset_t preset)
 {
-	switch (cp)
-	{
-		case COLOURS_STANDARD:
-			*Colours_setup = default_setup;
-			break;
-		case COLOURS_CLASSIC:
-			*Colours_setup = classic_setup;
-			break;
-		case COLOURS_ARCADE:
-			*Colours_setup = arcade_setup;
-			break;
-		default:
-			*Colours_setup = default_setup;
-	}
+	if (preset < COLOURS_PRESET_CUSTOM)
+		*Colours_setup = presets[preset];
 
 	if (Atari800_tv_mode == Atari800_TV_NTSC) 
-		COLOURS_NTSC_Set_Calibration_Profile(COLOURS_STANDARD);
-		
-#ifdef DIRECTX
-    /* Support PLATFORM_Configure */
-	Colours_video_profile = cp;
-#endif
+		COLOURS_NTSC_SetPreset(COLOURS_PRESET_STANDARD);
 }
 
 /* Compares the current settings to the available calibration profiles
    and returns the matching profile -- or CUSTOM if no match is found */
-COLOURS_VIDEO_PROFILE Colours_Get_Calibration_Profile()
+Colours_preset_t Colours_GetPreset(void)
 {
-	if (Atari800_tv_mode == Atari800_TV_NTSC) {
-		if (COLOURS_NTSC_setup.saturation == default_setup.saturation &&
-			COLOURS_NTSC_setup.contrast == default_setup.contrast &&
-			COLOURS_NTSC_setup.brightness == default_setup.brightness &&
-			COLOURS_NTSC_setup.gamma == default_setup.gamma &&
-			COLOURS_NTSC_setup.black_level == default_setup.black_level &&
-			COLOURS_NTSC_setup.white_level == default_setup.white_level &&
-			COLOURS_NTSC_Get_Calibration_Profile() == COLOURS_STANDARD)
-			return COLOURS_STANDARD; 
-		else if (COLOURS_NTSC_setup.saturation == classic_setup.saturation &&
-			COLOURS_NTSC_setup.contrast == classic_setup.contrast &&
-			COLOURS_NTSC_setup.brightness == classic_setup.brightness &&
-			COLOURS_NTSC_setup.gamma == classic_setup.gamma &&
-			COLOURS_NTSC_setup.black_level == classic_setup.black_level &&
-			COLOURS_NTSC_setup.white_level == classic_setup.white_level &&
-			COLOURS_NTSC_Get_Calibration_Profile() == COLOURS_STANDARD)
-			return COLOURS_CLASSIC;
-		else if (COLOURS_NTSC_setup.saturation == arcade_setup.saturation &&
-			COLOURS_NTSC_setup.contrast == arcade_setup.contrast &&
-			COLOURS_NTSC_setup.brightness == arcade_setup.brightness &&
-			COLOURS_NTSC_setup.gamma == arcade_setup.gamma &&
-			COLOURS_NTSC_setup.black_level == arcade_setup.black_level &&
-			COLOURS_NTSC_setup.white_level == arcade_setup.white_level &&
-			COLOURS_NTSC_Get_Calibration_Profile() == COLOURS_STANDARD)
-			return COLOURS_ARCADE;
+	int i;
+
+	if (Atari800_tv_mode == Atari800_TV_NTSC &&
+	    COLOURS_NTSC_GetPreset() != COLOURS_PRESET_STANDARD)
+		return COLOURS_PRESET_CUSTOM;
+
+	for (i = 0; i < COLOURS_PRESET_SIZE; i ++) {
+		if (Util_almostequal(Colours_setup->saturation, presets[i].saturation, 0.001) &&
+		    Util_almostequal(Colours_setup->contrast, presets[i].contrast, 0.001) &&
+		    Util_almostequal(Colours_setup->brightness, presets[i].brightness, 0.001) &&
+		    Util_almostequal(Colours_setup->gamma, presets[i].gamma, 0.001) &&
+		    Colours_setup->black_level == presets[i].black_level &&
+		    Colours_setup->white_level == presets[i].white_level)
+			return i; 
 	}
-		
-	if (Atari800_tv_mode == Atari800_TV_PAL) {
-		if (COLOURS_PAL_setup.saturation == default_setup.saturation &&
-			COLOURS_PAL_setup.contrast == default_setup.contrast &&
-			COLOURS_PAL_setup.brightness == default_setup.brightness &&
-			COLOURS_PAL_setup.gamma == default_setup.gamma &&
-			COLOURS_PAL_setup.black_level == default_setup.black_level &&
-			COLOURS_PAL_setup.white_level == default_setup.white_level)
-			return COLOURS_STANDARD; 
-		else if (COLOURS_NTSC_setup.saturation == classic_setup.saturation &&
-			COLOURS_PAL_setup.contrast == classic_setup.contrast &&
-			COLOURS_PAL_setup.brightness == classic_setup.brightness &&
-			COLOURS_PAL_setup.gamma == classic_setup.gamma &&
-			COLOURS_PAL_setup.black_level == classic_setup.black_level &&
-			COLOURS_PAL_setup.white_level == classic_setup.white_level)
-			return COLOURS_CLASSIC;
-		else if (COLOURS_NTSC_setup.saturation == arcade_setup.saturation &&
-			COLOURS_PAL_setup.contrast == arcade_setup.contrast &&
-			COLOURS_PAL_setup.brightness == arcade_setup.brightness &&
-			COLOURS_PAL_setup.gamma == arcade_setup.gamma &&
-			COLOURS_PAL_setup.black_level == arcade_setup.black_level &&
-			COLOURS_PAL_setup.white_level == arcade_setup.white_level)
-			return COLOURS_ARCADE;
-	}
-	
-	return COLOURS_CUSTOM;
+	return COLOURS_PRESET_CUSTOM;
 }
 
 int Colours_Save(const char *filename)
@@ -267,32 +195,33 @@ int Colours_Save(const char *filename)
 	return TRUE;
 }
 
+void Colours_PreInitialise(void)
+{
+	/* Copy the default setup for both NTSC and PAL. */
+	COLOURS_NTSC_setup = COLOURS_PAL_setup = presets[COLOURS_PRESET_STANDARD];
+	COLOURS_NTSC_PreInitialise();
+}
+
+int Colours_ReadConfig(char *option, char *ptr)
+{
+	if (COLOURS_NTSC_ReadConfig(option, ptr)) {
+	}
+	else if (COLOURS_PAL_ReadConfig(option, ptr)) {
+	}
+	else return FALSE; /* no match */
+	return TRUE; /* matched something */
+}
+
+void Colours_WriteConfig(FILE *fp)
+{
+	COLOURS_NTSC_WriteConfig(fp);
+	COLOURS_PAL_WriteConfig(fp);
+}
+
 int Colours_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
-
-#ifdef DIRECTX
-	/* Support PLATFORM_Configure */
-	/* Copy appropriate setup for both NTSC and PAL. */
-	switch (Colours_video_profile)
-	{
-		case COLOURS_STANDARD:
-			COLOURS_NTSC_setup = COLOURS_PAL_setup = default_setup;
-			break;
-		case COLOURS_CLASSIC:
-			COLOURS_NTSC_setup = COLOURS_PAL_setup = classic_setup;
-			break;
-		case COLOURS_ARCADE:
-			COLOURS_NTSC_setup = COLOURS_PAL_setup = arcade_setup;
-			break;
-		default:
-			COLOURS_NTSC_setup = COLOURS_PAL_setup = default_setup;
-	}
-#else
-	/* Copy default setup for both NTSC and PAL. */
-	COLOURS_NTSC_setup = COLOURS_PAL_setup = default_setup;
-#endif
 
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
@@ -318,30 +247,26 @@ int Colours_Initialise(int *argc, char *argv[])
 				COLOURS_NTSC_setup.gamma = COLOURS_PAL_setup.gamma = atof(argv[++i]);
 			else a_m = TRUE;
 		}
-		else if (strcmp(argv[i], "-video-profile") == 0) {
+		else if (strcmp(argv[i], "-colors-preset") == 0) {
 			if (i_a) {
-				if (strcmp(argv[++i], "standard") == 0) {
-				    COLOURS_NTSC_setup = COLOURS_PAL_setup = default_setup;
-				}
-				else if (strcmp(argv[i], "classic") == 0) {
-				    COLOURS_NTSC_setup = COLOURS_PAL_setup = classic_setup;
-				}
-				else if (strcmp(argv[i], "arcade") == 0) {
-					COLOURS_NTSC_setup = COLOURS_PAL_setup = arcade_setup;
-				} else {
-					Log_print("Invalid value for -video-profile");
+				int idx = CFG_MatchTextParameter(argv[++i], preset_cfg_strings, COLOURS_PRESET_SIZE);
+				if (idx < 0) {
+					Log_print("Invalid value for -colors-preset");
 					return FALSE;
 				}
+				COLOURS_NTSC_setup = COLOURS_PAL_setup = presets[idx];
+				COLOURS_NTSC_SetPreset(COLOURS_PRESET_STANDARD);
 			} else a_m = TRUE;
 		}
 
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Log_print("\t-video-profile <name>  Set video profile <standard> <classic> <arcade>");
-				Log_print("\t-saturation <num>      Set saturation of colours");
+				Log_print("\t-colors-preset standard|deep-black|vibrant");
+				Log_print("\t                       Use one of predefined color adjustments");
+				Log_print("\t-saturation <num>      Set color saturation");
 				Log_print("\t-contrast <num>        Set contrast");
 				Log_print("\t-brightness <num>      Set brightness");
-				Log_print("\t-gamma <num>           Set colour gamma factor");
+				Log_print("\t-gamma <num>           Set color gamma factor");
 			}
 			argv[j++] = argv[i];
 		}

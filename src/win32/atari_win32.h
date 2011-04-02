@@ -115,7 +115,6 @@ static const UBYTE joymask_arrow[] =
 	INPUT_STICK_BACK,    /* down */
 };
 
-void Process_Hotkeys(void);
 int getkeyvalue(char *name);
 void getkeyname(int value, char *name);
 void Win32_Init(void);

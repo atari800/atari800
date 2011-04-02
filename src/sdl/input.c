@@ -369,52 +369,70 @@ int PLATFORM_Keyboard(void)
 			case SDLK_1:
 				key_pressed = 0;
 				if (Atari800_tv_mode == Atari800_TV_NTSC) {
-					if (kbhits[SDLK_LSHIFT])
-						COLOURS_NTSC_specific_setup.hue-=0.02;
-					else
-						COLOURS_NTSC_specific_setup.hue+=0.02;
+					if (kbhits[SDLK_LSHIFT]) {
+						if (COLOURS_NTSC_specific_setup.hue > COLOURS_NTSC_HUE_MIN)
+							COLOURS_NTSC_specific_setup.hue -= 0.02;
+					} else {
+						if (COLOURS_NTSC_specific_setup.hue < COLOURS_NTSC_HUE_MAX)
+							COLOURS_NTSC_specific_setup.hue += 0.02;
+					}
 					Colours_Update();
 				}
 				break;
 			case SDLK_2:
 				key_pressed = 0;
-				if (kbhits[SDLK_LSHIFT])
-					Colours_setup->saturation-=0.02;
-				else
-					Colours_setup->saturation+=0.02;
+				if (kbhits[SDLK_LSHIFT]) {
+					if (Colours_setup->saturation > COLOURS_SATURATION_MIN)
+						Colours_setup->saturation -= 0.02;
+				} else {
+					if (Colours_setup->saturation < COLOURS_SATURATION_MAX)
+						Colours_setup->saturation += 0.02;
+				}
 				Colours_Update();
 				break;
 			case SDLK_3:
 				key_pressed = 0;
-				if (kbhits[SDLK_LSHIFT])
-					Colours_setup->contrast-=0.02;
-				else
-					Colours_setup->contrast+=0.02;
+				if (kbhits[SDLK_LSHIFT]) {
+					if (Colours_setup->contrast > COLOURS_CONTRAST_MIN)
+						Colours_setup->contrast -= 0.04;
+				} else {
+					if (Colours_setup->contrast < COLOURS_CONTRAST_MAX)
+					Colours_setup->contrast += 0.04;
+				}
 				Colours_Update();
 				break;
 			case SDLK_4:
 				key_pressed = 0;
-				if (kbhits[SDLK_LSHIFT])
-					Colours_setup->brightness-=0.02;
-				else
-					Colours_setup->brightness+=0.02;
+				if (kbhits[SDLK_LSHIFT]) {
+					if (Colours_setup->brightness > COLOURS_BRIGHTNESS_MIN)
+						Colours_setup->brightness -= 0.04;
+				} else {
+					if (Colours_setup->brightness < COLOURS_BRIGHTNESS_MAX)
+						Colours_setup->brightness += 0.04;
+				}
 				Colours_Update();
 				break;
 			case SDLK_5:
 				key_pressed = 0;
-				if (kbhits[SDLK_LSHIFT])
-					Colours_setup->gamma-=0.02;
-				else
-					Colours_setup->gamma+=0.02;
+				if (kbhits[SDLK_LSHIFT]) {
+					if (Colours_setup->gamma > COLOURS_GAMMA_MIN)
+						Colours_setup->gamma -= 0.02;
+				} else {
+					if (Colours_setup->gamma < COLOURS_GAMMA_MAX)
+						Colours_setup->gamma += 0.02;
+				}
 				Colours_Update();
 				break;
 			case SDLK_6:
 				key_pressed = 0;
 				if (Atari800_tv_mode == Atari800_TV_NTSC) {
-					if (kbhits[SDLK_LSHIFT])
-						COLOURS_NTSC_specific_setup.color_delay-=0.1;
-					else
-						COLOURS_NTSC_specific_setup.color_delay+=0.1;
+					if (kbhits[SDLK_LSHIFT]) {
+						if (COLOURS_NTSC_specific_setup.color_delay > COLOURS_NTSC_DELAY_MIN)
+							COLOURS_NTSC_specific_setup.color_delay -= 0.1;
+					} else {
+						if (COLOURS_NTSC_specific_setup.color_delay < COLOURS_NTSC_DELAY_MAX)
+							COLOURS_NTSC_specific_setup.color_delay += 0.1;
+					}
 					Colours_Update();
 				}
 				break;
@@ -430,50 +448,68 @@ int PLATFORM_Keyboard(void)
 					switch(lastkey){
 					case SDLK_7:
 						key_pressed = 0;
-						if (kbhits[SDLK_LSHIFT])
-							FILTER_NTSC_setup.sharpness-=0.1;
-						else
-							FILTER_NTSC_setup.sharpness+=0.1;
+						if (kbhits[SDLK_LSHIFT]) {
+							if (FILTER_NTSC_setup.sharpness > FILTER_NTSC_SHARPNESS_MIN)
+								FILTER_NTSC_setup.sharpness -= 0.02;
+						} else {
+							if (FILTER_NTSC_setup.sharpness < FILTER_NTSC_SHARPNESS_MAX)
+								FILTER_NTSC_setup.sharpness += 0.02;
+						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
 						break;
 					case SDLK_8:
 						key_pressed = 0;
-						if (kbhits[SDLK_LSHIFT])
-							FILTER_NTSC_setup.resolution-=.05;
-						else
-							FILTER_NTSC_setup.resolution+=.05;
+						if (kbhits[SDLK_LSHIFT]) {
+							if (FILTER_NTSC_setup.resolution > FILTER_NTSC_RESOLUTION_MIN)
+								FILTER_NTSC_setup.resolution -= 0.02;
+						} else {
+							if (FILTER_NTSC_setup.resolution < FILTER_NTSC_RESOLUTION_MAX)
+								FILTER_NTSC_setup.resolution += 0.02;
+						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
 						break;
 					case SDLK_9:
 						key_pressed = 0;
-						if (kbhits[SDLK_LSHIFT])
-							FILTER_NTSC_setup.artifacts-=.05;
-						else
-							FILTER_NTSC_setup.artifacts+=.05;
+						if (kbhits[SDLK_LSHIFT]) {
+							if (FILTER_NTSC_setup.artifacts > FILTER_NTSC_ARTIFACTS_MIN)
+								FILTER_NTSC_setup.artifacts -= 0.02;
+						} else {
+							if (FILTER_NTSC_setup.artifacts < FILTER_NTSC_ARTIFACTS_MAX)
+								FILTER_NTSC_setup.artifacts += 0.02;
+						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
 						break;
 					case SDLK_0:
 						key_pressed = 0;
-						if (kbhits[SDLK_LSHIFT])
-							FILTER_NTSC_setup.fringing-=.05;
-						else
-							FILTER_NTSC_setup.fringing+=.05;
+						if (kbhits[SDLK_LSHIFT]) {
+							if (FILTER_NTSC_setup.fringing > FILTER_NTSC_FRINGING_MIN)
+								FILTER_NTSC_setup.fringing -= 0.02;
+						} else {
+							if (FILTER_NTSC_setup.fringing < FILTER_NTSC_FRINGING_MAX)
+								FILTER_NTSC_setup.fringing += 0.02;
+						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
 						break;
 					case SDLK_MINUS:
 						key_pressed = 0;
-						if (kbhits[SDLK_LSHIFT])
-							FILTER_NTSC_setup.bleed-=.05;
-						else
-							FILTER_NTSC_setup.bleed+=.05;
+						if (kbhits[SDLK_LSHIFT]) {
+							if (FILTER_NTSC_setup.bleed > FILTER_NTSC_BLEED_MIN)
+								FILTER_NTSC_setup.bleed -= 0.02;
+						} else {
+							if (FILTER_NTSC_setup.bleed < FILTER_NTSC_BLEED_MAX)
+								FILTER_NTSC_setup.bleed += 0.02;
+						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
 						break;
 					case SDLK_EQUALS:
 						key_pressed = 0;
-						if (kbhits[SDLK_LSHIFT])
-							FILTER_NTSC_setup.burst_phase-=0.1;
-						else
-							FILTER_NTSC_setup.burst_phase+=0.1;
+						if (kbhits[SDLK_LSHIFT]) {
+							if (FILTER_NTSC_setup.burst_phase > FILTER_NTSC_BURST_PHASE_MIN)
+								FILTER_NTSC_setup.burst_phase -= 0.02;
+						} else {
+							if (FILTER_NTSC_setup.burst_phase < FILTER_NTSC_BURST_PHASE_MAX)
+								FILTER_NTSC_setup.burst_phase += 0.02;
+						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
 						break;
 					case SDLK_RIGHTBRACKET:

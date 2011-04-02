@@ -36,15 +36,6 @@
 #define AKEY_CX85_YES              -30
 #define AKEY_TURBO                 -31
 #ifdef DIRECTX
-    /* hot key codes */
-	#define AKEY32_WINDOWSIZEUP       	-100
-	#define AKEY32_WINDOWSIZEDOWN		-101
-	#define AKEY32_TOGGLESCANLINEMODE	-102
-	#define AKEY32_TOGGLESCREENSAVER	-103
-	#define AKEY32_TILTSCREEN			-104
-	#define AKEY32_TOGGLEFULLSCREEN   	-105
-	#define AKEY32_TOGGLEMENU 			-106	
-	
 	/* special menu directives */
 	#define AKEY32_MENU_SAVE_CONFIG     -107
 	#define AKEY32_UI_MOUSE_CLICK       -108

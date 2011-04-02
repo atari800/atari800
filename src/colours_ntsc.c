@@ -31,6 +31,7 @@
 #include "atari.h" /* for TRUE/FALSE */
 #include "colours.h"
 #include "log.h"
+#include "util.h"
 
 Colours_setup_t COLOURS_NTSC_setup;
 COLOURS_NTSC_setup_t COLOURS_NTSC_specific_setup;
@@ -206,26 +207,68 @@ void COLOURS_NTSC_RestoreDefaults(void)
 	COLOURS_NTSC_specific_setup = default_setup;
 }
 
-void COLOURS_NTSC_Set_Calibration_Profile(COLOURS_VIDEO_PROFILE cp)
+void COLOURS_NTSC_SetPreset(Colours_preset_t preset)
 {	
-	if (cp == COLOURS_STANDARD)
+	if (preset == COLOURS_PRESET_STANDARD)
 		COLOURS_NTSC_specific_setup = default_setup;
 }
 
-COLOURS_VIDEO_PROFILE COLOURS_NTSC_Get_Calibration_Profile()
+Colours_preset_t COLOURS_NTSC_GetPreset()
 {
-	if (COLOURS_NTSC_specific_setup.hue == default_setup.hue &&
-		COLOURS_NTSC_specific_setup.color_delay == default_setup.color_delay)
-		return COLOURS_STANDARD; 
-	return COLOURS_CUSTOM;
+	if (Util_almostequal(COLOURS_NTSC_specific_setup.hue, default_setup.hue, 0.001) &&
+	    Util_almostequal(COLOURS_NTSC_specific_setup.color_delay, default_setup.color_delay, 0.001))
+		return COLOURS_PRESET_STANDARD;
+	return COLOURS_PRESET_CUSTOM;
+}
+
+void COLOURS_NTSC_PreInitialise(void)
+{
+	COLOURS_NTSC_specific_setup = default_setup;
+}
+
+int COLOURS_NTSC_ReadConfig(char *option, char *ptr)
+{
+	if (strcmp(option, "COLOURS_NTSC_SATURATION") == 0)
+		return Util_sscandouble(ptr, &COLOURS_NTSC_setup.saturation);
+	else if (strcmp(option, "COLOURS_NTSC_CONTRAST") == 0)
+		return Util_sscandouble(ptr, &COLOURS_NTSC_setup.contrast);
+	else if (strcmp(option, "COLOURS_NTSC_BRIGHTNESS") == 0)
+		return Util_sscandouble(ptr, &COLOURS_NTSC_setup.brightness);
+	else if (strcmp(option, "COLOURS_NTSC_GAMMA") == 0)
+		return Util_sscandouble(ptr, &COLOURS_NTSC_setup.gamma);
+	else if (strcmp(option, "COLOURS_NTSC_HUE") == 0)
+		return Util_sscandouble(ptr, &COLOURS_NTSC_specific_setup.hue);
+	else if (strcmp(option, "COLOURS_NTSC_DELAY") == 0)
+		return Util_sscandouble(ptr, &COLOURS_NTSC_specific_setup.color_delay);
+	else if (strcmp(option, "COLOURS_NTSC_EXTERNAL_PALETTE") == 0)
+		Util_strlcpy(COLOURS_NTSC_external.filename, ptr, sizeof(COLOURS_NTSC_external.filename));
+	else if (strcmp(option, "COLOURS_NTSC_EXTERNAL_PALETTE_LOADED") == 0)
+		/* Use the "loaded" flag to indicate that the palette must be loaded later. */
+		return (COLOURS_NTSC_external.loaded = Util_sscanbool(ptr)) != -1;
+	else if (strcmp(option, "COLOURS_NTSC_ADJUST_EXTERNAL_PALETTE") == 0)
+		return (COLOURS_NTSC_external.adjust = Util_sscanbool(ptr)) != -1;
+	else
+		return FALSE;
+	return TRUE;
+}
+
+void COLOURS_NTSC_WriteConfig(FILE *fp)
+{
+	fprintf(fp, "COLOURS_NTSC_SATURATION=%g\n", COLOURS_NTSC_setup.saturation);
+	fprintf(fp, "COLOURS_NTSC_CONTRAST=%g\n", COLOURS_NTSC_setup.contrast);
+	fprintf(fp, "COLOURS_NTSC_BRIGHTNESS=%g\n", COLOURS_NTSC_setup.brightness);
+	fprintf(fp, "COLOURS_NTSC_GAMMA=%g\n", COLOURS_NTSC_setup.gamma);
+	fprintf(fp, "COLOURS_NTSC_HUE=%g\n", COLOURS_NTSC_specific_setup.hue);
+	fprintf(fp, "COLOURS_NTSC_DELAY=%g\n", COLOURS_NTSC_specific_setup.color_delay);
+	fprintf(fp, "COLOURS_NTSC_EXTERNAL_PALETTE=%s\n", COLOURS_NTSC_external.filename);
+	fprintf(fp, "COLOURS_NTSC_EXTERNAL_PALETTE_LOADED=%d\n", COLOURS_NTSC_external.loaded);
+	fprintf(fp, "COLOURS_NTSC_ADJUST_EXTERNAL_PALETTE=%d\n", COLOURS_NTSC_external.adjust);
 }
 
 int COLOURS_NTSC_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
-
-	COLOURS_NTSC_specific_setup = default_setup;
 
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
@@ -263,8 +306,9 @@ int COLOURS_NTSC_Initialise(int *argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "-paletten") == 0) {
 			if (i_a) {
-				if (!COLOURS_EXTERNAL_ReadFilename(&COLOURS_NTSC_external, argv[++i]))
-					Log_print("Cannot read NTSC palette from %s", argv[i]);
+				Util_strlcpy(COLOURS_NTSC_external.filename, argv[++i], sizeof(COLOURS_NTSC_external.filename));
+				/* Use the "loaded" flag to indicate that the palette must be loaded later. */
+				COLOURS_NTSC_external.loaded = TRUE;
 			} else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-paletten-adjust") == 0)
@@ -290,5 +334,9 @@ int COLOURS_NTSC_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
+	/* Try loading an external palette if needed. */
+	if (COLOURS_NTSC_external.loaded && !COLOURS_EXTERNAL_Read(&COLOURS_NTSC_external))
+		Log_print("Cannot read NTSC palette from %s", COLOURS_NTSC_external.filename);
+	
 	return TRUE;
 }

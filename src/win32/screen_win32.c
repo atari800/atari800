@@ -42,6 +42,7 @@
 #include "util.h"
 #include "keyboard.h"
 #include "screen.h"
+#include "sound.h"
 #include "main_menu.h"
 #include "ui.h"
 
@@ -725,6 +726,8 @@ void getcenteredcoords(RECT rect, int* x, int* y)
 void getnativecoords(int mx, int my, int* nx, int* ny)
 {	
 	RECT rect;
+	float fx;
+	float fy;
 	
 	GetClientRect(hWndMain, &rect);
 	
@@ -733,16 +736,16 @@ void getnativecoords(int mx, int my, int* nx, int* ny)
 	mx = mx - ((rect.right - rect.left) - frameparams.width) / 2;
 	
 	// transform absolute mouse coordinates into relative coordinates
-	float fx = (float)mx/frameparams.width;
-	float fy = (float)my/frameparams.height;
+	fx = (float)mx/frameparams.width;
+	fy = (float)my/frameparams.height;
 
 	// compute the absolute atari coordinates relative to the 
 	// 384x240 screen buffer accounting for offsets and cropping
-	*nx = (frameparams.view.right - frameparams.view.left) * fx
-	      + frameparams.view.left;
-		  
-	*ny = (frameparams.view.bottom - frameparams.view.top) * fy
-	      + frameparams.view.top;	
+	*nx = (int)((frameparams.view.right - frameparams.view.left) * fx
+	            + frameparams.view.left);
+
+	*ny = (int)((frameparams.view.bottom - frameparams.view.top) * fy
+	            + frameparams.view.top);	
 
 	// force any points determined to be outside the screen buffer to -1,-1
 	*nx = (*nx < frameparams.view.left || *nx >= frameparams.view.right) ? -1 : *nx;
@@ -971,7 +974,6 @@ void refreshv(UBYTE *scr_ptr)
 	INT nBaseWidth, nBaseHeight;
 	INT i;
 	RECT rt;
-	CHAR buf[100];
 	
 	/* DirectDraw mode does not support windowed modes, or aspect ratio processing
 	   (nor much else for that matter), so redirect immediately to the DirectDraw renderer. */
@@ -1037,8 +1039,8 @@ void refreshv(UBYTE *scr_ptr)
 				else { 
 					// Otherwise, allow aspect ratio to vary dynamically based on the 
 					// crop.horizontal and crop.vertical values.
-					fHorizAspect = SCREENWIDTH - crop.horizontal * 2;
-					fVertAspect = SCREENHEIGHT - crop.vertical * 2;
+					fHorizAspect = (float)SCREENWIDTH - crop.horizontal * 2;
+					fVertAspect = (float)SCREENHEIGHT - crop.vertical * 2;
 				}
 			}
 			else // aspect must be COMPRESSED, CROPPED, or AUTO/FULLSCREEN/CROP               
@@ -1051,8 +1053,8 @@ void refreshv(UBYTE *scr_ptr)
 				else {
 					// Allow aspect ratio to vary dynamically based on the 
 					// crop.horizontal and crop.vertical values if lockaspect is set to false.
-					fHorizAspect = CROPPEDWIDTH - crop.horizontal * 2;
-					fVertAspect = SCREENHEIGHT - crop.vertical * 2;
+					fHorizAspect = (float)CROPPEDWIDTH - crop.horizontal * 2;
+					fVertAspect = (float)SCREENHEIGHT - crop.vertical * 2;
 				}
 			}
 		
@@ -1173,9 +1175,9 @@ void refreshv(UBYTE *scr_ptr)
 			// based to make it more useful.  To compute this we use the vertical screen
 			// dimension, since its relatively constant, and factor out any vertical trim.
 			
-			currentscale = round((((float)frameparams.height + 
-			                      (crop.vertical * 2 * ((float)windowscale/100)))
-								  / 240.0f * 100));
+			currentscale = (int)Util_round(((float)frameparams.height + 
+			                                (crop.vertical * 2 * ((float)windowscale/100)))
+			                               / 240.0f * 100);
 			
 			switch (frameparams.scanlinemode)
 			{

@@ -139,6 +139,8 @@ Command line options
 -refresh <rate>       Set screen refresh rate
 -artif <mode>         Set artifacting mode 0-4 (0 = disable) (see also -ntscemu)
 
+-colors-preset standard|deep-black|vibrant
+                      Use one of predefined color adjustments
 -saturation <n>       Set screen color saturation (like TV Colour control)
 -contrast <n>         Set screen contrast (also called white level)
 -brightness <n>       Set screen brightness (also called black level)
@@ -273,7 +275,9 @@ SDL version options
 This includes NTSC TV artifacts.  "-artif" is not needed in this mode and will
 not work.
 -no-ntscemu            Disable emulation of NTSC composite video
-The following 8 items are for -ntscemu only:
+The following 7 items are for -ntscemu only:
+-ntsc-filter-preset composite|svideo|rgb|monochrome
+                      Use one of predefined NTSC filter adjustments
 -ntsc-sharpness <n>   Set sharpness
 -ntsc-resolution <n>  Set resolution
 -ntsc-artifacts <n>   Set artifacts

@@ -114,9 +114,11 @@ Building the Emulator for Windows using Microsoft 32-bit C/C++ Compiler
 Atari800 for Windows can be built using command-line tools
 from Microsoft Visual C++ 2005.  Avoid older compilers such as VC++ 6
 because they are buggy (even with service packs) and unsupported.
-In addition to the compiler suite you need Windows Platform SDK
-and DirectX SDK.  Set "Path", "INCLUDE" and "LIB" environment variables
-to point to the correct locations in VC++, PSDK and DXSDK.
+In addition to the compiler suite you need Windows Platform SDK (included
+in Visual C++ 2008 or newer) and DirectX SDK (not newer than the August 2007
+version, as it is the last one to contain the now-deprecated DirectInput
+libraries.) Set "Path", "INCLUDE" and "LIB" environment variables to point to
+the correct locations in VC++, PSDK and DXSDK.
 
 1. Install the ZLIB library:
 a. Download the source code from http://www.zlib.org

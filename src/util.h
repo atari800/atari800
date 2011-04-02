@@ -4,6 +4,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <ctype.h>
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
@@ -79,6 +80,18 @@ int Util_sscandouble(char const *s, double *dest);
 
 /* safe_strncpy guarantees that the dest. buffer ends with '\0' */
 char *safe_strncpy(char *, const char *, int);
+
+/* Math functions -------------------------------------------------------- */
+
+/* Rounds the floating-point number to the nearest integer. */
+#if HAVE_ROUND
+#define Util_round round
+#else
+double Util_round(double x);
+#endif
+
+/* Function for comparing double floating-point numbers. */
+#define Util_almostequal(x, y, epsilon) (fabs((x)-(y)) <= (epsilon))
 
 /* Memory management ----------------------------------------------------- */
 

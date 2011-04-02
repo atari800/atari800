@@ -29,6 +29,7 @@
 #include "atari.h" /* for TRUE/FALSE */
 #include "colours.h"
 #include "log.h"
+#include "util.h"
 
 Colours_setup_t COLOURS_PAL_setup;
 
@@ -132,6 +133,39 @@ void COLOURS_PAL_Update(int colourtable[256])
 		GeneratePalette(colourtable);
 }
 
+int COLOURS_PAL_ReadConfig(char *option, char *ptr)
+{
+	if (strcmp(option, "COLOURS_PAL_SATURATION") == 0)
+		return Util_sscandouble(ptr, &COLOURS_PAL_setup.saturation);
+	else if (strcmp(option, "COLOURS_PAL_CONTRAST") == 0)
+		return Util_sscandouble(ptr, &COLOURS_PAL_setup.contrast);
+	else if (strcmp(option, "COLOURS_PAL_BRIGHTNESS") == 0)
+		return Util_sscandouble(ptr, &COLOURS_PAL_setup.brightness);
+	else if (strcmp(option, "COLOURS_PAL_GAMMA") == 0)
+		return Util_sscandouble(ptr, &COLOURS_PAL_setup.gamma);
+	else if (strcmp(option, "COLOURS_PAL_EXTERNAL_PALETTE") == 0)
+		Util_strlcpy(COLOURS_PAL_external.filename, ptr, sizeof(COLOURS_PAL_external.filename));
+	else if (strcmp(option, "COLOURS_PAL_EXTERNAL_PALETTE_LOADED") == 0)
+		/* Use the "loaded" flag to indicate that the palette must be loaded later. */
+		return (COLOURS_PAL_external.loaded = Util_sscanbool(ptr)) != -1;
+	else if (strcmp(option, "COLOURS_PAL_ADJUST_EXTERNAL_PALETTE") == 0)
+		return (COLOURS_PAL_external.adjust = Util_sscanbool(ptr)) != -1;
+	else
+		return FALSE;
+	return TRUE;
+}
+
+void COLOURS_PAL_WriteConfig(FILE *fp)
+{
+	fprintf(fp, "COLOURS_PAL_SATURATION=%g\n", COLOURS_PAL_setup.saturation);
+	fprintf(fp, "COLOURS_PAL_CONTRAST=%g\n", COLOURS_PAL_setup.contrast);
+	fprintf(fp, "COLOURS_PAL_BRIGHTNESS=%g\n", COLOURS_PAL_setup.brightness);
+	fprintf(fp, "COLOURS_PAL_GAMMA=%g\n", COLOURS_PAL_setup.gamma);
+	fprintf(fp, "COLOURS_PAL_EXTERNAL_PALETTE=%s\n", COLOURS_PAL_external.filename);
+	fprintf(fp, "COLOURS_PAL_EXTERNAL_PALETTE_LOADED=%d\n", COLOURS_PAL_external.loaded);
+	fprintf(fp, "COLOURS_PAL_ADJUST_EXTERNAL_PALETTE=%d\n", COLOURS_PAL_external.adjust);
+}
+
 int COLOURS_PAL_Initialise(int *argc, char *argv[])
 {
 	int i;
@@ -163,8 +197,9 @@ int COLOURS_PAL_Initialise(int *argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "-palettep") == 0) {
 			if (i_a) {
-				if (!COLOURS_EXTERNAL_ReadFilename(&COLOURS_PAL_external, argv[++i]))
-					Log_print("Cannot read PAL palette from %s", argv[i]);
+				Util_strlcpy(COLOURS_PAL_external.filename, argv[++i], sizeof(COLOURS_PAL_external.filename));
+				/* Use the "loaded" flag to indicate that the palette must be loaded later. */
+				COLOURS_PAL_external.loaded = TRUE;
 			} else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-palettep-adjust") == 0)
@@ -187,6 +222,10 @@ int COLOURS_PAL_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
+
+	/* Try loading an external palette if needed. */
+	if (COLOURS_PAL_external.loaded && !COLOURS_EXTERNAL_Read(&COLOURS_PAL_external))
+		Log_print("Cannot read PAL palette from %s", COLOURS_PAL_external.filename);
 
 	return TRUE;
 }

@@ -1,6 +1,15 @@
 /* config.h for DirectX version of Atari800 compiled with MSVC 6. */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if building universal (internal helper macro) */
+/* #undef AC_APPLE_UNIVERSAL_BUILD */
+
+/* The Austin Franklin 80 column card. */
+/* #undef AF80 */
+
+/* Target: Android */
+/* #undef ANDROID */
+
 /* Target: standard I/O. */
 /* #undef BASIC */
 
@@ -28,6 +37,9 @@
 /* Target: Windows with DirectX. */
 #define DIRECTX 1
 
+/* Define to use dirty screen partial repaints. */
+/* #undef DIRTYRECT */
+
 /* Define to use back slash as directory separator. */
 #define DIR_SEP_BACKSLASH 1
 
@@ -36,6 +48,9 @@
 
 /* Define to enable DOS style drives support. */
 #define DOS_DRIVES 1
+
+/* Define to enable event recording. */
+/* #undef EVENT_RECORDING */
 
 /* Target: Atari Falcon system. */
 /* #undef FALCON */
@@ -83,6 +98,9 @@
 /* Define to 1 if you have the `floor' function. */
 #define HAVE_FLOOR 1
 
+/* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
+/* #undef HAVE_FSEEKO */
+
 /* Define to 1 if you have the `fstat' function. */
 #define HAVE_FSTAT 1
 
@@ -103,6 +121,9 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
+
+/* Define to 1 if you have the `gem' library (-lgem). */
+/* #undef HAVE_LIBGEM */
 
 /* Define to 1 if you have the `png' library (-lpng). */
 #define HAVE_LIBPNG 1
@@ -148,6 +169,12 @@
 
 /* Define to 1 if you have the `opendir' function. */
 /* #undef HAVE_OPENDIR */
+
+/* Support for OpenGL graphics acceleration. */
+/* #undef HAVE_OPENGL */
+
+/* Define to 1 if you have the <readline/readline.h> header file. */
+/* #undef HAVE_READLINE_READLINE_H */
 
 /* Define to 1 if you have the `rename' function. */
 #define HAVE_RENAME 1
@@ -203,6 +230,9 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
+
+/* Define to 1 if you have the `strncpy' function. */
+/* #undef HAVE_STRNCPY */
 
 /* Define to 1 if you have the `strrchr' function. */
 #define HAVE_STRRCHR 1
@@ -287,8 +317,17 @@
 /* Define to 1 if you have the <winsock2.h> header file. */
 #define HAVE_WINSOCK2_H 1
 
+/* Define to 1 if you have the `_mkdir' function. */
+/* #undef HAVE__MKDIR */
+
+/* Define to add IDE harddisk emulation. */
+/* #undef IDE */
+
 /* Define to allow sound interpolation. */
 #define INTERPOLATE_SOUND 1
+
+/* Target: Java NestedVM. */
+/* #undef JAVANVM */
 
 /* Define to use LINUX joystick. */
 /* #undef LINUX_JOYSTICK */
@@ -315,6 +354,9 @@
 /* Define to activate 6502 opcode profiling. */
 /* #undef MONITOR_PROFILE */
 
+/* Define to activate readline support in monitor. */
+/* #undef MONITOR_READLINE */
+
 /* Define to activate TRACE command in monitor. */
 /* #undef MONITOR_TRACE */
 
@@ -324,8 +366,44 @@
 /* Define to allow color changes inside a scanline. */
 #define NEW_CYCLE_EXACT 1
 
+/* Define to use nonlinear POKEY mixing. */
+/* #undef NONLINEAR_MIXING */
+
+/* Use NTSC video filter. */
+/* #undef NTSC_FILTER */
+
+/* Define to the address where bug reports for this package should be sent. */
+/* #undef PACKAGE_BUGREPORT */
+
+/* Define to the full name of this package. */
+/* #undef PACKAGE_NAME */
+
+/* Define to the full name and version of this package. */
+/* #undef PACKAGE_STRING */
+
+/* Define to the one symbol short name of this package. */
+/* #undef PACKAGE_TARNAME */
+
+/* Define to the home page for this package. */
+/* #undef PACKAGE_URL */
+
+/* Define to the version of this package. */
+/* #undef PACKAGE_VERSION */
+
 /* Define to use page-based attribute array. */
 /* #undef PAGED_ATTRIB */
+
+/* Define to emulate the Black Box. */
+/* #undef PBI_BB */
+
+/* Define to emulate the MIO board. */
+/* #undef PBI_MIO */
+
+/* A prototype 80 column card for the 1090 expansion box. */
+/* #undef PBI_PROTO80 */
+
+/* Define to emulate the 1400XL/1450XLD. */
+/* #undef PBI_XLD */
 
 /* Target: Sony PlayStation 2. */
 /* #undef PS2 */
@@ -335,6 +413,12 @@
 
 /* Define to use R: device. */
 /* #undef R_IO_DEVICE */
+
+/* Define to use IP network connection with the R: device. */
+/* #undef R_NETWORK */
+
+/* Define to use the host serial port with the R: device. */
+/* #undef R_SERIAL */
 
 /* Target: SDL library. */
 /* #undef SDL */
@@ -363,20 +447,29 @@
 /* Define to allow stereo sound. */
 /* #undef STEREO_SOUND */ /* TODO */
 
+/* Can change video modes on the fly. */
+/* #undef SUPPORTS_CHANGE_VIDEOMODE */
+
 /* Save additional config file options. */
 #define SUPPORTS_PLATFORM_CONFIGSAVE
 
 /* Additional config file options. */
 #define SUPPORTS_PLATFORM_CONFIGURE
 
-/* Target: Linux with SVGALib. */
-/* #undef SVGALIB */
+/* Update the Palette if it changed. */
+#define SUPPORTS_PLATFORM_PALETTEUPDATE 1
 
-/* Define to use Toshiba Joystick Mouse support. */
-/* #undef SVGA_JOYMOUSE */
+/* Platform-specific sleep function. */
+/* #undef SUPPORTS_PLATFORM_SLEEP */
 
-/* Define for drawing every 1/50 sec only 1/refresh of screen. */
-/* #undef SVGA_SPEEDUP */
+/* Can display the screen rotated sideways. */
+/* #undef SUPPORTS_ROTATE_VIDEOMODE */
+
+/* Reinitialise the sound system. */
+/* #undef SUPPORTS_SOUND_REINIT */
+
+/* Define to use synchronized sound. */
+/* #undef SYNCHRONIZED_SOUND */
 
 /* Alternate system-wide config file for non-Unix OS. */
 #define SYSTEM_WIDE_CFG_FILE "c:\\atari800.cfg"
@@ -386,9 +479,6 @@
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
-
-/* Define to use clock() instead of gettimeofday(). */
-/* #undef USE_CLOCK */
 
 /* Target: Curses-compatible library. */
 /* #undef USE_CURSES */
@@ -402,12 +492,23 @@
 /* Define to use very slow computer support (faster -refresh). */
 /* #undef VERY_SLOW */
 
+/* Define to emulate the Alien Group Voice Box. */
+/* #undef VOICEBOX */
+
 /* Define to allow volume only sound. */
 #define VOL_ONLY_SOUND 1
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-/* #undef WORDS_BIGENDIAN */
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+/* #  undef WORDS_BIGENDIAN */
+# endif
+#endif
 
 /* Define if unaligned word access is ok. */
 #define WORDS_UNALIGNED_OK 1
@@ -415,8 +516,20 @@
 /* Target: Standard X11. */
 /* #undef X11 */
 
+/* Emulate the XEP80. */
+/* #undef XEP80_EMULATION */
+
 /* Target: X11 with XView. */
 /* #undef XVIEW */
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+/* #undef _FILE_OFFSET_BITS */
+
+/* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
+/* #undef _LARGEFILE_SOURCE */
+
+/* Define for large files, on AIX-style hosts. */
+/* #undef _LARGE_FILES */
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */

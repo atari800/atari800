@@ -1,12 +1,35 @@
+2011-04-02  Petr Stehlik <pstehlik@sophics.cz>
+* many files: Tomasz Krasuski's large patch that adds a new control to the GUI,
+  a slider which allows to adjust a numeric value using left and right arrows.
+  The slider is used in the colour controls (brightness, contrast etc.) and in
+  NTSC Filter settings. The colour/palette settings and NTSC Filter settings
+  are now saved in the config file. Color handling in UI got better names:
+  "Color preset", "Standard", "Deep" and "Vibrant".
+  Added the option "Filter preset" to Display settings->NTSC Filter settings.
+  This option allows to adjust several presets for the NTSC filter: 
+  Composite, S-Video, RGB and Monochrome. Previously this option was available 
+  only as a keyboard shortcut in the SDL port. Also see -ntsc-filter-preset in 
+  the command line.
+  Added a new function PreInitialise() that is intended to contain any
+  initialisation code that needs to be called before reading of the config file.
+  Fixed a few compilation errors and warnings for the MSVC build, and slightly
+  updated the build instructions. As a bonus, the colour/palette adjustments
+  are now also available in the DirectX port.
+  Simplified the code for processing Win32-specific hotkeys. Now there's less
+  platfrom-specific code scattered around. Functionality remains unchanged.
+
+
 2011-03-19  Kostas Nakos  <knakos@gmail.com>
 * android/*: Map dpad-center and ~ to Atari's escape key,
              fix a couple of races when restarting, pausing/resuming the audio
+
 
 2011-03-06  Kostas Nakos  <knakos@gmail.com>
 * atari.[ch], android/*: Implemented autoframeskip functionality
 * android/*: Added .com & .exe to supported extensions,
              bugfix crash when sound disabled,
 			 added new joystick grace area preference 
+
 
 2011-02-13  Kostas Nakos  <knakos@gmail.com>
 * log.c, atari.c, screen.c, configure.ac, Makefile.in, android/*: Imported the

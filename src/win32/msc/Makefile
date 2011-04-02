@@ -56,6 +56,7 @@ OBJS = \
 	ui_basic.obj \
 	util.obj \
 	votrax.obj \
+	votraxsnd.obj \
 	win32\atari_win32.obj \
 	win32\joystick.obj \
 	win32\keyboard.obj \

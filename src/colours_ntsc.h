@@ -18,6 +18,12 @@ typedef struct COLOURS_NTSC_setup_t {
 	double color_delay; 
 } COLOURS_NTSC_setup_t;
 
+/* Limits for the adjustable values. */
+#define COLOURS_NTSC_HUE_MIN -1.0
+#define COLOURS_NTSC_HUE_MAX 1.0
+#define COLOURS_NTSC_DELAY_MIN 16
+#define COLOURS_NTSC_DELAY_MAX 26
+
 /* NTSC palette's current setup - generic controls. */
 extern Colours_setup_t COLOURS_NTSC_setup;
 /* NTSC palette's current setup - NTSC-specific controls. */
@@ -37,11 +43,18 @@ void COLOURS_NTSC_RestoreDefaults(void);
    is to be used exclusively by the NTSC Filter module. */
 void COLOURS_NTSC_GetYIQ(double yiq_table[768], const double start_angle);
 
+/* Initialise variables before loading from config file. */
+void COLOURS_NTSC_PreInitialise(void);
+
+/* Read/write to configuration file. */
+int COLOURS_NTSC_ReadConfig(char *option, char *ptr);
+void COLOURS_NTSC_WriteConfig(FILE *fp);
+
 /* NTSC Colours initialisation and processing of command-line arguments. */
 int COLOURS_NTSC_Initialise(int *argc, char *argv[]);
 
-/* Functions for setting and getting the NTSC color calibration profile */
-void COLOURS_NTSC_Set_Calibration_Profile(COLOURS_VIDEO_PROFILE cp);
-COLOURS_VIDEO_PROFILE COLOURS_NTSC_Get_Calibration_Profile(void);
+/* Functions for setting and getting the NTSC color preset. */
+void COLOURS_NTSC_SetPreset(Colours_preset_t preset);
+Colours_preset_t COLOURS_NTSC_GetPreset(void);
 
 #endif /* COLOURS_NTSC_H_ */

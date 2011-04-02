@@ -146,10 +146,6 @@ extern void do_hz_test(void);
 #endif /* HZ_TEST */
 #endif /* DREAMCAST */
 
-#if SUPPORTS_PLATFORM_PALETTEUPDATE
-COLOURS_VIDEO_PROFILE calibration_profile;
-#endif /* SUPPORTS_PLATFORM_PALETTEUPDATE */
-
 UI_tDriver *UI_driver = &UI_BASIC_driver;
 
 int UI_is_active = FALSE;
@@ -1589,17 +1585,42 @@ static void VideoModeSettings(void)
 /* An array of pointers to colour controls (brightness, contrast, NTSC filter
    controls, etc.). Used to display values of controls in GUI. */
 static struct {
+	double min; /* Minimum allowed value */
+	double max; /* Maximum allowed value */
 	double *setting; /* Pointer to a setup value */
 	char string[10]; /* string representation, for displaying */
-} colour_controls[12];
+} colour_controls[] = {
+	{ COLOURS_BRIGHTNESS_MIN, COLOURS_BRIGHTNESS_MAX },
+	{ COLOURS_CONTRAST_MIN, COLOURS_CONTRAST_MAX },
+	{ COLOURS_SATURATION_MIN, COLOURS_SATURATION_MAX },
+	{ COLOURS_NTSC_HUE_MIN, COLOURS_NTSC_HUE_MAX },
+	{ COLOURS_GAMMA_MIN, COLOURS_GAMMA_MAX },
+	{ COLOURS_NTSC_DELAY_MIN, COLOURS_NTSC_DELAY_MAX }
+#if NTSC_FILTER
+	,
+	{ FILTER_NTSC_SHARPNESS_MIN, FILTER_NTSC_SHARPNESS_MAX },
+	{ FILTER_NTSC_RESOLUTION_MIN, FILTER_NTSC_RESOLUTION_MAX },
+	{ FILTER_NTSC_ARTIFACTS_MIN, FILTER_NTSC_ARTIFACTS_MAX },
+	{ FILTER_NTSC_FRINGING_MIN, FILTER_NTSC_FRINGING_MAX },
+	{ FILTER_NTSC_BLEED_MIN, FILTER_NTSC_BLEED_MAX },
+	{ FILTER_NTSC_BURST_PHASE_MIN, FILTER_NTSC_BURST_PHASE_MAX }
+#endif /* NTSC_FILTER */
+};
 
 /* Updates the string representation of a single colour control. */
 static void UpdateColourControl(const int idx)
 {
+#ifdef HAVE_SNPRINTF
 	snprintf(colour_controls[idx].string,
 		 sizeof(colour_controls[0].string) - 1,
-		 "%f",
+		 "%.2f",
 		 *(colour_controls[idx].setting));
+#else
+	sprintf(colour_controls[idx].string,
+		 "%.2f",
+		 *(colour_controls[idx].setting));
+#endif /* HAVE_SNPRINTF */
+
 }
 
 /* Sets pointers to colour controls properly, and hides/shows the Hue and
@@ -1625,22 +1646,60 @@ static void UpdateColourControls(UI_tMenuItem menu_array[])
 	}
 }
 
+/* Converts value of a colour setting to range usable by slider (0..100). */
+static int ColourSettingToSlider(int index)
+{
+	/* min <= value <= max */
+	return (int)Util_round((*(colour_controls[index].setting) - colour_controls[index].min) * 100.0 /
+	                       (colour_controls[index].max - colour_controls[index].min));
+}
+
+/* Converts a slider value (0..100) to a range of a given colour setting. */
+static double SliderToColourSetting(int value, int index)
+{
+	/* 0 <= value <= 100 */
+	return (double)value * (colour_controls[index].max - colour_controls[index].min) / 100.0 + colour_controls[index].min;
+}
+
+/* Callback function that writes a text label to *LABEL, for use by a slider. */
+static void ColourSliderLabel(char *label, int value, void *user_data)
+{
+	int index = *((int *)user_data);
+	double setting = SliderToColourSetting(value, index);
+	sprintf(label, "% .2f", setting);
+	*colour_controls[index].setting = setting;
+	UpdateColourControl(index);
+	Colours_Update();
+}
+
 #if NTSC_FILTER
 /* Submenu with controls for NTSC filter. */
 static void NTSCFilterSettings(void)
 {
 	int i;
+	int preset;
+
+	static const UI_tMenuItem preset_menu_array[] = {
+		UI_MENU_ACTION(0, "Composite"),
+		UI_MENU_ACTION(1, "S-Video"),
+		UI_MENU_ACTION(2, "RGB"),
+		UI_MENU_ACTION(3, "Monochrome"),
+		UI_MENU_END
+	};
 	static UI_tMenuItem menu_array[] = {
-		UI_MENU_ACTION_PREFIX(0, "Sharpness: ", colour_controls[6].string),
-		UI_MENU_ACTION_PREFIX(1, "Resolution: ", colour_controls[7].string),
-		UI_MENU_ACTION_PREFIX(2, "Artifacts: ", colour_controls[8].string),
-		UI_MENU_ACTION_PREFIX(3, "Fringing: ", colour_controls[9].string),
-		UI_MENU_ACTION_PREFIX(4, "Bleed: ", colour_controls[10].string),
-		UI_MENU_ACTION_PREFIX(5, "Burst phase: ", colour_controls[11].string),
+		UI_MENU_SUBMENU_SUFFIX(0, "Filter preset: ", NULL),
+		UI_MENU_ACTION_PREFIX(1, "Sharpness: ", colour_controls[6].string),
+		UI_MENU_ACTION_PREFIX(2, "Resolution: ", colour_controls[7].string),
+		UI_MENU_ACTION_PREFIX(3, "Artifacts: ", colour_controls[8].string),
+		UI_MENU_ACTION_PREFIX(4, "Fringing: ", colour_controls[9].string),
+		UI_MENU_ACTION_PREFIX(5, "Bleed: ", colour_controls[10].string),
+		UI_MENU_ACTION_PREFIX(6, "Burst phase: ", colour_controls[11].string),
+		UI_MENU_ACTION(7, "Restore default settings"),
 		UI_MENU_END
 	};
 
 	int option = 0;
+	int option2;
 
 	/* Set pointers to colour controls. */
 	colour_controls[6].setting = &FILTER_NTSC_setup.sharpness;
@@ -1653,23 +1712,46 @@ static void NTSCFilterSettings(void)
 		UpdateColourControl(i);
 
 	for (;;) {
+		preset = FILTER_NTSC_GetPreset();
+		if (preset == FILTER_NTSC_PRESET_CUSTOM)
+			FindMenuItem(menu_array, 0)->suffix = "Custom";
+		else
+			FindMenuItem(menu_array, 0)->suffix = preset_menu_array[preset].item;
+
 		option = UI_driver->fSelect("NTSC Filter Settings", 0, option, menu_array, NULL);
 		switch (option) {
 		case 0:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, preset, preset_menu_array, NULL);
+			if (option2 >= 0) {
+				FILTER_NTSC_SetPreset(option2);
+				Colours_Update();
+				for (i=6; i<12; i++)
+					UpdateColourControl(i);
+			}
+			break;
 		case 1:
 		case 2:
 		case 3:
 		case 4:
 		case 5:
+		case 6:
 			{
-				char buffer[10]; /* same size as in colour_controls[0].string */
-				memcpy(buffer, colour_controls[option + 6].string, sizeof(buffer));
-				if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
-					*(colour_controls[option + 6].setting) = atof(buffer);
-					UpdateColourControl(option + 6);
+				int index = option + 5;
+				int value = UI_driver->fSelectSlider("Select value",
+								     ColourSettingToSlider(index),
+								     100, &ColourSliderLabel, &index);
+				if (value != -1) {
+					*(colour_controls[index].setting) = SliderToColourSetting(value, index);
+					UpdateColourControl(index);
 					Colours_Update();
 				}
 			}
+			break;
+		case 7:
+			FILTER_NTSC_RestoreDefaults();
+			Colours_Update();
+			for (i = 6; i < 12; i ++)
+				UpdateColourControl(i);
 			break;
 		default:
 			return;
@@ -1711,12 +1793,13 @@ static void DisplaySettings(void)
 	};
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE	
-	static const UI_tMenuItem calibration_profile_menu_array[] = {
-		UI_MENU_ACTION(0, "Standard [Atari Raster Standard]"),
-		UI_MENU_ACTION(1, "Classic  [Black-Level Optimized]"),
-		UI_MENU_ACTION(2, "Arcade   [Levels & Color Enhanced]"),
+	static const UI_tMenuItem colours_preset_menu_array[] = {
+		UI_MENU_ACTION(0, "Standard (most realistic)"),
+		UI_MENU_ACTION(1, "Deep black (allows pure black color)"),
+		UI_MENU_ACTION(2, "Vibrant (enhanced colors and levels)"),
 		UI_MENU_END
 	};
+	static char const * const colours_preset_names[] = { "Standard", "Deep black", "Vibrant", "Custom" };
 #endif
 	
 	static char refresh_status[16];
@@ -1746,7 +1829,7 @@ static void DisplaySettings(void)
 #endif
 #endif
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
-	    UI_MENU_SUBMENU_SUFFIX(12, "Video Calibration Profile: ", NULL),
+		UI_MENU_SUBMENU_SUFFIX(12, "Color preset: ", NULL),
 		UI_MENU_ACTION_PREFIX(13, " Brightness: ", colour_controls[0].string),
 		UI_MENU_ACTION_PREFIX(14, " Contrast: ", colour_controls[1].string),
 		UI_MENU_ACTION_PREFIX(15, " Saturation: ", colour_controls[2].string),
@@ -1777,20 +1860,13 @@ static void DisplaySettings(void)
 	int artif_quality;
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
+	Colours_preset_t colours_preset;
 	int i;
 	UpdateColourControls(menu_array);
 #endif
 
 	for (;;) {
 #if NTSC_FILTER
-#if SUPPORTS_PLATFORM_PALETTEUPDATE
-		/* Show NTSC filter option only if necessary. */
-		if (VIDEOMODE_ntsc_filter)
-			FindMenuItem(menu_array, 19)->flags = UI_ITEM_SUBMENU;
-		else
-			FindMenuItem(menu_array, 19)->flags = UI_ITEM_HIDDEN;
-#endif
-
 		/* Computing current artifacting quality... */
 		if (VIDEOMODE_ntsc_filter) {
 			/* NTSC filter is on */
@@ -1810,16 +1886,9 @@ static void DisplaySettings(void)
 		}
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
-		calibration_profile = Colours_Get_Calibration_Profile();
-		if (calibration_profile == COLOURS_CUSTOM)
-			FindMenuItem(menu_array, 12)->suffix = "Custom"; 
-		else if (calibration_profile == COLOURS_STANDARD)
-			FindMenuItem(menu_array, 12)->suffix = "Standard";
-		else if (calibration_profile == COLOURS_CLASSIC)
-			FindMenuItem(menu_array, 12)->suffix = "Classic";
-		else if (calibration_profile == COLOURS_ARCADE)
-			FindMenuItem(menu_array, 12)->suffix = "Arcade";
-		
+		colours_preset = Colours_GetPreset();
+		FindMenuItem(menu_array, 12)->suffix = colours_preset_names[colours_preset];
+
 		/* Set the palette file description */
 		if (Colours_external->loaded) {
 			FindMenuItem(menu_array, 21)->item = Colours_external->filename;
@@ -1966,9 +2035,9 @@ static void DisplaySettings(void)
 #endif /* DREAMCAST */
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 		case 12:
-			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, calibration_profile, calibration_profile_menu_array, NULL);
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, colours_preset, colours_preset_menu_array, NULL);
 			if (option2 >= 0) {
-				Colours_Set_Calibration_Profile(option2);
+				Colours_SetPreset(option2);
 				Colours_Update();
 				for (i=0; i<6; i++) {
 					UpdateColourControl(i);
@@ -1982,18 +2051,27 @@ static void DisplaySettings(void)
 		case 17:
 		case 18:
 			{
-				char buffer[10]; /* same size as in colour_controls[0].string */
-				memcpy(buffer, colour_controls[option - 13].string, sizeof(buffer));
-				if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer))) {
-					*(colour_controls[option - 13].setting) = atof(buffer);
-					UpdateColourControl(option - 13);
+				int index = option - 13;
+				int value = UI_driver->fSelectSlider("Select value",
+								     ColourSettingToSlider(index),
+								     100, &ColourSliderLabel, &index);
+				if (value != -1) {
+					*(colour_controls[index].setting) = SliderToColourSetting(value, index);
+					UpdateColourControl(index);
 					Colours_Update();
 				}
 			}
 			break;
 #if NTSC_FILTER
 		case 19:
-			NTSCFilterSettings();
+			if (VIDEOMODE_ntsc_filter) {
+				NTSCFilterSettings();
+				/* While in NTSC Filter menu, the "Filter preset" option also changes the "standard" colour
+				   controls (saturation etc.) - so we need to call UpdateColourControls to update the menu. */
+				UpdateColourControls(menu_array);
+			}
+			else
+				UI_driver->fMessage("Available only when NTSC filter is on", 1);
 			break;
 #endif
 		case 20:

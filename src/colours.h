@@ -5,12 +5,14 @@
 
 extern int Colours_table[256];
 
-typedef enum VIDEO_PROFILE_ {
-	COLOURS_STANDARD,
-	COLOURS_CLASSIC,
-	COLOURS_ARCADE,
-	COLOURS_CUSTOM
-} COLOURS_VIDEO_PROFILE;
+typedef enum {
+	COLOURS_PRESET_STANDARD,
+	COLOURS_PRESET_DEEPBLACK,
+	COLOURS_PRESET_VIBRANT,
+	COLOURS_PRESET_CUSTOM,
+	/* Number of "normal" (not including CUSTOM) values in enumerator */
+	COLOURS_PRESET_SIZE = COLOURS_PRESET_CUSTOM
+} Colours_preset_t;
 
 /* Contains controls for palette adjustment. These controls are available for
    NTSC and PAL palettes. */
@@ -22,6 +24,16 @@ typedef struct Colours_setup_t {
 	int black_level; /* 0..255. ITU-R Recommendation BT.601 advises it to be 16. */
 	int white_level; /* 0..255. ITU-R Recommendation BT.601 advises it to be 235. */
 } Colours_setup_t;
+
+/* Limits for the adjustable values. */
+#define COLOURS_SATURATION_MIN -1.0
+#define COLOURS_SATURATION_MAX 1.0
+#define COLOURS_CONTRAST_MIN -2.0
+#define COLOURS_CONTRAST_MAX 2.0
+#define COLOURS_BRIGHTNESS_MIN -2.0
+#define COLOURS_BRIGHTNESS_MAX 2.0
+#define COLOURS_GAMMA_MIN -1.0
+#define COLOURS_GAMMA_MAX 1.0
 
 /* Pointer to the current palette setup. Depending on the current TV system,
    it points to the NTSC setup, or the PAL setup. (See COLOURS_NTSC_setup and
@@ -37,8 +49,6 @@ void Colours_SetRGB(int i, int r, int g, int b, int *colortable_ptr);
 /* Called when the TV system changes, it updates the current palette
    accordingly. */
 void Colours_SetVideoSystem(int mode);
-/* Called during initialisation - updates palette if TV system has changed. */
-void Colours_InitialiseMachine(void);
 
 /* Updates the current palette - should be called after changing palette setup
    or loading/unloading an external palette. */
@@ -55,16 +65,19 @@ int Colours_Save(const char *filename);
    independently. (See COLOURS_NTSC_external and COLOURS_PAL_external.) */
 extern COLOURS_EXTERNAL_t *Colours_external;
 
+/* Initialise variables before loading from config file. */
+void Colours_PreInitialise(void);
+
+/* Read/write to configuration file. */
+int Colours_ReadConfig(char *option, char *ptr);
+void Colours_WriteConfig(FILE *fp);
+
 /* Colours initialisation and processing of command-line arguments. */
 int Colours_Initialise(int *argc, char *argv[]);
 
-/* Functions for setting and getting the color calibration profile */
-void Colours_Set_Calibration_Profile(COLOURS_VIDEO_PROFILE cp);
-COLOURS_VIDEO_PROFILE Colours_Get_Calibration_Profile(void);
-
-#ifdef DIRECTX
-/* Support PLATFORM_Configure */
-extern COLOURS_VIDEO_PROFILE Colours_video_profile;
-#endif
+/* Functions for setting and getting the color preset. PRESET cannot equal
+   COLOURS_PRESET_CUSTOM. */
+void Colours_SetPreset(Colours_preset_t preset);
+Colours_preset_t Colours_GetPreset(void);
 
 #endif /* COLOURS_H_ */

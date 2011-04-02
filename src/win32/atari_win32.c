@@ -39,7 +39,6 @@
 #include "sound.h"
 #include "ui.h"
 #include "util.h"
-#include "colours.h"
 
 #include "main.h"
 #include "joystick.h"
@@ -52,8 +51,6 @@ static int kbjoy = 0;
 static int win32keys = FALSE;
 
 /* default configuration options */
-COLOURS_VIDEO_PROFILE Colours_video_profile = COLOURS_STANDARD;
-
 ALTJOYMODE alternateJoystickMode = JOY_NORMAL_MODE;
 KEYJOYMODE keyboardJoystickMode = ARROW_MODE;
 BOOL mapController1Buttons = FALSE;
@@ -135,22 +132,6 @@ int PLATFORM_Configure(char *option, char *parameters)
 		}
 		if (strcmp(parameters,"DIRECT3D_BILINEAR")==0) {
 			SetDisplayMode(DIRECT3D_BILINEAR);
-			return TRUE;
-		}
-		return FALSE;
-	}
-	
-	if (strcmp(option, "VIDEO_PROFILE") == 0) {
-		if (strcmp(parameters,"STANDARD")==0) {
-			Colours_video_profile = COLOURS_STANDARD;
-			return TRUE;
-		}
-		if (strcmp(parameters,"CLASSIC")==0) {
-			Colours_video_profile = COLOURS_CLASSIC;
-			return TRUE;
-		}
-		if (strcmp(parameters,"ARCADE")==0) {
-			Colours_video_profile = COLOURS_ARCADE;
 			return TRUE;
 		}
 		return FALSE;
@@ -422,18 +403,6 @@ void PLATFORM_ConfigSave(FILE *fp)
 			break;
 		case DIRECT3D_BILINEAR:
 			fprintf(fp, "DISPLAY_MODE=DIRECT3D_BILINEAR\n");
-			break;
-	}
-	
-	switch (Colours_video_profile) {
-		case COLOURS_STANDARD:
-			fprintf(fp, "VIDEO_PROFILE=STANDARD\n");
-			break;
-		case COLOURS_CLASSIC:
-			fprintf(fp, "VIDEO_PROFILE=CLASSIC\n");
-			break;
-		case COLOURS_ARCADE:
-			fprintf(fp, "VIDEO_PROFILE=ARCADE\n");
 			break;
 	}
 	
@@ -1021,20 +990,34 @@ int PLATFORM_GetKeyName(void)
 	// Support Win32 specific hot-key sequences
 	if (kbhits[DIK_LMENU] || kbhits[DIK_RMENU]) { /* left or right Alt key is pressed */
 		switch (kbcode) {
-			case DIK_PGUP:     
-				return AKEY32_WINDOWSIZEUP;  		/* ALT+PAGEUP .. Increase window size */
-			case DIK_PGDN:
-				return AKEY32_WINDOWSIZEDOWN;  		/* ALT+PAGEDOWN .. Decrease window size */
-			case DIK_I:
-				return AKEY32_TOGGLESCANLINEMODE;  	/* ALT+I  .. Toggle Interleave (scanline) mode*/ 
-			case DIK_Z:
-				return AKEY32_TOGGLESCREENSAVER;  	/* ALT+Z .. Toggle "screensaver" mode */ 
-			case DIK_T:
-				return AKEY32_TILTSCREEN;  			/* ALT+T .. Toggle Tilt mode */ 
-			case DIK_RETURN:
-				return AKEY32_TOGGLEFULLSCREEN;  	/* ALT+ENTER .. Toggle fullscreen mode*/ 
-			case DIK_M:
-				return AKEY32_TOGGLEMENU;			/* ALT+M .. Toggle menu on/off */
+			case DIK_PGUP: /* ALT+PAGEUP .. Increase window size */
+				kbcode = 0;
+				changewindowsize(STEPUP, 50);
+				return AKEY_NONE;
+			case DIK_PGDN: /* ALT+PAGEDOWN .. Decrease window size */
+				kbcode = 0;
+				changewindowsize(STEPDOWN, 50);
+				return AKEY_NONE;
+			case DIK_I: /* ALT+I  .. Toggle Interleave (scanline) mode*/
+				kbcode = 0;
+				changescanlinemode();
+				return AKEY_NONE;
+			case DIK_Z: /* ALT+Z .. Toggle "screensaver" mode */
+				kbcode = 0;
+				togglescreensaver();
+				return AKEY_NONE;
+			case DIK_T: /* ALT+T .. Toggle Tilt mode */
+				kbcode = 0;
+				changetiltlevel();
+				return AKEY_NONE;
+			case DIK_RETURN: /* ALT+ENTER .. Toggle fullscreen mode*/
+				kbcode = 0;
+				togglewindowstate();
+				return AKEY_NONE;
+			case DIK_M: /* ALT+M .. Toggle menu on/off */
+				kbcode = 0;
+				togglemenustate();
+				return AKEY_NONE;
 			default:
 				break;
 		}
@@ -1473,38 +1456,3 @@ int PLATFORM_TRIG(int num)
 	}
 }
 
-void Process_Hotkeys(void)
-{
-	// Process Win32-specific hot-key presses
-	switch (INPUT_key_code)
-	{	
-		case AKEY32_WINDOWSIZEUP:
-			kbcode = 0;
-			changewindowsize(STEPUP, 50);
-			break;
-		case AKEY32_WINDOWSIZEDOWN:
-			kbcode = 0;
-			changewindowsize(STEPDOWN, 50);
-			break;  
-		case AKEY32_TOGGLESCANLINEMODE:
-			kbcode = 0;
-			changescanlinemode();
-			break;
-		case AKEY32_TOGGLESCREENSAVER:
-			kbcode = 0;
-			togglescreensaver();
-			break;
-		case AKEY32_TILTSCREEN:
-			kbcode = 0;
-			changetiltlevel();
-			break;
-		case AKEY32_TOGGLEFULLSCREEN:
-			kbcode = 0;
-			togglewindowstate();
-			break;	
-		case AKEY32_TOGGLEMENU:
-			kbcode = 0;
-			togglemenustate();
-			break;
-	}
-}

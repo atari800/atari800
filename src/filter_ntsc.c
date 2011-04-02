@@ -27,11 +27,26 @@
 
 #include "atari.h" /* for TRUE/FALSE */
 #include "atari_ntsc/atari_ntsc.h"
+#include "cfg.h"
 #include "colours_ntsc.h"
 #include "log.h"
 #include "util.h"
 
 atari_ntsc_setup_t FILTER_NTSC_setup;
+
+static atari_ntsc_setup_t const * const presets[] = {
+	&atari_ntsc_composite,
+	&atari_ntsc_svideo,
+	&atari_ntsc_rgb,
+	&atari_ntsc_monochrome
+};
+
+static char const * const preset_cfg_strings[FILTER_NTSC_PRESET_SIZE] = {
+	"COMPOSITE",
+	"SVIDEO",
+	"RGB",
+	"MONOCHROME"
+};
 
 atari_ntsc_t *FILTER_NTSC_emu = NULL;
 
@@ -81,26 +96,84 @@ void FILTER_NTSC_RestoreDefaults(void)
 	FILTER_NTSC_setup = atari_ntsc_composite;
 }
 
+void FILTER_NTSC_SetPreset(int preset)
+{
+	if (preset < FILTER_NTSC_PRESET_CUSTOM) {
+		FILTER_NTSC_setup = *presets[preset];
+
+		/* Copy settings from the preset to NTSC setup. */
+		COLOURS_NTSC_specific_setup.hue = FILTER_NTSC_setup.hue;
+		COLOURS_NTSC_setup.saturation = FILTER_NTSC_setup.saturation;
+		COLOURS_NTSC_setup.contrast = FILTER_NTSC_setup.contrast;
+		COLOURS_NTSC_setup.brightness = FILTER_NTSC_setup.brightness;
+		COLOURS_NTSC_setup.gamma = FILTER_NTSC_setup.gamma;
+	}
+}
+
+int FILTER_NTSC_GetPreset(void)
+{
+	int i;
+
+	for (i = 0; i < FILTER_NTSC_PRESET_SIZE; i ++) {
+		if (Util_almostequal(FILTER_NTSC_setup.sharpness, presets[i]->sharpness, 0.001) &&
+		    Util_almostequal(FILTER_NTSC_setup.resolution, presets[i]->resolution, 0.001) &&
+		    Util_almostequal(FILTER_NTSC_setup.artifacts, presets[i]->artifacts, 0.001) &&
+		    Util_almostequal(FILTER_NTSC_setup.fringing, presets[i]->fringing, 0.001) &&
+		    Util_almostequal(FILTER_NTSC_setup.bleed, presets[i]->bleed, 0.001) &&
+		    Util_almostequal(FILTER_NTSC_setup.burst_phase, presets[i]->burst_phase, 0.001) &&
+		    Util_almostequal(COLOURS_NTSC_specific_setup.hue, presets[i]->hue, 0.001) &&
+		    Util_almostequal(COLOURS_NTSC_setup.saturation, presets[i]->saturation, 0.001) &&
+		    Util_almostequal(COLOURS_NTSC_setup.contrast, presets[i]->contrast, 0.001) &&
+		    Util_almostequal(COLOURS_NTSC_setup.brightness, presets[i]->brightness, 0.001) &&
+		    Util_almostequal(COLOURS_NTSC_setup.gamma, presets[i]->gamma, 0.001))
+			return i; 
+	}
+	return FILTER_NTSC_PRESET_CUSTOM;
+}
+
 void FILTER_NTSC_NextPreset(void)
 {
-	static atari_ntsc_setup_t const *preset = &atari_ntsc_svideo;
-	FILTER_NTSC_setup = *preset;
-
-	/* Copy settings from the preset to NTSC setup. */
-	COLOURS_NTSC_specific_setup.hue = preset->hue;
-	COLOURS_NTSC_setup.saturation = preset->saturation;
-	COLOURS_NTSC_setup.contrast = preset->contrast;
-	COLOURS_NTSC_setup.brightness = preset->brightness;
-	COLOURS_NTSC_setup.gamma = preset->gamma;
+	int preset = FILTER_NTSC_GetPreset();
 	
-	/* Rotate the preset pointer */
-	if (preset == &atari_ntsc_composite)
-		preset = &atari_ntsc_svideo;
-	else if (preset == &atari_ntsc_svideo)
-		preset = &atari_ntsc_rgb;
-	else if (preset == &atari_ntsc_rgb)
-		preset = &atari_ntsc_monochrome;
-	else preset = &atari_ntsc_composite;
+	if (preset == FILTER_NTSC_PRESET_CUSTOM)
+		preset = FILTER_NTSC_PRESET_COMPOSITE;
+	else
+		preset = (preset + 1) % FILTER_NTSC_PRESET_SIZE;
+	FILTER_NTSC_SetPreset(preset);
+}
+
+void FILTER_NTSC_PreInitialise(void)
+{
+	/* atari_ntsc_composite acts as the default setup. */
+	FILTER_NTSC_setup = atari_ntsc_composite;
+}
+
+int FILTER_NTSC_ReadConfig(char *option, char *ptr)
+{
+	if (strcmp(option, "FILTER_NTSC_SHARPNESS") == 0)
+		return Util_sscandouble(ptr, &FILTER_NTSC_setup.sharpness);
+	else if (strcmp(option, "FILTER_NTSC_RESOLUTION") == 0)
+		return Util_sscandouble(ptr, &FILTER_NTSC_setup.resolution);
+	else if (strcmp(option, "FILTER_NTSC_ARTIFACTS") == 0)
+		return Util_sscandouble(ptr, &FILTER_NTSC_setup.artifacts);
+	else if (strcmp(option, "FILTER_NTSC_FRINGING") == 0)
+		return Util_sscandouble(ptr, &FILTER_NTSC_setup.fringing);
+	else if (strcmp(option, "FILTER_NTSC_BLEED") == 0)
+		return Util_sscandouble(ptr, &FILTER_NTSC_setup.bleed);
+	else if (strcmp(option, "FILTER_NTSC_BURST_PHASE") == 0)
+		return Util_sscandouble(ptr, &FILTER_NTSC_setup.burst_phase);
+	else
+		return FALSE;
+}
+
+void FILTER_NTSC_WriteConfig(FILE *fp)
+{
+	fprintf(fp, "FILTER_NTSC_SHARPNESS=%g\n", FILTER_NTSC_setup.sharpness);
+	fprintf(fp, "FILTER_NTSC_RESOLUTION=%g\n", FILTER_NTSC_setup.resolution);
+	fprintf(fp, "FILTER_NTSC_ARTIFACTS=%g\n", FILTER_NTSC_setup.artifacts);
+	fprintf(fp, "FILTER_NTSC_FRINGING=%g\n", FILTER_NTSC_setup.fringing);
+	fprintf(fp, "FILTER_NTSC_BLEED=%g\n", FILTER_NTSC_setup.bleed);
+	fprintf(fp, "FILTER_NTSC_BURST_PHASE=%g\n", FILTER_NTSC_setup.burst_phase);
 }
 
 int FILTER_NTSC_Initialise(int *argc, char *argv[])
@@ -108,9 +181,6 @@ int FILTER_NTSC_Initialise(int *argc, char *argv[])
 	int i;
 	int j;
 
-	/* atari_ntsc_composite acts as the default setup. */
-	FILTER_NTSC_setup = atari_ntsc_composite;
-	
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
@@ -145,6 +215,16 @@ int FILTER_NTSC_Initialise(int *argc, char *argv[])
 				FILTER_NTSC_setup.burst_phase = atof(argv[++i]);
 			else a_m = TRUE;
 		}
+		else if (strcmp(argv[i], "-ntsc-filter-preset") == 0) {
+			if (i_a) {
+				int idx = CFG_MatchTextParameter(argv[++i], preset_cfg_strings, FILTER_NTSC_PRESET_SIZE);
+				if (idx < 0) {
+					Log_print("Invalid value for -ntsc-filter-preset");
+					return FALSE;
+				}
+				FILTER_NTSC_SetPreset(idx);
+			} else a_m = TRUE;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-ntsc-sharpness <n>   Set sharpness for NTSC filter (default %.2g)", FILTER_NTSC_setup.sharpness);
@@ -153,6 +233,8 @@ int FILTER_NTSC_Initialise(int *argc, char *argv[])
 				Log_print("\t-ntsc-fringing <n>    Set chroma fringing ratio for NTSC filter (default %.2g)", FILTER_NTSC_setup.fringing);
 				Log_print("\t-ntsc-bleed <n>       Set bleed for NTSC filter (default %.2g)", FILTER_NTSC_setup.bleed);
 				Log_print("\t-ntsc-burstphase <n>  Set burst phase (artifact colours) for NTSC filter (default %.2g)", FILTER_NTSC_setup.burst_phase);
+				Log_print("\t-ntsc-filter-preset composite|svideo|rgb|monochrome");
+				Log_print("\t                      Use one of predefined NTSC filter adjustments");
 			}
 			argv[j++] = argv[i];
 		}
