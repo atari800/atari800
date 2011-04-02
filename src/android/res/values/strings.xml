@@ -176,4 +176,8 @@
 	<string name="pref_anchor_sum">Fix on-screen joystick to current position</string>
 	<string name="pref_joygrace">Joystick Grace Area</string>
 	<string name="pref_joygrace_sum">Area extension around the joystick which results in no recentering</string>
+	<string name="pref_crophoriz">Crop Horizontally</string>
+	<string name="pref_crophoriz_sum">Width in pixels of original screen to show</string>
+	<string name="pref_cropvert">Crop Vertically</string>
+	<string name="pref_cropvert_sum">Height in pixels of original screen to show</string>
 </resources>

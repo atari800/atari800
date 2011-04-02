@@ -103,7 +103,7 @@ static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 }
 
 static void JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this, jstring img, jint drv,
-											jint reboot)
+										  jint reboot)
 {
 	const jbyte *img_utf = NULL;
 
@@ -258,7 +258,8 @@ static void JNICALL NativeTouch(JNIEnv *env, jobject this, int x1, int y1, int s
 
 
 static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolean bilinear,
-									int artifact, int frameskip, jboolean collisions)
+								  int artifact, int frameskip, jboolean collisions, int crophoriz,
+								  int cropvert)
 {
 	Android_Aspect = aspect;
 	Android_Bilinear = bilinear;
@@ -272,6 +273,14 @@ static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolea
 		Atari800_refresh_rate = frameskip;
 	}
 	Atari800_collisions_in_skipped_frames = collisions;
+	Android_CropScreen[0] = (SCANLINE_LEN - crophoriz) / 2;
+	Android_CropScreen[2] = crophoriz;
+	Android_CropScreen[1] = SCREEN_HEIGHT - (SCREEN_HEIGHT - cropvert) / 2;
+	Android_CropScreen[3] = -cropvert;
+	Screen_visible_x1 = SCANLINE_START + Android_CropScreen[0];
+	Screen_visible_x2 = Screen_visible_x1 + crophoriz;
+	Screen_visible_y1 = SCREEN_HEIGHT - Android_CropScreen[1];
+	Screen_visible_y2 = Screen_visible_y1 + cropvert;
 }
 
 static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac)
@@ -313,7 +322,7 @@ static void JNICALL NativePrefEmulation(JNIEnv *env, jobject this, jboolean basi
 }
 
 static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjoy, int up, int down,
-										int left, int right, int fire)
+									  int left, int right, int fire)
 {
 	Android_SoftjoyEnable = softjoy;
 	softjoymap[SOFTJOY_UP][0] = up;
@@ -324,7 +333,8 @@ static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjo
 }
 
 static void JNICALL NativePrefOvl(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
-	jboolean righth, int deadband, jboolean midx, int anchor, int anchorx, int anchory, int grace)
+								  jboolean righth, int deadband, jboolean midx, int anchor, int anchorx,
+								  int anchory, int grace)
 {
 	AndroidInput_JoyOvl.ovl_visible = visible;
 	AndroidInput_JoyOvl.areaopacityset = 0.01f * opacity;
@@ -375,7 +385,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	JNINativeMethod main_methods[] = {
 		{ "NativeExit",				"()V",						NativeExit			  },
 		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",	NativeRunAtariProgram },
-		{ "NativePrefGfx",			"(IZIIZ)V",					NativePrefGfx		  },
+		{ "NativePrefGfx",			"(IZIIZII)V",				NativePrefGfx		  },
 		{ "NativePrefMachine",		"(I)Z",						NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZ)V",					NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIII)V",				NativePrefSoftjoy	  },

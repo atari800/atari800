@@ -413,7 +413,8 @@ public final class MainActivity extends Activity
 			aspect, bilinear, artifact, frameskip, collisions, machine, basic, speed,
 			disk, sector, softjoy, up, down, left, right, fire, joyvisible, joysize,
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
-			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace
+			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
+			crophoriz, cropvert
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -443,7 +444,9 @@ public final class MainActivity extends Activity
 						   Boolean.parseBoolean(_newvalues.get(PreferenceName.bilinear)),
 						   Integer.parseInt(_newvalues.get(PreferenceName.artifact)),
 						   Integer.parseInt(_newvalues.get(PreferenceName.frameskip)),
-						   Boolean.parseBoolean(_newvalues.get(PreferenceName.collisions)) );
+						   Boolean.parseBoolean(_newvalues.get(PreferenceName.collisions)),
+						   Integer.parseInt(_newvalues.get(PreferenceName.crophoriz)),
+						   Integer.parseInt(_newvalues.get(PreferenceName.cropvert)) );
 
 			if (changed(PreferenceName.machine)) {
 				if (!NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)))) {
@@ -563,14 +566,15 @@ public final class MainActivity extends Activity
 		}
 	}
 	private static native void NativePrefGfx(int aspect, boolean bilinear, int artifact,
-											 int frameskip, boolean collisions);
+											 int frameskip, boolean collisions, int crophoriz, int cropvert);
 	private static native boolean NativePrefMachine(int machine);
 	private static native void NativePrefEmulation(boolean basic, boolean speed, boolean disk,
 												   boolean sector);
 	private static native void NativePrefSoftjoy(boolean softjoy, int up, int down, int left,
 												 int right, int fire);
 	private static native void NativePrefOvl(boolean visible, int size, int opacity, boolean righth,
-						int deadband, int midx, boolean anchor, int anchorx, int anchory, int grace);
+											 int deadband, int midx, boolean anchor, int anchorx, int anchory,
+											 int grace);
 	private static native void NativePrefSound(int mixrate, boolean sound16bit, boolean hqpokey);
 	private static native boolean NativeSetROMPath(String path);
 	private static native String NativeGetJoypos();

@@ -35,6 +35,22 @@
 			android:title="@string/pref_collisions"
 			android:summary="@string/pref_collisions_sum"
 			android:defaultValue="true"/>
+		<name.nick.jubanka.atari800.SliderPreference
+			android:key="crophoriz"
+			android:title="@string/pref_crophoriz"
+			android:summary="@string/pref_crophoriz_sum"
+			android:defaultValue="336"
+			jub:suffix=""
+			jub:min="320"
+			jub:max="336"/>
+		<name.nick.jubanka.atari800.SliderPreference
+			android:key="cropvert"
+			android:title="@string/pref_cropvert"
+			android:summary="@string/pref_cropvert_sum"
+			android:defaultValue="240"
+			jub:suffix=""
+			jub:min="192"
+			jub:max="240"/>
 	</PreferenceCategory>
 
 	<PreferenceCategory android:title="@string/preftitle_emulation">

@@ -37,13 +37,6 @@
 #include "androidinput.h"
 #include "graphics.h"
 
-#define SCREEN_WIDTH   384
-#define SCREEN_HEIGHT  240
-#define DEAD_WIDTH     48
-#define SCANLINE_START (DEAD_WIDTH / 2)
-#define SCANLINE_END   (SCREEN_WIDTH - DEAD_WIDTH / 2)
-#define SCANLINE_LEN   (SCREEN_WIDTH - DEAD_WIDTH)
-
 #define TEXTURE_WIDTH  512
 #define TEXTURE_HEIGHT 256
 
@@ -54,6 +47,7 @@
 int Android_ScreenW = 0;
 int Android_ScreenH = 0;
 int Android_Aspect;
+int Android_CropScreen[] = {0, SCREEN_HEIGHT, SCANLINE_LEN, -SCREEN_HEIGHT};
 static struct RECT screenrect;
 static int screenclear;
 int Android_Bilinear;
@@ -88,9 +82,8 @@ void Android_PaletteUpdate(void)
 
 int Android_InitGraphics(void)
 {
-	const int crop_screen[] = {0, SCREEN_HEIGHT, SCANLINE_LEN, -SCREEN_HEIGHT};
 	const UWORD poly[] = { 0,16, 24,16, 32,0, 8,0 };
-	int i, tmp;
+	int i, tmp, w, h;
 	float tmp2, tmp3;
 
 	/* Allocate stuff */
@@ -133,7 +126,7 @@ int Android_InitGraphics(void)
 	glTexParameterx(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterx(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexEnvx(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, crop_screen);
+	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, Android_CropScreen);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_RGB,
 				 GL_UNSIGNED_SHORT_5_6_5, hicolor_screen);
 
@@ -187,15 +180,17 @@ int Android_InitGraphics(void)
 	/* Aspect correct scaling */
 	memset(&screenrect, 0, sizeof(struct RECT));
 	if ( ((Android_ScreenW > Android_ScreenH) + 1) & Android_Aspect) {
+		w = Android_CropScreen[2];
+		h = -Android_CropScreen[3];
 		/* fit horizontally */
-		tmp2 = ((float) Android_ScreenW) / ((float) SCREEN_WIDTH);
-		screenrect.h = tmp2 * SCREEN_HEIGHT;
-		if (screenrect.b > Android_ScreenH) {
+		tmp2 = ((float) Android_ScreenW) / ((float) w);
+		screenrect.h = tmp2 * h;
+		if (screenrect.h > Android_ScreenH) {
 			/* fit vertically */
-			tmp2 = ((float) Android_ScreenH) / ((float) SCREEN_HEIGHT);
+			tmp2 = ((float) Android_ScreenH) / ((float) h);
 			screenrect.h = Android_ScreenH;
 		}
-		screenrect.w = tmp2 * SCREEN_WIDTH;
+		screenrect.w = tmp2 * w;
 		/* center */
 		tmp = (Android_ScreenW - screenrect.r + 1) / 2;
 		screenrect.l += tmp;
