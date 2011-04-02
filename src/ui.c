@@ -33,6 +33,7 @@
 #include "binload.h"
 #include "cartridge.h"
 #include "cassette.h"
+#include "util.h"
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 #include "colours.h"
 #include "colours_external.h"
@@ -58,7 +59,6 @@
 #include "statesav.h"
 #include "ui.h"
 #include "ui_basic.h"
-#include "util.h"
 #ifdef XEP80_EMULATION
 #include "xep80.h"
 #endif /* XEP80_EMULATION */

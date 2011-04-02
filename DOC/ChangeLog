@@ -1,5 +1,6 @@
 2011-03-19  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement a simple disk management menu
+* ui.c: Rearranged an #include to silence a redefinition warning
 
 
 2011-04-02  Petr Stehlik <pstehlik@sophics.cz>
