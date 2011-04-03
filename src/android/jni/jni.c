@@ -322,7 +322,7 @@ static void JNICALL NativePrefEmulation(JNIEnv *env, jobject this, jboolean basi
 }
 
 static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjoy, int up, int down,
-									  int left, int right, int fire)
+									  int left, int right, int fire, int derotkeys)
 {
 	Android_SoftjoyEnable = softjoy;
 	softjoymap[SOFTJOY_UP][0] = up;
@@ -330,6 +330,7 @@ static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjo
 	softjoymap[SOFTJOY_LEFT][0] = left;
 	softjoymap[SOFTJOY_RIGHT][0] = right;
 	softjoymap[SOFTJOY_FIRE][0] = fire;
+	Android_DerotateKeys = derotkeys;
 }
 
 static void JNICALL NativePrefOvl(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
@@ -388,7 +389,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativePrefGfx",			"(IZIIZII)V",				NativePrefGfx		  },
 		{ "NativePrefMachine",		"(I)Z",						NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZ)V",					NativePrefEmulation	  },
-		{ "NativePrefSoftjoy",		"(ZIIIII)V",				NativePrefSoftjoy	  },
+		{ "NativePrefSoftjoy",		"(ZIIIIII)V",				NativePrefSoftjoy	  },
 		{ "NativePrefOvl",			"(ZIIZIIZIII)V",			NativePrefOvl		  },
 		{ "NativePrefSound",		"(IZZ)V",					NativePrefSound		  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",	NativeSetROMPath	  },

@@ -1,6 +1,7 @@
 2011-04-03  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement new screen cropping preferences,
-             some small port fixes
+             some small port fixes,
+             implement new arrow key derotation workaround for ext. keyboards
 
 
 ** 2.2.0 released on 2011-04-02 at Atariada in Prostejov

@@ -78,6 +78,7 @@ UBYTE softjoymap[SOFTJOY_MAXKEYS][2] =
 	{ '2',       0                   }
 };
 int Android_SoftjoyEnable = 1;
+int Android_DerotateKeys = 0;
 
 void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 {
@@ -333,6 +334,42 @@ void Android_KeyEvent(int k, int s)
 			Android_TrigStatus = Android_TrigStatus & (~(s != 0)) | (s == 0);
 			return;
 		}
+	}
+
+	switch (Android_DerotateKeys) {
+	case 1:		/* derotate left */
+		switch (k) {
+		case KEY_UP:
+			k = KEY_RIGHT;
+			break;
+		case KEY_DOWN:
+			k = KEY_LEFT;
+			break;
+		case KEY_LEFT:
+			k = KEY_UP;
+			break;
+		case KEY_RIGHT:
+			k = KEY_DOWN;
+			break;
+		}
+		break;
+
+	case 2:		/* derotate right */
+		switch (k) {
+		case KEY_UP:
+			k = KEY_LEFT;
+			break;
+		case KEY_DOWN:
+			k = KEY_RIGHT;
+			break;
+		case KEY_LEFT:
+			k = KEY_DOWN;
+			break;
+		case KEY_RIGHT:
+			k = KEY_UP;
+			break;
+		}
+		break;
 	}
 
 	switch (k) {

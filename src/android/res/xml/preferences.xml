@@ -129,6 +129,13 @@
 				android:negativeButtonText="@string/cancel"
 				android:defaultValue="50"/>
 		</PreferenceScreen>
+		<ListPreference
+			android:key="derotkeys"
+			android:title="@string/pref_derotkeys"
+			android:summary="@string/pref_derotkeys_sum"
+			android:entries="@array/derotkeys"
+			android:entryValues="@array/derotkeys_values"
+			android:defaultValue="0"/>
 		<CheckBoxPreference
 			android:key="joyvisible"
 			android:title="@string/pref_joyvisible"
