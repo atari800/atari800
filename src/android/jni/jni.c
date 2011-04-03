@@ -102,19 +102,6 @@ static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 	return (*env)->NewStringUTF(env, Atari800_TITLE);
 }
 
-static void JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this, jstring img, jint drv,
-										  jint reboot)
-{
-	const jbyte *img_utf = NULL;
-
-	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
-	if (!AFILE_OpenFile(img_utf, reboot, drv, FALSE))
-		Log_print("Cannot start image: %s", img_utf);
-	else
-		CPU_cim_encountered = FALSE;
-	(*env)->ReleaseStringUTFChars(env, img, img_utf);
-}
-
 static jobjectArray JNICALL NativeGetDrvFnames(JNIEnv *env, jobject this)
 {
 	jobjectArray arr;
@@ -162,6 +149,23 @@ static jboolean JNICALL NativeIsDisk(JNIEnv *env, jobject this, jstring img)
 	default:
 		return JNI_FALSE;
 	}
+}
+
+static void JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this, jstring img, jint drv,
+										  jint reboot)
+{
+	const jbyte *img_utf = NULL;
+
+	if (reboot) {
+		NativeUnmountAll(env, this);
+		CARTRIDGE_Remove();
+	}
+	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
+	if (!AFILE_OpenFile(img_utf, reboot, drv, FALSE))
+		Log_print("Cannot start image: %s", img_utf);
+	else
+		CPU_cim_encountered = FALSE;
+	(*env)->ReleaseStringUTFChars(env, img, img_utf);
 }
 
 static void JNICALL NativeExit(JNIEnv *env, jobject this)
