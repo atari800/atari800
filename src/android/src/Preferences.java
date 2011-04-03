@@ -36,6 +36,7 @@ import android.net.Uri;
 import android.content.Intent;
 import android.app.AlertDialog;
 import android.webkit.WebView;
+import android.app.Dialog;
 
 
 public final class Preferences extends PreferenceActivity implements Preference.OnPreferenceChangeListener
@@ -43,9 +44,8 @@ public final class Preferences extends PreferenceActivity implements Preference.
 	private static final String TAG = "Preferences";
 	private static final String[] PREF_KEYS = { "up", "down", "left", "right", "fire" };
 	private static final int ACTIVITY_FSEL = 1;
-	private int[] prefValues = new int[5];
+	private static final int DLG_ABOUT = 1;
 	private SharedPreferences _sp;
-	private AlertDialog _aboutdlg = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +71,7 @@ public final class Preferences extends PreferenceActivity implements Preference.
 		findPreference("about").setOnPreferenceClickListener(new OnPreferenceClickListener() {
 			@Override
 			public boolean onPreferenceClick(Preference p) {
-				aboutDialog();
+				showDialog(DLG_ABOUT);
 				return true;
 			}
 		});
@@ -120,17 +120,29 @@ public final class Preferences extends PreferenceActivity implements Preference.
 		}
 	}
 
-	private void aboutDialog() {
-		WebView v = new WebView(this);
-		v.loadData(String.format(getString(R.string.aboutmsg),
-					MainActivity._pkgversion, MainActivity._coreversion), "text/html", "utf-8");
-		v.setVerticalScrollBarEnabled(true);
-		_aboutdlg = new AlertDialog.Builder(this)
-				.setTitle(R.string.about)
-				.setIcon(R.drawable.icon)
-				.setView(v)
-				.setInverseBackgroundForced(true)
-				.setPositiveButton(R.string.ok, null)
-				.show();
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		Dialog d;
+
+		switch (id) {
+		case DLG_ABOUT:
+			WebView v = new WebView(this);
+			v.loadData(String.format(getString(R.string.aboutmsg),
+						MainActivity._pkgversion, MainActivity._coreversion), "text/html", "utf-8");
+			v.setVerticalScrollBarEnabled(true);
+			d = new AlertDialog.Builder(this)
+					.setTitle(R.string.about)
+					.setIcon(R.drawable.icon)
+					.setView(v)
+					.setInverseBackgroundForced(true)
+					.setPositiveButton(R.string.ok, null)
+					.create();
+			break;
+
+		default:
+			d = null;
+		}
+
+		return d;
 	}
 }
