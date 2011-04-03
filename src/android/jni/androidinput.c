@@ -178,11 +178,14 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			INPUT_key_consol = INPUT_CONSOL_NONE;
 			covl->resetcnt = 0;
 		}
-	} else if ( (newtc[PTRJOY].s && newtc[PTRJOY].x > Android_ScreenW - covl->hotlen
-								 && newtc[PTRJOY].y < covl->hotlen)					 ||
-				(newtc[PTRTRG].s && newtc[PTRTRG].x > Android_ScreenW - covl->hotlen
-								 && newtc[PTRTRG].y < covl->hotlen) ) {
+	} else if (newtc[PTRJOY].s && newtc[PTRJOY].x > Android_ScreenW - covl->hotlen
+								 && newtc[PTRJOY].y < covl->hotlen) {
 		covl->ovl_visible = COVL_FADEIN;						  /* touched overlay hotspot */
+		conptr = PTRJOY;
+	} else if (newtc[PTRTRG].s && newtc[PTRTRG].x > Android_ScreenW - covl->hotlen
+								 && newtc[PTRTRG].y < covl->hotlen) {
+		covl->ovl_visible = COVL_FADEIN;
+		conptr = PTRTRG;
 	}
 
 	/* joystick */

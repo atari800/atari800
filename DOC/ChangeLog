@@ -1,5 +1,6 @@
-2011-04-02  Kostas Nakos  <knakos@gmail.com>
-* android/*: Implement new screen cropping preferences
+2011-04-03  Kostas Nakos  <knakos@gmail.com>
+* android/*: Implement new screen cropping preferences,
+             some small port fixes
 
 
 ** 2.2.0 released on 2011-04-02 at Atariada in Prostejov
