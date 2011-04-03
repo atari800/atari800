@@ -88,6 +88,17 @@
 							<br><b>*</b> Added the new <i>Joystick Grace Area</i> preference
 							<br>Thanks to the bug/feature reporters!
 							]]></string>
+	<string name="changesv1_2"><![CDATA[
+							<i>Changes for version 1.2:</i><br>
+							<br><b>*</b> New disk management menu (long press in the file selector)
+							<br><b>*</b> New screen cropping preferences
+							<br><b>*</b> New arrow key derotation preference for external keyboards
+							<br><b>*</b> DPAD-CENTER and tilde (~) now map to Escape key
+							<br><b>*</b> Atari800 core version 2.2.0
+							<br><b>*</b> Fix rare sound-related crashes
+							<br><b>*</b> Various fixes and improvements
+							<br><br>Thanks to the bug/feature reporters!
+							]]></string>
 	<string name="atariupdate">Atari800 Update</string>
 
 	<!-- Preferences -->
