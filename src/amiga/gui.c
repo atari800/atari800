@@ -19,7 +19,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Atari800; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include <stdarg.h>
@@ -66,7 +66,7 @@ struct ClickTabIFace *IClickTab;
 struct CheckBoxIFace *ICheckBox;
 struct GetScreenModeIFace *IGetScreenMode;
 
-#define LIBENTRY(name,version,base,iface) {name,version,(struct Library**)base,(struct Interface**)iface}
+#define LIBENTRY(name,version,base,iface) {name,version,(struct Library**)base,(struct Interface**) iface}
 static struct
 {
 	STRPTR Name;
@@ -170,7 +170,7 @@ void VARARGS68K RefreshSetObjectAttrs(Object *o, Object *wo, ...)
 static Object *main_wnd;
 static Object *displaytype_chooser;
 static Object *screenmode_getscreenmode;
-static Object *bestscreenmode_checkbox;
+//static Object *bestscreenmode_checkbox;
 
 static int quitting;
 
@@ -252,7 +252,7 @@ BOOL Configure(struct AtariConfig *config)
 			WA_SizeGadget, TRUE,
 			WA_IDCMP, IDCMP_INTUITICKS,
 //			WINDOW_IDCMPHook, &idcmpHook,
-//			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE,
+			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
 			WINDOW_ParentGroup, VGroupObject,
 				LAYOUT_SpaceOuter, TRUE,

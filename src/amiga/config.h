@@ -53,7 +53,7 @@
 #define HAVE_CHMOD 1
 
 /* Define to 1 if you have the `clock' function. */
-#undef HAVE_CLOCK
+#define HAVE_CLOCK 1
 
 /* Define to 1 if you have the <direct.h> header file. */
 #undef HAVE_DIRECT_H
@@ -102,13 +102,13 @@
 #undef HAVE_INET_NTOA
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
+#define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `png' library (-lpng). */
-#undef HAVE_LIBPNG
+/*#define HAVE_LIBPNG 1*/
 
 /* Define to 1 if you have the `z' library (-lz). */
-#undef HAVE_LIBZ
+/*#define HAVE_LIBZ 1*/
 
 /* Define to 1 if you have the `localtime' function. */
 #define HAVE_LOCALTIME 1
@@ -214,7 +214,7 @@
 #define HAVE_STRTOL 1
 
 /* Define to 1 if you have the `system' function. */
-#define HAVE_SYSTEM 1
+//#define HAVE_SYSTEM 1
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
@@ -261,7 +261,7 @@
 #define HAVE_TMPNAM 1
 
 /* Define to 1 if you have the `uclock' function. */
-#undef HAVE_UCLOCK
+#define HAVE_UCLOCK 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
@@ -281,8 +281,8 @@
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
 
-/* Define to allow sound interpolation. */
-#undef INTERPOLATE_SOUND
+/* define to enable sound interpolation */
+#define INTERPOLATE_SOUND 1
 
 /* Define to use LINUX joystick. */
 #undef LINUX_JOYSTICK
@@ -334,19 +334,21 @@
 #undef SELECT_TYPE_ARG5
 
 /* Define to allow serial in/out sound. */
-#undef SERIO_SOUND
+#define SERIO_SOUND 1
 
 /* Target: X11 with shared memory extensions. */
 #undef SHM
 
 /* Define to activate sound support. */
 #define SOUND 1
+#define SOUND_GAIN 2
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
 /* Define to allow stereo sound. */
-#undef STEREO_SOUND
+#define STEREO 1
+#define STEREO_SOUND 1
 
 /* Save additional config file options. */
 #define SUPPORTS_ATARI_CONFIGSAVE 1
@@ -388,7 +390,7 @@
 #undef VERY_SLOW
 
 /* Define to allow volume only sound. */
-#define VOL_ONLY_SOUND 1
+#undef VOL_ONLY_SOUND
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
@@ -417,6 +419,10 @@
    code using `volatile' can become incorrect without. Disable with care. */
 #undef volatile
 
-void usleep(unsigned long usec);
-
 #endif
+
+/* Use Signed Samples in POKEY emulation */
+#define SIGNED_SAMPLES 1
+
+/* Define two screen arrays used for switching */
+#define BITPL_SCR 1

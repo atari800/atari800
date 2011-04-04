@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2000 Sebastian Bauer
  * Copyright (c) 2000-2005 Atari800 development team (see DOC/CREDITS)
+ * Newest changes by Ventzislav Tzvetkov - http://drhirudo.hit.bg
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -19,12 +20,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Atari800; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "atari.h"
 #include "ui.h"
 #include "screen.h"
+#include "input.h"
 
 #undef FILENAME_SIZE
 #undef UBYTE
@@ -45,7 +47,6 @@
 #include <exec/memory.h>
 
 #include <devices/ahi.h>
-#include <devices/gameport.h>
 #include <devices/inputevent.h>
 #include <devices/timer.h>
 #include <dos/dos.h>
@@ -68,6 +69,7 @@
 #include <proto/utility.h>
 #include <proto/icon.h>
 #include <proto/wb.h>
+#include <proto/lowlevel.h>
 
 #include <proto/ahi.h>
 #include <proto/cybergraphics.h>
@@ -85,14 +87,34 @@
 
 #include "amiga.h"
 #include "support.h"
+#include "afile.h"
+#include "cfg.h"
+#include "akey.h"
 
 /******************************/
 
-int Atari_Exit (int run_monitor);
+int PLATFORM_Exit (int run_monitor);
 
 /******************************/
 
 #include "Atari800_rev.h"
+
+
+/* joystick emulation
+   keys are loaded from config file
+   Here the defaults if there is no keymap in the config file... */
+
+/* a runtime switch for the kbd_joy_X_enabled vars is in the UI */
+int PLATFORM_kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
+int PLATFORM_kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
+
+/* real joysticks */
+
+static int fd_joystick0 = -1;
+static int fd_joystick1 = -1;
+
+#define minjoy 10000			/* real joystick tolerancy */
+
 
 static char __attribute__((used)) verstag[] = VERSTAG;
 
@@ -123,6 +145,8 @@ static char *display_text[] =
 
 struct timezone;
 
+double fps;
+
 /******************************/
 
 #define ICONIFY_GID 1
@@ -141,6 +165,7 @@ struct Library *KeymapBase;
 struct Library *UtilityBase;
 struct Library *WorkbenchBase;
 struct Library *IconBase;
+struct Library *LowLevelBase;
 
 struct IntuitionIFace *IIntuition;
 struct GraphicsIFace *IGraphics;
@@ -153,17 +178,11 @@ struct KeymapIFace *IKeymap;
 struct UtilityIFace *IUtility;
 struct WorkbenchIFace *IWorkbench;
 struct IconIFace *IIcon;
-
-/* Gameport */
-static struct InputEvent gameport_data;
-static struct MsgPort *gameport_msg_port;
-static struct IOStdReq *gameport_io_msg;
-static BOOL gameport_error;
-static BOOL gameport_msg_sent;
+struct LowLevelIFace *ILowLevel;
 
 /* Timer */
 static struct MsgPort *timer_msg_port;
-static struct timerequest *timer_request;
+static struct TimeRequest *timer_request;
 static BOOL timer_error;
 
 /* Sound */
@@ -174,8 +193,8 @@ static BOOL ahi_current;
 
 static UWORD ahi_fps;                  /* frames per second */
 static UWORD ahi_rupf;                 /* real updates per frame */
-static BYTE *ahi_streambuf[2];
-static ULONG ahi_streamfreq = 44100;   /* playing frequence */
+static UBYTE *ahi_streambuf[2];
+static ULONG ahi_streamfreq = 48000;   /* playing frequence */
 static ULONG ahi_streamlen;
 
 /* App Window */
@@ -220,27 +239,15 @@ struct FileRequester *BinFileReq;
 
 static int PaddlePos;
 
-/**************************************************************************
- usleep() function
-**************************************************************************/
-void usleep(unsigned long usec)
-{
-	timer_request->tr_node.io_Command = TR_ADDREQUEST;
-	timer_request->tr_time.tv_secs = 0;
-	timer_request->tr_time.tv_micro = usec;
-
-	DoIO((struct IORequest*)timer_request);
-}
-
-/**************************************************************************
- gettimeofday() function emulation
-**************************************************************************/
-int gettimeofday(struct timeval *tp, struct timezone *tzp)
-{
-	if (TimerBase)
-		GetSysTime(tp);
-	return 0;
-}
+char atari_disk_dirs[UI_MAX_DIRECTORIES][FILENAME_MAX];
+char atari_rom_dir[FILENAME_MAX];
+char atari_h1_dir[FILENAME_MAX];
+char atari_h2_dir[FILENAME_MAX];
+char atari_h3_dir[FILENAME_MAX];
+char atari_h4_dir[FILENAME_MAX];
+char atari_exe_dir[FILENAME_MAX];
+char atari_state_dir[FILENAME_MAX];
+int disk_directories;
 
 /**************************************************************************
  Returns the Programm's Diskobject
@@ -274,7 +281,7 @@ struct DiskObject *GetProgramObject(void)
 **************************************************************************/
 int Atari_LoadAnyFile(STRPTR name)
 {
-	return Atari800_OpenFile(name, TRUE, 1, FALSE) != AFILE_ERROR;
+	return AFILE_OpenFile(name, TRUE, 1, FALSE) != AFILE_ERROR;
 }
 
 /**************************************************************************
@@ -333,7 +340,7 @@ static struct NewMenu MenuEntries[] =
 	{NM_SUB, "Scalable Window?", NULL, CHECKIT, 1+4, (APTR)MEN_SETTINGS_SCALABLEWINDOW},
 	{NM_SUB, "Custom Screen?", NULL, CHECKIT, 1+2, (APTR)MEN_SETTINGS_CUSTOMSCREEN},
 	{NM_ITEM, "Atari Gameport 0", NULL, 0, 0L, NULL},
-	{NM_SUB, "Gameport 1", NULL, CHECKIT, 2+4+8, (APTR)MEN_SETTINGS_PORT0_GAMEPORT},
+	{NM_SUB, "Gameport 0", NULL, CHECKIT, 2+4+8, (APTR)MEN_SETTINGS_PORT0_GAMEPORT},
 	{NM_SUB, "Numeric Pad", NULL, CHECKIT, 1+4+8, (APTR)MEN_SETTINGS_PORT0_NUMERICPAD},
 	{NM_SUB, "Cursor Keys", NULL, CHECKIT, 1+2+8, (APTR)MEN_SETTINGS_PORT0_CURSORKEYS},
 	{NM_SUB, "Unassigned", NULL, CHECKIT, 1+2+4, (APTR)MEN_SETTINGS_PORT0_UNASSIGNED},
@@ -352,6 +359,7 @@ static struct NewMenu MenuEntries[] =
 **************************************************************************/
 VOID CloseLibraries(void)
 {
+	if (LowLevelBase) CloseLibraryInterface(LowLevelBase, ILowLevel);
 	if (IconBase) CloseLibraryInterface(IconBase, IIcon);
 	if (WorkbenchBase) CloseLibraryInterface(WorkbenchBase, IWorkbench);
 	if (CyberGfxBase) CloseLibraryInterface(CyberGfxBase, ICyberGfx);
@@ -383,125 +391,21 @@ BOOL OpenLibraries(void)
 						{
 							if ((KeymapBase = OpenLibraryInterface("keymap.library",36, &IKeymap)))
 							{
-								CyberGfxBase = OpenLibraryInterface("cybergraphics.library",41, &ICyberGfx);
-
-								if ((WorkbenchBase = OpenLibraryInterface("workbench.library",36, &IWorkbench)))
+								if ((CyberGfxBase = OpenLibraryInterface("cybergraphics.library",41, &ICyberGfx)))
 								{
-									IconBase = OpenLibraryInterface("icon.library",50,&IIcon);
-									return TRUE;
+
+									if ((WorkbenchBase = OpenLibraryInterface("workbench.library",36, &IWorkbench)))
+									{
+										if ((IconBase = OpenLibraryInterface("icon.library",50,&IIcon)))
+										{
+											if ((LowLevelBase = OpenLibraryInterface("lowlevel.library",44,&ILowLevel)))
+											return TRUE;
+										}		
+									}
 								}
 							}
 						}
 					}
-				}
-			}
-		}
-	}
-	return FALSE;
-}
-
-/**************************************************************************
- Close gameport.device
-**************************************************************************/
-VOID FreeJoystick(void)
-{
-	if (gameport_io_msg)
-	{
-		if (!gameport_error)
-		{
-			BYTE type = GPCT_NOCONTROLLER;
-
-			if (gameport_msg_sent)
-			{
-				AbortIO((struct IORequest*)gameport_io_msg);
-				WaitIO((struct IORequest*)gameport_io_msg);
-				gameport_msg_sent = FALSE;
-			}
-
-			gameport_io_msg->io_Command = GPD_SETCTYPE;
-			gameport_io_msg->io_Length = 1;
-			gameport_io_msg->io_Data = (APTR) &type;
-			DoIO ((struct IORequest*)gameport_io_msg);
-
-			CloseDevice((struct IORequest*)gameport_io_msg);
-		}
-
-		DeleteIORequest((struct IORequest*)gameport_io_msg);
-		gameport_io_msg = NULL;
-	}
-	if( gameport_msg_port )
-	{
-		DeleteMsgPort(gameport_msg_port);
-		gameport_msg_port = NULL;
-	}
-}
-
-/**************************************************************************
- Open gameport.device
-**************************************************************************/
-BOOL SetupJoystick(void)
-{
-	if((gameport_msg_port = CreateMsgPort()))
-	{
-		gameport_io_msg = (struct IOStdReq *) CreateIORequest (gameport_msg_port, sizeof(struct IOStdReq));
-		if( gameport_io_msg )
-		{
-			gameport_error = OpenDevice ("gameport.device", 1, (struct IORequest*)gameport_io_msg, 0xFFFF);
-			if(!gameport_error)
-			{
-				BYTE type = 0;
-				int ok = 1;
-				struct GamePortTrigger gpt;
-
-				gameport_io_msg->io_Command = GPD_ASKCTYPE;
-				gameport_io_msg->io_Length = 1;
-				gameport_io_msg->io_Data = (APTR) &type;
-
-				DoIO ((struct IORequest*)gameport_io_msg);
-
-				if (type == (BYTE)GPCT_ALLOCATED)
-				{
-					printf("gameport already in use\n");
-					CloseDevice((struct IORequest*)gameport_io_msg);
-					gameport_error = TRUE;
-					FreeJoystick();
-					return FALSE;
-				}
-
-				type = GPCT_ABSJOYSTICK;
-
-				gameport_io_msg->io_Command = GPD_SETCTYPE;
-				gameport_io_msg->io_Length = 1;
-				gameport_io_msg->io_Data = &type;
-
-				DoIO ((struct IORequest*)gameport_io_msg);
-
-				if (gameport_io_msg->io_Error)
-					ok = 0;
-
-				gpt.gpt_Keys = GPTF_DOWNKEYS | GPTF_UPKEYS;
-				gpt.gpt_Timeout = 0;
-				gpt.gpt_XDelta = 1;
-				gpt.gpt_YDelta = 1;
-
-				gameport_io_msg->io_Command = GPD_SETTRIGGER;
-				gameport_io_msg->io_Length = sizeof (gpt);
-				gameport_io_msg->io_Data = (APTR) &gpt;
-
-				DoIO ((struct IORequest*)gameport_io_msg);
-
-				if (gameport_io_msg->io_Error)
-					ok = 0;
-
-				if (ok)
-				{
-					gameport_io_msg->io_Command = GPD_READEVENT;
-					gameport_io_msg->io_Length = sizeof (struct InputEvent);
-					gameport_io_msg->io_Data = (APTR) &gameport_data;
-					gameport_io_msg->io_Flags = 0;
-					SendIO ((struct IORequest*)gameport_io_msg);
-					gameport_msg_sent = TRUE;
-					return TRUE;
 				}
 			}
 		}
@@ -557,7 +461,7 @@ VOID FreeSound(void)
 **************************************************************************/
 BOOL SetupSound(void)
 {
-	if(tv_mode== TV_PAL)
+	if(Atari800_tv_mode== Atari800_TV_PAL)
 	{
 		ahi_fps = 50;
 		ahi_rupf = 312;
@@ -583,14 +487,14 @@ BOOL SetupSound(void)
 
 #ifdef STEREO_SOUND
 				ahi_streamlen = (ahi_streamfreq/ahi_fps) * 2;
-				Pokey_sound_init(FREQ_17_EXACT, ahi_streamfreq, 2, 0);
+				POKEYSND_Init(POKEYSND_FREQ_17_EXACT, ahi_streamfreq, 2, 0);
 #else
 				ahi_streamlen = ahi_streamfreq/ahi_fps;
-				Pokey_sound_init(FREQ_17_EXACT, ahi_streamfreq, 1, 0);
+				POKEYSND_Init(POKEYSND_FREQ_17_EXACT, ahi_streamfreq, 1, 0);
 #endif
-				if((ahi_streambuf[0] = (STRPTR)AllocVec(ahi_streamlen*3, MEMF_PUBLIC|MEMF_CLEAR)))
+				if((ahi_streambuf[0] = AllocVec(ahi_streamlen*3, MEMF_PUBLIC|MEMF_CLEAR)))
 				{
-					if((ahi_streambuf[1] = (STRPTR)AllocVec(ahi_streamlen*3, MEMF_PUBLIC|MEMF_CLEAR)))
+					if((ahi_streambuf[1] = AllocVec(ahi_streamlen*3, MEMF_PUBLIC|MEMF_CLEAR)))
 					{
 						ahi_request->ahir_Std.io_Message.mn_Node.ln_Pri = -50;
 						ahi_request->ahir_Std.io_Command  = CMD_WRITE;
@@ -762,11 +666,11 @@ LONG SetupDisplay(void)
 	if (DisplayType == DISPLAY_CUSTOMSCREEN)
 	{
 		ULONG ScreenDisplayID;
-		static ULONG colors32[3*256+1];
+		static ULONG colors32[3*256+2];
 
 		ScreenIsCustom = TRUE;
-		ScreenWidth = ATARI_WIDTH - 64;
-		ScreenHeight = ATARI_HEIGHT;
+		ScreenWidth = Screen_WIDTH - 64;
+		ScreenHeight = Screen_HEIGHT;
 		ScreenDepth = 8;
 
 		ScreenDisplayID = DisplayID;
@@ -775,7 +679,7 @@ LONG SetupDisplay(void)
 		colors32[0] = 256 << 16;
 		for (i=0;i<256;i++)
 		{
-			int rgb = colortable[i];
+			int rgb = Colours_table[i];
 			int red,green,blue;
 
 			red = rgb & 0x00ff0000;
@@ -807,8 +711,8 @@ LONG SetupDisplay(void)
 		if ((ScreenMain = LockPubScreen(NULL)))
 		{
 			ScreenIsCustom = FALSE;
-			ScreenWidth = ATARI_WIDTH - 56;
-			ScreenHeight = ATARI_HEIGHT;
+			ScreenWidth = Screen_WIDTH - 56;
+			ScreenHeight = Screen_HEIGHT;
 			ScreenDepth = GetBitMapAttr(ScreenMain->RastPort.BitMap,BMA_DEPTH);
 
 			if (ScreenDepth <= 8 || !CyberGfxBase)
@@ -817,7 +721,7 @@ LONG SetupDisplay(void)
 
 				for(i=0;i<256;i++)
 				{
-					ULONG rgb = colortable[i];
+					ULONG rgb = Colours_table[i];
 					ULONG red = (rgb & 0x00ff0000) >> 16;
 					ULONG green = (rgb & 0x0000ff00) >> 8;
 					ULONG blue = (rgb & 0x000000ff);
@@ -857,7 +761,7 @@ LONG SetupDisplay(void)
 			}
 
 
-			if (!(tempscreendata = (UBYTE*)AllocVec(ATARI_WIDTH*(ATARI_HEIGHT+16),MEMF_CLEAR)))
+			if (!(tempscreendata = (UBYTE*)AllocVec(Screen_WIDTH*(Screen_HEIGHT+16),MEMF_CLEAR)))
 			{
 				UnlockPubScreen(NULL,ScreenMain);
 				ScreenMain = NULL;
@@ -934,14 +838,15 @@ LONG SetupDisplay(void)
 					mi = FindUserData(MenuMain, (APTR)MEN_SETTINGS_PORT0_GAMEPORT);
 					if (mi)
 					{
-						if (gameport_msg_sent) mi->Flags |= ITEMENABLED;
+
+						if (SetJoyPortAttrs(0,SJA_Type, SJA_TYPE_GAMECTLR, NULL )) mi->Flags |= ITEMENABLED;
 						else mi->Flags &= ~ITEMENABLED;
 					}
 
 					mi = FindUserData(MenuMain, (APTR)MEN_SETTINGS_PORT1_GAMEPORT);
 					if (mi)
 					{
-						if (gameport_msg_sent) mi->Flags |= ITEMENABLED;
+						if (SetJoyPortAttrs(1,SJA_Type, SJA_TYPE_GAMECTLR, NULL )) mi->Flags |= ITEMENABLED;
 						else mi->Flags &= ~ITEMENABLED;
 					}
 
@@ -986,13 +891,13 @@ BOOL SetupTimer(void)
 {
 	if((timer_msg_port = CreateMsgPort()))
 	{
-		timer_request = (struct timerequest*)CreateIORequest( timer_msg_port, sizeof( struct timerequest ));
+		timer_request = (struct TimeRequest*)CreateIORequest( timer_msg_port, sizeof( struct TimeRequest ));
 		if( timer_request )
 		{
 			timer_error = OpenDevice( TIMERNAME, UNIT_MICROHZ, (struct IORequest*)timer_request, 0);
 			if( !timer_error )
 			{
-				TimerBase = timer_request->tr_node.io_Device;
+				TimerBase = timer_request->Request.io_Device;
 				if ((ITimer = (struct TimerIFace*)GetInterface((struct Library*)TimerBase,"main",1,NULL)))
 					return TRUE;
 			}
@@ -1037,7 +942,7 @@ VOID Iconify(void)
 		RemoveAppIcon(app_icon);
 
 		if (!SetupDisplay())
-			Atari_Exit(0);
+			PLATFORM_Exit(0);
 	}
 
 	FreeDiskObject(dobj);
@@ -1064,7 +969,7 @@ int HandleMenu(UWORD code)
 							easy.es_StructSize = sizeof(struct EasyStruct);
 							easy.es_Flags = 0;
 							easy.es_Title = "Atari800";
-							easy.es_TextFormat = "Atari800 version %ld.%ld\n\nBased upon " ATARI_TITLE "\nCopyright (C) 2000-2005\nAtari800 development team\nAmiga port done by Sebastian Bauer";
+							easy.es_TextFormat = "Atari800 version %ld.%ld\n\nBased upon " Atari800_TITLE "\nCopyright (C) 2000-2009\nAtari800 development team\nAmiga port done by Sebastian Bauer\nand Ventzislav Tzvetkov";
 							easy.es_GadgetFormat = "Ok";
 
 							EasyRequest( WindowMain, &easy, NULL, VERSION, REVISION);
@@ -1081,7 +986,7 @@ int HandleMenu(UWORD code)
 								if(cd)
 								{
 									BPTR odir = CurrentDir(cd);
-									ReadAtariState(StateFileReq->fr_File,"rb");
+									StateSav_ReadAtariState(StateFileReq->fr_File,"rb");
 									CurrentDir(odir);
 									UnLock(cd);
 								}
@@ -1101,7 +1006,7 @@ int HandleMenu(UWORD code)
 									STRPTR fileName = AddSuffix(StateFileReq->fr_File,".sav");
 									if(fileName)
 									{
-										SaveAtariState(fileName,"wb",TRUE);
+										StateSav_SaveAtariState(fileName,"wb",TRUE);
 										FreeVec(fileName);
 									}
 									CurrentDir(odir);
@@ -1120,7 +1025,7 @@ int HandleMenu(UWORD code)
 								if(cd)
 								{
 									BPTR odir = CurrentDir(cd);
-									BIN_loader(BinFileReq->fr_File);
+									BINLOAD_Loader(BinFileReq->fr_File);
 									CurrentDir(odir);
 									UnLock(cd);
 								}
@@ -1160,7 +1065,7 @@ int HandleMenu(UWORD code)
 						break;
 
 				case	MEN_CONSOLE_RESET:
-							keycode = AKEY_WARMSTART;
+							Atari800_Warmstart();
 							menu_consol = 7;
 							break;
 
@@ -1188,7 +1093,7 @@ int HandleMenu(UWORD code)
 							break;
 
 				case	MEN_CONSOLE_COLDSTART:
-							keycode = AKEY_COLDSTART;
+							Atari800_Coldstart();
 							menu_consol = 7;
 							break;
 
@@ -1211,7 +1116,7 @@ int HandleMenu(UWORD code)
 				case	MEN_SETTINGS_CUSTOMSCREEN: DisplayType = DISPLAY_CUSTOMSCREEN; break;
 
 				case	MEN_SETTINGS_SAVE:
-						RtConfigSave();
+						CFG_WriteConfig();
 						break;
 			}
 
@@ -1525,7 +1430,7 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 		default:
 					{
 						struct InputEvent ev;
-						UBYTE key;
+						char key;
 
 						ev.ie_Class = IECLASS_RAWKEY;
 						ev.ie_SubClass = 0;
@@ -1545,35 +1450,6 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 }
 
 /**************************************************************************
- Called by the emulator.
-**************************************************************************/
-BOOL IsSoundFileOpen(void)
-{
-	return FALSE;
-}
-
-/**************************************************************************
- Called by the emulator.
-**************************************************************************/
-void WriteToSoundFile(void)
-{
-}
-
-/**************************************************************************
- Called by the emulator.
-**************************************************************************/
-void OpenSoundFile(void)
-{
-}
-
-/**************************************************************************
- Called by the emulator.
-**************************************************************************/
-void CloseSoundFile(void)
-{
-}
-
-/**************************************************************************
  Play the sound. Called by the emulator.
 **************************************************************************/
 void Sound_Update(void)
@@ -1585,7 +1461,7 @@ void Sound_Update(void)
 		if (sent[ahi_current])
 			WaitIO(((struct IORequest*)ahi_soundreq[ahi_current]));
 
-		Pokey_process(ahi_streambuf[ahi_current], ahi_streamlen);
+		POKEYSND_Process(ahi_streambuf[ahi_current], ahi_streamlen);
 
 		*ahi_soundreq[ahi_current] = *ahi_request;
 		ahi_soundreq[ahi_current]->ahir_Std.io_Data = ahi_streambuf[ahi_current];
@@ -1611,13 +1487,13 @@ void Atari_ConfigInit(void)
 {
 	int i;
 
-	strcpy(atari_osa_filename, "PROGDIR:ROMs/atariosa.rom");
-	strcpy(atari_osb_filename, "PROGDIR:ROMs/atariosb.rom");
-	strcpy(atari_xlxe_filename, "PROGDIR:ROMs/atarixl.rom");
-	strcpy(atari_basic_filename, "PROGDIR:ROMs/ataribas.rom");
-	atari_5200_filename[0] = '\0';
+	strcpy(CFG_osa_filename, "PROGDIR:ROMs/atariosa.rom");
+	strcpy(CFG_osb_filename, "PROGDIR:ROMs/atariosb.rom");
+	strcpy(CFG_xlxe_filename, "PROGDIR:ROMs/atarixl.rom");
+	strcpy(CFG_basic_filename, "PROGDIR:ROMs/ataribas.rom");
+	CFG_5200_filename[0] = '\0';
 
-	for (i=0;i<MAX_DIRECTORIES;i++)
+	for (i=0;i<UI_MAX_DIRECTORIES;i++)
 		strcpy(atari_disk_dirs[i], "PROGDIR:Disks");
 
 	disk_directories = 1;
@@ -1633,7 +1509,7 @@ void Atari_ConfigInit(void)
 /**************************************************************************
  Set additional Amiga config parameters
 **************************************************************************/
-int Atari_Configure(char* option, char *parameters)
+int PLATFORM_Configure(char* option, char *parameters)
 {
 	int i;
 
@@ -1664,7 +1540,7 @@ int Atari_Configure(char* option, char *parameters)
 /**************************************************************************
  Save additional Amiga config parameters
 **************************************************************************/
-void Atari_ConfigSave(FILE *fp)
+void PLATFORM_ConfigSave(FILE *fp)
 {
 	int i;
 
@@ -1685,11 +1561,11 @@ void Atari_ConfigSave(FILE *fp)
 /**************************************************************************
  Exit the emulator
 **************************************************************************/
-int Atari_Exit (int run_monitor)
+int PLATFORM_Exit (int run_monitor)
 {
 	if (run_monitor)
 	{
-		if (monitor ())
+		if (MONITOR_Run ())
 		{
 			return TRUE;
 		}
@@ -1699,7 +1575,7 @@ int Atari_Exit (int run_monitor)
 	if (app_port) DeleteMsgPort(app_port);
 	FreeTimer();
 	FreeSound();
-	FreeJoystick();
+	SetJoyPortAttrs(0,SJA_Type, SJA_TYPE_AUTOSENSE, NULL);
 
 	if (DiskFileReq) FreeAslRequest(DiskFileReq);
 	if (StateFileReq) FreeAslRequest(StateFileReq);
@@ -1712,7 +1588,7 @@ int Atari_Exit (int run_monitor)
 /**************************************************************************
  Initialize the Amiga specific part of the Atari800 Emulator.
 **************************************************************************/
-void Atari_Initialise (int *argc, unsigned char **argv)
+void PLATFORM_Initialise (int *argc, unsigned char **argv)
 {
 	PaddlePos = 228;
 
@@ -1732,11 +1608,10 @@ void Atari_Initialise (int *argc, unsigned char **argv)
 			{
 				if((BinFileReq = AllocAslRequestTags( ASL_FileRequest,
 										ASLFR_DoPatterns, TRUE,
-										ASLFR_InitialPattern,"#?.(bin|exe)",
+										ASLFR_InitialPattern,"#?.(bin|xex)",
 										ASLFR_InitialDrawer,atari_exe_dir,
 										TAG_DONE )))
 				{
-					SetupJoystick();
 					SetupSound();
 
 					if (SetupTimer())
@@ -1757,11 +1632,11 @@ void Atari_Initialise (int *argc, unsigned char **argv)
 			}
 		}
 	}
-	Atari_Exit(0);
+	PLATFORM_Exit(0);
 }
 
 /**************************************************************************
- Convert src to dest with colortable
+ Convert src to dest with Colours_table
 **************************************************************************/
 static void ScreenData28bit(UBYTE *src, UBYTE *dest, UBYTE *pentable, ULONG width, ULONG height)
 {
@@ -1832,7 +1707,7 @@ static void Scale8Bit(UBYTE *src, LONG srcwidth, LONG srcheight, LONG srcmod,
 		lines = (0x1ffff - (y & 0xffff))/dy;
 
 #if 1
-		WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, WindowMain->RPort, colortable, destx, desty + destheight-i, destwidth, 1, CTABFMT_XRGB8);
+		WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, WindowMain->RPort, Colours_table, destx, desty + destheight-i, destwidth, 1, CTABFMT_XRGB8);
 		for (j=1;j<lines;j++)
 		{
 			ClipBlit(WindowMain->RPort, destx, desty + destheight - i, WindowMain->RPort, destx, desty + destheight - i + j, destwidth, 1, 0xc0);
@@ -1841,12 +1716,12 @@ static void Scale8Bit(UBYTE *src, LONG srcwidth, LONG srcheight, LONG srcmod,
 #else
 		if (lines == 1)
 		{
-			WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, WindowMain->RPort, colortable, destx, desty + destheight-i, destwidth, 1, CTABFMT_XRGB8);
+			WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, WindowMain->RPort, Colours_table, destx, desty + destheight-i, destwidth, 1, CTABFMT_XRGB8);
 		} else
 		{
 			int j;
 
-			WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, &lineRastPort, colortable, 0, 0, destwidth, 1, CTABFMT_XRGB8);
+			WriteLUTPixelArray(lineBuffer, 0, 0, destwidth, &lineRastPort, Colours_table, 0, 0, destwidth, 1, CTABFMT_XRGB8);
 			for (j=0;j<lines;j++)
 			{
 				BltBitMapRastPort(lineBitMap, 0, 0, WindowMain->RPort, destx, desty + destheight - i + j, destwidth, 1, 0xc0);
@@ -1860,22 +1735,22 @@ static void Scale8Bit(UBYTE *src, LONG srcwidth, LONG srcheight, LONG srcmod,
 }
 
 /**************************************************************************
- Do the graphical output (also call the sound play routine)
+ Do the graphical output.
 **************************************************************************/
-void Atari_DisplayScreen(void)
+void PLATFORM_DisplayScreen(void)
 {
-	UBYTE *screen = (UBYTE *) atari_screen;
+	UBYTE *screen = (UBYTE *) Screen_atari;
 	static char fpsbuf[32];
 	int fgpen = 15,bgpen = 0;
 
 	if (DisplayType == DISPLAY_CUSTOMSCREEN)
 	{
-		WriteChunkyPixels(WindowMain->RPort, 0, 0, ATARI_WIDTH - 1 - 64, ATARI_HEIGHT - 1,
-						  screen + 32, ATARI_WIDTH);
+		WriteChunkyPixels(WindowMain->RPort, 0, 0, Screen_WIDTH - 1 - 64, Screen_HEIGHT - 1,
+						  screen + 32, Screen_WIDTH);
 	} else
 	{
-		LONG atariWidth = ATARI_WIDTH - 56;
-		LONG atariHeight = ATARI_HEIGHT;
+		LONG atariWidth = Screen_WIDTH - 56;
+		LONG atariHeight = Screen_HEIGHT;
 		LONG atariX = 28;
 		LONG atariY = 0;
 		LONG offx = WindowMain->BorderLeft;
@@ -1885,8 +1760,8 @@ void Atari_DisplayScreen(void)
 		{
 			if (pensallocated)
 			{
-				ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
-				ScalePixelArray( tempscreendata + atariX, atariWidth, atariHeight, ATARI_WIDTH, WindowMain->RPort, offx, offy,
+				ScreenData28bit(screen, tempscreendata, pentable, Screen_WIDTH, Screen_HEIGHT);
+				ScalePixelArray( tempscreendata + atariX, atariWidth, atariHeight, Screen_WIDTH, WindowMain->RPort, offx, offy,
 										InnerWidth(WindowMain), InnerHeight(WindowMain), RECTFMT_LUT8);
 				fgpen = pentable[fgpen];
 				bgpen = pentable[bgpen];
@@ -1894,7 +1769,7 @@ void Atari_DisplayScreen(void)
 			{
 				if (EnsureScaledDisplay(InnerWidth(WindowMain)))
 				{
-					Scale8Bit(screen + atariX, atariWidth, atariHeight, ATARI_WIDTH,
+					Scale8Bit(screen + atariX, atariWidth, atariHeight, Screen_WIDTH,
 					  WindowMain->RPort, offx, offy, InnerWidth(WindowMain), InnerHeight(WindowMain));
 				}
 			}
@@ -1902,15 +1777,15 @@ void Atari_DisplayScreen(void)
 		{
 			if (pensallocated)
 			{
-				ScreenData28bit(screen, tempscreendata, pentable, ATARI_WIDTH, ATARI_HEIGHT);
+				ScreenData28bit(screen, tempscreendata, pentable, Screen_WIDTH, Screen_HEIGHT);
 				WriteChunkyPixels(WindowMain->RPort, offx, offy, offx + atariWidth - 1, offy + atariHeight - 1,
-							  tempscreendata + atariX, ATARI_WIDTH);
+							  tempscreendata + atariX, Screen_WIDTH);
 
 				fgpen = pentable[fgpen];
 				bgpen = pentable[bgpen];
 			} else
 			{
-				WriteLUTPixelArray(screen, atariX, atariY, ATARI_WIDTH, WindowMain->RPort, colortable, offx, offy, atariWidth, atariHeight, CTABFMT_XRGB8);
+				WriteLUTPixelArray(screen, atariX, atariY, Screen_WIDTH, WindowMain->RPort, Colours_table, offx, offy, atariWidth, atariHeight, CTABFMT_XRGB8);
 			}
 		}
 	}
@@ -1930,12 +1805,13 @@ void Atari_DisplayScreen(void)
 		Move(WindowMain->RPort, WindowMain->Width - 4 - len - WindowMain->BorderRight, 4 + WindowMain->RPort->TxBaseline + WindowMain->BorderTop);
 		Text(WindowMain->RPort, fpsbuf,strlen(fpsbuf));
 	}
+
 }
 
 /**************************************************************************
  Handle Keyboard
 **************************************************************************/
-int Atari_Keyboard (void)
+int PLATFORM_Keyboard (void)
 {
 	static int old_keycode = -1;
 
@@ -2024,9 +1900,9 @@ int Atari_Keyboard (void)
 
 	if (menu_consol != 7)
 	{
-		key_consol = menu_consol;
+		INPUT_key_consol = menu_consol;
 		menu_consol = 7;
-	} else key_consol = keyboard_consol;
+	} else INPUT_key_consol = keyboard_consol;
 
 	if (app_window)
 	{
@@ -2061,104 +1937,107 @@ int Atari_Keyboard (void)
 }
 
 /**************************************************************************
- Handle the joyick.
-**************************************************************************/
-static void Atari_Joystick(int port)
-{
-}
-
-#if 0
-/**************************************************************************
- Handle the joysting
-**************************************************************************/
-static void Atari_Joystick(void)
-{
-  static int old_stick = 0xf;
-
-  if (GetMsg (gameport_msg_port))
-  {
-    WORD x = gameport_data.ie_X;
-    WORD y = gameport_data.ie_Y;
-    UWORD code = gameport_data.ie_Code;
-    int stick=0;
-
-    switch(x)
-    {
-      case  -1:
-            switch (y)
-            {
-              case  -1: stick = 10; break;
-              case   0: stick = 11; break;
-              case   1: stick = 9; break;
-            }
-            break;
-
-      case  0:
-            switch (y)
-            {
-              case  -1: stick = 14; break;
-              case   0: stick = 15; break;
-              case   1: stick = 13; break;
-            }
-            break;
-
-      case  1:
-            switch (y)
-            {
-              case	-1: stick = 6; break;
-              case	 0: stick = 7; break;
-              case	 1: stick = 5; break;
-            }
-            break;
-    }
-    if (stick != 0) old_stick = stick;
-
-    if (code == IECODE_LBUTTON) trig0 = 0;
-    else if (code == (IECODE_LBUTTON | IECODE_UP_PREFIX)) trig0 = 1;
-
-    SendIO ((struct IORequest*)gameport_io_msg);
-  }
-
-  stick0 = old_stick;
-}
-#endif
-
-/**************************************************************************
  Handle Joystick Port (direction)
 **************************************************************************/
-int Atari_PORT (int num)
+int PLATFORM_PORT (ULONG num)
 {
-	Atari_Joystick(num);
-	return stick[num];
 
-#if 0
-	if (num == 0)
-	{
+    ULONG JoyStickState;
 
-/*		if (Controller == controller_Joystick)
-		{
-			Atari_Joystick ();
-			return 0xf0 | stick0;
-		}
-		else
-		{
-			return stick0;
-		}*/
-	}
-	else
+    if (PortSource[num] == PORT_SOURCE_GAMEPORT)
 	{
-		return 0xff;
+	JoyStickState = ReadJoyPort(num);//==0? 1 : 0); // Swap Joystick Ports
+
+	if (JoyStickState & JPF_JOY_LEFT) {
+		if (JoyStickState & JPF_JOY_UP) return INPUT_STICK_UL;
+			else if (JoyStickState & JPF_JOY_DOWN) return INPUT_STICK_LL;
+		else return INPUT_STICK_LEFT;}
+
+	if (JoyStickState & JPF_JOY_RIGHT) {
+		if (JoyStickState & JPF_JOY_UP) return INPUT_STICK_UR;
+			else if (JoyStickState & JPF_JOY_DOWN) return INPUT_STICK_LR;
+		else return INPUT_STICK_RIGHT;}
+
+	if (JoyStickState & JPF_JOY_UP)   return INPUT_STICK_FORWARD;
+	if (JoyStickState & JPF_JOY_DOWN) return INPUT_STICK_BACK;
 	}
-#endif
+    return stick[num];
+
 }
+
+
 
 /**************************************************************************
  Handle Joystick Triggers
 **************************************************************************/
-int Atari_TRIG (int num)
+
+
+static void get_platform_TRIG(UBYTE *t0, UBYTE *t1)
 {
-	Atari_Joystick(num);
-	return trig[num];
+
+	ULONG JoyStickState;
+
+	int trig0, trig1;
+	trig0 = trig1 = 1;
+
+	if (fd_joystick0 != -1) {
+#ifdef LPTJOY
+		int status;
+		ioctl(fd_joystick0, LPGETSTATUS, &status);
+		if (status & 8)
+			*t0 = 1;
+		else
+			*t0 = 0;
+#endif /* LPTJOY */
+	}
+	else {JoyStickState = ReadJoyPort(0);
+		if (JoyStickState != 0) {
+		trig0 = 1;
+
+        if (JoyStickState & JPF_BUTTON_RED) trig0 = 0;
+		}
+		*t0 = trig0;
+	}
+
+	if (fd_joystick1 != -1) {
+#ifdef LPTJOY
+		int status;
+		ioctl(fd_joystick1, LPGETSTATUS, &status);
+		if (status & 8)
+			*t1 = 1;
+		else
+			*t1 = 0;
+#endif /* LPTJOY */
+	}
+	else {
+	JoyStickState = ReadJoyPort(1);
+		if (JoyStickState != 0) {
+		trig1 = 1;
+
+    if (JoyStickState & JPF_BUTTON_RED) trig1 = 0;
+		}
+		*t1 = trig1;
+	}
+}
+
+
+
+int PLATFORM_TRIG(int num)
+{
+
+#ifndef DONT_DISPLAY
+	UBYTE a, b;
+	get_platform_TRIG(&a, &b);
+	switch (num) { // Swapped ports on the Amiga 
+	case 0:
+		return a;
+	case 1:
+		return b;
+	default:
+		break;
+	}
+#endif
+	return 1;
 }
 
 /**************************************************************************
@@ -2168,6 +2047,7 @@ void Sound_Pause(void)
 {
 	if (SoundEnabled)
 	{
+	SoundEnabled=0;
 	}
 }
 
@@ -2176,8 +2056,9 @@ void Sound_Pause(void)
 **************************************************************************/
 void Sound_Continue(void)
 {
-	if (SoundEnabled)
+	if (!SoundEnabled)
 	{
+	SoundEnabled=1;
 	}
 }
 
@@ -2195,8 +2076,8 @@ LONG InsertDisk( LONG Drive )
 	{
 		SIO_Dismount( Drive );
 
-		strcpy( Filename, DiskFileReq->rf_Dir );
-		if (AddPart( Filename, DiskFileReq->rf_File,255) != DOSFALSE )
+		strcpy( Filename, DiskFileReq->fr_Drawer );
+		if (AddPart( Filename, DiskFileReq->fr_File,255) != DOSFALSE )
 		{
 			if (SIO_Mount (Drive, Filename, 0)) /* last parameter is read only */
 			{
@@ -2223,16 +2104,16 @@ LONG InsertROM(LONG CartType)
 			ASLFR_Screen, ScreenMain,
 			TAG_DONE))
 		{
-			if (FileRequester->rf_Dir) Strlcpy(Filename, FileRequester->rf_Dir, sizeof(Filename));
+			if (FileRequester->fr_Drawer) Strlcpy(Filename, FileRequester->fr_Drawer, sizeof(Filename));
 			else Filename[0] = 0;
-			AddPart(Filename, FileRequester->rf_File, sizeof(Filename));
+			AddPart(Filename, FileRequester->fr_File, sizeof(Filename));
 
 			if (CartType == 0)
 			{
 /*				Remove_ROM ();
 				if (Insert_8K_ROM(Filename))
 				{
-					Coldstart ();
+					Atari800_Coldstart ();
 				}*/
 			}
 			else if (CartType == 1)
@@ -2240,7 +2121,7 @@ LONG InsertROM(LONG CartType)
 /*				Remove_ROM ();
 				if (Insert_16K_ROM(Filename))
 				{
-					Coldstart ();
+					Atari800_Coldstart ();
 				}*/
 			}
 			else if (CartType == 2)
@@ -2248,7 +2129,7 @@ LONG InsertROM(LONG CartType)
 /*				Remove_ROM ();
 				if (Insert_OSS_ROM(Filename))
 				{
-					Coldstart ();
+					Atari800_Coldstart ();
 				}*/
 			}
 		}
@@ -2306,7 +2187,7 @@ int main(int argc, char **argv)
 	{
 		LONG LastDisplayType = DisplayType;
 
-		key_code = Atari_Keyboard();
+		INPUT_key_code = PLATFORM_Keyboard();
 
 		if (LastDisplayType != DisplayType)
 		{
@@ -2317,10 +2198,10 @@ int main(int argc, char **argv)
 
 		Atari800_Frame();
 
-		if (display_screen && !SizeVerify)
-			Atari_DisplayScreen();
+		if (Atari800_display_screen && !SizeVerify)
+			PLATFORM_DisplayScreen();
 	}
 
-	Atari_Exit(0);
+	PLATFORM_Exit(0);
 	return 0;
 }

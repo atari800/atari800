@@ -1,18 +1,26 @@
-CROSS=ppc-amigaos-
+# If Kickstart isn't defined, we don't run on AmigaOS
+ifndef Kickstart
+CROSS_COMPILE = ppc-amigaos-
+RM     = rm -R
+MKDIR  = mkdir -p
+else
+RM = delete all
+MKDIR = makedir
+endif
 
-CC = $(CROSS)gcc
-AR = $(CROSS)ar
-RANLIB = $(CROSS)ranlib
-STRIP = $(CROSS)strip
-RM = rm -rf
-MKDIR = mkdir -p
+CC = $(CROSS_COMPILE)gcc
+AR = $(CROSS_COMPILE)ar
+RANLIB = $(CROSS_COMPILE)ranlib
+STRIP = $(CROSS_COMPILE)strip
 
 # -------------------------------------------------------------
 
 TARGET = Atari800
 VERSION = 2
-CFLAGS = -O3 -I. -I.. -I"$(SDK_INCLUDE)" -I"$(AHI_INCLUDE)" -Wall -D__USE_CLIB2_TIMEVAL
-LIBS = -lm
+#CFLAGS = -O3 -I$(AHI_INCLUDE) -I. -I.. -Wall -use-dynld -DSUPPORTS_PLATFORM_CONFIGURE -DSUPPORTS_PLATFORM_CONFIGSAVE 
+CFLAGS = -O3 -I$(AHI_INCLUDE) -I. -I.. -Wall -DSUPPORTS_PLATFORM_CONFIGURE -DSUPPORTS_PLATFORM_CONFIGSAVE
+#LIBS = -lm -lz -lpng -lAuto
+LIBS = -lm -lauto
 
 AMIGASRCS=\
 	amiga.c \
@@ -20,33 +28,50 @@ AMIGASRCS=\
 	support.c
 
 EMUSRCS= \
+	afile.c \
 	antic.c \
 	atari.c \
 	binload.c \
 	cartridge.c \
 	cassette.c \
 	compfile.c \
+	cfg.c \
 	colours.c \
+	colours_external.c \
+	colours_pal.c \
+	colours_ntsc.c \
 	cpu.c \
-	cycle_map.c \
 	devices.c \
+	esc.c \
 	gtia.c \
-	input.c \
 	log.c \
 	memory.c \
 	monitor.c \
-	mzpokeysnd.c \
 	pia.c \
 	pokey.c \
-	pokeysnd.c \
-	remez.c \
 	rtime.c \
-	screen.c \
 	sio.c \
+	util.c \
+	pbi_proto80.c \
+	input.c \
 	statesav.c \
-	ui.c \
 	ui_basic.c \
-	util.c
+	ui.c \
+	screen.c \
+	cycle_map.c \
+	pbi_mio.c \
+	pbi_bb.c \
+	pbi_scsi.c \
+	pokeysnd.c \
+	mzpokeysnd.c \
+	remez.c \
+	sndsave.c \
+	pbi_xld.c \
+	votrax.c \
+	votraxsnd.c \
+	xep80.c \
+	xep80_fonts.c \
+	pbi.c
 
 
 SRCS = $(AMIGASRCS) $(addprefix ../,$(EMUSRCS))
@@ -65,7 +90,6 @@ dirs:
 $(TARGET): $(OBJS) $(AOBJS)
 	$(CC) $(LINK) -o $@.debug $(OBJS) $(AOBJS) $(LIBS)
 	$(STRIP) -R.comment -o $@ $@.debug
-	cp Atari800 "/cygdrive/c/Dokumente und Einstellungen/sba/Eigene Dateien/AmigaOne/Atari800/Atari800"
 
 ppc-amigaos-objs/amiga/%.o: %.S
 	$(CC) -Wa,-mregnames $(AFLAGS) -I$/home/sba/amigaos4/include -c $< -o $@
