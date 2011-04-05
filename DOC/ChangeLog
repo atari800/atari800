@@ -1,3 +1,7 @@
+2011-04-04  James Wilkinson  <james@slor.net>
+* configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)
+
+
 2011-04-03  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement new screen cropping preferences,
              some small port fixes,

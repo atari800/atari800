@@ -745,6 +745,11 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
                     OBJS="$OBJS sdl/sound.o"
                 fi
                 ;;
+            beos)
+                if [ "$a8_target" = "sdl" ]; then
+                    OBJS="$OBJS sdl/sound.o"
+                fi
+                ;;
             *)
                 if [[ "$SUPPORTS_SOUND_OSS" = "yes" ]]; then
                     OBJS="$OBJS sound_oss.o"

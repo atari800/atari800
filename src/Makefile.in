@@ -12,10 +12,12 @@ ifeq (@EXEEXT@,.mips)
 	JAVA = java
 	JAVACFLAGS = @JAVACFLAGS@
 	JAVAC = javac
-else ifeq (@CONFIGURE_TARGET@,android)
-	FINALTARGET = android
 else
-	FINALTARGET = $(TARGET)
+	ifeq (@CONFIGURE_TARGET@,android)
+		FINALTARGET = android
+	else
+		FINALTARGET = $(TARGET)
+	endif
 endif
 
 CFLAGS = @CFLAGS@
@@ -69,7 +71,7 @@ win32/%.o: win32/%.c
 	$(CC) -c -o $@ $(DEFS) -I. $(patsubst -pedantic,,$(patsubst -ansi,,$(CFLAGS))) $<
 
 ide.o: ide.c ide.h ide_internal.h
-	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS:-ansi=-std=c99) $<
+	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS:-ansi=) $<
 
 %.o: %.c
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
