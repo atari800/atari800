@@ -22,6 +22,8 @@
   -keep-aspect 1to1 -> image-aspect square-pixels,
   -[no]-opengl -> -[no]-video-accel
 * src/ui.c: Reorder the Video Mode Settings menu, for better usability.
+* src/sdl/video_gl.c, src/sdl/video_sw.c: Call SDL_SetVideoMode() and display
+  ModeInfo only when necessary.
 
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)

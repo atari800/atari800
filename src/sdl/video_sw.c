@@ -139,12 +139,12 @@ static void SetVideoMode(int w, int h, int bpp)
 	SDL_VIDEO_width = MainScreen->w;
 	SDL_VIDEO_height = MainScreen->h;
 	SDL_VIDEO_vsync_available = (MainScreen->flags & SDL_DOUBLEBUF);
+	ModeInfo();
 }
 
 void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
 {
 	int old_bpp = MainScreen == NULL ? 0 : MainScreen->format->BitsPerPixel;
-	fullscreen = !windowed;
 
 	if (SDL_VIDEO_SW_bpp == 0) {
 		/* Autodetect bpp */
@@ -160,7 +160,12 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 		SDL_VIDEO_SW_bpp = 16;
 	}
 
-	SetVideoMode(res->width, res->height, SDL_VIDEO_SW_bpp);
+	/* Call SetVideoMode only when necessary. */
+	if (MainScreen == NULL || MainScreen->w != res->width || MainScreen->h != res->height ||
+	    fullscreen == windowed || SDL_VIDEO_vsync != ((MainScreen->flags & SDL_DOUBLEBUF) != 0)) { 
+		fullscreen = !windowed;
+		SetVideoMode(res->width, res->height, SDL_VIDEO_SW_bpp);
+	}
 
 	/* BPP changed, or the new display mode's palette is different than the previous one. */
 	if (old_bpp != SDL_VIDEO_SW_bpp
@@ -174,7 +179,6 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 	SDL_Flip(MainScreen);
 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
-	ModeInfo();
 
 	if (mode == VIDEOMODE_MODE_NORMAL) {
 		if (rotate90)

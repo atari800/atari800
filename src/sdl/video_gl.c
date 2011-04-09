@@ -463,6 +463,7 @@ static void SetVideoMode(int w, int h)
 	SDL_VIDEO_width = MainScreen->w;
 	SDL_VIDEO_height = MainScreen->h;
 	SDL_VIDEO_vsync_available = FALSE;
+	ModeInfo();
 }
 
 int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90, int window_resized)
@@ -471,6 +472,7 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 	int context_updated = FALSE; /* TRUE means the OpenGL context has been recreated */
 	currently_rotated = rotate90;
 
+	/* Call SetVideoMode only when necessary. */
 	if (new || MainScreen->w != res->width || MainScreen->h != res->height ||
 	    currently_windowed != windowed || window_resized) {
 		currently_windowed = windowed;
@@ -513,7 +515,6 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 		InitGlTextures();
 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
-	ModeInfo();
 	gl.Viewport(VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
 	SetSubpixelShifts();
 	SetGlDisplayList();
