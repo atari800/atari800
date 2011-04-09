@@ -228,7 +228,8 @@ SDL version options
 -fs-height <y>        Set vertical fullscreen resolution
 -win-width <x>        Set window's horizontal size
 -win-height <y>       Set window's vertical size
--bpp <n>              Set mode bits per pixel (0=desktop depth, 8, 16, 32)
+-bpp <n>              Set mode bits per pixel, only if OpenGL is disabled
+                      (0=desktop depth, 8, 16, 32)
 -horiz-area narrow|tv|full|<number>
                       Set visible horizontal area:
                       narrow: 320 pixels,
@@ -290,6 +291,8 @@ The following 7 items are for -ntscemu only:
 -no-scanlinesint      Disable scanlines interpolation
 -opengl               Enable OpenGL hardware acceleration
 -no-opengl            Disable OpenGL hardware acceleration
+-pixel-format bgr16|rgb16|bgra32|argb32
+                      Choose OpenGL texture format
 -bilinear-filter      Enable OpenGL bilinear filtering
 -no-bilinear-filter   Disable OpenGL bilinear filtering
 -opengl-lib <path>    Use a custom OpenGL shared library

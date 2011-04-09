@@ -392,8 +392,11 @@ Set horizontal size of the window. The window can be later resized manually.
 Set vertical size of the window. The window can be later resized nanually.
 .TP
 \fB-bpp <number-of-bits>
-Host color depth for running in fullscreen. Accepted values are: 0 (use desktop
-depth), 8, 16 and 32.
+Sets image color depth when OpenGL acceleration is disabled. Accepted values
+are: 0 (use desktop depth; this is the default), 8, 16 and 32. Depending on
+the type of graphics hardware, the fullscreen setting and current desktop bit
+depth, either of the values might give the best performance. Note that with
+bit depth set to 16 emulation of colors is slightly less accurate.
 .TP
 \fB-horiz-area narrow|tv|full|<number>
 Set amount of visible screen horizontally. "Narrow" shows 320 pixels, "Tv"
@@ -513,6 +516,12 @@ and stretching the screen.
 .TP
 \fB-no-opengl
 Disable OpenGL hardware acceleration.
+.TP
+\fB-pixel-format bgr16|rgb16|bgra32|argb32
+Choose format of texture data when OpenGL acceleration is enabled. Depending
+on the type of the graphics hardware, either of the values might give the best
+performance. Note that with pixel format set to bgr16 or rgb16, emulation of
+colors is slightly less accurate.
 .TP
 \fB-bilinear-filter
 Enable bilinear filtering of the screen in OpenGL modes.

@@ -1,3 +1,13 @@
+2011-04-09  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* DOC/USAGE, src/atari800.man, src/ui.c, src/atari_ntsc/atari_ntsc.[ch],
+  src/sdl/palette.[ch], src/sdl/video.[ch], src/sdl/video_gl.[ch],
+  src/sdl/video_sw.[ch]: Add option for setting pixel (texture) format
+  in OpenGL mode - depending on graphics hardware, different formats give
+  the best performance. the BPP parameter is now only for software modes.
+  Also fix a bug with bit depth autodetection not working (in Windows BPP
+  autotetection works only before the first call to SDL_SetVideoMode), and use
+  the SDL 8-bit palettised video mode properly.
+
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)
 

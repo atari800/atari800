@@ -5,16 +5,18 @@
 #include <SDL.h>
 
 #include "config.h"
+#include "videomode.h"
+
+/* Native BPP of the desktop. OpenGL modes can be opened only
+   in the native BPP. */
+extern int SDL_VIDEO_native_bpp;
 
 /* Current width/height of the screen/window. */
 extern int SDL_VIDEO_width;
 extern int SDL_VIDEO_height;
 
-/* Get/set videomode bits per pixel. */
-/* Call VIDEOMODE_Update() after changing this variable, or use SDL_VIDEO_SetBpp() instead. */
-extern int SDL_VIDEO_bpp;
-int SDL_VIDEO_SetBpp(int value);
-int SDL_VIDEO_ToggleBpp(void);
+/* Indicates current display mode */
+extern VIDEOMODE_MODE_t SDL_VIDEO_current_display_mode;
 
 #if HAVE_OPENGL
 /* Indicates whenther OpenGL is available on the host machine. */

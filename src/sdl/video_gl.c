@@ -27,6 +27,7 @@
 
 #include "af80.h"
 #include "atari.h"
+#include "cfg.h"
 #include "colours.h"
 #include "config.h"
 #include "filter_ntsc.h"
@@ -49,7 +50,8 @@ static int currently_rotated = FALSE;
 static int bpp_32 = FALSE;
 
 int SDL_VIDEO_GL_filtering = 0;
-/*int SDL_VIDEO_GL_sync = 0;*/
+int SDL_VIDEO_GL_pixel_format = SDL_VIDEO_GL_PIXEL_FORMAT_BGR16;
+/* int SDL_VIDEO_GL_sync = 0; */
 
 /* Path to the OpenGL shared library. */
 static char const *library_path = NULL;
@@ -93,10 +95,6 @@ struct
 } gl;
 
 static SDL_Surface *MainScreen = NULL;
-static union {
-	Uint16 bpp16[256];	/* 16-bit palette */
-	Uint32 bpp32[256];	/* 32-bit palette */
-} palette;
 
 static void DisplayNormal(GLvoid *dest);
 static void DisplayNTSCEmu(GLvoid *dest);
@@ -111,8 +109,6 @@ static void (* const blit_funcs[VIDEOMODE_MODE_SIZE])(GLvoid *) = {
 	&DisplayProto80,
 	&DisplayAF80
 };
-
-static VIDEOMODE_MODE_t current_display_mode = VIDEOMODE_MODE_NORMAL;
 
 /* GL textures - [0] is screen, [1] is scanlines. */
 static GLuint textures[2];
@@ -142,6 +138,29 @@ static int paint_scanlines;
 
 /* GL Display List for placing the screen and scanline textures on the screen. */
 static GLuint screen_dlist;
+
+static char const * const pixel_format_cfg_strings[SDL_VIDEO_GL_PIXEL_FORMAT_SIZE] = {
+	"BGR16",
+	"RGB16",
+	"BGRA32",
+	"ARGB32"
+};
+
+typedef struct pixel_format_t {
+	GLint internal_format;
+	GLenum format;
+	GLenum type;
+	Uint32 black_pixel;
+	void(*calc_pal_func)(VIDEOMODE_MODE_t mode);
+	void(*ntsc_blit_func)(atari_ntsc_t const*, ATARI_NTSC_IN_T const*, long, int, int, void*, long);
+} pixel_format_t;
+
+pixel_format_t const pixel_formats[4] = {
+	{ GL_RGB5, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, 0x0000, &SDL_PALETTE_Calculate16_B5G6R5, &atari_ntsc_blit_bgr16 }, 
+	{ GL_RGB5, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, 0x0000, &SDL_PALETTE_Calculate16_R5G6B5, &atari_ntsc_blit_rgb16 }, /* NVIDIA 16-bit */
+	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, 0x000000ff, &SDL_PALETTE_Calculate32_B8G8R8A8, &atari_ntsc_blit_bgra32 },
+	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0xff000000, &SDL_PALETTE_Calculate32_A8R8G8B8, &atari_ntsc_blit_argb32 } /* NVIDIA 32-bit */
+};
 
 /* Conversion between function pointers and 'void *' is forbidden in
    ISO C, but unfortunately unavoidable when using SDL_GL_GetProcAddress.
@@ -218,17 +237,12 @@ static void CleanGlContext(void)
 /* Sets up the initial parameters of all used textures and the PBO. */
 static void InitGlTextures(void)
 {
-	/* Screen texture. */
+	/* Texture for the display surface. */
 	gl.BindTexture(GL_TEXTURE_2D, textures[0]);
-	if (bpp_32)
-		gl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1024, 512, 0,
-		              GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV,
-		              NULL);
-	else
-		gl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGB5, 1024, 512, 0,
-		              GL_RGB, GL_UNSIGNED_SHORT_5_6_5,
-		              NULL);
-	/* Scanlines texture. */
+	gl.TexImage2D(GL_TEXTURE_2D, 0, pixel_formats[SDL_VIDEO_GL_pixel_format].internal_format, 1024, 512, 0,
+	              pixel_formats[SDL_VIDEO_GL_pixel_format].format, pixel_formats[SDL_VIDEO_GL_pixel_format].type,
+	              NULL);
+	/* Texture for scanlines. */
 	gl.BindTexture(GL_TEXTURE_2D, textures[1]);
 	if (bpp_32)
 		gl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 2, 0,
@@ -257,63 +271,13 @@ void SDL_VIDEO_GL_Cleanup(void)
 /* Calculate the palette in the 32-bit BGRA format, or 16-bit BGR 5-6-5 format. */
 static void CalcPalette(VIDEOMODE_MODE_t mode)
 {
-	int *pal = SDL_PALETTE_tab[mode].palette;
-	int size = SDL_PALETTE_tab[mode].size;
-	int i;
-	for (i = 0; i < size; i++) {
-		int rgb = pal[i];
-		if (bpp_32) /* BGRA 8-8-8-8-REV */
-			palette.bpp32[i] = rgb | 0xff000000;
-		else /* RGB 5-6-5 */
-			palette.bpp16[i] = ((rgb & 0x00f80000) >> 8) | ((rgb & 0x0000fc00) >> 5) | ((rgb & 0x000000f8) >> 3);
-	}
+	if (mode != VIDEOMODE_MODE_NTSC_FILTER)
+		(*pixel_formats[SDL_VIDEO_GL_pixel_format].calc_pal_func)(mode);
 }
 
 void SDL_VIDEO_GL_PaletteUpdate(void)
 {
-	CalcPalette(current_display_mode);
-	if (current_display_mode == VIDEOMODE_MODE_NTSC_FILTER)
-		FILTER_NTSC_Update(FILTER_NTSC_emu);
-}
-
-static void ModeInfo(void)
-{
-	char *fullstring;
-	if (currently_windowed)
-		fullstring = "windowed";
-	else
-		fullstring = "fullscreen";
-	Log_print("Video Mode: %dx%dx%d %s, texture depth: %dbpp", MainScreen->w, MainScreen->h,
-		   MainScreen->format->BitsPerPixel, fullstring, SDL_VIDEO_bpp);
-}
-
-static void SetVideoMode(int w, int h)
-{
-	Uint32 flags = SDL_OPENGL | (currently_windowed ? SDL_RESIZABLE : SDL_FULLSCREEN);
-	/* In OpenGL mode, the SDL screen is always opened with the default
-	   desktop depth - it proved to be the most compatible way. */
-	MainScreen = SDL_SetVideoMode(w, h, 0, flags);
-	if (MainScreen == NULL) {
-		Log_print("Setting Video Mode: %dx%dx0 failed: %s", w, h, SDL_GetError());
-		Log_flushlog();
-		exit(-1);
-	}
-	SDL_VIDEO_width = MainScreen->w;
-	SDL_VIDEO_height = MainScreen->h;
-}
-
-static void UpdateNtscFilter(VIDEOMODE_MODE_t mode)
-{
-	if (mode != VIDEOMODE_MODE_NTSC_FILTER && FILTER_NTSC_emu != NULL) {
-		/* Turning filter off */
-		FILTER_NTSC_Delete(FILTER_NTSC_emu);
-		FILTER_NTSC_emu = NULL;
-	}
-	else if (mode == VIDEOMODE_MODE_NTSC_FILTER && FILTER_NTSC_emu == NULL) {
-		/* Turning filter on */
-		FILTER_NTSC_emu = FILTER_NTSC_New();
-		FILTER_NTSC_Update(FILTER_NTSC_emu);
-	}
+	CalcPalette(SDL_VIDEO_current_display_mode);
 }
 
 /* Set parameters that will shift the screen and scanline textures a bit,
@@ -420,7 +384,7 @@ static void SetGlDisplayList(void)
 }
 
 /* Resets the screen texture/PBO to all-black. */
-static void CleanTexture(void)
+static void CleanDisplayTexture(void)
 {
 	GLvoid *ptr;
 	gl.BindTexture(GL_TEXTURE_2D, textures[0]);
@@ -435,7 +399,7 @@ static void CleanTexture(void)
 		unsigned int i;
 		for (i = 0; i < 1024*512; i ++)
 			/* Set alpha channel to full opacity. */
-			tex[i] = 0xff000000;
+			tex[i] = pixel_formats[SDL_VIDEO_GL_pixel_format].black_pixel;
 
 	} else
 		memset(ptr, 0x00, 1024*512*sizeof(Uint16));
@@ -473,10 +437,31 @@ static int InitGlPbo(void)
 	return TRUE;
 }
 
+static void ModeInfo(void)
+{
+	char *fullstring = currently_windowed ? "windowed" : "fullscreen";
+	Log_print("Video Mode: %dx%dx%d %s, pixel format: %s", MainScreen->w, MainScreen->h,
+		   MainScreen->format->BitsPerPixel, fullstring, pixel_format_cfg_strings[SDL_VIDEO_GL_pixel_format]);
+}
+
+static void SetVideoMode(int w, int h)
+{
+	Uint32 flags = SDL_OPENGL | (currently_windowed ? SDL_RESIZABLE : SDL_FULLSCREEN);
+	/* In OpenGL mode, the SDL screen is always opened with the default
+	   desktop depth - it is the most compatible way. */
+	MainScreen = SDL_SetVideoMode(w, h, SDL_VIDEO_native_bpp, flags);
+	if (MainScreen == NULL) {
+		Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, SDL_VIDEO_native_bpp, SDL_GetError());
+		Log_flushlog();
+		exit(-1);
+	}
+	SDL_VIDEO_width = MainScreen->w;
+	SDL_VIDEO_height = MainScreen->h;
+}
+
 int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90, int window_resized)
 {
 	int new = MainScreen == NULL; /* TRUE means the SDL/GL screen was not yet initialised */
-	int bpp_changed; /* TRUE means the BPP setting got changed */
 	int context_updated = FALSE; /* TRUE means the OpenGL context has been recreated */
 	currently_rotated = rotate90;
 
@@ -507,35 +492,24 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 		context_updated = TRUE;
 	}
 
-	if (SDL_VIDEO_bpp == 0)
-		SDL_VIDEO_bpp = MainScreen->format->BitsPerPixel;
-	if (SDL_VIDEO_bpp != 16 && SDL_VIDEO_bpp != 32)
-		SDL_VIDEO_bpp = 16;
-	bpp_changed = (bpp_32 && SDL_VIDEO_bpp != 32) || (!bpp_32 && SDL_VIDEO_bpp != 16);
-	
-	if (new || bpp_changed) {
+	if (new) {
 		FreeTexture();
-		bpp_32 = SDL_VIDEO_bpp == 32;
 		AllocTexture();
 	}
 	
-	if (context_updated || bpp_changed)
+	if (new
+	    || SDL_PALETTE_tab[mode].palette != SDL_PALETTE_tab[SDL_VIDEO_current_display_mode].palette)
+		CalcPalette(mode);
+	
+	if (context_updated)
 		InitGlTextures();
 	
-	if (new || bpp_changed
-	    || SDL_PALETTE_tab[mode].palette != SDL_PALETTE_tab[current_display_mode].palette) {
-		CalcPalette(mode);
-	}
-
-	UpdateNtscFilter(mode);
-	current_display_mode = mode;
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
 	ModeInfo();
 	gl.Viewport(VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
 	SetSubpixelShifts();
 	SetGlDisplayList();
-	CleanTexture();
-	SDL_VIDEO_GL_DisplayScreen();
+	CleanDisplayTexture();
 	return TRUE;
 }
 
@@ -549,35 +523,27 @@ static void DisplayNormal(GLvoid *dest)
 {
 	Uint8 *screen = (Uint8 *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
 	if (bpp_32)
-		SDL_VIDEO_BlitNormal32((Uint32*)dest, screen, VIDEOMODE_actual_width, VIDEOMODE_src_width, VIDEOMODE_src_height, palette.bpp32);
+		SDL_VIDEO_BlitNormal32((Uint32*)dest, screen, VIDEOMODE_actual_width, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp32);
 	else {
 		int pitch;
 		if (VIDEOMODE_actual_width & 0x01)
 			pitch = VIDEOMODE_actual_width / 2 + 1;
 		else
 			pitch = VIDEOMODE_actual_width / 2;
-		SDL_VIDEO_BlitNormal16((Uint32*)dest, screen, pitch, VIDEOMODE_src_width, VIDEOMODE_src_height, palette.bpp16);
+		SDL_VIDEO_BlitNormal16((Uint32*)dest, screen, pitch, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp16);
 	}
 }
 
 static void DisplayNTSCEmu(GLvoid *dest)
 {
-	if (bpp_32)
-		atari_ntsc_blit32(FILTER_NTSC_emu,
-		                  (ATARI_NTSC_IN_T *) ((UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left),
-		                  Screen_WIDTH,
-		                  VIDEOMODE_src_width,
-		                  VIDEOMODE_src_height,
-		                  (Uint32*)dest,
-		                  VIDEOMODE_actual_width * 4);
-	else
-		atari_ntsc_blit16(FILTER_NTSC_emu,
-		                  (ATARI_NTSC_IN_T *) ((UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left),
-		                  Screen_WIDTH,
-		                  VIDEOMODE_src_width,
-		                  VIDEOMODE_src_height,
-		                  (Uint16*)dest,
-		                  VIDEOMODE_actual_width * 2);
+	(*pixel_formats[SDL_VIDEO_GL_pixel_format].ntsc_blit_func)(
+		FILTER_NTSC_emu,
+		(ATARI_NTSC_IN_T *) ((UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left),
+		Screen_WIDTH,
+		VIDEOMODE_src_width,
+		VIDEOMODE_src_height,
+		dest,
+		VIDEOMODE_actual_width * (bpp_32 ? 4 : 2));
 }
 
 static void DisplayXEP80(GLvoid *dest)
@@ -593,9 +559,9 @@ static void DisplayXEP80(GLvoid *dest)
 
 	screen += XEP80_SCRN_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
 	if (bpp_32)
-		SDL_VIDEO_BlitXEP80_32((Uint32*)dest, screen, VIDEOMODE_actual_width, VIDEOMODE_src_width, VIDEOMODE_src_height, palette.bpp32);
+		SDL_VIDEO_BlitXEP80_32((Uint32*)dest, screen, VIDEOMODE_actual_width, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp32);
 	else
-		SDL_VIDEO_BlitXEP80_16((Uint32*)dest, screen, VIDEOMODE_actual_width / 2, VIDEOMODE_src_width, VIDEOMODE_src_height, palette.bpp16);
+		SDL_VIDEO_BlitXEP80_16((Uint32*)dest, screen, VIDEOMODE_actual_width / 2, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp16);
 }
 
 static void DisplayProto80(GLvoid *dest)
@@ -605,9 +571,9 @@ static void DisplayProto80(GLvoid *dest)
 	int first_line = VIDEOMODE_src_offset_top;
 	int last_line = first_line + VIDEOMODE_src_height;
 	if (bpp_32)
-		SDL_VIDEO_BlitProto80_32((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width, first_line, last_line, palette.bpp32);
+		SDL_VIDEO_BlitProto80_32((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width, first_line, last_line, SDL_PALETTE_buffer.bpp32);
 	else
-		SDL_VIDEO_BlitProto80_16((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width/2, first_line, last_line, palette.bpp16);
+		SDL_VIDEO_BlitProto80_16((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width/2, first_line, last_line, SDL_PALETTE_buffer.bpp16);
 }
 
 static void DisplayAF80(GLvoid *dest)
@@ -622,9 +588,9 @@ static void DisplayAF80(GLvoid *dest)
 	if (AF80Frame == 60) AF80Frame = 0;
 	blink = AF80Frame >= 30;
 	if (bpp_32)
-		SDL_VIDEO_BlitAF80_32((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width, first_line, last_line, blink, palette.bpp32);
+		SDL_VIDEO_BlitAF80_32((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width, first_line, last_line, blink, SDL_PALETTE_buffer.bpp32);
 	else
-		SDL_VIDEO_BlitAF80_16((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width/2, first_line, last_line, blink, palette.bpp16);
+		SDL_VIDEO_BlitAF80_16((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width/2, first_line, last_line, blink, SDL_PALETTE_buffer.bpp16);
 }
 
 void SDL_VIDEO_GL_DisplayScreen(void)
@@ -634,27 +600,17 @@ void SDL_VIDEO_GL_DisplayScreen(void)
 		GLvoid *ptr;
 		gl.BindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, screen_pbo);
 		ptr = gl.MapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
-		(*blit_funcs[current_display_mode])(ptr);
+		(*blit_funcs[SDL_VIDEO_current_display_mode])(ptr);
 		gl.UnmapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB);
-		if (bpp_32)
-			gl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, VIDEOMODE_actual_width, VIDEOMODE_src_height,
-			                 GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV,
-			                 NULL);
-		else
-			gl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, VIDEOMODE_actual_width, VIDEOMODE_src_height,
-			                 GL_RGB, GL_UNSIGNED_SHORT_5_6_5,
-			                 NULL);
+		gl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, VIDEOMODE_actual_width, VIDEOMODE_src_height,
+		                 pixel_formats[SDL_VIDEO_GL_pixel_format].format, pixel_formats[SDL_VIDEO_GL_pixel_format].type,
+		                 NULL);
 		gl.BindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 	} else {
-		(*blit_funcs[current_display_mode])(screen_texture);
-		if (bpp_32)
-			gl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, VIDEOMODE_actual_width, VIDEOMODE_src_height,
-			                 GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV,
-			                 screen_texture);
-		else
-			gl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, VIDEOMODE_actual_width, VIDEOMODE_src_height,
-			                 GL_RGB, GL_UNSIGNED_SHORT_5_6_5,
-			                 screen_texture);
+		(*blit_funcs[SDL_VIDEO_current_display_mode])(screen_texture);
+		gl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, VIDEOMODE_actual_width, VIDEOMODE_src_height,
+		                 pixel_formats[SDL_VIDEO_GL_pixel_format].format, pixel_formats[SDL_VIDEO_GL_pixel_format].type,
+		                 screen_texture);
 	}
 	gl.CallList(screen_dlist);
 	SDL_GL_SwapBuffers();
@@ -662,16 +618,24 @@ void SDL_VIDEO_GL_DisplayScreen(void)
 
 int SDL_VIDEO_GL_ReadConfig(char *option, char *parameters)
 {
-	if (strcmp(option, "BILINEAR_FILTERING") == 0)
+	if (strcmp(option, "PIXEL_FORMAT") == 0) {
+		int i = CFG_MatchTextParameter(parameters, pixel_format_cfg_strings, SDL_VIDEO_GL_PIXEL_FORMAT_SIZE);
+		if (i < 0)
+			return FALSE;
+		SDL_VIDEO_GL_pixel_format = i;
+	}
+	else if (strcmp(option, "BILINEAR_FILTERING") == 0)
 		return (SDL_VIDEO_GL_filtering = Util_sscanbool(parameters)) != -1;
 /*	if (strcmp(option, "SDL_VIDEO_GL_SYNC") == 0)
 		return (SDL_VIDEO_GL_sync = Util_sscanbool(parameters)) != -1;*/
 	else
 		return FALSE;
+	return TRUE;
 }
 
 void SDL_VIDEO_GL_WriteConfig(FILE *fp)
 {
+	fprintf(fp, "PIXEL_FORMAT=%s\n", pixel_format_cfg_strings[SDL_VIDEO_GL_pixel_format]);
 	fprintf(fp, "BILINEAR_FILTERING=%d\n", SDL_VIDEO_GL_filtering);
 /*	fprintf(fp, "SDL_VIDEO_GL_SYNC=%d\n", SDL_VIDEO_GL_sync);*/
 }
@@ -732,7 +696,16 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
-		if (strcmp(argv[i], "-bilinear-filter") == 0)
+		int a_i = FALSE;           /* error, argument invalid! */
+
+		if (strcmp(argv[i], "-pixel-format") == 0) {
+			if (i_a) {
+				if ((SDL_VIDEO_GL_pixel_format = CFG_MatchTextParameter(argv[++i], pixel_format_cfg_strings, SDL_VIDEO_GL_PIXEL_FORMAT_SIZE)) < 0)
+					a_i = TRUE;
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-bilinear-filter") == 0)
 			SDL_VIDEO_GL_filtering = TRUE;
 		else if (strcmp(argv[i], "-no-bilinear-filter") == 0)
 			SDL_VIDEO_GL_filtering = FALSE;
@@ -748,6 +721,8 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
+				Log_print("\t-pixel-format bgr16|rgb16|bgra32|argb32");
+				Log_print("\t                     Set internal pixel format (affects performance)");
 				Log_print("\t-bilitear-filter     Enable OpenGL bilinear filtering");
 				Log_print("\t-no-bilitear-filter  Disable OpenGL bilinear filtering");
 /*				Log_print("\t-sync-video          Synchronize display to vertical blank (OpenGL only)");
@@ -759,12 +734,17 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 		if (a_m) {
 			Log_print("Missing argument for '%s'", argv[i]);
 			return FALSE;
+		} else if (a_i) {
+			Log_print("Invalid argument for '%s'", argv[--i]);
+			return FALSE;
 		}
 	}
 	*argc = j;
 
 	if (help_only)
 		return TRUE;
+
+	bpp_32 = SDL_VIDEO_GL_pixel_format >= SDL_VIDEO_GL_PIXEL_FORMAT_BGRA32;
 
 	SDL_VIDEO_opengl_available = InitGl();
 	if (SDL_VIDEO_opengl_available)
@@ -773,6 +753,31 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 		Log_print("OpenGL not available.");
 
 	return TRUE;
+}
+
+void SDL_VIDEO_GL_SetPixelFormat(int value)
+{
+	SDL_VIDEO_GL_pixel_format = value;
+	if (MainScreen != NULL) {
+		int new_bpp_32 = value >= SDL_VIDEO_GL_PIXEL_FORMAT_BGRA32;
+		if (new_bpp_32 != bpp_32)
+		{
+			FreeTexture();
+			bpp_32 = new_bpp_32;
+			AllocTexture();
+		}
+		CalcPalette(SDL_VIDEO_current_display_mode);
+		InitGlTextures();
+		CleanDisplayTexture();
+	}
+	else
+		bpp_32 = value;
+
+}
+
+void SDL_VIDEO_GL_TogglePixelFormat(void)
+{
+	SDL_VIDEO_GL_SetPixelFormat((SDL_VIDEO_GL_pixel_format + 1) % SDL_VIDEO_GL_PIXEL_FORMAT_SIZE);
 }
 
 void SDL_VIDEO_GL_SetFiltering(int value)

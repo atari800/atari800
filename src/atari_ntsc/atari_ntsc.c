@@ -123,65 +123,9 @@ void atari_ntsc_init( atari_ntsc_t* ntsc, atari_ntsc_setup_t const* setup )
 
 #ifndef ATARI_NTSC_NO_BLITTERS
 
-/* Atari change: no alternating burst phases - remove burst_phase parameter. */
-void atari_ntsc_blit( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, long in_row_width,
-		int in_width, int in_height, void* rgb_out, long out_pitch )
-{
-	int chunk_count = (in_width - 1) / atari_ntsc_in_chunk;
-	for ( ; in_height; --in_height )
-	{
-		ATARI_NTSC_IN_T const* line_in = input;
-		/* Atari change: no alternating burst phases - remove burst_phase parameter; adjust to 4/7 pixel ratio. */
-		ATARI_NTSC_BEGIN_ROW( ntsc,
-				atari_ntsc_black, atari_ntsc_black, atari_ntsc_black, ATARI_NTSC_ADJ_IN( *line_in ) );
-		atari_ntsc_out_t* restrict line_out = (atari_ntsc_out_t*) rgb_out;
-		int n;
-		++line_in;
-
-		for ( n = chunk_count; n; --n )
-		{
-			/* order of input and output pixels must not be altered */
-			ATARI_NTSC_COLOR_IN( 0, ATARI_NTSC_ADJ_IN( line_in [0] ) );
-			ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_OUT_DEPTH );
-			ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_OUT_DEPTH );
-
-			ATARI_NTSC_COLOR_IN( 1, ATARI_NTSC_ADJ_IN( line_in [1] ) );
-			ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_OUT_DEPTH );
-			ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_OUT_DEPTH );
-
-			ATARI_NTSC_COLOR_IN( 2, ATARI_NTSC_ADJ_IN( line_in [2] ) );
-			ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_OUT_DEPTH );
-			ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_OUT_DEPTH );
-
-			ATARI_NTSC_COLOR_IN( 3, ATARI_NTSC_ADJ_IN( line_in [3] ) );
-			ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_OUT_DEPTH );
-
-			line_in  += 4;
-			line_out += 7;
-		}
-
-		/* finish final pixels */
-		ATARI_NTSC_COLOR_IN( 0, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_OUT_DEPTH );
-		ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_OUT_DEPTH );
-
-		ATARI_NTSC_COLOR_IN( 1, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_OUT_DEPTH );
-		ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_OUT_DEPTH );
-
-		ATARI_NTSC_COLOR_IN( 2, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_OUT_DEPTH );
-		ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_OUT_DEPTH );
-
-		ATARI_NTSC_COLOR_IN( 3, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_OUT_DEPTH );
-
-		input += in_row_width;
-		rgb_out = (char*) rgb_out + out_pitch;
-	}
-}
-
-/* Atari change: added blitters for 16bpp, 32bpp(ARGB), and 24bpp(0RGB) screen formats. */
+/* Atari change: no alternating burst phases - remove burst_phase parameter.
+   Also removed the atari_ntsc_blit function and added specific blitters for various
+   pixel formats. */
 
 #include <limits.h>
 
@@ -199,7 +143,7 @@ void atari_ntsc_blit( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, lo
 	#error "Need 32-bit int type"
 #endif
 
-void atari_ntsc_blit16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, long in_row_width,
+void atari_ntsc_blit_rgb16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, long in_row_width,
 		int in_width, int in_height, void* rgb_out, long out_pitch )
 {
 	int chunk_count = (in_width - 1) / atari_ntsc_in_chunk;
@@ -217,19 +161,19 @@ void atari_ntsc_blit16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, 
 		{
 			/* order of input and output pixels must not be altered */
 			ATARI_NTSC_COLOR_IN( 0, ATARI_NTSC_ADJ_IN( line_in [0] ) );
-			ATARI_NTSC_RGB_OUT( 0, line_out [0], 16 );
-			ATARI_NTSC_RGB_OUT( 1, line_out [1], 16 );
+			ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_RGB_FORMAT_RGB16 );
+			ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_RGB_FORMAT_RGB16 );
 
 			ATARI_NTSC_COLOR_IN( 1, ATARI_NTSC_ADJ_IN( line_in [1] ) );
-			ATARI_NTSC_RGB_OUT( 2, line_out [2], 16 );
-			ATARI_NTSC_RGB_OUT( 3, line_out [3], 16 );
+			ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_RGB_FORMAT_RGB16 );
+			ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_RGB_FORMAT_RGB16 );
 
 			ATARI_NTSC_COLOR_IN( 2, ATARI_NTSC_ADJ_IN( line_in [2] ) );
-			ATARI_NTSC_RGB_OUT( 4, line_out [4], 16 );
-			ATARI_NTSC_RGB_OUT( 5, line_out [5], 16 );
+			ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_RGB_FORMAT_RGB16 );
+			ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_RGB_FORMAT_RGB16 );
 
 			ATARI_NTSC_COLOR_IN( 3, ATARI_NTSC_ADJ_IN( line_in [3] ) );
-			ATARI_NTSC_RGB_OUT( 6, line_out [6], 16 );
+			ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_RGB_FORMAT_RGB16 );
 
 			line_in  += 4;
 			line_out += 7;
@@ -237,26 +181,83 @@ void atari_ntsc_blit16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, 
 
 		/* finish final pixels */
 		ATARI_NTSC_COLOR_IN( 0, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 0, line_out [0], 16 );
-		ATARI_NTSC_RGB_OUT( 1, line_out [1], 16 );
+		ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_RGB_FORMAT_RGB16 );
+		ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_RGB_FORMAT_RGB16 );
 
 		ATARI_NTSC_COLOR_IN( 1, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 2, line_out [2], 16 );
-		ATARI_NTSC_RGB_OUT( 3, line_out [3], 16 );
+		ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_RGB_FORMAT_RGB16 );
+		ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_RGB_FORMAT_RGB16 );
 
 		ATARI_NTSC_COLOR_IN( 2, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 4, line_out [4], 16 );
-		ATARI_NTSC_RGB_OUT( 5, line_out [5], 16 );
+		ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_RGB_FORMAT_RGB16 );
+		ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_RGB_FORMAT_RGB16 );
 
 		ATARI_NTSC_COLOR_IN( 3, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 6, line_out [6], 16 );
+		ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_RGB_FORMAT_RGB16 );
 
 		input += in_row_width;
 		rgb_out = (char*) rgb_out + out_pitch;
 	}
 }
 
-void atari_ntsc_blit32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, long in_row_width,
+void atari_ntsc_blit_bgr16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, long in_row_width,
+		int in_width, int in_height, void* rgb_out, long out_pitch )
+{
+	int chunk_count = (in_width - 1) / atari_ntsc_in_chunk;
+	for ( ; in_height; --in_height )
+	{
+		ATARI_NTSC_IN_T const* line_in = input;
+		/* Atari change: no alternating burst phases - remove burst_phase parameter; adjust to 4/7 pixel ratio. */
+		ATARI_NTSC_BEGIN_ROW( ntsc,
+				atari_ntsc_black, atari_ntsc_black, atari_ntsc_black, ATARI_NTSC_ADJ_IN( *line_in ) );
+		atari_ntsc_out16_t* restrict line_out = (atari_ntsc_out16_t*) rgb_out;
+		int n;
+		++line_in;
+
+		for ( n = chunk_count; n; --n )
+		{
+			/* order of input and output pixels must not be altered */
+			ATARI_NTSC_COLOR_IN( 0, ATARI_NTSC_ADJ_IN( line_in [0] ) );
+			ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_RGB_FORMAT_BGR16 );
+			ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_RGB_FORMAT_BGR16 );
+
+			ATARI_NTSC_COLOR_IN( 1, ATARI_NTSC_ADJ_IN( line_in [1] ) );
+			ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_RGB_FORMAT_BGR16 );
+			ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_RGB_FORMAT_BGR16 );
+
+			ATARI_NTSC_COLOR_IN( 2, ATARI_NTSC_ADJ_IN( line_in [2] ) );
+			ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_RGB_FORMAT_BGR16 );
+			ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_RGB_FORMAT_BGR16 );
+
+			ATARI_NTSC_COLOR_IN( 3, ATARI_NTSC_ADJ_IN( line_in [3] ) );
+			ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_RGB_FORMAT_BGR16 );
+
+			line_in  += 4;
+			line_out += 7;
+		}
+
+		/* finish final pixels */
+		ATARI_NTSC_COLOR_IN( 0, atari_ntsc_black );
+		ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_RGB_FORMAT_BGR16 );
+		ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_RGB_FORMAT_BGR16 );
+
+		ATARI_NTSC_COLOR_IN( 1, atari_ntsc_black );
+		ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_RGB_FORMAT_BGR16 );
+		ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_RGB_FORMAT_BGR16 );
+
+		ATARI_NTSC_COLOR_IN( 2, atari_ntsc_black );
+		ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_RGB_FORMAT_BGR16 );
+		ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_RGB_FORMAT_BGR16 );
+
+		ATARI_NTSC_COLOR_IN( 3, atari_ntsc_black );
+		ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_RGB_FORMAT_BGR16 );
+
+		input += in_row_width;
+		rgb_out = (char*) rgb_out + out_pitch;
+	}
+}
+
+void atari_ntsc_blit_argb32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, long in_row_width,
 		int in_width, int in_height, void* rgb_out, long out_pitch )
 {
 	int chunk_count = (in_width - 1) / atari_ntsc_in_chunk;
@@ -274,19 +275,19 @@ void atari_ntsc_blit32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, 
 		{
 			/* order of input and output pixels must not be altered */
 			ATARI_NTSC_COLOR_IN( 0, ATARI_NTSC_ADJ_IN( line_in [0] ) );
-			ATARI_NTSC_RGB_OUT( 0, line_out [0], 32 );
-			ATARI_NTSC_RGB_OUT( 1, line_out [1], 32 );
+			ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_RGB_FORMAT_ARGB32 );
+			ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_RGB_FORMAT_ARGB32 );
 
 			ATARI_NTSC_COLOR_IN( 1, ATARI_NTSC_ADJ_IN( line_in [1] ) );
-			ATARI_NTSC_RGB_OUT( 2, line_out [2], 32 );
-			ATARI_NTSC_RGB_OUT( 3, line_out [3], 32 );
+			ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_RGB_FORMAT_ARGB32 );
+			ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_RGB_FORMAT_ARGB32 );
 
 			ATARI_NTSC_COLOR_IN( 2, ATARI_NTSC_ADJ_IN( line_in [2] ) );
-			ATARI_NTSC_RGB_OUT( 4, line_out [4], 32 );
-			ATARI_NTSC_RGB_OUT( 5, line_out [5], 32 );
+			ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_RGB_FORMAT_ARGB32 );
+			ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_RGB_FORMAT_ARGB32 );
 
 			ATARI_NTSC_COLOR_IN( 3, ATARI_NTSC_ADJ_IN( line_in [3] ) );
-			ATARI_NTSC_RGB_OUT( 6, line_out [6], 32 );
+			ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_RGB_FORMAT_ARGB32 );
 
 			line_in  += 4;
 			line_out += 7;
@@ -294,26 +295,26 @@ void atari_ntsc_blit32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, 
 
 		/* finish final pixels */
 		ATARI_NTSC_COLOR_IN( 0, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 0, line_out [0], 32 );
-		ATARI_NTSC_RGB_OUT( 1, line_out [1], 32 );
+		ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_RGB_FORMAT_ARGB32 );
+		ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_RGB_FORMAT_ARGB32 );
 
 		ATARI_NTSC_COLOR_IN( 1, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 2, line_out [2], 32 );
-		ATARI_NTSC_RGB_OUT( 3, line_out [3], 32 );
+		ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_RGB_FORMAT_ARGB32 );
+		ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_RGB_FORMAT_ARGB32 );
 
 		ATARI_NTSC_COLOR_IN( 2, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 4, line_out [4], 32 );
-		ATARI_NTSC_RGB_OUT( 5, line_out [5], 32 );
+		ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_RGB_FORMAT_ARGB32 );
+		ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_RGB_FORMAT_ARGB32 );
 
 		ATARI_NTSC_COLOR_IN( 3, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 6, line_out [6], 32 );
+		ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_RGB_FORMAT_ARGB32 );
 
 		input += in_row_width;
 		rgb_out = (char*) rgb_out + out_pitch;
 	}
 }
 
-void atari_ntsc_blit24( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, long in_row_width,
+void atari_ntsc_blit_bgra32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, long in_row_width,
 		int in_width, int in_height, void* rgb_out, long out_pitch )
 {
 	int chunk_count = (in_width - 1) / atari_ntsc_in_chunk;
@@ -331,19 +332,19 @@ void atari_ntsc_blit24( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, 
 		{
 			/* order of input and output pixels must not be altered */
 			ATARI_NTSC_COLOR_IN( 0, ATARI_NTSC_ADJ_IN( line_in [0] ) );
-			ATARI_NTSC_RGB_OUT( 0, line_out [0], 24 );
-			ATARI_NTSC_RGB_OUT( 1, line_out [1], 24 );
+			ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_RGB_FORMAT_BGRA32 );
+			ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_RGB_FORMAT_BGRA32 );
 
 			ATARI_NTSC_COLOR_IN( 1, ATARI_NTSC_ADJ_IN( line_in [1] ) );
-			ATARI_NTSC_RGB_OUT( 2, line_out [2], 24 );
-			ATARI_NTSC_RGB_OUT( 3, line_out [3], 24 );
+			ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_RGB_FORMAT_BGRA32 );
+			ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_RGB_FORMAT_BGRA32 );
 
 			ATARI_NTSC_COLOR_IN( 2, ATARI_NTSC_ADJ_IN( line_in [2] ) );
-			ATARI_NTSC_RGB_OUT( 4, line_out [4], 24 );
-			ATARI_NTSC_RGB_OUT( 5, line_out [5], 24 );
+			ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_RGB_FORMAT_BGRA32 );
+			ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_RGB_FORMAT_BGRA32 );
 
 			ATARI_NTSC_COLOR_IN( 3, ATARI_NTSC_ADJ_IN( line_in [3] ) );
-			ATARI_NTSC_RGB_OUT( 6, line_out [6], 24 );
+			ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_RGB_FORMAT_BGRA32 );
 
 			line_in  += 4;
 			line_out += 7;
@@ -351,19 +352,19 @@ void atari_ntsc_blit24( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* input, 
 
 		/* finish final pixels */
 		ATARI_NTSC_COLOR_IN( 0, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 0, line_out [0], 24 );
-		ATARI_NTSC_RGB_OUT( 1, line_out [1], 24 );
+		ATARI_NTSC_RGB_OUT( 0, line_out [0], ATARI_NTSC_RGB_FORMAT_BGRA32 );
+		ATARI_NTSC_RGB_OUT( 1, line_out [1], ATARI_NTSC_RGB_FORMAT_BGRA32 );
 
 		ATARI_NTSC_COLOR_IN( 1, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 2, line_out [2], 24 );
-		ATARI_NTSC_RGB_OUT( 3, line_out [3], 24 );
+		ATARI_NTSC_RGB_OUT( 2, line_out [2], ATARI_NTSC_RGB_FORMAT_BGRA32 );
+		ATARI_NTSC_RGB_OUT( 3, line_out [3], ATARI_NTSC_RGB_FORMAT_BGRA32 );
 
 		ATARI_NTSC_COLOR_IN( 2, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 4, line_out [4], 24 );
-		ATARI_NTSC_RGB_OUT( 5, line_out [5], 24 );
+		ATARI_NTSC_RGB_OUT( 4, line_out [4], ATARI_NTSC_RGB_FORMAT_BGRA32 );
+		ATARI_NTSC_RGB_OUT( 5, line_out [5], ATARI_NTSC_RGB_FORMAT_BGRA32 );
 
 		ATARI_NTSC_COLOR_IN( 3, atari_ntsc_black );
-		ATARI_NTSC_RGB_OUT( 6, line_out [6], 24 );
+		ATARI_NTSC_RGB_OUT( 6, line_out [6], ATARI_NTSC_RGB_FORMAT_BGRA32 );
 
 		input += in_row_width;
 		rgb_out = (char*) rgb_out + out_pitch;

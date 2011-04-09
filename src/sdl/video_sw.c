@@ -22,6 +22,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <stdio.h>
+#include <string.h>
 #include <SDL.h>
 
 #include "af80.h"
@@ -33,6 +35,7 @@
 #include "pbi_proto80.h"
 #include "platform.h"
 #include "screen.h"
+#include "videomode.h"
 #include "xep80.h"
 #include "xep80_fonts.h"
 #include "util.h"
@@ -45,10 +48,7 @@ static int fullscreen = 1;
 
 static SDL_Surface *MainScreen = NULL;
 static SDL_Color colors[256];			/* palette */
-static union {
-	Uint16 bpp16[256];	/* 16-bit palette */
-	Uint32 bpp32[256];	/* 32-bit palette */
-} palette;
+int SDL_VIDEO_SW_bpp = 0;
 
 static void DisplayWithoutScaling(void);
 static void DisplayWithScaling(void);
@@ -66,12 +66,13 @@ static void (*blit_funcs[VIDEOMODE_MODE_SIZE])(void) = {
 	&DisplayAF80
 };
 
-/* Indicates current display mode */
-static VIDEOMODE_MODE_t current_display_mode = VIDEOMODE_MODE_NORMAL;
-
 static void SetPalette(void)
 {
-	SDL_SetPalette(MainScreen, SDL_LOGPAL | SDL_PHYSPAL, colors, 0, 256);
+	/* As the data that will be written to MainScreen is already palettised,
+	   SDL_SetPalette shouldn't modify the surface's logical palette (so no
+	   SDL_LOGPAL here). Adding SDL_LOGPAL would break the palette when running
+	   with DirectX video driver in 8bpp fullscreen videomode on Intel GMA 3100. */
+	SDL_SetPalette(MainScreen, SDL_PHYSPAL, colors, 0, 256);
 }
 
 static void CalcPalette(VIDEOMODE_MODE_t mode)
@@ -80,52 +81,51 @@ static void CalcPalette(VIDEOMODE_MODE_t mode)
 	int size = SDL_PALETTE_tab[mode].size;
 	int i, rgb;
 	Uint32 c;
+
+	if (mode == VIDEOMODE_MODE_NTSC_FILTER)
+		return;
+
 	for (i = 0; i < size; i++) {
 		rgb = pal[i];
 		colors[i].r = (rgb & 0x00ff0000) >> 16;
 		colors[i].g = (rgb & 0x0000ff00) >> 8;
 		colors[i].b = (rgb & 0x000000ff) >> 0;
 	}
-	for (i = 0; i < size; i++) {
-		c =
-			SDL_MapRGB(MainScreen->format, colors[i].r, colors[i].g,
-					   colors[i].b);
-		switch (MainScreen->format->BitsPerPixel) {
-		case 16:
-			palette.bpp16[i] = (Uint16) c;
-			break;
-		case 32:
-			palette.bpp32[i] = (Uint32) c;
-			break;
+	if (MainScreen->format->BitsPerPixel == 16 || MainScreen->format->BitsPerPixel == 32) {
+		for (i = 0; i < size; i++) {
+			c = SDL_MapRGB(MainScreen->format, colors[i].r, colors[i].g, colors[i].b);
+			switch (MainScreen->format->BitsPerPixel) {
+			case 16:
+				SDL_PALETTE_buffer.bpp16[i] = (Uint16) c;
+				break;
+			case 32:
+				SDL_PALETTE_buffer.bpp32[i] = (Uint32) c;
+				break;
+			}
 		}
 	}
-
 }
 
 void SDL_VIDEO_SW_PaletteUpdate(void)
 {
-	CalcPalette(current_display_mode);
-	if (current_display_mode == VIDEOMODE_MODE_NTSC_FILTER)
-		FILTER_NTSC_Update(FILTER_NTSC_emu);
-	SetPalette();
+	CalcPalette(SDL_VIDEO_current_display_mode);
+	if (SDL_VIDEO_SW_bpp == 8)
+		SetPalette();
 }
 
 static void ModeInfo(void)
 {
-	char *fullstring;
-	if (fullscreen)
-		fullstring = "fullscreen";
-	else
-		fullstring = "windowed";
+/*	char *fullstring = fullscreen ? "fullscreen" : "windowed"; */
 /* this keeps printing over and over when windowed mode is maximized
-	Log_print("Video Mode: %dx%dx%d %s", MainScreen->w, MainScreen->h,
+	Log_print("Video Mode: %dx%dx%d %s %s", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel, fullstring);
 */
 }
 
 static void SetVideoMode(int w, int h, int bpp)
 {
-	Uint32 flags = fullscreen ? SDL_FULLSCREEN : SDL_RESIZABLE;
+	Uint32 flags = (fullscreen ? SDL_FULLSCREEN : SDL_RESIZABLE)
+	               | SDL_HWPALETTE;
 	MainScreen = SDL_SetVideoMode(w, h, bpp, flags);
 	if (MainScreen == NULL) {
 		Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, bpp, SDL_GetError());
@@ -136,54 +136,32 @@ static void SetVideoMode(int w, int h, int bpp)
 	SDL_VIDEO_height = MainScreen->h;
 }
 
-static void UpdateNtscFilter(VIDEOMODE_MODE_t mode)
-{
-	if (mode != VIDEOMODE_MODE_NTSC_FILTER && FILTER_NTSC_emu != NULL) {
-		/* Turning filter off */
-		FILTER_NTSC_Delete(FILTER_NTSC_emu);
-		FILTER_NTSC_emu = NULL;
-	}
-	else if (mode == VIDEOMODE_MODE_NTSC_FILTER && FILTER_NTSC_emu == NULL) {
-		/* Turning filter on */
-		FILTER_NTSC_emu = FILTER_NTSC_New();
-		FILTER_NTSC_Update(FILTER_NTSC_emu);
-	}
-}
-
 void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
 {
 	int old_bpp = MainScreen == NULL ? 0 : MainScreen->format->BitsPerPixel;
-	int need_setvideo = TRUE;
 	fullscreen = !windowed;
-	UpdateNtscFilter(mode);
 
-	if (SDL_VIDEO_bpp == 0) {
+	if (SDL_VIDEO_SW_bpp == 0) {
 		/* Autodetect bpp */
-		SetVideoMode(res->width, res->height, SDL_VIDEO_bpp);
-		SDL_VIDEO_bpp = MainScreen->format->BitsPerPixel;
-		Log_print("detected %dbpp", SDL_VIDEO_bpp);
-		if ((SDL_VIDEO_bpp != 8) && (SDL_VIDEO_bpp != 16) && (SDL_VIDEO_bpp != 32)) {
-			Log_print("it's unsupported, so setting 8bit mode (slow conversion)");
-			SDL_VIDEO_bpp = 8;
+		if ((SDL_VIDEO_native_bpp != 8) && (SDL_VIDEO_native_bpp != 16) && (SDL_VIDEO_native_bpp != 32)) {
+			Log_print("Native BPP of %i not supported, setting 8bit mode (slow conversion)", SDL_VIDEO_native_bpp);
+			SDL_VIDEO_SW_bpp = 8;
 		} else
-			need_setvideo = FALSE;
+			SDL_VIDEO_SW_bpp = SDL_VIDEO_native_bpp;
 	}
 
-	if ((rotate90 && SDL_VIDEO_bpp != 16) || (mode == VIDEOMODE_MODE_NTSC_FILTER && SDL_VIDEO_bpp != 16 && SDL_VIDEO_bpp != 32)) {
+	if ((rotate90 && SDL_VIDEO_SW_bpp != 16) || (mode == VIDEOMODE_MODE_NTSC_FILTER && SDL_VIDEO_SW_bpp != 16 && SDL_VIDEO_SW_bpp != 32)) {
 		/* Rotate90 supports only 16bpp; NTSC filter doesn't support 8bpp. */
-		SDL_VIDEO_bpp = 16;
-		need_setvideo = TRUE;
+		SDL_VIDEO_SW_bpp = 16;
 	}
 
-	if (need_setvideo) {
-		SetVideoMode(res->width, res->height, SDL_VIDEO_bpp);
-	}
+	SetVideoMode(res->width, res->height, SDL_VIDEO_SW_bpp);
 
 	/* BPP changed, or the new display mode's palette is different than the previous one. */
-	if (SDL_PALETTE_tab[mode].palette != SDL_PALETTE_tab[current_display_mode].palette
-	    || SDL_VIDEO_bpp != old_bpp)
+	if (old_bpp != SDL_VIDEO_SW_bpp
+	    || SDL_PALETTE_tab[mode].palette != SDL_PALETTE_tab[SDL_VIDEO_current_display_mode].palette)
 		CalcPalette(mode);
-	if (SDL_VIDEO_bpp == 8)
+	if (SDL_VIDEO_SW_bpp == 8)
 		SetPalette();
 
 	/* Clear the screen. */
@@ -193,7 +171,6 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
 	ModeInfo();
 
-	current_display_mode = mode;
 	if (mode == VIDEOMODE_MODE_NORMAL) {
 		if (rotate90)
 			blit_funcs[0] = &DisplayRotated;
@@ -202,7 +179,6 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 		else
 			blit_funcs[0] = &DisplayWithScaling;
 	}
-	SDL_VIDEO_SW_DisplayScreen();
 }
 
 int SDL_VIDEO_SW_SupportsVideomode(VIDEOMODE_MODE_t mode, int stretch, int rotate90)
@@ -213,6 +189,40 @@ int SDL_VIDEO_SW_SupportsVideomode(VIDEOMODE_MODE_t mode, int stretch, int rotat
 	} else
 		/* Other modes don't support stretching or rotation at all. */
 		return !stretch && !rotate90;
+}
+
+void SDL_VIDEO_SW_Cleanup(void)
+{
+	MainScreen = NULL;
+}
+
+int SDL_VIDEO_SW_SetBpp(int value)
+{
+	int old_value = SDL_VIDEO_SW_bpp;
+	if (old_value != value) {
+		SDL_VIDEO_SW_bpp = value;
+		if (!VIDEOMODE_Update()) {
+			SDL_VIDEO_SW_bpp = old_value;
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+int SDL_VIDEO_SW_ToggleBpp(void)
+{
+	int new_bpp;
+	switch (SDL_VIDEO_SW_bpp) {
+	case 16:
+		new_bpp = 32;
+		break;
+	case 32:
+		new_bpp = 8;
+		break;
+	default: /* 0 or 8 */
+		new_bpp = 16;
+	}
+	return SDL_VIDEO_SW_SetBpp(new_bpp);
 }
 
 /* License of scanLines_16():*/
@@ -414,12 +424,12 @@ static void DisplayXEP80(void)
 		break;
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
-		SDL_VIDEO_BlitXEP80_16((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, palette.bpp16);
+		SDL_VIDEO_BlitXEP80_16((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp16);
 		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	default:
 		pixels += VIDEOMODE_dest_offset_left * 4;
-		SDL_VIDEO_BlitXEP80_32((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, palette.bpp32);
+		SDL_VIDEO_BlitXEP80_32((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp32);
 		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
@@ -431,24 +441,24 @@ static void DisplayNTSCEmu(void)
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
 		/* blit atari image, doubled vertically */
-		atari_ntsc_blit16(FILTER_NTSC_emu,
-		                  (ATARI_NTSC_IN_T *) ((UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left),
-		                  Screen_WIDTH,
-		                  VIDEOMODE_src_width,
-		                  VIDEOMODE_src_height,
-		                  pixels,
-		                  MainScreen->pitch * 2);
+		atari_ntsc_blit_rgb16(FILTER_NTSC_emu,
+		                      (ATARI_NTSC_IN_T *) ((UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left),
+		                      Screen_WIDTH,
+		                      VIDEOMODE_src_width,
+		                      VIDEOMODE_src_height,
+		                      pixels,
+		                      MainScreen->pitch * 2);
 		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	case 32:
 		pixels += VIDEOMODE_dest_offset_left * 4;
-		atari_ntsc_blit24(FILTER_NTSC_emu,
-		                  (ATARI_NTSC_IN_T *) ((UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left),
-		                  Screen_WIDTH,
-		                  VIDEOMODE_src_width,
-		                  VIDEOMODE_src_height,
-		                  pixels,
-		                  MainScreen->pitch * 2);
+		atari_ntsc_blit_argb32(FILTER_NTSC_emu,
+		                      (ATARI_NTSC_IN_T *) ((UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left),
+		                       Screen_WIDTH,
+		                       VIDEOMODE_src_width,
+		                       VIDEOMODE_src_height,
+		                       pixels,
+		                       MainScreen->pitch * 2);
 		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	}
@@ -471,12 +481,12 @@ static void DisplayProto80(void)
 		break;
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
-		SDL_VIDEO_BlitProto80_16((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, palette.bpp16);
+		SDL_VIDEO_BlitProto80_16((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, SDL_PALETTE_buffer.bpp16);
 		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	default:
 		pixels += VIDEOMODE_dest_offset_left * 4;
-		SDL_VIDEO_BlitProto80_32((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, palette.bpp32);
+		SDL_VIDEO_BlitProto80_32((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, SDL_PALETTE_buffer.bpp32);
 		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
@@ -503,12 +513,12 @@ static void DisplayAF80(void)
 		break;
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
-		SDL_VIDEO_BlitAF80_16((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink, palette.bpp16);
+		SDL_VIDEO_BlitAF80_16((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink, SDL_PALETTE_buffer.bpp16);
 		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	default:
 		pixels += VIDEOMODE_dest_offset_left * 4;
-		SDL_VIDEO_BlitAF80_32((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink, palette.bpp32);
+		SDL_VIDEO_BlitAF80_32((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink, SDL_PALETTE_buffer.bpp32);
 		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
@@ -524,9 +534,9 @@ static void DisplayRotated(void)
 			Uint8 left = screen[Screen_WIDTH * (x * 2) + VIDEOMODE_src_width - y];
 			Uint8 right = screen[Screen_WIDTH * (x * 2 + 1) + VIDEOMODE_src_width - y];
 #ifdef WORDS_BIGENDIAN
-			*start32++ = (palette.bpp16[left] << 16) + palette.bpp16[right];
+			*start32++ = (SDL_PALETTE_buffer.bpp16[left] << 16) + SDL_PALETTE_buffer.bpp16[right];
 #else
-			*start32++ = (palette.bpp16[right] << 16) + palette.bpp16[left];
+			*start32++ = (SDL_PALETTE_buffer.bpp16[right] << 16) + SDL_PALETTE_buffer.bpp16[left];
 #endif
 		}
 		start32 += pitch4;
@@ -547,11 +557,11 @@ static void DisplayWithoutScaling(void)
 		break;
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
-		SDL_VIDEO_BlitNormal16((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, palette.bpp16);
+		SDL_VIDEO_BlitNormal16((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp16);
 		break;
 	default: /* MainScreen->format->BitsPerPixel == 32 */
 		pixels += VIDEOMODE_dest_offset_left * 4;
-		SDL_VIDEO_BlitNormal32((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, palette.bpp32);
+		SDL_VIDEO_BlitNormal32((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp32);
 	}
 }
 
@@ -621,10 +631,10 @@ static void DisplayWithScaling(void)
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
 				c = ss[yy + (x >> 16)];
-				quad = palette.bpp16[c] << 16;
+				quad = SDL_PALETTE_buffer.bpp16[c] << 16;
 				x = x - dx;
 				c = ss[yy + (x >> 16)];
-				quad += palette.bpp16[c];
+				quad += SDL_PALETTE_buffer.bpp16[c];
 				x = x - dx;
 				start32[pos] = quad;
 				pos--;
@@ -644,7 +654,7 @@ static void DisplayWithScaling(void)
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
 				c = ss[yy + (x >> 16)];
-				quad = palette.bpp32[c];
+				quad = SDL_PALETTE_buffer.bpp32[c];
 				x = x - dx;
 				start32[pos] = quad;
 				pos--;
@@ -659,9 +669,61 @@ static void DisplayWithScaling(void)
 void SDL_VIDEO_SW_DisplayScreen(void)
 {
 	/* Use function corresponding to the current_display_mode. */
-	(*blit_funcs[current_display_mode])();
+	(*blit_funcs[SDL_VIDEO_current_display_mode])();
 	/* SDL_UpdateRect is faster than SDL_Flip, because it updates only
 	   the relevant part of the screen. */
 /*	SDL_Flip(MainScreen);*/
 	SDL_UpdateRect(MainScreen, VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
+}
+
+int SDL_VIDEO_SW_ReadConfig(char *option, char *parameters)
+{
+	if (strcmp(option, "VIDEO_BPP") == 0) {
+		int value = Util_sscandec(parameters);
+		if (value != 0 && value != 8 && value != 16 && value != 32)
+			return FALSE;
+		else
+			SDL_VIDEO_SW_bpp = value;
+	}
+	else
+		return FALSE;
+	return TRUE;
+}
+
+void SDL_VIDEO_SW_WriteConfig(FILE *fp)
+{
+	fprintf(fp, "VIDEO_BPP=%d\n", SDL_VIDEO_SW_bpp);
+}
+
+int SDL_VIDEO_SW_Initialise(int *argc, char *argv[])
+{
+	int i, j;
+
+	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+		if (strcmp(argv[i], "-bpp") == 0) {
+			if (i_a) {
+				SDL_VIDEO_SW_bpp = Util_sscandec(argv[++i]);
+				if (SDL_VIDEO_SW_bpp != 0 && SDL_VIDEO_SW_bpp != 8 && SDL_VIDEO_SW_bpp != 16 && SDL_VIDEO_SW_bpp != 32) {
+					Log_print("Invalid BPP value %s", argv[i]);
+					return FALSE;
+				}
+			}
+			else a_m = TRUE;
+		}
+		else {
+			if (strcmp(argv[i], "-help") == 0)
+				Log_print("\t-bpp <num>        Host color depth (0 = autodetect)");
+			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
+	}
+	*argc = j;
+
+	return TRUE;
 }

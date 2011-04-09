@@ -5,6 +5,20 @@
 
 #include "videomode.h"
 
+/* Get/set texture pixel format. On some video cards, either of these is faster. */
+enum {
+	SDL_VIDEO_GL_PIXEL_FORMAT_BGR16,
+	SDL_VIDEO_GL_PIXEL_FORMAT_RGB16,
+	SDL_VIDEO_GL_PIXEL_FORMAT_BGRA32,
+	SDL_VIDEO_GL_PIXEL_FORMAT_ARGB32,
+	/* Number of values in enumerator */
+	SDL_VIDEO_GL_PIXEL_FORMAT_SIZE
+};
+/* Call SDL_VIDEO_GL_SetPixelFormat() after changing this variable. */
+extern int SDL_VIDEO_GL_pixel_format;
+void SDL_VIDEO_GL_SetPixelFormat(int value);
+void SDL_VIDEO_GL_TogglePixelFormat(void);
+
 /* Get/set bilinear filtering. */
 /* Call VIDEOMODE_Update() after changing this variable, or use SDL_VIDEO_GL_SetFiltering() instead. */
 extern int SDL_VIDEO_GL_filtering;

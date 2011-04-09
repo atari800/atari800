@@ -62,19 +62,19 @@ void atari_ntsc_init( atari_ntsc_t* ntsc, atari_ntsc_setup_t const* setup );
 In_row_width is the number of pixels to get to the next input row. Out_pitch
 is the number of *bytes* to get to the next output row. Output pixel format
 is set by ATARI_NTSC_OUT_DEPTH (defaults to 16-bit RGB). */
-/* Atari change: no alternating burst phases - remove burst_phase parameter. */
-void atari_ntsc_blit( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
+/* Atari change: no alternating burst phases - remove burst_phase parameter.
+   Also removed the atari_ntsc_blit function and added specific blitters for various
+   pixel formats. */
+void atari_ntsc_blit_rgb16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
 		long in_row_width, int in_width, int in_height,
 		void* rgb_out, long out_pitch );
-
-/* Atari change: added blitters for 16bpp, 32bpp(ARGB), and 24bpp(0RGB) screen formats. */
-void atari_ntsc_blit16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
+void atari_ntsc_blit_bgr16( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
 		long in_row_width, int in_width, int in_height,
 		void* rgb_out, long out_pitch );
-void atari_ntsc_blit32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
+void atari_ntsc_blit_argb32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
 		long in_row_width, int in_width, int in_height,
 		void* rgb_out, long out_pitch );
-void atari_ntsc_blit24( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
+void atari_ntsc_blit_bgra32( atari_ntsc_t const* ntsc, ATARI_NTSC_IN_T const* atari_in,
 		long in_row_width, int in_width, int in_height,
 		void* rgb_out, long out_pitch );
 
@@ -194,18 +194,29 @@ enum { atari_ntsc_full_overscan_right = atari_ntsc_full_in_width - atari_ntsc_mi
 	kernel##index = (color_ = (color), ENTRY( table, color_ ));\
 }
 
+/* Atari change: modified ATARI_NTSC_RGB_OUT_ so its BITS parameter is
+   no longer a straight number of bits, but an enumerated value. Then
+   added a few additional bit formats. Also added the ATARI_NTSC_RGB_FORMAT
+   enumerated values. */
+enum {
+	ATARI_NTSC_RGB_FORMAT_RGB16,
+	ATARI_NTSC_RGB_FORMAT_BGR16,
+	ATARI_NTSC_RGB_FORMAT_ARGB32,
+	ATARI_NTSC_RGB_FORMAT_BGRA32,
+	ATARI_NTSC_RGB_FORMAT_RGB15
+};
+
 /* x is always zero except in snes_ntsc library */
-/* Atari change: modified 32-bit format from 0x00RRGGBB to 0xffRRGGBB,
-   because downloading a texture in OpenGL is faster when the alpha channel is
-   set to 0xff (fully opaque). */
 #define ATARI_NTSC_RGB_OUT_( rgb_out, bits, x ) {\
-	if ( bits == 16 )\
+	if ( bits == ATARI_NTSC_RGB_FORMAT_RGB16 )\
 		rgb_out = (raw_>>(13-x)& 0xF800)|(raw_>>(8-x)&0x07E0)|(raw_>>(4-x)&0x001F);\
-	else if ( bits == 32 )\
+	else if ( bits == ATARI_NTSC_RGB_FORMAT_BGR16 )\
+		rgb_out = (raw_>>(24-x)& 0x001F)|(raw_>>(8-x)&0x07E0)|(raw_<<(7+x)&0xF800);\
+	else if ( bits == ATARI_NTSC_RGB_FORMAT_ARGB32 )\
 		rgb_out = (raw_>>(5-x)&0xFF0000)|(raw_>>(3-x)&0xFF00)|(raw_>>(1-x)&0xFF) | 0xFF000000;\
-	else if ( bits == 24 )\
-		rgb_out = (raw_>>(5-x)&0xFF0000)|(raw_>>(3-x)&0xFF00)|(raw_>>(1-x)&0xFF);\
-	else if ( bits == 15 )\
+	else if ( bits == ATARI_NTSC_RGB_FORMAT_BGRA32 )\
+		rgb_out = (raw_>>(13-x)&0xFF00)|(raw_<<(5+x)&0xFF0000)|(raw_<<(23+x)&0xFF000000) | 0xFF;\
+	else if ( bits == ATARI_NTSC_RGB_FORMAT_RGB15 )\
 		rgb_out = (raw_>>(14-x)& 0x7C00)|(raw_>>(9-x)&0x03E0)|(raw_>>(4-x)&0x001F);\
 	else if ( bits == 0 )\
 		rgb_out = raw_ << x;\
