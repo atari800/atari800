@@ -1281,7 +1281,7 @@ static void VideoModeSettings(void)
 		UI_MENU_ACTION(0, "none (1x)"),
 		UI_MENU_ACTION(1, "2x"),
 		UI_MENU_ACTION(2, "3x"),
-		UI_MENU_ACTION(3, "fit screen - integer"),
+		UI_MENU_ACTION(3, "fit screen - integral"),
 		UI_MENU_ACTION(4, "fit screen - full"),
 		UI_MENU_ACTION(5, "custom"),
 		UI_MENU_END
@@ -1294,8 +1294,8 @@ static void VideoModeSettings(void)
 		UI_MENU_END
 	};
 	static const UI_tMenuItem aspect_menu_array[] = {
-		UI_MENU_ACTION(0, "disabled"),
-		UI_MENU_ACTION(1, "1:1"),
+		UI_MENU_ACTION(0, "don't keep"),
+		UI_MENU_ACTION(1, "square pixels"),
 		UI_MENU_ACTION(2, "authentic"),
 		UI_MENU_END
 	};
@@ -1352,14 +1352,14 @@ static void VideoModeSettings(void)
 #if SUPPORTS_ROTATE_VIDEOMODE
 		UI_MENU_CHECK(5, "Rotate sideways:"),
 #endif /* SUPPORTS_ROTATE_VIDEOMODE */
-		UI_MENU_SUBMENU_SUFFIX(6, "Stretch:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(6, "Stretch image:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(7, "Fit screen method:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(8, "Keep aspect ratio:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(8, "Image aspect ratio:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(9, "Host display aspect ratio:", ratio_string),
 		UI_MENU_SUBMENU_SUFFIX(10, "Horizontal view area:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(11, "Vertical view area:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(12, "Horizontal offset:", horiz_offset_string),
-		UI_MENU_SUBMENU_SUFFIX(13, "Vertical offset:", vert_offset_string),
+		UI_MENU_SUBMENU_SUFFIX(12, "Horizontal shift:", horiz_offset_string),
+		UI_MENU_SUBMENU_SUFFIX(13, "Vertical shift:", vert_offset_string),
 #if SDL
 		UI_MENU_SUBMENU_SUFFIX(14, "Scanlines visibility:", scanlines_string),
 		UI_MENU_CHECK(15, "Interpolate scanlines:"),

@@ -189,7 +189,7 @@ int SDL_VIDEO_ReadConfig(char *option, char *parameters)
 	else if (strcmp(option, "VIDEO_VSYNC") == 0)
 		return (SDL_VIDEO_vsync = Util_sscanbool(parameters)) != -1;
 #if HAVE_OPENGL
-	else if (strcmp(option, "ENABLE_OPENGL") == 0)
+	else if (strcmp(option, "VIDEO_ACCEL") == 0)
 		return (currently_opengl = SDL_VIDEO_opengl = Util_sscanbool(parameters)) != -1;
 	else if (SDL_VIDEO_GL_ReadConfig(option, parameters)) {
 	}
@@ -207,7 +207,7 @@ void SDL_VIDEO_WriteConfig(FILE *fp)
 	fprintf(fp, "INTERPOLATE_SCANLINES=%d\n", SDL_VIDEO_interpolate_scanlines);
 	fprintf(fp, "VIDEO_VSYNC=%d\n", SDL_VIDEO_vsync);
 #if HAVE_OPENGL
-	fprintf(fp, "ENABLE_OPENGL=%d\n", SDL_VIDEO_opengl);
+	fprintf(fp, "VIDEO_ACCEL=%d\n", SDL_VIDEO_opengl);
 	SDL_VIDEO_GL_WriteConfig(fp);
 #endif
 	SDL_VIDEO_SW_WriteConfig(fp);
@@ -232,9 +232,9 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-no-scanlinesint") == 0)
 			SDL_VIDEO_interpolate_scanlines = FALSE;
 #if HAVE_OPENGL
-		else if (strcmp(argv[i], "-opengl") == 0)
+		else if (strcmp(argv[i], "-video-accel") == 0)
 			SDL_VIDEO_opengl = TRUE;
-		else if (strcmp(argv[i], "-no-opengl") == 0)
+		else if (strcmp(argv[i], "-no-video-accel") == 0)
 			SDL_VIDEO_opengl = FALSE;
 #endif /* HAVE_OPENGL */
 		else if (strcmp(argv[i], "-vsync") == 0)
@@ -248,8 +248,8 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 				Log_print("\t-scanlinesint     Enable scanlines interpolation");
 				Log_print("\t-no-scanlinesint  Disable scanlines interpolation");
 #if HAVE_OPENGL
-				Log_print("\t-opengl           Enable hardware video acceleration");
-				Log_print("\t-no-opengl        Disable hardware video acceleration");
+				Log_print("\t-video-accel      Enable hardware video acceleration");
+				Log_print("\t-no-video-accel   Disable hardware video acceleration");
 #endif /* HAVE_OPENGL */
 				Log_print("\t-vsync            Synchronize display to vertical retrace");
 				Log_print("\t-no-vsync         Don't synchronize display to vertical retrace");

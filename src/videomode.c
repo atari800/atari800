@@ -69,7 +69,7 @@ int VIDEOMODE_vertical_offset = 0;
 int VIDEOMODE_stretch = VIDEOMODE_STRETCH_INTEGER;
 double VIDEOMODE_custom_stretch = 1.0f;
 int VIDEOMODE_fit = VIDEOMODE_FIT_BOTH;
-int VIDEOMODE_keep_aspect = VIDEOMODE_KEEP_ASPECT_1TO1;
+int VIDEOMODE_keep_aspect = VIDEOMODE_KEEP_ASPECT_SQUARE_PIXELS;
 #if SUPPORTS_ROTATE_VIDEOMODE
 int VIDEOMODE_rotate90 = FALSE;
 #endif
@@ -124,7 +124,7 @@ static char const * const stretch_cfg_strings[VIDEOMODE_STRETCH_SIZE] = {
 	"NONE",
 	"2",
 	"3",
-	"INTEGER",
+	"INTEGRAL",
 	"FULL"
 };
 static char const * const fit_cfg_strings[VIDEOMODE_FIT_SIZE] = {
@@ -134,7 +134,7 @@ static char const * const fit_cfg_strings[VIDEOMODE_FIT_SIZE] = {
 };
 static char const * const keep_aspect_cfg_strings[VIDEOMODE_KEEP_ASPECT_SIZE] = {
 	"NONE",
-	"1TO1",
+	"SQUARE-PIXELS",
 	"REAL"
 };
 
@@ -920,9 +920,9 @@ int VIDEOMODE_ReadConfig(char *option, char *ptr)
 		}
 		VIDEOMODE_vertical_area = i;
 	}
-	else if (strcmp(option, "VIDEOMODE_HORIZONTAL_OFFSET") == 0)
+	else if (strcmp(option, "VIDEOMODE_HORIZONTAL_SHIFT") == 0)
 		return Util_sscansdec(ptr, &VIDEOMODE_horizontal_offset);
-	else if (strcmp(option, "VIDEOMODE_VERTICAL_OFFSET") == 0)
+	else if (strcmp(option, "VIDEOMODE_VERTICAL_SHIFT") == 0)
 		return Util_sscansdec(ptr, &VIDEOMODE_vertical_offset);
 	else if (strcmp(option, "VIDEOMODE_STRETCH") == 0) {
 		int i = CFG_MatchTextParameter(ptr, stretch_cfg_strings, VIDEOMODE_STRETCH_SIZE);
@@ -939,7 +939,7 @@ int VIDEOMODE_ReadConfig(char *option, char *ptr)
 			return FALSE;
 		VIDEOMODE_fit = i;
 	}
-	else if (strcmp(option, "VIDEOMODE_KEEP_ASPECT") == 0) {
+	else if (strcmp(option, "VIDEOMODE_IMAGE_ASPECT") == 0) {
 		int i = CFG_MatchTextParameter(ptr, keep_aspect_cfg_strings, VIDEOMODE_KEEP_ASPECT_SIZE);
 		if (i < 0)
 			return FALSE;
@@ -982,14 +982,14 @@ void VIDEOMODE_WriteConfig(FILE *fp) {
 		fprintf(fp, "VIDEOMODE_VERTICAL_AREA=%d\n", VIDEOMODE_custom_vertical_area);
 	else
 		fprintf(fp, "VIDEOMODE_VERTICAL_AREA=%s\n", vertical_area_cfg_strings[VIDEOMODE_vertical_area]);
-	fprintf(fp, "VIDEOMODE_HORIZONTAL_OFFSET=%d\n", VIDEOMODE_horizontal_offset);
-	fprintf(fp, "VIDEOMODE_VERTICAL_OFFSET=%d\n", VIDEOMODE_vertical_offset);
+	fprintf(fp, "VIDEOMODE_HORIZONTAL_SHIFT=%d\n", VIDEOMODE_horizontal_offset);
+	fprintf(fp, "VIDEOMODE_VERTICAL_SHIFT=%d\n", VIDEOMODE_vertical_offset);
 	if (VIDEOMODE_stretch == VIDEOMODE_STRETCH_CUSTOM)
 		fprintf(fp, "VIDEOMODE_STRETCH=%g\n", VIDEOMODE_custom_stretch);
 	else
 		fprintf(fp, "VIDEOMODE_STRETCH=%s\n", stretch_cfg_strings[VIDEOMODE_stretch]);
 	fprintf(fp, "VIDEOMODE_FIT=%s\n", fit_cfg_strings[VIDEOMODE_fit]);
-	fprintf(fp, "VIDEOMODE_KEEP_ASPECT=%s\n", keep_aspect_cfg_strings[VIDEOMODE_keep_aspect]);
+	fprintf(fp, "VIDEOMODE_IMAGE_ASPECT=%s\n", keep_aspect_cfg_strings[VIDEOMODE_keep_aspect]);
 #if SUPPORTS_ROTATE_VIDEOMODE
 	fprintf(fp, "VIDEOMODE_ROTATE90=%d\n", VIDEOMODE_rotate90);
 #endif
@@ -1060,12 +1060,12 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
-		else if (strcmp(argv[i], "-horiz-offset") == 0) {
+		else if (strcmp(argv[i], "-horiz-shift") == 0) {
 			if (i_a)
 				a_i = !Util_sscansdec(argv[++i], &VIDEOMODE_horizontal_offset);
 			else a_m = TRUE;
 		}
-		else if (strcmp(argv[i], "-vert-offset") == 0) {
+		else if (strcmp(argv[i], "-vert-shift") == 0) {
 			if (i_a)
 				a_i = !Util_sscansdec(argv[++i], &VIDEOMODE_vertical_offset);
 			else a_m = TRUE;
@@ -1089,7 +1089,7 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
-		else if (strcmp(argv[i], "-keep-aspect") == 0) {
+		else if (strcmp(argv[i], "-image-aspect") == 0) {
 			if (i_a) {
 				if ((VIDEOMODE_keep_aspect = CFG_MatchTextParameter(argv[++i], keep_aspect_cfg_strings, VIDEOMODE_KEEP_ASPECT_SIZE)) < 0)
 					a_i = TRUE;
@@ -1135,13 +1135,14 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 				Log_print("\t                            Choose horizontal view area");
 				Log_print("\t-vert-area short|tv|full|<number>");
 				Log_print("\t                            Choose vertical view area");
-				Log_print("\t-horiz-offset <num>         Set horizontal offset of the visible area (-384..384)");
-				Log_print("\t-vert-offset <num>          Set vertical offset of the visible area (-275..275)");
-				Log_print("\t-stretch none|integer|full|<number>");
-				Log_print("\t                            Stretch display to screen/window size");
+				Log_print("\t-horiz-shift <num>          Set horizontal shift of the visible area (-384..384)");
+				Log_print("\t-vert-shift <num>           Set vertical shift of the visible area (-275..275)");
+				Log_print("\t-stretch none|integral|full|<number>");
+				Log_print("\t                            Set method of image stretching");
 				Log_print("\t-fit-screen width|height|both");
 				Log_print("\t                            Set method of display fitting the screen");
-				Log_print("\t-keep-aspect none|1to1|real Keep display aspect ratio");
+				Log_print("\t-image-aspect none|square-pixels|real");
+				Log_print("\t                            Set image aspect ratio");
 #if SUPPORTS_ROTATE_VIDEOMODE
 				Log_print("\t-rotate90                   Rotate the screen sideways");
 				Log_print("\t-no-rotate90                Don't rotate the screen");

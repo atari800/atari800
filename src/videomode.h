@@ -133,7 +133,7 @@ int VIDEOMODE_ToggleFit(void);
 /* Get/set method of keeping screen aspect ratio. */
 enum {
 	VIDEOMODE_KEEP_ASPECT_NONE,
-	VIDEOMODE_KEEP_ASPECT_1TO1,
+	VIDEOMODE_KEEP_ASPECT_SQUARE_PIXELS,
 	VIDEOMODE_KEEP_ASPECT_REAL,
 	/* Number of values in enumerator */
 	VIDEOMODE_KEEP_ASPECT_SIZE

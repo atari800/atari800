@@ -15,6 +15,12 @@
   decrease performance.
 * DOC/USAGE, src/atari800.man, src/ui.c, src/videomode.[ch]:
   Add option for automatic detection of host screen aspect ratio.
+* DOC/USAGE, src/atari800.man, src/ui.c, src/videomode.[ch], src/sdl/video.c:
+  Rename several options to more intuitive names - in command line and in GUI:
+  -horiz-offset -> -horiz-shift, -vert-offset -> -vert-shift,
+  -stretch integer -> -stretch integral,
+  -keep-aspect 1to1 -> image-aspect square-pixels,
+  -[no]-opengl -> -[no]-video-accel
 
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)

@@ -425,21 +425,22 @@ setting will crop the top and bottom parts of text area.
 An exact number of visible scanlines can be set by providing a number between
 100 and 275.
 .TP
-\fB-horiz-offset <number>
+\fB-horiz-shift <number>
 When the visible horizontal area is not set to "full", this option specifies
 the screen's area that will be visible. Values higher than 0 will cause
 showing more of the right side of the screen, while values lower than 0 will
-cause showing more of the left side.
-\fB-vert-offset <number>
-Analogically to -horiz-offset: when the visible vertical area is not set to
+cause showing more of the left side. The default is 0 (no shift).
+\fB-vert-shift <number>
+Analogically to -horiz-shift: when the visible vertical area is not set to
 "full", this option specifies the screen's area that will be visible. Values
 higher than 0 will cause showing more of the bottom part of the screen, while
-values lower than 0 will cause showing more of the top part.
+values lower than 0 will cause showing more of the top part. The default is 0
+(no shift).
 .TP
-\fB-stretch none|integer|full|<number>
+\fB-stretch none|integral|full|<number>
 Choose method of stretching of the screen. "None" means that the screen won't
-be stretched at all; "Integer" means that the screen will be fit to screen but
-stretched only by integer multiplier; "Full" means that the screen will fit
+be stretched at all; "Integral" means that the screen will be fit to screen but
+stretched only by integral multiplier; "Full" means that the screen will fit
 the entire screen's/window's area. A custom multiplier (floating point number)
 can be also provided to precisely set the zoom factor.
 .TP
@@ -447,19 +448,20 @@ can be also provided to precisely set the zoom factor.
 When stretching to fit the screen, stretch so that: whole width must fit the
 screen; whole height must fit; or both width and height must fit the screen.
 .TP
-\fB-keep-aspect none|1to1|real
-Choose how the screen's aspect ratio should be corrected when stretching.
-"None" means that the screen will be stretched unrestricted, and aspect ratio
-won't be corrected; "1to1" means that aspect ratio will be preserved, and the
-screen will be stretched by the same amount horizontally and vertically;
-"Real" recreates the pixel aspect ratio of a real TV set (for NTSC it's about
-0.857, for PAL about 1.039 - pixels are not square).
+\fB-image-aspect none|square-pixels|real
+Choose how the image's aspect ratio should be maintained when stretching.
+"none" causes the image to be stretched without restriction to fit the
+screen/window area fully; "square-pixels" (the default) causes the image to
+be stretched by the same amount horizontally and vertically, maintaining
+square pixels. In low screen resolutions this setting may produce the nicest
+result; "real" recreates the aspect ratio of a real TV display (pixels are
+not square), but only if the -host-aspect-ratio option is set correctly.
 .TP
 \fB-host-aspect-ratio auto|<x>:<y>
 Set the aspect ratio of the host monitor on which the emulator's display is
 placed. Allowed values are "auto" for autodetection, or ratios like 4:3, 16:9,
 1.25:1 ... This value is used to properly maintain image's aspect ratio when
-having -keep-aspect set to "real". The default value is "auto".
+having -image-aspect set to "real". The default value is "auto".
 Note that host aspect ratio detection works as expected only if the desktop
 resolution matches aspect ratio of the display device (in other words, display
 pixels are square). If, for example, desktop resolution is 800x600 on a 16:9
@@ -529,11 +531,11 @@ Enable scanlines interpolation (looks nicer).
 \fB-no-scanlinesint
 Disable scanlines interpolation (in software modes may give better performance).
 .TP
-\fB-opengl
+\fB-video-accel
 Enable OpenGL hardware acceleration. This uses OpenGL for speed up displaying
 and stretching the screen.
 .TP
-\fB-no-opengl
+\fB-no-video-accel
 Disable OpenGL hardware acceleration.
 .TP
 \fB-pixel-format bgr16|rgb16|bgra32|argb32
