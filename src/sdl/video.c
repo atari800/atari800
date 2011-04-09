@@ -248,8 +248,8 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 				Log_print("\t-scanlinesint     Enable scanlines interpolation");
 				Log_print("\t-no-scanlinesint  Disable scanlines interpolation");
 #if HAVE_OPENGL
-				Log_print("\t-video-accel      Enable hardware video acceleration");
-				Log_print("\t-no-video-accel   Disable hardware video acceleration");
+				Log_print("\t-video-accel      Use hardware video acceleration");
+				Log_print("\t-no-video-accel   Don't use hardware video acceleration");
 #endif /* HAVE_OPENGL */
 				Log_print("\t-vsync            Synchronize display to vertical retrace");
 				Log_print("\t-no-vsync         Don't synchronize display to vertical retrace");

@@ -221,7 +221,7 @@ SDL version options
 -------------------
 
 -fullscreen           Start in fullscreen mode
--windowed             Start in windowed mode
+-windowed             Start in windowed mode (the default)
 -rotate90             Rotate display (useful for devices with 240x320 screen)
 -no-rotate90          Don't rotate display (the default)
 -fs-width <x>         Set horizontal fullscreen resolution
@@ -247,18 +247,20 @@ SDL version options
                       full: full overscan - 275 pixels,
                       or provide a number between 100 and 275.
 -horiz-shift <n>      Set horizontal shift of the visible area (-384..384)
--vert-shift <n>      Set vertical shift of the visible area (-275..275)
+-vert-shift <n>       Set vertical shift of the visible area (-275..275)
 -stretch none|integral|full|<number>
-                      Set method for screen stretching:
+                      Set method for image stretching:
                       none: no stretching at all,
-                      integral: fit to screen, stretch by integral multiplier
-                      full: fit to screen, unrestricted stretching
+                      integral: fit to screen/window, but stretch only by
+                      integral multiplier
+                      full: stretch to fit screen/window, unrestricted
                       or provide a custom multiplier (e.g. 2, 3, 2.5, ...)
 -fit-screen width|height|both
                       Set method of fitting the display to screen/window.
 -image-aspect none|square-pixels|real
-                      How to correct screen aspect ratio when stretching:
-                      none: no correction, screen stretching unrestricted,
+                      How to maintain image aspect ratio when stretching:
+                      none: maintaining disabled, image stretches to fill
+                      the entire screen/window
                       square-pixels: width and height stretched by the same
                       multiplier
                       real: real TV's aspect ratio (depending on TV system)
@@ -295,8 +297,8 @@ The following 7 items are for -ntscemu only:
 -scanlines <n>        Set visibility of scanlines (0-100)
 -scanlinesint         Enable scanlines interpolation
 -no-scanlinesint      Disable scanlines interpolation
--video-accel          Enable OpenGL hardware acceleration
--no-video-accel       Disable OpenGL hardware acceleration
+-video-accel          Use OpenGL hardware acceleration
+-no-video-accel       Don't use OpenGL hardware acceleration
 -pixel-format bgr16|rgb16|bgra32|argb32
                       Choose OpenGL texture format
 -pbo                  With OpenGL, use Pixel Buffer Objects for performance

@@ -25,6 +25,8 @@
   Use the slider control for video area/shift options.
 * src/sdl/video_gl.c, src/sdl/video_sw.c: Call SDL_SetVideoMode() and display
   ModeInfo only when necessary.
+* DOC/USAGE, src/atari800.man, src/videomode.c, src/sdl/video.c: Other fixes
+  in help/documentation.
 
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)

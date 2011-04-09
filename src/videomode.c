@@ -1131,16 +1131,16 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 				Log_print("\t-fs-height <num>            Host fullscreen height");
 				Log_print("\t-fullscreen                 Run fullscreen");
 				Log_print("\t-windowed                   Run in window");
-				Log_print("\t-horiz-area narrow|normal|full|<number>");
-				Log_print("\t                            Choose horizontal view area");
+				Log_print("\t-horiz-area narrow|tv|full|<number>");
+				Log_print("\t                            Set horizontal view area");
 				Log_print("\t-vert-area short|tv|full|<number>");
-				Log_print("\t                            Choose vertical view area");
+				Log_print("\t                            Set vertical view area");
 				Log_print("\t-horiz-shift <num>          Set horizontal shift of the visible area (-384..384)");
 				Log_print("\t-vert-shift <num>           Set vertical shift of the visible area (-275..275)");
 				Log_print("\t-stretch none|integral|full|<number>");
 				Log_print("\t                            Set method of image stretching");
 				Log_print("\t-fit-screen width|height|both");
-				Log_print("\t                            Set method of display fitting the screen");
+				Log_print("\t                            Set method of image fitting the screen");
 				Log_print("\t-image-aspect none|square-pixels|real");
 				Log_print("\t                            Set image aspect ratio");
 #if SUPPORTS_ROTATE_VIDEOMODE

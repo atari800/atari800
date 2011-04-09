@@ -371,7 +371,7 @@ Start in fullscreen mode. The default resolution is 336x240 and can be later
 changed.
 .TP
 \fB-windowed
-Start in a window.
+Start in a window (the default).
 .TP
 \fB-rotate90
 Rotate display (useful for devices with 240x320 screen).
@@ -411,19 +411,20 @@ video hardware driver's settings, if available.
 Disable synchronization with monitor's vertical retrace (the default).
 .TP
 \fB-horiz-area narrow|tv|full|<number>
-Set amount of visible screen horizontally. "Narrow" shows 320 pixels, "Tv"
-shows area visible on a standard TV (336 pixels), and "Full" shows full
-overscan area (384 pixels). An exact horizontal size can be set by providing
-a number between 160 and 384.
+Set amount of visible screen horizontally. "narrow" shows 320 pixels, "tv"
+(the default) shows area visible on a standard TV (336 pixels), and "full"
+shows full overscan area (384 pixels). An exact horizontal size can be set by
+providing a number between 160 and 384.
 .TP
 \fB-vertical-area short|tv|full|<number>
-Set amount of visible screen vertically. "Short" shows 200 pixels, "Tv" shows
-area visible on a standard TV (224 or 240 pixels, depending on current TV
-system), and "Full" shows full overscan area of 275 pixels. Note that when
-displaying output of an XEP80 or Austin Franklin 80 column card, the "Tv"
-setting will crop the top and bottom parts of text area.
-An exact number of visible scanlines can be set by providing a number between
-100 and 275.
+Set amount of visible screen vertically. "short" shows 200 pixels, "tv" (the
+default) shows area visible on a typical TV (224 or 240 pixels, depending on
+current TV system), and "full" shows full overscan area of 275 pixels. An
+exact number of visible scanlines can be set by providing a number between 100
+and 275. Note that when displaying output of an XEP80 or Austin Franklin 80
+column card, the "tv" setting will crop the top and bottom parts of text area,
+just like a real TV does - in such case setting the option to "full" would be
+more appriopriate.
 .TP
 \fB-horiz-shift <number>
 When the visible horizontal area is not set to "full", this option specifies
@@ -438,15 +439,22 @@ values lower than 0 will cause showing more of the top part. The default is 0
 (no shift).
 .TP
 \fB-stretch none|integral|full|<number>
-Choose method of stretching of the screen. "None" means that the screen won't
-be stretched at all; "Integral" means that the screen will be fit to screen but
-stretched only by integral multiplier; "Full" means that the screen will fit
-the entire screen's/window's area. A custom multiplier (floating point number)
-can be also provided to precisely set the zoom factor.
+Choose method of stretching the image to fit the screen/window area. "none"
+means that the image won't be stretched at all; "integral" (the default)
+means that the image will fit the screen/window but will be stretched only by
+an integral multiplier. This setting allows for nice output when using
+scanlines in low screen resolutions; "full" means that the screen will fit
+the entire screen/window area. This setting looks best in high screen
+resolutions; A custom multiplier (floating point number) can be also provided
+ to precisely set the amount of stretching.
 .TP
 \fB-fit-screen width|height|both
-When stretching to fit the screen, stretch so that: whole width must fit the
-screen; whole height must fit; or both width and height must fit the screen.
+When -stretch is set to "integral" or "full", this parameter controls how
+the stretching is performed with relation to window/screen size. "width" will
+fit the image's width while allowing it to be cropped vertically; "height"
+will fit the image's height while allowing it to be cropped horizontally;
+"both" (the default) will fit both the image's width and height, avoiding
+cropping.
 .TP
 \fB-image-aspect none|square-pixels|real
 Choose how the image's aspect ratio should be maintained when stretching.
@@ -470,9 +478,9 @@ manually, by measuring physical width and height of the monitor and setting
 the parameter to <width>:<height>.
 .TP
 \fB-80column
-Shows output of an 80 column hardware, when it is available. It has effect
-only if an 80 column hardware is activated, using one of the parameters -af80,
--proto80 or -af80.
+Shows output of an 80 column hardware, when it is available (the default).
+This parameter has effect only if an 80 column hardware is activated, using
+one of the parameters -af80, -proto80 or -af80.
 .TP
 \fB-no-80column
 Deactivates showing output of an 80 column hardware.
@@ -523,7 +531,9 @@ Set burst phase of the NTSC filter. This changes colors of artifacts. The best
 values are 0, 0.5, 1, 1.5.
 .TP
 \fB-scanlines <n>
-Set visibility of scanlines (0..100).
+Set visibility of scanlines (0..100). Scanlines are only visible when the
+screen's or window's vertical size is at least 480 (more precisely, at least
+twice the number of scanlines given in -vert-area).
 .TP
 \fB-scanlinesint
 Enable scanlines interpolation (looks nicer).
@@ -532,11 +542,11 @@ Enable scanlines interpolation (looks nicer).
 Disable scanlines interpolation (in software modes may give better performance).
 .TP
 \fB-video-accel
-Enable OpenGL hardware acceleration. This uses OpenGL for speed up displaying
-and stretching the screen.
+Use OpenGL hardware acceleration for displaying and stretching of the emulator's
+display. Using OpenGL improves performance.
 .TP
 \fB-no-video-accel
-Disable OpenGL hardware acceleration.
+Don't use OpenGL hardware acceleration (the default).
 .TP
 \fB-pixel-format bgr16|rgb16|bgra32|argb32
 Choose format of texture data when OpenGL acceleration is enabled. Depending
@@ -557,7 +567,7 @@ Don't use Pixel Buffer Objects when OpenGL acceleration is used.
 Enable bilinear filtering of the screen in OpenGL modes.
 .TP
 \fB-no-bilinear-filter
-Disable bilinear filtering in OpenGL modes.
+Disable bilinear filtering in OpenGL modes (the default).
 .TP
 \fb-opengl-lib <path>
 Provide a custom OpenGL shared library. If not given, Atari800 will use
@@ -936,10 +946,10 @@ Decrease NTSC burst phase (use this to change artifacting colours)
 Increase NTSC burst phase
 .TP
 \fBLAlt+LShift+[
-Decrease scanlines percentage
+Decrease scanlines visibility
 .TP
 \fBLAlt+[
-Increase scanlines percentage
+Increase scanlines visibility
 .TP
 \fBLAlt+]
 Toggle NTSC composite/S-Video/RGB/monochrome settings
