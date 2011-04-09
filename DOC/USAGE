@@ -296,6 +296,8 @@ The following 7 items are for -ntscemu only:
 -no-opengl            Disable OpenGL hardware acceleration
 -pixel-format bgr16|rgb16|bgra32|argb32
                       Choose OpenGL texture format
+-pbo                  With OpenGL, use Pixel Buffer Objects for performance
+-no-pbo               Disable usage of Pixel Buffer Objects
 -bilinear-filter      Enable OpenGL bilinear filtering
 -no-bilinear-filter   Disable OpenGL bilinear filtering
 -opengl-lib <path>    Use a custom OpenGL shared library

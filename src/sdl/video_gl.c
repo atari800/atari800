@@ -112,10 +112,11 @@ static void (* const blit_funcs[VIDEOMODE_MODE_SIZE])(GLvoid *) = {
 /* GL textures - [0] is screen, [1] is scanlines. */
 static GLuint textures[2];
 
-/* Indicates whether Pixel Buffer Objects GL extension is available and should be
-   used. Available from OpenGL 2.1, it gives a significant boost in blit speed. */
-static int use_pbo;
+int SDL_VIDEO_GL_pbo = TRUE;
 
+/* Indicates whether Pixel Buffer Objects GL extension is available.
+   Available from OpenGL 2.1, it gives a significant boost in blit speed. */
+static int pbo_available;
 /* Name of the main screen Pixel Buffer Object. */
 static GLuint screen_pbo;
 
@@ -176,14 +177,19 @@ static void (*GetGlFunc(const char* s))(void)
 /* Alocates memory for the screen texture, if needed. */
 static void AllocTexture(void)
 {
-	if (!use_pbo && screen_texture == NULL)
+	if (!SDL_VIDEO_GL_pbo && screen_texture == NULL)
+		/* The largest width is in NTSC-filtered full overscan mode - 672 pixels.
+		   The largest height is in XEP-80 mode - 275 pixels. Add 1 pixel at each side
+		   to nicely render screen borders. The texture is 1024x512, which is more than
+		   enough - although it's rounded to powers of 2 to be more compatible (earlier
+		   versions of OpenGL supported only textures with width/height of powers of 2). */
 		screen_texture = Util_malloc(1024*512*(bpp_32 ? sizeof(Uint32) : sizeof(Uint16)));
 }
 
 /* Frees memory for the screen texture, if needed. */
 static void FreeTexture(void)
 {
-	if (!use_pbo && screen_texture != NULL) {
+	if (!SDL_VIDEO_GL_pbo && screen_texture != NULL) {
 		free(screen_texture);
 		screen_texture = NULL;
 	}
@@ -220,14 +226,14 @@ static void InitGlContext(void)
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.LoadIdentity();
 	screen_dlist = gl.GenLists(1);
-	if (use_pbo)
+	if (SDL_VIDEO_GL_pbo)
 		gl.GenBuffers(1, &screen_pbo);
 }
 
 /* Cleans up the structures allocated in InitGlContext. */
 static void CleanGlContext(void)
 {
-		if (use_pbo)
+		if (SDL_VIDEO_GL_pbo)
 			gl.DeleteBuffers(1, &screen_pbo);
 		gl.DeleteLists(screen_dlist, 1);
 		gl.DeleteTextures(2, textures);
@@ -251,7 +257,7 @@ static void InitGlTextures(void)
 		gl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 2, 0,
 		              GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV,
 		              scanline_tex16);
-	if (use_pbo) {
+	if (SDL_VIDEO_GL_pbo) {
 		gl.BindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, screen_pbo);
 		gl.BufferData(GL_PIXEL_UNPACK_BUFFER_ARB, 1024*512*(bpp_32 ? sizeof(Uint32) : sizeof(Uint16)), NULL, GL_DYNAMIC_DRAW_ARB);
 		gl.BindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
@@ -387,7 +393,7 @@ static void CleanDisplayTexture(void)
 {
 	GLvoid *ptr;
 	gl.BindTexture(GL_TEXTURE_2D, textures[0]);
-	if (use_pbo) {
+	if (SDL_VIDEO_GL_pbo) {
 		gl.BindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, screen_pbo);
 		ptr = gl.MapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 	}
@@ -402,7 +408,7 @@ static void CleanDisplayTexture(void)
 
 	} else
 		memset(ptr, 0x00, 1024*512*sizeof(Uint16));
-	if (use_pbo) {
+	if (SDL_VIDEO_GL_pbo) {
 		gl.UnmapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB);
 		ptr = NULL;
 	}
@@ -414,7 +420,7 @@ static void CleanDisplayTexture(void)
 		gl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1024, 512,
 				GL_RGB, GL_UNSIGNED_SHORT_5_6_5,
 				ptr);
-	if (use_pbo)
+	if (SDL_VIDEO_GL_pbo)
 		gl.BindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 }
 
@@ -482,11 +488,13 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 				return FALSE;
 			}
 			Log_print("OpenGL version: %s", gl.GetString(GL_VERSION));
-			use_pbo = InitGlPbo();
-			if (use_pbo)
+			pbo_available = InitGlPbo();
+			if (pbo_available)
 				Log_print("OpenGL Pixel Buffer Objects available.");
-			else
+			else {
 				Log_print("OpenGL Pixel Buffer Objects not available.");
+				SDL_VIDEO_GL_pbo = FALSE;
+			}
 		}
 		InitGlContext();
 		context_updated = TRUE;
@@ -596,7 +604,7 @@ static void DisplayAF80(GLvoid *dest)
 void SDL_VIDEO_GL_DisplayScreen(void)
 {
 	gl.BindTexture(GL_TEXTURE_2D, textures[0]);
-	if (use_pbo) {
+	if (SDL_VIDEO_GL_pbo) {
 		GLvoid *ptr;
 		gl.BindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, screen_pbo);
 		ptr = gl.MapBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
@@ -626,6 +634,8 @@ int SDL_VIDEO_GL_ReadConfig(char *option, char *parameters)
 	}
 	else if (strcmp(option, "BILINEAR_FILTERING") == 0)
 		return (SDL_VIDEO_GL_filtering = Util_sscanbool(parameters)) != -1;
+	else if (strcmp(option, "OPENGL_PBO") == 0)
+		return (SDL_VIDEO_GL_pbo = Util_sscanbool(parameters)) != -1;
 	else
 		return FALSE;
 	return TRUE;
@@ -635,6 +645,7 @@ void SDL_VIDEO_GL_WriteConfig(FILE *fp)
 {
 	fprintf(fp, "PIXEL_FORMAT=%s\n", pixel_format_cfg_strings[SDL_VIDEO_GL_pixel_format]);
 	fprintf(fp, "BILINEAR_FILTERING=%d\n", SDL_VIDEO_GL_filtering);
+	fprintf(fp, "OPENGL_PBO=%d\n", SDL_VIDEO_GL_pbo);
 }
 
 /* Detects OpenGL availablility and set GL function pointers. Returns whether OpenGL is available. */
@@ -701,6 +712,10 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 			SDL_VIDEO_GL_filtering = TRUE;
 		else if (strcmp(argv[i], "-no-bilinear-filter") == 0)
 			SDL_VIDEO_GL_filtering = FALSE;
+		else if (strcmp(argv[i], "-pbo") == 0)
+			SDL_VIDEO_GL_pbo = TRUE;
+		else if (strcmp(argv[i], "-no-pbo") == 0)
+			SDL_VIDEO_GL_pbo = FALSE;
 		else if (strcmp(argv[i], "-opengl-lib") == 0) {
 			if (i_a)
 				library_path = argv[++i];
@@ -713,6 +728,8 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 				Log_print("\t                     Set internal pixel format (affects performance)");
 				Log_print("\t-bilitear-filter     Enable OpenGL bilinear filtering");
 				Log_print("\t-no-bilitear-filter  Disable OpenGL bilinear filtering");
+				Log_print("\t-pbo                 Use OpenGL Pixel Buffer Objects if available");
+				Log_print("\t-no-pbo              Don't use OpenGL Pixel Buffer Objects");
 				Log_print("\t-opengl-lib <path>   Use a custom OpenGL shared library");
 			}
 			argv[j++] = argv[i];
@@ -782,6 +799,31 @@ void SDL_VIDEO_GL_SetFiltering(int value)
 void SDL_VIDEO_GL_ToggleFiltering(void)
 {
 	SDL_VIDEO_GL_SetFiltering(!SDL_VIDEO_GL_filtering);
+}
+
+int SDL_VIDEO_GL_SetPbo(int value)
+{
+	if (MainScreen != NULL) {
+		/* Return false if PBOs are requested but not available. */
+		if (value && !pbo_available)
+			return FALSE;
+		CleanGlContext();
+		FreeTexture();
+		SDL_VIDEO_GL_pbo = value;
+		InitGlContext();
+		AllocTexture();
+		InitGlTextures();
+		SetGlDisplayList();
+		CleanDisplayTexture();
+	}
+	else
+		SDL_VIDEO_GL_pbo = value;
+	return TRUE;
+}
+
+int SDL_VIDEO_GL_TogglePbo(void)
+{
+	return SDL_VIDEO_GL_SetPbo(!SDL_VIDEO_GL_pbo);
 }
 
 void SDL_VIDEO_GL_ScanlinesPercentageChanged(void)

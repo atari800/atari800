@@ -25,6 +25,15 @@ extern int SDL_VIDEO_GL_filtering;
 void SDL_VIDEO_GL_SetFiltering(int value);
 void SDL_VIDEO_GL_ToggleFiltering(void);
 
+/* Get/set usage of Pixel Buffer Objects if available. */
+/* Call VIDEOMODE_Update() after changing this variable, or use SDL_VIDEO_GL_SetPbo() instead. */
+extern int SDL_VIDEO_GL_pbo;
+/* If PBOs are requested but not available, these functions return FALSE. Note: Testing for
+   availibility of PBOs is only possible when OpenGL is active. If the host doesn't support PBOs
+   but OpenGL mode is not active, the functions will return TRUE. */
+int SDL_VIDEO_GL_SetPbo(int value);
+int SDL_VIDEO_GL_TogglePbo(void);
+
 void SDL_VIDEO_GL_ScanlinesPercentageChanged(void);
 void SDL_VIDEO_GL_InterpolateScanlinesChanged(void);
 

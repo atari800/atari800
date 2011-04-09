@@ -1357,7 +1357,8 @@ static void VideoModeSettings(void)
 		UI_MENU_CHECK(15, "Interpolate scanlines:"),
 #if HAVE_OPENGL
 		UI_MENU_CHECK(16, "Hardware acceleration:"),
-		UI_MENU_CHECK(17, "Bilinear filtering:"),
+		UI_MENU_CHECK(17, " Bilinear filtering:"),
+		UI_MENU_CHECK(18, " Use pixel buffer objects:"),
 #endif /* HAVE_OPENGL */
 #endif /* SDL */
 		UI_MENU_END
@@ -1426,6 +1427,7 @@ static void VideoModeSettings(void)
 #if HAVE_OPENGL
 		SetItemChecked(menu_array, 16, SDL_VIDEO_opengl);
 		SetItemChecked(menu_array, 17, SDL_VIDEO_GL_filtering);
+		SetItemChecked(menu_array, 18, SDL_VIDEO_GL_pbo);
 #endif /* HAVE_OPENGL */
 #endif /* SDL */
 
@@ -1607,6 +1609,12 @@ static void VideoModeSettings(void)
 			if (!SDL_VIDEO_opengl)
 				UI_driver->fMessage("Works only with hardware acceleration.", 1);
 			SDL_VIDEO_GL_ToggleFiltering();
+			break;
+		case 18:
+			if (!SDL_VIDEO_opengl)
+				UI_driver->fMessage("Works only with hardware acceleration.", 1);
+			if (!SDL_VIDEO_GL_TogglePbo())
+				UI_driver->fMessage("Pixel buffer objects not available.", 1);
 			break;
 #endif /* HAVE_OPENGL */
 #endif /* SDL */

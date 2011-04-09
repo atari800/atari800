@@ -10,6 +10,9 @@
 * DOC/USAGE, src/atari800.man, src/ui.c, src/sdl/video.[ch],
   src/sdl/video_gl.[ch], src/sdl/video_sw.c: Add option for enabling
   synchronization with vertical retrace - for SDL fullscreen non-OpenGL modes.
+* DOC/USAGE, src/atari800.man, src/ui.c, src/sdl/video_gl.[ch]:
+  Add option for disabling OpenGL Pixel Buffer Objects - on some hardware they
+  decrease performance.
 
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)
