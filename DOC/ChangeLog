@@ -27,6 +27,9 @@
   ModeInfo only when necessary.
 * DOC/USAGE, src/atari800.man, src/videomode.c, src/sdl/video.c: Other fixes
   in help/documentation.
+* src/sdl/main.c, src/sdl/video.[ch], src/sdl/video_gl.[ch], src/sdl/video_sw.c:
+  Try to reinitialise the SDL video subsystem after an error before failing.
+  This allows to recover from some hardware/driver-related errors.
 
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)

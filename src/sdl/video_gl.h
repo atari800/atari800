@@ -49,4 +49,8 @@ int SDL_VIDEO_GL_ReadConfig(char *option, char *parameters);
 void SDL_VIDEO_GL_WriteConfig(FILE *fp);
 int SDL_VIDEO_GL_Initialise(int *argc, char *argv[]);
 
+/* Initialise SDL GL subsystem. Must be called after SDL video initialisation
+   (SDL_VIDEO_InitSDL()). */
+void SDL_VIDEO_GL_InitSDL(void);
+
 #endif /* SDL_VIDEO_GL_H_ */

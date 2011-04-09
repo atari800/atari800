@@ -49,6 +49,13 @@ extern int SDL_VIDEO_interpolate_scanlines;
 void SDL_VIDEO_SetInterpolateScanlines(int value);
 void SDL_VIDEO_ToggleInterpolateScanlines(void);
 
+/* Initialise the SDL video subsystem. */
+void SDL_VIDEO_InitSDL(void);
+/* Close the SDL video subsystem. */
+void SDL_VIDEO_QuitSDL(void);
+/* Close and restart the SDL video subsystem. */
+void SDL_VIDEO_ReinitSDL(void);
+
 int SDL_VIDEO_ReadConfig(char *option, char *parameters);
 void SDL_VIDEO_WriteConfig(FILE *fp);
 int SDL_VIDEO_Initialise(int *argc, char *argv[]);

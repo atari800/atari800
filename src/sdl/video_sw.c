@@ -132,9 +132,15 @@ static void SetVideoMode(int w, int h, int bpp)
 
 	MainScreen = SDL_SetVideoMode(w, h, bpp, flags);
 	if (MainScreen == NULL) {
-		Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, bpp, SDL_GetError());
-		Log_flushlog();
-		exit(-1);
+		/* Some SDL_SetVideoMode errors can be averted by reinitialising the SDL video subsystem. */
+		Log_print("Setting video mode: %dx%dx%d failed: %s. Reinitialising video.", w, h, bpp, SDL_GetError());
+		SDL_VIDEO_ReinitSDL();
+		MainScreen = SDL_SetVideoMode(w, h, bpp, flags);
+		if (MainScreen == NULL) {
+			Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, bpp, SDL_GetError());
+			Log_flushlog();
+			exit(-1);
+		}
 	}
 	SDL_VIDEO_width = MainScreen->w;
 	SDL_VIDEO_height = MainScreen->h;

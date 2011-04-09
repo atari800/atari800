@@ -449,21 +449,31 @@ static void ModeInfo(void)
 		   MainScreen->format->BitsPerPixel, fullstring, pixel_format_cfg_strings[SDL_VIDEO_GL_pixel_format]);
 }
 
-static void SetVideoMode(int w, int h)
+/* Return value of TRUE indicates that the video subsystem was reinitialised. */
+static int SetVideoMode(int w, int h)
 {
+	int reinit = FALSE;
 	Uint32 flags = SDL_OPENGL | (currently_windowed ? SDL_RESIZABLE : SDL_FULLSCREEN);
 	/* In OpenGL mode, the SDL screen is always opened with the default
 	   desktop depth - it is the most compatible way. */
 	MainScreen = SDL_SetVideoMode(w, h, SDL_VIDEO_native_bpp, flags);
 	if (MainScreen == NULL) {
-		Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, SDL_VIDEO_native_bpp, SDL_GetError());
-		Log_flushlog();
-		exit(-1);
+		/* Some SDL_SetVideoMode errors can be averted by reinitialising the SDL video subsystem. */
+		Log_print("Setting video mode: %dx%dx%d failed: %s. Reinitialising video.", w, h, SDL_VIDEO_native_bpp, SDL_GetError());
+		SDL_VIDEO_ReinitSDL();
+		reinit = TRUE;
+		MainScreen = SDL_SetVideoMode(w, h, SDL_VIDEO_native_bpp, flags);
+		if (MainScreen == NULL) {
+			Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, SDL_VIDEO_native_bpp, SDL_GetError());
+			Log_flushlog();
+			exit(-1);
+		}
 	}
 	SDL_VIDEO_width = MainScreen->w;
 	SDL_VIDEO_height = MainScreen->h;
 	SDL_VIDEO_vsync_available = FALSE;
 	ModeInfo();
+	return reinit;
 }
 
 int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90, int window_resized)
@@ -479,7 +489,9 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 		if (!new) {
 			CleanGlContext();
 		}
-		SetVideoMode(res->width, res->height);
+		if (SetVideoMode(res->width, res->height))
+			/* Reinitialisation happened! Need to recreate GL context. */
+			new = TRUE;
 		if (new) {
 			GLint tex_size;
 			gl.GetIntegerv(GL_MAX_TEXTURE_SIZE, & tex_size);
@@ -692,6 +704,15 @@ static int InitGl(void)
 	return TRUE;
 }
 
+void SDL_VIDEO_GL_InitSDL(void)
+{
+	SDL_VIDEO_opengl_available = InitGl();
+	if (SDL_VIDEO_opengl_available)
+		Log_print("OpenGL initialised successfully.");
+	else
+		Log_print("OpenGL not available.");
+}
+
 int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 {
 	int i, j;
@@ -749,12 +770,6 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 		return TRUE;
 
 	bpp_32 = SDL_VIDEO_GL_pixel_format >= SDL_VIDEO_GL_PIXEL_FORMAT_BGRA32;
-
-	SDL_VIDEO_opengl_available = InitGl();
-	if (SDL_VIDEO_opengl_available)
-		Log_print("OpenGL initialised successfully.");
-	else
-		Log_print("OpenGL not available.");
 
 	return TRUE;
 }

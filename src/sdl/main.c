@@ -75,7 +75,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	if (!help_only) {
-		i = SDL_INIT_VIDEO | SDL_INIT_JOYSTICK;
+		i = SDL_INIT_JOYSTICK;
 #ifdef SOUND
 		i |= SDL_INIT_AUDIO;
 #endif
@@ -86,15 +86,13 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		if (SDL_getenv("SDL_VIDEODRIVER")==NULL)
 			SDL_putenv("SDL_VIDEODRIVER=directx");
 #endif
+
 		if (SDL_Init(i) != 0) {
-			Log_print("SDL_Init FAILED");
-			Log_print(SDL_GetError());
+			Log_print("SDL_Init FAILED: %s", SDL_GetError());
 			Log_flushlog();
 			exit(-1);
 		}
 		atexit(SDL_Quit);
-		/* SDL_WM_SetIcon("/usr/local/atari800/atarixe.ICO"), NULL); */
-		SDL_WM_SetCaption(Atari800_TITLE, "Atari800");
 	}
 
 	if (!SDL_VIDEO_Initialise(argc, argv)
@@ -103,11 +101,6 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 #endif
 	    || !SDL_INPUT_Initialise(argc, argv))
 		return FALSE;
-
-	if (help_only)
-		return TRUE; /* return before initialising SDL */
-
-	SDL_EnableUNICODE(1);
 
 	return TRUE;
 }

@@ -37,6 +37,7 @@
 #include "videomode.h"
 #include "xep80.h"
 
+#include "sdl/input.h"
 #include "sdl/video.h"
 #include "sdl/video_sw.h"
 #if HAVE_OPENGL
@@ -213,6 +214,54 @@ void SDL_VIDEO_WriteConfig(FILE *fp)
 	SDL_VIDEO_SW_WriteConfig(fp);
 }
 
+void SDL_VIDEO_InitSDL(void)
+{
+	if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+			Log_print("SDL_INIT_VIDEO FAILED: %s", SDL_GetError());
+			Log_flushlog();
+			exit(-1);
+	}
+	/* SDL_WM_SetIcon("/usr/local/atari800/atarixe.ICO"), NULL); */
+	SDL_WM_SetCaption(Atari800_TITLE, "Atari800");
+
+	/* Get the desktop resolution */
+	{
+		SDL_VideoInfo const * const info = SDL_GetVideoInfo();
+		desktop_resolution.width = info->current_w;
+		desktop_resolution.height = info->current_h;
+		SDL_VIDEO_native_bpp = info->vfmt->BitsPerPixel;
+	}
+
+#if HAVE_OPENGL
+	SDL_VIDEO_GL_InitSDL();
+	if (!SDL_VIDEO_opengl_available)
+		currently_opengl = SDL_VIDEO_opengl = FALSE;
+#endif
+
+	SDL_EnableUNICODE(1);
+}
+
+void SDL_VIDEO_QuitSDL(void)
+{
+#if HAVE_OPENGL
+	if (currently_opengl)
+		SDL_VIDEO_GL_Cleanup();
+	else
+#endif
+		SDL_VIDEO_SW_Cleanup();
+
+	SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
+
+void SDL_VIDEO_ReinitSDL(void)
+{
+	SDL_VIDEO_QuitSDL();
+	/* At this moment the SDL window gets destroyed but for any pressed key no SDL_KEY_UP
+	   event is received. We have to flush the input state manually. */
+	SDL_INPUT_Restart();
+	SDL_VIDEO_InitSDL();
+}
+
 int SDL_VIDEO_Initialise(int *argc, char *argv[])
 {
 	int i, j;
@@ -233,9 +282,9 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 			SDL_VIDEO_interpolate_scanlines = FALSE;
 #if HAVE_OPENGL
 		else if (strcmp(argv[i], "-video-accel") == 0)
-			SDL_VIDEO_opengl = TRUE;
+			currently_opengl = SDL_VIDEO_opengl = TRUE;
 		else if (strcmp(argv[i], "-no-video-accel") == 0)
-			SDL_VIDEO_opengl = FALSE;
+			currently_opengl = SDL_VIDEO_opengl = FALSE;
 #endif /* HAVE_OPENGL */
 		else if (strcmp(argv[i], "-vsync") == 0)
 			SDL_VIDEO_vsync = TRUE;
@@ -271,32 +320,15 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 	)
 		return FALSE;
 
-	if (help_only)
-		return TRUE; /* return before initialising SDL */
+	if (!help_only)
+		SDL_VIDEO_InitSDL();
 
-	/* Get the desktop resolution and bit depth. */
-	{
-		SDL_VideoInfo const * const info = SDL_GetVideoInfo();
-		desktop_resolution.width = info->current_w;
-		desktop_resolution.height = info->current_h;
-		SDL_VIDEO_native_bpp = info->vfmt->BitsPerPixel;
-	}
-
-#if HAVE_OPENGL
-	if (!SDL_VIDEO_opengl_available)
-		currently_opengl = SDL_VIDEO_opengl = FALSE;
-#endif
 	return TRUE;
 }
 
 void SDL_VIDEO_Exit(void)
 {
-#if HAVE_OPENGL
-	if (currently_opengl)
-		SDL_VIDEO_GL_Cleanup();
-	else
-#endif
-		SDL_VIDEO_SW_Cleanup();
+	SDL_VIDEO_QuitSDL();
 }
 
 void SDL_VIDEO_BlitNormal8(Uint32 *dest, Uint8 *src, int pitch, int width, int height)
