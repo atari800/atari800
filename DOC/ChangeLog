@@ -22,6 +22,7 @@
   -keep-aspect 1to1 -> image-aspect square-pixels,
   -[no]-opengl -> -[no]-video-accel
 * src/ui.c: Reorder the Video Mode Settings menu, for better usability.
+  Use the slider control for video area/shift options.
 * src/sdl/video_gl.c, src/sdl/video_sw.c: Call SDL_SetVideoMode() and display
   ModeInfo only when necessary.
 

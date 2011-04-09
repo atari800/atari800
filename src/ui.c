@@ -1267,6 +1267,32 @@ static int ChooseVideoResolution(int current_res)
 	return current_res;
 }
 
+/* Callback function that writes a text label to *LABEL, for use by
+   any slider that adjusts an integer value. */
+static void IntSliderLabel(char *label, int value, void *user_data)
+{
+	value += *((int *)user_data);
+	sprintf(label, "%i", value); /* WARNING: No more that 10 chars! */
+}
+
+/* Callback function that writes a text label to *LABEL, for use by
+   the Set Horizontal Offset slider. */
+static void HorizOffsetSliderLabel(char *label, int value, void *user_data)
+{
+	value += *((int *)user_data);
+	sprintf(label, "%i", value); /* WARNING: No more that 10 chars! */
+	VIDEOMODE_SetHorizontalOffset(value);
+}
+
+/* Callback function that writes a text label to *LABEL, for use by
+   the Set Vertical Offset slider. */
+static void VertOffsetSliderLabel(char *label, int value, void *user_data)
+{
+	value += *((int *)user_data);
+	sprintf(label, "%i", value); /* WARNING: No more that 10 chars! */
+	VIDEOMODE_SetVerticalOffset(value);
+}
+
 static void VideoModeSettings(void)
 {
 	static const UI_tMenuItem host_aspect_menu_array[] = {
@@ -1565,14 +1591,12 @@ static void VideoModeSettings(void)
 				if (option2 < VIDEOMODE_HORIZONTAL_CUSTOM)
 					VIDEOMODE_SetHorizontalArea(option2);
 				else {
-					char buffer[sizeof(horiz_area_string)];
-#ifdef HAVE_SNPRINTF
-					snprintf(buffer, sizeof(buffer), "%d", VIDEOMODE_custom_horizontal_area);
-#else
-					sprintf(buffer, "%d", VIDEOMODE_custom_horizontal_area);
-#endif
-					if (UI_driver->fEditString("Enter number of pixels (160..384)", buffer, sizeof(buffer)))
-						VIDEOMODE_SetCustomHorizontalArea(atoi(buffer));
+					int offset = 160;
+					int value = UI_driver->fSelectSlider("Select horizontal area",
+					                                     VIDEOMODE_custom_horizontal_area - offset,
+					                                     384 - 160, &IntSliderLabel, &offset);
+					if (value != -1)
+						VIDEOMODE_SetCustomHorizontalArea(value + offset);
 				}
 			}
 			break;
@@ -1582,14 +1606,12 @@ static void VideoModeSettings(void)
 				if (option2 < VIDEOMODE_VERTICAL_CUSTOM)
 					VIDEOMODE_SetVerticalArea(option2);
 				else {
-					char buffer[sizeof(vert_area_string)];
-#ifdef HAVE_SNPRINTF
-					snprintf(buffer, sizeof(buffer), "%d", VIDEOMODE_custom_vertical_area);
-#else
-					sprintf(buffer, "%d", VIDEOMODE_custom_vertical_area);
-#endif
-					if (UI_driver->fEditString("Enter number of scanlines (120..275)", buffer, sizeof(buffer)))
-						VIDEOMODE_SetCustomVerticalArea(atoi(buffer));
+					int offset = 120;
+					int value = UI_driver->fSelectSlider("Select vertical area",
+					                                     VIDEOMODE_custom_vertical_area - offset,
+					                                     275 - 120, &IntSliderLabel, &offset);
+					if (value != -1)
+						VIDEOMODE_SetCustomVerticalArea(value + offset);
 				}
 			}
 			break;
@@ -1597,10 +1619,13 @@ static void VideoModeSettings(void)
 			switch (seltype) {
 			case UI_USER_SELECT:
 				{
-					char buffer[sizeof(horiz_offset_string)];
-					memcpy(buffer, horiz_offset_string, sizeof(buffer));
-					if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer)))
-						VIDEOMODE_SetHorizontalOffset(atoi(buffer));
+					int range = 384 - VIDEOMODE_custom_horizontal_area;
+					int offset = - range / 2;
+					int value = UI_driver->fSelectSlider("Select horizontal shift",
+					                                     VIDEOMODE_horizontal_offset - offset,
+					                                     range, &HorizOffsetSliderLabel, &offset);
+					if (value != -1)
+						VIDEOMODE_SetHorizontalOffset(value + offset);
 				}
 				break;
 			case UI_USER_DELETE:
@@ -1612,10 +1637,13 @@ static void VideoModeSettings(void)
 			switch (seltype) {
 			case UI_USER_SELECT:
 				{
-					char buffer[sizeof(vert_offset_string)];
-					memcpy(buffer, vert_offset_string, sizeof(buffer));
-					if (UI_driver->fEditString("Enter value", buffer, sizeof(buffer)))
-						VIDEOMODE_SetVerticalOffset(atoi(buffer));
+					int range = 275 - VIDEOMODE_custom_vertical_area;
+					int offset = - range / 2;
+					int value = UI_driver->fSelectSlider("Select vertical shift",
+					                                     VIDEOMODE_vertical_offset - offset,
+					                                     range, &VertOffsetSliderLabel, &offset);
+					if (value != -1)
+						VIDEOMODE_SetVerticalOffset(value + offset);
 				}
 				break;
 			case UI_USER_DELETE:
