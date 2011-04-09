@@ -73,8 +73,11 @@ int VIDEOMODE_keep_aspect = VIDEOMODE_KEEP_ASPECT_1TO1;
 #if SUPPORTS_ROTATE_VIDEOMODE
 int VIDEOMODE_rotate90 = FALSE;
 #endif
-double VIDEOMODE_host_aspect_ratio_w = 4.0;
-double VIDEOMODE_host_aspect_ratio_h = 3.0;
+
+/* Values of 0.0 indicate that aspect ratio should be autodetected
+   in VIDEOMODE_Initialise(). */
+double VIDEOMODE_host_aspect_ratio_w = 0.0;
+double VIDEOMODE_host_aspect_ratio_h = 0.0;
 
 unsigned int VIDEOMODE_src_offset_left;
 unsigned int VIDEOMODE_src_offset_top;
@@ -136,15 +139,15 @@ static char const * const keep_aspect_cfg_strings[VIDEOMODE_KEEP_ASPECT_SIZE] = 
 };
 
 typedef struct display_mode_t {
-	unsigned int min_w;
-	unsigned int min_h;
-	unsigned int src_width;
-	unsigned int src_height;
-	int param2src_w_mult;
-	int src2out_h_mult;
-	double asp_ratio;
-	unsigned int (*src2out_w_func)(unsigned int);
-	unsigned int (*out2src_w_func)(unsigned int);
+	unsigned int min_w; /* Minimum horizontal display resolution to show this mode */
+	unsigned int min_h; /* Minimum vertical display resolution to show this mode */
+	unsigned int src_width; /* Horizontal resolution of source image in this mode */
+	unsigned int src_height; /* Vertical resolution of source image in this mode */
+	int param2src_w_mult; /* Use this multiplier to compute needed horizontal amount of source image based on current "horizontal area" */
+	int src2out_h_mult; /* Use this multiplier to compute vertical output area based on source image area */
+	double asp_ratio; /* Pixel aspect ratio of this mode */
+	unsigned int (*src2out_w_func)(unsigned int); /* Function that converts source image width to output image width */
+	unsigned int (*out2src_w_func)(unsigned int); /* Function that converts output image width to source image width */
 } display_mode_t;
 
 static unsigned int ReturnSame(unsigned int value);
@@ -358,7 +361,9 @@ static void UpdateCustomStretch(void)
 }
 
 /* Computes VIDEOMODE_dest_width/height based on various parameters. */
-static void ComputeVideoArea(VIDEOMODE_resolution_t const *res, VIDEOMODE_resolution_t const *screen_res, VIDEOMODE_MODE_t display_mode, unsigned int out_w, unsigned int out_h, double *mult_w, double *mult_h, int rotate)
+static void ComputeVideoArea(VIDEOMODE_resolution_t const *res, VIDEOMODE_resolution_t const *screen_res,
+                             VIDEOMODE_MODE_t display_mode, unsigned int out_w, unsigned int out_h,
+                             double *mult_w, double *mult_h, int rotate)
 {
 	double asp_ratio;
 	/* asp_ratio = <Atari pixel aspect ratio>/<host pixel aspect ratio>.
@@ -848,6 +853,40 @@ void VIDEOMODE_CopyHostAspect(char *target, unsigned int size)
 	target[size - 1] = '\0';
 }
 
+/* Find greatest common divisor of M and N. */
+static unsigned int gcd(unsigned int m, unsigned int n) {
+	unsigned int t;
+	if (m < n) {
+		t = m;
+		m = n;
+		n = t;
+	}
+
+	for (;;) {
+		if (n == 0)
+			return m;
+		t = n;
+		n = m % n;
+		m = t;
+	}
+}
+
+/* Autodetect host aspect ratio and write it into W and H. */
+static void AutodetectHostAspect(double *w, double *h)
+{
+	VIDEOMODE_resolution_t *res = PLATFORM_DesktopResolution();
+	unsigned int d = gcd(res->width, res->height);
+	*w = (double)res->width / d;
+	*h = (double)res->height / d;
+}
+
+int VIDEOMODE_AutodetectHostAspect(void)
+{
+	double w, h;
+	AutodetectHostAspect(&w, &h);
+	return VIDEOMODE_SetHostAspect(w, h);
+}
+
 int VIDEOMODE_ReadConfig(char *option, char *ptr)
 {
 	if (strcmp(option, "VIDEOMODE_WINDOW_WIDTH") == 0)
@@ -911,7 +950,10 @@ int VIDEOMODE_ReadConfig(char *option, char *ptr)
 		return (VIDEOMODE_rotate90 = Util_sscanbool(ptr)) != -1;
 #endif
 	else if (strcmp(option, "VIDEOMODE_HOST_ASPECT_RATIO") == 0) {
-		return ParseAspectRatio(ptr, &VIDEOMODE_host_aspect_ratio_w, &VIDEOMODE_host_aspect_ratio_h);
+		if (strcmp(ptr, "AUTO") == 0)
+			VIDEOMODE_host_aspect_ratio_w = VIDEOMODE_host_aspect_ratio_h = 0.0;
+		else
+			return ParseAspectRatio(ptr, &VIDEOMODE_host_aspect_ratio_w, &VIDEOMODE_host_aspect_ratio_h);
 	}
 #if NTSC_FILTER
 	else if (strcmp(option, "VIDEOMODE_NTSC_FILTER") == 0)
@@ -1062,7 +1104,10 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 #endif /* SUPPORTS_ROTATE_VIDEOMODE */
 		else if (strcmp(argv[i], "-host-aspect-ratio") == 0) {
 			if (i_a) {
-				a_i = !ParseAspectRatio(argv[++i], &VIDEOMODE_host_aspect_ratio_w, &VIDEOMODE_host_aspect_ratio_h);
+				if (strcmp(argv[++i], "auto") == 0)
+					VIDEOMODE_host_aspect_ratio_w = VIDEOMODE_host_aspect_ratio_h = 0.0;
+				else
+					a_i = !ParseAspectRatio(argv[i], &VIDEOMODE_host_aspect_ratio_w, &VIDEOMODE_host_aspect_ratio_h);
 			}
 			else a_m = TRUE;
 		}
@@ -1092,7 +1137,6 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 				Log_print("\t                            Choose vertical view area");
 				Log_print("\t-horiz-offset <num>         Set horizontal offset of the visible area (-384..384)");
 				Log_print("\t-vert-offset <num>          Set vertical offset of the visible area (-275..275)");
-				Log_print("\t                            Possible values: normal, wide, narrow");
 				Log_print("\t-stretch none|integer|full|<number>");
 				Log_print("\t                            Stretch display to screen/window size");
 				Log_print("\t-fit-screen width|height|both");
@@ -1102,7 +1146,8 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 				Log_print("\t-rotate90                   Rotate the screen sideways");
 				Log_print("\t-no-rotate90                Don't rotate the screen");
 #endif /* SUPPORTS_ROTATE_VIDEOMODE */
-				Log_print("\t-host-aspect-ratio <w>:<h>  Set host display aspect ratio");
+				Log_print("\t-host-aspect-ratio auto|<w>:<h>");
+				Log_print("\t                            Set host display aspect ratio");
 #if NTSC_FILTER
 				Log_print("\t-ntscemu                    Enable NTSC composite video filter");
 				Log_print("\t-no-ntscemu                 Disable NTSC composite video filter");
@@ -1187,6 +1232,9 @@ int VIDEOMODE_InitialiseDisplay(void)
 		Log_print("Requested resolution %ux%u is not available, using %ux%u instead.",
 		          init_fs_resolution.width, init_fs_resolution.height,
 		          resolutions[current_resolution].width, resolutions[current_resolution].height);
+	/* Autodetect host display aspect ratio if requested. */
+	if (VIDEOMODE_host_aspect_ratio_w == 0.0 || VIDEOMODE_host_aspect_ratio_h == 0.0)
+		AutodetectHostAspect(&VIDEOMODE_host_aspect_ratio_w, &VIDEOMODE_host_aspect_ratio_h);
 
 	UpdateTvSystemSettings();
 	if (!VIDEOMODE_Update()) {

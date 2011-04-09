@@ -261,9 +261,11 @@ SDL version options
                       none: no correction, screen stretching unrestricted,
                       1to1: width and height stretched by the same multipler
                       real: real TV's aspect ratio (depending on TV system)
--host-aspect-ratio <x>:<y>
+-host-aspect-ratio auto|<x>:<y>
                       Set host display's aspect ratio. Used to correctly
                       compute aspect ratio when -keep-aspect is "real".
+                      Can be set to values such as 4:3, 16:9, 1.25:1, etc.
+                      "auto" tries to autodetect the ratio.
 -80column             Display output of 80 column hardware. Usable only in
                       conjunction with one of -xep80, -proto80, -af80
 -no-80column          Display normal screen instead of 80 column output

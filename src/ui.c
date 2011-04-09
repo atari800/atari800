@@ -1269,6 +1269,14 @@ static int ChooseVideoResolution(int current_res)
 
 static void VideoModeSettings(void)
 {
+	static const UI_tMenuItem host_aspect_menu_array[] = {
+		UI_MENU_ACTION(0, "autodetect"),
+		UI_MENU_ACTION(1, "4:3"),
+		UI_MENU_ACTION(2, "5:4"),
+		UI_MENU_ACTION(3, "16:9"),
+		UI_MENU_ACTION(4, "custom"),
+		UI_MENU_END
+	};
 	static const UI_tMenuItem stretch_menu_array[] = {
 		UI_MENU_ACTION(0, "none (1x)"),
 		UI_MENU_ACTION(1, "2x"),
@@ -1516,10 +1524,23 @@ static void VideoModeSettings(void)
 			break;
 		case 9:
 			{
-				char buffer[sizeof(ratio_string)];
-				memcpy(buffer, ratio_string, sizeof(buffer));
-				if (UI_driver->fEditString("Enter value in x:y format", buffer, sizeof(buffer)))
-					VIDEOMODE_SetHostAspectString(buffer);
+				int current;
+				for (current = 1; current < 4; ++current) {
+					/* Find the currently-chosen host aspect ratio. */
+					if (strcmp(ratio_string, host_aspect_menu_array[current].item) == 0)
+						break;
+				}
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, current, host_aspect_menu_array, NULL);
+				if (option2 == 4) {
+					char buffer[sizeof(ratio_string)];
+					memcpy(buffer, ratio_string, sizeof(buffer));
+					if (UI_driver->fEditString("Enter value in x:y format", buffer, sizeof(buffer)))
+						VIDEOMODE_SetHostAspectString(buffer);
+				}
+				else if (option2 >= 1)
+					VIDEOMODE_SetHostAspectString(host_aspect_menu_array[option2].item);
+				else if (option2 == 0)
+					VIDEOMODE_AutodetectHostAspect();
 			}
 			break;
 		case 10:

@@ -455,10 +455,17 @@ screen will be stretched by the same amount horizontally and vertically;
 "Real" recreates the pixel aspect ratio of a real TV set (for NTSC it's about
 0.857, for PAL about 1.039 - pixels are not square).
 .TP
-\fB-host-aspect-ratio <x>:<y>
-Set the host monitor's aspect ratio. Expects values like 4:3, 16:9, 1.25:1 ...
-This value is used to properly compute screen's pixel aspect ratio when having
--keep-aspect set to "real".
+\fB-host-aspect-ratio auto|<x>:<y>
+Set the aspect ratio of the host monitor on which the emulator's display is
+placed. Allowed values are "auto" for autodetection, or ratios like 4:3, 16:9,
+1.25:1 ... This value is used to properly maintain image's aspect ratio when
+having -keep-aspect set to "real". The default value is "auto".
+Note that host aspect ratio detection works as expected only if the desktop
+resolution matches aspect ratio of the display device (in other words, display
+pixels are square). If, for example, desktop resolution is 800x600 on a 16:9
+monitor, autodetection will fail and host aspect ratio will have to be set
+manually, by measuring physical width and height of the monitor and setting
+the parameter to <width>:<height>.
 .TP
 \fB-80column
 Shows output of an 80 column hardware, when it is available. It has effect

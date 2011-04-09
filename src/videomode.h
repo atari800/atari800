@@ -88,7 +88,7 @@ int VIDEOMODE_ToggleVerticalArea(void);
 extern unsigned int VIDEOMODE_custom_vertical_area;
 int VIDEOMODE_SetCustomVerticalArea(unsigned int value);
 
-/* Get/set vertical offset. */
+/* Get/set horizontal offset. */
 /* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetHorizontalOffset() instead. */
 extern int VIDEOMODE_horizontal_offset;
 int VIDEOMODE_SetHorizontalOffset(int value);
@@ -158,6 +158,9 @@ extern double VIDEOMODE_host_aspect_ratio_h;
 int VIDEOMODE_SetHostAspect(double w, double h);
 int VIDEOMODE_SetHostAspectString(char const *s);
 void VIDEOMODE_CopyHostAspect(char *target, unsigned int size);
+/* Autotedect host display aspect ratio, based on the desktop
+   resolution and assuming square pixels. */
+int VIDEOMODE_AutodetectHostAspect(void);
 
 /* Returns number of available fullscreen resolutions. */
 unsigned int VIDEOMODE_NumAvailableResolutions(void);
