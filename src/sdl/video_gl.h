@@ -28,13 +28,6 @@ void SDL_VIDEO_GL_ToggleFiltering(void);
 void SDL_VIDEO_GL_ScanlinesPercentageChanged(void);
 void SDL_VIDEO_GL_InterpolateScanlinesChanged(void);
 
-/* Get/set synchronization of blitting with screen vertical retrace. */
-/* Call VIDEOMODE_Update() after changing this variable, or use SDL_VIDEO_GL_SetSync() instead. */
-/* FIXME: Disabled, currently doesn't work.
-extern int SDL_VIDEO_GL_sync;
-int SDL_VIDEO_GL_SetSync(int value);
-int SDL_VIDEO_GL_ToggleSync(void);*/
-
 /* Called when switching back to software mode. Cleans the OpenGL context and frees structures. */
 void SDL_VIDEO_GL_Cleanup(void);
 

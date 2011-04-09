@@ -7,6 +7,9 @@
   Also fix a bug with bit depth autodetection not working (in Windows BPP
   autotetection works only before the first call to SDL_SetVideoMode), and use
   the SDL 8-bit palettised video mode properly.
+* DOC/USAGE, src/atari800.man, src/ui.c, src/sdl/video.[ch],
+  src/sdl/video_gl.[ch], src/sdl/video_sw.c: Add option for enabling
+  synchronization with vertical retrace - for SDL fullscreen non-OpenGL modes.
 
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)

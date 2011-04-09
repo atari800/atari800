@@ -63,6 +63,8 @@ int SDL_VIDEO_opengl = FALSE;
 /* Was OpenGL active previously? */
 static int currently_opengl = FALSE;
 #endif
+int SDL_VIDEO_vsync = FALSE;
+int SDL_VIDEO_vsync_available;
 
 void PLATFORM_PaletteUpdate(void)
 {
@@ -180,11 +182,12 @@ int SDL_VIDEO_ReadConfig(char *option, char *parameters)
 			return FALSE;
 		else {
 			SDL_VIDEO_scanlines_percentage = value;
-			return TRUE;
 		}
 	}
 	else if (strcmp(option, "INTERPOLATE_SCANLINES") == 0)
 		return (SDL_VIDEO_interpolate_scanlines = Util_sscanbool(parameters)) != -1;
+	else if (strcmp(option, "VIDEO_VSYNC") == 0)
+		return (SDL_VIDEO_vsync = Util_sscanbool(parameters)) != -1;
 #if HAVE_OPENGL
 	else if (strcmp(option, "ENABLE_OPENGL") == 0)
 		return (currently_opengl = SDL_VIDEO_opengl = Util_sscanbool(parameters)) != -1;
@@ -202,6 +205,7 @@ void SDL_VIDEO_WriteConfig(FILE *fp)
 {
 	fprintf(fp, "SCANLINES_PERCENTAGE=%d\n", SDL_VIDEO_scanlines_percentage);
 	fprintf(fp, "INTERPOLATE_SCANLINES=%d\n", SDL_VIDEO_interpolate_scanlines);
+	fprintf(fp, "VIDEO_VSYNC=%d\n", SDL_VIDEO_vsync);
 #if HAVE_OPENGL
 	fprintf(fp, "ENABLE_OPENGL=%d\n", SDL_VIDEO_opengl);
 	SDL_VIDEO_GL_WriteConfig(fp);
@@ -233,6 +237,10 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-no-opengl") == 0)
 			SDL_VIDEO_opengl = FALSE;
 #endif /* HAVE_OPENGL */
+		else if (strcmp(argv[i], "-vsync") == 0)
+			SDL_VIDEO_vsync = TRUE;
+		else if (strcmp(argv[i], "-no-vsync") == 0)
+			SDL_VIDEO_vsync = FALSE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
@@ -243,6 +251,8 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 				Log_print("\t-opengl           Enable hardware video acceleration");
 				Log_print("\t-no-opengl        Disable hardware video acceleration");
 #endif /* HAVE_OPENGL */
+				Log_print("\t-vsync            Synchronize display to vertical retrace");
+				Log_print("\t-no-vsync         Don't synchronize display to vertical retrace");
 			}
 			argv[j++] = argv[i];
 		}
@@ -631,3 +641,16 @@ int SDL_VIDEO_ToggleOpengl(void)
 	return SDL_VIDEO_SetOpengl(!SDL_VIDEO_opengl);
 }
 #endif /* HAVE_OPENGL */
+
+int SDL_VIDEO_SetVsync(int value)
+{
+	SDL_VIDEO_vsync = value;
+	VIDEOMODE_Update();
+	/* Return false if vsync is requested but not available. */
+	return !SDL_VIDEO_vsync || SDL_VIDEO_vsync_available;
+}
+
+int SDL_VIDEO_ToggleVsync(void)
+{
+	return SDL_VIDEO_SetVsync(!SDL_VIDEO_vsync);
+}

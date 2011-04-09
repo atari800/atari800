@@ -398,6 +398,18 @@ the type of graphics hardware, the fullscreen setting and current desktop bit
 depth, either of the values might give the best performance. Note that with
 bit depth set to 16 emulation of colors is slightly less accurate.
 .TP
+\fB-vsync
+Synchronize the display with the monitor's vertical retrace, to remove image
+tearing artifacts. This improves display quality, but may be not available
+depending on the current wideo mode (fullscreen/windowed), the chosen
+SDL_VIDEODRIVER and type of graphics hardware. Synchronization is available
+for some SDL videodrivers (directx, dga) but not for others. In OpenGL this
+option has no effect - vertical synchronization must be instead enabled in the
+video hardware driver's settings, if available.
+.TP
+\fB-no-vsync
+Disable synchronization with monitor's vertical retrace (the default).
+.TP
 \fB-horiz-area narrow|tv|full|<number>
 Set amount of visible screen horizontally. "Narrow" shows 320 pixels, "Tv"
 shows area visible on a standard TV (336 pixels), and "Full" shows full

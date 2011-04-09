@@ -28,6 +28,16 @@ int SDL_VIDEO_SetOpengl(int value);
 int SDL_VIDEO_ToggleOpengl(void);
 #endif /* HAVE_OPENGL */
 
+/* Get/set the vertical synchronisation feature. */
+/* Call VIDEOMODE_Update() after changing this variable, or use SDL_VIDEO_SetVsync() instead. */
+extern int SDL_VIDEO_vsync;
+/* If Vsync is requested but not available in the current video mode, these
+   functions return FALSE and set SDL_VIDEO_vsync_available to FALSE; else the returned and
+   set values are TRUE. */
+int SDL_VIDEO_SetVsync(int value);
+int SDL_VIDEO_ToggleVsync(void);
+extern int SDL_VIDEO_vsync_available;
+
 /* Get/set brightness of scanlines. (0=none, 100=completely black). */
 /* Use SDL_VIDEO_SetScanlinesPercentage() to set this value. */
 extern int SDL_VIDEO_scanlines_percentage;

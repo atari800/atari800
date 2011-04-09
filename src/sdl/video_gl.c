@@ -51,7 +51,6 @@ static int bpp_32 = FALSE;
 
 int SDL_VIDEO_GL_filtering = 0;
 int SDL_VIDEO_GL_pixel_format = SDL_VIDEO_GL_PIXEL_FORMAT_BGR16;
-/* int SDL_VIDEO_GL_sync = 0; */
 
 /* Path to the OpenGL shared library. */
 static char const *library_path = NULL;
@@ -457,6 +456,7 @@ static void SetVideoMode(int w, int h)
 	}
 	SDL_VIDEO_width = MainScreen->w;
 	SDL_VIDEO_height = MainScreen->h;
+	SDL_VIDEO_vsync_available = FALSE;
 }
 
 int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90, int window_resized)
@@ -500,10 +500,10 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 	if (new
 	    || SDL_PALETTE_tab[mode].palette != SDL_PALETTE_tab[SDL_VIDEO_current_display_mode].palette)
 		CalcPalette(mode);
-	
+
 	if (context_updated)
 		InitGlTextures();
-	
+
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
 	ModeInfo();
 	gl.Viewport(VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
@@ -626,8 +626,6 @@ int SDL_VIDEO_GL_ReadConfig(char *option, char *parameters)
 	}
 	else if (strcmp(option, "BILINEAR_FILTERING") == 0)
 		return (SDL_VIDEO_GL_filtering = Util_sscanbool(parameters)) != -1;
-/*	if (strcmp(option, "SDL_VIDEO_GL_SYNC") == 0)
-		return (SDL_VIDEO_GL_sync = Util_sscanbool(parameters)) != -1;*/
 	else
 		return FALSE;
 	return TRUE;
@@ -637,18 +635,12 @@ void SDL_VIDEO_GL_WriteConfig(FILE *fp)
 {
 	fprintf(fp, "PIXEL_FORMAT=%s\n", pixel_format_cfg_strings[SDL_VIDEO_GL_pixel_format]);
 	fprintf(fp, "BILINEAR_FILTERING=%d\n", SDL_VIDEO_GL_filtering);
-/*	fprintf(fp, "SDL_VIDEO_GL_SYNC=%d\n", SDL_VIDEO_GL_sync);*/
 }
 
 /* Detects OpenGL availablility and set GL function pointers. Returns whether OpenGL is available. */
 static int InitGl(void)
 {
-	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) < 0
-#if (SDL_MAJOR_VERSION > 1) || ((SDL_MINOR_VERSION > 2) || ((SDL_MINOR_VERSION == 2) && (SDL_PATCHLEVEL >= 10)))
-/*	    || SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, SDL_VIDEO_GL_sync) < 0 */
-	    || SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 0) < 0
-#endif
-	   ) {
+	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) != 0) {
 		Log_print("Unable to set GL attribute: %s\n",SDL_GetError());
 		return FALSE;
 	}
@@ -694,8 +686,8 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
-		int i_a = (i + 1 < *argc);		/* is argument available? */
-		int a_m = FALSE;			/* error, argument missing! */
+		int i_a = (i + 1 < *argc); /* is argument available? */
+		int a_m = FALSE;           /* error, argument missing! */
 		int a_i = FALSE;           /* error, argument invalid! */
 
 		if (strcmp(argv[i], "-pixel-format") == 0) {
@@ -709,10 +701,6 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 			SDL_VIDEO_GL_filtering = TRUE;
 		else if (strcmp(argv[i], "-no-bilinear-filter") == 0)
 			SDL_VIDEO_GL_filtering = FALSE;
-/*		else if (strcmp(argv[i], "-sync-video") == 0)
-			SDL_VIDEO_GL_sync = TRUE;
-		else if (strcmp(argv[i], "-no-sync-video") == 0)
-			SDL_VIDEO_GL_sync = FALSE;*/
 		else if (strcmp(argv[i], "-opengl-lib") == 0) {
 			if (i_a)
 				library_path = argv[++i];
@@ -725,8 +713,6 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 				Log_print("\t                     Set internal pixel format (affects performance)");
 				Log_print("\t-bilitear-filter     Enable OpenGL bilinear filtering");
 				Log_print("\t-no-bilitear-filter  Disable OpenGL bilinear filtering");
-/*				Log_print("\t-sync-video          Synchronize display to vertical blank (OpenGL only)");
-				Log_print("\t-no-sync-video       Don't synchronize display to vertical blank");*/
 				Log_print("\t-opengl-lib <path>   Use a custom OpenGL shared library");
 			}
 			argv[j++] = argv[i];
@@ -816,13 +802,3 @@ void SDL_VIDEO_GL_InterpolateScanlinesChanged(void)
 		SetGlDisplayList();
 	}
 }
-
-/*int SDL_VIDEO_GL_SetSync(int value)
-{
-
-}
-
-int SDL_VIDEO_GL_ToggleSync(void)
-{
-	return SDL_VIDEO_GL_SetSync(!SDL_VIDEO_GL_sync);
-}*/

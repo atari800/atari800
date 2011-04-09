@@ -230,6 +230,9 @@ SDL version options
 -win-height <y>       Set window's vertical size
 -bpp <n>              Set mode bits per pixel, only if OpenGL is disabled
                       (0=desktop depth, 8, 16, 32)
+-vsync                Synchronize the display with monitor's vertical retrace
+                      to avoid image tearing.
+-no-vsync             Don't synchronize the display with the monitor (the default).
 -horiz-area narrow|tv|full|<number>
                       Set visible horizontal area:
                       narrow: 320 pixels,

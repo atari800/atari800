@@ -115,10 +115,11 @@ void SDL_VIDEO_SW_PaletteUpdate(void)
 
 static void ModeInfo(void)
 {
-/*	char *fullstring = fullscreen ? "fullscreen" : "windowed"; */
 /* this keeps printing over and over when windowed mode is maximized
+	char *fullstring = fullscreen ? "fullscreen" : "windowed";
+	char *vsyncstring = (MainScreen->flags & SDL_DOUBLEBUF) ? "with vsync" : "without vsync";
 	Log_print("Video Mode: %dx%dx%d %s %s", MainScreen->w, MainScreen->h,
-		   MainScreen->format->BitsPerPixel, fullstring);
+		   MainScreen->format->BitsPerPixel, fullstring, vsyncstring);
 */
 }
 
@@ -126,6 +127,9 @@ static void SetVideoMode(int w, int h, int bpp)
 {
 	Uint32 flags = (fullscreen ? SDL_FULLSCREEN : SDL_RESIZABLE)
 	               | SDL_HWPALETTE;
+	if (SDL_VIDEO_vsync)
+		flags |= SDL_HWSURFACE | SDL_DOUBLEBUF;
+
 	MainScreen = SDL_SetVideoMode(w, h, bpp, flags);
 	if (MainScreen == NULL) {
 		Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, bpp, SDL_GetError());
@@ -134,6 +138,7 @@ static void SetVideoMode(int w, int h, int bpp)
 	}
 	SDL_VIDEO_width = MainScreen->w;
 	SDL_VIDEO_height = MainScreen->h;
+	SDL_VIDEO_vsync_available = (MainScreen->flags & SDL_DOUBLEBUF);
 }
 
 void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
@@ -668,12 +673,24 @@ static void DisplayWithScaling(void)
 
 void SDL_VIDEO_SW_DisplayScreen(void)
 {
+	if (SDL_LockSurface(MainScreen) != 0)
+		/* When the window manager decides to switch the SDL display from
+		   fullscreen to windowed mode (eg. by minimising the window after the
+		   user pressed Alt+Tab in Windows), hardware surface gets disabled
+		   immediately. In such case surface locking will fail. When it happens,
+		   don't blit to screen as it would cause a segfault. When fullscreen
+		   mode gets re-enabled, surface locking will work again and screen
+		   displaying will be restored */
+		   return;
 	/* Use function corresponding to the current_display_mode. */
 	(*blit_funcs[SDL_VIDEO_current_display_mode])();
-	/* SDL_UpdateRect is faster than SDL_Flip, because it updates only
-	   the relevant part of the screen. */
-/*	SDL_Flip(MainScreen);*/
-	SDL_UpdateRect(MainScreen, VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
+	SDL_UnlockSurface(MainScreen);
+	/* SDL_UpdateRect is faster than SDL_Flip for a software surface, because
+	   it copies only the used part of the screen. */
+	if (MainScreen->flags & SDL_DOUBLEBUF)
+		SDL_Flip(MainScreen);
+	else
+		SDL_UpdateRect(MainScreen, VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
 }
 
 int SDL_VIDEO_SW_ReadConfig(char *option, char *parameters)
