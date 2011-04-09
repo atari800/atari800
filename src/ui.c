@@ -1339,35 +1339,36 @@ static void VideoModeSettings(void)
 #endif /* HAVE_OPENGL */
 	static char scanlines_string[4];
 #endif /* SDL */
+
 	static UI_tMenuItem menu_array[] = {
-		UI_MENU_SUBMENU_SUFFIX(0, "Fullscreen resolution:", res_string),
-#if SDL
-		UI_MENU_SUBMENU_SUFFIX(1, "Bits per pixel:", bpp_string),
-#if HAVE_OPENGL
-		UI_MENU_SUBMENU_SUFFIX(2, "Pixel format:", NULL),
-#endif /* HAVE_OPENGL */
-		UI_MENU_CHECK(3, "Vertical synchronization:"),
-#endif /* SDL */
+		UI_MENU_SUBMENU_SUFFIX(0, "Host display aspect ratio:", ratio_string),
+#if SDL && HAVE_OPENGL
+		UI_MENU_CHECK(1, "Hardware acceleration:"),
+		UI_MENU_CHECK(2, " Bilinear filtering:"),
+		UI_MENU_CHECK(3, " Use pixel buffer objects:"),
+#endif /* SDL && HAVE_OPENGL */
 		UI_MENU_CHECK(4, "Fullscreen:"),
+		UI_MENU_SUBMENU_SUFFIX(5, " Fullscreen resolution:", res_string),
 #if SUPPORTS_ROTATE_VIDEOMODE
-		UI_MENU_CHECK(5, "Rotate sideways:"),
+		UI_MENU_CHECK(6, "Rotate sideways:"),
 #endif /* SUPPORTS_ROTATE_VIDEOMODE */
-		UI_MENU_SUBMENU_SUFFIX(6, "Stretch image:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(7, "Fit screen method:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(8, "Image aspect ratio:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(9, "Host display aspect ratio:", ratio_string),
-		UI_MENU_SUBMENU_SUFFIX(10, "Horizontal view area:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(11, "Vertical view area:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(12, "Horizontal shift:", horiz_offset_string),
-		UI_MENU_SUBMENU_SUFFIX(13, "Vertical shift:", vert_offset_string),
 #if SDL
-		UI_MENU_SUBMENU_SUFFIX(14, "Scanlines visibility:", scanlines_string),
-		UI_MENU_CHECK(15, "Interpolate scanlines:"),
+		UI_MENU_SUBMENU_SUFFIX(7, "Bits per pixel:", bpp_string),
 #if HAVE_OPENGL
-		UI_MENU_CHECK(16, "Hardware acceleration:"),
-		UI_MENU_CHECK(17, " Bilinear filtering:"),
-		UI_MENU_CHECK(18, " Use pixel buffer objects:"),
+		UI_MENU_SUBMENU_SUFFIX(8, "Pixel format:", NULL),
 #endif /* HAVE_OPENGL */
+		UI_MENU_CHECK(9, "Vertical synchronization:"),
+#endif /* SDL */
+		UI_MENU_SUBMENU_SUFFIX(10, "Image aspect ratio:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(11, "Stretch image:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(12, "Fit screen method:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(13, "Horizontal view area:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(14, "Vertical view area:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(15, "Horizontal shift:", horiz_offset_string),
+		UI_MENU_SUBMENU_SUFFIX(16, "Vertical shift:", vert_offset_string),
+#if SDL
+		UI_MENU_SUBMENU_SUFFIX(17, "Scanlines visibility:", scanlines_string),
+		UI_MENU_CHECK(18, " Interpolate scanlines:"),
 #endif /* SDL */
 		UI_MENU_END
 	};
@@ -1376,78 +1377,122 @@ static void VideoModeSettings(void)
 	int seltype;
 
 	for (;;) {
-		VIDEOMODE_CopyResolutionName(VIDEOMODE_GetFullscreenResolution(), res_string, 10);
+		VIDEOMODE_CopyHostAspect(ratio_string, 10);
 #if SDL
 		/* sprintf is safe - bpp can't be higher that 32. */
 		sprintf(bpp_string, "%d", SDL_VIDEO_SW_bpp);
 #if HAVE_OPENGL
+		SetItemChecked(menu_array, 1, SDL_VIDEO_opengl);
+		SetItemChecked(menu_array, 2, SDL_VIDEO_GL_filtering);
+		SetItemChecked(menu_array, 3, SDL_VIDEO_GL_pbo);
 		if (SDL_VIDEO_opengl) {
-			FindMenuItem(menu_array, 1)->flags = UI_ITEM_HIDDEN;
-			FindMenuItem(menu_array, 2)->flags = UI_ITEM_SUBMENU;
-			FindMenuItem(menu_array, 2)->suffix = pixel_format_menu_array[SDL_VIDEO_GL_pixel_format].item;
+			FindMenuItem(menu_array, 7)->flags = UI_ITEM_HIDDEN;
+			FindMenuItem(menu_array, 8)->flags = UI_ITEM_SUBMENU;
+			FindMenuItem(menu_array, 8)->suffix = pixel_format_menu_array[SDL_VIDEO_GL_pixel_format].item;
 		} else {
-			FindMenuItem(menu_array, 1)->flags = UI_ITEM_SUBMENU;
-			FindMenuItem(menu_array, 2)->flags = UI_ITEM_HIDDEN;
+			FindMenuItem(menu_array, 7)->flags = UI_ITEM_SUBMENU;
+			FindMenuItem(menu_array, 8)->flags = UI_ITEM_HIDDEN;
 		}
 #endif /* HAVE_OPENGL */
 		if (SDL_VIDEO_vsync && !SDL_VIDEO_vsync_available) {
-			FindMenuItem(menu_array, 3)->flags = UI_ITEM_ACTION;
-			FindMenuItem(menu_array, 3)->suffix = "N/A";
+			FindMenuItem(menu_array, 9)->flags = UI_ITEM_ACTION;
+			FindMenuItem(menu_array, 9)->suffix = "N/A";
 		} else {
-			FindMenuItem(menu_array, 3)->flags = UI_ITEM_CHECK;
-			SetItemChecked(menu_array, 3, SDL_VIDEO_vsync);
+			FindMenuItem(menu_array, 9)->flags = UI_ITEM_CHECK;
+			SetItemChecked(menu_array, 9, SDL_VIDEO_vsync);
 		}
+		/* sprintf is safe - scanlines percentage can't be higher than 100. */
+		sprintf(scanlines_string, "%d", SDL_VIDEO_scanlines_percentage);
+		SetItemChecked(menu_array, 18, SDL_VIDEO_interpolate_scanlines);
 #endif /* SDL */
 		SetItemChecked(menu_array, 4, !VIDEOMODE_windowed);
+		VIDEOMODE_CopyResolutionName(VIDEOMODE_GetFullscreenResolution(), res_string, 10);
 #if SUPPORTS_ROTATE_VIDEOMODE
-		SetItemChecked(menu_array, 5, VIDEOMODE_rotate90);
+		SetItemChecked(menu_array, 6, VIDEOMODE_rotate90);
 #endif
+		FindMenuItem(menu_array, 10)->suffix = aspect_menu_array[VIDEOMODE_keep_aspect].item;
 		if (VIDEOMODE_stretch < VIDEOMODE_STRETCH_CUSTOM)
-			FindMenuItem(menu_array, 6)->suffix = stretch_menu_array[VIDEOMODE_stretch].item;
+			FindMenuItem(menu_array, 11)->suffix = stretch_menu_array[VIDEOMODE_stretch].item;
 		else {
-			FindMenuItem(menu_array, 6)->suffix = stretch_string;
+			FindMenuItem(menu_array, 11)->suffix = stretch_string;
 			snprintf(stretch_string, sizeof(stretch_string) - 1, "%f", VIDEOMODE_custom_stretch);
 		}
-		FindMenuItem(menu_array, 7)->suffix = fit_menu_array[VIDEOMODE_fit].item;
-		FindMenuItem(menu_array, 8)->suffix = aspect_menu_array[VIDEOMODE_keep_aspect].item;
-		VIDEOMODE_CopyHostAspect(ratio_string, 10);
+		FindMenuItem(menu_array, 12)->suffix = fit_menu_array[VIDEOMODE_fit].item;
 		if (VIDEOMODE_horizontal_area < VIDEOMODE_HORIZONTAL_CUSTOM)
-			FindMenuItem(menu_array, 10)->suffix = width_menu_array[VIDEOMODE_horizontal_area].item;
+			FindMenuItem(menu_array, 13)->suffix = width_menu_array[VIDEOMODE_horizontal_area].item;
 		else {
-			FindMenuItem(menu_array, 10)->suffix = horiz_area_string;
+			FindMenuItem(menu_array, 13)->suffix = horiz_area_string;
 			/* sprintf is safe - horizontal area can't be higher than 384. */
 			sprintf(horiz_area_string, "%d", VIDEOMODE_custom_horizontal_area);
 		}
 		if (VIDEOMODE_vertical_area < VIDEOMODE_VERTICAL_CUSTOM)
-			FindMenuItem(menu_array, 11)->suffix = height_menu_array[VIDEOMODE_vertical_area].item;
+			FindMenuItem(menu_array, 14)->suffix = height_menu_array[VIDEOMODE_vertical_area].item;
 		else {
-			FindMenuItem(menu_array, 11)->suffix = vert_area_string;
+			FindMenuItem(menu_array, 14)->suffix = vert_area_string;
 			/* sprintf is safe - vertical area can't be higher than 240. */
 			sprintf(vert_area_string, "%d", VIDEOMODE_custom_vertical_area);
 		}
 		/* sprintf is safe - both offsets can't be higher than 384 or 240. */
 		sprintf(horiz_offset_string, "%d", VIDEOMODE_horizontal_offset);
 		sprintf(vert_offset_string, "%d", VIDEOMODE_vertical_offset);
-#if SDL
-		/* sprintf is safe - scanlines percentage can't be higher than 100. */
-		sprintf(scanlines_string, "%d", SDL_VIDEO_scanlines_percentage);
-		SetItemChecked(menu_array, 15, SDL_VIDEO_interpolate_scanlines);
-#if HAVE_OPENGL
-		SetItemChecked(menu_array, 16, SDL_VIDEO_opengl);
-		SetItemChecked(menu_array, 17, SDL_VIDEO_GL_filtering);
-		SetItemChecked(menu_array, 18, SDL_VIDEO_GL_pbo);
-#endif /* HAVE_OPENGL */
-#endif /* SDL */
 
 		option = UI_driver->fSelect("Video Mode Settings", 0, option, menu_array, &seltype);
 		switch (option) {
 		case 0:
+			{
+				int current;
+				for (current = 1; current < 4; ++current) {
+					/* Find the currently-chosen host aspect ratio. */
+					if (strcmp(ratio_string, host_aspect_menu_array[current].item) == 0)
+						break;
+				}
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, current, host_aspect_menu_array, NULL);
+				if (option2 == 4) {
+					char buffer[sizeof(ratio_string)];
+					memcpy(buffer, ratio_string, sizeof(buffer));
+					if (UI_driver->fEditString("Enter value in x:y format", buffer, sizeof(buffer)))
+						VIDEOMODE_SetHostAspectString(buffer);
+				}
+				else if (option2 >= 1)
+					VIDEOMODE_SetHostAspectString(host_aspect_menu_array[option2].item);
+				else if (option2 == 0)
+					VIDEOMODE_AutodetectHostAspect();
+			}
+			break;
+#if SDL && HAVE_OPENGL
+		case 1:
+			SDL_VIDEO_ToggleOpengl();
+			if (!SDL_VIDEO_opengl_available)
+				UI_driver->fMessage("Error: OpenGL is not available.", 1);
+				
+			break;
+		case 2:
+			if (!SDL_VIDEO_opengl)
+				UI_driver->fMessage("Works only with hardware acceleration.", 1);
+			SDL_VIDEO_GL_ToggleFiltering();
+			break;
+		case 3:
+			if (!SDL_VIDEO_opengl)
+				UI_driver->fMessage("Works only with hardware acceleration.", 1);
+			if (!SDL_VIDEO_GL_TogglePbo())
+				UI_driver->fMessage("Pixel buffer objects not available.", 1);
+			break;
+#endif /* SDL && HAVE_OPENGL */
+		case 4:
+			VIDEOMODE_ToggleWindowed();
+			break;
+		case 5:
 			option2 = ChooseVideoResolution(VIDEOMODE_GetFullscreenResolution());
 			if (option2 >= 0)
 				VIDEOMODE_SetFullscreenResolution(option2);
 			break;
+#if SUPPORTS_ROTATE_VIDEOMODE
+		case 6:
+			VIDEOMODE_ToggleRotate90();
+			break;
+#endif
 #if SDL
-		case 1:
+		case 7:
 			{
 				int current;
 				switch (SDL_VIDEO_SW_bpp) {
@@ -1480,26 +1525,23 @@ static void VideoModeSettings(void)
 			}
 			break;
 #if HAVE_OPENGL
-		case 2:
+		case 8:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, SDL_VIDEO_GL_pixel_format, pixel_format_menu_array, NULL);
 			if (option2 >= 0)
 				SDL_VIDEO_GL_SetPixelFormat(option2);
 			break;
 #endif /* HAVE_OPENGL */
-		case 3:
+		case 9:
 			if (!SDL_VIDEO_ToggleVsync())
 				UI_driver->fMessage("Not available in this video mode.", 1);
 			break;
 #endif /* SDL */
-		case 4:
-			VIDEOMODE_ToggleWindowed();
+		case 10:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_keep_aspect, aspect_menu_array, NULL);
+			if (option2 >= 0)
+				VIDEOMODE_SetKeepAspect(option2);
 			break;
-#if SUPPORTS_ROTATE_VIDEOMODE
-		case 5:
-			VIDEOMODE_ToggleRotate90();
-			break;
-#endif
-		case 6:
+		case 11:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_stretch, stretch_menu_array, NULL);
 			if (option2 >= 0) {
 				if (option2 < VIDEOMODE_STRETCH_CUSTOM)
@@ -1512,38 +1554,12 @@ static void VideoModeSettings(void)
 				}
 			}
 			break;
-		case 7:
+		case 12:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_fit, fit_menu_array, NULL);
 			if (option2 >= 0)
 				VIDEOMODE_SetFit(option2);
 			break;
-		case 8:
-			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_keep_aspect, aspect_menu_array, NULL);
-			if (option2 >= 0)
-				VIDEOMODE_SetKeepAspect(option2);
-			break;
-		case 9:
-			{
-				int current;
-				for (current = 1; current < 4; ++current) {
-					/* Find the currently-chosen host aspect ratio. */
-					if (strcmp(ratio_string, host_aspect_menu_array[current].item) == 0)
-						break;
-				}
-				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, current, host_aspect_menu_array, NULL);
-				if (option2 == 4) {
-					char buffer[sizeof(ratio_string)];
-					memcpy(buffer, ratio_string, sizeof(buffer));
-					if (UI_driver->fEditString("Enter value in x:y format", buffer, sizeof(buffer)))
-						VIDEOMODE_SetHostAspectString(buffer);
-				}
-				else if (option2 >= 1)
-					VIDEOMODE_SetHostAspectString(host_aspect_menu_array[option2].item);
-				else if (option2 == 0)
-					VIDEOMODE_AutodetectHostAspect();
-			}
-			break;
-		case 10:
+		case 13:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_horizontal_area, width_menu_array, NULL);
 			if (option2 >= 0) {
 				if (option2 < VIDEOMODE_HORIZONTAL_CUSTOM)
@@ -1560,7 +1576,7 @@ static void VideoModeSettings(void)
 				}
 			}
 			break;
-		case 11:
+		case 14:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_vertical_area, height_menu_array, NULL);
 			if (option2 >= 0) {
 				if (option2 < VIDEOMODE_VERTICAL_CUSTOM)
@@ -1577,7 +1593,7 @@ static void VideoModeSettings(void)
 				}
 			}
 			break;
-		case 12:
+		case 15:
 			switch (seltype) {
 			case UI_USER_SELECT:
 				{
@@ -1592,7 +1608,7 @@ static void VideoModeSettings(void)
 				break;
 			}
 			break;
-		case 13:
+		case 16:
 			switch (seltype) {
 			case UI_USER_SELECT:
 				{
@@ -1608,7 +1624,7 @@ static void VideoModeSettings(void)
 			}
 			break;
 #if SDL
-		case 14:
+		case 17:
 			{
 				char buffer[sizeof(scanlines_string)];
 				memcpy(buffer, scanlines_string, sizeof(buffer));
@@ -1616,28 +1632,9 @@ static void VideoModeSettings(void)
 					SDL_VIDEO_SetScanlinesPercentage(atoi(buffer));
 			}
 			break;
-		case 15:
+		case 18:
 			SDL_VIDEO_ToggleInterpolateScanlines();
 			break;
-#if HAVE_OPENGL
-		case 16:
-			SDL_VIDEO_ToggleOpengl();
-			if (!SDL_VIDEO_opengl_available)
-				UI_driver->fMessage("Error: OpenGL is not available.", 1);
-				
-			break;
-		case 17:
-			if (!SDL_VIDEO_opengl)
-				UI_driver->fMessage("Works only with hardware acceleration.", 1);
-			SDL_VIDEO_GL_ToggleFiltering();
-			break;
-		case 18:
-			if (!SDL_VIDEO_opengl)
-				UI_driver->fMessage("Works only with hardware acceleration.", 1);
-			if (!SDL_VIDEO_GL_TogglePbo())
-				UI_driver->fMessage("Pixel buffer objects not available.", 1);
-			break;
-#endif /* HAVE_OPENGL */
 #endif /* SDL */
 		default:
 			return;
