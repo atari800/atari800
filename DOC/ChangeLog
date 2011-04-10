@@ -37,6 +37,8 @@
   conditions are not met, glitches occur.
 * src/videomode.c: Fix broken aspect ratio correction in winowed rotated
   modes. Make the windowed mode the default - it's more compatible.
+* src/sdl/video_gl.c: Fix glitches when switching software<->OpenGL on
+  Windows. Avoid unnecessary scanline-drawing when scanline-percentage is 0.
 
 
 2011-04-04  James Wilkinson  <james@slor.net>
