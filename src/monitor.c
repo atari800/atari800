@@ -585,7 +585,7 @@ const UBYTE MONITOR_optype6502[256] = {
 };
 
 
-static void safe_gets(char *buffer, size_t size)
+static void safe_gets(char *buffer, size_t size, char const *prompt)
 {
 #ifdef HAVE_FFLUSH
 	fflush(stdout);
@@ -593,7 +593,7 @@ static void safe_gets(char *buffer, size_t size)
 
 #ifdef MONITOR_READLINE
 	{
-		char *got = readline("");
+		char *got = readline(prompt);
 		if (got) {
 			strncpy(buffer, got, size);
 			if (*got)
@@ -601,6 +601,7 @@ static void safe_gets(char *buffer, size_t size)
 		}
 	}
 #else
+	fputs(prompt, stdout);
 	fgets(buffer, size, stdin);
 #endif
 	Util_chomp(buffer);
@@ -609,8 +610,7 @@ static void safe_gets(char *buffer, size_t size)
 static int pager(void)
 {
 	char buf[100];
-	printf("Press Return to continue ('q' to quit): ");
-	safe_gets(buf, sizeof(buf));
+	safe_gets(buf, sizeof(buf), "Press Return to continue ('q' to quit): ");
 	return buf[0] == 'q' || buf[0] == 'Q';
 }
 
@@ -833,8 +833,9 @@ static UWORD assembler(UWORD addr)
 		int isa;      /* the operand is "A" */
 		UWORD value = 0;
 
-		printf("%04X: ", (int) addr);
-		safe_gets(s, sizeof(s));
+		char prompt[7];
+		sprintf(prompt, "%04X: ", (int) addr);
+		safe_gets(s, sizeof(s), prompt);
 		if (s[0] == '\0')
 			return addr;
 
@@ -1338,8 +1339,7 @@ int MONITOR_Run(void)
 		static char old_s[128] = "";
 		char *t;
 
-		printf("> ");
-		safe_gets(s, sizeof(s));
+		safe_gets(s, sizeof(s), "> ");
 		if (s[0] != '\0')
 			strcpy(old_s, s);
 		else {
@@ -2173,10 +2173,9 @@ int MONITOR_Run(void)
 				"HISTORY or H                   - List last %d executed instructions\n", CPU_REMEMBER_PC_STEPS);
 			printf(
 				"JUMPS                          - List last %d executed JMP/JSR\n", CPU_REMEMBER_JMP_STEPS);
-			printf("Press return to continue: ");
 			{
 				char buf[100];
-				safe_gets(buf, sizeof(buf));
+				safe_gets(buf, sizeof(buf), "Press return to continue: ");
 			}
 			printf(
 				"G                              - Execute one instruction\n"

@@ -46,6 +46,7 @@
   within a signal handler.
 * src/sdl/main.c: Close the SDL window when the monitor is used, to avoid
   unnecessary keyboard events.
+* src/monitor.c: Fix improper handling of the prompt when readline is used.
 
 
 2011-04-04  James Wilkinson  <james@slor.net>
