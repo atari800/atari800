@@ -234,12 +234,11 @@ int PLATFORM_GetRawKey(void)
 	}
 }
 
+static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
+static int lastuni = 0;
+
 int PLATFORM_Keyboard(void)
 {
-	static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
-	static int lastuni = 0;
-	static int resize_delay = 0;
-	static int resize_w, resize_h;
 	int shiftctrl = 0;
 	SDL_Event event;
 
@@ -251,19 +250,6 @@ int PLATFORM_Keyboard(void)
 		lastkey = SDLK_UNKNOWN;
 	   	key_pressed = 0;
  		lastuni = 0;
-	}
-
-	/* A hack to make window resizing work a little better.
-	   When a window is resized, SDL_SetVideoMode should be called, with width
-	   and height as given in the SDL_VIDEORESIZE event. In Atari800 width
-	   and height in SDL_SetVideoMode are adjusted and no longer equal the values
-	   that come in the resize event; this is a bad thing which causes glitches
-	   under MS Windows, such like SDL window hanging up or inability to resize
-	   the window again. By introducing a slight delay between a resize event and
-	   the resize action, the glitches no longer happen. */
-	if (resize_delay > 0) {
-		if (--resize_delay == 0)
-			VIDEOMODE_SetWindowSize(resize_w, resize_h);
 	}
 
 	if (SDL_PollEvent(&event)) {
@@ -285,9 +271,7 @@ int PLATFORM_Keyboard(void)
 			}
 			break;
 		case SDL_VIDEORESIZE:
-			resize_w = event.resize.w;
-			resize_h = event.resize.h;
-			resize_delay = 10;
+			VIDEOMODE_SetWindowSize(event.resize.w, event.resize.h);
 			break;
 		case SDL_VIDEOEXPOSE:
 			/* When window is "uncovered", and we are in the emulator's menu,
@@ -1162,6 +1146,8 @@ void SDL_INPUT_Exit(void)
 
 void SDL_INPUT_Restart(void)
 {
+	lastkey = SDLK_UNKNOWN;
+	key_pressed = key_control = lastuni = 0;
 	if(grab_mouse) SDL_WM_GrabInput(SDL_GRAB_ON);
 }
 

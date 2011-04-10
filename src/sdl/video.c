@@ -67,6 +67,8 @@ static int currently_opengl = FALSE;
 int SDL_VIDEO_vsync = FALSE;
 int SDL_VIDEO_vsync_available;
 
+static int window_maximised = FALSE;
+
 void PLATFORM_PaletteUpdate(void)
 {
 	if (SDL_VIDEO_current_display_mode == VIDEOMODE_MODE_NTSC_FILTER)
@@ -103,6 +105,11 @@ static void UpdateNtscFilter(VIDEOMODE_MODE_t mode)
 
 void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90, int window_resized)
 {
+	/* In SDL there's really no way to determine if a window is maximised. So we use a method
+	   that's not 100% sure: if we notice, that the windows's horizontal size equals desktop
+	   resolution, then we assume that the window is maximised. This works at least on Windows
+	   and Linux/KDE. */
+	   window_maximised = windowed && res->width == desktop_resolution.width;
 #if HAVE_OPENGL
 	if (SDL_VIDEO_opengl) {
 		if (!currently_opengl)
@@ -163,6 +170,11 @@ int PLATFORM_SupportsVideomode(VIDEOMODE_MODE_t mode, int stretch, int rotate90)
 	else
 #endif
 		return SDL_VIDEO_SW_SupportsVideomode(mode, stretch, rotate90);
+}
+
+int PLATFORM_WindowMaximised(void)
+{
+	return window_maximised;
 }
 
 void PLATFORM_DisplayScreen(void)

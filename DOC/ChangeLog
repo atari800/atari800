@@ -30,6 +30,11 @@
 * src/sdl/main.c, src/sdl/video.[ch], src/sdl/video_gl.[ch], src/sdl/video_sw.c:
   Try to reinitialise the SDL video subsystem after an error before failing.
   This allows to recover from some hardware/driver-related errors.
+* src/platform.h, src/videomode.c, src/sdl/input.c, src/sdl.video.c, src/sdl/video_sw.c:
+  Fix broken handling of SDL_VIDEORESIZE event: the call to SDL_SetVideoMode
+  must set the same window size as returned by the event. Also when window
+  is maximised, it is not allowed to un-maximise it by software. When these
+  conditions are not met, glitches occur.
 
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)

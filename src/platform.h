@@ -78,6 +78,9 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size);
 /* Returns the current desktop resolution. Used to compute pixel aspect ratio in windowed modes. */
 VIDEOMODE_resolution_t *PLATFORM_DesktopResolution(void);
+/* When in windowed mode, returns whether the application window is maximised. */
+int PLATFORM_WindowMaximised(void);
+
 #endif /* SUPPORTS_CHANGE_VIDEOMODE */
 
 #endif /* PLATFORM_H_ */

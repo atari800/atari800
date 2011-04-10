@@ -551,6 +551,7 @@ static int UpdateVideoWindowed(int window_resized)
 	VIDEOMODE_resolution_t desk_res = *PLATFORM_DesktopResolution();
 	VIDEOMODE_resolution_t res = window_resolution;
 	VIDEOMODE_resolution_t *max_res;
+	int maximised = PLATFORM_WindowMaximised();
 
 	if (rotate) {
 		RotateResolution(&res);
@@ -560,15 +561,17 @@ static int UpdateVideoWindowed(int window_resized)
 	GetOutArea(&out_w, &out_h, display_mode);
 	UpdateCustomStretch();
 	ComputeVideoArea(&res, &desk_res, display_mode, out_w, out_h, &mult_w, &mult_h, rotate);
-	if (window_resized)
+	if (window_resized || maximised)
 		/* If the window was user-resized we don't allow it to grow, only shrink. */
 		max_res = &res;
 	else
 		/* Don't allow the window to be larger than the desktop. */
 		max_res = &desk_res;
 	CropVideoArea(max_res, &out_w, &out_h, mult_w, mult_h);
-	res.width = VIDEOMODE_dest_width;
-	res.height = VIDEOMODE_dest_height;
+	if (!window_resized && !maximised) {
+		res.width = VIDEOMODE_dest_width;
+		res.height = VIDEOMODE_dest_height;
+	}
 	SetVideoMode(&res, display_mode, out_w, out_h, TRUE, rotate, window_resized);
 	return TRUE;
 }

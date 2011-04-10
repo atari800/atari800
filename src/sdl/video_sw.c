@@ -115,12 +115,10 @@ void SDL_VIDEO_SW_PaletteUpdate(void)
 
 static void ModeInfo(void)
 {
-/* this keeps printing over and over when windowed mode is maximized
 	char *fullstring = fullscreen ? "fullscreen" : "windowed";
 	char *vsyncstring = (MainScreen->flags & SDL_DOUBLEBUF) ? "with vsync" : "without vsync";
 	Log_print("Video Mode: %dx%dx%d %s %s", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel, fullstring, vsyncstring);
-*/
 }
 
 static void SetVideoMode(int w, int h, int bpp)
