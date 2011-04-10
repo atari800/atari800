@@ -39,6 +39,8 @@
   modes. Make the windowed mode the default - it's more compatible.
 * src/sdl/video_gl.c: Fix glitches when switching software<->OpenGL on
   Windows. Avoid unnecessary scanline-drawing when scanline-percentage is 0.
+* src/sdl/input.c: Work around unwanted keyboard events when pressing
+  Alt+Tab on Windows.
 
 
 2011-04-04  James Wilkinson  <james@slor.net>

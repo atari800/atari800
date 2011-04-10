@@ -670,6 +670,33 @@ int PLATFORM_Keyboard(void)
 		/* Windows takes ctrl+esc and ctrl+shift+esc */
 		return AKEY_ESCAPE ^ shiftctrl;
 	case SDLK_TAB:
+#if HAVE_WINDOWS_H
+		/* On Windows, when an SDL window has focus and LAlt+Tab is pressed,
+		   a window-switching menu appears, but the LAlt+Tab key sequence is
+		   still forwarded to the SDL window. In the effect the user cannot
+		   switch with LAlt+Tab without the emulator registering unwanted key
+		   presses. On other operating systems (e.g. GNU/Linux/KDE) everything
+		   is OK, the key sequence is not registered by the emulator. This
+		   hack fixes the behaviour on Windows. */
+		if (kbhits[SDLK_LALT]) {
+			key_pressed = 0;
+			/* 1. In fullscreen software (non-OpenGL) mode, user presses LAlt, then presses Tab.
+			      Atari800 window gets minimised and the window-switching menu appears.
+			   2. User switches back to Atari800 without releasing LAlt.
+			   3. User releases LAlt. Atari800 gets switched back to fullscreen.
+			   In the above situation, the emulator would register pressing of LAlt but
+			   would not register releasing of the key. It would think that LAlt is still
+			   pressed. The hack below fixes the issue by causing SDL to assume LAlt is
+			   not pressed. */
+#if HAVE_OPENGL
+			if (!VIDEOMODE_windowed && !SDL_VIDEO_opengl)
+#else
+			if (!VIDEOMODE_windowed)
+#endif /* HAVE_OPENGL */
+				kbhits[SDLK_LALT] = 0;
+			return AKEY_NONE;
+		}
+#endif /* HAVE_WINDOWS_H */
 		return AKEY_TAB ^ shiftctrl;
 	case SDLK_DELETE:
 		if (INPUT_key_shift)
