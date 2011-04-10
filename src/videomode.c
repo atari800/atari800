@@ -58,7 +58,7 @@
 #define VIDEOMODE_MODE_LASTWITHHUD VIDEOMODE_MODE_NORMAL
 #endif
 
-int VIDEOMODE_windowed = 0;
+int VIDEOMODE_windowed = 1;
 
 int VIDEOMODE_horizontal_area = VIDEOMODE_HORIZONTAL_TV;
 unsigned int VIDEOMODE_custom_horizontal_area = Screen_WIDTH;
@@ -553,10 +553,8 @@ static int UpdateVideoWindowed(int window_resized)
 	VIDEOMODE_resolution_t *max_res;
 	int maximised = PLATFORM_WindowMaximised();
 
-	if (rotate) {
+	if (rotate)
 		RotateResolution(&res);
-		RotateResolution(&desk_res);
-	}
 
 	GetOutArea(&out_w, &out_h, display_mode);
 	UpdateCustomStretch();

@@ -35,6 +35,9 @@
   must set the same window size as returned by the event. Also when window
   is maximised, it is not allowed to un-maximise it by software. When these
   conditions are not met, glitches occur.
+* src/videomode.c: Fix broken aspect ratio correction in winowed rotated
+  modes. Make the windowed mode the default - it's more compatible.
+
 
 2011-04-04  James Wilkinson  <james@slor.net>
 * configure.ac, Makefile.in: maintain support for older compilers (DOS, BeOS)
