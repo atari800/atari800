@@ -3221,22 +3221,17 @@ void UI_Run(void)
 #elif defined(DREAMCAST)
 			AboutAtariDC();
 			break;
-#elif defined(DIRECTX)
-			if (useconsole) {
-				if (PLATFORM_Exit(TRUE)) 
-					done = TRUE;
-					break;
-			}
-			else {
+#else
+#if defined(DIRECTX)
+			if (!useconsole) {
 				UI_driver->fMessage("Console required for monitor", 1);
 				break;
-			}				
-#else
-			if (PLATFORM_Exit(TRUE)) {
-				done = TRUE;
-				break;
 			}
+#endif /* DIRECTX */
+			if (Atari800_Exit(TRUE))
+				break;
 			/* if 'quit' typed in monitor, exit emulator */
+			exit(0);
 #endif
 		case UI_MENU_EXIT:
 			Atari800_Exit(FALSE);

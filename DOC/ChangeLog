@@ -41,6 +41,9 @@
   Windows. Avoid unnecessary scanline-drawing when scanline-percentage is 0.
 * src/sdl/input.c: Work around unwanted keyboard events when pressing
   Alt+Tab on Windows.
+* src/atari.c, src/ui.c, src/sdl/input.c: Fix abuse of signals.
+  Atari800_Exit() calls signal-unsafe functions, so it cannot be called from
+  within a signal handler.
 
 
 2011-04-04  James Wilkinson  <james@slor.net>

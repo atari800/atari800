@@ -506,10 +506,6 @@ int PLATFORM_Keyboard(void)
 			break;
 			}
 		}
-		if (UI_alt_function != -1) {
-			key_pressed = 0;
-			return AKEY_UI;
-		}
 	}
 
 	/* SHIFT STATE */
@@ -551,8 +547,8 @@ int PLATFORM_Keyboard(void)
 		key_pressed = 0;
 		return INPUT_key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
 	case SDLK_F8:
-		key_pressed = 0;
-		return (PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT);
+		UI_alt_function = UI_MENU_MONITOR;
+		break;
 	case SDLK_F9:
 		return AKEY_EXIT;
 	case SDLK_F10:
@@ -561,6 +557,11 @@ int PLATFORM_Keyboard(void)
 	case SDLK_F12:
 		key_pressed = 0;
 		return AKEY_TURBO;
+	}
+
+	if (UI_alt_function != -1) {
+		key_pressed = 0;
+		return AKEY_UI;
 	}
 
 	/* keyboard joysticks: don't pass the keypresses to emulation
