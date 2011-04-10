@@ -44,7 +44,6 @@
 #include "sdl/video.h"
 #include "sdl/video_gl.h"
 
-static int currently_windowed = FALSE;
 static int currently_rotated = FALSE;
 /* If TRUE, then 32 bit, else 16 bit screen. */
 static int bpp_32 = FALSE;
@@ -444,16 +443,16 @@ static int InitGlPbo(void)
 
 static void ModeInfo(void)
 {
-	char *fullstring = currently_windowed ? "windowed" : "fullscreen";
+	char *fullstring = (MainScreen->flags & SDL_FULLSCREEN) ? "fullscreen" : "windowed";
 	Log_print("Video Mode: %dx%dx%d %s, pixel format: %s", MainScreen->w, MainScreen->h,
 		   MainScreen->format->BitsPerPixel, fullstring, pixel_format_cfg_strings[SDL_VIDEO_GL_pixel_format]);
 }
 
 /* Return value of TRUE indicates that the video subsystem was reinitialised. */
-static int SetVideoMode(int w, int h)
+static int SetVideoMode(int w, int h, int windowed)
 {
 	int reinit = FALSE;
-	Uint32 flags = SDL_OPENGL | (currently_windowed ? SDL_RESIZABLE : SDL_FULLSCREEN);
+	Uint32 flags = SDL_OPENGL | (windowed ? SDL_RESIZABLE : SDL_FULLSCREEN);
 	/* In OpenGL mode, the SDL screen is always opened with the default
 	   desktop depth - it is the most compatible way. */
 	MainScreen = SDL_SetVideoMode(w, h, SDL_VIDEO_native_bpp, flags);
@@ -476,33 +475,32 @@ static int SetVideoMode(int w, int h)
 	return reinit;
 }
 
-int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90, int window_resized)
+int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
 {
 	int new = MainScreen == NULL; /* TRUE means the SDL/GL screen was not yet initialised */
 	int context_updated = FALSE; /* TRUE means the OpenGL context has been recreated */
 	currently_rotated = rotate90;
 
-#if HAVE_WINDOWS_H
-	if (new && !windowed && !currently_windowed) {
-		/* After switching to OpenGL while being in fullscreen, SDL's fullscreen-switching functionality
-		   starts glitching under Windows (and on some graphics hardware display stops being drawed in
-		   fullscreen). We avoid the issue by switching to a windowed mode for a moment. */
-		SDL_SetVideoMode(320, 200, SDL_VIDEO_native_bpp, SDL_RESIZABLE);
-	} else if (new && windowed) {
-		/* When switching to OpenGL while being windowed, SDL's display must be first switched to
-		   the same size (or greater) but in software mode, or else returning to software mode later
-		   would segfault. */
-		SDL_SetVideoMode(res->width, res->height, SDL_VIDEO_native_bpp, SDL_RESIZABLE);
-	}
-#endif /* HAVE_WINDOWS_H */
-	/* Call SetVideoMode only when necessary. */
+	/* Call SetVideoMode only when there was change in width, height, or windowed/fullscreen. */
 	if (new || MainScreen->w != res->width || MainScreen->h != res->height ||
-	    currently_windowed != windowed || window_resized) {
-		currently_windowed = windowed;
+	    ((MainScreen->flags & SDL_FULLSCREEN) == 0) != windowed) {
 		if (!new) {
 			CleanGlContext();
 		}
-		if (SetVideoMode(res->width, res->height))
+#if HAVE_WINDOWS_H
+		if (new && !windowed) {
+			/* Switching from fullscreen software mode directly to fullscreen OpenGL mode causes
+			   glitches on Windows (eg. when switched to windowed mode, the window would spontaneously
+			   go back to fullscreen each time it loses and regains focus). We avoid the issue by
+			   switching to a windowed non-OpenGL mode inbetween. */
+			SDL_SetVideoMode(320, 200, SDL_VIDEO_native_bpp, SDL_RESIZABLE);
+		} else if (windowed) {
+			/* On Windows, always create a same-size software-mode window before creating an
+			   OpenGL window. Otherwise, returning to software mode later will segfault. */
+			SDL_SetVideoMode(res->width, res->height, SDL_VIDEO_native_bpp, SDL_RESIZABLE);
+		}
+#endif /* HAVE_WINDOWS_H */
+		if (SetVideoMode(res->width, res->height, windowed))
 			/* Reinitialisation happened! Need to recreate GL context. */
 			new = TRUE;
 		if (new) {

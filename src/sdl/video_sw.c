@@ -164,8 +164,8 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 		SDL_VIDEO_SW_bpp = 16;
 	}
 
-	/* Call SetVideoMode only when necessary. */
-	if (MainScreen == NULL || MainScreen->w != res->width || MainScreen->h != res->height ||
+	/* Call SetVideoMode only when there was change in width, height, bpp, windowed/fullscreen, or vsync. */
+	if (MainScreen == NULL || MainScreen->w != res->width || MainScreen->h != res->height || old_bpp != SDL_VIDEO_SW_bpp ||
 	    fullscreen == windowed || SDL_VIDEO_vsync != ((MainScreen->flags & SDL_DOUBLEBUF) != 0)) { 
 		fullscreen = !windowed;
 		SetVideoMode(res->width, res->height, SDL_VIDEO_SW_bpp);
@@ -181,6 +181,9 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 	/* Clear the screen. */
 	SDL_FillRect(MainScreen, NULL, 0);
 	SDL_Flip(MainScreen);
+	if (SDL_VIDEO_vsync_available)
+		/* Also clear the backbuffer. */
+		SDL_FillRect(MainScreen, NULL, 0);
 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
 

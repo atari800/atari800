@@ -103,7 +103,7 @@ static void UpdateNtscFilter(VIDEOMODE_MODE_t mode)
 	}
 }
 
-void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90, int window_resized)
+void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
 {
 	/* In SDL there's really no way to determine if a window is maximised. So we use a method
 	   that's not 100% sure: if we notice, that the windows's horizontal size equals desktop
@@ -116,7 +116,7 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 			SDL_VIDEO_SW_Cleanup();
 		/* Switching to OpenGL can fail when the host machine doesn't
 		   support it. If so, revert to software mode. */
-		if (!SDL_VIDEO_GL_SetVideoMode(res, windowed, mode, rotate90, window_resized)) {
+		if (!SDL_VIDEO_GL_SetVideoMode(res, windowed, mode, rotate90)) {
 			SDL_VIDEO_opengl = SDL_VIDEO_opengl_available = FALSE;
 			VIDEOMODE_Update();
 		}

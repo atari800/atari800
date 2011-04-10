@@ -464,7 +464,7 @@ static void CropVideoArea(VIDEOMODE_resolution_t const *screen_res, unsigned int
 }
 
 /* Computes videomode parameters and calls the platform-specific videomode setup. */
-static void SetVideoMode(VIDEOMODE_resolution_t *res, VIDEOMODE_MODE_t display_mode, unsigned int out_w, unsigned int out_h, int windowed, int rotate, int window_resized)
+static void SetVideoMode(VIDEOMODE_resolution_t *res, VIDEOMODE_MODE_t display_mode, unsigned int out_w, unsigned int out_h, int windowed, int rotate)
 {
 	VIDEOMODE_actual_width = out_w;
 	VIDEOMODE_src_width = (*display_modes[display_mode].out2src_w_func)(out_w);
@@ -504,7 +504,7 @@ static void SetVideoMode(VIDEOMODE_resolution_t *res, VIDEOMODE_MODE_t display_m
 	VIDEOMODE_dest_offset_top = (res->height - VIDEOMODE_dest_height) / 2;
 	if (display_mode <= VIDEOMODE_MODE_LASTWITHHUD)
 		SetScreenVisible();
-	PLATFORM_SetVideoMode(res, windowed, display_mode, rotate, window_resized);
+	PLATFORM_SetVideoMode(res, windowed, display_mode, rotate);
 }
 
 /* Sets up the fullscreen video mode. */
@@ -532,7 +532,7 @@ static int UpdateVideoFullscreen(void)
 	UpdateCustomStretch();
 	ComputeVideoArea(&res, res_for_mode, display_mode, out_w, out_h, &mult_w, &mult_h, rotate);
 	CropVideoArea(&res, &out_w, &out_h, mult_w, mult_h);
-	SetVideoMode(&res, display_mode, out_w, out_h, FALSE, rotate, FALSE);
+	SetVideoMode(&res, display_mode, out_w, out_h, FALSE, rotate);
 	return TRUE;
 }
 
@@ -570,7 +570,7 @@ static int UpdateVideoWindowed(int window_resized)
 		res.width = VIDEOMODE_dest_width;
 		res.height = VIDEOMODE_dest_height;
 	}
-	SetVideoMode(&res, display_mode, out_w, out_h, TRUE, rotate, window_resized);
+	SetVideoMode(&res, display_mode, out_w, out_h, TRUE, rotate);
 	return TRUE;
 }
 
