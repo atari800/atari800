@@ -44,6 +44,8 @@
 * src/atari.c, src/ui.c, src/sdl/input.c: Fix abuse of signals.
   Atari800_Exit() calls signal-unsafe functions, so it cannot be called from
   within a signal handler.
+* src/sdl/main.c: Close the SDL window when the monitor is used, to avoid
+  unnecessary keyboard events.
 
 
 2011-04-04  James Wilkinson  <james@slor.net>

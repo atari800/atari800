@@ -110,9 +110,12 @@ int PLATFORM_Exit(int run_monitor)
 	int restart;
 
 	SDL_INPUT_Exit();
+	/* With SDL_VIDEODRIVER=directs keyboard presses in console are still
+	   fetched by the SDL window. This results in locked Return key when
+	   the user leaves the monitor. The only solution is to completely
+	   close the video subsystem for the time of running the monitor. */
+	SDL_VIDEO_Exit();
 	if (run_monitor) {
-		/* disable graphics, set alpha mode */
-		VIDEOMODE_ForceWindowed(TRUE);
 #ifdef SOUND
 		Sound_Pause();
 #endif
@@ -126,13 +129,14 @@ int PLATFORM_Exit(int run_monitor)
 	}
 
 	if (restart) {
-		/* set up graphics and all the stuff */
-		VIDEOMODE_ForceWindowed(FALSE);
+		/* Reinitialise the SDL subsystem. */
+		SDL_VIDEO_InitSDL();
 		SDL_INPUT_Restart();
+		/* This call reopens the SDL window. */
+		VIDEOMODE_Update();
 		return 1;
 	}
 
-	SDL_VIDEO_Exit();
 	SDL_Quit();
 
 	Log_flushlog();
