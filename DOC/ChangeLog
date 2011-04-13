@@ -1,6 +1,9 @@
 2011-04-13  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * src/atari.c: Fix bug introduced at 04-09 with atari.c not compiling when
   HAVE_SIGNAL is not defined.
+* DOS/INSTALL, src/configure.ac, src/aclocal.m4: Detect presence of SDL
+  using the standard m4 script provided by SDL. New configure options are
+  available: --disable-sdltest, --with-sdl-prefix and --with-sdl-exec-prefix.
 
 2011-04-09  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * DOC/USAGE, src/atari800.man, src/ui.c, src/atari_ntsc/atari_ntsc.[ch],

@@ -104,7 +104,7 @@ http://cygwin.com/
 2. For SDL, get the file SDL_win32_main.c from the SDL source that matches
    your version and copy it into the Atari800 src directory.
 3. Type "./configure --target=sdl" for SDL and --target=windx for DirectX
-5. Type "make".
+4. Type "make".
 5. Copy atari800.exe to destination directory.
 6. Copy the needed DLLs: /bin/mgwz.dll and (for SDL) sdl.dll
 
@@ -166,7 +166,8 @@ Building the Emulator for SDL
    For MinGW, get the OpenGL headers at
    http://www.libsdl.org/extras/win32/common/opengl-devel.tar.gz
    See also http://www.libsdl.org/extras/win32/mingw32/README.txt
-4. Type "./configure --target=sdl".
+4. Type "./configure --target=sdl". When building using MinGW, you might also
+   need to add "--with-sdl-prefix=/mingw".
 5. Type "make".
 6. Type "make install".
 7. You can run atari800 anytime you want.

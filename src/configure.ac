@@ -168,17 +168,10 @@ if [[ "$a8_target" != "android" ]]; then
 fi
 case "$a8_target" in
     sdl)
-        sdlcheck="X_`sdl-config --cflags`"
-        if [[ "$sdlcheck" != "X_" ]]; then
-            CFLAGS="$CFLAGS `sdl-config --cflags`"
-dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c  Otherwise
-dnl the autoconf tests don't work.
-            if [[ "$a8_host" = "win" ]]; then
-                CFLAGS=${CFLAGS/-Dmain=SDL_main/}
-            fi
-        else
-            AC_MSG_ERROR("No output from sdl-config!  Is sdl-config installed?")
-        fi
+        dnl Check for SDL
+        SDL_VERSION=1.2.0
+        AM_PATH_SDL($SDL_VERSION, :, AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!]))
+        CFLAGS="$CFLAGS $SDL_CFLAGS"
         ;;
     x11*)
         if [[ "X_$x_includes" != "X_" ]]; then
@@ -331,7 +324,7 @@ case "$a8_target" in
         SUPPORTS_SYNCHRONIZED_SOUND="yes"
         WANT_XEP80_EMULATION=yes
         WANT_NTSC_FILTER=yes
-        LIBS="$LIBS `sdl-config --libs`"
+        LIBS="$LIBS $SDL_LIBS"
         OBJS="videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
         if [[ "$a8_host" != "beos" ]]; then
