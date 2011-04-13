@@ -188,7 +188,7 @@ static void AllocTexture(void)
 /* Frees memory for the screen texture, if needed. */
 static void FreeTexture(void)
 {
-	if (!SDL_VIDEO_GL_pbo && screen_texture != NULL) {
+	if (screen_texture != NULL) {
 		free(screen_texture);
 		screen_texture = NULL;
 	}
@@ -423,7 +423,42 @@ static void CleanDisplayTexture(void)
 		gl.BindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 }
 
-/* Check availability of Pixel Buffer Objests extension. */
+/* Sets pointers to OpenGL functions. Returns TRUE on success, FALSE on failure. */
+static int InitGlFunctions(void)
+{
+	if ((gl.Viewport = (void(APIENTRY*)(GLint,GLint,GLsizei,GLsizei))GetGlFunc("glViewport")) == NULL ||
+	    (gl.ClearColor = (void(APIENTRY*)(GLfloat, GLfloat, GLfloat, GLfloat))GetGlFunc("glClearColor")) == NULL ||
+	    (gl.Clear = (void(APIENTRY*)(GLbitfield))GetGlFunc("glClear")) == NULL ||
+	    (gl.Enable = (void(APIENTRY*)(GLenum))GetGlFunc("glEnable")) == NULL ||
+	    (gl.Disable = (void(APIENTRY*)(GLenum))GetGlFunc("glDisable")) == NULL ||
+	    (gl.GenTextures = (void(APIENTRY*)(GLsizei, GLuint*))GetGlFunc("glGenTextures")) == NULL ||
+	    (gl.DeleteTextures = (void(APIENTRY*)(GLsizei, const GLuint*))GetGlFunc("glDeleteTextures")) == NULL ||
+	    (gl.BindTexture = (void(APIENTRY*)(GLenum, GLuint))GetGlFunc("glBindTexture")) == NULL ||
+	    (gl.TexParameteri = (void(APIENTRY*)(GLenum, GLenum, GLint))GetGlFunc("glTexParameteri")) == NULL ||
+	    (gl.TexImage2D = (void(APIENTRY*)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid*))GetGlFunc("glTexImage2D")) == NULL ||
+	    (gl.TexSubImage2D = (void(APIENTRY*)(GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, const GLvoid*))GetGlFunc("glTexSubImage2D")) == NULL ||
+	    (gl.TexCoord2f = (void(APIENTRY*)(GLfloat, GLfloat))GetGlFunc("glTexCoord2f")) == NULL ||
+	    (gl.Vertex3f = (void(APIENTRY*)(GLfloat, GLfloat, GLfloat))GetGlFunc("glVertex3f")) == NULL ||
+	    (gl.Color4f = (void(APIENTRY*)(GLfloat, GLfloat, GLfloat, GLfloat))GetGlFunc("glColor4f")) == NULL ||
+	    (gl.BlendFunc = (void(APIENTRY*)(GLenum,GLenum))GetGlFunc("glBlendFunc")) == NULL ||
+	    (gl.MatrixMode = (void(APIENTRY*)(GLenum))GetGlFunc("glMatrixMode")) == NULL ||
+	    (gl.Ortho = (void(APIENTRY*)(GLdouble,GLdouble,GLdouble,GLdouble,GLdouble,GLdouble))GetGlFunc("glOrtho")) == NULL ||
+	    (gl.LoadIdentity = (void(APIENTRY*)(void))GetGlFunc("glLoadIdentity")) == NULL ||
+	    (gl.Begin = (void(APIENTRY*)(GLenum))GetGlFunc("glBegin")) == NULL ||
+	    (gl.End = (void(APIENTRY*)(void))GetGlFunc("glEnd")) == NULL ||
+	    (gl.GetIntegerv = (void(APIENTRY*)(GLenum, GLint*))GetGlFunc("glGetIntegerv")) == NULL ||
+	    (gl.GetString = (const GLubyte*(APIENTRY*)(GLenum))GetGlFunc("glGetString")) == NULL ||
+	    (gl.GenLists = (GLuint(APIENTRY*)(GLsizei))GetGlFunc("glGenLists")) == NULL ||
+	    (gl.DeleteLists = (void(APIENTRY*)(GLuint, GLsizei))GetGlFunc("glDeleteLists")) == NULL ||
+	    (gl.NewList = (void(APIENTRY*)(GLuint, GLenum))GetGlFunc("glNewList")) == NULL ||
+	    (gl.EndList = (void(APIENTRY*)(void))GetGlFunc("glEndList")) == NULL ||
+	    (gl.CallList = (void(APIENTRY*)(GLuint))GetGlFunc("glCallList")) == NULL)
+		return FALSE;
+	return TRUE;
+}
+
+/* Checks availability of Pixel Buffer Objests extension and sets pointers of PBO-related OpenGL functions.
+   Returns TRUE on success, FALSE on failure. */
 static int InitGlPbo(void)
 {
 	const GLubyte *extensions = gl.GetString(GL_EXTENSIONS);
@@ -503,23 +538,27 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 		if (SetVideoMode(res->width, res->height, windowed))
 			/* Reinitialisation happened! Need to recreate GL context. */
 			new = TRUE;
+		if (!InitGlFunctions()) {
+			Log_print("Cannot use OpenGL - some functions are not provided.");
+			return FALSE;
+		}
 		if (new) {
 			GLint tex_size;
 			gl.GetIntegerv(GL_MAX_TEXTURE_SIZE, & tex_size);
 			if (tex_size < 1024) {
-				Log_print("Supported texture size is too small (%d), need 1024. OpenGL not available.", tex_size);
-				FreeTexture();
-				MainScreen = NULL;
+				Log_print("Cannot use OpenGL - Supported texture size is too small (%d).", tex_size);
 				return FALSE;
 			}
-			Log_print("OpenGL version: %s", gl.GetString(GL_VERSION));
-			pbo_available = InitGlPbo();
+		}
+		pbo_available = InitGlPbo();
+		if (!pbo_available)
+			SDL_VIDEO_GL_pbo = FALSE;
+		if (new) {
+			Log_print("OpenGL initialized successfully. Version: %s", gl.GetString(GL_VERSION));
 			if (pbo_available)
 				Log_print("OpenGL Pixel Buffer Objects available.");
-			else {
-				Log_print("OpenGL Pixel Buffer Objects not available.");
-				SDL_VIDEO_GL_pbo = FALSE;
-			}
+			else
+			Log_print("OpenGL Pixel Buffer Objects not available.");
 		}
 		InitGlContext();
 		context_updated = TRUE;
@@ -672,56 +711,23 @@ void SDL_VIDEO_GL_WriteConfig(FILE *fp)
 	fprintf(fp, "OPENGL_PBO=%d\n", SDL_VIDEO_GL_pbo);
 }
 
-/* Detects OpenGL availablility and set GL function pointers. Returns whether OpenGL is available. */
-static int InitGl(void)
+/* Loads the OpenGL library. Return TRUE on success, FALSE on failure. */
+static int InitGlLibrary(void)
 {
 	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) != 0) {
-		Log_print("Unable to set GL attribute: %s\n",SDL_GetError());
+		Log_print("Cannot use OpenGL - unable to set GL attribute: %s\n",SDL_GetError());
 		return FALSE;
 	}
 	if (SDL_GL_LoadLibrary(library_path) < 0) {
-		Log_print("Unable to dynamically open OpenGL library: %s\n",SDL_GetError());
+		Log_print("Cannot use OpenGL - unable to dynamically open OpenGL library: %s\n",SDL_GetError());
 		return FALSE;
 	}
-	if ((gl.Viewport = (void(APIENTRY*)(GLint,GLint,GLsizei,GLsizei))GetGlFunc("glViewport")) == NULL ||
-	    (gl.ClearColor = (void(APIENTRY*)(GLfloat, GLfloat, GLfloat, GLfloat))GetGlFunc("glClearColor")) == NULL ||
-	    (gl.Clear = (void(APIENTRY*)(GLbitfield))GetGlFunc("glClear")) == NULL ||
-	    (gl.Enable = (void(APIENTRY*)(GLenum))GetGlFunc("glEnable")) == NULL ||
-	    (gl.Disable = (void(APIENTRY*)(GLenum))GetGlFunc("glDisable")) == NULL ||
-	    (gl.GenTextures = (void(APIENTRY*)(GLsizei, GLuint*))GetGlFunc("glGenTextures")) == NULL ||
-	    (gl.DeleteTextures = (void(APIENTRY*)(GLsizei, const GLuint*))GetGlFunc("glDeleteTextures")) == NULL ||
-	    (gl.BindTexture = (void(APIENTRY*)(GLenum, GLuint))GetGlFunc("glBindTexture")) == NULL ||
-	    (gl.TexParameteri = (void(APIENTRY*)(GLenum, GLenum, GLint))GetGlFunc("glTexParameteri")) == NULL ||
-	    (gl.TexImage2D = (void(APIENTRY*)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid*))GetGlFunc("glTexImage2D")) == NULL ||
-	    (gl.TexSubImage2D = (void(APIENTRY*)(GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, const GLvoid*))GetGlFunc("glTexSubImage2D")) == NULL ||
-	    (gl.TexCoord2f = (void(APIENTRY*)(GLfloat, GLfloat))GetGlFunc("glTexCoord2f")) == NULL ||
-	    (gl.Vertex3f = (void(APIENTRY*)(GLfloat, GLfloat, GLfloat))GetGlFunc("glVertex3f")) == NULL ||
-	    (gl.Color4f = (void(APIENTRY*)(GLfloat, GLfloat, GLfloat, GLfloat))GetGlFunc("glColor4f")) == NULL ||
-	    (gl.BlendFunc = (void(APIENTRY*)(GLenum,GLenum))GetGlFunc("glBlendFunc")) == NULL ||
-	    (gl.MatrixMode = (void(APIENTRY*)(GLenum))GetGlFunc("glMatrixMode")) == NULL ||
-	    (gl.Ortho = (void(APIENTRY*)(GLdouble,GLdouble,GLdouble,GLdouble,GLdouble,GLdouble))GetGlFunc("glOrtho")) == NULL ||
-	    (gl.LoadIdentity = (void(APIENTRY*)(void))GetGlFunc("glLoadIdentity")) == NULL ||
-	    (gl.Begin = (void(APIENTRY*)(GLenum))GetGlFunc("glBegin")) == NULL ||
-	    (gl.End = (void(APIENTRY*)(void))GetGlFunc("glEnd")) == NULL ||
-	    (gl.GetIntegerv = (void(APIENTRY*)(GLenum, GLint*))GetGlFunc("glGetIntegerv")) == NULL ||
-	    (gl.GetString = (const GLubyte*(APIENTRY*)(GLenum))GetGlFunc("glGetString")) == NULL ||
-	    (gl.GenLists = (GLuint(APIENTRY*)(GLsizei))GetGlFunc("glGenLists")) == NULL ||
-	    (gl.DeleteLists = (void(APIENTRY*)(GLuint, GLsizei))GetGlFunc("glDeleteLists")) == NULL ||
-	    (gl.NewList = (void(APIENTRY*)(GLuint, GLenum))GetGlFunc("glNewList")) == NULL ||
-	    (gl.EndList = (void(APIENTRY*)(void))GetGlFunc("glEndList")) == NULL ||
-	    (gl.CallList = (void(APIENTRY*)(GLuint))GetGlFunc("glCallList")) == NULL)
-		return FALSE;
-
 	return TRUE;
 }
 
 void SDL_VIDEO_GL_InitSDL(void)
 {
-	SDL_VIDEO_opengl_available = InitGl();
-	if (SDL_VIDEO_opengl_available)
-		Log_print("OpenGL initialised successfully.");
-	else
-		Log_print("OpenGL not available.");
+	SDL_VIDEO_opengl_available = InitGlLibrary();
 }
 
 int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])

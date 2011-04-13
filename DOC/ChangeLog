@@ -4,6 +4,11 @@
 * DOS/INSTALL, src/configure.ac, src/aclocal.m4: Detect presence of SDL
   using the standard m4 script provided by SDL. New configure options are
   available: --disable-sdltest, --with-sdl-prefix and --with-sdl-exec-prefix.
+* src/sdl/video.c, src/sdl/video_gl.c: Fix misuse of SDL - setting pointers
+  to OpenGL functions must be performed after each call to SDL_SetVideoMode.
+  Fix a bug with screen_texture not always being freed when needed.
+  Make OpenGL log messages slimmer and let them appear only when initialising
+  OpenGL.
 
 2011-04-09  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * DOC/USAGE, src/atari800.man, src/ui.c, src/atari_ntsc/atari_ntsc.[ch],

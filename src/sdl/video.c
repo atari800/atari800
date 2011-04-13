@@ -117,6 +117,7 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 		/* Switching to OpenGL can fail when the host machine doesn't
 		   support it. If so, revert to software mode. */
 		if (!SDL_VIDEO_GL_SetVideoMode(res, windowed, mode, rotate90)) {
+			SDL_VIDEO_GL_Cleanup();
 			SDL_VIDEO_opengl = SDL_VIDEO_opengl_available = FALSE;
 			VIDEOMODE_Update();
 		}
