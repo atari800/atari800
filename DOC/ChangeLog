@@ -1,3 +1,7 @@
+2011-04-13  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* src/atari.c: Fix bug introduced at 04-09 with atari.c not compiling when
+  HAVE_SIGNAL is not defined.
+
 2011-04-09  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * DOC/USAGE, src/atari800.man, src/ui.c, src/atari_ntsc/atari_ntsc.[ch],
   src/sdl/palette.[ch], src/sdl/video.[ch], src/sdl/video_gl.[ch],
@@ -35,7 +39,7 @@
   must set the same window size as returned by the event. Also when window
   is maximised, it is not allowed to un-maximise it by software. When these
   conditions are not met, glitches occur.
-* src/videomode.c: Fix broken aspect ratio correction in winowed rotated
+* src/videomode.c: Fix broken aspect ratio correction in windowed rotated
   modes. Make the windowed mode the default - it's more compatible.
 * src/sdl/video_gl.c: Fix glitches when switching software<->OpenGL on
   Windows. Avoid unnecessary scanline-drawing when scanline-percentage is 0.

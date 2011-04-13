@@ -1249,11 +1249,13 @@ void Atari800_Frame(void)
 #ifndef BASIC
 	static int refresh_counter = 0;
 
+#ifdef HAVE_SIGNAL
 	if (sigint_flag) {
 		sigint_flag = FALSE;
 		INPUT_key_code = AKEY_UI;
 		UI_alt_function = UI_MENU_MONITOR;
 	}
+#endif /* HAVE_SIGNAL */
 
 	switch (INPUT_key_code) {
 	case AKEY_COLDSTART:
