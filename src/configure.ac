@@ -171,7 +171,6 @@ case "$a8_target" in
         dnl Check for SDL
         SDL_VERSION=1.2.0
         AM_PATH_SDL($SDL_VERSION, :, AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!]))
-        CFLAGS="$CFLAGS $SDL_CFLAGS"
         ;;
     x11*)
         if [[ "X_$x_includes" != "X_" ]]; then
@@ -324,21 +323,11 @@ case "$a8_target" in
         SUPPORTS_SYNCHRONIZED_SOUND="yes"
         WANT_XEP80_EMULATION=yes
         WANT_NTSC_FILTER=yes
-        LIBS="$LIBS $SDL_LIBS"
         OBJS="videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
         if [[ "$a8_host" != "beos" ]]; then
 dnl BeOS has a real issue with redundant-decls
             CFLAGS="$CFLAGS -Wredundant-decls"
-        fi
-        if [[ "$a8_host" = "win" ]]; then
-dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
-dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
-            LIBS=${LIBS/-lSDLmain/}
-            OBJS="$OBJS SDL_win32_main.o"
-            CFLAGS="$CFLAGS -DNO_STDIO_REDIRECT"
-dnl Don't make this a windowed app, make it a console app.
-            LIBS=${LIBS/-mwindows/}
         fi
         AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
         OBJS="$OBJS pbi_proto80.o"
@@ -905,7 +894,25 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     fi
 fi
 
-dnl Set SDL-OpenGL availability
+dnl Modifications to CFLAGS and LIBS not possible before earlier feature tests...
+
+case "$a8_target" in
+    sdl)
+        LIBS="$LIBS $SDL_LIBS"
+        CFLAGS="$CFLAGS $SDL_CFLAGS"
+        if [[ "$a8_host" = "win" ]]; then
+dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
+dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
+            LIBS=${LIBS/-lSDLmain/}
+            OBJS="$OBJS SDL_win32_main.o"
+            CFLAGS="$CFLAGS -DNO_STDIO_REDIRECT"
+dnl Don't make this a windowed app, make it a console app.
+            LIBS=${LIBS/-mwindows/}
+        fi
+        ;;
+esac
+
+dnl Set SDL-OpenGL availability...
 
 AC_ARG_ENABLE(opengl,
     AC_HELP_STRING(--enable-opengl,[Use OpenGL for graphics - only in SDL target (default=on if OpenGL installed)]),

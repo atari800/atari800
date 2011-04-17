@@ -1,5 +1,8 @@
 2011-04-18  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * src/ui_basic.c: Fix divsion by 0 in the slider control.
+* src/configure.ac: Fix recently-introduced issue with building SDL/Windows -
+  adding SDL flags to CFLAGS must be done after all AC_CHECK_FUNCS tests but
+  before the OpenGL check.
 
 2011-04-13  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * src/atari.c: Fix bug introduced at 04-09 with atari.c not compiling when
