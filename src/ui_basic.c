@@ -651,7 +651,10 @@ static int SelectSlider(int fg, int bg, int x, int y, int width,
 			Plot(fg, bg, bar, i, y + 1);
 		(*label_fun)(label, value, user_data);
 		label_length = strlen(label);
-		Print(bg, fg, label, x + 2 + (width - label_length - 2) * value / max_value, y + 1, label_length);
+		Print(bg, fg, label,
+		      max_value == 0 ? x + 2 + (width - label_length - 2) / 2
+		                     : x + 2 + (width - label_length - 2) * value / max_value,
+		      y + 1, label_length);
 		ascii = GetKeyPress();
 		switch (ascii) {
 			case 0x1c:				/* Up */

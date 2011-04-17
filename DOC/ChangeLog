@@ -1,3 +1,6 @@
+2011-04-18  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* src/ui_basic.c: Fix divsion by 0 in the slider control.
+
 2011-04-13  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * src/atari.c: Fix bug introduced at 04-09 with atari.c not compiling when
   HAVE_SIGNAL is not defined.
