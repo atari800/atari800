@@ -46,7 +46,6 @@
 
 static int fullscreen = 1;
 
-static SDL_Surface *MainScreen = NULL;
 static SDL_Color colors[256];			/* palette */
 int SDL_VIDEO_SW_bpp = 0;
 
@@ -68,11 +67,11 @@ static void (*blit_funcs[VIDEOMODE_MODE_SIZE])(void) = {
 
 static void SetPalette(void)
 {
-	/* As the data that will be written to MainScreen is already palettised,
+	/* As the data that will be written to SDL_VIDEO_screen is already palettised,
 	   SDL_SetPalette shouldn't modify the surface's logical palette (so no
 	   SDL_LOGPAL here). Adding SDL_LOGPAL would break the palette when running
 	   with DirectX video driver in 8bpp fullscreen videomode on Intel GMA 3100. */
-	SDL_SetPalette(MainScreen, SDL_PHYSPAL, colors, 0, 256);
+	SDL_SetPalette(SDL_VIDEO_screen, SDL_PHYSPAL, colors, 0, 256);
 }
 
 static void CalcPalette(VIDEOMODE_MODE_t mode)
@@ -91,10 +90,10 @@ static void CalcPalette(VIDEOMODE_MODE_t mode)
 		colors[i].g = (rgb & 0x0000ff00) >> 8;
 		colors[i].b = (rgb & 0x000000ff) >> 0;
 	}
-	if (MainScreen->format->BitsPerPixel == 16 || MainScreen->format->BitsPerPixel == 32) {
+	if (SDL_VIDEO_screen->format->BitsPerPixel == 16 || SDL_VIDEO_screen->format->BitsPerPixel == 32) {
 		for (i = 0; i < size; i++) {
-			c = SDL_MapRGB(MainScreen->format, colors[i].r, colors[i].g, colors[i].b);
-			switch (MainScreen->format->BitsPerPixel) {
+			c = SDL_MapRGB(SDL_VIDEO_screen->format, colors[i].r, colors[i].g, colors[i].b);
+			switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 			case 16:
 				SDL_PALETTE_buffer.bpp16[i] = (Uint16) c;
 				break;
@@ -116,9 +115,9 @@ void SDL_VIDEO_SW_PaletteUpdate(void)
 static void ModeInfo(void)
 {
 	char *fullstring = fullscreen ? "fullscreen" : "windowed";
-	char *vsyncstring = (MainScreen->flags & SDL_DOUBLEBUF) ? "with vsync" : "without vsync";
-	Log_print("Video Mode: %dx%dx%d %s %s", MainScreen->w, MainScreen->h,
-		   MainScreen->format->BitsPerPixel, fullstring, vsyncstring);
+	char *vsyncstring = (SDL_VIDEO_screen->flags & SDL_DOUBLEBUF) ? "with vsync" : "without vsync";
+	Log_print("Video Mode: %dx%dx%d %s %s", SDL_VIDEO_screen->w, SDL_VIDEO_screen->h,
+	          SDL_VIDEO_screen->format->BitsPerPixel, fullstring, vsyncstring);
 }
 
 static void SetVideoMode(int w, int h, int bpp)
@@ -128,27 +127,29 @@ static void SetVideoMode(int w, int h, int bpp)
 	if (SDL_VIDEO_vsync)
 		flags |= SDL_HWSURFACE | SDL_DOUBLEBUF;
 
-	MainScreen = SDL_SetVideoMode(w, h, bpp, flags);
-	if (MainScreen == NULL) {
+	SDL_VIDEO_screen = SDL_SetVideoMode(w, h, bpp, flags);
+	if (SDL_VIDEO_screen == NULL) {
 		/* Some SDL_SetVideoMode errors can be averted by reinitialising the SDL video subsystem. */
 		Log_print("Setting video mode: %dx%dx%d failed: %s. Reinitialising video.", w, h, bpp, SDL_GetError());
 		SDL_VIDEO_ReinitSDL();
-		MainScreen = SDL_SetVideoMode(w, h, bpp, flags);
-		if (MainScreen == NULL) {
+		SDL_VIDEO_screen = SDL_SetVideoMode(w, h, bpp, flags);
+		if (SDL_VIDEO_screen == NULL) {
 			Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, bpp, SDL_GetError());
 			Log_flushlog();
 			exit(-1);
 		}
 	}
-	SDL_VIDEO_width = MainScreen->w;
-	SDL_VIDEO_height = MainScreen->h;
-	SDL_VIDEO_vsync_available = (MainScreen->flags & SDL_DOUBLEBUF);
+	SDL_VIDEO_width = SDL_VIDEO_screen->w;
+	SDL_VIDEO_height = SDL_VIDEO_screen->h;
+	/* When vsync is off, set its availability to TRUE. Otherwise check if
+	   SDL_DOUBLEBUF is supported by the screen. */
+	SDL_VIDEO_vsync_available = !SDL_VIDEO_vsync || (SDL_VIDEO_screen->flags & SDL_DOUBLEBUF);
 	ModeInfo();
 }
 
 void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
 {
-	int old_bpp = MainScreen == NULL ? 0 : MainScreen->format->BitsPerPixel;
+	int old_bpp = SDL_VIDEO_screen == NULL ? 0 : SDL_VIDEO_screen->format->BitsPerPixel;
 
 	if (SDL_VIDEO_SW_bpp == 0) {
 		/* Autodetect bpp */
@@ -165,8 +166,8 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 	}
 
 	/* Call SetVideoMode only when there was change in width, height, bpp, windowed/fullscreen, or vsync. */
-	if (MainScreen == NULL || MainScreen->w != res->width || MainScreen->h != res->height || old_bpp != SDL_VIDEO_SW_bpp ||
-	    fullscreen == windowed || SDL_VIDEO_vsync != ((MainScreen->flags & SDL_DOUBLEBUF) != 0)) { 
+	if (SDL_VIDEO_screen == NULL || SDL_VIDEO_screen->w != res->width || SDL_VIDEO_screen->h != res->height || old_bpp != SDL_VIDEO_SW_bpp ||
+	    fullscreen == windowed || (SDL_VIDEO_vsync && SDL_VIDEO_vsync_available) != ((SDL_VIDEO_screen->flags & SDL_DOUBLEBUF) == SDL_DOUBLEBUF)) { 
 		fullscreen = !windowed;
 		SetVideoMode(res->width, res->height, SDL_VIDEO_SW_bpp);
 	}
@@ -179,11 +180,11 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 		SetPalette();
 
 	/* Clear the screen. */
-	SDL_FillRect(MainScreen, NULL, 0);
-	SDL_Flip(MainScreen);
+	SDL_FillRect(SDL_VIDEO_screen, NULL, 0);
+	SDL_Flip(SDL_VIDEO_screen);
 	if (SDL_VIDEO_vsync_available)
 		/* Also clear the backbuffer. */
-		SDL_FillRect(MainScreen, NULL, 0);
+		SDL_FillRect(SDL_VIDEO_screen, NULL, 0);
 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
 
@@ -205,11 +206,6 @@ int SDL_VIDEO_SW_SupportsVideomode(VIDEOMODE_MODE_t mode, int stretch, int rotat
 	} else
 		/* Other modes don't support stretching or rotation at all. */
 		return !stretch && !rotate90;
-}
-
-void SDL_VIDEO_SW_Cleanup(void)
-{
-	MainScreen = NULL;
 }
 
 int SDL_VIDEO_SW_SetBpp(int value)
@@ -420,9 +416,9 @@ static void scanLines_32(void* pBuffer, int width, int height, int pitch, int sc
 static void DisplayXEP80(void)
 {
 	static int xep80Frame = 0;
-	int pitch4 = MainScreen->pitch / 2;
+	int pitch4 = SDL_VIDEO_screen->pitch / 2;
 	UBYTE *screen;
-	Uint8 *pixels = (Uint8 *) MainScreen->pixels + MainScreen->pitch * VIDEOMODE_dest_offset_top;
+	Uint8 *pixels = (Uint8 *) SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
 	xep80Frame++;
 	if (xep80Frame == 60) xep80Frame = 0;
 	if (xep80Frame > 29) {
@@ -433,7 +429,7 @@ static void DisplayXEP80(void)
 	}
 
 	screen += XEP80_SCRN_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
-	switch (MainScreen->format->BitsPerPixel) {
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	case 8:
 		pixels += VIDEOMODE_dest_offset_left;
 		SDL_VIDEO_BlitXEP80_8((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height);
@@ -441,19 +437,19 @@ static void DisplayXEP80(void)
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
 		SDL_VIDEO_BlitXEP80_16((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp16);
-		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
+		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	default:
 		pixels += VIDEOMODE_dest_offset_left * 4;
 		SDL_VIDEO_BlitXEP80_32((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp32);
-		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
+		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
 
 static void DisplayNTSCEmu(void)
 {
-	Uint8 *pixels = (Uint8*)MainScreen->pixels + MainScreen->pitch * VIDEOMODE_dest_offset_top;
-	switch (MainScreen->format->BitsPerPixel) {
+	Uint8 *pixels = (Uint8*)SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
 		/* blit atari image, doubled vertically */
@@ -463,8 +459,8 @@ static void DisplayNTSCEmu(void)
 		                      VIDEOMODE_src_width,
 		                      VIDEOMODE_src_height,
 		                      pixels,
-		                      MainScreen->pitch * 2);
-		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
+		                      SDL_VIDEO_screen->pitch * 2);
+		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	case 32:
 		pixels += VIDEOMODE_dest_offset_left * 4;
@@ -474,8 +470,8 @@ static void DisplayNTSCEmu(void)
 		                       VIDEOMODE_src_width,
 		                       VIDEOMODE_src_height,
 		                       pixels,
-		                       MainScreen->pitch * 2);
-		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
+		                       SDL_VIDEO_screen->pitch * 2);
+		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	}
 }
@@ -486,11 +482,11 @@ static void DisplayProto80(void)
 	int last_column = (VIDEOMODE_src_offset_left + VIDEOMODE_src_width) / 8;
 	int first_line = VIDEOMODE_src_offset_top;
 	int last_line = first_line + VIDEOMODE_src_height;
-	int pitch4 = MainScreen->pitch / 2;
-	Uint8 *pixels = (Uint8*)MainScreen->pixels + MainScreen->pitch * VIDEOMODE_dest_offset_top;
+	int pitch4 = SDL_VIDEO_screen->pitch / 2;
+	Uint8 *pixels = (Uint8*)SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
 
 	
-	switch (MainScreen->format->BitsPerPixel) {
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	case 8:
 		pixels += VIDEOMODE_dest_offset_left;
 		SDL_VIDEO_BlitProto80_8((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line);
@@ -498,12 +494,12 @@ static void DisplayProto80(void)
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
 		SDL_VIDEO_BlitProto80_16((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, SDL_PALETTE_buffer.bpp16);
-		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
+		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	default:
 		pixels += VIDEOMODE_dest_offset_left * 4;
 		SDL_VIDEO_BlitProto80_32((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, SDL_PALETTE_buffer.bpp32);
-		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
+		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
 
@@ -513,8 +509,8 @@ static void DisplayAF80(void)
 	int last_column = (VIDEOMODE_src_offset_left + VIDEOMODE_src_width) / 8;
 	int first_line = VIDEOMODE_src_offset_top;
 	int last_line = first_line + VIDEOMODE_src_height;
-	int pitch4 = MainScreen->pitch / 2;
-	Uint8 *pixels = (Uint8*)MainScreen->pixels + MainScreen->pitch * VIDEOMODE_dest_offset_top;
+	int pitch4 = SDL_VIDEO_screen->pitch / 2;
+	Uint8 *pixels = (Uint8*)SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
 
 	static int AF80Frame = 0;
 	int blink;
@@ -522,7 +518,7 @@ static void DisplayAF80(void)
 	if (AF80Frame == 60) AF80Frame = 0;
 	blink = AF80Frame >= 30;
 	
-	switch (MainScreen->format->BitsPerPixel) {
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	case 8:
 		pixels += VIDEOMODE_dest_offset_left;
 		SDL_VIDEO_BlitAF80_8((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink);
@@ -530,20 +526,20 @@ static void DisplayAF80(void)
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
 		SDL_VIDEO_BlitAF80_16((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink, SDL_PALETTE_buffer.bpp16);
-		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
+		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 		break;
 	default:
 		pixels += VIDEOMODE_dest_offset_left * 4;
 		SDL_VIDEO_BlitAF80_32((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink, SDL_PALETTE_buffer.bpp32);
-		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, MainScreen->pitch, SDL_VIDEO_scanlines_percentage);
+		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
 
 static void DisplayRotated(void)
 {
 	unsigned int x, y;
-	register Uint32 *start32 = (Uint32 *) MainScreen->pixels + MainScreen->pitch / 4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
-	int pitch4 = MainScreen->pitch / 4 - VIDEOMODE_dest_width / 2;
+	register Uint32 *start32 = (Uint32 *) SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch / 4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
+	int pitch4 = SDL_VIDEO_screen->pitch / 4 - VIDEOMODE_dest_width / 2;
 	UBYTE *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
 	for (y = 0; y < VIDEOMODE_dest_height; y++) {
 		for (x = 0; x < VIDEOMODE_dest_width / 2; x++) {
@@ -561,10 +557,10 @@ static void DisplayRotated(void)
 
 static void DisplayWithoutScaling(void)
 {
-	int pitch4 = MainScreen->pitch / 4;
+	int pitch4 = SDL_VIDEO_screen->pitch / 4;
 	UBYTE *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
-	Uint8 *pixels = (Uint8 *) MainScreen->pixels + MainScreen->pitch * VIDEOMODE_dest_offset_top;
-	switch (MainScreen->format->BitsPerPixel) {
+	Uint8 *pixels = (Uint8 *) SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	/* Possible values are 8, 16 and 32, as checked earlier in the
 	 * PLATFORM_SetVideoMode() function. */
 	case 8:
@@ -575,7 +571,7 @@ static void DisplayWithoutScaling(void)
 		pixels += VIDEOMODE_dest_offset_left * 2;
 		SDL_VIDEO_BlitNormal16((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp16);
 		break;
-	default: /* MainScreen->format->BitsPerPixel == 32 */
+	default: /* SDL_VIDEO_screen->format->BitsPerPixel == 32 */
 		pixels += VIDEOMODE_dest_offset_left * 4;
 		SDL_VIDEO_BlitNormal32((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp32);
 	}
@@ -599,8 +595,8 @@ static void DisplayWithScaling(void)
 	int init_x = ((VIDEOMODE_src_width + VIDEOMODE_src_offset_left) << 16) - 0x4000;
 
 	Uint8 c;
-	pitch4 = MainScreen->pitch / 4;
-	start32 = (Uint32 *) MainScreen->pixels;
+	pitch4 = SDL_VIDEO_screen->pitch / 4;
+	start32 = (Uint32 *) SDL_VIDEO_screen->pixels;
 
 	w = (VIDEOMODE_src_width) << 16;
 	h = (VIDEOMODE_src_height) << 16;
@@ -609,7 +605,7 @@ static void DisplayWithScaling(void)
 	y = (VIDEOMODE_src_offset_top) << 16;
 	i = VIDEOMODE_dest_height;
 
-	switch (MainScreen->format->BitsPerPixel) {
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	/* Possible values are 8, 16 and 32, as checked earlier in the
 	 * PLATFORM_SetVideoMode() function. */
 	case 8:
@@ -663,7 +659,7 @@ static void DisplayWithScaling(void)
 	default:
 		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
 		w1 = VIDEOMODE_dest_width - 1;
-		/* MainScreen->format->BitsPerPixel = 32 */
+		/* SDL_VIDEO_screen->format->BitsPerPixel = 32 */
 		while (i > 0) {
 			x = init_x;
 			pos = w1;
@@ -684,7 +680,7 @@ static void DisplayWithScaling(void)
 
 void SDL_VIDEO_SW_DisplayScreen(void)
 {
-	if (SDL_LockSurface(MainScreen) != 0)
+	if (SDL_LockSurface(SDL_VIDEO_screen) != 0)
 		/* When the window manager decides to switch the SDL display from
 		   fullscreen to windowed mode (eg. by minimising the window after the
 		   user pressed Alt+Tab in Windows), hardware surface gets disabled
@@ -695,13 +691,13 @@ void SDL_VIDEO_SW_DisplayScreen(void)
 		   return;
 	/* Use function corresponding to the current_display_mode. */
 	(*blit_funcs[SDL_VIDEO_current_display_mode])();
-	SDL_UnlockSurface(MainScreen);
+	SDL_UnlockSurface(SDL_VIDEO_screen);
 	/* SDL_UpdateRect is faster than SDL_Flip for a software surface, because
 	   it copies only the used part of the screen. */
-	if (MainScreen->flags & SDL_DOUBLEBUF)
-		SDL_Flip(MainScreen);
+	if (SDL_VIDEO_screen->flags & SDL_DOUBLEBUF)
+		SDL_Flip(SDL_VIDEO_screen);
 	else
-		SDL_UpdateRect(MainScreen, VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
+		SDL_UpdateRect(SDL_VIDEO_screen, VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
 }
 
 int SDL_VIDEO_SW_ReadConfig(char *option, char *parameters)

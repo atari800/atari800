@@ -703,15 +703,15 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef NTSC_FILTER
 		|| !FILTER_NTSC_Initialise(argc, argv)
 #endif
+#if SUPPORTS_CHANGE_VIDEOMODE
+		|| !VIDEOMODE_Initialise(argc, argv)
+#endif
 #ifndef DONT_DISPLAY
 		/* Platform Specific Initialisation */
 		|| !PLATFORM_Initialise(argc, argv)
 #endif
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		|| !Screen_Initialise(argc, argv)
-#endif
-#if SUPPORTS_CHANGE_VIDEOMODE
-		|| !VIDEOMODE_Initialise(argc, argv)
 #endif
 		/* Initialise Custom Chips */
 		|| !ANTIC_Initialise(argc, argv)

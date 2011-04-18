@@ -18,6 +18,8 @@ extern int SDL_VIDEO_height;
 /* Indicates current display mode */
 extern VIDEOMODE_MODE_t SDL_VIDEO_current_display_mode;
 
+extern SDL_Surface *SDL_VIDEO_screen;
+
 #if HAVE_OPENGL
 /* Indicates whenther OpenGL is available on the host machine. */
 extern int SDL_VIDEO_opengl_available;

@@ -14,9 +14,6 @@ extern int SDL_VIDEO_SW_bpp;
 int SDL_VIDEO_SW_SetBpp(int value);
 int SDL_VIDEO_SW_ToggleBpp(void);
 
-/* Called when switching from software mode to OpenGL. */
-void SDL_VIDEO_SW_Cleanup(void);
-
 /* Read/write to configuration file. */
 int SDL_VIDEO_SW_ReadConfig(char *option, char *parameters);
 void SDL_VIDEO_SW_WriteConfig(FILE *fp);

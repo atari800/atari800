@@ -92,8 +92,6 @@ struct
 	GLboolean(APIENTRY*UnmapBuffer)(GLenum);
 } gl;
 
-static SDL_Surface *MainScreen = NULL;
-
 static void DisplayNormal(GLvoid *dest);
 static void DisplayNTSCEmu(GLvoid *dest);
 static void DisplayXEP80(GLvoid *dest);
@@ -265,10 +263,8 @@ static void InitGlTextures(void)
 
 void SDL_VIDEO_GL_Cleanup(void)
 {
-	if (MainScreen != NULL) {
+	if (SDL_VIDEO_screen != NULL && (SDL_VIDEO_screen->flags & SDL_OPENGL) == SDL_OPENGL)
 		CleanGlContext();
-		MainScreen = NULL;
-	}
 	FreeTexture();
 }
 
@@ -478,9 +474,9 @@ static int InitGlPbo(void)
 
 static void ModeInfo(void)
 {
-	char *fullstring = (MainScreen->flags & SDL_FULLSCREEN) ? "fullscreen" : "windowed";
-	Log_print("Video Mode: %dx%dx%d %s, pixel format: %s", MainScreen->w, MainScreen->h,
-		   MainScreen->format->BitsPerPixel, fullstring, pixel_format_cfg_strings[SDL_VIDEO_GL_pixel_format]);
+	char *fullstring = (SDL_VIDEO_screen->flags & SDL_FULLSCREEN) == SDL_FULLSCREEN ? "fullscreen" : "windowed";
+	Log_print("Video Mode: %dx%dx%d %s, pixel format: %s", SDL_VIDEO_screen->w, SDL_VIDEO_screen->h,
+		   SDL_VIDEO_screen->format->BitsPerPixel, fullstring, pixel_format_cfg_strings[SDL_VIDEO_GL_pixel_format]);
 }
 
 /* Return value of TRUE indicates that the video subsystem was reinitialised. */
@@ -490,21 +486,21 @@ static int SetVideoMode(int w, int h, int windowed)
 	Uint32 flags = SDL_OPENGL | (windowed ? SDL_RESIZABLE : SDL_FULLSCREEN);
 	/* In OpenGL mode, the SDL screen is always opened with the default
 	   desktop depth - it is the most compatible way. */
-	MainScreen = SDL_SetVideoMode(w, h, SDL_VIDEO_native_bpp, flags);
-	if (MainScreen == NULL) {
+	SDL_VIDEO_screen = SDL_SetVideoMode(w, h, SDL_VIDEO_native_bpp, flags);
+	if (SDL_VIDEO_screen == NULL) {
 		/* Some SDL_SetVideoMode errors can be averted by reinitialising the SDL video subsystem. */
 		Log_print("Setting video mode: %dx%dx%d failed: %s. Reinitialising video.", w, h, SDL_VIDEO_native_bpp, SDL_GetError());
 		SDL_VIDEO_ReinitSDL();
 		reinit = TRUE;
-		MainScreen = SDL_SetVideoMode(w, h, SDL_VIDEO_native_bpp, flags);
-		if (MainScreen == NULL) {
+		SDL_VIDEO_screen = SDL_SetVideoMode(w, h, SDL_VIDEO_native_bpp, flags);
+		if (SDL_VIDEO_screen == NULL) {
 			Log_print("Setting Video Mode: %dx%dx%d failed: %s", w, h, SDL_VIDEO_native_bpp, SDL_GetError());
 			Log_flushlog();
 			exit(-1);
 		}
 	}
-	SDL_VIDEO_width = MainScreen->w;
-	SDL_VIDEO_height = MainScreen->h;
+	SDL_VIDEO_width = SDL_VIDEO_screen->w;
+	SDL_VIDEO_height = SDL_VIDEO_screen->h;
 	SDL_VIDEO_vsync_available = FALSE;
 	ModeInfo();
 	return reinit;
@@ -512,13 +508,13 @@ static int SetVideoMode(int w, int h, int windowed)
 
 int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
 {
-	int new = MainScreen == NULL; /* TRUE means the SDL/GL screen was not yet initialised */
+	int new = SDL_VIDEO_screen == NULL; /* TRUE means the SDL/GL screen was not yet initialised */
 	int context_updated = FALSE; /* TRUE means the OpenGL context has been recreated */
 	currently_rotated = rotate90;
 
 	/* Call SetVideoMode only when there was change in width, height, or windowed/fullscreen. */
-	if (new || MainScreen->w != res->width || MainScreen->h != res->height ||
-	    ((MainScreen->flags & SDL_FULLSCREEN) == 0) != windowed) {
+	if (new || SDL_VIDEO_screen->w != res->width || SDL_VIDEO_screen->h != res->height ||
+	    ((SDL_VIDEO_screen->flags & SDL_FULLSCREEN) == SDL_FULLSCREEN) == windowed) {
 		if (!new) {
 			CleanGlContext();
 		}
@@ -794,7 +790,7 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 void SDL_VIDEO_GL_SetPixelFormat(int value)
 {
 	SDL_VIDEO_GL_pixel_format = value;
-	if (MainScreen != NULL) {
+	if (SDL_VIDEO_screen != NULL && (SDL_VIDEO_screen->flags & SDL_OPENGL) == SDL_OPENGL) {
 		int new_bpp_32 = value >= SDL_VIDEO_GL_PIXEL_FORMAT_BGRA32;
 		if (new_bpp_32 != bpp_32)
 		{
@@ -819,7 +815,7 @@ void SDL_VIDEO_GL_TogglePixelFormat(void)
 void SDL_VIDEO_GL_SetFiltering(int value)
 {
 	SDL_VIDEO_GL_filtering = value;
-	if (MainScreen != NULL) {
+	if (SDL_VIDEO_screen != NULL && (SDL_VIDEO_screen->flags & SDL_OPENGL) == SDL_OPENGL) {
 		GLint filtering = value ? GL_LINEAR : GL_NEAREST;
 		gl.BindTexture(GL_TEXTURE_2D, textures[0]);
 		gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);
@@ -836,7 +832,7 @@ void SDL_VIDEO_GL_ToggleFiltering(void)
 
 int SDL_VIDEO_GL_SetPbo(int value)
 {
-	if (MainScreen != NULL) {
+	if (SDL_VIDEO_screen != NULL && (SDL_VIDEO_screen->flags & SDL_OPENGL) == SDL_OPENGL) {
 		/* Return false if PBOs are requested but not available. */
 		if (value && !pbo_available)
 			return FALSE;
@@ -861,7 +857,7 @@ int SDL_VIDEO_GL_TogglePbo(void)
 
 void SDL_VIDEO_GL_ScanlinesPercentageChanged(void)
 {
-	if (MainScreen != NULL) {
+	if (SDL_VIDEO_screen != NULL && (SDL_VIDEO_screen->flags & SDL_OPENGL) == SDL_OPENGL) {
 		SetSubpixelShifts();
 		SetGlDisplayList();
 	}
@@ -869,7 +865,7 @@ void SDL_VIDEO_GL_ScanlinesPercentageChanged(void)
 
 void SDL_VIDEO_GL_InterpolateScanlinesChanged(void)
 {
-	if (MainScreen != NULL) {
+	if (SDL_VIDEO_screen != NULL && (SDL_VIDEO_screen->flags & SDL_OPENGL) == SDL_OPENGL) {
 		GLint filtering = SDL_VIDEO_interpolate_scanlines ? GL_LINEAR : GL_NEAREST;
 		gl.BindTexture(GL_TEXTURE_2D, textures[1]);
 		gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);

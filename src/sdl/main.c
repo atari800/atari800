@@ -79,14 +79,6 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 #ifdef SOUND
 		i |= SDL_INIT_AUDIO;
 #endif
-#ifdef HAVE_WINDOWS_H
-		/* Windows SDL version 1.2.10+ uses windib as the default, but it is slower.
-		   Additionally on some graphic cards it doesn't work properly in low
-		   resolutions like Atari800's default of 336x240. */
-		if (SDL_getenv("SDL_VIDEODRIVER")==NULL)
-			SDL_putenv("SDL_VIDEODRIVER=directx");
-#endif
-
 		if (SDL_Init(i) != 0) {
 			Log_print("SDL_Init FAILED: %s", SDL_GetError());
 			Log_flushlog();
@@ -110,10 +102,10 @@ int PLATFORM_Exit(int run_monitor)
 	int restart;
 
 	SDL_INPUT_Exit();
-	/* With SDL_VIDEODRIVER=directs keyboard presses in console are still
-	   fetched by the SDL window. This results in locked Return key when
-	   the user leaves the monitor. The only solution is to completely
-	   close the video subsystem for the time of running the monitor. */
+	/* If the SDL window was left not closed, it would be unusable and hanging
+	   for the time the monitor is active. Also, with SDL_VIDEODRIVER=directx all
+	   keyboard presses in console would be still fetched by the SDL window after
+	   leaving the monitor. To avoid the problems, close the video subsystem. */
 	SDL_VIDEO_Exit();
 	if (run_monitor) {
 #ifdef SOUND

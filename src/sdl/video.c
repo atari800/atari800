@@ -55,6 +55,8 @@ int SDL_VIDEO_height;
 
 VIDEOMODE_MODE_t SDL_VIDEO_current_display_mode = VIDEOMODE_MODE_NORMAL;
 
+SDL_Surface *SDL_VIDEO_screen = NULL;
+
 /* Desktop screen resolution is stored here on initialisation. */
 static VIDEOMODE_resolution_t desktop_resolution;
 
@@ -68,6 +70,12 @@ int SDL_VIDEO_vsync = FALSE;
 int SDL_VIDEO_vsync_available;
 
 static int window_maximised = FALSE;
+
+#if HAVE_WINDOWS_H
+/* Contains TRUE if the user chose a video backend by setting
+   the SDL_VIDEODRIVER environment variable. */
+static int user_video_driver = FALSE;
+#endif /* HAVE_WINDOWS_H */
 
 void PLATFORM_PaletteUpdate(void)
 {
@@ -109,21 +117,39 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 	   that's not 100% sure: if we notice, that the windows's horizontal size equals desktop
 	   resolution, then we assume that the window is maximised. This works at least on Windows
 	   and Linux/KDE. */
-	   window_maximised = windowed && res->width == desktop_resolution.width;
+	window_maximised = windowed && res->width == desktop_resolution.width;
+
+#if HAVE_WINDOWS_H
+		/* On Windows, choose Windib or DirectX backend when switching between
+		   fullscreen<->windowed. */
+		if (!user_video_driver &&
+		    SDL_VIDEO_screen != NULL &&
+		    ((SDL_VIDEO_screen->flags & SDL_FULLSCREEN) == SDL_FULLSCREEN) == windowed) {
+			if (windowed)
+				SDL_putenv("SDL_VIDEODRIVER=windib");
+			else
+				SDL_putenv("SDL_VIDEODRIVER=directx");
+			/* SDL_VIDEODRIVER is only used when initialising the video subsystem. */
+			SDL_VIDEO_ReinitSDL();
+		}
+#endif /* HAVE_WINDOWS_H */
 #if HAVE_OPENGL
 	if (SDL_VIDEO_opengl) {
 		if (!currently_opengl)
-			SDL_VIDEO_SW_Cleanup();
+			SDL_VIDEO_screen = NULL;
 		/* Switching to OpenGL can fail when the host machine doesn't
 		   support it. If so, revert to software mode. */
 		if (!SDL_VIDEO_GL_SetVideoMode(res, windowed, mode, rotate90)) {
 			SDL_VIDEO_GL_Cleanup();
+			SDL_VIDEO_screen = NULL;
 			SDL_VIDEO_opengl = SDL_VIDEO_opengl_available = FALSE;
 			VIDEOMODE_Update();
 		}
 	} else {
-		if (currently_opengl)
+		if (currently_opengl) {
 			SDL_VIDEO_GL_Cleanup();
+			SDL_VIDEO_screen = NULL;
+		}
 		SDL_VIDEO_SW_SetVideoMode(res, windowed, mode, rotate90);
 	}
 	currently_opengl = SDL_VIDEO_opengl;
@@ -259,9 +285,8 @@ void SDL_VIDEO_QuitSDL(void)
 #if HAVE_OPENGL
 	if (currently_opengl)
 		SDL_VIDEO_GL_Cleanup();
-	else
 #endif
-		SDL_VIDEO_SW_Cleanup();
+	SDL_VIDEO_screen = NULL;
 
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
@@ -333,8 +358,20 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 	)
 		return FALSE;
 
-	if (!help_only)
+	if (!help_only) {
+#ifdef HAVE_WINDOWS_H
+		/* On Windows the DirectX SDL backend is glitchy in windowed modes, but allows
+		   for vertical synchronisation in fullscreen modes. Unless the user specified
+		   his own backend, use DirectX in fullscreen modes and Windib in windowed modes. */
+		if (SDL_getenv("SDL_VIDEODRIVER") != NULL)
+			user_video_driver = TRUE;
+		else if (VIDEOMODE_windowed)
+			SDL_putenv("SDL_VIDEODRIVER=windib");
+		else
+			SDL_putenv("SDL_VIDEODRIVER=directx");
+#endif /* HAVE_WINDOWS_H */
 		SDL_VIDEO_InitSDL();
+	}
 
 	return TRUE;
 }
