@@ -144,8 +144,38 @@ int PLATFORM_Exit(int run_monitor)
 	return restart;
 }
 
+#if HAVE_WINDOWS_H
+static BOOL CtrlHandler(DWORD fdwCtrlType)
+{
+	switch (fdwCtrlType)
+	{
+	case CTRL_CLOSE_EVENT:
+	case CTRL_BREAK_EVENT:
+	case CTRL_LOGOFF_EVENT:
+	case CTRL_SHUTDOWN_EVENT:
+		/* Perform a normal exit. */
+		Atari800_Exit(FALSE);
+	case CTRL_C_EVENT:
+		/* Ctrl+C is handled in atari.c */
+		return TRUE;
+	default:
+		return FALSE;
+	}
+}
+#endif /* HAVE_WINDOWS_H */
+
 int main(int argc, char **argv)
 {
+#if HAVE_WINDOWS_H
+	/* Handle Windows console signals myself. If not, then closing
+	   the console window would cause emulator crash due to the sound
+	   subsystem being active. */
+	if(!SetConsoleCtrlHandler((PHANDLER_ROUTINE) CtrlHandler, TRUE)) {
+		Log_print("ERROR: Could not set console control handler");
+		return 1;
+	}
+#endif /* HAVE_WINDOWS_H */
+
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
