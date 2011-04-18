@@ -1,6 +1,8 @@
 #ifndef SCREEN_H_
 #define SCREEN_H_
 
+#include <stdio.h>
+
 #include "atari.h"  /* UBYTE */
 
 #ifdef DIRTYRECT
@@ -42,6 +44,8 @@ extern int Screen_show_disk_led;
 extern int Screen_show_sector_counter;
 
 int Screen_Initialise(int *argc, char *argv[]);
+int Screen_ReadConfig(char *string, char *ptr);
+void Screen_WriteConfig(FILE *fp);
 void Screen_DrawAtariSpeed(double);
 void Screen_DrawDiskLED(void);
 void Screen_FindScreenshotFilename(char *buffer);

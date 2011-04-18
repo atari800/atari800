@@ -11,6 +11,8 @@
   Windib otherwise (DirectX backend is glitchy in windowed modes).
 * src/ui.c: Use the slider control in the "Scanlines visibility" menu option;
   improve several option names.
+* src/cfg.c, src/screen.[ch]: Store the "Show speed", "Show disk activity" and
+  "Show sector counter" settings in config file.
 
 2011-04-13  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * src/atari.c: Fix bug introduced at 04-09 with atari.c not compiling when

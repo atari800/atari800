@@ -39,6 +39,7 @@
 #include "util.h"
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 #include "colours.h"
+#include "screen.h"
 #endif
 #ifdef NTSC_FILTER
 #include "filter_ntsc.h"
@@ -310,6 +311,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 			else if (Colours_ReadConfig(string, ptr)) {
 			}
+			else if (Screen_ReadConfig(string, ptr)) {
+			}
 #endif
 #ifdef NTSC_FILTER
 			else if (FILTER_NTSC_ReadConfig(string, ptr)) {
@@ -432,6 +435,7 @@ int CFG_WriteConfig(void)
 #endif
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	Colours_WriteConfig(fp);
+	Screen_WriteConfig(fp);
 #endif
 #ifdef NTSC_FILTER
 	FILTER_NTSC_WriteConfig(fp);

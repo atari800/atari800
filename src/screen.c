@@ -172,6 +172,25 @@ int Screen_Initialise(int *argc, char *argv[])
 	return TRUE;
 }
 
+int Screen_ReadConfig(char *string, char *ptr)
+{
+	if (strcmp(string, "SCREEN_SHOW_SPEED") == 0)
+		return (Screen_show_atari_speed = Util_sscanbool(ptr)) != -1;
+	else if (strcmp(string, "SCREEN_SHOW_IO_ACTIVITY") == 0)
+		return (Screen_show_disk_led = Util_sscanbool(ptr)) != -1;
+	else if (strcmp(string, "SCREEN_SHOW_IO_COUNTER") == 0)
+		return (Screen_show_sector_counter = Util_sscanbool(ptr)) != -1;
+	else return FALSE;
+	return TRUE;
+}
+
+void Screen_WriteConfig(FILE *fp)
+{
+	fprintf(fp, "SCREEN_SHOW_SPEED=%d\n", Screen_show_atari_speed);
+	fprintf(fp, "SCREEN_SHOW_IO_ACTIVITY=%d\n", Screen_show_disk_led);
+	fprintf(fp, "SCREEN_SHOW_IO_COUNTER=%d\n", Screen_show_sector_counter);
+}
+
 #define SMALLFONT_WIDTH    5
 #define SMALLFONT_HEIGHT   7
 #define SMALLFONT_PERCENT  10
