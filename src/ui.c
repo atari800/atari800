@@ -1293,6 +1293,14 @@ static void VertOffsetSliderLabel(char *label, int value, void *user_data)
 	VIDEOMODE_SetVerticalOffset(value);
 }
 
+/* Callback function that writes a text label to *LABEL, for use by
+   the Scanlines Visibility slider. */
+static void ScanlinesSliderLabel(char *label, int value, void *user_data)
+{
+	sprintf(label, "%i", value);
+	SDL_VIDEO_SetScanlinesPercentage(value);
+}
+
 static void VideoModeSettings(void)
 {
 	static const UI_tMenuItem host_aspect_menu_array[] = {
@@ -1592,7 +1600,7 @@ static void VideoModeSettings(void)
 					VIDEOMODE_SetHorizontalArea(option2);
 				else {
 					int offset = 160;
-					int value = UI_driver->fSelectSlider("Select horizontal area",
+					int value = UI_driver->fSelectSlider("Adjust horizontal area",
 					                                     VIDEOMODE_custom_horizontal_area - offset,
 					                                     384 - 160, &IntSliderLabel, &offset);
 					if (value != -1)
@@ -1607,7 +1615,7 @@ static void VideoModeSettings(void)
 					VIDEOMODE_SetVerticalArea(option2);
 				else {
 					int offset = 120;
-					int value = UI_driver->fSelectSlider("Select vertical area",
+					int value = UI_driver->fSelectSlider("Adjust vertical area",
 					                                     VIDEOMODE_custom_vertical_area - offset,
 					                                     275 - 120, &IntSliderLabel, &offset);
 					if (value != -1)
@@ -1621,7 +1629,7 @@ static void VideoModeSettings(void)
 				{
 					int range = 384 - VIDEOMODE_custom_horizontal_area;
 					int offset = - range / 2;
-					int value = UI_driver->fSelectSlider("Select horizontal shift",
+					int value = UI_driver->fSelectSlider("Adjust horizontal shift",
 					                                     VIDEOMODE_horizontal_offset - offset,
 					                                     range, &HorizOffsetSliderLabel, &offset);
 					if (value != -1)
@@ -1639,7 +1647,7 @@ static void VideoModeSettings(void)
 				{
 					int range = 275 - VIDEOMODE_custom_vertical_area;
 					int offset = - range / 2;
-					int value = UI_driver->fSelectSlider("Select vertical shift",
+					int value = UI_driver->fSelectSlider("Adjust vertical shift",
 					                                     VIDEOMODE_vertical_offset - offset,
 					                                     range, &VertOffsetSliderLabel, &offset);
 					if (value != -1)
@@ -1654,10 +1662,11 @@ static void VideoModeSettings(void)
 #if SDL
 		case 17:
 			{
-				char buffer[sizeof(scanlines_string)];
-				memcpy(buffer, scanlines_string, sizeof(buffer));
-				if (UI_driver->fEditString("Enter value (0-100)", buffer, sizeof(buffer)))
-					SDL_VIDEO_SetScanlinesPercentage(atoi(buffer));
+				int value = UI_driver->fSelectSlider("Adjust scanlines visibility",
+				                                     SDL_VIDEO_scanlines_percentage,
+				                                     100, &ScanlinesSliderLabel, NULL);
+				if (value != -1)
+					SDL_VIDEO_SetScanlinesPercentage(value);
 			}
 			break;
 		case 18:
@@ -1827,7 +1836,7 @@ static void NTSCFilterSettings(void)
 		case 6:
 			{
 				int index = option + 5;
-				int value = UI_driver->fSelectSlider("Select value",
+				int value = UI_driver->fSelectSlider("Adjust value",
 								     ColourSettingToSlider(index),
 								     100, &ColourSliderLabel, &index);
 				if (value != -1) {
@@ -2142,7 +2151,7 @@ static void DisplaySettings(void)
 		case 18:
 			{
 				int index = option - 13;
-				int value = UI_driver->fSelectSlider("Select value",
+				int value = UI_driver->fSelectSlider("Adjust value",
 								     ColourSettingToSlider(index),
 								     100, &ColourSliderLabel, &index);
 				if (value != -1) {

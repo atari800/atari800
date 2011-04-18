@@ -9,6 +9,8 @@
 * src/atari.c, src/sdl.main.c, src/sdl/video.[ch], src/sdl/video_gl.c, src/sdl/video_sw.[ch]:
   On Windows use the DirectX backend only in fullscreen (supports VSync) and
   Windib otherwise (DirectX backend is glitchy in windowed modes).
+* src/ui.c: Use the slider control in the "Scanlines visibility" menu option;
+  improve several option names.
 
 2011-04-13  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * src/atari.c: Fix bug introduced at 04-09 with atari.c not compiling when
