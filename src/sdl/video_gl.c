@@ -525,10 +525,6 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 			   go back to fullscreen each time it loses and regains focus). We avoid the issue by
 			   switching to a windowed non-OpenGL mode inbetween. */
 			SDL_SetVideoMode(320, 200, SDL_VIDEO_native_bpp, SDL_RESIZABLE);
-		} else if (windowed) {
-			/* On Windows, always create a same-size software-mode window before creating an
-			   OpenGL window. Otherwise, returning to software mode later will segfault. */
-			SDL_SetVideoMode(res->width, res->height, SDL_VIDEO_native_bpp, SDL_RESIZABLE);
 		}
 #endif /* HAVE_WINDOWS_H */
 		if (SetVideoMode(res->width, res->height, windowed))

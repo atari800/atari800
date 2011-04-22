@@ -2,6 +2,10 @@
 * src/sdl/input.c: Allow using SDL/LPT joysticks together with keyboard
   joysticks. Previously if a user had a joystick connected, keyboard
   joysticks were ignored.
+* src/sdl/video.c, src/sdl/video_gl.c: Rework the resolution of the segfault
+  when switching between software<->OpenGL in Windows - now it always
+  reinitialises the video subsystem. The previous solution would later cause
+  glitches when rapidly resizing the OpenGL window.
 
 2011-04-18  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * src/ui_basic.c: Fix divsion by 0 in the slider control.

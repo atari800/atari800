@@ -120,19 +120,27 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 	window_maximised = windowed && res->width == desktop_resolution.width;
 
 #if HAVE_WINDOWS_H
-		/* On Windows, choose Windib or DirectX backend when switching between
-		   fullscreen<->windowed. */
-		if (!user_video_driver &&
-		    SDL_VIDEO_screen != NULL &&
-		    ((SDL_VIDEO_screen->flags & SDL_FULLSCREEN) == SDL_FULLSCREEN) == windowed) {
-			if (windowed)
-				SDL_putenv("SDL_VIDEODRIVER=windib");
-			else
-				SDL_putenv("SDL_VIDEODRIVER=directx");
-			/* SDL_VIDEODRIVER is only used when initialising the video subsystem. */
-			SDL_VIDEO_ReinitSDL();
-		}
+	/* On Windows, choose Windib or DirectX backend when switching between
+	   fullscreen<->windowed. */
+	if (!user_video_driver &&
+	    SDL_VIDEO_screen != NULL &&
+	    ((SDL_VIDEO_screen->flags & SDL_FULLSCREEN) == SDL_FULLSCREEN) == windowed) {
+		if (windowed)
+			SDL_putenv("SDL_VIDEODRIVER=windib");
+		else
+			SDL_putenv("SDL_VIDEODRIVER=directx");
+		/* SDL_VIDEODRIVER is only used when initialising the video subsystem. */
+		SDL_VIDEO_ReinitSDL();
+	}
+#if HAVE_OPENGL
+	/* Reinitialise the video subsystem when switching between software<->OpenGL
+	   to avoid various SDL glitches and segfaults that might appear depending on
+	   the type of graphics hardware. */
+	else if (SDL_VIDEO_screen != NULL && SDL_VIDEO_opengl != currently_opengl)
+		SDL_VIDEO_ReinitSDL();
+#endif /* HAVE_OPENGL */
 #endif /* HAVE_WINDOWS_H */
+
 #if HAVE_OPENGL
 	if (SDL_VIDEO_opengl) {
 		if (!currently_opengl)
