@@ -1069,7 +1069,6 @@ static void Init_SDL_Joysticks(int first, int second)
 		else {
 			Log_print("joystick 0 found!");
 			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
-			swap_joysticks = 1;
 		}
 	}
 
@@ -1266,39 +1265,23 @@ static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
 
 	if (PLATFORM_kbd_joy_0_enabled) {
 		if (kbhits[KBD_STICK_0_LEFT])
-			stick0 = INPUT_STICK_LEFT;
+			stick0 &= INPUT_STICK_LEFT;
 		if (kbhits[KBD_STICK_0_RIGHT])
-			stick0 = INPUT_STICK_RIGHT;
+			stick0 &= INPUT_STICK_RIGHT;
 		if (kbhits[KBD_STICK_0_UP])
-			stick0 = INPUT_STICK_FORWARD;
+			stick0 &= INPUT_STICK_FORWARD;
 		if (kbhits[KBD_STICK_0_DOWN])
-			stick0 = INPUT_STICK_BACK;
-		if ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_UP]))
-			stick0 = INPUT_STICK_UL;
-		if ((kbhits[KBD_STICK_0_LEFT]) && (kbhits[KBD_STICK_0_DOWN]))
-			stick0 = INPUT_STICK_LL;
-		if ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_UP]))
-			stick0 = INPUT_STICK_UR;
-		if ((kbhits[KBD_STICK_0_RIGHT]) && (kbhits[KBD_STICK_0_DOWN]))
-			stick0 = INPUT_STICK_LR;
+			stick0 &= INPUT_STICK_BACK;
 	}
 	if (PLATFORM_kbd_joy_1_enabled) {
 		if (kbhits[KBD_STICK_1_LEFT])
-			stick1 = INPUT_STICK_LEFT;
+			stick1 &= INPUT_STICK_LEFT;
 		if (kbhits[KBD_STICK_1_RIGHT])
-			stick1 = INPUT_STICK_RIGHT;
+			stick1 &= INPUT_STICK_RIGHT;
 		if (kbhits[KBD_STICK_1_UP])
-			stick1 = INPUT_STICK_FORWARD;
+			stick1 &= INPUT_STICK_FORWARD;
 		if (kbhits[KBD_STICK_1_DOWN])
-			stick1 = INPUT_STICK_BACK;
-		if ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_UP]))
-			stick1 = INPUT_STICK_UL;
-		if ((kbhits[KBD_STICK_1_LEFT]) && (kbhits[KBD_STICK_1_DOWN]))
-			stick1 = INPUT_STICK_LL;
-		if ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_UP]))
-			stick1 = INPUT_STICK_UR;
-		if ((kbhits[KBD_STICK_1_RIGHT]) && (kbhits[KBD_STICK_1_DOWN]))
-			stick1 = INPUT_STICK_LR;
+			stick1 &= INPUT_STICK_BACK;
 	}
 
 	if (swap_joysticks) {
@@ -1316,14 +1299,14 @@ static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
 	}
 
 	if (fd_joystick0 != -1)
-		*s0 = get_LPT_joystick_state(fd_joystick0);
+		*s0 &= get_LPT_joystick_state(fd_joystick0);
 	else if (joystick0 != NULL)
-		*s0 = get_SDL_joystick_state(joystick0);
+		*s0 &= get_SDL_joystick_state(joystick0);
 
 	if (fd_joystick1 != -1)
-		*s1 = get_LPT_joystick_state(fd_joystick1);
+		*s1 &= get_LPT_joystick_state(fd_joystick1);
 	else if (joystick1 != NULL)
-		*s1 = get_SDL_joystick_state(joystick1);
+		*s1 &= get_SDL_joystick_state(joystick1);
 }
 
 static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
@@ -1332,11 +1315,11 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 	trig0 = trig1 = 1;
 
 	if (PLATFORM_kbd_joy_0_enabled) {
-		trig0 = kbhits[KBD_TRIG_0] ? 0 : 1;
+		trig0 = !kbhits[KBD_TRIG_0];
 	}
 
 	if (PLATFORM_kbd_joy_1_enabled) {
-		trig1 = kbhits[KBD_TRIG_1] ? 0 : 1;
+		trig1 = !kbhits[KBD_TRIG_1];
 	}
 
 	if (swap_joysticks) {
@@ -1352,10 +1335,7 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 #ifdef LPTJOY
 		int status;
 		ioctl(fd_joystick0, LPGETSTATUS, &status);
-		if (status & 8)
-			*t0 = 1;
-		else
-			*t0 = 0;
+		*t0 &= (status & 8);
 #endif /* LPTJOY */
 	}
 	else if (joystick0 != NULL) {
@@ -1366,17 +1346,14 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 				break;
 			}
 		}
-		*t0 = trig0;
+		*t0 &= trig0;
 	}
 
 	if (fd_joystick1 != -1) {
 #ifdef LPTJOY
 		int status;
 		ioctl(fd_joystick1, LPGETSTATUS, &status);
-		if (status & 8)
-			*t1 = 1;
-		else
-			*t1 = 0;
+		*t1 &= (status & 8);
 #endif /* LPTJOY */
 	}
 	else if (joystick1 != NULL) {
@@ -1387,7 +1364,7 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 				break;
 			}
 		}
-		*t1 = trig1;
+		*t1 &= trig1;
 	}
 }
 

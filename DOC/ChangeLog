@@ -1,3 +1,8 @@
+2011-04-22  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* src/sdl/input.c: Allow using SDL/LPT joysticks together with keyboard
+  joysticks. Previously if a user had a joystick connected, keyboard
+  joysticks were ignored.
+
 2011-04-18  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * src/ui_basic.c: Fix divsion by 0 in the slider control.
 * src/configure.ac: Fix recently-introduced issue with building SDL/Windows -
