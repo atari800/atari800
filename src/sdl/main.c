@@ -75,10 +75,15 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	if (!help_only) {
-		i = SDL_INIT_JOYSTICK;
+		i = SDL_INIT_JOYSTICK
 #ifdef SOUND
-		i |= SDL_INIT_AUDIO;
+		    | SDL_INIT_AUDIO
 #endif
+#if HAVE_WINDOWS_H
+/* Timers are used to avoid one Windows 7 glitch, see src/sdl/input.c */
+		    | SDL_INIT_TIMER
+#endif /* HAVE_WINDOWS_H */
+		;
 		if (SDL_Init(i) != 0) {
 			Log_print("SDL_Init FAILED: %s", SDL_GetError());
 			Log_flushlog();

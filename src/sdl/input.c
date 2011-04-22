@@ -237,10 +237,37 @@ int PLATFORM_GetRawKey(void)
 static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
 static int lastuni = 0;
 
+#if HAVE_WINDOWS_H
+/* On Windows 7 rapidly changing the window size invokes a bug in SDL
+   which causes the window to be resized to size 0,0. This hack delays
+   the resize requests a bit to ensure that no two resizes happen within
+   a span of 0.5 second. See also
+   http://www.atariage.com/forums/topic/179912-atari800-220-released/page__view__findpost__p__2258092 */
+enum { USER_EVENT_RESIZE_DELAY };
+static Uint32 ResizeDelayCallback(Uint32 interval, void *param)
+{
+	SDL_Event event;
+	event.user.type = SDL_USEREVENT;
+	event.user.code = USER_EVENT_RESIZE_DELAY;
+	event.user.data1 = NULL;
+	event.user.data2 = NULL;
+	SDL_PushEvent(&event);
+	return 0;
+}
+#endif /* HAVE_WINDOWS_H */
+
 int PLATFORM_Keyboard(void)
 {
 	int shiftctrl = 0;
 	SDL_Event event;
+
+#if HAVE_WINDOWS_H
+	/* Used to delay resize events on Windows 7, see above. */
+	enum { RESIZE_INTERVAL = 500 };
+	static int resize_delayed = FALSE;
+	static int resize_needed = FALSE;
+	static int resize_w, resize_h;
+#endif /* HAVE_WINDOWS_H */
 
 	/* Very ugly fix for SDL CAPSLOCK brokenness.  This will let the user
 	 * press CAPSLOCK and get a brief keypress on the Atari but it is not
@@ -271,7 +298,24 @@ int PLATFORM_Keyboard(void)
 			}
 			break;
 		case SDL_VIDEORESIZE:
+#if HAVE_WINDOWS_H
+			/* Delay resize events on Windows 7, see above. */
+			if (resize_delayed) {
+				resize_w = event.resize.w;
+				resize_h = event.resize.h;
+				resize_needed = TRUE;
+			} else {
+				VIDEOMODE_SetWindowSize(event.resize.w, event.resize.h);
+				resize_delayed = TRUE;
+				if (SDL_AddTimer(RESIZE_INTERVAL, &ResizeDelayCallback, NULL) == NULL) {
+					Log_print("Error: SDL_AddTimer failed: %s", SDL_GetError());
+					Log_flushlog();
+					exit(-1);
+				}
+			}
+#else
 			VIDEOMODE_SetWindowSize(event.resize.w, event.resize.h);
+#endif /* HAVE_WINDOWS_H */
 			break;
 		case SDL_VIDEOEXPOSE:
 			/* When window is "uncovered", and we are in the emulator's menu,
@@ -281,6 +325,30 @@ int PLATFORM_Keyboard(void)
 		case SDL_QUIT:
 			return AKEY_EXIT;
 			break;
+#if HAVE_WINDOWS_H
+		case SDL_USEREVENT:
+			/* Process delayed video resize on Windows 7, see above. */
+			if (event.user.code == USER_EVENT_RESIZE_DELAY) {
+				if (resize_needed) {
+					SDL_Event events[1];
+					resize_needed = FALSE;
+					/* If there's a resize event in the queue,
+					   wait for it and don't resize now. */
+					if (SDL_PeepEvents(events, 1, SDL_PEEKEVENT, SDL_EVENTMASK(SDL_VIDEORESIZE)) != 0)
+						resize_delayed = FALSE;
+					else {
+						VIDEOMODE_SetWindowSize(resize_w, resize_h);
+						if (SDL_AddTimer(RESIZE_INTERVAL, &ResizeDelayCallback, NULL) == NULL) {
+							Log_print("Error: SDL_AddTimer failed: %s", SDL_GetError());
+							Log_flushlog();
+							exit(-1);
+						}
+					}
+				} else
+					resize_delayed = FALSE;
+			}
+			break;
+#endif /* HAVE_WINDOWS_H */
 		}
 	}
 	else if (!key_pressed)
