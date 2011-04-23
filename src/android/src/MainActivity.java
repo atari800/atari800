@@ -70,10 +70,10 @@ public final class MainActivity extends Activity
 	public static String _pkgversion;
 	public static String _coreversion;
 	private static boolean _initialized = false;
+	private static String _curDiskFname = null;
 	private A800view _view = null;
 	private AudioThread _audio = null;
 	private InputMethodManager _imng;
-	private String _curDiskFname = null;
 	private Settings _settings = null;
 	private boolean _bootupconfig = false;
 
