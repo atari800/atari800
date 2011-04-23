@@ -125,7 +125,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 		String oldpath = _pathsel ? (getIntent().getData() != null ? getIntent().getData().getPath() : null)
 								  : prefs.getString(SAVED_PATH, null);
 		listDirectory((oldpath != null) ? new File(oldpath) : Environment.getExternalStorageDirectory(),
-					  _pathsel ? 0 :prefs.getInt(SAVED_POS, 0));
+					  _pathsel ? 0 : prefs.getInt(SAVED_POS, 0), getLastNonConfigurationInstance());
 	}
 
 	@Override
@@ -149,6 +149,17 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 	}
 
 	@Override
+	public Object onRetainNonConfigurationInstance() {
+		Object ret = null;
+		if (_task == null && _ad != null && _ad.getCount() > 0) {
+			ret = new String[_ad.getCount()];
+			for (int i = 0; i < _ad.getCount(); i++)
+				((String[]) ret)[i] = _ad.getItem(i);
+		}
+		return ret;
+	}
+
+	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.fsel_ok:
@@ -167,10 +178,11 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 	protected void onListItemClick(ListView l, View v, int pos, long id) {
 		String fname = _ad.getItem(pos);
 		if (fname.startsWith("../"))
-			listDirectory(_curdir.getParentFile(), 0);
+			listDirectory(_curdir.getParentFile(), 0, null);
 		else if (fname.endsWith("/"))
-			listDirectory(new File(_curdir, fname), 0);
+			listDirectory(new File(_curdir, fname), 0, null);
 		else if (!_pathsel) {
+			_drive1fname = null;
 			setResult(Activity.RESULT_OK, new Intent(MainActivity.ACTION_INSERT_REBOOT,
 					  Uri.fromFile(new File(_curdir, fname))));
 			finish();
@@ -277,12 +289,23 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 		super.finish();
 	}
 
-	private void listDirectory(File dir, int pos) {
+	private void listDirectory(File dir, int pos, Object retain) {
 		if (_ad != null)	_ad.clear();
 		setTitle(getString(_pathsel ? R.string.fsel_opendir : R.string.fsel_openfile)
 							+ " " + dir.getAbsolutePath());
 		_curdir = dir;
-		_task = (ListDirTask) new ListDirTask(pos).execute(dir);
+
+		if (retain == null)
+			_task = (ListDirTask) new ListDirTask(pos).execute(dir);
+		else {
+			_ad = new IconArrayAdapter(this, R.layout.file_selector_row);
+			for (String str: (String[]) retain)
+				_ad.add(str);
+
+			setListAdapter(_ad);
+			if (pos > _ad.getCount())	pos = _ad.getCount();
+			setSelection(pos);
+		}
 	}
 
 	private final class ListDirTask extends AsyncTask<File, Void, IconArrayAdapter>
