@@ -720,23 +720,35 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
                 fi
                 ;;
             falcon)
-                OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
+                if [[ "$a8_target" = "sdl" ]]; then
+                    OBJS="$OBJS sdl/sound.o"
+                else
+                    OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
+		fi
                 ;;
             linux)
                 if [[ "$a8_target" = "sdl" ]]; then
                     OBJS="$OBJS sdl/sound.o"
+		else
+                    OBJS="$OBJS sound_oss.o"
                 fi
                 ;;
             beos)
                 if [ "$a8_target" = "sdl" ]; then
                     OBJS="$OBJS sdl/sound.o"
+		else
+                    OBJS="$OBJS sound_oss.o"
                 fi
                 ;;
             *)
-                if [[ "$SUPPORTS_SOUND_OSS" = "yes" ]]; then
-                    OBJS="$OBJS sound_oss.o"
+                if [[ "$a8_target" = "sdl" ]]; then
+                    OBJS="$OBJS sdl/sound.o"
                 else
-                    AC_MSG_ERROR([Sound support not available, re-run configure with --disable-sound])
+	            if [[ "$SUPPORTS_SOUND_OSS" = "yes" ]]; then
+                        OBJS="$OBJS sound_oss.o"
+                    else
+                        AC_MSG_ERROR([Sound support not available, re-run configure with --disable-sound])
+		    fi
                 fi
                 ;;
         esac
