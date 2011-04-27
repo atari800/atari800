@@ -46,7 +46,7 @@
 #define _XOPEN_SOURCE 500
 
 #include "config.h"
-// allow non-ansi fseek/ftell functions
+/* allow non-ansi fseek/ftell functions */
 #ifdef __STRICT_ANSI__
 #  undef __STRICT_ANSI__
 #  include <stdio.h>
@@ -91,7 +91,7 @@ int IDE_enabled = 0, IDE_debug = 0;
 
 struct ide_device device;
 
-static int count = 0;     // for debug stuff
+static int count = 0;     /* for debug stuff */
 
 static inline void padstr(uint8_t *str, const char *src, int len) {
     int i;
@@ -109,15 +109,19 @@ static void ide_identify(struct ide_device *s) {
     LE16(p, 0, GCBI_FIXED_DRIVE);
     LE16(p, 1, s->cylinders);
     LE16(p, 3, s->heads);
-//    LE16(p, 4, 512 * s->sectors);   // bytes per track, obsolete ATA2
-//    LE16(p, 5, 512);                // bytes per sector, obsolete ATA2
-    LE16(p, 6, s->sectors);         // sectors per track
+/*
+    LE16(p, 4, 512 * s->sectors);   // bytes per track, obsolete ATA2
+    LE16(p, 5, 512);                // bytes per sector, obsolete ATA2
+*/
+    LE16(p, 6, s->sectors);         /* sectors per track */
 
     padstr(p+10*2, s->drive_serial_str, 20);
 
-//    LE16(p, 20, 3);                 // buffer type, obsolete ATA2
-//    LE16(p, 21, 16);                // cache size in sectors, obsolete ATA2
-    LE16(p, 22, 4);                 // number of ECC bytes
+/*
+    LE16(p, 20, 3);                 // buffer type, obsolete ATA2
+    LE16(p, 21, 16);                // cache size in sectors, obsolete ATA2
+*/
+    LE16(p, 22, 4);                 /* number of ECC bytes */
 
     padstr(p+23*2, PACKAGE_VERSION, 8);
     padstr(p+27*2, "ATARI800 HARDDISK", 40);
@@ -125,11 +129,13 @@ static void ide_identify(struct ide_device *s) {
     if (MAX_MULT_SECTORS > 1)
         LE16(p, 47, 0x8000 | MAX_MULT_SECTORS);
 
-    LE16(p, 48, 0);                 // cannot perform double word I/O
+    LE16(p, 48, 0);                 /* cannot perform double word I/O */
     LE16(p, 49, CAP_LBA_SUPPORTED);
-    LE16(p, 51, 0x0200);            // PIO transfer cycle
-//    LE16(p, 52, 0x0200);            // DMA transfer cycle, obsolete ATA3
-    LE16(p, 53, 1/*+2+4*/);         // words 54-58[,64-70,88] are valid
+    LE16(p, 51, 0x0200);            /* PIO transfer cycle */
+/*
+    LE16(p, 52, 0x0200);            // DMA transfer cycle, obsolete ATA3
+*/
+    LE16(p, 53, 1/*+2+4*/);         /* words 54-58[,64-70,88] are valid */
     LE16(p, 54, s->cylinders);
     LE16(p, 55, s->heads);
     LE16(p, 56, s->sectors);
@@ -139,11 +145,11 @@ static void ide_identify(struct ide_device *s) {
     if (s->mult_sectors)
         LE16(p, 59, 0x100 | s->mult_sectors);
 
-    LE16(p, 60, s->nb_sectors);     // total number of LBA sectors
+    LE16(p, 60, s->nb_sectors);     /* total number of LBA sectors */
     LE16(p, 61, s->nb_sectors >> 16);
 
     if (s->is_cf) {
-        LE16(p, 0, 0x848a);         // CF Storage Card signature
+        LE16(p, 0, 0x848a);         /* CF Storage Card signature */
         padstr(p+27*2, "ATARI800 MICRODRIVE", 40);
         LE16(p, 49, CAP_LBA_SUPPORTED);
         LE16(p, 51, 2);
@@ -742,8 +748,10 @@ static void ide_ioport_write(struct ide_device *s, uint16_t addr, uint8_t val){
 
         ide_transfer_stop(s);
 
-//        if ( (s->status & (BUSY_STAT|DRQ_STAT)) && val != WIN_DEVICE_RESET)
-//            break;
+/*
+        if ( (s->status & (BUSY_STAT|DRQ_STAT)) && val != WIN_DEVICE_RESET)
+            break;
+*/
 
         ide_command(s, val);
 
@@ -795,7 +803,7 @@ static void ide_data_writew(struct ide_device *s, int addr, uint16_t val) {
 }
 
 static uint8_t mmio_ide_read(struct ide_device *s, int addr) {
-    uint16_t ret;   // will be cast at return
+    uint16_t ret;   /* will be cast at return */
 
     addr &= 15;
 
