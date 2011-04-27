@@ -328,6 +328,7 @@ static void ide_transfer_start(struct ide_device *s, uint8_t *buf, int size,
     s->end_transfer_func = end_transfer_func;
     s->data_ptr          = buf;
     s->data_end          = buf + size;
+    s->cycle             = 0;
 
     if (!(s->status & ERR_STAT)) s->status |= DRQ_STAT;
 }
@@ -870,10 +871,13 @@ int IDE_Initialise(int *argc, char *argv[]) {
             filename = Util_strdup(argv[++i]);
         } else if (!strcmp(argv[i], "-ide_debug")) {
             IDE_debug = 1;
+        } else if (!strcmp(argv[i], "-ide_cf")) {
+            device.is_cf = 1;
         } else {
              if (!strcmp(argv[i], "-help")) {
                  Log_print("\t-ide <file>      Enable IDE emulation");
                  Log_print("\t-ide_debug       Enable IDE Debug Output");
+                 Log_print("\t-ide_cf          Enable CF emulation");
              }
              argv[j++] = argv[i];
         }

@@ -172,6 +172,7 @@ Command line options
 -snddelay <time>      Set sound delay (milliseconds)
 -ide <file>           Enable IDE emulation
 -ide_debug            Enable IDE Debug output
+-ide_cf               Enable CF emulation
 
 
 Curses version options

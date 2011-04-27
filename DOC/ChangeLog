@@ -1,94 +1,130 @@
+2011-04-23  Petr Stehlik <pstehlik@sophics.cz>
+* DOC/ChangeLog: blank lines added, "src/" from filenames removed
+
+* ide.c: fixes for IDE emulation from Ivo <ivop@euronet.nl> - fix for
+  8-bit mode with an odd number of reads and adds a command line option
+  for enabling CF mode (slightly different from normal HD mode)
+
+
 2011-04-23  Kostas Nakos  <knakos@gmail.com>
 * android/*: Speed up fileselector on orientation update & bugfix mount/insert
 
+
 2011-04-22  Tomasz Krasuski <kr0tki@poczta.onet.pl>
-* src/sdl/input.c: Allow using SDL/LPT joysticks together with keyboard
+* sdl/input.c: Allow using SDL/LPT joysticks together with keyboard
   joysticks. Previously if a user had a joystick connected, keyboard
   joysticks were ignored.
-* src/sdl/video.c, src/sdl/video_gl.c: Rework the resolution of the segfault
+
+* sdl/video.c, sdl/video_gl.c: Rework the resolution of the segfault
   when switching between software<->OpenGL in Windows - now it always
   reinitialises the video subsystem. The previous solution would later cause
   glitches when rapidly resizing the OpenGL window.
-* src/sdl/main.c, src/sdl/input.c: Delay processing of repeated window resize
+
+* sdl/main.c, sdl/input.c: Delay processing of repeated window resize
   requests on Windows to avoid a bug in SDL.
 
+
 2011-04-18  Tomasz Krasuski <kr0tki@poczta.onet.pl>
-* src/ui_basic.c: Fix divsion by 0 in the slider control.
-* src/configure.ac: Fix recently-introduced issue with building SDL/Windows -
+* ui_basic.c: Fix division by 0 in the slider control.
+
+* configure.ac: Fix recently-introduced issue with building SDL/Windows -
   adding SDL flags to CFLAGS must be done after all AC_CHECK_FUNCS tests but
   before the OpenGL check.
-* src/sdl/main.c: Fix Windows/SDL crash when the console window is closed by
+
+* sdl/main.c: Fix Windows/SDL crash when the console window is closed by
   user, by servicing console-sourced signals. The crash was due to the audio
   subsystem not being closed properly.
-* src/atari.c, src/sdl.main.c, src/sdl/video.[ch], src/sdl/video_gl.c, src/sdl/video_sw.[ch]:
+
+* atari.c, sdl/main.c, sdl/video.[ch], sdl/video_gl.c, sdl/video_sw.[ch]:
   On Windows use the DirectX backend only in fullscreen (supports VSync) and
   Windib otherwise (DirectX backend is glitchy in windowed modes).
-* src/ui.c: Use the slider control in the "Scanlines visibility" menu option;
+
+* ui.c: Use the slider control in the "Scanlines visibility" menu option;
   improve several option names.
-* src/cfg.c, src/screen.[ch]: Store the "Show speed", "Show disk activity" and
+
+* cfg.c, screen.[ch]: Store the "Show speed", "Show disk activity" and
   "Show sector counter" settings in config file.
 
+
 2011-04-13  Tomasz Krasuski <kr0tki@poczta.onet.pl>
-* src/atari.c: Fix bug introduced at 04-09 with atari.c not compiling when
+* atari.c: Fix bug introduced at 04-09 with atari.c not compiling when
   HAVE_SIGNAL is not defined.
-* DOS/INSTALL, src/configure.ac, src/aclocal.m4: Detect presence of SDL
+
+* DOS/INSTALL, configure.ac, aclocal.m4: Detect presence of SDL
   using the standard m4 script provided by SDL. New configure options are
   available: --disable-sdltest, --with-sdl-prefix and --with-sdl-exec-prefix.
-* src/sdl/video.c, src/sdl/video_gl.c: Fix misuse of SDL - setting pointers
+
+* sdl/video.c, sdl/video_gl.c: Fix misuse of SDL - setting pointers
   to OpenGL functions must be performed after each call to SDL_SetVideoMode.
   Fix a bug with screen_texture not always being freed when needed.
   Make OpenGL log messages slimmer and let them appear only when initialising
   OpenGL.
 
+
 2011-04-09  Tomasz Krasuski <kr0tki@poczta.onet.pl>
-* DOC/USAGE, src/atari800.man, src/ui.c, src/atari_ntsc/atari_ntsc.[ch],
-  src/sdl/palette.[ch], src/sdl/video.[ch], src/sdl/video_gl.[ch],
-  src/sdl/video_sw.[ch]: Add option for setting pixel (texture) format
+* DOC/USAGE, atari800.man, ui.c, atari_ntsc/atari_ntsc.[ch],
+  sdl/palette.[ch], sdl/video.[ch], sdl/video_gl.[ch],
+  sdl/video_sw.[ch]: Add option for setting pixel (texture) format
   in OpenGL mode - depending on graphics hardware, different formats give
   the best performance. the BPP parameter is now only for software modes.
   Also fix a bug with bit depth autodetection not working (in Windows BPP
   autotetection works only before the first call to SDL_SetVideoMode), and use
   the SDL 8-bit palettised video mode properly.
-* DOC/USAGE, src/atari800.man, src/ui.c, src/sdl/video.[ch],
-  src/sdl/video_gl.[ch], src/sdl/video_sw.c: Add option for enabling
+
+* DOC/USAGE, atari800.man, ui.c, sdl/video.[ch],
+  sdl/video_gl.[ch], sdl/video_sw.c: Add option for enabling
   synchronization with vertical retrace - for SDL fullscreen non-OpenGL modes.
-* DOC/USAGE, src/atari800.man, src/ui.c, src/sdl/video_gl.[ch]:
+
+* DOC/USAGE, atari800.man, ui.c, sdl/video_gl.[ch]:
   Add option for disabling OpenGL Pixel Buffer Objects - on some hardware they
   decrease performance.
-* DOC/USAGE, src/atari800.man, src/ui.c, src/videomode.[ch]:
+
+* DOC/USAGE, atari800.man, ui.c, videomode.[ch]:
   Add option for automatic detection of host screen aspect ratio.
-* DOC/USAGE, src/atari800.man, src/ui.c, src/videomode.[ch], src/sdl/video.c:
+
+* DOC/USAGE, atari800.man, ui.c, videomode.[ch], sdl/video.c:
   Rename several options to more intuitive names - in command line and in GUI:
   -horiz-offset -> -horiz-shift, -vert-offset -> -vert-shift,
   -stretch integer -> -stretch integral,
   -keep-aspect 1to1 -> image-aspect square-pixels,
   -[no]-opengl -> -[no]-video-accel
-* src/ui.c: Reorder the Video Mode Settings menu, for better usability.
+
+* ui.c: Reorder the Video Mode Settings menu, for better usability.
   Use the slider control for video area/shift options.
-* src/sdl/video_gl.c, src/sdl/video_sw.c: Call SDL_SetVideoMode() and display
+
+* sdl/video_gl.c, sdl/video_sw.c: Call SDL_SetVideoMode() and display
   ModeInfo only when necessary.
-* DOC/USAGE, src/atari800.man, src/videomode.c, src/sdl/video.c: Other fixes
+
+* DOC/USAGE, atari800.man, videomode.c, sdl/video.c: Other fixes
   in help/documentation.
-* src/sdl/main.c, src/sdl/video.[ch], src/sdl/video_gl.[ch], src/sdl/video_sw.c:
+
+* sdl/main.c, sdl/video.[ch], sdl/video_gl.[ch], sdl/video_sw.c:
   Try to reinitialise the SDL video subsystem after an error before failing.
   This allows to recover from some hardware/driver-related errors.
-* src/platform.h, src/videomode.c, src/sdl/input.c, src/sdl.video.c, src/sdl/video_sw.c:
+
+* platform.h, videomode.c, sdl/input.c, sdl.video.c, sdl/video_sw.c:
   Fix broken handling of SDL_VIDEORESIZE event: the call to SDL_SetVideoMode
   must set the same window size as returned by the event. Also when window
   is maximised, it is not allowed to un-maximise it by software. When these
   conditions are not met, glitches occur.
-* src/videomode.c: Fix broken aspect ratio correction in windowed rotated
+
+* videomode.c: Fix broken aspect ratio correction in windowed rotated
   modes. Make the windowed mode the default - it's more compatible.
-* src/sdl/video_gl.c: Fix glitches when switching software<->OpenGL on
+
+* sdl/video_gl.c: Fix glitches when switching software<->OpenGL on
   Windows. Avoid unnecessary scanline-drawing when scanline-percentage is 0.
-* src/sdl/input.c: Work around unwanted keyboard events when pressing
+
+* sdl/input.c: Work around unwanted keyboard events when pressing
   Alt+Tab on Windows.
-* src/atari.c, src/ui.c, src/sdl/input.c: Fix abuse of signals.
+
+* atari.c, ui.c, sdl/input.c: Fix abuse of signals.
   Atari800_Exit() calls signal-unsafe functions, so it cannot be called from
   within a signal handler.
-* src/sdl/main.c: Close the SDL window when the monitor is used, to avoid
+
+* sdl/main.c: Close the SDL window when the monitor is used, to avoid
   unnecessary keyboard events.
-* src/monitor.c: Fix improper handling of the prompt when readline is used.
+
+* monitor.c: Fix improper handling of the prompt when readline is used.
 
 
 2011-04-04  James Wilkinson  <james@slor.net>
@@ -1885,7 +1921,7 @@ for the Java NestedVM port
 
 
 2005-09-05  Kostas Nakos  <knakos@gmail.com>
-* src/wince/* : Updated the wince port to work with Smartphones.
+* wince/* : Updated the wince port to work with Smartphones.
   Several other improvements to the port.
 
 
