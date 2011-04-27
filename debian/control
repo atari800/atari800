@@ -2,14 +2,16 @@ Source: atari800
 Section: contrib/otherosfs
 Priority: optional
 Maintainer: Antonin Kral <A.Kral@sh.cvut.cz>
-Build-Depends: libx11-dev, libxext-dev, libxt-dev, x-dev, libsdl1.2-dev, libncurses-dev, zlib1g-dev, libreadline5-dev
-Standards-Version: 3.7.2
+Build-Depends: libsdl1.2-dev, zlib1g-dev, libreadline-dev, libgl1-mesa-dev, libpng12-dev, autotools-dev
+Standards-Version: 3.9.1
+Vcs-Git: git://github.com/bobek/aranym800-debian.git
+Vcs-Browser: https://github.com/bobek/aranym800-debian
 
 Package: atari800
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: Atari emulator for X/curses/SDL
- This is an Atari emulator that can use X, plain curses or SDL.
+Description: Atari800 emulator for SDL
+ This is an Atari800 emulator.
  It can emulate the Atari 800, 800XL, 130XE, and 5200 systems.
  .
  The Atari Operating System ROMs are not available with this package, due to

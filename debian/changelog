@@ -1,10 +1,26 @@
+atari800 (2.2.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Upstream dropped support for X and ncurses versions
+
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Wed, 06 Apr 2011 13:11:07 +0200
+
+atari800 (2.1.0-2) unstable; urgency=low
+
+  * Link against libreadline(6) (Closes: #553728)
+  * fixes stale autoconf files
+
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Tue, 22 Dec 2009 21:45:05 +0100
+
 atari800 (2.1.0-1) unstable; urgency=low
 
   * New upstream release.
   * Updated atari800.cfg example config file.
   * Added dependency to libreadline5-dev.
+  * added libpng12-dev to build depends
+  * hopefully fixed problem with gpg key in keyring
 
- -- Antonin Kral <A.Kral@sh.cvut.cz>  Fri, 27 Mar 2009 00:00:00 +0000
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Tue, 05 May 2009 19:05:33 +0000
 
 atari800 (2.0.3-1) unstable; urgency=low
 

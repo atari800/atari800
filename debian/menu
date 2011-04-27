@@ -1,6 +1,2 @@
-?package(atari800):needs="text" section="Apps/Emulators" \
-	title="Atari Emulator (curses)" command="atari800.curses"
-?package(atari800):needs="x11" section="Apps/Emulators" \
-	title="Atari Emulator (sdl)" command="atari800"
-?package(atari800):needs="x11" section="Apps/Emulators" \
-	title="Atari Emulator (X11)" command="atari800.x11"
+?package(atari800):needs="x11" section="Applications/Emulators" \
+	title="Atari Emulator" command="atari800"

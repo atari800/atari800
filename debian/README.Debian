@@ -7,14 +7,15 @@ The Atari ROMs can be downloaded from:
 
 Note that if you don't own an Atari, getting the ROMs via ftp may not be 
 legal. You must have the ROMs to use this emulator. The system admin should
-install the ROMS in /usr/local/lib/atari/ROMS/.
+install the ROMS in /usr/local/lib/atari/ROMS/ or anywhere else if you
+adapt the configuration file (see the provided atari800.cfg).
 
 Getting Atari Software
 ----------------------
 
 To add other software, you'll have to find your own disk images (some are 
-in the xf25.zip I mentioned above), and install them in: 
-/usr/local/lib/atari/DISKS
+in the xf25.zip I mentioned above), and install them either in
+/usr/local/lib/atari/DISKS or somewhere else.
 
 Running the Emulator
 --------------------
@@ -23,16 +24,7 @@ In the past, 3 versions of the Atari emulator were needed to support both
 an X version and either vga or curses version for the console.
 
 With the incorporation of the SDL interface, the same code can run in both 
-the console and an X window. While the other compilations will still be
-included in the package and can be called explicitly as atari800.x11 or
-atari800.curses, when atari800 is entered, or selected from a menu in X,
-the SDL library interface version will be executed.
-
-The previously provided script that selected which code to execute is no
-longer provided, as it is no longer necessary.
-
-At some point, with the possible exception of the curses version, all but
-the SDL version will be eliminated, for brevity sake.
+the console and an X window.
 
 Luck,
 
@@ -59,8 +51,8 @@ From the new maintainer:
 2nd takeover
 ------------
 
-  I took over this pakeg from Martin, thanks for excelent work. I am in close
+  I took over this package from Martin, thanks for excelent work. I am in close
   cooperation with Petr Stehlik, who maintains the sources, he is doing 
-  excelent job as release manager.
+  excelent job as a release manager.
   
   Enjoy the package, Antonin Kral <A.Kral@sh.cvut.cz>

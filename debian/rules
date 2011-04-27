@@ -23,8 +23,6 @@ endif
 # =====================================================================
 build: 
 	$(checkdir)
-	debian/rules bld-x11
-	debian/rules bld-curses
 	debian/rules bld-sdl
 	touch build
 
@@ -33,21 +31,6 @@ bld-sdl:
 	cd src ; ./configure \
 		 --target=sdl
 	cd src ; $(MAKE)
-	cp src/atari800 atari800.sdl
-
-bld-x11:
-	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
-	cd src ; ./configure \
-		 --target=x11
-	cd src ; $(MAKE)
-	cp src/atari800 atari800.x11
-
-bld-curses:
-	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
-	cd src ; ./configure \
-		 --target=ncurses
-	cd src ; $(MAKE)
-	cp src/atari800 atari800.curses
 
 # Clean up after a build and before building a source package
 #======================================================================
@@ -56,7 +39,7 @@ clean:
 	-rm -f build
 	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi; \
 	 rm -f config.log config.status config.h Makefile
-	mv ./atari800.spec ./tmp ; rm -f atari800.* ; mv ./tmp ./atari800.spec
+	mv ./atari800.spec ./tmp ; rm -f atari800 ; rm -f atari800.* ; mv ./tmp ./atari800.spec
 	-rm -rf	debian/tmp debian/*~ *~ *.orig *.log \
 		debian/files* debian/substvars*
 
@@ -116,12 +99,6 @@ binary-arch:		checkroot build
 	install -m 644 src/$(P).man debian/tmp/usr/share/man/man1/$(P).1
 	gzip -9 debian/tmp/usr/share/man/man1/$(P).1
 
-# link other executables to the main manpage
-#
-	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).sdl.1.gz
-	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).x11.1.gz
-	ln -s $(P).1.gz debian/tmp/usr/share/man/man1/$(P).curses.1.gz
-
 # install menu file
 #
 	install -d debian/tmp/usr/share/menu
@@ -130,19 +107,16 @@ binary-arch:		checkroot build
 # install binaries
 #
 	install -d debian/tmp/usr/bin
-	install -s $(P).curses $(P).x11 debian/tmp/usr/bin
-	install -s $(P).sdl debian/tmp/usr/bin/$(P)
+	install -s src/$(P) debian/tmp/usr/bin/$(P)
 
 	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P)
-	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P).x11
-	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P).curses
 
 #	(if [ "$(ARCH)" = "i386" ]; then install debian/$(P) debian/tmp/usr/bin; \
 #	else install debian/$(P).alt debian/tmp/usr/bin/$(P); fi)
 
 # Create dependency information
 #
-	dpkg-shlibdeps ./$(P).sdl ./$(P).x11 ./$(P).curses
+	dpkg-shlibdeps src/$(P)
 
 # Generate control file for the package
 #
