@@ -9,6 +9,8 @@
   and also adds support for SDL sound on Falcon and other platforms
   (like for example *BSD, which should fix the Debian Atari800 package)
 
+* debian/*: updated for a new release, dropping non-SDL binary packages.
+
 
 2011-04-23  Kostas Nakos  <knakos@gmail.com>
 * android/*: Speed up fileselector on orientation update & bugfix mount/insert
