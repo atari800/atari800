@@ -5,6 +5,10 @@
   8-bit mode with an odd number of reads and adds a command line option
   for enabling CF mode (slightly different from normal HD mode)
 
+* configure.ac: fixes non-SDL sound (example: X11 target) for Linux and BeOS
+  and also adds support for SDL sound on Falcon and other platforms
+  (like for example *BSD, which should fix the Debian Atari800 package)
+
 
 2011-04-23  Kostas Nakos  <knakos@gmail.com>
 * android/*: Speed up fileselector on orientation update & bugfix mount/insert
