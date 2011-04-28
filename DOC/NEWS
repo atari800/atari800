@@ -1,3 +1,23 @@
+Version 2.2.1 (2011/04/28)
+
+  Quick update fixing some annoying bugs from the previous release
+  and adding some new host screen optimizations and improvements:
+
+  * X11 target can be compiled again
+  * SDL sound on *BSD should work
+  * older compilers (DOS/BeOS) should compile again
+  * many SDL/OpenGL workarounds for Microsoft Windows libSDL bugs
+  * IDE fix and CF emulation
+  * some small Android fixes and new arrow key derotation workaround
+  * UI sliders used for more settings (video area/shift options)
+  * several command line options renamed to be more intuitive (see the USAGE)
+  * automatic detection of host screen aspect ratio
+  * added option for disabling OpenGL Pixel Buffer Objects
+  * added option for enabling video synchronization with vertical retrace
+  * added option for selecting pixel format in OpenGL
+  * now saves the Show Speed/Disk Activity/Sector Counter in the settings
+
+
 Version 2.2.0 (2011/04/02)
 
  Another update after two long years. A lot of changes and major improvements:

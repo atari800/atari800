@@ -1,4 +1,4 @@
-  Free and portable Atari 800 Emulator for everybody, Version 2.2.0
+  Free and portable Atari 800 Emulator for everybody, Version 2.2.1
   -----------------------------------------------------------------
 
     Copyright (C) 1995 David Firth. E-Mail: david@signus.demon.co.uk
@@ -10,7 +10,7 @@
     the Free Software Foundation; either version 2, or (at your option)
     any later version.
 
-This is the version 2.2.0 of the Atari 800, 800XL, 130XE and 5200 emulator
+This is the Atari 400/800, 800XL/XE, 65XE/130XE and 5200 emulator
 for Unix, Linux, Amiga, MS-DOS, Atari TT/Falcon, MS Windows, MS WinCE,
 Sega Dreamcast, Android and systems running the SDL library.
 Our main objective is to create a freely distributable portable emulator
@@ -28,6 +28,7 @@ It can be configured to run in the following ways :-
 	9. WinCE
        10. Sega Dreamcast
        11. JVM (Java applet)
+       12. Android
 
 The basic mode is only useful for running programs such as MAC65,
 Atari Basic etc. I have had this version running on Linux,

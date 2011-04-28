@@ -1,5 +1,5 @@
 %define name	atari800
-%define ver	2.2.0
+%define ver	2.2.1
 %define rel	1
 %define copy	GPL
 %define ich Petr Stehlik <pstehlik@sophics.cz>
@@ -85,6 +85,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/doc/atari800/NEWS
 
 %changelog
+* Thu Apr 28 2011 Petr Stehlik <pstehlik@sophics.cz>
+New upstream release with many small fixes.
 * Sat Apr 02 2011 Petr Stehlik <pstehlik@sophics.cz>
 New upstream release. Dropped X11 and ncurses targets.
 * Mon Mar 30 2009 Petr Stehlik <pstehlik@sophics.cz>

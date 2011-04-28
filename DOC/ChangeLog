@@ -1,8 +1,17 @@
+** 2.2.1 released on 2011-04-28
+
 2011-04-28  Petr Stehlik <pstehlik@sophics.cz>
 * configure.ac: generalization for sound configuration
-* ui.c, videomode.c, sdl/input.c: slight optimization for snprintf
+
+* ui.c, videomode.c, sdl/input.c: slight optimization for snprintf()
+
 * monitor.c, rdevice.c, screen.[ch], sio.c, ui.c, ui_basic.c, util.c,
   videomode.c: replace unsafe sprintf() with snprintf()
+
+* sdl/input.c: fix for over-optimized LPT TRIG, sprintf() removed
+
+* README.1ST, atari800.spec, DOC/README, DOC/NEWS, atari.h, util/export:
+  updated for a new release
 
 
 2011-04-27  Petr Stehlik <pstehlik@sophics.cz>
