@@ -211,8 +211,8 @@ void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int 
 	snprintf(buffer, bufsize, "%11s", key);
 #else
 	sprintf(buffer, "%11s", key);
-#endif
 	buffer[bufsize-1] = '\0';
+#endif
 }
 
 static void SwapJoysticks(void)

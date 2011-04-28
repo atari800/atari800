@@ -2,7 +2,7 @@
  * videomode.c - common code for changing of the display resolution
  *
  * Copyright (C) 2010 Tomasz Krasuski
- * Copyright (C) 2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2011 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -201,8 +201,8 @@ void VIDEOMODE_CopyResolutionName(unsigned int res_id, char *target, unsigned in
 	snprintf(target, size, "%ix%i", resolutions[res_id].width, resolutions[res_id].height);
 #else
 	sprintf(target, "%ix%i", resolutions[res_id].width, resolutions[res_id].height);
-#endif
 	target[size - 1] = '\0';
+#endif
 }
 
 unsigned int VIDEOMODE_GetFullscreenResolution(void)
@@ -850,8 +850,8 @@ void VIDEOMODE_CopyHostAspect(char *target, unsigned int size)
 	snprintf(target, size, "%g:%g", VIDEOMODE_host_aspect_ratio_w, VIDEOMODE_host_aspect_ratio_h);
 #else
 	sprintf(target, "%g:%g", VIDEOMODE_host_aspect_ratio_w, VIDEOMODE_host_aspect_ratio_h);
-#endif
 	target[size - 1] = '\0';
+#endif
 }
 
 /* Find greatest common divisor of M and N. */

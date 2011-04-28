@@ -2,7 +2,7 @@
  * ui.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2011 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -1449,7 +1449,7 @@ static void VideoModeSettings(void)
 			FindMenuItem(menu_array, 11)->suffix = stretch_menu_array[VIDEOMODE_stretch].item;
 		else {
 			FindMenuItem(menu_array, 11)->suffix = stretch_string;
-			snprintf(stretch_string, sizeof(stretch_string) - 1, "%f", VIDEOMODE_custom_stretch);
+			snprintf(stretch_string, sizeof(stretch_string), "%f", VIDEOMODE_custom_stretch);
 		}
 		FindMenuItem(menu_array, 12)->suffix = fit_menu_array[VIDEOMODE_fit].item;
 		if (VIDEOMODE_horizontal_area < VIDEOMODE_HORIZONTAL_CUSTOM)
@@ -1711,7 +1711,7 @@ static void UpdateColourControl(const int idx)
 {
 #ifdef HAVE_SNPRINTF
 	snprintf(colour_controls[idx].string,
-		 sizeof(colour_controls[0].string) - 1,
+		 sizeof(colour_controls[0].string),
 		 "%.2f",
 		 *(colour_controls[idx].setting));
 #else
