@@ -1454,7 +1454,7 @@ static void VideoModeSettings(void)
 			FindMenuItem(menu_array, 13)->suffix = width_menu_array[VIDEOMODE_horizontal_area].item;
 		else {
 			FindMenuItem(menu_array, 13)->suffix = horiz_area_string;
-			sprintf(horiz_area_string, sizeof(horiz_area_string), "%d", VIDEOMODE_custom_horizontal_area);
+			snprintf(horiz_area_string, sizeof(horiz_area_string), "%d", VIDEOMODE_custom_horizontal_area);
 		}
 		if (VIDEOMODE_vertical_area < VIDEOMODE_VERTICAL_CUSTOM)
 			FindMenuItem(menu_array, 14)->suffix = height_menu_array[VIDEOMODE_vertical_area].item;

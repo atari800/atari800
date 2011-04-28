@@ -635,7 +635,7 @@ static int SeekSector(int unit, int sector)
 	int size;
 
 	SIO_last_sector = sector;
-	sprintf(SIO_status, "%d: %d", unit + 1, sector);
+	snprintf(SIO_status, sizeof(SIO_status), "%d: %d", unit + 1, sector);
 	SIO_SizeOfSector((UBYTE) unit, sector, &size, &offset);
 	fseek(disk[unit], offset, SEEK_SET);
 

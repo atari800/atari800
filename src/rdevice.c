@@ -717,7 +717,7 @@ static void xio_40(void)
   else
   {
     concurrent = 0;
-    sprintf(MESSAGE, "R*: XIO 40, %d", aux1);
+    snprintf(MESSAGE, sizeof(MESSAGE), "R*: XIO 40, %d", aux1);
     DBG_APRINT(MESSAGE);
   }
 
@@ -765,7 +765,7 @@ static void open_connection(char * address, int port)
         host = gethostbyname(address);
         if(host != NULL)
         {
-          sprintf(MESSAGE, "R*: Host = '%s'.",  host->h_name);
+          snprintf(MESSAGE, sizeof(MESSAGE), "R*: Host = '%s'.",  host->h_name);
           DBG_APRINT(MESSAGE);
           memcpy((caddr_t)&peer_in.sin_addr, host->h_addr_list[0], host->h_length);
         }
@@ -787,7 +787,7 @@ static void open_connection(char * address, int port)
     if(connect(rdev_fd, (struct sockaddr *)&peer_in, sizeof(peer_in)) < 0)
     {
 #ifdef DEBUG
-      sprintf(MESSAGE, "R*: connect: '%s'", strerror(errno));
+      snprintf(MESSAGE, sizeof(MESSAGE), "R*: connect: '%s'", strerror(errno));
       DBG_APRINT(MESSAGE);
 #endif
     }
@@ -795,7 +795,7 @@ static void open_connection(char * address, int port)
     signal(SIGPIPE, catch_disconnect); /*Need to see if the other end disconnects...*/
     signal(SIGHUP, catch_disconnect); /*Need to see if the other end disconnects...*/
 #endif /* HAVE_WINDOWS_H */
-    sprintf(MESSAGE, "R*: Connecting to %s", address);
+    snprintf(MESSAGE, sizeof(MESSAGE), "R*: Connecting to %s", address);
     DBG_APRINT(MESSAGE);
 #ifdef HAVE_WINDOWS_H
     ioctlsocket(rdev_fd, FIONBIO, &ioctlsocket_non_block);
@@ -804,7 +804,7 @@ static void open_connection(char * address, int port)
 #endif /* HAVE_WINDOWS_H */
 
     /* Telnet negotiation */
-    sprintf(MESSAGE, "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
+    snprintf(MESSAGE, sizeof(MESSAGE), "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
     write(rdev_fd, MESSAGE, 9);
     DBG_APRINT("R*: Negotiating Terminal Options...");
   }
@@ -850,7 +850,7 @@ static void open_connection_serial(int port)
 
   dev_name[strlen(dev_name) - 1] += port - 1;
 
-  sprintf(MESSAGE, "R*: using serial device %s", dev_name);
+  snprintf(MESSAGE, sizeof(MESSAGE), "R*: using serial device %s", dev_name);
   DBG_APRINT(MESSAGE);
 
   rdev_fd = open(dev_name, O_RDWR | O_NOCTTY | O_NDELAY);
@@ -1247,7 +1247,7 @@ void RDevice_STAT(void)
 #endif /* HAVE_WINDOWS_H */
         len = sizeof ( struct sockaddr_in );
         /*bufend = 0;*/
-        sprintf(MESSAGE, "R%d: Listening on port %d...", devnum, portnum);
+        snprintf(MESSAGE, sizeof(MESSAGE), "R%d: Listening on port %d...", devnum, portnum);
         DBG_APRINT(MESSAGE);
       }
 
@@ -1261,13 +1261,13 @@ void RDevice_STAT(void)
         }
         else
         {
-          sprintf(MESSAGE, "R%d: Serving Connection from %s...", devnum, inet_ntoa(peer_in.sin_addr));
+          snprintf(MESSAGE, sizeof(MESSAGE), "R%d: Serving Connection from %s...", devnum, inet_ntoa(peer_in.sin_addr));
           if ((host = gethostbyaddr((char *) &peer_in.sin_addr, sizeof peer_in.sin_addr, AF_INET)) == NULL)
           {
             /*perror("gethostbyaddr");*/
             /*DBG_APRINT("Connected.");*/
           } else {
-            sprintf(MESSAGE, "R%d: Serving Connection from %s.", devnum, host->h_name);
+            snprintf(MESSAGE, sizeof(MESSAGE), "R%d: Serving Connection from %s.", devnum, host->h_name);
           }
         }
         DBG_APRINT(MESSAGE);
@@ -1282,7 +1282,7 @@ void RDevice_STAT(void)
 #endif /* HAVE_WINDOWS_H */
 
         /* Telnet negotiation */
-        sprintf(MESSAGE, "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
+        snprintf(MESSAGE, sizeof(MESSAGE), "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
         write(rdev_fd, MESSAGE, 9);
         DBG_APRINT("R*: Negotiating Terminal Options...");
 
@@ -1399,7 +1399,7 @@ void RDevice_SPEC(void)
   int iccom;
 
   iccom = Peek(Devices_ICCOMZ);
-  sprintf(MESSAGE, "R*: XIO %d", iccom);
+  snprintf(MESSAGE, sizeof(MESSAGE), "R*: XIO %d", iccom);
   DBG_APRINT(MESSAGE);
 
 /*

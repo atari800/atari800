@@ -220,7 +220,7 @@ static void Print(int fg, int bg, const char *string, int x, int y, int maxwidth
 	if ((int) strlen(string) > maxwidth) {
 		int firstlen = (maxwidth - 3) >> 1;
 		int laststart = strlen(string) - (maxwidth - 3 - firstlen);
-		sprintf(tmpbuf, "%.*s...%s", firstlen, string, string + laststart);
+		snprintf(tmpbuf, sizeof(tmpbuf), "%.*s...%s", firstlen, string, string + laststart);
 		string = tmpbuf;
 	}
 	while (*string != '\0')
@@ -601,7 +601,7 @@ static int BasicUISelectInt(int default_value, int min_value, int max_value)
 	nitems = 0;
 	for (value = min_value; value <= max_value; value++) {
 		items[nitems] = item_values[nitems];
-		sprintf(item_values[nitems], "%2d", value);
+		snprintf(item_values[nitems], sizeof(item_values[0]), "%2d", value);
 		nitems++;
 	}
 	if (nitems <= 10) {

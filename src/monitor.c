@@ -834,7 +834,7 @@ static UWORD assembler(UWORD addr)
 		UWORD value = 0;
 
 		char prompt[7];
-		sprintf(prompt, "%04X: ", (int) addr);
+		snprintf(prompt, sizeof(prompt), "%04X: ", (int) addr);
 		safe_gets(s, sizeof(s), prompt);
 		if (s[0] == '\0')
 			return addr;

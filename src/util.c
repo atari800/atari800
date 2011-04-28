@@ -315,11 +315,7 @@ void Util_splitpath(const char *path, char *dir_part, char *file_part)
 
 void Util_catpath(char *result, const char *path1, const char *path2)
 {
-#ifdef HAVE_SNPRINTF
 	snprintf(result, FILENAME_MAX,
-#else
-	sprintf(result,
-#endif
 		path1[0] == '\0' || path2[0] == Util_DIR_SEP_CHAR || path1[strlen(path1) - 1] == Util_DIR_SEP_CHAR
 #ifdef DIR_SEP_BACKSLASH
 		 || path2[0] == '/' || path1[strlen(path1) - 1] == '/'
@@ -409,7 +405,7 @@ FILE *Util_uniqopen(char *filename, const char *mode)
 	/* Roll-your-own */
 	int no;
 	for (no = 0; no < 1000000; no++) {
-		sprintf(filename, "a8%06d", no);
+		snprintf(filename, FILENAME_MAX, "a8%06d", no);
 		if (!Util_fileexists(filename))
 			return fopen(filename, mode);
 	}

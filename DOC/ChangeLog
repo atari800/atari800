@@ -1,6 +1,8 @@
 2011-04-28  Petr Stehlik <pstehlik@sophics.cz>
 * configure.ac: generalization for sound configuration
 * ui.c, videomode.c, sdl/input.c: slight optimization for snprintf
+* monitor.c, rdevice.c, screen.[ch], sio.c, ui.c, ui_basic.c, util.c,
+  videomode.c: replace unsafe sprintf() with snprintf()
 
 
 2011-04-27  Petr Stehlik <pstehlik@sophics.cz>

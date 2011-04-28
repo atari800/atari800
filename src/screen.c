@@ -381,7 +381,7 @@ void Screen_DrawDiskLED(void)
 	}
 }
 
-void Screen_FindScreenshotFilename(char *buffer)
+void Screen_FindScreenshotFilename(char *buffer, unsigned bufsize)
 {
 	static int no = -1;
 	static int overwrite = FALSE;
@@ -391,7 +391,7 @@ void Screen_FindScreenshotFilename(char *buffer)
 			no = 0;
 			overwrite = TRUE;
 		}
-		sprintf(buffer, screenshot_filename_format, no);
+		snprintf(buffer, bufsize, screenshot_filename_format, no);
 		if (overwrite)
 			break;
 		if (!Util_fileexists(buffer))
@@ -597,7 +597,7 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 void Screen_SaveNextScreenshot(int interlaced)
 {
 	char filename[FILENAME_MAX];
-	Screen_FindScreenshotFilename(filename);
+	Screen_FindScreenshotFilename(filename, sizeof(filename));
 	Screen_SaveScreenshot(filename, interlaced);
 }
 
