@@ -1,7 +1,7 @@
 dnl   configure.ac - Autoconf script for building configure
 dnl
 dnl   Copyright (C) 2001 Krzysztof Nikiel
-dnl   Copyright (C) 2001-2009 Atari800 development team (see DOC/CREDITS)
+dnl   Copyright (C) 2001-2011 Atari800 development team (see DOC/CREDITS)
 dnl
 dnl   This file is part of the Atari800 emulator project which emulates
 dnl   the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -726,29 +726,13 @@ if [[ "$WANT_SOUND" = "yes" ]]; then
                     OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
 		fi
                 ;;
-            linux)
-                if [[ "$a8_target" = "sdl" ]]; then
-                    OBJS="$OBJS sdl/sound.o"
-		else
-                    OBJS="$OBJS sound_oss.o"
-                fi
-                ;;
-            beos)
-                if [ "$a8_target" = "sdl" ]; then
-                    OBJS="$OBJS sdl/sound.o"
-		else
-                    OBJS="$OBJS sound_oss.o"
-                fi
-                ;;
             *)
                 if [[ "$a8_target" = "sdl" ]]; then
                     OBJS="$OBJS sdl/sound.o"
+	        elif [[ "$SUPPORTS_SOUND_OSS" = "yes" ]]; then
+                    OBJS="$OBJS sound_oss.o"
                 else
-	            if [[ "$SUPPORTS_SOUND_OSS" = "yes" ]]; then
-                        OBJS="$OBJS sound_oss.o"
-                    else
-                        AC_MSG_ERROR([Sound support not available, re-run configure with --disable-sound])
-		    fi
+                    AC_MSG_ERROR([Sound support not available, re-run configure with --disable-sound])
                 fi
                 ;;
         esac
