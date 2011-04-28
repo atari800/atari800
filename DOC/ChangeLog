@@ -1,6 +1,6 @@
 2011-04-28  Petr Stehlik <pstehlik@sophics.cz>
 * configure.ac: generalization for sound configuration
-* ui.c, videomode.c: slight optimization for snprintf
+* ui.c, videomode.c, sdl/input.c: slight optimization for snprintf
 
 
 2011-04-27  Petr Stehlik <pstehlik@sophics.cz>
