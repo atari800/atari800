@@ -207,12 +207,7 @@ void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int 
 		case 4: key = SDL_GetKeyName((SDLKey)(joystick == 0 ? KBD_TRIG_0 : KBD_TRIG_1));
 			break;
 	}
-#ifdef HAVE_SNPRINTF
 	snprintf(buffer, bufsize, "%11s", key);
-#else
-	sprintf(buffer, "%11s", key);
-	buffer[bufsize-1] = '\0';
-#endif
 }
 
 static void SwapJoysticks(void)
@@ -1403,7 +1398,7 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 #ifdef LPTJOY
 		int status;
 		ioctl(fd_joystick0, LPGETSTATUS, &status);
-		*t0 &= (status & 8);
+		*t0 &= ((status & 8) > 0);
 #endif /* LPTJOY */
 	}
 	else if (joystick0 != NULL) {
@@ -1421,7 +1416,7 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 #ifdef LPTJOY
 		int status;
 		ioctl(fd_joystick1, LPGETSTATUS, &status);
-		*t1 &= (status & 8);
+		*t1 &= ((status & 8) > 0);
 #endif /* LPTJOY */
 	}
 	else if (joystick1 != NULL) {
