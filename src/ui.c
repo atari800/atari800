@@ -180,7 +180,7 @@ static void SetItemChecked(UI_tMenuItem *mip, int option, int checked)
 static void FilenameMessage(const char *format, const char *filename)
 {
 	char msg[FILENAME_MAX + 30];
-	sprintf(msg, format, filename);
+	snprintf(msg, sizeof(msg), format, filename);
 	UI_driver->fMessage(msg, 1);
 }
 
@@ -823,7 +823,7 @@ static void SoundRecording(void)
 		int no = 0;
 		do {
 			char buffer[32];
-			sprintf(buffer, "atari%03d.wav", no);
+			snprintf(buffer, sizeof(buffer), "atari%03d.wav", no);
 			if (!Util_fileexists(buffer)) {
 				/* file does not exist - we can create it */
 				FilenameMessage(SndSave_OpenSoundFile(buffer)
@@ -1413,8 +1413,7 @@ static void VideoModeSettings(void)
 	for (;;) {
 		VIDEOMODE_CopyHostAspect(ratio_string, 10);
 #if SDL
-		/* sprintf is safe - bpp can't be higher that 32. */
-		sprintf(bpp_string, "%d", SDL_VIDEO_SW_bpp);
+		snprintf(bpp_string, sizeof(bpp_string), "%d", SDL_VIDEO_SW_bpp);
 #if HAVE_OPENGL
 		SetItemChecked(menu_array, 1, SDL_VIDEO_opengl);
 		SetItemChecked(menu_array, 2, SDL_VIDEO_GL_filtering);
@@ -1435,8 +1434,7 @@ static void VideoModeSettings(void)
 			FindMenuItem(menu_array, 9)->flags = UI_ITEM_CHECK;
 			SetItemChecked(menu_array, 9, SDL_VIDEO_vsync);
 		}
-		/* sprintf is safe - scanlines percentage can't be higher than 100. */
-		sprintf(scanlines_string, "%d", SDL_VIDEO_scanlines_percentage);
+		snprintf(scanlines_string, sizeof(scanlines_string), "%d", SDL_VIDEO_scanlines_percentage);
 		SetItemChecked(menu_array, 18, SDL_VIDEO_interpolate_scanlines);
 #endif /* SDL */
 		SetItemChecked(menu_array, 4, !VIDEOMODE_windowed);
@@ -1456,19 +1454,16 @@ static void VideoModeSettings(void)
 			FindMenuItem(menu_array, 13)->suffix = width_menu_array[VIDEOMODE_horizontal_area].item;
 		else {
 			FindMenuItem(menu_array, 13)->suffix = horiz_area_string;
-			/* sprintf is safe - horizontal area can't be higher than 384. */
-			sprintf(horiz_area_string, "%d", VIDEOMODE_custom_horizontal_area);
+			sprintf(horiz_area_string, sizeof(horiz_area_string), "%d", VIDEOMODE_custom_horizontal_area);
 		}
 		if (VIDEOMODE_vertical_area < VIDEOMODE_VERTICAL_CUSTOM)
 			FindMenuItem(menu_array, 14)->suffix = height_menu_array[VIDEOMODE_vertical_area].item;
 		else {
 			FindMenuItem(menu_array, 14)->suffix = vert_area_string;
-			/* sprintf is safe - vertical area can't be higher than 240. */
-			sprintf(vert_area_string, "%d", VIDEOMODE_custom_vertical_area);
+			snprintf(vert_area_string, sizeof(vert_area_string), "%d", VIDEOMODE_custom_vertical_area);
 		}
-		/* sprintf is safe - both offsets can't be higher than 384 or 240. */
-		sprintf(horiz_offset_string, "%d", VIDEOMODE_horizontal_offset);
-		sprintf(vert_offset_string, "%d", VIDEOMODE_vertical_offset);
+		snprintf(horiz_offset_string, sizeof(horiz_offset_string), "%d", VIDEOMODE_horizontal_offset);
+		snprintf(vert_offset_string, sizeof(vert_offset_string), "%d", VIDEOMODE_vertical_offset);
 
 		option = UI_driver->fSelect("Video Mode Settings", 0, option, menu_array, &seltype);
 		switch (option) {
@@ -1709,17 +1704,10 @@ static struct {
 /* Updates the string representation of a single colour control. */
 static void UpdateColourControl(const int idx)
 {
-#ifdef HAVE_SNPRINTF
 	snprintf(colour_controls[idx].string,
 		 sizeof(colour_controls[0].string),
 		 "%.2f",
 		 *(colour_controls[idx].setting));
-#else
-	sprintf(colour_controls[idx].string,
-		 "%.2f",
-		 *(colour_controls[idx].setting));
-#endif /* HAVE_SNPRINTF */
-
 }
 
 /* Sets pointers to colour controls properly, and hides/shows the Hue and
@@ -2005,7 +1993,7 @@ static void DisplaySettings(void)
 #if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
 		SetItemChecked(menu_array, 25, VIDEOMODE_80_column);
 #endif
-		sprintf(refresh_status, "1:%-2d", Atari800_refresh_rate);
+		snprintf(refresh_status, sizeof(refresh_status), "1:%-2d", Atari800_refresh_rate);
 		SetItemChecked(menu_array, 2, Atari800_collisions_in_skipped_frames);
 		SetItemChecked(menu_array, 3, Screen_show_atari_speed);
 		SetItemChecked(menu_array, 4, Screen_show_disk_led);
@@ -2342,14 +2330,14 @@ static void WindowsOptions(void)
 			else if (aspectmode == COMPRESSED)
 				FindMenuItem(menu_array, 5)->suffix = "Compressed";
 
-			sprintf(hcrop_label, "%d", crop.horizontal);
-			sprintf(vcrop_label, "%d", crop.vertical);
+			snprintf(hcrop_label, sizeof(hcrop_label), "%d", crop.horizontal);
+			snprintf(vcrop_label, sizeof(vcrop_label), "%d", crop.vertical);
 		    FindMenuItem(menu_array, 6)->suffix = hcrop_label;
 			FindMenuItem(menu_array, 7)->suffix = vcrop_label; 
 			
 			SetItemChecked(menu_array, 8, lockaspect);
-			sprintf(hshift_label, "%d", offset.horizontal);
-			sprintf(vshift_label, "%d", offset.vertical);
+			snprintf(hshift_label, sizeof(hshift_label), "%d", offset.horizontal);
+			snprintf(vshift_label, sizeof(vshift_label), "%d", offset.vertical);
 			FindMenuItem(menu_array, 9)->suffix = hshift_label;
 			FindMenuItem(menu_array, 10)->suffix = vshift_label;
 			
@@ -2447,14 +2435,14 @@ static void WindowsOptions(void)
 					changewindowsize(RESET, 0);
 					refreshframe();
 					PLATFORM_DisplayScreen(); /* force rebuild of the clipping frame */
-					sprintf(native_height_label, "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
-					sprintf(native_width_label, "[Width:  %d]", frameparams.view.right - frameparams.view.left);
+					snprintf(native_height_label, sizeof(native_height_label), "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
+					snprintf(native_width_label, sizeof(native_width_label), "[Width:  %d]", frameparams.view.right - frameparams.view.left);
 				}
 			}
 			break;
 		case 6:
 			if (rendermode != DIRECTDRAW)  {
-				sprintf(trim_value, "%d", crop.horizontal);
+				snprintf(trim_value, sizeof(trim_value), "%d", crop.horizontal);
 				if (UI_driver->fEditString("Enter value", trim_value, sizeof(trim_value))) {
 					if (atoi(trim_value) > 150) 
 						UI_driver->fMessage("Maximum X-Trim value is 150", 1);
@@ -2465,14 +2453,14 @@ static void WindowsOptions(void)
 						changewindowsize(RESET, 0);
 						refreshframe();
 						PLATFORM_DisplayScreen(); /* force rebuild of the clipping frame */
-						sprintf(native_width_label, "[Width:  %d]", frameparams.view.right - frameparams.view.left);
+						snprintf(native_width_label, sizeof(native_width_label), "[Width:  %d]", frameparams.view.right - frameparams.view.left);
 					}
 				}
 			}
 			break;
 		case 7:
 			if (rendermode != DIRECTDRAW)  {
-				sprintf(trim_value, "%d", crop.vertical);
+				snprintf(trim_value, sizeof(trim_value), "%d", crop.vertical);
 				if (UI_driver->fEditString("Enter value", trim_value, sizeof(trim_value))) {
 					if (atoi(trim_value) < 0) 
 						UI_driver->fMessage("Minimum Y-Trim value is 0", 1);
@@ -2483,7 +2471,7 @@ static void WindowsOptions(void)
 						changewindowsize(RESET, 0);
 						refreshframe();
 						PLATFORM_DisplayScreen(); /* force rebuild of the clipping frame */
-						sprintf(native_height_label, "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
+						snprintf(native_height_label, sizeof(native_height_label), "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
 					}
 				}
 			}
@@ -2497,7 +2485,7 @@ static void WindowsOptions(void)
 			break;
 		case 9:
 			if (rendermode != DIRECTDRAW)  {
-				sprintf(shift_value, "%d", offset.horizontal);
+				snprintf(shift_value, sizeof(shift_value), "%d", offset.horizontal);
 				if (UI_driver->fEditString("Enter value", shift_value, sizeof(shift_value))) {
 					if (atoi(shift_value) > 24) 
 						UI_driver->fMessage("Maximum horizontal offset is 24", 1);
@@ -2513,7 +2501,7 @@ static void WindowsOptions(void)
 			break;
 		case 10:
 			if (rendermode != DIRECTDRAW)  {
-				sprintf(shift_value, "%d", offset.vertical);
+				snprintf(shift_value, sizeof(shift_value), "%d", offset.vertical);
 				if (UI_driver->fEditString("Enter value", shift_value, sizeof(shift_value))) {
 					if (atoi(shift_value) > 50) 
 						UI_driver->fMessage("Maximum vertical offset is 50", 1);
@@ -2586,11 +2574,7 @@ static void KeyboardJoystickConfiguration(int joystick)
 {
 	char title[40];
 	int option2 = 0;
-#ifdef HAVE_SNPRINTF
 	snprintf(title, sizeof(title), "Define keys for joystick %d", joystick);
-#else
-	sprintf(title, "Define keys for joystick %d", joystick);
-#endif
 	for(;;) {
 		int j0d;
 		for(j0d = 0; j0d <= 4; j0d++)
@@ -2642,7 +2626,7 @@ static void ConfigureControllerButtons(int stick)
 	char title[40];
 	int option2 = 0;
 	
-	sprintf(title, "Define keys for controller %d", stick + 1);
+	snprintf(title, sizeof(title), "Define keys for controller %d", stick + 1);
 	for(;;) {
 		for(i = 0; i <= 8; i++) 
 			PLATFORM_GetButtonAssignments(stick, i, buttons[stick][i], sizeof(buttons[stick][i]));
@@ -3093,13 +3077,13 @@ void UI_Run(void)
 
 #ifdef DIRECTX
 	setcursor();
-	sprintf(desktopreslabel, "Desktop [%dx%d]", origScreenWidth, origScreenHeight);
-	sprintf(hcrop_label, "%d", crop.horizontal);
-	sprintf(vcrop_label, "%d", crop.vertical);
-	sprintf(hshift_label, "%d", offset.horizontal);
-	sprintf(vshift_label, "%d", offset.vertical);
-	sprintf(native_width_label, "[Width:  %d]", frameparams.view.right - frameparams.view.left);
-	sprintf(native_height_label, "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
+	snprintf(desktopreslabel, sizeof(desktopreslabel), "Desktop [%dx%d]", origScreenWidth, origScreenHeight);
+	snprintf(hcrop_label, sizeof(hcrop_label), "%d", crop.horizontal);
+	snprintf(vcrop_label, sizeof(vcrop_label), "%d", crop.vertical);
+	snprintf(hshift_label, sizeof(hshift_label), "%d", offset.horizontal);
+	snprintf(vshift_label, sizeof(vshift_label), "%d", offset.vertical);
+	snprintf(native_width_label, sizeof(native_width_label), "[Width:  %d]", frameparams.view.right - frameparams.view.left);
+	snprintf(native_height_label, sizeof(native_height_label), "[Height: %d]", frameparams.view.bottom - frameparams.view.top);
 	if (useconsole)
 		strcpy(monitor_label, "Enter Monitor");
 	else
@@ -3288,7 +3272,7 @@ int CrashMenu(void)
 	};
 
 	int option = 0;
-	sprintf(cim_info, "Code $%02X (CIM) at address $%04X", UI_crash_code, UI_crash_address);
+	snprintf(cim_info, sizeof(cim_info), "Code $%02X (CIM) at address $%04X", UI_crash_code, UI_crash_address);
 
 	for (;;) {
 		option = UI_driver->fSelect("!!! The Atari computer has crashed !!!", 0, option, menu_array, NULL);
