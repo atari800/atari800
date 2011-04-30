@@ -54,6 +54,7 @@ char CFG_xlxe_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
 char CFG_5200_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
 char CFG_basic_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
 
+int CFG_save_on_exit = FALSE;
 
 void CFG_FindROMImages(const char *directory, int only_if_not_set)
 {
@@ -301,6 +302,9 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				else
 					Log_print("Invalid TV Mode: %s", ptr);
 			}
+			else if (strcmp(string, "CFG_SAVE_ON_EXIT") == 0) {
+				CFG_save_on_exit = Util_sscanbool(ptr);
+			}
 			/* Add module-specific configurations here */
 			else if (PBI_ReadConfig(string,ptr)) {
 			}
@@ -428,6 +432,7 @@ int CFG_WriteConfig(void)
 	fprintf(fp, "SERIO_SOUND=%d\n", POKEYSND_serio_sound_enabled);
 #endif
 #endif /* SOUND */
+	fprintf(fp, "CFG_SAVE_ON_EXIT=%d\n", CFG_save_on_exit);
 	/* Add module-specific configurations here */
 	PBI_WriteConfig(fp);
 #ifdef AF80

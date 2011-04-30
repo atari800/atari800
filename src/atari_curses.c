@@ -288,7 +288,7 @@ int PLATFORM_Keyboard(void)
 #if 0
 	/* for debugging */
 	if (keycode > 0) {
-		Atari800_Exit(FALSE);
+		Atari800_ErrExit();
 		printf("keycode == %d (0x%x)\n", keycode, keycode);
 		exit(1);
 	}

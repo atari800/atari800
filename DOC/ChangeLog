@@ -3,6 +3,15 @@
   entry in the config file. Now when this value is encountered, the emulator
   performs aspect ratio autodetection.
 
+* DOC/USAGE, atari800.man, atari.[ch], atari_curses.c, cfg.[ch], colours.c,
+  input.c, ui.c, util.c, sdl/sound.c: Added support for automatic saving of
+  configuration on emulator exit. (Had to move the System ROM Settings to
+  a separate submenu in UI in order to make place for the new option.)
+  Autosaving is performed only when a user closed the emulator, and not when
+  the emulator closed itself eg. due to failure. For exiting an emulator due
+  to error, a new function Atari800_ErrExit() is provided. This function works
+  like Atari800_Exit but omits the autosaving.
+
 
 ** 2.2.1 released on 2011-04-28
 

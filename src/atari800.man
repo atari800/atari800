@@ -24,6 +24,12 @@ Display framerate when exiting
 .TP
 \fB-config filename
 Specify an alternative configuration filename
+.TP
+\fB-autosave-config
+Automatically save the current configuration on emulator exit.
+.TP
+\fB-no-autosave-config
+Don't save the current configuration on emulator exit (the default).
 
 .TP
 \fB-osa_rom filename

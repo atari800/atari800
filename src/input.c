@@ -891,7 +891,7 @@ static void update_adler32_of_screen(void)
 	if (playingback && gzeof(playbackfp)) {
 		playingback = FALSE;
 		gzclose(playbackfp);
-		Atari800_Exit(FALSE);
+		Atari800_ErrExit();
 		exit(adler32_errors > 0 ? 1 : 0); /* return code indicates errors*/
 	}
 }

@@ -236,7 +236,7 @@ static void SoundSetup(void)
 			desired.format = AUDIO_S16;
 		else {
 			Log_print("unknown sound_bits");
-			Atari800_Exit(FALSE);
+			Atari800_ErrExit();
 			Log_flushlog();
 		}
 

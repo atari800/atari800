@@ -618,6 +618,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 				else
 					a_m = TRUE;
 			}
+			else if (strcmp(argv[i], "-autosave-config") == 0)
+				CFG_save_on_exit = TRUE;
+			else if (strcmp(argv[i], "-no-autosave-config") == 0)
+				CFG_save_on_exit = FALSE;
 #endif /* BASIC */
 			else {
 				/* all options known to main module tried but none matched */
@@ -625,8 +629,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 				if (strcmp(argv[i], "-help") == 0) {
 #ifndef __PLUS
 					help_only = TRUE;
-					Log_print("\t-config <file>   Specify Alternate Configuration File");
+					Log_print("\t-config <file>   Specify alternate configuration file");
 #endif
+					Log_print("\t-autosave-config Automatically save configuration on emulator exit");
+					Log_print("\t-no-autosave-config");
+					Log_print("\t                 Disable automatic saving of configuration");
 					Log_print("\t-atari           Emulate Atari 800");
 					Log_print("\t-xl              Emulate Atari 800XL");
 					Log_print("\t-xe              Emulate Atari 130XE");
@@ -724,14 +731,14 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifndef __PLUS
 
 	if (help_only) {
-		Atari800_Exit(FALSE);
+		Atari800_ErrExit();
 		return FALSE;
 	}
 
 #if SUPPORTS_CHANGE_VIDEOMODE
 #ifndef DONT_DISPLAY
 	if (!VIDEOMODE_InitialiseDisplay()) {
-		Atari800_Exit(FALSE);
+		Atari800_ErrExit();
 		return FALSE;
 	}
 #endif
@@ -929,6 +936,11 @@ int Atari800_Exit(int run_monitor)
 #endif /* HAVE_SIGNAL */
 #ifndef __PLUS
 	if (!restart) {
+		/* We'd better save the configuration before calling the *_Exit() functions -
+		   there's a danger that they might change some emulator settings. */
+		if (CFG_save_on_exit)
+			CFG_WriteConfig();
+
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
 #ifndef BASIC
 		INPUT_Exit();	/* finish event recording */
@@ -946,6 +958,12 @@ int Atari800_Exit(int run_monitor)
 	}
 #endif /* __PLUS */
 	return restart;
+}
+
+void Atari800_ErrExit(void)
+{
+	CFG_save_on_exit = FALSE; /* avoid saving the config */
+	Atari800_Exit(FALSE);
 }
 
 #ifndef __PLUS
@@ -1348,7 +1366,7 @@ void Atari800_Frame(void)
 #ifdef BENCHMARK
 	if (Atari800_nframes >= BENCHMARK) {
 		double benchmark_time = Atari_time() - benchmark_start_time;
-		Atari800_Exit(FALSE);
+		Atari800_ErrExit();
 		printf("%d frames emulated in %.2f seconds\n", BENCHMARK, benchmark_time);
 		exit(0);
 	}

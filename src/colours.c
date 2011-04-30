@@ -88,7 +88,7 @@ static void UpdateModeDependentPointers(int tv_mode)
 		Colours_external = &COLOURS_PAL_external;
 	}
 	else {
-		Atari800_Exit(FALSE);
+		Atari800_ErrExit();
 		Log_print("Interal error: Invalid Atari800_tv_mode\n");
 		exit(1);
 	}

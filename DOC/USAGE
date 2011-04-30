@@ -54,6 +54,11 @@ Command line options
 -verbose              Display framerate when exiting
 
 -config <filename>    Use specified configuration file instead of default
+-autosave-config      Automatically save the current configuration on emulator
+                      exit
+-no-autosave-config   Don't save the current configuration on emulator exit
+                      (the default)
+
 -osa_rom <filename>   Use specified OS/A ROM image
 -osb_rom <filename>   Use specified OS/B ROM image
 -xlxe_rom <filename>  Use specified XL/XE OS ROM image

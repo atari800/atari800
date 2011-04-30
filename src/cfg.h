@@ -12,6 +12,9 @@ int CFG_LoadConfig(const char *alternate_config_filename);
 /* Writes Atari800 text configuration file. */
 int CFG_WriteConfig(void);
 
+/* Controls whether the configuration file will be saved on emulator exit. */
+extern int CFG_save_on_exit;
+
 /* Paths to ROM images. */
 extern char CFG_osa_filename[FILENAME_MAX];
 extern char CFG_osb_filename[FILENAME_MAX];

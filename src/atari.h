@@ -98,8 +98,13 @@ void Atari800_Warmstart(void);
    You should call Atari800_Coldstart() after it. */
 int Atari800_InitialiseMachine(void);
 
-/* Shuts down Atari800 emulation core. */
+/* Shuts down Atari800 emulation core and saves the config file if needed.
+ * Use it when a user requested exiting/entering a monitor. */
 int Atari800_Exit(int run_monitor);
+
+/* Shuts down Atari800 emulation core. Use it for emergency-exiting
+   such as on failure. */
+void Atari800_ErrExit(void);
 
 
 /* Private interface ----------------------------------------------------- */

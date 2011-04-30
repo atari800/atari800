@@ -1073,6 +1073,48 @@ static void ConfigureDirectories(void)
 	}
 }
 
+static void SystemROMSettings(void)
+{
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_FILESEL_PREFIX(0, " OS/A ROM: ", CFG_osa_filename),
+		UI_MENU_FILESEL_PREFIX(1, " OS/B ROM: ", CFG_osb_filename),
+		UI_MENU_FILESEL_PREFIX(2, "XL/XE ROM: ", CFG_xlxe_filename),
+		UI_MENU_FILESEL_PREFIX(3, " 5200 ROM: ", CFG_5200_filename),
+		UI_MENU_FILESEL_PREFIX(4, "BASIC ROM: ", CFG_basic_filename),
+		UI_MENU_FILESEL(5, "Find ROM images in a directory"),
+		UI_MENU_END
+	};
+	char rom_dir[FILENAME_MAX];
+
+	int option = 0;
+
+	for (;;) {
+		int seltype;
+
+		option = UI_driver->fSelect("System ROM Settings", 0, option, menu_array, &seltype);
+
+		switch (option) {
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+			if (seltype == UI_USER_DELETE)
+				FindMenuItem(menu_array, option)->item[0] = '\0';
+			else
+				UI_driver->fGetLoadFilename(FindMenuItem(menu_array, option)->item, NULL, 0);
+			break;
+		case 5:
+			Util_splitpath(CFG_xlxe_filename, rom_dir, NULL);
+			if (UI_driver->fGetDirectoryPath(rom_dir))
+				CFG_FindROMImages(rom_dir, FALSE);
+			break;
+		default:
+			return;
+		}
+	}
+}
+
 static void AtariSettings(void)
 {
 	static UI_tMenuItem menu_array[] = {
@@ -1080,7 +1122,7 @@ static void AtariSettings(void)
 		UI_MENU_CHECK(1, "Boot from tape (hold Start):"),
 		UI_MENU_CHECK(2, "Enable R-Time 8:"),
 		UI_MENU_CHECK(3, "SIO patch (fast disk access):"),
-		UI_MENU_CHECK(21, "Turbo (F12):"),
+		UI_MENU_CHECK(17, "Turbo (F12):"),
 		UI_MENU_ACTION(4, "H: device (hard disk):"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
 #ifdef R_IO_DEVICE
@@ -1090,20 +1132,15 @@ static void AtariSettings(void)
 		UI_MENU_FILESEL_PREFIX(8, "H2: ", Devices_atari_h_dir[1]),
 		UI_MENU_FILESEL_PREFIX(9, "H3: ", Devices_atari_h_dir[2]),
 		UI_MENU_FILESEL_PREFIX(10, "H4: ", Devices_atari_h_dir[3]),
-		UI_MENU_SUBMENU(20, "Advanced H: options"),
-		UI_MENU_ACTION_PREFIX(11, "Print command: ", Devices_print_command),
-		UI_MENU_FILESEL_PREFIX(12, " OS/A ROM: ", CFG_osa_filename),
-		UI_MENU_FILESEL_PREFIX(13, " OS/B ROM: ", CFG_osb_filename),
-		UI_MENU_FILESEL_PREFIX(14, "XL/XE ROM: ", CFG_xlxe_filename),
-		UI_MENU_FILESEL_PREFIX(15, " 5200 ROM: ", CFG_5200_filename),
-		UI_MENU_FILESEL_PREFIX(16, "BASIC ROM: ", CFG_basic_filename),
-		UI_MENU_FILESEL(17, "Find ROM images in a directory"),
-		UI_MENU_SUBMENU(18, "Configure directories"),
-		UI_MENU_ACTION(19, "Save configuration file"),
+		UI_MENU_SUBMENU(11, "Advanced H: options"),
+		UI_MENU_ACTION_PREFIX(12, "Print command: ", Devices_print_command),
+		UI_MENU_SUBMENU(13, "System ROM settings"),
+		UI_MENU_SUBMENU(14, "Configure directories"),
+		UI_MENU_ACTION(15, "Save configuration file"),
+		UI_MENU_CHECK(16, "Save configuration on exit:"),
 		UI_MENU_END
 	};
 	char tmp_command[256];
-	char rom_dir[FILENAME_MAX];
 
 	int option = 0;
 
@@ -1113,12 +1150,13 @@ static void AtariSettings(void)
 		SetItemChecked(menu_array, 1, CASSETTE_hold_start_on_reboot);
 		SetItemChecked(menu_array, 2, RTIME_enabled);
 		SetItemChecked(menu_array, 3, ESC_enable_sio_patch);
-		SetItemChecked(menu_array, 21, Atari800_turbo);
+		SetItemChecked(menu_array, 17, Atari800_turbo);
 		menu_array[5].suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
 		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
 		SetItemChecked(menu_array, 6, Devices_enable_r_patch);
 #endif
+		SetItemChecked(menu_array, 16, CFG_save_on_exit);
 
 		option = UI_driver->fSelect("Emulator Settings", 0, option, menu_array, &seltype);
 
@@ -1165,37 +1203,28 @@ static void AtariSettings(void)
 			else
 				UI_driver->fGetDirectoryPath(FindMenuItem(menu_array, option)->item);
 			break;
-		case 20:
+		case 11:
 			AdvancedHOptions();
 			break;
-		case 11:
+		case 12:
 			strcpy(tmp_command, Devices_print_command);
 			if (UI_driver->fEditString("Print command", tmp_command, sizeof(tmp_command)))
 				if (!Devices_SetPrintCommand(tmp_command))
 					UI_driver->fMessage("Specified command is not allowed", 1);
 			break;
-		case 12:
 		case 13:
+			SystemROMSettings();
+			break;
 		case 14:
-		case 15:
-		case 16:
-			if (seltype == UI_USER_DELETE)
-				FindMenuItem(menu_array, option)->item[0] = '\0';
-			else
-				UI_driver->fGetLoadFilename(FindMenuItem(menu_array, option)->item, NULL, 0);
-			break;
-		case 17:
-			Util_splitpath(CFG_xlxe_filename, rom_dir, NULL);
-			if (UI_driver->fGetDirectoryPath(rom_dir))
-				CFG_FindROMImages(rom_dir, FALSE);
-			break;
-		case 18:
 			ConfigureDirectories();
 			break;
-		case 19:
+		case 15:
 			UI_driver->fMessage(CFG_WriteConfig() ? "Configuration file updated" : "Error writing configuration file", 1);
 			break;
-		case 21:
+		case 16:
+			CFG_save_on_exit = !CFG_save_on_exit;
+			break;
+		case 17:
 			Atari800_turbo = !Atari800_turbo;
 			break;
 		default:
