@@ -1,3 +1,9 @@
+2011-04-30  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* videomode.c: Fixed a bug with not allowing a VIDEOMODE_HOST_ASPECT_RATIO=0:0
+  entry in the config file. Now when this value is encountered, the emulator
+  performs aspect ratio autodetection.
+
+
 ** 2.2.1 released on 2011-04-28
 
 2011-04-28  Petr Stehlik <pstehlik@sophics.cz>

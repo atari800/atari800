@@ -794,22 +794,51 @@ static int ParseAspectRatio(char const *s, double *w, double *h)
 	char *s2;
 	char *s3;
 	*w = strtod(s, &s2);
-	if (s2 == s || *w <= 0.0)
+	if (s2 == s || *w < 0.0)
 		return FALSE;
 	if (*s2 != ':')
 		return FALSE;
 	*h = strtod(++s2, &s3);
-	if (s3 == s2 || *h <= 0.0)
+	if (s3 == s2 || *h < 0.0)
 		return FALSE;
 	return TRUE;
+}
+
+/* Find greatest common divisor of M and N. */
+static unsigned int gcd(unsigned int m, unsigned int n) {
+	unsigned int t;
+	if (m < n) {
+		t = m;
+		m = n;
+		n = t;
+	}
+
+	for (;;) {
+		if (n == 0)
+			return m;
+		t = n;
+		n = m % n;
+		m = t;
+	}
+}
+
+/* Autodetect host aspect ratio and write it into W and H. */
+static void AutodetectHostAspect(double *w, double *h)
+{
+	VIDEOMODE_resolution_t *res = PLATFORM_DesktopResolution();
+	unsigned int d = gcd(res->width, res->height);
+	*w = (double)res->width / d;
+	*h = (double)res->height / d;
 }
 
 int VIDEOMODE_SetHostAspect(double w, double h)
 {
 	double old_w = VIDEOMODE_host_aspect_ratio_w;
 	double old_h = VIDEOMODE_host_aspect_ratio_h;
-	if (w <= 0.0 || h <= 0.0)
+	if (w < 0.0 || h < 0.0)
 		return FALSE;
+	if (w == 0.0 || h == 0.0)
+		AutodetectHostAspect(&w, &h);
 	VIDEOMODE_host_aspect_ratio_w = w;
 	VIDEOMODE_host_aspect_ratio_h = h;
 	if (!VIDEOMODE_Update()) {
@@ -842,33 +871,6 @@ void VIDEOMODE_SetVideoSystem(int mode)
 void VIDEOMODE_CopyHostAspect(char *target, unsigned int size)
 {
 	snprintf(target, size, "%g:%g", VIDEOMODE_host_aspect_ratio_w, VIDEOMODE_host_aspect_ratio_h);
-}
-
-/* Find greatest common divisor of M and N. */
-static unsigned int gcd(unsigned int m, unsigned int n) {
-	unsigned int t;
-	if (m < n) {
-		t = m;
-		m = n;
-		n = t;
-	}
-
-	for (;;) {
-		if (n == 0)
-			return m;
-		t = n;
-		n = m % n;
-		m = t;
-	}
-}
-
-/* Autodetect host aspect ratio and write it into W and H. */
-static void AutodetectHostAspect(double *w, double *h)
-{
-	VIDEOMODE_resolution_t *res = PLATFORM_DesktopResolution();
-	unsigned int d = gcd(res->width, res->height);
-	*w = (double)res->width / d;
-	*h = (double)res->height / d;
 }
 
 int VIDEOMODE_AutodetectHostAspect(void)
