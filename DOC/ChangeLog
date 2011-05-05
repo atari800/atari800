@@ -1,3 +1,8 @@
+2011-05-05  Petr Stehlik <pstehlik@sophics.cz>
+* atari800.spec: David Bolt has provided an update that allows building
+  the RPM packages for Fedora, CentOS, SUSE and Mandriva distributions.
+
+
 2011-04-30  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * videomode.c: Fixed a bug with not allowing a VIDEOMODE_HOST_ASPECT_RATIO=0:0
   entry in the config file. Now when this value is encountered, the emulator
