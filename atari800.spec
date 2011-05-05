@@ -1,34 +1,183 @@
-%define name	atari800
-%define ver	2.2.1
-%define rel	1
-%define copy	GPL
-%define ich Petr Stehlik <pstehlik@sophics.cz>
-%define group	Console/Emulators
-%define realname atari800-%{ver}
-%define src atari800-%{ver}.tar.gz
-%define targets sdl
-## If you change the targets, you'll have to change the files list at the
-## bottom of this file as well
-%define maintarget sdl
-Requires:	SDL >= 1.2.10
-BuildRequires:	SDL-devel >= 1.2.10
-Requires:	zlib
-BuildRequires:	zlib-devel
-Requires:	png
-BuildRequires:	png-devel
-Requires:	readline
-BuildRequires:	readline-devel
-Summary:	An emulator of 8-bit Atari personal computers.
-Name:		%{name}
-Version:	%{ver}
-Release:	%{rel}
-License:	%{copy}
-Packager: %{ich}
-URL: http://atari800.sourceforge.net/
-Group:	%{group}
-Source: http://prdownloads.sourceforge.net/atari800/%{src}
-BuildRoot: /var/tmp/%{name}-root
-#Patch: %{name}-%{ver}.patch
+# generic defines used by all distributions.
+#
+%define ver			2.2.1
+%define targets			sdl
+%define maintarget		sdl
+
+
+%define	myrelease		1
+%define mybuild			1
+%define _rel			%{myrelease}.%{mybuild}
+
+# define the package groups. If they all followed the same naming convention,
+# these would be the same. They don't, and so they aren't :(
+#
+%define	suse_group		System/Emulators/Other
+%define	mandriva_group		Console/Emulators
+%define	fedora_group		Console/Emulators
+
+# defaults
+#
+%define	group			Console/Emulators
+%define	rel			%{_rel}
+
+%define	my_suse			0
+%define	my_mandriva		0
+%define	my_fedora		0
+%define	my_centos		0
+
+
+%if 0%{?suse_version:1}%{?sles_version:1}
+%define	my_suse			1
+%endif
+
+# if present, use %distversion to find out which Mandriva version is being built
+#
+%if 0%{?distversion:1}
+%if 0%{?!mandriva_version:1}
+%define	mandriva_version	%(echo $[%{distversion}/10])
+%endif
+
+%endif
+
+%if 0%{?mandriva_version:1}
+%define	my_mandriva		1
+%define my_vendor		mandriva
+%endif
+
+# if present, decode %dist to find out which OS package is being built on
+#
+%if 0%{?dist:1}
+
+# Centos or Fedora
+#
+%define	my_which_os		%(i=%{dist} ; if [ "${i::3}" == ".fc" ] ; then echo "1" ; else echo "0" ; fi )
+
+%if %{my_which_os}
+
+%if 0%{?!fedora_version:1}
+%define fedora_version		%(i=%{dist} ; echo "${i:3}" )
+%endif
+
+%else
+
+%if 0%{?!centos_version:1}
+%define centos_version		%(i=%{dist} ; echo "${i:3}00" )
+%endif
+
+%endif
+
+%endif
+
+%if 0%{?fedora_version:1}
+%define	my_fedora		1
+%define my_vendor		fedora
+%endif
+
+%if 0%{?centos_version:1}
+%define	my_centos		1
+%define my_vendor		centos
+%endif
+
+
+%if %{my_suse}
+
+%if %{suse_version}
+%define	rel			%{myrelease}.suse%(echo $[%suse_version/10]).%{mybuild}
+%else
+%define	rel			%{myrelease}.sles%{sles_version}.%{mybuild}
+%endif
+
+%define	group			%{suse_group}
+
+%endif
+
+
+# building on a Mandriva/Mandrake Linux system.
+#
+# this should create a release that conforms to the Mandriva naming conventions.
+#
+%if %{my_mandriva}
+
+%define rel			%{myrelease}.mdv%{mandriva_version}.%{mybuild}
+
+%define group			%{mandriva_group}
+
+%endif
+
+
+# building on a Fedora Core Linux system.
+#
+# this should create a release that conforms to the Fedora naming conventions.
+#
+%if %{my_fedora}
+
+%if 0%{?!fedora_version:1}
+%define	fedora_version		%(i="%dist" ; echo "${i:3}")
+%endif
+
+%if 0%{?!dist:1}
+%define	dist			.fc%{fedora_version}
+%endif
+
+%define	rel			%{myrelease}%{dist}.%{mybuild}
+%define	group			%{fedora_group}
+
+%endif
+
+
+# building on a Centos Linux system.
+#
+# this should create a release that conforms to the Centos naming conventions.
+#
+%if %{my_centos}
+
+%if 0%{?!centos_version:1}
+%define	centos_version		%(i="%dist" ; echo "${i:3}")
+%endif
+
+%if 0%{?!dist:1}
+%define	dist			.el%{centos_version}
+%endif
+
+%define	rel			%{myrelease}%{dist}.%{mybuild}
+%define	group			%{fedora_group}
+
+%endif
+
+
+%if %{my_suse}
+Requires:			SDL >= 1.2.10
+BuildRequires:			SDL-devel >= 1.2.10
+%endif
+
+%if %{my_mandriva}
+Requires:			libSDL >= 1.2.10
+BuildRequires:			libSDL-devel >= 1.2.10
+%endif
+
+%if %{my_fedora}
+Requires:			SDL >= 1.2.10
+BuildRequires:			SDL-devel >= 1.2.10
+%endif
+
+
+# Now for the meat of the spec file
+#
+Name:			atari800
+Version:		%{ver}
+Summary:		An emulator of 8-bit Atari personal computers
+License:		GPLv2
+URL:			http://atari800.sourceforge.net/
+Source:			http://prdownloads.sourceforge.net/atari800/%{name}-%{version}.tar.gz
+Group:			%{group}
+Release:		%{rel}
+BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-buildroot
+BuildRequires:		zlib-devel
+BuildRequires:		libpng-devel
+BuildRequires:		readline-devel
+
+
 %description
 Atari800 is an emulator for the 800, 800XL, 130XE and 5200 models of
 the Atari personal computer. It can be used on console, FrameBuffer or X11.
@@ -39,95 +188,60 @@ Authors:
 David Firth
 and Atari800 Development Team (see CREDITS for a full list)
 
-%prep
-rm -rf %{realname}
 
-%setup -n %{realname}/src
-./autogen.sh || echo "Autogen put out its usual complaint, ignored!"
-#%patch -p1
+%prep
+%setup -q -n %{name}-%{version}
+
 
 %build
+cd src
 for target in %{targets}
 do
-	./configure --prefix=/usr --target=$target
-	make
-	mv atari800 atari800-$target
-	make clean
+	%configure --target=${target}
+	%{__make} %{?jobs:-j%jobs}
+	mv atari800 atari800-${target}
+	%{__make} clean
 done
 touch atari800
 
+
 %install
-rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT
+cd src
+mkdir -p %{buildroot}/%{_bindir}
+mkdir -p %{buildroot}/%{_mandir}/man1
 for target in %{targets}
 do
-	install atari800-$target $RPM_BUILD_ROOT/usr/bin
+	install -m 755 atari800-$target %{buildroot}/%{_bindir}
 done
 (
-	cd $RPM_BUILD_ROOT/usr/bin
-	ln -sf atari800-%{maintarget} atari800
+	cd %{buildroot}/%{_bindir}
+	ln -sf %{name}-%{maintarget} %{name}
 )
 
-%clean
-rm -rf $RPM_BUILD_ROOT
+mv %{name}.man %{name}.1
+
+install -m 644 %{name}.1 %{buildroot}/%{_mandir}/man1/
 
 
 %files
 %defattr(-,root,root)
-/usr/bin/atari800
-/usr/bin/atari800-sdl
-/usr/share/man/man1/atari800.1.gz
-/usr/share/doc/atari800/COPYING
-/usr/share/doc/atari800/README.1ST
-/usr/share/doc/atari800/README
-/usr/share/doc/atari800/INSTALL
-/usr/share/doc/atari800/USAGE
-/usr/share/doc/atari800/NEWS
+%{_bindir}/%{name}
+%{_bindir}/%{name}-%{maintarget}
+%{_mandir}/man1/%{name}.1.*
+%doc COPYING
+%doc README.1ST
+%doc DOC/BUGS
+%doc DOC/ChangeLog
+%doc DOC/CREDITS
+%doc DOC/FAQ
+%doc DOC/INSTALL
+%doc DOC/NEWS
+%doc DOC/PORTING
+%doc DOC/README
+%doc DOC/TODO
+%doc DOC/USAGE
 
-%changelog
-* Thu Apr 28 2011 Petr Stehlik <pstehlik@sophics.cz>
-New upstream release with many small fixes.
-* Sat Apr 02 2011 Petr Stehlik <pstehlik@sophics.cz>
-New upstream release. Dropped X11 and ncurses targets.
-* Mon Mar 30 2009 Petr Stehlik <pstehlik@sophics.cz>
-Requires and BuildRequires also the png library.
-* Fri Mar 27 2009 Petr Stehlik <pstehlik@sophics.cz>
-New upstream release. Requires and BuildRequires added.
-* Wed Jul 11 2007 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Changes documented in the NEWS file.
-* Sat Apr 08 2006 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Changes documented in the NEWS file.
-* Mon Jan 02 2006 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Long list of changes in the NEWS file.
-* Fri Dec 30 2005 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Long list of changes in the NEWS file.
-* Sat Apr 30 2005 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Changes documented in the NEWS.
-* Thu Dec 30 2004 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Changes documented in the NEWS.
-* Mon Dec 27 2004 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Changes documented in the NEWS.
-* Sun Aug 08 2004 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Changes documented in the NEWS.
-* Sat Dec 20 2003 Petr Stehlik <pstehlik@sophics.cz>
-Version increased.
-* Thu Sep 04 2003 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. Configure options removed.
-SVGAlib target dropped.
-configure uses --prefix and make install uses DESTDIR now.
-More documentation installed.
-* Mon Feb 10 2003 Petr Stehlik <pstehlik@sophics.cz>
-Version increased. STEREO enabled by default. Description updated.
-* Mon Dec 2 2002 Petr Stehlik <pstehlik@sophics.cz>
-Version increased.
-* Wed Aug 7 2002 Petr Stehlik <pstehlik@sophics.cz>
-Version increased, packager changed, slight change to description.
-* Tue Jul 9 2002 Petr Stehlik <pstehlik@sophics.cz>
-Main target is SDL. Manual is installed to /usr/share/man (FHS).
-* Mon Jul 8 2002 Petr Stehlik <pstehlik@sophics.cz>
-Atari800 now installs to /usr/bin
-* Fri Dec 21 2001 Friedrich Delgado Friedrichs <friedel@nomaden.org>
-Pathname correction (tarfile now unpacks to Atari800-<version>, instead
-of Atari800).
-* Sun Dec 2 2001 Friedrich Delgado Friedrichs <friedel@nomaden.org>
-First (working) version
+
+%clean
+%{__rm} -rf %{buildroot}
+%{__rm} -rf %{_builddir}/%{name}-%{version}-%{release}-buildroot
