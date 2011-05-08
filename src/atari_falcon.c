@@ -724,6 +724,8 @@ int PLATFORM_Keyboard(void)
 			UI_alt_function = UI_MENU_LOADSTATE;	/* ALT+L .. Load state */
 		else if (scancode == SCANCODE_C)
 			UI_alt_function = UI_MENU_CARTRIDGE;	/* ALT+C .. Cartridge management */
+		else if (scancode == SCANCODE_T)
+			UI_alt_function = UI_MENU_CASSETTE;	/* ALT+T .. Tape management */
 	}
 		if (UI_alt_function != -1)
 			return AKEY_UI;

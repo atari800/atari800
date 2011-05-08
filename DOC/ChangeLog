@@ -7,6 +7,11 @@
   must manually switch tape recording on/off if needed. Fixed some bugs and
   cleaned the code a bit.
 
+* DOC/directx.txt, atari_curses.c, atari_falcon.c, atari_ps2.c,
+  dos/atari_vga.c, javanvm/atari_javanvm.c, sdl/input.c, win32/atari_win32.c:
+  Added the Alt+T shortcut to the new Tape Management menu. The "tilt screen"
+  in the Win32 port has been remapped to Alt+Shift+Z to avoid conflict.
+
 
 2011-05-05  Petr Stehlik <pstehlik@sophics.cz>
 * atari800.spec: David Bolt has provided an update that allows building

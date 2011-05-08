@@ -272,6 +272,9 @@ int PLATFORM_Keyboard(void)
 			case VK_C:
 				UI_alt_function = UI_MENU_CARTRIDGE;
 				break;
+			case VK_T:
+				UI_alt_function = UI_MENU_CASSETTE;
+				break;
 			case VK_BACK_SLASH:
 				return AKEY_PBI_BB_MENU;
 				break;

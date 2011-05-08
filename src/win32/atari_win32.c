@@ -980,6 +980,9 @@ int PLATFORM_GetKeyName(void)
 		case DIK_C:
 			UI_alt_function = UI_MENU_CARTRIDGE; /* ALT+C .. Cartridge management */
 			return AKEY_UI;
+		case DIK_T:
+			UI_alt_function = UI_MENU_CASSETTE;  /* ALT+T .. Tape management */
+			return AKEY_UI;
 		case DIK_BACKSLASH:
 			return AKEY_PBI_BB_MENU; /* BLACK BOX */
 		default:
@@ -1004,11 +1007,10 @@ int PLATFORM_GetKeyName(void)
 				return AKEY_NONE;
 			case DIK_Z: /* ALT+Z .. Toggle "screensaver" mode */
 				kbcode = 0;
-				togglescreensaver();
-				return AKEY_NONE;
-			case DIK_T: /* ALT+T .. Toggle Tilt mode */
-				kbcode = 0;
-				changetiltlevel();
+				if (INPUT_key_shift)
+					changetiltlevel();
+				else
+					togglescreensaver();
 				return AKEY_NONE;
 			case DIK_RETURN: /* ALT+ENTER .. Toggle fullscreen mode*/
 				kbcode = 0;

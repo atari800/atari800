@@ -813,6 +813,9 @@ if (Atari800_machine_type != Atari800_MACHINE_5200 || UI_is_active) {
 			case 0x16:
 				UI_alt_function = UI_MENU_SAVESTATE;
 				return AKEY_UI;
+			case 0x17:
+				UI_alt_function = UI_MENU_CASSETTE;
+				return AKEY_UI;
 			case 0x4:
 				UI_alt_function = UI_MENU_ABOUT;
 				return AKEY_UI;

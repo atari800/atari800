@@ -1240,7 +1240,13 @@ int PLATFORM_Keyboard(void)
 	                keycode |= AKEY_r;
                 break;
         case 0x14:
-                keycode |= AKEY_t;
+				if (alt_key)
+				{
+					keycode = AKEY_UI;
+					UI_alt_function = UI_MENU_CASSETTE;			/* ALT+T .. Tape management */
+				}
+				else
+					keycode |= AKEY_t;
                 break;
         case 0x15:
 				if (alt_key)

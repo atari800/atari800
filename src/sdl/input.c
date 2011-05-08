@@ -406,6 +406,9 @@ int PLATFORM_Keyboard(void)
 			case SDLK_c:
 				UI_alt_function = UI_MENU_CARTRIDGE;
 				break;
+			case SDLK_t:
+				UI_alt_function = UI_MENU_CASSETTE;
+				break;
 			case SDLK_BACKSLASH:
 				return AKEY_PBI_BB_MENU;
 			case SDLK_m:

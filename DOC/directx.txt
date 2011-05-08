@@ -166,7 +166,7 @@ Alt+PageUp            Increases the size of the window
 Alt+PageDown          Decreases the size of the window  
 Alt+I                 Advances to the next scanline (interleave) mode 
 Alt+M                 Toggles Windows main menu on or off.
-Alt+T                 3D "tilt screen". (Direct3D modes only)
+Alt+Shift+Z           3D "tilt screen". (Direct3D modes only)
 Alt+Z                 3D "screensaver". (Direct3D modes only)
 
 Hint: Use of Alt-T & Alt-Z may require running the "DirectX 9 Updater"

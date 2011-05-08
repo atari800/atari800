@@ -815,6 +815,10 @@ int PLATFORM_Keyboard(void)
 		UI_alt_function = UI_MENU_SAVESTATE;
 		keycode = AKEY_UI;
 		break;
+	case ALT_T:
+		UI_alt_function = UI_MENU_CASSETTE;
+		keycode = AKEY_UI;
+		break;
 	case ALT_W:
 		UI_alt_function = UI_MENU_SOUND_RECORDING;
 		keycode = AKEY_UI;
