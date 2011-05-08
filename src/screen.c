@@ -195,6 +195,9 @@ void Screen_WriteConfig(FILE *fp)
 #define SMALLFONT_WIDTH    5
 #define SMALLFONT_HEIGHT   7
 #define SMALLFONT_PERCENT  10
+#define SMALLFONT_C        11
+#define SMALLFONT_D        12
+#define SMALLFONT_SLASH    13
 #define SMALLFONT_____ 0x00
 #define SMALLFONT___X_ 0x02
 #define SMALLFONT__X__ 0x04
@@ -206,7 +209,7 @@ void Screen_WriteConfig(FILE *fp)
 
 static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2)
 {
-	static const UBYTE font[12][SMALLFONT_HEIGHT] = {
+	static const UBYTE font[14][SMALLFONT_HEIGHT] = {
 		{
 			SMALLFONT_____,
 			SMALLFONT__X__,
@@ -313,6 +316,24 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 			SMALLFONT_X___,
 			SMALLFONT_X_X_,
 			SMALLFONT__X__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_XX__,
+			SMALLFONT_X_X_,
+			SMALLFONT_X_X_,
+			SMALLFONT_X_X_,
+			SMALLFONT_XX__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT___X_,
+			SMALLFONT___X_,
+			SMALLFONT__X__,
+			SMALLFONT__X__,
+			SMALLFONT_X___,
 			SMALLFONT_____
 		}
 	};
@@ -329,13 +350,16 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 	}
 }
 
-static void SmallFont_DrawInt(UBYTE *screen, int n, UBYTE color1, UBYTE color2)
+/* Returns screen address for placing the next character on the left of the
+   drawn number. */
+static UBYTE *SmallFont_DrawInt(UBYTE *screen, int n, UBYTE color1, UBYTE color2)
 {
 	do {
 		SmallFont_DrawChar(screen, n % 10, color1, color2);
 		screen -= SMALLFONT_WIDTH;
 		n /= 10;
 	} while (n > 0);
+	return screen;
 }
 
 void Screen_DrawAtariSpeed(double cur_time)
@@ -370,11 +394,23 @@ void Screen_DrawDiskLED(void)
 			+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * Screen_WIDTH;
 		if (SIO_last_drive == 0x60 || SIO_last_drive == 0x61) {
 			if (Screen_show_disk_led)
-				SmallFont_DrawChar(screen, 11, 0x00, (UBYTE) (CASSETTE_record ? 0x2b : 0xac));
+				SmallFont_DrawChar(screen, SMALLFONT_C, 0x00, (UBYTE) (CASSETTE_record ? 0x2b : 0xac));
+
+			if (Screen_show_sector_counter) {
+				/* Displaying tape length during saving is pointless since it would equal the number
+				   of the currently-written block, which is already displayed. */
+				if (!CASSETTE_record) {
+					screen = SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_max_block, 0x00, 0x88);
+					SmallFont_DrawChar(screen, SMALLFONT_SLASH, 0x00, 0x88);
+				}
+				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_current_block, 0x00, 0x88);
+			}
 		}
 		else {
-			if (Screen_show_disk_led)
+			if (Screen_show_disk_led) {
 				SmallFont_DrawChar(screen, SIO_last_drive, 0x00, (UBYTE) (SIO_last_op == SIO_LAST_READ ? 0xac : 0x2b));
+				SmallFont_DrawChar(screen -= SMALLFONT_WIDTH, SMALLFONT_D, 0x00, (UBYTE) (SIO_last_op == SIO_LAST_READ ? 0xac : 0x2b));
+			}
 		
 			if (Screen_show_sector_counter)
 				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, SIO_last_sector, 0x00, 0x88);

@@ -2048,8 +2048,8 @@ static void DisplaySettings(void)
 		UI_MENU_SUBMENU_SUFFIX(1, "Current refresh rate:", refresh_status),
 		UI_MENU_CHECK(2, "Accurate skipped frames:"),
 		UI_MENU_CHECK(3, "Show percents of Atari speed:"),
-		UI_MENU_CHECK(4, "Show disk drive activity:"),
-		UI_MENU_CHECK(5, "Show sector counter:"),
+		UI_MENU_CHECK(4, "Show disk/tape activity:"),
+		UI_MENU_CHECK(5, "Show sector/block counter:"),
 #ifdef _WIN32_WCE
 		UI_MENU_CHECK(6, "Enable linear filtering:"),
 #endif

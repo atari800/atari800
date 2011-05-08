@@ -14,6 +14,12 @@
 
 * DOC/USAGE: Updated the "Cassette operation" section with the new features.
 
+* screen.c: Added displaying of current tape position when sector counter is
+  enabled. Display a "Dn" symbol instead of "n" during disk operations.
+
+* ui.c: Renamed the "Show disk activity" and "Show sector counter" options to
+  reflect the fact that they also affect tape operations.
+
 
 2011-05-05  Petr Stehlik <pstehlik@sophics.cz>
 * atari800.spec: David Bolt has provided an update that allows building
