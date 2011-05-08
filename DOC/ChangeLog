@@ -1,3 +1,13 @@
+2011-05-08  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* atari.c, cassette.[ch], cfg.c, screen.c, sio.c, ui.c: Added support for
+  switching bettween tape loading/saving without need to re-attach a tape
+  image. Added a "Tape management" menu with new options for tape rewinding
+  and creating a blank CAS image. Added loading/saving of the currently
+  attached tape image in the config file. Without the SIO patch, a user now
+  must manually switch tape recording on/off if needed. Fixed some bugs and
+  cleaned the code a bit.
+
+
 2011-05-05  Petr Stehlik <pstehlik@sophics.cz>
 * atari800.spec: David Bolt has provided an update that allows building
   the RPM packages for Fedora, CentOS, SUSE and Mandriva distributions.

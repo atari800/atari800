@@ -33,6 +33,7 @@
 
 #include "antic.h"
 #include "atari.h"
+#include "cassette.h"
 #include "colours.h"
 #include "log.h"
 #include "screen.h"
@@ -369,7 +370,7 @@ void Screen_DrawDiskLED(void)
 			+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * Screen_WIDTH;
 		if (SIO_last_drive == 0x60 || SIO_last_drive == 0x61) {
 			if (Screen_show_disk_led)
-				SmallFont_DrawChar(screen, 11, 0x00, (UBYTE) (SIO_last_op == SIO_LAST_READ ? 0xac : 0x2b));
+				SmallFont_DrawChar(screen, 11, 0x00, (UBYTE) (CASSETTE_record ? 0x2b : 0xac));
 		}
 		else {
 			if (Screen_show_disk_led)

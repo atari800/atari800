@@ -852,13 +852,130 @@ static int AutostartFile(void)
 	return FALSE;
 }
 
-static void LoadTape(void)
+static void MakeBlankTapeMenu(void)
 {
-	static char filename[FILENAME_MAX] = "";
-	if (UI_driver->fGetLoadFilename(filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-		if (!CASSETTE_Insert(filename))
-			CantLoad(filename);
+	char filenm[FILENAME_MAX];
+	char description[CASSETTE_DESCRIPTION_MAX];
+	description[0] = '\0';
+	strncpy(filenm, CASSETTE_filename, FILENAME_MAX);
+	if (!UI_driver->fGetSaveFilename(filenm, UI_atari_files_dir, UI_n_atari_files_dir))
+		return;
+	if (!UI_driver->fEditString("Enter tape's description", description, sizeof(description)))
+		return;
+	if (!CASSETTE_CreateCAS(filenm, description))
+		CantSave(filenm);
+}
+
+/* Callback function that writes a text label to *LABEL, for use by
+   any slider that adjusts tape position. */
+static void TapeSliderLabel(char *label, int value, void *user_data)
+{
+	if (value >= CASSETTE_max_block)
+		sprintf(label, "End");
+	else
+		snprintf(label, 10, "%i", value + 1);
+}
+
+static void TapeManagement(void)
+{
+	static char position_string[17];
+	static char cas_symbol[4] = " C:";
+
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_FILESEL_PREFIX_TIP(0, cas_symbol, NULL, NULL),
+		UI_MENU_LABEL("Description:"),
+		UI_MENU_LABEL(CASSETTE_description),
+		UI_MENU_ACTION_PREFIX_TIP(1, "Position: ", position_string, NULL),
+		UI_MENU_CHECK(2, "Record:"),
+		UI_MENU_SUBMENU(3, "Make blank tape"),
+		UI_MENU_END
+	};
+
+	int option = 0;
+	int seltype;
+
+	for (;;) {
+
+		int position = CASSETTE_current_block;
+		int size = CASSETTE_max_block;
+
+		/* Set the cassette file description and set the Select Tape tip */
+		if (CASSETTE_status == CASSETTE_STATUS_NONE) {
+			menu_array[0].item = "None";
+			menu_array[0].suffix = "Return:insert";
+			menu_array[3].suffix = "Tape not loaded";
+			cas_symbol[0] = ' ';
+		} else {
+			menu_array[0].item = CASSETTE_filename;
+			menu_array[0].suffix = "Return:insert Backspace:eject";
+			menu_array[3].suffix = "Return:change Backspace: rewind";
+			cas_symbol[0] = (CASSETTE_status == CASSETTE_STATUS_READ_ONLY? '*' : ' ');
+		}
+
+		SetItemChecked(menu_array, 2, CASSETTE_record);
+
+		if (CASSETTE_status == CASSETTE_STATUS_NONE)
+			memcpy(position_string, "N/A", 4);
+		else {
+			if (position > size)
+				snprintf(position_string, sizeof(position_string) - 1, "End/%u blocks", size);
+			else
+				snprintf(position_string, sizeof(position_string) - 1, "%u/%u blocks", position, size);
+		}
+
+		option = UI_driver->fSelect("Tape Management", 0, option, menu_array, &seltype);
+
+		switch (option) {
+		case 0:
+			switch (seltype) {
+			case UI_USER_SELECT: /* Enter */
+				if (UI_driver->fGetLoadFilename(CASSETTE_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					UI_driver->fMessage("Please wait while inserting...", 0);
+					if (!CASSETTE_Insert(CASSETTE_filename)) {
+						CantLoad(CASSETTE_filename);
+						break;
+					}
+				}
+				break;
+			case UI_USER_DELETE: /* Backspace */
+				if (CASSETTE_status != CASSETTE_STATUS_NONE)
+					CASSETTE_Remove();
+				break;
+			}
+			break;
+		case 1:
+			/* The Current Block control is inactive if no cassette file present */
+			if (CASSETTE_status == CASSETTE_STATUS_NONE)
+				break;
+
+			switch (seltype) {
+			case UI_USER_SELECT: { /* Enter */
+					int value = UI_driver->fSelectSlider("Position tape",
+									     position - 1,
+					                                     size, &TapeSliderLabel, NULL);
+					if (value != -1)
+						CASSETTE_Seek(value + 1);
+				}
+				break;
+			case UI_USER_DELETE: /* Backspace */
+				CASSETTE_Seek(1);
+				break;
+			}
+			break;
+		case 2:
+			if (CASSETTE_status == CASSETTE_STATUS_READ_ONLY)
+				UI_driver->fMessage("Tape is read-only", 1);
+			else
+				CASSETTE_ToggleRecord();
+			break;
+		case 3:
+			MakeBlankTapeMenu();
+			break;
+		default:
+			return;
+		}
 	}
+
 }
 
 static void AdvancedHOptions(void)
@@ -3030,15 +3147,15 @@ static void HotKeyHelp(void)
 		"Hot Key Assignments \0"
 		"------------------- \0"
 		"\0"
-		"Alt+Enter - Toggle Fullscreen/Window\0"
-		"Alt+PgUp  - Increase window size    \0"
-		"Alt+PgDn  - Decrease window size    \0"
-		"Alt+I     - Next scanline mode      \0"
-		"Alt+M     - Hide/Show main menu     \0"
-		"Alt+T     - 3D Tilt                 \0"
-		"            (Direct3D modes only)   \0"
-		"Alt+Z     - 3D Screensaver          \0"
-		"            (Direct3D modes only)   \0"
+		"Alt+Enter   - Toggle Fullscreen/Window\0"
+		"Alt+PgUp    - Increase window size    \0"
+		"Alt+PgDn    - Decrease window size    \0"
+		"Alt+I       - Next scanline mode      \0"
+		"Alt+M       - Hide/Show main menu     \0"
+		"Alt+Shift+Z - 3D Tilt                 \0"
+		"              (Direct3D modes only)   \0"
+		"Alt+Z       - 3D Screensaver          \0"
+		"              (Direct3D modes only)   \0"
 		"\n");
 }
 #endif
@@ -3049,7 +3166,7 @@ void UI_Run(void)
 		UI_MENU_FILESEL_ACCEL(UI_MENU_RUN, "Run Atari Program", "Alt+R"),
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_DISK, "Disk Management", "Alt+D"),
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_CARTRIDGE, "Cartridge Management", "Alt+C"),
-		UI_MENU_FILESEL(UI_MENU_CASSETTE, "Select Tape Image"),
+		UI_MENU_SUBMENU_ACCEL(UI_MENU_CASSETTE, "Tape Management", "Alt+T"),
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_SYSTEM, "Select System", "Alt+Y"),
 #ifdef SOUND
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_SOUND, "Sound Settings", "Alt+O"),
@@ -3159,7 +3276,7 @@ void UI_Run(void)
 				done = TRUE;	/* reboot immediately */
 			break;
 		case UI_MENU_CASSETTE:
-			LoadTape();
+			TapeManagement();
 			break;
 		case UI_MENU_SYSTEM:
 			SelectSystem();

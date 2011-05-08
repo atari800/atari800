@@ -167,8 +167,7 @@ char SIO_status[256];
 #define SIO_WriteFrame      (0x04)
 #define SIO_FinalStatus     (0x05)
 #define SIO_FormatFrame     (0x06)
-#define SIO_CasRead         (0x60)
-#define SIO_CasWrite        (0x61)
+#define SIO_CasReadWrite    (0x60)
 static UBYTE CommandFrame[6];
 static int CommandIndex = 0;
 static UBYTE DataBuffer[256 + 3];
@@ -1479,44 +1478,21 @@ static UBYTE Command_Frame(void)
 /* Enable/disable the Tape Motor */
 void SIO_TapeMotor(int onoff)
 {
-	/* if sio is patched, do not do anything */
-	if (ESC_enable_sio_patch)
-		return;
+	CASSETTE_TapeMotor(onoff);
 	if (onoff) {
 		/* set frame to cassette frame, if not */
 		/* in a transfer with an intelligent peripheral */
-		if (TransferStatus == SIO_NoFrame || (TransferStatus & 0xfe) == SIO_CasRead) {
-			if (CASSETTE_IsSaveFile()) {
-				TransferStatus = SIO_CasWrite;
-				CASSETTE_TapeMotor(onoff);
-				SIO_last_op = SIO_LAST_WRITE;
-			}
-			else {
-				TransferStatus = SIO_CasRead;
-				CASSETTE_TapeMotor(onoff);
-				POKEY_DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
-				SIO_last_op = SIO_LAST_READ;
-			};
-			SIO_last_drive = 0x60;
-			SIO_last_op_time = 0x10;
+		if (TransferStatus == SIO_NoFrame || TransferStatus == SIO_CasReadWrite) {
+			TransferStatus = SIO_CasReadWrite;
+			POKEY_DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
 		}
-		else {
-			CASSETTE_TapeMotor(onoff);
-		}
+		SIO_last_drive = 0x60;
+		SIO_last_op_time = 0x10;
 	}
 	else {
 		/* set frame to none */
-		if (TransferStatus == SIO_CasWrite) {
+		if (TransferStatus == SIO_CasReadWrite) {
 			TransferStatus = SIO_NoFrame;
-			CASSETTE_TapeMotor(onoff);
-		}
-		else if (TransferStatus == SIO_CasRead) {
-			TransferStatus = SIO_NoFrame;
-			CASSETTE_TapeMotor(onoff);
-			POKEY_DELAYED_SERIN_IRQ = 0; /* off */
-		}
-		else {
-			CASSETTE_TapeMotor(onoff);
 			POKEY_DELAYED_SERIN_IRQ = 0; /* off */
 		}
 		SIO_last_op_time = 0;
@@ -1619,7 +1595,7 @@ void SIO_PutByte(int byte)
 			Log_print("Invalid data frame!");
 		}
 		break;
-	case SIO_CasWrite:
+	case SIO_CasReadWrite:
 		CASSETTE_PutByte(byte);
 		break;
 	}
@@ -1674,7 +1650,7 @@ int SIO_GetByte(void)
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
-	case SIO_CasRead:
+	case SIO_CasReadWrite:
 		byte = CASSETTE_GetByte();
 		POKEY_DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
 		break;

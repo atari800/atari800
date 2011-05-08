@@ -942,6 +942,7 @@ int Atari800_Exit(int run_monitor)
 			CFG_WriteConfig();
 
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
+		CASSETTE_Exit(); /* Finish writing to the cassette file */
 #ifndef BASIC
 		INPUT_Exit();	/* finish event recording */
 #endif

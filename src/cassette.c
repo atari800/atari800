@@ -29,6 +29,7 @@
 #include "atari.h"
 #include "cpu.h"
 #include "cassette.h"
+#include "esc.h"
 #include "log.h"
 #include "memory.h"
 #include "sio.h"
@@ -46,15 +47,18 @@ static SLONG cassette_elapsedtime;  /* elapsed time since begin of file */
 static SLONG cassette_savetime;	    /* helper for cas save */
 static SLONG cassette_nextirqevent; /* timestamp of next irq in scanlines */
 
-static char cassette_filename[FILENAME_MAX];
-static char cassette_description[CASSETTE_DESCRIPTION_MAX];
+char CASSETTE_filename[FILENAME_MAX] = "";
+CASSETTE_status_t CASSETTE_status = CASSETTE_STATUS_NONE;
+int CASSETTE_record = FALSE;
+static int cassette_writable = FALSE;
+static int cassette_readable = FALSE;
+
+char CASSETTE_description[CASSETTE_DESCRIPTION_MAX] = "";
 static int cassette_current_blockbyte = 0;
-static int cassette_current_block;
+int CASSETTE_current_block;
 static int cassette_max_blockbytes = 0;
-static int cassette_max_block = 0;
-static int cassette_savefile = FALSE;
+int CASSETTE_max_block = 0;
 static int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
-static int cassette_putdelay = 0;	/* in ms, delay since last putbyte */
 static int cassette_motor = 0;
 static int cassette_baudrate = 600;
 static int cassette_baudblock[MAX_BLOCKS];
@@ -88,26 +92,58 @@ $84 as used by the OS), aux is length of mark tone (including leader and gaps)
 just before the record data in milliseconds.
 */
 
+/* Call this function after each change of
+   cassette_motor, CASSETTE_status or eof_of_tape. */
+static void UpdateFlags(void)
+{
+	cassette_readable = cassette_motor &&
+	                    (CASSETTE_status == CASSETTE_STATUS_READ_WRITE ||
+	                     CASSETTE_status == CASSETTE_STATUS_READ_ONLY) &&
+	                     !eof_of_tape;
+	cassette_writable = cassette_motor &&
+	                    CASSETTE_status == CASSETTE_STATUS_READ_WRITE;
+}
+
+int CASSETTE_ReadConfig(char *string, char *ptr)
+{
+	if (strcmp(string, "CASSETTE_FILENAME") == 0)
+		Util_strlcpy(CASSETTE_filename, ptr, sizeof(CASSETTE_filename));
+	else if (strcmp(string, "CASSETTE_LOADED") == 0) {
+		int value = Util_sscanbool(ptr);
+		if (value == -1)
+			return FALSE;
+		CASSETTE_status = (value ? CASSETTE_STATUS_READ_WRITE : CASSETTE_STATUS_NONE);
+	}
+	else return FALSE;
+	return TRUE;
+}
+
+void CASSETTE_WriteConfig(FILE *fp)
+{
+	fprintf(fp, "CASSETTE_FILENAME=%s\n", CASSETTE_filename);
+	fprintf(fp, "CASSETTE_LOADED=%d\n", CASSETTE_status != CASSETTE_STATUS_NONE);
+}
+
 int CASSETTE_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
-
-	strcpy(cassette_filename, "None");
-	memset(cassette_description, 0, sizeof(cassette_description));
 
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
 
 		if (strcmp(argv[i], "-tape") == 0) {
-			if (i_a)
-				CASSETTE_Insert(argv[++i]);
+			if (i_a) {
+				Util_strlcpy(CASSETTE_filename, argv[++i], sizeof(CASSETTE_filename));
+				CASSETTE_status = CASSETTE_STATUS_READ_WRITE;
+			}
 			else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-boottape") == 0) {
 			if (i_a) {
-				CASSETTE_Insert(argv[++i]);
+				Util_strlcpy(CASSETTE_filename, argv[++i], sizeof(CASSETTE_filename));
+				CASSETTE_status = CASSETTE_STATUS_READ_WRITE;
 				CASSETTE_hold_start = 1;
 			}
 			else a_m = TRUE;
@@ -128,7 +164,17 @@ int CASSETTE_Initialise(int *argc, char *argv[])
 
 	*argc = j;
 
+	/* If CASSETTE_status was set in this function or in CASSETTE_ReadConfig(),
+	   then tape is to be mounted. */
+	if (CASSETTE_status != CASSETTE_STATUS_NONE && CASSETTE_filename[0] != '\0')
+		CASSETTE_Insert(CASSETTE_filename);
+
 	return TRUE;
+}
+
+void CASSETTE_Exit(void)
+{
+	CASSETTE_Remove();
 }
 
 /* Gets information about the cassette image. Returns TRUE if ok.
@@ -136,23 +182,26 @@ int CASSETTE_Initialise(int *argc, char *argv[])
    char description[CASSETTE_DESCRIPTION_MAX];
    int last_block;
    int isCAS;
-   CASSETTE_CheckFile(filename, NULL, description, &last_block, &isCAS);
+   int writable;
+   CASSETTE_CheckFile(filename, NULL, description, &last_block, &isCAS, &writable);
 */
-int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *last_block, int *isCAS)
+int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *last_block, int *isCAS, int *writable)
 {
 	FILE *f;
 	CAS_Header header;
 	int blocks;
 
-/* atm, no appending to existing cas files - too dangerous to data!
-   and will not work anyway without patched sio
+	/* Check if the file is writable. If not, recording will be disabled. */
 	f = fopen(filename, "rb+");
-	if (f == NULL) */
+	if (writable != NULL)
+		*writable = f != NULL;
+	/* If opening for reading+writing failed, reopen it as read-only. */
+	if (f == NULL)
 		f = fopen(filename, "rb");
 	if (f == NULL)
 		return FALSE;
 	if (description)
-		memset(description, 0, CASSETTE_DESCRIPTION_MAX);
+		description[0] = '\0';
 
 	if (fread(&header, 1, 6, f) == 6
 		&& header.identifier[0] == 'F'
@@ -181,31 +230,39 @@ int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *
 
 		/* count number of blocks */
 		blocks = 0;
-		cassette_baudblock[0]=600;
-		do {
+		if (fp) {
+			cassette_baudblock[0]=600;
+			cassette_block_offset[0] = ftell(f);
+		}
+		for (;;) {
 			/* chunk header is always 8 bytes */
 			if (fread(&header, 1, 8, f) != 8)
 				break;
+			length = header.length_lo + (header.length_hi << 8);
 			if (header.identifier[0] == 'b'
 			 && header.identifier[1] == 'a'
 			 && header.identifier[2] == 'u'
 			 && header.identifier[3] == 'd') {
 				cassette_baudrate=header.aux_lo + (header.aux_hi << 8);
+				if (fp)
+					cassette_block_offset[blocks] += length + 8;
 			}
 			else if (header.identifier[0] == 'd'
 			 && header.identifier[1] == 'a'
 			 && header.identifier[2] == 't'
 			 && header.identifier[3] == 'a') {
-				blocks++;
-				if (fp) {
-					cassette_block_offset[blocks] = ftell(f) - 4;
+				if (fp)
 					cassette_baudblock[blocks] = cassette_baudrate;
+				if (++blocks >= MAX_BLOCKS) {
+					--blocks;
+					break;
 				}
+				if (fp)
+					cassette_block_offset[blocks] = cassette_block_offset[blocks - 1] + length + 8;
 			}
-			length = header.length_lo + (header.length_hi << 8);
 			/* skip possibly present data block */
 			fseek(f, length, SEEK_CUR);
-		} while (blocks < MAX_BLOCKS);
+		}
 	}
 	else {
 		/* raw file */
@@ -216,11 +273,6 @@ int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *
 	}
 	if (last_block)
 		*last_block = blocks;
-	/* if filelength is 0, then it is a savefile */
-	fseek(f,0L,SEEK_SET);
-	if (fread(&header, 1, 4, f) == 0) {
-		cassette_savefile = TRUE;
-	}
 	if (fp)
 		*fp = f;
 	else
@@ -228,139 +280,145 @@ int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *
 	return TRUE;
 }
 
-/* Create CAS file header for saving data to tape */
-int CASSETTE_CreateFile(const char *filename, FILE **fp, int *isCAS)
+/* Write the initial FUJI and baud blocks of the CAS file. */
+static int WriteInitialBlocks(FILE *fp, char const *description)
 {
 	CAS_Header header;
+	size_t desc_len = strlen(description);
 	memset(&header, 0, sizeof(header));
-
-	/* if no file pointer location was given, this function is senseless */
-	if (fp == NULL)
-		return FALSE;
-	/* close if open */
-	if (*fp != NULL)
-		fclose(*fp);
-	/* create new file */
-	*fp = fopen(filename, "wb");
-	if (*fp == NULL)
-		return FALSE;
-
 	/* write CAS-header */
-	{
-		size_t desc_len = strlen(cassette_description);
-		header.length_lo = (UBYTE) desc_len;
-		header.length_hi = (UBYTE) (desc_len >> 8);
-		if (fwrite("FUJI", 1, 4, *fp) == 4
-		 && fwrite(&header.length_lo, 1, 4, *fp) == 4
-		 && fwrite(cassette_description, 1, desc_len, *fp) == desc_len) {
-			/* ok */
-		}
-		else {
-			fclose(*fp);
-			*fp = NULL;
-			return FALSE;
-		}
-	}
+	header.length_lo = (UBYTE) desc_len;
+	header.length_hi = (UBYTE) (desc_len >> 8);
+	if (fwrite("FUJI", 1, 4, fp) != 4
+	    || fwrite(&header.length_lo, 1, 4, fp) != 4
+	    || fwrite(description, 1, desc_len, fp) != desc_len)
+		return FALSE;
 
 	memset(&header, 0, sizeof(header));
-	header.aux_lo = cassette_baudrate & 0xff;	/* provisional: 600 baud */
+	header.aux_lo = cassette_baudrate & 0xff; /* provisional: 600 baud */
 	header.aux_hi = cassette_baudrate >> 8;
-	if ((fwrite("baud", 1, 4, *fp) == 4)
-	 && (fwrite(&header.length_lo, 1, 4, *fp) == 4)) {
-		/* ok */
-	}
-	else {
-		fclose(*fp);
-		*fp = NULL;
+	if (fwrite("baud", 1, 4, fp) != 4
+	    || fwrite(&header.length_lo, 1, 4, fp) != 4)
 		return FALSE;
-	};
-
-	/* file is now a cassette file */
-	*isCAS = TRUE;
 	return TRUE;
 }
 
-int CASSETTE_Insert(const char *filename)
-{
-	CASSETTE_Remove();
-	strcpy(cassette_filename, filename);
+int CASSETTE_CreateCAS(const char *filename, const char *description) {
+	FILE *fp = NULL;
+	/* create new file */
+	fp = fopen(filename, "wb+");
+	if (fp == NULL)
+		return FALSE;
+
+	if (!WriteInitialBlocks(fp, description)) {
+		fclose(fp);
+		return FALSE;
+	}
+
+	CASSETTE_Remove(); /* Unmount any previous tape image. */
+	cassette_file = fp;
+	Util_strlcpy(CASSETTE_filename, filename, sizeof(CASSETTE_filename));
+	if (description != NULL)
+		Util_strlcpy(CASSETTE_description, description, sizeof(CASSETTE_description));
+	cassette_isCAS = TRUE;
 	cassette_elapsedtime = 0;
 	cassette_savetime = 0;
 	cassette_nextirqevent = 0;
 	cassette_current_blockbyte = 0;
 	cassette_max_blockbytes = 0;
-	cassette_current_block = 1;
+	CASSETTE_current_block = 1;
+	CASSETTE_max_block = 0;
+	cassette_block_offset[0] = strlen(description) + 16;
 	cassette_gapdelay = 0;
 	eof_of_tape = 0;
-	cassette_savefile = FALSE;
 	cassette_baudrate = 600;
-	return CASSETTE_CheckFile(filename, &cassette_file, cassette_description,
-		 &cassette_max_block, &cassette_isCAS);
+	CASSETTE_record = TRUE;
+	CASSETTE_status = CASSETTE_STATUS_READ_WRITE;
+	UpdateFlags();
+	
+	return TRUE;
+}
+
+int CASSETTE_Insert(const char *filename)
+{
+	int writable;
+	CASSETTE_Remove();
+	/* Guard against providing CASSETTE_filename as parameter. */
+	if (CASSETTE_filename != filename)
+		strcpy(CASSETTE_filename, filename);
+	cassette_elapsedtime = 0;
+	cassette_savetime = 0;
+	cassette_nextirqevent = 0;
+	cassette_current_blockbyte = 0;
+	cassette_max_blockbytes = 0;
+	CASSETTE_current_block = 1;
+	cassette_gapdelay = 0;
+	eof_of_tape = 0;
+	cassette_baudrate = 600;
+	if (!CASSETTE_CheckFile(filename, &cassette_file, CASSETTE_description,
+	                        &CASSETTE_max_block, &cassette_isCAS, &writable))
+		return FALSE;
+	if (cassette_isCAS)
+		CASSETTE_status = (writable ? CASSETTE_STATUS_READ_WRITE : CASSETTE_STATUS_READ_ONLY);
+	else /* No support for writing raw files */
+		CASSETTE_status = CASSETTE_STATUS_READ_ONLY;
+	CASSETTE_record = FALSE;
+	UpdateFlags();
+	return TRUE;
 }
 
 void CASSETTE_Remove(void)
 {
 	if (cassette_file != NULL) {
 		/* save last block, ignore trailing space tone */
-		if ((cassette_current_blockbyte > 0) && cassette_savefile)
+		if ((cassette_current_blockbyte > 0) && cassette_writable && CASSETTE_record)
 			CASSETTE_Write(cassette_current_blockbyte);
 
 		fclose(cassette_file);
 		cassette_file = NULL;
 	}
-	cassette_max_block = 0;
-	strcpy(cassette_filename, "None");
-	memset(cassette_description, 0, sizeof(cassette_description));
+	CASSETTE_max_block = 0;
+	CASSETTE_status = CASSETTE_STATUS_NONE;
+	CASSETTE_description[0] = '\0';
+	UpdateFlags();
 }
 
-/* Read a record by SIO-patch
-   returns block length (with checksum) */
-static int ReadRecord_SIO(void)
+/* Read a record from the file. Returns block length (with checksum).
+   Writes length of pre-record gap (in ms) into *gap. */
+static int ReadRecord(int *gap)
 {
 	int length = 0;
 	if (cassette_isCAS) {
 		CAS_Header header;
-		/* if waiting for gap was longer than gap of record, skip
-		   atm there is no check if we start then inmidst a record */
-		int filegaptimes = 0;
-		while (cassette_gapdelay >= filegaptimes) {
-			if (cassette_current_block > cassette_max_block) {
-				length = -1;
-				break;
-			};
-			fseek(cassette_file, cassette_block_offset[cassette_current_block], SEEK_SET);
-			if (fread(&header.length_lo, 1, 4, cassette_file) < 4) {
-				Log_print("Error reading cassette file.\n");
-			}
-			length = header.length_lo + (header.length_hi << 8);
-			/* add gaplength */
-			filegaptimes += header.aux_lo + (header.aux_hi << 8);
-			/* add time used by the data themselves
-			   a byte is encoded into 10 bits */
-			filegaptimes += length * 10 * 1000 / cassette_baudblock[cassette_current_block];
 
-			if (fread(&CASSETTE_buffer[0], 1, length, cassette_file) < length) {
-				Log_print("Error reading cassette file.\n");
-			}
-			cassette_current_block++;
+		/* While reading a block, offset by 4 to skip its 4-byte name (assume it's "data") */
+		fseek(cassette_file, cassette_block_offset[CASSETTE_current_block-1] + 4, SEEK_SET);
+		if (fread(&header.length_lo, 1, 4, cassette_file) < 4) {
+			Log_print("Error reading cassette file.\n");
 		}
-		cassette_gapdelay = 0;
+		length = header.length_lo + (header.length_hi << 8);
+		*gap = header.aux_lo + (header.aux_hi << 8);
+		/* read block into buffer */
+		if (fread(&CASSETTE_buffer[0], 1, length, cassette_file) < length) {
+			Log_print("Error reading cassette file.\n");
+		}
 	}
 	else {
 		length = 132;
+		*gap = (CASSETTE_current_block == 1 ? 19200 : 260);
 		CASSETTE_buffer[0] = 0x55;
 		CASSETTE_buffer[1] = 0x55;
-		if (cassette_current_block >= cassette_max_block) {
+		if (CASSETTE_current_block >= CASSETTE_max_block) {
 			/* EOF record */
 			CASSETTE_buffer[2] = 0xfe;
 			memset(CASSETTE_buffer + 3, 0, 128);
 		}
 		else {
 			int bytes;
-			fseek(cassette_file, (cassette_current_block - 1) * 128, SEEK_SET);
+			fseek(cassette_file, (CASSETTE_current_block - 1) * 128, SEEK_SET);
 			bytes = fread(CASSETTE_buffer + 3, 1, 128, cassette_file);
 			if (bytes < 128) {
-				CASSETTE_buffer[2] = 0xfa;	/* non-full record */
+				CASSETTE_buffer[2] = 0xfa; /* non-full record */
 				memset(CASSETTE_buffer + 3 + bytes, 0, 127 - bytes);
 				CASSETTE_buffer[0x82] = bytes;
 			}
@@ -368,18 +426,45 @@ static int ReadRecord_SIO(void)
 				CASSETTE_buffer[2] = 0xfc;	/* full record */
 		}
 		CASSETTE_buffer[0x83] = SIO_ChkSum(CASSETTE_buffer, 0x83);
-		cassette_current_block++;
 	}
+	return length;
+}
+
+/* Read a record by SIO-patch
+   returns block length (with checksum) */
+static int ReadRecord_SIO(void)
+{
+	int length = 0;
+	/* if waiting for gap was longer than gap of record, skip
+	   atm there is no check if we start then inmidst a record */
+	int filegaptimes = 0;
+	while (cassette_gapdelay >= filegaptimes) {
+		int gap;
+		if (CASSETTE_current_block > CASSETTE_max_block) {
+			length = -1;
+			eof_of_tape = 1;
+			UpdateFlags();
+			break;
+		};
+		length = ReadRecord(&gap);
+		/* add gaplength */
+		filegaptimes += gap;
+		/* add time used by the data themselves
+		   a byte is encoded into 10 bits */
+		filegaptimes += length * 10 * 1000 / cassette_baudblock[CASSETTE_current_block-1];
+		CASSETTE_current_block++;
+	}
+	cassette_gapdelay = 0;
 	return length;
 }
 
 static UWORD WriteRecord(int len)
 {
 	CAS_Header header;
-	memset(&header, 0, sizeof(header));
 
 	/* always append */
-	fseek(cassette_file, 0, SEEK_END);
+	if (fseek(cassette_file, cassette_block_offset[CASSETTE_max_block], SEEK_SET) != 0)
+		return FALSE;
 	/* write recordheader */
 	Util_strncpy(header.identifier, "data", 4);
 	header.length_lo = len & 0xFF;
@@ -387,9 +472,13 @@ static UWORD WriteRecord(int len)
 	header.aux_lo = cassette_gapdelay & 0xff;
 	header.aux_hi = (cassette_gapdelay >> 8) & 0xff;
 	cassette_gapdelay = 0;
-	fwrite(&header, 1, 8, cassette_file);
-	cassette_max_block++;
-	cassette_current_block++;
+	if (fwrite(&header, 1, 8, cassette_file) != 8)
+		return FALSE;
+	/* Saving is supported only with standard baudrate. */
+	cassette_baudblock[CASSETTE_max_block] = 600;
+	CASSETTE_max_block++;
+	cassette_block_offset[CASSETTE_max_block] = cassette_block_offset[CASSETTE_max_block - 1] + len + 8;
+	CASSETTE_current_block = CASSETTE_max_block + 1;
 	/* write record */
 	return fwrite(&CASSETTE_buffer, 1, len, cassette_file);
 }
@@ -405,6 +494,9 @@ int CASSETTE_AddGap(int gaptime)
 /* Indicates that a loading leader is expected by the OS */
 void CASSETTE_LeaderLoad(void)
 {
+	if (CASSETTE_record)
+	CASSETTE_ToggleRecord();
+	CASSETTE_TapeMotor(TRUE);
 	cassette_gapdelay = 9600;
 	/* registers for SETVBV: third system timer, ~0.1 sec */
 	CPU_regA = 3;
@@ -415,11 +507,15 @@ void CASSETTE_LeaderLoad(void)
 /* indicates that a save leader is written by the OS */
 void CASSETTE_LeaderSave(void)
 {
+	if (!CASSETTE_record)
+	CASSETTE_ToggleRecord();
+	CASSETTE_TapeMotor(TRUE);
 	cassette_gapdelay = 19200;
 	/* registers for SETVBV: third system timer, ~0.1 sec */
 	CPU_regA = 3;
 	CPU_regX = 0;
 	CPU_regY = 5;
+	eof_of_tape = 0;
 }
 
 /* Read Cassette Record from Storage medium
@@ -428,12 +524,10 @@ void CASSETTE_LeaderSave(void)
     must be split and a baud chunk inserted inbetween) or -1 for error */
 int CASSETTE_Read(void)
 {
-	/* no file or blockpositions don't match anymore after saving */
-	if ((cassette_file == NULL) || (cassette_savefile == TRUE))
+	if (!cassette_readable)
 		return -1;
-	if (cassette_current_block > cassette_max_block)
-		return -1; /* EOF */
 	return ReadRecord_SIO();
+	
 }
 
 /* Write Cassette Record to Storage medium
@@ -441,21 +535,38 @@ int CASSETTE_Read(void)
   returns really written bytes, -1 for error */
 int CASSETTE_Write(int length)
 {
-	/* there must be a filename given for saving */
-	if (strcmp(cassette_filename, "None") == 0)
-		return -1;
-	/* if file doesn't exist (or has no records), create the header */
-	if ((cassette_file == NULL || ftell(cassette_file) == 0) &&
-			(CASSETTE_CreateFile(cassette_filename,
-			&cassette_file,&cassette_isCAS) == FALSE))
+	/* File must be writable */
+	if (!cassette_writable)
 		return -1;
 	/* on a raw file, saving is denied because it can hold
 	    only 1 file and could cause confusion */
-	if (cassette_isCAS == FALSE)
+	if (!cassette_isCAS)
 		return -1;
-	/* save record (always appends to the end of file) */
-	cassette_savefile = TRUE;
+
 	return WriteRecord(length);
+}
+
+void CASSETTE_Seek(unsigned int position)
+{
+	if (CASSETTE_status != CASSETTE_STATUS_NONE) {
+		/* save last block */
+		if (cassette_current_blockbyte > 0 && cassette_writable && CASSETTE_record)
+			CASSETTE_Write(cassette_current_blockbyte);
+
+		CASSETTE_current_block = (int)position;
+		if (CASSETTE_current_block > CASSETTE_max_block + 1)
+			CASSETTE_current_block = CASSETTE_max_block + 1;
+		cassette_elapsedtime = 0;
+		cassette_savetime = 0;
+		cassette_nextirqevent = 0;
+		cassette_current_blockbyte = 0;
+		cassette_max_blockbytes = 0;
+		cassette_gapdelay = 0;
+		eof_of_tape = 0;
+		cassette_baudrate = 600;
+		CASSETTE_record = FALSE;
+		UpdateFlags();
+	}
 }
 
 /* convert milliseconds to scanlines */
@@ -471,87 +582,29 @@ static SLONG MSToScanLines(int ms)
 static int ReadRecord_POKEY(void)
 {
 	int length = 0;
-	if (cassette_isCAS) {
-		CAS_Header header;
-		/* no file or blockpositions don't match anymore after saving */
-		if ((cassette_file == NULL) || (cassette_savefile == TRUE)) {
-			cassette_nextirqevent = -1;
-			length = -1;
-			return length;
-		}
-		/* if end of CAS file */
-		if (cassette_current_block > cassette_max_block){
-			cassette_nextirqevent = -1;
-			length = -1;
-			eof_of_tape = 1;
-			return length;
-		}
-		else {
-			fseek(cassette_file, cassette_block_offset[
-				cassette_current_block], SEEK_SET);
-			if (fread(&header.length_lo, 1, 4, cassette_file) < 4) {
-				Log_print("Error reading cassette file.\n");
-			}
-			length = header.length_lo + (header.length_hi << 8);
-			/* eval total length as pregap + 1 byte */
-			cassette_nextirqevent = cassette_elapsedtime +
-				MSToScanLines(
-				header.aux_lo + (header.aux_hi << 8)
-				+ 10 * 1000 / cassette_baudblock[
-				cassette_current_block]);
-			/* read block into buffer */
-			if (fread(&CASSETTE_buffer[0], 1, length, cassette_file) < length) {
-				Log_print("Error reading cassette file.\n");
-			}
-			cassette_max_blockbytes = length;
-			cassette_current_blockbyte = 0;
-			cassette_current_block++;
-		}
+	int gap = 0;
+	/* no file or blockpositions don't match anymore after saving */
+	if (!cassette_readable) {
+		cassette_nextirqevent = -1;
+		length = -1;
+		return length;
 	}
-	else {
-		length = 132;
-		CASSETTE_buffer[0] = 0x55;
-		CASSETTE_buffer[1] = 0x55;
-		if (cassette_current_block >= cassette_max_block) {
-			/* EOF record */
-			CASSETTE_buffer[2] = 0xfe;
-			memset(CASSETTE_buffer + 3, 0, 128);
-			if (cassette_current_block > cassette_max_block) {
-				eof_of_tape = 1;
-			}
-		}
-		else {
-			int bytes;
-			fseek(cassette_file,
-				(cassette_current_block - 1) * 128, SEEK_SET);
-			bytes = fread(CASSETTE_buffer + 3, 1, 128,
-				cassette_file);
-			if (bytes < 128) {
-				CASSETTE_buffer[2] = 0xfa; /* non-full record */
-				memset(CASSETTE_buffer + 3 + bytes, 0,
-					127 - bytes);
-				CASSETTE_buffer[0x82] = bytes;
-			}
-			else
-				CASSETTE_buffer[2] = 0xfc; /* full record */
-		}
-		CASSETTE_buffer[0x83] = SIO_ChkSum(CASSETTE_buffer, 0x83);
-		/* eval time to first byte coming out of pokey */
-		if (cassette_current_block == 1) {
-			/* on first block, length includes a leader */
-			cassette_nextirqevent = cassette_elapsedtime +
-				MSToScanLines(19200
-				+ 10 * 1000 / 600); /* always 600 baud */
-		}
-		else {
-			cassette_nextirqevent = cassette_elapsedtime +
-				MSToScanLines(260
-				+ 10 * 1000 / 600); /* always 600 baud */
-		}
-		cassette_max_blockbytes = length;
-		cassette_current_blockbyte = 0;
-		cassette_current_block++;
+	/* if end of CAS file */
+	if (CASSETTE_current_block > CASSETTE_max_block){
+		cassette_nextirqevent = -1;
+		length = -1;
+		eof_of_tape = 1;
+		UpdateFlags();
+		return length;
 	}
+	length = ReadRecord(&gap);
+	/* eval total length as pregap + 1 byte */
+	cassette_nextirqevent = cassette_elapsedtime +
+	                        MSToScanLines(gap + 10 * 1000 /
+	                                      (cassette_isCAS ? cassette_baudblock[CASSETTE_current_block-1] : 600)
+	                                     );
+	cassette_max_blockbytes = length;
+	cassette_current_blockbyte = 0;
 	return length;
 }
 
@@ -565,10 +618,14 @@ static int SetNextByteTime_POKEY(int adjust)
 	if (cassette_current_blockbyte < cassette_max_blockbytes) {
 		cassette_nextirqevent = cassette_elapsedtime + adjust
 			+ MSToScanLines(10 * 1000 / (cassette_isCAS?cassette_baudblock[
-			cassette_current_block-1]:600));
+			CASSETTE_current_block-1]:600));
 		return 0;
 	}
 
+	/* 0 indicates that there was no previous block being read and
+	   CASSETTE_current_block should not be increased. */
+	if (cassette_max_blockbytes != 0)
+		CASSETTE_current_block++;
 	/* if buffer is exhausted, load next record */
 	length = ReadRecord_POKEY();
 	/* if failed, return -1 */
@@ -583,8 +640,11 @@ static int SetNextByteTime_POKEY(int adjust)
 /* Get the byte for which the serial data ready int has been triggered */
 int CASSETTE_GetByte(void)
 {
-	/* there are programs which load 2 blocks as one */
-	return CASSETTE_buffer[cassette_current_blockbyte];
+	if (cassette_readable)
+		/* there are programs which load 2 blocks as one */
+		return CASSETTE_buffer[cassette_current_blockbyte];
+	else
+		return 0;
 }
 
 /* Check status of I/O-line
@@ -597,19 +657,18 @@ int CASSETTE_IOLineStatus(void)
 	int bit = 0;
 
 	/* if motor off and EOF return always 1 (equivalent the mark tone) */
-	if ((cassette_motor == 0)
-		|| (eof_of_tape != 0)) {
+	if (!cassette_readable || CASSETTE_record) {
 		return 1;
 	}
 
 	/* exam rate; if elapsed time > nextirq - duration of one byte */
 	if (cassette_elapsedtime >
 		(cassette_nextirqevent - 10 * 50 * 312 / 
-		(cassette_isCAS?cassette_baudblock[cassette_current_block-1]:
+		(cassette_isCAS?cassette_baudblock[CASSETTE_current_block-1]:
 		600) + 1)) {
 		bit = (cassette_nextirqevent - cassette_elapsedtime)
 			/ (50 * 312 / (cassette_isCAS?cassette_baudblock[
-			cassette_current_block-1]:600));
+			CASSETTE_current_block-1]:600));
 	}
 	else {
 		bit = 0;
@@ -634,27 +693,21 @@ int CASSETTE_GetInputIRQDelay(void)
 	int timespan;
 
 	/* if no file or eof or motor off, return zero */
-	if ((cassette_file == NULL)
-		|| (eof_of_tape != 0)
-		|| (cassette_motor == 0)
-		|| (cassette_nextirqevent < 0)
-		|| cassette_savefile) {
+	if (ESC_enable_sio_patch || !cassette_readable || CASSETTE_record || cassette_nextirqevent < 0)
 		return 0;
-	}
 
 	/* return time span */
 	timespan = cassette_nextirqevent - cassette_elapsedtime;
 	/* if timespan is negative, eval timespan to next byte */
 	if (timespan <= 0) {
-		if (SetNextByteTime_POKEY(0) == -1) {
+		if (SetNextByteTime_POKEY(0) == -1)
 			return -1;
-		}
 		/* return time span */
 		timespan = cassette_nextirqevent - cassette_elapsedtime;
 	}
 	if (timespan < 40) {
 		timespan += ((312 * 50 - 1) / (cassette_isCAS?cassette_baudblock[
-			cassette_current_block-1]:600)) * 10;
+			CASSETTE_current_block-1]:600)) * 10;
 	}
 
 	/* if still negative, return "failed" */
@@ -664,37 +717,33 @@ int CASSETTE_GetInputIRQDelay(void)
 	return timespan;
 }
 
-/* return if save file */
-int CASSETTE_IsSaveFile(void)
-{
-	return cassette_savefile;
-}
-
 /* put a byte into the cas file */
 /* the block is being written at first putbyte of the subsequent block */
 void CASSETTE_PutByte(int byte)
 {
-	/* get time since last byte-put resp. motor on */
-	cassette_putdelay = 1000*(cassette_elapsedtime-cassette_savetime)/312/50;
-	/* subtract one byte-duration from put delay */
-	cassette_putdelay -= 1000 * 10 * (POKEY_AUDF[POKEY_CHAN3] + POKEY_AUDF[POKEY_CHAN4]*0x100)/895000;
-	/* if putdelay > 5 (ms) */
-	if (cassette_putdelay > 05) {
+	if (!ESC_enable_sio_patch && cassette_writable && CASSETTE_record) {
+		/* get time since last byte-put resp. motor on */
+		int cassette_putdelay = 1000*(cassette_elapsedtime-cassette_savetime)/312/50; /* in ms, delay since last putbyte */
+		/* subtract one byte-duration from put delay */
+		cassette_putdelay -= 1000 * 10 * (POKEY_AUDF[POKEY_CHAN3] + POKEY_AUDF[POKEY_CHAN4]*0x100)/895000;
+		/* if putdelay > 5 (ms) */
+		if (cassette_putdelay > 05) {
 
-		/* write previous block */
-		if (cassette_current_blockbyte > 0) {
-			CASSETTE_Write(cassette_current_blockbyte);
-			cassette_current_blockbyte = 0;
-			cassette_gapdelay = 0;
+			/* write previous block */
+			if (cassette_current_blockbyte > 0) {
+				CASSETTE_Write(cassette_current_blockbyte);
+				cassette_current_blockbyte = 0;
+				cassette_gapdelay = 0;
+			}
+			/* set new gap-time */
+			cassette_gapdelay += cassette_putdelay;
 		}
-		/* set new gap-time */
-		cassette_gapdelay += cassette_putdelay;
+		/* put byte into buffer */
+		CASSETTE_buffer[cassette_current_blockbyte] = byte;
+		cassette_current_blockbyte++;
+		/* set new last byte-put time */
+		cassette_savetime = cassette_elapsedtime;
 	}
-	/* put byte into buffer */
-	CASSETTE_buffer[cassette_current_blockbyte] = byte;
-	cassette_current_blockbyte++;
-	/* set new last byte-put time */
-	cassette_savetime = cassette_elapsedtime;
 }
 
 /* set motor status
@@ -702,16 +751,16 @@ void CASSETTE_PutByte(int byte)
  remark: the real evaluation is done in AddScanLine*/
 void CASSETTE_TapeMotor(int onoff)
 {
-	if (cassette_file != NULL) {
-		if (cassette_savefile) { /* cas save */
-			if (onoff != cassette_motor) {
+	if (cassette_motor != onoff) {
+		if (!ESC_enable_sio_patch) {
+			if (cassette_writable && CASSETTE_record) {
 				if (onoff == 0) {
 					/* get time since last byte-put resp. motor on */
-					cassette_putdelay = 1000*(cassette_elapsedtime-cassette_savetime)/312/50;
+					int cassette_putdelay = 1000*(cassette_elapsedtime-cassette_savetime)/312/50; /* in ms, delay since last putbyte */
 					/* subtract one byte-duration from put delay */
 					cassette_putdelay -= 1000*10 * (POKEY_AUDF[POKEY_CHAN3] + POKEY_AUDF[POKEY_CHAN4]*0x100)/895000;
 					/* set putdelay non-negative */
-        				if (cassette_putdelay < 0) {
+					if (cassette_putdelay < 0) {
 						cassette_putdelay = 0;
 					}
 					/* write block from buffer */
@@ -722,22 +771,37 @@ void CASSETTE_TapeMotor(int onoff)
 					}
 					/* set new gap-time */
 					cassette_gapdelay += cassette_putdelay;
-
 				}
 				else {
 					/* motor on if it was off - restart gap time */
 					cassette_savetime = cassette_elapsedtime;
 				}
-				cassette_motor = onoff;
+			}
+			else if (cassette_readable) {
+				if (onoff == 1)
+					cassette_savetime = cassette_elapsedtime;
 			}
 		}
-		else {
-			cassette_motor = onoff;
-			/* restart gap time */
-			if (onoff == 1)
-				cassette_savetime = cassette_elapsedtime;
-		};
+		cassette_motor = onoff;
+		UpdateFlags();
 	}
+}
+
+void CASSETTE_ToggleRecord(void)
+{
+	if ((cassette_current_blockbyte > 0) && cassette_writable && CASSETTE_record)
+		CASSETTE_Write(cassette_current_blockbyte);
+	CASSETTE_record = !CASSETTE_record;
+	cassette_elapsedtime = 0;
+	cassette_savetime = 0;
+	cassette_nextirqevent = 0;
+	cassette_current_blockbyte = 0;
+	cassette_max_blockbytes = 0;
+	cassette_gapdelay = 0;
+	cassette_baudrate = 600;
+	if (CASSETTE_record)
+		eof_of_tape = 0;
+	UpdateFlags();
 }
 
 void CASSETTE_AddScanLine(void)
@@ -745,8 +809,7 @@ void CASSETTE_AddScanLine(void)
 	int tmp;
 	/* if motor on and a cassette file is opened, and not eof */
 	/* increment elapsed cassette time */
-	if (cassette_motor && (cassette_file != NULL)
-		&& ((eof_of_tape == 0) || cassette_savefile)) {
+	if (cassette_readable || cassette_writable) {
 		cassette_elapsedtime++;
 
 		/* only for loading: set next byte interrupt time */
@@ -754,8 +817,7 @@ void CASSETTE_AddScanLine(void)
 		   a time span of 18 scanlines, so comparing with
 		   -2 leaves a safe timespan for letting get the bit out
 		   of the pokey */
-		if (((cassette_nextirqevent - cassette_elapsedtime) <= -2)
-			&& !cassette_savefile) {
+		if (cassette_readable && !CASSETTE_record && cassette_nextirqevent - cassette_elapsedtime <= -2) {
 			tmp = SetNextByteTime_POKEY(-2);
 		}
 	}
