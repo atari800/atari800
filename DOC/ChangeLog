@@ -12,6 +12,8 @@
   Added the Alt+T shortcut to the new Tape Management menu. The "tilt screen"
   in the Win32 port has been remapped to Alt+Shift+Z to avoid conflict.
 
+* DOC/USAGE: Updated the "Cassette operation" section with the new features.
+
 
 2011-05-05  Petr Stehlik <pstehlik@sophics.cz>
 * atari800.spec: David Bolt has provided an update that allows building

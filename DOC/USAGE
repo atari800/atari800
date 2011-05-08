@@ -17,13 +17,51 @@ to the drive 1, next one to the drive 2, etc.
 
 Cassette operation
 ==================
+There is support for loading and saving from/to CAS tape images. It is also
+possible to select raw files (DOS binaries, bootable programs, BASIC programs
+etc.) as tape images, but only for loading. Upon attaching a tape image, the
+emulator acts as if the tape recorder's "Play" button was permanently pressed,
+so that a tape rolls automatically when an Atari program turns the tape motor
+on.
 
-As there is no possibility to create a new tape from the UI yet, create a file
-of zero size (e.g. with 'touch' command or a text editor) and Select that
-as tape if you want to save to tape.
-Appending to existing tapes is not allowed. You have to re-insert (select
-again in the tape dialog) a just saved tape when you want to load from it
-in order to rewind it.
+Turning the SIO patch on speeds up the tape load and save operations. Note
+that toggling the SIO patch during any tape operation will cause it to fail.
+
+A tape image can be rewound to a specific part (block), to allow loading
+from tape images which contain multiple programs one-after-another. After
+rewinding the "Record" option is automatically turned off. Rewinding will
+cause any tape operation being in progress to fail.
+
+When a tape image is attached to Atari800, only loading from it is possible.
+Before saving data on the tape, a user has to manually switch the "Record"
+option to "yes", in the same way as one would manually press/release the
+"Record" button on a physical tape recorder. Remember to disable the "Record"
+option before loading from tape. Note that switching the "Record" option
+on/off during any tape operation will cause it to fail and may cause random
+data to be saved to a tape image.
+
+With the SIO patch active, the emulator automatically recognises whether
+a load or save operation is requested. and it is not necessary to touch the
+"Record" option.
+
+Saving to tape always casues the new blocks to be appended at the end of the
+tape image, regardless of the tape's current position. It is not possible
+to overwrite existing data on the tape.
+
+A user can create a new empty CAS tape image with the "Make blank tape"
+option. The user then provides the image's filename and its description
+(stored in the CAS image's header; may be left empty). The created image is
+automatically attached to Atari800 with the "Record" option turned on, which
+allows to go straight to saving the data. Creating an image with the filename
+pointing to an existing file will cause that file to be cleared.
+
+Only standard blocks can be loaded or saved. Any copy protection that relies
+on non-standard signals is not supported. Additionally, saving is only
+supported with the standard speed of 600 baud.
+
+Saving the emulator's state during a tape loading/saving is not supported. The
+current tape operation is not stored in the savestate and it will not be
+restored properly when that savestate is later loaded.
 
 MIO and Black Box
 ==================
@@ -358,6 +396,7 @@ F12                  Turbo mode
 Alt+R                Run Atari program
 Alt+D                Disk management
 Alt+C                Cartridge management
+Alt+T                Tape management
 Alt+Y                Select system
 Alt+O                Sound settings
 Alt+W                Sound recording start/stop
