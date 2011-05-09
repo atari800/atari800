@@ -1,3 +1,8 @@
+2011-05-09  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* pia.c: Fixed a bug with PIA's tape motor state and COMMAND line state not
+  being restored on loading of a savestate.
+
+
 2011-05-08  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * atari.c, cassette.[ch], cfg.c, screen.c, sio.c, ui.c: Added support for
   switching bettween tape loading/saving without need to re-attach a tape

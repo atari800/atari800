@@ -200,9 +200,16 @@ void PIA_StateSave(void)
 void PIA_StateRead(void)
 {
 	int Ram256 = 0;
+	UBYTE byte;
 
 	StateSav_ReadUBYTE( &PIA_PACTL, 1 );
-	StateSav_ReadUBYTE( &PIA_PBCTL, 1 );
+	SIO_TapeMotor(PIA_PACTL & 0x08 ? 0 : 1);
+	StateSav_ReadUBYTE( &byte, 1 );
+	if ((PIA_PBCTL ^ byte) & 0x08) {
+		/* The command line status has changed. */
+		SIO_SwitchCommandFrame(byte & 0x08 ? 0 : 1);
+	}
+	PIA_PBCTL = byte;
 	StateSav_ReadUBYTE( &PIA_PORTA, 1 );
 	StateSav_ReadUBYTE( &PIA_PORTB, 1 );
 
