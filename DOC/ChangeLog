@@ -2,6 +2,8 @@
 * pia.c: Fixed a bug with PIA's tape motor state and COMMAND line state not
   being restored on loading of a savestate.
 
+* screen.c: Display SIO activity for tapes only when a tape image is attached.
+
 
 2011-05-08  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * atari.c, cassette.[ch], cfg.c, screen.c, sio.c, ui.c: Added support for

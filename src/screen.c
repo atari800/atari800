@@ -393,17 +393,19 @@ void Screen_DrawDiskLED(void)
 		screen = (UBYTE *) Screen_atari + Screen_visible_x2 - SMALLFONT_WIDTH
 			+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * Screen_WIDTH;
 		if (SIO_last_drive == 0x60 || SIO_last_drive == 0x61) {
-			if (Screen_show_disk_led)
-				SmallFont_DrawChar(screen, SMALLFONT_C, 0x00, (UBYTE) (CASSETTE_record ? 0x2b : 0xac));
+			if (CASSETTE_status != CASSETTE_STATUS_NONE) {
+				if (Screen_show_disk_led)
+					SmallFont_DrawChar(screen, SMALLFONT_C, 0x00, (UBYTE) (CASSETTE_record ? 0x2b : 0xac));
 
-			if (Screen_show_sector_counter) {
-				/* Displaying tape length during saving is pointless since it would equal the number
-				   of the currently-written block, which is already displayed. */
-				if (!CASSETTE_record) {
-					screen = SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_max_block, 0x00, 0x88);
-					SmallFont_DrawChar(screen, SMALLFONT_SLASH, 0x00, 0x88);
+				if (Screen_show_sector_counter) {
+					/* Displaying tape length during saving is pointless since it would equal the number
+					of the currently-written block, which is already displayed. */
+					if (!CASSETTE_record) {
+						screen = SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_max_block, 0x00, 0x88);
+						SmallFont_DrawChar(screen, SMALLFONT_SLASH, 0x00, 0x88);
+					}
+					SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_current_block, 0x00, 0x88);
 				}
-				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_current_block, 0x00, 0x88);
 			}
 		}
 		else {
@@ -411,7 +413,7 @@ void Screen_DrawDiskLED(void)
 				SmallFont_DrawChar(screen, SIO_last_drive, 0x00, (UBYTE) (SIO_last_op == SIO_LAST_READ ? 0xac : 0x2b));
 				SmallFont_DrawChar(screen -= SMALLFONT_WIDTH, SMALLFONT_D, 0x00, (UBYTE) (SIO_last_op == SIO_LAST_READ ? 0xac : 0x2b));
 			}
-		
+
 			if (Screen_show_sector_counter)
 				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, SIO_last_sector, 0x00, 0x88);
 		}
