@@ -4,6 +4,13 @@
 
 * screen.c: Display SIO activity for tapes only when a tape image is attached.
 
+* cassette.[ch], sio.c: Fixed a segfault when reading tape blocks longer than
+  4096 bytes, by dynamically allocationg memory when needed. Blocks loaded
+  with SIO patch are now copied to Atari memory even when they are too short
+  or the checksum is wrong - this duplicates the behaviour of the unpatched
+  system. CASSETTE_buffer no longer used outside cassette.c, so it's made
+  static.
+
 
 2011-05-08  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * atari.c, cassette.[ch], cfg.c, screen.c, sio.c, ui.c: Added support for

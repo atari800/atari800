@@ -44,8 +44,16 @@ void CASSETTE_ToggleRecord(void);
 int CASSETTE_AddGap(int gaptime);
 void CASSETTE_LeaderLoad(void);
 void CASSETTE_LeaderSave(void);
-int CASSETTE_Read(void);
-int CASSETTE_Write(int length);
+/* Reads a record from tape and copies its contents (max. LENGTH bytes,
+   excluding the trailing checksum) to memory starting at address DEST_ADDR.
+   Returns FALSE if number of bytes in record doesn't equal LENGTH, or
+   checksum is incorrect, or there was a read error/end of file; otherwise
+   returns TRUE. */
+int CASSETTE_ReadToMemory(UWORD dest_addr, int length);
+/* Reads LENGTH bytes from memory starting at SRC_ADDR and writes them as
+   a record (with added checksum) to tape. Returns FALSE if there was a write
+   error, TRUE otherwise. */
+int CASSETTE_WriteFromMemory(UWORD src_addr, int length);
 void CASSETTE_Seek(unsigned int position);
 int CASSETTE_IOLineStatus(void);
 int CASSETTE_GetByte(void);
@@ -53,6 +61,5 @@ int CASSETTE_GetInputIRQDelay(void);
 void CASSETTE_PutByte(int byte);
 void CASSETTE_TapeMotor(int onoff);
 void CASSETTE_AddScanLine(void);
-extern UBYTE CASSETTE_buffer[4096];
 
 #endif /* CASSETTE_H_ */

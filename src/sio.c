@@ -1233,44 +1233,31 @@ void SIO_Handler(void)
 	}
 	/* cassette i/o */
 	else if (MEMORY_dGetByte(0x300) == 0x60) {
-		int storagelength = 0;
 		UBYTE gaps = MEMORY_dGetByte(0x30b);
 		switch (cmd){
 		case 0x52:	/* read */
-			/* set expected Gap */
-			CASSETTE_AddGap(gaps == 0 ? 2000 : 160);
 			SIO_last_op = SIO_LAST_READ;
 			SIO_last_drive = 0x61;
 			SIO_last_op_time = 0x10;
+			/* set expected Gap */
+			CASSETTE_AddGap(gaps == 0 ? 2000 : 160);
 			/* get record from storage medium */
-			storagelength = CASSETTE_Read();
-			if (storagelength - 1 != length)	/* includes -1 as error */
-				result = 'E';
-			else
+			if (CASSETTE_ReadToMemory(data, length))
 				result = 'C';
-			/* check checksum */
-			if (CASSETTE_buffer[length] != SIO_ChkSum(CASSETTE_buffer, length))
+			else
 				result = 'E';
-			/* if all went ok, copy to Atari */
-			if (result == 'C')
-				MEMORY_CopyToMem(CASSETTE_buffer, data, length);
 			break;
 		case 0x57:	/* write */
 			SIO_last_op = SIO_LAST_WRITE;
 			SIO_last_drive = 0x61;
 			SIO_last_op_time = 0x10;
-			/* put record into buffer */
-			MEMORY_CopyFromMem(data, CASSETTE_buffer, length);
-			/* eval checksum over buffer data */
-			CASSETTE_buffer[length] = SIO_ChkSum(CASSETTE_buffer, length);
 			/* add pregap length */
 			CASSETTE_AddGap(gaps == 0 ? 3000 : 260);
 			/* write full record to storage medium */
-			storagelength = CASSETTE_Write(length + 1);
-			if (storagelength - 1 != length)	/* includes -1 as error */
-				result = 'E';
-			else
+			if (CASSETTE_WriteFromMemory(data, length))
 				result = 'C';
+			else
+				result = 'E';
 			break;
 		default:
 			result = 'N';
