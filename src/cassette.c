@@ -50,6 +50,18 @@ static SLONG cassette_elapsedtime;  /* elapsed time since begin of file */
                                     /* in scanlines */
 static SLONG cassette_savetime;	    /* helper for cas save */
 static SLONG cassette_nextirqevent; /* timestamp of next irq in scanlines */
+static UBYTE serin_byte; /* byte most recently loaded from tape; will be accessed by SIO_GetByte() */
+
+/* Indicates that there is a SERIN transmission in progress and when it ends,
+   the current byte should be copied to POKEY_SERIN. This can be reset by
+   rewinding/removing the tape or by resseting POKEY.
+   Note that this variable has any meaning when PASSING_IRG is FALSE,
+   so it doesn't have to be reset during PASSING_IRG. */
+static int pending_serin = FALSE;
+
+/* Indicates that an Inter-Record-Gap is currently being passed. It's set to TRUE
+   at the beginning of each block. */
+static int passing_gap = FALSE;
 
 char CASSETTE_filename[FILENAME_MAX] = "";
 CASSETTE_status_t CASSETTE_status = CASSETTE_STATUS_NONE;
@@ -357,8 +369,10 @@ int CASSETTE_CreateCAS(const char *filename, const char *description) {
 	cassette_elapsedtime = 0;
 	cassette_savetime = 0;
 	cassette_nextirqevent = 0;
+	pending_serin = FALSE;
 	cassette_current_blockbyte = 0;
 	cassette_max_blockbytes = 0;
+	passing_gap = FALSE;
 	CASSETTE_current_block = 1;
 	CASSETTE_max_block = 0;
 	cassette_block_offset[0] = strlen(description) + 16;
@@ -383,8 +397,10 @@ int CASSETTE_Insert(const char *filename)
 	cassette_elapsedtime = 0;
 	cassette_savetime = 0;
 	cassette_nextirqevent = 0;
+	pending_serin = FALSE;
 	cassette_current_blockbyte = 0;
 	cassette_max_blockbytes = 0;
+	passing_gap = FALSE;
 	CASSETTE_current_block = 1;
 	cassette_gapdelay = 0;
 	eof_of_tape = 0;
@@ -583,8 +599,10 @@ void CASSETTE_Seek(unsigned int position)
 		cassette_elapsedtime = 0;
 		cassette_savetime = 0;
 		cassette_nextirqevent = 0;
+		pending_serin = FALSE;
 		cassette_current_blockbyte = 0;
 		cassette_max_blockbytes = 0;
+		passing_gap = FALSE;
 		cassette_gapdelay = 0;
 		eof_of_tape = 0;
 		cassette_baudrate = 600;
@@ -622,53 +640,67 @@ static int ReadRecord_POKEY(void)
 		return length;
 	}
 	length = ReadRecord(&gap);
-	/* eval total length as pregap + 1 byte */
-	cassette_nextirqevent = cassette_elapsedtime +
-	                        MSToScanLines(gap + 10 * 1000 /
-	                                      (cassette_isCAS ? cassette_baudblock[CASSETTE_current_block-1] : 600)
-	                                     );
+
+	if (gap == 0)
+		/* There's no pre-record gap before this block. */
+		passing_gap = FALSE;
+	else {
+		/* The event will be invoked at the end of the gap. */
+		cassette_nextirqevent = cassette_elapsedtime + MSToScanLines(gap);
+		passing_gap = TRUE;
+	}
+	
 	cassette_max_blockbytes = length;
 	cassette_current_blockbyte = 0;
 	return length;
 }
 
-/* sets the stamp of next irq and loads new record if necessary
-   adjust is a value to correction of time of next irq*/
-static int SetNextByteTime_POKEY(int adjust)
+/* Sets the stamp of next SERIN IRQ event and loads new record if necessary.
+   Returns TRUE if a new byte was loaded and POKEY_SERIN should be updated. */
+static int SetNextByteTime_POKEY(void)
 {
-	int length = 0;
-	cassette_current_blockbyte += 1;
-	/* if there are still bytes in the buffer, take next byte */
-	if (cassette_current_blockbyte < cassette_max_blockbytes) {
-		cassette_nextirqevent = cassette_elapsedtime + adjust
-			+ MSToScanLines(10 * 1000 / (cassette_isCAS?cassette_baudblock[
-			CASSETTE_current_block-1]:600));
-		return 0;
+	int loaded = FALSE; /* Function's return value */
+	if (passing_gap)
+		/* An IRG has just ended. */
+		passing_gap = FALSE;
+	else {
+		/* We are not at an end of an IRG. That means we are
+		   in the middle of a tape block. */
+		if (pending_serin) {
+			serin_byte = cassette_buffer[cassette_current_blockbyte];
+			/* A byte is loaded, return TRUE so it gets stored in POKEY_SERIN. */
+			loaded = TRUE;
+		}
+		++cassette_current_blockbyte;
 	}
 
-	/* 0 indicates that there was no previous block being read and
-	   CASSETTE_current_block should not be increased. */
-	if (cassette_max_blockbytes != 0)
-		CASSETTE_current_block++;
-	/* if buffer is exhausted, load next record */
-	length = ReadRecord_POKEY();
-	/* if failed, return -1 */
-	if (length == -1) {
-		cassette_nextirqevent = -1;
-		return -1;
+	if (cassette_current_blockbyte >= cassette_max_blockbytes) {
+		/* Buffer is exhausted, load next record. */
+
+		/* 0 indicates that there was no previous block being read and
+		   CASSETTE_current_block already contains the current block number. */
+		if (cassette_max_blockbytes != 0)
+			/* Non-zero - a block was being read and it's finished, increase the block number. */
+			CASSETTE_current_block++;
+		if (ReadRecord_POKEY() == -1 ||
+		    passing_gap)
+			/* Loading failed/tape ended, or there's an Inter-Record Gap.
+			   That means, no byte is currently being loaded to SERIN. */
+			return loaded;
 	}
-	cassette_nextirqevent += adjust;
-	return 0;
+	/* If POKEY is in reset state, no serial I/O occurs. */
+	pending_serin = (POKEY_SKCTL & 0x03) != 0;
+
+	/* Next event will be after 10 bits of data gets loaded. */
+	cassette_nextirqevent = cassette_elapsedtime + 10 * 50 * 312 / 
+		(cassette_isCAS ? cassette_baudblock[CASSETTE_current_block-1] : 600);
+	return loaded;
 }
 
-/* Get the byte for which the serial data ready int has been triggered */
+/* Get the byte which was recently loaded from tape. */
 int CASSETTE_GetByte(void)
 {
-	if (cassette_readable)
-		/* there are programs which load 2 blocks as one */
-		return cassette_buffer[cassette_current_blockbyte];
-	else
-		return 0;
+	return serin_byte;
 }
 
 /* Check status of I/O-line
@@ -681,7 +713,7 @@ int CASSETTE_IOLineStatus(void)
 	int bit = 0;
 
 	/* if motor off and EOF return always 1 (equivalent the mark tone) */
-	if (!cassette_readable || CASSETTE_record) {
+	if (!cassette_readable || CASSETTE_record || passing_gap) {
 		return 1;
 	}
 
@@ -707,38 +739,7 @@ int CASSETTE_IOLineStatus(void)
 		return 0;
 
 	/* eval tone to return */
-	return (CASSETTE_GetByte() >> (8 - bit)) & 1;
-}
-
-/* Get the delay to trigger the next interrupt
-   remark: The I/O-Line-status is also evaluated on this basis */
-int CASSETTE_GetInputIRQDelay(void)
-{
-	int timespan;
-
-	/* if no file or eof or motor off, return zero */
-	if (ESC_enable_sio_patch || !cassette_readable || CASSETTE_record || cassette_nextirqevent < 0)
-		return 0;
-
-	/* return time span */
-	timespan = cassette_nextirqevent - cassette_elapsedtime;
-	/* if timespan is negative, eval timespan to next byte */
-	if (timespan <= 0) {
-		if (SetNextByteTime_POKEY(0) == -1)
-			return -1;
-		/* return time span */
-		timespan = cassette_nextirqevent - cassette_elapsedtime;
-	}
-	if (timespan < 40) {
-		timespan += ((312 * 50 - 1) / (cassette_isCAS?cassette_baudblock[
-			CASSETTE_current_block-1]:600)) * 10;
-	}
-
-	/* if still negative, return "failed" */
-	if (timespan < 0) {
-		timespan = -1;
-	}
-	return timespan;
+	return (cassette_buffer[cassette_current_blockbyte] >> (8 - bit)) & 1;
 }
 
 /* put a byte into the cas file */
@@ -820,8 +821,10 @@ void CASSETTE_ToggleRecord(void)
 	cassette_elapsedtime = 0;
 	cassette_savetime = 0;
 	cassette_nextirqevent = 0;
+	pending_serin = FALSE;
 	cassette_current_blockbyte = 0;
 	cassette_max_blockbytes = 0;
+	passing_gap = FALSE;
 	cassette_gapdelay = 0;
 	cassette_baudrate = 600;
 	if (CASSETTE_record)
@@ -829,23 +832,25 @@ void CASSETTE_ToggleRecord(void)
 	UpdateFlags();
 }
 
-void CASSETTE_AddScanLine(void)
+int CASSETTE_AddScanLine(void)
 {
-	int tmp;
 	/* if motor on and a cassette file is opened, and not eof */
 	/* increment elapsed cassette time */
 	if (cassette_readable || cassette_writable) {
 		cassette_elapsedtime++;
 
 		/* only for loading: set next byte interrupt time */
-		/* valid cassette times are up to 870 baud, giving
-		   a time span of 18 scanlines, so comparing with
-		   -2 leaves a safe timespan for letting get the bit out
-		   of the pokey */
-		if (cassette_readable && !CASSETTE_record && cassette_nextirqevent - cassette_elapsedtime <= -2) {
-			tmp = SetNextByteTime_POKEY(-2);
+		if (cassette_readable && !CASSETTE_record && cassette_nextirqevent <= cassette_elapsedtime) {
+			return SetNextByteTime_POKEY();
 		}
 	}
+	return FALSE;
+}
+
+void CASSETTE_ResetPOKEY(void)
+{
+	/* Resetting POKEY stops any serial transmission. */
+	pending_serin = FALSE;
 }
 
 /*

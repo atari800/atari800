@@ -1,3 +1,22 @@
+2011-05-15  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* cassette.[ch], pokey.c, sio.c: Improve cassette emulation, to allow loading
+  some non-standard tapes (e.g. Feud/Turbo 2600, Miecze Valdgira II,
+  Operation Blood).
+  Emulation of SERIN was inaccurate - new byte appeared in SERIN only if the
+  serial input IRQ was enabled, and it happened 2 scanlines after the byte's
+  transmission has _started_. On a real machine, a byte appears in
+  SERIN at the same time the serial input IRQ is generated, that is, when
+  the byte's transmission _ends_; and it happens even when the IRQ is
+  disabled. The bug caused issues with tapes of _certain_ baudrates (e.g. 577
+  baud).
+  Changed the way cassette IRQ is invoked - there is no notion of
+  "cassette IRQ delay" anymore. Instead, CASSETTE_AddScanLine returns TRUE
+  on SERIN update.
+  Added partial emulation of SKCTL reset bits - due to improved SERIN
+  accuracy proper emulation of serial IO resetting is now needed to load tapes
+  correctly.
+  
+
 2011-05-09  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * pia.c: Fixed a bug with PIA's tape motor state and COMMAND line state not
   being restored on loading of a savestate.

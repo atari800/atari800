@@ -57,9 +57,11 @@ int CASSETTE_WriteFromMemory(UWORD src_addr, int length);
 void CASSETTE_Seek(unsigned int position);
 int CASSETTE_IOLineStatus(void);
 int CASSETTE_GetByte(void);
-int CASSETTE_GetInputIRQDelay(void);
 void CASSETTE_PutByte(int byte);
 void CASSETTE_TapeMotor(int onoff);
-void CASSETTE_AddScanLine(void);
-
+/* Advance the tape by a scanline. Return TRUE if a new byte has been loaded
+   and POKEY_SERIN must be updated. */
+int CASSETTE_AddScanLine(void);
+/* Reset cassette serial transmission; call when resseting POKEY by SKCTL. */
+void CASSETTE_ResetPOKEY(void);
 #endif /* CASSETTE_H_ */

@@ -1469,19 +1469,15 @@ void SIO_TapeMotor(int onoff)
 	if (onoff) {
 		/* set frame to cassette frame, if not */
 		/* in a transfer with an intelligent peripheral */
-		if (TransferStatus == SIO_NoFrame || TransferStatus == SIO_CasReadWrite) {
+		if (TransferStatus == SIO_NoFrame || TransferStatus == SIO_CasReadWrite)
 			TransferStatus = SIO_CasReadWrite;
-			POKEY_DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
-		}
 		SIO_last_drive = 0x60;
 		SIO_last_op_time = 0x10;
 	}
 	else {
 		/* set frame to none */
-		if (TransferStatus == SIO_CasReadWrite) {
+		if (TransferStatus == SIO_CasReadWrite)
 			TransferStatus = SIO_NoFrame;
-			POKEY_DELAYED_SERIN_IRQ = 0; /* off */
-		}
 		SIO_last_op_time = 0;
 	}
 }
@@ -1639,7 +1635,6 @@ int SIO_GetByte(void)
 		break;
 	case SIO_CasReadWrite:
 		byte = CASSETTE_GetByte();
-		POKEY_DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
 		break;
 	default:
 		break;
