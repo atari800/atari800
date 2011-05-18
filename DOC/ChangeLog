@@ -1,3 +1,8 @@
+2011-05-18  Tomasz Krasuski <kr0tki@poczta.onet.pl>
+* cassette.c: Fixed a bug with CASSETTE_description not being properly ended
+  with '\0' when tape is inserted (reported by Achim Haertel).
+
+
 2011-05-15  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * cassette.[ch], pokey.c, sio.c: Improve cassette emulation, to allow loading
   some non-standard tapes (e.g. Feud/Turbo 2600, Miecze Valdgira II,

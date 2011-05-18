@@ -242,6 +242,7 @@ int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *
 				Log_print("Error reading cassette file.\n");
 			}
 		}
+		CASSETTE_description[length - skip] = '\0';
 		fseek(f, skip, SEEK_CUR);
 
 		/* count number of blocks */
