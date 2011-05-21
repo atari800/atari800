@@ -1288,6 +1288,19 @@ void SIO_Handler(void)
 	MEMORY_dPutByte(0x0303, CPU_regY);
 	MEMORY_dPutByte(0x42,0);
 	CPU_SetC;
+
+	/* After each SIO operation a routine called SENDDS ($EC5F in OSB) is
+	   invoked, which, among other functions, silences the sound
+	   generators. With SIO patch we don't call SIOV and in effect SENDDS
+	   is not called either, but this causes a problem with tape saving.
+	   During tape saving sound generators are enabled before calling
+	   SIOV, but are not disabled later (no call to SENDDS). The effect is
+	   that after saving to tape the unwanted SIO sounds are left audible.
+	   To avoid the problem, we silence the sound registers by hand. */
+	POKEY_PutByte(POKEY_OFFSET_AUDC1, 0);
+	POKEY_PutByte(POKEY_OFFSET_AUDC2, 0);
+	POKEY_PutByte(POKEY_OFFSET_AUDC3, 0);
+	POKEY_PutByte(POKEY_OFFSET_AUDC4, 0);
 }
 
 UBYTE SIO_ChkSum(const UBYTE *buffer, int length)
