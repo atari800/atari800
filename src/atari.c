@@ -222,12 +222,12 @@ void Atari800_Coldstart(void)
 	   and Start key (boot from cassette) */
 	GTIA_consol_index = 2;
 	GTIA_consol_table[2] = 0x0f;
-	if (Atari800_disable_basic && !BINLOAD_loading_basic) {
-		/* hold Option during reboot */
+	if (Atari800_machine_type == Atari800_MACHINE_XLXE && Atari800_disable_basic && !BINLOAD_loading_basic) {
+		/* Only for XL/XE - hold Option during reboot. */
 		GTIA_consol_table[2] &= ~INPUT_CONSOL_OPTION;
 	}
-	if (CASSETTE_hold_start) {
-		/* hold Start during reboot */
+	if (CASSETTE_hold_start && Atari800_machine_type != Atari800_MACHINE_5200) {
+		/* Only for the computers - hold Start during reboot */
 		GTIA_consol_table[2] &= ~INPUT_CONSOL_START;
 	}
 	GTIA_consol_table[1] = GTIA_consol_table[2];
