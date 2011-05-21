@@ -103,6 +103,12 @@ static int mosaic_curbank = 0x3f;
 int MEMORY_mosaic_maxbank = 0;
 int MEMORY_mosaic_enabled = FALSE;
 
+static int cart809F_enabled = FALSE;
+int MEMORY_cartA0BF_enabled = FALSE;
+static UBYTE under_cart809F[8192];
+static UBYTE under_cartA0BF[8192];
+
+
 static void alloc_axlon_memory(void){
 	axlon_curbank = 0;
 	if (MEMORY_axlon_enabled && (Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB )) {
@@ -165,6 +171,8 @@ static void AllocXEMemory(void)
 void MEMORY_InitialiseMachine(void)
 {
 	ANTIC_xe_ptr = NULL;
+	cart809F_enabled = FALSE;
+	MEMORY_cartA0BF_enabled = FALSE;
 	switch (Atari800_machine_type) {
 	case Atari800_MACHINE_OSA:
 	case Atari800_MACHINE_OSB:
@@ -795,11 +803,6 @@ static UBYTE AxlonGetByte(UWORD addr)
 	return MEMORY_mem[addr];
 }
 
-static int cart809F_enabled = FALSE;
-int MEMORY_cartA0BF_enabled = FALSE;
-static UBYTE under_cart809F[8192];
-static UBYTE under_cartA0BF[8192];
-
 void MEMORY_Cart809fDisable(void)
 {
 	if (cart809F_enabled) {
@@ -853,8 +856,7 @@ void MEMORY_CartA0bfEnable(void)
 	if (!MEMORY_cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if (MEMORY_ram_size > 40 && ((Atari800_machine_type != Atari800_MACHINE_XLXE) || (PIA_PORTB & 0x02)
-		|| ((PIA_PORTB & 0x10) == 0 && (MEMORY_ram_size == 576 || MEMORY_ram_size == 1088)))) {
+		if (MEMORY_ram_size > 40 && (Atari800_machine_type != Atari800_MACHINE_XLXE || basic_disabled(PIA_PORTB | PIA_PORTB_mask))) {
 			/* Back-up 0xa000-0xbfff RAM */
 			memcpy(under_cartA0BF, MEMORY_mem + 0xa000, 0x2000);
 			MEMORY_SetROM(0xa000, 0xbfff);

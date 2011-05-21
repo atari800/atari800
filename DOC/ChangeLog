@@ -6,6 +6,11 @@
   machines. This fixes unwanted keystrokes when running cartridges on 400/800
   with the "Disable Basic" option. Also, don't hold Start on booting the 5200.
 
+* memory.c: Bugfix: When "Selecting System" and choosing 800/48KB RAM twice
+  in a row, BASIC would get disabled even if the "Disable BASIC" option was
+  set to "No". This was caused by missing initialisation of cartridge memory
+  in MEMORY_InitialiseMachine().
+
 
 2011-05-18  Tomasz Krasuski <kr0tki@poczta.onet.pl>
 * cassette.c: Fixed a bug with CASSETTE_description not being properly ended
