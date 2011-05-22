@@ -377,6 +377,7 @@ static void CassetteFlush(void)
 	if ((cassette_current_blockbyte > 0) && cassette_writable && CASSETTE_record)
 		WriteRecord(cassette_current_blockbyte);
 }
+
 int CASSETTE_CreateCAS(const char *filename, const char *description) {
 	FILE *fp = NULL;
 	/* create new file */
@@ -525,95 +526,6 @@ static int ReadRecord(int *gap)
 		cassette_buffer[0x83] = SIO_ChkSum(cassette_buffer, 0x83);
 	}
 	return length;
-}
-
-/* Read a record by SIO-patch
-   returns block length (with checksum) */
-static int ReadRecord_SIO(void)
-{
-	int length = 0;
-	/* if waiting for gap was longer than gap of record, skip
-	   atm there is no check if we start then inmidst a record */
-	int filegaptimes = 0;
-	while (cassette_gapdelay >= filegaptimes) {
-		int gap;
-		if (CASSETTE_current_block > CASSETTE_max_block) {
-			length = 0;
-			eof_of_tape = 1;
-			UpdateFlags();
-			break;
-		};
-		length = ReadRecord(&gap);
-		/* add gaplength */
-		filegaptimes += gap;
-		/* add time used by the data themselves
-		   a byte is encoded into 10 bits */
-		filegaptimes += length * 10 * 1000 / cassette_baudblock[CASSETTE_current_block-1];
-		CASSETTE_current_block++;
-	}
-	cassette_gapdelay = 0;
-	return length;
-}
-
-int CASSETTE_AddGap(int gaptime)
-{
-	cassette_gapdelay += gaptime;
-	if (cassette_gapdelay < 0)
-		cassette_gapdelay = 0;
-	return cassette_gapdelay;
-}
-
-/* Indicates that a loading leader is expected by the OS */
-void CASSETTE_LeaderLoad(void)
-{
-	if (CASSETTE_record)
-	CASSETTE_ToggleRecord();
-	CASSETTE_TapeMotor(TRUE);
-	cassette_gapdelay = 9600;
-	/* registers for SETVBV: third system timer, ~0.1 sec */
-	CPU_regA = 3;
-	CPU_regX = 0;
-	CPU_regY = 5;
-}
-
-/* indicates that a save leader is written by the OS */
-void CASSETTE_LeaderSave(void)
-{
-	if (!CASSETTE_record)
-	CASSETTE_ToggleRecord();
-	CASSETTE_TapeMotor(TRUE);
-	cassette_gapdelay = 19200;
-	/* registers for SETVBV: third system timer, ~0.1 sec */
-	CPU_regA = 3;
-	CPU_regX = 0;
-	CPU_regY = 5;
-	eof_of_tape = 0;
-}
-
-int CASSETTE_ReadToMemory(UWORD dest_addr, int length)
-{
-	int read_length;
-	if (!cassette_readable)
-		return FALSE;
-	read_length = ReadRecord_SIO();
-	/* Copy record to memory, excluding the checksum byte if it exists. */
-	MEMORY_CopyToMem(cassette_buffer, dest_addr, read_length >= length ? length : read_length);
-	return read_length == length + 1 &&
-	       cassette_buffer[length] == SIO_ChkSum(cassette_buffer, length);
-}
-
-int CASSETTE_WriteFromMemory(UWORD src_addr, int length)
-{
-	/* File must be writable */
-	if (!cassette_writable)
-		return -1;
-	EnlargeBuffer(length + 1);
-	/* Put record into buffer. */
-	MEMORY_CopyFromMem(src_addr, cassette_buffer, length);
-	/* Eval checksum over buffer data. */
-	cassette_buffer[length] = SIO_ChkSum(cassette_buffer, length);
-
-	return WriteRecord(length + 1) == length + 1;
 }
 
 void CASSETTE_Seek(unsigned int position)
@@ -894,6 +806,98 @@ void CASSETTE_ResetPOKEY(void)
 	/* Resetting POKEY stops any serial transmission. */
 	pending_serin = FALSE;
 }
+
+/* --- Functions for loading/saving with SIO patch --- */
+
+/* Read a record by SIO-patch
+   returns block length (with checksum) */
+static int ReadRecord_SIO(void)
+{
+	int length = 0;
+	/* if waiting for gap was longer than gap of record, skip
+	   atm there is no check if we start then inmidst a record */
+	int filegaptimes = 0;
+	while (cassette_gapdelay >= filegaptimes) {
+		int gap;
+		if (CASSETTE_current_block > CASSETTE_max_block) {
+			length = 0;
+			eof_of_tape = 1;
+			UpdateFlags();
+			break;
+		};
+		length = ReadRecord(&gap);
+		/* add gaplength */
+		filegaptimes += gap;
+		/* add time used by the data themselves
+		   a byte is encoded into 10 bits */
+		filegaptimes += length * 10 * 1000 / cassette_baudblock[CASSETTE_current_block-1];
+		CASSETTE_current_block++;
+	}
+	cassette_gapdelay = 0;
+	return length;
+}
+
+int CASSETTE_AddGap(int gaptime)
+{
+	cassette_gapdelay += gaptime;
+	if (cassette_gapdelay < 0)
+		cassette_gapdelay = 0;
+	return cassette_gapdelay;
+}
+
+/* Indicates that a loading leader is expected by the OS */
+void CASSETTE_LeaderLoad(void)
+{
+	if (CASSETTE_record)
+	CASSETTE_ToggleRecord();
+	CASSETTE_TapeMotor(TRUE);
+	cassette_gapdelay = 9600;
+	/* registers for SETVBV: third system timer, ~0.1 sec */
+	CPU_regA = 3;
+	CPU_regX = 0;
+	CPU_regY = 5;
+}
+
+/* indicates that a save leader is written by the OS */
+void CASSETTE_LeaderSave(void)
+{
+	if (!CASSETTE_record)
+	CASSETTE_ToggleRecord();
+	CASSETTE_TapeMotor(TRUE);
+	cassette_gapdelay = 19200;
+	/* registers for SETVBV: third system timer, ~0.1 sec */
+	CPU_regA = 3;
+	CPU_regX = 0;
+	CPU_regY = 5;
+	eof_of_tape = 0;
+}
+
+int CASSETTE_ReadToMemory(UWORD dest_addr, int length)
+{
+	int read_length;
+	if (!cassette_readable)
+		return FALSE;
+	read_length = ReadRecord_SIO();
+	/* Copy record to memory, excluding the checksum byte if it exists. */
+	MEMORY_CopyToMem(cassette_buffer, dest_addr, read_length >= length ? length : read_length);
+	return read_length == length + 1 &&
+	       cassette_buffer[length] == SIO_ChkSum(cassette_buffer, length);
+}
+
+int CASSETTE_WriteFromMemory(UWORD src_addr, int length)
+{
+	/* File must be writable */
+	if (!cassette_writable)
+		return -1;
+	EnlargeBuffer(length + 1);
+	/* Put record into buffer. */
+	MEMORY_CopyFromMem(src_addr, cassette_buffer, length);
+	/* Eval checksum over buffer data. */
+	cassette_buffer[length] = SIO_ChkSum(cassette_buffer, length);
+
+	return WriteRecord(length + 1) == length + 1;
+}
+
 
 /*
 vim:ts=4:sw=4:

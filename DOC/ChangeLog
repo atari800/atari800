@@ -2,11 +2,14 @@
 * DOC/USAGE, atari800.man, cassette.[ch], ui.c: Add an option for making the
   attached cassette image read-only.
 
+* cassette.[ch]: Cleanup - rearrange function order to place the functions
+  related to the SIO patch together at the bottom of the files.
+
 
 2011-05-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sio.c: Fixed a bug with SIO sounds remaining audible after saving to tape
   with SIO patch (reported by Krzysztof Karkosza).
-  
+
 * atari.c: During coldstart, don't automatically hold Option on non-XL/XE
   machines. This fixes unwanted keystrokes when running cartridges on 400/800
   with the "Disable Basic" option. Also, don't hold Start on booting the 5200.
