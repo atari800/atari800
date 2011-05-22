@@ -65,6 +65,7 @@ static int passing_gap = FALSE;
 
 char CASSETTE_filename[FILENAME_MAX] = "";
 CASSETTE_status_t CASSETTE_status = CASSETTE_STATUS_NONE;
+int CASSETTE_write_protect = FALSE;
 int CASSETTE_record = FALSE;
 static int cassette_writable = FALSE;
 static int cassette_readable = FALSE;
@@ -117,7 +118,8 @@ static void UpdateFlags(void)
 	                     CASSETTE_status == CASSETTE_STATUS_READ_ONLY) &&
 	                     !eof_of_tape;
 	cassette_writable = cassette_motor &&
-	                    CASSETTE_status == CASSETTE_STATUS_READ_WRITE;
+	                    CASSETTE_status == CASSETTE_STATUS_READ_WRITE &&
+	                    !CASSETTE_write_protect;
 }
 
 int CASSETTE_ReadConfig(char *string, char *ptr)
@@ -130,6 +132,12 @@ int CASSETTE_ReadConfig(char *string, char *ptr)
 			return FALSE;
 		CASSETTE_status = (value ? CASSETTE_STATUS_READ_WRITE : CASSETTE_STATUS_NONE);
 	}
+	else if (strcmp(string, "CASSETTE_WRITE_PROTECT") == 0) {
+		int value = Util_sscanbool(ptr);
+		if (value == -1)
+			return FALSE;
+		CASSETTE_write_protect = value;
+	}
 	else return FALSE;
 	return TRUE;
 }
@@ -138,12 +146,14 @@ void CASSETTE_WriteConfig(FILE *fp)
 {
 	fprintf(fp, "CASSETTE_FILENAME=%s\n", CASSETTE_filename);
 	fprintf(fp, "CASSETTE_LOADED=%d\n", CASSETTE_status != CASSETTE_STATUS_NONE);
+	fprintf(fp, "CASSETTE_WRITE_PROTECT=%d\n", CASSETTE_write_protect);
 }
 
 int CASSETTE_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
+	int protect = FALSE; /* Is write-protect requested in command line? */
 
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
@@ -153,6 +163,8 @@ int CASSETTE_Initialise(int *argc, char *argv[])
 			if (i_a) {
 				Util_strlcpy(CASSETTE_filename, argv[++i], sizeof(CASSETTE_filename));
 				CASSETTE_status = CASSETTE_STATUS_READ_WRITE;
+				/* Reset any write-protection read from config file. */
+				CASSETTE_write_protect = FALSE;
 			}
 			else a_m = TRUE;
 		}
@@ -160,14 +172,19 @@ int CASSETTE_Initialise(int *argc, char *argv[])
 			if (i_a) {
 				Util_strlcpy(CASSETTE_filename, argv[++i], sizeof(CASSETTE_filename));
 				CASSETTE_status = CASSETTE_STATUS_READ_WRITE;
+				/* Reset any write-protection read from config file. */
+				CASSETTE_write_protect = FALSE;
 				CASSETTE_hold_start = 1;
 			}
 			else a_m = TRUE;
 		}
+		else if (strcmp(argv[i], "-tape-readonly") == 0)
+			protect = TRUE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Log_print("\t-tape <file>     Insert cassette image");
-				Log_print("\t-boottape <file> Insert cassette image and boot it");
+				Log_print("\t-tape <file>      Insert cassette image");
+				Log_print("\t-boottape <file>  Insert cassette image and boot it");
+				Log_print("\t-tape-readonly    Mark the attached cassette image as read-only");
 			}
 			argv[j++] = argv[i];
 		}
@@ -182,8 +199,13 @@ int CASSETTE_Initialise(int *argc, char *argv[])
 
 	/* If CASSETTE_status was set in this function or in CASSETTE_ReadConfig(),
 	   then tape is to be mounted. */
-	if (CASSETTE_status != CASSETTE_STATUS_NONE && CASSETTE_filename[0] != '\0')
+	if (CASSETTE_status != CASSETTE_STATUS_NONE && CASSETTE_filename[0] != '\0') {
+		/* Tape is mounted unprotected by default - overrun it if needed. */
+		protect = protect || CASSETTE_write_protect;
 		CASSETTE_Insert(CASSETTE_filename);
+		if (protect)
+			CASSETTE_ToggleWriteProtect();
+	}
 
 	return TRUE;
 }
@@ -349,6 +371,12 @@ static UWORD WriteRecord(int len)
 	return fwrite(cassette_buffer, 1, len, cassette_file);
 }
 
+/* Flush any unwritten data to tape. */
+static void CassetteFlush(void)
+{
+	if ((cassette_current_blockbyte > 0) && cassette_writable && CASSETTE_record)
+		WriteRecord(cassette_current_blockbyte);
+}
 int CASSETTE_CreateCAS(const char *filename, const char *description) {
 	FILE *fp = NULL;
 	/* create new file */
@@ -382,6 +410,7 @@ int CASSETTE_CreateCAS(const char *filename, const char *description) {
 	cassette_baudrate = 600;
 	CASSETTE_record = TRUE;
 	CASSETTE_status = CASSETTE_STATUS_READ_WRITE;
+	CASSETTE_write_protect = FALSE;
 	UpdateFlags();
 	cassette_buffer = Util_malloc((buffer_size = DEFAULT_BUFFER_SIZE) * sizeof(UBYTE));
 
@@ -413,6 +442,7 @@ int CASSETTE_Insert(const char *filename)
 		CASSETTE_status = (writable ? CASSETTE_STATUS_READ_WRITE : CASSETTE_STATUS_READ_ONLY);
 	else /* No support for writing raw files */
 		CASSETTE_status = CASSETTE_STATUS_READ_ONLY;
+	CASSETTE_write_protect = FALSE;
 	CASSETTE_record = FALSE;
 	UpdateFlags();
 	cassette_buffer = Util_malloc((buffer_size = DEFAULT_BUFFER_SIZE) * sizeof(UBYTE));
@@ -424,8 +454,7 @@ void CASSETTE_Remove(void)
 {
 	if (cassette_file != NULL) {
 		/* save last block, ignore trailing space tone */
-		if ((cassette_current_blockbyte > 0) && cassette_writable && CASSETTE_record)
-			WriteRecord(cassette_current_blockbyte);
+		CassetteFlush();
 
 		fclose(cassette_file);
 		cassette_file = NULL;
@@ -591,8 +620,7 @@ void CASSETTE_Seek(unsigned int position)
 {
 	if (CASSETTE_status != CASSETTE_STATUS_NONE) {
 		/* save last block */
-		if (cassette_current_blockbyte > 0 && cassette_writable && CASSETTE_record)
-			WriteRecord(cassette_current_blockbyte);
+		CassetteFlush();
 
 		CASSETTE_current_block = (int)position;
 		if (CASSETTE_current_block > CASSETTE_max_block + 1)
@@ -814,10 +842,21 @@ void CASSETTE_TapeMotor(int onoff)
 	}
 }
 
-void CASSETTE_ToggleRecord(void)
+int CASSETTE_ToggleWriteProtect(void)
 {
-	if ((cassette_current_blockbyte > 0) && cassette_writable && CASSETTE_record)
-		WriteRecord(cassette_current_blockbyte);
+	if (CASSETTE_status != CASSETTE_STATUS_READ_WRITE)
+		return FALSE;
+	CassetteFlush();
+	CASSETTE_write_protect = !CASSETTE_write_protect;
+	UpdateFlags();
+	return TRUE;
+}
+
+int CASSETTE_ToggleRecord(void)
+{
+	if (CASSETTE_status == CASSETTE_STATUS_NONE)
+		return FALSE;
+	CassetteFlush();
 	CASSETTE_record = !CASSETTE_record;
 	cassette_elapsedtime = 0;
 	cassette_savetime = 0;
@@ -831,6 +870,8 @@ void CASSETTE_ToggleRecord(void)
 	if (CASSETTE_record)
 		eof_of_tape = 0;
 	UpdateFlags();
+	/* Return FALSE to indicate that recording will not work. */
+	return !CASSETTE_record || (CASSETTE_status == CASSETTE_STATUS_READ_WRITE && !CASSETTE_write_protect);
 }
 
 int CASSETTE_AddScanLine(void)

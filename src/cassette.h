@@ -27,6 +27,8 @@ int CASSETTE_ReadConfig(char *string, char *ptr);
 void CASSETTE_WriteConfig(FILE *fp);
 
 int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *last_block, int *isCAS, int *writable);
+/* Attaches a tape image. Returns FALSE on failure.
+   Resets the CASSETTE_write_protect to FALSE. */
 int CASSETTE_Insert(const char *filename);
 void CASSETTE_Remove(void);
 /* Creates a new file in CAS format. DESCRIPTION can be NULL.
@@ -37,9 +39,17 @@ extern int CASSETTE_hold_start;
 extern int CASSETTE_hold_start_on_reboot; /* preserve hold_start after reboot */
 extern int CASSETTE_press_space;
 
- /* Is cassette record button pressed? Don't change the variable directly, use CASSETTE_ToggleRecord(). */
+/* Is cassette file write-protected? Don't change directly, use CASSETTE_ToggleWriteProtect(). */
+extern int CASSETTE_write_protect;
+/* Switches RO/RW. Fails with FALSE if the tape cannot be switched to RW. */
+int CASSETTE_ToggleWriteProtect(void);
+
+ /* Is cassette record button pressed? Don't change directly, use CASSETTE_ToggleRecord(). */
 extern int CASSETTE_record;
-void CASSETTE_ToggleRecord(void);
+/* If tape is mounted, switches recording on/off (otherwise return FALSE).
+   Recording operations would fail if the tape is read-only. In such
+   situation, when switching recording on the function returns FALSE. */
+int CASSETTE_ToggleRecord(void);
 
 int CASSETTE_AddGap(int gaptime);
 void CASSETTE_LeaderLoad(void);

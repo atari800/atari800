@@ -42,7 +42,9 @@ data to be saved to a tape image.
 
 With the SIO patch active, the emulator automatically recognises whether
 a load or save operation is requested. and it is not necessary to touch the
-"Record" option.
+"Record" option. This can lead to unwanted changes in a tape file. To avoid
+the problem, a user can mark the attached cassette image as read-only to
+disallow any write operations.
 
 Saving to tape always casues the new blocks to be appended at the end of the
 tape image, regardless of the tape's current position. It is not possible
@@ -135,6 +137,7 @@ Command line options
 
 -tape <filename>      Attach cassette image (CAS format or raw file)
 -boottape <filename>  Attach cassette image and boot it
+-tape-readonly        Set the attached cassette image as read-only
 
 -1400                 Emulate the Atari 1400XL
 -xld                  Emulate the Atari 1450XLD

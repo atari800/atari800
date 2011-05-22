@@ -124,6 +124,9 @@ Attach cassette image (CAS format or raw file)
 .TP
 \fB-boottape <filename>
 Attach cassette image and boot it
+\fB-tape-readonly
+Set the attached cassette image as read-only. 
+
 
 .TP
 \fB-1400

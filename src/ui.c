@@ -879,7 +879,7 @@ static void TapeSliderLabel(char *label, int value, void *user_data)
 static void TapeManagement(void)
 {
 	static char position_string[17];
-	static char cas_symbol[4] = " C:";
+	static char cas_symbol[] = " C:";
 
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_FILESEL_PREFIX_TIP(0, cas_symbol, NULL, NULL),
@@ -900,16 +900,25 @@ static void TapeManagement(void)
 		int size = CASSETTE_max_block;
 
 		/* Set the cassette file description and set the Select Tape tip */
-		if (CASSETTE_status == CASSETTE_STATUS_NONE) {
+		switch (CASSETTE_status) {
+		case CASSETTE_STATUS_NONE:
 			menu_array[0].item = "None";
 			menu_array[0].suffix = "Return:insert";
 			menu_array[3].suffix = "Tape not loaded";
 			cas_symbol[0] = ' ';
-		} else {
+			break;
+		case CASSETTE_STATUS_READ_ONLY:
 			menu_array[0].item = CASSETTE_filename;
 			menu_array[0].suffix = "Return:insert Backspace:eject";
-			menu_array[3].suffix = "Return:change Backspace: rewind";
-			cas_symbol[0] = (CASSETTE_status == CASSETTE_STATUS_READ_ONLY? '*' : ' ');
+			menu_array[3].suffix = "Return:change Backspace:rewind";
+			cas_symbol[0] = '*';
+			break;
+		default: /* CASSETTE_STATUS_READ_WRITE */
+			menu_array[0].item = CASSETTE_filename;
+			menu_array[0].suffix = "Ret:insert Bksp:eject Space:read-only";
+			menu_array[3].suffix = "Return:change Backspace:rewind";
+			cas_symbol[0] = CASSETTE_write_protect ? '*' : ' ';
+			break;
 		}
 
 		SetItemChecked(menu_array, 2, CASSETTE_record);
@@ -941,6 +950,12 @@ static void TapeManagement(void)
 				if (CASSETTE_status != CASSETTE_STATUS_NONE)
 					CASSETTE_Remove();
 				break;
+			case UI_USER_TOGGLE: /* Space */
+				/* Toggle only if the cassette is mounted. */
+				if (CASSETTE_status != CASSETTE_STATUS_NONE && !CASSETTE_ToggleWriteProtect())
+					/* The file is read-only. */
+					UI_driver->fMessage("Cannot switch to read/write", 1);
+				break;
 			}
 			break;
 		case 1:
@@ -963,10 +978,9 @@ static void TapeManagement(void)
 			}
 			break;
 		case 2:
-			if (CASSETTE_status == CASSETTE_STATUS_READ_ONLY)
-				UI_driver->fMessage("Tape is read-only", 1);
-			else
-				CASSETTE_ToggleRecord();
+			/* Toggle only if the cassette is mounted. */
+			if (CASSETTE_status != CASSETTE_STATUS_NONE && !CASSETTE_ToggleRecord())
+				UI_driver->fMessage("Tape is read-only, recording will fail", 1);
 			break;
 		case 3:
 			MakeBlankTapeMenu();

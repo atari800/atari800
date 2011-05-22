@@ -1,3 +1,8 @@
+2011-05-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/USAGE, atari800.man, cassette.[ch], ui.c: Add an option for making the
+  attached cassette image read-only.
+
+
 2011-05-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sio.c: Fixed a bug with SIO sounds remaining audible after saving to tape
   with SIO patch (reported by Krzysztof Karkosza).
