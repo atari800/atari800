@@ -787,13 +787,12 @@ static void CartManagement(void)
 						}
 					}
 					Atari800_Coldstart();
-					return;
 				}
 				break;
 			case UI_USER_DELETE: /* Backspace */
 				CARTRIDGE_Remove();
 				Atari800_Coldstart();
-				return;
+				break;
 			}
 			break;
 		case 3:
@@ -819,12 +818,11 @@ static void CartManagement(void)
 						CARTRIDGE_second_type = UI_SelectCartType(r);
 						break;
 					}
-					return;
 				}
 				break;
 			case UI_USER_DELETE: /* Backspace */
 				CARTRIDGE_Remove_Second();
-				return;
+				break;
 			}
 			break;
 		default:
