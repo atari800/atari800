@@ -52,6 +52,8 @@
 
 #define CARTRIDGE_MAX_SIZE	(1024 * 1024)
 extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
+extern char CARTRIDGE_filename[FILENAME_MAX];
+extern char CARTRIDGE_second_filename[FILENAME_MAX];
 extern int CARTRIDGE_type;
 extern int CARTRIDGE_second_type;
 

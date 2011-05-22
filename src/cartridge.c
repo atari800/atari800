@@ -111,8 +111,8 @@ int CARTRIDGE_IsFor5200(int type)
 static UBYTE *cart_image = NULL;		/* cartridge memory */
 static UBYTE *second_cart_image = NULL; /* Pass through cartridge memory for SpartaDOSX */
 static UBYTE *first_cart_image = NULL; /* Pointer for orignal cart image will using pass through */
-static char cart_filename[FILENAME_MAX];
-static char second_cart_filename[FILENAME_MAX];
+char CARTRIDGE_filename[FILENAME_MAX] = "";
+char CARTRIDGE_second_filename[FILENAME_MAX] = "";
 int CARTRIDGE_type = CARTRIDGE_NONE;
 int CARTRIDGE_second_type = CARTRIDGE_NONE;
 static int cart_pass_through = FALSE;
@@ -575,8 +575,10 @@ int CARTRIDGE_Insert(const char *filename)
 	len = Util_flen(fp);
 	Util_rewind(fp);
 
-	/* Save Filename for state save */
-	strcpy(cart_filename, filename);
+	/* Guard against providing CARTRIDGE_filename as parameter. */
+	if (CARTRIDGE_filename != filename)
+		/* Save Filename for state save */
+		strcpy(CARTRIDGE_filename, filename);
 
 	/* if full kilobytes, assume it is raw image */
 	if ((len & 0x3ff) == 0) {
@@ -656,8 +658,10 @@ int CARTRIDGE_Insert_Second(const char *filename)
 	len = Util_flen(fp);
 	Util_rewind(fp);
 
-	/* Save Filename for state save */
-	strcpy(second_cart_filename, filename);
+	/* Guard against providing CARTRIDGE_filename as parameter. */
+	if (CARTRIDGE_second_filename != filename)
+		/* Save Filename for state save */
+		strcpy(CARTRIDGE_second_filename, filename);
 
 	/* if full kilobytes, assume it is raw image */
 	if ((len & 0x3ff) == 0) {
@@ -1027,7 +1031,7 @@ void CARTRIDGE_StateSave(void)
 		/* Save the cartridge type, or CARTRIDGE_NONE if there isn't one...*/
 		StateSav_SaveINT(&CARTRIDGE_type, 1);
 		if (CARTRIDGE_type != CARTRIDGE_NONE) {
-			StateSav_SaveFNAME(cart_filename);
+			StateSav_SaveFNAME(CARTRIDGE_filename);
 		}
 	} else {
 		/* Save the cart type as negative, to indicate to CARTStateRead that there is a 
@@ -1036,11 +1040,11 @@ void CARTRIDGE_StateSave(void)
 		/* Save the cartridge type and name*/
 		StateSav_SaveINT(&cart_save, 1);
 		if (CARTRIDGE_type != CARTRIDGE_NONE) {
-			StateSav_SaveFNAME(cart_filename);
+			StateSav_SaveFNAME(CARTRIDGE_filename);
 		}
 		/* Save the second cartridge type and name*/
 		StateSav_SaveINT(&CARTRIDGE_second_type, 1);
-		StateSav_SaveFNAME(second_cart_filename);
+		StateSav_SaveFNAME(CARTRIDGE_second_filename);
 		/* Save the state of the first/second cart active flag */
 		StateSav_SaveINT(&cart_pass_through, 1);
 	}

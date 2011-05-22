@@ -594,21 +594,11 @@ int UI_SelectCartType(int k)
 
 static void CartManagement(void)
 {
-	static UI_tMenuItem menu_array_sdx[] = {
-		UI_MENU_FILESEL(0, "Create Cartridge from ROM image"),
-		UI_MENU_FILESEL(1, "Extract ROM image from Cartridge"),
-		UI_MENU_FILESEL(2, "Insert Cartridge"),
-		UI_MENU_ACTION(3, "Remove Cartridge"),
-		UI_MENU_FILESEL(4, "Insert SDX Piggyback Cartridge"),
-		UI_MENU_ACTION(5, "Remove SDX Piggyback Cartridge"),
-		UI_MENU_END
-	};
-	
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_FILESEL(0, "Create Cartridge from ROM image"),
 		UI_MENU_FILESEL(1, "Extract ROM image from Cartridge"),
-		UI_MENU_FILESEL(2, "Insert Cartridge"),
-		UI_MENU_ACTION(3, "Remove Cartridge"),
+		UI_MENU_FILESEL_PREFIX_TIP(2, "Cartridge:", NULL, NULL),
+		UI_MENU_FILESEL_PREFIX_TIP(3, "Piggyback:", NULL, NULL),
 		UI_MENU_END
 	};
 	
@@ -620,17 +610,35 @@ static void CartManagement(void)
 	} Header;
 	
 	int option = 2;
+	int seltype;
 
 	for (;;) {
 		static char cart_filename[FILENAME_MAX] = "";
 		
-		if (CARTRIDGE_type != CARTRIDGE_SDX_64 && CARTRIDGE_type != CARTRIDGE_SDX_128) {
-			option = UI_driver->fSelect("Cartridge Management", 0, option, menu_array, NULL);
+		if (CARTRIDGE_type == CARTRIDGE_NONE) {
+			menu_array[2].item = "None";
+			menu_array[2].suffix = "Return:insert";
 		}
-		else
-		{
-			option = UI_driver->fSelect("Cartridge Management", 0, option, menu_array_sdx, NULL);
+		else {
+			menu_array[2].item = CARTRIDGE_filename;
+			menu_array[2].suffix = "Return:insert Backspace:remove";
 		}
+
+		if (CARTRIDGE_type == CARTRIDGE_SDX_64 || CARTRIDGE_type == CARTRIDGE_SDX_128) {
+			menu_array[3].flags = UI_ITEM_FILESEL | UI_ITEM_TIP;
+			if (CARTRIDGE_second_type == CARTRIDGE_NONE) {
+				menu_array[3].item = "None";
+				menu_array[3].suffix = "Return:insert";
+			}
+			else {
+				menu_array[3].item = CARTRIDGE_second_filename;
+				menu_array[3].suffix = "Return:insert Backspace:remove";
+			}
+		} else {
+			menu_array[3].flags = UI_ITEM_HIDDEN;
+		}
+
+		option = UI_driver->fSelect("Cartridge Management", 0, option, menu_array, &seltype);
 
 		switch (option) {
 		case 0:
@@ -743,75 +751,84 @@ static void CartManagement(void)
 			}
 			break;
 		case 2:
-			if (UI_driver->fGetLoadFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-				int r = CARTRIDGE_Insert(cart_filename);
-				switch (r) {
-				case CARTRIDGE_CANT_OPEN:
-					CantLoad(cart_filename);
-					break;
-				case CARTRIDGE_BAD_FORMAT:
-					UI_driver->fMessage("Unknown cartridge format", 1);
-					break;
-				case CARTRIDGE_BAD_CHECKSUM:
-					UI_driver->fMessage("Warning: bad CART checksum", 1);
-					break;
-				case 0:
-					/* ok */
-					break;
-				default:
-					/* r > 0 */
-					CARTRIDGE_type = UI_SelectCartType(r);
-					break;
-				}
-				if (CARTRIDGE_type != CARTRIDGE_NONE) {
-					int for5200 = CARTRIDGE_IsFor5200(CARTRIDGE_type);
-					if (for5200 && Atari800_machine_type != Atari800_MACHINE_5200) {
-						Atari800_machine_type = Atari800_MACHINE_5200;
-						MEMORY_ram_size = 16;
-						Atari800_InitialiseMachine();
+			switch (seltype) {
+			case UI_USER_SELECT: /* Enter */
+				if (UI_driver->fGetLoadFilename(CARTRIDGE_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					int r = CARTRIDGE_Insert(CARTRIDGE_filename);
+					switch (r) {
+					case CARTRIDGE_CANT_OPEN:
+						CantLoad(CARTRIDGE_filename);
+						break;
+					case CARTRIDGE_BAD_FORMAT:
+						UI_driver->fMessage("Unknown cartridge format", 1);
+						break;
+					case CARTRIDGE_BAD_CHECKSUM:
+						UI_driver->fMessage("Warning: bad CART checksum", 1);
+						break;
+					case 0:
+						/* ok */
+						break;
+					default:
+						/* r > 0 */
+						CARTRIDGE_type = UI_SelectCartType(r);
+						break;
 					}
-					else if (!for5200 && Atari800_machine_type == Atari800_MACHINE_5200) {
-						Atari800_machine_type = Atari800_MACHINE_XLXE;
-						MEMORY_ram_size = 64;
-						Atari800_InitialiseMachine();
+					if (CARTRIDGE_type != CARTRIDGE_NONE) {
+						int for5200 = CARTRIDGE_IsFor5200(CARTRIDGE_type);
+						if (for5200 && Atari800_machine_type != Atari800_MACHINE_5200) {
+							Atari800_machine_type = Atari800_MACHINE_5200;
+							MEMORY_ram_size = 16;
+							Atari800_InitialiseMachine();
+						}
+						else if (!for5200 && Atari800_machine_type == Atari800_MACHINE_5200) {
+							Atari800_machine_type = Atari800_MACHINE_XLXE;
+							MEMORY_ram_size = 64;
+							Atari800_InitialiseMachine();
+						}
 					}
+					Atari800_Coldstart();
+					return;
 				}
+				break;
+			case UI_USER_DELETE: /* Backspace */
+				CARTRIDGE_Remove();
 				Atari800_Coldstart();
 				return;
 			}
 			break;
 		case 3:
-			CARTRIDGE_Remove();
-			Atari800_Coldstart();
-			return;
-		case 4:
-			if (UI_driver->fGetLoadFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-				int r = CARTRIDGE_Insert_Second(cart_filename);
-				switch (r) {
-				case CARTRIDGE_CANT_OPEN:
-					CantLoad(cart_filename);
-					break;
-				case CARTRIDGE_BAD_FORMAT:
-					UI_driver->fMessage("Unknown cartridge format", 1);
-					break;
-				case CARTRIDGE_BAD_CHECKSUM:
-					UI_driver->fMessage("Warning: bad CART checksum", 1);
-					break;
-				case 0:
-					/* ok */
-					break;
-				default:
-					/* r > 0 */
-					CARTRIDGE_second_type = UI_SelectCartType(r);
-					break;
+			switch (seltype) {
+			case UI_USER_SELECT: /* Enter */
+				if (UI_driver->fGetLoadFilename(CARTRIDGE_second_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					int r = CARTRIDGE_Insert_Second(CARTRIDGE_second_filename);
+					switch (r) {
+					case CARTRIDGE_CANT_OPEN:
+						CantLoad(CARTRIDGE_second_filename);
+						break;
+					case CARTRIDGE_BAD_FORMAT:
+						UI_driver->fMessage("Unknown cartridge format", 1);
+						break;
+					case CARTRIDGE_BAD_CHECKSUM:
+						UI_driver->fMessage("Warning: bad CART checksum", 1);
+						break;
+					case 0:
+						/* ok */
+						break;
+					default:
+						/* r > 0 */
+						CARTRIDGE_second_type = UI_SelectCartType(r);
+						break;
+					}
+					return;
 				}
+				break;
+			case UI_USER_DELETE: /* Backspace */
+				CARTRIDGE_Remove_Second();
 				return;
-		case 5:
-			CARTRIDGE_Remove_Second();
-			return;
+			}
+			break;
 		default:
 			return;
-			}
 		}
 	}
 }

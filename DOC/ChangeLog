@@ -5,6 +5,11 @@
 * cassette.[ch]: Cleanup - rearrange function order to place the functions
   related to the SIO patch together at the bottom of the files.
 
+* cartridge.[ch], ui.c: Merge "Insert Cartridge"/"Remove Cartridge" menu
+  options into one, to make it consistent with other file-selectors in the
+  menu (ie. display filename, Enter=Insert, BkSp=Remove). Ditto for the
+  "Insert|Remove SDX Piggyback Cartridge" options.
+
 
 2011-05-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sio.c: Fixed a bug with SIO sounds remaining audible after saving to tape
