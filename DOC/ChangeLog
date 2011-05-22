@@ -13,6 +13,8 @@
 * ui.c: Don't leave the "Cartridge Management" menu after inserting/removing
   a cartridge. The behaviour was inconsistent with other menus.
 
+* screen.c: Minor fix - missing "else" in Screen_Initialise().
+
 
 2011-05-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sio.c: Fixed a bug with SIO sounds remaining audible after saving to tape

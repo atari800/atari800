@@ -131,7 +131,7 @@ int Screen_Initialise(int *argc, char *argv[])
 				Screen_SetScreenshotFilenamePattern(argv[++i]);
 			else a_m = TRUE;
 		}
-		if (strcmp(argv[i], "-showspeed") == 0) {
+		else if (strcmp(argv[i], "-showspeed") == 0) {
 			Screen_show_atari_speed = TRUE;
 		}
 		else {
