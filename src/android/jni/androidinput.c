@@ -54,7 +54,7 @@ enum
 static struct touchstate prevtc[MAXPOINTERS];
 static int prevconptr;
 
-int Android_Joyleft = 1;
+int Android_Joyleft = TRUE;
 float Android_Splitpct = 0.5f;
 int Android_Split;
 
@@ -69,15 +69,23 @@ static int Android_key_control;
 static pthread_mutex_t key_mutex = PTHREAD_MUTEX_INITIALIZER;
 static key_last = AKEY_NONE;
 
-UBYTE softjoymap[SOFTJOY_MAXKEYS][2] =
+static const int derot_lut[2][4] =
 {
-	{ KEY_LEFT,  INPUT_STICK_LEFT    },
-	{ KEY_RIGHT, INPUT_STICK_RIGHT   },
-	{ KEY_UP,    INPUT_STICK_FORWARD },
-	{ KEY_DOWN,  INPUT_STICK_BACK    },
-	{ '2',       0                   }
+	{ KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN },	/* derot left */
+	{ KEY_LEFT, KEY_RIGHT, KEY_DOWN, KEY_UP }	/* derot right */
 };
-int Android_SoftjoyEnable = 1;
+UBYTE softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2] =
+{
+	{ KEY_LEFT,  	INPUT_STICK_LEFT    },
+	{ KEY_RIGHT, 	INPUT_STICK_RIGHT   },
+	{ KEY_UP,    	INPUT_STICK_FORWARD },
+	{ KEY_DOWN,  	INPUT_STICK_BACK    },
+	{ '2',       	0                   },
+	{ ACTION_NONE,	AKEY_NONE			},
+	{ ACTION_NONE,	AKEY_NONE			},
+	{ ACTION_NONE,	AKEY_NONE			}
+};
+int Android_SoftjoyEnable = TRUE;
 int Android_DerotateKeys = 0;
 
 void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
@@ -334,43 +342,15 @@ void Android_KeyEvent(int k, int s)
 			Android_TrigStatus = Android_TrigStatus & (~(s != 0)) | (s == 0);
 			return;
 		}
+		for (i = SOFTJOY_ACTIONBASE; i < SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS; i++)
+			if (softjoymap[i][0] == k && softjoymap[i][1] != AKEY_NONE) {
+				k = softjoymap[i][1];
+				break;
+			}
 	}
 
-	switch (Android_DerotateKeys) {
-	case 1:		/* derotate left */
-		switch (k) {
-		case KEY_UP:
-			k = KEY_RIGHT;
-			break;
-		case KEY_DOWN:
-			k = KEY_LEFT;
-			break;
-		case KEY_LEFT:
-			k = KEY_UP;
-			break;
-		case KEY_RIGHT:
-			k = KEY_DOWN;
-			break;
-		}
-		break;
-
-	case 2:		/* derotate right */
-		switch (k) {
-		case KEY_UP:
-			k = KEY_LEFT;
-			break;
-		case KEY_DOWN:
-			k = KEY_RIGHT;
-			break;
-		case KEY_LEFT:
-			k = KEY_DOWN;
-			break;
-		case KEY_RIGHT:
-			k = KEY_UP;
-			break;
-		}
-		break;
-	}
+	if (Android_DerotateKeys && k <= KEY_UP && k >= KEY_RIGHT)
+		k = derot_lut[Android_DerotateKeys - 1][KEY_UP - k];
 
 	switch (k) {
 	case KEY_SHIFT:

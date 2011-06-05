@@ -98,36 +98,54 @@
 			android:title="@string/pref_keydefscr"
 			android:summary="@string/pref_keydefscr_sum"
 			android:dependency="softjoy">
-			<name.nick.jubanka.atari800.KeymapPreference
-				android:key="up"
-				android:title="@string/pref_up"
-				android:dialogTitle="@string/pref_up"
-				android:negativeButtonText="@string/cancel"
-				android:defaultValue="254"/>
-			<name.nick.jubanka.atari800.KeymapPreference
-				android:key="down"
-				android:title="@string/pref_down"
-				android:dialogTitle="@string/pref_down"
-				android:negativeButtonText="@string/cancel"
-				android:defaultValue="253"/>
-			<name.nick.jubanka.atari800.KeymapPreference
-				android:key="left"
-				android:title="@string/pref_left"
-				android:dialogTitle="@string/pref_left"
-				android:negativeButtonText="@string/cancel"
-				android:defaultValue="252"/>
-			<name.nick.jubanka.atari800.KeymapPreference
-				android:key="right"
-				android:title="@string/pref_right"
-				android:dialogTitle="@string/pref_right"
-				android:negativeButtonText="@string/cancel"
-				android:defaultValue="251"/>
-			<name.nick.jubanka.atari800.KeymapPreference
-				android:key="fire"
-				android:title="@string/pref_fire"
-				android:dialogTitle="@string/pref_fire"
-				android:negativeButtonText="@string/cancel"
-				android:defaultValue="50"/>
+			<PreferenceCategory android:title="@string/preftitle_keymap_joystick">
+				<name.nick.jubanka.atari800.KeymapPreference
+					android:key="up"
+					android:title="@string/pref_up"
+					android:defaultValue="254"
+					jub:ext="false"/>
+				<name.nick.jubanka.atari800.KeymapPreference
+					android:key="down"
+					android:title="@string/pref_down"
+					android:defaultValue="253"
+					jub:ext="false"/>
+				<name.nick.jubanka.atari800.KeymapPreference
+					android:key="left"
+					android:title="@string/pref_left"
+					android:defaultValue="252"
+					jub:ext="false"/>
+				<name.nick.jubanka.atari800.KeymapPreference
+					android:key="right"
+					android:title="@string/pref_right"
+					android:defaultValue="251"
+					jub:ext="false"/>
+				<name.nick.jubanka.atari800.KeymapPreference
+					android:key="fire"
+					android:title="@string/pref_fire"
+					android:defaultValue="50"
+					jub:ext="false"/>
+			</PreferenceCategory>
+			<PreferenceCategory android:title="@string/preftitle_keymap_actions">
+				<name.nick.jubanka.atari800.KeymapPreference
+					android:key="actiona"
+					android:title="@string/pref_actiona"
+					android:defaultValue="-1,-1"
+					jub:ext="true"/>
+				<name.nick.jubanka.atari800.KeymapPreference
+					android:key="actionb"
+					android:title="@string/pref_actionb"
+					android:defaultValue="-1,-1"
+					jub:ext="true"/>
+				<name.nick.jubanka.atari800.KeymapPreference
+					android:key="actionc"
+					android:title="@string/pref_actionc"
+					android:defaultValue="-1,-1"
+					jub:ext="true"/>
+				<Preference
+					android:key="resetactions"
+					android:title="@string/pref_resetactions"
+					android:summary="@string/pref_resetactions_sum"/>
+			</PreferenceCategory>
 		</PreferenceScreen>
 		<ListPreference
 			android:key="derotkeys"

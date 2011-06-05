@@ -86,7 +86,11 @@ enum
 	SOFTJOY_FIRE,
 	SOFTJOY_MAXKEYS
 };
-extern UBYTE softjoymap[SOFTJOY_MAXKEYS][2];
+#define SOFTJOY_MAXACTIONS 3
+#define SOFTJOY_ACTIONBASE SOFTJOY_MAXKEYS
+#define ACTION_NONE 0xFF
+extern UBYTE softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2];
+
 extern int Android_SoftjoyEnable;
 extern int Android_Joyleft;
 extern float Android_Splitpct;

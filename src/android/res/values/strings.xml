@@ -151,6 +151,11 @@
 	<string name="pref_left">Left</string>
 	<string name="pref_right">Right</string>
 	<string name="pref_fire">Fire</string>
+	<string name="pref_actiona">Action A</string>
+	<string name="pref_actionb">Action B</string>
+	<string name="pref_actionc">Action C</string>
+	<string name="preftitle_keymap_joystick">Joystick Keymap</string>
+	<string name="preftitle_keymap_actions">Generic Mappable Keys</string>
 	<string name="pref_joysize">Joystick Area Size</string>
 	<string name="pref_joysize_sum">Enlarge/Shrink on-screen joystick</string>
 	<string name="pref_joyvisible">Joystick Visible</string>
@@ -173,10 +178,25 @@
 	<string name="pref_hqpokey_sum">Use high quality POKEY emulation</string>
 	<string name="pref_romdir">ROMs directory</string>
 	<string name="pref_romdir_sum">Set directory where Atari ROMs reside</string>
-	<string name="pref_keymapmsg">Press the key to assign to this action</string>
 	<string name="pref_keymapdupmsg">This key is already used for another action.\n\nWould you like to swap
 									 the mapping between these two keys? (\'No\' will keep current
 									 assignments)</string>
+	<string name="pref_warnresetactions">Are you sure you want to clear the current action mappings?</string>
+	<string name="pref_keymapmsg">Press the key on the controller to assign to this action</string>
+	<string name="pref_keymapmsg1">Step 1:\nPress the key on the CONTROLLER to assign to this action</string>
+	<string name="pref_keymapmsg2">Step 2:\nType the key of the Atari to assign to this action in
+								   the next box (1 character only)</string>
+	<string name="pref_keymapmsg2note">NOTE:\nUse the hardware keyboard to type in the box. If you have 
+									   enabled the Wiicontroller IME, please temporarily disable it by long
+									   pressing in the box and select the standard IME. The virtual keyboard
+									   subsequently will show up when you select the text box above. Please
+									   remember to re-set the WiiController IME when finished.</string>
+	<string name="pref_typeatarikey">Type Atari key</string>
+	<string name="pref_keymap_current">Current:</string>
+	<string name="pref_keymap_controller">Controller:</string>
+	<string name="pref_keymap_mappedto">is mapped to:</string>
+	<string name="pref_resetactions">Reset Action Mappings</string>
+	<string name="pref_resetactions_sum">Clear current action mappings</string>
 	<string name="pref_mixbufsize">Sound Buffer Size</string>
 	<string name="pref_mixbufsize_sum">Lower for lower latency, higher to get rid of clicks</string>
 	<string name="pref_rompath">Atari ROM Path</string>

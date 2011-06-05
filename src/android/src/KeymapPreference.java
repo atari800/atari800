@@ -28,6 +28,7 @@ import android.preference.DialogPreference;
 import android.content.Context;
 import android.view.KeyCharacterMap;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.KeyEvent;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
@@ -40,6 +41,7 @@ import android.util.SparseArray;
 import android.widget.TextView;
 import android.R.style;
 import android.util.TypedValue;
+import android.view.LayoutInflater;
 import static android.view.KeyEvent.*;
 import static name.nick.jubanka.atari800.A800view.*;
 
@@ -47,31 +49,48 @@ import static name.nick.jubanka.atari800.A800view.*;
 public final class KeymapPreference extends DialogPreference
 {
 	private static final String TAG = "KeyPreference";
+
 	private static final int DEFKEY = 'a';
+	private static final String DEFKEYEXT = "-1,-1";
+	private static final int EXTSTR_ACTION = 0;
+	private static final int EXTSTR_KEY = 1;
+
 	private KeyCharacterMap _keymap;
-	int _def;
+	private int _def;
+	private String _defext = null;
+	private boolean _extended = false;
 
 	public KeymapPreference(Context c, AttributeSet a) {
 		super(c, a);
 		_keymap = KeyCharacterMap.load(KeyCharacterMap.BUILT_IN_KEYBOARD);
+
+		_extended = Boolean.parseBoolean( c.obtainStyledAttributes(a, R.styleable.KeymapPreference)
+										   .getString(R.styleable.KeymapPreference_ext) );
+
+		setNegativeButtonText(R.string.cancel);
+		setDialogTitle(getTitle());
 	}
 
 	@Override
 	protected Object onGetDefaultValue(TypedArray a, int i) {
-		_def = a.getInt(i, DEFKEY);
-		return _def;
+		try {
+			_def = a.getInt(i, DEFKEY);
+			return _def;
+		} catch (NumberFormatException e) {
+			_defext = a.getString(i);
+			if (_defext == null)
+				_defext = DEFKEYEXT;
+			return _defext;
+		}
 	}
 
 	@Override
 	protected void onSetInitialValue(boolean restore, Object def) {
-		if (restore == false)
-			persistInt((Integer) def);
-	}
-
-	@Override
-	public void onBindView(View v) {
-		updateSum();
-		super.onBindView(v);
+		if (!restore)
+			if (!_extended)
+				persistInt((Integer) def);
+			else
+				persistString((String) def);
 	}
 
 	@Override
@@ -88,11 +107,11 @@ public final class KeymapPreference extends DialogPreference
 		return v;
 	}
 
-	private class SnoopTextView extends TextView
+	private final class SnoopTextView extends TextView
 	{
 		public SnoopTextView(Context c) {
 			super(c);
-			setText(R.string.pref_keymapmsg);
+			setText( (!_extended) ? R.string.pref_keymapmsg : R.string.pref_keymapmsg1);
 			setTextAppearance(c, android.R.style.TextAppearance_Medium);
 			int pad = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
 													  (float) 10,
@@ -105,7 +124,7 @@ public final class KeymapPreference extends DialogPreference
 
 		@Override
 		public boolean onKeyDown(int kc, KeyEvent ev) {
-			Log.d(TAG, "key" + kc);
+			Log.d(TAG, "key " + kc);
 
 			for (int res: RESKEYS)
 				if (res == kc)
@@ -116,7 +135,7 @@ public final class KeymapPreference extends DialogPreference
 			if (k == 0)
 				return false;
 
-			if (k == getPersistedInt(-1)) {
+			if (k == getKeymap() && !_extended) {
 				getDialog().dismiss();
 				return true;
 			}
@@ -131,7 +150,10 @@ public final class KeymapPreference extends DialogPreference
 							callChangeListener(new Integer(-k));
 							setKeymap(k);
 							d.dismiss();
-							getDialog().dismiss();
+							if (!_extended)
+								getDialog().dismiss();
+							else
+								showExtDialog();
 						}
 						})
 					.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -144,7 +166,10 @@ public final class KeymapPreference extends DialogPreference
 			}
 
 			setKeymap(k);
-			getDialog().dismiss();
+			if (!_extended)
+				getDialog().dismiss();
+			else
+				showExtDialog();
 			return true;
 		}
 
@@ -152,15 +177,53 @@ public final class KeymapPreference extends DialogPreference
 		public boolean onCheckIsTextEditor() { return true; }
 	}
 
+	private void showExtDialog()
+	{
+		LayoutInflater inf = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		new AlertDialog.Builder(getContext())
+			.setTitle(getTitle())
+			.setView(inf.inflate(R.layout.extended_keymap, null))
+			.setCancelable(false)
+			.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface d, int i) {
+					CharSequence txt = ((TextView) ((Dialog) d).findViewById(R.id.keyinput)).getText();
+					if (txt == null || txt.length() != 1) {
+						getDialog().dismiss();
+						return;
+					}
+					persistString( buildExtPref(parseExtPref(EXTSTR_ACTION), (int) txt.charAt(0)) );
+					updateSum();
+					d.dismiss();
+					getDialog().dismiss();
+				}
+				})
+			.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface d, int i) {
+					getDialog().dismiss();
+				}
+				})
+			.show();
+	}
+
 	public void updateSum() {
-		setSummary("Current: " + ((getPersistedInt(-1) == -1) ?
-								  getKeyname(_def) : getKeyname(getPersistedInt(-1))));
+		StringBuilder str = new StringBuilder();
+		str.append( getContext()
+					.getString(_extended ? R.string.pref_keymap_controller : R.string.pref_keymap_current) );
+		str.append(" ");
+		str.append( getKeyname(getKeymap()) );
+		if (_extended) {
+			str.append(" ");
+			str.append( getContext().getString(R.string.pref_keymap_mappedto) );
+			str.append(" ");
+			str.append( getKeyname(parseExtPref(EXTSTR_KEY)) );
+		}
+		setSummary(str);
 	}
 
 	private int xlatKey(int kc) {
 		int k;
 
-		Integer xlat = XLATKEYS.get(kc);
+		Integer xlat = A800view.XLATKEYS.get(kc);
 		if (xlat != null)
 			k = xlat.intValue();
 		else
@@ -168,9 +231,34 @@ public final class KeymapPreference extends DialogPreference
 		return k;
 	}
 
-	private void setKeymap(int k) {
-		persistInt(k);
+	public void setKeymap(int k) {
+		if (!_extended)
+			persistInt(k);
+		else
+			persistString( buildExtPref(k, parseExtPref(EXTSTR_KEY)) );
 		updateSum();
+	}
+
+	public void setDefaultKeymap() {
+		if (!_extended)		return;
+		persistString(DEFKEYEXT);
+		updateSum();
+	}
+
+	public int getKeymap() {
+		if (!_extended)
+			return getPersistedInt(-1) == -1 ? _def : getPersistedInt(-1);
+		else
+			return parseExtPref(EXTSTR_ACTION);
+	}
+
+	private int parseExtPref(int part) {
+		String str = getPersistedString(null);
+		return Integer.parseInt( ((str != null) ? str : _defext).split(",")[part] );
+	}
+
+	private String buildExtPref(int k1, int k2) {
+		return Integer.toString(k1) + "," + Integer.toString(k2);
 	}
 
 	private String getKeyname(int k) {
@@ -182,28 +270,25 @@ public final class KeymapPreference extends DialogPreference
 	}
 
 	// Real programmers *hate* data entry ;-)
-	private static final SparseArray<String> KEYNAMES = new SparseArray<String>();
+	private static final SparseArray<String> KEYNAMES = new SparseArray<String>(13);
 	static {
-		KEYNAMES.put(' ',					"Space");
-		KEYNAMES.put(KEY_DOWN,				"Down arrow");
-		KEYNAMES.put(KEY_LEFT,				"Left arrow");
-		KEYNAMES.put(KEY_RIGHT,				"Right arrow");
-		KEYNAMES.put(KEY_UP,				"Up arrow");
-		KEYNAMES.put(KEY_ENTER,				"DPAD Enter");
-		KEYNAMES.put(KEY_BACKSPACE,			"Del");
+		KEYNAMES.put(-1,			"None");
+		KEYNAMES.put(' ',			"Space");
+		KEYNAMES.put(KEY_DOWN,		"Down arrow");
+		KEYNAMES.put(KEY_LEFT,		"Left arrow");
+		KEYNAMES.put(KEY_RIGHT,		"Right arrow");
+		KEYNAMES.put(KEY_UP,		"Up arrow");
+		KEYNAMES.put(KEY_ENTER,		"Enter");
+		KEYNAMES.put(KEY_BACKSPACE,	"Del");
+		KEYNAMES.put(KEY_BT_X,		"Button X");
+		KEYNAMES.put(KEY_BT_Y,		"Button Y");
+		KEYNAMES.put(KEY_BT_L1,		"Button L1");
+		KEYNAMES.put(KEY_BT_R1,		"Button R1");
+		KEYNAMES.put(KEY_BREAK,		"DPAD Enter");
 	}
 	private static final int[] RESKEYS = {
 		KEYCODE_SHIFT_LEFT, KEYCODE_SHIFT_RIGHT, KEYCODE_VOLUME_UP, KEYCODE_VOLUME_DOWN,
 		KEYCODE_MENU, KEYCODE_SEARCH, KEYCODE_BACK, KEYCODE_HOME, KEYCODE_POWER,
 		KEYCODE_CALL, KEYCODE_ENDCALL
 	};
-	private static final SparseArray<Integer> XLATKEYS = new SparseArray<Integer>();
-	static {
-		XLATKEYS.put(KEYCODE_DPAD_UP,		KEY_UP);
-		XLATKEYS.put(KEYCODE_DPAD_DOWN,		KEY_DOWN);
-		XLATKEYS.put(KEYCODE_DPAD_LEFT,		KEY_LEFT);
-		XLATKEYS.put(KEYCODE_DPAD_RIGHT,	KEY_RIGHT);
-		XLATKEYS.put(KEYCODE_DPAD_CENTER,	KEY_ENTER);
-		XLATKEYS.put(KEYCODE_DEL,			KEY_BACKSPACE);
-	}
 }

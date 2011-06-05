@@ -25,6 +25,7 @@
 #include <stddef.h>
 #include <pthread.h>
 #include <jni.h>
+#include <string.h>
 
 #include "log.h"
 #include "atari.h"
@@ -35,24 +36,24 @@
 #include "antic.h"
 #include "../../memory.h"	/* override system header */
 #include "sio.h"
+#include "akey.h"
 
 #include "platform.h"
 #include "graphics.h"
 #include "androidinput.h"
 
-/* exported functions/parameters */
+/* exports/imports */
 int *ovl_texpix;
 int ovl_texw;
 int ovl_texh;
+extern void SoundThread_Update(void *buf, int offs, int len);
+extern void Android_SoundInit(int rate, int bit16, int hq);
 
 struct audiothread {
 	UBYTE *sndbuf;
 	jbyteArray sndarray;
 };
 static pthread_key_t audiothread_data;
-
-extern void SoundThread_Update(void *buf, int offs, int len);
-extern void Android_SoundInit(int rate, int bit16, int hq);
 
 static void JNICALL NativeGetOverlays(JNIEnv *env, jobject this)
 {
@@ -326,8 +327,14 @@ static void JNICALL NativePrefEmulation(JNIEnv *env, jobject this, jboolean basi
 }
 
 static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjoy, int up, int down,
-									  int left, int right, int fire, int derotkeys)
+									  int left, int right, int fire, int derotkeys, jobjectArray actions)
 {
+	int i;
+	jobject obj;
+	const char *str;
+	char *sep;
+	UBYTE act, akey;
+
 	Android_SoftjoyEnable = softjoy;
 	softjoymap[SOFTJOY_UP][0] = up;
 	softjoymap[SOFTJOY_DOWN][0] = down;
@@ -335,6 +342,22 @@ static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjo
 	softjoymap[SOFTJOY_RIGHT][0] = right;
 	softjoymap[SOFTJOY_FIRE][0] = fire;
 	Android_DerotateKeys = derotkeys;
+
+	for (i = 0; i < SOFTJOY_MAXACTIONS; i++) {
+		obj = (*env)->GetObjectArrayElement(env, actions, i);
+		str = (*env)->GetStringUTFChars(env, obj, NULL);
+		sep = strchr(str, ',');
+		act = ACTION_NONE;
+		akey = AKEY_NONE;
+		if (sep) {
+			act = atoi(str);
+			akey = atoi(sep + 1);
+		}
+		softjoymap[SOFTJOY_ACTIONBASE + i][0] = act;
+		softjoymap[SOFTJOY_ACTIONBASE + i][1] = akey;
+		(*env)->ReleaseStringUTFChars(env, obj, str);
+		(*env)->DeleteLocalRef(env, obj);
+	}
 }
 
 static void JNICALL NativePrefOvl(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
@@ -388,37 +411,37 @@ static jstring JNICALL NativeGetJoypos(JNIEnv *env, jobject this)
 jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
 	JNINativeMethod main_methods[] = {
-		{ "NativeExit",				"()V",						NativeExit			  },
-		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",	NativeRunAtariProgram },
-		{ "NativePrefGfx",			"(IZIIZII)V",				NativePrefGfx		  },
-		{ "NativePrefMachine",		"(I)Z",						NativePrefMachine	  },
-		{ "NativePrefEmulation",	"(ZZZZ)V",					NativePrefEmulation	  },
-		{ "NativePrefSoftjoy",		"(ZIIIIII)V",				NativePrefSoftjoy	  },
-		{ "NativePrefOvl",			"(ZIIZIIZIII)V",			NativePrefOvl		  },
-		{ "NativePrefSound",		"(IZZ)V",					NativePrefSound		  },
-		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",	NativeSetROMPath	  },
-		{ "NativeGetJoypos",		"()Ljava/lang/String;",		NativeGetJoypos		  },
-		{ "NativeInit",				"()Ljava/lang/String;",		NativeInit			  },
+		{ "NativeExit",				"()V",								NativeExit			  },
+		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",			NativeRunAtariProgram },
+		{ "NativePrefGfx",			"(IZIIZII)V",						NativePrefGfx		  },
+		{ "NativePrefMachine",		"(I)Z",								NativePrefMachine	  },
+		{ "NativePrefEmulation",	"(ZZZZ)V",							NativePrefEmulation	  },
+		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },
+		{ "NativePrefOvl",			"(ZIIZIIZIII)V",					NativePrefOvl		  },
+		{ "NativePrefSound",		"(IZZ)V",							NativePrefSound		  },
+		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",			NativeSetROMPath	  },
+		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },
+		{ "NativeInit",				"()Ljava/lang/String;",				NativeInit			  },
 	};
 	JNINativeMethod view_methods[] = {
-		{ "NativeTouch", 			"(IIIIII)V", 				NativeTouch			  },
-		{ "NativeKey",				"(II)V",					NativeKey			  },
+		{ "NativeTouch", 			"(IIIIII)V", 						NativeTouch			  },
+		{ "NativeKey",				"(II)V",							NativeKey			  },
 	};
 	JNINativeMethod snd_methods[] = {
-		{ "NativeSoundInit",		"(I)V",						NativeSoundInit		  },
-		{ "NativeSoundUpdate",		"(II)V",					NativeSoundUpdate	  },
-		{ "NativeSoundExit",		"()V",						NativeSoundExit		  },
+		{ "NativeSoundInit",		"(I)V",								NativeSoundInit		  },
+		{ "NativeSoundUpdate",		"(II)V",							NativeSoundUpdate	  },
+		{ "NativeSoundExit",		"()V",								NativeSoundExit		  },
 	};
 	JNINativeMethod render_methods[] = {
-		{ "NativeRunFrame",			"()Z",						NativeRunFrame		  },
-		{ "NativeGetOverlays",		"()V",						NativeGetOverlays	  },
-		{ "NativeResize",			"(II)V",					NativeResize		  },
+		{ "NativeRunFrame",			"()Z",								NativeRunFrame		  },
+		{ "NativeGetOverlays",		"()V",								NativeGetOverlays	  },
+		{ "NativeResize",			"(II)V",							NativeResize		  },
 	};
 	JNINativeMethod fsel_methods[] = {
-		{ "NativeIsDisk",			"(Ljava/lang/String;)Z",	NativeIsDisk		  },
-		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",	NativeRunAtariProgram },
-		{ "NativeGetDrvFnames",		"()[Ljava/lang/String;",	NativeGetDrvFnames	  },
-		{ "NativeUnmountAll",		"()V",						NativeUnmountAll	  },
+		{ "NativeIsDisk",			"(Ljava/lang/String;)Z",			NativeIsDisk		  },
+		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",			NativeRunAtariProgram },
+		{ "NativeGetDrvFnames",		"()[Ljava/lang/String;",			NativeGetDrvFnames	  },
+		{ "NativeUnmountAll",		"()V",								NativeUnmountAll	  },
 	};
 	JNIEnv *env;
 	jclass cls;

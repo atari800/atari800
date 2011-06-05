@@ -37,25 +37,33 @@ import android.content.Intent;
 import android.app.AlertDialog;
 import android.webkit.WebView;
 import android.app.Dialog;
+import android.content.DialogInterface;
 
 
 public final class Preferences extends PreferenceActivity implements Preference.OnPreferenceChangeListener
 {
 	private static final String TAG = "Preferences";
-	private static final String[] PREF_KEYS = { "up", "down", "left", "right", "fire" };
+	private static final String[] PREF_KEYS = { "up", "down", "left", "right", "fire",
+												"actiona", "actionb", "actionc" };
 	private static final int ACTIVITY_FSEL = 1;
 	private static final int DLG_ABOUT = 1;
+	private static final int DLG_RESET = 2;
 	private SharedPreferences _sp;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		KeymapPreference kp;
+
 		super.onCreate(savedInstanceState);
 
 		addPreferencesFromResource(R.xml.preferences);
 		_sp = getPreferenceManager().getSharedPreferences();
 
-		for (String s: PREF_KEYS)
-			findPreference(s).setOnPreferenceChangeListener(this);
+		for (String s: PREF_KEYS) {
+			kp = (KeymapPreference) findPreference(s);
+			kp.setOnPreferenceChangeListener(this);
+			kp.updateSum();
+		}
 
 		findPreference("rompath").setOnPreferenceClickListener(new OnPreferenceClickListener() {
 			@Override
@@ -84,29 +92,36 @@ public final class Preferences extends PreferenceActivity implements Preference.
 				return true;
 			}
 		});
+
+		findPreference("resetactions").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+			@Override
+			public boolean onPreferenceClick(Preference p) {
+				showDialog(DLG_RESET);
+				return true;
+			}
+		});
 	}
 
 	@Override
-	public boolean onPreferenceChange(Preference pref, Object v) {
+	public boolean onPreferenceChange(Preference p, Object v) {
 		int k = (Integer) v;
-		Log.d(TAG, "Change" + k);
+		KeymapPreference pref;
 
-		if (k >= 0) {	// check mappings
-			for (String key: PREF_KEYS)
-				if (_sp.getInt(key, -1) == k)
+		Log.d(TAG, "Change " + k);
+		for (String key: PREF_KEYS) {
+			if (key.equals(p.getKey()))	continue;
+			pref = (KeymapPreference) findPreference(key);
+			if (k >= 0) {	// check mappings
+				if (pref.getKeymap() == k)
 					return false;
-			return true;
-		} else {		// swap mappings
-			k = -k;
-			for (String key: PREF_KEYS)
-				if (_sp.getInt(key, -1) == k) {
-					SharedPreferences.Editor e = _sp.edit();
-					e.putInt(key, _sp.getInt(pref.getKey(), -1));
-					e.commit();
-					((KeymapPreference) findPreference(key)).updateSum();
+			} else {		// swap mappings
+				if (pref.getKeymap() == -k) {
+					pref.setKeymap( ((KeymapPreference) p).getKeymap() );
+					return true;
 				}
-			return true;
+			}
 		}
+		return true;
 	}
 
 	@Override
@@ -128,7 +143,7 @@ public final class Preferences extends PreferenceActivity implements Preference.
 		case DLG_ABOUT:
 			WebView v = new WebView(this);
 			v.loadData(String.format(getString(R.string.aboutmsg),
-						MainActivity._pkgversion, MainActivity._coreversion), "text/html", "utf-8");
+					   MainActivity._pkgversion, MainActivity._coreversion), "text/html", "utf-8");
 			v.setVerticalScrollBarEnabled(true);
 			d = new AlertDialog.Builder(this)
 					.setTitle(R.string.about)
@@ -136,6 +151,21 @@ public final class Preferences extends PreferenceActivity implements Preference.
 					.setView(v)
 					.setInverseBackgroundForced(true)
 					.setPositiveButton(R.string.ok, null)
+					.create();
+			break;
+
+		case DLG_RESET:
+			d = new AlertDialog.Builder(this)
+					.setTitle(R.string.warning)
+					.setIcon(android.R.drawable.ic_dialog_alert)
+					.setMessage(R.string.pref_warnresetactions)
+					.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface d, int i) {
+							for (String str: new String[] {"actiona", "actionb", "actionc"})
+								((KeymapPreference) findPreference(str)).setDefaultKeymap();
+						}
+						})
+					.setNegativeButton(R.string.cancel, null)
 					.create();
 			break;
 

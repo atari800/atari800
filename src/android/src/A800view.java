@@ -33,6 +33,8 @@ import android.view.KeyCharacterMap;
 import android.os.Build;
 import android.widget.Toast;
 import android.view.View;
+import android.util.SparseArray;
+import static android.view.KeyEvent.*;
 
 
 public final class A800view extends GLSurfaceView
@@ -47,6 +49,18 @@ public final class A800view extends GLSurfaceView
 	public static final int KEY_FIRE      = 250;
 	public static final int KEY_ENTER     = 249;
 	public static final int KEY_ESCAPE    = 248;
+	public static final int KEY_CENTER    = 247;
+	public static final int KEY_BT_X      = 246;
+	public static final int KEY_BT_Y      = 245;
+	public static final int KEY_BT_L1     = 244;
+	public static final int KEY_BT_R1     = 243;
+	public static final int KEY_BREAK     = 242;
+	// keycodes from newer sdks
+	public static final int KC_BUTTON_X   = 307;
+	public static final int KC_BUTTON_Y   = 308;
+	public static final int KC_BUTTON_L1  = 310;
+	public static final int KC_BUTTON_R1  = 311;
+	
 
 	private static final String TAG = "A800View";
 	private A800Renderer _renderer;
@@ -54,6 +68,7 @@ public final class A800view extends GLSurfaceView
 	private int _key, _meta, _hit;
 	private TouchFactory _touchHandler = null;
 	private Toast _toastquit;
+	private Integer _xkey;
 
 	public A800view(Context context) {
 		super(context);
@@ -158,46 +173,21 @@ public final class A800view extends GLSurfaceView
 	}
 
 	private boolean doKey(int kc, final KeyEvent ev) {
-		_hit =(ev.getAction() == KeyEvent.ACTION_DOWN) ? 1 : 0;
-		switch (kc) {
-		case KeyEvent.KEYCODE_BACK:
-			if (_hit == 1) {
-				if (_toastquit.getView().getWindowVisibility() == View.VISIBLE) {
-					_toastquit.cancel();
-					((MainActivity) getContext()).finish();
-				} else
-					_toastquit.show();
-				return true;
-			}
-			break;
-		case KeyEvent.KEYCODE_DPAD_UP:
-			_key = KEY_UP;
-			break;
-		case KeyEvent.KEYCODE_DPAD_DOWN:
-			_key = KEY_DOWN;
-			break;
-		case KeyEvent.KEYCODE_DPAD_LEFT:
-			_key = KEY_LEFT;
-			break;
-		case KeyEvent.KEYCODE_DPAD_RIGHT:
-			_key = KEY_RIGHT;
-			break;
-		case KeyEvent.KEYCODE_SEARCH:
-			_key = KEY_FIRE;
-			break;
-		case KeyEvent.KEYCODE_SHIFT_LEFT:
-			_key = KEY_SHIFT;
-			break;
-		case KeyEvent.KEYCODE_SHIFT_RIGHT:
-			_key = KEY_CONTROL;
-			break;
-		case KeyEvent.KEYCODE_DEL:
-			_key = KEY_BACKSPACE;
-			break;
-		case KeyEvent.KEYCODE_DPAD_CENTER:
-			_key = KEY_ESCAPE;
-			break;
-		default:
+		_hit =(ev.getAction() == ACTION_DOWN) ? 1 : 0;
+
+		if (kc == KEYCODE_BACK && _hit == 1) {
+			if (_toastquit.getView().getWindowVisibility() == View.VISIBLE) {
+				_toastquit.cancel();
+				((MainActivity) getContext()).finish();
+			} else
+				_toastquit.show();
+			return true;
+		}
+
+		_xkey = XLATKEYS.get(kc);
+		if (_xkey != null)
+			_key = _xkey.intValue();
+		else {
 			_meta = ev.getMetaState();
 			if ((_meta & KeyEvent.META_SHIFT_RIGHT_ON) == KeyEvent.META_SHIFT_RIGHT_ON)
 				_meta &= ~(KeyEvent.META_SHIFT_RIGHT_ON | KeyEvent.META_SHIFT_ON);
@@ -205,6 +195,7 @@ public final class A800view extends GLSurfaceView
 			if (_key == 0)
 				return false;
 		}
+
 		//Log.d(TAG, String.format("key %d %d -> %d", ev.getAction(), kc, _key));
 
 		NativeKey(_key, _hit);
@@ -214,4 +205,22 @@ public final class A800view extends GLSurfaceView
 
 	private native static void NativeTouch(int x1, int y1, int s1, int x2, int y2, int s2);
 	private native void NativeKey(int keycode, int status);
+
+	public static final SparseArray<Integer> XLATKEYS = new SparseArray<Integer>(14);
+	static {
+		XLATKEYS.put(KEYCODE_DPAD_UP,		KEY_UP);
+		XLATKEYS.put(KEYCODE_DPAD_DOWN,		KEY_DOWN);
+		XLATKEYS.put(KEYCODE_DPAD_LEFT,		KEY_LEFT);
+		XLATKEYS.put(KEYCODE_DPAD_RIGHT,	KEY_RIGHT);
+		XLATKEYS.put(KEYCODE_DPAD_CENTER,	KEY_BREAK);
+		XLATKEYS.put(KEYCODE_SEARCH,		KEY_FIRE);
+		XLATKEYS.put(KEYCODE_SHIFT_LEFT,	KEY_SHIFT);
+		XLATKEYS.put(KEYCODE_SHIFT_RIGHT,	KEY_CONTROL);
+		XLATKEYS.put(KEYCODE_DEL,			KEY_BACKSPACE);
+		XLATKEYS.put(KEYCODE_ENTER,			KEY_ENTER);
+		XLATKEYS.put(KC_BUTTON_X,			KEY_BT_X);
+		XLATKEYS.put(KC_BUTTON_Y,			KEY_BT_Y);
+		XLATKEYS.put(KC_BUTTON_L1,			KEY_BT_L1);
+		XLATKEYS.put(KC_BUTTON_R1,			KEY_BT_R1);
+	}
 }

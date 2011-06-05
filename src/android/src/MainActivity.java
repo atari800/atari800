@@ -414,7 +414,7 @@ public final class MainActivity extends Activity
 			disk, sector, softjoy, up, down, left, right, fire, joyvisible, joysize,
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
 			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
-			crophoriz, cropvert, derotkeys
+			crophoriz, cropvert, derotkeys, actiona, actionb, actionc
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -468,7 +468,10 @@ public final class MainActivity extends Activity
 							   Integer.parseInt(_newvalues.get(PreferenceName.left)),
 							   Integer.parseInt(_newvalues.get(PreferenceName.right)),
 							   Integer.parseInt(_newvalues.get(PreferenceName.fire)),
-							   Integer.parseInt(_newvalues.get(PreferenceName.derotkeys)) );
+							   Integer.parseInt(_newvalues.get(PreferenceName.derotkeys)),
+				   			   new String[] { _newvalues.get(PreferenceName.actiona),
+											  _newvalues.get(PreferenceName.actionb),
+											  _newvalues.get(PreferenceName.actionc) } );
 
 			int x = 0, y = 0;
 			if (Boolean.parseBoolean(_newvalues.get(PreferenceName.anchor))) {
@@ -571,8 +574,8 @@ public final class MainActivity extends Activity
 	private static native boolean NativePrefMachine(int machine);
 	private static native void NativePrefEmulation(boolean basic, boolean speed, boolean disk,
 												   boolean sector);
-	private static native void NativePrefSoftjoy(boolean softjoy, int up, int down, int left,
-												 int right, int fire, int derotkeys);
+	private static native void NativePrefSoftjoy(boolean softjoy, int up, int down, int left, int right,
+												 int fire, int derotkeys, String[] actions);
 	private static native void NativePrefOvl(boolean visible, int size, int opacity, boolean righth,
 											 int deadband, int midx, boolean anchor, int anchorx, int anchory,
 											 int grace);

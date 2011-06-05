@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <resources>
 	<declare-styleable name="SliderPreference">
 		<attr name="min" format="string"/>
 		<attr name="max" format="string"/>
 		<attr name="suffix" format="string"/>
+	</declare-styleable>
+
+	<declare-styleable name="KeymapPreference">
+		<attr name="ext" format="string"/>
 	</declare-styleable>
 </resources>

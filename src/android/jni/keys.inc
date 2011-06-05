@@ -10,6 +10,7 @@
 #define KEY_FIRE      250
 #define KEY_ENTER     249
 #define KEY_ESCAPE    248
+#define KEY_BREAK     242
 
 static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 	[0 ... (STATIC_MAXKEYS - 1)] = AKEY_NONE,
@@ -120,6 +121,7 @@ static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 	[KEY_RIGHT    ] = AKEY_RIGHT,
 	[KEY_ENTER    ] = AKEY_RETURN,
 	[KEY_ESCAPE   ] = AKEY_ESCAPE,
+	[KEY_BREAK    ] = AKEY_BREAK,
 
 
 
