@@ -245,7 +245,8 @@ public final class MainActivity extends Activity
 			if (_audio != null)	_audio.interrupt();
 			_audio = new AudioThread(Integer.parseInt(_settings.get(n, "mixrate")),
 									 Boolean.parseBoolean(_settings.get(n, "sound16bit")) ?  2 : 1,
-									 Integer.parseInt(_settings.get(n, "mixbufsize")) * 10);
+									 Integer.parseInt(_settings.get(n, "mixbufsize")) * 10,
+									 Boolean.parseBoolean(_settings.get(n, "ntsc")));
 			_audio.start();
 		} else {
 			if (_audio != null)	_audio.interrupt();
@@ -414,7 +415,7 @@ public final class MainActivity extends Activity
 			disk, sector, softjoy, up, down, left, right, fire, joyvisible, joysize,
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
 			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
-			crophoriz, cropvert, derotkeys, actiona, actionb, actionc
+			crophoriz, cropvert, derotkeys, actiona, actionb, actionc, ntsc
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -448,12 +449,14 @@ public final class MainActivity extends Activity
 						   Integer.parseInt(_newvalues.get(PreferenceName.crophoriz)),
 						   Integer.parseInt(_newvalues.get(PreferenceName.cropvert)) );
 
-			if (changed(PreferenceName.machine)) {
-				if (!NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)))) {
+			if ( changed(PreferenceName.machine) || changed(PreferenceName.ntsc) ) {
+				if ( !NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)),
+										Boolean.parseBoolean(_newvalues.get(PreferenceName.ntsc))) ) {
 					Log.d(TAG, "OS rom not found");
 					Toast.makeText(_context, R.string.noromfound, Toast.LENGTH_LONG).show();
 					revertString(PreferenceName.machine);
-					NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)));
+					NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)),
+									  Boolean.parseBoolean(_newvalues.get(PreferenceName.ntsc)));
 				}
 			}
 
@@ -571,7 +574,7 @@ public final class MainActivity extends Activity
 	}
 	private static native void NativePrefGfx(int aspect, boolean bilinear, int artifact,
 											 int frameskip, boolean collisions, int crophoriz, int cropvert);
-	private static native boolean NativePrefMachine(int machine);
+	private static native boolean NativePrefMachine(int machine, boolean ntsc);
 	private static native void NativePrefEmulation(boolean basic, boolean speed, boolean disk,
 												   boolean sector);
 	private static native void NativePrefSoftjoy(boolean softjoy, int up, int down, int left, int right,

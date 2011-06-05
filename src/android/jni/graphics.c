@@ -72,6 +72,14 @@ void Android_PaletteUpdate(void)
 {
 	int i;
 
+	if (!palette) {
+		if ( !(palette = malloc(256 * sizeof(UWORD))) ) {
+			Log_print("Cannot allocate memory for palette conversion.");
+			return FALSE;
+		}
+	}
+	memset(palette, 0, 256 * sizeof(UWORD));
+
 	for (i = 0; i < 256; i++)
 		palette[i] = ( (Colours_GetR(i) & 0xf8) << 8 ) |
 					 ( (Colours_GetG(i) & 0xfc) << 3 ) |
@@ -94,13 +102,6 @@ int Android_InitGraphics(void)
 		}
 	}
 	memset(hicolor_screen, 0, TEXTURE_WIDTH * TEXTURE_HEIGHT * sizeof(UWORD));
-	if (!palette) {
-		if ( !(palette = malloc(256 * sizeof(UWORD))) ) {
-			Log_print("Cannot allocate memory for palette conversion.");
-			return FALSE;
-		}
-	}
-	memset(palette, 0, 256 * sizeof(UWORD));
 
 	/* Setup GL */
 	glEnable(GL_TEXTURE_2D);

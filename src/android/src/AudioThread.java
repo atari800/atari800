@@ -33,7 +33,6 @@ import android.util.Log;
 public final class AudioThread extends Thread
 {
 	private static final String TAG = "A800AudioThread";
-	private static final int FRAMERATE = 50;
 
 	private AudioTrack _at;
 	private int _bufsize;
@@ -43,11 +42,11 @@ public final class AudioThread extends Thread
 	private boolean _initok;
 	private boolean _pause;
 
-	public AudioThread(int rate, int bytes, int bufsizems) {
+	public AudioThread(int rate, int bytes, int bufsizems, boolean ntsc) {
 		int format = bytes == 1 ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT;
 		int minbuf = AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, format);
 		int hardmin = (int) ( ((float) rate * bytes) / ((float) (1000.0f / bufsizems)) );
-		_chunk = rate * bytes / FRAMERATE;
+		_chunk = rate * bytes / (ntsc ? 60 : 50);
 		_bufsize = (hardmin > minbuf) ? hardmin : minbuf;
 		_bufsize = ((_bufsize + _chunk - 1) / _chunk * _chunk + 3) / 4 * 4;
 		_at = new AudioTrack(AudioManager.STREAM_MUSIC, rate, AudioFormat.CHANNEL_CONFIGURATION_MONO,

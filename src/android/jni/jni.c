@@ -288,7 +288,7 @@ static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolea
 	Screen_visible_y2 = Screen_visible_y1 + cropvert;
 }
 
-static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac)
+static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac, jboolean ntsc)
 {
 	struct tSysConfig {
 		int type;
@@ -314,6 +314,8 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac)
 
 	Atari800_machine_type = machine[nummac].type;
 	MEMORY_ram_size = machine[nummac].ram;
+	Atari800_SetTVMode(ntsc ? Atari800_TV_NTSC : Atari800_TV_PAL);
+	CPU_cim_encountered = FALSE;
 	return Atari800_InitialiseMachine();
 }
 
@@ -414,7 +416,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeExit",				"()V",								NativeExit			  },
 		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",			NativeRunAtariProgram },
 		{ "NativePrefGfx",			"(IZIIZII)V",						NativePrefGfx		  },
-		{ "NativePrefMachine",		"(I)Z",								NativePrefMachine	  },
+		{ "NativePrefMachine",		"(IZ)Z",							NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZ)V",							NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },
 		{ "NativePrefOvl",			"(ZIIZIIZIII)V",					NativePrefOvl		  },
