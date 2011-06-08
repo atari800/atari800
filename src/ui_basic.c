@@ -985,6 +985,21 @@ static void strcatchr(char *s, char c)
 	s[1] = '\0';
 }
 
+/* Fills BUF with the path of the current working directory (or, if it fails,
+   with "." or "/"). */
+static void GetCurrentDir(char buf[FILENAME_MAX])
+{
+#ifdef HAVE_GETCWD
+	if (getcwd(buf, FILENAME_MAX) == NULL) {
+		buf[0] = '/';
+		buf[1] = '\0';
+	}
+#else
+	buf[0] = '.';
+	buf[1] = '\0';
+#endif
+}
+
 /* Select file or directory.
    The result is returned in path and path is where selection begins (i.e. it must be initialized).
    pDirectories are "favourite" directories (there are nDirectories of them). */
@@ -1006,18 +1021,11 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 		strcpy(current_dir, help_dir);
 	}
 #elif defined(HAVE_GETCWD)
-	if (current_dir[0] == '\0' || (current_dir[0] == '.' && current_dir[1] == '\0')) {
-		if (getcwd(current_dir, FILENAME_MAX) == NULL) {
-			current_dir[0] = '/';
-			current_dir[1] = '\0';
-		}
-	}
+	if (current_dir[0] == '\0' || (current_dir[0] == '.' && current_dir[1] == '\0'))
 #else
-	if (current_dir[0] == '\0') {
-		current_dir[0] = '.';
-		current_dir[1] = '\0';
-	}
+	if (current_dir[0] == '\0')
 #endif
+		GetCurrentDir(current_dir);
 	for (;;) {
 		int index = 0;
 		int i;
@@ -1032,13 +1040,32 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 		TitleScreen("            Please wait...            ");
 		PLATFORM_DisplayScreen();
 
-		GetDirectory(current_dir);
+		for (;;) {
+			GetDirectory(current_dir);
 
-		if (n_filenames == 0) {
-			/* FIXME: change to a safe directory */
+			if (n_filenames > 0)
+				break;
+
+			/* Can't read directory - maybe it doesn't exist?
+			   Split the last part from the path and try again. */
 			FilenamesFree();
-			BasicUIMessage("No files inside directory", 1);
-			return FALSE;
+			{
+				char temp[FILENAME_MAX];
+				strcpy(temp, current_dir);
+				Util_splitpath(temp, current_dir, NULL);
+			}
+			if (current_dir[0] == '\0') {
+				/* Path couldn't be split further.
+				   Try the working directory as a last resort. */
+				GetCurrentDir(current_dir);
+				GetDirectory(current_dir);
+				if (n_filenames >= 0)
+					break;
+
+				FilenamesFree();
+				BasicUIMessage("No files inside directory", 1);
+				return FALSE;
+			}
 		}
 
 		if (highlighted_file[0] != '\0') {

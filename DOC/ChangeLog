@@ -1,8 +1,16 @@
+2011-06-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* ui_basic.c: Allow opening up the file selector when the given PATH is
+  invalid. When a diskette image is mounted, its path is cached in the
+  emulator. If, in the meantime, the path to that file have become invalid
+  (e.g. the directory in which the file resided have been deleted), then
+  reopening the file selector for that particular diskette would have failed.
+
+
 2011-06-05  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement extended key remapping,
              Support Xperia play keycodes,
              Remap dpad enter to break,
-			 New NTSC/PAL tv mode preference
+             New NTSC/PAL tv mode preference
 
 
 2011-05-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
