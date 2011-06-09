@@ -5,6 +5,9 @@
   (e.g. the directory in which the file resided have been deleted), then
   reopening the file selector for that particular diskette would have failed.
 
+* cartridge.c: Unify duplicate code in CARTRIDGE_Insert and
+  CARTRIDGE_Insert_Second.
+
 
 2011-06-05  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement extended key remapping,

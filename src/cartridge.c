@@ -557,15 +557,15 @@ int CARTRIDGE_Checksum(const UBYTE *image, int nbytes)
 	return checksum;
 }
 
-int CARTRIDGE_Insert(const char *filename)
+/* Loads a cartridge from FILENAME. Copies FILENAME to CART_FILENAME.
+   Allocates a buffer with cartridge image data and puts it in *CART_IMAGE.
+   Sets *CART_TYPE to the cartridge type. */
+static int InsertCartridge(const char *filename, char *cart_filename, UBYTE **cart_image, int *cart_type)
 {
 	FILE *fp;
 	int len;
 	int type;
 	UBYTE header[16];
-
-	/* remove currently inserted cart */
-	CARTRIDGE_Remove();
 
 	/* open file */
 	fp = fopen(filename, "rb");
@@ -576,34 +576,33 @@ int CARTRIDGE_Insert(const char *filename)
 	Util_rewind(fp);
 
 	/* Guard against providing CARTRIDGE_filename as parameter. */
-	if (CARTRIDGE_filename != filename)
+	if (cart_filename != filename)
 		/* Save Filename for state save */
-		strcpy(CARTRIDGE_filename, filename);
+		strcpy(cart_filename, filename);
 
 	/* if full kilobytes, assume it is raw image */
 	if ((len & 0x3ff) == 0) {
 		/* alloc memory and read data */
-		cart_image = (UBYTE *) Util_malloc(len);
-		if (fread(cart_image, 1, len, fp) < len) {
+		*cart_image = (UBYTE *) Util_malloc(len);
+		if (fread(*cart_image, 1, len, fp) < len) {
 			Log_print("Error reading cartridge.\n");
 		}
 		fclose(fp);
 		/* find cart type */
-		CARTRIDGE_type = CARTRIDGE_NONE;
+		*cart_type = CARTRIDGE_NONE;
 		len >>= 10;	/* number of kilobytes */
 		for (type = 1; type <= CARTRIDGE_LAST_SUPPORTED; type++)
 			if (CARTRIDGE_kb[type] == len) {
-				if (CARTRIDGE_type == CARTRIDGE_NONE)
-					CARTRIDGE_type = type;
+				if (*cart_type == CARTRIDGE_NONE)
+					*cart_type = type;
 				else
 					return len;	/* more than one cartridge type of such length - user must select */
 			}
-		if (CARTRIDGE_type != CARTRIDGE_NONE) {
-			CARTRIDGE_Start();
+		if (*cart_type != CARTRIDGE_NONE) {
 			return 0;	/* ok */
 		}
-		free(cart_image);
-		cart_image = NULL;
+		free(*cart_image);
+		*cart_image = NULL;
 		return CARTRIDGE_BAD_FORMAT;
 	}
 	/* if not full kilobytes, assume it is CART file */
@@ -622,8 +621,8 @@ int CARTRIDGE_Insert(const char *filename)
 			int checksum;
 			len = CARTRIDGE_kb[type] << 10;
 			/* alloc memory and read data */
-			cart_image = (UBYTE *) Util_malloc(len);
-			if (fread(cart_image, 1, len, fp) < len) {
+			*cart_image = (UBYTE *) Util_malloc(len);
+			if (fread(*cart_image, 1, len, fp) < len) {
 				Log_print("Error reading cartridge.\n");
 			}
 			fclose(fp);
@@ -631,94 +630,30 @@ int CARTRIDGE_Insert(const char *filename)
 				(header[9] << 16) |
 				(header[10] << 8) |
 				header[11];
-			CARTRIDGE_type = type;
-			CARTRIDGE_Start();
-			return checksum == CARTRIDGE_Checksum(cart_image, len) ? 0 : CARTRIDGE_BAD_CHECKSUM;
+			*cart_type = type;
+			return checksum == CARTRIDGE_Checksum(*cart_image, len) ? 0 : CARTRIDGE_BAD_CHECKSUM;
 		}
 	}
 	fclose(fp);
 	return CARTRIDGE_BAD_FORMAT;
 }
 
+int CARTRIDGE_Insert(const char *filename)
+{
+	int result;
+	/* remove currently inserted cart */
+	CARTRIDGE_Remove();
+	result = InsertCartridge(filename, CARTRIDGE_filename, &cart_image, &CARTRIDGE_type);
+	if (result == 0 || result == CARTRIDGE_BAD_CHECKSUM)
+		CARTRIDGE_Start();
+	return result;
+}
+
 int CARTRIDGE_Insert_Second(const char *filename)
 {
-	FILE *fp;
-	int len;
-	int type;
-	UBYTE header[16];
-
 	/* remove currently inserted cart */
 	CARTRIDGE_Remove_Second();
-
-	/* open file */
-	fp = fopen(filename, "rb");
-	if (fp == NULL)
-		return CARTRIDGE_CANT_OPEN;
-	/* check file length */
-	len = Util_flen(fp);
-	Util_rewind(fp);
-
-	/* Guard against providing CARTRIDGE_filename as parameter. */
-	if (CARTRIDGE_second_filename != filename)
-		/* Save Filename for state save */
-		strcpy(CARTRIDGE_second_filename, filename);
-
-	/* if full kilobytes, assume it is raw image */
-	if ((len & 0x3ff) == 0) {
-		/* alloc memory and read data */
-		second_cart_image = (UBYTE *) Util_malloc(len);
-		if (fread(second_cart_image, 1, len, fp) < len) {
-			Log_print("Error reading cartridge.\n");
-		}
-		fclose(fp);
-		/* find cart type */
-		CARTRIDGE_second_type = CARTRIDGE_NONE;
-		len >>= 10;	/* number of kilobytes */
-		for (type = 1; type <= CARTRIDGE_LAST_SUPPORTED; type++)
-			if (CARTRIDGE_kb[type] == len) {
-				if (CARTRIDGE_second_type == CARTRIDGE_NONE)
-					CARTRIDGE_second_type = type;
-				else
-					return len;	/* more than one cartridge type of such length - user must select */
-			}
-		if (CARTRIDGE_second_type != CARTRIDGE_NONE) {
-			return 0;	/* ok */
-		}
-		free(second_cart_image);
-		second_cart_image = NULL;
-		return CARTRIDGE_BAD_FORMAT;
-	}
-	/* if not full kilobytes, assume it is CART file */
-	if (fread(header, 1, 16, fp) < 16) {
-		Log_print("Error reading cartridge.\n");
-	}
-	if ((header[0] == 'C') &&
-		(header[1] == 'A') &&
-		(header[2] == 'R') &&
-		(header[3] == 'T')) {
-		type = (header[4] << 24) |
-			(header[5] << 16) |
-			(header[6] << 8) |
-			header[7];
-		if (type >= 1 && type <= CARTRIDGE_LAST_SUPPORTED) {
-			int checksum;
-			len = CARTRIDGE_kb[type] << 10;
-			/* alloc memory and read data */
-			second_cart_image = (UBYTE *) Util_malloc(len);
-			if (fread(second_cart_image, 1, len, fp) < len) {
-				Log_print("Error reading cartridge.\n");
-			}
-			fclose(fp);
-			checksum = (header[8] << 24) |
-				(header[9] << 16) |
-				(header[10] << 8) |
-				header[11];
-			CARTRIDGE_second_type = type;
-			return checksum == CARTRIDGE_Checksum(second_cart_image, len) ? 0 : CARTRIDGE_BAD_CHECKSUM;
-		}
-	}
-	fclose(fp);
-	return CARTRIDGE_BAD_FORMAT;
+	return InsertCartridge(filename, CARTRIDGE_second_filename, &second_cart_image, &CARTRIDGE_second_type);
 }
 
 void CARTRIDGE_Remove(void)
