@@ -615,23 +615,23 @@ static void CartManagement(void)
 	for (;;) {
 		static char cart_filename[FILENAME_MAX] = "";
 		
-		if (CARTRIDGE_type == CARTRIDGE_NONE) {
+		if (CARTRIDGE_main.type == CARTRIDGE_NONE) {
 			menu_array[2].item = "None";
 			menu_array[2].suffix = "Return:insert";
 		}
 		else {
-			menu_array[2].item = CARTRIDGE_filename;
+			menu_array[2].item = CARTRIDGE_main.filename;
 			menu_array[2].suffix = "Return:insert Backspace:remove";
 		}
 
-		if (CARTRIDGE_type == CARTRIDGE_SDX_64 || CARTRIDGE_type == CARTRIDGE_SDX_128) {
+		if (CARTRIDGE_main.type == CARTRIDGE_SDX_64 || CARTRIDGE_main.type == CARTRIDGE_SDX_128) {
 			menu_array[3].flags = UI_ITEM_FILESEL | UI_ITEM_TIP;
-			if (CARTRIDGE_second_type == CARTRIDGE_NONE) {
+			if (CARTRIDGE_piggyback.type == CARTRIDGE_NONE) {
 				menu_array[3].item = "None";
 				menu_array[3].suffix = "Return:insert";
 			}
 			else {
-				menu_array[3].item = CARTRIDGE_second_filename;
+				menu_array[3].item = CARTRIDGE_piggyback.filename;
 				menu_array[3].suffix = "Return:insert Backspace:remove";
 			}
 		} else {
@@ -753,11 +753,11 @@ static void CartManagement(void)
 		case 2:
 			switch (seltype) {
 			case UI_USER_SELECT: /* Enter */
-				if (UI_driver->fGetLoadFilename(CARTRIDGE_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-					int r = CARTRIDGE_Insert(CARTRIDGE_filename);
+				if (UI_driver->fGetLoadFilename(CARTRIDGE_main.filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					int r = CARTRIDGE_Insert(CARTRIDGE_main.filename);
 					switch (r) {
 					case CARTRIDGE_CANT_OPEN:
-						CantLoad(CARTRIDGE_filename);
+						CantLoad(CARTRIDGE_main.filename);
 						break;
 					case CARTRIDGE_BAD_FORMAT:
 						UI_driver->fMessage("Unknown cartridge format", 1);
@@ -770,11 +770,11 @@ static void CartManagement(void)
 						break;
 					default:
 						/* r > 0 */
-						CARTRIDGE_type = UI_SelectCartType(r);
+						CARTRIDGE_main.type = UI_SelectCartType(r);
 						break;
 					}
-					if (CARTRIDGE_type != CARTRIDGE_NONE) {
-						int for5200 = CARTRIDGE_IsFor5200(CARTRIDGE_type);
+					if (CARTRIDGE_main.type != CARTRIDGE_NONE) {
+						int for5200 = CARTRIDGE_IsFor5200(CARTRIDGE_main.type);
 						if (for5200 && Atari800_machine_type != Atari800_MACHINE_5200) {
 							Atari800_machine_type = Atari800_MACHINE_5200;
 							MEMORY_ram_size = 16;
@@ -798,11 +798,11 @@ static void CartManagement(void)
 		case 3:
 			switch (seltype) {
 			case UI_USER_SELECT: /* Enter */
-				if (UI_driver->fGetLoadFilename(CARTRIDGE_second_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-					int r = CARTRIDGE_Insert_Second(CARTRIDGE_second_filename);
+				if (UI_driver->fGetLoadFilename(CARTRIDGE_piggyback.filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					int r = CARTRIDGE_Insert_Second(CARTRIDGE_piggyback.filename);
 					switch (r) {
 					case CARTRIDGE_CANT_OPEN:
-						CantLoad(CARTRIDGE_second_filename);
+						CantLoad(CARTRIDGE_piggyback.filename);
 						break;
 					case CARTRIDGE_BAD_FORMAT:
 						UI_driver->fMessage("Unknown cartridge format", 1);
@@ -815,7 +815,8 @@ static void CartManagement(void)
 						break;
 					default:
 						/* r > 0 */
-						CARTRIDGE_second_type = UI_SelectCartType(r);
+						CARTRIDGE_piggyback.type = UI_SelectCartType(r);
+						CARTRIDGE_Start(&CARTRIDGE_piggyback);
 						break;
 					}
 				}

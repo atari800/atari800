@@ -190,9 +190,14 @@ are numbered in the order they appear in the image file, starting with 0.
 | Type 11: SpartaDOS X 64 KB cartridge                                      |
 +---------------------------------------------------------------------------+
 
- The cartridge has 8 banks mapped to $A000-$BFFF. An access to $D5E7 selects
- bank 0, $D5E6 - bank 1, etc. An access to $D5E8-$D5EF disables
- the cartridge.
+ The cartridge has 8 banks mapped to $A000-$BFFF. It also contains an
+ additional cartridge slot which allows to plug a second cartridge in.
+ An access to $D5E7 selects bank 0, $D5E6 - bank 1, etc. down to $D5E0. An
+ access to $D5E8-$D5EB disables the SDX cartridge and enables the second
+ cartridge. An access to $D5EC-$D5EF disables both cartriges.
+ Accesses to all addresses on page D5 always reaches the second cartridge,
+ even if it is disabled by SpartaDOS or if the SpartaDOS cartridge itself is
+ enabled.
 
 +---------------------------------------------------------------------------+
 | Type 12: XEGS 32 KB cartridge                                             |
@@ -470,6 +475,12 @@ are numbered in the order they appear in the image file, starting with 0.
 | Type 43: SpartaDOS X 128 KB cartridge                                     |
 +---------------------------------------------------------------------------+
 
- The cartridge has 16 banks mapped to $A000-$BFFF. First 8 banks are selected
- by an access to $D5F7-$D5F0, the other 8 banks by an access to $D5E7-$D5E0.
- An access to $D5E8-$D5EF or $D5F8-$D5FF disables the cartridge.
+ The cartridge has 16 banks mapped to $A000-$BFFF. It also contains an
+ additional cartridge slot which allows to plug a second cartridge in. First
+ 8 banks are selected by an access to $D5F7-$D5F0, the other 8 banks by an
+ access to $D5E7-$D5E0. An access to $D5E8-$D5EB or $D5F8-$D5FB disables the
+ SDX cartridge and enables the second cartridge. An access to $D5EC-$D5EF or
+ $D5FC-$D5FF disables both cartriges.
+ Accesses to all addresses on page D5 always reaches the second cartridge,
+ even if it is disabled by SpartaDOS or if the SpartaDOS cartridge itself is
+ enabled.

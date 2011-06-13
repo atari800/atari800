@@ -131,7 +131,7 @@ void GTIA_NewPmScanline(void);
 UBYTE GTIA_GetByte(UWORD addr);
 void GTIA_PutByte(UWORD addr, UBYTE byte);
 void GTIA_StateSave(void);
-void GTIA_StateRead(void);
+void GTIA_StateRead(UBYTE version);
 
 #ifdef NEW_CYCLE_EXACT
 void GTIA_UpdatePmplColls(void);

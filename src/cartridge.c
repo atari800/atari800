@@ -108,238 +108,393 @@ int CARTRIDGE_IsFor5200(int type)
 	return FALSE;
 }
 
-static UBYTE *cart_image = NULL;		/* cartridge memory */
-static UBYTE *second_cart_image = NULL; /* Pass through cartridge memory for SpartaDOSX */
-static UBYTE *first_cart_image = NULL; /* Pointer for orignal cart image will using pass through */
-char CARTRIDGE_filename[FILENAME_MAX] = "";
-char CARTRIDGE_second_filename[FILENAME_MAX] = "";
-int CARTRIDGE_type = CARTRIDGE_NONE;
-int CARTRIDGE_second_type = CARTRIDGE_NONE;
-static int cart_pass_through = FALSE;
+CARTRIDGE_image_t CARTRIDGE_main = { CARTRIDGE_NONE, 0, NULL, "" }; /* Left/Right cartridge */
+CARTRIDGE_image_t CARTRIDGE_piggyback = { CARTRIDGE_NONE, 0, NULL, "" }; /* Pass through cartridge for SpartaDOSX */
 
-static int bank;
-static void CARTRIDGE_Start_Local(int curr_cart_type);
+/* The currently active cartridge in the left slot - normally points to
+   CARTRIDGE_main but can be switched to CARTRIDGE_piggyback if the main
+   cartridge is a SpartaDOS X. */
+static CARTRIDGE_image_t *active_cart = &CARTRIDGE_main;
 
 /* DB_32, XEGS_32, XEGS_64, XEGS_128, XEGS_256, XEGS_512, XEGS_1024,
    SWXEGS_32, SWXEGS_64, SWXEGS_128, SWXEGS_256, SWXEGS_512, SWXEGS_1024 */
-static void set_bank_809F(int b, int main)
+static void set_bank_809F(int main, int old_state)
 {
-	if (b != bank) {
-		if (b & 0x80) {
-			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfDisable();
-		}
-		else {
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image + b * 0x2000);
-			if (bank & 0x80)
-				MEMORY_CopyROM(0xa000, 0xbfff, cart_image + main);
-		}
-		bank = b;
+	if (active_cart->state & 0x80) {
+		MEMORY_Cart809fDisable();
+		MEMORY_CartA0bfDisable();
+	}
+	else {
+		MEMORY_Cart809fEnable();
+		MEMORY_CartA0bfEnable();
+		MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image + active_cart->state * 0x2000);
+		if (old_state & 0x80)
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + main);
 	}
 }
 
 /* OSS_16, OSS2_16 */
-static void set_bank_A0AF(int b, int main)
+static void set_bank_A0AF(int main, int old_state)
 {
-	if (b != bank) {
-		if (b < 0)
-			MEMORY_CartA0bfDisable();
-		else {
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xafff, cart_image + b * 0x1000);
-			if (bank < 0)
-				MEMORY_CopyROM(0xb000, 0xbfff, cart_image + main);
-		}
-		bank = b;
+	if (active_cart->state < 0)
+		MEMORY_CartA0bfDisable();
+	else {
+		MEMORY_CartA0bfEnable();
+		if (active_cart->state == 0xff)
+			/* Fill cart area with 0xFF. */
+			MEMORY_dFillMem(0x8000, 0xff, 0x2000);
+		else
+			MEMORY_CopyROM(0xa000, 0xafff, active_cart->image + active_cart->state * 0x1000);
+		if (old_state < 0)
+			MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image + main);
 	}
 }
 
 /* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_1024,
    ATRAX_128 */
-static void set_bank_A0BF(int b, int n)
+static void set_bank_A0BF(int n)
 {
-	if (b != bank) {
-		if (b & n)
-			MEMORY_CartA0bfDisable();
-		else {
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + (b & (n - 1)) * 0x2000);
-		}
-		bank = b;
+	if (active_cart->state & n)
+		MEMORY_CartA0bfDisable();
+	else {
+		MEMORY_CartA0bfEnable();
+		MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + (active_cart->state & (n - 1)) * 0x2000);
 	}
 }
 
-static void set_bank_80BF(int b)
+/* MEGA_16, MEGA_32, MEGA_64, MEGA_128, MEGA_256, MEGA_512, MEGA_1024 */
+static void set_bank_80BF(void)
 {
-	if (b != bank) {
-		if (b & 0x80) {
-			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfDisable();
-		}
-		else {
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0xbfff, cart_image + b * 0x4000);
-		}
-		bank = b;
+	if (active_cart->state & 0x80) {
+		MEMORY_Cart809fDisable();
+		MEMORY_CartA0bfDisable();
+	}
+	else {
+		MEMORY_Cart809fEnable();
+		MEMORY_CartA0bfEnable();
+		MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image + active_cart->state * 0x4000);
 	}
 }
 
-static void set_bank_SDX_128(UWORD addr)
+static void set_bank_SDX_128(void)
 {
-	if (addr & 8)
+	if (active_cart->state & 8)
 		MEMORY_CartA0bfDisable();
 	else {
 		MEMORY_CartA0bfEnable();
 		MEMORY_CopyROM(0xa000, 0xbfff,
-			cart_image + (((addr & 7) + ((addr & 0x10) >> 1)) ^ 0xf) * 0x2000);
+			active_cart->image + ((active_cart->state & 7) + ((active_cart->state & 0x10) >> 1)) * 0x2000);
 	}
-	bank = addr;
 }
 
-/* an access (read or write) to D500-D5FF area */
-static void access_D5(int curr_cart_type,UWORD addr)
+static void MapActiveCart(void);
+
+/* Called on a read or write operation to page $D5. Switches banks or
+   enables/disables the cartridge pointed to by *active_cart. */
+static void SwitchBank(int old_state)
 {
-	int b = bank;
-	switch (curr_cart_type) {
+	/* All bank-switched cartridges besides two BBSB's are included in
+	   this swithch. The BBSB cartridges are not bank-switched by
+	   access to page $D5, but in CARTRIDGE_BountyBob1() and
+	   CARTRIDGE_BountyBob2(), so they need not be processed here. */
+	switch (active_cart->type) {
+	case CARTRIDGE_OSS_16:
+		set_bank_A0AF(0x3000, old_state);
+		break;
+	case CARTRIDGE_OSS2_16:
+		set_bank_A0AF(0x0000, old_state);
+		break;
+	case CARTRIDGE_WILL_64:
+	case CARTRIDGE_EXP_64:
+	case CARTRIDGE_DIAMOND_64:
+	case CARTRIDGE_SDX_64:
+	case CARTRIDGE_WILL_32:
+		set_bank_A0BF(8);
+		break;
+	case CARTRIDGE_DB_32:
+	case CARTRIDGE_XEGS_32:
+	case CARTRIDGE_SWXEGS_32:
+		set_bank_809F(0x6000, old_state);
+		break;
+	case CARTRIDGE_XEGS_64:
+	case CARTRIDGE_SWXEGS_64:
+		set_bank_809F(0xe000, old_state);
+		break;
+	case CARTRIDGE_XEGS_128:
+	case CARTRIDGE_SWXEGS_128:
+		set_bank_809F(0x1e000, old_state);
+		break;
+	case CARTRIDGE_XEGS_256:
+	case CARTRIDGE_SWXEGS_256:
+		set_bank_809F(0x3e000, old_state);
+		break;
+	case CARTRIDGE_XEGS_512:
+	case CARTRIDGE_SWXEGS_512:
+		set_bank_809F(0x7e000, old_state);
+		break;
+	case CARTRIDGE_XEGS_1024:
+	case CARTRIDGE_SWXEGS_1024:
+		set_bank_809F(0xfe000, old_state);
+		break;
+	case CARTRIDGE_ATRAX_128:
+	case CARTRIDGE_ATMAX_1024:
+		set_bank_A0BF(128);
+		break;
+	case CARTRIDGE_ATMAX_128:
+		set_bank_A0BF(16);
+		break;
+	case CARTRIDGE_MEGA_16:
+	case CARTRIDGE_MEGA_32:
+	case CARTRIDGE_MEGA_64:
+	case CARTRIDGE_MEGA_128:
+	case CARTRIDGE_MEGA_256:
+	case CARTRIDGE_MEGA_512:
+	case CARTRIDGE_MEGA_1024:
+		set_bank_80BF();
+		break;
+	case CARTRIDGE_PHOENIX_8:
+		if (active_cart->state)
+			MEMORY_CartA0bfDisable();
+		break;
+	case CARTRIDGE_BLIZZARD_16:
+		if (active_cart->state) {
+			MEMORY_Cart809fDisable();
+			MEMORY_CartA0bfDisable();
+		}
+		break;
+	case CARTRIDGE_SDX_128:
+		set_bank_SDX_128();
+		break;
+	}
+}
+
+/* Called from GetByte() and PutByte(), this function sets cartridge state
+   for a cartridge that is bank-switched by either read or write to
+   page $D5. Returns TRUE if switching a bank is needed. */
+static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
+{
+	int old_state = cart->state;
+	int new_state;
+
+	switch (cart->type) {
 	case CARTRIDGE_OSS_16:
 		if (addr & 0x08)
-			b = -1;
+			new_state = -1;
 		else
 			switch (addr & 0x07) {
 			case 0x00:
 			case 0x01:
-				b = 0;
+				new_state = 0;
 				break;
 			case 0x03:
 			case 0x07:
-				b = 1;
+				new_state = 1;
 				break;
 			case 0x04:
 			case 0x05:
-				b = 2;
+				new_state = 2;
 				break;
-			/* case 0x02:
-			case 0x06: */
-			default:
+			default: /* 0x02, 0x06 */
+				/* Fill cart area with 0xFFs. */
+				new_state = 0xff;
 				break;
 			}
-		set_bank_A0AF(b, 0x3000);
 		break;
 	case CARTRIDGE_DB_32:
-		set_bank_809F(addr & 0x03, 0x6000);
+		new_state = addr & 0x03;
 		break;
 	case CARTRIDGE_WILL_64:
-		set_bank_A0BF(addr, 8);
+		new_state = addr & 0x0f;
 		break;
 	case CARTRIDGE_WILL_32:
-		set_bank_A0BF(addr & 0xb, 8);
+		new_state = addr & 0x0b;
 		break;
 	case CARTRIDGE_EXP_64:
-		if ((addr & 0xf0) == 0x70)
-			set_bank_A0BF(addr ^ 7, 8);
+		/* Only react to access to $D57x. */
+		if ((addr & 0xf0) != 0x70)
+			return FALSE;
+		new_state = ((addr ^ 7) & 0x0f);
 		break;
 	case CARTRIDGE_DIAMOND_64:
-		if ((addr & 0xf0) == 0xd0)
-			set_bank_A0BF(addr ^ 7, 8);
+		/* Only react to access to $D5Dx. */
+		if ((addr & 0xf0) != 0xd0)
+			return FALSE;
+		new_state = ((addr ^ 7) & 0x0f);
 		break;
 	case CARTRIDGE_SDX_64:
-		if (cart_pass_through) {
-			if ((addr & 0xff) == 8) {
-				cart_pass_through = FALSE;
-				cart_image = first_cart_image;
-				MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
-				MEMORY_CartA0bfDisable();
-			}
-			else if ((addr & 0xf0) == 0xe0) {
-				cart_pass_through = FALSE;
-				cart_image = first_cart_image;
-				set_bank_A0BF(addr ^ 7, 8);
-			}
-			else {
-				access_D5(CARTRIDGE_second_type, addr);
-		        }
-		}
-		else {
-			if ((addr & 0xf0) == 0xe0) {
-				set_bank_A0BF(addr ^ 7, 8);
-			}
-			else if ((addr & 0xff) == 0) {
-				cart_pass_through = TRUE;
-				first_cart_image = cart_image;
-				if (second_cart_image) {
-				    cart_image = second_cart_image;
-				    CARTRIDGE_Start_Local(CARTRIDGE_second_type);
+		/* Only react to access to $D5Ex. */
+		if ((addr & 0xf0) != 0xe0)
+			return FALSE;
+		if (addr & 0x08)
+			new_state = addr & 0x0c;
+		else
+			/* Negate bits that encode bank number. */
+			new_state = ((addr ^ 0x07) & 0x0f);
+		if (cart == &CARTRIDGE_main) {
+			/* It's the 1st cartridge, process switching the piggyback on/off. */
+			if ((old_state & 0x0c) == 0x08) { /* Piggyback cartridge was enabled */
+				if ((new_state & 0x0c) != 0x08)  { /* Going to disable it */
+					active_cart = &CARTRIDGE_main;
+					MapActiveCart();
 				}
+			}
+			else if ((new_state & 0x0c) == 0x08) { /* Going to enable piggyback */
+				active_cart = &CARTRIDGE_piggyback;
+				MapActiveCart();
 			}
 		}
 		break;
 	case CARTRIDGE_SDX_128:
-		if (cart_pass_through) {
-			if ((addr & 0xff) == 8) {
-				cart_pass_through = FALSE;
-				cart_image = first_cart_image;
-				set_bank_SDX_128(0);
-			}
-			else if ((addr & 0xe0) == 0xe0) {
-				cart_pass_through = FALSE;
-				cart_image = first_cart_image;
-				set_bank_SDX_128(addr);
-			}
-			else {
-				access_D5(CARTRIDGE_second_type, addr);
-		        }
-		}
-		else {
-			if ((addr & 0xe0) == 0xe0)  {
-				if (addr != bank)
-					set_bank_SDX_128(addr);
-			}
-			else if ((addr & 0xff) == 0) {
-				cart_pass_through = TRUE;
-				first_cart_image = cart_image;
-				if (second_cart_image) {
-				    cart_image = second_cart_image;
-				    CARTRIDGE_Start_Local(CARTRIDGE_second_type);
+		/* Only react to access to $D5Ex/$D5Fx. */
+		if ((addr & 0xe0) != 0xe0)
+			return FALSE;
+		if (addr & 0x08)
+			new_state = addr & 0x0c;
+		else
+			/* Negate bits that encode bank number. */
+			new_state = ((addr ^ 0x17) & 0x1f);
+		if (cart == &CARTRIDGE_main) {
+			/* It's the 1st cartridge, process switching the piggyback on/off. */
+			if ((old_state & 0x0c) == 0x08) { /* Piggyback cartridge was enabled */
+				if ((new_state & 0x0c) != 0x08)  { /* Going to disable it */
+					active_cart = &CARTRIDGE_main;
+					MapActiveCart();
 				}
+			}
+			else if ((new_state & 0x0c) == 0x08) { /* Going to enable piggyback */
+				active_cart = &CARTRIDGE_piggyback;
+				MapActiveCart();
 			}
 		}
 		break;
 	case CARTRIDGE_OSS2_16:
 		switch (addr & 0x09) {
 		case 0x00:
-			b = 1;
+			new_state = 1;
 			break;
 		case 0x01:
-			b = 3;
+			new_state = 3;
 			break;
 		case 0x08:
-			b = -1;
+			new_state = -1;
 			break;
-		case 0x09:
-			b = 2;
+		default: /* 0x09 */
+			new_state = 2;
 			break;
 		}
-		set_bank_A0AF(b, 0x0000);
 		break;
 	case CARTRIDGE_PHOENIX_8:
-		MEMORY_CartA0bfDisable();
-		break;
 	case CARTRIDGE_BLIZZARD_16:
-		MEMORY_Cart809fDisable();
-		MEMORY_CartA0bfDisable();
+		/* Disable the cart. */
+		new_state = 1;
 		break;
 	case CARTRIDGE_ATMAX_128:
-		if ((addr & 0xe0) == 0)
-			set_bank_A0BF(addr, 16);
+		/* Only react to access to $D50x/$D51x. */
+		if ((addr & 0xe0) != 0)
+			return FALSE;
+		new_state = addr & 0x1f;
 		break;
 	case CARTRIDGE_ATMAX_1024:
-		set_bank_A0BF(addr, 128);
+		new_state = addr;
 		break;
 	default:
+		/* Other cartridge types don't support enabling/disabling/banking through page D5. */
+		return FALSE;
+	}
+	*state = new_state;
+	return TRUE;
+}
+
+/* Processes bankswitching of CART when reading from a $D5xx address ADDR. */
+static void GetByte(CARTRIDGE_image_t *cart, UWORD addr)
+{
+	int old_state = cart->state;
+	int new_state;
+
+	/* Set the cartridge's new state. */
+	/* Check types switchable by access to page D5. */
+	if (!access_D5(cart, addr, &new_state))
+		/* Cartridge doesn't support bankswitching, or didn't react to
+		   the given ADDR. */
+		return;
+
+	/* If the state changed, we need to do the bankswitch. */
+	if (new_state != old_state) {
+		cart->state = new_state;
+		if (cart == active_cart)
+			SwitchBank(old_state);
+	}
+}
+
+/* Processes bankswitching of CART when writing to a $D5xx address ADDR. */
+static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
+{
+	int old_state = cart->state;
+	int new_state;
+
+	/* Set the cartridge's new state. */
+	switch (cart->type) {
+	case CARTRIDGE_XEGS_32:
+		new_state = byte & 0x03;
 		break;
+	case CARTRIDGE_XEGS_64:
+		new_state = byte & 0x07;
+		break;
+	case CARTRIDGE_XEGS_128:
+		new_state = byte & 0x0f;
+		break;
+	case CARTRIDGE_XEGS_256:
+		new_state = byte & 0x1f;
+		break;
+	case CARTRIDGE_XEGS_512:
+		new_state = byte & 0x3f;
+		break;
+	case CARTRIDGE_XEGS_1024:
+		new_state = byte & 0x7f;
+		break;
+	case CARTRIDGE_MEGA_16:
+		new_state = byte & 0x80;
+		break;
+	case CARTRIDGE_MEGA_32:
+		new_state = byte & 0x81;
+		break;
+	case CARTRIDGE_MEGA_64:
+	case CARTRIDGE_SWXEGS_32:
+		new_state = byte & 0x83;
+		break;
+	case CARTRIDGE_MEGA_128:
+	case CARTRIDGE_SWXEGS_64:
+		new_state = byte & 0x87;
+		break;
+	case CARTRIDGE_MEGA_256:
+	case CARTRIDGE_SWXEGS_128:
+	case CARTRIDGE_ATRAX_128:
+		new_state = byte & 0x8f;
+		break;
+	case CARTRIDGE_MEGA_512:
+	case CARTRIDGE_SWXEGS_256:
+		new_state = byte & 0x9f;
+		break;
+	case CARTRIDGE_MEGA_1024:
+	case CARTRIDGE_SWXEGS_512:
+		new_state = byte & 0xbf;
+		break;
+	case CARTRIDGE_SWXEGS_1024:
+		new_state = byte;
+		break;
+	default:
+		/* Check types switchable by access to page D5. */
+		if (!access_D5(cart, addr, &new_state))
+			/* Cartridge doesn't support bankswitching, or didn't react to
+			   the given ADDR. */
+			return;
+	}
+
+	/* If the state changed, we need to do the bankswitch. */
+	if (new_state != old_state) {
+		cart->state = new_state;
+		if (cart == active_cart)
+			SwitchBank(old_state);
 	}
 }
 
@@ -357,102 +512,33 @@ UBYTE CARTRIDGE_GetByte(UWORD addr)
 	if (IDE_enabled && (addr <= 0xd50f))
 		return IDE_GetByte(addr);
 #endif
-	access_D5(CARTRIDGE_type, addr);
+	GetByte(&CARTRIDGE_main, addr);
+	GetByte(&CARTRIDGE_piggyback, addr);
 	return 0xff;
 }
 
 /* a write to D500-D5FF area */
 void CARTRIDGE_PutByte(UWORD addr, UBYTE byte)
 {
-	int curr_cart_type;
-	
 #ifdef AF80
 	if (AF80_enabled) {
 		AF80_D5PutByte(addr,byte);
+		/* Return, because AF_80_enabled means there's an AF80
+		   cartridge in the left slot and no other cartridges are
+		   there. */
 		return;
 	}
 #endif
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9)) {
 		RTIME_PutByte(byte);
-		return;
 	}
 #ifdef IDE
 	if (IDE_enabled && (addr <= 0xd50f)) {
 		IDE_PutByte(addr,byte);
-		return;
 	}
 #endif
-	
-	if (cart_pass_through)
-	    curr_cart_type = CARTRIDGE_second_type;
-	else
-		curr_cart_type = CARTRIDGE_type;
-		
-	switch (curr_cart_type) {
-	case CARTRIDGE_XEGS_32:
-		set_bank_809F(byte & 0x03, 0x6000);
-		break;
-	case CARTRIDGE_XEGS_64:
-		set_bank_809F(byte & 0x07, 0xe000);
-		break;
-	case CARTRIDGE_XEGS_128:
-		set_bank_809F(byte & 0x0f, 0x1e000);
-		break;
-	case CARTRIDGE_XEGS_256:
-		set_bank_809F(byte & 0x1f, 0x3e000);
-		break;
-	case CARTRIDGE_XEGS_512:
-		set_bank_809F(byte & 0x3f, 0x7e000);
-		break;
-	case CARTRIDGE_XEGS_1024:
-		set_bank_809F(byte & 0x7f, 0xfe000);
-		break;
-	case CARTRIDGE_ATRAX_128:
-		set_bank_A0BF(byte & 0x8f, 128);
-		break;
-	case CARTRIDGE_MEGA_16:
-		set_bank_80BF(byte & 0x80);
-		break;
-	case CARTRIDGE_MEGA_32:
-		set_bank_80BF(byte & 0x81);
-		break;
-	case CARTRIDGE_MEGA_64:
-		set_bank_80BF(byte & 0x83);
-		break;
-	case CARTRIDGE_MEGA_128:
-		set_bank_80BF(byte & 0x87);
-		break;
-	case CARTRIDGE_MEGA_256:
-		set_bank_80BF(byte & 0x8f);
-		break;
-	case CARTRIDGE_MEGA_512:
-		set_bank_80BF(byte & 0x9f);
-		break;
-	case CARTRIDGE_MEGA_1024:
-		set_bank_80BF(byte & 0xbf);
-		break;
-	case CARTRIDGE_SWXEGS_32:
-		set_bank_809F(byte & 0x83, 0x6000);
-		break;
-	case CARTRIDGE_SWXEGS_64:
-		set_bank_809F(byte & 0x87, 0xe000);
-		break;
-	case CARTRIDGE_SWXEGS_128:
-		set_bank_809F(byte & 0x8f, 0x1e000);
-		break;
-	case CARTRIDGE_SWXEGS_256:
-		set_bank_809F(byte & 0x9f, 0x3e000);
-		break;
-	case CARTRIDGE_SWXEGS_512:
-		set_bank_809F(byte & 0xbf, 0x7e000);
-		break;
-	case CARTRIDGE_SWXEGS_1024:
-		set_bank_809F(byte, 0xfe000);
-		break;
-	default:
-		access_D5(CARTRIDGE_type, addr);
-		break;
-	}
+	PutByte(&CARTRIDGE_main, addr, byte);
+	PutByte(&CARTRIDGE_piggyback, addr, byte);
 }
 
 /* special support of Bounty Bob on Atari5200 */
@@ -461,12 +547,14 @@ void CARTRIDGE_BountyBob1(UWORD addr)
 	if (Atari800_machine_type == Atari800_MACHINE_5200) {
 		if (addr >= 0x4ff6 && addr <= 0x4ff9) {
 			addr -= 0x4ff6;
-			MEMORY_CopyROM(0x4000, 0x4fff, cart_image + addr * 0x1000);
+			MEMORY_CopyROM(0x4000, 0x4fff, active_cart->image + addr * 0x1000);
+			active_cart->state = (active_cart->state & 0x0c) | addr;
 		}
 	} else {
 		if (addr >= 0x8ff6 && addr <= 0x8ff9) {
 			addr -= 0x8ff6;
-			MEMORY_CopyROM(0x8000, 0x8fff, cart_image + addr * 0x1000);
+			MEMORY_CopyROM(0x8000, 0x8fff, active_cart->image + addr * 0x1000);
+			active_cart->state = (active_cart->state & 0x0c) | addr;
 		}
 	}
 }
@@ -476,13 +564,15 @@ void CARTRIDGE_BountyBob2(UWORD addr)
 	if (Atari800_machine_type == Atari800_MACHINE_5200) {
 		if (addr >= 0x5ff6 && addr <= 0x5ff9) {
 			addr -= 0x5ff6;
-			MEMORY_CopyROM(0x5000, 0x5fff, cart_image + 0x4000 + addr * 0x1000);
+			MEMORY_CopyROM(0x5000, 0x5fff, active_cart->image + 0x4000 + addr * 0x1000);
+			active_cart->state = (active_cart->state & 0x03) | (addr << 2);
 		}
 	}
 	else {
 		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
 			addr -= 0x9ff6;
-			MEMORY_CopyROM(0x9000, 0x9fff, cart_image + 0x4000 + addr * 0x1000);
+			MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image + 0x4000 + addr * 0x1000);
+			active_cart->state = (active_cart->state & 0x03) | (addr << 2);
 		}
 	}
 }
@@ -560,7 +650,7 @@ int CARTRIDGE_Checksum(const UBYTE *image, int nbytes)
 /* Loads a cartridge from FILENAME. Copies FILENAME to CART_FILENAME.
    Allocates a buffer with cartridge image data and puts it in *CART_IMAGE.
    Sets *CART_TYPE to the cartridge type. */
-static int InsertCartridge(const char *filename, char *cart_filename, UBYTE **cart_image, int *cart_type)
+static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 {
 	FILE *fp;
 	int len;
@@ -576,33 +666,34 @@ static int InsertCartridge(const char *filename, char *cart_filename, UBYTE **ca
 	Util_rewind(fp);
 
 	/* Guard against providing CARTRIDGE_filename as parameter. */
-	if (cart_filename != filename)
+	if (cart->filename != filename)
 		/* Save Filename for state save */
-		strcpy(cart_filename, filename);
+		strcpy(cart->filename, filename);
 
 	/* if full kilobytes, assume it is raw image */
 	if ((len & 0x3ff) == 0) {
 		/* alloc memory and read data */
-		*cart_image = (UBYTE *) Util_malloc(len);
-		if (fread(*cart_image, 1, len, fp) < len) {
+		cart->image = (UBYTE *) Util_malloc(len);
+		if (fread(cart->image, 1, len, fp) < len) {
 			Log_print("Error reading cartridge.\n");
 		}
 		fclose(fp);
 		/* find cart type */
-		*cart_type = CARTRIDGE_NONE;
+		cart->type = CARTRIDGE_NONE;
 		len >>= 10;	/* number of kilobytes */
 		for (type = 1; type <= CARTRIDGE_LAST_SUPPORTED; type++)
 			if (CARTRIDGE_kb[type] == len) {
-				if (*cart_type == CARTRIDGE_NONE)
-					*cart_type = type;
+				if (cart->type == CARTRIDGE_NONE)
+					cart->type = type;
 				else
 					return len;	/* more than one cartridge type of such length - user must select */
 			}
-		if (*cart_type != CARTRIDGE_NONE) {
+		if (cart->type != CARTRIDGE_NONE) {
+			CARTRIDGE_Start(cart);
 			return 0;	/* ok */
 		}
-		free(*cart_image);
-		*cart_image = NULL;
+		free(cart->image);
+		cart->image = NULL;
 		return CARTRIDGE_BAD_FORMAT;
 	}
 	/* if not full kilobytes, assume it is CART file */
@@ -619,10 +710,11 @@ static int InsertCartridge(const char *filename, char *cart_filename, UBYTE **ca
 			header[7];
 		if (type >= 1 && type <= CARTRIDGE_LAST_SUPPORTED) {
 			int checksum;
+			int result;
 			len = CARTRIDGE_kb[type] << 10;
 			/* alloc memory and read data */
-			*cart_image = (UBYTE *) Util_malloc(len);
-			if (fread(*cart_image, 1, len, fp) < len) {
+			cart->image = (UBYTE *) Util_malloc(len);
+			if (fread(cart->image, 1, len, fp) < len) {
 				Log_print("Error reading cartridge.\n");
 			}
 			fclose(fp);
@@ -630,8 +722,11 @@ static int InsertCartridge(const char *filename, char *cart_filename, UBYTE **ca
 				(header[9] << 16) |
 				(header[10] << 8) |
 				header[11];
-			*cart_type = type;
-			return checksum == CARTRIDGE_Checksum(*cart_image, len) ? 0 : CARTRIDGE_BAD_CHECKSUM;
+			cart->type = type;
+			result = checksum == CARTRIDGE_Checksum(cart->image, len) ? 0 : CARTRIDGE_BAD_CHECKSUM;
+			if (result == 0 || result == CARTRIDGE_BAD_CHECKSUM)
+				CARTRIDGE_Start(cart);
+			return result;
 		}
 	}
 	fclose(fp);
@@ -640,75 +735,65 @@ static int InsertCartridge(const char *filename, char *cart_filename, UBYTE **ca
 
 int CARTRIDGE_Insert(const char *filename)
 {
-	int result;
 	/* remove currently inserted cart */
 	CARTRIDGE_Remove();
-	result = InsertCartridge(filename, CARTRIDGE_filename, &cart_image, &CARTRIDGE_type);
-	if (result == 0 || result == CARTRIDGE_BAD_CHECKSUM)
-		CARTRIDGE_Start();
-	return result;
+	return InsertCartridge(filename, &CARTRIDGE_main);
 }
 
 int CARTRIDGE_Insert_Second(const char *filename)
 {
 	/* remove currently inserted cart */
 	CARTRIDGE_Remove_Second();
-	return InsertCartridge(filename, CARTRIDGE_second_filename, &second_cart_image, &CARTRIDGE_second_type);
+	return InsertCartridge(filename, &CARTRIDGE_piggyback);
+}
+
+static void RemoveCart(CARTRIDGE_image_t *cart)
+{
+	if (cart->type != CARTRIDGE_NONE) {
+		cart->type = CARTRIDGE_NONE;
+		free(cart->image);
+		cart->image = NULL;
+		if (cart == active_cart)
+			MapActiveCart();
+	}
 }
 
 void CARTRIDGE_Remove(void)
 {
-	if (CARTRIDGE_second_type != CARTRIDGE_NONE)
-		CARTRIDGE_Remove_Second();
-	CARTRIDGE_type = CARTRIDGE_NONE;
-	if (cart_image != NULL) {
-		free(cart_image);
-		cart_image = NULL;
-	}
-	CARTRIDGE_Start();
+	active_cart = &CARTRIDGE_main;
+	CARTRIDGE_Remove_Second();
+	RemoveCart(&CARTRIDGE_main);
 }
 
 void CARTRIDGE_Remove_Second(void)
 {
-	CARTRIDGE_second_type = CARTRIDGE_NONE;
-	if (second_cart_image != NULL) {
-		free(second_cart_image);
-		second_cart_image = NULL;
-	}
-	if (cart_pass_through) {
-		cart_pass_through = FALSE;
-		cart_image = first_cart_image;
-		MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
-		Atari800_Warmstart();
-		}
+	RemoveCart(&CARTRIDGE_piggyback);
 }
 
-void CARTRIDGE_Start(void) {
-	if (cart_pass_through) {
-		cart_image = first_cart_image;
-		cart_pass_through = FALSE;
-		}
-        CARTRIDGE_Start_Local(CARTRIDGE_type);
-	}
-
-static void CARTRIDGE_Start_Local(int curr_cart_type) {
+/* Maps *active_cartridge to memory. If the cartridge is bankswitched,
+   the mapping is pe3rformed according to its current state (ie. it doesn't
+   reset to bank 0 or whatever). */
+/* Note that this function only maps part of a cartridge (if any). Then it
+   calls SwitchBank(), which maps the rest. */
+static void MapActiveCart(void)
+{
 	if (Atari800_machine_type == Atari800_MACHINE_5200) {
 		MEMORY_SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
 		MEMORY_SetROM(0x5ff6, 0x5ff9);
-		switch (curr_cart_type) {
+		switch (active_cart->type) {
 		case CARTRIDGE_5200_32:
-			MEMORY_CopyROM(0x4000, 0xbfff, cart_image);
+			MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image);
 			break;
 		case CARTRIDGE_5200_EE_16:
-			MEMORY_CopyROM(0x4000, 0x5fff, cart_image);
-			MEMORY_CopyROM(0x6000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0x2000);
+			MEMORY_CopyROM(0x4000, 0x5fff, active_cart->image);
+			MEMORY_CopyROM(0x6000, 0x9fff, active_cart->image);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x2000);
 			break;
 		case CARTRIDGE_5200_40:
-			MEMORY_CopyROM(0x4000, 0x4fff, cart_image);
-			MEMORY_CopyROM(0x5000, 0x5fff, cart_image + 0x4000);
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image + 0x8000);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0x8000);
+			MEMORY_CopyROM(0x4000, 0x4fff, active_cart->image + (active_cart->state & 0x03) * 0x1000);
+			MEMORY_CopyROM(0x5000, 0x5fff, active_cart->image + 0x4000 + ((active_cart->state & 0x0c) >> 2) * 0x1000);
+			MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image + 0x8000);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x8000);
 #ifndef PAGED_ATTRIB
 			MEMORY_SetHARDWARE(0x4ff6, 0x4ff9);
 			MEMORY_SetHARDWARE(0x5ff6, 0x5ff9);
@@ -720,17 +805,17 @@ static void CARTRIDGE_Start_Local(int curr_cart_type) {
 #endif
 			break;
 		case CARTRIDGE_5200_NS_16:
-			MEMORY_CopyROM(0x8000, 0xbfff, cart_image);
+			MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image);
 			break;
 		case CARTRIDGE_5200_8:
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
+			MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image);
 			break;
 		case CARTRIDGE_5200_4:
-			MEMORY_CopyROM(0x8000, 0x8fff, cart_image);
-			MEMORY_CopyROM(0x9000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xafff, cart_image);
-			MEMORY_CopyROM(0xb000, 0xbfff, cart_image);
+			MEMORY_CopyROM(0x8000, 0x8fff, active_cart->image);
+			MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image);
+			MEMORY_CopyROM(0xa000, 0xafff, active_cart->image);
+			MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image);
 			break;
 		default:
 			/* clear cartridge area so the 5200 will crash */
@@ -739,111 +824,93 @@ static void CARTRIDGE_Start_Local(int curr_cart_type) {
 		}
 	}
 	else {
-		switch (curr_cart_type) {
+		switch (active_cart->type) {
 		case CARTRIDGE_STD_8:
 		case CARTRIDGE_PHOENIX_8:
 			MEMORY_Cart809fDisable();
 			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image);
 			break;
 		case CARTRIDGE_STD_16:
 		case CARTRIDGE_BLIZZARD_16:
 			MEMORY_Cart809fEnable();
 			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0xbfff, cart_image);
+			MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image);
 			break;
 		case CARTRIDGE_OSS_16:
 			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xafff, cart_image);
-			MEMORY_CopyROM(0xb000, 0xbfff, cart_image + 0x3000);
-			bank = 0;
-			break;
-		case CARTRIDGE_DB_32:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0x6000);
-			bank = 0;
-			break;
-		case CARTRIDGE_WILL_64:
-		case CARTRIDGE_WILL_32:
-		case CARTRIDGE_EXP_64:
-		case CARTRIDGE_DIAMOND_64:
-		case CARTRIDGE_SDX_64:
-		case CARTRIDGE_SDX_128:
-			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
-			bank = 0;
-			break;
-		case CARTRIDGE_XEGS_32:
-		case CARTRIDGE_SWXEGS_32:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0x6000);
-			bank = 0;
-			break;
-		case CARTRIDGE_XEGS_64:
-		case CARTRIDGE_SWXEGS_64:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0xe000);
-			bank = 0;
-			break;
-		case CARTRIDGE_XEGS_128:
-		case CARTRIDGE_SWXEGS_128:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0x1e000);
-			bank = 0;
-			break;
-		case CARTRIDGE_XEGS_256:
-		case CARTRIDGE_SWXEGS_256:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0x3e000);
-			bank = 0;
-			break;
-		case CARTRIDGE_XEGS_512:
-		case CARTRIDGE_SWXEGS_512:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0x7e000);
-			bank = 0;
-			break;
-		case CARTRIDGE_XEGS_1024:
-		case CARTRIDGE_SWXEGS_1024:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0xfe000);
-			bank = 0;
+			if (active_cart->state >= 0) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image + 0x3000);
+			}
 			break;
 		case CARTRIDGE_OSS2_16:
 			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xafff, cart_image + 0x1000);
-			MEMORY_CopyROM(0xb000, 0xbfff, cart_image);
-			bank = 0;
+			if (active_cart->state >= 0) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image);
+			}
 			break;
+		case CARTRIDGE_WILL_64:
+		case CARTRIDGE_EXP_64:
+		case CARTRIDGE_DIAMOND_64:
+		case CARTRIDGE_SDX_64:
 		case CARTRIDGE_ATRAX_128:
+		case CARTRIDGE_WILL_32:
+		case CARTRIDGE_ATMAX_128:
+		case CARTRIDGE_ATMAX_1024:
+		case CARTRIDGE_SDX_128:
 			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
-			bank = 0;
+			break;
+		case CARTRIDGE_DB_32:
+		case CARTRIDGE_XEGS_32:
+		case CARTRIDGE_SWXEGS_32:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x6000);
+			}
+			break;
+		case CARTRIDGE_XEGS_64:
+		case CARTRIDGE_SWXEGS_64:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0xe000);
+			}
+			break;
+		case CARTRIDGE_XEGS_128:
+		case CARTRIDGE_SWXEGS_128:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x1e000);
+			}
+			break;
+		case CARTRIDGE_XEGS_256:
+		case CARTRIDGE_SWXEGS_256:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x3e000);
+			}
+			break;
+		case CARTRIDGE_XEGS_512:
+		case CARTRIDGE_SWXEGS_512:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x7e000);
+			}
+			break;
+		case CARTRIDGE_XEGS_1024:
+		case CARTRIDGE_SWXEGS_1024:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0xfe000);
+			}
 			break;
 		case CARTRIDGE_BBSB_40:
 			MEMORY_Cart809fEnable();
 			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x8fff, cart_image);
-			MEMORY_CopyROM(0x9000, 0x9fff, cart_image + 0x4000);
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0x8000);
+			MEMORY_CopyROM(0x8000, 0x8fff, active_cart->image + (active_cart->state & 0x03) * 0x1000);
+			MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image + 0x4000 + ((active_cart->state & 0x0c) >> 2) * 0x1000);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x8000);
 #ifndef PAGED_ATTRIB
 			MEMORY_SetHARDWARE(0x8ff6, 0x8ff9);
 			MEMORY_SetHARDWARE(0x9ff6, 0x9ff9);
@@ -853,23 +920,25 @@ static void CARTRIDGE_Start_Local(int curr_cart_type) {
 			MEMORY_writemap[0x8f] = CARTRIDGE_BountyBob1PutByte;
 			MEMORY_writemap[0x9f] = CARTRIDGE_BountyBob2PutByte;
 #endif
-			break;
+			/* No need to call SwitchBank(), return. */
+			return;
 		case CARTRIDGE_RIGHT_8:
 			if (Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB) {
 				MEMORY_Cart809fEnable();
-				MEMORY_CopyROM(0x8000, 0x9fff, cart_image);
+				MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
 				if ((!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
 					MEMORY_CartA0bfEnable();
 					MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
-					break;
 				}
+				else
+					MEMORY_CartA0bfDisable();
+			} else {
+				/* there's no right slot in XL/XE */
+				MEMORY_Cart809fDisable();
 				MEMORY_CartA0bfDisable();
-				break;
 			}
-			/* there's no right slot in XL/XE */
-			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfDisable();
-			break;
+			/* No need to call SwitchBank(), return. */
+			return;
 		case CARTRIDGE_MEGA_16:
 		case CARTRIDGE_MEGA_32:
 		case CARTRIDGE_MEGA_64:
@@ -877,113 +946,142 @@ static void CARTRIDGE_Start_Local(int curr_cart_type) {
 		case CARTRIDGE_MEGA_256:
 		case CARTRIDGE_MEGA_512:
 		case CARTRIDGE_MEGA_1024:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0xbfff, cart_image);
-			bank = 0;
-			break;
-		case CARTRIDGE_ATMAX_128:
-			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image);
-			bank = 0;
-			break;
-		case CARTRIDGE_ATMAX_1024:
-			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xbfff, cart_image + 0xfe000);
-			bank = 0x7f;
 			break;
 		default:
 			MEMORY_Cart809fDisable();
 			if ((Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB)
-			 && (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
+			&& (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
 				MEMORY_CartA0bfEnable();
 				MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
-				break;
 			}
-			MEMORY_CartA0bfDisable();
-			break;
+			else
+				MEMORY_CartA0bfDisable();
+			/* No need to call SwitchBank(), return. */
+			return;
 		}
+		SwitchBank(active_cart->state);
 	}
+}
+
+static void ResetCartState(CARTRIDGE_image_t *cart)
+{
+	switch (cart->type) {
+	case CARTRIDGE_OSS2_16:
+		cart->state = 1;
+		break;
+	case CARTRIDGE_ATMAX_1024:
+		cart->state = 0x7f;
+		break;
+	default:
+		cart->state = 0;
+	}
+}
+
+void CARTRIDGE_Start(CARTRIDGE_image_t *cart) {
+	ResetCartState(cart);
+	if (cart == active_cart)
+		MapActiveCart();
+}
+
+void CARTRIDGE_ColdStart(void) {
+	active_cart = &CARTRIDGE_main;
+	ResetCartState(&CARTRIDGE_main);
+	ResetCartState(&CARTRIDGE_piggyback);
+	MapActiveCart();
 }
 
 #ifndef BASIC
 
-void CARTRIDGE_StateRead(void)
+void CARTRIDGE_StateRead(UBYTE version)
 {
-	int savedCartType = CARTRIDGE_NONE;
+	int saved_type = CARTRIDGE_NONE;
 	char filename[FILENAME_MAX];
 
 	/* Read the cart type from the file.  If there is no cart type, becaused we have
 	   reached the end of the file, this will just default to CART_NONE */
-	StateSav_ReadINT(&savedCartType, 1);
-	if (savedCartType < 0) {
-		savedCartType = -savedCartType;
+	StateSav_ReadINT(&saved_type, 1);
+	if (saved_type != CARTRIDGE_NONE) {
 		StateSav_ReadFNAME(filename);
 		if (filename[0]) {
 			/* Insert the cartridge... */
 			if (CARTRIDGE_Insert(filename) >= 0) {
 				/* And set the type to the saved type, in case it was a raw cartridge image */
-				CARTRIDGE_type = savedCartType;
-				CARTRIDGE_Start();
+				CARTRIDGE_main.type = saved_type;
 			}
 		}
-		StateSav_ReadINT(&savedCartType, 1);
+	}
+	else
+		CARTRIDGE_main.type = saved_type;
+
+	if (version >= 7)
+		/* Read the cartridge's state (current bank etc.). */
+		StateSav_ReadINT(&CARTRIDGE_main.state, 1);
+
+	if (saved_type < 0) {
+		/* Minus value indicates a piggyback cartridge present. */
+		CARTRIDGE_main.type = -saved_type;
+	
+		StateSav_ReadINT(&saved_type, 1);
 		StateSav_ReadFNAME(filename);
 		if (filename[0]) {
 			/* Insert the cartridge... */
 			if (CARTRIDGE_Insert_Second(filename) >= 0) {
 				/* And set the type to the saved type, in case it was a raw cartridge image */
-				CARTRIDGE_second_type = savedCartType;
-				CARTRIDGE_Start();
+				CARTRIDGE_piggyback.type = saved_type;
 			}
 		}
-		/* Get the state of the first/second cart active flag */
-		StateSav_ReadINT(&cart_pass_through, 1);
-		if (cart_pass_through) {
-			first_cart_image = cart_image;
-			cart_image = second_cart_image;
-		}
-	} else if (savedCartType != CARTRIDGE_NONE) {
-		StateSav_ReadFNAME(filename);
-		if (filename[0]) {
-			/* Insert the cartridge... */
-			if (CARTRIDGE_Insert(filename) >= 0) {
-				/* And set the type to the saved type, in case it was a raw cartridge image */
-				CARTRIDGE_type = savedCartType;
-				CARTRIDGE_Start();
-			}
+		if (version >= 7)
+			/* Read the cartridge's state (current bank etc.). */
+			StateSav_ReadINT(&CARTRIDGE_piggyback.state, 1);
+		else {
+			/* Savestate version 6 explicitely stored information about
+			   the active cartridge. */
+			int piggyback_active;
+			StateSav_ReadINT(&piggyback_active, 1);
+			if (piggyback_active)
+				active_cart = &CARTRIDGE_piggyback;
+			else
+				active_cart = &CARTRIDGE_main;
+			/* The "Determine active cartridge" code below makes no
+			   sense when loading ver.6 savestates, because they
+			   did not store the cartridge state. */
+			return;
 		}
 	}
+
+	/* Determine active cartridge (main or piggyback. */
+	if ((CARTRIDGE_main.type == CARTRIDGE_SDX_64
+	     || CARTRIDGE_main.type == CARTRIDGE_SDX_128)
+	    && (CARTRIDGE_main.state & 0x0c) == 0x08)
+		active_cart = &CARTRIDGE_piggyback;
+	else
+		active_cart = &CARTRIDGE_main;
+
+	MapActiveCart();
 }
 
 void CARTRIDGE_StateSave(void)
 {
-	int cart_save;
+	int cart_save = CARTRIDGE_main.type;
 	
-	if (CARTRIDGE_second_type == CARTRIDGE_NONE) {
-		/* Save the cartridge type, or CARTRIDGE_NONE if there isn't one...*/
-		StateSav_SaveINT(&CARTRIDGE_type, 1);
-		if (CARTRIDGE_type != CARTRIDGE_NONE) {
-			StateSav_SaveFNAME(CARTRIDGE_filename);
-		}
-	} else {
+	if (CARTRIDGE_piggyback.type != CARTRIDGE_NONE)
 		/* Save the cart type as negative, to indicate to CARTStateRead that there is a 
 		   second cartridge */
-		cart_save = -CARTRIDGE_type;
-		/* Save the cartridge type and name*/
-		StateSav_SaveINT(&cart_save, 1);
-		if (CARTRIDGE_type != CARTRIDGE_NONE) {
-			StateSav_SaveFNAME(CARTRIDGE_filename);
-		}
-		/* Save the second cartridge type and name*/
-		StateSav_SaveINT(&CARTRIDGE_second_type, 1);
-		StateSav_SaveFNAME(CARTRIDGE_second_filename);
-		/* Save the state of the first/second cart active flag */
-		StateSav_SaveINT(&cart_pass_through, 1);
+		cart_save = -cart_save;
+	
+	/* Save the cartridge type, or CARTRIDGE_NONE if there isn't one...*/
+	StateSav_SaveINT(&cart_save, 1);
+	if (CARTRIDGE_main.type != CARTRIDGE_NONE) {
+		StateSav_SaveFNAME(CARTRIDGE_main.filename);
+		StateSav_SaveINT(&CARTRIDGE_main.state, 1);
 	}
 
+	if (CARTRIDGE_piggyback.type != CARTRIDGE_NONE) {
+		/* Save the second cartridge type and name*/
+		StateSav_SaveINT(&CARTRIDGE_piggyback.type, 1);
+		StateSav_SaveFNAME(CARTRIDGE_piggyback.filename);
+		StateSav_SaveINT(&CARTRIDGE_piggyback.state, 1);
+	}
 }
 
 #endif

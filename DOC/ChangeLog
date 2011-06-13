@@ -1,3 +1,31 @@
+2011-06-13  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch]: Major rewrite, required to fix bugs in piggyback cartridge
+  emulation and with writing/reading savestates with banked cartridges.
+  1. SDX piggyback emulation was broken and apparently written without knowing
+     the cartridge's specs - the SDX cart only reacts to access to address
+     $D5Ex (also $D5Fx in case of the 128K version).
+  2. A piggyback cartridge reacts to access to page $D5 even if it is disabled
+     by the SDX cart. So when processing a read/write to page $D5 both mounted
+     cartridges must be bank-switched.
+  3. A cartridge reacts to page $D5 even if there's an R-Time or
+     IDE hardware installed.
+  3. In savestates the bankswitched cartridge's current state was not stored,
+     and in some cases such savestates didn't work properly when loaded.
+  4. Overall code cleanup - introduced the CARTRIDGE_image_t structure for
+     clarity.
+
+* gtia.[ch], statesav.c, cartridge.[ch] (CARTRIDGE_StateRead)
+  (CARTRIDGE_StateSave): GTIA needs to store its trigger latches in the
+  savestate in order to properly restore after loading a savestate with
+  a banked cartridge. Banked cartridge's current state must also be stored in
+  a savestate. Both changes require bumping up the savestate version number.
+
+* atari.c, ui.c: Apply the new API of cartridge.h.
+
+* DOC/cart.txt: Update the SpartaDOS X sections with info about piggyback
+  cartridges.
+  
+
 2011-06-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui_basic.c: Allow opening up the file selector when the given PATH is
   invalid. When a diskette image is mounted, its path is cached in the

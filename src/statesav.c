@@ -71,7 +71,7 @@
 #include "xep80.h"
 #endif
 
-#define SAVE_VERSION_NUMBER 6
+#define SAVE_VERSION_NUMBER 7 /* Last changed after Atari800 2.2.1 */
 
 #if defined(MEMCOMPR)
 static gzFile *mem_open(const char *name, const char *mode);
@@ -462,12 +462,12 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 
 	Atari800_StateRead();
 	if (StateVersion >= 4) {
-		CARTRIDGE_StateRead();
+		CARTRIDGE_StateRead(StateVersion);
 		SIO_StateRead();
 	}
 	ANTIC_StateRead();
 	CPU_StateRead(SaveVerbose, StateVersion);
-	GTIA_StateRead();
+	GTIA_StateRead(StateVersion);
 	PIA_StateRead();
 	POKEY_StateRead();
 	if (StateVersion >= 6) {

@@ -52,10 +52,16 @@
 
 #define CARTRIDGE_MAX_SIZE	(1024 * 1024)
 extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
-extern char CARTRIDGE_filename[FILENAME_MAX];
-extern char CARTRIDGE_second_filename[FILENAME_MAX];
-extern int CARTRIDGE_type;
-extern int CARTRIDGE_second_type;
+
+typedef struct CARTRIDGE_image_t {
+	int type;
+	int state; /* Cartridge's state, such as selected bank or switch on/off. */
+	UBYTE *image;
+	char filename[FILENAME_MAX];
+} CARTRIDGE_image_t;
+
+extern CARTRIDGE_image_t CARTRIDGE_main;
+extern CARTRIDGE_image_t CARTRIDGE_piggyback;
 
 int CARTRIDGE_IsFor5200(int type);
 int CARTRIDGE_Checksum(const UBYTE *image, int nbytes);
@@ -69,13 +75,21 @@ int CARTRIDGE_Insert_Second(const char *filename);
 void CARTRIDGE_Remove(void);
 void CARTRIDGE_Remove_Second(void);
 
-void CARTRIDGE_Start(void);
+/* Called on system coldstart. Resets the states of mounted cartridges. */
+void CARTRIDGE_ColdStart(void);
+
+/* Initialises the cartridge CART after mounting. No need to call it after
+   CARTRIDGE_Insert or CARTRIDGE_Insert_Second, because these functions
+   call it inside. However CARTRIDGE_Start must be called after manually
+   setting the cartridge's type. */
+void CARTRIDGE_Start(CARTRIDGE_image_t *cart);
+
 UBYTE CARTRIDGE_GetByte(UWORD addr);
 void CARTRIDGE_PutByte(UWORD addr, UBYTE byte);
 void CARTRIDGE_BountyBob1(UWORD addr);
 void CARTRIDGE_BountyBob2(UWORD addr);
 void CARTRIDGE_StateSave(void);
-void CARTRIDGE_StateRead(void);
+void CARTRIDGE_StateRead(UBYTE version);
 #ifdef PAGED_ATTRIB
 UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr);
 UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr);

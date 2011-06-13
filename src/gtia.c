@@ -1203,9 +1203,10 @@ void GTIA_StateSave(void)
 	StateSav_SaveUBYTE(&consol_mask, 1);
 	StateSav_SaveINT(&GTIA_speaker, 1);
 	StateSav_SaveINT(&next_console_value, 1);
+	StateSav_SaveUBYTE(GTIA_TRIG_latch, 4);
 }
 
-void GTIA_StateRead(void)
+void GTIA_StateRead(UBYTE version)
 {
 	int next_console_value;	/* ignored */
 
@@ -1255,6 +1256,8 @@ void GTIA_StateRead(void)
 	StateSav_ReadUBYTE(&consol_mask, 1);
 	StateSav_ReadINT(&GTIA_speaker, 1);
 	StateSav_ReadINT(&next_console_value, 1);
+	if (version >= 7)
+		StateSav_ReadUBYTE(GTIA_TRIG_latch, 4);
 
 	GTIA_PutByte(GTIA_OFFSET_HPOSP0, GTIA_HPOSP0);
 	GTIA_PutByte(GTIA_OFFSET_HPOSP1, GTIA_HPOSP1);
