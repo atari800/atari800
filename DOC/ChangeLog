@@ -34,6 +34,9 @@
 * cartridge.c (CARTRIDGE_ReadConfig, CARTRIDGE_WriteConfig), cfg.c: Support
   loading and saving of the cartridge settings in the config file.
 
+* cartridge.[ch], ui.c, atari800.man, DOC/cart.txt DOC/USAGE: Add support for
+  the OSS The Writer's Tool cartridge mapping.
+
 
 2011-06-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui_basic.c: Allow opening up the file selector when the given PATH is

@@ -89,7 +89,8 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	16,   /* CARTRIDGE_BLIZZARD_16 */
 	128,  /* CARTRIDGE_ATMAX_128 */
 	1024, /* CARTRIDGE_ATMAX_1024 */
-	128   /* CARTRIDGE_SDX_128 */
+	128,  /* CARTRIDGE_SDX_128 */
+	8     /* CARTRIDGE_OSS_8 */
 };
 
 int CARTRIDGE_IsFor5200(int type)
@@ -207,6 +208,7 @@ static void SwitchBank(int old_state)
 		set_bank_A0AF(0x3000, old_state);
 		break;
 	case CARTRIDGE_OSS2_16:
+	case CARTRIDGE_OSS_8:
 		set_bank_A0AF(0x0000, old_state);
 		break;
 	case CARTRIDGE_WILL_64:
@@ -401,6 +403,20 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 		break;
 	case CARTRIDGE_ATMAX_1024:
 		new_state = addr;
+		break;
+	case CARTRIDGE_OSS_8:
+		switch (addr & 0x09) {
+		case 0x00:
+		case 0x01:
+			new_state = 1;
+			break;
+		case 0x08:
+			new_state = -1;
+			break;
+		default: /* 0x09 */
+			new_state = 0;
+			break;
+		}
 		break;
 	default:
 		/* Other cartridge types don't support enabling/disabling/banking through page D5. */
@@ -856,6 +872,7 @@ static void MapActiveCart(void)
 			}
 			break;
 		case CARTRIDGE_OSS2_16:
+		case CARTRIDGE_OSS_8:
 			MEMORY_Cart809fDisable();
 			if (active_cart->state >= 0) {
 				MEMORY_CartA0bfEnable();

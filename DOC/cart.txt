@@ -43,7 +43,7 @@ Currently supported cartridge types:
 |  8 | 800/XL/XE |   64 | 64 KB Williams cartridge                          |
 |  9 | 800/XL/XE |   64 | Express 64 KB cartridge                           |
 | 10 | 800/XL/XE |   64 | Diamond 64 KB cartridge                           |
-| 11 | 800/XL/XE |   64 | SpartaDos X 64 KB cartridge                       |
+| 11 | 800/XL/XE |   64 | SpartaDOS X 64 KB cartridge                       |
 | 12 | 800/XL/XE |   32 | XEGS 32 KB cartridge                              |
 | 13 | 800/XL/XE |   64 | XEGS 64 KB cartridge                              |
 | 14 | 800/XL/XE |  128 | XEGS 128 KB cartridge                             |
@@ -75,7 +75,8 @@ Currently supported cartridge types:
 | 40 | 800/XL/XE |   16 | Blizzard 16 KB cartridge                          |
 | 41 | 800/XL/XE |  128 | Atarimax 128 KB Flash cartridge                   |
 | 42 | 800/XL/XE | 1024 | Atarimax 1 MB Flash cartridge                     |
-| 43 | 800/XL/XE |  128 | SpartaDos X 128 KB cartridge                      |
+| 43 | 800/XL/XE |  128 | SpartaDOS X 128 KB cartridge                      |
+| 44 | 800/XL/XE |    8 | OSS 8 KB cartridge                                |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -484,3 +485,15 @@ are numbered in the order they appear in the image file, starting with 0.
  Accesses to all addresses on page D5 always reaches the second cartridge,
  even if it is disabled by SpartaDOS or if the SpartaDOS cartridge itself is
  enabled.
+
++---------------------------------------------------------------------------+
+| Type 44: OSS 8 KB cartridge                                               |
++---------------------------------------------------------------------------+
+
+ Used in The Writer's Tool cartridge, it is actually a 'M091' board with an
+ 8 KB ROM instead of a normal 16 KB one. Controlled by access to a byte in
+ $D500-$D5FF, it uses only A0 and A3 address lines:
+ A3=0, A0=0 - $A000-$AFFF: bank 1, $B000-$BFFF: bank 0
+ A3=0, A0=1 - $A000-$AFFF: bank 1, $B000-$BFFF: bank 0
+ A3=1, A0=0 - disable cartridge
+ A3=1, A0=1 - $A000-$AFFF: bank 0, $B000-$BFFF: bank 0

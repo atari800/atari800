@@ -113,7 +113,7 @@ Turn on Atari BASIC ROM
 \fB-cart <filename>
 Insert cartridge (CART or raw format)
 .TP
-\fB-cart-type <0..43>
+\fB-cart-type <0..44>
 Select type of the cartridge inserted with the -cart option. When inserting
 a raw ROM image its type cannot be detected automaticcaly, and must be
 provided with this option. Setting to 0 means disabling the cartridge,
@@ -162,8 +162,9 @@ and any other number indicates a specific cartridge type:
     41 - Atarimax 128 KB Flash cartridge
     42 - Atarimax 1 MB Flash cartridge
     43 - SpartaDos X 128 KB cartridge
+    44 - OSS 8 KB cartridge
 
-If this option is not give, the user will be asked to choose the cartridge
+If this option is not given, the user will be asked to choose the cartridge
 type when the emulator starts.
 .TP
 \fB-cart2 <filename>

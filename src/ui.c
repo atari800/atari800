@@ -565,6 +565,7 @@ int UI_SelectCartType(int k)
 		UI_MENU_ACTION(41, "Atarimax 128 KB Flash cartridge"),
 		UI_MENU_ACTION(42, "Atarimax 1 MB Flash cartridge"),
 		UI_MENU_ACTION(43, "SpartaDOS X 128 KB cartridge"),
+		UI_MENU_ACTION(44, "OSS 8 KB cartridge"),
 		UI_MENU_END
 	};
 
