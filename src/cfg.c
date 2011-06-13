@@ -24,6 +24,7 @@
 #include "config.h"
 #include "atari.h"
 #include <stdlib.h>
+#include "cartridge.h"
 #include "cassette.h"
 #include "cfg.h"
 #include "devices.h"
@@ -309,6 +310,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			/* Add module-specific configurations here */
 			else if (PBI_ReadConfig(string,ptr)) {
 			}
+			else if (CARTRIDGE_ReadConfig(string, ptr)) {
+			}
 			else if (CASSETTE_ReadConfig(string, ptr)) {
 			}
 #ifdef AF80
@@ -438,6 +441,7 @@ int CFG_WriteConfig(void)
 	fprintf(fp, "CFG_SAVE_ON_EXIT=%d\n", CFG_save_on_exit);
 	/* Add module-specific configurations here */
 	PBI_WriteConfig(fp);
+	CARTRIDGE_WriteConfig(fp);
 	CASSETTE_WriteConfig(fp);
 #ifdef AF80
 	AF80_WriteConfig(fp);

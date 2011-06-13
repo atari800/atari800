@@ -24,7 +24,16 @@
 
 * DOC/cart.txt: Update the SpartaDOS X sections with info about piggyback
   cartridges.
-  
+
+* atari.c, cartridge.[ch] (CARTRIDGE_Initialise): Move code for processing
+  cartridge-related commandline optins to cartridge.c.
+
+* cartridge.c, atari800.man, DOC/USAGE: Add -cart-type and -cart2-type
+  options, that allow to choose cartridge type from commandline.
+
+* cartridge.c (CARTRIDGE_ReadConfig, CARTRIDGE_WriteConfig), cfg.c: Support
+  loading and saving of the cartridge settings in the config file.
+
 
 2011-06-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui_basic.c: Allow opening up the file selector when the given PATH is

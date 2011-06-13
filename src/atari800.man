@@ -113,6 +113,69 @@ Turn on Atari BASIC ROM
 \fB-cart <filename>
 Insert cartridge (CART or raw format)
 .TP
+\fB-cart-type <0..43>
+Select type of the cartridge inserted with the -cart option. When inserting
+a raw ROM image its type cannot be detected automaticcaly, and must be
+provided with this option. Setting to 0 means disabling the cartridge,
+and any other number indicates a specific cartridge type:
+
+     1 - Standard 8 KB cartridge
+     2 - Standard 16 KB cartridge
+     3 - OSS '034M' 16 KB cartridge
+     4 - Standard 32 KB 5200 cartridge
+     5 - DB 32 KB cartridge
+     6 - Two chip 16 KB 5200 cartridge
+     7 - Bounty Bob Strikes Back 40 KB 5200 cartridge
+     8 - 64 KB Williams cartridge
+     9 - Express 64 KB cartridge
+    10 - Diamond 64 KB cartridge
+    11 - SpartaDos X 64 KB cartridge
+    12 - XEGS 32 KB cartridge
+    13 - XEGS 64 KB cartridge
+    14 - XEGS 128 KB cartridge
+    15 - OSS 'M091' 16 KB cartridge
+    16 - One chip 16 KB 5200 cartridge
+    17 - Atrax 128 KB cartridge
+    18 - Bounty Bob Strikes Back 40 KB cartridge
+    19 - Standard 8 KB 5200 cartridge
+    20 - Standard 4 KB 5200 cartridge
+    21 - Right slot 8 KB cartridge
+    22 - 32 KB Williams cartridge
+    23 - XEGS 256 KB cartridge
+    24 - XEGS 512 KB cartridge
+    25 - XEGS 1 MB cartridge
+    26 - MegaCart 16 KB cartridge
+    27 - MegaCart 32 KB cartridge
+    28 - MegaCart 64 KB cartridge
+    29 - MegaCart 128 KB cartridge
+    30 - MegaCart 256 KB cartridge
+    31 - MegaCart 512 KB cartridge
+    32 - MegaCart 1 MB cartridge
+    33 - Switchable XEGS 32 KB cartridge
+    34 - Switchable XEGS 64 KB cartridge
+    35 - Switchable XEGS 128 KB cartridge
+    36 - Switchable XEGS 256 KB cartridge
+    37 - Switchable XEGS 512 KB cartridge
+    38 - Switchable XEGS 1 MB cartridge
+    39 - Phoenix 8 KB cartridge
+    40 - Blizzard 16 KB cartridge
+    41 - Atarimax 128 KB Flash cartridge
+    42 - Atarimax 1 MB Flash cartridge
+    43 - SpartaDos X 128 KB cartridge
+
+If this option is not give, the user will be asked to choose the cartridge
+type when the emulator starts.
+.TP
+\fB-cart2 <filename>
+Insert piggyback cartridge (CART or raw format). This works only if the first
+cartridge is a pass-through (currently only SpartaDOS X 64KB and 128KB types).
+.TP
+\fB-cart2-type <0..43>
+Select type of the cartridge inserted with the -cart2 option. When inserting
+a raw ROM image its type cannot be detected automaticcaly, and must be
+provided with this option. The available values are the same as for the
+-cart-type option above.
+.TP
 \fB-run <filename>
 Run Atari program (EXE, COM, XEX, BAS, LST)
 .TP

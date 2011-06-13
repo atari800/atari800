@@ -4,6 +4,7 @@
 #include "config.h"
 #include "atari.h"
 
+#define CARTRIDGE_UNKNOWN        -1
 #define CARTRIDGE_NONE            0
 #define CARTRIDGE_STD_8           1
 #define CARTRIDGE_STD_16          2
@@ -56,6 +57,7 @@ extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 typedef struct CARTRIDGE_image_t {
 	int type;
 	int state; /* Cartridge's state, such as selected bank or switch on/off. */
+	int size; /* Size of the image, in kilobytes */
 	UBYTE *image;
 	char filename[FILENAME_MAX];
 } CARTRIDGE_image_t;
@@ -65,6 +67,10 @@ extern CARTRIDGE_image_t CARTRIDGE_piggyback;
 
 int CARTRIDGE_IsFor5200(int type);
 int CARTRIDGE_Checksum(const UBYTE *image, int nbytes);
+
+int CARTRIDGE_ReadConfig(char *string, char *ptr);
+void CARTRIDGE_WriteConfig(FILE *fp);
+int CARTRIDGE_Initialise(int *argc, char *argv[]);
 
 #define CARTRIDGE_CANT_OPEN		-1	/* Can't open cartridge image file */
 #define CARTRIDGE_BAD_FORMAT		-2	/* Unknown cartridge format */

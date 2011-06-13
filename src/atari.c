@@ -342,8 +342,6 @@ static void PreInitialise(void)
 int Atari800_Initialise(int *argc, char *argv[])
 {
 	int i, j;
-	const char *rom_filename = NULL;
-	const char *rom2_filename = NULL;
 	const char *run_direct = NULL;
 #ifndef BASIC
 	const char *state_file = NULL;
@@ -556,12 +554,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-basic_rom") == 0) {
 				if (i_a) Util_strlcpy(CFG_basic_filename, argv[++i], sizeof(CFG_basic_filename)); else a_m = TRUE;
 			}
-			else if (strcmp(argv[i], "-cart") == 0) {
-				if (i_a) rom_filename = argv[++i]; else a_m = TRUE;
-			}
-			else if (strcmp(argv[i], "-cart2") == 0) {
-				if (i_a) rom2_filename = argv[++i]; else a_m = TRUE;
-			}
 			else if (strcmp(argv[i], "-run") == 0) {
 				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
 			}
@@ -649,7 +641,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-xlxe_rom <file> Load XL/XE ROM from file");
 					Log_print("\t-5200_rom <file> Load 5200 ROM from file");
 					Log_print("\t-basic_rom <fil> Load BASIC ROM from file");
-					Log_print("\t-cart <file>     Install cartridge (raw or CART format)");
 					Log_print("\t-run <file>      Run Atari program (COM, EXE, XEX, BAS, LST)");
 #ifndef BASIC
 					Log_print("\t-state <file>    Load saved-state file");
@@ -693,6 +684,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		|| !IDE_Initialise(argc, argv)
 #endif
 		|| !SIO_Initialise (argc, argv)
+		|| !CARTRIDGE_Initialise(argc, argv)
 		|| !CASSETTE_Initialise(argc, argv)
 		|| !PBI_Initialise(argc,argv)
 #ifdef VOICEBOX
@@ -783,79 +775,59 @@ int Atari800_Initialise(int *argc, char *argv[])
 	}
 
 	/* Install requested ROM cartridge */
-	if (rom_filename) {
-		int r = CARTRIDGE_Insert(rom_filename);
-		if (r < 0) {
-			Log_print("Error inserting cartridge \"%s\": %s", rom_filename,
-			r == CARTRIDGE_CANT_OPEN ? "Can't open file" :
-			r == CARTRIDGE_BAD_FORMAT ? "Bad format" :
-			r == CARTRIDGE_BAD_CHECKSUM ? "Bad checksum" :
-			"Unknown error");
-		}
-		if (r > 0) {
+	if (CARTRIDGE_main.type == CARTRIDGE_UNKNOWN) {
 #ifdef BASIC
-			Log_print("Raw cartridge images not supported in BASIC version!");
+		Log_print("Raw cartridge images not supported in BASIC version!");
 #else /* BASIC */
 
 #ifndef __PLUS
-			UI_is_active = TRUE;
-			CARTRIDGE_main.type = UI_SelectCartType(r);
-			UI_is_active = FALSE;
+		UI_is_active = TRUE;
+		CARTRIDGE_main.type = UI_SelectCartType(CARTRIDGE_main.size);
+		UI_is_active = FALSE;
 #else /* __PLUS */
-			CARTRIDGE_main.type = (CARTRIDGE_NONE == nCartType ? UI_SelectCartType(r) : nCartType);
+		CARTRIDGE_main.type = (CARTRIDGE_NONE == nCartType ? UI_SelectCartType(r) : nCartType);
 #endif /* __PLUS */
-			CARTRIDGE_Start(&CARTRIDGE_main);
+		CARTRIDGE_Start(&CARTRIDGE_main);
 
 #endif /* BASIC */
-		}
-#ifndef __PLUS
-		if (CARTRIDGE_main.type != CARTRIDGE_NONE) {
-			int for5200 = CARTRIDGE_IsFor5200(CARTRIDGE_main.type);
-			if (for5200 && Atari800_machine_type != Atari800_MACHINE_5200) {
-				Atari800_machine_type = Atari800_MACHINE_5200;
-				MEMORY_ram_size = 16;
-				Atari800_InitialiseMachine();
-			}
-			else if (!for5200 && Atari800_machine_type == Atari800_MACHINE_5200) {
-				Atari800_machine_type = Atari800_MACHINE_XLXE;
-				MEMORY_ram_size = 64;
-				Atari800_InitialiseMachine();
-			}
-		}
-#endif /* __PLUS */
 	}
+#ifndef __PLUS
+	if (CARTRIDGE_main.type != CARTRIDGE_NONE) {
+		int for5200 = CARTRIDGE_IsFor5200(CARTRIDGE_main.type);
+		if (for5200 && Atari800_machine_type != Atari800_MACHINE_5200) {
+			Atari800_machine_type = Atari800_MACHINE_5200;
+			MEMORY_ram_size = 16;
+			Atari800_InitialiseMachine();
+		}
+		else if (!for5200 && Atari800_machine_type == Atari800_MACHINE_5200) {
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 64;
+			Atari800_InitialiseMachine();
+		}
+	}
+#endif /* __PLUS */
 
 	/* Install requested second ROM cartridge, if first is SpartaX */
-	if (((CARTRIDGE_main.type == CARTRIDGE_SDX_64) || (CARTRIDGE_main.type == CARTRIDGE_SDX_128)) && rom2_filename) {
-		int r = CARTRIDGE_Insert_Second(rom2_filename);
-		if (r < 0) {
-			Log_print("Error inserting cartridge \"%s\": %s", rom2_filename,
-			r == CARTRIDGE_CANT_OPEN ? "Can't open file" :
-			r == CARTRIDGE_BAD_FORMAT ? "Bad format" :
-			r == CARTRIDGE_BAD_CHECKSUM ? "Bad checksum" :
-			"Unknown error");
-		}
-		if (r > 0) {
+	if (CARTRIDGE_piggyback.type == CARTRIDGE_UNKNOWN) {
 #ifdef BASIC
-			Log_print("Raw cartridge images not supported in BASIC version!");
+		Log_print("Raw cartridge images not supported in BASIC version!");
 #else /* BASIC */
 
 #ifndef __PLUS
-			UI_is_active = TRUE;
-			CARTRIDGE_piggyback.type = UI_SelectCartType(r);
-			UI_is_active = FALSE;
+		UI_is_active = TRUE;
+		CARTRIDGE_piggyback.type = UI_SelectCartType(CARTRIDGE_piggyback.size);
+		UI_is_active = FALSE;
 #else /* __PLUS */
-			CARTRIDGE_piggyback.type = (CARTRIDGE_NONE == nCartType ? SelectCartType(r) : nCartType);
-			CARTRIDGE_Start(&CARTRIDGE_piggyback);
+		CARTRIDGE_piggyback.type = (CARTRIDGE_NONE == nCartType ? SelectCartType(r) : nCartType);
 #endif /* __PLUS */
+		CARTRIDGE_Start(&CARTRIDGE_piggyback);
 #endif /* BASIC */
-		}
 	}
 #ifdef AF80
 	/* Insert Austin Franklin 80 column cartridge */
-		if (AF80_enabled) {
-			AF80_InsertRightCartridge();
-		}
+	if (AF80_enabled) {
+		AF80_InsertRightCartridge();
+	}
 #endif
 	
 	/* Load Atari executable, if any */

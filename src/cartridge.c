@@ -108,8 +108,13 @@ int CARTRIDGE_IsFor5200(int type)
 	return FALSE;
 }
 
-CARTRIDGE_image_t CARTRIDGE_main = { CARTRIDGE_NONE, 0, NULL, "" }; /* Left/Right cartridge */
-CARTRIDGE_image_t CARTRIDGE_piggyback = { CARTRIDGE_NONE, 0, NULL, "" }; /* Pass through cartridge for SpartaDOSX */
+static int CartIsPassthrough(int type)
+{
+	return type == CARTRIDGE_SDX_64 || type == CARTRIDGE_SDX_128;
+}
+
+CARTRIDGE_image_t CARTRIDGE_main = { CARTRIDGE_NONE, 0, 0, NULL, "" }; /* Left/Right cartridge */
+CARTRIDGE_image_t CARTRIDGE_piggyback = { CARTRIDGE_NONE, 0, 0, NULL, "" }; /* Pass through cartridge for SpartaDOSX */
 
 /* The currently active cartridge in the left slot - normally points to
    CARTRIDGE_main but can be switched to CARTRIDGE_piggyback if the main
@@ -665,7 +670,7 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 	len = Util_flen(fp);
 	Util_rewind(fp);
 
-	/* Guard against providing CARTRIDGE_filename as parameter. */
+	/* Guard against providing cart->filename as parameter. */
 	if (cart->filename != filename)
 		/* Save Filename for state save */
 		strcpy(cart->filename, filename);
@@ -681,12 +686,16 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 		/* find cart type */
 		cart->type = CARTRIDGE_NONE;
 		len >>= 10;	/* number of kilobytes */
+		cart->size = len;
 		for (type = 1; type <= CARTRIDGE_LAST_SUPPORTED; type++)
 			if (CARTRIDGE_kb[type] == len) {
 				if (cart->type == CARTRIDGE_NONE)
 					cart->type = type;
-				else
-					return len;	/* more than one cartridge type of such length - user must select */
+				else {
+					/* more than one cartridge type of such length - user must select */
+					cart->type = CARTRIDGE_UNKNOWN;
+					return len;
+				}
 			}
 		if (cart->type != CARTRIDGE_NONE) {
 			CARTRIDGE_Start(cart);
@@ -712,6 +721,7 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 			int checksum;
 			int result;
 			len = CARTRIDGE_kb[type] << 10;
+			cart->size = CARTRIDGE_kb[type];
 			/* alloc memory and read data */
 			cart->image = (UBYTE *) Util_malloc(len);
 			if (fread(cart->image, 1, len, fp) < len) {
@@ -724,8 +734,7 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 				header[11];
 			cart->type = type;
 			result = checksum == CARTRIDGE_Checksum(cart->image, len) ? 0 : CARTRIDGE_BAD_CHECKSUM;
-			if (result == 0 || result == CARTRIDGE_BAD_CHECKSUM)
-				CARTRIDGE_Start(cart);
+			CARTRIDGE_Start(cart);
 			return result;
 		}
 	}
@@ -749,10 +758,12 @@ int CARTRIDGE_Insert_Second(const char *filename)
 
 static void RemoveCart(CARTRIDGE_image_t *cart)
 {
-	if (cart->type != CARTRIDGE_NONE) {
-		cart->type = CARTRIDGE_NONE;
+	if (cart->image != NULL) {
 		free(cart->image);
 		cart->image = NULL;
+	}
+	if (cart->type != CARTRIDGE_NONE) {
+		cart->type = CARTRIDGE_NONE;
 		if (cart == active_cart)
 			MapActiveCart();
 	}
@@ -990,6 +1001,149 @@ void CARTRIDGE_ColdStart(void) {
 	MapActiveCart();
 }
 
+int CARTRIDGE_ReadConfig(char *string, char *ptr)
+{
+	if (strcmp(string, "CARTRIDGE_FILENAME") == 0) {
+		Util_strlcpy(CARTRIDGE_main.filename, ptr, sizeof(CARTRIDGE_main.filename));
+		if (CARTRIDGE_main.type == CARTRIDGE_NONE)
+			CARTRIDGE_main.type = CARTRIDGE_UNKNOWN;
+	}
+	else if (strcmp(string, "CARTRIDGE_TYPE") == 0) {
+		int value = Util_sscandec(ptr);
+		if (value < 0 || value > CARTRIDGE_LAST_SUPPORTED)
+			return FALSE;
+		CARTRIDGE_main.type = value;
+	}
+	else if (strcmp(string, "CARTRIDGE_PIGGYBACK_FILENAME") == 0) {
+		Util_strlcpy(CARTRIDGE_piggyback.filename, ptr, sizeof(CARTRIDGE_piggyback.filename));
+		if (CARTRIDGE_piggyback.type == CARTRIDGE_NONE)
+			CARTRIDGE_piggyback.type = CARTRIDGE_UNKNOWN;
+	}
+	else if (strcmp(string, "CARTRIDGE_PIGGYBACK_TYPE") == 0) {
+		int value = Util_sscandec(ptr);
+		if (value < 0 || value > CARTRIDGE_LAST_SUPPORTED)
+			return FALSE;
+		CARTRIDGE_piggyback.type = value;
+	}
+	else return FALSE;
+	return TRUE;
+}
+
+void CARTRIDGE_WriteConfig(FILE *fp)
+{
+	fprintf(fp, "CARTRIDGE_FILENAME=%s\n", CARTRIDGE_main.filename);
+	fprintf(fp, "CARTRIDGE_TYPE=%d\n", CARTRIDGE_main.type);
+	fprintf(fp, "CARTRIDGE_PIGGYBACK_FILENAME=%s\n", CARTRIDGE_piggyback.filename);
+	fprintf(fp, "CARTRIDGE_PIGGYBACK_TYPE=%d\n", CARTRIDGE_piggyback.type);
+}
+
+static void InitInsert(CARTRIDGE_image_t *cart)
+{
+	if (cart->type != CARTRIDGE_NONE) {
+		int tmp_type = cart->type;
+		int res = InsertCartridge(cart->filename, cart);
+		if (res < 0) {
+			Log_print("Error inserting cartridge \"%s\": %s", cart->filename,
+			res == CARTRIDGE_CANT_OPEN ? "Can't open file" :
+			res == CARTRIDGE_BAD_FORMAT ? "Bad format" :
+			/* Assume r == CARTRIDGE_BAD_CHECKSUM */ "Bad checksum");
+			cart->type = CARTRIDGE_NONE;
+		}
+		if (cart->type == CARTRIDGE_UNKNOWN && CARTRIDGE_kb[tmp_type] == res)
+			cart->type = tmp_type;
+	}
+}
+
+int CARTRIDGE_Initialise(int *argc, char *argv[])
+{
+	int i;
+	int j;
+	int help_only = FALSE;
+	/* When filename is given at commandline, we have to reset cartridge type to UNKNOWN,
+	   because the cartridge type read earlier from the config file is no longer valid.
+	   These two variables indicate that cartridge type is also given at commandline
+	   and so it shouldn't be reset. */
+	int type_from_commandline = FALSE;
+	int type2_from_commandline = FALSE;
+
+	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc); /* is argument available? */
+		int a_m = FALSE; /* error, argument missing! */
+		int a_i = FALSE; /* error, argument invalid! */
+		
+		if (strcmp(argv[i], "-cart") == 0) {
+			if (i_a) {
+				Util_strlcpy(CARTRIDGE_main.filename, argv[++i], sizeof(CARTRIDGE_main.filename));
+				if (!type_from_commandline)
+					CARTRIDGE_main.type = CARTRIDGE_UNKNOWN;
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-cart-type") == 0) {
+			if (i_a) {
+				Util_sscansdec(argv[++i], &CARTRIDGE_main.type);
+				if (CARTRIDGE_main.type < 0 ||  CARTRIDGE_main.type > CARTRIDGE_LAST_SUPPORTED)
+					a_i = TRUE;
+				else
+					type_from_commandline = TRUE;
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-cart2") == 0) {
+			if (i_a) {
+				Util_strlcpy(CARTRIDGE_piggyback.filename, argv[++i], sizeof(CARTRIDGE_piggyback.filename));
+				if (!type2_from_commandline)
+					CARTRIDGE_piggyback.type = CARTRIDGE_UNKNOWN;
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-cart2-type") == 0) {
+			if (i_a) {
+				Util_sscansdec(argv[++i], &CARTRIDGE_piggyback.type);
+				if (CARTRIDGE_piggyback.type < 0 ||  CARTRIDGE_piggyback.type > CARTRIDGE_LAST_SUPPORTED)
+					a_i = TRUE;
+				else
+					type2_from_commandline = TRUE;
+			}
+			else a_m = TRUE;
+		}
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
+				Log_print("\t-cart <file>       Install cartridge (raw or CART format)");
+				Log_print("\t-cart-type <num>   Set cartridge type (0..%i)", CARTRIDGE_LAST_SUPPORTED);
+				Log_print("\t-cart2 <file>      Install piggyback cartridge");
+				Log_print("\t-cart2-type <num>  Set piggyback cartridge type (0..%i)", CARTRIDGE_LAST_SUPPORTED);
+			}
+			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		} else if (a_i) {
+			Log_print("Invalid argument for '%s'", argv[--i]);
+			return FALSE;
+		}
+	}
+	*argc = j;
+
+	if (help_only)
+		return TRUE;
+
+	/* If filename not given, we must reset the cartridge types. */
+	if (CARTRIDGE_main.filename[0] == '\0')
+		CARTRIDGE_main.type = CARTRIDGE_NONE;
+	if (CARTRIDGE_piggyback.filename[0] == '\0')
+		CARTRIDGE_piggyback.type = CARTRIDGE_NONE;
+
+	InitInsert(&CARTRIDGE_main);
+	if (CartIsPassthrough(CARTRIDGE_main.type))
+		InitInsert(&CARTRIDGE_piggyback);
+
+	return TRUE;
+}
+
 #ifndef BASIC
 
 void CARTRIDGE_StateRead(UBYTE version)
@@ -1050,9 +1204,7 @@ void CARTRIDGE_StateRead(UBYTE version)
 	}
 
 	/* Determine active cartridge (main or piggyback. */
-	if ((CARTRIDGE_main.type == CARTRIDGE_SDX_64
-	     || CARTRIDGE_main.type == CARTRIDGE_SDX_128)
-	    && (CARTRIDGE_main.state & 0x0c) == 0x08)
+	if (CartIsPassthrough(CARTRIDGE_main.type) && (CARTRIDGE_main.state & 0x0c) == 0x08)
 		active_cart = &CARTRIDGE_piggyback;
 	else
 		active_cart = &CARTRIDGE_main;
