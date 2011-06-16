@@ -116,9 +116,13 @@ are numbered in the order they appear in the image file, starting with 0.
 
  The '034M' scheme is the more complicated one.
  The main bank is 3. An access to:
- $D5x0 or $D5x1 selects bank 0.
- $D5x3 or $D5x7 selects bank 1.
- $D5x4 or $D5x5 selects bank 2.
+ $D5x0 selects bank 0.
+ $D5x1 is not useful - it selects banks 0 and 2 (the bytes are binary AND of
+ the corresponding bytes from banks 0 and 1).
+ $D5x3 or $D5x7 selects bank 2.
+ $D5x4 selects bank 1.
+ $D5x5 is not useful - it selects banks 1 and 2 (the bytes are binary AND of
+ the corresponding bytes from banks 1 and 2).
  $D5x2 or $D5x6 is not useful. It disables ROM (there are $FF bytes
  in $A000-$AFFF).
  $D5x8-$D5xF disables whole cartridge (enables computer's memory in address

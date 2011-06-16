@@ -285,21 +285,39 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 
 	switch (cart->type) {
 	case CARTRIDGE_OSS_16:
+		/* Reference: http://www.retrobits.net/atari/osscarts.shtml
+		   Using the nomenclature of the above article: the emulator
+		   accepts 16KB images composed of two 8KB EPROM dumps joined
+		   together in the following order: ROM B, ROM A. Currently
+		   only three cartridges with this scheme are known:
+		   Action! 3.5, BASIC XL 1.02 and MAC/65. */
+		   
 		if (addr & 0x08)
 			new_state = -1;
 		else
 			switch (addr & 0x07) {
 			case 0x00:
-			case 0x01:
+				/* B Lo/A Hi */
 				new_state = 0;
+				break;
+			case 0x01:
+				/* A Lo+B Lo/A Hi */
+				/* TODO should be binary AND of both banks. For now only fills with 0xFFs. */
+				new_state = 0xff;
 				break;
 			case 0x03:
 			case 0x07:
-				new_state = 1;
+				/* A Lo/A Hi */
+				new_state = 2;
 				break;
 			case 0x04:
+				/* B Hi/A Hi */
+				new_state = 1;
+				break;
 			case 0x05:
-				new_state = 2;
+				/* A Lo+B Hi/A Hi */
+				/* TODO should be binary AND of both banks. For now only fills with 0xFFs. */
+				new_state = 0xff;
 				break;
 			default: /* 0x02, 0x06 */
 				/* Fill cart area with 0xFFs. */

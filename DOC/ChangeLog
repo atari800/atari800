@@ -1,3 +1,18 @@
+2011-06-16  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+*cartridge.c, DOC/cart.txt: Fixed an ages-old bug in the OSS 034M cartridge
+  banking scheme. Banks 1 and 2 were switched, which caused all known OSS
+  034M dumps to fail. (There actually are only 3 known images of 034M
+  cartridges:
+  Action! 3.5: http://ftp.pigwa.net/stuff/collections/atari_forever/ROM/ACTION.OSS/ACTION.OSS
+  BASIC XL 1.02: http://ftp.pigwa.net/stuff/collections/atari_forever/ROM/BASICXL.OSS/BXL102.OSS
+  MAC/65 1.0: http://ftp.pigwa.net/stuff/collections/atari_forever/ROM/MAC65.OSS/MAC65.OSS
+  All failed to work before this fix.)
+  Additionally the combinations $D5x1 and $D5x5 were incorrectly described as
+  working - I've changed it to more closely reflect the reality (the
+  combinations cause selection of 2 banks simultaneously - but it's still not
+  emulated 100% exactly).
+
+
 2011-06-13  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch]: Major rewrite, required to fix bugs in piggyback cartridge
   emulation and with writing/reading savestates with banked cartridges.
