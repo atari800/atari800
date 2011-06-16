@@ -93,7 +93,7 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	8     /* CARTRIDGE_OSS_8 */
 };
 
-int CARTRIDGE_IsFor5200(int type)
+static int CartIsFor5200(int type)
 {
 	switch (type) {
 	case CARTRIDGE_5200_32:
@@ -193,8 +193,6 @@ static void set_bank_SDX_128(void)
 	}
 }
 
-static void MapActiveCart(void);
-
 /* Called on a read or write operation to page $D5. Switches banks or
    enables/disables the cartridge pointed to by *active_cart. */
 static void SwitchBank(int old_state)
@@ -272,6 +270,200 @@ static void SwitchBank(int old_state)
 	case CARTRIDGE_SDX_128:
 		set_bank_SDX_128();
 		break;
+	}
+}
+
+/* Maps *active_cart to memory. If the cartridge is bankswitched,
+   the mapping is pe3rformed according to its current state (ie. it doesn't
+   reset to bank 0 or whatever). */
+/* Note that this function only maps part of a cartridge (if any). Then it
+   calls SwitchBank(), which maps the rest. */
+static void MapActiveCart(void)
+{
+	if (Atari800_machine_type == Atari800_MACHINE_5200) {
+		MEMORY_SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
+		MEMORY_SetROM(0x5ff6, 0x5ff9);
+		switch (active_cart->type) {
+		case CARTRIDGE_5200_32:
+			MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image);
+			break;
+		case CARTRIDGE_5200_EE_16:
+			MEMORY_CopyROM(0x4000, 0x5fff, active_cart->image);
+			MEMORY_CopyROM(0x6000, 0x9fff, active_cart->image);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x2000);
+			break;
+		case CARTRIDGE_5200_40:
+			MEMORY_CopyROM(0x4000, 0x4fff, active_cart->image + (active_cart->state & 0x03) * 0x1000);
+			MEMORY_CopyROM(0x5000, 0x5fff, active_cart->image + 0x4000 + ((active_cart->state & 0x0c) >> 2) * 0x1000);
+			MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image + 0x8000);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x8000);
+#ifndef PAGED_ATTRIB
+			MEMORY_SetHARDWARE(0x4ff6, 0x4ff9);
+			MEMORY_SetHARDWARE(0x5ff6, 0x5ff9);
+#else
+			MEMORY_readmap[0x4f] = CARTRIDGE_BountyBob1GetByte;
+			MEMORY_readmap[0x5f] = CARTRIDGE_BountyBob2GetByte;
+			MEMORY_writemap[0x4f] = CARTRIDGE_BountyBob1PutByte;
+			MEMORY_writemap[0x5f] = CARTRIDGE_BountyBob2PutByte;
+#endif
+			break;
+		case CARTRIDGE_5200_NS_16:
+			MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image);
+			break;
+		case CARTRIDGE_5200_8:
+			MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image);
+			break;
+		case CARTRIDGE_5200_4:
+			MEMORY_CopyROM(0x8000, 0x8fff, active_cart->image);
+			MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image);
+			MEMORY_CopyROM(0xa000, 0xafff, active_cart->image);
+			MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image);
+			break;
+		default:
+			/* clear cartridge area so the 5200 will crash */
+			MEMORY_dFillMem(0x4000, 0, 0x8000);
+			break;
+		}
+	}
+	else {
+		switch (active_cart->type) {
+		case CARTRIDGE_STD_8:
+		case CARTRIDGE_PHOENIX_8:
+			MEMORY_Cart809fDisable();
+			MEMORY_CartA0bfEnable();
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image);
+			break;
+		case CARTRIDGE_STD_16:
+		case CARTRIDGE_BLIZZARD_16:
+			MEMORY_Cart809fEnable();
+			MEMORY_CartA0bfEnable();
+			MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image);
+			break;
+		case CARTRIDGE_OSS_16:
+			MEMORY_Cart809fDisable();
+			if (active_cart->state >= 0) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image + 0x3000);
+			}
+			break;
+		case CARTRIDGE_OSS2_16:
+		case CARTRIDGE_OSS_8:
+			MEMORY_Cart809fDisable();
+			if (active_cart->state >= 0) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image);
+			}
+			break;
+		case CARTRIDGE_WILL_64:
+		case CARTRIDGE_EXP_64:
+		case CARTRIDGE_DIAMOND_64:
+		case CARTRIDGE_SDX_64:
+		case CARTRIDGE_ATRAX_128:
+		case CARTRIDGE_WILL_32:
+		case CARTRIDGE_ATMAX_128:
+		case CARTRIDGE_ATMAX_1024:
+		case CARTRIDGE_SDX_128:
+			MEMORY_Cart809fDisable();
+			break;
+		case CARTRIDGE_DB_32:
+		case CARTRIDGE_XEGS_32:
+		case CARTRIDGE_SWXEGS_32:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x6000);
+			}
+			break;
+		case CARTRIDGE_XEGS_64:
+		case CARTRIDGE_SWXEGS_64:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0xe000);
+			}
+			break;
+		case CARTRIDGE_XEGS_128:
+		case CARTRIDGE_SWXEGS_128:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x1e000);
+			}
+			break;
+		case CARTRIDGE_XEGS_256:
+		case CARTRIDGE_SWXEGS_256:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x3e000);
+			}
+			break;
+		case CARTRIDGE_XEGS_512:
+		case CARTRIDGE_SWXEGS_512:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x7e000);
+			}
+			break;
+		case CARTRIDGE_XEGS_1024:
+		case CARTRIDGE_SWXEGS_1024:
+			if (!(active_cart->state & 0x80)) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0xfe000);
+			}
+			break;
+		case CARTRIDGE_BBSB_40:
+			MEMORY_Cart809fEnable();
+			MEMORY_CartA0bfEnable();
+			MEMORY_CopyROM(0x8000, 0x8fff, active_cart->image + (active_cart->state & 0x03) * 0x1000);
+			MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image + 0x4000 + ((active_cart->state & 0x0c) >> 2) * 0x1000);
+			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x8000);
+#ifndef PAGED_ATTRIB
+			MEMORY_SetHARDWARE(0x8ff6, 0x8ff9);
+			MEMORY_SetHARDWARE(0x9ff6, 0x9ff9);
+#else
+			MEMORY_readmap[0x8f] = CARTRIDGE_BountyBob1GetByte;
+			MEMORY_readmap[0x9f] = CARTRIDGE_BountyBob2GetByte;
+			MEMORY_writemap[0x8f] = CARTRIDGE_BountyBob1PutByte;
+			MEMORY_writemap[0x9f] = CARTRIDGE_BountyBob2PutByte;
+#endif
+			/* No need to call SwitchBank(), return. */
+			return;
+		case CARTRIDGE_RIGHT_8:
+			if (Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB) {
+				MEMORY_Cart809fEnable();
+				MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
+				if ((!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
+					MEMORY_CartA0bfEnable();
+					MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
+				}
+				else
+					MEMORY_CartA0bfDisable();
+			} else {
+				/* there's no right slot in XL/XE */
+				MEMORY_Cart809fDisable();
+				MEMORY_CartA0bfDisable();
+			}
+			/* No need to call SwitchBank(), return. */
+			return;
+		case CARTRIDGE_MEGA_16:
+		case CARTRIDGE_MEGA_32:
+		case CARTRIDGE_MEGA_64:
+		case CARTRIDGE_MEGA_128:
+		case CARTRIDGE_MEGA_256:
+		case CARTRIDGE_MEGA_512:
+		case CARTRIDGE_MEGA_1024:
+			break;
+		default:
+			MEMORY_Cart809fDisable();
+			if ((Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB)
+			&& (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
+				MEMORY_CartA0bfEnable();
+				MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
+			}
+			else
+				MEMORY_CartA0bfDisable();
+			/* No need to call SwitchBank(), return. */
+			return;
+		}
+		SwitchBank(active_cart->state);
 	}
 }
 
@@ -686,6 +878,72 @@ int CARTRIDGE_Checksum(const UBYTE *image, int nbytes)
 	return checksum;
 }
 
+static void ResetCartState(CARTRIDGE_image_t *cart)
+{
+	switch (cart->type) {
+	case CARTRIDGE_OSS2_16:
+		cart->state = 1;
+		break;
+	case CARTRIDGE_ATMAX_1024:
+		cart->state = 0x7f;
+		break;
+	default:
+		cart->state = 0;
+	}
+}
+
+/* Initialises the cartridge CART after mounting. Called by CARTRIDGE_Insert,
+   or CARTRIDGE_Insert_Second and CARTRIDGE_SetType. */
+static void InitCartridge(CARTRIDGE_image_t *cart) {
+	ResetCartState(cart);
+	if (cart == &CARTRIDGE_main) {
+		/* Check if we should automatically switch between computer/5200. */
+		int for5200 = CartIsFor5200(CARTRIDGE_main.type);
+		if (for5200 && Atari800_machine_type != Atari800_MACHINE_5200) {
+			Atari800_machine_type = Atari800_MACHINE_5200;
+			MEMORY_ram_size = 16;
+			Atari800_InitialiseMachine();
+		}
+		else if (!for5200 && Atari800_machine_type == Atari800_MACHINE_5200) {
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 64;
+			Atari800_InitialiseMachine();
+		}
+	}
+	if (cart == active_cart)
+		MapActiveCart();
+}
+
+static void RemoveCart(CARTRIDGE_image_t *cart)
+{
+	if (cart->image != NULL) {
+		free(cart->image);
+		cart->image = NULL;
+	}
+	if (cart->type != CARTRIDGE_NONE) {
+		cart->type = CARTRIDGE_NONE;
+		if (cart == active_cart)
+			MapActiveCart();
+	}
+}
+
+void CARTRIDGE_SetType(CARTRIDGE_image_t *cart, int type)
+{
+	cart->type = type;
+	if (type == CARTRIDGE_NONE)
+		/* User cancelled setting the cartridge's type - the cartridge
+		   can be unloaded. */
+		RemoveCart(cart);
+	InitCartridge(cart);
+}
+
+void CARTRIDGE_ColdStart(void) {
+	active_cart = &CARTRIDGE_main;
+	ResetCartState(&CARTRIDGE_main);
+	ResetCartState(&CARTRIDGE_piggyback);
+	MapActiveCart();
+}
+
 /* Loads a cartridge from FILENAME. Copies FILENAME to CART_FILENAME.
    Allocates a buffer with cartridge image data and puts it in *CART_IMAGE.
    Sets *CART_TYPE to the cartridge type. */
@@ -732,7 +990,7 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 				}
 			}
 		if (cart->type != CARTRIDGE_NONE) {
-			CARTRIDGE_Start(cart);
+			InitCartridge(cart);
 			return 0;	/* ok */
 		}
 		free(cart->image);
@@ -768,7 +1026,7 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 				header[11];
 			cart->type = type;
 			result = checksum == CARTRIDGE_Checksum(cart->image, len) ? 0 : CARTRIDGE_BAD_CHECKSUM;
-			CARTRIDGE_Start(cart);
+			InitCartridge(cart);
 			return result;
 		}
 	}
@@ -790,19 +1048,6 @@ int CARTRIDGE_Insert_Second(const char *filename)
 	return InsertCartridge(filename, &CARTRIDGE_piggyback);
 }
 
-static void RemoveCart(CARTRIDGE_image_t *cart)
-{
-	if (cart->image != NULL) {
-		free(cart->image);
-		cart->image = NULL;
-	}
-	if (cart->type != CARTRIDGE_NONE) {
-		cart->type = CARTRIDGE_NONE;
-		if (cart == active_cart)
-			MapActiveCart();
-	}
-}
-
 void CARTRIDGE_Remove(void)
 {
 	active_cart = &CARTRIDGE_main;
@@ -813,227 +1058,6 @@ void CARTRIDGE_Remove(void)
 void CARTRIDGE_Remove_Second(void)
 {
 	RemoveCart(&CARTRIDGE_piggyback);
-}
-
-/* Maps *active_cartridge to memory. If the cartridge is bankswitched,
-   the mapping is pe3rformed according to its current state (ie. it doesn't
-   reset to bank 0 or whatever). */
-/* Note that this function only maps part of a cartridge (if any). Then it
-   calls SwitchBank(), which maps the rest. */
-static void MapActiveCart(void)
-{
-	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		MEMORY_SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
-		MEMORY_SetROM(0x5ff6, 0x5ff9);
-		switch (active_cart->type) {
-		case CARTRIDGE_5200_32:
-			MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image);
-			break;
-		case CARTRIDGE_5200_EE_16:
-			MEMORY_CopyROM(0x4000, 0x5fff, active_cart->image);
-			MEMORY_CopyROM(0x6000, 0x9fff, active_cart->image);
-			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x2000);
-			break;
-		case CARTRIDGE_5200_40:
-			MEMORY_CopyROM(0x4000, 0x4fff, active_cart->image + (active_cart->state & 0x03) * 0x1000);
-			MEMORY_CopyROM(0x5000, 0x5fff, active_cart->image + 0x4000 + ((active_cart->state & 0x0c) >> 2) * 0x1000);
-			MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image + 0x8000);
-			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x8000);
-#ifndef PAGED_ATTRIB
-			MEMORY_SetHARDWARE(0x4ff6, 0x4ff9);
-			MEMORY_SetHARDWARE(0x5ff6, 0x5ff9);
-#else
-			MEMORY_readmap[0x4f] = CARTRIDGE_BountyBob1GetByte;
-			MEMORY_readmap[0x5f] = CARTRIDGE_BountyBob2GetByte;
-			MEMORY_writemap[0x4f] = CARTRIDGE_BountyBob1PutByte;
-			MEMORY_writemap[0x5f] = CARTRIDGE_BountyBob2PutByte;
-#endif
-			break;
-		case CARTRIDGE_5200_NS_16:
-			MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image);
-			break;
-		case CARTRIDGE_5200_8:
-			MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
-			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image);
-			break;
-		case CARTRIDGE_5200_4:
-			MEMORY_CopyROM(0x8000, 0x8fff, active_cart->image);
-			MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image);
-			MEMORY_CopyROM(0xa000, 0xafff, active_cart->image);
-			MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image);
-			break;
-		default:
-			/* clear cartridge area so the 5200 will crash */
-			MEMORY_dFillMem(0x4000, 0, 0x8000);
-			break;
-		}
-	}
-	else {
-		switch (active_cart->type) {
-		case CARTRIDGE_STD_8:
-		case CARTRIDGE_PHOENIX_8:
-			MEMORY_Cart809fDisable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image);
-			break;
-		case CARTRIDGE_STD_16:
-		case CARTRIDGE_BLIZZARD_16:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image);
-			break;
-		case CARTRIDGE_OSS_16:
-			MEMORY_Cart809fDisable();
-			if (active_cart->state >= 0) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image + 0x3000);
-			}
-			break;
-		case CARTRIDGE_OSS2_16:
-		case CARTRIDGE_OSS_8:
-			MEMORY_Cart809fDisable();
-			if (active_cart->state >= 0) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image);
-			}
-			break;
-		case CARTRIDGE_WILL_64:
-		case CARTRIDGE_EXP_64:
-		case CARTRIDGE_DIAMOND_64:
-		case CARTRIDGE_SDX_64:
-		case CARTRIDGE_ATRAX_128:
-		case CARTRIDGE_WILL_32:
-		case CARTRIDGE_ATMAX_128:
-		case CARTRIDGE_ATMAX_1024:
-		case CARTRIDGE_SDX_128:
-			MEMORY_Cart809fDisable();
-			break;
-		case CARTRIDGE_DB_32:
-		case CARTRIDGE_XEGS_32:
-		case CARTRIDGE_SWXEGS_32:
-			if (!(active_cart->state & 0x80)) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x6000);
-			}
-			break;
-		case CARTRIDGE_XEGS_64:
-		case CARTRIDGE_SWXEGS_64:
-			if (!(active_cart->state & 0x80)) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0xe000);
-			}
-			break;
-		case CARTRIDGE_XEGS_128:
-		case CARTRIDGE_SWXEGS_128:
-			if (!(active_cart->state & 0x80)) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x1e000);
-			}
-			break;
-		case CARTRIDGE_XEGS_256:
-		case CARTRIDGE_SWXEGS_256:
-			if (!(active_cart->state & 0x80)) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x3e000);
-			}
-			break;
-		case CARTRIDGE_XEGS_512:
-		case CARTRIDGE_SWXEGS_512:
-			if (!(active_cart->state & 0x80)) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x7e000);
-			}
-			break;
-		case CARTRIDGE_XEGS_1024:
-		case CARTRIDGE_SWXEGS_1024:
-			if (!(active_cart->state & 0x80)) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0xfe000);
-			}
-			break;
-		case CARTRIDGE_BBSB_40:
-			MEMORY_Cart809fEnable();
-			MEMORY_CartA0bfEnable();
-			MEMORY_CopyROM(0x8000, 0x8fff, active_cart->image + (active_cart->state & 0x03) * 0x1000);
-			MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image + 0x4000 + ((active_cart->state & 0x0c) >> 2) * 0x1000);
-			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x8000);
-#ifndef PAGED_ATTRIB
-			MEMORY_SetHARDWARE(0x8ff6, 0x8ff9);
-			MEMORY_SetHARDWARE(0x9ff6, 0x9ff9);
-#else
-			MEMORY_readmap[0x8f] = CARTRIDGE_BountyBob1GetByte;
-			MEMORY_readmap[0x9f] = CARTRIDGE_BountyBob2GetByte;
-			MEMORY_writemap[0x8f] = CARTRIDGE_BountyBob1PutByte;
-			MEMORY_writemap[0x9f] = CARTRIDGE_BountyBob2PutByte;
-#endif
-			/* No need to call SwitchBank(), return. */
-			return;
-		case CARTRIDGE_RIGHT_8:
-			if (Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB) {
-				MEMORY_Cart809fEnable();
-				MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
-				if ((!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
-					MEMORY_CartA0bfEnable();
-					MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
-				}
-				else
-					MEMORY_CartA0bfDisable();
-			} else {
-				/* there's no right slot in XL/XE */
-				MEMORY_Cart809fDisable();
-				MEMORY_CartA0bfDisable();
-			}
-			/* No need to call SwitchBank(), return. */
-			return;
-		case CARTRIDGE_MEGA_16:
-		case CARTRIDGE_MEGA_32:
-		case CARTRIDGE_MEGA_64:
-		case CARTRIDGE_MEGA_128:
-		case CARTRIDGE_MEGA_256:
-		case CARTRIDGE_MEGA_512:
-		case CARTRIDGE_MEGA_1024:
-			break;
-		default:
-			MEMORY_Cart809fDisable();
-			if ((Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB)
-			&& (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
-				MEMORY_CartA0bfEnable();
-				MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
-			}
-			else
-				MEMORY_CartA0bfDisable();
-			/* No need to call SwitchBank(), return. */
-			return;
-		}
-		SwitchBank(active_cart->state);
-	}
-}
-
-static void ResetCartState(CARTRIDGE_image_t *cart)
-{
-	switch (cart->type) {
-	case CARTRIDGE_OSS2_16:
-		cart->state = 1;
-		break;
-	case CARTRIDGE_ATMAX_1024:
-		cart->state = 0x7f;
-		break;
-	default:
-		cart->state = 0;
-	}
-}
-
-void CARTRIDGE_Start(CARTRIDGE_image_t *cart) {
-	ResetCartState(cart);
-	if (cart == active_cart)
-		MapActiveCart();
-}
-
-void CARTRIDGE_ColdStart(void) {
-	active_cart = &CARTRIDGE_main;
-	ResetCartState(&CARTRIDGE_main);
-	ResetCartState(&CARTRIDGE_piggyback);
-	MapActiveCart();
 }
 
 int CARTRIDGE_ReadConfig(char *string, char *ptr)
@@ -1085,7 +1109,7 @@ static void InitInsert(CARTRIDGE_image_t *cart)
 			cart->type = CARTRIDGE_NONE;
 		}
 		if (cart->type == CARTRIDGE_UNKNOWN && CARTRIDGE_kb[tmp_type] == res)
-			cart->type = tmp_type;
+			CARTRIDGE_SetType(cart, tmp_type);
 	}
 }
 

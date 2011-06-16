@@ -66,7 +66,6 @@ typedef struct CARTRIDGE_image_t {
 extern CARTRIDGE_image_t CARTRIDGE_main;
 extern CARTRIDGE_image_t CARTRIDGE_piggyback;
 
-int CARTRIDGE_IsFor5200(int type);
 int CARTRIDGE_Checksum(const UBYTE *image, int nbytes);
 
 int CARTRIDGE_ReadConfig(char *string, char *ptr);
@@ -78,18 +77,16 @@ int CARTRIDGE_Initialise(int *argc, char *argv[]);
 #define CARTRIDGE_BAD_CHECKSUM	-3	/* Warning: bad CART checksum */
 int CARTRIDGE_Insert(const char *filename);
 int CARTRIDGE_Insert_Second(const char *filename);
+/* When the cartridge type is CARTRIDGE_UNKNOWN after a call to
+   CARTRIDGE_Insert(), this function should be called to set the
+   cartridge's type manually to a value chosen by user. */
+void CARTRIDGE_SetType(CARTRIDGE_image_t *cart, int type);
 
 void CARTRIDGE_Remove(void);
 void CARTRIDGE_Remove_Second(void);
 
 /* Called on system coldstart. Resets the states of mounted cartridges. */
 void CARTRIDGE_ColdStart(void);
-
-/* Initialises the cartridge CART after mounting. No need to call it after
-   CARTRIDGE_Insert or CARTRIDGE_Insert_Second, because these functions
-   call it inside. However CARTRIDGE_Start must be called after manually
-   setting the cartridge's type. */
-void CARTRIDGE_Start(CARTRIDGE_image_t *cart);
 
 UBYTE CARTRIDGE_GetByte(UWORD addr);
 void CARTRIDGE_PutByte(UWORD addr, UBYTE byte);

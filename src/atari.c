@@ -779,48 +779,20 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef BASIC
 		Log_print("Raw cartridge images not supported in BASIC version!");
 #else /* BASIC */
-
-#ifndef __PLUS
 		UI_is_active = TRUE;
-		CARTRIDGE_main.type = UI_SelectCartType(CARTRIDGE_main.size);
+		CARTRIDGE_SetType(&CARTRIDGE_main, UI_SelectCartType(CARTRIDGE_main.size));
 		UI_is_active = FALSE;
-#else /* __PLUS */
-		CARTRIDGE_main.type = (CARTRIDGE_NONE == nCartType ? UI_SelectCartType(r) : nCartType);
-#endif /* __PLUS */
-		CARTRIDGE_Start(&CARTRIDGE_main);
-
 #endif /* BASIC */
 	}
-#ifndef __PLUS
-	if (CARTRIDGE_main.type != CARTRIDGE_NONE) {
-		int for5200 = CARTRIDGE_IsFor5200(CARTRIDGE_main.type);
-		if (for5200 && Atari800_machine_type != Atari800_MACHINE_5200) {
-			Atari800_machine_type = Atari800_MACHINE_5200;
-			MEMORY_ram_size = 16;
-			Atari800_InitialiseMachine();
-		}
-		else if (!for5200 && Atari800_machine_type == Atari800_MACHINE_5200) {
-			Atari800_machine_type = Atari800_MACHINE_XLXE;
-			MEMORY_ram_size = 64;
-			Atari800_InitialiseMachine();
-		}
-	}
-#endif /* __PLUS */
 
 	/* Install requested second ROM cartridge, if first is SpartaX */
 	if (CARTRIDGE_piggyback.type == CARTRIDGE_UNKNOWN) {
 #ifdef BASIC
 		Log_print("Raw cartridge images not supported in BASIC version!");
 #else /* BASIC */
-
-#ifndef __PLUS
 		UI_is_active = TRUE;
-		CARTRIDGE_piggyback.type = UI_SelectCartType(CARTRIDGE_piggyback.size);
+		CARTRIDGE_SetType(&CARTRIDGE_piggyback, UI_SelectCartType(CARTRIDGE_piggyback.size));
 		UI_is_active = FALSE;
-#else /* __PLUS */
-		CARTRIDGE_piggyback.type = (CARTRIDGE_NONE == nCartType ? SelectCartType(r) : nCartType);
-#endif /* __PLUS */
-		CARTRIDGE_Start(&CARTRIDGE_piggyback);
 #endif /* BASIC */
 	}
 #ifdef AF80

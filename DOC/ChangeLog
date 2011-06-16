@@ -12,6 +12,12 @@
   combinations cause selection of 2 banks simultaneously - but it's still not
   emulated 100% exactly).
 
+* cartridge.[ch], atari.c, ui.c: Moved the logic that auto-switches machine
+  type after insertion of a cartridge. Now it resides in cartridge.c, where it
+  belongs. Introduced new function CARTRIDGE_SetType, that should be used to
+  change the cartridge's type. CARTRIDGE_IsFor5200 and CARTRIDGE_Start are not
+  used outside cartridge.c anymore, so I renamed them and made static.
+
 
 2011-06-13  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch]: Major rewrite, required to fix bugs in piggyback cartridge
