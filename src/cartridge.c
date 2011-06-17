@@ -500,11 +500,11 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 			case 0x03:
 			case 0x07:
 				/* A Lo/A Hi */
-				new_state = 2;
+				new_state = 1;
 				break;
 			case 0x04:
 				/* B Hi/A Hi */
-				new_state = 1;
+				new_state = 2;
 				break;
 			case 0x05:
 				/* A Lo+B Hi/A Hi */
