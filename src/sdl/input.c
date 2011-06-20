@@ -619,7 +619,7 @@ int PLATFORM_Keyboard(void)
 		return AKEY_EXIT;
 	case SDLK_F10:
 		key_pressed = 0;
-		return INPUT_key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT_INTERLACE;
+		return INPUT_key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
 	case SDLK_F12:
 		key_pressed = 0;
 		return AKEY_TURBO;

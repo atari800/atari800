@@ -1,7 +1,6 @@
-2011-06-17  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
-* cartridge.c, DOC/cart.txt: Reverted the last change in the 034M mapping
-  regarding switched banks 1 and 2 - on second thought, applying such change
-  to a years-old specification without proper discussion is not a good idea.
+2011-06-20  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sdl/input.c: Fixed a bug with F10 creating interlaced screenshots instead of
+  non-interlaced.
 
 
 2011-06-16  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
