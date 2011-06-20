@@ -135,6 +135,9 @@ Command line options
                       Only if first cartridge is SpartaDOS X (64 or 128)
 -cart2-type <0..44>   Similar to -cart-type. Select type of cartridge inserted
                       with -cart2.
+-cart-autoreboot      Automatically reboot after cartridge inserting/removing
+                      (doesn't affect the piggyback cartridge)
+-no-cart-autoreboot   Don't reboot after cartridge inserting/removing
 
 -run <filename>       Run Atari program (EXE, COM, XEX, BAS, LST)
 

@@ -506,7 +506,7 @@ static int BasicUISelect(const char *title, int flags, int default_item, const U
 
 	nitems = 0;
 	index = 0;
-	for (pmenu = menu; pmenu->item != NULL; pmenu++) {
+	for (pmenu = menu; pmenu->flags != UI_ITEM_END; pmenu++) {
 		if (pmenu->flags != UI_ITEM_HIDDEN) {
 			prefix[nitems] = pmenu->prefix;
 			item[nitems] = pmenu->item;
@@ -531,7 +531,6 @@ static int BasicUISelect(const char *title, int flags, int default_item, const U
 			nitems++;
 		}
 	}
-
 	if (nitems == 0)
 		return -1; /* cancel immediately */
 
@@ -576,7 +575,7 @@ static int BasicUISelect(const char *title, int flags, int default_item, const U
 	                (flags & UI_SELECT_DRAG) ? TRUE : FALSE, NULL, seltype);
 	if (index < 0)
 		return index;
-	for (pmenu = menu; pmenu->item != NULL; pmenu++) {
+	for (pmenu = menu; pmenu->flags != UI_ITEM_END; pmenu++) {
 		if (pmenu->flags != UI_ITEM_HIDDEN) {
 			if (index == 0)
 				return pmenu->retval;

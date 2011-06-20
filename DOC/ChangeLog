@@ -2,6 +2,17 @@
 * sdl/input.c: Fixed a bug with F10 creating interlaced screenshots instead of
   non-interlaced.
 
+* cartridge.[ch], ui.c, atari800.man, DOC/USAGE: Ported from Atari800WinPLus -
+  an option for enabling/disabling automatic reboot when the cartridge is
+  inserted or removed. (Only applies to the main cartridge. After inserting or
+  removing a piggyback cartridge, it works as earlier - ie. the system will
+  not reboot automatically.)
+  
+* ui.h, ui_basic.c: Reworked detection of menu end (UI_MENU_END). The
+  previous solution stopped working correctly since in the CartManagement menu
+  there are hidden menuitems with the "item" field set to NULL which would be
+  incorrectly detected as end of menu.
+
 
 2011-06-17  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.c, DOC/cart.txt: Reverted the last change in the 034M mapping

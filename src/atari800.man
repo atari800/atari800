@@ -177,6 +177,15 @@ a raw ROM image its type cannot be detected automaticcaly, and must be
 provided with this option. The available values are the same as for the
 -cart-type option above.
 .TP
+\fB-cart-autoreboot
+Automatically reboot after cartridge inserting/removing (this is the default
+setting). This does not apply to the piggyback cartridge - inserting or
+removing it never causes automatic reboot.
+.TP
+\fB-no-cart-autoreboot
+Disable automatic reboot after cartridge inserting/removing.
+
+.TP
 \fB-run <filename>
 Run Atari program (EXE, COM, XEX, BAS, LST)
 .TP

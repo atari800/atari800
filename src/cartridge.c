@@ -93,6 +93,8 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	8     /* CARTRIDGE_OSS_8 */
 };
 
+int CARTRIDGE_autoreboot = TRUE;
+
 static int CartIsFor5200(int type)
 {
 	switch (type) {
@@ -927,6 +929,14 @@ static void RemoveCart(CARTRIDGE_image_t *cart)
 	}
 }
 
+/* Called after inserting/removing a cartridge (but not the piggyback one).
+   If needed, reboots the machine. */
+static void AutoReboot(void)
+{
+	if (CARTRIDGE_autoreboot)
+		Atari800_Coldstart();
+}
+
 void CARTRIDGE_SetType(CARTRIDGE_image_t *cart, int type)
 {
 	cart->type = type;
@@ -935,6 +945,14 @@ void CARTRIDGE_SetType(CARTRIDGE_image_t *cart, int type)
 		   can be unloaded. */
 		RemoveCart(cart);
 	InitCartridge(cart);
+}
+
+void CARTRIDGE_SetTypeAutoReboot(CARTRIDGE_image_t *cart, int type)
+{
+	CARTRIDGE_SetType(cart, type);
+	/* We don't want to autoreboot on inserting the piggyback cartridge. */
+	if (cart != &CARTRIDGE_piggyback)
+		AutoReboot();
 }
 
 void CARTRIDGE_ColdStart(void) {
@@ -1041,6 +1059,13 @@ int CARTRIDGE_Insert(const char *filename)
 	return InsertCartridge(filename, &CARTRIDGE_main);
 }
 
+int CARTRIDGE_InsertAutoReboot(const char *filename)
+{
+	int result = CARTRIDGE_Insert(filename);
+	AutoReboot();
+	return result;
+}
+
 int CARTRIDGE_Insert_Second(const char *filename)
 {
 	/* remove currently inserted cart */
@@ -1053,6 +1078,12 @@ void CARTRIDGE_Remove(void)
 	active_cart = &CARTRIDGE_main;
 	CARTRIDGE_Remove_Second();
 	RemoveCart(&CARTRIDGE_main);
+}
+
+void CARTRIDGE_RemoveAutoReboot(void)
+{
+	CARTRIDGE_Remove();
+	AutoReboot();
 }
 
 void CARTRIDGE_Remove_Second(void)
@@ -1084,6 +1115,12 @@ int CARTRIDGE_ReadConfig(char *string, char *ptr)
 			return FALSE;
 		CARTRIDGE_piggyback.type = value;
 	}
+	else if (strcmp(string, "CARTRIDGE_AUTOREBOOT") == 0) {
+		int value = Util_sscanbool(ptr);
+		if (value < 0)
+			return FALSE;
+		CARTRIDGE_autoreboot = value;
+	}
 	else return FALSE;
 	return TRUE;
 }
@@ -1094,6 +1131,7 @@ void CARTRIDGE_WriteConfig(FILE *fp)
 	fprintf(fp, "CARTRIDGE_TYPE=%d\n", CARTRIDGE_main.type);
 	fprintf(fp, "CARTRIDGE_PIGGYBACK_FILENAME=%s\n", CARTRIDGE_piggyback.filename);
 	fprintf(fp, "CARTRIDGE_PIGGYBACK_TYPE=%d\n", CARTRIDGE_piggyback.type);
+	fprintf(fp, "CARTRIDGE_AUTOREBOOT=%d\n", CARTRIDGE_autoreboot);
 }
 
 static void InitInsert(CARTRIDGE_image_t *cart)
@@ -1166,13 +1204,19 @@ int CARTRIDGE_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
+		else if (strcmp(argv[i], "-cart-autoreboot") == 0)
+			CARTRIDGE_autoreboot = TRUE;
+		else if (strcmp(argv[i], "-no-cart-autoreboot") == 0)
+			CARTRIDGE_autoreboot = FALSE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-				Log_print("\t-cart <file>       Install cartridge (raw or CART format)");
-				Log_print("\t-cart-type <num>   Set cartridge type (0..%i)", CARTRIDGE_LAST_SUPPORTED);
-				Log_print("\t-cart2 <file>      Install piggyback cartridge");
-				Log_print("\t-cart2-type <num>  Set piggyback cartridge type (0..%i)", CARTRIDGE_LAST_SUPPORTED);
+				Log_print("\t-cart <file>         Install cartridge (raw or CART format)");
+				Log_print("\t-cart-type <num>     Set cartridge type (0..%i)", CARTRIDGE_LAST_SUPPORTED);
+				Log_print("\t-cart2 <file>        Install piggyback cartridge");
+				Log_print("\t-cart2-type <num>    Set piggyback cartridge type (0..%i)", CARTRIDGE_LAST_SUPPORTED);
+				Log_print("\t-cart-autoreboot     Reboot when cartridge is inserted/removed");
+				Log_print("\t-no-cart-autoreboot  Don't reboot after changing cartridge");
 			}
 			argv[j++] = argv[i];
 		}

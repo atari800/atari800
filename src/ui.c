@@ -600,6 +600,7 @@ static void CartManagement(void)
 		UI_MENU_FILESEL(1, "Extract ROM image from Cartridge"),
 		UI_MENU_FILESEL_PREFIX_TIP(2, "Cartridge:", NULL, NULL),
 		UI_MENU_FILESEL_PREFIX_TIP(3, "Piggyback:", NULL, NULL),
+		UI_MENU_CHECK(4, "Reboot after cartridge change:"),
 		UI_MENU_END
 	};
 	
@@ -638,6 +639,8 @@ static void CartManagement(void)
 		} else {
 			menu_array[3].flags = UI_ITEM_HIDDEN;
 		}
+
+		SetItemChecked(menu_array, 4, CARTRIDGE_autoreboot);
 
 		option = UI_driver->fSelect("Cartridge Management", 0, option, menu_array, &seltype);
 
@@ -755,7 +758,7 @@ static void CartManagement(void)
 			switch (seltype) {
 			case UI_USER_SELECT: /* Enter */
 				if (UI_driver->fGetLoadFilename(CARTRIDGE_main.filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-					int r = CARTRIDGE_Insert(CARTRIDGE_main.filename);
+					int r = CARTRIDGE_InsertAutoReboot(CARTRIDGE_main.filename);
 					switch (r) {
 					case CARTRIDGE_CANT_OPEN:
 						CantLoad(CARTRIDGE_main.filename);
@@ -771,15 +774,13 @@ static void CartManagement(void)
 						break;
 					default:
 						/* r > 0 */
-						CARTRIDGE_SetType(&CARTRIDGE_main, UI_SelectCartType(r));
+						CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, UI_SelectCartType(r));
 						break;
 					}
-					Atari800_Coldstart();
 				}
 				break;
 			case UI_USER_DELETE: /* Backspace */
-				CARTRIDGE_Remove();
-				Atari800_Coldstart();
+				CARTRIDGE_RemoveAutoReboot();
 				break;
 			}
 			break;
@@ -812,6 +813,9 @@ static void CartManagement(void)
 				CARTRIDGE_Remove_Second();
 				break;
 			}
+			break;
+		case 4:
+			CARTRIDGE_autoreboot = !CARTRIDGE_autoreboot;
 			break;
 		default:
 			return;
