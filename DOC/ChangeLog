@@ -1,3 +1,9 @@
+2011-06-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* ui.c: Fixed a segfault when opening the "Fullscreen resolution" submenu.
+  This was caused by the change in ui.h on 06-20. (reported by Krzysztof
+  Karkosza)
+
+
 2011-06-20  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: Fixed a bug with F10 creating interlaced screenshots instead of
   non-interlaced.

@@ -1422,7 +1422,7 @@ static int ChooseVideoResolution(int current_res)
 		menu_array[i].item = res_strings[i];
 		menu_array[i].suffix = NULL;
 	}
-	menu_array[num_res].flags = UI_ITEM_HIDDEN;
+	menu_array[num_res].flags = UI_ITEM_END;
 	menu_array[num_res].retval = 0;
 	menu_array[i].prefix = NULL;
 	menu_array[i].item = NULL;
