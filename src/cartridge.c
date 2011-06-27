@@ -1266,13 +1266,12 @@ void CARTRIDGE_StateRead(UBYTE version)
 				CARTRIDGE_main.type = saved_type;
 			}
 		}
+		if (version >= 7)
+			/* Read the cartridge's state (current bank etc.). */
+			StateSav_ReadINT(&CARTRIDGE_main.state, 1);
 	}
 	else
 		CARTRIDGE_main.type = saved_type;
-
-	if (version >= 7)
-		/* Read the cartridge's state (current bank etc.). */
-		StateSav_ReadINT(&CARTRIDGE_main.state, 1);
 
 	if (saved_type < 0) {
 		/* Minus value indicates a piggyback cartridge present. */

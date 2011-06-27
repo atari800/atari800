@@ -9,6 +9,10 @@
   CASSETTE_current_block or CASSETTE_max_block, so a dangerous call to
   CASSETTE_IOLineStatus doesn't happen anymore.
 
+* cartridge.c: Fixed a bug introduced in rev. 1.48: CARTRIDGE_StateRead would
+  try to read the cartridge's bank state even if the cartridge was not
+  present; thus the whole state reading would fail.
+
 
 2011-06-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui.c: Fixed a segfault when opening the "Fullscreen resolution" submenu.
