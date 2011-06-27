@@ -1,3 +1,15 @@
+2011-06-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cassette.c: Fixed a bug with eof_of_tape not always being set to 1 when it
+  should be, f.e. after a call to CASSETTE_Seek(). When the SIO patch was
+  enabled and the tape was Seek'ed past the last block, this could result in
+  a call to CASSETTE_IOLineStatus() while CASSETTE_current_block was higher
+  than CASSETTE_max_block. This in turn would cause division by 0 (due to
+  reading an uninitialilsed value from cassette_baudblock).
+  Now eof_of_tape is set properly after every change of either
+  CASSETTE_current_block or CASSETTE_max_block, so a dangerous call to
+  CASSETTE_IOLineStatus doesn't happen anymore.
+
+
 2011-06-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui.c: Fixed a segfault when opening the "Fullscreen resolution" submenu.
   This was caused by the change in ui.h on 06-20. (reported by Krzysztof

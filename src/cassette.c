@@ -83,6 +83,8 @@ static int cassette_baudblock[MAX_BLOCKS];
 int CASSETTE_hold_start_on_reboot = 0;
 int CASSETTE_hold_start = 0;
 int CASSETTE_press_space = 0;
+/* Indicates whether the tape has ended. During saving the value is always 0;
+   during loading it is equal to (CASSETTE_current_block > CASSETTE_max_block). */
 static int eof_of_tape = 0;
 
 typedef struct {
@@ -434,7 +436,6 @@ int CASSETTE_Insert(const char *filename)
 	passing_gap = FALSE;
 	CASSETTE_current_block = 1;
 	cassette_gapdelay = 0;
-	eof_of_tape = 0;
 	cassette_baudrate = 600;
 	if (!CASSETTE_CheckFile(filename, &cassette_file, CASSETTE_description,
 	                        &CASSETTE_max_block, &cassette_isCAS, &writable))
@@ -445,6 +446,7 @@ int CASSETTE_Insert(const char *filename)
 		CASSETTE_status = CASSETTE_STATUS_READ_ONLY;
 	CASSETTE_write_protect = FALSE;
 	CASSETTE_record = FALSE;
+	eof_of_tape = CASSETTE_current_block > CASSETTE_max_block;
 	UpdateFlags();
 	cassette_buffer = Util_malloc((buffer_size = DEFAULT_BUFFER_SIZE) * sizeof(UBYTE));
 
@@ -545,7 +547,7 @@ void CASSETTE_Seek(unsigned int position)
 		cassette_max_blockbytes = 0;
 		passing_gap = FALSE;
 		cassette_gapdelay = 0;
-		eof_of_tape = 0;
+		eof_of_tape = CASSETTE_current_block > CASSETTE_max_block;
 		cassette_baudrate = 600;
 		CASSETTE_record = FALSE;
 		UpdateFlags();
@@ -561,7 +563,8 @@ static SLONG MSToScanLines(int ms)
 
 /* Support to read a record by POKEY-registers
    evals gap length
-   returns block length (with checksum) */
+   returns block length (with checksum)
+   The function assumes that CASSETTE_current_block <= CASSETTE_max_block. */
 static int ReadRecord_POKEY(void)
 {
 	int length = 0;
@@ -569,16 +572,7 @@ static int ReadRecord_POKEY(void)
 	/* no file or blockpositions don't match anymore after saving */
 	if (!cassette_readable) {
 		cassette_nextirqevent = -1;
-		length = -1;
-		return length;
-	}
-	/* if end of CAS file */
-	if (CASSETTE_current_block > CASSETTE_max_block){
-		cassette_nextirqevent = -1;
-		length = -1;
-		eof_of_tape = 1;
-		UpdateFlags();
-		return length;
+		return -1;
 	}
 	length = ReadRecord(&gap);
 
@@ -597,7 +591,8 @@ static int ReadRecord_POKEY(void)
 }
 
 /* Sets the stamp of next SERIN IRQ event and loads new record if necessary.
-   Returns TRUE if a new byte was loaded and POKEY_SERIN should be updated. */
+   Returns TRUE if a new byte was loaded and POKEY_SERIN should be updated.
+   The function assumes that CASSETTE_current_block <= CASSETTE_max_block. */
 static int SetNextByteTime_POKEY(void)
 {
 	int loaded = FALSE; /* Function's return value */
@@ -620,9 +615,15 @@ static int SetNextByteTime_POKEY(void)
 
 		/* 0 indicates that there was no previous block being read and
 		   CASSETTE_current_block already contains the current block number. */
-		if (cassette_max_blockbytes != 0)
+		if (cassette_max_blockbytes != 0) {
 			/* Non-zero - a block was being read and it's finished, increase the block number. */
-			CASSETTE_current_block++;
+			if (++CASSETTE_current_block > CASSETTE_max_block) {
+				eof_of_tape = 1;
+				cassette_nextirqevent = -1;
+				UpdateFlags();
+				return loaded;
+			}
+		}
 		if (ReadRecord_POKEY() == -1 ||
 		    passing_gap)
 			/* Loading failed/tape ended, or there's an Inter-Record Gap.
@@ -779,8 +780,7 @@ int CASSETTE_ToggleRecord(void)
 	passing_gap = FALSE;
 	cassette_gapdelay = 0;
 	cassette_baudrate = 600;
-	if (CASSETTE_record)
-		eof_of_tape = 0;
+	eof_of_tape = CASSETTE_record ? 0 : CASSETTE_current_block > CASSETTE_max_block;
 	UpdateFlags();
 	/* Return FALSE to indicate that recording will not work. */
 	return !CASSETTE_record || (CASSETTE_status == CASSETTE_STATUS_READ_WRITE && !CASSETTE_write_protect);
@@ -810,7 +810,8 @@ void CASSETTE_ResetPOKEY(void)
 /* --- Functions for loading/saving with SIO patch --- */
 
 /* Read a record by SIO-patch
-   returns block length (with checksum) */
+   returns block length (with checksum)
+   The function assumes that CASSETTE_current_block <= CASSETTE_max_block. */
 static int ReadRecord_SIO(void)
 {
 	int length = 0;
@@ -819,19 +820,20 @@ static int ReadRecord_SIO(void)
 	int filegaptimes = 0;
 	while (cassette_gapdelay >= filegaptimes) {
 		int gap;
-		if (CASSETTE_current_block > CASSETTE_max_block) {
+		if (eof_of_tape) {
 			length = 0;
-			eof_of_tape = 1;
-			UpdateFlags();
 			break;
-		};
+		}
 		length = ReadRecord(&gap);
 		/* add gaplength */
 		filegaptimes += gap;
 		/* add time used by the data themselves
 		   a byte is encoded into 10 bits */
 		filegaptimes += length * 10 * 1000 / cassette_baudblock[CASSETTE_current_block-1];
-		CASSETTE_current_block++;
+		if (++CASSETTE_current_block > CASSETTE_max_block) {
+			eof_of_tape = 1;
+			UpdateFlags();
+		}
 	}
 	cassette_gapdelay = 0;
 	return length;
