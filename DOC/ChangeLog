@@ -13,6 +13,8 @@
   try to read the cartridge's bank state even if the cartridge was not
   present; thus the whole state reading would fail.
 
+* afile.c: Support selecting cartridge type when loading a cartridge by Alt+R.
+
 
 2011-06-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui.c: Fixed a segfault when opening the "Fullscreen resolution" submenu.

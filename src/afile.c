@@ -187,11 +187,26 @@ int AFILE_OpenFile(const char *filename, int reboot, int diskno, int readonly)
 		break;
 	case AFILE_CART:
 	case AFILE_ROM:
-		/* TODO: select format for ROMs; switch 5200 ? */
-		if (CARTRIDGE_Insert(filename) != 0)
-			return AFILE_ERROR;
-		if (reboot)
-			Atari800_Coldstart();
+		{
+			int r;
+			if (reboot)
+				r = CARTRIDGE_InsertAutoReboot(filename);
+			else
+				r = CARTRIDGE_Insert(filename);
+			switch (r) {
+			case CARTRIDGE_CANT_OPEN:
+			case CARTRIDGE_BAD_FORMAT:
+				return AFILE_ERROR;
+			case CARTRIDGE_BAD_CHECKSUM:
+			case 0:
+				/* ok */
+				break;
+			default:
+				/* r > 0 */
+				CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, UI_SelectCartType(r));
+				break;
+			}
+		}
 		break;
 	case AFILE_CAS:
 	case AFILE_BOOT_TAPE:
