@@ -35,7 +35,7 @@ Currently supported cartridge types:
 |----+-----------+------+---------------------------------------------------+
 |  1 | 800/XL/XE |    8 | Standard 8 KB cartridge                           |
 |  2 | 800/XL/XE |   16 | Standard 16 KB cartridge                          |
-|  3 | 800/XL/XE |   16 | OSS '034M' 16 KB cartridge                        |
+|  3 | 800/XL/XE |   16 | OSS two chip 16 KB cartridge (034M)               |
 |  4 |   5200    |   32 | Standard 32 KB 5200 cartridge                     |
 |  5 | 800/XL/XE |   32 | DB 32 KB cartridge                                |
 |  6 |   5200    |   16 | Two chip 16 KB 5200 cartridge                     |
@@ -47,7 +47,7 @@ Currently supported cartridge types:
 | 12 | 800/XL/XE |   32 | XEGS 32 KB cartridge                              |
 | 13 | 800/XL/XE |   64 | XEGS 64 KB cartridge                              |
 | 14 | 800/XL/XE |  128 | XEGS 128 KB cartridge                             |
-| 15 | 800/XL/XE |   16 | OSS 'M091' 16 KB cartridge                        |
+| 15 | 800/XL/XE |   16 | OSS one chip 16 KB cartridge                      |
 | 16 |   5200    |   16 | One chip 16 KB 5200 cartridge                     |
 | 17 | 800/XL/XE |  128 | Atrax 128 KB cartridge                            |
 | 18 | 800/XL/XE |   40 | Bounty Bob Strikes Back 40 KB cartridge           |
@@ -77,6 +77,7 @@ Currently supported cartridge types:
 | 42 | 800/XL/XE | 1024 | Atarimax 1 MB Flash cartridge                     |
 | 43 | 800/XL/XE |  128 | SpartaDOS X 128 KB cartridge                      |
 | 44 | 800/XL/XE |    8 | OSS 8 KB cartridge                                |
+| 45 | 800/XL/XE |   16 | OSS two chip 16 KB cartridge (043M)               |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -104,29 +105,29 @@ are numbered in the order they appear in the image file, starting with 0.
  $8000 and $BFFF.
 
 +---------------------------------------------------------------------------+
-| Type 3: OSS '034M' 16 KB cartridge                                        |
+| Type 3: OSS two chip 16 KB cartridge (034M)                               |
 +---------------------------------------------------------------------------+
 
- There are two types of OSS cartridges. Both are 16 KB and occupy 8 KB
- of address space between $A000 and $BFFF. The cartridge memory is divided
- into 4 banks, 4 KB each. One bank ('main') is always mapped to $B000-$BFFF.
- The other 3 banks are mapped to $A000-$AFFF. The current bank is selected
- by accessing a byte in $D500-$D5FF. Only 4 lowest bits of address are
- significant.
+ NOTE: This cartridge image format has been obsoleted by Type 45 because its
+ order of banks is incorrect (i.e. the order in a physical cartridge's ROM
+ chips is different). This format is still supported by the CART file format
+ for backward compatibility.
 
- The '034M' scheme is the more complicated one.
- The main bank is 3. An access to:
- $D5x0 selects bank 0.
- $D5x1 is not useful - it selects banks 0 and 1 (the bytes are binary AND of
- the corresponding bytes from banks 0 and 1).
- $D5x3 or $D5x7 selects bank 1.
- $D5x4 selects bank 2.
- $D5x5 is not useful - it selects banks 1 and 2 (the bytes are binary AND of
- the corresponding bytes from banks 1 and 2).
- $D5x2 or $D5x6 is not useful. It disables ROM (there are $FF bytes
- in $A000-$AFFF).
- $D5x8-$D5xF disables whole cartridge (enables computer's memory in address
- space between $A000 and $BFFF).
+ The cartridge occupies 8 KB of address space between $A000 and $BFFF. Its
+ memory is divided into 4 banks, 4 KB each. Bank number 3 (the last one) is
+ always mapped to $B000-$BFFF. Bank in $A000-$AFFF is selected by an access to
+ $D500-$D5FF. Only 4 lowest bits of address are significant:
+ - $D5x0 selects bank 0.
+ - $D5x1 is not useful - it selects banks 0 and 1 (the bytes are binary AND of
+   the corresponding bytes from banks 0 and 1).
+ - $D5x3 or $D5x7 selects bank 1.
+ - $D5x4 selects bank 2.
+ - $D5x5 is not useful - it selects banks 1 and 2 (the bytes are binary AND of
+   the corresponding bytes from banks 1 and 2).
+ - $D5x2 or $D5x6 is not useful. It disables ROM (there are $FF bytes in
+   $A000-$AFFF).
+ - $D5x8-$D5xF disables whole cartridge (enables computer's memory in address
+   space between $A000 and $BFFF).
 
 +---------------------------------------------------------------------------+
 | Type 4: Standard 32 KB 5200 cartridge                                     |
@@ -232,15 +233,22 @@ are numbered in the order they appear in the image file, starting with 0.
  a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
 
 +---------------------------------------------------------------------------+
-| Type 15: OSS 'M091' 16 KB cartridge                                       |
+| Type 15: OSS one chip 16 KB cartridge                                     |
 +---------------------------------------------------------------------------+
 
- This is the simpler one of OSS schemes. It uses only A0 and A3 address
- lines:
- A3=0, A0=0 - $A000-$AFFF: bank 1, $B000-$BFFF: bank 0
- A3=0, A0=1 - $A000-$AFFF: bank 3, $B000-$BFFF: bank 0
- A3=1, A0=0 - disable cartridge
- A3=1, A0=1 - $A000-$AFFF: bank 2, $B000-$BFFF: bank 0
+ There are two types of OSS 16KB cartridges; this is the later, simpler one.
+ Used by BASIC XL 1.03, Action! 3.6, MAC/65 1.1 and BASIC XE 4.1 (and possibly
+ also by later versions of the above software).
+ It consists of one 16 KB ROM chip.
+ The cartridge occupies 8 KB of address space between $A000 and $BFFF. Its
+ memory is divided into 4 banks, 4 KB each. Bank number 0 (the first one) is
+ always mapped to $B000-$BFFF. Bank in $A000-$AFFF is selected by an access to
+ $D500-$D5FF. Only bits 0 and 3 of address are significant:
+ - A3=0, A0=0 - selects bank 1
+ - A3=0, A0=1 - selects bank 3
+ - A3=1, A0=0 - disables cartridge (enables computer's memory in address space
+   between $A000 and $BFFF)
+ - A3=1, A0=1 - selects bank 2
 
 +---------------------------------------------------------------------------+
 | Type 16: One chip 16 KB 5200 cartridge                                    |
@@ -494,10 +502,40 @@ are numbered in the order they appear in the image file, starting with 0.
 | Type 44: OSS 8 KB cartridge                                               |
 +---------------------------------------------------------------------------+
 
- Used in The Writer's Tool cartridge, it is actually a 'M091' board with an
- 8 KB ROM instead of a normal 16 KB one. Controlled by access to a byte in
- $D500-$D5FF, it uses only A0 and A3 address lines:
- A3=0, A0=0 - $A000-$AFFF: bank 1, $B000-$BFFF: bank 0
- A3=0, A0=1 - $A000-$AFFF: bank 1, $B000-$BFFF: bank 0
- A3=1, A0=0 - disable cartridge
- A3=1, A0=1 - $A000-$AFFF: bank 0, $B000-$BFFF: bank 0
+ Used in The Writer's Tool cartridge, it is actually an OSS one chip cartridge
+ board (see Type 15) with an 8 KB ROM chip instead of a normal 16 KB one.
+ The cartridge occupies 8 KB of address space between $A000 and $BFFF. Its
+ memory is divided into 2 banks, 4 KB each. Bank number 0 (the first one) is
+ always mapped to $B000-$BFFF. Bank in $A000-$AFFF is selected by an access to
+ $D500-$D5FF. Only bits 0 and 3 of address are significant:
+ - A3=0, A0=0 or 1 - selects bank 1
+ - A3=1, A0=0 - disables cartridge (enables computer's memory in address space
+   between $A000 and $BFFF)
+ - A3=1, A0=1 - selects bank 0
+
+Reference: http://www.retrobits.net/atari/osshack.shtml
+
++---------------------------------------------------------------------------+
+| Type 45: OSS two chip 16 KB cartridge (043M)                              |
++---------------------------------------------------------------------------+
+
+ There are two types of OSS 16KB cartridges; this is the earlier, more
+ complicated one. Used by BASIC XL 1.02 and earlier, Action! 3.5 and earlier,
+ and MAC/65 1.0. It consists of two 8 KB ROM chips.
+ The cartridge occupies 8 KB of address space between $A000 and $BFFF. Its
+ memory is divided into 4 banks, 4 KB each. Bank number 3 (the last one) is
+ always mapped to $B000-$BFFF. Bank in $A000-$AFFF is selected by an access to
+ $D500-$D5FF. Only 4 lowest bits of address are significant:
+ - $D5x0 selects bank 0.
+ - $D5x1 is not useful - it selects banks 0 and 2 (the bytes are binary AND of
+   the corresponding bytes from banks 0 and 2).
+ - $D5x3 or $D5x7 selects bank 2.
+ - $D5x4 selects bank 1.
+ - $D5x5 is not useful - it selects banks 1 and 2 (the bytes are binary AND of
+   the corresponding bytes from banks 1 and 2).
+ - $D5x2 or $D5x6 is not useful. It disables ROM (there are $FF bytes in
+   $A000-$AFFF).
+ - $D5x8-$D5xF disables whole cartridge (enables computer's memory in address
+   space between $A000 and $BFFF).
+
+Reference: http://www.retrobits.net/atari/osscarts.shtml

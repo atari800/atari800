@@ -8,7 +8,7 @@
 #define CARTRIDGE_NONE            0
 #define CARTRIDGE_STD_8           1
 #define CARTRIDGE_STD_16          2
-#define CARTRIDGE_OSS_16          3
+#define CARTRIDGE_OSS_034M_16     3
 #define CARTRIDGE_5200_32         4
 #define CARTRIDGE_DB_32           5
 #define CARTRIDGE_5200_EE_16      6
@@ -20,7 +20,7 @@
 #define CARTRIDGE_XEGS_32        12
 #define CARTRIDGE_XEGS_64        13
 #define CARTRIDGE_XEGS_128       14
-#define CARTRIDGE_OSS2_16        15
+#define CARTRIDGE_OSS_M091_16    15
 #define CARTRIDGE_5200_NS_16     16
 #define CARTRIDGE_ATRAX_128      17
 #define CARTRIDGE_BBSB_40        18
@@ -50,7 +50,8 @@
 #define CARTRIDGE_ATMAX_1024     42
 #define CARTRIDGE_SDX_128        43
 #define CARTRIDGE_OSS_8          44
-#define CARTRIDGE_LAST_SUPPORTED 44
+#define CARTRIDGE_OSS_043M_16    45
+#define CARTRIDGE_LAST_SUPPORTED 45
 
 #define CARTRIDGE_MAX_SIZE	(1024 * 1024)
 extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];

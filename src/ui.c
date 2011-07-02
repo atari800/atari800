@@ -524,7 +524,7 @@ int UI_SelectCartType(int k)
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_ACTION(1, "Standard 8 KB cartridge"),
 		UI_MENU_ACTION(2, "Standard 16 KB cartridge"),
-		UI_MENU_ACTION(3, "OSS '034M' 16 KB cartridge"),
+		UI_MENU_ACTION(3, "OSS two chip 16 KB cartridge (034M)"),
 		UI_MENU_ACTION(4, "Standard 32 KB 5200 cartridge"),
 		UI_MENU_ACTION(5, "DB 32 KB cartridge"),
 		UI_MENU_ACTION(6, "Two chip 16 KB 5200 cartridge"),
@@ -536,7 +536,7 @@ int UI_SelectCartType(int k)
 		UI_MENU_ACTION(12, "XEGS 32 KB cartridge"),
 		UI_MENU_ACTION(13, "XEGS 64 KB cartridge"),
 		UI_MENU_ACTION(14, "XEGS 128 KB cartridge"),
-		UI_MENU_ACTION(15, "OSS 'M091' 16 KB cartridge"),
+		UI_MENU_ACTION(15, "OSS one chip 16 KB cartridge"),
 		UI_MENU_ACTION(16, "One chip 16 KB 5200 cartridge"),
 		UI_MENU_ACTION(17, "Atrax 128 KB cartridge"),
 		UI_MENU_ACTION(18, "Bounty Bob 40 KB cartridge"),
@@ -566,6 +566,7 @@ int UI_SelectCartType(int k)
 		UI_MENU_ACTION(42, "Atarimax 1 MB Flash cartridge"),
 		UI_MENU_ACTION(43, "SpartaDOS X 128 KB cartridge"),
 		UI_MENU_ACTION(44, "OSS 8 KB cartridge"),
+		UI_MENU_ACTION(45, "OSS two chip 16 KB cartridge (043M)"),
 		UI_MENU_END
 	};
 

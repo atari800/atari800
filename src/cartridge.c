@@ -49,7 +49,7 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	0,
 	8,    /* CARTRIDGE_STD_8 */
 	16,   /* CARTRIDGE_STD_16 */
-	16,   /* CARTRIDGE_OSS_16 */
+	16,   /* CARTRIDGE_OSS_034M_16 */
 	32,   /* CARTRIDGE_5200_32 */
 	32,   /* CARTRIDGE_DB_32 */
 	16,   /* CARTRIDGE_5200_EE_16 */
@@ -61,7 +61,7 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	32,   /* CARTRIDGE_XEGS_32 */
 	64,   /* CARTRIDGE_XEGS_64 */
 	128,  /* CARTRIDGE_XEGS_128 */
-	16,   /* CARTRIDGE_OSS2_16 */
+	16,   /* CARTRIDGE_OSS_M091_16 */
 	16,   /* CARTRIDGE_5200_NS_16 */
 	128,  /* CARTRIDGE_ATRAX_128 */
 	40,   /* CARTRIDGE_BBSB_40 */
@@ -90,7 +90,8 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	128,  /* CARTRIDGE_ATMAX_128 */
 	1024, /* CARTRIDGE_ATMAX_1024 */
 	128,  /* CARTRIDGE_SDX_128 */
-	8     /* CARTRIDGE_OSS_8 */
+	8,    /* CARTRIDGE_OSS_8 */
+	16    /* CARTRIDGE_OSS_043M_16 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -204,10 +205,11 @@ static void SwitchBank(int old_state)
 	   access to page $D5, but in CARTRIDGE_BountyBob1() and
 	   CARTRIDGE_BountyBob2(), so they need not be processed here. */
 	switch (active_cart->type) {
-	case CARTRIDGE_OSS_16:
+	case CARTRIDGE_OSS_034M_16:
+	case CARTRIDGE_OSS_043M_16:
 		set_bank_A0AF(0x3000, old_state);
 		break;
-	case CARTRIDGE_OSS2_16:
+	case CARTRIDGE_OSS_M091_16:
 	case CARTRIDGE_OSS_8:
 		set_bank_A0AF(0x0000, old_state);
 		break;
@@ -342,14 +344,15 @@ static void MapActiveCart(void)
 			MEMORY_CartA0bfEnable();
 			MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image);
 			break;
-		case CARTRIDGE_OSS_16:
+		case CARTRIDGE_OSS_034M_16:
+		case CARTRIDGE_OSS_043M_16:
 			MEMORY_Cart809fDisable();
 			if (active_cart->state >= 0) {
 				MEMORY_CartA0bfEnable();
 				MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image + 0x3000);
 			}
 			break;
-		case CARTRIDGE_OSS2_16:
+		case CARTRIDGE_OSS_M091_16:
 		case CARTRIDGE_OSS_8:
 			MEMORY_Cart809fDisable();
 			if (active_cart->state >= 0) {
@@ -478,13 +481,12 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 	int new_state;
 
 	switch (cart->type) {
-	case CARTRIDGE_OSS_16:
+	case CARTRIDGE_OSS_034M_16:
 		/* Reference: http://www.retrobits.net/atari/osscarts.shtml
-		   Using the nomenclature of the above article: the emulator
-		   accepts 16KB images composed of two 8KB EPROM dumps joined
-		   together in the following order: ROM B, ROM A. Currently
-		   only three cartridges with this scheme are known:
-		   Action! 3.5, BASIC XL 1.02 and MAC/65. */
+		   Deprecated by CARTRIDGE_OSS_043M_16 - 034M is an incorrect
+		   bank order (a real cartridge consists of two 8KB chips,
+		   one containing banks 0 and 4, the other 3 and M). Kept here
+		   for backward compatibility. */
 		   
 		if (addr & 0x08)
 			new_state = -1;
@@ -507,6 +509,47 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 			case 0x04:
 				/* B Hi/A Hi */
 				new_state = 2;
+				break;
+			case 0x05:
+				/* A Lo+B Hi/A Hi */
+				/* TODO should be binary AND of both banks. For now only fills with 0xFFs. */
+				new_state = 0xff;
+				break;
+			default: /* 0x02, 0x06 */
+				/* Fill cart area with 0xFFs. */
+				new_state = 0xff;
+				break;
+			}
+		break;
+	case CARTRIDGE_OSS_043M_16:
+		/* Reference: http://www.retrobits.net/atari/osscarts.shtml
+		   Using the nomenclature of the above article: the emulator
+		   accepts 16KB images composed of two 8KB EPROM dumps joined
+		   together in the following order: ROM B, ROM A. Currently
+		   only three cartridges with this scheme are known:
+		   Action! 3.5, BASIC XL 1.02 and MAC/65 1.0. */
+		   
+		if (addr & 0x08)
+			new_state = -1;
+		else
+			switch (addr & 0x07) {
+			case 0x00:
+				/* B Lo/A Hi */
+				new_state = 0;
+				break;
+			case 0x01:
+				/* A Lo+B Lo/A Hi */
+				/* TODO should be binary AND of both banks. For now only fills with 0xFFs. */
+				new_state = 0xff;
+				break;
+			case 0x03:
+			case 0x07:
+				/* A Lo/A Hi */
+				new_state = 2;
+				break;
+			case 0x04:
+				/* B Hi/A Hi */
+				new_state = 1;
 				break;
 			case 0x05:
 				/* A Lo+B Hi/A Hi */
@@ -586,7 +629,7 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 			}
 		}
 		break;
-	case CARTRIDGE_OSS2_16:
+	case CARTRIDGE_OSS_M091_16:
 		switch (addr & 0x09) {
 		case 0x00:
 			new_state = 1;
@@ -883,7 +926,7 @@ int CARTRIDGE_Checksum(const UBYTE *image, int nbytes)
 static void ResetCartState(CARTRIDGE_image_t *cart)
 {
 	switch (cart->type) {
-	case CARTRIDGE_OSS2_16:
+	case CARTRIDGE_OSS_034M_16:
 		cart->state = 1;
 		break;
 	case CARTRIDGE_ATMAX_1024:

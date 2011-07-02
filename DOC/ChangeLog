@@ -1,3 +1,10 @@
+2011-07-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Added support
+  for the OSS 043M cartridge format. The old 034M format is marked as obsolete
+  but still supported. Renamed the OSS cartridge formats to include
+  information on number of ROM chips (043M/034M - two chip, M091 - one chip).
+
+
 2011-06-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cassette.c: Fixed a bug with eof_of_tape not always being set to 1 when it
   should be, f.e. after a call to CASSETTE_Seek(). When the SIO patch was
