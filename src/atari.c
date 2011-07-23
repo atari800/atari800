@@ -997,7 +997,7 @@ static void autoframeskip(double curtime, double lasttime)
 		afs_sleeptime += lasttime - curtime;
 	if (curtime - afs_lasttime > 0.5) {
 		afs_ataritime = ((double) (Atari800_nframes - afs_lastframe)) /
-						((double) (Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60));
+						((double) (Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC));
 		afs_realtime = curtime - afs_lasttime;
 		afs_speedpct = 100.0 * afs_ataritime / afs_realtime;
 		afs_sleeppct = 100.0 * afs_sleeptime / afs_realtime;
