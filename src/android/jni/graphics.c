@@ -75,7 +75,7 @@ void Android_PaletteUpdate(void)
 	if (!palette) {
 		if ( !(palette = malloc(256 * sizeof(UWORD))) ) {
 			Log_print("Cannot allocate memory for palette conversion.");
-			return FALSE;
+			return;
 		}
 	}
 	memset(palette, 0, 256 * sizeof(UWORD));
