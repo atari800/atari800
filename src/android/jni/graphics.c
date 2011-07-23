@@ -66,7 +66,7 @@ enum {
 static GLuint texture[TEX_MAXNAMES];
 static UWORD conkey_vrt[CONK_VERT_MAX];
 static int conkey_lbl[CONK_VERT_MAX >> 2];
-
+static UWORD conkey_shadow[2 * 4];
 
 void Android_PaletteUpdate(void)
 {
@@ -93,6 +93,7 @@ int Android_InitGraphics(void)
 	const UWORD poly[] = { 0,16, 24,16, 32,0, 8,0 };
 	int i, tmp, w, h;
 	float tmp2, tmp3;
+	struct RECT *r;
 
 	/* Allocate stuff */
 	if (!hicolor_screen) {
@@ -173,6 +174,15 @@ int Android_InitGraphics(void)
 	AndroidInput_ConOvl.bbox.t = conkey_vrt[CONK_VERT_MAX - 3];
 	AndroidInput_ConOvl.hotlen = 0.1f *
 			(Android_ScreenW < Android_ScreenH ? Android_ScreenW : Android_ScreenH);
+	r = &(AndroidInput_ConOvl.bbox);
+	conkey_shadow[0] = r->l - 10;
+	conkey_shadow[1] = r->b + 10;
+	conkey_shadow[2] = r->r;
+	conkey_shadow[3] = r->b + 10;
+	conkey_shadow[4] = r->r;
+	conkey_shadow[5] = r->t - 10;
+	conkey_shadow[6] = r->l - 10;
+	conkey_shadow[7] = r->t - 10;
 
 	/* Scale joystick overlays */
 	Joyovl_Scale();
@@ -338,12 +348,12 @@ void Android_Render(void)
 
 	/* console keys */
 ck:	if (AndroidInput_ConOvl.ovl_visible) {
-		glColor4f(1.0f, 1.0f, 1.0f, AndroidInput_ConOvl.opacity);
-		for (i = 0; i < CONK_VERT_MAX >> 2; i += 2) {
-			glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, crop_lbl[i >> 1]);
-			glDrawTexiOES(conkey_lbl[i], conkey_lbl[i + 1], 0, 40, 9);
-		}
 		glDisable(GL_TEXTURE_2D);	/* disable texturing */
+
+		glColor4f(0.0f, 0.0f, 0.0f, AndroidInput_ConOvl.opacity * 0.7);
+		glVertexPointer(2, GL_SHORT, 0, conkey_shadow);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
 		glColor4f(0.5f, 0.9f, 1.0f, AndroidInput_ConOvl.opacity);
 		glVertexPointer(2, GL_SHORT, 0, conkey_vrt);
 		for (i = 0; i < (CONK_VERT_MAX >> 1); i += 4)
@@ -353,11 +363,16 @@ ck:	if (AndroidInput_ConOvl.ovl_visible) {
 			glDrawArrays(GL_TRIANGLE_FAN, AndroidInput_ConOvl.hitkey << 2, 4);
 		}
 		glEnable(GL_TEXTURE_2D);	/* enable texturing */
+
+		glColor4f(1.0f, 1.0f, 1.0f, AndroidInput_ConOvl.opacity);
+		for (i = 0; i < CONK_VERT_MAX >> 2; i += 2) {
+			glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, crop_lbl[i >> 1]);
+			glDrawTexiOES(conkey_lbl[i], conkey_lbl[i + 1], 0, 40, 9);
+		}
 		if (glGetError() != GL_NO_ERROR) Log_print("OpenGL error at console overlay");
 	}
 
 	glDisable(GL_BLEND);		/* disable blending */
-
 }
 
 void Update_Overlays(void)

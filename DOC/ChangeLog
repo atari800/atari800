@@ -1,7 +1,8 @@
 2011-07-23  Kostas Nakos  <knakos@gmail.com>
 * atari.c: Use FPS defines in autoframeskip
 * android/*: Fix a nasty bug, when orientation was changed during the
-             preferences activity
+             preferences activity,
+             added shadow rectangle around console keys overlay
 
 
 2011-07-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
