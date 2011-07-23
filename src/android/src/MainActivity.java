@@ -93,7 +93,8 @@ public final class MainActivity extends Activity
 		_imng = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, true);
-		_settings = new Settings(PreferenceManager.getDefaultSharedPreferences(this), this);
+		Object obj = getLastNonConfigurationInstance();
+		_settings = new Settings(PreferenceManager.getDefaultSharedPreferences(this), this, obj);
 		_pkgversion = getPInfo().versionName;
 		if (!_initialized) {
 			_settings.fetchApplySettings();
@@ -101,9 +102,15 @@ public final class MainActivity extends Activity
 			bootupMsgs();
 		} else {
 			_settings.fetch();
+			if (obj != null)	_settings.testApply();
 			_settings.commit();
 			soundInit(false);
 		}
+	}
+
+	@Override
+	public Object onRetainNonConfigurationInstance() {
+		return (Object) _settings.serialize();
 	}
 
 	private void bootupMsgs() {
@@ -421,10 +428,13 @@ public final class MainActivity extends Activity
 		private Map<PreferenceName, String> _values, _newvalues;
 		private Context _context;
 
-		public Settings(SharedPreferences s, Context c) {
+		public Settings(SharedPreferences s, Context c, Object retain) {
 			_sharedprefs = s;
 			_context = c;
-			_values = new EnumMap<PreferenceName, String>(PreferenceName.class);
+			if (retain == null)
+				_values = new EnumMap<PreferenceName, String>(PreferenceName.class);
+			else
+				_values = (EnumMap<PreferenceName, String>) retain;
 			_newvalues = new EnumMap<PreferenceName, String>(PreferenceName.class);
 		}
 
@@ -453,10 +463,15 @@ public final class MainActivity extends Activity
 				if ( !NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)),
 										Boolean.parseBoolean(_newvalues.get(PreferenceName.ntsc))) ) {
 					Log.d(TAG, "OS rom not found");
-					Toast.makeText(_context, R.string.noromfound, Toast.LENGTH_LONG).show();
-					revertString(PreferenceName.machine);
-					NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)),
-									  Boolean.parseBoolean(_newvalues.get(PreferenceName.ntsc)));
+					if ( _values.get(PreferenceName.machine) != null &&
+						!_values.get(PreferenceName.machine).equals("false") ) {
+						Toast.makeText(_context, R.string.noromfoundrevert, Toast.LENGTH_LONG).show();
+						revertString(PreferenceName.machine);
+						NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)),
+										  Boolean.parseBoolean(_newvalues.get(PreferenceName.ntsc)));
+					} else {
+						Toast.makeText(_context, R.string.noromfound, Toast.LENGTH_LONG).show();
+					}
 				}
 			}
 
@@ -553,6 +568,14 @@ public final class MainActivity extends Activity
 			commit();
 		}
 
+		public void testApply() {
+			boolean changed = false;
+			for (PreferenceName n: PreferenceName.values())
+				changed |= changed(n);
+			if (changed)
+				apply();
+		}
+
 		private boolean changed(PreferenceName p) {
 			String s1 = _values.get(p);
 			String s2 = _newvalues.get(p);
@@ -570,6 +593,10 @@ public final class MainActivity extends Activity
 		public void print() {
 			for (PreferenceName n: PreferenceName.values())
 				Log.d(TAG, n.toString() + "=" + _values.get(n));
+		}
+
+		public Map<PreferenceName, String> serialize() {
+			return _values;
 		}
 	}
 	private static native void NativePrefGfx(int aspect, boolean bilinear, int artifact,

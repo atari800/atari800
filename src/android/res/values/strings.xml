@@ -25,8 +25,9 @@
     <string name="ok">OK</string>
 	<string name="cimcrash">The Atari computer has crashed.\n
 							\nReset the machine or boot another image.</string>
-	<string name="noromfound">Failed to initialize machine. Required ROM not found.\n
-							  \nYour machine change has been reverted.</string>
+	<string name="noromfoundrevert">Failed to initialize machine. Required ROM not found.\n
+									\nYour machine change has been reverted.</string>
+	<string name="noromfound">Failed to initialize machine. Required ROM not found.</string>
     <string name="pressback">Press \'Back\' once more to exit</string>
     <string name="welcome">Welcome to Atari800!</string>
 	<string name="welcomenote">Hello,\n

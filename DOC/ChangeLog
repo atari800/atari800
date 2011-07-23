@@ -1,3 +1,9 @@
+2011-07-23  Kostas Nakos  <knakos@gmail.com>
+* atari.c: Use FPS defines in autoframeskip
+* android/*: Fix a nasty bug, when orientation was changed during the
+             preferences activity
+
+
 2011-07-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Added support
   for the OSS 043M cartridge format. The old 034M format is marked as obsolete
