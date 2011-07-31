@@ -100,6 +100,16 @@
 							<br><b>*</b> Various fixes and improvements
 							<br><br>Thanks to the bug/feature reporters!
 							]]></string>
+	<string name="changesv1_3"><![CDATA[
+							<i>Changes for version 1.3:</i><br>
+							<br><b>*</b> New NTSC/PAL preference
+							<br><b>*</b> New keyboard action mapping preferences
+							<br><b>*</b> Added support for Xperia Play fire buttons
+							<br><b>*</b> DPAD-CENTER now mapped to Break key
+							<br><b>*</b> Atari800 core version 2.2.1
+							<br><b>*</b> Several bug fixes and improvements
+							<br><br>Thank you for your continued support and bug/feature reports :-)
+							]]></string>
 	<string name="atariupdate">Atari800 Update</string>
 
 	<!-- Preferences -->

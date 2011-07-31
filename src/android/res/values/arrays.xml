@@ -108,9 +108,11 @@
 	<string-array name="changes_strings">
 		<item>@string/changesv1_1a</item>
 		<item>@string/changesv1_2</item>
+		<item>@string/changesv1_3</item>
 	</string-array>
 	<integer-array name="changes_versions">
 		<item>3</item>
 		<item>10</item>
+		<item>20</item>
 	</integer-array>
 </resources>
