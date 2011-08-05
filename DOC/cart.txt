@@ -78,6 +78,7 @@ Currently supported cartridge types:
 | 43 | 800/XL/XE |  128 | SpartaDOS X 128 KB cartridge                      |
 | 44 | 800/XL/XE |    8 | OSS 8 KB cartridge                                |
 | 45 | 800/XL/XE |   16 | OSS two chip 16 KB cartridge (043M)               |
+| 46 | 800/XL/XE |    4 | Blizzard 4 KB cartridge                           |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -455,15 +456,21 @@ are numbered in the order they appear in the image file, starting with 0.
 | Type 39: Phoenix 8 KB cartridge                                           |
 +---------------------------------------------------------------------------+
 
- An 8 KB cartridge, that occupies 8 KB of address space between $A000
- and $BFFF, and can be disabled by an access to $D500-$D5FF.
+ A 8 KB cartridge, that occupies 8 KB of address space between $A000
+ and $BFFF. It starts in enabled state and can be disabled by an access to
+ $D500-$D5FF. Re-enabling is possible only by turning the computer off and on.
+ Some units contain a RESET button that allows to enable the cartridge without
+ touching the power button.
 
 +---------------------------------------------------------------------------+
 | Type 40: Blizzard 16 KB cartridge                                         |
 +---------------------------------------------------------------------------+
 
  A 16 KB cartridge, that occupies 16 KB of address space between $8000
- and $BFFF, and can be disabled by an access to $D500-$D5FF.
+ and $BFFF. It starts in enabled state and can be disabled by an access to
+ $D500-$D5FF. Re-enabling is possible only by turning the computer off and on.
+ Some units contain a RESET button that allows to enable the cartridge without
+ touching the power button.
 
 +---------------------------------------------------------------------------+
 | Type 41: Atarimax 128 KB Flash cartridge                                  |
@@ -539,3 +546,16 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
    space between $A000 and $BFFF).
 
 Reference: http://www.retrobits.net/atari/osscarts.shtml
+
++---------------------------------------------------------------------------+
+| Type 46: Blizzard 4 KB cartridge                                          |
++---------------------------------------------------------------------------+
+
+ A 4 KB cartridge, that occupies 8 KB of address space between $A000
+ and $BFFF. Line A12 is unconnected, so the cartridge's memory is duplicated
+ in $A000-$AFFF and $B000-$BFFF. The cartridge starts in enabled state and can
+ be disabled by an access to $D500-$D5FF. Re-enabling is possible only by
+ turning the computer off and on. Some units contain a RESET button that
+ allows to enable the cartridge without touching the power button.
+
+Reference: http://www.serious-dial.atari.pl/Serious/S13/A18.html

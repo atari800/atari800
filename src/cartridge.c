@@ -91,7 +91,8 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	1024, /* CARTRIDGE_ATMAX_1024 */
 	128,  /* CARTRIDGE_SDX_128 */
 	8,    /* CARTRIDGE_OSS_8 */
-	16    /* CARTRIDGE_OSS_043M_16 */
+	16,   /* CARTRIDGE_OSS_043M_16 */
+	4     /* CARTRIDGE_BLIZZARD_4 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -262,6 +263,7 @@ static void SwitchBank(int old_state)
 		set_bank_80BF();
 		break;
 	case CARTRIDGE_PHOENIX_8:
+	case CARTRIDGE_BLIZZARD_4:
 		if (active_cart->state)
 			MEMORY_CartA0bfDisable();
 		break;
@@ -332,6 +334,12 @@ static void MapActiveCart(void)
 	}
 	else {
 		switch (active_cart->type) {
+		case CARTRIDGE_BLIZZARD_4:
+			MEMORY_Cart809fDisable();
+			MEMORY_CartA0bfEnable();
+			MEMORY_CopyROM(0xa000, 0xafff, active_cart->image);
+			MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image);
+			break;
 		case CARTRIDGE_STD_8:
 		case CARTRIDGE_PHOENIX_8:
 			MEMORY_Cart809fDisable();
@@ -645,6 +653,7 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 			break;
 		}
 		break;
+	case CARTRIDGE_BLIZZARD_4:
 	case CARTRIDGE_PHOENIX_8:
 	case CARTRIDGE_BLIZZARD_16:
 		/* Disable the cart. */

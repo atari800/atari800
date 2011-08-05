@@ -4,54 +4,56 @@
 #include "config.h"
 #include "atari.h"
 
-#define CARTRIDGE_UNKNOWN        -1
-#define CARTRIDGE_NONE            0
-#define CARTRIDGE_STD_8           1
-#define CARTRIDGE_STD_16          2
-#define CARTRIDGE_OSS_034M_16     3
-#define CARTRIDGE_5200_32         4
-#define CARTRIDGE_DB_32           5
-#define CARTRIDGE_5200_EE_16      6
-#define CARTRIDGE_5200_40         7
-#define CARTRIDGE_WILL_64         8
-#define CARTRIDGE_EXP_64          9
-#define CARTRIDGE_DIAMOND_64     10
-#define CARTRIDGE_SDX_64         11
-#define CARTRIDGE_XEGS_32        12
-#define CARTRIDGE_XEGS_64        13
-#define CARTRIDGE_XEGS_128       14
-#define CARTRIDGE_OSS_M091_16    15
-#define CARTRIDGE_5200_NS_16     16
-#define CARTRIDGE_ATRAX_128      17
-#define CARTRIDGE_BBSB_40        18
-#define CARTRIDGE_5200_8         19
-#define CARTRIDGE_5200_4         20
-#define CARTRIDGE_RIGHT_8        21
-#define CARTRIDGE_WILL_32        22
-#define CARTRIDGE_XEGS_256       23
-#define CARTRIDGE_XEGS_512       24
-#define CARTRIDGE_XEGS_1024      25
-#define CARTRIDGE_MEGA_16        26
-#define CARTRIDGE_MEGA_32        27
-#define CARTRIDGE_MEGA_64        28
-#define CARTRIDGE_MEGA_128       29
-#define CARTRIDGE_MEGA_256       30
-#define CARTRIDGE_MEGA_512       31
-#define CARTRIDGE_MEGA_1024      32
-#define CARTRIDGE_SWXEGS_32      33
-#define CARTRIDGE_SWXEGS_64      34
-#define CARTRIDGE_SWXEGS_128     35
-#define CARTRIDGE_SWXEGS_256     36
-#define CARTRIDGE_SWXEGS_512     37
-#define CARTRIDGE_SWXEGS_1024    38
-#define CARTRIDGE_PHOENIX_8      39
-#define CARTRIDGE_BLIZZARD_16    40
-#define CARTRIDGE_ATMAX_128      41
-#define CARTRIDGE_ATMAX_1024     42
-#define CARTRIDGE_SDX_128        43
-#define CARTRIDGE_OSS_8          44
-#define CARTRIDGE_OSS_043M_16    45
-#define CARTRIDGE_LAST_SUPPORTED 45
+enum { CARTRIDGE_UNKNOWN        = -1,
+       CARTRIDGE_NONE           =  0,
+       CARTRIDGE_STD_8          =  1,
+       CARTRIDGE_STD_16         =  2,
+       CARTRIDGE_OSS_034M_16    =  3,
+       CARTRIDGE_5200_32        =  4,
+       CARTRIDGE_DB_32          =  5,
+       CARTRIDGE_5200_EE_16     =  6,
+       CARTRIDGE_5200_40        =  7,
+       CARTRIDGE_WILL_64        =  8,
+       CARTRIDGE_EXP_64         =  9,
+       CARTRIDGE_DIAMOND_64     = 10,
+       CARTRIDGE_SDX_64         = 11,
+       CARTRIDGE_XEGS_32        = 12,
+       CARTRIDGE_XEGS_64        = 13,
+       CARTRIDGE_XEGS_128       = 14,
+       CARTRIDGE_OSS_M091_16    = 15,
+       CARTRIDGE_5200_NS_16     = 16,
+       CARTRIDGE_ATRAX_128      = 17,
+       CARTRIDGE_BBSB_40        = 18,
+       CARTRIDGE_5200_8         = 19,
+       CARTRIDGE_5200_4         = 20,
+       CARTRIDGE_RIGHT_8        = 21,
+       CARTRIDGE_WILL_32        = 22,
+       CARTRIDGE_XEGS_256       = 23,
+       CARTRIDGE_XEGS_512       = 24,
+       CARTRIDGE_XEGS_1024      = 25,
+       CARTRIDGE_MEGA_16        = 26,
+       CARTRIDGE_MEGA_32        = 27,
+       CARTRIDGE_MEGA_64        = 28,
+       CARTRIDGE_MEGA_128       = 29,
+       CARTRIDGE_MEGA_256       = 30,
+       CARTRIDGE_MEGA_512       = 31,
+       CARTRIDGE_MEGA_1024      = 32,
+       CARTRIDGE_SWXEGS_32      = 33,
+       CARTRIDGE_SWXEGS_64      = 34,
+       CARTRIDGE_SWXEGS_128     = 35,
+       CARTRIDGE_SWXEGS_256     = 36,
+       CARTRIDGE_SWXEGS_512     = 37,
+       CARTRIDGE_SWXEGS_1024    = 38,
+       CARTRIDGE_PHOENIX_8      = 39,
+       CARTRIDGE_BLIZZARD_16    = 40,
+       CARTRIDGE_ATMAX_128      = 41,
+       CARTRIDGE_ATMAX_1024     = 42,
+       CARTRIDGE_SDX_128        = 43,
+       CARTRIDGE_OSS_8          = 44,
+       CARTRIDGE_OSS_043M_16    = 45,
+       CARTRIDGE_BLIZZARD_4     = 46,
+       CARTRIDGE_LAST_SUPPORTED = 46
+};
 
 #define CARTRIDGE_MAX_SIZE	(1024 * 1024)
 extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
