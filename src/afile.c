@@ -31,6 +31,9 @@
 #include "sio.h"
 #include "statesav.h"
 #include "util.h"
+#ifndef BASIC
+#include "ui.h"
+#endif /* BASIC */
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
@@ -202,9 +205,14 @@ int AFILE_OpenFile(const char *filename, int reboot, int diskno, int readonly)
 				/* ok */
 				break;
 			default:
+#ifdef BASIC
+				Log_print("Raw cartridge images are not supported in BASIC version.");
+				return AFILE_ERROR;
+#else /* BASIC */
 				/* r > 0 */
 				CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, UI_SelectCartType(r));
 				break;
+#endif /* BASIC */
 			}
 		}
 		break;

@@ -1,3 +1,8 @@
+2011-08-06  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* afile.c: Fixed compilation errors for --target=basic introduced on
+  2011-06-27.
+
+
 2011-08-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOS/cart.txt, DOC/USAGE, cartridge.[ch], ui.c: Added support for the
   Blizzard-type 4KB cartridge (which contains a 2732 EPROM inside).
