@@ -25,6 +25,7 @@
 #include "atari.h"
 #include "cpu.h"
 #include "input.h"
+#include "devices.h"
 
 #include "graphics.h"
 #include "androidinput.h"
@@ -33,10 +34,12 @@
 int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	/* Android_InitGraphics() is deferred until GL surface is created */
-	/* Sound_Initilise() not needed */
+	/* Sound_Initialise() not needed */
 	Log_print("Core init");
 
 	Input_Initialize();
+
+	Devices_enable_h_patch = FALSE;
 
 	return TRUE;
 }
