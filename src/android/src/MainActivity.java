@@ -78,7 +78,7 @@ public final class MainActivity extends Activity
 	private boolean _bootupconfig = false;
 
 	static {
-        System.loadLibrary("atari800");
+		System.loadLibrary("atari800");
 		_coreversion = NativeInit();
 	}
 	
