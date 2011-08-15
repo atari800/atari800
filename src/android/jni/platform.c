@@ -29,7 +29,6 @@
 
 #include "graphics.h"
 #include "androidinput.h"
-#include "jni.h"
 
 int PLATFORM_Initialise(int *argc, char *argv[])
 {

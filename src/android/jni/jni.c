@@ -38,7 +38,6 @@
 #include "sio.h"
 #include "akey.h"
 
-#include "platform.h"
 #include "graphics.h"
 #include "androidinput.h"
 
@@ -48,6 +47,7 @@ int ovl_texw;
 int ovl_texh;
 extern void SoundThread_Update(void *buf, int offs, int len);
 extern void Android_SoundInit(int rate, int bit16, int hq);
+extern int Android_Main(int argc, char **argv);
 
 struct audiothread {
 	UBYTE *sndbuf;

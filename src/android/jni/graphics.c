@@ -33,7 +33,6 @@
 #include "akey.h"
 #include "cpu.h"
 
-#include "jni.h"
 #include "androidinput.h"
 #include "graphics.h"
 
@@ -52,6 +51,10 @@ static struct RECT screenrect;
 static int screenclear;
 int Android_Bilinear;
 float Android_Joyscale = 0.15f;
+
+extern int *ovl_texpix;
+extern int ovl_texw;
+extern int ovl_texh;
 
 /* graphics conversion */
 static UWORD *palette = NULL;
