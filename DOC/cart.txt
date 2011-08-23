@@ -79,6 +79,7 @@ Currently supported cartridge types:
 | 44 | 800/XL/XE |    8 | OSS 8 KB cartridge                                |
 | 45 | 800/XL/XE |   16 | OSS two chip 16 KB cartridge (043M)               |
 | 46 | 800/XL/XE |    4 | Blizzard 4 KB cartridge                           |
+| 47 | 800/XL/XE |   32 | AST 32 KB cartridge                               |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -545,7 +546,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  - $D5x8-$D5xF disables whole cartridge (enables computer's memory in address
    space between $A000 and $BFFF).
 
-Reference: http://www.retrobits.net/atari/osscarts.shtml
+ Reference: http://www.retrobits.net/atari/osscarts.shtml
 
 +---------------------------------------------------------------------------+
 | Type 46: Blizzard 4 KB cartridge                                          |
@@ -558,4 +559,17 @@ Reference: http://www.retrobits.net/atari/osscarts.shtml
  turning the computer off and on. Some units contain a RESET button that
  allows to enable the cartridge without touching the power button.
 
-Reference: http://www.serious-dial.atari.pl/Serious/S13/A18.html
+ Reference: http://www.serious-dial.atari.pl/Serious/S13/A18.html
+
++---------------------------------------------------------------------------+
+| Type 47: AST 32 KB cartridge                                              |
++---------------------------------------------------------------------------+
+
+ This cartridge occupies 8 KB of address space between $A000 and $BFFF. The
+ cartridge memory is divided into 128 banks, 256 B each. On power on, bank 0
+ is visible in $A000-$BFFF (repeated 32 times) and also in $D500-$D5FF. A
+ write operation to $D500-$D5FF disables the cartridge (freeing the
+ $A000-$BFFF area) and selects the next 256-byte bank visible at $D500-$D5FF.
+ After bank 31 the write operation selects bank 0 again.
+
+ Reference: http://www.atari.org.pl/forum/viewtopic.php?pid=134014#p134014

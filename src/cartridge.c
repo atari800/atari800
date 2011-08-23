@@ -92,7 +92,8 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	128,  /* CARTRIDGE_SDX_128 */
 	8,    /* CARTRIDGE_OSS_8 */
 	16,   /* CARTRIDGE_OSS_043M_16 */
-	4     /* CARTRIDGE_BLIZZARD_4 */
+	4,    /* CARTRIDGE_BLIZZARD_4 */
+	32    /* CARTRIDGE_AST_32 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -276,6 +277,11 @@ static void SwitchBank(int old_state)
 	case CARTRIDGE_SDX_128:
 		set_bank_SDX_128();
 		break;
+	case CARTRIDGE_AST_32:
+		/* Value 0x10000 indicates cartridge enabled. */
+		if (active_cart->state < 0x10000)
+			MEMORY_CartA0bfDisable();
+		break;
 	}
 }
 
@@ -456,6 +462,17 @@ static void MapActiveCart(void)
 			}
 			/* No need to call SwitchBank(), return. */
 			return;
+		case CARTRIDGE_AST_32:
+			{
+				int i;
+				MEMORY_Cart809fDisable();
+				MEMORY_CartA0bfEnable();
+				/* Copy the chosen bank 32 times over 0xa000-0xbfff. */
+				for (i = 0xa000; i < 0xc000; i += 0x100) {
+					MEMORY_CopyROM(i, i + 0xff, active_cart->image + (active_cart->state & 0xffff));
+				}
+			}
+			break;
 		case CARTRIDGE_MEGA_16:
 		case CARTRIDGE_MEGA_32:
 		case CARTRIDGE_MEGA_64:
@@ -691,24 +708,30 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 }
 
 /* Processes bankswitching of CART when reading from a $D5xx address ADDR. */
-static void GetByte(CARTRIDGE_image_t *cart, UWORD addr)
+static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr)
 {
 	int old_state = cart->state;
 	int new_state;
 
 	/* Set the cartridge's new state. */
 	/* Check types switchable by access to page D5. */
-	if (!access_D5(cart, addr, &new_state))
-		/* Cartridge doesn't support bankswitching, or didn't react to
-		   the given ADDR. */
-		return;
-
-	/* If the state changed, we need to do the bankswitch. */
-	if (new_state != old_state) {
-		cart->state = new_state;
-		if (cart == active_cart)
-			SwitchBank(old_state);
+	if (access_D5(cart, addr, &new_state)) {
+		/* Cartridge supports bankswitching and reacted to the given
+		   ADDR. If the state changed, we need to do the bankswitch. */
+		if (new_state != old_state) {
+			cart->state = new_state;
+			if (cart == active_cart)
+				SwitchBank(old_state);
+		}
 	}
+
+	/* Determine returned byte value. */
+	if (cart->type == CARTRIDGE_AST_32)
+		/* cart->state contains address of current bank, therefore it
+		   divides by 0x100. */
+		return cart->image[(cart->state & 0xff00) | (addr & 0xff)];
+	return 0xff;
+
 }
 
 /* Processes bankswitching of CART when writing to a $D5xx address ADDR. */
@@ -767,6 +790,10 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 	case CARTRIDGE_SWXEGS_1024:
 		new_state = byte;
 		break;
+	case CARTRIDGE_AST_32:
+		/* State contains address of current bank. */
+		new_state = (old_state - 0x100) & 0x7fff;
+		break;
 	default:
 		/* Check types switchable by access to page D5. */
 		if (!access_D5(cart, addr, &new_state))
@@ -797,9 +824,9 @@ UBYTE CARTRIDGE_GetByte(UWORD addr)
 	if (IDE_enabled && (addr <= 0xd50f))
 		return IDE_GetByte(addr);
 #endif
-	GetByte(&CARTRIDGE_main, addr);
-	GetByte(&CARTRIDGE_piggyback, addr);
-	return 0xff;
+	/* In case 2 cartridges are inserted, reading a memory location would
+	   result in binary AND of both cartridges. */
+	return GetByte(&CARTRIDGE_main, addr) & GetByte(&CARTRIDGE_piggyback, addr);
 }
 
 /* a write to D500-D5FF area */
@@ -940,6 +967,11 @@ static void ResetCartState(CARTRIDGE_image_t *cart)
 		break;
 	case CARTRIDGE_ATMAX_1024:
 		cart->state = 0x7f;
+		break;
+	case CARTRIDGE_AST_32:
+		/* A special value of 0x10000 indicates the cartridge is
+		   enabled and the current bank is 0. */
+		cart->state = 0x10000;
 		break;
 	default:
 		cart->state = 0;

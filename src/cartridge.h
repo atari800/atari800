@@ -52,7 +52,8 @@ enum { CARTRIDGE_UNKNOWN        = -1,
        CARTRIDGE_OSS_8          = 44,
        CARTRIDGE_OSS_043M_16    = 45,
        CARTRIDGE_BLIZZARD_4     = 46,
-       CARTRIDGE_LAST_SUPPORTED = 46
+       CARTRIDGE_AST_32         = 47,
+       CARTRIDGE_LAST_SUPPORTED = 47
 };
 
 #define CARTRIDGE_MAX_SIZE	(1024 * 1024)
