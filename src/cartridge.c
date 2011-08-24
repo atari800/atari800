@@ -468,9 +468,8 @@ static void MapActiveCart(void)
 				MEMORY_Cart809fDisable();
 				MEMORY_CartA0bfEnable();
 				/* Copy the chosen bank 32 times over 0xa000-0xbfff. */
-				for (i = 0xa000; i < 0xc000; i += 0x100) {
+				for (i = 0xa000; i < 0xc000; i += 0x100)
 					MEMORY_CopyROM(i, i + 0xff, active_cart->image + (active_cart->state & 0xffff));
-				}
 			}
 			break;
 		case CARTRIDGE_MEGA_16:
@@ -792,7 +791,7 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 		break;
 	case CARTRIDGE_AST_32:
 		/* State contains address of current bank. */
-		new_state = (old_state - 0x100) & 0x7fff;
+		new_state = (old_state + 0x100) & 0x7fff;
 		break;
 	default:
 		/* Check types switchable by access to page D5. */
