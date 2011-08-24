@@ -4,6 +4,9 @@
 
 * cfg.c, rtime.[ch]: Support for saving the state of R-Time 8 in config file.
 
+* atari800.man: Improve formatting (bold, italic etc.), mainly according to
+  man-pages(7).
+
 
 2011-08-06  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * afile.c: Fixed compilation errors for --target=basic introduced on
