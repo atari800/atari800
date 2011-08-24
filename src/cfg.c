@@ -32,6 +32,7 @@
 #include "log.h"
 #include "memory.h"
 #include "pbi.h"
+#include "rtime.h"
 #ifdef AF80
 #include "af80.h"
 #endif
@@ -314,6 +315,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			}
 			else if (CASSETTE_ReadConfig(string, ptr)) {
 			}
+			else if (RTIME_ReadConfig(string, ptr)) {
+			}
 #ifdef AF80
 			else if (AF80_ReadConfig(string,ptr)) {
 			}
@@ -443,6 +446,7 @@ int CFG_WriteConfig(void)
 	PBI_WriteConfig(fp);
 	CARTRIDGE_WriteConfig(fp);
 	CASSETTE_WriteConfig(fp);
+	RTIME_WriteConfig(fp);
 #ifdef AF80
 	AF80_WriteConfig(fp);
 #endif

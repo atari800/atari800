@@ -2,6 +2,8 @@
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Added support
   for a 32 KB cartridge format used by Atari Super Turbo Multi-Cartridge.
 
+* cfg.c, rtime.[ch]: Support for saving the state of R-Time 8 in config file.
+
 
 2011-08-06  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * afile.c: Fixed compilation errors for --target=basic introduced on
