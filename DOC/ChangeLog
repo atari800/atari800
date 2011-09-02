@@ -1,3 +1,7 @@
+2011-09-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sdl/input.c: Swapped mapping of right and middle mouse buttons, to make it
+  identical to the X11 and Win32 ports.
+
 2011-08-24  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Added support
   for a 32 KB cartridge format used by Atari Super Turbo Multi-Cartridge.

@@ -1121,9 +1121,9 @@ void SDL_INPUT_Mouse(void)
 	}
 
 	INPUT_mouse_buttons =
-		((buttons & SDL_BUTTON(1)) ? 1 : 0) |
-		((buttons & SDL_BUTTON(2)) ? 2 : 0) |
-		((buttons & SDL_BUTTON(3)) ? 4 : 0);
+		((buttons & SDL_BUTTON(1)) ? 1 : 0) | /* Left button */
+		((buttons & SDL_BUTTON(3)) ? 2 : 0) | /* Right button */
+		((buttons & SDL_BUTTON(2)) ? 4 : 0); /* Middle button */
 }
 
 static void Init_SDL_Joysticks(int first, int second)
