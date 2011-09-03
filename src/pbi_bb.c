@@ -132,7 +132,7 @@ void PBI_BB_WriteConfig(FILE *fp)
 	}
 }
 
-UBYTE PBI_BB_D1GetByte(UWORD addr)
+UBYTE PBI_BB_D1GetByte(UWORD addr, int no_side_effects)
 {
 	UBYTE result = 0x00;/*ff;*/
 	if (addr == 0xd1be) result = 0xff;
@@ -143,7 +143,7 @@ UBYTE PBI_BB_D1GetByte(UWORD addr)
 	else if (addr == 0xd171) {
 		if (bb_scsi_enabled) {
 			result = PBI_SCSI_GetByte();
-			if (((bb_PCR & 0x0e)>>1) == 0x04) {
+			if (!no_side_effects && ((bb_PCR & 0x0e)>>1) == 0x04) {
 				/* handshake output */
 				PBI_SCSI_PutACK(1);
 				PBI_SCSI_PutACK(0);
@@ -235,7 +235,7 @@ void PBI_BB_D1PutByte(UWORD addr, UBYTE byte)
 /* Black Box RAM page at D600-D6ff*/
 /* Possible to put code in this ram, so we can't avoid using MEMORY_mem[]
  * because opcode fetch doesn't call this function*/
-UBYTE PBI_BB_D6GetByte(UWORD addr)
+UBYTE PBI_BB_D6GetByte(UWORD addr, int no_side_effects)
 {
 	return MEMORY_mem[addr];
 }

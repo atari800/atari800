@@ -18,7 +18,7 @@ extern UBYTE PIA_PORT_input[2];
 
 int PIA_Initialise(int *argc, char *argv[]);
 void PIA_Reset(void);
-UBYTE PIA_GetByte(UWORD addr);
+UBYTE PIA_GetByte(UWORD addr, int no_side_effects);
 void PIA_PutByte(UWORD addr, UBYTE byte);
 void PIA_StateSave(void);
 void PIA_StateRead(void);

@@ -747,24 +747,27 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 	int value = 0;
 	int nchars = 0;
 
-	insn = MEMORY_dGetByte(pc++);
+	insn = MEMORY_SafeGetByte(pc);
+	pc++;
 	mnemonic = instr6502[insn];
 	for (p = mnemonic + 3; *p != '\0'; p++) {
 		if (*p == '1') {
-			value = MEMORY_dGetByte(pc++);
+			value = MEMORY_SafeGetByte(pc);
+			pc++;
 			nchars = fprintf(fp, "%04X: %02X %02X     " /*"%Xcyc  "*/ "%.*s$%02X%s",
 			                 addr, insn, value, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
 			break;
 		}
 		if (*p == '2') {
-			value = MEMORY_dGetWord(pc);
+			value = MEMORY_SafeGetByte(pc) + (MEMORY_SafeGetByte(pc + 1) << 8);
 			nchars = fprintf(fp, "%04X: %02X %02X %02X  " /*"%Xcyc  "*/ "%.*s$%04X%s",
 			                 addr, insn, value & 0xff, value >> 8, /*cycles[insn],*/ (int) (p - mnemonic), mnemonic, value, p + 1);
 			pc += 2;
 			break;
 		}
 		if (*p == '0') {
-			UBYTE op = MEMORY_dGetByte(pc++);
+			UBYTE op = MEMORY_SafeGetByte(pc);
+			pc++;
 			value = (UWORD) (pc + (SBYTE) op);
 			nchars = fprintf(fp, "%04X: %02X %02X     " /*"3cyc  "*/ "%.4s$%04X", addr, insn, op, mnemonic, value);
 			break;
@@ -1347,7 +1350,7 @@ static void show_history(void)
 		j = CPU_remember_xpos[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS];
 		printf("%3d %3d ", j >> 8, j & 0xff);
 		for (k = 0; k < 3; k++) {
-			save_op[k] = MEMORY_dGetByte(saved_cpu + k);
+			save_op[k] = MEMORY_SafeGetByte(saved_cpu + k);
 			MEMORY_dPutByte(saved_cpu + k, CPU_remember_op[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS][k]);
 		}
 		show_instruction(stdout, CPU_remember_PC[(CPU_remember_PC_curpos + i) % CPU_REMEMBER_PC_STEPS]);
@@ -1368,10 +1371,10 @@ static void show_last_jumps(void)
 /* Stesp over the current instruction. */
 static void step_over(void)
 {
-	UBYTE opcode = MEMORY_dGetByte(CPU_regPC);
+	UBYTE opcode = MEMORY_SafeGetByte(CPU_regPC);
 	if ((opcode & 0x1f) == 0x10 || opcode == 0x20) {
 		/* branch or JSR: set breakpoint after it */
-		MONITOR_break_addr = CPU_regPC + (MONITOR_optype6502[MEMORY_dGetByte(CPU_regPC)] & 0x3);
+		MONITOR_break_addr = CPU_regPC + (MONITOR_optype6502[MEMORY_SafeGetByte(CPU_regPC)] & 0x3);
 		break_over = TRUE;
 	}
 	else
@@ -1780,7 +1783,7 @@ static void monitor_sum_mem(void)
 		int sum = 0;
 		int i;
 		for (i = addr1; i <= addr2; i++)
-			sum += MEMORY_dGetByte(i);
+			sum += MEMORY_SafeGetByte(i);
 		printf("SUM: %X\n", sum);
 	}
 }
@@ -1794,11 +1797,11 @@ static void monitor_show_mem(UWORD *addr)
 		int i;
 		printf("%04X: ", *addr);
 		for (i = 0; i < 16; i++)
-			printf("%02X ", MEMORY_GetByte((UWORD) (*addr + i)));
+			printf("%02X ", MEMORY_SafeGetByte((UWORD) (*addr + i)));
 		putchar(' ');
 		for (i = 0; i < 16; i++) {
 			UBYTE c;
-			c = MEMORY_GetByte(*addr);
+			c = MEMORY_SafeGetByte(*addr);
 			(*addr)++;
 			putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
 		}
@@ -1826,7 +1829,7 @@ static void trainer_start_search(void)
 		/* copy memory into shadow buffer at first use */
 		long int count = 65535;
 		do {
-			*(trainer_memory+count) = MEMORY_GetByte((UWORD) count);
+			*(trainer_memory+count) = MEMORY_SafeGetByte((UWORD) count);
 			*(trainer_flags+count) = 0xff;
 		} while (--count > -1);
 		if (value_valid) {
@@ -1850,15 +1853,15 @@ static void trainer_search_unchanged(void)
 		long int count = 65535;
 		do {
 			if (value_valid) {
-				if (trainer_value != MEMORY_GetByte((UWORD) count)) {
+				if (trainer_value != MEMORY_SafeGetByte((UWORD) count)) {
 					*(trainer_flags+count) = 0;
 				}
 			} else {
-				if (*(trainer_memory+count) != MEMORY_GetByte((UWORD) count)) {
+				if (*(trainer_memory+count) != MEMORY_SafeGetByte((UWORD) count)) {
 					*(trainer_flags+count) = 0;
 				}
 			}
-			*(trainer_memory+count) = MEMORY_GetByte((UWORD) count);
+			*(trainer_memory+count) = MEMORY_SafeGetByte((UWORD) count);
 		} while (--count > -1);
 	} else {
 		printf("Use tss first.\n");
@@ -1875,15 +1878,15 @@ static void trainer_search_changed(void)
 		long int count = 65535;
 		do {
 			if (value_valid) {
-				if (trainer_value != MEMORY_GetByte((UWORD) count)) {
+				if (trainer_value != MEMORY_SafeGetByte((UWORD) count)) {
 					*(trainer_flags+count) = 0;
 				}
 			} else {
-				if (*(trainer_memory+count) == MEMORY_GetByte((UWORD) count)) {
+				if (*(trainer_memory+count) == MEMORY_SafeGetByte((UWORD) count)) {
 					*(trainer_flags+count) = 0;
 				}
 			};
-			*(trainer_memory+count) = MEMORY_GetByte((UWORD) count);
+			*(trainer_memory+count) = MEMORY_SafeGetByte((UWORD) count);
 		} while (--count > -1);
 	} else {
 		printf("Use tss first.\n");
@@ -1943,7 +1946,7 @@ static void monitor_search_mem(void)
 		int a;
 		for (a = addr1; a <= addr2; a++) {
 			int i = 0;
-			while (MEMORY_GetByte((UWORD) (a + i)) == tab[i]) {
+			while (MEMORY_SafeGetByte((UWORD) (a + i)) == tab[i]) {
 				i++;
 				if (i >= n) {
 					printf("Found at %04X\n", a);
@@ -1965,10 +1968,10 @@ static UWORD disassemble_loop(UWORD addr)
 			printf("Conditional loop containing instruction at %04X not detected\n", addr);
 			break;
 		}
-		opcode = MEMORY_dGetByte(caddr);
+		opcode = MEMORY_SafeGetByte(caddr);
 		if ((opcode & 0x1f) == 0x10) {
 			/* branch */
-			UWORD target = caddr + 2 + (SBYTE) MEMORY_dGetByte(caddr + 1);
+			UWORD target = caddr + 2 + (SBYTE) MEMORY_SafeGetByte(caddr + 1);
 			if (target <= addr) {
 				addr = disassemble(target);
 				break;
@@ -2066,7 +2069,7 @@ static void show_ANTIC(void)
 		   ANTIC_DMACTL, ANTIC_CHACTL, ANTIC_dlist & 0xff, ANTIC_dlist >> 8, ANTIC_HSCROL, ANTIC_VSCROL);
 	printf("PMBASE=%02X    CHBASE=%02X    VCOUNT=%02X    "
 		   "NMIEN= %02X    ypos=%4d\n",
-		   ANTIC_PMBASE, ANTIC_CHBASE, ANTIC_GetByte(ANTIC_OFFSET_VCOUNT), ANTIC_NMIEN, ANTIC_ypos);
+		   ANTIC_PMBASE, ANTIC_CHBASE, ANTIC_GetByte(ANTIC_OFFSET_VCOUNT, TRUE), ANTIC_NMIEN, ANTIC_ypos);
 }
 
 /* Displays current PIA state. */

@@ -431,7 +431,7 @@ void GTIA_Frame(void)
 	}
 }
 
-UBYTE GTIA_GetByte(UWORD addr)
+UBYTE GTIA_GetByte(UWORD addr, int no_side_effects)
 {
 	switch (addr & 0x1f) {
 	case GTIA_OFFSET_M0PF:
@@ -520,7 +520,7 @@ UBYTE GTIA_GetByte(UWORD addr)
 	case GTIA_OFFSET_CONSOL:
 		{
 			UBYTE byte = GTIA_consol_table[GTIA_consol_index] & consol_mask;
-			if (GTIA_consol_index > 0) {
+			if (!no_side_effects && GTIA_consol_index > 0) {
 				GTIA_consol_index--;
 				if (GTIA_consol_index == 0 && CASSETTE_hold_start) {
 					/* press Space after Start to start cassette boot */

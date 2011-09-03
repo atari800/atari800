@@ -3598,7 +3598,7 @@ void draw_partial_scanline(int l, int r)
 
 /* ANTIC registers --------------------------------------------------------- */
 
-UBYTE ANTIC_GetByte(UWORD addr)
+UBYTE ANTIC_GetByte(UWORD addr, int no_side_effects)
 {
 	switch (addr & 0xf) {
 	case ANTIC_OFFSET_VCOUNT:

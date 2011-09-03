@@ -92,7 +92,7 @@ void PBI_PROTO80_WriteConfig(FILE *fp)
 	fprintf(fp, "PROTO80_ROM=%s\n", proto80_rom_filename);
 }
 
-int PBI_PROTO80_D1GetByte(UWORD addr)
+int PBI_PROTO80_D1GetByte(UWORD addr, int no_side_effects)
 {
 	int result = PBI_NOT_HANDLED;
 	if (PBI_PROTO80_enabled) {

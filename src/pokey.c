@@ -93,7 +93,7 @@ void POKEY_SetRandomCounter(ULONG value)
 	random_scanline_counter = value;
 }
 
-UBYTE POKEY_GetByte(UWORD addr)
+UBYTE POKEY_GetByte(UWORD addr, int no_side_effects)
 {
 	UBYTE byte = 0xff;
 

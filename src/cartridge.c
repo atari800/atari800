@@ -707,14 +707,14 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 }
 
 /* Processes bankswitching of CART when reading from a $D5xx address ADDR. */
-static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr)
+static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr, int no_side_effects)
 {
 	int old_state = cart->state;
 	int new_state;
 
 	/* Set the cartridge's new state. */
 	/* Check types switchable by access to page D5. */
-	if (access_D5(cart, addr, &new_state)) {
+	if (!no_side_effects && access_D5(cart, addr, &new_state)) {
 		/* Cartridge supports bankswitching and reacted to the given
 		   ADDR. If the state changed, we need to do the bankswitch. */
 		if (new_state != old_state) {
@@ -810,22 +810,22 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 }
 
 /* a read from D500-D5FF area */
-UBYTE CARTRIDGE_GetByte(UWORD addr)
+UBYTE CARTRIDGE_GetByte(UWORD addr, int no_side_effects)
 {
 #ifdef AF80
 	if (AF80_enabled) {
-		return AF80_D5GetByte(addr);
+		return AF80_D5GetByte(addr, no_side_effects);
 	}
 #endif
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9))
 		return RTIME_GetByte();
 #ifdef IDE
 	if (IDE_enabled && (addr <= 0xd50f))
-		return IDE_GetByte(addr);
+		return IDE_GetByte(addr, no_side_effects);
 #endif
 	/* In case 2 cartridges are inserted, reading a memory location would
 	   result in binary AND of both cartridges. */
-	return GetByte(&CARTRIDGE_main, addr) & GetByte(&CARTRIDGE_piggyback, addr);
+	return GetByte(&CARTRIDGE_main, addr, no_side_effects) & GetByte(&CARTRIDGE_piggyback, addr, no_side_effects);
 }
 
 /* a write to D500-D5FF area */
@@ -889,33 +889,37 @@ void CARTRIDGE_BountyBob2(UWORD addr)
 }
 
 #ifdef PAGED_ATTRIB
-UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr)
+UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		if (addr >= 0x4ff6 && addr <= 0x4ff9) {
-			CARTRIDGE_BountyBob1(addr);
-			return 0;
-		}
-	} else {
-		if (addr >= 0x8ff6 && addr <= 0x8ff9) {
-			CARTRIDGE_BountyBob1(addr);
-			return 0;
+	if (!no_side_effects) {
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
+			if (addr >= 0x4ff6 && addr <= 0x4ff9) {
+				CARTRIDGE_BountyBob1(addr);
+				return 0;
+			}
+		} else {
+			if (addr >= 0x8ff6 && addr <= 0x8ff9) {
+				CARTRIDGE_BountyBob1(addr);
+				return 0;
+			}
 		}
 	}
 	return MEMORY_dGetByte(addr);
 }
 
-UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr)
+UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr, int no_side_effects)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		if (addr >= 0x5ff6 && addr <= 0x5ff9) {
-			CARTRIDGE_BountyBob2(addr);
-			return 0;
-		}
-	} else {
-		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
-			CARTRIDGE_BountyBob2(addr);
-			return 0;
+	if (!no_side_effects) {
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
+			if (addr >= 0x5ff6 && addr <= 0x5ff9) {
+				CARTRIDGE_BountyBob2(addr);
+				return 0;
+			}
+		} else {
+			if (addr >= 0x9ff6 && addr <= 0x9ff9) {
+				CARTRIDGE_BountyBob2(addr);
+				return 0;
+			}
 		}
 	}
 	return MEMORY_dGetByte(addr);

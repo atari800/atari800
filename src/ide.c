@@ -856,7 +856,7 @@ void IDE_PutByte(uint16_t addr, uint8_t val) {
     mmio_ide_write(s, addr, val);
 }
 
-uint8_t IDE_GetByte(uint16_t addr) {
+uint8_t IDE_GetByte(uint16_t addr, int no_side_effects) {
     struct ide_device *s = &device;
     return mmio_ide_read(s, addr);
 }

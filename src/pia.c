@@ -69,7 +69,7 @@ void PIA_Reset(void)
 	PIA_PORTB = 0xff;
 }
 
-UBYTE PIA_GetByte(UWORD addr)
+UBYTE PIA_GetByte(UWORD addr, int no_side_effects)
 {
 	switch (addr & 0x03) {
 	case PIA_OFFSET_PACTL:

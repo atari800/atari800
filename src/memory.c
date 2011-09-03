@@ -88,9 +88,9 @@ int MEMORY_have_basic = FALSE; /* Atari BASIC image has been successfully read (
 
 /* Axlon and Mosaic RAM expansions for Atari 400/800 only */
 static void MosaicPutByte(UWORD addr, UBYTE byte);
-static UBYTE MosaicGetByte(UWORD addr);
+static UBYTE MosaicGetByte(UWORD addr, int no_side_effects);
 static void AxlonPutByte(UWORD addr, UBYTE byte);
-static UBYTE AxlonGetByte(UWORD addr);
+static UBYTE AxlonGetByte(UWORD addr, int no_side_effects);
 static UBYTE *axlon_ram = NULL;
 static int axlon_ram_size = 0;
 int axlon_curbank = 0;
@@ -760,7 +760,7 @@ static void MosaicPutByte(UWORD addr, UBYTE byte)
 	mosaic_curbank = newbank;
 }
 
-static UBYTE MosaicGetByte(UWORD addr)
+static UBYTE MosaicGetByte(UWORD addr, int no_side_effects)
 {
 #ifdef DEBUG
 	Log_print("MosaicGetByte%4X",addr);
@@ -795,7 +795,7 @@ static void AxlonPutByte(UWORD addr, UBYTE byte)
 	axlon_curbank = newbank;
 }
 
-static UBYTE AxlonGetByte(UWORD addr)
+static UBYTE AxlonGetByte(UWORD addr, int no_side_effects)
 {
 #ifdef DEBUG
 	Log_print("AxlonGetByte%4X",addr);
@@ -892,18 +892,20 @@ void MEMORY_GetCharset(UBYTE *cs)
 }
 
 #ifndef PAGED_MEM
-UBYTE MEMORY_HwGetByte(UWORD addr)
+UBYTE MEMORY_HwGetByte(UWORD addr, int no_side_effects)
 {
 	UBYTE byte = 0xff;
 	switch (addr & 0xff00) {
 	case 0x4f00:
 	case 0x8f00:
-		CARTRIDGE_BountyBob1(addr);
+		if (!no_side_effects)
+			CARTRIDGE_BountyBob1(addr);
 		byte = 0;
 		break;
 	case 0x5f00:
 	case 0x9f00:
-		CARTRIDGE_BountyBob2(addr);
+		if (!no_side_effects)
+			CARTRIDGE_BountyBob2(addr);
 		byte = 0;
 		break;
 	case 0xd000:				/* GTIA */
@@ -922,7 +924,7 @@ UBYTE MEMORY_HwGetByte(UWORD addr)
 	case 0xcc00:				/* GTIA - 5200 */
 	case 0xcd00:				/* GTIA - 5200 */
 	case 0xce00:				/* GTIA - 5200 */
-		byte = GTIA_GetByte(addr);
+		byte = GTIA_GetByte(addr, no_side_effects);
 		break;
 	case 0xd200:				/* POKEY */
 	case 0xe800:				/* POKEY - 5200 */
@@ -933,37 +935,37 @@ UBYTE MEMORY_HwGetByte(UWORD addr)
 	case 0xed00:				/* POKEY - 5200 */
 	case 0xee00:				/* POKEY - 5200 */
 	case 0xef00:				/* POKEY - 5200 */
-		byte = POKEY_GetByte(addr);
+		byte = POKEY_GetByte(addr, no_side_effects);
 		break;
 	case 0xd300:				/* PIA */
-		byte = PIA_GetByte(addr);
+		byte = PIA_GetByte(addr, no_side_effects);
 		break;
 	case 0xd400:				/* ANTIC */
-		byte = ANTIC_GetByte(addr);
+		byte = ANTIC_GetByte(addr, no_side_effects);
 		break;
 	case 0xd500:				/* bank-switching cartridges, RTIME-8 */
-		byte = CARTRIDGE_GetByte(addr);
+		byte = CARTRIDGE_GetByte(addr, no_side_effects);
 		break;
 	case 0xff00:				/* Mosaic memory expansion for 400/800 */
-		byte = MosaicGetByte(addr);
+		byte = MosaicGetByte(addr, no_side_effects);
 		break;
 	case 0xcf00:				/* Axlon memory expansion for 800 */
 	case 0x0f00:				/* Axlon shadow */
 		if (Atari800_machine_type == Atari800_MACHINE_5200) {
-			byte = GTIA_GetByte(addr); /* GTIA-5200 cfxx */
+			byte = GTIA_GetByte(addr, no_side_effects); /* GTIA-5200 cfxx */
 		}
 		else {
-			byte = AxlonGetByte(addr);
+			byte = AxlonGetByte(addr, no_side_effects);
 		}
 		break;
 	case 0xd100:				/* PBI page D1 */
-		byte = PBI_D1GetByte(addr);
+		byte = PBI_D1GetByte(addr, no_side_effects);
 		break;
 	case 0xd600:				/* PBI page D6 */
-		byte = PBI_D6GetByte(addr);
+		byte = PBI_D6GetByte(addr, no_side_effects);
 		break;
 	case 0xd700:				/* PBI page D7 */
-		byte = PBI_D7GetByte(addr);
+		byte = PBI_D7GetByte(addr, no_side_effects);
 		break;
 	default:
 		break;

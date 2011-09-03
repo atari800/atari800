@@ -121,7 +121,7 @@ void PBI_MIO_WriteConfig(FILE *fp)
 }
 
 /* $D1xx */
-UBYTE PBI_MIO_D1GetByte(UWORD addr)
+UBYTE PBI_MIO_D1GetByte(UWORD addr, int no_side_effects)
 {
 	UBYTE result = 0x00;/*ff*/;
 	addr &= 0xffe3; /* 7 mirrors */
@@ -132,8 +132,10 @@ UBYTE PBI_MIO_D1GetByte(UWORD addr)
 	else if (addr == 0xd1e1) {
 		if (mio_scsi_enabled) {
 			result = PBI_SCSI_GetByte()^0xff;
-			PBI_SCSI_PutACK(1);
-			PBI_SCSI_PutACK(0);
+			if (!no_side_effects) {
+				PBI_SCSI_PutACK(1);
+				PBI_SCSI_PutACK(0);
+			}
 		}
 	}
 	return result;
@@ -206,7 +208,7 @@ void PBI_MIO_D1PutByte(UWORD addr, UBYTE byte)
 /* MIO RAM page at D600-D6ff */
 /* Possible to put code in this ram, so we can't avoid using MEMORY_mem[] */
 /* because opcode fetch doesn't call this function */
-UBYTE PBI_MIO_D6GetByte(UWORD addr)
+UBYTE PBI_MIO_D6GetByte(UWORD addr, int no_side_effects)
 {
 	if (!mio_ram_enabled) return 0xff;
 	return MEMORY_mem[addr];

@@ -107,15 +107,15 @@ void CARTRIDGE_Remove_Second(void);
 /* Called on system coldstart. Resets the states of mounted cartridges. */
 void CARTRIDGE_ColdStart(void);
 
-UBYTE CARTRIDGE_GetByte(UWORD addr);
+UBYTE CARTRIDGE_GetByte(UWORD addr, int no_side_effects);
 void CARTRIDGE_PutByte(UWORD addr, UBYTE byte);
 void CARTRIDGE_BountyBob1(UWORD addr);
 void CARTRIDGE_BountyBob2(UWORD addr);
 void CARTRIDGE_StateSave(void);
 void CARTRIDGE_StateRead(UBYTE version);
 #ifdef PAGED_ATTRIB
-UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr);
-UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr);
+UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects);
+UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr, int no_side_effects);
 void CARTRIDGE_BountyBob1PutByte(UWORD addr, UBYTE value);
 void CARTRIDGE_BountyBob2PutByte(UWORD addr, UBYTE value);
 #endif

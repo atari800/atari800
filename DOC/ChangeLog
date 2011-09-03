@@ -2,6 +2,14 @@
 * monitor.c: Code cleanup - split MONITOR_Run() into separate functions for
   each monitor command. Functionality unchanged.
 
+* af80.[ch], antic.[ch], cartridge.[ch], cpu.c, gtia.[ch], ide.[ch],
+  memory.[ch], monitor.c, pbi_bb.[ch], pbi_mio.[ch], pbi_proto80.[ch],
+  pbi.[ch], pia.[ch], pokey.[ch]: Added option of reading hardware memory
+  without side effects. Used this in the, monitor so now eg. the "M" option
+  doesn't switch cartridge banks while displaying page $D5. Fixed the
+  monitor's "disassemble" functionality - it didn't correctly disassemble code
+  in hardware memory.
+
 
 2011-09-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: Swapped mapping of right and middle mouse buttons, to make it

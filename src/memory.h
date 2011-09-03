@@ -53,7 +53,11 @@ extern int MEMORY_ram_size;
 #ifndef PAGED_ATTRIB
 
 extern UBYTE MEMORY_attrib[65536];
-#define MEMORY_GetByte(addr)		(MEMORY_attrib[addr] == MEMORY_HARDWARE ? MEMORY_HwGetByte(addr) : MEMORY_mem[addr])
+/* Reads a byte from ADDR. Can potentially have side effects, when reading
+   from hardware area. */
+#define MEMORY_GetByte(addr)		(MEMORY_attrib[addr] == MEMORY_HARDWARE ? MEMORY_HwGetByte(addr, FALSE) : MEMORY_mem[addr])
+/* Reads a byte from ADDR, but without any side effects. */
+#define MEMORY_SafeGetByte(addr)		(MEMORY_attrib[addr] == MEMORY_HARDWARE ? MEMORY_HwGetByte(addr, TRUE) : MEMORY_mem[addr])
 #define MEMORY_PutByte(addr, byte)	 do { if (MEMORY_attrib[addr] == MEMORY_RAM) MEMORY_mem[addr] = byte; else if (MEMORY_attrib[addr] == MEMORY_HARDWARE) MEMORY_HwPutByte(addr, byte); } while (0)
 #define MEMORY_SetRAM(addr1, addr2) memset(MEMORY_attrib + (addr1), MEMORY_RAM, (addr2) - (addr1) + 1)
 #define MEMORY_SetROM(addr1, addr2) memset(MEMORY_attrib + (addr1), MEMORY_ROM, (addr2) - (addr1) + 1)
@@ -61,12 +65,17 @@ extern UBYTE MEMORY_attrib[65536];
 
 #else /* PAGED_ATTRIB */
 
-typedef UBYTE (*MEMORY_rdfunc)(UWORD addr);
+typedef UBYTE (*MEMORY_rdfunc)(UWORD addr, int no_side_effects);
 typedef void (*MEMORY_wrfunc)(UWORD addr, UBYTE value);
 extern MEMORY_rdfunc MEMORY_readmap[256];
+extern MEMORY_rdfunc MEMORY_safe_readmap[256];
 extern MEMORY_wrfunc MEMORY_writemap[256];
 void MEMORY_ROM_PutByte(UWORD addr, UBYTE byte);
-#define MEMORY_GetByte(addr)		(MEMORY_readmap[(addr) >> 8] ? (*MEMORY_readmap[(addr) >> 8])(addr) : MEMORY_mem[addr])
+/* Reads a byte from ADDR. Can potentially have side effects, when reading
+   from hardware area. */
+#define MEMORY_GetByte(addr)		(MEMORY_readmap[(addr) >> 8] ? (*MEMORY_readmap[(addr) >> 8])(addr, FALSE) : MEMORY_mem[addr])
+/* Reads a byte from ADDR, but without any side effects. */
+#define MEMORY_SafeGetByte(addr)		(MEMORY_readmap[(addr) >> 8] ? (*MEMORY_readmap[(addr) >> 8])(addr, TRUE) : MEMORY_mem[addr])
 #define MEMORY_PutByte(addr,byte)	(MEMORY_writemap[(addr) >> 8] ? ((*MEMORY_writemap[(addr) >> 8])(addr, byte), 0) : (MEMORY_mem[addr] = byte))
 #define MEMORY_SetRAM(addr1, addr2) do { \
 		int i; \
@@ -116,7 +125,7 @@ extern int MEMORY_axlon_bankmask;
 
 #ifndef PAGED_MEM
 /* Reads a byte from the specified special address (not RAM or ROM). */
-UBYTE MEMORY_HwGetByte(UWORD addr);
+UBYTE MEMORY_HwGetByte(UWORD addr, int safe);
 
 /* Stores a byte at the specified special address (not RAM or ROM). */
 void MEMORY_HwPutByte(UWORD addr, UBYTE byte);

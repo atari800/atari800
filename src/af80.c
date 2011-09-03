@@ -191,7 +191,7 @@ void AF80_WriteConfig(FILE *fp)
 	fprintf(fp, "AF80_CHARSET=%s\n", af80_charset_filename);
 }
 
-int AF80_D6GetByte(UWORD addr)
+int AF80_D6GetByte(UWORD addr, int no_side_effects)
 {
 	int result = 0xff;
 	if (!not_enable_2k_character_ram) {
@@ -240,7 +240,7 @@ void AF80_D6PutByte(UWORD addr, UBYTE byte)
 	}
 }
 
-int AF80_D5GetByte(UWORD addr)
+int AF80_D5GetByte(UWORD addr, int no_side_effects)
 {
 	int result = MEMORY_dGetByte(addr);
 	return result;
