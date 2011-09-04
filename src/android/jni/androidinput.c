@@ -27,6 +27,7 @@
 
 #include "input.h"
 #include "akey.h"
+#include "pokey.h"
 
 #include "graphics.h"
 #include "androidinput.h"
@@ -57,6 +58,10 @@ static int prevconptr;
 int Android_Joyleft = TRUE;
 float Android_Splitpct = 0.5f;
 int Android_Split;
+
+int Android_Paddle = FALSE;
+SWORD Android_POTX = 0;
+SWORD Android_POTY = 0;
 
 struct joy_overlay_state AndroidInput_JoyOvl;
 struct consolekey_overlay_state AndroidInput_ConOvl;
@@ -99,7 +104,7 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 	struct consolekey_overlay_state *covl;
 	int conptr;		/* will point to stolen ptr, PTRSTL otherwise */
 	int i;
-	float a;
+	float a, potx, poty;
 
 	jovl = &AndroidInput_JoyOvl;
 	covl = &AndroidInput_ConOvl;
@@ -200,17 +205,45 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 	/* joystick */
 	newjoy = INPUT_STICK_CENTRE;
 	if (newtc[PTRJOY].s && conptr != PTRJOY) {
-		dx2 = (jovl->joyarea.r - jovl->joyarea.l) >> 1;
-		dy2 = (jovl->joyarea.b - jovl->joyarea.t) >> 1;
-		dx  = dx2 - dx2 * jovl->deadarea;
-		dy  = dy2 - dy2 * jovl->deadarea;
-		dx2 = (jovl->joyarea.r - jovl->joyarea.l) * jovl->gracearea;
+		if (!Android_Paddle) {
+			dx2 = (jovl->joyarea.r - jovl->joyarea.l) >> 1;
+			dy2 = (jovl->joyarea.b - jovl->joyarea.t) >> 1;
+			dx  = dx2 - dx2 * jovl->deadarea;
+			dy  = dy2 - dy2 * jovl->deadarea;
+			dx2 = (jovl->joyarea.r - jovl->joyarea.l) * jovl->gracearea;
+		}
+		if (Android_Paddle) {
+			if (Android_Joyleft)
+				potx = (float) newtc[PTRJOY].x / (float) Android_Split;
+			else
+				potx = (float) (newtc[PTRJOY].x - Android_Split) /
+					   (float) (Android_ScreenW - Android_Split);
+			poty = (float) newtc[PTRJOY].y / (float) Android_ScreenH;
+			Android_POTX = 227 - (UBYTE) (potx * 228.0f + 0.5f);
+			Android_POTY = 227 - (UBYTE) (poty * 228.0f + 0.5f);
+			if (Android_POTX < 0)	Android_POTX = 0;
+			if (Android_POTY < 0)	Android_POTY = 0;
+			if (Android_POTX > 227)	Android_POTX = 227;
+			if (Android_POTY > 227)	Android_POTY = 227;
 
-		if ( (newtc[PTRJOY].x >= jovl->joyarea.l - dx2 &&
-			  newtc[PTRJOY].x <= jovl->joyarea.r + dx2 &&
-			  newtc[PTRJOY].y >= jovl->joyarea.t - dx2 &&
-			  newtc[PTRJOY].y <= jovl->joyarea.b + dx2) ||
-			 jovl->anchor ) {
+			jovl->joystick.x = newtc[PTRJOY].x;
+			jovl->joystick.y = newtc[PTRJOY].y;
+			jovl->stickopacity = HIT_OPACITY;
+			if (!jovl->anchor) {
+				dy = (jovl->joyarea.b - jovl->joyarea.t) >> 1;
+				if (newtc[PTRJOY].y - dy < 0)    newtc[PTRJOY].y -= newtc[PTRJOY].y - dy;
+				if (newtc[PTRJOY].y + dy > Android_ScreenH)
+					newtc[PTRJOY].y -= newtc[PTRJOY].y + dy - Android_ScreenH;
+				jovl->joyarea.t = newtc[PTRJOY].y - dy;
+				jovl->joyarea.b = newtc[PTRJOY].y + dy;
+				jovl->areaopacitycur = jovl->areaopacityset;
+				jovl->areaopacityfrm = 0;
+			}
+		} else if ( (newtc[PTRJOY].x >= jovl->joyarea.l - dx2 &&
+					 newtc[PTRJOY].x <= jovl->joyarea.r + dx2 &&
+					 newtc[PTRJOY].y >= jovl->joyarea.t - dx2 &&
+					 newtc[PTRJOY].y <= jovl->joyarea.b + dx2) ||
+					jovl->anchor ) {
 
 			if (newtc[PTRJOY].x <= jovl->joyarea.l + dx) {
 				newjoy &= INPUT_STICK_LEFT;
@@ -301,8 +334,8 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 					newtc[PTRJOY].y -= newtc[PTRJOY].y + dy - Android_ScreenH;
 				jovl->joyarea.l = newtc[PTRJOY].x - dx;
 				jovl->joyarea.r = newtc[PTRJOY].x + dx;
-				jovl->joyarea.t = newtc[PTRJOY].y - dx;
-				jovl->joyarea.b = newtc[PTRJOY].y + dx;
+				jovl->joyarea.t = newtc[PTRJOY].y - dy;
+				jovl->joyarea.b = newtc[PTRJOY].y + dy;
 			}
 			jovl->areaopacitycur = jovl->areaopacityset;
 			jovl->areaopacityfrm = 0;
@@ -318,8 +351,15 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		jovl->fireopacity = HIT_OPACITY;
 	}
 
-	Android_PortStatus = 0xFFF0 | newjoy;	/* thread unsafe => "no" problem */
-	Android_TrigStatus = 0xE | newtrig;
+	/* thread unsafe => "no" problem */
+	if (!Android_Paddle){
+		Android_PortStatus = 0xFFF0 | newjoy;
+		Android_TrigStatus = 0xE | newtrig;
+	} else {
+		POKEY_POT_input[INPUT_mouse_port << 1] = Android_POTX;
+		POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = Android_POTY;
+		INPUT_mouse_buttons = !newtrig;
+	}
 
 	memcpy(prevtc, newtc, sizeof(struct touchstate));
 	prevconptr = conptr;

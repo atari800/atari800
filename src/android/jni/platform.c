@@ -39,6 +39,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	Input_Initialize();
 
 	Devices_enable_h_patch = FALSE;
+	INPUT_direct_mouse = TRUE;
 
 	return TRUE;
 }
@@ -57,12 +58,10 @@ int PLATFORM_Exit(int run_monitor)
 	return FALSE;
 }
 
-
 int PLATFORM_Keyboard(void)
 {
 	return Keyboard_Dequeue();
 }
-
 
 void PLATFORM_DisplayScreen(void)
 {

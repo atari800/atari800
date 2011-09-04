@@ -230,8 +230,14 @@ void Joyovl_Scale(void)
 
 	tmp = ( (Android_ScreenW > Android_ScreenH) ?
 			 Android_ScreenW : Android_ScreenH ) * Android_Joyscale;
-	AndroidInput_JoyOvl.joyarea.r = AndroidInput_JoyOvl.joyarea.l + tmp;
-	AndroidInput_JoyOvl.joyarea.b = AndroidInput_JoyOvl.joyarea.t + tmp;
+	if (!Android_Paddle) {
+		AndroidInput_JoyOvl.joyarea.r = AndroidInput_JoyOvl.joyarea.l + tmp;
+		AndroidInput_JoyOvl.joyarea.b = AndroidInput_JoyOvl.joyarea.t + tmp;
+	} else {
+		AndroidInput_JoyOvl.joyarea.l = Android_Joyleft ? 0 : Android_Split;
+		AndroidInput_JoyOvl.joyarea.r = Android_Joyleft ?  Android_Split : Android_ScreenW;
+		AndroidInput_JoyOvl.joyarea.b = AndroidInput_JoyOvl.joyarea.t + 8 + (tmp >> 3);
+	}
 	AndroidInput_JoyOvl.firewid = tmp >> 3;
 }
 

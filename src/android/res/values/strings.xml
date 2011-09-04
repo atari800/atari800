@@ -228,4 +228,6 @@
 	<string name="pref_derotkeys_sum">Fix external keyboard arrow keys when display is rotated</string>
 	<string name="pref_ntsc">NTSC TV Mode</string>
 	<string name="pref_ntsc_sum">Toggle between NTSC (60fps) and PAL (50fps) tv modes</string>
+	<string name="pref_paddle">Paddle Mode</string>
+	<string name="pref_paddle_sum">Enable paddle emulation instead of joystick</string>
 </resources>

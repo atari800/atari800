@@ -210,6 +210,11 @@
 			android:defaultValue="50"
 			jub:min="10"
 			jub:max="99"/>
+		<CheckBoxPreference
+			android:key="paddle"
+			android:title="@string/pref_paddle"
+			android:summary="@string/pref_paddle_sum"
+			android:defaultValue="false"/>
 	</PreferenceCategory>
 
 	<PreferenceCategory android:title="@string/preftitle_sound">

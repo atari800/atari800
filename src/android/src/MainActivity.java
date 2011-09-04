@@ -422,12 +422,13 @@ public final class MainActivity extends Activity
 			disk, sector, softjoy, up, down, left, right, fire, joyvisible, joysize,
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
 			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
-			crophoriz, cropvert, derotkeys, actiona, actionb, actionc, ntsc
+			crophoriz, cropvert, derotkeys, actiona, actionb, actionc, ntsc, paddle
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
 		private Context _context;
 
+		@SuppressWarnings("unchecked")
 		public Settings(SharedPreferences s, Context c, Object retain) {
 			_sharedprefs = s;
 			_context = c;
@@ -504,7 +505,7 @@ public final class MainActivity extends Activity
 				y = Integer.parseInt(tok[1]);
 			} else
 				putString("anchorstr", "false");
-			NativePrefOvl( Boolean.parseBoolean(_newvalues.get(PreferenceName.joyvisible)),
+			NativePrefJoy( Boolean.parseBoolean(_newvalues.get(PreferenceName.joyvisible)),
 						   Integer.parseInt(_newvalues.get(PreferenceName.joysize)),
 						   Integer.parseInt(_newvalues.get(PreferenceName.joyopacity)),
 						   Boolean.parseBoolean(_newvalues.get(PreferenceName.joyrighth)),
@@ -512,7 +513,8 @@ public final class MainActivity extends Activity
 						   Integer.parseInt(_newvalues.get(PreferenceName.joymidx)),
 						   Boolean.parseBoolean(_newvalues.get(PreferenceName.anchor)),
 						   x, y,
-						   Integer.parseInt(_newvalues.get(PreferenceName.joygrace)) );
+						   Integer.parseInt(_newvalues.get(PreferenceName.joygrace)),
+						   Boolean.parseBoolean(_newvalues.get(PreferenceName.paddle)) );
 
 			if ( changed(PreferenceName.mixrate) || changed(PreferenceName.sound16bit) ||
 				 changed(PreferenceName.hqpokey) )
@@ -606,9 +608,9 @@ public final class MainActivity extends Activity
 												   boolean sector);
 	private static native void NativePrefSoftjoy(boolean softjoy, int up, int down, int left, int right,
 												 int fire, int derotkeys, String[] actions);
-	private static native void NativePrefOvl(boolean visible, int size, int opacity, boolean righth,
+	private static native void NativePrefJoy(boolean visible, int size, int opacity, boolean righth,
 											 int deadband, int midx, boolean anchor, int anchorx, int anchory,
-											 int grace);
+											 int grace, boolean paddle);
 	private static native void NativePrefSound(int mixrate, boolean sound16bit, boolean hqpokey);
 	private static native boolean NativeSetROMPath(String path);
 	private static native String NativeGetJoypos();

@@ -47,7 +47,6 @@ int ovl_texw;
 int ovl_texh;
 extern void SoundThread_Update(void *buf, int offs, int len);
 extern void Android_SoundInit(int rate, int bit16, int hq);
-extern int Android_Main(int argc, char **argv);
 
 struct audiothread {
 	UBYTE *sndbuf;
@@ -362,9 +361,9 @@ static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjo
 	}
 }
 
-static void JNICALL NativePrefOvl(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
+static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
 								  jboolean righth, int deadband, jboolean midx, int anchor, int anchorx,
-								  int anchory, int grace)
+								  int anchory, int grace, jboolean paddle)
 {
 	AndroidInput_JoyOvl.ovl_visible = visible;
 	AndroidInput_JoyOvl.areaopacityset = 0.01f * opacity;
@@ -378,6 +377,8 @@ static void JNICALL NativePrefOvl(JNIEnv *env, jobject this, jboolean visible, i
 		AndroidInput_JoyOvl.joyarea.l = anchorx;
 		AndroidInput_JoyOvl.joyarea.t = anchory;
 	}
+	Android_Paddle = paddle;
+	INPUT_mouse_mode = paddle ? INPUT_MOUSE_PAD : INPUT_MOUSE_OFF;
 
 	Android_SplitCalc();
 	Joyovl_Scale();
@@ -419,7 +420,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativePrefMachine",		"(IZ)Z",							NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZ)V",							NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },
-		{ "NativePrefOvl",			"(ZIIZIIZIII)V",					NativePrefOvl		  },
+		{ "NativePrefJoy",			"(ZIIZIIZIIIZ)V",					NativePrefJoy		  },
 		{ "NativePrefSound",		"(IZZ)V",							NativePrefSound		  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",			NativeSetROMPath	  },
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },
