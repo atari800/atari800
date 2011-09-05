@@ -45,6 +45,8 @@
 #endif
 #include "log.h"
 
+/* #define DEBUG 1 */
+
 int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	0,
 	8,    /* CARTRIDGE_STD_8 */
@@ -95,7 +97,9 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	4,    /* CARTRIDGE_BLIZZARD_4 */
 	32,   /* CARTRIDGE_AST_32 */
 	64,   /* CARTRIDGE_ATRAX_SDX_64 */
-	128   /* CARTRIDGE_ATRAX_SDX_128 */
+	128,  /* CARTRIDGE_ATRAX_SDX_128 */
+	64,   /* CARTRIDGE_TURBOSOFT_64 */
+	128   /* CARTRIDGE_TURBOSOFT_128 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -165,7 +169,7 @@ static void set_bank_A0AF(int main, int old_state)
 }
 
 /* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_1024,
-   ATRAX_128, ATRAX_SDX_64 */
+   ATRAX_128, ATRAX_SDX_64, TURBOSOFT_64, TURBOSOFT_128 */
 static void set_bank_A0BF(int n)
 {
 	if (active_cart->state & n)
@@ -256,6 +260,8 @@ static void SwitchBank(int old_state)
 		set_bank_A0BF(128);
 		break;
 	case CARTRIDGE_ATMAX_128:
+	case CARTRIDGE_TURBOSOFT_64:
+	case CARTRIDGE_TURBOSOFT_128:
 		set_bank_A0BF(16);
 		break;
 	case CARTRIDGE_MEGA_16:
@@ -288,6 +294,10 @@ static void SwitchBank(int old_state)
 			MEMORY_CartA0bfDisable();
 		break;
 	}
+#if DEBUG
+	if (old_state != active_cart->state)
+		Log_print("Cart %i state: %02x -> %02x", active_cart == &CARTRIDGE_piggyback, old_state, active_cart->state);
+#endif
 }
 
 /* Maps *active_cart to memory. If the cartridge is bankswitched,
@@ -390,6 +400,8 @@ static void MapActiveCart(void)
 		case CARTRIDGE_SDX_128:
 		case CARTRIDGE_ATRAX_SDX_64:
 		case CARTRIDGE_ATRAX_SDX_128:
+		case CARTRIDGE_TURBOSOFT_64:
+		case CARTRIDGE_TURBOSOFT_128:
 			MEMORY_Cart809fDisable();
 			break;
 		case CARTRIDGE_DB_32:
@@ -688,7 +700,12 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 		/* Only react to access to $D50x/$D51x. */
 		if ((addr & 0xe0) != 0)
 			return FALSE;
+		/* fall through */
+	case CARTRIDGE_TURBOSOFT_128:
 		new_state = addr & 0x1f;
+		break;
+	case CARTRIDGE_TURBOSOFT_64:
+		new_state = addr & 0x17;
 		break;
 	case CARTRIDGE_ATMAX_1024:
 		new_state = addr;
@@ -721,6 +738,10 @@ static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr, int no_side_effects)
 	int old_state = cart->state;
 	int new_state;
 
+#if DEBUG
+	if (cart->type > CARTRIDGE_NONE)
+		Log_print("Cart %i read: %04x", cart == &CARTRIDGE_piggyback, addr);
+#endif
 	/* Set the cartridge's new state. */
 	/* Check types switchable by access to page D5. */
 	if (!no_side_effects && access_D5(cart, addr, &new_state)) {
@@ -748,6 +769,10 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 	int old_state = cart->state;
 	int new_state;
 
+#if DEBUG
+	if (cart->type > CARTRIDGE_NONE)
+		Log_print("Cart %i write: %04x, %02x", cart == &CARTRIDGE_piggyback, addr, byte);
+#endif
 	/* Set the cartridge's new state. */
 	switch (cart->type) {
 	case CARTRIDGE_XEGS_32:

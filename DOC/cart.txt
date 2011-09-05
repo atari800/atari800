@@ -82,6 +82,8 @@ Currently supported cartridge types:
 | 47 | 800/XL/XE |   32 | AST 32 KB cartridge                               |
 | 48 | 800/XL/XE |   64 | Atrax SDX 64 KB cartridge                         |
 | 49 | 800/XL/XE |  128 | Atrax SDX 128 KB cartridge                        |
+| 50 | 800/XL/XE |   64 | Turbosoft 64 KB cartridge                         |
+| 51 | 800/XL/XE |  128 | Turbosoft 128 KB cartridge                        |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -204,7 +206,7 @@ are numbered in the order they appear in the image file, starting with 0.
  additional cartridge slot which allows to plug a second cartridge in.
  An access to $D5E7 selects bank 0, $D5E6 - bank 1, etc. down to $D5E0. An
  access to $D5E8-$D5EB disables the SDX cartridge and enables the second
- cartridge. An access to $D5EC-$D5EF disables both cartriges.
+ cartridge. An access to $D5EC-$D5EF disables both cartridges.
  Accesses to all addresses on page D5 always reaches the second cartridge,
  even if it is disabled by SpartaDOS or if the SpartaDOS cartridge itself is
  enabled.
@@ -652,3 +654,29 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference: http://www.dereatari.republika.pl/atarisch/sparta.zip
             http://trub.atari8.info/index.php?ref=atrax_128
+
++---------------------------------------------------------------------------+
+| Type 50: Turbosoft 64 KB cartridge                                        |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each. Banks
+ are selected by an access to an address at $D500-$D5FF. Bits 0-2 of the
+ address select the bank mapped to $A000-$BFFF. Bit 4 disables the cartridge
+ and enables RAM. Bits 3, 6 and 7 are ignored. The cartridge starts with
+ bank 0 enabled.
+
+ Reference: http://www.retrogames.cl/turbosoft.html
+
++---------------------------------------------------------------------------+
+| Type 51: Turbosoft 128 KB cartridge                                       |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each. Banks
+ are selected by an access to an address at $D500-D5FF. Bits 0-3 of the
+ address select the bank mapped to $A000-$BFFF. Bit 4 disables the cartridge
+ and enables RAM. Bits 6 and 7 are ignored. The cartridge starts with bank
+ 0 enabled.
+
+ Reference: http://www.retrogames.cl/turbosoft.html

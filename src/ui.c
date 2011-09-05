@@ -571,6 +571,8 @@ int UI_SelectCartType(int k)
 		UI_MENU_ACTION(47, "AST 32 KB cartridge"),
 		UI_MENU_ACTION(48, "Atrax SDX 64 KB cartridge"),
 		UI_MENU_ACTION(49, "Atrax SDX 128 KB cartridge"),
+		UI_MENU_ACTION(50, "Turbosoft 64 KB cartridge"),
+		UI_MENU_ACTION(51, "Turbosoft 128 KB cartridge"),
 		UI_MENU_END
 	};
 
