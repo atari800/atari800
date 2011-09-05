@@ -156,7 +156,7 @@ static void set_bank_A0AF(int main, int old_state)
 		MEMORY_CartA0bfEnable();
 		if (active_cart->state == 0xff)
 			/* Fill cart area with 0xFF. */
-			MEMORY_dFillMem(0x8000, 0xff, 0x2000);
+			MEMORY_dFillMem(0xa000, 0xff, 0x1000);
 		else
 			MEMORY_CopyROM(0xa000, 0xafff, active_cart->image + active_cart->state * 0x1000);
 		if (old_state < 0)

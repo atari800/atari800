@@ -2,6 +2,9 @@
 * DOC/cart.txt, DOC/USAGE, atari800.man, cartridge.[ch], ui.c: Added support
   for Atrax SDX 64/128K cartridge mapping.
 
+* cartridge.c: Fixed a bug in OSS 034M/043M mappings - the area filled by $FF
+  should be $A000-$AFF instead of $8000-$9FFF.
+
 
 2011-09-04  Kostas Nakos  <knakos@gmail.com>
 * android/*: Added paddle emulation
