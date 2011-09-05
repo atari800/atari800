@@ -1,4 +1,9 @@
-2011-07-23  Kostas Nakos  <knakos@gmail.com>
+2011-09-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/cart.txt, DOC/USAGE, atari800.man, cartridge.[ch], ui.c: Added support
+  for Atrax SDX 64/128K cartridge mapping.
+
+
+2011-09-04  Kostas Nakos  <knakos@gmail.com>
 * android/*: Added paddle emulation
 
 

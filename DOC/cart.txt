@@ -80,6 +80,8 @@ Currently supported cartridge types:
 | 45 | 800/XL/XE |   16 | OSS two chip 16 KB cartridge (043M)               |
 | 46 | 800/XL/XE |    4 | Blizzard 4 KB cartridge                           |
 | 47 | 800/XL/XE |   32 | AST 32 KB cartridge                               |
+| 48 | 800/XL/XE |   64 | Atrax SDX 64 KB cartridge                         |
+| 49 | 800/XL/XE |  128 | Atrax SDX 128 KB cartridge                        |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -573,3 +575,80 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  After bank 31 the write operation selects bank 0 again.
 
  Reference: http://www.atari.org.pl/forum/viewtopic.php?pid=134014#p134014
+
++---------------------------------------------------------------------------+
+| Type 48: Atrax SDX 64 KB cartridge                                        |
++---------------------------------------------------------------------------+
+
+ A variant of Type 11: SpartaDOS X 64 KB cartridge. The banking scheme is
+ identical, but the address and data lines between the cartridge port and the
+ ROM chip are interleaved as follows:
+   (Left - cartridge port + bank select lines, right - EPROM pins)
+    A0 -  A6
+    A1 -  A7
+    A2 - A12
+    A3 - A15
+    A4 - A14
+    A5 - A13
+    A6 -  A8
+    A7 -  A5
+    A8 -  A4
+    A9 -  A3
+   A10 -  A0
+   A11 -  A1
+   A12 -  A2
+   A13 -  A9  \
+   A14 - A11   > bank select
+   A15 - A10  /
+    D0 -  Q4
+    D1 -  Q0
+    D2 -  Q5
+    D3 -  Q1
+    D4 -  Q7
+    D5 -  Q6
+    D6 -  Q3
+    D7 -  Q2
+ By deinterleaving a ROM image, one would get a normal image of type 11.
+ See Type 11 for details on the banking scheme.
+
+ Reference: http://www.dereatari.republika.pl/atarisch/sparta.zip
+
++---------------------------------------------------------------------------+
+| Type 49: Atrax SDX 128 KB cartridge                                       |
++---------------------------------------------------------------------------+
+
+ A variant of Type 43: SpartaDOS X 128 KB cartridge. The banking scheme is
+ identical, but the address and data lines between the cartridge port and the
+ ROM chip are interleaved. The interleaving is similar to that of Type 48,
+ but with added A16 line, so it looks as follows:
+   (Left - cartridge port + bank select lines, right - EPROM pins)
+    A0 -  A6
+    A1 -  A7
+    A2 - A12
+    A3 - A15
+    A4 - A14
+    A5 - A13
+    A6 -  A8
+    A7 -  A5
+    A8 -  A4
+    A9 -  A3
+   A10 -  A0
+   A11 -  A1
+   A12 -  A2
+   A13 -  A9   \
+   A14 - A11    > bank select
+   A15 - A10   /
+   A16 - A16  /
+    D0 -  Q4
+    D1 -  Q0
+    D2 -  Q5
+    D3 -  Q1
+    D4 -  Q7
+    D5 -  Q6
+    D6 -  Q3
+    D7 -  Q2
+ By deinterleaving a ROM image, one would get a normal image of type 43.
+ See Type 43 for details on the banking scheme.
+
+ Reference: http://www.dereatari.republika.pl/atarisch/sparta.zip
+            http://trub.atari8.info/index.php?ref=atrax_128

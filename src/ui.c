@@ -569,6 +569,8 @@ int UI_SelectCartType(int k)
 		UI_MENU_ACTION(45, "OSS two chip 16 KB cartridge (043M)"),
 		UI_MENU_ACTION(46, "Blizzard 4 KB cartridge"),
 		UI_MENU_ACTION(47, "AST 32 KB cartridge"),
+		UI_MENU_ACTION(48, "Atrax SDX 64 KB cartridge"),
+		UI_MENU_ACTION(49, "Atrax SDX 128 KB cartridge"),
 		UI_MENU_END
 	};
 

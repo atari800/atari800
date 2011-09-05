@@ -93,7 +93,9 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	8,    /* CARTRIDGE_OSS_8 */
 	16,   /* CARTRIDGE_OSS_043M_16 */
 	4,    /* CARTRIDGE_BLIZZARD_4 */
-	32    /* CARTRIDGE_AST_32 */
+	32,   /* CARTRIDGE_AST_32 */
+	64,   /* CARTRIDGE_ATRAX_SDX_64 */
+	128   /* CARTRIDGE_ATRAX_SDX_128 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -116,7 +118,8 @@ static int CartIsFor5200(int type)
 
 static int CartIsPassthrough(int type)
 {
-	return type == CARTRIDGE_SDX_64 || type == CARTRIDGE_SDX_128;
+	return type == CARTRIDGE_SDX_64 || type == CARTRIDGE_SDX_128 ||
+	       type == CARTRIDGE_ATRAX_SDX_64 || type == CARTRIDGE_ATRAX_SDX_128;
 }
 
 CARTRIDGE_image_t CARTRIDGE_main = { CARTRIDGE_NONE, 0, 0, NULL, "" }; /* Left/Right cartridge */
@@ -144,7 +147,7 @@ static void set_bank_809F(int main, int old_state)
 	}
 }
 
-/* OSS_16, OSS2_16 */
+/* OSS_034M_16, OSS_043M_16, OSS_M091_16, OSS_8 */
 static void set_bank_A0AF(int main, int old_state)
 {
 	if (active_cart->state < 0)
@@ -162,7 +165,7 @@ static void set_bank_A0AF(int main, int old_state)
 }
 
 /* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_1024,
-   ATRAX_128 */
+   ATRAX_128, ATRAX_SDX_64 */
 static void set_bank_A0BF(int n)
 {
 	if (active_cart->state & n)
@@ -220,6 +223,7 @@ static void SwitchBank(int old_state)
 	case CARTRIDGE_DIAMOND_64:
 	case CARTRIDGE_SDX_64:
 	case CARTRIDGE_WILL_32:
+	case CARTRIDGE_ATRAX_SDX_64:
 		set_bank_A0BF(8);
 		break;
 	case CARTRIDGE_DB_32:
@@ -275,6 +279,7 @@ static void SwitchBank(int old_state)
 		}
 		break;
 	case CARTRIDGE_SDX_128:
+	case CARTRIDGE_ATRAX_SDX_128:
 		set_bank_SDX_128();
 		break;
 	case CARTRIDGE_AST_32:
@@ -383,6 +388,8 @@ static void MapActiveCart(void)
 		case CARTRIDGE_ATMAX_128:
 		case CARTRIDGE_ATMAX_1024:
 		case CARTRIDGE_SDX_128:
+		case CARTRIDGE_ATRAX_SDX_64:
+		case CARTRIDGE_ATRAX_SDX_128:
 			MEMORY_Cart809fDisable();
 			break;
 		case CARTRIDGE_DB_32:
@@ -608,6 +615,7 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 		new_state = ((addr ^ 7) & 0x0f);
 		break;
 	case CARTRIDGE_SDX_64:
+	case CARTRIDGE_ATRAX_SDX_64:
 		/* Only react to access to $D5Ex. */
 		if ((addr & 0xf0) != 0xe0)
 			return FALSE;
@@ -631,6 +639,7 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 		}
 		break;
 	case CARTRIDGE_SDX_128:
+	case CARTRIDGE_ATRAX_SDX_128:
 		/* Only react to access to $D5Ex/$D5Fx. */
 		if ((addr & 0xe0) != 0xe0)
 			return FALSE;
@@ -981,9 +990,91 @@ static void ResetCartState(CARTRIDGE_image_t *cart)
 	}
 }
 
+/* Before first use of the cartridge, preprocess its contents if needed. */
+static void PreprocessCart(CARTRIDGE_image_t *cart)
+{
+	switch (cart->type) {
+	case CARTRIDGE_ATRAX_SDX_64:
+	case CARTRIDGE_ATRAX_SDX_128: {
+		/* The address lines are connected a follows:
+		   (left - cartridge port + bank select, right - EPROM)
+		    A0 -  A6
+		    A1 -  A7
+		    A2 - A12
+		    A3 - A15
+		    A4 - A14
+		    A5 - A13
+		    A6 -  A8
+		    A7 -  A5
+		    A8 -  A4
+		    A9 -  A3
+		   A10 -  A0
+		   A11 -  A1
+		   A12 -  A2
+		   A13 -  A9
+		   A14 - A11
+		   A15 - A10
+		   A16 - A16 (only on ATRAX_SDX_128)
+
+		    The data lines are connected as follows:
+		    (left - cartridge port, right - EPROM)
+		    D1 - Q0
+		    D3 - Q1
+		    D7 - Q2
+		    D6 - Q3
+		    D0 - Q4
+		    D2 - Q5
+		    D5 - Q6
+		    D4 - Q7
+		 */
+		unsigned int i;
+		unsigned int const size = cart->size << 10;
+		UBYTE *new_image = (UBYTE *) Util_malloc(size);
+		/* FIXME: Can be optimised by caching the results in a conversion
+		   table, but doesn't seem to be worth it. */
+		for (i = 0; i < size; i++) {
+			unsigned int const rom_addr =
+				(i &  0x0001 ?  0x0040 : 0) |
+				(i &  0x0002 ?  0x0080 : 0) |
+				(i &  0x0004 ?  0x1000 : 0) |
+				(i &  0x0008 ?  0x8000 : 0) |
+				(i &  0x0010 ?  0x4000 : 0) |
+				(i &  0x0020 ?  0x2000 : 0) |
+				(i &  0x0040 ?  0x0100 : 0) |
+				(i &  0x0080 ?  0x0020 : 0) |
+				(i &  0x0100 ?  0x0010 : 0) |
+				(i &  0x0200 ?  0x0008 : 0) |
+				(i &  0x0400 ?  0x0001 : 0) |
+				(i &  0x0800 ?  0x0002 : 0) |
+				(i &  0x1000 ?  0x0004 : 0) |
+				(i &  0x2000 ?  0x0200 : 0) |
+				(i &  0x4000 ?  0x0800 : 0) |
+				(i &  0x8000 ?  0x0400 : 0) |
+				(i & 0x10000 ? 0x10000 : 0);
+
+			UBYTE byte = cart->image[rom_addr];
+			new_image[i] =
+					(byte & 0x01 ? 0x02 : 0) |
+					(byte & 0x02 ? 0x08 : 0) |
+					(byte & 0x04 ? 0x80 : 0) |
+					(byte & 0x08 ? 0x40 : 0) |
+					(byte & 0x10 ? 0x01 : 0) |
+					(byte & 0x20 ? 0x04 : 0) |
+					(byte & 0x40 ? 0x20 : 0) |
+					(byte & 0x80 ? 0x10 : 0);
+		}
+		free(cart->image);
+		cart->image = new_image;
+		break;
+	}
+	}
+}
+
 /* Initialises the cartridge CART after mounting. Called by CARTRIDGE_Insert,
    or CARTRIDGE_Insert_Second and CARTRIDGE_SetType. */
-static void InitCartridge(CARTRIDGE_image_t *cart) {
+static void InitCartridge(CARTRIDGE_image_t *cart)
+{
+	PreprocessCart(cart);
 	ResetCartState(cart);
 	if (cart == &CARTRIDGE_main) {
 		/* Check if we should automatically switch between computer/5200. */
