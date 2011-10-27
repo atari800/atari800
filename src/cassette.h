@@ -31,9 +31,6 @@ void CASSETTE_Remove(void);
    Returns TRUE on success, FALSE otherwise. */
 int CASSETTE_CreateCAS(char const *filename, char const *description);
 
-/* Returns TRUE if the file is a cassette image. */
-int CASSETTE_FileSupported(UBYTE const header[4]);
-
 extern int CASSETTE_hold_start;
 extern int CASSETTE_hold_start_on_reboot; /* preserve hold_start after reboot */
 extern int CASSETTE_press_space;
