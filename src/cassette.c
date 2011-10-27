@@ -286,8 +286,6 @@ int CASSETTE_GetByte(void)
 
 int CASSETTE_IOLineStatus(void)
 {
-	int bit = 0;
-
 	/* if motor off and EOF return always 1 (equivalent the mark tone) */
 	if (!cassette_readable || CASSETTE_record || passing_gap) {
 		return 1;
