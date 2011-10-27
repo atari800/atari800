@@ -27,6 +27,7 @@
 #include "cartridge.h"
 #include "cassette.h"
 #include "gtia.h"
+#include "img_tape.h"
 #include "log.h"
 #include "sio.h"
 #include "statesav.h"
@@ -117,12 +118,6 @@ int AFILE_DetectFileType(const char *filename)
 			return AFILE_CART;
 		}
 		break;
-	case 'F':
-		if (header[1] == 'U' && header[2] == 'J' && header[3] == 'I') {
-			fclose(fp);
-			return AFILE_CAS;
-		}
-		break;
 	case 0x96:
 		if (header[1] == 0x02) {
 			fclose(fp);
@@ -163,6 +158,8 @@ int AFILE_DetectFileType(const char *filename)
 		return AFILE_BOOT_TAPE;
 	if ((file_length & 0x7f) == 0)
 		return AFILE_XFD;
+	if (IMG_TAPE_FileSupported(header))
+		return AFILE_CAS;
 	return AFILE_ERROR;
 }
 

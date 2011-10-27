@@ -884,7 +884,7 @@ static void MakeBlankTapeMenu(void)
    any slider that adjusts tape position. */
 static void TapeSliderLabel(char *label, int value, void *user_data)
 {
-	if (value >= CASSETTE_max_block)
+	if (value >= CASSETTE_GetSize())
 		sprintf(label, "End");
 	else
 		snprintf(label, 10, "%i", value + 1);
@@ -910,8 +910,8 @@ static void TapeManagement(void)
 
 	for (;;) {
 
-		int position = CASSETTE_current_block;
-		int size = CASSETTE_max_block;
+		int position = CASSETTE_GetPosition();
+		int size = CASSETTE_GetSize();
 
 		/* Set the cassette file description and set the Select Tape tip */
 		switch (CASSETTE_status) {
@@ -980,7 +980,7 @@ static void TapeManagement(void)
 			switch (seltype) {
 			case UI_USER_SELECT: { /* Enter */
 					int value = UI_driver->fSelectSlider("Position tape",
-									     position - 1,
+					                                     position - 1,
 					                                     size, &TapeSliderLabel, NULL);
 					if (value != -1)
 						CASSETTE_Seek(value + 1);

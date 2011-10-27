@@ -16,9 +16,6 @@ typedef enum {
 } CASSETTE_status_t;
 extern CASSETTE_status_t CASSETTE_status;
 
-extern int CASSETTE_current_block;
-extern int CASSETTE_max_block;
-
 /* Used in Atari800_Initialise during emulator initialisation */
 int CASSETTE_Initialise(int *argc, char *argv[]);
 void CASSETTE_Exit(void);
@@ -26,14 +23,16 @@ void CASSETTE_Exit(void);
 int CASSETTE_ReadConfig(char *string, char *ptr);
 void CASSETTE_WriteConfig(FILE *fp);
 
-int CASSETTE_CheckFile(const char *filename, FILE **fp, char *description, int *last_block, int *isCAS, int *writable);
-/* Attaches a tape image. Returns FALSE on failure.
-   Resets the CASSETTE_write_protect to FALSE. */
+/* Attaches a tape image. Also resets CASSETTE_write_protect to FALSE.
+   Returns TRUE on success, FALSE otherwise. */
 int CASSETTE_Insert(const char *filename);
 void CASSETTE_Remove(void);
 /* Creates a new file in CAS format. DESCRIPTION can be NULL.
    Returns TRUE on success, FALSE otherwise. */
 int CASSETTE_CreateCAS(char const *filename, char const *description);
+
+/* Returns TRUE if the file is a cassette image. */
+int CASSETTE_FileSupported(UBYTE const header[4]);
 
 extern int CASSETTE_hold_start;
 extern int CASSETTE_hold_start_on_reboot; /* preserve hold_start after reboot */
@@ -52,15 +51,25 @@ extern int CASSETTE_record;
 int CASSETTE_ToggleRecord(void);
 
 void CASSETTE_Seek(unsigned int position);
+/* Returns status of the DATA IN line. */
 int CASSETTE_IOLineStatus(void);
+/* Get the byte which was recently loaded from tape. */
 int CASSETTE_GetByte(void);
+/* Put a byte into the cas file.
+   The block is being written at first putbyte of the subsequent block */
 void CASSETTE_PutByte(int byte);
+/* Set motor status: 1 - on, 0 - off */
 void CASSETTE_TapeMotor(int onoff);
 /* Advance the tape by a scanline. Return TRUE if a new byte has been loaded
    and POKEY_SERIN must be updated. */
 int CASSETTE_AddScanLine(void);
 /* Reset cassette serial transmission; call when resseting POKEY by SKCTL. */
 void CASSETTE_ResetPOKEY(void);
+
+/* Return size in blocks of the currently-mounted tape file. */
+unsigned int CASSETTE_GetSize(void);
+/* Return current position (block number) of the mounted tape (counted from 1). */
+unsigned int CASSETTE_GetPosition(void);
 
 /* --- Functions used by patched SIO --- */
 /* -- SIO_Handler() -- */

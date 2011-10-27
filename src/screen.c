@@ -401,10 +401,10 @@ void Screen_DrawDiskLED(void)
 					/* Displaying tape length during saving is pointless since it would equal the number
 					of the currently-written block, which is already displayed. */
 					if (!CASSETTE_record) {
-						screen = SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_max_block, 0x00, 0x88);
+						screen = SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_GetSize(), 0x00, 0x88);
 						SmallFont_DrawChar(screen, SMALLFONT_SLASH, 0x00, 0x88);
 					}
-					SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_current_block, 0x00, 0x88);
+					SmallFont_DrawInt(screen - SMALLFONT_WIDTH, CASSETTE_GetPosition(), 0x00, 0x88);
 				}
 			}
 		}

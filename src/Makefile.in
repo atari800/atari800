@@ -46,6 +46,7 @@ OBJS = \
 	devices.o \
 	esc.o \
 	gtia.o \
+	img_tape.o \
 	log.o \
 	memory.o \
 	monitor.o \
