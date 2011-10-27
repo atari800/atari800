@@ -138,7 +138,6 @@ IMG_TAPE_t *IMG_TAPE_Open(char const *filename, int *writable, char const **desc
 {
 	IMG_TAPE_t *img;
 	CAS_Header header;
-	FILE *file;
 
 	img = Util_malloc(sizeof(IMG_TAPE_t));
 	/* Check if the file is writable. If not, recording will be disabled. */
@@ -174,7 +173,7 @@ IMG_TAPE_t *IMG_TAPE_Open(char const *filename, int *writable, char const **desc
 		else
 			skip -= CASSETTE_DESCRIPTION_MAX - 1;
 		if (fread(img->description, 1, length - skip, img->file) < (length - skip)) {
-			fclose(file);
+			fclose(img->file);
 			free(img);
 			return NULL;
 		}
