@@ -598,6 +598,7 @@ static void safe_gets(char *buffer, size_t size, char const *prompt)
 			strncpy(buffer, got, size);
 			if (*got)
 				add_history(got);
+			free(got); /* Need to free buffer allocated by readline() */
 		}
 	}
 #else
