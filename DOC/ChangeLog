@@ -13,6 +13,10 @@
   Since the AC_CHECK_HEADER (used in OpenGL detection) requires proper setting
   of CPPFLAGS, rudimentary support for this variable has been added.
 
+* sdl/video_gl.c: Fix wrong definition of "black" colour for the BGRA32 pixel
+  format, which caused a visible blue border around the screen with bilinear
+  filtering and stretch >= 2.
+
 
 2011-10-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * afile.c, cassette.[ch], img_tape.[ch], screen.c, ui.c, Makefile.in:

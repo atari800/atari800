@@ -155,7 +155,7 @@ typedef struct pixel_format_t {
 pixel_format_t const pixel_formats[4] = {
 	{ GL_RGB5, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, 0x0000, &SDL_PALETTE_Calculate16_B5G6R5, &atari_ntsc_blit_bgr16 }, 
 	{ GL_RGB5, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, 0x0000, &SDL_PALETTE_Calculate16_R5G6B5, &atari_ntsc_blit_rgb16 }, /* NVIDIA 16-bit */
-	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, 0x000000ff, &SDL_PALETTE_Calculate32_B8G8R8A8, &atari_ntsc_blit_bgra32 },
+	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, 0xff000000, &SDL_PALETTE_Calculate32_B8G8R8A8, &atari_ntsc_blit_bgra32 },
 	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0xff000000, &SDL_PALETTE_Calculate32_A8R8G8B8, &atari_ntsc_blit_argb32 } /* NVIDIA 32-bit */
 };
 
