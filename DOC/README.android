@@ -26,7 +26,7 @@ Unpack the source tarball or get the CVS module. Go to the src directory and
 update the project thusly:
 android update project --path android/
 Configure the build. I use this setup:
-autoheader && autoconf && ./configure --target=android --disable-monitorbreak --enable-pagedattrib --enable-seriosound --disable-crashmenu --disable-monitorasm --disable-monitorhints --disable-monitor-readline --enable-clipsound
+autoheader && autoconf && ./configure --target=android --disable-monitorbreak --enable-pagedattrib --enable-seriosound --disable-crashmenu --disable-monitorasm --disable-monitorhints --without-readline --enable-clipsound
 Then just type make and your apk package should appear in:
 android/bin/atari800-debug.apk
 

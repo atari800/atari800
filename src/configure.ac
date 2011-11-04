@@ -126,7 +126,6 @@ dnl Set CFLAGS and LDFLAGS...
 if [[ "X_$CFLAGS" = "X_" ]]; then
     CFLAGS="-O2 -Wall"
 fi
-CFLAGS="$CFLAGS $CPPFLAGS"
 if [[ "X_$LDFLAGS" = "X_" ]]; then
     LDFLAGS=""
 fi
@@ -145,10 +144,9 @@ if [[ "$a8_target" = "android" ]]; then
 	CC="arm-eabi-gcc"
 	CPP="arm-eabi-cpp"
 	AC_NO_EXECUTABLES
-	CFLAGS="$CFLAGS -I$ANDROID_NDK_ROOT/build/platforms/android-8/arch-arm/usr/include"
-	CPPFLAGS="-I$ANDROID_NDK_ROOT/build/platforms/android-8/arch-arm/usr/include"
+	CPPFLAGS="$CPPFLAGS -I$ANDROID_NDK_ROOT/build/platforms/android-8/arch-arm/usr/include"
 	WANT_IDE=no
-	WANT_MONITOR_READLINE=no
+	with_readline=no
 	WANT_EVENT_RECORDING=no
 	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
 fi
@@ -324,7 +322,7 @@ case "$a8_target" in
         WANT_XEP80_EMULATION=yes
         WANT_NTSC_FILTER=yes
         LIBS="$LIBS $SDL_LIBS"
-        CFLAGS="$CFLAGS $SDL_CFLAGS"
+        CPPFLAGS="$CPPFLAGS $SDL_CFLAGS"
         OBJS="videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
         if [[ "$a8_host" != "beos" ]]; then
@@ -334,12 +332,12 @@ dnl BeOS has a real issue with redundant-decls
         if [[ "$a8_host" = "win" ]]; then
 dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c Otherwise
 dnl the autoconf tests don't work.
-            CFLAGS=${CFLAGS/-Dmain=SDL_main/}
+            CPPFLAGS=${CPPFLAGS/-Dmain=SDL_main/}
 dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
 dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
             LIBS=${LIBS/-lSDLmain/}
             OBJS="$OBJS SDL_win32_main.o"
-            CFLAGS="$CFLAGS -DNO_STDIO_REDIRECT"
+            CPPFLAGS="$CPPFLAGS -DNO_STDIO_REDIRECT"
 dnl Don't make this a windowed app, make it a console app.
             LIBS=${LIBS/-mwindows/}
         fi
@@ -629,55 +627,6 @@ A8_OPTION(monitortrace,no,
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
-AC_ARG_ENABLE(monitor-readline,
-              AC_HELP_STRING(--disable-monitor-readline,[Don't use Readline for input in monitor]),
-              WANT_MONITOR_READLINE=$enableval,
-              WANT_MONITOR_READLINE=yes)
-
-# Check for existence of the readline library and headers.
-if [[ "$WANT_MONITOR_READLINE" = yes ]]; then
-# Readline uses termcap internally. Termcap's functionality is nowadays
-# provided by several libraries (eg. ncurses). However, on some environments,
-# Readline is not linked to a Termcap-providing library at compile-time.
-# So, we check whether Readline is already linked to such library, by checking
-# existence of the tgetent symbol in readline. If not, we search for tgetent
-# in a few other libraries. All done with a single AC_SEARCH_LIBS statement.
-    have_tgetent=no
-    have_readline=no
-    AC_SEARCH_LIBS(tgetent, [readline ncursesw ncurses curses termcap], have_tgetent=yes)
-    if [[ "$have_tgetent" = yes ]]; then
-        AC_SEARCH_LIBS(readline, readline, have_readline=yes)
-        if [[ "$have_readline" = yes ]]; then
-            AC_CHECK_HEADERS([readline/readline.h],[],have_readline=no)
-        else
-            AC_MSG_WARN([Unable to find readline, which is needed for requested features.])
-            WANT_MONITOR_READLINE=no
-        fi
-    else
-        AC_MSG_WARN([Unable to properly link the readline library, which is needed for requested features.
-        Readline needs a library that provides termcap functionality; such library was not found.
-        Try installing one of ncursew, ncurses, curses, termcap.])
-        WANT_MONITOR_READLINE=no
-    fi
-fi
-
-if [[ "$WANT_MONITOR_READLINE" = yes ]]; then
-    AC_DEFINE(MONITOR_READLINE, 1, [Define to activate readline support in monitor.])
-fi
-#if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
-#	AC_CHECK_LIB(readline,readline,
-#		[A8_OPTION(readline,yes,
-#          		[Support readline in the monitor (default=ON)],
-#          		MONITOR_READLINE,[Define to activate readline support in monitor.]
-#			)],
-#		WANT_MONITOR_READLINE="no"
-#	)
-#fi
-#
-#if [[ "$WANT_MONITOR_READLINE" != "no" ]]; then
-#	LIBS="-lreadline -ltermcap $LIBS"
-#fi
-
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
 dnl we already checked for libz and added it to LIBS
     AC_CHECK_LIB(z,adler32,
@@ -842,6 +791,80 @@ if [[ "$WANT_IDE" == "yes" ]]; then
     OBJS="$OBJS ide.o"
 fi
 
+dnl Select/detect features based on external software...
+
+dnl Check for existence of the readline library and headers.
+AC_ARG_WITH(readline,
+    [AC_HELP_STRING(--with-readline,[Use libreadline for input in monitor @<:@default=check@:>@])],
+    [],
+    [with_readline=check])
+
+if [[ "$with_readline" != no ]]; then
+dnl Readline uses termcap internally. Termcap's functionality is nowadays
+dnl provided by several libraries (eg. ncurses). However, on some environments,
+dnl Readline is not linked to a Termcap-providing library at compile-time.
+dnl So, we check whether Readline is already linked to such library, by checking
+dnl existence of the tgetent symbol in readline. If not, we search for tgetent
+dnl in a few other libraries. All done with a single AC_SEARCH_LIBS statement.
+    have_readline=no
+    AC_SEARCH_LIBS(tgetent, [readline termcap ncursesw ncurses curses], [
+        AC_SEARCH_LIBS(readline, readline, [
+            AC_CHECK_HEADER([readline/readline.h], [
+                have_readline=yes
+            ], [
+                if [[ "$with_readline" = yes ]]; then
+                    AC_MSG_ERROR([unable to use libreadline  - readline/readline.h not found or not compilable.])
+                fi
+            ])
+        ], [
+            if [[ "$with_readline" = yes ]]; then
+                AC_MSG_ERROR([unable to link libreadline  - the library is not installed on this system.])
+            fi
+        ])
+    ], [
+        if [[ "$with_readline" = yes ]]; then
+            AC_MSG_ERROR([unable to properly link libreadline - a library \
+providing termcap functionality is not found. Try installing one of ncursew, \
+ncurses, curses, termcap.])
+        fi
+    ])
+    with_readline=$have_readline
+fi
+
+if [[ "$with_readline" = yes ]]; then
+    AC_DEFINE(MONITOR_READLINE, 1, [Define to activate readline support in monitor.])
+fi
+
+dnl Check for availability of the OpenGL header.
+AC_ARG_WITH(opengl,
+    AC_HELP_STRING(--with-opengl,[Use OpenGL for graphics - only in SDL target @<:@default=check@:>@]),
+    [],
+    [with_opengl=check])
+
+if [[ "$a8_target" != sdl ]]; then
+    if [[ "$with_opengl" = "yes" ]]; then
+        AC_MSG_ERROR([option --with-opengl not supported in this target!])
+    fi
+    with_opengl=no
+fi
+
+if [[ "$with_opengl" != no ]]; then
+    have_opengl=no
+    AC_CHECK_HEADER([SDL_opengl.h], [
+        have_opengl=yes
+    ], [
+        if [[ "$with_opengl" = yes ]]; then
+            AC_MSG_ERROR([unable to use OpenGL  - SDL_opengl.h not found or not compilable.])
+        fi
+    ])
+    with_opengl=$have_opengl
+fi
+
+if [[ "$with_opengl" = "yes" ]]; then
+    AC_DEFINE(HAVE_OPENGL, 1, [Support for OpenGL graphics acceleration.])
+    OBJS="$OBJS sdl/video_gl.o"
+fi
+
 dnl Select host/target specific features...
 
 if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
@@ -904,47 +927,6 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     fi
 fi
 
-dnl Set SDL-OpenGL availability...
-
-AC_ARG_ENABLE(opengl,
-    AC_HELP_STRING(--enable-opengl,[Use OpenGL for graphics - only in SDL target (default=on if OpenGL installed)]),
-    WANT_OPENGL="$enableval",
-    WANT_OPENGL=maybe
-)
-if [[ "$a8_target" = sdl ]]; then
-    AC_MSG_CHECKING(for OpenGL)
-    if [[ "$WANT_OPENGL" != no ]]; then
-        found_opengl=no
-        AC_TRY_COMPILE([
- #include "SDL_opengl.h"
-        ],[],[found_opengl=yes])
-    fi
-
-    if [[ "$WANT_OPENGL" != "no" ]]; then
-        if [[ "$found_opengl" = yes ]]; then
-            WANT_OPENGL=yes
-            OBJS="$OBJS sdl/video_gl.o"
-        else
-            if [[ "$WANT_OPENGL" = yes ]]; then
-                AC_MSG_ERROR([Building with OpenGL was requested, but OpenGL is not installed on your system.])
-            else # WANT_OPENGL is "maybe"
-                WANT_OPENGL=no
-            fi
-        fi
-        AC_MSG_RESULT($found_opengl)
-    else
-        AC_MSG_RESULT(disabled by user)
-    fi
-else
-    if [[ "$WANT_OPENGL" = "yes" ]]; then
-        AC_MSG_ERROR("Option --enable-opengl not supported in this target!")
-    fi
-    WANT_OPENGL=no
-fi
-if [[ "$WANT_OPENGL" = "yes" ]]; then
-    AC_DEFINE(HAVE_OPENGL, 1, [Support for OpenGL graphics acceleration.])
-fi
-
 dnl Wrapup: export OBJS and write Makefile...
 
 AC_SUBST(OBJS)
@@ -987,7 +969,7 @@ echo "Using user-defined breakpoints?.......: $WANT_MONITOR_BREAKPOINTS"
 echo "Using monitor hints?..................: $WANT_MONITOR_HINTS"
 echo "Using 6502 opcode profiling?..........: $WANT_MONITOR_PROFILE"
 echo "Using TRACE monitor command?..........: $WANT_MONITOR_TRACE"
-echo "Using readline support in monitor?....: $WANT_MONITOR_READLINE"
+echo "Using readline support in monitor?....: $with_readline"
 echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
@@ -1030,12 +1012,13 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
         fi
 fi
 if [[ "$a8_target" = "sdl" ]]; then
-    echo "Using OpenGL?.........................: $WANT_OPENGL"
+    echo "Using OpenGL?.........................: $with_opengl"
 fi
 echo
 echo "Main build variables:"
 echo "    CC......: \"$CC\""
 echo "    CFLAGS..: \"$CFLAGS\""
+echo "    CPPFLAGS: \"$CPPFLAGS\""
 echo "    LDFLAGS.: \"$LDFLAGS\""
 echo "    OBJS....: \"$OBJS\""
 echo "    LIBS....: \"$LIBS\""

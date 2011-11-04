@@ -20,7 +20,7 @@ else
 	endif
 endif
 
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 
 INSTALL = @INSTALL@

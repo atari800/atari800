@@ -4,6 +4,14 @@
 
 * configure.ac: Clean-up of SDL detection - restore the "Don't redefine main"
   snippet that got mistakenly deleted in revisions 1.108-1.109.
+  
+* configure.ac, Makefile.in, DOC/README.android: Cleanup in detection of
+  libreadline and OpenGL:
+  Renamed options --enable-monitor-readline and --enable-opengl to
+  --with-readline and --with-opengl, respectively - Autoconf manual recommends
+  the --with prefix for options requiring external software.
+  Since the AC_CHECK_HEADER (used in OpenGL detection) requires proper setting
+  of CPPFLAGS, rudimentary support for this variable has been added.
 
 
 2011-10-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
