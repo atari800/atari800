@@ -2,6 +2,9 @@
 * monitor.c: Fix a memory leak - buffer allocated by readline() should be
   freed by user.
 
+* configure.ac: Clean-up of SDL detection - restore the "Don't redefine main"
+  snippet that got mistakenly deleted in revisions 1.108-1.109.
+
 
 2011-10-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * afile.c, cassette.[ch], img_tape.[ch], screen.c, ui.c, Makefile.in:
