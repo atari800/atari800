@@ -717,8 +717,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 		|| !GTIA_Initialise(argc, argv)
 		|| !PIA_Initialise(argc, argv)
 		|| !POKEY_Initialise(argc, argv)
-	)
+	) {
+		Atari800_ErrExit();
 		return FALSE;
+	}
 
 #ifndef __PLUS
 
@@ -886,19 +888,30 @@ int Atari800_Exit(int run_monitor)
 		if (CFG_save_on_exit)
 			CFG_WriteConfig();
 
-		SIO_Exit();	/* umount disks, so temporary files are deleted */
-		CASSETTE_Exit(); /* Finish writing to the cassette file */
+		/* Cleanup functions, in reverse order as the init functions in
+		   Atari800_Initialise(). */
+#if SUPPORTS_CHANGE_VIDEOMODE
+		VIDEOMODE_Exit();
+#endif
+#ifdef AF80
+		AF80_Exit();
+#endif
 #ifndef BASIC
 		INPUT_Exit();	/* finish event recording */
 #endif
+		PBI_Exit();
+		CASSETTE_Exit(); /* Finish writing to the cassette file */
+		CARTRIDGE_Exit();
+		SIO_Exit();	/* umount disks, so temporary files are deleted */
+#ifdef IDE
+		IDE_Exit();
+#endif
+		Devices_Exit();
 #ifdef R_IO_DEVICE
 		RDevice_Exit(); /* R: Device cleanup */
 #endif
 #ifdef SOUND
 		SndSave_CloseSoundFile();
-#endif
-#if SUPPORTS_CHANGE_VIDEOMODE
-		VIDEOMODE_Exit();
 #endif
 		MONITOR_Exit();
 	}

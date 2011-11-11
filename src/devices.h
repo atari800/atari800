@@ -5,6 +5,7 @@
 #include "atari.h" /* UWORD */
 
 int Devices_Initialise(int *argc, char *argv[]);
+void Devices_Exit(void);
 int Devices_PatchOS(void);
 void Devices_Frame(void);
 void Devices_UpdatePatches(void);

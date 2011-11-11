@@ -623,6 +623,11 @@ int Devices_Initialise(int *argc, char *argv[])
 	return TRUE;
 }
 
+void Devices_Exit(void)
+{
+	Devices_H_CloseAll();
+}
+
 #define IS_DIR_SEP(c) ((c) == '/' || (c) == '\\' || (c) == ':' || (c) == '>')
 
 static int Devices_IsValidForFilename(char ch)

@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 int PBI_Initialise(int *argc, char *argv[]);
+void PBI_Exit(void);
 int PBI_ReadConfig(char *string, char *ptr);
 void PBI_WriteConfig(FILE *fp);
 void PBI_Reset(void);

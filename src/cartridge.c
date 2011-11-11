@@ -1450,6 +1450,11 @@ int CARTRIDGE_Initialise(int *argc, char *argv[])
 	return TRUE;
 }
 
+void CARTRIDGE_Exit(void)
+{
+	CARTRIDGE_Remove(); /* Removes both cartridges */
+}
+
 #ifndef BASIC
 
 void CARTRIDGE_StateRead(UBYTE version)

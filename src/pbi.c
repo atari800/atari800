@@ -85,6 +85,22 @@ int PBI_Initialise(int *argc, char *argv[])
 	;
 }
 
+void PBI_Exit(void)
+{
+#ifdef PBI_PROTO80
+	PBI_PROTO80_Exit();
+#endif
+#ifdef PBI_MIO
+	PBI_MIO_Exit();
+#endif
+#ifdef PBI_BB
+	PBI_BB_Exit();
+#endif
+#ifdef PBI_XLD
+	PBI_XLD_Exit();
+#endif
+}
+
 int PBI_ReadConfig(char *string, char *ptr)
 {
 	if (0) {

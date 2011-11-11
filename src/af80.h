@@ -6,6 +6,7 @@
 
 extern int AF80_palette[16];
 int AF80_Initialise(int *argc, char *argv[]);
+void AF80_Exit(void);
 void AF80_InsertRightCartridge(void);
 int AF80_ReadConfig(char *string, char *ptr);
 void AF80_WriteConfig(FILE *fp);

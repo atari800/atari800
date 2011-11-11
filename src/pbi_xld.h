@@ -3,6 +3,7 @@
 
 #include "atari.h"
 int PBI_XLD_Initialise(int *argc, char *argv[]);
+void PBI_XLD_Exit(void);
 int PBI_XLD_ReadConfig(char *string, char *ptr);
 void PBI_XLD_WriteConfig(FILE *fp);
 void PBI_XLD_Reset(void);

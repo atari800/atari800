@@ -147,6 +147,19 @@ int PBI_XLD_Initialise(int *argc, char *argv[])
 	return TRUE;
 }
 
+void PBI_XLD_Exit(void)
+{
+	if (xld_d_enabled) {
+		free(diskrom);
+		xld_d_enabled = FALSE;
+	}
+	if (PBI_XLD_v_enabled) {
+		free(voicerom);
+		PBI_XLD_v_enabled = FALSE;
+	}
+	PBI_XLD_enabled = FALSE;
+}
+
 int PBI_XLD_ReadConfig(char *string, char *ptr) 
 {
 	if (strcmp(string, "XLD_D_ROM") == 0)

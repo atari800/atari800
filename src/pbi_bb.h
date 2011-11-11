@@ -8,6 +8,7 @@ extern int PBI_BB_enabled;
 void PBI_BB_Menu(void);
 void PBI_BB_Frame(void);
 int PBI_BB_Initialise(int *argc, char *argv[]);
+void PBI_BB_Exit(void);
 UBYTE PBI_BB_D1GetByte(UWORD addr, int no_side_effects);
 void PBI_BB_D1PutByte(UWORD addr, UBYTE byte);
 UBYTE PBI_BB_D6GetByte(UWORD addr, int no_side_effects);

@@ -59,6 +59,7 @@ static void init_mio(void)
 	mio_rom = (UBYTE *)Util_malloc(mio_rom_size);
 	if (!Atari800_LoadImage(mio_rom_filename, mio_rom, mio_rom_size)) {
 		free(mio_rom);
+		mio_rom = NULL;
 		return;
 	}
 	D(printf("Loaded mio rom image\n"));
@@ -82,7 +83,6 @@ static void init_mio(void)
 	memset(mio_ram, 0, mio_ram_size);
 }
 
-
 int PBI_MIO_Initialise(int *argc, char *argv[])
 {
 	int i, j;
@@ -100,6 +100,17 @@ int PBI_MIO_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	return TRUE;
+}
+
+void PBI_MIO_Exit(void)
+{
+	if (PBI_SCSI_disk != NULL) {
+		fclose(PBI_SCSI_disk);
+		PBI_SCSI_disk = NULL;
+	}
+	free(mio_ram);
+	free(mio_rom);
+	mio_rom = mio_ram = NULL;
 }
 
 int PBI_MIO_ReadConfig(char *string, char *ptr) 

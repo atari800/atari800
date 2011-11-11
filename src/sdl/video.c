@@ -387,6 +387,11 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 void SDL_VIDEO_Exit(void)
 {
 	SDL_VIDEO_QuitSDL();
+	if (FILTER_NTSC_emu) {
+		/* Turning filter off */
+		FILTER_NTSC_Delete(FILTER_NTSC_emu);
+		FILTER_NTSC_emu = NULL;
+	}
 }
 
 void SDL_VIDEO_BlitNormal8(Uint32 *dest, Uint8 *src, int pitch, int width, int height)

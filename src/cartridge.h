@@ -84,6 +84,7 @@ int CARTRIDGE_Checksum(const UBYTE *image, int nbytes);
 int CARTRIDGE_ReadConfig(char *string, char *ptr);
 void CARTRIDGE_WriteConfig(FILE *fp);
 int CARTRIDGE_Initialise(int *argc, char *argv[]);
+void CARTRIDGE_Exit(void);
 
 #define CARTRIDGE_CANT_OPEN		-1	/* Can't open cartridge image file */
 #define CARTRIDGE_BAD_FORMAT		-2	/* Unknown cartridge format */

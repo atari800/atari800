@@ -303,6 +303,10 @@ void INPUT_Exit(void) {
 		gzclose(recordfp);
 		recording = FALSE;
 	}
+	if (playingback) {
+		gzclose(playbackfp);
+		playingback = FALSE;
+	}
 #endif
 }
 
