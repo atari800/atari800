@@ -6,6 +6,8 @@
   Add call to Atari800_ErrExit also when commandline-parsing fails.
   Previously when starting the dosvga target with "atari800 -artif",
   the emulator would exit without uninitialising VGA, leaving mess on screen.
+* amiga/amiga.c, dc/atari_dc.c: Fix Platform_Initialise() not returning
+  a value.
 
 
 2011-11-04  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

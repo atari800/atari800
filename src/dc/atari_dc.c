@@ -279,7 +279,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	static int fc = TRUE;
 
-	if (! fc) return; else fc = FALSE;
+	if (! fc) return TRUE; else fc = FALSE;
 
 	screen_tv_mode = Atari800_tv_mode;
 

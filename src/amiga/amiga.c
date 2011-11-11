@@ -1588,7 +1588,7 @@ int PLATFORM_Exit (int run_monitor)
 /**************************************************************************
  Initialize the Amiga specific part of the Atari800 Emulator.
 **************************************************************************/
-void PLATFORM_Initialise (int *argc, unsigned char **argv)
+int PLATFORM_Initialise (int *argc, unsigned char **argv)
 {
 	PaddlePos = 228;
 
@@ -1624,7 +1624,7 @@ void PLATFORM_Initialise (int *argc, unsigned char **argv)
 								stick[0] = stick[1] = 15;
 								menu_consol = 7;
 								keyboard_consol = 7;
-								return;
+								return TRUE;
 							}
 						}
 					}
@@ -1632,7 +1632,7 @@ void PLATFORM_Initialise (int *argc, unsigned char **argv)
 			}
 		}
 	}
-	PLATFORM_Exit(0);
+	return FALSE;
 }
 
 /**************************************************************************
