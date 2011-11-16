@@ -35,9 +35,10 @@ _timer_A:
 	sf	semafor
 konec:	rte
 
-	section	bss
+	.bss
 zaloha_registru:
 	ds.l	15
 zaloha_SR:
 	ds.w	1
-semafor:	ds.b	1
+semafor:
+	ds.b	1

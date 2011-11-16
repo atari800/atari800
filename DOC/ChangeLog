@@ -1,3 +1,9 @@
+2011-11-16  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari_falcon.c, sound_falcon.c, falcon/sound_dma.S: Fix Falcon compilation
+  errors with MiNTLib 0.59.1 and GCC 4.6.2 (still works with GCC 2.95.3 as
+  tested under SpareMiNT).
+
+
 2011-11-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * af80.[ch], atari.c, cartridge.[ch], devices.[ch], ide.[ch], input.c,
   pbi_bb.[ch], pbi_mio.[ch], pbi_proto80.[ch], pbi_xld.[ch], pbi.[ch],

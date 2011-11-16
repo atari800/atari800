@@ -23,11 +23,11 @@
  */
 
 #include "config.h"
-#include <osbind.h>
+#include <mint/osbind.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>		/* for free */
-#include <falcon.h>	/* for VsetRGB */
+#include <mint/falcon.h>	/* for VsetRGB */
 #include "falcon/xcb.h"		/* for NOVA screensaver */
 
 #include "atari.h"
@@ -239,7 +239,7 @@ void SetupEmulatedEnvironment(void)
 {
 	if (reprogram_VIDEL) {
 		/* set new video resolution by direct VIDEL programming */
-		(void)Vsetscreen(new_videoram, new_videoram, -1, -1);
+		(void)VsetScreen(new_videoram, new_videoram, -1, -1);
 		p_str_p = (ULONG *)mode336x240_videl_settings;
 		Supexec(load_r);
 		new_videl_mode_valid = 1;
@@ -267,7 +267,7 @@ void ShutdownEmulatedEnvironment(void)
 		p_str_p = (ULONG *) original_videl_settings;
 		Supexec(load_r);
 		new_videl_mode_valid = 0;
-		(void)Vsetscreen(Original_Log_base, Original_Phys_base, -1, -1);
+		(void)VsetScreen(Original_Log_base, Original_Phys_base, -1, -1);
 	}
 
 	restore_original_colors();
@@ -705,6 +705,7 @@ int PLATFORM_Keyboard(void)
 #define SCANCODE_D			0x20
 #define SCANCODE_L			0x26
 #define SCANCODE_C			0x2e
+#define SCANCODE_T			0x14
 
 	UI_alt_function = -1;		/* no alt function */
 	if (key_buf[0x38]) {		/* left Alt key is pressed */

@@ -25,8 +25,9 @@
 #include "config.h"
 
 #ifdef SOUND
+#include <stdlib.h>
 #include <stdio.h>
-#include <osbind.h>
+#include <mint/osbind.h>
 #include "atari.h"
 #include "pokeysnd.h"
 #include "util.h"
