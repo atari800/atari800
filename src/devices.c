@@ -277,7 +277,7 @@ static int Devices_ReadDir(char *fullpath, char *filename, int *isdir,
 #ifdef HAVE_STAT
 	if (stat(temppath, &status) == 0) {
 		if (isdir != NULL)
-			*isdir = (status.st_mode & S_IFDIR) ? TRUE : FALSE;
+			*isdir = S_ISDIR(status.st_mode);
 		if (readonly != NULL)
 			*readonly = (status.st_mode & S_IWRITE) ? FALSE : TRUE;
 		if (size != NULL)

@@ -235,9 +235,11 @@ void Sound_Update(void)
 		}
 	}
 
-	int wlen = write(dsp_fd, buffer, len);
-	if (wlen < len) {
-		/* handle problem */
+	{
+		int wlen = write(dsp_fd, buffer, len);
+		if (wlen < len) {
+			/* handle problem */
+		}
 	}
 }
 

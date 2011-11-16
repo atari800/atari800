@@ -249,6 +249,11 @@ case "$a8_target" in
         AC_DEFINE(USE_NCURSES,1,[Target: Ncurses library.])
         A8_NEED_LIB(ncurses)
         OBJS="atari_curses.o"
+        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
+        if [[ "$a8_host" != "beos" ]]; then
+dnl BeOS has a real issue with redundant-decls
+            CFLAGS="$CFLAGS -Wredundant-decls"
+        fi
 	WANT_EVENT_RECORDING=no
         ;;
     pdcurses)

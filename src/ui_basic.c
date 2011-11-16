@@ -22,6 +22,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#define _POSIX_C_SOURCE 200112L /* for snprintf */
+
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
@@ -791,7 +793,7 @@ static int BasicUIReadDir(char *filename, int *isdir)
 	strcpy(filename, entry->d_name);
 	Util_catpath(fullfilename, dir_path, entry->d_name);
 	stat(fullfilename, &st);
-	*isdir = (st.st_mode & S_IFDIR) ? TRUE : FALSE;
+	*isdir = S_ISDIR(st.st_mode);
 	return TRUE;
 }
 

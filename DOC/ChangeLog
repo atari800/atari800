@@ -14,6 +14,10 @@
 * antic.c, atari_curses.c, atari.c, platform.h, ui_basic.c, ui.c: Cleanup:
   gather all declarations of curses_* functions together in platform.h.
 
+* atari.c, configure.ac, devices.c, log.c, monitor.c, screen.c, sio.c,
+  sound_oss.c, ui_basic.c, ui.c: Cleanup to make the ncurses target build with
+  more restrictive CFLAGS (same as the sdl target).
+
 
 2011-11-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * af80.[ch], atari.c, cartridge.[ch], devices.[ch], ide.[ch], input.c,
