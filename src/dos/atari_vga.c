@@ -685,7 +685,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 #ifdef SOUND
         /* initialise sound routines */
-        Sound_Initialise(argc, argv);
+        if (!Sound_Initialise(argc, argv))
+        	return FALSE;
 #endif
 
         if (help_only)

@@ -27,8 +27,9 @@
 
 static int sixteenbit = 0;
 
-void Sound_Initialise(int *argc, char *argv[])
+int Sound_Initialise(int *argc, char *argv[])
 {
+	return 1;
 }
 
 void Android_SoundInit(int rate, int bit16, int hq)

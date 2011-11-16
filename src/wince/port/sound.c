@@ -151,31 +151,44 @@ static int initsound_wav(void)
   return 0;
 }
 
-void Sound_Initialise(int *argc, char *argv[])
+int Sound_Initialise(int *argc, char *argv[])
 {
   int i, j;
+  int help_only = FALSE;
   int usesound = TRUE;
 
   if (issound != SOUND_NONE)
-    return;
+    return TRUE;
 
   for (i = j = 1; i < *argc; i++)
     {
+      int i_a = (i + 1 < *argc); /* is argument available? */
+      int a_m = FALSE; /* error, argument missing! */
+
       if (strcmp(argv[i], "-sound") == 0)
 	usesound = TRUE;
       else if (strcmp(argv[i], "-nosound") == 0)
 	usesound = FALSE;
       else if (strcmp(argv[i], "-dsprate") == 0)
-	sscanf(argv[++i], "%d", &dsprate);
+      {
+	if (i_a)
+	  sscanf(argv[++i], "%d", &dsprate);
+	else a_m = TRUE;
+      }
       else if (strcmp(argv[i], "-snddelay") == 0)
       {
-	sscanf(argv[++i], "%d", &snddelay);
-        snddelaywav = snddelay;
+	if (i_a)
+	{
+	  sscanf(argv[++i], "%d", &snddelay);
+	  snddelaywav = snddelay;
+	}
+	else a_m = TRUE;
       }
       else
       {
 	if (strcmp(argv[i], "-help") == 0)
 	{
+	  help_only = TRUE;
 	  Log_print("\t-sound			enable sound\n"
 		 "\t-nosound			disable sound\n"
 		 "\t-dsprate <rate>		set dsp rate\n"
@@ -184,14 +197,22 @@ void Sound_Initialise(int *argc, char *argv[])
 	}
 	argv[j++] = argv[i];
       }
+
+      if (a_m) {
+	Log_print("Missing argument for '%s'", argv[i]);
+	usesound = FALSE;
+	return FALSE;
+      }
     }
   *argc = j;
 
-  if (!usesound)
-    return;
+  if (help_only || !usesound) {
+    usesound = FALSE;
+    return TRUE;
+  }
 
   initsound_wav();
-  return;
+  return TRUE;
 }
 
 void Sound_Exit(void)

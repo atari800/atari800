@@ -307,7 +307,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	timer_initialize();
 #endif
 #ifdef SOUND
-	Sound_Initialise(argc, argv);
+	if (!Sound_Initialise(argc, argv))
+		return FALSE;
 #endif
 
 	return TRUE;
@@ -943,7 +944,7 @@ int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
 
 #ifdef SOUND
 
-void Sound_Initialise(int *argc, char *argv[])
+int Sound_Initialise(int *argc, char *argv[])
 {
 	if (audsrv_init() != 0)
 		Log_print("failed to initialize audsrv: %s", audsrv_get_error_string());
@@ -956,6 +957,7 @@ void Sound_Initialise(int *argc, char *argv[])
 		audsrv_set_volume(MAX_VOLUME);
 		POKEYSND_Init(POKEYSND_FREQ_17_EXACT, 44100, 1, 0);
 	}
+	return TRUE;
 }
 
 void Sound_Exit(void)

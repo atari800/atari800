@@ -92,7 +92,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	nodelay(stdscr, 1);			/* Don't block for keypress */
 
 #ifdef SOUND
-	Sound_Initialise(argc, argv);
+	if (!Sound_Initialise(argc, argv))
+		return FALSE;
 #endif
 
 	return TRUE;

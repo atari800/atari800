@@ -1476,7 +1476,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 #ifdef SOUND
-	Sound_Initialise(argc, argv);
+	if (!Sound_Initialise(argc, argv))
+		return FALSE;
 #endif
 
 	if (help_only)

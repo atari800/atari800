@@ -3,6 +3,14 @@
   errors with MiNTLib 0.59.1 and GCC 4.6.2 (still works with GCC 2.95.3 as
   tested under SpareMiNT).
 
+* atari_basic.c, atari_curses.c, atari_falcon.c, atari_ps2.c, atari_x11.c,
+  sound_falcon.c, sound_oss.c, sound.h, android/jni/sound.c, dos/atari_vga.c,
+  dos/sound_dos.c, sdl/main.c, sdl/sound.[ch], win32/atari_win32.c,
+  win32/sound.c, wince/port/atari_wince.c, wince/port/sound.c: Make
+  Sound_Initialise fail gracefully instead of segfaulting when an option
+  argument is missing. Do not initialise sound unnecessarily when the "-help"
+  option is given.
+
 
 2011-11-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * af80.[ch], atari.c, cartridge.[ch], devices.[ch], ide.[ch], input.c,
@@ -12,6 +20,7 @@
   Add call to Atari800_ErrExit also when commandline-parsing fails.
   Previously when starting the dosvga target with "atari800 -artif",
   the emulator would exit without uninitialising VGA, leaving mess on screen.
+
 * amiga/amiga.c, dc/atari_dc.c: Fix Platform_Initialise() not returning
   a value.
 
@@ -22,7 +31,7 @@
 
 * configure.ac: Clean-up of SDL detection - restore the "Don't redefine main"
   snippet that got mistakenly deleted in revisions 1.108-1.109.
-  
+
 * configure.ac, Makefile.in, DOC/README.android: Cleanup in detection of
   libreadline and OpenGL:
   Renamed options --enable-monitor-readline and --enable-opengl to

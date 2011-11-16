@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <mint/osbind.h>
 #include "atari.h"
+#include "log.h"
 #include "pokeysnd.h"
 #include "util.h"
 
@@ -121,31 +122,57 @@ void MFP_IRQ_off(void)
 	DMActrlptr[0] = 0;			/* stop playing */
 }
 
-void Sound_Initialise(int *argc, char *argv[])
+int Sound_Initialise(int *argc, char *argv[])
 {
 	int i, j;
+	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);		/* is argument available? */
+		int a_m = FALSE;			/* error, argument missing! */
+
 		if (strcmp(argv[i], "-sound") == 0)
 			sound_enabled = TRUE;
 		else if (strcmp(argv[i], "-nosound") == 0)
 			sound_enabled = FALSE;
 		else if (strcmp(argv[i], "-dsprate") == 0) {
-			dsprate = Util_sscandec(argv[++i]);
-			if (dsprate == RATE50KHZ)
-				sndbufsize = 4*SNDBUFSIZE;
-			else if (dsprate == RATE25KHZ)
-				sndbufsize = 2*SNDBUFSIZE;
-			else {
-				dsprate = RATE12KHZ;
-				sndbufsize = SNDBUFSIZE;
+			if (i_a) {
+				dsprate = Util_sscandec(argv[++i]);
+				if (dsprate == RATE50KHZ)
+					sndbufsize = 4*SNDBUFSIZE;
+				else if (dsprate == RATE25KHZ)
+					sndbufsize = 2*SNDBUFSIZE;
+				else {
+					dsprate = RATE12KHZ;
+					sndbufsize = SNDBUFSIZE;
+				}
 			}
+			else a_m = TRUE;
 		}
-		else
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
+				Log_print("\t-sound           Enable sound\n"
+				       "\t-nosound         Disable sound\n"
+				       "\t-dsprate <rate>  Set sample rate in Hz"
+				      );
+			}
 			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			sound_enabled = FALSE;
+			return FALSE;
+		}
 	}
 
 	*argc = j;
+
+	if (help_only) {
+		sound_enabled = FALSE;
+		return TRUE;
+	}
 
 	/* test of Sound hardware availability */
 	if (sound_enabled) {
@@ -161,14 +188,14 @@ void Sound_Initialise(int *argc, char *argv[])
 
 	if (sound_enabled) {
 		dsp_buffer1 = (char *) Mxalloc(2 * sndbufsize, 0);
-		dsp_buffer2 = dsp_endbuf1 = dsp_buffer1 + sndbufsize;
-		dsp_endbuf2 = dsp_buffer2 + sndbufsize;
-		memset(dsp_buffer1, 0, sndbufsize);
-		memset(dsp_buffer2, 127, sndbufsize);
 		if (!dsp_buffer1) {
 			printf("can't allocate sound buffer\n");
 			exit(1);
 		}
+		dsp_buffer2 = dsp_endbuf1 = dsp_buffer1 + sndbufsize;
+		dsp_endbuf2 = dsp_buffer2 + sndbufsize;
+		memset(dsp_buffer1, 0, sndbufsize);
+		memset(dsp_buffer2, 127, sndbufsize);
 
 #ifdef STEREO_SOUND
 #  error "Unsupported Stereo Sound"
@@ -177,6 +204,7 @@ void Sound_Initialise(int *argc, char *argv[])
 #endif
 		Supexec(MFP_IRQ_on);
 	}
+	return TRUE;
 }
 
 void Sound_Exit(void)

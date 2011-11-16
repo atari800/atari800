@@ -47,32 +47,53 @@ static int stereo = FALSE;
 #endif
 static int bps = 8;
 
-void Sound_Initialise(int *argc, char *argv[])
+int Sound_Initialise(int *argc, char *argv[])
 {
 	int i, j;
+	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc); /* is argument available? */
+		int a_m = FALSE; /* error, argument missing! */
+
 		if (strcmp(argv[i], "-sound") == 0)
 			sound_enabled = TRUE;
 		else if (strcmp(argv[i], "-nosound") == 0)
 			sound_enabled = FALSE;
-		else if (strcmp(argv[i], "-dsprate") == 0)
-			playback_freq = Util_sscandec(argv[++i]);
-		else if (strcmp(argv[i], "-bufsize") == 0)
-			buffersize = Util_sscandec(argv[++i]);
+		else if (strcmp(argv[i], "-dsprate") == 0) {
+			if (i_a)
+				playback_freq = Util_sscandec(argv[++i]);
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-bufsize") == 0) {
+			if (i_a)
+				buffersize = Util_sscandec(argv[++i]);
+			else a_m = TRUE;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				sound_enabled = FALSE;
+				help_only = TRUE;
 				Log_print("\t-sound           Enable sound");
 				Log_print("\t-nosound         Disable sound");
 				Log_print("\t-dsprate <freq>  Set mixing frequency (Hz)");
-				Log_print("\t-bufsize         Set sound buffer size");
+				Log_print("\t-bufsize <size>  Set sound buffer size");
 			}
 			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			sound_enabled = FALSE;
+			return FALSE;
 		}
 	}
 
 	*argc = j;
+
+	if (help_only) {
+		sound_enabled = FALSE;
+		return TRUE;
+	}
 
 	if (sound_enabled) {
 		if (sb_init(&playback_freq, &bps, &buffersize, &stereo) < 0) {
@@ -84,6 +105,8 @@ void Sound_Initialise(int *argc, char *argv[])
 			sb_startoutput((sbmix_t) POKEYSND_Process);
 		}
 	}
+
+	return TRUE;
 }
 
 void Sound_Pause(void)

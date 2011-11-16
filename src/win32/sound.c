@@ -359,16 +359,19 @@ static int initsound_wav(void)
   return 0;
 }
 
-void Sound_Initialise(int *argc, char *argv[])
+int Sound_Initialise(int *argc, char *argv[])
 {
   int i, j;
   int help = FALSE;
 
   if (issound != SOUND_NONE)
-    return;
+    return TRUE;
 
   for (i = j = 1; i < *argc; i++)
     {
+      int i_a = (i + 1 < *argc); /* is argument available? */
+      int a_m = FALSE; /* error, argument missing! */
+
       if (strcmp(argv[i], "-sound") == 0)
 	usesound = TRUE;
       else if (strcmp(argv[i], "-nosound") == 0)
@@ -376,21 +379,32 @@ void Sound_Initialise(int *argc, char *argv[])
       else if (strcmp(argv[i], "-audio16") == 0)
 	bit16 = TRUE;
       else if (strcmp(argv[i], "-dsprate") == 0)
-	sscanf(argv[++i], "%d", &dsprate);
+      {
+	if (i_a)
+	  sscanf(argv[++i], "%d", &dsprate);
+	else a_m = TRUE;
+      }
       else if (strcmp(argv[i], "-snddelay") == 0)
       {
-	sscanf(argv[++i], "%d", &snddelay);
-        snddelaywav = snddelay;
+	if (i_a)
+	{
+	  sscanf(argv[++i], "%d", &snddelay);
+	  snddelaywav = snddelay;
+	}
+	else a_m = TRUE;
       }
       else if (strcmp(argv[i], "-quality") == 0) {
-	int quality;
-	sscanf(argv[++i], "%d", &quality);
-	if (quality > 1) {
-	  POKEYSND_SetMzQuality(quality - 1);
-	  POKEYSND_enable_new_pokey = 1;
+	if (i_a) {
+	  int quality;
+	  sscanf(argv[++i], "%d", &quality);
+	  if (quality > 1) {
+	    POKEYSND_SetMzQuality(quality - 1);
+	    POKEYSND_enable_new_pokey = 1;
+	  }
+	  else
+	    POKEYSND_enable_new_pokey = 0;
 	}
-	else
-	  POKEYSND_enable_new_pokey = 0;
+	else a_m = TRUE;
       }
 #ifdef DIRECTX
       else if (strcmp(argv[i], "-wavonly") == 0)
@@ -414,25 +428,30 @@ void Sound_Initialise(int *argc, char *argv[])
 	}
 	argv[j++] = argv[i];
       }
+
+      if (a_m) {
+	Log_print("Missing argument for '%s'", argv[i]);
+	usesound = FALSE;
+	return FALSE;
+      }
     }
   *argc = j;
 
-  if (help)
-    return;
-
-  if (!usesound)
-    return;
+  if (help || !usesound) {
+    usesound = FALSE;
+    return TRUE;
+  }
 
 #ifdef DIRECTX
   if (!wavonly)
   {
     i = initsound_dx();
     if (!i)
-      return;
+      return TRUE;
   }
 #endif
   initsound_wav();
-  return;
+  return TRUE;
 }
 
 void Sound_Reinit(void)

@@ -442,7 +442,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	CPU_Initialise();
 
 #ifdef SOUND
-	Sound_Initialise(argc, argv);
+	if (!Sound_Initialise(argc, argv))
+		return FALSE;
 #endif
 
 	SetupEmulatedEnvironment();

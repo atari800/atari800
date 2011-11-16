@@ -43,7 +43,6 @@
 #include "platform.h"
 #ifdef SOUND
 #include "../sound.h"
-#include "sdl/sound.h"
 #endif
 #include "videomode.h"
 #include "sdl/video.h"
@@ -94,7 +93,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 	if (!SDL_VIDEO_Initialise(argc, argv)
 #ifdef SOUND
-	    || !SDL_SOUND_Initialise(argc, argv)
+	    || !Sound_Initialise(argc, argv)
 #endif
 	    || !SDL_INPUT_Initialise(argc, argv))
 		return FALSE;

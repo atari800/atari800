@@ -23,7 +23,6 @@
 */
 
 #include <SDL.h>
-#include "sdl/sound.h"
 #include "../sound.h"
 #include "atari.h"
 #include "config.h"
@@ -284,7 +283,7 @@ void Sound_Reinit(void)
 	SoundSetup();
 }
 
-int SDL_SOUND_Initialise(int *argc, char *argv[])
+int Sound_Initialise(int *argc, char *argv[])
 {
 	int i, j;
 	int help_only = FALSE;
@@ -307,11 +306,11 @@ int SDL_SOUND_Initialise(int *argc, char *argv[])
 			sound_flags &= ~POKEYSND_BIT16;
 			sound_bits = 8;
 		}
-		else if (strcmp(argv[i], "-dsprate") == 0)
-			if (i_a) {
+		else if (strcmp(argv[i], "-dsprate") == 0) {
+			if (i_a)
 				dsprate = Util_sscandec(argv[++i]);
-			}
 			else a_m = TRUE;
+		}
 #ifdef SYNCHRONIZED_SOUND
 		else if (strcmp(argv[i], "-snddelay") == 0)
 			if (i_a) {
@@ -327,21 +326,25 @@ int SDL_SOUND_Initialise(int *argc, char *argv[])
 				Log_print("\t-audio16         Use 16-bit sound output");
 				Log_print("\t-audio8          Use 8 bit sound output");
 				Log_print("\t-dsprate <rate>  Set DSP rate in Hz");
+#ifdef SYNCHRONIZED_SOUND
 				Log_print("\t-snddelay <ms>   Set audio latency in ms");
-				sound_enabled = FALSE;
+#endif
 			}
 			argv[j++] = argv[i];
 		}
 
 		if (a_m) {
 			Log_print("Missing argument for '%s'", argv[i]);
+			sound_enabled = FALSE;
 			return FALSE;
 		}
 	}
 	*argc = j;
 
-	if (help_only)
+	if (help_only) {
+		sound_enabled = FALSE;
 		return TRUE;
+	}
 
 	SoundSetup();
 	SDL_PauseAudio(0);

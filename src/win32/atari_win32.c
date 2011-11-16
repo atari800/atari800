@@ -1381,8 +1381,10 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		return FALSE;
 
 #ifdef SOUND
-	if (usesnd)
-		Sound_Initialise(argc, argv);
+	if (usesnd) {
+		if (!Sound_Initialise(argc, argv))
+			return FALSE;
+	}
 #endif
 
 	if (initinput()) {
