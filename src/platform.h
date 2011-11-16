@@ -45,6 +45,16 @@ void PLATFORM_PaletteUpdate(void);
 void PLATFORM_Sleep(double s);
 #endif
 
+#ifdef USE_CURSES
+void curses_clear_screen(void);
+
+void curses_clear_rectangle(int x1, int y1, int x2, int y2);
+
+void curses_putch(int x, int y, int ascii, UBYTE fg, UBYTE bg);
+
+void curses_display_line(int anticmode, const UBYTE *screendata);
+#endif
+
 #ifdef SDL
 /* used in UI to show how the keyboard joystick is mapped */
 extern int PLATFORM_kbd_joy_0_enabled;

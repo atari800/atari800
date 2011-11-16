@@ -1062,15 +1062,7 @@ void Atari800_Sync(void)
 		lasttime = curtime;
 }
 
-#ifdef USE_CURSES
-void curses_clear_screen(void);
-#endif
-
 #if defined(BASIC) || defined(VERY_SLOW) || defined(CURSES_BASIC)
-
-#ifdef CURSES_BASIC
-void curses_display_line(int anticmode, const UBYTE *screendata);
-#endif
 
 static int scanlines_to_dl;
 

@@ -3102,10 +3102,6 @@ static int SoundSettings(void)
 
 #if !defined(CURSES_BASIC) && !defined(DREAMCAST)
 
-#ifdef USE_CURSES
-extern void curses_clear_screen(void);
-#endif
-
 static void Screenshot(int interlaced)
 {
 	static char filename[FILENAME_MAX] = "";

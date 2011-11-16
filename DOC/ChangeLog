@@ -11,6 +11,9 @@
   argument is missing. Do not initialise sound unnecessarily when the "-help"
   option is given.
 
+* antic.c, atari_curses.c, atari.c, platform.h, ui_basic.c, ui.c: Cleanup:
+  gather all declarations of curses_* functions together in platform.h.
+
 
 2011-11-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * af80.[ch], atari.c, cartridge.[ch], devices.[ch], ide.[ch], input.c,

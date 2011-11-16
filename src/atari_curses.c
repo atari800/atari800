@@ -37,6 +37,7 @@
 #include "akey.h"
 #include "log.h"
 #include "monitor.h"
+#include "platform.h"
 #include "ui.h" /* UI_alt_function */
 
 #ifdef SOUND

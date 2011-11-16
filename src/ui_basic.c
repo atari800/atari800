@@ -59,12 +59,6 @@
 	#include "ui_basic.h"
 #endif
 
-#ifdef USE_CURSES
-extern void curses_clear_screen(void);
-extern void curses_clear_rectangle(int x1, int y1, int x2, int y2);
-extern void curses_putch(int x, int y, int ascii, UBYTE fg, UBYTE bg);
-#endif
-
 static int initialised = FALSE;
 static UBYTE charset[1024];
 
