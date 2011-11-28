@@ -170,8 +170,10 @@ int CASSETTE_Initialise(int *argc, char *argv[])
 	if (CASSETTE_status != CASSETTE_STATUS_NONE && CASSETTE_filename[0] != '\0') {
 		/* Tape is mounted unprotected by default - overrun it if needed. */
 		protect = protect || CASSETTE_write_protect;
-		if (!CASSETTE_Insert(CASSETTE_filename))
+		if (!CASSETTE_Insert(CASSETTE_filename)) {
+			CASSETTE_status = CASSETTE_STATUS_NONE;
 			Log_print("Cannot open cassette image %s", CASSETTE_filename);
+		}
 		else if (protect)
 			CASSETTE_ToggleWriteProtect();
 	}
@@ -363,11 +365,14 @@ static int CassetteRead(int num_ticks)
 			/* If POKEY is in reset state, no serial I/O occurs. */
 			pending_serin = (POKEY_SKCTL & 0x03) != 0;
 
+			Log_print("!1");
 			if (!IMG_TAPE_Read(cassette_file, &length, &passing_gap, &pending_serin_byte)) {
+				Log_print("!2a");
 				eof_of_tape = 1;
 				UpdateFlags();
 				return loaded;
 			}
+			Log_print("!2b");
 
 			event_time_left += length;
 		}
