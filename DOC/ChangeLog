@@ -1,3 +1,7 @@
+2011-11-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cassette.c: Remove excessive logging, committed by mistake yesterday.
+
+
 2011-11-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cassette.c: Fix segfault when the -tape parameter points to a nonexistent
   file.

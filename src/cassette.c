@@ -365,14 +365,11 @@ static int CassetteRead(int num_ticks)
 			/* If POKEY is in reset state, no serial I/O occurs. */
 			pending_serin = (POKEY_SKCTL & 0x03) != 0;
 
-			Log_print("!1");
 			if (!IMG_TAPE_Read(cassette_file, &length, &passing_gap, &pending_serin_byte)) {
-				Log_print("!2a");
 				eof_of_tape = 1;
 				UpdateFlags();
 				return loaded;
 			}
-			Log_print("!2b");
 
 			event_time_left += length;
 		}
