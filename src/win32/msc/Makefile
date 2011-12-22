@@ -36,6 +36,7 @@ OBJS = \
 	devices.obj \
 	esc.obj \
 	gtia.obj \
+	img_tape.o \
 	input.obj \
 	log.obj \
 	memory.obj \

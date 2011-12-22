@@ -1,3 +1,9 @@
+2011-12-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* android/jni/Android.mk.in, dc/Makefile.dc, win32/msc/Makefile: Add missing
+  object img_tape.o to platform-specific Makefiles to make them work again
+  (see Makefile.in revision 1.52).
+
+
 2011-11-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cassette.c: Remove excessive logging, committed by mistake yesterday.
 

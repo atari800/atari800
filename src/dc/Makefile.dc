@@ -60,6 +60,7 @@ OBJ =	atari.o \
 	pokeysnd.o \
 	sndsave.o \
 	cassette.o \
+	img_tape.o \
 	util.o \
 	pbi.o \
 	screen.o \
