@@ -176,7 +176,7 @@ static void AllocTexture(void)
 {
 	if (!SDL_VIDEO_GL_pbo && screen_texture == NULL)
 		/* The largest width is in NTSC-filtered full overscan mode - 672 pixels.
-		   The largest height is in XEP-80 mode - 275 pixels. Add 1 pixel at each side
+		   The largest height is in PAL XEP-80 mode - 300 pixels. Add 1 pixel at each side
 		   to nicely render screen borders. The texture is 1024x512, which is more than
 		   enough - although it's rounded to powers of 2 to be more compatible (earlier
 		   versions of OpenGL supported only textures with width/height of powers of 2). */

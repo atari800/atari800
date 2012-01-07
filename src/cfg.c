@@ -33,6 +33,9 @@
 #include "memory.h"
 #include "pbi.h"
 #include "rtime.h"
+#ifdef XEP80_EMULATION
+#include "xep80.h"
+#endif
 #ifdef AF80
 #include "af80.h"
 #endif
@@ -317,6 +320,10 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			}
 			else if (RTIME_ReadConfig(string, ptr)) {
 			}
+#ifdef XEP80_EMULATION
+			else if (XEP80_ReadConfig(string, ptr)) {
+			}
+#endif
 #ifdef AF80
 			else if (AF80_ReadConfig(string,ptr)) {
 			}
@@ -447,6 +454,9 @@ int CFG_WriteConfig(void)
 	CARTRIDGE_WriteConfig(fp);
 	CASSETTE_WriteConfig(fp);
 	RTIME_WriteConfig(fp);
+#ifdef XEP80_EMULATION
+	XEP80_WriteConfig(fp);
+#endif
 #ifdef AF80
 	AF80_WriteConfig(fp);
 #endif

@@ -1770,10 +1770,11 @@ static void VideoModeSettings(void)
 				if (option2 < VIDEOMODE_HORIZONTAL_CUSTOM)
 					VIDEOMODE_SetHorizontalArea(option2);
 				else {
-					int offset = 160;
+					int offset = VIDEOMODE_MIN_HORIZONTAL_AREA;
 					int value = UI_driver->fSelectSlider("Adjust horizontal area",
 					                                     VIDEOMODE_custom_horizontal_area - offset,
-					                                     384 - 160, &IntSliderLabel, &offset);
+					                                     VIDEOMODE_MAX_HORIZONTAL_AREA - VIDEOMODE_MIN_HORIZONTAL_AREA,
+					                                     &IntSliderLabel, &offset);
 					if (value != -1)
 						VIDEOMODE_SetCustomHorizontalArea(value + offset);
 				}
@@ -1785,10 +1786,11 @@ static void VideoModeSettings(void)
 				if (option2 < VIDEOMODE_VERTICAL_CUSTOM)
 					VIDEOMODE_SetVerticalArea(option2);
 				else {
-					int offset = 120;
+					int offset = VIDEOMODE_MIN_VERTICAL_AREA;
 					int value = UI_driver->fSelectSlider("Adjust vertical area",
 					                                     VIDEOMODE_custom_vertical_area - offset,
-					                                     275 - 120, &IntSliderLabel, &offset);
+					                                     VIDEOMODE_MAX_VERTICAL_AREA - VIDEOMODE_MIN_VERTICAL_AREA,
+					                                     &IntSliderLabel, &offset);
 					if (value != -1)
 						VIDEOMODE_SetCustomVerticalArea(value + offset);
 				}
@@ -1798,7 +1800,7 @@ static void VideoModeSettings(void)
 			switch (seltype) {
 			case UI_USER_SELECT:
 				{
-					int range = 384 - VIDEOMODE_custom_horizontal_area;
+					int range = VIDEOMODE_MAX_HORIZONTAL_AREA - VIDEOMODE_custom_horizontal_area;
 					int offset = - range / 2;
 					int value = UI_driver->fSelectSlider("Adjust horizontal shift",
 					                                     VIDEOMODE_horizontal_offset - offset,
@@ -1816,7 +1818,7 @@ static void VideoModeSettings(void)
 			switch (seltype) {
 			case UI_USER_SELECT:
 				{
-					int range = 275 - VIDEOMODE_custom_vertical_area;
+					int range = VIDEOMODE_MAX_VERTICAL_AREA - VIDEOMODE_custom_vertical_area;
 					int offset = - range / 2;
 					int value = UI_driver->fSelectSlider("Adjust vertical shift",
 					                                     VIDEOMODE_vertical_offset - offset,

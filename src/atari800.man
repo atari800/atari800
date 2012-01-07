@@ -658,11 +658,11 @@ Shows area visible on a typical TV (224 or 240 pixels, depending on current TV
 system).
 .TP
 .B full
-Shows full overscan area of 275 pixels.
+Shows full overscan area, which can be up to 300 pixels in case of the XEP80.
 .TP
 .I number
 An exact number of visible scanlines can be set by providing a \fInumber\fR
-between 100 and 275.
+between 100 and 300.
 .PD
 .RE
 .PP

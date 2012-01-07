@@ -32,6 +32,9 @@
 #include "platform.h"
 #include "util.h"
 #include "log.h"
+#if SUPPORTS_CHANGE_VIDEOMODE
+#include <videomode.h>
+#endif /* SUPPORTS_CHANGE_VIDEOMODE */
 
 #define IN_QUEUE_SIZE		10
 
@@ -52,8 +55,8 @@
 #define CMD_1001_MASK    0xF8
 #define CMD_Y_CUR_HIGH   0x90
 #define CMD_Y_CUR_STATUS 0x98
-#define CMD_GRAPH_50HZ   0x99
-#define CMD_GRAPH_60HZ   0x9A
+#define CMD_GRAPH_60HZ   0x99
+#define CMD_GRAPH_50HZ   0x9A
 #define CMD_RIGHT_MAR_L  0xA0
 #define CMD_RIGHT_MAR_H  0xB0
 #define CMD_11           0xC0
@@ -90,7 +93,7 @@
 
 /* These center the graphics screen inside of the XEP80 screen */
 #define XEP80_GRAPH_X_OFFSET ((XEP80_SCRN_WIDTH - XEP80_GRAPH_WIDTH) / 2)
-#define XEP80_GRAPH_Y_OFFSET ((XEP80_SCRN_HEIGHT - XEP80_GRAPH_HEIGHT) / 2)
+#define XEP80_GRAPH_Y_OFFSET ((XEP80_scrn_height - XEP80_GRAPH_HEIGHT) / 2)
 
 /* Used to determine if a charcter is double width */
 #define IS_DOUBLE(x,y) (((xep80_data[y][x] & 0x80) && font_b_double) || \
@@ -99,6 +102,9 @@
 /* Global variables */
 int XEP80_enabled = FALSE;
 int XEP80_port = 0;
+
+int XEP80_char_height = XEP80_CHAR_HEIGHT_NTSC;
+int XEP80_scrn_height = XEP80_HEIGHT * XEP80_CHAR_HEIGHT_NTSC;
 
 /* Local procedures */
 static void XEP80_InputWord(int word);
@@ -198,10 +204,10 @@ static UBYTE output_mask[2] = {0x01,0x10};
 
 static UBYTE xep80_data[XEP80_HEIGHT][XEP80_WIDTH];
 static UBYTE xep80_graph_data[XEP80_GRAPH_HEIGHT][XEP80_GRAPH_WIDTH/8];
-UBYTE XEP80_screen_1[XEP80_SCRN_WIDTH*XEP80_SCRN_HEIGHT];
-UBYTE XEP80_screen_2[XEP80_SCRN_WIDTH*XEP80_SCRN_HEIGHT];
+UBYTE XEP80_screen_1[XEP80_SCRN_WIDTH*XEP80_MAX_SCRN_HEIGHT];
+UBYTE XEP80_screen_2[XEP80_SCRN_WIDTH*XEP80_MAX_SCRN_HEIGHT];
 
-UBYTE (*font)[XEP80_FONTS_CHAR_COUNT][XEP80_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
+UBYTE (*font)[XEP80_FONTS_CHAR_COUNT][XEP80_MAX_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
 
 static int tab_stops[256] = 
 {0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,
@@ -221,9 +227,36 @@ static int tab_stops[256] =
 static int eol_at_margin[XEP80_HEIGHT] = 
 {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
+/* Path to the XEP80's charset ROM image, marked as U12 on Jerzy Sobola's
+   schematic: http://www.dereatari.republika.pl/schematy.htm
+   The ROM image is also available there. */
+static char charset_filename[FILENAME_MAX] = "";
+
+int XEP80_ReadConfig(char *string, char *ptr)
+{
+	if (strcmp(string, "XEP80_CHARSET") == 0)
+		Util_strlcpy(charset_filename, ptr, sizeof(charset_filename));
+	else return FALSE; /* no match */
+	return TRUE; /* matched something */
+}
+
+void XEP80_WriteConfig(FILE *fp)
+{
+	fprintf(fp, "XEP80_CHARSET=%s\n", charset_filename);
+}
+
+int XEP80_SetEnabled(int value)
+{
+	if (value && !XEP80_FONTS_inited && !XEP80_FONTS_InitFonts(charset_filename))
+		return FALSE;
+	XEP80_enabled = value;
+	return TRUE;
+}
+
 int XEP80_Initialise(int *argc, char *argv[])
 {
 	int i, j;
+	int help_only = FALSE;
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
@@ -242,7 +275,8 @@ int XEP80_Initialise(int *argc, char *argv[])
 			else a_m = TRUE;
 		}
 		else {
-		 	if (strcmp(argv[i], "-help") == 0) {
+			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
 				Log_print("\t-xep80           Emulate the XEP80");
 				Log_print("\t-xep80port <n>   Use XEP80 on joystick port <n>");
 			}
@@ -255,6 +289,15 @@ int XEP80_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
+
+	if (help_only)
+		return TRUE;
+
+	if (XEP80_enabled && !XEP80_SetEnabled(XEP80_enabled)) {
+		XEP80_enabled = FALSE;
+		Log_print("Couldn't load XEP80 charset image: %s", charset_filename);
+		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -716,10 +759,20 @@ static void XEP80_SetYCur(UBYTE cursor)
 	XEP80_SendCursorStatus();
 }
 
+static void UpdateTVSystem(void)
+{
+	XEP80_char_height = pal_mode ? XEP80_CHAR_HEIGHT_PAL : XEP80_CHAR_HEIGHT_NTSC;
+	XEP80_scrn_height = XEP80_HEIGHT * XEP80_char_height;
+#if SUPPORTS_CHANGE_VIDEOMODE
+	VIDEOMODE_UpdateXEP80();
+#endif
+}
+
 static void XEP80_SetScreenMode(int graphics, int pal)
 {
 	graphics_mode = graphics;
 	pal_mode = pal;
+	UpdateTVSystem();
 	if (graphics_mode) {
         xcur = 0;
         ycur = 0;
@@ -819,6 +872,7 @@ static void XEP80_MasterReset(void)
 	burst_mode = FALSE;
 	graphics_mode = FALSE;
 	pal_mode = FALSE;
+	UpdateTVSystem();
 	escape_mode = FALSE;
 
     font_a_index = 0;
@@ -830,8 +884,6 @@ static void XEP80_MasterReset(void)
     font_b_blank = FALSE;
     font_b_blink = FALSE;
 	memset(xep80_data,XEP80_ATARI_EOL,XEP80_WIDTH*XEP80_HEIGHT);
-    if (!XEP80_FONTS_inited)
-        XEP80_FONTS_InitFonts();
 	for (i=0;i<XEP80_HEIGHT;i++)
 		eol_at_margin[i] = FALSE;
     XEP80_BlitScreen();
@@ -1597,9 +1649,9 @@ static void XEP80_BlitChar(int x, int y, int cur)
     if (font_blank) {
 		UBYTE color;
 		
-        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
+        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
                              screen_col * XEP80_CHAR_WIDTH];
-        for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+        for (font_row=0;font_row < XEP80_char_height; font_row++) {
             if (cur || (font_index & XEP80_FONTS_REV_FONT_BIT)) {
 				color = on;
             }
@@ -1618,9 +1670,9 @@ static void XEP80_BlitChar(int x, int y, int cur)
 				to += XEP80_SCRN_WIDTH - 1*XEP80_CHAR_WIDTH;
         }
 
-        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
+        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
                              screen_col * XEP80_CHAR_WIDTH];
-        for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+        for (font_row=0;font_row < XEP80_char_height; font_row++) {
             if ((cur && !cursor_blink) || (font_index & XEP80_FONTS_REV_FONT_BIT)) {
 				color = on;
             }
@@ -1647,9 +1699,9 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		else
 			width = XEP80_CHAR_WIDTH;
 		
-        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
+        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
                              screen_col * XEP80_CHAR_WIDTH];
-        for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+        for (font_row=0;font_row < XEP80_char_height; font_row++) {
             from = XEP80_FONTS_atari_fonts[char_set][font_index][ch][font_row];
 
             for (font_col=0; font_col < width; font_col++) {
@@ -1659,9 +1711,9 @@ static void XEP80_BlitChar(int x, int y, int cur)
             to += XEP80_SCRN_WIDTH - 2*XEP80_CHAR_WIDTH;
         }
 
-        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
+        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
                              screen_col * XEP80_CHAR_WIDTH];
-        for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+        for (font_row=0;font_row < XEP80_char_height; font_row++) {
 			if (blink_rev)
 				from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
 			else
@@ -1722,9 +1774,9 @@ static void XEP80_BlitChar(int x, int y, int cur)
 			ch = xep80_data[y][x-1];
 		}
 		
-        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
+        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
                              screen_col * XEP80_CHAR_WIDTH];
-		for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+		for (font_row=0;font_row < XEP80_char_height; font_row++) {
 			from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row] + start_col;
 			if (first_half)
 				*to++ = *from++;
@@ -1736,9 +1788,9 @@ static void XEP80_BlitChar(int x, int y, int cur)
 				*to++ = *from;
 			to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
 		}
-        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
+        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
                              screen_col * XEP80_CHAR_WIDTH];
-		for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+		for (font_row=0;font_row < XEP80_char_height; font_row++) {
 			if (!cursor_blink) {
 				from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row] + start_col;
 			}
@@ -1757,10 +1809,10 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		}
 	}
     else {
-        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
+        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
                              screen_col * XEP80_CHAR_WIDTH];
 		if (cur & cursor_overwrite) {
-			for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+			for (font_row=0;font_row < XEP80_char_height; font_row++) {
 				for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
 					*to++ = on;
 				}
@@ -1768,7 +1820,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
 			}
 		}
 		else {
-			for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+			for (font_row=0;font_row < XEP80_char_height; font_row++) {
 				if (cur) {
 					from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
 				}
@@ -1783,11 +1835,11 @@ static void XEP80_BlitChar(int x, int y, int cur)
 			}
 		}
 
-        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_CHAR_HEIGHT * y + 
+        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
                              screen_col * XEP80_CHAR_WIDTH];
 		if (cur & cursor_overwrite) {
 			if (cursor_blink) {
-				for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+				for (font_row=0;font_row < XEP80_char_height; font_row++) {
 					for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
 						*to++ = off;
 					}
@@ -1795,7 +1847,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
 				}
 			}
 			else {
-				for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+				for (font_row=0;font_row < XEP80_char_height; font_row++) {
 					for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
 						*to++ = on;
 					}
@@ -1804,7 +1856,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
 			}
 		}
 		else {
-			for (font_row=0;font_row < XEP80_CHAR_HEIGHT; font_row++) {
+			for (font_row=0;font_row < XEP80_char_height; font_row++) {
 				if (cur && !cursor_blink) {
 					from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
 				}
@@ -1873,7 +1925,7 @@ static void XEP80_BlitGraphChar(int x, int y)
         on = XEP80_FONTS_oncolor;
         off = XEP80_FONTS_offcolor;
     }
-	
+
     ch = xep80_graph_data[y][x];
 
     to1 = &XEP80_screen_1[XEP80_SCRN_WIDTH * (y + XEP80_GRAPH_Y_OFFSET)
@@ -1904,7 +1956,6 @@ static void XEP80_BlitGraphScreen(void)
 
 void XEP80_ChangeColors(void)
 {
-	XEP80_FONTS_InitFonts();
 	if (graphics_mode)
 		XEP80_BlitGraphScreen();
 	else {
@@ -1974,6 +2025,9 @@ void XEP80_StateRead(void)
 	
 	/* test for end of file */
 	StateSav_ReadINT(&local_xep80_enabled, 1);
+	if (!XEP80_SetEnabled(local_xep80_enabled))
+		XEP80_enabled = FALSE;
+
 	if (local_xep80_enabled) {
 		StateSav_ReadINT(&XEP80_port, 1);
 		StateSav_ReadINT(&local_xep80, 1);
@@ -2017,21 +2071,18 @@ void XEP80_StateRead(void)
 		StateSav_ReadINT(&font_b_blink, 1);
 		StateSav_ReadUBYTE(&xep80_data[0][0], XEP80_HEIGHT * XEP80_WIDTH);
 		StateSav_ReadUBYTE(&xep80_graph_data[0][0], XEP80_GRAPH_HEIGHT*XEP80_GRAPH_WIDTH/8);
-		if (!XEP80_FONTS_inited)
-			XEP80_FONTS_InitFonts();
-		if (graphics_mode)
-			XEP80_BlitGraphScreen();
-		else {
-			XEP80_BlitScreen();
-			XEP80_BlitChar(xcur, ycur, TRUE);
+		UpdateTVSystem();
+		if (XEP80_enabled) {
+			if (graphics_mode)
+				XEP80_BlitGraphScreen();
+			else {
+				XEP80_BlitScreen();
+				XEP80_BlitChar(xcur, ycur, TRUE);
 			}
-		XEP80_enabled = TRUE;
 #if SUPPORTS_CHANGE_VIDEOMODE
-		VIDEOMODE_Set80Column(local_xep80);
+			VIDEOMODE_Set80Column(local_xep80);
 #endif
-	}
-	else {
-		XEP80_enabled = FALSE;
+		}
 	}
 }
 

@@ -1,8 +1,20 @@
 2012-01-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: No need to call SDL_GetKeyState() on each frame - moved the
   call to SDL_INPUT_Initialise().
+
 * xep80.[ch]: Removed variables XEP80_first_row, XEP80_last_row - not used
   anywhere.
+
+* cfg.c, xep80_fonts.[ch], xep80.[ch]: Load XEP80 fonts from a ROM image
+  instead of storing them in the source file (ROM path stored in config).
+  Generate the XEP80 block font algorithmically instead of storing it in the
+  source file.
+
+* ui.c, videomode.[ch], xep80.[ch], atari800.man, DOC/USAGE, sdl/video_gl.c:
+  Support XEP80's ability to switch the TV system by software. After the
+  changes, the maximum height of the screen is 300 lines.
+
+* sdl/video.c: Fix a glitch that appeared during XEP80 initialisation.
 
 
 2012-01-07  Kostas Nakos  <knakos@gmail.com>

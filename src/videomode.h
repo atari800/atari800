@@ -63,6 +63,14 @@ enum {
 	/* Number of "normal" (not including CUSTOM) values in enumerator */
 	VIDEOMODE_HORIZONTAL_SIZE = VIDEOMODE_HORIZONTAL_CUSTOM
 };
+
+enum {
+	VIDEOMODE_MIN_HORIZONTAL_AREA = 160,
+	VIDEOMODE_MIN_VERTICAL_AREA = 100,
+	VIDEOMODE_MAX_HORIZONTAL_AREA = 384,
+	VIDEOMODE_MAX_VERTICAL_AREA = 300
+};
+
 /* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetHorizontalArea() instead. */
 extern int VIDEOMODE_horizontal_area;
 int VIDEOMODE_SetHorizontalArea(int value);
@@ -179,6 +187,11 @@ int VIDEOMODE_SetWindowSize(unsigned int width, unsigned int height);
 
 /* Additional actions when the TV system changes (change screen aspect ratio). */
 void VIDEOMODE_SetVideoSystem(int mode);
+
+#ifdef XEP80_EMULATION
+/* Update screen geometry after switching the XEP80 TV system. */
+void VIDEOMODE_UpdateXEP80(void);
+#endif
 
 /* This enumerator lists all possible "display modes" */
 typedef enum {

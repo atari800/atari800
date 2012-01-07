@@ -91,11 +91,6 @@ unsigned int VIDEOMODE_dest_offset_top;
 unsigned int VIDEOMODE_dest_width;
 unsigned int VIDEOMODE_dest_height;
 
-enum {
-	min_horizontal_area = 160,
-	min_vertical_area = 100
-};
-
 /* To have square pixels in NTSC, the screen should have a pixel clock of
    12+3/11 MHz (actually half of that, because Atari displays non-interlaced
    picture with half the vertical resolution). However Atari pixel clock
@@ -161,7 +156,7 @@ static display_mode_t display_modes[VIDEOMODE_MODE_SIZE] = {
 	, { 640, 400, Screen_WIDTH, Screen_HEIGHT, 1, 2, 1.0, &UpscaleWidthNtsc, &DownscaleWidthNtsc, }
 #endif
 #ifdef XEP80_EMULATION
-	, { XEP80_SCRN_WIDTH, 400, XEP80_SCRN_WIDTH, XEP80_SCRN_HEIGHT, 2, 2, 1.0, &ReturnSame, &ReturnSame }
+	, { XEP80_SCRN_WIDTH, 400, XEP80_SCRN_WIDTH, XEP80_MAX_SCRN_HEIGHT, 2, 2, 1.0, &ReturnSame, &ReturnSame }
 #endif
 #ifdef PBI_PROTO80
 	, { 640, 400, 640, 192, 2, 2, 1.0, &ReturnSame, &ReturnSame }
@@ -312,7 +307,7 @@ static void GetOutArea(unsigned int *w, unsigned int *h, VIDEOMODE_MODE_t displa
 		VIDEOMODE_custom_horizontal_area = 336;
 		break;
 	case VIDEOMODE_HORIZONTAL_FULL:
-		VIDEOMODE_custom_horizontal_area = 384;
+		VIDEOMODE_custom_horizontal_area = VIDEOMODE_MAX_HORIZONTAL_AREA;
 		break;
 	}
 	*w = VIDEOMODE_custom_horizontal_area * display_modes[display_mode].param2src_w_mult;
@@ -331,7 +326,7 @@ static void GetOutArea(unsigned int *w, unsigned int *h, VIDEOMODE_MODE_t displa
 			VIDEOMODE_custom_vertical_area = 240;
 		break;
 	case VIDEOMODE_VERTICAL_FULL:
-		VIDEOMODE_custom_vertical_area = 275;
+		VIDEOMODE_custom_vertical_area = VIDEOMODE_MAX_VERTICAL_AREA;
 		break;
 	}
 	*h = VIDEOMODE_custom_vertical_area;
@@ -467,14 +462,14 @@ static void SetVideoMode(VIDEOMODE_resolution_t *res, VIDEOMODE_MODE_t display_m
 	VIDEOMODE_src_offset_left = (display_modes[display_mode].src_width - VIDEOMODE_src_width) / 2;
 	VIDEOMODE_src_offset_top = (display_modes[display_mode].src_height - VIDEOMODE_src_height) / 2;
 
-	if (VIDEOMODE_horizontal_offset < -384)
-		VIDEOMODE_horizontal_offset = -384;
-	else if (VIDEOMODE_horizontal_offset > 384)
-		VIDEOMODE_horizontal_offset = 384;
-	if (VIDEOMODE_vertical_offset < -275)
-		VIDEOMODE_vertical_offset = -275;
-	else if (VIDEOMODE_vertical_offset > 275)
-		VIDEOMODE_vertical_offset = 275;
+	if (VIDEOMODE_horizontal_offset < -VIDEOMODE_MAX_HORIZONTAL_AREA)
+		VIDEOMODE_horizontal_offset = -VIDEOMODE_MAX_HORIZONTAL_AREA;
+	else if (VIDEOMODE_horizontal_offset > VIDEOMODE_MAX_HORIZONTAL_AREA)
+		VIDEOMODE_horizontal_offset = VIDEOMODE_MAX_HORIZONTAL_AREA;
+	if (VIDEOMODE_vertical_offset < -VIDEOMODE_MAX_VERTICAL_AREA)
+		VIDEOMODE_vertical_offset = -VIDEOMODE_MAX_VERTICAL_AREA;
+	else if (VIDEOMODE_vertical_offset > VIDEOMODE_MAX_VERTICAL_AREA)
+		VIDEOMODE_vertical_offset = VIDEOMODE_MAX_VERTICAL_AREA;
 	{
 		int x = VIDEOMODE_horizontal_offset * display_modes[display_mode].param2src_w_mult;
 		int y = VIDEOMODE_vertical_offset;
@@ -640,10 +635,10 @@ int VIDEOMODE_SetCustomHorizontalArea(unsigned int value)
 {
 	unsigned int old_value = VIDEOMODE_custom_horizontal_area;
 	unsigned int old_area = VIDEOMODE_horizontal_area;
-	if (value < min_horizontal_area)
+	if (value < VIDEOMODE_MIN_HORIZONTAL_AREA)
 		return FALSE;
-	if (value > Screen_WIDTH)
-		value = Screen_WIDTH;
+	if (value > VIDEOMODE_MAX_HORIZONTAL_AREA)
+		value = VIDEOMODE_MAX_HORIZONTAL_AREA;
 	if (value != VIDEOMODE_custom_horizontal_area || VIDEOMODE_horizontal_area != VIDEOMODE_HORIZONTAL_CUSTOM) {
 		VIDEOMODE_custom_horizontal_area = value;
 		VIDEOMODE_horizontal_area = VIDEOMODE_HORIZONTAL_CUSTOM;
@@ -670,10 +665,10 @@ int VIDEOMODE_SetCustomVerticalArea(unsigned int value)
 {
 	unsigned int old_value = VIDEOMODE_custom_vertical_area;
 	unsigned int old_area = VIDEOMODE_vertical_area;
-	if (value < min_vertical_area)
+	if (value < VIDEOMODE_MIN_VERTICAL_AREA)
 		return FALSE;
-	if (value > 275)
-		value = 275;
+	if (value > VIDEOMODE_MAX_VERTICAL_AREA)
+		value = VIDEOMODE_MAX_VERTICAL_AREA;
 	if (value != VIDEOMODE_custom_vertical_area || VIDEOMODE_vertical_area != VIDEOMODE_VERTICAL_CUSTOM) {
 		VIDEOMODE_custom_vertical_area = value;
 		VIDEOMODE_vertical_area = VIDEOMODE_VERTICAL_CUSTOM;
@@ -868,6 +863,16 @@ void VIDEOMODE_SetVideoSystem(int mode)
 	VIDEOMODE_Update();
 }
 
+#ifdef XEP80_EMULATION
+void VIDEOMODE_UpdateXEP80(void)
+{
+	display_modes[VIDEOMODE_MODE_XEP80].src_height = XEP80_scrn_height;
+	if (CurrentDisplayMode() == VIDEOMODE_MODE_XEP80)
+		VIDEOMODE_Update();
+}
+#endif /* XEP80_EMULATION */
+
+
 void VIDEOMODE_CopyHostAspect(char *target, unsigned int size)
 {
 	snprintf(target, size, "%g:%g", VIDEOMODE_host_aspect_ratio_w, VIDEOMODE_host_aspect_ratio_h);
@@ -898,8 +903,8 @@ int VIDEOMODE_ReadConfig(char *option, char *ptr)
 		if (i < 0) {
 			VIDEOMODE_horizontal_area = VIDEOMODE_HORIZONTAL_CUSTOM;
 			return (VIDEOMODE_custom_horizontal_area = Util_sscandec(ptr)) != -1
-			       && VIDEOMODE_custom_horizontal_area >= min_horizontal_area
-			       && VIDEOMODE_custom_horizontal_area <= Screen_WIDTH;
+			       && VIDEOMODE_custom_horizontal_area >= VIDEOMODE_MIN_HORIZONTAL_AREA
+			       && VIDEOMODE_custom_horizontal_area <= VIDEOMODE_MAX_HORIZONTAL_AREA;
 		}
 		VIDEOMODE_horizontal_area = i;
 	}
@@ -908,8 +913,8 @@ int VIDEOMODE_ReadConfig(char *option, char *ptr)
 		if (i < 0) {
 			VIDEOMODE_vertical_area = VIDEOMODE_VERTICAL_CUSTOM;
 			return (VIDEOMODE_custom_vertical_area = Util_sscandec(ptr)) != -1
-			       && VIDEOMODE_custom_vertical_area >= min_vertical_area
-			       && VIDEOMODE_custom_vertical_area <= 275;
+			       && VIDEOMODE_custom_vertical_area >= VIDEOMODE_MIN_VERTICAL_AREA
+			       && VIDEOMODE_custom_vertical_area <= VIDEOMODE_MAX_VERTICAL_AREA;
 		}
 		VIDEOMODE_vertical_area = i;
 	}
@@ -1033,8 +1038,8 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 				if (idx < 0) {
 					VIDEOMODE_horizontal_area = VIDEOMODE_HORIZONTAL_CUSTOM;
 					a_i = (VIDEOMODE_custom_horizontal_area = Util_sscandec(argv[i])) == -1
-					      || VIDEOMODE_custom_horizontal_area < min_horizontal_area
-					      || VIDEOMODE_custom_horizontal_area > Screen_WIDTH;
+					      || VIDEOMODE_custom_horizontal_area < VIDEOMODE_MIN_HORIZONTAL_AREA
+					      || VIDEOMODE_custom_horizontal_area > VIDEOMODE_MAX_HORIZONTAL_AREA;
 				} else
 					VIDEOMODE_horizontal_area = idx;
 			}
@@ -1046,8 +1051,8 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 				if (idx < 0) {
 					VIDEOMODE_vertical_area = VIDEOMODE_VERTICAL_CUSTOM;
 					a_i = (VIDEOMODE_custom_vertical_area = Util_sscandec(argv[i])) == -1
-					      || VIDEOMODE_custom_vertical_area < min_vertical_area
-					      || VIDEOMODE_custom_vertical_area > Screen_HEIGHT;
+					      || VIDEOMODE_custom_vertical_area < VIDEOMODE_MIN_VERTICAL_AREA
+					      || VIDEOMODE_custom_vertical_area > VIDEOMODE_MAX_VERTICAL_AREA;
 				} else
 					VIDEOMODE_vertical_area = idx;
 			}
@@ -1128,8 +1133,8 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 				Log_print("\t                            Set horizontal view area");
 				Log_print("\t-vert-area short|tv|full|<number>");
 				Log_print("\t                            Set vertical view area");
-				Log_print("\t-horiz-shift <num>          Set horizontal shift of the visible area (-384..384)");
-				Log_print("\t-vert-shift <num>           Set vertical shift of the visible area (-275..275)");
+				Log_print("\t-horiz-shift <num>          Set horizontal shift of the visible area (-%i..%i)", VIDEOMODE_MAX_HORIZONTAL_AREA, VIDEOMODE_MAX_HORIZONTAL_AREA);
+				Log_print("\t-vert-shift <num>           Set vertical shift of the visible area (-%i..%i)", VIDEOMODE_MAX_VERTICAL_AREA, VIDEOMODE_MAX_VERTICAL_AREA);
 				Log_print("\t-stretch none|integral|full|<number>");
 				Log_print("\t                            Set method of image stretching");
 				Log_print("\t-fit-screen width|height|both");

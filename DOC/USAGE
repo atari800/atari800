@@ -299,10 +299,10 @@ SDL version options
                       short: 200 pixels,
                       tv: similar to real tv - 224 or 240 pixels (depending on
                       TV system),
-                      full: full overscan - 275 pixels,
-                      or provide a number between 100 and 275.
+                      full: full overscan - 300 pixels,
+                      or provide a number between 100 and 300.
 -horiz-shift <n>      Set horizontal shift of the visible area (-384..384)
--vert-shift <n>       Set vertical shift of the visible area (-275..275)
+-vert-shift <n>       Set vertical shift of the visible area (-300..300)
 -stretch none|integral|full|<number>
                       Set method for image stretching:
                       none: no stretching at all,

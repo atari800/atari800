@@ -167,6 +167,24 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 	SDL_VIDEO_current_display_mode = mode;
 	UpdateNtscFilter(mode);
 	PLATFORM_DisplayScreen();
+
+	/* For unknown reason (maybe window manager-related), when SDL_SetVideoMode
+	   is called twice without calling SDL_PollEvent in between, SDL may throw
+	   an SDL_VIDEORESIZE event. (Happens on KDE4 in windowed mode during
+	   initialisation of the XEP80 handler (TV system = PAL), when it switches
+	   between 60Hz and 50Hz modes rapidly). If this event was processed, it
+	   would cause another screen resize, resulting in invalid window size. To
+	   avoid the glitch, we ignore all pending SDL_VIDEORESIZE events after
+	   each screen resize. */
+	for (;;) {
+		SDL_Event event;
+		int found = FALSE;
+		SDL_PumpEvents();
+		while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENTMASK(SDL_VIDEORESIZE)) > 0)
+			found = TRUE;
+		if (!found)
+			break;
+	}
 }
 
 VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size)
