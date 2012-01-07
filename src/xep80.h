@@ -22,9 +22,6 @@ extern int XEP80_port;
 extern UBYTE XEP80_screen_1[XEP80_SCRN_WIDTH*XEP80_SCRN_HEIGHT];
 extern UBYTE XEP80_screen_2[XEP80_SCRN_WIDTH*XEP80_SCRN_HEIGHT];
 
-extern int XEP80_first_row;
-extern int XEP80_last_row;
-
 UBYTE XEP80_GetBit(void);
 void XEP80_PutBit(UBYTE byte);
 void XEP80_ChangeColors(void);

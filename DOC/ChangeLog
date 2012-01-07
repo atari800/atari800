@@ -1,6 +1,8 @@
 2012-01-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: No need to call SDL_GetKeyState() on each frame - moved the
   call to SDL_INPUT_Initialise().
+* xep80.[ch]: Removed variables XEP80_first_row, XEP80_last_row - not used
+  anywhere.
 
 
 2012-01-07  Kostas Nakos  <knakos@gmail.com>

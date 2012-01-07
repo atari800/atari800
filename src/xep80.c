@@ -99,8 +99,6 @@
 /* Global variables */
 int XEP80_enabled = FALSE;
 int XEP80_port = 0;
-int XEP80_first_row = XEP80_SCRN_HEIGHT - 1;
-int XEP80_last_row = 0;
 
 /* Local procedures */
 static void XEP80_InputWord(int word);
@@ -1580,11 +1578,6 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		}
 	}
 
-	if (y*XEP80_CHAR_HEIGHT < XEP80_first_row)
-		XEP80_first_row = y*XEP80_CHAR_HEIGHT;
-	if (y*XEP80_CHAR_HEIGHT + XEP80_CHAR_HEIGHT - 1 > XEP80_last_row)
-		XEP80_last_row = y*XEP80_CHAR_HEIGHT + XEP80_CHAR_HEIGHT - 1;
-
     if (inverse_mode) {
         on = XEP80_FONTS_offcolor;
         off = XEP80_FONTS_oncolor;
@@ -1881,11 +1874,6 @@ static void XEP80_BlitGraphChar(int x, int y)
         off = XEP80_FONTS_offcolor;
     }
 	
-	if (y + XEP80_GRAPH_Y_OFFSET < XEP80_first_row)
-		XEP80_first_row = y + XEP80_GRAPH_Y_OFFSET;
-	if (y + XEP80_GRAPH_Y_OFFSET > XEP80_last_row)
-		XEP80_last_row = y + XEP80_GRAPH_Y_OFFSET;
-
     ch = xep80_graph_data[y][x];
 
     to1 = &XEP80_screen_1[XEP80_SCRN_WIDTH * (y + XEP80_GRAPH_Y_OFFSET)
