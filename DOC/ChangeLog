@@ -1,3 +1,7 @@
+2012-01-07  Kostas Nakos  <knakos@gmail.com>
+* android/*: Optimize file selector, allow roaming outside of ext. storage dir
+
+
 2011-12-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * android/jni/Android.mk.in, dc/Makefile.dc, win32/msc/Makefile: Add missing
   object img_tape.o to platform-specific Makefiles to make them work again

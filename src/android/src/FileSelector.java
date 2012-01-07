@@ -76,29 +76,23 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 	private static String _drive1fname = null;
 
 	private final class IconArrayAdapter extends ArrayAdapter<String> {
+		LayoutInflater _inf = null;
 
 		public IconArrayAdapter(Context context, int textViewResourceId) {
 			super(context, textViewResourceId);
+			_inf = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		}
 
 		@Override
 		public View getView(int pos, View view, ViewGroup par) {
-			int dr;
+			if (view == null)
+				view = _inf.inflate(R.layout.file_selector_row, null);
+			String itm = getItem(pos);
+			((TextView) view.findViewById(R.id.fsel_text)).setText(itm);
+			((ImageView) view.findViewById(R.id.fsel_image)).setImageResource(
+				itm.endsWith("/") ? R.drawable.folder : 0 );
 
-			View v = view;
-			if (v == null) {
-				LayoutInflater inf = (LayoutInflater) getContext().
-									 getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-				v = inf.inflate(R.layout.file_selector_row, null);
-			}
-			((TextView) v.findViewById(R.id.fsel_text)).setText(getItem(pos));
-			if (getItem(pos).endsWith("/"))
-				dr = R.drawable.folder;
-			else
-				dr = 0;
-			((ImageView) v.findViewById(R.id.fsel_image)).setImageResource(dr);
-
-			return v;
+			return view;
 		}
 	}
 
@@ -150,13 +144,14 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 
 	@Override
 	public Object onRetainNonConfigurationInstance() {
-		Object ret = null;
+		String[] ret = null;
 		if (_task == null && _ad != null && _ad.getCount() > 0) {
-			ret = new String[_ad.getCount()];
-			for (int i = 0; i < _ad.getCount(); i++)
-				((String[]) ret)[i] = _ad.getItem(i);
+			int cnt = _ad.getCount();
+			ret = new String[cnt];
+			for (int i = 0; i < cnt; i++)
+				ret[i] = _ad.getItem(i);
 		}
-		return ret;
+		return (Object) ret;
 	}
 
 	@Override
@@ -341,7 +336,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 		protected IconArrayAdapter doInBackground(File... files) {
 			IconArrayAdapter flst = new IconArrayAdapter(FileSelector.this, R.layout.file_selector_row);
 			File dir = files[0];
-			if (!dir.equals(Environment.getExternalStorageDirectory()))
+			if (!dir.toString().equals("/"))
 				flst.add("../");
 
 			File[] lst = dir.listFiles(new FileFilter() {
