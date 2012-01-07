@@ -1,3 +1,8 @@
+2012-01-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sdl/input.c: No need to call SDL_GetKeyState() on each frame - moved the
+  call to SDL_INPUT_Initialise().
+
+
 2012-01-07  Kostas Nakos  <knakos@gmail.com>
 * android/*: Optimize file selector, allow roaming outside of ext. storage dir
              Added an exclusion border for paddle mode

@@ -349,14 +349,6 @@ int PLATFORM_Keyboard(void)
 	else if (!key_pressed)
 		return AKEY_NONE;
 
-	kbhits = SDL_GetKeyState(NULL);
-
-	if (kbhits == NULL) {
-		Log_print("oops, kbhits is NULL!");
-		Log_flushlog();
-		exit(-1);
-	}
-
 	UI_alt_function = -1;
 	if (kbhits[SDLK_LALT]) {
 		if (key_pressed) {
@@ -1228,6 +1220,14 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 	}
 	if(grab_mouse)
 		SDL_WM_GrabInput(SDL_GRAB_ON);
+
+	kbhits = SDL_GetKeyState(NULL);
+
+	if (kbhits == NULL) {
+		Log_print("SDL_GetKeyState() failed");
+		Log_flushlog();
+		return FALSE;
+	}
 
 	return TRUE;
 }
