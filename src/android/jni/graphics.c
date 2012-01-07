@@ -43,6 +43,8 @@
 #define OPACITY_STEP   0.02f
 #define OPACITY_FRMSTR 75
 
+#define BORDER_PCT 0.05f
+
 int Android_ScreenW = 0;
 int Android_ScreenH = 0;
 int Android_Aspect;
@@ -234,8 +236,8 @@ void Joyovl_Scale(void)
 		AndroidInput_JoyOvl.joyarea.r = AndroidInput_JoyOvl.joyarea.l + tmp;
 		AndroidInput_JoyOvl.joyarea.b = AndroidInput_JoyOvl.joyarea.t + tmp;
 	} else {
-		AndroidInput_JoyOvl.joyarea.l = Android_Joyleft ? 0 : Android_Split;
-		AndroidInput_JoyOvl.joyarea.r = Android_Joyleft ?  Android_Split : Android_ScreenW;
+		AndroidInput_JoyOvl.joyarea.l = Android_Joyleft ? BORDER_PCT * Android_ScreenW : Android_Split;
+		AndroidInput_JoyOvl.joyarea.r = Android_Joyleft ? Android_Split : (1.0f - BORDER_PCT) * Android_ScreenW;
 		AndroidInput_JoyOvl.joyarea.b = AndroidInput_JoyOvl.joyarea.t + 8 + (tmp >> 3);
 	}
 	AndroidInput_JoyOvl.firewid = tmp >> 3;

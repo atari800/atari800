@@ -213,11 +213,8 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			dx2 = (jovl->joyarea.r - jovl->joyarea.l) * jovl->gracearea;
 		}
 		if (Android_Paddle) {
-			if (Android_Joyleft)
-				potx = (float) newtc[PTRJOY].x / (float) Android_Split;
-			else
-				potx = (float) (newtc[PTRJOY].x - Android_Split) /
-					   (float) (Android_ScreenW - Android_Split);
+			potx = ((float) (newtc[PTRJOY].x - jovl->joyarea.l)) /
+				   ((float) (jovl->joyarea.r - jovl->joyarea.l));
 			poty = (float) newtc[PTRJOY].y / (float) Android_ScreenH;
 			Android_POTX = 227 - (UBYTE) (potx * 228.0f + 0.5f);
 			Android_POTY = 227 - (UBYTE) (poty * 228.0f + 0.5f);

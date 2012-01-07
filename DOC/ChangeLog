@@ -1,5 +1,6 @@
 2012-01-07  Kostas Nakos  <knakos@gmail.com>
 * android/*: Optimize file selector, allow roaming outside of ext. storage dir
+             Added an exclusion border for paddle mode
 
 
 2011-12-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
