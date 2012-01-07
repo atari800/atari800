@@ -1264,10 +1264,22 @@ static void SystemROMSettings(void)
 
 static void AtariSettings(void)
 {
+#ifdef XEP80_EMULATION
+	static const UI_tMenuItem xep80_menu_array[] = {
+		UI_MENU_ACTION(0, "off"),
+		UI_MENU_ACTION(1, "port 1"),
+		UI_MENU_ACTION(2, "port 2"),
+		UI_MENU_END
+	};
+#endif /* XEP80_EMULATION */
+
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_CHECK(0, "Disable BASIC when booting Atari:"),
 		UI_MENU_CHECK(1, "Boot from tape (hold Start):"),
 		UI_MENU_CHECK(2, "Enable R-Time 8:"),
+#ifdef XEP80_EMULATION
+		UI_MENU_SUBMENU_SUFFIX(18, "Enable XEP80:", NULL),
+#endif /* XEP80_EMULATION */
 		UI_MENU_CHECK(3, "SIO patch (fast disk access):"),
 		UI_MENU_CHECK(17, "Turbo (F12):"),
 		UI_MENU_ACTION(4, "H: device (hard disk):"),
@@ -1290,6 +1302,7 @@ static void AtariSettings(void)
 	char tmp_command[256];
 
 	int option = 0;
+	int option2 = 0;
 
 	for (;;) {
 		int seltype;
@@ -1297,8 +1310,11 @@ static void AtariSettings(void)
 		SetItemChecked(menu_array, 1, CASSETTE_hold_start_on_reboot);
 		SetItemChecked(menu_array, 2, RTIME_enabled);
 		SetItemChecked(menu_array, 3, ESC_enable_sio_patch);
+#ifdef XEP80_EMULATION
+		FindMenuItem(menu_array, 18)->suffix = xep80_menu_array[XEP80_enabled ? XEP80_port + 1 : 0].item;
+#endif /* XEP80_EMULATION */
 		SetItemChecked(menu_array, 17, Atari800_turbo);
-		menu_array[5].suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
+		FindMenuItem(menu_array, 4)->suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
 		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
 		SetItemChecked(menu_array, 6, Devices_enable_r_patch);
@@ -1374,6 +1390,19 @@ static void AtariSettings(void)
 		case 17:
 			Atari800_turbo = !Atari800_turbo;
 			break;
+#ifdef XEP80_EMULATION
+		case 18:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, XEP80_enabled ? XEP80_port + 1 : 0, xep80_menu_array, NULL);
+			if (option2 == 0)
+				XEP80_SetEnabled(FALSE);
+			else if (option2 > 0) {
+				if (XEP80_SetEnabled(TRUE))
+					XEP80_port = option2 - 1;
+				else
+					UI_driver->fMessage("Error: Missing XEP80 charset ROM.", 1);
+			}
+			break;
+#endif /* XEP80_EMULATION */
 		default:
 			ESC_UpdatePatches();
 			return;

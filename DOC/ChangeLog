@@ -16,6 +16,8 @@
 
 * sdl/video.c: Fix a glitch that appeared during XEP80 initialisation.
 
+* ui.c: Add option to enable/disable XEP80 to the Emulator Settings menu.
+
 
 2012-01-07  Kostas Nakos  <knakos@gmail.com>
 * android/*: Optimize file selector, allow roaming outside of ext. storage dir
