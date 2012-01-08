@@ -49,7 +49,7 @@ extern int ANTIC_xpos_limit;
 extern unsigned int ANTIC_screenline_cpu_clock;
 
 /* Current main clock value. */
-#define ANTIC_CPU_CLOCK (ANTIC_screenline_cpu_clock + ANTIC_xpos)
+#define ANTIC_CPU_CLOCK (ANTIC_screenline_cpu_clock + ANTIC_XPOS)
 
 #define ANTIC_NMIST_C	6
 #define ANTIC_NMI_C	12
