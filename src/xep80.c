@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Atari800; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
+ */
 
 #include "config.h"
 #ifdef XEP80_EMULATION
@@ -84,12 +84,12 @@
 #define CMD_WHT_ON_BLK   0xDE
 #define CMD_BLK_ON_WHT   0xDF
 #define CMD_VIDEO_CTRL   0xED
-#define CMD_ATTRIB_A	 0xF4
-#define CMD_ATTRIB_B	 0xF5
+#define CMD_ATTRIB_A     0xF4
+#define CMD_ATTRIB_B     0xF5
 
-#define CHAR_SET_A			0
-#define CHAR_SET_B			1
-#define CHAR_SET_INTERNAL	2  
+#define CHAR_SET_A          0
+#define CHAR_SET_B          1
+#define CHAR_SET_INTERNAL   2
 
 /* These center the graphics screen inside of the XEP80 screen */
 #define XEP80_GRAPH_X_OFFSET ((XEP80_SCRN_WIDTH - XEP80_GRAPH_WIDTH) / 2)
@@ -97,7 +97,7 @@
 
 /* Used to determine if a charcter is double width */
 #define IS_DOUBLE(x,y) (((xep80_data[y][x] & 0x80) && font_b_double) || \
-						(((xep80_data[y][x] & 0x80) == 0) && font_a_double))
+                        (((xep80_data[y][x] & 0x80) == 0) && font_a_double))
 
 /* Global variables */
 int XEP80_enabled = FALSE;
@@ -215,7 +215,7 @@ UBYTE XEP80_screen_2[XEP80_SCRN_WIDTH*XEP80_MAX_SCRN_HEIGHT];
 
 UBYTE (*font)[XEP80_FONTS_CHAR_COUNT][XEP80_MAX_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
 
-static int tab_stops[256] = 
+static int tab_stops[256] =
 {0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,
  0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
  0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,
@@ -229,8 +229,8 @@ static int tab_stops[256] =
  0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,
  0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
  0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1};
- 
-static int eol_at_margin[XEP80_HEIGHT] = 
+
+static int eol_at_margin[XEP80_HEIGHT] =
 {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /* Path to the XEP80's charset ROM image, marked as U12 on Jerzy Sobola's
@@ -266,7 +266,7 @@ int XEP80_Initialise(int *argc, char *argv[])
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
-		
+
 		if (strcmp(argv[i], "-xep80") == 0) {
 			XEP80_enabled = TRUE;
 		}
@@ -314,7 +314,7 @@ static void XEP80_InputWord(int word)
 {
 	input_queue[input_count] = word;
 	input_count++;
-    }
+}
 
 UBYTE XEP80_GetBit(void) 
 {
@@ -332,7 +332,7 @@ UBYTE XEP80_GetBit(void)
 	/* If there is not input to be sent, just return */
 	if (input_count == 0 || num_ticks < 0)
 		return ret;
-	
+
 	/* Figure out which word of the queue it is in based on bit */
 	input_word_num = (bit_no / 11);
 
@@ -341,7 +341,7 @@ UBYTE XEP80_GetBit(void)
 		input_count = 0;
 		return ret;
 	}
-	
+
 	/* Get the word from the queue, and calculate which bit of the
 	 * word we are sending */
 	input_word = input_queue[input_word_num];
@@ -370,7 +370,7 @@ UBYTE XEP80_GetBit(void)
 		ret = 0xFF;
 		break;
 	}
-	
+
 	return ret;
 }
 
@@ -437,41 +437,40 @@ void XEP80_PutBit(UBYTE byte)
 
 static void XEP80_OutputWord(int word)
 {
-    UBYTE byte = word & 0xFF;
-    int cmd_flag = word & 0x100;
-    static UBYTE lastChar = 0;
+	UBYTE byte = word & 0xFF;
+	int cmd_flag = word & 0x100;
+	static UBYTE lastChar = 0;
 
-    /* Is it a command or data word? */
+	/* Is it a command or data word? */
 	if (cmd_flag) {
-        switch(byte & CMD_XX_MASK) {
-        case CMD_00:
-            XEP80_SetXCur(byte & 0x3F);
-            break;
-        case CMD_01:
-            switch(byte & CMD_01_MASK) {
-            case CMD_X_CUR_UPPER:
-                XEP80_SetXCur(0x40 + (byte & 0x0F));
-                break;
-            case CMD_X_CUR_HIGH:
-                XEP80_SetXCurHigh(byte & 0x0F);
-                break;
-            case CMD_LEFT_MAR_L:
-                XEP80_SetLeftMarginLow(byte & 0x0f);
-                break;
-            case CMD_LEFT_MAR_H:
-                XEP80_SetLeftMarginHigh(byte & 0x0f);
-                break;
-            }
-            break;
-        case CMD_10:
-            switch(byte & CMD_10_MASK) {
-            case CMD_Y_CUR_LOW:
-                XEP80_SetYCur(byte & 0x0F);
-                break;
-            case CMD_1001:
-				if ((byte & CMD_1001_MASK) == CMD_Y_CUR_HIGH) {
-                    XEP80_SetYCur(0x10 + (byte & 0x07));
-				}
+		switch(byte & CMD_XX_MASK) {
+		case CMD_00:
+			XEP80_SetXCur(byte & 0x3F);
+			break;
+		case CMD_01:
+			switch(byte & CMD_01_MASK) {
+			case CMD_X_CUR_UPPER:
+				XEP80_SetXCur(0x40 + (byte & 0x0F));
+				break;
+			case CMD_X_CUR_HIGH:
+				XEP80_SetXCurHigh(byte & 0x0F);
+				break;
+			case CMD_LEFT_MAR_L:
+				XEP80_SetLeftMarginLow(byte & 0x0f);
+				break;
+			case CMD_LEFT_MAR_H:
+				XEP80_SetLeftMarginHigh(byte & 0x0f);
+				break;
+			}
+			break;
+		case CMD_10:
+			switch(byte & CMD_10_MASK) {
+			case CMD_Y_CUR_LOW:
+				XEP80_SetYCur(byte & 0x0F);
+				break;
+			case CMD_1001:
+				if ((byte & CMD_1001_MASK) == CMD_Y_CUR_HIGH)
+					XEP80_SetYCur(0x10 + (byte & 0x07));
 				else {
 					switch(byte) {
 					case CMD_Y_CUR_STATUS:
@@ -484,134 +483,131 @@ static void XEP80_OutputWord(int word)
 						XEP80_SetScreenMode(TRUE, FALSE);
 						break;
 					}
-                }
-                break;
-            case CMD_RIGHT_MAR_L:
-                XEP80_SetRightMarginLow(byte & 0x0f);
-                break;
-            case CMD_RIGHT_MAR_H:
-                XEP80_SetRightMarginHigh(byte & 0x0f);
-                break;
-            }
-            break;
-        case CMD_11:
-            switch (byte) {
-            case CMD_GET_CHAR:
-                XEP80_GetChar();
-                break;
-            case CMD_REQ_X_CUR:
-                XEP80_GetXCur();
-                break;
-            case CMD_MRST:
-                XEP80_MasterReset();
-                break;
-            case CMD_PRT_STAT:
-                XEP80_GetPrinterStatus();
-                break;
-            case CMD_FILL_PREV:
-                XEP80_FillMem(lastChar, TRUE);
-                break;
-            case CMD_FILL_SPACE:
-                XEP80_FillMem(0x20, TRUE);
-                break;
-            case CMD_FILL_EOL:
-                XEP80_FillMem(0x9B, TRUE);
-                break;
-            case CMD_CLR_LIST:
-                XEP80_SetList(FALSE);
-                break;
-            case CMD_SET_LIST:
-                XEP80_SetList(TRUE);
-                break;
-            case CMD_SCR_NORMAL:
-                XEP80_SetOutputDevice(TRUE, FALSE);
-                break;
-            case CMD_SCR_BURST:
-                XEP80_SetOutputDevice(TRUE, TRUE);
-                break;
-            case CMD_SET_PRINT:
-                XEP80_SetOutputDevice(FALSE, TRUE);
-                break;
-            case CMD_CHAR_SET_A:
-                XEP80_SetCharSet(CHAR_SET_A);
+				}
+				break;
+			case CMD_RIGHT_MAR_L:
+				XEP80_SetRightMarginLow(byte & 0x0f);
+				break;
+			case CMD_RIGHT_MAR_H:
+				XEP80_SetRightMarginHigh(byte & 0x0f);
+				break;
+			}
+			break;
+		case CMD_11:
+			switch (byte) {
+			case CMD_GET_CHAR:
+				XEP80_GetChar();
+				break;
+			case CMD_REQ_X_CUR:
+				XEP80_GetXCur();
+				break;
+			case CMD_MRST:
+				XEP80_MasterReset();
+				break;
+			case CMD_PRT_STAT:
+				XEP80_GetPrinterStatus();
+				break;
+			case CMD_FILL_PREV:
+				XEP80_FillMem(lastChar, TRUE);
+				break;
+			case CMD_FILL_SPACE:
+				XEP80_FillMem(0x20, TRUE);
+				break;
+			case CMD_FILL_EOL:
+				XEP80_FillMem(0x9B, TRUE);
+				break;
+			case CMD_CLR_LIST:
+				XEP80_SetList(FALSE);
+				break;
+			case CMD_SET_LIST:
+				XEP80_SetList(TRUE);
+				break;
+			case CMD_SCR_NORMAL:
+				XEP80_SetOutputDevice(TRUE, FALSE);
+				break;
+			case CMD_SCR_BURST:
+				XEP80_SetOutputDevice(TRUE, TRUE);
+				break;
+			case CMD_SET_PRINT:
+				XEP80_SetOutputDevice(FALSE, TRUE);
+				break;
+			case CMD_CHAR_SET_A:
+				XEP80_SetCharSet(CHAR_SET_A);
 				XEP80_BlitScreen();
-                break;
-            case CMD_CHAR_SET_B:
-                XEP80_SetCharSet(CHAR_SET_B);
+				break;
+			case CMD_CHAR_SET_B:
+				XEP80_SetCharSet(CHAR_SET_B);
 				XEP80_BlitScreen();
-                break;
-            case CMD_CHAR_SET_INT:
-                XEP80_SetCharSet(CHAR_SET_INTERNAL);
+				break;
+			case CMD_CHAR_SET_INT:
+				XEP80_SetCharSet(CHAR_SET_INTERNAL);
 				XEP80_BlitScreen();
-                break;
-            case CMD_TEXT_50HZ:
-                XEP80_SetScreenMode(FALSE, TRUE);
-                break;
-            case CMD_CUR_OFF:
-                XEP80_SetCursor(FALSE, FALSE);
-                break;
-            case CMD_CUR_ON:
-                XEP80_SetCursor(TRUE, FALSE);
-                break;
-            case CMD_CUR_BLINK:
-                XEP80_SetCursor(TRUE, TRUE);
-                break;
-            case CMD_CUR_ST_LINE:
-                XEP80_SetXCurStart();
-                break;
-            case CMD_SET_SCRL_WIN:
-                XEP80_SetScrollWindow();
-                break;
-            case CMD_WHT_ON_BLK:
-                XEP80_SetInverse(FALSE);
-                break;
-            case CMD_BLK_ON_WHT:
-                XEP80_SetInverse(TRUE);
-                break;
-            case CMD_VIDEO_CTRL:
+				break;
+			case CMD_TEXT_50HZ:
+				XEP80_SetScreenMode(FALSE, TRUE);
+				break;
+			case CMD_CUR_OFF:
+				XEP80_SetCursor(FALSE, FALSE);
+				break;
+			case CMD_CUR_ON:
+				XEP80_SetCursor(TRUE, FALSE);
+				break;
+			case CMD_CUR_BLINK:
+				XEP80_SetCursor(TRUE, TRUE);
+				break;
+			case CMD_CUR_ST_LINE:
+				XEP80_SetXCurStart();
+				break;
+			case CMD_SET_SCRL_WIN:
+				XEP80_SetScrollWindow();
+				break;
+			case CMD_WHT_ON_BLK:
+				XEP80_SetInverse(FALSE);
+				break;
+			case CMD_BLK_ON_WHT:
+				XEP80_SetInverse(TRUE);
+				break;
+			case CMD_VIDEO_CTRL:
 				XEP80_Backspace();
-                XEP80_SetVideoCtrl(lastChar);
-                break;
-            case CMD_ATTRIB_A:
+				XEP80_SetVideoCtrl(lastChar);
+				break;
+			case CMD_ATTRIB_A:
 				XEP80_Backspace();
-                XEP80_SetAttributeA(lastChar);
-                break;
-            case CMD_ATTRIB_B:
+				XEP80_SetAttributeA(lastChar);
+				break;
+			case CMD_ATTRIB_B:
 				XEP80_Backspace();
-                XEP80_SetAttributeB(lastChar);
-                break;
-            }
-            break;
-        }
-    }
+				XEP80_SetAttributeB(lastChar);
+				break;
+			}
+			break;
+		}
+	}
 	/* If it's data, then handle it as a character */
-    else {
+	else {
 		old_xcur = xcur;
 		old_ycur = ycur;
 		XEP80_ReceiveChar(byte);
-        lastChar = byte;
+		lastChar = byte;
 		if (!burst_mode)
 			XEP80_SendCursorStatus();
-    }
+	}
 }
 
 static void XEP80_ReceiveChar(UBYTE byte)
 {
-	if (graphics_mode) {
-        XEP80_AddGraphCharAtCursor(byte);
-	}
+	if (graphics_mode)
+		XEP80_AddGraphCharAtCursor(byte);
 	else if (escape_mode) {
-        XEP80_AddCharAtCursor(byte);
+		XEP80_AddCharAtCursor(byte);
 		escape_mode = FALSE;
 	}
 	/* List mode prints control chars like escape mode, except for EOL */
 	else if (list_mode) {
-		if (byte == XEP80_ATARI_EOL) {
+		if (byte == XEP80_ATARI_EOL)
 			XEP80_AddEOL();
-		}
-		else {
+		else
 			XEP80_AddCharAtCursor(byte);
-		}
 	}
 	else if (!screen_output) {
 		/* Printer characters are thrown away, handled elsewhere.  The
@@ -620,16 +616,14 @@ static void XEP80_ReceiveChar(UBYTE byte)
 	}
 	else {
 		/* If we are on the status line, only allow Delete Line and char adds */
-        if (ycur == 24) {
-            if (byte == 0x9c) { /* Delete Line */
+		if (ycur == 24) {
+			if (byte == 0x9c) /* Delete Line */
 				memset(xep80_data[ycur],XEP80_ATARI_EOL,XEP80_WIDTH);
-            }
-            else {
-                XEP80_AddCharAtCursor(byte);
-            }
-        }
-        else {
-		switch(byte) {
+			else
+				XEP80_AddCharAtCursor(byte);
+		}
+		else {
+			switch(byte) {
 			case 0x1b: /* Escape - Print next char even if a control char */
 				escape_mode = TRUE;
 				break;
@@ -682,52 +676,46 @@ static void XEP80_ReceiveChar(UBYTE byte)
 				XEP80_AddCharAtCursor(byte);
 				break;
 			}
-        }
+		}
 	}
-
 }
 
 static void	XEP80_SendCursorStatus()
 {
 	/* Send X cursor only */
 	if ((old_xcur == xcur && old_ycur == ycur) ||
-		(old_ycur == ycur)) {
-		if (xcur > 0x4f) {
+	    (old_ycur == ycur)) {
+		if (xcur > 0x4f)
 			XEP80_InputWord(0x150);
-		}
-		else {
+		else
 			XEP80_InputWord(0x100 | (xcur & 0x7F));
-		}
-		}
+	}
 	/* Send Y cursor only */
-	else if (old_xcur == xcur) {
+	else if (old_xcur == xcur)
 			XEP80_InputWord(0x1E0 | (ycur & 0x1F));
-		}
 	/* Send X followed by Y cursor */
 	else {
-		if (xcur > 0x4f) {
+		if (xcur > 0x4f)
 			XEP80_InputWord(0x1D0);
-			}
-		else {
+		else
 			XEP80_InputWord(0x180 | (xcur & 0x7F));
-			}
 		XEP80_InputWord(0x1E0 | (ycur & 0x1F));
-		}
+	}
 }
 
 static void XEP80_SetXCur(UBYTE cursor)
 {
 	new_xcur = cursor;
-    new_ycur = ycur;
-    XEP80_UpdateCursor();
+	new_ycur = ycur;
+	XEP80_UpdateCursor();
 	XEP80_SendCursorStatus();
 }
 
 static void XEP80_SetXCurHigh(UBYTE cursor)
 {
 	new_xcur = ((UBYTE)xcur & 0x3f) | (cursor << 4);
-    new_ycur = ycur;
-    XEP80_UpdateCursor();
+	new_ycur = ycur;
+	XEP80_UpdateCursor();
 	XEP80_SendCursorStatus();
 }
 
@@ -743,9 +731,9 @@ static void XEP80_SetLeftMarginHigh(UBYTE margin)
 
 static void XEP80_SetYCur(UBYTE cursor)
 {
-    new_xcur = xcur;
+	new_xcur = xcur;
 	new_ycur = cursor;
-    XEP80_UpdateCursor();
+	XEP80_UpdateCursor();
 	XEP80_SendCursorStatus();
 }
 
@@ -764,26 +752,26 @@ static void XEP80_SetScreenMode(int graphics, int pal)
 	pal_mode = pal;
 	UpdateTVSystem();
 	if (graphics_mode) {
-        xcur = 0;
-        ycur = 0;
+		xcur = 0;
+		ycur = 0;
 		burst_mode = TRUE;
-        /* Clear the old text screen */
+		/* Clear the old text screen */
 		XEP80_FillMem(0x20, FALSE);
-        XEP80_BlitScreen();
-        /* Clear the graphics memory */
-        memset(xep80_graph_data,0,
-               (XEP80_GRAPH_WIDTH/8)*XEP80_GRAPH_HEIGHT);
-		}
+		XEP80_BlitScreen();
+		/* Clear the graphics memory */
+		memset(xep80_graph_data,0,
+		       (XEP80_GRAPH_WIDTH/8)*XEP80_GRAPH_HEIGHT);
+	}
 	else {
-        xcur = 0;
-        ycur = 0;
+		xcur = 0;
+		ycur = 0;
 		burst_mode = FALSE;
 		XEP80_FillMem(0x9b, FALSE);
-        XEP80_BlitScreen();
-        new_xcur = xcur;
-        new_ycur = ycur;
-        XEP80_UpdateCursor();
-		}
+		XEP80_BlitScreen();
+		new_xcur = xcur;
+		new_ycur = ycur;
+		XEP80_UpdateCursor();
+	}
 }
 
 static void XEP80_SetRightMarginLow(UBYTE margin)
@@ -798,34 +786,33 @@ static void XEP80_SetRightMarginHigh(UBYTE margin)
 
 static void XEP80_GetChar(void)
 {
-    static int at_eol_at_margin = FALSE;
+	static int at_eol_at_margin = FALSE;
 
-    if (xcur == rmargin && at_eol_at_margin) {
-        XEP80_InputWord(XEP80_ATARI_EOL);
-        at_eol_at_margin = FALSE;
-    } else {
-        XEP80_InputWord(xep80_data[ycur][xcur]);
-    }
-	
-    old_xcur = xcur;
+	if (xcur == rmargin && at_eol_at_margin) {
+		XEP80_InputWord(XEP80_ATARI_EOL);
+		at_eol_at_margin = FALSE;
+	}
+	else
+		XEP80_InputWord(xep80_data[ycur][xcur]);
+
+	old_xcur = xcur;
 	old_ycur = ycur;
-    new_xcur = xcur + 1;
-    new_ycur = ycur;
-    
-    if (new_xcur > rmargin) 
-        {
-        if (eol_at_margin[new_ycur]) {
-            new_ycur = ycur;
-            new_xcur -= 1;
-            at_eol_at_margin = TRUE;
-        }
-        else {
-            new_xcur = lmargin;
-            if (new_ycur < XEP80_HEIGHT-2)
-                new_ycur++;
-        }
-    }
-    XEP80_UpdateCursor();
+	new_xcur = xcur + 1;
+	new_ycur = ycur;
+
+	if (new_xcur > rmargin) {
+		if (eol_at_margin[new_ycur]) {
+			new_ycur = ycur;
+			new_xcur -= 1;
+			at_eol_at_margin = TRUE;
+		}
+		else {
+			new_xcur = lmargin;
+			if (new_ycur < XEP80_HEIGHT-2)
+				new_ycur++;
+		}
+	}
+	XEP80_UpdateCursor();
 	XEP80_SendCursorStatus();
 }
 
@@ -837,7 +824,7 @@ static void XEP80_GetXCur(void)
 static void XEP80_MasterReset(void)
 {
 	int i;
-	
+
 	input_count = 0;
 
 	xcur = 0;
@@ -865,18 +852,18 @@ static void XEP80_MasterReset(void)
 	UpdateTVSystem();
 	escape_mode = FALSE;
 
-    font_a_index = 0;
-    font_a_double = FALSE;
-    font_a_blank = FALSE;
-    font_a_blink = FALSE;
-    font_b_index = 0;
-    font_b_double = FALSE;
-    font_b_blank = FALSE;
-    font_b_blink = FALSE;
+	font_a_index = 0;
+	font_a_double = FALSE;
+	font_a_blank = FALSE;
+	font_a_blink = FALSE;
+	font_b_index = 0;
+	font_b_double = FALSE;
+	font_b_blank = FALSE;
+	font_b_blink = FALSE;
 	memset(xep80_data,XEP80_ATARI_EOL,XEP80_WIDTH*XEP80_HEIGHT);
 	for (i=0;i<XEP80_HEIGHT;i++)
 		eol_at_margin[i] = FALSE;
-    XEP80_BlitScreen();
+	XEP80_BlitScreen();
 	XEP80_UpdateCursor();
 	XEP80_InputWord(0x01);
 }
@@ -918,25 +905,24 @@ static void XEP80_SetCursor(int on, int blink)
 {
 	cursor_on = on;
 	cursor_blink = blink;
-    if (!cursor_on) {
-        XEP80_BlitChar(xcur, ycur, FALSE);
-    }
-    else {
-        new_xcur = xcur;
-        new_ycur = ycur;
-        XEP80_UpdateCursor();
-    }
+	if (!cursor_on)
+		XEP80_BlitChar(xcur, ycur, FALSE);
+	else {
+		new_xcur = xcur;
+		new_ycur = ycur;
+		XEP80_UpdateCursor();
+	}
 }
 
 static void XEP80_SetXCurStart(void)
 {
-    int x_start = xcur;
-    int y_start = ycur;
+	int x_start = xcur;
+	int y_start = ycur;
 
-    XEP80_FindStartLogicalLine(&x_start, &y_start);
-    new_xcur = x_start;
-    new_ycur = y_start;
-    XEP80_UpdateCursor();
+	XEP80_FindStartLogicalLine(&x_start, &y_start);
+	new_xcur = x_start;
+	new_ycur = y_start;
+	XEP80_UpdateCursor();
 	XEP80_SendCursorStatus();
 }
 
@@ -954,33 +940,25 @@ static void XEP80_SetInverse(int inverse)
 
 static void XEP80_SetVideoCtrl(UBYTE video_ctrl)
 {
-    if (video_ctrl & 0x08) {
-        inverse_mode = TRUE;
-    }
-    else {
-        inverse_mode = FALSE;
-    }
-    if (video_ctrl & 0x02) {
-        cursor_blink = FALSE;
-    }
-    else {
-        cursor_blink = TRUE;
-    }
-    if (video_ctrl & 0x04) {
-        cursor_overwrite = FALSE;
-    }
-    else {
-        cursor_overwrite = TRUE;
-    }
-    if (video_ctrl & 0x01) {
-        blink_reverse = TRUE;
-    }
-    else {
-        blink_reverse = FALSE;
-    }
+	if (video_ctrl & 0x08)
+		inverse_mode = TRUE;
+	else
+		inverse_mode = FALSE;
+	if (video_ctrl & 0x02)
+		cursor_blink = FALSE;
+	else
+		cursor_blink = TRUE;
+	if (video_ctrl & 0x04)
+		cursor_overwrite = FALSE;
+	else
+		cursor_overwrite = TRUE;
+	if (video_ctrl & 0x01)
+		blink_reverse = TRUE;
+	else
+		blink_reverse = FALSE;
 	XEP80_BlitScreen();
-    new_xcur = xcur;
-    new_ycur = ycur;
+	new_xcur = xcur;
+	new_ycur = ycur;
 	XEP80_UpdateCursor();
 }
 
@@ -988,34 +966,25 @@ static void XEP80_SetAttributeA(UBYTE attrib)
 {
 	attrib_a = ~attrib;
 
-    font_a_index = 0;
-    if (attrib_a & 0x01) {
-        font_a_index |= XEP80_FONTS_REV_FONT_BIT;
-    }
-    if (attrib_a & 0x20) {
-        font_a_index |= XEP80_FONTS_UNDER_FONT_BIT;
-    }
-    if (attrib_a & 0x80) {
-        font_a_index |= XEP80_FONTS_BLK_FONT_BIT;
-    }
-    if (attrib_a & 0x10) {
-        font_a_double = TRUE;
-    }
-    else {
-        font_a_double = FALSE;
-    }
-    if (attrib_a & 0x40) {
-        font_a_blank = TRUE;
-    }
-    else {
-        font_a_blank = FALSE;
-    }
-    if (attrib_a & 0x04) {
-        font_a_blink = TRUE;
-    }
-    else {
-        font_a_blink = FALSE;
-    }
+	font_a_index = 0;
+	if (attrib_a & 0x01)
+		font_a_index |= XEP80_FONTS_REV_FONT_BIT;
+	if (attrib_a & 0x20)
+		font_a_index |= XEP80_FONTS_UNDER_FONT_BIT;
+	if (attrib_a & 0x80)
+		font_a_index |= XEP80_FONTS_BLK_FONT_BIT;
+	if (attrib_a & 0x10)
+		font_a_double = TRUE;
+	else
+		font_a_double = FALSE;
+	if (attrib_a & 0x40)
+		font_a_blank = TRUE;
+	else
+		font_a_blank = FALSE;
+	if (attrib_a & 0x04)
+		font_a_blink = TRUE;
+	else
+		font_a_blink = FALSE;
 	XEP80_BlitScreen();
 }
 
@@ -1023,98 +992,82 @@ static void XEP80_SetAttributeB(UBYTE attrib)
 {
 	attrib_b = ~attrib;
 
-    font_b_index = 0;
-    if (attrib_b & 0x01) {
-        font_b_index |= XEP80_FONTS_REV_FONT_BIT;
-    }
-    if (attrib_b & 0x20) {
-        font_b_index |= XEP80_FONTS_UNDER_FONT_BIT;
-    }
-    if (attrib_b & 0x80) {
-        font_b_index |= XEP80_FONTS_BLK_FONT_BIT;
-    }
-    if (attrib_b & 0x10) {
-        font_b_double = TRUE;
-    }
-    else {
-        font_b_double = FALSE;
-    }
-    if (attrib_b & 0x40) {
-        font_b_blank = TRUE;
-    }
-    else {
-        font_b_blank = FALSE;
-    }
-    if (attrib_b & 0x04) {
-        font_b_blink = TRUE;
-    }
-    else {
-        font_b_blink = FALSE;
-    }
+	font_b_index = 0;
+	if (attrib_b & 0x01)
+		font_b_index |= XEP80_FONTS_REV_FONT_BIT;
+	if (attrib_b & 0x20)
+		font_b_index |= XEP80_FONTS_UNDER_FONT_BIT;
+	if (attrib_b & 0x80)
+		font_b_index |= XEP80_FONTS_BLK_FONT_BIT;
+	if (attrib_b & 0x10)
+		font_b_double = TRUE;
+	else
+		font_b_double = FALSE;
+	if (attrib_b & 0x40)
+		font_b_blank = TRUE;
+	else
+		font_b_blank = FALSE;
+	if (attrib_b & 0x04)
+		font_b_blink = TRUE;
+	else
+		font_b_blink = FALSE;
 	XEP80_BlitScreen();
 }
 
 static void XEP80_UpdateCursor(void)
 {
-    if (cursor_on) {
+	if (cursor_on) {
 		/* Redraw character cursor was at */
-        XEP80_BlitChar(xcur, ycur, FALSE);
-        /* Handle reblitting double wide's which cursor may have overwritten */
-        if (xcur != 0) {
-            XEP80_BlitChar(xcur-1, ycur, FALSE);
-        }
+		XEP80_BlitChar(xcur, ycur, FALSE);
+		/* Handle reblitting double wide's which cursor may have overwritten */
+		if (xcur != 0)
+			XEP80_BlitChar(xcur-1, ycur, FALSE);
 		/* Redraw cursor at new location */
-        XEP80_BlitChar(new_xcur, new_ycur, TRUE);
-    }
-    xcur = new_xcur;
-    ycur = new_ycur;
+		XEP80_BlitChar(new_xcur, new_ycur, TRUE);
+	}
+	xcur = new_xcur;
+	ycur = new_ycur;
 }
 
 static void XEP80_AddCharAtCursor(UBYTE byte)
 {
-    xep80_data[ycur][xcur] = byte;
-    XEP80_BlitChar(xcur, ycur, FALSE);
+	xep80_data[ycur][xcur] = byte;
+	XEP80_BlitChar(xcur, ycur, FALSE);
 
-    new_xcur = xcur + 1;
-    new_ycur = ycur;
-    if (new_xcur > rmargin) 
-        {
-        new_xcur = lmargin;
-        if (new_ycur == XEP80_HEIGHT-2) {
-            XEP80_ScrollUpLast();
-        }
-        else if (new_ycur != XEP80_HEIGHT-1) {
+	new_xcur = xcur + 1;
+	new_ycur = ycur;
+	if (new_xcur > rmargin) {
+		new_xcur = lmargin;
+		if (new_ycur == XEP80_HEIGHT-2)
+			XEP80_ScrollUpLast();
+		else if (new_ycur != XEP80_HEIGHT-1) {
 			new_ycur++;
-            XEP80_ScrollDown(new_ycur);
-        }
-    }
-	else {
-		XEP80_UpdateCursor();
+			XEP80_ScrollDown(new_ycur);
+		}
 	}
+	else
+		XEP80_UpdateCursor();
 }
 
 static void XEP80_AddGraphCharAtCursor(UBYTE byte)
 {
-    xep80_graph_data[ycur][xcur] = byte;
-    XEP80_BlitGraphChar(xcur, ycur);
-    xcur++;
-    if (xcur >= 40) {
-        xcur = 0;
-        ycur++;
-        if (ycur >= 240) {
-            ycur = 0;
-        }
-    }
+	xep80_graph_data[ycur][xcur] = byte;
+	XEP80_BlitGraphChar(xcur, ycur);
+	xcur++;
+	if (xcur >= 40) {
+		xcur = 0;
+		ycur++;
+		if (ycur >= 240)
+			ycur = 0;
+	}
 }
 
 static void XEP80_CursorUp(void)
 {
 	new_ycur = ycur - 1;
 	new_xcur = xcur;
-	if (new_ycur < 0) 
-		{
+	if (new_ycur < 0)
 		new_ycur = XEP80_HEIGHT-2;
-		}
 	XEP80_UpdateCursor();
 }
 
@@ -1122,10 +1075,8 @@ static void XEP80_CursorDown(void)
 {
 	new_ycur = ycur + 1;
 	new_xcur = xcur;
-	if (new_ycur > XEP80_HEIGHT-2) 
-		{
+	if (new_ycur > XEP80_HEIGHT-2)
 		new_ycur = 0;
-		}
 	XEP80_UpdateCursor();
 }
 
@@ -1133,24 +1084,19 @@ static void XEP80_CursorLeft(void)
 {
 	new_xcur = xcur - 1;
 	new_ycur = ycur;
-	if (new_xcur < lmargin) 
-		{
+	if (new_xcur < lmargin)
 		new_xcur = rmargin;
-		}
 	XEP80_UpdateCursor();
 }
 
 static void XEP80_CursorRight(void)
 {
-	if (xep80_data[ycur][xcur] == XEP80_ATARI_EOL) {
+	if (xep80_data[ycur][xcur] == XEP80_ATARI_EOL)
 		xep80_data[ycur][xcur] = 0x20;
-	}
 	new_xcur = xcur + 1;
 	new_ycur = ycur;
-	if (new_xcur > rmargin) 
-		{
+	if (new_xcur > rmargin)
 		new_xcur = lmargin;
-		}
 	XEP80_UpdateCursor();
 }
 
@@ -1171,131 +1117,125 @@ static void	XEP80_ClearScreen(void)
 
 static void XEP80_Backspace(void)
 {
-    int x_start = xcur;
-    int y_start = ycur;
+	int x_start = xcur;
+	int y_start = ycur;
 
-    XEP80_FindStartLogicalLine(&x_start, &y_start);
+	XEP80_FindStartLogicalLine(&x_start, &y_start);
 
-    if (xcur == lmargin && x_start == xcur && y_start == ycur) {
-        return;
-    }
-	
-    if (xcur == lmargin) {
-        new_ycur = ycur-1;
-        new_xcur = rmargin;
-    }
-    else {
-        new_xcur = xcur-1;
-        new_ycur = ycur;
-    }
-    xep80_data[new_ycur][new_xcur] = 0x20;
-    XEP80_UpdateCursor();
+	if (xcur == lmargin && x_start == xcur && y_start == ycur)
+		return;
+
+	if (xcur == lmargin) {
+		new_ycur = ycur-1;
+		new_xcur = rmargin;
+	}
+	else {
+		new_xcur = xcur-1;
+		new_ycur = ycur;
+	}
+	xep80_data[new_ycur][new_xcur] = 0x20;
+	XEP80_UpdateCursor();
 }
 
 static void XEP80_DeleteChar(void)
 {
-    int x_end = xcur;
-    int y_end = ycur;
-    int x_del, y_del;
+	int x_end = xcur;
+	int y_end = ycur;
+	int x_del, y_del;
 
-    XEP80_FindEndLogicalLine(&x_end, &y_end);
-    
-    x_del = xcur;
-    y_del = ycur;
-	
-    while(x_del != x_end || y_del != y_end) {
-        if (x_del == rmargin) {
-            if (y_del == XEP80_HEIGHT-2) {
-                xep80_data[y_del][x_del] = XEP80_ATARI_EOL;
-                break;
-            }
-            xep80_data[y_del][x_del] = xep80_data[y_del+1][lmargin];
-            if (xep80_data[y_del+1][lmargin+1] == XEP80_ATARI_EOL) {
-                XEP80_ScrollUp(y_del+1, y_del+1);
+	XEP80_FindEndLogicalLine(&x_end, &y_end);
+
+	x_del = xcur;
+	y_del = ycur;
+
+	while(x_del != x_end || y_del != y_end) {
+		if (x_del == rmargin) {
+			if (y_del == XEP80_HEIGHT-2) {
+				xep80_data[y_del][x_del] = XEP80_ATARI_EOL;
+				break;
+			}
+			xep80_data[y_del][x_del] = xep80_data[y_del+1][lmargin];
+			if (xep80_data[y_del+1][lmargin+1] == XEP80_ATARI_EOL) {
+				XEP80_ScrollUp(y_del+1, y_del+1);
 				eol_at_margin[y_del] = TRUE;
-               break;
-            }
-            y_del++;
-            x_del=lmargin;
-        }
-        else {
-            xep80_data[y_del][x_del] = xep80_data[y_del][x_del+1];
+				break;
+			}
+			y_del++;
+			x_del=lmargin;
+		}
+		else {
+			xep80_data[y_del][x_del] = xep80_data[y_del][x_del+1];
 			if (x_del == rmargin-1 && eol_at_margin[y_del]) {
 				xep80_data[y_del][x_del+1] = XEP80_ATARI_EOL;
 				eol_at_margin[y_del] = FALSE;
 			}
 			x_del++;
-        }
-    }
-    XEP80_BlitRows(ycur,y_end);
-    if (cursor_on) 
-        XEP80_BlitChar(xcur, ycur, TRUE);
+		}
+	}
+	XEP80_BlitRows(ycur,y_end);
+	if (cursor_on)
+		XEP80_BlitChar(xcur, ycur, TRUE);
 }
 
 
 static void XEP80_InsertChar(void)
 {
-    int x_end = xcur;
-    int y_end = ycur;
-    int x_ins, y_ins;
+	int x_end = xcur;
+	int y_end = ycur;
+	int x_ins, y_ins;
 
-    XEP80_FindEndLogicalLine(&x_end, &y_end);
+	XEP80_FindEndLogicalLine(&x_end, &y_end);
 
-    x_ins = x_end;
-    y_ins = y_end;
+	x_ins = x_end;
+	y_ins = y_end;
 
 	if (x_ins == rmargin) {
 		if (eol_at_margin[y_end]) {
-            if (y_end == XEP80_HEIGHT-2) {
-                new_ycur = ycur-1;
-                new_xcur = xcur;
-                XEP80_ScrollUpLast();
-                y_ins--;
-                eol_at_margin[y_end-1] = FALSE;
-                xep80_data[y_end][lmargin] = XEP80_ATARI_EOL;
-            } else {
-                XEP80_ScrollDown(y_ins+1);
-                eol_at_margin[y_end] = FALSE;
-                y_end++;
-                xep80_data[y_end][lmargin] = XEP80_ATARI_EOL;
-            }
+			if (y_end == XEP80_HEIGHT-2) {
+				new_ycur = ycur-1;
+				new_xcur = xcur;
+				XEP80_ScrollUpLast();
+				y_ins--;
+				eol_at_margin[y_end-1] = FALSE;
+				xep80_data[y_end][lmargin] = XEP80_ATARI_EOL;
+			} else {
+				XEP80_ScrollDown(y_ins+1);
+				eol_at_margin[y_end] = FALSE;
+				y_end++;
+				xep80_data[y_end][lmargin] = XEP80_ATARI_EOL;
 			}
+		}
 		else if (xep80_data[y_end][x_end] == XEP80_ATARI_EOL) {
 			x_ins--;
 			eol_at_margin[y_end] = TRUE;
 		}
 	}
 
-    while(x_ins != xcur || y_ins != ycur) {
+	while(x_ins != xcur || y_ins != ycur) {
 		if (y_ins == ycur && x_ins < xcur)
 			break;
-        if (x_ins == rmargin) {
-			if (y_ins != XEP80_HEIGHT-2) {
+		if (x_ins == rmargin) {
+			if (y_ins != XEP80_HEIGHT-2)
 				xep80_data[y_ins+1][lmargin] = xep80_data[y_ins][x_ins];
-				}
-        }
-        else {
-            xep80_data[y_ins][x_ins+1] = xep80_data[y_ins][x_ins];
-        }
-        if (x_ins == lmargin) {
+		}
+		else
+			xep80_data[y_ins][x_ins+1] = xep80_data[y_ins][x_ins];
+		if (x_ins == lmargin) {
 			x_ins = rmargin;
 			y_ins--;
-        }
-        else {
-            x_ins--;
-        }
-    }
+		}
+		else
+			x_ins--;
+	}
 
-	if (x_ins == rmargin) {
+	if (x_ins == rmargin)
 		xep80_data[y_ins+1][lmargin] = xep80_data[y_ins][x_ins];
-	}
-	else {
+	else
 		xep80_data[y_ins][x_ins+1] = xep80_data[y_ins][x_ins];
-	}
 	xep80_data[y_ins][x_ins] = 0x20;
-    XEP80_BlitRows(ycur,y_end);
-    if (cursor_on) 
-        XEP80_BlitChar(xcur, ycur, TRUE);
+	XEP80_BlitRows(ycur,y_end);
+	if (cursor_on)
+		XEP80_BlitChar(xcur, ycur, TRUE);
 }
 
 static void XEP80_GoToNextTab(void)
@@ -1303,12 +1243,12 @@ static void XEP80_GoToNextTab(void)
 	int x_search = xcur+1;
 	int y_search = ycur;
 	
-    while(1) {
+	while(1) {
 		while(x_search<=rmargin) {
-            if (tab_stops[x_search]) {
+			if (tab_stops[x_search]) {
 				new_xcur = x_search;
 				new_ycur = y_search;
-                XEP80_UpdateCursor();
+				XEP80_UpdateCursor();
 				return;
 			}
 			x_search++;
@@ -1316,11 +1256,11 @@ static void XEP80_GoToNextTab(void)
 		y_search++;
 		x_search = lmargin;
 		if (y_search >= XEP80_HEIGHT-1) {
-            new_ycur = XEP80_HEIGHT-2;
-            new_xcur = lmargin;
-            XEP80_ScrollUpLast();
-            return;
-        }
+			new_ycur = XEP80_HEIGHT-2;
+			new_xcur = lmargin;
+			XEP80_ScrollUpLast();
+			return;
+		}
 	}
 }
 
@@ -1344,117 +1284,111 @@ static void XEP80_AddEOL(void)
 
 static void XEP80_DeleteLogicalLine(void)
 {
-    int x_start = xcur;
-    int y_start = ycur;
-    int x_end = xcur;
-    int y_end = ycur;
+	int x_start = xcur;
+	int y_start = ycur;
+	int x_end = xcur;
+	int y_end = ycur;
 
-    XEP80_FindStartLogicalLine(&x_start, &y_start);
-    XEP80_FindEndLogicalLine(&x_end, &y_end);
-    new_ycur = y_start;
-    new_xcur = lmargin;
-    XEP80_ScrollUp(y_start, y_end);
+	XEP80_FindStartLogicalLine(&x_start, &y_start);
+	XEP80_FindEndLogicalLine(&x_end, &y_end);
+	new_ycur = y_start;
+	new_xcur = lmargin;
+	XEP80_ScrollUp(y_start, y_end);
 }
 
 static void XEP80_InsertLine(void)
 {
-    new_xcur = lmargin;
-    new_ycur = ycur;
+	new_xcur = lmargin;
+	new_ycur = ycur;
 
-    XEP80_ScrollDown(ycur);;
+	XEP80_ScrollDown(ycur);;
 }
 
 static void XEP80_ScrollUpLast(void)
 {
-    int row;
+	int row;
 
-    if (cursor_on) {
-        XEP80_BlitChar(xcur, ycur, FALSE);
-        if (xcur != 0) {
-            XEP80_BlitChar(xcur-1, ycur, FALSE);
-        }
-    }
+	if (cursor_on) {
+		XEP80_BlitChar(xcur, ycur, FALSE);
+		if (xcur != 0)
+			XEP80_BlitChar(xcur-1, ycur, FALSE);
+	}
 
-    for (row=1;row<=XEP80_HEIGHT-2;row++) {
-        memcpy(xep80_data[row-1],
-               xep80_data[row],
-               XEP80_WIDTH);
+	for (row=1;row<=XEP80_HEIGHT-2;row++) {
+		memcpy(xep80_data[row-1],
+		       xep80_data[row],
+		       XEP80_WIDTH);
 		eol_at_margin[row-1] = eol_at_margin[row] ;
-    }
-    
-    memset(xep80_data[23],XEP80_ATARI_EOL,XEP80_WIDTH);
-	eol_at_margin[23] = FALSE ;
-    
-    XEP80_BlitScreen();
+	}
 
-    if (cursor_on) {
-        XEP80_BlitChar(new_xcur, new_ycur, TRUE);
-    }
-    xcur = new_xcur;
-    ycur = new_ycur;
+	memset(xep80_data[23],XEP80_ATARI_EOL,XEP80_WIDTH);
+	eol_at_margin[23] = FALSE ;
+
+	XEP80_BlitScreen();
+
+	if (cursor_on)
+		XEP80_BlitChar(new_xcur, new_ycur, TRUE);
+	xcur = new_xcur;
+	ycur = new_ycur;
 }
 
 static void XEP80_ScrollDown(int y)
 {
-    int row;
-    
-    if (cursor_on) {
-        XEP80_BlitChar(xcur, ycur, FALSE);
-        if (xcur != 0) {
-            XEP80_BlitChar(xcur-1, ycur, FALSE);
-        }
-    }
+	int row;
 
-    for (row=XEP80_HEIGHT-3;row>=y;row--) {
-        memcpy(xep80_data[row+1],
-               xep80_data[row],
-               XEP80_WIDTH);
-		eol_at_margin[row+1] = eol_at_margin[row] ;
-    }
-    
-    memset(xep80_data[y],XEP80_ATARI_EOL,XEP80_WIDTH);
-	eol_at_margin[y] = FALSE ;
-    
-    XEP80_BlitRows(y,23);
+	if (cursor_on) {
+		XEP80_BlitChar(xcur, ycur, FALSE);
+		if (xcur != 0)
+			XEP80_BlitChar(xcur-1, ycur, FALSE);
+	}
 
-    if (cursor_on) {
-        XEP80_BlitChar(new_xcur, new_ycur, TRUE);
-    }
-    xcur = new_xcur;
-    ycur = new_ycur;
+	for (row=XEP80_HEIGHT-3;row>=y;row--) {
+		memcpy(xep80_data[row+1],
+		       xep80_data[row],
+		       XEP80_WIDTH);
+		eol_at_margin[row+1] = eol_at_margin[row];
+	}
+
+	memset(xep80_data[y],XEP80_ATARI_EOL,XEP80_WIDTH);
+	eol_at_margin[y] = FALSE;
+
+	XEP80_BlitRows(y,23);
+
+	if (cursor_on)
+		XEP80_BlitChar(new_xcur, new_ycur, TRUE);
+	xcur = new_xcur;
+	ycur = new_ycur;
 }
 
 static void XEP80_ScrollUp(int y_start, int y_end)
 {
-    int row;
+	int row;
 	int num_rows = y_end - y_start + 1;
 
-    if (cursor_on) {
-        XEP80_BlitChar(xcur, ycur, FALSE);
-        if (xcur != 0) {
-            XEP80_BlitChar(xcur-1, ycur, FALSE);
-        }
-    }
+	if (cursor_on) {
+		XEP80_BlitChar(xcur, ycur, FALSE);
+		if (xcur != 0)
+			XEP80_BlitChar(xcur-1, ycur, FALSE);
+	}
 
-    for (row=y_start;row<XEP80_HEIGHT-2;row++) {
-        memcpy(xep80_data[row],
-               xep80_data[row+num_rows],
-               XEP80_WIDTH);
+	for (row=y_start;row<XEP80_HEIGHT-2;row++) {
+		memcpy(xep80_data[row],
+		       xep80_data[row+num_rows],
+		       XEP80_WIDTH);
 		eol_at_margin[row] = eol_at_margin[row+num_rows] ;
-    }
-    
+	}
+
 	for (row=24-num_rows; row < 24; row++) {
 		memset(xep80_data[row],XEP80_ATARI_EOL,XEP80_WIDTH);
 		eol_at_margin[row] = FALSE;
-		}
+	}
 
-    XEP80_BlitRows(y_start,23);
+	XEP80_BlitRows(y_start,23);
 
-    if (cursor_on) {
-        XEP80_BlitChar(new_xcur, new_ycur, TRUE);
-    }
-    xcur = new_xcur;
-    ycur = new_ycur;
+	if (cursor_on)
+		XEP80_BlitChar(new_xcur, new_ycur, TRUE);
+	xcur = new_xcur;
+	ycur = new_ycur;
 }
 
 static void XEP80_FindEndLogicalLine(int *x, int *y)
@@ -1462,7 +1396,7 @@ static void XEP80_FindEndLogicalLine(int *x, int *y)
 	int x_search = *x;
 	int y_search = *y;
 	int found = FALSE;
-	
+
 	while(1) {
 		while(x_search<=rmargin) {
 			if (xep80_data[y_search][x_search] == XEP80_ATARI_EOL) {
@@ -1483,7 +1417,7 @@ static void XEP80_FindEndLogicalLine(int *x, int *y)
 			break;
 		x_search = lmargin;
 	}
-	
+
 	if (!found) {
 		*x = rmargin;
 		*y = XEP80_HEIGHT-2;
@@ -1505,12 +1439,12 @@ static void XEP80_FindStartLogicalLine(int *x, int *y)
 	int y_search = *y;
 	int x_search = rmargin;
 	int found = FALSE;
-	
+
 	if (y_search==0) {
 		*x = lmargin;
 		return;
-		}
-	
+	}
+
 	y_search--;
 	while(1) {
 		while(x_search>=lmargin) {
@@ -1518,7 +1452,7 @@ static void XEP80_FindStartLogicalLine(int *x, int *y)
 				found = TRUE;
 				break;
 			}
-            x_search--;
+			x_search--;
 		}
 		if (found)
 			break;
@@ -1529,89 +1463,82 @@ static void XEP80_FindStartLogicalLine(int *x, int *y)
 	}
 
 	*x = lmargin;
-	
-	if (!found) {
+
+	if (!found)
 		*y = 0;
-	}
-	else {
+	else
 		*y = y_search + 1;
-	}
 }
 
 static void XEP80_BlitChar(int x, int y, int cur)
 {
-    int screen_col;
-    int font_row, font_col;
-    UBYTE *from, *to;
-    UBYTE ch;
-    UBYTE on, off, blink;
-    int font_index, font_double, font_blank, font_blink;
+	int screen_col;
+	int font_row, font_col;
+	UBYTE *from, *to;
+	UBYTE ch;
+	UBYTE on, off, blink;
+	int font_index, font_double, font_blank, font_blink;
 	int blink_rev;
 	int last_double_cur = FALSE;
 
-    /* Don't Blit characters that aren't on the screen at the moment. */
-    if (x < xscroll || x >= xscroll + XEP80_LINE_LEN) 
-        return;
-    
-    screen_col = x-xscroll;
-    ch = xep80_data[y][x];
-	
+	/* Don't Blit characters that aren't on the screen at the moment. */
+	if (x < xscroll || x >= xscroll + XEP80_LINE_LEN)
+		return;
+
+	screen_col = x-xscroll;
+	ch = xep80_data[y][x];
+
 	/* Dispaly Atari EOL's as spaces */
 	if (ch == XEP80_ATARI_EOL && ((font_a_index & XEP80_FONTS_BLK_FONT_BIT) == 0) 
-        && char_set != CHAR_SET_INTERNAL)
+	    && char_set != CHAR_SET_INTERNAL)
 		ch = 0x20;
-	
-    if (ch & 0x80) {
-        font_index = font_b_index;
-        font_double = font_b_double;
-        font_blank = font_b_blank;
-        font_blink = font_b_blink;
-    }
-    else {
-        font_index = font_a_index;
-        font_double = font_a_double;
-        font_blank = font_a_blank;
-        font_blink = font_a_blink;
-    }
-	
-	if (font_blink && blink_reverse && (font_index & XEP80_FONTS_REV_FONT_BIT)) {
-		blink_rev = TRUE;
+
+	if (ch & 0x80) {
+		font_index = font_b_index;
+		font_double = font_b_double;
+		font_blank = font_b_blank;
+		font_blink = font_b_blink;
 	}
 	else {
-		blink_rev = FALSE;
+		font_index = font_a_index;
+		font_double = font_a_double;
+		font_blank = font_a_blank;
+		font_blink = font_a_blink;
 	}
+
+	if (font_blink && blink_reverse && (font_index & XEP80_FONTS_REV_FONT_BIT))
+		blink_rev = TRUE;
+	else
+		blink_rev = FALSE;
 	
-    if (inverse_mode) {
+	if (inverse_mode)
 		font_index ^= XEP80_FONTS_REV_FONT_BIT;
-    }
 	
-    if (ch==XEP80_ATARI_EOL) {
-        if (inverse_mode) {
-            font_index |= XEP80_FONTS_REV_FONT_BIT;
-        }
-        else {
-            font_index &= ~XEP80_FONTS_REV_FONT_BIT;
-        }
-    }
+	if (ch==XEP80_ATARI_EOL) {
+		if (inverse_mode)
+			font_index |= XEP80_FONTS_REV_FONT_BIT;
+		else
+			font_index &= ~XEP80_FONTS_REV_FONT_BIT;
+	}
 
 	/* Skip the charcter if the last one was a displayed double */
 	if (screen_col != 0 && !cur) {
 		if (IS_DOUBLE(x-1,y)) {
 			int firstd;
-			
+
 			firstd = x-1;
 			while (firstd > xscroll) {
 				if (!IS_DOUBLE(firstd,y)) {
 					firstd++;
 					break;
-					}
+				}
 				firstd--;
 			}
 			if ((x-firstd) % 2)
 				return;
 		}
 	}
-	
+
 	/* Check if we are doing a cursor, and the charcter before is double */
 	if (cur) {
 		if (screen_col != 0) {
@@ -1620,97 +1547,91 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		}
 	}
 
-    if (inverse_mode) {
-        on = XEP80_FONTS_offcolor;
-        off = XEP80_FONTS_oncolor;
-    }
-    else {
-        on = XEP80_FONTS_oncolor;
-        off = XEP80_FONTS_offcolor;
-    }
-
-	if (font_index & XEP80_FONTS_REV_FONT_BIT) {
-		blink = on;
-		}
+	if (inverse_mode) {
+		on = XEP80_FONTS_offcolor;
+		off = XEP80_FONTS_oncolor;
+	}
 	else {
+		on = XEP80_FONTS_oncolor;
+		off = XEP80_FONTS_offcolor;
+	}
+
+	if (font_index & XEP80_FONTS_REV_FONT_BIT)
+		blink = on;
+	else
 		blink = off;
+
+	if (font_blank) {
+		UBYTE color;
+
+		to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
+		                     screen_col * XEP80_CHAR_WIDTH];
+		for (font_row=0;font_row < XEP80_char_height; font_row++) {
+			if (cur || (font_index & XEP80_FONTS_REV_FONT_BIT))
+				color = on;
+			else
+				color = off;
+
+			for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
+				if (font_double)
+					*to++ = color;
+				*to++ = color;
+			}
+			if (font_double)
+				to += XEP80_SCRN_WIDTH - 2*XEP80_CHAR_WIDTH;
+			else
+				to += XEP80_SCRN_WIDTH - 1*XEP80_CHAR_WIDTH;
 		}
 
-    if (font_blank) {
-		UBYTE color;
-		
-        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
-                             screen_col * XEP80_CHAR_WIDTH];
-        for (font_row=0;font_row < XEP80_char_height; font_row++) {
-            if (cur || (font_index & XEP80_FONTS_REV_FONT_BIT)) {
+		to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
+		                     screen_col * XEP80_CHAR_WIDTH];
+		for (font_row=0;font_row < XEP80_char_height; font_row++) {
+			if ((cur && !cursor_blink) || (font_index & XEP80_FONTS_REV_FONT_BIT))
 				color = on;
-            }
-            else {
+			else
 				color = off;
-            }
 
-            for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
+			for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
 				if (font_double)
 					*to++ = color;
-                *to++ = color;
-            }
+				*to++ = color;
+			}
 			if (font_double)
 				to += XEP80_SCRN_WIDTH - 2*XEP80_CHAR_WIDTH;
 			else
 				to += XEP80_SCRN_WIDTH - 1*XEP80_CHAR_WIDTH;
-        }
-
-        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
-                             screen_col * XEP80_CHAR_WIDTH];
-        for (font_row=0;font_row < XEP80_char_height; font_row++) {
-            if ((cur && !cursor_blink) || (font_index & XEP80_FONTS_REV_FONT_BIT)) {
-				color = on;
-            }
-            else {
-				color = off;
-            }
-
-            for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
-				if (font_double)
-					*to++ = color;
-                *to++ = color;
-            }
-			if (font_double)
-				to += XEP80_SCRN_WIDTH - 2*XEP80_CHAR_WIDTH;
-			else
-				to += XEP80_SCRN_WIDTH - 1*XEP80_CHAR_WIDTH;
-        }
-    }
-    else if (font_double && !cur) {
+		}
+	}
+	else if (font_double && !cur) {
 		int width;
-		
+
 		if (screen_col == 79)
 			width = XEP80_CHAR_WIDTH/2;
 		else
 			width = XEP80_CHAR_WIDTH;
-		
-        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
-                             screen_col * XEP80_CHAR_WIDTH];
-        for (font_row=0;font_row < XEP80_char_height; font_row++) {
-            from = XEP80_FONTS_atari_fonts[char_set][font_index][ch][font_row];
 
-            for (font_col=0; font_col < width; font_col++) {
-                *to++ = *from;
-                *to++ = *from++;
-            }
-            to += XEP80_SCRN_WIDTH - 2*XEP80_CHAR_WIDTH;
-        }
+		to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
+		                     screen_col * XEP80_CHAR_WIDTH];
+		for (font_row=0;font_row < XEP80_char_height; font_row++) {
+			from = XEP80_FONTS_atari_fonts[char_set][font_index][ch][font_row];
 
-        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
-                             screen_col * XEP80_CHAR_WIDTH];
-        for (font_row=0;font_row < XEP80_char_height; font_row++) {
+			for (font_col=0; font_col < width; font_col++) {
+				*to++ = *from;
+				*to++ = *from++;
+			}
+			to += XEP80_SCRN_WIDTH - 2*XEP80_CHAR_WIDTH;
+		}
+
+		to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
+		                     screen_col * XEP80_CHAR_WIDTH];
+		for (font_row=0;font_row < XEP80_char_height; font_row++) {
 			if (blink_rev)
 				from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
 			else
 				from = XEP80_FONTS_atari_fonts[char_set][font_index][ch][font_row];
 
-            for (font_col=0; font_col < width; font_col++) {
-                if (font_blink && !cur && !blink_rev) {
+			for (font_col=0; font_col < width; font_col++) {
+				if (font_blink && !cur && !blink_rev) {
 					if ((font_index & XEP80_FONTS_UNDER_FONT_BIT) && font_row == XEP80_FONTS_UNDER_ROW) {
 						*to++ = *from;
 						*to++ = *from++;
@@ -1720,40 +1641,39 @@ static void XEP80_BlitChar(int x, int y, int cur)
 						*to++ = blink;
 						from++;
 					}
-                }
-                else {
-                    *to++ = *from;
-                    *to++ = *from++;
-                }
-            }
-            to += XEP80_SCRN_WIDTH - 2*XEP80_CHAR_WIDTH;
-        }
-    }
-    else if ((font_double || last_double_cur) && cur && !cursor_overwrite) {
+				}
+				else {
+					*to++ = *from;
+					*to++ = *from++;
+				}
+			}
+			to += XEP80_SCRN_WIDTH - 2*XEP80_CHAR_WIDTH;
+		}
+	}
+	else if ((font_double || last_double_cur) && cur && !cursor_overwrite) {
 		int first_half, start_col, end_col;
-		
+
 		/* Determine if this is a double first or second half */
-		if (screen_col == 0) {
+		if (screen_col == 0)
 			first_half = TRUE;
-		} else {
+		else {
 			if (IS_DOUBLE(x-1,y)) {
 				int firstd;
-			
+
 				firstd = x-1;
 				while (firstd > xscroll) {
 					if (!IS_DOUBLE(firstd,y)) {
 						firstd++;
 						break;
-						}
+					}
 					firstd--;
 				}
 				first_half = (((x-firstd) % 2) == 0);
 			}
-			else {
+			else
 				first_half = TRUE;
-			}
 		}
-		
+
 		if (first_half) {
 			start_col = 0;
 			end_col = 3;
@@ -1763,9 +1683,9 @@ static void XEP80_BlitChar(int x, int y, int cur)
 			end_col = 6;
 			ch = xep80_data[y][x-1];
 		}
-		
-        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
-                             screen_col * XEP80_CHAR_WIDTH];
+
+		to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
+		                     screen_col * XEP80_CHAR_WIDTH];
 		for (font_row=0;font_row < XEP80_char_height; font_row++) {
 			from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row] + start_col;
 			if (first_half)
@@ -1778,15 +1698,13 @@ static void XEP80_BlitChar(int x, int y, int cur)
 				*to++ = *from;
 			to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
 		}
-        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
-                             screen_col * XEP80_CHAR_WIDTH];
+		to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
+		                     screen_col * XEP80_CHAR_WIDTH];
 		for (font_row=0;font_row < XEP80_char_height; font_row++) {
-			if (!cursor_blink) {
+			if (!cursor_blink)
 				from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row] + start_col;
-			}
-			else {
+			else
 				from = XEP80_FONTS_atari_fonts[char_set][font_index][ch][font_row] + start_col;
-			}
 			if (first_half)
 				*to++ = *from++;
 			for (font_col=start_col; font_col < end_col; font_col++) {
@@ -1798,58 +1716,51 @@ static void XEP80_BlitChar(int x, int y, int cur)
 			to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
 		}
 	}
-    else {
-        to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
-                             screen_col * XEP80_CHAR_WIDTH];
+	else {
+		to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
+		                     screen_col * XEP80_CHAR_WIDTH];
 		if (cur & cursor_overwrite) {
 			for (font_row=0;font_row < XEP80_char_height; font_row++) {
-				for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
+				for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++)
 					*to++ = on;
-				}
 				to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
 			}
 		}
 		else {
 			for (font_row=0;font_row < XEP80_char_height; font_row++) {
-				if (cur) {
+				if (cur)
 					from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
-				}
-				else {
+				else
 					from = XEP80_FONTS_atari_fonts[char_set][font_index][ch][font_row];
-				}
 
-				for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
+				for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++)
 					*to++ = *from++;
-				}
 				to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
 			}
 		}
 
-        to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
-                             screen_col * XEP80_CHAR_WIDTH];
+		to = &XEP80_screen_2[XEP80_SCRN_WIDTH * XEP80_char_height * y +
+		                     screen_col * XEP80_CHAR_WIDTH];
 		if (cur & cursor_overwrite) {
 			if (cursor_blink) {
 				for (font_row=0;font_row < XEP80_char_height; font_row++) {
-					for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
+					for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++)
 						*to++ = off;
-					}
-				to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
+					to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
 				}
 			}
 			else {
 				for (font_row=0;font_row < XEP80_char_height; font_row++) {
-					for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
+					for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++)
 						*to++ = on;
-					}
-				to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
+					to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
 				}
 			}
 		}
 		else {
 			for (font_row=0;font_row < XEP80_char_height; font_row++) {
-				if (cur && !cursor_blink) {
+				if (cur && !cursor_blink)
 					from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
-				}
 				else {
 					if (blink_rev)
 						from = XEP80_FONTS_atari_fonts[char_set][font_index ^ XEP80_FONTS_REV_FONT_BIT][ch][font_row];
@@ -1858,87 +1769,83 @@ static void XEP80_BlitChar(int x, int y, int cur)
 				}
 				for (font_col=0; font_col < XEP80_CHAR_WIDTH; font_col++) {
 					if (font_blink && !cur) {
-						if ((font_index & XEP80_FONTS_UNDER_FONT_BIT) && font_row == XEP80_FONTS_UNDER_ROW) {
+						if ((font_index & XEP80_FONTS_UNDER_FONT_BIT) && font_row == XEP80_FONTS_UNDER_ROW)
 							*to++ = *from++;
-						}
 						else {
 							*to++ = blink;
 							from++;
 						}
 					}
-					else {
+					else
 						*to++ = *from++;
-					}
 				}
 				to += XEP80_SCRN_WIDTH - XEP80_CHAR_WIDTH;
 			}
 		}
-    }
+	}
 }
 
 static void XEP80_BlitScreen(void)
 {
-    int screen_row, screen_col;
+	int screen_row, screen_col;
 
-    for (screen_row = 0; screen_row < XEP80_HEIGHT; screen_row++) {
-        for (screen_col = xscroll; screen_col < xscroll + XEP80_LINE_LEN;
-             screen_col++) {
-            XEP80_BlitChar(screen_col, screen_row, FALSE);
-        }
-    }
+	for (screen_row = 0; screen_row < XEP80_HEIGHT; screen_row++) {
+		for (screen_col = xscroll; screen_col < xscroll + XEP80_LINE_LEN;
+		     screen_col++)
+			XEP80_BlitChar(screen_col, screen_row, FALSE);
+	}
 }
 
 static void XEP80_BlitRows(int y_start, int y_end)
 {
-    int screen_row, screen_col;
+	int screen_row, screen_col;
 
-    for (screen_row = y_start; screen_row <= y_end; screen_row++) {
-        for (screen_col = xscroll; screen_col < xscroll + XEP80_LINE_LEN;
-             screen_col++) {
-            XEP80_BlitChar(screen_col, screen_row, FALSE);
-        }
-    }
+	for (screen_row = y_start; screen_row <= y_end; screen_row++) {
+		for (screen_col = xscroll; screen_col < xscroll + XEP80_LINE_LEN;
+		     screen_col++)
+			XEP80_BlitChar(screen_col, screen_row, FALSE);
+	}
 }
 
 static void XEP80_BlitGraphChar(int x, int y)
 {
-    int graph_col;
-    UBYTE *to1,*to2;
-    UBYTE ch;
-    UBYTE on, off;
+	int graph_col;
+	UBYTE *to1,*to2;
+	UBYTE ch;
+	UBYTE on, off;
 
-    if (inverse_mode) {
-        on = XEP80_FONTS_offcolor;
-        off = XEP80_FONTS_oncolor;
-    }
-    else {
-        on = XEP80_FONTS_oncolor;
-        off = XEP80_FONTS_offcolor;
-    }
+	if (inverse_mode) {
+		on = XEP80_FONTS_offcolor;
+		off = XEP80_FONTS_oncolor;
+	}
+	else {
+		on = XEP80_FONTS_oncolor;
+		off = XEP80_FONTS_offcolor;
+	}
 
-    ch = xep80_graph_data[y][x];
+	ch = xep80_graph_data[y][x];
 
-    to1 = &XEP80_screen_1[XEP80_SCRN_WIDTH * (y + XEP80_GRAPH_Y_OFFSET)
-                          + x * 8 + XEP80_GRAPH_X_OFFSET];
-    to2 = &XEP80_screen_2[XEP80_SCRN_WIDTH * (y + XEP80_GRAPH_Y_OFFSET)
-                          + x * 8 + XEP80_GRAPH_X_OFFSET];
+	to1 = &XEP80_screen_1[XEP80_SCRN_WIDTH * (y + XEP80_GRAPH_Y_OFFSET)
+	                      + x * 8 + XEP80_GRAPH_X_OFFSET];
+	to2 = &XEP80_screen_2[XEP80_SCRN_WIDTH * (y + XEP80_GRAPH_Y_OFFSET)
+	                      + x * 8 + XEP80_GRAPH_X_OFFSET];
 
-    for (graph_col=7; graph_col >= 0; graph_col--) {
-        if (ch & (1<<graph_col)) {
-            *to1++ = on;
-            *to2++ = on;
-        }
-        else {
-            *to1++ = off;
-            *to2++ = off;
-        }
-    }
+	for (graph_col=7; graph_col >= 0; graph_col--) {
+		if (ch & (1<<graph_col)) {
+			*to1++ = on;
+			*to2++ = on;
+		}
+		else {
+			*to1++ = off;
+			*to2++ = off;
+		}
+	}
 }
 
 static void XEP80_BlitGraphScreen(void)
 {
 	int x, y;
-	
+
 	for (x=0; x<XEP80_GRAPH_WIDTH/8; x++)
 		for (y=0; y<XEP80_GRAPH_HEIGHT; y++)
 			XEP80_BlitGraphChar(x,y);
@@ -1951,7 +1858,7 @@ void XEP80_ChangeColors(void)
 	else {
 		XEP80_BlitScreen();
 		XEP80_BlitChar(xcur, ycur, TRUE);
-		}
+	}
 }
 
 void XEP80_StateSave(void)
@@ -2013,7 +1920,7 @@ void XEP80_StateRead(void)
 {
 	int local_xep80_enabled = 0;
 	int local_xep80 = 0;
-	
+
 	/* test for end of file */
 	StateSav_ReadINT(&local_xep80_enabled, 1);
 	if (!XEP80_SetEnabled(local_xep80_enabled))
@@ -2084,4 +1991,3 @@ void XEP80_StateRead(void)
 /*
 vim:ts=4:sw=4:
 */
-

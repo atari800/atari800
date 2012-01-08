@@ -7,6 +7,7 @@
 * xep80.c: Fix (and simplify) the code for I/O timing - it was not resistant
   to random data appearing in PORTA, which resulted in XEP80 going haywire
   after coldstart. The change breaks binary compatibility of savestates.
+  Standardise indentation (tabs instead of spaces).
 
 
 2012-01-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
