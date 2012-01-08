@@ -1,6 +1,9 @@
 2012-01-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * antic.c: Fix accuracy of ANTIC_CPU_CLOCK when NEW_CYCLE_EXACT is enabled.
 
+* monitor.c: Fix accuracy of cycle counts (when displaying the current state)
+  when NEX_CYCLE_EXACT is enabled.
+
 
 2012-01-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: No need to call SDL_GetKeyState() on each frame - moved the

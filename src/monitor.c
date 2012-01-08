@@ -807,7 +807,7 @@ void MONITOR_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
                 char n, char v, char z, char c)
 {
 	fprintf(fp, "%3d %3d A=%02X X=%02X Y=%02X S=%02X P=%c%c*-%c%c%c%c PC=",
-		ANTIC_ypos, ANTIC_xpos, a, x, y, s,
+		ANTIC_ypos, ANTIC_XPOS, a, x, y, s,
 		n, v, (CPU_regP & CPU_D_FLAG) ? 'D' : '-', (CPU_regP & CPU_I_FLAG) ? 'I' : '-', z, c);
 	show_instruction(fp, pc);
 }
