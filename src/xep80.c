@@ -160,13 +160,19 @@ static void XEP80_BlitRows(int y_start, int y_end);
 static void XEP80_BlitGraphChar(int x, int y);
 
 /* Local state variables */
-static int output_state = -1;
 static int output_word = 0;
 
 static UWORD input_queue[IN_QUEUE_SIZE];
 static int input_count = 0;
-static int input_bit = 0;
-static int input_first = TRUE;
+
+/* Indicates moment when receiving of a word started,
+   or a moment when transmitting of the first word in the output queue
+   started. Used to compare with ANTIC_CPU_CLOCK when determining
+   a bit currently transmitted. */
+static unsigned int start_trans_cpu_clock;
+/* Indicates that a byte is currently being received. */
+static int receiving = FALSE;
+
 
 static int xcur = 0;
 static int xscroll = 0;
@@ -299,6 +305,8 @@ int XEP80_Initialise(int *argc, char *argv[])
 		return FALSE;
 	}
 
+	start_trans_cpu_clock = ANTIC_CPU_CLOCK;
+
 	return TRUE;
 }
 
@@ -306,17 +314,7 @@ static void XEP80_InputWord(int word)
 {
 	input_queue[input_count] = word;
 	input_count++;
-	input_bit = 0;
-	input_first = TRUE;
     }
-
-static float XEP80_DeltaXYPos(float a, float b)
-{
-	if (b > a)
-		return (b-a);
-	else
-		return(((float) Atari800_tv_mode) - a + b);
-}
 
 UBYTE XEP80_GetBit(void) 
 {
@@ -324,125 +322,117 @@ UBYTE XEP80_GetBit(void)
 	int word_bit_num;
 	int input_word;
 	int input_word_num;
-	static float last_xypos;
-	/* This calculates the number of scan lines between bit
-	 *	reads.  A scan line is the same time duration as a
-	 *	XEP80 Bit period */
-	float xypos = ANTIC_ypos + 
-                        ((float) ANTIC_xpos)/
-                        ((float) ANTIC_xpos_limit);
-	
+	/* Number of CPU ticks since start of word receiving.
+	   TODO: Avoid overflows in this value (minimal issue, since transmission
+	   rate is 15.7 kHz - way too low to allow for overflows). */
+	int num_ticks = (int)(ANTIC_CPU_CLOCK - start_trans_cpu_clock);
+
+	int bit_no = num_ticks / ANTIC_LINE_C;
+
 	/* If there is not input to be sent, just return */
-	if (input_count == 0)
-		return(ret);
-	
-	/* If this is the first time, do nothing, start with bit 0 */
-	if (input_first)
-	{
-		input_first = FALSE;
-	}
-	else
-	{
-		/* If we are more than half a bit period since the last
-		 * read, assume it should be the next bit.  If it's less
-		 *  do nothing, as SpartaDos driver does multiple reads at
-		 *  times */
-		if (XEP80_DeltaXYPos(last_xypos, xypos) > 0.5)
-			input_bit++;
-		/* If it is the stop bit on the first or second character
-		 * to be sent, and we have taken more than a scan line to
-		 * read it, then skip it and go to the next start bit.
-		 * This is required to not confuse the stock AtariDOS 
-		 * driver. */
-		if ((XEP80_DeltaXYPos(last_xypos, xypos) > 1.1) &&
-			(input_bit == 10 || input_bit == 20))
-			input_bit++;
-	}
+	if (input_count == 0 || num_ticks < 0)
+		return ret;
 	
 	/* Figure out which word of the queue it is in based on bit */
-	input_word_num = (input_bit / 11) + 1;
+	input_word_num = (bit_no / 11);
 
-    /* If it is greater than we have, then clear queue and return */
-	if (input_word_num > (input_count))
-		{
+	/* If it is greater than we have, then clear queue and return */
+	if (input_word_num >= input_count) {
 		input_count = 0;
-		return(ret);
-		}
+		return ret;
+	}
 	
 	/* Get the word from the queue, and calculate which bit of the
 	 * word we are sending */
-	input_word = input_queue[input_word_num - 1];
-	word_bit_num = input_bit % 11;
+	input_word = input_queue[input_word_num];
+	word_bit_num = bit_no % 11;
 
-    /* Send the return value based on the bit */
+	/* Send the return value based on the bit */
 	switch(word_bit_num) {
-    case 0: /* Start Bit - 0 */
+	case 0: /* Start Bit - 0 */
 		ret = 0xFF & ~input_mask[XEP80_port];
 		break;
-    case 1: /* 9 Data Bits */
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-    case 8:
+	case 1: /* 9 Data Bits */
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+	case 6:
+	case 7:
+	case 8:
 	case 9:
-        if (input_word & (1 << (word_bit_num-1))) {
-            ret = 0xFF;
-        }
-        else {
-            ret = 0xFF & ~input_mask[XEP80_port];
-        }
+		if (input_word & (1 << (word_bit_num-1)))
+			ret = 0xFF;
+		else
+			ret = 0xFF & ~input_mask[XEP80_port];
 		break;
 	case 10: /* Stop Bit - 1 */
 		ret = 0xFF;
 		break;
-    }
+	}
 	
-	last_xypos = xypos;
-	/* If we are done with all bits, clear the queue */
-	if (input_bit >= ((input_count * 11) - 2))
-		input_count = 0;
-	return(ret);
+	return ret;
 }
 
 void XEP80_PutBit(UBYTE byte)
 {
-    byte &= output_mask[XEP80_port];
+	/* Number of CPU ticks since start of word receiving.
+	   TODO: Avoid overflows in this value (minimal issue, since transmission
+	   rate is 15.7 kHz - way too low to allow for overflows). */
+	int num_ticks = (int)(ANTIC_CPU_CLOCK - start_trans_cpu_clock);
 
-    /* Shift output words from the Atari for each write */
-	switch(output_state) {
-    case -1:
-        if (!byte) {
-            output_state = 0;
-            output_word = 0;
-        }
-        break;
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-        if (byte) {
-            output_word |= 1 << (output_state);
-        }
-        output_state ++;
-        break;
-    case 9:
-        output_state = -1;
-		/* Clear any unread input from last command */
-		input_count = 0;
-        if (byte) {
-			/* Handle the new word */
-            XEP80_OutputWord(output_word);
-        }
-        break;
-    }
+	int bit_no = (num_ticks + ANTIC_LINE_C / 2) / ANTIC_LINE_C;
+
+	byte &= output_mask[XEP80_port];
+
+	if (receiving) {
+		switch (bit_no) {
+		case 0:
+			return;
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+			if (byte)
+				output_word |= 1 << (bit_no - 1);
+			break;
+		case 10:
+			/* Stop bit */
+			/* Clear any unread input from last command */
+			input_count = 0;
+			receiving = FALSE;
+			if (byte)
+				/* Set the start position of the next possible output byte, to
+				   0.5 scanline after end of the current stop bit. This is not
+				   based on actual hardware - the delay was chosen to work with
+				   the Atari and the SpartaDOS X XEP80 drivers. Starting
+				   transmission immediately after end of the stop bit
+				   (prev_cpu_clock += 11 * ANTIC_LINE_C) would break the SDX
+				   driver. */
+				start_trans_cpu_clock += 11 * ANTIC_LINE_C + ANTIC_LINE_C / 2;
+				/* Handle the new word */
+				XEP80_OutputWord(output_word);
+			return;
+		default:
+			/* Transmission timed out without receiving stop bit. */
+			receiving = FALSE;
+		}
+	}
+
+	if (!receiving) {
+		/* Either previous byte ended or no byte was received yet. */
+		if (!byte) {
+			/* Start bit encountered. */
+			receiving = TRUE;
+			start_trans_cpu_clock = ANTIC_CPU_CLOCK;
+			output_word = 0;
+		}
+	}
 }
 
 static void XEP80_OutputWord(int word)
@@ -1968,6 +1958,7 @@ void XEP80_StateSave(void)
 {
 	StateSav_SaveINT(&XEP80_enabled, 1);
 	if (XEP80_enabled) {
+		int num_ticks = (int)(ANTIC_CPU_CLOCK - start_trans_cpu_clock);
 #if SUPPORTS_CHANGE_VIDEOMODE
 		int show_xep80 = VIDEOMODE_80_column;
 #else
@@ -1975,13 +1966,13 @@ void XEP80_StateSave(void)
 #endif /* SUPPORTS_CHANGE_VIDEOMODE */
 		StateSav_SaveINT(&XEP80_port, 1);
 		StateSav_SaveINT(&show_xep80, 1);
-		StateSav_SaveINT(&output_state, 1);
+		StateSav_SaveINT(&num_ticks, 1);
 		StateSav_SaveINT(&output_word, 1);
 		StateSav_SaveINT(&input_count, 1);
-		StateSav_SaveINT(&input_bit, 1);
+		StateSav_SaveINT(&receiving, 1);
 		StateSav_SaveUWORD(input_queue, IN_QUEUE_SIZE);
-		StateSav_SaveINT(&input_first, 1);
-		StateSav_SaveINT(&input_first, 1);
+		StateSav_SaveINT(&receiving, 1);
+		StateSav_SaveINT(&receiving, 1);
 
 		StateSav_SaveINT(&xcur, 1);
 		StateSav_SaveINT(&xscroll, 1);
@@ -2029,15 +2020,16 @@ void XEP80_StateRead(void)
 		XEP80_enabled = FALSE;
 
 	if (local_xep80_enabled) {
+		int num_ticks;
 		StateSav_ReadINT(&XEP80_port, 1);
 		StateSav_ReadINT(&local_xep80, 1);
-		StateSav_ReadINT(&output_state, 1);
+		StateSav_ReadINT(&num_ticks, 1);
 		StateSav_ReadINT(&output_word, 1);
 		StateSav_ReadINT(&input_count, 1);
-		StateSav_ReadINT(&input_bit, 1);
+		StateSav_ReadINT(&receiving, 1);
 		StateSav_ReadUWORD(input_queue, IN_QUEUE_SIZE);
-		StateSav_ReadINT(&input_first, 1);
-		StateSav_ReadINT(&input_first, 1);
+		StateSav_ReadINT(&receiving, 1);
+		StateSav_ReadINT(&receiving, 1);
 
 		StateSav_ReadINT(&xcur, 1);
 		StateSav_ReadINT(&xscroll, 1);
@@ -2071,6 +2063,7 @@ void XEP80_StateRead(void)
 		StateSav_ReadINT(&font_b_blink, 1);
 		StateSav_ReadUBYTE(&xep80_data[0][0], XEP80_HEIGHT * XEP80_WIDTH);
 		StateSav_ReadUBYTE(&xep80_graph_data[0][0], XEP80_GRAPH_HEIGHT*XEP80_GRAPH_WIDTH/8);
+		start_trans_cpu_clock = ANTIC_CPU_CLOCK - num_ticks;
 		UpdateTVSystem();
 		if (XEP80_enabled) {
 			if (graphics_mode)
