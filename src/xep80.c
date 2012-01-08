@@ -92,12 +92,12 @@
 #define CHAR_SET_INTERNAL   2
 
 /* These center the graphics screen inside of the XEP80 screen */
-#define XEP80_GRAPH_X_OFFSET ((XEP80_SCRN_WIDTH - XEP80_GRAPH_WIDTH) / 2)
-#define XEP80_GRAPH_Y_OFFSET ((XEP80_scrn_height - XEP80_GRAPH_HEIGHT) / 2)
+#define GRAPH_X_OFFSET ((XEP80_SCRN_WIDTH - XEP80_GRAPH_WIDTH) / 2)
+#define GRAPH_Y_OFFSET ((XEP80_scrn_height - XEP80_GRAPH_HEIGHT) / 2)
 
 /* Used to determine if a charcter is double width */
-#define IS_DOUBLE(x,y) (((xep80_data[y][x] & 0x80) && font_b_double) || \
-                        (((xep80_data[y][x] & 0x80) == 0) && font_a_double))
+#define IS_DOUBLE(x,y) (((char_data[y][x] & 0x80) && font_b_double) || \
+                        (((char_data[y][x] & 0x80) == 0) && font_a_double))
 
 /* Global variables */
 int XEP80_enabled = FALSE;
@@ -107,57 +107,57 @@ int XEP80_char_height = XEP80_CHAR_HEIGHT_NTSC;
 int XEP80_scrn_height = XEP80_HEIGHT * XEP80_CHAR_HEIGHT_NTSC;
 
 /* Local procedures */
-static void XEP80_InputWord(int word);
-static void XEP80_OutputWord(int word);
-static void XEP80_ReceiveChar(UBYTE byte);
-static void	XEP80_SendCursorStatus(void);
-static void XEP80_SetXCur(UBYTE cursor);
-static void XEP80_SetXCurHigh(UBYTE cursor);
-static void XEP80_SetLeftMarginLow(UBYTE margin);
-static void XEP80_SetLeftMarginHigh(UBYTE margin);
-static void XEP80_SetYCur(UBYTE cursor);
-static void XEP80_SetScreenMode(int graphics, int pal);
-static void XEP80_SetRightMarginLow(UBYTE margin);
-static void XEP80_SetRightMarginHigh(UBYTE margin);
-static void XEP80_GetChar(void);
-static void XEP80_GetXCur(void);
-static void XEP80_MasterReset(void);
-static void XEP80_GetPrinterStatus(void);
-static void XEP80_FillMem(UBYTE c, int output);
-static void XEP80_SetList(int list);
-static void XEP80_SetOutputDevice(int screen, int burst);
-static void XEP80_SetCharSet(int set);
-static void XEP80_SetCursor(int on, int blink);
-static void XEP80_SetXCurStart(void);
-static void XEP80_SetScrollWindow(void);
-static void XEP80_SetInverse(int inverse);
-static void XEP80_SetVideoCtrl(UBYTE video_ctrl);
-static void XEP80_SetAttributeA(UBYTE attrib);
-static void XEP80_SetAttributeB(UBYTE attrib);
-static void XEP80_UpdateCursor(void);
-static void XEP80_AddCharAtCursor(UBYTE byte);
-static void XEP80_AddGraphCharAtCursor(UBYTE byte);
-static void XEP80_CursorUp(void);
-static void XEP80_CursorDown(void);
-static void XEP80_CursorLeft(void);
-static void XEP80_CursorRight(void);
-static void	XEP80_ClearScreen(void);
-static void XEP80_Backspace(void);
-static void XEP80_AddEOL(void);
-static void XEP80_DeleteChar(void);
-static void XEP80_InsertChar(void);
-static void XEP80_DeleteLogicalLine(void);
-static void XEP80_InsertLine(void);
-static void XEP80_GoToNextTab(void);
-static void XEP80_ScrollUpLast(void);
-static void XEP80_ScrollDown(int y);
-static void XEP80_ScrollUp(int y_start, int y_end);
-static void XEP80_FindEndLogicalLine(int *x, int *y);
-static void XEP80_FindStartLogicalLine(int *x, int *y);
-static void XEP80_BlitChar(int x, int y, int cur);
-static void XEP80_BlitScreen(void);
-static void XEP80_BlitRows(int y_start, int y_end);
-static void XEP80_BlitGraphChar(int x, int y);
+static void InputWord(int word);
+static void OutputWord(int word);
+static void ReceiveChar(UBYTE byte);
+static void	SendCursorStatus(void);
+static void SetXCur(UBYTE cursor);
+static void SetXCurHigh(UBYTE cursor);
+static void SetLeftMarginLow(UBYTE margin);
+static void SetLeftMarginHigh(UBYTE margin);
+static void SetYCur(UBYTE cursor);
+static void SetScreenMode(int graphics, int pal);
+static void SetRightMarginLow(UBYTE margin);
+static void SetRightMarginHigh(UBYTE margin);
+static void GetChar(void);
+static void GetXCur(void);
+static void MasterReset(void);
+static void GetPrinterStatus(void);
+static void FillMem(UBYTE c, int output);
+static void SetList(int list);
+static void SetOutputDevice(int screen, int burst);
+static void SetCharSet(int set);
+static void SetCursor(int on, int blink);
+static void SetXCurStart(void);
+static void SetScrollWindow(void);
+static void SetInverse(int inverse);
+static void SetVideoCtrl(UBYTE video_ctrl);
+static void SetAttributeA(UBYTE attrib);
+static void SetAttributeB(UBYTE attrib);
+static void UpdateCursor(void);
+static void AddCharAtCursor(UBYTE byte);
+static void AddGraphCharAtCursor(UBYTE byte);
+static void CursorUp(void);
+static void CursorDown(void);
+static void CursorLeft(void);
+static void CursorRight(void);
+static void	ClearScreen(void);
+static void Backspace(void);
+static void AddEOL(void);
+static void DeleteChar(void);
+static void InsertChar(void);
+static void DeleteLogicalLine(void);
+static void InsertLine(void);
+static void GoToNextTab(void);
+static void ScrollUpLast(void);
+static void ScrollDown(int y);
+static void ScrollUp(int y_start, int y_end);
+static void FindEndLogicalLine(int *x, int *y);
+static void FindStartLogicalLine(int *x, int *y);
+static void BlitChar(int x, int y, int cur);
+static void BlitScreen(void);
+static void BlitRows(int y_start, int y_end);
+static void BlitGraphChar(int x, int y);
 
 /* Local state variables */
 static int output_word = 0;
@@ -208,8 +208,8 @@ static int font_b_blink = FALSE;
 static UBYTE input_mask[2] = {0x02,0x20};
 static UBYTE output_mask[2] = {0x01,0x10};
 
-static UBYTE xep80_data[XEP80_HEIGHT][XEP80_WIDTH];
-static UBYTE xep80_graph_data[XEP80_GRAPH_HEIGHT][XEP80_GRAPH_WIDTH/8];
+static UBYTE char_data[XEP80_HEIGHT][XEP80_WIDTH];
+static UBYTE graph_data[XEP80_GRAPH_HEIGHT][XEP80_GRAPH_WIDTH/8];
 UBYTE XEP80_screen_1[XEP80_SCRN_WIDTH*XEP80_MAX_SCRN_HEIGHT];
 UBYTE XEP80_screen_2[XEP80_SCRN_WIDTH*XEP80_MAX_SCRN_HEIGHT];
 
@@ -310,7 +310,7 @@ int XEP80_Initialise(int *argc, char *argv[])
 	return TRUE;
 }
 
-static void XEP80_InputWord(int word)
+static void InputWord(int word)
 {
 	input_queue[input_count] = word;
 	input_count++;
@@ -416,7 +416,7 @@ void XEP80_PutBit(UBYTE byte)
 				   driver. */
 				start_trans_cpu_clock += 11 * ANTIC_LINE_C + ANTIC_LINE_C / 2;
 				/* Handle the new word */
-				XEP80_OutputWord(output_word);
+				OutputWord(output_word);
 			return;
 		default:
 			/* Transmission timed out without receiving stop bit. */
@@ -435,7 +435,7 @@ void XEP80_PutBit(UBYTE byte)
 	}
 }
 
-static void XEP80_OutputWord(int word)
+static void OutputWord(int word)
 {
 	UBYTE byte = word & 0xFF;
 	int cmd_flag = word & 0x100;
@@ -445,139 +445,139 @@ static void XEP80_OutputWord(int word)
 	if (cmd_flag) {
 		switch(byte & CMD_XX_MASK) {
 		case CMD_00:
-			XEP80_SetXCur(byte & 0x3F);
+			SetXCur(byte & 0x3F);
 			break;
 		case CMD_01:
 			switch(byte & CMD_01_MASK) {
 			case CMD_X_CUR_UPPER:
-				XEP80_SetXCur(0x40 + (byte & 0x0F));
+				SetXCur(0x40 + (byte & 0x0F));
 				break;
 			case CMD_X_CUR_HIGH:
-				XEP80_SetXCurHigh(byte & 0x0F);
+				SetXCurHigh(byte & 0x0F);
 				break;
 			case CMD_LEFT_MAR_L:
-				XEP80_SetLeftMarginLow(byte & 0x0f);
+				SetLeftMarginLow(byte & 0x0f);
 				break;
 			case CMD_LEFT_MAR_H:
-				XEP80_SetLeftMarginHigh(byte & 0x0f);
+				SetLeftMarginHigh(byte & 0x0f);
 				break;
 			}
 			break;
 		case CMD_10:
 			switch(byte & CMD_10_MASK) {
 			case CMD_Y_CUR_LOW:
-				XEP80_SetYCur(byte & 0x0F);
+				SetYCur(byte & 0x0F);
 				break;
 			case CMD_1001:
 				if ((byte & CMD_1001_MASK) == CMD_Y_CUR_HIGH)
-					XEP80_SetYCur(0x10 + (byte & 0x07));
+					SetYCur(0x10 + (byte & 0x07));
 				else {
 					switch(byte) {
 					case CMD_Y_CUR_STATUS:
-						XEP80_SetYCur(24);
+						SetYCur(24);
 						break;
 					case CMD_GRAPH_50HZ:
-						XEP80_SetScreenMode(TRUE, TRUE);
+						SetScreenMode(TRUE, TRUE);
 						break;
 					case CMD_GRAPH_60HZ:
-						XEP80_SetScreenMode(TRUE, FALSE);
+						SetScreenMode(TRUE, FALSE);
 						break;
 					}
 				}
 				break;
 			case CMD_RIGHT_MAR_L:
-				XEP80_SetRightMarginLow(byte & 0x0f);
+				SetRightMarginLow(byte & 0x0f);
 				break;
 			case CMD_RIGHT_MAR_H:
-				XEP80_SetRightMarginHigh(byte & 0x0f);
+				SetRightMarginHigh(byte & 0x0f);
 				break;
 			}
 			break;
 		case CMD_11:
 			switch (byte) {
 			case CMD_GET_CHAR:
-				XEP80_GetChar();
+				GetChar();
 				break;
 			case CMD_REQ_X_CUR:
-				XEP80_GetXCur();
+				GetXCur();
 				break;
 			case CMD_MRST:
-				XEP80_MasterReset();
+				MasterReset();
 				break;
 			case CMD_PRT_STAT:
-				XEP80_GetPrinterStatus();
+				GetPrinterStatus();
 				break;
 			case CMD_FILL_PREV:
-				XEP80_FillMem(lastChar, TRUE);
+				FillMem(lastChar, TRUE);
 				break;
 			case CMD_FILL_SPACE:
-				XEP80_FillMem(0x20, TRUE);
+				FillMem(0x20, TRUE);
 				break;
 			case CMD_FILL_EOL:
-				XEP80_FillMem(0x9B, TRUE);
+				FillMem(0x9B, TRUE);
 				break;
 			case CMD_CLR_LIST:
-				XEP80_SetList(FALSE);
+				SetList(FALSE);
 				break;
 			case CMD_SET_LIST:
-				XEP80_SetList(TRUE);
+				SetList(TRUE);
 				break;
 			case CMD_SCR_NORMAL:
-				XEP80_SetOutputDevice(TRUE, FALSE);
+				SetOutputDevice(TRUE, FALSE);
 				break;
 			case CMD_SCR_BURST:
-				XEP80_SetOutputDevice(TRUE, TRUE);
+				SetOutputDevice(TRUE, TRUE);
 				break;
 			case CMD_SET_PRINT:
-				XEP80_SetOutputDevice(FALSE, TRUE);
+				SetOutputDevice(FALSE, TRUE);
 				break;
 			case CMD_CHAR_SET_A:
-				XEP80_SetCharSet(CHAR_SET_A);
-				XEP80_BlitScreen();
+				SetCharSet(CHAR_SET_A);
+				BlitScreen();
 				break;
 			case CMD_CHAR_SET_B:
-				XEP80_SetCharSet(CHAR_SET_B);
-				XEP80_BlitScreen();
+				SetCharSet(CHAR_SET_B);
+				BlitScreen();
 				break;
 			case CMD_CHAR_SET_INT:
-				XEP80_SetCharSet(CHAR_SET_INTERNAL);
-				XEP80_BlitScreen();
+				SetCharSet(CHAR_SET_INTERNAL);
+				BlitScreen();
 				break;
 			case CMD_TEXT_50HZ:
-				XEP80_SetScreenMode(FALSE, TRUE);
+				SetScreenMode(FALSE, TRUE);
 				break;
 			case CMD_CUR_OFF:
-				XEP80_SetCursor(FALSE, FALSE);
+				SetCursor(FALSE, FALSE);
 				break;
 			case CMD_CUR_ON:
-				XEP80_SetCursor(TRUE, FALSE);
+				SetCursor(TRUE, FALSE);
 				break;
 			case CMD_CUR_BLINK:
-				XEP80_SetCursor(TRUE, TRUE);
+				SetCursor(TRUE, TRUE);
 				break;
 			case CMD_CUR_ST_LINE:
-				XEP80_SetXCurStart();
+				SetXCurStart();
 				break;
 			case CMD_SET_SCRL_WIN:
-				XEP80_SetScrollWindow();
+				SetScrollWindow();
 				break;
 			case CMD_WHT_ON_BLK:
-				XEP80_SetInverse(FALSE);
+				SetInverse(FALSE);
 				break;
 			case CMD_BLK_ON_WHT:
-				XEP80_SetInverse(TRUE);
+				SetInverse(TRUE);
 				break;
 			case CMD_VIDEO_CTRL:
-				XEP80_Backspace();
-				XEP80_SetVideoCtrl(lastChar);
+				Backspace();
+				SetVideoCtrl(lastChar);
 				break;
 			case CMD_ATTRIB_A:
-				XEP80_Backspace();
-				XEP80_SetAttributeA(lastChar);
+				Backspace();
+				SetAttributeA(lastChar);
 				break;
 			case CMD_ATTRIB_B:
-				XEP80_Backspace();
-				XEP80_SetAttributeB(lastChar);
+				Backspace();
+				SetAttributeB(lastChar);
 				break;
 			}
 			break;
@@ -587,27 +587,27 @@ static void XEP80_OutputWord(int word)
 	else {
 		old_xcur = xcur;
 		old_ycur = ycur;
-		XEP80_ReceiveChar(byte);
+		ReceiveChar(byte);
 		lastChar = byte;
 		if (!burst_mode)
-			XEP80_SendCursorStatus();
+			SendCursorStatus();
 	}
 }
 
-static void XEP80_ReceiveChar(UBYTE byte)
+static void ReceiveChar(UBYTE byte)
 {
 	if (graphics_mode)
-		XEP80_AddGraphCharAtCursor(byte);
+		AddGraphCharAtCursor(byte);
 	else if (escape_mode) {
-		XEP80_AddCharAtCursor(byte);
+		AddCharAtCursor(byte);
 		escape_mode = FALSE;
 	}
 	/* List mode prints control chars like escape mode, except for EOL */
 	else if (list_mode) {
 		if (byte == XEP80_ATARI_EOL)
-			XEP80_AddEOL();
+			AddEOL();
 		else
-			XEP80_AddCharAtCursor(byte);
+			AddCharAtCursor(byte);
 	}
 	else if (!screen_output) {
 		/* Printer characters are thrown away, handled elsewhere.  The
@@ -618,9 +618,9 @@ static void XEP80_ReceiveChar(UBYTE byte)
 		/* If we are on the status line, only allow Delete Line and char adds */
 		if (ycur == 24) {
 			if (byte == 0x9c) /* Delete Line */
-				memset(xep80_data[ycur],XEP80_ATARI_EOL,XEP80_WIDTH);
+				memset(char_data[ycur],XEP80_ATARI_EOL,XEP80_WIDTH);
 			else
-				XEP80_AddCharAtCursor(byte);
+				AddCharAtCursor(byte);
 		}
 		else {
 			switch(byte) {
@@ -628,34 +628,34 @@ static void XEP80_ReceiveChar(UBYTE byte)
 				escape_mode = TRUE;
 				break;
 			case 0x1c: /* Cursor Up */
-				XEP80_CursorUp();
+				CursorUp();
 				break;
 			case 0x1d: /* Cursor Down */
-				XEP80_CursorDown();
+				CursorDown();
 				break;
 			case 0x1e: /* Cursor Left */
-				XEP80_CursorLeft();
+				CursorLeft();
 				break;
 			case 0x1f: /* Cursor Right */
-				XEP80_CursorRight();
+				CursorRight();
 				break;
 			case 0x7d: /* Clear Screen */
-				XEP80_ClearScreen();
+				ClearScreen();
 				break;
 			case 0x7e: /* Backspace */
-				XEP80_Backspace();
+				Backspace();
 				break;
 			case 0x7f: /* Tab */
-				XEP80_GoToNextTab();
+				GoToNextTab();
 				break;
 			case XEP80_ATARI_EOL: /* Atari EOL */
-				XEP80_AddEOL();
+				AddEOL();
 				break;
 			case 0x9c: /* Delete Line */
-				XEP80_DeleteLogicalLine();
+				DeleteLogicalLine();
 				break;
 			case 0x9d: /* Insert Line */
-				XEP80_InsertLine();
+				InsertLine();
 				break;
 			case 0x9e: /* Clear tab */
 				tab_stops[xcur] = FALSE;
@@ -667,74 +667,74 @@ static void XEP80_ReceiveChar(UBYTE byte)
 				/* Do nothing here */
 				break;
 			case 0xfe: /* Delete Char */
-				XEP80_DeleteChar();
+				DeleteChar();
 				break;
 			case 0xff: /* Insert Char */
-				XEP80_InsertChar();
+				InsertChar();
 				break;
 			default:
-				XEP80_AddCharAtCursor(byte);
+				AddCharAtCursor(byte);
 				break;
 			}
 		}
 	}
 }
 
-static void	XEP80_SendCursorStatus()
+static void	SendCursorStatus()
 {
 	/* Send X cursor only */
 	if ((old_xcur == xcur && old_ycur == ycur) ||
 	    (old_ycur == ycur)) {
 		if (xcur > 0x4f)
-			XEP80_InputWord(0x150);
+			InputWord(0x150);
 		else
-			XEP80_InputWord(0x100 | (xcur & 0x7F));
+			InputWord(0x100 | (xcur & 0x7F));
 	}
 	/* Send Y cursor only */
 	else if (old_xcur == xcur)
-			XEP80_InputWord(0x1E0 | (ycur & 0x1F));
+			InputWord(0x1E0 | (ycur & 0x1F));
 	/* Send X followed by Y cursor */
 	else {
 		if (xcur > 0x4f)
-			XEP80_InputWord(0x1D0);
+			InputWord(0x1D0);
 		else
-			XEP80_InputWord(0x180 | (xcur & 0x7F));
-		XEP80_InputWord(0x1E0 | (ycur & 0x1F));
+			InputWord(0x180 | (xcur & 0x7F));
+		InputWord(0x1E0 | (ycur & 0x1F));
 	}
 }
 
-static void XEP80_SetXCur(UBYTE cursor)
+static void SetXCur(UBYTE cursor)
 {
 	new_xcur = cursor;
 	new_ycur = ycur;
-	XEP80_UpdateCursor();
-	XEP80_SendCursorStatus();
+	UpdateCursor();
+	SendCursorStatus();
 }
 
-static void XEP80_SetXCurHigh(UBYTE cursor)
+static void SetXCurHigh(UBYTE cursor)
 {
 	new_xcur = ((UBYTE)xcur & 0x3f) | (cursor << 4);
 	new_ycur = ycur;
-	XEP80_UpdateCursor();
-	XEP80_SendCursorStatus();
+	UpdateCursor();
+	SendCursorStatus();
 }
 
-static void XEP80_SetLeftMarginLow(UBYTE margin)
+static void SetLeftMarginLow(UBYTE margin)
 {
 	lmargin = margin;
 }
 
-static void XEP80_SetLeftMarginHigh(UBYTE margin)
+static void SetLeftMarginHigh(UBYTE margin)
 {
 	lmargin = ((UBYTE)lmargin & 0x3f) | (margin << 4);
 }
 
-static void XEP80_SetYCur(UBYTE cursor)
+static void SetYCur(UBYTE cursor)
 {
 	new_xcur = xcur;
 	new_ycur = cursor;
-	XEP80_UpdateCursor();
-	XEP80_SendCursorStatus();
+	UpdateCursor();
+	SendCursorStatus();
 }
 
 static void UpdateTVSystem(void)
@@ -746,7 +746,7 @@ static void UpdateTVSystem(void)
 #endif
 }
 
-static void XEP80_SetScreenMode(int graphics, int pal)
+static void SetScreenMode(int graphics, int pal)
 {
 	graphics_mode = graphics;
 	pal_mode = pal;
@@ -756,44 +756,44 @@ static void XEP80_SetScreenMode(int graphics, int pal)
 		ycur = 0;
 		burst_mode = TRUE;
 		/* Clear the old text screen */
-		XEP80_FillMem(0x20, FALSE);
-		XEP80_BlitScreen();
+		FillMem(0x20, FALSE);
+		BlitScreen();
 		/* Clear the graphics memory */
-		memset(xep80_graph_data,0,
+		memset(graph_data,0,
 		       (XEP80_GRAPH_WIDTH/8)*XEP80_GRAPH_HEIGHT);
 	}
 	else {
 		xcur = 0;
 		ycur = 0;
 		burst_mode = FALSE;
-		XEP80_FillMem(0x9b, FALSE);
-		XEP80_BlitScreen();
+		FillMem(0x9b, FALSE);
+		BlitScreen();
 		new_xcur = xcur;
 		new_ycur = ycur;
-		XEP80_UpdateCursor();
+		UpdateCursor();
 	}
 }
 
-static void XEP80_SetRightMarginLow(UBYTE margin)
+static void SetRightMarginLow(UBYTE margin)
 {
 	rmargin = margin;
 }
 
-static void XEP80_SetRightMarginHigh(UBYTE margin)
+static void SetRightMarginHigh(UBYTE margin)
 {
 	rmargin = ((UBYTE)rmargin & 0x3f) | (margin << 4);
 }
 
-static void XEP80_GetChar(void)
+static void GetChar(void)
 {
 	static int at_eol_at_margin = FALSE;
 
 	if (xcur == rmargin && at_eol_at_margin) {
-		XEP80_InputWord(XEP80_ATARI_EOL);
+		InputWord(XEP80_ATARI_EOL);
 		at_eol_at_margin = FALSE;
 	}
 	else
-		XEP80_InputWord(xep80_data[ycur][xcur]);
+		InputWord(char_data[ycur][xcur]);
 
 	old_xcur = xcur;
 	old_ycur = ycur;
@@ -812,16 +812,16 @@ static void XEP80_GetChar(void)
 				new_ycur++;
 		}
 	}
-	XEP80_UpdateCursor();
-	XEP80_SendCursorStatus();
+	UpdateCursor();
+	SendCursorStatus();
 }
 
-static void XEP80_GetXCur(void)
+static void GetXCur(void)
 {
-	XEP80_InputWord(xcur);
+	InputWord(xcur);
 }
 
-static void XEP80_MasterReset(void)
+static void MasterReset(void)
 {
 	int i;
 
@@ -860,85 +860,85 @@ static void XEP80_MasterReset(void)
 	font_b_double = FALSE;
 	font_b_blank = FALSE;
 	font_b_blink = FALSE;
-	memset(xep80_data,XEP80_ATARI_EOL,XEP80_WIDTH*XEP80_HEIGHT);
+	memset(char_data,XEP80_ATARI_EOL,XEP80_WIDTH*XEP80_HEIGHT);
 	for (i=0;i<XEP80_HEIGHT;i++)
 		eol_at_margin[i] = FALSE;
-	XEP80_BlitScreen();
-	XEP80_UpdateCursor();
-	XEP80_InputWord(0x01);
+	BlitScreen();
+	UpdateCursor();
+	InputWord(0x01);
 }
 
-static void XEP80_GetPrinterStatus(void)
+static void GetPrinterStatus(void)
 {
-	XEP80_InputWord(0x01);
+	InputWord(0x01);
 }
 
-static void XEP80_FillMem(UBYTE c, int output)
+static void FillMem(UBYTE c, int output)
 {
 	int i;
 	
 	for (i=0;i<XEP80_HEIGHT;i++)
 		eol_at_margin[i] = FALSE;
 
-	memset(xep80_data,c,XEP80_WIDTH*XEP80_HEIGHT);
+	memset(char_data,c,XEP80_WIDTH*XEP80_HEIGHT);
 	if (output)
-	XEP80_InputWord(0x01);
+	InputWord(0x01);
 }
 
-static void XEP80_SetList(int list)
+static void SetList(int list)
 {
 	list_mode = list;
 }
 
-static void XEP80_SetOutputDevice(int screen, int burst)
+static void SetOutputDevice(int screen, int burst)
 {
 	screen_output = screen;
 	burst_mode = burst;
 }
 
-static void XEP80_SetCharSet(int set)
+static void SetCharSet(int set)
 {
 	char_set = set;
 }
 
-static void XEP80_SetCursor(int on, int blink)
+static void SetCursor(int on, int blink)
 {
 	cursor_on = on;
 	cursor_blink = blink;
 	if (!cursor_on)
-		XEP80_BlitChar(xcur, ycur, FALSE);
+		BlitChar(xcur, ycur, FALSE);
 	else {
 		new_xcur = xcur;
 		new_ycur = ycur;
-		XEP80_UpdateCursor();
+		UpdateCursor();
 	}
 }
 
-static void XEP80_SetXCurStart(void)
+static void SetXCurStart(void)
 {
 	int x_start = xcur;
 	int y_start = ycur;
 
-	XEP80_FindStartLogicalLine(&x_start, &y_start);
+	FindStartLogicalLine(&x_start, &y_start);
 	new_xcur = x_start;
 	new_ycur = y_start;
-	XEP80_UpdateCursor();
-	XEP80_SendCursorStatus();
+	UpdateCursor();
+	SendCursorStatus();
 }
 
-static void XEP80_SetScrollWindow(void)
+static void SetScrollWindow(void)
 {
 	xscroll = xcur;
-	XEP80_BlitScreen();
+	BlitScreen();
 }
 
-static void XEP80_SetInverse(int inverse)
+static void SetInverse(int inverse)
 {
 	inverse_mode = inverse;
-	XEP80_BlitScreen();
+	BlitScreen();
 }
 
-static void XEP80_SetVideoCtrl(UBYTE video_ctrl)
+static void SetVideoCtrl(UBYTE video_ctrl)
 {
 	if (video_ctrl & 0x08)
 		inverse_mode = TRUE;
@@ -956,13 +956,13 @@ static void XEP80_SetVideoCtrl(UBYTE video_ctrl)
 		blink_reverse = TRUE;
 	else
 		blink_reverse = FALSE;
-	XEP80_BlitScreen();
+	BlitScreen();
 	new_xcur = xcur;
 	new_ycur = ycur;
-	XEP80_UpdateCursor();
+	UpdateCursor();
 }
 
-static void XEP80_SetAttributeA(UBYTE attrib)
+static void SetAttributeA(UBYTE attrib)
 {
 	attrib_a = ~attrib;
 
@@ -985,10 +985,10 @@ static void XEP80_SetAttributeA(UBYTE attrib)
 		font_a_blink = TRUE;
 	else
 		font_a_blink = FALSE;
-	XEP80_BlitScreen();
+	BlitScreen();
 }
 
-static void XEP80_SetAttributeB(UBYTE attrib)
+static void SetAttributeB(UBYTE attrib)
 {
 	attrib_b = ~attrib;
 
@@ -1011,48 +1011,48 @@ static void XEP80_SetAttributeB(UBYTE attrib)
 		font_b_blink = TRUE;
 	else
 		font_b_blink = FALSE;
-	XEP80_BlitScreen();
+	BlitScreen();
 }
 
-static void XEP80_UpdateCursor(void)
+static void UpdateCursor(void)
 {
 	if (cursor_on) {
 		/* Redraw character cursor was at */
-		XEP80_BlitChar(xcur, ycur, FALSE);
+		BlitChar(xcur, ycur, FALSE);
 		/* Handle reblitting double wide's which cursor may have overwritten */
 		if (xcur != 0)
-			XEP80_BlitChar(xcur-1, ycur, FALSE);
+			BlitChar(xcur-1, ycur, FALSE);
 		/* Redraw cursor at new location */
-		XEP80_BlitChar(new_xcur, new_ycur, TRUE);
+		BlitChar(new_xcur, new_ycur, TRUE);
 	}
 	xcur = new_xcur;
 	ycur = new_ycur;
 }
 
-static void XEP80_AddCharAtCursor(UBYTE byte)
+static void AddCharAtCursor(UBYTE byte)
 {
-	xep80_data[ycur][xcur] = byte;
-	XEP80_BlitChar(xcur, ycur, FALSE);
+	char_data[ycur][xcur] = byte;
+	BlitChar(xcur, ycur, FALSE);
 
 	new_xcur = xcur + 1;
 	new_ycur = ycur;
 	if (new_xcur > rmargin) {
 		new_xcur = lmargin;
 		if (new_ycur == XEP80_HEIGHT-2)
-			XEP80_ScrollUpLast();
+			ScrollUpLast();
 		else if (new_ycur != XEP80_HEIGHT-1) {
 			new_ycur++;
-			XEP80_ScrollDown(new_ycur);
+			ScrollDown(new_ycur);
 		}
 	}
 	else
-		XEP80_UpdateCursor();
+		UpdateCursor();
 }
 
-static void XEP80_AddGraphCharAtCursor(UBYTE byte)
+static void AddGraphCharAtCursor(UBYTE byte)
 {
-	xep80_graph_data[ycur][xcur] = byte;
-	XEP80_BlitGraphChar(xcur, ycur);
+	graph_data[ycur][xcur] = byte;
+	BlitGraphChar(xcur, ycur);
 	xcur++;
 	if (xcur >= 40) {
 		xcur = 0;
@@ -1062,65 +1062,65 @@ static void XEP80_AddGraphCharAtCursor(UBYTE byte)
 	}
 }
 
-static void XEP80_CursorUp(void)
+static void CursorUp(void)
 {
 	new_ycur = ycur - 1;
 	new_xcur = xcur;
 	if (new_ycur < 0)
 		new_ycur = XEP80_HEIGHT-2;
-	XEP80_UpdateCursor();
+	UpdateCursor();
 }
 
-static void XEP80_CursorDown(void)
+static void CursorDown(void)
 {
 	new_ycur = ycur + 1;
 	new_xcur = xcur;
 	if (new_ycur > XEP80_HEIGHT-2)
 		new_ycur = 0;
-	XEP80_UpdateCursor();
+	UpdateCursor();
 }
 
-static void XEP80_CursorLeft(void)
+static void CursorLeft(void)
 {
 	new_xcur = xcur - 1;
 	new_ycur = ycur;
 	if (new_xcur < lmargin)
 		new_xcur = rmargin;
-	XEP80_UpdateCursor();
+	UpdateCursor();
 }
 
-static void XEP80_CursorRight(void)
+static void CursorRight(void)
 {
-	if (xep80_data[ycur][xcur] == XEP80_ATARI_EOL)
-		xep80_data[ycur][xcur] = 0x20;
+	if (char_data[ycur][xcur] == XEP80_ATARI_EOL)
+		char_data[ycur][xcur] = 0x20;
 	new_xcur = xcur + 1;
 	new_ycur = ycur;
 	if (new_xcur > rmargin)
 		new_xcur = lmargin;
-	XEP80_UpdateCursor();
+	UpdateCursor();
 }
 
-static void	XEP80_ClearScreen(void)
+static void	ClearScreen(void)
 {
 	int y;
 
 	for (y=0;y<XEP80_HEIGHT-1;y++) {
-		memset(&xep80_data[y][xscroll],XEP80_ATARI_EOL,XEP80_LINE_LEN);
+		memset(&char_data[y][xscroll],XEP80_ATARI_EOL,XEP80_LINE_LEN);
 		eol_at_margin[y] = FALSE;
 	}
-	XEP80_BlitScreen();
+	BlitScreen();
 	new_xcur = 0;
 	new_ycur = 0;
-	XEP80_UpdateCursor();
+	UpdateCursor();
 }
 
 
-static void XEP80_Backspace(void)
+static void Backspace(void)
 {
 	int x_start = xcur;
 	int y_start = ycur;
 
-	XEP80_FindStartLogicalLine(&x_start, &y_start);
+	FindStartLogicalLine(&x_start, &y_start);
 
 	if (xcur == lmargin && x_start == xcur && y_start == ycur)
 		return;
@@ -1133,17 +1133,17 @@ static void XEP80_Backspace(void)
 		new_xcur = xcur-1;
 		new_ycur = ycur;
 	}
-	xep80_data[new_ycur][new_xcur] = 0x20;
-	XEP80_UpdateCursor();
+	char_data[new_ycur][new_xcur] = 0x20;
+	UpdateCursor();
 }
 
-static void XEP80_DeleteChar(void)
+static void DeleteChar(void)
 {
 	int x_end = xcur;
 	int y_end = ycur;
 	int x_del, y_del;
 
-	XEP80_FindEndLogicalLine(&x_end, &y_end);
+	FindEndLogicalLine(&x_end, &y_end);
 
 	x_del = xcur;
 	y_del = ycur;
@@ -1151,12 +1151,12 @@ static void XEP80_DeleteChar(void)
 	while(x_del != x_end || y_del != y_end) {
 		if (x_del == rmargin) {
 			if (y_del == XEP80_HEIGHT-2) {
-				xep80_data[y_del][x_del] = XEP80_ATARI_EOL;
+				char_data[y_del][x_del] = XEP80_ATARI_EOL;
 				break;
 			}
-			xep80_data[y_del][x_del] = xep80_data[y_del+1][lmargin];
-			if (xep80_data[y_del+1][lmargin+1] == XEP80_ATARI_EOL) {
-				XEP80_ScrollUp(y_del+1, y_del+1);
+			char_data[y_del][x_del] = char_data[y_del+1][lmargin];
+			if (char_data[y_del+1][lmargin+1] == XEP80_ATARI_EOL) {
+				ScrollUp(y_del+1, y_del+1);
 				eol_at_margin[y_del] = TRUE;
 				break;
 			}
@@ -1164,27 +1164,27 @@ static void XEP80_DeleteChar(void)
 			x_del=lmargin;
 		}
 		else {
-			xep80_data[y_del][x_del] = xep80_data[y_del][x_del+1];
+			char_data[y_del][x_del] = char_data[y_del][x_del+1];
 			if (x_del == rmargin-1 && eol_at_margin[y_del]) {
-				xep80_data[y_del][x_del+1] = XEP80_ATARI_EOL;
+				char_data[y_del][x_del+1] = XEP80_ATARI_EOL;
 				eol_at_margin[y_del] = FALSE;
 			}
 			x_del++;
 		}
 	}
-	XEP80_BlitRows(ycur,y_end);
+	BlitRows(ycur,y_end);
 	if (cursor_on)
-		XEP80_BlitChar(xcur, ycur, TRUE);
+		BlitChar(xcur, ycur, TRUE);
 }
 
 
-static void XEP80_InsertChar(void)
+static void InsertChar(void)
 {
 	int x_end = xcur;
 	int y_end = ycur;
 	int x_ins, y_ins;
 
-	XEP80_FindEndLogicalLine(&x_end, &y_end);
+	FindEndLogicalLine(&x_end, &y_end);
 
 	x_ins = x_end;
 	y_ins = y_end;
@@ -1194,18 +1194,18 @@ static void XEP80_InsertChar(void)
 			if (y_end == XEP80_HEIGHT-2) {
 				new_ycur = ycur-1;
 				new_xcur = xcur;
-				XEP80_ScrollUpLast();
+				ScrollUpLast();
 				y_ins--;
 				eol_at_margin[y_end-1] = FALSE;
-				xep80_data[y_end][lmargin] = XEP80_ATARI_EOL;
+				char_data[y_end][lmargin] = XEP80_ATARI_EOL;
 			} else {
-				XEP80_ScrollDown(y_ins+1);
+				ScrollDown(y_ins+1);
 				eol_at_margin[y_end] = FALSE;
 				y_end++;
-				xep80_data[y_end][lmargin] = XEP80_ATARI_EOL;
+				char_data[y_end][lmargin] = XEP80_ATARI_EOL;
 			}
 		}
-		else if (xep80_data[y_end][x_end] == XEP80_ATARI_EOL) {
+		else if (char_data[y_end][x_end] == XEP80_ATARI_EOL) {
 			x_ins--;
 			eol_at_margin[y_end] = TRUE;
 		}
@@ -1216,10 +1216,10 @@ static void XEP80_InsertChar(void)
 			break;
 		if (x_ins == rmargin) {
 			if (y_ins != XEP80_HEIGHT-2)
-				xep80_data[y_ins+1][lmargin] = xep80_data[y_ins][x_ins];
+				char_data[y_ins+1][lmargin] = char_data[y_ins][x_ins];
 		}
 		else
-			xep80_data[y_ins][x_ins+1] = xep80_data[y_ins][x_ins];
+			char_data[y_ins][x_ins+1] = char_data[y_ins][x_ins];
 		if (x_ins == lmargin) {
 			x_ins = rmargin;
 			y_ins--;
@@ -1229,16 +1229,16 @@ static void XEP80_InsertChar(void)
 	}
 
 	if (x_ins == rmargin)
-		xep80_data[y_ins+1][lmargin] = xep80_data[y_ins][x_ins];
+		char_data[y_ins+1][lmargin] = char_data[y_ins][x_ins];
 	else
-		xep80_data[y_ins][x_ins+1] = xep80_data[y_ins][x_ins];
-	xep80_data[y_ins][x_ins] = 0x20;
-	XEP80_BlitRows(ycur,y_end);
+		char_data[y_ins][x_ins+1] = char_data[y_ins][x_ins];
+	char_data[y_ins][x_ins] = 0x20;
+	BlitRows(ycur,y_end);
 	if (cursor_on)
-		XEP80_BlitChar(xcur, ycur, TRUE);
+		BlitChar(xcur, ycur, TRUE);
 }
 
-static void XEP80_GoToNextTab(void)
+static void GoToNextTab(void)
 {
 	int x_search = xcur+1;
 	int y_search = ycur;
@@ -1248,7 +1248,7 @@ static void XEP80_GoToNextTab(void)
 			if (tab_stops[x_search]) {
 				new_xcur = x_search;
 				new_ycur = y_search;
-				XEP80_UpdateCursor();
+				UpdateCursor();
 				return;
 			}
 			x_search++;
@@ -1258,140 +1258,140 @@ static void XEP80_GoToNextTab(void)
 		if (y_search >= XEP80_HEIGHT-1) {
 			new_ycur = XEP80_HEIGHT-2;
 			new_xcur = lmargin;
-			XEP80_ScrollUpLast();
+			ScrollUpLast();
 			return;
 		}
 	}
 }
 
-static void XEP80_AddEOL(void)
+static void AddEOL(void)
 {
 	int x_end = xcur;
 	int y_end = ycur;
 
-	XEP80_FindEndLogicalLine(&x_end,&y_end);
-	xep80_data[y_end][x_end] = XEP80_ATARI_EOL;
+	FindEndLogicalLine(&x_end,&y_end);
+	char_data[y_end][x_end] = XEP80_ATARI_EOL;
 	new_xcur = lmargin;
 	if (y_end == XEP80_HEIGHT-2) {
 		new_ycur = y_end;
-		XEP80_ScrollUpLast();
+		ScrollUpLast();
 	}
 	else {
 		new_ycur = y_end+1;
-		XEP80_UpdateCursor();
+		UpdateCursor();
 	}
 }
 
-static void XEP80_DeleteLogicalLine(void)
+static void DeleteLogicalLine(void)
 {
 	int x_start = xcur;
 	int y_start = ycur;
 	int x_end = xcur;
 	int y_end = ycur;
 
-	XEP80_FindStartLogicalLine(&x_start, &y_start);
-	XEP80_FindEndLogicalLine(&x_end, &y_end);
+	FindStartLogicalLine(&x_start, &y_start);
+	FindEndLogicalLine(&x_end, &y_end);
 	new_ycur = y_start;
 	new_xcur = lmargin;
-	XEP80_ScrollUp(y_start, y_end);
+	ScrollUp(y_start, y_end);
 }
 
-static void XEP80_InsertLine(void)
+static void InsertLine(void)
 {
 	new_xcur = lmargin;
 	new_ycur = ycur;
 
-	XEP80_ScrollDown(ycur);;
+	ScrollDown(ycur);;
 }
 
-static void XEP80_ScrollUpLast(void)
+static void ScrollUpLast(void)
 {
 	int row;
 
 	if (cursor_on) {
-		XEP80_BlitChar(xcur, ycur, FALSE);
+		BlitChar(xcur, ycur, FALSE);
 		if (xcur != 0)
-			XEP80_BlitChar(xcur-1, ycur, FALSE);
+			BlitChar(xcur-1, ycur, FALSE);
 	}
 
 	for (row=1;row<=XEP80_HEIGHT-2;row++) {
-		memcpy(xep80_data[row-1],
-		       xep80_data[row],
+		memcpy(char_data[row-1],
+		       char_data[row],
 		       XEP80_WIDTH);
 		eol_at_margin[row-1] = eol_at_margin[row] ;
 	}
 
-	memset(xep80_data[23],XEP80_ATARI_EOL,XEP80_WIDTH);
+	memset(char_data[23],XEP80_ATARI_EOL,XEP80_WIDTH);
 	eol_at_margin[23] = FALSE ;
 
-	XEP80_BlitScreen();
+	BlitScreen();
 
 	if (cursor_on)
-		XEP80_BlitChar(new_xcur, new_ycur, TRUE);
+		BlitChar(new_xcur, new_ycur, TRUE);
 	xcur = new_xcur;
 	ycur = new_ycur;
 }
 
-static void XEP80_ScrollDown(int y)
+static void ScrollDown(int y)
 {
 	int row;
 
 	if (cursor_on) {
-		XEP80_BlitChar(xcur, ycur, FALSE);
+		BlitChar(xcur, ycur, FALSE);
 		if (xcur != 0)
-			XEP80_BlitChar(xcur-1, ycur, FALSE);
+			BlitChar(xcur-1, ycur, FALSE);
 	}
 
 	for (row=XEP80_HEIGHT-3;row>=y;row--) {
-		memcpy(xep80_data[row+1],
-		       xep80_data[row],
+		memcpy(char_data[row+1],
+		       char_data[row],
 		       XEP80_WIDTH);
 		eol_at_margin[row+1] = eol_at_margin[row];
 	}
 
-	memset(xep80_data[y],XEP80_ATARI_EOL,XEP80_WIDTH);
+	memset(char_data[y],XEP80_ATARI_EOL,XEP80_WIDTH);
 	eol_at_margin[y] = FALSE;
 
-	XEP80_BlitRows(y,23);
+	BlitRows(y,23);
 
 	if (cursor_on)
-		XEP80_BlitChar(new_xcur, new_ycur, TRUE);
+		BlitChar(new_xcur, new_ycur, TRUE);
 	xcur = new_xcur;
 	ycur = new_ycur;
 }
 
-static void XEP80_ScrollUp(int y_start, int y_end)
+static void ScrollUp(int y_start, int y_end)
 {
 	int row;
 	int num_rows = y_end - y_start + 1;
 
 	if (cursor_on) {
-		XEP80_BlitChar(xcur, ycur, FALSE);
+		BlitChar(xcur, ycur, FALSE);
 		if (xcur != 0)
-			XEP80_BlitChar(xcur-1, ycur, FALSE);
+			BlitChar(xcur-1, ycur, FALSE);
 	}
 
 	for (row=y_start;row<XEP80_HEIGHT-2;row++) {
-		memcpy(xep80_data[row],
-		       xep80_data[row+num_rows],
+		memcpy(char_data[row],
+		       char_data[row+num_rows],
 		       XEP80_WIDTH);
 		eol_at_margin[row] = eol_at_margin[row+num_rows] ;
 	}
 
 	for (row=24-num_rows; row < 24; row++) {
-		memset(xep80_data[row],XEP80_ATARI_EOL,XEP80_WIDTH);
+		memset(char_data[row],XEP80_ATARI_EOL,XEP80_WIDTH);
 		eol_at_margin[row] = FALSE;
 	}
 
-	XEP80_BlitRows(y_start,23);
+	BlitRows(y_start,23);
 
 	if (cursor_on)
-		XEP80_BlitChar(new_xcur, new_ycur, TRUE);
+		BlitChar(new_xcur, new_ycur, TRUE);
 	xcur = new_xcur;
 	ycur = new_ycur;
 }
 
-static void XEP80_FindEndLogicalLine(int *x, int *y)
+static void FindEndLogicalLine(int *x, int *y)
 {
 	int x_search = *x;
 	int y_search = *y;
@@ -1399,7 +1399,7 @@ static void XEP80_FindEndLogicalLine(int *x, int *y)
 
 	while(1) {
 		while(x_search<=rmargin) {
-			if (xep80_data[y_search][x_search] == XEP80_ATARI_EOL) {
+			if (char_data[y_search][x_search] == XEP80_ATARI_EOL) {
 				found = TRUE;
 				break;
 			}
@@ -1434,7 +1434,7 @@ static void XEP80_FindEndLogicalLine(int *x, int *y)
 	}
 }
 
-static void XEP80_FindStartLogicalLine(int *x, int *y)
+static void FindStartLogicalLine(int *x, int *y)
 {
 	int y_search = *y;
 	int x_search = rmargin;
@@ -1448,7 +1448,7 @@ static void XEP80_FindStartLogicalLine(int *x, int *y)
 	y_search--;
 	while(1) {
 		while(x_search>=lmargin) {
-			if (xep80_data[y_search][x_search] == XEP80_ATARI_EOL) {
+			if (char_data[y_search][x_search] == XEP80_ATARI_EOL) {
 				found = TRUE;
 				break;
 			}
@@ -1470,7 +1470,7 @@ static void XEP80_FindStartLogicalLine(int *x, int *y)
 		*y = y_search + 1;
 }
 
-static void XEP80_BlitChar(int x, int y, int cur)
+static void BlitChar(int x, int y, int cur)
 {
 	int screen_col;
 	int font_row, font_col;
@@ -1486,7 +1486,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		return;
 
 	screen_col = x-xscroll;
-	ch = xep80_data[y][x];
+	ch = char_data[y][x];
 
 	/* Dispaly Atari EOL's as spaces */
 	if (ch == XEP80_ATARI_EOL && ((font_a_index & XEP80_FONTS_BLK_FONT_BIT) == 0) 
@@ -1681,7 +1681,7 @@ static void XEP80_BlitChar(int x, int y, int cur)
 		else {
 			start_col = 3;
 			end_col = 6;
-			ch = xep80_data[y][x-1];
+			ch = char_data[y][x-1];
 		}
 
 		to = &XEP80_screen_1[XEP80_SCRN_WIDTH * XEP80_char_height * y +
@@ -1785,29 +1785,29 @@ static void XEP80_BlitChar(int x, int y, int cur)
 	}
 }
 
-static void XEP80_BlitScreen(void)
+static void BlitScreen(void)
 {
 	int screen_row, screen_col;
 
 	for (screen_row = 0; screen_row < XEP80_HEIGHT; screen_row++) {
 		for (screen_col = xscroll; screen_col < xscroll + XEP80_LINE_LEN;
 		     screen_col++)
-			XEP80_BlitChar(screen_col, screen_row, FALSE);
+			BlitChar(screen_col, screen_row, FALSE);
 	}
 }
 
-static void XEP80_BlitRows(int y_start, int y_end)
+static void BlitRows(int y_start, int y_end)
 {
 	int screen_row, screen_col;
 
 	for (screen_row = y_start; screen_row <= y_end; screen_row++) {
 		for (screen_col = xscroll; screen_col < xscroll + XEP80_LINE_LEN;
 		     screen_col++)
-			XEP80_BlitChar(screen_col, screen_row, FALSE);
+			BlitChar(screen_col, screen_row, FALSE);
 	}
 }
 
-static void XEP80_BlitGraphChar(int x, int y)
+static void BlitGraphChar(int x, int y)
 {
 	int graph_col;
 	UBYTE *to1,*to2;
@@ -1823,12 +1823,12 @@ static void XEP80_BlitGraphChar(int x, int y)
 		off = XEP80_FONTS_offcolor;
 	}
 
-	ch = xep80_graph_data[y][x];
+	ch = graph_data[y][x];
 
-	to1 = &XEP80_screen_1[XEP80_SCRN_WIDTH * (y + XEP80_GRAPH_Y_OFFSET)
-	                      + x * 8 + XEP80_GRAPH_X_OFFSET];
-	to2 = &XEP80_screen_2[XEP80_SCRN_WIDTH * (y + XEP80_GRAPH_Y_OFFSET)
-	                      + x * 8 + XEP80_GRAPH_X_OFFSET];
+	to1 = &XEP80_screen_1[XEP80_SCRN_WIDTH * (y + GRAPH_Y_OFFSET)
+	                      + x * 8 + GRAPH_X_OFFSET];
+	to2 = &XEP80_screen_2[XEP80_SCRN_WIDTH * (y + GRAPH_Y_OFFSET)
+	                      + x * 8 + GRAPH_X_OFFSET];
 
 	for (graph_col=7; graph_col >= 0; graph_col--) {
 		if (ch & (1<<graph_col)) {
@@ -1848,7 +1848,7 @@ static void XEP80_BlitGraphScreen(void)
 
 	for (x=0; x<XEP80_GRAPH_WIDTH/8; x++)
 		for (y=0; y<XEP80_GRAPH_HEIGHT; y++)
-			XEP80_BlitGraphChar(x,y);
+			BlitGraphChar(x,y);
 }
 
 void XEP80_ChangeColors(void)
@@ -1856,8 +1856,8 @@ void XEP80_ChangeColors(void)
 	if (graphics_mode)
 		XEP80_BlitGraphScreen();
 	else {
-		XEP80_BlitScreen();
-		XEP80_BlitChar(xcur, ycur, TRUE);
+		BlitScreen();
+		BlitChar(xcur, ycur, TRUE);
 	}
 }
 
@@ -1911,8 +1911,8 @@ void XEP80_StateSave(void)
 		StateSav_SaveINT(&font_b_double, 1);
 		StateSav_SaveINT(&font_b_blank, 1);
 		StateSav_SaveINT(&font_b_blink, 1);
-		StateSav_SaveUBYTE(&xep80_data[0][0], XEP80_HEIGHT * XEP80_WIDTH);
-		StateSav_SaveUBYTE(&xep80_graph_data[0][0], XEP80_GRAPH_HEIGHT*XEP80_GRAPH_WIDTH/8);
+		StateSav_SaveUBYTE(&char_data[0][0], XEP80_HEIGHT * XEP80_WIDTH);
+		StateSav_SaveUBYTE(&graph_data[0][0], XEP80_GRAPH_HEIGHT*XEP80_GRAPH_WIDTH/8);
 	}
 }
 
@@ -1968,16 +1968,16 @@ void XEP80_StateRead(void)
 		StateSav_ReadINT(&font_b_double, 1);
 		StateSav_ReadINT(&font_b_blank, 1);
 		StateSav_ReadINT(&font_b_blink, 1);
-		StateSav_ReadUBYTE(&xep80_data[0][0], XEP80_HEIGHT * XEP80_WIDTH);
-		StateSav_ReadUBYTE(&xep80_graph_data[0][0], XEP80_GRAPH_HEIGHT*XEP80_GRAPH_WIDTH/8);
+		StateSav_ReadUBYTE(&char_data[0][0], XEP80_HEIGHT * XEP80_WIDTH);
+		StateSav_ReadUBYTE(&graph_data[0][0], XEP80_GRAPH_HEIGHT*XEP80_GRAPH_WIDTH/8);
 		start_trans_cpu_clock = ANTIC_CPU_CLOCK - num_ticks;
 		UpdateTVSystem();
 		if (XEP80_enabled) {
 			if (graphics_mode)
 				XEP80_BlitGraphScreen();
 			else {
-				XEP80_BlitScreen();
-				XEP80_BlitChar(xcur, ycur, TRUE);
+				BlitScreen();
+				BlitChar(xcur, ycur, TRUE);
 			}
 #if SUPPORTS_CHANGE_VIDEOMODE
 			VIDEOMODE_Set80Column(local_xep80);

@@ -8,6 +8,7 @@
   to random data appearing in PORTA, which resulted in XEP80 going haywire
   after coldstart. The change breaks binary compatibility of savestates.
   Standardise indentation (tabs instead of spaces).
+  Remove the XEP80_ prefix from names of static entities.
 
 
 2012-01-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
