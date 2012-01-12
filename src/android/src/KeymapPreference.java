@@ -247,7 +247,7 @@ public final class KeymapPreference extends DialogPreference
 
 	public int getKeymap() {
 		if (!_extended)
-			return getPersistedInt(-1) == -1 ? _def : getPersistedInt(-1);
+			return getPersistedInt(-128) == -128 ? _def : getPersistedInt(-1);
 		else
 			return parseExtPref(EXTSTR_ACTION);
 	}
