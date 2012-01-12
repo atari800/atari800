@@ -1,3 +1,7 @@
+2012-01-12  Kostas Nakos  <knakos@gmail.com>
+* android/*: Implement state saving, fix a keymap preference corner case
+
+
 2012-01-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * antic.c: Fix accuracy of ANTIC_CPU_CLOCK when NEW_CYCLE_EXACT is enabled.
 

@@ -151,6 +151,18 @@ static jboolean JNICALL NativeIsDisk(JNIEnv *env, jobject this, jstring img)
 	}
 }
 
+static jboolean JNICALL NativeSaveState(JNIEnv *env, jobject this, jstring fname)
+{
+	const jbyte *fname_utf = NULL;
+	int ret;
+
+	fname_utf = (*env)->GetStringUTFChars(env, fname, NULL);
+	ret = StateSav_SaveAtariState(fname_utf, "wb", TRUE);
+	Log_print("Saved state %s with return %d", fname_utf, ret);
+	(*env)->ReleaseStringUTFChars(env, fname, fname_utf);
+	return ret;
+}
+
 static void JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this, jstring img, jint drv,
 										  jint reboot)
 {
@@ -165,6 +177,7 @@ static void JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this, jstring img
 		Log_print("Cannot start image: %s", img_utf);
 	else
 		CPU_cim_encountered = FALSE;
+
 	(*env)->ReleaseStringUTFChars(env, img, img_utf);
 }
 
@@ -446,6 +459,9 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeGetDrvFnames",		"()[Ljava/lang/String;",			NativeGetDrvFnames	  },
 		{ "NativeUnmountAll",		"()V",								NativeUnmountAll	  },
 	};
+	JNINativeMethod pref_methods[] = {
+		{ "NativeSaveState",		"(Ljava/lang/String;)Z",			NativeSaveState		  },
+	};
 	JNIEnv *env;
 	jclass cls;
 
@@ -462,6 +478,8 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	(*env)->RegisterNatives(env, cls, render_methods, sizeof(render_methods)/sizeof(JNINativeMethod));
 	cls = (*env)->FindClass(env, "name/nick/jubanka/atari800/FileSelector");
 	(*env)->RegisterNatives(env, cls, fsel_methods, sizeof(fsel_methods)/sizeof(JNINativeMethod));
+	cls = (*env)->FindClass(env, "name/nick/jubanka/atari800/Preferences");
+	(*env)->RegisterNatives(env, cls, pref_methods, sizeof(pref_methods)/sizeof(JNINativeMethod));
 
 	return JNI_VERSION_1_2;
 }

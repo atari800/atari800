@@ -15,6 +15,9 @@
     <string name="unmountall">Unmount all drives</string>
     <string name="mountnextdisk">Image %s inserted</string>
     <string name="mountinsertdisk">Image %s inserted into drive D%d:</string>
+    <string name="savestateoverwrite">Save state file \'%s\' already exists. OK to overwrite?</string>
+    <string name="savestateerror">Error: Couldn\'t save state</string>
+    <string name="savestateok">State saved</string>
     <string name="mountnonextdisk">No next disk image found</string>
     <string name="diskboot">Booting image %s</string>
     <string name="none">None</string>
@@ -23,6 +26,7 @@
 	<string name="menu_preferences">Preferences</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
+    <string name="save">Save</string>
 	<string name="cimcrash">The Atari computer has crashed.\n
 							\nReset the machine or boot another image.</string>
 	<string name="noromfoundrevert">Failed to initialize machine. Required ROM not found.\n
@@ -230,4 +234,10 @@
 	<string name="pref_ntsc_sum">Toggle between NTSC (60fps) and PAL (50fps) tv modes</string>
 	<string name="pref_paddle">Paddle Mode</string>
 	<string name="pref_paddle_sum">Enable paddle emulation instead of joystick</string>
+	<string name="pref_savestate">Save Current State</string>
+	<string name="pref_savestate_sum_dis">Disabled! Set a state save path first!</string>
+	<string name="pref_savestate_sum_ena">Save current machine state</string>
+	<string name="pref_savestate_msg">Enter the file name:</string>
+	<string name="pref_statepath">State Save Path</string>
+	<string name="pref_statepath_sum">Where atari states will be saved</string>
 </resources>

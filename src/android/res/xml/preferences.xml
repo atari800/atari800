@@ -70,6 +70,18 @@
 			android:key="rompath"
 			android:title="@string/pref_rompath"
 			android:summary="@string/pref_rompath_sum"/>
+		<Preference
+			android:key="statepath"
+			android:title="@string/pref_statepath"
+			android:summary="@string/pref_statepath_sum"/>
+		<EditTextPreference
+			android:key="savestate"
+			android:title="@string/pref_savestate"
+			android:summary="@string/pref_savestate_sum_dis"
+			android:dialogMessage="@string/pref_savestate_msg"
+			android:positiveButtonText="@string/save"
+			android:negativeButtonText="@string/cancel"
+			android:enabled="false"/>
 		<CheckBoxPreference
 			android:key="basic"
 			android:title="@string/pref_basic"
@@ -265,7 +277,6 @@
 	</PreferenceCategory>
 
 		<!--
-			 save/load states?
 			 reset to default?
 			 save state on exit (state/disk/none)?
 			 mouse?
