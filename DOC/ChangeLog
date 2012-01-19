@@ -1,3 +1,9 @@
+2012-01-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* xep80_fonts.c, xep80.[ch], videomode.c: Rewtritten XEP80 emulation, based on
+  disassembly of the XEP80 ROM. Programs such as EIGHTY.BAS from XEP80 System
+  Diskette, or XEPLIST2.BAS from ANTIC Oct/1988, now work correctly.
+
+
 2012-01-12  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement state saving, fix a keymap preference corner case
 

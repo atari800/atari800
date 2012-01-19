@@ -867,7 +867,8 @@ void VIDEOMODE_SetVideoSystem(int mode)
 void VIDEOMODE_UpdateXEP80(void)
 {
 	display_modes[VIDEOMODE_MODE_XEP80].src_height = XEP80_scrn_height;
-	if (CurrentDisplayMode() == VIDEOMODE_MODE_XEP80)
+	if (resolutions != NULL /* Display already initialised */
+	    && CurrentDisplayMode() == VIDEOMODE_MODE_XEP80)
 		VIDEOMODE_Update();
 }
 #endif /* XEP80_EMULATION */

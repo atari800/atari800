@@ -40,8 +40,8 @@
 
 /* The values below define shape of the block font */
 enum {
-	BLOCK_FONT_MIDDLE_ROW = 4, /* Line at which middle row starts */
-	BLOCK_FONT_BOTTOM_ROW = 7, /* Line at which bottom row starts */
+	BLOCK_FONT_MIDDLE_ROW = 3, /* Line at which middle row starts */
+	BLOCK_FONT_BOTTOM_ROW = 6, /* Line at which bottom row starts */
 	BLOCK_FONT_MIDDLE_COL = 2, /* Pixel at which middle column starts */
 	BLOCK_FONT_RIGHT_COL = 5 /* Pixel at which right column starts */
 };
