@@ -3,6 +3,10 @@
   disassembly of the XEP80 ROM. Programs such as EIGHTY.BAS from XEP80 System
   Diskette, or XEPLIST2.BAS from ANTIC Oct/1988, now work correctly.
 
+* videomode.c: Added authenthic aspect ratio for XEP80. Fixed issue with
+  1x, 2x, 3x, and "custom" stretch settings - for all videomodes except NORMAL
+  the screen would stretch twice the amount it should.
+
 
 2012-01-12  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement state saving, fix a keymap preference corner case

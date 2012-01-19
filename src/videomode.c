@@ -105,6 +105,12 @@ unsigned int VIDEOMODE_dest_height;
 static double const pixel_aspect_ratio_ntsc = (12.0 + 3.0/11.0) / 14.31818;
 static double const pixel_aspect_ratio_pal = 14.75 / 14.187576;
 
+#ifdef XEP80_EMULATION
+/* XEP80 dot clock is 12 MHz. */
+static double const xep80_aspect_ratio_ntsc = (12.0 + 3.0/11.0) / 2.0 / 12.0;
+static double const xep80_aspect_ratio_pal = 14.75 / 2.0 / 12.0;
+#endif /* XEP80_EMULATION */
+
 static char const * const horizontal_area_cfg_strings[VIDEOMODE_HORIZONTAL_SIZE] = {
 	"NARROW",
 	"TV",
@@ -139,7 +145,10 @@ typedef struct display_mode_t {
 	unsigned int src_width; /* Horizontal resolution of source image in this mode */
 	unsigned int src_height; /* Vertical resolution of source image in this mode */
 	int param2src_w_mult; /* Use this multiplier to compute needed horizontal amount of source image based on current "horizontal area" */
-	int src2out_h_mult; /* Use this multiplier to compute vertical output area based on source image area */
+	/* Height multiplier for modes whose aspect ratio is far from 1. Blit
+	   functions that don't stretch, should anyway stretch their output
+	   vertically by this value. */
+	int h_mult;
 	double asp_ratio; /* Pixel aspect ratio of this mode */
 	unsigned int (*src2out_w_func)(unsigned int); /* Function that converts source image width to output image width */
 	unsigned int (*out2src_w_func)(unsigned int); /* Function that converts output image width to source image width */
@@ -153,16 +162,16 @@ static unsigned int DownscaleWidthNtsc(unsigned int w);
 static display_mode_t display_modes[VIDEOMODE_MODE_SIZE] = {
 	{ 320, 200, Screen_WIDTH, Screen_HEIGHT, 1, 1, 1.0, &ReturnSame, &ReturnSame }
 #if NTSC_FILTER
-	, { 640, 400, Screen_WIDTH, Screen_HEIGHT, 1, 2, 1.0, &UpscaleWidthNtsc, &DownscaleWidthNtsc, }
+	, { 640, 400, Screen_WIDTH, Screen_HEIGHT, 1, 2, 0.5, &UpscaleWidthNtsc, &DownscaleWidthNtsc, }
 #endif
 #ifdef XEP80_EMULATION
-	, { XEP80_SCRN_WIDTH, 400, XEP80_SCRN_WIDTH, XEP80_MAX_SCRN_HEIGHT, 2, 2, 1.0, &ReturnSame, &ReturnSame }
+	, { XEP80_SCRN_WIDTH, 400, XEP80_SCRN_WIDTH, XEP80_MAX_SCRN_HEIGHT, 2, 2, 0.5, &ReturnSame, &ReturnSame }
 #endif
 #ifdef PBI_PROTO80
-	, { 640, 400, 640, 192, 2, 2, 1.0, &ReturnSame, &ReturnSame }
+	, { 640, 400, 640, 192, 2, 2, 0.5, &ReturnSame, &ReturnSame }
 #endif
 #ifdef AF80
-	, { 640, 400, 640, 250, 2, 2, 1.0, &ReturnSame, &ReturnSame }
+	, { 640, 400, 640, 250, 2, 2, 0.5, &ReturnSame, &ReturnSame }
 #endif
 };
 
@@ -332,7 +341,6 @@ static void GetOutArea(unsigned int *w, unsigned int *h, VIDEOMODE_MODE_t displa
 	*h = VIDEOMODE_custom_vertical_area;
 	if (*h > display_modes[display_mode].src_height)
 		*h = display_modes[display_mode].src_height;
-	*h *= display_modes[display_mode].src2out_h_mult;
 }
 
 static void UpdateCustomStretch(void)
@@ -367,12 +375,13 @@ static void ComputeVideoArea(VIDEOMODE_resolution_t const *res, VIDEOMODE_resolu
 			            * VIDEOMODE_host_aspect_ratio_h / screen_res->height;
 	}
 	else
-		asp_ratio = 1.0;
+		asp_ratio = 1.0 / display_modes[display_mode].h_mult;
 
 	if (!PLATFORM_SupportsVideomode(display_mode, TRUE, rotate)) {
-		VIDEOMODE_dest_width = out_w;
-		VIDEOMODE_dest_height = out_h;
-		*mult_w = *mult_h = 1.0;
+		*mult_w = 1.0;
+		*mult_h = display_modes[display_mode].h_mult;
+		VIDEOMODE_dest_width = out_w * *mult_w;
+		VIDEOMODE_dest_height = out_h * *mult_h;
 		return;
 	}
 
@@ -454,11 +463,13 @@ static void CropVideoArea(VIDEOMODE_resolution_t const *screen_res, unsigned int
 }
 
 /* Computes videomode parameters and calls the platform-specific videomode setup. */
-static void SetVideoMode(VIDEOMODE_resolution_t *res, VIDEOMODE_MODE_t display_mode, unsigned int out_w, unsigned int out_h, int windowed, int rotate)
+static void SetVideoMode(VIDEOMODE_resolution_t *res, VIDEOMODE_MODE_t display_mode,
+                         unsigned int out_w, unsigned int out_h,
+                         int windowed, int rotate)
 {
 	VIDEOMODE_actual_width = out_w;
 	VIDEOMODE_src_width = (*display_modes[display_mode].out2src_w_func)(out_w);
-	VIDEOMODE_src_height = out_h / display_modes[display_mode].src2out_h_mult;
+	VIDEOMODE_src_height = out_h;
 	VIDEOMODE_src_offset_left = (display_modes[display_mode].src_width - VIDEOMODE_src_width) / 2;
 	VIDEOMODE_src_offset_top = (display_modes[display_mode].src_height - VIDEOMODE_src_height) / 2;
 
@@ -867,6 +878,10 @@ void VIDEOMODE_SetVideoSystem(int mode)
 void VIDEOMODE_UpdateXEP80(void)
 {
 	display_modes[VIDEOMODE_MODE_XEP80].src_height = XEP80_scrn_height;
+	if (XEP80_char_height == 12) /* PAL */
+		display_modes[VIDEOMODE_MODE_XEP80].asp_ratio = xep80_aspect_ratio_pal;
+	else
+		display_modes[VIDEOMODE_MODE_XEP80].asp_ratio = xep80_aspect_ratio_ntsc;
 	if (resolutions != NULL /* Display already initialised */
 	    && CurrentDisplayMode() == VIDEOMODE_MODE_XEP80)
 		VIDEOMODE_Update();
@@ -1170,6 +1185,9 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
+#ifdef XEP80_EMULATION
+	display_modes[VIDEOMODE_MODE_XEP80].asp_ratio = xep80_aspect_ratio_ntsc;
+#endif
 	return TRUE;
 }
 
