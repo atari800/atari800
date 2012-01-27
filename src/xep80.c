@@ -1294,7 +1294,7 @@ static void SetText50Hz(void)
    111011001 - Cursor On Continuous
    111011010 - Cursor On Blink
    ROM location: 03af, 03b5 */
-static void SetCursor(int on, int blink)
+static void SetCursorMode(int on, int blink)
 {
 	cursor_on = on;
 	cursor_blink = blink;
@@ -1576,13 +1576,13 @@ static void OutputWord(int word)
 					SetText50Hz();
 					break;
 				case CMD_CUR_OFF:
-					SetCursor(FALSE, FALSE);
+					SetCursorMode(FALSE, FALSE);
 					break;
 				case CMD_CUR_ON:
-					SetCursor(TRUE, FALSE);
+					SetCursorMode(TRUE, FALSE);
 					break;
 				case CMD_CUR_BLINK:
-					SetCursor(TRUE, TRUE);
+					SetCursorMode(TRUE, TRUE);
 					break;
 				case CMD_CUR_ST_LINE:
 					SetXCurStart();

@@ -1,3 +1,8 @@
+2012-01-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* xep80.c: Rename SetCursor to SetCursorMode to avoid conflict with a winuser.h
+  function under MinGW.
+
+
 2012-01-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * xep80_fonts.c, xep80.[ch], videomode.c: Rewtritten XEP80 emulation, based on
   disassembly of the XEP80 ROM. Programs such as EIGHTY.BAS from XEP80 System
