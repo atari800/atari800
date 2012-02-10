@@ -89,6 +89,7 @@
 #include "rtime.h"
 #include "pbi.h"
 #include "sio.h"
+#include "sysrom.h"
 #include "util.h"
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 #include "colours.h"
@@ -269,54 +270,16 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 
 static int load_roms(void)
 {
-	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_OSA:
-		if (emuos_mode == 2)
-			COPY_EMUOS(0x0800);
-		else if (!Atari800_LoadImage(CFG_osa_filename, MEMORY_os, 0x2800)) {
-			if (emuos_mode == 1)
-				COPY_EMUOS(0x0800);
-			else
-				return FALSE;
-		}
+	if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 2)
+		COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_XLXE ? 0x2000 : 0x0800);
+	else if (!SYSROM_LoadROMs()) {
+		if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
+			COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_XLXE ? 0x2000 : 0x0800);
 		else
-			MEMORY_have_basic = Atari800_LoadImage(CFG_basic_filename, MEMORY_basic, 0x2000);
-		break;
-	case Atari800_MACHINE_OSB:
-		if (emuos_mode == 2)
-			COPY_EMUOS(0x0800);
-		else if (!Atari800_LoadImage(CFG_osb_filename, MEMORY_os, 0x2800)) {
-			if (emuos_mode == 1)
-				COPY_EMUOS(0x0800);
-			else
-				return FALSE;
-		}
-		else
-			MEMORY_have_basic = Atari800_LoadImage(CFG_basic_filename, MEMORY_basic, 0x2000);
-		break;
-	case Atari800_MACHINE_XLXE:
-		if (emuos_mode == 2)
-			COPY_EMUOS(0x2000);
-		else if (!Atari800_LoadImage(CFG_xlxe_filename, MEMORY_os, 0x4000)) {
-			if (emuos_mode == 1)
-				COPY_EMUOS(0x2000);
-			else
-				return FALSE;
-		}
-		else {
-			/* if you really don't want built-in BASIC */
-			if (!strcmp(CFG_basic_filename,"none"))
-				memset(MEMORY_basic, 0, 0x2000);
-			else if (!Atari800_LoadImage(CFG_basic_filename, MEMORY_basic, 0x2000))
-				return FALSE;
-		}
-		MEMORY_xe_bank = 0;
-		break;
-	case Atari800_MACHINE_5200:
-		if (!Atari800_LoadImage(CFG_5200_filename, MEMORY_os, 0x800))
 			return FALSE;
-		break;
 	}
+
+	MEMORY_xe_bank = 0;
 	return TRUE;
 }
 
@@ -415,37 +378,28 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	/* try to find ROM images if the configuration file is not found
 	   or it does not specify some ROM paths (blank paths count as specified) */
-	CFG_FindROMImages("", TRUE); /* current directory */
+	SYSROM_FindInDir(".", TRUE); /* current directory */
 #if defined(unix) || defined(__unix__) || defined(__linux__)
-	CFG_FindROMImages("/usr/share/atari800", TRUE);
+	SYSROM_FindInDir("/usr/share/atari800", TRUE);
 #endif
 	if (*argc > 0 && argv[0] != NULL) {
 		char atari800_exe_dir[FILENAME_MAX];
 		char atari800_exe_rom_dir[FILENAME_MAX];
 		/* the directory of the Atari800 program */
 		Util_splitpath(argv[0], atari800_exe_dir, NULL);
-		CFG_FindROMImages(atari800_exe_dir, TRUE);
+		SYSROM_FindInDir(atari800_exe_dir, TRUE);
 		/* "rom" and "ROM" subdirectories of this directory */
 		Util_catpath(atari800_exe_rom_dir, atari800_exe_dir, "rom");
-		CFG_FindROMImages(atari800_exe_rom_dir, TRUE);
+		SYSROM_FindInDir(atari800_exe_rom_dir, TRUE);
 /* skip "ROM" on systems that are known to be case-insensitive */
 #if !defined(DJGPP) && !defined(HAVE_WINDOWS_H)
 		Util_catpath(atari800_exe_rom_dir, atari800_exe_dir, "ROM");
-		CFG_FindROMImages(atari800_exe_rom_dir, TRUE);
+		SYSROM_FindInDir(atari800_exe_rom_dir, TRUE);
 #endif
 	}
 	/* finally if nothing is found, set some defaults to make
 	   the configuration file easier to edit */
-	if (Util_filenamenotset(CFG_osa_filename))
-		strcpy(CFG_osa_filename, "atariosa.rom");
-	if (Util_filenamenotset(CFG_osb_filename))
-		strcpy(CFG_osb_filename, "atariosb.rom");
-	if (Util_filenamenotset(CFG_xlxe_filename))
-		strcpy(CFG_xlxe_filename, "atarixl.rom");
-	if (Util_filenamenotset(CFG_5200_filename))
-		strcpy(CFG_5200_filename, "5200.rom");
-	if (Util_filenamenotset(CFG_basic_filename))
-		strcpy(CFG_basic_filename, "ataribas.rom");
+	SYSROM_SetDefaults();
 
 	/* if no configuration file read, try to save one with the defaults */
 	if (!got_config)
@@ -525,8 +479,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 			int i_a = (i + 1 < *argc);		/* is argument available? */
 			int a_m = FALSE;			/* error, argument missing! */
 
-			if (strcmp(argv[i], "-osa_rom") == 0) {
-				if (i_a) Util_strlcpy(CFG_osa_filename, argv[++i], sizeof(CFG_osa_filename)); else a_m = TRUE;
+			if (strcmp(argv[i], "-run") == 0) {
+				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
 			}
 #ifdef R_IO_DEVICE
 			else if (strcmp(argv[i], "-rdevice") == 0) {
@@ -544,21 +498,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif /* R_SERIAL */
 			}
 #endif
-			else if (strcmp(argv[i], "-osb_rom") == 0) {
-				if (i_a) Util_strlcpy(CFG_osb_filename, argv[++i], sizeof(CFG_osb_filename)); else a_m = TRUE;
-			}
-			else if (strcmp(argv[i], "-xlxe_rom") == 0) {
-				if (i_a) Util_strlcpy(CFG_xlxe_filename, argv[++i], sizeof(CFG_xlxe_filename)); else a_m = TRUE;
-			}
-			else if (strcmp(argv[i], "-5200_rom") == 0) {
-				if (i_a) Util_strlcpy(CFG_5200_filename, argv[++i], sizeof(CFG_5200_filename)); else a_m = TRUE;
-			}
-			else if (strcmp(argv[i], "-basic_rom") == 0) {
-				if (i_a) Util_strlcpy(CFG_basic_filename, argv[++i], sizeof(CFG_basic_filename)); else a_m = TRUE;
-			}
-			else if (strcmp(argv[i], "-run") == 0) {
-				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
-			}
 			else if (strcmp(argv[i], "-mosaic") == 0) {
 				if (i_a) {
 					int total_ram = Util_sscandec(argv[++i]);
@@ -638,11 +577,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-basic           Turn on Atari BASIC ROM");
 					Log_print("\t-pal             Enable PAL TV mode");
 					Log_print("\t-ntsc            Enable NTSC TV mode");
-					Log_print("\t-osa_rom <file>  Load OS A ROM from file");
-					Log_print("\t-osb_rom <file>  Load OS B ROM from file");
-					Log_print("\t-xlxe_rom <file> Load XL/XE ROM from file");
-					Log_print("\t-5200_rom <file> Load 5200 ROM from file");
-					Log_print("\t-basic_rom <fil> Load BASIC ROM from file");
 					Log_print("\t-run <file>      Run Atari program (COM, EXE, XEX, BAS, LST)");
 #ifndef BASIC
 					Log_print("\t-state <file>    Load saved-state file");

@@ -59,6 +59,7 @@
 #include "screen.h"
 #include "sio.h"
 #include "statesav.h"
+#include "sysrom.h"
 #include "ui.h"
 #include "ui_basic.h"
 #ifdef XEP80_EMULATION
@@ -201,6 +202,49 @@ static void SelectSystem(void)
 		int ram;
 	} tSysConfig;
 
+	static UI_tMenuItem osa_menu_array[] = {
+		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
+		UI_MENU_ACTION(SYSROM_A_NTSC, "Rev. A NTSC"),
+		UI_MENU_ACTION(SYSROM_A_PAL, "Rev. A PAL"),
+		UI_MENU_ACTION(SYSROM_400800_CUSTOM, "Custom"),
+		UI_MENU_END
+	};
+	static UI_tMenuItem osb_menu_array[] = {
+		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
+		UI_MENU_ACTION(SYSROM_B_NTSC, "Rev. B NTSC"),
+		UI_MENU_ACTION(SYSROM_400800_CUSTOM, "Custom"),
+		UI_MENU_END
+	};
+	static UI_tMenuItem osxl_menu_array[] = {
+		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
+		UI_MENU_ACTION(SYSROM_BB00R1, "BB00 Rev. 1"),
+		UI_MENU_ACTION(SYSROM_BB01R2, "BB01 Rev. 2"),
+		UI_MENU_ACTION(SYSROM_BB01R3, "BB01 Rev. 3"),
+		UI_MENU_ACTION(SYSROM_BB01R4_OS, "BB01 Rev. 4"),
+		UI_MENU_ACTION(SYSROM_XL_CUSTOM, "Custom"),
+		UI_MENU_END
+	};
+	static UI_tMenuItem os5200_menu_array[] = {
+		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
+		UI_MENU_ACTION(SYSROM_5200, "Original"),
+		UI_MENU_ACTION(SYSROM_5200A, "Rev. A"),
+		UI_MENU_ACTION(SYSROM_5200_CUSTOM, "Custom"),
+		UI_MENU_END
+	};
+	static UI_tMenuItem * const os_menu_arrays[] = {
+		osa_menu_array,
+		osb_menu_array,
+		osxl_menu_array,
+		os5200_menu_array
+	};
+	static UI_tMenuItem basic_menu_array[] = {
+		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
+		UI_MENU_ACTION(SYSROM_BASIC_A, "Rev. A"),
+		UI_MENU_ACTION(SYSROM_BASIC_B, "Rev. B"),
+		UI_MENU_ACTION(SYSROM_BASIC_C, "Rev. C"),
+		UI_MENU_ACTION(SYSROM_BASIC_CUSTOM, "Custom"),
+		UI_MENU_END
+	};
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_ACTION(0, "Atari OS/A (16 KB)"),
 		UI_MENU_ACTION(1, "Atari OS/A (48 KB)"),
@@ -217,7 +261,9 @@ static void SelectSystem(void)
 		UI_MENU_ACTION(12, "Atari XL/XE (576 KB)"),
 		UI_MENU_ACTION(13, "Atari XL/XE (1088 KB)"),
 		UI_MENU_ACTION(14, "Atari 5200 (16 KB)"),
-		UI_MENU_ACTION(15, "Video system:"),
+		UI_MENU_SUBMENU_SUFFIX(15, "OS version:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(16, "BASIC version:", NULL),
+		UI_MENU_ACTION(17, "Video system:"),
 		UI_MENU_END
 	};
 
@@ -241,8 +287,15 @@ static void SelectSystem(void)
 
 #define N_MACHINES  ((int) (sizeof(machine) / sizeof(machine[0])))
 
+	/* Size must be long enough to store "<longest OS label> (auto)". */
+	static char default_os_label[29];
+	/* Size must be long enough to store "<longest BASIC label> (auto)". */
+	static char default_basic_label[14];
+
 	int option = 0;
+	int option2 = 0;
 	int new_tv_mode = Atari800_tv_mode;
+	int need_initialise = FALSE;
 
 	int i;
 	for (i = 0; i < N_MACHINES; i++)
@@ -252,21 +305,108 @@ static void SelectSystem(void)
 		}
 
 	for (;;) {
-		menu_array[N_MACHINES].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
+		/* Set label for the "OS version" action. */
+		if (SYSROM_os_versions[Atari800_machine_type] == SYSROM_AUTO) {
+			int auto_os = SYSROM_AutoChooseOS(Atari800_machine_type, MEMORY_ram_size, new_tv_mode);
+			if (auto_os == -1)
+				menu_array[15].suffix = "ROM missing";
+			else {
+				sprintf(default_os_label, "%s (auto)", FindMenuItem(os_menu_arrays[Atari800_machine_type], auto_os)->item);
+				menu_array[15].suffix = default_os_label;
+			}
+		}
+		else if (SYSROM_roms[SYSROM_os_versions[Atari800_machine_type]].filename[0] == '\0')
+			menu_array[15].suffix = "ROM missing";
+		else
+			menu_array[15].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
+
+		/* Set label for the "BASIC version" action. */
+		if (SYSROM_basic_version == SYSROM_AUTO) {
+			int auto_basic = SYSROM_AutoChooseBASIC();
+			if (auto_basic == -1)
+				menu_array[16].suffix = "ROM missing";
+			else {
+				sprintf(default_basic_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_basic)->item);
+				menu_array[16].suffix = default_basic_label;
+			}
+		}
+		else if (SYSROM_roms[SYSROM_basic_version].filename[0] == '\0')
+			menu_array[16].suffix = "ROM missing";
+		else
+			menu_array[16].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
+
+		menu_array[17].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
+
 		option = UI_driver->fSelect("Select System", 0, option, menu_array, NULL);
 		if (option < N_MACHINES)
 			break;
-		new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
+		switch (option) {
+		case 15:
+			{
+				int rom_available = FALSE;
+				/* Start from index 1, to skip the "Choose automatically" option,
+				   as it can never be hidden. */
+				UI_tMenuItem *menu_ptr = os_menu_arrays[Atari800_machine_type] + 1;
+				do {
+					if (SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
+						menu_ptr->flags = UI_ITEM_ACTION;
+						rom_available = TRUE;
+					}
+					else
+						menu_ptr->flags = UI_ITEM_HIDDEN;
+				} while ((++menu_ptr)->flags != UI_ITEM_END);
+				if (!rom_available)
+					UI_driver->fMessage("No OS version available, ROMs missing", 1);
+				else {
+					option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, SYSROM_os_versions[Atari800_machine_type], os_menu_arrays[Atari800_machine_type], NULL);
+					if (option2 >= 0) {
+						SYSROM_os_versions[Atari800_machine_type] = option2;
+						need_initialise = TRUE;
+					}
+				}
+			}
+			break;
+		case 16:
+			{
+				int rom_available = FALSE;
+				/* Start from index 1, to skip the "Choose automatically" option,
+				   as it can never be hidden. */
+				UI_tMenuItem *menu_ptr = basic_menu_array + 1;
+				do {
+					if (SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
+						menu_ptr->flags = UI_ITEM_ACTION;
+						rom_available = TRUE;
+					}
+					else
+						menu_ptr->flags = UI_ITEM_HIDDEN;
+				} while ((++menu_ptr)->flags != UI_ITEM_END);
+				if (!rom_available)
+					UI_driver->fMessage("No BASIC available, ROMs missing", 1);
+				else {
+					option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, SYSROM_basic_version, basic_menu_array, NULL);
+					if (option2 >= 0) {
+						SYSROM_basic_version = option2;
+						need_initialise = TRUE;
+					}
+				}
+			}
+			break;
+		case 17:
+			new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
+			break;
+		}
 	}
 	if (option >= 0) {
 		Atari800_machine_type = machine[option].type;
 		MEMORY_ram_size = machine[option].ram;
-		Atari800_InitialiseMachine();
+		need_initialise = TRUE;
 	}
-	else if (new_tv_mode != Atari800_tv_mode) {
+	if (new_tv_mode != Atari800_tv_mode) {
 		Atari800_SetTVMode(new_tv_mode);
-		Atari800_InitialiseMachine(); /* XXX: Atari800_Coldstart() is probably enough */
+		need_initialise = TRUE;
 	}
+	if (need_initialise)
+		Atari800_InitialiseMachine();
 }
 
 /* Inspired by LNG (lng.sourceforge.net) */
@@ -1223,38 +1363,111 @@ static void ConfigureDirectories(void)
 static void SystemROMSettings(void)
 {
 	static UI_tMenuItem menu_array[] = {
-		UI_MENU_FILESEL_PREFIX(0, " OS/A ROM: ", CFG_osa_filename),
-		UI_MENU_FILESEL_PREFIX(1, " OS/B ROM: ", CFG_osb_filename),
-		UI_MENU_FILESEL_PREFIX(2, "XL/XE ROM: ", CFG_xlxe_filename),
-		UI_MENU_FILESEL_PREFIX(3, " 5200 ROM: ", CFG_5200_filename),
-		UI_MENU_FILESEL_PREFIX(4, "BASIC ROM: ", CFG_basic_filename),
-		UI_MENU_FILESEL(5, "Find ROM images in a directory"),
+		UI_MENU_FILESEL(SYSROM_SIZE, "Find ROM images in a directory"),
+		UI_MENU_LABEL("400/800 OS"),
+		UI_MENU_FILESEL_PREFIX(SYSROM_A_NTSC, " Rev. A NTSC:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_A_PAL, " Rev. A PAL:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_B_NTSC, " Rev. B NTSC:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_400800_CUSTOM, " Custom:", NULL),
+		UI_MENU_LABEL("XL/XE OS"),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BB00R1, " BB00 Rev. 1:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R2, " BB01 Rev. 2:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R3, " BB01 Rev. 3:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R4_OS, " BB01 Rev. 4:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_XL_CUSTOM, " Custom:", NULL),
+		UI_MENU_LABEL("5200 BIOS"),
+		UI_MENU_FILESEL_PREFIX(SYSROM_5200, " Original:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_5200A, " Rev. A:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_5200_CUSTOM, " Custom:", NULL),
+		UI_MENU_LABEL("BASIC"),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BASIC_A, " Rev. A:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BASIC_B, " Rev. B:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BASIC_C, " Rev. C:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BASIC_CUSTOM, " Custom:", NULL),
 		UI_MENU_END
 	};
-	char rom_dir[FILENAME_MAX];
 
-	int option = 0;
+	int option = SYSROM_SIZE;
 
 	for (;;) {
 		int seltype;
 
+		int i;
+		for (i = 0; i < SYSROM_SIZE; ++i) {
+			UI_tMenuItem *item = FindMenuItem(menu_array, i);
+			if (SYSROM_roms[i].filename[0] == '\0')
+				item->item = "None";
+			else
+				item->item = SYSROM_roms[i].filename;
+		}
+
 		option = UI_driver->fSelect("System ROM Settings", 0, option, menu_array, &seltype);
 
 		switch (option) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
+		case SYSROM_A_NTSC:
+		case SYSROM_A_PAL:
+		case SYSROM_B_NTSC:
+		case SYSROM_400800_CUSTOM:
+		case SYSROM_BB00R1:
+		case SYSROM_BB01R2:
+		case SYSROM_BB01R3:
+		case SYSROM_BB01R4_OS:
+		case SYSROM_XL_CUSTOM:
+		case SYSROM_5200:
+		case SYSROM_5200A:
+		case SYSROM_5200_CUSTOM:
+		case SYSROM_BASIC_A:
+		case SYSROM_BASIC_B:
+		case SYSROM_BASIC_C:
+		case SYSROM_BASIC_CUSTOM:
 			if (seltype == UI_USER_DELETE)
-				FindMenuItem(menu_array, option)->item[0] = '\0';
-			else
-				UI_driver->fGetLoadFilename(FindMenuItem(menu_array, option)->item, NULL, 0);
+				SYSROM_roms[option].filename[0] = '\0';
+			else {
+				char filename[FILENAME_MAX] = "";
+				if (SYSROM_roms[option].filename[0] != '\0')
+					strcpy(filename, SYSROM_roms[option].filename);
+				else {
+					/* Use first non-empty ROM path as a starting filename for the dialog. */
+					int i;
+					for (i = 0; i < SYSROM_SIZE; ++i) {
+						if (SYSROM_roms[i].filename[0] != '\0') {
+							strcpy(filename, SYSROM_roms[i].filename);
+							break;
+						}
+					}
+				}
+				for (;;) {
+					if (!UI_driver->fGetLoadFilename(filename, NULL, 0))
+						break;
+					switch(SYSROM_SetPath(filename, 1, option)) {
+					case SYSROM_ERROR:
+						CantLoad(filename);
+						continue;
+					case SYSROM_BADSIZE:
+						UI_driver->fMessage("Can't load, incorrect file size", 1);
+						continue;
+					case SYSROM_BADCRC:
+						UI_driver->fMessage("Can't load, incorrect checksum", 1);
+						continue;
+					}
+					break;
+				}
+			}
 			break;
-		case 5:
-			Util_splitpath(CFG_xlxe_filename, rom_dir, NULL);
-			if (UI_driver->fGetDirectoryPath(rom_dir))
-				CFG_FindROMImages(rom_dir, FALSE);
+		case SYSROM_SIZE:
+			{
+				char rom_dir[FILENAME_MAX] = "";
+				int i;
+				/* Use first non-empty ROM path as a starting filename for the dialog. */
+				for (i = 0; i < SYSROM_SIZE; ++i) {
+					if (SYSROM_roms[i].filename[0] != '\0') {
+						Util_splitpath(SYSROM_roms[i].filename, rom_dir, NULL);
+						break;
+					}
+				}
+				if (UI_driver->fGetDirectoryPath(rom_dir))
+					SYSROM_FindInDir(rom_dir, FALSE);
+			}
 			break;
 		default:
 			return;

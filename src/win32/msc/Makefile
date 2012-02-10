@@ -32,6 +32,7 @@ OBJS = \
 	colours_pal.obj \
 	compfile.obj \
 	cpu.obj \
+	crc32.o \
 	cycle_map.obj \
 	devices.obj \
 	esc.obj \
@@ -53,6 +54,7 @@ OBJS = \
 	sio.obj \
 	sndsave.obj \
 	statesav.obj \
+	sysrom.o \
 	ui.obj \
 	ui_basic.obj \
 	util.obj \

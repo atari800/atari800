@@ -33,6 +33,7 @@
 #include "memory.h"
 #include "pbi.h"
 #include "rtime.h"
+#include "sysrom.h"
 #ifdef XEP80_EMULATION
 #include "xep80.h"
 #endif
@@ -54,56 +55,7 @@
 #include "videomode.h"
 #endif
 
-char CFG_osa_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
-char CFG_osb_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
-char CFG_xlxe_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
-char CFG_5200_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
-char CFG_basic_filename[FILENAME_MAX] = Util_FILENAME_NOT_SET;
-
 int CFG_save_on_exit = FALSE;
-
-void CFG_FindROMImages(const char *directory, int only_if_not_set)
-{
-	static char * const rom_filenames[5] = {
-		CFG_osa_filename,
-		CFG_osb_filename,
-		CFG_xlxe_filename,
-		CFG_5200_filename,
-		CFG_basic_filename
-	};
-	static const char * const common_filenames[] = {
-		"atariosa.rom", "atari_osa.rom", "atari_os_a.rom",
-		"ATARIOSA.ROM", "ATARI_OSA.ROM", "ATARI_OS_A.ROM",
-		NULL,
-		"atariosb.rom", "atari_osb.rom", "atari_os_b.rom",
-		"ATARIOSB.ROM", "ATARI_OSB.ROM", "ATARI_OS_B.ROM",
-		NULL,
-		"atarixlxe.rom", "atarixl.rom", "atari_xlxe.rom", "atari_xl_xe.rom",
-		"ATARIXLXE.ROM", "ATARIXL.ROM", "ATARI_XLXE.ROM", "ATARI_XL_XE.ROM",
-		NULL,
-		"atari5200.rom", "atar5200.rom", "5200.rom", "5200.bin", "atari_5200.rom",
-		"ATARI5200.ROM", "ATAR5200.ROM", "5200.ROM", "5200.BIN", "ATARI_5200.ROM",
-		NULL,
-		"ataribasic.rom", "ataribas.rom", "basic.rom", "atari_basic.rom",
-		"ATARIBASIC.ROM", "ATARIBAS.ROM", "BASIC.ROM", "ATARI_BASIC.ROM",
-		NULL
-	};
-	const char * const *common_filename = common_filenames;
-	int i;
-	for (i = 0; i < 5; i++) {
-		if (!only_if_not_set || Util_filenamenotset(rom_filenames[i])) {
-			do {
-				char full_filename[FILENAME_MAX];
-				Util_catpath(full_filename, directory, *common_filename);
-				if (Util_fileexists(full_filename)) {
-					strcpy(rom_filenames[i], full_filename);
-					break;
-				}
-			} while (*++common_filename != NULL);
-		}
-		while (*common_filename++ != NULL);
-	}
-}
 
 /* If another default path config path is defined use it
    otherwise use the default one */
@@ -172,16 +124,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			Util_trim(string);
 			Util_trim(ptr);
 
-			if (strcmp(string, "OS/A_ROM") == 0)
-				Util_strlcpy(CFG_osa_filename, ptr, sizeof(CFG_osa_filename));
-			else if (strcmp(string, "OS/B_ROM") == 0)
-				Util_strlcpy(CFG_osb_filename, ptr, sizeof(CFG_osb_filename));
-			else if (strcmp(string, "XL/XE_ROM") == 0)
-				Util_strlcpy(CFG_xlxe_filename, ptr, sizeof(CFG_xlxe_filename));
-			else if (strcmp(string, "BASIC_ROM") == 0)
-				Util_strlcpy(CFG_basic_filename, ptr, sizeof(CFG_basic_filename));
-			else if (strcmp(string, "5200_ROM") == 0)
-				Util_strlcpy(CFG_5200_filename, ptr, sizeof(CFG_5200_filename));
+			if (SYSROM_ReadConfig(string, ptr)) {
+			}
 #ifdef BASIC
 			else if (strcmp(string, "ATARI_FILES_DIR") == 0
 				  || strcmp(string, "SAVED_FILES_DIR") == 0
@@ -386,11 +330,7 @@ int CFG_WriteConfig(void)
 	Log_print("Writing config file: %s", rtconfig_filename);
 
 	fprintf(fp, "%s\n", Atari800_TITLE);
-	fprintf(fp, "OS/A_ROM=%s\n", CFG_osa_filename);
-	fprintf(fp, "OS/B_ROM=%s\n", CFG_osb_filename);
-	fprintf(fp, "XL/XE_ROM=%s\n", CFG_xlxe_filename);
-	fprintf(fp, "BASIC_ROM=%s\n", CFG_basic_filename);
-	fprintf(fp, "5200_ROM=%s\n", CFG_5200_filename);
+	SYSROM_WriteConfig(fp);
 #ifndef BASIC
 	for (i = 0; i < UI_n_atari_files_dir; i++)
 		fprintf(fp, "ATARI_FILES_DIR=%s\n", UI_atari_files_dir[i]);

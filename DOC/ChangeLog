@@ -1,3 +1,15 @@
+2012-02-10  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.c, cfg.[ch], crc32.[ch], sysrom.[ch], ui.c, Makefile.in,
+  dc/Makefile.dc, win32/msc/Makefile, android/jni/jni.c,
+  android/jni/Android.mk.in: Two new modules (crc32, sysrom) that add a new
+  functionality of searching for OS/BASIC ROM images based on known CRC32
+  hashes. Added possibility to select an OS/BASIC version when many are
+  available ("Select System"). When switching between PAL/NTSC, NTSC or PAL
+  version of OS Rev. A is selected accordingly.
+  Android port updated to work correctly (OS/BASIC version selection is still
+  missing though).
+
+
 2012-01-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * xep80.c: Rename SetCursor to SetCursorMode to avoid conflict with a winuser.h
   function under MinGW.

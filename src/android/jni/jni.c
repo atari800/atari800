@@ -36,6 +36,7 @@
 #include "antic.h"
 #include "../../memory.h"	/* override system header */
 #include "sio.h"
+#include "sysrom.h"
 #include "akey.h"
 
 #include "graphics.h"
@@ -410,7 +411,7 @@ static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path
 	jboolean ret = JNI_FALSE;
 
 	utf = (*env)->GetStringUTFChars(env, path, NULL);
-	ret |= chdir(utf);
+	SYSROM_FindInDir(utf, FALSE);
 	ret |= Atari800_InitialiseMachine();
 	(*env)->ReleaseStringUTFChars(env, path, utf);
 

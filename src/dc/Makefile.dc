@@ -46,6 +46,7 @@ OBJ =	atari.o \
 	pokey.o \
 	pia.o \
 	cartridge.o \
+	crc32.o \
 	rtime.o \
 	ui.o \
 	ui_basic.o \
@@ -54,6 +55,7 @@ OBJ =	atari.o \
 	compfile.o \
 	memory.o \
 	statesav.o \
+	sysrom.o \
 	colours.o \
 	mzpokeysnd.o \
 	remez.o \

@@ -43,6 +43,7 @@ OBJS = \
 	compfile.o \
 	cfg.o \
 	cpu.o \
+	crc32.o \
 	devices.o \
 	esc.o \
 	gtia.o \
@@ -55,6 +56,7 @@ OBJS = \
 	pokey.o \
 	rtime.o \
 	sio.o \
+	sysrom.o \
 	util.o \
 	@OBJS@
 
