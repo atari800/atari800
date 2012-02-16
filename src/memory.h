@@ -38,7 +38,7 @@
 extern UBYTE MEMORY_mem[65536 + 2];
 
 /* RAM size in kilobytes.
-   Valid values for Atari800_MACHINE_OSA and Atari800_MACHINE_OSB are: 16, 48, 52.
+   Valid values for Atari800_MACHINE_800 are: 16, 48, 52.
    Valid values for Atari800_MACHINE_XLXE are: 16, 64, 128, 192, RAM_320_RAMBO,
    RAM_320_COMPY_SHOP, 576, 1088.
    The only valid value for Atari800_MACHINE_5200 is 16. */

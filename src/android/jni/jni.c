@@ -308,12 +308,12 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 		int ram;
 	};
 	static const struct tSysConfig machine[] = {
-		{ Atari800_MACHINE_OSA, 16 },
-		{ Atari800_MACHINE_OSA, 48 },
-		{ Atari800_MACHINE_OSA, 52 },
-		{ Atari800_MACHINE_OSB, 16 },
-		{ Atari800_MACHINE_OSB, 48 },
-		{ Atari800_MACHINE_OSB, 52 },
+		{ Atari800_MACHINE_800, 16 },
+		{ Atari800_MACHINE_800, 48 },
+		{ Atari800_MACHINE_800, 52 },
+		{ Atari800_MACHINE_800, 16 },
+		{ Atari800_MACHINE_800, 48 },
+		{ Atari800_MACHINE_800, 52 },
 		{ Atari800_MACHINE_XLXE, 16 },
 		{ Atari800_MACHINE_XLXE, 64 },
 		{ Atari800_MACHINE_XLXE, 128 },
@@ -327,6 +327,14 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 
 	Atari800_machine_type = machine[nummac].type;
 	MEMORY_ram_size = machine[nummac].ram;
+	/* Temporary hack to allow choosing OS rev. A/B. Delete after adding
+	   support for choosing OS/BASIC revision. */
+	if (nummac < 3)
+		SYSROM_os_versions[Atari800_MACHINE_800] = ntsc ? SYSROM_A_NTSC : SYSROM_A_PAL;
+	else if (nummac >= 3 && nummac < 6)
+		SYSROM_os_versions[Atari800_MACHINE_800] = ntsc ? SYSROM_AUTO : SYSROM_B_NTSC;
+	/* End of hack */
+
 	Atari800_SetTVMode(ntsc ? Atari800_TV_NTSC : Atari800_TV_PAL);
 	CPU_cim_encountered = FALSE;
 	return Atari800_InitialiseMachine();

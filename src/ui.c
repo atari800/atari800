@@ -202,17 +202,12 @@ static void SelectSystem(void)
 		int ram;
 	} tSysConfig;
 
-	static UI_tMenuItem osa_menu_array[] = {
+	static UI_tMenuItem os800_menu_array[] = {
 		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
 		UI_MENU_ACTION(SYSROM_A_NTSC, "Rev. A NTSC"),
 		UI_MENU_ACTION(SYSROM_A_PAL, "Rev. A PAL"),
-		UI_MENU_ACTION(SYSROM_400800_CUSTOM, "Custom"),
-		UI_MENU_END
-	};
-	static UI_tMenuItem osb_menu_array[] = {
-		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
 		UI_MENU_ACTION(SYSROM_B_NTSC, "Rev. B NTSC"),
-		UI_MENU_ACTION(SYSROM_400800_CUSTOM, "Custom"),
+		UI_MENU_ACTION(SYSROM_800_CUSTOM, "Custom"),
 		UI_MENU_END
 	};
 	static UI_tMenuItem osxl_menu_array[] = {
@@ -232,8 +227,7 @@ static void SelectSystem(void)
 		UI_MENU_END
 	};
 	static UI_tMenuItem * const os_menu_arrays[] = {
-		osa_menu_array,
-		osb_menu_array,
+		os800_menu_array,
 		osxl_menu_array,
 		os5200_menu_array
 	};
@@ -246,34 +240,28 @@ static void SelectSystem(void)
 		UI_MENU_END
 	};
 	static UI_tMenuItem menu_array[] = {
-		UI_MENU_ACTION(0, "Atari OS/A (16 KB)"),
-		UI_MENU_ACTION(1, "Atari OS/A (48 KB)"),
-		UI_MENU_ACTION(2, "Atari OS/A (52 KB)"),
-		UI_MENU_ACTION(3, "Atari OS/B (16 KB)"),
-		UI_MENU_ACTION(4, "Atari OS/B (48 KB)"),
-		UI_MENU_ACTION(5, "Atari OS/B (52 KB)"),
-		UI_MENU_ACTION(6, "Atari 600XL (16 KB)"),
-		UI_MENU_ACTION(7, "Atari 800XL (64 KB)"),
-		UI_MENU_ACTION(8, "Atari 130XE (128 KB)"),
-		UI_MENU_ACTION(9, "Atari XL/XE (192 KB)"),
-		UI_MENU_ACTION(10, "Atari XL/XE (320 KB RAMBO)"),
-		UI_MENU_ACTION(11, "Atari XL/XE (320 KB COMPY SHOP)"),
-		UI_MENU_ACTION(12, "Atari XL/XE (576 KB)"),
-		UI_MENU_ACTION(13, "Atari XL/XE (1088 KB)"),
-		UI_MENU_ACTION(14, "Atari 5200 (16 KB)"),
-		UI_MENU_SUBMENU_SUFFIX(15, "OS version:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(16, "BASIC version:", NULL),
-		UI_MENU_ACTION(17, "Video system:"),
+		UI_MENU_ACTION(0, "Atari 400 (16 KB)"),
+		UI_MENU_ACTION(1, "Atari 800 (48 KB)"),
+		UI_MENU_ACTION(2, "Atari 800 (52 KB)"),
+		UI_MENU_ACTION(3, "Atari 600XL (16 KB)"),
+		UI_MENU_ACTION(4, "Atari 800XL (64 KB)"),
+		UI_MENU_ACTION(5, "Atari 130XE (128 KB)"),
+		UI_MENU_ACTION(6, "Atari XL/XE (192 KB)"),
+		UI_MENU_ACTION(7, "Atari XL/XE (320 KB RAMBO)"),
+		UI_MENU_ACTION(8, "Atari XL/XE (320 KB COMPY SHOP)"),
+		UI_MENU_ACTION(9, "Atari XL/XE (576 KB)"),
+		UI_MENU_ACTION(10, "Atari XL/XE (1088 KB)"),
+		UI_MENU_ACTION(11, "Atari 5200 (16 KB)"),
+		UI_MENU_SUBMENU_SUFFIX(12, "OS version:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(13, "BASIC version:", NULL),
+		UI_MENU_ACTION(14, "Video system:"),
 		UI_MENU_END
 	};
 
 	static const tSysConfig machine[] = {
-		{ Atari800_MACHINE_OSA, 16 },
-		{ Atari800_MACHINE_OSA, 48 },
-		{ Atari800_MACHINE_OSA, 52 },
-		{ Atari800_MACHINE_OSB, 16 },
-		{ Atari800_MACHINE_OSB, 48 },
-		{ Atari800_MACHINE_OSB, 52 },
+		{ Atari800_MACHINE_800, 16 },
+		{ Atari800_MACHINE_800, 48 },
+		{ Atari800_MACHINE_800, 52 },
 		{ Atari800_MACHINE_XLXE, 16 },
 		{ Atari800_MACHINE_XLXE, 64 },
 		{ Atari800_MACHINE_XLXE, 128 },
@@ -309,39 +297,39 @@ static void SelectSystem(void)
 		if (SYSROM_os_versions[Atari800_machine_type] == SYSROM_AUTO) {
 			int auto_os = SYSROM_AutoChooseOS(Atari800_machine_type, MEMORY_ram_size, new_tv_mode);
 			if (auto_os == -1)
-				menu_array[15].suffix = "ROM missing";
+				menu_array[12].suffix = "ROM missing";
 			else {
 				sprintf(default_os_label, "%s (auto)", FindMenuItem(os_menu_arrays[Atari800_machine_type], auto_os)->item);
-				menu_array[15].suffix = default_os_label;
+				menu_array[12].suffix = default_os_label;
 			}
 		}
 		else if (SYSROM_roms[SYSROM_os_versions[Atari800_machine_type]].filename[0] == '\0')
-			menu_array[15].suffix = "ROM missing";
+			menu_array[12].suffix = "ROM missing";
 		else
-			menu_array[15].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
+			menu_array[12].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
 
 		/* Set label for the "BASIC version" action. */
 		if (SYSROM_basic_version == SYSROM_AUTO) {
 			int auto_basic = SYSROM_AutoChooseBASIC();
 			if (auto_basic == -1)
-				menu_array[16].suffix = "ROM missing";
+				menu_array[13].suffix = "ROM missing";
 			else {
 				sprintf(default_basic_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_basic)->item);
-				menu_array[16].suffix = default_basic_label;
+				menu_array[13].suffix = default_basic_label;
 			}
 		}
 		else if (SYSROM_roms[SYSROM_basic_version].filename[0] == '\0')
-			menu_array[16].suffix = "ROM missing";
+			menu_array[13].suffix = "ROM missing";
 		else
-			menu_array[16].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
+			menu_array[13].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
 
-		menu_array[17].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
+		menu_array[14].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
 
 		option = UI_driver->fSelect("Select System", 0, option, menu_array, NULL);
 		if (option < N_MACHINES)
 			break;
 		switch (option) {
-		case 15:
+		case 12:
 			{
 				int rom_available = FALSE;
 				/* Start from index 1, to skip the "Choose automatically" option,
@@ -366,7 +354,7 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 16:
+		case 13:
 			{
 				int rom_available = FALSE;
 				/* Start from index 1, to skip the "Choose automatically" option,
@@ -391,7 +379,7 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 17:
+		case 14:
 			new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
 			break;
 		}
@@ -1368,7 +1356,7 @@ static void SystemROMSettings(void)
 		UI_MENU_FILESEL_PREFIX(SYSROM_A_NTSC, " Rev. A NTSC:", NULL),
 		UI_MENU_FILESEL_PREFIX(SYSROM_A_PAL, " Rev. A PAL:", NULL),
 		UI_MENU_FILESEL_PREFIX(SYSROM_B_NTSC, " Rev. B NTSC:", NULL),
-		UI_MENU_FILESEL_PREFIX(SYSROM_400800_CUSTOM, " Custom:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_800_CUSTOM, " Custom:", NULL),
 		UI_MENU_LABEL("XL/XE OS"),
 		UI_MENU_FILESEL_PREFIX(SYSROM_BB00R1, " BB00 Rev. 1:", NULL),
 		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R2, " BB01 Rev. 2:", NULL),
@@ -1407,7 +1395,7 @@ static void SystemROMSettings(void)
 		case SYSROM_A_NTSC:
 		case SYSROM_A_PAL:
 		case SYSROM_B_NTSC:
-		case SYSROM_400800_CUSTOM:
+		case SYSROM_800_CUSTOM:
 		case SYSROM_BB00R1:
 		case SYSROM_BB01R2:
 		case SYSROM_BB01R3:

@@ -111,7 +111,7 @@ static UBYTE under_cartA0BF[8192];
 
 static void alloc_axlon_memory(void){
 	axlon_curbank = 0;
-	if (MEMORY_axlon_enabled && (Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB )) {
+	if (MEMORY_axlon_enabled && Atari800_machine_type == Atari800_MACHINE_800) {
 		int new_axlon_ram_size = (MEMORY_axlon_bankmask+1)*0x4000;
 		if ((axlon_ram == NULL) || (axlon_ram_size != new_axlon_ram_size)) {
 			axlon_ram_size = new_axlon_ram_size;
@@ -129,7 +129,7 @@ static void alloc_axlon_memory(void){
 
 static void alloc_mosaic_memory(void){
 	mosaic_curbank = 0x3f;
-	if (MEMORY_mosaic_enabled && (Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB)) {
+	if (MEMORY_mosaic_enabled && Atari800_machine_type == Atari800_MACHINE_800) {
 		int new_mosaic_ram_size = (MEMORY_mosaic_maxbank+1)*0x1000;
 		if ((mosaic_ram == NULL) || (mosaic_ram_size != new_mosaic_ram_size)) {
 			mosaic_ram_size = new_mosaic_ram_size;
@@ -174,8 +174,7 @@ void MEMORY_InitialiseMachine(void)
 	cart809F_enabled = FALSE;
 	MEMORY_cartA0BF_enabled = FALSE;
 	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_OSA:
-	case Atari800_MACHINE_OSB:
+	case Atari800_MACHINE_800:
 		memcpy(MEMORY_mem + 0xd800, MEMORY_os, 0x2800);
 		ESC_PatchOS();
 		MEMORY_dFillMem(0x0000, 0x00, MEMORY_ram_size * 1024 - 1);
@@ -327,7 +326,7 @@ void MEMORY_InitialiseMachine(void)
 void MEMORY_StateSave(UBYTE SaveVerbose)
 {
 	/* Axlon/Mosaic for 400/800 */
-	if (Atari800_machine_type == Atari800_MACHINE_OSA  || Atari800_machine_type == Atari800_MACHINE_OSB) {
+	if (Atari800_machine_type == Atari800_MACHINE_800) {
 		StateSav_SaveINT(&MEMORY_axlon_enabled, 1);
 		if (MEMORY_axlon_enabled){
 			StateSav_SaveINT(&axlon_curbank, 1);
@@ -403,7 +402,7 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 {
 	/* Axlon/Mosaic for 400/800 */
-	if ((Atari800_machine_type == Atari800_MACHINE_OSA  || Atari800_machine_type == Atari800_MACHINE_OSB) && StateVersion >= 5) {
+	if (Atari800_machine_type == Atari800_MACHINE_800 && StateVersion >= 5) {
 		StateSav_ReadINT(&MEMORY_axlon_enabled, 1);
 		if (MEMORY_axlon_enabled){
 			StateSav_ReadINT(&axlon_curbank, 1);
@@ -871,8 +870,7 @@ void MEMORY_GetCharset(UBYTE *cs)
 {
 	const UBYTE *p;
 	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_OSA:
-	case Atari800_MACHINE_OSB:
+	case Atari800_MACHINE_800:
 		p = MEMORY_mem + 0xe000;
 		break;
 	case Atari800_MACHINE_XLXE:

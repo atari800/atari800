@@ -1420,14 +1420,13 @@ int UI_BASIC_OnScreenKeyboard(const char *title, int layout)
 #endif
 	modifiers &= AKEY_SHFT;
 	switch (layout) {
-	case MACHINE_OSA:
-	case MACHINE_OSB:
+	case Atari800_MACHINE_800:
 		layout_lines[0] = "     Start Select Option Atari Break";
 		break;
-	case MACHINE_XLXE:
+	case Atari800_MACHINE_XLXE:
 		layout_lines[0] = "  Help Start Select Option Inv Break";
 		break;
-	case MACHINE_5200:
+	case Atari800_MACHINE_5200:
 		layout_lines[0] = NULL;
 		break;
 	default:
@@ -1439,7 +1438,7 @@ int UI_BASIC_OnScreenKeyboard(const char *title, int layout)
 		int y;
 		int code;
 		const char *layout_line;
-		if (layout == MACHINE_5200) {
+		if (layout == Atari800_MACHINE_5200) {
 			layout_lines[1] = "        Start  Pause  Reset         ";
 			layout_lines[2] = "        --1--  --2--  --3--         ";
 			layout_lines[3] = "        --4--  --5--  --6--         ";
@@ -1538,7 +1537,7 @@ int UI_BASIC_OnScreenKeyboard(const char *title, int layout)
 					}
 				}
 			}
-			if (layout == MACHINE_5200) {
+			if (layout == Atari800_MACHINE_5200) {
 				static const UBYTE keycodes_5200[5][3] = {
 					{ AKEY_5200_START, AKEY_5200_PAUSE, AKEY_5200_RESET },
 					{ AKEY_5200_1, AKEY_5200_2, AKEY_5200_3 },
@@ -1561,7 +1560,7 @@ int UI_BASIC_OnScreenKeyboard(const char *title, int layout)
 				};
 				switch (key_y) {
 				case 0:
-					switch (code + (layout != MACHINE_XLXE ? 1 : 0)) {
+					switch (code + (layout != Atari800_MACHINE_XLXE ? 1 : 0)) {
 					case 0:
 						return AKEY_HELP ^ modifiers;
 					case 1:

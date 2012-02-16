@@ -37,10 +37,11 @@
 /* Public interface ------------------------------------------------------ */
 
 /* Machine type. */
-#define Atari800_MACHINE_OSA   0
-#define Atari800_MACHINE_OSB   1
-#define Atari800_MACHINE_XLXE  2
-#define Atari800_MACHINE_5200  3
+enum {
+	Atari800_MACHINE_800,
+	Atari800_MACHINE_XLXE,
+	Atari800_MACHINE_5200
+};
 extern int Atari800_machine_type;
 
 /* Always call Atari800_InitialiseMachine() after changing Atari800_machine_type

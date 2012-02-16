@@ -2278,8 +2278,7 @@ int Devices_PatchOS(void)
 	int patched = FALSE;
 
 	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_OSA:
-	case Atari800_MACHINE_OSB:
+	case Atari800_MACHINE_800:
 		addr = 0xf0e3;
 		break;
 	case Atari800_MACHINE_XLXE:

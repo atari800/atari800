@@ -182,7 +182,7 @@ static RETSIGTYPE sigint_handler(int num)
 
 void Atari800_Warmstart(void)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_OSA || Atari800_machine_type == Atari800_MACHINE_OSB) {
+	if (Atari800_machine_type == Atari800_MACHINE_800) {
 		/* A real Axlon homebanks on reset */
 		/* XXX: what does Mosaic do? */
 		if (MEMORY_axlon_enabled) MEMORY_PutByte(0xcfff, 0);
@@ -409,10 +409,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-atari") == 0) {
-			if (Atari800_machine_type != Atari800_MACHINE_OSA) {
-				Atari800_machine_type = Atari800_MACHINE_OSB;
-				MEMORY_ram_size = 48;
-			}
+			Atari800_machine_type = Atari800_MACHINE_800;
+			MEMORY_ram_size = 48;
 		}
 		else if (strcmp(argv[i], "-xl") == 0) {
 			Atari800_machine_type = Atari800_MACHINE_XLXE;
@@ -446,18 +444,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_tv_mode = Atari800_TV_PAL;
 		else if (strcmp(argv[i], "-ntsc") == 0)
 			Atari800_tv_mode = Atari800_TV_NTSC;
-		else if (strcmp(argv[i], "-a") == 0) {
-			Atari800_machine_type = Atari800_MACHINE_OSA;
-			MEMORY_ram_size = 48;
-		}
-		else if (strcmp(argv[i], "-b") == 0) {
-			Atari800_machine_type = Atari800_MACHINE_OSB;
-			MEMORY_ram_size = 48;
-		}
 		else if (strcmp(argv[i], "-emuos") == 0)
 			emuos_mode = 2;
 		else if (strcmp(argv[i], "-c") == 0) {
-			if (MEMORY_ram_size == 48)
+			if (Atari800_machine_type == Atari800_MACHINE_800)
 				MEMORY_ram_size = 52;
 		}
 		else if (strcmp(argv[i], "-axlon0f") == 0) {
@@ -584,8 +574,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif
 					Log_print("\t-nopatch         Don't patch SIO routine in OS");
 					Log_print("\t-nopatchall      Don't patch OS at all, H: device won't work");
-					Log_print("\t-a               Use OS A");
-					Log_print("\t-b               Use OS B");
 					Log_print("\t-c               Enable RAM between 0xc000 and 0xcfff in Atari 800");
 					Log_print("\t-axlon <n>       Use Atari 800 Axlon memory expansion: <n> k total RAM");
 					Log_print("\t-axlon0f         Use Axlon shadow at 0x0fc0-0x0fff");
@@ -610,11 +598,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 	}
 
 	*argc = j;
-	if (
+	if (!SYSROM_Initialise(argc, argv)
 #if !defined(BASIC) && !defined(CURSES_BASIC)
-		!Colours_Initialise(argc, argv) ||
+		|| !Colours_Initialise(argc, argv)
 #endif
-		!Devices_Initialise(argc, argv)
+		|| !Devices_Initialise(argc, argv)
 		|| !RTIME_Initialise(argc, argv)
 #ifdef IDE
 		|| !IDE_Initialise(argc, argv)
@@ -1289,15 +1277,10 @@ void Atari800_StateSave(void)
 	StateSav_SaveUBYTE(&temp, 1);
 
 	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_OSA:
+	case Atari800_MACHINE_800:
 		temp = MEMORY_ram_size == 16 ? 5 : 0;
 		os = 1;
 		default_system = 1;
-		break;
-	case Atari800_MACHINE_OSB:
-		temp = MEMORY_ram_size == 16 ? 5 : 0;
-		os = 2;
-		default_system = 2;
 		break;
 	case Atari800_MACHINE_XLXE:
 		switch (MEMORY_ram_size) {
@@ -1363,7 +1346,7 @@ void Atari800_StateRead(void)
 	StateSav_ReadINT(&os, 1);
 	switch (temp) {
 	case 0:
-		Atari800_machine_type = os == 1 ? Atari800_MACHINE_OSA : Atari800_MACHINE_OSB;
+		Atari800_machine_type = Atari800_MACHINE_800;
 		MEMORY_ram_size = 48;
 		break;
 	case 1:
@@ -1383,7 +1366,7 @@ void Atari800_StateRead(void)
 		MEMORY_ram_size = 16;
 		break;
 	case 5:
-		Atari800_machine_type = os == 1 ? Atari800_MACHINE_OSA : Atari800_MACHINE_OSB;
+		Atari800_machine_type = Atari800_MACHINE_800;
 		MEMORY_ram_size = 16;
 		break;
 	case 6:

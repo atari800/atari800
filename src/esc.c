@@ -125,8 +125,7 @@ void ESC_PatchOS(void)
 		UBYTE check_s_1;
 		/* patch Open() of C: so we know when a leader is processed */
 		switch (Atari800_machine_type) {
-		case Atari800_MACHINE_OSA:
-		case Atari800_MACHINE_OSB:
+		case Atari800_MACHINE_800:
 			addr_l = 0xef74;
 			addr_s = 0xefbc;
 			check_s_0 = 0xa0;
@@ -172,8 +171,7 @@ void ESC_PatchOS(void)
 void ESC_UpdatePatches(void)
 {
 	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_OSA:
-	case Atari800_MACHINE_OSB:
+	case Atari800_MACHINE_800:
 		/* Restore unpatched OS */
 		MEMORY_dCopyToMem(MEMORY_os, 0xd800, 0x2800);
 		/* Set patches */

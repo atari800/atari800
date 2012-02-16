@@ -209,10 +209,11 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 #endif
 			}
 			else if (strcmp(string, "MACHINE_TYPE") == 0) {
-				if (strcmp(ptr, "Atari OS/A") == 0)
-					Atari800_machine_type = Atari800_MACHINE_OSA;
-				else if (strcmp(ptr, "Atari OS/B") == 0)
-					Atari800_machine_type = Atari800_MACHINE_OSB;
+				if (strcmp(ptr, "Atari 400/800") == 0 ||
+				    /* Also recognise legacy values of this parameter */
+				    strcmp(ptr, "Atari OS/A") == 0 ||
+				    strcmp(ptr, "Atari OS/B") == 0)
+					Atari800_machine_type = Atari800_MACHINE_800;
 				else if (strcmp(ptr, "Atari XL/XE") == 0)
 					Atari800_machine_type = Atari800_MACHINE_XLXE;
 				else if (strcmp(ptr, "Atari 5200") == 0)
@@ -317,8 +318,8 @@ int CFG_WriteConfig(void)
 {
 	FILE *fp;
 	int i;
-	static const char * const machine_type_string[4] = {
-		"OS/A", "OS/B", "XL/XE", "5200"
+	static const char * const machine_type_string[3] = {
+		"400/800", "XL/XE", "5200"
 	};
 
 	fp = fopen(rtconfig_filename, "w");

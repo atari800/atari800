@@ -33,7 +33,7 @@ enum {
 	/* Rev. C (1984), from late 800XL and all XE/XEGS, also on cartridge, Part no. CO24947A */
 	SYSROM_BASIC_C,
 	/* --- Custom ROMs --- */
-	SYSROM_400800_CUSTOM, /* Custom 400/800 OS */
+	SYSROM_800_CUSTOM, /* Custom 400/800 OS */
 	SYSROM_XL_CUSTOM, /* Custom XL/XE OS */
 	SYSROM_5200_CUSTOM, /* Custom 5200 BIOS */
 	SYSROM_BASIC_CUSTOM,/* Custom BASIC */
@@ -52,7 +52,7 @@ extern SYSROM_t SYSROM_roms[SYSROM_SIZE];
 
 /* OS version preference chosen by user. Indexed by value of Atari800_machine_type.
    Set these to SYSROM_AUTO to let the emulator choose the OS revision automatically. */
-extern int SYSROM_os_versions[4];
+extern int SYSROM_os_versions[3];
 /* BASIC version preference chosen by user. Set this to SYSROM_AUTO to let the emulator
    choose the BASIC revision automatically. */
 extern int SYSROM_basic_version;
