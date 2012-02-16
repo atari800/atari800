@@ -1,3 +1,13 @@
+2012-02-16  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.[ch], cartridge.c, cfg.c, devices.c, esc.c, memory.[ch], sysrom.[ch],
+  ui_basic.c, ui.c, android/jni/jni.c: Merge Atari800_MACHINE_OSA and
+  Atari800_MACHINE_OSB into Atari800_MACHINE_800 - no need for separate machine
+  types since OS revision can now be selected.
+
+* sysrom.c, atari800.man, DOC/USAGE: Support choosing OS revision from command
+  line.
+
+
 2012-02-10  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c, cfg.[ch], crc32.[ch], sysrom.[ch], ui.c, Makefile.in,
   dc/Makefile.dc, win32/msc/Makefile, android/jni/jni.c,
