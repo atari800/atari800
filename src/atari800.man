@@ -36,23 +36,116 @@ Don't save the current configuration on emulator exit (the default).
 .TP
 .BI \-osa_rom\  filename
 Path to file containing Atari Rev.A Operating System.
-Used to override paths defined at compile time.
 .TP
 .BI \-osb_rom\  filename
 Path to file containing Atari Rev.B Operating System.
-Used to override paths defined at compile time.
 .TP
 .BI \-xlxe_rom\  filename
 Path to file containing Atari XL/XE Operating System.
-Used to override paths defined at compile time.
 .TP
 .BI \-5200_rom\  filename
 Path to file containing Atari 5200 Games System ROM.
-Used to override paths defined at compile time.
 .TP
 .BI \-basic_rom\  filename
 Path to file containing Atari BASIC ROM.
 Used to override paths defined at compile time.
+
+.TP
+\fB\-800\-rev auto\fR|\fBa\-ntsc\fR|\fBa\-pal\fR|\fBb\-ntsc\fR|\fBcustom\fR
+Select operating system revision for Atari 800:
+.PP
+.RS
+.PD 0
+.TP
+.B auto
+The default.
+Use the most appropriate from the available ones.
+.TP
+.B a\-ntsc
+Use OS rev. A NTSC from early NTSC 400/800 units.
+.TP
+.B a\-pal
+Use OS rev. A PAL from PAL 400/800 units.
+.TP
+.B a\-pal
+Use OS rev. B NTSC from late NTSC 400/800 units.
+.TP
+.B custom
+Use a custom OS.
+.PD
+.RE
+.TP
+\fB\-xl\-rev auto\fR|\fB1\fR|\fB2\fR|\fB3\fR|\fB4\fR|\fBcustom\fR
+Select operating system revision for Atari XL/XE:
+.PP
+.RS
+.PD 0
+.TP
+.B auto
+The default.
+Use the most appropriate from the available ones.
+.TP
+.B 1
+Use OS BB000000 rev. 1 from the 600XL.
+.TP
+.B 2
+Use OS BB000001 rev. 2 from the 800XL and early 65XE/130XE units.
+.TP
+.B 3
+Use OS BB000001 rev. 3 from late 65XE/130XE units.
+.TP
+.B 4
+Use OS BB000001 rev. 4 from the XEGS.
+.TP
+.B custom
+Use a custom OS.
+.PD
+.RE
+.TP
+\fB\-5200\-rev auto\fR|\fBorig\fR|\fBa\fR|\fBcustom\fR
+Select BIOS revision for Atari 5200:
+.PP
+.RS
+.PD 0
+.TP
+.B auto
+The default.
+Use the most appropriate from the available ones.
+.TP
+.B orig
+Use BIOS from 4-port and early 2\-port 5200 units.
+.TP
+.B a
+Use BIOS rev. A from late 2\-port 5200 units.
+.TP
+.B custom
+Use a custom BIOS.
+.PD
+.RE
+.TP
+\fB\-basic\-rev auto\fR|\fBa\fR|\fBb\fR|\fBc\fR|\fBcustom\fR
+Select BASIC revision:
+.PP
+.RS
+.PD 0
+.TP
+.B auto
+The default.
+Use the most appropriate from the available ones.
+.TP
+.B a
+Use BASIC rev. A.
+.TP
+.B b
+Use BASIC rev. B from early 600XL/800XL units.
+.TP
+.B c
+Use BASIC rev. C from late 600XL/800XL and all XE units.
+.TP
+.B custom
+Use a custom BASIC.
+.PD
+.RE
 
 .TP
 .B \-atari
@@ -76,12 +169,6 @@ Emulate Atari 5200
 .B \-emuos
 Use EmuOS
 
-.TP
-.B \-a
-Use Atari OS/A for Atari 800
-.TP
-.B \-b
-Use Atari OS/B for Atari 800
 .TP
 .B \-c
 Enable RAM between 0xc000 and 0xcfff in Atari 800

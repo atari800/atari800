@@ -105,6 +105,15 @@ Command line options
 -5200_rom <filename>  Use specified 5200 OS ROM image
 -basic_rom <filename> Use specified Atari BASIC ROM image
 
+-800-rev auto|a-ntsc|a-pal|b-ntsc|custom
+                      Select OS revision for Atari 400/800
+-xl-rev auto|1|2|3|4|custom
+                      Select OS revision for Atari XL/XE
+-5200-rev auto|orig|a|custom
+                      Select OS revision for Atari 5200
+-basic-rev auto|a|b|c|custom
+                      Select BASIC revision
+
 -atari                Emulate Atari 800
 -xl                   Emulate Atari 800 XL
 -xe                   Emulate Atari 130 XE
@@ -113,8 +122,6 @@ Command line options
 -5200                 Emulate Atari 5200
 
 -emuos                Use EmuOS
--a                    Use OS/A for Atari 800
--b                    Use OS/B for Atari 800
 -c                    Enable RAM between 0xc000 and 0xcfff in Atari 800
 
 -axlon <n>            Use Atari 800 Axlon memory expansion: <n> k total RAM
