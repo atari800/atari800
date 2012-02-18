@@ -358,41 +358,31 @@ int SYSROM_AutoChooseBASIC(void)
 	return -1;
 }
 
-int SYSROM_LoadROMs(void)
+void SYSROM_ChooseROMs(int machine_type, int ram_size, int tv_system, int *os_version, int *basic_version)
 {
-	int os_version;
-	if (SYSROM_os_versions[Atari800_machine_type] == SYSROM_AUTO)
-		os_version = SYSROM_AutoChooseOS(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode);
+	int os_ver;
+	if (SYSROM_os_versions[machine_type] == SYSROM_AUTO)
+		os_ver = SYSROM_AutoChooseOS(machine_type, ram_size, tv_system);
 	else
-		os_version = SYSROM_os_versions[Atari800_machine_type];
+		os_ver = SYSROM_os_versions[machine_type];
 
-	/* Load OS ROM. */
-	if (os_version == -1
-	    || SYSROM_roms[os_version].filename[0] == '\0'
-	    || !Atari800_LoadImage(SYSROM_roms[os_version].filename, MEMORY_os, SYSROM_roms[os_version].size))
-		/* Loading OS ROM failed. */
-		return FALSE;
+	if (os_ver != -1 && SYSROM_roms[os_ver].filename[0] == '\0')
+		os_ver = -1;
+	*os_version = os_ver;
 
-	if (Atari800_machine_type != Atari800_MACHINE_5200) {
+	if (machine_type == Atari800_MACHINE_5200)
+		*basic_version = -1;
+	else {
 		/* Load BASIC ROM. */
-		int basic_version;
+		int basic_ver;
 		if (SYSROM_basic_version == SYSROM_AUTO)
-			basic_version = SYSROM_AutoChooseBASIC();
+			basic_ver = SYSROM_AutoChooseBASIC();
 		else
-			basic_version = SYSROM_basic_version;
-		if (basic_version == -1
-		    || SYSROM_roms[basic_version].filename[0] == '\0'
-		    || !(MEMORY_have_basic = Atari800_LoadImage(SYSROM_roms[basic_version].filename, MEMORY_basic, SYSROM_roms[basic_version].size))) {
-			/* Loading BASIC ROM failed. */
-			if (Atari800_machine_type != Atari800_MACHINE_XLXE)
-				return FALSE;
-			/* Don't fail on XL/XE - instead fill BASIC ROM with zeroes. */
-			MEMORY_have_basic = TRUE;
-			memset(MEMORY_basic, 0, 0x2000);
-		}
+			basic_ver = SYSROM_basic_version;
+		if (basic_ver != -1 && SYSROM_roms[basic_ver].filename[0] == '\0')
+			basic_ver = -1;
+		*basic_version = basic_ver;
 	}
-
-	return TRUE;
 }
 
 /* Matches values of OS_*_VERSION and BASIC_VERSION parameters in the config file.

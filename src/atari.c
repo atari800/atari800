@@ -152,6 +152,8 @@ int Atari800_machine_type = Atari800_MACHINE_XLXE;
 int Atari800_tv_mode = Atari800_TV_PAL;
 int Atari800_disable_basic = TRUE;
 
+int Atari800_os_version = -1;
+
 int verbose = FALSE;
 
 int Atari800_display_screen = FALSE;
@@ -270,13 +272,37 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 
 static int load_roms(void)
 {
-	if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 2)
+	if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 2) {
 		COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_XLXE ? 0x2000 : 0x0800);
-	else if (!SYSROM_LoadROMs()) {
-		if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
-			COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_XLXE ? 0x2000 : 0x0800);
-		else
-			return FALSE;
+		Atari800_os_version = -1;
+	}
+	else {
+		int basic_ver;
+		SYSROM_ChooseROMs(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode, &Atari800_os_version, &basic_ver);
+		if (Atari800_os_version == -1
+		    || !Atari800_LoadImage(SYSROM_roms[Atari800_os_version].filename, MEMORY_os, SYSROM_roms[Atari800_os_version].size)) {
+			/* Missing OS ROM. */
+			Atari800_os_version = -1;
+			if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
+				COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_XLXE ? 0x2000 : 0x0800);
+			else
+				/* No OS ROM loaded. */
+				return FALSE;
+		}
+		else if (Atari800_machine_type != Atari800_MACHINE_5200) {
+			/* OS ROM found, try loading BASIC. */
+			MEMORY_have_basic = basic_ver != -1 && Atari800_LoadImage(SYSROM_roms[basic_ver].filename, MEMORY_basic, SYSROM_roms[basic_ver].size);
+			if (!MEMORY_have_basic) {
+				/* Missing BASIC ROM. Don't fail when it happens. */
+				if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+					/* if you really don't want built-in BASIC */
+					if (basic_ver == -1)
+						memset(MEMORY_basic, 0, 0x2000);
+					else
+						return FALSE;
+				}
+			}
+		}
 	}
 
 	MEMORY_xe_bank = 0;

@@ -92,10 +92,14 @@ int SYSROM_AutoChooseBASIC(void);
    making edits to the config file easier. */
 void SYSROM_SetDefaults(void);
 
-/* Called from Atari800_Initialise(). Loads the OS/BASIC ROMs chosen by
-   SYSROM_os_versions and SYSROM_basic_version. If ROM loading succeeded,
-   returns TRUE; otherwise FALSE. */
-int SYSROM_LoadROMs(void);
+/* Called from Atari800_InitialiseMachine(). Determines OS and BASIC ROM
+   versions based on given machine_type, ram_size and tv_system, and depending
+   on settings in SYSROM_os_versions and SYSROM_basic_version.
+   Returns OS version in *os_version and BASIC version in *basic_version -
+   both can be -1 if no ROM is available or no path is configured for the
+   chosen ROM.
+ */
+void SYSROM_ChooseROMs(int machine_type, int ram_size, int tv_system, int *os_version, int *basic_version);
 
 /* Read/write from/to configuration file. */
 int SYSROM_ReadConfig(char *string, char *ptr);

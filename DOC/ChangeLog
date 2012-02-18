@@ -1,3 +1,8 @@
+2012-02-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.[ch], devices.c, esc.c, sysrom.[ch]: Make OS patches work depending on
+  OS version. Now patches work correctly also with Rev. A PAL and Rev. 1
+  (600XL).
+
 2012-02-16  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.[ch], cartridge.c, cfg.c, devices.c, esc.c, memory.[ch], sysrom.[ch],
   ui_basic.c, ui.c, android/jni/jni.c: Merge Atari800_MACHINE_OSA and

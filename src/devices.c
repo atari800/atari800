@@ -66,6 +66,7 @@
 #include "log.h"
 #include "memory.h"
 #include "sio.h"
+#include "sysrom.h"
 #include "util.h"
 #ifdef R_IO_DEVICE
 #include "rdevice.h"
@@ -2277,11 +2278,20 @@ int Devices_PatchOS(void)
 	int i;
 	int patched = FALSE;
 
-	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_800:
+	switch (Atari800_os_version) {
+	case SYSROM_A_NTSC:
+	case SYSROM_A_PAL:
+	case SYSROM_B_NTSC:
+	case SYSROM_800_CUSTOM:
 		addr = 0xf0e3;
 		break;
-	case Atari800_MACHINE_XLXE:
+	case SYSROM_BB00R1:
+		addr = 0xc43c;
+		break;
+	case SYSROM_BB01R2:
+	case SYSROM_BB01R3:
+	case SYSROM_BB01R4_OS:
+	case SYSROM_XL_CUSTOM:
 		addr = 0xc42e;
 		break;
 	default:

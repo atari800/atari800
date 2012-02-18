@@ -63,6 +63,10 @@ extern int Atari800_tv_mode;
 /* TRUE to disable Atari BASIC when booting Atari (hold Option in XL/XE). */
 extern int Atari800_disable_basic;
 
+/* OS ROM version currently used by the emulator. Can be -1 for emuos/missing
+   ROM, or a value from the SYSROM enumerator. */
+extern int Atari800_os_version;
+
 /* If Atari800_Frame() sets it to TRUE, then the current contents
    of Screen_atari should be displayed. */
 extern int Atari800_display_screen;

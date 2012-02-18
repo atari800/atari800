@@ -32,6 +32,7 @@
 #include "memory.h"
 #include "pia.h"
 #include "sio.h"
+#include "sysrom.h"
 #include "ui.h"
 #include <stdlib.h>
 
@@ -124,14 +125,26 @@ void ESC_PatchOS(void)
 		UBYTE check_s_0;
 		UBYTE check_s_1;
 		/* patch Open() of C: so we know when a leader is processed */
-		switch (Atari800_machine_type) {
-		case Atari800_MACHINE_800:
+		switch (Atari800_os_version) {
+		case SYSROM_A_NTSC:
+		case SYSROM_B_NTSC:
+		case SYSROM_800_CUSTOM:
 			addr_l = 0xef74;
 			addr_s = 0xefbc;
 			check_s_0 = 0xa0;
 			check_s_1 = 0x80;
 			break;
-		case Atari800_MACHINE_XLXE:
+		case SYSROM_A_PAL:
+			addr_l = 0xef74;
+			addr_s = 0xefbc;
+			check_s_0 = 0xa0;
+			check_s_1 = 0xc0;
+			break;
+		case SYSROM_BB00R1:
+		case SYSROM_BB01R2:
+		case SYSROM_BB01R3:
+		case SYSROM_BB01R4_OS:
+		case SYSROM_XL_CUSTOM:
 			addr_l = 0xfd13;
 			addr_s = 0xfd60;
 			check_s_0 = 0xa9;
@@ -159,12 +172,25 @@ void ESC_PatchOS(void)
 		ESC_Remove(ESC_COPENSAVE);
 		ESC_Remove(ESC_SIOV);
 	};
-	if (patched && Atari800_machine_type == Atari800_MACHINE_XLXE) {
-		/* Disable Checksum Test */
-		MEMORY_dPutByte(0xc314, 0x8e);
-		MEMORY_dPutByte(0xc315, 0xff);
-		MEMORY_dPutByte(0xc319, 0x8e);
-		MEMORY_dPutByte(0xc31a, 0xff);
+	if (patched){
+		UWORD addr;
+		switch (Atari800_os_version) {
+		case SYSROM_BB00R1:
+			addr = 0xc32b;
+			break;
+		case SYSROM_BB01R2:
+		case SYSROM_BB01R3:
+		case SYSROM_BB01R4_OS:
+		case SYSROM_XL_CUSTOM:
+			addr = 0xc31d;
+			break;
+		default:
+			/* Don't disable checksum test. */
+			return;
+		}
+		/* Disable setting NGFLAG on wrong OS checksum. */
+		MEMORY_dPutByte(addr, 0xea);
+		MEMORY_dPutByte(addr+1, 0xea);
 	}
 }
 
