@@ -168,89 +168,20 @@ static void AllocXEMemory(void)
 	}
 }
 
+int MEMORY_SizeValid(int size)
+{
+	return size == 8 || size == 16 || size == 24 || size == 32
+	       || size == 40 || size == 48 || size == 52 || size == 64
+	       || size == 128 || size == 192 || size == MEMORY_RAM_320_RAMBO
+	       || size == MEMORY_RAM_320_COMPY_SHOP || size == 576 || size == 1088;
+}
+
 void MEMORY_InitialiseMachine(void)
 {
 	ANTIC_xe_ptr = NULL;
 	cart809F_enabled = FALSE;
 	MEMORY_cartA0BF_enabled = FALSE;
 	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_800:
-		memcpy(MEMORY_mem + 0xd800, MEMORY_os, 0x2800);
-		ESC_PatchOS();
-		MEMORY_dFillMem(0x0000, 0x00, MEMORY_ram_size * 1024 - 1);
-		MEMORY_SetRAM(0x0000, MEMORY_ram_size * 1024 - 1);
-		if (MEMORY_ram_size < 52) {
-			MEMORY_dFillMem(MEMORY_ram_size * 1024, 0xff, 0xd000 - MEMORY_ram_size * 1024);
-			MEMORY_SetROM(MEMORY_ram_size * 1024, 0xcfff);
-		}
-		MEMORY_SetROM(0xd800, 0xffff);
-#ifndef PAGED_ATTRIB
-		MEMORY_SetHARDWARE(0xd000, 0xd7ff);
-		if (MEMORY_mosaic_enabled) MEMORY_SetHARDWARE(0xff00, 0xffff); 
-		/* only 0xffc0-0xffff are used, but mark the whole  
-		 * page to make state saving easier */
-		if (MEMORY_axlon_enabled) { 
-		       	MEMORY_SetHARDWARE(0xcf00, 0xcfff);
-			if (MEMORY_axlon_0f_mirror) MEMORY_SetHARDWARE(0x0f00, 0x0fff);
-			/* only ?fc0-?fff are used, but mark the whole page*/
-		}
-#else
-		MEMORY_readmap[0xd0] = GTIA_GetByte;
-		MEMORY_readmap[0xd1] = PBI_D1GetByte;
-		MEMORY_readmap[0xd2] = POKEY_GetByte;
-		MEMORY_readmap[0xd3] = PIA_GetByte;
-		MEMORY_readmap[0xd4] = ANTIC_GetByte;
-		MEMORY_readmap[0xd5] = CARTRIDGE_GetByte;
-		MEMORY_readmap[0xd6] = PBI_D6GetByte;
-		MEMORY_readmap[0xd7] = PBI_D7GetByte;
-		MEMORY_writemap[0xd0] = GTIA_PutByte;
-		MEMORY_writemap[0xd1] = PBI_D1PutByte;
-		MEMORY_writemap[0xd2] = POKEY_PutByte;
-		MEMORY_writemap[0xd3] = PIA_PutByte;
-		MEMORY_writemap[0xd4] = ANTIC_PutByte;
-		MEMORY_writemap[0xd5] = CARTRIDGE_PutByte;
-		MEMORY_writemap[0xd6] = PBI_D6PutByte;
-		MEMORY_writemap[0xd7] = PBI_D7PutByte;
-		if (MEMORY_mosaic_enabled) MEMORY_writemap[0xff] = MosaicPutByte;
-		if (MEMORY_axlon_enabled) MEMORY_writemap[0xcf] = AxlonPutByte;
-		if (MEMORY_axlon_enabled && MEMORY_axlon_0f_mirror) MEMORY_writemap[0x0f] = AxlonPutByte;
-#endif
-		break;
-	case Atari800_MACHINE_XLXE:
-		memcpy(MEMORY_mem + 0xc000, MEMORY_os, 0x4000);
-		ESC_PatchOS();
-		if (MEMORY_ram_size == 16) {
-			MEMORY_dFillMem(0x0000, 0x00, 0x4000);
-			MEMORY_SetRAM(0x0000, 0x3fff);
-			MEMORY_dFillMem(0x4000, 0xff, 0x8000);
-			MEMORY_SetROM(0x4000, 0xcfff);
-		} else {
-			MEMORY_dFillMem(0x0000, 0x00, 0xc000);
-			MEMORY_SetRAM(0x0000, 0xbfff);
-			MEMORY_SetROM(0xc000, 0xcfff);
-		}
-#ifndef PAGED_ATTRIB
-		MEMORY_SetHARDWARE(0xd000, 0xd7ff);
-#else
-		MEMORY_readmap[0xd0] = GTIA_GetByte;
-		MEMORY_readmap[0xd1] = PBI_D1GetByte;
-		MEMORY_readmap[0xd2] = POKEY_GetByte;
-		MEMORY_readmap[0xd3] = PIA_GetByte;
-		MEMORY_readmap[0xd4] = ANTIC_GetByte;
-		MEMORY_readmap[0xd5] = CARTRIDGE_GetByte;
-		MEMORY_readmap[0xd6] = PBI_D6GetByte;
-		MEMORY_readmap[0xd7] = PBI_D7GetByte;
-		MEMORY_writemap[0xd0] = GTIA_PutByte;
-		MEMORY_writemap[0xd1] = PBI_D1PutByte;
-		MEMORY_writemap[0xd2] = POKEY_PutByte;
-		MEMORY_writemap[0xd3] = PIA_PutByte;
-		MEMORY_writemap[0xd4] = ANTIC_PutByte;
-		MEMORY_writemap[0xd5] = CARTRIDGE_PutByte;
-		MEMORY_writemap[0xd6] = PBI_D6PutByte;
-		MEMORY_writemap[0xd7] = PBI_D7PutByte;
-#endif
-		MEMORY_SetROM(0xd800, 0xffff);
-		break;
 	case Atari800_MACHINE_5200:
 		memcpy(MEMORY_mem + 0xf800, MEMORY_os, 0x800);
 		MEMORY_dFillMem(0x0000, 0x00, 0xf800);
@@ -313,6 +244,61 @@ void MEMORY_InitialiseMachine(void)
 		MEMORY_writemap[0xee] = POKEY_PutByte;
 		MEMORY_writemap[0xef] = POKEY_PutByte;
 #endif
+		break;
+	default:
+		{
+			int const os_size = Atari800_machine_type == Atari800_MACHINE_800 ? 0x2800 : 0x4000;
+			int const os_rom_start = 0x10000 - os_size;
+			int const base_ram = MEMORY_ram_size > 64 ? 64 * 1024 : MEMORY_ram_size * 1024;
+			int const hole_end = (os_rom_start < 0xd000 ? os_rom_start : 0xd000);
+			int const hole_start = base_ram > hole_end ? hole_end : base_ram;
+			memcpy(MEMORY_mem + os_rom_start, MEMORY_os, os_size);
+			ESC_PatchOS();
+			MEMORY_dFillMem(0x0000, 0x00, hole_start);
+			MEMORY_SetRAM(0x0000, hole_start - 1);
+			if (hole_start < hole_end) {
+				MEMORY_dFillMem(hole_start, 0xff, hole_end - hole_start);
+				MEMORY_SetROM(hole_start, hole_end - 1);
+			}
+			if (hole_end < 0xd000)
+				MEMORY_SetROM(hole_end, 0xcfff);
+#ifndef PAGED_ATTRIB
+			MEMORY_SetHARDWARE(0xd000, 0xd7ff);
+			if (Atari800_machine_type == Atari800_MACHINE_800) {
+				if (MEMORY_mosaic_enabled) MEMORY_SetHARDWARE(0xff00, 0xffff);
+				/* only 0xffc0-0xffff are used, but mark the whole
+				 * page to make state saving easier */
+				if (MEMORY_axlon_enabled) {
+					MEMORY_SetHARDWARE(0xcf00, 0xcfff);
+					if (MEMORY_axlon_0f_mirror) MEMORY_SetHARDWARE(0x0f00, 0x0fff);
+					/* only ?fc0-?fff are used, but mark the whole page*/
+				}
+			}
+#else
+			MEMORY_readmap[0xd0] = GTIA_GetByte;
+			MEMORY_readmap[0xd1] = PBI_D1GetByte;
+			MEMORY_readmap[0xd2] = POKEY_GetByte;
+			MEMORY_readmap[0xd3] = PIA_GetByte;
+			MEMORY_readmap[0xd4] = ANTIC_GetByte;
+			MEMORY_readmap[0xd5] = CARTRIDGE_GetByte;
+			MEMORY_readmap[0xd6] = PBI_D6GetByte;
+			MEMORY_readmap[0xd7] = PBI_D7GetByte;
+			MEMORY_writemap[0xd0] = GTIA_PutByte;
+			MEMORY_writemap[0xd1] = PBI_D1PutByte;
+			MEMORY_writemap[0xd2] = POKEY_PutByte;
+			MEMORY_writemap[0xd3] = PIA_PutByte;
+			MEMORY_writemap[0xd4] = ANTIC_PutByte;
+			MEMORY_writemap[0xd5] = CARTRIDGE_PutByte;
+			MEMORY_writemap[0xd6] = PBI_D6PutByte;
+			MEMORY_writemap[0xd7] = PBI_D7PutByte;
+			if (Atari800_features.has_c000_window) {
+				if (MEMORY_mosaic_enabled) MEMORY_writemap[0xff] = MosaicPutByte;
+				if (MEMORY_axlon_enabled) MEMORY_writemap[0xcf] = AxlonPutByte;
+				if (MEMORY_axlon_enabled && MEMORY_axlon_0f_mirror) MEMORY_writemap[0x0f] = AxlonPutByte;
+			}
+#endif
+			MEMORY_SetROM(0xd800, 0xffff);
+		}
 		break;
 	}
 	AllocXEMemory();

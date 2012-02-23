@@ -222,28 +222,17 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 					Log_print("Invalid machine type: %s", ptr);
 			}
 			else if (strcmp(string, "RAM_SIZE") == 0) {
-				if (strcmp(ptr, "16") == 0)
-					MEMORY_ram_size = 16;
-				else if (strcmp(ptr, "48") == 0)
-					MEMORY_ram_size = 48;
-				else if (strcmp(ptr, "52") == 0)
-					MEMORY_ram_size = 52;
-				else if (strcmp(ptr, "64") == 0)
-					MEMORY_ram_size = 64;
-				else if (strcmp(ptr, "128") == 0)
-					MEMORY_ram_size = 128;
-				else if (strcmp(ptr, "192") == 0)
-					MEMORY_ram_size = 192;
-				else if (strcmp(ptr, "320 (RAMBO)") == 0)
+				if (strcmp(ptr, "320 (RAMBO)") == 0)
 					MEMORY_ram_size = MEMORY_RAM_320_RAMBO;
 				else if (strcmp(ptr, "320 (COMPY SHOP)") == 0)
 					MEMORY_ram_size = MEMORY_RAM_320_COMPY_SHOP;
-				else if (strcmp(ptr, "576") == 0)
-					MEMORY_ram_size = 576;
-				else if (strcmp(ptr, "1088") == 0)
-					MEMORY_ram_size = 1088;
-				else
-					Log_print("Invalid RAM size: %s", ptr);
+				else {
+					int size = Util_sscandec(ptr);
+					if (MEMORY_SizeValid(size))
+						MEMORY_ram_size = size;
+					else
+						Log_print("Invalid RAM size: %s", ptr);
+				}
 			}
 			else if (strcmp(string, "DEFAULT_TV_MODE") == 0) {
 				if (strcmp(ptr, "PAL") == 0)

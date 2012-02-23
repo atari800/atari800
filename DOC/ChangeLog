@@ -1,3 +1,10 @@
+2012-02-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cfg.c, memory.[ch], ui.c: Allow choosing more RAM amounts for 400/800, based
+  on possible combinations of CX852 and CX853 memory modules. Extending the
+  list of available systems in "Select System" menu to include all new RAM
+  sizes would be impractical, so a new option "RAM size" was added instead.
+
+
 2012-02-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.[ch], devices.c, esc.c, sysrom.[ch]: Make OS patches work depending on
   OS version. Now patches work correctly also with Rev. A PAL and Rev. 1

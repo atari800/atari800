@@ -103,6 +103,8 @@ extern int MEMORY_selftest_enabled;
 extern int MEMORY_have_basic;
 extern int MEMORY_cartA0BF_enabled;
 
+/* Verifies if SIZE is a correct value for RAM size. */
+int MEMORY_SizeValid(int size);
 void MEMORY_InitialiseMachine(void);
 void MEMORY_StateSave(UBYTE SaveVerbose);
 void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion);

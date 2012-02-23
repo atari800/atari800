@@ -202,6 +202,27 @@ static void SelectSystem(void)
 		int ram;
 	} tSysConfig;
 
+	static UI_tMenuItem ram800_menu_array[] = {
+		UI_MENU_ACTION(8, "8 KB"),
+		UI_MENU_ACTION(16, "16 KB"),
+		UI_MENU_ACTION(24, "24 KB"),
+		UI_MENU_ACTION(32, "32 KB"),
+		UI_MENU_ACTION(40, "40 KB"),
+		UI_MENU_ACTION(48, "48 KB"),
+		UI_MENU_ACTION(52, "52 KB"),
+		UI_MENU_END
+	};
+	static UI_tMenuItem ramxl_menu_array[] = {
+		UI_MENU_ACTION(16, "16 KB"),
+		UI_MENU_ACTION(64, "64 KB"),
+		UI_MENU_ACTION(128, "128 KB"),
+		UI_MENU_ACTION(192, "192 KB"),
+		UI_MENU_ACTION(MEMORY_RAM_320_RAMBO, "320 KB (Rambo)"),
+		UI_MENU_ACTION(MEMORY_RAM_320_COMPY_SHOP, "320 KB (Compy-Shop)"),
+		UI_MENU_ACTION(576, "576 KB"),
+		UI_MENU_ACTION(1088, "1088 KB"),
+		UI_MENU_END
+	};
 	static UI_tMenuItem os800_menu_array[] = {
 		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
 		UI_MENU_ACTION(SYSROM_A_NTSC, "Rev. A NTSC"),
@@ -247,14 +268,15 @@ static void SelectSystem(void)
 		UI_MENU_ACTION(4, "Atari 800XL (64 KB)"),
 		UI_MENU_ACTION(5, "Atari 130XE (128 KB)"),
 		UI_MENU_ACTION(6, "Atari XL/XE (192 KB)"),
-		UI_MENU_ACTION(7, "Atari XL/XE (320 KB RAMBO)"),
-		UI_MENU_ACTION(8, "Atari XL/XE (320 KB COMPY SHOP)"),
+		UI_MENU_ACTION(7, "Atari XL/XE (320 KB Rambo)"),
+		UI_MENU_ACTION(8, "Atari XL/XE (320 KB Compy-Shop)"),
 		UI_MENU_ACTION(9, "Atari XL/XE (576 KB)"),
 		UI_MENU_ACTION(10, "Atari XL/XE (1088 KB)"),
 		UI_MENU_ACTION(11, "Atari 5200 (16 KB)"),
-		UI_MENU_SUBMENU_SUFFIX(12, "OS version:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(13, "BASIC version:", NULL),
-		UI_MENU_ACTION(14, "Video system:"),
+		UI_MENU_SUBMENU_SUFFIX(12, "RAM size:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(13, "OS version:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(14, "BASIC version:", NULL),
+		UI_MENU_ACTION(15, "Video system:"),
 		UI_MENU_END
 	};
 
@@ -293,43 +315,76 @@ static void SelectSystem(void)
 		}
 
 	for (;;) {
+		/* Set label for the "RAM size" action. */
+		switch (Atari800_machine_type) {
+		case Atari800_MACHINE_800:
+			menu_array[12].suffix = FindMenuItem(ram800_menu_array, MEMORY_ram_size)->item;
+			break;
+		case Atari800_MACHINE_XLXE:
+			menu_array[12].suffix = FindMenuItem(ramxl_menu_array, MEMORY_ram_size)->item;
+			break;
+		case Atari800_MACHINE_5200:
+			menu_array[12].suffix = "16 KB";
+			break;
+		}
 		/* Set label for the "OS version" action. */
 		if (SYSROM_os_versions[Atari800_machine_type] == SYSROM_AUTO) {
 			int auto_os = SYSROM_AutoChooseOS(Atari800_machine_type, MEMORY_ram_size, new_tv_mode);
 			if (auto_os == -1)
-				menu_array[12].suffix = "ROM missing";
+				menu_array[13].suffix = "ROM missing";
 			else {
 				sprintf(default_os_label, "%s (auto)", FindMenuItem(os_menu_arrays[Atari800_machine_type], auto_os)->item);
-				menu_array[12].suffix = default_os_label;
+				menu_array[13].suffix = default_os_label;
 			}
 		}
 		else if (SYSROM_roms[SYSROM_os_versions[Atari800_machine_type]].filename[0] == '\0')
-			menu_array[12].suffix = "ROM missing";
+			menu_array[13].suffix = "ROM missing";
 		else
-			menu_array[12].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
+			menu_array[13].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
 
 		/* Set label for the "BASIC version" action. */
 		if (SYSROM_basic_version == SYSROM_AUTO) {
 			int auto_basic = SYSROM_AutoChooseBASIC();
 			if (auto_basic == -1)
-				menu_array[13].suffix = "ROM missing";
+				menu_array[14].suffix = "ROM missing";
 			else {
 				sprintf(default_basic_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_basic)->item);
-				menu_array[13].suffix = default_basic_label;
+				menu_array[14].suffix = default_basic_label;
 			}
 		}
 		else if (SYSROM_roms[SYSROM_basic_version].filename[0] == '\0')
-			menu_array[13].suffix = "ROM missing";
+			menu_array[14].suffix = "ROM missing";
 		else
-			menu_array[13].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
+			menu_array[14].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
 
-		menu_array[14].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
+		menu_array[15].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
 
 		option = UI_driver->fSelect("Select System", 0, option, menu_array, NULL);
 		if (option < N_MACHINES)
 			break;
 		switch (option) {
 		case 12:
+			{
+				UI_tMenuItem *menu_ptr;
+				switch (Atari800_machine_type) {
+				case Atari800_MACHINE_5200:
+					goto leave;
+				case Atari800_MACHINE_800:
+					menu_ptr = ram800_menu_array;
+					break;
+				case Atari800_MACHINE_XLXE:
+					menu_ptr = ramxl_menu_array;
+					break;
+				}
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, MEMORY_ram_size, menu_ptr, NULL);
+				if (option2 >= 0) {
+					MEMORY_ram_size = option2;
+					need_initialise = TRUE;
+				}
+			}
+			leave:
+			break;
+		case 13:
 			{
 				int rom_available = FALSE;
 				/* Start from index 1, to skip the "Choose automatically" option,
@@ -354,7 +409,7 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 13:
+		case 14:
 			{
 				int rom_available = FALSE;
 				/* Start from index 1, to skip the "Choose automatically" option,
@@ -379,7 +434,7 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 14:
+		case 15:
 			new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
 			break;
 		}
