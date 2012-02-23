@@ -4,6 +4,12 @@
   list of available systems in "Select System" menu to include all new RAM
   sizes would be impractical, so a new option "RAM size" was added instead.
 
+* atari.[ch], memory.c, pia.c, statesav.c: Support for saving new RAM sizes
+  (and the old 52kb size, too) in save states. reading/saving MEMORY_ram_size
+  moved to memory.c, where it belongs; storing RAM size as two separate values
+  (base RAM, XE banks) to make it more future-proof. Fixed the "feature" of
+  saving of unused 192kb.
+
 
 2012-02-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.[ch], devices.c, esc.c, sysrom.[ch]: Make OS patches work depending on

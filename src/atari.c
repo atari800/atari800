@@ -1286,141 +1286,92 @@ void Atari800_Frame(void)
 
 void Atari800_StateSave(void)
 {
-	UBYTE temp;
-	int default_tv_mode;
-	int os = 0;
-	int default_system = 3;
-	int pil_on = FALSE;
-
-	if (Atari800_tv_mode == Atari800_TV_PAL) {
-		temp = 0;
-		default_tv_mode = 1;
-	}
-	else {
-		temp = 1;
-		default_tv_mode = 2;
-	}
+	UBYTE temp = Atari800_tv_mode == Atari800_TV_PAL;
 	StateSav_SaveUBYTE(&temp, 1);
-
-	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_800:
-		temp = MEMORY_ram_size == 16 ? 5 : 0;
-		os = 1;
-		default_system = 1;
-		break;
-	case Atari800_MACHINE_XLXE:
-		switch (MEMORY_ram_size) {
-		case 16:
-			temp = 6;
-			default_system = 3;
-			break;
-		case 64:
-			temp = 1;
-			default_system = 3;
-			break;
-		case 128:
-			temp = 2;
-			default_system = 4;
-			break;
-		case 192:
-			temp = 9;
-			default_system = 8;
-			break;
-		case MEMORY_RAM_320_RAMBO:
-		case MEMORY_RAM_320_COMPY_SHOP:
-			temp = 3;
-			default_system = 5;
-			break;
-		case 576:
-			temp = 7;
-			default_system = 6;
-			break;
-		case 1088:
-			temp = 8;
-			default_system = 7;
-			break;
-		}
-		break;
-	case Atari800_MACHINE_5200:
-		temp = 4;
-		default_system = 6;
-		break;
-	}
+	temp = Atari800_machine_type;
 	StateSav_SaveUBYTE(&temp, 1);
-
-	StateSav_SaveINT(&os, 1);
-	StateSav_SaveINT(&pil_on, 1);
-	StateSav_SaveINT(&default_tv_mode, 1);
-	StateSav_SaveINT(&default_system, 1);
 }
 
-void Atari800_StateRead(void)
+void Atari800_StateRead(UBYTE version)
 {
-	int new_tv_mode;
-	/* these are all for compatibility with previous versions */
-	UBYTE temp;
-	int default_tv_mode;
-	int os;
-	int default_system;
-	int pil_on;
-
-	StateSav_ReadUBYTE(&temp, 1);
-	new_tv_mode = (temp == 0) ? Atari800_TV_PAL : Atari800_TV_NTSC;
-	Atari800_SetTVMode(new_tv_mode);
-
-	StateSav_ReadUBYTE(&temp, 1);
-	StateSav_ReadINT(&os, 1);
-	switch (temp) {
-	case 0:
-		Atari800_machine_type = Atari800_MACHINE_800;
-		MEMORY_ram_size = 48;
-		break;
-	case 1:
-		Atari800_machine_type = Atari800_MACHINE_XLXE;
-		MEMORY_ram_size = 64;
-		break;
-	case 2:
-		Atari800_machine_type = Atari800_MACHINE_XLXE;
-		MEMORY_ram_size = 128;
-		break;
-	case 3:
-		Atari800_machine_type = Atari800_MACHINE_XLXE;
-		MEMORY_ram_size = MEMORY_RAM_320_COMPY_SHOP;
-		break;
-	case 4:
-		Atari800_machine_type = Atari800_MACHINE_5200;
-		MEMORY_ram_size = 16;
-		break;
-	case 5:
-		Atari800_machine_type = Atari800_MACHINE_800;
-		MEMORY_ram_size = 16;
-		break;
-	case 6:
-		Atari800_machine_type = Atari800_MACHINE_XLXE;
-		MEMORY_ram_size = 16;
-		break;
-	case 7:
-		Atari800_machine_type = Atari800_MACHINE_XLXE;
-		MEMORY_ram_size = 576;
-		break;
-	case 8:
-		Atari800_machine_type = Atari800_MACHINE_XLXE;
-		MEMORY_ram_size = 1088;
-		break;
-	case 9:
-		Atari800_machine_type = Atari800_MACHINE_XLXE;
-		MEMORY_ram_size = 192;
-		break;
-	default:
-		Atari800_machine_type = Atari800_MACHINE_XLXE;
-		MEMORY_ram_size = 64;
-		Log_print("Warning: Bad machine type read in from state save, defaulting to 800 XL");
-		break;
+	if (version >= 7) {
+		UBYTE temp;
+		StateSav_ReadUBYTE(&temp, 1);
+		Atari800_SetTVMode(temp ? Atari800_TV_PAL : Atari800_TV_NTSC);
+		StateSav_ReadUBYTE(&temp, 1);
+		if (temp < 0 || temp > 3) {
+			temp = Atari800_MACHINE_XLXE;
+			Log_print("Warning: Bad machine type read in from state save, defaulting to XL/XE");
+		}
+		Atari800_machine_type = temp;
 	}
+	else { /* savestate from version 2.2.1 or earlier */
+		int new_tv_mode;
+		/* these are all for compatibility with previous versions */
+		UBYTE temp;
+		int default_tv_mode;
+		int os;
+		int default_system;
+		int pil_on;
 
-	StateSav_ReadINT(&pil_on, 1);
-	StateSav_ReadINT(&default_tv_mode, 1);
-	StateSav_ReadINT(&default_system, 1);
+		StateSav_ReadUBYTE(&temp, 1);
+		new_tv_mode = (temp == 0) ? Atari800_TV_PAL : Atari800_TV_NTSC;
+		Atari800_SetTVMode(new_tv_mode);
+
+		StateSav_ReadUBYTE(&temp, 1);
+		StateSav_ReadINT(&os, 1);
+		switch (temp) {
+		case 0:
+			Atari800_machine_type = Atari800_MACHINE_800;
+			MEMORY_ram_size = 48;
+			break;
+		case 1:
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 64;
+			break;
+		case 2:
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 128;
+			break;
+		case 3:
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = MEMORY_RAM_320_COMPY_SHOP;
+			break;
+		case 4:
+			Atari800_machine_type = Atari800_MACHINE_5200;
+			MEMORY_ram_size = 16;
+			break;
+		case 5:
+			Atari800_machine_type = Atari800_MACHINE_800;
+			MEMORY_ram_size = 16;
+			break;
+		case 6:
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 16;
+			break;
+		case 7:
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 576;
+			break;
+		case 8:
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 1088;
+			break;
+		case 9:
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 192;
+			break;
+		default:
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 64;
+			Log_print("Warning: Bad machine type read in from state save, defaulting to 800 XL");
+			break;
+		}
+
+		StateSav_ReadINT(&pil_on, 1);
+		StateSav_ReadINT(&default_tv_mode, 1);
+		StateSav_ReadINT(&default_system, 1);
+	}
 	load_roms();
 	/* XXX: what about patches? */
 }

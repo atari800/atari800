@@ -151,7 +151,7 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes);
 void Atari800_StateSave(void);
 
 /* Read State */
-void Atari800_StateRead(void);
+void Atari800_StateRead(UBYTE version);
 
 /* Change TV mode. */
 void Atari800_SetTVMode(int mode);

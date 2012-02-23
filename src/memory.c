@@ -311,6 +311,8 @@ void MEMORY_InitialiseMachine(void)
 
 void MEMORY_StateSave(UBYTE SaveVerbose)
 {
+	int temp;
+
 	/* Axlon/Mosaic for 400/800 */
 	if (Atari800_machine_type == Atari800_MACHINE_800) {
 		StateSav_SaveINT(&MEMORY_axlon_enabled, 1);
@@ -330,6 +332,9 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 		}
 	}
 
+	/* Save amount of base RAM in kilobytes. */
+	temp = MEMORY_ram_size > 64 ? 64 : MEMORY_ram_size;
+	StateSav_SaveINT(&temp, 1);
 	StateSav_SaveUBYTE(&MEMORY_mem[0], 65536);
 #ifndef PAGED_ATTRIB
 	StateSav_SaveUBYTE(&MEMORY_attrib[0], 65536);
@@ -371,22 +376,20 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 		StateSav_SaveUBYTE(&under_atarixl_os[0], 16384);
 	}
 
-	if (MEMORY_ram_size > 64) {
+	/* Save amount of XE RAM in 16KB banks. */
+	temp = (MEMORY_ram_size - 64) / 16;
+	if (temp < 0)
+		temp = 0;
+	StateSav_SaveINT(&temp, 1);
+	if (MEMORY_ram_size > 64)
 		StateSav_SaveUBYTE(&atarixe_memory[0], atarixe_memory_size);
-		/* a hack that makes state files compatible with previous versions:
-           for 130 XE there's written 192 KB of unused data */
-		if (MEMORY_ram_size == 128) {
-			UBYTE buffer[256];
-			int i;
-			memset(buffer, 0, 256);
-			for (i = 0; i < 192 * 4; i++)
-				StateSav_SaveUBYTE(&buffer[0], 256);
-		}
-	}
 }
 
 void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 {
+	int base_ram_kb;
+	int num_xe_banks;
+
 	/* Axlon/Mosaic for 400/800 */
 	if (Atari800_machine_type == Atari800_MACHINE_800 && StateVersion >= 5) {
 		StateSav_ReadINT(&MEMORY_axlon_enabled, 1);
@@ -408,6 +411,9 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 		}
 	}
 
+	if (StateVersion >= 7)
+		/* Read amount of base RAM in kilobytes. */
+		StateSav_ReadINT(&base_ram_kb, 1);
 	StateSav_ReadUBYTE(&MEMORY_mem[0], 65536);
 #ifndef PAGED_ATTRIB
 	StateSav_ReadUBYTE(&MEMORY_attrib[0], 65536);
@@ -510,13 +516,23 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 		StateSav_ReadUBYTE(&under_atarixl_os[0], 16384);
 	}
 
+	if (StateVersion >= 7) {
+		/* Read amount of XE RAM in 16KB banks. */
+		StateSav_ReadINT(&num_xe_banks, 1);
+		/* Compute value of MEMORY_ram_size. */
+		MEMORY_ram_size = base_ram_kb + num_xe_banks * 16;
+		if (!MEMORY_SizeValid(MEMORY_ram_size)) {
+			MEMORY_ram_size = 64;
+			Log_print("Warning: Bad RAM size read in from state save, defaulting to 64 KB");
+		}
+	}
 	ANTIC_xe_ptr = NULL;
 	AllocXEMemory();
 	if (MEMORY_ram_size > 64) {
 		StateSav_ReadUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		/* a hack that makes state files compatible with previous versions:
            for 130 XE there's written 192 KB of unused data */
-		if (MEMORY_ram_size == 128) {
+		if (MEMORY_ram_size == 128 && StateVersion <= 6) {
 			UBYTE buffer[256];
 			int i;
 			for (i = 0; i < 192 * 4; i++)

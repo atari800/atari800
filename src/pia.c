@@ -217,8 +217,13 @@ void PIA_StateRead(void)
 	StateSav_ReadINT( &MEMORY_selftest_enabled, 1 );
 	StateSav_ReadINT( &Ram256, 1 );
 
-	if (Ram256 == 1 && Atari800_machine_type == Atari800_MACHINE_XLXE && MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
-		MEMORY_ram_size = MEMORY_RAM_320_RAMBO;
+	if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+		if (Ram256 == 1 && MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
+			/* Occurs only for states of version 6 and lower. */
+			MEMORY_ram_size = MEMORY_RAM_320_RAMBO;
+		else if (Ram256 == 2 && MEMORY_ram_size == MEMORY_RAM_320_RAMBO)
+			MEMORY_ram_size = MEMORY_RAM_320_COMPY_SHOP;
+	}
 
 	StateSav_ReadINT( &MEMORY_cartA0BF_enabled, 1 );
 
