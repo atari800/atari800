@@ -10,6 +10,9 @@
   (base RAM, XE banks) to make it more future-proof. Fixed the "feature" of
   saving of unused 192kb.
 
+* statesav.c: Fix old bug that allowed loading of save states with version
+  number higher than current.
+
 
 2012-02-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.[ch], devices.c, esc.c, sysrom.[ch]: Make OS patches work depending on

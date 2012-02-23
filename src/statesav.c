@@ -453,7 +453,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 		return FALSE;
 	}
 
-	if (StateVersion != SAVE_VERSION_NUMBER && StateVersion < 3) {
+	if (StateVersion > SAVE_VERSION_NUMBER || StateVersion < 3) {
 		Log_print("Cannot read this state file because it is an incompatible version.");
 		GZCLOSE(StateFile);
 		StateFile = NULL;
