@@ -291,7 +291,7 @@ void MEMORY_InitialiseMachine(void)
 			MEMORY_writemap[0xd5] = CARTRIDGE_PutByte;
 			MEMORY_writemap[0xd6] = PBI_D6PutByte;
 			MEMORY_writemap[0xd7] = PBI_D7PutByte;
-			if (Atari800_features.has_c000_window) {
+			if (Atari800_machine_type == Atari800_MACHINE_800) {
 				if (MEMORY_mosaic_enabled) MEMORY_writemap[0xff] = MosaicPutByte;
 				if (MEMORY_axlon_enabled) MEMORY_writemap[0xcf] = AxlonPutByte;
 				if (MEMORY_axlon_enabled && MEMORY_axlon_0f_mirror) MEMORY_writemap[0x0f] = AxlonPutByte;
