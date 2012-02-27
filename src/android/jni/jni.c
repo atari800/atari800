@@ -420,6 +420,7 @@ static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path
 
 	utf = (*env)->GetStringUTFChars(env, path, NULL);
 	SYSROM_FindInDir(utf, FALSE);
+	ret |= chdir(utf);
 	ret |= Atari800_InitialiseMachine();
 	(*env)->ReleaseStringUTFChars(env, path, utf);
 
