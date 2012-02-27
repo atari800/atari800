@@ -81,6 +81,10 @@
 			android:dialogMessage="@string/pref_savestate_msg"
 			android:positiveButtonText="@string/save"
 			android:negativeButtonText="@string/cancel"
+			android:lines="1"
+			android:maxLines="1"
+			android:inputType="textNoSuggestions"
+			android:imeOptions="actionDone"
 			android:enabled="false"/>
 		<CheckBoxPreference
 			android:key="basic"
