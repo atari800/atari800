@@ -13,6 +13,8 @@
   XL OS revisions). The System ROM Settings menu ceased to fit on one screen,
   so it is split into submenus.
 
+* sdl/input.c: When in 1200XL mode, map arrows to F1-F4 keys.
+
 
 2012-02-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cfg.c, memory.[ch], ui.c: Allow choosing more RAM amounts for 400/800, based
