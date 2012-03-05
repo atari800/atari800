@@ -40,12 +40,14 @@
 #include "memory.h"
 #include "util.h"
 
-int SYSROM_os_versions[3] = { SYSROM_AUTO, SYSROM_AUTO, SYSROM_AUTO };
+int SYSROM_os_versions[Atari800_MACHINE_SIZE] = { SYSROM_AUTO, SYSROM_AUTO, SYSROM_AUTO, SYSROM_AUTO };
 int SYSROM_basic_version = SYSROM_AUTO;
 
 static char osa_ntsc_filename[FILENAME_MAX] = "";
 static char osa_pal_filename[FILENAME_MAX] = "";
 static char osb_ntsc_filename[FILENAME_MAX] = "";
+static char osaa00r10_filename[FILENAME_MAX] = "";
+static char osaa01r11_filename[FILENAME_MAX] = "";
 static char osbb00r1_filename[FILENAME_MAX] = "";
 static char osbb01r2_filename[FILENAME_MAX] = "";
 static char osbb01r3_filename[FILENAME_MAX] = "";
@@ -68,6 +70,8 @@ SYSROM_t SYSROM_roms[SYSROM_SIZE] = {
 	{ osa_ntsc_filename, 0x2800, 0xc1b3bb02, TRUE }, /* SYSROM_A_NTSC */
 	{ osa_pal_filename, 0x2800, 0x72b3fed4, TRUE }, /* SYSROM_A_PAL */
 	{ osb_ntsc_filename, 0x2800, 0x0e86d61d, TRUE }, /* SYSROM_B_NTSC */
+	{ osaa00r10_filename, 0x4000, 0xc5c11546, TRUE }, /* SYSROM_AA00R10 */
+	{ osaa01r11_filename, 0x4000, 0x1a1d7b1b, TRUE }, /* SYSROM_AA01R11 */
 	{ osbb00r1_filename, 0x4000, 0x643bcc98, TRUE }, /* SYSROM_BB00R1 */
 	{ osbb01r2_filename, 0x4000, 0x1f9cd270, TRUE }, /* SYSROM_BB01R2 */
 	{ osbb01r3_filename, 0x4000, 0x29f133f7, TRUE }, /* SYSROM_BB01R3 */
@@ -88,6 +92,8 @@ static char const * const cfg_strings[SYSROM_SIZE] = {
 	"ROM_OS_A_NTSC",
 	"ROM_OS_A_PAL",
 	"ROM_OS_B_NTSC",
+	"ROM_OS_AA00R10",
+	"ROM_OS_AA00R11",
 	"ROM_OS_BB00R1",
 	"ROM_OS_BB01R2",
 	"ROM_OS_BB01R3",
@@ -108,6 +114,8 @@ static char const * const cfg_strings_rev[SYSROM_SIZE+1] = {
 	"A-NTSC",
 	"A-PAL",
 	"B-NTSC",
+	"10",
+	"11",
 	"1",
 	"2",
 	"3",
@@ -307,9 +315,10 @@ void SYSROM_SetDefaults(void)
    SYSROM_basic_version are set to SYSROM_AUTO. */
 static int const autochoose_order_800_ntsc[] = { SYSROM_B_NTSC, SYSROM_A_NTSC, SYSROM_A_PAL, SYSROM_800_CUSTOM, -1 };
 static int const autochoose_order_800_pal[] = { SYSROM_A_PAL, SYSROM_B_NTSC, SYSROM_A_NTSC, SYSROM_800_CUSTOM, -1 };
-static int const autochoose_order_600xl[] = { SYSROM_BB00R1, SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_XL_CUSTOM, -1 };
-static int const autochoose_order_800xl[] = { SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_BB00R1, SYSROM_XL_CUSTOM, -1 };
-static int const autochoose_order_xe[] = { SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_BB01R2, SYSROM_BB00R1, SYSROM_XL_CUSTOM, -1 };
+static int const autochoose_order_1200xl[] = { SYSROM_AA01R11, SYSROM_AA00R10, SYSROM_BB00R1, SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_XL_CUSTOM, -1 };
+static int const autochoose_order_600xl[] = { SYSROM_BB00R1, SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_AA01R11, SYSROM_AA00R10, SYSROM_XL_CUSTOM, -1 };
+static int const autochoose_order_800xl[] = { SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_BB00R1, SYSROM_AA01R11, SYSROM_AA00R10, SYSROM_XL_CUSTOM, -1 };
+static int const autochoose_order_xe[] = { SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_BB01R2, SYSROM_BB00R1, SYSROM_AA01R11, SYSROM_AA00R10, SYSROM_XL_CUSTOM, -1 };
 static int const autochoose_order_5200[] = { SYSROM_5200, SYSROM_5200A, SYSROM_5200_CUSTOM, -1 };
 static int const autochoose_order_basic[] = { SYSROM_BASIC_C, SYSROM_BASIC_B, SYSROM_BASIC_A, SYSROM_BASIC_CUSTOM, -1 };
 
@@ -323,6 +332,9 @@ int SYSROM_AutoChooseOS(int machine_type, int ram_size, int tv_system)
 			order = autochoose_order_800_ntsc;
 		else
 			order = autochoose_order_800_pal;
+		break;
+	case Atari800_MACHINE_1200:
+		order = autochoose_order_1200xl;
 		break;
 	case Atari800_MACHINE_XLXE:
 		switch (ram_size) {
@@ -417,6 +429,10 @@ int SYSROM_ReadConfig(char *string, char *ptr)
 		if (!MatchROMVersionParameter(ptr, autochoose_order_800_ntsc, &SYSROM_os_versions[Atari800_MACHINE_800]))
 			return FALSE;
 	}
+	else if (strcmp(string, "OS_1200XL_VERSION") == 0) {
+		if (!MatchROMVersionParameter(ptr, autochoose_order_1200xl, &SYSROM_os_versions[Atari800_MACHINE_1200]))
+			return FALSE;
+	}
 	else if (strcmp(string, "OS_XL/XE_VERSION") == 0) {
 		if (!MatchROMVersionParameter(ptr, autochoose_order_600xl, &SYSROM_os_versions[Atari800_MACHINE_XLXE]))
 			return FALSE;
@@ -439,7 +455,7 @@ int SYSROM_ReadConfig(char *string, char *ptr)
 			return FALSE;
 	}
 	else if (strcmp(string, "XL/XE_ROM") == 0) {
-		if (SYSROM_SetPath(ptr, 5, SYSROM_BB00R1, SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_XL_CUSTOM) != SYSROM_OK)
+		if (SYSROM_SetPath(ptr, 7, SYSROM_AA00R10, SYSROM_AA01R11, SYSROM_BB00R1, SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_XL_CUSTOM) != SYSROM_OK)
 			return FALSE;
 	}
 	else if (strcmp(string, "5200_ROM") == 0) {
@@ -462,6 +478,7 @@ void SYSROM_WriteConfig(FILE *fp)
 			fprintf(fp, "%s=%s\n", cfg_strings[id], SYSROM_roms[id].filename);
 	}
 	fprintf(fp, "OS_400/800_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_800]]);
+	fprintf(fp, "OS_1200XL_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_1200]]);
 	fprintf(fp, "OS_XL/XE_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_XLXE]]);
 	fprintf(fp, "OS_5200_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_5200]]);
 	fprintf(fp, "BASIC_VERSION=%s\n", cfg_strings_rev[SYSROM_basic_version]);
@@ -493,7 +510,7 @@ int SYSROM_Initialise(int *argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "-xlxe_rom") == 0) {
 			if (i_a) {
-				if (SYSROM_SetPath(argv[++i], 5, SYSROM_BB00R1, SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_XL_CUSTOM) != SYSROM_OK)
+				if (SYSROM_SetPath(argv[++i], 7, SYSROM_AA00R10, SYSROM_AA01R11, SYSROM_BB00R1, SYSROM_BB01R2, SYSROM_BB01R3, SYSROM_BB01R4_OS, SYSROM_XL_CUSTOM) != SYSROM_OK)
 					a_i = TRUE;
 			}
 			else a_m = TRUE;
@@ -515,6 +532,13 @@ int SYSROM_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-800-rev") == 0) {
 			if (i_a) {
 				if (!MatchROMVersionParameter(argv[++i], autochoose_order_800_ntsc, &SYSROM_os_versions[Atari800_MACHINE_800]))
+					a_i = TRUE;
+			}
+			else a_m= TRUE;
+		}
+		else if (strcmp(argv[i], "-1200-rev") == 0) {
+			if (i_a) {
+				if (!MatchROMVersionParameter(argv[++i], autochoose_order_1200xl, &SYSROM_os_versions[Atari800_MACHINE_1200]))
 					a_i = TRUE;
 			}
 			else a_m= TRUE;
@@ -549,7 +573,9 @@ int SYSROM_Initialise(int *argc, char *argv[])
 				Log_print("\t-basic_rom <file> Load BASIC ROM from file");
 				Log_print("\t-800-rev auto|a-ntsc|a-pal|b-ntsc|custom");
 				Log_print("\t                  Select 400/800 OS revision");
-				Log_print("\t-xl-rev auto|1|2|3|4|custom");
+				Log_print("\t-1200-rev auto|10|11|1|2|3|4|custom");
+				Log_print("\t                  Select 1200XL OS revision");
+				Log_print("\t-xl-rev auto|10|11|1|2|3|4|custom");
 				Log_print("\t                  Select XL/XE OS revision");
 				Log_print("\t-5200-rev auto|orig|a|custom");
 				Log_print("\t                  Select 5200 OS revision");

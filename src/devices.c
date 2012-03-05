@@ -2025,9 +2025,9 @@ static void Devices_RestoreHandler(UWORD address, UBYTE esc_code)
 {
 	ESC_Remove(esc_code);
 	/* restore original OS code */
-	MEMORY_dCopyToMem(Atari800_machine_type == Atari800_MACHINE_XLXE
-	            ? MEMORY_os + address - 0xc000
-	            : MEMORY_os + address - 0xd800,
+	MEMORY_dCopyToMem(Atari800_machine_type == Atari800_MACHINE_800
+	            ? MEMORY_os + address - 0xd800
+	            : MEMORY_os + address - 0xc000,
 	           address, 3);
 }
 
@@ -2284,6 +2284,12 @@ int Devices_PatchOS(void)
 	case SYSROM_B_NTSC:
 	case SYSROM_800_CUSTOM:
 		addr = 0xf0e3;
+		break;
+	case SYSROM_AA00R10:
+		addr = 0xc4fa;
+		break;
+	case SYSROM_AA01R11:
+		addr = 0xc479;
 		break;
 	case SYSROM_BB00R1:
 		addr = 0xc43c;

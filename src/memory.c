@@ -371,7 +371,8 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 	}
 #endif
 
-	if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+	if (Atari800_machine_type == Atari800_MACHINE_1200
+	    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
 		if (SaveVerbose != 0)
 			StateSav_SaveUBYTE(&MEMORY_basic[0], 8192);
 		StateSav_SaveUBYTE(&under_atari_basic[0], 8192);
@@ -522,7 +523,8 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 	}
 #endif
 
-	if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+	if (Atari800_machine_type == Atari800_MACHINE_1200
+	    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
 		if (SaveVerbose != 0)
 			StateSav_ReadUBYTE(&MEMORY_basic[0], 8192);
 		StateSav_ReadUBYTE(&under_atari_basic[0], 8192);
@@ -747,7 +749,7 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 	}
 
 	/* Enable/disable BASIC ROM in 0xa000-0xbfff */
-	if (!MEMORY_cartA0BF_enabled) {
+	if (!MEMORY_cartA0BF_enabled && Atari800_machine_type == Atari800_MACHINE_XLXE) {
 		/* BASIC is disabled if bit 1 set or accessing extended 576K or 1088K memory */
 		int now_disabled = basic_disabled(byte);
 		if (basic_disabled(oldval) != now_disabled) {
@@ -931,7 +933,7 @@ void MEMORY_CartA0bfDisable(void)
 		else
 			memcpy(MEMORY_mem + 0xa000, MEMORY_basic, 0x2000);
 		MEMORY_cartA0BF_enabled = FALSE;
-		if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+		if (Atari800_machine_type != Atari800_MACHINE_800) {
 			GTIA_TRIG[3] = 0;
 			if (GTIA_GRACTL & 4)
 				GTIA_TRIG_latch[3] = 0;
@@ -950,7 +952,7 @@ void MEMORY_CartA0bfEnable(void)
 			MEMORY_SetROM(0xa000, 0xbfff);
 		}
 		MEMORY_cartA0BF_enabled = TRUE;
-		if (Atari800_machine_type == Atari800_MACHINE_XLXE)
+		if (Atari800_machine_type != Atari800_MACHINE_800)
 			GTIA_TRIG[3] = 1;
 	}
 }
@@ -962,6 +964,7 @@ void MEMORY_GetCharset(UBYTE *cs)
 	case Atari800_MACHINE_800:
 		p = MEMORY_mem + 0xe000;
 		break;
+	case Atari800_MACHINE_1200:
 	case Atari800_MACHINE_XLXE:
 		p = MEMORY_os + 0x2000;
 		break;

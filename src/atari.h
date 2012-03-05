@@ -39,8 +39,11 @@
 /* Machine type. */
 enum {
 	Atari800_MACHINE_800,
+	Atari800_MACHINE_1200,
 	Atari800_MACHINE_XLXE,
-	Atari800_MACHINE_5200
+	Atari800_MACHINE_5200,
+	/* Number of values in the emumerator */
+	Atari800_MACHINE_SIZE
 };
 extern int Atari800_machine_type;
 

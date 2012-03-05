@@ -107,7 +107,9 @@ Command line options
 
 -800-rev auto|a-ntsc|a-pal|b-ntsc|custom
                       Select OS revision for Atari 400/800
--xl-rev auto|1|2|3|4|custom
+-1200-rev auto|10|11|1|2|3|4|custom
+                      Select OS revision for Atari 1200XL
+-xl-rev auto|10|11|1|2|3|4|custom
                       Select OS revision for Atari XL/XE
 -5200-rev auto|orig|a|custom
                       Select OS revision for Atari 5200
@@ -115,10 +117,11 @@ Command line options
                       Select BASIC revision
 
 -atari                Emulate Atari 800
--xl                   Emulate Atari 800 XL
--xe                   Emulate Atari 130 XE
--320xe                Emulate Atari 320 XE (Compy Shop)
--rambo                Emulate Atari 320 XE (Rambo)
+-1200                 Emulate Atari 1200XL
+-xl                   Emulate Atari 800XL
+-xe                   Emulate Atari 130XE
+-320xe                Emulate Atari 320XE (Compy Shop)
+-rambo                Emulate Atari 320XE (Rambo)
 -5200                 Emulate Atari 5200
 
 -emuos                Use EmuOS

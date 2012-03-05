@@ -273,7 +273,7 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 static int load_roms(void)
 {
 	if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 2) {
-		COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_XLXE ? 0x2000 : 0x0800);
+		COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x0800 : 0x2000);
 		Atari800_os_version = -1;
 	}
 	else {
@@ -284,7 +284,7 @@ static int load_roms(void)
 			/* Missing OS ROM. */
 			Atari800_os_version = -1;
 			if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
-				COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_XLXE ? 0x2000 : 0x0800);
+				COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x0800 : 0x2000);
 			else
 				/* No OS ROM loaded. */
 				return FALSE;
@@ -438,6 +438,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_machine_type = Atari800_MACHINE_800;
 			MEMORY_ram_size = 48;
 		}
+		else if (strcmp(argv[i], "-1200") == 0) {
+			Atari800_machine_type = Atari800_MACHINE_1200;
+			MEMORY_ram_size = 64;
+		}
 		else if (strcmp(argv[i], "-xl") == 0) {
 			Atari800_machine_type = Atari800_MACHINE_XLXE;
 			MEMORY_ram_size = 64;
@@ -584,6 +588,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-no-autosave-config");
 					Log_print("\t                 Disable automatic saving of configuration");
 					Log_print("\t-atari           Emulate Atari 800");
+					Log_print("\t-1200            Emulate Atari 1200XL");
 					Log_print("\t-xl              Emulate Atari 800XL");
 					Log_print("\t-xe              Emulate Atari 130XE");
 					Log_print("\t-320xe           Emulate Atari 320XE (COMPY SHOP)");
@@ -1243,6 +1248,7 @@ void Atari800_Frame(void)
 		INPUT_DrawMousePointer();
 		Screen_DrawAtariSpeed(Atari_time());
 		Screen_DrawDiskLED();
+		Screen_Draw1200LED();
 #endif /* CURSES_BASIC */
 #ifdef DONT_DISPLAY
 		Atari800_display_screen = FALSE;
@@ -1299,7 +1305,7 @@ void Atari800_StateRead(UBYTE version)
 		StateSav_ReadUBYTE(&temp, 1);
 		Atari800_SetTVMode(temp ? Atari800_TV_PAL : Atari800_TV_NTSC);
 		StateSav_ReadUBYTE(&temp, 1);
-		if (temp < 0 || temp > 3) {
+		if (temp < 0 || temp >= Atari800_MACHINE_SIZE) {
 			temp = Atari800_MACHINE_XLXE;
 			Log_print("Warning: Bad machine type read in from state save, defaulting to XL/XE");
 		}

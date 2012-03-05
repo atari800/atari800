@@ -6,15 +6,19 @@
 /* ROM IDs for all supported ROM images. */
 enum {
 	/* --- OS ROMs from released Atari computers --- */
-	/* OS rev. A (1979) from early NTSC 400/800. Part no. CO12499A + CO14599A + CO12399B */
+	/* OS rev. A (1979) from early NTSC 400/800. Part no. C012499A + C014599A + C012399B */
 	SYSROM_A_NTSC,
-	/* OS rev. A (1979) from PAL 400/800. Part no. CO15199 + CO15299 + CO12399B */
+	/* OS rev. A (1979) from PAL 400/800. Part no. C015199 + C015299 + C012399B */
 	SYSROM_A_PAL,
-	/* OS rev. B (1981) from late NTSC 400/800. Part no. CO12499B + CO14599B + 12399B */
+	/* OS rev. B (1981) from late NTSC 400/800. Part no. C012499B + C014599B + C012399B */
 	SYSROM_B_NTSC,
-	/* OS rev. 1 (1983-03-11) from 600XL. Part no. CO62024 */
+	/* OS rev. 10 (1982-10-26) from 1200XL. Part no. C060616A + C060617A */
+	SYSROM_AA00R10,
+	/* OS rev. 11 (1982-12-23) from 1200XL. Part no. C060616B + C060617B */
+	SYSROM_AA01R11,
+	/* OS rev. 1 (1983-03-11) from 600XL. Part no. C062024 */
 	SYSROM_BB00R1,
-	/* OS rev. 2 (1983-05-10) from 800XL and early 65XE/130XE. Part no. CO61598B */
+	/* OS rev. 2 (1983-05-10) from 800XL and early 65XE/130XE. Part no. C061598B */
 	SYSROM_BB01R2,
 	/* OS rev. 3 (1985-03-01) from late 65XE/130XE. Part no. C300717 */
 	SYSROM_BB01R3,
@@ -26,11 +30,11 @@ enum {
 	/* BIOS from late 2-port 5200 (1983). Part no. C019156A */
 	SYSROM_5200A,
 	/* --- Atari BASIC ROMs --- */
-	/* Rev. A (1979), sold on cartridge. Part no. CO12402 + CO14502 */
+	/* Rev. A (1979), sold on cartridge. Part no. C012402 + C014502 */
 	SYSROM_BASIC_A,
-	/* Rev. B (1983), from 600XL/early 800XL, also on cartridge. Part no. CO60302A */
+	/* Rev. B (1983), from 600XL/early 800XL, also on cartridge. Part no. C060302A */
 	SYSROM_BASIC_B,
-	/* Rev. C (1984), from late 800XL and all XE/XEGS, also on cartridge, Part no. CO24947A */
+	/* Rev. C (1984), from late 800XL and all XE/XEGS, also on cartridge, Part no. C024947A */
 	SYSROM_BASIC_C,
 	/* --- Custom ROMs --- */
 	SYSROM_800_CUSTOM, /* Custom 400/800 OS */
@@ -52,7 +56,7 @@ extern SYSROM_t SYSROM_roms[SYSROM_SIZE];
 
 /* OS version preference chosen by user. Indexed by value of Atari800_machine_type.
    Set these to SYSROM_AUTO to let the emulator choose the OS revision automatically. */
-extern int SYSROM_os_versions[3];
+extern int SYSROM_os_versions[Atari800_MACHINE_SIZE];
 /* BASIC version preference chosen by user. Set this to SYSROM_AUTO to let the emulator
    choose the BASIC revision automatically. */
 extern int SYSROM_basic_version;

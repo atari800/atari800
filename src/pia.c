@@ -63,7 +63,8 @@ int PIA_Initialise(int *argc, char *argv[])
 void PIA_Reset(void)
 {
 	PIA_PORTA = 0xff;
-	if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+	if (Atari800_machine_type == Atari800_MACHINE_1200
+	    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
 		MEMORY_HandlePORTB(0xff, (UBYTE) (PIA_PORTB | PIA_PORTB_mask));
 	}
 	PIA_PORTB = 0xff;
@@ -97,7 +98,8 @@ UBYTE PIA_GetByte(UWORD addr, int no_side_effects)
 		}
 		else {
 			/* port state */
-			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+			if (Atari800_machine_type == Atari800_MACHINE_1200
+			    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
 				return PIA_PORTB | PIA_PORTB_mask;
 			}
 			else {
@@ -146,7 +148,8 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 #endif
 		break;
 	case PIA_OFFSET_PORTB:
-		if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+		if (Atari800_machine_type == Atari800_MACHINE_1200
+		    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
 			if ((PIA_PBCTL & 0x04) == 0) {
 				/* direction register */
 				MEMORY_HandlePORTB((UBYTE) (PIA_PORTB | ~byte), (UBYTE) (PIA_PORTB | PIA_PORTB_mask));
@@ -209,7 +212,8 @@ void PIA_StateRead(UBYTE version)
 		StateSav_ReadINT( &MEMORY_selftest_enabled, 1 );
 		StateSav_ReadINT( &Ram256, 1 );
 
-		if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+	if (Atari800_machine_type == Atari800_MACHINE_1200
+	    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
 			if (Ram256 == 1 && MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
 				MEMORY_ram_size = MEMORY_RAM_320_RAMBO;
 		}

@@ -38,6 +38,7 @@
 #include "cassette.h"
 #include "colours.h"
 #include "log.h"
+#include "pia.h"
 #include "screen.h"
 #include "sio.h"
 #include "util.h"
@@ -70,6 +71,7 @@ int Screen_visible_y2 = Screen_HEIGHT;	/* 0 .. Screen_HEIGHT */
 int Screen_show_atari_speed = FALSE;
 int Screen_show_disk_led = TRUE;
 int Screen_show_sector_counter = FALSE;
+int Screen_show_1200_leds = TRUE;
 
 #ifdef HAVE_LIBPNG
 #define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.png"
@@ -183,6 +185,8 @@ int Screen_ReadConfig(char *string, char *ptr)
 		return (Screen_show_disk_led = Util_sscanbool(ptr)) != -1;
 	else if (strcmp(string, "SCREEN_SHOW_IO_COUNTER") == 0)
 		return (Screen_show_sector_counter = Util_sscanbool(ptr)) != -1;
+	else if (strcmp(string, "SCREEN_SHOW_1200XL_LEDS") == 0)
+		return (Screen_show_1200_leds = Util_sscanbool(ptr)) != -1;
 	else return FALSE;
 	return TRUE;
 }
@@ -199,7 +203,8 @@ void Screen_WriteConfig(FILE *fp)
 #define SMALLFONT_PERCENT  10
 #define SMALLFONT_C        11
 #define SMALLFONT_D        12
-#define SMALLFONT_SLASH    13
+#define SMALLFONT_L        13
+#define SMALLFONT_SLASH    14
 #define SMALLFONT_____ 0x00
 #define SMALLFONT___X_ 0x02
 #define SMALLFONT__X__ 0x04
@@ -211,7 +216,7 @@ void Screen_WriteConfig(FILE *fp)
 
 static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2)
 {
-	static const UBYTE font[14][SMALLFONT_HEIGHT] = {
+	static const UBYTE font[15][SMALLFONT_HEIGHT] = {
 		{
 			SMALLFONT_____,
 			SMALLFONT__X__,
@@ -327,6 +332,15 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 			SMALLFONT_X_X_,
 			SMALLFONT_X_X_,
 			SMALLFONT_XX__,
+			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_X___,
+			SMALLFONT_X___,
+			SMALLFONT_X___,
+			SMALLFONT_X___,
+			SMALLFONT_XXX_,
 			SMALLFONT_____
 		},
 		{
@@ -418,6 +432,24 @@ void Screen_DrawDiskLED(void)
 
 			if (Screen_show_sector_counter)
 				SmallFont_DrawInt(screen - SMALLFONT_WIDTH, SIO_last_sector, 0x00, 0x88);
+		}
+	}
+}
+
+void Screen_Draw1200LED(void)
+{
+	if (Screen_show_1200_leds && Atari800_machine_type == Atari800_MACHINE_1200) {
+		UBYTE *screen = (UBYTE *) Screen_atari + Screen_visible_x1 + SMALLFONT_WIDTH * 10
+			+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * Screen_WIDTH;
+		UBYTE portb = PIA_PORTB | PIA_PORTB_mask;
+		if ((portb & 0x04) == 0) {
+			SmallFont_DrawChar(screen, SMALLFONT_L, 0x00, 0x36);
+			SmallFont_DrawChar(screen + SMALLFONT_WIDTH, 1, 0x00, 0x36);
+		}
+		screen += SMALLFONT_WIDTH * 3;
+		if ((portb & 0x08) == 0) {
+			SmallFont_DrawChar(screen, SMALLFONT_L, 0x00, 0x36);
+			SmallFont_DrawChar(screen + SMALLFONT_WIDTH, 2, 0x00, 0x36);
 		}
 	}
 }

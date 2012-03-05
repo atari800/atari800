@@ -7,6 +7,12 @@
   of MEMORY_xe_bank had to be moved from PIA_StateRead to MEMORY_StateRead; so
   I also moved a few other variables in those functions to where they belong.
 
+* atari.[ch], cartridge.c, cfg.c, devices.c, esc.c, input.c, memory.c, pia.c,
+  screen.[ch], sysrom.[ch], ui_basic.c, ui.c, atari800.man, DOC/USAGE: Add
+  emulation of the 1200XL (no builtin BASIC, LEDs overlayed on screen, 2 new
+  XL OS revisions). The System ROM Settings menu ceased to fit on one screen,
+  so it is split into submenus.
+
 
 2012-02-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cfg.c, memory.[ch], ui.c: Allow choosing more RAM amounts for 400/800, based

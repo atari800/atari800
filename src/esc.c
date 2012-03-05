@@ -140,6 +140,13 @@ void ESC_PatchOS(void)
 			check_s_0 = 0xa0;
 			check_s_1 = 0xc0;
 			break;
+		case SYSROM_AA00R10:
+			addr_l = 0xed47;
+			addr_s = 0xed94;
+			check_s_0 = 0xa9;
+			check_s_1 = 0x03;
+			break;
+		case SYSROM_AA01R11:
 		case SYSROM_BB00R1:
 		case SYSROM_BB01R2:
 		case SYSROM_BB01R3:
@@ -175,6 +182,12 @@ void ESC_PatchOS(void)
 	if (patched){
 		UWORD addr;
 		switch (Atari800_os_version) {
+		case SYSROM_AA00R10:
+			addr = 0xc3d2;
+			break;
+		case SYSROM_AA01R11:
+			addr = 0xc346;
+			break;
 		case SYSROM_BB00R1:
 			addr = 0xc32b;
 			break;
@@ -204,6 +217,7 @@ void ESC_UpdatePatches(void)
 		ESC_PatchOS();
 		Devices_UpdatePatches();
 		break;
+	case Atari800_MACHINE_1200:
 	case Atari800_MACHINE_XLXE:
 		/* Don't patch if OS disabled */
 		if ((PIA_PORTB & 1) == 0)
