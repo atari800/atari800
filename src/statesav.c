@@ -468,7 +468,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 	ANTIC_StateRead();
 	CPU_StateRead(SaveVerbose, StateVersion);
 	GTIA_StateRead(StateVersion);
-	PIA_StateRead();
+	PIA_StateRead(StateVersion);
 	POKEY_StateRead();
 	if (StateVersion >= 6) {
 #ifdef XEP80_EMULATION

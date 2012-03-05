@@ -84,6 +84,10 @@ static UBYTE under_atari_basic[8192];
 static UBYTE *atarixe_memory = NULL;
 static ULONG atarixe_memory_size = 0;
 
+/* RAM shadowed by Self-Test in the XE bank seen by ANTIC, when ANTIC/CPU
+   separate XE access is active. */
+static UBYTE antic_bank_under_selftest[0x800];
+
 int MEMORY_have_basic = FALSE; /* Atari BASIC image has been successfully read (Atari 800 only) */
 
 /* Axlon and Mosaic RAM expansions for Atari 400/800 only */
@@ -312,6 +316,7 @@ void MEMORY_InitialiseMachine(void)
 void MEMORY_StateSave(UBYTE SaveVerbose)
 {
 	int temp;
+	UBYTE byte;
 
 	/* Axlon/Mosaic for 400/800 */
 	if (Atari800_machine_type == Atari800_MACHINE_800) {
@@ -381,14 +386,25 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 	if (temp < 0)
 		temp = 0;
 	StateSav_SaveINT(&temp, 1);
-	if (MEMORY_ram_size > 64)
+	if (MEMORY_ram_size == MEMORY_RAM_320_RAMBO || MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP) {
+		/* Save specific banking type. */
+		temp = MEMORY_ram_size - 320;
+		StateSav_SaveINT(&temp, 1);
+	}
+	byte = PIA_PORTB | PIA_PORTB_mask;
+	StateSav_SaveUBYTE(&byte, 1);
+	if (MEMORY_ram_size > 64) {
 		StateSav_SaveUBYTE(&atarixe_memory[0], atarixe_memory_size);
+		if (ANTIC_xe_ptr != NULL && MEMORY_selftest_enabled)
+			StateSav_SaveUBYTE(antic_bank_under_selftest, 0x800);
+	}
 }
 
 void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 {
 	int base_ram_kb;
 	int num_xe_banks;
+	UBYTE portb;
 
 	/* Axlon/Mosaic for 400/800 */
 	if (Atari800_machine_type == Atari800_MACHINE_800 && StateVersion >= 5) {
@@ -521,22 +537,78 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 		StateSav_ReadINT(&num_xe_banks, 1);
 		/* Compute value of MEMORY_ram_size. */
 		MEMORY_ram_size = base_ram_kb + num_xe_banks * 16;
+		if (MEMORY_ram_size == 320) {
+			/* There are 2 different memory mappings for 320 KB. */
+			/* In savestate version <= 6 this variable is read in PIA_StateRead. */
+			int xe_type;
+			StateSav_ReadINT(&xe_type, 1);
+			MEMORY_ram_size += xe_type;
+		}
 		if (!MEMORY_SizeValid(MEMORY_ram_size)) {
 			MEMORY_ram_size = 64;
 			Log_print("Warning: Bad RAM size read in from state save, defaulting to 64 KB");
 		}
+
+		/* Read PORTB and set variables that are based on it. */
+		StateSav_ReadUBYTE(&portb, 1);
+		MEMORY_xe_bank = 0;
+		if (MEMORY_ram_size > 64 && (portb & 0x30) != 0x30) {
+			switch (MEMORY_ram_size) {
+			case 128:
+				MEMORY_xe_bank = ((portb & 0x0c) >> 2) + 1;
+				break;
+			case 192:
+				MEMORY_xe_bank = (((portb & 0x0c) + ((portb & 0x40) >> 2)) >> 2) + 1;
+				break;
+			case MEMORY_RAM_320_RAMBO:
+				MEMORY_xe_bank = (((portb & 0x0c) + ((portb & 0x60) >> 1)) >> 2) + 1;
+				break;
+			case MEMORY_RAM_320_COMPY_SHOP:
+				MEMORY_xe_bank = (((portb & 0x0c) + ((portb & 0xc0) >> 2)) >> 2) + 1;
+				break;
+			case 576:
+				MEMORY_xe_bank = (((portb & 0x0e) + ((portb & 0x60) >> 1)) >> 1) + 1;
+				break;
+			case 1088:
+				MEMORY_xe_bank = (((portb & 0x0e) + ((portb & 0xe0) >> 1)) >> 1) + 1;
+				break;
+			}
+		}
+		/* In savestate version <= 6 this variable is read in PIA_StateRead. */
+		MEMORY_selftest_enabled = (portb & 0x81) == 0x01
+		                          && !((portb & 0x30) != 0x30 && MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
+		                          && !((portb & 0x10) == 0 && MEMORY_ram_size == 1088);
+
 	}
 	ANTIC_xe_ptr = NULL;
 	AllocXEMemory();
 	if (MEMORY_ram_size > 64) {
 		StateSav_ReadUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		/* a hack that makes state files compatible with previous versions:
-           for 130 XE there's written 192 KB of unused data */
+		   for 130 XE there's written 192 KB of unused data */
 		if (MEMORY_ram_size == 128 && StateVersion <= 6) {
 			UBYTE buffer[256];
 			int i;
 			for (i = 0; i < 192 * 4; i++)
 				StateSav_ReadUBYTE(&buffer[0], 256);
+		}
+		if (StateVersion >= 7 && (MEMORY_ram_size == 128 || MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)) {
+			switch (portb & 0x30) {
+			case 0x20:	/* ANTIC: base, CPU: extended */
+				ANTIC_xe_ptr = atarixe_memory;
+				break;
+			case 0x10:	/* ANTIC: extended, CPU: base */
+				ANTIC_xe_ptr = atarixe_memory + (MEMORY_xe_bank << 14);
+				break;
+			default:	/* ANTIC same as CPU */
+				ANTIC_xe_ptr = NULL;
+				break;
+			}
+
+			if (ANTIC_xe_ptr != NULL && MEMORY_selftest_enabled)
+				/* Also read ANTIC-visible memory shadowed by Self Test. */
+				StateSav_ReadUBYTE(antic_bank_under_selftest, 0x800);
+
 		}
 	}
 }
@@ -575,12 +647,14 @@ static int basic_disabled(UBYTE portb)
 /* Note: this function is only for XL/XE! */
 void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 {
+	int antic_bank = 0;
 	/* Switch XE memory bank in 0x4000-0x7fff */
 	if (MEMORY_ram_size > 64) {
 		int bank = 0;
+		int cpu_bank, new_cpu_bank, new_antic_bank;
 		/* bank = 0 : base RAM */
 		/* bank = 1..64 : extended RAM */
-		if ((byte & 0x10) == 0)
+		if ((byte & 0x30) != 0x30)
 			switch (MEMORY_ram_size) {
 			case 128:
 				bank = ((byte & 0x0c) >> 2) + 1;
@@ -601,33 +675,34 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 				bank = (((byte & 0x0e) + ((byte & 0xe0) >> 1)) >> 1) + 1;
 				break;
 			}
+		cpu_bank = (oldval & 0x10) ? 0 : MEMORY_xe_bank;
+		new_cpu_bank = (byte & 0x10) ? 0 : bank;
+		antic_bank = (oldval & 0x20) ? 0 : MEMORY_xe_bank;
+		new_antic_bank = (byte & 0x20) ? 0 : bank;
+
 		/* Note: in Compy Shop bit 5 (ANTIC access) disables Self Test */
-		if (MEMORY_selftest_enabled && (bank != MEMORY_xe_bank || (MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP && (byte & 0x20) == 0))) {
+		if (MEMORY_selftest_enabled
+		    && (cpu_bank != new_cpu_bank
+		        || antic_bank != new_antic_bank
+		        || (MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP && (byte & 0x20) == 0))) {
 			/* Disable Self Test ROM */
 			memcpy(MEMORY_mem + 0x5000, under_atarixl_os + 0x1000, 0x800);
+			if (ANTIC_xe_ptr != NULL)
+				/* Also disable Self Test from XE bank accessed by ANTIC. */
+				memcpy(atarixe_memory + (antic_bank << 14) + 0x1000, antic_bank_under_selftest, 0x800);
 			MEMORY_SetRAM(0x5000, 0x57ff);
 			MEMORY_selftest_enabled = FALSE;
 		}
-		if (bank != MEMORY_xe_bank) {
-			memcpy(atarixe_memory + (MEMORY_xe_bank << 14), MEMORY_mem + 0x4000, 16384);
-			memcpy(MEMORY_mem + 0x4000, atarixe_memory + (bank << 14), 16384);
-			MEMORY_xe_bank = bank;
+		if (cpu_bank != new_cpu_bank) {
+			memcpy(atarixe_memory + (cpu_bank << 14), MEMORY_mem + 0x4000, 0x4000);
+			memcpy(MEMORY_mem + 0x4000, atarixe_memory + (new_cpu_bank << 14), 0x4000);
 		}
+
 		if (MEMORY_ram_size == 128 || MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
-			switch (byte & 0x30) {
-			case 0x20:	/* ANTIC: base, CPU: extended */
-				ANTIC_xe_ptr = atarixe_memory;
-				break;
-			case 0x10:	/* ANTIC: extended, CPU: base */
-				if (MEMORY_ram_size == 128)
-					ANTIC_xe_ptr = atarixe_memory + ((((byte & 0x0c) >> 2) + 1) << 14);
-				else	/* 320 Compy Shop */
-					ANTIC_xe_ptr = atarixe_memory + (((((byte & 0x0c) + ((byte & 0xc0) >> 2)) >> 2) + 1) << 14);
-				break;
-			default:	/* ANTIC same as CPU */
-				ANTIC_xe_ptr = NULL;
-				break;
-			}
+			ANTIC_xe_ptr = new_antic_bank == new_cpu_bank ? NULL : atarixe_memory + (new_antic_bank << 14);
+
+		MEMORY_xe_bank = bank;
+		antic_bank = new_antic_bank;
 	}
 
 	/* Enable/disable OS ROM in 0xc000-0xcfff and 0xd800-0xffff */
@@ -659,6 +734,9 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			if (MEMORY_selftest_enabled) {
 				if (MEMORY_ram_size > 20) {
 					memcpy(MEMORY_mem + 0x5000, under_atarixl_os + 0x1000, 0x800);
+					if (ANTIC_xe_ptr != NULL)
+						/* Also disable Self Test from XE bank accessed by ANTIC. */
+						memcpy(atarixe_memory + (antic_bank << 14) + 0x1000, antic_bank_under_selftest, 0x800);
 					MEMORY_SetRAM(0x5000, 0x57ff);
 				}
 				else
@@ -699,6 +777,9 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			/* Disable Self Test ROM */
 			if (MEMORY_ram_size > 20) {
 				memcpy(MEMORY_mem + 0x5000, under_atarixl_os + 0x1000, 0x800);
+				if (ANTIC_xe_ptr != NULL)
+					/* Also disable Self Test from XE bank accessed by ANTIC. */
+					memcpy(atarixe_memory + (antic_bank << 14) + 0x1000, antic_bank_under_selftest, 0x800);
 				MEMORY_SetRAM(0x5000, 0x57ff);
 			}
 			else
@@ -716,9 +797,15 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 			/* Enable Self Test ROM */
 			if (MEMORY_ram_size > 20) {
 				memcpy(under_atarixl_os + 0x1000, MEMORY_mem + 0x5000, 0x800);
+				if (ANTIC_xe_ptr != NULL)
+					/* Also backup RAM under Self Test from XE bank accessed by ANTIC. */
+					memcpy(antic_bank_under_selftest, atarixe_memory + (antic_bank << 14) + 0x1000, 0x800);
 				MEMORY_SetROM(0x5000, 0x57ff);
 			}
 			memcpy(MEMORY_mem + 0x5000, MEMORY_os + 0x1000, 0x800);
+			if (ANTIC_xe_ptr != NULL)
+				/* Also enable Self Test in the XE bank accessed by ANTIC. */
+				memcpy(atarixe_memory + (antic_bank << 14) + 0x1000, MEMORY_os + 0x1000, 0x800);
 			MEMORY_selftest_enabled = TRUE;
 		}
 	}
