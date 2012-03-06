@@ -149,6 +149,16 @@
 #endif
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
+
+static Atari800_features_t const feature_map[] = {
+	{ FALSE, TRUE, TRUE, FALSE, 0x2800, FALSE, FALSE, FALSE }, /* Atari800_MACHINE_800 */
+	{ FALSE, FALSE, FALSE, TRUE, 0x4000, TRUE, TRUE, TRUE }, /* Atari800_MACHINE_1200 */
+	{ TRUE, FALSE, FALSE, TRUE, 0x4000, TRUE, FALSE, FALSE }, /* Atari800_MACHINE_XLXE */
+	{ FALSE, TRUE, FALSE, FALSE, 0x0800, FALSE, FALSE, FALSE } /* Atari800_MACHINE_5200 */
+};
+
+Atari800_features_t Atari800_features;
+
 int Atari800_tv_mode = Atari800_TV_PAL;
 int Atari800_disable_basic = TRUE;
 
@@ -181,6 +191,12 @@ static RETSIGTYPE sigint_handler(int num)
 	return;
 }
 #endif
+
+void Atari800_SetMachineType(int type)
+{
+	Atari800_machine_type = type;
+	Atari800_features = feature_map[type];
+}
 
 void Atari800_Warmstart(void)
 {
@@ -227,7 +243,7 @@ void Atari800_Coldstart(void)
 	   and Start key (boot from cassette) */
 	GTIA_consol_index = 2;
 	GTIA_consol_table[2] = 0x0f;
-	if (Atari800_machine_type == Atari800_MACHINE_XLXE && Atari800_disable_basic && !BINLOAD_loading_basic) {
+	if (Atari800_features.builtin_basic && Atari800_disable_basic && !BINLOAD_loading_basic) {
 		/* Only for XL/XE - hold Option during reboot. */
 		GTIA_consol_table[2] &= ~INPUT_CONSOL_OPTION;
 	}
@@ -273,7 +289,7 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 static int load_roms(void)
 {
 	if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 2) {
-		COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x0800 : 0x2000);
+		COPY_EMUOS(Atari800_features.os_size - 0x2000);
 		Atari800_os_version = -1;
 	}
 	else {
@@ -284,7 +300,7 @@ static int load_roms(void)
 			/* Missing OS ROM. */
 			Atari800_os_version = -1;
 			if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
-				COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x0800 : 0x2000);
+				COPY_EMUOS(Atari800_features.os_size - 0x2000);
 			else
 				/* No OS ROM loaded. */
 				return FALSE;
@@ -294,7 +310,7 @@ static int load_roms(void)
 			MEMORY_have_basic = basic_ver != -1 && Atari800_LoadImage(SYSROM_roms[basic_ver].filename, MEMORY_basic, SYSROM_roms[basic_ver].size);
 			if (!MEMORY_have_basic) {
 				/* Missing BASIC ROM. Don't fail when it happens. */
-				if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+				if (Atari800_features.builtin_basic) {
 					/* if you really don't want built-in BASIC */
 					if (basic_ver == -1)
 						memset(MEMORY_basic, 0, 0x2000);
@@ -322,6 +338,7 @@ int Atari800_InitialiseMachine(void)
 /* Initialise any modules before loading the config file. */
 static void PreInitialise(void)
 {
+	Atari800_features = feature_map[Atari800_machine_type];
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	Colours_PreInitialise();
 #endif
@@ -629,6 +646,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 	}
 
 	*argc = j;
+
+	/* Update machine feature variables. after reading from config file and/or
+	   command-line options. */
+	Atari800_SetMachineType(Atari800_machine_type);
+
 	if (!SYSROM_Initialise(argc, argv)
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		|| !Colours_Initialise(argc, argv)
@@ -1309,7 +1331,7 @@ void Atari800_StateRead(UBYTE version)
 			temp = Atari800_MACHINE_XLXE;
 			Log_print("Warning: Bad machine type read in from state save, defaulting to XL/XE");
 		}
-		Atari800_machine_type = temp;
+		Atari800_SetMachineType(temp);
 	}
 	else { /* savestate from version 2.2.1 or earlier */
 		int new_tv_mode;
@@ -1377,6 +1399,7 @@ void Atari800_StateRead(UBYTE version)
 		StateSav_ReadINT(&pil_on, 1);
 		StateSav_ReadINT(&default_tv_mode, 1);
 		StateSav_ReadINT(&default_system, 1);
+		Atari800_SetMachineType(Atari800_machine_type);
 	}
 	load_roms();
 	/* XXX: what about patches? */

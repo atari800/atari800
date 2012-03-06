@@ -325,7 +325,7 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 		{ Atari800_MACHINE_5200, 16 }
 	};
 
-	Atari800_machine_type = machine[nummac].type;
+	Atari800_SetMachineType(machine[nummac].type);
 	MEMORY_ram_size = machine[nummac].ram;
 	/* Temporary hack to allow choosing OS rev. A/B. Delete after adding
 	   support for choosing OS/BASIC revision. */

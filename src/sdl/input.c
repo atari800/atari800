@@ -718,13 +718,13 @@ int PLATFORM_Keyboard(void)
 	case SDLK_RETURN:
 		return AKEY_RETURN ^ shiftctrl;
 	case SDLK_LEFT:
-		return (!UI_is_active && Atari800_machine_type == Atari800_MACHINE_1200 ? AKEY_F3 : (INPUT_key_shift ? AKEY_PLUS : AKEY_LEFT)) ^ shiftctrl;
+		return (!UI_is_active && Atari800_features.f_keys ? AKEY_F3 : (INPUT_key_shift ? AKEY_PLUS : AKEY_LEFT)) ^ shiftctrl;
 	case SDLK_RIGHT:
-		return (!UI_is_active && Atari800_machine_type == Atari800_MACHINE_1200 ? AKEY_F4 : (INPUT_key_shift ? AKEY_ASTERISK : AKEY_RIGHT)) ^ shiftctrl;
+		return (!UI_is_active && Atari800_features.f_keys ? AKEY_F4 : (INPUT_key_shift ? AKEY_ASTERISK : AKEY_RIGHT)) ^ shiftctrl;
 	case SDLK_UP:
-		return (!UI_is_active && Atari800_machine_type == Atari800_MACHINE_1200 ? AKEY_F1 : (INPUT_key_shift ? AKEY_MINUS : AKEY_UP)) ^ shiftctrl;
+		return (!UI_is_active && Atari800_features.f_keys ? AKEY_F1 : (INPUT_key_shift ? AKEY_MINUS : AKEY_UP)) ^ shiftctrl;
 	case SDLK_DOWN:
-		return (!UI_is_active && Atari800_machine_type == Atari800_MACHINE_1200 ? AKEY_F2 : (INPUT_key_shift ? AKEY_EQUAL : AKEY_DOWN)) ^ shiftctrl;
+		return (!UI_is_active && Atari800_features.f_keys ? AKEY_F2 : (INPUT_key_shift ? AKEY_EQUAL : AKEY_DOWN)) ^ shiftctrl;
 	case SDLK_ESCAPE:
 		/* Windows takes ctrl+esc and ctrl+shift+esc */
 		return AKEY_ESCAPE ^ shiftctrl;

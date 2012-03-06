@@ -465,10 +465,11 @@ static void MapActiveCart(void)
 			/* No need to call SwitchBank(), return. */
 			return;
 		case CARTRIDGE_RIGHT_8:
-			if (Atari800_machine_type == Atari800_MACHINE_800) {
+			if (Atari800_features.right_cartridge) {
 				MEMORY_Cart809fEnable();
 				MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
-				if ((!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
+				if (!Atari800_features.builtin_basic
+				    && (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
 					MEMORY_CartA0bfEnable();
 					MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
 				}
@@ -501,9 +502,8 @@ static void MapActiveCart(void)
 			break;
 		default:
 			MEMORY_Cart809fDisable();
-			if ((Atari800_machine_type == Atari800_MACHINE_800 ||
-			     Atari800_machine_type == Atari800_MACHINE_1200)
-			    && (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
+			if (!Atari800_features.builtin_basic
+			&& (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
 				MEMORY_CartA0bfEnable();
 				MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
 			}
@@ -1106,12 +1106,12 @@ static void InitCartridge(CARTRIDGE_image_t *cart)
 		/* Check if we should automatically switch between computer/5200. */
 		int for5200 = CartIsFor5200(CARTRIDGE_main.type);
 		if (for5200 && Atari800_machine_type != Atari800_MACHINE_5200) {
-			Atari800_machine_type = Atari800_MACHINE_5200;
+			Atari800_SetMachineType(Atari800_MACHINE_5200);
 			MEMORY_ram_size = 16;
 			Atari800_InitialiseMachine();
 		}
 		else if (!for5200 && Atari800_machine_type == Atari800_MACHINE_5200) {
-			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			Atari800_SetMachineType(Atari800_MACHINE_XLXE);
 			MEMORY_ram_size = 64;
 			Atari800_InitialiseMachine();
 		}

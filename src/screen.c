@@ -439,7 +439,7 @@ void Screen_DrawDiskLED(void)
 
 void Screen_Draw1200LED(void)
 {
-	if (Screen_show_1200_leds && Atari800_machine_type == Atari800_MACHINE_1200) {
+	if (Screen_show_1200_leds && Atari800_features.keyboard_leds) {
 		UBYTE *screen = (UBYTE *) Screen_atari + Screen_visible_x1 + SMALLFONT_WIDTH * 10
 			+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * Screen_WIDTH;
 		UBYTE portb = PIA_PORTB | PIA_PORTB_mask;

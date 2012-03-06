@@ -447,7 +447,7 @@ static void SelectSystem(void)
 		}
 	}
 	if (option >= 0) {
-		Atari800_machine_type = machine[option].type;
+		Atari800_SetMachineType(machine[option].type);
 		MEMORY_ram_size = machine[option].ram;
 		need_initialise = TRUE;
 	}

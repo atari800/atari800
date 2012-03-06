@@ -843,20 +843,21 @@ void INPUT_Frame(void)
 		PIA_PORT_input[1] = 0xff;
 		GTIA_TRIG[0] = TRIG_input[joy_multijoy_no];
 		GTIA_TRIG[2] = GTIA_TRIG[1] = 1;
-		GTIA_TRIG[3] = Atari800_machine_type == Atari800_MACHINE_1200
-		               || Atari800_machine_type == Atari800_MACHINE_XLXE ? MEMORY_cartA0BF_enabled : 1;
+		GTIA_TRIG[3] = Atari800_features.detects_cartridge ? MEMORY_cartA0BF_enabled : 1;
 	}
 	else {
 		GTIA_TRIG[0] = TRIG_input[0];
 		GTIA_TRIG[1] = TRIG_input[1];
-		if (Atari800_machine_type == Atari800_MACHINE_1200
-		    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
-			GTIA_TRIG[2] = 1;
-			GTIA_TRIG[3] = MEMORY_cartA0BF_enabled;
-		}
-		else {
+		if (Atari800_features.four_ports) {
 			GTIA_TRIG[2] = TRIG_input[2];
 			GTIA_TRIG[3] = TRIG_input[3];
+		}
+		else {
+			GTIA_TRIG[2] = 1;
+			if (Atari800_features.detects_cartridge)
+				GTIA_TRIG[3] = MEMORY_cartA0BF_enabled;
+			else
+				GTIA_TRIG[3] = 1;
 		}
 		PIA_PORT_input[0] = (STICK[1] << 4) | STICK[0];
 		PIA_PORT_input[1] = (STICK[3] << 4) | STICK[2];

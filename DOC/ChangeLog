@@ -15,6 +15,11 @@
 
 * sdl/input.c: When in 1200XL mode, map arrows to F1-F4 keys.
 
+* atari.[ch], cartridge.c, devices.c, esc.c, input.c, memory.c, pia.c,
+  screen.c, ui.c, sdl/input.c, android/jni/jni.c: Replace most of the
+  "if Atari800_machine_type ==" statements with references to
+  Atari800_features  - the code was starting to be too convoluted.
+
 
 2012-02-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cfg.c, memory.[ch], ui.c: Allow choosing more RAM amounts for 400/800, based

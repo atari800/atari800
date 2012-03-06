@@ -45,7 +45,23 @@ enum {
 	/* Number of values in the emumerator */
 	Atari800_MACHINE_SIZE
 };
+/* Don't change this variable directly; use Atari800_SetMachineType() instead. */
 extern int Atari800_machine_type;
+void Atari800_SetMachineType(int type);
+
+typedef struct Atari800_features_t {
+	int builtin_basic; /* has built-in BASIC selectable by Option on boot */
+	int four_ports; /* has all 4 joystick ports */
+	int right_cartridge; /* has right catridge slot */
+	int xl_portb; /* PORTB is used to switch OS, BASIC and XE RAM */
+	int os_size; /* size of OS ROM in bytes */
+	int detects_cartridge; /* can detect A000-BFFF cartridge by GTIA TRIG3 */
+	int keyboard_leds; /* has 1200XL LEDs L1 and L2 */
+	int f_keys; /* has F1-F4 keys */
+} Atari800_features_t;
+
+/* Current configuration of Atari features. */
+extern Atari800_features_t Atari800_features;
 
 /* Always call Atari800_InitialiseMachine() after changing Atari800_machine_type
    or MEMORY_ram_size! */

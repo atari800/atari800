@@ -182,12 +182,13 @@ int MEMORY_SizeValid(int size)
 
 void MEMORY_InitialiseMachine(void)
 {
+	int const os_rom_start = 0x10000 - Atari800_features.os_size;
 	ANTIC_xe_ptr = NULL;
 	cart809F_enabled = FALSE;
 	MEMORY_cartA0BF_enabled = FALSE;
+	memcpy(MEMORY_mem + os_rom_start, MEMORY_os, Atari800_features.os_size);
 	switch (Atari800_machine_type) {
 	case Atari800_MACHINE_5200:
-		memcpy(MEMORY_mem + 0xf800, MEMORY_os, 0x800);
 		MEMORY_dFillMem(0x0000, 0x00, 0xf800);
 		MEMORY_SetRAM(0x0000, 0x3fff);
 		MEMORY_SetROM(0x4000, 0xffff);
@@ -251,12 +252,9 @@ void MEMORY_InitialiseMachine(void)
 		break;
 	default:
 		{
-			int const os_size = Atari800_machine_type == Atari800_MACHINE_800 ? 0x2800 : 0x4000;
-			int const os_rom_start = 0x10000 - os_size;
 			int const base_ram = MEMORY_ram_size > 64 ? 64 * 1024 : MEMORY_ram_size * 1024;
 			int const hole_end = (os_rom_start < 0xd000 ? os_rom_start : 0xd000);
 			int const hole_start = base_ram > hole_end ? hole_end : base_ram;
-			memcpy(MEMORY_mem + os_rom_start, MEMORY_os, os_size);
 			ESC_PatchOS();
 			MEMORY_dFillMem(0x0000, 0x00, hole_start);
 			MEMORY_SetRAM(0x0000, hole_start - 1);
@@ -371,8 +369,7 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 	}
 #endif
 
-	if (Atari800_machine_type == Atari800_MACHINE_1200
-	    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
+	if (Atari800_features.xl_portb) {
 		if (SaveVerbose != 0)
 			StateSav_SaveUBYTE(&MEMORY_basic[0], 8192);
 		StateSav_SaveUBYTE(&under_atari_basic[0], 8192);
@@ -523,8 +520,7 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 	}
 #endif
 
-	if (Atari800_machine_type == Atari800_MACHINE_1200
-	    || Atari800_machine_type == Atari800_MACHINE_XLXE) {
+	if (Atari800_features.xl_portb) {
 		if (SaveVerbose != 0)
 			StateSav_ReadUBYTE(&MEMORY_basic[0], 8192);
 		StateSav_ReadUBYTE(&under_atari_basic[0], 8192);
@@ -749,7 +745,7 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 	}
 
 	/* Enable/disable BASIC ROM in 0xa000-0xbfff */
-	if (!MEMORY_cartA0BF_enabled && Atari800_machine_type == Atari800_MACHINE_XLXE) {
+	if (!MEMORY_cartA0BF_enabled && Atari800_features.builtin_basic) {
 		/* BASIC is disabled if bit 1 set or accessing extended 576K or 1088K memory */
 		int now_disabled = basic_disabled(byte);
 		if (basic_disabled(oldval) != now_disabled) {
@@ -922,7 +918,7 @@ void MEMORY_CartA0bfDisable(void)
 	if (MEMORY_cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if ((Atari800_machine_type != Atari800_MACHINE_XLXE) || basic_disabled((UBYTE) (PIA_PORTB | PIA_PORTB_mask))) {
+		if (!Atari800_features.builtin_basic || basic_disabled((UBYTE) (PIA_PORTB | PIA_PORTB_mask))) {
 			if (MEMORY_ram_size > 40) {
 				memcpy(MEMORY_mem + 0xa000, under_cartA0BF, 0x2000);
 				MEMORY_SetRAM(0xa000, 0xbfff);
@@ -933,7 +929,7 @@ void MEMORY_CartA0bfDisable(void)
 		else
 			memcpy(MEMORY_mem + 0xa000, MEMORY_basic, 0x2000);
 		MEMORY_cartA0BF_enabled = FALSE;
-		if (Atari800_machine_type != Atari800_MACHINE_800) {
+		if (Atari800_features.detects_cartridge) {
 			GTIA_TRIG[3] = 0;
 			if (GTIA_GRACTL & 4)
 				GTIA_TRIG_latch[3] = 0;
@@ -946,13 +942,13 @@ void MEMORY_CartA0bfEnable(void)
 	if (!MEMORY_cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if (MEMORY_ram_size > 40 && (Atari800_machine_type != Atari800_MACHINE_XLXE || basic_disabled(PIA_PORTB | PIA_PORTB_mask))) {
+		if (MEMORY_ram_size > 40 && (!Atari800_features.builtin_basic || basic_disabled(PIA_PORTB | PIA_PORTB_mask))) {
 			/* Back-up 0xa000-0xbfff RAM */
 			memcpy(under_cartA0BF, MEMORY_mem + 0xa000, 0x2000);
 			MEMORY_SetROM(0xa000, 0xbfff);
 		}
 		MEMORY_cartA0BF_enabled = TRUE;
-		if (Atari800_machine_type != Atari800_MACHINE_800)
+		if (Atari800_features.detects_cartridge)
 			GTIA_TRIG[3] = 1;
 	}
 }
