@@ -270,6 +270,13 @@ static void SelectSystem(void)
 		UI_MENU_ACTION(SYSROM_XEGAME_CUSTOM, "Custom"),
 		UI_MENU_END
 	};
+	static UI_tMenuItem jumpers_menu_array[] = {
+		UI_MENU_ACTION(0, "J1:"),
+		UI_MENU_ACTION(1, "J2:"),
+		UI_MENU_ACTION(2, "J3:"),
+		UI_MENU_ACTION(3, "J4:"),
+		UI_MENU_END
+	};
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_ACTION(0, "Atari 400 (16 KB)"),
 		UI_MENU_ACTION(1, "Atari 800 (48 KB)"),
@@ -289,8 +296,9 @@ static void SelectSystem(void)
 		UI_MENU_SUBMENU_SUFFIX(15, "OS version:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(16, "BASIC version:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(17, "XEGS game:", NULL),
-		UI_MENU_ACTION(18, "XEGS keyboard:"),
-		UI_MENU_ACTION(19, "Video system:"),
+		UI_MENU_SUBMENU(18, "1200XL option jumpers"),
+		UI_MENU_ACTION(19, "XEGS keyboard:"),
+		UI_MENU_ACTION(20, "Video system:"),
 		UI_MENU_END
 	};
 
@@ -392,8 +400,8 @@ static void SelectSystem(void)
 		else
 			menu_array[17].suffix = FindMenuItem(xegame_menu_array, SYSROM_xegame_version)->item;
 
-		menu_array[18].suffix = Atari800_xegs_keyboard ? "attached" : "detached";
-		menu_array[19].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
+		menu_array[19].suffix = Atari800_xegs_keyboard ? "attached" : "detached";
+		menu_array[20].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
 
 		option = UI_driver->fSelect("Select System", 0, option, menu_array, NULL);
 		if (option < N_MACHINES)
@@ -497,10 +505,25 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 18:
-			Atari800_SetXEGSKeyboard(!Atari800_xegs_keyboard);
+		case 18: {
+			int option2 = 0;
+				for (;;) {
+					int i;
+					for (i = 0; i < 4; ++i)
+						jumpers_menu_array[i].suffix = Atari800_jumpers[i] ? "  installed" : "uninstalled";
+/*						SetItemChecked(jumpers_menu_array, i, Atari800_jumpers[i]);*/
+					option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, option2, jumpers_menu_array, NULL);
+					if (option2 < 0)
+						break;
+					Atari800_jumpers[option2] = !Atari800_jumpers[option2];
+				}
+				Atari800_UpdateJumpers();
+			}
 			break;
 		case 19:
+			Atari800_SetXEGSKeyboard(!Atari800_xegs_keyboard);
+			break;
+		case 20:
 			new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
 			break;
 		}

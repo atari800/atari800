@@ -248,6 +248,13 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			}
 			else if (strcmp(string, "XEGS_KEYBOARD") == 0)
 				Atari800_xegs_keyboard = Util_sscanbool(ptr);
+			else if (strcmp(string, "1200XL_JUMPERS") == 0) {
+				int i;
+				if (strlen(ptr) < 4)
+					return FALSE;
+				for (i = 0; i < 4; ++i)
+					Atari800_jumpers[i] = ptr[i] == '1';
+			}
 			else if (strcmp(string, "CFG_SAVE_ON_EXIT") == 0) {
 				CFG_save_on_exit = Util_sscanbool(ptr);
 			}
@@ -385,6 +392,7 @@ int CFG_WriteConfig(void)
 #endif
 #endif /* SOUND */
 	fprintf(fp, "XEGS_KEYBOARD=%d\n", Atari800_xegs_keyboard);
+	fprintf(fp, "1200XL_JUMPERS=%d%d%d%d\n", Atari800_jumpers[0], Atari800_jumpers[1], Atari800_jumpers[2], Atari800_jumpers[3]);
 	fprintf(fp, "CFG_SAVE_ON_EXIT=%d\n", CFG_save_on_exit);
 	/* Add module-specific configurations here */
 	PBI_WriteConfig(fp);

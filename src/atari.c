@@ -151,16 +151,18 @@
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
 
 static Atari800_features_t const feature_map[Atari800_MACHINE_SIZE] = {
-	{ FALSE, TRUE, TRUE, FALSE, 0x2800, FALSE, FALSE, FALSE, FALSE, FALSE }, /* Atari800_MACHINE_800 */
-	{ FALSE, FALSE, FALSE, TRUE, 0x4000, TRUE, TRUE, TRUE, FALSE, FALSE }, /* Atari800_MACHINE_1200 */
-	{ TRUE, FALSE, FALSE, TRUE, 0x4000, TRUE, FALSE, FALSE, FALSE, FALSE }, /* Atari800_MACHINE_XLXE */
-	{ TRUE, FALSE, FALSE, TRUE, 0x4000, TRUE, FALSE, FALSE, TRUE, TRUE }, /* Atari800_MACHINE_XEGS */
-	{ FALSE, TRUE, FALSE, FALSE, 0x0800, FALSE, FALSE, FALSE, FALSE, FALSE } /* Atari800_MACHINE_5200 */
+	{ FALSE, TRUE, TRUE, FALSE, 0x2800, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE }, /* Atari800_MACHINE_800 */
+	{ FALSE, FALSE, FALSE, TRUE, 0x4000, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE }, /* Atari800_MACHINE_1200 */
+	{ TRUE, FALSE, FALSE, TRUE, 0x4000, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE }, /* Atari800_MACHINE_XLXE */
+	{ TRUE, FALSE, FALSE, TRUE, 0x4000, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE }, /* Atari800_MACHINE_XEGS */
+	{ FALSE, TRUE, FALSE, FALSE, 0x0800, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE } /* Atari800_MACHINE_5200 */
 };
 
 Atari800_features_t Atari800_features;
 
 int Atari800_xegs_keyboard = TRUE;
+UBYTE Atari800_jumpers[4];
+
 int Atari800_tv_mode = Atari800_TV_PAL;
 int Atari800_disable_basic = TRUE;
 
@@ -208,6 +210,12 @@ void Atari800_SetXEGSKeyboard(int value)
 		if (value == 0 && (GTIA_GRACTL & 4))
 				GTIA_TRIG_latch[2] = 0;
 	}
+}
+void Atari800_UpdateJumpers(void)
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		POKEY_POT_input[4 + i] = Atari800_features.jumpers && Atari800_jumpers[i] ? 0 : 228;
 }
 
 void Atari800_Warmstart(void)
@@ -351,6 +359,7 @@ int Atari800_InitialiseMachine(void)
 	if (!load_roms())
 		return FALSE;
 	Atari800_SetXEGSKeyboard(Atari800_xegs_keyboard);
+	Atari800_UpdateJumpers();
 	MEMORY_InitialiseMachine();
 	Devices_UpdatePatches();
 	return TRUE;
@@ -1346,6 +1355,7 @@ void Atari800_StateSave(void)
 	StateSav_SaveUBYTE(&temp, 1);
 	temp = Atari800_xegs_keyboard;
 	StateSav_SaveUBYTE(&temp, 1);
+	StateSav_SaveUBYTE(Atari800_jumpers, 4);
 }
 
 void Atari800_StateRead(UBYTE version)
@@ -1362,6 +1372,8 @@ void Atari800_StateRead(UBYTE version)
 		Atari800_SetMachineType(temp);
 		StateSav_ReadUBYTE(&temp, 1);
 		Atari800_SetXEGSKeyboard(temp != 0);
+		StateSav_ReadUBYTE(Atari800_jumpers, 4);
+		Atari800_UpdateJumpers();
 	}
 	else { /* savestate from version 2.2.1 or earlier */
 		int new_tv_mode;

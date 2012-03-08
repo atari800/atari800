@@ -614,9 +614,14 @@ void INPUT_Frame(void)
 
 	/* handle analog joysticks in Atari 5200 */
 	if (Atari800_machine_type != Atari800_MACHINE_5200) {
-		if(!INPUT_direct_mouse)
-			for (i = 0; i < 8; i++)
+		if(!INPUT_direct_mouse) {
+			for (i = 0; i < 4; i++)
 				POKEY_POT_input[i] = Atari_POT(i);
+			if (Atari800_features.four_ports) {
+				for (i = 4; i < 8; ++i)
+					POKEY_POT_input[i] = Atari_POT(i);
+			}
+		}
 	}
 	else {
 		for (i = 0; i < 4; i++) {

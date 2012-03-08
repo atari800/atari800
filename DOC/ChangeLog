@@ -2,6 +2,9 @@
 * atari.[ch], cfg.c, input.c, memory.[ch], sysrom.[ch], ui.c, atari800.man,
   DOC/USAGE: Add emulation of the XEGS (builtin game, detachable keyboard).
 
+* atari.[ch], cfg.c, input.c, ui.c: Add emulation of 1200XL option jumpers,
+  as described in Atari XL Addendum section 3.8.
+
 
 2012-03-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * memory.c, pia.[ch], statesav.c: Fix 2 errors related to separate access

@@ -59,6 +59,7 @@ typedef struct Atari800_features_t {
 	int detects_cartridge; /* can detect A000-BFFF cartridge by TRIG3 */
 	int keyboard_leds; /* has 1200XL LEDs L1 and L2 */
 	int f_keys; /* has F1-F4 keys */
+	int jumpers; /* has four hardware jumpers on mainboard */
 	int builtin_game; /* has built-in XEGS game selectable by PORTB bit 6 */
 	int detachable_keyboard; /* has detachable keyboard detectable by TRIG2 */
 } Atari800_features_t;
@@ -74,6 +75,12 @@ extern Atari800_features_t Atari800_features;
    Don't change this variable directly; use Atari800_SetXEGSKeyboard() instead. */
 extern int Atari800_xegs_keyboard;
 void Atari800_SetXEGSKeyboard(int value);
+
+/* State of four jumpers on the 1200XL board, J1..J4.
+   Used only when Atari800_features.jumpers == TRUE. Always call
+   Atari800_UpdateJumpers() after changing this variable. */
+extern UBYTE Atari800_jumpers[4];
+void Atari800_UpdateJumpers(void);
 
 /* Video system. */
 #define Atari800_TV_UNSET 0
