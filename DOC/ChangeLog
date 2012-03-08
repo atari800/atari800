@@ -5,6 +5,9 @@
 * atari.[ch], cfg.c, input.c, ui.c: Add emulation of 1200XL option jumpers,
   as described in Atari XL Addendum section 3.8.
 
+* ui.c: Emulate 32KB and 48KB memory expansions for the 600XL manufactured by
+  RC Systems.
+
 
 2012-03-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * memory.c, pia.[ch], statesav.c: Fix 2 errors related to separate access

@@ -214,6 +214,8 @@ static void SelectSystem(void)
 	};
 	static UI_tMenuItem ramxl_menu_array[] = {
 		UI_MENU_ACTION(16, "16 KB"),
+		UI_MENU_ACTION(32, "32 KB"),
+		UI_MENU_ACTION(48, "48 KB"),
 		UI_MENU_ACTION(64, "64 KB"),
 		UI_MENU_ACTION(128, "128 KB"),
 		UI_MENU_ACTION(192, "192 KB"),
