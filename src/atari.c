@@ -150,15 +150,17 @@
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
 
-static Atari800_features_t const feature_map[] = {
-	{ FALSE, TRUE, TRUE, FALSE, 0x2800, FALSE, FALSE, FALSE }, /* Atari800_MACHINE_800 */
-	{ FALSE, FALSE, FALSE, TRUE, 0x4000, TRUE, TRUE, TRUE }, /* Atari800_MACHINE_1200 */
-	{ TRUE, FALSE, FALSE, TRUE, 0x4000, TRUE, FALSE, FALSE }, /* Atari800_MACHINE_XLXE */
-	{ FALSE, TRUE, FALSE, FALSE, 0x0800, FALSE, FALSE, FALSE } /* Atari800_MACHINE_5200 */
+static Atari800_features_t const feature_map[Atari800_MACHINE_SIZE] = {
+	{ FALSE, TRUE, TRUE, FALSE, 0x2800, FALSE, FALSE, FALSE, FALSE, FALSE }, /* Atari800_MACHINE_800 */
+	{ FALSE, FALSE, FALSE, TRUE, 0x4000, TRUE, TRUE, TRUE, FALSE, FALSE }, /* Atari800_MACHINE_1200 */
+	{ TRUE, FALSE, FALSE, TRUE, 0x4000, TRUE, FALSE, FALSE, FALSE, FALSE }, /* Atari800_MACHINE_XLXE */
+	{ TRUE, FALSE, FALSE, TRUE, 0x4000, TRUE, FALSE, FALSE, TRUE, TRUE }, /* Atari800_MACHINE_XEGS */
+	{ FALSE, TRUE, FALSE, FALSE, 0x0800, FALSE, FALSE, FALSE, FALSE, FALSE } /* Atari800_MACHINE_5200 */
 };
 
 Atari800_features_t Atari800_features;
 
+int Atari800_xegs_keyboard = TRUE;
 int Atari800_tv_mode = Atari800_TV_PAL;
 int Atari800_disable_basic = TRUE;
 
@@ -196,6 +198,16 @@ void Atari800_SetMachineType(int type)
 {
 	Atari800_machine_type = type;
 	Atari800_features = feature_map[type];
+}
+
+void Atari800_SetXEGSKeyboard(int value)
+{
+	Atari800_xegs_keyboard = value;
+	if (Atari800_features.detachable_keyboard) {
+		GTIA_TRIG[2] = value;
+		if (value == 0 && (GTIA_GRACTL & 4))
+				GTIA_TRIG_latch[2] = 0;
+	}
 }
 
 void Atari800_Warmstart(void)
@@ -293,8 +305,8 @@ static int load_roms(void)
 		Atari800_os_version = -1;
 	}
 	else {
-		int basic_ver;
-		SYSROM_ChooseROMs(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode, &Atari800_os_version, &basic_ver);
+		int basic_ver, xegame_ver;
+		SYSROM_ChooseROMs(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode, &Atari800_os_version, &basic_ver, &xegame_ver);
 		if (Atari800_os_version == -1
 		    || !Atari800_LoadImage(SYSROM_roms[Atari800_os_version].filename, MEMORY_os, SYSROM_roms[Atari800_os_version].size)) {
 			/* Missing OS ROM. */
@@ -318,6 +330,14 @@ static int load_roms(void)
 						return FALSE;
 				}
 			}
+
+			if (Atari800_features.builtin_game) {
+				/* Try loading built-in XEGS game. */
+				if (xegame_ver == -1
+				    || !Atari800_LoadImage(SYSROM_roms[xegame_ver].filename, MEMORY_xegame, SYSROM_roms[xegame_ver].size))
+					/* Missing XEGS game ROM. */
+					memset(MEMORY_xegame, 0, 0x2000);
+			}
 		}
 	}
 
@@ -330,6 +350,7 @@ int Atari800_InitialiseMachine(void)
 	ESC_ClearAll();
 	if (!load_roms())
 		return FALSE;
+	Atari800_SetXEGSKeyboard(Atari800_xegs_keyboard);
 	MEMORY_InitialiseMachine();
 	Devices_UpdatePatches();
 	return TRUE;
@@ -475,6 +496,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_machine_type = Atari800_MACHINE_XLXE;
 			MEMORY_ram_size = MEMORY_RAM_320_RAMBO;
 		}
+		else if (strcmp(argv[i], "-xegs") == 0) {
+			Atari800_machine_type = Atari800_MACHINE_XEGS;
+			MEMORY_ram_size = 64;
+		}
 		else if (strcmp(argv[i], "-5200") == 0) {
 			Atari800_machine_type = Atari800_MACHINE_5200;
 			MEMORY_ram_size = 16;
@@ -610,6 +635,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-xe              Emulate Atari 130XE");
 					Log_print("\t-320xe           Emulate Atari 320XE (COMPY SHOP)");
 					Log_print("\t-rambo           Emulate Atari 320XE (RAMBO)");
+					Log_print("\t-xegs            Emulate Atari XEGS");
 					Log_print("\t-5200            Emulate Atari 5200 Games System");
 					Log_print("\t-nobasic         Turn off Atari BASIC ROM");
 					Log_print("\t-basic           Turn on Atari BASIC ROM");
@@ -1318,6 +1344,8 @@ void Atari800_StateSave(void)
 	StateSav_SaveUBYTE(&temp, 1);
 	temp = Atari800_machine_type;
 	StateSav_SaveUBYTE(&temp, 1);
+	temp = Atari800_xegs_keyboard;
+	StateSav_SaveUBYTE(&temp, 1);
 }
 
 void Atari800_StateRead(UBYTE version)
@@ -1332,6 +1360,8 @@ void Atari800_StateRead(UBYTE version)
 			Log_print("Warning: Bad machine type read in from state save, defaulting to XL/XE");
 		}
 		Atari800_SetMachineType(temp);
+		StateSav_ReadUBYTE(&temp, 1);
+		Atari800_SetXEGSKeyboard(temp != 0);
 	}
 	else { /* savestate from version 2.2.1 or earlier */
 		int new_tv_mode;

@@ -111,10 +111,14 @@ Command line options
                       Select OS revision for Atari 1200XL
 -xl-rev auto|10|11|1|2|3|4|custom
                       Select OS revision for Atari XL/XE
+-xegs-rev auto|10|11|1|2|3|4|custom
+                      Select OS revision for Atari XEGS
 -5200-rev auto|orig|a|custom
                       Select OS revision for Atari 5200
 -basic-rev auto|a|b|c|custom
                       Select BASIC revision
+-xegame-rev auto|orig|custom
+                      Select XEGS builtin game version
 
 -atari                Emulate Atari 800
 -1200                 Emulate Atari 1200XL
@@ -122,6 +126,7 @@ Command line options
 -xe                   Emulate Atari 130XE
 -320xe                Emulate Atari 320XE (Compy Shop)
 -rambo                Emulate Atari 320XE (Rambo)
+-xegs                 Emulate Atari XEGS
 -5200                 Emulate Atari 5200
 
 -emuos                Use EmuOS

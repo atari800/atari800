@@ -36,11 +36,14 @@ enum {
 	SYSROM_BASIC_B,
 	/* Rev. C (1984), from late 800XL and all XE/XEGS, also on cartridge, Part no. C024947A */
 	SYSROM_BASIC_C,
+	/* builtin XEGS Missile Command. Part no. C101687 (1st quarter) */
+	SYSROM_XEGAME,
 	/* --- Custom ROMs --- */
 	SYSROM_800_CUSTOM, /* Custom 400/800 OS */
 	SYSROM_XL_CUSTOM, /* Custom XL/XE OS */
 	SYSROM_5200_CUSTOM, /* Custom 5200 BIOS */
 	SYSROM_BASIC_CUSTOM,/* Custom BASIC */
+	SYSROM_XEGAME_CUSTOM, /* Custom XEGS game */
 	SYSROM_SIZE, /* Number of available OS ROMs */
 	SYSROM_AUTO = SYSROM_SIZE /* Use to indicate that OS revision should be chosen automatically */
 };
@@ -60,6 +63,10 @@ extern int SYSROM_os_versions[Atari800_MACHINE_SIZE];
 /* BASIC version preference chosen by user. Set this to SYSROM_AUTO to let the emulator
    choose the BASIC revision automatically. */
 extern int SYSROM_basic_version;
+
+/* XEGS game version preference chosen by user. Set this to SYSROM_AUTO to let the emulator
+   choose the game ROM automatically. */
+extern int SYSROM_xegame_version;
 
 /* Values returned by SYSROM_SetPath(). */
 enum{
@@ -90,20 +97,23 @@ int SYSROM_AutoChooseOS(int machine_type, int ram_size, int tv_system);
 /* Return ROM ID of the "best" available BASIC ROM. If no BASIC ROM is
    available, returns -1; otherwise returns a ROM ID. */
 int SYSROM_AutoChooseBASIC(void);
+/* Return ROM ID of the "best" available XEGS game ROM. If no game ROM is
+   available, returns -1; otherwise returns a ROM ID. */
+int SYSROM_AutoChooseXEGame(void);
 
 /* Called after initialisation ended. Fills the filenames with default values,
    so that when writing the config file all config options will be written,
    making edits to the config file easier. */
 void SYSROM_SetDefaults(void);
 
-/* Called from Atari800_InitialiseMachine(). Determines OS and BASIC ROM
+/* Called from Atari800_InitialiseMachine(). Determines OS BASIC, and XEGS game ROM
    versions based on given machine_type, ram_size and tv_system, and depending
-   on settings in SYSROM_os_versions and SYSROM_basic_version.
-   Returns OS version in *os_version and BASIC version in *basic_version -
-   both can be -1 if no ROM is available or no path is configured for the
-   chosen ROM.
+   on settings in SYSROM_os_versions, SYSROM_basic_version and SYSROM_xegame_version.
+   Returns OS version in *os_version,  BASIC version in *basic_version and XEGS game
+   version in *xegame_version - all can be -1 if no ROM is available or no path
+   is configured for the chosen ROM.
  */
-void SYSROM_ChooseROMs(int machine_type, int ram_size, int tv_system, int *os_version, int *basic_version);
+void SYSROM_ChooseROMs(int machine_type, int ram_size, int tv_system, int *os_version, int *basic_version, int *xegame_version);
 
 /* Read/write from/to configuration file. */
 int SYSROM_ReadConfig(char *string, char *ptr);

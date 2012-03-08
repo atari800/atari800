@@ -1,3 +1,8 @@
+2012-03-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.[ch], cfg.c, input.c, memory.[ch], sysrom.[ch], ui.c, atari800.man,
+  DOC/USAGE: Add emulation of the XEGS (builtin game, detachable keyboard).
+
+
 2012-03-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * memory.c, pia.[ch], statesav.c: Fix 2 errors related to separate access
   of CPU and ANTIC to XE RAM:

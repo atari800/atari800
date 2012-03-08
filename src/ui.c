@@ -249,8 +249,9 @@ static void SelectSystem(void)
 		UI_MENU_ACTION(SYSROM_5200_CUSTOM, "Custom"),
 		UI_MENU_END
 	};
-	static UI_tMenuItem * const os_menu_arrays[] = {
+	static UI_tMenuItem * const os_menu_arrays[Atari800_MACHINE_SIZE] = {
 		os800_menu_array,
+		osxl_menu_array,
 		osxl_menu_array,
 		osxl_menu_array,
 		os5200_menu_array
@@ -261,6 +262,12 @@ static void SelectSystem(void)
 		UI_MENU_ACTION(SYSROM_BASIC_B, "Rev. B"),
 		UI_MENU_ACTION(SYSROM_BASIC_C, "Rev. C"),
 		UI_MENU_ACTION(SYSROM_BASIC_CUSTOM, "Custom"),
+		UI_MENU_END
+	};
+	static UI_tMenuItem xegame_menu_array[] = {
+		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
+		UI_MENU_ACTION(SYSROM_XEGAME, "Missile Command"),
+		UI_MENU_ACTION(SYSROM_XEGAME_CUSTOM, "Custom"),
 		UI_MENU_END
 	};
 	static UI_tMenuItem menu_array[] = {
@@ -276,11 +283,14 @@ static void SelectSystem(void)
 		UI_MENU_ACTION(9, "Atari XL/XE (320 KB COMPY SHOP)"),
 		UI_MENU_ACTION(10, "Atari XL/XE (576 KB)"),
 		UI_MENU_ACTION(11, "Atari XL/XE (1088 KB)"),
-		UI_MENU_ACTION(12, "Atari 5200 (16 KB)"),
-		UI_MENU_SUBMENU_SUFFIX(13, "RAM size:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(14, "OS version:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(15, "BASIC version:", NULL),
-		UI_MENU_ACTION(16, "Video system:"),
+		UI_MENU_ACTION(12, "Atari XEGS (64 KB)"),
+		UI_MENU_ACTION(13, "Atari 5200 (16 KB)"),
+		UI_MENU_SUBMENU_SUFFIX(14, "RAM size:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(15, "OS version:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(16, "BASIC version:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(17, "XEGS game:", NULL),
+		UI_MENU_ACTION(18, "XEGS keyboard:"),
+		UI_MENU_ACTION(19, "Video system:"),
 		UI_MENU_END
 	};
 
@@ -297,6 +307,7 @@ static void SelectSystem(void)
 		{ Atari800_MACHINE_XLXE, MEMORY_RAM_320_COMPY_SHOP },
 		{ Atari800_MACHINE_XLXE, 576 },
 		{ Atari800_MACHINE_XLXE, 1088 },
+		{ Atari800_MACHINE_XEGS, 64 },
 		{ Atari800_MACHINE_5200, 16 }
 	};
 
@@ -306,6 +317,8 @@ static void SelectSystem(void)
 	static char default_os_label[29];
 	/* Size must be long enough to store "<longest BASIC label> (auto)". */
 	static char default_basic_label[14];
+	/* Size must be long enough to store "<longest XEGAME label> (auto)". */
+	static char default_xegame_label[23];
 
 	int option = 0;
 	int option2 = 0;
@@ -323,53 +336,70 @@ static void SelectSystem(void)
 		/* Set label for the "RAM size" action. */
 		switch (Atari800_machine_type) {
 		case Atari800_MACHINE_800:
-			menu_array[13].suffix = FindMenuItem(ram800_menu_array, MEMORY_ram_size)->item;
+			menu_array[14].suffix = FindMenuItem(ram800_menu_array, MEMORY_ram_size)->item;
 			break;
 		case Atari800_MACHINE_1200:
 		case Atari800_MACHINE_XLXE:
-			menu_array[13].suffix = FindMenuItem(ramxl_menu_array, MEMORY_ram_size)->item;
+		case Atari800_MACHINE_XEGS:
+			menu_array[14].suffix = FindMenuItem(ramxl_menu_array, MEMORY_ram_size)->item;
 			break;
 		case Atari800_MACHINE_5200:
-			menu_array[13].suffix = "16 KB";
+			menu_array[14].suffix = "16 KB";
 			break;
 		}
 		/* Set label for the "OS version" action. */
 		if (SYSROM_os_versions[Atari800_machine_type] == SYSROM_AUTO) {
 			int auto_os = SYSROM_AutoChooseOS(Atari800_machine_type, MEMORY_ram_size, new_tv_mode);
 			if (auto_os == -1)
-				menu_array[14].suffix = "ROM missing";
+				menu_array[15].suffix = "ROM missing";
 			else {
 				sprintf(default_os_label, "%s (auto)", FindMenuItem(os_menu_arrays[Atari800_machine_type], auto_os)->item);
-				menu_array[14].suffix = default_os_label;
+				menu_array[15].suffix = default_os_label;
 			}
 		}
 		else if (SYSROM_roms[SYSROM_os_versions[Atari800_machine_type]].filename[0] == '\0')
-			menu_array[14].suffix = "ROM missing";
+			menu_array[15].suffix = "ROM missing";
 		else
-			menu_array[14].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
+			menu_array[15].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
 
 		/* Set label for the "BASIC version" action. */
 		if (SYSROM_basic_version == SYSROM_AUTO) {
 			int auto_basic = SYSROM_AutoChooseBASIC();
 			if (auto_basic == -1)
-				menu_array[15].suffix = "ROM missing";
+				menu_array[16].suffix = "ROM missing";
 			else {
 				sprintf(default_basic_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_basic)->item);
-				menu_array[15].suffix = default_basic_label;
+				menu_array[16].suffix = default_basic_label;
 			}
 		}
 		else if (SYSROM_roms[SYSROM_basic_version].filename[0] == '\0')
-			menu_array[15].suffix = "ROM missing";
+			menu_array[16].suffix = "ROM missing";
 		else
-			menu_array[15].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
+			menu_array[16].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
 
-		menu_array[16].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
+		/* Set label for the "Builtin XEGS game" action. */
+		if (SYSROM_xegame_version == SYSROM_AUTO) {
+			int auto_xegame = SYSROM_AutoChooseXEGame();
+			if (auto_xegame == -1)
+				menu_array[17].suffix = "ROM missing";
+			else {
+				sprintf(default_xegame_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_xegame)->item);
+				menu_array[17].suffix = default_xegame_label;
+			}
+		}
+		else if (SYSROM_roms[SYSROM_xegame_version].filename[0] == '\0')
+			menu_array[17].suffix = "ROM missing";
+		else
+			menu_array[17].suffix = FindMenuItem(xegame_menu_array, SYSROM_xegame_version)->item;
+
+		menu_array[18].suffix = Atari800_xegs_keyboard ? "attached" : "detached";
+		menu_array[19].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
 
 		option = UI_driver->fSelect("Select System", 0, option, menu_array, NULL);
 		if (option < N_MACHINES)
 			break;
 		switch (option) {
-		case 13:
+		case 14:
 			{
 				UI_tMenuItem *menu_ptr;
 				switch (Atari800_machine_type) {
@@ -380,6 +410,7 @@ static void SelectSystem(void)
 					break;
 				case Atari800_MACHINE_1200:
 				case Atari800_MACHINE_XLXE:
+				case Atari800_MACHINE_XEGS:
 					menu_ptr = ramxl_menu_array;
 					break;
 				}
@@ -391,7 +422,7 @@ static void SelectSystem(void)
 			}
 			leave:
 			break;
-		case 14:
+		case 15:
 			{
 				int rom_available = FALSE;
 				/* Start from index 1, to skip the "Choose automatically" option,
@@ -416,7 +447,7 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 15:
+		case 16:
 			{
 				int rom_available = FALSE;
 				/* Start from index 1, to skip the "Choose automatically" option,
@@ -441,7 +472,35 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 16:
+		case 17:
+			{
+				int rom_available = FALSE;
+				/* Start from index 1, to skip the "Choose automatically" option,
+				   as it can never be hidden. */
+				UI_tMenuItem *menu_ptr = xegame_menu_array + 1;
+				do {
+					if (SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
+						menu_ptr->flags = UI_ITEM_ACTION;
+						rom_available = TRUE;
+					}
+					else
+						menu_ptr->flags = UI_ITEM_HIDDEN;
+				} while ((++menu_ptr)->flags != UI_ITEM_END);
+				if (!rom_available)
+					UI_driver->fMessage("No XEGS game available, ROMs missing", 1);
+				else {
+					option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, SYSROM_xegame_version, xegame_menu_array, NULL);
+					if (option2 >= 0) {
+						SYSROM_xegame_version = option2;
+						need_initialise = TRUE;
+					}
+				}
+			}
+			break;
+		case 18:
+			Atari800_SetXEGSKeyboard(!Atari800_xegs_keyboard);
+			break;
+		case 19:
 			new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
 			break;
 		}
@@ -1516,6 +1575,16 @@ static void ROMLocationsBASIC(void)
 	ROMLocations("BASIC ROM Locations", menu_array);
 }
 
+static void ROMLocationsXEGame(void)
+{
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_FILESEL_PREFIX(SYSROM_XEGAME, " Original:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_XEGAME_CUSTOM, " Custom:", NULL),
+		UI_MENU_END
+	};
+	ROMLocations("XEGS Builtin Game ROM Locations", menu_array);
+}
+
 static void SystemROMSettings(void)
 {
 	static UI_tMenuItem menu_array[] = {
@@ -1524,6 +1593,7 @@ static void SystemROMSettings(void)
 		UI_MENU_SUBMENU(2, "XL/XE OS ROM locations"),
 		UI_MENU_SUBMENU(3, "5200 BIOS ROM locations"),
 		UI_MENU_SUBMENU(4, "BASIC ROM locations"),
+		UI_MENU_SUBMENU(5, "XEGS builtin game ROM locations"),
 		UI_MENU_END
 	};
 
@@ -1561,6 +1631,9 @@ static void SystemROMSettings(void)
 			break;
 		case 4:
 			ROMLocationsBASIC();
+			break;
+		case 5:
+			ROMLocationsXEGame();
 			break;
 		default:
 			return;

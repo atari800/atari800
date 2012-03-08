@@ -75,12 +75,18 @@ map_save save_map[2] = {
 
 UBYTE MEMORY_basic[8192];
 UBYTE MEMORY_os[16384];
+UBYTE MEMORY_xegame[8192];
 
 int MEMORY_xe_bank = 0;
 int MEMORY_selftest_enabled = 0;
 
 static UBYTE under_atarixl_os[16384];
-static UBYTE under_atari_basic[8192];
+static UBYTE under_cart809F[8192];
+static UBYTE under_cartA0BF[8192];
+
+static int cart809F_enabled = FALSE;
+int MEMORY_cartA0BF_enabled = FALSE;
+
 static UBYTE *atarixe_memory = NULL;
 static ULONG atarixe_memory_size = 0;
 
@@ -106,12 +112,6 @@ static int mosaic_ram_size = 0;
 static int mosaic_curbank = 0x3f;
 int MEMORY_mosaic_maxbank = 0;
 int MEMORY_mosaic_enabled = FALSE;
-
-static int cart809F_enabled = FALSE;
-int MEMORY_cartA0BF_enabled = FALSE;
-static UBYTE under_cart809F[8192];
-static UBYTE under_cartA0BF[8192];
-
 
 static void alloc_axlon_memory(void){
 	axlon_curbank = 0;
@@ -186,6 +186,11 @@ void MEMORY_InitialiseMachine(void)
 	ANTIC_xe_ptr = NULL;
 	cart809F_enabled = FALSE;
 	MEMORY_cartA0BF_enabled = FALSE;
+	if (Atari800_features.detects_cartridge) {
+		GTIA_TRIG[3] = 0;
+		if (GTIA_GRACTL & 4)
+			GTIA_TRIG_latch[3] = 0;
+	}
 	memcpy(MEMORY_mem + os_rom_start, MEMORY_os, Atari800_features.os_size);
 	switch (Atari800_machine_type) {
 	case Atari800_MACHINE_5200:
@@ -372,7 +377,7 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 	if (Atari800_features.xl_portb) {
 		if (SaveVerbose != 0)
 			StateSav_SaveUBYTE(&MEMORY_basic[0], 8192);
-		StateSav_SaveUBYTE(&under_atari_basic[0], 8192);
+		StateSav_SaveUBYTE(&under_cartA0BF[0], 8192);
 
 		if (SaveVerbose != 0)
 			StateSav_SaveUBYTE(&MEMORY_os[0], 16384);
@@ -391,6 +396,9 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 	}
 	byte = PIA_PORTB | PIA_PORTB_mask;
 	StateSav_SaveUBYTE(&byte, 1);
+
+	StateSav_SaveINT(&MEMORY_cartA0BF_enabled, 1);
+
 	if (MEMORY_ram_size > 64) {
 		StateSav_SaveUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		if (ANTIC_xe_ptr != NULL && MEMORY_selftest_enabled)
@@ -523,7 +531,7 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 	if (Atari800_features.xl_portb) {
 		if (SaveVerbose != 0)
 			StateSav_ReadUBYTE(&MEMORY_basic[0], 8192);
-		StateSav_ReadUBYTE(&under_atari_basic[0], 8192);
+		StateSav_ReadUBYTE(&under_cartA0BF[0], 8192);
 
 		if (SaveVerbose != 0)
 			StateSav_ReadUBYTE(&MEMORY_os[0], 16384);
@@ -577,6 +585,12 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 		                          && !((portb & 0x30) != 0x30 && MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
 		                          && !((portb & 0x10) == 0 && MEMORY_ram_size == 1088);
 
+		StateSav_ReadINT(&MEMORY_cartA0BF_enabled, 1);
+		if (Atari800_features.detects_cartridge) {
+			GTIA_TRIG[3] = MEMORY_cartA0BF_enabled;
+			if (MEMORY_cartA0BF_enabled == 0 && (GTIA_GRACTL & 4))
+				GTIA_TRIG_latch[3] = 0;
+		}
 	}
 	ANTIC_xe_ptr = NULL;
 	AllocXEMemory();
@@ -630,16 +644,28 @@ void MEMORY_CopyToMem(const UBYTE *from, UWORD to, int size)
 	}
 }
 
-/*
- * Returns non-zero, if Atari BASIC is disabled by given PORTB output.
- * Normally BASIC is disabled by setting bit 1, but it's also disabled
- * when using 576K and 1088K memory expansions, where bit 1 is used
- * for selecting extended memory bank number.
- */
-static int basic_disabled(UBYTE portb)
+
+/* Returns NULL if both builtin BASIC and XEGS game are disabled.
+   Otherwise returns a pointer to an 8KB array containing either
+   BASIC or XEGS game ROM contents. */
+static UBYTE const * builtin_cart(UBYTE portb)
 {
-	return (portb & 0x02) != 0
-	 || ((portb & 0x10) == 0 && (MEMORY_ram_size == 576 || MEMORY_ram_size == 1088));
+	/* Normally BASIC is enabled by clearing bit 1 of PORTB, but it's disabled
+	   when using 576K and 1088K memory expansions, where bit 1 is used for
+	   selecting extended memory bank number. */
+	if (Atari800_features.builtin_basic
+	    && (portb & 0x02) == 0
+	    && ((portb & 0x10) != 0 || (MEMORY_ram_size != 576 && MEMORY_ram_size != 1088)))
+		return MEMORY_basic;
+	/* The builtin XEGS game is disabled when BASIC is enabled. It is enabled
+	   by setting bit 6 of PORTB, but it's disabled when using 320K and larger
+	   XE memory expansions, where bit 6 is used for selecting extended memory
+	   bank number. */
+	if (Atari800_features.builtin_game
+	    && (portb & 0x40) == 0
+	    && ((portb & 0x10) != 0 || MEMORY_ram_size < 320))
+		return MEMORY_xegame;
+	return NULL;
 }
 
 /* Note: this function is only for XL/XE! */
@@ -744,28 +770,25 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 		}
 	}
 
-	/* Enable/disable BASIC ROM in 0xa000-0xbfff */
-	if (!MEMORY_cartA0BF_enabled && Atari800_features.builtin_basic) {
-		/* BASIC is disabled if bit 1 set or accessing extended 576K or 1088K memory */
-		int now_disabled = basic_disabled(byte);
-		if (basic_disabled(oldval) != now_disabled) {
-			if (now_disabled) {
-				/* Disable BASIC ROM */
+	/* Enable/disable BASIC/game ROM in 0xa000-0xbfff */
+	if (!MEMORY_cartA0BF_enabled) {
+		UBYTE const *builtin_cart_new = builtin_cart(byte);
+		UBYTE const *builtin_cart_old = builtin_cart(oldval);
+		if (builtin_cart_old != builtin_cart_new) {
+			if (builtin_cart_old == NULL && MEMORY_ram_size > 40) { /* switching RAM out */
+				memcpy(under_cartA0BF, MEMORY_mem + 0xa000, 0x2000);
+				MEMORY_SetROM(0xa000, 0xbfff);
+			}
+			if (builtin_cart_new == NULL) { /* switching RAM in */
 				if (MEMORY_ram_size > 40) {
-					memcpy(MEMORY_mem + 0xa000, under_atari_basic, 0x2000);
+					memcpy(MEMORY_mem + 0xa000, under_cartA0BF, 0x2000);
 					MEMORY_SetRAM(0xa000, 0xbfff);
 				}
 				else
 					MEMORY_dFillMem(0xa000, 0xff, 0x2000);
 			}
-			else {
-				/* Enable BASIC ROM */
-				if (MEMORY_ram_size > 40) {
-					memcpy(under_atari_basic, MEMORY_mem + 0xa000, 0x2000);
-					MEMORY_SetROM(0xa000, 0xbfff);
-				}
-				memcpy(MEMORY_mem + 0xa000, MEMORY_basic, 0x2000);
-			}
+			else
+				memcpy(MEMORY_mem + 0xa000, builtin_cart_new, 0x2000);
 		}
 	}
 
@@ -918,7 +941,8 @@ void MEMORY_CartA0bfDisable(void)
 	if (MEMORY_cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if (!Atari800_features.builtin_basic || basic_disabled((UBYTE) (PIA_PORTB | PIA_PORTB_mask))) {
+		UBYTE const *builtin = builtin_cart(PIA_PORTB | PIA_PORTB_mask);
+		if (builtin == NULL) { /* switch RAM in */
 			if (MEMORY_ram_size > 40) {
 				memcpy(MEMORY_mem + 0xa000, under_cartA0BF, 0x2000);
 				MEMORY_SetRAM(0xa000, 0xbfff);
@@ -927,7 +951,7 @@ void MEMORY_CartA0bfDisable(void)
 				MEMORY_dFillMem(0xa000, 0xff, 0x2000);
 		}
 		else
-			memcpy(MEMORY_mem + 0xa000, MEMORY_basic, 0x2000);
+			memcpy(MEMORY_mem + 0xa000, builtin, 0x2000);
 		MEMORY_cartA0BF_enabled = FALSE;
 		if (Atari800_features.detects_cartridge) {
 			GTIA_TRIG[3] = 0;
@@ -942,7 +966,7 @@ void MEMORY_CartA0bfEnable(void)
 	if (!MEMORY_cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if (MEMORY_ram_size > 40 && (!Atari800_features.builtin_basic || basic_disabled(PIA_PORTB | PIA_PORTB_mask))) {
+		if (MEMORY_ram_size > 40 && builtin_cart(PIA_PORTB | PIA_PORTB_mask) == NULL) {
 			/* Back-up 0xa000-0xbfff RAM */
 			memcpy(under_cartA0BF, MEMORY_mem + 0xa000, 0x2000);
 			MEMORY_SetROM(0xa000, 0xbfff);
@@ -960,16 +984,12 @@ void MEMORY_GetCharset(UBYTE *cs)
 	case Atari800_MACHINE_800:
 		p = MEMORY_mem + 0xe000;
 		break;
-	case Atari800_MACHINE_1200:
-	case Atari800_MACHINE_XLXE:
-		p = MEMORY_os + 0x2000;
-		break;
 	case Atari800_MACHINE_5200:
 		p = MEMORY_mem + 0xf800;
 		break;
 	default:
-		/* shouldn't happen */
-		return;
+		p = MEMORY_os + 0x2000;
+		break;
 	}
 	/* copy font, but change screencode order to ATASCII order */
 	memcpy(cs, p + 0x200, 0x100); /* control chars */

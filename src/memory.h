@@ -96,6 +96,7 @@ void MEMORY_ROM_PutByte(UWORD addr, UBYTE byte);
 
 extern UBYTE MEMORY_basic[8192];
 extern UBYTE MEMORY_os[16384];
+extern UBYTE MEMORY_xegame[8192];
 
 extern int MEMORY_xe_bank;
 extern int MEMORY_selftest_enabled;

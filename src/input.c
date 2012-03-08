@@ -433,6 +433,12 @@ void INPUT_Frame(void)
 
 	/* handle keyboard */
 
+	if (Atari800_features.detachable_keyboard && !Atari800_xegs_keyboard) {
+		/* Disable keyboard if it's not connedted. */
+		INPUT_key_code = AKEY_NONE;
+		INPUT_key_shift = 0;
+	}
+
 	/* In Atari 5200 joystick there's a second fire button, which acts
 	   like the Shift key in 800/XL/XE (bit 3 in SKSTAT) and generates IRQ
 	   like the Break key (bit 7 in IRQST and IRQEN).
@@ -842,25 +848,17 @@ void INPUT_Frame(void)
 		PIA_PORT_input[0] = 0xf0 | STICK[joy_multijoy_no];
 		PIA_PORT_input[1] = 0xff;
 		GTIA_TRIG[0] = TRIG_input[joy_multijoy_no];
-		GTIA_TRIG[2] = GTIA_TRIG[1] = 1;
-		GTIA_TRIG[3] = Atari800_features.detects_cartridge ? MEMORY_cartA0BF_enabled : 1;
+		GTIA_TRIG[1] = 1;
 	}
 	else {
 		GTIA_TRIG[0] = TRIG_input[0];
 		GTIA_TRIG[1] = TRIG_input[1];
-		if (Atari800_features.four_ports) {
-			GTIA_TRIG[2] = TRIG_input[2];
-			GTIA_TRIG[3] = TRIG_input[3];
-		}
-		else {
-			GTIA_TRIG[2] = 1;
-			if (Atari800_features.detects_cartridge)
-				GTIA_TRIG[3] = MEMORY_cartA0BF_enabled;
-			else
-				GTIA_TRIG[3] = 1;
-		}
 		PIA_PORT_input[0] = (STICK[1] << 4) | STICK[0];
 		PIA_PORT_input[1] = (STICK[3] << 4) | STICK[2];
+	}
+	if (Atari800_features.four_ports) {
+		GTIA_TRIG[2] = TRIG_input[2];
+		GTIA_TRIG[3] = TRIG_input[3];
 	}
 
 #ifdef EVENT_RECORDING

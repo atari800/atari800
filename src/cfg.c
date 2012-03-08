@@ -218,6 +218,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 					Atari800_machine_type = Atari800_MACHINE_1200;
 				else if (strcmp(ptr, "Atari XL/XE") == 0)
 					Atari800_machine_type = Atari800_MACHINE_XLXE;
+				else if (strcmp(ptr, "Atari XEGS") == 0)
+					Atari800_machine_type = Atari800_MACHINE_XEGS;
 				else if (strcmp(ptr, "Atari 5200") == 0)
 					Atari800_machine_type = Atari800_MACHINE_5200;
 				else
@@ -244,6 +246,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				else
 					Log_print("Invalid TV Mode: %s", ptr);
 			}
+			else if (strcmp(string, "XEGS_KEYBOARD") == 0)
+				Atari800_xegs_keyboard = Util_sscanbool(ptr);
 			else if (strcmp(string, "CFG_SAVE_ON_EXIT") == 0) {
 				CFG_save_on_exit = Util_sscanbool(ptr);
 			}
@@ -310,7 +314,7 @@ int CFG_WriteConfig(void)
 	FILE *fp;
 	int i;
 	static const char * const machine_type_string[Atari800_MACHINE_SIZE] = {
-		"400/800", "1200XL", "XL/XE", "5200"
+		"400/800", "1200XL", "XL/XE", "XEGS", "5200"
 	};
 
 	fp = fopen(rtconfig_filename, "w");
@@ -380,6 +384,7 @@ int CFG_WriteConfig(void)
 	fprintf(fp, "SERIO_SOUND=%d\n", POKEYSND_serio_sound_enabled);
 #endif
 #endif /* SOUND */
+	fprintf(fp, "XEGS_KEYBOARD=%d\n", Atari800_xegs_keyboard);
 	fprintf(fp, "CFG_SAVE_ON_EXIT=%d\n", CFG_save_on_exit);
 	/* Add module-specific configurations here */
 	PBI_WriteConfig(fp);

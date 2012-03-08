@@ -9,8 +9,8 @@ atari800 \- emulator of Atari 8-bit computers and the 5200 console
 
 .SH DESCRIPTION
 .B atari800
-emulates the Atari 800, Atari 800XL, Atari 130XE computers and the Atari 5200
-SuperSystem game console.
+emulates the Atari 400/800/XL/XE computers and the Atari XEGS and 5200
+SuperSystem game consoles.
 
 .SH OPTIONS
 
@@ -141,6 +141,39 @@ Use a custom OS.
 .PD
 .RE
 .TP
+\fB\-xegs\-rev auto\fR|\fB10\fR|\fB11\fR|\fB1\fR|\fB2\fR|\fB3\fR|\fB4\fR|\fBcustom\fR
+Select operating system revision for Atari XEGS:
+.PP
+.RS
+.PD 0
+.TP
+.B auto
+The default.
+Use the most appropriate from the available ones.
+.TP
+.B 10
+Use OS AA000000 rev. 10 from early 1200XL units.
+.TP
+.B 11
+Use OS AA000001 rev. 11 from late 1200XL units.
+.TP
+.B 1
+Use OS BB000000 rev. 1 from the 600XL.
+.TP
+.B 2
+Use OS BB000001 rev. 2 from the 800XL and early 65XE/130XE units.
+.TP
+.B 3
+Use OS BB000001 rev. 3 from late 65XE/130XE units.
+.TP
+.B 4
+Use OS BB000001 rev. 4 from the XEGS.
+.TP
+.B custom
+Use a custom OS.
+.PD
+.RE
+.TP
 \fB\-5200\-rev auto\fR|\fBorig\fR|\fBa\fR|\fBcustom\fR
 Select BIOS revision for Atari 5200:
 .PP
@@ -185,6 +218,24 @@ Use BASIC rev. C from late 600XL/800XL and all XE units.
 Use a custom BASIC.
 .PD
 .RE
+.TP
+\fB\-xegame\-rev auto\fR|\fBorig\fR|\fBcustom\fR
+Select XEGS builtin game version:
+.PP
+.RS
+.PD 0
+.TP
+.B auto
+The default.
+Use the most appropriate from the available ones.
+.TP
+.B orig
+Use the original Missile Command game.
+.TP
+.B custom
+Use a custom game ROM.
+.PD
+.RE
 
 .TP
 .B \-atari
@@ -204,6 +255,9 @@ Emulate Atari 320XE (Compy-Shop)
 .TP
 .B \-rambo
 Emulate Atari 320XE (Rambo)
+.TP
+.B \-xegs
+Emulate Atari XEGS
 .TP
 .B \-5200
 Emulate Atari 5200

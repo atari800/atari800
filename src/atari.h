@@ -41,6 +41,7 @@ enum {
 	Atari800_MACHINE_800,
 	Atari800_MACHINE_1200,
 	Atari800_MACHINE_XLXE,
+	Atari800_MACHINE_XEGS,
 	Atari800_MACHINE_5200,
 	/* Number of values in the emumerator */
 	Atari800_MACHINE_SIZE
@@ -55,9 +56,11 @@ typedef struct Atari800_features_t {
 	int right_cartridge; /* has right catridge slot */
 	int xl_portb; /* PORTB is used to switch OS, BASIC and XE RAM */
 	int os_size; /* size of OS ROM in bytes */
-	int detects_cartridge; /* can detect A000-BFFF cartridge by GTIA TRIG3 */
+	int detects_cartridge; /* can detect A000-BFFF cartridge by TRIG3 */
 	int keyboard_leds; /* has 1200XL LEDs L1 and L2 */
 	int f_keys; /* has F1-F4 keys */
+	int builtin_game; /* has built-in XEGS game selectable by PORTB bit 6 */
+	int detachable_keyboard; /* has detachable keyboard detectable by TRIG2 */
 } Atari800_features_t;
 
 /* Current configuration of Atari features. */
@@ -65,6 +68,12 @@ extern Atari800_features_t Atari800_features;
 
 /* Always call Atari800_InitialiseMachine() after changing Atari800_machine_type
    or MEMORY_ram_size! */
+
+/* TRUE if the XEGS keyboard is attached.
+   Used only when Atari800_features.detachable_keyboard == TRUE.
+   Don't change this variable directly; use Atari800_SetXEGSKeyboard() instead. */
+extern int Atari800_xegs_keyboard;
+void Atari800_SetXEGSKeyboard(int value);
 
 /* Video system. */
 #define Atari800_TV_UNSET 0
