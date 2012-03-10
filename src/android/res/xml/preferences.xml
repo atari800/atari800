@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
 		xmlns:android="http://schemas.android.com/apk/res/android"
-		xmlns:jub="http://schemas.android.com/apk/res/name.nick.jubanka.atari800">
+		xmlns:jub="http://schemas.android.com/apk/res/name.nick.jubanka.colleen">
 
 	<PreferenceCategory android:title="@string/preftitle_graphics">
 		<CheckBoxPreference
@@ -40,7 +40,7 @@
 			android:title="@string/pref_collisions"
 			android:summary="@string/pref_collisions_sum"
 			android:defaultValue="true"/>
-		<name.nick.jubanka.atari800.SliderPreference
+		<name.nick.jubanka.colleen.SliderPreference
 			android:key="crophoriz"
 			android:title="@string/pref_crophoriz"
 			android:summary="@string/pref_crophoriz_sum"
@@ -48,7 +48,7 @@
 			jub:suffix=""
 			jub:min="320"
 			jub:max="336"/>
-		<name.nick.jubanka.atari800.SliderPreference
+		<name.nick.jubanka.colleen.SliderPreference
 			android:key="cropvert"
 			android:title="@string/pref_cropvert"
 			android:summary="@string/pref_cropvert_sum"
@@ -120,44 +120,44 @@
 			android:summary="@string/pref_keydefscr_sum"
 			android:dependency="softjoy">
 			<PreferenceCategory android:title="@string/preftitle_keymap_joystick">
-				<name.nick.jubanka.atari800.KeymapPreference
+				<name.nick.jubanka.colleen.KeymapPreference
 					android:key="up"
 					android:title="@string/pref_up"
 					android:defaultValue="254"
 					jub:ext="false"/>
-				<name.nick.jubanka.atari800.KeymapPreference
+				<name.nick.jubanka.colleen.KeymapPreference
 					android:key="down"
 					android:title="@string/pref_down"
 					android:defaultValue="253"
 					jub:ext="false"/>
-				<name.nick.jubanka.atari800.KeymapPreference
+				<name.nick.jubanka.colleen.KeymapPreference
 					android:key="left"
 					android:title="@string/pref_left"
 					android:defaultValue="252"
 					jub:ext="false"/>
-				<name.nick.jubanka.atari800.KeymapPreference
+				<name.nick.jubanka.colleen.KeymapPreference
 					android:key="right"
 					android:title="@string/pref_right"
 					android:defaultValue="251"
 					jub:ext="false"/>
-				<name.nick.jubanka.atari800.KeymapPreference
+				<name.nick.jubanka.colleen.KeymapPreference
 					android:key="fire"
 					android:title="@string/pref_fire"
 					android:defaultValue="50"
 					jub:ext="false"/>
 			</PreferenceCategory>
 			<PreferenceCategory android:title="@string/preftitle_keymap_actions">
-				<name.nick.jubanka.atari800.KeymapPreference
+				<name.nick.jubanka.colleen.KeymapPreference
 					android:key="actiona"
 					android:title="@string/pref_actiona"
 					android:defaultValue="-1,-1"
 					jub:ext="true"/>
-				<name.nick.jubanka.atari800.KeymapPreference
+				<name.nick.jubanka.colleen.KeymapPreference
 					android:key="actionb"
 					android:title="@string/pref_actionb"
 					android:defaultValue="-1,-1"
 					jub:ext="true"/>
-				<name.nick.jubanka.atari800.KeymapPreference
+				<name.nick.jubanka.colleen.KeymapPreference
 					android:key="actionc"
 					android:title="@string/pref_actionc"
 					android:defaultValue="-1,-1"
@@ -180,7 +180,7 @@
 			android:title="@string/pref_joyvisible"
 			android:summary="@string/pref_joyvisible_sum"
 			android:defaultValue="true"/>
-		<name.nick.jubanka.atari800.SliderPreference
+		<name.nick.jubanka.colleen.SliderPreference
 			android:key="joyopacity"
 			android:title="@string/pref_joyopacity"
 			android:summary="@string/pref_joyopacity_sum"
@@ -188,7 +188,7 @@
 			android:defaultValue="25"
 			jub:min="10"
 			jub:max="90"/>
-		<name.nick.jubanka.atari800.SliderPreference
+		<name.nick.jubanka.colleen.SliderPreference
 			android:key="joysize"
 			android:title="@string/pref_joysize"
 			android:summary="@string/pref_joysize_sum"
@@ -205,21 +205,21 @@
 			android:title="@string/pref_anchor"
 			android:summary="@string/pref_anchor_sum"
 			android:defaultValue="false"/>
-		<name.nick.jubanka.atari800.SliderPreference
+		<name.nick.jubanka.colleen.SliderPreference
 			android:key="joymidx"
 			android:title="@string/pref_joymidx"
 			android:summary="@string/pref_joymidx_sum"
 			android:defaultValue="65"
 			jub:min="50"
 			jub:max="80"/>
-		<name.nick.jubanka.atari800.SliderPreference
+		<name.nick.jubanka.colleen.SliderPreference
 			android:key="joydeadband"
 			android:title="@string/pref_joydeadband"
 			android:summary="@string/pref_joydeadband_sum"
 			android:defaultValue="35"
 			jub:min="20"
 			jub:max="60"/>
-		<name.nick.jubanka.atari800.SliderPreference
+		<name.nick.jubanka.colleen.SliderPreference
 			android:key="joygrace"
 			android:title="@string/pref_joygrace"
 			android:summary="@string/pref_joygrace_sum"
@@ -247,7 +247,7 @@
 			android:entryValues="@array/mixrate_values"
 			android:defaultValue="44100"
 			android:dependency="sound"/>
-		<name.nick.jubanka.atari800.SliderPreference
+		<name.nick.jubanka.colleen.SliderPreference
 			android:key="mixbufsize"
 			android:title="@string/pref_mixbufsize"
 			android:summary="@string/pref_mixbufsize_sum"

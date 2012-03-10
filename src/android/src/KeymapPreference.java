@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-package name.nick.jubanka.atari800;
+package name.nick.jubanka.colleen;
 
 import android.preference.DialogPreference;
 import android.content.Context;
@@ -43,7 +43,7 @@ import android.R.style;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import static android.view.KeyEvent.*;
-import static name.nick.jubanka.atari800.A800view.*;
+import static name.nick.jubanka.colleen.A800view.*;
 
 
 public final class KeymapPreference extends DialogPreference

@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-package name.nick.jubanka.atari800;
+package name.nick.jubanka.colleen;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -56,9 +56,9 @@ import android.text.method.LinkMovementMethod;
 
 public final class MainActivity extends Activity
 {
-	public static final String ACTION_INSERT_REBOOT = "name.nick.jubanka.atari800.FileSelector.INSERTREBOOT";
-	public static final String ACTION_INSERT_ONLY   = "name.nick.jubanka.atari800.FileSelector.INSERTONLY";
-	public static final String ACTION_SET_ROMPATH   = "name.nick.jubanka.atari800.FileSelector.SETROMPATH";
+	public static final String ACTION_INSERT_REBOOT = "name.nick.jubanka.colleen.FileSelector.INSERTREBOOT";
+	public static final String ACTION_INSERT_ONLY   = "name.nick.jubanka.colleen.FileSelector.INSERTONLY";
+	public static final String ACTION_SET_ROMPATH   = "name.nick.jubanka.colleen.FileSelector.SETROMPATH";
 
 	private static final String TAG = "MainActivity";
 	private static final int ACTIVITY_FSEL = 1;
@@ -239,7 +239,7 @@ public final class MainActivity extends Activity
 	private PackageInfo getPInfo() {
 		PackageInfo p;
 		try {
-			p = getPackageManager().getPackageInfo("name.nick.jubanka.atari800", 0);
+			p = getPackageManager().getPackageInfo("name.nick.jubanka.colleen", 0);
 		} catch (Exception e) {
 			Log.d(TAG, "Package not found");
 			p = null;

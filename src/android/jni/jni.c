@@ -478,17 +478,17 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	if ((*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2))
 		return JNI_ERR;
 
-	cls = (*env)->FindClass(env, "name/nick/jubanka/atari800/MainActivity");
+	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/MainActivity");
 	(*env)->RegisterNatives(env, cls, main_methods, sizeof(main_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/atari800/A800view");
+	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/A800view");
 	(*env)->RegisterNatives(env, cls, view_methods, sizeof(view_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/atari800/AudioThread");
+	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/AudioThread");
 	(*env)->RegisterNatives(env, cls, snd_methods, sizeof(snd_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/atari800/A800Renderer");
+	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/A800Renderer");
 	(*env)->RegisterNatives(env, cls, render_methods, sizeof(render_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/atari800/FileSelector");
+	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/FileSelector");
 	(*env)->RegisterNatives(env, cls, fsel_methods, sizeof(fsel_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/atari800/Preferences");
+	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/Preferences");
 	(*env)->RegisterNatives(env, cls, pref_methods, sizeof(pref_methods)/sizeof(JNINativeMethod));
 
 	return JNI_VERSION_1_2;

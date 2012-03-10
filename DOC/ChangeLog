@@ -1,3 +1,7 @@
+2012-03-10  Kostas Nakos  <knakos@gmail.com>
+* android/*: Rename android port to Colleen
+
+
 2012-03-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.[ch], cfg.c, input.c, memory.[ch], sysrom.[ch], ui.c, atari800.man,
   DOC/USAGE: Add emulation of the XEGS (builtin game, detachable keyboard).

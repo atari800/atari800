@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Atari800</string>
+    <string name="app_name">Colleen</string>
     <string name="menu_quit">Quit</string>
     <string name="menu_softkbd">Keyboard</string>
     <string name="menu_open">Open</string>
@@ -33,7 +33,7 @@
 									\nYour machine change has been reverted.</string>
 	<string name="noromfound">Failed to initialize machine. Required ROM not found.</string>
     <string name="pressback">Press \'Back\' once more to exit</string>
-    <string name="welcome">Welcome to Atari800!</string>
+    <string name="welcome">Welcome to Colleen!</string>
 	<string name="welcomenote">Hello,\n
 							   \nJust a few tips to get you going:
 							   \n1) Left hand joystick, right hand trigger (or search button).
@@ -63,7 +63,7 @@
     <string name="selectdir">Select directory</string>
 	<string name="rompatherror">Failed to initialize machine.\n
 							  \nRequired ROM not found or path not accessible.</string>
-	<string name="about">Atari800</string>
+	<string name="about">Colleen</string>
 	<string name="aboutmsg"><![CDATA[
 							<html><head></head><body>
 							<p align="right"><font size="-1"><b>Package version:</b>%s<br>
@@ -72,8 +72,11 @@
 								<a href="http://pocketatari.atari.org/android">
 										http://pocketatari.atari.org/android</a><br>
 								Copyright &copy; 1995-1998 <i>David Firth</i><br>
-								Copyright &copy; 1998-2011 <i>Atari800 Development Team</i><br>
+								Copyright &copy; 1998-2012 <i>Atari800 Development Team</i><br>
 								<a href="http://atari800.atari.org">http://atari800.atari.org</a></p>
+							<p align="justify"><font size="-1">This program is not affiliated with Atari Inc.
+								Atari and the Atari logo are trademarks owned by Atari Interactive, Inc.
+								All other trademarks are the property of their respective owners.</font></p>
 							<p align="justify"><font size="-1">This program is free software; you can
 								redistribute it	and/or modify it under the terms of the GNU General 
 								Public License as published by the Free Software Foundation; either
@@ -114,7 +117,7 @@
 							<br><b>*</b> Several bug fixes and improvements
 							<br><br>Thank you for your continued support and bug/feature reports :-)
 							]]></string>
-	<string name="atariupdate">Atari800 Update</string>
+	<string name="atariupdate">Colleen Update</string>
 
 	<!-- Preferences -->
 	<string name="preftitle_graphics">Graphics</string>
@@ -217,7 +220,7 @@
 	<string name="pref_rompath">Atari ROM Path</string>
 	<string name="pref_rompath_sum">Set directory containing the ROM images</string>
 	<string name="pref_about">About</string>
-	<string name="pref_about_sum">Atari800 credits</string>
+	<string name="pref_about_sum">Colleen credits</string>
 	<string name="pref_help">Help</string>
 	<string name="pref_help_sum">Android port instructions</string>
 	<string name="pref_anchor">Anchor Joystick</string>
