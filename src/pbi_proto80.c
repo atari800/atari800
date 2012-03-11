@@ -35,7 +35,7 @@
 #define PROTO80_MASK (1 << PROTO80_PBI_NUM)
 
 static UBYTE *proto80rom;
-static char proto80_rom_filename[FILENAME_MAX] = "";
+static char proto80_rom_filename[FILENAME_MAX];
 
 int PBI_PROTO80_enabled = FALSE;
 

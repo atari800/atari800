@@ -46,8 +46,8 @@
 
 static UBYTE *voicerom;
 static UBYTE *diskrom;
-static char xld_d_rom_filename[FILENAME_MAX] = "";
-static char xld_v_rom_filename[FILENAME_MAX] = "";
+static char xld_d_rom_filename[FILENAME_MAX];
+static char xld_v_rom_filename[FILENAME_MAX];
 
 static UBYTE votrax_latch = 0;
 static UBYTE modem_latch = 0;

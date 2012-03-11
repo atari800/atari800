@@ -2236,7 +2236,7 @@ int MONITOR_Run(void)
 
 	for (;;) {
 		char s[128];
-		static char old_s[128] = "";
+		static char old_s[128];
 		char *t;
 
 		safe_gets(s, sizeof(s), "> ");

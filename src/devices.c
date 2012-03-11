@@ -479,7 +479,7 @@ static UBYTE Devices_RemoveDirectory(const char *filename)
 static int devbug = FALSE;
 
 /* host path for each H: unit */
-char Devices_atari_h_dir[4][FILENAME_MAX] = { "", "", "", "" };
+char Devices_atari_h_dir[4][FILENAME_MAX];
 
 /* read only mode for H: device */
 int Devices_h_read_only = TRUE;

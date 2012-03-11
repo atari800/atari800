@@ -59,14 +59,14 @@ static UBYTE pending_serin_byte = 0xff;
 /* Byte most recently loaded from tape; will be accessed by SIO_GetByte(). */
 static UBYTE serin_byte = 0xff;
 
-char CASSETTE_filename[FILENAME_MAX] = "";
+char CASSETTE_filename[FILENAME_MAX];
 CASSETTE_status_t CASSETTE_status = CASSETTE_STATUS_NONE;
 int CASSETTE_write_protect = FALSE;
 int CASSETTE_record = FALSE;
 static int cassette_writable = FALSE;
 static int cassette_readable = FALSE;
 
-char CASSETTE_description[CASSETTE_DESCRIPTION_MAX] = "";
+char CASSETTE_description[CASSETTE_DESCRIPTION_MAX];
 static int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
 static int cassette_motor = 0;
 

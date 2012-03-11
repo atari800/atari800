@@ -2,6 +2,13 @@
 * pia.c: Fix recently-introduced bug with MEMORY_cartA0BF_enabled being saved
   twice in savestates - in both memory.c and pia.c.
 
+* af80.c, cassette.c, devices.c, log.c, monitor.c, pbi_bb.c, pbi_mio.c,
+  pbi_proto80.c, pbi_xld.c, sysrom.c, ui.c, xep80.c, wince/port/missing.c:
+  Remove initialisation of local-static and global arrays to "", to prevent
+  them ending up in .data segment instead of .bss on some architectures/
+  compilers (android-arm). The C standard requires them to be initialised with
+  zeroes at runtime, so initialisation with "" is not needed.
+
 
 2012-03-10  Kostas Nakos  <knakos@gmail.com>
 * android/*: Rename android port to Colleen

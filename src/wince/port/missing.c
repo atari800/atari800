@@ -41,7 +41,7 @@ FILE *tmpfile()
 	return _wfopen(pTemp, TEXT("w+b"));
 }
 
-char cwd[MAX_PATH+1] = "";
+char cwd[MAX_PATH+1];
 char *getcwd(char *buffer, int maxlen)
 {
 	TCHAR fileUnc[MAX_PATH+1];

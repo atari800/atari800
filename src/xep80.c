@@ -184,7 +184,7 @@ UBYTE (*font)[XEP80_FONTS_CHAR_COUNT][XEP80_MAX_CHAR_HEIGHT][XEP80_CHAR_WIDTH];
 /* Path to the XEP80's charset ROM image, marked as U12 on Jerzy Sobola's
    schematic: http://www.dereatari.republika.pl/schematy.htm
    The ROM image is also available there. */
-static char charset_filename[FILENAME_MAX] = "";
+static char charset_filename[FILENAME_MAX];
 
 static void UpdateTVSystem(void)
 {

@@ -595,8 +595,8 @@ static void DiskManagement(void)
 	int dsknum = 0;
 
 	for (;;) {
-		static char disk_filename[FILENAME_MAX] = "";
-		static char set_filename[FILENAME_MAX] = "";
+		static char disk_filename[FILENAME_MAX];
+		static char set_filename[FILENAME_MAX];
 		int i;
 		int seltype;
 
@@ -898,7 +898,7 @@ static void CartManagement(void)
 	int seltype;
 
 	for (;;) {
-		static char cart_filename[FILENAME_MAX] = "";
+		static char cart_filename[FILENAME_MAX];
 		
 		if (CARTRIDGE_main.type == CARTRIDGE_NONE) {
 			menu_array[2].item = "None";
@@ -1133,7 +1133,7 @@ static void SoundRecording(void)
 
 static int AutostartFile(void)
 {
-	static char filename[FILENAME_MAX] = "";
+	static char filename[FILENAME_MAX];
 	if (UI_driver->fGetLoadFilename(filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
 		if (AFILE_OpenFile(filename, TRUE, 1, FALSE))
 			return TRUE;
@@ -1814,7 +1814,7 @@ static void AtariSettings(void)
 	}
 }
 
-static char state_filename[FILENAME_MAX] = "";
+static char state_filename[FILENAME_MAX];
 
 static void SaveState(void)
 {
@@ -2462,7 +2462,7 @@ static void NTSCFilterSettings(void)
    by user. */
 static void SavePalette(void)
 {
-	static char filename[FILENAME_MAX] = "";
+	static char filename[FILENAME_MAX];
 	if (UI_driver->fGetSaveFilename(filename, UI_saved_files_dir, UI_n_saved_files_dir)) {
 		UI_driver->fMessage("Please wait while saving...", 0);
 		if (!Colours_Save(filename))
@@ -3546,7 +3546,7 @@ static int SoundSettings(void)
 
 static void Screenshot(int interlaced)
 {
-	static char filename[FILENAME_MAX] = "";
+	static char filename[FILENAME_MAX];
 	if (UI_driver->fGetSaveFilename(filename, UI_saved_files_dir, UI_n_saved_files_dir)) {
 #ifdef USE_CURSES
 		/* must clear, otherwise in case of a failure we'll see parts

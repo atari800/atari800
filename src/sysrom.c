@@ -44,26 +44,26 @@ int SYSROM_os_versions[Atari800_MACHINE_SIZE] = { SYSROM_AUTO, SYSROM_AUTO, SYSR
 int SYSROM_basic_version = SYSROM_AUTO;
 int SYSROM_xegame_version = SYSROM_AUTO;
 
-static char osa_ntsc_filename[FILENAME_MAX] = "";
-static char osa_pal_filename[FILENAME_MAX] = "";
-static char osb_ntsc_filename[FILENAME_MAX] = "";
-static char osaa00r10_filename[FILENAME_MAX] = "";
-static char osaa01r11_filename[FILENAME_MAX] = "";
-static char osbb00r1_filename[FILENAME_MAX] = "";
-static char osbb01r2_filename[FILENAME_MAX] = "";
-static char osbb01r3_filename[FILENAME_MAX] = "";
-static char osbb01r4_filename[FILENAME_MAX] = "";
-static char os5200a_filename[FILENAME_MAX] = "";
-static char os5200b_filename[FILENAME_MAX] = "";
-static char basica_filename[FILENAME_MAX] = "";
-static char basicb_filename[FILENAME_MAX] = "";
-static char basicc_filename[FILENAME_MAX] = "";
-static char xegame_filename[FILENAME_MAX] = "";
-static char os800_custom_filename[FILENAME_MAX] = "";
-static char osxl_custom_filename[FILENAME_MAX] = "";
-static char os5200_custom_filename[FILENAME_MAX] = "";
-static char basic_custom_filename[FILENAME_MAX] = "";
-static char xegame_custom_filename[FILENAME_MAX] = "";
+static char osa_ntsc_filename[FILENAME_MAX];
+static char osa_pal_filename[FILENAME_MAX];
+static char osb_ntsc_filename[FILENAME_MAX];
+static char osaa00r10_filename[FILENAME_MAX];
+static char osaa01r11_filename[FILENAME_MAX];
+static char osbb00r1_filename[FILENAME_MAX];
+static char osbb01r2_filename[FILENAME_MAX];
+static char osbb01r3_filename[FILENAME_MAX];
+static char osbb01r4_filename[FILENAME_MAX];
+static char os5200a_filename[FILENAME_MAX];
+static char os5200b_filename[FILENAME_MAX];
+static char basica_filename[FILENAME_MAX];
+static char basicb_filename[FILENAME_MAX];
+static char basicc_filename[FILENAME_MAX];
+static char xegame_filename[FILENAME_MAX];
+static char os800_custom_filename[FILENAME_MAX];
+static char osxl_custom_filename[FILENAME_MAX];
+static char os5200_custom_filename[FILENAME_MAX];
+static char basic_custom_filename[FILENAME_MAX];
+static char xegame_custom_filename[FILENAME_MAX];
 
 /* Indicates an unknown checksum - an entry with this value will not be tested for checksum.
    Choosea value different than any know checksum in SYSROM_roms. */

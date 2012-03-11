@@ -43,7 +43,7 @@
 #endif
 
 #ifdef BUFFERED_LOG
-char Log_buffer[Log_BUFFER_SIZE] = "";
+char Log_buffer[Log_BUFFER_SIZE];
 #endif
 
 void Log_print(char *format, ...)
