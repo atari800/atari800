@@ -181,8 +181,6 @@ void PIA_StateSave(void)
 	StateSav_SaveUBYTE( &PIA_PORTA, 1 );
 	StateSav_SaveUBYTE( &PIA_PORTB, 1 );
 
-	StateSav_SaveINT( &MEMORY_cartA0BF_enabled, 1 );
-
 	StateSav_SaveUBYTE( &PIA_PORTA_mask, 1 );
 	StateSav_SaveUBYTE( &PIA_PORTB_mask, 1 );
 }
@@ -213,9 +211,8 @@ void PIA_StateRead(UBYTE version)
 			if (Ram256 == 1 && MEMORY_ram_size == MEMORY_RAM_320_COMPY_SHOP)
 				MEMORY_ram_size = MEMORY_RAM_320_RAMBO;
 		}
+		StateSav_ReadINT( &MEMORY_cartA0BF_enabled, 1 );
 	}
-
-	StateSav_ReadINT( &MEMORY_cartA0BF_enabled, 1 );
 
 	StateSav_ReadUBYTE( &PIA_PORTA_mask, 1 );
 	StateSav_ReadUBYTE( &PIA_PORTB_mask, 1 );
