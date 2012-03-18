@@ -1,3 +1,10 @@
+2012-03-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.c, emuos.[ch], memory.c, Makefile.in, android/jni/Amdroid.mk.in,
+  dc/Makefile.dc, win32/msc/Makefile: Always take UI font from EMUOS - fixes
+  missing font when running the emulator in 5200 mode without configured OS
+  ROMs.
+
+
 2012-03-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * pia.c: Fix recently-introduced bug with MEMORY_cartA0BF_enabled being saved
   twice in savestates - in both memory.c and pia.c.
