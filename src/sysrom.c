@@ -40,7 +40,7 @@
 #include "memory.h"
 #include "util.h"
 
-int SYSROM_os_versions[Atari800_MACHINE_SIZE] = { SYSROM_AUTO, SYSROM_AUTO, SYSROM_AUTO, SYSROM_AUTO, SYSROM_AUTO };
+int SYSROM_os_versions[Atari800_MACHINE_SIZE] = { SYSROM_AUTO, SYSROM_AUTO, SYSROM_AUTO };
 int SYSROM_basic_version = SYSROM_AUTO;
 int SYSROM_xegame_version = SYSROM_AUTO;
 
@@ -353,23 +353,24 @@ int SYSROM_AutoChooseOS(int machine_type, int ram_size, int tv_system)
 		else
 			order = autochoose_order_800_pal;
 		break;
-	case Atari800_MACHINE_1200:
-		order = autochoose_order_1200xl;
-		break;
 	case Atari800_MACHINE_XLXE:
-		switch (ram_size) {
-		case 16:
-			order = autochoose_order_600xl;
-			break;
-		case 64:
-			order = autochoose_order_800xl;
-			break;
-		default:
-			order = autochoose_order_xe;
+		if (Atari800_builtin_game)
+			order = autochoose_order_xegs;
+		else if (!Atari800_builtin_basic)
+			order = autochoose_order_1200xl;
+		else {
+			switch (ram_size) {
+			case 16:
+				order = autochoose_order_600xl;
+				break;
+			case 64:
+				order = autochoose_order_800xl;
+				break;
+			default:
+				order = autochoose_order_xe;
+				break;
+			}
 		}
-		break;
-	case Atari800_MACHINE_XEGS:
-		order = autochoose_order_xegs;
 		break;
 	default: /* Atari800_MACHINE_5200 */
 		order = autochoose_order_5200;
@@ -459,16 +460,8 @@ int SYSROM_ReadConfig(char *string, char *ptr)
 		if (!MatchROMVersionParameter(ptr, autochoose_order_800_ntsc, &SYSROM_os_versions[Atari800_MACHINE_800]))
 			return FALSE;
 	}
-	else if (strcmp(string, "OS_1200XL_VERSION") == 0) {
-		if (!MatchROMVersionParameter(ptr, autochoose_order_1200xl, &SYSROM_os_versions[Atari800_MACHINE_1200]))
-			return FALSE;
-	}
 	else if (strcmp(string, "OS_XL/XE_VERSION") == 0) {
 		if (!MatchROMVersionParameter(ptr, autochoose_order_600xl, &SYSROM_os_versions[Atari800_MACHINE_XLXE]))
-			return FALSE;
-	}
-	else if (strcmp(string, "OS_XEGS_VERSION") == 0) {
-		if (!MatchROMVersionParameter(ptr, autochoose_order_xegs, &SYSROM_os_versions[Atari800_MACHINE_XEGS]))
 			return FALSE;
 	}
 	else if (strcmp(string, "OS_5200_VERSION") == 0) {
@@ -516,9 +509,7 @@ void SYSROM_WriteConfig(FILE *fp)
 			fprintf(fp, "%s=%s\n", cfg_strings[id], SYSROM_roms[id].filename);
 	}
 	fprintf(fp, "OS_400/800_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_800]]);
-	fprintf(fp, "OS_1200XL_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_1200]]);
 	fprintf(fp, "OS_XL/XE_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_XLXE]]);
-	fprintf(fp, "OS_XEGS_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_XEGS]]);
 	fprintf(fp, "OS_5200_VERSION=%s\n", cfg_strings_rev[SYSROM_os_versions[Atari800_MACHINE_5200]]);
 	fprintf(fp, "BASIC_VERSION=%s\n", cfg_strings_rev[SYSROM_basic_version]);
 	fprintf(fp, "XEGS_GAME_VERSION=%s\n", cfg_strings_rev[SYSROM_xegame_version]);
@@ -576,23 +567,9 @@ int SYSROM_Initialise(int *argc, char *argv[])
 			}
 			else a_m= TRUE;
 		}
-		else if (strcmp(argv[i], "-1200-rev") == 0) {
-			if (i_a) {
-				if (!MatchROMVersionParameter(argv[++i], autochoose_order_1200xl, &SYSROM_os_versions[Atari800_MACHINE_1200]))
-					a_i = TRUE;
-			}
-			else a_m= TRUE;
-		}
 		else if (strcmp(argv[i], "-xl-rev") == 0) {
 			if (i_a) {
 				if (!MatchROMVersionParameter(argv[++i], autochoose_order_600xl, &SYSROM_os_versions[Atari800_MACHINE_XLXE]))
-					a_i = TRUE;
-			}
-			else a_m= TRUE;
-		}
-		else if (strcmp(argv[i], "-xegs-rev") == 0) {
-			if (i_a) {
-				if (!MatchROMVersionParameter(argv[++i], autochoose_order_xegs, &SYSROM_os_versions[Atari800_MACHINE_XEGS]))
 					a_i = TRUE;
 			}
 			else a_m= TRUE;
@@ -627,12 +604,8 @@ int SYSROM_Initialise(int *argc, char *argv[])
 				Log_print("\t-basic_rom <file> Load BASIC ROM from file");
 				Log_print("\t-800-rev auto|a-ntsc|a-pal|b-ntsc|custom");
 				Log_print("\t                  Select 400/800 OS revision");
-				Log_print("\t-1200-rev auto|10|11|1|2|3|4|custom");
-				Log_print("\t                  Select 1200XL OS revision");
 				Log_print("\t-xl-rev auto|10|11|1|2|3|4|custom");
 				Log_print("\t                  Select XL/XE OS revision");
-				Log_print("\t-xegs-rev auto|10|11|1|2|3|4|custom");
-				Log_print("\t                  Select XEGS OS revision");
 				Log_print("\t-5200-rev auto|orig|a|custom");
 				Log_print("\t                  Select 5200 OS revision");
 				Log_print("\t-basic-rev auto|a|b|c|custom");

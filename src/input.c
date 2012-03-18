@@ -433,7 +433,7 @@ void INPUT_Frame(void)
 
 	/* handle keyboard */
 
-	if (Atari800_features.detachable_keyboard && !Atari800_xegs_keyboard) {
+	if (Atari800_keyboard_detached) {
 		/* Disable keyboard if it's not connedted. */
 		INPUT_key_code = AKEY_NONE;
 		INPUT_key_shift = 0;
@@ -617,7 +617,7 @@ void INPUT_Frame(void)
 		if(!INPUT_direct_mouse) {
 			for (i = 0; i < 4; i++)
 				POKEY_POT_input[i] = Atari_POT(i);
-			if (Atari800_features.four_ports) {
+			if (Atari800_machine_type != Atari800_MACHINE_XLXE) {
 				for (i = 4; i < 8; ++i)
 					POKEY_POT_input[i] = Atari_POT(i);
 			}
@@ -861,7 +861,7 @@ void INPUT_Frame(void)
 		PIA_PORT_input[0] = (STICK[1] << 4) | STICK[0];
 		PIA_PORT_input[1] = (STICK[3] << 4) | STICK[2];
 	}
-	if (Atari800_features.four_ports) {
+	if (Atari800_machine_type != Atari800_MACHINE_XLXE) {
 		GTIA_TRIG[2] = TRIG_input[2];
 		GTIA_TRIG[3] = TRIG_input[3];
 	}

@@ -195,13 +195,8 @@ static const char * const created = "Created \"%s\"";
 #define CantSave(filename) FilenameMessage(cant_save, filename)
 #define Created(filename) FilenameMessage(created, filename)
 
-static void SelectSystem(void)
+static void SystemSettings(void)
 {
-	typedef struct {
-		int type;
-		int ram;
-	} tSysConfig;
-
 	static UI_tMenuItem ram800_menu_array[] = {
 		UI_MENU_ACTION(8, "8 KB"),
 		UI_MENU_ACTION(16, "16 KB"),
@@ -254,8 +249,6 @@ static void SelectSystem(void)
 	static UI_tMenuItem * const os_menu_arrays[Atari800_MACHINE_SIZE] = {
 		os800_menu_array,
 		osxl_menu_array,
-		osxl_menu_array,
-		osxl_menu_array,
 		os5200_menu_array
 	};
 	static UI_tMenuItem basic_menu_array[] = {
@@ -267,6 +260,7 @@ static void SelectSystem(void)
 		UI_MENU_END
 	};
 	static UI_tMenuItem xegame_menu_array[] = {
+		UI_MENU_ACTION(0, "None"),
 		UI_MENU_ACTION(SYSROM_AUTO, "Choose automatically"),
 		UI_MENU_ACTION(SYSROM_XEGAME, "Missile Command"),
 		UI_MENU_ACTION(SYSROM_XEGAME_CUSTOM, "Custom"),
@@ -279,160 +273,197 @@ static void SelectSystem(void)
 		UI_MENU_ACTION(3, "J4:"),
 		UI_MENU_END
 	};
-	static UI_tMenuItem menu_array[] = {
+	static struct {
+		int type;
+		int ram;
+		int basic;
+		int leds;
+		int f_keys;
+		int jumpers;
+		int game;
+		int keyboard;
+	} const machine[] = {
+		{ Atari800_MACHINE_800, 16, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE },
+		{ Atari800_MACHINE_800, 48, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE },
+		{ Atari800_MACHINE_XLXE, 64, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE },
+		{ Atari800_MACHINE_XLXE, 16, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE },
+		{ Atari800_MACHINE_XLXE, 64, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE },
+		{ Atari800_MACHINE_XLXE, 128, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE },
+		{ Atari800_MACHINE_XLXE, 64, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE },
+		{ Atari800_MACHINE_5200, 16, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE }
+	};
+	static UI_tMenuItem machine_menu_array[] = {
 		UI_MENU_ACTION(0, "Atari 400 (16 KB)"),
 		UI_MENU_ACTION(1, "Atari 800 (48 KB)"),
-		UI_MENU_ACTION(2, "Atari 800 (52 KB)"),
-		UI_MENU_ACTION(3, "Atari 1200XL (64 KB)"),
-		UI_MENU_ACTION(4, "Atari 600XL (16 KB)"),
-		UI_MENU_ACTION(5, "Atari 800XL (64 KB)"),
-		UI_MENU_ACTION(6, "Atari 130XE (128 KB)"),
-		UI_MENU_ACTION(7, "Atari XL/XE (192 KB)"),
-		UI_MENU_ACTION(8, "Atari XL/XE (320 KB RAMBO)"),
-		UI_MENU_ACTION(9, "Atari XL/XE (320 KB COMPY SHOP)"),
-		UI_MENU_ACTION(10, "Atari XL/XE (576 KB)"),
-		UI_MENU_ACTION(11, "Atari XL/XE (1088 KB)"),
-		UI_MENU_ACTION(12, "Atari XEGS (64 KB)"),
-		UI_MENU_ACTION(13, "Atari 5200 (16 KB)"),
-		UI_MENU_SUBMENU_SUFFIX(14, "RAM size:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(15, "OS version:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(16, "BASIC version:", NULL),
-		UI_MENU_SUBMENU_SUFFIX(17, "XEGS game:", NULL),
-		UI_MENU_SUBMENU(18, "1200XL option jumpers"),
-		UI_MENU_ACTION(19, "XEGS keyboard:"),
-		UI_MENU_ACTION(20, "Video system:"),
+		UI_MENU_ACTION(2, "Atari 1200XL (64 KB)"),
+		UI_MENU_ACTION(3, "Atari 600XL (16 KB)"),
+		UI_MENU_ACTION(4, "Atari 800XL (64 KB)"),
+		UI_MENU_ACTION(5, "Atari 130XE (128 KB)"),
+		UI_MENU_ACTION(6, "Atari XEGS (64 KB)"),
+		UI_MENU_ACTION(7, "Atari 5200 (16 KB)"),
+		UI_MENU_END
+	};
+	enum { N_MACHINES = (int) (sizeof(machine) / sizeof(machine[0])) };
+
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_SUBMENU_SUFFIX(0, "Machine:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(1, "OS version:", NULL),
+		UI_MENU_ACTION(2, "BASIC:"),
+		UI_MENU_SUBMENU_SUFFIX(3, "BASIC version:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(4, "XEGS game:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(5, "RAM size:", NULL),
+		UI_MENU_ACTION(6, "Video system:"),
+		UI_MENU_SUBMENU(7, "1200XL keyboard LEDs:"),
+		UI_MENU_ACTION(8, "1200XL F1-F4 keys:"),
+		UI_MENU_ACTION(9, "1200XL option jumpers"),
+		UI_MENU_ACTION(10, "Keyboard:"),
 		UI_MENU_END
 	};
 
-	static const tSysConfig machine[] = {
-		{ Atari800_MACHINE_800, 16 },
-		{ Atari800_MACHINE_800, 48 },
-		{ Atari800_MACHINE_800, 52 },
-		{ Atari800_MACHINE_1200, 64 },
-		{ Atari800_MACHINE_XLXE, 16 },
-		{ Atari800_MACHINE_XLXE, 64 },
-		{ Atari800_MACHINE_XLXE, 128 },
-		{ Atari800_MACHINE_XLXE, 192 },
-		{ Atari800_MACHINE_XLXE, MEMORY_RAM_320_RAMBO },
-		{ Atari800_MACHINE_XLXE, MEMORY_RAM_320_COMPY_SHOP },
-		{ Atari800_MACHINE_XLXE, 576 },
-		{ Atari800_MACHINE_XLXE, 1088 },
-		{ Atari800_MACHINE_XEGS, 64 },
-		{ Atari800_MACHINE_5200, 16 }
-	};
-
-#define N_MACHINES  ((int) (sizeof(machine) / sizeof(machine[0])))
-
 	/* Size must be long enough to store "<longest OS label> (auto)". */
-	static char default_os_label[29];
+	char default_os_label[29];
 	/* Size must be long enough to store "<longest BASIC label> (auto)". */
-	static char default_basic_label[14];
+	char default_basic_label[14];
 	/* Size must be long enough to store "<longest XEGAME label> (auto)". */
-	static char default_xegame_label[23];
+	char default_xegame_label[23];
 
 	int option = 0;
 	int option2 = 0;
 	int new_tv_mode = Atari800_tv_mode;
 	int need_initialise = FALSE;
 
-	int i;
-	for (i = 0; i < N_MACHINES; i++)
-		if (Atari800_machine_type == machine[i].type && MEMORY_ram_size == machine[i].ram) {
-			option = i;
-			break;
+	for (;;) {
+		int sys_id;
+		/* Set label for the "Machine" action. */
+		for (sys_id = 0; sys_id < N_MACHINES; ++sys_id) {
+			if (Atari800_machine_type == machine[sys_id].type
+			    && MEMORY_ram_size == machine[sys_id].ram
+			    && Atari800_builtin_basic == machine[sys_id].basic
+			    && Atari800_keyboard_leds == machine[sys_id].leds
+			    && Atari800_f_keys == machine[sys_id].f_keys
+			    && (machine[sys_id].jumpers || !(Atari800_jumpers[0] | Atari800_jumpers[1] | Atari800_jumpers[2] | Atari800_jumpers[3]))
+			    && Atari800_builtin_game == machine[sys_id].game
+			    && (machine[sys_id].keyboard || !Atari800_keyboard_detached)) {
+				menu_array[0].suffix = machine_menu_array[sys_id].item;
+				break;
+			}
+		}
+		if (sys_id >= N_MACHINES) { /* Loop ended without break */
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE)
+				menu_array[0].suffix = "Custom XL/XE";
+			else
+				menu_array[0].suffix = "Custom 400/800";
 		}
 
-	for (;;) {
-		/* Set label for the "RAM size" action. */
-		switch (Atari800_machine_type) {
-		case Atari800_MACHINE_800:
-			menu_array[14].suffix = FindMenuItem(ram800_menu_array, MEMORY_ram_size)->item;
-			break;
-		case Atari800_MACHINE_1200:
-		case Atari800_MACHINE_XLXE:
-		case Atari800_MACHINE_XEGS:
-			menu_array[14].suffix = FindMenuItem(ramxl_menu_array, MEMORY_ram_size)->item;
-			break;
-		case Atari800_MACHINE_5200:
-			menu_array[14].suffix = "16 KB";
-			break;
-		}
 		/* Set label for the "OS version" action. */
 		if (SYSROM_os_versions[Atari800_machine_type] == SYSROM_AUTO) {
 			int auto_os = SYSROM_AutoChooseOS(Atari800_machine_type, MEMORY_ram_size, new_tv_mode);
 			if (auto_os == -1)
-				menu_array[15].suffix = "ROM missing";
+				menu_array[1].suffix = "ROM missing";
 			else {
 				sprintf(default_os_label, "%s (auto)", FindMenuItem(os_menu_arrays[Atari800_machine_type], auto_os)->item);
-				menu_array[15].suffix = default_os_label;
+				menu_array[1].suffix = default_os_label;
 			}
 		}
 		else if (SYSROM_roms[SYSROM_os_versions[Atari800_machine_type]].filename[0] == '\0')
-			menu_array[15].suffix = "ROM missing";
+			menu_array[1].suffix = "ROM missing";
 		else
-			menu_array[15].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
+			menu_array[1].suffix = FindMenuItem(os_menu_arrays[Atari800_machine_type], SYSROM_os_versions[Atari800_machine_type])->item;
+
+		/* Set label for the "BASIC" action. */
+		menu_array[2].suffix = Atari800_machine_type == Atari800_MACHINE_5200
+		                       ? "N/A"
+		                       : Atari800_builtin_basic ? "built in" : "external";
 
 		/* Set label for the "BASIC version" action. */
-		if (SYSROM_basic_version == SYSROM_AUTO) {
-			int auto_basic = SYSROM_AutoChooseBASIC();
-			if (auto_basic == -1)
-				menu_array[16].suffix = "ROM missing";
+		if (Atari800_machine_type == Atari800_MACHINE_5200)
+			menu_array[3].suffix = "N/A";
+		else {
+			if (SYSROM_basic_version == SYSROM_AUTO) {
+				int auto_basic = SYSROM_AutoChooseBASIC();
+				if (auto_basic == -1)
+					menu_array[3].suffix = "ROM missing";
+				else {
+					sprintf(default_basic_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_basic)->item);
+					menu_array[3].suffix = default_basic_label;
+				}
+			}
+			else if (SYSROM_roms[SYSROM_basic_version].filename[0] == '\0')
+				menu_array[3].suffix = "ROM missing";
 			else {
-				sprintf(default_basic_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_basic)->item);
-				menu_array[16].suffix = default_basic_label;
+				menu_array[3].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
 			}
 		}
-		else if (SYSROM_roms[SYSROM_basic_version].filename[0] == '\0')
-			menu_array[16].suffix = "ROM missing";
-		else
-			menu_array[16].suffix = FindMenuItem(basic_menu_array, SYSROM_basic_version)->item;
 
 		/* Set label for the "Builtin XEGS game" action. */
-		if (SYSROM_xegame_version == SYSROM_AUTO) {
-			int auto_xegame = SYSROM_AutoChooseXEGame();
-			if (auto_xegame == -1)
-				menu_array[17].suffix = "ROM missing";
-			else {
-				sprintf(default_xegame_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_xegame)->item);
-				menu_array[17].suffix = default_xegame_label;
+		if (Atari800_machine_type != Atari800_MACHINE_XLXE)
+			menu_array[4].suffix = "N/A";
+		else if (Atari800_builtin_game) {
+			if (SYSROM_xegame_version == SYSROM_AUTO) {
+				int auto_xegame = SYSROM_AutoChooseXEGame();
+				if (auto_xegame == -1)
+					menu_array[4].suffix = "ROM missing";
+				else {
+					sprintf(default_xegame_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_xegame)->item);
+					menu_array[4].suffix = default_xegame_label;
+				}
 			}
+			else if (SYSROM_roms[SYSROM_xegame_version].filename[0] == '\0')
+				menu_array[4].suffix = "ROM missing";
+			else
+				menu_array[4].suffix = FindMenuItem(xegame_menu_array, SYSROM_xegame_version)->item;
 		}
-		else if (SYSROM_roms[SYSROM_xegame_version].filename[0] == '\0')
-			menu_array[17].suffix = "ROM missing";
 		else
-			menu_array[17].suffix = FindMenuItem(xegame_menu_array, SYSROM_xegame_version)->item;
+			menu_array[4].suffix = xegame_menu_array[0].item;
 
-		menu_array[19].suffix = Atari800_xegs_keyboard ? "attached" : "detached";
-		menu_array[20].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
-
-		option = UI_driver->fSelect("Select System", 0, option, menu_array, NULL);
-		if (option < N_MACHINES)
+		/* Set label for the "RAM size" action. */
+		switch (Atari800_machine_type) {
+		case Atari800_MACHINE_800:
+			menu_array[5].suffix = FindMenuItem(ram800_menu_array, MEMORY_ram_size)->item;
 			break;
+		case Atari800_MACHINE_XLXE:
+			menu_array[5].suffix = FindMenuItem(ramxl_menu_array, MEMORY_ram_size)->item;
+			break;
+		case Atari800_MACHINE_5200:
+			menu_array[5].suffix = "16 KB";
+			break;
+		}
+
+		menu_array[6].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
+
+		/* Set label for the "keyboard LEDs" action. */
+		menu_array[7].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
+		                       ? "N/A"
+		                       : Atari800_keyboard_leds ? "Yes" : "No";
+
+		/* Set label for the "F keys" action. */
+		menu_array[8].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
+		                       ? "N/A"
+		                       : Atari800_f_keys ? "Yes" : "No";
+
+		/* Set label for the "XEGS keyboard" action. */
+		menu_array[10].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
+		                       Atari800_keyboard_detached ? "detached (XEGS)" : "integrated/attached";
+
+		option = UI_driver->fSelect("System Settings", 0, option, menu_array, NULL);
 		switch (option) {
-		case 14:
-			{
-				UI_tMenuItem *menu_ptr;
-				switch (Atari800_machine_type) {
-				case Atari800_MACHINE_5200:
-					goto leave;
-				case Atari800_MACHINE_800:
-					menu_ptr = ram800_menu_array;
-					break;
-				case Atari800_MACHINE_1200:
-				case Atari800_MACHINE_XLXE:
-				case Atari800_MACHINE_XEGS:
-					menu_ptr = ramxl_menu_array;
-					break;
-				}
-				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, MEMORY_ram_size, menu_ptr, NULL);
-				if (option2 >= 0) {
-					MEMORY_ram_size = option2;
-					need_initialise = TRUE;
-				}
+		case 0:
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, sys_id, machine_menu_array, NULL);
+			if (option2 >= 0) {
+				Atari800_machine_type = machine[option2].type;
+				MEMORY_ram_size = machine[option2].ram;
+				Atari800_builtin_basic = machine[option2].basic;
+				Atari800_keyboard_leds = machine[option2].leds;
+				Atari800_f_keys = machine[option2].f_keys;
+				if (!machine[option2].jumpers)
+					Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+				Atari800_builtin_game = machine[option2].game;
+				if (!machine[option2].keyboard)
+					Atari800_keyboard_detached = FALSE;
+				need_initialise = TRUE;
 			}
-			leave:
 			break;
-		case 15:
+		case 1:
 			{
 				int rom_available = FALSE;
 				/* Start from index 1, to skip the "Choose automatically" option,
@@ -457,8 +488,14 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 16:
-			{
+		case 2:
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+				Atari800_builtin_basic = !Atari800_builtin_basic;
+				need_initialise = TRUE;
+			}
+			break;
+		case 3:
+			if (Atari800_machine_type != Atari800_MACHINE_5200) {
 				int rom_available = FALSE;
 				/* Start from index 1, to skip the "Choose automatically" option,
 				   as it can never be hidden. */
@@ -471,6 +508,7 @@ static void SelectSystem(void)
 					else
 						menu_ptr->flags = UI_ITEM_HIDDEN;
 				} while ((++menu_ptr)->flags != UI_ITEM_END);
+
 				if (!rom_available)
 					UI_driver->fMessage("No BASIC available, ROMs missing", 1);
 				else {
@@ -482,38 +520,70 @@ static void SelectSystem(void)
 				}
 			}
 			break;
-		case 17:
-			{
-				int rom_available = FALSE;
-				/* Start from index 1, to skip the "Choose automatically" option,
-				   as it can never be hidden. */
-				UI_tMenuItem *menu_ptr = xegame_menu_array + 1;
+		case 4:
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+				/* Start from index 2, to skip the "None" and "Choose automatically" options,
+				   as they can never be hidden. */
+				UI_tMenuItem *menu_ptr = xegame_menu_array + 2;
 				do {
 					if (SYSROM_roms[menu_ptr->retval].filename[0] != '\0') {
 						menu_ptr->flags = UI_ITEM_ACTION;
-						rom_available = TRUE;
 					}
 					else
 						menu_ptr->flags = UI_ITEM_HIDDEN;
 				} while ((++menu_ptr)->flags != UI_ITEM_END);
-				if (!rom_available)
-					UI_driver->fMessage("No XEGS game available, ROMs missing", 1);
-				else {
-					option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, SYSROM_xegame_version, xegame_menu_array, NULL);
-					if (option2 >= 0) {
+
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, Atari800_builtin_game ? SYSROM_xegame_version : 0, xegame_menu_array, NULL);
+				if (option2 >= 0) {
+					if (option2 > 0) {
+						Atari800_builtin_game = TRUE;
 						SYSROM_xegame_version = option2;
-						need_initialise = TRUE;
 					}
+					else
+						Atari800_builtin_game = FALSE;
+					need_initialise = TRUE;
 				}
 			}
 			break;
-		case 18: {
-			int option2 = 0;
+		case 5:
+			{
+				UI_tMenuItem *menu_ptr;
+				switch (Atari800_machine_type) {
+				case Atari800_MACHINE_5200:
+					goto leave;
+				case Atari800_MACHINE_800:
+					menu_ptr = ram800_menu_array;
+					break;
+				default: /* Atari800_MACHINE_XLXE */
+					menu_ptr = ramxl_menu_array;
+					break;
+				}
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, MEMORY_ram_size, menu_ptr, NULL);
+				if (option2 >= 0) {
+					MEMORY_ram_size = option2;
+					need_initialise = TRUE;
+				}
+			}
+			leave:
+			break;
+		case 6:
+			new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
+			break;
+		case 7:
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE)
+				Atari800_keyboard_leds = !Atari800_keyboard_leds;
+			break;
+		case 8:
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE)
+				Atari800_f_keys = !Atari800_f_keys;
+			break;
+		case 9:
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+				option2 = 0;
 				for (;;) {
 					int i;
 					for (i = 0; i < 4; ++i)
 						jumpers_menu_array[i].suffix = Atari800_jumpers[i] ? "  installed" : "uninstalled";
-/*						SetItemChecked(jumpers_menu_array, i, Atari800_jumpers[i]);*/
 					option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, option2, jumpers_menu_array, NULL);
 					if (option2 < 0)
 						break;
@@ -522,25 +592,22 @@ static void SelectSystem(void)
 				Atari800_UpdateJumpers();
 			}
 			break;
-		case 19:
-			Atari800_SetXEGSKeyboard(!Atari800_xegs_keyboard);
+		case 10:
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+				Atari800_keyboard_detached = !Atari800_keyboard_detached;
+				Atari800_UpdateKeyboardDetached();
+			}
 			break;
-		case 20:
-			new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
-			break;
+		default:
+			if (new_tv_mode != Atari800_tv_mode) {
+				Atari800_SetTVMode(new_tv_mode);
+				need_initialise = TRUE;
+			}
+			if (need_initialise)
+				Atari800_InitialiseMachine();
+			return;
 		}
 	}
-	if (option >= 0) {
-		Atari800_SetMachineType(machine[option].type);
-		MEMORY_ram_size = machine[option].ram;
-		need_initialise = TRUE;
-	}
-	if (new_tv_mode != Atari800_tv_mode) {
-		Atari800_SetTVMode(new_tv_mode);
-		need_initialise = TRUE;
-	}
-	if (need_initialise)
-		Atari800_InitialiseMachine();
 }
 
 /* Inspired by LNG (lng.sourceforge.net) */
@@ -3633,7 +3700,7 @@ void UI_Run(void)
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_DISK, "Disk Management", "Alt+D"),
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_CARTRIDGE, "Cartridge Management", "Alt+C"),
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_CASSETTE, "Tape Management", "Alt+T"),
-		UI_MENU_SUBMENU_ACCEL(UI_MENU_SYSTEM, "Select System", "Alt+Y"),
+		UI_MENU_SUBMENU_ACCEL(UI_MENU_SYSTEM, "System Settings", "Alt+Y"),
 #ifdef SOUND
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_SOUND, "Sound Settings", "Alt+O"),
 #ifndef DREAMCAST
@@ -3745,7 +3812,7 @@ void UI_Run(void)
 			TapeManagement();
 			break;
 		case UI_MENU_SYSTEM:
-			SelectSystem();
+			SystemSettings();
 			break;
 		case UI_MENU_SETTINGS:
 			AtariSettings();

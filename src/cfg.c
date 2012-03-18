@@ -214,12 +214,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				    strcmp(ptr, "Atari OS/A") == 0 ||
 				    strcmp(ptr, "Atari OS/B") == 0)
 					Atari800_machine_type = Atari800_MACHINE_800;
-				else if (strcmp(ptr, "Atari 1200XL") == 0)
-					Atari800_machine_type = Atari800_MACHINE_1200;
 				else if (strcmp(ptr, "Atari XL/XE") == 0)
 					Atari800_machine_type = Atari800_MACHINE_XLXE;
-				else if (strcmp(ptr, "Atari XEGS") == 0)
-					Atari800_machine_type = Atari800_MACHINE_XEGS;
 				else if (strcmp(ptr, "Atari 5200") == 0)
 					Atari800_machine_type = Atari800_MACHINE_5200;
 				else
@@ -246,8 +242,16 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				else
 					Log_print("Invalid TV Mode: %s", ptr);
 			}
-			else if (strcmp(string, "XEGS_KEYBOARD") == 0)
-				Atari800_xegs_keyboard = Util_sscanbool(ptr);
+			else if (strcmp(string, "BUILTIN_BASIC") == 0)
+				Atari800_builtin_basic = Util_sscanbool(ptr);
+			else if (strcmp(string, "KEYBOARD_LEDS") == 0)
+				Atari800_keyboard_leds = Util_sscanbool(ptr);
+			else if (strcmp(string, "F_KEYS") == 0)
+				Atari800_f_keys = Util_sscanbool(ptr);
+			else if (strcmp(string, "BUILTIN_GAME") == 0)
+				Atari800_builtin_game = Util_sscanbool(ptr);
+			else if (strcmp(string, "KEYBOARD_DETACHED") == 0)
+				Atari800_keyboard_detached = Util_sscanbool(ptr);
 			else if (strcmp(string, "1200XL_JUMPERS") == 0) {
 				int i;
 				if (strlen(ptr) < 4)
@@ -321,7 +325,7 @@ int CFG_WriteConfig(void)
 	FILE *fp;
 	int i;
 	static const char * const machine_type_string[Atari800_MACHINE_SIZE] = {
-		"400/800", "1200XL", "XL/XE", "XEGS", "5200"
+		"400/800", "XL/XE", "5200"
 	};
 
 	fp = fopen(rtconfig_filename, "w");
@@ -391,7 +395,11 @@ int CFG_WriteConfig(void)
 	fprintf(fp, "SERIO_SOUND=%d\n", POKEYSND_serio_sound_enabled);
 #endif
 #endif /* SOUND */
-	fprintf(fp, "XEGS_KEYBOARD=%d\n", Atari800_xegs_keyboard);
+	fprintf(fp, "BUILTIN_BASIC=%d\n", Atari800_builtin_basic);
+	fprintf(fp, "KEYBOARD_LEDS=%d\n", Atari800_keyboard_leds);
+	fprintf(fp, "F_KEYS=%d\n", Atari800_f_keys);
+	fprintf(fp, "BUILTIN_GAME=%d\n", Atari800_builtin_game);
+	fprintf(fp, "KEYBOARD_DETACHED=%d\n", Atari800_keyboard_detached);
 	fprintf(fp, "1200XL_JUMPERS=%d%d%d%d\n", Atari800_jumpers[0], Atari800_jumpers[1], Atari800_jumpers[2], Atari800_jumpers[3]);
 	fprintf(fp, "CFG_SAVE_ON_EXIT=%d\n", CFG_save_on_exit);
 	/* Add module-specific configurations here */

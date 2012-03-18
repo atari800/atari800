@@ -211,8 +211,8 @@ void ESC_UpdatePatches(void)
 {
 	/* Patch only if OS enabled. */
 	if (Atari800_machine_type != Atari800_MACHINE_5200 &&
-	    (!Atari800_features.xl_portb || (PIA_PORTB & 1) != 0)) {
-		int const os_rom_start = 0x10000 - Atari800_features.os_size;
+	    (Atari800_machine_type != Atari800_MACHINE_XLXE || (PIA_PORTB & 1) != 0)) {
+		int const os_rom_start = Atari800_machine_type == Atari800_MACHINE_800 ? 0xd800 : 0xc000;
 		/* Restore unpatched OS */
 		if (os_rom_start < 0xd000)
 			MEMORY_dCopyToMem(MEMORY_os, os_rom_start, 0xd000 - os_rom_start);

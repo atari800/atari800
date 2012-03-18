@@ -327,12 +327,20 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 
 	Atari800_SetMachineType(machine[nummac].type);
 	MEMORY_ram_size = machine[nummac].ram;
-	/* Temporary hack to allow choosing OS rev. A/B. Delete after adding
-	   support for choosing OS/BASIC revision. */
+	/* Temporary hack to allow choosing OS rev. A/B and XL/XE features.
+	   Delete after adding proper support for choosing system settings. */
 	if (nummac < 3)
 		SYSROM_os_versions[Atari800_MACHINE_800] = ntsc ? SYSROM_A_NTSC : SYSROM_A_PAL;
 	else if (nummac >= 3 && nummac < 6)
 		SYSROM_os_versions[Atari800_MACHINE_800] = ntsc ? SYSROM_AUTO : SYSROM_B_NTSC;
+	else if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
+		Atari800_builtin_basic = TRUE;
+		Atari800_keyboard_leds = FALSE;
+		Atari800_f_keys = FALSE;
+		Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+		Atari800_builtin_game = FALSE;
+		Atari800_keyboard_detached = FALSE;
+	}
 	/* End of hack */
 
 	Atari800_SetTVMode(ntsc ? Atari800_TV_NTSC : Atari800_TV_PAL);

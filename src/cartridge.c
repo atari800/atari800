@@ -465,10 +465,10 @@ static void MapActiveCart(void)
 			/* No need to call SwitchBank(), return. */
 			return;
 		case CARTRIDGE_RIGHT_8:
-			if (Atari800_features.right_cartridge) {
+			if (Atari800_machine_type == Atari800_MACHINE_800) {
 				MEMORY_Cart809fEnable();
 				MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
-				if (!Atari800_features.builtin_basic
+				if (!Atari800_builtin_basic
 				    && (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
 					MEMORY_CartA0bfEnable();
 					MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
@@ -502,7 +502,7 @@ static void MapActiveCart(void)
 			break;
 		default:
 			MEMORY_Cart809fDisable();
-			if (!Atari800_features.builtin_basic
+			if (!Atari800_builtin_basic
 			&& (!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
 				MEMORY_CartA0bfEnable();
 				MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);

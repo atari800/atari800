@@ -1423,7 +1423,6 @@ int UI_BASIC_OnScreenKeyboard(const char *title, int layout)
 	case Atari800_MACHINE_800:
 		layout_lines[0] = "     Start Select Option Atari Break";
 		break;
-	case Atari800_MACHINE_1200:
 	case Atari800_MACHINE_XLXE:
 		layout_lines[0] = "  Help Start Select Option Inv Break";
 		break;

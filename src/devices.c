@@ -2025,7 +2025,10 @@ static void Devices_RestoreHandler(UWORD address, UBYTE esc_code)
 {
 	ESC_Remove(esc_code);
 	/* restore original OS code */
-	MEMORY_dCopyToMem(MEMORY_os + address - 0x10000 + Atari800_features.os_size, address, 3);
+	MEMORY_dCopyToMem(MEMORY_os - (Atari800_machine_type == Atari800_MACHINE_800
+	                               ? 0xd800
+	                               : 0xc000) + address,
+	                  address, 3);
 }
 
 static void Devices_RestoreEHOPEN(void)
