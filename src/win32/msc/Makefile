@@ -35,6 +35,7 @@ OBJS = \
 	crc32.o \
 	cycle_map.obj \
 	devices.obj \
+	emuos.o \
 	esc.obj \
 	gtia.obj \
 	img_tape.o \

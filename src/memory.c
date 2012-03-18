@@ -31,6 +31,7 @@
 #include "antic.h"
 #include "cpu.h"
 #include "cartridge.h"
+#include "emuos.h"
 #include "esc.h"
 #include "gtia.h"
 #include "log.h"
@@ -979,22 +980,10 @@ void MEMORY_CartA0bfEnable(void)
 
 void MEMORY_GetCharset(UBYTE *cs)
 {
-	const UBYTE *p;
-	switch (Atari800_machine_type) {
-	case Atari800_MACHINE_800:
-		p = MEMORY_mem + 0xe000;
-		break;
-	case Atari800_MACHINE_5200:
-		p = MEMORY_mem + 0xf800;
-		break;
-	default:
-		p = MEMORY_os + 0x2000;
-		break;
-	}
 	/* copy font, but change screencode order to ATASCII order */
-	memcpy(cs, p + 0x200, 0x100); /* control chars */
-	memcpy(cs + 0x100, p, 0x200); /* !"#$..., uppercase letters */
-	memcpy(cs + 0x300, p + 0x300, 0x100); /* lowercase letters */
+	memcpy(cs, emuos_h + 0x200, 0x100); /* control chars */
+	memcpy(cs + 0x100, emuos_h, 0x200); /* !"#$..., uppercase letters */
+	memcpy(cs + 0x300, emuos_h + 0x300, 0x100); /* lowercase letters */
 }
 
 #ifndef PAGED_MEM

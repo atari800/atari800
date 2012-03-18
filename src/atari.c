@@ -74,6 +74,7 @@
 #include "cfg.h"
 #include "cpu.h"
 #include "devices.h"
+#include "emuos.h"
 #include "esc.h"
 #include "gtia.h"
 #include "input.h"
@@ -298,8 +299,6 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 	}
 	return TRUE;
 }
-
-#include "emuos.h"
 
 #define COPY_EMUOS(padding) do { \
 		memset(MEMORY_os, 0, padding); \

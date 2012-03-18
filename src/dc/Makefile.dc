@@ -39,6 +39,7 @@ LIBS=-Wl,--start-group -lkallisti -lz -lbz2 -lm -lc -lgcc -Wl,--end-group
 
 OBJ =	atari.o \
 	cpu.o \
+	emuos.o \
 	sio.o \
 	devices.o \
 	antic.o \
