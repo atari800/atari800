@@ -5,7 +5,8 @@
   ROMs.
 
 * atari.[ch], cartridge.c, cfg.c, devices.c, esc.c, input.c, memory.c, pia.c,
-  screen.c, sysrom.c, ui_basic.c, ui.c, sdl/input.c, android/jni/jni.c:
+  screen.c, sysrom.c, ui_basic.c, ui.c, sdl/input.c, android/jni/jni.c,
+  atari800.man, DOC/USAGE:
   Reworked support for machine types. All XL/XE features can be enabled/
   disabled independently. UI menu "Select System" renamed to "System Settings"
   and reworked - now it only lists systems manufactured originally, with

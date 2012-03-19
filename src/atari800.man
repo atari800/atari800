@@ -75,74 +75,8 @@ Use a custom OS.
 .PD
 .RE
 .TP
-\fB\-1200\-rev auto\fR|\fB10\fR|\fB11\fR|\fB1\fR|\fB2\fR|\fB3\fR|\fB4\fR|\fBcustom\fR
-Select operating system revision for Atari 1200XL:
-.PP
-.RS
-.PD 0
-.TP
-.B auto
-The default.
-Use the most appropriate from the available ones.
-.TP
-.B 10
-Use OS AA000000 rev. 10 from early 1200XL units.
-.TP
-.B 11
-Use OS AA000001 rev. 11 from late 1200XL units.
-.TP
-.B 1
-Use OS BB000000 rev. 1 from the 600XL.
-.TP
-.B 2
-Use OS BB000001 rev. 2 from the 800XL and early 65XE/130XE units.
-.TP
-.B 3
-Use OS BB000001 rev. 3 from late 65XE/130XE units.
-.TP
-.B 4
-Use OS BB000001 rev. 4 from the XEGS.
-.TP
-.B custom
-Use a custom OS.
-.PD
-.RE
-.TP
 \fB\-xl\-rev auto\fR|\fB10\fR|\fB11\fR|\fB1\fR|\fB2\fR|\fB3\fR|\fB4\fR|\fBcustom\fR
 Select operating system revision for Atari XL/XE:
-.PP
-.RS
-.PD 0
-.TP
-.B auto
-The default.
-Use the most appropriate from the available ones.
-.TP
-.B 10
-Use OS AA000000 rev. 10 from early 1200XL units.
-.TP
-.B 11
-Use OS AA000001 rev. 11 from late 1200XL units.
-.TP
-.B 1
-Use OS BB000000 rev. 1 from the 600XL.
-.TP
-.B 2
-Use OS BB000001 rev. 2 from the 800XL and early 65XE/130XE units.
-.TP
-.B 3
-Use OS BB000001 rev. 3 from late 65XE/130XE units.
-.TP
-.B 4
-Use OS BB000001 rev. 4 from the XEGS.
-.TP
-.B custom
-Use a custom OS.
-.PD
-.RE
-.TP
-\fB\-xegs\-rev auto\fR|\fB10\fR|\fB11\fR|\fB1\fR|\fB2\fR|\fB3\fR|\fB4\fR|\fBcustom\fR
-Select operating system revision for Atari XEGS:
 .PP
 .RS
 .PD 0

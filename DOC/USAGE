@@ -107,12 +107,8 @@ Command line options
 
 -800-rev auto|a-ntsc|a-pal|b-ntsc|custom
                       Select OS revision for Atari 400/800
--1200-rev auto|10|11|1|2|3|4|custom
-                      Select OS revision for Atari 1200XL
 -xl-rev auto|10|11|1|2|3|4|custom
                       Select OS revision for Atari XL/XE
--xegs-rev auto|10|11|1|2|3|4|custom
-                      Select OS revision for Atari XEGS
 -5200-rev auto|orig|a|custom
                       Select OS revision for Atari 5200
 -basic-rev auto|a|b|c|custom
