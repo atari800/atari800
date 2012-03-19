@@ -75,7 +75,7 @@ Use a custom OS.
 .PD
 .RE
 .TP
-\fB\-xl\-rev auto\fR|\fB10\fR|\fB11\fR|\fB1\fR|\fB2\fR|\fB3\fR|\fB4\fR|\fBcustom\fR
+\fB\-xl\-rev auto\fR|\fB10\fR|\fB11\fR|\fB1\fR|\fB2\fR|\fB3a\fR|\fB3b\fR|\fB5\fR|\fB3\fR|\fB4\fR|\fB59\fR|\fB59a\fR|\fBcustom\fR
 Select operating system revision for Atari XL/XE:
 .PP
 .RS
@@ -97,11 +97,27 @@ Use OS BB000000 rev. 1 from the 600XL.
 .B 2
 Use OS BB000001 rev. 2 from the 800XL and early 65XE/130XE units.
 .TP
+.B 3a
+Use prototype OS BB000002 rev. 3 from 1400XL/1450XLD units (also known as 1540OS3.V0 and 1450R3V0.ROM).
+.TP
+.B 3b
+Use prototype OS BB000002 rev. 3 ver. 4 from 1400XL/1450XLD units (also known as os1450.128 and 1450R3VX.ROM).
+.TP
+.B 5
+Use prototype OS CC000001 rev. 4 (also known as Rev. 5), for which sources are
+available at <http://www.atariage.com/forums/topic/78579-a800ossrc/page__view__findpost__p__961535>.
+.TP
 .B 3
 Use OS BB000001 rev. 3 from late 65XE/130XE units.
 .TP
 .B 4
 Use OS BB000001 rev. 4 from the XEGS.
+.TP
+.B 59
+Use OS BB000001 rev. 59 from the Arabic 65XE.
+.TP
+.B 59a
+Use OS BB000001 rev. 59 from Kevin Savetz' Arabic 65XE: <http://www.savetz.com/vintagecomputers/arabic65xe/>.
 .TP
 .B custom
 Use a custom OS.

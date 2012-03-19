@@ -107,7 +107,7 @@ Command line options
 
 -800-rev auto|a-ntsc|a-pal|b-ntsc|custom
                       Select OS revision for Atari 400/800
--xl-rev auto|10|11|1|2|3|4|custom
+-xl-rev auto|10|11|1|2|3a|3b|5|3|4|59|59a|custom
                       Select OS revision for Atari XL/XE
 -5200-rev auto|orig|a|custom
                       Select OS revision for Atari 5200

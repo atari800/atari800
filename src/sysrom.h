@@ -20,10 +20,22 @@ enum {
 	SYSROM_BB00R1,
 	/* OS rev. 2 (1983-05-10) from 800XL and early 65XE/130XE. Part no. C061598B */
 	SYSROM_BB01R2,
+	/* OS rev. 3 (1984-03-23) from prototype 1450XLD. Known as 1540OS3.V0 and 1450R3V0.ROM */
+	SYSROM_BB02R3,
+	/* OS rev. 3 ver. 4 (1984-06-21) from prototype 1450XLD. Known as os1450.128 and 1450R3VX.ROM */
+	SYSROM_BB02R3V4,
+	/* OS rev. 5 ver. 0 (1984-09-06) compiled from sources:
+	   http://www.atariage.com/forums/topic/78579-a800ossrc/page__view__findpost__p__961535 */
+	SYSROM_CC01R4,
 	/* OS rev. 3 (1985-03-01) from late 65XE/130XE. Part no. C300717 */
 	SYSROM_BB01R3,
-	/* OS rev. 4 from XEGS - OS only. Part no. C101687 (2nd half) */
+	/* OS rev. 4 (1987-05-07) from XEGS - OS only. Part no. C101687 (2nd half) */
 	SYSROM_BB01R4_OS,
+	/* OS rev. 59 (1987-07-21) from Arabic 65XE. Part no. C101700 */
+	SYSROM_BB01R59,
+	/* OS rev. 59 (1987-07-21) from Kevin Savetz' Arabic 65XE (prototype?):
+	   http://www.savetz.com/vintagecomputers/arabic65xe/ */
+	SYSROM_BB01R59A,
 	/* --- BIOS ROMs from Atari 5200 --- */
 	/* BIOS from 4-port and early 2-port 5200 (1982). Part no. C019156 */
 	SYSROM_5200,

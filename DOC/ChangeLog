@@ -12,6 +12,9 @@
   and reworked - now it only lists systems manufactured originally, with
   additional options for configuration.
 
+* devices.c, esc.c, sysrom.[ch], ui.c, atari800.man, DOC/USAGE: Support OS
+  revisions from the Arabic 65XE and prototype XL machines.
+
 
 2012-03-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * pia.c: Fix recently-introduced bug with MEMORY_cartA0BF_enabled being saved

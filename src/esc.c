@@ -149,11 +149,21 @@ void ESC_PatchOS(void)
 		case SYSROM_AA01R11:
 		case SYSROM_BB00R1:
 		case SYSROM_BB01R2:
+		case SYSROM_BB02R3:
+		case SYSROM_BB02R3V4:
 		case SYSROM_BB01R3:
 		case SYSROM_BB01R4_OS:
+		case SYSROM_BB01R59:
+		case SYSROM_BB01R59A:
 		case SYSROM_XL_CUSTOM:
 			addr_l = 0xfd13;
 			addr_s = 0xfd60;
+			check_s_0 = 0xa9;
+			check_s_1 = 0x03;
+			break;
+		case SYSROM_CC01R4:
+			addr_l = 0xef74;
+			addr_s = 0xefbc;
 			check_s_0 = 0xa9;
 			check_s_1 = 0x03;
 			break;
@@ -192,10 +202,19 @@ void ESC_PatchOS(void)
 			addr = 0xc32b;
 			break;
 		case SYSROM_BB01R2:
+		case SYSROM_BB02R3:
 		case SYSROM_BB01R3:
 		case SYSROM_BB01R4_OS:
+		case SYSROM_BB01R59:
+		case SYSROM_BB01R59A:
 		case SYSROM_XL_CUSTOM:
 			addr = 0xc31d;
+			break;
+		case SYSROM_BB02R3V4:
+			addr = 0xc32c;
+			break;
+		case SYSROM_CC01R4:
+			addr = 0xc2e0;
 			break;
 		default:
 			/* Don't disable checksum test. */

@@ -2297,8 +2297,19 @@ int Devices_PatchOS(void)
 	case SYSROM_BB01R2:
 	case SYSROM_BB01R3:
 	case SYSROM_BB01R4_OS:
+	case SYSROM_BB01R59:
+	case SYSROM_BB01R59A:
 	case SYSROM_XL_CUSTOM:
 		addr = 0xc42e;
+		break;
+	case SYSROM_BB02R3:
+		addr = 0xc42c;
+		break;
+	case SYSROM_BB02R3V4:
+		addr = 0xc43b;
+		break;
+	case SYSROM_CC01R4:
+		addr = 0xc3eb;
 		break;
 	default:
 		return FALSE;

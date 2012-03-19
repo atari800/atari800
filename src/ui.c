@@ -234,8 +234,13 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(SYSROM_AA01R11, "AA01 Rev. 11"),
 		UI_MENU_ACTION(SYSROM_BB00R1, "BB00 Rev. 1"),
 		UI_MENU_ACTION(SYSROM_BB01R2, "BB01 Rev. 2"),
+		UI_MENU_ACTION(SYSROM_BB02R3, "BB02 Rev. 3"),
+		UI_MENU_ACTION(SYSROM_BB02R3V4, "BB02 Rev. 3 Ver. 4"),
+		UI_MENU_ACTION(SYSROM_CC01R4, "CC01 Rev. 4"),
 		UI_MENU_ACTION(SYSROM_BB01R3, "BB01 Rev. 3"),
 		UI_MENU_ACTION(SYSROM_BB01R4_OS, "BB01 Rev. 4"),
+		UI_MENU_ACTION(SYSROM_BB01R59, "BB01 Rev. 59"),
+		UI_MENU_ACTION(SYSROM_BB01R59A, "BB01 Rev. 59 alt."),
 		UI_MENU_ACTION(SYSROM_XL_CUSTOM, "Custom"),
 		UI_MENU_END
 	};
@@ -321,7 +326,7 @@ static void SystemSettings(void)
 	};
 
 	/* Size must be long enough to store "<longest OS label> (auto)". */
-	char default_os_label[29];
+	char default_os_label[26];
 	/* Size must be long enough to store "<longest BASIC label> (auto)". */
 	char default_basic_label[14];
 	/* Size must be long enough to store "<longest XEGAME label> (auto)". */
@@ -1636,8 +1641,13 @@ static void ROMLocationsXL(void)
 		UI_MENU_FILESEL_PREFIX(SYSROM_AA01R11, " AA01 Rev. 11:", NULL),
 		UI_MENU_FILESEL_PREFIX(SYSROM_BB00R1, " BB00 Rev. 1:", NULL),
 		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R2, " BB01 Rev. 2:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BB02R3, " BB02 Rev. 3:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BB02R3V4, " BB02 Rev. 3 Ver. 4:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_CC01R4, " CC01 Rev. 4:", NULL),
 		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R3, " BB01 Rev. 3:", NULL),
 		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R4_OS, " BB01 Rev. 4:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R59, " BB01 Rev. 59:", NULL),
+		UI_MENU_FILESEL_PREFIX(SYSROM_BB01R59A, " BB01 Rev. 59 alt.:", NULL),
 		UI_MENU_FILESEL_PREFIX(SYSROM_XL_CUSTOM, " Custom:", NULL),
 		UI_MENU_END
 	};
