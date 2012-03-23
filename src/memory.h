@@ -120,8 +120,7 @@ void MEMORY_CartA0bfEnable(void);
 void MEMORY_GetCharset(UBYTE *cs);
 
 /* Mosaic and Axlon 400/800 RAM extensions */
-extern int MEMORY_mosaic_maxbank;
-extern int MEMORY_mosaic_enabled;
+extern int MEMORY_mosaic_num_banks;
 extern int MEMORY_axlon_enabled;
 extern int MEMORY_axlon_0f_mirror;
 extern int MEMORY_axlon_bankmask;

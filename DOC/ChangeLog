@@ -2,6 +2,9 @@
 * atari.[ch], cfg.c, ui.c: Fixed 1200XL jumper emulation - the machine has
   only one onboard jumper, not four.
 
+* atari.c, cfg.c, memory.[ch], ui.c: Simplify Mosaic RAM code. Add option to
+  control Mosaic RAM settings in GUI. Save Mosaic RAM setting in config.
+
 
 2012-03-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c, emuos.[ch], memory.c, Makefile.in, android/jni/Amdroid.mk.in,

@@ -195,6 +195,13 @@ static const char * const created = "Created \"%s\"";
 #define CantSave(filename) FilenameMessage(cant_save, filename)
 #define Created(filename) FilenameMessage(created, filename)
 
+/* Callback function that writes a text label to *LABEL, for use by
+   the Select Mosaic RAM slider. */
+static void MosaicSliderLabel(char *label, int value, void *user_data)
+{
+	sprintf(label, "%i KB", value * 4); /* WARNING: No more that 10 chars! */
+}
+
 static void SystemSettings(void)
 {
 	static UI_tMenuItem ram800_menu_array[] = {
@@ -205,6 +212,16 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(40, "40 KB"),
 		UI_MENU_ACTION(48, "48 KB"),
 		UI_MENU_ACTION(52, "52 KB"),
+		UI_MENU_END
+	};
+
+	enum { MOSAIC_OTHER = 65 }; /* must be a value that's illegal for MEMORY_mosaic_num_banks */
+	static UI_tMenuItem mosaic_ram_menu_array[] = {
+		UI_MENU_ACTION(0, "Disabled"),
+		UI_MENU_ACTION(4, "1 64K RAM Select board (16 KB)"),
+		UI_MENU_ACTION(20, "2 64K RAM Select boards (80 KB)"),
+		UI_MENU_ACTION(36, "3 64K RAM Select boards (144 KB)"),
+		UI_MENU_ACTION(MOSAIC_OTHER, "Other"),
 		UI_MENU_END
 	};
 	static UI_tMenuItem ramxl_menu_array[] = {
@@ -311,10 +328,11 @@ static void SystemSettings(void)
 		UI_MENU_SUBMENU_SUFFIX(4, "XEGS game:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(5, "RAM size:", NULL),
 		UI_MENU_ACTION(6, "Video system:"),
-		UI_MENU_SUBMENU(7, "1200XL keyboard LEDs:"),
-		UI_MENU_ACTION(8, "1200XL F1-F4 keys:"),
-		UI_MENU_ACTION(9, "1200XL option jumper J1:"),
-		UI_MENU_ACTION(10, "Keyboard:"),
+		UI_MENU_SUBMENU_SUFFIX(7, "Mosaic RAM:", NULL),
+		UI_MENU_SUBMENU(8, "1200XL keyboard LEDs:"),
+		UI_MENU_ACTION(9, "1200XL F1-F4 keys:"),
+		UI_MENU_ACTION(10, "1200XL option jumper J1:"),
+		UI_MENU_ACTION(11, "Keyboard:"),
 		UI_MENU_END
 	};
 
@@ -324,6 +342,7 @@ static void SystemSettings(void)
 	char default_basic_label[14];
 	/* Size must be long enough to store "<longest XEGAME label> (auto)". */
 	char default_xegame_label[23];
+	char mosaic_label[7]; /* Fits "256 KB" */
 
 	int option = 0;
 	int option2 = 0;
@@ -429,22 +448,34 @@ static void SystemSettings(void)
 
 		menu_array[6].suffix = (new_tv_mode == Atari800_TV_PAL) ? "PAL" : "NTSC";
 
+		/* Set label for the "Mosaic" action. */
+		if (Atari800_machine_type == Atari800_MACHINE_800) {
+			if (MEMORY_mosaic_num_banks == 0)
+				menu_array[7].suffix = mosaic_ram_menu_array[0].item;
+			else {
+				sprintf(mosaic_label, "%i KB", MEMORY_mosaic_num_banks * 4);
+				menu_array[7].suffix = mosaic_label;
+			}
+		}
+		else
+			menu_array[7].suffix = "N/A";
+
 		/* Set label for the "keyboard LEDs" action. */
-		menu_array[7].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
+		menu_array[8].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
 		                       ? "N/A"
 		                       : Atari800_keyboard_leds ? "Yes" : "No";
 
 		/* Set label for the "F keys" action. */
-		menu_array[8].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
+		menu_array[9].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
 		                       ? "N/A"
 		                       : Atari800_f_keys ? "Yes" : "No";
 
 		/* Set label for the "1200XL option jumper" action. */
-		menu_array[9].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
+		menu_array[10].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
 		                       Atari800_jumper ? "installed" : "none";
 
 		/* Set label for the "XEGS keyboard" action. */
-		menu_array[10].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
+		menu_array[11].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
 		                       Atari800_keyboard_detached ? "detached (XEGS)" : "integrated/attached";
 
 		option = UI_driver->fSelect("System Settings", 0, option, menu_array, NULL);
@@ -572,20 +603,43 @@ static void SystemSettings(void)
 			new_tv_mode = (new_tv_mode == Atari800_TV_PAL) ? Atari800_TV_NTSC : Atari800_TV_PAL;
 			break;
 		case 7:
-			if (Atari800_machine_type == Atari800_MACHINE_XLXE)
-				Atari800_keyboard_leds = !Atari800_keyboard_leds;
+			if (Atari800_machine_type == Atari800_MACHINE_800) {
+				if (MEMORY_mosaic_num_banks == 0 || MEMORY_mosaic_num_banks == 4 || MEMORY_mosaic_num_banks == 20 || MEMORY_mosaic_num_banks == 36)
+					option2 = MEMORY_mosaic_num_banks;
+				else
+					option2 = MOSAIC_OTHER;
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, option2, mosaic_ram_menu_array, NULL);
+				if (option2 >= 0) {
+					if (option2 == MOSAIC_OTHER) {
+						int offset = 0;
+						int value = UI_driver->fSelectSlider("Select amount of Mosaic RAM",
+						                      MEMORY_mosaic_num_banks,
+						                      64, &MosaicSliderLabel, &offset);
+						if (value != -1) {
+							MEMORY_mosaic_num_banks = value;
+						}
+					}
+					else
+						MEMORY_mosaic_num_banks = option2;
+					need_initialise = TRUE;
+				}
+			}
 			break;
 		case 8:
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE)
-				Atari800_f_keys = !Atari800_f_keys;
+				Atari800_keyboard_leds = !Atari800_keyboard_leds;
 			break;
 		case 9:
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE)
+				Atari800_f_keys = !Atari800_f_keys;
+			break;
+		case 10:
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 				Atari800_jumper = !Atari800_jumper;
 				Atari800_UpdateJumper();
 			}
 			break;
-		case 10:
+		case 11:
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 				Atari800_keyboard_detached = !Atari800_keyboard_detached;
 				Atari800_UpdateKeyboardDetached();

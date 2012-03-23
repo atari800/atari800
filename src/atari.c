@@ -609,9 +609,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-mosaic") == 0) {
 				if (i_a) {
 					int total_ram = Util_sscandec(argv[++i]);
-					MEMORY_mosaic_enabled = TRUE;
-					MEMORY_mosaic_maxbank = (total_ram - 48)/4 - 1;
-					if (((total_ram - 48) % 4 != 0) || (MEMORY_mosaic_maxbank > 0x3e) || (MEMORY_mosaic_maxbank < 0)) {
+					MEMORY_mosaic_num_banks = (total_ram - 48)/4;
+					if (((total_ram - 48) % 4 != 0) || (MEMORY_mosaic_num_banks >= 0x40) || (MEMORY_mosaic_num_banks < 0)) {
 						Log_print("Invalid Mosaic total RAM size");
 						return FALSE;
 					}
@@ -631,7 +630,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 						Log_print("Invalid Axlon total RAM size");
 						return FALSE;
 					}
-					if (MEMORY_mosaic_enabled) {
+					if (MEMORY_mosaic_num_banks > 0) {
 						Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
 						return FALSE;
 					}

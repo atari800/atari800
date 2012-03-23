@@ -242,6 +242,13 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				else
 					Log_print("Invalid TV Mode: %s", ptr);
 			}
+			else if (strcmp(string, "MOSAIC_RAM_NUM_BANKS") == 0) {
+				int num = Util_sscandec(ptr);
+				if (num >= 0 && num <= 64)
+					MEMORY_mosaic_num_banks = num;
+				else
+					Log_print("Invalid Mosaic RAM number of banks: %s", ptr);
+			}
 			else if (strcmp(string, "BUILTIN_BASIC") == 0)
 				Atari800_builtin_basic = Util_sscanbool(ptr);
 			else if (strcmp(string, "KEYBOARD_LEDS") == 0)
@@ -367,6 +374,7 @@ int CFG_WriteConfig(void)
 	}
 
 	fprintf(fp, (Atari800_tv_mode == Atari800_TV_PAL) ? "DEFAULT_TV_MODE=PAL\n" : "DEFAULT_TV_MODE=NTSC\n");
+	fprintf(fp, "MOSAIC_RAM_NUM_BANKS=%d\n", MEMORY_mosaic_num_banks);
 
 	fprintf(fp, "DISABLE_BASIC=%d\n", Atari800_disable_basic);
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", ESC_enable_sio_patch);
