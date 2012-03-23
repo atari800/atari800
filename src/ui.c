@@ -271,20 +271,13 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(SYSROM_XEGAME_CUSTOM, "Custom"),
 		UI_MENU_END
 	};
-	static UI_tMenuItem jumpers_menu_array[] = {
-		UI_MENU_ACTION(0, "J1:"),
-		UI_MENU_ACTION(1, "J2:"),
-		UI_MENU_ACTION(2, "J3:"),
-		UI_MENU_ACTION(3, "J4:"),
-		UI_MENU_END
-	};
 	static struct {
 		int type;
 		int ram;
 		int basic;
 		int leds;
 		int f_keys;
-		int jumpers;
+		int jumper;
 		int game;
 		int keyboard;
 	} const machine[] = {
@@ -320,7 +313,7 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(6, "Video system:"),
 		UI_MENU_SUBMENU(7, "1200XL keyboard LEDs:"),
 		UI_MENU_ACTION(8, "1200XL F1-F4 keys:"),
-		UI_MENU_ACTION(9, "1200XL option jumpers"),
+		UI_MENU_ACTION(9, "1200XL option jumper J1:"),
 		UI_MENU_ACTION(10, "Keyboard:"),
 		UI_MENU_END
 	};
@@ -346,7 +339,7 @@ static void SystemSettings(void)
 			    && Atari800_builtin_basic == machine[sys_id].basic
 			    && Atari800_keyboard_leds == machine[sys_id].leds
 			    && Atari800_f_keys == machine[sys_id].f_keys
-			    && (machine[sys_id].jumpers || !(Atari800_jumpers[0] | Atari800_jumpers[1] | Atari800_jumpers[2] | Atari800_jumpers[3]))
+			    && (machine[sys_id].jumper || !Atari800_jumper)
 			    && Atari800_builtin_game == machine[sys_id].game
 			    && (machine[sys_id].keyboard || !Atari800_keyboard_detached)) {
 				menu_array[0].suffix = machine_menu_array[sys_id].item;
@@ -446,6 +439,10 @@ static void SystemSettings(void)
 		                       ? "N/A"
 		                       : Atari800_f_keys ? "Yes" : "No";
 
+		/* Set label for the "1200XL option jumper" action. */
+		menu_array[9].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
+		                       Atari800_jumper ? "installed" : "none";
+
 		/* Set label for the "XEGS keyboard" action. */
 		menu_array[10].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
 		                       Atari800_keyboard_detached ? "detached (XEGS)" : "integrated/attached";
@@ -460,8 +457,8 @@ static void SystemSettings(void)
 				Atari800_builtin_basic = machine[option2].basic;
 				Atari800_keyboard_leds = machine[option2].leds;
 				Atari800_f_keys = machine[option2].f_keys;
-				if (!machine[option2].jumpers)
-					Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+				if (!machine[option2].jumper)
+					Atari800_jumper = FALSE;
 				Atari800_builtin_game = machine[option2].game;
 				if (!machine[option2].keyboard)
 					Atari800_keyboard_detached = FALSE;
@@ -584,17 +581,8 @@ static void SystemSettings(void)
 			break;
 		case 9:
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
-				option2 = 0;
-				for (;;) {
-					int i;
-					for (i = 0; i < 4; ++i)
-						jumpers_menu_array[i].suffix = Atari800_jumpers[i] ? "  installed" : "uninstalled";
-					option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, option2, jumpers_menu_array, NULL);
-					if (option2 < 0)
-						break;
-					Atari800_jumpers[option2] = !Atari800_jumpers[option2];
-				}
-				Atari800_UpdateJumpers();
+				Atari800_jumper = !Atari800_jumper;
+				Atari800_UpdateJumper();
 			}
 			break;
 		case 10:

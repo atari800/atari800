@@ -154,7 +154,7 @@ int Atari800_machine_type = Atari800_MACHINE_XLXE;
 int Atari800_builtin_basic = TRUE;
 int Atari800_keyboard_leds = FALSE;
 int Atari800_f_keys = FALSE;
-UBYTE Atari800_jumpers[4];
+int Atari800_jumper;
 int Atari800_builtin_game = FALSE;
 int Atari800_keyboard_detached = FALSE;
 
@@ -198,7 +198,7 @@ void Atari800_SetMachineType(int type)
 		Atari800_builtin_basic = FALSE;
 		Atari800_keyboard_leds = FALSE;
 		Atari800_f_keys = FALSE;
-		Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+		Atari800_jumper = FALSE;
 		Atari800_builtin_game = FALSE;
 		Atari800_keyboard_detached = FALSE;
 	}
@@ -212,13 +212,10 @@ void Atari800_UpdateKeyboardDetached(void)
 				GTIA_TRIG_latch[2] = 0;
 	}
 }
-void Atari800_UpdateJumpers(void)
+void Atari800_UpdateJumper(void)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
-		int i;
-		for (i = 0; i < 4; ++i)
-			POKEY_POT_input[4 + i] = Atari800_jumpers[i] ? 0 : 228;
-	}
+	if (Atari800_machine_type == Atari800_MACHINE_XLXE)
+			POKEY_POT_input[4] = Atari800_jumper ? 0 : 228;
 }
 
 void Atari800_Warmstart(void)
@@ -353,7 +350,7 @@ int Atari800_InitialiseMachine(void)
 	if (!load_roms())
 		return FALSE;
 	Atari800_UpdateKeyboardDetached();
-	Atari800_UpdateJumpers();
+	Atari800_UpdateJumper();
 	MEMORY_InitialiseMachine();
 	Devices_UpdatePatches();
 	return TRUE;
@@ -480,7 +477,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_basic = FALSE;
 			Atari800_keyboard_leds = FALSE;
 			Atari800_f_keys = FALSE;
-			Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+			Atari800_jumper = FALSE;
 			Atari800_builtin_game = FALSE;
 			Atari800_keyboard_detached = FALSE;
 		}
@@ -490,7 +487,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_basic = FALSE;
 			Atari800_keyboard_leds = TRUE;
 			Atari800_f_keys = TRUE;
-			Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+			Atari800_jumper = FALSE;
 			Atari800_builtin_game = FALSE;
 			Atari800_keyboard_detached = FALSE;
 		}
@@ -500,7 +497,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_basic = TRUE;
 			Atari800_keyboard_leds = FALSE;
 			Atari800_f_keys = FALSE;
-			Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+			Atari800_jumper = FALSE;
 			Atari800_builtin_game = FALSE;
 			Atari800_keyboard_detached = FALSE;
 		}
@@ -510,7 +507,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_basic = TRUE;
 			Atari800_keyboard_leds = FALSE;
 			Atari800_f_keys = FALSE;
-			Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+			Atari800_jumper = FALSE;
 			Atari800_builtin_game = FALSE;
 			Atari800_keyboard_detached = FALSE;
 		}
@@ -520,7 +517,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_basic = TRUE;
 			Atari800_keyboard_leds = FALSE;
 			Atari800_f_keys = FALSE;
-			Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+			Atari800_jumper = FALSE;
 			Atari800_builtin_game = FALSE;
 			Atari800_keyboard_detached = FALSE;
 		}
@@ -530,7 +527,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_basic = TRUE;
 			Atari800_keyboard_leds = FALSE;
 			Atari800_f_keys = FALSE;
-			Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+			Atari800_jumper = FALSE;
 			Atari800_builtin_game = FALSE;
 			Atari800_keyboard_detached = FALSE;
 		}
@@ -540,7 +537,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_basic = TRUE;
 			Atari800_keyboard_leds = FALSE;
 			Atari800_f_keys = FALSE;
-			Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+			Atari800_jumper = FALSE;
 			Atari800_builtin_game = TRUE;
 		}
 		else if (strcmp(argv[i], "-5200") == 0) {
@@ -549,7 +546,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_basic = FALSE;
 			Atari800_keyboard_leds = FALSE;
 			Atari800_f_keys = FALSE;
-			Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+			Atari800_jumper = FALSE;
 			Atari800_builtin_game = FALSE;
 			Atari800_keyboard_detached = FALSE;
 		}
@@ -1400,7 +1397,8 @@ void Atari800_StateSave(void)
 		StateSav_SaveUBYTE(&temp, 1);
 		temp = Atari800_f_keys;
 		StateSav_SaveUBYTE(&temp, 1);
-		StateSav_SaveUBYTE(Atari800_jumpers, 4);
+		temp = Atari800_jumper;
+		StateSav_SaveUBYTE(&temp, 1);
 		temp = Atari800_builtin_game;
 		StateSav_SaveUBYTE(&temp, 1);
 		temp = Atari800_keyboard_detached;
@@ -1427,8 +1425,9 @@ void Atari800_StateRead(UBYTE version)
 			Atari800_keyboard_leds = temp != 0;
 			StateSav_ReadUBYTE(&temp, 1);
 			Atari800_f_keys = temp != 0;
-			StateSav_ReadUBYTE(Atari800_jumpers, 4);
-			Atari800_UpdateJumpers();
+			StateSav_ReadUBYTE(&temp, 1);
+			Atari800_jumper = temp != 0;
+			Atari800_UpdateJumper();
 			StateSav_ReadUBYTE(&temp, 1);
 			Atari800_builtin_game = temp != 0;
 			StateSav_ReadUBYTE(&temp, 1);

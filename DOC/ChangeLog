@@ -1,3 +1,8 @@
+2012-03-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.[ch], cfg.c, ui.c: Fixed 1200XL jumper emulation - the machine has
+  only one onboard jumper, not four.
+
+
 2012-03-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c, emuos.[ch], memory.c, Makefile.in, android/jni/Amdroid.mk.in,
   dc/Makefile.dc, win32/msc/Makefile: Always take UI font from EMUOS - fixes

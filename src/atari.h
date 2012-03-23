@@ -62,11 +62,11 @@ extern int Atari800_keyboard_leds;
    Used only for Atari800_MACHINE_XLXE. */
 extern int Atari800_f_keys;
 
-/* State of four jumpers on the 1200XL board, J1..J4.
+/* State of the J1 jumper on the 1200XL board.
    Used only for Atari800_MACHINE_XLXE. Always call
-   Atari800_UpdateJumpers() after changing this variable. */
-extern UBYTE Atari800_jumpers[4];
-void Atari800_UpdateJumpers(void);
+   Atari800_UpdateJumper() after changing this variable. */
+extern int Atari800_jumper;
+void Atari800_UpdateJumper(void);
 
 /* Indicates existence of XEGS' built-in game.
    Used only for Atari800_MACHINE_XLXE. */

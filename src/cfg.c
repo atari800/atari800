@@ -252,13 +252,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				Atari800_builtin_game = Util_sscanbool(ptr);
 			else if (strcmp(string, "KEYBOARD_DETACHED") == 0)
 				Atari800_keyboard_detached = Util_sscanbool(ptr);
-			else if (strcmp(string, "1200XL_JUMPERS") == 0) {
-				int i;
-				if (strlen(ptr) < 4)
-					return FALSE;
-				for (i = 0; i < 4; ++i)
-					Atari800_jumpers[i] = ptr[i] == '1';
-			}
+			else if (strcmp(string, "1200XL_JUMPER") == 0)
+				Atari800_jumper = Util_sscanbool(ptr);
 			else if (strcmp(string, "CFG_SAVE_ON_EXIT") == 0) {
 				CFG_save_on_exit = Util_sscanbool(ptr);
 			}
@@ -400,7 +395,7 @@ int CFG_WriteConfig(void)
 	fprintf(fp, "F_KEYS=%d\n", Atari800_f_keys);
 	fprintf(fp, "BUILTIN_GAME=%d\n", Atari800_builtin_game);
 	fprintf(fp, "KEYBOARD_DETACHED=%d\n", Atari800_keyboard_detached);
-	fprintf(fp, "1200XL_JUMPERS=%d%d%d%d\n", Atari800_jumpers[0], Atari800_jumpers[1], Atari800_jumpers[2], Atari800_jumpers[3]);
+	fprintf(fp, "1200XL_JUMPER=%d\n", Atari800_jumper);
 	fprintf(fp, "CFG_SAVE_ON_EXIT=%d\n", CFG_save_on_exit);
 	/* Add module-specific configurations here */
 	PBI_WriteConfig(fp);
