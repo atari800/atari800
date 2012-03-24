@@ -103,10 +103,9 @@ static UBYTE MosaicGetByte(UWORD addr, int no_side_effects);
 static void AxlonPutByte(UWORD addr, UBYTE byte);
 static UBYTE AxlonGetByte(UWORD addr, int no_side_effects);
 static UBYTE *axlon_ram = NULL;
-static int axlon_ram_size = 0;
+static int axlon_current_bankmask = 0;
 int axlon_curbank = 0;
-int MEMORY_axlon_bankmask = 0x07;
-int MEMORY_axlon_enabled = FALSE;
+int MEMORY_axlon_num_banks = 0x00;
 int MEMORY_axlon_0f_mirror = FALSE; /* The real Axlon had a mirror bank register at 0x0fc0-0x0fff, compatibles did not*/
 static UBYTE *mosaic_ram = NULL;
 static int mosaic_current_num_banks = 0;
@@ -114,25 +113,23 @@ static int mosaic_curbank = 0x3f;
 int MEMORY_mosaic_num_banks = 0;
 
 static void alloc_axlon_memory(void){
-	axlon_curbank = 0;
-	if (MEMORY_axlon_enabled && Atari800_machine_type == Atari800_MACHINE_800) {
-		int new_axlon_ram_size = (MEMORY_axlon_bankmask+1)*0x4000;
-		if ((axlon_ram == NULL) || (axlon_ram_size != new_axlon_ram_size)) {
-			axlon_ram_size = new_axlon_ram_size;
-			if (axlon_ram != NULL) free(axlon_ram);
-			axlon_ram = (UBYTE *)Util_malloc(axlon_ram_size);
+	if (MEMORY_axlon_num_banks > 0 && Atari800_machine_type == Atari800_MACHINE_800) {
+		int size = MEMORY_axlon_num_banks * 0x4000;
+		if (axlon_ram == NULL || axlon_current_bankmask != MEMORY_axlon_num_banks - 1) {
+			axlon_current_bankmask = MEMORY_axlon_num_banks - 1;
+			axlon_ram = (UBYTE *)Util_realloc(axlon_ram, size);
 		}
-		memset(axlon_ram, 0, axlon_ram_size);
+		memset(axlon_ram, 0, size);
 	} else {
 		if (axlon_ram != NULL) {
 			free(axlon_ram);
-			axlon_ram_size = 0;
+			axlon_ram = NULL;
+			axlon_current_bankmask = 0;
 		}
 	}
 }
 
 static void alloc_mosaic_memory(void){
-	mosaic_curbank = 0x3f;
 	if (MEMORY_mosaic_num_banks > 0 && Atari800_machine_type == Atari800_MACHINE_800) {
 		int size = MEMORY_mosaic_num_banks * 0x1000;
 		if (mosaic_ram == NULL || mosaic_current_num_banks != MEMORY_mosaic_num_banks) {
@@ -278,7 +275,7 @@ void MEMORY_InitialiseMachine(void)
 				if (MEMORY_mosaic_num_banks > 0) MEMORY_SetHARDWARE(0xff00, 0xffff);
 				/* only 0xffc0-0xffff are used, but mark the whole
 				 * page to make state saving easier */
-				if (MEMORY_axlon_enabled) {
+				if (MEMORY_axlon_num_banks > 0) {
 					MEMORY_SetHARDWARE(0xcf00, 0xcfff);
 					if (MEMORY_axlon_0f_mirror) MEMORY_SetHARDWARE(0x0f00, 0x0fff);
 					/* only ?fc0-?fff are used, but mark the whole page*/
@@ -303,8 +300,11 @@ void MEMORY_InitialiseMachine(void)
 			MEMORY_writemap[0xd7] = PBI_D7PutByte;
 			if (Atari800_machine_type == Atari800_MACHINE_800) {
 				if (MEMORY_mosaic_num_banks > 0) MEMORY_writemap[0xff] = MosaicPutByte;
-				if (MEMORY_axlon_enabled) MEMORY_writemap[0xcf] = AxlonPutByte;
-				if (MEMORY_axlon_enabled && MEMORY_axlon_0f_mirror) MEMORY_writemap[0x0f] = AxlonPutByte;
+				if (MEMORY_axlon_num_banks > 0) {
+					MEMORY_writemap[0xcf] = AxlonPutByte;
+					if (MEMORY_axlon_0f_mirror)
+						MEMORY_writemap[0x0f] = AxlonPutByte;
+				}
 			}
 #endif
 		}
@@ -313,6 +313,8 @@ void MEMORY_InitialiseMachine(void)
 	AllocXEMemory();
 	alloc_axlon_memory();
 	alloc_mosaic_memory();
+	axlon_curbank = 0;
+	mosaic_curbank = 0x3f;
 	Atari800_Coldstart();
 }
 
@@ -325,13 +327,11 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 
 	/* Axlon/Mosaic for 400/800 */
 	if (Atari800_machine_type == Atari800_MACHINE_800) {
-		StateSav_SaveINT(&MEMORY_axlon_enabled, 1);
-		if (MEMORY_axlon_enabled){
+		StateSav_SaveINT(&MEMORY_axlon_num_banks, 1);
+		if (MEMORY_axlon_num_banks > 0){
 			StateSav_SaveINT(&axlon_curbank, 1);
-			StateSav_SaveINT(&MEMORY_axlon_bankmask, 1);
 			StateSav_SaveINT(&MEMORY_axlon_0f_mirror, 1);
-			StateSav_SaveINT(&axlon_ram_size, 1);
-			StateSav_SaveUBYTE(&axlon_ram[0], axlon_ram_size);
+			StateSav_SaveUBYTE(axlon_ram, MEMORY_axlon_num_banks * 0x4000);
 		}
 		StateSav_SaveINT(&mosaic_current_num_banks, 1);
 		if (mosaic_current_num_banks > 0) {
@@ -416,14 +416,22 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 
 	/* Axlon/Mosaic for 400/800 */
 	if (Atari800_machine_type == Atari800_MACHINE_800 && StateVersion >= 5) {
-		StateSav_ReadINT(&MEMORY_axlon_enabled, 1);
-		if (MEMORY_axlon_enabled){
+		StateSav_ReadINT(&MEMORY_axlon_num_banks, 1);
+		if (MEMORY_axlon_num_banks > 0){
 			StateSav_ReadINT(&axlon_curbank, 1);
-			StateSav_ReadINT(&MEMORY_axlon_bankmask, 1);
+			if (StateVersion < 7) {
+				/* Read bank mask, then increase by 1 to get number of banks. */
+				StateSav_ReadINT(&MEMORY_axlon_num_banks, 1);
+				++ MEMORY_axlon_num_banks;
+			}
 			StateSav_ReadINT(&MEMORY_axlon_0f_mirror, 1);
-			StateSav_ReadINT(&axlon_ram_size, 1);
+			if (StateVersion < 7) {
+				int temp;
+				/* Ignore saved RAM size - can be derived. */
+				StateSav_ReadINT(&temp, 1);
+			}
 			alloc_axlon_memory();
-			StateSav_ReadUBYTE(&axlon_ram[0], axlon_ram_size);
+			StateSav_ReadUBYTE(axlon_ram, MEMORY_axlon_num_banks * 0x4000);
 		}
 		StateSav_ReadINT(&MEMORY_mosaic_num_banks, 1);
 		if (MEMORY_mosaic_num_banks > 0) {
@@ -517,10 +525,10 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 					if (MEMORY_mosaic_num_banks > 0) MEMORY_writemap[0xff] = MosaicPutByte;
 					break;
 				case 0xcf:
-					if (MEMORY_axlon_enabled) MEMORY_writemap[0xcf] = AxlonPutByte;
+					if (MEMORY_axlon_num_banks > 0) MEMORY_writemap[0xcf] = AxlonPutByte;
 					break;
 				case 0x0f:
-					if (MEMORY_axlon_enabled && MEMORY_axlon_0f_mirror) MEMORY_writemap[0x0f] = AxlonPutByte;
+					if (MEMORY_axlon_num_banks > 0 && MEMORY_axlon_0f_mirror) MEMORY_writemap[0x0f] = AxlonPutByte;
 					break;
 				default:
 					/* something's wrong, so we keep current values */
@@ -857,14 +865,14 @@ static void MosaicPutByte(UWORD addr, UBYTE byte)
 	Log_print("MosaicPutByte:%4X:%2X",addr,byte);
 #endif
 	newbank = addr - 0xffc0;
-	if (newbank == mosaic_curbank || (newbank >= MEMORY_mosaic_num_banks && mosaic_curbank >= MEMORY_mosaic_num_banks)) return; /*same bank or rom -> rom*/
-	if (newbank >= MEMORY_mosaic_num_banks && mosaic_curbank < MEMORY_mosaic_num_banks) {
+	if (newbank == mosaic_curbank || (newbank >= mosaic_current_num_banks && mosaic_curbank >= mosaic_current_num_banks)) return; /*same bank or rom -> rom*/
+	if (newbank >= mosaic_current_num_banks && mosaic_curbank < mosaic_current_num_banks) {
 		/*ram ->rom*/
 		memcpy(mosaic_ram + mosaic_curbank*0x1000, MEMORY_mem + 0xc000,0x1000);
 		MEMORY_dFillMem(0xc000, 0xff, 0x1000);
 		MEMORY_SetROM(0xc000, 0xcfff);
 	}
-	else if (newbank < MEMORY_mosaic_num_banks && mosaic_curbank >= MEMORY_mosaic_num_banks) {
+	else if (newbank < mosaic_current_num_banks && mosaic_curbank >= mosaic_current_num_banks) {
 		/*rom->ram*/
 		memcpy(MEMORY_mem + 0xc000, mosaic_ram+newbank*0x1000,0x1000);
 		MEMORY_SetRAM(0xc000, 0xcfff);
@@ -906,7 +914,7 @@ static void AxlonPutByte(UWORD addr, UBYTE byte)
 #ifdef DEBUG
 	Log_print("AxlonPutByte:%4X:%2X", addr, byte);
 #endif
-	newbank = (byte&MEMORY_axlon_bankmask);
+	newbank = (byte&axlon_current_bankmask);
 	if (newbank == axlon_curbank) return;
 	memcpy(axlon_ram + axlon_curbank*0x4000, MEMORY_mem + 0x4000, 0x4000);
 	memcpy(MEMORY_mem + 0x4000, axlon_ram + newbank*0x4000, 0x4000);

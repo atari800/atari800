@@ -223,7 +223,7 @@ void Atari800_Warmstart(void)
 	if (Atari800_machine_type == Atari800_MACHINE_800) {
 		/* A real Axlon homebanks on reset */
 		/* XXX: what does Mosaic do? */
-		if (MEMORY_axlon_enabled) MEMORY_PutByte(0xcfff, 0);
+		if (MEMORY_axlon_num_banks > 0) MEMORY_PutByte(0xcfff, 0);
 		/* RESET key in 400/800 does not reset chips,
 		   but only generates RNMI interrupt */
 		ANTIC_NMIST = 0x3f;
@@ -610,12 +610,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 				if (i_a) {
 					int total_ram = Util_sscandec(argv[++i]);
 					MEMORY_mosaic_num_banks = (total_ram - 48)/4;
-					if (((total_ram - 48) % 4 != 0) || (MEMORY_mosaic_num_banks >= 0x40) || (MEMORY_mosaic_num_banks < 0)) {
+					if ((total_ram - 48) % 4 != 0 || MEMORY_mosaic_num_banks >= 0x40 || MEMORY_mosaic_num_banks < 0) {
 						Log_print("Invalid Mosaic total RAM size");
-						return FALSE;
-					}
-					if (MEMORY_axlon_enabled) {
-						Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
 						return FALSE;
 					}
 				}
@@ -624,17 +620,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-axlon") == 0) {
 				if (i_a) {
 					int total_ram = Util_sscandec(argv[++i]);
-					int banks = ((total_ram) - 32) / 16;
-					MEMORY_axlon_enabled = TRUE;
-					if (((total_ram - 32) % 16 != 0) || ((banks != 8) && (banks != 16) && (banks != 32) && (banks != 64) && (banks != 128) && (banks != 256))) {
+					MEMORY_axlon_num_banks = ((total_ram) - 32) / 16;
+					if ((total_ram - 32) % 16 != 0 || (MEMORY_axlon_num_banks != 0 && MEMORY_axlon_num_banks != 8 && MEMORY_axlon_num_banks != 16 && MEMORY_axlon_num_banks != 32 && MEMORY_axlon_num_banks != 64 && MEMORY_axlon_num_banks != 128 && MEMORY_axlon_num_banks != 256)) {
 						Log_print("Invalid Axlon total RAM size");
 						return FALSE;
 					}
-					if (MEMORY_mosaic_num_banks > 0) {
-						Log_print("Axlon and Mosaic can not both be enabled, because they are incompatible");
-						return FALSE;
-					}
-					MEMORY_axlon_bankmask = banks - 1;
 				}
 				else a_m = TRUE;
 			}
@@ -714,6 +704,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 				return FALSE;
 			}
 		}
+	}
+	if (MEMORY_mosaic_num_banks > 0 && MEMORY_axlon_num_banks > 0) {
+		Log_print("Axlon and Mosaic RAM can not both be enabled, because they are incompatible");
+		return FALSE;
 	}
 
 	*argc = j;

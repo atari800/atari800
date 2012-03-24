@@ -121,9 +121,8 @@ void MEMORY_GetCharset(UBYTE *cs);
 
 /* Mosaic and Axlon 400/800 RAM extensions */
 extern int MEMORY_mosaic_num_banks;
-extern int MEMORY_axlon_enabled;
 extern int MEMORY_axlon_0f_mirror;
-extern int MEMORY_axlon_bankmask;
+extern int MEMORY_axlon_num_banks;
 
 #ifndef PAGED_MEM
 /* Reads a byte from the specified special address (not RAM or ROM). */

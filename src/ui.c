@@ -224,6 +224,16 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(MOSAIC_OTHER, "Other"),
 		UI_MENU_END
 	};
+	static UI_tMenuItem axlon_ram_menu_array[] = {
+		UI_MENU_ACTION(0, "Disabled"),
+		UI_MENU_ACTION(8, "128 KB"),
+		UI_MENU_ACTION(16, "256 KB"),
+		UI_MENU_ACTION(32, "512 KB"),
+		UI_MENU_ACTION(64, "1 MB"),
+		UI_MENU_ACTION(128, "2 MB"),
+		UI_MENU_ACTION(256, "4 MB"),
+		UI_MENU_END
+	};
 	static UI_tMenuItem ramxl_menu_array[] = {
 		UI_MENU_ACTION(16, "16 KB"),
 		UI_MENU_ACTION(32, "32 KB"),
@@ -329,10 +339,12 @@ static void SystemSettings(void)
 		UI_MENU_SUBMENU_SUFFIX(5, "RAM size:", NULL),
 		UI_MENU_ACTION(6, "Video system:"),
 		UI_MENU_SUBMENU_SUFFIX(7, "Mosaic RAM:", NULL),
-		UI_MENU_SUBMENU(8, "1200XL keyboard LEDs:"),
-		UI_MENU_ACTION(9, "1200XL F1-F4 keys:"),
-		UI_MENU_ACTION(10, "1200XL option jumper J1:"),
-		UI_MENU_ACTION(11, "Keyboard:"),
+		UI_MENU_SUBMENU_SUFFIX(8, "Axlon RAMDisk:", NULL),
+		UI_MENU_ACTION(9, "Axlon RAMDisk page $0F shadow:"),
+		UI_MENU_SUBMENU(10, "1200XL keyboard LEDs:"),
+		UI_MENU_ACTION(11, "1200XL F1-F4 keys:"),
+		UI_MENU_ACTION(12, "1200XL option jumper J1:"),
+		UI_MENU_ACTION(13, "Keyboard:"),
 		UI_MENU_END
 	};
 
@@ -460,23 +472,33 @@ static void SystemSettings(void)
 		else
 			menu_array[7].suffix = "N/A";
 
-		/* Set label for the "keyboard LEDs" action. */
-		menu_array[8].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
+		/* Set label for the "Axlon RAM" action. */
+		menu_array[8].suffix = Atari800_machine_type != Atari800_MACHINE_800
 		                       ? "N/A"
-		                       : Atari800_keyboard_leds ? "Yes" : "No";
+		                       : FindMenuItem(axlon_ram_menu_array, MEMORY_axlon_num_banks)->item;
+
+		/* Set label for the "Axlon $0F shadow" action. */
+		menu_array[9].suffix = Atari800_machine_type != Atari800_MACHINE_800
+		                       ? "N/A"
+		                       : MEMORY_axlon_0f_mirror ? "on" : "off";
+
+		/* Set label for the "keyboard LEDs" action. */
+		menu_array[10].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
+		                        ? "N/A"
+		                        : Atari800_keyboard_leds ? "Yes" : "No";
 
 		/* Set label for the "F keys" action. */
-		menu_array[9].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
-		                       ? "N/A"
-		                       : Atari800_f_keys ? "Yes" : "No";
+		menu_array[11].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE
+		                        ? "N/A"
+		                        : Atari800_f_keys ? "Yes" : "No";
 
 		/* Set label for the "1200XL option jumper" action. */
-		menu_array[10].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
-		                       Atari800_jumper ? "installed" : "none";
+		menu_array[12].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
+		                        Atari800_jumper ? "installed" : "none";
 
 		/* Set label for the "XEGS keyboard" action. */
-		menu_array[11].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
-		                       Atari800_keyboard_detached ? "detached (XEGS)" : "integrated/attached";
+		menu_array[13].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
+		                        Atari800_keyboard_detached ? "detached (XEGS)" : "integrated/attached";
 
 		option = UI_driver->fSelect("System Settings", 0, option, menu_array, NULL);
 		switch (option) {
@@ -621,25 +643,46 @@ static void SystemSettings(void)
 					}
 					else
 						MEMORY_mosaic_num_banks = option2;
+					if (option2 > 0)
+						/* Can't have both Mosaic and Axlon active together. */
+						MEMORY_axlon_num_banks = 0;
 					need_initialise = TRUE;
 				}
 			}
 			break;
 		case 8:
+			if (Atari800_machine_type == Atari800_MACHINE_800) {
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, MEMORY_axlon_num_banks, axlon_ram_menu_array, NULL);
+				if (option2 >= 0) {
+					MEMORY_axlon_num_banks = option2;
+					if (option2 > 0)
+						/* Can't have both Mosaic and Axlon active together. */
+						MEMORY_mosaic_num_banks = 0;
+					need_initialise = TRUE;
+				}
+			}
+			break;
+		case 9:
+			if (Atari800_machine_type == Atari800_MACHINE_800) {
+				MEMORY_axlon_0f_mirror = !MEMORY_axlon_0f_mirror;
+				need_initialise = TRUE;
+			}
+			break;
+		case 10:
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE)
 				Atari800_keyboard_leds = !Atari800_keyboard_leds;
 			break;
-		case 9:
+		case 11:
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE)
 				Atari800_f_keys = !Atari800_f_keys;
 			break;
-		case 10:
+		case 12:
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 				Atari800_jumper = !Atari800_jumper;
 				Atari800_UpdateJumper();
 			}
 			break;
-		case 11:
+		case 13:
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 				Atari800_keyboard_detached = !Atari800_keyboard_detached;
 				Atari800_UpdateKeyboardDetached();

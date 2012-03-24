@@ -1,3 +1,9 @@
+2012-03-24  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.c, cfg.c, memory.[ch], ui.c: Simplify Axlon RAM code. Fix bug with
+  Axlon and Mosaic RAM switching to home bank on state read. Add option to
+  control Axlon RAM settings in GUI. Save Axlon RAM settings in config.
+
+
 2012-03-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.[ch], cfg.c, ui.c: Fixed 1200XL jumper emulation - the machine has
   only one onboard jumper, not four.
