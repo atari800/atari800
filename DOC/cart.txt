@@ -84,6 +84,7 @@ Currently supported cartridge types:
 | 49 | 800/XL/XE |  128 | Atrax SDX 128 KB cartridge                        |
 | 50 | 800/XL/XE |   64 | Turbosoft 64 KB cartridge                         |
 | 51 | 800/XL/XE |  128 | Turbosoft 128 KB cartridge                        |
+| 52 | 800/XL/XE |   32 | MicroCalc 32 KB cartridge                         |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -680,3 +681,13 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  0 enabled.
 
  Reference: http://www.retrogames.cl/turbosoft.html
+
++---------------------------------------------------------------------------+
+| Type 52: MicroCalc 32 KB cartridge                                        |
++---------------------------------------------------------------------------+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $Bfff. The cartridge memory is divided into 4 banks, 8 KB each. On power
+ on, bank 0 is visible. Each access to $D500-$D5FF switches another bank in
+ the sequence as follows: 0->1->2->3->cartridge disabled->0 etc.
+
+ Reference: Altirra source code, ver. 2.10-test20

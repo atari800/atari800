@@ -45,7 +45,7 @@
 #endif
 #include "log.h"
 
-/* #define DEBUG 1 */
+#define DEBUG 1
 
 int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	0,
@@ -99,7 +99,8 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	64,   /* CARTRIDGE_ATRAX_SDX_64 */
 	128,  /* CARTRIDGE_ATRAX_SDX_128 */
 	64,   /* CARTRIDGE_TURBOSOFT_64 */
-	128   /* CARTRIDGE_TURBOSOFT_128 */
+	128,  /* CARTRIDGE_TURBOSOFT_128 */
+	32    /* CARTRIDGE_MICROCALC_32 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -293,6 +294,9 @@ static void SwitchBank(int old_state)
 		if (active_cart->state < 0x10000)
 			MEMORY_CartA0bfDisable();
 		break;
+	case CARTRIDGE_MICROCALC_32:
+		set_bank_A0BF(4);
+		break;
 	}
 #if DEBUG
 	if (old_state != active_cart->state)
@@ -301,7 +305,7 @@ static void SwitchBank(int old_state)
 }
 
 /* Maps *active_cart to memory. If the cartridge is bankswitched,
-   the mapping is pe3rformed according to its current state (ie. it doesn't
+   the mapping is performed according to its current state (ie. it doesn't
    reset to bank 0 or whatever). */
 /* Note that this function only maps part of a cartridge (if any). Then it
    calls SwitchBank(), which maps the rest. */
@@ -402,6 +406,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_ATRAX_SDX_128:
 		case CARTRIDGE_TURBOSOFT_64:
 		case CARTRIDGE_TURBOSOFT_128:
+		case CARTRIDGE_MICROCALC_32:
 			MEMORY_Cart809fDisable();
 			break;
 		case CARTRIDGE_DB_32:
@@ -724,6 +729,9 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 			new_state = 0;
 			break;
 		}
+		break;
+	case CARTRIDGE_MICROCALC_32:
+		new_state = (old_state + 1) % 5;
 		break;
 	default:
 		/* Other cartridge types don't support enabling/disabling/banking through page D5. */

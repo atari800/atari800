@@ -1,3 +1,8 @@
+2012-03-26  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Added support
+  for the MicroCalc cartridge mapping.
+
+
 2012-03-24  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c, cfg.c, memory.[ch], ui.c: Simplify Axlon RAM code. Fix bug with
   Axlon and Mosaic RAM switching to home bank on state read. Add option to
