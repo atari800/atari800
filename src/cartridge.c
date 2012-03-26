@@ -45,7 +45,7 @@
 #endif
 #include "log.h"
 
-#define DEBUG 1
+/* #define DEBUG 1 */
 
 int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	0,
