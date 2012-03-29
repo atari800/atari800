@@ -100,7 +100,7 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	128,  /* CARTRIDGE_ATRAX_SDX_128 */
 	64,   /* CARTRIDGE_TURBOSOFT_64 */
 	128,  /* CARTRIDGE_TURBOSOFT_128 */
-	32    /* CARTRIDGE_MICROCALC_32 */
+	32    /* CARTRIDGE_ULTRACART_32 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -294,7 +294,7 @@ static void SwitchBank(int old_state)
 		if (active_cart->state < 0x10000)
 			MEMORY_CartA0bfDisable();
 		break;
-	case CARTRIDGE_MICROCALC_32:
+	case CARTRIDGE_ULTRACART_32:
 		set_bank_A0BF(4);
 		break;
 	}
@@ -406,7 +406,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_ATRAX_SDX_128:
 		case CARTRIDGE_TURBOSOFT_64:
 		case CARTRIDGE_TURBOSOFT_128:
-		case CARTRIDGE_MICROCALC_32:
+		case CARTRIDGE_ULTRACART_32:
 			MEMORY_Cart809fDisable();
 			break;
 		case CARTRIDGE_DB_32:
@@ -730,7 +730,7 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 			break;
 		}
 		break;
-	case CARTRIDGE_MICROCALC_32:
+	case CARTRIDGE_ULTRACART_32:
 		new_state = (old_state + 1) % 5;
 		break;
 	default:
