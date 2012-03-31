@@ -1,3 +1,8 @@
+2012-03-31  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Added support
+  for the cartridge mapping used by "Monkey Wrench II for the Atari XL".
+
+
 2012-03-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt: Renamed MicroCalc
   cartridge mapping to Ultracart - that's the name printed at the cartridge's

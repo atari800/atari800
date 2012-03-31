@@ -100,7 +100,8 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	128,  /* CARTRIDGE_ATRAX_SDX_128 */
 	64,   /* CARTRIDGE_TURBOSOFT_64 */
 	128,  /* CARTRIDGE_TURBOSOFT_128 */
-	32    /* CARTRIDGE_ULTRACART_32 */
+	32,   /* CARTRIDGE_ULTRACART_32 */
+	8     /* CARTRIDGE_LOW_BANK_8 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -370,6 +371,11 @@ static void MapActiveCart(void)
 			MEMORY_Cart809fDisable();
 			MEMORY_CartA0bfEnable();
 			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image);
+			break;
+		case CARTRIDGE_LOW_BANK_8:
+			MEMORY_Cart809fEnable();
+			MEMORY_CartA0bfDisable();
+			MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image);
 			break;
 		case CARTRIDGE_STD_16:
 		case CARTRIDGE_BLIZZARD_16:

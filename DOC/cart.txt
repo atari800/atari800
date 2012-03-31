@@ -85,6 +85,7 @@ Currently supported cartridge types:
 | 50 | 800/XL/XE |   64 | Turbosoft 64 KB cartridge                         |
 | 51 | 800/XL/XE |  128 | Turbosoft 128 KB cartridge                        |
 | 52 | 800/XL/XE |   32 | Ultracart 32 KB cartridge                         |
+| 53 | 800/XL/XE |    8 | Low bank 8 KB cartridge                           |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -685,6 +686,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 +---------------------------------------------------------------------------+
 | Type 52: Ultracart 32 KB cartridge                                        |
 +---------------------------------------------------------------------------+
+
  This bank-switched cartridge occupies 8 KB of address space between $A000
  and $Bfff. The cartridge memory is divided into 4 banks, 8 KB each. On power
  on, bank 0 is visible. Each access to $D500-$D5FF switches another bank in
@@ -692,3 +694,13 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference: Altirra source code, ver. 2.10-test20
  http://www.atarimania.com/utility-atari-400-800-xl-xe-microcalc_28241.html
+
++---------------------------------------------------------------------------+
+| Type 53: Low bank 8 KB cartridge                                          |
++---------------------------------------------------------------------------+
+
+ This cartridge, destined for the left cartridge slot, occupies 8 KB of
+ address space between $8000 and $9FFF. It achieves that by asserting the RD4
+ line and not asserting the RD5 line.
+
+ Reference: http://www.atariage.com/forums/topic/161828-hooked-on-8-bit-carts/page__view__findpost__p__2338297
