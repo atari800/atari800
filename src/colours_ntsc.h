@@ -11,7 +11,6 @@
 
 /* Contains NTSC-specific controls for palette adjustment. */
 typedef struct COLOURS_NTSC_setup_t {
-	double hue; /* Like TV tint control */
 	/* Delay between phases of two consecutive chromas, in nanoseconds;
 	normally 21. Corresponds to the R38 potentiometer on the bottom of
 	Atari computers. */
@@ -19,8 +18,6 @@ typedef struct COLOURS_NTSC_setup_t {
 } COLOURS_NTSC_setup_t;
 
 /* Limits for the adjustable values. */
-#define COLOURS_NTSC_HUE_MIN -1.0
-#define COLOURS_NTSC_HUE_MAX 1.0
 #define COLOURS_NTSC_DELAY_MIN 16
 #define COLOURS_NTSC_DELAY_MAX 26
 

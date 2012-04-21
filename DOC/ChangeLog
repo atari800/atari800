@@ -1,6 +1,9 @@
 2012-04-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: Make the display adjustment keyboard shortcuts work by pressing
   and holding - no more need to press the keys repeatedly.
+* colours_ntsc.[ch], colurs_pal.c, colours.[ch], filter_ntsc.c, ui.c,
+  sdl/input.c, atari800.man, DOS/USAGE: Rename color control "Hue" to "Tint".
+  Add tint control also for PAL mode, as there are PAL TVs with tint control.
 
 
 2012-03-31  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

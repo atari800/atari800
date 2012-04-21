@@ -46,10 +46,10 @@ Colours_setup_t *Colours_setup;
 COLOURS_EXTERNAL_t *Colours_external;
 
 static Colours_setup_t const presets[] = {
-	/* Saturation, Contrast, Brightness, Gamm adjustment, Black level, White level */
-	{ 0.0, 0.0, 0.0, 0.3, 16, 235 }, /* Standard preset */
-	{ 0.0, 0.2, -0.16, 0.5, 16, 235 }, /* Deep blacks preset */
-	{ 0.26, 0.72, -0.16, 0.16, 16, 235 } /* Vibrant colours & levels preset */
+	/* Hue, Saturation, Contrast, Brightness, Gamma adjustment, Black level, White level */
+	{ 0.0, 0.0, 0.0, 0.0, 0.3, 16, 235 }, /* Standard preset */
+	{ 0.0, 0.0, 0.2, -0.16, 0.5, 16, 235 }, /* Deep blacks preset */
+	{ 0.0, 0.26, 0.72, -0.16, 0.16, 16, 235 } /* Vibrant colours & levels preset */
 };
 static char const * const preset_cfg_strings[COLOURS_PRESET_SIZE] = {
 	"STANDARD",
@@ -78,7 +78,7 @@ void Colours_SetRGB(int i, int r, int g, int b, int *colortable_ptr)
 
 static void UpdateModeDependentPointers(int tv_mode)
 {
-	/* Set pointers to the currnt setup and external palette */
+	/* Set pointers to the current setup and external palette. */
 	if (tv_mode == Atari800_TV_NTSC) {
 		Colours_setup = &COLOURS_NTSC_setup;
 		Colours_external = &COLOURS_NTSC_external;
@@ -158,7 +158,8 @@ Colours_preset_t Colours_GetPreset(void)
 		return COLOURS_PRESET_CUSTOM;
 
 	for (i = 0; i < COLOURS_PRESET_SIZE; i ++) {
-		if (Util_almostequal(Colours_setup->saturation, presets[i].saturation, 0.001) &&
+		if (Util_almostequal(Colours_setup->hue, presets[i].hue, 0.001) &&
+		    Util_almostequal(Colours_setup->saturation, presets[i].saturation, 0.001) &&
 		    Util_almostequal(Colours_setup->contrast, presets[i].contrast, 0.001) &&
 		    Util_almostequal(Colours_setup->brightness, presets[i].brightness, 0.001) &&
 		    Util_almostequal(Colours_setup->gamma, presets[i].gamma, 0.001) &&
@@ -247,6 +248,11 @@ int Colours_Initialise(int *argc, char *argv[])
 				COLOURS_NTSC_setup.gamma = COLOURS_PAL_setup.gamma = atof(argv[++i]);
 			else a_m = TRUE;
 		}
+		else if (strcmp(argv[i], "-tint") == 0) {
+			if (i_a)
+				COLOURS_NTSC_setup.hue = COLOURS_PAL_setup.hue = atof(argv[++i]);
+			else a_m = TRUE;
+		}
 		else if (strcmp(argv[i], "-colors-preset") == 0) {
 			if (i_a) {
 				int idx = CFG_MatchTextParameter(argv[++i], preset_cfg_strings, COLOURS_PRESET_SIZE);
@@ -267,6 +273,7 @@ int Colours_Initialise(int *argc, char *argv[])
 				Log_print("\t-contrast <num>        Set contrast");
 				Log_print("\t-brightness <num>      Set brightness");
 				Log_print("\t-gamma <num>           Set color gamma factor");
+				Log_print("\t-tint <num>            Set tint");
 			}
 			argv[j++] = argv[i];
 		}

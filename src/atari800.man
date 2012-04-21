@@ -617,9 +617,11 @@ Set screen gamma correction
 \fB\-ntsc\-gamma \fIn\fR, \fB\-pal\-gamma \fIn\fR
 Set gamma adjustment only for NTSC or PAL, respectively
 .TP
-.BI \-hue\  n
-Set hue -1..1 (like TV Tint control).
-Only for NTSC.
+.BI \-tint\  n
+Set tint -1..1.
+.TP
+\fB\-ntsc\-tint \fIn\fR, \fB\-pal\-tint \fIn\fR
+Set tint only for NTSC or PAL, respectively
 .TP
 .BI \-colordelay\ n
 Set GTIA color delay.
@@ -1308,7 +1310,7 @@ Grab mouse (prevents mouse pointer from leaving the window)
 
 .TP
 .BR LAlt + LShift + 1
-Decrease hue (like TV Tint control, only NTSC)
+Decrease tint (also called hue)
 .TP
 .BR LAlt + 1
 Increase hue

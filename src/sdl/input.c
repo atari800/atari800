@@ -409,16 +409,14 @@ int PLATFORM_Keyboard(void)
 				key_pressed = 0;
 				break;
 			case SDLK_1:
-				if (Atari800_tv_mode == Atari800_TV_NTSC) {
-					if (kbhits[SDLK_LSHIFT]) {
-						if (COLOURS_NTSC_specific_setup.hue > COLOURS_NTSC_HUE_MIN)
-							COLOURS_NTSC_specific_setup.hue -= 0.02;
-					} else {
-						if (COLOURS_NTSC_specific_setup.hue < COLOURS_NTSC_HUE_MAX)
-							COLOURS_NTSC_specific_setup.hue += 0.02;
-					}
-					Colours_Update();
+				if (kbhits[SDLK_LSHIFT]) {
+					if (Colours_setup->hue > COLOURS_HUE_MIN)
+						Colours_setup->hue -= 0.02;
+				} else {
+					if (Colours_setup->hue < COLOURS_HUE_MAX)
+						Colours_setup->hue += 0.02;
 				}
+				Colours_Update();
 				return AKEY_NONE;
 			case SDLK_2:
 				if (kbhits[SDLK_LSHIFT]) {

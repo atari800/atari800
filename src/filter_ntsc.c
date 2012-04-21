@@ -81,7 +81,7 @@ void FILTER_NTSC_Update(atari_ntsc_t *filter)
 		/* It's either generated palette, or external palette with
 		   need for adjustments. Copy values from
 		   COLOURS_NTSC_setup to FILTER_NTSC_setup. */
-		FILTER_NTSC_setup.hue = COLOURS_NTSC_specific_setup.hue;
+		FILTER_NTSC_setup.hue = COLOURS_NTSC_setup.hue;
 		FILTER_NTSC_setup.saturation = COLOURS_NTSC_setup.saturation;
 		FILTER_NTSC_setup.contrast = COLOURS_NTSC_setup.contrast;
 		FILTER_NTSC_setup.brightness = COLOURS_NTSC_setup.brightness;
@@ -102,7 +102,7 @@ void FILTER_NTSC_SetPreset(int preset)
 		FILTER_NTSC_setup = *presets[preset];
 
 		/* Copy settings from the preset to NTSC setup. */
-		COLOURS_NTSC_specific_setup.hue = FILTER_NTSC_setup.hue;
+		COLOURS_NTSC_setup.hue = FILTER_NTSC_setup.hue;
 		COLOURS_NTSC_setup.saturation = FILTER_NTSC_setup.saturation;
 		COLOURS_NTSC_setup.contrast = FILTER_NTSC_setup.contrast;
 		COLOURS_NTSC_setup.brightness = FILTER_NTSC_setup.brightness;
@@ -121,7 +121,7 @@ int FILTER_NTSC_GetPreset(void)
 		    Util_almostequal(FILTER_NTSC_setup.fringing, presets[i]->fringing, 0.001) &&
 		    Util_almostequal(FILTER_NTSC_setup.bleed, presets[i]->bleed, 0.001) &&
 		    Util_almostequal(FILTER_NTSC_setup.burst_phase, presets[i]->burst_phase, 0.001) &&
-		    Util_almostequal(COLOURS_NTSC_specific_setup.hue, presets[i]->hue, 0.001) &&
+		    Util_almostequal(COLOURS_NTSC_setup.hue, presets[i]->hue, 0.001) &&
 		    Util_almostequal(COLOURS_NTSC_setup.saturation, presets[i]->saturation, 0.001) &&
 		    Util_almostequal(COLOURS_NTSC_setup.contrast, presets[i]->contrast, 0.001) &&
 		    Util_almostequal(COLOURS_NTSC_setup.brightness, presets[i]->brightness, 0.001) &&

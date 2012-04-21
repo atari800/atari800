@@ -2462,7 +2462,7 @@ static struct {
 	{ COLOURS_BRIGHTNESS_MIN, COLOURS_BRIGHTNESS_MAX },
 	{ COLOURS_CONTRAST_MIN, COLOURS_CONTRAST_MAX },
 	{ COLOURS_SATURATION_MIN, COLOURS_SATURATION_MAX },
-	{ COLOURS_NTSC_HUE_MIN, COLOURS_NTSC_HUE_MAX },
+	{ COLOURS_HUE_MIN, COLOURS_HUE_MAX },
 	{ COLOURS_GAMMA_MIN, COLOURS_GAMMA_MAX },
 	{ COLOURS_NTSC_DELAY_MIN, COLOURS_NTSC_DELAY_MAX }
 #if NTSC_FILTER
@@ -2485,27 +2485,24 @@ static void UpdateColourControl(const int idx)
 		 *(colour_controls[idx].setting));
 }
 
-/* Sets pointers to colour controls properly, and hides/shows the Hue and
-   Color delay controls, which are applicable only for NTSC. */
+/* Sets pointers to colour controls properly, and hides/shows the Color delay
+   control, which is applicable only for NTSC. */
 static void UpdateColourControls(UI_tMenuItem menu_array[])
 {
 	int i;
 	colour_controls[0].setting = &Colours_setup->brightness;
 	colour_controls[1].setting = &Colours_setup->contrast;
 	colour_controls[2].setting = &Colours_setup->saturation;
-	colour_controls[3].setting = &COLOURS_NTSC_specific_setup.hue;
+	colour_controls[3].setting = &Colours_setup->hue;
 	colour_controls[4].setting = &Colours_setup->gamma;
 	colour_controls[5].setting = &COLOURS_NTSC_specific_setup.color_delay;
 	for (i = 0; i < 6; i ++)
 		UpdateColourControl(i);
-	/* Hide/show Hue and Color delay. */
-	if (Atari800_tv_mode == Atari800_TV_NTSC) {
-		FindMenuItem(menu_array, 16)->flags = UI_ITEM_ACTION;
+	/* Hide/show Color delay. */
+	if (Atari800_tv_mode == Atari800_TV_NTSC)
 		FindMenuItem(menu_array, 18)->flags = UI_ITEM_ACTION;
-	} else {
-		FindMenuItem(menu_array, 16)->flags = UI_ITEM_HIDDEN;
+	else
 		FindMenuItem(menu_array, 18)->flags = UI_ITEM_HIDDEN;
-	}
 }
 
 /* Converts value of a colour setting to range usable by slider (0..100). */
@@ -2696,7 +2693,7 @@ static void DisplaySettings(void)
 		UI_MENU_ACTION_PREFIX(13, " Brightness: ", colour_controls[0].string),
 		UI_MENU_ACTION_PREFIX(14, " Contrast: ", colour_controls[1].string),
 		UI_MENU_ACTION_PREFIX(15, " Saturation: ", colour_controls[2].string),
-		UI_MENU_ACTION_PREFIX(16, " Hue: ", colour_controls[3].string),
+		UI_MENU_ACTION_PREFIX(16, " Tint: ", colour_controls[3].string),
 		UI_MENU_ACTION_PREFIX(17, " Gamma: ", colour_controls[4].string),
 		UI_MENU_ACTION_PREFIX(18, " GTIA delay: ", colour_controls[5].string),
 #if NTSC_FILTER

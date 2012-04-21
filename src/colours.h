@@ -17,6 +17,7 @@ typedef enum {
 /* Contains controls for palette adjustment. These controls are available for
    NTSC and PAL palettes. */
 typedef struct Colours_setup_t {
+	double hue; /* TV tint control */
 	double saturation;
 	double contrast;
 	double brightness;
@@ -26,6 +27,8 @@ typedef struct Colours_setup_t {
 } Colours_setup_t;
 
 /* Limits for the adjustable values. */
+#define COLOURS_HUE_MIN -1.0
+#define COLOURS_HUE_MAX 1.0
 #define COLOURS_SATURATION_MIN -1.0
 #define COLOURS_SATURATION_MAX 1.0
 #define COLOURS_CONTRAST_MIN -2.0

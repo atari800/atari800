@@ -210,17 +210,19 @@ Command line options
 -contrast <n>         Set screen contrast (also called white level)
 -brightness <n>       Set screen brightness (also called black level)
 -gamma <n>            Set screen gamma correction
+-tint <n>             Set tint -1..1
 -ntsc-saturation <n>  Set saturation only for NTSC
 -ntsc-contrast <n>    Set contrast only for NTSC
 -ntsc-brightness <n>  Set brightness only for NTSC
 -ntsc-gamma <n>       Set gamma adjustment only for NTSC
--hue <n>              Set hue -1..1 (like TV Tint control, NTSC only)
+-ntsc-tint <n>        Set tint only for NTSC
 -colordelay <n>       Set GTIA color delay (emulates the potentiometer at the
                       bottom of Atari computers, that adjusts colors; NTSC only)
 -pal-saturation <n>   Set saturation only for PAL
 -pal-contrast <n>     Set contrast only for PAL
 -pal-brightness <n>   Set brightness only for PAL
 -pal-gamma <n>        Set gamma adjustment only for PAL
+-pal-tint <n>         Set tint only for PAL
 
 -paletten <filename>  Read Atari NTSC colors from ACT file
 -paletten-adjust      Apply the colour adjustments to the loaded NTSC palette
@@ -535,8 +537,8 @@ LAlt+G     Switch visible horizontal area. See -horiz-area.
 LAlt+J     Swap joysticks 0 and 1
 LAlt+M     Grab mouse (prevents mouse pointer from leaving the window)
 
-LAlt+LShift+1     Decrease hue (like TV Tint control, only NTSC)
-LAlt+1            Increase hue
+LAlt+LShift+1     Decrease tint (also called hue)
+LAlt+1            Increase tint
 LAlt+LShift+2     Decrease saturation (like TV Colour control)
 LAlt+2            Increase saturation
 LAlt+LShift+3     Decrease contrast (also called white level)
