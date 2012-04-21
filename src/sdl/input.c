@@ -409,7 +409,6 @@ int PLATFORM_Keyboard(void)
 				key_pressed = 0;
 				break;
 			case SDLK_1:
-				key_pressed = 0;
 				if (Atari800_tv_mode == Atari800_TV_NTSC) {
 					if (kbhits[SDLK_LSHIFT]) {
 						if (COLOURS_NTSC_specific_setup.hue > COLOURS_NTSC_HUE_MIN)
@@ -420,9 +419,8 @@ int PLATFORM_Keyboard(void)
 					}
 					Colours_Update();
 				}
-				break;
+				return AKEY_NONE;
 			case SDLK_2:
-				key_pressed = 0;
 				if (kbhits[SDLK_LSHIFT]) {
 					if (Colours_setup->saturation > COLOURS_SATURATION_MIN)
 						Colours_setup->saturation -= 0.02;
@@ -431,9 +429,8 @@ int PLATFORM_Keyboard(void)
 						Colours_setup->saturation += 0.02;
 				}
 				Colours_Update();
-				break;
+				return AKEY_NONE;
 			case SDLK_3:
-				key_pressed = 0;
 				if (kbhits[SDLK_LSHIFT]) {
 					if (Colours_setup->contrast > COLOURS_CONTRAST_MIN)
 						Colours_setup->contrast -= 0.04;
@@ -442,9 +439,8 @@ int PLATFORM_Keyboard(void)
 					Colours_setup->contrast += 0.04;
 				}
 				Colours_Update();
-				break;
+				return AKEY_NONE;
 			case SDLK_4:
-				key_pressed = 0;
 				if (kbhits[SDLK_LSHIFT]) {
 					if (Colours_setup->brightness > COLOURS_BRIGHTNESS_MIN)
 						Colours_setup->brightness -= 0.04;
@@ -453,9 +449,8 @@ int PLATFORM_Keyboard(void)
 						Colours_setup->brightness += 0.04;
 				}
 				Colours_Update();
-				break;
+				return AKEY_NONE;
 			case SDLK_5:
-				key_pressed = 0;
 				if (kbhits[SDLK_LSHIFT]) {
 					if (Colours_setup->gamma > COLOURS_GAMMA_MIN)
 						Colours_setup->gamma -= 0.02;
@@ -464,9 +459,8 @@ int PLATFORM_Keyboard(void)
 						Colours_setup->gamma += 0.02;
 				}
 				Colours_Update();
-				break;
+				return AKEY_NONE;
 			case SDLK_6:
-				key_pressed = 0;
 				if (Atari800_tv_mode == Atari800_TV_NTSC) {
 					if (kbhits[SDLK_LSHIFT]) {
 						if (COLOURS_NTSC_specific_setup.color_delay > COLOURS_NTSC_DELAY_MIN)
@@ -477,19 +471,17 @@ int PLATFORM_Keyboard(void)
 					}
 					Colours_Update();
 				}
-				break;
+				return AKEY_NONE;
 			case SDLK_LEFTBRACKET:
-				key_pressed = 0;
 				if (kbhits[SDLK_LSHIFT])
-					SDL_VIDEO_SetScanlinesPercentage(SDL_VIDEO_scanlines_percentage - 5);
+					SDL_VIDEO_SetScanlinesPercentage(SDL_VIDEO_scanlines_percentage - 1);
 				else
-					SDL_VIDEO_SetScanlinesPercentage(SDL_VIDEO_scanlines_percentage + 5);
-				break;
+					SDL_VIDEO_SetScanlinesPercentage(SDL_VIDEO_scanlines_percentage + 1);
+				return AKEY_NONE;
 			default:
 				if(FILTER_NTSC_emu != NULL){
 					switch(lastkey){
 					case SDLK_7:
-						key_pressed = 0;
 						if (kbhits[SDLK_LSHIFT]) {
 							if (FILTER_NTSC_setup.sharpness > FILTER_NTSC_SHARPNESS_MIN)
 								FILTER_NTSC_setup.sharpness -= 0.02;
@@ -498,9 +490,8 @@ int PLATFORM_Keyboard(void)
 								FILTER_NTSC_setup.sharpness += 0.02;
 						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
-						break;
+						return AKEY_NONE;
 					case SDLK_8:
-						key_pressed = 0;
 						if (kbhits[SDLK_LSHIFT]) {
 							if (FILTER_NTSC_setup.resolution > FILTER_NTSC_RESOLUTION_MIN)
 								FILTER_NTSC_setup.resolution -= 0.02;
@@ -509,9 +500,8 @@ int PLATFORM_Keyboard(void)
 								FILTER_NTSC_setup.resolution += 0.02;
 						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
-						break;
+						return AKEY_NONE;
 					case SDLK_9:
-						key_pressed = 0;
 						if (kbhits[SDLK_LSHIFT]) {
 							if (FILTER_NTSC_setup.artifacts > FILTER_NTSC_ARTIFACTS_MIN)
 								FILTER_NTSC_setup.artifacts -= 0.02;
@@ -520,9 +510,8 @@ int PLATFORM_Keyboard(void)
 								FILTER_NTSC_setup.artifacts += 0.02;
 						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
-						break;
+						return AKEY_NONE;
 					case SDLK_0:
-						key_pressed = 0;
 						if (kbhits[SDLK_LSHIFT]) {
 							if (FILTER_NTSC_setup.fringing > FILTER_NTSC_FRINGING_MIN)
 								FILTER_NTSC_setup.fringing -= 0.02;
@@ -531,9 +520,8 @@ int PLATFORM_Keyboard(void)
 								FILTER_NTSC_setup.fringing += 0.02;
 						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
-						break;
+						return AKEY_NONE;
 					case SDLK_MINUS:
-						key_pressed = 0;
 						if (kbhits[SDLK_LSHIFT]) {
 							if (FILTER_NTSC_setup.bleed > FILTER_NTSC_BLEED_MIN)
 								FILTER_NTSC_setup.bleed -= 0.02;
@@ -542,9 +530,8 @@ int PLATFORM_Keyboard(void)
 								FILTER_NTSC_setup.bleed += 0.02;
 						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
-						break;
+						return AKEY_NONE;
 					case SDLK_EQUALS:
-						key_pressed = 0;
 						if (kbhits[SDLK_LSHIFT]) {
 							if (FILTER_NTSC_setup.burst_phase > FILTER_NTSC_BURST_PHASE_MIN)
 								FILTER_NTSC_setup.burst_phase -= 0.02;
@@ -553,7 +540,7 @@ int PLATFORM_Keyboard(void)
 								FILTER_NTSC_setup.burst_phase += 0.02;
 						}
 						FILTER_NTSC_Update(FILTER_NTSC_emu);
-						break;
+						return AKEY_NONE;
 					case SDLK_RIGHTBRACKET:
 						key_pressed = 0;
 						FILTER_NTSC_NextPreset();
@@ -572,7 +559,7 @@ int PLATFORM_Keyboard(void)
 	else
 		INPUT_key_shift = 0;
 
-    /* CONTROL STATE */
+	/* CONTROL STATE */
 	if ((kbhits[SDLK_LCTRL]) || (kbhits[SDLK_RCTRL]))
 		key_control = 1;
 	else

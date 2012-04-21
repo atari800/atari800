@@ -1,3 +1,8 @@
+2012-04-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sdl/input.c: Make the display adjustment keyboard shortcuts work by pressing
+  and holding - no more need to press the keys repeatedly.
+
+
 2012-03-31  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Added support
   for the cartridge mapping used by "Monkey Wrench II for the Atari XL".
