@@ -39,7 +39,7 @@
 #include "sdl/input.h"
 #include "akey.h"
 #include "atari.h"
-#include "colours_ntsc.h"
+#include "colours.h"
 #include "config.h"
 #include "filter_ntsc.h"
 #include "../input.h"
@@ -459,16 +459,14 @@ int PLATFORM_Keyboard(void)
 				Colours_Update();
 				return AKEY_NONE;
 			case SDLK_6:
-				if (Atari800_tv_mode == Atari800_TV_NTSC) {
-					if (kbhits[SDLK_LSHIFT]) {
-						if (COLOURS_NTSC_specific_setup.color_delay > COLOURS_NTSC_DELAY_MIN)
-							COLOURS_NTSC_specific_setup.color_delay -= 0.1;
-					} else {
-						if (COLOURS_NTSC_specific_setup.color_delay < COLOURS_NTSC_DELAY_MAX)
-							COLOURS_NTSC_specific_setup.color_delay += 0.1;
-					}
-					Colours_Update();
+				if (kbhits[SDLK_LSHIFT]) {
+					if (Colours_setup->color_delay > COLOURS_DELAY_MIN)
+						Colours_setup->color_delay -= 0.4;
+				} else {
+					if (Colours_setup->color_delay < COLOURS_DELAY_MAX)
+						Colours_setup->color_delay += 0.4;
 				}
+				Colours_Update();
 				return AKEY_NONE;
 			case SDLK_LEFTBRACKET:
 				if (kbhits[SDLK_LSHIFT])

@@ -1,3 +1,11 @@
+2012-04-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* colours.[ch], colours_ntsc.[ch], colours_pal.[ch], ui.c, sdl/input.c,
+  atari800.man, DOC/USAGE: More exact emulation of PAL colors, including
+  colour delay - based on Altirra but with different table coeffitients,
+  derived from a real machine. Colour delay values for NTSC rescaled to
+  simplify the code.
+
+
 2012-04-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: Make the display adjustment keyboard shortcuts work by pressing
   and holding - no more need to press the keys repeatedly.

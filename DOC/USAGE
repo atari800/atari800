@@ -216,13 +216,14 @@ Command line options
 -ntsc-brightness <n>  Set brightness only for NTSC
 -ntsc-gamma <n>       Set gamma adjustment only for NTSC
 -ntsc-tint <n>        Set tint only for NTSC
--colordelay <n>       Set GTIA color delay (emulates the potentiometer at the
-                      bottom of Atari computers, that adjusts colors; NTSC only)
+-ntsc-colordelay <n>  Set GTIA color delay for NTSC (emulates the potentiometer at the
+                      bottom of Atari computers, that adjusts colors)
 -pal-saturation <n>   Set saturation only for PAL
 -pal-contrast <n>     Set contrast only for PAL
 -pal-brightness <n>   Set brightness only for PAL
 -pal-gamma <n>        Set gamma adjustment only for PAL
 -pal-tint <n>         Set tint only for PAL
+-pal-colordelay <n>   Set GTIA color delay for PAL
 
 -paletten <filename>  Read Atari NTSC colors from ACT file
 -paletten-adjust      Apply the colour adjustments to the loaded NTSC palette
@@ -547,7 +548,7 @@ LAlt+LShift+4     Decrease brightness (also called black level)
 LAlt+4            Increase brightness
 LAlt+LShift+5     Decrease gamma adjustment
 LAlt+5            Increase gamma adjustment
-LAlt+LShift+6     Decrease color delay (Atari color adjustment potentiometer, only NTSC)
+LAlt+LShift+6     Decrease color delay (Atari color adjustment potentiometer)
 LAlt+6            Increase color delay
 
 The following keys work only in the NTSC filter mode (-ntscemu):

@@ -623,11 +623,13 @@ Set tint -1..1.
 \fB\-ntsc\-tint \fIn\fR, \fB\-pal\-tint \fIn\fR
 Set tint only for NTSC or PAL, respectively
 .TP
-.BI \-colordelay\ n
-Set GTIA color delay.
-This emulates adjusting the potentiometer visible at the bottom of Atari
+.BI \-ntsc-colordelay\  n
+Set GTIA color delay for NTSC system.
+This emulates adjusting the potentiometer existing at the bottom of Atari
 computers, which adjusts hues of colors produced by the computer.
-Only for NTSC.
+.TP
+.BI \-pal\-colordelay\  n
+Set GTIA color delay for PAL system.
 
 .TP
 \fB\-paletten \fIfilename\fR, \fB\-palettep \fIfilename\fR
@@ -1340,7 +1342,7 @@ Decrease gamma adjustment
 Increase gamma adjustment
 .TP
 .BR LAlt + LShift + 6
-Decrease color delay (Atari color adjustment potentiometer, only NTSC)
+Decrease color delay (Atari color adjustment potentiometer)
 .TP
 .BR LAlt + 6
 Increase color delay

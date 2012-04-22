@@ -33,6 +33,13 @@
 
 Colours_setup_t COLOURS_PAL_setup;
 
+/* PAL-specific default setup. */
+static struct {
+	double color_delay;
+} const default_setup = {
+	23.2, /* chosen by eye to give a smooth rainbow */
+};
+
 COLOURS_EXTERNAL_t COLOURS_PAL_external = { "", FALSE, FALSE };
 
 /* Applies the colours setup to the external palette. Writes output to
@@ -77,7 +84,11 @@ static void AdjustExternal(int colourtable[256])
 }
 
 /* Generates a PAL palette, based on colour setup. Result is written into
-   COLOURTABLE. */
+   COLOURTABLE.
+   PAL GTIA produces slightly different hues on odd and even lines;
+   they are later averaged in the TV (a feature of PAL system). The generated
+   palette reproduces the real machine somewhat - each hue is an average of
+   an "odd" hue and an "even" hue. */
 static void GeneratePalette(int colourtable[256])
 {
 	int cr, lm;
@@ -86,6 +97,9 @@ static void GeneratePalette(int colourtable[256])
 	double scaled_white_level = (double)COLOURS_PAL_setup.white_level / 255.0f;
 	const double gamma = 1 - COLOURS_PAL_setup.gamma / 2.0;
 
+	double const start_angle = COLOURS_PAL_setup.hue * M_PI;
+	double color_diff = COLOURS_PAL_setup.color_delay * M_PI / 180.0;
+
 	/* NTSC luma multipliers from CGIA.PDF */
 	double luma_mult[16] = {
 		0.6941, 0.7091, 0.7241, 0.7401,
@@ -93,22 +107,42 @@ static void GeneratePalette(int colourtable[256])
 		0.8260, 0.8470, 0.8700, 0.8930,
 		0.9160, 0.9420, 0.9690, 1.0000};
 
-	/* TODO Angles were chosen based on examination of several
-	   PAL screenshots. A thorough examination of PAL GTIA color
-	   generation is needed instead, to determine a mathematical formula
-	   that stands behind these values. */
-	double color_angles[16] = {
-		0.0, 2.267095, 1.927638, 1.715966,
-		1.228852, 0.863367, 0.447344, -0.361837,
-		-0.815415, -1.198193, 4.568137, 4.014433,
-		3.568811, 3.134938, 2.71825, 2.279574
-	};
-	double const hue = COLOURS_PAL_setup.hue * M_PI;
 	for (cr = 0; cr < 16; cr ++) {
-		double angle = color_angles[cr] + hue;
-		double saturation = (cr ? (COLOURS_PAL_setup.saturation + 1) * 0.175f: 0.0f);
-		double u = cos(angle) * saturation;
-		double v = sin(angle) * saturation;
+		double u = 0.0;
+		double v = 0.0;
+		if (cr) {
+			struct pal_phase {
+				double mult;
+				double shift;
+			};
+			static struct pal_phase const phases[14] = {
+					{  1.5, M_PI },
+					{  2.5, M_PI },
+					{  3.5, M_PI },
+					{ -1.5,  0.0 },
+					{ -0.5,  0.0 },
+					{  0.0,  0.0 },
+					{  1.5,  0.0 },
+					{  2.5,  0.0 },
+					{  3.5,  0.0 },
+					{  4.0,  0.0 },
+					{ -2.5, M_PI },
+					{ -1.5, M_PI },
+					{ -0.5, M_PI },
+					{  0.5, M_PI }
+			};
+			struct pal_phase const *odd_phase = &phases[(cr - 1) % 14];
+			struct pal_phase const *even_phase = &phases[(25 -(cr - 1)) % 14];
+			double odd_angle = start_angle + odd_phase->shift - color_diff * (odd_phase->mult);
+			double even_angle = start_angle + even_phase->shift + color_diff * (even_phase->mult - 0.5);
+			double odd_u = cos(odd_angle);
+			double odd_v = sin(odd_angle);
+			double even_u = cos(even_angle);
+			double even_v = sin(even_angle);
+			double saturation = (COLOURS_PAL_setup.saturation + 1) * 0.175;
+			u = (even_u + odd_u) * 0.5 * saturation;
+			v = (even_v + odd_v) * 0.5 * saturation;
+		}
 		for (lm = 0; lm < 16; lm ++) {
 			/* calculate yuv for color entry */
 			double y = (luma_mult[lm] - luma_mult[0]) / (luma_mult[15] - luma_mult[0]);
@@ -141,6 +175,18 @@ void COLOURS_PAL_Update(int colourtable[256])
 		GeneratePalette(colourtable);
 }
 
+void COLOURS_PAL_RestoreDefaults(void)
+{
+	COLOURS_PAL_setup.color_delay = default_setup.color_delay;
+}
+
+Colours_preset_t COLOURS_PAL_GetPreset()
+{
+	if (Util_almostequal(COLOURS_PAL_setup.color_delay, default_setup.color_delay, 0.001))
+		return COLOURS_PRESET_STANDARD;
+	return COLOURS_PRESET_CUSTOM;
+}
+
 int COLOURS_PAL_ReadConfig(char *option, char *ptr)
 {
 	if (strcmp(option, "COLOURS_PAL_SATURATION") == 0)
@@ -153,6 +199,8 @@ int COLOURS_PAL_ReadConfig(char *option, char *ptr)
 		return Util_sscandouble(ptr, &COLOURS_PAL_setup.gamma);
 	else if (strcmp(option, "COLOURS_PAL_HUE") == 0)
 		return Util_sscandouble(ptr, &COLOURS_PAL_setup.hue);
+	else if (strcmp(option, "COLOURS_PAL_GTIA_DELAY") == 0)
+		return Util_sscandouble(ptr, &COLOURS_PAL_setup.color_delay);
 	else if (strcmp(option, "COLOURS_PAL_EXTERNAL_PALETTE") == 0)
 		Util_strlcpy(COLOURS_PAL_external.filename, ptr, sizeof(COLOURS_PAL_external.filename));
 	else if (strcmp(option, "COLOURS_PAL_EXTERNAL_PALETTE_LOADED") == 0)
@@ -172,6 +220,7 @@ void COLOURS_PAL_WriteConfig(FILE *fp)
 	fprintf(fp, "COLOURS_PAL_BRIGHTNESS=%g\n", COLOURS_PAL_setup.brightness);
 	fprintf(fp, "COLOURS_PAL_GAMMA=%g\n", COLOURS_PAL_setup.gamma);
 	fprintf(fp, "COLOURS_PAL_HUE=%g\n", COLOURS_PAL_setup.hue);
+	fprintf(fp, "COLOURS_PAL_GTIA_DELAY=%g\n", COLOURS_PAL_setup.color_delay);
 	fprintf(fp, "COLOURS_PAL_EXTERNAL_PALETTE=%s\n", COLOURS_PAL_external.filename);
 	fprintf(fp, "COLOURS_PAL_EXTERNAL_PALETTE_LOADED=%d\n", COLOURS_PAL_external.loaded);
 	fprintf(fp, "COLOURS_PAL_ADJUST_EXTERNAL_PALETTE=%d\n", COLOURS_PAL_external.adjust);
@@ -211,6 +260,11 @@ int COLOURS_PAL_Initialise(int *argc, char *argv[])
 				COLOURS_PAL_setup.hue = atof(argv[++i]);
 			else a_m = TRUE;
 		}
+		else if (strcmp(argv[i], "-pal-colordelay") == 0) {
+			if (i_a)
+				COLOURS_PAL_setup.color_delay = atof(argv[++i]);
+			else a_m = TRUE;
+		}
 		else if (strcmp(argv[i], "-palettep") == 0) {
 			if (i_a) {
 				Util_strlcpy(COLOURS_PAL_external.filename, argv[++i], sizeof(COLOURS_PAL_external.filename));
@@ -227,6 +281,7 @@ int COLOURS_PAL_Initialise(int *argc, char *argv[])
 				Log_print("\t-pal-brightness <num>  Set PAL brightness");
 				Log_print("\t-pal-gamma <num>       Set PAL color gamma factor");
 				Log_print("\t-pal-tint <num>        Set PAL tint");
+				Log_print("\t-pal-colordelay <num>  Set PAL GTIA color delay");
 				Log_print("\t-palettep <filename>   Load PAL external palette");
 				Log_print("\t-palettep-adjust       Apply adjustments to PAL external palette");
 			}

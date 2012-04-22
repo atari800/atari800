@@ -2464,7 +2464,7 @@ static struct {
 	{ COLOURS_SATURATION_MIN, COLOURS_SATURATION_MAX },
 	{ COLOURS_HUE_MIN, COLOURS_HUE_MAX },
 	{ COLOURS_GAMMA_MIN, COLOURS_GAMMA_MAX },
-	{ COLOURS_NTSC_DELAY_MIN, COLOURS_NTSC_DELAY_MAX }
+	{ COLOURS_DELAY_MIN, COLOURS_DELAY_MAX }
 #if NTSC_FILTER
 	,
 	{ FILTER_NTSC_SHARPNESS_MIN, FILTER_NTSC_SHARPNESS_MAX },
@@ -2485,8 +2485,7 @@ static void UpdateColourControl(const int idx)
 		 *(colour_controls[idx].setting));
 }
 
-/* Sets pointers to colour controls properly, and hides/shows the Color delay
-   control, which is applicable only for NTSC. */
+/* Sets pointers to colour controls properly. */
 static void UpdateColourControls(UI_tMenuItem menu_array[])
 {
 	int i;
@@ -2495,14 +2494,9 @@ static void UpdateColourControls(UI_tMenuItem menu_array[])
 	colour_controls[2].setting = &Colours_setup->saturation;
 	colour_controls[3].setting = &Colours_setup->hue;
 	colour_controls[4].setting = &Colours_setup->gamma;
-	colour_controls[5].setting = &COLOURS_NTSC_specific_setup.color_delay;
+	colour_controls[5].setting = &Colours_setup->color_delay;
 	for (i = 0; i < 6; i ++)
 		UpdateColourControl(i);
-	/* Hide/show Color delay. */
-	if (Atari800_tv_mode == Atari800_TV_NTSC)
-		FindMenuItem(menu_array, 18)->flags = UI_ITEM_ACTION;
-	else
-		FindMenuItem(menu_array, 18)->flags = UI_ITEM_HIDDEN;
 }
 
 /* Converts value of a colour setting to range usable by slider (0..100). */

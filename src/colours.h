@@ -22,6 +22,10 @@ typedef struct Colours_setup_t {
 	double contrast;
 	double brightness;
 	double gamma;
+	/* Delay between phases of two consecutive chromas, in degrees.
+	   Corresponds to the color adjustment potentiometer on the bottom of
+	   Atari computers. */
+	double color_delay;
 	int black_level; /* 0..255. ITU-R Recommendation BT.601 advises it to be 16. */
 	int white_level; /* 0..255. ITU-R Recommendation BT.601 advises it to be 235. */
 } Colours_setup_t;
@@ -37,6 +41,8 @@ typedef struct Colours_setup_t {
 #define COLOURS_BRIGHTNESS_MAX 2.0
 #define COLOURS_GAMMA_MIN -1.0
 #define COLOURS_GAMMA_MAX 1.0
+#define COLOURS_DELAY_MIN 10
+#define COLOURS_DELAY_MAX 50
 
 /* Pointer to the current palette setup. Depending on the current TV system,
    it points to the NTSC setup, or the PAL setup. (See COLOURS_NTSC_setup and

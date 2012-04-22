@@ -46,10 +46,10 @@ Colours_setup_t *Colours_setup;
 COLOURS_EXTERNAL_t *Colours_external;
 
 static Colours_setup_t const presets[] = {
-	/* Hue, Saturation, Contrast, Brightness, Gamma adjustment, Black level, White level */
-	{ 0.0, 0.0, 0.0, 0.0, 0.3, 16, 235 }, /* Standard preset */
-	{ 0.0, 0.0, 0.2, -0.16, 0.5, 16, 235 }, /* Deep blacks preset */
-	{ 0.0, 0.26, 0.72, -0.16, 0.16, 16, 235 } /* Vibrant colours & levels preset */
+	/* Hue, Saturation, Contrast, Brightness, Gamma adjustment, GTIA delay, Black level, White level */
+	{ 0.0, 0.0, 0.0, 0.0, 0.3, 0.0, 16, 235 }, /* Standard preset */
+	{ 0.0, 0.0, 0.2, -0.16, 0.5, 0.0, 16, 235 }, /* Deep blacks preset */
+	{ 0.0, 0.26, 0.72, -0.16, 0.16, 0.0, 16, 235 } /* Vibrant colours & levels preset */
 };
 static char const * const preset_cfg_strings[COLOURS_PRESET_SIZE] = {
 	"STANDARD",
@@ -132,19 +132,19 @@ void Colours_Update(void)
 
 void Colours_RestoreDefaults(void)
 {
-	*Colours_setup = presets[COLOURS_PRESET_STANDARD];
-	if (Atari800_tv_mode == Atari800_TV_NTSC)
-		COLOURS_NTSC_RestoreDefaults();
+	Colours_SetPreset(COLOURS_PRESET_STANDARD);
 }
 
 /* Sets the video calibration profile to the user preference */
 void Colours_SetPreset(Colours_preset_t preset)
 {
-	if (preset < COLOURS_PRESET_CUSTOM)
+	if (preset < COLOURS_PRESET_CUSTOM) {
 		*Colours_setup = presets[preset];
-
-	if (Atari800_tv_mode == Atari800_TV_NTSC) 
-		COLOURS_NTSC_SetPreset(COLOURS_PRESET_STANDARD);
+		if (Atari800_tv_mode == Atari800_TV_NTSC) 
+			COLOURS_NTSC_RestoreDefaults();
+		else
+			COLOURS_PAL_RestoreDefaults();
+	}
 }
 
 /* Compares the current settings to the available calibration profiles
@@ -153,8 +153,10 @@ Colours_preset_t Colours_GetPreset(void)
 {
 	int i;
 
-	if (Atari800_tv_mode == Atari800_TV_NTSC &&
-	    COLOURS_NTSC_GetPreset() != COLOURS_PRESET_STANDARD)
+	if ((Atari800_tv_mode == Atari800_TV_NTSC &&
+	     COLOURS_NTSC_GetPreset() != COLOURS_PRESET_STANDARD) ||
+	    (Atari800_tv_mode == Atari800_TV_PAL &&
+	     COLOURS_PAL_GetPreset() != COLOURS_PRESET_STANDARD))
 		return COLOURS_PRESET_CUSTOM;
 
 	for (i = 0; i < COLOURS_PRESET_SIZE; i ++) {
@@ -200,7 +202,8 @@ void Colours_PreInitialise(void)
 {
 	/* Copy the default setup for both NTSC and PAL. */
 	COLOURS_NTSC_setup = COLOURS_PAL_setup = presets[COLOURS_PRESET_STANDARD];
-	COLOURS_NTSC_PreInitialise();
+	COLOURS_NTSC_RestoreDefaults();
+	COLOURS_PAL_RestoreDefaults();
 }
 
 int Colours_ReadConfig(char *option, char *ptr)
@@ -261,7 +264,8 @@ int Colours_Initialise(int *argc, char *argv[])
 					return FALSE;
 				}
 				COLOURS_NTSC_setup = COLOURS_PAL_setup = presets[idx];
-				COLOURS_NTSC_SetPreset(COLOURS_PRESET_STANDARD);
+				COLOURS_NTSC_RestoreDefaults();
+				COLOURS_PAL_RestoreDefaults();
 			} else a_m = TRUE;
 		}
 
