@@ -31,6 +31,10 @@
 #include "log.h"
 #include "util.h"
 
+#ifndef M_PI
+#define M_PI		3.14159265358979323846
+#endif
+
 Colours_setup_t COLOURS_PAL_setup;
 
 /* PAL-specific default setup. */
