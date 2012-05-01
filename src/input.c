@@ -719,7 +719,6 @@ void INPUT_Frame(void)
 			i = -mouse_move_y;
 
 		{
-			UBYTE stick = INPUT_STICK_CENTRE;
 			if (i > 0) {
 				i += (1 << MOUSE_SHIFT) - 1;
 				i >>= MOUSE_SHIFT;
@@ -727,7 +726,7 @@ void INPUT_Frame(void)
 					max_scanline_counter = scanline_counter = 5;
 				else
 					max_scanline_counter = scanline_counter = Atari800_tv_mode / i;
-				stick = mouse_step();
+				mouse_step();
 			}
 			if (INPUT_mouse_mode == INPUT_MOUSE_TRAK) {
 				/* bit 3 toggles - vertical movement, bit 2 = 0 - up */

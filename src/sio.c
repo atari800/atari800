@@ -711,7 +711,7 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 		ULONG secindex = 0;
 		static int lasttrack = 0;
 		unsigned int currpos, time, delay, rotations, bestdelay;
-		unsigned char beststatus;
+/*		unsigned char beststatus;*/
 		int fromtrack, trackstostep, j;
 
 		info = (vapi_additional_info_t *)additional_info[unit];
@@ -758,7 +758,7 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 #endif
 
 		bestdelay = 10 * VAPI_CYCLES_PER_ROT;
-		beststatus = 0;
+/*		beststatus = 0;*/
 		for (j=0;j<secinfo->sec_count;j++) {
 			if (secinfo->sec_rot_pos[j]  < currpos)
 				delay = (VAPI_CYCLES_PER_ROT - currpos) + secinfo->sec_rot_pos[j];
@@ -771,7 +771,7 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 #endif
 			if (delay < bestdelay) {
 				bestdelay = delay;
-				beststatus = secinfo->sec_status[j];
+/*				beststatus = secinfo->sec_status[j];*/
 				secindex = j;
 			}
 		}

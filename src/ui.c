@@ -1870,7 +1870,6 @@ static void AtariSettings(void)
 	char tmp_command[256];
 
 	int option = 0;
-	int option2 = 0;
 
 	for (;;) {
 		int seltype;
@@ -1960,14 +1959,16 @@ static void AtariSettings(void)
 			break;
 #ifdef XEP80_EMULATION
 		case 18:
-			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, XEP80_enabled ? XEP80_port + 1 : 0, xep80_menu_array, NULL);
-			if (option2 == 0)
-				XEP80_SetEnabled(FALSE);
-			else if (option2 > 0) {
-				if (XEP80_SetEnabled(TRUE))
-					XEP80_port = option2 - 1;
-				else
-					UI_driver->fMessage("Error: Missing XEP80 charset ROM.", 1);
+			{
+				int option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, XEP80_enabled ? XEP80_port + 1 : 0, xep80_menu_array, NULL);
+				if (option2 == 0)
+					XEP80_SetEnabled(FALSE);
+				else if (option2 > 0) {
+					if (XEP80_SetEnabled(TRUE))
+						XEP80_port = option2 - 1;
+					else
+						UI_driver->fMessage("Error: Missing XEP80 charset ROM.", 1);
+				}
 			}
 			break;
 #endif /* XEP80_EMULATION */

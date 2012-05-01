@@ -1,3 +1,8 @@
+2012-05-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* devices.c, ide_internal.h, input.c, pbi_scsi.c, sio.c, ui.c, util.h: Fix
+  some GCC warnings.
+
+
 2012-04-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * colours.[ch], colours_ntsc.[ch], colours_pal.[ch], ui.c, sdl/input.c,
   atari800.man, DOC/USAGE: More exact emulation of PAL colors, including

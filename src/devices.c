@@ -1851,7 +1851,8 @@ static void Devices_P_Close(void)
 			char command[256 + FILENAME_MAX]; /* 256 for Devices_print_command + FILENAME_MAX for spool_file */
 			int retval;
 			sprintf(command, Devices_print_command, spool_file);
-			retval = system(command);
+			if ((retval = system(command)) == -1)
+				Log_print("Print command \"%s\' failed", command);
 #if defined(HAVE_UTIL_UNLINK) && !defined(VMS) && !defined(MACOSX)
 			if (Util_unlink(spool_file) != 0) {
 				perror(spool_file);
