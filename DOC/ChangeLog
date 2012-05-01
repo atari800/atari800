@@ -1,6 +1,6 @@
 2012-05-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
-* devices.c, ide_internal.h, input.c, pbi_scsi.c, sio.c, ui.c, util.h: Fix
-  some GCC warnings.
+* devices.c, ide_internal.h, input.c, log.c, pbi_scsi.c, sio.c, ui.c, util.h,
+  dos/dos_ints.h: Fix some GCC warnings.
 
 
 2012-04-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

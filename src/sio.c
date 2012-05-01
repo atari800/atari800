@@ -846,12 +846,12 @@ int SIO_WriteSector(int unit, int sector, const UBYTE *buffer)
 		secinfo = &info->sectors[sector-1];
 		
 		if (secinfo->sec_count != 1) {
-			// No writes to sectors with duplicates or missing sectors
+			/* No writes to sectors with duplicates or missing sectors */
 			return 'E';
 		}
 		
 		if (secinfo->sec_status[0] != 0xFF) {
-			// No writes to bad sectors
+			/* No writes to bad sectors */
 			return 'E';
 		}
 		
@@ -869,7 +869,7 @@ int SIO_WriteSector(int unit, int sector, const UBYTE *buffer)
 		phantom = &info->phantom[sector-1];
 		
 		if (phantom->phantom_count != 0) {
-			// No writes to sectors with duplicates 
+			/* No writes to sectors with duplicates */
 			return 'E';
 		}
 		

@@ -50,9 +50,6 @@ void Log_print(char *format, ...)
 {
 	va_list args;
 	char buffer[8192];
-#ifdef BUFFERED_LOG
-	int buflen;
-#endif
 
 	va_start(args, format);
 #ifdef HAVE_VSNPRINTF
@@ -69,8 +66,6 @@ void Log_print(char *format, ...)
 #endif
 
 #ifdef BUFFERED_LOG
-	buflen = strlen(buffer);
-
 	if ((strlen(Log_buffer) + strlen(buffer) + 1) > Log_BUFFER_SIZE)
 		*Log_buffer = 0;
 
