@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    basic | dosvga | falcon | javanvm | javanvm-basic | ps2 | android | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | falcon | javanvm | javanvm-basic | ps2 | android | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -43,8 +43,7 @@ case "$target" in
         echo "options, including Atari800 specific '--enable' options.  Possible values"
         echo "for the '--target' option are:"
         echo "    android          (Android devices)"
-        echo "    basic            (autodetect: text mode, Curses)"
-        echo "    dosvga           (DOS only)"
+        echo "    basic            (autodetect available graphics library)"
         echo "    falcon           (Atari Falcon systems only)"
         echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
         echo "    javanvm-basic    (Java NestedVM text-mode: set --host=mips-unknown-elf)"
@@ -230,16 +229,6 @@ dnl In DJGPP building with zlib fails with -ansi.
 dnl BeOS has a real issue with redundant-decls
             CFLAGS="$CFLAGS -Wredundant-decls"
         fi
-        ;;
-    dosvga)
-        if [[ "$a8_host" != "dos" ]]; then
-            AC_MSG_ERROR("the dosvga target is valid only on a DOS system!")
-        fi
-        AC_DEFINE(DOSVGA,1,[Target: DOS VGA.])
-        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
-        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
-        OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
-        CFLAGS="$CFLAGS -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         ;;
     falcon)
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
@@ -516,10 +505,10 @@ fi
 dnl Select/detect external library for graphics and input.
 
 AC_ARG_WITH([gui],
-    [AC_HELP_STRING([--with-gui@<:@=no|yes|curses|ncurses|pdcurses@:>@],[Select supported GUI @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-gui@<:@=no|yes|curses|ncurses|pdcurses|dosvga@:>@],[Select supported GUI @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | curses | ncurses | pdcurses )
+            no | yes | check | curses | ncurses | pdcurses | dosvga )
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-gui: "$withval"])
@@ -530,6 +519,13 @@ AC_ARG_WITH([gui],
 
 if [[ "$a8_target" = basic ]]; then
     if [[ "$with_gui" != no ]]; then
+        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = dosvga ]]; then
+            if [[ "$a8_host" = dos ]]; then
+                with_gui=dosvga
+            elif [[ "$with_gui" = dosvga ]]; then
+                AC_MSG_ERROR([--with-gui=dosvga was given, but host system is not DOS!])
+            fi
+        fi
         if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = curses ]]; then
             AC_CHECK_LIB([curses], [initscr],
                 [LIBS="-lcurses $LIBS"
@@ -566,12 +562,18 @@ if [[ "$a8_target" = basic ]]; then
         with_gui=no
     fi
     case "$with_gui" in
-        curses | ncurses | pdcurses )
+        dosvga)
+            AC_DEFINE(DOSVGA,1,[Target: DOS VGA.])
+            AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
+            AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
+            OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
+            ;;
+        curses | ncurses | pdcurses)
             AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
             OBJS="$OBJS atari_curses.o"
             WANT_EVENT_RECORDING=no
             ;;
-        no )
+        no)
             AC_DEFINE(BASIC,1,[Target: standard I/O.])
             OBJS="atari_basic.o"
             WANT_EVENT_RECORDING=no
@@ -1009,7 +1011,7 @@ if [[ "$a8_target" = basic ]]; then
             ;;
     esac
 fi
-if [[ "$a8_target" != "basic" -a "$a8_target" != "javanvm-basic" ]]; then
+if [[ \( "$a8_target" != "basic" -o "$with_gui" != no \) -a "$a8_target" != "javanvm-basic" ]]; then
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
         echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"

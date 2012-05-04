@@ -118,8 +118,8 @@ else {
 
 # supported targets
 my @targets = qw(
-	basic dosvga falcon sdl windx x11 x11-motif
-	x11-shm x11-xview x11-xview-shm motif shm xview xview-shm
+	basic falcon sdl windx x11 x11-motif x11-shm
+	x11-xview x11-xview-shm motif shm xview xview-shm
 );
 
 my $help_me = 0;
@@ -137,6 +137,9 @@ for (@ARGV) {
 		$cflags = $1;
 	}
 	elsif (/^--(?:en|dis)able-/) {
+		push @features, $_;
+	}
+	elsif (/^--with(?:out)?-/) {
 		push @features, $_;
 	}
 	elsif (/^--program=(.+)/) {
@@ -213,6 +216,8 @@ Available options:
 --cflags="<cflags>"   Override CFLAGS (default: "-O2 -Wall" + test-specific)
 --enable-<feature>    Enable Atari800 feature via "configure"
 --disable-<feature>   Disable Atari800 feature via "configure"
+--with-<feature>      Add external dependency via "configure"
+--without-<feature>   Remove external dependency via "configure"
 --program=<filename>  Choose Atari program to be run (defaults to $reference_program)
 --frames=<frames>     Set number of frames to be run (defaults to $frames)
 --output=<filename>   Output the results to the specified file
@@ -236,7 +241,7 @@ Available tests:
 
 Available Atari800 targets:
   @targets[0..6]
-  @targets[7..13]
+  @targets[7..12]
 
 EOF
 	exit;

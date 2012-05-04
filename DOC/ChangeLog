@@ -1,11 +1,8 @@
 2012-05-04  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
-* configure.ac, util/benchmark.pl: Merge curses, ncurses and pdcurses targets
-  - appropriate curses library is now autodetected or selected explicitely by
-  --with-gui configure option.
+* configure.ac, util/benchmark.pl: Merge basic, curses, ncurses, pdcurses and
+  dosvga targets - appropriate GUI/input library is now autodetected or
+  selected explicitely by --with-gui configure option.
 * ui.c: Fix segfault in the ROM Locations menu.
-* configure.ac, util/benchmark.pl: Merge basic and curses targets - basic
-  version is now built when no curses library is found or when explicitely
-  requested by --without-gui configure option.
 * atari_basic.c: Fix some GCC warnings.
 
 
