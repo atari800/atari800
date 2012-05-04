@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    basic | curses | ncurses | pdcurses | dosvga | falcon | javanvm | javanvm-basic | ps2 | android | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | curses | dosvga | falcon | javanvm | javanvm-basic | ps2 | android | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -45,8 +45,6 @@ case "$target" in
         echo "    android          (Android devices)"
         echo "    basic            (text mode using standard I/O)"
         echo "    curses           (text mode using Curses library)"
-        echo "    ncurses          (text mode using NCurses library)"
-        echo "    pdcurses         (text mode using PDCurses library)"
         echo "    dosvga           (DOS only)"
         echo "    falcon           (Atari Falcon systems only)"
         echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
@@ -239,28 +237,15 @@ case "$a8_target" in
         CFLAGS="$CFLAGS -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         ;;
     curses)
-        AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
-        A8_NEED_LIB(curses)
-        OBJS="atari_curses.o"
-	WANT_EVENT_RECORDING=no
-        ;;
-    ncurses)
-        AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
-        AC_DEFINE(USE_NCURSES,1,[Target: Ncurses library.])
-        A8_NEED_LIB(ncurses)
-        OBJS="atari_curses.o"
-        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
+        if [[ "$a8_host" != "dos" ]]; then
+dnl In DJGPP building with zlib fails with -ansi.
+            CFLAGS="$CFLAGS -ansi"
+        fi
+        CFLAGS="$CFLAGS -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
         if [[ "$a8_host" != "beos" ]]; then
 dnl BeOS has a real issue with redundant-decls
             CFLAGS="$CFLAGS -Wredundant-decls"
         fi
-	WANT_EVENT_RECORDING=no
-        ;;
-    pdcurses)
-        AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
-        A8_NEED_LIB(pdcurses)
-        OBJS="atari_curses.o"
-	WANT_EVENT_RECORDING=no
         ;;
     falcon)
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
@@ -534,6 +519,64 @@ if [[ "$a8_host" != "win" -a "$a8_target" != "android" ]]; then
     AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 fi
 
+dnl Select/detect external library for graphics and input.
+
+AC_ARG_WITH([gui],
+    [AC_HELP_STRING([--with-gui@<:@=curses|ncurses|pdcurses@:>@],[Select supported GUI @<:@default=check@:>@])],
+    [
+        case "$withval" in
+            no | yes | check | curses | ncurses | pdcurses )
+                ;;
+            *)
+                AC_MSG_ERROR([unrecognized value for --with-gui: "$withval"])
+                ;;
+        esac
+    ],
+    [with_gui=check])
+
+if [[ "$a8_target" = curses ]]; then
+    if [[ "$with_gui" != no ]]; then
+        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = curses ]]; then
+            AC_CHECK_LIB([curses], [initscr],
+                [LIBS="-lcurses $LIBS"
+                 with_gui=curses
+                ],
+                [if [[ "$with_gui" = curses ]]; then
+                    AC_MSG_FAILURE([--with-gui=curses was given, but curses library not found!])
+                 fi
+                ])
+        fi
+        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = ncurses ]]; then
+            AC_CHECK_LIB([ncurses], [initscr],
+                [LIBS="-lncurses $LIBS"
+                 with_gui=ncurses
+                 AC_DEFINE(USE_NCURSES,1,[Target: Ncurses library.])
+                ],
+                [if [[ "$with_gui" = ncurses ]]; then
+                    AC_MSG_FAILURE([--with-gui=ncurses was given, but ncurses library not found!])
+                 fi
+                ])
+        fi
+        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = pdcurses ]]; then
+            AC_CHECK_LIB([pdcurses], [initscr],
+                [LIBS="-lpdcurses $LIBS"
+                 with_gui=pdcurses
+                ],
+                [if [[ "$with_gui" = pdcurses ]]; then
+                    AC_MSG_FAILURE([--with-gui=pdcurses was given, but pdcurses library not found!])
+                 fi
+                ])
+        fi
+    fi
+    if [[ "$with_gui" = no -o "$with_gui" = check -o "$with_gui" = yes ]]; then
+    	AC_MSG_ERROR([no gui library found!])
+    fi
+    if [[ "$with_gui" = curses -o "$with_gui" = ncurses -o "$with_gui" = pdcurses ]]; then
+        AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
+        OBJS="$OBJS atari_curses.o"
+        WANT_EVENT_RECORDING=no
+    fi 
+fi
 
 dnl Select optional Atari800 features...
 
@@ -557,14 +600,12 @@ if [[ "$a8_target" != "basic" -a "$a8_target" != "javanvm-basic" ]]; then
     dnl These objects are not compiled in BASIC target
     OBJS="$OBJS input.o statesav.o ui_basic.o ui.o"
 
-    case "$a8_target" in
-        *curses)
-            A8_OPTION(cursesbasic,yes,
-                      [No bitmap graphics emulation (curses targets only) (default=ON)],
-                      CURSES_BASIC,[Define to disable bitmap graphics emulation in CURSES target.]
-                     )
-            ;;
-    esac
+    if [[ "$a8_target" = curses ]]; then
+        A8_OPTION(cursesbasic,yes,
+                  [No bitmap graphics emulation (curses target only) (default=ON)],
+                  CURSES_BASIC,[Define to disable bitmap graphics emulation in CURSES target.]
+                 )
+    fi
 
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
 
@@ -954,12 +995,13 @@ echo "-------------------------------------------------------"
 echo "Host OS...............................: $a8_host"
 echo "Target ...............................: $a8_target"
 echo
+if [[ "$a8_target" = curses ]]; then
+    echo "Library for graphics and input........: $with_gui"
+fi
 if [[ "$a8_target" != "basic" -a "$a8_target" != "javanvm-basic" ]]; then
-    case "$a8_target" in
-        *curses)
-            echo "Using no bitmap graphics emulation?...: $WANT_CURSES_BASIC"
-            ;;
-    esac
+    if [[ "$a8_target" = curses ]]; then
+        echo "Using no bitmap graphics emulation?...: $WANT_CURSES_BASIC"
+    fi
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
         echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"

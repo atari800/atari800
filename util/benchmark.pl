@@ -118,8 +118,8 @@ else {
 
 # supported targets
 my @targets = qw(
-	basic curses ncurses pdcurses dosvga falcon sdl windx
-	x11 x11-motif x11-shm x11-xview x11-xview-shm motif shm xview xview-shm
+	basic curses dosvga falcon sdl windx x11 x11-motif
+	x11-shm x11-xview x11-xview-shm motif shm xview xview-shm
 );
 
 my $help_me = 0;
@@ -235,8 +235,8 @@ Available tests:
                 (default target: $gfx_target)
 
 Available Atari800 targets:
-  @targets[0..8]
-  @targets[9..17]
+  @targets[0..7]
+  @targets[8..14]
 
 EOF
 	exit;
