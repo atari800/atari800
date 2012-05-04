@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    basic | curses | dosvga | falcon | javanvm | javanvm-basic | ps2 | android | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | dosvga | falcon | javanvm | javanvm-basic | ps2 | android | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -43,8 +43,7 @@ case "$target" in
         echo "options, including Atari800 specific '--enable' options.  Possible values"
         echo "for the '--target' option are:"
         echo "    android          (Android devices)"
-        echo "    basic            (text mode using standard I/O)"
-        echo "    curses           (text mode using Curses library)"
+        echo "    basic            (autodetect: text mode, Curses)"
         echo "    dosvga           (DOS only)"
         echo "    falcon           (Atari Falcon systems only)"
         echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
@@ -222,9 +221,15 @@ if [[ "$a8_host" = "win" -a "$a8_target" != "sdl" ]]; then
 fi
 case "$a8_target" in
     basic)
-        AC_DEFINE(BASIC,1,[Target: standard I/O.])
-        OBJS="atari_basic.o"
-	WANT_EVENT_RECORDING=no
+        if [[ "$a8_host" != "dos" ]]; then
+dnl In DJGPP building with zlib fails with -ansi.
+            CFLAGS="$CFLAGS -ansi"
+        fi
+        CFLAGS="$CFLAGS -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
+        if [[ "$a8_host" != "beos" ]]; then
+dnl BeOS has a real issue with redundant-decls
+            CFLAGS="$CFLAGS -Wredundant-decls"
+        fi
         ;;
     dosvga)
         if [[ "$a8_host" != "dos" ]]; then
@@ -235,17 +240,6 @@ case "$a8_target" in
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
         CFLAGS="$CFLAGS -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
-        ;;
-    curses)
-        if [[ "$a8_host" != "dos" ]]; then
-dnl In DJGPP building with zlib fails with -ansi.
-            CFLAGS="$CFLAGS -ansi"
-        fi
-        CFLAGS="$CFLAGS -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
-        if [[ "$a8_host" != "beos" ]]; then
-dnl BeOS has a real issue with redundant-decls
-            CFLAGS="$CFLAGS -Wredundant-decls"
-        fi
         ;;
     falcon)
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
@@ -522,7 +516,7 @@ fi
 dnl Select/detect external library for graphics and input.
 
 AC_ARG_WITH([gui],
-    [AC_HELP_STRING([--with-gui@<:@=curses|ncurses|pdcurses@:>@],[Select supported GUI @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-gui@<:@=no|yes|curses|ncurses|pdcurses@:>@],[Select supported GUI @<:@default=check@:>@])],
     [
         case "$withval" in
             no | yes | check | curses | ncurses | pdcurses )
@@ -534,7 +528,7 @@ AC_ARG_WITH([gui],
     ],
     [with_gui=check])
 
-if [[ "$a8_target" = curses ]]; then
+if [[ "$a8_target" = basic ]]; then
     if [[ "$with_gui" != no ]]; then
         if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = curses ]]; then
             AC_CHECK_LIB([curses], [initscr],
@@ -568,14 +562,24 @@ if [[ "$a8_target" = curses ]]; then
                 ])
         fi
     fi
-    if [[ "$with_gui" = no -o "$with_gui" = check -o "$with_gui" = yes ]]; then
-    	AC_MSG_ERROR([no gui library found!])
+    if [[ "$with_gui" = check ]]; then
+        with_gui=no
     fi
-    if [[ "$with_gui" = curses -o "$with_gui" = ncurses -o "$with_gui" = pdcurses ]]; then
-        AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
-        OBJS="$OBJS atari_curses.o"
-        WANT_EVENT_RECORDING=no
-    fi 
+    case "$with_gui" in
+        curses | ncurses | pdcurses )
+            AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
+            OBJS="$OBJS atari_curses.o"
+            WANT_EVENT_RECORDING=no
+            ;;
+        no )
+            AC_DEFINE(BASIC,1,[Target: standard I/O.])
+            OBJS="atari_basic.o"
+            WANT_EVENT_RECORDING=no
+            ;;
+        *)
+            AC_MSG_ERROR([--with-gui=$with_gui was given, but no GUI library found!])
+            ;;
+    esac
 fi
 
 dnl Select optional Atari800 features...
@@ -595,17 +599,19 @@ AC_DEFUN([A8_OPTION],[
     fi
 ])
 
-if [[ "$a8_target" != "basic" -a "$a8_target" != "javanvm-basic" ]]; then
+if [[ \( "$a8_target" != "basic" -o "$with_gui" != no \) -a "$a8_target" != "javanvm-basic" ]]; then
 
     dnl These objects are not compiled in BASIC target
     OBJS="$OBJS input.o statesav.o ui_basic.o ui.o"
 
-    if [[ "$a8_target" = curses ]]; then
-        A8_OPTION(cursesbasic,yes,
-                  [No bitmap graphics emulation (curses target only) (default=ON)],
-                  CURSES_BASIC,[Define to disable bitmap graphics emulation in CURSES target.]
-                 )
-    fi
+    case "$with_gui" in
+        *curses)
+            A8_OPTION(cursesbasic,yes,
+                      [No bitmap graphics emulation (curses targets only) (default=ON)],
+                      CURSES_BASIC,[Define to disable bitmap graphics emulation in CURSES target.]
+                     )
+            ;;
+    esac
 
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
 
@@ -995,13 +1001,15 @@ echo "-------------------------------------------------------"
 echo "Host OS...............................: $a8_host"
 echo "Target ...............................: $a8_target"
 echo
-if [[ "$a8_target" = curses ]]; then
+if [[ "$a8_target" = basic ]]; then
     echo "Library for graphics and input........: $with_gui"
+    case "$with_gui" in
+        *curses)
+            echo "Using no bitmap graphics emulation?...: $WANT_CURSES_BASIC"
+            ;;
+    esac
 fi
 if [[ "$a8_target" != "basic" -a "$a8_target" != "javanvm-basic" ]]; then
-    if [[ "$a8_target" = curses ]]; then
-        echo "Using no bitmap graphics emulation?...: $WANT_CURSES_BASIC"
-    fi
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
         echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
