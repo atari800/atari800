@@ -1660,9 +1660,9 @@ static void ROMLocations(char const *title, UI_tMenuItem *menu_array)
 	for (;;) {
 		int seltype;
 
-		int i;
-		for (i = 0; i < SYSROM_SIZE; ++i) {
-			UI_tMenuItem *item = FindMenuItem(menu_array, i);
+		UI_tMenuItem *item;
+		for (item = menu_array; item->flags != UI_ITEM_END; ++item) {
+			int i = item->retval;
 			if (SYSROM_roms[i].filename[0] == '\0')
 				item->item = "None";
 			else
