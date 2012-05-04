@@ -6,6 +6,7 @@
 * configure.ac, util/benchmark.pl: Merge basic and curses targets - basic
   version is now built when no curses library is found or when explicitely
   requested by --without-gui configure option.
+* atari_basic.c: Fix some GCC warnings.
 
 
 2012-05-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

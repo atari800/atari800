@@ -26,6 +26,7 @@
 #include "config.h"
 #include "monitor.h"
 #include "log.h"
+#include "platform.h"
 #ifdef SOUND
 #include "sound.h"
 #endif
