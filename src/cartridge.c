@@ -101,7 +101,10 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	64,   /* CARTRIDGE_TURBOSOFT_64 */
 	128,  /* CARTRIDGE_TURBOSOFT_128 */
 	32,   /* CARTRIDGE_ULTRACART_32 */
-	8     /* CARTRIDGE_LOW_BANK_8 */
+	8,    /* CARTRIDGE_LOW_BANK_8 */
+	128,  /* CARTRIDGE_SIC_128 */
+	256,  /* CARTRIDGE_SIC_256 */
+	512   /* CARTRIDGE_SIC_512 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -206,6 +209,23 @@ static void set_bank_SDX_128(void)
 			active_cart->image + ((active_cart->state & 7) + ((active_cart->state & 0x10) >> 1)) * 0x2000);
 	}
 }
+static void set_bank_SIC(int n)
+{
+	if (!(active_cart->state & 0x20))
+		MEMORY_Cart809fDisable();
+	else {
+		MEMORY_Cart809fEnable();
+		MEMORY_CopyROM(0x8000, 0x9fff,
+			active_cart->image + (active_cart->state & n) * 0x4000);
+	}
+	if (active_cart->state & 0x40)
+		MEMORY_CartA0bfDisable();
+	else {
+		MEMORY_CartA0bfEnable();
+		MEMORY_CopyROM(0xa000, 0xbfff,
+			active_cart->image + (active_cart->state & n) * 0x4000 + 0x2000);
+	}
+}
 
 /* Called on a read or write operation to page $D5. Switches banks or
    enables/disables the cartridge pointed to by *active_cart. */
@@ -297,6 +317,15 @@ static void SwitchBank(int old_state)
 		break;
 	case CARTRIDGE_ULTRACART_32:
 		set_bank_A0BF(4);
+		break;
+	case CARTRIDGE_SIC_128:
+		set_bank_SIC(0x07);
+		break;
+	case CARTRIDGE_SIC_256:
+		set_bank_SIC(0x0f);
+		break;
+	case CARTRIDGE_SIC_512:
+		set_bank_SIC(0x1f);
 		break;
 	}
 #if DEBUG
@@ -510,6 +539,9 @@ static void MapActiveCart(void)
 		case CARTRIDGE_MEGA_256:
 		case CARTRIDGE_MEGA_512:
 		case CARTRIDGE_MEGA_1024:
+		case CARTRIDGE_SIC_128:
+		case CARTRIDGE_SIC_256:
+		case CARTRIDGE_SIC_512:
 			break;
 		default:
 			MEMORY_Cart809fDisable();
@@ -770,10 +802,19 @@ static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr, int no_side_effects)
 	}
 
 	/* Determine returned byte value. */
-	if (cart->type == CARTRIDGE_AST_32)
+	switch (cart->type) {
+	case CARTRIDGE_AST_32:
 		/* cart->state contains address of current bank, therefore it
 		   divides by 0x100. */
 		return cart->image[(cart->state & 0xff00) | (addr & 0xff)];
+	case CARTRIDGE_SIC_512:
+	case CARTRIDGE_SIC_256:
+	case CARTRIDGE_SIC_128:
+		/* Only react to access to $D50x/$D51x. */
+		if ((addr & 0xe0) == 0x00)
+			return cart->state;
+		break;
+	}
 	return 0xff;
 
 }
@@ -841,6 +882,13 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 	case CARTRIDGE_AST_32:
 		/* State contains address of current bank. */
 		new_state = (old_state + 0x100) & 0x7fff;
+		break;
+	case CARTRIDGE_SIC_512:
+	case CARTRIDGE_SIC_256:
+	case CARTRIDGE_SIC_128:
+		/* Only react to access to $D50x/$D51x. */
+		if ((addr & 0xe0) == 0x00)
+			new_state = byte;
 		break;
 	default:
 		/* Check types switchable by access to page D5. */

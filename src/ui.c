@@ -1008,6 +1008,9 @@ int UI_SelectCartType(int k)
 		UI_MENU_ACTION(CARTRIDGE_TURBOSOFT_128, "Turbosoft 128 KB cartridge"),
 		UI_MENU_ACTION(CARTRIDGE_ULTRACART_32, "Ultracart 32 KB cartridge"),
 		UI_MENU_ACTION(CARTRIDGE_LOW_BANK_8, "Low bank 8 KB cartridge"),
+		UI_MENU_ACTION(CARTRIDGE_SIC_128, "SIC! 128 KB cartridge"),
+		UI_MENU_ACTION(CARTRIDGE_SIC_256, "SIC! 256 KB cartridge"),
+		UI_MENU_ACTION(CARTRIDGE_SIC_512, "SIC! 512 KB cartridge"),
 		UI_MENU_END
 	};
 

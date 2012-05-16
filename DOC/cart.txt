@@ -86,6 +86,9 @@ Currently supported cartridge types:
 | 51 | 800/XL/XE |  128 | Turbosoft 128 KB cartridge                        |
 | 52 | 800/XL/XE |   32 | Ultracart 32 KB cartridge                         |
 | 53 | 800/XL/XE |    8 | Low bank 8 KB cartridge                           |
+| 54 | 800/XL/XE |  128 | SIC! 128 KB cartridge                             |
+| 55 | 800/XL/XE |  256 | SIC! 256 KB cartridge                             |
+| 56 | 800/XL/XE |  512 | SIC! 512 KB cartridge                             |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -704,3 +707,41 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  line and not asserting the RD5 line.
 
  Reference: http://www.atariage.com/forums/topic/161828-hooked-on-8-bit-carts/page__view__findpost__p__2338297
+
+
++---------------------------------------------------------------------------+
+| Type 54: SIC! 128 KB cartridge                                            |
++---------------------------------------------------------------------------+
+
+ Cartridge memory is divided into 8 banks, each 16KB long and consisting of
+ two 8KB subbanks. Each subbank can be mapped to Atari memory or switched
+ off. The lower subbank always maps to $8000-$9FFF, while the upper one always
+ maps to $A000-$BFFF.
+ Control register address is $D500-$D51F mirrored, read/write (written value
+ can be read at any time).
+ Bit 7 = 0 - flash write-protection is on
+ Bit 6 = 0 - odd 8k block (upper subbank) present in $A000-$BFFF
+ Bit 5 = 0 - even 8k block (lower subbank) not present in $8000-$9FFF 
+ Bits 4..3 - unused
+ Bits 2..0 - 16KB bank number (0..7)
+ Default value = 0 which means 0 bank upper subbank in address $A000-$BFFF
+ To switch cart off - poke $40 info $D500-$D51F
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
+ Reference: http://sic.pigwa.net/files/specyfikacja_pl_eng.zip
+
++---------------------------------------------------------------------------+
+| Type 55: SIC! 256 KB cartridge                                            |
++---------------------------------------------------------------------------+
+
+ Same as Type 54, but with cartridge memory being divided into 16 banks.
+ Bit 4 is unused
+ Bits 3..0 - 16KB bank number (0..15)
+
++---------------------------------------------------------------------------+
+| Type 56: SIC! 512 KB cartridge                                            |
++---------------------------------------------------------------------------+
+
+ Same as Type 54, but with cartridge memory being divided into 32 banks.
+ Bits 4..0 - 16KB bank number (0..31)

@@ -185,6 +185,10 @@ Alex Hornby <alex@zetnet.co.uk>
 Tom Hunt
     - original author of R: device support
 
+Jakub Husak
+    - support for SIC! cartridge mapping (wihout the flash programming
+      feature)
+
 Gerhard Janka <gerhard.janka@siemens.at>
     - cpu_m68k.asm corrections and improvements
     - double buffering of screen output
