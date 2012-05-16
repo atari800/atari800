@@ -1,7 +1,7 @@
 2012-05-16  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
-* cartridge.[ch], ui.c, DOC/cart.txt, DOC/CREDITS: Committing patch by Jakub
-  Husak: Support for the SIC! cartridge mapping (without the flash programming
-  feature).
+* cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/CREDITS, DOC/USAGE:
+  Committing patch by Jakub Husak: Support for the SIC! cartridge mapping
+  (without the flash programming feature).
 
 
 2012-05-04  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
