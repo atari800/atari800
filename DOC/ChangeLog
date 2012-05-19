@@ -7,6 +7,8 @@
   basic and sdl targets - GUI and sound libraries are now autodetected or
   explicitely selected by --with-gui and --with-sound configure options.
 
+* configure_dos.bat: Fix the dosvga and basic targets being merged.
+
 
 2012-05-16  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/CREDITS, DOC/USAGE:
