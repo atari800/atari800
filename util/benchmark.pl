@@ -118,7 +118,7 @@ else {
 
 # supported targets
 my @targets = qw(
-	basic falcon sdl windx x11 x11-motif x11-shm
+	basic falcon windx x11 x11-motif x11-shm
 	x11-xview x11-xview-shm motif shm xview xview-shm
 );
 
@@ -164,10 +164,10 @@ for (@ARGV) {
 	}
 }
 
-# gfx-generating target: dosvga for DJGPP, windx on Win32, sdl otherwise
-my $gfx_target = 'sdl';
-if ($^O =~ /win|dos/i) {
-	$gfx_target = `gcc -dumpmachine` =~ /djgpp/i ? 'dosvga' : 'windx';
+# gfx-generating target: windx on Win32, basic otherwise
+my $gfx_target = 'basic';
+if ($^O =~ /win/i) {
+	$gfx_target = 'windx';
 }
 
 # must initialize this after parsing the command line
@@ -240,8 +240,8 @@ Available tests:
                 (default target: $gfx_target)
 
 Available Atari800 targets:
-  @targets[0..6]
-  @targets[7..12]
+  @targets[0..5]
+  @targets[6..11]
 
 EOF
 	exit;
@@ -329,8 +329,8 @@ my @configs = $test_settings->{'config'} ? @{$test_settings->{'config'}} : ('');
 for my $config (@configs) {
 	print '-' x 76, "\n";
 	# "@{[]}" trick in this print is to avoid two consecutive spaces when @features is empty
-	print OUT "./configure --target=$target --disable-sound @{[@features, $config]}\n";
-	run_command('sh', './configure', "--target=$target", '--disable-sound', @features, split(' ', $config));
+	print OUT "./configure --target=$target --without-sound @{[@features, $config]}\n";
+	run_command('sh', './configure', "--target=$target", '--without-sound', @features, split(' ', $config));
 	run_command('make', 'clean');
 	run_command('make');
 	# run each program

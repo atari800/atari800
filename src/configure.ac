@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    basic | falcon | javanvm | javanvm-basic | ps2 | android | sdl | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    basic | falcon | javanvm | javanvm-basic | ps2 | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -43,12 +43,11 @@ case "$target" in
         echo "options, including Atari800 specific '--enable' options.  Possible values"
         echo "for the '--target' option are:"
         echo "    android          (Android devices)"
-        echo "    basic            (autodetect available graphics library)"
+        echo "    basic            (autodetect available graphics and sound libraries)"
         echo "    falcon           (Atari Falcon systems only)"
         echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
         echo "    javanvm-basic    (Java NestedVM text-mode: set --host=mips-unknown-elf)"
         echo "    ps2              (Sony PlayStation 2)"
-        echo "    sdl              (System with Simple Direct Media Layer library)"
         echo "    windx            (Windows with DirectX only)"
         echo "    x11              (Standard X11)"
         echo "    (x11-)motif      (Motif on X11)"
@@ -69,13 +68,11 @@ dnl Set a8_host...
 AC_CANONICAL_HOST
 
 if [[ "$host_os" = "cygwin" ]]; then
-    if [[ "$a8_target" = "windx" -o "$a8_target" = "sdl" ]]; then
-        CC="gcc -mno-cygwin"
-        echo
-        echo "Using CC=\"$CC\" to disable cygwin library...";
-        echo
-        host_os="mingw32"
-    fi
+    CC="gcc -mno-cygwin"
+    echo
+    echo "Using CC=\"$CC\" to disable cygwin library...";
+    echo
+    host_os="mingw32"
 fi
 
 case $host_os in
@@ -153,6 +150,37 @@ dnl Check for programs...
 AC_PROG_CC
 AC_PROG_INSTALL
 
+a8_use_sdl=no
+dnl Check if SDL library exists. If it's found, set a8_use_sdl to yes and AC_DEFINE the SDL symbol.
+dnl If called multiple times, it will check for the library only once.
+dnl Usage: TRY_USE_SDL()
+AC_DEFUN(TRY_USE_SDL,
+[
+    if [[ "$a8_use_sdl" = no ]]; then
+        dnl Check for SDL
+        SDL_VERSION=1.2.0
+        AM_PATH_SDL($SDL_VERSION,
+        [
+            OBJS="$OBJS sdl/init.o"
+            AC_DEFINE(SDL,1,[Target: SDL library.])
+            LIBS="$LIBS $SDL_LIBS"
+            CPPFLAGS="$CPPFLAGS $SDL_CFLAGS"
+            if [[ "$a8_host" = "win" ]]; then
+dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c Otherwise
+dnl the autoconf tests don't work.
+                CPPFLAGS=${CPPFLAGS/-Dmain=SDL_main/}
+dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
+dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
+                LIBS=${LIBS/-lSDLmain/}
+                OBJS="$OBJS SDL_win32_main.o"
+                CPPFLAGS="$CPPFLAGS -DNO_STDIO_REDIRECT"
+dnl Don't make this a windowed app, make it a console app.
+                LIBS=${LIBS/-mwindows/}
+            fi
+            a8_use_sdl=yes
+        ])
+    fi
+])
 
 dnl Check for header files...
 
@@ -161,11 +189,6 @@ if [[ "$a8_target" != "android" ]]; then
 	AC_PATH_X
 fi
 case "$a8_target" in
-    sdl)
-        dnl Check for SDL
-        SDL_VERSION=1.2.0
-        AM_PATH_SDL($SDL_VERSION, :, AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!]))
-        ;;
     x11*)
         if [[ "X_$x_includes" != "X_" ]]; then
             CFLAGS="$CFLAGS -I$x_includes"
@@ -214,10 +237,6 @@ dnl Set OBJS and libraries depending on host and target...
 dnl OBJS is not an AC "precious" variable but is used in the Makefile, so
 dnl it must be explicitly AC_SUBST'ed at the end of this file.
 OBJS=
-if [[ "$a8_host" = "win" -a "$a8_target" != "sdl" ]]; then
-    A8_NEED_LIB(gdi32)
-    A8_NEED_LIB(winmm)
-fi
 case "$a8_target" in
     basic)
         if [[ "$a8_host" != "dos" ]]; then
@@ -283,42 +302,6 @@ dnl BeOS has a real issue with redundant-decls
         AC_DEFINE(DIRTYRECT,1,[Define to use dirty screen partial repaints.])
         dnl AC_DEFINE(NODIRTYCOMPARE,1,[Define to skip memory comparisons - Requires DIRTYRECT.])
 		;;
-    sdl)
-        AC_DEFINE(SDL,1,[Target: SDL library.])
-        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
-        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
-        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
-        AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
-        AC_DEFINE(SUPPORTS_CHANGE_VIDEOMODE,1,[Can change video modes on the fly.])
-        AC_DEFINE(SUPPORTS_ROTATE_VIDEOMODE,1,[Can display the screen rotated sideways.])
-        SUPPORTS_SYNCHRONIZED_SOUND="yes"
-        WANT_XEP80_EMULATION=yes
-        WANT_NTSC_FILTER=yes
-        LIBS="$LIBS $SDL_LIBS"
-        CPPFLAGS="$CPPFLAGS $SDL_CFLAGS"
-        OBJS="videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
-        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Winline"
-        if [[ "$a8_host" != "beos" ]]; then
-dnl BeOS has a real issue with redundant-decls
-            CFLAGS="$CFLAGS -Wredundant-decls"
-        fi
-        if [[ "$a8_host" = "win" ]]; then
-dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c Otherwise
-dnl the autoconf tests don't work.
-            CPPFLAGS=${CPPFLAGS/-Dmain=SDL_main/}
-dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
-dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
-            LIBS=${LIBS/-lSDLmain/}
-            OBJS="$OBJS SDL_win32_main.o"
-            CPPFLAGS="$CPPFLAGS -DNO_STDIO_REDIRECT"
-dnl Don't make this a windowed app, make it a console app.
-            LIBS=${LIBS/-mwindows/}
-        fi
-        AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
-        OBJS="$OBJS pbi_proto80.o"
-        AC_DEFINE(AF80,1,[The Austin Franklin 80 column card.])
-        OBJS="$OBJS af80.o"
-        ;;
     windx)
         AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])
         AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
@@ -333,6 +316,7 @@ dnl Don't make this a windowed app, make it a console app.
         A8_NEED_LIB(gdiplus)
         A8_NEED_LIB(stdc++)
         A8_NEED_LIB(ws2_32)
+        A8_NEED_LIB(gdi32)
         OBJS="win32/atari_win32.o win32/screen_win32.o win32/render_direct3d.o win32/render_directdraw.o win32/render_gdi.o win32/render_gdiplus.o win32/main.o win32/keyboard.o win32/joystick.o win32/atari.ro"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         LDFLAGS="$LDFLAGS -mwindows"
@@ -505,10 +489,10 @@ fi
 dnl Select/detect external library for graphics and input.
 
 AC_ARG_WITH([gui],
-    [AC_HELP_STRING([--with-gui@<:@=no|yes|curses|ncurses|pdcurses|dosvga@:>@],[Select supported GUI @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-gui@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl@:>@],[Select supported GUI @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | curses | ncurses | pdcurses | dosvga )
+            no | yes | check | curses | ncurses | pdcurses | dosvga | sdl)
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-gui: "$withval"])
@@ -519,6 +503,14 @@ AC_ARG_WITH([gui],
 
 if [[ "$a8_target" = basic ]]; then
     if [[ "$with_gui" != no ]]; then
+        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = sdl ]]; then
+            TRY_USE_SDL()
+            if [[ "$a8_use_sdl" = yes ]]; then
+                with_gui=sdl
+            elif [[ "$with_gui" = sdl ]]; then
+                AC_MSG_FAILURE([--with-gui=sdl was given, but SDL library not found!])
+            fi
+        fi
         if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = dosvga ]]; then
             if [[ "$a8_host" = dos ]]; then
                 with_gui=dosvga
@@ -562,11 +554,26 @@ if [[ "$a8_target" = basic ]]; then
         with_gui=no
     fi
     case "$with_gui" in
+        sdl)
+            AC_DEFINE(GUI_SDL,1,[Use SDL for graphics and input.])
+            AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
+            AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
+            AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
+            AC_DEFINE(SUPPORTS_CHANGE_VIDEOMODE,1,[Can change video modes on the fly.])
+            AC_DEFINE(SUPPORTS_ROTATE_VIDEOMODE,1,[Can display the screen rotated sideways.])
+            WANT_XEP80_EMULATION=yes
+            WANT_NTSC_FILTER=yes
+            OBJS="$OBJS videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
+            AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
+            OBJS="$OBJS pbi_proto80.o"
+            AC_DEFINE(AF80,1,[The Austin Franklin 80 column card.])
+            OBJS="$OBJS af80.o"
+            ;;
         dosvga)
             AC_DEFINE(DOSVGA,1,[Target: DOS VGA.])
             AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
             AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
-            OBJS="dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
+            OBJS="$OBJS dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
             ;;
         curses | ncurses | pdcurses)
             AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
@@ -575,7 +582,7 @@ if [[ "$a8_target" = basic ]]; then
             ;;
         no)
             AC_DEFINE(BASIC,1,[Target: standard I/O.])
-            OBJS="atari_basic.o"
+            OBJS="$OBJS atari_basic.o"
             WANT_EVENT_RECORDING=no
             ;;
         *)
@@ -714,46 +721,100 @@ if [[ "$WANT_PBI_BB" = "yes" -o "$WANT_PBI_MIO" = "yes" ]]; then
     OBJS="$OBJS pbi_scsi.o"
 fi
 
-dnl Set sound support options...
+dnl Select/detect external library for sound.
 
-A8_OPTION(sound,yes,
-          [Use sound support (default=ON)],
-          SOUND,[Define to activate sound support.]
-         )
-if [[ "$WANT_SOUND" = "yes" ]]; then
-
-    OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
-
-    if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" -a "$a8_target" != "javanvm" ]]; then
-        case "$a8_host" in
-            dos)
-                OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
-                ;;
-            win)
-                if [[ "$a8_target" = "sdl" ]]; then
-                    OBJS="$OBJS sdl/sound.o"
-                else
-                    OBJS="$OBJS win32/sound.o"
-                fi
-                ;;
-            falcon)
-                if [[ "$a8_target" = "sdl" ]]; then
-                    OBJS="$OBJS sdl/sound.o"
-                else
-                    OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
-		fi
+AC_ARG_WITH([sound],
+    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|win|sdl@:>@],[Select supported sound @<:@default=check@:>@])],
+    [
+        case "$withval" in
+            no | yes | check | dossb | oss | falcon | win | sdl)
                 ;;
             *)
-                if [[ "$a8_target" = "sdl" ]]; then
-                    OBJS="$OBJS sdl/sound.o"
-	        elif [[ "$SUPPORTS_SOUND_OSS" = "yes" ]]; then
-                    OBJS="$OBJS sound_oss.o"
-                else
-                    AC_MSG_ERROR([Sound support not available, re-run configure with --disable-sound])
-                fi
+                AC_MSG_ERROR([unrecognized value for --with-sound: "$withval"])
                 ;;
         esac
+    ],
+    [with_sound=check])
+
+AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
+if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" -a "$a8_target" != "javanvm" ]]; then
+    if [[ "$with_sound" != no ]]; then
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = sdl ]]; then
+            TRY_USE_SDL()
+            if [[ "$a8_use_sdl" = yes ]]; then
+                with_sound=sdl
+            elif [[ "$with_sound" = sdl ]]; then
+                AC_MSG_FAILURE([--with-sound=sdl was given, but SDL library not found!])
+            fi
+        fi
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = win ]]; then
+            AC_CHECK_LIB([winmm], [main],
+                [LIBS="-lwinmm $LIBS"
+                 with_sound=win
+                ],
+                [if [[ "$with_sound" = win ]]; then
+                    AC_MSG_FAILURE([--with-sound=win was given, but WinMM library not found!])
+                 fi
+                ])
+        fi
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = falcon ]]; then
+            if [[ "$a8_host" = falcon ]]; then
+                with_sound=falcon
+            elif [[ "$with_sound" = falcon ]]; then
+                AC_MSG_ERROR([--with-sound=falcon was given, but host system is not Falcon!])
+            fi
+        fi
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = oss ]]; then
+            if [[ "$SUPPORTS_SOUND_OSS" = yes ]]; then
+                with_sound=oss
+            elif [[ "$with_sound" = oss ]]; then
+                AC_MSG_ERROR([--with-sound=oss was given, but OSS is not supported!])
+            fi
+        fi
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = dossb ]]; then
+            if [[ "$a8_host" = dos ]]; then
+                with_sound=dossb
+            elif [[ "$with_sound" = dossb ]]; then
+                AC_MSG_ERROR([--with-sound=dossb was given, but host system is not DOS!])
+            fi
+        fi
     fi
+    if [[ "$with_sound" = check ]]; then
+        with_sound=no
+    fi
+    case "$with_sound" in
+        sdl)
+            AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
+            SUPPORTS_SYNCHRONIZED_SOUND="yes"
+            OBJS="$OBJS sdl/sound.o"
+            ;;
+        win)
+            AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
+            OBJS="$OBJS win32/sound.o"
+            ;;
+        falcon)
+            OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
+            ;;
+        oss)
+            OBJS="$OBJS sound_oss.o"
+            ;;
+        dossb)
+            OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
+            ;;
+        no)
+            ;;
+        *)
+            AC_MSG_ERROR([--with-sound=$with_sound was given, but no sound library found!])
+            ;;
+    esac
+fi
+
+dnl Set sound support options...
+
+if [[ "$with_sound" != no ]]; then
+
+    AC_DEFINE(SOUND, 1, [Define to activate sound support.])
+    OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
 
     if [[ "$SUPPORTS_SYNCHRONIZED_SOUND" = "yes" ]]; then
         A8_OPTION(synchronized_sound,yes,
@@ -895,9 +956,9 @@ AC_ARG_WITH(opengl,
     [],
     [with_opengl=check])
 
-if [[ "$a8_target" != sdl ]]; then
+if [[ "$a8_target" != basic -o "$with_gui" != sdl ]]; then
     if [[ "$with_opengl" = "yes" ]]; then
-        AC_MSG_ERROR([option --with-opengl not supported in this target!])
+        AC_MSG_ERROR([option --with-opengl only supported with --target=basic --with-gui=sdl!])
     fi
     with_opengl=no
 fi
@@ -1031,8 +1092,8 @@ echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using IDE emulation?..................: $WANT_IDE"
-echo "Using sound?..........................: $WANT_SOUND"
-if [[ "$WANT_SOUND" = "yes" ]]; then
+echo "Library for sound.....................: $with_sound"
+if [[ "$with_sound" != no ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
     echo "    Using synchronized sound?.........: $WANT_SYNCHRONIZED_SOUND"
     echo "    Using sound interpolation?........: $WANT_INTERPOLATE_SOUND"
@@ -1068,7 +1129,7 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
             echo "Using R: with IP network support......: $WANT_R_NETWORK"
         fi
 fi
-if [[ "$a8_target" = "sdl" ]]; then
+if [[ "$a8_target" = basic -a "$with_gui" = sdl ]]; then
     echo "Using OpenGL?.........................: $with_opengl"
 fi
 echo
@@ -1088,7 +1149,7 @@ if [[ "$WANT_VERY_SLOW" = "yes" ]]; then
 	if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
 		echo "It is better to use --disable-monitorbreak."
 	fi
-	if [[ "$WANT_SOUND" = "yes" ]]; then
+	if [[ "$with_sound" != "no" ]]; then
 		echo "Try --disable-sound, too."
 	fi
 	if [[ "$WANT_PAGED_ATTRIB" != "yes" ]]; then

@@ -55,12 +55,12 @@ void curses_putch(int x, int y, int ascii, UBYTE fg, UBYTE bg);
 void curses_display_line(int anticmode, const UBYTE *screendata);
 #endif
 
-#ifdef SDL
+#ifdef GUI_SDL
 /* used in UI to show how the keyboard joystick is mapped */
 extern int PLATFORM_kbd_joy_0_enabled;
 extern int PLATFORM_kbd_joy_1_enabled;
 int PLATFORM_GetRawKey(void);
-#endif
+#endif /* GUI_SDL */
 
 #ifdef DIRECTX
 int PLATFORM_GetKeyName(void);

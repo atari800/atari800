@@ -75,20 +75,16 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 	if (!help_only) {
 		i = SDL_INIT_JOYSTICK
-#ifdef SOUND
-		    | SDL_INIT_AUDIO
-#endif
 #if HAVE_WINDOWS_H
 /* Timers are used to avoid one Windows 7 glitch, see src/sdl/input.c */
 		    | SDL_INIT_TIMER
 #endif /* HAVE_WINDOWS_H */
 		;
-		if (SDL_Init(i) != 0) {
-			Log_print("SDL_Init FAILED: %s", SDL_GetError());
+		if (SDL_InitSubSystem(i) != 0) {
+			Log_print("SDL_InitSubSystem FAILED: %s", SDL_GetError());
 			Log_flushlog();
 			exit(-1);
 		}
-		atexit(SDL_Quit);
 	}
 
 	if (!SDL_VIDEO_Initialise(argc, argv)
@@ -133,7 +129,9 @@ int PLATFORM_Exit(int run_monitor)
 		return 1;
 	}
 
-	SDL_Quit();
+#ifdef SOUND
+	Sound_Exit();
+#endif
 
 	Log_flushlog();
 

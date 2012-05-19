@@ -84,13 +84,13 @@
 #if SUPPORTS_CHANGE_VIDEOMODE
 #include "videomode.h"
 #endif /* SUPPORTS_CHANGE_VIDEOMODE */
-#if SDL
+#if GUI_SDL
 #include "sdl/video.h"
 #include "sdl/video_sw.h"
 #if HAVE_OPENGL
 #include "sdl/video_gl.h"
 #endif /* HAVE_OPENGL */
-#endif /* SDL */
+#endif /* GUI_SDL */
 
 #ifdef DIRECTX
 /* Display Settings */
@@ -2073,6 +2073,7 @@ static void VertOffsetSliderLabel(char *label, int value, void *user_data)
 	VIDEOMODE_SetVerticalOffset(value);
 }
 
+#if GUI_SDL
 /* Callback function that writes a text label to *LABEL, for use by
    the Scanlines Visibility slider. */
 static void ScanlinesSliderLabel(char *label, int value, void *user_data)
@@ -2080,6 +2081,7 @@ static void ScanlinesSliderLabel(char *label, int value, void *user_data)
 	sprintf(label, "%i", value);
 	SDL_VIDEO_SetScanlinesPercentage(value);
 }
+#endif /* GUI_SDL */
 
 static void VideoModeSettings(void)
 {
@@ -2133,7 +2135,7 @@ static void VideoModeSettings(void)
 	static char ratio_string[10];
 	static char horiz_offset_string[4];
 	static char vert_offset_string[4];
-#if SDL
+#if GUI_SDL
 	static const UI_tMenuItem bpp_menu_array[] = {
 		UI_MENU_ACTION(0, "autodetect"),
 		UI_MENU_ACTION(1, "8"),
@@ -2152,27 +2154,27 @@ static void VideoModeSettings(void)
 	};
 #endif /* HAVE_OPENGL */
 	static char scanlines_string[4];
-#endif /* SDL */
+#endif /* GUI_SDL */
 
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_SUBMENU_SUFFIX(0, "Host display aspect ratio:", ratio_string),
-#if SDL && HAVE_OPENGL
+#if GUI_SDL && HAVE_OPENGL
 		UI_MENU_CHECK(1, "Hardware acceleration:"),
 		UI_MENU_CHECK(2, " Bilinear filtering:"),
 		UI_MENU_CHECK(3, " Use pixel buffer objects:"),
-#endif /* SDL && HAVE_OPENGL */
+#endif /* GUI_SDL && HAVE_OPENGL */
 		UI_MENU_CHECK(4, "Fullscreen:"),
 		UI_MENU_SUBMENU_SUFFIX(5, " Fullscreen resolution:", res_string),
 #if SUPPORTS_ROTATE_VIDEOMODE
 		UI_MENU_CHECK(6, "Rotate sideways:"),
 #endif /* SUPPORTS_ROTATE_VIDEOMODE */
-#if SDL
+#if GUI_SDL
 		UI_MENU_SUBMENU_SUFFIX(7, "Bits per pixel:", bpp_string),
 #if HAVE_OPENGL
 		UI_MENU_SUBMENU_SUFFIX(8, "Pixel format:", NULL),
 #endif /* HAVE_OPENGL */
 		UI_MENU_CHECK(9, "Vertical synchronization:"),
-#endif /* SDL */
+#endif /* GUI_SDL */
 		UI_MENU_SUBMENU_SUFFIX(10, "Image aspect ratio:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(11, "Stretch image:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(12, "Fit screen method:", NULL),
@@ -2180,10 +2182,10 @@ static void VideoModeSettings(void)
 		UI_MENU_SUBMENU_SUFFIX(14, "Vertical view area:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(15, "Horizontal shift:", horiz_offset_string),
 		UI_MENU_SUBMENU_SUFFIX(16, "Vertical shift:", vert_offset_string),
-#if SDL
+#if GUI_SDL
 		UI_MENU_SUBMENU_SUFFIX(17, "Scanlines visibility:", scanlines_string),
 		UI_MENU_CHECK(18, " Interpolate scanlines:"),
-#endif /* SDL */
+#endif /* GUI_SDL */
 		UI_MENU_END
 	};
 	int option = 0;
@@ -2192,7 +2194,7 @@ static void VideoModeSettings(void)
 
 	for (;;) {
 		VIDEOMODE_CopyHostAspect(ratio_string, 10);
-#if SDL
+#if GUI_SDL
 		snprintf(bpp_string, sizeof(bpp_string), "%d", SDL_VIDEO_SW_bpp);
 #if HAVE_OPENGL
 		SetItemChecked(menu_array, 1, SDL_VIDEO_opengl);
@@ -2216,7 +2218,7 @@ static void VideoModeSettings(void)
 		}
 		snprintf(scanlines_string, sizeof(scanlines_string), "%d", SDL_VIDEO_scanlines_percentage);
 		SetItemChecked(menu_array, 18, SDL_VIDEO_interpolate_scanlines);
-#endif /* SDL */
+#endif /* GUI_SDL */
 		SetItemChecked(menu_array, 4, !VIDEOMODE_windowed);
 		VIDEOMODE_CopyResolutionName(VIDEOMODE_GetFullscreenResolution(), res_string, 10);
 #if SUPPORTS_ROTATE_VIDEOMODE
@@ -2268,7 +2270,7 @@ static void VideoModeSettings(void)
 					VIDEOMODE_AutodetectHostAspect();
 			}
 			break;
-#if SDL && HAVE_OPENGL
+#if GUI_SDL && HAVE_OPENGL
 		case 1:
 			SDL_VIDEO_ToggleOpengl();
 			if (!SDL_VIDEO_opengl_available)
@@ -2286,7 +2288,7 @@ static void VideoModeSettings(void)
 			if (!SDL_VIDEO_GL_TogglePbo())
 				UI_driver->fMessage("Pixel buffer objects not available.", 1);
 			break;
-#endif /* SDL && HAVE_OPENGL */
+#endif /* GUI_SDL && HAVE_OPENGL */
 		case 4:
 			VIDEOMODE_ToggleWindowed();
 			break;
@@ -2300,7 +2302,7 @@ static void VideoModeSettings(void)
 			VIDEOMODE_ToggleRotate90();
 			break;
 #endif
-#if SDL
+#if GUI_SDL
 		case 7:
 			{
 				int current;
@@ -2344,7 +2346,7 @@ static void VideoModeSettings(void)
 			if (!SDL_VIDEO_ToggleVsync())
 				UI_driver->fMessage("Not available in this video mode.", 1);
 			break;
-#endif /* SDL */
+#endif /* GUI_SDL */
 		case 10:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, VIDEOMODE_keep_aspect, aspect_menu_array, NULL);
 			if (option2 >= 0)
@@ -2436,7 +2438,7 @@ static void VideoModeSettings(void)
 				break;
 			}
 			break;
-#if SDL
+#if GUI_SDL
 		case 17:
 			{
 				int value = UI_driver->fSelectSlider("Adjust scanlines visibility",
@@ -2449,7 +2451,7 @@ static void VideoModeSettings(void)
 		case 18:
 			SDL_VIDEO_ToggleInterpolateScanlines();
 			break;
-#endif /* SDL */
+#endif /* GUI_SDL */
 		default:
 			return;
 		}
@@ -3325,7 +3327,7 @@ static void WindowsOptions(void)
 
 #ifndef USE_CURSES
 
-#ifdef SDL
+#ifdef GUI_SDL
 static char joys[2][5][16];
 static const UI_tMenuItem joy0_menu_array[] = {
 	UI_MENU_LABEL("Select joy direction"),
@@ -3465,7 +3467,7 @@ static void ControllerConfiguration(void)
 		UI_MENU_SUBMENU_SUFFIX(3, "Mouse port:", mouse_port_status),
 		UI_MENU_SUBMENU_SUFFIX(4, "Mouse speed:", mouse_speed_status),
 #endif
-#ifdef SDL
+#ifdef GUI_SDL
 		UI_MENU_CHECK(5, "Enable keyboard joystick 1:"),
 		UI_MENU_SUBMENU(6, "Define layout of keyboard joystick 1"),
 		UI_MENU_CHECK(7, "Enable keyboard joystick 2:"),
@@ -3504,7 +3506,7 @@ static void ControllerConfiguration(void)
 		mouse_port_status[0] = (char) ('1' + INPUT_mouse_port);
 		mouse_speed_status[0] = (char) ('0' + INPUT_mouse_speed);
 #endif
-#ifdef SDL
+#ifdef GUI_SDL
 		SetItemChecked(menu_array, 5, PLATFORM_kbd_joy_0_enabled);
 		SetItemChecked(menu_array, 7, PLATFORM_kbd_joy_1_enabled);
 #endif
@@ -3556,7 +3558,7 @@ static void ControllerConfiguration(void)
 			INPUT_mouse_speed = UI_driver->fSelectInt(INPUT_mouse_speed, 1, 9);
 			break;
 #endif
-#ifdef SDL
+#ifdef GUI_SDL
 		case 5:
 			PLATFORM_kbd_joy_0_enabled = !PLATFORM_kbd_joy_0_enabled;
 			break;

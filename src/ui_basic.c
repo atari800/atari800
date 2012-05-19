@@ -298,7 +298,7 @@ static void BasicUIMessage(const char *msg, int waitforkey)
 		PLATFORM_DisplayScreen();
 }
 
-#ifdef SDL
+#ifdef GUI_SDL
 int GetRawKey(void)
 {
 	ClearRectangle(0x94, 13, 11, 25, 13);
@@ -307,7 +307,7 @@ int GetRawKey(void)
 	PLATFORM_DisplayScreen();
 	return PLATFORM_GetRawKey();
 }
-#endif
+#endif /* GUI_SDL */
 
 #ifdef DIRECTX
 int GetKeyName(void)

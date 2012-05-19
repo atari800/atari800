@@ -346,7 +346,18 @@ int Sound_Initialise(int *argc, char *argv[])
 		return TRUE;
 	}
 
+	if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+			Log_print("SDL_INIT_AUDIO FAILED: %s", SDL_GetError());
+			return FALSE;
+	}
+
 	SoundSetup();
 	SDL_PauseAudio(0);
 	return TRUE;
+}
+
+void Sound_Exit(void)
+{
+	SDL_QuitSubSystem(SDL_INIT_AUDIO);
+	sound_enabled = FALSE;
 }

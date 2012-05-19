@@ -2,6 +2,12 @@
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Support for
   2 KB and 4 KB ROMs used in early Atari cartridges.
 
+* configure.ac, platform.h, atari.c, ui_basic.c, ui.[ch], sdl/init.[ch],
+  sdl/main.c, sdl/sound.c, debian/rules, util/benchmark.pl, DOC/INSTALL: Merge
+  basic and sdl targets - GUI and sound libraries are now autodetected or
+  explicitely selected by --with-gui and --with-sound configure options.
+
+
 2012-05-16  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/CREDITS, DOC/USAGE:
   Committing patch by Jakub Husak: Support for the SIC! cartridge mapping
@@ -12,7 +18,9 @@
 * configure.ac, util/benchmark.pl: Merge basic, curses, ncurses, pdcurses and
   dosvga targets - appropriate GUI/input library is now autodetected or
   selected explicitely by --with-gui configure option.
+
 * ui.c: Fix segfault in the ROM Locations menu.
+
 * atari_basic.c: Fix some GCC warnings.
 
 
@@ -32,6 +40,7 @@
 2012-04-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: Make the display adjustment keyboard shortcuts work by pressing
   and holding - no more need to press the keys repeatedly.
+
 * colours_ntsc.[ch], colurs_pal.c, colours.[ch], filter_ntsc.c, ui.c,
   sdl/input.c, atari800.man, DOS/USAGE: Rename color control "Hue" to "Tint".
   Add tint control also for PAL mode, as there are PAL TVs with tint control.

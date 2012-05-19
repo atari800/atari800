@@ -145,6 +145,9 @@
 #if SUPPORTS_CHANGE_VIDEOMODE
 #include "videomode.h"
 #endif
+#ifdef SDL
+#include "sdl/init.h"
+#endif
 #ifdef DIRECTX
 #include "win32\main.h"
 #endif
@@ -716,6 +719,13 @@ int Atari800_Initialise(int *argc, char *argv[])
 	   command-line options. */
 	Atari800_SetMachineType(Atari800_machine_type);
 
+#ifdef SDL
+	if (!help_only) {
+		if (!SDL_INIT_Initialise())
+			return FALSE;
+	}
+#endif /* SDL */
+
 	if (!SYSROM_Initialise(argc, argv)
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		|| !Colours_Initialise(argc, argv)
@@ -956,6 +966,9 @@ int Atari800_Exit(int run_monitor)
 		SndSave_CloseSoundFile();
 #endif
 		MONITOR_Exit();
+#ifdef SDL
+		SDL_INIT_Exit();
+#endif /* SDL */
 	}
 #endif /* __PLUS */
 	return restart;
