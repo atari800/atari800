@@ -89,6 +89,9 @@ Currently supported cartridge types:
 | 54 | 800/XL/XE |  128 | SIC! 128 KB cartridge                             |
 | 55 | 800/XL/XE |  256 | SIC! 256 KB cartridge                             |
 | 56 | 800/XL/XE |  512 | SIC! 512 KB cartridge                             |
+| 57 | 800/XL/XE |    2 | Standard 2 KB cartridge                           |
+| 58 | 800/XL/XE |    4 | Standard 4 KB cartridge                           |
+| 59 |    800    |    4 | Right slot 4 KB cartridge                         |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -691,7 +694,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 +---------------------------------------------------------------------------+
 
  This bank-switched cartridge occupies 8 KB of address space between $A000
- and $Bfff. The cartridge memory is divided into 4 banks, 8 KB each. On power
+ and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each. On power
  on, bank 0 is visible. Each access to $D500-$D5FF switches another bank in
  the sequence as follows: 0->1->2->3->cartridge disabled->0 etc.
 
@@ -707,7 +710,6 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  line and not asserting the RD5 line.
 
  Reference: http://www.atariage.com/forums/topic/161828-hooked-on-8-bit-carts/page__view__findpost__p__2338297
-
 
 +---------------------------------------------------------------------------+
 | Type 54: SIC! 128 KB cartridge                                            |
@@ -745,3 +747,30 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Same as Type 54, but with cartridge memory being divided into 32 banks.
  Bits 4..0 - 16KB bank number (0..31)
+
++---------------------------------------------------------------------------+
+| Type 57: Standard 2 KB cartridge                                          |
++---------------------------------------------------------------------------+
+
+ A 2 KB cartridge, that occupies 8 KB of address space between $A000 and
+ $BFFF. The ROM chip is active only when lines A11 and A12 are high. In
+ effect, the cartridge's memory appears at $B800-$BFFF while the $A000-B7FF
+ area is unavailable and returns $FF when read.
+
++---------------------------------------------------------------------------+
+| Type 58: Standard 4 KB cartridge                                          |
++---------------------------------------------------------------------------+
+
+ A 4 KB cartridge, that occupies 8 KB of address space between $A000 and
+ $BFFF. The ROM chip is active only when line A12 is high. In effect, the
+ cartridge's memory appears at $B000-$BFFF while the $A000-AFFF area is
+ unavailable and returns $FF when read.
+
++---------------------------------------------------------------------------+
+| Type 59: Right slot 4 KB cartridge                                        |
++---------------------------------------------------------------------------+
+
+ A 4 KB cartridge for Atari 800, mapped into $8000-$9FFF. The ROM chip is
+ active only when line A12 is high. In effect, the cartridge's memory appears
+ at $9000-$9FFF while the $8000-8FFF area is unavailable and returns $FF when
+ read.

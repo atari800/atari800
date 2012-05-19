@@ -104,7 +104,10 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	8,    /* CARTRIDGE_LOW_BANK_8 */
 	128,  /* CARTRIDGE_SIC_128 */
 	256,  /* CARTRIDGE_SIC_256 */
-	512   /* CARTRIDGE_SIC_512 */
+	512,  /* CARTRIDGE_SIC_512 */
+	2,    /* CARTRIDGE_STD_2 */
+	4,    /* CARTRIDGE_STD_4 */
+	4     /* CARTRIDGE_RIGHT_4 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -389,6 +392,18 @@ static void MapActiveCart(void)
 	}
 	else {
 		switch (active_cart->type) {
+		case CARTRIDGE_STD_2:
+			MEMORY_Cart809fDisable();
+			MEMORY_CartA0bfEnable();
+			MEMORY_dFillMem(0xa000, 0xff, 0x1800);
+			MEMORY_CopyROM(0xb800, 0xbfff, active_cart->image);
+			break;
+		case CARTRIDGE_STD_4:
+			MEMORY_Cart809fDisable();
+			MEMORY_CartA0bfEnable();
+			MEMORY_dFillMem(0xa000, 0xff, 0x1000);
+			MEMORY_CopyROM(0xb000, 0xbfff, active_cart->image);
+			break;
 		case CARTRIDGE_BLIZZARD_4:
 			MEMORY_Cart809fDisable();
 			MEMORY_CartA0bfEnable();
@@ -502,6 +517,24 @@ static void MapActiveCart(void)
 			MEMORY_writemap[0x8f] = CARTRIDGE_BountyBob1PutByte;
 			MEMORY_writemap[0x9f] = CARTRIDGE_BountyBob2PutByte;
 #endif
+			/* No need to call SwitchBank(), return. */
+			return;
+		case CARTRIDGE_RIGHT_4:
+			if (Atari800_machine_type == Atari800_MACHINE_800) {
+				MEMORY_Cart809fEnable();
+				MEMORY_dFillMem(0x8000, 0xff, 0x1000);
+				MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image);
+				if ((!Atari800_disable_basic || BINLOAD_loading_basic) && MEMORY_have_basic) {
+					MEMORY_CartA0bfEnable();
+					MEMORY_CopyROM(0xa000, 0xbfff, MEMORY_basic);
+				}
+				else
+					MEMORY_CartA0bfDisable();
+			} else {
+				/* there's no right slot in XL/XE */
+				MEMORY_Cart809fDisable();
+				MEMORY_CartA0bfDisable();
+			}
 			/* No need to call SwitchBank(), return. */
 			return;
 		case CARTRIDGE_RIGHT_8:
@@ -816,7 +849,6 @@ static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr, int no_side_effects)
 		break;
 	}
 	return 0xff;
-
 }
 
 /* Processes bankswitching of CART when writing to a $D5xx address ADDR. */

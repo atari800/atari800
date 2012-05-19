@@ -1011,6 +1011,9 @@ int UI_SelectCartType(int k)
 		UI_MENU_ACTION(CARTRIDGE_SIC_128, "SIC! 128 KB cartridge"),
 		UI_MENU_ACTION(CARTRIDGE_SIC_256, "SIC! 256 KB cartridge"),
 		UI_MENU_ACTION(CARTRIDGE_SIC_512, "SIC! 512 KB cartridge"),
+		UI_MENU_ACTION(CARTRIDGE_STD_2, "Standard 2 KB cartridge"),
+		UI_MENU_ACTION(CARTRIDGE_STD_4, "Standard 4 KB cartridge"),
+		UI_MENU_ACTION(CARTRIDGE_RIGHT_4, "Right slot 4 KB cartridge"),
 		UI_MENU_END
 	};
 

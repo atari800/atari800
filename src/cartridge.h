@@ -62,7 +62,10 @@ enum { CARTRIDGE_UNKNOWN        = -1,
        CARTRIDGE_SIC_128        = 54,
        CARTRIDGE_SIC_256        = 55,
        CARTRIDGE_SIC_512        = 56,
-       CARTRIDGE_LAST_SUPPORTED = 56
+       CARTRIDGE_STD_2          = 57,
+       CARTRIDGE_STD_4          = 58,
+       CARTRIDGE_RIGHT_4        = 59,
+       CARTRIDGE_LAST_SUPPORTED = 59
 };
 
 #define CARTRIDGE_MAX_SIZE	(1024 * 1024)
