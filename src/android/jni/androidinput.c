@@ -62,6 +62,8 @@ int Android_Split;
 int Android_Paddle = FALSE;
 SWORD Android_POTX = 0;
 SWORD Android_POTY = 0;
+SWORD Android_POTLIMIT = 228;
+int Android_PlanetaryDefense = FALSE;
 
 struct joy_overlay_state AndroidInput_JoyOvl;
 struct consolekey_overlay_state AndroidInput_ConOvl;
@@ -216,12 +218,14 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			potx = ((float) (newtc[PTRJOY].x - jovl->joyarea.l)) /
 				   ((float) (jovl->joyarea.r - jovl->joyarea.l));
 			poty = (float) newtc[PTRJOY].y / (float) Android_ScreenH;
-			Android_POTX = 227 - (UBYTE) (potx * 228.0f + 0.5f);
-			Android_POTY = 227 - (UBYTE) (poty * 228.0f + 0.5f);
+			Android_POTX = (Android_POTLIMIT - 1) - 
+						   (UBYTE) (potx * ((float) Android_POTLIMIT) + 0.5f);
+			Android_POTY = (Android_POTLIMIT - 1) -
+			   			   (UBYTE) (poty * ((float) Android_POTLIMIT) + 0.5f);
 			if (Android_POTX < 0)	Android_POTX = 0;
 			if (Android_POTY < 0)	Android_POTY = 0;
-			if (Android_POTX > 227)	Android_POTX = 227;
-			if (Android_POTY > 227)	Android_POTY = 227;
+			if (Android_POTX > Android_POTLIMIT)	Android_POTX = Android_POTLIMIT;
+			if (Android_POTY > Android_POTLIMIT)	Android_POTY = Android_POTLIMIT;
 
 			jovl->joystick.x = newtc[PTRJOY].x;
 			jovl->joystick.y = newtc[PTRJOY].y;
@@ -341,7 +345,8 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 
 	/* trigger */
 	newtrig = 1;
-	if (newtc[PTRTRG].s && conptr != PTRTRG) {
+	if ( (newtc[PTRTRG].s && conptr != PTRTRG) ||	/* normal trigger */
+		 (newtc[PTRJOY].s && conptr != PTRJOY && Android_PlanetaryDefense) ) {
 		newtrig = 0;
 		jovl->fire.x = newtc[PTRTRG].x;
 		jovl->fire.y = newtc[PTRTRG].y;

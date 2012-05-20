@@ -337,7 +337,7 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 		Atari800_builtin_basic = TRUE;
 		Atari800_keyboard_leds = FALSE;
 		Atari800_f_keys = FALSE;
-		Atari800_jumpers[0] = Atari800_jumpers[1] = Atari800_jumpers[2] = Atari800_jumpers[3] = FALSE;
+		Atari800_jumper = FALSE;
 		Atari800_builtin_game = FALSE;
 		Atari800_keyboard_detached = FALSE;
 	}
@@ -393,7 +393,7 @@ static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjo
 
 static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
 								  jboolean righth, int deadband, jboolean midx, int anchor, int anchorx,
-								  int anchory, int grace, jboolean paddle)
+								  int anchory, int grace, jboolean paddle, jboolean plandef)
 {
 	AndroidInput_JoyOvl.ovl_visible = visible;
 	AndroidInput_JoyOvl.areaopacityset = 0.01f * opacity;
@@ -409,6 +409,16 @@ static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, i
 	}
 	Android_Paddle = paddle;
 	INPUT_mouse_mode = paddle ? INPUT_MOUSE_PAD : INPUT_MOUSE_OFF;
+	Android_POTLIMIT = 228;
+	Android_PlanetaryDefense = FALSE;
+	if (plandef) {
+		INPUT_mouse_mode = INPUT_MOUSE_PAD;
+		Android_Splitpct = 1.0f;
+		AndroidInput_JoyOvl.ovl_visible = FALSE;
+		Android_POTLIMIT = 255;
+		Android_PlanetaryDefense = TRUE;
+		Android_Paddle = TRUE;
+	}
 
 	Android_SplitCalc();
 	Joyovl_Scale();
@@ -451,7 +461,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativePrefMachine",		"(IZ)Z",							NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZ)V",							NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },
-		{ "NativePrefJoy",			"(ZIIZIIZIIIZ)V",					NativePrefJoy		  },
+		{ "NativePrefJoy",			"(ZIIZIIZIIIZZ)V",					NativePrefJoy		  },
 		{ "NativePrefSound",		"(IZZ)V",							NativePrefSound		  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",			NativeSetROMPath	  },
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },

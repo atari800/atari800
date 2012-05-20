@@ -243,4 +243,6 @@
 	<string name="pref_savestate_msg">Enter the file name:</string>
 	<string name="pref_statepath">State Save Path</string>
 	<string name="pref_statepath_sum">Where atari states will be saved</string>
+	<string name="pref_plandef">Planetary Defense Mode!</string>
+	<string name="pref_plandef_sum">A Koala Pad emulation mode</string>
 </resources>

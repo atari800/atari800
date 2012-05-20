@@ -230,6 +230,13 @@
 			android:key="paddle"
 			android:title="@string/pref_paddle"
 			android:summary="@string/pref_paddle_sum"
+			android:disableDependentsState="true"
+			android:defaultValue="false"/>
+		<CheckBoxPreference
+			android:key="plandef"
+			android:title="@string/pref_plandef"
+			android:summary="@string/pref_plandef_sum"
+			android:disableDependentsState="true"
 			android:defaultValue="false"/>
 	</PreferenceCategory>
 
