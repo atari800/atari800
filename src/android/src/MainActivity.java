@@ -66,6 +66,7 @@ public final class MainActivity extends Activity
 	private static final int DLG_WELCOME = 0;
 	private static final int DLG_PATHSETUP = 1;
 	private static final int DLG_CHANGES = 2;
+	private static final int DLG_BRWSCONFRM = 3;
 
 	public static String _pkgversion;
 	public static String _coreversion;
@@ -135,6 +136,19 @@ public final class MainActivity extends Activity
 			pauseEmulation(true);
 			showDialog(DLG_CHANGES);
 		}
+	}
+
+	public void message(int msg) {
+		switch (msg) {
+		case A800Renderer.REQ_BROWSER:
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					showDialog(DLG_BRWSCONFRM);
+				}
+			});
+			break;
+		};
 	}
 
 	@Override
@@ -229,11 +243,66 @@ public final class MainActivity extends Activity
 						.create();
 			break;
 
+		case DLG_BRWSCONFRM:
+			if (! validateURL(NativeGetURL())) {
+				Log.d(TAG, "Browser request denied for improper url " + NativeGetURL());
+				d = null;
+				Toast.makeText(this, R.string.browserreqdenied, Toast.LENGTH_LONG).show();
+				break;
+			}
+			pauseEmulation(true);
+			d = new AlertDialog.Builder(this)
+						.setTitle(R.string.warning)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setCancelable(false)
+						.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								String u = NativeGetURL().trim();
+								Log.d(TAG, "Spawning browser for " + u);
+								pauseEmulation(false);
+								try {
+									startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u)));
+								} catch (Exception e1) {
+									Log.d(TAG, "Exception, trying with lower case");
+									try {
+										startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u.toLowerCase())));
+									} catch (Exception e2) {
+										Log.d(TAG, "Exception, failed, giving up");
+									}
+								}
+							}
+							})
+						.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								pauseEmulation(false);
+							}
+							})
+						.setMessage("")
+						.create();
+			break;
+
 		default:
 			d = null;
 		}
 
 		return d;
+	}
+
+	@Override
+	protected void onPrepareDialog(int id, Dialog d) {
+		switch (id) {
+		case DLG_BRWSCONFRM:
+			((AlertDialog) d).setMessage(String.format(getString(R.string.confirmurl), NativeGetURL().trim()));
+			break;
+		}
+	}
+
+	private boolean validateURL(String u) {
+		if (u.trim().toLowerCase().startsWith("http://"))
+			return true;
+		return false;
 	}
 
 	private PackageInfo getPInfo() {
@@ -423,7 +492,7 @@ public final class MainActivity extends Activity
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
 			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
 			crophoriz, cropvert, derotkeys, actiona, actionb, actionc, ntsc, paddle,
-			plandef
+			plandef, browser
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -480,7 +549,8 @@ public final class MainActivity extends Activity
 			NativePrefEmulation( Boolean.parseBoolean(_newvalues.get(PreferenceName.basic)),
 								 Boolean.parseBoolean(_newvalues.get(PreferenceName.speed)),
 								 Boolean.parseBoolean(_newvalues.get(PreferenceName.disk)),
-								 Boolean.parseBoolean(_newvalues.get(PreferenceName.sector)) );
+								 Boolean.parseBoolean(_newvalues.get(PreferenceName.sector)),
+								 Boolean.parseBoolean(_newvalues.get(PreferenceName.browser)) );
 
 			NativePrefSoftjoy( Boolean.parseBoolean(_newvalues.get(PreferenceName.softjoy)),
 							   Integer.parseInt(_newvalues.get(PreferenceName.up)),
@@ -607,7 +677,7 @@ public final class MainActivity extends Activity
 											 int frameskip, boolean collisions, int crophoriz, int cropvert);
 	private static native boolean NativePrefMachine(int machine, boolean ntsc);
 	private static native void NativePrefEmulation(boolean basic, boolean speed, boolean disk,
-												   boolean sector);
+												   boolean sector, boolean browser);
 	private static native void NativePrefSoftjoy(boolean softjoy, int up, int down, int left, int right,
 												 int fire, int derotkeys, String[] actions);
 	private static native void NativePrefJoy(boolean visible, int size, int opacity, boolean righth,
@@ -616,4 +686,5 @@ public final class MainActivity extends Activity
 	private static native void NativePrefSound(int mixrate, boolean sound16bit, boolean hqpokey);
 	private static native boolean NativeSetROMPath(String path);
 	private static native String NativeGetJoypos();
+	private static native String NativeGetURL();
 }

@@ -2008,6 +2008,97 @@ static void Devices_K_Read(void)
 
 #endif /* BASIC */
 
+/* B: device emulation --------------------------------------------------- */
+
+/* The B: device is intended as a handler for interoperating with a web browser.
+ * The device is OPENed, a url is WRITE-n, then it is CLOSEd.
+ * Upon closing, the ready flag in the structure is set to TRUE.
+ * This can tested by the host port, reset to FALSE then if the string contained
+ * in the url member looks like a url, a browser to can be spawned to that url.
+ * The user can also be notified via a popup that an Atari program is requesting
+ * browser access.
+ */
+
+struct DEV_B dev_b_status;
+
+static void Devices_B_Open(void)
+{
+	if (devbug)
+		Log_print("B: OPEN");
+
+	if (MEMORY_dGetByte(Devices_ICAX1Z) != 8) {
+		CPU_regY = 163; /* read-only device */
+		CPU_SetN;
+		return;
+	}
+
+	memset(dev_b_status.url, 0, sizeof(dev_b_status.url));
+	dev_b_status.pos = 0;
+	dev_b_status.ready = FALSE;
+
+	CPU_regY = 1;	/* open OK */
+	CPU_ClrN;
+}
+
+static void Devices_B_Close(void)
+{
+	if (devbug)
+		Log_print("B: CLOSE (%s)", dev_b_status.url);
+
+	if (dev_b_status.pos > 0)
+		dev_b_status.ready = TRUE;
+
+	CPU_regY = 1;
+	CPU_ClrN;
+}
+
+static void Devices_B_Write(void)
+{
+	UBYTE byte;
+
+	byte = CPU_regA;
+
+	if (devbug)
+		Log_print("B: WRITE ([%d] %02X, '%c')", dev_b_status.pos, byte, byte);
+
+	if (byte == 0x9b)
+		byte = '\0';
+
+	if (dev_b_status.pos >= sizeof(dev_b_status.url) - 1) {
+		CPU_regY = 135; /* attempted to write to a read-only device */
+		CPU_SetN;
+		return;
+	}
+	dev_b_status.url[dev_b_status.pos++] = byte;
+
+	CPU_regY = 1;
+	CPU_ClrN;
+}
+
+static void Devices_B_Null(void)
+{
+	if (devbug)
+		Log_print("B: NULL");
+}
+
+static void Devices_B_Read(void)
+{
+	if (devbug)
+		Log_print("B: READ");
+
+	CPU_regY = 136; /* end of file */
+	CPU_SetN;
+}
+
+static void Devices_B_Init(void)
+{
+	if (devbug)
+		Log_print("B: INIT");
+
+	CPU_regY = 1;
+	CPU_ClrN;
+}
+
 
 /* Atari BASIC loader ---------------------------------------------------- */
 
@@ -2264,6 +2355,7 @@ static void Devices_CloseBasicFile(void)
 int Devices_enable_h_patch = TRUE;
 int Devices_enable_p_patch = TRUE;
 int Devices_enable_r_patch = FALSE;
+int Devices_enable_b_patch = FALSE;
 
 /* Devices_PatchOS is called by ESC_PatchOS to modify standard device
    handlers in Atari OS. It puts escape codes at beginnings of OS routines,
@@ -2432,6 +2524,7 @@ static UWORD h_entry_address = 0;
 #ifdef R_IO_DEVICE
 static UWORD r_entry_address = 0;
 #endif
+static UWORD b_entry_address = 0;
 
 #define H_DEVICE_BEGIN  0xd140
 #define H_TABLE_ADDRESS 0xd140
@@ -2456,6 +2549,17 @@ static UWORD r_entry_address = 0;
 #define R_DEVICE_END    0xd1b5
 #endif
 
+#define B_DEVICE_BEGIN  0xd1c0
+#define B_TABLE_ADDRESS 0xd1c0
+#define B_PATCH_OPEN    0xd1d0
+#define B_PATCH_CLOS    0xd1d3
+#define B_PATCH_READ    0xd1d6
+#define B_PATCH_WRIT    0xd1d9
+#define B_PATCH_STAT    0xd1dc
+#define B_PATCH_SPEC    0xd1df
+#define B_PATCH_INIT    0xd1e3
+#define B_DEVICE_END    0xd1e5
+
 void Devices_Frame(void)
 {
 	if (Devices_enable_h_patch)
@@ -2465,6 +2569,9 @@ void Devices_Frame(void)
 	if (Devices_enable_r_patch)
 		r_entry_address = Devices_UpdateHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
 #endif
+
+	if (Devices_enable_b_patch)
+		b_entry_address = Devices_UpdateHATABSEntry('B', b_entry_address, B_TABLE_ADDRESS);
 }
 
 /* this is called when Devices_enable_h_patch is toggled */
@@ -2541,6 +2648,40 @@ void Devices_UpdatePatches(void)
 		MEMORY_dFillMem(R_DEVICE_BEGIN, 0xff, R_DEVICE_END - R_DEVICE_BEGIN + 1);
 	}
 #endif /* defined(R_IO_DEVICE) */
+
+	if (Devices_enable_b_patch) {
+		/* add B: device to HATABS */
+		MEMORY_SetROM(B_DEVICE_BEGIN, B_DEVICE_END);
+		/* set handler table */
+		MEMORY_dPutWord(B_TABLE_ADDRESS + Devices_TABLE_OPEN, B_PATCH_OPEN - 1);
+		MEMORY_dPutWord(B_TABLE_ADDRESS + Devices_TABLE_CLOS, B_PATCH_CLOS - 1);
+		MEMORY_dPutWord(B_TABLE_ADDRESS + Devices_TABLE_READ, B_PATCH_READ - 1);
+		MEMORY_dPutWord(B_TABLE_ADDRESS + Devices_TABLE_WRIT, B_PATCH_WRIT - 1);
+		MEMORY_dPutWord(B_TABLE_ADDRESS + Devices_TABLE_STAT, B_PATCH_STAT - 1);
+		MEMORY_dPutWord(B_TABLE_ADDRESS + Devices_TABLE_SPEC, B_PATCH_SPEC - 1);
+		MEMORY_dPutWord(B_TABLE_ADDRESS + Devices_TABLE_INIT, B_PATCH_INIT - 1);
+		/* set patches */
+		ESC_AddEscRts(B_PATCH_OPEN, ESC_BOPEN, Devices_B_Open);
+		ESC_AddEscRts(B_PATCH_CLOS, ESC_BCLOS, Devices_B_Close);
+		ESC_AddEscRts(B_PATCH_READ, ESC_BREAD, Devices_B_Read);
+		ESC_AddEscRts(B_PATCH_WRIT, ESC_BWRIT, Devices_B_Write);
+		ESC_AddEscRts(B_PATCH_STAT, ESC_BSTAT, Devices_B_Null);
+		ESC_AddEscRts(B_PATCH_SPEC, ESC_BSPEC, Devices_B_Null);
+		ESC_AddEscRts(B_PATCH_INIT, ESC_BINIT, Devices_B_Init);
+	}
+	else {
+		/* remove B: entry from HATABS */
+		Devices_RemoveHATABSEntry('B', b_entry_address, B_TABLE_ADDRESS);
+		/* remove patches */
+		ESC_Remove(ESC_BOPEN);
+		ESC_Remove(ESC_BCLOS);
+		ESC_Remove(ESC_BREAD);
+		ESC_Remove(ESC_BWRIT);
+		ESC_Remove(ESC_BSTAT);
+		ESC_Remove(ESC_BSPEC);
+		/* fill memory area used for table and patches with 0xff */
+		MEMORY_dFillMem(B_DEVICE_BEGIN, 0xff, B_DEVICE_END - B_DEVICE_BEGIN + 1);
+	}
 }
 
 /*

@@ -37,14 +37,19 @@ import android.graphics.Region;
 import android.util.Log;
 import android.widget.Toast;
 import android.content.Context;
+import android.os.Message;
+import android.os.Handler;
 
 public final class A800Renderer implements GLSurfaceView.Renderer
 {
+	public static final int REQ_BROWSER = 1;
 	private static final String TAG = "A800Renderer";
 	private final int OVL_TEXW = 128;
 	private final int OVL_TEXH = 64;
 	private int[] _pix;
 	private Toast _crashtoast;
+	private int _frameret;
+	private Handler _handler = null;
 
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -61,12 +66,22 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 
 	@Override
 	public void onDrawFrame(GL10 gl) {
-		if (NativeRunFrame())
+		_frameret = NativeRunFrame();
+		if ((_frameret & 1) != 0)
 			_crashtoast.show();
+		else if ((_frameret & 2) != 0) {
+			Log.d(TAG, "Browser request");
+			if (_handler != null)
+				_handler.dispatchMessage(Message.obtain(_handler, REQ_BROWSER));
+		}
 	}
 
 	public void prepareToast(Context c) {
 		_crashtoast = Toast.makeText(c, R.string.cimcrash, Toast.LENGTH_LONG);
+	}
+
+	public void setHandler(Handler h) {
+		_handler = h;
 	}
 
 	private void generateOverlays() {
@@ -113,6 +128,6 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 
 	// Native function declarations
 	private native void NativeGetOverlays();
-	private native boolean NativeRunFrame();
+	private native int  NativeRunFrame();
 	private native void NativeResize(int w, int h);
 }

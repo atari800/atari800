@@ -1,7 +1,8 @@
 2012-05-20  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement Planetary Defense mode, a Koala Pad click-where-I-point
-             mode
-
+  mode
+* devices.[ch], esc.h, android/*: Implement the B: device in the core and
+  android port
 
 2012-05-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Support for

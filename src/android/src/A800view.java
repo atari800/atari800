@@ -34,6 +34,8 @@ import android.os.Build;
 import android.widget.Toast;
 import android.view.View;
 import android.util.SparseArray;
+import android.os.Handler;
+import android.os.Message;
 import static android.view.KeyEvent.*;
 
 
@@ -76,6 +78,12 @@ public final class A800view extends GLSurfaceView
 		_renderer = new A800Renderer();
 		setRenderer(_renderer);
 		_renderer.prepareToast(context);
+		_renderer.setHandler(new Handler() {
+			@Override
+			public void handleMessage(Message msg) {
+				((MainActivity) getContext()).message(msg.what);
+			}
+		});
 
 		setFocusable(true);
 		setFocusableInTouchMode(true);

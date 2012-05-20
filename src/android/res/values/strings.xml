@@ -118,6 +118,9 @@
 							<br><br>Thank you for your continued support and bug/feature reports :-)
 							]]></string>
 	<string name="atariupdate">Colleen Update</string>
+	<string name="confirmurl">The current Atari program is requesting browser access to the
+							  following URL:\n%s\nAllow access?</string>
+	<string name="browserreqdenied">Denied Atari program browser request (malformed URL)</string>
 
 	<!-- Preferences -->
 	<string name="preftitle_graphics">Graphics</string>
@@ -245,4 +248,6 @@
 	<string name="pref_statepath_sum">Where atari states will be saved</string>
 	<string name="pref_plandef">Planetary Defense Mode!</string>
 	<string name="pref_plandef_sum">A Koala Pad emulation mode</string>
+	<string name="pref_browser">Allow Web Browser</string>
+	<string name="pref_browser_sum">Provide the B: device to the emulated Atari</string>
 </resources>

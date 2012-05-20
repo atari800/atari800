@@ -38,6 +38,7 @@
 #include "sio.h"
 #include "sysrom.h"
 #include "akey.h"
+#include "devices.h"
 
 #include "graphics.h"
 #include "androidinput.h"
@@ -187,11 +188,12 @@ static void JNICALL NativeExit(JNIEnv *env, jobject this)
 	Atari800_Exit(FALSE);
 }
 
-static jboolean JNICALL NativeRunFrame(JNIEnv *env, jobject this)
+static jint JNICALL NativeRunFrame(JNIEnv *env, jobject this)
 {
 	static int old_cim = FALSE;
 	int ret = FALSE;
 
+	dev_b_status.ready = FALSE;
 	do {
 		INPUT_key_code = PLATFORM_Keyboard();
 
@@ -209,7 +211,7 @@ static jboolean JNICALL NativeRunFrame(JNIEnv *env, jobject this)
 		old_cim = CPU_cim_encountered;
 	} while (!Atari800_display_screen);
 
-	return ret;
+	return ((dev_b_status.ready == TRUE) << 1) | (ret == TRUE);
 }
 
 static void JNICALL NativeSoundInit(JNIEnv *env, jobject this, jint size)
@@ -349,12 +351,14 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 }
 
 static void JNICALL NativePrefEmulation(JNIEnv *env, jobject this, jboolean basic, jboolean speed,
-										jboolean disk, jboolean sector)
+										jboolean disk, jboolean sector, jboolean browser)
 {
 	Atari800_disable_basic = basic;
 	Screen_show_atari_speed = speed;
 	Screen_show_disk_led = disk;
 	Screen_show_sector_counter = sector;
+	Devices_enable_b_patch = browser;
+	Devices_UpdatePatches();
 }
 
 static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjoy, int up, int down,
@@ -452,6 +456,11 @@ static jstring JNICALL NativeGetJoypos(JNIEnv *env, jobject this)
 	return (*env)->NewStringUTF(env, tmp);
 }
 
+static jstring JNICALL NativeGetURL(JNIEnv *env, jobject this)
+{
+	return (*env)->NewStringUTF(env, dev_b_status.url);
+}
+
 jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
 	JNINativeMethod main_methods[] = {
@@ -459,13 +468,14 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",			NativeRunAtariProgram },
 		{ "NativePrefGfx",			"(IZIIZII)V",						NativePrefGfx		  },
 		{ "NativePrefMachine",		"(IZ)Z",							NativePrefMachine	  },
-		{ "NativePrefEmulation",	"(ZZZZ)V",							NativePrefEmulation	  },
+		{ "NativePrefEmulation",	"(ZZZZZ)V",							NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },
 		{ "NativePrefJoy",			"(ZIIZIIZIIIZZ)V",					NativePrefJoy		  },
 		{ "NativePrefSound",		"(IZZ)V",							NativePrefSound		  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",			NativeSetROMPath	  },
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },
 		{ "NativeInit",				"()Ljava/lang/String;",				NativeInit			  },
+		{ "NativeGetURL",			"()Ljava/lang/String;",				NativeGetURL		  },
 	};
 	JNINativeMethod view_methods[] = {
 		{ "NativeTouch", 			"(IIIIII)V", 						NativeTouch			  },
@@ -477,7 +487,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeSoundExit",		"()V",								NativeSoundExit		  },
 	};
 	JNINativeMethod render_methods[] = {
-		{ "NativeRunFrame",			"()Z",								NativeRunFrame		  },
+		{ "NativeRunFrame",			"()I",								NativeRunFrame		  },
 		{ "NativeGetOverlays",		"()V",								NativeGetOverlays	  },
 		{ "NativeResize",			"(II)V",							NativeResize		  },
 	};
