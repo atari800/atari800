@@ -28,7 +28,7 @@ android update project --path android/
 Configure the build. I use this setup:
 autoheader && autoconf && ./configure --target=android --disable-monitorbreak --enable-pagedattrib --enable-seriosound --disable-crashmenu --disable-monitorasm --disable-monitorhints --without-readline --enable-clipsound
 Then just type make and your apk package should appear in:
-android/bin/atari800-debug.apk
+android/bin/colleen-debug.apk
 
 Cheers,
 Kostas
