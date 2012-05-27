@@ -247,7 +247,8 @@ public final class MainActivity extends Activity
 			if (! validateURL(NativeGetURL())) {
 				Log.d(TAG, "Browser request denied for improper url " + NativeGetURL());
 				d = null;
-				Toast.makeText(this, R.string.browserreqdenied, Toast.LENGTH_LONG).show();
+				NativeClearDevB();
+				Toast.makeText(this, R.string.browserreqdenied, Toast.LENGTH_SHORT).show();
 				break;
 			}
 			pauseEmulation(true);
@@ -271,12 +272,14 @@ public final class MainActivity extends Activity
 										Log.d(TAG, "Exception, failed, giving up");
 									}
 								}
+								NativeClearDevB();
 							}
 							})
 						.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface d, int i) {
 								pauseEmulation(false);
+								NativeClearDevB();
 							}
 							})
 						.setMessage("")
@@ -687,4 +690,5 @@ public final class MainActivity extends Activity
 	private static native boolean NativeSetROMPath(String path);
 	private static native String NativeGetJoypos();
 	private static native String NativeGetURL();
+	private static native void NativeClearDevB();
 }

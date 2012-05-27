@@ -56,6 +56,8 @@ struct audiothread {
 };
 static pthread_key_t audiothread_data;
 
+static char devb_url[512];
+
 static void JNICALL NativeGetOverlays(JNIEnv *env, jobject this)
 {
 	jclass cls;
@@ -90,6 +92,12 @@ static void JNICALL NativeResize(JNIEnv *env, jobject this, jint w, jint h)
 	Android_InitGraphics();
 }
 
+static void JNICALL NativeClearDevB(JNIEnv *env, jobject this)
+{
+	dev_b_status.ready = FALSE;
+	memset(devb_url, 0, sizeof(devb_url));
+}
+
 static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 {
 	int ac = 1;
@@ -98,6 +106,8 @@ static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 
 	pthread_key_create(&audiothread_data, NULL);
 	pthread_setspecific(audiothread_data, NULL);
+
+	NativeClearDevB(env, this);
 
 	Atari800_Initialise(&ac, &avp);
 
@@ -191,9 +201,8 @@ static void JNICALL NativeExit(JNIEnv *env, jobject this)
 static jint JNICALL NativeRunFrame(JNIEnv *env, jobject this)
 {
 	static int old_cim = FALSE;
-	int ret = FALSE;
+	int ret = 0;
 
-	dev_b_status.ready = FALSE;
 	do {
 		INPUT_key_code = PLATFORM_Keyboard();
 
@@ -206,12 +215,18 @@ static jint JNICALL NativeRunFrame(JNIEnv *env, jobject this)
 			PLATFORM_DisplayScreen();
 
 		if (!old_cim && CPU_cim_encountered)
-			ret = TRUE;
+			ret = 1;
 
 		old_cim = CPU_cim_encountered;
 	} while (!Atari800_display_screen);
 
-	return ((dev_b_status.ready == TRUE) << 1) | (ret == TRUE);
+	if (dev_b_status.ready && devb_url[0] == '\0') {
+		strncpy(devb_url, dev_b_status.url, sizeof(devb_url));
+		Log_print("Received b: device URL: %s", devb_url);
+		ret |= 2;
+	}
+
+	return ret;
 }
 
 static void JNICALL NativeSoundInit(JNIEnv *env, jobject this, jint size)
@@ -476,6 +491,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },
 		{ "NativeInit",				"()Ljava/lang/String;",				NativeInit			  },
 		{ "NativeGetURL",			"()Ljava/lang/String;",				NativeGetURL		  },
+		{ "NativeClearDevB",		"()V",								NativeClearDevB		  },
 	};
 	JNINativeMethod view_methods[] = {
 		{ "NativeTouch", 			"(IIIIII)V", 						NativeTouch			  },
