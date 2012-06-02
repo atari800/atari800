@@ -100,7 +100,7 @@ extern int Android_Paddle;
 extern int Android_PlanetaryDefense;
 extern SWORD Android_POTX;
 extern SWORD Android_POTY;
-extern SWORD Android_POTLIMIT;
+extern UBYTE Android_ReversePddle;
 
 void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2);
 void Android_KeyEvent(int k, int s);

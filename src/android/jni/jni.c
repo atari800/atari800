@@ -428,15 +428,15 @@ static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, i
 	}
 	Android_Paddle = paddle;
 	INPUT_mouse_mode = paddle ? INPUT_MOUSE_PAD : INPUT_MOUSE_OFF;
-	Android_POTLIMIT = 228;
 	Android_PlanetaryDefense = FALSE;
+	Android_ReversePddle = 0;
 	if (plandef) {
 		INPUT_mouse_mode = INPUT_MOUSE_PAD;
 		Android_Splitpct = 1.0f;
 		AndroidInput_JoyOvl.ovl_visible = FALSE;
-		Android_POTLIMIT = 255;
 		Android_PlanetaryDefense = TRUE;
 		Android_Paddle = TRUE;
+		Android_ReversePddle = 3;
 	}
 
 	Android_SplitCalc();

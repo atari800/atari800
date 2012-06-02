@@ -184,6 +184,7 @@
 			android:key="joyvisible"
 			android:title="@string/pref_joyvisible"
 			android:summary="@string/pref_joyvisible_sum"
+			android:dependency="plandef"
 			android:defaultValue="true"/>
 		<name.nick.jubanka.colleen.SliderPreference
 			android:key="joyopacity"
@@ -197,6 +198,7 @@
 			android:key="joysize"
 			android:title="@string/pref_joysize"
 			android:summary="@string/pref_joysize_sum"
+			android:dependency="plandef"
 			android:defaultValue="15"
 			jub:min="10"
 			jub:max="32"/>
@@ -204,16 +206,19 @@
 			android:key="joyrighth"
 			android:title="@string/pref_joyrighth"
 			android:summary="@string/pref_joyrighth_sum"
+			android:dependency="plandef"
 			android:defaultValue="false"/>
 		<CheckBoxPreference
 			android:key="anchor"
 			android:title="@string/pref_anchor"
 			android:summary="@string/pref_anchor_sum"
+			android:dependency="plandef"
 			android:defaultValue="false"/>
 		<name.nick.jubanka.colleen.SliderPreference
 			android:key="joymidx"
 			android:title="@string/pref_joymidx"
 			android:summary="@string/pref_joymidx_sum"
+			android:dependency="plandef"
 			android:defaultValue="65"
 			jub:min="50"
 			jub:max="80"/>
@@ -221,6 +226,7 @@
 			android:key="joydeadband"
 			android:title="@string/pref_joydeadband"
 			android:summary="@string/pref_joydeadband_sum"
+			android:dependency="plandef"
 			android:defaultValue="35"
 			jub:min="20"
 			jub:max="60"/>
@@ -228,6 +234,7 @@
 			android:key="joygrace"
 			android:title="@string/pref_joygrace"
 			android:summary="@string/pref_joygrace_sum"
+			android:dependency="plandef"
 			android:defaultValue="50"
 			jub:min="10"
 			jub:max="99"/>
@@ -236,6 +243,7 @@
 			android:title="@string/pref_paddle"
 			android:summary="@string/pref_paddle_sum"
 			android:disableDependentsState="true"
+			android:dependency="plandef"
 			android:defaultValue="false"/>
 		<CheckBoxPreference
 			android:key="plandef"
