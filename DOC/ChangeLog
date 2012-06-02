@@ -1,3 +1,9 @@
+2012-06-02  Kostas Nakos  <knakos@gmail.com>
+* android/*: Small tweaks to the touchscreen mode
+* afile.c, cartridge.c: Temporary fix for non auto-detected cartridges, until
+  the implementation of a proper menu
+
+
 2012-05-20  Kostas Nakos  <knakos@gmail.com>
 * android/*: Implement Planetary Defense mode, a Koala Pad click-where-I-point
   mode
