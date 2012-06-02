@@ -1297,9 +1297,12 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 		cart->size = len;
 		for (type = 1; type <= CARTRIDGE_LAST_SUPPORTED; type++)
 			if (CARTRIDGE_kb[type] == len) {
-				if (cart->type == CARTRIDGE_NONE)
+				if (cart->type == CARTRIDGE_NONE) {
 					cart->type = type;
-				else {
+#ifdef ANDROID
+					break;
+#endif
+				} else {
 					/* more than one cartridge type of such length - user must select */
 					cart->type = CARTRIDGE_UNKNOWN;
 					return len;
