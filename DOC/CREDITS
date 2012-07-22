@@ -44,6 +44,10 @@ Robert Brewer <rbrewer@op.net>
 Chris Chiesa <xetwnk@shell.portal.com>
     - added code allowing emulator to run under DEC Windows
 
+Mike Coates <Mike@Dissfulfils.co.uk>
+Tom Haukap <Tom.Haukap@t-online.de>
+    - Votrax SC-01
+
 Ed Cogburn <ecogburn@xtn.net>
     - major improvements of configure & make process
     - added copyright headers to all source files
@@ -203,11 +207,30 @@ Jari Karppinen <jakarppi@mail.student.oulu.fi>
     - fixed some warnings and bugs such as "void main()" in joycfg
 
 Tomasz Krasuski <kr0tki@poczta.onet.pl>
-    - NTSC filter option added to UI
-    - SDL display modes cleanup
-    - audio fixes (WAV, -audio16, TV mode)
-    - restore state fixes (color palette reinit)
-    - check for ARGV additional parameters
+    - various bugfixes
+    - accurate emulation of NTSC and PAL palettes
+    - support for color adjustments
+    - saving of color palettes
+    - integration of Blargg's video kernel version 0.2.2
+    - rewrite of SDL video subsystem
+    - new options for display adjustments in SDL port
+    - OpenGL support in SDL
+    - support for V-Sync in SDL port (only on Windows fullscreen)
+    - slider widget in basic UI
+    - autosaving of the configuration file
+    - Tape Management menu with options for creation of tapes and rewinding
+    - display tape position during loading/saving
+    - fixes in tape emulation to support some non-standard tapes
+    - rewrite of cartridge subsystem to fix savestates and pigyback cartridges
+    - support OSS 8 KB, OSS 043M, Blizzard 4 KB, AST, Atrax SDX, Turbosoft,
+      Ultracart, Low bank, and standard 2 & 4 KB cartridge mappings
+    - rewrite of XEP80 emulation to fix inaccuracies
+    - automatic searching for OS ROM images based on CRC matching
+    - rewrite of Select system menu, incl. choosing OS & BASIC revision
+    - support for RAM amounts other than 16/48 KB in Atari 400/800
+    - support for RAM expansions by RC Systems
+    - emulation of 1200XL and XEGS features
+    - autodetection of video and sound libraries in configure
 
 Kuba <kubad@zeus.polsl.gliwice.pl>
     - vertical retrace control in DOS port
@@ -280,6 +303,9 @@ Krzysztof Nikiel <krzych00@priv.onet.pl>
     - sound improvements (interpolation, configurable delay, 4 buffers)
     - autoconf stuff
     - Windows code clean up and DirectX version
+
+John Oyler <john.m.oyler@gmail.com>
+    - atari2.svg and atari2.png icons
 
 Chris Palmer <crpalmer@solo.uwaterloo.ca>
     - spotted incorrect declaration of atari_basic[8129] in pia.c
@@ -357,6 +383,12 @@ Steven Tucker <classics@atarimax.com>
 and Wrathchild <atari@mkeates.f9.co.uk>
     - Atarimax cartridges
 
+B Watson  <yalhcru@gmail.com>
+    - mouse support for SDL
+    - direct mouse support (SDL and X11)
+    - readline support for the internal monitor (including command history)
+    - turbo mode
+
 James Wilkinson <james@slor.net>
     - DirectX joystick support
     - various enhancements and bug fixes
@@ -380,16 +412,3 @@ Marcin Zukowski <eru@ibb.waw.pl>
     - fix in ANTIC, GTIA
     - slight monitor improvement
     - fix in Atrax cartridge bank switching
-
-Mike Coates <Mike@Dissfulfils.co.uk>
-Tom Haukap <Tom.Haukap@t-online.de>
-    - Votrax SC-01
-
-B Watson  <yalhcru@gmail.com>
-    - mouse support for SDL
-    - direct mouse support (SDL and X11)
-    - readline support for the internal monitor (including command history)
-    - turbo mode
-
-John Oyler <john.m.oyler@gmail.com>
-    - atari2.svg and atari2.png icons

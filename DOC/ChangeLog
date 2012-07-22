@@ -1,3 +1,7 @@
+2012-07-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/CREDITS: Fix aplphabetical order. Update my own contributions.
+
+
 2012-06-02  Kostas Nakos  <knakos@gmail.com>
 * android/*: Small tweaks to the touchscreen mode
 * afile.c, cartridge.c: Temporary fix for non auto-detected cartridges, until
