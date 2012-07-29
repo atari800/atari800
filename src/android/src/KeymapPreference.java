@@ -39,6 +39,7 @@ import android.app.Dialog;
 import android.app.AlertDialog;
 import android.util.SparseArray;
 import android.widget.TextView;
+import android.widget.EditText;
 import android.R.style;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -107,12 +108,12 @@ public final class KeymapPreference extends DialogPreference
 		return v;
 	}
 
-	private final class SnoopTextView extends TextView
+	private final class SnoopTextView extends EditText
 	{
 		public SnoopTextView(Context c) {
 			super(c);
 			setText( (!_extended) ? R.string.pref_keymapmsg : R.string.pref_keymapmsg1);
-			setTextAppearance(c, android.R.style.TextAppearance_Medium);
+			setCursorVisible(false);
 			int pad = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
 													  (float) 10,
 													  c.getResources().getDisplayMetrics());
@@ -150,15 +151,19 @@ public final class KeymapPreference extends DialogPreference
 							callChangeListener(new Integer(-k));
 							setKeymap(k);
 							d.dismiss();
-							if (!_extended)
-								getDialog().dismiss();
-							else
+							if (!_extended) {
+								Dialog d1 = getDialog();
+								if (d1 != null)
+									d1.dismiss();
+							} else
 								showExtDialog();
 						}
 						})
 					.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface d, int i) {
-							getDialog().dismiss();
+							Dialog d1 = getDialog();
+							if (d1 != null)
+								d1.dismiss();
 						}
 						})
 					.show();
@@ -172,9 +177,6 @@ public final class KeymapPreference extends DialogPreference
 				showExtDialog();
 			return true;
 		}
-
-		@Override
-		public boolean onCheckIsTextEditor() { return true; }
 	}
 
 	private void showExtDialog()
