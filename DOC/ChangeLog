@@ -1,6 +1,7 @@
 2012-07-29  Kostas Nakos  <knakos@gmail.com>
 * android/*: Update project to newer android sdk (jelly bean - 4.1),
-             Fine tuning of the B: device handling
+             Fine tuning of the B: device handling,
+			 Fix audio stuttering on jelly bean
 
 
 2012-07-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

@@ -279,7 +279,7 @@
 			android:key="sound16bit"
 			android:title="@string/pref_sound16bit"
 			android:summary="@string/pref_sound16bit_sum"
-			android:defaultValue="false"
+			android:defaultValue="true"
 			android:dependency="sound"/>
 		<CheckBoxPreference
 			android:key="hqpokey"
