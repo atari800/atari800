@@ -14,7 +14,7 @@
     <string name="mountdisk">Mount Image to Drive</string>
     <string name="unmountall">Unmount all drives</string>
     <string name="mountnextdisk">Image %s inserted</string>
-    <string name="mountinsertdisk">Image %s inserted into drive D%d:</string>
+    <string name="mountinsertdisk">Image %1$s inserted into drive D%2$d:</string>
     <string name="savestateoverwrite">Save state file \'%s\' already exists. OK to overwrite?</string>
     <string name="savestateerror">Error: Couldn\'t save state</string>
     <string name="savestateok">State saved</string>
@@ -66,8 +66,8 @@
 	<string name="about">Colleen</string>
 	<string name="aboutmsg"><![CDATA[
 							<html><head></head><body>
-							<p align="right"><font size="-1"><b>Package version:</b>%s<br>
-								<b>Core version:</b>%s</font></p>
+							<p align="right"><font size="-1"><b>Package version:</b>%1$s<br>
+								<b>Core version:</b>%2$s</font></p>
 							<p align="center">Android port by <i>Kostas Nakos</i><br>
 								<a href="http://pocketatari.atari.org/android">
 										http://pocketatari.atari.org/android</a><br>

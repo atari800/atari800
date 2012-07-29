@@ -18,13 +18,13 @@ ANDROID_NDK_ROOT which points to the root of the NDK
 (f.ex.:export ANDROID_NDK_ROOT="/android-ndk/").
 Next, add the NDK root, gcc and android tools paths to PATH (f.ex. export PATH=
 "$ANDROID_NDK_ROOT:$ANDROID_NDK_ROOT/build/prebuilt/windows/arm-eabi-4.4.0/bin/:
-/android-sdk-windows/tools/:$PATH").
-Don't forget to also add the proper Java environment vars too:
-export PATH="/ant/bin:$PATH"; export JAVA_HOME='c:\Java\jdk1.6.0_21\';
+/android-sdk-windows/tools/:/android-sdk-windows/platform-tools/:$PATH").
+Don't forget to also add the proper Java environment vars too (f.ex.
+export PATH="/ant/bin:$PATH"; export JAVA_HOME='c:\Java\jdk1.6.0_21\';).
 
 Unpack the source tarball or get the CVS module. Go to the src directory and
 update the project thusly:
-android update project --path android/
+android update project --path android/ --name colleen
 Configure the build. I use this setup:
 autoheader && autoconf && ./configure --target=android --disable-monitorbreak --enable-pagedattrib --enable-seriosound --disable-crashmenu --disable-monitorasm --disable-monitorhints --without-readline --enable-clipsound
 Then just type make and your apk package should appear in:
