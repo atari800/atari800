@@ -1,3 +1,8 @@
+2012-07-29  Kostas Nakos  <knakos@gmail.com>
+* android/*: Update project to newer android sdk (jelly bean - 4.1),
+             Fine tuning of the B: device handling
+
+
 2012-07-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/CREDITS: Fix aplphabetical order. Update my own contributions.
 

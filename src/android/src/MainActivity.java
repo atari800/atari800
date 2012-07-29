@@ -244,8 +244,13 @@ public final class MainActivity extends Activity
 			break;
 
 		case DLG_BRWSCONFRM:
-			if (! validateURL(NativeGetURL())) {
-				Log.d(TAG, "Browser request denied for improper url " + NativeGetURL());
+			String url = NativeGetURL();
+			if (url.length() == 0) {
+				d = null;
+				break;
+			}
+			if (! validateURL(url)) {
+				Log.d(TAG, "Browser request denied for improper url " + url);
 				d = null;
 				NativeClearDevB();
 				Toast.makeText(this, R.string.browserreqdenied, Toast.LENGTH_SHORT).show();
