@@ -1,3 +1,8 @@
+2012-08-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sysrom.c: Fixed CRC32 of the CC01r4 OS ROM - the previous one was for a
+  binary that I've myself incorrectly-assembled from sources.
+
+
 2012-07-29  Kostas Nakos  <knakos@gmail.com>
 * android/*: Update project to newer android sdk (jelly bean - 4.1),
              Fine tuning of the B: device handling,
@@ -7,7 +12,7 @@
 
 
 2012-07-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
-* DOC/CREDITS: Fix aplphabetical order. Update my own contributions.
+* DOC/CREDITS: Fix alphabetical order. Update my own contributions.
 
 
 2012-06-02  Kostas Nakos  <knakos@gmail.com>

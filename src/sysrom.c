@@ -71,7 +71,7 @@ static char basic_custom_filename[FILENAME_MAX];
 static char xegame_custom_filename[FILENAME_MAX];
 
 /* Indicates an unknown checksum - an entry with this value will not be tested for checksum.
-   Choosea value different than any know checksum in SYSROM_roms. */
+   Choose a value different than any known checksum in SYSROM_roms. */
 enum { CRC_NULL = 0 };
 
 SYSROM_t SYSROM_roms[SYSROM_SIZE] = {
@@ -84,7 +84,7 @@ SYSROM_t SYSROM_roms[SYSROM_SIZE] = {
 	{ osbb01r2_filename, 0x4000, 0x1f9cd270, TRUE }, /* SYSROM_BB01R2 */
 	{ osbb02r3_filename, 0x4000, 0x0d477aa1, TRUE }, /* SYSROM_BB02R3 */
 	{ osbb02r3v4_filename, 0x4000, 0xd425a9cf, TRUE }, /* SYSROM_BB02R3V4 */
-	{ oscc01r4_filename, 0x4000, 0xd0c84956, TRUE }, /* SYSROM_CC01R4 */
+	{ oscc01r4_filename, 0x4000, 0x0e000b99, TRUE }, /* SYSROM_CC01R4 */
 	{ osbb01r3_filename, 0x4000, 0x29f133f7, TRUE }, /* SYSROM_BB01R3 */
 	{ osbb01r4_filename, 0x4000, 0x1eaf4002, TRUE }, /* SYSROM_BB01R4_OS */
 	{ osbb01r59_filename, 0x4000, 0x45f47988, TRUE }, /* SYSROM_BB01R59 */
