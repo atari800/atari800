@@ -372,7 +372,7 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 
 void Android_KeyEvent(int k, int s)
 {
-	int i;
+	int i, shft;
 
 	if (Android_SoftjoyEnable) {
 		for (i = 0; i < 4; i++)
@@ -410,8 +410,13 @@ void Android_KeyEvent(int k, int s)
 	default:
 		if (k >= STATIC_MAXKEYS)
 			Log_print("Unmappable key %d", k);
-		else
-			Keyboard_Enqueue( (s) ? (skeyxlat[k] | Android_key_control | INPUT_key_shift) : AKEY_NONE );
+		else {
+			if (k == '+' || k == '<' || k == '>' || k == '*')
+				shft = 0;
+			else
+				shft == INPUT_key_shift;
+			Keyboard_Enqueue( (s) ? (skeyxlat[k] | Android_key_control | shft) : AKEY_NONE );
+		}
 	}
 }
 
