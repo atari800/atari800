@@ -1193,7 +1193,7 @@ EOF
     BeMac:BeOS:*:*)	# BeOS running on Mac or Mac clone, PPC only.
 	echo powerpc-apple-beos
 	exit ;;
-    BePC:BeOS:*:*)	# BeOS running on Intel PC compatible.
+    BePC:BeOS:*:* | BePC:Haiku:*:*)	# BeOS running on Intel PC compatible.
 	echo i586-pc-beos
 	exit ;;
     SX-4:SUPER-UX:*:*)

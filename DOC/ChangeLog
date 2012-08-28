@@ -1,3 +1,7 @@
+2011-08-27  James Wilkinson  <james@slor.net>
+* config.guess: Detect Haiku as x86 BeOS.
+
+
 2012-08-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sysrom.c: Fixed CRC32 of the CC01r4 OS ROM - the previous one was for a
   binary that I've myself incorrectly-assembled from sources.
@@ -26,6 +30,7 @@
   mode
 * devices.[ch], esc.h, android/*: Implement the B: device in the core and
   android port
+
 
 2012-05-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Support for
