@@ -287,10 +287,10 @@ static void JNICALL NativeKey(JNIEnv *env, jobject this, int k, int s)
 	Android_KeyEvent(k, s);
 }
 
-static void JNICALL NativeTouch(JNIEnv *env, jobject this, int x1, int y1, int s1,
-														   int x2, int y2, int s2)
+static int JNICALL NativeTouch(JNIEnv *env, jobject this, int x1, int y1, int s1,
+														  int x2, int y2, int s2)
 {
-	Android_TouchEvent(x1, y1, s1, x2, y2, s2);
+	return Android_TouchEvent(x1, y1, s1, x2, y2, s2);
 }
 
 
@@ -496,7 +496,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeClearDevB",		"()V",								NativeClearDevB		  },
 	};
 	JNINativeMethod view_methods[] = {
-		{ "NativeTouch", 			"(IIIIII)V", 						NativeTouch			  },
+		{ "NativeTouch", 			"(IIIIII)I", 						NativeTouch			  },
 		{ "NativeKey",				"(II)V",							NativeKey			  },
 	};
 	JNINativeMethod snd_methods[] = {

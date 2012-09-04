@@ -1,3 +1,7 @@
+2012-09-04  Kostas Nakos  <knakos@gmail.com>
+* android/*: Natively support UI on post-Honeycomb devices
+
+
 2011-08-27  James Wilkinson  <james@slor.net>
 * config.guess: Detect Haiku as x86 BeOS.
 

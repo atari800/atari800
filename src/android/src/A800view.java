@@ -107,11 +107,20 @@ public final class A800view extends GLSurfaceView
 	// Touch input
 	@Override
 	public boolean onTouchEvent(final MotionEvent ev) {
-		return _touchHandler.onTouchEvent(ev);
+		int ret = _touchHandler.onTouchEvent(ev);
+
+		if (Integer.parseInt(Build.VERSION.SDK) >= Build.VERSION_CODES.HONEYCOMB) {
+			MainActivity m = (MainActivity) getContext();
+			if (ret == 2)
+				m._aBar.show(m);
+			else if (ret == 1)
+				m._aBar.hide(m);
+		}
+		return true;
 	}
 
 	abstract static class TouchFactory {
-		public abstract boolean onTouchEvent(MotionEvent ev);
+		public abstract int onTouchEvent(MotionEvent ev);
 	};
 
 	private static final class SingleTouch extends TouchFactory {
@@ -120,7 +129,7 @@ public final class A800view extends GLSurfaceView
 
 
 		@Override
-		public boolean onTouchEvent(final MotionEvent ev) {
+		public int onTouchEvent(final MotionEvent ev) {
 			_action = ev.getAction();
 			_actioncode = _action & MotionEvent.ACTION_MASK;
 			_x1 = (int) ev.getX();
@@ -129,8 +138,7 @@ public final class A800view extends GLSurfaceView
 			if (_actioncode == MotionEvent.ACTION_UP)
 				_s1 = 0;
 
-			NativeTouch(_x1, _y1, _s1, -1000, -1000, 0);
-			return true;
+			return NativeTouch(_x1, _y1, _s1, -1000, -1000, 0);
 		}
 	}
 
@@ -139,7 +147,7 @@ public final class A800view extends GLSurfaceView
 		private int _action, _actioncode, _ptrcnt;
 
 		@Override
-		public boolean onTouchEvent(final MotionEvent ev) {
+		public int onTouchEvent(final MotionEvent ev) {
 			_action = ev.getAction();
 			_actioncode = _action & MotionEvent.ACTION_MASK;
 			_ptrcnt = ev.getPointerCount();
@@ -164,8 +172,7 @@ public final class A800view extends GLSurfaceView
 					_s2 = 0;
 			}
 
-			NativeTouch(_x1, _y1, _s1, _x2, _y2, _s2);
-			return true;
+			return NativeTouch(_x1, _y1, _s1, _x2, _y2, _s2);
 		}
 	}
 
@@ -184,10 +191,13 @@ public final class A800view extends GLSurfaceView
 		_hit =(ev.getAction() == ACTION_DOWN) ? 1 : 0;
 
 		if (kc == KEYCODE_BACK && _hit == 1) {
+			MainActivity m = (MainActivity) getContext();
 			if (_toastquit.getView().getWindowVisibility() == View.VISIBLE) {
 				_toastquit.cancel();
-				((MainActivity) getContext()).finish();
-			} else
+				m.finish();
+			} else if (m._aBar.isShowing(m))
+				m._aBar.hide(m);
+			else
 				_toastquit.show();
 			return true;
 		}
@@ -211,7 +221,7 @@ public final class A800view extends GLSurfaceView
 		return true;
 	}
 
-	private native static void NativeTouch(int x1, int y1, int s1, int x2, int y2, int s2);
+	private native static int NativeTouch(int x1, int y1, int s1, int x2, int y2, int s2);
 	private native void NativeKey(int keycode, int status);
 
 	public static final SparseArray<Integer> XLATKEYS = new SparseArray<Integer>(14);

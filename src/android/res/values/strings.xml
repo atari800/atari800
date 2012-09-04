@@ -7,6 +7,7 @@
     <string name="menu_nextdisk">Next Side</string>
     <string name="fsel_openfile">Open File:</string>
     <string name="fsel_opendir">Open Dir:</string>
+    <string name="fselmenu_search">Search</string>
     <string name="warning">Warning</string>
     <string name="mountnodisk">File %s is not a disk image.\nContinue?</string>
     <string name="yes">Yes</string>
@@ -121,6 +122,7 @@
 	<string name="confirmurl">The current Atari program is requesting browser access to the
 							  following URL:\n%s\nAllow access?</string>
 	<string name="browserreqdenied">Denied Atari program browser request (malformed URL)</string>
+	<string name="actionbarhelp">Touch near the top of the screen for menu</string>
 
 	<!-- Preferences -->
 	<string name="preftitle_graphics">Graphics</string>

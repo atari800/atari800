@@ -53,6 +53,12 @@ import android.app.ProgressDialog;
 import android.os.AsyncTask;
 import android.app.Dialog;
 import android.widget.Toast;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.widget.SearchView;
+import android.text.TextUtils;
+import android.os.Build;
 
 
 public final class FileSelector extends ListActivity implements AdapterView.OnItemLongClickListener,
@@ -74,6 +80,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 	private boolean _pathsel = false;
 	private static String _mntfname = null;
 	private static String _drive1fname = null;
+	private SearchNull _srchView;
 
 	private final class IconArrayAdapter extends ArrayAdapter<String> {
 		LayoutInflater _inf = null;
@@ -96,9 +103,57 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 		}
 	}
 
+	private static class SearchNull {
+		public boolean onCreateOptionsMenu(Menu menu, ListActivity a)	{ return false; };
+		public void reset(ListActivity a)									{};
+	}
+
+	private static final class SearchHelp extends SearchNull implements SearchView.OnQueryTextListener {
+		ListActivity _actv;
+		private MenuItem _msrch = null;
+
+		@Override
+		public boolean onCreateOptionsMenu(Menu menu, ListActivity a) {
+			_actv = a;
+			MenuInflater inf = a.getMenuInflater();
+			inf.inflate(R.menu.fsel_menu, menu);
+			_msrch = menu.findItem(R.id.menu_search);
+			((SearchView) _msrch.getActionView()).setOnQueryTextListener(this);
+			return true;
+		};
+
+		@Override
+		public boolean onQueryTextChange(String newText) {
+			if (TextUtils.isEmpty(newText))
+				_actv.getListView().clearTextFilter();
+			else
+				_actv.getListView().setFilterText(newText.toString());
+			return true;
+		}
+
+		@Override
+		public boolean onQueryTextSubmit(String query) {
+			return true;
+		}
+
+		@Override
+		public void reset(ListActivity a) {
+			a.getListView().clearTextFilter();
+			if (_msrch != null) {
+				_msrch.collapseActionView();
+				//_srch.setIconified(true);
+			}
+		}
+	}
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		if (Integer.parseInt(Build.VERSION.SDK) >= Build.VERSION_CODES.HONEYCOMB)
+			_srchView = new SearchHelp();
+		else
+			_srchView = new SearchNull();
 
 		ListView lv = getListView();
 		_pathsel = getIntent().getAction().equals(ACTION_OPEN_PATH);
@@ -274,6 +329,11 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 	}
 
 	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		return _srchView.onCreateOptionsMenu(menu, this);
+	}
+
+	@Override
 	public void finish() {
 		if (!_pathsel) {
 			if (_drive1fname != null) {
@@ -286,6 +346,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 
 	private void listDirectory(File dir, int pos, Object retain) {
 		if (_ad != null)	_ad.clear();
+		_srchView.reset(this);
 		setTitle(getString(_pathsel ? R.string.fsel_opendir : R.string.fsel_openfile)
 							+ " " + dir.getAbsolutePath());
 		_curdir = dir;

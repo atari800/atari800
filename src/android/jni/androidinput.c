@@ -96,7 +96,7 @@ UBYTE softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2] =
 int Android_SoftjoyEnable = TRUE;
 int Android_DerotateKeys = 0;
 
-void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
+int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 {
 	int joyptr;		/* will point to joystick touch of input set */
 	int tmpfire;	/* flag: both pointers on fire side */
@@ -108,6 +108,7 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 	int conptr;		/* will point to stolen ptr, PTRSTL otherwise */
 	int i;
 	float a, potx, poty;
+	int ret = 0, bbhit = FALSE;
 
 	jovl = &AndroidInput_JoyOvl;
 	covl = &AndroidInput_ConOvl;
@@ -136,6 +137,9 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		newtc[PTRTRG].x = x2; newtc[PTRTRG].y = y2; newtc[PTRTRG].s = s2; 
 	}
 
+	if (newtc[PTRJOY].s || newtc[PTRTRG].s)
+		ret = 1;
+
 	/* console keys */
 	conptr = PTRSTL;
 	covl->hitkey = CONK_NOKEY;
@@ -153,6 +157,7 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 				 newtc[PTRTRG].y <  covl->bbox.b)
 					conptr = PTRTRG;
 		if (conptr != PTRSTL) {	  /* if bb is exact on top & bottom => check only horiz/lly */
+			bbhit = TRUE;
 			dy = covl->keycoo[i + 1] - newtc[conptr].y;
 			for (i = 0; i < CONK_VERT_MAX; i += 8) {
 				a = ((float) covl->keycoo[i + 6] - covl->keycoo[i    ]) /
@@ -204,6 +209,18 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		covl->ovl_visible = COVL_FADEIN;
 		conptr = PTRTRG;
 	}
+	if (conptr == PTRSTL && !bbhit)
+		if (newtc[PTRJOY].s && 
+				( (!prevtc[PTRJOY].s && newtc[PTRJOY].y < covl->hotlen) ||
+				  prevconptr == PTRJOY) ) {
+			conptr = PTRJOY;										  /* touched menu area */
+			ret = 2;
+		} else if (newtc[PTRTRG].s &&
+					( (!prevtc[PTRTRG].s && newtc[PTRTRG].y < covl->hotlen) ||
+					  prevconptr == PTRTRG) ) {
+			conptr = PTRTRG;
+			ret = 2;
+		}
 
 	/* joystick */
 	newjoy = INPUT_STICK_CENTRE;
@@ -366,8 +383,10 @@ void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		INPUT_mouse_buttons = !newtrig;
 	}
 
-	memcpy(prevtc, newtc, sizeof(struct touchstate));
+	memcpy(prevtc, newtc, sizeof(struct touchstate) * MAXPOINTERS);
 	prevconptr = conptr;
+
+	return ret;
 }
 
 void Android_KeyEvent(int k, int s)

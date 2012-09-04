@@ -52,6 +52,11 @@ import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
+import android.app.ActionBar;
+import android.view.Window;
+import android.view.WindowManager;
+import android.os.Build;
+import android.view.View;
 
 
 public final class MainActivity extends Activity
@@ -70,6 +75,7 @@ public final class MainActivity extends Activity
 
 	public static String _pkgversion;
 	public static String _coreversion;
+	public ActionBarNull _aBar = null;
 	private static boolean _initialized = false;
 	private static String _curDiskFname = null;
 	private A800view _view = null;
@@ -77,6 +83,74 @@ public final class MainActivity extends Activity
 	private InputMethodManager _imng;
 	private Settings _settings = null;
 	private boolean _bootupconfig = false;
+
+
+	public static class ActionBarNull {
+		public ActionBarNull(Activity a)			{};
+		public void hide(Activity a)				{};
+		public void hide(Activity a, boolean p)		{};
+		public void show(Activity a) 				{};
+		public boolean isShowing(Activity a)		{ return false; }
+		public boolean isReal()						{ return false; }
+		public void init(Activity a) 				{};
+	}
+
+	public static final class ActionBarHelp extends ActionBarNull {
+		public ActionBarHelp(Activity a) {
+			super(a);
+		}
+
+		@Override
+		public void hide(Activity a) {
+			hide(a, true);
+		}
+
+		@Override
+		public void hide(Activity a, boolean p) {
+			ActionBar ab = a.getActionBar();
+			if (!ab.isShowing())	return;
+
+			View v = ((MainActivity) a)._view;
+			if (v != null) {
+				int flags = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN 	|
+							View.SYSTEM_UI_FLAG_LAYOUT_STABLE 		|
+							View.SYSTEM_UI_FLAG_FULLSCREEN;
+				if (p == true)
+					flags |= View.SYSTEM_UI_FLAG_LOW_PROFILE;
+				v.setSystemUiVisibility(flags);
+			}
+			ab.hide();
+			((MainActivity) a).pauseEmulation(false);
+		}
+
+		@Override
+		public void show(Activity a) {
+			ActionBar ab = a.getActionBar();
+			if (ab.isShowing())		return;
+
+			((MainActivity) a).pauseEmulation(true);
+			View v = ((MainActivity) a)._view;
+			if (v != null) v.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+												   View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+			ab.show();
+		}
+
+		@Override
+		public boolean isShowing(Activity a) {
+			return a.getActionBar().isShowing();
+		}
+
+		@Override
+		public boolean isReal() {
+			return true;
+		}
+
+		@Override
+		public void init(Activity a) {
+			a.getActionBar().setBackgroundDrawable(a.getResources().getDrawable(R.drawable.actionbar_bg));
+		}
+	}
+
 
 	static {
 		System.loadLibrary("atari800");
@@ -87,9 +161,17 @@ public final class MainActivity extends Activity
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		if (Integer.parseInt(Build.VERSION.SDK) >= Build.VERSION_CODES.HONEYCOMB)
+			_aBar = new ActionBarHelp(this);
+		else
+			_aBar = new ActionBarNull(this);
+
 		_view = new A800view(this);
 		setContentView(_view);
 		_view.setKeepScreenOn(true);
+
+		_aBar.init(this);
+		_aBar.hide(this);
 
 		_imng = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
@@ -97,6 +179,7 @@ public final class MainActivity extends Activity
 		Object obj = getLastNonConfigurationInstance();
 		_settings = new Settings(PreferenceManager.getDefaultSharedPreferences(this), this, obj);
 		_pkgversion = getPInfo().versionName;
+
 		if (!_initialized) {
 			_settings.fetchApplySettings();
 			_initialized = true;
@@ -136,6 +219,8 @@ public final class MainActivity extends Activity
 			pauseEmulation(true);
 			showDialog(DLG_CHANGES);
 		}
+		if (_aBar.isReal())
+			Toast.makeText(this, R.string.actionbarhelp, Toast.LENGTH_LONG).show();
 	}
 
 	public void message(int msg) {
@@ -382,7 +467,8 @@ public final class MainActivity extends Activity
 
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		pauseEmulation(true);
+		if (!_aBar.isReal())
+			pauseEmulation(true);	// menu is always shown on > honeycomb
 		_imng.hideSoftInputFromWindow(_view.getWindowToken(), 0);
 		return true;
 	}
@@ -395,6 +481,7 @@ public final class MainActivity extends Activity
 			return true;
 		case R.id.menu_softkbd:
 			_imng.showSoftInput(_view, InputMethodManager.SHOW_FORCED);
+			_aBar.hide(this, false);
 			return true;
 		case R.id.menu_open:
 			startActivityForResult(new Intent(FileSelector.ACTION_OPEN_FILE, null, this, FileSelector.class),
@@ -402,6 +489,7 @@ public final class MainActivity extends Activity
 			return true;
 		case R.id.menu_nextdisk:
 			insertNextDisk();
+			_aBar.hide(this);
 			return true;
 		case R.id.menu_preferences:
 			startActivityForResult(new Intent(this, Preferences.class), ACTIVITY_PREFS);
@@ -413,6 +501,8 @@ public final class MainActivity extends Activity
 
 	@Override
 	protected void onActivityResult(int reqc, int resc, Intent data) {
+		_aBar.hide(this);
+
 		switch (reqc) {
 		case ACTIVITY_FSEL:
 			if (resc != RESULT_OK) {

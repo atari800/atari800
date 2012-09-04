@@ -102,7 +102,7 @@ extern SWORD Android_POTX;
 extern SWORD Android_POTY;
 extern UBYTE Android_ReversePddle;
 
-void Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2);
+int  Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2);
 void Android_KeyEvent(int k, int s);
 void Input_Initialize(void);
 void Keyboard_Enqueue(int key);
