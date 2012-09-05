@@ -1,3 +1,9 @@
+2012-09-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* android/jni/jni.c: Fix ROM selection hack to support the well-known OSB NTSC
+  ROM bundled with XFormer. That ROM is hacked and therefore it is not
+  recognised as SYSROM_B_NTSC, but as SYSROM_800_CUSTOM.
+
+
 2012-09-04  Kostas Nakos  <knakos@gmail.com>
 * android/*: Natively support UI on post-Honeycomb devices
 

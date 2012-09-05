@@ -351,7 +351,11 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 	if (nummac < 3)
 		SYSROM_os_versions[Atari800_MACHINE_800] = ntsc ? SYSROM_A_NTSC : SYSROM_A_PAL;
 	else if (nummac >= 3 && nummac < 6)
-		SYSROM_os_versions[Atari800_MACHINE_800] = ntsc ? SYSROM_AUTO : SYSROM_B_NTSC;
+		/* If no OSB NTSC ROM present, try the "custom" 400/800 ROM. */
+		SYSROM_os_versions[Atari800_MACHINE_800] =
+				SYSROM_roms[SYSROM_B_NTSC].filename[0] == '\0' ?
+						SYSROM_800_CUSTOM :
+						SYSROM_B_NTSC;
 	else if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 		Atari800_builtin_basic = TRUE;
 		Atari800_keyboard_leds = FALSE;
