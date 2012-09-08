@@ -180,14 +180,14 @@ int Android_InitGraphics(void)
 	AndroidInput_ConOvl.hotlen = 0.1f *
 			(Android_ScreenW < Android_ScreenH ? Android_ScreenW : Android_ScreenH);
 	r = &(AndroidInput_ConOvl.bbox);
-	conkey_shadow[0] = r->l - 10;
-	conkey_shadow[1] = r->b + 10;
+	conkey_shadow[0] = r->l - COVL_SHADOW_OFF;
+	conkey_shadow[1] = r->b + COVL_SHADOW_OFF;
 	conkey_shadow[2] = r->r;
-	conkey_shadow[3] = r->b + 10;
+	conkey_shadow[3] = r->b + COVL_SHADOW_OFF;
 	conkey_shadow[4] = r->r;
-	conkey_shadow[5] = r->t - 10;
-	conkey_shadow[6] = r->l - 10;
-	conkey_shadow[7] = r->t - 10;
+	conkey_shadow[5] = r->t - COVL_SHADOW_OFF;
+	conkey_shadow[6] = r->l - COVL_SHADOW_OFF;
+	conkey_shadow[7] = r->t - COVL_SHADOW_OFF;
 
 	/* Scale joystick overlays */
 	Joyovl_Scale();
@@ -210,7 +210,13 @@ int Android_InitGraphics(void)
 		/* center */
 		tmp = (Android_ScreenW - screenrect.r + 1) / 2;
 		screenrect.l += tmp;
-		tmp = (Android_ScreenH - screenrect.b + 1) / 2;
+		h = Android_ScreenH;
+		if (Android_ScreenH > Android_ScreenW)
+			h >>= 1;	/* assume keyboard takes up half the height in portrait */
+		tmp = (h - screenrect.b + 1) / 2;
+		if (tmp < 0)
+			tmp = 0;
+		tmp = (Android_ScreenH - h) + tmp;
 		screenrect.t += tmp;
 		screenclear = TRUE;
 	} else {
@@ -340,7 +346,7 @@ void Android_Render(void)
 	if (glGetError() != GL_NO_ERROR) Log_print("OpenGL error at joy area");
 
 	/* stick */
-	if (AndroidInput_JoyOvl.stickopacity >= 0.05f) {
+	if (AndroidInput_JoyOvl.stickopacity >= OPACITY_CUTOFF) {
 		glColor4f(1.0f, 1.0f, 1.0f, AndroidInput_JoyOvl.stickopacity);
 		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, crop_fire);
 		p = &AndroidInput_JoyOvl.joystick;
@@ -350,7 +356,7 @@ void Android_Render(void)
 	}
 
 	/* fire */
-	if (AndroidInput_JoyOvl.fireopacity >= 0.05f) {
+	if (AndroidInput_JoyOvl.fireopacity >= OPACITY_CUTOFF) {
 		glColor4f(1.0f, 1.0f, 1.0f, AndroidInput_JoyOvl.fireopacity);
 		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, crop_fire);
 		p = &AndroidInput_JoyOvl.fire;

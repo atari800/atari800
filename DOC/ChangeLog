@@ -1,3 +1,7 @@
+2012-09-08  Kostas Nakos  <knakos@gmail.com>
+* android/*: UI fine tuning, soft keyboard fix for jelly bean
+
+
 2012-09-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * android/jni/jni.c: Fix ROM selection hack to support the well-known OSB NTSC
   ROM bundled with XFormer. That ROM is hacked and therefore it is not

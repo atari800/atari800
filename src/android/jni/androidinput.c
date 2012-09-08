@@ -108,7 +108,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 	int conptr;		/* will point to stolen ptr, PTRSTL otherwise */
 	int i;
 	float a, potx, poty;
-	int ret = 0, bbhit = FALSE;
+	int ret = 0;
 
 	jovl = &AndroidInput_JoyOvl;
 	covl = &AndroidInput_ConOvl;
@@ -157,7 +157,6 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 				 newtc[PTRTRG].y <  covl->bbox.b)
 					conptr = PTRTRG;
 		if (conptr != PTRSTL) {	  /* if bb is exact on top & bottom => check only horiz/lly */
-			bbhit = TRUE;
 			dy = covl->keycoo[i + 1] - newtc[conptr].y;
 			for (i = 0; i < CONK_VERT_MAX; i += 8) {
 				a = ((float) covl->keycoo[i + 6] - covl->keycoo[i    ]) /
@@ -209,15 +208,21 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		covl->ovl_visible = COVL_FADEIN;
 		conptr = PTRTRG;
 	}
-	if (conptr == PTRSTL && !bbhit)
+	if (conptr == PTRSTL)
 		if (newtc[PTRJOY].s && 
-				( (!prevtc[PTRJOY].s && newtc[PTRJOY].y < covl->hotlen) ||
-				  prevconptr == PTRJOY) ) {
-			conptr = PTRJOY;										  /* touched menu area */
+				( (!prevtc[PTRJOY].s && newtc[PTRJOY].y < covl->hotlen) ||	/* menu area */
+				  prevconptr != PTRSTL) &&								   /* still held */
+				!(covl->ovl_visible != COVL_HIDDEN &&
+				  newtc[PTRJOY].x >= covl->bbox.l - COVL_SHADOW_OFF &&	 /* outside bbox */
+				  newtc[PTRJOY].y <= covl->bbox.b + COVL_SHADOW_OFF) ) {
+			conptr = PTRJOY;										/* touched menu area */
 			ret = 2;
 		} else if (newtc[PTRTRG].s &&
 					( (!prevtc[PTRTRG].s && newtc[PTRTRG].y < covl->hotlen) ||
-					  prevconptr == PTRTRG) ) {
+					  prevconptr != PTRSTL) &&
+					!(covl->ovl_visible != COVL_HIDDEN &&
+					  newtc[PTRTRG].x >= covl->bbox.l - COVL_SHADOW_OFF &&
+					  newtc[PTRTRG].y <= covl->bbox.b + COVL_SHADOW_OFF) ) {
 			conptr = PTRTRG;
 			ret = 2;
 		}

@@ -122,7 +122,9 @@
 	<string name="confirmurl">The current Atari program is requesting browser access to the
 							  following URL:\n%s\nAllow access?</string>
 	<string name="browserreqdenied">Denied Atari program browser request (malformed URL)</string>
-	<string name="actionbarhelp">Touch near the top of the screen for menu</string>
+	<string name="actionbarhelptoast">Touch near the top of the screen for menu\nTouch
+								 top-right for console keys</string>
+	<string name="noactionbarhelptoast">Touch top-right for console keys</string>
 
 	<!-- Preferences -->
 	<string name="preftitle_graphics">Graphics</string>

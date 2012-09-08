@@ -86,13 +86,14 @@ public final class MainActivity extends Activity
 
 
 	public static class ActionBarNull {
-		public ActionBarNull(Activity a)			{};
-		public void hide(Activity a)				{};
-		public void hide(Activity a, boolean p)		{};
-		public void show(Activity a) 				{};
-		public boolean isShowing(Activity a)		{ return false; }
-		public boolean isReal()						{ return false; }
-		public void init(Activity a) 				{};
+		public ActionBarNull(Activity a)					{};
+		public void hide(Activity a)						{};
+		public void hide(Activity a, boolean p)				{};
+		public void hide(Activity a, boolean p, boolean f)	{};
+		public void show(Activity a) 						{};
+		public boolean isShowing(Activity a)				{ return false; }
+		public boolean isReal()								{ return false; }
+		public void init(Activity a) 						{};
 	}
 
 	public static final class ActionBarHelp extends ActionBarNull {
@@ -107,8 +108,13 @@ public final class MainActivity extends Activity
 
 		@Override
 		public void hide(Activity a, boolean p) {
+			hide(a, p, false);
+		}
+
+		@Override
+		public void hide(Activity a, boolean p, boolean f) {
 			ActionBar ab = a.getActionBar();
-			if (!ab.isShowing())	return;
+			if (!f && !ab.isShowing())	return;
 
 			View v = ((MainActivity) a)._view;
 			if (v != null) {
@@ -218,9 +224,11 @@ public final class MainActivity extends Activity
 			_bootupconfig = true;
 			pauseEmulation(true);
 			showDialog(DLG_CHANGES);
+			return;
 		}
-		if (_aBar.isReal())
-			Toast.makeText(this, R.string.actionbarhelp, Toast.LENGTH_LONG).show();
+		Toast.makeText(this,
+					   _aBar.isReal() ? R.string.actionbarhelptoast : R.string.noactionbarhelptoast,
+					   Toast.LENGTH_LONG).show();
 	}
 
 	public void message(int msg) {
@@ -323,6 +331,10 @@ public final class MainActivity extends Activity
 								_bootupconfig = false;
 								pauseEmulation(false);
 								dismissDialog(DLG_CHANGES);
+								Toast.makeText(MainActivity.this, _aBar.isReal() ?
+														R.string.actionbarhelptoast :
+														R.string.noactionbarhelptoast,
+											   Toast.LENGTH_LONG).show();
 							}
 							})
 						.create();
@@ -437,6 +449,7 @@ public final class MainActivity extends Activity
 
 	@Override
 	public void onResume() {
+		_aBar.hide(this, true, true);
 		if (!_bootupconfig)	pauseEmulation(false);
 		super.onResume();
 	}
