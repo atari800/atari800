@@ -36,6 +36,9 @@ import android.view.View;
 import android.util.SparseArray;
 import android.os.Handler;
 import android.os.Message;
+import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.BaseInputConnection;
+import android.view.inputmethod.EditorInfo;
 import static android.view.KeyEvent.*;
 
 
@@ -185,6 +188,24 @@ public final class A800view extends GLSurfaceView
 	@Override
 	public boolean onKeyUp(int kc, final KeyEvent ev) {
 		return doKey(kc, ev);
+	}
+
+	@Override
+    public boolean onCheckIsTextEditor() {
+        return true;
+    }
+	
+	@Override
+	public InputConnection onCreateInputConnection (EditorInfo outAttrs) {
+		return new BaseInputConnection(this, false) {
+				@Override
+				public boolean deleteSurroundingText (int leftLength, int rightLength) {
+					//Log.d(TAG, "Synthetic del");
+					this.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
+					this.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
+					return true;
+				}
+			};
 	}
 
 	private boolean doKey(int kc, final KeyEvent ev) {
