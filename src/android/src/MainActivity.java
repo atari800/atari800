@@ -72,6 +72,7 @@ public final class MainActivity extends Activity
 	private static final int DLG_PATHSETUP = 1;
 	private static final int DLG_CHANGES = 2;
 	private static final int DLG_BRWSCONFRM = 3;
+	private static final int DLG_SELCARTTYPE = 4;
 
 	public static String _pkgversion;
 	public static String _coreversion;
@@ -83,7 +84,7 @@ public final class MainActivity extends Activity
 	private InputMethodManager _imng;
 	private Settings _settings = null;
 	private boolean _bootupconfig = false;
-
+	private String _cartTypes[][] = null;
 
 	public static class ActionBarNull {
 		public ActionBarNull(Activity a)					{};
@@ -114,13 +115,20 @@ public final class MainActivity extends Activity
 		@Override
 		public void hide(Activity a, boolean p, boolean f) {
 			ActionBar ab = a.getActionBar();
-			if (!f && !ab.isShowing())	return;
-
 			View v = ((MainActivity) a)._view;
+			if ( !f && !ab.isShowing() &&
+				(v.getSystemUiVisibility() & View.STATUS_BAR_HIDDEN) == View.STATUS_BAR_HIDDEN )
+			   	return;
+
+			if (Integer.parseInt(Build.VERSION.SDK) < Build.VERSION_CODES.JELLY_BEAN) {
+				a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+				a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+			}
 			if (v != null) {
 				int flags = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN 	|
 							View.SYSTEM_UI_FLAG_LAYOUT_STABLE 		|
-							View.SYSTEM_UI_FLAG_FULLSCREEN;
+							View.SYSTEM_UI_FLAG_FULLSCREEN			|
+							View.STATUS_BAR_HIDDEN;
 				if (p == true)
 					flags |= View.SYSTEM_UI_FLAG_LOW_PROFILE;
 				v.setSystemUiVisibility(flags);
@@ -135,9 +143,14 @@ public final class MainActivity extends Activity
 			if (ab.isShowing())		return;
 
 			((MainActivity) a).pauseEmulation(true);
+			if (Integer.parseInt(Build.VERSION.SDK) < Build.VERSION_CODES.JELLY_BEAN) {
+				a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+				a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+			}
 			View v = ((MainActivity) a)._view;
 			if (v != null) v.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-												   View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+												   View.SYSTEM_UI_FLAG_LAYOUT_STABLE	 |
+												   View.STATUS_BAR_VISIBLE);
 			ab.show();
 		}
 
@@ -228,7 +241,7 @@ public final class MainActivity extends Activity
 		}
 		Toast.makeText(this,
 					   _aBar.isReal() ? R.string.actionbarhelptoast : R.string.noactionbarhelptoast,
-					   Toast.LENGTH_LONG).show();
+					   Toast.LENGTH_SHORT).show();
 	}
 
 	public void message(int msg) {
@@ -334,7 +347,7 @@ public final class MainActivity extends Activity
 								Toast.makeText(MainActivity.this, _aBar.isReal() ?
 														R.string.actionbarhelptoast :
 														R.string.noactionbarhelptoast,
-											   Toast.LENGTH_LONG).show();
+											   Toast.LENGTH_SHORT).show();
 							}
 							})
 						.create();
@@ -385,6 +398,36 @@ public final class MainActivity extends Activity
 							}
 							})
 						.setMessage("")
+						.create();
+			break;
+
+		case DLG_SELCARTTYPE:
+			if (_cartTypes == null || _cartTypes.length == 0) {
+				Log.d(TAG, "0 cart types passed");
+				d = null;
+				break;
+			}
+			pauseEmulation(true);
+			String itm[] = new String[_cartTypes.length];
+			for (int i = 0; i < _cartTypes.length; itm[i] = _cartTypes[i][1], i++);
+			d = new AlertDialog.Builder(this)
+						.setTitle(R.string.selectcarttype)
+						.setCancelable(false)
+						.setItems(itm, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								NativeBootCartType(Integer.parseInt(_cartTypes[i][0]));
+								pauseEmulation(false);
+								removeDialog(DLG_SELCARTTYPE);
+							}
+							})
+						.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								pauseEmulation(false);
+								removeDialog(DLG_SELCARTTYPE);
+							}
+							})
 						.create();
 			break;
 
@@ -475,6 +518,7 @@ public final class MainActivity extends Activity
 
 	@Override
 	public void onOptionsMenuClosed(Menu m) {
+		_aBar.hide(this);
 		pauseEmulation(false);
 	}
 
@@ -532,11 +576,14 @@ public final class MainActivity extends Activity
 			}
 			_curDiskFname = data.getData().getPath();
 			if (data.getAction().equals(ACTION_INSERT_REBOOT)) {
-				NativeRunAtariProgram(_curDiskFname, 1, 1);
-				Toast.makeText(this, String.format(getString(R.string.diskboot),
-									_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
-							   Toast.LENGTH_SHORT)
-					 .show();
+				int r = NativeRunAtariProgram(_curDiskFname, 1, 1);
+				if (r == -2)
+					showDialog(DLG_SELCARTTYPE);
+				else
+					Toast.makeText(this, String.format(getString(r < 0 ? R.string.errorboot : R.string.diskboot),
+										_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
+								   Toast.LENGTH_SHORT)
+						 .show();
 			}
 			break;
 		case ACTIVITY_PREFS:
@@ -572,9 +619,11 @@ public final class MainActivity extends Activity
 				Log.d(TAG, "Trying loop " + f.getName());
 					if (f.exists()) {
 						_curDiskFname = f.getPath();
-						NativeRunAtariProgram(_curDiskFname, 1, 0);
+						int r = NativeRunAtariProgram(_curDiskFname, 1, 0);
 						Toast.makeText(this,
-									   String.format(getString(R.string.mountnextdisk), f.getName()),
+									   String.format(getString(
+											   r >= 0 ? R.string.mountnextdisk : R.string.mountnextdiskerror),
+										   f.getName()),
 									   Toast.LENGTH_SHORT)
 							 .show();
 						return;
@@ -589,7 +638,8 @@ public final class MainActivity extends Activity
 		Toast.makeText(this, R.string.mountnonextdisk, Toast.LENGTH_SHORT).show();
 	}
 
-	private native void NativeRunAtariProgram(String img, int drive, int reboot);
+	private native int NativeRunAtariProgram(String img, int drive, int reboot);
+	private native void NativeBootCartType(int kb);
 	private native void NativeExit();
 	private static native String NativeInit();
 

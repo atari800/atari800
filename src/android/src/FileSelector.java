@@ -139,10 +139,11 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 		@Override
 		public void reset(ListActivity a) {
 			a.getListView().clearTextFilter();
-			if (_msrch != null) {
-				_msrch.collapseActionView();
-				//_srch.setIconified(true);
-			}
+			if (_msrch != null)
+				if (Integer.parseInt(Build.VERSION.SDK) >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+					_msrch.collapseActionView();
+				else
+					((SearchView) _msrch.getActionView()).setIconified(true);
 		}
 	}
 
@@ -433,7 +434,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 
 
 	private native boolean NativeIsDisk(String img);
-	private native void NativeRunAtariProgram(String img, int drive, int reboot);
+	private native int NativeRunAtariProgram(String img, int drive, int reboot);
 	private native String[] NativeGetDrvFnames();
 	private native void NativeUnmountAll();
 

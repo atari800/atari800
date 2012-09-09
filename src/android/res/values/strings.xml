@@ -15,12 +15,14 @@
     <string name="mountdisk">Mount Image to Drive</string>
     <string name="unmountall">Unmount all drives</string>
     <string name="mountnextdisk">Image %s inserted</string>
+    <string name="mountnextdiskerror">Cannot insert image %s</string>
     <string name="mountinsertdisk">Image %1$s inserted into drive D%2$d:</string>
     <string name="savestateoverwrite">Save state file \'%s\' already exists. OK to overwrite?</string>
-    <string name="savestateerror">Error: Couldn\'t save state</string>
+    <string name="savestateerror">Error: Cannot save state</string>
     <string name="savestateok">State saved</string>
     <string name="mountnonextdisk">No next disk image found</string>
     <string name="diskboot">Booting image %s</string>
+    <string name="errorboot">Cannot boot image %s</string>
     <string name="none">None</string>
     <string name="left">Left</string>
     <string name="right">Right</string>
@@ -125,6 +127,7 @@
 	<string name="actionbarhelptoast">Touch near the top of the screen for menu\nTouch
 								 top-right for console keys</string>
 	<string name="noactionbarhelptoast">Touch top-right for console keys</string>
+	<string name="selectcarttype">Select cartridge type</string>
 
 	<!-- Preferences -->
 	<string name="preftitle_graphics">Graphics</string>
