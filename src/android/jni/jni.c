@@ -39,6 +39,7 @@
 #include "sysrom.h"
 #include "akey.h"
 #include "devices.h"
+#include "cartridge.h"
 
 #include "graphics.h"
 #include "androidinput.h"
@@ -175,22 +176,62 @@ static jboolean JNICALL NativeSaveState(JNIEnv *env, jobject this, jstring fname
 	return ret;
 }
 
-static void JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this, jstring img, jint drv,
-										  jint reboot)
+static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
+												  jstring img, jint drv, jint reboot)
 {
 	const jbyte *img_utf = NULL;
+	int ret = 0, r, kb, i, cnt = 0;
+	jclass cls, scls;
+	jfieldID fid;
+	jobjectArray arr, xarr;
+	jstring str;
+	char tmp[128];
 
 	if (reboot) {
 		NativeUnmountAll(env, this);
 		CARTRIDGE_Remove();
 	}
+
 	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
-	if (!AFILE_OpenFile(img_utf, reboot, drv, FALSE))
+	r = AFILE_OpenFile(img_utf, reboot, drv, FALSE);
+	if ((r & 0xFF) == AFILE_ROM && (r >> 8) != 0) {
+		kb = r >> 8;
+		scls = (*env)->FindClass(env, "java/lang/String");
+		cls = (*env)->GetObjectClass(env, this);
+		fid = (*env)->GetFieldID(env, cls, "_cartTypes", "[[Ljava/lang/String;");
+		for (i = 1; i <= CARTRIDGE_LAST_SUPPORTED; i++)
+			if (CARTRIDGE_kb[i] == kb)	cnt++;
+		xarr = (*env)->NewObjectArray(env, 2, scls, NULL);
+		arr = (*env)->NewObjectArray(env, cnt, (*env)->GetObjectClass(env, xarr), NULL);
+		for (cnt = 0, i = 1; i <= CARTRIDGE_LAST_SUPPORTED; i++)
+			if (CARTRIDGE_kb[i] == kb) {
+				sprintf(tmp, "%d", i);
+				str = (*env)->NewStringUTF(env, tmp);
+				(*env)->SetObjectArrayElement(env, xarr, 0, str);
+				(*env)->DeleteLocalRef(env, str);
+				str = (*env)->NewStringUTF(env, CARTRIDGE_TextDesc[i]);
+				(*env)->SetObjectArrayElement(env, xarr, 1, str);
+				(*env)->DeleteLocalRef(env, str);
+				(*env)->SetObjectArrayElement(env, arr, cnt++, xarr);
+				(*env)->DeleteLocalRef(env, xarr);
+				xarr = (*env)->NewObjectArray(env, 2, scls, NULL);
+			}
+		(*env)->SetObjectField(env, this, fid, arr);
+		ret = -2;
+	} else if (r == 0) {
 		Log_print("Cannot start image: %s", img_utf);
-	else
+		ret = -1;
+	} else
 		CPU_cim_encountered = FALSE;
 
 	(*env)->ReleaseStringUTFChars(env, img, img_utf);
+	return ret;
+}
+
+static void JNICALL NativeBootCartType(JNIEnv *env, jobject this, jint kb)
+{
+	CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, kb);
+	Atari800_Coldstart();
 }
 
 static void JNICALL NativeExit(JNIEnv *env, jobject this)
@@ -486,7 +527,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
 	JNINativeMethod main_methods[] = {
 		{ "NativeExit",				"()V",								NativeExit			  },
-		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",			NativeRunAtariProgram },
+		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)I",			NativeRunAtariProgram },
 		{ "NativePrefGfx",			"(IZIIZII)V",						NativePrefGfx		  },
 		{ "NativePrefMachine",		"(IZ)Z",							NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZZ)V",							NativePrefEmulation	  },
@@ -498,6 +539,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeInit",				"()Ljava/lang/String;",				NativeInit			  },
 		{ "NativeGetURL",			"()Ljava/lang/String;",				NativeGetURL		  },
 		{ "NativeClearDevB",		"()V",								NativeClearDevB		  },
+		{ "NativeBootCartType",		"(I)V",								NativeBootCartType	  },
 	};
 	JNINativeMethod view_methods[] = {
 		{ "NativeTouch", 			"(IIIIII)I", 						NativeTouch			  },
@@ -515,7 +557,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	};
 	JNINativeMethod fsel_methods[] = {
 		{ "NativeIsDisk",			"(Ljava/lang/String;)Z",			NativeIsDisk		  },
-		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)V",			NativeRunAtariProgram },
+		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)I",			NativeRunAtariProgram },
 		{ "NativeGetDrvFnames",		"()[Ljava/lang/String;",			NativeGetDrvFnames	  },
 		{ "NativeUnmountAll",		"()V",								NativeUnmountAll	  },
 	};

@@ -1,4 +1,5 @@
 #define CONK_VERT_MAX   (2 * 4 * 5)
+#define COVL_SHADOW_OFF 10
 
 #define SCREEN_WIDTH   384
 #define SCREEN_HEIGHT  240

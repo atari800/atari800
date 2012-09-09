@@ -210,7 +210,7 @@ int AFILE_OpenFile(const char *filename, int reboot, int diskno, int readonly)
 #ifndef ANDROID
 				CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, UI_SelectCartType(r));
 #else
-				return AFILE_ERROR;		/* UI is not available in android */
+				return (r << 8) | AFILE_ROM;
 #endif /* ANDROID */
 				break;
 #endif /* BASIC */

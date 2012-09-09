@@ -70,6 +70,7 @@ enum { CARTRIDGE_UNKNOWN        = -1,
 
 #define CARTRIDGE_MAX_SIZE	(1024 * 1024)
 extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
+extern char *CARTRIDGE_TextDesc[CARTRIDGE_LAST_SUPPORTED + 1];
 
 /* Indicates whether the emulator should automatically reboot (coldstart)
    after inserting/removing a cartridge. (Doesn't affect the piggyback
