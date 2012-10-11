@@ -22,6 +22,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+/* Bibliography:
+   [OSMAN] - Atari Home Computer System Technical Reference Notes - Operating System
+             User's Manual - CA016555 Rev. A - 1982 Atari, Inc.
+ */
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -499,12 +503,16 @@ static FILE *h_fp[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 /* H: text mode per IOCB */
 static int h_textmode[8];
 
+/* H: last read character per IOCB */
+static int h_lastbyte[8];
+
 /* last read character was CR, per IOCB */
 static int h_wascr[8];
 
-/* last operation: 'o': open, 'r': read, 'w': write, per IOCB */
-/* (this is needed to apply fseek(fp, 0, SEEK_CUR) between reads and writes
-   in update (12) mode) */
+/* last operation: 'o': open, 'r': read, 'w': write, 'p': point, 'b': binary
+   load, per IOCB. This is needed to apply fseek(fp, 0, SEEK_CUR) between reads
+   and writes in update (12) mode, and to support the read-ahead of 1 byte
+   in Devices_h_read. */
 static char h_lastop[8];
 
 Util_tmpbufdef(static, h_tmpbuf[8])
@@ -983,10 +991,13 @@ static void Devices_H_Read(void)
 		return;
 	if (h_fp[h_iocb] != NULL) {
 		int ch;
-		if (h_lastop[h_iocb] == 'w')
-			fseek(h_fp[h_iocb], 0, SEEK_CUR);
-		h_lastop[h_iocb] = 'r';
-		ch = fgetc(h_fp[h_iocb]);
+		if (h_lastop[h_iocb] != 'r') {
+			if (h_lastop[h_iocb] == 'w')
+				fseek(h_fp[h_iocb], 0, SEEK_CUR);
+			h_lastbyte[h_iocb] = fgetc(h_fp[h_iocb]);
+			h_lastop[h_iocb] = 'r';
+		}
+		ch = h_lastbyte[h_iocb];
 		if (ch != EOF) {
 			if (h_textmode[h_iocb]) {
 				switch (ch) {
@@ -1021,7 +1032,10 @@ static void Devices_H_Read(void)
 				}
 			}
 			CPU_regA = (UBYTE) ch;
-			CPU_regY = 1;
+			/* [OSMAN] p. 79: Status should be 3 if next read would yield EOF.
+			   But to set the stream's EOF flag, we need to read the next byte. */
+			h_lastbyte[h_iocb] = fgetc(h_fp[h_iocb]);
+			CPU_regY = feof(h_fp[h_iocb]) ? 3 : 1;
 			CPU_ClrN;
 		}
 		else {
@@ -1323,6 +1337,9 @@ static void Devices_H_Note(void)
 		long pos = ftell(h_fp[h_iocb]);
 		if (pos >= 0) {
 			int iocb = Devices_IOCB0 + h_iocb * 16;
+			/* In Devices_H_Read one byte is read ahead. Take it into account. */
+			if (h_lastop[h_iocb] == 'r' && h_lastbyte[h_iocb] != EOF)
+				--pos;
 			MEMORY_dPutByte(iocb + Devices_ICAX5, (UBYTE) pos);
 			MEMORY_dPutByte(iocb + Devices_ICAX3, (UBYTE) (pos >> 8));
 			MEMORY_dPutByte(iocb + Devices_ICAX4, (UBYTE) (pos >> 16));
@@ -1358,6 +1375,7 @@ static void Devices_H_Point(void)
 			CPU_regY = 166; /* invalid POINT request */
 			CPU_SetN;
 		}
+		h_lastop[h_iocb] = 'p';
 	}
 	else {
 		CPU_regY = 130; /* specified device does not exist; XXX: correct? */
@@ -1574,9 +1592,15 @@ static void Devices_H_FileLength(void)
 	/* if we are running MyDOS then assume it is a MyDOS Load File command */
 	else if (MEMORY_dGetByte(0x700) == 'M') {
 		/* XXX: if (binf != NULL) fclose(binf); ? */
+
+		/* In Devices_H_Read one byte is read ahead. Take it into account. */
+		if (h_lastop[h_iocb] == 'r' && h_lastbyte[h_iocb] != EOF)
+			fseek(h_fp[h_iocb], -1, SEEK_CUR);
+
 		binf = h_fp[h_iocb];
 		Devices_H_LoadProceed(TRUE);
 		/* XXX: don't close binf when complete? */
+		h_lastop[h_iocb] = 'b';
 	}
 	/* otherwise assume it is a file length command */
 	else {
