@@ -228,6 +228,12 @@ Use Axlon shadow at 0x0fc0-0x0fff
 .TP
 .BI \-mosaic\  n
 Use 400/800 Mosaic memory expansion: \fIn\fR k total RAM
+.TP
+.B \-mapram
+Enable the MapRAM memory expansion. Works only when emulating an Atari XL/XE machine.
+.TP
+.B \-no-mapram
+Disable the MapRAM memory expansion.
 
 .TP
 .B \-pal

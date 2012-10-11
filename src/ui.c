@@ -345,6 +345,7 @@ static void SystemSettings(void)
 		UI_MENU_ACTION(11, "1200XL F1-F4 keys:"),
 		UI_MENU_ACTION(12, "1200XL option jumper J1:"),
 		UI_MENU_ACTION(13, "Keyboard:"),
+		UI_MENU_ACTION(14, "MapRAM:"),
 		UI_MENU_END
 	};
 
@@ -499,6 +500,11 @@ static void SystemSettings(void)
 		/* Set label for the "XEGS keyboard" action. */
 		menu_array[13].suffix = Atari800_machine_type != Atari800_MACHINE_XLXE ? "N/A" :
 		                        Atari800_keyboard_detached ? "detached (XEGS)" : "integrated/attached";
+
+		/* Set label for the "XL/XE MapRAM" action. */
+		menu_array[14].suffix = (Atari800_machine_type != Atari800_MACHINE_XLXE || MEMORY_ram_size < 20)
+		                        ? "N/A"
+		                        : MEMORY_enable_mapram ? "Yes" : "No";
 
 		option = UI_driver->fSelect("System Settings", 0, option, menu_array, NULL);
 		switch (option) {
@@ -686,6 +692,12 @@ static void SystemSettings(void)
 			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 				Atari800_keyboard_detached = !Atari800_keyboard_detached;
 				Atari800_UpdateKeyboardDetached();
+			}
+			break;
+		case 14:
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE && MEMORY_ram_size > 20) {
+				MEMORY_enable_mapram = !MEMORY_enable_mapram;
+				need_initialise = TRUE;
 			}
 			break;
 		default:

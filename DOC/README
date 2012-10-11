@@ -77,7 +77,9 @@ o 130XE compatible memory expansions: 320K, 576K, 1088K.
 
 o Optional 4K RAM between 0xc000 and 0xcfff in 400/800 mode.
 
-o Axlon and Mosaic memory expansions for the 400/800
+o Axlon and Mosaic memory expansions for the 400/800.
+
+o MapRAM memory enhancement for the XL/XE.
 
 o Cycle-exact 6502 emulation, all unofficial instructions.
 

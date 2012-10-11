@@ -112,6 +112,11 @@ static int mosaic_current_num_banks = 0;
 static int mosaic_curbank = 0x3f;
 int MEMORY_mosaic_num_banks = 0;
 
+int MEMORY_enable_mapram = FALSE;
+
+/* Buffer for storing of MapRAM memory. */
+static UBYTE *mapram_memory = NULL;
+
 static void alloc_axlon_memory(void){
 	if (MEMORY_axlon_num_banks > 0 && Atari800_machine_type == Atari800_MACHINE_800) {
 		int size = MEMORY_axlon_num_banks * 0x4000;
@@ -165,6 +170,19 @@ static void AllocXEMemory(void)
 		free(atarixe_memory);
 		atarixe_memory = NULL;
 		atarixe_memory_size = 0;
+	}
+}
+
+static void AllocMapRAM(void)
+{
+	if (MEMORY_enable_mapram && Atari800_machine_type == Atari800_MACHINE_XLXE
+	    && MEMORY_ram_size > 20) {
+		if (mapram_memory == NULL)
+			mapram_memory = (UBYTE *)Util_malloc(0x800);
+	}
+	else if (mapram_memory != NULL) {
+		free(mapram_memory);
+		mapram_memory = NULL;
 	}
 }
 
@@ -315,6 +333,7 @@ void MEMORY_InitialiseMachine(void)
 	alloc_mosaic_memory();
 	axlon_curbank = 0;
 	mosaic_curbank = 0x3f;
+	AllocMapRAM();
 	Atari800_Coldstart();
 }
 
@@ -405,6 +424,14 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 		StateSav_SaveUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		if (ANTIC_xe_ptr != NULL && MEMORY_selftest_enabled)
 			StateSav_SaveUBYTE(antic_bank_under_selftest, 0x800);
+	}
+
+	/* Simius XL/XE MapRAM expansion */
+	if (Atari800_machine_type == Atari800_MACHINE_XLXE && MEMORY_ram_size > 20) {
+		StateSav_SaveINT(&MEMORY_enable_mapram, 1);
+		if (MEMORY_enable_mapram) {
+			StateSav_SaveUBYTE( mapram_memory, 0x800 );
+		}
 	}
 }
 
@@ -640,6 +667,15 @@ void MEMORY_StateRead(UBYTE SaveVerbose, UBYTE StateVersion)
 
 		}
 	}
+
+	/* Simius XL/XE MapRAM expansion */
+	if (StateVersion >= 7 && Atari800_machine_type == Atari800_MACHINE_XLXE && MEMORY_ram_size > 20) {
+		StateSav_ReadINT(&MEMORY_enable_mapram, 1);
+		AllocMapRAM();
+		if (mapram_memory != NULL) {
+			StateSav_ReadUBYTE(mapram_memory, 0x800);
+		}
+	}
 }
 
 #endif /* BASIC */
@@ -689,6 +725,22 @@ static UBYTE const * builtin_cart(UBYTE portb)
 void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 {
 	int antic_bank = 0;
+	int mapram_selected = FALSE;
+	int new_mapram_selected = FALSE;
+
+	/* MapRAM is selected if RAM > 20 KB, Self Test is enabled while OS ROM is disabled,
+	   and both CPU & ANTIC have access to base RAM. */
+	if (mapram_memory != NULL && MEMORY_ram_size > 20) {
+		mapram_selected = (oldval & 0xb1) == 0x30;
+		new_mapram_selected = (byte & 0xb1) == 0x30;
+	}
+
+	if (mapram_selected && !new_mapram_selected) {
+		/* Restore RAM hidden by MapRAM. */
+		memcpy(mapram_memory, MEMORY_mem + 0x5000, 0x800);
+		memcpy(MEMORY_mem + 0x5000, under_atarixl_os + 0x1000, 0x800);
+	}
+
 	/* Switch XE memory bank in 0x4000-0x7fff */
 	if (MEMORY_ram_size > 64) {
 		int bank = 0;
@@ -845,6 +897,11 @@ void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
 				/* Also enable Self Test in the XE bank accessed by ANTIC. */
 				memcpy(atarixe_memory + (antic_bank << 14) + 0x1000, MEMORY_os + 0x1000, 0x800);
 			MEMORY_selftest_enabled = TRUE;
+		}
+		else if (!mapram_selected && new_mapram_selected) {
+			/* Enable MapRAM */
+			memcpy(under_atarixl_os + 0x1000, MEMORY_mem + 0x5000, 0x800);
+			memcpy(MEMORY_mem + 0x5000, mapram_memory, 0x800);
 		}
 	}
 }

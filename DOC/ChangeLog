@@ -3,6 +3,10 @@
   operation would yield EOF. This complies with Atari DOS behaviour and fixes
   Turbo BASIC's BLOAD.
 
+* atari.c, cfg.c, memory.[ch], ui.c, atari800.man, DOC/CREDITS, DOC/README,
+  DOC/USAGE: Patch by Jerzy Kut <mono@atari.pl> with additional fixes. Adds
+  support for the MapRAM memory enhancement for XL/XE systems.
+
 
 2012-09-09  Kostas Nakos  <knakos@gmail.com>
 * android/*: More UI fine tuning, new dialog for cartridge type selection

@@ -631,6 +631,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 				}
 				else a_m = TRUE;
 			}
+			else if (strcmp(argv[i], "-mapram") == 0)
+				MEMORY_enable_mapram = TRUE;
+			else if (strcmp(argv[i], "-no-mapram") == 0)
+				MEMORY_enable_mapram = FALSE;
 #ifndef BASIC
 			/* The BASIC version does not support state files, because:
 			   1. It has no ability to save state files, because of lack of UI.
@@ -690,6 +694,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-axlon <n>       Use Atari 800 Axlon memory expansion: <n> k total RAM");
 					Log_print("\t-axlon0f         Use Axlon shadow at 0x0fc0-0x0fff");
 					Log_print("\t-mosaic <n>      Use 400/800 Mosaic memory expansion: <n> k total RAM");
+					Log_print("\t-mapram          Enable MapRAM for Atari XL/XE");
+					Log_print("\t-no-mapram       Disable MapRAM");
 #ifdef R_IO_DEVICE
 					Log_print("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
 #endif

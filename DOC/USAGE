@@ -131,6 +131,9 @@ Command line options
 -axlon <n>            Use Atari 800 Axlon memory expansion: <n> k total RAM
 -axlon0f              Use Axlon shadow at 0x0fc0-0x0fff
 -mosaic <n>           Use 400/800 Mosaic memory expansion: <n> k total RAM
+-mapram               Enable MapRAM enhancement for Atari XL/XE
+-no-mapram            Disable MapRAM
+
 
 -pal                  Emulate PAL TV mode
 -ntsc                 Emulate NTSC TV mode

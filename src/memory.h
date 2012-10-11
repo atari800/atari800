@@ -124,6 +124,9 @@ extern int MEMORY_mosaic_num_banks;
 extern int MEMORY_axlon_0f_mirror;
 extern int MEMORY_axlon_num_banks;
 
+/* Controls presence of MapRAM memory modification for XL/XE mode. */
+extern int MEMORY_enable_mapram;
+
 #ifndef PAGED_MEM
 /* Reads a byte from the specified special address (not RAM or ROM). */
 UBYTE MEMORY_HwGetByte(UWORD addr, int safe);
