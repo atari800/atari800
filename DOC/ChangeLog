@@ -7,6 +7,8 @@
   DOC/USAGE: Patch by Jerzy Kut <mono@atari.pl> with additional fixes. Adds
   support for the MapRAM memory enhancement for XL/XE systems.
 
+* sdl/video_gl.c: Patch by Jerzy Kut <mono@atari.pl>. Spelling fix.
+
 
 2012-09-09  Kostas Nakos  <knakos@gmail.com>
 * android/*: More UI fine tuning, new dialog for cartridge type selection

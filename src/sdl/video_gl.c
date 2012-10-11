@@ -757,8 +757,8 @@ int SDL_VIDEO_GL_Initialise(int *argc, char *argv[])
 				help_only = TRUE;
 				Log_print("\t-pixel-format bgr16|rgb16|bgra32|argb32");
 				Log_print("\t                     Set internal pixel format (affects performance)");
-				Log_print("\t-bilitear-filter     Enable OpenGL bilinear filtering");
-				Log_print("\t-no-bilitear-filter  Disable OpenGL bilinear filtering");
+				Log_print("\t-bilinear-filter     Enable OpenGL bilinear filtering");
+				Log_print("\t-no-bilinear-filter  Disable OpenGL bilinear filtering");
 				Log_print("\t-pbo                 Use OpenGL Pixel Buffer Objects if available");
 				Log_print("\t-no-pbo              Don't use OpenGL Pixel Buffer Objects");
 				Log_print("\t-opengl-lib <path>   Use a custom OpenGL shared library");
