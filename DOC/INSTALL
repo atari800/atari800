@@ -14,11 +14,10 @@ http://prdownloads.sf.net/atari800/xf25.zip
 If you are creating the ROM images yourself they should be copied from
 the following locations:-
 
-1. Atari Basic (8192 bytes between $a000 and $bfff)
-2. Atari OS/A (10240 bytes between $d800 and $ffff)
-3. Atari OS/B (10240 bytes between $d800 and $ffff)
-4. Atari XL/XE (16384 bytes between $c000 and $ffff)
-5. Atari 5200 (2048 bytes between $f800 and $ffff)
+1. Atari BASIC (8192 bytes between $a000 and $bfff)
+2. Atari 400/800 (10240 bytes between $d800 and $ffff)
+3. Atari XL/XE (16384 bytes between $c000 and $ffff)
+4. Atari 5200 (2048 bytes between $f800 and $ffff)
 
 Note: If you are extracting the atarixl.rom you will find that the
       ROM area under the custom chip ($d000 to $d7ff) are mapped
@@ -62,27 +61,56 @@ Building the Emulator on most platforms
 1. Change your working dir to the atari800/src path
 2. Check if "configure" script is there. If it is skip to step 4.
 3. Run "./autogen.sh" (make sure you have autoconf >= 2.5x installed).
-4. Type "./configure --target=" for a list of supported platforms.
-5. Type "./configure --target=<YourTarget>" (choose from the list above)
-6. Type "make".
-7. Install the emulator by typing "make install".
+4. Type "./configure".
+5. Type "make".
+6. Install the emulator by typing "make install".
+
+By default, the "configure" script attempts to auto-detect the best interfaces
+available to use for emulating video and sound. It is also possible to
+override autodetection and select a specific interface by appending the
+"--with-video=<value>" and "--with-sound=<value>" options to the command
+in step 4. Below is the list of available values for these options:  
+a) Video interfaces (--with-video):
+- dosvga: use direct access to VGA card, only under DOS/DJGPP
+- sdl: use the Simple DirectMedia Library
+- curses: use the curses library
+- ncurses: use the ncurses library
+- pdcurses: use the pdcurses library
+- no: use only stdin/stdout for input/output. Supported on all platforms
+b) Sound interfaces (--with-sound):
+- win: use the WinMM library, only under Windows
+- falcon: use Atari Falcon native sound
+- dossb: use direct access to a Sound Blaster-compatible card, only under
+  DOS/DJGPP
+- sdl: use the Simple DirectMedia Library
+- oss: use Open Sound System
+- no: disable sound altogether. Supported on all platforms
+
+Only the video and sound interfaces listed above are autodetected, but the
+emulator also supports other ones. To build for a platform that is
+not automatically detected, replace step 4 of the above instructions with:
+
+4a. Type "./configure --target=help" for a list of supported platforms.
+4b. Type "./configure --target=<YourTarget>" (choose from the list above)
+
 
 Building the Emulator for Curses
 --------------------------------
 
-Follow the instruction for Unix but note that you must be using the
+Follow the instruction above but note that you must be using the
 System V Curses Library. BSD Curses is lacking a few functions and
 will not work (nodelay, attron, attroff, keypad and curs_set).
 
 Building the Emulator for DOS
 -----------------------------
 
-To compile, use DJGPP the DOS port of gcc, which can be get from
+To compile, use DJGPP the DOS port of gcc, which can be got from
 http://www.delorie.com/djgpp/. You will need complete environment
 in order to configure and build the executables.
 You may need zlib (compression library) to use compressed statesave images
 and libpng for PNG screenshots. To build curses (text mode) version install
-curses-compatible library (e.g. PDCurses).
+curses-compatible library (e.g. PDCurses) and add
+"--with-video=pdcurses" when invoking "./configure".
 
 Since the source code contains files with long file names, you must unpack
 and compile the source on a filesystem supporting long file names (for example
@@ -103,7 +131,8 @@ http://cygwin.com/
 1. Get and install at least one of SDL or DirectX for MinGW.
 2. For SDL, get the file SDL_win32_main.c from the SDL source that matches
    your version and copy it into the Atari800 src directory.
-3. Type "./configure --target=windx for DirectX and --target=basic" for SDL
+3. Type "./configure --target=windx" for DirectX or "./configure
+   --with-video=sdl --with-sound=sdl" for SDL.
 4. Type "make".
 5. Copy atari800.exe to destination directory.
 6. Copy the needed DLLs: /bin/mgwz.dll and (for SDL) sdl.dll
@@ -152,11 +181,15 @@ file names (either minix-fs of MiNT, or VFAT of MagiC).
 2. Type "make".
 3. Copy atari800 to destination directory or try "make install".
 
+You also can build the default target (by omitting the "--target" option)
+with optional support for curses or SDL - see "Building the Emulator on most
+platforms".
+
 Building the Emulator for SDL
 -----------------------------
 
 1. Please install (and configure) SDL library (http://www.libsdl.org).
-2. If you are using MinGW or Cygwin, get the file SDL_win32_main.c from the SDL 
+2. If you are using MinGW or Cygwin, get the file SDL_win32_main.c from the SDL
    source (in src/main/win32) and copy it to the atari800 src directory.
 3. If you want to build an OpenGL-capable version, you'll need OpenGL headers
    installed. They should support OpenGL version 2.1 (support for the Pixel
@@ -166,11 +199,10 @@ Building the Emulator for SDL
    For MinGW, get the OpenGL headers at
    http://www.libsdl.org/extras/win32/common/opengl-devel.tar.gz
    See also http://www.libsdl.org/extras/win32/mingw32/README.txt
-4. Type "./configure --target=basic". When building using MinGW, you might also
-   need to add "--with-sdl-prefix=/mingw".
-5. Type "make".
-6. Type "make install".
-7. You can run atari800 anytime you want.
+4. Follow the instructions in the "Building the Emulator on most platforms"
+   section above. NOTE: If required, force using SDL by adding
+   "--with-video-input=sdl --with-sound=sdl" when calling "./configure". When
+   building using MinGW, you might also need to add "--with-sdl-prefix=/mingw". 
 
 Building the Emulator for Java using NestedVM
 ---------------------------------------------

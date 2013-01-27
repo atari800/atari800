@@ -29,7 +29,7 @@ build:
 bld-sdl:
 	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
 	cd src ; ./configure \
-		 --target=basic --with-gui=sdl --with-sound=sdl
+		 --with-video=sdl --with-sound=sdl
 	cd src ; $(MAKE)
 
 # Clean up after a build and before building a source package

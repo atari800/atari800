@@ -77,9 +77,9 @@ sound items in "config.h".
 
 The easiest way to start is to compile a simplified version of the emulator,
 called the "basic" version.  With the configure script you specify
-"--target=basic".  If editing "config.h", "#define BASIC 1" and figure out
-which files to compile.  The basic version uses only standard C library
-functions.
+"--target=default --without-video --without-sound".  If editing "config.h",
+"#define BASIC 1" and figure out which files to compile.
+The basic version uses only standard C library functions.
 
 The basic version does not support graphics or joysticks and has
 a very limited keyboard input.  Most likely it will appear as a blank screen
