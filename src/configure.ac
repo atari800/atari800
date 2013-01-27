@@ -29,21 +29,24 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    basic | falcon | javanvm | javanvm-basic | ps2 | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    default | falcon | javanvm | javanvm-basic | ps2 | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
         a8_target="x11-$target"
         ;;
+    "")
+        a8_target=default
+        ;;
     *)
         echo
-        echo "Usage: configure --target=<target> <other options>"
+        echo "Usage: configure [--target=<target>] <other options>"
         echo
-        echo "The '--target' option is required.  Use '--help' to see other available"
-        echo "options, including Atari800 specific '--enable' options.  Possible values"
-        echo "for the '--target' option are:"
+        echo "The '--target' option, if not given, defaults to 'default'.  Use '--help'"
+        echo "to see other available options, including Atari800 specific '--enable' options."
+        echo "Possible values for the '--target' option are:"
+        echo "    default          (autodetect available graphics and sound libraries)"
         echo "    android          (Android devices)"
-        echo "    basic            (autodetect available graphics and sound libraries)"
         echo "    falcon           (Atari Falcon systems only)"
         echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
         echo "    javanvm-basic    (Java NestedVM text-mode: set --host=mips-unknown-elf)"
@@ -238,7 +241,7 @@ dnl OBJS is not an AC "precious" variable but is used in the Makefile, so
 dnl it must be explicitly AC_SUBST'ed at the end of this file.
 OBJS=
 case "$a8_target" in
-    basic)
+    default)
         if [[ "$a8_host" != "dos" ]]; then
 dnl In DJGPP building with zlib fails with -ansi.
             CFLAGS="$CFLAGS -ansi"
@@ -486,74 +489,74 @@ if [[ "$a8_host" != "win" -a "$a8_target" != "android" ]]; then
     AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
 fi
 
-dnl Select/detect external library for graphics and input.
+dnl Select/detect video interface.
 
-AC_ARG_WITH([gui],
-    [AC_HELP_STRING([--with-gui@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl@:>@],[Select supported GUI @<:@default=check@:>@])],
+AC_ARG_WITH([video],
+    [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl@:>@],[Select video interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
             no | yes | check | curses | ncurses | pdcurses | dosvga | sdl)
                 ;;
             *)
-                AC_MSG_ERROR([unrecognized value for --with-gui: "$withval"])
+                AC_MSG_ERROR([unrecognized value for --with-video: "$withval"])
                 ;;
         esac
     ],
-    [with_gui=check])
+    [with_video=check])
 
-if [[ "$a8_target" = basic ]]; then
-    if [[ "$with_gui" != no ]]; then
-        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = sdl ]]; then
+if [[ "$a8_target" = default ]]; then
+    if [[ "$with_video" != no ]]; then
+        if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = dosvga ]]; then
+            if [[ "$a8_host" = dos ]]; then
+                with_video=dosvga
+            elif [[ "$with_video" = dosvga ]]; then
+                AC_MSG_ERROR([--with-video=dosvga was given, but host system is not DOS!])
+            fi
+        fi
+        if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = sdl ]]; then
             TRY_USE_SDL()
             if [[ "$a8_use_sdl" = yes ]]; then
-                with_gui=sdl
-            elif [[ "$with_gui" = sdl ]]; then
-                AC_MSG_FAILURE([--with-gui=sdl was given, but SDL library not found!])
+                with_video=sdl
+            elif [[ "$with_video" = sdl ]]; then
+                AC_MSG_FAILURE([--with-video=sdl was given, but SDL library not found!])
             fi
         fi
-        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = dosvga ]]; then
-            if [[ "$a8_host" = dos ]]; then
-                with_gui=dosvga
-            elif [[ "$with_gui" = dosvga ]]; then
-                AC_MSG_ERROR([--with-gui=dosvga was given, but host system is not DOS!])
-            fi
-        fi
-        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = curses ]]; then
+        if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = curses ]]; then
             AC_CHECK_LIB([curses], [initscr],
                 [LIBS="-lcurses $LIBS"
-                 with_gui=curses
+                 with_video=curses
                 ],
-                [if [[ "$with_gui" = curses ]]; then
-                    AC_MSG_FAILURE([--with-gui=curses was given, but curses library not found!])
+                [if [[ "$with_video" = curses ]]; then
+                    AC_MSG_FAILURE([--with-video=curses was given, but curses library not found!])
                  fi
                 ])
         fi
-        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = ncurses ]]; then
+        if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = ncurses ]]; then
             AC_CHECK_LIB([ncurses], [initscr],
                 [LIBS="-lncurses $LIBS"
-                 with_gui=ncurses
+                 with_video=ncurses
                  AC_DEFINE(USE_NCURSES,1,[Target: Ncurses library.])
                 ],
-                [if [[ "$with_gui" = ncurses ]]; then
-                    AC_MSG_FAILURE([--with-gui=ncurses was given, but ncurses library not found!])
+                [if [[ "$with_video" = ncurses ]]; then
+                    AC_MSG_FAILURE([--with-video=ncurses was given, but ncurses library not found!])
                  fi
                 ])
         fi
-        if [[ "$with_gui" = check -o "$with_gui" = yes -o "$with_gui" = pdcurses ]]; then
+        if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = pdcurses ]]; then
             AC_CHECK_LIB([pdcurses], [initscr],
                 [LIBS="-lpdcurses $LIBS"
-                 with_gui=pdcurses
+                 with_video=pdcurses
                 ],
-                [if [[ "$with_gui" = pdcurses ]]; then
-                    AC_MSG_FAILURE([--with-gui=pdcurses was given, but pdcurses library not found!])
+                [if [[ "$with_video" = pdcurses ]]; then
+                    AC_MSG_FAILURE([--with-video=pdcurses was given, but pdcurses library not found!])
                  fi
                 ])
         fi
     fi
-    if [[ "$with_gui" = check ]]; then
-        with_gui=no
+    if [[ "$with_video" = check ]]; then
+        with_video=no
     fi
-    case "$with_gui" in
+    case "$with_video" in
         sdl)
             AC_DEFINE(GUI_SDL,1,[Use SDL for graphics and input.])
             AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
@@ -586,7 +589,7 @@ if [[ "$a8_target" = basic ]]; then
             WANT_EVENT_RECORDING=no
             ;;
         *)
-            AC_MSG_ERROR([--with-gui=$with_gui was given, but no GUI library found!])
+            AC_MSG_ERROR([--with-video=$with_video was given, but no video/input library found!])
             ;;
     esac
 fi
@@ -608,12 +611,12 @@ AC_DEFUN([A8_OPTION],[
     fi
 ])
 
-if [[ \( "$a8_target" != "basic" -o "$with_gui" != no \) -a "$a8_target" != "javanvm-basic" ]]; then
+if [[ \( "$a8_target" != "default" -o "$with_video" != no \) -a "$a8_target" != "javanvm-basic" ]]; then
 
-    dnl These objects are not compiled in BASIC target
+    dnl These objects are not compiled when --with-video=no
     OBJS="$OBJS input.o statesav.o ui_basic.o ui.o"
 
-    case "$with_gui" in
+    case "$with_video" in
         *curses)
             A8_OPTION(cursesbasic,yes,
                       [No bitmap graphics emulation (curses targets only) (default=ON)],
@@ -624,7 +627,7 @@ if [[ \( "$a8_target" != "basic" -o "$with_gui" != no \) -a "$a8_target" != "jav
 
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
 
-        dnl These objects are not compiled in BASIC nor CURSES_BASIC target
+        dnl These objects are not compiled when --with-video=no or --enable-cursesbasic=no
         OBJS="$OBJS colours.o colours_ntsc.o colours_pal.o colours_external.o screen.o"
 
         A8_OPTION(newcycleexact,yes,
@@ -721,10 +724,10 @@ if [[ "$WANT_PBI_BB" = "yes" -o "$WANT_PBI_MIO" = "yes" ]]; then
     OBJS="$OBJS pbi_scsi.o"
 fi
 
-dnl Select/detect external library for sound.
+dnl Select/detect sound interface.
 
 AC_ARG_WITH([sound],
-    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|win|sdl@:>@],[Select supported sound @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|win|sdl@:>@],[Select sound interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
             no | yes | check | dossb | oss | falcon | win | sdl)
@@ -736,17 +739,8 @@ AC_ARG_WITH([sound],
     ],
     [with_sound=check])
 
-AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
 if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" -a "$a8_target" != "javanvm" ]]; then
     if [[ "$with_sound" != no ]]; then
-        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = sdl ]]; then
-            TRY_USE_SDL()
-            if [[ "$a8_use_sdl" = yes ]]; then
-                with_sound=sdl
-            elif [[ "$with_sound" = sdl ]]; then
-                AC_MSG_FAILURE([--with-sound=sdl was given, but SDL library not found!])
-            fi
-        fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = win ]]; then
             AC_CHECK_LIB([winmm], [main],
                 [LIBS="-lwinmm $LIBS"
@@ -764,18 +758,26 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" -a "$a8_target" != "jav
                 AC_MSG_ERROR([--with-sound=falcon was given, but host system is not Falcon!])
             fi
         fi
-        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = oss ]]; then
-            if [[ "$SUPPORTS_SOUND_OSS" = yes ]]; then
-                with_sound=oss
-            elif [[ "$with_sound" = oss ]]; then
-                AC_MSG_ERROR([--with-sound=oss was given, but OSS is not supported!])
-            fi
-        fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = dossb ]]; then
             if [[ "$a8_host" = dos ]]; then
                 with_sound=dossb
             elif [[ "$with_sound" = dossb ]]; then
                 AC_MSG_ERROR([--with-sound=dossb was given, but host system is not DOS!])
+            fi
+        fi
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = sdl ]]; then
+            TRY_USE_SDL()
+            if [[ "$a8_use_sdl" = yes ]]; then
+                with_sound=sdl
+            elif [[ "$with_sound" = sdl ]]; then
+                AC_MSG_FAILURE([--with-sound=sdl was given, but SDL library not found!])
+            fi
+        fi
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = oss ]]; then
+            if [[ "$SUPPORTS_SOUND_OSS" = yes ]]; then
+                with_sound=oss
+            elif [[ "$with_sound" = oss ]]; then
+                AC_MSG_ERROR([--with-sound=oss was given, but OSS is not supported!])
             fi
         fi
     fi
@@ -956,9 +958,9 @@ AC_ARG_WITH(opengl,
     [],
     [with_opengl=check])
 
-if [[ "$a8_target" != basic -o "$with_gui" != sdl ]]; then
+if [[ "$a8_target" != default -o "$with_video" != sdl ]]; then
     if [[ "$with_opengl" = "yes" ]]; then
-        AC_MSG_ERROR([option --with-opengl only supported with --target=basic --with-gui=sdl!])
+        AC_MSG_ERROR([option --with-opengl only supported with --target=default --with-video=sdl!])
     fi
     with_opengl=no
 fi
@@ -1064,15 +1066,15 @@ echo "-------------------------------------------------------"
 echo "Host OS...............................: $a8_host"
 echo "Target ...............................: $a8_target"
 echo
-if [[ "$a8_target" = basic ]]; then
-    echo "Library for graphics and input........: $with_gui"
-    case "$with_gui" in
+if [[ "$a8_target" = default ]]; then
+    echo "Interface for video...................: $with_video"
+    case "$with_video" in
         *curses)
             echo "Using no bitmap graphics emulation?...: $WANT_CURSES_BASIC"
             ;;
     esac
 fi
-if [[ \( "$a8_target" != "basic" -o "$with_gui" != no \) -a "$a8_target" != "javanvm-basic" ]]; then
+if [[ \( "$a8_target" != "default" -o "$with_video" != no \) -a "$a8_target" != "javanvm-basic" ]]; then
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
         echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
@@ -1092,7 +1094,7 @@ echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using IDE emulation?..................: $WANT_IDE"
-echo "Library for sound.....................: $with_sound"
+echo "Interface for sound...................: $with_sound"
 if [[ "$with_sound" != no ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
     echo "    Using synchronized sound?.........: $WANT_SYNCHRONIZED_SOUND"
@@ -1129,7 +1131,7 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
             echo "Using R: with IP network support......: $WANT_R_NETWORK"
         fi
 fi
-if [[ "$a8_target" = basic -a "$with_gui" = sdl ]]; then
+if [[ "$a8_target" = default -a "$with_video" = sdl ]]; then
     echo "Using OpenGL?.........................: $with_opengl"
 fi
 echo
@@ -1150,7 +1152,7 @@ if [[ "$WANT_VERY_SLOW" = "yes" ]]; then
 		echo "It is better to use --disable-monitorbreak."
 	fi
 	if [[ "$with_sound" != "no" ]]; then
-		echo "Try --disable-sound, too."
+		echo "Try --without-sound, too."
 	fi
 	if [[ "$WANT_PAGED_ATTRIB" != "yes" ]]; then
 		echo "Have you tried --enable-pagedattrib ?"

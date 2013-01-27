@@ -1,3 +1,10 @@
+2013-01-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* src/autogen.sh, src/configure.ac, src/configure_dos.bat:
+  Rename the "basic" target to "default" and make it the default - the
+  "--target" configure option can be omitted. Renamed the "--with-gui"
+  configure option to "--with-video".
+
+
 2012-10-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * devices.c: Fix the H: read function to return status $03 if the next read
   operation would yield EOF. This complies with Atari DOS behaviour and fixes
