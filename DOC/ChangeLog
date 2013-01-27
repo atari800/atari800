@@ -4,6 +4,10 @@
   "--target" configure option can be omitted. Renamed the "--with-gui"
   configure option to "--with-video".
 
+* util/benchmark.pl:
+  Update to reflect the above changes. Allow passing --with-* options to
+  configure.
+
 
 2012-10-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * devices.c: Fix the H: read function to return status $03 if the next read

@@ -118,7 +118,7 @@ else {
 
 # supported targets
 my @targets = qw(
-	basic falcon windx x11 x11-motif x11-shm
+	default falcon windx x11 x11-motif x11-shm
 	x11-xview x11-xview-shm motif shm xview xview-shm
 );
 
@@ -135,12 +135,6 @@ for (@ARGV) {
 	}
 	elsif (/^--cflags=(.+)/) {
 		$cflags = $1;
-	}
-	elsif (/^--(?:en|dis)able-/) {
-		push @features, $_;
-	}
-	elsif (/^--with(?:out)?-/) {
-		push @features, $_;
 	}
 	elsif (/^--program=(.+)/) {
 		$reference_program = $1;
@@ -160,12 +154,12 @@ for (@ARGV) {
 		$help_me = 1;
 	}
 	else {
-		die "Unknown option: $_\n";
+		push @features, $_;
 	}
 }
 
-# gfx-generating target: windx on Win32, basic otherwise
-my $gfx_target = 'basic';
+# gfx-generating target: windx on Win32, default otherwise
+my $gfx_target = 'default';
 if ($^O =~ /win/i) {
 	$gfx_target = 'windx';
 }
@@ -179,16 +173,16 @@ my %tests = (
 		'run' => [ $reference_program, 'blank.xex' ]
 	},
 	'basic' => {
-		'target' => 'basic',
+		'target' => 'default',
 		'run' => [ $reference_program, 'blank.xex' ]
 	},
 	'monitorbreak' => {
-		'target' => 'basic',
+		'target' => 'default',
 		'config' => [ '--disable-monitorbreak', '--enable-monitorbreak' ],
 		'run' => [ $reference_program ],
 	},
 	'pagedattrib' => {
-		'target' => 'basic',
+		'target' => 'default',
 		'config' => [ '--disable-pagedattrib', '--enable-pagedattrib' ],
 		'run' => [ $reference_program, 'ramread.xex', 'ramstore.xex', 'hwread.xex', 'hwstore.xex' ],
 	},
@@ -214,14 +208,12 @@ Available options:
 --test=<test>         Choose test (required)
 --target=<target>     Choose Atari800 target for the test
 --cflags="<cflags>"   Override CFLAGS (default: "-O2 -Wall" + test-specific)
---enable-<feature>    Enable Atari800 feature via "configure"
---disable-<feature>   Disable Atari800 feature via "configure"
---with-<feature>      Add external dependency via "configure"
---without-<feature>   Remove external dependency via "configure"
 --program=<filename>  Choose Atari program to be run (defaults to $reference_program)
 --frames=<frames>     Set number of frames to be run (defaults to $frames)
 --output=<filename>   Output the results to the specified file
 --generate-programs   Just generate all the built-in Atari programs
+Any other options are passed to the configure script. Use it to affect the set
+of optional features and external libraries used during the test. 
 
 Available tests:
   default       Compare chosen Atari program with one that does nothing,
@@ -229,11 +221,11 @@ Available tests:
                 with "--enable-<feature>", "--disable-<feature>")
                 (default target: $gfx_target)
   basic         Compare chosen Atari program with one that does nothing
-                (default target: basic)
+                (default target: default)
   monitorbreak  Compare configurations with/without MONITOR_BREAK
-                (default target: basic)
+                (default target: default)
   pagedattrib   Compare configurations with/without PAGED_ATTRIB
-                (default target: basic)
+                (default target: default)
   cycleexact    Compare configurations with/without NEW_CYCLE_EXACT
                 (default target: $gfx_target)
   display       Compare display performance with different Atari programs
