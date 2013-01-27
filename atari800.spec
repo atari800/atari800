@@ -1,9 +1,11 @@
 # generic defines used by all distributions.
 #
 %define ver			2.2.1
+# When adding a target, add an $options_<target_name> variable to the %build
+# section, and add %{_bindir}/%{name}-<target_name> to the files list in the
+# %files section.
 %define targets			sdl
 %define maintarget		sdl
-
 
 %define	myrelease		1
 %define mybuild			1
@@ -194,10 +196,14 @@ and Atari800 Development Team (see CREDITS for a full list)
 
 
 %build
+options_sdl="--with-video=sdl --with-sound=sdl"
+#options_ncurses="--with-video=ncurses --with-sound=oss"
+#options_x11="--target=x11 --with-sound=oss"
+
 cd src
 for target in %{targets}
 do
-	%configure --target=${target}
+	%configure `eval echo \\\$options_${target}`
 	%{__make} %{?jobs:-j%jobs}
 	mv atari800 atari800-${target}
 	%{__make} clean

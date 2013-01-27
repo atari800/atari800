@@ -8,6 +8,10 @@
   Update to reflect the above changes. Allow passing --with-* options to
   configure.
 
+* atari800.spec:
+  Update to reflect the above changes. Allow building multiple binaries, each
+  with a different set of configure options.
+
 
 2012-10-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * devices.c: Fix the H: read function to return status $03 if the next read
