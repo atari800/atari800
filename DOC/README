@@ -17,7 +17,7 @@ Our main objective is to create a freely distributable portable emulator
 (i.e. with source code available).
 It can be configured to run in the following ways :-
 
-	1. "basic" mode (many platforms) - uses only the standard C library
+	1. "simple" version (many platforms) - uses only the standard C library
 	2. curses (many platforms)
 	3. X Window + Optional XVIEW or MOTIF User Interface
 	4. CBM Amiga
@@ -30,14 +30,14 @@ It can be configured to run in the following ways :-
     11. JVM (Java applet)
     12. Android
 
-The "basic" mode is only useful for running programs such as MAC65,
+The "simple" version is only useful for running programs such as MAC65,
 Atari BASIC etc. I have had this version running on Linux,
 SunOS 4.1.3, Solaris 2.4, Silicon Graphics, VAX/VMS, CBM Amiga
 (Dice C and GNU C), DOS/DJGPP and the HP-UX 9000/380.
 
-When using curses, the emulator is similar to the "basic" version, but it also
-enables full screen editing capability. Some computer don't seem to support
-curses fully - SunOS 4.1.3, VAX/VMS, LINUX (but ncurses is OK).
+When using curses, the emulator is similar to the "simple" version, but it
+also enables full screen editing capability. Some computer don't seem to
+support curses fully - SunOS 4.1.3, VAX/VMS, LINUX (but ncurses is OK).
 
 The X Window version supports graphics and has an optional XVIEW
 or MOTIF user interface. The Linux X Window version can be built with

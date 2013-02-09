@@ -1,3 +1,9 @@
+2013-02-09  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/INSTALL, DOC/PORTING, DOC/README: Rename the "basic" version to "simple"
+  in the docs, to avoid confusion with the Atari BASIC and with the "basic"
+  target - there's no such target anymore.
+
+
 2013-01-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * src/autogen.sh, src/configure.ac, src/configure_dos.bat:
   Rename the "basic" target to "default" and make it the default - the

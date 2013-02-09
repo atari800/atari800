@@ -43,7 +43,7 @@ many others with a little work):-
 2. CURSES version
 3. Graphical Version for the Amiga (not maintained)
 4. Graphical version for the Atari TT/Falcon and compatible computers
-5. BASIC version (No Graphics). Should be straightforward to configure
+5. "simple" version (no graphics). Should be straightforward to configure
    for any 32-bit environment supporting ANSI C.
 6. VGA Version for DOS
 7. DirectX Version for Microsoft Windows (also try the SDL version)
@@ -212,7 +212,7 @@ Building the Emulator for Java using NestedVM
    ./autogen.sh (only if you don't have configure, such as a CVS build)
    ./configure --host=mips-unknown-elf --target=javanvm
    You might want to add --enable-veryslow --disable-monitorbreak to the above.
-   For the basic version, use --target=javanvm-basic
+   For the "simple" version, use --target=javanvm-basic
 4. Type "make".
 5. atari800.jar requires unix_runtime.jar in the same directory. Copy it from
    the NestedVM directory where you made it using "make unix_runtime.jar" as 

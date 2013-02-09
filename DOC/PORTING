@@ -72,20 +72,20 @@ Compiling for the first time
 ----------------------------
 
 Try starting with something simple.  Disable sound emulation,
-either by passing "--disable-sound" to the configure script or by #undef'ing
+either by passing "--without-sound" to the configure script or by #undef'ing
 sound items in "config.h".
 
-The easiest way to start is to compile a simplified version of the emulator,
-called the "basic" version.  With the configure script you specify
-"--target=default --without-video --without-sound".  If editing "config.h",
-"#define BASIC 1" and figure out which files to compile.
-The basic version uses only standard C library functions.
+The easiest way to start is to compile a "simple" version of the emulator,
+that does not use any external libraries/interfaces for emulation of video,
+audio and input, and uses only standard C library functions.  With the
+configure script you specify "--without-video --without-sound".  If editing
+"config.h", "#define BASIC 1" and figure out which files to compile.
 
-The basic version does not support graphics or joysticks and has
-a very limited keyboard input.  Most likely it will appear as a blank screen
-when run.  That's fine.  Edit the runtime configuration file providing
-paths to Atari ROM images and change "DISABLE_BASIC" to "0".
-If you're lucky, you'll see the "READY" prompt of Atari BASIC.
+The "simple" version does not support graphics or joysticks and has a very
+limited keyboard input.  Most likely it will appear as a blank screen when
+run.  That's fine.  Edit the runtime configuration file providing paths to
+Atari ROM images and change "DISABLE_BASIC" to "0".  If you're lucky, you'll
+see the "READY" prompt of Atari BASIC.
 
 
 Implementing platform-specific part
