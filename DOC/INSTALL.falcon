@@ -24,7 +24,7 @@ The following script might be used for rebuilding the fastest possible
 version:
 ============================== make.sh ====================================
 #!/bin/sh
-CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall" ./configure --disable-newcycleexact --disable-sound --enable-veryslow --disable-monitorbreak --target=falcon
+CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall" ./configure --disable-newcycleexact --without-sound --enable-veryslow --disable-monitorbreak --target=falcon
 make clean
 time make
 fixstk 256k atari800

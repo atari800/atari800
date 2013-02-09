@@ -7,6 +7,8 @@
   DOC/README, DOC/readme.html.in, src/atari800.man, atari800.spec, README.1ST:
   Update docs to inlcude the 1200XL and the XEGS as emulated systems.
 
+* DOC/INSTALL.falcon: Update after renaming --disable-sound to --without-sound.
+
 
 2013-01-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * src/autogen.sh, src/configure.ac, src/configure_dos.bat:
