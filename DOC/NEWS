@@ -1,3 +1,105 @@
+Version ? (????/??/??)
+
+ New features:
+ -------------
+  * Option to automatically save configuration on exit
+  * More settings saved in configuration:
+    - currently attached tape file
+    - cartridge settings, including currently attached cartridges
+    - state of R-Time 8
+    - system settings, including Mosaic/Axlon RAM size
+  * New Tape Management menu - can now create blank tape images, switch tape
+    to read/write in order to save additional data at the end of the current
+    tape image, rewind/fast forward the tape, and mark it as read-only. See
+    DOC/USAGE for details.
+  * Displaying tape position when "Show sector/block counter" is enabled.
+  * Reworked Cartridge Management menu - now displays filename of the
+    attached cartridge.
+  * Option to disable restarting of the machine after cartridge change.
+  * When attaching a cartridge from the command line, cartridge type can now
+    be specified using the new -cart-type and -cart2-type options.
+  * New cartridge types supported:
+    - OSS 8 KB cartridge
+    - OSS two chip 16 KB cartridge (043M)
+    - Blizzard 4 KB cartridge
+    - AST 32 KB cartridge
+    - Atrax SDX 64 KB cartridge
+    - Atrax SDX 128 KB cartridge
+    - Turbosoft 64 KB cartridge
+    - Turbosoft 128 KB cartridge
+    - Ultracart 32 KB cartridge
+    - Low bank 8 KB cartridge
+    - SIC! 128 KB cartridge
+    - SIC! 256 KB cartridge
+    - SIC! 512 KB cartridge
+    - Standard 2 KB cartridge
+    - Standard 4 KB cartridge
+    - Right slot 4 KB cartridge
+  * The configure script can now auto-detect some of the available display and
+    sound interfaces before compiling.
+  * Option to enable XEP80 added to The Emulator Settings menu.
+  * Emulation of the 1200XL, including console LEDs, no built-in BASIC, the
+    F1-F4 keys (mapped to arrow keys in the SDL version) and the on-board
+    J1 jumper.
+  * Emulation of the XE Game System, including the built-in game and
+    detachable keyboard.
+  * Revamped the Select System menu (now called System Settings). Can now
+    select many system settings, including RAM expansions, OS and BASIC
+    revision, and more.
+  * System ROM settings moved to a separate menu. Now it stores paths to all
+    known official revisions of the Atari OS, the 5200 BIOS, all BASIC
+    revisions, and the XEGS built-in game. The OS revision to use is chosen
+    automatically when selecting a machine type (for example, the 400/800 OS
+    PAL or NTSC version is chosen depending on the selected TV system).
+  * 400/800: Emulation of all RAM sizes achievable with different combinations
+    of the CX852 and CX853 modules - from 8 to 48 KB.
+  * Emulation of 32/48KB memory sizes in the XL/XE mode, compatible
+    with memory expansions for the 600XL manufactured by RC Systems.
+  * Emulation of the MapRAM hardware hack.
+  * Display settings: "Hue" renamed to "Tint". Tint now configurable also in
+    PAL mode.
+
+ Fixes:
+ ------
+  * Bugfixes in cassette emulation - works reliably even for tape images with
+    long (> 4096 B) blocks.
+  * Fixes in save states - loading of save states works correctly even with an
+    attached bank-switched cartridge or with an Axlon/Mosaic RAM expansion.
+    Note 1: Format of the state files has changed. Old save states can still
+    be opened, but newly-created ones cannot be opened in older versions of
+    Atari800.
+    Note 2: Tape position is not restored on loading of save states. Do not
+    save state during tape loading/saving - it won't work as expected.
+  * "Disable BASIC when booting Atari" no longer emulates pressing of the
+    Option key when in the 400/800 mode.
+  * Fixed a bug with BASIC sometimes disabling itself when switching system
+    type to 400/800
+  * Minor bugfixes in file selector
+  * Fixed emulation of SpartaDOS X piggyback cartridge functionality
+  * "Save Screenshot" fixed - it saved an interlaced screenshot instead of a
+    normal one.
+  * SDL version: Swapped mapping of right and middle mouse buttons, to make it
+    identical to the X11 and Win32 ports.
+  * Monitor: fixed displaying/disassembling of memory area $D000-$D7FF - with
+    the new supported cartridge types, code may reside on page $D5, and now it
+    can be debugged.
+  * SDL version: fixed a blue border when in OpenGL BGRA32 mode.
+  * Minor fixes in parsing of command-line options.
+  * Rewritten XEP80 emulation - now more accurate and supports switching
+    between NTSC/PAL modes with correct aspect ratio. XEP80 emulation now
+    requires a charset ROM image, path to which should be set in the
+    XEP80_CHARSET line in the config file.
+  * Fixed operating system patches not working with all official revisions of
+    the OS.
+  * Fixed emulation of separate ANTIC/CPU access to XE RAM when Self-Test is
+    enabled.
+  * Fixed the emulator menu sometimes being displayed incorrectly (missing
+    font) when running without an OS ROM image.
+  * Improved accuracy of generated colours in PAL mode.
+  * Fixed emulation of the H: read operation - Turbo Basic's BLOAD now works
+    on H: devices.
+
+
 Version 2.2.1 (2011/04/28)
 
   Quick update fixing some annoying bugs from the previous release

@@ -9,6 +9,8 @@
 
 * DOC/INSTALL.falcon: Update after renaming --disable-sound to --without-sound.
 
+* DOC/README, DOC/NEWS: Updated with all my contributions since 2.2.1.
+
 
 2013-01-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * src/autogen.sh, src/configure.ac, src/configure_dos.bat:

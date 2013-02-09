@@ -73,11 +73,15 @@ Note: Not all features are supported on all platforms.
 o Emulated machines: Atari 400, 800, 1200XL, 600XL, 800XL, 65XE, 130XE, 800XE,
   XE Game System, 5200 SuperSystem.
 
-o 130XE compatible memory expansions: 320K, 576K, 1088K.
+o Configurable 400/800 RAM size, between 8 and 48 KB.
 
 o Optional 4K RAM between 0xc000 and 0xcfff in 400/800 mode.
 
 o Axlon and Mosaic memory expansions for the 400/800.
+
+o 600XL memory expansions to 32 or 48 KB.
+
+o 130XE compatible memory expansions: 192K, 320K, 576K, 1088K.
 
 o MapRAM memory enhancement for the XL/XE.
 
@@ -98,7 +102,7 @@ o ATR, XFD, DCM, ATR.GZ, XFD.GZ and .PRO disk images.
 
 o Direct loading of Atari executable files and Atari BASIC programs.
 
-o 43 cartridge types, raw and CART format.
+o 59 cartridge types, raw and CART format.
 
 o Cassette recorder, raw and CAS images.
 
