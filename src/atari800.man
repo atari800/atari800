@@ -9,8 +9,9 @@ atari800 \- emulator of Atari 8-bit computers and the 5200 console
 
 .SH DESCRIPTION
 .B atari800
-emulates the Atari 400/800/XL/XE computers and the Atari XEGS and 5200
-SuperSystem game consoles.
+emulates the Atari 8-bit computer systems including the 400, 800, 1200XL,
+600XL, 800XL, 65XE, 130XE, 800XE and the XE Game System, and also the Atari
+5200 SuperSystem console.
 
 .SH OPTIONS
 

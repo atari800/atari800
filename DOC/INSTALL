@@ -1,4 +1,4 @@
-Installation of the Atari 800 Emulator
+Installation of the Atari800 Emulator
 --------------------------------------
 
 Irrespective of whether you are going to compile the emulator yourself
@@ -15,17 +15,20 @@ If you are creating the ROM images yourself they should be copied from
 the following locations:-
 
 1. Atari BASIC (8192 bytes between $a000 and $bfff)
-2. Atari 400/800 (10240 bytes between $d800 and $ffff)
-3. Atari XL/XE (16384 bytes between $c000 and $ffff)
-4. Atari 5200 (2048 bytes between $f800 and $ffff)
-
-Note: If you are extracting the atarixl.rom you will find that the
-      ROM area under the custom chip ($d000 to $d7ff) are mapped
-      between $5000 and $57ff when bit 7 of PORTB is set to 1.
-
-      i.e. You should set bit 7 of PORTB and then dump the memory
-           out in the following order:- $c000 to $cfff, $5000 to $57ff
-           and finally $d800 to $ffff.
+   Note: On a 400/800/1200XL system a BASIC cartridge must be inserted, and on
+   other systems the built-in BASIC must be enabled by setting bit 1 of PORTB
+   to 0.
+2. Atari 400/800 OS (10240 bytes between $d800 and $ffff)
+3. Atari XL/XE OS (16384 bytes between $c000 and $ffff)
+   Note: If you are extracting the XL/XE OS you will find that the ROM area
+   under the custom chip ($d000 to $d7ff) is mapped between $5000 and $57ff
+   when bit 7 of PORTB is set to 1. I.e. you should set bit 7 of PORTB and
+   then dump the memory out in the following order:- $c000 to $cfff,
+   $5000 to $57ff and finally $d800 to $ffff.
+4. Atari XEGS built-in game (8192 bytes between $a000 and $bfff)
+   Note: the built-in game must be enabled by setting bit 1 of PORTB to 1 and
+   bit 6 to 0.
+5. Atari 5200 BIOS (2048 bytes between $f800 and $ffff)
 
 The first time you run the emulator you will be prompted for the
 location of the ROMs and various other defaults. If you want to

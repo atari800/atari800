@@ -11,8 +11,9 @@ Package: atari800
 Architecture: any
 Depends: ${shlibs:Depends}
 Description: Atari800 emulator for SDL
- This is an Atari800 emulator.
- It can emulate the Atari 800, 800XL, 130XE, and 5200 systems.
+ This is an emulator for Atari 8-bit computer systems including the 400, 800,
+ 1200XL, 600XL, 800XL, 65XE, 130XE, 800XE and the XE Game System, and also for
+ the Atari 5200 SuperSystem console.
  .
  The Atari Operating System ROMs are not available with this package, due to
  copyright. You'll have to either make copies of them from an old Atari

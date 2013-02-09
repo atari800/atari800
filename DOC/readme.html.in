@@ -28,8 +28,8 @@ Atari800 emulator version $A800VERSION
 This is the version $A800VERSION of Atari800 for MS Windows.
 Atari800 is a free (you don't pay for it, you can get source code and you are
 welcome to develop it) and portable (can run on many weird machines
-and different operating systems) emulator of Atari 800XL, 130XE and 5200
-computers, developed by <A HREF="DOC/CREDITS">many people</A> under the <A HREF="COPYING">GPL</A>. More information you find
+and different operating systems) emulator of Atari 8-bit computer systems and
+the 5200 console, developed by <A HREF="DOC/CREDITS">many people</A> under the <A HREF="COPYING">GPL</A>. More information you find
 in the <A HREF="DOC/README">README</A> file.
 
 <a name="install">

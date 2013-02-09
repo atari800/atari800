@@ -181,9 +181,10 @@ BuildRequires:		readline-devel
 
 
 %description
-Atari800 is an emulator for the 800, 800XL, 130XE and 5200 models of
-the Atari personal computer. It can be used on console, FrameBuffer or X11.
-It features excellent compatibility, HIFI sound support, artifacting
+Atari800 is an emulator for Atari 8-bit computer systems including the 400,
+800, 1200XL, 600XL, 800XL, 65XE, 130XE, 800XE and the XE Game System, and also
+for the Atari 5200 SuperSystem console. It can be used on console, FrameBuffer
+or X11. It features excellent compatibility, HIFI sound support, artifacting
 emulation, precise cycle-exact ANTIC/GTIA emulation and more.
 
 Authors:

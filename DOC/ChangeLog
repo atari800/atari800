@@ -3,6 +3,10 @@
   in the docs, to avoid confusion with the Atari BASIC and with the "basic"
   target - there's no such target anymore.
 
+* debian/control, DOC/INSTALL, DOC/INSTALL.dos, DOC/INSTALL.falcon,
+  DOC/README, DOC/readme.html.in, src/atari800.man, atari800.spec, README.1ST:
+  Update docs to inlcude the 1200XL and the XEGS as emulated systems.
+
 
 2013-01-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * src/autogen.sh, src/configure.ac, src/configure_dos.bat:

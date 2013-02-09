@@ -1,10 +1,10 @@
 Atari800 emulator version 2.2.1
 -------------------------------
 
-This is free and portable Atari800/XL/XE/5200 emulator, originally written
-by David Firth and now developed by the Atari800 Development Team (please
-see DOC/CREDITS). This program is copyrighted and released under the GPL
-(see COPYING).
+This is free and portable Atari 8-bit computer and 5200 console emulator,
+originally written by David Firth and now developed by the Atari800
+Development Team (please see DOC/CREDITS). This program is copyrighted and
+released under the GPL (see COPYING).
 
 Please read DOC/README, DOC/INSTALL and DOC/USAGE.
 

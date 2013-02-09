@@ -10,7 +10,7 @@
     the Free Software Foundation; either version 2, or (at your option)
     any later version.
 
-This is the Atari 400/800, 800XL/XE, 65XE/130XE and 5200 emulator
+This is the emulator of Atari 8-bit computer systems and the 5200 console
 for Unix, Linux, Amiga, MS-DOS, Atari TT/Falcon, MS Windows, MS WinCE,
 Sega Dreamcast, Android and systems running the SDL library.
 Our main objective is to create a freely distributable portable emulator
@@ -70,7 +70,8 @@ Features
 
 Note: Not all features are supported on all platforms.
 
-o Atari 400, 800, 600 XL, 800XL, 130XE, 5200 Games System.
+o Emulated machines: Atari 400, 800, 1200XL, 600XL, 800XL, 65XE, 130XE, 800XE,
+  XE Game System, 5200 SuperSystem.
 
 o 130XE compatible memory expansions: 320K, 576K, 1088K.
 
