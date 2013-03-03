@@ -33,7 +33,7 @@ if [ $? -ne 0 ]; then
 	echo "ERROR: increase version in DOC/README"
 	exit 1
 fi
-grep "[Vv]ersion "$VERSION atari800/src/atari800.man >/dev/null
+grep "Atari800 "$VERSION atari800/src/atari800.man >/dev/null
 if [ $? -ne 0 ]; then
 	echo "ERROR: increase version in src/atari800.man"
 	exit 1
