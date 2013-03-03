@@ -21,10 +21,13 @@ endif
 
 # Build the binary components and assemble the libraries
 # =====================================================================
-build: 
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
+build-stamp:
 	$(checkdir)
 	debian/rules bld-sdl
-	touch build
+	touch build-stamp
 
 bld-sdl:
 	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
@@ -36,7 +39,7 @@ bld-sdl:
 #======================================================================
 clean:
 	$(checkdir)
-	-rm -f build
+	-rm -f build-stamp
 	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi; \
 	 rm -f config.log config.status config.h Makefile
 	mv ./atari800.spec ./tmp ; rm -f atari800 ; rm -f atari800.* ; mv ./tmp ./atari800.spec
@@ -132,7 +135,7 @@ binary-arch:		checkroot build
 
 # and build the package
 #
-	dpkg --build debian/tmp ..	
+	dpkg --build debian/tmp ..
 
 define checkdir
 	test -f ./atari800.spec
