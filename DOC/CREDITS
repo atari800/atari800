@@ -5,7 +5,7 @@ Current active members of the Atari800 development team:
     Perry McFarlane     (core developer)
     Piotr Fusik         (core developer)
     Mark Grebe          (Mac OSX)
-    Kostas Nakos        (Windows CE)
+    Kostas Nakos        (Windows CE, Android)
     James Wilkinson     (DOS, BeOS, Win32)
     Christian Groessler (Sega Dreamcast)
 
@@ -299,6 +299,7 @@ Nathan Monson <nathan@polaristel.net>
 Kostas Nakos <knakos@gmail.com>
     - update of the WinCE port
     - porting to Smartphone devices
+    - the whole Android port ("Colleen")
 
 Krzysztof Nikiel <krzych00@priv.onet.pl>
     - SaveINT() fix in state save code

@@ -1,3 +1,12 @@
+** 3.0.0 released on 2013-03-03
+
+2013-03-03  Petr Stehlik <pstehlik@sophics.cz>
+* DOC/ChangeLog, DOC/NEWS: updated for new release
+* README.1ST, atari800.spec, DOC/README, atari.h, atari800.man, configure.ac,
+  util/export: version++
+* emuos.c, emuos.lis: extended copyleft
+
+
 2013-02-09  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/INSTALL, DOC/PORTING, DOC/README: Rename the "basic" version to "simple"
   in the docs, to avoid confusion with the Atari BASIC and with the "basic"
@@ -77,7 +86,7 @@
              Fine tuning of the B: device handling,
              Fix audio stuttering on jelly bean,
              Fix keymap preference crash on jelly bean,
-			 Fix keyboard mapping dialog on jelly bean
+             Fix keyboard mapping dialog on jelly bean
 
 
 2012-07-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

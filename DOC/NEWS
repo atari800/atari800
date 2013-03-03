@@ -1,4 +1,4 @@
-Version ? (????/??/??)
+Version 3.0.0 (2013/03/03)
 
  New features:
  -------------
@@ -59,8 +59,25 @@ Version ? (????/??/??)
   * Display settings: "Hue" renamed to "Tint". Tint now configurable also in
     PAL mode.
 
- Fixes:
- ------
+  New Android port features:
+  --------------------------
+  * Renamed Atari800 Android port to "Colleen"
+  * Implemented extended key remapping
+  * Implemented the B: device (8-bit games can reach the web now)
+  * Support for Xperia play keycodes added
+  * Remapped dpad enter to break
+  * Added paddle emulation
+  * Optimized file selector, allow roaming outside of ext. storage dir
+  * Added an exclusion border for paddle mode
+  * Implemented state saving
+  * Implemented Planetary Defense mode, a Koala Pad click-where-I-point mode
+  * Natively supported UI on post-Honeycomb devices
+  * Fixes for Jelly Bean (audio stuttering, keypad dialogs, soft keyboard)
+  * Added new dialog for cartridge type selection
+  * UI fine tuning
+
+ General Fixes:
+ --------------
   * Bugfixes in cassette emulation - works reliably even for tape images with
     long (> 4096 B) blocks.
   * Fixes in save states - loading of save states works correctly even with an
