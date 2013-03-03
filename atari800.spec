@@ -1,6 +1,6 @@
 # generic defines used by all distributions.
 #
-%define ver			2.2.1
+%define ver			3.0.0
 # When adding a target, add an $options_<target_name> variable to the %build
 # section, and add %{_bindir}/%{name}-<target_name> to the files list in the
 # %files section.

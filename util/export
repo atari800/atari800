@@ -1,9 +1,9 @@
 #!/bin/sh
 # This scripts helps with building the source .tar.gz file
 
-VER_MAJOR=2
-VER_MINOR=2
-VER_MICRO=1
+VER_MAJOR=3
+VER_MINOR=0
+VER_MICRO=0
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO
 TAG="ATARI800_"$VER_MAJOR"_"$VER_MINOR"_"$VER_MICRO
