@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | javanvm | javanvm-basic | ps2 | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    default | falcon | javanvm | javanvm-basic | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -51,6 +51,7 @@ case "$target" in
         echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
         echo "    javanvm-basic    (Java NestedVM text-mode: set --host=mips-unknown-elf)"
         echo "    ps2              (Sony PlayStation 2)"
+        echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
         echo "    x11              (Standard X11)"
         echo "    (x11-)motif      (Motif on X11)"
@@ -135,6 +136,11 @@ if [[ "$a8_target" = "ps2" ]]; then
     LDFLAGS="$LDFLAGS -T${PS2SDK}/ee/startup/linkfile"
     LDFLAGS="$LDFLAGS -L${PS2SDK}/ee/lib -L${GSKITSRC}/lib -L${PS2DEV}/ee/lib/gcc-lib/ee/3.2.2"
     LDFLAGS="$LDFLAGS -L${PS2SDK}/ports/lib"
+fi
+if [[ "$a8_target" = "rpi" ]]; then
+    CC="${RPI_SDK}/bin/arm-linux-gnueabihf-gcc"
+    CFLAGS="$CFLAGS -I${RPI_SDK}/include -I${RPI_SDK}/include/SDL -I${RPI_SDK}/include/interface/vmcs_host/linux -I${RPI_SDK}/include/interface/vcos/pthreads"
+    LDFLAGS="$LDFLAGS -Wl,--unresolved-symbols=ignore-in-shared-libs -L${RPI_SDK}/lib"
 fi
 if [[ "$a8_target" = "android" ]]; then
 	CC="arm-eabi-gcc"
@@ -298,6 +304,18 @@ dnl BeOS has a real issue with redundant-decls
         A8_NEED_LIB(z)
         A8_NEED_LIB(c)
         OBJS="atari_ps2.o ps2kbd.s usbd.s audsrv.s"
+        ;;
+    rpi)
+        AC_DEFINE(RPI,1,[Target: Raspberry Pi.])
+        AC_DEFINE(GUI_SDL,1,[Use SDL for graphics and input.])
+        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
+        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
+        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
+        A8_NEED_LIB(GLESv2)
+        A8_NEED_LIB(EGL)
+        A8_NEED_LIB(SDL)
+        A8_NEED_LIB(bcm_host)
+        OBJS="atari_rpi.o gles2/video.o sdl/main.o sdl/input.o"
         ;;
 	android)
         AC_DEFINE(ANDROID,1,[Target: Android])

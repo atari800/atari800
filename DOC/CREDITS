@@ -66,6 +66,9 @@ David Dahlstrom <ddahlstrom@charter.net>
 Nir Dary <ndary@bigfoot.com>
     - detailed information about OSS, Williams, XEGS and MegaCart cartridges
 
+Andrey Dj <djdron@gmail.com>
+    - Raspberry Pi support
+
 Jason Duerstock <jason@cluephone.com>
     - R-Time 8 cartridge support (real date and time from host machine)
     - page based memory access

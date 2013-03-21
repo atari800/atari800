@@ -150,6 +150,11 @@ extern void do_hz_test(void);
 #endif /* HZ_TEST */
 #endif /* DREAMCAST */
 
+#ifdef RPI
+extern int op_filtering;
+extern float op_zoom;
+#endif /* RPI */
+
 UI_tDriver *UI_driver = &UI_BASIC_driver;
 
 int UI_is_active = FALSE;
@@ -2546,6 +2551,25 @@ static void ColourSliderLabel(char *label, int value, void *user_data)
 	Colours_Update();
 }
 
+#ifdef RPI
+static int ZoomSettingToSlider()
+{
+	/* 0.8 <= op_zoom <= 1.3 */
+	return (int) Util_round((op_zoom - 0.8f) * 50.0 / (1.3f - 0.8f));
+}
+static double SliderToZoomSetting(int value)
+{
+	/* 0 <= value <= 50 */
+	return (double) value * (1.3f - 0.8f) / 50.0 + 0.8f;
+}
+static void ZoomSliderLabel(char *label, int value, void *user_data)
+{
+	double setting = SliderToZoomSetting(value);
+	sprintf(label, "% .2f", setting);
+	op_zoom = setting;
+}
+#endif /* RPI */
+
 #if NTSC_FILTER
 /* Submenu with controls for NTSC filter. */
 static void NTSCFilterSettings(void)
@@ -2677,10 +2701,17 @@ static void DisplaySettings(void)
 #endif
 	
 	static char refresh_status[16];
+#ifdef RPI
+	static char op_zoom_string[16];
+#endif /* RPI */
 	static UI_tMenuItem menu_array[] = {
 #if SUPPORTS_CHANGE_VIDEOMODE
 		UI_MENU_SUBMENU(24, "Video mode settings"),
 #endif /* SUPPORTS_CHANGE_VIDEOMODE */
+#ifdef RPI
+		UI_MENU_CHECK(30, "Filtering:"),
+		{ UI_ITEM_ACTION, 31, NULL, "Zoom: ", op_zoom_string },
+#endif /* RPI */
 		UI_MENU_SUBMENU_SUFFIX(0, "NTSC artifacting quality:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(11, "NTSC artifacting mode:", NULL),
 #if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
@@ -2724,9 +2755,11 @@ static void DisplaySettings(void)
 
 #if SUPPORTS_CHANGE_VIDEOMODE
 	int option = 24;
-#else
+#elif RPI
+	int option = 30;
+#else /* RPI */
 	int option = 0;
-#endif
+#endif /* RPI */
 	int option2;
 	int seltype;
 
@@ -2782,6 +2815,10 @@ static void DisplaySettings(void)
 		SetItemChecked(menu_array, 25, VIDEOMODE_80_column);
 #endif
 		snprintf(refresh_status, sizeof(refresh_status), "1:%-2d", Atari800_refresh_rate);
+#ifdef RPI
+		snprintf(op_zoom_string, sizeof(op_zoom_string), "%.2f", op_zoom);
+		SetItemChecked(menu_array, 30, op_filtering);
+#endif /* RPI */
 		SetItemChecked(menu_array, 2, Atari800_collisions_in_skipped_frames);
 		SetItemChecked(menu_array, 3, Screen_show_atari_speed);
 		SetItemChecked(menu_array, 4, Screen_show_disk_led);
@@ -2857,6 +2894,21 @@ static void DisplaySettings(void)
 				UI_driver->fMessage("No 80 column hardware available now.", 1);
 			break;
 #endif /* SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80)) */
+#ifdef RPI
+		case 30:
+			op_filtering = !op_filtering;
+			break;
+		case 31:
+			{
+				int value = UI_driver->fSelectSlider("Adjust zoom",
+								     ZoomSettingToSlider(),
+								     50, &ZoomSliderLabel, NULL);
+				if (value != -1) {
+					op_zoom = SliderToZoomSetting(value);
+				}
+			}
+			break;
+#endif /* RPI */
 		case 1:
 			Atari800_refresh_rate = UI_driver->fSelectInt(Atari800_refresh_rate, 1, 99);
 			break;
