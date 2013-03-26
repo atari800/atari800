@@ -1,9 +1,9 @@
 # adapt the following variables to your environment
-SHBASE = /opt/local/dcchain/dc/sh-elf
-KOS = /local/kos-sand/kos
+SHBASE = /opt/dcgcc-4.7.0/sh-elf
+KOS = /net/swamp/zeug/dc/kos-git/kos
 
 # use assembler screen update functions
-ASSEMBLER = 1
+#ASSEMBLER = 1
 
 # include R: device emulation
 R_DEVICE = 1
@@ -12,7 +12,7 @@ R_DEVICE = 1
 #ROMDISK = 1
 
 # optimization settings
-CFLAGS=-ml -W -Wall -Wno-unused -m4-single-only -O2 -D_arch_dreamcast -fstrict-aliasing -fno-builtin -fomit-frame-pointer -funroll-loops -fexpensive-optimizations -fno-optimize-sibling-calls
+CFLAGS=-O2 -fomit-frame-pointer -ml -m4-single-only -ffunction-sections -fdata-sections -D_arch_dreamcast -D_arch_sub_pristine -W -Wall -g -fno-builtin -fno-strict-aliasing
 
 DEFS = -DDREAMCAST
 ifdef ASSEMBLER
@@ -33,12 +33,14 @@ SHOBJCOPY = $(SHBASE)/bin/sh-elf-objcopy
 SHSTRIP   = $(SHBASE)/bin/sh-elf-strip
 
 INCLUDE=-I$(KOS)/../kos-ports/include -I$(KOS)/../kos-ports/include/zlib -I$(KOS)/include -I$(KOS)/kernel/arch/dreamcast/include -I$(KOS)/addons/include -I$(KOS)/kernel/arch/dreamcast/sound -Idc -I.
-LDFLAGS=-ml -m4-single-only -nostartfiles -nostdlib -Wl,-Ttext=0x8c010000 -L$(KOS)/lib/dreamcast -L$(KOS)/addons/lib/dreamcast -o $@ $(KOS)/kernel/arch/dreamcast/kernel/startup.o -Wl,-Map,atari800.map,--cref
+LDFLAGS=-ml -m4-single-only -ffunction-sections -fdata-sections -g -fno-builtin -fno-strict-aliasing -ml -m4-single-only -Wl,-Ttext=0x8c010000 -Wl,--gc-sections -T$(KOS)/utils/ldscripts/shlelf.xc -nodefaultlibs -L$(KOS)/lib/dreamcast -L$(KOS)/addons/lib/dreamcast
 
 LIBS=-Wl,--start-group -lkallisti -lz -lbz2 -lm -lc -lgcc -Wl,--end-group
 
 OBJ =	atari.o \
 	cpu.o \
+	esc.o \
+	cfg.o \
 	emuos.o \
 	sio.o \
 	devices.o \
@@ -51,13 +53,18 @@ OBJ =	atari.o \
 	rtime.o \
 	ui.o \
 	ui_basic.o \
+	afile.o \
 	binload.o \
 	log.o \
 	compfile.o \
 	memory.o \
+	monitor.o \
 	statesav.o \
 	sysrom.o \
 	colours.o \
+	colours_pal.o \
+	colours_ntsc.o \
+	colours_external.o \
 	mzpokeysnd.o \
 	remez.o \
 	pokeysnd.o \

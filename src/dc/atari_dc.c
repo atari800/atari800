@@ -1,6 +1,6 @@
 /*
  * SEGA Dreamcast support using KallistiOS (http://cadcdev.sourceforge.net)
- * (c) 2002-2006,2008 Christian Groessler (chris@groessler.org)
+ * (c) 2002-2013 Christian Groessler (chris@groessler.org)
  */
 
 #include <stdarg.h>
@@ -13,10 +13,15 @@
 #include "config.h"
 #include "sio.h"
 #include "binload.h"
+#include "afile.h"
 #include "input.h"
 #include "akey.h"
 #include "colours.h"
+#include "colours_ntsc.h"
+#include "colours_pal.h"
+#include "colours_external.h"
 #include "ui.h"
+#include "ui_basic.h"
 #include "time.h"
 #include "screen.h"
 #include <dc/g2bus.h>
@@ -27,8 +32,6 @@
 #define _TYPEDEF_H   /* to prevent pokeysnd.h to create uint32 type #defines */
 #include "pokeysnd.h"
 #include "version.h"
-
-#define AKEY_KEYB -120
 
 #define REPEAT_DELAY 5000
 #define REPEAT_INI_DELAY (5 * REPEAT_DELAY)
@@ -49,14 +52,20 @@ static void dc_snd_stream_stop(void);
 
 static unsigned char *atari_screen_backup;
 static unsigned char *atari_screen_backup2;
-static uint8 mcont[4];
-static cont_cond_t mcond[4];
+static maple_device_t *mcont_dev[MAPLE_PORT_COUNT * MAPLE_UNIT_COUNT];
+static cont_state_t *mcont_state[MAPLE_PORT_COUNT * MAPLE_UNIT_COUNT];
+static maple_device_t *mkeyb_dev;
 static int num_cont;   /* # of controllers found */
 static int su_first_call = TRUE;
 static int b_ui_leave = FALSE;
 static int in_kbui = FALSE;
 static int open_tray = FALSE;
 static int tray_closed = TRUE;
+static int reverse_x_axis = FALSE, reverse_y_axis = FALSE;
+static unsigned int cont_dpad_up = CONT_DPAD_UP;
+static unsigned int cont_dpad_down = CONT_DPAD_DOWN;
+static unsigned int cont_dpad_left = CONT_DPAD_LEFT;
+static unsigned int cont_dpad_right = CONT_DPAD_RIGHT;
 #ifdef ASSEMBLER_SCREENUPDATE
 int vid_mode_width;
 #endif
@@ -64,16 +73,24 @@ int vid_mode_width;
 static
 #endif
        uint16 *screen_vram;
+static char x_str[16], y_str[16];  /* used by ScreenPositionConfiguration */
+int x_adj, y_adj;  /* screen position adjustment */
 int emulate_paddles = FALSE;
 int glob_snd_ena = TRUE;
 int db_mode = FALSE;
 int screen_tv_mode;    /* mode of connected tv set */
 
 int x_ovr = FALSE, y_ovr = FALSE, b_ovr = FALSE;
+int disable_js = FALSE, disable_dpad = FALSE;
 int ovr_inject_key = AKEY_NONE;
 int x_key = AKEY_NONE;
 int y_key = AKEY_NONE;
 int b_key = AKEY_NONE;
+
+extern char curr_disk_dir[];
+extern char curr_cart_dir[];
+extern char curr_exe_dir[];
+extern char curr_tape_dir[];
 
 static vid_mode_t mymode_pal = {
 	DM_320x240,
@@ -82,7 +99,7 @@ static vid_mode_t mymode_pal = {
 	CT_ANY,
 	PM_RGB565,
 	313, 857,
-	0xA4, 0x35, /*0x2d,*/
+	0xAE, 0x2D,
 	0x15, 312,
 	141, 843,
 	24, 313*2,
@@ -96,7 +113,7 @@ static vid_mode_t mymode_ntsc = {
 	CT_ANY,				      /* cable type */
 	PM_RGB565,			      /* pixel mode */
 	262, 857,			      /* scanlines/frame, clocks/scanline */
-	0xA4, 0x18,			      /* bitmap window position x, y */
+	0xAE, 0x10,			      /* bitmap window position x, y */
 	0x15, 261,			      /* scanline interrupt positions */
 	141, 843,			      /* border x start + stop */
 	24, 263*2,			      /* border y start + stop */
@@ -110,15 +127,17 @@ void update_vidmode(void)
 
 	/* we need to copy it since vid_set_mode_ex() modifies it */
 	switch(screen_tv_mode) {
-	case TV_NTSC:
+	case Atari800_TV_NTSC:
 		memcpy(&mymode, &mymode_ntsc, sizeof(vid_mode_t));
 		break;
-	case TV_PAL:
+	case Atari800_TV_PAL:
 	default:
 		memcpy(&mymode, &mymode_pal, sizeof(vid_mode_t));
 		break;
 	}
 	mymode.cable_type = vid_check_cable();
+	mymode.bitmapx += x_adj;
+	mymode.bitmapy += y_adj;
 	vid_set_mode_ex(&mymode);
 
 	screen_vram = (uint16*)0xA5000000;
@@ -128,14 +147,14 @@ void update_vidmode(void)
 	screen_vram += (vid_mode->width - 320) / 2 - (Screen_WIDTH - 320) / 2 ;
 
 #ifdef ASSEMBLER_SCREENUPDATE
-        vid_mode_width = vid_mode->width; /* for the assembler routines... */
+	vid_mode_width = vid_mode->width;   /* for the assembler routines... */
 #endif
 }
 
 #ifndef ASSEMBLER_SCREENUPDATE
 static
 #endif
-        uint16 mypal[256];
+	uint16 mypal[256];
 
 static void calc_palette(void)
 {
@@ -181,13 +200,13 @@ static void PLATFORM_DisplayScreen_doubleb(UBYTE *screen)
 #endif
 	if (sbase) {
 		sbase = 0;
-                vram = screen_vram;
+		vram = screen_vram;
 		osd = old_sd[0];
 		nsd = old_sd[1];
 	}
 	else {
 		sbase = 1024 * 768 * 4;
-                vram = screen_vram + sbase / 2;  /* "/ 2" since screen_vram is (uint16 *) */
+		vram = screen_vram + sbase / 2;	 /* "/ 2" since screen_vram is (uint16 *) */
 		osd = old_sd[1];
 		nsd = old_sd[0];
 	}
@@ -262,7 +281,7 @@ static void (*screen_updater)(UBYTE *screen);
 
 void PLATFORM_DisplayScreen(void)
 {
-	screen_updater((UBYTE *)atari_screen);
+	screen_updater((UBYTE *)Screen_atari);
 }
 
 void update_screen_updater(void)
@@ -302,17 +321,22 @@ int PLATFORM_Exit(int run_monitor)
 }
 
 /*
- * update num_cont and mcont[]
+ * update num_cont, mkeyb_dev, and mcont_dev[]
  */
 static void dc_controller_init(void)
 {
 	int p, u;
+	maple_device_t *dev;
 
+	mkeyb_dev = NULL;
 	num_cont = 0;
 	for (p = 0; p < MAPLE_PORT_COUNT; p++) {
 		for (u = 0; u < MAPLE_UNIT_COUNT; u++) {
-			if (maple_device_func(p, u) & MAPLE_FUNC_CONTROLLER) {
-				mcont[num_cont++] = maple_addr(p, u);
+			if ((dev = maple_enum_type(p * MAPLE_PORT_COUNT + u, MAPLE_FUNC_CONTROLLER))) {
+				mcont_dev[num_cont++] = dev;
+			}
+			else if (!mkeyb_dev && (dev = maple_enum_type(p * MAPLE_PORT_COUNT + u, MAPLE_FUNC_KEYBOARD))) {
+				mkeyb_dev = dev;
 			}
 		}
 	}
@@ -328,7 +352,7 @@ static void controller_update(void)
 
 	dc_controller_init();  /* update dis-/reconnections */
 	for (i = 0; i < num_cont; i++) {
-		if (cont_get_cond(mcont[i], &mcond[i])) {
+		if (! (mcont_state[i] = (cont_state_t *)maple_dev_status(mcont_dev[i]))) {
 #ifdef DEBUG
 			printf("controller_update: error getting controller status\n");
 #endif
@@ -338,13 +362,13 @@ static void controller_update(void)
 
 static int consol_keys(void)
 {
-	cont_cond_t *cond = &mcond[0];
+	cont_state_t *state = mcont_state[0];
 
-	if (! (cond->buttons & CONT_START)) {
+	if (state->buttons & CONT_START) {
 		if (UI_is_active)
 			arch_reboot();
 		else {
-			if (! (cond->buttons & CONT_X))
+			if (state->buttons & CONT_X)
 				return(AKEY_COLDSTART);
 			else
 				return(AKEY_WARMSTART);
@@ -355,11 +379,11 @@ static int consol_keys(void)
 		if (b_ovr && !UI_is_active && !b_ui_leave) {
 			/* !UI_is_active and !b_ui_leave because B is also the esc key
 			   (with rtrig) to leave the ui */
-			if (b_key != AKEY_NONE && !(cond->buttons & CONT_B))
+			if (b_key != AKEY_NONE && (state->buttons & CONT_B))
 				ovr_inject_key = b_key;
 		}
 		else {
-			if (! (cond->buttons & CONT_B)) {
+			if (state->buttons & CONT_B) {
 				if (! b_ui_leave) {
 					INPUT_key_consol &= ~INPUT_CONSOL_START;
 				}
@@ -374,11 +398,11 @@ static int consol_keys(void)
 		}
 
 		if (y_ovr) {
-			if (y_key != AKEY_NONE && !(cond->buttons & CONT_Y))
+			if (y_key != AKEY_NONE && (state->buttons & CONT_Y))
 				ovr_inject_key = y_key;
 		}
 		else {
-			if (! (cond->buttons & CONT_Y)) {
+			if (state->buttons & CONT_Y) {
 				INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
 			}
 			else {
@@ -387,11 +411,11 @@ static int consol_keys(void)
 		}
 
 		if (x_ovr) {
-			if (x_key != AKEY_NONE && !(cond->buttons & CONT_X))
+			if (x_key != AKEY_NONE && (state->buttons & CONT_X))
 				ovr_inject_key = x_key;
 		}
 		else {
-			if (! (cond->buttons & CONT_X)) {
+			if (state->buttons & CONT_X) {
 				INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
 			}
 			else {
@@ -402,14 +426,14 @@ static int consol_keys(void)
 	else {
 		/* @@@ *_ovr TODO @@@ */
 
-		if (! (cond->buttons & CONT_X)) {  /* 2nd action button */
+		if (state->buttons & CONT_X) {	/* 2nd action button */
 			INPUT_key_shift = 1;
 		}
 		else {
 			INPUT_key_shift = 0;
 		}
 		if (! UI_is_active) {
-			if (! (cond->buttons & CONT_B)) {  /* testtest */
+			if (state->buttons & CONT_B) {	/* testtest */
 				if (! b_ui_leave) {
 					return(AKEY_4);	  /* ??? at least on the dc kb "4" starts some games?? */
 				}
@@ -417,7 +441,7 @@ static int consol_keys(void)
 			else {
 				b_ui_leave = FALSE;
 			}
-			if (! (cond->buttons & CONT_Y)) {  /* testtest */
+			if (state->buttons & CONT_Y) {	/* testtest */
 				return(AKEY_5200_START);
 			}
 		}
@@ -431,13 +455,24 @@ int get_emkey(UBYTE *title)
 
 	controller_update();
 	in_kbui = TRUE;
-	memcpy(atari_screen_backup, atari_screen, Screen_HEIGHT * Screen_WIDTH);
+	memcpy(atari_screen_backup, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
 	keycode = UI_BASIC_OnScreenKeyboard(title, -1);
-	memcpy(atari_screen, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
+	memcpy(Screen_atari, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
 	Screen_EntireDirty();
 	PLATFORM_DisplayScreen();
 	in_kbui = FALSE;
 	return keycode;
+
+#if 0 /* @@@ 26-Mar-2013, chris: check this */
+	if (inject_key != AKEY_NONE) {
+		keycode = inject_key;
+		inject_key = AKEY_NONE;
+		return(keycode);
+	}
+	else {
+		return(AKEY_NONE);
+	}
+#endif
 }
 
 /*
@@ -451,38 +486,48 @@ static int controller_kb(void)
 		prev_r = FALSE, prev_left = FALSE, prev_right = FALSE,
 		prev_b = FALSE, prev_l = FALSE;
 	static int repdelay = REPEAT_DELAY;
-	cont_cond_t *cond = &mcond[0];
+	cont_state_t *state = mcont_state[0];
 
 	if (! num_cont) return(AKEY_NONE);  /* no controller present */
 
 	repdelay--;
 	if (repdelay < 0) repdelay = REPEAT_DELAY;
 
-	if (!UI_is_active && (cond->ltrig > 250 || !(cond->buttons & CONT_Z))) {
+	if (!UI_is_active && (state->ltrig > 250 || (state->buttons & CONT_Z))) {
 		return(AKEY_UI);
 	}
-#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-	if (!UI_is_active && (cond->rtrig > 250 || !(cond->buttons & CONT_C))) {
+#ifdef KB_UI
+	if (!UI_is_active && (state->rtrig > 250 || (state->buttons & CONT_C))) {
 		controller_update();
 		return(AKEY_KEYB);
 	}
 	/* provide keyboard emulation to enter file name */
-	if (UI_is_active && !in_kbui && (cond->rtrig > 250 || !(cond->buttons & CONT_C))) {
-		int keycode;
+	if (UI_is_active && !in_kbui && (state->rtrig > 250 || (state->buttons & CONT_C))) {
 		controller_update();
 		in_kbui = TRUE;
-		memcpy(atari_screen_backup, atari_screen, Screen_HEIGHT * Screen_WIDTH);
+		memcpy(atari_screen_backup, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
 		keycode = UI_BASIC_OnScreenKeyboard(NULL, -1);
-		memcpy(atari_screen, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
+		memcpy(Screen_atari, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
 		Screen_EntireDirty();
 		PLATFORM_DisplayScreen();
 		in_kbui = FALSE;
 		return keycode;
+#if 0 /* @@@ 26-Mar-2013, chris: check this */
+		if (inject_key != AKEY_NONE) {
+			int keycode;
+			keycode = inject_key;
+			inject_key = AKEY_NONE;
+			return(keycode);
+		}
+		else {
+			return(AKEY_NONE);
+		}
+#endif
 	}
 #endif
 
 	if (UI_is_active) {
-		if (! (cond->buttons & CONT_DPAD_UP)) {
+		if ((state->buttons & cont_dpad_up)) {
 			prev_down = FALSE;
 			if (! prev_up) {
 				repdelay = REPEAT_INI_DELAY;
@@ -499,7 +544,7 @@ static int controller_kb(void)
 			prev_up = FALSE;
 		}
 
-		if (! (cond->buttons & CONT_DPAD_DOWN)) {
+		if ((state->buttons & cont_dpad_down)) {
 			prev_up = FALSE;
 			if (! prev_down) {
 				repdelay = REPEAT_INI_DELAY;
@@ -516,7 +561,7 @@ static int controller_kb(void)
 			prev_down = FALSE;
 		}
 
-		if (! (cond->buttons & CONT_DPAD_LEFT)) {
+		if ((state->buttons & cont_dpad_left)) {
 			prev_right = FALSE;
 			if (! prev_left) {
 				repdelay = REPEAT_INI_DELAY;
@@ -533,7 +578,7 @@ static int controller_kb(void)
 			prev_left = FALSE;
 		}
 
-		if (! (cond->buttons & CONT_DPAD_RIGHT)) {
+		if ((state->buttons & cont_dpad_right)) {
 			prev_left = FALSE;
 			if (! prev_right) {
 				repdelay = REPEAT_INI_DELAY;
@@ -550,7 +595,7 @@ static int controller_kb(void)
 			prev_right = FALSE;
 		}
 
-		if (! (cond->buttons & CONT_A)) {
+		if ((state->buttons & CONT_A)) {
 			if (! prev_a) {
 				prev_a = TRUE;
 				return(AKEY_RETURN);
@@ -560,7 +605,7 @@ static int controller_kb(void)
 			prev_a = FALSE;
 		}
 
-		if (! (cond->buttons & CONT_B)) {
+		if ((state->buttons & CONT_B)) {
 			if (! prev_b) {
 				prev_b = TRUE;
 				b_ui_leave = TRUE;   /* B must be released again */
@@ -571,7 +616,7 @@ static int controller_kb(void)
 			prev_b = FALSE;
 		}
 
-		if (cond->ltrig > 250 || !(cond->buttons & CONT_Z)) {
+		if (state->ltrig > 250 || (state->buttons & CONT_Z)) {
 			if (! prev_l && in_kbui) {
 				prev_l = TRUE;
 				return(AKEY_ESCAPE);
@@ -581,7 +626,7 @@ static int controller_kb(void)
 			prev_l = FALSE;
 		}
 
-		if (cond->rtrig > 250 || !(cond->buttons & CONT_C)) {
+		if (state->rtrig > 250 || (state->buttons & CONT_C)) {
 			if (! prev_r) {
 				prev_r = TRUE;
 				return(AKEY_ESCAPE);
@@ -629,6 +674,27 @@ int PLATFORM_Keyboard(void)
 
 	if (num_cont && (keycode = consol_keys()) != AKEY_NONE) return(keycode);
 
+#ifdef KB_UI
+	if (inject_key != AKEY_NONE) {
+		keycode = inject_key;
+		inject_key = AKEY_NONE;
+		switch(keycode) {
+		case AKEY_OPTION:
+			INPUT_key_consol &= (~INPUT_CONSOL_OPTION);
+			keycode = AKEY_NONE;
+			break;
+		case AKEY_SELECT:
+			INPUT_key_consol &= (~INPUT_CONSOL_SELECT);
+			keycode = AKEY_NONE;
+			break;
+		case AKEY_START:
+			INPUT_key_consol &= (~INPUT_CONSOL_START);
+			keycode = AKEY_NONE;
+			break;
+		}
+		return(keycode);
+	}
+#endif
 	if (ovr_inject_key != AKEY_NONE) {
 		keycode = ovr_inject_key;
 		ovr_inject_key = AKEY_NONE;
@@ -638,7 +704,10 @@ int PLATFORM_Keyboard(void)
 	keycode = controller_kb();
 	if (keycode != AKEY_NONE) return(keycode);
 
-	keycode = kbd_get_key();
+	if (mkeyb_dev)
+		keycode = kbd_queue_pop(mkeyb_dev, 1);
+	else
+		keycode = -1;
 	if (keycode == -1) return(AKEY_NONE);
 
 #ifdef DEBUG
@@ -662,7 +731,7 @@ int PLATFORM_Keyboard(void)
 	case 0x1b:  /* ESC */
 		keycode = AKEY_ESCAPE;
 		break;
-	case 9:  /* TAB */
+	case 9:	 /* TAB */
 		keycode = AKEY_TAB;
 		break;
 	case '`':
@@ -1011,85 +1080,131 @@ int PLATFORM_Keyboard(void)
 
 int PLATFORM_PORT(int num)
 {
-	cont_cond_t *cond;
+	cont_state_t *state;
 	int retval = 0xff;
 	int cix = 0;
 
-	if (num)
+	if (num) {
+		if (Atari800_machine_type != Atari800_MACHINE_800) return(retval);
 		cix = 2;   /* js #2 and #3 */
+	}
 
 	if (num_cont < 1 + cix) return(retval);	 /* no controller present */
 
-	cond = &mcond[cix];
+	state = mcont_state[cix];
 	if (! emulate_paddles) {
-		if (! (cond->buttons & CONT_DPAD_UP)) {
-			retval &= 0xfe;
-		}
-		if (! (cond->buttons & CONT_DPAD_DOWN)) {
-			retval &= 0xfd;
-		}
-		if (! (cond->buttons & CONT_DPAD_LEFT)) {
-			retval &= 0xfb;
-		}
-		if (! (cond->buttons & CONT_DPAD_RIGHT)) {
-			retval &= 0xf7;
-		}
-		/* if joypad not used, try the joystick instead */
-		if (retval == 0xff) {
-			if (cond->joyx > 127 + 64) {  /* right */
-				retval &= 0xf7;
+		if (! disable_dpad) {
+			if (state->buttons & cont_dpad_up) {
+				retval &= 0xfe;
 			}
-			if (cond->joyx < 127 - 64) {  /* left */
-				retval &= 0xfb;
-			}
-			if (cond->joyy > 127 + 64) {  /* down */
+			if (state->buttons & cont_dpad_down) {
 				retval &= 0xfd;
 			}
-			if (cond->joyy < 127 - 64) {  /* up */
-				retval &= 0xfe;
+			if (state->buttons & cont_dpad_left) {
+				retval &= 0xfb;
+			}
+			if (state->buttons & cont_dpad_right) {
+				retval &= 0xf7;
+			}
+		}
+		/* if joypad not used, try the joystick instead */
+		if (retval == 0xff && !disable_js) {
+			if (reverse_x_axis) {
+				if (state->joyx < -10) {  // @@@ new kos new values
+					retval &= 0xf7;
+				}
+				if (state->joyx > 10) {  // @@@ ditto, and following lines
+					retval &= 0xfb;
+				}
+			}
+			else {
+				if (state->joyx > 10) {  /* right */
+					retval &= 0xf7;
+				}
+				if (state->joyx < -10) {  /* left */
+					retval &= 0xfb;
+				}
+			}
+			if (reverse_y_axis) {
+				if (state->joyy < -10) {
+					retval &= 0xfd;
+				}
+				if (state->joyy > 10) {
+					retval &= 0xfe;
+				}
+			}
+			else {
+				if (state->joyy > -10) {  /* down */
+					retval &= 0xfd;
+				}
+				if (state->joyy < 10) {  /* up */
+					retval &= 0xfe;
+				}
 			}
 		}
 		if (num_cont > 1 + cix) {
-			cond = &mcond[cix+1];
-			if (! (cond->buttons & CONT_DPAD_UP)) {
-				retval &= 0xef;
-			}
-			if (! (cond->buttons & CONT_DPAD_DOWN)) {
-				retval &= 0xdf;
-			}
-			if (! (cond->buttons & CONT_DPAD_LEFT)) {
-				retval &= 0xbf;
-			}
-			if (! (cond->buttons & CONT_DPAD_RIGHT)) {
-				retval &= 0x7f;
-			}
-			/* if joypad not used, try the joystick instead */
-			if ((retval & 0xf0) == 0xf0) {
-				if (cond->joyx > 127 + 64) {  /* right */
-					retval &= 0x7f;
+			state = mcont_state[cix+1];
+			if (! disable_dpad) {
+				if (state->buttons & cont_dpad_up) {
+					retval &= 0xef;
 				}
-				if (cond->joyx < 127 - 64) {  /* left */
-					retval &= 0xbf;
-				}
-				if (cond->joyy > 127 + 64) {  /* down */
+				if (state->buttons & cont_dpad_down) {
 					retval &= 0xdf;
 				}
-				if (cond->joyy < 127 - 64) {  /* up */
-					retval &= 0xef;
+				if (state->buttons & cont_dpad_left) {
+					retval &= 0xbf;
+				}
+				if (state->buttons & cont_dpad_right) {
+					retval &= 0x7f;
+				}
+			}
+			/* if joypad not used, try the joystick instead */
+			if ((retval & 0xf0) == 0xf0 && !disable_js) {
+				if (reverse_x_axis) {
+					if (state->joyx < -10) {
+						retval &= 0x7f;
+					}
+					if (state->joyx > 10) {
+						retval &= 0xbf;
+					}
+				}
+				else {
+					if (state->joyx > 10) {  /* right */
+						retval &= 0x7f;
+					}
+					if (state->joyx < -10) {  /* left */
+						retval &= 0xbf;
+					}
+				}
+				if (reverse_y_axis) {
+					if (state->joyy < -10) {
+						retval &= 0xdf;
+					}
+					if (state->joyy > 10) {
+						retval &= 0xef;
+					}
+				}
+				else {
+					if (state->joyy > 10) {  /* down */
+						retval &= 0xdf;
+					}
+					if (state->joyy < -10) {  /* up */
+						retval &= 0xef;
+					}
 				}
 			}
 		}
 	}
 	else {	/* emulate paddles */
 		/* 1st paddle trigger */
-		if (! (cond->buttons & CONT_A)) {
+		if (state->buttons & CONT_A) {
 			retval &= (cix > 1) ? 0xbf : 0xfb;
 		}
 		if (num_cont > 1 + cix) {
-			cond = &mcond[cix+1];
+			state = mcont_state[cix+1];
 
 			/* 2nd paddle trigger */
-			if (! (cond->buttons & CONT_A)) {
+			if (state->buttons & CONT_A) {
 				retval &= (cix > 1) ? 0x7f : 0xf7;
 			}
 		}
@@ -1101,14 +1216,16 @@ int PLATFORM_PORT(int num)
 int Atari_POT(int num)
 {
 	int val;
-	cont_cond_t *cond;
+	cont_state_t *state;
 
 	if (Atari800_machine_type != Atari800_MACHINE_5200) {
-		if (emulate_paddles) {
+		if (emulate_paddles && !disable_js) {
 			if (num + 1 > num_cont) return(228);
+			if (Atari800_machine_type != Atari800_MACHINE_800 && num > 3) return(228);
 
-			cond = &mcond[num];
-			val = cond->joyx;
+			state = mcont_state[num];
+			val = state->joyx;
+			if (reverse_x_axis) val = 255 - val;
 			val = val * 228 / 255;
 			if (val > 227) return(1);
 			return(228 - val);
@@ -1124,16 +1241,27 @@ int Atari_POT(int num)
 		 * num & 1 == 1: y axis
 		 */
 
-		if (num / 2 + 1 > num_cont) return(INPUT_joy_5200_center);
+		if (num / 2 + 1 > num_cont || disable_js) return(INPUT_joy_5200_center);
 
-		cond = &mcond[num / 2];
-		val = (num & 1) ? cond->joyy : cond->joyx;
+		state = mcont_state[num / 2];
+		if (num & 1) {
+			if (reverse_y_axis)
+				val = -state->joyy;
+			else
+				val = state->joyy;
+		}
+		else {
+			if (reverse_x_axis)
+				val = -state->joyx;
+			else
+				val = state->joyx;
+		}
 
 		/* normalize into 5200 range */
-		if (val == 127) return(INPUT_joy_5200_center);
-		if (val < 127) {
-			/*val -= INPUT_joy_5200_min;*/
-			val = val * (INPUT_joy_5200_center - INPUT_joy_5200_min) / 127;
+		if (! val) return(INPUT_joy_5200_center);
+		if (val < 0) {
+			/*val -= joy_5200_min;*/
+			val = val * (INPUT_joy_5200_center - INPUT_joy_5200_min) / 127; // @@@ new kos values
 			return(val + INPUT_joy_5200_min);
 		}
 		else {
@@ -1147,21 +1275,46 @@ int Atari_POT(int num)
 
 int PLATFORM_TRIG(int num)
 {
-	cont_cond_t *cond;
+	cont_state_t *state;
 
 	if (num + 1 > num_cont) return(1);  /* no controller present */
+	if (Atari800_machine_type != Atari800_MACHINE_800 && num > 1) return(1);
 
-	cond = &mcond[num];
-	if (! (cond->buttons & CONT_A)) {
+	state = mcont_state[num];
+	if (state->buttons & CONT_A) {
 		return(0);
 	}
 
 	return(1);
 }
 
+void do_reverse_x_axis(void)
+{
+	if (reverse_x_axis) {
+		cont_dpad_left = CONT_DPAD_RIGHT;
+		cont_dpad_right = CONT_DPAD_LEFT;
+	}
+	else {
+		cont_dpad_left = CONT_DPAD_LEFT;
+		cont_dpad_right = CONT_DPAD_RIGHT;
+	}
+}
+
+void do_reverse_y_axis(void)
+{
+	if (reverse_y_axis) {
+		cont_dpad_up = CONT_DPAD_DOWN;
+		cont_dpad_down = CONT_DPAD_UP;
+	}
+	else {
+		cont_dpad_up = CONT_DPAD_UP;
+		cont_dpad_down = CONT_DPAD_DOWN;
+	}
+}
+
 #if 0
 /*
- * fill up unused (no entry in atari800.cfg) UI_saved_files_dir
+ * fill up unused (no entry in atari800.cfg) saved_files_dir
  * entries with the available VMUs
  */
 static void setup_saved_files_dirs(void)
@@ -1172,10 +1325,10 @@ static void setup_saved_files_dirs(void)
 	for (p=0; p<MAPLE_PORT_COUNT; p++) {
 		for (u=0; u<MAPLE_UNIT_COUNT; u++) {
 			if (maple_device_func(p, u) & MAPLE_FUNC_MEMCARD) {
-				if (UI_n_saved_files_dir < MAX_DIRECTORIES) {
-					sprintf(UI_saved_files_dir[UI_n_saved_files_dir], "/vmu/%c%c",
+				if (n_saved_files_dir < MAX_DIRECTORIES) {
+					sprintf(saved_files_dir[n_saved_files_dir], "/vmu/%c%c",
 						'a' + p, '0' + u);
-					UI_n_saved_files_dir++;
+					n_saved_files_dir++;
 				}
 				else
 					return;
@@ -1196,16 +1349,21 @@ static void cls(int xres, int yres)
 
 static void wait_a(void)
 {
-	cont_cond_t cond;
+	cont_state_t *state;
+
+	while (!mcont_dev[0])
+		dc_controller_init();
 
 	do {
-		if (cont_get_cond(mcont[0], &cond)) {
+		if (!(state = (cont_state_t *)maple_dev_status(mcont_dev[0]))) {
 			return;
 		}
 
-	} while (cond.buttons & CONT_A);
+	} while (state && !(state->buttons & CONT_A));
 }
+#endif
 
+#ifdef HZ_TEST
 void do_hz_test(void)
 {
 	uint32 s, ms, s2, ms2, z;
@@ -1235,6 +1393,10 @@ KOS_INIT_FLAGS(INIT_IRQ | INIT_THD_PREEMPT);
 #ifdef ROMDISK
 extern uint8 romdisk[];
 KOS_INIT_ROMDISK(romdisk);
+#endif
+
+#ifndef DEBUG
+int scif_dbgio_enabled = 1;  /* 1 = disable serial debug output */
 #endif
 
 void dc_init_serial(void)
@@ -1272,7 +1434,8 @@ int dc_read_serial(unsigned char *byte)
 
 int main(int argc, char **argv)
 {
-	printf("Atari800DC main() starting\n");  /* workaound for fopen-before-printf kos bug */
+	printf("Atari800DC main() starting\n");	 /* workaound for fopen-before-printf kos bug */
+	printf("--------------------------\n");	 /* §$%&!:-grr! */
 
 	/* initialize screen updater */
 	update_screen_updater();
@@ -1315,18 +1478,6 @@ int main(int argc, char **argv)
 
 	atari_screen_backup = malloc(Screen_HEIGHT * Screen_WIDTH);
 	atari_screen_backup2 = malloc(Screen_HEIGHT * Screen_WIDTH);
-	/*setup_saved_files_dirs();*/
-
-#ifdef DEBUG
-	{
-		int i;
-		printf("UI_n_saved_files_dir: %d\n", UI_n_saved_files_dir);
-		for (i=0; i<UI_n_saved_files_dir; i++) {
-			if (UI_saved_files_dir[i])
-				printf("%d: %s\n", i, UI_saved_files_dir[i]);
-		}
-	}
-#endif
 
 	chdir("/");   /* initialize cwd in dc_chdir.c */
 	autostart();
@@ -1339,37 +1490,41 @@ int main(int argc, char **argv)
 		keycode = PLATFORM_Keyboard();
 
 		switch (keycode) {
-#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-		case AKEY_KEYB:
-			Sound_Pause();
-			in_kbui = TRUE;
-			{
-				int temp = UI_is_active;
-				UI_is_active = TRUE;
-				INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, Atari800_machine_type);
-				UI_is_active = temp;
-			}
-			in_kbui = FALSE;
-			Sound_Continue();
-			controller_update();
-			switch (INPUT_key_code) {
-			case AKEY_OPTION:
-				INPUT_key_consol &= (~INPUT_CONSOL_OPTION);
-				INPUT_key_code = AKEY_NONE;
-				break;
-			case AKEY_SELECT:
-				INPUT_key_consol &= (~INPUT_CONSOL_SELECT);
-				INPUT_key_code = AKEY_NONE;
-				break;
-			case AKEY_START:
-				INPUT_key_consol &= (~INPUT_CONSOL_START);
-				INPUT_key_code = AKEY_NONE;
-				break;
-			default:
-				break;
+		case AKEY_5200_RESET:
+			if (Atari800_machine_type == Atari800_MACHINE_5200) {
+				Atari800_Coldstart();
 			}
 			break;
-#endif /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
+#ifdef KB_UI
+		case AKEY_KEYB:
+			if (Atari800_machine_type != Atari800_MACHINE_5200) {
+				Sound_Pause();
+				in_kbui = TRUE;
+				if (x_ovr || y_ovr || b_ovr) {
+					kb_ui((UBYTE *)Screen_atari, NULL, KB_CONSOL);
+				}
+				else {
+					kb_ui((UBYTE *)Screen_atari, NULL, 0);
+				}
+				in_kbui = FALSE;
+				INPUT_key_consol |= INPUT_CONSOL_START;
+				/*b_ui_leave = TRUE;  crashes when included!! why?? */
+				Sound_Continue();
+				controller_update();
+			}
+			else {
+				Sound_Pause();
+				in_kbui = TRUE;
+				kb_ui_5200((UBYTE *)Screen_atari);
+				in_kbui = FALSE;
+				Sound_Continue();
+				controller_update();
+			}
+			break;
+#endif /* #ifdef KB_UI */
+		case AKEY_BREAK:
+			INPUT_key_code = AKEY_BREAK;
+			break;
 		default:
 			INPUT_key_code = keycode;
 			break;
@@ -1391,7 +1546,7 @@ static void autostart(void)
 
 	if (! stat("/cd/autorun.com", &sb)) {
 		if (S_ISREG(sb.st_mode)) {
-			if (BIN_loader("/cd/autorun.com")) {
+			if (BINLOAD_Loader("/cd/autorun.com")) {
 				Atari800_Coldstart();
 				return;
 			}
@@ -1399,7 +1554,7 @@ static void autostart(void)
 	}
 	if (! stat("/cd/autorun.exe", &sb)) {
 		if (S_ISREG(sb.st_mode)) {
-			if (BIN_loader("/cd/autorun.exe")) {
+			if (BINLOAD_Loader("/cd/autorun.exe")) {
 				Atari800_Coldstart();
 				return;
 			}
@@ -1476,7 +1631,7 @@ DIR *opendir(const char *name)
 
 	if (strcmp(name, "/") && strcmp(name, "/pc")	/* no ".." in the root directory */
 	    && strncmp(name, "/pc/", 4))		/* and in /pc and subdirectories */
-		odc = 1;                                /* (/pc provides ".." by itself) */
+		odc = 1;				/* (/pc provides ".." by itself) */
 	return(newd);
 }
 
@@ -1566,7 +1721,7 @@ static void dc_atari_sync(void)
 		curclock = ((unsigned long long)s << 32) + ms;
 	} while (curclock < nextclock);
 
-	nextclock = curclock + CLK_TCK / ((Atari800_tv_mode == TV_PAL ? 50 : 60));
+	nextclock = curclock + CLK_TCK / ((Atari800_tv_mode == Atari800_TV_PAL ? 50 : 60));
 }
 #endif
 
@@ -1584,10 +1739,33 @@ static int check_tray_open(void)
 	}
 }
 
+void dc_printbox(char *string)
+{
+	int l = strlen(string);
+
+	Box(0x9a, 0x94, 20-l/2-1, 11, 20-l/2-1+l+1, 13);
+	Print(0x94, 0x9a, string, 20-l/2, 12, 40);
+}
+
+void dc_please_wait(void)
+{
+	dc_printbox(" Please wait... ");
+	entire_Screen_dirty();
+	PLATFORM_DisplayScreen();
+}
+
+void dc_error_msg(void)
+{
+	dc_printbox("     Error!!    ");
+	entire_Screen_dirty();
+	PLATFORM_DisplayScreen();
+	GetKeyPress();
+}
 
 void DCStateSave(void)
 {
-	unsigned int i, f = 0;
+	unsigned int i;
+	int f = 0;
 
 	StateSav_SaveINT(&screen_tv_mode, 1);
 	StateSav_SaveINT(&Atari800_tv_mode, 1);
@@ -1604,8 +1782,8 @@ void DCStateSave(void)
 	for (i=0; i<16; i++) StateSav_SaveINT(&f, 1);  /* future stuff */
 
 #ifdef DEBUG
-        printf("DCStateSave: Atari800_tv_mode = %d, screen_tv_mode = %d, db_mode = %d\n",
-               Atari800_tv_mode, screen_tv_mode, db_mode);
+	printf("DCStateSave: tv_mode = %d, screen_tv_mode = %d, db_mode = %d\n",
+	       Atari800_tv_mode, screen_tv_mode, db_mode);
 #endif
 }
 
@@ -1624,8 +1802,8 @@ void DCStateRead(void)
 	StateSav_ReadINT(&db_mode, 1);
 	StateSav_ReadINT(&INPUT_joy_autofire[0], 1);
 #ifdef DEBUG
-        printf("DCStateRead: Atari800_tv_mode = %d, screen_tv_mode = %d, db_mode = %d\n",
-               Atari800_tv_mode, screen_tv_mode, db_mode);
+	printf("DCStateRead: tv_mode = %d, screen_tv_mode = %d, db_mode = %d\n",
+	       Atari800_tv_mode, screen_tv_mode, db_mode);
 #endif
 
 	/* sanity check */
@@ -1639,7 +1817,7 @@ void AboutAtariDC(void)
 {
 	UI_driver->fInfoScreen("About AtariDC",
 			       "AtariDC v" A800DCVERASC " ("__DATE__")\0"
-			       "(c) 2002-2006 Christian Groessler\0"
+			       "(c) 2002-2013 Christian Groessler\0"
 			       "http://www.groessler.org/a800dc\0"
 			       "\0"
 			       "Please report all problems\0"
@@ -1652,7 +1830,11 @@ void AboutAtariDC(void)
 			       "It uses the KallistiOS library\0"
 			       "http://cadcdev.sourceforge.net\0"
 			       "\0"
-                               "Dedicated to Tobias & Dominik\0\n");
+#if 1
+			       "THIS IS A *BETA* VERSION!\0"
+			       "PLEASE  DO NOT DISTRIBUTE\0\0"
+#endif
+			       "Dedicated to Tobias & Dominik\0\n");
 }
 
 
@@ -1742,11 +1924,125 @@ void ButtonConfiguration(void)
 	} while (option >= 0);
 }
 
+/* "Joystick/D-Pad configuration" submenu of "Controller Configuration" */
+void JoystickConfiguration(void)
+{
+	int option = 0;
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_ACTION(0, "Disable Joystick: "),
+		UI_MENU_ACTION(1, "Disable D-Pad:"),
+		UI_MENU_ACTION(2, "Reverse X axis:"),
+		UI_MENU_ACTION(3, "Reverse Y axis:"),
+		UI_MENU_END
+	};
+
+
+	do {
+		if (disable_js)
+			menu_array[0].suffix = "ON ";
+		else
+			menu_array[0].suffix = "OFF";
+
+		if (disable_dpad)
+			menu_array[1].suffix = "ON ";
+		else
+			menu_array[1].suffix = "OFF";
+
+		if (reverse_x_axis)
+			menu_array[2].suffix = "ON ";
+		else
+			menu_array[2].suffix = "OFF";
+
+		if (reverse_y_axis)
+			menu_array[3].suffix = "ON ";
+		else
+			menu_array[3].suffix = "OFF";
+
+		option = UI_driver->fSelect(NULL, TRUE, option, menu_array, NULL);
+
+		switch(option) {
+		case 0:
+			disable_js = !disable_js;
+			break;
+		case 1:
+			disable_dpad = !disable_dpad;
+			break;
+		case 2:
+			reverse_x_axis = !reverse_x_axis;
+			do_reverse_x_axis();
+			break;
+		case 3:
+			reverse_y_axis = !reverse_y_axis;
+			do_reverse_y_axis();
+			break;
+		}
+#if 0
+		if (disable_js && disable_dpad)	 /* don't allow both to be disabled */
+			disable_js = disable_dpad = FALSE;
+#endif
+	} while (option >= 0);
+}
+
+
+/* "Screen position configuration" submenu of "Display Settings" */
+void ScreenPositionConfiguration(void)
+{
+	int keycode;
+
+	ClearScreen();
+	//TitleScreen("Screen position configuration");
+
+	Box(0x9a, 0x94, 0, 0, 39, 24);
+	CenterPrint(0x9a, 0x94,"Screen position configuration", 2);
+
+	CenterPrint(0x9a, 0x94, "Use up/down/left/right to adjust", 20);
+	CenterPrint(0x9a, 0x94, "Use ESC to exit", 21);
+
+	Print(0x9a, 0x94, "X adjustment:", 8, 9, 40);
+	Print(0x9a, 0x94, "Y adjustment:", 8, 11, 40);
+
+	do {
+
+		sprintf(x_str, "%d", x_adj);
+		sprintf(y_str, "%d", y_adj);
+
+		Print(0x9a, 0x94, "      ", 31 - 6, 9, 40);
+		Print(0x9a, 0x94, "      ", 31 - 6, 11, 40);
+
+		Print(0x9a, 0x94, x_str, 31 - strlen(x_str), 9, 40);
+		Print(0x9a, 0x94, y_str, 31 - strlen(y_str), 11, 40);
+
+		while ((keycode = GetKeyPress()) == AKEY_NONE)
+			;
+
+		if (keycode == 0x1e) {	/* left */
+			x_adj--;
+			if (x_adj < -63) x_adj = -63;
+		}
+		else if (keycode == 0x1f) {  /* right */
+			x_adj++;
+			if (x_adj > 63) x_adj = 63;
+		}
+		else if (keycode == 0x1c) {  /* up */
+			y_adj--;
+			if (y_adj < -63) y_adj = -63;
+		}
+		else if (keycode == 0x1d) {  /* down */
+			y_adj++;
+			if (y_adj > 63) y_adj = 63;
+		}
+		else
+			continue;
+
+		update_vidmode();
+		entire_Screen_dirty();
+	} while (keycode != 0x1b);  /* ESC */
+}
+
 
 static int sound_enabled = TRUE;	/* sound: on or off */
 
 #define DSPRATE 22050
-#define FRAGSIZE       12		/* 1<<FRAGSIZE is size of sound buffer */
 
 void dc_sound_init(void)
 {
@@ -1754,7 +2050,11 @@ void dc_sound_init(void)
 #ifdef STEREO
 	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, DSPRATE, 2, 0);
 #else
+#if 0
+	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, DSPRATE, 1, 0, 0);
+#else
 	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, DSPRATE, 1, 0);
+#endif
 #endif
 }
 
@@ -1788,7 +2088,7 @@ void Sound_Exit(void)
 #define FRAG_NUM     16	       /* max. # of fragments in the buffer */
 #define FRAG_BUFSZ   (FRAG_NUM * FRAG_SIZE)
 
-static unsigned char fragbuf[FRAG_SIZE]; /* scratch buffer to generate sound data for a fragment */
+static unsigned char fragbuf[FRAG_BUFSZ]; /* scratch buffer to generate sound data for a fragment */
 static uint32 spu_ram_sch1 = 0;
 
 /* ripped from KOS */
@@ -1817,6 +2117,7 @@ void Sound_Update(void)
 {
 	static int last_frag;
 	int cur_pos, cur_frag, fill_frag, first_frag_to_fill, last_frag_to_fill;
+	int n, k;
 
 	if (! sound_enabled) return;
 
@@ -1829,7 +2130,7 @@ void Sound_Update(void)
 			spu_ram_sch1 = snd_mem_malloc(FRAG_BUFSZ);
 
 		/* prefill buffers */
-		POKEYSND_Process(fragbuf, FRAG_SIZE);
+		POKEYSND_Process(fragbuf, FRAG_BUFSZ);
 		spu_memload(spu_ram_sch1, fragbuf, FRAG_SIZE);
 
 		last_frag = 0;
@@ -1860,19 +2161,50 @@ void Sound_Update(void)
 	cur_pos = aica_getpos(0);
 	cur_frag = cur_pos / FRAG_SIZE;
 
+#if 0 /* new */
+	if (cur_frag > last_frag) {
+		n = cur_frag - last_frag - 1;
+		Pokey_process(fragbuf, n * FRAG_SIZE);
+		spu_memload(spu_ram_sch1 + FRAG_SIZE * (last_frag + 1),
+			    fragbuf, FRAG_SIZE * n);
+	}
+	else {
+		n = cur_frag - last_frag - 1 + FRAG_NUM;
+		Pokey_process(fragbuf, n * FRAG_SIZE);
+		k = FRAG_NUM - last_frag - 1;
+		if (k) {
+			spu_memload(spu_ram_sch1 + FRAG_SIZE * (last_frag + 1),
+				    fragbuf, FRAG_SIZE * k);
+		}
+		n = n - k;
+		if (n) {
+			spu_memload(spu_ram_sch1,
+				    fragbuf + FRAG_SIZE * k, FRAG_SIZE * n);
+		}
+	}
+	last_frag = cur_frag - 1;
+	if (last_frag < 0) last_frag = 0;
+#else
 	/* calc # of new fragments needed to fill sound buffer */
 	first_frag_to_fill = last_frag + 1;
 	first_frag_to_fill %= FRAG_NUM;
 	last_frag_to_fill = cur_frag;
 
 	fill_frag = first_frag_to_fill;
+
+	n = last_frag_to_fill - first_frag_to_fill;
+	if (n < 0) n += FRAG_NUM;
+	POKEYSND_Process(fragbuf, n * FRAG_SIZE);
+	k = 0;
 	while (fill_frag != last_frag_to_fill) {
-		POKEYSND_Process(fragbuf, FRAG_SIZE);
-		spu_memload(spu_ram_sch1 + FRAG_SIZE * fill_frag, fragbuf, FRAG_SIZE);
+		spu_memload(spu_ram_sch1 + FRAG_SIZE * fill_frag, fragbuf + k * FRAG_SIZE, FRAG_SIZE);
 		last_frag = fill_frag;
 		fill_frag++;
 		fill_frag %= FRAG_NUM;
+		k++;
 	}
+#endif
+
 #if 0  /* some arm debug stuff */
 	printf("cur_pos was %x (%x) (%x)\n", cur_pos,
 	       g2_read_32(SPU_RAM_BASE + 0x1f800),
