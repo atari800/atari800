@@ -1,0 +1,11 @@
+Raspberry Pi (rpi) target is cross-compiling, so you need to get toolchain here:
+https://github.com/raspberrypi/tools/tree/master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian
+
+Also you need to copy SDL headers and libs from Raspberry Pi device to this toolchain.
+
+Then you need to export RPI_SDK pointed to the rpi toolchain root folder.
+
+Then go to 'src' folder and type './configure --target=rpi --host=arm-linux --with-sdl-prefix=$RPI_SDK'.
+
+Then type 'make'.
+

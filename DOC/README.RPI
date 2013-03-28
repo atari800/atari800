@@ -1,0 +1,21 @@
+Note: you need to setup correct video mode for PAL/NTSC machines (proper video/audio sync and vsync).
+edit /boot/config.txt
+
+for PAL version (50 Hz) you can supply this values:
+720p mode:
+hdmi_group=1
+hdmi_mode=19
+1080p mode:
+hdmi_group=1
+hdmi_mode=31
+
+for NTSC version (60 Hz):
+720p mode:
+hdmi_group=1
+hdmi_mode=4
+1080p mode:
+hdmi_group=1
+hdmi_mode=16
+
+See http://elinux.org/RPiconfig for more info.
+

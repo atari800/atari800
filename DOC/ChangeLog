@@ -2,6 +2,8 @@
 * configure.c, ui.c, atari_rpi.c, gles/video.c: committing new support
   for Raspberry Pi made by Andrey Dj
 
+* DOC/README.RPI, DOC/BUILD.RPI: documentation added
+
 
 ** 3.0.0 released on 2013-03-03
 
