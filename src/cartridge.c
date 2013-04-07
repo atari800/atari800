@@ -824,7 +824,7 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr, int no_side_effects)
 {
 	int old_state = cart->state;
-	int new_state;
+	int new_state = old_state;
 
 #if DEBUG
 	if (cart->type > CARTRIDGE_NONE)
@@ -863,7 +863,7 @@ static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr, int no_side_effects)
 static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 {
 	int old_state = cart->state;
-	int new_state;
+	int new_state = old_state;
 
 #if DEBUG
 	if (cart->type > CARTRIDGE_NONE)
