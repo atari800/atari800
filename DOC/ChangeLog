@@ -5,6 +5,8 @@
 * cartridge.[ch], ui.c, atari800.man, DOC/cart.txt, DOC/USAGE: Added support
   for the cartridge mapping used by "Turbo Hit"/"Atari Blizzard Hit".
 
+* memory.h: Fix gcc 4.7.2 -Wstrict-aliasing warnings.
+
 
 2013-03-21  Petr Stehlik <pstehlik@sophics.cz>
 * configure.c, ui.c, atari_rpi.c, gles/video.c: committing new support
