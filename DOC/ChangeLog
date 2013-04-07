@@ -1,3 +1,8 @@
+2013-04-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* colours_pal.c: More accurate emulation of PAL colours based on analysis of
+  oscillograms of PAL GTIA output.
+
+
 2013-03-21  Petr Stehlik <pstehlik@sophics.cz>
 * configure.c, ui.c, atari_rpi.c, gles/video.c: committing new support
   for Raspberry Pi made by Andrey Dj
