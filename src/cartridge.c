@@ -107,69 +107,71 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	512,  /* CARTRIDGE_SIC_512 */
 	2,    /* CARTRIDGE_STD_2 */
 	4,    /* CARTRIDGE_STD_4 */
-	4     /* CARTRIDGE_RIGHT_4 */
+	4,    /* CARTRIDGE_RIGHT_4 */
+	32    /* CARTRIDGE_TURBO_HIT_32 */
 };
 
 char *CARTRIDGE_TextDesc[CARTRIDGE_LAST_SUPPORTED + 1] = {
-	[CARTRIDGE_STD_8]			=	"Standard 8 KB cartridge",
-	[CARTRIDGE_STD_16]			=	"Standard 16 KB cartridge",
-	[CARTRIDGE_OSS_034M_16]		=	"OSS two chip 16 KB cartridge (034M)",
-	[CARTRIDGE_5200_32]			=	"Standard 32 KB 5200 cartridge",
-	[CARTRIDGE_DB_32]			=	"DB 32 KB cartridge",
-	[CARTRIDGE_5200_EE_16]		=	"Two chip 16 KB 5200 cartridge",
-	[CARTRIDGE_5200_40]			=	"Bounty Bob 40 KB 5200 cartridge",
-	[CARTRIDGE_WILL_64]			=	"64 KB Williams cartridge",
-	[CARTRIDGE_EXP_64]			=	"Express 64 KB cartridge",
-	[CARTRIDGE_DIAMOND_64]		=	"Diamond 64 KB cartridge",
-	[CARTRIDGE_SDX_64]			=	"SpartaDOS X 64 KB cartridge",
-	[CARTRIDGE_XEGS_32]			=	"XEGS 32 KB cartridge",
-	[CARTRIDGE_XEGS_64]			=	"XEGS 64 KB cartridge",
-	[CARTRIDGE_XEGS_128]		=	"XEGS 128 KB cartridge",
-	[CARTRIDGE_OSS_M091_16]		=	"OSS one chip 16 KB cartridge",
-	[CARTRIDGE_5200_NS_16]		=	"One chip 16 KB 5200 cartridge",
-	[CARTRIDGE_ATRAX_128]		=	"Atrax 128 KB cartridge",
-	[CARTRIDGE_BBSB_40]			=	"Bounty Bob 40 KB cartridge",
-	[CARTRIDGE_5200_8]			=	"Standard 8 KB 5200 cartridge",
-	[CARTRIDGE_5200_4]			=	"Standard 4 KB 5200 cartridge",
-	[CARTRIDGE_RIGHT_8]			=	"Right slot 8 KB cartridge",
-	[CARTRIDGE_WILL_32]			=	"32 KB Williams cartridge",
-	[CARTRIDGE_XEGS_256]		=	"XEGS 256 KB cartridge",
-	[CARTRIDGE_XEGS_512]		=	"XEGS 512 KB cartridge",
-	[CARTRIDGE_XEGS_1024]		=	"XEGS 1 MB cartridge",
-	[CARTRIDGE_MEGA_16]			=	"MegaCart 16 KB cartridge",
-	[CARTRIDGE_MEGA_32]			=	"MegaCart 32 KB cartridge",
-	[CARTRIDGE_MEGA_64]			=	"MegaCart 64 KB cartridge",
-	[CARTRIDGE_MEGA_128]		=	"MegaCart 128 KB cartridge",
-	[CARTRIDGE_MEGA_256]		=	"MegaCart 256 KB cartridge",
-	[CARTRIDGE_MEGA_512]		=	"MegaCart 512 KB cartridge",
-	[CARTRIDGE_MEGA_1024]		=	"MegaCart 1 MB cartridge",
-	[CARTRIDGE_SWXEGS_32]		=	"Switchable XEGS 32 KB cartridge",
-	[CARTRIDGE_SWXEGS_64]		=	"Switchable XEGS 64 KB cartridge",
-	[CARTRIDGE_SWXEGS_128]		=	"Switchable XEGS 128 KB cartridge",
-	[CARTRIDGE_SWXEGS_256]		=	"Switchable XEGS 256 KB cartridge",
-	[CARTRIDGE_SWXEGS_512]		=	"Switchable XEGS 512 KB cartridge",
-	[CARTRIDGE_SWXEGS_1024]		=	"Switchable XEGS 1 MB cartridge",
-	[CARTRIDGE_PHOENIX_8]		=	"Phoenix 8 KB cartridge",
-	[CARTRIDGE_BLIZZARD_16]		=	"Blizzard 16 KB cartridge",
-	[CARTRIDGE_ATMAX_128]		=	"Atarimax 128 KB Flash cartridge",
-	[CARTRIDGE_ATMAX_1024]		=	"Atarimax 1 MB Flash cartridge",
-	[CARTRIDGE_SDX_128]			=	"SpartaDOS X 128 KB cartridge",
-	[CARTRIDGE_OSS_8]			=	"OSS 8 KB cartridge",
-	[CARTRIDGE_OSS_043M_16]		=	"OSS two chip 16 KB cartridge (043M)",
-	[CARTRIDGE_BLIZZARD_4]		=	"Blizzard 4 KB cartridge",
-	[CARTRIDGE_AST_32]			=	"AST 32 KB cartridge",
-	[CARTRIDGE_ATRAX_SDX_64]	=	"Atrax SDX 64 KB cartridge",
-	[CARTRIDGE_ATRAX_SDX_128]	=	"Atrax SDX 128 KB cartridge",
-	[CARTRIDGE_TURBOSOFT_64]	=	"Turbosoft 64 KB cartridge",
-	[CARTRIDGE_TURBOSOFT_128]	=	"Turbosoft 128 KB cartridge",
-	[CARTRIDGE_ULTRACART_32]	=	"Ultracart 32 KB cartridge",
-	[CARTRIDGE_LOW_BANK_8]		=	"Low bank 8 KB cartridge",
-	[CARTRIDGE_SIC_128]			=	"SIC! 128 KB cartridge",
-	[CARTRIDGE_SIC_256]			=	"SIC! 256 KB cartridge",
-	[CARTRIDGE_SIC_512]			=	"SIC! 512 KB cartridge",
-	[CARTRIDGE_STD_2]			=	"Standard 2 KB cartridge",
-	[CARTRIDGE_STD_4]			=	"Standard 4 KB cartridge",
-	[CARTRIDGE_RIGHT_4]			=	"Right slot 4 KB cartridge"
+	[CARTRIDGE_STD_8]           = "Standard 8 KB cartridge",
+	[CARTRIDGE_STD_16]          = "Standard 16 KB cartridge",
+	[CARTRIDGE_OSS_034M_16]     = "OSS two chip 16 KB cartridge (034M)",
+	[CARTRIDGE_5200_32]         = "Standard 32 KB 5200 cartridge",
+	[CARTRIDGE_DB_32]           = "DB 32 KB cartridge",
+	[CARTRIDGE_5200_EE_16]      = "Two chip 16 KB 5200 cartridge",
+	[CARTRIDGE_5200_40]         = "Bounty Bob 40 KB 5200 cartridge",
+	[CARTRIDGE_WILL_64]         = "64 KB Williams cartridge",
+	[CARTRIDGE_EXP_64]          = "Express 64 KB cartridge",
+	[CARTRIDGE_DIAMOND_64]      = "Diamond 64 KB cartridge",
+	[CARTRIDGE_SDX_64]          = "SpartaDOS X 64 KB cartridge",
+	[CARTRIDGE_XEGS_32]         = "XEGS 32 KB cartridge",
+	[CARTRIDGE_XEGS_64]         = "XEGS 64 KB cartridge",
+	[CARTRIDGE_XEGS_128]        = "XEGS 128 KB cartridge",
+	[CARTRIDGE_OSS_M091_16]     = "OSS one chip 16 KB cartridge",
+	[CARTRIDGE_5200_NS_16]      = "One chip 16 KB 5200 cartridge",
+	[CARTRIDGE_ATRAX_128]       = "Atrax 128 KB cartridge",
+	[CARTRIDGE_BBSB_40]         = "Bounty Bob 40 KB cartridge",
+	[CARTRIDGE_5200_8]          = "Standard 8 KB 5200 cartridge",
+	[CARTRIDGE_5200_4]          = "Standard 4 KB 5200 cartridge",
+	[CARTRIDGE_RIGHT_8]         = "Right slot 8 KB cartridge",
+	[CARTRIDGE_WILL_32]         = "32 KB Williams cartridge",
+	[CARTRIDGE_XEGS_256]        = "XEGS 256 KB cartridge",
+	[CARTRIDGE_XEGS_512]        = "XEGS 512 KB cartridge",
+	[CARTRIDGE_XEGS_1024]       = "XEGS 1 MB cartridge",
+	[CARTRIDGE_MEGA_16]         = "MegaCart 16 KB cartridge",
+	[CARTRIDGE_MEGA_32]         = "MegaCart 32 KB cartridge",
+	[CARTRIDGE_MEGA_64]         = "MegaCart 64 KB cartridge",
+	[CARTRIDGE_MEGA_128]        = "MegaCart 128 KB cartridge",
+	[CARTRIDGE_MEGA_256]        = "MegaCart 256 KB cartridge",
+	[CARTRIDGE_MEGA_512]        = "MegaCart 512 KB cartridge",
+	[CARTRIDGE_MEGA_1024]       = "MegaCart 1 MB cartridge",
+	[CARTRIDGE_SWXEGS_32]       = "Switchable XEGS 32 KB cartridge",
+	[CARTRIDGE_SWXEGS_64]       = "Switchable XEGS 64 KB cartridge",
+	[CARTRIDGE_SWXEGS_128]      = "Switchable XEGS 128 KB cartridge",
+	[CARTRIDGE_SWXEGS_256]      = "Switchable XEGS 256 KB cartridge",
+	[CARTRIDGE_SWXEGS_512]      = "Switchable XEGS 512 KB cartridge",
+	[CARTRIDGE_SWXEGS_1024]     = "Switchable XEGS 1 MB cartridge",
+	[CARTRIDGE_PHOENIX_8]       = "Phoenix 8 KB cartridge",
+	[CARTRIDGE_BLIZZARD_16]     = "Blizzard 16 KB cartridge",
+	[CARTRIDGE_ATMAX_128]       = "Atarimax 128 KB Flash cartridge",
+	[CARTRIDGE_ATMAX_1024]      = "Atarimax 1 MB Flash cartridge",
+	[CARTRIDGE_SDX_128]         = "SpartaDOS X 128 KB cartridge",
+	[CARTRIDGE_OSS_8]           = "OSS 8 KB cartridge",
+	[CARTRIDGE_OSS_043M_16]     = "OSS two chip 16 KB cartridge (043M)",
+	[CARTRIDGE_BLIZZARD_4]      = "Blizzard 4 KB cartridge",
+	[CARTRIDGE_AST_32]          = "AST 32 KB cartridge",
+	[CARTRIDGE_ATRAX_SDX_64]    = "Atrax SDX 64 KB cartridge",
+	[CARTRIDGE_ATRAX_SDX_128]   = "Atrax SDX 128 KB cartridge",
+	[CARTRIDGE_TURBOSOFT_64]    = "Turbosoft 64 KB cartridge",
+	[CARTRIDGE_TURBOSOFT_128]   = "Turbosoft 128 KB cartridge",
+	[CARTRIDGE_ULTRACART_32]    = "Ultracart 32 KB cartridge",
+	[CARTRIDGE_LOW_BANK_8]      = "Low bank 8 KB cartridge",
+	[CARTRIDGE_SIC_128]         = "SIC! 128 KB cartridge",
+	[CARTRIDGE_SIC_256]         = "SIC! 256 KB cartridge",
+	[CARTRIDGE_SIC_512]         = "SIC! 512 KB cartridge",
+	[CARTRIDGE_STD_2]           = "Standard 2 KB cartridge",
+	[CARTRIDGE_STD_4]           = "Standard 4 KB cartridge",
+	[CARTRIDGE_RIGHT_4]         = "Right slot 4 KB cartridge",
+	[CARTRIDGE_BLIZZARD_32]     = "Blizzard 32 KB cartridge"
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -239,7 +241,8 @@ static void set_bank_A0AF(int main, int old_state)
 }
 
 /* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_1024,
-   ATRAX_128, ATRAX_SDX_64, TURBOSOFT_64, TURBOSOFT_128 */
+   ATRAX_128, ATRAX_SDX_64, TURBOSOFT_64, TURBOSOFT_128, ULTRACART_32,
+   TURBO_HIT_32 */
 static void set_bank_A0BF(int n)
 {
 	if (active_cart->state & n)
@@ -381,6 +384,7 @@ static void SwitchBank(int old_state)
 			MEMORY_CartA0bfDisable();
 		break;
 	case CARTRIDGE_ULTRACART_32:
+	case CARTRIDGE_BLIZZARD_32:
 		set_bank_A0BF(4);
 		break;
 	case CARTRIDGE_SIC_128:
@@ -519,6 +523,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_TURBOSOFT_64:
 		case CARTRIDGE_TURBOSOFT_128:
 		case CARTRIDGE_ULTRACART_32:
+		case CARTRIDGE_BLIZZARD_32:
 			MEMORY_Cart809fDisable();
 			break;
 		case CARTRIDGE_DB_32:
@@ -865,6 +870,10 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 		break;
 	case CARTRIDGE_ULTRACART_32:
 		new_state = (old_state + 1) % 5;
+		break;
+	case CARTRIDGE_BLIZZARD_32:
+		if (old_state < 4)
+			new_state = old_state + 1;
 		break;
 	default:
 		/* Other cartridge types don't support enabling/disabling/banking through page D5. */

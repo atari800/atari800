@@ -92,6 +92,7 @@ Currently supported cartridge types:
 | 57 | 800/XL/XE |    2 | Standard 2 KB cartridge                           |
 | 58 | 800/XL/XE |    4 | Standard 4 KB cartridge                           |
 | 59 |    800    |    4 | Right slot 4 KB cartridge                         |
+| 60 | 800/XL/XE |   32 | Blizzard 32 KB cartridge                          |
 +----+-----------+------+---------------------------------------------------+
 
 Id is the cartridge type code stored in the CART file.
@@ -774,3 +775,17 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  active only when line A12 is high. In effect, the cartridge's memory appears
  at $9000-$9FFF while the $8000-8FFF area is unavailable and returns $FF when
  read.
+
++---------------------------------------------------------------------------+
+| Type 60: Blizzard 32 KB cartridge                                         |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each. On power
+ on, bank 0 is visible. Each access to $D500-$D5FF switches another bank in
+ the sequence as follows: 0->1->2->3->cartridge disabled. Re-enabling is
+ possible only by turning the computer off and on. Some units contain a RESET
+ button that allows to enable the cartridge without touching the power button.
+
+ Reference:
+ http://www.atari.org.pl/forum/viewtopic.php?id=7292
