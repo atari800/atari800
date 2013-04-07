@@ -7,6 +7,10 @@
 
 * memory.h: Fix gcc 4.7.2 -Wstrict-aliasing warnings.
 
+* cartridge.[ch], ui.c, android/jni/jni.c: Avoid compiler warnings by moving
+  the table of cartridge names to jni.c. The default target doesn't need that
+  table anyway, it only needs the names.
+
 
 2013-03-21  Petr Stehlik <pstehlik@sophics.cz>
 * configure.c, ui.c, atari_rpi.c, gles/video.c: committing new support
