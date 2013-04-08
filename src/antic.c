@@ -65,23 +65,10 @@ static UBYTE delayed_DMACTL;
 static int draw_antic_ptr_changed = 0;
 static UBYTE need_load;
 static int dmactl_bug_chdata;
-#ifndef NO_GTIA11_DELAY
-/* the position in the ring buffer where the last change before */
-/* the previous line occurred to PRIOR */
-static int prevline_prior_pos = 0;
-/* the position in the ring buffer where the last change before */
-/* the current line occurred to PRIOR */
-static int curline_prior_pos = 0;
-/* the current position in the ring buffer where the most recent */
-/* change to PRIOR occurred */
-int ANTIC_prior_curpos = 0;
-/* ring buffer to hold the previous values of PRIOR */
-UBYTE ANTIC_prior_val_buf[ANTIC_PRIOR_BUF_SIZE];
-/* can be negative, leave as signed ints */
-/* ring buffer to hold the positions where PRIOR changed */
-int ANTIC_prior_pos_buf[ANTIC_PRIOR_BUF_SIZE];
-#endif /* NO_GTIA11_DELAY */
 #endif /* NEW_CYCLE_EXACT */
+#ifndef NO_SIMPLE_PAL_BLENDING
+int ANTIC_pal_blending = 0;
+#endif /* NO_SIMPLE_PAL_BLENDING */
 
 /* Video memory access is hidden behind these macros. It allows to track dirty video memory
    to improve video system performance */
@@ -2875,17 +2862,6 @@ void ANTIC_Frame(int draw_display)
 #ifdef NEW_CYCLE_EXACT
 	int cpu2antic_index;
 #endif /* NEW_CYCLE_EXACT */
-#ifndef NO_GTIA11_DELAY
-#ifdef NEW_CYCLE_EXACT
-	int stop = FALSE;
-/* can be negative, leave as signed ints */
-	int old_curline_prior_pos;
-	int last_pos;
-	int change_pos;
-#else
-	int delayed_gtia11 = 250;
-#endif /* NEW_CYCLE_EXACT */
-#endif /* NO_GTIA11_DELAY */
 
 	ANTIC_ypos = 0;
 	do {
@@ -3159,108 +3135,6 @@ void ANTIC_Frame(int draw_display)
 			scrn_ptr + x_min[md],
 			(ULONG *) &GTIA_pm_scanline[x_min[md]]);
 
-#endif /* NEW_CYCLE_EXACT */
-#ifndef NO_GTIA11_DELAY
-#ifndef NEW_CYCLE_EXACT
-		if (GTIA_PRIOR >= 0xc0)
-			delayed_gtia11 = ANTIC_ypos + 1;
-		else
-			if (ANTIC_ypos == delayed_gtia11) {
-				ULONG *ptr = (ULONG *) (scrn_ptr + 4 * LCHOP);
-				int k = 2 * (48 - LCHOP - RCHOP);
-				do {
-					WRITE_VIDEO_LONG(ptr, READ_VIDEO_LONG(ptr) | READ_VIDEO_LONG(ptr - Screen_WIDTH / 4));
-					ptr++;
-				} while (--k);
-			}
-#else /* NEW_CYCLE_EXACT defined */
-/* Basic explaination: */
-/* the ring buffer ANTIC_prior_pos_buf has three pointers: */
-/*     A   B  C              D     E    F      G   */
-/*     ^                     ^                 ^   */
-/* prevline_prior_pos  curline_prior_pos  ANTIC_prior_curpos  */
-/* G would be the most recent change which occurred during drawing */
-/* of the current line, D is the most recent */
-/* change before the current line was drawn, and A is the most recent */
-/* change before the previous line was drawn */
-/* curline_prior_pos is saved in old_curline_prior_pos */
-/* then the code will increase either curline_prior_pos or */
-/* prevline_prior_pos depending if the change at B or E occurred */
-/* earlier in the scanline ignoring which scanline it was */
-/* eg: */
-/*                              A occurs on some previous scanline */
-/* prev:     B                      C                          D     */
-/* current:                     E                    F           G   */
-/* so from the left end of the screen, the changes occurred in the order */
-/* B,E,C,F,D,G */
-/* then the code will read the values in that order, and each time it will */
-/* update prev_prior_val and cur_prior_val to be equal the the PRIOR values */
-/* "in effect" *before* those changes occurred.  If those PRIOR values */
-/* should cause a GTIA11_DELAY effect to occur then this is processed */
-/* for that portion of the scanline */
-/* At the end of processing, the buffer would look like: */
-/* the ring buffer ANTIC_prior_pos_buf has three pointers: */
-/*     A   B  C              D     E    F      G   */
-/*                           ^                 ^   */
-/*                    prevline_prior_pos  curline_prior_pos==ANTIC_prior_curpos  */
-
-		stop = FALSE;
-		last_pos = LBORDER_START;
-		old_curline_prior_pos = curline_prior_pos;
-		do {
-
-			UBYTE prev_prior_val;
-			UBYTE cur_prior_val;
-			prev_prior_val = ANTIC_prior_val_buf[prevline_prior_pos];
-			cur_prior_val = ANTIC_prior_val_buf[curline_prior_pos];
-
-			if (prevline_prior_pos == old_curline_prior_pos &&
-				curline_prior_pos == ANTIC_prior_curpos) {
-			/* no more changes */
-				change_pos = RBORDER_END;
-				stop = TRUE;
-			}
-			else if (prevline_prior_pos != old_curline_prior_pos &&
-				curline_prior_pos != ANTIC_prior_curpos) {
-			/* find leftmost change */
-				int pnext = (prevline_prior_pos + 1) % ANTIC_PRIOR_BUF_SIZE;
-				int cnext = (curline_prior_pos + 1) % ANTIC_PRIOR_BUF_SIZE;
-				if (ANTIC_prior_pos_buf[pnext] < ANTIC_prior_pos_buf[cnext]) {
-					change_pos = ANTIC_prior_pos_buf[pnext];
-					prevline_prior_pos = pnext;
-				}
-				else {
-					change_pos = ANTIC_prior_pos_buf[cnext];
-					curline_prior_pos = cnext;
-				}
-			}
-			else if (prevline_prior_pos != old_curline_prior_pos) {
-				/* only have prevline change */
-				prevline_prior_pos = (prevline_prior_pos + 1) % ANTIC_PRIOR_BUF_SIZE;
-				change_pos = ANTIC_prior_pos_buf[prevline_prior_pos];
-			}
-			else {
-				/* must only have curline change */
-				curline_prior_pos = (curline_prior_pos + 1) % ANTIC_PRIOR_BUF_SIZE;
-				change_pos = ANTIC_prior_pos_buf[curline_prior_pos];
-			}
-
-			if (prev_prior_val >= 0xc0 && cur_prior_val < 0xc0 &&
-				change_pos > LBORDER_START &&
-				change_pos > last_pos && last_pos < RBORDER_END) {
-				int adj_change_pos = (change_pos > RBORDER_END) ? RBORDER_END : change_pos;
-				UWORD *ptr = (scrn_ptr + last_pos);
-				int k = adj_change_pos - last_pos;
-				do {
-					WRITE_VIDEO(ptr, *ptr | *(ptr - Screen_WIDTH / 2));
-					ptr++;
-				} while (--k);
-			}
-			last_pos = (change_pos > last_pos) ? change_pos: last_pos;
-		} while (!stop);
-#endif /* NEW_CYCLE_EXACT */
-#endif /* NO_GTIA11_DELAY */
-#ifndef NEW_CYCLE_EXACT
 		GOEOL;
 #endif /* NEW_CYCLE_EXACT */
 		YPOS_BREAK_FLICKER;
@@ -3268,6 +3142,37 @@ void ANTIC_Frame(int draw_display)
 		dctr++;
 		dctr &= 0xf;
 	} while (ANTIC_ypos < (Screen_HEIGHT + 8));
+
+#ifndef NO_SIMPLE_PAL_BLENDING
+	/* Simple PAL blending, using only the base 256 color palette. */
+	if (ANTIC_pal_blending)
+	{
+		int ypos = ANTIC_ypos - 1;
+		/* Start at the last screen line (248). */
+		ULONG *ptr = (ULONG *) (scrn_ptr - 4 * RCHOP);
+		do {
+			int k = 2 * (48 - LCHOP - RCHOP);
+			do {
+				/* For each grayscale pixel (colors $00..$0f) blend it with
+				   chrominance of a pixel from the previous line. */
+				ULONG pix = READ_VIDEO_LONG(--ptr);
+				ULONG mask = 0xf0f0f0f0;
+				/* Take advantage of the fact that chrominance can change only
+				   every two pixels. This way we may test only two pixels in a
+				   quadruplet instead of four. */
+				if (pix & 0x0000f0f0)
+					/* Two LSBs are non-grayscale */
+					mask &= 0xf0f00000;
+				if (pix & 0xf0f00000)
+					/* Two MSBs are non-grayscale */
+					mask &= 0x0000f0f0;
+
+				WRITE_VIDEO_LONG(ptr, (READ_VIDEO_LONG(ptr - Screen_WIDTH / 4) & mask) | pix);
+			} while (--k);
+			ptr -= 2 * (LCHOP + RCHOP); /* Move one line up */
+		} while (--ypos > 8); /* Stop after line 9 */
+	}
+#endif /* NO_SIMPLE_PAL_BLENDING */
 
 /* TODO: cycle-exact overscreen lines */
 	POKEY_Scanline();		/* check and generate IRQ */

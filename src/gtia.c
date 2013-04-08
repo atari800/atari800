@@ -1119,14 +1119,6 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		UPDATE_PM_CYCLE_EXACT
 		break;
 	case GTIA_OFFSET_PRIOR:
-#ifdef NEW_CYCLE_EXACT
-#ifndef NO_GTIA11_DELAY
-		/* update prior change ring buffer */
-  		ANTIC_prior_curpos = (ANTIC_prior_curpos + 1) % ANTIC_PRIOR_BUF_SIZE;
-		ANTIC_prior_pos_buf[ANTIC_prior_curpos] = ANTIC_XPOS * 2 - 37 + 2;
-		ANTIC_prior_val_buf[ANTIC_prior_curpos] = byte;
-#endif
-#endif
 		ANTIC_SetPrior(byte);
 		GTIA_PRIOR = byte;
 		if (byte & 0x40)

@@ -2674,12 +2674,15 @@ static void SavePalette(void)
 
 static void DisplaySettings(void)
 {
-	static const UI_tMenuItem artif_quality_menu_array[] = {
+	static const UI_tMenuItem tv_effect_menu_array[] = {
 		UI_MENU_ACTION(0, "off"),
-		UI_MENU_ACTION(1, "original"),
-		UI_MENU_ACTION(2, "new"),
+		UI_MENU_ACTION(1, "NTSC artifacting - original"),
+		UI_MENU_ACTION(2, "NTSC artifacting - new"),
 #if NTSC_FILTER
-		UI_MENU_ACTION(3, "NTSC filter"),
+		UI_MENU_ACTION(3, "full NTSC filter"),
+#endif
+#ifndef NO_SIMPLE_PAL_BLENDING
+		UI_MENU_ACTION(4, "PAL blending - simple"),
 #endif
 		UI_MENU_END
 	};
@@ -2713,7 +2716,7 @@ static void DisplaySettings(void)
 		UI_MENU_CHECK(30, "Filtering:"),
 		{ UI_ITEM_ACTION, 31, NULL, "Zoom: ", op_zoom_string },
 #endif /* RPI */
-		UI_MENU_SUBMENU_SUFFIX(0, "NTSC artifacting quality:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(0, "TV effect:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(11, "NTSC artifacting mode:", NULL),
 #if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
 		UI_MENU_CHECK(25, "Show output of 80 column device:"),
@@ -2764,9 +2767,9 @@ static void DisplaySettings(void)
 	int option2;
 	int seltype;
 
-	/* Current artifacting quality, computed from
-	   PLATFORM_artifacting and ANTIC_artif_new */
-	int artif_quality;
+	/* Current TV effect, computed from VIDEOMODE_ntsc_filter,
+	   ANTIC_artif_mode and ANTIC_pal_blending. */
+	int tv_effect;
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 	Colours_preset_t colours_preset;
@@ -2776,23 +2779,28 @@ static void DisplaySettings(void)
 
 	for (;;) {
 #if NTSC_FILTER
-		/* Computing current artifacting quality... */
+		/* Computing current TV effect... */
 		if (VIDEOMODE_ntsc_filter) {
 			/* NTSC filter is on */
-			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[3].item;
 			FindMenuItem(menu_array, 11)->suffix = "N/A";
-			artif_quality = 3;
+			tv_effect = 3;
 		} else
 #endif /* NTSC_FILTER */
-		if (ANTIC_artif_mode == 0) { /* artifacting is off */
-			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[0].item;
+#ifndef NO_SIMPLE_PAL_BLENDING
+		if (ANTIC_pal_blending) {
+			/* Simple PAL blending is on */
 			FindMenuItem(menu_array, 11)->suffix = "N/A";
-			artif_quality = 0;
+			tv_effect = 4;
+		} else
+#endif /* NO_SIMPLE_PAL_BLENDING */
+		if (ANTIC_artif_mode == 0) { /* artifacting is off */
+			FindMenuItem(menu_array, 11)->suffix = "N/A";
+			tv_effect = 0;
 		} else { /* ANTIC artifacting is on */
-			FindMenuItem(menu_array, 0)->suffix = artif_quality_menu_array[1 + ANTIC_artif_new].item;
 			FindMenuItem(menu_array, 11)->suffix = artif_mode_menu_array[ANTIC_artif_mode - 1].item;
-			artif_quality = 1 + ANTIC_artif_new;
+			tv_effect = 1 + ANTIC_artif_new;
 		}
+		FindMenuItem(menu_array, 0)->suffix = tv_effect_menu_array[tv_effect].item;
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 		colours_preset = Colours_GetPreset();
@@ -2841,24 +2849,27 @@ static void DisplaySettings(void)
 			break;
 #endif
 		case 0:
-			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, artif_quality, artif_quality_menu_array, NULL);
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, tv_effect, tv_effect_menu_array, NULL);
 			if (option2 >= 0)
 			{
 #if NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE
 				/* If switched between non-filter and NTSC filter,
 				   VIDEOMODE_ntsc_filter must be updated. */
-				if (option2 >= 3 && artif_quality < 3)
+				if (option2 == 3 && tv_effect != 3)
 					VIDEOMODE_SetNtscFilter(TRUE);
-				else if (option2 < 3 && artif_quality >= 3)
+				else if (option2 != 3 && tv_effect == 3)
 					VIDEOMODE_SetNtscFilter(FALSE);
 #endif /* NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE */
+#ifndef NO_SIMPLE_PAL_BLENDING
+				ANTIC_pal_blending = option2 == 4;
+#endif /* NO_SIMPLE_PAL_BLENDING */
 				/* ANTIC artifacting settings cannot be turned on
 				   when artifacting is off or NTSC filter. */
 				if (option2 == 0 || option2 >= 3) {
 					ANTIC_artif_new = ANTIC_artif_mode = 0;
 				} else {
 					/* Do not reset artifacting mode when switched between original and new. */
-					if (artif_quality >= 3 || artif_quality == 0)
+					if (tv_effect >= 3 || tv_effect == 0)
 						/* switched from off/ntsc filter to ANTIC artifacting */
 						ANTIC_artif_mode = 1;
 
@@ -2869,7 +2880,7 @@ static void DisplaySettings(void)
 			break;
 		case 11:
 			/* The artifacting mode option is only active for ANTIC artifacting. */
-			if (artif_quality > 0 && artif_quality < 3)
+			if (tv_effect >= 1 && tv_effect <= 2)
 			{
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, ANTIC_artif_mode - 1, artif_mode_menu_array, NULL);
 				if (option2 >= 0) {

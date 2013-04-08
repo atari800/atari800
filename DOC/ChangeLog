@@ -1,3 +1,12 @@
+2013-04-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* antic.[ch], gtia.c, ui.c: Improve the existing PAL blending implementation,
+  which worked only on lines in GTIA mode 9 and was erroneously called
+  "GTIA11_DELAY". Previously it only blended lines placed below GTIA 11 lines,
+  now it works on all grasycale pixels. PAL blending now can be switched
+  on/off - see "Display settings->TV effect" (renamed from "NTSC artifacting
+  quality", as this option is no longer NTSC-specific).
+
+
 2013-04-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * colours_pal.c: More accurate emulation of PAL colours based on analysis of
   oscillograms of PAL GTIA output.
