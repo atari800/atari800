@@ -24,9 +24,9 @@ typedef union SDL_PALETTE_buffer_t {
    ARGB etc.) */
 extern SDL_PALETTE_buffer_t SDL_PALETTE_buffer;
 
-void SDL_PALETTE_Calculate32_A8R8G8B8(VIDEOMODE_MODE_t mode);
-void SDL_PALETTE_Calculate32_B8G8R8A8(VIDEOMODE_MODE_t mode);
-void SDL_PALETTE_Calculate16_R5G6B5(VIDEOMODE_MODE_t mode);
-void SDL_PALETTE_Calculate16_B5G6R5(VIDEOMODE_MODE_t mode);
+void SDL_PALETTE_Calculate32_A8R8G8B8(void *dest, int const *palette, int size);
+void SDL_PALETTE_Calculate32_B8G8R8A8(void *dest, int const *palette, int size);
+void SDL_PALETTE_Calculate16_R5G6B5(void *dest, int const *palette, int size);
+void SDL_PALETTE_Calculate16_B5G6R5(void *dest, int const *palette, int size);
 
 #endif /* SDL_PALETTE_H_ */

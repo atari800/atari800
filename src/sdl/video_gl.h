@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#include "platform.h"
+
 #include "videomode.h"
 
 /* Get/set texture pixel format. On some video cards, either of these is faster. */
@@ -18,6 +20,13 @@ enum {
 extern int SDL_VIDEO_GL_pixel_format;
 void SDL_VIDEO_GL_SetPixelFormat(int value);
 void SDL_VIDEO_GL_TogglePixelFormat(void);
+
+/* Returns parameters of the current display pixel format. Used when computing
+   lookup tables used for blitting the Atari screen to display surface. */
+void SDL_VIDEO_GL_GetPixelFormat(PLATFORM_pixel_format_t *format);
+/* Convert a table of RGB values, PALETTE, of size SIZE, to a display's native
+   format and store it in the lookup table DEST. */
+void SDL_VIDEO_GL_MapRGB(void *dest, int const *palette, int size);
 
 /* Get/set bilinear filtering. */
 /* Call VIDEOMODE_Update() after changing this variable, or use SDL_VIDEO_GL_SetFiltering() instead. */

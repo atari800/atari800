@@ -54,6 +54,9 @@
 #include "akey.h"
 #include "log.h"
 #include "memory.h"
+#ifdef PAL_BLENDING
+#include "pal_blending.h"
+#endif /* PAL_BLENDING */
 #include "platform.h"
 #include "rtime.h"
 #include "screen.h"
@@ -2684,6 +2687,9 @@ static void DisplaySettings(void)
 #ifndef NO_SIMPLE_PAL_BLENDING
 		UI_MENU_ACTION(4, "PAL blending - simple"),
 #endif
+#if PAL_BLENDING
+		UI_MENU_ACTION(5, "PAL blending - accurate"),
+#endif /* PAL_BLENDING */
 		UI_MENU_END
 	};
 	static const UI_tMenuItem artif_mode_menu_array[] = {
@@ -2786,6 +2792,13 @@ static void DisplaySettings(void)
 			tv_effect = 3;
 		} else
 #endif /* NTSC_FILTER */
+#ifdef PAL_BLENDING
+		if (PAL_BLENDING_enabled) {
+			/* PAL blending is on */
+			FindMenuItem(menu_array, 11)->suffix = "N/A";
+			tv_effect = 5;
+		} else
+#endif
 #ifndef NO_SIMPLE_PAL_BLENDING
 		if (ANTIC_pal_blending) {
 			/* Simple PAL blending is on */
@@ -2860,6 +2873,13 @@ static void DisplaySettings(void)
 				else if (option2 != 3 && tv_effect == 3)
 					VIDEOMODE_SetNtscFilter(FALSE);
 #endif /* NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE */
+#ifdef PAL_BLENDING
+				/* If PAL blending was enabled/disabed, it must be updated. */
+				if ((option2 == 5 && tv_effect != 5) ||
+				    (option2 != 5 && tv_effect == 5)) {
+					PAL_BLENDING_Set(option2 == 5);
+				}
+#endif /* PAL_BLENDING */
 #ifndef NO_SIMPLE_PAL_BLENDING
 				ANTIC_pal_blending = option2 == 4;
 #endif /* NO_SIMPLE_PAL_BLENDING */

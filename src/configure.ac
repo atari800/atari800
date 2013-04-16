@@ -582,8 +582,10 @@ if [[ "$a8_target" = default ]]; then
             AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
             AC_DEFINE(SUPPORTS_CHANGE_VIDEOMODE,1,[Can change video modes on the fly.])
             AC_DEFINE(SUPPORTS_ROTATE_VIDEOMODE,1,[Can display the screen rotated sideways.])
+            AC_DEFINE(PLATFORM_MAP_PALETTE,1,[Platform-specific mapping of RGB palette to display surface.])
             WANT_XEP80_EMULATION=yes
             WANT_NTSC_FILTER=yes
+            WANT_PAL_BLENDING=yes
             OBJS="$OBJS videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
             AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
             OBJS="$OBJS pbi_proto80.o"
@@ -1037,6 +1039,12 @@ fi
 if [[ "$WANT_NTSC_FILTER" = "yes" ]]; then
 	AC_DEFINE(NTSC_FILTER,1,[Use NTSC video filter.])
     OBJS="$OBJS filter_ntsc.o atari_ntsc/atari_ntsc.o"
+fi
+
+if [[ "$WANT_PAL_BLENDING" = "yes" ]]; then
+    AC_DEFINE(PAL_BLENDING,1,[Use accurate PAL color blending.])
+    OBJS="$OBJS pal_blending.o"
+    
 fi
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then

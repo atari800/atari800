@@ -40,44 +40,36 @@ SDL_PALETTE_tab_t const SDL_PALETTE_tab[VIDEOMODE_MODE_SIZE] = {
 
 SDL_PALETTE_buffer_t SDL_PALETTE_buffer;
 
-void SDL_PALETTE_Calculate32_A8R8G8B8(VIDEOMODE_MODE_t mode)
+void SDL_PALETTE_Calculate32_A8R8G8B8(void *dest, int const *palette, int size)
 {
-	int *pal = SDL_PALETTE_tab[mode].palette;
-	int size = SDL_PALETTE_tab[mode].size;
 	int i;
 	for (i = 0; i < size; i++) {
-		SDL_PALETTE_buffer.bpp32[i] = 0xff000000 | pal[i];
+		((Uint32 *)dest)[i] = 0xff000000 | palette[i];
 	}
 }
-void SDL_PALETTE_Calculate32_B8G8R8A8(VIDEOMODE_MODE_t mode)
+void SDL_PALETTE_Calculate32_B8G8R8A8(void *dest, int const *palette, int size)
 {
-	int *pal = SDL_PALETTE_tab[mode].palette;
-	int size = SDL_PALETTE_tab[mode].size;
 	int i;
 	for (i = 0; i < size; i++) {
-		int rgb = pal[i];
-		SDL_PALETTE_buffer.bpp32[i] = 0xff | ((rgb & 0x00ff0000) >> 8) | ((rgb & 0x0000ff00) << 8) | ((rgb & 0x000000ff) << 24);
+		int rgb = palette[i];
+		((Uint32 *)dest)[i] = 0xff | ((rgb & 0x00ff0000) >> 8) | ((rgb & 0x0000ff00) << 8) | ((rgb & 0x000000ff) << 24);
 	}
 }
 
-void SDL_PALETTE_Calculate16_R5G6B5(VIDEOMODE_MODE_t mode)
+void SDL_PALETTE_Calculate16_R5G6B5(void *dest, int const *palette, int size)
 {
-	int *pal = SDL_PALETTE_tab[mode].palette;
-	int size = SDL_PALETTE_tab[mode].size;
 	int i;
 	for (i = 0; i < size; i++) {
-		int rgb = pal[i];
-		SDL_PALETTE_buffer.bpp16[i] = ((rgb & 0x00f80000) >> 8) | ((rgb & 0x0000fc00) >> 5) | ((rgb & 0x000000f8) >> 3);
+		int rgb = palette[i];
+		((Uint16 *)dest)[i] = ((rgb & 0x00f80000) >> 8) | ((rgb & 0x0000fc00) >> 5) | ((rgb & 0x000000f8) >> 3);
 	}
 }
 
-void SDL_PALETTE_Calculate16_B5G6R5(VIDEOMODE_MODE_t mode)
+void SDL_PALETTE_Calculate16_B5G6R5(void *dest, int const *palette, int size)
 {
-	int *pal = SDL_PALETTE_tab[mode].palette;
-	int size = SDL_PALETTE_tab[mode].size;
 	int i;
 	for (i = 0; i < size; i++) {
-		int rgb = pal[i];
-		SDL_PALETTE_buffer.bpp16[i] = ((rgb & 0x00f80000) >> 19) | ((rgb & 0x0000fc00) >> 5) | ((rgb & 0x000000f8) << 8);
+		int rgb = palette[i];
+		((Uint16 *)dest)[i] = ((rgb & 0x00f80000) >> 19) | ((rgb & 0x0000fc00) >> 5) | ((rgb & 0x000000f8) << 8);
 	}
 }

@@ -33,6 +33,9 @@
 #include "filter_ntsc.h"
 #include "log.h"
 #include "pbi_proto80.h"
+#ifdef PAL_BLENDING
+#include "pal_blending.h"
+#endif /* PAL_BLENDING */
 #include "platform.h"
 #include "screen.h"
 #include "videomode.h"
@@ -46,7 +49,6 @@
 
 static int fullscreen = 1;
 
-static SDL_Color colors[256];			/* palette */
 int SDL_VIDEO_SW_bpp = 0;
 
 static void DisplayWithoutScaling(void);
@@ -56,6 +58,10 @@ static void DisplayNTSCEmu(void);
 static void DisplayXEP80(void);
 static void DisplayProto80(void);
 static void DisplayAF80(void);
+#ifdef PAL_BLENDING
+static void DisplayPalBlending(void);
+static void DisplayPalBlendingScaled(void);
+#endif /* PAL_BLENDING */
 
 static void (*blit_funcs[VIDEOMODE_MODE_SIZE])(void) = {
 	&DisplayWithoutScaling,
@@ -65,8 +71,19 @@ static void (*blit_funcs[VIDEOMODE_MODE_SIZE])(void) = {
 	&DisplayAF80
 };
 
-static void SetPalette(void)
+static void Set8BitPalette(VIDEOMODE_MODE_t mode)
 {
+	int *pal = SDL_PALETTE_tab[mode].palette;
+	int size = SDL_PALETTE_tab[mode].size;
+	SDL_Color colors[256];
+	int i, rgb;
+	for (i = 0; i < size; i++) {
+		rgb = pal[i];
+		colors[i].r = (rgb & 0x00ff0000) >> 16;
+		colors[i].g = (rgb & 0x0000ff00) >> 8;
+		colors[i].b = (rgb & 0x000000ff) >> 0;
+	}
+
 	/* As the data that will be written to SDL_VIDEO_screen is already palettised,
 	   SDL_SetPalette shouldn't modify the surface's logical palette (so no
 	   SDL_LOGPAL here). Adding SDL_LOGPAL would break the palette when running
@@ -74,42 +91,44 @@ static void SetPalette(void)
 	SDL_SetPalette(SDL_VIDEO_screen, SDL_PHYSPAL, colors, 0, 256);
 }
 
-static void CalcPalette(VIDEOMODE_MODE_t mode)
+void SDL_VIDEO_SW_GetPixelFormat(PLATFORM_pixel_format_t *format)
 {
-	int *pal = SDL_PALETTE_tab[mode].palette;
-	int size = SDL_PALETTE_tab[mode].size;
-	int i, rgb;
-	Uint32 c;
+	format->bpp = SDL_VIDEO_SW_bpp;
+	format->rmask = SDL_VIDEO_screen->format->Rmask;
+	format->gmask = SDL_VIDEO_screen->format->Gmask;
+	format->bmask = SDL_VIDEO_screen->format->Bmask;
+}
 
-	if (mode == VIDEOMODE_MODE_NTSC_FILTER)
-		return;
-
-	for (i = 0; i < size; i++) {
-		rgb = pal[i];
-		colors[i].r = (rgb & 0x00ff0000) >> 16;
-		colors[i].g = (rgb & 0x0000ff00) >> 8;
-		colors[i].b = (rgb & 0x000000ff) >> 0;
-	}
-	if (SDL_VIDEO_screen->format->BitsPerPixel == 16 || SDL_VIDEO_screen->format->BitsPerPixel == 32) {
-		for (i = 0; i < size; i++) {
-			c = SDL_MapRGB(SDL_VIDEO_screen->format, colors[i].r, colors[i].g, colors[i].b);
-			switch (SDL_VIDEO_screen->format->BitsPerPixel) {
-			case 16:
-				SDL_PALETTE_buffer.bpp16[i] = (Uint16) c;
-				break;
-			case 32:
-				SDL_PALETTE_buffer.bpp32[i] = (Uint32) c;
-				break;
-			}
+void SDL_VIDEO_SW_MapRGB(void *dest, int const *palette, int size)
+{
+	int i;
+	for (i = 0; i < size; ++i) {
+		Uint32 c = SDL_MapRGB(SDL_VIDEO_screen->format,
+		                      (palette[i] & 0x00ff0000) >> 16,
+		                      (palette[i] & 0x0000ff00) >> 8,
+		                      (palette[i] & 0x000000ff));
+		switch (SDL_VIDEO_screen->format->BitsPerPixel) {
+		case 16:
+			((UWORD *)dest)[i] = (UWORD) c;
+			break;
+		case 32:
+			((ULONG *)dest)[i] = (ULONG) c;
+			break;
 		}
 	}
 }
 
+static void UpdatePaletteLookup(VIDEOMODE_MODE_t mode)
+{
+	if (SDL_VIDEO_screen->format->BitsPerPixel == 8)
+		Set8BitPalette(mode);
+	else
+		SDL_VIDEO_UpdatePaletteLookup(mode, SDL_VIDEO_screen->format->BitsPerPixel == 32);
+}
+
 void SDL_VIDEO_SW_PaletteUpdate(void)
 {
-	CalcPalette(SDL_VIDEO_current_display_mode);
-	if (SDL_VIDEO_SW_bpp == 8)
-		SetPalette();
+	UpdatePaletteLookup(SDL_VIDEO_current_display_mode);
 }
 
 static void ModeInfo(void)
@@ -160,8 +179,13 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 			SDL_VIDEO_SW_bpp = SDL_VIDEO_native_bpp;
 	}
 
-	if ((rotate90 && SDL_VIDEO_SW_bpp != 16) || (mode == VIDEOMODE_MODE_NTSC_FILTER && SDL_VIDEO_SW_bpp != 16 && SDL_VIDEO_SW_bpp != 32)) {
-		/* Rotate90 supports only 16bpp; NTSC filter doesn't support 8bpp. */
+	if ((rotate90 && SDL_VIDEO_SW_bpp != 16) ||
+		((mode == VIDEOMODE_MODE_NTSC_FILTER
+#ifdef PAL_BLENDING
+		  || (mode == VIDEOMODE_MODE_NORMAL && PAL_BLENDING_enabled)
+#endif /* PAL_BLENDING */
+		 ) && SDL_VIDEO_SW_bpp != 16 && SDL_VIDEO_SW_bpp != 32)) {
+		/* Rotate90 supports only 16bpp; NTSC filter and PAL blending don't support 8bpp. */
 		SDL_VIDEO_SW_bpp = 16;
 	}
 
@@ -172,12 +196,7 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 		SetVideoMode(res->width, res->height, SDL_VIDEO_SW_bpp);
 	}
 
-	/* BPP changed, or the new display mode's palette is different than the previous one. */
-	if (old_bpp != SDL_VIDEO_SW_bpp
-	    || SDL_PALETTE_tab[mode].palette != SDL_PALETTE_tab[SDL_VIDEO_current_display_mode].palette)
-		CalcPalette(mode);
-	if (SDL_VIDEO_SW_bpp == 8)
-		SetPalette();
+	UpdatePaletteLookup(mode);
 
 	/* Clear the screen. */
 	SDL_FillRect(SDL_VIDEO_screen, NULL, 0);
@@ -191,6 +210,14 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 	if (mode == VIDEOMODE_MODE_NORMAL) {
 		if (rotate90)
 			blit_funcs[0] = &DisplayRotated;
+#ifdef PAL_BLENDING
+		else if (PAL_BLENDING_enabled) {
+			if (VIDEOMODE_src_width == VIDEOMODE_dest_width && VIDEOMODE_src_height == VIDEOMODE_dest_height)
+				blit_funcs[0] = &DisplayPalBlending;
+			else
+				blit_funcs[0] = &DisplayPalBlendingScaled;
+		}
+#endif /* PAL_BLENDING */
 		else if (VIDEOMODE_src_width == VIDEOMODE_dest_width && VIDEOMODE_src_height == VIDEOMODE_dest_height)
 			blit_funcs[0] = &DisplayWithoutScaling;
 		else
@@ -581,83 +608,77 @@ static void DisplayWithScaling(void)
 {
 	register Uint32 quad;
 	register int x;
-	register int dx;
-	register int yy;
-	register Uint8 *ss = (UBYTE *)Screen_atari;
-	register Uint32 *start32;
+	register Uint8 *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	register Uint32 *pixels = (Uint32 *) SDL_VIDEO_screen->pixels;
 	int i;
-	int y;
+	int y = 0;
 	int w1;
-	int w, h;
+	int w = (VIDEOMODE_src_width) << 16;
+	int h = (VIDEOMODE_src_height) << 16;
+	register int dx = w / VIDEOMODE_dest_width;
+	register int yy;
 	int pos;
-	int pitch4;
-	int dy;
-	int init_x = ((VIDEOMODE_src_width + VIDEOMODE_src_offset_left) << 16) - 0x4000;
+	int pitch4 = SDL_VIDEO_screen->pitch / 4;
+	int dy = h / VIDEOMODE_dest_height;
+	int init_x = (VIDEOMODE_src_width << 16) - 0x4000;
 
 	Uint8 c;
-	pitch4 = SDL_VIDEO_screen->pitch / 4;
-	start32 = (Uint32 *) SDL_VIDEO_screen->pixels;
 
-	w = (VIDEOMODE_src_width) << 16;
-	h = (VIDEOMODE_src_height) << 16;
-	dx = w / VIDEOMODE_dest_width;
-	dy = h / VIDEOMODE_dest_height;
-	y = (VIDEOMODE_src_offset_top) << 16;
 	i = VIDEOMODE_dest_height;
 
 	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	/* Possible values are 8, 16 and 32, as checked earlier in the
 	 * PLATFORM_SetVideoMode() function. */
 	case 8:
-		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 4;
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 4;
 		w1 = VIDEOMODE_dest_width / 4 - 1;
 		while (i > 0) {
 			x = init_x;
 			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
-				quad = (ss[yy + (x >> 16)] << 24);
-				x = x - dx;
-				quad += (ss[yy + (x >> 16)] << 16);
-				x = x - dx;
-				quad += (ss[yy + (x >> 16)] << 8);
-				x = x - dx;
-				quad += (ss[yy + (x >> 16)] << 0);
-				x = x - dx;
+				quad = (screen[yy + (x >> 16)] << 24);
+				x -= dx;
+				quad += (screen[yy + (x >> 16)] << 16);
+				x -= dx;
+				quad += (screen[yy + (x >> 16)] << 8);
+				x -= dx;
+				quad += (screen[yy + (x >> 16)] << 0);
+				x -= dx;
 
-				start32[pos] = quad;
+				pixels[pos] = quad;
 				pos--;
 
 			}
-			start32 += pitch4;
-			y = y + dy;
+			pixels += pitch4;
+			y += dy;
 			i--;
 		}
 		break;
 	case 16:
-		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
 		w1 = VIDEOMODE_dest_width / 2 - 1;
 		while (i > 0) {
 			x = init_x;
 			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
-				c = ss[yy + (x >> 16)];
+				c = screen[yy + (x >> 16)];
 				quad = SDL_PALETTE_buffer.bpp16[c] << 16;
-				x = x - dx;
-				c = ss[yy + (x >> 16)];
+				x -= dx;
+				c = screen[yy + (x >> 16)];
 				quad += SDL_PALETTE_buffer.bpp16[c];
-				x = x - dx;
-				start32[pos] = quad;
+				x -= dx;
+				pixels[pos] = quad;
 				pos--;
 			}
-			start32 += pitch4;
-			y = y + dy;
+			pixels += pitch4;
+			y += dy;
 			i--;
 		}
 		break;
 	default:
-		start32 += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
 		w1 = VIDEOMODE_dest_width - 1;
 		/* SDL_VIDEO_screen->format->BitsPerPixel = 32 */
 		while (i > 0) {
@@ -665,18 +686,56 @@ static void DisplayWithScaling(void)
 			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
-				c = ss[yy + (x >> 16)];
+				c = screen[yy + (x >> 16)];
 				quad = SDL_PALETTE_buffer.bpp32[c];
-				x = x - dx;
-				start32[pos] = quad;
+				x -= dx;
+				pixels[pos] = quad;
 				pos--;
 			}
-			start32 += pitch4;
-			y = y + dy;
+			pixels += pitch4;
+			y += dy;
 			i--;
 		}
 	}
 }
+
+#ifdef PAL_BLENDING
+static void DisplayPalBlending(void)
+{
+	int pitch4 = SDL_VIDEO_screen->pitch / 4;
+	UBYTE *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	Uint8 *pixels = (Uint8 *) SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
+	/* Possible values are 8, 16 and 32, as checked earlier in the
+	 * PLATFORM_SetVideoMode() function. */
+	case 16:
+		pixels += VIDEOMODE_dest_offset_left * 2;
+		PAL_BLENDING_Blit16((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+		break;
+	default: /* SDL_VIDEO_screen->format->BitsPerPixel == 32 */
+		pixels += VIDEOMODE_dest_offset_left * 4;
+		PAL_BLENDING_Blit32((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+
+static void DisplayPalBlendingScaled(void)
+{
+	int pitch4 = SDL_VIDEO_screen->pitch / 4;
+	Uint8 *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	Uint32 *pixels = (Uint32 *) SDL_VIDEO_screen->pixels;
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
+	/* Possible values are 8, 16 and 32, as checked earlier in the
+	 * PLATFORM_SetVideoMode() function. */
+	case 16:
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
+		PAL_BLENDING_BlitScaled16((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
+		break;
+	case 32:
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
+		PAL_BLENDING_BlitScaled32((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+#endif /* PAL_BLENDING */
 
 void SDL_VIDEO_SW_DisplayScreen(void)
 {

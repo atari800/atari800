@@ -89,4 +89,11 @@ int Colours_Initialise(int *argc, char *argv[]);
 void Colours_SetPreset(Colours_preset_t preset);
 Colours_preset_t Colours_GetPreset(void);
 
+/* Convert given R, G and B values to corresponding Y, U, V values (all in the
+   0.0 - 1.0 range). */
+void Colours_RGB2YUV(double r, double g, double b, double *y, double *u, double *v);
+/* Convert given Y, U and V values to corresponding R, G, B values (all in the
+   0.0 - 1.0 range). */
+void Colours_YUV2RGB(double y, double u, double v, double *r, double *g, double *b);
+
 #endif /* COLOURS_H_ */

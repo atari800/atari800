@@ -91,4 +91,20 @@ int PLATFORM_WindowMaximised(void);
 
 #endif /* SUPPORTS_CHANGE_VIDEOMODE */
 
+#ifdef PLATFORM_MAP_PALETTE
+typedef struct PLATFORM_pixel_format_t {
+	int bpp; /* Current bits per pixel */
+	ULONG rmask;
+	ULONG gmask;
+	ULONG bmask;
+} PLATFORM_pixel_format_t;
+/* Returns parameters of the current display pixel format. Used when computing
+   lookup tables used for blitting the Atari screen to display surface. */
+void PLATFORM_GetPixelFormat(PLATFORM_pixel_format_t *format);/* Can be 8, 16, 32 */
+
+/* Convert a table of RGB values, PALETTE, of size SIZE, to a display's native
+   format and store it in the lookup table DEST. */
+void PLATFORM_MapRGB(void *dest, int const *palette, int size);
+#endif /* PLATFORM_MAP_PALETTE */
+
 #endif /* PLATFORM_H_ */

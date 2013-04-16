@@ -76,6 +76,38 @@ void Colours_SetRGB(int i, int r, int g, int b, int *colortable_ptr)
 	colortable_ptr[i] = (r << 16) + (g << 8) + b;
 }
 
+/* 3x3 matrix for conversion from RGB to YUV colourspace. */
+static double const RGB2YUV_matrix[3][3] = {
+	{ 0.299, 0.587, 0.114 },
+	{ -0.14713, -0.28886, 0.436 },
+	{ 0.615, -0.51499, -0.10001 }
+};
+
+/* 3x3 matrix for conversion from YUV to RGB colourspace. */
+static double const YUV2RGB_matrix[3][3] = {
+	{ 1.0, 0.0, 1.13983 },
+	{ 1.0, -0.39465, -0.58060 },
+	{ 1.0, 2.03211, 0.0 }
+};
+
+/* Multiply 3x3 matrix MATRIX by vector IN[1..3] and return result in OUT[1..3]. */
+static void MultiplyMatrix(double in1, double in2, double in3, double *out1, double *out2, double *out3, double const matrix[3][3])
+{
+	*out1 = matrix[0][0] * in1 + matrix[0][1] * in2 + matrix[0][2] * in3;
+	*out2 = matrix[1][0] * in1 + matrix[1][1] * in2 + matrix[1][2] * in3;
+	*out3 = matrix[2][0] * in1 + matrix[2][1] * in2 + matrix[2][2] * in3;
+}
+
+void Colours_RGB2YUV(double r, double g, double b, double *y, double *u, double *v)
+{
+	MultiplyMatrix(r, g, b, y, u, v, RGB2YUV_matrix);
+}
+
+void Colours_YUV2RGB(double y, double u, double v, double *r, double *g, double *b)
+{
+	MultiplyMatrix(y, u, v, r, g, b, YUV2RGB_matrix);
+}
+
 static void UpdateModeDependentPointers(int tv_mode)
 {
 	/* Set pointers to the current setup and external palette. */

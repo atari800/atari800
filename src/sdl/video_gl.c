@@ -33,6 +33,9 @@
 #include "filter_ntsc.h"
 #include "log.h"
 #include "pbi_proto80.h"
+#ifdef PAL_BLENDING
+#include "pal_blending.h"
+#endif /* PAL_BLENDING */
 #include "platform.h"
 #include "screen.h"
 #include "videomode.h"
@@ -97,8 +100,11 @@ static void DisplayNTSCEmu(GLvoid *dest);
 static void DisplayXEP80(GLvoid *dest);
 static void DisplayProto80(GLvoid *dest);
 static void DisplayAF80(GLvoid *dest);
+#ifdef PAL_BLENDING
+static void DisplayPalBlending(GLvoid *dest);
+#endif /* PAL_BLENDING */
 
-static void (* const blit_funcs[VIDEOMODE_MODE_SIZE])(GLvoid *) = {
+static void (* blit_funcs[VIDEOMODE_MODE_SIZE])(GLvoid *) = {
 	&DisplayNormal,
 	&DisplayNTSCEmu,
 	&DisplayXEP80,
@@ -148,15 +154,26 @@ typedef struct pixel_format_t {
 	GLenum format;
 	GLenum type;
 	Uint32 black_pixel;
-	void(*calc_pal_func)(VIDEOMODE_MODE_t mode);
+	Uint32 rmask;
+	Uint32 gmask;
+	Uint32 bmask;
+	void(*calc_pal_func)(void *dest, int const *palette, int size);
 	void(*ntsc_blit_func)(atari_ntsc_t const*, ATARI_NTSC_IN_T const*, long, int, int, void*, long);
 } pixel_format_t;
 
 pixel_format_t const pixel_formats[4] = {
-	{ GL_RGB5, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, 0x0000, &SDL_PALETTE_Calculate16_B5G6R5, &atari_ntsc_blit_bgr16 }, 
-	{ GL_RGB5, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, 0x0000, &SDL_PALETTE_Calculate16_R5G6B5, &atari_ntsc_blit_rgb16 }, /* NVIDIA 16-bit */
-	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, 0xff000000, &SDL_PALETTE_Calculate32_B8G8R8A8, &atari_ntsc_blit_bgra32 },
-	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0xff000000, &SDL_PALETTE_Calculate32_A8R8G8B8, &atari_ntsc_blit_argb32 } /* NVIDIA 32-bit */
+	{ GL_RGB5, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, 0x0000,
+	  0x0000001f, 0x000007e0, 0x0000f800,
+	  &SDL_PALETTE_Calculate16_B5G6R5, &atari_ntsc_blit_bgr16 },
+	{ GL_RGB5, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, 0x0000,
+	  0x0000f800, 0x000007e0, 0x0000001f,
+	  &SDL_PALETTE_Calculate16_R5G6B5, &atari_ntsc_blit_rgb16 }, /* NVIDIA 16-bit */
+	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, 0xff000000,
+	  0x0000ff00, 0x00ff0000, 0xff000000,
+	  &SDL_PALETTE_Calculate32_B8G8R8A8, &atari_ntsc_blit_bgra32 },
+	{ GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0xff000000,
+	  0x00ff0000, 0x0000ff00, 0x000000ff,
+	  &SDL_PALETTE_Calculate32_A8R8G8B8, &atari_ntsc_blit_argb32 } /* NVIDIA 32-bit */
 };
 
 /* Conversion between function pointers and 'void *' is forbidden in
@@ -268,16 +285,28 @@ void SDL_VIDEO_GL_Cleanup(void)
 	FreeTexture();
 }
 
-/* Calculate the palette in the 32-bit BGRA format, or 16-bit BGR 5-6-5 format. */
-static void CalcPalette(VIDEOMODE_MODE_t mode)
+void SDL_VIDEO_GL_GetPixelFormat(PLATFORM_pixel_format_t *format)
 {
-	if (mode != VIDEOMODE_MODE_NTSC_FILTER)
-		(*pixel_formats[SDL_VIDEO_GL_pixel_format].calc_pal_func)(mode);
+	format->bpp = bpp_32 ? 32 : 16;
+	format->rmask = pixel_formats[SDL_VIDEO_GL_pixel_format].rmask;
+	format->gmask = pixel_formats[SDL_VIDEO_GL_pixel_format].gmask;
+	format->bmask = pixel_formats[SDL_VIDEO_GL_pixel_format].bmask;
+}
+
+void SDL_VIDEO_GL_MapRGB(void *dest, int const *palette, int size)
+{
+	(*pixel_formats[SDL_VIDEO_GL_pixel_format].calc_pal_func)(dest, palette, size);
+}
+
+/* Calculate the palette in the 32-bit BGRA format, or 16-bit BGR 5-6-5 format. */
+static void UpdatePaletteLookup(VIDEOMODE_MODE_t mode)
+{
+	SDL_VIDEO_UpdatePaletteLookup(mode, bpp_32);
 }
 
 void SDL_VIDEO_GL_PaletteUpdate(void)
 {
-	CalcPalette(SDL_VIDEO_current_display_mode);
+	UpdatePaletteLookup(SDL_VIDEO_current_display_mode);
 }
 
 /* Set parameters that will shift the screen and scanline textures a bit,
@@ -560,15 +589,23 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 		FreeTexture();
 		AllocTexture();
 	}
-	
-	if (new
-	    || SDL_PALETTE_tab[mode].palette != SDL_PALETTE_tab[SDL_VIDEO_current_display_mode].palette)
-		CalcPalette(mode);
+
+	UpdatePaletteLookup(mode);
 
 	if (context_updated)
 		InitGlTextures();
 
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
+
+	if (mode == VIDEOMODE_MODE_NORMAL) {
+#ifdef PAL_BLENDING
+		if (PAL_BLENDING_enabled)
+			blit_funcs[0] = &DisplayPalBlending;
+		else
+#endif /* PAL_BLENDING */
+			blit_funcs[0] = &DisplayNormal;
+	}
+
 	gl.Viewport(VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
 	SetSubpixelShifts();
 	SetGlDisplayList();
@@ -596,6 +633,23 @@ static void DisplayNormal(GLvoid *dest)
 		SDL_VIDEO_BlitNormal16((Uint32*)dest, screen, pitch, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp16);
 	}
 }
+
+#ifdef PAL_BLENDING
+static void DisplayPalBlending(GLvoid *dest)
+{
+	Uint8 *screen = (Uint8 *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	if (bpp_32)
+		PAL_BLENDING_Blit32((Uint32*)dest, screen, VIDEOMODE_actual_width, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	else {
+		int pitch;
+		if (VIDEOMODE_actual_width & 0x01)
+			pitch = VIDEOMODE_actual_width / 2 + 1;
+		else
+			pitch = VIDEOMODE_actual_width / 2;
+		PAL_BLENDING_Blit16((Uint32*)dest, screen, pitch, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+#endif /* PAL_BLENDING */
 
 static void DisplayNTSCEmu(GLvoid *dest)
 {
@@ -794,7 +848,7 @@ void SDL_VIDEO_GL_SetPixelFormat(int value)
 			bpp_32 = new_bpp_32;
 			AllocTexture();
 		}
-		CalcPalette(SDL_VIDEO_current_display_mode);
+		UpdatePaletteLookup(SDL_VIDEO_current_display_mode);
 		InitGlTextures();
 		CleanDisplayTexture();
 	}

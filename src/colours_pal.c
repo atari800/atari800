@@ -46,9 +46,9 @@ static struct {
 
 COLOURS_EXTERNAL_t COLOURS_PAL_external = { "", FALSE, FALSE };
 
-/* Applies the colours setup to the external palette. Writes output to
-   COLOURTABLE. */
-static void AdjustExternal(int colourtable[256])
+/* Fills YUV_TABLE from external palette. External palette is not adjusted if
+   COLOURS_PAL_external.adjust is false. */
+static void GetYUVFromExternal(double yuv_table[256*5])
 {
 	const double gamma = 1 - COLOURS_PAL_setup.gamma / 2.0;
 	unsigned char *ext_ptr = COLOURS_PAL_external.palette;
@@ -63,27 +63,31 @@ static void AdjustExternal(int colourtable[256])
 		double r = (double)*ext_ptr++ / 255.0;
 		double g = (double)*ext_ptr++ / 255.0;
 		double b = (double)*ext_ptr++ / 255.0;
-		double y = 0.299 * r + 0.587 * g + 0.114 * b;
-		double u = -0.14713 * r - 0.28886 * g + 0.436 * b;
-		double v = 0.615 * r - 0.51499 * g - 0.10001 * b;
-		double tmp_u = u;
+		double y, u, v, tmp_u;
+		Colours_RGB2YUV(r, g, b, &y, &u, &v);
+		tmp_u = u;
 		u = tmp_u * c - v * s;
 		v = tmp_u * s + v * c;
-		y = pow(y, gamma);
-		y *= COLOURS_PAL_setup.contrast * 0.5 + 1;
-		y += COLOURS_PAL_setup.brightness * 0.5;
-		if (y > 1.0)
-			y = 1.0;
-		else if (y < 0.0)
-			y = 0.0;
-		u *= COLOURS_PAL_setup.saturation + 1.0;
-		v *= COLOURS_PAL_setup.saturation + 1.0;
+		/* Optionally adjust external palette. */
+		if (COLOURS_PAL_external.adjust) {
+			y = pow(y, gamma);
+			y *= COLOURS_PAL_setup.contrast * 0.5 + 1;
+			y += COLOURS_PAL_setup.brightness * 0.5;
+			if (y > 1.0)
+				y = 1.0;
+			else if (y < 0.0)
+				y = 0.0;
+			u *= COLOURS_PAL_setup.saturation + 1.0;
+			v *= COLOURS_PAL_setup.saturation + 1.0;
+		}
 
-		r = y + 1.13983 * v;
-		g = y - 0.39465 * u - 0.58060 * v;
-		b = y + 2.03211 * u;
-
-		Colours_SetRGB(n, (int) (r * 255), (int) (g * 255), (int) (b * 255), colourtable);
+		*yuv_table++ = y;
+		/* Cannot retrieve different U/V values for even and odd lines from an
+		   external palette - instead write each value twice. */
+		*yuv_table++ = u;
+		*yuv_table++ = u;
+		*yuv_table++ = v;
+		*yuv_table++ = v;
 	}
 }
 
@@ -192,9 +196,8 @@ static void AdjustExternal(int colourtable[256])
    deg that phase shift must be. It is specific to a TV set. */
 #define COLOR_DISABLE_THRESHOLD 0.05
 
-/* Generates a PAL palette, based on colour setup. Result is written into
-   COLOURTABLE. */
-static void GeneratePalette(int colourtable[256])
+/* Generates PAL palette into YUV_TABLE. */
+static void GetYUVFromGenerated(double yuv_table[256*5])
 {
 	struct del_coeff {
 		int add;
@@ -288,8 +291,10 @@ static void GeneratePalette(int colourtable[256])
 	}
 
 	for (cr = 0; cr < 16; cr ++) {
-		double u = 0.0;
-		double v = 0.0;
+		double even_u = 0.0;
+		double odd_u = 0.0;
+		double even_v = 0.0;
+		double odd_v = 0.0;
 		if (cr) {
 			struct del_coeff const *even_delay = &(del_coeffs.even[cr - 1]);
 			struct del_coeff const *odd_delay = &(del_coeffs.odd[cr - 1]);
@@ -297,20 +302,15 @@ static void GeneratePalette(int colourtable[256])
 			double odd_del = base_del + add_del * odd_delay->add + del_adj * odd_delay->mult;
 			double even_angle = (0.5 - (even_del - subcarrier_del)) * 2.0 * M_PI;
 			double odd_angle = (0.5 + (odd_del - subcarrier_del)) * 2.0 * M_PI;
-			double even_u = cos(even_angle);
-			double even_v = sin(even_angle);
-			double odd_u = cos(odd_angle);
-			double odd_v = sin(odd_angle);
 			double saturation = (COLOURS_PAL_setup.saturation + 1) * 0.175 * saturation_mult;
-			/* TODO: the different colors in odd and even lines are not
-			   emulated - instead the palette contains averaged values. */
-			u = (even_u + odd_u) * 0.5 * saturation;
-			v = (even_v + odd_v) * 0.5 * saturation;
+			even_u = cos(even_angle) * saturation;
+			even_v = sin(even_angle) * saturation;
+			odd_u = cos(odd_angle) * saturation;
+			odd_v = sin(odd_angle) * saturation;
 		}
 		for (lm = 0; lm < 16; lm ++) {
 			/* calculate yuv for color entry */
 			double y = (luma_mult[lm] - luma_mult[0]) / (luma_mult[15] - luma_mult[0]);
-			double r, g, b;
 			y = pow(y, gamma);
 			y *= COLOURS_PAL_setup.contrast * 0.5 + 1;
 			y += COLOURS_PAL_setup.brightness * 0.5;
@@ -323,20 +323,50 @@ static void GeneratePalette(int colourtable[256])
 			else if (y > scaled_white_level)
 				y = scaled_white_level;
 			*/
-			r = y + 1.13983 * v;
-			g = y - 0.39465 * u - 0.58060 * v;
-			b = y + 2.03211 * u;
-			Colours_SetRGB(cr * 16 + lm, (int) (r * 255), (int) (g * 255), (int) (b * 255), colourtable);
+			*yuv_table++ = y;
+			*yuv_table++ = even_u;
+			*yuv_table++ = odd_u;
+			*yuv_table++ = even_v;
+			*yuv_table++ = odd_v;
 		}
+	}
+}
+
+void COLOURS_PAL_GetYUV(double yuv_table[256*5])
+{
+	if (COLOURS_PAL_external.loaded)
+		GetYUVFromExternal(yuv_table);
+	else
+		GetYUVFromGenerated(yuv_table);
+}
+
+/* Averages YUV values from YUV_TABLE and converts them to RGB values. Stores
+   them in COLOURTABLE. */
+static void YUV2RGB(int colourtable[256], double const yuv_table[256*5])
+{
+	double const *yuv_ptr = yuv_table;
+	int n;
+	for (n = 0; n < 256; ++n) {
+		double y = *yuv_ptr++;
+		double even_u = *yuv_ptr++;
+		double odd_u = *yuv_ptr++;
+		double even_v = *yuv_ptr++;
+		double odd_v = *yuv_ptr++;
+		double r, g, b;
+		/* The different colors in odd and even lines are not
+		   emulated - instead the palette contains averaged values. */
+		double u = (even_u + odd_u) / 2.0;
+		double v = (even_v + odd_v) / 2.0;
+		Colours_YUV2RGB(y, u, v, &r, &g, &b);
+		Colours_SetRGB(n, (int) (r * 255), (int) (g * 255), (int) (b * 255), colourtable);
 	}
 }
 
 void COLOURS_PAL_Update(int colourtable[256])
 {
-	if (COLOURS_PAL_external.loaded)
-		AdjustExternal(colourtable);
-	else
-		GeneratePalette(colourtable);
+	double yuv_table[256*5];
+	COLOURS_PAL_GetYUV(yuv_table);
+	YUV2RGB(colourtable, yuv_table);
 }
 
 void COLOURS_PAL_RestoreDefaults(void)

@@ -1,3 +1,9 @@
+2013-04-15  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* colours_pal.[ch], colours.[ch], configure.ac, pal_blending.[ch], platform.h,
+  ui.c, sdl/palette.[ch], sdl/video_gl.[ch], sdl/video_sw.[ch], sdl.video.[ch]:
+  Added accurate emulation of PAL delay line (PAL blending).
+
+
 2013-04-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * antic.[ch], gtia.c, ui.c: Improve the existing PAL blending implementation,
   which worked only on lines in GTIA mode 9 and was erroneously called

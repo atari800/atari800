@@ -27,4 +27,8 @@ int COLOURS_PAL_Initialise(int *argc, char *argv[]);
 /* Function for getting the PAL-specific color preset. */
 Colours_preset_t COLOURS_PAL_GetPreset(void);
 
+/* Writes the PAL palette (generated or external) as {Y, even U, odd U,
+   even V, odd V} quintuples in YUV_TABLE. */
+void COLOURS_PAL_GetYUV(double yuv_table[256*5]);
+
 #endif /* COLOURS_PAL_H_ */

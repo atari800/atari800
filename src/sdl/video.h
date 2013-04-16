@@ -77,4 +77,7 @@ void SDL_VIDEO_BlitAF80_8(Uint32 *dest, int first_column, int last_column, int p
 void SDL_VIDEO_BlitAF80_16(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink, Uint16 *palette16);
 void SDL_VIDEO_BlitAF80_32(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink, Uint32 *palette32);
 
+/* Update lookup tables for the blit functions. */
+void SDL_VIDEO_UpdatePaletteLookup(VIDEOMODE_MODE_t mode, int bpp_32);
+
 #endif /* SDL_VIDEO_H_ */
