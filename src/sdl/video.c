@@ -350,13 +350,15 @@ void SDL_VIDEO_InitSDL(void)
 
 void SDL_VIDEO_QuitSDL(void)
 {
+	if (SDL_VIDEO_screen != NULL) {
 #if HAVE_OPENGL
-	if (currently_opengl)
-		SDL_VIDEO_GL_Cleanup();
+		if (currently_opengl)
+			SDL_VIDEO_GL_Cleanup();
 #endif
-	SDL_VIDEO_screen = NULL;
+		SDL_VIDEO_screen = NULL;
 
-	SDL_QuitSubSystem(SDL_INIT_VIDEO);
+		SDL_QuitSubSystem(SDL_INIT_VIDEO);
+	}
 }
 
 void SDL_VIDEO_ReinitSDL(void)

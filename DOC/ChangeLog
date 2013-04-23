@@ -6,6 +6,9 @@
   artifacting modes. Artifacting modes are now stored independently for PAL
   and NTSC modes, and set according to the current TV mode setting.
 
+* sdl/main.c, sdl/video.c: When in monitor, avoid reopening the SDL window
+  during stepping through code.
+
 
 2013-04-15  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * colours_pal.[ch], colours.[ch], configure.ac, pal_blending.[ch], platform.h,

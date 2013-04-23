@@ -99,43 +99,41 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 int PLATFORM_Exit(int run_monitor)
 {
-	int restart;
-
 	SDL_INPUT_Exit();
 	/* If the SDL window was left not closed, it would be unusable and hanging
 	   for the time the monitor is active. Also, with SDL_VIDEODRIVER=directx all
 	   keyboard presses in console would be still fetched by the SDL window after
 	   leaving the monitor. To avoid the problems, close the video subsystem. */
 	SDL_VIDEO_Exit();
+	Log_flushlog();
+
 	if (run_monitor) {
 #ifdef SOUND
 		Sound_Pause();
 #endif
-		restart = MONITOR_Run();
-#ifdef SOUND
-		Sound_Continue();
+		if (MONITOR_Run()) {
+			/* Reinitialise the SDL subsystem. */
+#ifdef MONITOR_BREAK
+			if (!MONITOR_break_step) /*Do not initialise videomode when stepping through code */
 #endif
-	}
-	else {
-		restart = FALSE;
-	}
-
-	if (restart) {
-		/* Reinitialise the SDL subsystem. */
-		SDL_VIDEO_InitSDL();
-		SDL_INPUT_Restart();
-		/* This call reopens the SDL window. */
-		VIDEOMODE_Update();
-		return 1;
+			{
+				SDL_VIDEO_InitSDL();
+				SDL_INPUT_Restart();
+				/* This call reopens the SDL window. */
+				VIDEOMODE_Update();
+			}
+	#ifdef SOUND
+			Sound_Continue();
+	#endif
+			return 1;
+		}
 	}
 
 #ifdef SOUND
 	Sound_Exit();
 #endif
 
-	Log_flushlog();
-
-	return restart;
+	return 0;
 }
 
 #if HAVE_WINDOWS_H
