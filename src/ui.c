@@ -31,6 +31,7 @@
 
 #include "afile.h"
 #include "antic.h"
+#include "artifact.h"
 #include "atari.h"
 #include "binload.h"
 #include "cartridge.h"
@@ -2677,18 +2678,18 @@ static void SavePalette(void)
 
 static void DisplaySettings(void)
 {
-	static const UI_tMenuItem tv_effect_menu_array[] = {
-		UI_MENU_ACTION(0, "off"),
-		UI_MENU_ACTION(1, "NTSC artifacting - original"),
-		UI_MENU_ACTION(2, "NTSC artifacting - new"),
+	static UI_tMenuItem artif_menu_array[] = {
+		UI_MENU_ACTION(ARTIFACT_NONE, "off"),
+		UI_MENU_ACTION(ARTIFACT_NTSC_OLD, "old NTSC artifacts"),
+		UI_MENU_ACTION(ARTIFACT_NTSC_NEW, "new NTSC artifacts"),
 #if NTSC_FILTER
-		UI_MENU_ACTION(3, "full NTSC filter"),
+		UI_MENU_ACTION(ARTIFACT_NTSC_FULL, "full NTSC filter"),
 #endif
 #ifndef NO_SIMPLE_PAL_BLENDING
-		UI_MENU_ACTION(4, "PAL blending - simple"),
+		UI_MENU_ACTION(ARTIFACT_PAL_SIMPLE, "simple PAL blending"),
 #endif
 #if PAL_BLENDING
-		UI_MENU_ACTION(5, "PAL blending - accurate"),
+		UI_MENU_ACTION(ARTIFACT_PAL_BLEND, "accurate PAL blending"),
 #endif /* PAL_BLENDING */
 		UI_MENU_END
 	};
@@ -2722,7 +2723,7 @@ static void DisplaySettings(void)
 		UI_MENU_CHECK(30, "Filtering:"),
 		{ UI_ITEM_ACTION, 31, NULL, "Zoom: ", op_zoom_string },
 #endif /* RPI */
-		UI_MENU_SUBMENU_SUFFIX(0, "TV effect:", NULL),
+		UI_MENU_SUBMENU_SUFFIX(0, "Video artifacts:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(11, "NTSC artifacting mode:", NULL),
 #if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
 		UI_MENU_CHECK(25, "Show output of 80 column device:"),
@@ -2773,10 +2774,6 @@ static void DisplaySettings(void)
 	int option2;
 	int seltype;
 
-	/* Current TV effect, computed from VIDEOMODE_ntsc_filter,
-	   ANTIC_artif_mode and ANTIC_pal_blending. */
-	int tv_effect;
-
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 	Colours_preset_t colours_preset;
 	int i;
@@ -2784,36 +2781,12 @@ static void DisplaySettings(void)
 #endif
 
 	for (;;) {
-#if NTSC_FILTER
-		/* Computing current TV effect... */
-		if (VIDEOMODE_ntsc_filter) {
-			/* NTSC filter is on */
-			FindMenuItem(menu_array, 11)->suffix = "N/A";
-			tv_effect = 3;
-		} else
-#endif /* NTSC_FILTER */
-#ifdef PAL_BLENDING
-		if (PAL_BLENDING_enabled) {
-			/* PAL blending is on */
-			FindMenuItem(menu_array, 11)->suffix = "N/A";
-			tv_effect = 5;
-		} else
-#endif
-#ifndef NO_SIMPLE_PAL_BLENDING
-		if (ANTIC_pal_blending) {
-			/* Simple PAL blending is on */
-			FindMenuItem(menu_array, 11)->suffix = "N/A";
-			tv_effect = 4;
-		} else
-#endif /* NO_SIMPLE_PAL_BLENDING */
 		if (ANTIC_artif_mode == 0) { /* artifacting is off */
 			FindMenuItem(menu_array, 11)->suffix = "N/A";
-			tv_effect = 0;
 		} else { /* ANTIC artifacting is on */
 			FindMenuItem(menu_array, 11)->suffix = artif_mode_menu_array[ANTIC_artif_mode - 1].item;
-			tv_effect = 1 + ANTIC_artif_new;
 		}
-		FindMenuItem(menu_array, 0)->suffix = tv_effect_menu_array[tv_effect].item;
+		FindMenuItem(menu_array, 0)->suffix = artif_menu_array[ARTIFACT_mode].item;
 
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 		colours_preset = Colours_GetPreset();
@@ -2862,45 +2835,29 @@ static void DisplaySettings(void)
 			break;
 #endif
 		case 0:
-			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, tv_effect, tv_effect_menu_array, NULL);
-			if (option2 >= 0)
-			{
-#if NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE
-				/* If switched between non-filter and NTSC filter,
-				   VIDEOMODE_ntsc_filter must be updated. */
-				if (option2 == 3 && tv_effect != 3)
-					VIDEOMODE_SetNtscFilter(TRUE);
-				else if (option2 != 3 && tv_effect == 3)
-					VIDEOMODE_SetNtscFilter(FALSE);
-#endif /* NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE */
-#ifdef PAL_BLENDING
-				/* If PAL blending was enabled/disabed, it must be updated. */
-				if ((option2 == 5 && tv_effect != 5) ||
-				    (option2 != 5 && tv_effect == 5)) {
-					PAL_BLENDING_Set(option2 == 5);
-				}
-#endif /* PAL_BLENDING */
+			artif_menu_array[ARTIFACT_NTSC_OLD].flags =
+				Atari800_tv_mode == Atari800_TV_NTSC ? UI_ITEM_ACTION : UI_ITEM_HIDDEN;
+			artif_menu_array[ARTIFACT_NTSC_NEW].flags =
+				Atari800_tv_mode == Atari800_TV_NTSC ? UI_ITEM_ACTION : UI_ITEM_HIDDEN;
+#if NTSC_FILTER
+			artif_menu_array[ARTIFACT_NTSC_FULL].flags =
+				Atari800_tv_mode == Atari800_TV_NTSC ? UI_ITEM_ACTION : UI_ITEM_HIDDEN;
+#endif /* NTSC_FILTER */
 #ifndef NO_SIMPLE_PAL_BLENDING
-				ANTIC_pal_blending = option2 == 4;
+			artif_menu_array[ARTIFACT_PAL_SIMPLE].flags =
+				Atari800_tv_mode == Atari800_TV_PAL ? UI_ITEM_ACTION : UI_ITEM_HIDDEN;
 #endif /* NO_SIMPLE_PAL_BLENDING */
-				/* ANTIC artifacting settings cannot be turned on
-				   when artifacting is off or NTSC filter. */
-				if (option2 == 0 || option2 >= 3) {
-					ANTIC_artif_new = ANTIC_artif_mode = 0;
-				} else {
-					/* Do not reset artifacting mode when switched between original and new. */
-					if (tv_effect >= 3 || tv_effect == 0)
-						/* switched from off/ntsc filter to ANTIC artifacting */
-						ANTIC_artif_mode = 1;
-
-					ANTIC_artif_new = option2 - 1;
-				}
-				ANTIC_UpdateArtifacting();
-			}
+#ifdef PAL_BLENDING
+			artif_menu_array[ARTIFACT_PAL_BLEND].flags =
+				Atari800_tv_mode == Atari800_TV_PAL ? UI_ITEM_ACTION : UI_ITEM_HIDDEN;
+#endif /* PAL_BLENDING */
+			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, ARTIFACT_mode, artif_menu_array, NULL);
+			if (option2 >= 0)
+				ARTIFACT_Set(option2);
 			break;
 		case 11:
 			/* The artifacting mode option is only active for ANTIC artifacting. */
-			if (tv_effect >= 1 && tv_effect <= 2)
+			if (ANTIC_artif_mode != 0)
 			{
 				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, ANTIC_artif_mode - 1, artif_mode_menu_array, NULL);
 				if (option2 >= 0) {
@@ -3027,7 +2984,7 @@ static void DisplaySettings(void)
 			break;
 #if NTSC_FILTER
 		case 19:
-			if (VIDEOMODE_ntsc_filter) {
+			if (ARTIFACT_mode == ARTIFACT_NTSC_FULL) {
 				NTSCFilterSettings();
 				/* While in NTSC Filter menu, the "Filter preset" option also changes the "standard" colour
 				   controls (saturation etc.) - so we need to call UpdateColourControls to update the menu. */
@@ -3040,7 +2997,7 @@ static void DisplaySettings(void)
 		case 20:
 			Colours_RestoreDefaults();
 #if NTSC_FILTER
-			if (VIDEOMODE_ntsc_filter)
+			if (ARTIFACT_mode == ARTIFACT_NTSC_FULL)
 				FILTER_NTSC_RestoreDefaults();
 #endif
 			UpdateColourControls(menu_array);

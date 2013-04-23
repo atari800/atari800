@@ -22,6 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "config.h"
+#include "artifact.h"
 #include "atari.h"
 #include <stdlib.h>
 #include "cartridge.h"
@@ -293,6 +294,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 			else if (Colours_ReadConfig(string, ptr)) {
 			}
+			else if (ARTIFACT_ReadConfig(string, ptr)) {
+			}
 			else if (Screen_ReadConfig(string, ptr)) {
 			}
 #endif
@@ -429,6 +432,7 @@ int CFG_WriteConfig(void)
 #endif
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	Colours_WriteConfig(fp);
+	ARTIFACT_WriteConfig(fp);
 	Screen_WriteConfig(fp);
 #endif
 #ifdef NTSC_FILTER

@@ -26,6 +26,7 @@
 #include <SDL_opengl.h>
 
 #include "af80.h"
+#include "artifact.h"
 #include "atari.h"
 #include "cfg.h"
 #include "colours.h"
@@ -599,7 +600,7 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 
 	if (mode == VIDEOMODE_MODE_NORMAL) {
 #ifdef PAL_BLENDING
-		if (PAL_BLENDING_enabled)
+		if (ARTIFACT_mode == ARTIFACT_PAL_BLEND)
 			blit_funcs[0] = &DisplayPalBlending;
 		else
 #endif /* PAL_BLENDING */

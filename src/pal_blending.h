@@ -3,12 +3,6 @@
 
 #include "atari.h"
 
-/* Indicates if accurate PAL chroma blending (PAL delay line) is enabled.
-   Don't change this value directly - use PAL_BLENDING_Set() instead. */
-extern int PAL_BLENDING_enabled;
-/* Enable/disable accurate PAL blending. */
-void PAL_BLENDING_Set(int enabled);
-
 /* Updates blitter lookup tables according to the current display pixel
    format. Call after changing host video mode or after adjusting colours. */
 void PAL_BLENDING_UpdateLookup(void);

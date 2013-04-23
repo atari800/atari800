@@ -210,13 +210,6 @@ typedef enum {
 #endif
 	VIDEOMODE_MODE_SIZE
 } VIDEOMODE_MODE_t;
-#if NTSC_FILTER
-/* Get/set state of NTSC filtering. */
-/* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_SetNtscFilter() instead. */
-extern int VIDEOMODE_ntsc_filter;
-int VIDEOMODE_SetNtscFilter(int value);
-int VIDEOMODE_ToggleNtscFilter(void);
-#endif /* NTSC_FILTER */
 #if defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80)
 /* Indicates that 80 column display should be active when a 80 column card is available.
    Setting to TRUE does not switch to 80 column display when no 80 column card is present. */

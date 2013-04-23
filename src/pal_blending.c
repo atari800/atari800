@@ -24,6 +24,7 @@
 
 #include "pal_blending.h"
 
+#include "artifact.h"
 #include "atari.h"
 #include "colours.h"
 #include "colours_pal.h"
@@ -34,8 +35,6 @@
 #include "videomode.h"
 #endif /* SUPPORTS_CHANGE_VIDEOMODE */
 
-int PAL_BLENDING_enabled = FALSE;
-
 static union {
 	UWORD bpp16[2][256];	/* 16-bit palette */
 	ULONG bpp32[2][256];	/* 32-bit palette */
@@ -45,7 +44,7 @@ static ULONG shift_mask;
 
 void PAL_BLENDING_UpdateLookup(void)
 {
-	if (PAL_BLENDING_enabled) {
+	if (ARTIFACT_mode == ARTIFACT_PAL_BLEND) {
 		double yuv_table[256*5];
 		int even_pal[256];
 		int odd_pal[256];
@@ -81,16 +80,6 @@ void PAL_BLENDING_UpdateLookup(void)
 		}
 		shift_mask = ~shift_mask;
 	}
-}
-
-void PAL_BLENDING_Set(int enabled)
-{
-	PAL_BLENDING_enabled = enabled;
-#if SUPPORTS_CHANGE_VIDEOMODE
-	/* Need to update display BPP - PAL blending works only in 16 and 32-bit
-	   modes. */
-	VIDEOMODE_Update();
-#endif /* SUPPORTS_CHANGE_VIDEOMODE */
 }
 
 void PAL_BLENDING_Blit16(ULONG *dest, UBYTE *src, int pitch, int width, int height, int start_odd)

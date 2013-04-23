@@ -648,7 +648,7 @@ if [[ \( "$a8_target" != "default" -o "$with_video" != no \) -a "$a8_target" != 
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
 
         dnl These objects are not compiled when --with-video=no or --enable-cursesbasic=no
-        OBJS="$OBJS colours.o colours_ntsc.o colours_pal.o colours_external.o screen.o"
+        OBJS="$OBJS artifact.o colours.o colours_ntsc.o colours_pal.o colours_external.o screen.o"
 
         A8_OPTION(newcycleexact,yes,
                   [Allow color changes inside a scanline (default=ON)],

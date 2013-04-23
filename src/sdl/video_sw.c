@@ -27,6 +27,7 @@
 #include <SDL.h>
 
 #include "af80.h"
+#include "artifact.h"
 #include "atari.h"
 #include "colours.h"
 #include "config.h"
@@ -182,7 +183,7 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 	if ((rotate90 && SDL_VIDEO_SW_bpp != 16) ||
 		((mode == VIDEOMODE_MODE_NTSC_FILTER
 #ifdef PAL_BLENDING
-		  || (mode == VIDEOMODE_MODE_NORMAL && PAL_BLENDING_enabled)
+		  || (mode == VIDEOMODE_MODE_NORMAL && ARTIFACT_mode == ARTIFACT_PAL_BLEND)
 #endif /* PAL_BLENDING */
 		 ) && SDL_VIDEO_SW_bpp != 16 && SDL_VIDEO_SW_bpp != 32)) {
 		/* Rotate90 supports only 16bpp; NTSC filter and PAL blending don't support 8bpp. */
@@ -211,7 +212,7 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 		if (rotate90)
 			blit_funcs[0] = &DisplayRotated;
 #ifdef PAL_BLENDING
-		else if (PAL_BLENDING_enabled) {
+		else if (ARTIFACT_mode == ARTIFACT_PAL_BLEND) {
 			if (VIDEOMODE_src_width == VIDEOMODE_dest_width && VIDEOMODE_src_height == VIDEOMODE_dest_height)
 				blit_funcs[0] = &DisplayPalBlending;
 			else

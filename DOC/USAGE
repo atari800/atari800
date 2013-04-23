@@ -205,7 +205,13 @@ Command line options
 -playback <filename>  Playback input from <filename>
 
 -refresh <rate>       Set screen refresh rate
--artif <mode>         Set artifacting mode 0-4 (0 = disable) (see also -ntscemu)
+-ntsc-artif none|ntsc-old|ntsc-new|ntsc-full
+                      Set video artifacting emulation mode for NTSC.
+-pal-artif none|pal-simple|pal-blend
+                      Set video artifacting emulation mode for PAL.
+
+-artif <mode>         Set artifacting mode 0-4 (0 = disable) - only for
+                      ntsc-old and ntsc-new
 
 -colors-preset standard|deep-black|vibrant
                       Use one of predefined color adjustments
@@ -352,11 +358,7 @@ SDL version options
 -joy0 </dev/lp0>      Define the device for LPTjoy
 -joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
 
--ntscemu              Emulate NTSC composite video
-This includes NTSC TV artifacts.  "-artif" is not needed in this mode and will
-not work.
--no-ntscemu            Disable emulation of NTSC composite video
-The following 7 items are for -ntscemu only:
+The following 7 items are only for -ntsc-artif set to ntsc-full:
 -ntsc-filter-preset composite|svideo|rgb|monochrome
                       Use one of predefined NTSC filter adjustments
 -ntsc-sharpness <n>   Set sharpness
@@ -554,7 +556,8 @@ LAlt+5            Increase gamma adjustment
 LAlt+LShift+6     Decrease color delay (Atari color adjustment potentiometer)
 LAlt+6            Increase color delay
 
-The following keys work only in the NTSC filter mode (-ntscemu):
+The following keys work only when the NTSC filter is enabled (-ntsc-artif set
+to ntsc-full):
 LAlt+LShift+7     Decrease sharpness
 LAlt+7            Increase sharpness
 LAlt+LShift+8     Decrease resolution

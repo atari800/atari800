@@ -67,6 +67,7 @@
 
 #include "akey.h"
 #include "antic.h"
+#include "artifact.h"
 #include "atari.h"
 #include "binload.h"
 #include "cartridge.h"
@@ -735,6 +736,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	if (!SYSROM_Initialise(argc, argv)
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		|| !Colours_Initialise(argc, argv)
+		|| !ARTIFACT_Initialise(argc, argv)
 #endif
 		|| !Devices_Initialise(argc, argv)
 		|| !RTIME_Initialise(argc, argv)
@@ -1527,6 +1529,7 @@ void Atari800_SetTVMode(int mode)
 		Atari800_tv_mode = mode;
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		Colours_SetVideoSystem(mode);
+		ARTIFACT_SetTVMode(mode);
 #endif
 #if SUPPORTS_CHANGE_VIDEOMODE
 		VIDEOMODE_SetVideoSystem(mode);

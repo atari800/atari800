@@ -21,6 +21,7 @@ LDFLAGS = /nologo
 OBJS = \
 	afile.obj \
 	antic.obj \
+	artifact.obj \
 	atari.obj \
 	binload.obj \
 	cartridge.obj \

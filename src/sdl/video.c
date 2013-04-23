@@ -25,6 +25,7 @@
 #include <SDL.h>
 
 #include "af80.h"
+#include "artifact.h"
 #include "atari.h"
 #include "colours.h"
 #include "config.h"
@@ -84,7 +85,7 @@ static int user_video_driver = FALSE;
 void SDL_VIDEO_UpdatePaletteLookup(VIDEOMODE_MODE_t mode, int bpp_32)
 {
 #ifdef PAL_BLENDING
-	if (mode == VIDEOMODE_MODE_NORMAL && PAL_BLENDING_enabled)
+	if (mode == VIDEOMODE_MODE_NORMAL && ARTIFACT_mode == ARTIFACT_PAL_BLEND)
 		PAL_BLENDING_UpdateLookup();
 	else
 #endif /* PAL_BLENDING */

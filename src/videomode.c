@@ -32,6 +32,7 @@
 #ifdef AF80
 #include "af80.h"
 #endif
+#include "artifact.h"
 #include "atari.h"
 #include "cfg.h"
 #include "config.h"
@@ -175,9 +176,6 @@ static display_mode_t display_modes[VIDEOMODE_MODE_SIZE] = {
 #endif
 };
 
-#if NTSC_FILTER
-int VIDEOMODE_ntsc_filter = FALSE;
-#endif
 #if COLUMN_80
 int VIDEOMODE_80_column = TRUE;
 #endif
@@ -229,7 +227,7 @@ static VIDEOMODE_MODE_t CurrentDisplayMode(void)
 	}
 #endif /* COLUMN_80 */
 #if NTSC_FILTER
-	if (VIDEOMODE_ntsc_filter)
+	if (ARTIFACT_mode == ARTIFACT_NTSC_FULL)
 		return VIDEOMODE_MODE_NTSC_FILTER;
 #endif
 	return VIDEOMODE_MODE_NORMAL;
@@ -762,18 +760,6 @@ int VIDEOMODE_ToggleRotate90(void)
 }
 #endif /* SUPPORTS_ROTATE_VIDEOMODE */
 
-#if NTSC_FILTER
-int VIDEOMODE_SetNtscFilter(int value)
-{
-	return SetIntAndUpdateVideo(&VIDEOMODE_ntsc_filter, value);
-}
-
-int VIDEOMODE_ToggleNtscFilter(void)
-{
-	return VIDEOMODE_SetNtscFilter(!VIDEOMODE_ntsc_filter);
-}
-#endif /* NTSC_FILTER */
-
 #if COLUMN_80
 int VIDEOMODE_Set80Column(int value)
 {
@@ -969,10 +955,6 @@ int VIDEOMODE_ReadConfig(char *option, char *ptr)
 		else
 			return ParseAspectRatio(ptr, &VIDEOMODE_host_aspect_ratio_w, &VIDEOMODE_host_aspect_ratio_h);
 	}
-#if NTSC_FILTER
-	else if (strcmp(option, "VIDEOMODE_NTSC_FILTER") == 0)
-		return (VIDEOMODE_ntsc_filter = Util_sscanbool(ptr)) != -1;
-#endif
 #if COLUMN_80
 	else if (strcmp(option, "VIDEOMODE_80_COLUMN") == 0)
 		return (VIDEOMODE_80_column = Util_sscanbool(ptr)) != -1;
@@ -1008,9 +990,6 @@ void VIDEOMODE_WriteConfig(FILE *fp) {
 	fprintf(fp, "VIDEOMODE_ROTATE90=%d\n", VIDEOMODE_rotate90);
 #endif
 	fprintf(fp, "VIDEOMODE_HOST_ASPECT_RATIO=%g:%g\n", VIDEOMODE_host_aspect_ratio_w, VIDEOMODE_host_aspect_ratio_h);
-#if NTSC_FILTER
-	fprintf(fp, "VIDEOMODE_NTSC_FILTER=%d\n", VIDEOMODE_ntsc_filter);
-#endif
 #if COLUMN_80
 	fprintf(fp, "VIDEOMODE_80_COLUMN=%d\n", VIDEOMODE_80_column);
 #endif
@@ -1125,12 +1104,6 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
-#if NTSC_FILTER
-		else if (strcmp(argv[i], "-ntscemu") == 0)
-			VIDEOMODE_ntsc_filter = TRUE;
-		else if (strcmp(argv[i], "-no-ntscemu") == 0)
-			VIDEOMODE_ntsc_filter = FALSE;
-#endif /* NTSC_FILTER */
 #if COLUMN_80
 		else if (strcmp(argv[i], "-80column") == 0)
 			VIDEOMODE_80_column = TRUE;
@@ -1163,10 +1136,6 @@ int VIDEOMODE_Initialise(int *argc, char *argv[])
 #endif /* SUPPORTS_ROTATE_VIDEOMODE */
 				Log_print("\t-host-aspect-ratio auto|<w>:<h>");
 				Log_print("\t                            Set host display aspect ratio");
-#if NTSC_FILTER
-				Log_print("\t-ntscemu                    Enable NTSC composite video filter");
-				Log_print("\t-no-ntscemu                 Disable NTSC composite video filter");
-#endif
 #if COLUMN_80
 				Log_print("\t-80column                   Show output of an 80 column card, if present");
 				Log_print("\t-no-80column                Show standard screen output");

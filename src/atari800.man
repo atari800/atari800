@@ -614,8 +614,37 @@ This value effects the speed of the emulation: A higher value results in
 faster CPU emulation but a less frequently updated screen.
 
 .TP
+\fB\-ntsc\-artif \fImode\fR, \fB\-pal\-artif \fImode\fR
+Set emulation mode of video artifacts in NTSC or PAL, respectively. The
+available values for \fImode\fR are:
+.RS
+.PD 0
+.TP
+.B none
+Disable video artifacts.
+.TP
+.B ntsc-old
+Simple emulation of NTSC composite video artifacts. Fast but inaccurate.
+.TP
+.B ntsc-new
+Improved emulation of NTSC artifacts. May look better than \fBntsc\-old\fR.
+.TP
+.B ntsc-full
+Full emulation of NTSC artifacts. Rather slow and available only in 16-
+and 32-bit video modes.
+.TP
+.B pal-simple
+Simple emulation of PAL chroma blending, without composite artifacts. Fast but
+inaccurate.
+.TP
+.B pal-blend
+Accurate emulation of PAL chroma blending, without composite artifacts.
+Available only in 16- and 32-bit video modes.
+.PD
+.RE
+.TP
 .BI \-artif\  mode
-Set artifacting mode 0-4 (0 = disable)
+Set artifacting mode 0-4 (0 = disable). Only for tv effects \fBntsc\-old\fR and \fBntsc\-new\fR.
 
 .TP
 .BR "\-colors\-preset standard" | "deep\-black" | vibrant
@@ -961,13 +990,6 @@ Define path to device used in LPTjoy 0. Available on linux-ia32 only.
 .BI \-joy1\  path\-to\-device
 Define path to device used in LPTjoy 1. Available on linux-ia32 only.
 
-.TP
-.B \-ntscemu
-Activate NTSC filter. This faithfully emulates NTSC composite
-video artifacts. \fB-artif\fR is not needed in this mode and will not work.
-.TP
-.B \-no\-ntscemu
-Disable NTSC filter.
 .TP
 \fB\-ntsc\-filter\-preset composite\fR|\fBsvideo\fR|\fBrgb\fR|\fBmonochrome\fR
 Use one of predefined NTSC filter adjustments.
@@ -1376,7 +1398,8 @@ Decrease color delay (Atari color adjustment potentiometer)
 Increase color delay
 
 .PP
-These keys work only in the NTSC filter mode (\fB\-ntscemu\fR):
+The following keys work only when the NTSC filter is enabled (\fB\-ntsc\-artif\fR
+set to \fBntsc\-full\fR):
 .RS
 .TP 15
 .BR LAlt + LShift + 7

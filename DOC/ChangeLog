@@ -1,3 +1,12 @@
+2013-04-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* artifact.[ch], atari.c, atari800.man, cfg.c, configure.ac,
+  pal_blending.[ch], ui.c, videomode.[ch], sdl/video_gl.c, sdl/video.sw.c,
+  sdl/video.c, DOC/USAGE, amiga/makefile, dc/Makefile.dc,
+  win32/msc/Makefile: New module, artifact.c, which manages settings of all
+  artifacting modes. Artifacting modes are now stored independently for PAL
+  and NTSC modes, and set according to the current TV mode setting.
+
+
 2013-04-15  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * colours_pal.[ch], colours.[ch], configure.ac, pal_blending.[ch], platform.h,
   ui.c, sdl/palette.[ch], sdl/video_gl.[ch], sdl/video_sw.[ch], sdl.video.[ch]:

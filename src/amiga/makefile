@@ -30,6 +30,7 @@ AMIGASRCS=\
 EMUSRCS= \
 	afile.c \
 	antic.c \
+	artifact.c \
 	atari.c \
 	binload.c \
 	cartridge.c \

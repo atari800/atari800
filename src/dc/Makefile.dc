@@ -37,7 +37,8 @@ LDFLAGS=-ml -m4-single-only -ffunction-sections -fdata-sections -g -fno-builtin 
 
 LIBS=-Wl,--start-group -lkallisti -lz -lbz2 -lm -lc -lgcc -Wl,--end-group
 
-OBJ =	atari.o \
+OBJ =	artifact.o \
+	atari.o \
 	cpu.o \
 	esc.o \
 	cfg.o \
