@@ -3,7 +3,7 @@ SHBASE = /opt/dcgcc-4.7.0/sh-elf
 KOS = /net/swamp/zeug/dc/kos-git/kos
 
 # use assembler screen update functions
-#ASSEMBLER = 1
+ASSEMBLER = 1
 
 # include R: device emulation
 R_DEVICE = 1
