@@ -1,6 +1,6 @@
 /*
  * SEGA Dreamcast assembler support routines
- * (c) 2003,2004 Christian Groessler (chris@groessler.org)
+ * (c) 2003,2004,2013 Christian Groessler (chris@groessler.org)
  */
 
 #include "config.h"
@@ -16,7 +16,7 @@
  * implementation of the following C routine
  *
 
-static void Atari_DisplayScreen_singleb(UBYTE *screen)
+static void PLATFORM_DisplayScreen_singleb(UBYTE *screen)
 {
 	unsigned int x, m, j;
 	uint16 *vram = screen_vram;
@@ -25,11 +25,11 @@ static void Atari_DisplayScreen_singleb(UBYTE *screen)
 	vid_border_color(0, 0, 0);
 #endif
 	for (m=START_VAL/8, x=START_VAL; m < ATARI_HEIGHT * ATARI_WIDTH / 8; m++) {
-		if (screen_dirty[m]) {
+		if (Screen_dirty[m]) {
 			for (j=0; j<8; j++) {
 				*(vram + x + j) = mypal[*(screen + x + j)];
 			}
-			screen_dirty[m] = 0;
+			Screen_dirty[m] = 0;
 		}
 		x += 8;
 		if (x >= 320 + (ATARI_WIDTH - 320) / 2) {
@@ -51,8 +51,8 @@ static void Atari_DisplayScreen_singleb(UBYTE *screen)
 
 		.align	5
 
-_Atari_DisplayScreen_singleb:
-		.globl	_Atari_DisplayScreen_singleb
+_PLATFORM_DisplayScreen_singleb:
+		.globl	_PLATFORM_DisplayScreen_singleb
 
 		mov.l	r8,@-r15
 		sts.l	pr,@-r15	/* save return address */
@@ -77,7 +77,7 @@ _Atari_DisplayScreen_singleb:
  * r2 - x
  * r4 - screen (function input argument)
  * r5 - ATARI_HEIGHT * ATARI_WIDTH / 8
- * r6 - screen_dirty
+ * r6 - Screen_dirty
  * r7 - 0
  * r8 - ATARI_WIDTH
  * r9 - vid_mode_width
@@ -91,7 +91,7 @@ _Atari_DisplayScreen_singleb:
 		mov	#START_VAL/8,r1
 		mov	#START_VAL,r2
 		mov.l	cmp_val,r5
-		mov.l	screen_dirty,r6
+		mov.l	Screen_dirty,r6
 		mov.l	@r6,r6
 		mov.l	atari_width,r8
 		mov.l	vid_mode_width,r9
@@ -109,7 +109,7 @@ _Atari_DisplayScreen_singleb:
 s_loop:		bt/s	s_done
 		 mov	r1,r0		/* m -> r0 */
 
-		mov.b	@(r0,r6),r0	/* screen_dirty[m] */
+		mov.b	@(r0,r6),r0	/* Screen_dirty[m] */
 
 		tst	#255,r0		/* is it dirty? */
 		bt/s	s_next		/* not dirty, skip screen update */
@@ -205,7 +205,7 @@ s_loop:		bt/s	s_done
 
 		/* end of unrolled loop */
 
-		/* screen_dirty[m] = 0; */
+		/* Screen_dirty[m] = 0; */
 		mov	r1,r0		/* m -> r0 */
 		mov.b	r7,@(r0,r6)
 
@@ -263,7 +263,7 @@ s_done:
 /*
  * implementation of the following C routine
  *
-static void Atari_DisplayScreen_doubleb(UBYTE *screen)
+static void PLATFORM_DisplayScreen_doubleb(UBYTE *screen)
 {
 	unsigned int sbase = 0;
 	unsigned int x, m, j;
@@ -287,12 +287,12 @@ static void Atari_DisplayScreen_doubleb(UBYTE *screen)
 	}
 
 	for (m=START_VAL/8, x=START_VAL; m < ATARI_HEIGHT * ATARI_WIDTH / 8; m++) {
-		nsd[m] = screen_dirty[m];
-		if (screen_dirty[m] || osd[m]) {
+		nsd[m] = Screen_dirty[m];
+		if (Screen_dirty[m] || osd[m]) {
 			for (j=0; j<8; j++) {
 				*(vram + x + j) = mypal[*(screen + x + j)];
 			}
-			screen_dirty[m] = 0;
+			Screen_dirty[m] = 0;
 		}
 		x += 8;
 		if (x >= 320 + (ATARI_WIDTH - 320) / 2) {
@@ -316,8 +316,8 @@ static void Atari_DisplayScreen_doubleb(UBYTE *screen)
 
 		.align	5
 
-_Atari_DisplayScreen_doubleb:
-		.globl	_Atari_DisplayScreen_doubleb
+_PLATFORM_DisplayScreen_doubleb:
+		.globl	_PLATFORM_DisplayScreen_doubleb
 
 		mov.l	r8,@-r15
 		sts.l	pr,@-r15	/* save return address */
@@ -343,7 +343,7 @@ _Atari_DisplayScreen_doubleb:
  * r3 - nsd
  * r4 - screen (function input argument)
  * r5 - ATARI_HEIGHT * ATARI_WIDTH / 8
- * r6 - screen_dirty
+ * r6 - Screen_dirty
  * r7 - 0
  * r8 - osd
  * r9 - scratch
@@ -394,7 +394,7 @@ d_sbase_2:
 		sub	r7,r7
 		mov	#START_VAL/8,r1
 		mov	#START_VAL,r2
-		mov.l	screen_dirty,r6
+		mov.l	Screen_dirty,r6
 		mov.l	@r6,r6
 		mov.l	cmp_val2,r11
 		mov.l	mypal,r12
@@ -407,7 +407,7 @@ d_sbase_2:
 d_loop:		bt/s	d_done
 		 mov	r1,r0		/* m -> r0 */
 
-		mov.b	@(r0,r6),r9	/* screen_dirty[m] */
+		mov.b	@(r0,r6),r9	/* Screen_dirty[m] */
 		mov.b	r9,@(r0,r3)	/* nsd[m] = screen_dirty[m] */
 		mov	r9,r0
 
@@ -512,7 +512,7 @@ d_do:		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
 
 		/* end of unrolled loop */
 
-		/* screen_dirty[m] = 0; */
+		/* Screen_dirty[m] = 0; */
 		mov	r1,r0		/* m -> r0 */
 		mov.b	r7,@(r0,r6)
 
@@ -577,7 +577,7 @@ d_done:
 vbc_ptr:	.long	_vid_border_color
 vbl_wt:		.long	_vbl_wait
 vram:		.long	_screen_vram
-screen_dirty:	.long	_screen_dirty
+Screen_dirty:	.long	_Screen_dirty
 cmp_val:	.long	(ATARI_HEIGHT * ATARI_WIDTH / 8)
 atari_width:	.long	ATARI_WIDTH
 vid_mode_width:	.long	_vid_mode_width
