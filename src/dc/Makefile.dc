@@ -33,7 +33,7 @@ SHOBJCOPY = $(SHBASE)/bin/sh-elf-objcopy
 SHSTRIP   = $(SHBASE)/bin/sh-elf-strip
 
 INCLUDE=-I$(KOS)/../kos-ports/include -I$(KOS)/../kos-ports/include/zlib -I$(KOS)/include -I$(KOS)/kernel/arch/dreamcast/include -I$(KOS)/addons/include -I$(KOS)/kernel/arch/dreamcast/sound -Idc -I.
-LDFLAGS=-ml -m4-single-only -ffunction-sections -fdata-sections -g -fno-builtin -fno-strict-aliasing -ml -m4-single-only -Wl,-Ttext=0x8c010000 -Wl,--gc-sections -T$(KOS)/utils/ldscripts/shlelf.xc -nodefaultlibs -L$(KOS)/lib/dreamcast -L$(KOS)/addons/lib/dreamcast
+LDFLAGS=-ml -m4-single-only -ffunction-sections -fdata-sections -g -fno-builtin -fno-strict-aliasing -Wl,-Ttext=0x8c010000 -Wl,--gc-sections -T$(KOS)/utils/ldscripts/shlelf.xc -nodefaultlibs -L$(KOS)/lib/dreamcast -L$(KOS)/addons/lib/dreamcast
 
 LIBS=-Wl,--start-group -lkallisti -lz -lbz2 -lm -lc -lgcc -Wl,--end-group
 
