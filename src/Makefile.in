@@ -105,7 +105,7 @@ $(TARGET_BASE_NAME)$(RUNTIME).class: $(TARGET)
 ##Also, -o UnixRuntime fixes directory browsing but requires /c:/-style paths
 
 $(TARGET_BASE_NAME).jar: $(TARGET_BASE_NAME).class $(TARGET_BASE_NAME)$(RUNTIME).class
-	echo -e "Manifest-Version: 1.0\nMain-Class: $(TARGET_BASE_NAME)\nClass-Path: unix_runtime.jar\n" > .manifest
+	printf "Manifest-Version: 1.0\nMain-Class: $(TARGET_BASE_NAME)\nClass-Path: unix_runtime.jar\n" > .manifest
 	jar cfm $(TARGET_BASE_NAME).jar .manifest *.class
 
 # Allow parallel execution in sub-make with '+'

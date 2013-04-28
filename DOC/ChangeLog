@@ -1,3 +1,8 @@
+2013-04-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* Makefile.in: Use printf instead of echo -e - more portable (and -e didn't
+  work on GNU Make 3.81).
+
+
 2013-04-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * artifact.[ch], atari.c, atari800.man, cfg.c, configure.ac,
   pal_blending.[ch], ui.c, videomode.[ch], sdl/video_gl.c, sdl/video.sw.c,
