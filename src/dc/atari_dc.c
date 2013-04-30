@@ -1134,10 +1134,10 @@ int PLATFORM_PORT(int num)
 				}
 			}
 			else {
-				if (state->joyy > -10) {  /* down */
+				if (state->joyy < -10) {  /* down */
 					retval &= 0xfd;
 				}
-				if (state->joyy < 10) {  /* up */
+				if (state->joyy > 10) {  /* up */
 					retval &= 0xfe;
 				}
 			}
