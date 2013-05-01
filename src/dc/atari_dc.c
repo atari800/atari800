@@ -1779,6 +1779,12 @@ void DCStateSave(void)
 	StateSav_SaveINT(&glob_snd_ena, 1);
 	StateSav_SaveINT(&db_mode, 1);
 	StateSav_SaveINT(&INPUT_joy_autofire[0], 1);
+	StateSav_SaveINT(&disable_js, 1);
+	StateSav_SaveINT(&disable_dpad, 1);
+	StateSav_SaveINT(&reverse_x_axis, 1);
+	StateSav_SaveINT(&reverse_y_axis, 1);
+	StateSav_SaveINT(&x_adj, 1);
+	StateSav_SaveINT(&y_adj, 1);
 	for (i=0; i<16; i++) StateSav_SaveINT(&f, 1);  /* future stuff */
 
 #ifdef DEBUG
@@ -1801,6 +1807,13 @@ void DCStateRead(void)
 	StateSav_ReadINT(&glob_snd_ena, 1);
 	StateSav_ReadINT(&db_mode, 1);
 	StateSav_ReadINT(&INPUT_joy_autofire[0], 1);
+	StateSav_ReadINT(&disable_js, 1);
+	StateSav_ReadINT(&disable_dpad, 1);
+	StateSav_ReadINT(&reverse_x_axis, 1);
+	StateSav_ReadINT(&reverse_y_axis, 1);
+	StateSav_ReadINT(&x_adj, 1);
+	StateSav_ReadINT(&y_adj, 1);
+
 #ifdef DEBUG
 	printf("DCStateRead: tv_mode = %d, screen_tv_mode = %d, db_mode = %d\n",
 	       Atari800_tv_mode, screen_tv_mode, db_mode);
