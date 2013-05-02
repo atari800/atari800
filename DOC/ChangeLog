@@ -1,3 +1,8 @@
+2013-05-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/INSTALL: Update NestedVM build manual - it doesn't build with
+  --enable-ide.
+
+
 2013-04-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * Makefile.in: Use printf instead of echo -e - more portable (and -e didn't
   work on GNU Make 3.81).

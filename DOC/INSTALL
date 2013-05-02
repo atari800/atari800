@@ -213,7 +213,7 @@ Building the Emulator for Java using NestedVM
 2. source env.sh in the NestedVM directory.
 3. In the atari800 directory:
    ./autogen.sh (only if you don't have configure, such as a CVS build)
-   ./configure --host=mips-unknown-elf --target=javanvm
+   ./configure --host=mips-unknown-elf --target=javanvm --disable-ide
    You might want to add --enable-veryslow --disable-monitorbreak to the above.
    For the "simple" version, use --target=javanvm-basic
 4. Type "make".
