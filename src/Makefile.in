@@ -6,7 +6,8 @@ LIBS = @LIBS@
 TARGET_BASE_NAME = atari800
 TARGET = $(TARGET_BASE_NAME)@EXEEXT@
 CONFIGURE_TARGET = @CONFIGURE_TARGET@
-ifeq (@EXEEXT@,.mips)
+CONFIGURE_HOST = @CONFIGURE_HOST@
+ifeq (@CONFIGURE_HOST@, javanvm)
 	FINALTARGET = $(TARGET_BASE_NAME).jar
 	JAVAFLAGS = @JAVAFLAGS@
 	JAVA = java
@@ -89,7 +90,7 @@ ide.o: ide.c ide.h ide_internal.h
 %.o: %.S
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
 
-ifeq ($(CONFIGURE_TARGET),javanvm)
+ifeq ($(CONFIGURE_HOST),javanvm)
 $(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class
 	$(JAVAC) -d . $(JAVACFLAGS) javanvm/$(TARGET_BASE_NAME).java
 RUNTIME = _runtime

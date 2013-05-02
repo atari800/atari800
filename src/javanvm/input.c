@@ -1,5 +1,5 @@
 /*
- * atari_javanvm.c - Java NestedVM port-specific code
+ * javanvm/input.c - NestedVM-specific port code - input device support
  *
  * Copyright (c) 2001-2002 Jacek Poplawski (original atari_sdl.c)
  * Copyright (c) 2007-2008 Perry McFarlane (javanvm port)
@@ -7,46 +7,30 @@
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
- *
+
  * Atari800 is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+
  * Atari800 is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Atari800; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-*/
 
-#include "config.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+ * You should have received a copy of the GNU General Public License along
+ * with Atari800; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
 
-/* Atari800 includes */
-#include "input.h"
+#include "javanvm/input.h"
+
 #include "akey.h"
-#include "colours.h"
-#include "monitor.h"
+#include "atari.h"
+#include "../input.h"
 #include "platform.h"
 #include "ui.h"
-#include "screen.h"
-#include "pokeysnd.h"
-#include "gtia.h"
-#include "antic.h"
-#include "devices.h"
-#include "cpu.h"
-#include "memory.h"
-#include "pia.h"
-#include "log.h"
-#include "util.h"
-#include "sound.h"
-#include "javanvm/atari_javanvm.h"
+#include "javanvm/javanvm.h"
 
 /* joystick emulation */
 
@@ -93,106 +77,20 @@ static int KBD_STICK_1_RIGHTDOWN = VK_C;
 static int KBD_STICK_1_RIGHTDOWN_LOC = KEY_LOCATION_STANDARD;
 static int swap_joysticks = 0;
 
-/* Sound */
-#ifdef SOUND
-static UBYTE *dsp_buffer = NULL;
-static int line_buffer_size;
-static int dsp_buffer_size;
-#endif /* SOUND */
-
 /* These functions call the NestedVM runtime */
-extern int _call_java(int a, int b, int c, int d);
-
-static void JAVANVM_DisplayScreen(void *as){
-	_call_java(1, (int)as, 0, 0);
-}
-static void JAVANVM_InitPalette(void *ct){
-	_call_java(2, (int)ct, 0, 0);
-}
-static int JAVANVM_Kbhits(int key, int loc){
-	return _call_java(3, key, loc, 0);
-}
-static int JAVANVM_PollKeyEvent(void *event){
-	return _call_java(4, (int)event, 0, 0);
-}
-static int JAVANVM_GetWindowClosed(void){
-	return _call_java(5, 0, 0, 0);
-}
-static int JAVANVM_Sleep(int millis){
-	return _call_java(6, millis, 0, 0);
-}
-static int JAVANVM_InitGraphics(void *config){
-	return _call_java(7, (int)config, 0, 0);
-}
-static int JAVANVM_InitSound(void *config){
-	return _call_java(8, (int)config, 0, 0);
-}
-static int JAVANVM_SoundAvailable(void){
-	return _call_java(9, 0, 0, 0);
-}
-static int JAVANVM_SoundWrite(void *buffer,int len){
-	return _call_java(10, (int)buffer, len, 0);
-}
-static int JAVANVM_SoundPause(void){
-	return _call_java(11, 0, 0, 0);
-}
-static int JAVANVM_SoundContinue(void){
-	return _call_java(12, 0, 0, 0);
-}
-static int JAVANVM_CheckThreadStatus(void){
-	return _call_java(13, 0, 0, 0);
-}
-
-/* These constants are for use with arrays passed to and from the NestedVM runtime */
-#define JAVANVM_KeyEventType 0
-#define JAVANVM_KeyEventKeyCode 1
-#define JAVANVM_KeyEventKeyChar 2
-#define JAVANVM_KeyEventKeyLocation 3
-#define JAVANVM_KeyEventSIZE 4
-#define JAVANVM_InitGraphicsScalew 0
-#define JAVANVM_InitGraphicsScaleh 1
-#define JAVANVM_InitGraphicsScreen_WIDTH 2
-#define JAVANVM_InitGraphicsScreen_HEIGHT 3
-#define JAVANVM_InitGraphicsATARI_VISIBLE_WIDTH 4
-#define JAVANVM_InitGraphicsATARI_LEFT_MARGIN 5
-#define JAVANVM_InitGraphicsSIZE 6
-#define JAVANVM_InitSoundSampleRate 0
-#define JAVANVM_InitSoundBitsPerSample 1
-#define JAVANVM_InitSoundChannels 2
-#define JAVANVM_InitSoundSigned 3
-#define JAVANVM_InitSoundBigEndian 4
-#define JAVANVM_InitSoundSIZE 5
-
-#ifdef SOUND
-
-void Sound_Pause(void)
+static int JAVANVM_Kbhits(int key, int loc)
 {
-	/* stop audio output */
-	JAVANVM_SoundPause();
+	return _call_java(JAVANVM_FUN_Kbhits, key, loc, 0);
 }
 
-void Sound_Continue(void)
+static int JAVANVM_PollKeyEvent(void *event)
 {
-	/* start audio output */
-	JAVANVM_SoundContinue();
+	return _call_java(JAVANVM_FUN_PollKeyEvent, (int)event, 0, 0);
 }
 
-void Sound_Update(void)
+static int JAVANVM_GetWindowClosed(void)
 {
-	int avail = JAVANVM_SoundAvailable();
-	while (avail > 0) {
-		int len = dsp_buffer_size > avail ? avail : dsp_buffer_size;
-		POKEYSND_Process(dsp_buffer, len / 2 / (POKEYSND_stereo_enabled ? 2 : 1));
-		JAVANVM_SoundWrite((void *)dsp_buffer, len);
-		avail -= len;
-	}
-}
-
-#endif /* SOUND */
-
-void PLATFORM_PaletteUpdate(void)
-{
-	JAVANVM_InitPalette((void *)&Colours_table[0]);
+	return _call_java(JAVANVM_FUN_GetWindowClosed, 0, 0, 0);
 }
 
 int PLATFORM_Keyboard(void)
@@ -218,7 +116,7 @@ int PLATFORM_Keyboard(void)
 			break;
 		case KEY_RELEASED:
 			lastkey = event[JAVANVM_KeyEventKeyCode];
- 			lastuni = 0; 
+ 			lastuni = 0;
 			key_pressed = 0;
 			break;
 		}
@@ -775,105 +673,12 @@ int PLATFORM_Keyboard(void)
 	return AKEY_NONE;
 }
 
-#ifdef SOUND
-static void SoundSetup(void)
+int JAVANVM_INPUT_Initialise(int *argc, char *argv[])
 {
-	int dsprate = 48000;
-	int sound_flags = 0;
-	int sconfig[JAVANVM_InitSoundSIZE];
-	sound_flags |= POKEYSND_BIT16;
-	sconfig[JAVANVM_InitSoundSampleRate] = dsprate;
-	sconfig[JAVANVM_InitSoundBitsPerSample] = 16;
-	sconfig[JAVANVM_InitSoundChannels] = POKEYSND_stereo_enabled ? 2 : 1;
-	sconfig[JAVANVM_InitSoundSigned] = TRUE;
-	sconfig[JAVANVM_InitSoundBigEndian] = TRUE;
-	line_buffer_size = JAVANVM_InitSound((void *)&sconfig[0]);
-	dsp_buffer_size = 4096; /*adjust this to fix skipping/latency*/
-	if (POKEYSND_stereo_enabled) dsp_buffer_size *= 2;
-	if (line_buffer_size < dsp_buffer_size) dsp_buffer_size = line_buffer_size;
-	free(dsp_buffer);
-	dsp_buffer = (UBYTE*)malloc(dsp_buffer_size);
-	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, dsprate, (POKEYSND_stereo_enabled ? 2 : 1) , sound_flags);
-}
-
-void Sound_Reinit(void)
-{
-	SoundSetup();
-}
-#endif /* SOUND */
-
-int PLATFORM_Initialise(int *argc, char *argv[])
-{
-	int i, j;
-	int help_only = FALSE;
-	int scale = 2;
-	for (i = j = 1; i < *argc; i++) {
-		int i_a = (i + 1 < *argc);		/* is argument available? */
-		int a_m = FALSE;			/* error, argument missing! */
-		
-		if (strcmp(argv[i], "-scale") == 0) {
-			if (i_a)
-				scale = Util_sscandec(argv[++i]);
-			else a_m = TRUE;
-		}
-		else {
-			if (strcmp(argv[i], "-help") == 0) {
-				help_only = TRUE;
-				Log_print("\t-scale <n>       Scale width and height by <n>");
-			}
-			argv[j++] = argv[i];
-		}
-
-		if (a_m) {
-			Log_print("Missing argument for '%s'", argv[i]);
-			return FALSE;
-		}
-	}
-	*argc = j;
-
-	if (!help_only) {
-        int config[JAVANVM_InitGraphicsSIZE];
-        config[JAVANVM_InitGraphicsScalew] = scale;
-        config[JAVANVM_InitGraphicsScaleh] = scale;
-        config[JAVANVM_InitGraphicsScreen_WIDTH] = Screen_WIDTH;
-        config[JAVANVM_InitGraphicsScreen_HEIGHT] = Screen_HEIGHT;
-        config[JAVANVM_InitGraphicsATARI_VISIBLE_WIDTH] = 336;
-        config[JAVANVM_InitGraphicsATARI_LEFT_MARGIN] = 24;
-		JAVANVM_InitGraphics((void *)&config[0]);
-		JAVANVM_InitPalette((void *)&Colours_table[0]);
-#ifdef SOUND
-		SoundSetup();
-#endif
-	}
 	if (INPUT_cx85) {
 		kbd_joy_0_enabled = FALSE;
 	}
 	return TRUE;
-}
-
-int PLATFORM_Exit(int run_monitor){
-	int restart;
-	if (run_monitor) {
-#ifdef SOUND
-		Sound_Pause();
-#endif
-		restart = MONITOR_Run();
-#ifdef SOUND
-		Sound_Continue();
-#endif
-	}
-   	else {
-		restart = FALSE;
-	}
-	if (restart) {
-		return 1;
-	}
-	return restart;
-}
-
-void PLATFORM_DisplayScreen(void){
-	JAVANVM_DisplayScreen((void *)Screen_atari);
-	return;
 }
 
 static void do_platform_PORT(UBYTE *s0, UBYTE *s1)
@@ -989,30 +794,3 @@ int PLATFORM_TRIG(int num)
 #endif
 	return 1;
 }
-
-void PLATFORM_Sleep(double s){
-	JAVANVM_Sleep((int)(s*1e3));
-}
-
-int main(int argc, char **argv)
-{
-	/* initialise Atari800 core */
-	if (!Atari800_Initialise(&argc, argv))
-		return 3;
-
-	/* main loop */
-	for (;;) {
-		INPUT_key_code = PLATFORM_Keyboard();
-		Atari800_Frame();
-		if (Atari800_display_screen)
-			PLATFORM_DisplayScreen();
-		if (JAVANVM_CheckThreadStatus()) {
-		   	Atari800_Exit(FALSE);
-			exit(0);
-		}
-	}
-}
-
-/*
-vim:ts=4:sw=4:
-*/

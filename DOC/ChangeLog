@@ -4,6 +4,11 @@
 * javanvm/atari_javanvm.c: Fix overflow of dsp_buffer - could happen on some
   systems where JAVANVM_SoundAvailable sometimes returns value larger than
   2*line_buffer_size.
+* DOC/INSTALL, configure.ac, Makefile.in, javanvm/atari_javanvm.[ch],
+  javanvm/input.[ch], javanvm/javanvm.h, javanvm/main.c, javanvm/sound.c,
+  javanvm/video.[ch]: Code cleanup - split atari_javanvm.c to separate modules
+  for video, sound and input. Merge javanvm and javanvm-basic targets into the
+  default target - NestedVM host is now autodetected.
 
 
 2013-04-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

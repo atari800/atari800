@@ -29,7 +29,7 @@ AC_CONFIG_HEADER(config.h)
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | javanvm | javanvm-basic | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    default | falcon | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -48,8 +48,6 @@ case "$target" in
         echo "    default          (autodetect available graphics and sound libraries)"
         echo "    android          (Android devices)"
         echo "    falcon           (Atari Falcon systems only)"
-        echo "    javanvm          (Java NestedVM: set --host=mips-unknown-elf)"
-        echo "    javanvm-basic    (Java NestedVM text-mode: set --host=mips-unknown-elf)"
         echo "    ps2              (Sony PlayStation 2)"
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
@@ -191,6 +189,28 @@ dnl Don't make this a windowed app, make it a console app.
     fi
 ])
 
+dnl Check if host os Java NestedVM...
+AC_MSG_CHECKING([whether host is Java NestedVM])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[extern int _call_java(int a, int b, int c, int d);]],
+		[[_call_java(0, 0, 0, 0);]]
+	)],
+	[
+		a8_host=javanvm
+		EXEEXT=".mips"
+		enable_unalignedwords=no
+		if [[ "$build_os" = "cygwin" ]]; then
+			JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
+			JAVACFLAGS="-source 1.4 -classpath '""`cygpath -wp $CLASSPATH`'"
+		fi
+		AC_MSG_RESULT(yes)
+	],
+	[
+		AC_MSG_RESULT(no)
+	]
+)
+
 dnl Check for header files...
 
 dnl Beware: AC_PATH_X must NOT be inside "case"!
@@ -262,31 +282,6 @@ dnl BeOS has a real issue with redundant-decls
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
         AC_CHECK_LIB(gem, appl_init)
         OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
-        ;;
-    javanvm)
-        AC_DEFINE(JAVANVM,1,[Target: Java NestedVM.])
-        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
-        AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
-        AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
-        OBJS="javanvm/atari_javanvm.o"
-        EXEEXT=".mips"
-        enable_unalignedwords=no
-        if [[ "$build_os" = "cygwin" ]]; then
-            JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
-            JAVACFLAGS="-source 1.4 -classpath '""`cygpath -wp $CLASSPATH`'"
-        fi
-        CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
-        ;;
-    javanvm-basic)
-        AC_DEFINE(BASIC,1,[Target: standard I/O.])
-        OBJS="atari_basic.o"
-        EXEEXT=".mips"
-        enable_unalignedwords=no
-        enable_sound=no
-        if [[ "$build_os" = "cygwin" ]]; then
-            JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
-            JAVACFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
-        fi
         ;;
     ps2)
         AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
@@ -498,10 +493,10 @@ else
     AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
     AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf])
     AX_FUNC_MKDIR
-fi
-dnl select usleep strncpy are broken on javanvm targets
-if [[ "$a8_target" != "javanvm" -a "$a8_target" != "javanvm-basic" -a "$a8_target" != "android" ]]; then
-    AC_CHECK_FUNCS([select usleep strncpy])
+	dnl select usleep strncpy are broken on the NestedVM host
+    if test "x$a8_host" != xjavanvm ; then
+        AC_CHECK_FUNCS([select usleep strncpy])
+    fi
 fi
 if [[ "$a8_host" != "win" -a "$a8_target" != "android" ]]; then
     AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
@@ -510,10 +505,10 @@ fi
 dnl Select/detect video interface.
 
 AC_ARG_WITH([video],
-    [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl@:>@],[Select video interface to use @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl|javanvm@:>@],[Select video interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | curses | ncurses | pdcurses | dosvga | sdl)
+            no | yes | check | curses | ncurses | pdcurses | dosvga | sdl | javanvm)
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-video: "$withval"])
@@ -524,6 +519,13 @@ AC_ARG_WITH([video],
 
 if [[ "$a8_target" = default ]]; then
     if [[ "$with_video" != no ]]; then
+        if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = javanvm ]]; then
+            if [[ "$a8_host" = javanvm ]]; then
+                with_video=javanvm
+            elif [[ "$with_video" = javanvm ]]; then
+                AC_MSG_ERROR([--with-video=javanvm was given, but host system is not NestedVM!])
+            fi
+        fi
         if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = dosvga ]]; then
             if [[ "$a8_host" = dos ]]; then
                 with_video=dosvga
@@ -575,6 +577,11 @@ if [[ "$a8_target" = default ]]; then
         with_video=no
     fi
     case "$with_video" in
+        javanvm)
+            AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
+            AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
+            OBJS="javanvm/main.o javanvm/video.o javanvm/input.o"
+            ;;
         sdl)
             AC_DEFINE(GUI_SDL,1,[Use SDL for graphics and input.])
             AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
@@ -631,7 +638,7 @@ AC_DEFUN([A8_OPTION],[
     fi
 ])
 
-if [[ \( "$a8_target" != "default" -o "$with_video" != no \) -a "$a8_target" != "javanvm-basic" ]]; then
+if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
 
     dnl These objects are not compiled when --with-video=no
     OBJS="$OBJS input.o statesav.o ui_basic.o ui.o"
@@ -747,10 +754,10 @@ fi
 dnl Select/detect sound interface.
 
 AC_ARG_WITH([sound],
-    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|win|sdl@:>@],[Select sound interface to use @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|win|sdl|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | dossb | oss | falcon | win | sdl)
+            no | yes | check | dossb | oss | falcon | win | sdl | javanvm)
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-sound: "$withval"])
@@ -759,8 +766,15 @@ AC_ARG_WITH([sound],
     ],
     [with_sound=check])
 
-if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" -a "$a8_target" != "javanvm" ]]; then
+if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
     if [[ "$with_sound" != no ]]; then
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = javanvm ]]; then
+            if [[ "$a8_host" = javanvm ]]; then
+                with_sound=javanvm
+            elif [[ "$with_sound" = javanvm ]]; then
+                AC_MSG_ERROR([--with-sound=javanvm was given, but host system is not NestedVM!])
+            fi
+        fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = win ]]; then
             AC_CHECK_LIB([winmm], [main],
                 [LIBS="-lwinmm $LIBS"
@@ -805,6 +819,10 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" -a "$a8_target" != "jav
         with_sound=no
     fi
     case "$with_sound" in
+        javanvm)
+            AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
+            OBJS="$OBJS javanvm/sound.o"
+            ;;
         sdl)
             AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
             SUPPORTS_SYNCHRONIZED_SOUND="yes"
@@ -1077,6 +1095,8 @@ AC_SUBST(JAVAFLAGS)
 AC_SUBST(JAVACFLAGS)
 CONFIGURE_TARGET="$target"
 AC_SUBST(CONFIGURE_TARGET)
+CONFIGURE_HOST="$a8_host"
+AC_SUBST(CONFIGURE_HOST)
 AC_CONFIG_FILES(Makefile)
 if [[ "$a8_target" = "android" ]]; then
 	AC_CONFIG_FILES(android/jni/Android.mk)
@@ -1100,7 +1120,7 @@ if [[ "$a8_target" = default ]]; then
             ;;
     esac
 fi
-if [[ \( "$a8_target" != "default" -o "$with_video" != no \) -a "$a8_target" != "javanvm-basic" ]]; then
+if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
         echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"

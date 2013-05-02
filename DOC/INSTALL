@@ -211,16 +211,17 @@ Building the Emulator for Java using NestedVM
 ---------------------------------------------
 1. Get and build NestedVM (nestedvm.ibex.org). make env.sh and unix_runtime.jar
 2. source env.sh in the NestedVM directory.
-3. In the atari800 directory:
-   ./autogen.sh (only if you don't have configure, such as a CVS build)
-   ./configure --host=mips-unknown-elf --target=javanvm --disable-ide
+3. Follow steps 1-5 of the "Building the Emulator on most platforms" section
+   above, but when calling ./configure, add these two parameters:
+   --host=mips-unknown-elf --disable-ide
+   ie.
+   ./configure --host=mips-unknown-elf --disable-ide
    You might want to add --enable-veryslow --disable-monitorbreak to the above.
-   For the "simple" version, use --target=javanvm-basic
-4. Type "make".
-5. atari800.jar requires unix_runtime.jar in the same directory. Copy it from
+   This should result in creation of the file named atari800.jar.
+4. atari800.jar requires unix_runtime.jar in the same directory. Copy it from
    the NestedVM directory where you made it using "make unix_runtime.jar" as 
    stated above.
-6. To run use: java -jar atari800.jar
+5. To run use: java -jar atari800.jar
 Add -o UnixRuntime to the NestedVM compiler options to enable directory
 browsing.
 This requires changing Windows paths to the form: /c:/file in all configuration
