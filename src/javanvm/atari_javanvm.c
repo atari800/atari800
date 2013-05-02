@@ -180,10 +180,12 @@ void Sound_Continue(void)
 void Sound_Update(void)
 {
 	int avail = JAVANVM_SoundAvailable();
-	avail -= (line_buffer_size-dsp_buffer_size);
-	if (avail<0) avail = 0;
-	POKEYSND_Process(dsp_buffer, avail/2);
-	JAVANVM_SoundWrite((void *)dsp_buffer, avail);
+	while (avail > 0) {
+		int len = dsp_buffer_size > avail ? avail : dsp_buffer_size;
+		POKEYSND_Process(dsp_buffer, len / 2 / (POKEYSND_stereo_enabled ? 2 : 1));
+		JAVANVM_SoundWrite((void *)dsp_buffer, len);
+		avail -= len;
+	}
 }
 
 #endif /* SOUND */
