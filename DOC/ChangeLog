@@ -1,3 +1,7 @@
+2013-11-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* monitor.c: Fixed & updated symbols based on OS & BASIC source listings.
+
+
 2013-11-09  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/cart.txt: By request of the developers of The!Cart, reserved two IDs
   for this new cartridge type.
