@@ -170,6 +170,7 @@ AC_DEFUN(TRY_USE_SDL,
         [
             OBJS="$OBJS sdl/init.o"
             AC_DEFINE(SDL,1,[Target: SDL library.])
+            AC_DEFINE(SUPPORTS_PLATFORM_TIME,1,[Platform-specific time function.])
             LIBS="$LIBS $SDL_LIBS"
             CPPFLAGS="$CPPFLAGS $SDL_CFLAGS"
             if [[ "$a8_host" = "win" ]]; then
@@ -285,6 +286,8 @@ dnl BeOS has a real issue with redundant-decls
         ;;
     ps2)
         AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
+        AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
+        AC_DEFINE(SUPPORTS_PLATFORM_TIME,1,[Platform-specific time function.])
         AC_DEFINE(DEFAULT_CFG_NAME,"mc0:/ATARI/ATARI800.CFG",[Alternate config filename due to 8+3 fs limit.])
         A8_NEED_LIB(kernel)
 	A8_NEED_LIB(audsrv)

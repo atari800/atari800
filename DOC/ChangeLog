@@ -1,3 +1,8 @@
+2013-11-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* configure.ac, atari.c, platform.h, atari_ps2.c, sdl/main.c : Minimal cleanup
+  of platform-specific Sleep/Time routines.
+
+
 2013-11-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * monitor.c: Fixed & updated symbols based on OS & BASIC source listings.
 

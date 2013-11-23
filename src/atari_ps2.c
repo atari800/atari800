@@ -91,7 +91,7 @@ static char padBuf[256] __attribute__((aligned(64)));
 
 #ifdef USE_TIMERS
 
-/* We use T0 for Atari_time() and T1 for Atari_sleep().
+/* We use T0 for PLATFORM_Time() and T1 for PLATFORM_Sleep().
    Note that both timers are just 16-bit. */
 
 #define T0_COUNT  (*(volatile unsigned long *) 0x10000000)
@@ -162,7 +162,7 @@ static void timer_shutdown(void)
 
 #endif /* USE_TIMERS */
 
-double Atari_time(void)
+double PLATFORM_Time(void)
 {
 #ifdef USE_TIMERS
 	/* AFAIK, multiplication is faster than division,
@@ -174,10 +174,10 @@ double Atari_time(void)
 #endif
 }
 
-/* this Atari_sleep() supports times only up to 0.11 sec,
+/* this PLATFORM_Sleep() supports times only up to 0.11 sec,
    which is enough for Atari800 purposes */
 
-/* void Atari_sleep(double s)
+/* void PLATFORM_Sleep(double s)
 {
 #ifdef USE_TIMERS
 	unsigned long count = 65536 - (unsigned long) (s * 576000);
@@ -200,7 +200,7 @@ double Atari_time(void)
 //        locked = 0;
 //}
 //
-//void Atari_sleep(double s)
+//void PLATFORM_Sleep(double s)
 //{
 //
 //        /* 15734 is around 1 second on NTSC */
@@ -209,7 +209,7 @@ double Atari_time(void)
 //        while (locked);
 //	locked = 1;
 //}
-void Atari_sleep(double s)
+void PLATFORM_Sleep(double s)
 {
 
 	if (UI_is_active){

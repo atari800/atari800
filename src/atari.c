@@ -990,17 +990,10 @@ void Atari800_ErrExit(void)
 
 #ifndef __PLUS
 
-#ifdef PS2
-
-double Atari_time(void);
-void Atari_sleep(double s);
-
-#else /* PS2 */
-
 static double Atari_time(void)
 {
-#ifdef SDL
-	return SDL_GetTicks() * 1e-3;
+#ifdef SUPPORTS_PLATFORM_TIME
+	return PLATFORM_Time();
 #elif defined(HAVE_WINDOWS_H)
 	return GetTickCount() * 1e-3;
 #elif defined(DJGPP)
@@ -1021,10 +1014,12 @@ static double Atari_time(void)
 
 /* FIXME: Ports should use SUPPORTS_PLATFORM_SLEEP and SUPPORTS_PLATFORM_TIME */
 /* and not this mess */
-#ifndef SUPPORTS_PLATFORM_SLEEP
 
 static void Atari_sleep(double s)
 {
+#ifdef SUPPORTS_PLATFORM_SLEEP
+	PLATFORM_Sleep(s);
+#else /* !SUPPORTS_PLATFORM_SLEEP */
 	if (s > 0) {
 #ifdef HAVE_WINDOWS_H
 		Sleep((DWORD) (s * 1e3));
@@ -1057,11 +1052,8 @@ static void Atari_sleep(double s)
 		while ((curtime + s) > Atari_time());
 #endif
 	}
+#endif /* !SUPPORTS_PLATFORM_SLEEP */
 }
-
-#endif /* SUPPORTS_PLATFORM_SLEEP */
-
-#endif /* PS2 */
 
 static void autoframeskip(double curtime, double lasttime)
 {
@@ -1114,11 +1106,7 @@ void Atari800_Sync(void)
 	curtime = Atari_time();
 	if (Atari800_auto_frameskip)
 		autoframeskip(curtime, lasttime);
-#ifdef SUPPORTS_PLATFORM_SLEEP
-	PLATFORM_Sleep(lasttime - curtime);
-#else
 	Atari_sleep(lasttime - curtime);
-#endif
 	curtime = Atari_time();
 
 	if ((lasttime + deltatime) < curtime)

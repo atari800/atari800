@@ -156,6 +156,11 @@ static BOOL CtrlHandler(DWORD fdwCtrlType)
 }
 #endif /* HAVE_WINDOWS_H */
 
+double PLATFORM_Time(void)
+{
+	return SDL_GetTicks() * 1e-3;
+}
+
 int main(int argc, char **argv)
 {
 #if HAVE_WINDOWS_H

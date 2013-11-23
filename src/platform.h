@@ -45,6 +45,11 @@ void PLATFORM_PaletteUpdate(void);
 void PLATFORM_Sleep(double s);
 #endif
 
+#ifdef SUPPORTS_PLATFORM_TIME
+/* This function is for those ports that need their own version of sleep */
+double PLATFORM_Time(void);
+#endif
+
 #ifdef USE_CURSES
 void curses_clear_screen(void);
 
