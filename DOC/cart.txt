@@ -92,6 +92,7 @@ Currently supported cartridge types:
 | 58 | 800/XL/XE |    4 | Standard 4 KB cartridge                           |
 | 59 |    800    |    4 | Right slot 4 KB cartridge                         |
 | 60 | 800/XL/XE |   32 | Blizzard 32 KB cartridge                          |
+| 61 | 800/XL/XE | 2048 | MegaMax 2 MB cartridge                            |
 +----+-----------+------+---------------------------------------------------+
 
 Cartridge types with assigned type code but not yet supported:
@@ -99,7 +100,6 @@ Cartridge types with assigned type code but not yet supported:
 +----+-----------+------+---------------------------------------------------+
 | Id |  Machine  | Size | Name                                              |
 |----+-----------+------+---------------------------------------------------+
-| 61 | 800/XL/XE | 2048 | MegaMax 2 MB cartridge                            |
 | 62 | 800/XL/XE | 128M | The!Cart 128 MB cartridge                         |
 +----+-----------+------+---------------------------------------------------+
 
