@@ -108,7 +108,8 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	2,    /* CARTRIDGE_STD_2 */
 	4,    /* CARTRIDGE_STD_4 */
 	4,    /* CARTRIDGE_RIGHT_4 */
-	32    /* CARTRIDGE_TURBO_HIT_32 */
+	32,   /* CARTRIDGE_TURBO_HIT_32 */
+	2048  /* CARTRIDGE_MEGA_2048 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -190,7 +191,8 @@ static void set_bank_A0BF(int n)
 	}
 }
 
-/* MEGA_16, MEGA_32, MEGA_64, MEGA_128, MEGA_256, MEGA_512, MEGA_1024 */
+/* MEGA_16, MEGA_32, MEGA_64, MEGA_128, MEGA_256, MEGA_512, MEGA_1024,
+   MEGAMAX_2048 */
 static void set_bank_80BF(void)
 {
 	if (active_cart->state & 0x80) {
@@ -200,7 +202,7 @@ static void set_bank_80BF(void)
 	else {
 		MEMORY_Cart809fEnable();
 		MEMORY_CartA0bfEnable();
-		MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image + active_cart->state * 0x4000);
+		MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image + (active_cart->state & 0x7f) * 0x4000);
 	}
 }
 
@@ -298,6 +300,7 @@ static void SwitchBank(int old_state)
 	case CARTRIDGE_MEGA_256:
 	case CARTRIDGE_MEGA_512:
 	case CARTRIDGE_MEGA_1024:
+	case CARTRIDGE_MEGAMAX_2048:
 		set_bank_80BF();
 		break;
 	case CARTRIDGE_PHOENIX_8:
@@ -579,6 +582,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_SIC_128:
 		case CARTRIDGE_SIC_256:
 		case CARTRIDGE_SIC_512:
+		case CARTRIDGE_MEGAMAX_2048:
 			break;
 		default:
 			MEMORY_Cart809fDisable();
@@ -789,6 +793,7 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 		new_state = addr & 0x17;
 		break;
 	case CARTRIDGE_ATMAX_1024:
+	case CARTRIDGE_MEGAMAX_2048:
 		new_state = addr;
 		break;
 	case CARTRIDGE_OSS_8:

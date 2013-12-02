@@ -1,3 +1,10 @@
+2013-12-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
+  DOC/USAGE: Added support for the MegaMax 2 MB cartridge mapping. Developers
+  of The!Cart confirmed that the CART ID for the 64MB variant is not needed, so
+  I've reused it.
+
+
 2013-11-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * configure.ac, atari.c, platform.h, atari_ps2.c, sdl/main.c : Minimal cleanup
   of platform-specific Sleep/Time routines.

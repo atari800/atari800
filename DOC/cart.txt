@@ -99,7 +99,7 @@ Cartridge types with assigned type code but not yet supported:
 +----+-----------+------+---------------------------------------------------+
 | Id |  Machine  | Size | Name                                              |
 |----+-----------+------+---------------------------------------------------+
-| 61 | 800/XL/XE |  64M | The!Cart 64 MB cartridge                          |
+| 61 | 800/XL/XE | 2048 | MegaMax 2 MB cartridge                            |
 | 62 | 800/XL/XE | 128M | The!Cart 128 MB cartridge                         |
 +----+-----------+------+---------------------------------------------------+
 
@@ -800,13 +800,21 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://www.atari.org.pl/forum/viewtopic.php?id=7292
 
 +---------------------------------------------------------------------------+
-| Type 61: The!Cart 64 MB cartridge                                         |
+| Type 61: MegaMax 2 MB cartridge                                           |
 +---------------------------------------------------------------------------+
 
- This cartridge type is not yet supported by Atari800.
+ A variant of the MegaMax cartridge with 2MB ROM. The cartridge has a switch
+ to toggle between the 1 MB Atarimax-compatible mode and the 2MB mode;
+ this type describes the latter one.
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by accessing to an address at $D500-$D5FF.
+ Bits 0-6 of the address select one of 128 available banks, bit 7 disables the
+ cartridge. The cartridge starts with bank 0 enabled.
 
  Reference:
- http://www.mega-hz.de/Angebote/THE!CART/THE!CART_EN.htm
+ http://www.mega-hz.de/Angebote/MEGAMAX/en/MegaMAX%20Cart%20en%20V1.htm
+
 +---------------------------------------------------------------------------+
 | Type 62: The!Cart 128 MB cartridge                                        |
 +---------------------------------------------------------------------------+

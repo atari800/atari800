@@ -66,10 +66,11 @@ enum { CARTRIDGE_UNKNOWN        = -1,
        CARTRIDGE_STD_4          = 58,
        CARTRIDGE_RIGHT_4        = 59,
        CARTRIDGE_BLIZZARD_32    = 60,
-       CARTRIDGE_LAST_SUPPORTED = 60
+       CARTRIDGE_MEGAMAX_2048   = 61,
+       CARTRIDGE_LAST_SUPPORTED = 61
 };
 
-#define CARTRIDGE_MAX_SIZE	(1024 * 1024)
+#define CARTRIDGE_MAX_SIZE	(2048 * 1024)
 extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 
 #define CARTRIDGE_STD_8_DESC         "Standard 8 KB cartridge"
@@ -132,6 +133,7 @@ extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 #define CARTRIDGE_STD_4_DESC         "Standard 4 KB cartridge"
 #define CARTRIDGE_RIGHT_4_DESC       "Right slot 4 KB cartridge"
 #define CARTRIDGE_BLIZZARD_32_DESC   "Blizzard 32 KB cartridge"
+#define CARTRIDGE_MEGAMAX_2048_DESC  "MegaMax 2 MB cartridge"
 
 /* Indicates whether the emulator should automatically reboot (coldstart)
    after inserting/removing a cartridge. (Doesn't affect the piggyback
