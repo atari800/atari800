@@ -109,7 +109,9 @@ int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	4,    /* CARTRIDGE_STD_4 */
 	4,    /* CARTRIDGE_RIGHT_4 */
 	32,   /* CARTRIDGE_TURBO_HIT_32 */
-	2048  /* CARTRIDGE_MEGA_2048 */
+	2048, /* CARTRIDGE_MEGA_2048 */
+	-1,   /* CARTRIDGE_THECART_128M, should be 128*1024 but not supported yet */
+	4096  /* CARTRIDGE_MEGA_4096 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -234,6 +236,19 @@ static void set_bank_SIC(int n)
 	}
 }
 
+/* MEGA_4096 */
+static void set_bank_MEGA_4096(void)
+{
+	if (active_cart->state == 0xff) {
+		MEMORY_Cart809fDisable();
+		MEMORY_CartA0bfDisable();
+	}
+	else {
+		MEMORY_Cart809fEnable();
+		MEMORY_CartA0bfEnable();
+		MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image + active_cart->state * 0x4000);
+	}
+}
 /* Called on a read or write operation to page $D5. Switches banks or
    enables/disables the cartridge pointed to by *active_cart. */
 static void SwitchBank(int old_state)
@@ -335,6 +350,9 @@ static void SwitchBank(int old_state)
 		break;
 	case CARTRIDGE_SIC_512:
 		set_bank_SIC(0x1f);
+		break;
+	case CARTRIDGE_MEGA_4096:
+		set_bank_MEGA_4096();
 		break;
 	}
 #if DEBUG
@@ -583,6 +601,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_SIC_256:
 		case CARTRIDGE_SIC_512:
 		case CARTRIDGE_MEGAMAX_2048:
+		case CARTRIDGE_MEGA_4096:
 			break;
 		default:
 			MEMORY_Cart809fDisable();
@@ -856,6 +875,7 @@ static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr, int no_side_effects)
 	case CARTRIDGE_SIC_512:
 	case CARTRIDGE_SIC_256:
 	case CARTRIDGE_SIC_128:
+	case CARTRIDGE_MEGA_4096:
 		/* Only react to access to $D50x/$D51x. */
 		if ((addr & 0xe0) == 0x00)
 			return cart->state;
@@ -931,6 +951,7 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 	case CARTRIDGE_SIC_512:
 	case CARTRIDGE_SIC_256:
 	case CARTRIDGE_SIC_128:
+	case CARTRIDGE_MEGA_4096:
 		/* Only react to access to $D50x/$D51x. */
 		if ((addr & 0xe0) == 0x00)
 			new_state = byte;
@@ -1117,6 +1138,9 @@ static void ResetCartState(CARTRIDGE_image_t *cart)
 		/* A special value of 0x10000 indicates the cartridge is
 		   enabled and the current bank is 0. */
 		cart->state = 0x10000;
+		break;
+	case CARTRIDGE_MEGA_4096:
+		cart->state = 254;
 		break;
 	default:
 		cart->state = 0;

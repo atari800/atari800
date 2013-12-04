@@ -1,3 +1,8 @@
+2013-12-04  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
+  DOC/USAGE: Added read-only support for the 4 MB Flash MegaCart mapping.
+
+
 2013-12-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
   DOC/USAGE: Added support for the MegaMax 2 MB cartridge mapping. Developers

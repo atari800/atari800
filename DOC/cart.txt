@@ -93,6 +93,7 @@ Currently supported cartridge types:
 | 59 |    800    |    4 | Right slot 4 KB cartridge                         |
 | 60 | 800/XL/XE |   32 | Blizzard 32 KB cartridge                          |
 | 61 | 800/XL/XE | 2048 | MegaMax 2 MB cartridge                            |
+| 63 | 800/XL/XE | 4096 | Flash MegaCart 4 MB cartridge                     |
 +----+-----------+------+---------------------------------------------------+
 
 Cartridge types with assigned type code but not yet supported:
@@ -823,3 +824,21 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference:
  http://www.mega-hz.de/Angebote/THE!CART/THE!CART_EN.htm
+
++---------------------------------------------------------------------------+
+| Type 63: Flash MegaCart 4 MB cartridge                                    |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D51F. Values
+ 0-254 select one of the first 255 banks, and the value 255 disables the
+ cartridge. Bank 255 is not available. The cartridge starts with bank 254
+ enabled.
+
+ A read from $D500-$D51F returns the last value written (initially 254).
+ 
+ The cartridge also has ROM flashing functionality, which is currently not
+ emulated.
+
+ Reference:
+ http://herale.org/4MB_FLASH_MEGACART
