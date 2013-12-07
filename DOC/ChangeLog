@@ -1,3 +1,9 @@
+2013-12-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch], atari800.man, DOC/cart.txt: Added support for a small subset
+  of The!Cart mapping.
+* cartridge.[ch]: CARTRIDGE_kb is not modified anywhere, made it const.
+
+
 2013-12-04  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
   DOC/USAGE: Added read-only support for the 4 MB Flash MegaCart mapping.

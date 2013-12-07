@@ -809,7 +809,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  this type describes the latter one.
 
  A bank-switched cartridge that occupies 16 KB of address space between
- $8000 and $BFFF. It is controlled by accessing to an address at $D500-$D5FF.
+ $8000 and $BFFF. It is controlled by access to an address at $D500-$D5FF.
  Bits 0-6 of the address select one of 128 available banks, bit 7 disables the
  cartridge. The cartridge starts with bank 0 enabled.
 
@@ -820,7 +820,17 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 | Type 62: The!Cart 128 MB cartridge                                        |
 +---------------------------------------------------------------------------+
 
- This cartridge type is not yet supported by Atari800.
+ Only a small subset, as described below, of this cartridge's features is
+ currently emulated.
+
+ The cartridge occupies 8 KB of address space between $A000 and $BFFF, and
+ consists of 16384 banks. The enabled bank is controlled by bytes written to
+ $D5A0 (LSB) and $D5A1 (MSB, only 6 lowest bytes matter). Byte written to
+ $D5A2 turns the cartridge on/off: bit 0 = 1 enables the cartridge, 0 disables
+ it and enables RAM. The cartridge starts with bank 0 enabled.
+
+ The $D5A0-$D5A2 registers are read/write; one can read the cartridge's current
+ state from them. Unused bits are always read as 0.
 
  Reference:
  http://www.mega-hz.de/Angebote/THE!CART/THE!CART_EN.htm

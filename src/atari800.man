@@ -447,6 +447,9 @@ Blizzard 32 KB cartridge
 .B 61
 MegaMax 2 MB cartridge
 .TP
+.B 62
+The!Cart 128 MB cartridge
+.TP
 .B 63
 Flash MegaCart 4 MB cartridge
 .PD

@@ -72,8 +72,8 @@ enum { CARTRIDGE_UNKNOWN        = -1,
        CARTRIDGE_LAST_SUPPORTED = 63
 };
 
-#define CARTRIDGE_MAX_SIZE	(4096 * 1024)
-extern int CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
+#define CARTRIDGE_MAX_SIZE	(128 * 1024 * 1024)
+extern int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 
 #define CARTRIDGE_STD_8_DESC         "Standard 8 KB cartridge"
 #define CARTRIDGE_STD_16_DESC        "Standard 16 KB cartridge"
