@@ -5,6 +5,8 @@
   checks. Calling ESC_UpdatePatches() instead solves the issue.
 * afile.c, atari.c, gtia.[ch]: Avoid sending Option and Start keystrokes to a 
   diagnostic cartridge when coldstarting.
+* cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
+  DOC/USAGE: Added support for the 2 MB MegaCart mapping.
 
 
 2013-12-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

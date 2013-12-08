@@ -94,6 +94,7 @@ Currently supported cartridge types:
 | 60 | 800/XL/XE |   32 | Blizzard 32 KB cartridge                          |
 | 61 | 800/XL/XE | 2048 | MegaMax 2 MB cartridge                            |
 | 63 | 800/XL/XE | 4096 | Flash MegaCart 4 MB cartridge                     |
+| 64 | 800/XL/XE | 2048 | MegaCart 2 MB cartridge                           |
 +----+-----------+------+---------------------------------------------------+
 
 Cartridge types with assigned type code but not yet supported:
@@ -381,40 +382,40 @@ are numbered in the order they appear in the image file, starting with 0.
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge that occupies 16 KB of address space between
- $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bits 0
- and 1 select one of four available banks, bit 7 disables the cartridge.
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bits 0-1
+ select one of four available banks, bit 7 disables the cartridge.
 
 +---------------------------------------------------------------------------+
 | Type 29: MegaCart 128 KB cartridge                                        |
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge that occupies 16 KB of address space between
- $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF.
- Bits 0,1,2 select one of 8 available banks, bit 7 disables the cartridge.
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bits 0-2
+ select one of 8 available banks, bit 7 disables the cartridge.
 
 +---------------------------------------------------------------------------+
 | Type 30: MegaCart 256 KB cartridge                                        |
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge that occupies 16 KB of address space between
- $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Four
- lowest bits select one of 16 available banks, bit 7 disables the cartridge.
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bits 0-3
+ select one of 16 available banks, bit 7 disables the cartridge.
 
 +---------------------------------------------------------------------------+
 | Type 31: MegaCart 512 KB cartridge                                        |
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge that occupies 16 KB of address space between
- $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Five
- lowest bits select one of 32 available banks, bit 7 disables the cartridge.
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bits 0-4
+ select one of 32 available banks, bit 7 disables the cartridge.
 
 +---------------------------------------------------------------------------+
 | Type 32: MegaCart 1 MB cartridge                                          |
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge that occupies 16 KB of address space between
- $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Six
- lowest bits select one of 64 available banks, bit 7 disables the cartridge.
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bits 0-5
+ select one of 64 available banks, bit 7 disables the cartridge.
 
 +---------------------------------------------------------------------------+
 | Type 33: Switchable XEGS 32 KB cartridge                                  |
@@ -852,3 +853,11 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference:
  http://herale.org/4MB_FLASH_MEGACART
+
++---------------------------------------------------------------------------+
+| Type 64: MegaCart 2 MB cartridge                                          |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge that occupies 16 KB of address space between
+ $8000 and $BFFF. It is controlled by a byte written to $D500-$D5FF. Bits 0-6
+ select one of 128 available banks, bit 7 disables the cartridge.

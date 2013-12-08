@@ -69,7 +69,8 @@ enum { CARTRIDGE_UNKNOWN        = -1,
        CARTRIDGE_MEGAMAX_2048   = 61,
        CARTRIDGE_THECART_128M   = 62,
        CARTRIDGE_MEGA_4096      = 63,
-       CARTRIDGE_LAST_SUPPORTED = 63
+       CARTRIDGE_MEGA_2048      = 64,
+       CARTRIDGE_LAST_SUPPORTED = 64
 };
 
 #define CARTRIDGE_MAX_SIZE	(128 * 1024 * 1024)
@@ -138,6 +139,7 @@ extern int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 #define CARTRIDGE_MEGAMAX_2048_DESC  "MegaMax 2 MB cartridge"
 #define CARTRIDGE_THECART_128M_DESC  "The!Cart 128 MB cartridge"
 #define CARTRIDGE_MEGA_4096_DESC     "Flash MegaCart 4 MB cartridge"
+#define CARTRIDGE_MEGA_2048_DESC     "MegaCart 2 MB cartridge"
 
 /* Indicates whether the emulator should automatically reboot (coldstart)
    after inserting/removing a cartridge. (Doesn't affect the piggyback
