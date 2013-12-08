@@ -234,8 +234,8 @@ int AFILE_OpenFile(const char *filename, int reboot, int diskno, int readonly)
 #else
 		if (!StateSav_ReadAtariState(filename, "rb"))
 			return AFILE_ERROR;
-		/* Don't press Option */
-		GTIA_consol_table[1] = GTIA_consol_table[2] = 0xf;
+		/* Don't press Start nor Option */
+		GTIA_consol_override = 0;
 		break;
 #endif
 	default:

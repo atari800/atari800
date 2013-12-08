@@ -265,17 +265,7 @@ void Atari800_Coldstart(void)
 	MEMORY_dPutByte(0x244, 1);
 	/* handle Option key (disable BASIC in XL/XE)
 	   and Start key (boot from cassette) */
-	GTIA_consol_index = 2;
-	GTIA_consol_table[2] = 0x0f;
-	if (Atari800_builtin_basic && Atari800_disable_basic && !BINLOAD_loading_basic) {
-		/* Only for XL/XE - hold Option during reboot. */
-		GTIA_consol_table[2] &= ~INPUT_CONSOL_OPTION;
-	}
-	if (CASSETTE_hold_start && Atari800_machine_type != Atari800_MACHINE_5200) {
-		/* Only for the computers - hold Start during reboot */
-		GTIA_consol_table[2] &= ~INPUT_CONSOL_START;
-	}
-	GTIA_consol_table[1] = GTIA_consol_table[2];
+	GTIA_consol_override = 2;
 #ifdef AF80
 	if (AF80_enabled) {
 		AF80_Reset();
@@ -872,8 +862,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 	/* Load state file */
 	if (state_file != NULL) {
 		if (StateSav_ReadAtariState(state_file, "rb"))
-			/* Don't press Option */
-			GTIA_consol_table[1] = GTIA_consol_table[2] = 0x0f;
+			/* Don't press Start nor Option */
+			GTIA_consol_override = 0;
 	}
 #endif
 

@@ -3,6 +3,8 @@
   cause the emulated system to go sraight to Self Test: the calls to
   Device_PatchOS() would enable E: patches, but wouldn't disable the OS memory
   checks. Calling ESC_UpdatePatches() instead solves the issue.
+* afile.c, atari.c, gtia.[ch]: Avoid sending Option and Start keystrokes to a 
+  diagnostic cartridge when coldstarting.
 
 
 2013-12-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

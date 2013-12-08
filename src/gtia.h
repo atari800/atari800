@@ -121,8 +121,7 @@ extern UBYTE GTIA_collisions_mask_player_player;
 extern UBYTE GTIA_TRIG[4];
 extern UBYTE GTIA_TRIG_latch[4];
 
-extern int GTIA_consol_index;
-extern UBYTE GTIA_consol_table[3];
+extern int GTIA_consol_override;
 extern int GTIA_speaker;
 
 int GTIA_Initialise(int *argc, char *argv[]);
