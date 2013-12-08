@@ -167,13 +167,13 @@ int BINLOAD_Loader(const char *filename)
 		}
 		else if (buf[0] == 0 && buf[1] == 0) {
 			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_SAVED;
-			Devices_PatchOS();
+			ESC_UpdatePatches();
 			Atari800_Coldstart();
 			return TRUE;
 		}
 		else if (buf[0] >= '0' && buf[0] <= '9') {
 			BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED;
-			Devices_PatchOS();
+			ESC_UpdatePatches();
 			Atari800_Coldstart();
 			return TRUE;
 		}

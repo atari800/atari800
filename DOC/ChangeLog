@@ -1,3 +1,10 @@
+2013-12-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* binload.c: When no OS patches were enabled, Running of BASIC files would
+  cause the emulated system to go sraight to Self Test: the calls to
+  Device_PatchOS() would enable E: patches, but wouldn't disable the OS memory
+  checks. Calling ESC_UpdatePatches() instead solves the issue.
+
+
 2013-12-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], atari800.man, DOC/cart.txt: Added support for a small subset
   of The!Cart mapping.
