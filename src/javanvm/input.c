@@ -226,6 +226,9 @@ int PLATFORM_Keyboard(void)
 	case VK_F10:
 		key_pressed = 0;
 		return INPUT_key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT_INTERLACE;
+	case VK_F12:
+		key_pressed = 0;
+		return AKEY_TURBO;
 	}
 	/* keyboard joysticks: don't pass the keypresses to emulation
 	 * as some games pause on a keypress (River Raid, Bruce Lee)

@@ -1,3 +1,7 @@
+2013-12-14  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* javanvm/input.c: Map F12 to Turbo, as in other targets.
+
+
 2013-12-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * binload.c: When no OS patches were enabled, Running of BASIC files would
   cause the emulated system to go sraight to Self Test: the calls to
