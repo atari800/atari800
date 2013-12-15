@@ -3,9 +3,13 @@
 
 #include "config.h"
 #include <stdio.h>
+#include "atari.h"
 #if SUPPORTS_CHANGE_VIDEOMODE
 #include "videomode.h"
 #endif
+#if defined(SOUND) && defined(SOUND_THIN_API)
+#include "sound.h"
+#endif /* defined(SOUND) && defined(SOUND_THIN_API) */
 
 /* This include file defines prototypes for platform-specific functions. */
 
@@ -71,12 +75,6 @@ int PLATFORM_GetRawKey(void);
 int PLATFORM_GetKeyName(void);
 #endif
 
-#ifdef SYNCHRONIZED_SOUND
-/* This function returns a number which is used to adjust the speed
- * of execution to synchronize with the sound output */
-double PLATFORM_AdjustSpeed(void);
-#endif /* SYNCHRONIZED SOUND */
-
 #if SUPPORTS_CHANGE_VIDEOMODE
 /* Returns whether the platform-specific code support the given display mode, MODE,
    with/without stretching and with/without rotation. */
@@ -111,5 +109,67 @@ void PLATFORM_GetPixelFormat(PLATFORM_pixel_format_t *format);/* Can be 8, 16, 3
    format and store it in the lookup table DEST. */
 void PLATFORM_MapRGB(void *dest, int const *palette, int size);
 #endif /* PLATFORM_MAP_PALETTE */
+
+#if defined(SOUND) && defined(SOUND_THIN_API)
+/* PLATFORM_SoundSetup opens the hardware sound output with parameters
+   set beforehand in Sound_out. The implementation If the code decides so,
+   the actual setup with which audio output is opened may differ from the
+   provided ones. In such case Sound_out will be modified accordingly.
+   The function returns TRUE if it successfully opened the sound output - in such
+   case the caller should set Sound_enabled to TRUE. Sound output is initially
+   paused - caller should call PLATFORM_SoundContinue to start sound output.
+   When opening failed, the function returns FALSE - in this case the caller
+   should set Sound_enabled to FALSE and not attempt to generate any sound.
+   Calling PLATFORM_SoundSetup again with Sound_out unmodified since the
+   previous call to the function, is guaranteed to not change them further -
+   after all, they had been determined to be OK (or modified to be OK) at the
+   previous call.
+   PLATFORM_SoundSetup may be called multiple times without calling
+   PLATFORM_SoundExit inbetween. */
+int PLATFORM_SoundSetup(Sound_setup_t *setup);
+
+/* PLATFORM_SoundExit is the reverse of PLATFORM_SoundSetup. It closes the
+   sound output completely.
+   The function will be called only if the last call to PLATFORM_SoundSetup
+   returned TRUE (ie. iff Sound_enabled == TRUE). */
+void PLATFORM_SoundExit(void);
+
+/* PLATFORM_SoundPause pauses the sound output.
+   The function will be called only if the last call to PLATFORM_SoundSetup
+   returned TRUE (ie. iff Sound_enabled == TRUE) and only when sound is
+   unpaused (ie. after PLATFORM_SoundContinue). */
+void PLATFORM_SoundPause(void);
+
+/* PLATFORM_SoundContinue unpauses the sound output.
+   The function will be called only if the last call to PLATFORM_SoundSetup
+   returned TRUE (ie. iff Sound_enabled == TRUE) and only when sound is paused
+   (ie. straight after PLATFORM_SoundSetup or after PLATFORM_SoundPause). */
+void PLATFORM_SoundContinue(void);
+
+#ifdef SOUND_CALLBACK
+/* Data from sound buffer is sent to output device by calling Sound_Callback
+   in a separate thread. These two functions must be used in the main thread to
+   synchronise access to variables accessed by Sound_Callback. */
+void PLATFORM_SoundLock(void);
+void PLATFORM_SoundUnlock(void);
+#else /* !SOUND_CALLBACK */
+
+/* Return number of bytes that can be written to the output device without
+   blocking. If it is equal or larger than
+   Sound_out.frag_frames*channels*sample_size, it probably means that sound
+   underflow has occurred. */
+unsigned int PLATFORM_SoundAvailable(void);
+
+/* Write contents of *BUFFER to audio output device. SIZE is the size of BUFFER.
+   SIZE must not be greater than
+   Sound_out.frag_frames*Sound_out.channels*Sound_out.sample_size. */
+void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size);
+
+/* Dummy functions, not needed with no SOUND_CALLBACK. */
+#define PLATFORM_SoundLock() {}
+#define PLATFORM_SoundUnlock() {}
+
+#endif /* !SOUND_CALLBACK */
+#endif /* defined(SOUND) && defined(SOUND_THIN_API) */
 
 #endif /* PLATFORM_H_ */

@@ -2,7 +2,7 @@
  * util.c - utility functions
  *
  * Copyright (c) 2005 Piotr Fusik
- * Copyright (c) 2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2005-2013 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -40,8 +40,19 @@
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# elif defined(HAVE_TIME_H)
+#  include <time.h>
+# endif
+#endif
 
 #include "atari.h"
+#include "platform.h"
 #include "util.h"
 
 int Util_chrieq(char c1, char c2)
@@ -438,3 +449,68 @@ int Util_unlink(const char *filename)
 	return (DeleteFile(filename) != 0) ? 0 : -1;
 }
 #endif /* defined(HAVE_WINDOWS_H) && defined(UNICODE) */
+
+double Util_time(void)
+{
+#ifdef SUPPORTS_PLATFORM_TIME
+	return PLATFORM_Time();
+#elif defined(HAVE_WINDOWS_H)
+	return GetTickCount() * 1e-3;
+#elif defined(DJGPP)
+	/* DJGPP has gettimeofday, but it's not more accurate than uclock */
+	return uclock() * (1.0 / UCLOCKS_PER_SEC);
+#elif defined(HAVE_GETTIMEOFDAY)
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
+	return tp.tv_sec + 1e-6 * tp.tv_usec;
+#elif defined(HAVE_UCLOCK)
+	return uclock() * (1.0 / UCLOCKS_PER_SEC);
+#elif defined(HAVE_CLOCK)
+	return clock() * (1.0 / CLK_TCK);
+#else
+#error No function found for Util_time()
+#endif
+}
+
+/* FIXME: Ports should use SUPPORTS_PLATFORM_SLEEP and SUPPORTS_PLATFORM_TIME */
+/* and not this mess */
+
+void Util_sleep(double s)
+{
+#ifdef SUPPORTS_PLATFORM_SLEEP
+	PLATFORM_Sleep(s);
+#else /* !SUPPORTS_PLATFORM_SLEEP */
+	if (s > 0) {
+#ifdef HAVE_WINDOWS_H
+		Sleep((DWORD) (s * 1e3));
+#elif defined(DJGPP)
+		/* DJGPP has usleep and select, but they don't work that good */
+		/* XXX: find out why */
+		double curtime = Util_time();
+		while ((curtime + s) > Util_time());
+#elif defined(HAVE_NANOSLEEP)
+		struct timespec ts;
+		ts.tv_sec = 0;
+		ts.tv_nsec = s * 1e9;
+		nanosleep(&ts, NULL);
+#elif defined(HAVE_USLEEP)
+		usleep(s * 1e6);
+#elif defined(__BEOS__)
+		/* added by Walter Las for BeOS */
+		snooze(s * 1e6);
+#elif defined(__EMX__)
+		/* added by Brian Smith for os/2 */
+		DosSleep(s);
+#elif defined(HAVE_SELECT)
+		/* linux */
+		struct timeval tp;
+		tp.tv_sec = 0;
+		tp.tv_usec = s * 1e6;
+		select(1, NULL, NULL, NULL, &tp);
+#else
+		double curtime = Util_time();
+		while ((curtime + s) > Util_time());
+#endif
+	}
+#endif /* !SUPPORTS_PLATFORM_SLEEP */
+}

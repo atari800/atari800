@@ -2,7 +2,7 @@
  * atari800.java - Java NestedVM port of atari800
  *
  * Copyright (C) 2007-2008 Perry McFarlane
- * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2013 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -242,15 +242,14 @@ public class atari800 extends Applet implements Runnable {
 		}
 	}
 
-	private void initSound(int sampleRate, int bitsPerSample, int channels, boolean isSigned, boolean bigEndian){
+	private void initSound(int sampleRate, int bitsPerSample, int channels, boolean isSigned, boolean bigEndian, int bufferSize){
 		AudioFormat format = new AudioFormat(sampleRate, bitsPerSample, channels, isSigned, bigEndian);
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class,format);
 
 		try {
 			if (line != null) line.close();
 			line = (SourceDataLine) AudioSystem.getLine(info);
-			line.open(format);
-			line.start();
+			line.open(format, bufferSize);
 			soundBuffer = new byte[line.getBufferSize()];
 		} catch(Exception e) {
 			System.err.println(e);
@@ -405,25 +404,34 @@ public class atari800 extends Applet implements Runnable {
 							int channels = 2;
 							boolean isSigned = true;
 							boolean bigEndian = true;
+							int bufferSize = 1024;
 							try {
 								sampleRate = rt.memRead(b+4*0);
 								bitsPerSample = rt.memRead(b+4*1);
 								channels = rt.memRead(b+4*2);
 								isSigned = (rt.memRead(b+4*3) != 0);
 								bigEndian = (rt.memRead(b+4*4) != 0);
+								bufferSize = rt.memRead(b+4*5);
 							} catch(Exception e) {
 								System.err.println(e);
+								return 0; // Indicate failure
 							}
 
-							initSound(sampleRate, bitsPerSample, channels, isSigned, bigEndian);
+							initSound(sampleRate, bitsPerSample, channels, isSigned, bigEndian, bufferSize);
 							return line.getBufferSize();
 						case 9:
+							/*static int JAVANVM_SoundExit(void){
+								return _call_java(9, 0, 0, 0);
+							}*/
+							line.close();
+							return 0;
+						case 10:
 							/*static int JAVANVM_SoundAvailable(void){
 								return _call_java(9, 0, 0, 0);
 							}*/
 							return line.available();
-						case 10:
-							/*static int JAVANVM_SoundWrite(void *buffer,int len){
+						case 11:
+							/*static int JAVANVM_SoundWrite(void const *buffer,int len){
 								return _call_java(10, (int)buffer, len, 0);
 							}*/
 							try {
@@ -433,19 +441,19 @@ public class atari800 extends Applet implements Runnable {
 							}
 							line.write(soundBuffer,0,c);
 							return 0;
-						case 11:
+						case 12:
 							/*static int JAVANVM_SoundPause(void){
 								return _call_java(11, 0, 0, 0);
 							}*/
 							line.stop();
 							return 0;
-						case 12:
+						case 13:
 							/*static int JAVANVM_SoundContinue(void){
 								return _call_java(12, 0, 0, 0);
 							}*/
 							line.start();
 							return 0;
-						case 13:
+						case 14:
 							/*static int JAVANVM_CheckThreadStatus(void){
 								return _call_java(13, 0, 0, 0);
 							}*/

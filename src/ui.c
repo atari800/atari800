@@ -2,7 +2,7 @@
  * ui.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2011 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2013 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -3666,25 +3666,72 @@ static void ControllerConfiguration(void)
 
 static int SoundSettings(void)
 {
+#ifdef SOUND_THIN_API
+	Sound_setup_t setup = Sound_desired;
+	static char freq_string[9]; /* "nnnnn Hz\0" */
+	static char frag_frames_string[13]; /* "auto (nnnnn)\0" */
+#ifdef SYNCHRONIZED_SOUND
+	static char latency_string[8]; /* nnnn ms\0" */
+#endif /* SYNCHRONIZED_SOUND */
+
+	static const unsigned int freq_values[] = {
+		8192,
+		11025,
+		22050,
+		44100,
+		48000
+	};
+	static const UI_tMenuItem freq_menu_array[] = {
+		UI_MENU_ACTION(0, "8192 Hz"),
+		UI_MENU_ACTION(1, "11025 Hz"),
+		UI_MENU_ACTION(2, "22050 Hz"),
+		UI_MENU_ACTION(3, "44100 Hz"),
+		UI_MENU_ACTION(4, "48000 Hz"),
+		UI_MENU_ACTION(5, "custom"),
+		UI_MENU_END
+	};
+
+	static const UI_tMenuItem frag_frames_menu_array[] = {
+		UI_MENU_ACTION(0, "automatic"),
+		UI_MENU_ACTION(128, "128"),
+		UI_MENU_ACTION(256, "256"),
+		UI_MENU_ACTION(512, "512"),
+		UI_MENU_ACTION(1024, "1024"),
+		UI_MENU_ACTION(2048, "2048"),
+		UI_MENU_ACTION(4096, "4096"),
+		UI_MENU_ACTION(8192, "8192"),
+		UI_MENU_ACTION(16384, "16384"),
+		UI_MENU_END
+	};
+#endif /* SOUND_THIN_API */
+
 	static UI_tMenuItem menu_array[] = {
-		/* XXX: don't allow on smartphones? */
-#ifndef SYNCHRONIZED_SOUND
-		UI_MENU_CHECK(0, "High Fidelity POKEY:"),
+#ifdef SOUND_THIN_API
+		UI_MENU_CHECK(0, "Enable sound:"),
+		UI_MENU_SUBMENU_SUFFIX(1, "Frequency:", freq_string),
+		UI_MENU_ACTION(2, "Bit depth:"),
+		UI_MENU_SUBMENU_SUFFIX(3, "Fragment size:", frag_frames_string),
+#ifdef SYNCHRONIZED_SOUND
+		UI_MENU_SUBMENU_SUFFIX(4, "Latency:", latency_string),
+#endif /* SYNCHRONIZED_SOUND */
+#endif /* SOUND_THIN_API */
+#ifdef DREAMCAST
+		UI_MENU_CHECK(0, "Enable sound:"),
 #endif
 #ifdef STEREO_SOUND
-		UI_MENU_CHECK(1, "Dual POKEY (Stereo):"),
-#endif
-#ifdef CONSOLE_SOUND
-		UI_MENU_CHECK(2, "Speaker (Key Click):"),
-#endif
-#ifdef SERIO_SOUND
-		UI_MENU_CHECK(3, "Serial IO Sound:"),
+		UI_MENU_CHECK(5, "Dual POKEY (Stereo):"),
 #endif
 #ifndef SYNCHRONIZED_SOUND
-		UI_MENU_ACTION(4, "Enable higher frequencies:"),
+		UI_MENU_CHECK(6, "High Fidelity POKEY:"),
 #endif
-#ifdef DREAMCAST
-		UI_MENU_CHECK(5, "Enable sound:"),
+#ifdef CONSOLE_SOUND
+		UI_MENU_CHECK(7, "Speaker (Key Click):"),
+#endif
+#ifdef SERIO_SOUND
+		UI_MENU_CHECK(8, "Serial IO Sound:"),
+#endif
+#ifndef SYNCHRONIZED_SOUND
+		UI_MENU_ACTION(9, "Enable higher frequencies:"),
 #endif
 		UI_MENU_END
 	};
@@ -3692,34 +3739,124 @@ static int SoundSettings(void)
 	int option = 0;
 
 	for (;;) {
-#ifndef SYNCHRONIZED_SOUND
-		SetItemChecked(menu_array, 0, POKEYSND_enable_new_pokey);
+#ifdef SOUND_THIN_API
+		SetItemChecked(menu_array, 0, Sound_enabled);
+		snprintf(freq_string, sizeof(freq_string), "%i Hz", setup.freq);
+		menu_array[2].suffix = setup.sample_size == 2 ? "16 bit" : "8 bit";
+		if (setup.frag_frames == 0) {
+			if (Sound_enabled)
+				snprintf(frag_frames_string, sizeof(frag_frames_string), "auto (%u)", Sound_out.frag_frames);
+			else
+				strncpy(frag_frames_string, "auto", sizeof(frag_frames_string));
+		}
+		else
+			snprintf(frag_frames_string, sizeof(frag_frames_string), "%u", setup.frag_frames);
+#ifdef SYNCHRONIZED_SOUND
+		snprintf(latency_string, sizeof(latency_string), "%i ms", Sound_latency);
+#endif /* SYNCHRONIZED_SOUND */
+#endif /* SOUND_THIN_API */
+#ifdef DREAMCAST
+		SetItemChecked(menu_array, 0, glob_snd_ena);
 #endif
 #ifdef STEREO_SOUND
-		SetItemChecked(menu_array, 1, POKEYSND_stereo_enabled);
+#ifdef SOUND_THIN_API
+		SetItemChecked(menu_array, 5, setup.channels == 2);
+#else /* !defined(SOUND_THIN_API) */
+		SetItemChecked(menu_array, 5, POKEYSND_stereo_enabled);
+#endif /* SOUND_THIN_API */
+#endif /* STEREO_SOUND */
+#ifndef SYNCHRONIZED_SOUND
+		SetItemChecked(menu_array, 6, POKEYSND_enable_new_pokey);
 #endif
 #ifdef CONSOLE_SOUND
-		SetItemChecked(menu_array, 2, POKEYSND_console_sound_enabled);
+		SetItemChecked(menu_array, 7, POKEYSND_console_sound_enabled);
 #endif
 #ifdef SERIO_SOUND
-		SetItemChecked(menu_array, 3, POKEYSND_serio_sound_enabled);
+		SetItemChecked(menu_array, 8, POKEYSND_serio_sound_enabled);
 #endif
 #ifndef SYNCHRONIZED_SOUND
-		FindMenuItem(menu_array, 4)->suffix = POKEYSND_enable_new_pokey ? "N/A" : POKEYSND_bienias_fix ? "Yes" : "No ";
-#endif
-#ifdef DREAMCAST
-		SetItemChecked(menu_array, 5, glob_snd_ena);
+		FindMenuItem(menu_array, 9)->suffix = POKEYSND_enable_new_pokey ? "N/A" : POKEYSND_bienias_fix ? "Yes" : "No ";
 #endif
 
-#if 0
-		option = UI_driver->fSelect(NULL, UI_SELECT_POPUP, option, menu_array, NULL);
-#else
 		option = UI_driver->fSelect("Sound Settings", 0, option, menu_array, NULL);
-#endif
-
 		switch (option) {
-#ifndef SYNCHRONIZED_SOUND
+#ifdef SOUND_THIN_API
 		case 0:
+			if (Sound_enabled)
+				Sound_Exit();
+			else {
+				Sound_desired = setup;
+				if (!Sound_Setup())
+					UI_driver->fMessage("Error: can't open sound device", 1);
+				else {
+					Sound_desired.freq = Sound_out.freq;
+					Sound_desired.sample_size = Sound_out.sample_size;
+					Sound_desired.channels = Sound_out.channels;
+					/* Don't copy Sound_out.frag_frames to Sound_desired.frag_frames.
+					   Reason: some backends (e.g. SDL on PulseAudio) always
+					   decrease the desired frag_size when opening audio. If the
+					   obtained value was copied, repeated calls to Sound_Setup
+					   would quickly decrease frag_size to 0. */
+					setup = Sound_desired;
+				}
+			}
+			break;
+		case 1:
+			{
+				int option2;
+				int current;
+				for (current = 0; freq_menu_array[current].retval < 5; ++current) {
+					/* Find the currently-chosen frequency. */
+					if (freq_values[freq_menu_array[current].retval] == setup.freq)
+						break;
+				}
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, current, freq_menu_array, NULL);
+				if (option2 == 5) {
+					snprintf(freq_string, sizeof(freq_string), "%u", setup.freq); /* Remove " Hz" suffix */
+					if (UI_driver->fEditString("Enter sound frequency", freq_string, sizeof(freq_string)-3))
+						setup.freq = atoi(freq_string);
+				}
+				else if (option2 >= 0)
+					setup.freq = freq_values[option2];
+				}
+			break;
+		case 2:
+			setup.sample_size = 3 - setup.sample_size; /* Toggle 1<->2 */
+			break;
+		case 3:
+			{
+				int option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, setup.frag_frames, frag_frames_menu_array, NULL);
+				if (option2 >= 0)
+					setup.frag_frames = option2;
+			}
+			break;
+#ifdef SYNCHRONIZED_SOUND
+		case 4:
+			snprintf(latency_string, sizeof(latency_string), "%u", Sound_latency); /* Remove " ms" suffix */
+			if (UI_driver->fEditString("Enter sound latency", latency_string, sizeof(latency_string)-3))
+				Sound_SetLatency(atoi(latency_string));
+			break;
+#endif /* SYNCHRONIZED_SOUND */
+#endif /* SOUND_THIN_API */
+#ifdef DREAMCAST
+		case 0:
+			glob_snd_ena = !glob_snd_ena;
+			break;
+#endif
+#ifdef STEREO_SOUND
+		case 5:
+#ifdef SOUND_THIN_API
+			setup.channels = 3 - setup.channels; /* Toggle 1<->2 */
+#else /* !defined(SOUND_THIN_API) */
+			POKEYSND_stereo_enabled = !POKEYSND_stereo_enabled;
+#ifdef SUPPORTS_SOUND_REINIT
+			Sound_Reinit();
+#endif
+#endif /* SOUND_THIN_API */
+			break;
+#endif
+#ifndef SYNCHRONIZED_SOUND
+		case 6:
 			POKEYSND_enable_new_pokey = !POKEYSND_enable_new_pokey;
 			POKEYSND_DoInit();
 			/* According to the PokeySnd doc the POKEY switch can occur on
@@ -3727,35 +3864,50 @@ static int SoundSettings(void)
 			UI_driver->fMessage("Will reboot to apply the change", 1);
 			return TRUE; /* reboot required */
 #endif
-#ifdef STEREO_SOUND
-		case 1:
-			POKEYSND_stereo_enabled = !POKEYSND_stereo_enabled;
-#ifdef SUPPORTS_SOUND_REINIT
-			Sound_Reinit();
-#endif
-			break;
-#endif
 #ifdef CONSOLE_SOUND
-		case 2:
+		case 7:
 			POKEYSND_console_sound_enabled = !POKEYSND_console_sound_enabled;
 			break;
 #endif
 #ifdef SERIO_SOUND
-		case 3:
+		case 8:
 			POKEYSND_serio_sound_enabled = !POKEYSND_serio_sound_enabled;
 			break;
 #endif
 #ifndef SYNCHRONIZED_SOUND
-		case 4:
+		case 9:
 			if (! POKEYSND_enable_new_pokey) POKEYSND_bienias_fix = !POKEYSND_bienias_fix;
 			break;
 #endif
-#ifdef DREAMCAST
-		case 5:
-			glob_snd_ena = !glob_snd_ena;
-			break;
-#endif
 		default:
+#ifdef SOUND_THIN_API
+			if (!Sound_enabled)
+				/* Only store setup from menu in Sound_desired. */
+				Sound_desired = setup;
+			else if (setup.freq        != Sound_desired.freq ||
+			         setup.sample_size != Sound_desired.sample_size ||
+#ifdef STEREO_SOUND
+			         setup.channels    != Sound_desired.channels ||
+#endif
+			         setup.frag_frames != Sound_desired.frag_frames) {
+				/* Sound output reinitialisation needed. */
+				Sound_desired = setup;
+				if (!Sound_Setup()) {
+					UI_driver->fMessage("Error: can't open sound device", 1);
+					/* Don't leave menu on failure. */
+					break;
+				}
+				Sound_desired.freq = Sound_out.freq;
+				Sound_desired.sample_size = Sound_out.sample_size;
+				Sound_desired.channels = Sound_out.channels;
+				/* Don't copy Sound_out.frag_frames to Sound_desired.frag_frames.
+				   Reason: some backends (e.g. SDL on PulseAudio) always
+				   decrease the desired frag_size when opening audio. If the
+				   obtained value was copied, calling Sound_Setup several times
+				   would quickly decrease frag_size to 0. */
+				setup = Sound_desired;
+			}
+#endif /* SOUND_THIN_API */
 			return FALSE;
 		}
 	}

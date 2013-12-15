@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001-2002 Jacek Poplawski (original atari_sdl.c)
  * Copyright (c) 2007-2008 Perry McFarlane (javanvm port)
- * Copyright (C) 2001-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2013 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -37,11 +37,12 @@ enum {
 	JAVANVM_FUN_Sleep = 6,
 	JAVANVM_FUN_InitGraphics = 7,
 	JAVANVM_FUN_InitSound = 8,
-	JAVANVM_FUN_SoundAvailable = 9,
-	JAVANVM_FUN_SoundWrite = 10,
-	JAVANVM_FUN_SoundPause = 11,
-	JAVANVM_FUN_SoundContinue = 12,
-	JAVANVM_FUN_CheckThreadStatus = 13
+	JAVANVM_FUN_SoundExit = 9,
+	JAVANVM_FUN_SoundAvailable = 10,
+	JAVANVM_FUN_SoundWrite = 11,
+	JAVANVM_FUN_SoundPause = 12,
+	JAVANVM_FUN_SoundContinue = 13,
+	JAVANVM_FUN_CheckThreadStatus = 14
 };
 
 /* These constants are for use with arrays passed to and from the NestedVM runtime */
@@ -67,7 +68,8 @@ enum {
 	JAVANVM_InitSoundChannels = 2,
 	JAVANVM_InitSoundSigned = 3,
 	JAVANVM_InitSoundBigEndian = 4,
-	JAVANVM_InitSoundSIZE = 5
+	JAVANVM_InitSoundBufferSize = 5,
+	JAVANVM_InitSoundSIZE = 6
 };
 
 /* Java Keys */

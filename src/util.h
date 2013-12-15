@@ -199,4 +199,7 @@ FILE *Util_uniqopen(char *filename, const char *mode);
 #define Util_fclose(fp, tmpbuf)             fclose(fp)
 #endif
 
+void Util_sleep(double s);
+double Util_time(void);
+
 #endif /* UTIL_H_ */

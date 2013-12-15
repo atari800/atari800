@@ -2,7 +2,7 @@
  * atari.c - main high-level routines
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2013 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -31,16 +31,6 @@
 #include <string.h>
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#endif
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# elif defined(HAVE_TIME_H)
-#  include <time.h>
-# endif
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -178,7 +168,6 @@ int Atari800_auto_frameskip = FALSE;
 
 #ifdef BENCHMARK
 static double benchmark_start_time;
-static double Atari_time(void);
 #endif
 
 int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
@@ -883,8 +872,15 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif /* __PLUS */
 
 #ifdef BENCHMARK
-	benchmark_start_time = Atari_time();
+	benchmark_start_time = Util_time();
 #endif
+
+#if defined (SOUND) && defined(SOUND_THIN_API)
+	if (Sound_enabled && Sound_Setup())
+	/* Start sound if opening audio output was successful. */
+		Sound_Continue();
+#endif /* defined (SOUND) && defined(SOUND_THIN_API) */
+
 	return TRUE;
 }
 
@@ -979,72 +975,6 @@ void Atari800_ErrExit(void)
 }
 
 #ifndef __PLUS
-
-static double Atari_time(void)
-{
-#ifdef SUPPORTS_PLATFORM_TIME
-	return PLATFORM_Time();
-#elif defined(HAVE_WINDOWS_H)
-	return GetTickCount() * 1e-3;
-#elif defined(DJGPP)
-	/* DJGPP has gettimeofday, but it's not more accurate than uclock */
-	return uclock() * (1.0 / UCLOCKS_PER_SEC);
-#elif defined(HAVE_GETTIMEOFDAY)
-	struct timeval tp;
-	gettimeofday(&tp, NULL);
-	return tp.tv_sec + 1e-6 * tp.tv_usec;
-#elif defined(HAVE_UCLOCK)
-	return uclock() * (1.0 / UCLOCKS_PER_SEC);
-#elif defined(HAVE_CLOCK)
-	return clock() * (1.0 / CLK_TCK);
-#else
-#error No function found for Atari_time()
-#endif
-}
-
-/* FIXME: Ports should use SUPPORTS_PLATFORM_SLEEP and SUPPORTS_PLATFORM_TIME */
-/* and not this mess */
-
-static void Atari_sleep(double s)
-{
-#ifdef SUPPORTS_PLATFORM_SLEEP
-	PLATFORM_Sleep(s);
-#else /* !SUPPORTS_PLATFORM_SLEEP */
-	if (s > 0) {
-#ifdef HAVE_WINDOWS_H
-		Sleep((DWORD) (s * 1e3));
-#elif defined(DJGPP)
-		/* DJGPP has usleep and select, but they don't work that good */
-		/* XXX: find out why */
-		double curtime = Atari_time();
-		while ((curtime + s) > Atari_time());
-#elif defined(HAVE_NANOSLEEP)
-		struct timespec ts;
-		ts.tv_sec = 0;
-		ts.tv_nsec = s * 1e9;
-		nanosleep(&ts, NULL);
-#elif defined(HAVE_USLEEP)
-		usleep(s * 1e6);
-#elif defined(__BEOS__)
-		/* added by Walter Las for BeOS */
-		snooze(s * 1e6);
-#elif defined(__EMX__)
-		/* added by Brian Smith for os/2 */
-		DosSleep(s);
-#elif defined(HAVE_SELECT)
-		/* linux */
-		struct timeval tp;
-		tp.tv_sec = 0;
-		tp.tv_usec = s * 1e6;
-		select(1, NULL, NULL, NULL, &tp);
-#else
-		double curtime = Atari_time();
-		while ((curtime + s) > Atari_time());
-#endif
-	}
-#endif /* !SUPPORTS_PLATFORM_SLEEP */
-}
-
 static void autoframeskip(double curtime, double lasttime)
 {
 	static int afs_lastframe = 0, afs_discard = 0;
@@ -1075,7 +1005,7 @@ static void autoframeskip(double curtime, double lasttime)
 
 		afs_sleeptime = 0.0;
 		afs_lastframe = Atari800_nframes;
-		afs_lasttime = Atari_time();
+		afs_lasttime = Util_time();
 	}
 }
 
@@ -1086,18 +1016,18 @@ void Atari800_Sync(void)
 	double curtime;
 
 #ifdef SYNCHRONIZED_SOUND
-	deltatime *= PLATFORM_AdjustSpeed();
+	deltatime *= Sound_AdjustSpeed();
 #endif
 #ifdef ALTERNATE_SYNC_WITH_HOST
 	if (! UI_is_active)
 		deltatime *= Atari800_refresh_rate;
 #endif
 	lasttime += deltatime;
-	curtime = Atari_time();
+	curtime = Util_time();
 	if (Atari800_auto_frameskip)
 		autoframeskip(curtime, lasttime);
-	Atari_sleep(lasttime - curtime);
-	curtime = Atari_time();
+	Util_sleep(lasttime - curtime);
+	curtime = Util_time();
 
 	if ((lasttime + deltatime) < curtime)
 		lasttime = curtime;
@@ -1332,7 +1262,7 @@ void Atari800_Frame(void)
 #else
 		ANTIC_Frame(TRUE);
 		INPUT_DrawMousePointer();
-		Screen_DrawAtariSpeed(Atari_time());
+		Screen_DrawAtariSpeed(Util_time());
 		Screen_DrawDiskLED();
 		Screen_Draw1200LED();
 #endif /* CURSES_BASIC */
@@ -1358,7 +1288,7 @@ void Atari800_Frame(void)
 	Atari800_nframes++;
 #ifdef BENCHMARK
 	if (Atari800_nframes >= BENCHMARK) {
-		double benchmark_time = Atari_time() - benchmark_start_time;
+		double benchmark_time = Util_time() - benchmark_start_time;
 		Atari800_ErrExit();
 		printf("%d frames emulated in %.2f seconds\n", BENCHMARK, benchmark_time);
 		exit(0);
@@ -1512,9 +1442,13 @@ void Atari800_SetTVMode(int mode)
 #if SUPPORTS_CHANGE_VIDEOMODE
 		VIDEOMODE_SetVideoSystem(mode);
 #endif
-#if defined(SOUND) && defined(SUPPORTS_SOUND_REINIT)
+#ifdef SOUND
+#ifdef SOUND_THIN_API
+		POKEYSND_Init(POKEYSND_FREQ_17_EXACT, Sound_out.freq, Sound_out.channels, Sound_out.sample_size == 2 ? POKEYSND_BIT16 : 0);
+#elif defined(SUPPORTS_SOUND_REINIT)
 		Sound_Reinit();
-#endif
+#endif /* defined(SUPPORTS_SOUND_REINIT) */
+#endif /* SOUND */
 #if defined(DIRECTX)
 		SetTVModeMenuItem(mode);
 #endif

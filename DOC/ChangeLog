@@ -1,3 +1,23 @@
+2013-12-15  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.c, util.[ch]: Atari_time and Atari_sleep renamed to Util_* and moved to
+  util.c module - they are now used externally from atari.c.
+
+* atari.c, cfg.c, platform.h, sound_oss.c, sound.[ch], ui.c,
+  javanvm/atari800.java, javanvm/javanvm.h, javanvm/sound.c, sdl/sound.c,
+  configure.ac, atari800.man, DOC/USAGE: Formerly SDL-specific support for
+  synchronized sound moved to new module sound.c and made platform-independent.
+  In effect, created a new thin API for platform-specific audio. Platforms that
+  support SOUND_THIN_API will have thinner layer of platform-specific sound
+  code and will support a common set of new functionality:
+  - ability to build with --enable-synchronized_sound,
+  - new UI Sound menu options for enabling/disabling sound, setting sample
+    rate, choosing 8- or 16-bit sound, setting hardwares ound buffer size, and
+    (with enabled synchronized_sound) setting sound latency,
+  - saving these new options in config, and setting them from command line
+    parameters.
+  Currently SOUND_THIN_API is implemented for SDL, JavaNVM and OSS sound.
+
+
 2013-12-14  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * javanvm/input.c: Map F12 to Turbo, as in other targets.
 

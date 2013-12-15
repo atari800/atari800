@@ -1,7 +1,7 @@
 dnl   configure.ac - Autoconf script for building configure
 dnl
 dnl   Copyright (C) 2001 Krzysztof Nikiel
-dnl   Copyright (C) 2001-2011 Atari800 development team (see DOC/CREDITS)
+dnl   Copyright (C) 2001-2013 Atari800 development team (see DOC/CREDITS)
 dnl
 dnl   This file is part of the Atari800 emulator project which emulates
 dnl   the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -823,12 +823,12 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
     fi
     case "$with_sound" in
         javanvm)
-            AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
+            WANT_SOUND_THIN_API=yes
             OBJS="$OBJS javanvm/sound.o"
             ;;
         sdl)
-            AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
-            SUPPORTS_SYNCHRONIZED_SOUND="yes"
+            WANT_SOUND_THIN_API=yes
+            AC_DEFINE(SOUND_CALLBACK,1,[Platform updates sound buffer by callback function.])
             OBJS="$OBJS sdl/sound.o"
             ;;
         win)
@@ -839,6 +839,7 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
             ;;
         oss)
+            WANT_SOUND_THIN_API=yes
             OBJS="$OBJS sound_oss.o"
             ;;
         dossb)
@@ -859,7 +860,9 @@ if [[ "$with_sound" != no ]]; then
     AC_DEFINE(SOUND, 1, [Define to activate sound support.])
     OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
 
-    if [[ "$SUPPORTS_SYNCHRONIZED_SOUND" = "yes" ]]; then
+    if [[ "$WANT_SOUND_THIN_API" = "yes" ]]; then
+        AC_DEFINE(SOUND_THIN_API,1,[Use new sound API.])
+        OBJS="$OBJS sound.o"
         A8_OPTION(synchronized_sound,yes,
                   [Use synchronized sound (default=ON)],
                   SYNCHRONIZED_SOUND,[Define to use synchronized sound.]

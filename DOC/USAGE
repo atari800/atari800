@@ -245,8 +245,12 @@ Command line options
 
 -sound                Enable sound
 -nosound              Disable sound
--dsprate <freq>       Set mixing frequency (Hz)
--snddelay <time>      Set sound delay (milliseconds)
+-dsprate <freq>       Set sound output frequency in Hz
+-audio16              Set sound output format to 16-bit
+-audio8               Set sound output format to 8-bit
+-snd-fragsize <num>   Set size of the hardware sound buffer (fragment size)
+-snddelay <time>      Set sound latency in milliseconds
+
 -ide <file>           Enable IDE emulation
 -ide_debug            Enable IDE Debug output
 -ide_cf               Enable CF emulation
@@ -350,9 +354,6 @@ SDL version options
 -80column             Display output of 80 column hardware. Usable only in
                       conjunction with one of -xep80, -proto80, -af80
 -no-80column          Display normal screen instead of 80 column output
-
--audio16              Use 16-bit sound
--audio8               Use 8-bit sound
 
 -nojoystick           Do not initialize joysticks
 -joy0 </dev/lp0>      Define the device for LPTjoy

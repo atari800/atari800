@@ -729,10 +729,25 @@ Enable sound
 Disable sound
 .TP
 .BI \-dsprate\  freq
-Set mixing frequency (Hz)
+Set sound output frequency in Hz.
+The default is 44100 Hz.
 .TP
-.BI \-snddelay\ time
-Set sound delay (milliseconds)
+.B \-audio16
+Set sound output format to 16-bit
+.TP
+.B \-audio8
+Set sound output format to 8-bit
+.TP
+.BI \-snd\-fragsize\  size
+Set size of the hardware sound buffer (fragment size).
+The value should be a power of 2.
+Setting to 0 (the default) causes the size to be set automatically.
+Higher values increase sound latency.
+Automatic setting should be OK in most cases.
+.TP
+.BI \-snddelay\  time
+Set sound latency in milliseconds. 
+Increase it if you experience gaps of silence during sound playback.
 
 .SS Curses Options
 
@@ -987,10 +1002,6 @@ one of the parameters \fB\-af80\fR, \fB\-proto80\fR or \fB\-af80\fR.
 .B \-no\-80column
 Deactivates showing output of an 80 column hardware.
 
-
-.TP
-.B \-audio16
-Enable 16-bit sound output
 
 .TP
 .B \-nojoystick
