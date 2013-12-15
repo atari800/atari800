@@ -109,8 +109,10 @@ int Sound_ReadConfig(char *option, char *ptr)
 			return FALSE;
 		Sound_desired.frag_frames = val;
 	}
+#ifdef SYNCHRONIZED_SOUND
 	else if (strcmp(option, "SOUND_LATENCY") == 0)
 		return (Sound_latency = Util_sscandec(ptr)) != -1;
+#endif /* SYNCHRONIZED_SOUND */
 	else
 		return FALSE;
 	return TRUE;
@@ -122,7 +124,9 @@ void Sound_WriteConfig(FILE *fp)
 	fprintf(fp, "SOUND_RATE=%u\n", Sound_desired.freq);
 	fprintf(fp, "SOUND_BITS=%u\n", Sound_desired.sample_size * 8);
 	fprintf(fp, "SOUND_FRAG_FRAMES=%u\n", Sound_desired.frag_frames);
+#ifdef SYNCHRONIZED_SOUND
 	fprintf(fp, "SOUND_LATENCY=%u\n", Sound_latency);
+#endif /* SYNCHRONIZED_SOUND */
 }
 
 int Sound_Initialise(int *argc, char *argv[])
