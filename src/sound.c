@@ -75,9 +75,7 @@ static unsigned int sync_est_fill;
 /* If sync_est_fill goes outside this bounds, emulation speed is adjusted. */
 static unsigned int sync_min_fill;
 static unsigned int sync_max_fill;
-#ifdef SOUND_CALLBACK
-#endif /* SOUND_CALLBACK */
-/* Time of last write of sudio to output device (either by Sound_Callback or
+/* Time of last write of audio to output device (either by Sound_Callback or
    WriteOut). */
 double last_audio_write_time;
 #endif /* SYNCHRONIZED_SOUND */
@@ -140,9 +138,9 @@ int Sound_Initialise(int *argc, char *argv[])
 		int a_i = FALSE; /* error, argument invalid! */
 
 		if (strcmp(argv[i], "-sound") == 0)
-			Sound_enabled = 0;
-		else if (strcmp(argv[i], "-nosound") == 0)
 			Sound_enabled = 1;
+		else if (strcmp(argv[i], "-nosound") == 0)
+			Sound_enabled = 0;
 		else if (strcmp(argv[i], "-dsprate") == 0) {
 			if (i_a)
 				a_i = (Sound_desired.freq = Util_sscandec(argv[++i])) == -1;
