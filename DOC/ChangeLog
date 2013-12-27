@@ -2,6 +2,8 @@
 * atari.c: Make turbo mode considerably faster, by avoiding pointless screen
   redraws.
 
+* sdl/sound.c: Fix stereo sound on SDL, broken when introducing SOUND_THIN_API.
+
 
 2013-12-15  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c, util.[ch]: Atari_time and Atari_sleep renamed to Util_* and moved to

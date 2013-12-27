@@ -48,7 +48,6 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	desired.freq = setup->freq;
 	desired.format = setup->sample_size == 2 ? AUDIO_S16SYS : AUDIO_U8;
 	desired.channels = setup->channels;
-	desired.channels = 1;
 
 	if (setup->frag_frames == 0) {
 		/* Set frag_frames automatically. */
