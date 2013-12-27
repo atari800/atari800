@@ -1,3 +1,8 @@
+2013-12-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.c: Make turbo mode considerably faster, by avoiding pointless screen
+  redraws.
+
+
 2013-12-15  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c, util.[ch]: Atari_time and Atari_sleep renamed to Util_* and moved to
   util.c module - they are now used externally from atari.c.

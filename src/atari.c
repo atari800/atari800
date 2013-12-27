@@ -1298,7 +1298,20 @@ void Atari800_Frame(void)
 #ifdef ALTERNATE_SYNC_WITH_HOST
 	if (refresh_counter == 0)
 #endif
-		if (Atari800_turbo == FALSE) Atari800_Sync();
+		if (Atari800_turbo) {
+			/* No need to draw Atari frames with frequency higher than display
+			   refresh rate. */
+			static double last_display_screen_time = 0.0;
+			static double const limit = 1.0 / 60.0; /* refresh every 1/60 s */
+			/* TODO Actually sync the limit with the display refresh rate. */
+			double cur_time = Util_time();
+			if (cur_time - last_display_screen_time > limit)
+				last_display_screen_time = cur_time;
+			else
+				Atari800_display_screen = FALSE;
+		}
+		else
+			Atari800_Sync();
 #endif /* BENCHMARK */
 }
 
