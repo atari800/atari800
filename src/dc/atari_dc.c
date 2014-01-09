@@ -1,6 +1,6 @@
 /*
  * SEGA Dreamcast support using KallistiOS (http://cadcdev.sourceforge.net)
- * (c) 2002-2013 Christian Groessler (chris@groessler.org)
+ * (c) 2002-2014 Christian Groessler (chris@groessler.org)
  */
 
 #include <stdarg.h>
@@ -2003,7 +2003,6 @@ void ScreenPositionConfiguration(void)
 	int keycode;
 
 	ClearScreen();
-	//TitleScreen("Screen position configuration");
 
 	Box(0x9a, 0x94, 0, 0, 39, 24);
 	CenterPrint(0x9a, 0x94,"Screen position configuration", 2);
@@ -2063,11 +2062,7 @@ void dc_sound_init(void)
 #ifdef STEREO
 	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, DSPRATE, 2, 0);
 #else
-#if 0
-	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, DSPRATE, 1, 0, 0);
-#else
 	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, DSPRATE, 1, 0);
-#endif
 #endif
 }
 
