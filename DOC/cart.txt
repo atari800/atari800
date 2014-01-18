@@ -825,10 +825,13 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  currently emulated.
 
  The cartridge occupies 8 KB of address space between $A000 and $BFFF, and
- consists of 16384 banks. The enabled bank is controlled by bytes written to
- $D5A0 (LSB) and $D5A1 (MSB, only 6 lowest bytes matter). Byte written to
- $D5A2 turns the cartridge on/off: bit 0 = 1 enables the cartridge, 0 disables
- it and enables RAM. The cartridge starts with bank 0 enabled.
+ consists of 16384 banks. Byte written to $D5A2 turns the cartridge on/off:
+ bit 0 = 1 enables the cartridge, 0 disables it and enables RAM. The enabled
+ bank is controlled by bytes written to $D5A0 (LSB) and $D5A1 (MSB, only 6
+ lowest bytes matter). Any write do $D5A0-$D5A1 also automatically enables the
+ cartridge.
+
+ The cartridge starts with bank 0 enabled.
 
  The $D5A0-$D5A2 registers are read/write; one can read the cartridge's current
  state from them. Unused bits are always read as 0.

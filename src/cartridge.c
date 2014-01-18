@@ -977,13 +977,13 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 	case CARTRIDGE_THECART_128M:
 		switch (addr) {
 		case 0xd5a0:
-			new_state = (old_state & 0x7f00) | byte;
+			new_state = (old_state & 0x3f00) | byte;
 			break;
 		case 0xd5a1:
-			new_state = (old_state & 0x40ff) | ((byte & 0x3f) << 8);
+			new_state = (old_state & 0x00ff) | ((byte & 0x3f) << 8);
 			break;
 		case 0xd5a2:
-			new_state = (old_state & 0x3fff) | ((~byte % 0x01) << 14);
+			new_state = (old_state & 0x3fff) | ((~byte & 0x01) << 14);
 			break;
 		}
 		break;

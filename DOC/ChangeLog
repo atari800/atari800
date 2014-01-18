@@ -1,6 +1,9 @@
 2014-01-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui.c: Fix obvious mistake in System Settings, that lead to buffer overflow.
 
+* cartridge.c, DOC/cart.txt, DOC/CREDITS: Fixes by Matthias Reichl for
+  emulation of The!Cart.
+
 
 2013-12-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c: Make turbo mode considerably faster, by avoiding pointless screen
