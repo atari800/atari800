@@ -443,7 +443,7 @@ static void SystemSettings(void)
 				if (auto_xegame == -1)
 					menu_array[4].suffix = "ROM missing";
 				else {
-					sprintf(default_xegame_label, "%s (auto)", FindMenuItem(basic_menu_array, auto_xegame)->item);
+					sprintf(default_xegame_label, "%s (auto)", FindMenuItem(xegame_menu_array, auto_xegame)->item);
 					menu_array[4].suffix = default_xegame_label;
 				}
 			}
