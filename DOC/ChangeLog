@@ -1,3 +1,7 @@
+2014-01-26  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* dos/dos_sb.c: Bring indentation more into line with the apparent standard.
+
+
 2014-01-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui.c: Fix obvious mistake in System Settings, that lead to buffer overflow.
 
