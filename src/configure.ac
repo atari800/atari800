@@ -1,7 +1,7 @@
 dnl   configure.ac - Autoconf script for building configure
 dnl
 dnl   Copyright (C) 2001 Krzysztof Nikiel
-dnl   Copyright (C) 2001-2013 Atari800 development team (see DOC/CREDITS)
+dnl   Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
 dnl
 dnl   This file is part of the Atari800 emulator project which emulates
 dnl   the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -828,7 +828,7 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             ;;
         sdl)
             WANT_SOUND_THIN_API=yes
-            AC_DEFINE(SOUND_CALLBACK,1,[Platform updates sound buffer by callback function.])
+            WANT_SOUND_CALLBACK=yes
             OBJS="$OBJS sdl/sound.o"
             ;;
         win)
@@ -843,6 +843,8 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             OBJS="$OBJS sound_oss.o"
             ;;
         dossb)
+            WANT_SOUND_THIN_API=yes
+            WANT_SOUND_CALLBACK=yes
             OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
             ;;
         no)
@@ -872,6 +874,9 @@ if [[ "$with_sound" != no ]]; then
                   [Use nonlinear POKEY mixing (default=ON)],
                   NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
                  )
+        if [[ "$WANT_SOUND_CALLBACK" = "yes" ]]; then
+            AC_DEFINE(SOUND_CALLBACK,1,[Platform updates sound buffer by callback function.])
+        fi
     else
 
         A8_OPTION(nonlinear_mixing,no,

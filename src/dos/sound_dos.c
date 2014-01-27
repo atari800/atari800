@@ -2,7 +2,7 @@
  * sound_dos.c - high level sound routines for DOS port
  *
  * Copyright (c) 1998-2000 Matthew Conte
- * Copyright (c) 2000-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2000-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -22,113 +22,66 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "config.h"
-#include <string.h>		/* for strcmp */
-
-#ifdef SOUND
+#include "dos_sb.h"
 
 #include "atari.h"
 #include "log.h"
-#include "pokeysnd.h"
-#include "util.h"
+#include "platform.h"
 #include "sound.h"
+#include "util.h" /* TODO */
 
-#include "dos_sb.h"
-
-static int sound_enabled = TRUE;
-
-static int playback_freq = POKEYSND_FREQ_17_APPROX / 28 / 3;
-#ifdef STEREO_SOUND
-static int buffersize = 880;
-static int stereo = TRUE;
-#else
-static int buffersize = 440;
-static int stereo = FALSE;
-#endif
-static int bps = 8;
-
-int Sound_Initialise(int *argc, char *argv[])
+int PLATFORM_SoundSetup(Sound_setup_t *setup)
 {
-	int i, j;
-	int help_only = FALSE;
+	int playback_freq = setup->freq;
+	int bps = setup->sample_size * 8;
+	int buffer_samples;
+	int stereo = setup->channels == 2;
 
-	for (i = j = 1; i < *argc; i++) {
-		int i_a = (i + 1 < *argc); /* is argument available? */
-		int a_m = FALSE; /* error, argument missing! */
-
-		if (strcmp(argv[i], "-sound") == 0)
-			sound_enabled = TRUE;
-		else if (strcmp(argv[i], "-nosound") == 0)
-			sound_enabled = FALSE;
-		else if (strcmp(argv[i], "-dsprate") == 0) {
-			if (i_a)
-				playback_freq = Util_sscandec(argv[++i]);
-			else a_m = TRUE;
-		}
-		else if (strcmp(argv[i], "-bufsize") == 0) {
-			if (i_a)
-				buffersize = Util_sscandec(argv[++i]);
-			else a_m = TRUE;
-		}
-		else {
-			if (strcmp(argv[i], "-help") == 0) {
-				help_only = TRUE;
-				Log_print("\t-sound           Enable sound");
-				Log_print("\t-nosound         Disable sound");
-				Log_print("\t-dsprate <freq>  Set mixing frequency (Hz)");
-				Log_print("\t-bufsize <size>  Set sound buffer size");
-			}
-			argv[j++] = argv[i];
-		}
-
-		if (a_m) {
-			Log_print("Missing argument for '%s'", argv[i]);
-			sound_enabled = FALSE;
-			return FALSE;
-		}
+	if (setup->frag_frames == 0) {
+		/* Set frag_frames automatically. */
+		unsigned int val = setup->frag_frames = setup->freq / 50;
+		unsigned int pow_val = 1;
+		while (val >>= 1)
+			pow_val <<= 1;
+		if (pow_val < setup->frag_frames)
+			pow_val <<= 1;
+		setup->frag_frames = pow_val;
 	}
 
-	*argc = j;
+	buffer_samples = setup->frag_frames * setup->channels;
 
-	if (help_only) {
-		sound_enabled = FALSE;
-		return TRUE;
+	if (sb_init(&playback_freq, &bps, &buffer_samples, &stereo) < 0) {
+		Log_print("Cannot init sound card");
+		return FALSE;
 	}
 
-	if (sound_enabled) {
-		if (sb_init(&playback_freq, &bps, &buffersize, &stereo) < 0) {
-			Log_print("Cannot init sound card");
-			sound_enabled = FALSE;
-		}
-		else {
-			POKEYSND_Init(POKEYSND_FREQ_17_APPROX, playback_freq, stereo ? 2 : 1, 0);
-			sb_startoutput((sbmix_t) POKEYSND_Process);
-		}
-	}
+	setup->channels = stereo ? 2 : 1;
+	setup->sample_size = bps / 8;
+	setup->frag_frames = buffer_samples / setup->channels;
+	setup->freq = playback_freq;
 
 	return TRUE;
 }
 
-void Sound_Pause(void)
+void PLATFORM_SoundExit(void)
 {
-	if (sound_enabled)
-		sb_stopoutput();
+	sb_shutdown();
 }
 
-void Sound_Continue(void)
+void PLATFORM_SoundPause(void)
 {
-	if (sound_enabled)
-		sb_startoutput((sbmix_t) POKEYSND_Process);
+	sb_stopoutput();
 }
 
-void Sound_Update(void)
+void PLATFORM_SoundContinue(void)
+{
+	sb_startoutput((sbmix_t) Sound_Callback);
+}
+
+void PLATFORM_SoundLock(void)
 {
 }
 
-void Sound_Exit(void)
+void PLATFORM_SoundUnlock(void)
 {
-	if (sound_enabled)
-		sb_shutdown();
 }
-
-#endif /* SOUND */

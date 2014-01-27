@@ -1,6 +1,10 @@
 2014-01-26  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * dos/dos_sb.c: Bring indentation more into line with the apparent standard.
 
+* dos/sound_dos.c, dos/dos_sb.[ch], configure.ac: Apply SOUND_THIN_API to DOS
+  sound. Also fix two old bugs: pitch being wrong, and sound not working in
+  one-shot mode (DSP 1.xx).
+
 
 2014-01-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui.c: Fix obvious mistake in System Settings, that lead to buffer overflow.

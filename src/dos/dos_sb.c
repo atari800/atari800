@@ -149,8 +149,8 @@ static struct
 {
 	_go32_dpmi_seginfo buffer;
 	uint32 bufaddr; /* linear address */
-	uint32 offset;
-	uint32 page;
+	uint16 offset;
+	uint8 page;
 } dos;
 
 /* Interrupt stuff */
@@ -170,8 +170,16 @@ static struct
 {
 	boolean autoinit;
 	volatile int count;
-	uint16 addrport;
+	uint16 offsetport;
+	uint16 lengthport; 
 	uint16 ackport;
+	uint16 maskport;
+	uint16 modeport;
+	uint8 base;
+	uint8 mode;
+	uint16 length;
+	uint16 clrptrport;
+	uint16 pageport;
 } dma;
 
 /* 8 and 16 bit DMA ports */
@@ -191,9 +199,12 @@ static struct
 
 	uint8 irq, dma, dma16;
 
+	/* Size of buffer is 2*buf_size. */
 	void *buffer;
+	/* In 16-bit mode, buf_samples is buf_size/2. */
+	uint32 buf_samples;
+	/* Number of bytes requested by a single DMA callback. */
 	uint32 buf_size;
-	uint32 buf_chunk;
 
 	sbmix_t callback;
 } sb;
@@ -227,9 +238,9 @@ static uint8 dsp_read(void)
 static boolean dsp_reset(void)
 {
 	outportb(sb.baseio + DSP_RESET, 1); /* reset command */
-	delay(5);                           /* 5 usec delay */
+	delay(5);                           /* 5 msec delay */
 	outportb(sb.baseio + DSP_RESET, 0); /* clear */
-	delay(5);                           /* 5 usec delay */
+	delay(5);                           /* 5 msec delay */
 
 	if (0xAA == dsp_read())
 		return TRUE;
@@ -620,41 +631,64 @@ static boolean sb_probe(void)
  ** Interrupt handler for 8/16-bit audio
  */
 
+static void set_dma(uint16 shift)
+{
+	outportb(dma.maskport, DMA_STOPMASK_BASE | dma.base);
+	outportb(dma.clrptrport, 0x00);
+	outportb(dma.modeport, dma.mode);
+	outportb(dma.offsetport, LOW_BYTE(dos.offset + shift));
+	outportb(dma.offsetport, HIGH_BYTE(dos.offset + shift));
+	outportb(dma.lengthport, LOW_BYTE(dma.length - 1));
+	outportb(dma.lengthport, HIGH_BYTE(dma.length - 1));
+	outportb(dma.pageport, dos.page);
+	outportb(dma.maskport, DMA_STARTMASK_BASE | dma.base);
+}
+END_OF_STATIC_FUNCTION(set_dma)
+
 static void sb_isr(void)
 {
-	uint32 address;
+	uint16 pos;
+	uint16 write_shift;
 
 	/* maybe needed for slow machines? */
 	/*DISABLE_INTS();*/
 
 	dma.count++;
 
+	/* determine the current playback position */
+	pos = inportb(dma.offsetport);
+	pos |= (inportb(dma.offsetport) << 8);
+	pos -= dos.offset;
+
 	/* NOTE: this only works with 8-bit, as one-shot mode
 	 ** does not seem to work with 16-bit transfers
 	 */
 	if (FALSE == dma.autoinit) {
+		uint16 shift;
+		if (pos == sb.buf_samples) {
+			shift = sb.buf_samples;
+			write_shift = 0;
+		}
+		else {
+			shift = 0;
+			write_shift = sb.buf_size;
+		}
+
+		set_dma(shift);
 		dsp_write(DSP_DMA_DAC_8BIT);
-		dsp_write(LOW_BYTE(sb.buf_size - 1));
-		dsp_write(HIGH_BYTE(sb.buf_size - 1));
+		dsp_write(LOW_BYTE(sb.buf_samples - 1));
+		dsp_write(HIGH_BYTE(sb.buf_samples - 1));
 	}
+	else if (pos < sb.buf_samples)
+		write_shift = sb.buf_size;
+	else
+		write_shift = 0;
+
+	sb.callback((uint8 *) sb.buffer + write_shift, sb.buf_size);
+	DOS_PUTBUFFER(dos.bufaddr + write_shift, (uint8 *) sb.buffer + write_shift, sb.buf_size);
 
 	/* indicate we got the interrupt */
 	inportb(dma.ackport);
-
-	/* determine the current playback position */
-	address = inportb(dma.addrport);
-	address |= (inportb(dma.addrport) << 8);
-	address -= dos.offset;
-
-	if (address < sb.buf_size) {
-		sb.callback((uint8 *) sb.buffer + sb.buf_chunk, sb.buf_size);
-		DOS_PUTBUFFER(dos.bufaddr + sb.buf_chunk, (uint8 *) sb.buffer + sb.buf_chunk, sb.buf_chunk);
-	}
-	else {
-		sb.callback(sb.buffer, sb.buf_size);
-		DOS_PUTBUFFER(dos.bufaddr, sb.buffer, sb.buf_chunk);
-	}
-
 	/* acknowledge interrupt was taken */
 	if (sb.irq > 7)
 		outportb(0xA0, 0x20);
@@ -674,15 +708,7 @@ static void sb_setisr(void)
 	LOCK_VARIABLE(dos);
 	LOCK_VARIABLE(sb);
 	LOCK_FUNCTION(sb_isr);
-
-	if (sb.format & SB_FORMAT_16BIT) {
-		dma.ackport = sb.baseio + DSP_DMA_ACK_16BIT;
-		dma.addrport = DMA_ADDRBASE_16BIT + (4 * (sb.dma16 - 4));
-	}
-	else {
-		dma.ackport = sb.baseio + DSP_DMA_ACK_8BIT;
-		dma.addrport = DMA_ADDRBASE_8BIT + (2 * sb.dma);
-	}
+	LOCK_FUNCTION(set_dma);
 
 	if (sb.irq < 8) {
 		/* PIC 1 */
@@ -733,21 +759,16 @@ static void sb_resetisr(void)
 }
 
 /* allocate sound buffers */
-static boolean sb_allocate_buffers(int buf_size)
+static boolean sb_allocate_buffers(int buf_samples)
 {
 	int double_bufsize;
 
-	/* TODO: I don't like this. */
-	if (sb.format & SB_FORMAT_16BIT) {
-		sb.buf_size = 2 * buf_size;
-		sb.buf_chunk = sb.buf_size * sizeof(uint16);
-	}
-	else {
-		sb.buf_size = buf_size;
-		sb.buf_chunk = sb.buf_size * sizeof(uint8);
-	}
+	int word_size = (sb.format & SB_FORMAT_16BIT) ? sizeof(int16) : sizeof(int8);
 
-	double_bufsize = 2 * sb.buf_chunk;
+	sb.buf_samples = buf_samples;
+	sb.buf_size = sb.buf_samples * word_size;
+
+	double_bufsize = 2 * sb.buf_size;
 
 	dos.buffer.size = (double_bufsize + 15) >> 4;
 	if (_go32_dpmi_allocate_dos_memory(&dos.buffer))
@@ -755,15 +776,8 @@ static boolean sb_allocate_buffers(int buf_size)
 
 	/* calc linear address */
 	dos.bufaddr = dos.buffer.rm_segment << 4;
-	if (sb.format & SB_FORMAT_16BIT) {
-		dos.page = (dos.bufaddr >> 16) & 0xFF;
-		/* bleh! thanks, creative! */
-		dos.offset = (dos.bufaddr >> 1) & 0xFFFF;
-	}
-	else {
-		dos.page = (dos.bufaddr >> 16) & 0xFF;
-		dos.offset = dos.bufaddr & 0xFFFF;
-	}
+	dos.page = (dos.bufaddr >> 16) & 0xFF;
+	dos.offset = (dos.bufaddr / word_size) & 0xFFFF;
 
 #ifdef DJGPP_USE_NEARPTR
 	sb.buffer = (uint8 *) dos.bufaddr + __djgpp_conventional_base;
@@ -811,24 +825,27 @@ void sb_shutdown(void)
 }
 
 /* initialize sound bastard */
-int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
+int sb_init(int *sample_rate, int *bps, int *buf_samples, int *stereo)
 {
-#define  CLAMP_RATE(in_rate, min_rate, max_rate) \
-		(in_rate < min_rate ? min_rate : \
-				(in_rate > max_rate ? max_rate : in_rate))
+#define CLAMP_RATE(in_rate, min_rate, max_rate) \
+                  (in_rate < min_rate ? min_rate : \
+                   (in_rate > max_rate ? max_rate : in_rate))
 
-	/* don't init twice! */
 	if (TRUE == sb.initialized)
-		return 0;
+		/* don't init twice! */
+		sb_shutdown();
+	else {
+		/* Discover the hardware parameters. */
+		memset(&sb, 0, sizeof(sb));
 
-	memset(&sb, 0, sizeof(sb));
+		if (FALSE == sb_probe())
+			return -1;
 
-	if (FALSE == sb_probe())
-		return -1;
+		log_printf("\nSB DSP version: %d.%d baseio: %X IRQ: %d DMA: %d High: %d\n",
+		           sb.dsp_version >> 8, sb.dsp_version & 0xFF,
+		           sb.baseio, sb.irq, sb.dma, sb.dma16);
+	}
 
-	log_printf("\nSB DSP version: %d.%d baseio: %X IRQ: %d DMA: %d High: %d\n",
-			sb.dsp_version >> 8, sb.dsp_version & 0xFF,
-			sb.baseio, sb.irq, sb.dma, sb.dma16);
 
 	/* try autoinit DMA first */
 	dma.autoinit = TRUE;
@@ -837,31 +854,33 @@ int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
 
 	/* determine which SB model we have, and act accordingly */
 	if (sb.dsp_version < DSP_VERSION_SB_15) {
-		/* SB 1.0 */
-		sb.sample_rate = CLAMP_RATE(*sample_rate, 4000, 22050);
+		/* SB 1.0; DSP 1.xx */
+		sb.sample_rate = CLAMP_RATE(*sample_rate, 4000, 23000);
 		sb.format &= ~(SB_FORMAT_16BIT | SB_FORMAT_STEREO);
 		dma.autoinit = FALSE;
 	}
 	else if (sb.dsp_version < DSP_VERSION_SB_20) {
-		/* SB 1.5 */
-		sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 22050);
+		/* SB 1.5; DSP 2.00 */
+		sb.sample_rate = CLAMP_RATE(*sample_rate, 4000, 23000);
 		sb.format &= ~(SB_FORMAT_16BIT | SB_FORMAT_STEREO);
 	}
 	else if (sb.dsp_version < DSP_VERSION_SB_PRO) {
-		/* SB 2.0 */
-		sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 44100);
+		/* SB 2.0; DSP 2.01+ */
+		sb.sample_rate = CLAMP_RATE(*sample_rate, 4000, 44100);
 		sb.format &= ~(SB_FORMAT_16BIT | SB_FORMAT_STEREO);
 	}
 	else if (sb.dsp_version < DSP_VERSION_SB16) {
-		/* SB Pro */
+		/* SB Pro; DSP 3.xx */
 		if (sb.format & SB_FORMAT_STEREO)
-			sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 22050);
+			/* SB Pro supports stereo only in High-Speed mode, and only in
+			   11025 and 22050 Hz. */
+			sb.sample_rate = (*sample_rate >= 22050 ? 22050 : 11025);
 		else
-			sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 44100);
+			sb.sample_rate = CLAMP_RATE(*sample_rate, 4000, 44100);
 		sb.format &= ~SB_FORMAT_16BIT;
 	}
 	else {
-		/* SB 16 */
+		/* SB 16; DSP 4.xx */
 		sb.sample_rate = CLAMP_RATE(*sample_rate, 5000, 44100);
 	}
 
@@ -872,7 +891,7 @@ int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
 	}
 
 	/* allocate buffer / DOS memory */
-	if (FALSE == sb_allocate_buffers(*buf_size))
+	if (FALSE == sb_allocate_buffers(*buf_samples))
 		return -1;
 
 	/* set the new IRQ vector! */
@@ -882,7 +901,7 @@ int sb_init(int *sample_rate, int *bps, int *buf_size, int *stereo)
 
 	/* return the actual values */
 	*sample_rate = sb.sample_rate;
-	*buf_size = sb.buf_size;
+	*buf_samples = sb.buf_samples;
 	*bps = (sb.format & SB_FORMAT_16BIT) ? 16 : 8;
 	*stereo = (sb.format & SB_FORMAT_STEREO) ? TRUE : FALSE;
 	return 0;
@@ -911,14 +930,14 @@ static uint8 get_time_constant(int rate)
 
 static void init_samplerate(int rate)
 {
-	if ((sb.format & SB_FORMAT_STEREO))
-		rate *= 2;
 	if ((sb.format & SB_FORMAT_16BIT) || sb.dsp_version >= DSP_VERSION_SB16) {
 		dsp_write(DSP_DMA_DAC_RATE);
 		dsp_write(HIGH_BYTE(rate));
 		dsp_write(LOW_BYTE(rate));
 	}
 	else {
+		if ((sb.format & SB_FORMAT_STEREO))
+			rate *= 2;
 		dsp_write(DSP_DMA_TIME_CONST);
 		dsp_write(get_time_constant(rate));
 	}
@@ -944,55 +963,51 @@ void sb_setrate(int rate)
 /* start SB DMA transfer */
 static void start_transfer(void)
 {
-	uint8 dma_mode, start_command, mode_command;
-	int dma_length;
+	uint8 start_command, mode_command;
 
 	dma.count = 0;
 
-	dma_length = sb.buf_size << 1;
-
 	if (TRUE == dma.autoinit) {
 		start_command = DSP_DMA_DAC_MODE;   /* autoinit DMA */
-		dma_mode = DMA_AUTOINIT_MODE;
+		dma.mode = DMA_AUTOINIT_MODE;
+		dma.length = sb.buf_samples << 1;
 	}
 	else {
 		start_command = 0;
-		dma_mode = DMA_ONESHOT_MODE;
+		dma.mode = DMA_ONESHOT_MODE;
+		dma.length = sb.buf_samples;
 	}
 
 	/* things get a little bit nasty here, look out */
 	if (sb.format & SB_FORMAT_16BIT) {
-		uint8 dma_base = sb.dma16 - 4;
-
-		dma_mode |= dma_base;
+		dma.base = sb.dma16 - 4;
+		dma.mode |= dma.base;
+		dma.ackport = sb.baseio + DSP_DMA_ACK_16BIT;
+		dma.offsetport = DMA_ADDRBASE_16BIT + (4 * dma.base);
+		dma.lengthport = DMA_COUNTBASE_16BIT + (4 * dma.base);
+		dma.maskport = DMA_MASKPORT_16BIT;
+		dma.modeport = DMA_MODEPORT_16BIT;
+		dma.clrptrport = DMA_CLRPTRPORT_16BIT;
+		dma.pageport = dma16_ports[dma.base];
+		
 		start_command |= DSP_DMA_START_16BIT;
 		mode_command = DSP_DMA_SIGNED;
-
-		outportb(DMA_MASKPORT_16BIT, DMA_STOPMASK_BASE | dma_base);
-		outportb(DMA_MODEPORT_16BIT, dma_mode);
-		outportb(DMA_CLRPTRPORT_16BIT, 0x00);
-		outportb(DMA_ADDRBASE_16BIT + (4 * dma_base), LOW_BYTE(dos.offset));
-		outportb(DMA_ADDRBASE_16BIT + (4 * dma_base), HIGH_BYTE(dos.offset));
-		outportb(DMA_COUNTBASE_16BIT + (4 * dma_base), LOW_BYTE(dma_length - 1));
-		outportb(DMA_COUNTBASE_16BIT + (4 * dma_base), HIGH_BYTE(dma_length - 1));
-		outportb(dma16_ports[dma_base], dos.page);
-		outportb(DMA_MASKPORT_16BIT, DMA_STARTMASK_BASE | dma_base);
 	}
 	else {
-		dma_mode |= sb.dma;
+		dma.base = sb.dma;
+		dma.mode |= dma.base;
+		dma.ackport = sb.baseio + DSP_DMA_ACK_8BIT;
+		dma.offsetport = DMA_ADDRBASE_8BIT + (2 * dma.base);
+		dma.lengthport = DMA_COUNTBASE_8BIT + (2 * dma.base);
+		dma.maskport = DMA_MASKPORT_8BIT;
+		dma.modeport = DMA_MODEPORT_8BIT;
+		dma.clrptrport = DMA_CLRPTRPORT_8BIT;
+		dma.pageport = dma8_ports[sb.dma];
+
 		start_command |= DSP_DMA_START_8BIT;
 		mode_command = DSP_DMA_UNSIGNED;
-
-		outportb(DMA_MASKPORT_8BIT, DMA_STOPMASK_BASE + sb.dma);
-		outportb(DMA_MODEPORT_8BIT, dma_mode);
-		outportb(DMA_CLRPTRPORT_8BIT, 0x00);
-		outportb(DMA_ADDRBASE_8BIT + (2 * sb.dma), LOW_BYTE(dos.offset));
-		outportb(DMA_ADDRBASE_8BIT + (2 * sb.dma), HIGH_BYTE(dos.offset));
-		outportb(DMA_COUNTBASE_8BIT + (2 * sb.dma), LOW_BYTE(dma_length - 1));
-		outportb(DMA_COUNTBASE_8BIT + (2 * sb.dma), HIGH_BYTE(dma_length - 1));
-		outportb(dma8_ports[sb.dma], dos.page);
-		outportb(DMA_MASKPORT_8BIT, DMA_STARTMASK_BASE + sb.dma);
 	}
+	set_dma(0);
 
 	/* check stereo */
 	if (sb.format & SB_FORMAT_STEREO)
@@ -1006,8 +1021,8 @@ static void start_transfer(void)
 	if ((sb.format & SB_FORMAT_16BIT) || sb.dsp_version >= DSP_VERSION_SB16) {
 		dsp_write(start_command);
 		dsp_write(mode_command);
-		dsp_write(LOW_BYTE(sb.buf_size - 1));
-		dsp_write(HIGH_BYTE(sb.buf_size - 1));
+		dsp_write(LOW_BYTE(sb.buf_samples - 1));
+		dsp_write(HIGH_BYTE(sb.buf_samples - 1));
 	}
 	else {
 		/* turn on speaker */
@@ -1015,8 +1030,8 @@ static void start_transfer(void)
 
 		if (TRUE == dma.autoinit) {
 			dsp_write(DSP_DMA_BLOCK_SIZE);  /* set buffer size */
-			dsp_write(LOW_BYTE(sb.buf_size - 1));
-			dsp_write(HIGH_BYTE(sb.buf_size - 1));
+			dsp_write(LOW_BYTE(sb.buf_samples - 1));
+			dsp_write(HIGH_BYTE(sb.buf_samples - 1));
 
 			if (sb.dsp_version < DSP_VERSION_SB_20)
 				dsp_write(DSP_DMA_DAC_AI_8BIT); /* low speed autoinit */
@@ -1025,8 +1040,8 @@ static void start_transfer(void)
 		}
 		else {
 			dsp_write(DSP_DMA_DAC_8BIT);
-			dsp_write(LOW_BYTE(sb.buf_size - 1));
-			dsp_write(HIGH_BYTE(sb.buf_size - 1));
+			dsp_write(LOW_BYTE(sb.buf_samples - 1));
+			dsp_write(HIGH_BYTE(sb.buf_samples - 1));
 		}
 	}
 }
@@ -1034,7 +1049,8 @@ static void start_transfer(void)
 /* start playing the output buffer */
 int sb_startoutput(sbmix_t fillbuf)
 {
-	int count;
+	clock_t count;
+	clock_t wait_ticks;
 
 	/* make sure we really should be here... */
 	if (FALSE == sb.initialized || NULL == fillbuf)
@@ -1058,10 +1074,14 @@ int sb_startoutput(sbmix_t fillbuf)
 	 ** interrupts firing at this point...
 	 */
 	count = clock();
-	while (((clock() - count) < CLOCKS_PER_SEC / 2) && (dma.count < 2))
+	/* Wait for period of 2 calls of the ISR, plus 1/4 sec. just to be sure
+	   that they are fired twice. */
+	wait_ticks = (clock_t)(((double) sb.buf_samples / sb.sample_rate * 2.0 + 0.25) * CLOCKS_PER_SEC);
+	while ((clock() - count < wait_ticks) && (dma.count < 2))
 		; /* loop */
 
 	if (dma.count < 2) {
+		/* Problem, ISR was fired less than two times! */
 		if (TRUE == dma.autoinit) {
 			log_printf("Autoinit DMA failed, trying one-shot mode.\n");
 			dsp_reset();
