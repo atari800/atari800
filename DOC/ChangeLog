@@ -5,6 +5,10 @@
   sound. Also fix two old bugs: pitch being wrong, and sound not working in
   one-shot mode (DSP 1.xx).
 
+* sound.c, ui.c: Move code that stores current sound settings in Sound_desired
+  - previously settings were stored only when changed from GUI, but not when
+  changed from command line params.
+
 
 2014-01-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * ui.c: Fix obvious mistake in System Settings, that lead to buffer overflow.

@@ -2,7 +2,7 @@
  * sound.c - platform-independent interface for platform-specific sound output.
  *
  * Copyright (C) 2013 Tomasz Krasuski
- * Copyright (C) 2013 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2013-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -75,7 +75,9 @@ static unsigned int sync_est_fill;
 /* If sync_est_fill goes outside this bounds, emulation speed is adjusted. */
 static unsigned int sync_min_fill;
 static unsigned int sync_max_fill;
-/* Time of last write of audio to output device (either by Sound_Callback or
+#ifdef SOUND_CALLBACK
+#endif /* SOUND_CALLBACK */
+/* Time of last write of sudio to output device (either by Sound_Callback or
    WriteOut). */
 double last_audio_write_time;
 #endif /* SYNCHRONIZED_SOUND */
@@ -256,6 +258,15 @@ int Sound_Setup(void)
 #ifdef SYNCHRONIZED_SOUND
 	Sound_SetLatency(Sound_latency);
 #endif /* SYNCHRONIZED_SOUND */
+
+	Sound_desired.freq = Sound_out.freq;
+	Sound_desired.sample_size = Sound_out.sample_size;
+	Sound_desired.channels = Sound_out.channels;
+	/* Don't copy Sound_out.frag_frames to Sound_desired.frag_frames.
+       Reason: some backends (e.g. SDL on PulseAudio) always
+	   decrease the desired frag_size when opening audio. If the
+	   obtained value was copied, repeated calls to Sound_Setup
+	   would quickly decrease frag_size to 0. */
 
 	paused = TRUE;
 	return TRUE;

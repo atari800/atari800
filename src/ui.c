@@ -2,7 +2,7 @@
  * ui.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2013 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -3788,17 +3788,8 @@ static int SoundSettings(void)
 				Sound_desired = setup;
 				if (!Sound_Setup())
 					UI_driver->fMessage("Error: can't open sound device", 1);
-				else {
-					Sound_desired.freq = Sound_out.freq;
-					Sound_desired.sample_size = Sound_out.sample_size;
-					Sound_desired.channels = Sound_out.channels;
-					/* Don't copy Sound_out.frag_frames to Sound_desired.frag_frames.
-					   Reason: some backends (e.g. SDL on PulseAudio) always
-					   decrease the desired frag_size when opening audio. If the
-					   obtained value was copied, repeated calls to Sound_Setup
-					   would quickly decrease frag_size to 0. */
+				else
 					setup = Sound_desired;
-				}
 			}
 			break;
 		case 1:
@@ -3897,14 +3888,6 @@ static int SoundSettings(void)
 					/* Don't leave menu on failure. */
 					break;
 				}
-				Sound_desired.freq = Sound_out.freq;
-				Sound_desired.sample_size = Sound_out.sample_size;
-				Sound_desired.channels = Sound_out.channels;
-				/* Don't copy Sound_out.frag_frames to Sound_desired.frag_frames.
-				   Reason: some backends (e.g. SDL on PulseAudio) always
-				   decrease the desired frag_size when opening audio. If the
-				   obtained value was copied, calling Sound_Setup several times
-				   would quickly decrease frag_size to 0. */
 				setup = Sound_desired;
 			}
 #endif /* SOUND_THIN_API */
