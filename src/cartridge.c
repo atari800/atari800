@@ -112,7 +112,9 @@ int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	2048,     /* CARTRIDGE_MEGA_2048 */
 	128*1024, /* CARTRIDGE_THECART_128M */
 	4096,     /* CARTRIDGE_MEGA_4096 */
-	2048      /* CARTRIDGE_MEGA_2048 */
+	2048,     /* CARTRIDGE_MEGA_2048 */
+	32*1024,  /* CARTRIDGE_THECART_32M */
+	64*1024   /* CARTRIDGE_THECART_64M */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -183,14 +185,14 @@ static void set_bank_A0AF(int main, int old_state)
 
 /* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_1024,
    ATRAX_128, ATRAX_SDX_64, TURBOSOFT_64, TURBOSOFT_128, ULTRACART_32,
-   TURBO_HIT_32, THECART_128M */
-static void set_bank_A0BF(int n)
+   TURBO_HIT_32, THECART_128M, THECART_32M, THECART_64M */
+static void set_bank_A0BF(int disable_mask, int bank_mask)
 {
-	if (active_cart->state & n)
+	if (active_cart->state & disable_mask)
 		MEMORY_CartA0bfDisable();
 	else {
 		MEMORY_CartA0bfEnable();
-		MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + (active_cart->state & (n - 1)) * 0x2000);
+		MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + (active_cart->state & bank_mask) * 0x2000);
 	}
 }
 
@@ -273,7 +275,7 @@ static void SwitchBank(int old_state)
 	case CARTRIDGE_SDX_64:
 	case CARTRIDGE_WILL_32:
 	case CARTRIDGE_ATRAX_SDX_64:
-		set_bank_A0BF(8);
+		set_bank_A0BF(8, 7);
 		break;
 	case CARTRIDGE_DB_32:
 	case CARTRIDGE_XEGS_32:
@@ -302,12 +304,12 @@ static void SwitchBank(int old_state)
 		break;
 	case CARTRIDGE_ATRAX_128:
 	case CARTRIDGE_ATMAX_1024:
-		set_bank_A0BF(128);
+		set_bank_A0BF(0x80, 0x7f);
 		break;
 	case CARTRIDGE_ATMAX_128:
 	case CARTRIDGE_TURBOSOFT_64:
 	case CARTRIDGE_TURBOSOFT_128:
-		set_bank_A0BF(16);
+		set_bank_A0BF(0x10, 0x0f);
 		break;
 	case CARTRIDGE_MEGA_16:
 	case CARTRIDGE_MEGA_32:
@@ -342,7 +344,7 @@ static void SwitchBank(int old_state)
 		break;
 	case CARTRIDGE_ULTRACART_32:
 	case CARTRIDGE_BLIZZARD_32:
-		set_bank_A0BF(4);
+		set_bank_A0BF(4, 3);
 		break;
 	case CARTRIDGE_SIC_128:
 		set_bank_SIC(0x07);
@@ -357,7 +359,13 @@ static void SwitchBank(int old_state)
 		set_bank_MEGA_4096();
 		break;
 	case CARTRIDGE_THECART_128M:
-		set_bank_A0BF(0x4000);
+		set_bank_A0BF(0x4000, 0x3fff);
+		break;
+	case CARTRIDGE_THECART_32M:
+		set_bank_A0BF(0x4000, 0x0fff);
+		break;
+	case CARTRIDGE_THECART_64M:
+		set_bank_A0BF(0x4000, 0x1fff);
 		break;
 	}
 #if DEBUG
@@ -488,6 +496,8 @@ static void MapActiveCart(void)
 		case CARTRIDGE_ULTRACART_32:
 		case CARTRIDGE_BLIZZARD_32:
 		case CARTRIDGE_THECART_128M:
+		case CARTRIDGE_THECART_32M:
+		case CARTRIDGE_THECART_64M:
 			MEMORY_Cart809fDisable();
 			break;
 		case CARTRIDGE_DB_32:
@@ -888,6 +898,8 @@ static UBYTE GetByte(CARTRIDGE_image_t *cart, UWORD addr, int no_side_effects)
 			return cart->state;
 		break;
 	case CARTRIDGE_THECART_128M:
+	case CARTRIDGE_THECART_32M:
+	case CARTRIDGE_THECART_64M:
 		switch (addr) {
 		case 0xd5a0:
 			return cart->state & 0x00ff;
@@ -975,6 +987,8 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 			new_state = byte;
 		break;
 	case CARTRIDGE_THECART_128M:
+	case CARTRIDGE_THECART_32M:
+	case CARTRIDGE_THECART_64M:
 		switch (addr) {
 		case 0xd5a0:
 			new_state = (old_state & 0x3f00) | byte;

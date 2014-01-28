@@ -1,3 +1,12 @@
+2014-01-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
+  DOC/USAGE: Based on description by Hias, added minimal support for the 32
+  and 64 MB variants of The!Cart.
+
+* DOC/cart.txt: Added column that describes state of emulation support of
+  the cartridge types. Also other fixes.
+
+
 2014-01-26  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * dos/dos_sb.c: Bring indentation more into line with the apparent standard.
 
