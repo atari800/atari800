@@ -1,3 +1,10 @@
+2014-02-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
+  DOC/USAGE, DOC/CREDITS: With Hias' help - documented behaviour of the XEGS
+  cartridges more precisely. Also added a different variant of the XEGS 64 KB
+  cartridge - both variants were manufactured by Atari.
+
+
 2014-01-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
   DOC/USAGE: Based on description by Hias, added minimal support for the 32

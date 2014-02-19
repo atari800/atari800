@@ -19,7 +19,7 @@ enum {
 	CARTRIDGE_DIAMOND_64     = 10,
 	CARTRIDGE_SDX_64         = 11,
 	CARTRIDGE_XEGS_32        = 12,
-	CARTRIDGE_XEGS_64        = 13,
+	CARTRIDGE_XEGS_07_64     = 13,
 	CARTRIDGE_XEGS_128       = 14,
 	CARTRIDGE_OSS_M091_16    = 15,
 	CARTRIDGE_5200_NS_16     = 16,
@@ -73,7 +73,8 @@ enum {
 	CARTRIDGE_MEGA_2048      = 64,
 	CARTRIDGE_THECART_32M    = 65,
 	CARTRIDGE_THECART_64M    = 66,
-	CARTRIDGE_LAST_SUPPORTED = 66
+	CARTRIDGE_XEGS_8F_64     = 67,
+	CARTRIDGE_LAST_SUPPORTED = 67
 };
 
 #define CARTRIDGE_MAX_SIZE	(128 * 1024 * 1024)
@@ -91,7 +92,7 @@ extern int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 #define CARTRIDGE_DIAMOND_64_DESC    "Diamond 64 KB cartridge"
 #define CARTRIDGE_SDX_64_DESC        "SpartaDOS X 64 KB cartridge"
 #define CARTRIDGE_XEGS_32_DESC       "XEGS 32 KB cartridge"
-#define CARTRIDGE_XEGS_64_DESC       "XEGS 64 KB cartridge"
+#define CARTRIDGE_XEGS_07_64_DESC    "XEGS 64 KB cartridge (banks 0-7)"
 #define CARTRIDGE_XEGS_128_DESC      "XEGS 128 KB cartridge"
 #define CARTRIDGE_OSS_M091_16_DESC   "OSS one chip 16 KB cartridge"
 #define CARTRIDGE_5200_NS_16_DESC    "One chip 16 KB 5200 cartridge"
@@ -145,6 +146,7 @@ extern int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 #define CARTRIDGE_MEGA_2048_DESC     "MegaCart 2 MB cartridge"
 #define CARTRIDGE_THECART_32M_DESC   "The!Cart 32 MB cartridge"
 #define CARTRIDGE_THECART_64M_DESC   "The!Cart 64 MB cartridge"
+#define CARTRIDGE_XEGS_8F_64_DESC    "XEGS 64 KB cartridge (banks 8-15)"
 
 /* Indicates whether the emulator should automatically reboot (coldstart)
    after inserting/removing a cartridge. (Doesn't affect the piggyback

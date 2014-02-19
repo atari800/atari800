@@ -44,7 +44,7 @@ Currently supported cartridge types:
 | 10 | 800/XL/XE |   64 | Diamond 64 KB cartridge                       |   |
 | 11 | 800/XL/XE |   64 | SpartaDOS X 64 KB cartridge                   |   |
 | 12 | 800/XL/XE |   32 | XEGS 32 KB cartridge                          |   |
-| 13 | 800/XL/XE |   64 | XEGS 64 KB cartridge                          |   |
+| 13 | 800/XL/XE |   64 | XEGS 64 KB cartridge (banks 0-7)              |   |
 | 14 | 800/XL/XE |  128 | XEGS 128 KB cartridge                         |   |
 | 15 | 800/XL/XE |   16 | OSS one chip 16 KB cartridge                  |   |
 | 16 |   5200    |   16 | One chip 16 KB 5200 cartridge                 |   |
@@ -98,6 +98,7 @@ Currently supported cartridge types:
 | 64 | 800/XL/XE | 2048 | MegaCart 2 MB cartridge                       |   |
 | 65 | 800/XL/XE |  32M | The!Cart 32 MB cartridge                      | p |
 | 66 | 800/XL/XE |  64M | The!Cart 64 MB cartridge                      | p |
+| 67 | 800/XL/XE |   64 | XEGS 64 KB cartridge (banks 8-15)             |   |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -237,25 +238,45 @@ are numbered in the order they appear in the image file, starting with 0.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each.
  Bank 3 (the last one) is always mapped to $A000-$BFFF. Two lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF.
+ The initially selected bank is random, although it seems that 0 gets chosen
+ the most often. Atari800 always selects bank 0 initially.
+ 
+ Reference:
+ http://www.atarimax.com/jindroush.atari.org/acarts.html#xegs
 
 +---------------------------------------------------------------------------+
-| Type 13: XEGS 64 KB cartridge                                             |
+| Type 13: XEGS 64 KB cartridge (banks 0-7)                                 |
 +---------------------------------------------------------------------------+
 
+ One of the two variants of the 64 KB XEGS cartridge, that's built on either
+ a C100649 board with the W1 solder point not connected, or a C026449 board
+ with pin 9 of the 74LS374 chip unconnected.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
  Bank 7 (the last one) is always mapped to $A000-$BFFF. Three lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF.
+ The initially selected bank is random, although it seems that 0 gets chosen
+ the most often. Atari800 always selects bank 0 initially.
+
+ Reference:
+ http://www.atarimax.com/jindroush.atari.org/acarts.html#xegs
 
 +---------------------------------------------------------------------------+
 | Type 14: XEGS 128 KB cartridge                                            |
 +---------------------------------------------------------------------------+
 
+ Built on either a C100649 board with the W1 solder point connected, or a
+ C026449 board.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
  Bank 15 (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF.
+ The initially selected bank is random, although it seems that 0 gets chosen
+ the most often. Atari800 always selects bank 0 initially.
+
+ Reference:
+ http://www.atarimax.com/jindroush.atari.org/acarts.html#xegs
 
 +---------------------------------------------------------------------------+
 | Type 15: OSS one chip 16 KB cartridge                                     |
@@ -337,28 +358,43 @@ are numbered in the order they appear in the image file, starting with 0.
 | Type 23: XEGS 256 KB cartridge                                            |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 32 banks, 8 KB each.
  The last bank is always mapped to $A000-BFFF. Five lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 24: XEGS 512 KB cartridge                                            |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
  The last bank is always mapped to $A000-$BFFF. Six lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 25: XEGS 1 MB cartridge                                              |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
  The last bank is always mapped to $A000-$BFFF. Seven lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF.
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 26: MegaCart 16 KB cartridge                                         |
@@ -420,61 +456,91 @@ are numbered in the order they appear in the image file, starting with 0.
 | Type 33: Switchable XEGS 32 KB cartridge                                  |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each.
  Bank 3 (the last one) is always mapped to $A000-$BFFF. Two lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF,
  bit 7 disables the cartridge.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 34: Switchable XEGS 64 KB cartridge                                  |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
  Bank 7 (the last one) is always mapped to $A000-$BFFF. Three lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF,
  bit 7 disables the cartridge.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 35: Switchable XEGS 128 KB cartridge                                 |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
  Bank 15 (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF,
  bit 7 disables the cartridge.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 36: Switchable XEGS 256 KB cartridge                                 |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 32 banks, 8 KB each.
  The last bank is always mapped to $A000-$BFFF. Five lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF,
  bit 7 disables the cartridge.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 37: Switchable XEGS 512 KB cartridge                                 |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
  The last bank is always mapped to $A000-$BFFF. Six lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF,
  bit 7 disables the cartridge.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 38: Switchable XEGS 1 MB cartridge                                   |
 +---------------------------------------------------------------------------+
 
+ An extension to the standard XEGS cartridge, apparently sold by Nir Dary
+ in the 1990s/2000s.
  This bank-switched cartridge occupies 16 KB of address space between $8000
  and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
  The last bank is always mapped to $A000-$BFFF. Seven lowest bits of
- a byte written to $D500-$D5FF select the bank mapped to $8000-$BFFF,
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF,
  bit 7 disables the cartridge.
+ The initially selected bank is currently not known, although it's probable
+ that it's the same as in standard XEGS cartridges, ie. random. Atari800
+ always selects bank 0 initially.
 
 +---------------------------------------------------------------------------+
 | Type 39: Phoenix 8 KB cartridge                                           |
@@ -909,3 +975,24 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  The $D5A0-$D5A2 registers are read/write; one can read the cartridge's current
  state from them. Unused bits are always read as 0.
+
++---------------------------------------------------------------------------+
+| Type 67: XEGS 64 KB cartridge (banks 8-15)                                |
++---------------------------------------------------------------------------+
+
+ One of the two variants of the 64 KB XEGS cartridge, built on a C026449 board
+ with all pins of the 74LS374 chip connected. All software designed for this
+ cartridge type also works with the other variant; see Type 13.
+ This bank-switched cartridge occupies 16 KB of address space between $8000
+ and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
+ Bank 7 (the last one) is always mapped to $A000-$BFFF. Four lowest bits of
+ a byte written to $D500-$D5FF select the bank mapped to $8000-$9FFF.
+ Unsetting bit 3 unmaps the $8000-$9FFFF area and leaves it unconnected
+ (floating or all $FFs); otherwise a bank selected by the three lowest bits is
+ mapped.
+ The initially selected bank is random, although it seems that the value of 0
+ (ie. no bank mapped) gets chosen the most often. Atari800 always selects 0
+ initially.
+
+ Reference:
+ http://www.atarimax.com/jindroush.atari.org/acarts.html#xegs

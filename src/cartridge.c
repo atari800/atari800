@@ -61,7 +61,7 @@ int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	64,       /* CARTRIDGE_DIAMOND_64 */
 	64,       /* CARTRIDGE_SDX_64 */
 	32,       /* CARTRIDGE_XEGS_32 */
-	64,       /* CARTRIDGE_XEGS_64 */
+	64,       /* CARTRIDGE_XEGS_64_07 */
 	128,      /* CARTRIDGE_XEGS_128 */
 	16,       /* CARTRIDGE_OSS_M091_16 */
 	16,       /* CARTRIDGE_5200_NS_16 */
@@ -114,7 +114,8 @@ int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	4096,     /* CARTRIDGE_MEGA_4096 */
 	2048,     /* CARTRIDGE_MEGA_2048 */
 	32*1024,  /* CARTRIDGE_THECART_32M */
-	64*1024   /* CARTRIDGE_THECART_64M */
+	64*1024,  /* CARTRIDGE_THECART_64M */
+	64        /* CARTRIDGE_XEGS_64_8F */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -149,7 +150,7 @@ CARTRIDGE_image_t CARTRIDGE_piggyback = { CARTRIDGE_NONE, 0, 0, NULL, "" }; /* P
    cartridge is a SpartaDOS X. */
 static CARTRIDGE_image_t *active_cart = &CARTRIDGE_main;
 
-/* DB_32, XEGS_32, XEGS_64, XEGS_128, XEGS_256, XEGS_512, XEGS_1024,
+/* DB_32, XEGS_32, XEGS_07_64, XEGS_128, XEGS_256, XEGS_512, XEGS_1024,
    SWXEGS_32, SWXEGS_64, SWXEGS_128, SWXEGS_256, SWXEGS_512, SWXEGS_1024 */
 static void set_bank_809F(int main, int old_state)
 {
@@ -164,6 +165,16 @@ static void set_bank_809F(int main, int old_state)
 		if (old_state & 0x80)
 			MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + main);
 	}
+}
+
+/* XEGS_8F_64 */
+static void set_bank_XEGS_8F_64(void)
+{
+	if (active_cart->state & 0x08)
+		MEMORY_CopyROM(0x8000, 0x9fff, active_cart->image + (active_cart->state & ~0x08) * 0x2000);
+	else
+		/* $8000-$9FFF is left unconnected. */
+		MEMORY_dFillMem(0x8000, 0xff, 0x2000);
 }
 
 /* OSS_034M_16, OSS_043M_16, OSS_M091_16, OSS_8 */
@@ -282,9 +293,12 @@ static void SwitchBank(int old_state)
 	case CARTRIDGE_SWXEGS_32:
 		set_bank_809F(0x6000, old_state);
 		break;
-	case CARTRIDGE_XEGS_64:
+	case CARTRIDGE_XEGS_07_64:
 	case CARTRIDGE_SWXEGS_64:
 		set_bank_809F(0xe000, old_state);
+		break;
+	case CARTRIDGE_XEGS_8F_64:
+		set_bank_XEGS_8F_64();
 		break;
 	case CARTRIDGE_XEGS_128:
 	case CARTRIDGE_SWXEGS_128:
@@ -508,8 +522,9 @@ static void MapActiveCart(void)
 				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0x6000);
 			}
 			break;
-		case CARTRIDGE_XEGS_64:
+		case CARTRIDGE_XEGS_07_64:
 		case CARTRIDGE_SWXEGS_64:
+		case CARTRIDGE_XEGS_8F_64:
 			if (!(active_cart->state & 0x80)) {
 				MEMORY_CartA0bfEnable();
 				MEMORY_CopyROM(0xa000, 0xbfff, active_cart->image + 0xe000);
@@ -928,10 +943,11 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 	case CARTRIDGE_XEGS_32:
 		new_state = byte & 0x03;
 		break;
-	case CARTRIDGE_XEGS_64:
+	case CARTRIDGE_XEGS_07_64:
 		new_state = byte & 0x07;
 		break;
 	case CARTRIDGE_XEGS_128:
+	case CARTRIDGE_XEGS_8F_64:
 		new_state = byte & 0x0f;
 		break;
 	case CARTRIDGE_XEGS_256:

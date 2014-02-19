@@ -255,7 +255,7 @@ Turn on Atari BASIC ROM
 .BI \-cart\  filename
 Insert cartridge (CART or raw format)
 .TP
-.BR "\-cart\-type 0" .. 66
+.BR "\-cart\-type 0" .. 67
 Select type of the cartridge inserted with the \fB\-cart\fR option.
 When inserting a raw ROM image its type cannot be detected automaticcaly,
 and must be provided with this option.
@@ -301,7 +301,7 @@ SpartaDos X 64 KB cartridge
 XEGS 32 KB cartridge
 .TP
 .B 13
-XEGS 64 KB cartridge
+XEGS 64 KB cartridge (banks 0-7)
 .TP
 .B 14
 XEGS 128 KB cartridge
@@ -461,6 +461,9 @@ The!Cart 32 MB cartridge
 .TP
 .B 66
 The!Cart 64 MB cartridge
+.TP
+.B 67
+XEGS 64 KB cartridge (banks 8-15)
 .PD
 .RE
 If this option is not given, the user will be asked to choose the cartridge
@@ -471,7 +474,7 @@ Insert piggyback cartridge (CART or raw format).
 This works only if the first cartridge is a pass-through (currently only
 SpartaDOS X 64KB and 128KB types).
 .TP
-.BR "\-cart2\-type 0" .. 66
+.BR "\-cart2\-type 0" .. 67
 Select type of the cartridge inserted with the \fB-cart2\fR option.
 When inserting a raw ROM image its type cannot be detected automatically,
 and must be provided with this option.

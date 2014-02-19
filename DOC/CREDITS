@@ -335,6 +335,7 @@ Erhard Puetz <erhard-puetz@wtal.de>
 Matthias Reichl  <hias@horus.com>
     - POKEY ALLPOT register fix
     - The!Cart emulation fixes
+    - reported quirks in behaviour of XEGS cartridges
 
 Thomas Richter <thor@math.tu-berlin.de>
     - GTIA collisions and third colour of players
