@@ -1,3 +1,8 @@
+2014-02-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sdl/init.c, sdl/main.c: Avoid "undefined reference to PLATFORM_Time" linker
+  error when configured --with-sound=sdl but --with-video != sdl.
+
+
 2014-02-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
   DOC/USAGE, DOC/CREDITS: With Hias' help - documented behaviour of the XEGS

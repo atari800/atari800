@@ -27,6 +27,7 @@
 #include "sdl/init.h"
 #include "atari.h"
 #include "log.h"
+#include "platform.h"
 
 int SDL_INIT_Initialise(void)
 {
@@ -43,3 +44,9 @@ void SDL_INIT_Exit(void)
 {
 	SDL_Quit();
 }
+
+double PLATFORM_Time(void)
+{
+	return SDL_GetTicks() * 1e-3;
+}
+
