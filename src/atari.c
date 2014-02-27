@@ -876,9 +876,19 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif
 
 #if defined (SOUND) && defined(SOUND_THIN_API)
-	if (Sound_enabled && Sound_Setup())
-	/* Start sound if opening audio output was successful. */
-		Sound_Continue();
+	if (Sound_enabled) {
+		/* Up to this point the Sound_enabled flag indicated that we _want_ to
+		   enable sound. From now on, the flag will indicate whether audio
+		   output is enabled and working. So, since the sound output was not
+		   yet initiated, we set the flag accordingly. */
+		Sound_enabled = FALSE;
+		/* Don't worry, Sound_Setup() will set Sound_enabled back to TRUE if
+		   it opens audio output successfully. But Sound_Setup() relies on the
+		   flag being set if and only if audio output is active. */
+		if (Sound_Setup())
+			/* Start sound if opening audio output was successful. */
+				Sound_Continue();
+	}
 #endif /* defined (SOUND) && defined(SOUND_THIN_API) */
 
 	return TRUE;

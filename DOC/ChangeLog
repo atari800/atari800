@@ -2,6 +2,12 @@
 * sdl/init.c, sdl/main.c: Avoid "undefined reference to PLATFORM_Time" linker
   error when configured --with-sound=sdl but --with-video != sdl.
 
+* atari.c: Fixed a bug with keyboard input not working on --with-video=ncurses
+  --with-audio=oss. On initialisation, Sound_enabled == TRUE but audio output
+  is not yet initialised. In such situation calling
+  sound_oss.c->PLATFORM_SoundSetup() would close standard input, thus disabling
+  keyboard.
+
 
 2014-02-19  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cartridge.[ch], ui.c, android/jni/jni.c, atari800.man, DOC/cart.txt,
