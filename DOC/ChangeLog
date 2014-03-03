@@ -1,3 +1,13 @@
+2014-03-03  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.c, atari_basic.c, atari_curses.c, atari_falcon.c, atari_ps2.c,
+  atari_x11.c, amiga/amiga.c, dos/atari_vga.c, sdl/main.c,
+  win32/atari_win32.c, win32/main.cpp, atari_wince.c Ensure that Sound_Exit()
+  is called after config file is saved-on-exit, by moving the call to
+  Sound_Exit() out of PLATFORM_Exit() and into Atari800_Exit(). Reason: When
+  SOUND_THIN_API is enabled, autosaving after Sound_Exit would cause the
+  config file's SOUND_ENABLED entry to always be written as 0.
+
+
 2014-02-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/init.c, sdl/main.c: Avoid "undefined reference to PLATFORM_Time" linker
   error when configured --with-sound=sdl but --with-video != sdl.

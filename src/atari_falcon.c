@@ -2,7 +2,7 @@
  * atari_falcon.c - Atari Falcon specific port code
  *
  * Copyright (c) 1997-1998 Petr Stehlik and Karel Rous
- * Copyright (c) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -468,10 +468,6 @@ int PLATFORM_Exit(int run_monitor)
 			return 1;			/* go back to emulation */
 		}
 	}
-
-#ifdef SOUND
-	Sound_Exit();
-#endif
 
 	if (new_videoram)
 		free(new_videoram);

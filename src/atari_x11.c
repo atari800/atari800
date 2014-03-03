@@ -2,7 +2,7 @@
  * atari_x11.c - X11 specific port code
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -238,7 +238,7 @@ static void autorepeat_restore(void)
 
 static void segmentationfault(int x)
 {
-	PLATFORM_Exit(0);
+	Atari800_ErrExit();
 	exit(0);
 }
 
@@ -959,7 +959,7 @@ static void remove_rom_callback(void)
 
 static void exit_callback(void)
 {
-	PLATFORM_Exit(FALSE);
+	Atari800_Exit(FALSE);
 	exit(1);
 }
 
@@ -2356,9 +2356,6 @@ int PLATFORM_Exit(int run_monitor)
 			close(js1);
 #endif
 
-#ifdef SOUND
-		Sound_Exit();
-#endif
 	}
 	return restart;
 }

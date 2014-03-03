@@ -2,7 +2,7 @@
  * sdl/main.c - SDL library specific port code - main interface
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
- * Copyright (C) 2001-2009 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -128,10 +128,6 @@ int PLATFORM_Exit(int run_monitor)
 			return 1;
 		}
 	}
-
-#ifdef SOUND
-	Sound_Exit();
-#endif
 
 	return 0;
 }

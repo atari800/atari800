@@ -2,7 +2,7 @@
  * atari_ps2.c - Sony PlayStation 2 port code
  *
  * Copyright (c) 2005 Troy Ayers and Piotr Fusik
- * Copyright (c) 2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2005-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -327,6 +327,11 @@ int PLATFORM_Exit(int run_monitor)
 #ifdef USE_TIMERS
 	timer_shutdown();
 #endif
+/* TODO Sound_Exit should not be called here! It only stays here now because
+   the next step restarts the PS2 without ever returning from this function to
+   Atari800_Exit, so the call to Sound_Exit located in the latter function is
+   never invoked. So, should the LoadExecPS2call below get removed, so should
+   this call to Sound_Exit. */
 #ifdef SOUND
 	Sound_Exit();
 #endif

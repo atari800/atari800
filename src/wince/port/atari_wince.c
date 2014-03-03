@@ -2,7 +2,7 @@
  * atari_wince.c - WinCE port specific code
  *
  * Copyright (C) 2001 Vasyl Tsvirkunov
- * Copyright (C) 2001-2006 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -158,10 +158,6 @@ int PLATFORM_Exit(int run_monitor)
 
 	uninitinput();
 	groff();
-
-#ifdef SOUND
-	Sound_Exit();
-#endif
 
 	return 0;
 }

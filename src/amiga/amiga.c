@@ -2,7 +2,7 @@
  * amiga.c - Amiga specific port code
  *
  * Copyright (c) 2000 Sebastian Bauer
- * Copyright (c) 2000-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 2000-2014 Atari800 development team (see DOC/CREDITS)
  * Newest changes by Ventzislav Tzvetkov - http://drhirudo.hit.bg
  *
  * This file is part of the Atari800 emulator project which emulates
@@ -90,10 +90,6 @@
 #include "afile.h"
 #include "cfg.h"
 #include "akey.h"
-
-/******************************/
-
-int PLATFORM_Exit (int run_monitor);
 
 /******************************/
 
@@ -942,7 +938,7 @@ VOID Iconify(void)
 		RemoveAppIcon(app_icon);
 
 		if (!SetupDisplay())
-			PLATFORM_Exit(0);
+			Atari800_ErrExit();
 	}
 
 	FreeDiskObject(dobj);
@@ -2192,8 +2188,10 @@ int main(int argc, char **argv)
 		if (LastDisplayType != DisplayType)
 		{
 			FreeDisplay();
-			if (!(SetupDisplay()))
+			if (!(SetupDisplay())) {
+				Atari800_ErrExit();
 				break;
+			}
 		}
 
 		Atari800_Frame();
@@ -2202,6 +2200,5 @@ int main(int argc, char **argv)
 			PLATFORM_DisplayScreen();
 	}
 
-	PLATFORM_Exit(0);
 	return 0;
 }

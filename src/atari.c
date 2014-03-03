@@ -2,7 +2,7 @@
  * atari.c - main high-level routines
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2013 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -946,6 +946,9 @@ int Atari800_Exit(int run_monitor)
 
 		/* Cleanup functions, in reverse order as the init functions in
 		   Atari800_Initialise(). */
+#ifdef SOUND
+		Sound_Exit();
+#endif
 #if SUPPORTS_CHANGE_VIDEOMODE
 		VIDEOMODE_Exit();
 #endif

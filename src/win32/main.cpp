@@ -2,7 +2,7 @@
  * main.cpp - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel
- * Copyright (C) 2000-2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2000-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -85,7 +85,6 @@ void exit(int code)
 	}
 
 	MSG msg;
-	PostMessage(hWndMain, WM_CLOSE, 0, 0);
 	while (GetMessage(&msg, NULL, 0, 0)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -162,12 +161,7 @@ HWND OnSysChar(HWND hWnd, TCHAR ch, int cRepeat)
 
 void OnClose(HWND hWnd)
 {
-	groff();
-#ifdef SOUND
-	Sound_Exit();
-#endif
-	uninitjoystick();
-	uninitinput();
+	Atari800_Exit(FALSE);
 }
 
 void OnDestroy(HWND hWnd)
