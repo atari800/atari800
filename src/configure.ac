@@ -957,6 +957,13 @@ if [[ "$WANT_IDE" == "yes" ]]; then
     OBJS="$OBJS ide.o"
 fi
 
+if [[ "$a8_use_sdl" = yes ]]; then
+    A8_OPTION(onscreenkeyboard,no,
+              [Enable on-screen keyboard (default=OFF)],
+              USE_UI_BASIC_ONSCREEN_KEYBOARD,[Define to enable on-screen keyboard.]
+             )
+fi
+
 dnl Select/detect features based on external software...
 
 dnl Check for existence of the readline library and headers.
@@ -1189,6 +1196,7 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
         fi
 fi
 if [[ "$a8_target" = default -a "$with_video" = sdl ]]; then
+    echo "Using on-screen keyboard?.............: $WANT_USE_UI_BASIC_ONSCREEN_KEYBOARD"
     echo "Using OpenGL?.........................: $with_opengl"
 fi
 echo

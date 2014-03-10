@@ -55,10 +55,10 @@
 #include "screen.h" /* Screen_atari */
 #include "ui.h"
 #include "util.h"
+#include "ui_basic.h"
 
 #ifdef DIRECTX
-	#include "win32\main.h"
-	#include "ui_basic.h"
+	#include "win32/main.h"
 #endif
 
 static int initialised = FALSE;

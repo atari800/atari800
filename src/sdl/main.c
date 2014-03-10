@@ -44,6 +44,10 @@
 #ifdef SOUND
 #include "../sound.h"
 #endif
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+#include "akey.h"
+#include "ui_basic.h"
+#endif
 #include "videomode.h"
 #include "sdl/video.h"
 #include "sdl/input.h"
@@ -171,6 +175,21 @@ int main(int argc, char **argv)
 	/* main loop */
 	for (;;) {
 		INPUT_key_code = PLATFORM_Keyboard();
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+		if (INPUT_key_code == AKEY_KEYB) {
+			Sound_Pause();
+			UI_BASIC_in_kbui = TRUE;
+			INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, 0);
+			UI_BASIC_in_kbui = FALSE;
+			switch (INPUT_key_code) {
+				case AKEY_OPTION: INPUT_key_consol &= (~INPUT_CONSOL_OPTION); break;
+				case AKEY_SELECT: INPUT_key_consol &= (~INPUT_CONSOL_SELECT); break;
+				case AKEY_START: INPUT_key_consol &= (~INPUT_CONSOL_START); break;
+			}
+
+			Sound_Continue();
+		}
+#endif
 		SDL_INPUT_Mouse();
 		Atari800_Frame();
 		if (Atari800_display_screen)

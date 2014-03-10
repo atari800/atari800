@@ -2,7 +2,7 @@
  * sdl/input.c - SDL library specific port code - input device support
  *
  * Copyright (c) 2001-2002 Jacek Poplawski
- * Copyright (C) 2001-2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2001-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -36,11 +36,11 @@
 
 #include <SDL.h>
 
+#include "config.h"
 #include "sdl/input.h"
 #include "akey.h"
 #include "atari.h"
 #include "colours.h"
-#include "config.h"
 #include "filter_ntsc.h"
 #include "../input.h"
 #include "log.h"
@@ -50,6 +50,10 @@
 #include "ui.h"
 #include "util.h"
 #include "videomode.h"
+#include "screen.h"
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+#include "ui_basic.h"
+#endif
 
 static int grab_mouse = FALSE;
 static int swap_joysticks = FALSE;
@@ -87,6 +91,22 @@ static int joystick1_nbuttons;
 
 /* keyboard */
 static Uint8 *kbhits;
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+static int SDL_controller_kb(void);
+int OSK_enabled = 1;
+#define OSK_MAX_BUTTONS 16
+#define OSK_BUTTON_TRIGGER 0
+#define OSK_BUTTON_LEAVE 1
+#define OSK_BUTTON_UI 4
+#define OSK_BUTTON_KEYB 5
+#define OSK_BUTTON_0 0
+#define OSK_BUTTON_1 1
+#define OSK_BUTTON_2 2
+#define OSK_BUTTON_3 3
+#define OSK_BUTTON_4 4
+#define OSK_BUTTON_5 5
+#endif
+
 
 /* For better handling of the PLATFORM_Configure-recognition...
    Takes a keySym as integer-string and fills the value
@@ -251,10 +271,19 @@ static Uint32 ResizeDelayCallback(Uint32 interval, void *param)
 }
 #endif /* HAVE_WINDOWS_H */
 
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+static unsigned char *atari_screen_backup;
+#endif
+
 int PLATFORM_Keyboard(void)
 {
 	int shiftctrl = 0;
 	SDL_Event event;
+
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+	if (!atari_screen_backup)
+		atari_screen_backup = malloc(Screen_HEIGHT * Screen_WIDTH);
+#endif
 
 #if HAVE_WINDOWS_H
 	/* Used to delay resize events on Windows 7, see above. */
@@ -347,7 +376,11 @@ int PLATFORM_Keyboard(void)
 		}
 	}
 	else if (!key_pressed)
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+		return SDL_controller_kb();
+#else
 		return AKEY_NONE;
+#endif
 
 	UI_alt_function = -1;
 	if (kbhits[SDLK_LALT]) {
@@ -1110,6 +1143,10 @@ static void Init_SDL_Joysticks(int first, int second)
 		else {
 			Log_print("joystick 0 found!");
 			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+			if (joystick0_nbuttons > OSK_MAX_BUTTONS)
+				joystick0_nbuttons = OSK_MAX_BUTTONS;
+#endif
 		}
 	}
 
@@ -1120,6 +1157,10 @@ static void Init_SDL_Joysticks(int first, int second)
 		else {
 			Log_print("joystick 1 found!");
 			joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+			if (joystick1_nbuttons > OSK_MAX_BUTTONS)
+				joystick1_nbuttons = OSK_MAX_BUTTONS;
+#endif
 		}
 	}
 }
@@ -1307,6 +1348,44 @@ static int get_LPT_joystick_state(int fd)
 #endif /* LPTJOY */
 }
 
+
+static struct js_state {
+	unsigned int port;
+	unsigned int trig;
+} sdl_js_state[2];
+
+static void update_SDL_joysticks(void)
+{
+	int i;
+
+	if (joystick0 == NULL && joystick1 == NULL)
+		return;
+
+	SDL_JoystickUpdate();
+
+	if (joystick0 != NULL) {
+		sdl_js_state[0].port = get_SDL_joystick_state(joystick0);
+
+		sdl_js_state[0].trig = 0;
+		for (i = 0; i < joystick0_nbuttons; i++) {
+			if (SDL_JoystickGetButton(joystick0, i)) {
+				sdl_js_state[0].trig |= 1 << i;
+			}
+		}
+	}
+
+	if (joystick1 != NULL) {
+		sdl_js_state[1].port = get_SDL_joystick_state(joystick1);
+
+		sdl_js_state[1].trig = 0;
+		for (i = 0; i < joystick1_nbuttons; i++) {
+			if (SDL_JoystickGetButton(joystick1, i)) {
+				sdl_js_state[1].trig |= 1 << i;
+			}
+		}
+	}
+}
+
 static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
 {
 	int stick0, stick1;
@@ -1342,25 +1421,20 @@ static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
 		*s1 = stick1;
 	}
 
-	if ((joystick0 != NULL) || (joystick1 != NULL))	/* can only joystick1!=NULL ? */
-	{
-		SDL_JoystickUpdate();
-	}
-
 	if (fd_joystick0 != -1)
 		*s0 &= get_LPT_joystick_state(fd_joystick0);
 	else if (joystick0 != NULL)
-		*s0 &= get_SDL_joystick_state(joystick0);
+		*s0 &= sdl_js_state[0].port;
 
 	if (fd_joystick1 != -1)
 		*s1 &= get_LPT_joystick_state(fd_joystick1);
 	else if (joystick1 != NULL)
-		*s1 &= get_SDL_joystick_state(joystick1);
+		*s1 &= sdl_js_state[1].port;
 }
 
 static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 {
-	int trig0, trig1, i;
+	int trig0, trig1;
 	trig0 = trig1 = 1;
 
 	if (PLATFORM_kbd_joy_0_enabled) {
@@ -1389,12 +1463,15 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 	}
 	else if (joystick0 != NULL) {
 		trig0 = 1;
-		for (i = 0; i < joystick0_nbuttons; i++) {
-			if (SDL_JoystickGetButton(joystick0, i)) {
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+		if (OSK_enabled) {
+			if (sdl_js_state[0].trig & (1 << OSK_BUTTON_TRIGGER))
 				trig0 = 0;
-				break;
-			}
 		}
+		else
+#endif
+			if (sdl_js_state[0].trig)
+				trig0 = 0;
 		*t0 &= trig0;
 	}
 
@@ -1407,12 +1484,8 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 	}
 	else if (joystick1 != NULL) {
 		trig1 = 1;
-		for (i = 0; i < joystick1_nbuttons; i++) {
-			if (SDL_JoystickGetButton(joystick1, i)) {
-				trig1 = 0;
-				break;
-			}
-		}
+		if (sdl_js_state[1].trig)
+			trig1 = 0;
 		*t1 &= trig1;
 	}
 }
@@ -1422,6 +1495,7 @@ int PLATFORM_PORT(int num)
 #ifndef DONT_DISPLAY
 	if (num == 0) {
 		UBYTE a, b;
+		update_SDL_joysticks();
 		get_platform_PORT(&a, &b);
 		return (b << 4) | (a & 0x0f);
 	}
@@ -1445,3 +1519,183 @@ int PLATFORM_TRIG(int num)
 #endif
 	return 1;
 }
+
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+
+#define REPEAT_DELAY 5000
+#define REPEAT_INI_DELAY (5 * REPEAT_DELAY)
+
+int UI_BASIC_in_kbui;
+
+static int b_ui_leave;
+
+/*
+ * do some basic keyboard emulation using the joystick controller
+ */
+static int SDL_controller_kb1(void)
+{
+	static int prev_up = FALSE, prev_down = FALSE, prev_a = FALSE,
+		prev_r = FALSE, prev_left = FALSE, prev_right = FALSE,
+		prev_b = FALSE, prev_l = FALSE;
+	static int repdelay = REPEAT_DELAY;
+	struct js_state *state = &sdl_js_state[0];
+
+	if (! joystick0) return(AKEY_NONE);  /* no controller present */
+
+	update_SDL_joysticks();
+
+	repdelay--;
+	if (repdelay < 0) repdelay = REPEAT_DELAY;
+
+	if (!UI_is_active && (state->trig & (1 << OSK_BUTTON_UI))) {
+		return(AKEY_UI);
+	}
+	if (!UI_is_active && (state->trig & (1 << OSK_BUTTON_KEYB))) {
+		return(AKEY_KEYB);
+	}
+	/* provide keyboard emulation to enter file name */
+	if (UI_is_active && !UI_BASIC_in_kbui && (state->trig & (1 << OSK_BUTTON_KEYB))) {
+		int keycode;
+		update_SDL_joysticks();
+		UI_BASIC_in_kbui = TRUE;
+		memcpy(atari_screen_backup, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
+		keycode = UI_BASIC_OnScreenKeyboard(NULL, -1);
+		memcpy(Screen_atari, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
+		Screen_EntireDirty();
+		PLATFORM_DisplayScreen();
+		UI_BASIC_in_kbui = FALSE;
+		return keycode;
+#if 0 /* @@@ 26-Mar-2013, chris: check this */
+		if (inject_key != AKEY_NONE) {
+			keycode = inject_key;
+			inject_key = AKEY_NONE;
+			return(keycode);
+		}
+		else {
+			return(AKEY_NONE);
+		}
+#endif
+	}
+
+	if (UI_is_active || UI_BASIC_in_kbui) {
+		if (!(state->port & 1)) {
+			prev_down = FALSE;
+			if (! prev_up) {
+				repdelay = REPEAT_INI_DELAY;
+				prev_up = 1;
+				return(AKEY_UP);
+			}
+			else {
+				if (! repdelay) {
+					return(AKEY_UP);
+				}
+			}
+		}
+		else {
+			prev_up = FALSE;
+		}
+
+		if (!(state->port & 2)) {
+			prev_up = FALSE;
+			if (! prev_down) {
+				repdelay = REPEAT_INI_DELAY;
+				prev_down = TRUE;
+				return(AKEY_DOWN);
+			}
+			else {
+				if (! repdelay) {
+					return(AKEY_DOWN);
+				}
+			}
+		}
+		else {
+			prev_down = FALSE;
+		}
+
+		if (!(state->port & 4)) {
+			prev_right = FALSE;
+			if (! prev_left) {
+				repdelay = REPEAT_INI_DELAY;
+				prev_left = TRUE;
+				return(AKEY_LEFT);
+			}
+			else {
+				if (! repdelay) {
+					return(AKEY_LEFT);
+				}
+			}
+		}
+		else {
+			prev_left = FALSE;
+		}
+
+		if (!(state->port & 8)) {
+			prev_left = FALSE;
+			if (! prev_right) {
+				repdelay = REPEAT_INI_DELAY;
+				prev_right = TRUE;
+				return(AKEY_RIGHT);
+			}
+			else {
+				if (! repdelay) {
+					return(AKEY_RIGHT);
+				}
+			}
+		}
+		else {
+			prev_right = FALSE;
+		}
+
+
+		if ((state->trig & (1 << OSK_BUTTON_TRIGGER))) {
+			if (! prev_a) {
+				prev_a = TRUE;
+				return(AKEY_RETURN);
+			}
+		}
+		else {
+			prev_a = FALSE;
+		}
+
+		if ((state->trig & (1 << OSK_BUTTON_LEAVE))) {
+			if (! prev_b) {
+				prev_b = TRUE;
+				b_ui_leave = TRUE;   /* B must be released again */
+				return(AKEY_ESCAPE);
+			}
+		}
+		else {
+			prev_b = FALSE;
+		}
+
+		if ((state->trig & (1 << OSK_BUTTON_UI))) {
+			if (! prev_l && UI_BASIC_in_kbui) {
+				prev_l = TRUE;
+				return(AKEY_ESCAPE);
+			}
+		}
+		else {
+			prev_l = FALSE;
+		}
+
+		if ((state->trig & (1 << OSK_BUTTON_KEYB))) {
+			if (! prev_r) {
+				prev_r = TRUE;
+				return(AKEY_ESCAPE);
+			}
+		}
+		else {
+			prev_r = FALSE;
+		}
+	}
+	return(AKEY_NONE);
+}
+
+static int SDL_controller_kb(void)
+{
+	int key = SDL_controller_kb1();
+	if (key != AKEY_NONE) printf("SDL_controller_kb: key = 0x%x\n", key);
+	return key;
+}
+
+#endif /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */

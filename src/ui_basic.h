@@ -9,7 +9,8 @@ extern UI_tDriver UI_BASIC_driver;
 
 /* for Windows CE and Dreamcast */
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-int UI_BASIC_OnScreenKeyboard(const char *title, int layout);
+extern int UI_BASIC_in_kbui;
+extern int UI_BASIC_OnScreenKeyboard(const char *title, int layout);
 /* layout must be one of MACHINE_* values (see atari.h)
    or -1 for base keyboard with no function keys */
 #endif
