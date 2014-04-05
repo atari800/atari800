@@ -2,7 +2,7 @@
  * pokeysnd.c - POKEY sound chip emulation, v2.4
  *
  * Copyright (C) 1996-1998 Ron Fries
- * Copyright (C) 1998-2008 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -23,6 +23,8 @@
 */
 
 #include "config.h"
+#include <stdlib.h>
+#include <math.h>
 
 #ifdef ASAP /* external project, see http://asap.sf.net */
 #include "asap_internal.h"
@@ -41,6 +43,7 @@
 #endif
 #include "antic.h"
 #include "gtia.h"
+#include "util.h"
 
 #ifdef WORDS_UNALIGNED_OK
 #  define READ_U32(x)     (*(ULONG *) (x))
@@ -173,7 +176,7 @@ void (*POKEYSND_Process_ptr)(void *sndbuffer, int sndn) = null_pokey_process;
 
 static void Update_pokey_sound_rf(UWORD, UBYTE, UBYTE, UBYTE);
 static void null_pokey_sound(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain) {}
-void (*POKEYSND_Update) (UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
+void (*POKEYSND_Update_ptr) (UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
   = null_pokey_sound;
 
 #ifdef SERIO_SOUND
@@ -186,7 +189,7 @@ int POKEYSND_serio_sound_enabled = 1;
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_rf(int set);
 static void null_consol_sound(int set) {}
-void (*POKEYSND_UpdateConsol)(int set) = null_consol_sound;
+void (*POKEYSND_UpdateConsol_ptr)(int set) = null_consol_sound;
 int POKEYSND_console_sound_enabled = 1;
 #endif
 
@@ -195,6 +198,22 @@ static void Update_vol_only_sound_rf(void);
 static void null_vol_only_sound(void) {}
 void (*POKEYSND_UpdateVolOnly)(void) = null_vol_only_sound;
 #endif
+
+#ifdef SYNCHRONIZED_SOUND
+UBYTE *POKEYSND_process_buffer = NULL;
+unsigned int POKEYSND_process_buffer_length;
+unsigned int POKEYSND_process_buffer_fill;
+static unsigned int prev_update_tick;
+
+static void Generate_sync_rf(unsigned int num_ticks);
+static void null_generate_sync(unsigned int num_ticks) {}
+void (*POKEYSND_GenerateSync)(unsigned int num_ticks) = null_generate_sync;
+
+static double ticks_per_sample;
+static double samp_pos;
+static int speaker;
+static int const CONSOLE_VOL = 32;
+#endif /* SYNCHRONIZED_SOUND */
 
 /*****************************************************************************/
 /* In my routines, I treat the sample output as another divide by N counter  */
@@ -242,9 +261,30 @@ void (*POKEYSND_UpdateVolOnly)(void) = null_vol_only_sound;
 static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
            UBYTE num_pokeys, int flags);
 
+#ifdef VOL_ONLY_SOUND
+/* Initialise variables related to volume-only sound. */
+static void init_vol_only(void)
+{
+	POKEYSND_sampbuf_rptr = POKEYSND_sampbuf_ptr;
+	POKEYSND_sampbuf_last = ANTIC_CPU_CLOCK;
+	POKEYSND_sampbuf_lastval = 0;
+	POKEYSND_samp_consol_val = 0;
+#ifdef STEREO_SOUND
+	sampbuf_rptr2 = sampbuf_ptr2;
+	sampbuf_last2 = ANTIC_CPU_CLOCK;
+	sampbuf_lastval2 = 0;
+#endif /* STEREO_SOUND */
+}
+#endif /* VOL_ONLY_SOUND */
+
 int POKEYSND_DoInit(void)
 {
 	SndSave_CloseSoundFile();
+
+#ifdef VOL_ONLY_SOUND
+	init_vol_only();
+#endif /* VOL_ONLY_SOUND */
+
 	if (POKEYSND_enable_new_pokey)
 		return MZPOKEYSND_Init(snd_freq17, POKEYSND_playback_freq,
 				POKEYSND_num_pokeys, POKEYSND_snd_flags, mz_quality
@@ -271,6 +311,22 @@ int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 #ifdef __PLUS
 	mz_clear_regs = clear_regs;
 #endif
+#ifdef SYNCHRONIZED_SOUND
+	{
+		/* A single call to Atari800_Frame may emulate a bit more CPU ticks than the exact number of
+		   ticks per frame (Atari800_tv_mode*114). So we add a few ticks to buffer size just to be safe. */
+		unsigned int const surplus_ticks = 10;
+		double samples_per_frame = (double)POKEYSND_playback_freq/(Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC);
+		unsigned int ticks_per_frame = Atari800_tv_mode*114;
+		unsigned int max_ticks_per_frame = ticks_per_frame + surplus_ticks;
+		double ticks_per_sample = (double)ticks_per_frame / samples_per_frame;
+		POKEYSND_process_buffer_length = POKEYSND_num_pokeys * (unsigned int)ceil((double)max_ticks_per_frame / ticks_per_sample) * ((POKEYSND_snd_flags & POKEYSND_BIT16) ? 2:1);
+		free(POKEYSND_process_buffer);
+		POKEYSND_process_buffer = (UBYTE *)Util_malloc(POKEYSND_process_buffer_length);
+		POKEYSND_process_buffer_fill = 0;
+	    prev_update_tick = ANTIC_CPU_CLOCK;
+	}
+#endif /* SYNCHRONIZED_SOUND */
 
 #if defined(PBI_XLD) || defined (VOICEBOX)
 	VOTRAXSND_Init(playback_freq, num_pokeys, (flags & POKEYSND_BIT16));
@@ -294,17 +350,53 @@ void POKEYSND_Process(void *sndbuffer, int sndn)
 #endif
 }
 
+#ifdef SYNCHRONIZED_SOUND
+static void Update_synchronized_sound(void)
+{
+	POKEYSND_GenerateSync(ANTIC_CPU_CLOCK - prev_update_tick);
+	prev_update_tick = ANTIC_CPU_CLOCK;
+}
+
+int POKEYSND_UpdateProcessBuffer(void)
+{
+	int sndn;
+	Update_synchronized_sound();
+	sndn = POKEYSND_process_buffer_fill / ((POKEYSND_snd_flags & POKEYSND_BIT16) ? 2 : 1);
+	POKEYSND_process_buffer_fill = 0;
+
+#if defined(PBI_XLD) || defined (VOICEBOX)
+	VOTRAXSND_Process(POKEYSND_process_buffer, sndn);
+#endif
+#if !defined(__PLUS) && !defined(ASAP)
+	SndSave_WriteToSoundFile((const unsigned char *)POKEYSND_process_buffer, sndn);
+#endif
+	return sndn;
+}
+#endif /* SYNCHRONIZED_SOUND */
+
+#ifdef SYNCHRONIZED_SOUND
+static void init_syncsound(void)
+{
+	double samples_per_frame = (double)POKEYSND_playback_freq/(Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC);
+	unsigned int ticks_per_frame = Atari800_tv_mode*114;
+	ticks_per_sample = (double)ticks_per_frame / samples_per_frame;
+	samp_pos = 0.0;
+	POKEYSND_GenerateSync = Generate_sync_rf;
+	speaker = 0;
+}
+#endif /* SYNCHRONIZED_SOUND */
+
 static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
            UBYTE num_pokeys, int flags)
 {
 	UBYTE chan;
 
-	POKEYSND_Update = Update_pokey_sound_rf;
+	POKEYSND_Update_ptr = Update_pokey_sound_rf;
 #ifdef SERIO_SOUND
 	POKEYSND_UpdateSerio = Update_serio_sound_rf;
 #endif
 #ifdef CONSOLE_SOUND
-	POKEYSND_UpdateConsol = Update_consol_sound_rf;
+	POKEYSND_UpdateConsol_ptr = Update_consol_sound_rf;
 #endif
 #ifdef VOL_ONLY_SOUND
 	POKEYSND_UpdateVolOnly = Update_vol_only_sound_rf;
@@ -342,6 +434,9 @@ static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
 	/* set the number of pokey chips currently emulated */
 	Num_pokeys = num_pokeys;
 
+#ifdef SYNCHRONIZED_SOUND
+	init_syncsound();
+#endif
 	return 0; /* OK */
 }
 
@@ -364,6 +459,14 @@ static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
 /* Outputs: Adjusts local globals - no return value                          */
 /*                                                                           */
 /*****************************************************************************/
+
+void POKEYSND_Update(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
+{
+#ifdef SYNCHRONIZED_SOUND
+    Update_synchronized_sound();
+#endif /* SYNCHRONIZED_SOUND */
+	POKEYSND_Update_ptr(addr, val, chip, gain);
+}
 
 static void Update_pokey_sound_rf(UWORD addr, UBYTE val, UBYTE chip,
 				  UBYTE gain)
@@ -721,11 +824,10 @@ static void pokeysnd_process_8(void *sndbuffer, int sndn)
 #endif /* STEREO_SOUND */
 		count--;
 	} while (count);
-/*
-#if defined (USE_DOSSOUND)
-	cur_val += 32 * GTIA_speaker;
+
+#ifdef SYNCHRONIZED_SOUND
+	cur_val += speaker;
 #endif
-*/
 
 	/* loop until the buffer is filled */
 	while (n) {
@@ -1163,10 +1265,62 @@ static void pokeysnd_process_16(void *sndbuffer, int sndn)
 	}
 }
 
+#ifdef SYNCHRONIZED_SOUND
+static void Generate_sync_rf(unsigned int num_ticks)
+{
+	double new_samp_pos;
+	unsigned int ticks;
+	UBYTE *buffer = POKEYSND_process_buffer + POKEYSND_process_buffer_fill;
+	UBYTE *buffer_end = POKEYSND_process_buffer + POKEYSND_process_buffer_length;
+
+	for (;;) {
+		double int_part;
+		new_samp_pos = samp_pos + ticks_per_sample;
+		new_samp_pos = modf(new_samp_pos, &int_part);
+		ticks = (unsigned int)int_part;
+		if (ticks > num_ticks) {
+			samp_pos -= num_ticks;
+			break;
+		}
+		if (buffer >= buffer_end)
+			break;
+
+		samp_pos = new_samp_pos;
+		num_ticks -= ticks;
+
+		if (POKEYSND_snd_flags & POKEYSND_BIT16) {
+			pokeysnd_process_16(buffer, 1);
+			buffer += 2 * POKEYSND_num_pokeys;
+		}
+		else {
+			pokeysnd_process_8(buffer, 1);
+			buffer += POKEYSND_num_pokeys;
+		}
+
+	}
+
+	POKEYSND_process_buffer_fill = buffer - POKEYSND_process_buffer;
+}
+#endif /* SYNCHRONIZED_SOUND */
+
 #ifdef CONSOLE_SOUND
+void POKEYSND_UpdateConsol(int set)
+{
+	if (!POKEYSND_console_sound_enabled)
+		return;
+#ifdef SYNCHRONIZED_SOUND
+	if (set)
+		Update_synchronized_sound();
+#endif /* SYNCHRONIZED_SOUND */
+	POKEYSND_UpdateConsol_ptr(set);
+}
+
 static void Update_consol_sound_rf(int set)
 {
-#ifdef VOL_ONLY_SOUND
+#ifdef SYNCHRONIZED_SOUND
+	if (set)
+		speaker = CONSOLE_VOL * GTIA_speaker;
+#elif defined(VOL_ONLY_SOUND)
 	static int prev_atari_speaker = 0;
 	static unsigned int prev_cpu_clock = 0;
 	int d;
@@ -1174,8 +1328,6 @@ static void Update_consol_sound_rf(int set)
 	if (!g_Sound.nDigitized)
 		return;
 #endif
-	if (!POKEYSND_console_sound_enabled)
-		return;
 
 	if (!set && POKEYSND_samp_consol_val == 0)
 		return;
@@ -1211,7 +1363,7 @@ static void Update_consol_sound_rf(int set)
 		if (POKEYSND_sampbuf_rptr >= POKEYSND_SAMPBUF_MAX)
 			POKEYSND_sampbuf_rptr = 0;
 	}
-#endif  /* VOL_ONLY_SOUND */
+#endif /* !SYNCHRONIZED_SOUND && VOL_ONLY_SOUND */
 }
 #endif /* CONSOLE_SOUND */
 

@@ -29,9 +29,6 @@
 
 #include "atari.h"
 #include "log.h"
-#ifdef SYNCHRONIZED_SOUND
-#include "mzpokeysnd.h"
-#endif
 #include "platform.h"
 #include "pokeysnd.h"
 #include "util.h"
@@ -430,7 +427,7 @@ static void UpdateSyncBuffer(void)
 	}
 
 	/* produce samples from the sound emulation */
-	samples_written = MZPOKEYSND_UpdateProcessBuffer();
+	samples_written = POKEYSND_UpdateProcessBuffer();
 	bytes_written = Sound_out.sample_size * samples_written;
 
 	/* if there isn't enough room... */
@@ -466,12 +463,12 @@ static void UpdateSyncBuffer(void)
 	new_write_pos = sync_write_pos + bytes_written;
 	if (new_write_pos/sync_buffer_size == sync_write_pos/sync_buffer_size)
 		/* no wrap */
-		memcpy(sync_buffer + sync_write_pos%sync_buffer_size, MZPOKEYSND_process_buffer, bytes_written);
+		memcpy(sync_buffer + sync_write_pos%sync_buffer_size, POKEYSND_process_buffer, bytes_written);
 	else {
 		/* wraps */
 		int first_part_size = sync_buffer_size - sync_write_pos%sync_buffer_size;
-		memcpy(sync_buffer + sync_write_pos%sync_buffer_size, MZPOKEYSND_process_buffer, first_part_size);
-		memcpy(sync_buffer, MZPOKEYSND_process_buffer + first_part_size, bytes_written - first_part_size);
+		memcpy(sync_buffer + sync_write_pos%sync_buffer_size, POKEYSND_process_buffer, first_part_size);
+		memcpy(sync_buffer, POKEYSND_process_buffer + first_part_size, bytes_written - first_part_size);
 	}
 
 	sync_write_pos = new_write_pos;

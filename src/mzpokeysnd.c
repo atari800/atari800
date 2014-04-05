@@ -2,7 +2,7 @@
  * mzpokeysnd.c - POKEY sound chip emulation, v1.6
  *
  * Copyright (C) 2002 Michael Borisov
- * Copyright (C) 2002-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2002-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -36,13 +36,6 @@
 #include "remez.h"
 #include "antic.h"
 #include "gtia.h"
-#include "util.h"
-#ifdef SYNCHRONIZED_SOUND
-#if defined(PBI_XLD) || defined (VOICEBOX)
-#include "votraxsnd.h"
-#endif
-#include "sndsave.h"
-#endif
 
 #define CONSOLE_VOL 8
 #ifdef NONLINEAR_MIXING
@@ -79,7 +72,6 @@ static const double pokeymix[61+CONSOLE_VOL] = { /* Nonlinear POKEY mixing array
 static int num_cur_pokeys = 0;
 
 /* Filter */
-static int sample_rate; /* Hz */
 static int pokey_frq; /* Hz - for easier resampling */
 static int filter_size;
 static double filter_data[SND_FILTER_SIZE];
@@ -100,7 +92,6 @@ static const int filter_size_8_8 = 1214;
 #endif
 
 /* Flags and quality */
-static int snd_flags = 0;
 static int snd_quality = 0;
 
 /* Poly tables */
@@ -121,6 +112,11 @@ typedef double qev_t;
 #else
 typedef unsigned char qev_t;
 #endif
+
+#ifdef SYNCHRONIZED_SOUND
+static double ticks_per_sample;
+static double samp_pos;
+#endif /* SYNCHRONIZED_SOUND */
 
 /* State variables for single Pokey Chip */
 typedef struct stPokeyState
@@ -283,19 +279,6 @@ static void event2_pure(PokeyState* ps, int p5v, int p4v, int p917v);
 
 static int readout3_normal(PokeyState* ps);
 static void event3_pure(PokeyState* ps, int p5v, int p4v, int p917v);
-
-#ifdef SYNCHRONIZED_SOUND
-static int ticks_per_frame;
-static int tick_pos;
-static double samp_pos;
-static int start_sample;
-static double ticks_per_sample;
-UBYTE *MZPOKEYSND_process_buffer = NULL;
-static void render_to_tick(int last_tick);
-#endif
-
-
-
 
 static void ResetPokeyState(PokeyState* ps)
 {
@@ -1159,10 +1142,10 @@ static void advance_ticks(PokeyState* ps, int ticks)
 
 static double generate_sample(PokeyState* ps)
 {
-    /*unsigned long ta = (subticks+pokey_frq)/sample_rate;
-    subticks = (subticks+pokey_frq)%sample_rate;*/
+    /*unsigned long ta = (subticks+pokey_frq)/POKEYSND_playback_freq;
+    subticks = (subticks+pokey_frq)%POKEYSND_playback_freq;*/
 
-    advance_ticks(ps, pokey_frq/sample_rate);
+    advance_ticks(ps, pokey_frq/POKEYSND_playback_freq);
     return read_resam_all(ps);
 }
 
@@ -1298,7 +1281,19 @@ static void Update_vol_only_sound_mz( void );
 /*                                                                           */
 /*****************************************************************************/
 
-void init_mzpokeysnd_sync(void);
+#ifdef SYNCHRONIZED_SOUND
+static void generate_sync(unsigned int num_ticks);
+
+static void init_syncsound(void)
+{
+    double samples_per_frame = (double)POKEYSND_playback_freq/(Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC);
+    unsigned int ticks_per_frame = Atari800_tv_mode*114;
+    ticks_per_sample = (double)ticks_per_frame / samples_per_frame;
+    samp_pos = 0.0;
+    POKEYSND_GenerateSync = generate_sync;
+}
+#endif /* SYNCHRONIZED_SOUND */
+
 int MZPOKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
                         int flags, int quality
 #ifdef __PLUS
@@ -1308,16 +1303,14 @@ int MZPOKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 {
     double cutoff;
 
-    sample_rate = playback_freq;
-    snd_flags = flags;
     snd_quality = quality;
 
-    POKEYSND_Update = Update_pokey_sound_mz;
+    POKEYSND_Update_ptr = Update_pokey_sound_mz;
 #ifdef SERIO_SOUND
     POKEYSND_UpdateSerio = Update_serio_sound_mz;
 #endif
 #ifdef CONSOLE_SOUND
-    POKEYSND_UpdateConsol = Update_consol_sound_mz;
+    POKEYSND_UpdateConsol_ptr = Update_consol_sound_mz;
 #endif
 #ifdef VOL_ONLY_SOUND
     POKEYSND_UpdateVolOnly = Update_vol_only_sound_mz;
@@ -1404,9 +1397,9 @@ int MZPOKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
         break;
 #endif
     default:
-        pokey_frq = (int)(((double)pokey_frq_ideal/sample_rate) + 0.5)
-          * sample_rate;
-	filter_size = remez_filter_table((double)sample_rate/pokey_frq,
+        pokey_frq = (int)(((double)pokey_frq_ideal/POKEYSND_playback_freq) + 0.5)
+          * POKEYSND_playback_freq;
+	filter_size = remez_filter_table((double)POKEYSND_playback_freq/pokey_frq,
 					 &cutoff, quality);
 	audible_frq = (int ) (cutoff * pokey_frq);
     }
@@ -1426,7 +1419,7 @@ int MZPOKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 	num_cur_pokeys = num_pokeys;
 
 #ifdef SYNCHRONIZED_SOUND
-	init_mzpokeysnd_sync();
+	init_syncsound();
 #endif
 	return 0; /* OK */
 }
@@ -1976,23 +1969,6 @@ static void Update_c3stop(PokeyState* ps)
 }
 #endif /*NONLINEAR_MIXING*/
 
-#ifdef SYNCHRONIZED_SOUND
-static void Update_synchronized_sound(void)
-{
-    int last_tick = ANTIC_ypos*114+ANTIC_XPOS+1;
-    int i;
-    if (last_tick > ticks_per_frame) last_tick = ticks_per_frame; /* XXX it could go past the frame, fix this */
-    render_to_tick(last_tick); /* only advances to last sample tick */
-    if (last_tick - tick_pos > 0) {
-        for (i = 0; i < (int)num_cur_pokeys; i++)
-        {
-            /* remaining ticks */
-            advance_ticks(pokey_states + i, last_tick - tick_pos);
-        }
-        tick_pos = last_tick;
-    }
-}
-#endif
 /*****************************************************************************/
 /* Function: Update_pokey_sound_mz()                                         */
 /*                                                                           */
@@ -2009,9 +1985,6 @@ static void Update_pokey_sound_mz(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
 {
     PokeyState* ps = pokey_states+chip;
 
-#ifdef SYNCHRONIZED_SOUND
-    Update_synchronized_sound();
-#endif
     switch(addr & 0x0f)
     {
     case POKEY_OFFSET_AUDF1:
@@ -2433,78 +2406,55 @@ static void mzpokeysnd_process_16(void* sndbuffer, int sndn)
 }
 
 #ifdef SYNCHRONIZED_SOUND
-void init_mzpokeysnd_sync(void)
+static void generate_sync(unsigned int num_ticks)
 {
-    int bytes_per_frame;
-    double samples_per_frame;
-    samples_per_frame = (double)sample_rate/((Atari800_tv_mode == Atari800_TV_PAL) ? Atari800_FPS_PAL : Atari800_FPS_NTSC);
-    ticks_per_frame = Atari800_tv_mode*114;
-    ticks_per_sample = (double)ticks_per_frame / samples_per_frame;
-    tick_pos = 0;
-    bytes_per_frame = (int)ceil(num_cur_pokeys*samples_per_frame*((snd_flags & POKEYSND_BIT16) ? 2:1));
-    free(MZPOKEYSND_process_buffer);
-    MZPOKEYSND_process_buffer = (UBYTE *)Util_malloc(bytes_per_frame);
-    memset(MZPOKEYSND_process_buffer, 0, bytes_per_frame);
-    tick_pos = 0;
-    samp_pos = 0.0;
-    start_sample = 0;
-}
+	double new_samp_pos;
+	unsigned int ticks;
+	UBYTE *buffer = POKEYSND_process_buffer + POKEYSND_process_buffer_fill;
+	UBYTE *buffer_end = POKEYSND_process_buffer + POKEYSND_process_buffer_length;
+	unsigned int i;
 
-/* render sound into the buffer up to the specified tick position */
-static void render_to_tick(int last_tick)
-{
-    int i;
-    UBYTE *buffer = (UBYTE *)MZPOKEYSND_process_buffer + start_sample*((snd_flags & POKEYSND_BIT16) ? 2 : 1);
+	for (;;) {
+		double int_part;
+		new_samp_pos = samp_pos + ticks_per_sample;
+		new_samp_pos = modf(new_samp_pos, &int_part);
+		ticks = (unsigned int)int_part;
+		if (ticks > num_ticks) {
+			samp_pos -= num_ticks;
+			break;
+		}
+		if (buffer >= buffer_end)
+			break;
 
-    /* the new sample position is a floating point number that can be
-     * between two ticks */
-    double new_samp_pos;
-    int new_tick_pos;
+		samp_pos = new_samp_pos;
+		num_ticks -= ticks;
 
-    if (num_cur_pokeys<1)
-        return ; /* module was not initialized */
+		for (i = 0; i < num_cur_pokeys; ++i) {
+			/* advance pokey to the new position and produce a sample */
+			advance_ticks(pokey_states + i, ticks);
+			if (POKEYSND_snd_flags & POKEYSND_BIT16) {
+				*((SWORD *)buffer) = (SWORD)floor(
+					(interp_read_resam_all(pokey_states + i, samp_pos) - MAX_SAMPLE / 2.0)
+					* (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95)
+					+ 0.5 + 0.5 * rand() / RAND_MAX - 0.25
+				);
+				buffer += 2;
+			}
+			else
+				*buffer++ = (UBYTE)floor(
+					(interp_read_resam_all(pokey_states + i, samp_pos) - MAX_SAMPLE / 2.0)
+					* (255.0 / MAX_SAMPLE / 4 * M_PI * 0.95)
+					+ 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25
+				);
+		}
+	}
 
-    do {
-        /* advance to the next sample position */
-        new_samp_pos = samp_pos + ticks_per_sample;
-        /* the next tick position is the integer part */
-        new_tick_pos = floor(new_samp_pos);
-        /* leave the loop if we went past the desired position */
-        if (new_tick_pos > last_tick) {
-                break;
-        }
-        for (i = 0; i<num_cur_pokeys; i++)
-        {
-            /* advance pokey to the new position and produce a sample */
-            advance_ticks(pokey_states + i, new_tick_pos - tick_pos);
-            if (snd_flags & POKEYSND_BIT16) ((SWORD *)buffer)[i] = (SWORD)floor((interp_read_resam_all(pokey_states + i, new_samp_pos - new_tick_pos) - MAX_SAMPLE / 2.0)
-             * (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
-            else buffer[i] = (UBYTE)floor((interp_read_resam_all(pokey_states + i, new_samp_pos - new_tick_pos) - MAX_SAMPLE / 2.0)
-             * (255.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
-        }
-        buffer += num_cur_pokeys*((snd_flags & POKEYSND_BIT16) ? 2 : 1 );
-        samp_pos = new_samp_pos;
-        tick_pos = new_tick_pos;
-    } while (1);
-    /* adjust the starting sample position in the buffer for next time */
-    start_sample = (buffer - (UBYTE *)MZPOKEYSND_process_buffer)/((snd_flags & POKEYSND_BIT16) ? 2 : 1);
-}
-
-int MZPOKEYSND_UpdateProcessBuffer(void)
-{
-    int result;
-    render_to_tick(ticks_per_frame);
-    samp_pos = samp_pos - (double)ticks_per_frame;
-    tick_pos = tick_pos - ticks_per_frame;
-    result = start_sample;
-    start_sample = 0;
-#if defined(PBI_XLD) || defined (VOICEBOX)
-    VOTRAXSND_Process(MZPOKEYSND_process_buffer,result);
-#endif
-#if !defined(__PLUS) && !defined(ASAP)
-    SndSave_WriteToSoundFile((const unsigned char *)MZPOKEYSND_process_buffer, result);
-#endif
-    return result;
+	POKEYSND_process_buffer_fill = buffer - POKEYSND_process_buffer;
+	if (num_ticks > 0) {
+		/* remaining ticks */
+		for (i = 0; i < num_cur_pokeys; ++i)
+			advance_ticks(pokey_states + i, num_ticks);
+	}
 }
 #endif /* SYNCHRONIZED_SOUND */
 
@@ -2549,18 +2499,14 @@ static void Update_serio_sound_mz( int out, UBYTE data )
 static void Update_consol_sound_mz( int set )
 {
 #ifdef SYNCHRONIZED_SOUND
-    if (!POKEYSND_console_sound_enabled) return;
-    if (set) { /* The set variable is 0 only in VOL_ONLY_SOUND routines */
-	Update_synchronized_sound();
-	pokey_states[0].speaker = GTIA_speaker*CONSOLE_VOL;
-	pokey_states[0].forcero = 1; /* first chip */
-    }
-#else /* SYNCHRONIZED_SOUND */
-#ifdef VOL_ONLY_SOUND
-  static int prev_atari_speaker=0;
-  static unsigned int prev_cpu_clock=0;
-  int d;
-        if (!POKEYSND_console_sound_enabled) return;
+	if (set) { /* The set variable is 0 only in VOL_ONLY_SOUND routines */
+		pokey_states[0].speaker = GTIA_speaker*CONSOLE_VOL;
+		pokey_states[0].forcero = 1; /* first chip */
+	}
+#elif defined(VOL_ONLY_SOUND)
+	static int prev_atari_speaker=0;
+	static unsigned int prev_cpu_clock=0;
+	int d;
 
 	if( !set && POKEYSND_samp_consol_val==0 )	return;
 	POKEYSND_sampbuf_lastval-=POKEYSND_samp_consol_val;
@@ -2593,8 +2539,7 @@ static void Update_consol_sound_mz( int set )
 		if( POKEYSND_sampbuf_rptr>=POKEYSND_SAMPBUF_MAX )
 			POKEYSND_sampbuf_rptr=0;
 	}
-#endif  /* VOL_ONLY_SOUND */
-#endif /* SYNCHRONIZED_SOUND */
+#endif  /* !SYNCHRONIZED_SOUND && VOL_ONLY_SOUND */
 }
 #endif
 

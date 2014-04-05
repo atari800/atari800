@@ -896,11 +896,13 @@ if [[ "$with_sound" != no ]]; then
               STEREO_SOUND,[Define to allow stereo sound.]
              )
 
-    A8_OPTION(volonlysound,yes,
-              [Use volume only sound (digitized sound effects) (default=ON)],
-              VOL_ONLY_SOUND,[Define to allow volume only sound.]
-             )
-    if [[ "$WANT_VOL_ONLY_SOUND" = "yes" ]]; then
+    if [[ "$WANT_SYNCHRONIZED_SOUND" != "yes" ]]; then
+        A8_OPTION(volonlysound,yes,
+                  [Use volume only sound (digitized sound effects) (default=ON)],
+                  VOL_ONLY_SOUND,[Define to allow volume only sound.]
+                 )
+    fi
+    if [[ "$WANT_SYNCHRONIZED_SOUND" = "yes" -o "$WANT_VOL_ONLY_SOUND" = "yes" ]]; then
         A8_OPTION(consolesound,yes,
                   [Use console sound (keyboard clicks) (default=ON)],
                   CONSOLE_SOUND,[Define to allow console sound (keyboard clicks).]

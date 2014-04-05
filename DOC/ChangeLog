@@ -1,3 +1,9 @@
+2014-04-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cfg.c, mxpokeysnd.[ch], pokeysnd.[ch], sound.c, ui.c, configure.ac: Moved the
+  SYNCHRONIZED_SOUND code made more generic and moved out of mzpokeysnd.c to
+  pokeysnd.c. Now synchronized sound is supported by both pokey sound engines.
+
+
 2014-03-03  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c, atari_basic.c, atari_curses.c, atari_falcon.c, atari_ps2.c,
   atari_x11.c, amiga/amiga.c, dos/atari_vga.c, sdl/main.c,

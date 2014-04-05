@@ -92,9 +92,9 @@ extern int POKEYSND_console_sound_enabled;
 extern int POKEYSND_bienias_fix;
 
 extern void (*POKEYSND_Process_ptr)(void *sndbuffer, int sndn);
-extern void (*POKEYSND_Update)(UWORD addr, UBYTE val, UBYTE /*chip*/, UBYTE gain);
+extern void (*POKEYSND_Update_ptr)(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain);
 extern void (*POKEYSND_UpdateSerio)(int out, UBYTE data);
-extern void (*POKEYSND_UpdateConsol)(int set);
+extern void (*POKEYSND_UpdateConsol_ptr)(int set);
 extern void (*POKEYSND_UpdateVolOnly)(void);
 
 int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
@@ -103,6 +103,8 @@ int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
                      , int clear_regs
 #endif
                      );
+void POKEYSND_Update(UWORD addr, UBYTE val, UBYTE /*chip*/, UBYTE gain);
+void POKEYSND_UpdateConsol(int set);
 void POKEYSND_Process(void *sndbuffer, int sndn);
 int POKEYSND_DoInit(void);
 void POKEYSND_SetMzQuality(int quality);
@@ -122,6 +124,14 @@ extern int	POKEYSND_sampout;			/* last out volume */
 extern int	POKEYSND_samp_freq;
 extern int	POKEYSND_samp_consol_val;		/* actual value of console sound */
 #endif  /* VOL_ONLY_SOUND */
+
+#ifdef SYNCHRONIZED_SOUND
+extern UBYTE *POKEYSND_process_buffer;
+extern unsigned int POKEYSND_process_buffer_length;
+extern unsigned int POKEYSND_process_buffer_fill;
+extern void (*POKEYSND_GenerateSync)(unsigned int num_ticks);
+int POKEYSND_UpdateProcessBuffer(void);
+#endif /* SYNCHRONIZED_SOUND */
 
 #ifdef __cplusplus
 }

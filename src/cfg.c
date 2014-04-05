@@ -2,7 +2,7 @@
  * cfg.c - Emulator Configuration
  *
  * Copyright (c) 1995-1998 David Firth
- * Copyright (c) 1998-2013 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -192,9 +192,7 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 
 			else if (strcmp(string, "ENABLE_NEW_POKEY") == 0) {
 #ifdef SOUND
-#ifndef SYNCHRONIZED_SOUND
 				POKEYSND_enable_new_pokey = Util_sscanbool(ptr);
-#endif /* SYNCHRONIZED_SOUND */
 #endif /* SOUND */
 			}
 			else if (strcmp(string, "STEREO_POKEY") == 0) {
@@ -409,9 +407,7 @@ int CFG_WriteConfig(void)
 #endif
 
 #ifdef SOUND
-#ifndef SYNCHRONIZED_SOUND
 	fprintf(fp, "ENABLE_NEW_POKEY=%d\n", POKEYSND_enable_new_pokey);
-#endif /* SYNCHRONIZED_SOUND */
 #ifdef STEREO_SOUND
 	fprintf(fp, "STEREO_POKEY=%d\n", POKEYSND_stereo_enabled);
 #endif

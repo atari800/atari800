@@ -3724,18 +3724,14 @@ static int SoundSettings(void)
 #ifdef STEREO_SOUND
 		UI_MENU_CHECK(5, "Dual POKEY (Stereo):"),
 #endif
-#ifndef SYNCHRONIZED_SOUND
 		UI_MENU_CHECK(6, "High Fidelity POKEY:"),
-#endif
 #ifdef CONSOLE_SOUND
 		UI_MENU_CHECK(7, "Speaker (Key Click):"),
 #endif
 #ifdef SERIO_SOUND
 		UI_MENU_CHECK(8, "Serial IO Sound:"),
 #endif
-#ifndef SYNCHRONIZED_SOUND
 		UI_MENU_ACTION(9, "Enable higher frequencies:"),
-#endif
 		UI_MENU_END
 	};
 
@@ -3768,18 +3764,14 @@ static int SoundSettings(void)
 		SetItemChecked(menu_array, 5, POKEYSND_stereo_enabled);
 #endif /* SOUND_THIN_API */
 #endif /* STEREO_SOUND */
-#ifndef SYNCHRONIZED_SOUND
 		SetItemChecked(menu_array, 6, POKEYSND_enable_new_pokey);
-#endif
 #ifdef CONSOLE_SOUND
 		SetItemChecked(menu_array, 7, POKEYSND_console_sound_enabled);
 #endif
 #ifdef SERIO_SOUND
 		SetItemChecked(menu_array, 8, POKEYSND_serio_sound_enabled);
 #endif
-#ifndef SYNCHRONIZED_SOUND
 		FindMenuItem(menu_array, 9)->suffix = POKEYSND_enable_new_pokey ? "N/A" : POKEYSND_bienias_fix ? "Yes" : "No ";
-#endif
 
 		option = UI_driver->fSelect("Sound Settings", 0, option, menu_array, NULL);
 		switch (option) {
@@ -3849,7 +3841,6 @@ static int SoundSettings(void)
 #endif /* SOUND_THIN_API */
 			break;
 #endif
-#ifndef SYNCHRONIZED_SOUND
 		case 6:
 			POKEYSND_enable_new_pokey = !POKEYSND_enable_new_pokey;
 			POKEYSND_DoInit();
@@ -3857,7 +3848,6 @@ static int SoundSettings(void)
 			   a cold-restart only */
 			UI_driver->fMessage("Will reboot to apply the change", 1);
 			return TRUE; /* reboot required */
-#endif
 #ifdef CONSOLE_SOUND
 		case 7:
 			POKEYSND_console_sound_enabled = !POKEYSND_console_sound_enabled;
@@ -3868,11 +3858,10 @@ static int SoundSettings(void)
 			POKEYSND_serio_sound_enabled = !POKEYSND_serio_sound_enabled;
 			break;
 #endif
-#ifndef SYNCHRONIZED_SOUND
 		case 9:
-			if (! POKEYSND_enable_new_pokey) POKEYSND_bienias_fix = !POKEYSND_bienias_fix;
+			if (!POKEYSND_enable_new_pokey)
+				POKEYSND_bienias_fix = !POKEYSND_bienias_fix;
 			break;
-#endif
 		default:
 #ifdef SOUND_THIN_API
 			if (!Sound_enabled)
