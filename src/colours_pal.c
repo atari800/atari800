@@ -1,7 +1,7 @@
 /*
  * colours_pal.c - Atari PAL colour palette generation and adjustment
  *
- * Copyright (C) 2009-2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2009-2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -50,7 +50,7 @@ COLOURS_EXTERNAL_t COLOURS_PAL_external = { "", FALSE, FALSE };
    COLOURS_PAL_external.adjust is false. */
 static void GetYUVFromExternal(double yuv_table[256*5])
 {
-	const double gamma = 1 - COLOURS_PAL_setup.gamma / 2.0;
+	double const gamma = 1 - COLOURS_PAL_setup.gamma / 2.0;
 	unsigned char *ext_ptr = COLOURS_PAL_external.palette;
 	int n;
 
@@ -191,11 +191,6 @@ static void GetYUVFromExternal(double yuv_table[256*5])
    shifted by 180 deg.
 */
 
-/* When phase shift between even and odd colorbursts is close to 180 deg, the
-   TV stops interpreting color signal. This value determines how close to 180
-   deg that phase shift must be. It is specific to a TV set. */
-#define COLOR_DISABLE_THRESHOLD 0.05
-
 /* Generates PAL palette into YUV_TABLE. */
 static void GetYUVFromGenerated(double yuv_table[256*5])
 {
@@ -208,7 +203,7 @@ static void GetYUVFromGenerated(double yuv_table[256*5])
 	static struct {
 		struct del_coeff even[15];
 		struct del_coeff odd[15];
-	} del_coeffs = {
+	} const del_coeffs = {
 		{ { 1, 5 }, /* Hue $1 in even lines */
 		  { 1, 6 }, /* Hue $2 in even lines */
 		  { 1, 7 },
@@ -241,7 +236,7 @@ static void GetYUVFromGenerated(double yuv_table[256*5])
 		  { 1, 2 },
 		  { 1, 1 } /* Hue $F in odd lines */
 		}
-};
+	};
 	int cr, lm;
 
 	double const scaled_black_level = (double)COLOURS_PAL_setup.black_level / 255.0f;
@@ -255,6 +250,10 @@ static void GetYUVFromGenerated(double yuv_table[256*5])
 		0.8260, 0.8470, 0.8700, 0.8930,
 		0.9160, 0.9420, 0.9690, 1.0000};
 
+	/* When phase shift between even and odd colorbursts is close to 180 deg, the
+	   TV stops interpreting color signal. This value determines how close to 180
+	   deg that phase shift must be. It is specific to a TV set. */
+	static double const color_disable_threshold = 0.05;
 	/* Base delay - 1/4.43MHz * base_del = ca. 95.2ns */
 	static double const base_del = 0.421894970414201;
 	/* Additional delay - 1/4.43MHz * add_del = ca. 100.7ns */
@@ -276,7 +275,7 @@ static void GetYUVFromGenerated(double yuv_table[256*5])
 	double burst_diff = even_burst_del - odd_burst_del;
 	burst_diff -= floor(burst_diff); /* Normalize to 0..1. */
 
-	if (burst_diff > 0.5 - COLOR_DISABLE_THRESHOLD && burst_diff < 0.5 + COLOR_DISABLE_THRESHOLD)
+	if (burst_diff > 0.5 - color_disable_threshold && burst_diff < 0.5 + color_disable_threshold)
 		/* Shift between colorbursts close to 180 deg. Don't produce color. */
 		saturation_mult = 0.0;
 	else {
@@ -285,8 +284,8 @@ static void GetYUVFromGenerated(double yuv_table[256*5])
 		   http://2000clicks.com/mathhelp/GeometryTrigEquivPhaseShift.aspx */
 		double subcarrier_amplitude = sqrt(2.0 * cos(burst_diff*2.0*M_PI) + 2.0);
 		/* Normalise saturation_mult by multiplying by sqrt(2), so that it
-		  equals 1.0 when odd & even colorbursts are shifted by 90 deg (ie.
-		  burst_diff == 0.25). */
+		   equals 1.0 when odd & even colorbursts are shifted by 90 deg (ie.
+		   burst_diff == 0.25). */
 		saturation_mult = sqrt(2.0) / subcarrier_amplitude;
 	}
 
@@ -315,7 +314,7 @@ static void GetYUVFromGenerated(double yuv_table[256*5])
 			y *= COLOURS_PAL_setup.contrast * 0.5 + 1;
 			y += COLOURS_PAL_setup.brightness * 0.5;
 			/* Scale the Y signal's range from 0..1 to
-			* scaled_black_level..scaled_white_level */
+			   scaled_black_level..scaled_white_level */
 			y = y * (scaled_white_level - scaled_black_level) + scaled_black_level;
 			/*
 			if (y < scaled_black_level)

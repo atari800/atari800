@@ -3,6 +3,8 @@
   SYNCHRONIZED_SOUND code made more generic and moved out of mzpokeysnd.c to
   pokeysnd.c. Now synchronized sound is supported by both pokey sound engines.
 
+* colours_pal.c: Minor formatting & constness fixes.
+
 
 2014-03-03  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c, atari_basic.c, atari_curses.c, atari_falcon.c, atari_ps2.c,
