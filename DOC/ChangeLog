@@ -1,3 +1,12 @@
+** 3.1.0 released on 2014-04-12
+
+2014-04-12  Petr Stehlik <pstehlik@sophics.cz>
+* DOC/ChangeLog, DOC/NEWS: updated for new release
+
+* README.1ST, atari800.spec, DOC/README, atari.h, atari800.man, configure.ac,
+  util/export: version++
+
+
 2014-04-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cfg.c, mxpokeysnd.[ch], pokeysnd.[ch], sound.c, ui.c, configure.ac: Moved the
   SYNCHRONIZED_SOUND code made more generic and moved out of mzpokeysnd.c to
@@ -140,9 +149,11 @@
 2013-05-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/INSTALL: Update NestedVM build manual - it doesn't build with
   --enable-ide.
+
 * javanvm/atari_javanvm.c: Fix overflow of dsp_buffer - could happen on some
   systems where JAVANVM_SoundAvailable sometimes returns value larger than
   2*line_buffer_size.
+
 * DOC/INSTALL, configure.ac, Makefile.in, javanvm/atari_javanvm.[ch],
   javanvm/input.[ch], javanvm/javanvm.h, javanvm/main.c, javanvm/sound.c,
   javanvm/video.[ch]: Code cleanup - split atari_javanvm.c to separate modules

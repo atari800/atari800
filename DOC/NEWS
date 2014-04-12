@@ -1,3 +1,39 @@
+Version 3.1.0 (2014/04/12) - release cooked at Atariada.cz
+
+  Highlight of this release: Raspberry Pi port by Andrey Dj
+
+  Hidden easter egg: on-screen keyboard in SDL by Christian Groessler
+
+  All the following work has been done by Tomasz Krasuski:
+
+ General new features:
+ ---------------------
+  * More accurate emulation of PAL colours (based on analysis of oscillograms
+    of real PAL GTIA output)
+
+  * Improved PAL blending, working on all grayscale pixels and is accurate now
+    (can be enabled/disabled in "TV effect" display settings)
+
+  * common sound layer implemented (SDL, JavaNVM, OSS, DOS) with synchro sound.
+
+  * synchronized sound is now supported by both POKEY sound engines.
+
+  * turbo mode (F12) is considerably faster
+
+  * Added cartridge mapping used by "Turbo Hit"/"Atari Blizzard Hit".
+  * Added MegaMax 2 MB cartridge mapping.
+  * Added read-only support for the 4 MB Flash MegaCart mapping.
+  * Added minimal support for The!Cart.
+
+ General Fixes:
+ --------------
+  * fixed possible unnecessary cartridge bank switching
+  * fixes and clean up in Java port 
+  * fixed diagnostic cartridge cold start (doesn't send Start+Option)
+  * fixed two old bugs in DOS sound (pitch being wrong and sound missing)
+  * fixed keyboard not working for ncurses video and OSS sound
+
+
 Version 3.0.0 (2013/03/03)
 
  New features:
