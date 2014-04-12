@@ -1,4 +1,4 @@
-.TH ATARI800 1 "2013-03-03" "Atari800 3.0.0"
+.TH ATARI800 1 "2014-04-12" "Atari800 3.1.0"
 
 .SH NAME
 atari800 \- emulator of Atari 8-bit computers and the 5200 console

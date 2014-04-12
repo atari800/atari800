@@ -1,4 +1,4 @@
-  Free and portable Atari 800 Emulator for everybody, Version 3.0.0
+  Free and portable Atari 800 Emulator for everybody, Version 3.1.0
   -----------------------------------------------------------------
 
     Copyright (C) 1995 David Firth. E-Mail: david@signus.demon.co.uk
@@ -29,6 +29,7 @@ It can be configured to run in the following ways :-
 	10. Sega Dreamcast
 	11. JVM (Java applet)
 	12. Android
+	13. Raspberry Pi
 
 The "simple" version is only useful for running programs such as MAC65,
 Atari BASIC etc. I have had this version running on Linux,
