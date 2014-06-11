@@ -91,21 +91,26 @@ static int joystick1_nbuttons;
 
 /* keyboard */
 static Uint8 *kbhits;
+
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 static int SDL_controller_kb(void);
+static int SDL_consol_keys(void);
 int OSK_enabled = 1;
-#define OSK_MAX_BUTTONS 16
-#define OSK_BUTTON_TRIGGER 0
-#define OSK_BUTTON_LEAVE 1
-#define OSK_BUTTON_UI 4
-#define OSK_BUTTON_KEYB 5
+#define OSK_MAX_BUTTONS 6
 #define OSK_BUTTON_0 0
 #define OSK_BUTTON_1 1
 #define OSK_BUTTON_2 2
 #define OSK_BUTTON_3 3
 #define OSK_BUTTON_4 4
 #define OSK_BUTTON_5 5
-#endif
+#define OSK_BUTTON_TRIGGER OSK_BUTTON_0
+#define OSK_BUTTON_LEAVE   OSK_BUTTON_1      /* button to exit emulator UI or keyboard emulation screen */
+#define OSK_BUTTON_UI      OSK_BUTTON_4      /* button to enter emulator UI */
+#define OSK_BUTTON_KEYB    OSK_BUTTON_5      /* button to enter keyboard emulation screen */
+#define OSK_BUTTON_START   OSK_BUTTON_LEAVE
+#define OSK_BUTTON_SELECT  OSK_BUTTON_2
+#define OSK_BUTTON_OPTION  OSK_BUTTON_3
+#endif /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
 
 
 /* For better handling of the PLATFORM_Configure-recognition...
@@ -375,12 +380,14 @@ int PLATFORM_Keyboard(void)
 #endif /* HAVE_WINDOWS_H */
 		}
 	}
-	else if (!key_pressed)
+	else if (!key_pressed) {
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+		SDL_consol_keys();
 		return SDL_controller_kb();
 #else
 		return AKEY_NONE;
 #endif
+	}
 
 	UI_alt_function = -1;
 	if (kbhits[SDLK_LALT]) {
@@ -603,11 +610,11 @@ int PLATFORM_Keyboard(void)
 	/* OPTION / SELECT / START keys */
 	INPUT_key_consol = INPUT_CONSOL_NONE;
 	if (kbhits[SDLK_F2])
-		INPUT_key_consol &= (~INPUT_CONSOL_OPTION);
+		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
 	if (kbhits[SDLK_F3])
-		INPUT_key_consol &= (~INPUT_CONSOL_SELECT);
+		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
 	if (kbhits[SDLK_F4])
-		INPUT_key_consol &= (~INPUT_CONSOL_START);
+		INPUT_key_consol &= ~INPUT_CONSOL_START;
 
 	if (key_pressed == 0)
 		return AKEY_NONE;
@@ -1527,16 +1534,16 @@ int PLATFORM_TRIG(int num)
 
 int UI_BASIC_in_kbui;
 
-static int b_ui_leave;
+static int ui_leave_in_progress;   /* was 'b_ui_leave' */
 
 /*
  * do some basic keyboard emulation using the joystick controller
  */
 static int SDL_controller_kb1(void)
 {
-	static int prev_up = FALSE, prev_down = FALSE, prev_a = FALSE,
-		prev_r = FALSE, prev_left = FALSE, prev_right = FALSE,
-		prev_b = FALSE, prev_l = FALSE;
+	static int prev_up = FALSE, prev_down = FALSE, prev_trigger = FALSE,
+		prev_keyb = FALSE, prev_left = FALSE, prev_right = FALSE,
+		prev_leave = FALSE, prev_ui = FALSE;
 	static int repdelay = REPEAT_DELAY;
 	struct js_state *state = &sdl_js_state[0];
 
@@ -1648,44 +1655,44 @@ static int SDL_controller_kb1(void)
 
 
 		if ((state->trig & (1 << OSK_BUTTON_TRIGGER))) {
-			if (! prev_a) {
-				prev_a = TRUE;
+			if (! prev_trigger) {
+				prev_trigger = TRUE;
 				return(AKEY_RETURN);
 			}
 		}
 		else {
-			prev_a = FALSE;
+			prev_trigger = FALSE;
 		}
 
 		if ((state->trig & (1 << OSK_BUTTON_LEAVE))) {
-			if (! prev_b) {
-				prev_b = TRUE;
-				b_ui_leave = TRUE;   /* B must be released again */
+			if (! prev_leave) {
+				prev_leave = TRUE;
+				ui_leave_in_progress = TRUE;   /* OSK_BUTTON_LEAVE must be released again */
 				return(AKEY_ESCAPE);
 			}
 		}
 		else {
-			prev_b = FALSE;
+			prev_leave = FALSE;
 		}
 
 		if ((state->trig & (1 << OSK_BUTTON_UI))) {
-			if (! prev_l && UI_BASIC_in_kbui) {
-				prev_l = TRUE;
+			if (! prev_ui && UI_BASIC_in_kbui) {
+				prev_ui = TRUE;
 				return(AKEY_ESCAPE);
 			}
 		}
 		else {
-			prev_l = FALSE;
+			prev_ui = FALSE;
 		}
 
 		if ((state->trig & (1 << OSK_BUTTON_KEYB))) {
-			if (! prev_r) {
-				prev_r = TRUE;
+			if (! prev_keyb) {
+				prev_keyb = TRUE;
 				return(AKEY_ESCAPE);
 			}
 		}
 		else {
-			prev_r = FALSE;
+			prev_keyb = FALSE;
 		}
 	}
 	return(AKEY_NONE);
@@ -1694,8 +1701,49 @@ static int SDL_controller_kb1(void)
 static int SDL_controller_kb(void)
 {
 	int key = SDL_controller_kb1();
+#ifdef DEBUG
 	if (key != AKEY_NONE) printf("SDL_controller_kb: key = 0x%x\n", key);
+#endif
 	return key;
+}
+
+static int SDL_consol_keys(void)
+{
+	struct js_state *state = &sdl_js_state[0];
+
+	INPUT_key_consol = INPUT_CONSOL_NONE;
+
+#if OSK_BUTTON_START != OSK_BUTTON_LEAVE
+#error FIXME: make button assignments configurable
+#endif
+	if (Atari800_machine_type != Atari800_MACHINE_5200) {
+		if (! (UI_is_active || UI_BASIC_in_kbui)) {
+			if ((state->trig & (1 << OSK_BUTTON_START))) {
+				if (! ui_leave_in_progress)
+					INPUT_key_consol &= ~INPUT_CONSOL_START;
+				else
+					INPUT_key_consol |= INPUT_CONSOL_START;
+			}
+			else {
+				ui_leave_in_progress = FALSE;
+				INPUT_key_consol |= INPUT_CONSOL_START;
+			}
+
+			if ((state->trig & (1 << OSK_BUTTON_SELECT)))
+				INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
+			else
+				INPUT_key_consol |= INPUT_CONSOL_SELECT;
+
+			if ((state->trig & (1 << OSK_BUTTON_OPTION)))
+				INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
+			else
+				INPUT_key_consol |= INPUT_CONSOL_OPTION;
+		}
+	}
+	else {
+		/* @@@ 5200: TODO @@@ */
+	}
+	return(AKEY_NONE);
 }
 
 #endif /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
