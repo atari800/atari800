@@ -796,7 +796,7 @@ static int insert_rom(const char *filename)
 	/* TODO: select cartridge type */
 	for (i = 1; i < CARTRIDGE_LAST_SUPPORTED; i++) {
 		if (CARTRIDGE_kb[i] == r) {
-			CARTRIDGE_type = i;
+			CARTRIDGE_main.type = i;
 			Atari800_Coldstart();
 			return TRUE;
 		}
@@ -1002,14 +1002,9 @@ static void coldstart_sys(int machtype, int ram, const char *errmsg)
 	}
 }
 
-static void coldstart_osa_callback(void)
+static void coldstart_800_callback(void)
 {
-	coldstart_sys(Atari800_MACHINE_OSA, 48, "Sorry, OS/A ROM Unavailable");
-}
-
-static void coldstart_osb_callback(void)
-{
-	coldstart_sys(Atari800_MACHINE_OSB, 48, "Sorry, OS/B ROM Unavailable");
+	coldstart_sys(Atari800_MACHINE_800, 48, "Sorry, 800 ROM Unavailable");
 }
 
 static void coldstart_xl_callback(void)
@@ -1194,7 +1189,7 @@ static void motif_boot_disk(Widget fs, XtPointer client_data,
 
 static void motif_select_disk(Widget toggle, XtPointer client_data, XtPointer cbs)
 {
-	motif_disk_sel = (int) client_data;
+	motif_disk_sel = (int)(long) client_data;
 }
 
 static void motif_insert_disk(Widget fs, XtPointer client_data, XtPointer cbs)
@@ -1236,12 +1231,12 @@ static void motif_fs_cancel(Widget fs, XtPointer client_data, XtPointer call_dat
 
 static void motif_eject_cback(Widget button, XtPointer client_data, XtPointer cbs)
 {
-	SIO_Dismount(((int) client_data) + 1);
+	SIO_Dismount(((int)(long) client_data) + 1);
 }
 
 static void motif_disable_cback(Widget button, XtPointer client_data, XtPointer cbs)
 {
-	SIO_DisableDrive(((int) client_data) + 1);
+	SIO_DisableDrive(((int)(long) client_data) + 1);
 }
 
 static void update_fsel(Widget fsel)
@@ -1258,7 +1253,7 @@ static void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 	int status;
 	char *errmsg = NULL;
 
-	switch ((int) item_no) {
+	switch ((int)(long) item_no) {
 	case 0:
 		update_fsel(fsel_b);
 		XtManageChild(fsel_b);
@@ -1289,41 +1284,34 @@ static void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 		Atari800_Coldstart();
 		break;
 	case 6:
-		Atari800_machine_type = Atari800_MACHINE_OSA;
+		Atari800_machine_type = Atari800_MACHINE_800;
 		MEMORY_ram_size = 48;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
-			errmsg = "Sorry, OS/A ROM Unavailable";
+			errmsg = "Sorry, 800 ROM Unavailable";
 		break;
 	case 7:
-		Atari800_machine_type = Atari800_MACHINE_OSB;
-		MEMORY_ram_size = 48;
-		status = Atari800_InitialiseMachine();
-		if (status == 0)
-			errmsg = "Sorry, OS/B ROM Unavailable";
-		break;
-	case 8:
 		Atari800_machine_type = Atari800_MACHINE_XLXE;
 		MEMORY_ram_size = 64;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, XL/XE ROM Unavailable";
 		break;
-	case 9:
+	case 8:
 		Atari800_machine_type = Atari800_MACHINE_XLXE;
 		MEMORY_ram_size = 128;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, XL/XE ROM Unavailable";
 		break;
-	case 10:
+	case 9:
 		Atari800_machine_type = Atari800_MACHINE_5200;
 		MEMORY_ram_size = 16;
 		status = Atari800_InitialiseMachine();
 		if (status == 0)
 			errmsg = "Sorry, 5200 ROM Unavailable";
 		break;
-	case 11:
+	case 10:
 		Atari800_Exit(FALSE);
 		exit(0);
 	}
@@ -1354,7 +1342,7 @@ static void motif_system_cback(Widget w, XtPointer item_no, XtPointer cbs)
 
 static void motif_consol_cback(Widget w, XtPointer item_no, XtPointer cbs)
 {
-	switch ((int) item_no) {
+	switch ((int)(long) item_no) {
 	case 0:
 		menu_consol &= (~INPUT_CONSOL_OPTION);
 		break;
@@ -1418,7 +1406,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
-		
+
 		if (strcmp(argv[i], "-small") == 0)
 			windowsize = Small;
 		else if (strcmp(argv[i], "-large") == 0)
@@ -1452,7 +1440,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 				keypad_mode = mode++;
 		}
 		else {
-			if (strcmp(argv[i], "-help") == 0) {
+			if (strcmp(argv[i], "-help") == 0 || a_m) {
 				help_only = TRUE;
 				printf("\t-small           Small window (%dx%d)\n",
 					   clipping_width, clipping_height);
@@ -1468,10 +1456,14 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 				printf("\t-private_cmap    Use private colormap\n");
 				printf("\t-sio             Show SIO monitor\n");
 				printf("\t-keypad          Keypad mode\n");
+				break;
 			}
 			argv[j++] = argv[i];
 		}
 	}
+
+	if (help_only)
+		return TRUE;
 
 	*argc = j;
 
@@ -1479,9 +1471,6 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	if (!Sound_Initialise(argc, argv))
 		return FALSE;
 #endif
-
-	if (help_only)
-		return TRUE;
 
 	if ((clipping_x < 0) || (clipping_x >= Screen_WIDTH))
 		clipping_x = 0;
@@ -1597,12 +1586,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 							MENU_NOTIFY_PROC, remove_rom_callback,
 							NULL,
 							MENU_ITEM,
-							MENU_STRING, "Atari 800 OS/A",
-							MENU_NOTIFY_PROC, coldstart_osa_callback,
-							NULL,
-							MENU_ITEM,
-							MENU_STRING, "Atari 800 OS/B",
-							MENU_NOTIFY_PROC, coldstart_osb_callback,
+							MENU_STRING, "Atari 800",
+							MENU_NOTIFY_PROC, coldstart_800_callback,
 							NULL,
 							MENU_ITEM,
 							MENU_STRING, "Atari 800XL",
@@ -1849,8 +1834,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		XmString s_disable_drive;
 		XmString s_insert_cart;
 		XmString s_remove_cart;
-		XmString s_osa;
-		XmString s_osb;
+		XmString s_os800;
 		XmString s_osxl;
 		XmString s_osxe;
 		XmString s_os5200;
@@ -1885,8 +1869,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		s_disable_drive = XmStringCreateSimple("Disable Drive");
 		s_insert_cart = XmStringCreateSimple("Insert Cartridge...");
 		s_remove_cart = XmStringCreateSimple("Remove Cartridge");
-		s_osa = XmStringCreateSimple("Atari 800 OS/A");
-		s_osb = XmStringCreateSimple("Atari 800 OS/B");
+		s_os800 = XmStringCreateSimple("Atari 800");
 		s_osxl = XmStringCreateSimple("Atari 800XL");
 		s_osxe = XmStringCreateSimple("Atari 130XE");
 		s_os5200 = XmStringCreateSimple("Atari 5200");
@@ -1914,8 +1897,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 						  XmVaPUSHBUTTON, s_insert_cart, 'n', NULL, NULL,
 						  XmVaPUSHBUTTON, s_remove_cart, 'R', NULL, NULL,
 										 XmVaSEPARATOR,
-								  XmVaPUSHBUTTON, s_osa, 'A', NULL, NULL,
-								  XmVaPUSHBUTTON, s_osb, 'B', NULL, NULL,
+								  XmVaPUSHBUTTON, s_os800, '8', NULL, NULL,
 								 XmVaPUSHBUTTON, s_osxl, 'L', NULL, NULL,
 								 XmVaPUSHBUTTON, s_osxe, 'E', NULL, NULL,
 							   XmVaPUSHBUTTON, s_os5200, '5', NULL, NULL,
@@ -1939,8 +1921,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		XmStringFree(s_disable_drive);
 		XmStringFree(s_insert_cart);
 		XmStringFree(s_remove_cart);
-		XmStringFree(s_osa);
-		XmStringFree(s_osb);
+		XmStringFree(s_os800);
 		XmStringFree(s_osxl);
 		XmStringFree(s_osxe);
 		XmStringFree(s_os5200);
@@ -2243,6 +2224,11 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		status = XAllocColor(display,
 							 cmap,
 							 &colour);
+
+		if (! status) {
+			printf("Could not allocate color\n");
+			exit(1);
+		}
 
 		for (j = 0; j < colorstep; j++)
 			colours[i + j] = colour.pixel;
