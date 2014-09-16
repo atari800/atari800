@@ -25,6 +25,8 @@
 package name.nick.jubanka.colleen;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.IOException;
 
 import android.preference.PreferenceActivity;
 import android.os.Bundle;
@@ -40,6 +42,8 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.preference.EditTextPreference;
 import android.widget.Toast;
+import android.content.res.Resources;
+import android.preference.CheckBoxPreference;
 
 
 public final class Preferences extends PreferenceActivity implements Preference.OnPreferenceChangeListener
@@ -47,6 +51,7 @@ public final class Preferences extends PreferenceActivity implements Preference.
 	private static final String TAG = "Preferences";
 	private static final String[] PREF_KEYS = { "up", "down", "left", "right", "fire",
 												"actiona", "actionb", "actionc" };
+	private static final String PD_RESNAME = "pd2012";
 	private static final int ACTIVITY_FSEL_ROMPATH = 1;
 	private static final int ACTIVITY_FSEL_STATEPATH = 2;
 	private static final int DLG_ABOUT = 1;
@@ -112,8 +117,42 @@ public final class Preferences extends PreferenceActivity implements Preference.
 
 		if (_sp.getString("statepath", null) != null)
 			enableStateSave();
-
 		findPreference("savestate").setOnPreferenceChangeListener(this);
+
+		Preference p = findPreference("launchpd");
+		if (p != null) {
+			p.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference p) {
+					Resources res = Preferences.this.getResources();
+					int id = res.getIdentifier(PD_RESNAME, "raw", Preferences.this.getPackageName());
+					if (id != 0) {
+						InputStream is = res.openRawResource(id);
+						byte pddata[];
+						try {
+							pddata = new byte[is.available()];
+							is.read(pddata);
+							is.close();
+						} catch (IOException e) { 
+							Log.d(TAG, "IO exception while reading resouce");
+							return true;
+						}
+						if (! NativeBootPD(pddata, pddata.length))
+							Toast.makeText(Preferences.this, R.string.pdbooterror, Toast.LENGTH_LONG).show();
+						else {
+							((CheckBoxPreference) Preferences.this.findPreference("plandef")).setChecked(true);
+							Toast.makeText(Preferences.this, R.string.pdreminder, Toast.LENGTH_LONG).show();
+							Preferences.this.finish();
+						}
+					} else {
+						Log.d(TAG, "PD2012 resource not found");
+					}
+					return true;
+				}
+			});
+			if (getResources().getIdentifier(PD_RESNAME, "raw", getPackageName()) == 0)
+				p.setEnabled(false);
+		}
 	}
 
 	private void enableStateSave() {
@@ -245,4 +284,5 @@ public final class Preferences extends PreferenceActivity implements Preference.
 
 
 	private native boolean NativeSaveState(String fname);
+	private native boolean NativeBootPD(byte data[], int len);
 }

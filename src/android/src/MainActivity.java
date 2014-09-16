@@ -200,6 +200,7 @@ public final class MainActivity extends Activity
 		_pkgversion = getPInfo().versionName;
 
 		if (!_initialized) {
+			_settings.putBoolean("plandef", false);
 			_settings.fetchApplySettings();
 			_initialized = true;
 			bootupMsgs();
@@ -786,6 +787,13 @@ public final class MainActivity extends Activity
 			_values.put(PreferenceName.valueOf(key), val);
 			SharedPreferences.Editor e = _sharedprefs.edit();
 			e.putString(key, val);
+			e.commit();
+		}
+
+		public void putBoolean(String key, boolean val) {
+			_values.put(PreferenceName.valueOf(key), Boolean.toString(val));
+			SharedPreferences.Editor e = _sharedprefs.edit();
+			e.putBoolean(key, val);
 			e.commit();
 		}
 

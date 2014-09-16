@@ -44,6 +44,8 @@
 #include "graphics.h"
 #include "androidinput.h"
 
+#define PD2012_FNAME "PD2012.com"
+
 /* exports/imports */
 int *ovl_texpix;
 int ovl_texw;
@@ -58,6 +60,7 @@ struct audiothread {
 static pthread_key_t audiothread_data;
 
 static char devb_url[512];
+
 
 static void JNICALL NativeGetOverlays(JNIEnv *env, jobject this)
 {
@@ -289,7 +292,7 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 			}
 		(*env)->SetObjectField(env, this, fid, arr);
 		ret = -2;
-	} else if (r == 0) {
+	} else if (r == AFILE_ERROR) {
 		Log_print("Cannot start image: %s", img_utf);
 		ret = -1;
 	} else
@@ -528,6 +531,16 @@ static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjo
 	}
 }
 
+static void config_PD(void)
+{
+	INPUT_mouse_mode = INPUT_MOUSE_PAD;
+	Android_Splitpct = 1.0f;
+	AndroidInput_JoyOvl.ovl_visible = FALSE;
+	Android_PlanetaryDefense = TRUE;
+	Android_Paddle = TRUE;
+	Android_ReversePddle = 3;
+}
+
 static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
 								  jboolean righth, int deadband, jboolean midx, int anchor, int anchorx,
 								  int anchory, int grace, jboolean paddle, jboolean plandef)
@@ -548,14 +561,8 @@ static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, i
 	INPUT_mouse_mode = paddle ? INPUT_MOUSE_PAD : INPUT_MOUSE_OFF;
 	Android_PlanetaryDefense = FALSE;
 	Android_ReversePddle = 0;
-	if (plandef) {
-		INPUT_mouse_mode = INPUT_MOUSE_PAD;
-		Android_Splitpct = 1.0f;
-		AndroidInput_JoyOvl.ovl_visible = FALSE;
-		Android_PlanetaryDefense = TRUE;
-		Android_Paddle = TRUE;
-		Android_ReversePddle = 3;
-	}
+	if (plandef)
+		config_PD();
 
 	Android_SplitCalc();
 	Joyovl_Scale();
@@ -575,7 +582,9 @@ static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path
 
 	utf = (*env)->GetStringUTFChars(env, path, NULL);
 	SYSROM_FindInDir(utf, FALSE);
+    Log_print("sysrom %s %d", utf, SYSROM_FindInDir(utf, FALSE));
 	ret |= chdir(utf);
+    Log_print("sysrom %s %d", utf, SYSROM_FindInDir(utf, FALSE));
 	ret |= Atari800_InitialiseMachine();
 	(*env)->ReleaseStringUTFChars(env, path, utf);
 
@@ -593,6 +602,28 @@ static jstring JNICALL NativeGetURL(JNIEnv *env, jobject this)
 {
 	return (*env)->NewStringUTF(env, dev_b_status.url);
 }
+
+static jboolean JNICALL NativeBootPD(JNIEnv *env, jobject this, jobjectArray img, jint sz)
+{
+	FILE *fp;
+	void *src;
+
+	fp = fopen(PD2012_FNAME, "wb");
+	if (!fp) {
+		Log_print("ERROR: Cannot open PD2012 for write");
+		return FALSE;
+	}
+	src = (*env)->GetByteArrayElements(env, img, NULL);
+	fwrite(src, 1, sz, fp);
+	fclose(fp);
+	(*env)->ReleaseByteArrayElements(env, img, src, JNI_ABORT);
+
+	config_PD();
+	NativeUnmountAll(env, this);
+	CARTRIDGE_Remove();
+	return AFILE_OpenFile(PD2012_FNAME, TRUE, 1, FALSE);
+}
+
 
 jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
@@ -634,6 +665,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	};
 	JNINativeMethod pref_methods[] = {
 		{ "NativeSaveState",		"(Ljava/lang/String;)Z",			NativeSaveState		  },
+		{ "NativeBootPD",			"([BI)Z",							NativeBootPD		  },
 	};
 	JNIEnv *env;
 	jclass cls;

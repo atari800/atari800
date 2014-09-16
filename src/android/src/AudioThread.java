@@ -116,6 +116,7 @@ public final class AudioThread extends Thread
 
 		NativeSoundExit();
 		_at.stop();
+		_at.release();
 	}
 
 	public void interrupt() {

@@ -39,10 +39,12 @@ import android.app.Dialog;
 import android.app.AlertDialog;
 import android.util.SparseArray;
 import android.widget.TextView;
-import android.widget.EditText;
 import android.R.style;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.BaseInputConnection;
+import android.view.inputmethod.EditorInfo;
 import static android.view.KeyEvent.*;
 import static name.nick.jubanka.colleen.A800view.*;
 
@@ -108,7 +110,7 @@ public final class KeymapPreference extends DialogPreference
 		return v;
 	}
 
-	private final class SnoopTextView extends EditText
+	private final class SnoopTextView extends TextView
 	{
 		public SnoopTextView(Context c) {
 			super(c);
@@ -121,6 +123,16 @@ public final class KeymapPreference extends DialogPreference
 			setFocusable(true);
 			setFocusableInTouchMode(true);
 			requestFocus();
+		}
+
+		@Override
+		public boolean onCheckIsTextEditor() {
+			return true;
+		}
+		
+		@Override
+		public InputConnection onCreateInputConnection (EditorInfo outAttrs) {
+			return new BaseInputConnection(this, false);
 		}
 
 		@Override

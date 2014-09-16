@@ -289,6 +289,13 @@
 			android:dependency="sound"/>
 	</PreferenceCategory>
 
+	<PreferenceCategory android:title="@string/preftitle_extras">
+		<Preference
+			android:key="launchpd"
+			android:title="@string/pref_launchpd"
+			android:summary="@string/pref_launchpd_sum"/>
+	</PreferenceCategory>
+
 	<PreferenceCategory android:title="@string/preftitle_about">
 		<Preference
 			android:key="about"

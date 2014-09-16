@@ -41,9 +41,10 @@
 							   \nJust a few tips to get you going:
 							   \n1) Left hand joystick, right hand trigger (or search button).
 							   \n2) Tap the top-right corner for console keys.
-							   \n3) Long-press in the file selector to insert an image and not boot it.
-							   \n4) Use the WiiController or the keyboard for accuracy.
-							   \n5) Hit \'Menu\' for preferences and more.\n
+							   \n3) On Honeycomb (3.0)+ devices, tap near the screen\'s top for menu.
+							   \n4) On earlier devices, hit \'Menu\' for preferences and more.
+							   \n5) Long-press in the file selector to insert an image and not boot it.
+							   \n6) Use the WiiController or the keyboard for accuracy.\n
 							   \nFirst though, setup the Atari ROM path in the next dialog.\n
 							   \nHave fun! </string>
     <string name="pathsetup">Atari ROM Path</string>
@@ -120,6 +121,18 @@
 							<br><b>*</b> Several bug fixes and improvements
 							<br><br>Thank you for your continued support and bug/feature reports :-)
 							]]></string>
+	<string name="changesv2_0"><![CDATA[
+							<i>Changes for version 2.0:</i><br>
+							<br><b>*</b> Free game included: Planetary Defense 2012. Find it in the Preferences.
+							<br><b>*</b> UI overhaul for Honeycomb+ devices
+							<br><b>*</b> When aspect correction is portrait, make room for the soft keyboard
+							<br><b>*</b> Bugfix: Crashes while loading ROMs
+							<br><b>*</b> Bugfix: Won\'t load OSB ROMs
+							<br><b>*</b> Bugfix: Crashes in keyboard-joystick remapping
+							<br><b>*</b> Warning: State saves from previous version are incompatible (sorry)
+							<br><b>*</b> Numerous bug fixes and improvements
+							<br><br>Thank you for your continued support and bug/feature reports
+							]]></string>
 	<string name="atariupdate">Colleen Update</string>
 	<string name="confirmurl">The current Atari program is requesting browser access to the
 							  following URL:\n%s\nAllow access?</string>
@@ -128,6 +141,9 @@
 								 top-right for console keys</string>
 	<string name="noactionbarhelptoast">Touch top-right for console keys</string>
 	<string name="selectcarttype">Select cartridge type</string>
+	<string name="pdbooterror">Cannot prepare Planetary Defense 2012 for boot :-(</string>
+	<string name="pdreminder">Reminder: \"Touchscreen Mode\" enabled. Please remember to uncheck
+							  the \"Touchscreen Mode\" preference when done playing</string>
 
 	<!-- Preferences -->
 	<string name="preftitle_graphics">Graphics</string>
@@ -135,6 +151,7 @@
 	<string name="preftitle_input">Input</string>
 	<string name="preftitle_sound">Sound</string>
 	<string name="preftitle_about">About</string>
+	<string name="preftitle_extras">Extras</string>
     <string name="pref_aspect">Aspect</string>
     <string name="pref_aspect_sum">Maintain aspect for scaling the screen</string>
     <string name="asp_portrait">Portrait</string>
@@ -254,7 +271,9 @@
 	<string name="pref_statepath">State Save Path</string>
 	<string name="pref_statepath_sum">Where atari states will be saved</string>
 	<string name="pref_plandef">Touchscreen Mode</string>
-	<string name="pref_plandef_sum">Play Planetary Defense!</string>
+	<string name="pref_plandef_sum">A Koala Pad-like input mode for games like Planetary Defense</string>
 	<string name="pref_browser">Allow Web Browser</string>
 	<string name="pref_browser_sum">Provide the B: device to the emulated Atari</string>
+	<string name="pref_launchpd">Planetary Defense 2012</string>
+	<string name="pref_launchpd_sum">A game revamped for touchscreen and Colleen by Tom Hudson</string>
 </resources>
