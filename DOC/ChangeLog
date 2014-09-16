@@ -1,3 +1,13 @@
+2014-09-16  Kostas Nakos  <knakos@gmail.com>
+* atari.c: Skip ROM file search as some android builds go in infinite loop
+  due to buggy platform implementation.
+
+* configure.ac: Updated to newer android toolchain.
+
+* android/*: Support for built-in Planetary Defense 2012 (courtesy and thanks
+  to Tom Hudson, miscellaneous fixes, update to newer android toolchain.
+
+
 ** 3.1.0 released on 2014-04-12
 
 2014-04-12  Petr Stehlik <pstehlik@sophics.cz>
