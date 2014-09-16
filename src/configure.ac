@@ -83,7 +83,10 @@ case $host_os in
         ;;
     mingw32*)
         a8_host="win"
-        AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
+        if [[ "$a8_target" != "android" ]]; then
+            dnl Android target uses normal slashes
+            AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
+        fi
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         ;;
     msdosdjgpp)
@@ -141,10 +144,10 @@ if [[ "$a8_target" = "rpi" ]]; then
     LDFLAGS="$LDFLAGS -Wl,--unresolved-symbols=ignore-in-shared-libs -L${RPI_SDK}/lib"
 fi
 if [[ "$a8_target" = "android" ]]; then
-	CC="arm-eabi-gcc"
-	CPP="arm-eabi-cpp"
+	CC="arm-linux-androideabi-gcc"
+	CPP="arm-linux-androideabi-cpp"
 	AC_NO_EXECUTABLES
-	CPPFLAGS="$CPPFLAGS -I$ANDROID_NDK_ROOT/build/platforms/android-8/arch-arm/usr/include"
+	CPPFLAGS="$CPPFLAGS -I$ANDROID_NDK_ROOT/platforms/android-4/arch-arm/usr/include/"
 	WANT_IDE=no
 	with_readline=no
 	WANT_EVENT_RECORDING=no
@@ -191,26 +194,29 @@ dnl Don't make this a windowed app, make it a console app.
 ])
 
 dnl Check if host os Java NestedVM...
-AC_MSG_CHECKING([whether host is Java NestedVM])
-AC_LINK_IFELSE(
-	[AC_LANG_PROGRAM(
-		[[extern int _call_java(int a, int b, int c, int d);]],
-		[[_call_java(0, 0, 0, 0);]]
-	)],
-	[
-		a8_host=javanvm
-		EXEEXT=".mips"
-		enable_unalignedwords=no
-		if [[ "$build_os" = "cygwin" ]]; then
-			JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
-			JAVACFLAGS="-source 1.4 -classpath '""`cygpath -wp $CLASSPATH`'"
-		fi
-		AC_MSG_RESULT(yes)
-	],
-	[
-		AC_MSG_RESULT(no)
-	]
-)
+if [[ "$a8_target" != "android" ]]; then
+    dnl Android target cannot perform link tests
+    AC_MSG_CHECKING([whether host is Java NestedVM])
+    AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM(
+            [[extern int _call_java(int a, int b, int c, int d);]],
+            [[_call_java(0, 0, 0, 0);]]
+        )],
+        [
+            a8_host=javanvm
+            EXEEXT=".mips"
+            enable_unalignedwords=no
+            if [[ "$build_os" = "cygwin" ]]; then
+                JAVAFLAGS="-classpath '""`cygpath -wp $CLASSPATH`'"
+                JAVACFLAGS="-source 1.4 -classpath '""`cygpath -wp $CLASSPATH`'"
+            fi
+            AC_MSG_RESULT(yes)
+        ],
+        [
+            AC_MSG_RESULT(no)
+        ]
+    )
+fi
 
 dnl Check for header files...
 
