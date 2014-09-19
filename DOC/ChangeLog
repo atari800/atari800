@@ -2,7 +2,7 @@
 * configure.ac: Switch to android-9 environment for OpenSL ES support.
 
 * android/*: Add OpenSL ES native sound support for post-2.3 devices. Gained
-  accurate sound playback.
+  accurate sound playback. Added bindings for capstoggle & atari keys.
 
 
 2014-09-16  Kostas Nakos  <knakos@gmail.com>
@@ -12,7 +12,7 @@
 * configure.ac: Updated to newer android toolchain.
 
 * android/*: Support for built-in Planetary Defense 2012 (courtesy and thanks
-  to Tom Hudson, miscellaneous fixes, update to newer android toolchain.
+  to Tom Hudson), miscellaneous fixes, update to newer android toolchain.
 
 
 ** 3.1.0 released on 2014-04-12
