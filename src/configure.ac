@@ -147,7 +147,7 @@ if [[ "$a8_target" = "android" ]]; then
 	CC="arm-linux-androideabi-gcc"
 	CPP="arm-linux-androideabi-cpp"
 	AC_NO_EXECUTABLES
-	CPPFLAGS="$CPPFLAGS -I$ANDROID_NDK_ROOT/platforms/android-4/arch-arm/usr/include/"
+	CPPFLAGS="$CPPFLAGS -I$ANDROID_NDK_ROOT/platforms/android-9/arch-arm/usr/include/"
 	WANT_IDE=no
 	with_readline=no
 	WANT_EVENT_RECORDING=no
