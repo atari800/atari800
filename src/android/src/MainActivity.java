@@ -654,7 +654,7 @@ public final class MainActivity extends Activity
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
 			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
 			crophoriz, cropvert, derotkeys, actiona, actionb, actionc, ntsc, paddle,
-			plandef, browser
+			plandef, browser, forceAT
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -751,13 +751,16 @@ public final class MainActivity extends Activity
 						   Boolean.parseBoolean(_newvalues.get(PreferenceName.plandef)) );
 
 			if ( changed(PreferenceName.mixrate) || changed(PreferenceName.sound16bit) ||
-				 changed(PreferenceName.hqpokey) || changed(PreferenceName.mixbufsize) )
+				 changed(PreferenceName.hqpokey) || changed(PreferenceName.mixbufsize) ||
+				 changed(PreferenceName.forceAT) )
 				NativePrefSound( Integer.parseInt(_newvalues.get(PreferenceName.mixrate)),
 								 Integer.parseInt(_newvalues.get(PreferenceName.mixbufsize)) * 10,
 								 Boolean.parseBoolean(_newvalues.get(PreferenceName.sound16bit)),
-								 Boolean.parseBoolean(_newvalues.get(PreferenceName.hqpokey)) );
+								 Boolean.parseBoolean(_newvalues.get(PreferenceName.hqpokey)),
+								 Boolean.parseBoolean(_newvalues.get(PreferenceName.forceAT)) );
 			if ( changed(PreferenceName.sound) || changed(PreferenceName.mixrate) ||
-				 changed(PreferenceName.sound16bit) || changed(PreferenceName.mixbufsize) )
+				 changed(PreferenceName.sound16bit) || changed(PreferenceName.mixbufsize) ||
+				 changed(PreferenceName.forceAT) )
 				((MainActivity) _context).soundInit(true);
 
 			if (changed(PreferenceName.rompath))
@@ -853,7 +856,8 @@ public final class MainActivity extends Activity
 	private static native void NativePrefJoy(boolean visible, int size, int opacity, boolean righth,
 											 int deadband, int midx, boolean anchor, int anchorx, int anchory,
 											 int grace, boolean paddle, boolean plandef);
-	private static native void NativePrefSound(int mixrate, int mixbufsizems, boolean sound16bit, boolean hqpokey);
+	private static native void NativePrefSound(int mixrate, int mixbufsizems, boolean sound16bit, boolean hqpokey,
+											   boolean disableOSL);
 	private static native boolean NativeSetROMPath(String path);
 	private static native String NativeGetJoypos();
 	private static native String NativeGetURL();

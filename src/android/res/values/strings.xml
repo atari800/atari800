@@ -276,4 +276,6 @@
 	<string name="pref_browser_sum">Provide the B: device to the emulated Atari</string>
 	<string name="pref_launchpd">Planetary Defense 2012</string>
 	<string name="pref_launchpd_sum">A game revamped for touchscreen and Colleen by Tom Hudson</string>
+	<string name="pref_forceAT">Force Legacy Playback</string>
+	<string name="pref_forceAT_sum">Disable OpenSL ES sound if checked</string>
 </resources>

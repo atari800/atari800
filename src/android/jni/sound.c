@@ -38,6 +38,7 @@ static int snd_mixrate   = 0;
 #define OSL_BUFSIZE_MS 10
 static void *osl_handle;
 int Android_osl_sound;
+static int osl_disable = 0;
 static int osl_bufnum = 0;
 static int osl_bufszbytes = 0;
 static UBYTE *osl_soundbuf = NULL;
@@ -85,7 +86,7 @@ void Sound_Continue(void);
 
 /* Legacy AudioThread functions */
 
-void Android_SoundInit(int rate, int bufsizems, int bit16, int hq)
+void Android_SoundInit(int rate, int bufsizems, int bit16, int hq, int disableOSL)
 {
 	POKEYSND_bienias_fix = 0;
 	POKEYSND_enable_new_pokey = hq;
@@ -94,6 +95,7 @@ void Android_SoundInit(int rate, int bufsizems, int bit16, int hq)
 	snd_mixrate = rate;
 	osl_bufnum = snd_bufsizems / OSL_BUFSIZE_MS;
 	osl_bufszbytes = OSL_BUFSIZE_MS * (at_sixteenbit ? 2 : 1) * snd_mixrate / 1000;
+	osl_disable = disableOSL;
 	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, rate, 1, bit16 ? POKEYSND_BIT16 : 0);
 }
 
@@ -323,12 +325,14 @@ int Sound_Initialise(int *argc, char *argv[])
 	Android_osl_sound = TRUE;
 
 	if (
+			  osl_disable ||
 			! OSL_load() ||
 			! OSL_init() ||
 			! OSL_buf_alloc() ||
 			! OSL_start_playback()
 		)
 	{
+			Android_osl_sound = FALSE;
 			Sound_Exit();
 			Log_print("Using legacy AudioThread");
 	} else

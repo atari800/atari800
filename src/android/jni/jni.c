@@ -51,7 +51,7 @@ int *ovl_texpix;
 int ovl_texw;
 int ovl_texh;
 extern void SoundThread_Update(void *buf, int offs, int len);
-extern void Android_SoundInit(int rate, int sizems, int bit16, int hq);
+extern void Android_SoundInit(int rate, int sizems, int bit16, int hq, int disableOSL);
 extern void Sound_Exit(void);
 extern void Sound_Pause(void);
 extern void Sound_Continue(void);
@@ -574,9 +574,9 @@ static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, i
 }
 
 static void JNICALL NativePrefSound(JNIEnv *env, jobject this, int mixrate, int bufsizems,
-									jboolean sound16bit, jboolean hqpokey)
+									jboolean sound16bit, jboolean hqpokey, jboolean disableOSL)
 {
-	Android_SoundInit(mixrate, bufsizems, sound16bit, hqpokey);
+	Android_SoundInit(mixrate, bufsizems, sound16bit, hqpokey, disableOSL);
 }
 
 static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path)
@@ -662,7 +662,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativePrefEmulation",	"(ZZZZZ)V",							NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },
 		{ "NativePrefJoy",			"(ZIIZIIZIIIZZ)V",					NativePrefJoy		  },
-		{ "NativePrefSound",		"(IIZZ)V",							NativePrefSound		  },
+		{ "NativePrefSound",		"(IIZZZ)V",							NativePrefSound		  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",			NativeSetROMPath	  },
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },
 		{ "NativeInit",				"()Ljava/lang/String;",				NativeInit			  },
@@ -697,6 +697,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	JNINativeMethod pref_methods[] = {
 		{ "NativeSaveState",		"(Ljava/lang/String;)Z",			NativeSaveState		  },
 		{ "NativeBootPD",			"([BI)Z",							NativeBootPD		  },
+		{ "NativeOSLSound",			"()Z",								NativeOSLSound		  },
 	};
 	JNIEnv *env;
 	jclass cls;

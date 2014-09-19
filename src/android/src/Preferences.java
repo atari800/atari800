@@ -1,8 +1,8 @@
 /*
  * Preferences.java - Preference activity for the emulator
  *
- * Copyright (C) 2010 Kostas Nakos
- * Copyright (C) 2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2014 Kostas Nakos
+ * Copyright (C) 2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -153,6 +153,8 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			if (getResources().getIdentifier(PD_RESNAME, "raw", getPackageName()) == 0)
 				p.setEnabled(false);
 		}
+
+		findPreference("forceAT").setEnabled(NativeOSLSound() || ((CheckBoxPreference) findPreference("forceAT")).isChecked());
 	}
 
 	private void enableStateSave() {
@@ -285,4 +287,5 @@ public final class Preferences extends PreferenceActivity implements Preference.
 
 	private native boolean NativeSaveState(String fname);
 	private native boolean NativeBootPD(byte data[], int len);
+	private native boolean NativeOSLSound();
 }
