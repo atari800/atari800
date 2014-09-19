@@ -1,3 +1,10 @@
+2014-09-19  Kostas Nakos  <knakos@gmail.com>
+* configure.ac: Switch to android-9 environment for OpenSL ES support.
+
+* android/*: Add OpenSL ES native sound support for post-2.3 devices. Gained
+  accurate sound playback.
+
+
 2014-09-16  Kostas Nakos  <knakos@gmail.com>
 * atari.c: Skip ROM file search as some android builds go in infinite loop
   due to buggy platform implementation.

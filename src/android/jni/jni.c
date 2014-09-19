@@ -1,8 +1,8 @@
 /*
  * jni.c - native functions exported to java
  *
- * Copyright (C) 2010 Kostas Nakos
- * Copyright (C) 2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2014 Kostas Nakos
+ * Copyright (C) 2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -51,7 +51,11 @@ int *ovl_texpix;
 int ovl_texw;
 int ovl_texh;
 extern void SoundThread_Update(void *buf, int offs, int len);
-extern void Android_SoundInit(int rate, int bit16, int hq);
+extern void Android_SoundInit(int rate, int sizems, int bit16, int hq);
+extern void Sound_Exit(void);
+extern void Sound_Pause(void);
+extern void Sound_Continue(void);
+extern int Android_osl_sound;
 
 struct audiothread {
 	UBYTE *sndbuf;
@@ -569,10 +573,10 @@ static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, i
 	Joy_Reposition();
 }
 
-static void JNICALL NativePrefSound(JNIEnv *env, jobject this, int mixrate, jboolean sound16bit,
-									jboolean hqpokey)
+static void JNICALL NativePrefSound(JNIEnv *env, jobject this, int mixrate, int bufsizems,
+									jboolean sound16bit, jboolean hqpokey)
 {
-	Android_SoundInit(mixrate, sound16bit, hqpokey);
+	Android_SoundInit(mixrate, bufsizems, sound16bit, hqpokey);
 }
 
 static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path)
@@ -624,6 +628,29 @@ static jboolean JNICALL NativeBootPD(JNIEnv *env, jobject this, jobjectArray img
 	return AFILE_OpenFile(PD2012_FNAME, TRUE, 1, FALSE);
 }
 
+static jboolean JNICALL NativeOSLSound(JNIEnv *env, jobject this)
+{
+	return Android_osl_sound;
+}
+
+static jboolean JNICALL NativeOSLSoundPause(JNIEnv *env, jobject this, jboolean pause)
+{
+	if (pause)
+		Sound_Pause();
+	else
+		Sound_Continue();
+}
+
+static void JNICALL NativeOSLSoundInit(JNIEnv *env, jobject this)
+{
+	Sound_Initialise(0, NULL);
+}
+
+static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
+{
+	Sound_Exit();
+}
+
 
 jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
@@ -635,7 +662,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativePrefEmulation",	"(ZZZZZ)V",							NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },
 		{ "NativePrefJoy",			"(ZIIZIIZIIIZZ)V",					NativePrefJoy		  },
-		{ "NativePrefSound",		"(IZZ)V",							NativePrefSound		  },
+		{ "NativePrefSound",		"(IIZZ)V",							NativePrefSound		  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",			NativeSetROMPath	  },
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },
 		{ "NativeInit",				"()Ljava/lang/String;",				NativeInit			  },
@@ -651,6 +678,10 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeSoundInit",		"(I)V",								NativeSoundInit		  },
 		{ "NativeSoundUpdate",		"(II)V",							NativeSoundUpdate	  },
 		{ "NativeSoundExit",		"()V",								NativeSoundExit		  },
+		{ "NativeOSLSound",			"()Z",								NativeOSLSound		  },
+		{ "NativeOSLSoundInit",		"()V",								NativeOSLSoundInit	  },
+		{ "NativeOSLSoundExit",		"()V",								NativeOSLSoundExit	  },
+		{ "NativeOSLSoundPause",	"(Z)V",								NativeOSLSoundPause	  },
 	};
 	JNINativeMethod render_methods[] = {
 		{ "NativeRunFrame",			"()I",								NativeRunFrame		  },

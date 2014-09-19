@@ -1,8 +1,8 @@
 /*
  * MainActivity.java - activity entry point for atari800
  *
- * Copyright (C) 2010 Kostas Nakos
- * Copyright (C) 2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2014 Kostas Nakos
+ * Copyright (C) 2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -751,8 +751,9 @@ public final class MainActivity extends Activity
 						   Boolean.parseBoolean(_newvalues.get(PreferenceName.plandef)) );
 
 			if ( changed(PreferenceName.mixrate) || changed(PreferenceName.sound16bit) ||
-				 changed(PreferenceName.hqpokey) )
+				 changed(PreferenceName.hqpokey) || changed(PreferenceName.mixbufsize) )
 				NativePrefSound( Integer.parseInt(_newvalues.get(PreferenceName.mixrate)),
+								 Integer.parseInt(_newvalues.get(PreferenceName.mixbufsize)) * 10,
 								 Boolean.parseBoolean(_newvalues.get(PreferenceName.sound16bit)),
 								 Boolean.parseBoolean(_newvalues.get(PreferenceName.hqpokey)) );
 			if ( changed(PreferenceName.sound) || changed(PreferenceName.mixrate) ||
@@ -852,7 +853,7 @@ public final class MainActivity extends Activity
 	private static native void NativePrefJoy(boolean visible, int size, int opacity, boolean righth,
 											 int deadband, int midx, boolean anchor, int anchorx, int anchory,
 											 int grace, boolean paddle, boolean plandef);
-	private static native void NativePrefSound(int mixrate, boolean sound16bit, boolean hqpokey);
+	private static native void NativePrefSound(int mixrate, int mixbufsizems, boolean sound16bit, boolean hqpokey);
 	private static native boolean NativeSetROMPath(String path);
 	private static native String NativeGetJoypos();
 	private static native String NativeGetURL();
