@@ -1,8 +1,8 @@
 /*
  * A800view.java - atari screen view
  *
- * Copyright (C) 2010 Kostas Nakos
- * Copyright (C) 2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2014 Kostas Nakos
+ * Copyright (C) 2014 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -196,10 +196,10 @@ public final class A800view extends GLSurfaceView
     }
 	
 	@Override
-	public InputConnection onCreateInputConnection (EditorInfo outAttrs) {
+	public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
 		return new BaseInputConnection(this, false) {
 				@Override
-				public boolean deleteSurroundingText (int leftLength, int rightLength) {
+				public boolean deleteSurroundingText(int leftLength, int rightLength) {
 					//Log.d(TAG, "Synthetic del");
 					this.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
 					this.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));

@@ -113,6 +113,8 @@ static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 	['^']  = AKEY_CIRCUMFLEX,
 	['\\'] = AKEY_BACKSLASH,
 	['|']  = AKEY_BAR,
+	['`']  = AKEY_CAPSTOGGLE,
+	['{']  = AKEY_ATARI,
 
 	[KEY_BACKSPACE] = AKEY_BACKSPACE,
 	[KEY_UP       ] = AKEY_UP,
@@ -131,9 +133,6 @@ static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 #define AKEY_DELETE_LINE 0x74
 #define AKEY_INSERT_CHAR 0xb7
 #define AKEY_INSERT_LINE 0x77
-#define AKEY_ATARI 0x27
-#define AKEY_CAPSLOCK 0x7c
-#define AKEY_CAPSTOGGLE 0x3c
 #define AKEY_SETTAB 0x6c
 #define AKEY_CLRTAB 0xac
 */
