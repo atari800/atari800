@@ -88,6 +88,8 @@ void Sound_Continue(void);
 
 void Android_SoundInit(int rate, int bufsizems, int bit16, int hq, int disableOSL)
 {
+	Log_print("SoundInit for android initializing with %dHz, %d bufsize, OSL %s",
+				rate, bufsizems, (disableOSL) ? "off" : "on");
 	POKEYSND_bienias_fix = 0;
 	POKEYSND_enable_new_pokey = hq;
 	at_sixteenbit = bit16;
@@ -96,7 +98,11 @@ void Android_SoundInit(int rate, int bufsizems, int bit16, int hq, int disableOS
 	osl_bufnum = snd_bufsizems / OSL_BUFSIZE_MS;
 	osl_bufszbytes = OSL_BUFSIZE_MS * (at_sixteenbit ? 2 : 1) * snd_mixrate / 1000;
 	osl_disable = disableOSL;
+	if (disableOSL)
+		Android_osl_sound = FALSE;
+	Log_print("Initializing POKEY");
 	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, rate, 1, bit16 ? POKEYSND_BIT16 : 0);
+	Log_print("POKEY init done");
 }
 
 void SoundThread_Update(void *buf, int offs, int len)
@@ -294,6 +300,7 @@ static int OSL_start_playback(void)
 	Sound_Continue();
 
 	for (i = 0; i < osl_bufnum; i++) {
+		if (! osl_bufqif)	return FALSE;
 		CHECK_OSL( (*osl_bufqif)->Enqueue(osl_bufqif, osl_soundbufptr[i], osl_bufszbytes), "enqueue init buffer");
 	}
 
@@ -346,7 +353,9 @@ void Sound_Update(void)
 	SLresult res;
 
 	while (osl_lastplayedindex < osl_lastindex) {
+		if (! osl_soundbufptr)	return;
 		POKEYSND_Process(osl_soundbufptr[osl_nextbufindex], osl_bufszbytes >> at_sixteenbit);
+		if (! osl_bufqif)		return;
 		res = (*osl_bufqif)->Enqueue(osl_bufqif, osl_soundbufptr[osl_nextbufindex], osl_bufszbytes);
 		if (res != SL_RESULT_SUCCESS) {
 			Log_print("Cannot enqueue buffer #%d (%08X)", osl_nextbufindex, res);
@@ -360,11 +369,13 @@ void Sound_Update(void)
 void Sound_Pause(void)
 {
 	Log_print("OSL pausing sound");
+	if (! osl_playif)	return;
 	(*osl_playif)->SetPlayState(osl_playif, SL_PLAYSTATE_PAUSED);
 }
 
 void Sound_Continue(void)
 {
 	Log_print("OSL resuming sound");
+	if (! osl_playif)	return;
 	(*osl_playif)->SetPlayState(osl_playif, SL_PLAYSTATE_PLAYING);
 }
