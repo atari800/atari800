@@ -1,7 +1,7 @@
 2014-09-22  Kostas Nakos  <knakos@gmail.com>
 
 * android/* : Bugfix no sound when machine is NTSC, small bugfixes and
-  workarounds for OSL sound.
+  workarounds for OSL sound. Prepare for release.
 
 
 2014-09-19  Kostas Nakos  <knakos@gmail.com>
