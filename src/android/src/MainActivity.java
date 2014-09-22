@@ -480,8 +480,13 @@ public final class MainActivity extends Activity
 	}
 
 	public void pauseEmulation(boolean pause) {
-		if (_audio != null)	_audio.pause(pause);
-		if (_view != null)	_view.pause(pause);
+		if (pause) {
+			if (_audio != null)	_audio.pause(pause);
+			if (_view != null)	_view.pause(pause);
+		} else {
+			if (_view != null)	_view.pause(pause);
+			if (_audio != null)	_audio.pause(pause);
+		}
 	}
 
 	@Override
