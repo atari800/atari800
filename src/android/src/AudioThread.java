@@ -54,17 +54,18 @@ public final class AudioThread extends Thread
 		int format = bytes == 1 ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT;
 		int minbuf = AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, format);
 		int hardmin = (int) ( ((float) rate * bytes) / ((float) (1000.0f / bufsizems)) );
-		_chunk = rate * bytes / (ntsc ? 60 : 50);
+		_chunk = (rate * bytes / (ntsc ? 60 : 50) + 3) / 4 * 4;
 		_bufsize = (hardmin > minbuf) ? hardmin : minbuf;
 		_bufsize = ((_bufsize + _chunk - 1) / _chunk * _chunk + 3) / 4 * 4;
 		_at = new AudioTrack(AudioManager.STREAM_MUSIC, rate, AudioFormat.CHANNEL_CONFIGURATION_MONO,
 							 format, _bufsize, AudioTrack.MODE_STREAM);
 		_buffer = new byte[_bufsize];
 		Log.d( TAG, String.format(
-				  "Mixing audio at %dHz, %dbit, buffer size %d (%d ms) [requested=%d(%dms), minbuf=%d(%dms)]",
+				  "Mixing audio at %dHz, %dbit, buffer size %d (%d ms) [requested=%d(%dms), minbuf=%d(%dms)], chunk %d",
 				  rate, 8 * bytes, _bufsize, (int) (((float) _bufsize)/((float) rate * bytes) * 1000),
 				  hardmin, (int) (((float) hardmin)/((float) rate * bytes) * 1000),
-				  minbuf, (int) (((float) minbuf)/((float) rate * bytes) * 1000)
+				  minbuf, (int) (((float) minbuf)/((float) rate * bytes) * 1000),
+				  _chunk
 				  ) );
 		_quit = false;
 		_pause = false;
@@ -103,6 +104,7 @@ public final class AudioThread extends Thread
 		}
 		if (!_initok)	return;
 
+		Log.d(TAG, "Running");
 		NativeSoundInit(_bufsize);
 		_at.play();
 		chunk = _chunk / 2;
@@ -130,6 +132,7 @@ public final class AudioThread extends Thread
 		} catch (InterruptedException ex) {
 		}
 
+		Log.d(TAG, "Exit");
 		NativeSoundExit();
 		_at.stop();
 		_at.release();
