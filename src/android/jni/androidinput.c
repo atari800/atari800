@@ -402,7 +402,7 @@ void Android_KeyEvent(int k, int s)
 		for (i = 0; i < 4; i++)
 			if (softjoymap[i][0] == k) {
 				if (s)
-					Android_PortStatus &= softjoymap[i][1];
+					Android_PortStatus &= 0xFFF0 | softjoymap[i][1];
 				else
 					Android_PortStatus |= ~softjoymap[i][1];
 				return;
