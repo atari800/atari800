@@ -1,5 +1,6 @@
 /* Based on nes_ntsc 0.2.2. http://www.slack.net/~ant/ */
 
+#include "colours.h"
 #include "atari_ntsc.h"
 
 /* Copyright (C) 2006-2007 Shay Green. This module is free software; you
@@ -94,6 +95,23 @@ void atari_ntsc_init( atari_ntsc_t* ntsc, atari_ntsc_setup_t const* setup )
 			y = *yiq_ptr++;
 			i = *yiq_ptr++;
 			q = *yiq_ptr++;
+		}
+
+		/* Atari change: Convert from CRT TV gamma correction to the sRGB
+		   gamma correction. */
+		if (setup->gamma >= 0.0)
+		{
+			double r, g, b = YIQ_TO_RGB( y, i, q, default_decoder, double, r, g );
+
+			r = Colours_Gamma2Linear(r, setup->gamma);
+			g = Colours_Gamma2Linear(g, setup->gamma);
+			b = Colours_Gamma2Linear(b, setup->gamma);
+
+			r = Colours_Linear2sRGB(r);
+			g = Colours_Linear2sRGB(g);
+			b = Colours_Linear2sRGB(b);
+
+			q = RGB_TO_YIQ( r, g, b, y, i );
 		}
 
 		i *= rgb_unit;

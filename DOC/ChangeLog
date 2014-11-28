@@ -3,6 +3,10 @@
   computations - although the resulting colors were correct, the names of i
   and q variables were swapped in the sources.
 
+* colours_ntsc.c, colours_pal.c, colours.[ch], pal_blending.c, filter_ntsc.c,
+  atari_ntsc/atari_ntsc.c, DOC/NEWS: Fixed computation of gamma adjustment -
+  it is now applied to each of the three RGB channels separately.
+
 
 2014-09-22  Kostas Nakos  <knakos@gmail.com>
 

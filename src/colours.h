@@ -39,8 +39,8 @@ typedef struct Colours_setup_t {
 #define COLOURS_CONTRAST_MAX 2.0
 #define COLOURS_BRIGHTNESS_MIN -2.0
 #define COLOURS_BRIGHTNESS_MAX 2.0
-#define COLOURS_GAMMA_MIN -1.0
-#define COLOURS_GAMMA_MAX 1.0
+#define COLOURS_GAMMA_MIN 1.0
+#define COLOURS_GAMMA_MAX 3.5
 #define COLOURS_DELAY_MIN 10
 #define COLOURS_DELAY_MAX 50
 
@@ -95,5 +95,11 @@ void Colours_RGB2YUV(double r, double g, double b, double *y, double *u, double 
 /* Convert given Y, U and V values to corresponding R, G, B values (all in the
    0.0 - 1.0 range). */
 void Colours_YUV2RGB(double y, double u, double v, double *r, double *g, double *b);
+
+/* Converts a gamma-adjusted color value c (0 <= c <= 1) into linear value. */
+double Colours_Gamma2Linear(double c, double gamma_adj);
+/* Converts a linear color value c (0 <= c <= 1) into sRGB gamma-corrected
+   value. */
+double Colours_Linear2sRGB(double c);
 
 #endif /* COLOURS_H_ */

@@ -50,7 +50,6 @@ COLOURS_EXTERNAL_t COLOURS_PAL_external = { "", FALSE, FALSE };
    COLOURS_PAL_external.adjust is false. */
 static void GetYUVFromExternal(double yuv_table[256*5])
 {
-	double const gamma = 1 - COLOURS_PAL_setup.gamma / 2.0;
 	unsigned char *ext_ptr = COLOURS_PAL_external.palette;
 	int n;
 
@@ -70,7 +69,6 @@ static void GetYUVFromExternal(double yuv_table[256*5])
 		v = tmp_u * s + v * c;
 		/* Optionally adjust external palette. */
 		if (COLOURS_PAL_external.adjust) {
-			y = pow(y, gamma);
 			y *= COLOURS_PAL_setup.contrast * 0.5 + 1;
 			y += COLOURS_PAL_setup.brightness * 0.5;
 			if (y > 1.0)
@@ -241,7 +239,6 @@ static void GetYUVFromGenerated(double yuv_table[256*5])
 
 	double const scaled_black_level = (double)COLOURS_PAL_setup.black_level / 255.0f;
 	double const scaled_white_level = (double)COLOURS_PAL_setup.white_level / 255.0f;
-	double const gamma = 1 - COLOURS_PAL_setup.gamma / 2.0;
 
 	/* NTSC luma multipliers from CGIA.PDF */
 	static double const luma_mult[16] = {
@@ -310,7 +307,6 @@ static void GetYUVFromGenerated(double yuv_table[256*5])
 		for (lm = 0; lm < 16; lm ++) {
 			/* calculate yuv for color entry */
 			double y = (luma_mult[lm] - luma_mult[0]) / (luma_mult[15] - luma_mult[0]);
-			y = pow(y, gamma);
 			y *= COLOURS_PAL_setup.contrast * 0.5 + 1;
 			y += COLOURS_PAL_setup.brightness * 0.5;
 			/* Scale the Y signal's range from 0..1 to
@@ -357,6 +353,20 @@ static void YUV2RGB(int colourtable[256], double const yuv_table[256*5])
 		double u = (even_u + odd_u) / 2.0;
 		double v = (even_v + odd_v) / 2.0;
 		Colours_YUV2RGB(y, u, v, &r, &g, &b);
+
+		if (!COLOURS_PAL_external.loaded || COLOURS_PAL_external.adjust) {
+			/* The r, g, b values derived from the YUV signal are non-linear
+			   (ie. gamma-corrected). We convert them to linear values,
+			   assuming the CRT TV's gamma = COLOURS_PAL_setup.gamma. */
+			r = Colours_Gamma2Linear(r, COLOURS_PAL_setup.gamma);
+			g = Colours_Gamma2Linear(g, COLOURS_PAL_setup.gamma);
+			b = Colours_Gamma2Linear(b, COLOURS_PAL_setup.gamma);
+			/* Now we convert the linear values to the sRGB colourspace. */
+			r = Colours_Linear2sRGB(r);
+			g = Colours_Linear2sRGB(g);
+			b = Colours_Linear2sRGB(b);
+		}
+
 		Colours_SetRGB(n, (int) (r * 255), (int) (g * 255), (int) (b * 255), colourtable);
 	}
 }

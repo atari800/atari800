@@ -45,11 +45,17 @@
 Colours_setup_t *Colours_setup;
 COLOURS_EXTERNAL_t *Colours_external;
 
+/* The NTSC and PAL TV systems maintain that the gamma factor of CRT TV
+   receivers should be 2.5 and 2.8, respectively. However, typical CRT TVs
+   (both NTSC and PAL) would have the gamma factor somewhere in the range
+   between 2.35 and 2.55. Therefore we choose 2.35 as the default gamma for
+   both TV systems. Reference: sections 10, 11 and 19 of
+   http://www.poynton.com/notes/colour_and_gamma/GammaFAQ.html */
 static Colours_setup_t const presets[] = {
 	/* Hue, Saturation, Contrast, Brightness, Gamma adjustment, GTIA delay, Black level, White level */
-	{ 0.0, 0.0, 0.0, 0.0, 0.3, 0.0, 16, 235 }, /* Standard preset */
-	{ 0.0, 0.0, 0.2, -0.16, 0.5, 0.0, 16, 235 }, /* Deep blacks preset */
-	{ 0.0, 0.26, 0.72, -0.16, 0.16, 0.0, 16, 235 } /* Vibrant colours & levels preset */
+	{ 0.0, 0.0, 0.0, 0.0, 2.35, 0.0, 16, 235 }, /* Standard preset */
+	{ 0.0, 0.0, 0.08, -0.08, 2.35, 0.0, 16, 235 }, /* Deep blacks preset */
+	{ 0.0, 0.26, 0.72, -0.16, 2.00, 0.0, 16, 235 } /* Vibrant colours & levels preset */
 };
 static char const * const preset_cfg_strings[COLOURS_PRESET_SIZE] = {
 	"STANDARD",
@@ -106,6 +112,26 @@ void Colours_RGB2YUV(double r, double g, double b, double *y, double *u, double 
 void Colours_YUV2RGB(double y, double u, double v, double *r, double *g, double *b)
 {
 	MultiplyMatrix(y, u, v, r, g, b, YUV2RGB_matrix);
+}
+
+double Colours_Gamma2Linear(double c, double gamma_adj)
+{
+	if (c >= 0.0)
+		return pow(c, gamma_adj);
+	else
+		/* Can't do pow() on a negative c. Let's divide c by the same value as
+		   in Colours_Linear2sRGB, so that a later conversion to sRGB will
+		   result in the value of c being unchanged. */
+		return c / 12.92;
+}
+
+double Colours_Linear2sRGB(double c)
+{
+	/* Source: https://en.wikipedia.org/wiki/SRGB */
+	if (c <= 0.0031308)
+		return c * 12.92;
+	else
+		return 1.055 * pow(c, 1.0/2.4) - 0.055;
 }
 
 static void UpdateModeDependentPointers(int tv_mode)

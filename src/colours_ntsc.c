@@ -68,7 +68,6 @@ static const double colorburst_angle = (303.0f) * M_PI / 180.0f;
    External palette is not adjusted if COLOURS_NTSC_external.adjust is false. */
 static void UpdateYIQTableFromExternal(double yiq_table[768], double start_angle, const double start_saturation)
 {
-	const double gamma = 1 - COLOURS_NTSC_setup.gamma / 2.0;
 	unsigned char *ext_ptr = COLOURS_NTSC_external.palette;
 	int n;
 
@@ -89,7 +88,6 @@ static void UpdateYIQTableFromExternal(double yiq_table[768], double start_angle
 		q = tmp_i * s + q * c;
 		/* Optionally adjust external palette. */
 		if (COLOURS_NTSC_external.adjust) {
-			y = pow(y, gamma);
 			y *= COLOURS_NTSC_setup.contrast * 0.5 + 1;
 			y += COLOURS_NTSC_setup.brightness * 0.5;
 			if (y > 1.0)
@@ -118,7 +116,6 @@ static void UpdateYIQTableFromGenerated(double yiq_table[768], const double star
 
 	double scaled_black_level = (double)COLOURS_NTSC_setup.black_level / 255.0;
 	double scaled_white_level = (double)COLOURS_NTSC_setup.white_level / 255.0;
-	const double gamma = 1 - COLOURS_NTSC_setup.gamma / 2.0;
 
 	/* NTSC luma multipliers from CGIA.PDF */
 	double luma_mult[16]={
@@ -136,7 +133,6 @@ static void UpdateYIQTableFromGenerated(double yiq_table[768], const double star
 		for (lm = 0; lm < 16; lm ++) {
 			/* calculate yiq for color entry */
 			double y = (luma_mult[lm] - luma_mult[0]) / (luma_mult[15] - luma_mult[0]);
-			y = pow(y, gamma);
 			y *= COLOURS_NTSC_setup.contrast * 0.5 + 1;
 			y += COLOURS_NTSC_setup.brightness * 0.5;
 			/* Scale the Y signal's range from 0..1 to
@@ -186,6 +182,20 @@ static void YIQ2RGB(int colourtable[256], const double yiq_table[768])
 		r = y + 0.9563 * i + 0.6210 * q;
 		g = y - 0.2721 * i - 0.6474 * q;
 		b = y - 1.1070 * i + 1.7046 * q;
+
+		if (!COLOURS_NTSC_external.loaded || COLOURS_NTSC_external.adjust) {
+			/* The r, g, b values derived from the YIQ signal are non-linear
+			   (ie. gamma-corrected). We convert them to linear values,
+			   assuming the CRT TV's gamma = COLOURS_NTSC_setup.gamma. */
+			r = Colours_Gamma2Linear(r, COLOURS_NTSC_setup.gamma);
+			g = Colours_Gamma2Linear(g, COLOURS_NTSC_setup.gamma);
+			b = Colours_Gamma2Linear(b, COLOURS_NTSC_setup.gamma);
+			/* Now we convert the linear values to the sRGB colourspace. */
+			r = Colours_Linear2sRGB(r);
+			g = Colours_Linear2sRGB(g);
+			b = Colours_Linear2sRGB(b);
+		}
+
 		Colours_SetRGB(n, (int) (r * 255), (int) (g * 255), (int) (b * 255), colourtable);
 	}
 }

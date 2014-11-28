@@ -77,6 +77,7 @@ void FILTER_NTSC_Update(atari_ntsc_t *filter)
 		FILTER_NTSC_setup.saturation = 0.0;
 		FILTER_NTSC_setup.contrast = 0.0;
 		FILTER_NTSC_setup.brightness = 0.0;
+		FILTER_NTSC_setup.gamma = -1.0; /* indicates no gamma correction shall be done */
 	} else {
 		/* It's either generated palette, or external palette with
 		   need for adjustments. Copy values from
@@ -85,6 +86,7 @@ void FILTER_NTSC_Update(atari_ntsc_t *filter)
 		FILTER_NTSC_setup.saturation = COLOURS_NTSC_setup.saturation;
 		FILTER_NTSC_setup.contrast = COLOURS_NTSC_setup.contrast;
 		FILTER_NTSC_setup.brightness = COLOURS_NTSC_setup.brightness;
+		FILTER_NTSC_setup.gamma = COLOURS_NTSC_setup.gamma;
 	}
 
 	FILTER_NTSC_setup.yiq_palette = yiq_table;

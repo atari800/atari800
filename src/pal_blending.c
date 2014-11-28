@@ -62,8 +62,24 @@ void PAL_BLENDING_UpdateLookup(void)
 			double odd_v = *ptr++;
 			double r, g, b;
 			Colours_YUV2RGB(y, even_u, even_v, &r, &g, &b);
+			if (!COLOURS_PAL_external.loaded || COLOURS_PAL_external.adjust) {
+				r = Colours_Gamma2Linear(r, COLOURS_PAL_setup.gamma);
+				g = Colours_Gamma2Linear(g, COLOURS_PAL_setup.gamma);
+				b = Colours_Gamma2Linear(b, COLOURS_PAL_setup.gamma);
+				r = Colours_Linear2sRGB(r);
+				g = Colours_Linear2sRGB(g);
+				b = Colours_Linear2sRGB(b);
+			}
 			Colours_SetRGB(i, (int) (r * 255), (int) (g * 255), (int) (b * 255), even_pal);
 			Colours_YUV2RGB(y, odd_u, odd_v, &r, &g, &b);
+			if (!COLOURS_PAL_external.loaded || COLOURS_PAL_external.adjust) {
+				r = Colours_Gamma2Linear(r, COLOURS_PAL_setup.gamma);
+				g = Colours_Gamma2Linear(g, COLOURS_PAL_setup.gamma);
+				b = Colours_Gamma2Linear(b, COLOURS_PAL_setup.gamma);
+				r = Colours_Linear2sRGB(r);
+				g = Colours_Linear2sRGB(g);
+				b = Colours_Linear2sRGB(b);
+			}
 			Colours_SetRGB(i, (int) (r * 255), (int) (g * 255), (int) (b * 255), odd_pal);
 		}
 		PLATFORM_GetPixelFormat(&format);

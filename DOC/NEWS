@@ -1,3 +1,21 @@
+Version ?.?.? (????/??/??)
+
+ This release contains changes in color handling. Users updating from
+ an earlier version should reset their color settings, or else the display
+ might be unreadable. To reset the color settings, do one of these:
+  * Select one of the presets available in the menu option "Display settings"->
+    "Color preset"; or
+  * Run atari800 with the -color-preset command-line option, e.g.:
+    atari800 -colors-preset standard; or
+  * Delete the emulator's config file (.atari800.cfg). Caution: you'll lose
+    all Atari800 settings!
+
+ Fixes:
+ ------
+  * Fixed computation of gamma adjustment - now it is applied to each of the
+    three RGB channels separately.
+
+
 Version 3.1.0 (2014/04/12) - release cooked at Atariada.cz
 
   Highlight of this release: Raspberry Pi port by Andrey Dj
