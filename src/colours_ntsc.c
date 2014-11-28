@@ -48,10 +48,10 @@ COLOURS_EXTERNAL_t COLOURS_NTSC_external = { "", FALSE, FALSE };
  * 180 degrees in YUV - that is, a gold color. In YIQ, gold is at
  * different angle. However, YIQ is actually YUV turned
  * 33 degrees. So by looking at screenshots at Wikipedia we can
- * conclude that the colorburst angle is 180+33 in YIQ.
+ * conclude that the colorburst angle is 270+33 in YIQ.
  * (See http://en.wikipedia.org/wiki/YUV and
  * http://en.wikipedia.org/wiki/YIQ) */
-static const double colorburst_angle = (213.0f) * M_PI / 180.0f;
+static const double colorburst_angle = (303.0f) * M_PI / 180.0f;
 
 /* In COLOURS_NTSC colours are generated in 2 stages:
    1. Generate Y, I and Q values for all 256 colours and store in an
@@ -72,7 +72,7 @@ static void UpdateYIQTableFromExternal(double yiq_table[768], double start_angle
 	unsigned char *ext_ptr = COLOURS_NTSC_external.palette;
 	int n;
 
-	start_angle = - colorburst_angle - start_angle;
+	start_angle -= colorburst_angle;
 
 	for (n = 0; n < 256; n ++) {
 		/* Convert RGB values from external palette to YIQ. */
@@ -128,10 +128,10 @@ static void UpdateYIQTableFromGenerated(double yiq_table[768], const double star
 		0.9160, 0.9420, 0.9690, 1.0000};
 
 	for (cr = 0; cr < 16; cr ++) {
-		double angle = start_angle - (cr - 1) * color_diff;
+		double angle = start_angle + (cr - 1) * color_diff;
 		double saturation = (cr ? (start_saturation + 1) * 0.175f: 0.0);
-		double i = sin(angle) * saturation;
-		double q = cos(angle) * saturation;
+		double i = cos(angle) * saturation;
+		double q = sin(angle) * saturation;
 
 		for (lm = 0; lm < 16; lm ++) {
 			/* calculate yiq for color entry */
@@ -193,7 +193,7 @@ static void YIQ2RGB(int colourtable[256], const double yiq_table[768])
 void COLOURS_NTSC_Update(int colourtable[256])
 {
 	double yiq_table[768];
-	UpdateYIQTable(yiq_table, - colorburst_angle + COLOURS_NTSC_setup.hue * M_PI, COLOURS_NTSC_setup.saturation);
+	UpdateYIQTable(yiq_table, colorburst_angle + COLOURS_NTSC_setup.hue * M_PI, COLOURS_NTSC_setup.saturation);
 	YIQ2RGB(colourtable, yiq_table);
 }
 

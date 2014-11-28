@@ -237,11 +237,11 @@ static void init( init_t* impl, atari_ntsc_setup_t const* setup )
 		   180 degrees in YUV - that is, a gold color. In YIQ, gold is at
 		   different angle. However, YIQ is actually YUV turned
 		   33 degrees. So by looking at screenshots at Wikipedia we can
-		   conclude that the colorburst angle is 180+33 in YIQ.
+		   conclude that the colorburst angle is 270+33 in YIQ.
 		   (See http://en.wikipedia.org/wiki/YUV and
 		   http://en.wikipedia.org/wiki/YIQ) */
-		static float const colorburst_angle = (213.0f) * PI / 180.0f;
-		float hue = (float) setup->hue * PI + PI / 180 * ext_decoder_hue - PI * setup->burst_phase - colorburst_angle;
+		static float const colorburst_angle = (303.0f) * PI / 180.0f;
+		float hue = (float) -setup->hue * PI + PI / 180 * ext_decoder_hue + PI * setup->burst_phase - colorburst_angle;
 		float sat = (float) setup->saturation + 1;
 		float const* decoder = setup->decoder_matrix;
 		if ( !decoder )
