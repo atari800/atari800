@@ -1,3 +1,7 @@
+2015-01-10  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* win32/msc/Makefile: Fixed incorrect file extensions.
+
+
 2014-11-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * colours_ntsc.c, atari_ntsc/atari_ntsc_impl.h: Fixed mathematics in the YIQ
   computations - although the resulting colors were correct, the names of i

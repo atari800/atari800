@@ -33,13 +33,13 @@ OBJS = \
 	colours_pal.obj \
 	compfile.obj \
 	cpu.obj \
-	crc32.o \
+	crc32.obj \
 	cycle_map.obj \
 	devices.obj \
-	emuos.o \
+	emuos.obj \
 	esc.obj \
 	gtia.obj \
-	img_tape.o \
+	img_tape.obj \
 	input.obj \
 	log.obj \
 	memory.obj \
@@ -56,7 +56,7 @@ OBJS = \
 	sio.obj \
 	sndsave.obj \
 	statesav.obj \
-	sysrom.o \
+	sysrom.obj \
 	ui.obj \
 	ui_basic.obj \
 	util.obj \
