@@ -33,10 +33,11 @@ typedef struct Sound_setup_t {
 	int sample_size;
 	/* Number of audio channels: 1 = mono, 2 = stereo. */
 	unsigned int channels;
-	/* Size of the hardware audio buffer in frames. Should be a power of 2.
-	   To get the buffer's size in bytes, compute
-	   frag_frames*sample_size*channels. */
-	unsigned int frag_frames;
+	/* Length of the hardware audio buffer in milliseconds. */
+	unsigned int buffer_ms;
+	/* Size of the hardware audio buffer in frames. Computed internally,
+	   equals freq * buffer_ms / 1000. */
+	unsigned int buffer_frames;
 } Sound_setup_t;
 
 /* Holds parameters of the audio output desired by user. When calling Sound_Setup(),
@@ -44,7 +45,7 @@ typedef struct Sound_setup_t {
    different parameters than the desired ones (e.g. hardware might not support
    the desired parameters), so after opening, the actual parameters of the opened
    output are stored in Sound_out.
-   Set Sound_desired.frag_frames to 0 if you want the hardware to decide value of this
+   Set Sound_desired.buffer_frames to 0 if you want the hardware to decide value of this
    parameter automatically.
  */
 extern Sound_setup_t Sound_desired;
@@ -89,6 +90,11 @@ void Sound_SetLatency(unsigned int latency);
  * slows down or speeds up to match the actual speed of sound output. */
 double Sound_AdjustSpeed(void);
 #endif /* SYNCHRONIZED_SOUND */
+
+/* Helper function for use when hardware audio buffer size is required to
+   equal a power of 2. Returns a power of 2 that is not lower than NUM
+   (0 <= NUM < UINT_MAX). */
+unsigned int Sound_NextPow2(unsigned int num);
 
 #endif /* SOUND_THIN_API */
 

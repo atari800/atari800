@@ -111,19 +111,19 @@ void PLATFORM_MapRGB(void *dest, int const *palette, int size);
 #endif /* PLATFORM_MAP_PALETTE */
 
 #if defined(SOUND) && defined(SOUND_THIN_API)
-/* PLATFORM_SoundSetup opens the hardware sound output with parameters
-   set beforehand in Sound_out. The implementation If the code decides so,
-   the actual setup with which audio output is opened may differ from the
-   provided ones. In such case Sound_out will be modified accordingly.
+/* PLATFORM_SoundSetup opens the hardware sound output with settings
+   defined in *setup. If the code decides so, the actual setup with which
+   audio output is opened may differ from the provided settings. In such case
+   *setup will be modified according to the actual parameters of the opened
+   audio output.
    The function returns TRUE if it successfully opened the sound output - in such
    case the caller should set Sound_enabled to TRUE. Sound output is initially
    paused - caller should call PLATFORM_SoundContinue to start sound output.
    When opening failed, the function returns FALSE - in this case the caller
    should set Sound_enabled to FALSE and not attempt to generate any sound.
-   Calling PLATFORM_SoundSetup again with Sound_out unmodified since the
-   previous call to the function, is guaranteed to not change them further -
-   after all, they had been determined to be OK (or modified to be OK) at the
-   previous call.
+   Calling PLATFORM_SoundSetup again with *setup unmodified since the last call
+   is guaranteed to not change them further - after all, they had been
+   determined to be OK (or modified to be OK) at the last call.
    PLATFORM_SoundSetup may be called multiple times without calling
    PLATFORM_SoundExit inbetween. */
 int PLATFORM_SoundSetup(Sound_setup_t *setup);
@@ -156,13 +156,13 @@ void PLATFORM_SoundUnlock(void);
 
 /* Return number of bytes that can be written to the output device without
    blocking. If it is equal or larger than
-   Sound_out.frag_frames*channels*sample_size, it probably means that sound
+   Sound_out.buffer_frames*channels*sample_size, it probably means that sound
    underflow has occurred. */
 unsigned int PLATFORM_SoundAvailable(void);
 
 /* Write contents of *BUFFER to audio output device. SIZE is the size of BUFFER.
    SIZE must not be greater than
-   Sound_out.frag_frames*Sound_out.channels*Sound_out.sample_size. */
+   Sound_out.buffer_frames*Sound_out.channels*Sound_out.sample_size. */
 void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size);
 
 /* Dummy functions, not needed with no SOUND_CALLBACK. */

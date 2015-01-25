@@ -747,14 +747,13 @@ Set sound output format to 16-bit
 .B \-audio8
 Set sound output format to 8-bit
 .TP
-.BI \-snd\-fragsize\  size
-Set size of the hardware sound buffer (fragment size).
-The value should be a power of 2.
-Setting to 0 (the default) causes the size to be set automatically.
+.BI \-snd\-buflen\  ms
+Set length of the hardware sound buffer in milliseconds.
+Setting to 0 (the default) causes the length to be set automatically.
 Higher values increase sound latency.
 Automatic setting should be OK in most cases.
 .TP
-.BI \-snddelay\  time
+.BI \-snddelay\  ms
 Set sound latency in milliseconds. 
 Increase it if you experience gaps of silence during sound playback.
 

@@ -3672,7 +3672,7 @@ static int SoundSettings(void)
 #ifdef SOUND_THIN_API
 	Sound_setup_t setup = Sound_desired;
 	static char freq_string[9]; /* "nnnnn Hz\0" */
-	static char frag_frames_string[13]; /* "auto (nnnnn)\0" */
+	static char hw_buflen_string[15]; /* "auto (nnnn ms)\0" */
 #ifdef SYNCHRONIZED_SOUND
 	static char latency_string[8]; /* nnnn ms\0" */
 #endif /* SYNCHRONIZED_SOUND */
@@ -3694,16 +3694,14 @@ static int SoundSettings(void)
 		UI_MENU_END
 	};
 
-	static const UI_tMenuItem frag_frames_menu_array[] = {
-		UI_MENU_ACTION(0, "automatic"),
-		UI_MENU_ACTION(128, "128"),
-		UI_MENU_ACTION(256, "256"),
-		UI_MENU_ACTION(512, "512"),
-		UI_MENU_ACTION(1024, "1024"),
-		UI_MENU_ACTION(2048, "2048"),
-		UI_MENU_ACTION(4096, "4096"),
-		UI_MENU_ACTION(8192, "8192"),
-		UI_MENU_ACTION(16384, "16384"),
+	static const UI_tMenuItem hw_buflen_menu_array[] = {
+		UI_MENU_ACTION(0, "choose automatically"),
+		UI_MENU_ACTION(20, "20 ms"),
+		UI_MENU_ACTION(40, "40 ms"),
+		UI_MENU_ACTION(80, "80 ms"),
+		UI_MENU_ACTION(160, "160 ms"),
+		UI_MENU_ACTION(320, "320 ms"),
+		UI_MENU_ACTION(1, "custom"),
 		UI_MENU_END
 	};
 #endif /* SOUND_THIN_API */
@@ -3713,7 +3711,7 @@ static int SoundSettings(void)
 		UI_MENU_CHECK(0, "Enable sound:"),
 		UI_MENU_SUBMENU_SUFFIX(1, "Frequency:", freq_string),
 		UI_MENU_ACTION(2, "Bit depth:"),
-		UI_MENU_SUBMENU_SUFFIX(3, "Fragment size:", frag_frames_string),
+		UI_MENU_SUBMENU_SUFFIX(3, "Hardware buffer length:", hw_buflen_string),
 #ifdef SYNCHRONIZED_SOUND
 		UI_MENU_SUBMENU_SUFFIX(4, "Latency:", latency_string),
 #endif /* SYNCHRONIZED_SOUND */
@@ -3742,16 +3740,16 @@ static int SoundSettings(void)
 		SetItemChecked(menu_array, 0, Sound_enabled);
 		snprintf(freq_string, sizeof(freq_string), "%i Hz", setup.freq);
 		menu_array[2].suffix = setup.sample_size == 2 ? "16 bit" : "8 bit";
-		if (setup.frag_frames == 0) {
+		if (setup.buffer_ms == 0) {
 			if (Sound_enabled)
-				snprintf(frag_frames_string, sizeof(frag_frames_string), "auto (%u)", Sound_out.frag_frames);
+				snprintf(hw_buflen_string, sizeof(hw_buflen_string), "auto (%u ms)", Sound_out.buffer_ms);
 			else
-				strncpy(frag_frames_string, "auto", sizeof(frag_frames_string));
+				strncpy(hw_buflen_string, "auto", sizeof(hw_buflen_string));
 		}
 		else
-			snprintf(frag_frames_string, sizeof(frag_frames_string), "%u", setup.frag_frames);
+			snprintf(hw_buflen_string, sizeof(hw_buflen_string), "%u ms", setup.buffer_ms);
 #ifdef SYNCHRONIZED_SOUND
-		snprintf(latency_string, sizeof(latency_string), "%i ms", Sound_latency);
+		snprintf(latency_string, sizeof(latency_string), "%u ms", Sound_latency);
 #endif /* SYNCHRONIZED_SOUND */
 #endif /* SOUND_THIN_API */
 #ifdef DREAMCAST
@@ -3804,16 +3802,30 @@ static int SoundSettings(void)
 				}
 				else if (option2 >= 0)
 					setup.freq = freq_values[option2];
-				}
+			}
 			break;
 		case 2:
 			setup.sample_size = 3 - setup.sample_size; /* Toggle 1<->2 */
 			break;
 		case 3:
 			{
-				int option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, setup.frag_frames, frag_frames_menu_array, NULL);
-				if (option2 >= 0)
-					setup.frag_frames = option2;
+				int current = 1; /* 1 means "custom" as in hw_buflen_menu_array */
+				int i, option2;
+				for (i = 0; hw_buflen_menu_array[i].retval != 1; ++i) {
+					/* Find the currently-chosen buffer length. */
+					if (setup.buffer_ms == hw_buflen_menu_array[i].retval) {
+						current = setup.buffer_ms;
+						break;
+					}
+				}
+				option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, current, hw_buflen_menu_array, NULL);
+				if (option2 == 1) {
+					snprintf(hw_buflen_string, sizeof(hw_buflen_string), "%u", setup.buffer_ms); /* Remove " ms" suffix */
+					if (UI_driver->fEditString("Enter hardware buffer length", hw_buflen_string, sizeof(hw_buflen_string)-3))
+						setup.buffer_ms = atoi(hw_buflen_string);
+				}
+				else if (option2 >= 0)
+					setup.buffer_ms = option2;
 			}
 			break;
 #ifdef SYNCHRONIZED_SOUND
@@ -3872,7 +3884,7 @@ static int SoundSettings(void)
 #ifdef STEREO_SOUND
 			         setup.channels    != Sound_desired.channels ||
 #endif
-			         setup.frag_frames != Sound_desired.frag_frames) {
+			         setup.buffer_ms != Sound_desired.buffer_ms) {
 				/* Sound output reinitialisation needed. */
 				Sound_desired = setup;
 				if (!Sound_Setup()) {

@@ -62,11 +62,11 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 		return FALSE;
 	}
 
-	if (setup->frag_frames == 0)
-		/* Set frag_frames automatically. */
+	if (setup->buffer_frames == 0)
+		/* Set buffer_frames automatically. */
 		frag_size = setup->freq / 50;
 	else
-		frag_size = setup->frag_frames;
+		frag_size = setup->buffer_frames;
 	frag_size *= setup->channels * setup->sample_size;
 
 	/* By setting number of fragments to 0x7fff (ie. don't limit) we ensure
@@ -76,14 +76,10 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	{
 		/* Compute the closest power of two. */
 		int pow_val = 1;
-		int val = frag_size;
-		while (val >>= 1) {
+		while (pow_val <= frag_size) {
 			pow_val <<= 1;
 			++setfragment;
 		}
-		if (pow_val < frag_size)
-			/* Ensure fragment size is not smaller than user-provided value. */
-			++setfragment;
 	}
 	if (ioctl(dsp_fd, SNDCTL_DSP_SETFRAGMENT, &setfragment) == -1) {
 		Log_print("%s: SNDCTL_DSP_SETFRAGMENT(%.8x) failed", dspname, setfragment);
@@ -125,7 +121,7 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 		return FALSE;
 	}
 
-	setup->frag_frames = frag_size / setup->channels / setup->sample_size;
+	setup->buffer_frames = frag_size / setup->channels / setup->sample_size;
 	{
 		audio_buf_info bi;
 		if (ioctl(dsp_fd, SNDCTL_DSP_GETOSPACE, &bi) == -1) {
@@ -134,7 +130,7 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 		}
 #if DEBUG
 		Log_print("fragments=%i, fragstotal=%i, fragsize=%i, bytes=%i", bi.fragments, bi.fragstotal, bi.fragsize, bi.bytes);
-		Log_print("frag_size=%i, buf_Frames=%u", frag_size, setup->frag_frames);
+		Log_print("frag_size=%i, buf_Frames=%u", frag_size, setup->buffer_frames);
 #endif
 	}
 

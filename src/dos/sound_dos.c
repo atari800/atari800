@@ -37,18 +37,11 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	int buffer_samples;
 	int stereo = setup->channels == 2;
 
-	if (setup->frag_frames == 0) {
-		/* Set frag_frames automatically. */
-		unsigned int val = setup->frag_frames = setup->freq / 50;
-		unsigned int pow_val = 1;
-		while (val >>= 1)
-			pow_val <<= 1;
-		if (pow_val < setup->frag_frames)
-			pow_val <<= 1;
-		setup->frag_frames = pow_val;
-	}
+	if (setup->buffer_frames == 0)
+		/* Set buffer_frames automatically. */
+		setup->buffer_frames = Sound_NextPow2(setup->freq / 50);
 
-	buffer_samples = setup->frag_frames * setup->channels;
+	buffer_samples = setup->buffer_frames * setup->channels;
 
 	if (sb_init(&playback_freq, &bps, &buffer_samples, &stereo) < 0) {
 		Log_print("Cannot init sound card");
@@ -57,7 +50,7 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 
 	setup->channels = stereo ? 2 : 1;
 	setup->sample_size = bps / 8;
-	setup->frag_frames = buffer_samples / setup->channels;
+	setup->buffer_frames = buffer_samples / setup->channels;
 	setup->freq = playback_freq;
 
 	return TRUE;

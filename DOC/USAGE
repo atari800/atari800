@@ -248,8 +248,8 @@ Command line options
 -dsprate <freq>       Set sound output frequency in Hz
 -audio16              Set sound output format to 16-bit
 -audio8               Set sound output format to 8-bit
--snd-fragsize <num>   Set size of the hardware sound buffer (fragment size)
--snddelay <time>      Set sound latency in milliseconds
+-snd-buflen <ms>      Set length of the hardware sound buffer in milliseconds
+-snddelay <ms>        Set sound latency in milliseconds
 
 -ide <file>           Enable IDE emulation
 -ide_debug            Enable IDE Debug output

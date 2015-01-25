@@ -1,3 +1,12 @@
+2015-01-24  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* platform.h, sound_oss.c, sound.[ch], ui.c, dos/sound_dos.c, javanm/sound.c,
+  sdl/sound.c, atari800.man, DOC/USAGE: Improve usability: rename "Fragment
+  size" to "Hardware buffer size" and change the unit to milliseconds instead
+  of frames. Code for resizing the buffer to a power of 2 is now called in
+  platform-specific modules - the reason is not all sound backends require
+  such adjustment of the buffer length.
+
+
 2015-01-10  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * win32/msc/Makefile: Fixed incorrect file extensions.
 

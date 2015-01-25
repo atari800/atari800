@@ -49,17 +49,13 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	desired.format = setup->sample_size == 2 ? AUDIO_S16SYS : AUDIO_U8;
 	desired.channels = setup->channels;
 
-	if (setup->frag_frames == 0) {
-		/* Set frag_frames automatically. */
-		unsigned int val = setup->frag_frames = setup->freq / 50;
-		unsigned int pow_val = 1;
-		while (val >>= 1)
-			pow_val <<= 1;
-		if (pow_val < setup->frag_frames)
-			pow_val <<= 1;
-		setup->frag_frames = pow_val;
-	}
-	desired.samples = setup->frag_frames;
+	if (setup->buffer_frames == 0)
+		/* Set buffer_frames automatically. */
+		setup->buffer_frames = setup->freq / 50;
+
+	setup->buffer_frames = Sound_NextPow2(setup->buffer_frames);
+
+	desired.samples = setup->buffer_frames;
 	desired.callback = SoundCallback;
 	desired.userdata = NULL;
 
@@ -67,7 +63,7 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
 		return FALSE;
 	}
-	setup->frag_frames = desired.samples;
+	setup->buffer_frames = desired.samples;
 
 	return TRUE;
 }

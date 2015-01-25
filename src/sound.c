@@ -100,11 +100,11 @@ int Sound_ReadConfig(char *option, char *ptr)
 			return FALSE;
 		Sound_desired.sample_size = bits / 8;
 	}
-	else if (strcmp(option, "SOUND_FRAG_FRAMES") == 0) {
+	else if (strcmp(option, "SOUND_BUFFER_MS") == 0) {
 		int val = Util_sscandec(ptr);
 		if (val == -1)
 			return FALSE;
-		Sound_desired.frag_frames = val;
+		Sound_desired.buffer_ms = val;
 	}
 #ifdef SYNCHRONIZED_SOUND
 	else if (strcmp(option, "SOUND_LATENCY") == 0)
@@ -120,7 +120,7 @@ void Sound_WriteConfig(FILE *fp)
 	fprintf(fp, "SOUND_ENABLED=%u\n", Sound_enabled);
 	fprintf(fp, "SOUND_RATE=%u\n", Sound_desired.freq);
 	fprintf(fp, "SOUND_BITS=%u\n", Sound_desired.sample_size * 8);
-	fprintf(fp, "SOUND_FRAG_FRAMES=%u\n", Sound_desired.frag_frames);
+	fprintf(fp, "SOUND_BUFFER_MS=%u\n", Sound_desired.buffer_ms);
 #ifdef SYNCHRONIZED_SOUND
 	fprintf(fp, "SOUND_LATENCY=%u\n", Sound_latency);
 #endif /* SYNCHRONIZED_SOUND */
@@ -149,13 +149,13 @@ int Sound_Initialise(int *argc, char *argv[])
 			Sound_desired.sample_size = 2;
 		else if (strcmp(argv[i], "-audio8") == 0)
 			Sound_desired.sample_size = 1;
-		else if (strcmp(argv[i], "snd-fragsize") == 0) {
+		else if (strcmp(argv[i], "snd-buflen") == 0) {
 			if (i_a) {
 				int val = Util_sscandec(argv[++i]);
 				if (val == -1)
 					a_i = TRUE;
 				else
-					Sound_desired.frag_frames = val;
+					Sound_desired.buffer_ms = val;
 			}
 			else a_m = TRUE;
 		}
@@ -173,9 +173,9 @@ int Sound_Initialise(int *argc, char *argv[])
 				Log_print("\t-dsprate <rate>      Set sound output frequency in Hz");
 				Log_print("\t-audio16             Set sound output format to 16-bit");
 				Log_print("\t-audio8              Set sound output format to 8-bit");
-				Log_print("\t-snd-fragsize <num>  Set size of the hardware sound buffer (fragment size)");
+				Log_print("\t-snd-buflen <ms>     Set length of the hardware sound buffer in milliseconds");
 #ifdef SYNCHRONIZED_SOUND
-				Log_print("\t-snddelay <time>       Set sound latency in milliseconds");
+				Log_print("\t-snddelay <ms>       Set sound latency in milliseconds");
 #endif /* SYNCHRONIZED_SOUND */
 			}
 			argv[j++] = argv[i];
@@ -210,25 +210,13 @@ int Sound_Setup(void)
 		/* POKEY emulation doesn't support rate > 65535 Hz. */
 		Sound_desired.freq = 65535;
 
-	/* 0 indicates setting frag_size automatically. */
-	if (Sound_desired.frag_frames != 0) {
-		/* Make sure frag_frames is a power of 2. */
-		unsigned int pow_val = 1;
-		unsigned int val = Sound_desired.frag_frames;
-		while (val >>= 1)
-			pow_val <<= 1;
-		if (pow_val < Sound_desired.frag_frames)
-			pow_val <<= 1;
-		Sound_desired.frag_frames = pow_val;
-
-		if (Sound_desired.frag_frames < 16)
-			/* Lower values are simply not practical. */
-			Sound_desired.frag_frames = 16;
-	}
+	Sound_desired.buffer_frames = Sound_desired.freq * Sound_desired.buffer_ms / 1000;
 
 	Sound_out = Sound_desired;
 	if (!(Sound_enabled = PLATFORM_SoundSetup(&Sound_out)))
 		return FALSE;
+
+	Sound_out.buffer_ms = Sound_out.buffer_frames * 1000 / Sound_out.freq;
 
 	/* Now setup contains actual audio output settings. */
 	if ((POKEYSND_enable_new_pokey && Sound_out.freq < 8192)
@@ -246,7 +234,7 @@ int Sound_Setup(void)
 	POKEYSND_stereo_enabled = Sound_out.channels == 2;
 #ifndef SOUND_CALLBACK
 	free(process_buffer);
-	process_buffer_size = Sound_out.frag_frames * Sound_out.channels * Sound_out.sample_size;
+	process_buffer_size = Sound_out.buffer_frames * Sound_out.channels * Sound_out.sample_size;
 	process_buffer = Util_malloc(process_buffer_size);
 #endif /* !SOUND_CALLBACK */
 
@@ -259,11 +247,11 @@ int Sound_Setup(void)
 	Sound_desired.freq = Sound_out.freq;
 	Sound_desired.sample_size = Sound_out.sample_size;
 	Sound_desired.channels = Sound_out.channels;
-	/* Don't copy Sound_out.frag_frames to Sound_desired.frag_frames.
-       Reason: some backends (e.g. SDL on PulseAudio) always
-	   decrease the desired frag_size when opening audio. If the
-	   obtained value was copied, repeated calls to Sound_Setup
-	   would quickly decrease frag_size to 0. */
+	/* buffer_ms and buffer_frames are not copied from Sound_out back to
+	   Sound_desired. The reason is, for some backends (e.g. SDL on PulseAudio)
+	   opening audio always results in buffer size smaller than desired. If
+	   the obtained value was copied from Sound_out to Sound_desired, repeated
+	   calls to Sound_Setup would quickly decrease buffer_ms to 0. */
 
 	paused = TRUE;
 	return TRUE;
@@ -443,7 +431,7 @@ static void UpdateSyncBuffer(void)
 		do {
 			PLATFORM_SoundUnlock();
 			/* Sleep for the duration of one full HW buffer. */
-			Util_sleep((double)Sound_out.frag_frames / Sound_out.freq);
+			Util_sleep((double)Sound_out.buffer_frames / Sound_out.freq);
 			PLATFORM_SoundLock();
 #ifndef SOUND_CALLBACK
 			WriteOut(); /* Write to audio buffer as much as possible. */
@@ -500,9 +488,9 @@ void Sound_SetLatency(unsigned int latency)
 		unsigned int bytes_per_frame = Sound_out.channels * Sound_out.sample_size;
 		unsigned int latency_frames = Sound_out.freq*Sound_latency/1000;
 		PLATFORM_SoundLock();
-		sync_buffer_size = (latency_frames + SYNC_BUFFER_FRAGS*Sound_out.frag_frames) * bytes_per_frame;
+		sync_buffer_size = (latency_frames + SYNC_BUFFER_FRAGS*Sound_out.buffer_frames) * bytes_per_frame;
 		sync_min_fill = latency_frames * bytes_per_frame;
-		sync_max_fill = sync_min_fill + Sound_out.frag_frames * bytes_per_frame;
+		sync_max_fill = sync_min_fill + Sound_out.buffer_frames * bytes_per_frame;
 		avg_fill = sync_min_fill;
 		sync_read_pos = 0;
 		sync_write_pos = sync_min_fill;
@@ -545,3 +533,11 @@ double Sound_AdjustSpeed(void)
 	return delay_mult;
 }
 #endif /* SYNCHRONIZED_SOUND */
+
+unsigned int Sound_NextPow2(unsigned int num)
+{
+	unsigned int result = 1;
+	while (result <= num)
+		result <<= 1;
+	return result;
+}
