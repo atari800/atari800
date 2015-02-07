@@ -1,3 +1,9 @@
+2015-02-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cassette.c, img_tape.c: Minimal support for reading CAS "fsk " chunks, to
+  support some tape images of copy-protected original software, only with
+  unpatched SIO.
+
+
 2015-01-24  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * platform.h, sound_oss.c, sound.[ch], ui.c, dos/sound_dos.c, javanm/sound.c,
   sdl/sound.c, atari800.man, DOC/USAGE: Improve usability: rename "Fragment
