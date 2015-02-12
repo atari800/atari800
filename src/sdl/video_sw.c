@@ -27,6 +27,7 @@
 #include <SDL.h>
 
 #include "af80.h"
+#include "bit3.h"
 #include "artifact.h"
 #include "atari.h"
 #include "colours.h"
@@ -55,21 +56,43 @@ int SDL_VIDEO_SW_bpp = 0;
 static void DisplayWithoutScaling(void);
 static void DisplayWithScaling(void);
 static void DisplayRotated(void);
+#ifdef NTSC_FILTER
 static void DisplayNTSCEmu(void);
+#endif
+#ifdef XEP80_EMULATION
 static void DisplayXEP80(void);
+#endif
+#ifdef PBI_PROTO80
 static void DisplayProto80(void);
+#endif
+#ifdef AF80
 static void DisplayAF80(void);
+#endif
+#ifdef BIT3
+static void DisplayBIT3(void);
+#endif
 #ifdef PAL_BLENDING
 static void DisplayPalBlending(void);
 static void DisplayPalBlendingScaled(void);
 #endif /* PAL_BLENDING */
 
 static void (*blit_funcs[VIDEOMODE_MODE_SIZE])(void) = {
-	&DisplayWithoutScaling,
-	&DisplayNTSCEmu,
-	&DisplayXEP80,
-	&DisplayProto80,
-	&DisplayAF80
+	&DisplayWithoutScaling
+#ifdef NTSC_FILTER
+	,&DisplayNTSCEmu
+#endif
+#ifdef XEP80_EMULATION
+	,&DisplayXEP80
+#endif
+#ifdef PBI_PROTO80
+	,&DisplayProto80
+#endif
+#ifdef AF80
+	,&DisplayAF80
+#endif
+#ifdef BIT3
+	,&DisplayBIT3
+#endif
 };
 
 static void Set8BitPalette(VIDEOMODE_MODE_t mode)
@@ -181,7 +204,10 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 	}
 
 	if ((rotate90 && SDL_VIDEO_SW_bpp != 16) ||
-		((mode == VIDEOMODE_MODE_NTSC_FILTER
+		((0
+#ifdef NTSC_FILTER
+		  || mode == VIDEOMODE_MODE_NTSC_FILTER
+#endif
 #ifdef PAL_BLENDING
 		  || (mode == VIDEOMODE_MODE_NORMAL && ARTIFACT_mode == ARTIFACT_PAL_BLEND)
 #endif /* PAL_BLENDING */
@@ -441,6 +467,7 @@ static void scanLines_32(void* pBuffer, int width, int height, int pitch, int sc
 	}
 }
 
+#ifdef XEP80_EMULATION
 static void DisplayXEP80(void)
 {
 	static int xep80Frame = 0;
@@ -473,7 +500,9 @@ static void DisplayXEP80(void)
 		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
+#endif
 
+#ifdef NTSC_FILTER
 static void DisplayNTSCEmu(void)
 {
 	Uint8 *pixels = (Uint8*)SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
@@ -503,7 +532,9 @@ static void DisplayNTSCEmu(void)
 		break;
 	}
 }
+#endif
 
+#ifdef PBI_PROTO80
 static void DisplayProto80(void)
 {
 	int first_column = (VIDEOMODE_src_offset_left+7) / 8;
@@ -530,7 +561,9 @@ static void DisplayProto80(void)
 		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
+#endif
 
+#ifdef AF80
 static void DisplayAF80(void)
 {
 	int first_column = (VIDEOMODE_src_offset_left+7) / 8;
@@ -562,6 +595,41 @@ static void DisplayAF80(void)
 		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
 	}
 }
+#endif
+
+#ifdef BIT3
+static void DisplayBIT3(void)
+{
+	int first_column = (VIDEOMODE_src_offset_left+7) / 8;
+	int last_column = (VIDEOMODE_src_offset_left + VIDEOMODE_src_width) / 8;
+	int first_line = VIDEOMODE_src_offset_top;
+	int last_line = first_line + VIDEOMODE_src_height;
+	int pitch4 = SDL_VIDEO_screen->pitch / 2;
+	Uint8 *pixels = (Uint8*)SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
+
+	static int BIT3Frame = 0;
+	int blink;
+	BIT3Frame++;
+	if (BIT3Frame == 60) BIT3Frame = 0;
+	blink = BIT3Frame >= 30;
+	
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
+	case 8:
+		pixels += VIDEOMODE_dest_offset_left;
+		SDL_VIDEO_BlitBIT3_8((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink);
+		break;
+	case 16:
+		pixels += VIDEOMODE_dest_offset_left * 2;
+		SDL_VIDEO_BlitBIT3_16((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink, SDL_PALETTE_buffer.bpp16);
+		scanLines_16((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
+		break;
+	default:
+		pixels += VIDEOMODE_dest_offset_left * 4;
+		SDL_VIDEO_BlitBIT3_32((Uint32 *)pixels, first_column, last_column, pitch4, first_line, last_line, blink, SDL_PALETTE_buffer.bpp32);
+		scanLines_32((void *)pixels, VIDEOMODE_dest_width, VIDEOMODE_dest_height, SDL_VIDEO_screen->pitch, SDL_VIDEO_scanlines_percentage);
+	}
+}
+#endif
 
 static void DisplayRotated(void)
 {

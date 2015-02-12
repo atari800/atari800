@@ -607,6 +607,8 @@ if [[ "$a8_target" = default ]]; then
             OBJS="$OBJS pbi_proto80.o"
             AC_DEFINE(AF80,1,[The Austin Franklin 80 column card.])
             OBJS="$OBJS af80.o"
+            AC_DEFINE(BIT3,1,[The Bit3 Full View 80 column card.])
+            OBJS="$OBJS bit3.o"
             ;;
         dosvga)
             AC_DEFINE(DOSVGA,1,[Target: DOS VGA.])

@@ -352,7 +352,8 @@ SDL version options
                       Can be set to values such as 4:3, 16:9, 1.25:1, etc.
                       "auto" tries to autodetect the ratio.
 -80column             Display output of 80 column hardware. Usable only in
-                      conjunction with one of -xep80, -proto80, -af80
+                      conjunction with one of -xep80, -proto80, -af80, -bit3.
+                      -bit3 uses software control and does not need this.
 -no-80column          Display normal screen instead of 80 column output
 
 -nojoystick           Do not initialize joysticks
@@ -385,6 +386,7 @@ The following 7 items are only for -ntsc-artif set to ntsc-full:
 -xep80                Emulate the XEP80
 -xep80port <n>        Use XEP80 on joystick port <n>
 -af80                 Emulate the Austin Franklin 80 column board
+-bit3                 Emulate the Bit3 Full View 80 column board
 
 
 X11 options
@@ -575,7 +577,8 @@ LAlt+LShift+[     Decrease scanlines percentage
 LAlt+[            Increase scanlines percentage
 LAlt+]            Toggle NTSC composite/S-Video/RGB/monochrome settings
  
-LAlt+Shift+X      Enable/disable 80 column screen (for -xep80/-af80/-proto80)
+LAlt+Shift+X      Enable/disable 80 column screen (for -xep80/-af80/-proto80/
+-bit3)
 
 Apart from standard joysticks (handled by the SDL) up to two keyboard joysticks
 are supported. The keys used for joystick directions and the trigger can be

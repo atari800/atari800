@@ -41,6 +41,9 @@
 #ifdef AF80
 #include "af80.h"
 #endif
+#ifdef BIT3
+#include "bit3.h"
+#endif
 #include "platform.h"
 #include "pokeysnd.h"
 #include "ui.h"
@@ -295,6 +298,10 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			else if (AF80_ReadConfig(string,ptr)) {
 			}
 #endif
+#ifdef BIT3
+			else if (BIT3_ReadConfig(string,ptr)) {
+			}
+#endif
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 			else if (Colours_ReadConfig(string, ptr)) {
 			}
@@ -435,6 +442,9 @@ int CFG_WriteConfig(void)
 #endif
 #ifdef AF80
 	AF80_WriteConfig(fp);
+#endif
+#ifdef BIT3
+	BIT3_WriteConfig(fp);
 #endif
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 	Colours_WriteConfig(fp);

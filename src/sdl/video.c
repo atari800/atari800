@@ -25,6 +25,7 @@
 #include <SDL.h>
 
 #include "af80.h"
+#include "bit3.h"
 #include "artifact.h"
 #include "atari.h"
 #include "colours.h"
@@ -89,7 +90,10 @@ void SDL_VIDEO_UpdatePaletteLookup(VIDEOMODE_MODE_t mode, int bpp_32)
 		PAL_BLENDING_UpdateLookup();
 	else
 #endif /* PAL_BLENDING */
-	if (mode != VIDEOMODE_MODE_NTSC_FILTER) {
+#ifdef NTSC_FILTER
+	if (mode != VIDEOMODE_MODE_NTSC_FILTER)
+#endif
+	{
 		void *dest;
 		if (bpp_32)
 			dest = SDL_PALETTE_buffer.bpp32;
@@ -101,9 +105,12 @@ void SDL_VIDEO_UpdatePaletteLookup(VIDEOMODE_MODE_t mode, int bpp_32)
 
 void PLATFORM_PaletteUpdate(void)
 {
+#ifdef NTSC_FILTER
 	if (SDL_VIDEO_current_display_mode == VIDEOMODE_MODE_NTSC_FILTER)
 		FILTER_NTSC_Update(FILTER_NTSC_emu);
-	else {
+	else
+#endif
+	{
 #if HAVE_OPENGL
 		if (SDL_VIDEO_opengl)
 			SDL_VIDEO_GL_PaletteUpdate();
@@ -133,6 +140,7 @@ void PLATFORM_MapRGB(void *dest, int const *palette, int size)
 		SDL_VIDEO_SW_MapRGB(dest, palette, size);
 }
 
+#ifdef NTSC_FILTER
 static void UpdateNtscFilter(VIDEOMODE_MODE_t mode)
 {
 	if (mode != VIDEOMODE_MODE_NTSC_FILTER && FILTER_NTSC_emu != NULL) {
@@ -152,6 +160,7 @@ static void UpdateNtscFilter(VIDEOMODE_MODE_t mode)
 		FILTER_NTSC_Update(FILTER_NTSC_emu);
 	}
 }
+#endif
 
 void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
 {
@@ -207,7 +216,9 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 	SDL_VIDEO_SW_SetVideoMode(res, windowed, mode, rotate90);
 #endif
 	SDL_VIDEO_current_display_mode = mode;
+#ifdef NTSC_FILTER
 	UpdateNtscFilter(mode);
+#endif
 	PLATFORM_DisplayScreen();
 
 	/* For unknown reason (maybe window manager-related), when SDL_SetVideoMode
@@ -449,7 +460,10 @@ int SDL_VIDEO_Initialise(int *argc, char *argv[])
 void SDL_VIDEO_Exit(void)
 {
 	SDL_VIDEO_QuitSDL();
-	if (FILTER_NTSC_emu) {
+#ifdef NTSC_FILTER
+	if (FILTER_NTSC_emu)
+#endif
+	{
 		/* Turning filter off */
 		FILTER_NTSC_Delete(FILTER_NTSC_emu);
 		FILTER_NTSC_emu = NULL;
@@ -660,6 +674,7 @@ void SDL_VIDEO_BlitProto80_32(Uint32 *dest, int first_column, int last_column, i
 	}
 }
 
+#ifdef AF80
 void SDL_VIDEO_BlitAF80_8(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink)
 {
 	int skip = pitch - (last_column - first_column)*2;
@@ -745,6 +760,95 @@ void SDL_VIDEO_BlitAF80_32(Uint32 *dest, int first_column, int last_column, int 
 		start32 += skip;
 	}
 }
+#endif /* AF80 */
+
+#ifdef BIT3
+void SDL_VIDEO_BlitBIT3_8(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink)
+{
+	int skip = pitch - (last_column - first_column)*2;
+	register Uint32 *start32 = dest;
+	unsigned int column;
+	UBYTE pixels;
+	register Uint32 quad;
+	for (; first_line < last_line; first_line++) {
+		for (column = first_column; column < last_column; column++) {
+			int i;
+			int colour;
+			pixels = BIT3_GetPixels(first_line, column, &colour, blink);
+			for (i = 0; i < 2; i++) {
+				if (pixels & 0x01)
+					quad = colour;
+				else
+					quad = 0;
+				if (pixels & 0x02)
+					quad |= colour << 8;
+				if (pixels & 0x04)
+					quad |= colour << 16;
+				if (pixels & 0x08)
+					quad |= colour << 24;
+				*start32++ = quad;
+				pixels >>= 4;
+			}
+		}
+		start32 += skip;
+	}
+}
+
+void SDL_VIDEO_BlitBIT3_16(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink, Uint16 *palette16)
+{
+	Uint32 const black = (Uint32)palette16[0];
+	Uint32 const black2 = black << 16;
+	int skip = pitch - (last_column - first_column)*4;
+	register Uint32 *start32 = dest;
+	unsigned int column;
+	UBYTE pixels;
+	register Uint32 quad;
+	for (; first_line < last_line; first_line++) {
+		for (column = first_column; column < last_column; column++) {
+			int i;
+			int colour;
+			pixels = BIT3_GetPixels(first_line, column, &colour, blink);
+			for (i = 0; i < 4; i++) {
+				if (pixels & 0x01)
+					quad = palette16[colour];
+				else
+					quad = black;
+				if (pixels & 0x02)
+					quad |= palette16[colour] << 16;
+				else
+					quad |= black2;
+				*start32++ = quad;
+				pixels >>= 2;
+			}
+		}
+		start32 += skip;
+	}
+}
+
+void SDL_VIDEO_BlitBIT3_32(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink, Uint32 *palette32)
+{
+	Uint32 const black = palette32[0];
+	int skip = pitch - (last_column - first_column)*8;
+	register Uint32 *start32 = dest;
+	unsigned int column;
+	UBYTE pixels;
+	for (; first_line < last_line; first_line++) {
+		for (column = first_column; column < last_column; column++) {
+			int i;
+			int colour;
+			pixels = BIT3_GetPixels(first_line, column, &colour, blink);
+			for (i = 0; i < 8; i++) {
+				if (pixels & 0x01)
+					*start32++ = palette32[colour];
+				else
+					*start32++ = black;
+				pixels >>= 1;
+			}
+		}
+		start32 += skip;
+	}
+}
+#endif /* BIT3 */
 
 void SDL_VIDEO_SetScanlinesPercentage(int value)
 {

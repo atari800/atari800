@@ -127,6 +127,9 @@
 #ifdef AF80
 #include "af80.h"
 #endif
+#ifdef BIT3
+#include "bit3.h"
+#endif
 #ifdef NTSC_FILTER
 #include "filter_ntsc.h"
 #endif
@@ -259,6 +262,11 @@ void Atari800_Coldstart(void)
 	if (AF80_enabled) {
 		AF80_Reset();
 		AF80_InsertRightCartridge();
+	}
+#endif
+#ifdef BIT3
+	if (BIT3_enabled) {
+		BIT3_Reset();
 	}
 #endif
 }
@@ -741,6 +749,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef AF80
 		|| !AF80_Initialise(argc, argv)
 #endif
+#ifdef BIT3
+		|| !BIT3_Initialise(argc, argv) 
+#endif
 #ifdef NTSC_FILTER
 		|| !FILTER_NTSC_Initialise(argc, argv)
 #endif
@@ -957,6 +968,9 @@ int Atari800_Exit(int run_monitor)
 #endif
 #ifdef AF80
 		AF80_Exit();
+#endif
+#ifdef BIT3
+		BIT3_Exit();
 #endif
 #ifndef BASIC
 		INPUT_Exit();	/* finish event recording */

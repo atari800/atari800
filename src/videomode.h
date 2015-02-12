@@ -208,16 +208,19 @@ typedef enum {
 #ifdef AF80
 	VIDEOMODE_MODE_AF80,
 #endif
+#ifdef BIT3
+	VIDEOMODE_MODE_BIT3,
+#endif
 	VIDEOMODE_MODE_SIZE
 } VIDEOMODE_MODE_t;
-#if defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80)
+#if defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) || defined(BIT3)
 /* Indicates that 80 column display should be active when a 80 column card is available.
    Setting to TRUE does not switch to 80 column display when no 80 column card is present. */
 /* Call VIDEOMODE_Update() after changing this variable, or use VIDEOMODE_Set80Column() instead. */
 extern int VIDEOMODE_80_column;
 int VIDEOMODE_Set80Column(int value);
 int VIDEOMODE_Toggle80Column(void);
-#endif /* defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) */
+#endif /* defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) || defined(BIT3) */
 
 /* Called when an UI needs to be displayed. Forces the standard 40x25 display mode. */
 void VIDEOMODE_ForceStandardScreen(int value);

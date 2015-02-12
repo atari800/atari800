@@ -47,6 +47,9 @@
 #ifdef AF80
 #include "af80.h"
 #endif
+#ifdef BIT3
+#include "bit3.h"
+#endif
 
 /* stores the current state of the D1FF register, real hardware has 1
  * bit per device, the bits are on the devices themselves */
@@ -253,6 +256,9 @@ UBYTE PBI_D6GetByte(UWORD addr, int no_side_effects)
 #ifdef AF80
 	if (AF80_enabled) return AF80_D6GetByte(addr, no_side_effects);
 #endif
+#ifdef BIT3
+	if (BIT3_enabled) return BIT3_D6GetByte(addr, no_side_effects);
+#endif
 #ifdef PBI_MIO
 	if (PBI_MIO_enabled) return PBI_MIO_D6GetByte(addr, no_side_effects);
 #endif
@@ -270,6 +276,12 @@ void PBI_D6PutByte(UWORD addr, UBYTE byte)
 #ifdef AF80
 	if (AF80_enabled) {
 		AF80_D6PutByte(addr,byte);
+		return;
+	}
+#endif
+#ifdef BIT3
+	if (BIT3_enabled) {
+		BIT3_D6PutByte(addr,byte);
 		return;
 	}
 #endif

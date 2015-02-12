@@ -69,9 +69,6 @@ Emulation core
 * ATR-8000 emulation.  ATR-8500.
   Adapt an existing CPM emulator.
 
-* emulate the 800-only FULL-VIEW 80 BOARD by Bit3 Computer Corp
-  Need ROM images and schematics.
-
 * 6502 BRK bug
 
 * try to understand 6502's "unstable" opcodes (0x93, 0x9b, 0x9f) that seem

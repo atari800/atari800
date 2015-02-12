@@ -73,9 +73,16 @@ void SDL_VIDEO_BlitXEP80_32(Uint32 *dest, Uint8 *src, int pitch, int width, int 
 void SDL_VIDEO_BlitProto80_8(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line);
 void SDL_VIDEO_BlitProto80_16(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, Uint16 *palette16);
 void SDL_VIDEO_BlitProto80_32(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, Uint32 *palette32);
+#ifdef AF80
 void SDL_VIDEO_BlitAF80_8(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink);
 void SDL_VIDEO_BlitAF80_16(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink, Uint16 *palette16);
 void SDL_VIDEO_BlitAF80_32(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink, Uint32 *palette32);
+#endif
+#ifdef BIT3
+void SDL_VIDEO_BlitBIT3_8(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink);
+void SDL_VIDEO_BlitBIT3_16(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink, Uint16 *palette16);
+void SDL_VIDEO_BlitBIT3_32(Uint32 *dest, int first_column, int last_column, int pitch, int first_line, int last_line, int blink, Uint32 *palette32);
+#endif
 
 /* Update lookup tables for the blit functions. */
 void SDL_VIDEO_UpdatePaletteLookup(VIDEOMODE_MODE_t mode, int bpp_32);

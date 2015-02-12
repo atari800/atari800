@@ -26,16 +26,28 @@
 
 #include "sdl/palette.h"
 #include "af80.h"
+#include "bit3.h"
 #include "config.h"
 #include "colours.h"
 #include "videomode.h"
 
 SDL_PALETTE_tab_t const SDL_PALETTE_tab[VIDEOMODE_MODE_SIZE] = {
-	{ Colours_table, 256 }, /* Standard display */
-	{ Colours_table, 256 }, /* NTSC filter */
-	{ Colours_table, 256 }, /* XEP80 also uses the standard palette */
-	{ Colours_table, 256 }, /* So does PBI Proto80 */
-	{ AF80_palette, 16 } /* AF80 */
+	{ Colours_table, 256 } /* Standard display */
+#if NTSC_FILTER
+	,{ Colours_table, 256 } /* NTSC filter */
+#endif
+#ifdef XEP80_EMULATION
+	,{ Colours_table, 256 } /* XEP80 also uses the standard palette */
+#endif
+#ifdef PBI_PROTO80
+	,{ Colours_table, 256 } /* So does PBI Proto80 */
+#endif
+#ifdef AF80
+	,{ AF80_palette, 16 } /* AF80 */
+#endif
+#ifdef BIT3
+	,{ BIT3_palette, 2 } /* BIT3 */
+#endif
 };
 
 SDL_PALETTE_buffer_t SDL_PALETTE_buffer;

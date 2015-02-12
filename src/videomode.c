@@ -32,6 +32,9 @@
 #ifdef AF80
 #include "af80.h"
 #endif
+#ifdef BIT3
+#include "bit3.h"
+#endif
 #include "artifact.h"
 #include "atari.h"
 #include "cfg.h"
@@ -47,7 +50,7 @@
 #include "xep80.h"
 #endif
 
-#if defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80)
+#if defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) || defined(BIT3)
 #define COLUMN_80 1
 #else
 #define COLUMN_80 0
@@ -156,8 +159,10 @@ typedef struct display_mode_t {
 } display_mode_t;
 
 static unsigned int ReturnSame(unsigned int value);
+#if NTSC_FILTER
 static unsigned int UpscaleWidthNtsc(unsigned int w);
 static unsigned int DownscaleWidthNtsc(unsigned int w);
+#endif
 
 /* TODO determine pixel aspect ratio for 80 column cards. */
 static display_mode_t display_modes[VIDEOMODE_MODE_SIZE] = {
@@ -173,6 +178,9 @@ static display_mode_t display_modes[VIDEOMODE_MODE_SIZE] = {
 #endif
 #ifdef AF80
 	, { 640, 400, 640, 250, 2, 2, 0.5, &ReturnSame, &ReturnSame }
+#endif
+#ifdef BIT3
+	, { 640, 400, 640, 240, 2, 2, 0.5, &ReturnSame, &ReturnSame }
 #endif
 };
 
@@ -223,6 +231,10 @@ static VIDEOMODE_MODE_t CurrentDisplayMode(void)
 #ifdef AF80
 		if (AF80_enabled)
 			return VIDEOMODE_MODE_AF80;
+#endif
+#ifdef BIT3
+		if (BIT3_enabled)
+			return VIDEOMODE_MODE_BIT3;
 #endif
 	}
 #endif /* COLUMN_80 */

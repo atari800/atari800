@@ -75,6 +75,9 @@
 #ifdef AF80
 #include "af80.h"
 #endif /* AF80 */
+#ifdef BIT3
+#include "bit3.h"
+#endif /* BIT3 */
 #ifdef SOUND
 #include "pokeysnd.h"
 #include "sndsave.h"
@@ -2732,7 +2735,7 @@ static void DisplaySettings(void)
 #endif /* RPI */
 		UI_MENU_SUBMENU_SUFFIX(0, "Video artifacts:", NULL),
 		UI_MENU_SUBMENU_SUFFIX(11, "NTSC artifacting mode:", NULL),
-#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
+#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) || defined(BIT3))
 		UI_MENU_CHECK(25, "Show output of 80 column device:"),
 #endif
 		UI_MENU_SUBMENU_SUFFIX(1, "Current refresh rate:", refresh_status),
@@ -2813,7 +2816,7 @@ static void DisplaySettings(void)
 		}
 #endif
 
-#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
+#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) || defined(BIT3))
 		SetItemChecked(menu_array, 25, VIDEOMODE_80_column);
 #endif
 		snprintf(refresh_status, sizeof(refresh_status), "1:%-2d", Atari800_refresh_rate);
@@ -2873,7 +2876,7 @@ static void DisplaySettings(void)
 				}
 			}
 			break;
-#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80))
+#if SUPPORTS_CHANGE_VIDEOMODE && (defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) || defined(BIT3) )
 		case 25:
 			VIDEOMODE_Toggle80Column();
 			if (TRUE
@@ -2886,6 +2889,9 @@ static void DisplaySettings(void)
 #ifdef AF80
 			    && !AF80_enabled
 #endif /* AF80 */
+#ifdef BIT3
+			    && !BIT3_enabled
+#endif /* BIT3 */
 			   )
 				UI_driver->fMessage("No 80 column hardware available now.", 1);
 			break;

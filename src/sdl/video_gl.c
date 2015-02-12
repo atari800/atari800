@@ -26,6 +26,7 @@
 #include <SDL_opengl.h>
 
 #include "af80.h"
+#include "bit3.h"
 #include "artifact.h"
 #include "atari.h"
 #include "cfg.h"
@@ -97,20 +98,42 @@ struct
 } gl;
 
 static void DisplayNormal(GLvoid *dest);
+#if NTSC_FILTER
 static void DisplayNTSCEmu(GLvoid *dest);
+#endif
+#ifdef XEP80_EMULATION
 static void DisplayXEP80(GLvoid *dest);
+#endif
+#ifdef PBI_PROTO80
 static void DisplayProto80(GLvoid *dest);
+#endif
+#ifdef AF80
 static void DisplayAF80(GLvoid *dest);
+#endif
+#ifdef BIT3
+static void DisplayBIT3(GLvoid *dest);
+#endif
 #ifdef PAL_BLENDING
 static void DisplayPalBlending(GLvoid *dest);
 #endif /* PAL_BLENDING */
 
 static void (* blit_funcs[VIDEOMODE_MODE_SIZE])(GLvoid *) = {
-	&DisplayNormal,
-	&DisplayNTSCEmu,
-	&DisplayXEP80,
-	&DisplayProto80,
-	&DisplayAF80
+	&DisplayNormal
+#if NTSC_FILTER
+	,&DisplayNTSCEmu
+#endif
+#ifdef XEP80_EMULATION
+	,&DisplayXEP80
+#endif
+#ifdef PBI_PROTO80
+	,&DisplayProto80
+#endif
+#ifdef AF80
+	,&DisplayAF80
+#endif
+#ifdef BIT3
+	,&DisplayBIT3
+#endif
 };
 
 /* GL textures - [0] is screen, [1] is scanlines. */
@@ -652,6 +675,7 @@ static void DisplayPalBlending(GLvoid *dest)
 }
 #endif /* PAL_BLENDING */
 
+#if NTSC_FILTER
 static void DisplayNTSCEmu(GLvoid *dest)
 {
 	(*pixel_formats[SDL_VIDEO_GL_pixel_format].ntsc_blit_func)(
@@ -663,7 +687,9 @@ static void DisplayNTSCEmu(GLvoid *dest)
 		dest,
 		VIDEOMODE_actual_width * (bpp_32 ? 4 : 2));
 }
+#endif
 
+#ifdef XEP80_EMULATION
 static void DisplayXEP80(GLvoid *dest)
 {
 	static int xep80Frame = 0;
@@ -681,7 +707,9 @@ static void DisplayXEP80(GLvoid *dest)
 	else
 		SDL_VIDEO_BlitXEP80_16((Uint32*)dest, screen, VIDEOMODE_actual_width / 2, VIDEOMODE_src_width, VIDEOMODE_src_height, SDL_PALETTE_buffer.bpp16);
 }
+#endif
 
+#ifdef PBI_PROTO80
 static void DisplayProto80(GLvoid *dest)
 {
 	int first_column = (VIDEOMODE_src_offset_left+7) / 8;
@@ -693,7 +721,9 @@ static void DisplayProto80(GLvoid *dest)
 	else
 		SDL_VIDEO_BlitProto80_16((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width/2, first_line, last_line, SDL_PALETTE_buffer.bpp16);
 }
+#endif
 
+#ifdef AF80
 static void DisplayAF80(GLvoid *dest)
 {
 	int first_column = (VIDEOMODE_src_offset_left+7) / 8;
@@ -710,6 +740,26 @@ static void DisplayAF80(GLvoid *dest)
 	else
 		SDL_VIDEO_BlitAF80_16((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width/2, first_line, last_line, blink, SDL_PALETTE_buffer.bpp16);
 }
+#endif
+
+#ifdef BIT3
+static void DisplayBIT3(GLvoid *dest)
+{
+	int first_column = (VIDEOMODE_src_offset_left+7) / 8;
+	int last_column = (VIDEOMODE_src_offset_left + VIDEOMODE_src_width) / 8;
+	int first_line = VIDEOMODE_src_offset_top;
+	int last_line = first_line + VIDEOMODE_src_height;
+	static int BIT3Frame = 0;
+	int blink;
+	BIT3Frame++;
+	if (BIT3Frame == 60) BIT3Frame = 0;
+	blink = BIT3Frame >= 30;
+	if (bpp_32)
+		SDL_VIDEO_BlitBIT3_32((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width, first_line, last_line, blink, SDL_PALETTE_buffer.bpp32);
+	else
+		SDL_VIDEO_BlitBIT3_16((Uint32*)dest, first_column, last_column, VIDEOMODE_actual_width/2, first_line, last_line, blink, SDL_PALETTE_buffer.bpp16);
+}
+#endif
 
 void SDL_VIDEO_GL_DisplayScreen(void)
 {

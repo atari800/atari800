@@ -43,6 +43,9 @@
 #ifdef AF80
 #include "af80.h"
 #endif
+#ifdef BIT3
+#include "bit3.h"
+#endif
 #include "log.h"
 
 /* #define DEBUG 1 */
@@ -1041,6 +1044,11 @@ UBYTE CARTRIDGE_GetByte(UWORD addr, int no_side_effects)
 		return AF80_D5GetByte(addr, no_side_effects);
 	}
 #endif
+#ifdef BIT3
+	if (BIT3_enabled) {
+		return BIT3_D5GetByte(addr, no_side_effects);
+	}
+#endif
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9))
 		return RTIME_GetByte();
 #ifdef IDE
@@ -1062,6 +1070,11 @@ void CARTRIDGE_PutByte(UWORD addr, UBYTE byte)
 		   cartridge in the left slot and no other cartridges are
 		   there. */
 		return;
+	}
+#endif
+#ifdef BIT3
+	if (BIT3_enabled && (addr == 0xd508 || addr == 0xd580 || addr == 0xd581 || addr == 0xd583 || addr == 0xd585)) {
+		BIT3_D5PutByte(addr,byte);
 	}
 #endif
 	if (RTIME_enabled && (addr == 0xd5b8 || addr == 0xd5b9)) {

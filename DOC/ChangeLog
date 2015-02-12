@@ -1,3 +1,11 @@
+2015-02-12  Perry McFarlane  <perry_m@mail.com>
+* DOC/ChangeLog, DOC/TODO, DOC/USAGE, atari.c, cartridge.c, cfg.c,
+  configure.ac, pbi.c, ui.c, videomode.[ch], sdl/input.c, sdl/palette.c,
+  sdl/video.[ch], sdl/video_gl.c, sdl/video_sw.c, bit3.[ch]: Emulate the Bit3
+  Full View 80 column card for the Atari 800.  Added more #ifdefs for AF80,
+  XEP80_EMULATION, PBI_PROTO80, and NTSC_FILTER.
+
+
 2015-02-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cassette.c, img_tape.c: Minimal support for reading CAS "fsk " chunks, to
   support some tape images of copy-protected original software, only with

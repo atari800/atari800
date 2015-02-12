@@ -400,7 +400,9 @@ int PLATFORM_Keyboard(void)
 			case SDLK_x:
 				if (INPUT_key_shift) {
 					key_pressed = 0;
+#if defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) || defined(BIT3)
 					VIDEOMODE_Toggle80Column();
+#endif
 				}
 				break;
 			case SDLK_g:
