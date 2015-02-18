@@ -10,6 +10,16 @@ Version ?.?.? (????/??/??)
   * Delete the emulator's config file (.atari800.cfg). Caution: you'll lose
     all Atari800 settings!
 
+ New features:
+ -------------
+  * Support for loading of CAS images with "fsk" chunks - images of
+    copy-protected tapes can now be loaded, with SIO patch being disabled.
+
+ Changes:
+ --------
+  * The Sound Settings option "Fragment size" has been renamed to less cryptic
+    "Hardware buffer size".
+
  Fixes:
  ------
   * Fixed computation of gamma adjustment - now it is applied to each of the

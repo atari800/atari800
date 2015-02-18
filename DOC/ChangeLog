@@ -1,3 +1,7 @@
+2015-02-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/NEWS, DOC/USAGE: Updated for new release.
+
+
 2015-02-12  Petr Stehlik <pstehlik@sophics.cz>
 Committing fixes provided by an Anonymous author in SF.net Bugs:
 * configure.ac: native building on RPi fixed

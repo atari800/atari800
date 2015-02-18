@@ -24,8 +24,10 @@ emulator acts as if the tape recorder's "Play" button was permanently pressed,
 so that a tape rolls automatically when an Atari program turns the tape motor
 on.
 
-Turning the SIO patch on speeds up the tape load and save operations. Note
-that toggling the SIO patch during any tape operation will cause it to fail.
+Turning the SIO patch on speeds up the tape load and save operations. Some
+tapes, however, are copy-protected an will load correctly only with the SIO
+patch being disabled. Note that toggling the SIO patch during any tape
+operation will cause it to fail.
 
 A tape image can be rewound to a specific part (block), to allow loading
 from tape images which contain multiple programs one-after-another. After
