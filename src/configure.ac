@@ -350,6 +350,7 @@ dnl BeOS has a real issue with redundant-decls
         ;;
     x11*)
         AC_DEFINE(X11,1,[Target: Standard X11.])
+        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         A8_NEED_LIB(X11)
         case "$a8_target" in
             *-shm)

@@ -1,3 +1,7 @@
+2015-02-24  Christian Groessler  <chris@groessler.org>
+* atari_x11.c, configure.ac: Add support for palette update in X11 targets.
+
+
 2015-02-18  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/NEWS, DOC/USAGE: Updated for new release.
 

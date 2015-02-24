@@ -159,7 +159,9 @@ static Colormap cmap;
 
 static GC gc;
 static GC gc_colour[256];
-static int colours[256];
+static unsigned long colours[256];
+static int colors_allocated;
+static int force_redraw;  /* flag for PLATFORM_DisplayScreen: redraw whole screen after a palette change */
 
 #ifdef XVIEW
 static Frame frame;
@@ -1381,10 +1383,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	XSetWindowAttributes xswda;
 #endif
 
-	XGCValues xgcvl;
-
 	int depth;
-	int colorstep;
 	int i, j;
 	int mode = 0;
 	int help_only = FALSE;
@@ -2207,55 +2206,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 						   window_width, window_height, depth);
 #endif /* SHM */
 
-	if (depth <= 8)
-		colorstep = 2;
-	else
-		colorstep = 1;
-	for (i = 0; i < 256; i += colorstep) {
-		XColor colour;
-
-		int rgb = Colours_table[i];
-		int status;
-
-		colour.red = (rgb & 0x00ff0000) >> 8;
-		colour.green = (rgb & 0x0000ff00);
-		colour.blue = (rgb & 0x000000ff) << 8;
-
-		status = XAllocColor(display,
-							 cmap,
-							 &colour);
-
-		if (! status) {
-			printf("Could not allocate color\n");
-			exit(1);
-		}
-
-		for (j = 0; j < colorstep; j++)
-			colours[i + j] = colour.pixel;
-
-#ifdef SHM
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-		for (j = 0; j < colorstep; j++)
-			colour_translation_table[i + j] = colours[i + j] | (colours[i + j] << 8);
-#endif
-#endif
-	}
-
-	for (i = 0; i < 256; i++) {
-		xgcvl.background = colours[0];
-		xgcvl.foreground = colours[i];
-
-		gc_colour[i] = XCreateGC(display, window,
-								 GCForeground | GCBackground,
-								 &xgcvl);
-	}
-
-	xgcvl.background = colours[0];
-	xgcvl.foreground = colours[0];
-
-	gc = XCreateGC(display, window,
-				   GCForeground | GCBackground,
-				   &xgcvl);
+	PLATFORM_PaletteUpdate();
 
 #ifndef SHM
 	XFillRectangle(display, pixmap, gc, 0, 0,
@@ -2377,7 +2328,7 @@ void PLATFORM_DisplayScreen(void)
 				for (y = clipping_y; y < (clipping_y + clipping_height); y++) { \
 					for (x = clipping_x; x < (clipping_x + clipping_width); x++) { \
 						help_color = colours[*ptr2++]; \
-						if (help_color != *ptr) { \
+						if (help_color != *ptr || force_redraw) { \
 							SHM_SET_LAST \
 							*ptr = help_color; \
 						} \
@@ -2393,7 +2344,7 @@ void PLATFORM_DisplayScreen(void)
 					pixel_type *ptr_second_line = ptr + window_width; \
 					for (x = clipping_x; x < (clipping_x + clipping_width); x++) { \
 						help_color = colours[*ptr2++]; \
-						if (help_color != *ptr) { \
+						if (help_color != *ptr || force_redraw) { \
 							SHM_SET_LAST \
 							ptr[0] = help_color; \
 							ptr[1] = help_color; \
@@ -2415,7 +2366,7 @@ void PLATFORM_DisplayScreen(void)
 					pixel_type *ptr_third_line = ptr + window_width + window_width; \
 					for (x = clipping_x; x < (clipping_x + clipping_width); x++) { \
 						help_color = colours[*ptr2++]; \
-						if (help_color != *ptr) { \
+						if (help_color != *ptr || force_redraw) { \
 							SHM_SET_LAST \
 							ptr[0] = help_color; \
 							ptr[1] = help_color; \
@@ -2497,7 +2448,7 @@ void PLATFORM_DisplayScreen(void)
 			for (y = 0; y < clipping_height; y++) {
 				for (x = 0; x < clipping_width; x++) {
 					UBYTE colour = *ptr2++;
-					if (colour != *ptr) {
+					if (colour != *ptr || force_redraw) {
 						*ptr = colour;
 						if (colour != last_colour || n >= NPOINTS) {
 							if (n > 0) {
@@ -2527,7 +2478,7 @@ void PLATFORM_DisplayScreen(void)
 			for (y = 0; y < window_height; y += 2) {
 				for (x = 0; x < window_width; ) {
 					UBYTE colour = *ptr2++;
-					if (colour != *ptr) {
+					if (colour != *ptr || force_redraw) {
 						int width = 2;
 						*ptr++ = colour;
 						if (colour != last_colour || n >= NRECTS) {
@@ -2567,7 +2518,7 @@ void PLATFORM_DisplayScreen(void)
 			for (y = 0; y < window_height; y += 3) {
 				for (x = 0; x < window_width; ) {
 					UBYTE colour = *ptr2++;
-					if (colour != *ptr) {
+					if (colour != *ptr || force_redraw) {
 						int width = 3;
 						*ptr++ = colour;
 						if (colour != last_colour || n >= NRECTS) {
@@ -2985,6 +2936,102 @@ int PLATFORM_TRIG(int num)
 #endif
 
 	return trig;
+}
+
+void PLATFORM_PaletteUpdate(void)
+{
+	int i, j;
+	int depth;
+	int colorstep;
+	XGCValues xgcvl;
+
+	depth = XDefaultDepthOfScreen(screen);
+	cmap = XDefaultColormapOfScreen(screen);
+
+	if (depth <= 8)
+		colorstep = 2;
+	else
+		colorstep = 1;
+
+	if (colors_allocated) {
+		if (colorstep == 1)
+			XFreeColors(display, cmap, colours, 256, 0);
+		else {
+			for (i = 0; i < 256; i += colorstep)
+				XFreeColors(display, cmap, colours + i, 1, 0);
+		}
+	}
+
+	for (i = 0; i < 256; i += colorstep) {
+		XColor colour;
+
+		int rgb = Colours_table[i];
+		int status;
+
+		colour.red = (rgb & 0x00ff0000) >> 8;
+		colour.green = (rgb & 0x0000ff00);
+		colour.blue = (rgb & 0x000000ff) << 8;
+
+		status = XAllocColor(display,
+							 cmap,
+							 &colour);
+
+		if (! status) {
+			printf("Could not allocate color\n");
+			exit(1);
+		}
+
+		for (j = 0; j < colorstep; j++)
+			colours[i + j] = colour.pixel;
+
+#ifdef SHM
+#ifdef USE_COLOUR_TRANSLATION_TABLE
+		for (j = 0; j < colorstep; j++)
+			colour_translation_table[i + j] = colours[i + j] | (colours[i + j] << 8);
+#endif
+#endif
+	}
+
+	if (! colors_allocated) {
+		for (i = 0; i < 256; i++) {
+			xgcvl.background = colours[0];
+			xgcvl.foreground = colours[i];
+
+			gc_colour[i] = XCreateGC(display, window,
+									 GCForeground | GCBackground,
+									 &xgcvl);
+		}
+
+		xgcvl.background = colours[0];
+		xgcvl.foreground = colours[0];
+
+		gc = XCreateGC(display, window,
+					   GCForeground | GCBackground,
+					   &xgcvl);
+
+	}
+	else {
+		for (i = 0; i < 256; i++) {
+			xgcvl.background = colours[0];
+			xgcvl.foreground = colours[i];
+
+			XChangeGC(display, gc_colour[i],
+					  GCForeground | GCBackground,
+					  &xgcvl);
+		}
+
+		xgcvl.background = colours[0];
+		xgcvl.foreground = colours[0];
+
+		XChangeGC(display, gc,
+				  GCForeground | GCBackground,
+				  &xgcvl);
+
+		force_redraw = TRUE;
+		PLATFORM_DisplayScreen();
+		force_redraw = FALSE;
+	}
+	colors_allocated = TRUE;
 }
 
 void Atari_Mouse(void)
