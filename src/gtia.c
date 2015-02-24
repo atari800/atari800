@@ -30,8 +30,8 @@
 #include "cassette.h"
 #include "cpu.h"
 #include "gtia.h"
-#ifndef BASIC
 #include "input.h"
+#ifndef BASIC
 #include "statesav.h"
 #endif
 #include "pokeysnd.h"
