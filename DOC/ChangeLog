@@ -1,3 +1,7 @@
+2015-02-24  Perry McFarlane  <perry_m@mail.com>
+* bit3.c, DOC/NEWS: Invert bit3 cursor, add bit3 NEWS.
+
+
 2015-02-24  Christian Groessler  <chris@groessler.org>
 * atari_x11.c, configure.ac: Add support for palette update in X11 targets.
 * gtia.c: Fix compilation of basic (no video) target.

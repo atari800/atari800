@@ -14,6 +14,7 @@ Version ?.?.? (????/??/??)
  -------------
   * Support for loading of CAS images with "fsk" chunks - images of
     copy-protected tapes can now be loaded, with SIO patch being disabled.
+  * Bit3 Full View 80 Column card emulation.
 
  Changes:
  --------

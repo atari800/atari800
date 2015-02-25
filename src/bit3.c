@@ -238,7 +238,7 @@ UBYTE BIT3_GetPixels(int scanline, int column, int *colour, int blink)
 					/* 0x20: no cursor */
 					/* 0x40: blink at 1/16 field rate */
 					/* 0x60: blink at 1/32 field rate TODO */
-				font_data = 0xff; /* cursor */
+				font_data ^= 0xff; /* cursor */
 			}
 		}
 	}
