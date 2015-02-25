@@ -231,7 +231,7 @@ case "$a8_target" in
             CFLAGS="$CFLAGS -I$x_includes"
         fi
         if [[ "X_$x_libraries" != "X_" ]]; then
-            LDFLAGS="$LDFLAGS -L$x_libraries"
+            LDFLAGS="$LDFLAGS -L$x_libraries -Wl,-rpath,$x_libraries"
         fi
         ;;
 esac

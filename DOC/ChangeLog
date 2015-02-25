@@ -1,3 +1,8 @@
+2015-02-25  Christian Groessler  <chris@groessler.org>
+* configure.ac: If a non-standard location for the X11 libraries was given
+  (--x-libraries parameter), add this location to the run-time search path.
+
+
 2015-02-24  Perry McFarlane  <perry_m@mail.com>
 * bit3.c, DOC/NEWS: Invert bit3 cursor, add bit3 NEWS.
 
