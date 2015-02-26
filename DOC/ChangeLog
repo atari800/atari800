@@ -17,7 +17,7 @@
 
 
 2015-02-12  Petr Stehlik <pstehlik@sophics.cz>
-Committing fixes provided by an Anonymous author in SF.net Bugs:
+Committing fixes provided by Jools Wills in SF.net Bugs #41 and #42:
 * configure.ac: native building on RPi fixed
 * sdl/video.c: handle properly situation when any resolution is available
 
