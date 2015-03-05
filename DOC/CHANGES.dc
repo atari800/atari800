@@ -1,3 +1,31 @@
+17-Aug-2008	atari800dc v0.78
+
+	* fix crash when loading state save file from ramdisk
+	* add screen position configuration ability
+	* default screen position can be set in the configuration file
+	  (DISPLAY_X_ADJUST and DISPLAY_Y_ADJUST)
+	* adjust default PAL screen position by x=10, y=-8
+	* adjust default NTSC screen position by x=10, y=-8
+	* remove "Save configuration file" option in "Emulator
+	  configuration" menu. Since the atari800.cfg file is on the CD
+	  this option anyway never worked.
+
+13-May-2008	atari800dc v0.77
+
+	* enable basic R: device emulation with the DC Coder's Cable (no
+	  modem controls; fixed to 8n1; baud rates 300 - 9600)
+	* use Atari800 2.0.3 code base
+	* use KOS svn code base version 560
+	* add possibility to switch X and Y axes of controller input
+	* ability to disable either the D-Pad or the Joystick of the
+	  controllers (in "Controller Configuration" menu)
+	* ability to disable or enable Bienias' sound improvements. They
+	  are too heavy for the DC and therefore disabled by default. 0.75
+	  had them disabled, 0.76 had them enabled, now it's selectable.
+	* when saving or restoring state display a "please wait" since
+	  accessing the VMU is very slow. This was already in 0.75 but got
+	  lost in 0.76.
+
 30-Jan-2006	atari800dc v0.76
 
 	* use Atari800 cvs code base as of jan-27-2006
