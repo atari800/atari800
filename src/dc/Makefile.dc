@@ -1,5 +1,5 @@
 # adapt the following variables to your environment
-SHBASE = /opt/dcgcc-4.7.0/sh-elf
+SHBASE = /opt/dcgcc-4.7.3/sh-elf
 KOS = /net/swamp/zeug/dc/kos-git/kos
 
 # use assembler screen update functions

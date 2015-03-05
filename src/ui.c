@@ -3933,7 +3933,7 @@ static void AboutEmulator(void)
 		Atari800_TITLE "\0"
 		"Copyright (c) 1995-1998 David Firth\0"
 		"and\0"
-		"(c)1998-2010 Atari800 Development Team\0"
+		"(c)1998-2015 Atari800 Development Team\0"
 		"See CREDITS file for details.\0"
 		"http://atari800.atari.org/\0"
 		"\0"

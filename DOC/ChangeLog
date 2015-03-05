@@ -1,3 +1,10 @@
+2015-03-05  Christian Groessler  <chris@groessler.org>
+* ui.c (AboutEmulator): Change copyright year to 2015.
+* dc/version.h: Add a knob to switch "beta versions" on and off.
+* dc/atari_dc.c: Update on-screen keyboard to current interface of
+  ui_basic.c.
+
+
 2015-02-25  Christian Groessler  <chris@groessler.org>
 * configure.ac: If a non-standard location for the X11 libraries was given
   (--x-libraries parameter), add this location to the run-time search path.

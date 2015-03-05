@@ -58,7 +58,6 @@ static maple_device_t *mkeyb_dev;
 static int num_cont;   /* # of controllers found */
 static int su_first_call = TRUE;
 static int b_ui_leave = FALSE;
-static int in_kbui = FALSE;
 static int open_tray = FALSE;
 static int tray_closed = TRUE;
 static int reverse_x_axis = FALSE, reverse_y_axis = FALSE;
@@ -86,6 +85,7 @@ int ovr_inject_key = AKEY_NONE;
 int x_key = AKEY_NONE;
 int y_key = AKEY_NONE;
 int b_key = AKEY_NONE;
+int UI_BASIC_in_kbui;
 
 extern char curr_disk_dir[];
 extern char curr_cart_dir[];
@@ -454,13 +454,13 @@ int get_emkey(UBYTE *title)
 	int keycode;
 
 	controller_update();
-	in_kbui = TRUE;
+	UI_BASIC_in_kbui = TRUE;
 	memcpy(atari_screen_backup, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
 	keycode = UI_BASIC_OnScreenKeyboard(title, -1);
 	memcpy(Screen_atari, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
 	Screen_EntireDirty();
 	PLATFORM_DisplayScreen();
-	in_kbui = FALSE;
+	UI_BASIC_in_kbui = FALSE;
 	return keycode;
 
 #if 0 /* @@@ 26-Mar-2013, chris: check this */
@@ -487,6 +487,7 @@ static int controller_kb(void)
 		prev_b = FALSE, prev_l = FALSE;
 	static int repdelay = REPEAT_DELAY;
 	cont_state_t *state = mcont_state[0];
+	int keycode;
 
 	if (! num_cont) return(AKEY_NONE);  /* no controller present */
 
@@ -496,23 +497,24 @@ static int controller_kb(void)
 	if (!UI_is_active && (state->ltrig > 250 || (state->buttons & CONT_Z))) {
 		return(AKEY_UI);
 	}
-#ifdef KB_UI
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 	if (!UI_is_active && (state->rtrig > 250 || (state->buttons & CONT_C))) {
 		controller_update();
-		return(AKEY_KEYB);
+		return(AKEY_KEYB);  /* enter keyboard emulation screen */
 	}
 	/* provide keyboard emulation to enter file name */
-	if (UI_is_active && !in_kbui && (state->rtrig > 250 || (state->buttons & CONT_C))) {
+	if (UI_is_active && !UI_BASIC_in_kbui && (state->rtrig > 250 || (state->buttons & CONT_C))) {
 		controller_update();
-		in_kbui = TRUE;
+		UI_BASIC_in_kbui = TRUE;
 		memcpy(atari_screen_backup, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
 		keycode = UI_BASIC_OnScreenKeyboard(NULL, -1);
 		memcpy(Screen_atari, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
 		Screen_EntireDirty();
 		PLATFORM_DisplayScreen();
-		in_kbui = FALSE;
+		UI_BASIC_in_kbui = FALSE;
 		return keycode;
 #if 0 /* @@@ 26-Mar-2013, chris: check this */
+		// @@@ DONE, should be ok if removed
 		if (inject_key != AKEY_NONE) {
 			int keycode;
 			keycode = inject_key;
@@ -524,9 +526,9 @@ static int controller_kb(void)
 		}
 #endif
 	}
-#endif
+#endif  /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
 
-	if (UI_is_active) {
+	if (UI_is_active || UI_BASIC_in_kbui) {
 		if ((state->buttons & cont_dpad_up)) {
 			prev_down = FALSE;
 			if (! prev_up) {
@@ -617,7 +619,7 @@ static int controller_kb(void)
 		}
 
 		if (state->ltrig > 250 || (state->buttons & CONT_Z)) {
-			if (! prev_l && in_kbui) {
+			if (! prev_l && UI_BASIC_in_kbui) {
 				prev_l = TRUE;
 				return(AKEY_ESCAPE);
 			}
@@ -674,7 +676,8 @@ int PLATFORM_Keyboard(void)
 
 	if (num_cont && (keycode = consol_keys()) != AKEY_NONE) return(keycode);
 
-#ifdef KB_UI
+#if 0  /* @@@ 05-Mar-2015, chris: check this */
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 	if (inject_key != AKEY_NONE) {
 		keycode = inject_key;
 		inject_key = AKEY_NONE;
@@ -694,6 +697,7 @@ int PLATFORM_Keyboard(void)
 		}
 		return(keycode);
 	}
+#endif  /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
 #endif
 	if (ovr_inject_key != AKEY_NONE) {
 		keycode = ovr_inject_key;
@@ -1495,18 +1499,30 @@ int main(int argc, char **argv)
 				Atari800_Coldstart();
 			}
 			break;
-#ifdef KB_UI
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 		case AKEY_KEYB:
+#if 1
+			Sound_Pause();
+			UI_BASIC_in_kbui = TRUE;
+			INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, 0);
+			UI_BASIC_in_kbui = FALSE;
+			switch (INPUT_key_code) {
+				case AKEY_OPTION: INPUT_key_consol &= (~INPUT_CONSOL_OPTION); break;
+				case AKEY_SELECT: INPUT_key_consol &= (~INPUT_CONSOL_SELECT); break;
+				case AKEY_START: INPUT_key_consol &= (~INPUT_CONSOL_START); break;
+			}
+			Sound_Continue();
+#else /* @@@ 05-Mar-2015, chris: check this */
 			if (Atari800_machine_type != Atari800_MACHINE_5200) {
 				Sound_Pause();
-				in_kbui = TRUE;
+				UI_BASIC_in_kbui = TRUE;
 				if (x_ovr || y_ovr || b_ovr) {
 					kb_ui((UBYTE *)Screen_atari, NULL, KB_CONSOL);
 				}
 				else {
 					kb_ui((UBYTE *)Screen_atari, NULL, 0);
 				}
-				in_kbui = FALSE;
+				UI_BASIC_in_kbui = FALSE;
 				INPUT_key_consol |= INPUT_CONSOL_START;
 				/*b_ui_leave = TRUE;  crashes when included!! why?? */
 				Sound_Continue();
@@ -1514,14 +1530,15 @@ int main(int argc, char **argv)
 			}
 			else {
 				Sound_Pause();
-				in_kbui = TRUE;
+				UI_BASIC_in_kbui = TRUE;
 				kb_ui_5200((UBYTE *)Screen_atari);
-				in_kbui = FALSE;
+				UI_BASIC_in_kbui = FALSE;
 				Sound_Continue();
 				controller_update();
 			}
+#endif
 			break;
-#endif /* #ifdef KB_UI */
+#endif /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
 		case AKEY_BREAK:
 			INPUT_key_code = AKEY_BREAK;
 			break;
@@ -1830,7 +1847,7 @@ void AboutAtariDC(void)
 {
 	UI_driver->fInfoScreen("About AtariDC",
 			       "AtariDC v" A800DCVERASC " ("__DATE__")\0"
-			       "(c) 2002-2013 Christian Groessler\0"
+			       "(c) 2002-2015 Christian Groessler\0"
 			       "http://www.groessler.org/a800dc\0"
 			       "\0"
 			       "Please report all problems\0"
@@ -1843,7 +1860,7 @@ void AboutAtariDC(void)
 			       "It uses the KallistiOS library\0"
 			       "http://cadcdev.sourceforge.net\0"
 			       "\0"
-#if 1
+#if A800DCBETA
 			       "THIS IS A *BETA* VERSION!\0"
 			       "PLEASE  DO NOT DISTRIBUTE\0\0"
 #endif
@@ -2219,3 +2236,4 @@ void Sound_Update(void)
 	       g2_read_32(SPU_RAM_BASE + 0x1f804));
 #endif
 }
+/* eval: (c-set-offset 'case-label '+) */
