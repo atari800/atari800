@@ -1629,10 +1629,14 @@ void CPU_GO(int limit)
 	OPCODE(93)				/* SHA (ab),y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] (Fox) */
 		/* It seems previous memory value is important - also in 9f */
 		ZPAGE;
-		data = MEMORY_dGetByte((UBYTE) (addr + 1));	/* Get high byte from zpage */
-		data = A & X & (data + 1);
-		addr = MEMORY_dGetWord(addr) + Y;
-		MEMORY_PutByte(addr, data);
+		addr = zGetWord(addr);
+		data = A & X & ((addr >> 8) + 1);
+		if ((addr & 0xff) + Y > 0xff) { /* if it crosses a page */
+			MEMORY_PutByte(((addr + Y) & 0xff) | (data << 8), data);
+		}
+		else {
+			MEMORY_PutByte(addr + Y, data);
+		}
 		DONE
 
 	OPCODE(94)				/* STY ab,x */
@@ -1675,8 +1679,12 @@ void CPU_GO(int limit)
 		ABSOLUTE;
 		S = A & X;
 		data = S & ((addr >> 8) + 1);
-		addr += Y;
-		MEMORY_PutByte(addr, data);
+		if ((addr & 0xff) + Y > 0xff) { /* if it crosses a page */
+			MEMORY_PutByte(((addr + Y) & 0xff) | (data << 8), data);
+		}
+		else {
+			MEMORY_PutByte(addr + Y, data);
+		}
 		DONE
 
 	OPCODE(9c)				/* SHY abcd,x [unofficial - Store Y and (H+1)] (Fox) */
@@ -1684,8 +1692,12 @@ void CPU_GO(int limit)
 		ABSOLUTE;
 		/* MPC 05/24/00 */
 		data = Y & ((UBYTE) ((addr >> 8) + 1));
-		addr += X;
-		MEMORY_PutByte(addr, data);
+		if ((addr & 0xff) + X > 0xff) { /* if it crosses a page */
+			MEMORY_PutByte(((addr + X) & 0xff) | (data << 8), data);
+		}
+		else {
+			MEMORY_PutByte(addr + X, data);
+		}
 		DONE
 
 	OPCODE(9d)				/* STA abcd,x */
@@ -1698,15 +1710,23 @@ void CPU_GO(int limit)
 		ABSOLUTE;
 		/* MPC 05/24/00 */
 		data = X & ((UBYTE) ((addr >> 8) + 1));
-		addr += Y;
-		MEMORY_PutByte(addr, data);
+		if ((addr & 0xff) + Y > 0xff) { /* if it crosses a page */
+			MEMORY_PutByte(((addr + Y) & 0xff) | (data << 8), data);
+		}
+		else {
+			MEMORY_PutByte(addr + Y, data);
+		}
 		DONE
 
 	OPCODE(9f)				/* SHA abcd,y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] (Fox) */
 		ABSOLUTE;
 		data = A & X & ((addr >> 8) + 1);
-		addr += Y;
-		MEMORY_PutByte(addr, data);
+		if ((addr & 0xff) + Y > 0xff) { /* if it crosses a page */
+			MEMORY_PutByte(((addr + Y) & 0xff) | (data << 8), data);
+		}
+		else {
+			MEMORY_PutByte(addr + Y, data);
+		}
 		DONE
 
 	OPCODE(a0)				/* LDY #ab */

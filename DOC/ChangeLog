@@ -1,3 +1,8 @@
+2015-03-11  Perry McFarlane  <perry_m@mail.com>
+* cpu.c: Fix opcodes 93, 9b, 9c, 9e, 9f (sha ind_y, shs, shy, shx, sha) page
+  crossing behaviour.
+
+
 2015-03-05  Christian Groessler  <chris@groessler.org>
 * ui.c (AboutEmulator): Change copyright year to 2015.
 * dc/version.h: Add a knob to switch "beta versions" on and off.
