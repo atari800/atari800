@@ -1,3 +1,8 @@
+2015-03-14  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sio.c: With SIO patch enabled, replicate behaviour of the real SIO OS
+  routine. E.T. Phone Home! now works with SIO patch enabled.
+
+
 2015-03-11  Perry McFarlane  <perry_m@mail.com>
 * cpu.c: Fix opcodes 93, 9b, 9c, 9e, 9f (sha ind_y, shs, shy, shx, sha) page
   crossing behaviour.

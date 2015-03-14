@@ -1112,7 +1112,7 @@ static int last_ypos = 0;
 void SIO_Handler(void)
 {
 	int sector = MEMORY_dGetWordAligned(0x30a);
-	UBYTE unit = (MEMORY_dGetByte(0x300) + MEMORY_dGetByte(0x301) + 0xff ) - 0x31;
+	UBYTE unit = MEMORY_dGetByte(0x300) + MEMORY_dGetByte(0x301) + 0xff;
 	UBYTE result = 0x00;
 	UWORD data = MEMORY_dGetWordAligned(0x304);
 	int length = MEMORY_dGetWordAligned(0x308);
@@ -1125,8 +1125,22 @@ void SIO_Handler(void)
 	}
 	/* A real atari just adds the bytes and 0xff. The result could wrap.*/
 	/* XL OS: E99D: LDA $0300 ADC $0301 ADC #$FF STA 023A */
+
+	/* The OS SIO routine copies decide ID do CDEVIC, command ID to CCOMND etc.
+	   This operation is not needed withe the SIO patch enabled, but we perform
+	   it anyway, since some programs rely on that. (E.g. the E.T Phone Home!
+	   cartridge would crash with SIO patch enabled.)
+	   Note: While on a real XL OS the copying is done only for SIO devices
+	   (not for PBI ones), here we copy the values for all types of devices -
+	   it's probably harmless. */
+	MEMORY_dPutByte(0x023a, unit); /* sta CDEVIC */
+	MEMORY_dPutByte(0x023b, cmd); /* sta CCOMND */
+	MEMORY_dPutWordAligned(0x023c, sector); /* sta CAUX1; sta CAUX2 */
+
 	/* Disk 1 is ASCII '1' = 0x31 etc */
 	/* Disk 1 -> unit = 0 */
+	unit -= 0x31;
+
 	if (MEMORY_dGetByte(0x300) != 0x60 && unit < SIO_MAX_DRIVES && (SIO_drive_status[unit] != SIO_OFF || BINLOAD_start_binloading)) {	/* UBYTE range ! */
 #ifdef DEBUG
 		Log_print("SIO disk command is %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x",
