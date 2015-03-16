@@ -1,3 +1,8 @@
+2015-03-16  Perry McFarlane  <perry_m@mail.com>
+* pia.[ch], pokey.c, statesav.c: Fix PIA CA2/CB2 and irq. Bump
+  SAVE_VERSION_NUMBER to 8.
+
+
 2015-03-14  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sio.c: With SIO patch enabled, replicate behaviour of the real SIO OS
   routine. E.T. Phone Home! now works with SIO patch enabled.

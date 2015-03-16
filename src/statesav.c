@@ -71,7 +71,7 @@
 #include "xep80.h"
 #endif
 
-#define SAVE_VERSION_NUMBER 7 /* Last changed after Atari800 2.2.1 */
+#define SAVE_VERSION_NUMBER 8 /* Last changed after Atari800 3.1.0 */
 
 #if defined(MEMCOMPR)
 static gzFile *mem_open(const char *name, const char *mode);

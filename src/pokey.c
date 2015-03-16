@@ -240,7 +240,7 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		printf("WR: IRQEN = %x, PC = %x\n", POKEY_IRQEN, PC);
 #endif
 		POKEY_IRQST |= ~byte & 0xf7;	/* Reset disabled IRQs except XMTDONE */
-		if ((~POKEY_IRQST & POKEY_IRQEN) == 0 && PBI_IRQ == 0)
+		if ((~POKEY_IRQST & POKEY_IRQEN) == 0 && PBI_IRQ == 0 && PIA_IRQ == 0)
 			CPU_IRQ = 0;
 		else
 			CPU_GenerateIRQ();

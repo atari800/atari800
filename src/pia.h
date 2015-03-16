@@ -15,6 +15,9 @@ extern UBYTE PIA_PORTB;
 extern UBYTE PIA_PORTA_mask;
 extern UBYTE PIA_PORTB_mask;
 extern UBYTE PIA_PORT_input[2];
+extern int PIA_CA2;
+extern int PIA_CB2;
+extern int PIA_IRQ;
 
 int PIA_Initialise(int *argc, char *argv[]);
 void PIA_Reset(void);
