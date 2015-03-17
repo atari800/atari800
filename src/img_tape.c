@@ -146,7 +146,7 @@ IMG_TAPE_t *IMG_TAPE_Open(char const *filename, int *writable, char const **desc
 	IMG_TAPE_t *img;
 	CAS_Header header;
 
-	img = Util_malloc(sizeof(IMG_TAPE_t));
+	img = (IMG_TAPE_t *)Util_malloc(sizeof(IMG_TAPE_t));
 	/* Check if the file is writable. If not, recording will be disabled. */
 	img->file = fopen(filename, "rb+");
 	*writable = img->file != NULL;
@@ -238,7 +238,7 @@ IMG_TAPE_t *IMG_TAPE_Open(char const *filename, int *writable, char const **desc
 	img->next_blockbyte = 0;
 	img->block_length = 0;
 	img->current_block = 0;
-	img->buffer = Util_malloc((img->buffer_size = DEFAULT_BUFFER_SIZE) * sizeof(UBYTE));
+	img->buffer = (UBYTE *)Util_malloc((img->buffer_size = DEFAULT_BUFFER_SIZE) * sizeof(UBYTE));
 	img->was_writing = FALSE;
 
 	return img;
@@ -288,7 +288,7 @@ IMG_TAPE_t *IMG_TAPE_Create(char const *filename, char const *description)
 		return NULL;
 	}
 
-	img = Util_malloc(sizeof(IMG_TAPE_t));
+	img = (IMG_TAPE_t *)Util_malloc(sizeof(IMG_TAPE_t));
 	img->file = file;
 	if (description != NULL)
 		Util_strlcpy(img->description, description, CASSETTE_DESCRIPTION_MAX);
@@ -300,7 +300,7 @@ IMG_TAPE_t *IMG_TAPE_Create(char const *filename, char const *description)
 	img->current_block = 0;
 	img->num_blocks = 0;
 	img->block_offsets[0] = strlen(description) + 16;
-	img->buffer = Util_malloc((img->buffer_size = DEFAULT_BUFFER_SIZE) * sizeof(UBYTE));
+	img->buffer = (UBYTE *)Util_malloc((img->buffer_size = DEFAULT_BUFFER_SIZE) * sizeof(UBYTE));
 	img->was_writing = TRUE;
 
 	return img;
@@ -314,7 +314,7 @@ static void EnlargeBuffer(IMG_TAPE_t *file, size_t size)
 		file->buffer_size *= 2;
 		if (file->buffer_size < size)
 			file->buffer_size = size;
-		file->buffer = Util_realloc(file->buffer, file->buffer_size * sizeof(UBYTE));
+		file->buffer = (UBYTE *)Util_realloc(file->buffer, file->buffer_size * sizeof(UBYTE));
 	}
 }
 

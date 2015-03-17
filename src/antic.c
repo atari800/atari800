@@ -1506,6 +1506,7 @@ static void draw_antic_2_dmactl_bug(int nchars, const UBYTE *antic_memptr, UWORD
 {
 	INIT_BACKGROUND_6
 	INIT_ANTIC_2
+	chptr = chptr; /* suppress GCC -Wunused-but-set-variable warning */
 	INIT_HIRES
 
 	CHAR_LOOP_BEGIN

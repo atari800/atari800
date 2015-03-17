@@ -98,7 +98,7 @@ typedef struct
 	UWORD flags;   /* Flags, see values below */
 	SWORD retval;  /* Value returned by Select when this item is selected */
 	               /* < 0 means that item is strictly informative and cannot be selected */
-	char *prefix;  /* Text to prepend the item */
+	const char *prefix;  /* Text to prepend the item */
 	char *item;    /* Main item text */
 	const char *suffix;  /* Optional text to show after the item text (e.g. key shortcut) */
 	               /* or (if (flags & UI_ITEM_TIP) != 0) "tooltip" */

@@ -249,7 +249,7 @@ VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size)
 	if (modes == (SDL_Rect**)0)
 		return NULL;
 	if (modes == (SDL_Rect**)-1) {
-		resolutions = Util_malloc(sizeof(VIDEOMODE_resolution_t));
+		resolutions = (VIDEOMODE_resolution_t *)Util_malloc(sizeof(VIDEOMODE_resolution_t));
 		resolutions[0].width = 336;
 		resolutions[0].height = 240;
 		*size = 1;
@@ -258,7 +258,7 @@ VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size)
 	/* Determine number of available modes. */
 	for (num_modes = 0; modes[num_modes] != NULL; ++num_modes);
 
-	resolutions = Util_malloc(num_modes * sizeof(VIDEOMODE_resolution_t));
+	resolutions = (VIDEOMODE_resolution_t *)Util_malloc(num_modes * sizeof(VIDEOMODE_resolution_t));
 	for (i = 0; i < num_modes; i++) {
 		resolutions[i].width = modes[i]->w;
 		resolutions[i].height = modes[i]->h;

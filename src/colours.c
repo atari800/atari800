@@ -225,7 +225,7 @@ Colours_preset_t Colours_GetPreset(void)
 		    Util_almostequal(Colours_setup->gamma, presets[i].gamma, 0.001) &&
 		    Colours_setup->black_level == presets[i].black_level &&
 		    Colours_setup->white_level == presets[i].white_level)
-			return i; 
+			return (Colours_preset_t)i; 
 	}
 	return COLOURS_PRESET_CUSTOM;
 }

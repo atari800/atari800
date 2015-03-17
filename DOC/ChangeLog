@@ -1,3 +1,9 @@
+2015-03-17  Perry McFarlane  <perry_m@mail.com>
+* antic.c, artifact.c, colours.c, img_tape.c, log.[ch], monitor.c, screen.c,
+  sio.c, ui.[ch], sdl/video.c, sdl/video_gl.c, sdl/video_sw.c, win32/sound.c:
+  Fix gcc warnings, allow compiling with g++.
+
+
 2015-03-16  Perry McFarlane  <perry_m@mail.com>
 * pia.[ch], pokey.c, statesav.c: Fix PIA CA2/CB2 and irq. Bump
   SAVE_VERSION_NUMBER to 8.

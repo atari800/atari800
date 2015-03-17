@@ -59,7 +59,7 @@ static char const * const mode_cfg_strings[ARTIFACT_SIZE] = {
 #endif /* PAL_BLENDING */
 };
 
-static void UpdateMode(int old_mode, int reinit)
+static void UpdateMode(ARTIFACT_t old_mode, int reinit)
 {
 #if (NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE) || defined(PAL_BLENDING)
 	int need_reinit = FALSE;
@@ -137,19 +137,19 @@ int ARTIFACT_ReadConfig(char *option, char *ptr)
 		int i = CFG_MatchTextParameter(ptr, mode_cfg_strings, ARTIFACT_SIZE);
 		if (i < 0)
 			return FALSE;
-		mode_ntsc = i;
+		mode_ntsc = (ARTIFACT_t)i;
 	}
 	else if (strcmp(option, "ARTIFACT_PAL") == 0) {
 		int i = CFG_MatchTextParameter(ptr, mode_cfg_strings, ARTIFACT_SIZE);
 		if (i < 0)
 			return FALSE;
-		mode_pal = i;
+		mode_pal = (ARTIFACT_t)i;
 	}
 	else if (strcmp(option, "ARTIFACT_NTSC_MODE") == 0) {
 		int i = Util_sscandec(ptr);
 		if (i < 0 || i > 4)
 			return FALSE;
-		ANTIC_artif_mode = i;
+		ANTIC_artif_mode = (ARTIFACT_t)i;
 	}
 	else
 		return FALSE;
@@ -179,7 +179,7 @@ int ARTIFACT_Initialise(int *argc, char *argv[])
 					Log_print("Invalid value for -ntsc-artif");
 					return FALSE;
 				}
-				mode_ntsc = idx;
+				mode_ntsc = (ARTIFACT_t)idx;
 			} else a_m = TRUE;
 		}
 		else if (strcmp(argv[i], "-pal-artif") == 0) {
@@ -189,7 +189,7 @@ int ARTIFACT_Initialise(int *argc, char *argv[])
 					Log_print("Invalid value for -pal-artif");
 					return FALSE;
 				}
-				mode_pal = idx;
+				mode_pal = (ARTIFACT_t)idx;
 			} else a_m = TRUE;
 		}
 

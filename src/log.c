@@ -46,7 +46,7 @@
 char Log_buffer[Log_BUFFER_SIZE];
 #endif
 
-void Log_print(char *format, ...)
+void Log_print(const char *format, ...)
 {
 	va_list args;
 	char buffer[8192];

@@ -81,8 +81,8 @@ void monitor_printf(const char *format, ...)
 
 #endif /* __PLUS */
 
-unsigned char *trainer_memory = NULL;
-unsigned char *trainer_flags = NULL;
+UBYTE *trainer_memory = NULL;
+UBYTE *trainer_flags = NULL;
 
 #ifdef MONITOR_TRACE
 FILE *MONITOR_trace_file = NULL;
@@ -1851,7 +1851,7 @@ static void trainer_start_search(void)
 
 	/* alloc needed memory at first use */
 	if (trainer_memory == NULL) {
-		trainer_memory = malloc(65536*2);
+		trainer_memory = (UBYTE *)malloc(65536*2);
 		if (trainer_memory != NULL) {
 			trainer_flags = trainer_memory + 65536;
 		} else {

@@ -157,8 +157,8 @@ void SDL_VIDEO_SW_PaletteUpdate(void)
 
 static void ModeInfo(void)
 {
-	char *fullstring = fullscreen ? "fullscreen" : "windowed";
-	char *vsyncstring = (SDL_VIDEO_screen->flags & SDL_DOUBLEBUF) ? "with vsync" : "without vsync";
+	const char *fullstring = fullscreen ? "fullscreen" : "windowed";
+	const char *vsyncstring = (SDL_VIDEO_screen->flags & SDL_DOUBLEBUF) ? "with vsync" : "without vsync";
 	Log_print("Video Mode: %dx%dx%d %s %s", SDL_VIDEO_screen->w, SDL_VIDEO_screen->h,
 	          SDL_VIDEO_screen->format->BitsPerPixel, fullstring, vsyncstring);
 }
@@ -779,11 +779,11 @@ static void DisplayPalBlending(void)
 	 * PLATFORM_SetVideoMode() function. */
 	case 16:
 		pixels += VIDEOMODE_dest_offset_left * 2;
-		PAL_BLENDING_Blit16((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+		PAL_BLENDING_Blit16((ULONG*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
 		break;
 	default: /* SDL_VIDEO_screen->format->BitsPerPixel == 32 */
 		pixels += VIDEOMODE_dest_offset_left * 4;
-		PAL_BLENDING_Blit32((Uint32 *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+		PAL_BLENDING_Blit32((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
 	}
 }
 
@@ -797,11 +797,11 @@ static void DisplayPalBlendingScaled(void)
 	 * PLATFORM_SetVideoMode() function. */
 	case 16:
 		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
-		PAL_BLENDING_BlitScaled16((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
+		PAL_BLENDING_BlitScaled16((ULONG*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
 		break;
 	case 32:
 		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
-		PAL_BLENDING_BlitScaled32((Uint32*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
+		PAL_BLENDING_BlitScaled32((ULONG*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
 	}
 }
 #endif /* PAL_BLENDING */

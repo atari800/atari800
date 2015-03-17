@@ -334,11 +334,11 @@ static int initsound_wav(void)
     }
 
   buffers = ((wfx.nAvgBytesPerSec * snddelaywav / 1000) >> WAVSHIFT) + 1;
-  waves = malloc(buffers * sizeof(*waves));
+  waves = (WAVEHDR *)malloc(buffers * sizeof(*waves));
   for (i = 0; i < buffers; i++)
     {
       memset(&waves[i], 0, sizeof (waves[i]));
-      if (!(waves[i].lpData = (UBYTE *)malloc(WAVSIZE)))
+      if (!(waves[i].lpData = (LPSTR)malloc(WAVSIZE)))
 	{
 	  Log_print("could not get wave buffer memory\n");
 	  exit(1);

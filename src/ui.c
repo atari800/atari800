@@ -2056,8 +2056,8 @@ static int ChooseVideoResolution(int current_res)
 
 	unsigned int i;
 
-	menu_array = Util_malloc((num_res+1) * sizeof(UI_tMenuItem));
-	res_strings = Util_malloc(num_res * sizeof(char(*[10])));
+	menu_array = (UI_tMenuItem *)Util_malloc((num_res+1) * sizeof(UI_tMenuItem));
+	res_strings = (char (*)[10])Util_malloc(num_res * sizeof(char(*)[10]));
 
 	for (i = 0; i < num_res; i ++) {
 		VIDEOMODE_CopyResolutionName(i, res_strings[i], 10);
@@ -2863,7 +2863,7 @@ static void DisplaySettings(void)
 #endif /* PAL_BLENDING */
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, ARTIFACT_mode, artif_menu_array, NULL);
 			if (option2 >= 0)
-				ARTIFACT_Set(option2);
+				ARTIFACT_Set((ARTIFACT_t)option2);
 			break;
 		case 11:
 			/* The artifacting mode option is only active for ANTIC artifacting. */
@@ -2970,7 +2970,7 @@ static void DisplaySettings(void)
 		case 12:
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, colours_preset, colours_preset_menu_array, NULL);
 			if (option2 >= 0) {
-				Colours_SetPreset(option2);
+				Colours_SetPreset((Colours_preset_t)option2);
 				Colours_Update();
 				for (i=0; i<6; i++) {
 					UpdateColourControl(i);
