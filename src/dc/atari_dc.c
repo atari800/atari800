@@ -1,6 +1,6 @@
 /*
  * SEGA Dreamcast support using KallistiOS (http://cadcdev.sourceforge.net)
- * (c) 2002-2014 Christian Groessler (chris@groessler.org)
+ * (c) 2002-2015 Christian Groessler (chris@groessler.org)
  */
 
 #include <stdarg.h>
@@ -477,7 +477,7 @@ int get_emkey(UBYTE *title)
 
 /*
  * do some basic keyboard emulation for the controller,
- * so that the emulator menu can be used without keyboard
+ * so that the emulator menu can be used without a keyboard
  * (basically for selecting bin files/disk images)
  */
 static int controller_kb(void)
@@ -1489,11 +1489,9 @@ int main(int argc, char **argv)
 	/* main loop */
 	while(TRUE)
 	{
-		int keycode;
+		INPUT_key_code = PLATFORM_Keyboard();
 
-		keycode = PLATFORM_Keyboard();
-
-		switch (keycode) {
+		switch (INPUT_key_code) {
 		case AKEY_5200_RESET:
 			if (Atari800_machine_type == Atari800_MACHINE_5200) {
 				Atari800_Coldstart();
@@ -1511,6 +1509,7 @@ int main(int argc, char **argv)
 				case AKEY_SELECT: INPUT_key_consol &= (~INPUT_CONSOL_SELECT); break;
 				case AKEY_START: INPUT_key_consol &= (~INPUT_CONSOL_START); break;
 			}
+			INPUT_key_consol |= INPUT_CONSOL_START;
 			Sound_Continue();
 #else /* @@@ 05-Mar-2015, chris: check this */
 			if (Atari800_machine_type != Atari800_MACHINE_5200) {
@@ -1539,12 +1538,6 @@ int main(int argc, char **argv)
 #endif
 			break;
 #endif /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
-		case AKEY_BREAK:
-			INPUT_key_code = AKEY_BREAK;
-			break;
-		default:
-			INPUT_key_code = keycode;
-			break;
 		}
 
 		Atari800_Frame();
