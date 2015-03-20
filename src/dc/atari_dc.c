@@ -85,7 +85,7 @@ int ovr_inject_key = AKEY_NONE;
 int x_key = AKEY_NONE;
 int y_key = AKEY_NONE;
 int b_key = AKEY_NONE;
-int UI_BASIC_in_kbui;
+int DC_in_kbui;
 
 extern char curr_disk_dir[];
 extern char curr_cart_dir[];
@@ -376,7 +376,7 @@ static int consol_keys(void)
 	}
 
 	if (Atari800_machine_type != Atari800_MACHINE_5200) {
-		if (b_ovr && !UI_is_active && !b_ui_leave) {
+		if (b_ovr && !UI_is_active && !DC_in_kbui && !b_ui_leave) {
 			/* !UI_is_active and !b_ui_leave because B is also the esc key
 			   (with rtrig) to leave the ui */
 			if (b_key != AKEY_NONE && (state->buttons & CONT_B))
@@ -384,7 +384,7 @@ static int consol_keys(void)
 		}
 		else {
 			if (state->buttons & CONT_B) {
-				if (! b_ui_leave) {
+				if (!b_ui_leave && !DC_in_kbui && !UI_is_active) {
 					INPUT_key_consol &= ~INPUT_CONSOL_START;
 				}
 				else {
@@ -454,13 +454,13 @@ int get_emkey(UBYTE *title)
 	int keycode;
 
 	controller_update();
-	UI_BASIC_in_kbui = TRUE;
+	DC_in_kbui = TRUE;
 	memcpy(atari_screen_backup, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
 	keycode = UI_BASIC_OnScreenKeyboard(title, -1);
 	memcpy(Screen_atari, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
 	Screen_EntireDirty();
 	PLATFORM_DisplayScreen();
-	UI_BASIC_in_kbui = FALSE;
+	DC_in_kbui = FALSE;
 	return keycode;
 
 #if 0 /* @@@ 26-Mar-2013, chris: check this */
@@ -503,15 +503,15 @@ static int controller_kb(void)
 		return(AKEY_KEYB);  /* enter keyboard emulation screen */
 	}
 	/* provide keyboard emulation to enter file name */
-	if (UI_is_active && !UI_BASIC_in_kbui && (state->rtrig > 250 || (state->buttons & CONT_C))) {
+	if (UI_is_active && !DC_in_kbui && (state->rtrig > 250 || (state->buttons & CONT_C))) {
 		controller_update();
-		UI_BASIC_in_kbui = TRUE;
+		DC_in_kbui = TRUE;
 		memcpy(atari_screen_backup, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
 		keycode = UI_BASIC_OnScreenKeyboard(NULL, -1);
 		memcpy(Screen_atari, atari_screen_backup, Screen_HEIGHT * Screen_WIDTH);
 		Screen_EntireDirty();
 		PLATFORM_DisplayScreen();
-		UI_BASIC_in_kbui = FALSE;
+		DC_in_kbui = FALSE;
 		return keycode;
 #if 0 /* @@@ 26-Mar-2013, chris: check this */
 		// @@@ DONE, should be ok if removed
@@ -528,7 +528,7 @@ static int controller_kb(void)
 	}
 #endif  /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
 
-	if (UI_is_active || UI_BASIC_in_kbui) {
+	if (UI_is_active || DC_in_kbui) {
 		if ((state->buttons & cont_dpad_up)) {
 			prev_down = FALSE;
 			if (! prev_up) {
@@ -619,7 +619,7 @@ static int controller_kb(void)
 		}
 
 		if (state->ltrig > 250 || (state->buttons & CONT_Z)) {
-			if (! prev_l && UI_BASIC_in_kbui) {
+			if (! prev_l && DC_in_kbui) {
 				prev_l = TRUE;
 				return(AKEY_ESCAPE);
 			}
@@ -676,34 +676,30 @@ int PLATFORM_Keyboard(void)
 
 	if (num_cont && (keycode = consol_keys()) != AKEY_NONE) return(keycode);
 
-#if 0  /* @@@ 05-Mar-2015, chris: check this */
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-	if (inject_key != AKEY_NONE) {
-		keycode = inject_key;
-		inject_key = AKEY_NONE;
+	if (ovr_inject_key != AKEY_NONE) {
+		keycode = ovr_inject_key;
+		ovr_inject_key = AKEY_NONE;
 		switch(keycode) {
 		case AKEY_OPTION:
-			INPUT_key_consol &= (~INPUT_CONSOL_OPTION);
+			INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
 			keycode = AKEY_NONE;
 			break;
 		case AKEY_SELECT:
-			INPUT_key_consol &= (~INPUT_CONSOL_SELECT);
+			INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
+			printf("XXX SELECT \n");
 			keycode = AKEY_NONE;
 			break;
 		case AKEY_START:
-			INPUT_key_consol &= (~INPUT_CONSOL_START);
+			INPUT_key_consol &= ~INPUT_CONSOL_START;
 			keycode = AKEY_NONE;
 			break;
 		}
 		return(keycode);
 	}
+#else
+#error check me!
 #endif  /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
-#endif
-	if (ovr_inject_key != AKEY_NONE) {
-		keycode = ovr_inject_key;
-		ovr_inject_key = AKEY_NONE;
-		return(keycode);
-	}
 
 	keycode = controller_kb();
 	if (keycode != AKEY_NONE) return(keycode);
@@ -723,13 +719,14 @@ int PLATFORM_Keyboard(void)
 	/* OPTION / SELECT / START keys */
 	/*INPUT_key_consol = INPUT_CONSOL_NONE;  -- already set in consol_keys... */
 	case 0x3b00:
-		INPUT_key_consol &= (~INPUT_CONSOL_OPTION);
+		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
 		return(AKEY_NONE);
 	case 0x3c00:
-		INPUT_key_consol &= (~INPUT_CONSOL_SELECT);
+		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
 		return(AKEY_NONE);
 	case 0x3d00:
-		INPUT_key_consol &= (~INPUT_CONSOL_START);
+		printf("setting START #2...\n");
+		INPUT_key_consol &= ~INPUT_CONSOL_START;
 		return(AKEY_NONE);
 
 	case 0x1b:  /* ESC */
@@ -1501,27 +1498,26 @@ int main(int argc, char **argv)
 		case AKEY_KEYB:
 #if 1
 			Sound_Pause();
-			UI_BASIC_in_kbui = TRUE;
+			DC_in_kbui = TRUE;
 			INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, 0);
-			UI_BASIC_in_kbui = FALSE;
+			DC_in_kbui = FALSE;
 			switch (INPUT_key_code) {
-				case AKEY_OPTION: INPUT_key_consol &= (~INPUT_CONSOL_OPTION); break;
-				case AKEY_SELECT: INPUT_key_consol &= (~INPUT_CONSOL_SELECT); break;
-				case AKEY_START: INPUT_key_consol &= (~INPUT_CONSOL_START); break;
+				case AKEY_OPTION: INPUT_key_consol &= ~INPUT_CONSOL_OPTION; break;
+				case AKEY_SELECT: INPUT_key_consol &= ~INPUT_CONSOL_SELECT; break;
+				case AKEY_START: b_ui_leave = TRUE; INPUT_key_consol &= ~INPUT_CONSOL_START; break;
 			}
-			INPUT_key_consol |= INPUT_CONSOL_START;
 			Sound_Continue();
 #else /* @@@ 05-Mar-2015, chris: check this */
 			if (Atari800_machine_type != Atari800_MACHINE_5200) {
 				Sound_Pause();
-				UI_BASIC_in_kbui = TRUE;
+				DC_in_kbui = TRUE;
 				if (x_ovr || y_ovr || b_ovr) {
 					kb_ui((UBYTE *)Screen_atari, NULL, KB_CONSOL);
 				}
 				else {
 					kb_ui((UBYTE *)Screen_atari, NULL, 0);
 				}
-				UI_BASIC_in_kbui = FALSE;
+				DC_in_kbui = FALSE;
 				INPUT_key_consol |= INPUT_CONSOL_START;
 				/*b_ui_leave = TRUE;  crashes when included!! why?? */
 				Sound_Continue();
@@ -1529,9 +1525,9 @@ int main(int argc, char **argv)
 			}
 			else {
 				Sound_Pause();
-				UI_BASIC_in_kbui = TRUE;
+				DC_in_kbui = TRUE;
 				kb_ui_5200((UBYTE *)Screen_atari);
-				UI_BASIC_in_kbui = FALSE;
+				DC_in_kbui = FALSE;
 				Sound_Continue();
 				controller_update();
 			}

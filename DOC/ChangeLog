@@ -1,3 +1,9 @@
+2015-03-20  Christian Groessler  <chris@groessler.org>
+* dc/atari_dc.c: Fix problem when trying to leave the on-screen keyboard
+  emulation menu when an override for the DC 'B' button is configured.
+  Some other unrelated code cleanups.
+
+
 2015-03-19  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c: Don't inject a "START" button press when leaving the
   on-screen keyboard.
