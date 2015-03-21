@@ -105,6 +105,10 @@ int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
                      );
 void POKEYSND_Update(UWORD addr, UBYTE val, UBYTE /*chip*/, UBYTE gain);
 void POKEYSND_UpdateConsol(int set);
+
+/* Fill sndbuffer with sndn samples of audio. Number of bytes written to
+   sndbuffer is sndn with 8-bit sound, and 2*sndn with 16-bit sound. sndn
+   must be a multiple of POKEYSND_num_pokeys. */
 void POKEYSND_Process(void *sndbuffer, int sndn);
 int POKEYSND_DoInit(void);
 void POKEYSND_SetMzQuality(int quality);

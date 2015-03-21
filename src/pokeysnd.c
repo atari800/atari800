@@ -1289,11 +1289,11 @@ static void Generate_sync_rf(unsigned int num_ticks)
 		num_ticks -= ticks;
 
 		if (POKEYSND_snd_flags & POKEYSND_BIT16) {
-			pokeysnd_process_16(buffer, 1);
+			pokeysnd_process_16(buffer, POKEYSND_num_pokeys);
 			buffer += 2 * POKEYSND_num_pokeys;
 		}
 		else {
-			pokeysnd_process_8(buffer, 1);
+			pokeysnd_process_8(buffer, POKEYSND_num_pokeys);
 			buffer += POKEYSND_num_pokeys;
 		}
 
