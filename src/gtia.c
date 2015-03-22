@@ -434,41 +434,81 @@ UBYTE GTIA_GetByte(UWORD addr, int no_side_effects)
 {
 	switch (addr & 0x1f) {
 	case GTIA_OFFSET_M0PF:
+#ifdef NEW_CYCLE_EXACT
+	if (ANTIC_DRAWING_SCREEN) {
+			ANTIC_UpdateScanline();
+	}
+#endif
 		return (((PF0PM & 0x10) >> 4)
 		      + ((PF1PM & 0x10) >> 3)
 		      + ((PF2PM & 0x10) >> 2)
 		      + ((PF3PM & 0x10) >> 1)) & GTIA_collisions_mask_missile_playfield;
 	case GTIA_OFFSET_M1PF:
+#ifdef NEW_CYCLE_EXACT
+	if (ANTIC_DRAWING_SCREEN) {
+			ANTIC_UpdateScanline();
+	}
+#endif
 		return (((PF0PM & 0x20) >> 5)
 		      + ((PF1PM & 0x20) >> 4)
 		      + ((PF2PM & 0x20) >> 3)
 		      + ((PF3PM & 0x20) >> 2)) & GTIA_collisions_mask_missile_playfield;
 	case GTIA_OFFSET_M2PF:
+#ifdef NEW_CYCLE_EXACT
+	if (ANTIC_DRAWING_SCREEN) {
+			ANTIC_UpdateScanline();
+	}
+#endif
 		return (((PF0PM & 0x40) >> 6)
 		      + ((PF1PM & 0x40) >> 5)
 		      + ((PF2PM & 0x40) >> 4)
 		      + ((PF3PM & 0x40) >> 3)) & GTIA_collisions_mask_missile_playfield;
 	case GTIA_OFFSET_M3PF:
+#ifdef NEW_CYCLE_EXACT
+	if (ANTIC_DRAWING_SCREEN) {
+			ANTIC_UpdateScanline();
+	}
+#endif
 		return (((PF0PM & 0x80) >> 7)
 		      + ((PF1PM & 0x80) >> 6)
 		      + ((PF2PM & 0x80) >> 5)
 		      + ((PF3PM & 0x80) >> 4)) & GTIA_collisions_mask_missile_playfield;
 	case GTIA_OFFSET_P0PF:
+#ifdef NEW_CYCLE_EXACT
+	if (ANTIC_DRAWING_SCREEN) {
+			ANTIC_UpdateScanline();
+	}
+#endif
 		return ((PF0PM & 0x01)
 		      + ((PF1PM & 0x01) << 1)
 		      + ((PF2PM & 0x01) << 2)
 		      + ((PF3PM & 0x01) << 3)) & GTIA_collisions_mask_player_playfield;
 	case GTIA_OFFSET_P1PF:
+#ifdef NEW_CYCLE_EXACT
+	if (ANTIC_DRAWING_SCREEN) {
+			ANTIC_UpdateScanline();
+	}
+#endif
 		return (((PF0PM & 0x02) >> 1)
 		      + (PF1PM & 0x02)
 		      + ((PF2PM & 0x02) << 1)
 		      + ((PF3PM & 0x02) << 2)) & GTIA_collisions_mask_player_playfield;
 	case GTIA_OFFSET_P2PF:
+#ifdef NEW_CYCLE_EXACT
+	if (ANTIC_DRAWING_SCREEN) {
+			ANTIC_UpdateScanline();
+	}
+#endif
 		return (((PF0PM & 0x04) >> 2)
 		      + ((PF1PM & 0x04) >> 1)
 		      + (PF2PM & 0x04)
 		      + ((PF3PM & 0x04) << 1)) & GTIA_collisions_mask_player_playfield;
 	case GTIA_OFFSET_P3PF:
+#ifdef NEW_CYCLE_EXACT
+	if (ANTIC_DRAWING_SCREEN) {
+			ANTIC_UpdateScanline();
+	}
+#endif
 		return (((PF0PM & 0x08) >> 3)
 		      + ((PF1PM & 0x08) >> 2)
 		      + ((PF2PM & 0x08) >> 1)
