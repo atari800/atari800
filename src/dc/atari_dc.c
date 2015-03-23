@@ -40,6 +40,8 @@
 #error need DIRTYRECT
 #endif
 
+#define OVR_DELAY 5  /* # of frames that an overridden console key appears to be pressed */
+
 void PLATFORM_DisplayScreen(void);
 int stat(const char *, struct stat *);
 static void calc_palette(void);
@@ -80,11 +82,10 @@ int db_mode = FALSE;
 int screen_tv_mode;    /* mode of connected tv set */
 
 int x_ovr = FALSE, y_ovr = FALSE, b_ovr = FALSE;
+int x_key = AKEY_NONE, y_key = AKEY_NONE, b_key = AKEY_NONE;
+int x_ovr_delay, y_ovr_delay, b_ovr_delay;
 int disable_js = FALSE, disable_dpad = FALSE;
 int ovr_inject_key = AKEY_NONE;
-int x_key = AKEY_NONE;
-int y_key = AKEY_NONE;
-int b_key = AKEY_NONE;
 int DC_in_kbui;
 
 extern char curr_disk_dir[];
@@ -1499,12 +1500,22 @@ int main(int argc, char **argv)
 #if 1
 			Sound_Pause();
 			DC_in_kbui = TRUE;
-			INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, 0);
+			INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, Atari800_machine_type);
 			DC_in_kbui = FALSE;
 			switch (INPUT_key_code) {
-				case AKEY_OPTION: INPUT_key_consol &= ~INPUT_CONSOL_OPTION; break;
-				case AKEY_SELECT: INPUT_key_consol &= ~INPUT_CONSOL_SELECT; break;
-				case AKEY_START: b_ui_leave = TRUE; INPUT_key_consol &= ~INPUT_CONSOL_START; break;
+				case AKEY_OPTION:
+					INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
+					x_ovr_delay = OVR_DELAY;
+					break;
+				case AKEY_SELECT:
+					INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
+					y_ovr_delay = OVR_DELAY;
+					break;
+				case AKEY_START:
+					b_ui_leave = TRUE;
+					INPUT_key_consol &= ~INPUT_CONSOL_START;
+					b_ovr_delay = OVR_DELAY;
+					break;
 			}
 			Sound_Continue();
 #else /* @@@ 05-Mar-2015, chris: check this */
@@ -1539,6 +1550,14 @@ int main(int argc, char **argv)
 		Atari800_Frame();
 		PLATFORM_DisplayScreen();
 		controller_update();  /* get new values from the controllers */
+
+		/* if overrides are in place, inject the console keys' releases */
+		if (b_ovr && !(INPUT_key_consol & INPUT_CONSOL_START) && !b_ovr_delay--)
+			INPUT_key_consol |= INPUT_CONSOL_START;
+		if (x_ovr && !(INPUT_key_consol & INPUT_CONSOL_OPTION) && !x_ovr_delay--)
+			INPUT_key_consol |= INPUT_CONSOL_OPTION;
+		if (y_ovr && !(INPUT_key_consol & INPUT_CONSOL_SELECT) && !y_ovr_delay--)
+			INPUT_key_consol |= INPUT_CONSOL_SELECT;
 	}
 }
 

@@ -1,3 +1,8 @@
+2015-03-23  Christian Groessler  <chris@groessler.org>
+* dc/atari_dc.c: The overridden console keys were never released, except
+  for START.
+
+
 2015-03-21  Perry McFarlane  <perry_m@mail.com>
 * gtia.c: Improve player/playfield collisions for NEW_CYCLE_EXACT
 
