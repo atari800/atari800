@@ -2,7 +2,7 @@
  * ui_basic.c - Atari look&feel user interface driver
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2015 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -1389,6 +1389,66 @@ UI_tDriver UI_BASIC_driver = {
 	&BasicUIInfoScreen,
 	&BasicUIInit
 };
+
+#ifdef DREAMCAST
+extern void update_vidmode(void);
+extern int x_adj, y_adj;
+static char x_str[16], y_str[16];
+
+/* "Screen position configuration" submenu of "Display Settings" */
+void ScreenPositionConfiguration(void)
+{
+	int keycode;
+
+	ClearScreen();
+
+	Box(0x9a, 0x94, 0, 0, 39, 24);
+	CenterPrint(0x9a, 0x94,"Screen position configuration", 2);
+
+	CenterPrint(0x9a, 0x94, "Use up/down/left/right to adjust", 20);
+	CenterPrint(0x9a, 0x94, "Use ESC ('B') to exit", 21);
+
+	Print(0x9a, 0x94, "X adjustment:", 8, 9, 40);
+	Print(0x9a, 0x94, "Y adjustment:", 8, 11, 40);
+
+	do {
+
+		sprintf(x_str, "%d", x_adj);
+		sprintf(y_str, "%d", y_adj);
+
+		Print(0x9a, 0x94, "      ", 31 - 6, 9, 40);
+		Print(0x9a, 0x94, "      ", 31 - 6, 11, 40);
+
+		Print(0x9a, 0x94, x_str, 31 - strlen(x_str), 9, 40);
+		Print(0x9a, 0x94, y_str, 31 - strlen(y_str), 11, 40);
+
+		while ((keycode = GetKeyPress()) == AKEY_NONE)
+			;
+
+		if (keycode == 0x1e) {	/* left */
+			x_adj--;
+			if (x_adj < -63) x_adj = -63;
+		}
+		else if (keycode == 0x1f) {  /* right */
+			x_adj++;
+			if (x_adj > 63) x_adj = 63;
+		}
+		else if (keycode == 0x1c) {  /* up */
+			y_adj--;
+			if (y_adj < -63) y_adj = -63;
+		}
+		else if (keycode == 0x1d) {  /* down */
+			y_adj++;
+			if (y_adj > 63) y_adj = 63;
+		}
+		else
+			continue;
+
+		update_vidmode();
+		Screen_EntireDirty();
+	} while (keycode != 0x1b);  /* ESC */
+}
+#endif /* DREAMCAST */
 
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 

@@ -2,7 +2,7 @@
  * ui.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2014 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2015 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -148,8 +148,10 @@ extern int db_mode;
 extern int screen_tv_mode;
 extern int emulate_paddles;
 extern int glob_snd_ena;
+extern void JoystickConfiguration(void);
 extern void ButtonConfiguration(void);
 extern void AboutAtariDC(void);
+extern void ScreenPositionConfiguration(void);
 extern void update_vidmode(void);
 extern void update_screen_updater(void);
 #ifdef HZ_TEST
@@ -1891,7 +1893,11 @@ static void AtariSettings(void)
 		UI_MENU_ACTION(4, "H: device (hard disk):"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
 #ifdef R_IO_DEVICE
+#ifdef DREAMCAST
+		UI_MENU_CHECK(6, "R: device (using Coder's Cable):"),
+#else
 		UI_MENU_CHECK(6, "R: device (Atari850 via net):"),
+#endif
 #endif
 		UI_MENU_FILESEL_PREFIX(7, "H1: ", Devices_atari_h_dir[0]),
 		UI_MENU_FILESEL_PREFIX(8, "H2: ", Devices_atari_h_dir[1]),
@@ -1901,8 +1907,10 @@ static void AtariSettings(void)
 		UI_MENU_ACTION_PREFIX(12, "Print command: ", Devices_print_command),
 		UI_MENU_SUBMENU(13, "System ROM settings"),
 		UI_MENU_SUBMENU(14, "Configure directories"),
+#ifndef DREAMCAST
 		UI_MENU_ACTION(15, "Save configuration file"),
 		UI_MENU_CHECK(16, "Save configuration on exit:"),
+#endif
 		UI_MENU_END
 	};
 	char tmp_command[256];
@@ -1986,12 +1994,14 @@ static void AtariSettings(void)
 		case 14:
 			ConfigureDirectories();
 			break;
+#ifndef DREAMCAST
 		case 15:
 			UI_driver->fMessage(CFG_WriteConfig() ? "Configuration file updated" : "Error writing configuration file", 1);
 			break;
 		case 16:
 			CFG_save_on_exit = !CFG_save_on_exit;
 			break;
+#endif
 		case 17:
 			Atari800_turbo = !Atari800_turbo;
 			break;
@@ -2720,7 +2730,7 @@ static void DisplaySettings(void)
 	};
 	static char const * const colours_preset_names[] = { "Standard", "Deep black", "Vibrant", "Custom" };
 #endif
-	
+
 	static char refresh_status[16];
 #ifdef RPI
 	static char op_zoom_string[16];
@@ -2754,6 +2764,7 @@ static void DisplaySettings(void)
 #ifdef HZ_TEST
 		UI_MENU_ACTION(10, "DO HZ TEST:"),
 #endif
+		UI_MENU_ACTION(32, "Screen position configuration:"),
 #endif
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 		UI_MENU_SUBMENU_SUFFIX(12, "Color preset: ", NULL),
@@ -2965,6 +2976,9 @@ static void DisplaySettings(void)
 			Screen_EntireDirty();
 			break;
 #endif
+		case 32:
+			ScreenPositionConfiguration();
+			break;
 #endif /* DREAMCAST */
 #if SUPPORTS_PLATFORM_PALETTEUPDATE
 		case 12:
@@ -3527,7 +3541,8 @@ static void ControllerConfiguration(void)
 		UI_MENU_CHECK(5, "Virtual joystick:"),
 #elif defined(DREAMCAST)
 		UI_MENU_CHECK(9, "Emulate Paddles:"),
-		UI_MENU_ACTION(10, "Button configuration"),
+		UI_MENU_ACTION(10, "Joystick/D-Pad configuration"),
+		UI_MENU_ACTION(11, "Button configuration"),
 #else
 		UI_MENU_SUBMENU_SUFFIX(2, "Mouse device: ", NULL),
 		UI_MENU_SUBMENU_SUFFIX(3, "Mouse port:", mouse_port_status),
@@ -3609,6 +3624,9 @@ static void ControllerConfiguration(void)
 			emulate_paddles = !emulate_paddles;
 			break;
 		case 10:
+			JoystickConfiguration();
+			break;
+		case 11:
 			ButtonConfiguration();
 			break;
 #else

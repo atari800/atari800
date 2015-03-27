@@ -74,7 +74,6 @@ int vid_mode_width;
 static
 #endif
        uint16 *screen_vram;
-static char x_str[16], y_str[16];  /* used by ScreenPositionConfiguration */
 int x_adj, y_adj;  /* screen position adjustment */
 int emulate_paddles = FALSE;
 int glob_snd_ena = TRUE;
@@ -1148,10 +1147,10 @@ int PLATFORM_PORT(int num)
 				}
 			}
 			else {
-				if (state->joyy < -10) {  /* down */
+				if (state->joyy > 10) {  /* down */
 					retval &= 0xfd;
 				}
-				if (state->joyy > 10) {  /* up */
+				if (state->joyy < -10) {  /* up */
 					retval &= 0xfe;
 				}
 			}
@@ -2031,61 +2030,6 @@ void JoystickConfiguration(void)
 			disable_js = disable_dpad = FALSE;
 #endif
 	} while (option >= 0);
-}
-
-
-/* "Screen position configuration" submenu of "Display Settings" */
-void ScreenPositionConfiguration(void)
-{
-	int keycode;
-
-	ClearScreen();
-
-	Box(0x9a, 0x94, 0, 0, 39, 24);
-	CenterPrint(0x9a, 0x94,"Screen position configuration", 2);
-
-	CenterPrint(0x9a, 0x94, "Use up/down/left/right to adjust", 20);
-	CenterPrint(0x9a, 0x94, "Use ESC to exit", 21);
-
-	Print(0x9a, 0x94, "X adjustment:", 8, 9, 40);
-	Print(0x9a, 0x94, "Y adjustment:", 8, 11, 40);
-
-	do {
-
-		sprintf(x_str, "%d", x_adj);
-		sprintf(y_str, "%d", y_adj);
-
-		Print(0x9a, 0x94, "      ", 31 - 6, 9, 40);
-		Print(0x9a, 0x94, "      ", 31 - 6, 11, 40);
-
-		Print(0x9a, 0x94, x_str, 31 - strlen(x_str), 9, 40);
-		Print(0x9a, 0x94, y_str, 31 - strlen(y_str), 11, 40);
-
-		while ((keycode = GetKeyPress()) == AKEY_NONE)
-			;
-
-		if (keycode == 0x1e) {	/* left */
-			x_adj--;
-			if (x_adj < -63) x_adj = -63;
-		}
-		else if (keycode == 0x1f) {  /* right */
-			x_adj++;
-			if (x_adj > 63) x_adj = 63;
-		}
-		else if (keycode == 0x1c) {  /* up */
-			y_adj--;
-			if (y_adj < -63) y_adj = -63;
-		}
-		else if (keycode == 0x1d) {  /* down */
-			y_adj++;
-			if (y_adj > 63) y_adj = 63;
-		}
-		else
-			continue;
-
-		update_vidmode();
-		entire_Screen_dirty();
-	} while (keycode != 0x1b);  /* ESC */
 }
 
 

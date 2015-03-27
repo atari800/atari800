@@ -1,3 +1,10 @@
+2015-03-28  Christian Groessler  <chris@groessler.org>
+* ui.c, ui_basic.c: Adapt emulator menu to Dreamcast and
+  add DC specific menu items.
+* dc/atari_dc.c: Ditto. And fix swapped up/down direction when using the
+  controller joystick.
+
+
 2015-03-27  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c (controller_kb): Fix auto-repeat in emulator menu.
 
