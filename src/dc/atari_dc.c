@@ -33,7 +33,7 @@
 #include "pokeysnd.h"
 #include "version.h"
 
-#define REPEAT_DELAY 5000
+#define REPEAT_DELAY 100  /* in ms */
 #define REPEAT_INI_DELAY (5 * REPEAT_DELAY)
 /*#define DEBUG*/
 #ifndef DIRTYRECT
@@ -477,6 +477,17 @@ int get_emkey(UBYTE *title)
 }
 
 /*
+ * milliseconds since boot
+ */
+static uint64_t timer_get(void)
+{
+	uint32_t secs, msecs;
+	timer_ms_gettime(&secs, &msecs);
+	return (uint64_t)secs * 1000 + msecs;
+
+}
+
+/*
  * do some basic keyboard emulation for the controller,
  * so that the emulator menu can be used without a keyboard
  * (basically for selecting bin files/disk images)
@@ -486,14 +497,11 @@ static int controller_kb(void)
 	static int prev_up = FALSE, prev_down = FALSE, prev_a = FALSE,
 		prev_r = FALSE, prev_left = FALSE, prev_right = FALSE,
 		prev_b = FALSE, prev_l = FALSE;
-	static int repdelay = REPEAT_DELAY;
+	static uint64_t repdelay_timeout;
 	cont_state_t *state = mcont_state[0];
 	int keycode;
 
 	if (! num_cont) return(AKEY_NONE);  /* no controller present */
-
-	repdelay--;
-	if (repdelay < 0) repdelay = REPEAT_DELAY;
 
 	if (!UI_is_active && (state->ltrig > 250 || (state->buttons & CONT_Z))) {
 		return(AKEY_UI);
@@ -533,12 +541,13 @@ static int controller_kb(void)
 		if ((state->buttons & cont_dpad_up)) {
 			prev_down = FALSE;
 			if (! prev_up) {
-				repdelay = REPEAT_INI_DELAY;
+				repdelay_timeout = timer_get() + REPEAT_INI_DELAY;
 				prev_up = 1;
 				return(AKEY_UP);
 			}
 			else {
-				if (! repdelay) {
+				if (timer_get() > repdelay_timeout) {
+					repdelay_timeout = timer_get() + REPEAT_DELAY;
 					return(AKEY_UP);
 				}
 			}
@@ -550,12 +559,13 @@ static int controller_kb(void)
 		if ((state->buttons & cont_dpad_down)) {
 			prev_up = FALSE;
 			if (! prev_down) {
-				repdelay = REPEAT_INI_DELAY;
+				repdelay_timeout = timer_get() + REPEAT_INI_DELAY;
 				prev_down = TRUE;
 				return(AKEY_DOWN);
 			}
 			else {
-				if (! repdelay) {
+				if (timer_get() > repdelay_timeout) {
+					repdelay_timeout = timer_get() + REPEAT_DELAY;
 					return(AKEY_DOWN);
 				}
 			}
@@ -567,12 +577,13 @@ static int controller_kb(void)
 		if ((state->buttons & cont_dpad_left)) {
 			prev_right = FALSE;
 			if (! prev_left) {
-				repdelay = REPEAT_INI_DELAY;
+				repdelay_timeout = timer_get() + REPEAT_INI_DELAY;
 				prev_left = TRUE;
 				return(AKEY_LEFT);
 			}
 			else {
-				if (! repdelay) {
+				if (timer_get() > repdelay_timeout) {
+					repdelay_timeout = timer_get() + REPEAT_DELAY;
 					return(AKEY_LEFT);
 				}
 			}
@@ -584,12 +595,13 @@ static int controller_kb(void)
 		if ((state->buttons & cont_dpad_right)) {
 			prev_left = FALSE;
 			if (! prev_right) {
-				repdelay = REPEAT_INI_DELAY;
+				repdelay_timeout = timer_get() + REPEAT_INI_DELAY;
 				prev_right = TRUE;
 				return(AKEY_RIGHT);
 			}
 			else {
-				if (! repdelay) {
+				if (timer_get() > repdelay_timeout) {
+					repdelay_timeout = timer_get() + REPEAT_DELAY;
 					return(AKEY_RIGHT);
 				}
 			}

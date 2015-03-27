@@ -1,3 +1,7 @@
+2015-03-27  Christian Groessler  <chris@groessler.org>
+* dc/atari_dc.c (controller_kb): Fix auto-repeat in emulator menu.
+
+
 2015-03-23  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c: The overridden console keys were never released, except
   for START.
