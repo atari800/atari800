@@ -880,22 +880,17 @@ if [[ "$with_sound" != no ]]; then
                   [Use synchronized sound (default=ON)],
                   SYNCHRONIZED_SOUND,[Define to use synchronized sound.]
                  )
-
-        A8_OPTION(nonlinear_mixing,yes,
-                  [Use nonlinear POKEY mixing (default=ON)],
-                  NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
-                 )
         if [[ "$WANT_SOUND_CALLBACK" = "yes" ]]; then
             AC_DEFINE(SOUND_CALLBACK,1,[Platform updates sound buffer by callback function.])
         fi
     else
-
-        A8_OPTION(nonlinear_mixing,no,
-                  [Use nonlinear POKEY mixing (default=OFF)],
-                  NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
-                 )
         WANT_SYNCHRONIZED_SOUND="no"
     fi
+
+    A8_OPTION(nonlinear_mixing,yes,
+              [Use nonlinear POKEY mixing (default=ON)],
+              NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
+             )
 
     A8_OPTION(interpolatesound,yes,
               [Use sound interpolation (default=ON)],

@@ -1,3 +1,8 @@
+2015-03-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* configure.ac: Fix displaying --enable-nonlinear_mixing twice on
+  ./configure --help. NONLINEAR_MIXING now defaults to enabled on all targets.
+
+
 2015-03-28  Christian Groessler  <chris@groessler.org>
 * ui.c, ui_basic.c: Adapt emulator menu to Dreamcast and
   add DC specific menu items.
@@ -16,6 +21,12 @@
 
 2015-03-21  Perry McFarlane  <perry_m@mail.com>
 * gtia.c: Improve player/playfield collisions for NEW_CYCLE_EXACT
+
+
+2015-03-21  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* pokeysnd.[ch], DOC/NEWS: Fixed a crash with SYNCHRONIZED_SOUND, when enabling
+  stereo sound together with ENABLE_NEW_POKEY=0. Added comment to avoid future
+  mistakes.
 
 
 2015-03-20  Christian Groessler  <chris@groessler.org>
