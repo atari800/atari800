@@ -100,7 +100,7 @@ romdisk.o:
 atari800.elf: $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
 
-dc/atari_dc.o: dc/atari_dc.c dc/config.h
+dc/atari_dc.o: dc/atari_dc.c dc/config.h dc/version.h
 	$(CC) -c -o $@ $(DEFS) $(INCLUDE) $(CFLAGS) $<
 
 dep:
