@@ -1,3 +1,10 @@
+2015-03-31  Christian Groessler  <chris@groessler.org>
+* dc/atari_dc.c: Fix crash when disconnecting the controller while being
+  in the emulator menu. Fix inaccessibility of controller when
+  disconnecting and reconnecting to a different port while being in the
+  keyboard emulation menu.
+
+
 2015-03-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * configure.ac: Fix displaying --enable-nonlinear_mixing twice on
   ./configure --help. NONLINEAR_MIXING now defaults to enabled on all targets.

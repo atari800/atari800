@@ -56,6 +56,7 @@ static unsigned char *atari_screen_backup;
 static unsigned char *atari_screen_backup2;
 static maple_device_t *mcont_dev[MAPLE_PORT_COUNT * MAPLE_UNIT_COUNT];
 static cont_state_t *mcont_state[MAPLE_PORT_COUNT * MAPLE_UNIT_COUNT];
+static cont_state_t mcont_state_disconnected;
 static maple_device_t *mkeyb_dev;
 static int num_cont;   /* # of controllers found */
 static int su_first_call = TRUE;
@@ -356,6 +357,8 @@ static void controller_update(void)
 #ifdef DEBUG
 			printf("controller_update: error getting controller status\n");
 #endif
+			/* controller has been disconnected in the meanwhile: add a dummy entry */
+			mcont_state[i] = &mcont_state_disconnected;
 		}
 	}
 }
@@ -363,6 +366,8 @@ static void controller_update(void)
 static int consol_keys(void)
 {
 	cont_state_t *state = mcont_state[0];
+
+	if (! num_cont) return(AKEY_NONE);  /* no controller present */
 
 	if (state->buttons & CONT_START) {
 		if (UI_is_active)
@@ -449,7 +454,7 @@ static int consol_keys(void)
 	return(AKEY_NONE);
 }
 
-int get_emkey(UBYTE *title)
+int get_emkey(char *title)
 {
 	int keycode;
 
@@ -684,7 +689,7 @@ int PLATFORM_Keyboard(void)
 		}
 	}
 
-	if (UI_is_active) controller_update();
+	if (UI_is_active || DC_in_kbui) controller_update();
 
 	if (num_cont && (keycode = consol_keys()) != AKEY_NONE) return(keycode);
 
@@ -1374,9 +1379,7 @@ static void wait_a(void)
 
 	} while (state && !(state->buttons & CONT_A));
 }
-#endif
 
-#ifdef HZ_TEST
 void do_hz_test(void)
 {
 	uint32 s, ms, s2, ms2, z;
@@ -1494,6 +1497,8 @@ int main(int argc, char **argv)
 
 	chdir("/");   /* initialize cwd in dc_chdir.c */
 	autostart();
+
+	controller_update();  /* initialize controllers */
 
 	/* main loop */
 	while(TRUE)
