@@ -1,3 +1,7 @@
+2015-04-01  Christian Groessler  <chris@groessler.org>
+* sound_oss.c: Fix sound device name for NetBSD and OpenBSD.
+
+
 2015-03-31  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c: Fix crash when disconnecting the controller while being
   in the emulator menu. Fix inaccessibility of controller when

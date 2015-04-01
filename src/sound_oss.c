@@ -2,7 +2,7 @@
  * sound_oss.c - Open Sound System driver
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2013 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2015 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -36,7 +36,11 @@
 
 #define DEBUG 0
 
+#if defined (__NetBSD__) || defined (__OpenBSD__)
+static const char * const dspname = "/dev/audio";
+#else
 static const char * const dspname = "/dev/dsp";
+#endif
 
 static int dsp_fd;
 
