@@ -22,6 +22,7 @@
 #include "colours_external.h"
 #include "ui.h"
 #include "ui_basic.h"
+#include "util.h"
 #include "time.h"
 #include "screen.h"
 #include <dc/g2bus.h>
@@ -43,6 +44,7 @@
 #define OVR_DELAY 5  /* # of frames that an overridden console key appears to be pressed */
 
 void PLATFORM_DisplayScreen(void);
+int PLATFORM_Configure(char *, char *);
 int stat(const char *, struct stat *);
 static void calc_palette(void);
 static int check_tray_open(void);
@@ -298,6 +300,8 @@ void update_screen_updater(void)
 int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	static int fc = TRUE;
+	(void)argc; /* remove unused parameter warning */
+	(void)argv; /*   "  "  "  "  "  "  "  "  "  "  */
 
 	if (! fc) return TRUE; else fc = FALSE;
 
@@ -317,8 +321,34 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 int PLATFORM_Exit(int run_monitor)
 {
+	(void)run_monitor; /* remove unused parameter warning */
 	arch_reboot();
 	return(0);  /* not reached */
+}
+
+int PLATFORM_Configure(char *option, char *parameters)
+{
+	int ret, val;
+
+	if (strcmp(option, "DISPLAY_X_ADJUST") == 0) {
+		ret = Util_sscansdec(parameters, &val);
+		if (ret) {
+			x_adj = val;
+			update_vidmode();
+			update_screen_updater();
+		}
+		return ret;
+	}
+	else if (strcmp(option, "DISPLAY_Y_ADJUST") == 0) {
+		ret = Util_sscansdec(parameters, &val);
+		if (ret) {
+			y_adj = val;
+			update_vidmode();
+			update_screen_updater();
+		}
+		return ret;
+	}
+	return FALSE;
 }
 
 /*
@@ -1243,9 +1273,9 @@ int Atari_POT(int num)
 
 			state = mcont_state[num];
 			val = state->joyx;
-			if (reverse_x_axis) val = 255 - val;
+			if (reverse_x_axis) val = -val;
 			val = val * 228 / 255;
-			if (val > 227) return(1);
+			val = 114 + val;
 			return(228 - val);
 		}
 		else {
@@ -1778,29 +1808,6 @@ static int check_tray_open(void)
 	else {
 		return(FALSE); /* error case: assume tray not open */
 	}
-}
-
-void dc_printbox(char *string)
-{
-	int l = strlen(string);
-
-	Box(0x9a, 0x94, 20-l/2-1, 11, 20-l/2-1+l+1, 13);
-	Print(0x94, 0x9a, string, 20-l/2, 12, 40);
-}
-
-void dc_please_wait(void)
-{
-	dc_printbox(" Please wait... ");
-	entire_Screen_dirty();
-	PLATFORM_DisplayScreen();
-}
-
-void dc_error_msg(void)
-{
-	dc_printbox("     Error!!    ");
-	entire_Screen_dirty();
-	PLATFORM_DisplayScreen();
-	GetKeyPress();
 }
 
 void DCStateSave(void)

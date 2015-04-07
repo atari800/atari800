@@ -1,3 +1,11 @@
+2015-04-08  Christian Groessler  <chris@groessler.org>
+* dc/atari_dc.c: Fix paddle emulation (adapt to new KOS return values).
+  Add PLATFORM_Configure() to parse DISPLAY_X_ADJUST and
+  DISPLAY_Y_ADJUST. Remove warnings and some unused code.
+* dc/config.h: Add SUPPORTS_PLATFORM_CONFIGURE.
+* dc/atari800.cfg: Recreated with new emulator version.
+
+
 2015-04-01  Christian Groessler  <chris@groessler.org>
 * sound_oss.c: Fix sound device name for NetBSD and OpenBSD.
 
