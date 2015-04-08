@@ -1531,7 +1531,7 @@ int PLATFORM_TRIG(int num)
 
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 
-#define REPEAT_DELAY 5000
+#define REPEAT_DELAY 100  /* in ms */
 #define REPEAT_INI_DELAY (5 * REPEAT_DELAY)
 
 int UI_BASIC_in_kbui;
@@ -1546,15 +1546,12 @@ static int SDL_controller_kb1(void)
 	static int prev_up = FALSE, prev_down = FALSE, prev_trigger = FALSE,
 		prev_keyb = FALSE, prev_left = FALSE, prev_right = FALSE,
 		prev_leave = FALSE, prev_ui = FALSE;
-	static int repdelay = REPEAT_DELAY;
+	static int repdelay_timeout = REPEAT_DELAY;
 	struct js_state *state = &sdl_js_state[0];
 
 	if (! joystick0) return(AKEY_NONE);  /* no controller present */
 
 	update_SDL_joysticks();
-
-	repdelay--;
-	if (repdelay < 0) repdelay = REPEAT_DELAY;
 
 	if (!UI_is_active && (state->trig & (1 << OSK_BUTTON_UI))) {
 		return(AKEY_UI);
@@ -1590,12 +1587,13 @@ static int SDL_controller_kb1(void)
 		if (!(state->port & 1)) {
 			prev_down = FALSE;
 			if (! prev_up) {
-				repdelay = REPEAT_INI_DELAY;
+				repdelay_timeout = SDL_GetTicks() + REPEAT_INI_DELAY;
 				prev_up = 1;
 				return(AKEY_UP);
 			}
 			else {
-				if (! repdelay) {
+				if (SDL_GetTicks() > repdelay_timeout) {
+					repdelay_timeout = SDL_GetTicks() + REPEAT_DELAY;
 					return(AKEY_UP);
 				}
 			}
@@ -1607,12 +1605,13 @@ static int SDL_controller_kb1(void)
 		if (!(state->port & 2)) {
 			prev_up = FALSE;
 			if (! prev_down) {
-				repdelay = REPEAT_INI_DELAY;
+				repdelay_timeout = SDL_GetTicks() + REPEAT_INI_DELAY;
 				prev_down = TRUE;
 				return(AKEY_DOWN);
 			}
 			else {
-				if (! repdelay) {
+				if (SDL_GetTicks() > repdelay_timeout) {
+					repdelay_timeout = SDL_GetTicks() + REPEAT_DELAY;
 					return(AKEY_DOWN);
 				}
 			}
@@ -1624,12 +1623,13 @@ static int SDL_controller_kb1(void)
 		if (!(state->port & 4)) {
 			prev_right = FALSE;
 			if (! prev_left) {
-				repdelay = REPEAT_INI_DELAY;
+				repdelay_timeout = SDL_GetTicks() + REPEAT_INI_DELAY;
 				prev_left = TRUE;
 				return(AKEY_LEFT);
 			}
 			else {
-				if (! repdelay) {
+				if (SDL_GetTicks() > repdelay_timeout) {
+					repdelay_timeout = SDL_GetTicks() + REPEAT_DELAY;
 					return(AKEY_LEFT);
 				}
 			}
@@ -1641,12 +1641,13 @@ static int SDL_controller_kb1(void)
 		if (!(state->port & 8)) {
 			prev_left = FALSE;
 			if (! prev_right) {
-				repdelay = REPEAT_INI_DELAY;
+				repdelay_timeout = SDL_GetTicks() + REPEAT_INI_DELAY;
 				prev_right = TRUE;
 				return(AKEY_RIGHT);
 			}
 			else {
-				if (! repdelay) {
+				if (SDL_GetTicks() > repdelay_timeout) {
+					repdelay_timeout = SDL_GetTicks() + REPEAT_DELAY;
 					return(AKEY_RIGHT);
 				}
 			}

@@ -1,4 +1,9 @@
 2015-04-08  Christian Groessler  <chris@groessler.org>
+* sdl/input.c: Fix auto-repeat in emulator menu when using on-screen
+  keyboard emulation.
+
+
+2015-04-08  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c: Fix paddle emulation (adapt to new KOS return values).
   Add PLATFORM_Configure() to parse DISPLAY_X_ADJUST and
   DISPLAY_Y_ADJUST. Remove warnings and some unused code.
