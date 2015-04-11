@@ -2067,7 +2067,7 @@ static int ChooseVideoResolution(int current_res)
 	unsigned int i;
 
 	menu_array = (UI_tMenuItem *)Util_malloc((num_res+1) * sizeof(UI_tMenuItem));
-	res_strings = (char (*)[10])Util_malloc(num_res * sizeof(char(*)[10]));
+	res_strings = (char (*)[10])Util_malloc(num_res * sizeof(char[10]));
 
 	for (i = 0; i < num_res; i ++) {
 		VIDEOMODE_CopyResolutionName(i, res_strings[i], 10);

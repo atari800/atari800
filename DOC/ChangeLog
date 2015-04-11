@@ -1,3 +1,7 @@
+2015-04-11  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* ui.c: Fix a bad cast that resulted in crash when changing display resolution.
+
+
 2015-04-08  Christian Groessler  <chris@groessler.org>
 * sdl/input.c: Fix auto-repeat in emulator menu when using on-screen
   keyboard emulation.
