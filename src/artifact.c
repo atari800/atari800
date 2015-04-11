@@ -149,7 +149,7 @@ int ARTIFACT_ReadConfig(char *option, char *ptr)
 		int i = Util_sscandec(ptr);
 		if (i < 0 || i > 4)
 			return FALSE;
-		ANTIC_artif_mode = (ARTIFACT_t)i;
+		ANTIC_artif_mode = i;
 	}
 	else
 		return FALSE;
