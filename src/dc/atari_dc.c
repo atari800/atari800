@@ -42,6 +42,7 @@
 #endif
 
 #define OVR_DELAY 5  /* # of frames that an overridden console key appears to be pressed */
+#define MAX_CONTROLLERS 4  /* # of controllers we support */
 
 void PLATFORM_DisplayScreen(void);
 int PLATFORM_Configure(char *, char *);
@@ -56,8 +57,8 @@ static void dc_snd_stream_stop(void);
 
 static unsigned char *atari_screen_backup;
 static unsigned char *atari_screen_backup2;
-static maple_device_t *mcont_dev[MAPLE_PORT_COUNT * MAPLE_UNIT_COUNT];
-static cont_state_t *mcont_state[MAPLE_PORT_COUNT * MAPLE_UNIT_COUNT];
+static maple_device_t *mcont_dev[MAX_CONTROLLERS];
+static cont_state_t *mcont_state[MAX_CONTROLLERS];
 static cont_state_t mcont_state_disconnected;
 static maple_device_t *mkeyb_dev;
 static int num_cont;   /* # of controllers found */
@@ -356,20 +357,18 @@ int PLATFORM_Configure(char *option, char *parameters)
  */
 static void dc_controller_init(void)
 {
-	int p, u;
+	int i, n = maple_enum_count();
 	maple_device_t *dev;
 
+	/* start with no controllers and no keyboard */
 	mkeyb_dev = NULL;
 	num_cont = 0;
-	for (p = 0; p < MAPLE_PORT_COUNT; p++) {
-		for (u = 0; u < MAPLE_UNIT_COUNT; u++) {
-			if ((dev = maple_enum_type(p * MAPLE_PORT_COUNT + u, MAPLE_FUNC_CONTROLLER))) {
-				mcont_dev[num_cont++] = dev;
-			}
-			else if (!mkeyb_dev && (dev = maple_enum_type(p * MAPLE_PORT_COUNT + u, MAPLE_FUNC_KEYBOARD))) {
-				mkeyb_dev = dev;
-			}
-		}
+
+	for (i = 0; i < n && num_cont < MAX_CONTROLLERS; i++) {
+		if ((dev = maple_enum_type(i, MAPLE_FUNC_CONTROLLER)))
+			mcont_dev[num_cont++] = dev;
+		if (!mkeyb_dev && (dev = maple_enum_type(i, MAPLE_FUNC_KEYBOARD)))
+			mkeyb_dev = dev;
 	}
 	return;
 }
@@ -772,7 +771,6 @@ int PLATFORM_Keyboard(void)
 		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
 		return(AKEY_NONE);
 	case 0x3d00:
-		printf("setting START #2...\n");
 		INPUT_key_consol &= ~INPUT_CONSOL_START;
 		return(AKEY_NONE);
 
