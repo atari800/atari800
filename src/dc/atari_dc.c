@@ -30,7 +30,6 @@
 #include <dc/sound/sound.h>
 #include "statesav.h"
 #include "sound.h"
-#define _TYPEDEF_H   /* to prevent pokeysnd.h to create uint32 type #defines */
 #include "pokeysnd.h"
 #include "version.h"
 
@@ -348,6 +347,11 @@ int PLATFORM_Configure(char *option, char *parameters)
 			update_screen_updater();
 		}
 		return ret;
+	}
+	else if (strcmp(option, "DOUBLE_BUFFERING") == 0) {
+		db_mode = Util_sscanbool(parameters);
+		update_screen_updater();
+		return TRUE;
 	}
 	return FALSE;
 }
@@ -1478,9 +1482,6 @@ int dc_read_serial(unsigned char *byte)
 
 int main(int argc, char **argv)
 {
-	printf("Atari800DC main() starting\n");	 /* workaound for fopen-before-printf kos bug */
-	printf("--------------------------\n");	 /* §$%&!:-grr! */
-
 	/* initialize screen updater */
 	update_screen_updater();
 
@@ -1488,7 +1489,7 @@ int main(int argc, char **argv)
 	Atari800_Initialise(&argc, argv);
 
 	/* initialize dc controllers for the first time */
-	dc_controller_init();
+	controller_update();
 
 	/* initialize sound */
 	dc_sound_init();
@@ -1525,8 +1526,6 @@ int main(int argc, char **argv)
 
 	chdir("/");   /* initialize cwd in dc_chdir.c */
 	autostart();
-
-	controller_update();  /* initialize controllers */
 
 	/* main loop */
 	while(TRUE)

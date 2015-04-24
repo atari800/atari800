@@ -1,3 +1,9 @@
+2015-04-24  Christian Groessler  <chris@groessler.org>
+* dc/atari_dc.c: Parse "DOUBLE_BUFFERING" from atari800.cfg, setting the 'db_mode'
+  variable. Some other small cleanups.
+* dc/atari800.cfg: Add "DOUBLE_BUFFERING" entry.
+
+
 2015-04-16  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c: Adapt controller and keyboard detection to new KOS version.
 
