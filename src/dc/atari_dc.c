@@ -1160,10 +1160,10 @@ int PLATFORM_PORT(int num)
 		/* if joypad not used, try the joystick instead */
 		if (retval == 0xff && !disable_js) {
 			if (reverse_x_axis) {
-				if (state->joyx < -10) {  // @@@ new kos new values
+				if (state->joyx < -10) {
 					retval &= 0xf7;
 				}
-				if (state->joyx > 10) {  // @@@ ditto, and following lines
+				if (state->joyx > 10) {
 					retval &= 0xfb;
 				}
 			}

@@ -1,3 +1,16 @@
+27-Apr-2015	atari800dc v0.79beta2
+
+	* adapt to current Atari800 cvs code base
+	* adapt to current KOS code base (9b7049b3c8b39421)
+	* add atari800.cfg file generated with the current version
+	* fix controller dis-/reconnection code (due to new KOS version)
+	* fix autorepeat in emulator menu (due to new KOS version)
+
+01-Apr-2015	atari800dc v0.79beta1
+
+	* adapt to current Atari800 cvs code base
+	* adapt to current KOS code base (f6fff5b012265521)
+
 17-Aug-2008	atari800dc v0.78
 
 	* fix crash when loading state save file from ramdisk

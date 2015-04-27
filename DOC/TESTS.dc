@@ -1,0 +1,209 @@
+Tests to be performed prior to a new release of Atari800DC
+==========================================================
+
+
+General:
+--------
+
+- Before burning a CD it's advisable to run most of the tests by other
+  means (e.g. loading the new version with 'dc-tool'). After all tests
+  are passing, burn a CD and run at least all the tests which require
+  access to the host file system again, and run the CD-only tests.
+
+- Unless otherwise stated, the tests assume "computer mode", not "5200
+  mode".
+
+- Run the new version, play around in the menus, and run your
+  favourite Atari programs. If something is strange, compare with the
+  PC version of Atari800 and/or a real Atari.
+
+- Check new features and/or bug fixes since the previous version.
+
+- Check "about" menus ("About the Emulator", "About AtariDC") for
+  correct information (typically copyright year and version) and
+  layout.
+
+- Check that Atari800DC specific menu entries are present and working:
+  main menu:
+    -> "About AtariDC"
+  "Display settings":
+    -> "Double buffer video data"
+    -> "Emulator video mode"
+    -> "Display video mode"
+    -> "Screen position configuration"
+  "Controller configuration":
+    -> "Joystick/D-Pad configuration"
+    -> "Button configuration"
+
+- Check "autorun" feature
+  For each of "autorun.com", "autorun.exe", "autorun.atr" have it as
+  the only 'autorun.*' file in the root directory of the
+  CD(-image). Check that each of them is automatically started at
+  boot. ("autorun.com" and "autorun.exe" are just regular AtariDOS
+  program files, the extension doesn't/shouldn't make any
+  difference. "autorun.atr" is a bootable disk image.)
+
+
+On-screen keyboard:
+-------------------
+
+- Check that if leaving emulator menu or on-screen keyboard UI by
+  pressing 'B' doesn't insert a 'START' console button press (use
+  e.g. Berzerk or ROM self test).
+  - leave emulator menu
+  - leave onscreen keyboard
+
+- Check that the keyboard emulation works within the emulator menu
+  ("Load State" or "Save State" and enter a file name).
+
+- Test button overrides ("Controller Configuration"->"Button
+  Configuration").
+  Assign keys to all controller buttons (B, X, Y).
+  - check that the keys are generated on button presses (e.g. in the
+    BASIC editor)
+  - check that the now inaccessible "START", "SELECT", or "OPTION"
+    keys can be injected via the on-screen keyboard (e.g. in the ROM
+    self test or River Raid)
+    - try more than one injection (for each of "SELECT" and "OPTION"
+      and "START")
+    - check that the injected key gets released (e.g. River Raid)
+
+
+Emulator menu:
+--------------
+
+- Check auto-repeat (up/down/left/right on d-pad) in emulator menu.
+  (Currently there is no auto-repeat when using a keyboard, that's a
+  KOS problem.)
+
+
+Controllers:
+------------
+
+- Check that the controller D-Pad works.
+- Check that the controller Joystick works.
+- Check that reverting X and Y axes both work ("Controller
+  configuration"->"Joystick/D-Pad configuration"->"Reverse ...
+  axis").
+- Check that disabling D-Pad and disabling Joystick works ("Controller
+  configuration"->"Joystick/D-Pad configuration"->...).
+- Check unplugging/replugging controllers:
+  - there shouldn't be a crash/reboot
+    - try in the emulation, in the emulator menu, and in the on-screen
+      keyboard
+  - disconnecting and reconnecting the leftmost controller to a
+    different port (still being the leftmost controller) should keep
+    it accessible and the "main" controller/port #1 (in emulation,
+    emulator menu, and on-screen keyboard)
+- Check paddle emulation ("Controller configuration"->"Emulate
+  Paddles") with e.g. "Super Breakout"
+- Keyboard
+  - boot with keyboard connected and check if it works (BASIC and
+    emulator menu)
+    - disconnect and reconnect (to a different port) and check if it
+      still works (BASIC and emulator menu)
+  - boot with keyboard disconnected, then connect, and see if it works
+    - disconnect and reconnect (to a different port) and check if it
+      still works (BASIC and emulator menu)
+
+
+Config file:
+------------
+
+- Add/modify DC specific entries to atari800.cfg (DISPLAY_X_ADJUST and
+  DISPLAY_Y_ADJUST)
+  - check that they are used after bootup
+- Check that double buffering ("Display Settings"->"Double buffer
+  video data") is enabled/disabled according to the config file
+  setting (DOUBLE_BUFFERING).
+
+
+Load/Save state:
+----------------
+
+VMU:
+
+- Start a game and play it for some time and then enter emulator menu
+  and select "Save State".
+  - enter "TAB" (via the on-screen keyboard or a connected keyboard
+    controller) and select the VMU ('/vmu')
+  - enter a new file name (again via the on-screen or a real keyboard)
+    and press "return" (on-screen or real keyboard)
+    - select a VMU with enough free space (currently a "save file"
+      requires ~ 76 blocks)
+      - check that a "please wait" message appears while saving
+      - reboot DC and and enter VMU menu
+	- check that the state file is present
+	  - the description should be "<atari800 version number> saved
+	    state"
+	  - the icon should show the Atari "fuji" logo
+	  - the file name should be the same as the one entered
+      - reboot DC into Atari800DC
+	- enter emulator menu and load the just saved state
+	  - check that a "please wait" message appears while loading
+	  - exit emulator menu and check that the game continues at the
+	    point where it was saved
+    - select a VMU with not enough free space
+      - check that an error message appears
+      - reboot DC and and enter VMU menu
+	- check that the state file is not present and the free space
+	  on the VMU hasn't decreased
+
+RAMDISK:
+
+- Start a game and play it for some time and then enter emulator menu
+  and select "Save State".
+  - enter "TAB" (via the on-screen keyboard or a connected keyboard
+    controller) and select the ramdisk ('/ram')
+  - enter file name (e.g '/ram/saved') and press "return"
+  - load a different program
+  - enter emulator menu and load the just saved state
+    - check that the game continues at the point where it was saved
+
+
+R: device emulation:
+--------------------
+
+- Connect DC to peer with serial ("Coder's Cable") cable.
+  - Check that R: device emulation is enabled in Atari800DC ("Emulator
+    Configuration"->"R: device ...").
+  - Check that the serial connection is working (e.g. by using terminal
+    programs on both sides).
+
+
+Sound:
+------
+
+- Check sound synchronization/speed
+  - Use "MULE" and watch the title screen. The third voice should
+    start when the mule is just beneath the "L".
+
+
+Video:
+------
+
+- Check VGA and composite monitor. Screen should be centered and
+  "good".
+- Check speed (no jitter):
+  - Enable double buffering if it isn't enabled.
+  - Load "Boulder Dash" and run through the first screen as fast as
+    possible.
+  - There shouldn't be any jitter in PAL mode. NTSC mode will have
+    some jitter.
+  - Check both composite and VGA. 
+
+
+CD-only tests:
+--------------
+
+- Boot from CD and start some program/game
+  - Open the CD tray
+    - Emulator should enter the emulator menu
+    - Insert a different CD
+    - Check that the content of the new CD is there
+    - Load program/disk image from new CD
+    - Check that the file is loaded correctly (emulator runs the new
+      file).
+- Open the CD tray at random times
+  - There should never be a crash/hang.
+  - If not in any emulator menu, the emulator menu should be entered.

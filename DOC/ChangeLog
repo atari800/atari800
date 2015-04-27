@@ -1,3 +1,12 @@
+2015-04-27  Christian Groessler  <chris@groessler.org>
+* dc/atari_dc.c: Remove obsolete comments.
+* dc/version.h: Set A800DCBETA to 2 (2nd beta version).
+* DOC/TESTS.dc: New file. Lists tests which should be run before a new
+  Atari800DC release.
+* DOC/README.dc: Update.
+* DOC/CHANGES.dc: Update for Atari800DC 0.79beta2 release.
+
+
 2015-04-24  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c: Parse "DOUBLE_BUFFERING" from atari800.cfg, setting the 'db_mode'
   variable. Some other small cleanups.
