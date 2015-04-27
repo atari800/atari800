@@ -78,9 +78,8 @@ Compiling
 You will need a SH4 cross compiler and the KallistiOS library
 (http://cadcdev.sourceforge.net).
 
-Please follow the instructions at
-http://gamedev.allusion.net/softprj/kos/dcsetup.php to build the cross
-compiler and KOS library.
+See the README included in KallistiOS for information on how to build
+the cross compiler and library.
 
 After you have installed the cross compiler and compiled KOS, adapt
 src/dc/Makefile.dc to your environment. You'll probably have to change
@@ -104,17 +103,18 @@ to use.
 
 If you don't want to burn a CD, but have a serial, broadband, or lan
 adapter, then you can use the dc-load tool to transfer the ELF
-executable to the Dreamcast and run it. (For dc-load see
-http://adk.napalm-x.com/dc.) You need to create a CD ISO image, as
-described below, and use the -i switch to dc-load, to emulate this
-image over the the dc-load connection.
+executable to the Dreamcast and run it. The dc-load tool is included
+in the KOS library. You need to create a CD ISO image, as described
+below, and use the -i switch to dc-load, to emulate this image over
+the the dc-load connection.
 
 If you create a real CD, there is one more step needed additionally to
 the steps described below: You need to put the atari800 executable
 file as boot file onto the CD. For information to create Dreamcast
 bootable CDs see http://mc.pp.se/dc/cdr.html. Convert the atari800.elf
-to a plain binary file with something like "sh-elf-objcopy -O binary
-atari800.elf atari800.bin" and then scramble it.
+to a plain binary file with something like "sh-elf-objcopy -R .stack
+-R .comment -R .bss -R .sbss -O binary atari800.elf atari800.bin" and
+then scramble it.
 
 The CD must contain the atari800.cfg file in the root directory. If
 you use the supplied demo atari800.cfg file, the Atari BIOS ROMS also
@@ -130,19 +130,12 @@ it into the CD root directory and name it autorun.com / autorun.exe /
 autorun.atr, respectively.
 
 
-Saving/restoring state to VMU
------------------------------
-
-Be careful, since the VMU code is only beta, use only VMUs where there
-are no important data files.
-
-
 Bugs/ToDos
 ----------
 
-* There are still sound glitches on some games. Fix them.
-* Save state to vmu and/or run ATRs rw from vmu. (*** save state
-  implemented ***)
+* There are still sound glitches on some games.
+* There might be display jitter in scrolling games in NTSC mode.
+* Run ATRs read-write from vmu.
 * More than 2 controllers are not well tested.
 * Improve keyboard support
 * Mouse support?
@@ -151,14 +144,16 @@ Bugs/ToDos
 Help/Problems/Bugs/Suggestions
 ------------------------------
 
-Please contact me at chris@groessler.org or cpg@aladdin.de.
+Please contact me at chris@groessler.org or
+groessler_christian@yahoo.de. I'm also monitoring the official
+Atari800 mailing list (atari800-users@lists.sourceforge.net).
 
 The newest version is at
 
     ftp://ftp.groessler.org/pub/chris/dreamcast/atari800dc
 
 
-In the mean time have fun with it,
+Have fun with it,
 Christian Groessler
-chris@groessler.org, 30-Jan-2006
 
+Last change: 27-Apr-2015.
