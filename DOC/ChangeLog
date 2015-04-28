@@ -1,3 +1,13 @@
+2015-04-28  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* antic.c: Fix an infinite recursion with enabled NEW_CYCLE_EXACT, disabled
+  PAGED_ATTRIB, when the ANTIC display list is pointed to GTIA registers. The
+  recursion was: ANTIC_UpdateScanline -> draw_partial_scanline -> antic_load ->
+  MEMORY_CopyFromMem -> MEMORY_GetByte -> MEMORY_HwGetByte -> GTIA_GetByte ->
+  ANTIC_UpdateScanline.
+  Test case: Sky Writer XEX (length 16827, CRC32 9e0fd2e7) running in 400/800
+  mode.
+
+
 2015-04-27  Christian Groessler  <chris@groessler.org>
 * dc/atari_dc.c: Remove obsolete comments.
 * dc/version.h: Set A800DCBETA to 2 (2nd beta version).
