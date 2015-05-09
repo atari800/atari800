@@ -2226,6 +2226,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
    ============================
  */
 	image_data = (UBYTE *) Util_malloc(Screen_WIDTH * Screen_HEIGHT);
+	memset(image_data, 0, Screen_WIDTH * Screen_HEIGHT);
 
 	keyboard_consol = INPUT_CONSOL_NONE;
 

@@ -1383,7 +1383,8 @@ static void Devices_H_Point(void)
 	}
 }
 
-static FILE *binf = NULL;
+static FILE *binfile = NULL;
+static FILE **binf = &binfile;
 static int runBinFile;
 static int initBinFile;
 
@@ -1391,9 +1392,9 @@ static int initBinFile;
 static int Devices_H_BinReadWord(void)
 {
 	UBYTE buf[2];
-	if (fread(buf, 1, 2, binf) != 2) {
-		fclose(binf);
-		binf = NULL;
+	if (fread(buf, 1, 2, *binf) != 2) {
+		fclose(*binf);
+		*binf = NULL;
 		if (BINLOAD_start_binloading) {
 			BINLOAD_start_binloading = FALSE;
 			Log_print("binload: not valid BIN file");
@@ -1412,7 +1413,7 @@ static int Devices_H_BinReadWord(void)
 
 static void Devices_H_BinLoaderCont(void)
 {
-	if (binf == NULL)
+	if (*binf == NULL)
 		return;
 	if (BINLOAD_start_binloading) {
 		MEMORY_dPutByte(0x244, 0);
@@ -1449,10 +1450,10 @@ static void Devices_H_BinLoaderCont(void)
 
 		to++;
 		do {
-			int byte = fgetc(binf);
+			int byte = fgetc(*binf);
 			if (byte == EOF) {
-				fclose(binf);
-				binf = NULL;
+				fclose(*binf);
+				*binf = NULL;
 				if (runBinFile)
 					CPU_regPC = MEMORY_dGetWordAligned(0x2e0);
 				if (initBinFile && (MEMORY_dGetByte(0x2e3) != 0xd7)) {
@@ -1548,19 +1549,19 @@ static void Devices_H_Load(int mydos)
 		if (Devices_GetAtariPath(devnum, r) == 0)
 			return;
 		Util_catpath(host_path, Devices_atari_h_dir[devnum], atari_path);
-		binf = fopen(host_path, "rb");
-		if (binf != NULL || *q == '\0')
+		*binf = fopen(host_path, "rb");
+		if (*binf != NULL || *q == '\0')
 			break;
 		p = q + 1;
 	}
 
-	if (binf == NULL) {
+	if (*binf == NULL) {
 		/* open from the specified location */
 		if (Devices_GetAtariPath(h_devnum, atari_filename) == 0)
 			return;
 		Util_catpath(host_path, Devices_atari_h_dir[h_devnum], atari_path);
-		binf = fopen(host_path, "rb");
-		if (binf == NULL) {
+		*binf = fopen(host_path, "rb");
+		if (*binf == NULL) {
 			CPU_regY = 170;
 			CPU_SetN;
 			return;
@@ -1568,9 +1569,9 @@ static void Devices_H_Load(int mydos)
 	}
 
 	/* check header */
-	if (fread(buf, 1, 2, binf) != 2 || buf[0] != 0xff || buf[1] != 0xff) {
-		fclose(binf);
-		binf = NULL;
+	if (fread(buf, 1, 2, *binf) != 2 || buf[0] != 0xff || buf[1] != 0xff) {
+		fclose(*binf);
+		*binf = NULL;
 		Log_print("H: load: not valid BIN file");
 		CPU_regY = 180;
 		CPU_SetN;
@@ -1591,15 +1592,15 @@ static void Devices_H_FileLength(void)
 		Devices_H_Load(TRUE);
 	/* if we are running MyDOS then assume it is a MyDOS Load File command */
 	else if (MEMORY_dGetByte(0x700) == 'M') {
-		/* XXX: if (binf != NULL) fclose(binf); ? */
+		/* XXX: if (*binf != NULL) fclose(*binf); ? */
 
 		/* In Devices_H_Read one byte is read ahead. Take it into account. */
 		if (h_lastop[h_iocb] == 'r' && h_lastbyte[h_iocb] != EOF)
 			fseek(h_fp[h_iocb], -1, SEEK_CUR);
 
-		binf = h_fp[h_iocb];
+		binf = &h_fp[h_iocb];
 		Devices_H_LoadProceed(TRUE);
-		/* XXX: don't close binf when complete? */
+		binf = &binfile;
 		h_lastop[h_iocb] = 'b';
 	}
 	/* otherwise assume it is a file length command */
