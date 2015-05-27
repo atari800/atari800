@@ -43,7 +43,7 @@
  * Write:   write MSB, write LSB (16-bit word is written to device)
  */
 
-#define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 600
 
 #include "config.h"
 /* allow non-ansi fseek/ftell functions */

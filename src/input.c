@@ -945,16 +945,14 @@ void INPUT_RecordInt(int i)
 
 int INPUT_PlaybackInt(void)
 {
+	int i = 0;
 #ifdef EVENT_RECORDING
-	int i;
 	if (playingback) {
 		gzgets(playbackfp, gzbuf, GZBUFSIZE);
 		sscanf(gzbuf, "%d", &i);
 	}
-	return i;
-#else
-	return 0;
 #endif
+	return i;
 }
 
 void INPUT_Scanline(void)

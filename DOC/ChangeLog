@@ -1,3 +1,8 @@
+2015-05-27  Christian Groessler  <chris@groessler.org>
+* antic.c, cartridge.c, ide.c, input.c: Remove warnings when compiling
+  on FreeBSD/i386 10.1 with llvm.
+
+
 2015-05-10  Christian Groessler  <chris@groessler.org>
 * atari_x11.c (PLATFORM_Initialise): Preinitialize image_data buffer to
   shut off valgrind warnings.

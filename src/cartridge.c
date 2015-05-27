@@ -870,7 +870,7 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 	case CARTRIDGE_BLIZZARD_32:
 		if (old_state < 4)
 			new_state = old_state + 1;
-		break;
+		else
 	default:
 		/* Other cartridge types don't support enabling/disabling/banking through page D5. */
 		return FALSE;
