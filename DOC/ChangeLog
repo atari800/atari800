@@ -1,3 +1,12 @@
+2015-05-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* binload.[ch], cfg.c, ui.c, DOC/CREDITS: Achim Haertel's patch
+  adds an option to slow down the loading of DOS binary files ran using "Run
+  Atari Program".
+* atari_curses.c, atari_falcon.c, atari_x11.c, amiga/amiga.c, javanvm/input.c,
+  sdl/input.c, win32/atari_win32.c, DOC/USAGE: Map F7 to temporarily stop slow
+  loading of DOS binary files, in addition to its standard "Break" key mapping.
+
+
 2015-05-27  Christian Groessler  <chris@groessler.org>
 * antic.c, cartridge.c, ide.c, input.c: Remove warnings when compiling
   on FreeBSD/i386 10.1 with llvm.

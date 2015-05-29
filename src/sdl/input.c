@@ -40,6 +40,7 @@
 #include "sdl/input.h"
 #include "akey.h"
 #include "atari.h"
+#include "binload.h"
 #include "colours.h"
 #include "filter_ntsc.h"
 #include "../input.h"
@@ -609,6 +610,8 @@ int PLATFORM_Keyboard(void)
 	}
 	*/
 
+	BINLOAD_pause_loading = FALSE;
+
 	/* OPTION / SELECT / START keys */
 	INPUT_key_consol = INPUT_CONSOL_NONE;
 	if (kbhits[SDLK_F2])
@@ -730,7 +733,12 @@ int PLATFORM_Keyboard(void)
 		return key_control ? AKEY_LESS|shiftctrl : AKEY_CLEAR;
 	case SDLK_PAUSE:
 	case SDLK_F7:
-		return AKEY_BREAK;
+		if (BINLOAD_wait_active) {
+			BINLOAD_pause_loading = TRUE;
+			return AKEY_NONE;
+		}
+		else
+			return AKEY_BREAK;
 	case SDLK_CAPSLOCK:
 		if (INPUT_key_shift)
 			return AKEY_CAPSLOCK|shiftctrl;

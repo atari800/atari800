@@ -27,6 +27,7 @@
 
 #include "akey.h"
 #include "atari.h"
+#include "binload.h"
 #include "../input.h"
 #include "platform.h"
 #include "ui.h"
@@ -198,6 +199,8 @@ int PLATFORM_Keyboard(void)
 	else
 		key_control = 0;
 
+	BINLOAD_pause_loading = FALSE;
+
 	/* OPTION / SELECT / START keys */
 	INPUT_key_consol = INPUT_CONSOL_NONE;
 	if (JAVANVM_Kbhits(VK_F2,KEY_LOCATION_STANDARD))
@@ -314,7 +317,12 @@ int PLATFORM_Keyboard(void)
 		return (key_control ? AKEY_LESS : AKEY_CLEAR)|shiftctrl;
 	case VK_PAUSE:
 	case VK_F7:
-		return AKEY_BREAK;
+		if (BINLOAD_wait_active) {
+			BINLOAD_pause_loading = TRUE;
+			return AKEY_NONE;
+		}
+		else
+			return AKEY_BREAK;
 	case VK_CAPS_LOCK:
 		if (INPUT_key_shift)
 			return AKEY_CAPSLOCK|shiftctrl;

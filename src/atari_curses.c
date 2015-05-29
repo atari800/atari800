@@ -32,6 +32,7 @@
 
 #include "antic.h" /* ypos */
 #include "atari.h"
+#include "binload.h"
 #include "gtia.h" /* GTIA_COLPFx */
 #include "input.h"
 #include "akey.h"
@@ -292,6 +293,8 @@ int PLATFORM_Keyboard(void)
 		exit(1);
 	}
 #endif
+
+	BINLOAD_pause_loading = FALSE;
 
 	INPUT_key_consol = INPUT_CONSOL_NONE;
 
@@ -705,7 +708,12 @@ int PLATFORM_Keyboard(void)
 	case KEY_BREAK:
 #endif
 	case KEY_F0 + 7:
-		keycode = AKEY_BREAK;
+		if (BINLOAD_wait_active) {
+			BINLOAD_pause_loading = TRUE;
+			keycode = AKEY_NONE;
+		}
+		else
+			keycode = AKEY_BREAK;
 		break;
 	case KEY_F0 + 8:
 		keycode = PLATFORM_Exit(TRUE) ? AKEY_NONE : AKEY_EXIT;

@@ -80,6 +80,7 @@ static int motif_disk_sel = 1;
 #include <X11/keysym.h>
 
 #include "atari.h"
+#include "binload.h"
 #include "cartridge.h"
 #include "colours.h"
 #include "input.h"
@@ -253,6 +254,8 @@ static int GetKeyCode(XEvent *event)
 	if (event->type == KeyPress || event->type == KeyRelease) {
 		XLookupString((XKeyEvent *) event, buffer, sizeof(buffer), &keysym, NULL);
 	}
+
+	BINLOAD_pause_loading = FALSE;
 
 	switch (event->type) {
 	case Expose:
@@ -452,7 +455,12 @@ static int GetKeyCode(XEvent *event)
 			break;
 		case XK_Break:
 		case XK_F7:
-			keycode = AKEY_BREAK;
+			if (BINLOAD_wait_active) {
+				BINLOAD_pause_loading = TRUE;
+				keycode = AKEY_NONE;
+			}
+			else
+				keycode = AKEY_BREAK;
 			break;
 		case XK_Home:
 			keycode = AKEY_CLEAR;

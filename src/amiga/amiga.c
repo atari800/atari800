@@ -1339,7 +1339,14 @@ int HandleRawkey( UWORD code, UWORD qual, APTR iaddress )
 		case	0xd2: keyboard_consol |= 0x02; keycode = AKEY_NONE; break; /* F3 released */
 		case	0x53: keyboard_consol &= 0x06; keycode = AKEY_NONE; break; /* F4 pressed */
 		case	0xd3: keyboard_consol |= 0x01; keycode = AKEY_NONE; break; /* F4 released */
-		case	0x56: keycode = AKEY_BREAK; break; /* F7 */
+		case	0x56: /* F7 */
+			if (BINLOAD_wait_active) {
+				BINLOAD_pause_loading = TRUE;
+				keycode = AKEY_NONE;
+			}
+			else
+				keycode = AKEY_BREAK;
+			break;
 		case	0x59: keycode = AKEY_NONE; break;
 		case	0x5f: keycode = AKEY_HELP; 	break;
 
@@ -1815,6 +1822,8 @@ int PLATFORM_Keyboard (void)
 	int iconify = 0;
 
 	struct IntuiMessage *imsg;
+
+	BINLOAD_pause_loading = FALSE;
 
 	while ((imsg = (struct IntuiMessage*) GetMsg (WindowMain->UserPort)))
 	{

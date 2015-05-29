@@ -422,7 +422,7 @@ F4                   Start key
 F5                   Reset key ("warm reset")
 Shift+F5             Reboot ("cold reset")
 F6                   Help key (XL/XE only)
-F7                   Break key
+F7                   Break key (**)
 F8                   Enter monitor
 F9                   Exit emulator
 F10                  Save screenshot
@@ -480,6 +480,9 @@ Paddles, Atari touch tablet, Koala pad, light pen, light gun,
 ST/Amiga mouse, Atari trak-ball, joystick and Atari 5200 analog
 controller are emulated using mouse on ports that support it.
 See the options above for how to enable mouse.
+
+(**) When Slow loading of XEX is enabled, holding F7 during loading pauses the
+loading process.
 
 
 Amiga keyboard, joystick and other controllers

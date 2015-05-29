@@ -31,6 +31,7 @@
 #include <ctype.h>
 
 #include "atari.h"
+#include "binload.h"
 #include "input.h"
 #include "log.h"
 #include "monitor.h"
@@ -943,6 +944,8 @@ int PLATFORM_GetKeyName(void)
 		}
 	}
 
+	BINLOAD_pause_loading = FALSE;
+
 	INPUT_key_consol = (kbhits[DIK_F2] ? 0 : INPUT_CONSOL_OPTION)
 	                 + (kbhits[DIK_F3] ? 0 : INPUT_CONSOL_SELECT)
 	                 + (kbhits[DIK_F4] ? 0 : INPUT_CONSOL_START);
@@ -1031,7 +1034,12 @@ int PLATFORM_GetKeyName(void)
 		case DIK_F5:
 			return INPUT_key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
 		case DIK_F7:
-			return AKEY_BREAK;
+			if (BINLOAD_wait_active) {
+				BINLOAD_pause_loading = TRUE;
+				return AKEY_NONE;
+			}
+			else
+				return AKEY_BREAK;
 		case DIK_F8:
 		    if (useconsole) { // only permit F8 if a console is available.
 				keycode = PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT;

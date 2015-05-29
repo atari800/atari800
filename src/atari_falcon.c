@@ -31,6 +31,7 @@
 #include "falcon/xcb.h"		/* for NOVA screensaver */
 
 #include "atari.h"
+#include "binload.h"
 #include "cpu.h"
 #include "colours.h"
 #include "ui.h"         /* for UI_is_active */
@@ -725,9 +726,10 @@ int PLATFORM_Keyboard(void)
 		else if (scancode == SCANCODE_T)
 			UI_alt_function = UI_MENU_CASSETTE;	/* ALT+T .. Tape management */
 	}
-		if (UI_alt_function != -1)
-			return AKEY_UI;
+	if (UI_alt_function != -1)
+		return AKEY_UI;
 
+	BINLOAD_pause_loading = FALSE;
 
 	if (key_buf[0x3c])	/* F2 */
 		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;	/* OPTION key ON */
@@ -1141,7 +1143,12 @@ int PLATFORM_Keyboard(void)
 				keycode = AKEY_HELP;
 				break;
 			case 0x41:			/* F7 */
-				keycode = AKEY_BREAK;
+				if (BINLOAD_wait_active) {
+					BINLOAD_pause_loading = TRUE;
+					keycode = AKEY_NONE;
+				}
+				else
+					keycode = AKEY_BREAK;
 				break;
 			case 0x42:			/* F8 */
 				keycode = PLATFORM_Exit(1) ? AKEY_NONE : AKEY_EXIT;	/* invoke monitor */
