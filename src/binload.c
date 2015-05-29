@@ -36,7 +36,22 @@
 
 int BINLOAD_start_binloading = FALSE;
 int BINLOAD_loading_basic = 0;
+int BINLOAD_slow_xex_loading = FALSE;
 FILE *BINLOAD_bin_file = NULL;
+
+/* These variables are for slow XEX loading only. */
+
+/* Number of CPU instructions elapsed since last loaded byte. */
+static unsigned int instr_elapsed = 0;
+int BINLOAD_wait_active=FALSE;
+/* Start and end address of the currently loaded segment. */
+static UWORD from = 0;
+static UWORD to = 0;
+/* Inticates that the next call to loader_cont will overwrite INITAD. */
+static int init2e3 = FALSE;
+/* Indicates that we are currently not during loading of a segment. */
+static int segfinished = TRUE;
+int BINLOAD_pause_loading;
 
 /* Read a word from file */
 static int read_word(void)
@@ -68,31 +83,47 @@ static void loader_cont(void)
 	else
 		CPU_regS += 2;	/* pop ESC code */
 
-	MEMORY_dPutByte(0x2e3, 0xd7);
+	if (init2e3)
+		MEMORY_dPutByte(0x2e3, 0xd7);
+	init2e3=FALSE;
 	do {
-		int temp;
-		UWORD from;
-		UWORD to;
-		do
+		if(!BINLOAD_wait_active && segfinished){
+			int temp;
+			do
+				temp = read_word();
+			while (temp == 0xffff);
+			if (temp < 0)
+				return;
+			from = (UWORD) temp;
+
 			temp = read_word();
-		while (temp == 0xffff);
-		if (temp < 0)
-			return;
-		from = (UWORD) temp;
+			if (temp < 0)
+				return;
+			to = (UWORD) temp;
 
-		temp = read_word();
-		if (temp < 0)
-			return;
-		to = (UWORD) temp;
-
-		if (BINLOAD_start_binloading) {
-			MEMORY_dPutWordAligned(0x2e0, from);
-			BINLOAD_start_binloading = FALSE;
+			if (BINLOAD_start_binloading) {
+				MEMORY_dPutWordAligned(0x2e0, from);
+				BINLOAD_start_binloading = FALSE;
+			}
+			to++;
+			segfinished = FALSE;
 		}
-
-		to++;
 		do {
-			int byte = fgetc(BINLOAD_bin_file);
+			int byte;
+			if (BINLOAD_slow_xex_loading) {
+				instr_elapsed++;
+				if ((instr_elapsed < 300) || BINLOAD_pause_loading) {
+					CPU_regS--;
+					ESC_Add((UWORD) (0x100 + CPU_regS), ESC_BINLOADER_CONT, loader_cont);
+					CPU_regS--;
+					CPU_regPC = CPU_regS + 1 + 0x100;
+					BINLOAD_wait_active = TRUE;
+					return;
+				}
+				instr_elapsed = 0;
+				BINLOAD_wait_active = FALSE;
+			}
+			byte = fgetc(BINLOAD_bin_file);
 			if (byte == EOF) {
 				fclose(BINLOAD_bin_file);
 				BINLOAD_bin_file = NULL;
@@ -109,6 +140,7 @@ static void loader_cont(void)
 			MEMORY_PutByte(from, (UBYTE) byte);
 			from++;
 		} while (from != to);
+		segfinished = TRUE;
 	} while (MEMORY_dGetByte(0x2e3) == 0xd7);
 
 	CPU_regS--;
@@ -121,6 +153,7 @@ static void loader_cont(void)
 	CPU_SetC;
 
 	MEMORY_dPutByte(0x0300, 0x31);	/* for "Studio Dream" */
+	init2e3 = TRUE;
 }
 
 /* Fake boot sector to call loader_cont at boot time */
@@ -135,6 +168,9 @@ int BINLOAD_LoaderStart(UBYTE *buffer)
 	buffer[6] = 0xf2;	/* ESC */
 	buffer[7] = ESC_BINLOADER_CONT;
 	ESC_Add(0x706, ESC_BINLOADER_CONT, loader_cont);
+	BINLOAD_wait_active = FALSE;
+	init2e3 = TRUE;
+	segfinished = TRUE;
 	return 'C';
 }
 

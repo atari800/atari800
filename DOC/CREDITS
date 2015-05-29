@@ -180,6 +180,7 @@ Achim Haertel <achim.haertel@e-technik.tu-chemnitz.de>
     - implemented cassette writing
     - cassette loading with variable baud rate
     - trainer searcher
+    - slow loading of binary DOS files
 
 Nathan Hartwell <mage@magelair.com>
     - Win32 fixes

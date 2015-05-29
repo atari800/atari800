@@ -1890,6 +1890,7 @@ static void AtariSettings(void)
 #endif /* XEP80_EMULATION */
 		UI_MENU_CHECK(3, "SIO patch (fast disk access):"),
 		UI_MENU_CHECK(17, "Turbo (F12):"),
+		UI_MENU_CHECK(19, "Slow loading of XEX:"),
 		UI_MENU_ACTION(4, "H: device (hard disk):"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
 #ifdef R_IO_DEVICE
@@ -1927,6 +1928,7 @@ static void AtariSettings(void)
 		FindMenuItem(menu_array, 18)->suffix = xep80_menu_array[XEP80_enabled ? XEP80_port + 1 : 0].item;
 #endif /* XEP80_EMULATION */
 		SetItemChecked(menu_array, 17, Atari800_turbo);
+		SetItemChecked(menu_array, 19, BINLOAD_slow_xex_loading);
 		FindMenuItem(menu_array, 4)->suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
 		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
@@ -2020,6 +2022,9 @@ static void AtariSettings(void)
 			}
 			break;
 #endif /* XEP80_EMULATION */
+		case 19:
+			BINLOAD_slow_xex_loading = !BINLOAD_slow_xex_loading;
+			break;
 		default:
 			ESC_UpdatePatches();
 			return;

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include "cartridge.h"
 #include "cassette.h"
+#include "binload.h"
 #include "cfg.h"
 #include "devices.h"
 #include "esc.h"
@@ -182,6 +183,9 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 
 			else if (strcmp(string, "ENABLE_SIO_PATCH") == 0) {
 				ESC_enable_sio_patch = Util_sscanbool(ptr);
+			}
+			else if (strcmp(string, "ENABLE_SLOW_XEX_LOADING") == 0) {
+				BINLOAD_slow_xex_loading = Util_sscanbool(ptr);
 			}
 			else if (strcmp(string, "ENABLE_H_PATCH") == 0) {
 				Devices_enable_h_patch = Util_sscanbool(ptr);
@@ -407,6 +411,7 @@ int CFG_WriteConfig(void)
 
 	fprintf(fp, "DISABLE_BASIC=%d\n", Atari800_disable_basic);
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", ESC_enable_sio_patch);
+	fprintf(fp, "ENABLE_SLOW_XEX_LOADING=%d\n", BINLOAD_slow_xex_loading);
 	fprintf(fp, "ENABLE_H_PATCH=%d\n", Devices_enable_h_patch);
 	fprintf(fp, "ENABLE_P_PATCH=%d\n", Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
