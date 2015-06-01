@@ -636,7 +636,8 @@ static void safe_gets(char *buffer, size_t size, char const *prompt)
 	}
 #else
 	fputs(prompt, stdout);
-	fgets(buffer, size, stdin);
+	if (fgets(buffer, size, stdin) == NULL)
+		buffer[0] = 0;
 #endif
 	Util_chomp(buffer);
 }
