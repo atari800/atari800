@@ -1,3 +1,7 @@
+2015-02-12  Petr Stehlik <pstehlik@sophics.cz>
+* sdl/input.c: preliminary support for four real joysticks
+
+
 2015-05-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * binload.[ch], cfg.c, ui.c, DOC/CREDITS: Achim Haertel's patch
   adds an option to slow down the loading of DOS binary files ran using "Run

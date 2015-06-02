@@ -83,10 +83,10 @@ static int KBD_STICK_1_UP = SDLK_w;
 static int fd_joystick0 = -1;
 static int fd_joystick1 = -1;
 
-static SDL_Joystick *joystick0 = NULL;
-static SDL_Joystick *joystick1 = NULL;
-static int joystick0_nbuttons;
-static int joystick1_nbuttons;
+#define MAX_JOYSTICKS	4
+static SDL_Joystick *joystick[MAX_JOYSTICKS] = { NULL, NULL, NULL, NULL };
+static int joystick_nbuttons[MAX_JOYSTICKS];
+static int joysticks_found = 0;
 
 #define minjoy 10000			/* real joystick tolerancy */
 
@@ -1153,31 +1153,20 @@ void SDL_INPUT_Mouse(void)
 
 static void Init_SDL_Joysticks(int first, int second)
 {
-	if (first) {
-		joystick0 = SDL_JoystickOpen(0);
-		if (joystick0 == NULL)
-			Log_print("joystick 0 not found");
+	int i;
+	joysticks_found = 0;
+	for(i = 0; i < SDL_NumJoysticks() && i < MAX_JOYSTICKS; i++) {
+		joystick[joysticks_found] = SDL_JoystickOpen(i);
+		if (joystick[joysticks_found] == NULL)
+			Log_print("Joystick %i not found", i);
 		else {
-			Log_print("joystick 0 found!");
-			joystick0_nbuttons = SDL_JoystickNumButtons(joystick0);
+			Log_print("Joystick %i found", i);
+			joystick_nbuttons[joysticks_found] = SDL_JoystickNumButtons(joystick[i]);
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-			if (joystick0_nbuttons > OSK_MAX_BUTTONS)
-				joystick0_nbuttons = OSK_MAX_BUTTONS;
+			if (joystick_nbuttons[joysticks_found] > OSK_MAX_BUTTONS)
+				joystick_nbuttons[joysticks_found] = OSK_MAX_BUTTONS;
 #endif
-		}
-	}
-
-	if (second) {
-		joystick1 = SDL_JoystickOpen(1);
-		if (joystick1 == NULL)
-			Log_print("joystick 1 not found");
-		else {
-			Log_print("joystick 1 found!");
-			joystick1_nbuttons = SDL_JoystickNumButtons(joystick1);
-#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-			if (joystick1_nbuttons > OSK_MAX_BUTTONS)
-				joystick1_nbuttons = OSK_MAX_BUTTONS;
-#endif
+			joysticks_found++;
 		}
 	}
 }
@@ -1369,41 +1358,32 @@ static int get_LPT_joystick_state(int fd)
 static struct js_state {
 	unsigned int port;
 	unsigned int trig;
-} sdl_js_state[2];
+} sdl_js_state[MAX_JOYSTICKS];
 
 static void update_SDL_joysticks(void)
 {
-	int i;
+	int joy;
 
-	if (joystick0 == NULL && joystick1 == NULL)
+	if (! joysticks_found)
 		return;
 
 	SDL_JoystickUpdate();
 
-	if (joystick0 != NULL) {
-		sdl_js_state[0].port = get_SDL_joystick_state(joystick0);
+	for(joy = 0; joy < joysticks_found; joy++) {
+		int i;
 
-		sdl_js_state[0].trig = 0;
-		for (i = 0; i < joystick0_nbuttons; i++) {
-			if (SDL_JoystickGetButton(joystick0, i)) {
-				sdl_js_state[0].trig |= 1 << i;
-			}
-		}
-	}
+		sdl_js_state[joy].port = get_SDL_joystick_state(joystick[joy]);
 
-	if (joystick1 != NULL) {
-		sdl_js_state[1].port = get_SDL_joystick_state(joystick1);
-
-		sdl_js_state[1].trig = 0;
-		for (i = 0; i < joystick1_nbuttons; i++) {
-			if (SDL_JoystickGetButton(joystick1, i)) {
-				sdl_js_state[1].trig |= 1 << i;
+		sdl_js_state[joy].trig = 0;
+		for (i = 0; i < joystick_nbuttons[joy]; i++) {
+			if (SDL_JoystickGetButton(joystick[joy], i)) {
+				sdl_js_state[joy].trig |= 1 << i;
 			}
 		}
 	}
 }
 
-static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
+static void get_platform_PORT(Uint8 *s0, Uint8 *s1, Uint8 *s2, Uint8 *s3)
 {
 	int stick0, stick1;
 	stick0 = stick1 = INPUT_STICK_CENTRE;
@@ -1440,16 +1420,19 @@ static void get_platform_PORT(Uint8 *s0, Uint8 *s1)
 
 	if (fd_joystick0 != -1)
 		*s0 &= get_LPT_joystick_state(fd_joystick0);
-	else if (joystick0 != NULL)
+	else if (joystick[0] != NULL)
 		*s0 &= sdl_js_state[0].port;
 
 	if (fd_joystick1 != -1)
 		*s1 &= get_LPT_joystick_state(fd_joystick1);
-	else if (joystick1 != NULL)
+	else if (joystick[1] != NULL)
 		*s1 &= sdl_js_state[1].port;
+
+	*s2 = sdl_js_state[2].port;
+	*s3 = sdl_js_state[3].port;
 }
 
-static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
+static void get_platform_TRIG(Uint8 *t0, Uint8 *t1, Uint8 *t2, Uint8 *t3)
 {
 	int trig0, trig1;
 	trig0 = trig1 = 1;
@@ -1478,7 +1461,7 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 		*t0 &= ((status & 8) > 0);
 #endif /* LPTJOY */
 	}
-	else if (joystick0 != NULL) {
+	else if (joystick[0] != NULL) {
 		trig0 = 1;
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 		if (OSK_enabled) {
@@ -1499,22 +1482,28 @@ static void get_platform_TRIG(Uint8 *t0, Uint8 *t1)
 		*t1 &= ((status & 8) > 0);
 #endif /* LPTJOY */
 	}
-	else if (joystick1 != NULL) {
+	else if (joystick[1] != NULL) {
 		trig1 = 1;
 		if (sdl_js_state[1].trig)
 			trig1 = 0;
 		*t1 &= trig1;
 	}
+
+	*t2 = sdl_js_state[2].trig ? 0 : 1;
+	*t3 = sdl_js_state[3].trig ? 0 : 1;
 }
 
 int PLATFORM_PORT(int num)
 {
 #ifndef DONT_DISPLAY
+	UBYTE a, b, c, d;
+	update_SDL_joysticks();
+	get_platform_PORT(&a, &b, &c, &d);
 	if (num == 0) {
-		UBYTE a, b;
-		update_SDL_joysticks();
-		get_platform_PORT(&a, &b);
 		return (b << 4) | (a & 0x0f);
+	}
+	else if (num == 1) {
+		return (d << 4) | (c & 0x0f);
 	}
 #endif
 	return 0xff;
@@ -1523,13 +1512,17 @@ int PLATFORM_PORT(int num)
 int PLATFORM_TRIG(int num)
 {
 #ifndef DONT_DISPLAY
-	UBYTE a, b;
-	get_platform_TRIG(&a, &b);
+	UBYTE a, b, c, d;
+	get_platform_TRIG(&a, &b, &c, &d);
 	switch (num) {
 	case 0:
 		return a;
 	case 1:
 		return b;
+	case 2:
+		return c;
+	case 3:
+		return d;
 	default:
 		break;
 	}
