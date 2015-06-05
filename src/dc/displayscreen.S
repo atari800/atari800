@@ -51,6 +51,7 @@ static void PLATFORM_DisplayScreen_singleb(UBYTE *screen)
 
 		.align	5
 
+#ifdef DIRTYRECT
 _PLATFORM_DisplayScreen_singleb:
 		.globl	_PLATFORM_DisplayScreen_singleb
 
@@ -112,11 +113,18 @@ s_loop:		bt/s	s_done
 		mov.b	@(r0,r6),r0	/* Screen_dirty[m] */
 
 		tst	#255,r0		/* is it dirty? */
-		bt/s	s_next		/* not dirty, skip screen update */
 		 mov	r2,r0		/* x, j = 0 -> r0 */
+		bt/s	s_next		/* not dirty, skip screen update */
+		 add	#8,r2		/* x += 8; */
+
+
+!		 mov	r2,r0		/* x, j = 0 -> r0 */
 
 		/* loop "for (j=0; j<8; j++)" unrolled */
 
+		!add	#8,r2		/* x += 8; */
+
+bim:
 		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
 		and	r14,r13		/* and with 255 */
 		shal	r13
@@ -127,7 +135,12 @@ s_loop:		bt/s	s_done
 		shar	r0
 
 		add	#1,r0		/* j = 1 */
+!nop
+		cmp/eq	r2,r0
+		bf	bim
+!nop
 
+#if 0
 		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
 		and	r14,r13		/* and with 255 */
 		shal	r13
@@ -202,7 +215,7 @@ s_loop:		bt/s	s_done
 		shal	r0		/* index * 2 (words) */
 		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
 		shar	r0
-
+#endif
 		/* end of unrolled loop */
 
 		/* Screen_dirty[m] = 0; */
@@ -211,7 +224,7 @@ s_loop:		bt/s	s_done
 
 		.align	5
 
-s_next:		add	#8,r2		/* x += 8; */
+s_next:		!add	#8,r2		/* x += 8; */
 		cmp/hs	r11,r2		/* x >= 320 + (ATARI_WIDTH - 320) / 2 */
 		bf/s	s_next2		/* no... */
 		 add	#1,r1		/* m++ */
@@ -257,6 +270,153 @@ s_done:
 		rts
 		 mov.l	@r15+,r8
 
+#else // DIRTYRECT
+
+
+
+
+_PLATFORM_DisplayScreen_singleb:
+		.globl	_PLATFORM_DisplayScreen_singleb
+
+		mov.l	r8,@-r15
+		sts.l	pr,@-r15	/* save return address */
+		mov.l	r9,@-r15	/* save registers */
+		mov.l	r10,@-r15
+		mov.l	r11,@-r15
+		mov.l	r12,@-r15
+		mov.l	r13,@-r15
+		mov.l	r14,@-r15
+
+	!trapa #0x20
+
+#ifdef SPEED_CHECK
+		mov.l	r4,@-r15
+		mov.l	vbc_ptr,r0
+		mov	#0,r4
+		mov	r4,r5
+		jsr	@r0		/* vid_border_color(0, 0, 0); */
+		 mov	r4,r6
+		mov.l	@r15+,r4
+#endif
+
+/* @@@
+
+	vram_wrk = vram + START_VAL;
+	screen += START_VAL;
+	for (y = 0; y < Screen_HEIGHT; y++) {
+		for (x = 0; x < 320; x++)
+			*(vram_wrk + x) = mypal[*(screen + x)];
+		screen += Screen_WIDTH;
+		vram_wrk += vid_mode->width;
+	}
+*/
+
+/* r0
+ * r1 - data
+ * r2 - column counter (inner loop variable)
+ * r4 - screen (function input argument)
+ * r5
+ * r6 - 320
+ * r7 - 0
+ * r8 - ATARI_WIDTH (Screen_WIDTH)
+ * r9 - vid_mode_width
+ * r10 - vram (work)
+ * r11 - line counter (outer loop variable)
+ * r12 - mypal
+ * r13 - vram
+ * r14 - 255 (for ANDing)
+ */
+		sub	r7,r7
+		mov	#START_VAL,r2
+
+		mov.l	atari_width,r8
+		mov.l	vid_mode_width,r9
+		mov.l	screen_vram,r10
+		mov.l	@r9,r9
+		mov.l	@r10,r10
+
+		!add	#-1,r7
+
+		mov.l	mypal,r12
+		mov.l	three20,r6
+		mov.l	two55,r14
+
+		add	r2,r10
+		mov.l	atari_height,r11	! line counter, outer loop variable
+		add	r2,r4			! screen + START_VAL
+		add	r2,r10			! vram + START_VAL (16bit frame buffer) -> vram_wrk
+
+		!add	#-1,r11
+		mov	r6,r2
+		mov	r10,r13
+
+		shal	r9
+
+		!.align	5
+
+s_loop:		
+		mov.b	@r4+,r1			! *(screen + x); screen++;
+
+		.align	5
+s_loop1:
+		and	r14,r1			! and with 255
+		shal	r1			! r1: index into mypal
+		add	r12,r1
+		mov.w	@r1,r1			! mypal[*(screen + x)]
+		mov.w	r1,@r10
+		add	#2,r10			! vram++ (16bit fb)
+
+		add	#-1,r2
+		cmp/eq	r2,r7
+!		bf	s_loop
+		bf/s	s_loop1
+		 mov.b	@r4+,r1
+
+		! one line done, update "screen" and "vram" to point to the next line
+		add	r9,r13
+		add	#ATARI_WIDTH-320-1,r4	! screen
+		mov	r13,r10
+		mov	r6,r2
+
+		add	#-1,r11
+		cmp/eq	r11,r7
+!		bf	s_loop
+		bf/s	s_loop1
+		 mov.b	@r4+,r1
+
+s_done:
+
+#ifdef SPEED_CHECK
+		mov.l	vbc_ptr,r0
+		mov	#127,r4
+		mov	r4,r5
+		jsr	@r0		/* vid_border_color(127, 127, 127); */
+		 mov	r4,r6
+#endif
+
+		mov.l	vbl_wt,r0
+		jsr	@r0		/* vbl_wait(); */
+		 nop
+
+#ifdef SPEED_CHECK
+		mov.l	vbc_ptr,r0
+		mov	#255,r4
+		mov	r4,r5
+		jsr	@r0		/* vid_border_color(255, 255, 255); */
+		 mov	r4,r6
+#endif
+
+		mov.l	@r15+,r14
+		mov.l	@r15+,r13
+		mov.l	@r15+,r12
+		mov.l	@r15+,r11
+		mov.l	@r15+,r10
+		mov.l	@r15+,r9
+		lds.l	@r15+,pr	/* get return address */
+		rts
+		 mov.l	@r15+,r8
+
+#endif
 
 /*******************************************************************************/
 
@@ -394,7 +554,9 @@ d_sbase_2:
 		sub	r7,r7
 		mov	#START_VAL/8,r1
 		mov	#START_VAL,r2
+#ifdef DIRTYRECT
 		mov.l	Screen_dirty,r6
+#endif
 		mov.l	@r6,r6
 		mov.l	cmp_val2,r11
 		mov.l	mypal,r12
@@ -434,7 +596,10 @@ d_do:		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
 		shar	r0
 
 		add	#1,r0		/* j = 1 */
+		cmp/eq	#8,r0
+		bf	d_do
 
+#if 0
 		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
 		and	r14,r13		/* and with 255 */
 		shal	r13
@@ -510,6 +675,7 @@ d_do:		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
 		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
 		shar	r0
 
+#endif
 		/* end of unrolled loop */
 
 		/* Screen_dirty[m] = 0; */
@@ -577,14 +743,18 @@ d_done:
 vbc_ptr:	.long	_vid_border_color
 vbl_wt:		.long	_vbl_wait
 vram:		.long	_screen_vram
+#ifdef DIRTYRECT
 Screen_dirty:	.long	_Screen_dirty
+#endif
 cmp_val:	.long	(ATARI_HEIGHT * ATARI_WIDTH / 8)
 atari_width:	.long	ATARI_WIDTH
+atari_height:	.long	ATARI_HEIGHT
 vid_mode_width:	.long	_vid_mode_width
 screen_vram:	.long	_screen_vram
 cmp_val2:	.long	320 + (ATARI_WIDTH - 320) / 2
 mypal:		.long	_mypal
 two55:		.long	255
+three20:	.long	320
 vid_set_start:	.long	_vid_set_start
 
 sbase2_start:	.long	1024 * 768 * 4
