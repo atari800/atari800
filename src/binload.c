@@ -87,7 +87,7 @@ static void loader_cont(void)
 		MEMORY_dPutByte(0x2e3, 0xd7);
 	init2e3=FALSE;
 	do {
-		if(!BINLOAD_wait_active && segfinished){
+		if((!BINLOAD_wait_active || !BINLOAD_slow_xex_loading) && segfinished){
 			int temp;
 			do
 				temp = read_word();

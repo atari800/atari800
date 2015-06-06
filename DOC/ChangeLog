@@ -1,4 +1,9 @@
-2015-02-12  Petr Stehlik <pstehlik@sophics.cz>
+2015-06-06  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* binload.c: Achim Haertel's patch fixes emulation crash when slow loading of
+  DOS binary files is turned off during such loading.
+
+
+2015-06-02  Petr Stehlik <pstehlik@sophics.cz>
 * sdl/input.c: preliminary support for four real joysticks
 
 
