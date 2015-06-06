@@ -1890,7 +1890,7 @@ static void AtariSettings(void)
 #endif /* XEP80_EMULATION */
 		UI_MENU_CHECK(3, "SIO patch (fast disk access):"),
 		UI_MENU_CHECK(17, "Turbo (F12):"),
-		UI_MENU_CHECK(19, "Slow loading of XEX:"),
+		UI_MENU_CHECK(19, "Slow booting of DOS binary files:"),
 		UI_MENU_ACTION(4, "H: device (hard disk):"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
 #ifdef R_IO_DEVICE
