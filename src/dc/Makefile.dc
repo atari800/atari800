@@ -109,7 +109,7 @@ dep:
 
 clean:
 	rm -f $(OBJ) atari800.map atari800.elf atari800.bin atari800.scrambled
-	rm -f romdisk.img romdisk.o dc/displayscreen.o
+	rm -f romdisk.img $(ADDOBJ)
 
 # Local Variables: #
 # mode: makefile #
