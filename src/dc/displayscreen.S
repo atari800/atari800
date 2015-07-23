@@ -1,6 +1,6 @@
 /*
  * SEGA Dreamcast assembler support routines
- * (c) 2003,2004,2013 Christian Groessler (chris@groessler.org)
+ * (c) 2003,2004,2013,2015 Christian Groessler (chris@groessler.org)
  */
 
 #include "config.h"
@@ -11,43 +11,6 @@
 #define START_VAL ((ATARI_WIDTH - 320) / 2)
 
 /*******************************************************************************/
-
-/*
- * implementation of the following C routine
- *
-
-static void PLATFORM_DisplayScreen_singleb(UBYTE *screen)
-{
-	unsigned int x, m, j;
-	uint16 *vram = screen_vram;
-
-#ifdef SPEED_CHECK
-	vid_border_color(0, 0, 0);
-#endif
-	for (m=START_VAL/8, x=START_VAL; m < ATARI_HEIGHT * ATARI_WIDTH / 8; m++) {
-		if (Screen_dirty[m]) {
-			for (j=0; j<8; j++) {
-				*(vram + x + j) = mypal[*(screen + x + j)];
-			}
-			Screen_dirty[m] = 0;
-		}
-		x += 8;
-		if (x >= 320 + (ATARI_WIDTH - 320) / 2) {
-			vram += vid_mode->width;
-			screen += ATARI_WIDTH;
-			m += (ATARI_WIDTH - 320) / 8;
-			x = START_VAL;
-		}
-	}
-#ifdef SPEED_CHECK
-	vid_border_color(127, 127, 127);
-#endif
-	vbl_wait();
-#ifdef SPEED_CHECK
-	vid_border_color(255, 255, 255);
-#endif
-}
- */
 
 		.align	5
 
@@ -73,157 +36,176 @@ _PLATFORM_DisplayScreen_singleb:
 		mov.l	@r15+,r4
 #endif
 
-/* r1 - m
- * r2 - x
- * r4 - screen (function input argument)
- * r5 - ATARI_HEIGHT * ATARI_WIDTH / 8
- * r6 - Screen_dirty
- * r7 - 0
- * r8 - ATARI_WIDTH
- * r9 - vid_mode_width
- * r10 - vram
- * r11 - 320 + (ATARI_WIDTH - 320) / 2
- * r12 - mypal
- * r13 - (x + j) * 2
- * r14 - 255 (for ANDing)
- */
-		sub	r7,r7
-		mov	#START_VAL/8,r1
-		mov	#START_VAL,r2
-		mov.l	cmp_val,r5
-		mov.l	Screen_dirty,r6
-		mov.l	@r6,r6
-		mov.l	atari_width,r8
-		mov.l	vid_mode_width,r9
-		mov.l	@r9,r9
+/*
+	vram_wrk = vram + START_VAL;
+	screen += START_VAL;
+	for (y = 0; y < Screen_HEIGHT; y++) {
+		for (x = 0; x < 320; x++)
+			*(vram_wrk + x) = mypal[*(screen + x)];
+		screen += Screen_WIDTH;
+		vram_wrk += vid_mode->width;
+	}
+*/
+
 		mov.l	screen_vram,r10
+		sub	r8,r8			! sbase
 		mov.l	@r10,r10
-		mov.l	cmp_val2,r11
+
+		.align	5
+
+ext_entry:	! entered here from _PLATFORM_DisplayScreen_doubleb
+		! r4 - screen
+		! r8 - sbase
+		! r10 - vram
+
 		mov.l	mypal,r12
-		mov.l	two55,r14	/* 255 -> r14 */
 
-		cmp/hs	r5,r1		/* m >= ATARI_HEIGHT * ATARI_WIDTH / 8 */
+		mov.l	vid_mode_width,r9
+		mov	#START_VAL,r2
+		mov.l	@r9,r9
 
-		.align	5
+#ifdef STORE_QUEUE
 
-s_loop:		bt/s	s_done
-		 mov	r1,r0		/* m -> r0 */
+		add	r2,r10			! vram + START_VAL (1st part, 16bit values)
+		mov.l	atari_height,r11	! line counter, outer loop variable
+		add	r2,r4			! screen + START_VAL
+		add	r2,r10			! vram + START_VAL (2nd part, 16bit frame buffer) -> vram_wrk
 
-		mov.b	@(r0,r6),r0	/* Screen_dirty[m] */
 
-		tst	#255,r0		/* is it dirty? */
-		bt/s	s_next		/* not dirty, skip screen update */
-		 mov	r2,r0		/* x, j = 0 -> r0 */
+		! build SQ address out of vram address
+		mov.l	_03ffffe0,r13
+		mov.l	_e0000000,r2
+		and	r13,r10
+		or	r2,r10
 
-		/* loop "for (j=0; j<8; j++)" unrolled */
+		shal	r9			! vid_mode_width (16bit)
+		mov	r10,r13			! remember initial vram_wrk
 
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
+/* r0 - data
+ * r1 - data
+ * r2
+ * r4 - screen (function input argument)
+ * r5 - data
+ * r6
+ * r7
+ * r8
+ * r9 - vid_mode_width
+ * r10 - vram_wrk (during line)
+ * r11 - line counter (outer loop variable)
+ * r12 - mypal
+ * r13 - vram_wrk (start of each line)
+ * r14 - store queue addr for "pref"
+ */
 
-		add	#1,r0		/* j = 1 */
 
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
+! Store-Queue
+! Each of the two store queues is 32 bytes (8 words) long.
+! Our pixels are 16bit, so 16 pixel fit into one store queue.
+! Store queue can only be written with word (32bit) accesses.
+! Line length is 320 pixel, so we need to fill the store queues 20 times for each line.
 
-		add	#1,r0		/* j = 2 */
 
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 3 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 4 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 5 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 6 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 7 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		/* end of unrolled loop */
-
-		/* Screen_dirty[m] = 0; */
-		mov	r1,r0		/* m -> r0 */
-		mov.b	r7,@(r0,r6)
+		mov	#20,r2			! we need to run the following part 20 times for one line
 
 		.align	5
 
-s_next:		add	#8,r2		/* x += 8; */
-		cmp/hs	r11,r2		/* x >= 320 + (ATARI_WIDTH - 320) / 2 */
-		bf/s	s_next2		/* no... */
-		 add	#1,r1		/* m++ */
+s_loop:		mov	r10,r14
 
-		mov	#START_VAL,r2			/* x = START_VAL */
-		add	#(ATARI_WIDTH - 320) / 8,r1	/* m += (ATARI_WIDTH - 320) / 8 */
-		add	r8,r4				/* screen += ATARI_WIDTH */
-		add	r9,r10		/* vram += vid_mode->width */
-		add	r9,r10		/* dto. (vram points to 16bit values) */
+		.rept	8
 
-s_next2:	bra	s_loop
-		 cmp/hs	r5,r1		/* m >= ATARI_HEIGHT * ATARI_WIDTH / 8 */
+  		mov.b	@r4+,r0			! *(screen + x)
+  		mov.b	@r4+,r1			! *(screen + x + 1)
+
+		extu.b	r0,r0
+		extu.b	r1,r1
+
+		shal	r0
+		shal	r1
+
+		mov.w	@(r0,r12),r5		! mypal[*(screen + x)]
+		mov	r1,r0
+		extu.w	r5,r5
+
+		mov.w	@(r0,r12),r0		! mypal[*(screen + x + 1)]
+		shll16	r0			! move to high 16bits
+
+		or	r0,r5
+		mov.l	r5,@r10
+		add	#4,r10
+
+		.endr
+
+		! one store queue is full, 16 pixels done
+
+		pref	@r14			! flush store queue
+
+		dt    	r2
+		bf  	s_loop
+
+		! one line done, update "screen" and "vram" to point to the next line
+
+		add	r9,r13
+		add	#ATARI_WIDTH-320,r4	! screen
+		mov	r13,r10
+
+		dt	r11			! all lines done?
+		bf/s	s_loop			! branch taken if not
+		 mov	#20,r2			! we need to run the following part 20 times for one line (see above...)
+
+
+#else /* above STORE_QUEUE, below not */
+
+/* r0
+ * r1 - data
+ * r2 - column counter (inner loop variable)
+ * r4 - screen (function input argument)
+ * r5
+ * r6 - 320
+ * r7
+ * r8
+ * r9 - vid_mode_width
+ * r10 - vram (during line)
+ * r11 - line counter (outer loop variable)
+ * r12 - mypal
+ * r13 - vram_wrk (start of each line)
+ * r14
+ */
+
+		add	r2,r10			! vram + START_VAL (1st part, 16bit values)
+		mov.l	atari_height,r11	! line counter, outer loop variable
+		mov.l	_320,r6
+		add	r2,r4			! screen + START_VAL
+		add	r2,r10			! vram + START_VAL (16bit frame buffer) -> vram_wrk
+
+		mov	r6,r2			! initialize column counter
+		mov	r10,r13			! remember initial vram_wrk
+
+		shal	r9			! vid_mode_width (16bit)
+
+		.align	5
+
+s_loop:		
+		mov.b	@r4+,r1			! *(screen + x)
+		extu.b	r1,r1
+		shal	r1			! r1: index into mypal
+		add	r12,r1
+		mov.w	@r1,r1			! mypal[*(screen + x)]
+		mov.w	r1,@r10
+		add	#2,r10			! vram++ (16bit fb)
+
+		dt	r2
+		bf	s_loop
+
+		! one line done, update "screen" and "vram" to point to the next line
+		add	r9,r13
+		add	#ATARI_WIDTH-320,r4	! screen
+		mov	r13,r10
+		mov	r6,r2
+
+		dt	r11
+		bf	s_loop
+
+#endif /* not defined STORE_QUEUE */
 
 s_done:
 
@@ -238,6 +220,10 @@ s_done:
 		mov.l	vbl_wt,r0
 		jsr	@r0		/* vbl_wait(); */
 		 nop
+
+		mov.l	vid_set_start,r0
+		jsr	@r0		/* vid_set_start(sbase); */
+		 mov	r8,r4		/* sbase */
 
 #ifdef SPEED_CHECK
 		mov.l	vbc_ptr,r0
@@ -260,59 +246,6 @@ s_done:
 
 /*******************************************************************************/
 
-/*
- * implementation of the following C routine
- *
-static void PLATFORM_DisplayScreen_doubleb(UBYTE *screen)
-{
-	unsigned int sbase = 0;
-	unsigned int x, m, j;
-	uint16 *vram;
-	UBYTE *osd, *nsd;
-
-#ifdef SPEED_CHECK
-	vid_border_color(0, 0, 0);
-#endif
-	if (sbase) {
-		sbase = 0;
-                vram = screen_vram;
-		osd = old_sd[0];
-		nsd = old_sd[1];
-	}
-	else {
-		sbase = 1024 * 768 * 4;
-                vram = screen_vram + sbase / 2;
-		osd = old_sd[1];
-		nsd = old_sd[0];
-	}
-
-	for (m=START_VAL/8, x=START_VAL; m < ATARI_HEIGHT * ATARI_WIDTH / 8; m++) {
-		nsd[m] = Screen_dirty[m];
-		if (Screen_dirty[m] || osd[m]) {
-			for (j=0; j<8; j++) {
-				*(vram + x + j) = mypal[*(screen + x + j)];
-			}
-			Screen_dirty[m] = 0;
-		}
-		x += 8;
-		if (x >= 320 + (ATARI_WIDTH - 320) / 2) {
-			vram += vid_mode->width;
-			screen += ATARI_WIDTH;
-			m += (ATARI_WIDTH - 320) / 8;
-			x = START_VAL;
-		}
-	}
-
-#ifdef SPEED_CHECK
-	vid_border_color(127, 127, 127);
-#endif
-	vbl_wait();
-	vid_set_start(sbase);
-#ifdef SPEED_CHECK
-	vid_border_color(255, 255, 255);
-#endif
-}
- */
 
 		.align	5
 
@@ -338,41 +271,18 @@ _PLATFORM_DisplayScreen_doubleb:
 		mov.l	@r15+,r4
 #endif
 
-/* r1 - m
- * r2 - x
- * r3 - nsd
- * r4 - screen (function input argument)
- * r5 - ATARI_HEIGHT * ATARI_WIDTH / 8
- * r6 - Screen_dirty
- * r7 - 0
- * r8 - osd
- * r9 - scratch
- * r10 - vram
- * r11 - 320 + (ATARI_WIDTH - 320) / 2
- * r12 - mypal
- * r13 - (x + j) * 2
- * r14 - 255 (for ANDing)
- */
 		mov.l	screen_vram,r10
-		mov.l	@r10,r10	/* vram = screen_vram */
-		
-		mov.l	cmp_val,r5	/* ATARI_HEIGHT * ATARI_WIDTH / 8 */
 		mov.l	sbase,r0
 		cmp/eq	#0,r0
 		mova	sbase,r0
 		bt/s	d_sbase_1
-		 nop
+		 mov.l	@r10,r10	/* vram = screen_vram */
 
 /* sbase != 0 */
 
 		mov	#0,r8
-		mov.l	r8,@r0		/* sbase = 0 */
-
-		mov.l	old_sd,r0
-		mov	r0,r8		/* osd = old_sd[0] */
-		add	r5,r0
-		bra	d_sbase_2
-		 mov	r0,r3		/* nsd = old_sd[1] */
+		bra	ext_entry
+		 mov.l	r8,@r0		/* sbase = 0 */
 
 /* sbase == 0 */
 
@@ -380,215 +290,32 @@ d_sbase_1:
 		mov.l	sbase2_start,r8
 		mov.l	r8,@r0		/* sbase = 1024 * 768 * 4 */
 
-		add	r8,r10		/* vram = screen_vram + sbase / 2 */
+		bra	ext_entry
+		 add	r8,r10		/* vram = screen_vram + sbase / 2 */
 					/* "/ 2" in the C code, since screen_vram is */
 					/* a uint16 pointer; here we operate on byte */
 					/* pointers */
-
-		mov.l	old_sd,r0
-		mov	r0,r3		/* nsd = old_sd[0] */
-		add	r5,r0
-		mov	r0,r8		/* osd = old_sd[1] */
-
-d_sbase_2:
-		sub	r7,r7
-		mov	#START_VAL/8,r1
-		mov	#START_VAL,r2
-		mov.l	Screen_dirty,r6
-		mov.l	@r6,r6
-		mov.l	cmp_val2,r11
-		mov.l	mypal,r12
-		mov.l	two55,r14	/* 255 -> r14 */
-
-		cmp/hs	r5,r1		/* m >= ATARI_HEIGHT * ATARI_WIDTH / 8 */
-
-		.align	5
-
-d_loop:		bt/s	d_done
-		 mov	r1,r0		/* m -> r0 */
-
-		mov.b	@(r0,r6),r9	/* Screen_dirty[m] */
-		mov.b	r9,@(r0,r3)	/* nsd[m] = screen_dirty[m] */
-		mov	r9,r0
-
-		tst	#255,r0		/* is it dirty? */
-		bf/s	d_do		/* dirty, do screen update */
-		 mov	r2,r0		/* x, j = 0 -> r0 */
-
-		mov	r1,r0		/* m -> r0 */
-		mov.b	@(r0,r8),r0	/* osd[m] */
-
-		tst	#255,r0		/* is it dirty? */
-		bt/s	d_next		/* not dirty, skip screen update */
-		 mov	r2,r0		/* x, j = 0 -> r0 */
-
-		/* loop "for (j=0; j<8; j++)" unrolled */
-
-d_do:		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 1 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 2 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 3 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 4 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 5 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 6 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		add	#1,r0		/* j = 7 */
-
-		mov.b	@(r0,r4),r13	/* *(screen + x + j) */
-		and	r14,r13		/* and with 255 */
-		shal	r13
-		add	r12,r13		/* &mypal[*(screen + x + j)] */
-		mov.w	@r13,r13
-		shal	r0		/* index * 2 (words) */
-		mov.w	r13,@(r0,r10)	/* *(vram + x + j) */
-		shar	r0
-
-		/* end of unrolled loop */
-
-		/* Screen_dirty[m] = 0; */
-		mov	r1,r0		/* m -> r0 */
-		mov.b	r7,@(r0,r6)
-
-		.align	5
-
-d_next:		add	#8,r2		/* x += 8; */
-		cmp/hs	r11,r2		/* x >= 320 + (ATARI_WIDTH - 320) / 2 */
-		bf/s	d_next2		/* no... */
-		 add	#1,r1		/* m++ */
-
-		mov	#START_VAL,r2			/* x = START_VAL */
-		add	#(ATARI_WIDTH - 320) / 8,r1	/* m += (ATARI_WIDTH - 320) / 8 */
-		mov.l	atari_width,r0
-		add	r0,r4				/* screen += ATARI_WIDTH */
-		mov.l	vid_mode_width,r0
-		mov.l	@r0,r0
-		add	r0,r10		/* vram += vid_mode->width */
-		add	r0,r10		/* dto. (vram points to 16bit values) */
-
-d_next2:	bra	d_loop
-		 cmp/hs	r5,r1		/* m >= ATARI_HEIGHT * ATARI_WIDTH / 8 */
-
-d_done:
-
-#ifdef SPEED_CHECK
-		mov.l	vbc_ptr,r0
-		mov	#127,r4
-		mov	r4,r5
-		jsr	@r0		/* vid_border_color(127, 127, 127); */
-		 mov	r4,r6
-#endif
-
-		mov.l	vbl_wt,r0
-		jsr	@r0		/* vbl_wait(); */
-		 nop
-
-		mov.l	vid_set_start,r0
-		mov.l	sbase,r4
-		jsr	@r0		/* vid_set_start(sbase); */
-		 nop
-
-#ifdef SPEED_CHECK
-		mov.l	vbc_ptr,r0
-		mov	#255,r4
-		mov	r4,r5
-		jsr	@r0		/* vid_border_color(255, 255, 255); */
-		 mov	r4,r6
-#endif
-
-		mov.l	@r15+,r14
-		mov.l	@r15+,r13
-		mov.l	@r15+,r12
-		mov.l	@r15+,r11
-		mov.l	@r15+,r10
-		mov.l	@r15+,r9
-		lds.l	@r15+,pr	/* get return address */
-		rts
-		 mov.l	@r15+,r8
 
 
 		.align	2
 vbc_ptr:	.long	_vid_border_color
 vbl_wt:		.long	_vbl_wait
 vram:		.long	_screen_vram
-Screen_dirty:	.long	_Screen_dirty
-cmp_val:	.long	(ATARI_HEIGHT * ATARI_WIDTH / 8)
-atari_width:	.long	ATARI_WIDTH
+atari_height:	.long	ATARI_HEIGHT
 vid_mode_width:	.long	_vid_mode_width
 screen_vram:	.long	_screen_vram
-cmp_val2:	.long	320 + (ATARI_WIDTH - 320) / 2
 mypal:		.long	_mypal
-two55:		.long	255
+!mypal:		.long	0x7c001000
+_320:		.long	320
 vid_set_start:	.long	_vid_set_start
-
 sbase2_start:	.long	1024 * 768 * 4
-old_sd:		.long	_old_sd
 sbase:		.long	0
+
+#ifdef STORE_QUEUE
+QACR0:		.long	0xff000038
+QACR1:		.long	0xff00003c
+_03ffffe0:	.long	0x03ffffe0
+_e0000000:	.long	0xe0000000	/* store queue memory area */
+#endif
 
 		.end

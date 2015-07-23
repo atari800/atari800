@@ -32,13 +32,13 @@
 #include "sound.h"
 #include "pokeysnd.h"
 #include "version.h"
+#ifdef STORE_QUEUE
+#include <dc/sq.h>
+#endif
 
 #define REPEAT_DELAY 100  /* in ms */
 #define REPEAT_INI_DELAY (5 * REPEAT_DELAY)
 /*#define DEBUG*/
-#ifndef DIRTYRECT
-#error need DIRTYRECT
-#endif
 
 #define OVR_DELAY 5  /* # of frames that an overridden console key appears to be pressed */
 #define MAX_CONTROLLERS 4  /* # of controllers we support */
@@ -70,13 +70,17 @@ static unsigned int cont_dpad_up = CONT_DPAD_UP;
 static unsigned int cont_dpad_down = CONT_DPAD_DOWN;
 static unsigned int cont_dpad_left = CONT_DPAD_LEFT;
 static unsigned int cont_dpad_right = CONT_DPAD_RIGHT;
-#ifdef ASSEMBLER_SCREENUPDATE
-int vid_mode_width;
+
+#ifndef ASSEMBLER_SCREENUPDATE
+static
 #endif
+	int vid_mode_width;
+
 #ifndef ASSEMBLER_SCREENUPDATE
 static
 #endif
        uint16 *screen_vram;
+
 int x_adj, y_adj;  /* screen position adjustment */
 int emulate_paddles = FALSE;
 int glob_snd_ena = TRUE;
@@ -143,21 +147,27 @@ void update_vidmode(void)
 	mymode.bitmapy += y_adj;
 	vid_set_mode_ex(&mymode);
 
+	vid_mode_width = vid_mode->width;
+
 	screen_vram = (uint16*)0xA5000000;
 	/* point to current line of atari screen in display memory */
-	screen_vram += (vid_mode->height - Screen_HEIGHT) / 2 * vid_mode->width;
+	screen_vram += (vid_mode->height - Screen_HEIGHT) / 2 * vid_mode_width;
 	/* adjust left column to screen resolution */
-	screen_vram += (vid_mode->width - 320) / 2 - (Screen_WIDTH - 320) / 2 ;
+	screen_vram += (vid_mode_width - 320) / 2 - (Screen_WIDTH - 320) / 2 ;
 
-#ifdef ASSEMBLER_SCREENUPDATE
-	vid_mode_width = vid_mode->width;   /* for the assembler routines... */
+#ifdef STORE_QUEUE
+	QACR0 = QACR1 = (unsigned int)screen_vram >> 24;
 #endif
 }
 
 #ifndef ASSEMBLER_SCREENUPDATE
 static
 #endif
-	uint16 mypal[256];
+	uint16 mypal[256]
+#ifdef USE_OCRAM
+			   __attribute__((section (".ocram")))
+#endif
+	;
 
 static void calc_palette(void)
 {
@@ -183,54 +193,54 @@ void vbl_wait(void)
 
 #define START_VAL ((Screen_WIDTH - 320) / 2)  /* shortcut, used in screen update routines */
 
-#ifndef ASSEMBLER_SCREENUPDATE
-static
-#endif
-UBYTE old_sd[2][Screen_HEIGHT * Screen_WIDTH / 8];
-
 #ifdef ASSEMBLER_SCREENUPDATE
 extern void PLATFORM_DisplayScreen_doubleb(UBYTE *screen);
 #else
 static void PLATFORM_DisplayScreen_doubleb(UBYTE *screen)
 {
 	static unsigned int sbase = 0;		/* screen base of current frame */
-	unsigned int x, m, j;
+	unsigned int x, y;
 	uint16 *vram;
-	UBYTE *osd, *nsd;	/* old screen-dirty, new screen-dirty */
+#ifdef STORE_QUEUE
+	uint32 *vram_sq;
+#endif
 
 #ifdef SPEED_CHECK
 	vid_border_color(0, 0, 0);
 #endif
 	if (sbase) {
 		sbase = 0;
-		vram = screen_vram;
-		osd = old_sd[0];
-		nsd = old_sd[1];
+		vram = screen_vram + START_VAL;
 	}
 	else {
 		sbase = 1024 * 768 * 4;
-		vram = screen_vram + sbase / 2;	 /* "/ 2" since screen_vram is (uint16 *) */
-		osd = old_sd[1];
-		nsd = old_sd[0];
+		vram = screen_vram + START_VAL + sbase / 2;	 /* "/ 2" since screen_vram is (uint16 *) */
 	}
+	screen += START_VAL;
 
-	for (m=START_VAL/8, x=START_VAL; m < Screen_HEIGHT * Screen_WIDTH / 8; m++) {
-		nsd[m] = Screen_dirty[m];  /* remember for other page */
-		if (Screen_dirty[m] || osd[m]) {
-			/* Draw eight pixels (x,y), (x+1,y),...,(x+7,y) here */
-			for (j=0; j<8; j++) {
-				*(vram + x + j) = mypal[*(screen + x + j)];
-			}
-			Screen_dirty[m] = 0;
-		}
-		x += 8;
-		if (x >= 320 + (Screen_WIDTH - 320) / 2) { /* end of visible part of line */
-			vram += vid_mode->width;
-			screen += Screen_WIDTH;
-			m += (Screen_WIDTH - 320) / 8;
-			x = START_VAL;
-		}
+#ifndef STORE_QUEUE
+	for (y = 0; y < Screen_HEIGHT; y++) {
+		for (x = 0; x < 320; x++)
+			*(vram + x) = mypal[*(screen + x)];
+		screen += Screen_WIDTH;
+		vram += vid_mode_width;
 	}
+#else
+	vram_sq = (uint32 *)(void *)(0xe0000000 | (((unsigned long)vram) & 0x03ffffe0));
+	for (y = 0; y < Screen_HEIGHT; y++) {
+		for (x = 0; x < 320; x += 16) {
+			int i;
+			for (i = 0; i < 8; i++) {
+				uint32 val = mypal[*(screen + x + 2 * i)] & 0xffff;
+				val |= mypal[*(screen + x + 2 * i + 1)] << 16;
+				*(vram_sq + x / 2 + i) = val;
+			}
+			__asm__("pref @%0" : : "r"(vram_sq + x / 2));
+		}
+		screen += Screen_WIDTH;
+		vram_sq += vid_mode_width / 2;
+	}
+#endif
 
 #ifdef SPEED_CHECK
 	vid_border_color(127, 127, 127);
@@ -248,28 +258,41 @@ extern void PLATFORM_DisplayScreen_singleb(UBYTE *screen);
 #else
 static void PLATFORM_DisplayScreen_singleb(UBYTE *screen)
 {
-	unsigned int x, m, j;
-	uint16 *vram = screen_vram;
+	unsigned int x, y;
+	uint16 *vram = screen_vram + START_VAL;;
+#ifdef STORE_QUEUE
+	uint32 *vram_sq;
+#endif
 
 #ifdef SPEED_CHECK
 	vid_border_color(0, 0, 0);
 #endif
-	for (m=START_VAL/8, x=START_VAL; m < Screen_HEIGHT * Screen_WIDTH / 8; m++) {
-		if (Screen_dirty[m]) {
-			/* Draw eight pixels (x,y), (x+1,y),...,(x+7,y) here */
-			for (j=0; j<8; j++) {
-				*(vram + x + j) = mypal[*(screen + x + j)];
-			}
-			Screen_dirty[m] = 0;
-		}
-		x += 8;
-		if (x >= 320 + (Screen_WIDTH - 320) / 2) { /* end of visible part of line */
-			vram += vid_mode->width;
-			screen += Screen_WIDTH;
-			m += (Screen_WIDTH - 320) / 8;
-			x = START_VAL;
-		}
+	screen += START_VAL;
+
+#ifndef STORE_QUEUE
+	for (y = 0; y < Screen_HEIGHT; y++) {
+		for (x = 0; x < 320; x++)
+			*(vram + x) = mypal[*(screen + x)];
+		screen += Screen_WIDTH;
+		vram += vid_mode_width;
 	}
+#else
+	vram_sq = (uint32 *)(void *)(0xe0000000 | (((unsigned long)vram) & 0x03ffffe0));
+	for (y = 0; y < Screen_HEIGHT; y++) {
+		for (x = 0; x < 320; x += 16) {
+			int i;
+			for (i = 0; i < 8; i++) {
+				uint32 val = mypal[*(screen + x + 2 * i)] & 0xffff;
+				val |= mypal[*(screen + x + 2 * i + 1)] << 16;
+				*(vram_sq + x / 2 + i) = val;
+			}
+			__asm__("pref @%0" : : "r"(vram_sq + x / 2));
+		}
+		screen += Screen_WIDTH;
+		vram_sq += vid_mode_width / 2;
+	}
+#endif
+
 #ifdef SPEED_CHECK
 	vid_border_color(127, 127, 127);
 #endif
@@ -299,7 +322,7 @@ void update_screen_updater(void)
 
 int PLATFORM_Initialise(int *argc, char *argv[])
 {
-	static int fc = TRUE;
+	static int fc = TRUE;  /* "first call" */
 	(void)argc; /* remove unused parameter warning */
 	(void)argv; /*   "  "  "  "  "  "  "  "  "  "  */
 
@@ -1437,7 +1460,11 @@ void do_hz_test(void)
 }
 #endif /* ifdef HZ_TEST */
 
-KOS_INIT_FLAGS(INIT_IRQ | INIT_THD_PREEMPT);
+KOS_INIT_FLAGS(INIT_IRQ | INIT_THD_PREEMPT
+#ifdef USE_OCRAM
+ | INIT_OCRAM
+#endif
+);
 #ifdef ROMDISK
 extern uint8 romdisk[];
 KOS_INIT_ROMDISK(romdisk);
@@ -1510,6 +1537,8 @@ int main(int argc, char **argv)
 
 #if 0
 	gdb_init();
+#endif
+#if 0
 	asm("mov #7,r12");
 	asm("trapa #0x20");
 	asm("nop");
@@ -1526,6 +1555,38 @@ int main(int argc, char **argv)
 
 	chdir("/");   /* initialize cwd in dc_chdir.c */
 	autostart();
+
+
+#ifdef DEBUG
+	/* print configuration settings */
+	printf("frame buffer address: %p\n", screen_vram);
+	printf("palette address: %p\n", mypal);
+#ifdef ASSEMBLER_SCREENUPDATE
+	printf("ASSEMBLER: ON\n");
+#else
+	printf("ASSEMBLER: OFF\n");
+#endif
+	if (db_mode)
+		printf("DOUBLE BUFFERING: ON\n");
+	else
+		printf("DOUBLE BUFFERING: OFF\n");
+#ifdef DIRTYRECT
+	printf("DIRTYRECT: ON\n");
+#else
+	printf("DIRTYRECT: OFF\n");
+#endif
+#ifdef STORE_QUEUE
+	printf("STORE_QUEUE: ON\n");
+#else
+	printf("STORE_QUEUE: OFF\n");
+#endif
+#ifdef USE_OCRAM
+	printf("OCRAM: ON\n");
+#else
+	printf("OCRAM: OFF\n");
+#endif
+#endif
+
 
 	/* main loop */
 	while(TRUE)

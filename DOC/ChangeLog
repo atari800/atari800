@@ -1,3 +1,22 @@
+2015-07-23  Christian Groessler  <chris@groessler.org>
+* dc/Makefile.dc, dc/atari_dc.c, dc/config.h, dc/displayscreen.S:
+  Rewrite of the screen update routines. DIRTYRECT isn't used
+  anymore. Now always the whole screen is updated. The new routines
+  use the Dreamcast processor's "store queue" which results in a
+  decent speed-up. The time spent updating the screen is now constant,
+  regardless of the screen changes. With little changes to the screen
+  more time is spent in the screen update routines, compared to
+  DIRTYRECT. But for the worst case (whole screen dirty) it's faster
+  than with DIRTYRECT. Boulder Dash in NTSC mode now doesn't jitter
+  when scrolling.
+  Add another option in Makefile.dc to use OCRAM (fast on-processor
+  RAM, cutting the data cache size in half) for the palette data. This
+  option is disabled for now since I didn't notice any difference in
+  emulation speed with it. Maybe if more "hot" variables are moved
+  into OCRAM it could make a difference.
+* dc/shlelf-ocram.xc: New File. Linker script to be used when using
+  the OCRAM option.
+
 2015-06-06  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * binload.c: Achim Haertel's patch fixes emulation crash when slow loading of
   DOS binary files is turned off during such loading.

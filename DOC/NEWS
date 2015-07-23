@@ -27,6 +27,9 @@ Version ?.?.? (????/??/??)
     three RGB channels separately.
   * On systems that support synchronized sound: Fixed the emulator crashing
     when Dual POKEY was enabled while High Fidelity POKEY was turned off.
+  * Improve screen update routines in the Dreamcast port. They don't use
+    DIRTYRECT anymore but are faster than the old routines when the whole
+    screen is dirty.
 
 
 Version 3.1.0 (2014/04/12) - release cooked at Atariada.cz

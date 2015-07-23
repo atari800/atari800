@@ -449,14 +449,15 @@
 
 #define DREAMCAST 1
 
+/* There are additional configuration options in Makefile.dc. */
 #define SIGNED_SAMPLES
-#define DIRTYRECT
 #define USE_UI_BASIC_ONSCREEN_KEYBOARD
 #define SUPPORTS_PLATFORM_CONFIGURE
 #undef SPEED_CHECK
+#define STORE_QUEUE
 #undef HZ_TEST
 
-#ifndef ASSEMBLER  /* don't include the following part in assember source files */
+#ifndef ASSEMBLER  /* don't include the following part in assembler source files */
 extern void DCStateSave(void);
 extern void DCStateRead(void);
 #endif /* #ifndef ASSEMBLER */
