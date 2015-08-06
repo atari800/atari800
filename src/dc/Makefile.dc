@@ -1,6 +1,7 @@
 # adapt the following variables to your environment
 SHBASE = /opt/dcgcc-4.7.3/sh-elf
 KOS = /net/swamp/zeug/dc/kos-git/kos
+KOS_PORTS = $(KOS)/../kos-ports
 
 # use assembler screen update functions
 ASSEMBLER = 1
@@ -15,7 +16,7 @@ R_DEVICE = 1
 #ROMDISK = 1
 
 # optimization settings
-CFLAGS=-O2 -fomit-frame-pointer -ml -m4-single-only -ffunction-sections -fdata-sections -D_arch_dreamcast -D_arch_sub_pristine -W -Wall -g -fno-builtin -fno-strict-aliasing
+CFLAGS = -O2 -fomit-frame-pointer -ml -m4-single-only -ffunction-sections -fdata-sections -D_arch_dreamcast -D_arch_sub_pristine -W -Wall -g -fno-builtin -fno-strict-aliasing
 
 LINKER_SCRIPT = $(KOS)/utils/ldscripts/shlelf.xc
 DEFS = -DDREAMCAST
@@ -41,10 +42,10 @@ CC = $(SHBASE)/bin/sh-elf-gcc
 SHOBJCOPY = $(SHBASE)/bin/sh-elf-objcopy
 SHSTRIP   = $(SHBASE)/bin/sh-elf-strip
 
-INCLUDE=-I$(KOS)/../kos-ports/include -I$(KOS)/../kos-ports/include/zlib -I$(KOS)/include -I$(KOS)/kernel/arch/dreamcast/include -I$(KOS)/addons/include -I$(KOS)/kernel/arch/dreamcast/sound -Idc -I.
-LDFLAGS=-ml -m4-single-only -ffunction-sections -fdata-sections -g -fno-builtin -fno-strict-aliasing -Wl,-Ttext=0x8c010000 -Wl,--gc-sections -Wl,-Map,$(basename $@).map -T$(LINKER_SCRIPT) -nodefaultlibs -L$(KOS)/lib/dreamcast -L$(KOS)/addons/lib/dreamcast
+INCLUDE = -I$(KOS)/include -I$(KOS)/kernel/arch/dreamcast/include -I$(KOS)/addons/include -I$(KOS)/kernel/arch/dreamcast/sound -I$(KOS_PORTS)/include -I$(KOS_PORTS)/include/zlib -Idc -I.
+LDFLAGS = -ml -m4-single-only -ffunction-sections -fdata-sections -g -fno-builtin -fno-strict-aliasing -Wl,-Ttext=0x8c010000 -Wl,--gc-sections -Wl,-Map,$(basename $@).map -T$(LINKER_SCRIPT) -nodefaultlibs -L$(KOS)/lib/dreamcast -L$(KOS_PORTS)/lib
 
-LIBS=-Wl,--start-group -lkallisti -lz -lbz2 -lm -lc -lgcc -Wl,--end-group
+LIBS = -Wl,--start-group -lz -lbz2 -lkallisti -lm -lc -lgcc -Wl,--end-group
 
 OBJ =	artifact.o \
 	atari.o \
