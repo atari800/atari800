@@ -1,3 +1,7 @@
+2015-08-26  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* atari.c: Avoid segfault on switching TV system while sound is disabled.
+
+
 2015-07-23  Christian Groessler  <chris@groessler.org>
 * dc/Makefile.dc, dc/atari_dc.c, dc/config.h, dc/displayscreen.S:
   Rewrite of the screen update routines. DIRTYRECT isn't used
