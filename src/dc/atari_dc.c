@@ -79,7 +79,7 @@ static
 #ifndef ASSEMBLER_SCREENUPDATE
 static
 #endif
-       uint16 *screen_vram;
+	uint16 *screen_vram;
 
 int x_adj, y_adj;  /* screen position adjustment */
 int emulate_paddles = FALSE;
@@ -523,17 +523,6 @@ int get_emkey(char *title)
 	PLATFORM_DisplayScreen();
 	DC_in_kbui = FALSE;
 	return keycode;
-
-#if 0 /* @@@ 26-Mar-2013, chris: check this */
-	if (inject_key != AKEY_NONE) {
-		keycode = inject_key;
-		inject_key = AKEY_NONE;
-		return(keycode);
-	}
-	else {
-		return(AKEY_NONE);
-	}
-#endif
 }
 
 /*
@@ -582,18 +571,6 @@ static int controller_kb(void)
 		PLATFORM_DisplayScreen();
 		DC_in_kbui = FALSE;
 		return keycode;
-#if 0 /* @@@ 26-Mar-2013, chris: check this */
-		// @@@ DONE, should be ok if removed
-		if (inject_key != AKEY_NONE) {
-			int keycode;
-			keycode = inject_key;
-			inject_key = AKEY_NONE;
-			return(keycode);
-		}
-		else {
-			return(AKEY_NONE);
-		}
-#endif
 	}
 #endif  /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
 
@@ -1601,7 +1578,6 @@ int main(int argc, char **argv)
 			break;
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 		case AKEY_KEYB:
-#if 1
 			Sound_Pause();
 			DC_in_kbui = TRUE;
 			INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, Atari800_machine_type);
@@ -1622,31 +1598,6 @@ int main(int argc, char **argv)
 					break;
 			}
 			Sound_Continue();
-#else /* @@@ 05-Mar-2015, chris: check this */
-			if (Atari800_machine_type != Atari800_MACHINE_5200) {
-				Sound_Pause();
-				DC_in_kbui = TRUE;
-				if (x_ovr || y_ovr || b_ovr) {
-					kb_ui((UBYTE *)Screen_atari, NULL, KB_CONSOL);
-				}
-				else {
-					kb_ui((UBYTE *)Screen_atari, NULL, 0);
-				}
-				DC_in_kbui = FALSE;
-				INPUT_key_consol |= INPUT_CONSOL_START;
-				/*b_ui_leave = TRUE;  crashes when included!! why?? */
-				Sound_Continue();
-				controller_update();
-			}
-			else {
-				Sound_Pause();
-				DC_in_kbui = TRUE;
-				kb_ui_5200((UBYTE *)Screen_atari);
-				DC_in_kbui = FALSE;
-				Sound_Continue();
-				controller_update();
-			}
-#endif
 			break;
 #endif /* #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD */
 		}

@@ -305,15 +305,12 @@ atari_height:	.long	ATARI_HEIGHT
 vid_mode_width:	.long	_vid_mode_width
 screen_vram:	.long	_screen_vram
 mypal:		.long	_mypal
-!mypal:		.long	0x7c001000
 _320:		.long	320
 vid_set_start:	.long	_vid_set_start
 sbase2_start:	.long	1024 * 768 * 4
 sbase:		.long	0
 
 #ifdef STORE_QUEUE
-QACR0:		.long	0xff000038
-QACR1:		.long	0xff00003c
 _03ffffe0:	.long	0x03ffffe0
 _e0000000:	.long	0xe0000000	/* store queue memory area */
 #endif
