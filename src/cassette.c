@@ -63,8 +63,8 @@ char CASSETTE_filename[FILENAME_MAX];
 CASSETTE_status_t CASSETTE_status = CASSETTE_STATUS_NONE;
 int CASSETTE_write_protect = FALSE;
 int CASSETTE_record = FALSE;
-static int cassette_writable = FALSE;
-static int cassette_readable = FALSE;
+int CASSETTE_writable = FALSE;
+int CASSETTE_readable = FALSE;
 
 char CASSETTE_description[CASSETTE_DESCRIPTION_MAX];
 static int cassette_gapdelay = 0;	/* in ms, includes leader and all gaps */
@@ -81,11 +81,11 @@ static int eof_of_tape = 0;
    cassette_motor, CASSETTE_status or eof_of_tape. */
 static void UpdateFlags(void)
 {
-	cassette_readable = cassette_motor &&
+	CASSETTE_readable = cassette_motor &&
 	                    (CASSETTE_status == CASSETTE_STATUS_READ_WRITE ||
 	                     CASSETTE_status == CASSETTE_STATUS_READ_ONLY) &&
 	                     !eof_of_tape;
-	cassette_writable = cassette_motor &&
+	CASSETTE_writable = cassette_motor &&
 	                    CASSETTE_status == CASSETTE_STATUS_READ_WRITE &&
 	                    !CASSETTE_write_protect;
 }
@@ -289,7 +289,7 @@ int CASSETTE_GetByte(void)
 int CASSETTE_IOLineStatus(void)
 {
 	/* if motor off and EOF return always 1 (equivalent the mark tone) */
-	if (!cassette_readable || CASSETTE_record) {
+	if (!CASSETTE_readable || CASSETTE_record) {
 		return 1;
 	}
 
@@ -298,14 +298,14 @@ int CASSETTE_IOLineStatus(void)
 
 void CASSETTE_PutByte(int byte)
 {
-	if (!ESC_enable_sio_patch && cassette_writable && CASSETTE_record)
+	if (!ESC_enable_sio_patch && CASSETTE_writable && CASSETTE_record)
 		IMG_TAPE_WriteByte(cassette_file, byte, POKEY_AUDF[POKEY_CHAN3] + POKEY_AUDF[POKEY_CHAN4]*0x100);
 }
 
 void CASSETTE_TapeMotor(int onoff)
 {
 	if (cassette_motor != onoff) {
-		if (CASSETTE_record && cassette_writable)
+		if (CASSETTE_record && CASSETTE_writable)
 			/* Recording disabled, flush the tape */
 			IMG_TAPE_Flush(cassette_file);
 		cassette_motor = onoff;
@@ -329,7 +329,7 @@ int CASSETTE_ToggleRecord(void)
 	CASSETTE_record = !CASSETTE_record;
 	if (CASSETTE_record)
 		eof_of_tape = FALSE;
-	else if (cassette_writable)
+	else if (CASSETTE_writable)
 		/* Recording disabled, flush the tape */
 		IMG_TAPE_Flush(cassette_file);
 	event_time_left = 0;
@@ -342,7 +342,7 @@ int CASSETTE_ToggleRecord(void)
 
 static void CassetteWrite(int num_ticks)
 {
-	if (cassette_writable)
+	if (CASSETTE_writable)
 		IMG_TAPE_WriteAdvance(cassette_file, num_ticks);
 }
 
@@ -351,7 +351,7 @@ static void CassetteWrite(int num_ticks)
    The function assumes that current_block <= max_block. */
 static int CassetteRead(int num_ticks)
 {
-	if (cassette_readable) {
+	if (CASSETTE_readable) {
 		int loaded = FALSE; /* Function's return value */
 		event_time_left -= num_ticks;
 		while (event_time_left < 0) {
@@ -434,7 +434,7 @@ void CASSETTE_LeaderSave(void)
 int CASSETTE_ReadToMemory(UWORD dest_addr, int length)
 {
 	CASSETTE_TapeMotor(1);
-	if (!cassette_readable)
+	if (!CASSETTE_readable)
 		return 0;
 
 	/* Convert wait_time to ms ( wait_time * 1000 / 1789790 ) and subtract. */
@@ -465,7 +465,7 @@ int CASSETTE_WriteFromMemory(UWORD src_addr, int length)
 {
 	int result;
 	CASSETTE_TapeMotor(1);
-	if (!cassette_writable)
+	if (!CASSETTE_writable)
 		return 0;
 
 	result = IMG_TAPE_WriteFromMemory(cassette_file, src_addr, length, cassette_gapdelay);

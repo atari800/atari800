@@ -85,4 +85,11 @@ int CASSETTE_WriteFromMemory(UWORD src_addr, int length);
 void CASSETTE_LeaderLoad(void);
 void CASSETTE_LeaderSave(void);
 
+/* Indicates whether the tape can be read from, ie. it's mounted and not on its
+   end. */
+extern int CASSETTE_readable;
+/* Indicates whether the tape can be written to, ie. it's mounted and not
+   read-only. */
+extern int CASSETTE_writable;
+
 #endif /* CASSETTE_H_ */

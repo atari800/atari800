@@ -169,7 +169,6 @@ char SIO_status[256];
 #define SIO_WriteFrame      (0x04)
 #define SIO_FinalStatus     (0x05)
 #define SIO_FormatFrame     (0x06)
-#define SIO_CasReadWrite    (0x60)
 static UBYTE CommandFrame[6];
 static int CommandIndex = 0;
 static UBYTE DataBuffer[256 + 3];
@@ -1252,9 +1251,6 @@ void SIO_Handler(void)
 		UBYTE gaps = MEMORY_dGetByte(0x30b);
 		switch (cmd){
 		case 0x52:	/* read */
-			SIO_last_op = SIO_LAST_READ;
-			SIO_last_drive = 0x61;
-			SIO_last_op_time = 0x10;
 			/* set expected Gap */
 			CASSETTE_AddGap(gaps == 0 ? 2000 : 160);
 			/* get record from storage medium */
@@ -1264,9 +1260,6 @@ void SIO_Handler(void)
 				result = 'E';
 			break;
 		case 0x57:	/* write */
-			SIO_last_op = SIO_LAST_WRITE;
-			SIO_last_drive = 0x61;
-			SIO_last_op_time = 0x10;
 			/* add pregap length */
 			CASSETTE_AddGap(gaps == 0 ? 3000 : 260);
 			/* write full record to storage medium */
@@ -1491,26 +1484,6 @@ static UBYTE Command_Frame(void)
 	}
 }
 
-/* Enable/disable the Tape Motor */
-void SIO_TapeMotor(int onoff)
-{
-	CASSETTE_TapeMotor(onoff);
-	if (onoff) {
-		/* set frame to cassette frame, if not */
-		/* in a transfer with an intelligent peripheral */
-		if (TransferStatus == SIO_NoFrame || TransferStatus == SIO_CasReadWrite)
-			TransferStatus = SIO_CasReadWrite;
-		SIO_last_drive = 0x60;
-		SIO_last_op_time = 0x10;
-	}
-	else {
-		/* set frame to none */
-		if (TransferStatus == SIO_CasReadWrite)
-			TransferStatus = SIO_NoFrame;
-		SIO_last_op_time = 0;
-	}
-}
-
 /* Enable/disable the command frame */
 void SIO_SwitchCommandFrame(int onoff)
 {
@@ -1607,10 +1580,8 @@ void SIO_PutByte(int byte)
 			Log_print("Invalid data frame!");
 		}
 		break;
-	case SIO_CasReadWrite:
-		CASSETTE_PutByte(byte);
-		break;
 	}
+	CASSETTE_PutByte(byte);
 	/* POKEY_DELAYED_SEROUT_IRQ = SIO_SEROUT_INTERVAL; */ /* already set in pokey.c */
 }
 
@@ -1662,10 +1633,8 @@ int SIO_GetByte(void)
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
-	case SIO_CasReadWrite:
-		byte = CASSETTE_GetByte();
-		break;
 	default:
+		byte = CASSETTE_GetByte();
 		break;
 	}
 	return byte;

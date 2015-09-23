@@ -1,3 +1,14 @@
+2015-09-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cassette.[ch], pia.c, screen.c, sio.[ch]: Some tapes try to read from disk
+  while the tape motor is on (case in point: Cubbyholes (APX)). This was not
+  emulated correctly - when a disk read was attempted while tape motor was on,
+  the value of the sio.c->TransferStatus variable would never revert to
+  SIO_CasReadWrite, and the tape loading would not continue. This is now
+  fixed. As a consequence, tape emulation ceased to use the variables
+  SIO_last_op, SIO_last_op_time and SIO_last_drive, so the related code in
+  screen.c and pia.c has been updated with that in mind.
+
+
 2015-08-26  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari.c: Avoid segfault on switching TV system while sound is disabled.
 

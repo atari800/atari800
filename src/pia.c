@@ -25,6 +25,7 @@
 #include "config.h"
 
 #include "atari.h"
+#include "cassette.h"
 #include "cpu.h"
 #include "memory.h"
 #include "pia.h"
@@ -84,7 +85,7 @@ static void set_CA2(int value)
 	/* This code is part of the cassette emulation */
 	if (PIA_CA2 != value) {
 		/* The motor status has changed */
-		SIO_TapeMotor(!value);
+		CASSETTE_TapeMotor(!value);
 	}
 	PIA_CA2 = value;
 }
