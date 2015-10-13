@@ -1126,7 +1126,7 @@ void SIO_Handler(void)
 	/* XL OS: E99D: LDA $0300 ADC $0301 ADC #$FF STA 023A */
 
 	/* The OS SIO routine copies decide ID do CDEVIC, command ID to CCOMND etc.
-	   This operation is not needed withe the SIO patch enabled, but we perform
+	   This operation is not needed with the SIO patch enabled, but we perform
 	   it anyway, since some programs rely on that. (E.g. the E.T Phone Home!
 	   cartridge would crash with SIO patch enabled.)
 	   Note: While on a real XL OS the copying is done only for SIO devices
@@ -1275,21 +1275,24 @@ void SIO_Handler(void)
 
 	switch (result) {
 	case 0x00:					/* Device disabled, generate timeout */
-		CPU_regY = 138;
+		CPU_regY = 138; /* TIMOUT: peripheral device timeout error */
 		CPU_SetN;
 		break;
 	case 'A':					/* Device acknowledge */
 	case 'C':					/* Operation complete */
-		CPU_regY = 1;
+		CPU_regY = 1; /* SUCCES: successful operation */
 		CPU_ClrN;
 		break;
 	case 'N':					/* Device NAK */
-		CPU_regY = 144;
+		CPU_regY = 139; /* DNACK: device does not acknowledge command error */
 		CPU_SetN;
 		break;
 	case 'E':					/* Device error */
+		CPU_regY = 144; /* DERROR: device done (operation incomplete) error */
+		CPU_SetN;
+		break;
 	default:
-		CPU_regY = 146;
+		CPU_regY = 146; /* FNCNOT: function not implemented in handler error */
 		CPU_SetN;
 		break;
 	}

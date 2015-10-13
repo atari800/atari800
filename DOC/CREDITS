@@ -256,6 +256,9 @@ Rich Lawrence <rich@kesmai.com>
     - Atari800Win author
     - DCM and ZLIB compressed files support
 
+Avery Lee <phaeron@virtualdub.org>
+    - a fix for error codes in SIO patch handler
+
 Marcin Lewandowski <jaskier@atari8.info>
     - Atari800Win PLus maintainer since version 4.0
     - initial implementation of "B" and "LABELS" monitor commands

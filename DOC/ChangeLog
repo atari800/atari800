@@ -1,3 +1,10 @@
+2015-10-13  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sio.c: Suggested by Avery Lee: Fix SIO error codes with SIO patch enabled.
+  This bug tripped up the original Sikor Soft's Ketchup disk, that relied on
+  attempting to read disk sector 720, which should return error 144 instead of
+  146.
+
+
 2015-09-23  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cassette.[ch], pia.c, screen.c, sio.[ch]: Some tapes try to read from disk
   while the tape motor is on (case in point: Cubbyholes (APX)). This was not
