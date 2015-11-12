@@ -1,3 +1,7 @@
+2015-11-12  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* pia.c: Fix convoluted "if" condition.
+
+
 2015-10-13  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sio.c: Suggested by Avery Lee: Fix SIO error codes with SIO patch enabled.
   This bug tripped up the original Sikor Soft's Ketchup disk, that relied on

@@ -163,7 +163,7 @@ UBYTE PIA_GetByte(UWORD addr, int no_side_effects)
 				PIA_PBCTL &= 0x3f; /* clear bit 6 & 7 */
 				update_PIA_IRQ();
 			}
-			if (!Atari800_machine_type != Atari800_MACHINE_XLXE) {
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 				return PIA_PORTB | PIA_PORTB_mask;
 			}
 			else {
