@@ -1,3 +1,7 @@
+2016-10-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* sdl/input.c: Fix segfault when using -nojoystick.
+
+
 2015-11-12  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * pia.c: Fix convoluted "if" condition.
 

@@ -1229,22 +1229,25 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 	}
 	*argc = j;
 
-	if (help_only || no_joystick)
+	if (help_only)
 		return TRUE;
 
+	if (!no_joystick) {
 #ifdef LPTJOY
-	if (lpt_joy0 != NULL) {				/* LPT1 joystick */
-		fd_joystick0 = open(lpt_joy0, O_RDONLY);
-		if (fd_joystick0 == -1)
-			perror(lpt_joy0);
-	}
-	if (lpt_joy1 != NULL) {				/* LPT2 joystick */
-		fd_joystick1 = open(lpt_joy1, O_RDONLY);
-		if (fd_joystick1 == -1)
-			perror(lpt_joy1);
-	}
+		if (lpt_joy0 != NULL) {				/* LPT1 joystick */
+			fd_joystick0 = open(lpt_joy0, O_RDONLY);
+			if (fd_joystick0 == -1)
+				perror(lpt_joy0);
+		}
+		if (lpt_joy1 != NULL) {				/* LPT2 joystick */
+			fd_joystick1 = open(lpt_joy1, O_RDONLY);
+			if (fd_joystick1 == -1)
+				perror(lpt_joy1);
+		}
 #endif /* LPTJOY */
-	Init_SDL_Joysticks(fd_joystick0 == -1, fd_joystick1 == -1);
+		Init_SDL_Joysticks(fd_joystick0 == -1, fd_joystick1 == -1);
+	}
+
 	if (INPUT_cx85) { /* disable keyboard joystick if using CX85 numpad */
 		PLATFORM_kbd_joy_0_enabled = 0;
 	}
