@@ -1,5 +1,6 @@
 2016-10-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
-* sdl/input.c: Fix segfault when using -nojoystick.
+* sdl/input.c: Fix segfault when using -nojoystick. Fix improper use of
+  SDL_PollEvent - caused keyboard input lag when moving a mouse or joystick.
 
 
 2015-11-12  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

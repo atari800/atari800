@@ -285,6 +285,7 @@ int PLATFORM_Keyboard(void)
 {
 	int shiftctrl = 0;
 	SDL_Event event;
+	int event_found = 0; /* Was there at least one event? */
 
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 	if (!atari_screen_backup)
@@ -305,11 +306,12 @@ int PLATFORM_Keyboard(void)
 	 * the broken SDL*/
 	if (lastkey == SDLK_CAPSLOCK) {
 		lastkey = SDLK_UNKNOWN;
-	   	key_pressed = 0;
+		key_pressed = 0;
  		lastuni = 0;
 	}
 
-	if (SDL_PollEvent(&event)) {
+	while (SDL_PollEvent(&event)) {
+		event_found = 1;
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			lastkey = event.key.keysym.sym;
@@ -381,7 +383,8 @@ int PLATFORM_Keyboard(void)
 #endif /* HAVE_WINDOWS_H */
 		}
 	}
-	else if (!key_pressed) {
+
+	if (!event_found && !key_pressed) {
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 		SDL_consol_keys();
 		return SDL_controller_kb();
