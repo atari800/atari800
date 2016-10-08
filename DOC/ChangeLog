@@ -1,3 +1,8 @@
+2016-10-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* debian/compat, debian/changelog, debian/control, debian/rules,
+  debian/source/format: Updates from the official Debian package.
+
+
 2016-10-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * sdl/input.c: Fix segfault when using -nojoystick. Fix improper use of
   SDL_PollEvent - caused keyboard input lag when moving a mouse or joystick.

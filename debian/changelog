@@ -1,8 +1,23 @@
+atari800 (3.1.0-2) unstable; urgency=medium
+
+  * [8596bb2] update config.{sub, guess} (Closes: #762477)
+  * Thank Aurelien Jarno for report and Tobias Frost for a friendly NMU
+
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Mon, 11 Apr 2016 08:36:31 +0200
+
+atari800 (3.1.0-1) unstable; urgency=medium
+
+  * [947c00c] Imported Upstream version 3.1.0
+  * [6d267ad] update standards version
+  * [646e6e7] add source format
+
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Tue, 15 Apr 2014 14:07:16 +0200
+
 atari800 (3.0.0-1) unstable; urgency=low
 
-  * New upstream release.
+  * New upstream release
 
- -- Petr Stehlik <pstehlik@sophics.cz>  Sun, 03 Mar 2013 03:03:03 +0200
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Sat, 16 Mar 2013 13:02:47 +0100
 
 atari800 (2.2.1-2) unstable; urgency=low
 

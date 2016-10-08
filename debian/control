@@ -2,16 +2,16 @@ Source: atari800
 Section: contrib/otherosfs
 Priority: optional
 Maintainer: Antonin Kral <A.Kral@sh.cvut.cz>
-Build-Depends: libsdl1.2-dev, zlib1g-dev, libreadline-dev, libgl1-mesa-dev, libpng-dev, autotools-dev
-Standards-Version: 3.9.3
+Build-Depends: libsdl1.2-dev, zlib1g-dev, libreadline-dev, libgl1-mesa-dev, libpng-dev, autotools-dev, dpkg-dev (>= 1.16.1~), autotools-dev
+Standards-Version: 3.9.7
 Vcs-Git: git://github.com/bobek/aranym800-debian.git
 Vcs-Browser: https://github.com/bobek/aranym800-debian
 
 Package: atari800
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: Atari800 emulator for SDL
- This is an emulator of Atari 8-bit computer systems including the 400, 800,
+Description: Atari 8-bit emulator for SDL
+ Atari800 is an emulator of Atari 8-bit computer systems including the 400, 800,
  1200XL, 600XL, 800XL, 65XE, 130XE, 800XE and the XE Game System,
  and also of the Atari 5200 SuperSystem console.
  .

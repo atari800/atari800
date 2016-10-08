@@ -9,15 +9,10 @@ P=atari800
 
 ARCH := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 
-# Special Debian build options - nostrip yet un-handled
-export CFLAGS
-CFLAGS += -g -Wall
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-CFLAGS += -O0
-else
-CFLAGS += -O3
-endif
-
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+CFLAGS+=$(CPPFLAGS)
+CXXFLAGS+=$(CPPFLAGS)
 
 # Build the binary components and assemble the libraries
 # =====================================================================
@@ -30,6 +25,7 @@ build-stamp:
 	touch build-stamp
 
 bld-sdl:
+	cp /usr/share/misc/config.guess /usr/share/misc/config.sub src
 	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
 	cd src ; ./configure \
 		 --with-video=sdl --with-sound=sdl
@@ -42,6 +38,7 @@ clean:
 	-rm -f build-stamp
 	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi; \
 	 rm -f config.log config.status config.h Makefile
+	rm -f src/config.guess src/config.sub
 	mv ./atari800.spec ./tmp ; rm -f atari800 ; rm -f atari800.* ; mv ./tmp ./atari800.spec
 	-rm -rf	debian/tmp debian/*~ *~ *.orig *.log \
 		debian/files* debian/substvars*
@@ -81,7 +78,7 @@ binary-arch:		checkroot build
 	cp DOC/CREDITS debian/tmp/usr/share/doc/$(P)/CREDITS
 	cp DOC/README debian/tmp/usr/share/doc/$(P)/README
 	cp DOC/USAGE debian/tmp/usr/share/doc/$(P)/USAGE
-	gzip -9v debian/tmp/usr/share/doc/$(P)/*
+	gzip -9nv debian/tmp/usr/share/doc/$(P)/*
 
 # These are too small to gzip
 #
@@ -100,7 +97,7 @@ binary-arch:		checkroot build
 #
 	install -d debian/tmp/usr/share/man/man1
 	install -m 644 src/$(P).man debian/tmp/usr/share/man/man1/$(P).1
-	gzip -9 debian/tmp/usr/share/man/man1/$(P).1
+	gzip -9nv debian/tmp/usr/share/man/man1/$(P).1
 
 # install menu file
 #
