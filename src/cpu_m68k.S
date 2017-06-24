@@ -25,44 +25,44 @@
 | Converted from Devpac to GCC syntax by Petr Stehlik, no functional changes
 
 | P65C02 ; we emulate this version of processor (6502 has a bug in jump code,
-         | you can emulate this bug by commenting out this line :)
+|        ; you can emulate this bug by commenting out this line :)
 | PROFILE  ; fills the 'instruction_count' array for instruction profiling
 | MONITOR_BREAK   ; jump to monitor at break
 | CRASH_MENU      ; enable crash menu output
 | CYCLE_EXACT     ; !NO_CYCLE_EXACT :)
 | NEW_CYCLE_EXACT ; !NO_NEW_CYCLE_EXACT :)
 
-  .globl _CART_BountyBob2
-  .globl _CART_BountyBob1
+  .globl _CARTRIDGE_BountyBob2
+  .globl _CARTRIDGE_BountyBob1
   .globl _GTIA_GetByte
   .globl _POKEY_GetByte
   .globl _PIA_GetByte
   .globl _ANTIC_GetByte
-  .globl _CART_GetByte
+  .globl _CARTRIDGE_GetByte
   .globl _GTIA_PutByte
   .globl _POKEY_PutByte
   .globl _PIA_PutByte
   .globl _ANTIC_PutByte
-  .globl _CART_PutByte
-  .globl _Atari800_RunEsc
+  .globl _CARTRIDGE_PutByte
+  .globl _ESC_Run
   .globl _Atari800_Exit
   .globl _exit
-  .globl _wsync_halt |CPU is stopped
+  .globl _ANTIC_wsync_halt |CPU is stopped
  #ifdef NEW_CYCLE_EXACT
   .globl _delayed_wsync
   .globl _antic2cpu_ptr
   .globl _cur_screen_pos
   #endif
-  .globl _xpos
-  .globl _xpos_limit
-  .globl _regPC
-  .globl _regA
-  .globl _regP |/* Processor Status Byte (Partial) */
-  .globl _regS
-  .globl _regX
-  .globl _regY
-  .globl _memory
-  .globl _attrib
+  .globl _ANTIC_xpos
+  .globl _ANTIC_xpos_limit
+  .globl _CPU_regPC
+  .globl _CPU_regA
+  .globl _CPU_regP |/* Processor Status Byte (Partial) */
+  .globl _CPU_regS
+  .globl _CPU_regX
+  .globl _CPU_regY
+  .globl _MEMORY_mem
+  .globl _MEMORY_attrib
  #ifdef PROFILE
   .globl _instruction_count
   #endif
@@ -90,16 +90,16 @@
   .globl _crash_address
   .globl _crash_afterCIM
   #endif
-  .globl _IRQ
-  .globl _NMI
+  .globl _CPU_IRQ
+  .globl _CPU_NMI
   .globl _RTI
-  .globl _GO
-  .globl _CPUGET
-  .globl _CPUPUT
+  .globl _CPU_GO
+  .globl _CPU_GET
+  .globl _CPU_PUT
   .globl _CPU_INIT
   .globl _cycles |temporarily needed outside :)
-  .globl _cim_encountered
-  .globl _rts_handler
+  .globl _CPU_cim_encountered
+  .globl _CPU_rts_handler
 
  #ifdef MONITOR_BREAK
 
@@ -133,36 +133,36 @@ _remember_jmp_curpos:
   .align	4         | doubleword alignment
 
 regP:
-  ds.b 1        ;
-_regP: ds.b 1   | CCR
+  ds.b 1        |
+_CPU_regP: ds.b 1   | CCR
 
 regA:
   ds.b 1
-_regA: ds.b 1   | A
+_CPU_regA: ds.b 1   | A
 
 regX:
   ds.b 1
-_regX: ds.b 1   | X
+_CPU_regX: ds.b 1   | X
 
 regY:
   ds.b 1
-_regY: ds.b 1   | Y
+_CPU_regY: ds.b 1   | Y
 
 regPC:
-_regPC: ds.w 1  | PC
+_CPU_regPC: ds.w 1  | PC
 
 regS:
   ds.b 1
-_regS: ds.b 1   | stack
+_CPU_regS: ds.b 1   | stack
 
 IRQ:
-_IRQ: ds.b 1
+_CPU_IRQ: ds.b 1
       ds.b 1    | dummy
 
-_cim_encountered:
+_CPU_cim_encountered:
 	ds.b	1
 
-_rts_handler:
+_CPU_rts_handler:
 	ds.l	1
 
   .even
@@ -282,7 +282,7 @@ _rts_handler:
   move.l  memory_pointer,PC6502
   add.l   d7,PC6502
   lea     OPMODE_TABLE,a3
-  btst    #D_FLAGB,_regP
+  btst    #D_FLAGB,_CPU_regP
   beq.s   PDATE_LOCAL_REGS_upd_end\@
   lea     OPMODE_TABLE_D,a3
 PDATE_LOCAL_REGS_upd_end\@:
@@ -329,20 +329,20 @@ GetANTIC:
   rts
 GetCART:
   move.l d0,-(a7)
-  jsr    _CART_GetByte
+  jsr    _CARTRIDGE_GetByte
   addq.l #4,a7
   rts
 ItsBob2:
   move.w d7,-(a7)
   clr.w  -(a7)
-  jsr    _CART_BountyBob2
+  jsr    _CARTRIDGE_BountyBob2
   addq.l #4,a7
   moveq  #0,d0
   rts
 ItsBob1:
   move.w d7,-(a7)
   clr.w  -(a7)
-  jsr    _CART_BountyBob1
+  jsr    _CARTRIDGE_BountyBob1
   addq.l #4,a7
   moveq  #0,d0
   rts
@@ -367,7 +367,7 @@ PutGTIA:
   move.b d7,d1
   move.l d1,-(a7)
  #ifdef CYCLE_EXACT
-  move.l CD,_xpos
+  move.l CD,_ANTIC_xpos
   #endif
   jsr    _GTIA_PutByte
   addq.l #8,a7
@@ -378,7 +378,7 @@ PutPOKEY:
   move.b d7,d1
   move.l d1,-(a7)
  #ifdef CYCLE_EXACT
-  move.l CD,_xpos
+  move.l CD,_ANTIC_xpos
   #endif
   jsr    _POKEY_PutByte
   addq.l #8,a7
@@ -396,9 +396,9 @@ PutANTIC:
   move.l d1,-(a7)
   move.b d7,d1
   move.l d1,-(a7)
-  move.l CD,_xpos
+  move.l CD,_ANTIC_xpos
   jsr    _ANTIC_PutByte
-  move.l _xpos,CD
+  move.l _ANTIC_xpos,CD
   addq.l #8,a7
   rts
 PutCART:
@@ -406,7 +406,7 @@ PutCART:
   move.l d1,-(a7)
   move.b d7,d1
   move.l d1,-(a7)
-  jsr    _CART_PutByte
+  jsr    _CARTRIDGE_PutByte
   addq.l #8,a7
   rts
 
@@ -533,24 +533,24 @@ _CPU_INIT:
   rts
 
   .macro SetI
-  ori.b  #I_FLAG,_regP
+  ori.b  #I_FLAG,_CPU_regP
   .endm
 
   .macro ClrI
-  andi.b #I_FLAGN,_regP
+  andi.b #I_FLAGN,_CPU_regP
   .endm
 
   .macro SetB
-  ori.b  #B_FLAG,_regP
+  ori.b  #B_FLAG,_CPU_regP
   .endm
 
   .macro SetD
-  ori.b  #D_FLAG,_regP
+  ori.b  #D_FLAG,_CPU_regP
   lea    OPMODE_TABLE_D,a3
   .endm
 
   .macro ClrD
-  andi.b #D_FLAGN,_regP
+  andi.b #D_FLAGN,_CPU_regP
   lea    OPMODE_TABLE,a3
   .endm
 
@@ -585,7 +585,7 @@ _CPU_INIT:
 | _RegP  : NV*BDIZC
 
   .macro ConvertSTATUS_RegP p1
-  move.b _regP,\p1 |put flag BDI into d0
+  move.b _CPU_regP,\p1 |put flag BDI into d0
   andi.b #VCZN_FLAGSN,\p1 | clear overflow, carry, zero & negative flag
   tst.b  CFLAG
   beq.s  onvertSTATUS_RegP_SETC\@
@@ -607,7 +607,7 @@ onvertSTATUS_RegP_SETV\@:
   .endm
 
   .macro ConvertSTATUS_RegP_destroy p1
-  move.b _regP,\p1 |put flag BDI into d0
+  move.b _CPU_regP,\p1 |put flag BDI into d0
   andi.b  #VCZN_FLAGSN,\p1 | clear overflow, carry, zero & negative flag
   lsr.b  #7,CFLAG
   or.b   CFLAG,\p1
@@ -643,7 +643,7 @@ onvertSTATUS_RegP_destroy_SETV\@:
   move.b d7,(3,a7) |!!!TEST!!!
   ConvertSTATUS_RegP_destroy d0
   UPDATE_GLOBAL_REGS
-  jsr _Atari800_RunEsc
+  jsr _ESC_Run
   addq.l #4,a7
   UPDATE_LOCAL_REGS
   ConvertRegP_STATUS d0
@@ -669,7 +669,7 @@ all_Atari800_Exit_true_GOON\@:
   subq.b #1,\p2
   or.b   (memory_pointer,\p2.l),\p1
   addq.b #1,\p2
-  move.b \p2,_regS
+  move.b \p2,_CPU_regS
   .endm
 
   .macro SetVFLAG
@@ -689,44 +689,44 @@ all_Atari800_Exit_true_GOON\@:
   .endm
 
 CPUGET:
-_CPUGET:
+_CPU_GET:
   ConvertSTATUS_RegP d0
-  move.b d0,_regP
+  move.b d0,_CPU_regP
   rts
 
 CPUPUT:
-_CPUPUT:
-  move.b _regP,d0
+_CPU_PUT:
+  move.b _CPU_regP,d0
   ConvertRegP_STATUS d0
   rts
 
 NMI:
-_NMI:
-  lea    _memory,a0
+_CPU_NMI:
+  lea    _MEMORY_mem,a0
   moveq  #0,d1
   move.w regS,d1
-  move.b _regPC,(a0,d1.l)
+  move.b _CPU_regPC,(a0,d1.l)
   subq.b #1,d1
-  move.b _regPC+1,(a0,d1.l)
+  move.b _CPU_regPC+1,(a0,d1.l)
   subq.b #1,d1
-| move.b _regP,(a0,d1.l)  ;put P onto stack
-  move.b _regP,d0       | Test
+| move.b _CPU_regP,(a0,d1.l)  ;put P onto stack
+  move.b _CPU_regP,d0       | Test
   andi.b #B_FLAGN,d0    | Test
   move.b d0,(a0,d1.l)   | Test
   subq.b #1,d1
-  move.b d1,_regS
+  move.b d1,_CPU_regS
   SetI
   |put regPC & Stack pointer address on its place
   move.w (a0,0xfffa.l),d1
   LoHi d1
-  move.w d1,_regPC
-  addq.l #7,_xpos
+  move.w d1,_CPU_regPC
+  addq.l #7,_ANTIC_xpos
  #ifdef MONITOR_BREAK
   addq.l #1,_ret_nesting
   #endif
   rts
 
-_GO: |cycles (d0)
+_CPU_GO: |cycles (d0)
 
 |  UWORD PC;
 |  UBYTE S;
@@ -741,16 +741,16 @@ _GO: |cycles (d0)
 |   This used to be in the main loop but has been removed to improve
 |   execution speed. It does not seem to have any adverse effect on
 |   the emulation for two reasons:-
-;
+|
 |   1. NMI's can only be raised in atari_custom.c - there is
 |      no way an NMI can be generated whilst in this routine.
-;
+|
 |   2. The timing of the IRQs are not that critical.
 |*/
 
   move.l  4(a7),d0
  #ifdef NEW_CYCLE_EXACT
-  tst.b   _wsync_halt
+  tst.b   _ANTIC_wsync_halt
   beq.s   NO_WS_HALT
   moveq.l #WSYNC_C-1,d1  | TEST : no -1 if bpl.s
   cmp.l   #-999,_cur_screen_pos
@@ -763,29 +763,29 @@ GO_now_cmp:
 | bpl.s   TERM_GO        ; TEST
   bge     TERM_GO        | TEST
   addq.l  #1,d1          | TEST : not necessary if bpl.s
-  move.l  d1,_xpos
-  clr.b   _wsync_halt
+  move.l  d1,_ANTIC_xpos
+  clr.b   _ANTIC_wsync_halt
   clr.l   _delayed_wsync
  #else
-  tst.b   _wsync_halt
+  tst.b   _ANTIC_wsync_halt
   beq.s   NO_WS_HALT
   moveq.l #WSYNC_C-1,d1  | TEST : no -1 if bpl.s
   cmp.l   d0,d1
 | bpl.s   TERM_GO        ; TEST
   bge     TERM_GO        | TEST
   addq.l  #1,d1          | TEST : not necessary if bpl.s
-  move.l  d1,_xpos
-  clr.b   _wsync_halt
+  move.l  d1,_ANTIC_xpos
+  clr.b   _ANTIC_wsync_halt
   #endif
 NO_WS_HALT:
-  move.l  d0,_xpos_limit |  needed for WSYNC store inside ANTIC
+  move.l  d0,_ANTIC_xpos_limit |  needed for WSYNC store inside ANTIC
   movem.l d2-d7/a2-a6,-(a7)
-  move.l  _xpos,CD
-  lea     _memory,memory_pointer
+  move.l  _ANTIC_xpos,CD
+  lea     _MEMORY_mem,memory_pointer
   UPDATE_LOCAL_REGS
   ConvertRegP_STATUS d0
-  lea     _attrib,attrib_pointer
-  tst.b   _IRQ          | CPUCHECKIRQ
+  lea     _MEMORY_attrib,attrib_pointer
+  tst.b   _CPU_IRQ          | CPUCHECKIRQ
   beq     NEXTCHANGE_WITHOUT
   move.b  d0,d7
 | and.b   #I_FLAG,d0 ;is interrupt active
@@ -793,22 +793,22 @@ NO_WS_HALT:
   bne     NEXTCHANGE_WITHOUT |yes, no other interrupt
   moveq   #0,d0
   move.w  regS,d0  | push PC and P to stack ( PHW + PHB ) start
-  move.b  _regPC,(memory_pointer,d0.l)
+  move.b  _CPU_regPC,(memory_pointer,d0.l)
   subq.b  #1,d0
-  move.b  _regPC+1,(memory_pointer,d0.l)
+  move.b  _CPU_regPC+1,(memory_pointer,d0.l)
   subq.b  #1,d0
 | move.b  d7,(memory_pointer,d0.l) ;put P onto stack
   andi.b  #B_FLAGN,d7              | TEST
   move.b  d7,(memory_pointer,d0.l) | TEST
   subq.b  #1,d0
-  move.b  d0,_regS      | push PC and P to stack ( PHW + PHB ) end
+  move.b  d0,_CPU_regS      | push PC and P to stack ( PHW + PHB ) end
   SetI
   move.w  (memory_pointer,0xfffe.l),d0  | d0 already cleared from before
   LoHi d0
   move.l  d0,PC6502
   add.l   memory_pointer,PC6502
   addq.l  #7,CD
-  clr.b   _IRQ |clear interrupt.....
+  clr.b   _CPU_IRQ |clear interrupt.....
  #ifdef MONITOR_BREAK
   addq.l  #1,_ret_nesting
   #endif
@@ -998,10 +998,10 @@ opcode_9b: |/* SHS abcd,y [unofficial, UNSTABLE] (Fox) */
   move.w (PC6502)+,d7
   move.b d7,d0
   LoHi d7 |d7 contains reversed value
-  move.b A,_regS
-  and.b  X,_regS
+  move.b A,_CPU_regS
+  and.b  X,_CPU_regS
   addq.b #1,d0
-  and.b  _regS,d0
+  and.b  _CPU_regS,d0
   add.w  Y,d7
   tst.b  (attrib_pointer,d7.l)    | PUTANYBYTE
   bne.w  A800PUTB
@@ -1015,7 +1015,7 @@ opcode_6b: |/* ARR #ab [unofficial - Acc AND Data, ROR result] */
   addq.l #cy_Imm,CD
   IMMEDIATE ZFLAG
   and.b  A,ZFLAG
-  btst   #D_FLAGB,_regP
+  btst   #D_FLAGB,_CPU_regP
   beq.s  pcode_6b_6b_noBCD
 | 'BCD fixup'
   move.b ZFLAG,d7
@@ -1493,7 +1493,7 @@ opcode_bb: |/* LAS abcd,y [unofficial - AND S with Mem, transfer to A and X */
 pcode_bb_Getbyte_RAMROM:
   move.b (memory_pointer,d7.l),d0 |get byte
 pcode_bb_AFTER_READ:
-  and.b  _regS,d0
+  and.b  _CPU_regS,d0
   move.b d0,A
   move.b d0,X
   move.b d0,ZFLAG
@@ -1731,7 +1731,7 @@ opcode_00: |/* BRK */
 pcode_00_oc_00_norm:
   #endif
   addq.l #cy_BRK,CD
-| btst   #I_FLAGB,_regP
+| btst   #I_FLAGB,_CPU_regP
 | bne.w  NEXTCHANGE_WITHOUT
   SetB
   move.l PC6502,d7
@@ -1746,10 +1746,10 @@ pcode_00_oc_00_norm:
   move.b d7,(memory_pointer,d0.l)
   subq.b #2,d0
   ConvertSTATUS_RegP d7
-| move.b d7,_regP       ;put result to _regP ! TEST !!!
+| move.b d7,_CPU_regP       ;put result to _CPU_regP ! TEST !!!
   move.b d7,(memory_pointer,d0.l)
   subq.b #1,d0
-  move.b d0,_regS
+  move.b d0,_CPU_regS
   SetI
   move.w (memory_pointer,0xfffe.l),d7
   LoHi d7
@@ -1766,7 +1766,7 @@ opcode_08: |/* PHP */
   ConvertSTATUS_RegP d0
   move.b d0,(memory_pointer,d7.l)
   subq.b #1,d7
-  move.b d7,_regS
+  move.b d7,_CPU_regS
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_28: |/* PLP */
@@ -1774,20 +1774,20 @@ opcode_28: |/* PLP */
   moveq  #0,d0          | PLP
   move.w regS,d0
   addq.b #1,d0
-| move.b (memory_pointer,d0.l),_regP
+| move.b (memory_pointer,d0.l),_CPU_regP
   move.b (memory_pointer,d0.l),d7 | TEST
   ori.b  #0x30,d7                  | TEST
-  move.b d7,_regP                 | TEST
+  move.b d7,_CPU_regP                 | TEST
   ConvertRegP_STATUS d7
-  move.b d0,_regS
-  tst.b  _IRQ           | CPUCHECKIRQ
+  move.b d0,_CPU_regS
+  tst.b  _CPU_IRQ           | CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
   btst   #I_FLAGB,d7
   bne.w  NEXTCHANGE_WITHOUT
 | moveq  #0,d0
 | move.w regS,d0        ; push PC and P to stack ( PHW + PHB ) start
   subq.b #2,d0          | but do it the wrong way around for optim.
-  andi.b  #B_FLAGN,d7              ;
+  andi.b  #B_FLAGN,d7              |
   move.b  d7,(memory_pointer,d0.l) | Push P
   move.l PC6502,d7
   sub.l  memory_pointer,d7
@@ -1797,7 +1797,7 @@ opcode_28: |/* PLP */
   LoHi d7
   move.b d7,(memory_pointer,d0.l)  | Push Low
   subq.b #3,d0
-  move.b d0,_regS       | push PC and P to stack ( PHW + PHB ) end
+  move.b d0,_CPU_regS       | push PC and P to stack ( PHW + PHB ) end
   SetI
   move.w (memory_pointer,0xfffe.l),d7
   LoHi d7
@@ -1814,7 +1814,7 @@ opcode_48: |/* PHA */
   move.w regS,d7
   move.b A,(memory_pointer,d7.l)
   subq.b #1,d7
-  move.b d7,_regS
+  move.b d7,_CPU_regS
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_68: |/* PLA */
@@ -1822,7 +1822,7 @@ opcode_68: |/* PLA */
   move.w regS,d7
   addq.b #1,d7
   move.b (memory_pointer,d7.l),A
-  move.b d7,_regS
+  move.b d7,_CPU_regS
   NEXTCHANGE_REG A
 
   .macro OR_ANYBYTE
@@ -2246,7 +2246,7 @@ opcode_38: |/* SEC */
 opcode_58: |/* CLI */
   addq.l #cy_FlagCS,CD
   ClrI
-  tst.b  _IRQ      | ~ CPUCHECKIRQ
+  tst.b  _CPU_IRQ      | ~ CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
   move.l PC6502,d7
   sub.l  memory_pointer,d7
@@ -2259,17 +2259,17 @@ opcode_58: |/* CLI */
   move.b d7,(memory_pointer,d0.l)
   subq.b #2,d0
   ConvertSTATUS_RegP d7
-| move.b d7,_regP       ;put result to _regP ! TEST !!!
+| move.b d7,_CPU_regP       ;put result to _CPU_regP ! TEST !!!
   andi.b #B_FLAGN,d7              | TEST
   move.b d7,(memory_pointer,d0.l)
   subq.b #1,d0
-  move.b d0,_regS
+  move.b d0,_CPU_regS
   SetI
   move.w (memory_pointer,0xfffe.l),d7
   LoHi d7
   move.l d7,PC6502
   add.l  memory_pointer,PC6502
-  clr.b  _IRQ
+  clr.b  _CPU_IRQ
   addq.l #7,CD
  #ifdef MONITOR_BREAK
   addq.l #1,_ret_nesting
@@ -2390,7 +2390,7 @@ pcode_20_point_rem_jmp:
   LoHi d7
   move.b d7,(memory_pointer,d0.l)
   subq.b #2,d0
-  move.b d0,_regS
+  move.b d0,_CPU_regS
   JMP_C
 
 opcode_60: |/* RTS */
@@ -2414,10 +2414,10 @@ _RTI:
   moveq  #0,d0                    | PLP + PLW
   move.w regS,d0
   addq.b #1,d0
-| move.b (memory_pointer,d0.l),_regP
+| move.b (memory_pointer,d0.l),_CPU_regP
   move.b (memory_pointer,d0.l),d7 | TEST
   ori.b  #0x30,d7                  | TEST
-  move.b d7,_regP                 | TEST
+  move.b d7,_CPU_regP                 | TEST
   ConvertRegP_STATUS d7
   addq.b #2,d0     | wrong way around
   move.b (memory_pointer,d0.l),d7
@@ -2425,7 +2425,7 @@ _RTI:
   subq.b #1,d0
   or.b   (memory_pointer,d0.l),d7
   addq.b #1,d0
-  move.b d0,_regS
+  move.b d0,_CPU_regS
   lea    (memory_pointer,d7.l),PC6502
  #ifdef MONITOR_BREAK
   tst.b _break_ret
@@ -2436,9 +2436,9 @@ _RTI:
 RTI_mb_end:
   subq.l #1,_ret_nesting
   #endif
-  tst.b  _IRQ           | CPUCHECKIRQ
+  tst.b  _CPU_IRQ           | CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
-  move.b _regP,d7
+  move.b _CPU_regP,d7
 | andi.b #I_FLAG,d7
   btst   #I_FLAGB,d7
   bne.w  NEXTCHANGE_WITHOUT
@@ -2455,7 +2455,7 @@ RTI_mb_end:
   LoHi d7
   move.b d7,(memory_pointer,d0.l)
   subq.b #3,d0
-  move.b d0,_regS       | push PC and P to stack ( PHW + PHB ) end
+  move.b d0,_CPU_regS       | push PC and P to stack ( PHW + PHB ) end
   SetI
   move.w (memory_pointer,0xfffe.l),d7
   LoHi d7
@@ -2743,12 +2743,12 @@ opcode_a8: |/* TAY */
 
 opcode_9a: |/* TXS */
   addq.l #cy_RegChg,CD
-  move.b X,_regS
+  move.b X,_CPU_regS
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_ba: |/* TSX */
   addq.l #cy_RegChg,CD
-  move.b _regS,X
+  move.b _CPU_regS,X
   NEXTCHANGE_REG X
 
 opcode_d2: |/* ESCRTS #ab (JAM) - on Atari is here instruction CIM
@@ -2969,7 +2969,7 @@ opcode_70: |/* BVS */
   .endm
 
 adc:
-  btst   #D_FLAGB,_regP
+  btst   #D_FLAGB,_CPU_regP
   bne.w  BCD_ADC
   bra.w  adcb
 
@@ -3122,7 +3122,7 @@ opcode_69_D: |/* ADC #ab */
   .endm
 
 sbc:
-  btst   #D_FLAGB,_regP
+  btst   #D_FLAGB,_CPU_regP
   bne.w  BCD_SBC
   bra.w  sbcb
 
@@ -3365,7 +3365,7 @@ COMPARE:
 NEXTCHANGE_N:
   ext.w  NFLAG
 NEXTCHANGE_WITHOUT:
-  cmp.l _xpos_limit,CD
+  cmp.l _ANTIC_xpos_limit,CD
   bge.s END_OF_CYCLE
 ****************************************
  #ifdef MONITOR_BREAK
@@ -3431,7 +3431,7 @@ EXTCHANGE_WITHOUT_get_first:
 END_OF_CYCLE:
   ConvertSTATUS_RegP_destroy d0
   UPDATE_GLOBAL_REGS
-  move.l CD,_xpos |returned value
+  move.l CD,_ANTIC_xpos |returned value
   movem.l (a7)+,d2-d7/a2-a6
 TERM_GO:
   rts
