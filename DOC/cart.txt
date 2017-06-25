@@ -48,7 +48,7 @@ Currently supported cartridge types:
 | 14 | 800/XL/XE |  128 | XEGS 128 KB cartridge                         |   |
 | 15 | 800/XL/XE |   16 | OSS one chip 16 KB cartridge                  |   |
 | 16 |   5200    |   16 | One chip 16 KB 5200 cartridge                 |   |
-| 17 | 800/XL/XE |  128 | Atrax 128 KB cartridge                        |   |
+| 17 | 800/XL/XE |  128 | Decoded Atrax 128 KB cartridge                |   |
 | 18 | 800/XL/XE |   40 | Bounty Bob Strikes Back 40 KB cartridge       |   |
 | 19 |   5200    |    8 | Standard 8 KB 5200 cartridge                  |   |
 | 20 |   5200    |    4 | Standard 4 KB 5200 cartridge                  |   |
@@ -99,6 +99,7 @@ Currently supported cartridge types:
 | 65 | 800/XL/XE |  32M | The!Cart 32 MB cartridge                      | p |
 | 66 | 800/XL/XE |  64M | The!Cart 64 MB cartridge                      | p |
 | 67 | 800/XL/XE |   64 | XEGS 64 KB cartridge (banks 8-15)             |   |
+| 68 | 800/XL/XE |  128 | Atrax 128 KB cartridge                        |   |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -304,13 +305,23 @@ are numbered in the order they appear in the image file, starting with 0.
  between $8000 and $BFFF.
 
 +---------------------------------------------------------------------------+
-| Type 17: Atrax 128 KB cartridge                                           |
+| Type 17: Decoded Atrax 128 KB cartridge                                   |
 +---------------------------------------------------------------------------+
+
+ The Atrax cartridge has its address and data lines intermixed as a kind of
+ copy protection - dumping a ROM chip directly would result in a dump that
+ would need decoding before reading data. This cartridge type represents
+ a decoded ROM dump, for example as a result of dumping by reading the
+ cartridge using an Atari computer. The original, non-decoded dump is
+ represented by Type 68: Atrax 128 KB cartridge.
 
  This bank-switched cartridge occupies 8 KB of address space between $A000
  and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
  If a byte written to $D500-$D5FF has highest bit set, the cartridge is
  disabled. Otherwise four lowest bits select the bank mapped to $A000-$BFFF.
+
+ Reference:
+ http://atarionline.pl/forum/comments.php?DiscussionID=2861&page=11#CommentBody_91383
 
 +---------------------------------------------------------------------------+
 | Type 18: Bounty Bob Strikes Back 40 KB cartridge                          |
@@ -996,3 +1007,47 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference:
  http://www.atarimax.com/jindroush.atari.org/acarts.html#xegs
+
++---------------------------------------------------------------------------+
+| Type 68: Atrax 128 KB cartridge                                           |
++---------------------------------------------------------------------------+
+
+ The Atrax cartridge has its address and data lines intermixed as a kind of
+ copy protection, as below:
+   (Left - cartridge port + bank select lines, right - EPROM pins)
+    A0 -  A5
+    A1 -  A6
+    A2 -  A7
+    A3 - A12
+    A4 -  A0
+    A5 -  A1
+    A6 -  A2
+    A7 -  A3
+    A8 -  A4
+    A9 -  A8
+   A10 - A10
+   A11 - A11
+   A12 -  A9
+   A13 - A13   \
+   A14 - A14    > bank select
+   A15 - A15   /
+   A16 - A16  /
+    D0 -  Q5
+    D1 -  Q6
+    D2 -  Q2
+    D3 -  Q4
+    D4 -  Q0
+    D5 -  Q1
+    D6 -  Q7
+    D7 -  Q3
+ This cartridge type represents an original, non-decoded ROM dump, as read
+ directly from the ROM chip. A decoded ROM dump is represented by Type 17:
+ Decoded Atrax 128 KB cartridge.
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
+ If a byte written to $D500-$D5FF has highest bit set, the cartridge is
+ disabled. Otherwise four lowest bits select the bank mapped to $A000-$BFFF.
+
+ Reference:
+ http://atarionline.pl/forum/comments.php?DiscussionID=2861&page=11#CommentBody_91383

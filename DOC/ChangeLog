@@ -1,3 +1,12 @@
+2017-06-25  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/NEWS, DOC/USAGE, android/jni/jni.c, atari800.man, cartridge.[ch], ui.c:
+  Original Atrax cartridges have address and data lines intermixed. The
+  existing CART Type 17: Atrax 128 KB cartridge was therefore not a type of
+  real cartridge, not usable for actual Atrax ROM dumps. I've renamed it to
+  "Decoded Atrax 128 KB cartridge" and added new "Type 68: Atrax 128 KB
+  cartridge" that supports real Atrax ROM dumps.
+
+
 2016-10-08  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * debian/compat, debian/changelog, debian/control, debian/rules,
   debian/source/format: Updates from the official Debian package.

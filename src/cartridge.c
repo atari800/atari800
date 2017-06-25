@@ -68,7 +68,7 @@ int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	128,      /* CARTRIDGE_XEGS_128 */
 	16,       /* CARTRIDGE_OSS_M091_16 */
 	16,       /* CARTRIDGE_5200_NS_16 */
-	128,      /* CARTRIDGE_ATRAX_128 */
+	128,      /* CARTRIDGE_ATRAX_DEC_128 */
 	40,       /* CARTRIDGE_BBSB_40 */
 	8,        /* CARTRIDGE_5200_8 */
 	4,        /* CARTRIDGE_5200_4 */
@@ -118,7 +118,8 @@ int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
 	2048,     /* CARTRIDGE_MEGA_2048 */
 	32*1024,  /* CARTRIDGE_THECART_32M */
 	64*1024,  /* CARTRIDGE_THECART_64M */
-	64        /* CARTRIDGE_XEGS_64_8F */
+	64,       /* CARTRIDGE_XEGS_64_8F */
+	128       /* CARTRIDGE_ATRAX_128 */
 };
 
 int CARTRIDGE_autoreboot = TRUE;
@@ -198,8 +199,8 @@ static void set_bank_A0AF(int main, int old_state)
 }
 
 /* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_1024,
-   ATRAX_128, ATRAX_SDX_64, TURBOSOFT_64, TURBOSOFT_128, ULTRACART_32,
-   TURBO_HIT_32, THECART_128M, THECART_32M, THECART_64M */
+   ATRAX_DEC_128, ATRAX_SDX_64, TURBOSOFT_64, TURBOSOFT_128, ULTRACART_32,
+   TURBO_HIT_32, THECART_128M, THECART_32M, THECART_64M, ATRAX_128 */
 static void set_bank_A0BF(int disable_mask, int bank_mask)
 {
 	if (active_cart->state & disable_mask)
@@ -319,8 +320,9 @@ static void SwitchBank(int old_state)
 	case CARTRIDGE_SWXEGS_1024:
 		set_bank_809F(0xfe000, old_state);
 		break;
-	case CARTRIDGE_ATRAX_128:
+	case CARTRIDGE_ATRAX_DEC_128:
 	case CARTRIDGE_ATMAX_1024:
+	case CARTRIDGE_ATRAX_128:
 		set_bank_A0BF(0x80, 0x7f);
 		break;
 	case CARTRIDGE_ATMAX_128:
@@ -501,7 +503,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_EXP_64:
 		case CARTRIDGE_DIAMOND_64:
 		case CARTRIDGE_SDX_64:
-		case CARTRIDGE_ATRAX_128:
+		case CARTRIDGE_ATRAX_DEC_128:
 		case CARTRIDGE_WILL_32:
 		case CARTRIDGE_ATMAX_128:
 		case CARTRIDGE_ATMAX_1024:
@@ -515,6 +517,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_THECART_128M:
 		case CARTRIDGE_THECART_32M:
 		case CARTRIDGE_THECART_64M:
+		case CARTRIDGE_ATRAX_128:
 			MEMORY_Cart809fDisable();
 			break;
 		case CARTRIDGE_DB_32:
@@ -978,6 +981,7 @@ static void PutByte(CARTRIDGE_image_t *cart, UWORD addr, UBYTE byte)
 		break;
 	case CARTRIDGE_MEGA_256:
 	case CARTRIDGE_SWXEGS_128:
+	case CARTRIDGE_ATRAX_DEC_128:
 	case CARTRIDGE_ATRAX_128:
 		new_state = byte & 0x8f;
 		break;
@@ -1224,40 +1228,89 @@ static void ResetCartState(CARTRIDGE_image_t *cart)
 /* Before first use of the cartridge, preprocess its contents if needed. */
 static void PreprocessCart(CARTRIDGE_image_t *cart)
 {
-	switch (cart->type) {
-	case CARTRIDGE_ATRAX_SDX_64:
-	case CARTRIDGE_ATRAX_SDX_128: {
-		/* The address lines are connected a follows:
-		   (left - cartridge port + bank select, right - EPROM)
-		    A0 -  A6
-		    A1 -  A7
-		    A2 - A12
-		    A3 - A15
-		    A4 - A14
-		    A5 - A13
-		    A6 -  A8
-		    A7 -  A5
-		    A8 -  A4
-		    A9 -  A3
-		   A10 -  A0
-		   A11 -  A1
-		   A12 -  A2
-		   A13 -  A9
-		   A14 - A11
-		   A15 - A10
-		   A16 - A16 (only on ATRAX_SDX_128)
+	/* On Atrax game and SDX cartridges, address and data lines between the
+	   cartridge port and the EPROM are intermixed as a kind of copy
+	   prevention. Data in the ROM chip, if read directly, would make no
+	   sense. We have to decode the ROM contents according to the connections
+	   on the cartidge. */
 
-		    The data lines are connected as follows:
-		    (left - cartridge port, right - EPROM)
-		    D1 - Q0
-		    D3 - Q1
-		    D7 - Q2
-		    D6 - Q3
-		    D0 - Q4
-		    D2 - Q5
-		    D5 - Q6
-		    D4 - Q7
-		 */
+	struct cross_map_t {
+		unsigned int addr[17]; /* Mapping of address (+ bank select) lines */
+		unsigned char data[8]; /* Mapping of data lines */
+	};
+	static struct cross_map_t cross_maps[2] = {
+		/* Atrax games cartridge */
+		{ /* cartridge port + bank select <-> EPROM */
+			{ 0x0020,              /*  A0 <->  A5 */
+			  0x0040,              /*  A1 <->  A6 */
+			  0x0080,              /*  A2 <->  A7 */
+			  0x1000,              /*  A3 <-> A12 */
+			  0x0001,              /*  A4 <->  A0 */
+			  0x0002,              /*  A5 <->  A1 */
+			  0x0004,              /*  A6 <->  A2 */
+			  0x0008,              /*  A7 <->  A3 */
+			  0x0010,              /*  A8 <->  A4 */
+			  0x0100,              /*  A9 <->  A8 */
+			  0x0400,              /* A10 <-> A10 */
+			  0x0800,              /* A11 <-> A11 */
+			  0x0200,              /* A12 <->  A9 */
+			  0x2000,              /* A13 <-> A13 */
+			  0x4000,              /* A14 <-> A14 */
+			  0x8000,              /* A15 <-> A15 */
+			  0x10000 },           /* A16 <-> A16 */
+			{ 0x10,                /*  D4 <->  Q0 */
+			  0x20,                /*  D5 <->  Q1 */
+			  0x04,                /*  D2 <->  Q2 */
+			  0x80,                /*  D7 <->  Q3 */
+			  0x08,                /*  D3 <->  Q4 */
+			  0x01,                /*  D0 <->  Q5 */
+			  0x02,                /*  D1 <->  Q6 */
+			  0x40 }               /*  D6 <->  Q7 */
+		},
+		/* Atrax SDX */
+		{ /* cartridge port + bank select <-> EPROM */
+			{ 0x0040,              /*  A0 <->  A6 */
+			  0x0080,              /*  A1 <->  A7 */
+			  0x1000,              /*  A2 <-> A12 */
+			  0x8000,              /*  A3 <-> A15 */
+			  0x4000,              /*  A4 <-> A14 */
+			  0x2000,              /*  A5 <-> A13 */
+			  0x0100,              /*  A6 <->  A8 */
+			  0x0020,              /*  A7 <->  A5 */
+			  0x0010,              /*  A8 <->  A4 */
+			  0x0008,              /*  A9 <->  A3 */
+			  0x0001,              /* A10 <->  A0 */
+			  0x0002,              /* A11 <->  A1 */
+			  0x0004,              /* A12 <->  A2 */
+			  0x0200,              /* A13 <->  A9 */
+			  0x0800,              /* A14 <-> A11 */
+			  0x0400,              /* A15 <-> A10 */
+			  0x10000 },           /* A16 <-> A16 (only on ATRAX_SDX_128) */
+			{ 0x02,                /*  D1 <->  Q0 */
+			  0x08,                /*  D3 <->  Q1 */
+			  0x80,                /*  D7 <->  Q2 */
+			  0x40,                /*  D6 <->  Q3 */
+			  0x01,                /*  D0 <->  Q4 */
+			  0x04,                /*  D2 <->  Q5 */
+			  0x20,                /*  D5 <->  Q6 */
+			  0x10 }               /*  D4 <->  Q7 */
+		}
+	};
+	struct cross_map_t *map;
+
+	switch (cart->type) {
+	case CARTRIDGE_ATRAX_128:
+		map = &cross_maps[0];
+		break;
+	case CARTRIDGE_ATRAX_SDX_64:
+	case CARTRIDGE_ATRAX_SDX_128:
+		map = &cross_maps[1];
+		break;
+	default: /* Cartridge lined not crossed */
+		return;
+	}
+
+	{
 		unsigned int i;
 		unsigned int const size = cart->size << 10;
 		UBYTE *new_image = (UBYTE *) Util_malloc(size);
@@ -1265,39 +1318,37 @@ static void PreprocessCart(CARTRIDGE_image_t *cart)
 		   table, but doesn't seem to be worth it. */
 		for (i = 0; i < size; i++) {
 			unsigned int const rom_addr =
-				(i &  0x0001 ?  0x0040 : 0) |
-				(i &  0x0002 ?  0x0080 : 0) |
-				(i &  0x0004 ?  0x1000 : 0) |
-				(i &  0x0008 ?  0x8000 : 0) |
-				(i &  0x0010 ?  0x4000 : 0) |
-				(i &  0x0020 ?  0x2000 : 0) |
-				(i &  0x0040 ?  0x0100 : 0) |
-				(i &  0x0080 ?  0x0020 : 0) |
-				(i &  0x0100 ?  0x0010 : 0) |
-				(i &  0x0200 ?  0x0008 : 0) |
-				(i &  0x0400 ?  0x0001 : 0) |
-				(i &  0x0800 ?  0x0002 : 0) |
-				(i &  0x1000 ?  0x0004 : 0) |
-				(i &  0x2000 ?  0x0200 : 0) |
-				(i &  0x4000 ?  0x0800 : 0) |
-				(i &  0x8000 ?  0x0400 : 0) |
-				(i & 0x10000 ? 0x10000 : 0);
+				(i &  0x0001 ? map->addr[0] : 0) |
+				(i &  0x0002 ? map->addr[1] : 0) |
+				(i &  0x0004 ? map->addr[2] : 0) |
+				(i &  0x0008 ? map->addr[3] : 0) |
+				(i &  0x0010 ? map->addr[4] : 0) |
+				(i &  0x0020 ? map->addr[5] : 0) |
+				(i &  0x0040 ? map->addr[6] : 0) |
+				(i &  0x0080 ? map->addr[7] : 0) |
+				(i &  0x0100 ? map->addr[8] : 0) |
+				(i &  0x0200 ? map->addr[9] : 0) |
+				(i &  0x0400 ? map->addr[10] : 0) |
+				(i &  0x0800 ? map->addr[11] : 0) |
+				(i &  0x1000 ? map->addr[12] : 0) |
+				(i &  0x2000 ? map->addr[13] : 0) |
+				(i &  0x4000 ? map->addr[14] : 0) |
+				(i &  0x8000 ? map->addr[15] : 0) |
+				(i & 0x10000 ? map->addr[16] : 0);
 
 			UBYTE byte = cart->image[rom_addr];
 			new_image[i] =
-					(byte & 0x01 ? 0x02 : 0) |
-					(byte & 0x02 ? 0x08 : 0) |
-					(byte & 0x04 ? 0x80 : 0) |
-					(byte & 0x08 ? 0x40 : 0) |
-					(byte & 0x10 ? 0x01 : 0) |
-					(byte & 0x20 ? 0x04 : 0) |
-					(byte & 0x40 ? 0x20 : 0) |
-					(byte & 0x80 ? 0x10 : 0);
+				(byte & 0x01 ? map->data[0] : 0) |
+				(byte & 0x02 ? map->data[1] : 0) |
+				(byte & 0x04 ? map->data[2] : 0) |
+				(byte & 0x08 ? map->data[3] : 0) |
+				(byte & 0x10 ? map->data[4] : 0) |
+				(byte & 0x20 ? map->data[5] : 0) |
+				(byte & 0x40 ? map->data[6] : 0) |
+				(byte & 0x80 ? map->data[7] : 0);
 		}
 		free(cart->image);
 		cart->image = new_image;
-		break;
-	}
 	}
 }
 

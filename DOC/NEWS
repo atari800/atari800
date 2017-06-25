@@ -15,6 +15,12 @@ Version ?.?.? (????/??/??)
   * Support for loading of CAS images with "fsk" chunks - images of
     copy-protected tapes can now be loaded, with SIO patch being disabled.
   * Bit3 Full View 80 Column card emulation.
+  * New cartridge type 68: "Atrax 128 KB cartridge".
+    Previously existing cartridge type 17: "Atrax 128 KB cartridge" was based
+    on a misconception - real Atrax cartridges have their address and data
+    lines intermixed, so type 17 could not be used with actual ROM dumps. So,
+    type 17 has been renamed to "Decoded Atrax 128 KB cartridge", and new type
+    68 has been added, whcih now can be used for Atrax ROM chip dumps.
 
  Changes:
  --------

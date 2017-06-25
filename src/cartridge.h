@@ -23,7 +23,7 @@ enum {
 	CARTRIDGE_XEGS_128       = 14,
 	CARTRIDGE_OSS_M091_16    = 15,
 	CARTRIDGE_5200_NS_16     = 16,
-	CARTRIDGE_ATRAX_128      = 17,
+	CARTRIDGE_ATRAX_DEC_128  = 17,
 	CARTRIDGE_BBSB_40        = 18,
 	CARTRIDGE_5200_8         = 19,
 	CARTRIDGE_5200_4         = 20,
@@ -74,7 +74,8 @@ enum {
 	CARTRIDGE_THECART_32M    = 65,
 	CARTRIDGE_THECART_64M    = 66,
 	CARTRIDGE_XEGS_8F_64     = 67,
-	CARTRIDGE_LAST_SUPPORTED = 67
+	CARTRIDGE_ATRAX_128      = 68,
+	CARTRIDGE_LAST_SUPPORTED = 68
 };
 
 #define CARTRIDGE_MAX_SIZE	(128 * 1024 * 1024)
@@ -96,7 +97,7 @@ extern int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 #define CARTRIDGE_XEGS_128_DESC      "XEGS 128 KB cartridge"
 #define CARTRIDGE_OSS_M091_16_DESC   "OSS one chip 16 KB cartridge"
 #define CARTRIDGE_5200_NS_16_DESC    "One chip 16 KB 5200 cartridge"
-#define CARTRIDGE_ATRAX_128_DESC     "Atrax 128 KB cartridge"
+#define CARTRIDGE_ATRAX_DEC_128_DESC "Decoded Atrax 128 KB cartridge"
 #define CARTRIDGE_BBSB_40_DESC       "Bounty Bob 40 KB cartridge"
 #define CARTRIDGE_5200_8_DESC        "Standard 8 KB 5200 cartridge"
 #define CARTRIDGE_5200_4_DESC        "Standard 4 KB 5200 cartridge"
@@ -147,6 +148,7 @@ extern int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 #define CARTRIDGE_THECART_32M_DESC   "The!Cart 32 MB cartridge"
 #define CARTRIDGE_THECART_64M_DESC   "The!Cart 64 MB cartridge"
 #define CARTRIDGE_XEGS_8F_64_DESC    "XEGS 64 KB cartridge (banks 8-15)"
+#define CARTRIDGE_ATRAX_128_DESC     "Atrax 128 KB cartridge"
 
 /* Indicates whether the emulator should automatically reboot (coldstart)
    after inserting/removing a cartridge. (Doesn't affect the piggyback
