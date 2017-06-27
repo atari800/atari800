@@ -1,5 +1,5 @@
 /*
- * sound_falcon.c - high-level sound routines for the Atari Falcon port
+ * sound.c - high-level sound routines for the Atari Falcon port
  *
  * Copyright (C) 1995-1998 David Firth
  * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)

@@ -1,5 +1,5 @@
 /*
- * atari_falcon.c - Atari Falcon specific port code
+ * main.c - Atari Falcon specific port code
  *
  * Copyright (c) 1997-1998 Petr Stehlik and Karel Rous
  * Copyright (c) 1998-2014 Atari800 development team (see DOC/CREDITS)
