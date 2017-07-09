@@ -1286,8 +1286,11 @@ static void pokeysnd_process_16(void *sndbuffer, int sndn)
 	pokeysnd_process_8(buffer, sndn);
 
 	for (i = sndn - 1; i >= 0; i--) {
+#ifndef POKEYSND_SIGNED_SAMPLES
 		int smp = ((int) (((UBYTE *) buffer)[i]) - 0x80) * POKEYSND_volume;
-
+#else
+		int smp = ((int) ((SBYTE *) buffer)[i]) * POKEYSND_volume;
+#endif
 		if (smp > 32767)
 			smp = 32767;
 		else if (smp < -32768)

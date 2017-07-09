@@ -105,7 +105,7 @@ case $host_os in
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
-	WANT_IDE="no"
+        WANT_IDE="no"
         ;;
     beos)
         a8_host="beos"
@@ -858,6 +858,7 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             OBJS="$OBJS win32/sound.o"
             ;;
         falcon)
+            AC_DEFINE(POKEYSND_SIGNED_SAMPLES,1,[Use 8-bit signed samples.])
             OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
             ;;
         oss)
