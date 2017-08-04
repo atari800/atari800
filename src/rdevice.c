@@ -700,8 +700,8 @@ static void xio_40(void)
 
   int aux1;
 /*
-    if(connected == 0)
-      Poke(747,0);
+  if(connected == 0)
+    Poke(747,0);
 */
   CPU_regA = 1;
   CPU_regY = 1;
