@@ -290,15 +290,19 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 	return TRUE;
 }
 
-#define COPY_EMUOS(padding) do { \
-		memset(MEMORY_os, 0, padding); \
-		memcpy(MEMORY_os + (padding), emuos_h, 0x2000); \
-	} while (0)
+static void copy_emuos(int machine_type) {
+	int rom_start_addr, padding;
+
+	rom_start_addr = Atari800_machine_type == Atari800_MACHINE_800 ? 0xd800 : 0xc000;
+	padding = 0x10000 - rom_start_addr - sizeof(emuos_h);
+	memset(MEMORY_os, 0, padding);
+	memcpy(MEMORY_os + padding, emuos_h, sizeof(emuos_h));
+}
 
 static int load_roms(void)
 {
 	if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 2) {
-		COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x800 : 0x2000);
+		copy_emuos(Atari800_machine_type);
 		Atari800_os_version = -1;
 	}
 	else {
@@ -309,7 +313,7 @@ static int load_roms(void)
 			/* Missing OS ROM. */
 			Atari800_os_version = -1;
 			if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
-				COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x800 : 0x2000);
+				copy_emuos(Atari800_machine_type);
 			else
 				/* No OS ROM loaded. */
 				return FALSE;

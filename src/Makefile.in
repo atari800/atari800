@@ -46,7 +46,6 @@ OBJS = \
 	cpu.o \
 	crc32.o \
 	devices.o \
-	emuos.o \
 	esc.o \
 	gtia.o \
 	img_tape.o \
