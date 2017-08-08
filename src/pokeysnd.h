@@ -84,6 +84,7 @@ extern "C" {
 extern SLONG POKEYSND_playback_freq;
 extern UBYTE POKEYSND_num_pokeys;
 extern int POKEYSND_snd_flags;
+extern int POKEYSND_volume;
 
 extern int POKEYSND_enable_new_pokey;
 extern int POKEYSND_stereo_enabled;
@@ -112,6 +113,7 @@ void POKEYSND_UpdateConsol(int set);
 void POKEYSND_Process(void *sndbuffer, int sndn);
 int POKEYSND_DoInit(void);
 void POKEYSND_SetMzQuality(int quality);
+void POKEYSND_SetVolume(int vol);
 
 /* Volume only emulations declarations */
 #ifdef VOL_ONLY_SOUND

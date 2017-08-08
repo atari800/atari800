@@ -33,6 +33,7 @@
 #include "voicebox.h"
 #endif
 #include "pokey.h"
+#include "pokeysnd.h"
 #include "log.h"
 
 /* Votrax */
@@ -267,8 +268,8 @@ void VOTRAXSND_Process(void *sndbuffer, int sndn)
 	while (sndn > 0) {
 		int amount = ((sndn > VTRX_BLOCK_SIZE) ? VTRX_BLOCK_SIZE : sndn);
 		votrax_process(votrax_buffer, amount, temp_votrax_buffer);
-		if (bit16) mix((SWORD *)sndbuffer, votrax_buffer, amount, 128/4);
-		else mix8((UBYTE *)sndbuffer, votrax_buffer, amount, 128/4);
+		if (bit16) mix((SWORD *)sndbuffer, votrax_buffer, amount, POKEYSND_volume >> 3);
+		else mix8((UBYTE *)sndbuffer, votrax_buffer, amount, POKEYSND_volume >> 3);
 		sndbuffer = (char *) sndbuffer + VTRX_BLOCK_SIZE*(bit16 ? 2 : 1)*((num_pokeys == 2) ? 2: 1);
 		sndn -= VTRX_BLOCK_SIZE;
 	}

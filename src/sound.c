@@ -145,6 +145,8 @@ int Sound_Initialise(int *argc, char *argv[])
 				a_i = (Sound_desired.freq = Util_sscandec(argv[++i])) == -1;
 			else a_m = TRUE;
 		}
+		else if (strcmp(argv[i], "-volume") == 0)
+			POKEYSND_SetVolume(Util_sscandec(argv[++i]));
 		else if (strcmp(argv[i], "-audio16") == 0)
 			Sound_desired.sample_size = 2;
 		else if (strcmp(argv[i], "-audio8") == 0)
@@ -171,6 +173,7 @@ int Sound_Initialise(int *argc, char *argv[])
 				Log_print("\t-sound               Enable sound");
 				Log_print("\t-nosound             Disable sound");
 				Log_print("\t-dsprate <rate>      Set sound output frequency in Hz");
+				Log_print("\t-volume <0 .. 100>   Set sound output volume");
 				Log_print("\t-audio16             Set sound output format to 16-bit");
 				Log_print("\t-audio8              Set sound output format to 8-bit");
 				Log_print("\t-snd-buflen <ms>     Set length of the hardware sound buffer in milliseconds");

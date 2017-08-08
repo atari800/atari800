@@ -168,6 +168,8 @@ int POKEYSND_bienias_fix = TRUE;  /* when TRUE, high frequencies get emulated: b
 int POKEYSND_stereo_enabled = FALSE;
 #endif
 
+int POKEYSND_volume = 0x100;
+
 /* multiple sound engine interface */
 static void pokeysnd_process_8(void *sndbuffer, int sndn);
 static void pokeysnd_process_16(void *sndbuffer, int sndn);
@@ -1246,6 +1248,16 @@ static void Update_serio_sound_rf(int out, UBYTE data)
 }
 #endif /* SERIO_SOUND */
 
+void POKEYSND_SetVolume(int vol)
+{
+    if (vol > 100)
+        vol = 100;
+    if (vol < 0)
+        vol = 0;
+
+    POKEYSND_volume = vol * 0x100 / 100;
+}
+
 static void pokeysnd_process_16(void *sndbuffer, int sndn)
 {
 	UWORD *buffer = (UWORD *) sndbuffer;
@@ -1254,7 +1266,7 @@ static void pokeysnd_process_16(void *sndbuffer, int sndn)
 	pokeysnd_process_8(buffer, sndn);
 
 	for (i = sndn - 1; i >= 0; i--) {
-		int smp = ((int) (((UBYTE *) buffer)[i]) - 0x80) * 0x100;
+		int smp = ((int) (((UBYTE *) buffer)[i]) - 0x80) * POKEYSND_volume;
 
 		if (smp > 32767)
 			smp = 32767;
