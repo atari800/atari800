@@ -176,6 +176,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 					Log_print("Unsafe PRINT_COMMAND ignored");
 			}
 
+			else if (strcmp(string, "ACCURATE_SKIPPED_FRAMES") == 0)
+				Atari800_collisions_in_skipped_frames = Util_sscanbool(ptr);
 			else if (strcmp(string, "SCREEN_REFRESH_RATIO") == 0)
 				Atari800_refresh_rate = Util_sscandec(ptr);
 			else if (strcmp(string, "DISABLE_BASIC") == 0)
@@ -387,6 +389,7 @@ int CFG_WriteConfig(void)
 
 #ifndef BASIC
 	fprintf(fp, "SCREEN_REFRESH_RATIO=%d\n", Atari800_refresh_rate);
+	fprintf(fp, "ACCURATE_SKIPPED_FRAMES=%d\n", Atari800_collisions_in_skipped_frames);
 #endif
 
 	fprintf(fp, "MACHINE_TYPE=Atari %s\n", machine_type_string[Atari800_machine_type]);
