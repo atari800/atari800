@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>		/* for free */
+#include <time.h>
 #include <mint/falcon.h>	/* for VsetRGB */
 #include "falcon/xcb.h"		/* for NOVA screensaver */
 
@@ -1221,6 +1222,21 @@ int PLATFORM_TRIG(int num)
 	default:
 		return 1;
 	}
+}
+
+/* -------------------------------------------------------------------------- */
+
+void PLATFORM_Sleep(double s)
+{
+	double curtime = Util_time();
+	while ((curtime + s) > Util_time());
+}
+
+/* -------------------------------------------------------------------------- */
+
+double PLATFORM_Time(void)
+{
+	return clock() * (1.0 / CLOCKS_PER_SEC);
 }
 
 /* -------------------------------------------------------------------------- */
