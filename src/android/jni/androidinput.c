@@ -448,7 +448,7 @@ void Input_Initialize(void)
 {
 	int i;
 
-	memset(prevtc, 0, 2 * sizeof(struct touchstate));
+	memset(prevtc, 0, sizeof(prevtc));
 	prevconptr = PTRSTL;
 
 	memset(&AndroidInput_JoyOvl, 0, sizeof(struct joy_overlay_state));
