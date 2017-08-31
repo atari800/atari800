@@ -19,7 +19,7 @@ OUT="${PWD}/.travis/out"
 # variables
 RELEASE_DATE=`date -u +%Y-%m-%dT%H:%M:%S`
 BINTRAY_HOST=https://api.bintray.com
-BINTRAY_USER="${BINTRAY_USER:-atari800}"
+BINTRAY_USER="${BINTRAY_USER:-th-otto}"
 BINTRAY_REPO_OWNER="${BINTRAY_REPO_OWNER:-$BINTRAY_USER}" # owner and user not always the same
 BINTRAY_REPO="${BINTRAY_REPO_OWNER}/${BINTRAY_REPO:-atari800-files}"
 
