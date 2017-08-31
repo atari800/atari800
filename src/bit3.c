@@ -250,7 +250,7 @@ void BIT3_Reset(void)
 {
 	memset(bit3_screen, 0, 0x800);
 	rom_bank_select = 0;
-	memset(crtreg, 0, 0x40);
+	memset(crtreg, 0, sizeof(crtreg));
 	update_d6();
 	video_latch = 0;
 	VIDEOMODE_Set80Column(video_latch);

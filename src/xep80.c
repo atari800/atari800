@@ -615,7 +615,7 @@ static void BlitScreen(void)
    ROM location: 0643 */
 static void FillMem(UBYTE c)
 {
-	memset(video_ram,c,0x2000);
+	memset(video_ram,c,sizeof(video_ram));
 }
 /* Initialise the XEP80.
    ROM location: 001f, 0056 */

@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 			   argv[0]);
 		return 0;
 	}
-	memset(image, 0, 65536);
+	memset(image, 0, sizeof(image));
 
 	f = fopen(in_filename, "rb");
 	if (!f) {

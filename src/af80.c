@@ -382,7 +382,7 @@ void AF80_Reset(void)
 	not_enable_crtc_registers = 0;
 	not_enable_80_column_output = 0;
 	video_bank_select = 0;
-	memset(crtreg, 0, 0x40);
+	memset(crtreg, 0, sizeof(crtreg));
 }
 
 /*
