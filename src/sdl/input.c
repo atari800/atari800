@@ -1435,9 +1435,9 @@ static void update_SDL_joysticks(void)
 	for(joy = 0; joy < joysticks_found; joy++) {
 		int i;
 
-                if (joy == 0 joystick0_use_hat == TRUE) {
+                if (joy == 0 && joystick0_use_hat == TRUE) {
                         sdl_js_state[0].port = get_SDL_joystick_hat_state(joystick[0]);
-                } else if (joy == 1 joystick1_use_hat == TRUE) {
+                } else if (joy == 1 && joystick1_use_hat == TRUE) {
                         sdl_js_state[1].port = get_SDL_joystick_hat_state(joystick[1]);
                 } else {
 		sdl_js_state[joy].port = get_SDL_joystick_state(joystick[joy]);
