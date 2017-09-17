@@ -352,8 +352,15 @@ void SDL_VIDEO_InitSDL(void)
 	/* Get the desktop resolution */
 	{
 		SDL_VideoInfo const * const info = SDL_GetVideoInfo();
-		desktop_resolution.width = info->current_w;
-		desktop_resolution.height = info->current_h;
+		if (info->current_w == 0 || info->current_h == 0) {
+			/* fix for Atari's XBIOS SDL backend */
+			desktop_resolution.width = 320;
+			desktop_resolution.height = 240;
+		} else {
+			desktop_resolution.width = info->current_w;
+			desktop_resolution.height = info->current_h;
+		}
+
 		SDL_VIDEO_native_bpp = info->vfmt->BitsPerPixel;
 	}
 
@@ -502,12 +509,21 @@ void SDL_VIDEO_BlitNormal16(Uint32 *dest, Uint8 *src, int pitch, int width, int 
 	while (height > 0) {
 		pos = width_32;
 		do {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			pos--;
+			c = src[pos];
+			quad = palette16[c];
+			pos--;
+			c = src[pos];
+			quad += palette16[c] << 16;
+#else
 			pos--;
 			c = src[pos];
 			quad = palette16[c] << 16;
 			pos--;
 			c = src[pos];
 			quad += palette16[c];
+#endif
 			start32[pos >> 1] = quad;
 		} while (pos > 0);
 		src += Screen_WIDTH;
@@ -561,12 +577,21 @@ void SDL_VIDEO_BlitXEP80_16(Uint32 *dest, Uint8 *src, int pitch, int width, int 
 	while (height > 0) {
 		pos = width_32;
 		do {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			pos--;
+			c = src[pos];
+			quad = palette16[c];
+			pos--;
+			c = src[pos];
+			quad += palette16[c] << 16;
+#else
 			pos--;
 			c = src[pos];
 			quad = palette16[c] << 16;
 			pos--;
 			c = src[pos];
 			quad += palette16[c];
+#endif
 			start32[pos >> 1] = quad;
 		} while (pos > 0);
 		src += XEP80_SCRN_WIDTH;
@@ -607,6 +632,18 @@ void SDL_VIDEO_BlitProto80_8(Uint32 *dest, int first_column, int last_column, in
 			int i;
 			pixels = PBI_PROTO80_GetPixels(first_line, column);
 			for (i = 0; i < 2; i++) {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+				if (pixels & 0x10)
+					quad = 0x0000000f;
+				else
+					quad = 0x00000000;
+				if (pixels & 0x20)
+					quad |= 0x00000f00;
+				if (pixels & 0x40)
+					quad |= 0x000f0000;
+				if (pixels & 0x80)
+					quad |= 0x0f000000;
+#else
 				if (pixels & 0x80)
 					quad = 0x0000000f;
 				else
@@ -617,6 +654,7 @@ void SDL_VIDEO_BlitProto80_8(Uint32 *dest, int first_column, int last_column, in
 					quad |= 0x000f0000;
 				if (pixels & 0x10)
 					quad |= 0x0f000000;
+#endif
 				*start32++ = quad;
 				pixels <<= 4;
 			}
@@ -641,6 +679,16 @@ void SDL_VIDEO_BlitProto80_16(Uint32 *dest, int first_column, int last_column, i
 			int i;
 			pixels = PBI_PROTO80_GetPixels(first_line, column);
 			for (i = 0; i < 4; i++) {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+				if (pixels & 0x40)
+					quad = white;
+				else
+					quad = black;
+				if (pixels & 0x80)
+					quad |= white2;
+				else
+					quad |= black2;
+#else
 				if (pixels & 0x80)
 					quad = white;
 				else
@@ -649,6 +697,7 @@ void SDL_VIDEO_BlitProto80_16(Uint32 *dest, int first_column, int last_column, i
 					quad |= white2;
 				else
 					quad |= black2;
+#endif
 				*start32++ = quad;
 				pixels <<= 2;
 			}
@@ -695,6 +744,18 @@ void SDL_VIDEO_BlitAF80_8(Uint32 *dest, int first_column, int last_column, int p
 			int colour;
 			pixels = AF80_GetPixels(first_line, column, &colour, blink);
 			for (i = 0; i < 2; i++) {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+				if (pixels & 0x01)
+					quad = colour << 24;
+				else
+					quad = 0;
+				if (pixels & 0x02)
+					quad |= colour << 16;
+				if (pixels & 0x04)
+					quad |= colour << 8;
+				if (pixels & 0x08)
+					quad |= colour;
+#else
 				if (pixels & 0x01)
 					quad = colour;
 				else
@@ -705,6 +766,7 @@ void SDL_VIDEO_BlitAF80_8(Uint32 *dest, int first_column, int last_column, int p
 					quad |= colour << 16;
 				if (pixels & 0x08)
 					quad |= colour << 24;
+#endif
 				*start32++ = quad;
 				pixels >>= 4;
 			}
@@ -728,6 +790,16 @@ void SDL_VIDEO_BlitAF80_16(Uint32 *dest, int first_column, int last_column, int 
 			int colour;
 			pixels = AF80_GetPixels(first_line, column, &colour, blink);
 			for (i = 0; i < 4; i++) {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+				if (pixels & 0x01)
+					quad = palette16[colour] << 16;
+				else
+					quad = black2;
+				if (pixels & 0x02)
+					quad |= palette16[colour];
+				else
+					quad |= black;
+#else
 				if (pixels & 0x01)
 					quad = palette16[colour];
 				else
@@ -736,6 +808,7 @@ void SDL_VIDEO_BlitAF80_16(Uint32 *dest, int first_column, int last_column, int 
 					quad |= palette16[colour] << 16;
 				else
 					quad |= black2;
+#endif
 				*start32++ = quad;
 				pixels >>= 2;
 			}
@@ -783,6 +856,18 @@ void SDL_VIDEO_BlitBIT3_8(Uint32 *dest, int first_column, int last_column, int p
 			int colour;
 			pixels = BIT3_GetPixels(first_line, column, &colour, blink);
 			for (i = 0; i < 2; i++) {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+				if (pixels & 0x01)
+					quad = colour << 24;
+				else
+					quad = 0;
+				if (pixels & 0x02)
+					quad |= colour << 16;
+				if (pixels & 0x04)
+					quad |= colour << 8;
+				if (pixels & 0x08)
+					quad |= colour;
+#else
 				if (pixels & 0x01)
 					quad = colour;
 				else
@@ -793,6 +878,7 @@ void SDL_VIDEO_BlitBIT3_8(Uint32 *dest, int first_column, int last_column, int p
 					quad |= colour << 16;
 				if (pixels & 0x08)
 					quad |= colour << 24;
+#endif
 				*start32++ = quad;
 				pixels >>= 4;
 			}
@@ -816,6 +902,16 @@ void SDL_VIDEO_BlitBIT3_16(Uint32 *dest, int first_column, int last_column, int 
 			int colour;
 			pixels = BIT3_GetPixels(first_line, column, &colour, blink);
 			for (i = 0; i < 4; i++) {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+				if (pixels & 0x01)
+					quad = palette16[colour] << 16;
+				else
+					quad = black2;
+				if (pixels & 0x02)
+					quad |= palette16[colour];
+				else
+					quad |= black;
+#else
 				if (pixels & 0x01)
 					quad = palette16[colour];
 				else
@@ -824,6 +920,7 @@ void SDL_VIDEO_BlitBIT3_16(Uint32 *dest, int first_column, int last_column, int 
 					quad |= palette16[colour] << 16;
 				else
 					quad |= black2;
+#endif
 				*start32++ = quad;
 				pixels >>= 2;
 			}
