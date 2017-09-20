@@ -118,9 +118,17 @@ static ULONG Samp_n_max,		/* Sample max.  For accuracy, it is *256 */
  Samp_n_cnt[2];					/* Sample cnt. */
 
 #ifdef INTERPOLATE_SOUND
-static UWORD last_val = 0;		/* last output value */
+#ifdef CLIP_SOUND
+static SWORD last_val = 0;		/* last output value */
+#else
+static UWORD last_val = 0;
+#endif
 #ifdef STEREO_SOUND
-static UWORD last_val2 = 0;	/* last output value */
+#ifdef CLIP_SOUND
+static SWORD last_val2 = 0;	/* last output value */
+#else
+static UWORD last_val2 = 0;
+#endif
 #endif
 #endif
 
@@ -1041,9 +1049,15 @@ static void pokeysnd_process_8(void *sndbuffer, int sndn)
 #ifdef INTERPOLATE_SOUND
 			if (cur_val != last_val) {
 				if (*Samp_n_cnt < Samp_n_max) {		/* need interpolation */
+#ifdef CLIP_SOUND
+					iout = (cur_val * (SLONG)(*Samp_n_cnt) +
+							last_val * (SLONG)(Samp_n_max - *Samp_n_cnt))
+						/ (SLONG)Samp_n_max;
+#else
 					iout = (cur_val * (*Samp_n_cnt) +
 							last_val * (Samp_n_max - *Samp_n_cnt))
 						/ Samp_n_max;
+#endif
 				}
 				else
 					iout = cur_val;
@@ -1057,9 +1071,15 @@ static void pokeysnd_process_8(void *sndbuffer, int sndn)
 #endif
 			if (cur_val2 != last_val2) {
 				if (*Samp_n_cnt < Samp_n_max) {		/* need interpolation */
+#ifdef CLIP_SOUND
+					iout2 = (cur_val2 * (SLONG)(*Samp_n_cnt) +
+							last_val2 * (SLONG)(Samp_n_max - *Samp_n_cnt))
+						/ (SLONG)Samp_n_max;
+#else
 					iout2 = (cur_val2 * (*Samp_n_cnt) +
 							last_val2 * (Samp_n_max - *Samp_n_cnt))
 						/ Samp_n_max;
+#endif
 				}
 				else
 					iout2 = cur_val2;
