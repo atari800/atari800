@@ -861,6 +861,7 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             ;;
         falcon)
             AC_DEFINE(POKEYSND_SIGNED_SAMPLES,1,[Use 8-bit signed samples.])
+            WANT_SOUND_THIN_API=yes
             OBJS="$OBJS falcon/sound.o"
             ;;
         oss)

@@ -433,8 +433,10 @@ static void UpdateSyncBuffer(void)
 		   makes place in the buffer. */
 		do {
 			PLATFORM_SoundUnlock();
+#ifndef __MINT__	/* this does more harm than good on Atari */
 			/* Sleep for the duration of one full HW buffer. */
 			Util_sleep((double)Sound_out.buffer_frames / Sound_out.freq);
+#endif
 			PLATFORM_SoundLock();
 #ifndef SOUND_CALLBACK
 			WriteOut(); /* Write to audio buffer as much as possible. */
