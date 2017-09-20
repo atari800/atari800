@@ -2,7 +2,7 @@
  * main.c - Atari Falcon specific port code
  *
  * Copyright (c) 1997-1998 Petr Stehlik and Karel Rous
- * Copyright (c) 1998-2014 Atari800 development team (see DOC/CREDITS)
+ * Copyright (c) 1998-2017 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -23,31 +23,34 @@
  */
 
 #include "config.h"
-#include <mint/osbind.h>
+
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>		/* for free */
+#include <stdlib.h>
 #include <time.h>
-#include <mint/falcon.h>	/* for VsetRGB */
+
+#include <gemx.h>
 #include <mint/cookie.h>
-#include "falcon/xcb.h"		/* for NOVA screensaver */
+#include <mint/falcon.h>
+#include <mint/osbind.h>
+#include <mint/sysvars.h>
 
 #include "atari.h"
 #include "binload.h"
 #include "cpu.h"
 #include "colours.h"
-#include "ui.h"         /* for UI_is_active */
+#include "ui.h"
 #include "input.h"
 #include "akey.h"
 #include "screen.h"
-#include "antic.h"		/* for BITPL_SCR */
 #include "platform.h"
+#include "pokeysnd.h"
 #include "monitor.h"
 #include "sound.h"
 #include "log.h"
 #include "util.h"
 
-#include "gem.h"
+#include "falcon/xcb.h"		/* for NOVA screensaver */
 
 /* -------------------------------------------------------------------------- */
 
@@ -55,7 +58,7 @@
 
 #include "falcon/jclkcook.h"
 
-int Clocky_SS(int on)
+static int Clocky_SS(int on)
 {
 	long adr;
 	JCLKSTRUCT *jclk;
@@ -92,22 +95,25 @@ typedef enum {
 	UNKNOWN,
 	TT030,
 	F030,
-	Milan,
+	Milan
 } Video_HW;
-
 static Video_HW video_hw = UNKNOWN;
 static int bitplanes = TRUE;	/* Atari 256 colour mode uses 8 bit planes */
+static int vga;
+static int vga50;
+static int sv;
+
 static short gl_app_id;
 static short gl_vdi_handle;
-static XCB *NOVA_xcb = NULL;
-static int NOVA_double_size = FALSE;
+static XCB *NOVA_xcb;
+static int NOVA_double_size;
 static int HOST_WIDTH, HOST_HEIGHT, HOST_PLANES;
 #define EMUL_WIDTH	(NOVA_double_size ? 2*336 : 336)
 #define EMUL_HEIGHT	(NOVA_double_size ? 2*240 : 240)
 #undef QUAD
-#define CENTER_X	((HOST_WIDTH - EMUL_WIDTH) / 2)
-#define CENTER_Y	((HOST_HEIGHT - EMUL_HEIGHT) / 2)
-#define CENTER		(CENTER_X + CENTER_Y * HOST_WIDTH)
+#define CENTER_X	((vramw - EMUL_WIDTH) / 2)
+#define CENTER_Y	((vramh - EMUL_HEIGHT) / 2)
+#define CENTER		(CENTER_X + CENTER_Y * vramw)
 
 #ifdef SHOW_DISK_LED
 static int LED_timeout = 0;
@@ -115,19 +121,18 @@ static int LED_timeout = 0;
 
 /* -------------------------------------------------------------------------- */
 
-// static int consol;
 static int trig0;
 static int stick0;
-static int joyswap = FALSE;
+static int joyswap;
 
 /* parameters for c2p_uni */
 UWORD screenw, screenh, vramw, vramh;
 UBYTE *odkud, *kam;
-static int delta_screen = FALSE;
 UBYTE *oldscreen = NULL;	/* pointer to previous screen if double buffering is turned on */
 
 /* parameters for DisplayScreen */
-static int skip_N_frames = 0;
+static int skip_N_frames;
+static int delta_screen;
 
 extern void init_kb(void);
 extern void rem_kb(void);
@@ -138,18 +143,27 @@ _KEYTAB *key_tab;
 unsigned char keybuf[KEYBUF_SIZE];
 int kbhead = 0;
 
-UBYTE *Original_Log_base, *Original_Phys_base;
+static UBYTE *Original_Phys_base;
+static UWORD original_videl_settings[26];
+static UWORD mode336x240_vga[26]= {
+	0x0133, 0x0001, 0x3b00, 0x0150, 0x00f0, 0x0008, 0x0002, 0x0010, \
+	0x0000, 0x00a8, 0x0186, 0x0005, 0x00c6, 0x0095, 0x000d, 0x0292, 0x0083, \
+	0x0096, 0x0000, 0x0000, 0x0419, 0x03ff, 0x003f, 0x003f, 0x03ff, 0x0415
+};
+static UWORD mode336x240_vga50[26]= {
+	0x0133, 0x0001, 0x3b00, 0x0150, 0x00f0, 0x0008, 0x0002, 0x0010, \
+	0x0000, 0x00a8, 0x0186, 0x0005, 0x00c6, 0x008d, 0x0015, 0x0292, 0x0083, \
+	0x0097, 0x0000, 0x0000, 0x04eb, 0x0465, 0x00a5, 0x00a5, 0x0465, 0x04e7
+};
+static const UWORD mode336x240_rgb[26]= {
+	0x0133, 0x0001, 0x3b00, 0x0150, 0x00f0, 0x0008, 0x0002, 0x0010, \
+	0x0000, 0x00a8, 0x0185, 0x0000, 0x00c7, 0x00a0, 0x001f, 0x02b2, 0x0091, \
+	0x00ab, 0x0000, 0x0000, 0x0271, 0x0265, 0x002f, 0x0059, 0x0239, 0x026b
+};
 
-UWORD original_videl_settings[25];
-UWORD mode336x240_videl_settings[25]=
-{0x0133, 0x0001, 0x3b00, 0x0150, 0x00f0, 0x0008, 0x0002, 0x0010, \
- 0x00a8, 0x0186, 0x0005, 0x00c6, 0x0095, 0x000d, 0x0292, 0x0083, \
- 0x0096, 0x0000, 0x0000, 0x0419, 0x03ff, 0x003f, 0x003f, 0x03ff, 0x0415};
-
-static int force_videl = FALSE;	/* force Atari800 to switch VIDEL into new resolution by direct HW programming */
-static int reprogram_VIDEL = FALSE;
-static int new_videl_mode_valid = FALSE;
-UBYTE *new_videoram = NULL;
+static int reprogram_VIDEL;
+static int new_videl_mode_valid;
+static UBYTE *new_videoram_unaligned;
 
 extern void rplanes(void);
 extern void rplanes_delta(void);
@@ -157,41 +171,66 @@ extern void load_r(void);
 extern void save_r(void);
 extern ULONG *p_str_p;
 
-ULONG f030coltable[256];
-ULONG f030coltable_backup[256];
-ULONG *f030_coltable_ptr;
-long RGBcoltable[256], RGBcoltable_backup[256];
-short int coltable[256][3], coltable_backup[256][3];
+static ULONG f030coltable[256], f030coltable_backup[256];
+static short int coltable[256][3], coltable_backup[256][3];
 
-void get_colors_on_f030(void)
+/* -------------------------------------------------------------------------- */
+
+static ULONG old_frclock;
+#define SCREEN_BUFFERS	3
+static UBYTE* new_videobases[SCREEN_BUFFERS];
+#define new_videobase new_videobases[0]	/* work address (pointer to logical buffer) */
+
+static void SwapScreen()
 {
+	ULONG new_frclock;
 	int i;
-	ULONG *x = (ULONG *) 0xff9800;
+	UBYTE* tmp_videobase;
+	size_t offset;
 
-	for (i = 0; i < 256; i++)
-		f030_coltable_ptr[i] = x[i];
+	/* always wait at least one VBL before swapping the screen */
+	for (new_frclock = (ULONG)get_sysvar(_frclock);
+		 new_frclock == old_frclock;
+		 new_frclock = (ULONG)get_sysvar(_frclock));
+	old_frclock = new_frclock;
+
+	if (delta_screen || SCREEN_BUFFERS < 2) {
+		/* wait for VBL only */
+		return;
+	}
+
+	/* set new physical address */
+	offset = sv ? (Screen_WIDTH - 336) / 2 : 0;	/* in pixels */
+	VsetScreen(SCR_NOCHANGE, new_videobase + offset, SCR_NOCHANGE, SCR_NOCHANGE);
+
+	/* cycle screens */
+	tmp_videobase = new_videobases[0];
+	for (i = 0; i < SCREEN_BUFFERS-1; ++i) {
+		new_videobases[i] = new_videobases[i+1];
+	}
+	new_videobases[SCREEN_BUFFERS-1] = tmp_videobase;
+
+	if (sv && !UI_is_active) {
+		Screen_atari = (ULONG*)new_videobase;
+	}
 }
 
-void set_colors_on_f030(void)
+static void* NewLogbase()
 {
-	int i;
-	ULONG *x = (ULONG *) 0xff9800;
-
-	for (i = 0; i < 256; i++)
-		x[i] = f030_coltable_ptr[i];
+	if (reprogram_VIDEL)
+		return new_videobase;
+	else
+		return Logbase();
 }
 
-void set_colors(int new)
+/* -------------------------------------------------------------------------- */
+
+static void set_colors(int new)
 {
 	int i;
 
 	if (reprogram_VIDEL) {
-		if (new)
-			f030_coltable_ptr = f030coltable;
-		else
-			f030_coltable_ptr = f030coltable_backup;
-		Supexec(set_colors_on_f030);
-		/* VsetRGB(0, 256, new ? RGBcoltable : RGBcoltable_backup); */
+		VsetRGB(0, 256, new ? f030coltable : f030coltable_backup);
 	}
 	else {
 		for(i=0; i<256; i++)
@@ -199,14 +238,12 @@ void set_colors(int new)
 	}
 }
 
-void save_original_colors(void)
+static void save_original_colors(void)
 {
 	int i;
 
 	if (reprogram_VIDEL) {
-		f030_coltable_ptr = f030coltable_backup;
-		Supexec(get_colors_on_f030);
-		/* VgetRGB(0, 256, RGBcoltable_backup); */
+		VgetRGB(0, 256, f030coltable_backup);
 	}
 	else {
 		for(i=0; i<256; i++)
@@ -214,18 +251,25 @@ void save_original_colors(void)
 	}
 }
 
-void set_new_colors(void) { set_colors(1); }
+static void set_new_colors(void) { set_colors(1); }
 
-void restore_original_colors(void) { set_colors(0); }
+static void restore_original_colors(void) { set_colors(0); }
 
 /* -------------------------------------------------------------------------- */
 
-void SetupEmulatedEnvironment(void)
+static void SetupEmulatedEnvironment(void)
 {
 	if (reprogram_VIDEL) {
+		size_t offset;
+
+		/* save original VIDEL settings */
+		p_str_p = (ULONG *) original_videl_settings;
+		Supexec(save_r);
+
 		/* set new video resolution by direct VIDEL programming */
-		(void)VsetScreen(new_videoram, new_videoram, -1, -1);
-		p_str_p = (ULONG *)mode336x240_videl_settings;
+		offset = sv ? (Screen_WIDTH - 336) / 2 : 0;	/* in pixels */
+		(void)VsetScreen(SCR_NOCHANGE, new_videobases[delta_screen ? 0 : SCREEN_BUFFERS-1] + offset, SCR_NOCHANGE, SCR_NOCHANGE);
+		p_str_p = (ULONG *)(vga ? (vga50 ? mode336x240_vga50 : mode336x240_vga) : mode336x240_rgb);
 		Supexec(load_r);
 		new_videl_mode_valid = 1;
 	}
@@ -235,24 +279,16 @@ void SetupEmulatedEnvironment(void)
 	Supexec(init_kb);	/* our keyboard routine */
 
 	Bconout(4, 0x14);	/* joystick init */
-
-#ifdef BITPL_SCR
-	if (delta_screen) {
-		if (Screen_atari_b != NULL) {
-			memset(Screen_atari_b, 0, (Screen_HEIGHT * Screen_WIDTH));
-		}
-	}
-#endif
 }
 
-void ShutdownEmulatedEnvironment(void)
+static void ShutdownEmulatedEnvironment(void)
 {
 	if (new_videl_mode_valid) {
 		/* restore original VIDEL mode */
 		p_str_p = (ULONG *) original_videl_settings;
 		Supexec(load_r);
 		new_videl_mode_valid = 0;
-		(void)VsetScreen(Original_Log_base, Original_Phys_base, -1, -1);
+		(void)VsetScreen(SCR_NOCHANGE, Original_Phys_base, SCR_NOCHANGE, SCR_NOCHANGE);
 	}
 
 	restore_original_colors();
@@ -262,19 +298,22 @@ void ShutdownEmulatedEnvironment(void)
 	Bconout(4, 8);		/* joystick disable */
 }
 
+/* -------------------------------------------------------------------------- */
+
 int PLATFORM_Initialise(int *argc, char *argv[])
 {
 	int i;
 	int j;
 
-	short work_in[11], work_out[57];
+	short work_in[11], work_out[272];
 	short maxx, maxy, maxw, maxh, wcell, hcell, wbox, hbox;
 	long video_hardware;
+	int force_videl = FALSE;	/* force Atari800 to switch VIDEL into new resolution by direct HW programming */
 
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
-		
+
 		if (strcmp(argv[i], "-interlace") == 0) {
 			if (i_a)
 				skip_N_frames = Util_sscandec(argv[++i]);
@@ -288,12 +327,16 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			NOVA_double_size = TRUE;
 		else if (strcmp(argv[i], "-delta") == 0)
 			delta_screen = TRUE;
+		else if (strcmp(argv[i], "-vga50") == 0)
+			vga50 = TRUE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				Log_print("\t-interlace x  Generate Falcon screen only every X frame\n");
 				Log_print("\t-joyswap      Exchange joysticks\n");
-				Log_print("\t-videl        direct VIDEL programming (Falcon/VGA only)\n");
-				Log_print("\t-delta        delta screen output (differences only)\n");
+				Log_print("\t-videl        Direct VIDEL programming (Falcon only); enables double buffering\n");
+				Log_print("\t-double       Double width/height (ignored for planar modes and -videl)\n");
+				Log_print("\t-delta        Delta screen output (ignored for -videl with SuperVidel; disables double buffering)\n");
+				Log_print("\t-vga50        Use VGA/50 Hz for -videl\n");
 			}
 
 			argv[j++] = argv[i];
@@ -309,14 +352,26 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 	/* recalculate color tables */
 	for (i = 0; i < 256; i++) {
-		int r = (Colours_table[i] >> 18) & 0x3f;
-		int g = (Colours_table[i] >> 10) & 0x3f;
-		int b = (Colours_table[i] >> 2) & 0x3f;
-		f030coltable[i] = (r << 26) | (g << 18) | (b << 2);
-		RGBcoltable[i] = (r << 16) | (g << 8) | b;
-		coltable[i][0] = r * 1000 / 64;
-		coltable[i][1] = g * 1000 / 64;
-		coltable[i][2] = b * 1000 / 64;
+		UBYTE r = Colours_GetR(i);
+		UBYTE g = Colours_GetG(i);
+		UBYTE b = Colours_GetB(i);
+
+		/* Native:  RRRRRRrrGGGGGGgg--------BBBBBBbb
+		f030coltable[i] = (r << 24) | (g << 16) | b;*/
+		/* VsetRGB: --------RRRRRRRRGGGGGGGGBBBBBBBB */
+		f030coltable[i] = (r << 16) | (g << 8) | b;
+		if (sv) {
+			coltable[i][0] = r * 1000 / 255;
+			coltable[i][1] = g * 1000 / 255;
+			coltable[i][2] = b * 1000 / 255;
+		} else {
+			/* not sure what's going on here, the VDI sets wrong colours if
+			 * code above is used
+			 */
+			coltable[i][0] = (r/4) * 1000 / 63;
+			coltable[i][1] = (g/4) * 1000 / 63;
+			coltable[i][2] = (b/4) * 1000 / 63;
+		}
 	}
 
 	/* check for VIDEL hardware */
@@ -338,11 +393,11 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			bitplanes = FALSE;
 	}
 
-	/* check for NOVA graphics card */
-	if (Getcookie(C_NOVA, (long int*)&NOVA_xcb) == C_FOUND)
-		bitplanes = FALSE;
-	else if (Getcookie(C_fVDI, NULL) == C_FOUND)
-		bitplanes = FALSE;
+	vga = VgetMonitor() == MON_VGA;
+
+	/* check for the SuperVidel */
+	if (Getcookie(C_SupV, NULL) == C_FOUND && vga)
+		sv = TRUE;
 
 	/* GEM init */
 	gl_app_id = appl_init();
@@ -352,6 +407,19 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	wind_get(0, WF_WORKXYWH, &maxx, &maxy, &maxw, &maxh);
 
 	gl_vdi_handle = graf_handle(&wcell, &hcell, &wbox, &hbox);
+
+	if (Getcookie(C_EdDI, NULL) == C_FOUND) {
+		vq_scrninfo(gl_vdi_handle, work_out);
+		bitplanes = (work_out[0] != 2);
+	} else {
+		/* guess some common setups */
+		if (Getcookie(C_NOVA, (long int*)&NOVA_xcb) == C_FOUND)
+			bitplanes = FALSE;
+		else if (Getcookie(C_fVDI, NULL) == C_FOUND)
+			bitplanes = FALSE;
+		else if (sv && (VsetMode(VM_INQUIRE) & BPS8C) == BPS8C)
+			bitplanes = FALSE;
+	}
 
 	work_in[0] = Getrez() + 2;
 	for(i = 1;i < 10;work_in[i++] = 1);
@@ -366,34 +434,61 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	HOST_PLANES = work_out[4];
 
 	if (force_videl && video_hw == F030) {	/* we may switch VIDEL directly */
-		bitplanes = TRUE;
+		int buffers = (delta_screen && !sv) ? 1 : SCREEN_BUFFERS;
+		vramw = screenw = sv ? Screen_WIDTH : 336;
+		vramh = screenh = Screen_HEIGHT;
 
-		/* save original VIDEL settings */
-		p_str_p = (ULONG *) original_videl_settings;
-		Supexec(save_r);
-
-		if ((new_videoram = (UBYTE *)Mxalloc((336UL*Screen_HEIGHT), 0)) == NULL) {
+		if ((new_videoram_unaligned = (UBYTE*)Mxalloc(buffers*vramw*vramh+15, MX_STRAM)) == NULL) {
 			form_alert(1, "[1][Error allocating video memory ][ OK ]");
 			goto exit_gem;
 		}
 
-		/* create new graphics mode 336x240 in 256 colors */
-		reprogram_VIDEL = 1;
-		vramw = screenw = 336;
-		vramh = screenh = Screen_HEIGHT;
+		new_videobases[0] = (UBYTE*)(((ULONG)new_videoram_unaligned + 15) & ~15);
+		for (i = 1; i < buffers; ++i) {
+			new_videobases[i] = new_videobases[i-1] + vramw*vramh;
+		}
+		memset(new_videobases[0], 0, buffers*vramw*vramh);	/* all buffers */
+
+		if (sv) {
+			delta_screen = FALSE;
+
+			/* use SuperVidel's memory instead of ST RAM */
+			for (i = 0; i < buffers; ++i) {
+				new_videobases[i] = (UBYTE*)((ULONG)new_videobases[i] | 0xA0000000);
+			}
+			/* use direct rendering */
+			Screen_atari = (ULONG*)new_videobase;
+			if (vga50) {
+				/* use the new chunky mode */
+				mode336x240_vga50[7] |= 0x1000;
+				/* use virtual offset of 384 - 336 = 48 bytes = 24 words */
+				mode336x240_vga50[8] = (Screen_WIDTH - 336) / 2;
+			} else {
+				/* use the new chunky mode */
+				mode336x240_vga[7] |= 0x1000;
+				/* use virtual offset of 384 - 336 = 48 bytes = 24 words */
+				mode336x240_vga[8] = (Screen_WIDTH - 336) / 2;
+			}
+			bitplanes = FALSE;
+		} else {
+			bitplanes = TRUE;
+		}
+
+		/* create new graphics mode {336|384}x240 in 256 colors */
+		reprogram_VIDEL = TRUE;
 	}
 	else if (HOST_PLANES == 8 && HOST_WIDTH >= 320 && HOST_HEIGHT >= Screen_HEIGHT) {
 		/* current resolution is OK */
 		vramw = HOST_WIDTH;
 		vramh = HOST_HEIGHT;
 
-/*
-		if (vramw > 336)
-			screenw = 336;
+		if (vramw >= 352)
+			screenw = 352;
 		else
-*/
 			screenw = 320;
 		screenh = Screen_HEIGHT;
+
+		sv = FALSE;
 	}
 	else {
 		/* we may also try to switch into proper resolution using XBios call and then
@@ -419,12 +514,9 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	}
 #endif
 
-	Original_Log_base = Logbase();
 	Original_Phys_base = Physbase();
 
 	key_tab = Keytbl(-1, -1, -1);
-
-	// consol = 7;
 
 	CPU_Initialise();
 
@@ -463,8 +555,8 @@ int PLATFORM_Exit(int run_monitor)
 		}
 	}
 
-	if (new_videoram)
-		free(new_videoram);
+	if (new_videoram_unaligned)
+		Mfree(new_videoram_unaligned);
 
 	/* unlock GEM */
 	wind_update(END_UPDATE);
@@ -485,25 +577,36 @@ int PLATFORM_Exit(int run_monitor)
 
 /* -------------------------------------------------------------------------- */
 
-inline long DoubleSizeIt(short data)
-{
-	long result;
-	__asm__ __volatile__("\n\t\
-		movew	%1,%0\n\t\
-		swap	%0\n\t\
-		movew	%1,%0\n\t\
-		rorw	#8,%0\n\t\
-		rorl	#8,%0"
-		: "=d" (result)
-		: "d" (data)
+#define DoubleSizeIt(in, out1, out2) \
+	__asm__ (				\
+		"\n\tmove.l	%2,%0"	\
+		"\n\tmove.l	%0,%1"	\
+		"\n\tclr.w	%0"		\
+		"\n\teor.l	%0,%1"	\
+							\
+		"\n\tmove.l	%0,d2"	\
+		"\n\tmove.l	%1,d3"	\
+							\
+		"\n\tswap	%1"		\
+		"\n\tswap	d2"		\
+							\
+		"\n\tor.l	d2,%0"	\
+		"\n\tor.l	d3,%1"	\
+							\
+		"\n\tror.w	#8,%0"	\
+		"\n\tror.w	#8,%1"	\
+							\
+		"\n\tror.l	#8,%0"	\
+		"\n\tror.l	#8,%1"	\
+		: "=d" (out1), "=d" (out2) \
+		: "g" (in) 			\
+		: "cc", "d2", "d3"	\
 	);
-	return result;
-}
 
 void PLATFORM_DisplayScreen(void)
 {
-	UBYTE *screen = (UBYTE *) Screen_atari;
 	static int i = 0;
+	static ULONG Screen_ui[Screen_HEIGHT*Screen_WIDTH/sizeof(ULONG)];
 
 /*
 	if (! draw_display)
@@ -521,107 +624,141 @@ void PLATFORM_DisplayScreen(void)
 	}
 	i = 0;
 
-	odkud = screen;
-	kam = Logbase();
+	if (!sv) {
+		/* not direct rendering */
+		UBYTE *screen = (UBYTE *) Screen_atari;
+		odkud = screen;
+		kam = NewLogbase();
 #ifdef BITPL_SCR
-	oldscreen = Screen_atari_b;
+		oldscreen = (UBYTE *) Screen_atari_b;
 
-	if (delta_screen) {
-		/* switch between screens to enable delta output */
-		if (Screen_atari==Screen_atari1) {
-			Screen_atari = Screen_atari2;
-			Screen_atari_b = Screen_atari1;
+		if (delta_screen) {
+			if (!UI_is_active) {
+				/* switch between screens to enable delta output */
+				if (Screen_atari == Screen_atari1) {
+					Screen_atari = Screen_atari2;
+					Screen_atari_b = Screen_atari1;
+				} else {
+					Screen_atari = Screen_atari1;
+					Screen_atari_b = Screen_atari2;
+				}
+			} else {
+				/* when UI_is_active == true maintain Screen_atari's copy so
+				 * when UI_is_active == false the difference will be noted
+				 */
+				memcpy (Screen_atari_b, Screen_atari, Screen_HEIGHT*Screen_WIDTH);
+			}
+		}
+#endif
+
+		if (bitplanes) {
+#ifdef BITPL_SCR
+			if (delta_screen && !UI_is_active)
+				rplanes_delta();
+			else
+#endif
+				rplanes();
 		}
 		else {
-			Screen_atari = Screen_atari1;
-			Screen_atari_b = Screen_atari2;
-		}
-	}
-#endif
+			UBYTE *ptr_from = screen + 24;
+			UBYTE *ptr_mirror = oldscreen + 24;
+			UBYTE *ptr_dest = kam + CENTER;
+			int j;
 
-	if (bitplanes) {
+			for (j = 0; j < Screen_HEIGHT; j++) {
+				short cycles;
+				ULONG *long_ptr_from = (ULONG*)ptr_from;
+				ULONG *long_ptr_mirror = (ULONG*)ptr_mirror;
+				ULONG *long_ptr_dest = (ULONG*)ptr_dest;
+
+				if (NOVA_double_size) {
+					cycles = 83;
 #ifdef BITPL_SCR
-		if (delta_screen && !UI_is_active)
-			rplanes_delta();
-		else
+					if (delta_screen && !UI_is_active) {
+						do {
+							ULONG data = *long_ptr_from++;
+							if (data == *long_ptr_mirror++)
+								long_ptr_dest+=2;
+							else {
+								ULONG data1, data2;
+								DoubleSizeIt(data, data1, data2);
+								*(long_ptr_dest + vramw / 4) = data1;
+								*long_ptr_dest++ = data1;
+								*(long_ptr_dest + vramw / 4) = data2;
+								*long_ptr_dest++ = data2;
+							}
+						} while (cycles--);
+					}
+					else
 #endif
-			rplanes();
-	}
-	else {
-		UBYTE *ptr_from = screen + 24;
-		UBYTE *ptr_mirror = oldscreen + 24;
-		UBYTE *ptr_dest = kam + CENTER;
-		int j;
+					{
+						do {
+							ULONG data1, data2;
+							DoubleSizeIt(*long_ptr_from++, data1, data2);
 
-		for (j = 0; j < Screen_HEIGHT; j++) {
-			short cycles;
-			long *long_ptr_from = (long*)ptr_from;
-			long *long_ptr_mirror = (long*)ptr_mirror;
-			long *long_ptr_dest = (long*)ptr_dest;
-
-			if (NOVA_double_size) {
-				cycles = 83;
-
-				if (delta_screen && !UI_is_active) {
-					do {
-						long data = *long_ptr_from++;
-						if (data == *long_ptr_mirror++)
-							long_ptr_dest+=2;
-						else {
-							long data2 = DoubleSizeIt((short) data);
-							long data1 = DoubleSizeIt((short) (data >> 16));
-							*(long_ptr_dest + HOST_WIDTH / 4) = data1;
+							*(long_ptr_dest + vramw / 4) = data1;
 							*long_ptr_dest++ = data1;
-							*(long_ptr_dest + HOST_WIDTH / 4) = data2;
+							*(long_ptr_dest + vramw / 4) = data2;
 							*long_ptr_dest++ = data2;
-						}
-					} while (cycles--);
+						} while (cycles--);
+					}
+					ptr_dest += vramw;
 				}
 				else {
-					do {
-						long data = *long_ptr_from++;
-						long data2 = DoubleSizeIt((short) data);
-						long data1 = DoubleSizeIt((short) (data >> 16));
-						*(long_ptr_dest + HOST_WIDTH / 4) = data1;
-						*long_ptr_dest++ = data1;
-						*(long_ptr_dest + HOST_WIDTH / 4) = data2;
-						*long_ptr_dest++ = data2;
-					} while (cycles--);
-				}
-				ptr_dest += HOST_WIDTH;
-			}
-			else {
-				cycles = 20;
-				if (delta_screen && !UI_is_active) {
-					do {
-						long data;
-#define	CHECK_AND_WRITE									\
-						data = *long_ptr_from++;		\
-						if (data == *long_ptr_mirror++)	\
-							long_ptr_dest++;			\
-						else							\
-							*long_ptr_dest++ = data;
+					cycles = 20;
+#ifdef BITPL_SCR
+					if (delta_screen && !UI_is_active) {
+						do {
+							ULONG data;
+#define	CHECK_AND_WRITE										\
+							data = *long_ptr_from++;		\
+							if (data == *long_ptr_mirror++)	\
+								long_ptr_dest++;			\
+							else							\
+								*long_ptr_dest++ = data;
 
-						CHECK_AND_WRITE
-						CHECK_AND_WRITE
-						CHECK_AND_WRITE
-						CHECK_AND_WRITE
-					} while (cycles--);
+								CHECK_AND_WRITE
+								CHECK_AND_WRITE
+								CHECK_AND_WRITE
+								CHECK_AND_WRITE
+						} while (cycles--);
+					}
+					else
+#endif
+					{
+						do {
+							*long_ptr_dest++ = *long_ptr_from++;
+							*long_ptr_dest++ = *long_ptr_from++;
+							*long_ptr_dest++ = *long_ptr_from++;
+							*long_ptr_dest++ = *long_ptr_from++;
+						} while (cycles--);
+					}
 				}
-				else {
-					do {
-						*long_ptr_dest++ = *long_ptr_from++;
-						*long_ptr_dest++ = *long_ptr_from++;
-						*long_ptr_dest++ = *long_ptr_from++;
-						*long_ptr_dest++ = *long_ptr_from++;
-					} while (cycles--);
-				}
-			}
 
-			ptr_from += Screen_WIDTH;
-			ptr_mirror += Screen_WIDTH;
-			ptr_dest += HOST_WIDTH;
+				ptr_from += Screen_WIDTH;
+				ptr_mirror += Screen_WIDTH;
+				ptr_dest += vramw;
+			}
 		}
+	} else {
+		/* direct rendering */
+		if (UI_is_active) {
+			if (Screen_ui != Screen_atari) {
+				memcpy(Screen_ui, Screen_atari, sizeof(Screen_ui));
+				Screen_atari = Screen_ui;
+			} else {
+				memcpy(new_videobase, Screen_ui, sizeof(Screen_ui));
+			}
+		} else {
+			if (Screen_ui == Screen_atari) {
+				Screen_atari = (ULONG*)new_videobase;
+				memcpy(Screen_atari, Screen_ui, sizeof(Screen_ui));
+			}
+		}
+	}
+
+	if (reprogram_VIDEL) {
+		SwapScreen();
 	}
 }
 

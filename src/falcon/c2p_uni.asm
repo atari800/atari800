@@ -53,11 +53,11 @@ pop	macro
 	endm
 
 pushall	macro
-	movem.l		d0-a6,-(sp)
+	movem.l		d2-d7/a2-a5,-(sp)
 	endm
 
 popall	macro
-	movem.l		(sp)+,d0-a6
+	movem.l		(sp)+,d2-d7/a2-a5
 	endm
 
 *-------------------------------------------------------*
@@ -76,7 +76,7 @@ _rplanes:
 	move.l		_odkud,a0
 	move.l		_kam,a1
 
-; centering of view at screen 
+; centering of view at screen
 	move.w		#384,d0		; width of Atari800 emulated screen
 	sub.w		_screenw,d0	; width of displayed screen
 	move.w		d0,src_line_offset

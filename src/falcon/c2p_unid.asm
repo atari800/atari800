@@ -85,9 +85,8 @@ _rplanes_delta:
 	move.w		_vramw,d0
 	sub.w		_screenw,d0
 	movea.w		d0,a4
-	lsr.w		#1,d0
-	neg.w		d0
-	lea		(a1,d0),a1	; negative pre-offset (will be OK at .ylp)
+	lsr.w		#1,d0		; centering
+	lea		(a1,d0),a1	; offset
 
 ; centering of screen in videoram in vertical axis
 	move.w		_vramh,d0

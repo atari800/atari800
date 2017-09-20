@@ -22,7 +22,7 @@
 
 	xdef		_load_r,_save_r,_p_str_p
 *-------------------------------------------------------*
-	section	text
+	section		text
 *-------------------------------------------------------*
 none			=	-1
 
@@ -62,6 +62,7 @@ lace			=	1<<lace_bit
 
 RShift			=	$FFFF8260
 RSpShift		=	$FFFF8266
+ROffset			=	$FFFF820E
 RWrap			=	$FFFF8210
 RSync			=	$FFFF820A
 RCO			=	$FFFF82C0
@@ -96,6 +97,7 @@ patch_depth		rs.w	1			; colour depth (bits per pixel)
 patch_RShift		rs.b	1			; register file
 patch_RSync		rs.b	1
 patch_RSpShift		rs.w	1
+patch_ROffset		rs.w	1
 patch_RWrap		rs.w	1
 patch_RCO		rs.w	1
 patch_RMode		rs.w	1
@@ -154,9 +156,10 @@ _load_r:
 	bra.s		.d2p
 .n2p:	move.w		patch_RSpShift(a0),RSpShift.w
 *-------------------------------------------------------*
-*	Load line wrap					*
+*	Load line offset+wrap				*
 *-------------------------------------------------------*
-.d2p:	move.w		patch_RWrap(a0),RWrap.w
+.d2p:	move.w		patch_ROffset(a0),ROffset.w
+	move.w		patch_RWrap(a0),RWrap.w
 *-------------------------------------------------------*
 *	Load sync					*
 *-------------------------------------------------------*
@@ -205,13 +208,14 @@ _load_r:
 *	Save Videl registers				*
 *-------------------------------------------------------*
 _save_r:
+	movem.l		d2/a2,-(sp)
 *-------------------------------------------------------*
 *	Get Modecode					*
 *-------------------------------------------------------*
-	move		#-1,-(sp)
-	move		#87,-(sp)
+	move.w		#-1,-(sp)
+	move.w		#87,-(sp)
 	trap		#14
-	addq		#4,sp
+	addq.l		#4,sp
 *-------------------------------------------------------*
 *	Register file pointer				*
 *-------------------------------------------------------*
@@ -233,8 +237,9 @@ _save_r:
 	move.b		RShift.w,patch_RShift(a0)
 	move.w		RSpShift.w,patch_RSpShift(a0)
 *-------------------------------------------------------*
-*	Save line wrap					*
+*	Save line offset+wrap				*
 *-------------------------------------------------------*
+	move.w		ROffset.w,patch_ROffset(a0)
 	move.w		RWrap.w,patch_RWrap(a0)
 *-------------------------------------------------------*
 *	Save sync					*
@@ -272,10 +277,12 @@ _save_r:
 *	Restore exceptions				*
 *-------------------------------------------------------*
 	move.w		(sp)+,sr
+	movem.l		(sp)+,d2/a2
 	rts
 
 *-------------------------------------------------------*
 videl_re_sync:
+	move.l		d2,-(sp)
 *-------------------------------------------------------*
 *	Decode new modecode				*
 *-------------------------------------------------------*
@@ -289,7 +296,7 @@ videl_re_sync:
 *-------------------------------------------------------*
 *	Reset Videl for re-sync				*
 *-------------------------------------------------------*
-.sync:	move.w		RSpShift.w,d1
+.sync:	move.w		patch_RSpShift(a0),d1
 	clr.w		RSpShift.w
 *-------------------------------------------------------*
 *	Wait for at least 1 VBlank period		*
@@ -308,15 +315,17 @@ videl_re_sync:
 *-------------------------------------------------------*
 .stop:	move.w		d1,RSpShift.w
 *-------------------------------------------------------*
-.nsync:	rts
+.nsync:	move.l		(sp)+,d2
+	rts
 
 
 *-------------------------------------------------------*
-		section 	bss
+	section 	bss
 *-------------------------------------------------------*
 
-_p_str_p:	ds.l	1
+_p_str_p:
+	ds.l	1
 
 *-------------------------------------------------------*
-                section			text
+	section		text
 *-------------------------------------------------------*
