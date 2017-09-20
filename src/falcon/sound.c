@@ -42,6 +42,7 @@ static char *dsp_buffer1, *dsp_endbuf1;
 static char *dsp_buffer2, *dsp_endbuf2;
 
 static int sound_enabled = TRUE;
+static int stereo_enabled = FALSE;
 
 #define RATE12KHZ		12517
 #define RATE25KHZ		25033
@@ -91,13 +92,14 @@ static void __attribute__((interrupt)) timer_A( void )
 void MFP_IRQ_on(void)
 {
 	SetBuffer((long)dsp_buffer1, sndbufsize);		/* start playing first buffer */
+	short mono = stereo_enabled ? 0x00 : 0x80;
 
 	if (dsprate == RATE25KHZ)
-		DMActrlptr[0x10] = 0x80 | 2;	/* mono 25 kHz */
+		DMActrlptr[0x10] = mono | 2;	/* mono/stereo 25 kHz */
 	else if (dsprate == RATE50KHZ)
-		DMActrlptr[0x10] = 0x80 | 3;	/* mono 50 kHz */
+		DMActrlptr[0x10] = mono | 3;	/* mono/stereo 50 kHz */
 	else
-		DMActrlptr[0x10] = 0x80 | 1;	/* mono 12 kHz */
+		DMActrlptr[0x10] = mono | 1;	/* mono/stereo 12 kHz */
 
 	DMActrlptr[0] = 0x400 | 3;	/* play until stopped, interrupt at end of frame */
 
@@ -140,11 +142,23 @@ int Sound_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
+#ifdef STEREO_SOUND
+		else if (strcmp(argv[i], "-stereo") == 0) {
+			stereo_enabled = TRUE;
+		}
+		else if (strcmp(argv[i], "-nostereo") == 0) {
+			stereo_enabled = FALSE;
+		}
+#endif
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				Log_print("\t-sound           Enable sound\n"
 				       "\t-nosound         Disable sound\n"
+#ifdef STEREO_SOUND
+					   "\t-stereo          Enable stereo sound\n"
+					   "\t-nostereo        Disable stereo sound\n"
+#endif
 				       "\t-dsprate <rate>  Set sample rate in Hz"
 				      );
 			}
@@ -178,6 +192,9 @@ int Sound_Initialise(int *argc, char *argv[])
 	}
 
 	if (sound_enabled) {
+		if (stereo_enabled)
+			sndbufsize *= 2;
+
 		dsp_buffer1 = (char *) Mxalloc(2 * sndbufsize, MX_STRAM);
 		if (!dsp_buffer1) {
 			printf("can't allocate sound buffer\n");
@@ -188,11 +205,8 @@ int Sound_Initialise(int *argc, char *argv[])
 		memset(dsp_buffer1, 0, sndbufsize);
 		memset(dsp_buffer2, 127, sndbufsize);
 
-#ifdef STEREO_SOUND
-#  error "Unsupported Stereo Sound"
-#else
-		POKEYSND_Init(POKEYSND_FREQ_17_EXACT, dsprate, 1, 0);
-#endif
+		POKEYSND_Init(POKEYSND_FREQ_17_EXACT, dsprate, stereo_enabled ? 2 : 1, 0);
+
 		Supexec(MFP_IRQ_on);
 	}
 	return TRUE;

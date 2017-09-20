@@ -24,10 +24,10 @@ The following script might be used for rebuilding the fastest possible
 version:
 ============================== make.sh ====================================
 #!/bin/sh
-CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall" ./configure --disable-newcycleexact --without-sound --enable-veryslow --disable-monitorbreak --target=falcon
+CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall" LDFLAGS="-m68020-60" ./configure --host=m68k-atari-mint --disable-newcycleexact --without-sound --enable-veryslow --disable-monitorbreak --target=falcon --enable-falconcpuasm
 make clean
 time make
-fixstk 256k atari800
+m68k-atari-mint-stack --fix=256k atari800
 ===========================================================================
 
 Keyboard emulation works just like in other Atari800 flavors:
