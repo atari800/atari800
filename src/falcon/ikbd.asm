@@ -46,10 +46,10 @@ initialise_ikbd:
 *-------------------------------------------------------*
 	bsr	empty_buffer
 	lea	key_buffer,a0
-	moveq	#(128/4)-1,d7
+	moveq	#(128/4)-1,d0
 .clear_keybd:
 	clr.l	(a0)+
-	dbf	d7,.clear_keybd
+	dbf	d0,.clear_keybd
 	move.l	ikbd.w,old_ikbd
 	move.l	#ikbd_handler,ikbd.w
 	bsr	flush_ikbd
@@ -220,12 +220,12 @@ empty_buffer:
 *-------------------------------------------------------*
 .bk	move.w		#11,-(sp)
 	trap		#1
-	addq		#2,sp
+	addq.l		#2,sp
 	tst.w		d0
 	beq.s		.ot
 	move.w		#7,-(sp)
 	trap		#1
-	addq		#2,sp
+	addq.l		#2,sp
 	bra.s		.bk
 .ot	rts
 

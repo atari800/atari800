@@ -778,9 +778,6 @@ void Atari_Set_LED(int how)
 
 /* -------------------------------------------------------------------------- */
 
-// extern int KEYPRESSED;
-extern int UI_alt_function;
-
 int PLATFORM_Keyboard(void)
 {
 	UBYTE shift_key, control_key;
@@ -1312,10 +1309,10 @@ int PLATFORM_Keyboard(void)
 			break;
 		}
 	}
-	else
+	else {
+		INPUT_key_shift = shift_key;
 		keycode = AKEY_NONE;
-
-	// KEYPRESSED = (keycode != AKEY_NONE);
+	}
 
 	return keycode;
 }
@@ -1358,8 +1355,11 @@ int PLATFORM_TRIG(int num)
 
 void PLATFORM_Sleep(double s)
 {
-	double curtime = Util_time();
-	while ((curtime + s) > Util_time());
+	static const double one_tick = 1.0 / CLOCKS_PER_SEC;
+	if (s >= one_tick) {
+		const ULONG final_tick = (ULONG)(clock() + s*CLOCKS_PER_SEC + 0.5);
+		while (clock() < final_tick);
+	}
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1373,6 +1373,16 @@ double PLATFORM_Time(void)
 
 int main(int argc, char **argv)
 {
+#ifdef SOUND
+	/* disabled by default */
+	POKEYSND_enable_new_pokey = FALSE;
+	/* set default desired sound */
+	Sound_desired.freq = 24585;
+	Sound_desired.sample_size = 1;
+	Sound_desired.channels = 2;
+	Sound_desired.buffer_ms = 40;
+#endif
+
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
