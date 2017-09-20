@@ -29,6 +29,7 @@
 #include <stdlib.h>		/* for free */
 #include <time.h>
 #include <mint/falcon.h>	/* for VsetRGB */
+#include <mint/cookie.h>
 #include "falcon/xcb.h"		/* for NOVA screensaver */
 
 #include "atari.h"
@@ -50,25 +51,6 @@
 
 /* -------------------------------------------------------------------------- */
 
-int get_cookie(long cookie, long *value)
-{
-	long *cookiejar = (long *) Setexc(0x168, -1L);
-
-	if (cookiejar) {
-		while (*cookiejar) {
-			if (*cookiejar == cookie) {
-				if (value)
-					*value = *++cookiejar;
-				return (1);
-			}
-			cookiejar += 2;
-		}
-	}
-	return (0);
-}
-
-/* -------------------------------------------------------------------------- */
-
 #ifdef SCREENSAVER
 
 #include "falcon/jclkcook.h"
@@ -81,7 +63,7 @@ int Clocky_SS(int on)
 
 /*	CHECK_CLOCKY_STRUCT; */
 
-	if (!get_cookie(CLOCKY_IDENT_NUM, &adr))
+	if (Getcookie(CLOCKY_IDENT_NUM, &adr) == C_NOTFOUND)
 		return 0;
 
 	jclk = (JCLKSTRUCT *) adr;
@@ -115,8 +97,9 @@ typedef enum {
 
 static Video_HW video_hw = UNKNOWN;
 static int bitplanes = TRUE;	/* Atari 256 colour mode uses 8 bit planes */
-static int gl_vdi_handle;
-XCB	*NOVA_xcb = NULL;
+static short gl_app_id;
+static short gl_vdi_handle;
+static XCB *NOVA_xcb = NULL;
 static int NOVA_double_size = FALSE;
 static int HOST_WIDTH, HOST_HEIGHT, HOST_PLANES;
 #define EMUL_WIDTH	(NOVA_double_size ? 2*336 : 336)
@@ -178,7 +161,7 @@ ULONG f030coltable[256];
 ULONG f030coltable_backup[256];
 ULONG *f030_coltable_ptr;
 long RGBcoltable[256], RGBcoltable_backup[256];
-int coltable[256][3], coltable_backup[256][3];
+short int coltable[256][3], coltable_backup[256][3];
 
 void get_colors_on_f030(void)
 {
@@ -284,9 +267,9 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	int i;
 	int j;
 
-	int work_in[11], work_out[57];
-	int maxx, maxy, maxw, maxh, wcell, hcell, wbox, hbox;
-	int video_hardware;
+	short work_in[11], work_out[57];
+	short maxx, maxy, maxw, maxh, wcell, hcell, wbox, hbox;
+	long video_hardware;
 
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
@@ -337,7 +320,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	}
 
 	/* check for VIDEL hardware */
-	if (!get_cookie('_VDO', &video_hardware))
+	if (Getcookie(C__VDO, &video_hardware) == C_NOTFOUND)
 		video_hardware = 0;
 	switch(video_hardware >> 16) {
 		case 2:
@@ -356,13 +339,15 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	}
 
 	/* check for NOVA graphics card */
-	if (get_cookie('NOVA', &NOVA_xcb))
+	if (Getcookie(C_NOVA, (long int*)&NOVA_xcb) == C_FOUND)
 		bitplanes = FALSE;
-	else if (get_cookie('fVDI', NULL))
+	else if (Getcookie(C_fVDI, NULL) == C_FOUND)
 		bitplanes = FALSE;
 
 	/* GEM init */
-	appl_init();
+	gl_app_id = appl_init();
+	if (gl_app_id == -1)
+		goto exit_appl_init;
 	graf_mouse(M_OFF, NULL);
 	wind_get(0, WF_WORKXYWH, &maxx, &maxy, &maxw, &maxh);
 
@@ -389,7 +374,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 		if ((new_videoram = (UBYTE *)Mxalloc((336UL*Screen_HEIGHT), 0)) == NULL) {
 			form_alert(1, "[1][Error allocating video memory ][ OK ]");
-			exit(-1);
+			goto exit_gem;
 		}
 
 		/* create new graphics mode 336x240 in 256 colors */
@@ -417,7 +402,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			form_alert(1, "[1][Atari800 emulator needs 320x240|or higher res. in 256 colors.|Or use the -videl switch.][ OK ]");
 		else
 			form_alert(1, "[1][Atari800 emulator needs 320x240|or higher res. in 256 colors.][ OK ]");
-		exit(-1);
+		goto exit_gem;
 	}
 
 	/* lock GEM */
@@ -451,6 +436,13 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	SetupEmulatedEnvironment();
 
 	return TRUE;
+
+exit_gem:
+	graf_mouse(M_ON, NULL);
+	v_clsvwk(gl_vdi_handle);
+	appl_exit();
+exit_appl_init:
+	exit(-1);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -477,6 +469,7 @@ int PLATFORM_Exit(int run_monitor)
 	/* unlock GEM */
 	wind_update(END_UPDATE);
 	form_dial(FMD_FINISH, 0, 0, 0, 0, 0, 0, HOST_WIDTH, HOST_HEIGHT);	/* redraw screen */
+	v_clsvwk(gl_vdi_handle);
 	graf_mouse(M_ON, NULL);
 	/* GEM exit */
 	appl_exit();
@@ -562,9 +555,9 @@ void PLATFORM_DisplayScreen(void)
 
 		for (j = 0; j < Screen_HEIGHT; j++) {
 			short cycles;
-			long *long_ptr_from = ptr_from;
-			long *long_ptr_mirror = ptr_mirror;
-			long *long_ptr_dest = ptr_dest;
+			long *long_ptr_from = (long*)ptr_from;
+			long *long_ptr_mirror = (long*)ptr_mirror;
+			long *long_ptr_dest = (long*)ptr_dest;
 
 			if (NOVA_double_size) {
 				cycles = 83;

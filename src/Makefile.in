@@ -87,9 +87,7 @@ ide.o: ide.c ide.h ide_internal.h
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS) $<
 
 %.o: %.asm
-	#cd $(<D); xgen -L1 $(@F) $(<F)
-	#cd $(<D); gst2gcc gcc $(@F)
-	cd $(<D); vasm -quiet -devpac -opt-allbra -Faout -o $(@F) $(<F)
+	vasm -quiet -devpac -opt-allbra -Faout -o $@ $<
 
 ifeq ($(CONFIGURE_HOST),javanvm)
 $(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class

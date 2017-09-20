@@ -27,13 +27,16 @@
 #ifdef SOUND
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <mint/cookie.h>
+#include <mint/falcon.h>
 #include <mint/osbind.h>
+
 #include "atari.h"
 #include "log.h"
 #include "pokeysnd.h"
+#include "sound.h"
 #include "util.h"
-
-extern int get_cookie(long cookie, long *value);
 
 static char *dsp_buffer1, *dsp_endbuf1;
 static char *dsp_buffer2, *dsp_endbuf2;
@@ -49,24 +52,11 @@ static int sound_enabled = TRUE;
 static int dsprate = RATE12KHZ;
 static int sndbufsize = SNDBUFSIZE;
 
-/* Atari DMA sound hardware */
-extern void timer_A(void);
+#define IVECTOR		*(volatile UBYTE *)0xFFFA17
 
-#define	TIMERA		*(long *)0x134
+volatile short *DMActrlptr = (volatile short *) 0xff8900;
 
-#define	TACTRL		*(UBYTE *)0xFFFA19
-#define	TADATA		*(UBYTE *)0xFFFA1F
-
-#define	IEA			*(UBYTE *)0xFFFA07
-#define	ISRA		*(UBYTE *)0xFFFA0F
-#define	IMA			*(UBYTE *)0xFFFA13
-#define IVECTOR		*(UBYTE *)0xFFFA17
-
-long old_timer_A;
-UBYTE old_tactrl, old_tadata, old_ivector, old_iea, old_isra, old_ima;
-short *DMActrlptr = (short *) 0xff8900;
-
-void Setbuffer(long bufbeg, long bufsize)
+void SetBuffer(long bufbeg, long bufsize)
 {
 	long bufend = bufbeg + bufsize;
 	DMActrlptr[1] = (bufbeg >> 16) & 0xff;
@@ -82,17 +72,17 @@ void Sound_Update(void)
 	/* dunno what to do here as the sound precomputing is interrupt driven */
 }
 
-void timer_A_v_C(void)
+static void __attribute__((interrupt)) timer_A( void )
 {
 	static int first = FALSE;	/* start computing second buffer */
 
 	if (first) {
-		Setbuffer((long)dsp_buffer1, sndbufsize);		/* set next DMA buffer */
+		SetBuffer((long)dsp_buffer1, sndbufsize);		/* set next DMA buffer */
 		POKEYSND_Process(dsp_buffer1, sndbufsize);		/* quickly compute it */
 		first = FALSE;
 	}
 	else {
-		Setbuffer((long)dsp_buffer2, sndbufsize);
+		SetBuffer((long)dsp_buffer2, sndbufsize);
 		POKEYSND_Process(dsp_buffer2, sndbufsize);
 		first = TRUE;
 	}
@@ -100,7 +90,8 @@ void timer_A_v_C(void)
 
 void MFP_IRQ_on(void)
 {
-	Setbuffer((long)dsp_buffer1, sndbufsize);		/* start playing first buffer */
+	SetBuffer((long)dsp_buffer1, sndbufsize);		/* start playing first buffer */
+
 	if (dsprate == RATE25KHZ)
 		DMActrlptr[0x10] = 0x80 | 2;	/* mono 25 kHz */
 	else if (dsprate == RATE50KHZ)
@@ -110,15 +101,15 @@ void MFP_IRQ_on(void)
 
 	DMActrlptr[0] = 0x400 | 3;	/* play until stopped, interrupt at end of frame */
 
-	Mfpint(13, timer_A);
-	Xbtimer(0, 8, 1, timer_A);	/* event count mode, interrupt after 1st frame */
+	Mfpint(MFP_TIMERA, timer_A);
+	Xbtimer(XB_TIMERA, 1<<3, 1, timer_A);	/* event count mode, interrupt after 1st frame */
 	IVECTOR &= ~(1 << 3);		/* turn on AEO */
-	Jenabint(13);
+	Jenabint(MFP_TIMERA);
 }
 
 void MFP_IRQ_off(void)
 {
-	Jdisint(13);
+	Jdisint(MFP_TIMERA);
 	DMActrlptr[0] = 0;			/* stop playing */
 }
 
@@ -178,8 +169,8 @@ int Sound_Initialise(int *argc, char *argv[])
 	if (sound_enabled) {
 		long val;
 
-		if (get_cookie('_SND', &val)) {
-			if (!(val & 2))
+		if (Getcookie(C__SND, &val) == C_FOUND) {
+			if (!(val & SND_8BIT))
 				sound_enabled = FALSE;	/* Sound DMA hardware is missing */
 		}
 		else
@@ -187,7 +178,7 @@ int Sound_Initialise(int *argc, char *argv[])
 	}
 
 	if (sound_enabled) {
-		dsp_buffer1 = (char *) Mxalloc(2 * sndbufsize, 0);
+		dsp_buffer1 = (char *) Mxalloc(2 * sndbufsize, MX_STRAM);
 		if (!dsp_buffer1) {
 			printf("can't allocate sound buffer\n");
 			exit(1);
