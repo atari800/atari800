@@ -73,7 +73,7 @@ _rplanes_delta:
 	move.l		_kam,a1
 	move.l		_oldscreen,a2
 
-; centering of view at screen 
+; centering of view at screen
 	move.w		#384,d0		; width of Atari800 emulated screen
 	sub.w		_screenw,d0	; width of displayed screen
 	movea.w		d0,a3
@@ -106,9 +106,9 @@ _rplanes_delta:
 	move.w		_screenh,d6
 	subq.w		#1,d6
 	move.w		a5,d5
-	nop			; for cache alignment	
+	nop			; for cache alignment
 *-------------------------------------------------------*
-.xlp:	
+.xlp:
 	move.l		(a0)+,d4
 	move.l		(a0)+,d3
 	move.l		(a0)+,d2
