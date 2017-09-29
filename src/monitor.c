@@ -2230,6 +2230,70 @@ static void show_help(void)
 		"HELP or ?                      - This text\n");
 }
 
+#ifdef MONITOR_READLINE
+#ifdef MONITOR_HINTS
+static char *label_generator(const char *text, int state)
+{
+	static int user_index, builtin_index, len;
+	static const symtable_rec *builtins;
+	char *name;
+
+	if(!state)
+	{
+		user_index = 0;
+		builtin_index = 0;
+		builtins = (Atari800_machine_type == Atari800_MACHINE_5200 ? symtable_builtin_5200 : symtable_builtin);
+		len = strlen(text);
+	}
+
+	while(user_index < symtable_user_size)
+	{
+		name = symtable_user[user_index].name;
+		user_index++;
+		if(strncmp(name, text, len) == 0)
+			return strdup(name);
+	}
+
+	while(symtable_builtin_enable && (builtins[builtin_index].name != NULL))
+	{
+		name = builtins[builtin_index].name;
+		builtin_index++;
+		if(strncmp(name, text, len) == 0)
+			return strdup(name);
+	}
+
+	return (char *)NULL;
+}
+
+static char **label_completion(const char *text, int start, int end)
+{
+	char **matches = (char **)NULL;
+
+	/* don't attempt label completion at start of line, since we only
+		ever take labels as arguments, not commands */
+	if(start > 0) {
+		matches = rl_completion_matches(text, label_generator);
+	}
+
+	return matches;
+}
+#endif
+
+static void init_readline(void)
+{
+	static int need_init = TRUE;
+
+	if(need_init)
+	{
+		need_init = FALSE;
+		rl_readline_name = "Atari800";
+#ifdef MONITOR_HINTS
+		rl_attempted_completion_function = label_completion;
+#endif
+	}
+}
+#endif
+
 #ifdef MONITOR_HINTS
 void MONITOR_PreloadLabelFile(char *filename)
 {
@@ -2244,6 +2308,10 @@ int MONITOR_Run(void)
 #ifdef __PLUS
 	if (!Misc_AllocMonitorConsole(&mon_output, &mon_input))
 		return TRUE;
+#endif
+
+#ifdef MONITOR_READLINE
+	init_readline();
 #endif
 
 	addr = CPU_regPC;
