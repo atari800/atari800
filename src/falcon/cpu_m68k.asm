@@ -20,14 +20,11 @@
 ;  along with Atari800; if not, write to the Free Software
 ;  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ;
-; Last changes    :   30th March 2003, gerhard.janka
-
 ; P65C02 ; we emulate this version of processor (6502 has a bug in jump code,
          ; you can emulate this bug by commenting out this line :)
 ; PROFILE  ; fills the 'instruction_count' array for instruction profiling
 ; MONITOR_BREAK   ; jump to monitor at break
 ; CRASH_MENU      ; enable crash menu output
-; CYCLE_EXACT     ; !NO_CYCLE_EXACT :)
 ; NEW_CYCLE_EXACT ; !NO_NEW_CYCLE_EXACT :)
 
   OPT    P=68040,L1,O+,W-
@@ -237,11 +234,15 @@ GetNone:
   rts
 GetGTIA:
   move.l d0,-(a7)
+  ifd NEW_CYCLE_EXACT
+  move.l CD,_ANTIC_xpos
+  endc
   jsr    _GTIA_GetByte
   addq.l #4,a7
   rts
 GetPOKEY:
   move.l d0,-(a7)
+  move.l CD,_ANTIC_xpos
   jsr    _POKEY_GetByte
   addq.l #4,a7
   rts
@@ -252,6 +253,7 @@ GetPIA:
   rts
 GetANTIC:
   move.l d0,-(a7)
+  move.l CD,_ANTIC_xpos
   jsr    _ANTIC_GetByte
   addq.l #4,a7
   rts
@@ -294,9 +296,7 @@ PutGTIA:
   move.l d1,-(a7)
   move.b d7,d1
   move.l d1,-(a7)
-  ifd CYCLE_EXACT
   move.l CD,_ANTIC_xpos
-  endc
   jsr    _GTIA_PutByte
   addq.l #8,a7
   rts
@@ -305,9 +305,6 @@ PutPOKEY:
   move.l d1,-(a7)
   move.b d7,d1
   move.l d1,-(a7)
-  ifd CYCLE_EXACT
-  move.l CD,_ANTIC_xpos
-  endc
   jsr    _POKEY_PutByte
   addq.l #8,a7
   rts
@@ -429,7 +426,7 @@ EXE_PUTBYTE macro
   endm
 
 RMW_GETBYTE macro
-  ifd CYCLE_EXACT
+  ifd NEW_CYCLE_EXACT
   move.w d7,d0
   and.w  #$ef1f,d0
   cmp.w  #$c01a,d0
