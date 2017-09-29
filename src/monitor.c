@@ -2230,6 +2230,13 @@ static void show_help(void)
 		"HELP or ?                      - This text\n");
 }
 
+#ifdef MONITOR_HINTS
+void MONITOR_PreloadLabelFile(char *filename)
+{
+	load_user_labels(filename);
+}
+#endif
+
 int MONITOR_Run(void)
 {
 	UWORD addr;

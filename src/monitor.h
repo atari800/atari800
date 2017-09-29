@@ -8,6 +8,10 @@
 
 int MONITOR_Run(void);
 
+#ifdef MONITOR_HINTS
+void MONITOR_PreloadLabelFile(char *filename);
+#endif
+
 #ifdef MONITOR_TRACE
 extern FILE *MONITOR_trace_file;
 #endif
