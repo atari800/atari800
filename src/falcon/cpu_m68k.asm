@@ -71,14 +71,12 @@
   xdef _CPU_remember_xpos
   xdef _CPU_remember_JMP
   xdef _CPU_remember_jmp_curpos
-  xref _ypos_break_addr
-  xref ANTIC_ypos
+  xref _ANTIC_break_ypos
+  xref _ANTIC_ypos
   xref _MONITOR_break_addr
   xref _MONITOR_break_step
   xref _MONITOR_break_ret
-  xref _break_cim
-  xref _break_here
-  xref _brkhere
+  xref _MONITOR_break_brk
   xref _MONITOR_ret_nesting
   endc
   ifd CRASH_MENU
@@ -1027,15 +1025,11 @@ opcode_b2:
   move.l d7,_UI_crash_code
   jsr    _UI_Run
   elseif
-  ifd MONITOR_BREAK
-  moveq  #1,d0
-  move.l d0,_break_cim
-  elseif
+  move.b #1,_CPU_cim_encountered
   Call_Atari800_Exit_true
   endc
   UPDATE_LOCAL_REGS
   ConvertRegP_STATUS d0
-  endc
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_07: ;/* ASO ab [unofficial - ASL then ORA with Acc] */
@@ -1652,9 +1646,8 @@ opcode_fa:
 
 opcode_00: ;/* BRK */
   ifd MONITOR_BREAK
-  tst.l  _brkhere
+  tst.b  _MONITOR_break_brk
   beq.s  .oc_00_norm
-  move.b #1,_break_here
   bsr    go_monitor
   bra.w  NEXTCHANGE_WITHOUT
 .oc_00_norm:
@@ -2333,11 +2326,10 @@ opcode_60: ;/* RTS */
   ifd MONITOR_BREAK
   tst.b _MONITOR_break_ret
   beq.s .mb_end
-  tst.l _MONITOR_ret_nesting
-  bmi.s .mb_end
+  subq.l #1,_MONITOR_ret_nesting
+  bgt.s .mb_end
   move.b #1,_MONITOR_break_step
 .mb_end:
-  subq.l #1,_MONITOR_ret_nesting
   endc
   movea.l _CPU_rts_handler,a0
   tst.l a0
@@ -2367,23 +2359,14 @@ _RTI:
   addq.b #1,d0
   move.b d0,_CPU_regS
   lea    (memory_pointer,d7.l),PC6502
-  ifd MONITOR_BREAK
-  tst.b _MONITOR_break_ret
-  beq.s .mb_end
-  tst.l _MONITOR_ret_nesting
-  bmi.s .mb_end
-  move.b #1,_MONITOR_break_step
-.mb_end:
-  subq.l #1,_MONITOR_ret_nesting
-  endc
   tst.b  _CPU_IRQ           ; CPUCHECKIRQ
-  beq.w  NEXTCHANGE_WITHOUT
-  cmp.l   _ANTIC_xpos_limit,CD
-  bge     NEXTCHANGE_WITHOUT
+  beq.w  .no_irq
+  cmp.l  _ANTIC_xpos_limit,CD
+  bge    .no_irq
   move.b _CPU_regP,d7
 ; andi.b #I_FLAG,d7
   btst   #I_FLAGB,d7
-  bne.w  NEXTCHANGE_WITHOUT
+  bne.w  .no_irq
   moveq  #0,d0
   move.w regS,d0        ; push PC and P to stack ( PHW + PHB ) start
   subq.b #2,d0
@@ -2406,6 +2389,15 @@ _RTI:
   addq.l #7,CD
   ifd MONITOR_BREAK
   addq.l #1,_MONITOR_ret_nesting
+  endc
+.no_irq:
+  ifd MONITOR_BREAK
+  tst.b _MONITOR_break_ret
+  beq.s .mb_end
+  subq.l #1,_MONITOR_ret_nesting
+  bgt.s .mb_end
+  move.b #1,_MONITOR_break_step
+.mb_end:
   endc
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -2704,11 +2696,10 @@ opcode_d2: ;/* ESCRTS #ab (JAM) - on Atari is here instruction CIM
   ifd MONITOR_BREAK
   tst.b _MONITOR_break_ret
   beq.s .mb_end
-  tst.l _MONITOR_ret_nesting
-  bmi.s .mb_end
+  subq.l #1,_MONITOR_ret_nesting
+  bgt.s .mb_end
   move.b #1,_MONITOR_break_step
 .mb_end:
-  subq.l #1,_MONITOR_ret_nesting
   endc
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -3330,8 +3321,7 @@ NEXTCHANGE_WITHOUT:
   endc
   move.l  CD,a1
 .drawing:
-  moveq   #0,d0
-  move.b  ANTIC_ypos,d0
+  move.l  _ANTIC_ypos,d0
   lsl.w   #8,d0
   add.l   d0,a1
   move.l  a1,(a0)
@@ -3346,8 +3336,8 @@ NEXTCHANGE_WITHOUT:
 
   cmp.w  _MONITOR_break_addr,d7 ; break address reached ?
   beq.s  .go_monitor
-  move.l ANTIC_ypos,d0    ; !!! or .w ?
-  cmp.l  _ypos_break_addr,d0 ; break address reached ?
+  move.l _ANTIC_ypos,d0
+  cmp.l  _ANTIC_break_ypos,d0 ; break address reached ?
   beq.s  .go_monitor
   tst.b  _MONITOR_break_step ; step mode active ?
   beq.s  .get_first

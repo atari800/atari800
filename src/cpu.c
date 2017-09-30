@@ -94,6 +94,14 @@ extern UBYTE CPU_IRQ;
 #error cpu_m68k.asm cannot work with paged memory/attributes
 #endif
 
+#if defined(MONITOR_BREAKPOINTS)
+#error cpu_m68k.asm does not support user-defined breakpoints
+#endif
+
+#if defined(MONITOR_TRACE)
+#error cpu_m68k.asm does not support disassembling the code while it is executed
+#endif
+
 void CPU_Initialise(void)
 {
 	CPU_INIT();
