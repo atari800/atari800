@@ -67,6 +67,7 @@
   endc
   ifd MONITOR_BREAK
   xdef _CPU_remember_PC
+  xdef _CPU_remember_op
   xdef _CPU_remember_PC_curpos
   xdef _CPU_remember_xpos
   xdef _CPU_remember_JMP
@@ -103,6 +104,9 @@ rem_jmp_steps equ 16  ; has to be equal to REMEMBER_JMP_STEPS
 remember_PC
 _CPU_remember_PC
   ds.w rem_pc_steps   ;REMEMBER_PC_STEPS
+remember_op:
+_CPU_remember_op
+  ds.b rem_pc_steps*3 ;[REMEMBER_PC_STEPS][3]
 remember_PC_curpos
 _CPU_remember_PC_curpos
   ds.l 1
@@ -3309,6 +3313,14 @@ NEXTCHANGE_WITHOUT:
   sub.l  memory_pointer,d7
   move.w d7,(a0,d0.l*2) ; remember program counter
 
+  lea	 _CPU_remember_op,a0
+  mulu.w #3,d0
+  add.l  d0,a0
+  move.b (0.b,memory_pointer,d7.l),(a0)+
+  move.b (1.b,memory_pointer,d7.l),(a0)+
+  move.b (2.b,memory_pointer,d7.l),(a0)+
+
+  move.l _CPU_remember_PC_curpos,d0
   lea    _CPU_remember_xpos,a0
   lea    (a0,d0.l*4),a0
   ifd NEW_CYCLE_EXACT
