@@ -76,6 +76,16 @@
 #endif /* BASIC */
 #endif /* ASAP */
 
+/* For Atari Basic loader */
+void (*CPU_rts_handler)(void) = NULL;
+
+/* 6502 instruction profiling */
+#ifdef MONITOR_PROFILE
+int CPU_instruction_count[256];
+#endif
+
+UBYTE CPU_cim_encountered = FALSE;
+
 #ifdef FALCON_CPUASM
 
 extern UBYTE CPU_IRQ;
@@ -220,16 +230,6 @@ void CPU_PutStatus(void)
 	Z = (CPU_regP & 0x02) ^ 0x02;
 	C = (CPU_regP & 0x01);
 }
-
-/* For Atari Basic loader */
-void (*CPU_rts_handler)(void) = NULL;
-
-/* 6502 instruction profiling */
-#ifdef MONITOR_PROFILE
-int CPU_instruction_count[256];
-#endif
-
-UBYTE CPU_cim_encountered = FALSE;
 
 /* Execution history */
 #ifdef MONITOR_BREAK

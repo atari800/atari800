@@ -47,9 +47,10 @@
   xref _exit
   xref _ANTIC_wsync_halt ;CPU is stopped
   ifd NEW_CYCLE_EXACT
-  xref _delayed_wsync
-  xref _antic2cpu_ptr
-  xref _cur_screen_pos
+  xref _ANTIC_delayed_wsync
+  xref _ANTIC_antic2cpu_ptr
+  xref _ANTIC_cpu2antic_ptr
+  xref _ANTIC_cur_screen_pos
   endc
   xref _ANTIC_xpos
   xref _ANTIC_xpos_limit
@@ -62,31 +63,32 @@
   xref _MEMORY_mem
   xref _MEMORY_attrib
   ifd PROFILE
-  xref _instruction_count
+  xref _CPU_instruction_count
   endc
   ifd MONITOR_BREAK
-  xdef _remember_PC
-  xdef _remember_PC_curpos
+  xdef _CPU_remember_PC
+  xdef _CPU_remember_PC_curpos
   ifd NEW_CYCLE_EXACT
-  xdef _remember_xpos
+  xdef _CPU_remember_xpos
   xdef _remember_xpos_curpos
   endc
-  xdef _remember_JMP
-  xdef _remember_jmp_curpos
+  xdef _CPU_remember_JMP
+  xdef _CPU_remember_jmp_curpos
   xref _ypos_break_addr
-  xref _ypos
+  xref ANTIC_ypos
   xref _break_addr
-  xref _break_step
-  xref _break_ret
+  xref _MONITOR_break_step
+  xref _MONITOR_break_ret
   xref _break_cim
   xref _break_here
   xref _brkhere
-  xref _ret_nesting
+  xref _MONITOR_ret_nesting
   endc
   ifd CRASH_MENU
-  xref _crash_code
-  xref _crash_address
-  xref _crash_afterCIM
+  xref _UI_crash_code
+  xref _UI_crash_address
+  xref _UI_crash_afterCIM
+  xref _UI_Run
   endc
   xdef _CPU_IRQ
   xdef _CPU_NMI
@@ -95,9 +97,8 @@
   xdef _CPU_GET
   xdef _CPU_PUT
   xdef _CPU_INIT
-  xdef _cycles ;temporarily needed outside :)
-  xdef _CPU_cim_encountered
-  xdef _CPU_rts_handler
+  xref _CPU_cim_encountered
+  xref _CPU_rts_handler
 
   ifd MONITOR_BREAK
 
@@ -105,23 +106,23 @@ rem_pc_steps  equ 64  ; has to be equal to REMEMBER_PC_STEPS
 rem_jmp_steps equ 16  ; has to be equal to REMEMBER_JMP_STEPS
 
 remember_PC
-_remember_PC
+_CPU_remember_PC
   ds.w rem_pc_steps   ;REMEMBER_PC_STEPS
 remember_PC_curpos
-_remember_PC_curpos
+_CPU_remember_PC_curpos
   ds.l 1
 remember_xpos
-_remember_xpos
+_CPU_remember_xpos
   ds.l rem_pc_steps   ;REMEMBER_PC_STEPS
 remember_xpos_curpos
 _remember_xpos_curpos
   ds.l 1
 
 remember_JMP
-_remember_JMP
+_CPU_remember_JMP
   ds.w rem_jmp_steps  ;REMEMBER_JMP_STEPS
 remember_jmp_curpos
-_remember_jmp_curpos
+_CPU_remember_jmp_curpos
   ds.l 1
 
   endc
@@ -156,12 +157,6 @@ _CPU_regS  ds.b 1   ; stack
 IRQ
 _CPU_IRQ  ds.b 1
       ds.b 1    ; dummy
-
-_CPU_cim_encountered
-      ds.b 1
-
-_CPU_rts_handler
-      ds.l 1
 
   even
 
@@ -449,9 +444,9 @@ RMW_GETBYTE macro
 _CPU_INIT:
   ifd MONITOR_BREAK
   moveq  #0,d0
-  move.l d0,_remember_PC_curpos
+  move.l d0,_CPU_remember_PC_curpos
   move.l d0,_remember_xpos_curpos
-  move.l d0,_remember_jmp_curpos
+  move.l d0,_CPU_remember_jmp_curpos
   endc
   moveq  #1,d0     ; set regS to page 1
   move.b d0,regS
@@ -682,7 +677,7 @@ _CPU_NMI:
   move.w d1,_CPU_regPC
   addq.l #7,_ANTIC_xpos
   ifd MONITOR_BREAK
-  addq.l #1,_ret_nesting
+  addq.l #1,_MONITOR_ret_nesting
   endc
   rts
 
@@ -713,19 +708,19 @@ _CPU_GO: ;cycles (d0)
   tst.b   _ANTIC_wsync_halt
   beq.s   NO_WS_HALT
   moveq.l #WSYNC_C-1,d1  ; TEST : no -1 if bpl.s
-  cmp.l   #-999,_cur_screen_pos
+  cmp.l   #-999,_ANTIC_cur_screen_pos
   beq.s   .now_cmp
-  move.l  _antic2cpu_ptr,a0
+  move.l  _ANTIC_antic2cpu_ptr,a0
   move.l  (a0,d1*4),d1
 .now_cmp:
-  add.l   _delayed_wsync,d1
+  add.l   _ANTIC_delayed_wsync,d1
   cmp.l   d0,d1
 ; bpl.s   TERM_GO        ; TEST
   bge     TERM_GO        ; TEST
   addq.l  #1,d1          ; TEST : not necessary if bpl.s
   move.l  d1,_ANTIC_xpos
   clr.b   _ANTIC_wsync_halt
-  clr.l   _delayed_wsync
+  clr.l   _ANTIC_delayed_wsync
   elseif
   tst.b   _ANTIC_wsync_halt
   beq.s   NO_WS_HALT
@@ -770,7 +765,7 @@ NO_WS_HALT:
   addq.l  #7,CD
   clr.b   _CPU_IRQ ;clear interrupt.....
   ifd MONITOR_BREAK
-  addq.l  #1,_ret_nesting
+  addq.l  #1,_MONITOR_ret_nesting
   endc
   bra     NEXTCHANGE_WITHOUT
 
@@ -1051,12 +1046,11 @@ opcode_b2:
   ConvertSTATUS_RegP_destroy d0
   UPDATE_GLOBAL_REGS
   ifd CRASH_MENU
-  move.w PC6502,_crash_address
+  move.w PC6502,_UI_crash_address
   addq.w #1,PC6502
-  move.w PC6502,crash_afterCIM
-  move.l d7,_crash_code
-  move.l _atari_screen,-(sp)
-  jsr    _ui
+  move.w PC6502,_UI_crash_afterCIM
+  move.l d7,_UI_crash_code
+  jsr    _UI_Run
   elseif
   ifd MONITOR_BREAK
   moveq  #1,d0
@@ -1716,7 +1710,7 @@ opcode_00: ;/* BRK */
   move.l d7,PC6502
   add.l  memory_pointer,PC6502
   ifd MONITOR_BREAK
-  addq.l #1,_ret_nesting
+  addq.l #1,_MONITOR_ret_nesting
   endc
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -1765,7 +1759,7 @@ opcode_28: ;/* PLP */
   add.l  memory_pointer,PC6502
   addq.l #7,CD
   ifd MONITOR_BREAK
-  addq.l #1,_ret_nesting
+  addq.l #1,_MONITOR_ret_nesting
   endc
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -2232,7 +2226,7 @@ opcode_58: ;/* CLI */
   clr.b  _CPU_IRQ
   addq.l #7,CD
   ifd MONITOR_BREAK
-  addq.l #1,_ret_nesting
+  addq.l #1,_MONITOR_ret_nesting
   endc
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -2268,15 +2262,15 @@ opcode_4c: ;/* JMP abcd */
   move.l PC6502,d7 ;current pointer
   sub.l  memory_pointer,d7
   subq.l #1,d7
-  lea    _remember_JMP,a0
-  move.l _remember_jmp_curpos,d0
+  lea    _CPU_remember_JMP,a0
+  move.l _CPU_remember_jmp_curpos,d0
   move.w d7,(a0,d0*2)
   addq.l #1,d0
   cmp.l  #rem_jmp_steps,d0
   bmi.s  .point_rem_jmp
   moveq  #0,d0
 .point_rem_jmp:
-  move.l d0,_remember_jmp_curpos
+  move.l d0,_CPU_remember_jmp_curpos
   endc
   addq.l #cy_JmpAbs,CD
   JMP_C
@@ -2286,15 +2280,15 @@ opcode_6c: ;/* JMP (abcd) */
   move.l PC6502,d7 ;current pointer
   sub.l  memory_pointer,d7
   subq.l #1,d7
-  lea    _remember_JMP,a0
-  move.l _remember_jmp_curpos,d0
+  lea    _CPU_remember_JMP,a0
+  move.l _CPU_remember_jmp_curpos,d0
   move.w d7,(a0,d0*2)
   addq.l #1,d0
   cmp.l  #rem_jmp_steps,d0
   bmi.s  .point_rem_jmp
   moveq  #0,d0
 .point_rem_jmp:
-  move.l d0,_remember_jmp_curpos
+  move.l d0,_CPU_remember_jmp_curpos
   endc
   move.w (PC6502)+,d7
   LoHi d7
@@ -2329,8 +2323,8 @@ opcode_20: ;/* JSR abcd */
   sub.l  memory_pointer,d7
   ifd MONITOR_BREAK
   subq.l #1,d7
-  lea    _remember_JMP,a0
-  move.l _remember_jmp_curpos,d0
+  lea    _CPU_remember_JMP,a0
+  move.l _CPU_remember_jmp_curpos,d0
   move.w d7,(a0,d0*2)
   addq.l #1,d7     ; restore to PC
   addq.l #1,d0
@@ -2338,8 +2332,8 @@ opcode_20: ;/* JSR abcd */
   bmi.s  .point_rem_jmp
   moveq  #0,d0
 .point_rem_jmp:
-  move.l d0,_remember_jmp_curpos
-  addq.l #1,_ret_nesting
+  move.l d0,_CPU_remember_jmp_curpos
+  addq.l #1,_MONITOR_ret_nesting
   endc
   addq.l #1,d7 ; return address
   moveq  #0,d0                    ; PHW
@@ -2358,14 +2352,21 @@ opcode_60: ;/* RTS */
   PLW d7,d0
   lea    1(memory_pointer,d7.l),PC6502
   ifd MONITOR_BREAK
-  tst.b _break_ret
+  tst.b _MONITOR_break_ret
   beq.s .mb_end
-  tst.l _ret_nesting
+  tst.l _MONITOR_ret_nesting
   bmi.s .mb_end
-  move.b #1,_break_step
+  move.b #1,_MONITOR_break_step
 .mb_end:
-  subq.l #1,_ret_nesting
+  subq.l #1,_MONITOR_ret_nesting
   endc
+  movea.l _CPU_rts_handler,a0
+  tst.l a0
+  beq.b .no_rts
+  UPDATE_GLOBAL_REGS
+  jsr	(a0)
+  UPDATE_LOCAL_REGS
+.no_rts:
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_40: ;/* RTI */
@@ -2388,13 +2389,13 @@ _RTI:
   move.b d0,_CPU_regS
   lea    (memory_pointer,d7.l),PC6502
   ifd MONITOR_BREAK
-  tst.b _break_ret
+  tst.b _MONITOR_break_ret
   beq.s .mb_end
-  tst.l _ret_nesting
+  tst.l _MONITOR_ret_nesting
   bmi.s .mb_end
-  move.b #1,_break_step
+  move.b #1,_MONITOR_break_step
 .mb_end:
-  subq.l #1,_ret_nesting
+  subq.l #1,_MONITOR_ret_nesting
   endc
   tst.b  _CPU_IRQ           ; CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
@@ -2423,7 +2424,7 @@ _RTI:
   add.l  memory_pointer,PC6502
   addq.l #7,CD
   ifd MONITOR_BREAK
-  addq.l #1,_ret_nesting
+  addq.l #1,_MONITOR_ret_nesting
   endc
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -2720,13 +2721,13 @@ opcode_d2: ;/* ESCRTS #ab (JAM) - on Atari is here instruction CIM
   lea (memory_pointer,d7.l),PC6502
   addq.l #1,PC6502
   ifd MONITOR_BREAK
-  tst.b _break_ret
+  tst.b _MONITOR_break_ret
   beq.s .mb_end
-  tst.l _ret_nesting
+  tst.l _MONITOR_ret_nesting
   bmi.s .mb_end
-  move.b #1,_break_step
+  move.b #1,_MONITOR_break_step
 .mb_end:
-  subq.l #1,_ret_nesting
+  subq.l #1,_MONITOR_ret_nesting
   endc
   bra.w  NEXTCHANGE_WITHOUT
 
@@ -3330,8 +3331,8 @@ NEXTCHANGE_WITHOUT:
 ****************************************
   ifd MONITOR_BREAK  ;following block of code allows you to enter
                      ;a break address
-  move.l _remember_PC_curpos,d0
-  lea    _remember_PC,a0
+  move.l _CPU_remember_PC_curpos,d0
+  lea    _CPU_remember_PC,a0
   move.l PC6502,d7
   sub.l  memory_pointer,d7
   move.w d7,(a0,d0*2) ; remember program counter
@@ -3340,22 +3341,22 @@ NEXTCHANGE_WITHOUT:
   bmi.s  .point_rem_pc
   moveq  #0,d0
 .point_rem_pc:
-  move.l d0,_remember_PC_curpos
+  move.l d0,_CPU_remember_PC_curpos
   ifd NEW_CYCLE_EXACT
   moveq   #0,d0
-  move.b  _ypos,d0
+  move.b  ANTIC_ypos,d0
   asl.w   #8,d0
   move.l  d0,a1
   move.l  CD,d0
-  cmp.l   #-999,_cur_screen_pos
+  cmp.l   #-999,_ANTIC_cur_screen_pos
   beq.s   .calc_all
-  move.l  _cpu2antic_ptr,a0
+  move.l  _ANTIC_cpu2antic_ptr,a0
   move.l  (a0,d0*4),d0
   bra.s   .calc_all
 .calc_all:
   add.l   a1,d0
   move.l  d0,a1
-  move.l  _remember_xpos,a0
+  move.l  _CPU_remember_xpos,a0
   move.l  _remember_xpos_curpos,d0
   move.l  a1,(a0,d0*4)
   addq.l #1,d0
@@ -3367,10 +3368,10 @@ NEXTCHANGE_WITHOUT:
   endc
   cmp.w  _break_addr,d7 ; break address reached ?
   beq.s  .go_monitor
-  move.l _ypos,d0    ; !!! or .w ?
+  move.l ANTIC_ypos,d0    ; !!! or .w ?
   cmp.l  _ypos_break_addr,d0 ; break address reached ?
   beq.s  .go_monitor
-  tst.b  _break_step ; step mode active ?
+  tst.b  _MONITOR_break_step ; step mode active ?
   beq.s  .get_first
 .go_monitor:
   bsr    go_monitor  ;on break monitor is invoked
@@ -3380,7 +3381,7 @@ NEXTCHANGE_WITHOUT:
   moveq  #0,d7
   move.b (PC6502)+,d7
   ifd PROFILE
-  lea    _instruction_count,a0
+  lea    _CPU_instruction_count,a0
   addq.l #1,(a0,d7.l*4)
   endc
 ; move.w (OPMODE_TABLE,PC,d7.l*2),d0
@@ -3923,9 +3924,6 @@ OP_T_D:
   dc.w opcode_fd_D-OP_T_D
   dc.w opcode_fe-OP_T_D
   dc.w opcode_ff-OP_T_D
-
-cycles:
-_cycles:   ; dc.l for the world outside, equ for internal use
 
 cy_CIM equ 2
 cy_NOP equ 2
