@@ -225,34 +225,39 @@ GetNone:
   st     d0        ; higher bytes are 0 from before
   rts
 GetGTIA:
+  clr.l -(a7)      ; FALSE (no side effects)
   move.l d0,-(a7)
   ifd NEW_CYCLE_EXACT
   move.l CD,_ANTIC_xpos
   endc
   jsr    _GTIA_GetByte
-  addq.l #4,a7
+  addq.l #8,a7
   rts
 GetPOKEY:
+  clr.l -(a7)      ; FALSE (no side effects)
   move.l d0,-(a7)
   move.l CD,_ANTIC_xpos
   jsr    _POKEY_GetByte
-  addq.l #4,a7
+  addq.l #8,a7
   rts
 GetPIA:
+  clr.l -(a7)      ; FALSE (no side effects)
   move.l d0,-(a7)
   jsr    _PIA_GetByte
-  addq.l #4,a7
+  addq.l #8,a7
   rts
 GetANTIC:
+  clr.l -(a7)      ; FALSE (no side effects)
   move.l d0,-(a7)
   move.l CD,_ANTIC_xpos
   jsr    _ANTIC_GetByte
-  addq.l #4,a7
+  addq.l #8,a7
   rts
 GetCART:
+  clr.l -(a7)      ; FALSE (no side effects)
   move.l d0,-(a7)
   jsr    _CARTRIDGE_GetByte
-  addq.l #4,a7
+  addq.l #8,a7
   rts
 ItsBob2:
   move.w d7,-(a7)
