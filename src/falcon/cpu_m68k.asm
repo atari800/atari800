@@ -549,15 +549,14 @@ ConvertSTATUS_RegP macro
 .SETC\@
   tst.w  NFLAG
   bpl.s  .SETN\@
-; ori.b  #N_FLAG,\1
   tas    \1
 .SETN\@
   tst.b  ZFLAG
-  bne.s  .SETZ\@   ; beware! reverse compare is ok
+  bne.s  .SETZ\@
   addq.b #2,\1
 .SETZ\@
   tst.b  VFLAG
-  bpl.s  .SETV\@        ; !!!
+  bpl.s  .SETV\@
   ori.b  #V_FLAG,\1
 .SETV\@
   endm
@@ -569,15 +568,14 @@ ConvertSTATUS_RegP_destroy macro
   or.b   CFLAG,\1
   tst.w  NFLAG
   bpl.s  .SETN\@
-; ori.b  #N_FLAG,\1
   tas    \1
 .SETN\@
   tst.b  ZFLAG
-  bne.s  .SETZ\@   ; beware! reverse compare is ok
+  bne.s  .SETZ\@
   addq.b #2,\1
 .SETZ\@
   tst.b  VFLAG
-  bpl.s  .SETV\@        ; !!!
+  bpl.s  .SETV\@
   ori.b  #V_FLAG,\1
 .SETV\@
   endm
@@ -682,28 +680,7 @@ _CPU_NMI:
   endc
   rts
 
-_CPU_GO: ;cycles (d0)
-
-;  UWORD PC;
-;  UBYTE S;
-;  UBYTE A;
-;  UBYTE X;
-;  UBYTE Y;
-;
-;  UWORD  addr;
-;  UBYTE  data;
-
-;/*
-;   This used to be in the main loop but has been removed to improve
-;   execution speed. It does not seem to have any adverse effect on
-;   the emulation for two reasons:-
-;
-;   1. NMI's can only be raised in atari_custom.c - there is
-;      no way an NMI can be generated whilst in this routine.
-;
-;   2. The timing of the IRQs are not that critical.
-;*/
-
+_CPU_GO:
   move.l  4(a7),d0
   ifd NEW_CYCLE_EXACT
   tst.b   _ANTIC_wsync_halt
