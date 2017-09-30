@@ -176,6 +176,7 @@ Y      equr d4
 
 ;d0  contains usually adress where we are working or temporary value
 ;d7  contains is a working register or adress
+;a3  contains OPMODE_TABLE or OPMODE_TABLE_D (depending on the D flag)
 
 LoHi  macro    ;change order of lo and hi byte (address)
       ror.w #8,\1
@@ -742,6 +743,8 @@ NO_WS_HALT:
   lea     _MEMORY_attrib,attrib_pointer
   tst.b   _CPU_IRQ          ; CPUCHECKIRQ
   beq     NEXTCHANGE_WITHOUT
+  cmp.l   _ANTIC_xpos_limit,CD
+  bge     NEXTCHANGE_WITHOUT
   move.b  d0,d7
 ; and.b   #I_FLAG,d0 ;is interrupt active
   btst    #I_FLAG,d0
@@ -1736,6 +1739,8 @@ opcode_28: ;/* PLP */
   move.b d0,_CPU_regS
   tst.b  _CPU_IRQ           ; CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
+  cmp.l   _ANTIC_xpos_limit,CD
+  bge     NEXTCHANGE_WITHOUT
   btst   #I_FLAGB,d7
   bne.w  NEXTCHANGE_WITHOUT
 ; moveq  #0,d0
@@ -2202,6 +2207,8 @@ opcode_58: ;/* CLI */
   ClrI
   tst.b  _CPU_IRQ      ; ~ CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
+  cmp.l   _ANTIC_xpos_limit,CD
+  bge     NEXTCHANGE_WITHOUT
   move.l PC6502,d7
   sub.l  memory_pointer,d7
   moveq  #0,d0                    ; PHW + PHP (B0)
@@ -2399,6 +2406,8 @@ _RTI:
   endc
   tst.b  _CPU_IRQ           ; CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
+  cmp.l   _ANTIC_xpos_limit,CD
+  bge     NEXTCHANGE_WITHOUT
   move.b _CPU_regP,d7
 ; andi.b #I_FLAG,d7
   btst   #I_FLAGB,d7
