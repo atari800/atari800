@@ -415,11 +415,13 @@ EXE_PUTBYTE macro
 ; addq.l #8,a7
   endm
 
+; XXX: we do this only for GTIA, because NEW_CYCLE_EXACT does not correctly
+; emulate INC $D400 (and INC $D40A wasn't tested) */
 RMW_GETBYTE macro
   ifd NEW_CYCLE_EXACT
   move.w d7,d0
-  and.w  #$ef1f,d0
-  cmp.w  #$c01a,d0
+  and.w  #$ef00,d0
+  cmp.w  #$c000,d0
   bne.s  .normal_get
   EXE_GETBYTE
   subq.l #1,CD
