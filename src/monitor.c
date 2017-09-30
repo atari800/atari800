@@ -685,7 +685,7 @@ static int get_dec(int *decval)
 
 /* Parses S in search for a hexadecimal number. On success stores the number
    in HEXVAL and returns TRUE; otherwise returns FALSE. */
-static int parse_hex(const char *s, UWORD *hexval)
+static int real_parse_hex(const char *s, UWORD *hexval)
 {
 	int x = Util_sscanhex(s);
 #ifdef MONITOR_HINTS
@@ -703,6 +703,46 @@ static int parse_hex(const char *s, UWORD *hexval)
 	if (x < 0 || x > 0xffff)
 		return FALSE;
 	*hexval = (UWORD) x;
+	return TRUE;
+}
+
+/* Parse s, support * (byte deference) and @ (word deref). Recursive calls
+	support stacking (e.g. **label, *@label) */
+static int parse_hex(const char *s, UWORD *hexval)
+{
+	UWORD addr;
+	char deref_type = '\0';
+
+	switch(s[0]) {
+		case '\0': return FALSE; /* don't operate on empty string */
+		case '*':
+		case '@':
+			deref_type = s[0];
+			s++;
+			if(!parse_hex(s, &addr))
+				return FALSE;
+			break;
+		default:
+			if(!real_parse_hex(s, &addr))
+				return FALSE;
+			break;
+	}
+
+
+	switch(deref_type) {
+		case '\0':
+			*hexval = addr;
+			break;
+		case '*':
+			*hexval = MEMORY_SafeGetByte(addr);
+			break;
+		case '@':
+			*hexval = MEMORY_SafeGetByte(addr) | (MEMORY_SafeGetByte(addr + 1) << 8);
+			break;
+		default:
+			return FALSE; /* should never happen */
+	}
+
 	return TRUE;
 }
 
@@ -2731,8 +2771,13 @@ int MONITOR_Run(void)
 		else if (strcmp(t, "QUIT") == 0 || strcmp(t, "EXIT") == 0) {
 			PLUS_EXIT_MONITOR;
 			return FALSE;
-		}
-		else
+		} else if(t[0] == '*' || t[0] == '@') {
+			UWORD val;
+			if(parse_hex(t, &val))
+				printf("%s = $%04x\n", t, val);
+			else
+				printf("Invalid dereference\n");
+		} else
 			printf("Invalid command!\n");
 	}
 }
