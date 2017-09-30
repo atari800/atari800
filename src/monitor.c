@@ -2232,6 +2232,83 @@ static void show_help(void)
 
 #ifdef MONITOR_READLINE
 #ifdef MONITOR_HINTS
+/* 20170929 bkw: This code is based on the GNU Readline example code,
+	found here:
+	http://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC49 */
+
+/* Callback for readline, generates the list of monitor commands, one
+	at a time. Not going to list all commands here, only ones >= 4 characters
+	long. */
+static char *command_generator(const char *text, int state)
+{
+	static int index, len;
+	const char *name;
+
+	static const char *commands[] = {
+		"CONT", "SHOW", "STACK", "LOOP", "HARDWARE", "READ", "WRITE",
+#ifdef MONITOR_TRACE
+		"TRACE",
+#endif
+#ifdef MONITOR_BREAK
+		"BLINE", "BBRK", "HISTORY", "JUMPS",
+#endif
+		"ANTIC", "GTIA", "PIA", "POKEY", "DLIST",
+#ifdef MONITOR_PROFILE
+		"PROFILE",
+#endif
+#ifdef MONITOR_HINTS
+		"LABELS",
+#endif
+		"COLDSTART", "WARMSTART", "QUIT", "EXIT", "HELP",
+		NULL };
+
+	if(!state)
+	{
+		index = 0;
+		len = strlen(text);
+	}
+
+	while((name = commands[index]) != NULL)
+	{
+		index++;
+		if(strncasecmp(name, text, len) == 0)
+			return strdup(name);
+	}
+
+	return (char *)NULL;
+}
+
+/* Callback for readline, generates the list of valid subcommands
+	for the LABELS command */
+static char *subcmd_labels_generator(const char *text, int state)
+{
+	static int index, len;
+	const char *name;
+
+	static const char *commands[] = {
+		"OFF", "BUILTIN", "LOAD", "ADD", "SET", "LIST",
+		NULL };
+
+	if(!state)
+	{
+		index = 0;
+		len = strlen(text);
+	}
+
+	while((name = commands[index]) != NULL)
+	{
+		index++;
+		if(strncasecmp(name, text, len) == 0)
+			return strdup(name);
+	}
+
+	return (char *)NULL;
+}
+
+/* Callback for readline, generates the list of user labels (if any)
+	followed by the list of builtin labels (if enabled). If no user labels
+	are loaded, and builtin labels are disabled (LABELS OFF), this
+	just returns NULL for every call. */
 static char *label_generator(const char *text, int state)
 {
 	static int user_index, builtin_index, len;
@@ -2250,7 +2327,7 @@ static char *label_generator(const char *text, int state)
 	{
 		name = symtable_user[user_index].name;
 		user_index++;
-		if(strncmp(name, text, len) == 0)
+		if(strncasecmp(name, text, len) == 0)
 			return strdup(name);
 	}
 
@@ -2258,27 +2335,90 @@ static char *label_generator(const char *text, int state)
 	{
 		name = builtins[builtin_index].name;
 		builtin_index++;
-		if(strncmp(name, text, len) == 0)
+		if(strncasecmp(name, text, len) == 0)
 			return strdup(name);
 	}
 
 	return (char *)NULL;
 }
 
-static char **label_completion(const char *text, int start, int end)
-{
-	char **matches = (char **)NULL;
+/* Count instances of one or more consecutive spaces in rl_line_buffer.
+	Leading spaces are ignored. */
+static int count_spaces(void) {
+	char *p = rl_line_buffer;
+	int wasspace = 1, result = 0;
 
-	/* don't attempt label completion at start of line, since we only
-		ever take labels as arguments, not commands */
-	if(start > 0) {
+	while(*p != '\0') {
+		if(*p == ' ') {
+			if(!wasspace) {
+				result++;
+			}
+			wasspace = 1;
+		} else {
+			wasspace = 0;
+		}
+		p++;
+	}
+	return result;
+}
+
+/* Return TRUE if we should complete filenames. Logic is rudimentary
+	and gets confused if the cursor isn't actually at the end of the
+	command line, or if someone says e.g. "labels LoAd".
+	No harm done though (completion will fail, but that's it). */
+static int cmd_wants_filename(void) {
+	int spaces = count_spaces();
+
+	if(spaces == 1 && strncasecmp(rl_line_buffer, "read ", 5) == 0)
+		return TRUE;
+
+	if(spaces == 3 && strncasecmp(rl_line_buffer, "write ", 6) == 0)
+		return TRUE;
+
+	if(spaces == 2 && strncasecmp(rl_line_buffer, "labels ", 7) == 0) {
+		if(strstr(rl_line_buffer, " add ") ||
+		   strstr(rl_line_buffer, " ADD ") ||
+		   strstr(rl_line_buffer, " load ") ||
+		   strstr(rl_line_buffer, " LOAD "))
+		{
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+/* Callback for readline. Returns a list of matches, which can consist
+	of monitor commands, labels (built-in or user), and/or filenames. */
+static char **monitor_completion(const char *text, int start, int end)
+{
+	char **matches;
+
+	/* setting this prevents readline from falling back to its default
+		action, if this function returns NULL (no matches). The default
+		action is to complete filenames. */
+	rl_attempted_completion_over = TRUE;
+
+	if(start == 0) {
+		/* start of line is always a command... */
+		matches = rl_completion_matches(text, command_generator);
+	} else if(cmd_wants_filename()) {
+		/* if we're expecting a filename, complete filenames (default action) */
+		rl_attempted_completion_over = FALSE;
+		return NULL;
+	} else if(strncasecmp(rl_line_buffer, "labels ", 7) == 0) {
+		matches = rl_completion_matches(text, subcmd_labels_generator);
+	} else {
+		/* ...otherwise assume it's a label. */
 		matches = rl_completion_matches(text, label_generator);
 	}
 
 	return matches;
 }
-#endif
+#endif /* MONITOR_HINTS */
 
+/* Setting rl_readline_name allows us to have our own private section
+	in the user's ~/.inputrc. */
 static void init_readline(void)
 {
 	static int need_init = TRUE;
@@ -2288,11 +2428,11 @@ static void init_readline(void)
 		need_init = FALSE;
 		rl_readline_name = "Atari800";
 #ifdef MONITOR_HINTS
-		rl_attempted_completion_function = label_completion;
+		rl_attempted_completion_function = monitor_completion;
 #endif
 	}
 }
-#endif
+#endif /* MONITOR_READLINE */
 
 #ifdef MONITOR_HINTS
 void MONITOR_PreloadLabelFile(char *filename)
