@@ -68,15 +68,12 @@
   ifd MONITOR_BREAK
   xdef _CPU_remember_PC
   xdef _CPU_remember_PC_curpos
-  ifd NEW_CYCLE_EXACT
   xdef _CPU_remember_xpos
-  xdef _remember_xpos_curpos
-  endc
   xdef _CPU_remember_JMP
   xdef _CPU_remember_jmp_curpos
   xref _ypos_break_addr
   xref ANTIC_ypos
-  xref _break_addr
+  xref _MONITOR_break_addr
   xref _MONITOR_break_step
   xref _MONITOR_break_ret
   xref _break_cim
@@ -114,9 +111,6 @@ _CPU_remember_PC_curpos
 remember_xpos
 _CPU_remember_xpos
   ds.l rem_pc_steps   ;REMEMBER_PC_STEPS
-remember_xpos_curpos
-_remember_xpos_curpos
-  ds.l 1
 
 remember_JMP
 _CPU_remember_JMP
@@ -446,7 +440,6 @@ _CPU_INIT:
   ifd MONITOR_BREAK
   moveq  #0,d0
   move.l d0,_CPU_remember_PC_curpos
-  move.l d0,_remember_xpos_curpos
   move.l d0,_CPU_remember_jmp_curpos
   endc
   moveq  #1,d0     ; set regS to page 1
@@ -946,6 +939,7 @@ opcode_9b: ;/* SHS abcd,y [unofficial, UNSTABLE] (Fox) */
 
 opcode_6b: ;/* ARR #ab [unofficial - Acc AND Data, ROR result] */
 ; not optimized because I think it will never be executed anyway
+; commit 01a618e7 seems to optimize it a bit, ignoring
   addq.l #cy_Imm,CD
   IMMEDIATE ZFLAG
   and.b  A,ZFLAG
@@ -969,7 +963,7 @@ opcode_6b: ;/* ARR #ab [unofficial - Acc AND Data, ROR result] */
   cmpi.b #6,d0     ; check for >5
   bmi.s  .6b_bcd1  ; <=5
   move.b A,CFLAG
-  and.b  #240,CFLAG
+  and.b  #$f0,CFLAG
   move.b A,d0
   addq.b #6,d0
   and.b  #15,d0
@@ -1659,7 +1653,7 @@ opcode_00: ;/* BRK */
   tst.l  _brkhere
   beq.s  .oc_00_norm
   move.b #1,_break_here
-  jsr    go_monitor
+  bsr    go_monitor
   bra.w  NEXTCHANGE_WITHOUT
 .oc_00_norm:
   endc
@@ -1707,10 +1701,10 @@ opcode_28: ;/* PLP */
   moveq  #0,d0          ; PLP
   move.w regS,d0
   addq.b #1,d0
-; move.b (memory_pointer,d0.l),_CPU_regP
-  move.b (memory_pointer,d0.l),d7 ; TEST
-  ori.b  #$30,d7                  ; TEST
-  move.b d7,_CPU_regP                 ; TEST
+  move.b (memory_pointer,d0.l),d7
+  andi.b #$0c,d7
+  ori.b  #$30,d7
+  move.b d7,_CPU_regP
   ConvertRegP_STATUS d7
   move.b d0,_CPU_regS
   tst.b  _CPU_IRQ           ; CPUCHECKIRQ
@@ -2358,10 +2352,10 @@ _RTI:
   moveq  #0,d0                    ; PLP + PLW
   move.w regS,d0
   addq.b #1,d0
-; move.b (memory_pointer,d0.l),_CPU_regP
-  move.b (memory_pointer,d0.l),d7 ; TEST
-  ori.b  #$30,d7                  ; TEST
-  move.b d7,_CPU_regP                 ; TEST
+  move.b (memory_pointer,d0.l),d7
+  andi.b #$0c,d7
+  ori.b  #$30,d7
+  move.b d7,_CPU_regP
   ConvertRegP_STATUS d7
   addq.b #2,d0     ; wrong way around
   move.b (memory_pointer,d0.l),d7
@@ -3320,38 +3314,35 @@ NEXTCHANGE_WITHOUT:
   lea    _CPU_remember_PC,a0
   move.l PC6502,d7
   sub.l  memory_pointer,d7
-  move.w d7,(a0,d0*2) ; remember program counter
+  move.w d7,(a0,d0.l*2) ; remember program counter
+
+  lea    _CPU_remember_xpos,a0
+  lea    (a0,d0.l*4),a0
+  ifd NEW_CYCLE_EXACT
+  cmp.l   #-999,_ANTIC_cur_screen_pos
+  bne.s   .not_drawing
+  move.l  _ANTIC_cpu2antic_ptr,a1
+  move.l  (a1,CD.l*4),a1
+  bra.s   .drawing
+.not_drawing:
+  endc
+  move.l  CD,a1
+.drawing:
+  moveq   #0,d0
+  move.b  ANTIC_ypos,d0
+  lsl.w   #8,d0
+  add.l   d0,a1
+  move.l  a1,(a0)
+
+  move.l _CPU_remember_PC_curpos,d0
   addq.l #1,d0
   cmp.l  #rem_pc_steps,d0
   bmi.s  .point_rem_pc
   moveq  #0,d0
 .point_rem_pc:
   move.l d0,_CPU_remember_PC_curpos
-  ifd NEW_CYCLE_EXACT
-  moveq   #0,d0
-  move.b  ANTIC_ypos,d0
-  asl.w   #8,d0
-  move.l  d0,a1
-  move.l  CD,d0
-  cmp.l   #-999,_ANTIC_cur_screen_pos
-  beq.s   .calc_all
-  move.l  _ANTIC_cpu2antic_ptr,a0
-  move.l  (a0,d0*4),d0
-  bra.s   .calc_all
-.calc_all:
-  add.l   a1,d0
-  move.l  d0,a1
-  move.l  _CPU_remember_xpos,a0
-  move.l  _remember_xpos_curpos,d0
-  move.l  a1,(a0,d0*4)
-  addq.l #1,d0
-  cmp.l  #rem_pc_steps,d0
-  bmi.s  .point_rem_xpos
-  moveq  #0,d0
-.point_rem_xpos:
-  move.l d0,_remember_xpos_curpos
-  endc
-  cmp.w  _break_addr,d7 ; break address reached ?
+
+  cmp.w  _MONITOR_break_addr,d7 ; break address reached ?
   beq.s  .go_monitor
   move.l ANTIC_ypos,d0    ; !!! or .w ?
   cmp.l  _ypos_break_addr,d0 ; break address reached ?
@@ -3369,8 +3360,6 @@ NEXTCHANGE_WITHOUT:
   lea    _CPU_instruction_count,a0
   addq.l #1,(a0,d7.l*4)
   endc
-; move.w (OPMODE_TABLE,PC,d7.l*2),d0
-; jmp    (OPMODE_TABLE,d0.w)
   move.w (a3,d7.l*2),d0
   jmp    (a3,d0.w)
 
