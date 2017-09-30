@@ -681,12 +681,13 @@ _CPU_NMI:
   rts
 
 _CPU_GO:
-  move.l  4(a7),d0
-  ifd NEW_CYCLE_EXACT
+  move.l  4(a7),d0       ; limit
+
   tst.b   _ANTIC_wsync_halt
   beq.s   NO_WS_HALT
+  ifd NEW_CYCLE_EXACT
   moveq.l #WSYNC_C-1,d1  ; TEST : no -1 if bpl.s
-  cmp.l   #-999,_ANTIC_cur_screen_pos
+  cmp.l   #-999,_ANTIC_cur_screen_pos    ; ANTIC_NOT_DRAWING
   beq.s   .now_cmp
   move.l  _ANTIC_antic2cpu_ptr,a0
   move.l  (a0,d1*4),d1
@@ -699,17 +700,15 @@ _CPU_GO:
   move.l  d1,_ANTIC_xpos
   clr.b   _ANTIC_wsync_halt
   clr.l   _ANTIC_delayed_wsync
-  elseif
-  tst.b   _ANTIC_wsync_halt
-  beq.s   NO_WS_HALT
+  elseif ; NEW_CYCLE_EXACT
   moveq.l #WSYNC_C-1,d1  ; TEST : no -1 if bpl.s
   cmp.l   d0,d1
 ; bpl.s   TERM_GO        ; TEST
   bge     TERM_GO        ; TEST
   addq.l  #1,d1          ; TEST : not necessary if bpl.s
   move.l  d1,_ANTIC_xpos
-  clr.b   _ANTIC_wsync_halt
   endc
+  clr.b   _ANTIC_wsync_halt
 NO_WS_HALT:
   move.l  d0,_ANTIC_xpos_limit ;  needed for WSYNC store inside ANTIC
   movem.l d2-d7/a2-a6,-(a7)
