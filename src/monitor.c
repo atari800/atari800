@@ -669,7 +669,6 @@ static char *get_token(void)
 	return p;
 }
 
-#if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
 static int get_dec(int *decval)
 {
 	const char *t;
@@ -683,7 +682,6 @@ static int get_dec(int *decval)
 	}
 	return FALSE;
 }
-#endif
 
 /* Parses S in search for a hexadecimal number. On success stores the number
    in HEXVAL and returns TRUE; otherwise returns FALSE. */
@@ -2152,6 +2150,49 @@ static void show_POKEY(void)
 #endif
 }
 
+static void hex_to_dec(UWORD val) {
+	printf("$%04x = %d\n", val, val);
+}
+
+static void dec_to_hex(UWORD val) {
+	printf("%d = $%04x\n", val, val);
+}
+
+static void bin_to_hex(void) {
+	char *binval = get_token(), *p;
+	UWORD result = 0;
+
+	if(binval == NULL) {
+		printf("Missing binary argument\n");
+		return;
+	}
+
+	for(p = binval; *p != '\0'; p++) {
+		if(*p != '1' && *p != '0') {
+			printf("Invalid binary argument\n");
+			return;
+		}
+		result <<= 1;
+		if(*p == '1') result |= 1;
+	}
+
+	printf("%%%s = $%04x\n", binval, result);
+}
+
+static void hex_to_bin(UWORD val) {
+	int mask;
+
+	printf("$%04x = %%", val);
+
+	mask = val < 0x100 ? 0x80 : 0x8000;
+	while(mask) {
+		putchar((val & mask) ? '1' : '0');
+		mask >>= 1;
+	}
+
+	putchar('\n');
+}
+
 /* Displays monitor help. */
 static void show_help(void)
 {
@@ -2226,6 +2267,10 @@ static void show_help(void)
 #ifdef HAVE_SYSTEM
 		"!command                       - Execute shell command\n"
 #endif
+		"DEC [value]                    - Convert hex value to decimal\n"
+		"HEX [value]                    - Convert decimal value to hex\n"
+		"BIN [value]                    - Convert hex value to binary\n"
+		"BHEX [value]                   - Convert binary value to hex\n"
 		"QUIT or EXIT                   - Quit emulator\n"
 		"HELP or ?                      - This text\n");
 }
@@ -2663,7 +2708,25 @@ int MONITOR_Run(void)
 			addr = assembler(addr);
 		}
 #endif
-		else if (strcmp(t, "HELP") == 0 || strcmp(t, "?") == 0)
+		else if (strcmp(t, "DEC") == 0) {
+			if(get_hex(&addr))
+				hex_to_dec(addr);
+			else
+				printf("Missing/invalid hex argument\n");
+		} else if (strcmp(t, "HEX") == 0) {
+			int d;
+			if(get_dec(&d))
+				dec_to_hex(d);
+			else
+				printf("Missing/invalid decimal argument\n");
+		} else if (strcmp(t, "BIN") == 0) {
+			if(get_hex(&addr))
+				hex_to_bin(addr);
+			else
+				printf("Missing/invalid hex argument\n");
+		} else if (strcmp(t, "BHEX") == 0) {
+			bin_to_hex();
+		} else if (strcmp(t, "HELP") == 0 || strcmp(t, "?") == 0)
 			show_help();
 		else if (strcmp(t, "QUIT") == 0 || strcmp(t, "EXIT") == 0) {
 			PLUS_EXIT_MONITOR;
