@@ -2334,16 +2334,17 @@ static char *command_generator(const char *text, int state)
 #ifdef MONITOR_TRACE
 		"TRACE",
 #endif
+#if defined(MONITOR_BREAK) || !defined(NO_YPOS_BREAK_FLICKER)
+		"BLINE",
+#endif
 #ifdef MONITOR_BREAK
-		"BLINE", "BBRK", "HISTORY", "JUMPS",
+		"BBRK", "HISTORY", "JUMPS",
 #endif
 		"ANTIC", "GTIA", "PIA", "POKEY", "DLIST",
 #ifdef MONITOR_PROFILE
 		"PROFILE",
 #endif
-#ifdef MONITOR_HINTS
 		"LABELS",
-#endif
 		"COLDSTART", "WARMSTART", "QUIT", "EXIT", "HELP",
 		NULL };
 
@@ -2356,8 +2357,8 @@ static char *command_generator(const char *text, int state)
 	while((name = commands[index]) != NULL)
 	{
 		index++;
-		if(strncasecmp(name, text, len) == 0)
-			return strdup(name);
+		if(Util_strnicmp(name, text, len) == 0)
+			return Util_strdup(name);
 	}
 
 	return (char *)NULL;
@@ -2383,8 +2384,8 @@ static char *subcmd_labels_generator(const char *text, int state)
 	while((name = commands[index]) != NULL)
 	{
 		index++;
-		if(strncasecmp(name, text, len) == 0)
-			return strdup(name);
+		if(Util_strnicmp(name, text, len) == 0)
+			return Util_strdup(name);
 	}
 
 	return (char *)NULL;
@@ -2412,16 +2413,16 @@ static char *label_generator(const char *text, int state)
 	{
 		name = symtable_user[user_index].name;
 		user_index++;
-		if(strncasecmp(name, text, len) == 0)
-			return strdup(name);
+		if(Util_strnicmp(name, text, len) == 0)
+			return Util_strdup(name);
 	}
 
 	while(symtable_builtin_enable && (builtins[builtin_index].name != NULL))
 	{
 		name = builtins[builtin_index].name;
 		builtin_index++;
-		if(strncasecmp(name, text, len) == 0)
-			return strdup(name);
+		if(Util_strnicmp(name, text, len) == 0)
+			return Util_strdup(name);
 	}
 
 	return (char *)NULL;
@@ -2454,21 +2455,31 @@ static int count_spaces(void) {
 static int cmd_wants_filename(void) {
 	int spaces = count_spaces();
 
-	if(spaces == 1 && strncasecmp(rl_line_buffer, "read ", 5) == 0)
+	if(spaces == 1 && Util_strnicmp(rl_line_buffer, "read ", 5) == 0)
 		return TRUE;
 
-	if(spaces == 3 && strncasecmp(rl_line_buffer, "write ", 6) == 0)
+	if(spaces == 3 && Util_strnicmp(rl_line_buffer, "write ", 6) == 0)
 		return TRUE;
 
-	if(spaces == 2 && strncasecmp(rl_line_buffer, "labels ", 7) == 0) {
-		if(strstr(rl_line_buffer, " add ") ||
-		   strstr(rl_line_buffer, " ADD ") ||
+#ifdef MONITOR_TRACE
+	if(spaces == 1 && Util_strnicmp(rl_line_buffer, "trace ", 6) == 0)
+		return TRUE;
+#endif
+
+#ifdef HAVE_STRSTR
+	/* XXX For now, platforms that lack strstr() just can't complete
+		filenames with 'labels add' or 'labels load'.
+		If it weren't a GNU extension, it'd be nice to use strcasestr() here */
+	if(spaces == 2 && Util_strnicmp(rl_line_buffer, "labels ", 7) == 0) {
+		if(strstr(rl_line_buffer, " add ")  ||
+		   strstr(rl_line_buffer, " ADD ")  ||
 		   strstr(rl_line_buffer, " load ") ||
-		   strstr(rl_line_buffer, " LOAD "))
+		   strstr(rl_line_buffer, " LOAD ") )
 		{
 			return TRUE;
 		}
 	}
+#endif
 
 	return FALSE;
 }
@@ -2491,7 +2502,7 @@ static char **monitor_completion(const char *text, int start, int end)
 		/* if we're expecting a filename, complete filenames (default action) */
 		rl_attempted_completion_over = FALSE;
 		return NULL;
-	} else if(strncasecmp(rl_line_buffer, "labels ", 7) == 0) {
+	} else if(Util_strnicmp(rl_line_buffer, "labels ", 7) == 0) {
 		matches = rl_completion_matches(text, subcmd_labels_generator);
 	} else {
 		/* ...otherwise assume it's a label. */

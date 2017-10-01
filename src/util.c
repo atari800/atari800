@@ -81,6 +81,18 @@ int Util_stricmp(const char *str1, const char *str2)
 }
 #endif
 
+int Util_strnicmp(const char *str1, const char *str2, size_t size)
+{
+	int retval = 0;
+
+	while((size-- > 0) && ((retval = tolower(*str1) - tolower(*str2++)) == 0))
+	{
+		if (*str1++ == '\0')
+			break;
+	}
+	return retval;
+}
+
 char *Util_stpcpy(char *dest, const char *src)
 {
 	size_t len = strlen(src);
