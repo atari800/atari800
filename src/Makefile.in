@@ -21,7 +21,7 @@ else
 	endif
 endif
 
-ASFLAGS = @ASFLAGS@
+#ASFLAGS = @ASFLAGS@
 CFLAGS = @CFLAGS@ @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 

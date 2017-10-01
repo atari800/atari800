@@ -1,4 +1,4 @@
-                                                                      Sep 2017
+                                                                      Oct 2017
 
     Hi all Atari users,
 
@@ -27,17 +27,25 @@ Falcons... and guess what, they are not! And then there's ARAnyM. ;-) And the
 FireBee. So I have cleaned up the source code, added a feature or two and here
 we are.
 
+Another common misbelief was that the new cycle exact CPU emulation has drifted
+from the original CPU implementation so much that it will be super hard to sync
+with our m68k assembler core. Wrong again! Right now, all the features from its
+C counter part are available for the assembler core as well. That is also the
+reason why all executables (except the FireBee, naturally) have the fast
+assembler core included! No more dilemmas about speed vs. compatibility.
+
 ATARISDL.GTP    - XBIOS audio, SDL video, cycle exact 6502/ANTIC
 ATARI800.GTP    - XBIOS audio, GEM/Videl video, cycle exact 6502/ANTIC
-ATARICPU.GTP    - cpu.c rewritten in optimized MC68030 asm, inexact 6502/ANTIC
+ATARIFST.GTP    - XBIOS audio, GEM/Videl video, inexact 6502/ANTIC (fastest)
 
-ATARI_CF.GTP    - same as ATARISDL.GTP but for the FireBee (ColdFire build)
+ATARI_CF.GTP    - same as ATARISDL.GTP but for the FireBee (ColdFire build) and
+                  without the m68k optimized emulation core
 
-The following script might be used for rebuilding the fastest possible
-version:
+The following script might be used for rebuilding the fastest and smallest
+possible version (although they are not all used in the released binaries):
 ============================== make.sh ====================================
 #!/bin/sh
-CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall" LDFLAGS="-m68020-60" ./configure --host=m68k-atari-mint --disable-newcycleexact --without-sound --enable-veryslow --disable-monitorbreak --target=falcon --enable-falconcpuasm
+./configure --host=m68k-atari-mint --disable-newcycleexact --without-sound --enable-veryslow --disable-monitorbreak --target=falcon --enable-falconcpuasm --disable-monitorhints --disable-crashmenu --disable-monitorasm --with-readline=no --disable-eventrecording
 make clean
 time make
 m68k-atari-mint-stack --fix=256k atari800
