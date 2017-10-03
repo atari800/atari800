@@ -2745,9 +2745,26 @@ static void init_readline(void)
 #endif /* MONITOR_READLINE */
 
 #ifdef MONITOR_HINTS
+/* called from atari.c, for -label-file CLI arg. */
 void MONITOR_PreloadLabelFile(char *filename)
 {
 	load_user_labels(filename);
+}
+#endif
+
+#ifdef MONITOR_BREAK
+/* called from atari.c, for -bbrk CLI arg. */
+void MONITOR_BBRK_on(void)
+{
+	MONITOR_break_brk = TRUE;
+}
+
+/* called from atari.c, for -bpc CLI arg. */
+void MONITOR_BPC(char *arg)
+{
+	UWORD addr = 0xd000;
+	parse_hex(arg, &addr); /* XXX error message on bad arg? */
+	MONITOR_break_addr = addr;
 }
 #endif
 

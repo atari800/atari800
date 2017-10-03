@@ -662,6 +662,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-label-file") == 0)
 				if (i_a) MONITOR_PreloadLabelFile(argv[++i]); else a_m = TRUE;
 #endif /* MONITOR_HINTS */
+#ifdef MONITOR_BREAK
+			else if (strcmp(argv[i], "-bbrk") == 0)
+				MONITOR_BBRK_on();
+			else if (strcmp(argv[i], "-bpc") == 0)
+				if (i_a) MONITOR_BPC(argv[++i]); else a_m = TRUE;
+#endif /* MONITOR_BREAK */
 			else {
 				/* all options known to main module tried but none matched */
 

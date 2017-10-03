@@ -17,6 +17,8 @@ extern FILE *MONITOR_trace_file;
 #endif
 
 #ifdef MONITOR_BREAK
+void MONITOR_BBRK_on(void);
+void MONITOR_BPC(char *arg);
 extern UWORD MONITOR_break_addr;
 extern UBYTE MONITOR_break_step;
 extern UBYTE MONITOR_break_ret;
