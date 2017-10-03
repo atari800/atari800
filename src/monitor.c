@@ -2315,6 +2315,82 @@ static void show_help(void)
 		"HELP or ?                      - This text\n");
 }
 
+/* XXX make this a configure option */
+#define MONITOR_ANSI
+
+#ifdef MONITOR_ANSI
+static char *gr_color_chars[] = { "\x1b[30;40m ", "\x1b[30;42m ", "\x1b[30;41m ", "\x1b[30;47m " };
+static char *gr_color_done = "\x1b[0m";
+#else
+static char *gr_chars[] = { " ", "X", "O", "." };
+static char *gr_color_done = "";
+#endif
+
+static void print_gr_color(UWORD addr) {
+	UBYTE b = MEMORY_SafeGetByte(addr);
+	printf(gr_color_chars[b >> 6]);
+	printf(gr_color_chars[(b >> 4) & 3]);
+	printf(gr_color_chars[(b >> 2) & 3]);
+	printf(gr_color_chars[b & 3]);
+	printf(gr_color_done);
+}
+
+static void print_gr_mono(UWORD addr) {
+	UBYTE b = MEMORY_SafeGetByte(addr);
+	int i;
+
+	for(i = 0x80; i; i >>= 1)
+		printf(gr_color_chars[(b & i) ? 1 : 0]);
+
+	printf(gr_color_done);
+}
+
+static void print_graphics(int want_color) {
+	static UWORD width = 1, height = 8;
+	UWORD addr;
+	int rows, cols, x, y, row = 0, col = 0;
+
+	if(!get_hex(&addr)) {
+		printf("Usage: GR%c addr [width-in-bytes] [height]\n", want_color ? 'C' : 'M' );
+		return;
+	}
+
+	get_hex(&width);
+	get_hex(&height);
+
+	/* XXX assume 80x24 terminal for now */
+	cols = 80 / (width * (want_color ? 5 : 9));
+	rows = 24 / (height + 1);
+	if(cols == 0) cols = 1;
+	if(rows == 0) rows = 1;
+
+	while(1) {
+		for(row = 0; row < rows; row++) {
+			for(col = 0; col < cols; col++) {
+				printf("%04x", addr + col * width * height);
+				for(x = 4; x < width * (want_color ? 4 : 8) + 1; x++)
+					putchar('-');
+			}
+			putchar('\n');
+			for(y = 0; y < height; y++) {
+				for(col = 0; col < cols; col++) {
+					putchar('|');
+					for(x = 0; x < width; x++) {
+					if(want_color)
+						print_gr_color(addr + x + (col * width) * height);
+					else
+						print_gr_mono(addr + x + (col * width) * height);
+					}
+				}
+				putchar('\n');
+				addr += width;
+			}
+			addr += (cols - 1) * height * width;
+		}
+		if(pager()) break;
+	}
+}
+
 #ifdef MONITOR_READLINE
 #ifdef MONITOR_HINTS
 /* 20170929 bkw: This code is based on the GNU Readline example code,
@@ -2777,6 +2853,10 @@ int MONITOR_Run(void)
 				printf("Missing/invalid hex argument\n");
 		} else if (strcmp(t, "BHEX") == 0) {
 			bin_to_hex();
+		} else if (strcmp(t, "GRC") == 0) {
+			print_graphics(TRUE);
+		} else if (strcmp(t, "GRM") == 0) {
+			print_graphics(FALSE);
 		} else if (strcmp(t, "HELP") == 0 || strcmp(t, "?") == 0)
 			show_help();
 		else if (strcmp(t, "QUIT") == 0 || strcmp(t, "EXIT") == 0) {
