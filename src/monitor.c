@@ -2764,11 +2764,18 @@ static char **monitor_completion(const char *text, int start, int end)
 }
 #endif /* MONITOR_HINTS */
 
+/* Characters that signal a break between words, for readline.
+	Someday this may be fancier, if we start supporting e.g. quoted
+	strings or C-style expressions like (2+2)*2. */
+static char *break_chars = " @*";
+
 /* Setting rl_readline_name allows us to have our own private section
 	in the user's ~/.inputrc. */
 static void init_readline(void)
 {
 	static int need_init = TRUE;
+
+	rl_completer_word_break_characters = break_chars;
 
 	if(need_init)
 	{
