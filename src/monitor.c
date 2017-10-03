@@ -24,6 +24,9 @@
 
 #define _POSIX_C_SOURCE 200112L /* for snprintf */
 
+/* XXX make this a configure option */
+#define MONITOR_ANSI
+
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +44,8 @@
 #ifdef STEREO_SOUND
 #include "pokeysnd.h"
 #endif
+#include "platform.h"
+#include "statesav.h"
 
 #ifdef MONITOR_READLINE
 #include <readline/readline.h>
@@ -2190,6 +2195,21 @@ static void show_POKEY(void)
 #endif
 }
 
+static void save_load_state(int save) {
+	int result;
+	char *filename;
+
+	if( (filename = get_token()) == NULL ) filename = "monitor.a8s";
+	if(save) {
+		result = StateSav_SaveAtariState(filename, "wb", TRUE);
+	} else {
+		result = StateSav_ReadAtariState(filename, "rb");
+		PLATFORM_Exit(FALSE);
+	}
+
+	printf("%s: %s\n", filename, result ? "OK" : "Failed");
+}
+
 static char screen_to_asc(char c) {
 	char bit7 = c & 0x80;
 	c &= 0x7f;
@@ -2311,10 +2331,7 @@ static void show_help(void)
 		"HISTORY or H                   - List last %d executed instructions\n", CPU_REMEMBER_PC_STEPS);
 	printf(
 		"JUMPS                          - List last %d executed JMP/JSR\n", CPU_REMEMBER_JMP_STEPS);
-	{
-		char buf[100];
-		safe_gets(buf, sizeof(buf), "Press return to continue: ");
-	}
+	if(pager()) return;
 	printf(
 		"G                              - Execute one instruction\n"
 		"O                              - Step over the instruction\n"
@@ -2349,22 +2366,33 @@ static void show_help(void)
 #ifdef HAVE_SYSTEM
 		"!command                       - Execute shell command\n"
 #endif
-		"DEC [value]                    - Convert hex value to decimal\n"
+		"DEC [value]                    - Convert hex value to decimal\n");
+	printf(
 		"HEX [value]                    - Convert decimal value to hex\n"
-		"BIN [value]                    - Convert hex value to binary\n"
+		"BIN [value]                    - Convert hex value to binary\n");
+	if(pager()) return;
+	printf(
 		"BHEX [value]                   - Convert binary value to hex\n"
+		"ASC [value] <[value] ...>      - Convert hex value(s) to ASCII string\n"
+		"AHEX [string]                  - Convert ASCII string to hex\n"
+		"SCR [value] <[value] ...>      - Convert hex value(s) to screencode string\n"
+		"SHEX [string]                  - Convert screencode string to hex\n");
+	printf(
+#ifdef MONITOR_ANSI
+		"GRM [addr] <[width] [height]>  - Display memory as mono bitmap\n"
+		"GRC [addr] <[width] [height]>  - Display memory as 4-color bitmap\n"
+#endif
+		"SAVESTATE <[filename]>         - Save machine state (default 'monitor.a8s')\n"
+		"LOADSTATE <[filename]>         - Load machine state (default 'monitor.a8s')\n"
 		"QUIT or EXIT                   - Quit emulator\n"
 		"HELP or ?                      - This text\n");
 }
-
-/* XXX make this a configure option */
-#define MONITOR_ANSI
 
 #ifdef MONITOR_ANSI
 static char *gr_color_chars[] = { "\x1b[30;40m ", "\x1b[30;42m ", "\x1b[30;41m ", "\x1b[30;47m " };
 static char *gr_color_done = "\x1b[0m";
 #else
-static char *gr_chars[] = { " ", "X", "O", "." };
+static char *gr_chars[] = { " ", "*", "O", "X" };
 static char *gr_color_done = "";
 #endif
 
@@ -2382,7 +2410,7 @@ static void print_gr_mono(UWORD addr) {
 	int i;
 
 	for(i = 0x80; i; i >>= 1)
-		printf(gr_color_chars[(b & i) ? 1 : 0]);
+		printf(gr_color_chars[(b & i) ? 3 : 0]);
 
 	printf(gr_color_done);
 }
@@ -2463,6 +2491,7 @@ static char *command_generator(const char *text, int state)
 		"PROFILE",
 #endif
 		"LABELS",
+		"SAVESTATE", "LOADSTATE",
 		"COLDSTART", "WARMSTART", "QUIT", "EXIT", "HELP",
 		NULL };
 
@@ -2598,6 +2627,13 @@ static int cmd_wants_filename(void) {
 		}
 	}
 #endif
+
+	if(spaces == 1 && Util_strnicmp(rl_line_buffer, "savestate ", 10) == 0)
+		return TRUE;
+
+	if(spaces == 1 && Util_strnicmp(rl_line_buffer, "loadstate ", 10) == 0)
+		return TRUE;
+
 
 	return FALSE;
 }
@@ -2907,6 +2943,10 @@ int MONITOR_Run(void)
 			print_graphics(TRUE);
 		} else if (strcmp(t, "GRM") == 0) {
 			print_graphics(FALSE);
+		} else if (strcmp(t, "SAVESTATE") == 0) {
+			save_load_state(TRUE);
+		} else if (strcmp(t, "LOADSTATE") == 0) {
+			save_load_state(FALSE);
 		} else if (strcmp(t, "HELP") == 0 || strcmp(t, "?") == 0)
 			show_help();
 		else if (strcmp(t, "QUIT") == 0 || strcmp(t, "EXIT") == 0) {
