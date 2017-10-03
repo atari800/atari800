@@ -510,7 +510,7 @@ else
     AC_CHECK_FUNCS([gettimeofday localtime memmove memset mkstemp mktemp])
     AC_CHECK_FUNCS([modf nanosleep opendir rename rewind rmdir signal snprintf])
     AC_CHECK_FUNCS([stat strcasecmp strchr strdup strerror strrchr strstr])
-    AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf])
+    AC_CHECK_FUNCS([strtol system time tmpfile tmpnam uclock unlink vsnprintf popen])
     AX_FUNC_MKDIR
 	dnl select usleep strncpy are broken on the NestedVM host
     if test "x$a8_host" != xjavanvm ; then

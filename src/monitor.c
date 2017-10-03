@@ -1786,21 +1786,54 @@ static void monitor_write_to_file(void)
 {
 	UWORD addr1;
 	UWORD addr2;
+#ifdef HAVE_POPEN
+	int pipe = FALSE;
+#endif
+
 	if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
 		const char *filename;
 		FILE *f;
 		filename = get_token();
-		if (filename == NULL)
+
+		if (filename == NULL) {
 			filename = "memdump.dat";
-		f = fopen(filename, "wb");
-		if (f == NULL)
+#ifdef HAVE_POPEN
+		} else if (filename[0] == '|') {
+			if(filename[1]) {
+				filename++;
+			} else {
+				filename = get_token();
+			}
+			if (filename == NULL) {
+				printf("Missing argument after |\n");
+				return;
+			}
+			pipe = TRUE;
+#endif
+		}
+
+#ifdef HAVE_POPEN
+		if(pipe)
+			f = popen(filename, "w");
+		else
+#endif
+			f = fopen(filename, "wb");
+
+		if (f == NULL) {
 			perror(filename);
-		else {
+			return;
+		} else {
 			size_t nbytes = addr2 - addr1 + 1;
 			if (fwrite(&MEMORY_mem[addr1], 1, addr2 - addr1 + 1, f) < nbytes)
 				perror(filename);
-			fclose(f);
 		}
+
+#ifdef HAVE_POPEN
+		if(pipe)
+			pclose(f);
+		else
+#endif
+			fclose(f);
 	}
 }
 
@@ -2376,8 +2409,12 @@ static void show_help(void)
 		"RAM startaddr endaddr          - Convert memory block into RAM\n"
 		"ROM startaddr endaddr          - Convert memory block into ROM\n"
 		"HARDWARE startaddr endaddr     - Convert memory block into HARDWARE\n"
-		"READ filename startaddr nbytes - Read file into memory\n"
+		"READ filename startaddr nbytes - Read file into memory\n");
+	printf(
 		"WRITE startaddr endaddr [file] - Write memory block to a file (memdump.dat)\n"
+#ifdef HAVE_POPEN
+		"                                 [file] may begin with |, to pipe to a command\n"
+#endif
 		"SUM startaddr endaddr          - Print sum of specified memory range\n");
 #ifdef MONITOR_TRACE
 	printf(
