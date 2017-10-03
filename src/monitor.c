@@ -2190,6 +2190,48 @@ static void show_POKEY(void)
 #endif
 }
 
+static char screen_to_asc(char c) {
+	char bit7 = c & 0x80;
+	c &= 0x7f;
+
+	if(c < 64)
+		c += 32;
+	else if(c < 96)
+		c -= 64;
+
+	return c | bit7;
+}
+
+static char asc_to_screen(char c) {
+	char bit7 = c & 0x80;
+	c &= 0x7f;
+
+	if(c < 32)
+		c += 64;
+	else if(c < 96)
+		c -= 32;
+
+	return c | bit7;
+}
+
+static void hex_to_asc(int screencodes) {
+	UWORD c;
+	while(get_hex(&c)) {
+		if(screencodes) c = screen_to_asc(c);
+		putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
+	}
+	putchar('\n');
+}
+
+static void asc_to_hex(int screencodes) {
+	char *p = token_ptr;
+	while(*p != '\0') {
+		printf("%02x ", screencodes ? asc_to_screen(*p) : *p);
+		p++;
+	}
+	putchar('\n');
+}
+
 static void hex_to_dec(UWORD val) {
 	printf("$%04x = %d\n", val, val);
 }
@@ -2853,6 +2895,14 @@ int MONITOR_Run(void)
 				printf("Missing/invalid hex argument\n");
 		} else if (strcmp(t, "BHEX") == 0) {
 			bin_to_hex();
+		} else if (strcmp(t, "AHEX") == 0) {
+			asc_to_hex(FALSE);
+		} else if (strcmp(t, "ASC") == 0) {
+			hex_to_asc(FALSE);
+		} else if (strcmp(t, "SHEX") == 0) {
+			asc_to_hex(TRUE);
+		} else if (strcmp(t, "SCR") == 0) {
+			hex_to_asc(TRUE);
 		} else if (strcmp(t, "GRC") == 0) {
 			print_graphics(TRUE);
 		} else if (strcmp(t, "GRM") == 0) {
