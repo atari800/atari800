@@ -172,6 +172,9 @@ int main(int argc, char **argv)
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
+	if(Atari800_start_in_monitor)
+		PLATFORM_Exit(TRUE);
+
 	/* main loop */
 	for (;;) {
 		INPUT_key_code = PLATFORM_Keyboard();

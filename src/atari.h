@@ -118,6 +118,10 @@ extern int Atari800_collisions_in_skipped_frames;
 /* Set to TRUE to run emulated Atari as fast as possible */
 extern int Atari800_turbo;
 
+/* Set to TRUE to start in the monitor. It's up to each port's
+	main.c to implement this (initially only SDL supports it). */
+extern int Atari800_start_in_monitor;
+
 /* Initializes Atari800 emulation core. */
 int Atari800_Initialise(int *argc, char *argv[]);
 
