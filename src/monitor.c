@@ -2295,6 +2295,66 @@ static void hex_to_bin(UWORD val) {
 	putchar('\n');
 }
 
+/* Prompt for search string. Returns TRUE if a string is entered,
+	FALSE if the user just presses Return. */
+static void prompt_for_string(char *buf) {
+	char input[256];
+
+	if(*buf) {
+		printf("Search string [%s]: ", buf);
+		safe_gets(input, 255, "");
+	} else {
+		safe_gets(input, 255, "Search string: ");
+	}
+
+	Util_strlcpy(buf, input, strlen(input) + 1);
+}
+
+/* Searches memory for a string, which can be given in ATASCII or
+	screencodes. The arguments are optional, and saved between calls.
+	To avoid ambiguity, the search string is prompted for separately.
+	XXX because I use safe_gets(), the string can't have leading spaces.
+ */
+static void string_search(int screencodes)
+{
+	static char strbuf[256] = { 0 }; /* default = nothing (always prompt) */
+	static UWORD start = 0, end = 0xffff; /* default = search all 64K */
+	char bytes[256];
+	int i, j, len;
+
+	get_hex(&start);
+	get_hex(&end);
+
+	prompt_for_string(strbuf);
+	len = strlen(strbuf);
+
+	if(screencodes) {
+		char *p, *q;
+		for(p = strbuf, q = bytes; *p; p++, q++)
+			*q = asc_to_screen(*p);
+	} else {
+		Util_strlcpy(bytes, strbuf, len + 1);
+	}
+
+	if(!bytes[0]) {
+		printf("Missing search string\n");
+		return;
+	}
+
+	printf("search %04x - %04x for '%s'\n", start, end, strbuf);
+	for(i = start; i <= end; i++) {
+		j = 0;
+		while(MEMORY_SafeGetByte(i + j) == bytes[j]) {
+			j++;
+			if(j >= len) {
+				printf("Found at %04X\n", i);
+				break;
+			}
+		}
+	}
+}
+
+
 /* Displays monitor help. */
 static void show_help(void)
 {
@@ -2947,6 +3007,10 @@ int MONITOR_Run(void)
 			save_load_state(TRUE);
 		} else if (strcmp(t, "LOADSTATE") == 0) {
 			save_load_state(FALSE);
+		} else if (strcmp(t, "SSTR") == 0) {
+			string_search(FALSE);
+		} else if (strcmp(t, "SSCR") == 0) {
+			string_search(TRUE);
 		} else if (strcmp(t, "HELP") == 0 || strcmp(t, "?") == 0)
 			show_help();
 		else if (strcmp(t, "QUIT") == 0 || strcmp(t, "EXIT") == 0) {
