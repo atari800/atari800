@@ -155,6 +155,10 @@ if [[ "$a8_target" = "android" ]]; then
 	WANT_EVENT_RECORDING=no
 	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
 fi
+if [[ "$a8_target" = "falcon" ]]; then
+	CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall"
+	LDFLAGS="-m68020-60"
+fi
 
 
 dnl Check for programs...
@@ -680,6 +684,7 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
                  )
         if [[ "$WANT_NEW_CYCLE_EXACT" = "yes" ]]; then
             OBJS="$OBJS cycle_map.o"
+            ASFLAGS="$ASFLAGS -DNEW_CYCLE_EXACT"
         fi
 
         A8_OPTION(veryslow,no,
@@ -693,6 +698,9 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
               [Display a menu after a CIM instruction (default=ON)],
               CRASH_MENU,[Define to activate crash menu after CIM instruction.]
              )
+    if [[ "$WANT_CRASH_MENU" = "yes" ]]; then
+        ASFLAGS="$ASFLAGS -DCRASH_MENU"
+    fi
 fi
 
 A8_OPTION(pagedattrib,no,
@@ -725,6 +733,9 @@ A8_OPTION(monitorbreak,yes,
           [Support code breakpoints and execution history (slower emulation) (default=ON)],
           MONITOR_BREAK,[Define to activate code breakpoints and execution history.]
          )
+if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
+    ASFLAGS="$ASFLAGS -DMONITOR_BREAK"
+fi
 
 A8_OPTION(monitorbreakpoints,no,
           [Support user-defined breakpoints (default=OFF)],
@@ -740,6 +751,9 @@ A8_OPTION(monitorprofile,no,
           [6502 opcode profiling (default=OFF)],
           MONITOR_PROFILE,[Define to activate 6502 opcode profiling.]
          )
+if [[ "$WANT_MONITOR_PROFILE" = "yes" ]]; then
+    ASFLAGS="$ASFLAGS -DMONITOR_PROFILE"
+fi
 
 A8_OPTION(monitortrace,no,
           [Support TRACE command in the monitor (default=OFF)],
@@ -1227,6 +1241,7 @@ fi
 echo
 echo "Main build variables:"
 echo "    CC......: \"$CC\""
+echo "    ASFLAGS.: \"$ASFLAGS\""
 echo "    CFLAGS..: \"$CFLAGS\""
 echo "    CPPFLAGS: \"$CPPFLAGS\""
 echo "    LDFLAGS.: \"$LDFLAGS\""

@@ -76,12 +76,30 @@
 #endif /* BASIC */
 #endif /* ASAP */
 
+/* For Atari Basic loader */
+void (*CPU_rts_handler)(void) = NULL;
+
+/* 6502 instruction profiling */
+#ifdef MONITOR_PROFILE
+int CPU_instruction_count[256];
+#endif
+
+UBYTE CPU_cim_encountered = FALSE;
+
 #ifdef FALCON_CPUASM
 
 extern UBYTE CPU_IRQ;
 
 #if defined(PAGED_MEM) || defined(PAGED_ATTRIB)
 #error cpu_m68k.asm cannot work with paged memory/attributes
+#endif
+
+#if defined(MONITOR_BREAKPOINTS)
+#error cpu_m68k.asm does not support user-defined breakpoints
+#endif
+
+#if defined(MONITOR_TRACE)
+#error cpu_m68k.asm does not support disassembling the code while it is executed
 #endif
 
 void CPU_Initialise(void)
@@ -220,16 +238,6 @@ void CPU_PutStatus(void)
 	Z = (CPU_regP & 0x02) ^ 0x02;
 	C = (CPU_regP & 0x01);
 }
-
-/* For Atari Basic loader */
-void (*CPU_rts_handler)(void) = NULL;
-
-/* 6502 instruction profiling */
-#ifdef MONITOR_PROFILE
-int CPU_instruction_count[256];
-#endif
-
-UBYTE CPU_cim_encountered = FALSE;
 
 /* Execution history */
 #ifdef MONITOR_BREAK
