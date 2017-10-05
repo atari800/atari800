@@ -52,12 +52,14 @@ void MONITOR_ShowState(FILE *fp, UWORD pc, UBYTE a, UBYTE x, UBYTE y, UBYTE s,
 #define MONITOR_BREAKPOINT_S           48
 #define MONITOR_BREAKPOINT_READ        64
 #define MONITOR_BREAKPOINT_WRITE       128
+#define MONITOR_BREAKPOINT_MEMORY      256
 #define MONITOR_BREAKPOINT_ACCESS      (MONITOR_BREAKPOINT_READ | MONITOR_BREAKPOINT_WRITE)
 
 typedef struct {
 	UBYTE enabled;
-	UBYTE condition;
+	UWORD condition;
 	UWORD value;
+	UWORD m_addr; /* only for MEM: */
 } MONITOR_breakpoint_cond;
 
 #define MONITOR_BREAKPOINT_TABLE_MAX  20

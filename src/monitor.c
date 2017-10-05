@@ -1247,6 +1247,9 @@ static void monitor_breakpoints(void)
 					case MONITOR_BREAKPOINT_ACCESS >> 3:
 						printf("ACCESS%s%04X", op, MONITOR_breakpoint_table[i].value);
 						break;
+					case MONITOR_BREAKPOINT_MEMORY >> 3:
+						printf("MEM:%04x%s%04X", MONITOR_breakpoint_table[i].m_addr, op, MONITOR_breakpoint_table[i].value);
+						break;
 					default:
 						printf("???");
 						break;
@@ -1271,9 +1274,11 @@ static void monitor_breakpoints(void)
 			"    cond is: TYPE OPERATOR VALUE (without spaces)\n"
 			"         or: SETFLAG, CLRFLAG where FLAG is: N, V, D, I, Z, C\n");
 		printf(
-			"    TYPE is: PC, A, X, Y, S, READ, WRITE, ACCESS (read or write)\n"
+			"    TYPE is: PC, A, X, Y, S, READ, WRITE, ACCESS (read or write),\n"
+			"             MEM:addr (contents of memory)\n"
 			"OPERATOR is: <, <=, =, ==, >, >=, !=, <>\n"
-			"   VALUE is a hex number\n"
+			"   VALUE is a hex number\n");
+		printf(
 			"Breakpoint conditions are connected by AND operator\n"
 			"unless you explicitly use OR.\n"
 			"Examples:\n"
@@ -1324,8 +1329,8 @@ static void monitor_breakpoints(void)
 		else
 			i = MONITOR_breakpoint_table_size;
 		while (MONITOR_breakpoint_table_size < MONITOR_BREAKPOINT_TABLE_MAX) {
-			UBYTE condition;
-			int value;
+			UWORD condition;
+			int value, m_addr = -1;
 			int j;
 			if (strcmp(t, "OR") == 0) {
 				condition = MONITOR_BREAKPOINT_OR;
@@ -1382,8 +1387,37 @@ static void monitor_breakpoints(void)
 						t += 5;
 					}
 					break;
+				case 'M':
+					if (strncmp(t, "MEM:", 4) == 0) {
+						UWORD tmp, i;
+						char *p;
+						char b[100];
+						condition = MONITOR_BREAKPOINT_MEMORY;
+						t += 4;
+						p = t;
+						for(i = 0; i < 100; i++) {
+							if(
+									t[i] == ' ' || t[i] == '!' ||
+									t[i] == '<' || t[i] == '>' ||
+									t[i] == '=' || t[i] == '\0')
+							{
+								b[i] = '\0';
+								break;
+							}
+							b[i] = t[i];
+							p++;
+						}
+						if (parse_hex(b, &tmp))
+							m_addr = tmp;
+						t = p;
+					}
+					break;
 				default:
 					break;
+				}
+				if(condition == MONITOR_BREAKPOINT_MEMORY && (m_addr < 0 || m_addr > 0xffff)) {
+					printf("Bad address for MEM:\n");
+					return;
 				}
 				if (t[0] == '!' && t[1] == '=') {
 					condition += MONITOR_BREAKPOINT_LESS | MONITOR_BREAKPOINT_GREATER;
@@ -1426,6 +1460,7 @@ static void monitor_breakpoints(void)
 			MONITOR_breakpoint_table[i].enabled = TRUE;
 			MONITOR_breakpoint_table[i].condition = condition;
 			MONITOR_breakpoint_table[i].value = (UWORD) value;
+			MONITOR_breakpoint_table[i].m_addr = (UWORD) m_addr;
 			i++;
 			MONITOR_breakpoint_table_size++;
 			t = get_token();

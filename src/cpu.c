@@ -668,13 +668,14 @@ void CPU_GO(int limit)
 			}
 			for (i = 0; i < MONITOR_breakpoint_table_size; i++) {
 				int cond;
-				int value;
+				int value, m_addr;
 				if (!MONITOR_breakpoint_table[i].enabled)
 					continue; /* skip */
 				cond = MONITOR_breakpoint_table[i].condition;
 				if (cond == MONITOR_BREAKPOINT_OR)
 					break; /* fire */
 				value = MONITOR_breakpoint_table[i].value;
+				m_addr = MONITOR_breakpoint_table[i].m_addr;
 				if (cond == MONITOR_BREAKPOINT_FLAG_CLEAR) {
 					switch (value) {
 					case CPU_N_FLAG:
@@ -759,6 +760,9 @@ void CPU_GO(int limit)
 						if ((optype & 12) == 0)
 							goto cond_failed;
 						val = addr;
+						break;
+					case MONITOR_BREAKPOINT_MEMORY >> 3:
+						val = MEMORY_SafeGetByte(m_addr);
 						break;
 					default:
 						/* shouldn't happen */
