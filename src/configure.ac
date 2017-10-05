@@ -760,6 +760,11 @@ A8_OPTION(monitortrace,no,
           MONITOR_TRACE,[Define to activate TRACE command in monitor.]
          )
 
+A8_OPTION(monitoransi,yes,
+          [Support ANSI color for GRC and GRM commands (default=ON)],
+          MONITOR_ANSI,[Define to use ANSI color in the monitor.]
+         )
+
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
 dnl we already checked for libz and added it to LIBS
     AC_CHECK_LIB(z,adler32,

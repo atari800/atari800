@@ -24,9 +24,6 @@
 
 #define _POSIX_C_SOURCE 200112L /* for snprintf */
 
-/* XXX make this a configure option */
-#define MONITOR_ANSI
-
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
@@ -2500,7 +2497,7 @@ static void show_help(void)
 static char *gr_color_chars[] = { "\x1b[30;40m ", "\x1b[30;42m ", "\x1b[30;41m ", "\x1b[30;47m " };
 static char *gr_color_done = "\x1b[0m";
 #else
-static char *gr_chars[] = { " ", "*", "O", "X" };
+static char *gr_color_chars[] = { " ", "*", "O", "X" };
 static char *gr_color_done = "";
 #endif
 
