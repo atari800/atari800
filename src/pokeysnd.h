@@ -66,8 +66,6 @@
 extern "C" {
 #endif
 
-	/* #define SIGNED_SAMPLES */ /* define for signed output */
-
 #ifdef  POKEYSND_SIGNED_SAMPLES			/* if signed output selected */
 #define POKEYSND_SAMP_MAX 127			/* then set signed 8-bit clipping ranges */
 #define POKEYSND_SAMP_MIN -128

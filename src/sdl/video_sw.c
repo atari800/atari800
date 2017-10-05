@@ -706,6 +706,16 @@ static void DisplayWithScaling(void)
 			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+				quad = (screen[yy + (x >> 16)] << 0);
+				x -= dx;
+				quad += (screen[yy + (x >> 16)] << 8);
+				x -= dx;
+				quad += (screen[yy + (x >> 16)] << 16);
+				x -= dx;
+				quad += (screen[yy + (x >> 16)] << 24);
+				x -= dx;
+#else
 				quad = (screen[yy + (x >> 16)] << 24);
 				x -= dx;
 				quad += (screen[yy + (x >> 16)] << 16);
@@ -714,6 +724,7 @@ static void DisplayWithScaling(void)
 				x -= dx;
 				quad += (screen[yy + (x >> 16)] << 0);
 				x -= dx;
+#endif
 
 				pixels[pos] = quad;
 				pos--;
@@ -732,12 +743,22 @@ static void DisplayWithScaling(void)
 			pos = w1;
 			yy = Screen_WIDTH * (y >> 16);
 			while (pos >= 0) {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+				c = screen[yy + (x >> 16)];
+				quad = SDL_PALETTE_buffer.bpp16[c];
+				x -= dx;
+				c = screen[yy + (x >> 16)];
+				quad += SDL_PALETTE_buffer.bpp16[c] << 16;
+				x -= dx;
+#else
 				c = screen[yy + (x >> 16)];
 				quad = SDL_PALETTE_buffer.bpp16[c] << 16;
 				x -= dx;
 				c = screen[yy + (x >> 16)];
 				quad += SDL_PALETTE_buffer.bpp16[c];
 				x -= dx;
+#endif
+
 				pixels[pos] = quad;
 				pos--;
 			}
