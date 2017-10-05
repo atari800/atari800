@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "antic.h"
 #include "atari.h"
@@ -2405,6 +2406,9 @@ static void show_help(void)
 	/* split into several printfs to avoid gcc -pedantic warning: "string length 'xxx'
 	   is greater than the length '509' ISO C89 compilers are required to support" */
 	printf(
+		"SSTR startaddr endaddr string  - Search memory for ASCII string\n"
+		"SSCR startaddr endaddr string  - Search memory for ANTIC screen-code string\n");
+	printf(
 		"LOOP [inneraddr]               - Disassemble a loop that contains inneraddr\n"
 		"RAM startaddr endaddr          - Convert memory block into RAM\n"
 		"ROM startaddr endaddr          - Convert memory block into ROM\n"
@@ -2463,24 +2467,31 @@ static void show_help(void)
 #ifdef HAVE_SYSTEM
 		"!command                       - Execute shell command\n"
 #endif
-		"DEC [value]                    - Convert hex value to decimal\n");
+		"DEC value                      - Convert hex value to decimal\n");
 	printf(
-		"HEX [value]                    - Convert decimal value to hex\n"
-		"BIN [value]                    - Convert hex value to binary\n");
+		"HEX value                      - Convert decimal value to hex\n"
+		"BIN value                      - Convert hex value to binary\n");
 	if(pager()) return;
 	printf(
-		"BHEX [value]                   - Convert binary value to hex\n"
-		"ASC [value] <[value] ...>      - Convert hex value(s) to ASCII string\n"
-		"AHEX [string]                  - Convert ASCII string to hex\n"
-		"SCR [value] <[value] ...>      - Convert hex value(s) to screencode string\n"
-		"SHEX [string]                  - Convert screencode string to hex\n");
+		"BHEX value                     - Convert binary value to hex\n"
+		"ASC value [value] ...          - Convert hex value(s) to ASCII string\n"
+		"AHEX string                    - Convert ASCII string to hex\n"
+		"SCR value [value] ...          - Convert hex value(s) to screencode string\n"
+		"SHEX string                    - Convert screencode string to hex\n");
+	printf(
+      "FP number                      - Convert number to BCD floating point, show in hex\n"
+      "FP exp m1 [m2 m3 m4 m5]        - Convert hex bytes to BCD float, show result\n"
+		"                                 Missing mantissa bytes are assumed to be 00\n"
+      "CFP addr number                - Convert to BCD float, store in memory\n"
+		"MFP [addr]                     - Show memory as Atari BCD floating point\n"
+		"                                 Default addr is d4 (FR0)\n");
 	printf(
 #ifdef MONITOR_ANSI
-		"GRM [addr] <[width] [height]>  - Display memory as mono bitmap\n"
-		"GRC [addr] <[width] [height]>  - Display memory as 4-color bitmap\n"
+		"GRM addr [width] [height]      - Display memory as mono bitmap\n"
+		"GRC addr [width] [height]      - Display memory as 4-color bitmap\n"
 #endif
-		"SAVESTATE <[filename]>         - Save machine state (default 'monitor.a8s')\n"
-		"LOADSTATE <[filename]>         - Load machine state (default 'monitor.a8s')\n"
+		"SAVESTATE [filename]           - Save machine state (default 'monitor.a8s')\n"
+		"LOADSTATE [filename]           - Load machine state (default 'monitor.a8s')\n"
 		"QUIT or EXIT                   - Quit emulator\n"
 		"HELP or ?                      - This text\n");
 }
@@ -2555,6 +2566,231 @@ static void print_graphics(int want_color) {
 			addr += (cols - 1) * height * width;
 		}
 		if(pager()) break;
+	}
+}
+
+/* See De Re Atari chapter 8 for a description of the FP storage format:
+	http://www.atariarchives.org/dere/chapt08.php#H8_8 */
+static double fp_to_double(unsigned char *fp, int *invalid) {
+	int exp = (int)*fp, sign, i;
+	unsigned char *mant = fp + 1;
+	double fval = 0.0l, mult = 1.0l;
+
+	*invalid = FALSE;
+
+	/* "The number zero is handled as a special case, and is
+		represented as a zero exponent and zero mantissa. Either the
+		exponent or the first mantissa byte may be tested for zero." */
+	if(exp == 0 || mant[0] == 0) return 0.0l;
+
+	/* De Re doesn't mention it, but an exponent of $80 is invalid. It
+		would mean "negative zero"... */
+	if(exp == 0x80) {
+		*invalid = TRUE;
+		return 0.0l;
+	}
+
+	/* bit 7 of exponent is the sign of the mantissa, save & strip off */
+	sign = (exp & 0x80 ? -1 : 1);
+	exp &= 0x7f;
+
+	/* The FP format looks like it should support exponents ranging $00-$7f,
+		but the FP ROM limits the range to $0f-$70. Anything outside this, we
+		flag as invalid (but the conversion result should be OK). */
+	if(exp < 0x0f || exp > 0x70) *invalid = TRUE;
+
+	/* "In excess 64 notation, the value 64 is added to the exponent
+		value before it is placed in the exponent byte." */
+	exp -= 64;
+
+	/* Mantissa bytes are base 100, packed BCD, $00 - $99.
+		"There is an implied decimal point to the right of the first mantissa
+		byte", but it's not a decimal point (base 10), it's a centimal point
+		(base 100).
+
+		The 5 mantissa bytes are interpreted as:
+		aa.bbccddee, so aa is taken as-is, bb is multiplied by 0.01, cc by 0.0001,
+		etc.
+	 */
+	for(i = 0; i < 5; mant++, i++) {
+		char hi, lo;
+
+		hi = *mant >> 4;
+		lo = *mant & 0x0f;
+
+		/* Flag if either nybble isn't valid BCD, but finish the conversion */
+		if(hi > 9 || lo > 9) *invalid = TRUE;
+
+		fval += (double)(hi * 10 + lo) * mult;
+		mult /= 100.0l;
+	}
+
+	/* Apply exponent and sign. */
+	fval *= pow(100.0l, exp);
+	fval *= (double)sign;
+
+	return fval;
+}
+
+/* Convert an Atari FP number and print it, with a warning
+	if the conversion found invalid input. */
+static void print_fp_dbl(unsigned char *fp)
+{
+	int invalid = FALSE;
+	printf("%-10g", fp_to_double(fp, &invalid));
+	if(invalid) printf(" (invalid FP!)");
+	putchar('\n');
+}
+
+/* Interpret memory as a 6-byte Atari floating point
+	constant, display in decimal/scientific notation. */
+static void mem_to_fp(void)
+{
+	UWORD addr;
+
+	if(!get_hex(&addr)) addr = 0xd4; /* FR0 */
+
+	print_fp_dbl(&MEMORY_mem[addr]);
+}
+
+/* Read 2 to 6 hex bytes from command line, interpret
+	as a 6-byte Atari floating point constant, display
+	in decimal/scientific notation. */
+static void hex_to_fp(void)
+{
+	UWORD input;
+	unsigned char buf[6];
+	int i;
+
+	for(i = 0; i < 6; i++) {
+		if(get_hex(&input))
+			buf[i] = (unsigned char)input;
+		else
+			buf[i] = 0;
+	}
+
+	print_fp_dbl(buf);
+}
+
+/* Base 100 logarithm, purely to make the code below more readable. */
+#define LOG100(x) (log10(x) / log10(100.0l))
+
+/* Convert a double to a 6-byte Atari BCD floating point value.
+	Return TRUE for success, FALSE if conversion failed, due to
+	the number being out of the Atari's range. */
+static int double_to_fp(double val, unsigned char *result)
+{
+	double exp, mant;
+	int i, sign = 1;
+	long mantl;
+
+	/* Set initial result value to zero. */
+	for(i = 0; i < 6; i++)
+		result[i] = 0;
+
+	/* Logarithms not valid for negative numbers, so separate the
+		sign and work on the absolute value. */
+	if(val < 0) {
+		val = fabs(val);
+		sign = -1;
+	}
+
+	/* Calculate exponent and mantissa. Mantissa will always be >= 0
+		and < 100. */
+	exp = floor(LOG100(val));
+	mant = val / pow(100.0l, exp);
+
+	/* Paranoia, to make sure the loop below isn't infinite. This
+		should never happen, but... */
+	if(mant <= 0.0l) return TRUE;
+
+	/* Normalize: shift left 1 base-100 place until 100 > mantissa >= 1.
+		Each left shift means multiplying the mantissa by 100, so we
+		have to decrement the (base-100) exponent. */
+	while(mant < 1.0l) {
+		mant *= 100.0l;
+		exp--;
+	}
+
+	/* It's easier to convert to BCD if we use a long instead of a
+		double, since C doesn't let us use modulus on a double. You
+		can think of mantl as a fixed-point decimal number. */
+	mantl = (long)floor(mant * 100000000.0l);
+
+	/* At this point, result[] is still all zeroes. If we got a zero
+		mantissa, we got a valid zero result. */
+	if(mantl == 0) return TRUE;
+
+	/* Convert to excess 64 notation and check range. The FP ROM limits
+		the exponent to the range $0f-$70, even though the format should
+		allow $00-$7f. Not sure why this was done (does it mask a bug?),
+		but we do likewise here. Exponent too small just means we return
+		a valid zero result, but too large is an error. */
+	exp += 64;
+	if(exp < 0x0f) return TRUE;
+	if(exp > 0x70) return FALSE;
+
+	/* Set sign bit. Can't use | on a double. */
+	if(sign == -1) exp += 0x80;
+
+	/* At this point we have a valid exponent and mantissa, so store
+		them in result[]. */
+	result[0] = (unsigned char)exp;
+
+	/* Extract each base-100 digit, convert to BCD, store in result[]. */
+	for(i = 5; i > 0; i--) {
+		unsigned char n = mantl % 100l;
+		mantl /= 100l;
+		result[i] = ((n / 10) << 4) | (n % 10);
+	}
+	return TRUE;
+}
+
+/* Read a double from the command line, convert to Atari FP, print.
+	If store is TRUE, read an address first, and store the FP bytes
+	at the address (changes 6 bytes). */
+static void fp_to_hex(int store) {
+	UWORD addr;
+	double val;
+	char *t;
+	unsigned char fp[6];
+	char *end;
+	int i;
+
+	if(store) {
+		if(!get_hex(&addr)) {
+			printf("Missing/invalid address\n");
+			return;
+		}
+	}
+
+	if( (t = get_token()) == NULL) {
+		printf("Missing floating point argument\n");
+		return;
+	}
+
+	val = strtod(t, &end);
+	if(end == t) {
+		printf("Invalid floating point argument\n");
+		return;
+	}
+
+	if(!double_to_fp(val, fp)) {
+		printf("Floating point argument out of range\n");
+		return;
+	}
+
+	if(store) printf("%04x: ", addr);
+	for(i = 0; i < 6; i++) {
+		printf("%02x ", fp[i]);
+	}
+	putchar('\n');
+
+	if(store) {
+		for(i = 0; i < 6; i++) {
+			MEMORY_PutByte(addr, fp[i]);
+			addr++;
+		}
 	}
 }
 
@@ -3072,6 +3308,20 @@ int MONITOR_Run(void)
 			string_search(FALSE);
 		} else if (strcmp(t, "SSCR") == 0) {
 			string_search(TRUE);
+		} else if (strcmp(t, "MFP") == 0) {
+			mem_to_fp();
+		} else if (strcmp(t, "CFP") == 0) {
+			fp_to_hex(TRUE);
+		} else if (strcmp(t, "FP") == 0) {
+			int spaces = 0;
+			char *p = token_ptr;
+			while(*p++) spaces += (*p == ' ');
+			/* if we got at least 2 args, assume the input is hex bytes.
+				for 1 arg, assume it's a floating point number. */
+			if(spaces)
+				hex_to_fp();
+			else
+				fp_to_hex(FALSE);
 		} else if (strcmp(t, "HELP") == 0 || strcmp(t, "?") == 0)
 			show_help();
 		else if (strcmp(t, "QUIT") == 0 || strcmp(t, "EXIT") == 0) {
