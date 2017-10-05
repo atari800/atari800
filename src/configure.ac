@@ -761,8 +761,13 @@ A8_OPTION(monitortrace,no,
          )
 
 A8_OPTION(monitoransi,yes,
-          [Support ANSI color for GRC and GRM commands (default=ON)],
-          MONITOR_ANSI,[Define to use ANSI color in the monitor.]
+          [Support ANSI terminal control (default=ON)],
+          MONITOR_ANSI,[Define to use ANSI terminal control in the monitor.]
+         )
+
+A8_OPTION(monitorutf8,yes,
+          [Support UTF-8 for printing ATASCII characters in the monitor (default=ON)],
+          MONITOR_ANSI,[Define to use UTF-8 in the monitor.]
          )
 
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then

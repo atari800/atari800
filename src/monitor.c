@@ -393,6 +393,66 @@ static int symtable_builtin_enable = TRUE;
 static symtable_rec *symtable_user = NULL;
 static int symtable_user_size = 0;
 
+#ifdef MONITOR_ANSI
+static char *gr_color_chars[] = { "\x1b[30;40m ", "\x1b[30;42m ", "\x1b[30;41m ", "\x1b[30;47m " };
+static char *gr_color_done = "\x1b[0m";
+#else
+static char *gr_color_chars[] = { " ", "*", "O", "X" };
+static char *gr_color_done = "";
+#endif
+
+
+/* XXX make this configurable */
+#define MONITOR_UTF8
+
+#ifdef MONITOR_UTF8
+static const char *utf8_chars[] = {
+/* 0 - 7 */ "\xe2\x99\xa5", "\xe2\x94\xa3", "\xe2\x94\x83", "\xe2\x94\x9b", "\xe2\x94\xab", "\xe2\x94\x93", "\xe2\x95\xb1", "\xe2\x95\xb2",
+/* 8 - 15 */ "\xe2\x97\xa2", "\xe2\x96\x97", "\xe2\x97\xa3", "\xe2\x96\x9d", "\xe2\x96\x98", "\xe2\x96\x94", "\xe2\x96\x81", "\xe2\x96\x96",
+/* 16 - 23 */ "\xe2\x99\xa3", "\xe2\x94\x8f", "\xe2\x94\x81", "\xe2\x95\x8b", "\xe2\x9a\xab", "\xe2\x96\x84", "\xe2\x96\x8e", "\xe2\x94\xb3",
+/* 24 - 31 */ "\xe2\x94\xbb", "\xe2\x96\x8c", "\xe2\x94\x97", "\xe2\x90\x9b", "\xe2\x86\x91", "\xe2\x86\x93", "\xe2\x86\x90", "\xe2\x86\x92",
+/* 32 - 39 */ " ", "!", "\"", "#", "$", "%", "&", "'",
+/* 40 - 47 */ "(", ")", "*", "+", ",", "-", ".", "/",
+/* 48 - 55 */ "0", "1", "2", "3", "4", "5", "6", "7",
+/* 56 - 63 */ "8", "9", ":", ";", "<", "=", ">", "?",
+/* 64 - 71 */ "@", "A", "B", "C", "D", "E", "F", "G",
+/* 72 - 79 */ "H", "I", "J", "K", "L", "M", "N", "O",
+/* 80 - 87 */ "P", "Q", "R", "S", "T", "U", "V", "W",
+/* 88 - 95 */ "X", "Y", "Z", "[", "\\", "]", "^", "_",
+/* 96 - 103 */ "\xe2\x97\x86", "a", "b", "c", "d", "e", "f", "g",
+/* 104 - 111 */ "h", "i", "j", "k", "l", "m", "n", "o",
+/* 112 - 119 */ "p", "q", "r", "s", "t", "u", "v", "w",
+/* 120 - 127 */ "x", "y", "z", "\xe2\x99\xa0", "|", "\xe2\x86\xb0", "\xe2\x97\x80", "\xe2\x96\xb6",
+};
+
+/* Print an ATASCII character, with support for graphics characters if
+	UTF-8 is available, and inverse video if ANSI is available. */
+static void print_atascii_char(UWORD c) {
+	int inv = c & 0x80;
+
+#ifdef MONITOR_ANSI
+	/* ESC[7m = bold attribute on */
+	if(inv) printf("\x1b[7m");
+#else
+	if(inv) {
+		putchar('.');
+		return;
+	}
+#endif /* MONITOR_ANSI */
+
+	printf("%s", utf8_chars[c & 0x7f]);
+
+#ifdef MONITOR_ANSI
+	/* ESC[0m = all attributes off */
+	if(inv) printf("\x1b[0m");
+#endif /* MONITOR_ANSI */
+}
+#else /* MONITOR_UTF8 */
+static void print_atascii_char(UWORD c) {
+	putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
+}
+#endif /* MONITOR_UTF8 */
+
 static const char *find_label_name(UWORD addr, int is_write)
 {
 	int i;
@@ -1898,7 +1958,8 @@ static void monitor_sum_mem(void)
 }
 
 /* Show memory contents, starting from address fetched from command line. */
-static void monitor_show_mem(UWORD *addr)
+static char screen_to_asc(char c);
+static void monitor_show_mem(UWORD *addr, int screencodes)
 {
 	int count = 16;
 	get_hex(addr);
@@ -1911,8 +1972,9 @@ static void monitor_show_mem(UWORD *addr)
 		for (i = 0; i < 16; i++) {
 			UBYTE c;
 			c = MEMORY_SafeGetByte(*addr);
+			if(screencodes) c = screen_to_asc(c);
 			(*addr)++;
-			putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
+			print_atascii_char(c);
 		}
 		putchar('\n');
 	} while (--count > 0);
@@ -2269,7 +2331,7 @@ static void hex_to_asc(int screencodes) {
 	UWORD c;
 	while(get_hex(&c)) {
 		if(screencodes) c = screen_to_asc(c);
-		putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
+		print_atascii_char(c);
 	}
 	putchar('\n');
 }
@@ -2397,12 +2459,13 @@ static void show_help(void)
 		"SET{N,V,D,I,Z,C} 0 or 1        - Set flag value\n"
 		"C startaddr hexval...          - Change memory\n"
 		"D [startaddr]                  - Disassemble memory\n"
-		"F startaddr endaddr hexval     - Fill memory\n"
-		"M [startaddr]                  - Memory list\n"
-		"S startaddr endaddr hexval...  - Search memory\n");
+		"F startaddr endaddr hexval     - Fill memory\n");
 	/* split into several printfs to avoid gcc -pedantic warning: "string length 'xxx'
 	   is greater than the length '509' ISO C89 compilers are required to support" */
 	printf(
+		"M [startaddr]                  - Memory list\n"
+		"MS [startaddr]                 - Memory list (show characters as screencodes)\n"
+		"S startaddr endaddr hexval...  - Search memory\n"
 		"SSTR startaddr endaddr string  - Search memory for ASCII string\n"
 		"SSCR startaddr endaddr string  - Search memory for ANTIC screen-code string\n");
 	printf(
@@ -2492,14 +2555,6 @@ static void show_help(void)
 		"QUIT or EXIT                   - Quit emulator\n"
 		"HELP or ?                      - This text\n");
 }
-
-#ifdef MONITOR_ANSI
-static char *gr_color_chars[] = { "\x1b[30;40m ", "\x1b[30;42m ", "\x1b[30;41m ", "\x1b[30;47m " };
-static char *gr_color_done = "\x1b[0m";
-#else
-static char *gr_color_chars[] = { " ", "*", "O", "X" };
-static char *gr_color_done = "";
-#endif
 
 static void print_gr_color(UWORD addr) {
 	UBYTE b = MEMORY_SafeGetByte(addr);
@@ -3226,7 +3281,9 @@ int MONITOR_Run(void)
 		else if (strcmp(t, "SUM") == 0)
 			monitor_sum_mem();
 		else if (strcmp(t, "M") == 0)
-			monitor_show_mem(&addr);
+			monitor_show_mem(&addr, FALSE);
+		else if (strcmp(t, "MS") == 0)
+			monitor_show_mem(&addr, TRUE);
 		else if (strcmp(t, "TSS") == 0)
 			trainer_start_search();
 		else if (strcmp(t, "TSN") == 0)
