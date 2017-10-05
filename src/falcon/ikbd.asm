@@ -1,42 +1,42 @@
-|  ikbd.asm - Atari Falcon specific port code
-|
-|  Copyright (c) 1997-1998 Petr Stehlik and Karel Rous
-|  Copyright (c) 1998-2003 Atari800 development team (see DOC/CREDITS)
-|
-|  This file is part of the Atari800 emulator project which emulates
-|  the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
-|
-|  Atari800 is free software; you can redistribute it and/or modify
-|  it under the terms of the GNU General Public License as published by
-|  the Free Software Foundation; either version 2 of the License, or
-|  (at your option) any later version.
-|
-|  Atari800 is distributed in the hope that it will be useful,
-|  but WITHOUT ANY WARRANTY; without even the implied warranty of
-|  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-|  GNU General Public License for more details.
-|
-|  You should have received a copy of the GNU General Public License
-|  along with Atari800; if not, write to the Free Software
-|  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+;  ikbd.asm - Atari Falcon specific port code
+;
+;  Copyright (c) 1997-1998 Petr Stehlik and Karel Rous
+;  Copyright (c) 1998-2003 Atari800 development team (see DOC/CREDITS)
+;
+;  This file is part of the Atari800 emulator project which emulates
+;  the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
+;
+;  Atari800 is free software; you can redistribute it and/or modify
+;  it under the terms of the GNU General Public License as published by
+;  the Free Software Foundation; either version 2 of the License, or
+;  (at your option) any later version.
+;
+;  Atari800 is distributed in the hope that it will be useful,
+;  but WITHOUT ANY WARRANTY; without even the implied warranty of
+;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;  GNU General Public License for more details.
+;
+;  You should have received a copy of the GNU General Public License
+;  along with Atari800; if not, write to the Free Software
+;  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-	.globl	_init_kb
-	.globl	_rem_kb
-	.globl	_key_buf
-	.globl	_joy0
-	.globl	_joy1
-	.globl	_buttons
-	.globl	_kbhead
-	.globl	_keybuf
+	xdef	_init_kb
+	xdef	_rem_kb
+	xdef	_key_buf
+	xdef	_joy0
+	xdef	_joy1
+	xdef	_buttons
+	xref	_kbhead
+	xref	_keybuf
 *=======================================================*
 *	IKBD routines: latest update 25/03/96		*
 *=======================================================*
 *	Handle keyboard & mouse				*
 *=======================================================*
 
-	.set	ikbd,0x118		| keyboard vector
-	.set	key_ctl,0xfffffc00	| keyboard control register
-	.set	key_dat,0xfffffc02	| keyboard data register
+ikbd		=	$118		; keyboard vector
+key_ctl		=	$fffffc00	; keyboard control register
+key_dat		=	$fffffc02	; keyboard data register
 
 *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
 * Initialise custom keyboard packet handler		*
@@ -46,10 +46,10 @@ initialise_ikbd:
 *-------------------------------------------------------*
 	bsr	empty_buffer
 	lea	key_buffer,a0
-	moveq	#(128/4)-1,d7
-nitialise_ikbd_clear_keybd:
+	moveq	#(128/4)-1,d0
+.clear_keybd:
 	clr.l	(a0)+
-	dbf	d7,nitialise_ikbd_clear_keybd
+	dbf	d0,.clear_keybd
 	move.l	ikbd.w,old_ikbd
 	move.l	#ikbd_handler,ikbd.w
 	bsr	flush_ikbd
@@ -71,13 +71,13 @@ remove_ikbd:
 *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
 flush_ikbd:
 *-------------------------------------------------------*
-lush_ikbd_wl:	tst.b	key_dat.w
-	bpl.s	lush_ikbd_wl
+.wl:	tst.b	key_dat.w
+	bpl.s	.wl
 	move.b	key_ctl.w,d0
 	btst	#0,d0
-	bne.s	lush_ikbd_read
+	bne.s	.read
 	rts
-lush_ikbd_read:	move.b	key_dat.w,d0
+.read	move.b	key_dat.w,d0
 	bra.s	flush_ikbd
 
 *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
@@ -104,15 +104,15 @@ ikbd_loop:
 
 	move.b	key_dat.w,d0
 
-	cmp.b	#0xff,d0			| joystick 1 packet
+	cmp.b	#$ff,d0			; joystick 1 packet
 	beq.s	do_joy1
-	cmp.b	#0xfe,d0			| joystick 0 packet
+	cmp.b	#$fe,d0			; joystick 0 packet
 	beq.s	do_joy0
 
 mouse_event:
 	move.b	d0,d1
-	and.b	#0xfc,d1			| 0b111110xx = mouse packet
-	cmp.b	#0xf8,d1
+	and.b	#$fc,d1			; %111110xx = mouse packet
+	cmp.b	#$f8,d1
 	bne.s	key_press
 	and.b	#3,d0
 	move.b	d0,buttons
@@ -136,9 +136,9 @@ key_press:
 	and.w	#256-1,d1
 	move.l	d1,_kbhead
 
-	btst	#7,d0			| test release bit
-	seq	d1			| d1.b cleared if release bit set
-	and.w	#0x7f,d0			| mask off release bit
+	btst	#7,d0			; test release bit
+	seq	d1			; d1.b cleared if release bit set
+	and.w	#$7f,d0			; mask off release bit
 	lea	key_buffer,a0
 	move.b	d1,(a0,d0.w)
 
@@ -149,17 +149,17 @@ ikbd_aq:
 
 ikbd_aq2:
 
-	bclr	#6,0xfffffa11.w
+	bclr	#6,$fffffa11.w
 	movem.l	(sp)+,a0/d0-d1
 	rte
 
 
 ik_err:	move.l	#ikbd_handler,ikbd.w
-k_err_ikl:	btst	#0,key_ctl.w
-	beq.s	k_err_clr
+.ikl:	btst	#0,key_ctl.w
+	beq.s	.clr
 	move.b	key_dat.w,d0
-	bra.s	k_err_ikl
-k_err_clr:	bra.s	ikbd_aq
+	bra.s	.ikl
+.clr:	bra.s	ikbd_aq
 
 get_dx:
 	movem.l	a0/d0-d1,-(sp)
@@ -204,13 +204,13 @@ get_dy:
 get_joy1:
 	move.b	key_dat.w,joy0
 	move.l	#ikbd_handler,ikbd.w
-	bclr	#6,0xfffffa11.w
+	bclr	#6,$fffffa11.w
 	rte
 
 get_joy0:
 	move.b	key_dat.w,joy1
 	move.l	#ikbd_handler,ikbd.w
-	bclr	#6,0xfffffa11.w
+	bclr	#6,$fffffa11.w
 	rte
 
 *-------------------------------------------------------*
@@ -218,19 +218,19 @@ get_joy0:
 *-------------------------------------------------------*
 empty_buffer:
 *-------------------------------------------------------*
-mpty_buffer_bk:	move.w		#11,-(sp)
+.bk	move.w		#11,-(sp)
 	trap		#1
-	addq		#2,sp
+	addq.l		#2,sp
 	tst.w		d0
-	beq.s		mpty_buffer_ot
+	beq.s		.ot
 	move.w		#7,-(sp)
 	trap		#1
-	addq		#2,sp
-	bra.s		mpty_buffer_bk
-mpty_buffer_ot:	rts
+	addq.l		#2,sp
+	bra.s		.bk
+.ot	rts
 
 *-------------------------------------------------------*
-			.bss
+			bss
 *-------------------------------------------------------*
 
 old_ikbd:		ds.l	1
@@ -247,6 +247,10 @@ _joy1:
 joy1:			ds.b	1
 _buttons:
 buttons:		ds.b	1
-
+			even
 _key_buf:
-key_buffer:		ds.w	64
+key_buffer:		ds.b	128
+
+*-------------------------------------------------------*
+			text
+*-------------------------------------------------------*

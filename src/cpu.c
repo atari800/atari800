@@ -80,8 +80,8 @@
 
 extern UBYTE CPU_IRQ;
 
-#ifdef PAGED_MEM
-#error cpu_m68k.asm cannot work with paged memory
+#if defined(PAGED_MEM) || defined(PAGED_ATTRIB)
+#error cpu_m68k.asm cannot work with paged memory/attributes
 #endif
 
 void CPU_Initialise(void)

@@ -47,7 +47,7 @@ case "$target" in
         echo "Possible values for the '--target' option are:"
         echo "    default          (autodetect available graphics and sound libraries)"
         echo "    android          (Android devices)"
-        echo "    falcon           (Atari Falcon systems only)"
+        echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint)"
         echo "    ps2              (Sony PlayStation 2)"
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
@@ -105,6 +105,7 @@ case $host_os in
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
         AC_DEFINE(SYSTEM_WIDE_CFG_FILE,"c:\\atari800.cfg",[Alternate system-wide config file for non-Unix OS.])
+		AC_DEFINE(BITPL_SCR,1,[Define to allocate the screen back buffer.])
         WANT_IDE="no"
         ;;
     beos)
@@ -287,9 +288,11 @@ dnl BeOS has a real issue with redundant-decls
         fi
         ;;
     falcon)
+        AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
+        AC_DEFINE(SUPPORTS_PLATFORM_TIME,1,[Platform-specific time function.])
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
         AC_CHECK_LIB(gem, appl_init)
-        OBJS="atari_falcon.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
+        OBJS="falcon/main.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
         ;;
     ps2)
         AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
@@ -859,7 +862,8 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             ;;
         falcon)
             AC_DEFINE(POKEYSND_SIGNED_SAMPLES,1,[Use 8-bit signed samples.])
-            OBJS="$OBJS sound_falcon.o falcon/sound_dma.o"
+            WANT_SOUND_THIN_API=yes
+            OBJS="$OBJS falcon/sound.o"
             ;;
         oss)
             WANT_SOUND_THIN_API=yes
@@ -1066,7 +1070,7 @@ if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
               FALCON_CPUASM,[Define to use m68k assembler CPU core for Falcon target.]
              )
     if [[ "$WANT_FALCON_CPUASM" = "yes" ]]; then
-        OBJS="$OBJS cpu_m68k.o"
+        OBJS="$OBJS falcon/cpu_m68k.o"
     fi
 fi
 

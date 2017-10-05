@@ -10,11 +10,19 @@ Current active members of the Atari800 development team:
     James Wilkinson     (DOS, BeOS, Win32)
     Christian Groessler (Sega Dreamcast)
     Andrey Dj           (Raspberry Pi)
+    Miro Kropacek       (Atari Falcon)
 
 
 
 All contributors, past and present:
 -----------------------------------
+
+Miro Kropacek <miro.kropacek@gmail.com>
+    - revitalised the Atari Falcon port:
+        - Sound ThinAPI
+        - Videl fixes & RGB support
+        - SuperVidel support
+        - double/tripple buffering
 
 Troy Ayers <holiday42@gmail.com>
     - PlayStation 2 port

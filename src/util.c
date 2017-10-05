@@ -466,7 +466,7 @@ double Util_time(void)
 #elif defined(HAVE_UCLOCK)
 	return uclock() * (1.0 / UCLOCKS_PER_SEC);
 #elif defined(HAVE_CLOCK)
-	return clock() * (1.0 / CLK_TCK);
+	return clock() * (1.0 / CLOCKS_PER_SEC);
 #else
 #error No function found for Util_time()
 #endif
