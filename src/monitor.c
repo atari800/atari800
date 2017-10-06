@@ -3112,6 +3112,13 @@ static int count_spaces(void) {
 static int cmd_wants_filename(void) {
 	int spaces = count_spaces();
 
+#ifdef HAVE_SYSTEM
+	/* XXX for now, just filename completion. Maybe worth revisiting,
+		do command completion using $PATH, for the first argument. */
+	if(spaces >= 1 && rl_line_buffer[0] == '!')
+		return TRUE;
+#endif
+
 	if(spaces == 1 && Util_strnicmp(rl_line_buffer, "read ", 5) == 0)
 		return TRUE;
 
