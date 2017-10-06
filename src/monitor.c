@@ -441,7 +441,7 @@ static void print_atascii_char(UWORD c) {
 	int inv = c & 0x80;
 
 #ifdef MONITOR_ANSI
-	/* ESC[7m = bold attribute on */
+	/* ESC[7m = reverse video attribute on */
 	if(inv) printf("\x1b[7m");
 #else
 	if(inv) {
