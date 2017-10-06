@@ -631,7 +631,12 @@ void CPU_GO(int limit)
 		insn = GET_CODE_BYTE();
 
 #ifdef MONITOR_BREAKPOINTS
-		if (MONITOR_breakpoint_table_size > 0 && MONITOR_breakpoints_enabled) {
+#ifdef MONITOR_BREAK
+		if (MONITOR_breakpoint_table_size > 0 && MONITOR_breakpoints_enabled && !MONITOR_break_step)
+#else
+		if (MONITOR_breakpoint_table_size > 0 && MONITOR_breakpoints_enabled)
+#endif
+		{
 			UBYTE optype = MONITOR_optype6502[insn];
 			int i;
 			switch (optype >> 4) {
