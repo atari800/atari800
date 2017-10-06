@@ -1884,19 +1884,38 @@ static void monitor_read_from_file(UWORD *addr)
 	}
 }
 
-/* Writes memory to file, from address fetched from command line. */
+/* Writes memory to file, from address fetched from command line.
+	Optionally, it can be a xex file, with optional run address.
+ */
 static void monitor_write_to_file(void)
 {
 	UWORD addr1;
 	UWORD addr2;
+	UWORD runaddr;
+	int xex = FALSE, have_runaddr = FALSE;
 #ifdef HAVE_POPEN
 	int pipe = FALSE;
 #endif
 
+	/* Peek at the next token without retrieving it... */
+	if(Util_strnicmp(token_ptr, "XEX ", 4) == 0) {
+		xex = TRUE;
+		/* we got the magic keyword, toss the token */
+		(void)get_token();
+	}
+
 	if (get_hex2(&addr1, &addr2) && addr1 <= addr2) {
+		size_t wbytes = 0;
 		const char *filename;
 		FILE *f;
 		filename = get_token();
+
+		/* XXX this logic doesn't allow us to give a filename that
+			matches a symbol name or hex address. */
+		if(xex && filename != NULL && parse_hex(filename, &runaddr)) {
+			have_runaddr = TRUE;
+			filename = get_token();
+		}
 
 		if (filename == NULL) {
 			filename = "memdump.dat";
@@ -1927,8 +1946,31 @@ static void monitor_write_to_file(void)
 			return;
 		} else {
 			size_t nbytes = addr2 - addr1 + 1;
+
+			if(xex) {
+				fputc(0xff, f); /* binary load FFFF header */
+				fputc(0xff, f);
+				fputc(addr1 & 0xff, f);
+				fputc(addr1 >> 8, f);
+				fputc(addr2 & 0xff, f);
+				fputc(addr2 >> 8, f);
+				wbytes += 6;
+			}
+
 			if (fwrite(&MEMORY_mem[addr1], 1, addr2 - addr1 + 1, f) < nbytes)
 				perror(filename);
+
+			wbytes += nbytes;
+
+			if(xex && have_runaddr) {
+				fputc(0xe0, f); /* start addr $02e0 = RUNAD */
+				fputc(0x02, f);
+				fputc(0xe1, f); /* end addr $02e1 */
+				fputc(0x02, f);
+				fputc(runaddr & 0xff, f);
+				fputc(runaddr >> 8, f);
+				wbytes += 6;
+			}
 		}
 
 #ifdef HAVE_POPEN
@@ -1937,6 +1979,18 @@ static void monitor_write_to_file(void)
 		else
 #endif
 			fclose(f);
+
+		printf("Wrote %lu bytes to %s file '%s'",
+				wbytes, xex ? "XEX" : "RAW", filename);
+		if(xex) {
+			if(!have_runaddr)
+				printf(" (no run address)");
+			else
+				printf(", run address %04x", runaddr);
+		}
+		putchar('\n');
+	} else {
+		printf("Invalid address range\n");
 	}
 }
 
@@ -2520,11 +2574,15 @@ static void show_help(void)
 		"HARDWARE startaddr endaddr     - Convert memory block into HARDWARE\n"
 		"READ filename startaddr nbytes - Read file into memory\n");
 	printf(
-		"WRITE startaddr endaddr [file] - Write memory block to a file (memdump.dat)\n"
+		"WRITE [XEX] startaddr endaddr [runaddr] [file]\n"
+		"                               - Write memory block to a file (memdump.dat).\n"
+		"                                 With XEX, writes an Atari executable with\n"
+		"                                 optional run address (no init addr, sorry).\n"
 #ifdef HAVE_POPEN
 		"                                 [file] may begin with |, to pipe to a command\n"
 #endif
 		"SUM startaddr endaddr          - Print sum of specified memory range\n");
+	if(pager()) return;
 #ifdef MONITOR_TRACE
 	printf(
 		"TRACE [filename]               - Output 6502 trace on/off\n");
@@ -2537,7 +2595,6 @@ static void show_help(void)
 		"HISTORY or H                   - List last %d executed instructions\n", CPU_REMEMBER_PC_STEPS);
 	printf(
 		"JUMPS                          - List last %d executed JMP/JSR\n", CPU_REMEMBER_JMP_STEPS);
-	if(pager()) return;
 	printf(
 		"G                              - Execute one instruction\n"
 		"O                              - Step over the instruction\n"
@@ -2573,10 +2630,10 @@ static void show_help(void)
 		"!command                       - Execute shell command\n"
 #endif
 		"DEC value                      - Convert hex value to decimal\n");
+	if(pager()) return;
 	printf(
 		"HEX value                      - Convert decimal value to hex\n"
 		"BIN value                      - Convert hex value to binary\n");
-	if(pager()) return;
 	printf(
 		"BHEX value                     - Convert binary value to hex\n"
 		"ASC value [value] ...          - Convert hex value(s) to ASCII string\n"
