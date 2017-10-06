@@ -28,7 +28,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <math.h>
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
 
 #include "antic.h"
 #include "atari.h"
@@ -394,7 +398,10 @@ static symtable_rec *symtable_user = NULL;
 static int symtable_user_size = 0;
 
 #ifdef MONITOR_ANSI
-static char *gr_color_chars[] = { "\x1b[30;40m ", "\x1b[30;42m ", "\x1b[30;41m ", "\x1b[30;47m " };
+/* for color bitmaps: black, green, red, white for 00 01 10 11
+	for mono, black & white for 0 and 1. */
+static char *gr_color_chars[] = {
+	"\x1b[30;40m ", "\x1b[30;42m ", "\x1b[30;41m ", "\x1b[30;47m " };
 static char *gr_color_done = "\x1b[0m";
 #else
 static char *gr_color_chars[] = { " ", "*", "O", "X" };
@@ -402,10 +409,13 @@ static char *gr_color_done = "";
 #endif
 
 
-/* XXX make this configurable */
-#define MONITOR_UTF8
-
 #ifdef MONITOR_UTF8
+/* These are hard-coded UTF-8 encoded Unicode characters. Doing it this way
+	has the advantage that the compiler (and the developer's text editor)
+	doesn't have to have Unicode support, and the C library doesn't have to
+	support wide characters. The disadvantage is that no other encodings
+	besides UTF-8 can be supported (which shouldn't be a real problem these
+	days). */
 static const char *utf8_chars[] = {
 /* 0 - 7 */ "\xe2\x99\xa5", "\xe2\x94\xa3", "\xe2\x94\x83", "\xe2\x94\x9b", "\xe2\x94\xab", "\xe2\x94\x93", "\xe2\x95\xb1", "\xe2\x95\xb2",
 /* 8 - 15 */ "\xe2\x97\xa2", "\xe2\x96\x97", "\xe2\x97\xa3", "\xe2\x96\x9d", "\xe2\x96\x98", "\xe2\x96\x94", "\xe2\x96\x81", "\xe2\x96\x96",
@@ -2581,14 +2591,35 @@ static void show_help(void)
 		"MFP [addr]                     - Show memory as Atari BCD floating point\n"
 		"                                 Default addr is d4 (FR0)\n");
 	printf(
-#ifdef MONITOR_ANSI
 		"GRM addr [width] [height]      - Display memory as mono bitmap\n"
 		"GRC addr [width] [height]      - Display memory as 4-color bitmap\n"
-#endif
 		"SAVESTATE [filename]           - Save machine state (default 'monitor.a8s')\n"
 		"LOADSTATE [filename]           - Load machine state (default 'monitor.a8s')\n"
 		"QUIT or EXIT                   - Quit emulator\n"
 		"HELP or ?                      - This text\n");
+}
+
+static void get_terminal_size(int *cols, int *rows) {
+	*cols = 80;
+	*rows = 24;
+
+#ifdef TIOCGSIZE
+	{
+		struct ttysize ts;
+		if(ioctl(STDIN_FILENO, TIOCGSIZE, &ts) == 0) {
+			*cols = ts.ts_cols;
+			*rows = ts.ts_lines;
+		}
+	}
+#elif defined(TIOCGWINSZ)
+	{
+		struct winsize ts;
+		if(ioctl(STDIN_FILENO, TIOCGWINSZ, &ts) == 0) {
+			*cols = ts.ws_col;
+			*rows = ts.ws_row;
+		}
+	}
+#endif /* TIOCGSIZE */
 }
 
 static void print_gr_color(UWORD addr) {
@@ -2610,10 +2641,12 @@ static void print_gr_mono(UWORD addr) {
 	printf(gr_color_done);
 }
 
+
 static void print_graphics(int want_color) {
 	static UWORD width = 1, height = 8;
 	UWORD addr;
 	int rows, cols, x, y, row = 0, col = 0;
+	int trows, tcols;
 
 	if(!get_hex(&addr)) {
 		printf("Usage: GR%c addr [width-in-bytes] [height]\n", want_color ? 'C' : 'M' );
@@ -2623,9 +2656,9 @@ static void print_graphics(int want_color) {
 	get_hex(&width);
 	get_hex(&height);
 
-	/* XXX assume 80x24 terminal for now */
-	cols = 80 / (width * (want_color ? 5 : 9));
-	rows = 24 / (height + 1);
+	get_terminal_size(&tcols, &trows);
+	cols = tcols / (width * (want_color ? 5 : 9));
+	rows = trows / (height + 1);
 	if(cols == 0) cols = 1;
 	if(rows == 0) rows = 1;
 

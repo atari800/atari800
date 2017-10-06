@@ -767,7 +767,7 @@ A8_OPTION(monitoransi,yes,
 
 A8_OPTION(monitorutf8,yes,
           [Support UTF-8 for printing ATASCII characters in the monitor (default=ON)],
-          MONITOR_ANSI,[Define to use UTF-8 in the monitor.]
+          MONITOR_UTF8,[Define to use UTF-8 in the monitor.]
          )
 
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
