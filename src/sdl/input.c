@@ -88,6 +88,11 @@ static SDL_Joystick *joystick[MAX_JOYSTICKS] = { NULL, NULL, NULL, NULL };
 static int joystick_nbuttons[MAX_JOYSTICKS];
 static int joysticks_found = 0;
 
+static int joystick0_use_hat = FALSE;
+static int joystick1_use_hat = FALSE;
+static int joystick0_use_hat_in_cfg_file = FALSE;
+static int joystick1_use_hat_in_cfg_file = FALSE;
+
 #define minjoy 10000			/* real joystick tolerancy */
 
 /* keyboard */
@@ -172,7 +177,22 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 		return SDLKeyBind(&KBD_STICK_1_UP, parameters);
 	else if (strcmp(option, "SDL_JOY_1_TRIGGER") == 0)
 		return SDLKeyBind(&KBD_TRIG_1, parameters);
-	else
+
+        else if (strcmp(option, "SDL_JOY_0_USE_HAT") == 0) {
+                if (strcmp(parameters,"1") == 0) {
+                    joystick0_use_hat = TRUE;
+                    joystick0_use_hat_in_cfg_file = TRUE;
+                }
+                return TRUE;
+        }
+        else if (strcmp(option, "SDL_JOY_1_USE_HAT") == 0) {
+                if (strcmp(parameters,"1") == 0) {
+                    joystick1_use_hat = TRUE;
+                    joystick1_use_hat_in_cfg_file = TRUE;
+                }
+                return TRUE;
+        }
+
 		return FALSE;
 }
 
@@ -194,6 +214,10 @@ void SDL_INPUT_WriteConfig(FILE *fp)
 	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
 	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", KBD_STICK_1_DOWN);
 	fprintf(fp, "SDL_JOY_1_TRIGGER=%d\n", KBD_TRIG_1);
+
+        fprintf(fp, "SDL_JOY_0_USE_HAT=%d\n", joystick0_use_hat && (joystick0_use_hat_in_cfg_file == TRUE ));
+        fprintf(fp, "SDL_JOY_1_USE_HAT=%d\n", joystick1_use_hat && (joystick1_use_hat_in_cfg_file == TRUE ));
+
 }
 
 void PLATFORM_SetJoystickKey(int joystick, int direction, int value)
@@ -1198,6 +1222,13 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-grabmouse") == 0) {
 			grab_mouse = TRUE;
 		}
+
+                else if (strcmp(argv[i], "-joy0hat") == 0) {
+                        joystick0_use_hat = TRUE;
+                }
+                else if (strcmp(argv[i], "-joy1hat") == 0) {
+                        joystick1_use_hat = TRUE;
+                }
 #ifdef LPTJOY
 		else if (strcmp(argv[i], "-joy0") == 0) {
 			if (i_a) {
@@ -1216,6 +1247,8 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				Log_print("\t-nojoystick      Disable joystick");
+                                Log_print("\t-joy0hat         Use hat of joystick 0");
+                                Log_print("\t-joy1hat         Use hat of joystick 1");
 #ifdef LPTJOY
 				Log_print("\t-joy0 <pathname> Select LPTjoy0 device");
 				Log_print("\t-joy1 <pathname> Select LPTjoy1 device");
@@ -1314,6 +1347,30 @@ static int get_SDL_joystick_state(SDL_Joystick *joystick)
 	}
 }
 
+static int get_SDL_joystick_hat_state(SDL_Joystick* joystick)
+{
+    Uint8 hat = SDL_JoystickGetHat(joystick, 0);
+
+    if ( ((hat & SDL_HAT_LEFT)==SDL_HAT_LEFT) ) {
+
+            if ( ((hat & SDL_HAT_LEFTDOWN)==SDL_HAT_LEFTDOWN) ) return INPUT_STICK_LL;
+            if ( ((hat & SDL_HAT_LEFTUP)==SDL_HAT_LEFTUP) ) return INPUT_STICK_UL;
+            return INPUT_STICK_LEFT;
+    }
+
+    else if ( ((hat & SDL_HAT_RIGHT)==SDL_HAT_RIGHT) ) {
+
+            if ( ((hat & SDL_HAT_RIGHTDOWN)==SDL_HAT_RIGHTDOWN) ) return INPUT_STICK_LR;
+            else if ( ((hat & SDL_HAT_RIGHTUP)==SDL_HAT_RIGHTUP) ) return INPUT_STICK_UR;
+            return INPUT_STICK_RIGHT;
+    }
+
+    else if ( ((hat & SDL_HAT_UP)==SDL_HAT_UP) ) return INPUT_STICK_FORWARD;
+    else if ( ((hat & SDL_HAT_DOWN)==SDL_HAT_DOWN) ) return INPUT_STICK_BACK;
+
+    return INPUT_STICK_CENTRE;
+}
+
 static int get_LPT_joystick_state(int fd)
 {
 #ifdef LPTJOY
@@ -1378,7 +1435,13 @@ static void update_SDL_joysticks(void)
 	for(joy = 0; joy < joysticks_found; joy++) {
 		int i;
 
+                if (joy == 0 && joystick0_use_hat == TRUE) {
+                        sdl_js_state[0].port = get_SDL_joystick_hat_state(joystick[0]);
+                } else if (joy == 1 && joystick1_use_hat == TRUE) {
+                        sdl_js_state[1].port = get_SDL_joystick_hat_state(joystick[1]);
+                } else {
 		sdl_js_state[joy].port = get_SDL_joystick_state(joystick[joy]);
+                }
 
 		sdl_js_state[joy].trig = 0;
 		for (i = 0; i < joystick_nbuttons[joy]; i++) {
