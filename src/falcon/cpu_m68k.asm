@@ -3944,38 +3944,3 @@ cy_FlagCS equ 2  ; flag clear/set
 cy_RegChg equ 2  ; register only manipulation
 cy_RegPH equ 3   ; push register to stack
 cy_RegPL equ 4   ; pull register from stack
-
-  dc.l cy_BRK,cy_IndX,cy_CIM,cy_IndX_RW,cy_NOP3,cy_ZP,cy_ZP_RW,cy_ZP_RW
-  dc.l cy_RegPH,cy_Imm,cy_RegChg,cy_Imm,cy_SKW,cy_Abs,cy_Abs_RW,cy_Abs_RW
-  dc.l cy_Bcc,cy_IndY,cy_CIM,cy_IndY_RW,cy_NOP4,cy_ZPX,cy_ZPX_RW,cy_ZPX_RW
-  dc.l cy_FlagCS,cy_AbsY,cy_NOP,cy_AbsY_RW,cy_SKW,cy_AbsX,cy_AbsX_RW,cy_AbsX_RW
-  dc.l cy_Sub,cy_IndX,cy_CIM,cy_IndX_RW,cy_ZP,cy_ZP,cy_ZP_RW,cy_ZP_RW
-  dc.l cy_RegPL,cy_Imm,cy_RegChg,cy_Imm,cy_Abs,cy_Abs,cy_Abs_RW,cy_Abs_RW
-  dc.l cy_Bcc,cy_IndY,cy_CIM,cy_IndY_RW,cy_NOP4,cy_ZPX,cy_ZPX_RW,cy_ZPX_RW
-  dc.l cy_FlagCS,cy_AbsY,cy_NOP,cy_AbsY_RW,cy_SKW,cy_AbsX,cy_AbsX_RW,cy_AbsX_RW
-  dc.l cy_Sub,cy_IndX,cy_CIM,cy_IndX_RW,cy_NOP3,cy_ZP,cy_ZP_RW,cy_ZP_RW
-  dc.l cy_RegPH,cy_Imm,cy_RegChg,cy_Imm,cy_JmpAbs,cy_Abs,cy_Abs_RW,cy_Abs_RW
-  dc.l cy_Bcc,cy_IndY,cy_CIM,cy_IndY_RW,cy_NOP4,cy_ZPX,cy_ZPX_RW,cy_ZPX_RW
-  dc.l cy_FlagCS,cy_AbsY,cy_NOP,cy_AbsY_RW,cy_SKW,cy_AbsX,cy_AbsX_RW,cy_AbsX_RW
-  dc.l cy_Sub,cy_IndX,cy_CIM,cy_IndX_RW,cy_NOP3,cy_ZP,cy_ZP_RW,cy_ZP_RW
-  dc.l cy_RegPL,cy_Imm,cy_RegChg,cy_Imm,cy_JmpInd,cy_Abs,cy_Abs_RW,cy_Abs_RW
-  dc.l cy_Bcc,cy_IndY,cy_CIM,cy_IndY_RW,cy_NOP4,cy_ZPX,cy_ZPX_RW,cy_ZPX_RW
-  dc.l cy_FlagCS,cy_AbsY,cy_NOP,cy_AbsY_RW,cy_SKW,cy_AbsX,cy_AbsX_RW,cy_AbsX_RW
-  dc.l cy_NOP2,cy_IndX,cy_NOP2,cy_IndX,cy_ZP,cy_ZP,cy_ZP,cy_ZP
-  dc.l cy_RegChg,cy_NOP2,cy_RegChg,cy_Imm,cy_Abs,cy_Abs,cy_Abs,cy_Abs
-  dc.l cy_Bcc,cy_IndY2,cy_CIM,cy_IndY2,cy_ZPX,cy_ZPX,cy_ZPY,cy_ZPY
-  dc.l cy_RegChg,cy_IndY2,cy_RegChg,cy_IndY2,cy_AbsX2,cy_AbsX2,cy_IndY2,cy_IndY2
-  dc.l cy_Imm,cy_IndX,cy_Imm,cy_IndX,cy_ZP,cy_ZP,cy_ZP,cy_ZP
-  dc.l cy_RegChg,cy_Imm,cy_RegChg,cy_Imm,cy_Abs,cy_Abs,cy_Abs,cy_Abs
-  dc.l cy_Bcc,cy_IndY,cy_CIM,cy_IndY,cy_ZPX,cy_ZPX,cy_ZPY,cy_ZPY
-  dc.l cy_FlagCS,cy_AbsY,cy_RegChg,cy_AbsY,cy_AbsX,cy_AbsX,cy_AbsY,cy_AbsY
-  dc.l cy_Imm,cy_IndX,cy_NOP2,cy_IndX_RW,cy_ZP,cy_ZP,cy_ZP_RW,cy_ZP_RW
-  dc.l cy_RegChg,cy_Imm,cy_RegChg,cy_Imm,cy_Abs,cy_Abs,cy_Abs_RW,cy_Abs_RW
-  dc.l cy_Bcc,cy_IndY,cy_CIM,cy_IndY_RW,cy_NOP4,cy_ZPX,cy_ZPX_RW,cy_ZPX_RW
-  dc.l cy_FlagCS,cy_AbsY,cy_NOP,cy_AbsY_RW,cy_SKW,cy_AbsX,cy_AbsX_RW,cy_AbsX_RW
-  dc.l cy_Imm,cy_IndX,cy_NOP2,cy_IndX_RW,cy_ZP,cy_ZP,cy_ZP_RW,cy_ZP_RW
-  dc.l cy_RegChg,cy_Imm,cy_NOP,cy_Imm,cy_Abs,cy_Abs,cy_Abs_RW,cy_Abs_RW
-  dc.l cy_Bcc,cy_IndY,cy_CIM,cy_IndY_RW,cy_NOP4,cy_ZPX,cy_ZPX_RW,cy_ZPX_RW
-  dc.l cy_FlagCS,cy_AbsY,cy_NOP,cy_AbsY_RW,cy_SKW,cy_AbsX,cy_AbsX_RW,cy_AbsX_RW
-
-
