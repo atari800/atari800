@@ -1,0 +1,135 @@
+[Note: this is a work in progress, and it's not finished. Neither is
+the coverage code, meaning what you see here is subject to change as
+the code changes!]
+
+Starting with Atari800 3.2.0, the monitor has a new COV (coverage)
+command. This is meant to be a short explanation & tutorial that should
+help everyone understand what COV is & what it's good for.
+
+The general idea is that COV can tell you:
+
+- What sections of code were executed, and what sections weren't.
+  For development, this is useful for testing. Ideally, you want to
+  "exercise" all your code, to verify that it works properly. Code that
+  never gets run can't be tested. For reverse engineering, this will
+  help you identify sections of memory as code or data, and it's handy
+  for finding dead code areas.
+
+- How often each instruction was executed, and...
+- How much CPU time (6502 cycles) each instruction or section used.
+  For development, these are useful for finding performance
+  bottlenecks. You can concentrate only on optimizing the code that's
+  run most frequently. For reverse engineering, this helps you identify
+  'interesting' sections of code.
+
+A word of caution: Currently, the COV command doesn't know anything
+about bankswitching (neither XL/XE PORTB switching nor cartridges).
+If the range of code you're examining with COV gets bankswitched out
+and different code is run at the same address, COV's results will be
+confusing and probably useless. To avoid this, limit yourself to working
+with one small(ish) section of code at a time, or else set breakpoints
+on the instructions that do the bankswitching, and manually clear the
+coverage stats (COV C) when the breakpoints are triggered.
+
+COV has 5 subcommands:
+
+COV C - Clears the coverage stat counters. Every address in the emulated
+Atari (0 to FFFF) has two counters: number of times executed, and cycles
+used. These are updated whenever the emulator runs the CPU (including
+exiting the monitor via CONT, or using the G/R/O commands). The counters
+start out at zero when Atari800 starts, and are NEVER automatically zeroed
+(not even when using the COLDSTART command). The only way to clear them
+is to use COV C. You should definitely do this any time you alter the
+code with the A (assembler) command.
+
+The other commands are for viewing the coverage stats. They each take
+an optional start and end address, which sets the coverage range (the
+range of code we're "looking at"). If no start/end addresses are given,
+the commands use the current range (last start/end addresses given,
+or 0000 to FFFF if no range was given).
+
+COV S - Show a summary of the coverage stats. As an example, you'll get
+something similar to this [*] if you start Atari800 with BASIC enabled,
+wait a second or so at the READY prompt, press F8 to enter the monitor,
+then use COV S with the start & end addresses of the cartridge:
+
+> cov s a000 bfff
+Range a000-bfff: 883(0.14%) insns, 2889(0.17%) cycles executed
+Coverage: 378(4.61%) of 8192
+Total: 616725 instructions, 1706224 cycles executed
+
+[*] But probably not identical, unless you hit F8 at exactly the
+    same time since startup as I did.
+
+What's this telling us? Let's look at the first line first:
+
+883(0.14%) insns - 883 instructions in the range a000-bfff were executed,
+which amounts to 0.14% of all instructions executed so far. If the same
+instruction was executed more than once (e.g. a loop), it's counted
+each time. 883 works out to 0.14% of the total instructions executed
+(see the 3rd line of output). Notice that 0.14% isn't really very much:
+most of the code the Atari has executed so far is outside of the range
+a000-bfff (it's actually in the c000-ffff range, aka the OS ROM).
+
+2889(0.17%) cycles - Those 883 instructions took 2889 cycles to execute,
+or 0.17% of the cycles the CPU has executed so far.
+
+The second line is: Coverage: 378(4.61%) of 8192
+
+It's telling us that there are 8192 (decimal) memory locations in the
+range we're looking at (a000-bfff), and that 378 of them have been
+executed as instructions [*], which works out to 4.61%. Note that any
+real program (such as BASIC) will contain data as well as code, so
+it's unlikely that you'll ever see 100% coverage if you're looking at
+the whole program. You will, if you "drill down" to look at individual
+subroutines or loops.
+
+[*] ...or, being perfectly pedantic, as operands to instructions. An
+    immediate LDA #0 counts as 2 instructions, here.
+
+The last line gives the total CPU instruction and cycle counts since
+startup (or since the last COV C command). These are what was used to
+calculate the percentages on the first line.
+
+So if BASIC only used 0.17% of the CPU cycles, what used the other 98.83%?
+A good guess would be the OS. Let's check:
+
+> cov s c000 ffff
+Range c000-ffff: 615842(99.86%) insns, 1703335(99.83%) cycles executed
+Coverage: 2089(12.75%) of 16384
+Total: 616725 instructions, 1706224 cycles executed
+
+Yep, that's it, 99.83%. Was any other code run?
+
+> cov s 0000 9fff
+Range 0000-9fff: 0(0.00%) insns, 0(0.00%) cycles executed
+Coverage: 0(0.00%) of 40960
+Total: 616725 instructions, 1706224 cycles executed
+
+Nope.
+
+OK, let's go back to looking at BASIC. Enter "cov s a000 bfff" again,
+you should get the same display as the first example. Now, let's play
+around with BASIC a bit, and see what we get. Use "cont" to get back
+into BASIC, and type:
+
+PRINT "HELLO"
+
+...which will give you HELLO followed by another READY prompt. Now
+press F8 to get back to the monitor and run "cov s". Notice there are no
+start/end addresses in the command? COV will re-use the last start/end
+addresses we gave it (in this case, a000 and bfff). You should see
+something like:
+
+Range a000-bfff: 15339(0.33%) insns, 47727(0.39%) cycles executed
+Coverage: 1438(17.55%) of 8192
+Total: 4642110 instructions, 12216322 cycles executed
+
+The coverage was 4.61% before, so running that PRINT command caused about
+12% of the cartridge to run. You can try various other BASIC commands
+and watch the coverage increase, but it won't ever reach 100% because
+not everything in the BASIC ROM is code (some of it's data tables).
+
+COV H - Show CPU hogs
+
+TODO: write the rest of this!
