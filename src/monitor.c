@@ -2837,7 +2837,7 @@ static void string_search(int screencodes)
 static void show_help(void)
 {
 	printf(
-		"CONT                           - Continue emulation\n"
+		"CONT [addr]                    - Continue emulation (default addr=PC)\n"
 		"SHOW                           - Show registers\n"
 		"STACK                          - Show stack\n"
 		"SET{PC,A,X,Y,S} hexval         - Set register value\n"
@@ -2882,9 +2882,9 @@ static void show_help(void)
 	printf(
 		"JUMPS                          - List last %d executed JMP/JSR\n", CPU_REMEMBER_JMP_STEPS);
 	printf(
-		"G                              - Execute one instruction\n"
-		"O                              - Step over the instruction\n"
-		"R                              - Execute until return\n");
+		"G [addr]                       - Execute one instruction (default addr=PC)\n"
+		"O [addr]                       - Step over the instruction (default addr=PC)\n"
+		"R [addr]                       - Execute until return (default addr=PC)\n");
 #elif !defined(NO_YPOS_BREAK_FLICKER)
 	printf(
 		"BLINE [1000+ypos]              - Blink scanline (8<=ypos<=247)\n");
@@ -3573,6 +3573,7 @@ int MONITOR_Run(void)
 		Util_strupper(t);
 
 		if (strcmp(t, "CONT") == 0) {
+			if(get_hex(&addr)) CPU_regPC = addr;
 #ifdef MONITOR_PROFILE
 			memset(CPU_instruction_count, 0, sizeof(CPU_instruction_count));
 #endif /* MONITOR_PROFILE */
@@ -3589,17 +3590,21 @@ int MONITOR_Run(void)
 		else if (strcmp(t, "JUMPS") == 0)
 			show_last_jumps();
 		else if (strcmp(t, "G") == 0) {
+			if(get_hex(&addr)) CPU_regPC = addr;
 			MONITOR_break_step = TRUE;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
 		else if (strcmp(t, "R") == 0 ) {
+			if(get_hex(&addr)) CPU_regPC = addr;
 			MONITOR_break_ret = TRUE;
 			MONITOR_ret_nesting = 1;
 			PLUS_EXIT_MONITOR;
 			return TRUE;
 		}
 		else if (strcmp(t, "O") == 0) {
+			if(get_hex(&addr)) CPU_regPC = addr;
+			get_hex(&addr);
 			step_over();
 			PLUS_EXIT_MONITOR;
 			return TRUE;
