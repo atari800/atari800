@@ -570,6 +570,11 @@ void CPU_GO(int limit)
 	CPUCHECKIRQ;
 
 	while (ANTIC_xpos < ANTIC_xpos_limit) {
+#ifdef MONITOR_PROFILE
+		int old_xpos = ANTIC_xpos;
+		UWORD old_PC = GET_PC();
+#endif
+
 
 #ifdef MONITOR_BREAKPOINTS
 	breakpoint_return:
@@ -804,6 +809,8 @@ void CPU_GO(int limit)
 
 #ifdef MONITOR_PROFILE
 		CPU_instruction_count[insn]++;
+		MONITOR_coverage[old_PC = PC - 1].count++;
+		MONITOR_coverage_insns++;
 #endif
 
 #ifdef PREFETCH_CODE
@@ -2364,6 +2371,14 @@ void CPU_GO(int limit)
 	}
 #else
 	next:
+#endif
+
+#ifdef MONITOR_PROFILE
+		{
+			int cyc = ANTIC_xpos - old_xpos;
+			MONITOR_coverage[old_PC].cycles += cyc;
+			MONITOR_coverage_cycles += cyc;
+		}
 #endif
 
 #ifdef MONITOR_BREAK

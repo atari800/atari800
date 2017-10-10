@@ -1108,6 +1108,12 @@ static UWORD assembler(UWORD addr)
 }
 #endif /* MONITOR_ASSEMBLER */
 
+#ifdef MONITOR_PROFILE
+MONITOR_coverage_rec MONITOR_coverage[0x10000];
+unsigned long MONITOR_coverage_insns;
+unsigned long MONITOR_coverage_cycles;
+#endif /* MONITOR_PROFILE */
+
 #ifdef MONITOR_BREAK
 UWORD MONITOR_break_addr = 0xd000;
 UBYTE MONITOR_break_step = FALSE;
@@ -1781,6 +1787,30 @@ static void set_trace_file(char const *filename)
 }
 #endif /* MONITOR_TRACE */
 
+static void get_terminal_size(int *cols, int *rows) {
+	*cols = 80;
+	*rows = 24;
+
+#ifdef TIOCGSIZE
+	{
+		struct ttysize ts;
+		if(ioctl(STDIN_FILENO, TIOCGSIZE, &ts) == 0) {
+			*cols = ts.ts_cols;
+			*rows = ts.ts_lines;
+		}
+	}
+#elif defined(TIOCGWINSZ)
+	{
+		struct winsize ts;
+		if(ioctl(STDIN_FILENO, TIOCGWINSZ, &ts) == 0) {
+			*cols = ts.ws_col;
+			*rows = ts.ws_row;
+		}
+	}
+#endif /* TIOCGSIZE */
+}
+
+
 #ifdef MONITOR_PROFILE
 static void command_PROFILE(void)
 {
@@ -1802,6 +1832,262 @@ static void command_PROFILE(void)
 		printf("Opcode %02X: %-9s has been executed %d times\n",
 				instr, instr6502[instr], max);
 	}
+}
+
+static void print_coverage_detail(UWORD addr)
+{
+	int len = 4;
+#ifdef MONITOR_HINTS
+	const char *label = find_label_name(addr, 0);
+	if(label) {
+		printf("%s ", label);
+		len = strlen(label);
+		if(len > 11) len = 11;
+	} else {
+		printf("%04X ", addr);
+	}
+#else
+	printf("%04X ", addr);
+#endif
+	printf("%*lu(%5.2f%%) %8lu(%5.2f%%)",
+			12 - len,
+			MONITOR_coverage[addr].count,
+			100.0f * (float)MONITOR_coverage[addr].count / (float)MONITOR_coverage_insns,
+			MONITOR_coverage[addr].cycles,
+			100.0f * (float)MONITOR_coverage[addr].cycles / (float)MONITOR_coverage_cycles);
+	printf("  ");
+	show_instruction(stdout, addr);
+}
+
+typedef struct {
+	UWORD addr;
+	unsigned long cycles;
+} hog_rec;
+
+#define HOG_MAX 10
+
+/* Stupid simple insertion sort */
+static void insert_hog_rec(hog_rec *list, unsigned int *count, UWORD addr, unsigned long cycles)
+{
+	int i, pos = -1;
+
+	/* find where new entry should go (or -1 if it shouldn't) */
+	for(i = 0; i < *count; i++) {
+		if(cycles >= list[i].cycles) {
+			pos = i;
+			break;
+		}
+	}
+
+	/* either the list isn't full (add this entry to the end), or else
+		it's full and this entry sorts less than the stuff in the list. */
+	if(pos == -1) {
+	  	if(*count < HOG_MAX) {
+			list[*count].addr = addr;
+			list[*count].cycles = cycles;
+			(*count)++;
+		}
+		return;
+	}
+
+	/* move list entries to make room for the new one */
+	for(i = (*count) - 1; i >= pos; i--) {
+		list[i + 1] = list[i];
+	}
+	list[pos].addr = addr;
+	list[pos].cycles = cycles;
+	if(*count < HOG_MAX) (*count)++;
+}
+
+#ifdef MONITOR_HINTS
+/* If there's a label for addr, set 'label' to it.
+	If not, look for a nearby one, and set 'label' to a string like
+	"otherlabel+3" or "otherlabel-1". If there's nothing close by,
+	just set 'label' to an empty string.
+	Then append the hex address, so we get something like:
+	"label/0600" or "label-1/05ff" or just "0600". */
+static void get_nearby_label(UWORD addr, char *result) {
+	int i = 0;
+	const char *label = NULL;
+
+	/* a label at addr is ideal. if there's not one, a label before
+		addr is better than one after it, since it makes more sense to
+		specify an unlabelled address as "subroutine+offset" or
+		"loop+offset" than a negative offset from the next subroutine
+		or loop. */
+	for(i = 0; i > -129; i--) {
+		label = find_label_name(addr + i, 0);
+		if(label != NULL) break;
+	}
+
+	/* if nothing's in range, go ahead & look for a negative offset from
+		a label at a later address. */
+	if(label == NULL) {
+		for(i = 1; i < 128; i++) {
+			label = find_label_name(addr + i, 0);
+			if(label != NULL) break;
+		}
+	}
+
+	if(i == 0)
+		snprintf(result, 127, "%s/%04X", label, addr); /* exact match */
+	else if(label == NULL)
+		snprintf(result, 127, "%04X", addr); /* got nothing... */
+	else 
+		snprintf(result, 127, "%s%c%x/%04X", /* + or - offset */
+				label,
+				i < 0 ? '+' : '-',
+				i < 0 ? -i : i,
+				addr);
+}
+#endif
+
+static void print_cov_range(UWORD start, UWORD end, int executed)
+{
+#ifdef MONITOR_HINTS
+	char startlabel[128], endlabel[128];
+
+	get_nearby_label(start, startlabel);
+	get_nearby_label(end, endlabel);
+	printf("%s => %s %sexecuted\n",
+			startlabel, endlabel, executed ? "" : "NOT ");
+#else
+	printf("%04X => %04X %sexecuted\n",
+			start, end, executed ? "" : "NOT ");
+#endif
+}
+
+/* Handle the COV R command. Coalesces adjacent executed
+	or non-executed instructions into ranges. "Instruction"
+	here means opcode plus any operand: obviously if location N
+	contains a 2- or 3-byte instruction, the operand bytes
+	don't normally get executed by themselves, but we want to
+	count them as "executed" if the opcode byte is. */
+static void coverage_ranges(UWORD start, UWORD end)
+{
+	int range_start = start, range_end = start;
+	int range_executed = MONITOR_coverage[start].count ? 1 : 0;
+
+	while(range_start <= end) {
+		int opsize = MONITOR_optype6502[MEMORY_SafeGetByte(range_end)] & 3;
+		int executed = MONITOR_coverage[range_end].count ? 1 : 0;
+
+		if((executed != range_executed) || (range_end > end)) {
+			print_cov_range(range_start, range_end - 1, range_executed);
+			range_start = range_end;
+			range_executed = executed;
+		}
+
+		range_end += opsize;
+	}
+}
+
+/* Show code coverage & profiling statistics.
+	XXX: this code knows nothing about bankswitching! */
+static void coverage(void)
+{
+	/* save these across calls, to save typing (and remembering) */
+	static UWORD start = 0, end = 0xffff;
+	static char cc = '?';
+
+	unsigned int i, cov = 0, full = FALSE, hogs = FALSE, hog_count = 0, ranges = FALSE;
+	unsigned long subttl_i = 0, subttl_c = 0;
+	int detail_count = 0;
+	hog_rec hog_list[HOG_MAX];
+	char *cmd = get_token();
+
+	if(cmd) cc = tolower(*cmd);
+
+	if(cc == '?') {
+		printf(
+			"Usage:\n"
+			"COV ?             - This help\n"
+			"COV S [start end] - Summary of coverage stats\n"
+			"COV H [start end] - Hogs: summary + top 10 CPU-using instructions\n"
+			"COV F [start end] - Summary + detail for every instruction (long!)\n"
+			"COV R [start end] - Show ranges of executed/non-executed code\n"
+			"COV C             - Clear coverage\n");
+		printf("With no argument, COV repeats the last S/H/F/R command.\n");
+		printf("Without [start end], the S/H/F/R commands use the previous\n"
+			"start/end addresses (or 0000 FFFF if not previously set)\n");
+		printf("Current range: %04X %04X\n", start, end);
+		return;
+	} else if(cc == 'c') {
+		MONITOR_coverage_insns = MONITOR_coverage_cycles = 0;
+		memset(MONITOR_coverage, 0, sizeof(MONITOR_coverage));
+		printf("Coverage stats reset\n");
+		return;
+	} else if(cc == 'f') {
+		full = TRUE;
+	} else if(cc == 's') {
+		full = FALSE;
+	} else if(cc == 'h') {
+		full = FALSE;
+		hogs = TRUE;
+	} else if(cc == 'r') {
+		ranges = TRUE;
+	} else {
+		printf("Invalid command, type \"COV ?\" for help\n");
+		return;
+	}
+
+	if(!MONITOR_coverage_insns) {
+		printf("No instructions executed since last reset\n");
+		return;
+	}
+
+	get_hex(&start);
+	get_hex(&end);
+
+	if(ranges) {
+		coverage_ranges(start, end);
+		return;
+	}
+
+	if(full || hogs)
+		printf("Addr  TimesExecuted    Cycles           Instruction\n");
+
+	for(i = start; i <= end; i++) {
+		subttl_i += MONITOR_coverage[i].count;
+		subttl_c += MONITOR_coverage[i].cycles;
+
+		if(MONITOR_coverage[i].count) {
+			cov += MONITOR_optype6502[MEMORY_SafeGetByte(i)] & 3;
+
+			if(full) {
+				int cols, rows;
+				get_terminal_size(&cols, &rows);
+				if(detail_count++ >= rows - 1) {
+					if(pager()) return;
+					detail_count = 0;
+				}
+				print_coverage_detail(i);
+			} else if(hogs) {
+				insert_hog_rec(hog_list, &hog_count, i, MONITOR_coverage[i].cycles);
+			}
+		}
+	}
+
+	if(hogs) {
+		for(i = 0; i < hog_count; i++) {
+			print_coverage_detail(hog_list[i].addr);
+		}
+	}
+
+	printf("Range %04x-%04x: %lu(%.2f%%) insns, %lu(%.2f%%) cycles executed\n",
+			start,
+			end,
+			subttl_i,
+			100.0f * (float)subttl_i / (float)MONITOR_coverage_insns,
+			subttl_c,
+			100.0f * (float)subttl_c / (float)MONITOR_coverage_cycles);
+	printf("Coverage: %d(%.2f%%) of %d\n",
+			cov,
+			100.0f * (float)cov / (float)(end - start + 1),
+			(end - start + 1));
+
+	printf("Total: %lu instructions, %lu cycles executed\n",
+			MONITOR_coverage_insns, MONITOR_coverage_cycles);
 }
 #endif /* MONITOR_PROFILE */
 
@@ -2615,6 +2901,8 @@ static void show_help(void)
 	printf(
 #ifdef MONITOR_PROFILE
 		"PROFILE                        - Display profiling statistics\n"
+		"COV [argument...]              - Coverage statistics (\"COV ?\" for help)\n");
+	printf(
 #endif
 #ifdef MONITOR_HINTS
 		"LABELS [command] [filename]    - Configure labels\n"
@@ -2654,29 +2942,6 @@ static void show_help(void)
 		"LOADSTATE [filename]           - Load machine state (default 'monitor.a8s')\n"
 		"QUIT or EXIT                   - Quit emulator\n"
 		"HELP or ?                      - This text\n");
-}
-
-static void get_terminal_size(int *cols, int *rows) {
-	*cols = 80;
-	*rows = 24;
-
-#ifdef TIOCGSIZE
-	{
-		struct ttysize ts;
-		if(ioctl(STDIN_FILENO, TIOCGSIZE, &ts) == 0) {
-			*cols = ts.ts_cols;
-			*rows = ts.ts_lines;
-		}
-	}
-#elif defined(TIOCGWINSZ)
-	{
-		struct winsize ts;
-		if(ioctl(STDIN_FILENO, TIOCGWINSZ, &ts) == 0) {
-			*cols = ts.ws_col;
-			*rows = ts.ws_row;
-		}
-	}
-#endif /* TIOCGSIZE */
 }
 
 static void print_gr_color(UWORD addr) {
@@ -3377,6 +3642,8 @@ int MONITOR_Run(void)
 #ifdef MONITOR_PROFILE
 		else if (strcmp(t, "PROFILE") == 0)
 			command_PROFILE();
+		else if (strcmp(t, "COV") == 0)
+			coverage();
 #endif /* MONITOR_PROFILE */
 		else if (strcmp(t, "SHOW") == 0)
 			show_state();

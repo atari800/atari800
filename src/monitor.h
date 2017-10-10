@@ -69,4 +69,15 @@ extern int MONITOR_breakpoints_enabled;
 
 #endif /* MONITOR_BREAKPOINTS */
 
+#ifdef MONITOR_PROFILE
+typedef struct {
+	unsigned long count; /* number of times executed since last reset */
+	unsigned long cycles; /* number of cycles executed since last reset */
+} MONITOR_coverage_rec;
+extern MONITOR_coverage_rec MONITOR_coverage[0x10000];
+extern unsigned long MONITOR_coverage_insns;
+extern unsigned long MONITOR_coverage_cycles;
+
+#endif /* MONITOR_PROFILE */
+
 #endif /* MONITOR_H_ */
