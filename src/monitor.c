@@ -1882,7 +1882,7 @@ static void insert_hog_rec(hog_rec *list, unsigned int *count, UWORD addr, unsig
 	/* either the list isn't full (add this entry to the end), or else
 		it's full and this entry sorts less than the stuff in the list. */
 	if(pos == -1) {
-	  	if(*count < HOG_MAX) {
+		if(*count < HOG_MAX) {
 			list[*count].addr = addr;
 			list[*count].cycles = cycles;
 			(*count)++;
@@ -1933,7 +1933,7 @@ static void get_nearby_label(UWORD addr, char *result) {
 		snprintf(result, 127, "%s/%04X", label, addr); /* exact match */
 	else if(label == NULL)
 		snprintf(result, 127, "%04X", addr); /* got nothing... */
-	else 
+	else
 		snprintf(result, 127, "%s%c%x/%04X", /* + or - offset */
 				label,
 				i < 0 ? '+' : '-',
