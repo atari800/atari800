@@ -2019,8 +2019,6 @@ void CPU_GO(int limit)
 	OPCODE(d5)				/* CMP ab,x */
 		ZPAGE_X;
 		CMP(MEMORY_dGetByte(addr));
-		Z = N = A - data;
-		C = (A >= data);
 		DONE
 
 	OPCODE(d6)				/* DEC ab,x */
