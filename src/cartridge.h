@@ -75,7 +75,9 @@ enum {
 	CARTRIDGE_THECART_64M    = 66,
 	CARTRIDGE_XEGS_8F_64     = 67,
 	CARTRIDGE_ATRAX_128      = 68,
-	CARTRIDGE_LAST_SUPPORTED = 68
+	CARTRIDGE_ADAWLIAH_32    = 69,
+	CARTRIDGE_ADAWLIAH_64    = 70,
+	CARTRIDGE_LAST_SUPPORTED = 70
 };
 
 #define CARTRIDGE_MAX_SIZE	(128 * 1024 * 1024)
@@ -149,6 +151,8 @@ extern int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1];
 #define CARTRIDGE_THECART_64M_DESC   "The!Cart 64 MB cartridge"
 #define CARTRIDGE_XEGS_8F_64_DESC    "XEGS 64 KB cartridge (banks 8-15)"
 #define CARTRIDGE_ATRAX_128_DESC     "Atrax 128 KB cartridge"
+#define CARTRIDGE_ADAWLIAH_32_DESC   "aDawliah 32 KB cartridge"
+#define CARTRIDGE_ADAWLIAH_64_DESC   "aDawliah 64 KB cartridge"
 
 /* Indicates whether the emulator should automatically reboot (coldstart)
    after inserting/removing a cartridge. (Doesn't affect the piggyback

@@ -21,6 +21,9 @@ Version ?.?.? (????/??/??)
     lines intermixed, so type 17 could not be used with actual ROM dumps. So,
     type 17 has been renamed to "Decoded Atrax 128 KB cartridge", and new type
     68 has been added, whcih now can be used for Atrax ROM chip dumps.
+  * New cartridge types supported:
+    - aDawliah 32 KB cartridge
+    - aDawliah 64 KB cartridge
 
  Changes:
  --------

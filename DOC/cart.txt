@@ -100,6 +100,8 @@ Currently supported cartridge types:
 | 66 | 800/XL/XE |  64M | The!Cart 64 MB cartridge                      | p |
 | 67 | 800/XL/XE |   64 | XEGS 64 KB cartridge (banks 8-15)             |   |
 | 68 | 800/XL/XE |  128 | Atrax 128 KB cartridge                        |   |
+| 69 | 800/XL/XE |   32 | aDawliah 32 KB cartridge                      |   |
+| 70 | 800/XL/XE |   64 | aDawliah 64 KB cartridge                      |   |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -1051,3 +1053,38 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference:
  http://atarionline.pl/forum/comments.php?DiscussionID=2861&page=11#CommentBody_91383
+
+ +---------------------------------------------------------------------------+
+ | Type 69: aDawliah 32 KB cartridge                                         |
+ +---------------------------------------------------------------------------+
+
+ A bank-switched cartridge built on a board marked "A-NA0002". Two variants of
+ this board are known: one that connects the EPROM's pin 1 to +5V, and another
+ that connects it to an 74169 counter. The cartridge houses a 256 kbit EPROM.
+ (The former board variant can also contain a 512 kbit EPROM, but the board is
+ hardwired to access only the upper half of the ROM.)
+
+ The cartridge occupies 8 KB of address space between $A000 and $BFFF. Its
+ memory is divided into 4 banks, 8 KB each. On power on, bank 0 is visible. Each
+ access to $D500-$D5FF increases the visible bank number, looping to 0 after the
+ last bank.
+
+ Reference:
+ http://atarionline.pl/forum/comments.php?DiscussionID=4260&page=1#Item_13
+
+ +---------------------------------------------------------------------------+
+ | Type 70: aDawliah 64 KB cartridge                                         |
+ +---------------------------------------------------------------------------+
+
+ A bank-switched cartridge built on a board marked "A-NA0002", specifically the
+ variant that connects the EPROM's pin 1 to an 74169 counter. The cartridge
+ houses a 512 kbit EPROM. (Note: no such cartridge has been identified as of
+ yet, all known specimens house a 256 kbit EPROM.)
+
+ The cartridge occupies 8 KB of address space between $A000 and $BFFF. Its
+ memory is divided into 8 banks, 8 KB each. On power on, bank 0 is visible. Each
+ access to $D500-$D5FF increases the visible bank number, looping to 0 after the
+ last bank.
+
+ Reference:
+ http://atarionline.pl/forum/comments.php?DiscussionID=4260&page=1#Item_13
