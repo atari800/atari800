@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
+   <FileRef
+      location = "group:Atari800macOS/Atari800macOS.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Atari800iOS/Atari800iOS.xcodeproj">
+   </FileRef>
    <Group
       location = "container:Shared"
       name = "Shared">
@@ -49,10 +55,4 @@
          </Group>
       </Group>
    </Group>
-   <FileRef
-      location = "group:Atari800iOS/Atari800iOS.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:Atari800macOS/Atari800macOS.xcodeproj">
-   </FileRef>
 </Workspace>
