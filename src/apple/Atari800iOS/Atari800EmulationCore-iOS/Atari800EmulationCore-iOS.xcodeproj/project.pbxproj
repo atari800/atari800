@@ -7,10 +7,34 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E231F6821FE94BD5004ED389 /* Atari800ShaderTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */; };
+		E231F6831FE94BD5004ED389 /* Atari800Palette.m in Sources */ = {isa = PBXBuildFile; fileRef = E231F6761FE94BD5004ED389 /* Atari800Palette.m */; };
+		E231F6841FE94BD5004ED389 /* Atari800Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6771FE94BD5004ED389 /* Atari800Renderer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E231F6851FE94BD5004ED389 /* Atari800Palette.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6781FE94BD5004ED389 /* Atari800Palette.h */; };
+		E231F6861FE94BD5004ED389 /* Atari800Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E231F6791FE94BD5004ED389 /* Atari800Shaders.metal */; };
+		E231F6871FE94BD5004ED389 /* Atari800Renderer.m in Sources */ = {isa = PBXBuildFile; fileRef = E231F67A1FE94BD5004ED389 /* Atari800Renderer.m */; };
+		E231F6881FE94BD5004ED389 /* jakub.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F67C1FE94BD5004ED389 /* jakub.act */; };
+		E231F6891FE94BD5004ED389 /* gray.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F67D1FE94BD5004ED389 /* gray.act */; };
+		E231F68A1FE94BD5004ED389 /* Real.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F67E1FE94BD5004ED389 /* Real.act */; };
+		E231F68B1FE94BD5004ED389 /* fox.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F67F1FE94BD5004ED389 /* fox.act */; };
+		E231F68C1FE94BD5004ED389 /* default.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F6801FE94BD5004ED389 /* default.act */; };
+		E231F68D1FE94BD5004ED389 /* XFormer.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F6811FE94BD5004ED389 /* XFormer.act */; };
 		E2D98BB61FE93A78005362D9 /* Atari800EmulationCore_iOS.h in Headers */ = {isa = PBXBuildFile; fileRef = E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800ShaderTypes.h; sourceTree = "<group>"; };
+		E231F6761FE94BD5004ED389 /* Atari800Palette.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Palette.m; sourceTree = "<group>"; };
+		E231F6771FE94BD5004ED389 /* Atari800Renderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Renderer.h; sourceTree = "<group>"; };
+		E231F6781FE94BD5004ED389 /* Atari800Palette.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Palette.h; sourceTree = "<group>"; };
+		E231F6791FE94BD5004ED389 /* Atari800Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Atari800Shaders.metal; sourceTree = "<group>"; };
+		E231F67A1FE94BD5004ED389 /* Atari800Renderer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Renderer.m; sourceTree = "<group>"; };
+		E231F67C1FE94BD5004ED389 /* jakub.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = jakub.act; sourceTree = "<group>"; };
+		E231F67D1FE94BD5004ED389 /* gray.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = gray.act; sourceTree = "<group>"; };
+		E231F67E1FE94BD5004ED389 /* Real.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = Real.act; sourceTree = "<group>"; };
+		E231F67F1FE94BD5004ED389 /* fox.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = fox.act; sourceTree = "<group>"; };
+		E231F6801FE94BD5004ED389 /* default.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = default.act; sourceTree = "<group>"; };
+		E231F6811FE94BD5004ED389 /* XFormer.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = XFormer.act; sourceTree = "<group>"; };
 		E2D98BB11FE93A78005362D9 /* Atari800EmulationCore_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Atari800EmulationCore_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800EmulationCore_iOS.h; sourceTree = "<group>"; };
 		E2D98BB51FE93A78005362D9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -30,9 +54,37 @@
 		E231F6581FE945A6004ED389 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				E231F6741FE94BD5004ED389 /* Metal */,
 			);
 			name = Shared;
 			path = ../../../Shared;
+			sourceTree = "<group>";
+		};
+		E231F6741FE94BD5004ED389 /* Metal */ = {
+			isa = PBXGroup;
+			children = (
+				E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */,
+				E231F6761FE94BD5004ED389 /* Atari800Palette.m */,
+				E231F6771FE94BD5004ED389 /* Atari800Renderer.h */,
+				E231F6781FE94BD5004ED389 /* Atari800Palette.h */,
+				E231F6791FE94BD5004ED389 /* Atari800Shaders.metal */,
+				E231F67A1FE94BD5004ED389 /* Atari800Renderer.m */,
+				E231F67B1FE94BD5004ED389 /* Palettes */,
+			);
+			path = Metal;
+			sourceTree = "<group>";
+		};
+		E231F67B1FE94BD5004ED389 /* Palettes */ = {
+			isa = PBXGroup;
+			children = (
+				E231F67C1FE94BD5004ED389 /* jakub.act */,
+				E231F67D1FE94BD5004ED389 /* gray.act */,
+				E231F67E1FE94BD5004ED389 /* Real.act */,
+				E231F67F1FE94BD5004ED389 /* fox.act */,
+				E231F6801FE94BD5004ED389 /* default.act */,
+				E231F6811FE94BD5004ED389 /* XFormer.act */,
+			);
+			path = Palettes;
 			sourceTree = "<group>";
 		};
 		E2D98BA71FE93A78005362D9 = {
@@ -68,7 +120,10 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E231F6821FE94BD5004ED389 /* Atari800ShaderTypes.h in Headers */,
+				E231F6841FE94BD5004ED389 /* Atari800Renderer.h in Headers */,
 				E2D98BB61FE93A78005362D9 /* Atari800EmulationCore_iOS.h in Headers */,
+				E231F6851FE94BD5004ED389 /* Atari800Palette.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,6 +185,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E231F68A1FE94BD5004ED389 /* Real.act in Resources */,
+				E231F6881FE94BD5004ED389 /* jakub.act in Resources */,
+				E231F68B1FE94BD5004ED389 /* fox.act in Resources */,
+				E231F68C1FE94BD5004ED389 /* default.act in Resources */,
+				E231F68D1FE94BD5004ED389 /* XFormer.act in Resources */,
+				E231F6891FE94BD5004ED389 /* gray.act in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,6 +201,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E231F6831FE94BD5004ED389 /* Atari800Palette.m in Sources */,
+				E231F6861FE94BD5004ED389 /* Atari800Shaders.metal in Sources */,
+				E231F6871FE94BD5004ED389 /* Atari800Renderer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -195,7 +259,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -247,7 +311,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
@@ -268,6 +332,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "Atari800EmulationCore-iOS/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.atari800.Atari800EmulationCore-iOS";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -288,6 +353,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "Atari800EmulationCore-iOS/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.atari800.Atari800EmulationCore-iOS";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";

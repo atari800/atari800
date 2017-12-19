@@ -60,7 +60,7 @@
 		E2BAFC331FE9390500B93945 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E2BAFC361FE9390500B93945 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		E2BAFC381FE9390500B93945 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		E2BAFC391FE9390500B93945 /* Atari800macOs.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Atari800macOs.entitlements; sourceTree = "<group>"; };
+		E2BAFC391FE9390500B93945 /* Atari800macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Atari800macOS.entitlements; sourceTree = "<group>"; };
 		E2D98BA11FE93A52005362D9 /* Atari800EmulationCore-macOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "Atari800EmulationCore-macOS.xcodeproj"; path = "Atari800EmulationCore-macOS/Atari800EmulationCore-macOS.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -101,7 +101,7 @@
 				E2BAFC331FE9390500B93945 /* Assets.xcassets */,
 				E2BAFC351FE9390500B93945 /* Main.storyboard */,
 				E2BAFC381FE9390500B93945 /* Info.plist */,
-				E2BAFC391FE9390500B93945 /* Atari800macOs.entitlements */,
+				E2BAFC391FE9390500B93945 /* Atari800macOS.entitlements */,
 			);
 			path = Atari800macOS;
 			sourceTree = "<group>";
