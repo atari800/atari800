@@ -1601,7 +1601,7 @@ void CPU_GO(int limit)
 
 	OPCODE(8b)				/* ANE #ab [unofficial - A AND X AND (Mem OR $EF) to Acc] (Fox) */
 		data = IMMEDIATE;
-		N = Z = A & X & data;
+		Z = N = A & X & data;
 		A &= X & (data | 0xef);
 		DONE
 
@@ -2285,8 +2285,8 @@ void CPU_GO(int limit)
 			/* Decimal mode */
 			unsigned int tmp;
 			tmp = (A & 0x0f) + (data & 0x0f) + C;
-			if (tmp >= 10)
-				tmp = (tmp - 10) | 0x10;
+			if (tmp >= 0x0a)
+				tmp = ((tmp + 0x06) & 0x0f) + 0x10;
 			tmp += (A & 0xf0) + (data & 0xf0);
 
 			Z = A + data + C;
@@ -2299,7 +2299,7 @@ void CPU_GO(int limit)
 				CPU_SetV;
 #endif
 
-			if (tmp > 0x9f)
+			if (tmp >= 0xa0)
 				tmp += 0x60;
 			C = tmp > 0xff;
 			A = (UBYTE) tmp;
@@ -2314,40 +2314,35 @@ void CPU_GO(int limit)
 			tmp = A - data - 1 + C;
 			C = tmp < 0x100;
 #ifndef NO_V_FLAG_VARIABLE
-			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
+			V = ((A ^ data) & 0x80) && ((A ^ tmp) & 0x80);
 #else
 			CPU_ClrV;
-			if (((A ^ tmp) & 0x80) && ((A ^ data) & 0x80))
+			if (((A ^ data) & 0x80) && ((A ^ tmp) & 0x80))
 				CPU_SetV;
 #endif
 			Z = N = A = (UBYTE) tmp;
 		}
 		else {
 			/* Decimal mode */
-			unsigned int al, ah, tmp;
-			/* tmp = A - data - !C; */
-			tmp = A - data - 1 + C;
-			/* al = (A & 0x0f) - (data & 0x0f) - !C; */
-			al = (A & 0x0f) - (data & 0x0f) - 1 + C;	/* Calculate lower nybble */
-			ah = (A >> 4) - (data >> 4);		/* Calculate upper nybble */
-			if (al & 0x10) {
-				al -= 6;	/* BCD fixup for lower nybble */
-				ah--;
-			}
-			if (ah & 0x10)
-				ah -= 6;	/* BCD fixup for upper nybble */
+			unsigned int tmp;
+			tmp = (A & 0x0f) - (data & 0x0f) - 1 + C;
+			if (tmp & 0x10)
+				tmp = ((tmp - 0x06) & 0x0f) - 0x10;
+			tmp += (A & 0xf0) - (data & 0xf0);
+			if (tmp & 0x100)
+				tmp -= 0x60;
 
-			C = tmp < 0x100;			/* Set flags */
+			Z = N = A - data - 1 + C;
 #ifndef NO_V_FLAG_VARIABLE
-			V = ((A ^ tmp) & 0x80) && ((A ^ data) & 0x80);
+			V = ((A ^ data) & 0x80) && ((A ^ Z) & 0x80);
 #else
 			CPU_ClrV;
-			if (((A ^ tmp) & 0x80) && ((A ^ data) & 0x80))
+			if (((A ^ data) & 0x80) && ((A ^ Z) & 0x80))
 				CPU_SetV;
 #endif
-			Z = N = (UBYTE) tmp;
+			C = ((unsigned int) (A - data - 1 + C)) <= 0xff;
 
-			A = (ah << 4) + (al & 0x0f);	/* Compose result */
+			A = tmp;
 		}
 		DONE
 
