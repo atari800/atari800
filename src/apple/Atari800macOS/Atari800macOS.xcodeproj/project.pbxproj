@@ -1,0 +1,401 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 48;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E2BAFC301FE9390500B93945 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */; };
+		E2BAFC321FE9390500B93945 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC311FE9390500B93945 /* ViewController.swift */; };
+		E2BAFC341FE9390500B93945 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC331FE9390500B93945 /* Assets.xcassets */; };
+		E2BAFC371FE9390500B93945 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC351FE9390500B93945 /* Main.storyboard */; };
+		E2D98BCB1FE93AD5005362D9 /* Atari800EmulationCore_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2D98BA61FE93A53005362D9 /* Atari800EmulationCore_macOS.framework */; };
+		E2D98BCC1FE93AD5005362D9 /* Atari800EmulationCore_macOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E2D98BA61FE93A53005362D9 /* Atari800EmulationCore_macOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E2D98BA51FE93A53005362D9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2D98BA11FE93A52005362D9 /* Atari800EmulationCore-macOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = E2D98B961FE93A52005362D9;
+			remoteInfo = "Atari800EmulationCore-macOS";
+		};
+		E2D98BC91FE93ABD005362D9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2D98BA11FE93A52005362D9 /* Atari800EmulationCore-macOS.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = E2D98B951FE93A52005362D9;
+			remoteInfo = "Atari800EmulationCore-macOS";
+		};
+		E2D98BCD1FE93AD5005362D9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2D98BA11FE93A52005362D9 /* Atari800EmulationCore-macOS.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = E2D98B951FE93A52005362D9;
+			remoteInfo = "Atari800EmulationCore-macOS";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E2D98BCF1FE93AD5005362D9 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				E2D98BCC1FE93AD5005362D9 /* Atari800EmulationCore_macOS.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		E2BAFC2C1FE9390500B93945 /* Atari800macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atari800macOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E2BAFC311FE9390500B93945 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		E2BAFC331FE9390500B93945 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E2BAFC361FE9390500B93945 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		E2BAFC381FE9390500B93945 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E2BAFC391FE9390500B93945 /* Atari800macOs.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Atari800macOs.entitlements; sourceTree = "<group>"; };
+		E2D98BA11FE93A52005362D9 /* Atari800EmulationCore-macOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "Atari800EmulationCore-macOS.xcodeproj"; path = "Atari800EmulationCore-macOS/Atari800EmulationCore-macOS.xcodeproj"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E2BAFC291FE9390500B93945 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E2D98BCB1FE93AD5005362D9 /* Atari800EmulationCore_macOS.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E2BAFC231FE9390500B93945 = {
+			isa = PBXGroup;
+			children = (
+				E2D98BA11FE93A52005362D9 /* Atari800EmulationCore-macOS.xcodeproj */,
+				E2BAFC2E1FE9390500B93945 /* Atari800macOS */,
+				E2BAFC2D1FE9390500B93945 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E2BAFC2D1FE9390500B93945 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E2BAFC2C1FE9390500B93945 /* Atari800macOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E2BAFC2E1FE9390500B93945 /* Atari800macOS */ = {
+			isa = PBXGroup;
+			children = (
+				E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */,
+				E2BAFC311FE9390500B93945 /* ViewController.swift */,
+				E2BAFC331FE9390500B93945 /* Assets.xcassets */,
+				E2BAFC351FE9390500B93945 /* Main.storyboard */,
+				E2BAFC381FE9390500B93945 /* Info.plist */,
+				E2BAFC391FE9390500B93945 /* Atari800macOs.entitlements */,
+			);
+			path = Atari800macOS;
+			sourceTree = "<group>";
+		};
+		E2D98BA21FE93A52005362D9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E2D98BA61FE93A53005362D9 /* Atari800EmulationCore_macOS.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E2BAFC2B1FE9390500B93945 /* Atari800macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E2BAFC3C1FE9390500B93945 /* Build configuration list for PBXNativeTarget "Atari800macOS" */;
+			buildPhases = (
+				E2BAFC281FE9390500B93945 /* Sources */,
+				E2BAFC291FE9390500B93945 /* Frameworks */,
+				E2BAFC2A1FE9390500B93945 /* Resources */,
+				E2D98BCF1FE93AD5005362D9 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E2D98BCA1FE93ABD005362D9 /* PBXTargetDependency */,
+				E2D98BCE1FE93AD5005362D9 /* PBXTargetDependency */,
+			);
+			name = Atari800macOS;
+			productName = Atari800Mac;
+			productReference = E2BAFC2C1FE9390500B93945 /* Atari800macOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E2BAFC241FE9390500B93945 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0920;
+				LastUpgradeCheck = 0920;
+				ORGANIZATIONNAME = "Atari800 development team";
+				TargetAttributes = {
+					E2BAFC2B1FE9390500B93945 = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = E2BAFC271FE9390500B93945 /* Build configuration list for PBXProject "Atari800macOS" */;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E2BAFC231FE9390500B93945;
+			productRefGroup = E2BAFC2D1FE9390500B93945 /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = E2D98BA21FE93A52005362D9 /* Products */;
+					ProjectRef = E2D98BA11FE93A52005362D9 /* Atari800EmulationCore-macOS.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				E2BAFC2B1FE9390500B93945 /* Atari800macOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		E2D98BA61FE93A53005362D9 /* Atari800EmulationCore_macOS.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = Atari800EmulationCore_macOS.framework;
+			remoteRef = E2D98BA51FE93A53005362D9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E2BAFC2A1FE9390500B93945 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E2BAFC341FE9390500B93945 /* Assets.xcassets in Resources */,
+				E2BAFC371FE9390500B93945 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E2BAFC281FE9390500B93945 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E2BAFC321FE9390500B93945 /* ViewController.swift in Sources */,
+				E2BAFC301FE9390500B93945 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E2D98BCA1FE93ABD005362D9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "Atari800EmulationCore-macOS";
+			targetProxy = E2D98BC91FE93ABD005362D9 /* PBXContainerItemProxy */;
+		};
+		E2D98BCE1FE93AD5005362D9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "Atari800EmulationCore-macOS";
+			targetProxy = E2D98BCD1FE93AD5005362D9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		E2BAFC351FE9390500B93945 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E2BAFC361FE9390500B93945 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		E2BAFC3A1FE9390500B93945 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		E2BAFC3B1FE9390500B93945 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+		E2BAFC3D1FE9390500B93945 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Atari800macOS/Atari800macOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 4338UNAE32;
+				INFOPLIST_FILE = Atari800macOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.atari800.Atari800macOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.0;
+			};
+			name = Debug;
+		};
+		E2BAFC3E1FE9390500B93945 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Atari800macOS/Atari800macOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 4338UNAE32;
+				INFOPLIST_FILE = Atari800macOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.atari800.Atari800macOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E2BAFC271FE9390500B93945 /* Build configuration list for PBXProject "Atari800macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2BAFC3A1FE9390500B93945 /* Debug */,
+				E2BAFC3B1FE9390500B93945 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E2BAFC3C1FE9390500B93945 /* Build configuration list for PBXNativeTarget "Atari800macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2BAFC3D1FE9390500B93945 /* Debug */,
+				E2BAFC3E1FE9390500B93945 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E2BAFC241FE9390500B93945 /* Project object */;
+}

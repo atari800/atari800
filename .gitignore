@@ -8,3 +8,8 @@ autom4te.cache/
 /src/config.log
 /src/config.status
 /src/configure
+*.xcuserstate
+src/apple/Atari800macOS/Atari800EmulationCore-macOS/Atari800EmulationCore-macOS.xcodeproj/xcuserdata
+src/apple/Atari800macOS/Atari800macOS.xcodeproj/xcuserdata
+src/apple/Atari800iOS/Atari800iOS.xcodeproj/xcuserdata
+src/apple/Atari800iOS/Atari800EmulationCore-iOS/Atari800EmulationCore-iOS.xcodeproj/xcuserdata
