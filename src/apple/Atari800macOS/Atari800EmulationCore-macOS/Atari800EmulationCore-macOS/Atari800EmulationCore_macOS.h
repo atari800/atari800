@@ -15,5 +15,5 @@ FOUNDATION_EXPORT double Atari800EmulationCore_macOSVersionNumber;
 FOUNDATION_EXPORT const unsigned char Atari800EmulationCore_macOSVersionString[];
 
 // In this header, you should import all the public headers of your framework using statements like #import <Atari800EmulationCore_macOS/PublicHeader.h>
-
+#import <Atari800EmulationCore_macOS/Atari800Renderer.h>
 

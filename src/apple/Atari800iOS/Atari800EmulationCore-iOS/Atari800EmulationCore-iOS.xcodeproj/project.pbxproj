@@ -27,6 +27,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E231F6581FE945A6004ED389 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Shared;
+			path = ../../../Shared;
+			sourceTree = "<group>";
+		};
 		E2D98BA71FE93A78005362D9 = {
 			isa = PBXGroup;
 			children = (
@@ -46,6 +54,7 @@
 		E2D98BB31FE93A78005362D9 /* Atari800EmulationCore-iOS */ = {
 			isa = PBXGroup;
 			children = (
+				E231F6581FE945A6004ED389 /* Shared */,
 				E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */,
 				E2D98BB51FE93A78005362D9 /* Info.plist */,
 			);

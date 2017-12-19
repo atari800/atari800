@@ -1,6 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
+   <Group
+      location = "container:Shared"
+      name = "Shared">
+      <Group
+         location = "container:"
+         name = "Metal">
+         <FileRef
+            location = "group:Shared/Metal/Atari800Palette.h">
+         </FileRef>
+         <FileRef
+            location = "group:Shared/Metal/Atari800Palette.m">
+         </FileRef>
+         <FileRef
+            location = "group:Shared/Metal/Atari800Renderer.h">
+         </FileRef>
+         <FileRef
+            location = "group:Shared/Metal/Atari800Renderer.m">
+         </FileRef>
+         <FileRef
+            location = "group:Shared/Metal/Atari800Shaders.metal">
+         </FileRef>
+         <FileRef
+            location = "group:Shared/Metal/Atari800ShaderTypes.h">
+         </FileRef>
+         <Group
+            location = "group:Shared/Metal/Palettes"
+            name = "Palettes">
+            <FileRef
+               location = "group:jakub.act">
+            </FileRef>
+            <FileRef
+               location = "group:gray.act">
+            </FileRef>
+            <FileRef
+               location = "group:Real.act">
+            </FileRef>
+            <FileRef
+               location = "group:fox.act">
+            </FileRef>
+            <FileRef
+               location = "group:default.act">
+            </FileRef>
+            <FileRef
+               location = "group:XFormer.act">
+            </FileRef>
+         </Group>
+      </Group>
+   </Group>
    <FileRef
       location = "group:Atari800iOS/Atari800iOS.xcodeproj">
    </FileRef>
