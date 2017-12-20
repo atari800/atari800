@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E21FDAE61FEA6C5A00FB1796 /* Atari800ControlManager.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FDADF1FEA6C5A00FB1796 /* Atari800ControlManager.h */; };
+		E21FDAE71FEA6C5A00FB1796 /* Atari800Platform.m in Sources */ = {isa = PBXBuildFile; fileRef = E21FDAE01FEA6C5A00FB1796 /* Atari800Platform.m */; };
+		E21FDAE81FEA6C5A00FB1796 /* Atari800ControlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E21FDAE11FEA6C5A00FB1796 /* Atari800ControlManager.m */; };
+		E21FDAE91FEA6C5A00FB1796 /* Atari800Platform.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FDAE21FEA6C5A00FB1796 /* Atari800Platform.h */; };
+		E21FDAEA1FEA6C5A00FB1796 /* Atari800Preferences.m in Sources */ = {isa = PBXBuildFile; fileRef = E21FDAE41FEA6C5A00FB1796 /* Atari800Preferences.m */; };
+		E21FDAEB1FEA6C5A00FB1796 /* Atari800Preferences.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FDAE51FEA6C5A00FB1796 /* Atari800Preferences.h */; };
 		E231F6821FE94BD5004ED389 /* Atari800ShaderTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */; };
 		E231F6831FE94BD5004ED389 /* Atari800Palette.m in Sources */ = {isa = PBXBuildFile; fileRef = E231F6761FE94BD5004ED389 /* Atari800Palette.m */; };
 		E231F6841FE94BD5004ED389 /* Atari800Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6771FE94BD5004ED389 /* Atari800Renderer.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -23,6 +29,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E21FDADF1FEA6C5A00FB1796 /* Atari800ControlManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800ControlManager.h; sourceTree = "<group>"; };
+		E21FDAE01FEA6C5A00FB1796 /* Atari800Platform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Platform.m; sourceTree = "<group>"; };
+		E21FDAE11FEA6C5A00FB1796 /* Atari800ControlManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800ControlManager.m; sourceTree = "<group>"; };
+		E21FDAE21FEA6C5A00FB1796 /* Atari800Platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Platform.h; sourceTree = "<group>"; };
+		E21FDAE41FEA6C5A00FB1796 /* Atari800Preferences.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Preferences.m; sourceTree = "<group>"; };
+		E21FDAE51FEA6C5A00FB1796 /* Atari800Preferences.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Preferences.h; sourceTree = "<group>"; };
 		E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800ShaderTypes.h; sourceTree = "<group>"; };
 		E231F6761FE94BD5004ED389 /* Atari800Palette.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Palette.m; sourceTree = "<group>"; };
 		E231F6771FE94BD5004ED389 /* Atari800Renderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Renderer.h; sourceTree = "<group>"; };
@@ -51,6 +63,36 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E21FD8C11FE97D3700FB1796 /* Emulation */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Emulation;
+			path = ../../../..;
+			sourceTree = "<group>";
+		};
+		E21FDADE1FEA6C5A00FB1796 /* Hosting */ = {
+			isa = PBXGroup;
+			children = (
+				E21FDADF1FEA6C5A00FB1796 /* Atari800ControlManager.h */,
+				E21FDAE01FEA6C5A00FB1796 /* Atari800Platform.m */,
+				E21FDAE11FEA6C5A00FB1796 /* Atari800ControlManager.m */,
+				E21FDAE21FEA6C5A00FB1796 /* Atari800Platform.h */,
+			);
+			name = Hosting;
+			path = ../../../Shared/Hosting;
+			sourceTree = "<group>";
+		};
+		E21FDAE31FEA6C5A00FB1796 /* Preferences */ = {
+			isa = PBXGroup;
+			children = (
+				E21FDAE41FEA6C5A00FB1796 /* Atari800Preferences.m */,
+				E21FDAE51FEA6C5A00FB1796 /* Atari800Preferences.h */,
+			);
+			name = Preferences;
+			path = ../../../Shared/Preferences;
+			sourceTree = "<group>";
+		};
 		E231F6581FE945A6004ED389 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
@@ -106,6 +148,9 @@
 		E2D98BB31FE93A78005362D9 /* Atari800EmulationCore-iOS */ = {
 			isa = PBXGroup;
 			children = (
+				E21FDADE1FEA6C5A00FB1796 /* Hosting */,
+				E21FDAE31FEA6C5A00FB1796 /* Preferences */,
+				E21FD8C11FE97D3700FB1796 /* Emulation */,
 				E231F6581FE945A6004ED389 /* Shared */,
 				E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */,
 				E2D98BB51FE93A78005362D9 /* Info.plist */,
@@ -120,9 +165,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E21FDAE61FEA6C5A00FB1796 /* Atari800ControlManager.h in Headers */,
 				E231F6821FE94BD5004ED389 /* Atari800ShaderTypes.h in Headers */,
+				E21FDAE91FEA6C5A00FB1796 /* Atari800Platform.h in Headers */,
 				E231F6841FE94BD5004ED389 /* Atari800Renderer.h in Headers */,
 				E2D98BB61FE93A78005362D9 /* Atari800EmulationCore_iOS.h in Headers */,
+				E21FDAEB1FEA6C5A00FB1796 /* Atari800Preferences.h in Headers */,
 				E231F6851FE94BD5004ED389 /* Atari800Palette.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -201,9 +249,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E21FDAE81FEA6C5A00FB1796 /* Atari800ControlManager.m in Sources */,
+				E21FDAEA1FEA6C5A00FB1796 /* Atari800Preferences.m in Sources */,
 				E231F6831FE94BD5004ED389 /* Atari800Palette.m in Sources */,
 				E231F6861FE94BD5004ED389 /* Atari800Shaders.metal in Sources */,
 				E231F6871FE94BD5004ED389 /* Atari800Renderer.m in Sources */,
+				E21FDAE71FEA6C5A00FB1796 /* Atari800Platform.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
