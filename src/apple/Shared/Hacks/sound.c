@@ -33,15 +33,18 @@
 #include "pokeysnd.h"
 #include "util.h"
 
-#define DEBUG 0
+#define DEBUG_SOUND 0
 
 int Sound_enabled = 1;
+
+// HACK
+const int hackyLatency = 5;
 
 Sound_setup_t Sound_desired = {
 	44100,
 	2,
 	1,
-	10
+	hackyLatency
 };
 
 Sound_setup_t Sound_out;
@@ -110,7 +113,7 @@ int Sound_ReadConfig(char *option, char *ptr)
 			return FALSE;
         // HACK!!!!!!
 		/////Sound_desired.buffer_ms = val;
-        Sound_desired.buffer_ms = 10.0;
+        Sound_desired.buffer_ms = hackyLatency;
 	}
 #ifdef SYNCHRONIZED_SOUND
 	else if (strcmp(option, "SOUND_LATENCY") == 0)
@@ -342,7 +345,7 @@ static void FillBuffer(UBYTE *buffer, unsigned int size)
 
 	/* Just repeat the last good frame if underflow. */
 	if (to_write < size) {
-#if DEBUG
+#if DEBUG_SOUND
 		Log_print("Sound buffer underflow: fill %d, needed %d",
 		          to_write/Sound_out.channels/Sound_out.sample_size,
 		          size/Sound_out.channels/Sound_out.sample_size);
@@ -360,7 +363,7 @@ static void FillBuffer(UBYTE *buffer, unsigned int size)
 #ifdef SOUND_CALLBACK
 void Sound_Callback(UBYTE *buffer, unsigned int size)
 {
-#if DEBUG >= 2
+#if DEBUG_SOUND >= 2
 		Log_print("Callback: fill %u, needed %u",
 		          (sync_write_pos - sync_read_pos) / Sound_out.channels / Sound_out.sample_size,
 		          size / Sound_out.channels / Sound_out.sample_size);
@@ -377,7 +380,7 @@ static void WriteOut(void)
 	unsigned int avail = PLATFORM_SoundAvailable();
 
 	if (avail > 0) {
-#if DEBUG >= 2
+#if DEBUG_SOUND >= 2
 		Log_print("WriteOut: fill %u, needed %u",
 		          (sync_write_pos - sync_read_pos) / Sound_out.channels / Sound_out.sample_size,
 		          avail / Sound_out.channels / Sound_out.sample_size);
@@ -430,7 +433,7 @@ static void UpdateSyncBuffer(void)
 	/* if there isn't enough room... */
 	if (bytes_written > sync_buffer_size - fill) {
 		/* Overflow of sync_buffer. */
-#if DEBUG
+#if DEBUG_SOUND
 		Log_print("Sound buffer overflow: free %d, needed %d",
 				  (sync_buffer_size - fill)/Sound_out.channels/Sound_out.sample_size,
 				  bytes_written/Sound_out.channels/Sound_out.sample_size);
@@ -452,7 +455,7 @@ static void UpdateSyncBuffer(void)
 	}
 	/* Now bytes_written <= audio_buffer_size + dsp_read_pos - dsp_write_pos) */
 
-#if DEBUG >= 2
+#if DEBUG_SOUND >= 2
 	Log_print("UpdateSyncBuffer: est_gap: %f, fill %u, write %u",
 			(Util_time() - last_audio_write_time)*Sound_out.freq,
 	          fill / Sound_out.channels/Sound_out.sample_size,
@@ -531,7 +534,7 @@ double Sound_AdjustSpeed(void)
 		else if (sync_est_fill > sync_max_fill)
 			delay_mult = 1.05;
 #endif
-#if DEBUG >= 2
+#if DEBUG_SOUND >= 2
 		Log_print("delay_mult: %f, est_fill: %u, avg_fill: %f, buf_size: %u, min_fill: %u, max_fill: %u",
 		          delay_mult,
 		          sync_est_fill / Sound_out.channels / Sound_out.sample_size,

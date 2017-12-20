@@ -8,7 +8,7 @@ extern void ControlManagerMessagePrint(char *);
 #define COLUMN_80 1
 #define SOUND_THIN_API 1
 #undef SOUND_CALLBACK
-#define SYNCHRONIZED_SOUND
+#undef SYNCHRONIZED_SOUND
 #define STEREO
 #define STEREO_SOUND
 

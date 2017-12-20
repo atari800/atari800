@@ -21,7 +21,7 @@
 
 @end
 
-const unsigned int bufferSize = 0x10000;
+const unsigned int bufferSize = 4096;
 #define kOutputBus 0
 #define SAMPLING_FREQUENCY_HZ 44100
 
@@ -40,11 +40,16 @@ static Atari800AudioDriver *sharedDriver = nil;
     
     sharedDriver = self;
     
+    [sharedDriver initialiseSound];
+    [sharedDriver startSound];
+
     return self;
 }
 
 - (void)dealloc
 {
+    [self stopSound];
+    
     ring_buffer_uninit(_buffer);
 }
 
@@ -57,6 +62,7 @@ OSStatus RenderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlag
         ring_buffer_read(driver->_buffer, ioData->mBuffers[0].mData, framesize);
     }
     else {
+        memset(ioData->mBuffers[0].mData, 0, framesize);
         putchar('+');
     }
     
@@ -175,14 +181,11 @@ OSStatus RenderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlag
 
 int PLATFORM_SoundSetup(Sound_setup_t *setup)
 {
-    [sharedDriver initialiseSound];
-    
     return TRUE;
 }
 
 void PLATFORM_SoundExit(void)
 {
-    [sharedDriver stopSound];
 }
 
 void PLATFORM_SoundPause(void)
@@ -192,7 +195,6 @@ void PLATFORM_SoundPause(void)
 
 void PLATFORM_SoundContinue(void)
 {
-    [sharedDriver startSound];
 }
 
 //void PLATFORM_SoundLock(void) {}
