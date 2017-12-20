@@ -68,13 +68,13 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     atari800EmulationThread = thread;
     
     NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(@"Atari800EmulationThread")];
-    const char * bundlePath = [[bundle.resourcePath stringByAppendingPathComponent:@"Resources"] UTF8String];
+    const char *bundlePath = [[bundle.resourcePath stringByAppendingPathComponent:@"Resources"] UTF8String];
     int argc = 1;
-    char **argv = {&bundlePath};
+    const char **argv = {&bundlePath};
     
     Screen_atari = (unsigned int *)atari800EmulationThread->_renderer.screen;
     
-    if (!Atari800_Initialise(&argc, argv)) {
+    if (!Atari800_Initialise(&argc, (char **)argv)) {
         
         return;
     }

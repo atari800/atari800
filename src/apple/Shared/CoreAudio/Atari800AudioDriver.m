@@ -40,9 +40,6 @@ static Atari800AudioDriver *sharedDriver = nil;
     
     sharedDriver = self;
     
-    [sharedDriver initialiseSound];
-    [sharedDriver startSound];
-
     return self;
 }
 
@@ -181,11 +178,14 @@ OSStatus RenderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlag
 
 int PLATFORM_SoundSetup(Sound_setup_t *setup)
 {
+    [sharedDriver initialiseSound];
+
     return TRUE;
 }
 
 void PLATFORM_SoundExit(void)
 {
+    [sharedDriver stopSound];
 }
 
 void PLATFORM_SoundPause(void)
@@ -195,10 +195,8 @@ void PLATFORM_SoundPause(void)
 
 void PLATFORM_SoundContinue(void)
 {
+    [sharedDriver startSound];
 }
-
-//void PLATFORM_SoundLock(void) {}
-//void PLATFORM_SoundUnlock(void) {}
 
 unsigned int PLATFORM_SoundAvailable(void)
 {

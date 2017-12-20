@@ -4,15 +4,15 @@ extern void ControlManagerMessagePrint(char *);
 
 #define SUPPORTS_CHANGE_VIDEOMODE 0
 #define PAL_BLENDING 1
-#define PACKAGE_VERSION "3.5.3"
+#define PACKAGE_VERSION "1.3.6"
 #define COLUMN_80 1
 #define MACOSX
 #undef HAVE_SYSTEM
 #define SOUND_THIN_API 1
 #undef SOUND_CALLBACK
 #undef SYNCHRONIZED_SOUND
-#undef STEREO
-#undef STEREO_SOUND
+#define STEREO
+#define STEREO_SOUND
 
 /* Define to empty if the keyword does not work.  */
 /* #undef const */
