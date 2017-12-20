@@ -7,6 +7,8 @@ extern void ControlManagerMessagePrint(char *);
 #define PACKAGE_VERSION "3.5.3"
 #define SOUND_THIN_API 1
 #define COLUMN_80 1
+#define MACOSX
+#undef HAVE_SYSTEM
 
 /* Define to empty if the keyword does not work.  */
 /* #undef const */
@@ -115,9 +117,6 @@ extern void ControlManagerMessagePrint(char *);
 
 /* Define if you have the function chmod  */
 #define HAVE_CHMOD 1
-
-/* Define if you have the function system  */
-#define HAVE_SYSTEM 1
 
 /* Define if you have the function rewind  */
 #define HAVE_REWIND 1
@@ -345,8 +344,6 @@ extern void ControlManagerMessagePrint(char *);
 
 /* Change name confict with monitor() function */
 #define monitor Atari_monitor
-
-#define MACOSX
 
 #define XEP80_EMULATION
 

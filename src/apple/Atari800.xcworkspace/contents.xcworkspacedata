@@ -14,6 +14,12 @@
          location = "group:Hosting"
          name = "Hosting">
          <FileRef
+            location = "group:Atari800Emulator.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800Emulator.m">
+         </FileRef>
+         <FileRef
             location = "group:Atari800ControlManager.h">
          </FileRef>
          <FileRef
@@ -419,7 +425,8 @@
             location = "group:votraxsnd.h">
          </FileRef>
          <FileRef
-            location = "group:vtxsmpls.inc">
+            location = "group:vtxsmpls.inc"
+            assignedFileDataType = "public.c-header">
          </FileRef>
          <FileRef
             location = "group:xep80_fonts.c">
