@@ -14,6 +14,12 @@
          location = "group:CoreAudio"
          name = "CoreAudio">
          <FileRef
+            location = "group:Atari800AudioBuffer.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800AudioBuffer.m">
+         </FileRef>
+         <FileRef
             location = "group:/Users/simonl/Projects/atari800/src/apple/Shared/CoreAudio/Atari800AudioDriver.m">
          </FileRef>
          <FileRef

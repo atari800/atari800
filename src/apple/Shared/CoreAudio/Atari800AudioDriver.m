@@ -8,7 +8,7 @@
 
 #import "Atari800AudioDriver.h"
 #import "sound.h"
-#import "OBRingBuffer.h"
+#import "Atari800AudioBuffer.h"
 @import CoreAudio;
 @import AudioToolbox;
 
@@ -16,7 +16,7 @@
 @public
     AudioUnit _outputUnit;
     BOOL _initialisedAudio;
-    OBRingBuffer *_buffer;
+    Atari800AudioBuffer *_buffer;
 }
 
 @end
@@ -35,7 +35,7 @@ static Atari800AudioDriver *sharedDriver = nil;
     
     if (self) {
     
-        ring_buffer_init(&_buffer, bufferSize);
+        _buffer = [[Atari800AudioBuffer alloc] initWithCapacity:bufferSize];
     }
     
     sharedDriver = self;
@@ -46,8 +46,6 @@ static Atari800AudioDriver *sharedDriver = nil;
 - (void)dealloc
 {
     [self stopSound];
-    
-    ring_buffer_uninit(_buffer);
 }
 
 OSStatus RenderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags, const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList *ioData)
@@ -55,8 +53,8 @@ OSStatus RenderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlag
     __unsafe_unretained Atari800AudioDriver *driver = (__bridge Atari800AudioDriver *)inRefCon;
     unsigned int framesize = inNumberFrames * sizeof(SInt16);
     
-    if (ring_buffer_data_size(driver->_buffer) >= framesize) {
-        ring_buffer_read(driver->_buffer, ioData->mBuffers[0].mData, framesize);
+    if (Atari800AudioBufferDataSize(driver->_buffer) >= framesize) {
+        Atari800AudioBufferRead(driver->_buffer, ioData->mBuffers[0].mData, framesize);
     }
     else {
         memset(ioData->mBuffers[0].mData, 0, framesize);
@@ -158,7 +156,7 @@ OSStatus RenderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlag
             return;
         }
         
-        ring_buffer_clear(_buffer);
+        Atari800AudioBufferClear(_buffer);
     }
     
     _initialisedAudio = YES;
@@ -171,7 +169,7 @@ OSStatus RenderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlag
     if (_initialisedAudio)
         AudioOutputUnitStop(_outputUnit);
     
-    ring_buffer_clear(_buffer);
+    Atari800AudioBufferClear(_buffer);
 }
 
 @end
@@ -203,11 +201,11 @@ unsigned int PLATFORM_SoundAvailable(void)
     if (!sharedDriver)
         return 0;
     
-    return ring_buffer_free(sharedDriver->_buffer);
+    return (unsigned int)Atari800AudioBufferFreeSpace(sharedDriver->_buffer);
 }
 
 void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 {
     NSCAssert(size > 0, @"LOL WUT");
-    ring_buffer_write(sharedDriver->_buffer, buffer, size);
+    Atari800AudioBufferWrite(sharedDriver->_buffer, buffer, size);
 }

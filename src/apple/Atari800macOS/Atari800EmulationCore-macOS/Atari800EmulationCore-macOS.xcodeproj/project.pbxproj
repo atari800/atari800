@@ -156,8 +156,8 @@
 		E251DB231FEA9AEE00613C10 /* ROM in Resources */ = {isa = PBXBuildFile; fileRef = E251DB221FEA9AEE00613C10 /* ROM */; };
 		E251DB291FEAA29900613C10 /* atari.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DB281FEAA29900613C10 /* atari.c */; };
 		E251DB2B1FEAA30900613C10 /* XEX in Resources */ = {isa = PBXBuildFile; fileRef = E251DB2A1FEAA30900613C10 /* XEX */; };
-		E2640D301FEAB60D00524592 /* OBRingBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = E2640D2E1FEAB60C00524592 /* OBRingBuffer.h */; };
-		E2640D311FEAB60D00524592 /* OBRingBuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = E2640D2F1FEAB60D00524592 /* OBRingBuffer.c */; };
+		E29D0F211FEAFE67002D3DF0 /* Atari800AudioBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = E29D0F1F1FEAFE67002D3DF0 /* Atari800AudioBuffer.h */; };
+		E29D0F221FEAFE67002D3DF0 /* Atari800AudioBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = E29D0F201FEAFE67002D3DF0 /* Atari800AudioBuffer.m */; };
 		E2D98B9B1FE93A52005362D9 /* Atari800EmulationCore_macOS.h in Headers */ = {isa = PBXBuildFile; fileRef = E2D98B991FE93A52005362D9 /* Atari800EmulationCore_macOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
@@ -318,8 +318,8 @@
 		E251DB221FEA9AEE00613C10 /* ROM */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ROM; path = ../../../Shared/ROM; sourceTree = "<group>"; };
 		E251DB281FEAA29900613C10 /* atari.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = atari.c; sourceTree = "<group>"; };
 		E251DB2A1FEAA30900613C10 /* XEX */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XEX; path = ../../../Shared/XEX; sourceTree = "<group>"; };
-		E2640D2E1FEAB60C00524592 /* OBRingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBRingBuffer.h; sourceTree = "<group>"; };
-		E2640D2F1FEAB60D00524592 /* OBRingBuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = OBRingBuffer.c; sourceTree = "<group>"; };
+		E29D0F1F1FEAFE67002D3DF0 /* Atari800AudioBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800AudioBuffer.h; sourceTree = "<group>"; };
+		E29D0F201FEAFE67002D3DF0 /* Atari800AudioBuffer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800AudioBuffer.m; sourceTree = "<group>"; };
 		E2D98B961FE93A52005362D9 /* Atari800EmulationCore_macOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Atari800EmulationCore_macOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2D98B991FE93A52005362D9 /* Atari800EmulationCore_macOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800EmulationCore_macOS.h; sourceTree = "<group>"; };
 		E2D98B9A1FE93A52005362D9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -471,10 +471,10 @@
 		E21FDAC11FE9859C00FB1796 /* CoreAudio */ = {
 			isa = PBXGroup;
 			children = (
-				E2640D2F1FEAB60D00524592 /* OBRingBuffer.c */,
-				E2640D2E1FEAB60C00524592 /* OBRingBuffer.h */,
 				E21FDAC21FE985BF00FB1796 /* Atari800AudioDriver.h */,
 				E21FDAC31FE985BF00FB1796 /* Atari800AudioDriver.m */,
+				E29D0F1F1FEAFE67002D3DF0 /* Atari800AudioBuffer.h */,
+				E29D0F201FEAFE67002D3DF0 /* Atari800AudioBuffer.m */,
 			);
 			path = CoreAudio;
 			sourceTree = "<group>";
@@ -626,7 +626,6 @@
 				E21FDAAB1FE97E6B00FB1796 /* xep80_fonts.h in Headers */,
 				E21FDA471FE97E6B00FB1796 /* cartridge.h in Headers */,
 				E21FDA7C1FE97E6B00FB1796 /* votraxsnd.h in Headers */,
-				E2640D301FEAB60D00524592 /* OBRingBuffer.h in Headers */,
 				E21FDA901FE97E6B00FB1796 /* afile.h in Headers */,
 				E21FDA711FE97E6B00FB1796 /* memory.h in Headers */,
 				E21FDA6E1FE97E6B00FB1796 /* rtime.h in Headers */,
@@ -640,6 +639,7 @@
 				E21FDABC1FE97E6B00FB1796 /* log.h in Headers */,
 				E21FDA591FE97E6B00FB1796 /* ide_internal.h in Headers */,
 				E231F6681FE9469F004ED389 /* Atari800ShaderTypes.h in Headers */,
+				E29D0F211FEAFE67002D3DF0 /* Atari800AudioBuffer.h in Headers */,
 				E21FDA671FE97E6B00FB1796 /* antic.h in Headers */,
 				E21FDA911FE97E6B00FB1796 /* colours_ntsc.h in Headers */,
 				E21FDA861FE97E6B00FB1796 /* sound.h in Headers */,
@@ -761,6 +761,7 @@
 				E21FDA4F1FE97E6B00FB1796 /* compfile.c in Sources */,
 				E21FDA921FE97E6B00FB1796 /* cassette.c in Sources */,
 				E21FDA631FE97E6B00FB1796 /* colours.c in Sources */,
+				E29D0F221FEAFE67002D3DF0 /* Atari800AudioBuffer.m in Sources */,
 				E21FDACD1FE986F400FB1796 /* atari_ntsc.c in Sources */,
 				E21FDA441FE97E6B00FB1796 /* pbi.c in Sources */,
 				E251DAEF1FEA81C300613C10 /* Atari800EmulationThread.m in Sources */,
@@ -821,7 +822,6 @@
 				E21FDAD91FEA6A3400FB1796 /* Atari800ControlManager.m in Sources */,
 				E21FDA6C1FE97E6B00FB1796 /* pbi_mio.c in Sources */,
 				E21FDAAF1FE97E6B00FB1796 /* xep80.c in Sources */,
-				E2640D311FEAB60D00524592 /* OBRingBuffer.c in Sources */,
 				E21FDA8F1FE97E6B00FB1796 /* mzpokeysnd.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
