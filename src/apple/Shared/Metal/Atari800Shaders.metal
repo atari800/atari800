@@ -39,10 +39,11 @@ fragment float4 atari800BasicShader(RasterizerData in [[stage_in]],
 {
     float2 screenSize = float2(*screenSizePointer);
     
-    int x = (int)round(in.screenCoordinate.x * screenSize.x);
-    int y = (int)round(in.screenCoordinate.y * screenSize.y);
+    float2 pos = in.screenCoordinate * screenSize;
     
-    uint8_t c = screen[x + y * (*screenSizePointer).x];
+    int2 pixel = int2(round(pos));
+    
+    uint8_t c = screen[pixel.x + pixel.y * (*screenSizePointer).x];
     
     return palette[c];
 }
