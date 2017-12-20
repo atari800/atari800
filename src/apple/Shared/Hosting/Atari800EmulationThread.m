@@ -36,7 +36,7 @@ int VIDEOMODE_80_column;
 
 void PLATFORM_DisplayScreen(void)
 {
-    memcpy(atari800EmulationThread->_renderer.screen, Screen_atari, 384 * 240 * sizeof(uint8_t));
+    //memcpy(atari800EmulationThread->_renderer.screen, Screen_atari, 384 * 240 * sizeof(uint8_t));
 }
 
 int PLATFORM_Exit(int run_monitor) {
@@ -71,6 +71,8 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     const char * bundlePath = [[bundle.resourcePath stringByAppendingPathComponent:@"Resources"] UTF8String];
     int argc = 1;
     char **argv = {&bundlePath};
+    
+    Screen_atari = (unsigned int *)atari800EmulationThread->_renderer.screen;
     
     if (!Atari800_Initialise(&argc, argv)) {
         

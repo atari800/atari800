@@ -38,7 +38,6 @@ fragment float4 atari800BasicShader(RasterizerData in [[stage_in]],
                                     constant vector_uint2 *screenSizePointer [[buffer(Atari800FragmentInputIndexScreenBounds)]])
 {
     float2 screenSize = float2(*screenSizePointer);
-    
     float2 pos = in.screenCoordinate * screenSize;
     
     int2 pixel = int2(round(pos));
