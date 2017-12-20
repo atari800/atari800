@@ -80,7 +80,7 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     atari800EmulationThread->_atari800Running = YES;
     
     // HACK: Load something for now
-    NSString *exeFilePath = [bundle pathForResource:@"Drunk Chessboard"
+    NSString *exeFilePath = [bundle pathForResource:@"yoomp_pa"
                                              ofType:@"xex"
                                         inDirectory:@"XEX"];
     const char *exeName = [exeFilePath cStringUsingEncoding:NSUTF8StringEncoding];
