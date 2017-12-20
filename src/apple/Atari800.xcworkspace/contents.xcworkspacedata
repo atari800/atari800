@@ -11,6 +11,10 @@
       location = "container:Shared"
       name = "Shared">
       <Group
+         location = "container:Shared/Hacks"
+         name = "Hacks">
+      </Group>
+      <Group
          location = "group:Hosting"
          name = "Hosting">
          <FileRef
