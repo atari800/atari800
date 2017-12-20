@@ -5,8 +5,12 @@ extern void ControlManagerMessagePrint(char *);
 #define SUPPORTS_CHANGE_VIDEOMODE 0
 #define PAL_BLENDING 1
 #define PACKAGE_VERSION "3.5.3"
-#define SOUND_THIN_API 1
 #define COLUMN_80 1
+#define SOUND_THIN_API 1
+#undef SOUND_CALLBACK
+#define SYNCHRONIZED_SOUND
+#define STEREO
+#define STEREO_SOUND
 
 /* Define to empty if the keyword does not work.  */
 /* #undef const */
@@ -306,12 +310,6 @@ extern void ControlManagerMessagePrint(char *);
 
 /* define to enable sound clipping */
 /* #define CLIP_SOUND */
-
-/* define to enable stereo sound */
-#define STEREO
-#define STEREO_SOUND
-#define SYNCHRONIZED_SOUND
-
 
 /* Buffer debug output (until the graphics mode switches back to text mode) */
 /* #define BUFFERED_LOG 1 */

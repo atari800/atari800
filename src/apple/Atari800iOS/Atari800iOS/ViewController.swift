@@ -8,6 +8,7 @@
 
 import UIKit
 import Atari800EmulationCore_iOS
+import AVFoundation;
 
 class ViewController: UIViewController {
 
@@ -19,6 +20,14 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(AVAudioSessionCategoryPlayback)
+            try session.setActive(true)
+        } catch let error as NSError {
+            print("Unable to activate audio session:  \(error.localizedDescription)")
+        }
         
         // Do any additional setup after loading the view.
         if let mtkView = self.view as? MTKView {
@@ -42,6 +51,11 @@ class ViewController: UIViewController {
             
             emulator?.renderer = renderer;
             renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
+            
+            let driver = Atari800AudioDriver()
+            
+            emulator?.audioDriver = driver;
+            
             emulator?.startEmulation()
         }
     }
@@ -78,7 +92,5 @@ class ViewController: UIViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-
 }
 

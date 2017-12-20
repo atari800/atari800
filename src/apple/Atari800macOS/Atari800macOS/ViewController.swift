@@ -44,6 +44,11 @@ class ViewController: NSViewController {
             emulator?.renderer = renderer;
             // self.updateDisplay(self)
             renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
+            
+            let driver = Atari800AudioDriver()
+            
+            emulator?.audioDriver = driver;
+            
             emulator?.startEmulation()
         }
     }

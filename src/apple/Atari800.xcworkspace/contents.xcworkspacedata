@@ -11,8 +11,30 @@
       location = "container:Shared"
       name = "Shared">
       <Group
+         location = "group:CoreAudio"
+         name = "CoreAudio">
+         <FileRef
+            location = "group:/Users/simonl/Projects/atari800/src/apple/Shared/CoreAudio/Atari800AudioDriver.m">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800AudioDriver.h">
+         </FileRef>
+      </Group>
+      <Group
          location = "container:Shared/Hacks"
          name = "Hacks">
+         <FileRef
+            location = "group:atari.c">
+         </FileRef>
+         <FileRef
+            location = "group:ide.c">
+         </FileRef>
+         <FileRef
+            location = "group:pal_blending.c">
+         </FileRef>
+         <FileRef
+            location = "group:sound.c">
+         </FileRef>
       </Group>
       <Group
          location = "group:Hosting"

@@ -41,7 +41,7 @@ Sound_setup_t Sound_desired = {
 	44100,
 	2,
 	1,
-	0
+	10
 };
 
 Sound_setup_t Sound_out;
@@ -108,7 +108,9 @@ int Sound_ReadConfig(char *option, char *ptr)
 		int val = Util_sscandec(ptr);
 		if (val == -1)
 			return FALSE;
-		Sound_desired.buffer_ms = val;
+        // HACK!!!!!!
+		/////Sound_desired.buffer_ms = val;
+        Sound_desired.buffer_ms = 10.0;
 	}
 #ifdef SYNCHRONIZED_SOUND
 	else if (strcmp(option, "SOUND_LATENCY") == 0)
