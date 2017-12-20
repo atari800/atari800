@@ -33,6 +33,7 @@ static Atari800EmulationThread *atari800EmulationThread;
 
 int VIDEOMODE_80_column;
 
+
 void PLATFORM_DisplayScreen(void)
 {
     memcpy(atari800EmulationThread->_renderer.screen, Screen_atari, 384 * 240 * sizeof(uint8_t));
@@ -66,8 +67,10 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
 {
     atari800EmulationThread = thread;
     
-    int argc = 0;
-    char **argv = NULL;
+    NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(@"Atari800EmulationThread")];
+    const char * bundlePath = [[bundle.resourcePath stringByAppendingPathComponent:@"Resources"] UTF8String];
+    int argc = 1;
+    char **argv = {&bundlePath};
     
     if (!Atari800_Initialise(&argc, argv)) {
         
@@ -75,6 +78,13 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     }
     
     atari800EmulationThread->_atari800Running = YES;
+    
+    // HACK: Load something for now
+    NSString *exeFilePath = [bundle pathForResource:@"Drunk Chessboard"
+                                             ofType:@"xex"
+                                        inDirectory:@"XEX"];
+    const char *exeName = [exeFilePath cStringUsingEncoding:NSUTF8StringEncoding];
+    BINLOAD_Loader(exeName);
     
     while (atari800EmulationThread->_atari800Running) {
         

@@ -69,7 +69,6 @@
 		E251DA931FEA747800613C10 /* gtia.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DA141FEA747500613C10 /* gtia.c */; };
 		E251DA941FEA747800613C10 /* votraxsnd.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DA151FEA747500613C10 /* votraxsnd.c */; };
 		E251DA951FEA747800613C10 /* sndsave.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DA161FEA747500613C10 /* sndsave.h */; };
-		E251DA961FEA747800613C10 /* atari.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DA171FEA747500613C10 /* atari.c */; };
 		E251DA971FEA747800613C10 /* pbi_scsi.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DA181FEA747500613C10 /* pbi_scsi.h */; };
 		E251DA981FEA747800613C10 /* xep80_fonts.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DA191FEA747500613C10 /* xep80_fonts.h */; };
 		E251DA991FEA747800613C10 /* memory.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DA1A1FEA747500613C10 /* memory.h */; };
@@ -153,6 +152,9 @@
 		E251DAFF1FEA915600613C10 /* pal_blending.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAFC1FEA915500613C10 /* pal_blending.c */; };
 		E251DB001FEA915600613C10 /* sound.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAFD1FEA915500613C10 /* sound.c */; };
 		E251DB011FEA915600613C10 /* ide.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAFE1FEA915500613C10 /* ide.c */; };
+		E251DB251FEAA06000613C10 /* ROM in Resources */ = {isa = PBXBuildFile; fileRef = E251DB241FEAA06000613C10 /* ROM */; };
+		E251DB271FEAA28C00613C10 /* atari.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DB261FEAA28B00613C10 /* atari.c */; };
+		E251DB2D1FEAA31900613C10 /* XEX in Resources */ = {isa = PBXBuildFile; fileRef = E251DB2C1FEAA31900613C10 /* XEX */; };
 		E2D98BB61FE93A78005362D9 /* Atari800EmulationCore_iOS.h in Headers */ = {isa = PBXBuildFile; fileRef = E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
@@ -310,6 +312,9 @@
 		E251DAFC1FEA915500613C10 /* pal_blending.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pal_blending.c; sourceTree = "<group>"; };
 		E251DAFD1FEA915500613C10 /* sound.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sound.c; sourceTree = "<group>"; };
 		E251DAFE1FEA915500613C10 /* ide.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ide.c; sourceTree = "<group>"; };
+		E251DB241FEAA06000613C10 /* ROM */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ROM; path = ../../../Shared/ROM; sourceTree = "<group>"; };
+		E251DB261FEAA28B00613C10 /* atari.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = atari.c; sourceTree = "<group>"; };
+		E251DB2C1FEAA31900613C10 /* XEX */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XEX; path = ../../../Shared/XEX; sourceTree = "<group>"; };
 		E2D98BB11FE93A78005362D9 /* Atari800EmulationCore_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Atari800EmulationCore_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800EmulationCore_iOS.h; sourceTree = "<group>"; };
 		E2D98BB51FE93A78005362D9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -543,6 +548,7 @@
 		E251DAFB1FEA915500613C10 /* Hacks */ = {
 			isa = PBXGroup;
 			children = (
+				E251DB261FEAA28B00613C10 /* atari.c */,
 				E251DAFC1FEA915500613C10 /* pal_blending.c */,
 				E251DAFD1FEA915500613C10 /* sound.c */,
 				E251DAFE1FEA915500613C10 /* ide.c */,
@@ -569,6 +575,8 @@
 		E2D98BB31FE93A78005362D9 /* Atari800EmulationCore-iOS */ = {
 			isa = PBXGroup;
 			children = (
+				E251DB2C1FEAA31900613C10 /* XEX */,
+				E251DB241FEAA06000613C10 /* ROM */,
 				E251DAE91FEA749E00613C10 /* config.h */,
 				E21FD8C11FE97D3700FB1796 /* Emulation */,
 				E231F6581FE945A6004ED389 /* Shared */,
@@ -719,7 +727,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E251DB2D1FEAA31900613C10 /* XEX in Resources */,
 				E231F68A1FE94BD5004ED389 /* Real.act in Resources */,
+				E251DB251FEAA06000613C10 /* ROM in Resources */,
 				E231F6881FE94BD5004ED389 /* jakub.act in Resources */,
 				E231F68B1FE94BD5004ED389 /* fox.act in Resources */,
 				E231F68C1FE94BD5004ED389 /* default.act in Resources */,
@@ -758,12 +768,12 @@
 				E251DA9A1FEA747800613C10 /* artifact.c in Sources */,
 				E251DACF1FEA747800613C10 /* rtime.c in Sources */,
 				E251DAB21FEA747800613C10 /* colours_ntsc.c in Sources */,
-				E251DA961FEA747800613C10 /* atari.c in Sources */,
 				E251DAC01FEA747800613C10 /* monitor.c in Sources */,
 				E251DA7D1FEA747800613C10 /* util.c in Sources */,
 				E251DADA1FEA747800613C10 /* cpu.c in Sources */,
 				E231F6861FE94BD5004ED389 /* Atari800Shaders.metal in Sources */,
 				E251DAD91FEA747800613C10 /* xep80_fonts.c in Sources */,
+				E251DB271FEAA28C00613C10 /* atari.c in Sources */,
 				E251DAD11FEA747800613C10 /* remez.c in Sources */,
 				E251DA8E1FEA747800613C10 /* filter_ntsc.c in Sources */,
 				E251DAE81FEA747800613C10 /* crc32.c in Sources */,
