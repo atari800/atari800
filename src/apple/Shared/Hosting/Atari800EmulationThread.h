@@ -1,5 +1,5 @@
 //
-//  Atari800Platform.h
+//  Atari800EmulationThread.h
 //  Atari800EmulationCore-macOS
 //
 //  Created by Simon Lawrence on 20/12/2017.
@@ -8,6 +8,12 @@
 
 #import <Foundation/Foundation.h>
 
-@interface Atari800Platform : NSObject
+@class Atari800Emulator;
+
+@interface Atari800EmulationThread : NSThread
+
+- (instancetype)initWithEmulator:(Atari800Emulator *)emulator;
+
+- (void)pause;
 
 @end

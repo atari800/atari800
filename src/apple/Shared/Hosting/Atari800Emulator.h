@@ -13,8 +13,12 @@
 
 @interface Atari800Emulator : NSObject
 
-@property (nonatomic, readonly) Atari800Renderer *renderer;
-@property (nonatomic, readonly) Atari800AudioDriver *audioDriver;
+@property (nonatomic, strong) Atari800Renderer *renderer;
+@property (nonatomic, strong) Atari800AudioDriver *audioDriver;
+
+- (void)startEmulation;
+- (void)stopEmulation;
+- (void)pauseEmulation;
 
 + (instancetype)shared;
 

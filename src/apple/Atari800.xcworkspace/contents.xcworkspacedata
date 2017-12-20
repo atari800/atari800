@@ -23,13 +23,7 @@
             location = "group:Atari800ControlManager.h">
          </FileRef>
          <FileRef
-            location = "group:Atari800Platform.m">
-         </FileRef>
-         <FileRef
             location = "group:Atari800ControlManager.m">
-         </FileRef>
-         <FileRef
-            location = "group:Atari800Platform.h">
          </FileRef>
       </Group>
       <Group

@@ -86,14 +86,14 @@
     return self;
 }
 
-- (uint32_t *)screen
+- (uint8_t *)screen
 {
-    return (uint32_t *)[_screen contents];
+    return (uint8_t *)[_screen contents];
 }
 
 - (NSData *)setupScreenForWidthInPixels:(NSInteger)width heightInScanLines:(NSInteger)height
 {
-    NSInteger screenLength = width * height * sizeof(uint32_t);
+    NSInteger screenLength = width * height * sizeof(uint8_t);
     NSMutableData *screen = [NSMutableData dataWithLength:screenLength];
     
     return screen;

@@ -34,7 +34,7 @@ vertex RasterizerData vertexShader(uint vertexID [[ vertex_id ]],
 // TODO: *Very* basic fragment function, need to add scan lines etc.
 fragment float4 atari800BasicShader(RasterizerData in [[stage_in]],
                                     constant float4 *palette [[buffer(Atari800FragmentInputIndexPalette)]],
-                                    constant uint32_t *screen [[buffer(Atari800FragmentInputIndexScreen)]],
+                                    constant uint8_t *screen [[buffer(Atari800FragmentInputIndexScreen)]],
                                     constant vector_uint2 *screenSizePointer [[buffer(Atari800FragmentInputIndexScreenBounds)]])
 {
     float2 screenSize = float2(*screenSizePointer);
@@ -42,7 +42,7 @@ fragment float4 atari800BasicShader(RasterizerData in [[stage_in]],
     int x = (int)round(in.screenCoordinate.x * screenSize.x);
     int y = (int)round(in.screenCoordinate.y * screenSize.y);
     
-    uint32_t c = screen[x + y * (*screenSizePointer).x];
+    uint8_t c = screen[x + y * (*screenSizePointer).x];
     
     return palette[c];
 }

@@ -16,7 +16,7 @@ class ViewController: UIViewController {
     
     weak var mtkView: MTKView?
     var renderer: Atari800Renderer?
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -38,8 +38,11 @@ class ViewController: UIViewController {
             
             mtkView.delegate = renderer
             self.renderer = renderer
-            self.updateDisplay(self)
+            let emulator = Atari800Emulator.shared()
+            
+            emulator?.renderer = renderer;
             renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
+            emulator?.startEmulation()
         }
     }
     
@@ -58,7 +61,7 @@ class ViewController: UIViewController {
                 
                 for _ in 0..<width {
                     
-                    screen[i] = UInt32(c)
+                    screen[i] = UInt8(c)
                     c += 1
                     
                     c = c & 0xFF

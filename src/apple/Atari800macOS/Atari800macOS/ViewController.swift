@@ -38,8 +38,13 @@ class ViewController: NSViewController {
             
             mtkView.delegate = renderer
             self.renderer = renderer
-            self.updateDisplay(self)
+            
+            let emulator = Atari800Emulator.shared()
+            
+            emulator?.renderer = renderer;
+            // self.updateDisplay(self)
             renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
+            emulator?.startEmulation()
         }
     }
 
@@ -58,7 +63,7 @@ class ViewController: NSViewController {
                 
                 for _ in 0..<width {
                     
-                    screen[i] = UInt32(c)
+                    screen[i] = UInt8(c)
                     c += 1
                     
                     c = c & 0xFF
