@@ -22,8 +22,8 @@
 @end
 
 const unsigned int bufferSize = 4096;
-#define kOutputBus 0
-#define SAMPLING_FREQUENCY_HZ 44100
+const int kOutputBus = 0;
+const int SAMPLING_FREQUENCY_HZ = 44100;
 
 @implementation Atari800AudioDriver
 
@@ -206,6 +206,9 @@ unsigned int PLATFORM_SoundAvailable(void)
 
 void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 {
+    if (!sharedDriver)
+        return;
+    
     NSCAssert(size > 0, @"LOL WUT");
     Atari800AudioBufferWrite(sharedDriver->_buffer, buffer, size);
 }

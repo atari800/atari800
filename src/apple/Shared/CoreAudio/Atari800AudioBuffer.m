@@ -26,7 +26,6 @@
     
     if (self) {
     
-        _buffer = calloc(capacity, sizeof(uint8_t));
         _readPointer = 0;
         _writePointer = 0;
         
@@ -34,9 +33,18 @@
         
         while (_size <= capacity)
             _size <<= 1;
+        
+        _buffer = calloc(_size, sizeof(uint8_t));
     }
     
     return self;
+}
+
+- (void)dealloc
+{
+    free(_buffer);
+    _buffer = NULL;
+    _size = 0;
 }
 
 @end
@@ -47,6 +55,7 @@ size_t Atari800AudioBufferWrite(__unsafe_unretained Atari800AudioBuffer *destina
     size_t i;
     
     total = Atari800AudioBufferFreeSpace(destination);
+    
     if (length > total)
         length = total;
     else
