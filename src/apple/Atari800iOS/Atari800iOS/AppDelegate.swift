@@ -2,7 +2,7 @@
 //  AppDelegate.swift
 //  Atari800iOS
 //
-//  Created by Simon Lawrence on 19/12/2017.
+//  Created by Rod Münch on 19/12/2017.
 //  Copyright © 2017 Atari800 development team. All rights reserved.
 //
 

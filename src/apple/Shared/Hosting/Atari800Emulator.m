@@ -2,14 +2,17 @@
 //  Atari800Emulator.m
 //  Atari800EmulationCore-iOS
 //
-//  Created by Simon Lawrence on 20/12/2017.
+//  Created by Rod Münch on 20/12/2017.
 //  Copyright © 2017 Atari800 development team. All rights reserved.
 //
 
 #import "Atari800Emulator.h"
-#import "Atari800Renderer.h"
+#import "Atari800MetalRenderer.h"
 #import "Atari800AudioDriver.h"
 #import "Atari800EmulationThread.h"
+#if TARGET_OS_SIMULATOR
+#import "Atari800QuartzRenderer.h"
+#endif
 
 @interface Atari800Emulator() {
     
@@ -28,6 +31,11 @@ static Atari800Emulator *shared = nil;
 
     if (self) {
         
+#if TARGET_OS_SIMULATOR
+        _renderer = [[Atari800QuartzRenderer alloc] init];
+#else
+        _renderer = [[Atari800MetalRenderer alloc] init];
+#endif
     }
     
     return self;

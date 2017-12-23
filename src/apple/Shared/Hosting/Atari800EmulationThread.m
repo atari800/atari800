@@ -2,7 +2,7 @@
 //  Atari800EmulationThread.m
 //  Atari800EmulationCore-macOS
 //
-//  Created by Simon Lawrence on 20/12/2017.
+//  Created by Rod Münch on 20/12/2017.
 //  Copyright © 2017 Atari800 development team. All rights reserved.
 //
 
@@ -23,7 +23,7 @@
 @interface Atari800EmulationThread() {
 @public
     Atari800Emulator *_emulator;
-    __unsafe_unretained Atari800Renderer *_renderer;
+    __unsafe_unretained id<Atari800Renderer> _renderer;
     BOOL _atari800Running;
 }
 
@@ -82,7 +82,7 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     atari800EmulationThread->_atari800Running = YES;
     
     // HACK: Load something for now
-    NSString *exeFilePath = [bundle pathForResource:@"yoomp_pa"
+    NSString *exeFilePath = [bundle pathForResource:@"Warhawk"
                                              ofType:@"xex"
                                         inDirectory:@"XEX"];
     const char *exeName = [exeFilePath cStringUsingEncoding:NSUTF8StringEncoding];

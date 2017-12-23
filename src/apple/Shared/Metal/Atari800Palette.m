@@ -45,4 +45,28 @@
     return rgbaData;
 }
 
++ (NSData *)rgbaPaletteFromRGBPalette:(NSData *)paletteData error:(NSError **)error
+{
+    NSInteger numberOfColors = [paletteData length] / 3;
+    NSInteger rgbaLength = numberOfColors * 4;
+    
+    NSMutableData *rgbaData = [NSMutableData dataWithLength:rgbaLength];
+    
+    int rgbaIndex = 0;
+    int rgbIndex = 0;
+    
+    uint8_t *rgbaPointer = [rgbaData mutableBytes];
+    const uint8_t *rgbPointer = [paletteData bytes];
+    
+    for (int i = 0; i < numberOfColors; ++i) {
+        
+        rgbaPointer[rgbaIndex++] = rgbPointer[rgbIndex++];
+        rgbaPointer[rgbaIndex++] = rgbPointer[rgbIndex++];
+        rgbaPointer[rgbaIndex++] = rgbPointer[rgbIndex++];
+        rgbaPointer[rgbaIndex++] = 0xFF;
+    }
+    
+    return rgbaData;
+}
+
 @end

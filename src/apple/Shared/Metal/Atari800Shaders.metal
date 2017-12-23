@@ -46,4 +46,3 @@ fragment float4 atari800BasicShader(RasterizerData in [[stage_in]],
     
     return palette[c];
 }
-

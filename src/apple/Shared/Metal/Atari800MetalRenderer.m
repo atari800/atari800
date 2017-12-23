@@ -2,11 +2,11 @@
 @import MetalKit;
 @import AVFoundation;
 
-#import "Atari800Renderer.h"
+#import "Atari800MetalRenderer.h"
 #import "Atari800Palette.h"
 #import "Atari800ShaderTypes.h"
 
-@interface Atari800Renderer() {
+@interface Atari800MetalRenderer() {
     id<MTLDevice> _device;
     id<MTLRenderPipelineState> _pipelineState;
     id<MTLCommandQueue> _commandQueue;
@@ -20,74 +20,69 @@
 
 @end
 
-@implementation Atari800Renderer
+@implementation Atari800MetalRenderer
 
-- (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)view widthInPixels:(NSInteger)width heightInScanLines:(NSInteger)height
+- (void)setupForView:(id)view widthInPixels:(NSInteger)width heightInScanLines:(NSInteger)height
 {
-    self = [super init];
+    NSParameterAssert(view);
+    NSAssert([view isKindOfClass:[MTKView class]], @"Invalid view class.");
     
-    if (self) {
-        
-        _device = view.device;
-
-        // Set up a simple MTLBuffer with our vertices which include texture coordinates
-        /*
-         * Short - 320x240
-         * Normal -  336x240
-         * Full - 384x240
-         */
-
-        [self updateVertices:view.drawableSize];
-        
-        _screenSize.x = (unsigned int)width;
-        _screenSize.y = (unsigned int)height;
-        
-        NSData *screen = [self setupScreenForWidthInPixels:width
-                                         heightInScanLines:height];
-        
-        _screen = [_device newBufferWithBytes:[screen bytes]
-                                       length:[screen length]
-                                      options:MTLResourceStorageModeShared];
-        
-        NSData *paletteData = [Atari800Palette paletteWithName:@"jakub"
-                                                           error:nil];
-        NSData *bufferData = [Atari800Palette float4BufferDataFromPaletteData:paletteData
+    MTKView *metalView = (MTKView *)view;
+    
+    _device = metalView.device;
+    
+    [self updateVertices:metalView.drawableSize];
+    
+    _screenSize.x = (unsigned int)width;
+    _screenSize.y = (unsigned int)height;
+    
+    NSData *screen = [self setupScreenForWidthInPixels:width
+                                     heightInScanLines:height];
+    
+    _screen = [_device newBufferWithBytes:[screen bytes]
+                                   length:[screen length]
+                                  options:MTLResourceStorageModeShared];
+    
+    NSData *paletteData = [Atari800Palette paletteWithName:@"jakub"
+                                                     error:nil];
+    NSData *bufferData = [Atari800Palette float4BufferDataFromPaletteData:paletteData
                                                                     error:nil];
+    
+    _palette = [_device newBufferWithBytes:[bufferData bytes]
+                                    length:[bufferData length]
+                                   options:MTLResourceStorageModeShared];
+    
+    NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(@"Atari800MetalRenderer")];
+    id<MTLLibrary> defaultLibrary = [_device newDefaultLibraryWithBundle:bundle
+                                                                   error:nil];
+    
+    id<MTLFunction> vertexFunction = [defaultLibrary newFunctionWithName:@"vertexShader"];
+    id<MTLFunction> fragmentFunction = [defaultLibrary newFunctionWithName:@"atari800BasicShader"];
+    
+    MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
+    pipelineStateDescriptor.label = @"Atari Drawing Pipeline";
+    pipelineStateDescriptor.vertexFunction = vertexFunction;
+    pipelineStateDescriptor.fragmentFunction = fragmentFunction;
+    pipelineStateDescriptor.colorAttachments[0].pixelFormat = metalView.colorPixelFormat;
+    
+    NSError *error = NULL;
+    _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor
+                                                             error:&error];
+    if (!_pipelineState) {
         
-        _palette = [_device newBufferWithBytes:[bufferData bytes]
-                                        length:[bufferData length]
-                                       options:MTLResourceStorageModeShared];
-        
-        NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(@"Atari800Renderer")];
-        id<MTLLibrary> defaultLibrary = [_device newDefaultLibraryWithBundle:bundle
-                                                                       error:nil];
-
-        id<MTLFunction> vertexFunction = [defaultLibrary newFunctionWithName:@"vertexShader"];
-        id<MTLFunction> fragmentFunction = [defaultLibrary newFunctionWithName:@"atari800BasicShader"];
-
-        MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
-        pipelineStateDescriptor.label = @"Atari Drawing Pipeline";
-        pipelineStateDescriptor.vertexFunction = vertexFunction;
-        pipelineStateDescriptor.fragmentFunction = fragmentFunction;
-        pipelineStateDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat;
-
-        NSError *error = NULL;
-        _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor
-                                                                 error:&error];
-        if (!_pipelineState) {
-            
-            NSLog(@"Failed to created pipeline state, error %@", error);
-        }
-
-        // Create the command queue
-        _commandQueue = [_device newCommandQueue];
+        NSLog(@"Failed to created pipeline state, error %@", error);
     }
-
-    return self;
+    
+    _commandQueue = [_device newCommandQueue];
+    
+    metalView.delegate = self;
 }
 
 - (uint8_t *)screen
 {
+    if (!_screen)
+        return NULL;
+    
     return (uint8_t *)[_screen contents];
 }
 

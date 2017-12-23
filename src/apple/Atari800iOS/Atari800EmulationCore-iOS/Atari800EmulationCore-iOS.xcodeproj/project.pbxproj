@@ -15,12 +15,15 @@
 		E21FDB071FEA73EC00FB1796 /* Atari800Emulator.m in Sources */ = {isa = PBXBuildFile; fileRef = E21FDAFC1FEA73EC00FB1796 /* Atari800Emulator.m */; };
 		E21FDB091FEA73EC00FB1796 /* Atari800AudioDriver.m in Sources */ = {isa = PBXBuildFile; fileRef = E21FDAFF1FEA73EC00FB1796 /* Atari800AudioDriver.m */; };
 		E21FDB0A1FEA73EC00FB1796 /* Atari800AudioDriver.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FDB001FEA73EC00FB1796 /* Atari800AudioDriver.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E22C8D1E1FED5B2800FB4995 /* Atari800QuartzRenderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D1C1FED5B2800FB4995 /* Atari800QuartzRenderer.h */; };
+		E22C8D1F1FED5B2800FB4995 /* Atari800QuartzRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = E22C8D1D1FED5B2800FB4995 /* Atari800QuartzRenderer.m */; };
+		E22C8D271FED620B00FB4995 /* Atari800Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D261FED620A00FB4995 /* Atari800Renderer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E231F6821FE94BD5004ED389 /* Atari800ShaderTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */; };
 		E231F6831FE94BD5004ED389 /* Atari800Palette.m in Sources */ = {isa = PBXBuildFile; fileRef = E231F6761FE94BD5004ED389 /* Atari800Palette.m */; };
-		E231F6841FE94BD5004ED389 /* Atari800Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6771FE94BD5004ED389 /* Atari800Renderer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E231F6841FE94BD5004ED389 /* Atari800MetalRenderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6771FE94BD5004ED389 /* Atari800MetalRenderer.h */; };
 		E231F6851FE94BD5004ED389 /* Atari800Palette.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6781FE94BD5004ED389 /* Atari800Palette.h */; };
 		E231F6861FE94BD5004ED389 /* Atari800Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E231F6791FE94BD5004ED389 /* Atari800Shaders.metal */; };
-		E231F6871FE94BD5004ED389 /* Atari800Renderer.m in Sources */ = {isa = PBXBuildFile; fileRef = E231F67A1FE94BD5004ED389 /* Atari800Renderer.m */; };
+		E231F6871FE94BD5004ED389 /* Atari800MetalRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = E231F67A1FE94BD5004ED389 /* Atari800MetalRenderer.m */; };
 		E231F6881FE94BD5004ED389 /* jakub.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F67C1FE94BD5004ED389 /* jakub.act */; };
 		E231F6891FE94BD5004ED389 /* gray.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F67D1FE94BD5004ED389 /* gray.act */; };
 		E231F68A1FE94BD5004ED389 /* Real.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F67E1FE94BD5004ED389 /* Real.act */; };
@@ -169,12 +172,15 @@
 		E21FDAFC1FEA73EC00FB1796 /* Atari800Emulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Emulator.m; sourceTree = "<group>"; };
 		E21FDAFF1FEA73EC00FB1796 /* Atari800AudioDriver.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800AudioDriver.m; sourceTree = "<group>"; };
 		E21FDB001FEA73EC00FB1796 /* Atari800AudioDriver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800AudioDriver.h; sourceTree = "<group>"; };
+		E22C8D1C1FED5B2800FB4995 /* Atari800QuartzRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800QuartzRenderer.h; sourceTree = "<group>"; };
+		E22C8D1D1FED5B2800FB4995 /* Atari800QuartzRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800QuartzRenderer.m; sourceTree = "<group>"; };
+		E22C8D261FED620A00FB4995 /* Atari800Renderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Renderer.h; sourceTree = "<group>"; };
 		E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800ShaderTypes.h; sourceTree = "<group>"; };
 		E231F6761FE94BD5004ED389 /* Atari800Palette.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Palette.m; sourceTree = "<group>"; };
-		E231F6771FE94BD5004ED389 /* Atari800Renderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Renderer.h; sourceTree = "<group>"; };
+		E231F6771FE94BD5004ED389 /* Atari800MetalRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800MetalRenderer.h; sourceTree = "<group>"; };
 		E231F6781FE94BD5004ED389 /* Atari800Palette.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Palette.h; sourceTree = "<group>"; };
 		E231F6791FE94BD5004ED389 /* Atari800Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Atari800Shaders.metal; sourceTree = "<group>"; };
-		E231F67A1FE94BD5004ED389 /* Atari800Renderer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Renderer.m; sourceTree = "<group>"; };
+		E231F67A1FE94BD5004ED389 /* Atari800MetalRenderer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800MetalRenderer.m; sourceTree = "<group>"; };
 		E231F67C1FE94BD5004ED389 /* jakub.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = jakub.act; sourceTree = "<group>"; };
 		E231F67D1FE94BD5004ED389 /* gray.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = gray.act; sourceTree = "<group>"; };
 		E231F67E1FE94BD5004ED389 /* Real.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = Real.act; sourceTree = "<group>"; };
@@ -479,6 +485,7 @@
 		E21FDAF71FEA73EC00FB1796 /* Hosting */ = {
 			isa = PBXGroup;
 			children = (
+				E22C8D261FED620A00FB4995 /* Atari800Renderer.h */,
 				E251DAF11FEA8F2A00613C10 /* Atari800EmulationThread.h */,
 				E251DAF01FEA8F2900613C10 /* Atari800EmulationThread.m */,
 				E21FDAFA1FEA73EC00FB1796 /* Atari800Emulator.h */,
@@ -500,6 +507,15 @@
 			path = CoreAudio;
 			sourceTree = "<group>";
 		};
+		E22C8D1B1FED5AD000FB4995 /* Simulator */ = {
+			isa = PBXGroup;
+			children = (
+				E22C8D1C1FED5B2800FB4995 /* Atari800QuartzRenderer.h */,
+				E22C8D1D1FED5B2800FB4995 /* Atari800QuartzRenderer.m */,
+			);
+			path = Simulator;
+			sourceTree = "<group>";
+		};
 		E231F6581FE945A6004ED389 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
@@ -518,10 +534,10 @@
 			children = (
 				E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */,
 				E231F6761FE94BD5004ED389 /* Atari800Palette.m */,
-				E231F6771FE94BD5004ED389 /* Atari800Renderer.h */,
 				E231F6781FE94BD5004ED389 /* Atari800Palette.h */,
 				E231F6791FE94BD5004ED389 /* Atari800Shaders.metal */,
-				E231F67A1FE94BD5004ED389 /* Atari800Renderer.m */,
+				E231F6771FE94BD5004ED389 /* Atari800MetalRenderer.h */,
+				E231F67A1FE94BD5004ED389 /* Atari800MetalRenderer.m */,
 				E231F67B1FE94BD5004ED389 /* Palettes */,
 			);
 			path = Metal;
@@ -586,6 +602,7 @@
 				E251DAE91FEA749E00613C10 /* config.h */,
 				E21FD8C11FE97D3700FB1796 /* Emulation */,
 				E231F6581FE945A6004ED389 /* Shared */,
+				E22C8D1B1FED5AD000FB4995 /* Simulator */,
 				E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */,
 				E2D98BB51FE93A78005362D9 /* Info.plist */,
 			);
@@ -611,6 +628,7 @@
 				E251DAA71FEA747800613C10 /* cycle_map.h in Headers */,
 				E251DAB11FEA747800613C10 /* pbi_mio.h in Headers */,
 				E251DAE01FEA747800613C10 /* votraxsnd.h in Headers */,
+				E22C8D271FED620B00FB4995 /* Atari800Renderer.h in Headers */,
 				E251DAB31FEA747800613C10 /* colours_ntsc.h in Headers */,
 				E251DAAE1FEA747800613C10 /* compfile.h in Headers */,
 				E251DAA91FEA747800613C10 /* binload.h in Headers */,
@@ -634,7 +652,7 @@
 				E29D0F251FEB053E002D3DF0 /* Atari800AudioBuffer.h in Headers */,
 				E251DADE1FEA747800613C10 /* pbi_xld.h in Headers */,
 				E251DA7B1FEA747800613C10 /* esc.h in Headers */,
-				E231F6841FE94BD5004ED389 /* Atari800Renderer.h in Headers */,
+				E231F6841FE94BD5004ED389 /* Atari800MetalRenderer.h in Headers */,
 				E251DABB1FEA747800613C10 /* af80.h in Headers */,
 				E251DA801FEA747800613C10 /* util.h in Headers */,
 				E251DA831FEA747800613C10 /* ui.h in Headers */,
@@ -648,6 +666,7 @@
 				E251DAE11FEA747800613C10 /* screen.h in Headers */,
 				E251DACB1FEA747800613C10 /* rdevice.h in Headers */,
 				E251DA6C1FEA747800613C10 /* atari_ntsc_config.h in Headers */,
+				E22C8D1E1FED5B2800FB4995 /* Atari800QuartzRenderer.h in Headers */,
 				E251DAAF1FEA747800613C10 /* atari.h in Headers */,
 				E251DA891FEA747800613C10 /* cfg.h in Headers */,
 				E251DA851FEA747800613C10 /* pcjoy.h in Headers */,
@@ -799,10 +818,11 @@
 				E251DACA1FEA747800613C10 /* pbi.c in Sources */,
 				E21FDB061FEA73EC00FB1796 /* Atari800ControlManager.m in Sources */,
 				E251DAFF1FEA915600613C10 /* pal_blending.c in Sources */,
-				E231F6871FE94BD5004ED389 /* Atari800Renderer.m in Sources */,
+				E231F6871FE94BD5004ED389 /* Atari800MetalRenderer.m in Sources */,
 				E251DAB61FEA747800613C10 /* memory.c in Sources */,
 				E251DAB71FEA747800613C10 /* screen.c in Sources */,
 				E29D0F261FEB053E002D3DF0 /* Atari800AudioBuffer.m in Sources */,
+				E22C8D1F1FED5B2800FB4995 /* Atari800QuartzRenderer.m in Sources */,
 				E251DA941FEA747800613C10 /* votraxsnd.c in Sources */,
 				E21FDB011FEA73EC00FB1796 /* Atari800Preferences.m in Sources */,
 				E251DADC1FEA747800613C10 /* afile.c in Sources */,

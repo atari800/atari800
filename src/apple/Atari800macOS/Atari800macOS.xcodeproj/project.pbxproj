@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		E2BAFC301FE9390500B93945 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */; };
-		E2BAFC321FE9390500B93945 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC311FE9390500B93945 /* ViewController.swift */; };
+		E2BAFC321FE9390500B93945 /* EmulationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC311FE9390500B93945 /* EmulationViewController.swift */; };
 		E2BAFC341FE9390500B93945 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC331FE9390500B93945 /* Assets.xcassets */; };
 		E2BAFC371FE9390500B93945 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC351FE9390500B93945 /* Main.storyboard */; };
 		E2D98BCB1FE93AD5005362D9 /* Atari800EmulationCore_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2D98BA61FE93A53005362D9 /* Atari800EmulationCore_macOS.framework */; };
@@ -56,7 +56,7 @@
 /* Begin PBXFileReference section */
 		E2BAFC2C1FE9390500B93945 /* Atari800macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atari800macOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		E2BAFC311FE9390500B93945 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		E2BAFC311FE9390500B93945 /* EmulationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmulationViewController.swift; sourceTree = "<group>"; };
 		E2BAFC331FE9390500B93945 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E2BAFC361FE9390500B93945 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		E2BAFC381FE9390500B93945 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -97,7 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */,
-				E2BAFC311FE9390500B93945 /* ViewController.swift */,
+				E2BAFC311FE9390500B93945 /* EmulationViewController.swift */,
 				E2BAFC331FE9390500B93945 /* Assets.xcassets */,
 				E2BAFC351FE9390500B93945 /* Main.storyboard */,
 				E2BAFC381FE9390500B93945 /* Info.plist */,
@@ -204,7 +204,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E2BAFC321FE9390500B93945 /* ViewController.swift in Sources */,
+				E2BAFC321FE9390500B93945 /* EmulationViewController.swift in Sources */,
 				E2BAFC301FE9390500B93945 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
