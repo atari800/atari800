@@ -24,6 +24,7 @@
 @public
     Atari800Emulator *_emulator;
     __unsafe_unretained id<Atari800Renderer> _renderer;
+    __unsafe_unretained Atari800KeyboardHandler _keyboardHandler;
     BOOL _atari800Running;
 }
 
@@ -82,7 +83,7 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     atari800EmulationThread->_atari800Running = YES;
     
     // HACK: Load something for now
-    NSString *exeFilePath = [bundle pathForResource:@"Warhawk"
+    NSString *exeFilePath = [bundle pathForResource:@"Colossal Adventure"
                                              ofType:@"xex"
                                         inDirectory:@"XEX"];
     const char *exeName = [exeFilePath cStringUsingEncoding:NSUTF8StringEncoding];
@@ -90,7 +91,21 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     
     while (atari800EmulationThread->_atari800Running) {
         
-        INPUT_key_code = PLATFORM_Keyboard();
+        if (atari800EmulationThread->_keyboardHandler) {
+            
+            int keycode = 0;
+            int controlKey = 0;
+            int shiftKey = 0;
+            
+            atari800EmulationThread->_keyboardHandler(&keycode, &shiftKey, &controlKey);
+            
+            INPUT_key_code = (shiftKey) ? keycode | AKEY_SHFT : keycode;
+        }
+        else {
+            
+            INPUT_key_code = AKEY_NONE;
+        }
+        
         Atari800_Frame();
         if (Atari800_display_screen)
             PLATFORM_DisplayScreen();
@@ -106,6 +121,7 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     if (self) {
         
         _emulator = emulator;
+        _keyboardHandler = emulator.keyboardHandler;
         _renderer = emulator.renderer;
     }
     

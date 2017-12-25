@@ -18,6 +18,12 @@
 		E22C8D1E1FED5B2800FB4995 /* Atari800QuartzRenderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D1C1FED5B2800FB4995 /* Atari800QuartzRenderer.h */; };
 		E22C8D1F1FED5B2800FB4995 /* Atari800QuartzRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = E22C8D1D1FED5B2800FB4995 /* Atari800QuartzRenderer.m */; };
 		E22C8D271FED620B00FB4995 /* Atari800Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D261FED620A00FB4995 /* Atari800Renderer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E22C8D2F1FF1230000FB4995 /* Atari800KeyboardView.m in Sources */ = {isa = PBXBuildFile; fileRef = E22C8D291FF1230000FB4995 /* Atari800KeyboardView.m */; };
+		E22C8D301FF1230000FB4995 /* Atari800KeyLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = E22C8D2A1FF1230000FB4995 /* Atari800KeyLayer.m */; };
+		E22C8D311FF1230000FB4995 /* Atari800KeyboardDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E22C8D2B1FF1230000FB4995 /* Atari800KeyboardDrawing.m */; };
+		E22C8D321FF1230000FB4995 /* Atari800KeyboardView.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D2C1FF1230000FB4995 /* Atari800KeyboardView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E22C8D331FF1230000FB4995 /* Atari800KeyLayer.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D2D1FF1230000FB4995 /* Atari800KeyLayer.h */; };
+		E22C8D341FF1230000FB4995 /* Atari800KeyboardDrawing.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D2E1FF1230000FB4995 /* Atari800KeyboardDrawing.h */; };
 		E231F6821FE94BD5004ED389 /* Atari800ShaderTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */; };
 		E231F6831FE94BD5004ED389 /* Atari800Palette.m in Sources */ = {isa = PBXBuildFile; fileRef = E231F6761FE94BD5004ED389 /* Atari800Palette.m */; };
 		E231F6841FE94BD5004ED389 /* Atari800MetalRenderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E231F6771FE94BD5004ED389 /* Atari800MetalRenderer.h */; };
@@ -30,6 +36,7 @@
 		E231F68B1FE94BD5004ED389 /* fox.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F67F1FE94BD5004ED389 /* fox.act */; };
 		E231F68C1FE94BD5004ED389 /* default.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F6801FE94BD5004ED389 /* default.act */; };
 		E231F68D1FE94BD5004ED389 /* XFormer.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F6811FE94BD5004ED389 /* XFormer.act */; };
+		E24E0BEA1FF12DB300CD5B2B /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = E24E0BE91FF12DB300CD5B2B /* Fonts */; };
 		E251DA6A1FEA747800613C10 /* pbi_scsi.c in Sources */ = {isa = PBXBuildFile; fileRef = E251D9EA1FEA747300613C10 /* pbi_scsi.c */; };
 		E251DA6B1FEA747800613C10 /* atari_ntsc.h in Headers */ = {isa = PBXBuildFile; fileRef = E251D9EC1FEA747300613C10 /* atari_ntsc.h */; };
 		E251DA6C1FEA747800613C10 /* atari_ntsc_config.h in Headers */ = {isa = PBXBuildFile; fileRef = E251D9ED1FEA747300613C10 /* atari_ntsc_config.h */; };
@@ -175,6 +182,12 @@
 		E22C8D1C1FED5B2800FB4995 /* Atari800QuartzRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800QuartzRenderer.h; sourceTree = "<group>"; };
 		E22C8D1D1FED5B2800FB4995 /* Atari800QuartzRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800QuartzRenderer.m; sourceTree = "<group>"; };
 		E22C8D261FED620A00FB4995 /* Atari800Renderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Renderer.h; sourceTree = "<group>"; };
+		E22C8D291FF1230000FB4995 /* Atari800KeyboardView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800KeyboardView.m; sourceTree = "<group>"; };
+		E22C8D2A1FF1230000FB4995 /* Atari800KeyLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800KeyLayer.m; sourceTree = "<group>"; };
+		E22C8D2B1FF1230000FB4995 /* Atari800KeyboardDrawing.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800KeyboardDrawing.m; sourceTree = "<group>"; };
+		E22C8D2C1FF1230000FB4995 /* Atari800KeyboardView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800KeyboardView.h; sourceTree = "<group>"; };
+		E22C8D2D1FF1230000FB4995 /* Atari800KeyLayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800KeyLayer.h; sourceTree = "<group>"; };
+		E22C8D2E1FF1230000FB4995 /* Atari800KeyboardDrawing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800KeyboardDrawing.h; sourceTree = "<group>"; };
 		E231F6751FE94BD5004ED389 /* Atari800ShaderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800ShaderTypes.h; sourceTree = "<group>"; };
 		E231F6761FE94BD5004ED389 /* Atari800Palette.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Palette.m; sourceTree = "<group>"; };
 		E231F6771FE94BD5004ED389 /* Atari800MetalRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800MetalRenderer.h; sourceTree = "<group>"; };
@@ -187,6 +200,7 @@
 		E231F67F1FE94BD5004ED389 /* fox.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = fox.act; sourceTree = "<group>"; };
 		E231F6801FE94BD5004ED389 /* default.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = default.act; sourceTree = "<group>"; };
 		E231F6811FE94BD5004ED389 /* XFormer.act */ = {isa = PBXFileReference; lastKnownFileType = file; path = XFormer.act; sourceTree = "<group>"; };
+		E24E0BE91FF12DB300CD5B2B /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = ../../../Shared/Fonts; sourceTree = "<group>"; };
 		E251D9EA1FEA747300613C10 /* pbi_scsi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pbi_scsi.c; sourceTree = "<group>"; };
 		E251D9EC1FEA747300613C10 /* atari_ntsc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = atari_ntsc.h; sourceTree = "<group>"; };
 		E251D9ED1FEA747300613C10 /* atari_ntsc_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = atari_ntsc_config.h; sourceTree = "<group>"; };
@@ -516,6 +530,19 @@
 			path = Simulator;
 			sourceTree = "<group>";
 		};
+		E22C8D281FF122D600FB4995 /* Keyboard */ = {
+			isa = PBXGroup;
+			children = (
+				E22C8D2C1FF1230000FB4995 /* Atari800KeyboardView.h */,
+				E22C8D291FF1230000FB4995 /* Atari800KeyboardView.m */,
+				E22C8D2E1FF1230000FB4995 /* Atari800KeyboardDrawing.h */,
+				E22C8D2B1FF1230000FB4995 /* Atari800KeyboardDrawing.m */,
+				E22C8D2D1FF1230000FB4995 /* Atari800KeyLayer.h */,
+				E22C8D2A1FF1230000FB4995 /* Atari800KeyLayer.m */,
+			);
+			path = Keyboard;
+			sourceTree = "<group>";
+		};
 		E231F6581FE945A6004ED389 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
@@ -597,12 +624,14 @@
 		E2D98BB31FE93A78005362D9 /* Atari800EmulationCore-iOS */ = {
 			isa = PBXGroup;
 			children = (
+				E24E0BE91FF12DB300CD5B2B /* Fonts */,
 				E251DB2C1FEAA31900613C10 /* XEX */,
 				E251DB241FEAA06000613C10 /* ROM */,
 				E251DAE91FEA749E00613C10 /* config.h */,
 				E21FD8C11FE97D3700FB1796 /* Emulation */,
 				E231F6581FE945A6004ED389 /* Shared */,
 				E22C8D1B1FED5AD000FB4995 /* Simulator */,
+				E22C8D281FF122D600FB4995 /* Keyboard */,
 				E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */,
 				E2D98BB51FE93A78005362D9 /* Info.plist */,
 			);
@@ -644,6 +673,7 @@
 				E251DA6F1FEA747800613C10 /* platform.h in Headers */,
 				E251DAC31FEA747800613C10 /* sound.h in Headers */,
 				E251DA7F1FEA747800613C10 /* cassette.h in Headers */,
+				E22C8D321FF1230000FB4995 /* Atari800KeyboardView.h in Headers */,
 				E251DA721FEA747800613C10 /* artifact.h in Headers */,
 				E251DA8C1FEA747800613C10 /* input.h in Headers */,
 				E251DABE1FEA747800613C10 /* log.h in Headers */,
@@ -669,6 +699,7 @@
 				E22C8D1E1FED5B2800FB4995 /* Atari800QuartzRenderer.h in Headers */,
 				E251DAAF1FEA747800613C10 /* atari.h in Headers */,
 				E251DA891FEA747800613C10 /* cfg.h in Headers */,
+				E22C8D341FF1230000FB4995 /* Atari800KeyboardDrawing.h in Headers */,
 				E251DA851FEA747800613C10 /* pcjoy.h in Headers */,
 				E251DAE51FEA747800613C10 /* rtime.h in Headers */,
 				E251DAA11FEA747800613C10 /* akey.h in Headers */,
@@ -680,6 +711,7 @@
 				E251DAC21FEA747800613C10 /* sio.h in Headers */,
 				E251DA971FEA747800613C10 /* pbi_scsi.h in Headers */,
 				E2D98BB61FE93A78005362D9 /* Atari800EmulationCore_iOS.h in Headers */,
+				E22C8D331FF1230000FB4995 /* Atari800KeyLayer.h in Headers */,
 				E251DA6B1FEA747800613C10 /* atari_ntsc.h in Headers */,
 				E251DAAB1FEA747800613C10 /* afile.h in Headers */,
 				E251DAE31FEA747800613C10 /* monitor.h in Headers */,
@@ -758,6 +790,7 @@
 				E251DB251FEAA06000613C10 /* ROM in Resources */,
 				E231F6881FE94BD5004ED389 /* jakub.act in Resources */,
 				E231F68B1FE94BD5004ED389 /* fox.act in Resources */,
+				E24E0BEA1FF12DB300CD5B2B /* Fonts in Resources */,
 				E231F68C1FE94BD5004ED389 /* default.act in Resources */,
 				E231F68D1FE94BD5004ED389 /* XFormer.act in Resources */,
 				E251DAA61FEA747800613C10 /* emuos.lis in Resources */,
@@ -777,6 +810,7 @@
 				E251DA841FEA747800613C10 /* antic.c in Sources */,
 				E251DAC91FEA747800613C10 /* pbi_bb.c in Sources */,
 				E251DA781FEA747800613C10 /* sndsave.c in Sources */,
+				E22C8D301FF1230000FB4995 /* Atari800KeyLayer.m in Sources */,
 				E251DA701FEA747800613C10 /* pia.c in Sources */,
 				E251DA761FEA747800613C10 /* colours_pal.c in Sources */,
 				E251DA911FEA747800613C10 /* pokey.c in Sources */,
@@ -822,6 +856,8 @@
 				E251DAB61FEA747800613C10 /* memory.c in Sources */,
 				E251DAB71FEA747800613C10 /* screen.c in Sources */,
 				E29D0F261FEB053E002D3DF0 /* Atari800AudioBuffer.m in Sources */,
+				E22C8D2F1FF1230000FB4995 /* Atari800KeyboardView.m in Sources */,
+				E22C8D311FF1230000FB4995 /* Atari800KeyboardDrawing.m in Sources */,
 				E22C8D1F1FED5B2800FB4995 /* Atari800QuartzRenderer.m in Sources */,
 				E251DA941FEA747800613C10 /* votraxsnd.c in Sources */,
 				E21FDB011FEA73EC00FB1796 /* Atari800Preferences.m in Sources */,

@@ -11,10 +11,13 @@
 @protocol Atari800Renderer;
 @class Atari800AudioDriver;
 
+typedef void (^Atari800KeyboardHandler)(int *keycode, int *shiftKey, int *ctrlKey);
+
 @interface Atari800Emulator : NSObject
 
 @property (nonatomic, readonly, strong) id<Atari800Renderer> renderer;
 @property (nonatomic, strong) Atari800AudioDriver *audioDriver;
+@property (nonatomic, copy) Atari800KeyboardHandler keyboardHandler;
 
 - (void)startEmulation;
 - (void)stopEmulation;

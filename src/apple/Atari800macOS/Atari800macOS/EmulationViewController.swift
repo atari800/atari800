@@ -12,45 +12,61 @@ import Atari800EmulationCore_macOS
 
 class EmulationViewController: NSViewController {
 
+    @IBOutlet weak var metalView: MTKView?
+    
     let width = 384
     let height = 240
     
-    weak var mtkView: MTKView?
-    
     override func viewDidLoad() {
+        
         super.viewDidLoad()
 
-        // Do any additional setup after loading the view.
-        if let mtkView = self.view as? MTKView {
+        if let metalView = self.metalView  {
             
-            mtkView.device = MTLCreateSystemDefaultDevice()
-            mtkView.preferredFramesPerSecond = 60
+            metalView.device = MTLCreateSystemDefaultDevice()
+            metalView.preferredFramesPerSecond = 60
             
-            if mtkView.device == nil {
+            if metalView.device == nil {
                 
                 print("Metal is not supported on this device.");
                 return
             }
             
-            self.mtkView = mtkView
-            
             if let emulator = Atari800Emulator.shared() {
                 
                 if let renderer = emulator.renderer {
                     
-                    renderer.setup(forView: mtkView, widthInPixels: width, heightInScanLines: height);
+                    renderer.setup(forView: metalView, widthInPixels: width, heightInScanLines: height);
                 }
-                mtkView.delegate?.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
+                self.metalView?.delegate?.mtkView(metalView, drawableSizeWillChange: metalView.drawableSize)
                 
                 let driver = Atari800AudioDriver()
                 
                 emulator.audioDriver = driver;
-                
-                emulator.startEmulation()
             }
         }
     }
 
+    override func viewWillAppear() {
+        
+        if let emulator = Atari800Emulator.shared() {
+            
+            if let windowController = self.view.window?.windowController as? Atari800WindowController {
+                
+                emulator.keyboardHandler = windowController.newKeyboardHandler()
+            }
+            
+            emulator.startEmulation()
+        }
+        
+        super.viewWillAppear()
+    }
+    
+    override func viewWillDisappear() {
+        
+        super.viewWillDisappear()
+    }
+    
     static var o: Int = 0;
     
     override var representedObject: Any? {

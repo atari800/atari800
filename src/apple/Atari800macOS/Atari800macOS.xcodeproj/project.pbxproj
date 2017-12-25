@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E266678E1FF1A1FA00ECBD26 /* EmulationWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E266678D1FF1A1FA00ECBD26 /* EmulationWindowController.swift */; };
 		E2BAFC301FE9390500B93945 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */; };
 		E2BAFC321FE9390500B93945 /* EmulationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC311FE9390500B93945 /* EmulationViewController.swift */; };
 		E2BAFC341FE9390500B93945 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC331FE9390500B93945 /* Assets.xcassets */; };
@@ -54,6 +55,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E266678D1FF1A1FA00ECBD26 /* EmulationWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmulationWindowController.swift; sourceTree = "<group>"; };
 		E2BAFC2C1FE9390500B93945 /* Atari800macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atari800macOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E2BAFC311FE9390500B93945 /* EmulationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmulationViewController.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 				E2BAFC351FE9390500B93945 /* Main.storyboard */,
 				E2BAFC381FE9390500B93945 /* Info.plist */,
 				E2BAFC391FE9390500B93945 /* Atari800macOS.entitlements */,
+				E266678D1FF1A1FA00ECBD26 /* EmulationWindowController.swift */,
 			);
 			path = Atari800macOS;
 			sourceTree = "<group>";
@@ -204,6 +207,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E266678E1FF1A1FA00ECBD26 /* EmulationWindowController.swift in Sources */,
 				E2BAFC321FE9390500B93945 /* EmulationViewController.swift in Sources */,
 				E2BAFC301FE9390500B93945 /* AppDelegate.swift in Sources */,
 			);

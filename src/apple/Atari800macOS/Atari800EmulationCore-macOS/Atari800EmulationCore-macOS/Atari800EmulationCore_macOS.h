@@ -18,3 +18,4 @@ FOUNDATION_EXPORT const unsigned char Atari800EmulationCore_macOSVersionString[]
 #import <Atari800EmulationCore_macOS/Atari800Renderer.h>
 #import <Atari800EmulationCore_macOS/Atari800AudioDriver.h>
 #import <Atari800EmulationCore_macOS/Atari800Emulator.h>
+#import <Atari800EmulationCore_macOS/Atari800WindowController.h>

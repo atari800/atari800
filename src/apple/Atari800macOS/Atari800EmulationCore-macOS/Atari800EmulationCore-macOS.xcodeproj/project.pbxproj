@@ -157,6 +157,8 @@
 		E251DB231FEA9AEE00613C10 /* ROM in Resources */ = {isa = PBXBuildFile; fileRef = E251DB221FEA9AEE00613C10 /* ROM */; };
 		E251DB291FEAA29900613C10 /* atari.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DB281FEAA29900613C10 /* atari.c */; };
 		E251DB2B1FEAA30900613C10 /* XEX in Resources */ = {isa = PBXBuildFile; fileRef = E251DB2A1FEAA30900613C10 /* XEX */; };
+		E266678B1FF1894B00ECBD26 /* Atari800WindowController.h in Headers */ = {isa = PBXBuildFile; fileRef = E26667891FF1894B00ECBD26 /* Atari800WindowController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E266678C1FF1894B00ECBD26 /* Atari800WindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = E266678A1FF1894B00ECBD26 /* Atari800WindowController.m */; };
 		E29D0F211FEAFE67002D3DF0 /* Atari800AudioBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = E29D0F1F1FEAFE67002D3DF0 /* Atari800AudioBuffer.h */; };
 		E29D0F221FEAFE67002D3DF0 /* Atari800AudioBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = E29D0F201FEAFE67002D3DF0 /* Atari800AudioBuffer.m */; };
 		E2D98B9B1FE93A52005362D9 /* Atari800EmulationCore_macOS.h in Headers */ = {isa = PBXBuildFile; fileRef = E2D98B991FE93A52005362D9 /* Atari800EmulationCore_macOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -320,6 +322,8 @@
 		E251DB221FEA9AEE00613C10 /* ROM */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ROM; path = ../../../Shared/ROM; sourceTree = "<group>"; };
 		E251DB281FEAA29900613C10 /* atari.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = atari.c; sourceTree = "<group>"; };
 		E251DB2A1FEAA30900613C10 /* XEX */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XEX; path = ../../../Shared/XEX; sourceTree = "<group>"; };
+		E26667891FF1894B00ECBD26 /* Atari800WindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800WindowController.h; sourceTree = "<group>"; };
+		E266678A1FF1894B00ECBD26 /* Atari800WindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800WindowController.m; sourceTree = "<group>"; };
 		E29D0F1F1FEAFE67002D3DF0 /* Atari800AudioBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800AudioBuffer.h; sourceTree = "<group>"; };
 		E29D0F201FEAFE67002D3DF0 /* Atari800AudioBuffer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800AudioBuffer.m; sourceTree = "<group>"; };
 		E2D98B961FE93A52005362D9 /* Atari800EmulationCore_macOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Atari800EmulationCore_macOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -566,6 +570,15 @@
 			path = Hacks;
 			sourceTree = "<group>";
 		};
+		E26667881FF1892F00ECBD26 /* Keyboard */ = {
+			isa = PBXGroup;
+			children = (
+				E26667891FF1894B00ECBD26 /* Atari800WindowController.h */,
+				E266678A1FF1894B00ECBD26 /* Atari800WindowController.m */,
+			);
+			path = Keyboard;
+			sourceTree = "<group>";
+		};
 		E2D98B8C1FE93A52005362D9 = {
 			isa = PBXGroup;
 			children = (
@@ -590,6 +603,7 @@
 				E251DAEA1FEA754800613C10 /* config.h */,
 				E21FD8C21FE97D5B00FB1796 /* Emulation */,
 				E231F6591FE945BD004ED389 /* Shared */,
+				E26667881FF1892F00ECBD26 /* Keyboard */,
 				E2D98B991FE93A52005362D9 /* Atari800EmulationCore_macOS.h */,
 				E2D98B9A1FE93A52005362D9 /* Info.plist */,
 			);
@@ -643,6 +657,7 @@
 				E21FDABC1FE97E6B00FB1796 /* log.h in Headers */,
 				E21FDA591FE97E6B00FB1796 /* ide_internal.h in Headers */,
 				E231F6681FE9469F004ED389 /* Atari800ShaderTypes.h in Headers */,
+				E266678B1FF1894B00ECBD26 /* Atari800WindowController.h in Headers */,
 				E29D0F211FEAFE67002D3DF0 /* Atari800AudioBuffer.h in Headers */,
 				E21FDA671FE97E6B00FB1796 /* antic.h in Headers */,
 				E21FDA911FE97E6B00FB1796 /* colours_ntsc.h in Headers */,
@@ -808,6 +823,7 @@
 				E21FDAB11FE97E6B00FB1796 /* cpu.c in Sources */,
 				E21FDAB71FE97E6B00FB1796 /* sio.c in Sources */,
 				E21FDA491FE97E6B00FB1796 /* colours_ntsc.c in Sources */,
+				E266678C1FF1894B00ECBD26 /* Atari800WindowController.m in Sources */,
 				E21FDAD31FEA69E500FB1796 /* Atari800Preferences.m in Sources */,
 				E21FDA571FE97E6B00FB1796 /* afile.c in Sources */,
 				E21FDA6F1FE97E6B00FB1796 /* gtia.c in Sources */,

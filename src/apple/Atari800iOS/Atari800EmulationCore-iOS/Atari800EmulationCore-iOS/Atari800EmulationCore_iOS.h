@@ -19,3 +19,4 @@ FOUNDATION_EXPORT const unsigned char Atari800EmulationCore_iOSVersionString[];
 #import <Atari800EmulationCore_iOS/Atari800Renderer.h>
 #import <Atari800EmulationCore_iOS/Atari800AudioDriver.h>
 #import <Atari800EmulationCore_iOS/Atari800Emulator.h>
+#import <Atari800EmulationCore_iOS/Atari800KeyboardView.h>

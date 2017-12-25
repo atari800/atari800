@@ -18,33 +18,55 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <mtkView contentMode="scaleToFill" colorPixelFormat="BGRA8Unorm" depthStencilPixelFormat="Depth32Float" translatesAutoresizingMaskIntoConstraints="NO" id="kRu-A4-VYI">
-                                <rect key="frame" x="0.0" y="20" width="375" height="647"/>
+                                <rect key="frame" x="0.0" y="20" width="375" height="355"/>
                             </mtkView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="s1u-tI-eaR" userLabel="Quartz View">
-                                <rect key="frame" x="0.0" y="20" width="375" height="647"/>
+                                <rect key="frame" x="0.0" y="20" width="375" height="355"/>
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                            <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" barStyle="black" translatesAutoresizingMaskIntoConstraints="NO" id="4nA-bg-ayT">
+                                <rect key="frame" x="0.0" y="375" width="375" height="44"/>
+                                <items>
+                                    <barButtonItem title="Item" id="TPy-7h-Q59"/>
+                                </items>
+                            </toolbar>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="v3k-zg-JKT" userLabel="Keyboard View" customClass="Atari800KeyboardView">
+                                <rect key="frame" x="0.0" y="419" width="375" height="248"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="248" id="DtC-JC-lOD"/>
+                                </constraints>
                             </view>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
+                            <constraint firstItem="v3k-zg-JKT" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="5yp-5i-EdB"/>
+                            <constraint firstItem="v3k-zg-JKT" firstAttribute="top" secondItem="4nA-bg-ayT" secondAttribute="bottom" id="Ewk-Ms-J4E"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="kRu-A4-VYI" secondAttribute="trailing" id="FCT-de-hSY"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="s1u-tI-eaR" secondAttribute="bottom" id="LZ3-xz-9Ys"/>
+                            <constraint firstItem="4nA-bg-ayT" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="HDM-oW-lcC"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="v3k-zg-JKT" secondAttribute="trailing" id="KLR-IK-HBR"/>
                             <constraint firstItem="kRu-A4-VYI" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="Po0-78-4oT"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="kRu-A4-VYI" secondAttribute="bottom" id="RVe-Kd-r23"/>
                             <constraint firstItem="kRu-A4-VYI" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="XVu-ge-bO8"/>
+                            <constraint firstItem="4nA-bg-ayT" firstAttribute="top" secondItem="s1u-tI-eaR" secondAttribute="bottom" id="XZi-lq-kxa"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="v3k-zg-JKT" secondAttribute="bottom" id="fnw-e0-SWw"/>
                             <constraint firstItem="s1u-tI-eaR" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="kJ0-6e-fYD"/>
+                            <constraint firstItem="4nA-bg-ayT" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" id="sEI-6V-0Bc"/>
                             <constraint firstItem="s1u-tI-eaR" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="uX9-u7-pTs"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="s1u-tI-eaR" secondAttribute="trailing" id="uwd-uO-tIJ"/>
+                            <constraint firstItem="4nA-bg-ayT" firstAttribute="top" secondItem="kRu-A4-VYI" secondAttribute="bottom" id="yKM-BG-7La"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <connections>
+                        <outlet property="keyboardView" destination="v3k-zg-JKT" id="WSD-d2-ntK"/>
                         <outlet property="metalView" destination="kRu-A4-VYI" id="XE8-Wv-Xgg"/>
                         <outlet property="quartzView" destination="s1u-tI-eaR" id="xoj-4d-hRk"/>
+                        <outlet property="view" destination="8bC-Xf-vdC" id="zt4-hZ-g9i"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
+            <point key="canvasLocation" x="29.600000000000001" y="80.50974512743629"/>
         </scene>
     </scenes>
 </document>

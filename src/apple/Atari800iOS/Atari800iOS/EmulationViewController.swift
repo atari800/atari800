@@ -15,6 +15,7 @@ class EmulationViewController: UIViewController {
     
     @IBOutlet weak var metalView: MTKView?
     @IBOutlet weak var quartzView: UIView?
+    @IBOutlet weak var keyboardView: Atari800KeyboardView?
     
     let width = 384
     let height = 240
@@ -53,12 +54,17 @@ class EmulationViewController: UIViewController {
             
             if let emulator = Atari800Emulator.shared() {
                 
+                if let keyboardView = self.keyboardView {
+                
+                    emulator.keyboardHandler = keyboardView.newKeyboardHandler()
+                }
+                
                 if let renderer = emulator.renderer {
                     
                     renderer.setup(forView: emulationView, widthInPixels: width, heightInScanLines: height);
-                }
                 
-                self.metalView?.delegate?.mtkView(metalView, drawableSizeWillChange: metalView.drawableSize)
+                    self.metalView?.delegate?.mtkView(metalView, drawableSizeWillChange: metalView.drawableSize)
+                }
                 
                 let driver = Atari800AudioDriver()
                 

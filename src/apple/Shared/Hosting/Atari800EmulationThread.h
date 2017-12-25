@@ -7,8 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-
-@class Atari800Emulator;
+#import "Atari800Emulator.h"
 
 @interface Atari800EmulationThread : NSThread
 
