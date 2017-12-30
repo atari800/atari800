@@ -9,6 +9,7 @@
 #import "Atari800EmulationThread.h"
 #import "Atari800Emulator.h"
 #import "Atari800Renderer.h"
+#import <libkern/OSAtomic.h>
 
 #include "antic.h"
 #include "atari.h"
@@ -19,49 +20,225 @@
 #include "log.h"
 #include "monitor.h"
 #include "platform.h"
+#include "cartridge.h"
+
+typedef struct Atari800UICommand {
+    void *nextCommand;
+    char **parameters;
+    Atari800UICommandParamType param;
+    NSInteger intParam;
+    NSInteger numberOfParameters;
+    Atari800UICommandType command;
+} Atari800UICommand;
 
 @interface Atari800EmulationThread() {
 @public
     Atari800Emulator *_emulator;
     __unsafe_unretained id<Atari800Renderer> _renderer;
     __unsafe_unretained Atari800KeyboardHandler _keyboardHandler;
-    BOOL _atari800Running;
+    __unsafe_unretained Atari800PortHandler _portHandler;
+    BOOL _running;
+    BOOL _paused;
 }
 
 @end
 
 static Atari800EmulationThread *atari800EmulationThread;
+OSQueueHead Atari800UICommands = OS_ATOMIC_QUEUE_INIT;
+const NSInteger Atari800CommandNoIntParam = -1;
+const size_t Atari800UICommandMaximumParameterLength = 0x1000;
+
+void Atari800UICommandEnqueue(Atari800UICommandType command, Atari800UICommandParamType param, NSInteger intParam, NSArray<NSString *> *parameters)
+{
+    NSInteger numberOfParameters = [parameters count];
+    char **parametersArray = (numberOfParameters == 0) ? NULL : calloc(numberOfParameters, sizeof(char *));
+    
+    for (NSInteger i = 0; i < numberOfParameters; ++i) {
+        
+        const char *parameter = [parameters[i] UTF8String];
+        char *parameterCopy = calloc(strnlen(parameter, Atari800UICommandMaximumParameterLength) + 1, sizeof(char));
+        strcpy(parameterCopy, parameter);
+        parametersArray[i] = parameterCopy;
+    }
+    
+    Atari800UICommand *uiCommand = calloc(1, sizeof(Atari800UICommand));
+    uiCommand->command = command;
+    uiCommand->parameters = parametersArray;
+    uiCommand->numberOfParameters = numberOfParameters;
+    uiCommand->param = param;
+    uiCommand->intParam = intParam;
+    
+    OSAtomicEnqueue(&Atari800UICommands, uiCommand, offsetof(Atari800UICommand, nextCommand));
+}
+
+Atari800UICommand *Atari800UICommandDequeue(void)
+{
+    return (Atari800UICommand *)OSAtomicDequeue(&Atari800UICommands, offsetof(Atari800UICommand, nextCommand));
+}
+
+void Atari800UICommandFree(Atari800UICommand *command)
+{
+    if (!command)
+        return;
+    
+    if (command->parameters) {
+        
+        for (int i = 0; i < command->numberOfParameters; ++i) {
+            
+            free(command->parameters[i]);
+        }
+        
+        free(command->parameters);
+        command->parameters = NULL;
+    }
+    
+    free(command);
+}
 
 int VIDEOMODE_80_column;
 
-
-void PLATFORM_DisplayScreen(void)
-{
-    //memcpy(atari800EmulationThread->_renderer.screen, Screen_atari, 384 * 240 * sizeof(uint8_t));
-}
+void PLATFORM_DisplayScreen(void) {}
 
 int PLATFORM_Exit(int run_monitor) {
     
     return noErr;
 }
 
-int PLATFORM_Initialise(int *argc, char *argv[])
-{
+int PLATFORM_Initialise(int *argc, char *argv[]) { return TRUE; }
+
+int PLATFORM_Keyboard(void) { return AKEY_NONE; }
+
+int PLATFORM_PORT(int num) {
     
-    return TRUE;
+    if (!atari800EmulationThread->_portHandler) {
+        
+        return 0xFF;
+    }
+    
+    int port = 0xFF;
+    int trig = 0x01;
+    
+    atari800EmulationThread->_portHandler(num, &port, &trig);
+    
+    return port;
 }
 
-int PLATFORM_Keyboard(void) { return 0; }
-
-int PLATFORM_PORT(int num) { return 0xff; }
-
-int PLATFORM_TRIG(int num) { return 1; }
+int PLATFORM_TRIG(int num) {
+    
+    if (!atari800EmulationThread->_portHandler) {
+        
+        return 0x01;
+    }
+    
+    int port = 0xFF;
+    int trig = 0x01;
+    
+    atari800EmulationThread->_portHandler(num, &port, &trig);
+    
+    return trig;
+}
 
 int VIDEOMODE_Set80Column(int value)
 {
     
     VIDEOMODE_80_column = value;
     return value;
+}
+
+NS_INLINE void Atari800BinaryLoad(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
+{
+    NSCAssert(command->numberOfParameters == 1, @"No parameters specified for binary load");
+    const char *exeName = command->parameters[0];
+    BINLOAD_Loader(exeName);
+}
+
+NS_INLINE void Atari800InsertCartridge(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
+{
+    NSCAssert(command->numberOfParameters == 1, @"No parameters specified for cartridge");
+    const char *cartridgeName = command->parameters[0];
+    
+    int r = CARTRIDGE_Insert(cartridgeName);
+    switch (r) {
+        case CARTRIDGE_CANT_OPEN:
+            NSLog(@"Can't open %s", CARTRIDGE_main.filename);
+            break;
+        case CARTRIDGE_BAD_FORMAT:
+            NSLog(@"Unknown cartridge format");
+            break;
+        case CARTRIDGE_BAD_CHECKSUM:
+            NSLog(@"Warning: bad CART checksum");
+            break;
+        case 0:
+            /* ok */
+            break;
+        default:
+            /* r > 0 */
+            CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, (int)command->intParam);
+            break;
+    }
+}
+
+NS_INLINE void Atari800ProcessUICommand(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
+{
+    switch (command->command) {
+        
+        case Atari800CommandBinaryLoad:
+            Atari800BinaryLoad(thread, command);
+            break;
+            
+        case Atari800CommandInsertCartridge:
+            Atari800InsertCartridge(thread, command);
+            break;
+            
+        case Atari800CommandInsertDisk:
+            
+            break;
+            
+        case Atari800CommandLoadCassette:
+            
+            break;
+            
+        default:
+            break;
+    }
+}
+
+NS_INLINE void Atari800ProcessUICommands(__unsafe_unretained Atari800EmulationThread *thread)
+{
+    while (true) {
+        
+        Atari800UICommand *command = Atari800UICommandDequeue();
+        
+        if (command == NULL) {
+            
+            return;
+        }
+        
+        Atari800ProcessUICommand(thread, command);
+        
+        Atari800UICommandFree(command);
+    }
+}
+
+NS_INLINE void Atari800ProcessKeyboardInput(__unsafe_unretained Atari800EmulationThread *thread)
+{
+    if (atari800EmulationThread->_keyboardHandler) {
+        
+        int keycode = 0;
+        int controlKey = 0;
+        int shiftKey = 0;
+        int console = 0;
+        
+        atari800EmulationThread->_keyboardHandler(&keycode, &shiftKey, &controlKey, &console);
+        
+        INPUT_key_code = (shiftKey) ? keycode | AKEY_SHFT : keycode;
+        
+        INPUT_key_consol = console;
+    }
+    else {
+        
+        INPUT_key_code = AKEY_NONE;
+    }
 }
 
 void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
@@ -80,35 +257,15 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
         return;
     }
     
-    atari800EmulationThread->_atari800Running = YES;
+    atari800EmulationThread->_running = YES;
     
-    // HACK: Load something for now
-    NSString *exeFilePath = [bundle pathForResource:@"Colossal Adventure"
-                                             ofType:@"xex"
-                                        inDirectory:@"XEX"];
-    const char *exeName = [exeFilePath cStringUsingEncoding:NSUTF8StringEncoding];
-    BINLOAD_Loader(exeName);
-    
-    while (atari800EmulationThread->_atari800Running) {
+    while (atari800EmulationThread->_running) {
         
-        if (atari800EmulationThread->_keyboardHandler) {
-            
-            int keycode = 0;
-            int controlKey = 0;
-            int shiftKey = 0;
-            
-            atari800EmulationThread->_keyboardHandler(&keycode, &shiftKey, &controlKey);
-            
-            INPUT_key_code = (shiftKey) ? keycode | AKEY_SHFT : keycode;
-        }
-        else {
-            
-            INPUT_key_code = AKEY_NONE;
-        }
+        Atari800ProcessUICommands(atari800EmulationThread);
+        
+        Atari800ProcessKeyboardInput(atari800EmulationThread);
         
         Atari800_Frame();
-        if (Atari800_display_screen)
-            PLATFORM_DisplayScreen();
     }
 }
 
@@ -122,6 +279,7 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
         
         _emulator = emulator;
         _keyboardHandler = emulator.keyboardHandler;
+        _portHandler = emulator.portHandler;
         _renderer = emulator.renderer;
     }
     
@@ -131,18 +289,19 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
 - (void)main
 {
     @autoreleasepool {
+        
         Atari800StartEmulation(self);
     }
 }
 
 - (void)pause
 {
-    // TODO: Implement this
+    _paused = YES;
 }
 
 - (void)cancel
 {
-    _atari800Running = NO;
+    _running = NO;
     [super cancel];
 }
 

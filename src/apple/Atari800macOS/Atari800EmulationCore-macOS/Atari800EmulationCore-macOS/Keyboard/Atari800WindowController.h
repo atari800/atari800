@@ -12,5 +12,6 @@
 @interface Atari800WindowController : NSWindowController
 
 - (Atari800KeyboardHandler)newKeyboardHandler;
+- (Atari800PortHandler)newPortHandler;
 
 @end

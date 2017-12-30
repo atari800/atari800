@@ -9,6 +9,26 @@
 #import <Foundation/Foundation.h>
 #import "Atari800Emulator.h"
 
+typedef NS_ENUM(NSInteger, Atari800UICommandType) {
+    
+    Atari800CommandBinaryLoad      = 0,
+    Atari800CommandInsertDisk      = 1,
+    Atari800CommandInsertCartridge = 2,
+    Atari800CommandLoadCassette    = 3,
+};
+
+typedef NS_ENUM(NSInteger, Atari800UICommandParamType) {
+ 
+    Atari800CommandParamNotRequired = -1,
+    Atari800CommandParamDrive0 = 0,
+    Atari800CommandParamLeftCartridge,
+    Atari800CommandParamRightCartridge,
+};
+
+@class Atari800EmulationThread;
+
+void Atari800UICommandEnqueue(Atari800UICommandType command, Atari800UICommandParamType param, NSInteger intParam, NSArray<NSString *> *parameters);
+
 @interface Atari800EmulationThread : NSThread
 
 - (instancetype)initWithEmulator:(Atari800Emulator *)emulator;

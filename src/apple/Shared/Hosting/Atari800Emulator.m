@@ -13,6 +13,7 @@
 #if TARGET_OS_SIMULATOR
 #import "Atari800QuartzRenderer.h"
 #endif
+#import "Atari800Emulator+CartridgeHandling.h"
 
 @interface Atari800Emulator() {
     
@@ -28,7 +29,7 @@ static Atari800Emulator *shared = nil;
 - (instancetype)init
 {
     self = [super init];
-
+    
     if (self) {
         
 #if TARGET_OS_SIMULATOR
@@ -36,6 +37,7 @@ static Atari800Emulator *shared = nil;
 #else
         _renderer = [[Atari800MetalRenderer alloc] init];
 #endif
+        _audioDriver = [[Atari800AudioDriver alloc] init];
     }
     
     return self;
@@ -46,6 +48,36 @@ static Atari800Emulator *shared = nil;
     _emulationThread = [[Atari800EmulationThread alloc] initWithEmulator:self];
     [_emulationThread setThreadPriority:0.75];
     [_emulationThread start];
+}
+
+- (void)loadFile:(NSURL *)url completion:(Atari800CompletionHandler)completion
+{
+    NSParameterAssert(url);
+    NSString *path = [url path];
+    NSString *extension = [[path pathExtension] lowercaseString];
+    
+    if ([extension isEqualToString:@"rom"]) {
+        
+        [self insertCartridge:path
+                   completion:completion];
+        return;
+    }
+    
+    if ([extension isEqualToString:@"xex"]) {
+        
+        Atari800UICommandEnqueue(Atari800CommandBinaryLoad, Atari800CommandParamNotRequired, 0, @[path]);
+    }
+    else if ([extension isEqualToString:@"atr"]) {
+        
+        // TODO: Support multiple drives
+        Atari800UICommandEnqueue(Atari800CommandInsertDisk, Atari800CommandParamDrive0, 0, @[path]);
+    }
+    else if ([extension isEqualToString:@"cas"]) {
+        
+        Atari800UICommandEnqueue(Atari800CommandLoadCassette, Atari800CommandParamNotRequired, 0, @[path]);
+    }
+    
+    completion(YES, nil);
 }
 
 - (void)pauseEmulation

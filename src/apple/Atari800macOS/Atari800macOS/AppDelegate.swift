@@ -7,16 +7,57 @@
 //
 
 import Cocoa
+import Atari800EmulationCore_macOS
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
     
+        if let emulator = Atari800Emulator.shared() {
+         
+            emulator.delegate = self
+        }
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
     
+    }
+    
+    func application(_ sender: NSApplication, openFile filename: String) -> Bool {
+    
+        let url = URL(fileURLWithPath: filename)
+        
+        if let emulator = Atari800Emulator.shared() {
+            
+            DispatchQueue.main.async {
+                
+                emulator.loadFile(url) { (ok, error) in
+                    
+                    NSDocumentController.shared.noteNewRecentDocumentURL(url)
+                }
+            }
+        }
+
+        return true;
+    }
+}
+
+extension AppDelegate: Atari800EmulatorDelegate {
+    func emulator(_ emulator: Atari800Emulator!, didSelectCartridgeWithSize size: Int, filename: String!, completion: Atari800CartridgeSelectionHandler!) {
+        if let keyWindow = NSApplication.shared.keyWindow {
+            
+            if let emulationViewController = keyWindow.contentViewController as? EmulationViewController {
+                
+                emulationViewController.cartridgeSize = size
+                emulationViewController.cartridgeFileName = filename
+                emulationViewController.cartridgeCompletion = completion
+                emulationViewController.performSegue(withIdentifier: EmulationViewController.ShowCartridgeTypesSegue, sender: self)
+                return
+            }
+        }
+        
+        completion(false, 0);
     }
 }
 

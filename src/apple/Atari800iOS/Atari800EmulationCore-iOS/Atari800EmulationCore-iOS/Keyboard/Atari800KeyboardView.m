@@ -206,11 +206,12 @@ const NSTimeInterval KEY_ANIMATION_DURATION = 0.05f;
 {
     __unsafe_unretained Atari800KeyboardView *uSelf = self;
     
-    Atari800KeyboardHandler handler = ^(int *keycode, int *shiftKey, int *ctrlKey) {
+    Atari800KeyboardHandler handler = ^(int *keycode, int *shiftKey, int *ctrlKey, int *console) {
         
         *keycode = uSelf->keycode;
         *shiftKey = uSelf->shiftKey;
         *ctrlKey = uSelf->ctrlKey;
+        *console = 0x07;
     };
     
     return handler;

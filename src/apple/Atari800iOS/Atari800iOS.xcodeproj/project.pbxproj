@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E2929BD21FF809B90072A66E /* CartridgeTypesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2929BD11FF809B90072A66E /* CartridgeTypesViewController.swift */; };
 		E2BAFC4C1FE9392700B93945 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC4B1FE9392700B93945 /* AppDelegate.swift */; };
 		E2BAFC4E1FE9392700B93945 /* EmulationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC4D1FE9392700B93945 /* EmulationViewController.swift */; };
 		E2BAFC511FE9392700B93945 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC4F1FE9392700B93945 /* Main.storyboard */; };
@@ -55,6 +56,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E2929BD11FF809B90072A66E /* CartridgeTypesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartridgeTypesViewController.swift; sourceTree = "<group>"; };
 		E2BAFC481FE9392700B93945 /* Atari800iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atari800iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2BAFC4B1FE9392700B93945 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E2BAFC4D1FE9392700B93945 /* EmulationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmulationViewController.swift; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 				E2BAFC521FE9392700B93945 /* Assets.xcassets */,
 				E2BAFC541FE9392700B93945 /* LaunchScreen.storyboard */,
 				E2BAFC571FE9392700B93945 /* Info.plist */,
+				E2929BD11FF809B90072A66E /* CartridgeTypesViewController.swift */,
 			);
 			path = Atari800iOS;
 			sourceTree = "<group>";
@@ -206,6 +209,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E2929BD21FF809B90072A66E /* CartridgeTypesViewController.swift in Sources */,
 				E2BAFC4E1FE9392700B93945 /* EmulationViewController.swift in Sources */,
 				E2BAFC4C1FE9392700B93945 /* AppDelegate.swift in Sources */,
 			);

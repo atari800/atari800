@@ -66,6 +66,12 @@
          <FileRef
             location = "group:Atari800ControlManager.m">
          </FileRef>
+         <FileRef
+            location = "group:Atari800Emulator+CartridgeHandling.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800Emulator+CartridgeHandling.m">
+         </FileRef>
       </Group>
       <Group
          location = "group:Preferences"

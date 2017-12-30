@@ -5,6 +5,116 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
+        <!--Select Cartridge Type-->
+        <scene sceneID="TQd-09-osy">
+            <objects>
+                <viewController showSeguePresentationStyle="single" id="h5Q-kJ-fQa" userLabel="Select Cartridge Type" customClass="CartridgeTypesViewController" customModule="Atari800macOS" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="hWk-Qa-c2u">
+                        <rect key="frame" x="0.0" y="0.0" width="450" height="237"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zVw-15-5TA">
+                                <rect key="frame" x="354" y="13" width="82" height="32"/>
+                                <buttonCell key="cell" type="push" title="OK" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="seT-WG-IPj">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                    <string key="keyEquivalent" base64-UTF8="YES">
+DQ
+</string>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="ok:" target="h5Q-kJ-fQa" id="aHQ-1h-zpH"/>
+                                </connections>
+                            </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BuC-QP-B2Y">
+                                <rect key="frame" x="272" y="13" width="82" height="32"/>
+                                <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="FdJ-9Y-gA3">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                    <string key="keyEquivalent" base64-UTF8="YES">
+Gw
+</string>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="cancel:" target="h5Q-kJ-fQa" id="xbH-6T-L9l"/>
+                                </connections>
+                            </button>
+                            <scrollView autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Hsb-Wn-w6d">
+                                <rect key="frame" x="20" y="52" width="410" height="140"/>
+                                <clipView key="contentView" id="08o-bv-RPd">
+                                    <rect key="frame" x="1" y="1" width="408" height="138"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" columnSelection="YES" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" id="1Og-N9-AGz">
+                                            <rect key="frame" x="0.0" y="0.0" width="408" height="138"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <size key="intercellSpacing" width="3" height="2"/>
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
+                                            <tableColumns>
+                                                <tableColumn identifier="" width="405" minWidth="40" maxWidth="1000" id="9rs-1f-AHG">
+                                                    <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
+                                                        <font key="font" metaFont="smallSystem"/>
+                                                        <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
+                                                    </tableHeaderCell>
+                                                    <textFieldCell key="dataCell" lineBreakMode="truncatingTail" refusesFirstResponder="YES" title="Text Cell" id="roe-PW-CXi">
+                                                        <font key="font" metaFont="system"/>
+                                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                    <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
+                                                </tableColumn>
+                                            </tableColumns>
+                                            <connections>
+                                                <outlet property="dataSource" destination="h5Q-kJ-fQa" id="F98-Qq-9L1"/>
+                                            </connections>
+                                        </tableView>
+                                    </subviews>
+                                </clipView>
+                                <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="YES" id="BIT-7S-nrW">
+                                    <rect key="frame" x="1" y="119" width="223" height="15"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </scroller>
+                                <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="qO4-XP-dX0">
+                                    <rect key="frame" x="224" y="17" width="15" height="102"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </scroller>
+                            </scrollView>
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Tk2-5X-70h">
+                                <rect key="frame" x="20" y="200" width="412" height="17"/>
+                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Select the cartridge type for %@:" id="EP4-GO-dvF">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="BuC-QP-B2Y" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="hWk-Qa-c2u" secondAttribute="leading" constant="20" symbolic="YES" id="BfH-vt-ZgH"/>
+                            <constraint firstAttribute="bottom" secondItem="zVw-15-5TA" secondAttribute="bottom" constant="20" id="Idi-p8-gmh"/>
+                            <constraint firstItem="Tk2-5X-70h" firstAttribute="top" secondItem="hWk-Qa-c2u" secondAttribute="top" constant="20" id="QUN-ak-eGp"/>
+                            <constraint firstAttribute="trailing" secondItem="Tk2-5X-70h" secondAttribute="trailing" constant="20" id="QWe-P1-qU9"/>
+                            <constraint firstItem="BuC-QP-B2Y" firstAttribute="centerY" secondItem="zVw-15-5TA" secondAttribute="centerY" id="XUP-f3-YMK"/>
+                            <constraint firstAttribute="trailing" secondItem="zVw-15-5TA" secondAttribute="trailing" constant="20" id="XX8-Uf-h4Q"/>
+                            <constraint firstItem="BuC-QP-B2Y" firstAttribute="top" secondItem="Hsb-Wn-w6d" secondAttribute="bottom" constant="11" id="YI4-Za-Uzw"/>
+                            <constraint firstItem="Tk2-5X-70h" firstAttribute="leading" secondItem="hWk-Qa-c2u" secondAttribute="leading" constant="22" id="aRL-Hh-Dj7"/>
+                            <constraint firstAttribute="trailing" secondItem="Hsb-Wn-w6d" secondAttribute="trailing" constant="20" id="gaN-7F-tvc"/>
+                            <constraint firstItem="BuC-QP-B2Y" firstAttribute="width" secondItem="zVw-15-5TA" secondAttribute="width" id="h13-fr-PG6"/>
+                            <constraint firstItem="Hsb-Wn-w6d" firstAttribute="leading" secondItem="hWk-Qa-c2u" secondAttribute="leading" constant="20" id="p9l-yw-0ae"/>
+                            <constraint firstItem="zVw-15-5TA" firstAttribute="leading" secondItem="BuC-QP-B2Y" secondAttribute="trailing" constant="12" symbolic="YES" id="pT2-aI-Hdf"/>
+                            <constraint firstItem="Hsb-Wn-w6d" firstAttribute="top" secondItem="Tk2-5X-70h" secondAttribute="bottom" constant="8" symbolic="YES" id="vvU-oy-035"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="prompt" destination="Tk2-5X-70h" id="vze-nv-2IZ"/>
+                        <outlet property="tableView" destination="1Og-N9-AGz" id="fO6-h9-sik"/>
+                    </connections>
+                </viewController>
+                <customObject id="t25-lq-Dsb" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="717" y="680.5"/>
+        </scene>
         <!--Application-->
         <scene sceneID="JPo-4y-FX3">
             <objects>
@@ -722,6 +832,7 @@
                     </view>
                     <connections>
                         <outlet property="metalView" destination="eEO-RZ-YmI" id="l8i-dF-3Md"/>
+                        <segue destination="h5Q-kJ-fQa" kind="sheet" identifier="Show Cartridge Types" id="Bk0-L3-o9W"/>
                     </connections>
                 </viewController>
                 <customObject id="rPt-NT-nkU" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>

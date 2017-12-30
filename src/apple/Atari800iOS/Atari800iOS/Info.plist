@@ -43,5 +43,79 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeIconFiles</key>
+			<array/>
+			<key>CFBundleTypeName</key>
+			<string>Atari Executable File</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>org.atari.xex</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeIconFiles</key>
+			<array/>
+			<key>CFBundleTypeName</key>
+			<string>Atari ROM File</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>org.atari.rom</string>
+			</array>
+		</dict>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Atari Executable File</string>
+			<key>UTTypeIdentifier</key>
+			<string>org.atari.xex</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>com.apple.ostype</key>
+				<string>AXEX</string>
+				<key>public.filename-extension</key>
+				<array>
+					<string>xex</string>
+					<string>XEX</string>
+				</array>
+				<key>public.mime-type</key>
+				<string>application/axex</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Atari ROM File</string>
+			<key>UTTypeIdentifier</key>
+			<string>org.atari.rom</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>com.apple.ostype</key>
+				<string>AROM</string>
+				<key>public.filename-extension</key>
+				<array>
+					<string>rom</string>
+					<string>ROM</string>
+				</array>
+				<key>public.mime-type</key>
+				<string>application/arom</string>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>
