@@ -19,7 +19,7 @@ const CGFloat defaultKeyWidth = 40.0f;
 const CGFloat defaultKeyHeight = 40.0f;
 const CGFloat keyGutter = 10.0f;
 
-char * const Atari800KeyboardFontFamily = "SFAtarianSystem";
+char * const Atari800KeyboardFontFamily = "AvenirNextCondensed-Medium";
 char * const Atari800KeyboardSymbolFontFamily = "HiraginoSans-W3";
 
 const CGFloat SMALL_FONT_SIZE = 11.0f;

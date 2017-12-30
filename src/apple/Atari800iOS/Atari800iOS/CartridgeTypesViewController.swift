@@ -2,7 +2,7 @@
 //  CartridgeTypesViewController.swift
 //  Atari800iOS
 //
-//  Created by Simon Lawrence on 30/12/2017.
+//  Created by Rod Münch on 30/12/2017.
 //  Copyright © 2017 Atari800 development team. All rights reserved.
 //
 
@@ -23,6 +23,7 @@ class CartridgeTypesViewController: UITableViewController {
         
         cartridgeTypes = Atari800Emulator.shared().supportedCartridgeTypes(forSize: self.cartridgeSize)
         sortedCartridgeTypes =  cartridgeTypes?.keys.sorted(by: { (a, b) -> Bool in
+            
             return a.compare(b) == .orderedAscending
         })
             
