@@ -447,7 +447,20 @@ Gw
                                     </items>
                                 </menu>
                             </menuItem>
-                            <menuItem title="Format" id="jxT-CU-nIS">
+                            <menuItem title="Emulation" id="tNh-cZ-6ty" userLabel="Emulation">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <menu key="submenu" title="Emulation" id="JRu-2p-yBa">
+                                    <items>
+                                        <menuItem title="Reset" keyEquivalent="" id="Ofb-C3-7y2">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="reset:" target="Ady-hI-5gd" id="d20-fa-Qlx"/>
+                                            </connections>
+                                        </menuItem>
+                                    </items>
+                                </menu>
+                            </menuItem>
+                            <menuItem title="Format" hidden="YES" id="jxT-CU-nIS">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Format" id="GEO-Iw-cKr">
                                     <items>

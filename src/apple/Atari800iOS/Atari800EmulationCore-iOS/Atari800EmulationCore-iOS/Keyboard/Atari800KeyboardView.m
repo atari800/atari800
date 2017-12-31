@@ -24,6 +24,7 @@
     int keycode;
     int shiftKey;
     int ctrlKey;
+    int console;
 }
 
 @end
@@ -33,6 +34,24 @@
 const CGFloat KEY_DOWN_SCALE = 1.1f;
 const NSTimeInterval KEY_ANIMATION_DURATION = 0.05f;
 
+const uint8_t AtariStickUp    = 0x01;
+const uint8_t AtariStickDown  = 0x02;
+const uint8_t AtariStickLeft  = 0x04;
+const uint8_t AtariStickRight = 0x08;
+
+const uint8_t AtariConsoleStart  = 0x01;
+const uint8_t AtariConsoleSelect = 0x02;
+const uint8_t AtariConsoleOption = 0x04;
+
+const uint8_t AtariStickUpMask    = 0xFE;
+const uint8_t AtariStickDownMask  = 0xFD;
+const uint8_t AtariStickLeftMask  = 0xFB;
+const uint8_t AtariStickRightMask = 0xF7;
+
+const uint8_t AtariConsoleStartMask  = 0xFE;
+const uint8_t AtariConsoleSelectMask = 0xFD;
+const uint8_t AtariConsoleOptionMask = 0xFB;
+
 #pragma mark - View lifecycle
 
 - (void)internalInit
@@ -40,6 +59,7 @@ const NSTimeInterval KEY_ANIMATION_DURATION = 0.05f;
     [self registerFonts];
     
     keycode = AKEY_NONE;
+    console = 0x07;
     
     _drawing = [[Atari800KeyboardDrawing alloc] init];
     
@@ -128,6 +148,18 @@ const NSTimeInterval KEY_ANIMATION_DURATION = 0.05f;
     
     [_drawing addKeyLayersToLayer:self.layer];
     self.backgroundColor = [UIColor colorWithCGColor:_drawing->keyboardBackgroundColor];
+    
+    for (UIButton *button in @[self.startButton, self.selectButton, self.optionButton]) {
+        [button addTarget:self
+                   action:@selector(consoleKeyDown:)
+         forControlEvents:UIControlEventTouchDown];
+        [button addTarget:self
+                   action:@selector(consoleKeyUp:)
+         forControlEvents:UIControlEventTouchUpInside];
+        [button addTarget:self
+                   action:@selector(consoleKeyUp:)
+         forControlEvents:UIControlEventTouchUpOutside];
+    }
 }
 
 #pragma mark - Touch event handling
@@ -211,10 +243,36 @@ const NSTimeInterval KEY_ANIMATION_DURATION = 0.05f;
         *keycode = uSelf->keycode;
         *shiftKey = uSelf->shiftKey;
         *ctrlKey = uSelf->ctrlKey;
-        *console = 0x07;
+        *console = uSelf->console;
     };
     
     return handler;
+}
+
+- (IBAction)consoleKeyDown:(id)sender
+{
+    if (sender == self.startButton) {
+        console &= AtariConsoleStartMask;
+    }
+    else if (sender == self.selectButton) {
+        console &= AtariConsoleSelectMask;
+    }
+    else if (sender == self.optionButton) {
+        console &= AtariConsoleOptionMask;
+    }
+}
+
+- (IBAction)consoleKeyUp:(id)sender
+{
+    if (sender == self.startButton) {
+        console |= AtariConsoleStart;
+    }
+    else if (sender == self.selectButton) {
+        console |= AtariConsoleSelect;
+    }
+    else if (sender == self.optionButton) {
+        console |= AtariConsoleOption;
+    }
 }
 
 @end

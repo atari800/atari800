@@ -91,6 +91,11 @@ class EmulationViewController: UIViewController {
         }
     }
     
+    @IBAction func reset(_ sender: Any?) {
+     
+        Atari800Emulator.shared().reset()
+    }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         
         if segue.identifier == EmulationViewController.ShowCartridgeTypesSegue {

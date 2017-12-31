@@ -15,6 +15,10 @@
 
 }
 
+@property (nonatomic, weak) IBOutlet UIButton *startButton;
+@property (nonatomic, weak) IBOutlet UIButton *selectButton;
+@property (nonatomic, weak) IBOutlet UIButton *optionButton;
+
 - (Atari800KeyboardHandler)newKeyboardHandler;
 
 @end

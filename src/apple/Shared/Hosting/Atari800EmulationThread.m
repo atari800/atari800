@@ -170,12 +170,16 @@ NS_INLINE void Atari800InsertCartridge(__unsafe_unretained Atari800EmulationThre
             break;
         case 0:
             /* ok */
-            break;
         default:
             /* r > 0 */
             CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, (int)command->intParam);
             break;
     }
+}
+
+NS_INLINE void Atari800Reset(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
+{
+    Atari800_Warmstart();
 }
 
 NS_INLINE void Atari800ProcessUICommand(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
@@ -196,6 +200,10 @@ NS_INLINE void Atari800ProcessUICommand(__unsafe_unretained Atari800EmulationThr
             
         case Atari800CommandLoadCassette:
             
+            break;
+        
+        case Atari800CommandReset:
+            Atari800Reset(thread, command);
             break;
             
         default:

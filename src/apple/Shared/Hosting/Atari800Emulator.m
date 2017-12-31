@@ -43,6 +43,14 @@ static Atari800Emulator *shared = nil;
     return self;
 }
 
+- (void)reset
+{
+    if (_emulationThread) {
+        
+        Atari800UICommandEnqueue(Atari800CommandReset, Atari800CommandParamNotRequired, 0, @[]);
+    }
+}
+
 - (void)startEmulation
 {
     _emulationThread = [[Atari800EmulationThread alloc] initWithEmulator:self];

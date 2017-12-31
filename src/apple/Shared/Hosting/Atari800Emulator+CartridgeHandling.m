@@ -13,11 +13,9 @@
 
 @implementation Atari800Emulator (CartridgeHandling)
 
-int Atar800ValidateCartridgeImage(NSString *path)
+int Atar800ValidateCartridgeImage(NSString *path, CARTRIDGE_image_t *cart)
 {
     const char *filename = [path UTF8String];
-    CARTRIDGE_image_t cartridge;
-    CARTRIDGE_image_t *cart = &cartridge;
     
     FILE *fp;
     int len;
@@ -197,8 +195,15 @@ int Atar800ValidateCartridgeImage(NSString *path)
     
     if (_delegate && [_delegate respondsToSelector:@selector(emulator:didSelectCartridgeWithSize:filename:completion:)]) {
         
-        NSInteger sizeKb = Atar800ValidateCartridgeImage(path);
+        CARTRIDGE_image_t cartridge;
         
+        NSInteger sizeKb = Atar800ValidateCartridgeImage(path, &cartridge);
+        
+        if (sizeKb == 0) {
+            
+            Atari800UICommandEnqueue(Atari800CommandInsertCartridge, Atari800CommandParamLeftCartridge, cartridge.type, @[path]);
+            return;
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             [_delegate emulator:self
      didSelectCartridgeWithSize:sizeKb

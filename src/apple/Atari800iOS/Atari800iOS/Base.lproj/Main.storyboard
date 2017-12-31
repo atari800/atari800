@@ -46,6 +46,11 @@
                                 <constraints>
                                     <constraint firstAttribute="height" constant="248" id="DtC-JC-lOD"/>
                                 </constraints>
+                                <connections>
+                                    <outlet property="optionButton" destination="yrU-MA-skL" id="KQ9-00-9Fn"/>
+                                    <outlet property="selectButton" destination="PkN-QV-7T6" id="YXD-zk-gbo"/>
+                                    <outlet property="startButton" destination="UeL-go-0pc" id="aF7-ey-HEK"/>
+                                </connections>
                             </view>
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="qM7-g1-wwg">
                                 <rect key="frame" x="0.0" y="283" width="320" height="37"/>
@@ -69,6 +74,9 @@
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="I9v-Cv-myn">
                                         <rect key="frame" x="256" y="0.0" width="64" height="37"/>
                                         <state key="normal" title="Reset"/>
+                                        <connections>
+                                            <action selector="reset:" destination="BYZ-38-t0r" eventType="touchUpInside" id="cI4-O0-H7f"/>
+                                        </connections>
                                     </button>
                                 </subviews>
                                 <constraints>
@@ -118,7 +126,7 @@
         <!--Cartridge Type-->
         <scene sceneID="DBc-8r-Lxu">
             <objects>
-                <tableViewController title="Cartridge Type" id="bIZ-Sl-CNc" customClass="CartridgeTypesViewController" customModule="Atari800iOS" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController title="Cartridge Type" modalPresentationStyle="formSheet" id="bIZ-Sl-CNc" customClass="CartridgeTypesViewController" customModule="Atari800iOS" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" id="ayr-oh-Brh">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

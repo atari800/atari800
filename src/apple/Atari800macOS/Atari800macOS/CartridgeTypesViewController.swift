@@ -26,7 +26,7 @@ class CartridgeTypesViewController: NSViewController {
         cartridgeTypes = Atari800Emulator.shared().supportedCartridgeTypes(forSize: self.cartridgeSize)
         sortedCartridgeTypes =  cartridgeTypes?.keys.sorted(by: { (a, b) -> Bool in
             return a.compare(b) == .orderedAscending
-        }
+        })
         if let prompt = self.prompt {
             
             prompt.stringValue = String(format: "Select the cartridge type for %@:", self.cartridgeFileName ?? "(Unknown)");

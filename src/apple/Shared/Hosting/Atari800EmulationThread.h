@@ -15,6 +15,7 @@ typedef NS_ENUM(NSInteger, Atari800UICommandType) {
     Atari800CommandInsertDisk      = 1,
     Atari800CommandInsertCartridge = 2,
     Atari800CommandLoadCassette    = 3,
+    Atari800CommandReset           = 4,
 };
 
 typedef NS_ENUM(NSInteger, Atari800UICommandParamType) {

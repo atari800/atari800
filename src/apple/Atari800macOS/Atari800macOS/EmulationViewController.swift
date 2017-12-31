@@ -83,6 +83,11 @@ class EmulationViewController: NSViewController {
         }
     }
     
+    @IBAction func reset(_ sender: Any?) {
+        
+        Atari800Emulator.shared().reset()
+    }
+    
     @IBAction func openDocument(_ sender: Any?) {
     
         let panel = NSOpenPanel();
