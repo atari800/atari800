@@ -1,8 +1,8 @@
 //
 //  Atari800Dispatch.m
-//  Atari800EmulationCore-iOS
+//  Atari800EmulationCore
 //
-//  Created by Simon Lawrence on 01/01/2018.
+//  Created by Rod Münch on 01/01/2018.
 //  Copyright © 2018 Atari800 development team. All rights reserved.
 //
 

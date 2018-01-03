@@ -8,7 +8,7 @@
 
 import UIKit
 import MetalKit
-import Atari800EmulationCore_iOS
+import Atari800EmulationCore
 import AVFoundation;
 
 class EmulationViewController: UIViewController {

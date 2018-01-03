@@ -8,7 +8,7 @@
 
 import Cocoa
 import MetalKit
-import Atari800EmulationCore_macOS
+import Atari800EmulationCore
 
 class EmulationViewController: NSViewController {
 

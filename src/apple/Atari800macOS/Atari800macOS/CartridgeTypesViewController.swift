@@ -7,7 +7,7 @@
 //
 
 import Cocoa
-import Atari800EmulationCore_macOS
+import Atari800EmulationCore
 
 class CartridgeTypesViewController: NSViewController {
 

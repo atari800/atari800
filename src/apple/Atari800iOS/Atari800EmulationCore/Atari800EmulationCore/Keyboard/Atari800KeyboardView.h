@@ -9,7 +9,7 @@
 @import UIKit;
 @import QuartzCore;
 
-#import <Atari800EmulationCore_iOS/Atari800Emulator.h>
+#import <Atari800EmulationCore/Atari800Emulator.h>
 
 @interface Atari800KeyboardView : UIView {
 

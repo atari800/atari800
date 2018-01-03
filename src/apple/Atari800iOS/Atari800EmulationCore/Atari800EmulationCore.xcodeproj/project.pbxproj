@@ -171,7 +171,7 @@
 		E2929BDB1FFA8BC00072A66E /* Atari800Dispatch.m in Sources */ = {isa = PBXBuildFile; fileRef = E2929BD91FFA8BC00072A66E /* Atari800Dispatch.m */; };
 		E29D0F251FEB053E002D3DF0 /* Atari800AudioBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = E29D0F231FEB053E002D3DF0 /* Atari800AudioBuffer.h */; };
 		E29D0F261FEB053E002D3DF0 /* Atari800AudioBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = E29D0F241FEB053E002D3DF0 /* Atari800AudioBuffer.m */; };
-		E2D98BB61FE93A78005362D9 /* Atari800EmulationCore_iOS.h in Headers */ = {isa = PBXBuildFile; fileRef = E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E2D98BB61FE93A78005362D9 /* Atari800EmulationCore.h in Headers */ = {isa = PBXBuildFile; fileRef = E2D98BB41FE93A78005362D9 /* Atari800EmulationCore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -347,8 +347,8 @@
 		E2929BD91FFA8BC00072A66E /* Atari800Dispatch.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800Dispatch.m; sourceTree = "<group>"; };
 		E29D0F231FEB053E002D3DF0 /* Atari800AudioBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800AudioBuffer.h; sourceTree = "<group>"; };
 		E29D0F241FEB053E002D3DF0 /* Atari800AudioBuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800AudioBuffer.m; sourceTree = "<group>"; };
-		E2D98BB11FE93A78005362D9 /* Atari800EmulationCore_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Atari800EmulationCore_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800EmulationCore_iOS.h; sourceTree = "<group>"; };
+		E2D98BB11FE93A78005362D9 /* Atari800EmulationCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Atari800EmulationCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2D98BB41FE93A78005362D9 /* Atari800EmulationCore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800EmulationCore.h; sourceTree = "<group>"; };
 		E2D98BB51FE93A78005362D9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -628,7 +628,7 @@
 		E2D98BA71FE93A78005362D9 = {
 			isa = PBXGroup;
 			children = (
-				E2D98BB31FE93A78005362D9 /* Atari800EmulationCore-iOS */,
+				E2D98BB31FE93A78005362D9 /* Atari800EmulationCore */,
 				E2D98BB21FE93A78005362D9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -636,12 +636,12 @@
 		E2D98BB21FE93A78005362D9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E2D98BB11FE93A78005362D9 /* Atari800EmulationCore_iOS.framework */,
+				E2D98BB11FE93A78005362D9 /* Atari800EmulationCore.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		E2D98BB31FE93A78005362D9 /* Atari800EmulationCore-iOS */ = {
+		E2D98BB31FE93A78005362D9 /* Atari800EmulationCore */ = {
 			isa = PBXGroup;
 			children = (
 				E24E0BE91FF12DB300CD5B2B /* Fonts */,
@@ -652,10 +652,10 @@
 				E231F6581FE945A6004ED389 /* Shared */,
 				E22C8D1B1FED5AD000FB4995 /* Simulator */,
 				E22C8D281FF122D600FB4995 /* Keyboard */,
-				E2D98BB41FE93A78005362D9 /* Atari800EmulationCore_iOS.h */,
+				E2D98BB41FE93A78005362D9 /* Atari800EmulationCore.h */,
 				E2D98BB51FE93A78005362D9 /* Info.plist */,
 			);
-			path = "Atari800EmulationCore-iOS";
+			path = Atari800EmulationCore;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -732,7 +732,7 @@
 				E251DA9E1FEA747800613C10 /* cpu.h in Headers */,
 				E251DAC21FEA747800613C10 /* sio.h in Headers */,
 				E251DA971FEA747800613C10 /* pbi_scsi.h in Headers */,
-				E2D98BB61FE93A78005362D9 /* Atari800EmulationCore_iOS.h in Headers */,
+				E2D98BB61FE93A78005362D9 /* Atari800EmulationCore.h in Headers */,
 				E22C8D331FF1230000FB4995 /* Atari800KeyLayer.h in Headers */,
 				E251DA6B1FEA747800613C10 /* atari_ntsc.h in Headers */,
 				E251DAAB1FEA747800613C10 /* afile.h in Headers */,
@@ -752,9 +752,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		E2D98BB01FE93A78005362D9 /* Atari800EmulationCore-iOS */ = {
+		E2D98BB01FE93A78005362D9 /* Atari800EmulationCore */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E2D98BB91FE93A78005362D9 /* Build configuration list for PBXNativeTarget "Atari800EmulationCore-iOS" */;
+			buildConfigurationList = E2D98BB91FE93A78005362D9 /* Build configuration list for PBXNativeTarget "Atari800EmulationCore" */;
 			buildPhases = (
 				E2D98BAC1FE93A78005362D9 /* Sources */,
 				E2D98BAD1FE93A78005362D9 /* Frameworks */,
@@ -765,9 +765,9 @@
 			);
 			dependencies = (
 			);
-			name = "Atari800EmulationCore-iOS";
+			name = Atari800EmulationCore;
 			productName = "Atari800EmulationCore-iOS";
-			productReference = E2D98BB11FE93A78005362D9 /* Atari800EmulationCore_iOS.framework */;
+			productReference = E2D98BB11FE93A78005362D9 /* Atari800EmulationCore.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -785,7 +785,7 @@
 					};
 				};
 			};
-			buildConfigurationList = E2D98BAB1FE93A78005362D9 /* Build configuration list for PBXProject "Atari800EmulationCore-iOS" */;
+			buildConfigurationList = E2D98BAB1FE93A78005362D9 /* Build configuration list for PBXProject "Atari800EmulationCore" */;
 			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -797,7 +797,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				E2D98BB01FE93A78005362D9 /* Atari800EmulationCore-iOS */,
+				E2D98BB01FE93A78005362D9 /* Atari800EmulationCore */,
 			);
 		};
 /* End PBXProject section */
@@ -1027,12 +1027,12 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "Atari800EmulationCore-iOS/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Atari800EmulationCore/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				OTHER_LDFLAGS = "-ObjC";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.atari800.Atari800EmulationCore-iOS";
+				PRODUCT_BUNDLE_IDENTIFIER = com.atari800.Atari800EmulationCore;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1049,12 +1049,12 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "Atari800EmulationCore-iOS/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Atari800EmulationCore/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				OTHER_LDFLAGS = "-ObjC";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.atari800.Atari800EmulationCore-iOS";
+				PRODUCT_BUNDLE_IDENTIFIER = com.atari800.Atari800EmulationCore;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1064,7 +1064,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E2D98BAB1FE93A78005362D9 /* Build configuration list for PBXProject "Atari800EmulationCore-iOS" */ = {
+		E2D98BAB1FE93A78005362D9 /* Build configuration list for PBXProject "Atari800EmulationCore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E2D98BB71FE93A78005362D9 /* Debug */,
@@ -1073,7 +1073,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E2D98BB91FE93A78005362D9 /* Build configuration list for PBXNativeTarget "Atari800EmulationCore-iOS" */ = {
+		E2D98BB91FE93A78005362D9 /* Build configuration list for PBXNativeTarget "Atari800EmulationCore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E2D98BBA1FE93A78005362D9 /* Debug */,

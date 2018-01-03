@@ -1,6 +1,6 @@
 //
 //  Atari800WindowController.m
-//  Atari800EmulationCore-macOS
+//  Atari800EmulationCore
 //
 //  Created by Rod Münch on 25/12/2017.
 //  Copyright © 2017 Atari800 development team. All rights reserved.

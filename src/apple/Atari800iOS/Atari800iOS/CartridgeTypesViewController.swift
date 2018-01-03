@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import Atari800EmulationCore_iOS
+import Atari800EmulationCore
 
 class CartridgeTypesViewController: UITableViewController {
 

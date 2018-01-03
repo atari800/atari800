@@ -7,37 +7,30 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E22250BF1FFD2487007994F8 /* Atari800EmulationCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E22250BE1FFD2449007994F8 /* Atari800EmulationCore.framework */; };
+		E22250C01FFD2487007994F8 /* Atari800EmulationCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E22250BE1FFD2449007994F8 /* Atari800EmulationCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		E2929BD21FF809B90072A66E /* CartridgeTypesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2929BD11FF809B90072A66E /* CartridgeTypesViewController.swift */; };
 		E2BAFC4C1FE9392700B93945 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC4B1FE9392700B93945 /* AppDelegate.swift */; };
 		E2BAFC4E1FE9392700B93945 /* EmulationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC4D1FE9392700B93945 /* EmulationViewController.swift */; };
 		E2BAFC511FE9392700B93945 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC4F1FE9392700B93945 /* Main.storyboard */; };
 		E2BAFC531FE9392700B93945 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC521FE9392700B93945 /* Assets.xcassets */; };
 		E2BAFC561FE9392700B93945 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E2BAFC541FE9392700B93945 /* LaunchScreen.storyboard */; };
-		E2D98BC41FE93A96005362D9 /* Atari800EmulationCore_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2D98BC11FE93A79005362D9 /* Atari800EmulationCore_iOS.framework */; };
-		E2D98BC51FE93A96005362D9 /* Atari800EmulationCore_iOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E2D98BC11FE93A79005362D9 /* Atari800EmulationCore_iOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		E2D98BC01FE93A79005362D9 /* PBXContainerItemProxy */ = {
+		E22250BD1FFD2449007994F8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore-iOS.xcodeproj */;
+			containerPortal = E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = E2D98BB11FE93A78005362D9;
-			remoteInfo = "Atari800EmulationCore-iOS";
+			remoteInfo = Atari800EmulationCore;
 		};
-		E2D98BC21FE93A8D005362D9 /* PBXContainerItemProxy */ = {
+		E22250C11FFD2487007994F8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore-iOS.xcodeproj */;
+			containerPortal = E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore.xcodeproj */;
 			proxyType = 1;
 			remoteGlobalIDString = E2D98BB01FE93A78005362D9;
-			remoteInfo = "Atari800EmulationCore-iOS";
-		};
-		E2D98BC61FE93A96005362D9 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore-iOS.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = E2D98BB01FE93A78005362D9;
-			remoteInfo = "Atari800EmulationCore-iOS";
+			remoteInfo = Atari800EmulationCore;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -48,7 +41,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				E2D98BC51FE93A96005362D9 /* Atari800EmulationCore_iOS.framework in Embed Frameworks */,
+				E22250C01FFD2487007994F8 /* Atari800EmulationCore.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -64,7 +57,7 @@
 		E2BAFC521FE9392700B93945 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E2BAFC551FE9392700B93945 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		E2BAFC571FE9392700B93945 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore-iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "Atari800EmulationCore-iOS.xcodeproj"; path = "Atari800EmulationCore-iOS/Atari800EmulationCore-iOS.xcodeproj"; sourceTree = "<group>"; };
+		E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Atari800EmulationCore.xcodeproj; path = Atari800EmulationCore/Atari800EmulationCore.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,17 +65,25 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E2D98BC41FE93A96005362D9 /* Atari800EmulationCore_iOS.framework in Frameworks */,
+				E22250BF1FFD2487007994F8 /* Atari800EmulationCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E22250BA1FFD2449007994F8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E22250BE1FFD2449007994F8 /* Atari800EmulationCore.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		E2BAFC3F1FE9392700B93945 = {
 			isa = PBXGroup;
 			children = (
-				E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore-iOS.xcodeproj */,
+				E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore.xcodeproj */,
 				E2BAFC4A1FE9392700B93945 /* Atari800iOS */,
 				E2BAFC491FE9392700B93945 /* Products */,
 			);
@@ -110,14 +111,6 @@
 			path = Atari800iOS;
 			sourceTree = "<group>";
 		};
-		E2D98BBD1FE93A78005362D9 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				E2D98BC11FE93A79005362D9 /* Atari800EmulationCore_iOS.framework */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -133,8 +126,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				E2D98BC31FE93A8D005362D9 /* PBXTargetDependency */,
-				E2D98BC71FE93A96005362D9 /* PBXTargetDependency */,
+				E22250C21FFD2487007994F8 /* PBXTargetDependency */,
 			);
 			name = Atari800iOS;
 			productName = Atari800iOS;
@@ -170,8 +162,8 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = E2D98BBD1FE93A78005362D9 /* Products */;
-					ProjectRef = E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore-iOS.xcodeproj */;
+					ProductGroup = E22250BA1FFD2449007994F8 /* Products */;
+					ProjectRef = E2D98BBC1FE93A78005362D9 /* Atari800EmulationCore.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -182,11 +174,11 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		E2D98BC11FE93A79005362D9 /* Atari800EmulationCore_iOS.framework */ = {
+		E22250BE1FFD2449007994F8 /* Atari800EmulationCore.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
-			path = Atari800EmulationCore_iOS.framework;
-			remoteRef = E2D98BC01FE93A79005362D9 /* PBXContainerItemProxy */;
+			path = Atari800EmulationCore.framework;
+			remoteRef = E22250BD1FFD2449007994F8 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -218,15 +210,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		E2D98BC31FE93A8D005362D9 /* PBXTargetDependency */ = {
+		E22250C21FFD2487007994F8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = "Atari800EmulationCore-iOS";
-			targetProxy = E2D98BC21FE93A8D005362D9 /* PBXContainerItemProxy */;
-		};
-		E2D98BC71FE93A96005362D9 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = "Atari800EmulationCore-iOS";
-			targetProxy = E2D98BC61FE93A96005362D9 /* PBXContainerItemProxy */;
+			name = Atari800EmulationCore;
+			targetProxy = E22250C11FFD2487007994F8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
