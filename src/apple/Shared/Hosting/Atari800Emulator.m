@@ -88,6 +88,11 @@ static Atari800Emulator *shared = nil;
     completion(YES, nil);
 }
 
+- (void)removeCartridge
+{
+    Atari800UICommandEnqueue(Atari800CommandRemoveCartridge, Atari800CommandParamNotRequired, 0, @[]);
+}
+
 - (void)pauseEmulation
 {
     [_emulationThread pause];

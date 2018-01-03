@@ -39,6 +39,7 @@ typedef void (^Atari800CartridgeSelectionHandler)(BOOL ok, NSInteger cartridgeTy
 - (void)stopEmulation;
 - (void)pauseEmulation;
 
+- (void)removeCartridge;
 - (void)reset;
 
 - (void)loadFile:(NSURL *)url completion:(Atari800CompletionHandler)completion;

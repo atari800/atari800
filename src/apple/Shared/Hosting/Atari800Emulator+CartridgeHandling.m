@@ -8,6 +8,8 @@
 
 #import "Atari800Emulator+CartridgeHandling.h"
 #import "Atari800EmulationThread.h"
+#import "Atari800Dispatch.h"
+
 #import "cartridge.h"
 #import "util.h"
 
@@ -204,19 +206,23 @@ int Atar800ValidateCartridgeImage(NSString *path, CARTRIDGE_image_t *cart)
             Atari800UICommandEnqueue(Atari800CommandInsertCartridge, Atari800CommandParamLeftCartridge, cartridge.type, @[path]);
             return;
         }
-        dispatch_async(dispatch_get_main_queue(), ^{
+        
+        Atari800CartridgeSelectionHandler selection = ^(BOOL ok, NSInteger cartridgeType) {
+            
+            if (ok) {
+                
+                Atari800UICommandEnqueue(Atari800CommandInsertCartridge, Atari800CommandParamLeftCartridge, cartridgeType, @[path]);
+            }
+            
+            completion(ok, nil);
+        };
+        
+        AlwaysAsync(^{
+            
             [_delegate emulator:self
      didSelectCartridgeWithSize:sizeKb
                        filename:[path lastPathComponent]
-                     completion:^(BOOL ok, NSInteger cartridgeType) {
-                         
-                         if (ok) {
-                             
-                             Atari800UICommandEnqueue(Atari800CommandInsertCartridge, Atari800CommandParamLeftCartridge, cartridgeType, @[path]);
-                         }
-                         
-                         completion(ok, nil);
-                     }];
+                     completion:selection];
         });
     }
 }

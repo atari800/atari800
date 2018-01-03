@@ -111,4 +111,12 @@ class EmulationViewController: NSViewController {
             }
         }
     }
+    
+    @IBAction func removeCartridge(_ sender: Any?) {
+        
+        if let emulator = Atari800Emulator.shared() {
+         
+            emulator.removeCartridge();
+        }
+    }
 }

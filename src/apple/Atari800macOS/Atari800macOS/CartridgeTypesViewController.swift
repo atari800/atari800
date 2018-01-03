@@ -31,7 +31,15 @@ class CartridgeTypesViewController: NSViewController {
             
             prompt.stringValue = String(format: "Select the cartridge type for %@:", self.cartridgeFileName ?? "(Unknown)");
         }
+        
         super.viewDidLoad()
+    }
+    
+    override func viewWillAppear() {
+        
+        super.viewWillAppear()
+        
+        self.tableView?.selectRowIndexes(IndexSet([0]), byExtendingSelection: false)
     }
     
     @IBAction func ok(_ sender: Any?) {

@@ -61,7 +61,7 @@
 		E21FDA7B1FE97E6B00FB1796 /* pbi.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FD9FC1FE97E6100FB1796 /* pbi.h */; };
 		E21FDA7C1FE97E6B00FB1796 /* votraxsnd.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FD9FD1FE97E6100FB1796 /* votraxsnd.h */; };
 		E21FDA7D1FE97E6B00FB1796 /* gtia.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FD9FE1FE97E6100FB1796 /* gtia.h */; };
-		E21FDA7E1FE97E6B00FB1796 /* monitor.c in Sources */ = {isa = PBXBuildFile; fileRef = E21FD9FF1FE97E6100FB1796 /* monitor.c */; };
+		E21FDA7E1FE97E6B00FB1796 /* monitor.c in Sources */ = {isa = PBXBuildFile; fileRef = E21FD9FF1FE97E6100FB1796 /* monitor.c */; settings = {COMPILER_FLAGS = " -Wno-format-nonliteral -Wno-format-security"; }; };
 		E21FDA7F1FE97E6B00FB1796 /* emuos.lis in Resources */ = {isa = PBXBuildFile; fileRef = E21FDA001FE97E6200FB1796 /* emuos.lis */; };
 		E21FDA801FE97E6B00FB1796 /* pia.c in Sources */ = {isa = PBXBuildFile; fileRef = E21FDA011FE97E6200FB1796 /* pia.c */; };
 		E21FDA811FE97E6B00FB1796 /* remez.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FDA021FE97E6200FB1796 /* remez.h */; };
@@ -159,6 +159,8 @@
 		E266678C1FF1894B00ECBD26 /* Atari800WindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = E266678A1FF1894B00ECBD26 /* Atari800WindowController.m */; };
 		E266678F1FF3BBC300ECBD26 /* ui_basic.c in Sources */ = {isa = PBXBuildFile; fileRef = E21FD9DD1FE97E5C00FB1796 /* ui_basic.c */; };
 		E26667901FF3BBC300ECBD26 /* ui.c in Sources */ = {isa = PBXBuildFile; fileRef = E21FDA2D1FE97E6800FB1796 /* ui.c */; };
+		E2929BE11FFA8BE10072A66E /* Atari800Dispatch.m in Sources */ = {isa = PBXBuildFile; fileRef = E2929BDF1FFA8BE10072A66E /* Atari800Dispatch.m */; };
+		E2929BE21FFA8BE10072A66E /* Atari800Dispatch.h in Headers */ = {isa = PBXBuildFile; fileRef = E2929BE01FFA8BE10072A66E /* Atari800Dispatch.h */; };
 		E29D0F211FEAFE67002D3DF0 /* Atari800AudioBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = E29D0F1F1FEAFE67002D3DF0 /* Atari800AudioBuffer.h */; };
 		E29D0F221FEAFE67002D3DF0 /* Atari800AudioBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = E29D0F201FEAFE67002D3DF0 /* Atari800AudioBuffer.m */; };
 		E2D412031FF7AFE1009294C5 /* Atari800Emulator+CartridgeHandling.h in Headers */ = {isa = PBXBuildFile; fileRef = E2D412011FF7AFE0009294C5 /* Atari800Emulator+CartridgeHandling.h */; settings = {ATTRIBUTES = (Private, ); }; };
@@ -326,6 +328,8 @@
 		E251DB2A1FEAA30900613C10 /* XEX */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XEX; path = ../../../Shared/XEX; sourceTree = "<group>"; };
 		E26667891FF1894B00ECBD26 /* Atari800WindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800WindowController.h; sourceTree = "<group>"; };
 		E266678A1FF1894B00ECBD26 /* Atari800WindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800WindowController.m; sourceTree = "<group>"; };
+		E2929BDF1FFA8BE10072A66E /* Atari800Dispatch.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Dispatch.m; sourceTree = "<group>"; };
+		E2929BE01FFA8BE10072A66E /* Atari800Dispatch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Dispatch.h; sourceTree = "<group>"; };
 		E29D0F1F1FEAFE67002D3DF0 /* Atari800AudioBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800AudioBuffer.h; sourceTree = "<group>"; };
 		E29D0F201FEAFE67002D3DF0 /* Atari800AudioBuffer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800AudioBuffer.m; sourceTree = "<group>"; };
 		E2D412011FF7AFE0009294C5 /* Atari800Emulator+CartridgeHandling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Atari800Emulator+CartridgeHandling.h"; sourceTree = "<group>"; };
@@ -528,6 +532,7 @@
 		E231F6591FE945BD004ED389 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				E2929BDE1FFA8BE10072A66E /* Utils */,
 				E251DAF41FEA914100613C10 /* Hacks */,
 				E21FDAD51FEA6A1900FB1796 /* Hosting */,
 				E21FDACF1FEA69CE00FB1796 /* Preferences */,
@@ -585,6 +590,15 @@
 			path = Keyboard;
 			sourceTree = "<group>";
 		};
+		E2929BDE1FFA8BE10072A66E /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				E2929BE01FFA8BE10072A66E /* Atari800Dispatch.h */,
+				E2929BDF1FFA8BE10072A66E /* Atari800Dispatch.m */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
 		E2D98B8C1FE93A52005362D9 = {
 			isa = PBXGroup;
 			children = (
@@ -630,6 +644,7 @@
 				E21FDAC41FE985BF00FB1796 /* Atari800AudioDriver.h in Headers */,
 				E2D412031FF7AFE1009294C5 /* Atari800Emulator+CartridgeHandling.h in Headers */,
 				E21FDAB31FE97E6B00FB1796 /* mzpokeysnd.h in Headers */,
+				E2929BE21FFA8BE10072A66E /* Atari800Dispatch.h in Headers */,
 				E21FDA771FE97E6B00FB1796 /* bit3.h in Headers */,
 				E21FDA611FE97E6B00FB1796 /* ui.h in Headers */,
 				E21FDAAA1FE97E6B00FB1796 /* pokey.h in Headers */,
@@ -840,6 +855,7 @@
 				E21FDAA31FE97E6B00FB1796 /* pbi_scsi.c in Sources */,
 				E21FDAB61FE97E6B00FB1796 /* pbi_bb.c in Sources */,
 				E21FDA871FE97E6B00FB1796 /* votraxsnd.c in Sources */,
+				E2929BE11FFA8BE10072A66E /* Atari800Dispatch.m in Sources */,
 				E251DAF91FEA914100613C10 /* sound.c in Sources */,
 				E21FDA581FE97E6B00FB1796 /* votrax.c in Sources */,
 				E21FDA9C1FE97E6B00FB1796 /* antic.c in Sources */,
