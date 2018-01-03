@@ -195,7 +195,7 @@ int Atar800ValidateCartridgeImage(NSString *path, CARTRIDGE_image_t *cart)
 {
     id<Atari800EmulatorDelegate> _delegate = self.delegate;
     
-    if (_delegate && [_delegate respondsToSelector:@selector(emulator:didSelectCartridgeWithSize:filename:completion:)]) {
+    if (_delegate && [_delegate respondsToSelector:@selector(emulator:didSelectCartridgeWithPossibleTypes:filename:completion:)]) {
         
         CARTRIDGE_image_t cartridge;
         
@@ -219,8 +219,9 @@ int Atar800ValidateCartridgeImage(NSString *path, CARTRIDGE_image_t *cart)
         
         AlwaysAsync(^{
             
+            NSDictionary<NSNumber *, NSString *> *types = [self supportedCartridgeTypesForSize:sizeKb];
             [_delegate emulator:self
-     didSelectCartridgeWithSize:sizeKb
+didSelectCartridgeWithPossibleTypes:types
                        filename:[path lastPathComponent]
                      completion:selection];
         });

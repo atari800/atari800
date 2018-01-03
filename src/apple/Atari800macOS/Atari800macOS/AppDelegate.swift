@@ -44,20 +44,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 extension AppDelegate: Atari800EmulatorDelegate {
-    func emulator(_ emulator: Atari800Emulator!, didSelectCartridgeWithSize size: Int, filename: String!, completion: Atari800CartridgeSelectionHandler!) {
+    
+    func emulator(_ emulator: Atari800Emulator!, didSelectCartridgeWithPossibleTypes types: [NSNumber : String]!, filename: String!, completion: Atari800CartridgeSelectionHandler!) {
+        
         if let keyWindow = NSApplication.shared.keyWindow {
             
             if let emulationViewController = keyWindow.contentViewController as? EmulationViewController {
                 
-                emulationViewController.cartridgeSize = size
+                emulationViewController.cartridgeTypes = types
                 emulationViewController.cartridgeFileName = filename
                 emulationViewController.cartridgeCompletion = completion
                 emulationViewController.performSegue(withIdentifier: EmulationViewController.ShowCartridgeTypesSegue, sender: self)
                 return
             }
         }
-        
-        completion(false, 0);
     }
 }
 

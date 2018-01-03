@@ -11,7 +11,6 @@ import Atari800EmulationCore
 
 class CartridgeTypesViewController: UITableViewController {
 
-    var cartridgeSize: Int = 16
     var cartridgeFileName: String?
     
     var cartridgeTypes: [NSNumber: String]?
@@ -21,7 +20,6 @@ class CartridgeTypesViewController: UITableViewController {
     
     override func viewDidLoad() {
         
-        cartridgeTypes = Atari800Emulator.shared().supportedCartridgeTypes(forSize: self.cartridgeSize)
         sortedCartridgeTypes =  cartridgeTypes?.keys.sorted(by: { (a, b) -> Bool in
             
             return a.compare(b) == .orderedAscending

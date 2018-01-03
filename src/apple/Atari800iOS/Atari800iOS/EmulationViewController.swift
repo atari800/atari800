@@ -15,7 +15,7 @@ class EmulationViewController: UIViewController {
     
     static let ShowCartridgeTypesSegue = "Show Cartridge Types"
     
-    var cartridgeSize: Int = 0
+    var cartridgeTypes: [NSNumber: String]?
     var cartridgeFileName: String?
     var cartridgeCompletion: Atari800CartridgeSelectionHandler? = nil
     
@@ -105,7 +105,7 @@ class EmulationViewController: UIViewController {
                     
                     cartridgeTypesController.cartridgeFileName = self.cartridgeFileName
                     cartridgeTypesController.cartridgeCompletion = self.cartridgeCompletion
-                    cartridgeTypesController.cartridgeSize = self.cartridgeSize
+                    cartridgeTypesController.cartridgeTypes = self.cartridgeTypes
                 }
             }
         }
@@ -114,11 +114,11 @@ class EmulationViewController: UIViewController {
 
 extension EmulationViewController: Atari800EmulatorDelegate {
     
-    func emulator(_ emulator: Atari800Emulator!, didSelectCartridgeWithSize size: Int, filename: String!, completion: Atari800CartridgeSelectionHandler!) {
+    func emulator(_ emulator: Atari800Emulator!, didSelectCartridgeWithPossibleTypes types: [NSNumber : String]!, filename: String!, completion: Atari800CartridgeSelectionHandler!) {
         
         self.cartridgeFileName = filename
         self.cartridgeCompletion = completion
-        self.cartridgeSize = size
+        self.cartridgeTypes = types
         
         self.performSegue(withIdentifier: EmulationViewController.ShowCartridgeTypesSegue, sender: self)
     }

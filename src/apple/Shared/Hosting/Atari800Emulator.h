@@ -19,7 +19,7 @@ typedef void (^Atari800CartridgeSelectionHandler)(BOOL ok, NSInteger cartridgeTy
 
 @protocol Atari800EmulatorDelegate<NSObject>
 
-- (void)emulator:(Atari800Emulator *)emulator didSelectCartridgeWithSize:(NSInteger)size filename:(NSString *)filename completion:(Atari800CartridgeSelectionHandler)completion;
+- (void)emulator:(Atari800Emulator *)emulator didSelectCartridgeWithPossibleTypes:(NSDictionary<NSNumber *, NSString *> *)types filename:(NSString *)filename completion:(Atari800CartridgeSelectionHandler)completion;
 
 @end
 
@@ -30,8 +30,6 @@ typedef void (^Atari800CartridgeSelectionHandler)(BOOL ok, NSInteger cartridgeTy
 
 @property (nonatomic, copy) Atari800KeyboardHandler keyboardHandler;
 @property (nonatomic, copy) Atari800PortHandler portHandler;
-
-- (NSDictionary<NSNumber *, NSString *> *)supportedCartridgeTypesForSize:(NSInteger)sizeKb;
 
 @property (nonatomic, weak) id<Atari800EmulatorDelegate> delegate;
 

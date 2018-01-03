@@ -16,7 +16,7 @@ class EmulationViewController: NSViewController {
     
     static let ShowCartridgeTypesSegue = NSStoryboardSegue.Identifier("Show Cartridge Types")
     
-    var cartridgeSize: Int = 0
+    var cartridgeTypes: [NSNumber: String]?
     var cartridgeFileName: String?
     var cartridgeCompletion: Atari800CartridgeSelectionHandler? = nil
     
@@ -78,7 +78,7 @@ class EmulationViewController: NSViewController {
                 
                 cartridgeTypesController.cartridgeFileName = self.cartridgeFileName
                 cartridgeTypesController.cartridgeCompletion = self.cartridgeCompletion
-                cartridgeTypesController.cartridgeSize = self.cartridgeSize
+                cartridgeTypesController.cartridgeTypes = self.cartridgeTypes
             }
         }
     }
