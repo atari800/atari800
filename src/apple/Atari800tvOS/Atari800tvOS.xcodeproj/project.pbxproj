@@ -1,0 +1,385 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 48;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E203742E1FFEB4BA0027CCDE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E203742D1FFEB4BA0027CCDE /* AppDelegate.swift */; };
+		E20374301FFEB4BA0027CCDE /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E203742F1FFEB4BA0027CCDE /* ViewController.swift */; };
+		E20374331FFEB4BA0027CCDE /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E20374311FFEB4BA0027CCDE /* Main.storyboard */; };
+		E20374351FFEB4BA0027CCDE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E20374341FFEB4BA0027CCDE /* Assets.xcassets */; };
+		E20374591FFEB5310027CCDE /* Atari800EmulationCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E20374581FFEB5170027CCDE /* Atari800EmulationCore.framework */; };
+		E203745A1FFEB5310027CCDE /* Atari800EmulationCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E20374581FFEB5170027CCDE /* Atari800EmulationCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E20374571FFEB5170027CCDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = E20374481FFEB5160027CCDE;
+			remoteInfo = Atari800EmulationCore;
+		};
+		E203745B1FFEB5310027CCDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = E20374471FFEB5160027CCDE;
+			remoteInfo = Atari800EmulationCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E203745D1FFEB5310027CCDE /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				E203745A1FFEB5310027CCDE /* Atari800EmulationCore.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		E203742A1FFEB4BA0027CCDE /* Atari800tvOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atari800tvOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E203742D1FFEB4BA0027CCDE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E203742F1FFEB4BA0027CCDE /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		E20374321FFEB4BA0027CCDE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		E20374341FFEB4BA0027CCDE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E20374361FFEB4BA0027CCDE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Atari800EmulationCore.xcodeproj; path = Atari800tvOS/Atari800EmulationCore/Atari800EmulationCore.xcodeproj; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E20374271FFEB4BA0027CCDE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E20374591FFEB5310027CCDE /* Atari800EmulationCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E20374211FFEB4BA0027CCDE = {
+			isa = PBXGroup;
+			children = (
+				E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */,
+				E203742C1FFEB4BA0027CCDE /* Atari800tvOS */,
+				E203742B1FFEB4BA0027CCDE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E203742B1FFEB4BA0027CCDE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E203742A1FFEB4BA0027CCDE /* Atari800tvOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E203742C1FFEB4BA0027CCDE /* Atari800tvOS */ = {
+			isa = PBXGroup;
+			children = (
+				E203742D1FFEB4BA0027CCDE /* AppDelegate.swift */,
+				E203742F1FFEB4BA0027CCDE /* ViewController.swift */,
+				E20374311FFEB4BA0027CCDE /* Main.storyboard */,
+				E20374341FFEB4BA0027CCDE /* Assets.xcassets */,
+				E20374361FFEB4BA0027CCDE /* Info.plist */,
+			);
+			path = Atari800tvOS;
+			sourceTree = "<group>";
+		};
+		E20374541FFEB5160027CCDE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E20374581FFEB5170027CCDE /* Atari800EmulationCore.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E20374291FFEB4BA0027CCDE /* Atari800tvOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E20374391FFEB4BA0027CCDE /* Build configuration list for PBXNativeTarget "Atari800tvOS" */;
+			buildPhases = (
+				E20374261FFEB4BA0027CCDE /* Sources */,
+				E20374271FFEB4BA0027CCDE /* Frameworks */,
+				E20374281FFEB4BA0027CCDE /* Resources */,
+				E203745D1FFEB5310027CCDE /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E203745C1FFEB5310027CCDE /* PBXTargetDependency */,
+			);
+			name = Atari800tvOS;
+			productName = Atari800tvOS;
+			productReference = E203742A1FFEB4BA0027CCDE /* Atari800tvOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E20374221FFEB4BA0027CCDE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0920;
+				LastUpgradeCheck = 0920;
+				ORGANIZATIONNAME = "Atari800 development team";
+				TargetAttributes = {
+					E20374291FFEB4BA0027CCDE = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = E20374251FFEB4BA0027CCDE /* Build configuration list for PBXProject "Atari800tvOS" */;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E20374211FFEB4BA0027CCDE;
+			productRefGroup = E203742B1FFEB4BA0027CCDE /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = E20374541FFEB5160027CCDE /* Products */;
+					ProjectRef = E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				E20374291FFEB4BA0027CCDE /* Atari800tvOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		E20374581FFEB5170027CCDE /* Atari800EmulationCore.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = Atari800EmulationCore.framework;
+			remoteRef = E20374571FFEB5170027CCDE /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E20374281FFEB4BA0027CCDE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E20374351FFEB4BA0027CCDE /* Assets.xcassets in Resources */,
+				E20374331FFEB4BA0027CCDE /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E20374261FFEB4BA0027CCDE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E20374301FFEB4BA0027CCDE /* ViewController.swift in Sources */,
+				E203742E1FFEB4BA0027CCDE /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E203745C1FFEB5310027CCDE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Atari800EmulationCore;
+			targetProxy = E203745B1FFEB5310027CCDE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		E20374311FFEB4BA0027CCDE /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E20374321FFEB4BA0027CCDE /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		E20374371FFEB4BA0027CCDE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = appletvos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TVOS_DEPLOYMENT_TARGET = 11.2;
+			};
+			name = Debug;
+		};
+		E20374381FFEB4BA0027CCDE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = appletvos;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				TVOS_DEPLOYMENT_TARGET = 11.2;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		E203743A1FFEB4BA0027CCDE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 4338UNAE32;
+				INFOPLIST_FILE = Atari800tvOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.atari800.Atari800tvOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
+		};
+		E203743B1FFEB4BA0027CCDE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 4338UNAE32;
+				INFOPLIST_FILE = Atari800tvOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.atari800.Atari800tvOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E20374251FFEB4BA0027CCDE /* Build configuration list for PBXProject "Atari800tvOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E20374371FFEB4BA0027CCDE /* Debug */,
+				E20374381FFEB4BA0027CCDE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E20374391FFEB4BA0027CCDE /* Build configuration list for PBXNativeTarget "Atari800tvOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E203743A1FFEB4BA0027CCDE /* Debug */,
+				E203743B1FFEB4BA0027CCDE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E20374221FFEB4BA0027CCDE /* Project object */;
+}

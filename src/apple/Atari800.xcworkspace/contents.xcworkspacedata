@@ -7,6 +7,9 @@
    <FileRef
       location = "group:Atari800iOS/Atari800iOS.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:Atari800tvOS/Atari800tvOS.xcodeproj">
+   </FileRef>
    <Group
       location = "container:Shared"
       name = "Shared">
