@@ -17,3 +17,7 @@ FOUNDATION_EXPORT const unsigned char Atari800EmulationCoreVersionString[];
 // In this header, you should import all the public headers of your framework using statements like #import <Atari800EmulationCore/PublicHeader.h>
 
 
+#import <Atari800EmulationCore/Atari800Renderer.h>
+#import <Atari800EmulationCore/Atari800AudioDriver.h>
+#import <Atari800EmulationCore/Atari800Emulator.h>
+

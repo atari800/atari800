@@ -8,22 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		E203742E1FFEB4BA0027CCDE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E203742D1FFEB4BA0027CCDE /* AppDelegate.swift */; };
-		E20374301FFEB4BA0027CCDE /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E203742F1FFEB4BA0027CCDE /* ViewController.swift */; };
+		E20374301FFEB4BA0027CCDE /* EmulationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E203742F1FFEB4BA0027CCDE /* EmulationViewController.swift */; };
 		E20374331FFEB4BA0027CCDE /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E20374311FFEB4BA0027CCDE /* Main.storyboard */; };
 		E20374351FFEB4BA0027CCDE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E20374341FFEB4BA0027CCDE /* Assets.xcassets */; };
-		E20374591FFEB5310027CCDE /* Atari800EmulationCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E20374581FFEB5170027CCDE /* Atari800EmulationCore.framework */; };
-		E203745A1FFEB5310027CCDE /* Atari800EmulationCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E20374581FFEB5170027CCDE /* Atari800EmulationCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E21D08542001061B005566E6 /* LibraryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E21D08532001061B005566E6 /* LibraryViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		E20374571FFEB5170027CCDE /* PBXContainerItemProxy */ = {
+		E21D085820010713005566E6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = E20374481FFEB5160027CCDE;
 			remoteInfo = Atari800EmulationCore;
 		};
-		E203745B1FFEB5310027CCDE /* PBXContainerItemProxy */ = {
+		E21D09BD20010A33005566E6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */;
 			proxyType = 1;
@@ -39,7 +38,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				E203745A1FFEB5310027CCDE /* Atari800EmulationCore.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -49,11 +47,12 @@
 /* Begin PBXFileReference section */
 		E203742A1FFEB4BA0027CCDE /* Atari800tvOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atari800tvOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E203742D1FFEB4BA0027CCDE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		E203742F1FFEB4BA0027CCDE /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		E203742F1FFEB4BA0027CCDE /* EmulationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmulationViewController.swift; sourceTree = "<group>"; };
 		E20374321FFEB4BA0027CCDE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		E20374341FFEB4BA0027CCDE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E20374361FFEB4BA0027CCDE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Atari800EmulationCore.xcodeproj; path = Atari800tvOS/Atari800EmulationCore/Atari800EmulationCore.xcodeproj; sourceTree = "<group>"; };
+		E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Atari800EmulationCore.xcodeproj; path = Atari800EmulationCore/Atari800EmulationCore.xcodeproj; sourceTree = "<group>"; };
+		E21D08532001061B005566E6 /* LibraryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,7 +60,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E20374591FFEB5310027CCDE /* Atari800EmulationCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,18 +87,19 @@
 			isa = PBXGroup;
 			children = (
 				E203742D1FFEB4BA0027CCDE /* AppDelegate.swift */,
-				E203742F1FFEB4BA0027CCDE /* ViewController.swift */,
+				E203742F1FFEB4BA0027CCDE /* EmulationViewController.swift */,
 				E20374311FFEB4BA0027CCDE /* Main.storyboard */,
 				E20374341FFEB4BA0027CCDE /* Assets.xcassets */,
 				E20374361FFEB4BA0027CCDE /* Info.plist */,
+				E21D08532001061B005566E6 /* LibraryViewController.swift */,
 			);
 			path = Atari800tvOS;
 			sourceTree = "<group>";
 		};
-		E20374541FFEB5160027CCDE /* Products */ = {
+		E21D085520010713005566E6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E20374581FFEB5170027CCDE /* Atari800EmulationCore.framework */,
+				E21D085920010713005566E6 /* Atari800EmulationCore.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -120,7 +119,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				E203745C1FFEB5310027CCDE /* PBXTargetDependency */,
+				E21D09BE20010A33005566E6 /* PBXTargetDependency */,
 			);
 			name = Atari800tvOS;
 			productName = Atari800tvOS;
@@ -156,7 +155,7 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = E20374541FFEB5160027CCDE /* Products */;
+					ProductGroup = E21D085520010713005566E6 /* Products */;
 					ProjectRef = E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */;
 				},
 			);
@@ -168,11 +167,11 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		E20374581FFEB5170027CCDE /* Atari800EmulationCore.framework */ = {
+		E21D085920010713005566E6 /* Atari800EmulationCore.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
 			path = Atari800EmulationCore.framework;
-			remoteRef = E20374571FFEB5170027CCDE /* PBXContainerItemProxy */;
+			remoteRef = E21D085820010713005566E6 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -194,7 +193,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E20374301FFEB4BA0027CCDE /* ViewController.swift in Sources */,
+				E20374301FFEB4BA0027CCDE /* EmulationViewController.swift in Sources */,
+				E21D08542001061B005566E6 /* LibraryViewController.swift in Sources */,
 				E203742E1FFEB4BA0027CCDE /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -202,10 +202,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		E203745C1FFEB5310027CCDE /* PBXTargetDependency */ = {
+		E21D09BE20010A33005566E6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = Atari800EmulationCore;
-			targetProxy = E203745B1FFEB5310027CCDE /* PBXContainerItemProxy */;
+			targetProxy = E21D09BD20010A33005566E6 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
