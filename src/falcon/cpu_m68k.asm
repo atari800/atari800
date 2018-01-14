@@ -3009,6 +3009,9 @@ opcode_7d_D: ;/* ADC abcd,x */
 ;   C, N, V, A from decimal calc.
 ; a lot of code necessary to replicate 6502 carry handling
 BCD_ADC:
+  and.w  #$00ff,d0
+  clr.w  ZFLAG
+
   move.w d0,a0     ; needed first
   moveq  #15,d7
   and.b  d7,d0     ; low nibble Add
@@ -3171,6 +3174,9 @@ opcode_fd_D: ;/* SBC abcd,x */
 ;   C, Z, N, V from binary calc.
 ;   A from decimal calc.
 BCD_SBC:
+  and.w  #$00ff,d0
+  clr.w  ZFLAG
+
   move.w d0,a0     ; needed first
   moveq  #15,d7
   and.b  d7,d0     ; low nibble Sub
