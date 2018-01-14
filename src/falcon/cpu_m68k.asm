@@ -3027,8 +3027,8 @@ BCD_ADC:
   ext.w  NFLAG     ; NFLAG finished
   eor.b  A,d0      ; A eor data
   eor.b  A,ZFLAG   ; A eor temp
-  not.b  ZFLAG
-  or.b   d0,ZFLAG
+  not.b  d0
+  and.b  d0,ZFLAG
   smi    VFLAG     ; VFLAG finished
   move.w a0,d0     ; restore data
   add.b  CFLAG,CFLAG
