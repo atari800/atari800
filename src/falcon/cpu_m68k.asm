@@ -3171,10 +3171,37 @@ opcode_fd_D: ;/* SBC abcd,x */
 ;   C, Z, N, V from binary calc.
 ;   A from decimal calc.
 BCD_SBC:
+  move.w d0,a0     ; needed first
+  moveq  #15,d7
+  and.b  d7,d0     ; low nibble Sub
   move.b A,ZFLAG
+  and.b  d7,ZFLAG  ; low nibble A
   not.b  CFLAG
   add.b  CFLAG,CFLAG
-  sbcd   d0,A
+  subx.b d0,ZFLAG  ; low nibble BCD sub
+  move.b #$10,d0
+  and.b  ZFLAG,d0
+  beq.b  .no_carry
+  subq.b #$06,ZFLAG
+  and.b  d7,ZFLAG  ; emulate 6502 carry handling
+  sub.w  #$0010,ZFLAG
+.no_carry:
+  move.b A,d0
+  moveq  #$f0,d7
+  and.b  d7,d0     ; high nibble Add
+  add.w  d0,ZFLAG
+  move.w a0,d0
+  and.b  d7,d0     ; high nibble Sub
+  sub.w  d0,ZFLAG
+  move.w ZFLAG,d7
+  move.w a0,d0     ; restore data
+  move.w #$0100,ZFLAG
+  and.w  d7,ZFLAG
+  beq.b  .no_carry2
+  sub.b  #$60,d7
+.no_carry2:
+  move.b A,ZFLAG
+  move.b d7,A
   add.b  CFLAG,CFLAG
   subx.b d0,ZFLAG
   svs    VFLAG
