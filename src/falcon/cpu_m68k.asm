@@ -3006,9 +3006,8 @@ opcode_7d_D: ;/* ADC abcd,x */
 
 ; Version 1 : exact like Thor
 ;   Z from binary calc.
-;   N + V after lower nibble decimal correction
-;   C from decimal calc.
-; a lot of code necessary to replicate a 6502 bug
+;   C, N, V, A from decimal calc.
+; a lot of code necessary to replicate 6502 carry handling
 BCD_ADC:
   move.w d0,a0     ; needed first
   moveq  #15,d7
@@ -3016,14 +3015,21 @@ BCD_ADC:
   move.b A,ZFLAG
   and.b  d7,ZFLAG  ; low nibble A
   add.b  CFLAG,CFLAG
-  abcd   d0,ZFLAG  ; low nibble BCD add
+  addx.b d0,ZFLAG  ; low nibble BCD add
+  cmp.b  #$0a,ZFLAG
+  blo.b  .no_carry
+  addq.b #$06,ZFLAG
+  and.b  d7,ZFLAG  ; emulate 6502 carry handling
+  add.b  #$10,ZFLAG
+.no_carry:
   move.b A,d0
   moveq  #$f0,d7
   and.b  d7,d0     ; high nibble Add
-  add.b  d0,ZFLAG
+  add.w  d0,ZFLAG
   move.w a0,d0
   and.b  d7,d0     ; high nibble Add
-  add.b  d0,ZFLAG
+  add.w  d0,ZFLAG
+  move.w ZFLAG,d7
   ext.w  NFLAG     ; NFLAG finished
   eor.b  A,d0      ; A eor data
   eor.b  A,ZFLAG   ; A eor temp
@@ -3034,9 +3040,12 @@ BCD_ADC:
   add.b  CFLAG,CFLAG
   move.b A,ZFLAG
   addx.b d0,ZFLAG  ; ZFLAG finished
-  add.b  CFLAG,CFLAG
-  abcd   d0,A      ; A finished
-  scs    CFLAG
+  cmp.w  #$00a0,d7
+  shs    CFLAG
+  blo.b  .no_carry2
+  add.b  #$60,d7
+.no_carry2:
+  move.b d7,A
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_65_D: ;/* ADC ab */
