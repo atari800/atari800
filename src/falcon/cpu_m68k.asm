@@ -1286,9 +1286,9 @@ LSE_NOW_EOR:
 
 opcode_4b: ;/* ALR #ab [unofficial - Acc AND Data, LSR result] */
   addq.l #cy_Imm,CD
-  IMMEDIATE ZFLAG
-  and.b  A,ZFLAG
-  LSR_C ZFLAG
+  and.b  (PC6502)+,A
+  LSR_C  A
+  move.b A,ZFLAG
   bra.w  NEXTCHANGE_N
 
 opcode_67: ;/* RRA ab [unofficial - ROR Mem, then ADC to Acc] */
