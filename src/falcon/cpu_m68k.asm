@@ -878,7 +878,12 @@ opcode_93: ;/* SHA (ab),y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] */
   and.b  X,d0
   move.w (memory_pointer,d7.l),d7
   LoHi d7      ;swap bytes
-  add.w  Y,d7
+  add.b  Y,d7
+  bcc    .ok
+  LoHi d7
+  move.b d0,d7
+  LoHi d7
+.ok:
   tst.b  (attrib_pointer,d7.l)    ; PUTANYBYTE
   bne.w  A800PUTB
   move.b d0,(memory_pointer,d7.l)
@@ -892,7 +897,12 @@ opcode_9f: ;/* SHA abcd,y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] */
   addq.b #1,d0
   and.b  A,d0
   and.b  X,d0
-  add.w  Y,d7
+  add.b  Y,d7
+  bcc    .ok
+  LoHi d7
+  move.b d0,d7
+  LoHi d7
+.ok:
   tst.b  (attrib_pointer,d7.l)    ; PUTANYBYTE
   bne.w  A800PUTB
   move.b d0,(memory_pointer,d7.l)
@@ -906,7 +916,12 @@ opcode_9e: ;/* SHX abcd,y [unofficial - Store X and (H+1)] (Fox) */
   LoHi d7 ;d7 contains reversed value
   addq.b #1,d0
   and.b  X,d0
-  add.w  Y,d7
+  add.b  Y,d7
+  bcc    .ok
+  LoHi d7
+  move.b d0,d7
+  LoHi d7
+.ok:
   tst.b  (attrib_pointer,d7.l)    ; PUTANYBYTE
   bne.w  A800PUTB
   move.b d0,(memory_pointer,d7.l)
@@ -919,9 +934,13 @@ opcode_9c: ;/* SHY abcd,x [unofficial - Store Y and (H+1)] (Fox) */
   move.b d7,d0
   LoHi d7 ;d7 contains reversed value
   addq.b #1,d0
-  and.b  A,d0
   and.b  Y,d0
-  add.w  X,d7
+  add.b  X,d7
+  bcc    .ok
+  LoHi d7
+  move.b d0,d7
+  LoHi d7
+.ok:
   tst.b  (attrib_pointer,d7.l)    ; PUTANYBYTE
   bne.w  A800PUTB
   move.b d0,(memory_pointer,d7.l)
@@ -938,7 +957,12 @@ opcode_9b: ;/* SHS abcd,y [unofficial, UNSTABLE] (Fox) */
   and.b  X,_CPU_regS
   addq.b #1,d0
   and.b  _CPU_regS,d0
-  add.w  Y,d7
+  add.b  Y,d7
+  bcc    .ok
+  LoHi d7
+  move.b d0,d7
+  LoHi d7
+.ok:
   tst.b  (attrib_pointer,d7.l)    ; PUTANYBYTE
   bne.w  A800PUTB
   move.b d0,(memory_pointer,d7.l)
