@@ -197,11 +197,6 @@ UPDATE_LOCAL_REGS macro
   move.w  regPC,d7
   move.l  memory_pointer,PC6502
   add.l   d7,PC6502
-  lea     OPMODE_TABLE,a3
-  btst    #D_FLAGB,_CPU_regP
-  beq.s   .upd_end
-  lea     OPMODE_TABLE_D,a3
-.upd_end:
   endm
 
 _Local_GetByte:
@@ -590,6 +585,11 @@ ConvertRegP_STATUS macro
   lsl.w  #8,NFLAG  ; sets NFLAG and clears ZFLAG
   btst   #Z_FLAGB,\1
   seq    ZFLAG
+  lea    OPMODE_TABLE,a3
+  btst   #D_FLAGB,\1
+  beq.s  .conv_end\@
+  lea    OPMODE_TABLE_D,a3
+.conv_end\@:
   endm
 
 Call_Atari800_RunEsc macro
