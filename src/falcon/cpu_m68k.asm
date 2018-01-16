@@ -88,7 +88,6 @@ NEW_CYCLE_EXACT equ 1   ; set to 1 to use the new cycle exact CPU emulation
   endif
   xdef _CPU_IRQ
   xdef _CPU_NMI
-  xdef _RTI
   xdef _CPU_GO
   xdef _CPU_GET
   xdef _CPU_PUT
@@ -665,10 +664,9 @@ _CPU_NMI:
   subq.b #1,d1
   move.b _CPU_regPC+1,(a0,d1.l)
   subq.b #1,d1
-; move.b _CPU_regP,(a0,d1.l)  ;put P onto stack
-  move.b _CPU_regP,d0       ; Test
-  andi.b #B_FLAGN,d0    ; Test
-  move.b d0,(a0,d1.l)   ; Test
+  move.b _CPU_regP,d0
+  andi.b #B_FLAGN,d0
+  move.b d0,(a0,d1.l)
   subq.b #1,d1
   move.b d1,_CPU_regS
   SetI
@@ -733,9 +731,8 @@ NO_WS_HALT:
   subq.b #1,d0
   move.b _CPU_regPC+1,(memory_pointer,d0.l)
   subq.b #1,d0
-; move.b d7,(memory_pointer,d0.l) ;put P onto stack
-  andi.b #B_FLAGN,d7              ; TEST
-  move.b d7,(memory_pointer,d0.l) ; TEST
+  andi.b #B_FLAGN,d7
+  move.b d7,(memory_pointer,d0.l)
   subq.b #1,d0
   move.b d0,_CPU_regS      ; push PC and P to stack ( PHW + PHB ) end
   SetI
@@ -1662,9 +1659,6 @@ opcode_00: ;/* BRK */
 .oc_00_norm:
   endif
   addq.l #cy_BRK,CD
-; btst   #I_FLAGB,_CPU_regP
-; bne.w  NEXTCHANGE_WITHOUT
-  SetB
   move.l PC6502,d7
   sub.l  memory_pointer,d7
   addq.w #1,d7
@@ -1677,7 +1671,6 @@ opcode_00: ;/* BRK */
   move.b d7,(memory_pointer,d0.l)
   subq.b #2,d0
   ConvertSTATUS_RegP d7
-; move.b d7,_CPU_regP       ;put result to _CPU_regP ! TEST !!!
   move.b d7,(memory_pointer,d0.l)
   subq.b #1,d0
   move.b d0,_CPU_regS
@@ -1706,7 +1699,6 @@ opcode_28: ;/* PLP */
   move.w regS,d0
   addq.b #1,d0
   move.b (memory_pointer,d0.l),d7
-  andi.b #$0c,d7
   ori.b  #$30,d7
   move.b d7,_CPU_regP
   ConvertRegP_STATUS d7
@@ -2194,8 +2186,7 @@ opcode_58: ;/* CLI */
   move.b d7,(memory_pointer,d0.l)
   subq.b #2,d0
   ConvertSTATUS_RegP d7
-; move.b d7,_CPU_regP       ;put result to _CPU_regP ! TEST !!!
-  andi.b #B_FLAGN,d7              ; TEST
+  andi.b #B_FLAGN,d7
   move.b d7,(memory_pointer,d0.l)
   subq.b #1,d0
   move.b d0,_CPU_regS
@@ -2350,13 +2341,11 @@ opcode_60: ;/* RTS */
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_40: ;/* RTI */
-_RTI:
   addq.l #cy_Sub,CD
   moveq  #0,d0                    ; PLP + PLW
   move.w regS,d0
   addq.b #1,d0
   move.b (memory_pointer,d0.l),d7
-  andi.b #$0c,d7
   ori.b  #$30,d7
   move.b d7,_CPU_regP
   ConvertRegP_STATUS d7
@@ -2379,7 +2368,7 @@ _RTI:
   moveq  #0,d0
   move.w regS,d0        ; push PC and P to stack ( PHW + PHB ) start
   subq.b #2,d0
-  andi.b #B_FLAGN,d7              ; TEST
+  andi.b #B_FLAGN,d7
   move.b d7,(memory_pointer,d0.l) ; Push P
   move.l PC6502,d7
   sub.l  memory_pointer,d7
