@@ -2993,52 +2993,33 @@ opcode_7d_D: ;/* ADC abcd,x */
   ABSOLUTE_X_NCY
   GETANYBYTE_ADC_D
 
-; Version 1 : exact like Thor
-;   Z from binary calc.
-;   C, N, V, A from decimal calc.
-; a lot of code necessary to replicate 6502 carry handling
 BCD_ADC:
-  and.w  #$00ff,d0
-  clr.w  ZFLAG
-
-  move.w d0,a0     ; needed first
-  moveq  #15,d7
-  and.b  d7,d0     ; low nibble Add
-  move.b A,ZFLAG
-  and.b  d7,ZFLAG  ; low nibble A
+  unpk   A,d7,#0
+  unpk   d0,ZFLAG,#0
   add.b  CFLAG,CFLAG
-  addx.b d0,ZFLAG  ; low nibble BCD add
-  cmp.b  #$0a,ZFLAG
+  addx.w ZFLAG,d7
+  cmp.b  #$0a,d7
   blo.b  .no_carry
-  addq.b #$06,ZFLAG
-  and.b  d7,ZFLAG  ; emulate 6502 carry handling
-  add.b  #$10,ZFLAG
+  add.w  #$0106,d7
 .no_carry:
-  move.b A,d0
-  moveq  #$f0,d7
-  and.b  d7,d0     ; high nibble Add
-  add.w  d0,ZFLAG
-  move.w a0,d0
-  and.b  d7,d0     ; high nibble Add
-  add.w  d0,ZFLAG
-  move.w ZFLAG,d7
-  ext.w  NFLAG     ; NFLAG finished
-  eor.b  A,d0      ; A eor data
-  eor.b  A,ZFLAG   ; A eor temp
-  not.b  d0
-  and.b  d0,ZFLAG
-  smi    VFLAG     ; VFLAG finished
-  move.w a0,d0     ; restore data
-  add.b  CFLAG,CFLAG
+  pack   d7,d7,#0
+  move.b d7,ZFLAG
+  ext.w  NFLAG
   move.b A,ZFLAG
-  addx.b d0,ZFLAG  ; ZFLAG finished
-  cmp.w  #$00a0,d7
+  add.b  CFLAG,CFLAG
+  addx.b d0,ZFLAG
+  eor.b  d0,A
+  not.b  A
+  eor.b  d7,d0
+  and.b  A,d0
+  smi    VFLAG
+  move.b d7,A
+  cmp.w  #$0a00,d7
   shs    CFLAG
   blo.b  .no_carry2
-  add.b  #$60,d7
+  add.b  #$60,A
 .no_carry2:
-  move.b d7,A
-  bra.w  NEXTCHANGE_WITHOUT
+  bra    NEXTCHANGE_WITHOUT
 
 opcode_65_D: ;/* ADC ab */
   addq.l #cy_ZP,CD
@@ -3159,49 +3140,27 @@ opcode_fd_D: ;/* SBC abcd,x */
   ABSOLUTE_X_NCY
   GETANYBYTE_SBC_D
 
-; Version exact like Thor
-;   C, Z, N, V from binary calc.
-;   A from decimal calc.
 BCD_SBC:
-  and.w  #$00ff,d0
-  clr.w  ZFLAG
-
-  move.w d0,a0     ; needed first
-  moveq  #15,d7
-  and.b  d7,d0     ; low nibble Sub
   move.b A,ZFLAG
-  and.b  d7,ZFLAG  ; low nibble A
+  unpk   A,A,#0
+  unpk   d0,d7,#0
   not.b  CFLAG
   add.b  CFLAG,CFLAG
-  subx.b d0,ZFLAG  ; low nibble BCD sub
-  move.b #$10,d0
-  and.b  ZFLAG,d0
-  beq.b  .no_carry
-  subq.b #$06,ZFLAG
-  and.b  d7,ZFLAG  ; emulate 6502 carry handling
-  sub.w  #$0010,ZFLAG
+  subx.w d7,A
+  tst.b  A
+  bpl.b  .no_carry
+  subq.w #6,A
 .no_carry:
-  move.b A,d0
-  moveq  #$f0,d7
-  and.b  d7,d0     ; high nibble Add
-  add.w  d0,ZFLAG
-  move.w a0,d0
-  and.b  d7,d0     ; high nibble Sub
-  sub.w  d0,ZFLAG
-  move.w ZFLAG,d7
-  move.w a0,d0     ; restore data
-  move.w #$0100,ZFLAG
-  and.w  d7,ZFLAG
-  beq.b  .no_carry2
-  sub.b  #$60,d7
+  pack   A,A,#0
+  tst.w  A
+  bpl.b  .no_carry2
+  sub.b  #$60,A
 .no_carry2:
-  move.b A,ZFLAG
-  move.b d7,A
   add.b  CFLAG,CFLAG
   subx.b d0,ZFLAG
   svs    VFLAG
   scc    CFLAG
-  bra.w  NEXTCHANGE_N
+  bra    NEXTCHANGE_N
 
 opcode_e5_D: ;/* SBC ab */
   addq.l #cy_ZP,CD
