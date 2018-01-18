@@ -88,7 +88,6 @@ NEW_CYCLE_EXACT equ 1   ; set to 1 to use the new cycle exact CPU emulation
   endif
   xdef _CPU_IRQ
   xdef _CPU_NMI
-  xdef _RTI
   xdef _CPU_GO
   xdef _CPU_GET
   xdef _CPU_PUT
@@ -198,11 +197,6 @@ UPDATE_LOCAL_REGS macro
   move.w  regPC,d7
   move.l  memory_pointer,PC6502
   add.l   d7,PC6502
-  lea     OPMODE_TABLE,a3
-  btst    #D_FLAGB,_CPU_regP
-  beq.s   .upd_end
-  lea     OPMODE_TABLE_D,a3
-.upd_end:
   endm
 
 _Local_GetByte:
@@ -591,6 +585,11 @@ ConvertRegP_STATUS macro
   lsl.w  #8,NFLAG  ; sets NFLAG and clears ZFLAG
   btst   #Z_FLAGB,\1
   seq    ZFLAG
+  lea    OPMODE_TABLE,a3
+  btst   #D_FLAGB,\1
+  beq.s  .conv_end\@
+  lea    OPMODE_TABLE_D,a3
+.conv_end\@:
   endm
 
 Call_Atari800_RunEsc macro
@@ -665,10 +664,9 @@ _CPU_NMI:
   subq.b #1,d1
   move.b _CPU_regPC+1,(a0,d1.l)
   subq.b #1,d1
-; move.b _CPU_regP,(a0,d1.l)  ;put P onto stack
-  move.b _CPU_regP,d0       ; Test
-  andi.b #B_FLAGN,d0    ; Test
-  move.b d0,(a0,d1.l)   ; Test
+  move.b _CPU_regP,d0
+  andi.b #B_FLAGN,d0
+  move.b d0,(a0,d1.l)
   subq.b #1,d1
   move.b d1,_CPU_regS
   SetI
@@ -733,9 +731,8 @@ NO_WS_HALT:
   subq.b #1,d0
   move.b _CPU_regPC+1,(memory_pointer,d0.l)
   subq.b #1,d0
-; move.b d7,(memory_pointer,d0.l) ;put P onto stack
-  andi.b #B_FLAGN,d7              ; TEST
-  move.b d7,(memory_pointer,d0.l) ; TEST
+  andi.b #B_FLAGN,d7
+  move.b d7,(memory_pointer,d0.l)
   subq.b #1,d0
   move.b d0,_CPU_regS      ; push PC and P to stack ( PHW + PHB ) end
   SetI
@@ -1662,9 +1659,6 @@ opcode_00: ;/* BRK */
 .oc_00_norm:
   endif
   addq.l #cy_BRK,CD
-; btst   #I_FLAGB,_CPU_regP
-; bne.w  NEXTCHANGE_WITHOUT
-  SetB
   move.l PC6502,d7
   sub.l  memory_pointer,d7
   addq.w #1,d7
@@ -1677,7 +1671,6 @@ opcode_00: ;/* BRK */
   move.b d7,(memory_pointer,d0.l)
   subq.b #2,d0
   ConvertSTATUS_RegP d7
-; move.b d7,_CPU_regP       ;put result to _CPU_regP ! TEST !!!
   move.b d7,(memory_pointer,d0.l)
   subq.b #1,d0
   move.b d0,_CPU_regS
@@ -1706,7 +1699,6 @@ opcode_28: ;/* PLP */
   move.w regS,d0
   addq.b #1,d0
   move.b (memory_pointer,d0.l),d7
-  andi.b #$0c,d7
   ori.b  #$30,d7
   move.b d7,_CPU_regP
   ConvertRegP_STATUS d7
@@ -2194,8 +2186,7 @@ opcode_58: ;/* CLI */
   move.b d7,(memory_pointer,d0.l)
   subq.b #2,d0
   ConvertSTATUS_RegP d7
-; move.b d7,_CPU_regP       ;put result to _CPU_regP ! TEST !!!
-  andi.b #B_FLAGN,d7              ; TEST
+  andi.b #B_FLAGN,d7
   move.b d7,(memory_pointer,d0.l)
   subq.b #1,d0
   move.b d0,_CPU_regS
@@ -2350,13 +2341,11 @@ opcode_60: ;/* RTS */
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_40: ;/* RTI */
-_RTI:
   addq.l #cy_Sub,CD
   moveq  #0,d0                    ; PLP + PLW
   move.w regS,d0
   addq.b #1,d0
   move.b (memory_pointer,d0.l),d7
-  andi.b #$0c,d7
   ori.b  #$30,d7
   move.b d7,_CPU_regP
   ConvertRegP_STATUS d7
@@ -2379,7 +2368,7 @@ _RTI:
   moveq  #0,d0
   move.w regS,d0        ; push PC and P to stack ( PHW + PHB ) start
   subq.b #2,d0
-  andi.b #B_FLAGN,d7              ; TEST
+  andi.b #B_FLAGN,d7
   move.b d7,(memory_pointer,d0.l) ; Push P
   move.l PC6502,d7
   sub.l  memory_pointer,d7
@@ -3006,37 +2995,49 @@ opcode_7d_D: ;/* ADC abcd,x */
 
 ; Version 1 : exact like Thor
 ;   Z from binary calc.
-;   N + V after lower nibble decimal correction
-;   C from decimal calc.
-; a lot of code necessary to replicate a 6502 bug
+;   C, N, V, A from decimal calc.
+; a lot of code necessary to replicate 6502 carry handling
 BCD_ADC:
+  and.w  #$00ff,d0
+  clr.w  ZFLAG
+
   move.w d0,a0     ; needed first
   moveq  #15,d7
   and.b  d7,d0     ; low nibble Add
   move.b A,ZFLAG
   and.b  d7,ZFLAG  ; low nibble A
   add.b  CFLAG,CFLAG
-  abcd   d0,ZFLAG  ; low nibble BCD add
+  addx.b d0,ZFLAG  ; low nibble BCD add
+  cmp.b  #$0a,ZFLAG
+  blo.b  .no_carry
+  addq.b #$06,ZFLAG
+  and.b  d7,ZFLAG  ; emulate 6502 carry handling
+  add.b  #$10,ZFLAG
+.no_carry:
   move.b A,d0
   moveq  #$f0,d7
   and.b  d7,d0     ; high nibble Add
-  add.b  d0,ZFLAG
+  add.w  d0,ZFLAG
   move.w a0,d0
   and.b  d7,d0     ; high nibble Add
-  add.b  d0,ZFLAG
+  add.w  d0,ZFLAG
+  move.w ZFLAG,d7
   ext.w  NFLAG     ; NFLAG finished
   eor.b  A,d0      ; A eor data
   eor.b  A,ZFLAG   ; A eor temp
-  not.b  ZFLAG
-  or.b   d0,ZFLAG
+  not.b  d0
+  and.b  d0,ZFLAG
   smi    VFLAG     ; VFLAG finished
   move.w a0,d0     ; restore data
   add.b  CFLAG,CFLAG
   move.b A,ZFLAG
   addx.b d0,ZFLAG  ; ZFLAG finished
-  add.b  CFLAG,CFLAG
-  abcd   d0,A      ; A finished
-  scs    CFLAG
+  cmp.w  #$00a0,d7
+  shs    CFLAG
+  blo.b  .no_carry2
+  add.b  #$60,d7
+.no_carry2:
+  move.b d7,A
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_65_D: ;/* ADC ab */
@@ -3162,10 +3163,40 @@ opcode_fd_D: ;/* SBC abcd,x */
 ;   C, Z, N, V from binary calc.
 ;   A from decimal calc.
 BCD_SBC:
+  and.w  #$00ff,d0
+  clr.w  ZFLAG
+
+  move.w d0,a0     ; needed first
+  moveq  #15,d7
+  and.b  d7,d0     ; low nibble Sub
   move.b A,ZFLAG
+  and.b  d7,ZFLAG  ; low nibble A
   not.b  CFLAG
   add.b  CFLAG,CFLAG
-  sbcd   d0,A
+  subx.b d0,ZFLAG  ; low nibble BCD sub
+  move.b #$10,d0
+  and.b  ZFLAG,d0
+  beq.b  .no_carry
+  subq.b #$06,ZFLAG
+  and.b  d7,ZFLAG  ; emulate 6502 carry handling
+  sub.w  #$0010,ZFLAG
+.no_carry:
+  move.b A,d0
+  moveq  #$f0,d7
+  and.b  d7,d0     ; high nibble Add
+  add.w  d0,ZFLAG
+  move.w a0,d0
+  and.b  d7,d0     ; high nibble Sub
+  sub.w  d0,ZFLAG
+  move.w ZFLAG,d7
+  move.w a0,d0     ; restore data
+  move.w #$0100,ZFLAG
+  and.w  d7,ZFLAG
+  beq.b  .no_carry2
+  sub.b  #$60,d7
+.no_carry2:
+  move.b A,ZFLAG
+  move.b d7,A
   add.b  CFLAG,CFLAG
   subx.b d0,ZFLAG
   svs    VFLAG
