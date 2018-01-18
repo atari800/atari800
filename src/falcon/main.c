@@ -37,7 +37,6 @@
 
 #include "atari.h"
 #include "binload.h"
-#include "cpu.h"
 #include "colours.h"
 #include "ui.h"
 #include "input.h"
@@ -517,8 +516,6 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	Original_Phys_base = Physbase();
 
 	key_tab = Keytbl(-1, -1, -1);
-
-	CPU_Initialise();
 
 #ifdef SOUND
 	if (!Sound_Initialise(argc, argv))
@@ -1385,7 +1382,7 @@ int main(int argc, char **argv)
 
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
-		return 3;
+		return EXIT_FAILURE;
 
 	/* main loop */
 	for (;;) {

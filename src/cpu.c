@@ -102,21 +102,6 @@ extern UBYTE CPU_IRQ;
 #error cpu_m68k.asm does not support disassembling the code while it is executed
 #endif
 
-void CPU_Initialise(void)
-{
-	CPU_INIT();
-}
-
-void CPU_GetStatus(void)
-{
-	CPU_GET();
-}
-
-void CPU_PutStatus(void)
-{
-	CPU_PUT();
-}
-
 #else /* FALCON_CPUASM */
 
 /* Windows headers define it */
@@ -2386,10 +2371,6 @@ void CPU_GO(int limit)
 	}
 
 	UPDATE_GLOBAL_REGS;
-}
-
-void CPU_Initialise(void)
-{
 }
 
 #endif /* FALCON_CPUASM */
