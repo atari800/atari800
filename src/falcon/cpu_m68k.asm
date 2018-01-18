@@ -66,12 +66,12 @@ NEW_CYCLE_EXACT equ 1   ; set to 1 to use the new cycle exact CPU emulation
   xref _CPU_instruction_count
   endif
   ifne MONITOR_BREAK
-  xdef _CPU_remember_PC
-  xdef _CPU_remember_op
-  xdef _CPU_remember_PC_curpos
-  xdef _CPU_remember_xpos
-  xdef _CPU_remember_JMP
-  xdef _CPU_remember_jmp_curpos
+  xref _CPU_remember_PC
+  xref _CPU_remember_op
+  xref _CPU_remember_PC_curpos
+  xref _CPU_remember_xpos
+  xref _CPU_remember_JMP
+  xref _CPU_remember_jmp_curpos
   xref _ANTIC_break_ypos
   xref _ANTIC_ypos
   xref _MONITOR_break_addr
@@ -86,7 +86,7 @@ NEW_CYCLE_EXACT equ 1   ; set to 1 to use the new cycle exact CPU emulation
   xref _UI_crash_afterCIM
   xref _UI_Run
   endif
-  xdef _CPU_IRQ
+  xref _CPU_IRQ
   xdef _CPU_NMI
   xdef _RTI
   xdef _CPU_GO
@@ -96,30 +96,8 @@ NEW_CYCLE_EXACT equ 1   ; set to 1 to use the new cycle exact CPU emulation
   xref _CPU_rts_handler
 
   ifne MONITOR_BREAK
-
 rem_pc_steps  equ 64  ; has to be equal to REMEMBER_PC_STEPS
 rem_jmp_steps equ 16  ; has to be equal to REMEMBER_JMP_STEPS
-
-remember_PC
-_CPU_remember_PC
-  ds.w rem_pc_steps   ;REMEMBER_PC_STEPS
-remember_op:
-_CPU_remember_op
-  ds.b rem_pc_steps*3 ;[REMEMBER_PC_STEPS][3]
-remember_PC_curpos
-_CPU_remember_PC_curpos
-  ds.l 1
-remember_xpos
-_CPU_remember_xpos
-  ds.l rem_pc_steps   ;REMEMBER_PC_STEPS
-
-remember_JMP
-_CPU_remember_JMP
-  ds.w rem_jmp_steps  ;REMEMBER_JMP_STEPS
-remember_jmp_curpos
-_CPU_remember_jmp_curpos
-  ds.l 1
-
   endif
 
   even
@@ -148,10 +126,6 @@ _CPU_regPC ds.w 1  ; PC
 regS
   dc.b $01
 _CPU_regS  ds.b 1   ; stack
-
-IRQ
-_CPU_IRQ  ds.b 1
-      ds.b 1    ; dummy
 
   even
 

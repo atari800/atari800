@@ -84,11 +84,23 @@ void (*CPU_rts_handler)(void) = NULL;
 int CPU_instruction_count[256];
 #endif
 
+/* Execution history */
+#ifdef MONITOR_BREAK
+UWORD CPU_remember_PC[CPU_REMEMBER_PC_STEPS];
+UBYTE CPU_remember_op[CPU_REMEMBER_PC_STEPS][3];
+unsigned int CPU_remember_PC_curpos = 0;
+int CPU_remember_xpos[CPU_REMEMBER_PC_STEPS];
+UWORD CPU_remember_JMP[CPU_REMEMBER_JMP_STEPS];
+unsigned int CPU_remember_jmp_curpos = 0;
+#define INC_RET_NESTING MONITOR_ret_nesting++
+#else /* MONITOR_BREAK */
+#define INC_RET_NESTING
+#endif /* MONITOR_BREAK */
+
 UBYTE CPU_cim_encountered = FALSE;
+UBYTE CPU_IRQ;
 
 #ifdef FALCON_CPUASM
-
-extern UBYTE CPU_IRQ;
 
 #if defined(PAGED_MEM) || defined(PAGED_ATTRIB)
 #error cpu_m68k.asm cannot work with paged memory/attributes
@@ -190,7 +202,6 @@ UBYTE CPU_regX;
 UBYTE CPU_regY;
 UBYTE CPU_regP;						/* Processor Status Byte (Partial) */
 UBYTE CPU_regS;
-UBYTE CPU_IRQ;
 
 /* Transfer 6502 registers between global variables and local variables inside CPU_GO() */
 #define UPDATE_GLOBAL_REGS  CPU_regPC = GET_PC(); CPU_regS = S; CPU_regA = A; CPU_regX = X; CPU_regY = Y
@@ -223,19 +234,6 @@ void CPU_PutStatus(void)
 	Z = (CPU_regP & 0x02) ^ 0x02;
 	C = (CPU_regP & 0x01);
 }
-
-/* Execution history */
-#ifdef MONITOR_BREAK
-UWORD CPU_remember_PC[CPU_REMEMBER_PC_STEPS];
-UBYTE CPU_remember_op[CPU_REMEMBER_PC_STEPS][3];
-unsigned int CPU_remember_PC_curpos = 0;
-int CPU_remember_xpos[CPU_REMEMBER_PC_STEPS];
-UWORD CPU_remember_JMP[CPU_REMEMBER_JMP_STEPS];
-unsigned int CPU_remember_jmp_curpos = 0;
-#define INC_RET_NESTING MONITOR_ret_nesting++
-#else /* MONITOR_BREAK */
-#define INC_RET_NESTING
-#endif /* MONITOR_BREAK */
 
 /* Addressing modes */
 #ifdef WRAP_ZPAGE
