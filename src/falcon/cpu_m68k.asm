@@ -89,9 +89,8 @@ NEW_CYCLE_EXACT equ 1   ; set to 1 to use the new cycle exact CPU emulation
   xdef _CPU_IRQ
   xdef _CPU_NMI
   xdef _CPU_GO
-  xdef _CPU_GET
-  xdef _CPU_PUT
-  xdef _CPU_INIT
+  xdef _CPU_GetStatus
+  xdef _CPU_PutStatus
   xref _CPU_cim_encountered
   xref _CPU_rts_handler
 
@@ -146,7 +145,7 @@ regPC
 _CPU_regPC ds.w 1  ; PC
 
 regS
-  ds.b 1
+  dc.b $01
 _CPU_regS  ds.b 1   ; stack
 
 IRQ
@@ -439,16 +438,6 @@ RMW_GETBYTE macro
   endif
   endm
 
-_CPU_INIT:
-  ifne   MONITOR_BREAK
-  moveq  #0,d0
-  move.l d0,_CPU_remember_PC_curpos
-  move.l d0,_CPU_remember_jmp_curpos
-  endif
-  moveq  #1,d0     ; set regS to page 1
-  move.b d0,regS
-  rts
-
 ;these are bit in MC68000 CCR register
 NB68  equ 3
 EB68  equ 4 ;X
@@ -643,14 +632,12 @@ ClrCFLAG macro
   clr.b  CFLAG
   endm
 
-CPUGET:
-_CPU_GET:
+_CPU_GetStatus:
   ConvertSTATUS_RegP d0
   move.b d0,_CPU_regP
   rts
 
-CPUPUT:
-_CPU_PUT:
+_CPU_PutStatus:
   move.b _CPU_regP,d0
   ConvertRegP_STATUS d0
   rts
