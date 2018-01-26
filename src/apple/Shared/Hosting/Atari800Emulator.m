@@ -47,15 +47,21 @@ static Atari800Emulator *shared = nil;
 {
     if (_emulationThread) {
         
-        Atari800UICommandEnqueue(Atari800CommandReset, Atari800CommandParamNotRequired, 0, @[]);
+        Atari800UICommandEnqueue(Atari800CommandReset, Atari800CommandParamNotRequired, 0, @[], nil);
     }
 }
 
 - (void)startEmulation
 {
-    _emulationThread = [[Atari800EmulationThread alloc] initWithEmulator:self];
-    [_emulationThread setThreadPriority:0.75];
-    [_emulationThread start];
+    @synchronized (self) {
+        
+        if (!_emulationThread) {
+            
+            _emulationThread = [[Atari800EmulationThread alloc] initWithEmulator:self];
+            [_emulationThread setThreadPriority:0.75];
+            [_emulationThread start];
+        }
+    }
 }
 
 - (void)loadFile:(NSURL *)url completion:(Atari800CompletionHandler)completion
@@ -73,34 +79,47 @@ static Atari800Emulator *shared = nil;
     
     if ([extension isEqualToString:@"xex"]) {
         
-        Atari800UICommandEnqueue(Atari800CommandBinaryLoad, Atari800CommandParamNotRequired, 0, @[path]);
+        Atari800UICommandEnqueue(Atari800CommandBinaryLoad, Atari800CommandParamNotRequired, 0, @[path], completion);
+    
+        return;
     }
-    else if ([extension isEqualToString:@"atr"]) {
+    else if ([extension isEqualToString:@"atr"] || [extension isEqualToString:@"atx"]) {
         
         // TODO: Support multiple drives
-        Atari800UICommandEnqueue(Atari800CommandInsertDisk, Atari800CommandParamDrive0, 0, @[path]);
+        Atari800UICommandEnqueue(Atari800CommandMountDisk, Atari800CommandParamNotRequired, 0, @[path], completion);
+    
+        return;
     }
     else if ([extension isEqualToString:@"cas"]) {
         
-        Atari800UICommandEnqueue(Atari800CommandLoadCassette, Atari800CommandParamNotRequired, 0, @[path]);
+        Atari800UICommandEnqueue(Atari800CommandLoadCassette, Atari800CommandParamNotRequired, 0, @[path], completion);
+    
+        return;
     }
     
     completion(YES, nil);
 }
 
-- (void)removeCartridge
+- (void)mount:(NSURL *)url driveNumber:(NSInteger)driveNumber completion:(Atari800CompletionHandler)completion
 {
-    Atari800UICommandEnqueue(Atari800CommandRemoveCartridge, Atari800CommandParamNotRequired, 0, @[]);
+    NSString *path = [url path];
+    Atari800UICommandEnqueue(Atari800CommandMountDisk, Atari800CommandParamNotRequired, driveNumber, @[path], completion);
 }
 
-- (void)pauseEmulation
+- (void)dismount:(NSInteger)driveNumber completion:(Atari800CompletionHandler)completion
 {
-    [_emulationThread pause];
+    Atari800UICommandEnqueue(Atari800CommandDismountDisk, Atari800CommandParamNotRequired, driveNumber, @[], completion);
+}
+
+- (void)removeCartridge:(Atari800CompletionHandler)completion
+{
+    Atari800UICommandEnqueue(Atari800CommandRemoveCartridge, Atari800CommandParamNotRequired, 0, @[], completion);
 }
 
 - (void)stopEmulation
 {
     [_emulationThread cancel];
+    _emulationThread = nil;
 }
 
 + (instancetype)shared

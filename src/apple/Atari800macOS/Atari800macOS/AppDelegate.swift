@@ -51,11 +51,9 @@ extension AppDelegate: Atari800EmulatorDelegate {
             
             if let emulationViewController = keyWindow.contentViewController as? EmulationViewController {
                 
-                emulationViewController.cartridgeTypes = types
-                emulationViewController.cartridgeFileName = filename
-                emulationViewController.cartridgeCompletion = completion
+                emulationViewController.cartridgeDetails = CartridgeDetails(fileName: filename, types: types, completion: completion)
+                
                 emulationViewController.performSegue(withIdentifier: EmulationViewController.ShowCartridgeTypesSegue, sender: self)
-                return
             }
         }
     }

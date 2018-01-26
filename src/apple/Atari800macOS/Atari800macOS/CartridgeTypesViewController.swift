@@ -11,25 +11,23 @@ import Atari800EmulationCore
 
 class CartridgeTypesViewController: NSViewController {
 
-    var cartridgeFileName: String?
+    var cartridgeDetails: CartridgeDetails?
     
-    var cartridgeTypes: [NSNumber: String]?
     var sortedCartridgeTypes: [NSNumber]?
-    var cartridgeCompletion: Atari800CartridgeSelectionHandler? = nil
     
     @IBOutlet weak var tableView: NSTableView?
     @IBOutlet weak var prompt: NSTextField?
     
     override func viewDidLoad() {
     
-        sortedCartridgeTypes =  cartridgeTypes?.keys.sorted(by: { (a, b) -> Bool in
+        sortedCartridgeTypes =  cartridgeDetails?.types.keys.sorted(by: { (a, b) -> Bool in
             
             return a.compare(b) == .orderedAscending
         })
         
         if let prompt = self.prompt {
             
-            prompt.stringValue = String(format: "Select the cartridge type for %@:", self.cartridgeFileName ?? "(Unknown)");
+            prompt.stringValue = String(format: "Select the cartridge type for %@:", cartridgeDetails?.fileName ?? "(Unknown)");
         }
         
         super.viewDidLoad()
@@ -44,7 +42,7 @@ class CartridgeTypesViewController: NSViewController {
     
     @IBAction func ok(_ sender: Any?) {
         
-        if let cartridgeCompletion = cartridgeCompletion {
+        if let cartridgeCompletion = cartridgeDetails?.completion {
             
             if let selectedRow = tableView?.selectedRow {
             
@@ -59,7 +57,7 @@ class CartridgeTypesViewController: NSViewController {
     
     @IBAction func cancel(_ sender: Any?) {
      
-        if let cartridgeCompletion = cartridgeCompletion {
+        if let cartridgeCompletion = cartridgeDetails?.completion {
             
             cartridgeCompletion(false, 0)
         }
@@ -72,14 +70,14 @@ extension CartridgeTypesViewController: NSTableViewDataSource {
     
     func numberOfRows(in tableView: NSTableView) -> Int {
         
-        return cartridgeTypes?.count ?? 0
+        return cartridgeDetails?.types.count ?? 0
     }
     
     func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
         
         if let key = sortedCartridgeTypes?[row] {
             
-            return cartridgeTypes![key]
+            return cartridgeDetails!.types[key]
         }
         
         return nil

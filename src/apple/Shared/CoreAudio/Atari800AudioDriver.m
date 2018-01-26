@@ -164,7 +164,7 @@ OSStatus RenderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlag
     err = AudioOutputUnitStart(_outputUnit);
 }
 
-- (void) stopSound
+- (void)stopSound
 {
     if (_initialisedAudio)
         AudioOutputUnitStop(_outputUnit);

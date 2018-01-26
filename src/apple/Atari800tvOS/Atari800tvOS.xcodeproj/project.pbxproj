@@ -12,6 +12,7 @@
 		E20374331FFEB4BA0027CCDE /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E20374311FFEB4BA0027CCDE /* Main.storyboard */; };
 		E20374351FFEB4BA0027CCDE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E20374341FFEB4BA0027CCDE /* Assets.xcassets */; };
 		E21D08542001061B005566E6 /* LibraryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E21D08532001061B005566E6 /* LibraryViewController.swift */; };
+		E285978720010F1200D9E544 /* Dimension X.xex in Resources */ = {isa = PBXBuildFile; fileRef = E285978620010F1200D9E544 /* Dimension X.xex */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +54,7 @@
 		E20374361FFEB4BA0027CCDE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E20374531FFEB5160027CCDE /* Atari800EmulationCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Atari800EmulationCore.xcodeproj; path = Atari800EmulationCore/Atari800EmulationCore.xcodeproj; sourceTree = "<group>"; };
 		E21D08532001061B005566E6 /* LibraryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewController.swift; sourceTree = "<group>"; };
+		E285978620010F1200D9E544 /* Dimension X.xex */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Dimension X.xex"; path = "../../Shared/XEX/Dimension X.xex"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +88,7 @@
 		E203742C1FFEB4BA0027CCDE /* Atari800tvOS */ = {
 			isa = PBXGroup;
 			children = (
+				E285978620010F1200D9E544 /* Dimension X.xex */,
 				E203742D1FFEB4BA0027CCDE /* AppDelegate.swift */,
 				E203742F1FFEB4BA0027CCDE /* EmulationViewController.swift */,
 				E20374311FFEB4BA0027CCDE /* Main.storyboard */,
@@ -183,6 +186,7 @@
 			files = (
 				E20374351FFEB4BA0027CCDE /* Assets.xcassets in Resources */,
 				E20374331FFEB4BA0027CCDE /* Main.storyboard in Resources */,
+				E285978720010F1200D9E544 /* Dimension X.xex in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

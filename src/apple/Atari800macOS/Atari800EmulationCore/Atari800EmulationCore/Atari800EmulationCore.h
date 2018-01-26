@@ -19,3 +19,4 @@ FOUNDATION_EXPORT const unsigned char Atari800EmulationCoreVersionString[];
 #import <Atari800EmulationCore/Atari800AudioDriver.h>
 #import <Atari800EmulationCore/Atari800Emulator.h>
 #import <Atari800EmulationCore/Atari800WindowController.h>
+#import <Atari800EmulationCore/Atari800DriveController.h>

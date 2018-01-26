@@ -9,18 +9,25 @@
 #import "Atari800EmulationThread.h"
 #import "Atari800Emulator.h"
 #import "Atari800Renderer.h"
+#import "Atari800Dispatch.h"
+
 #import <libkern/OSAtomic.h>
 
-#include "antic.h"
-#include "atari.h"
-#include "binload.h"
-#include "gtia.h"
-#include "input.h"
-#include "akey.h"
-#include "log.h"
-#include "monitor.h"
-#include "platform.h"
-#include "cartridge.h"
+#import "antic.h"
+#import "atari.h"
+#import "binload.h"
+#import "gtia.h"
+#import "input.h"
+#import "akey.h"
+#import "log.h"
+#import "monitor.h"
+#import "platform.h"
+#import "cartridge.h"
+#import "sio.h"
+
+#if __has_feature(objc_arc)
+    #error This file must be compiled without ARC. Use -fnoobjc-arc flag
+#endif
 
 typedef struct Atari800UICommand {
     void *nextCommand;
@@ -29,14 +36,16 @@ typedef struct Atari800UICommand {
     NSInteger intParam;
     NSInteger numberOfParameters;
     Atari800UICommandType command;
+    Atari800CompletionHandler handler;
 } Atari800UICommand;
 
 @interface Atari800EmulationThread() {
 @public
-    Atari800Emulator *_emulator;
+    __unsafe_unretained Atari800Emulator *_emulator;
     __unsafe_unretained id<Atari800Renderer> _renderer;
     __unsafe_unretained Atari800KeyboardHandler _keyboardHandler;
     __unsafe_unretained Atari800PortHandler _portHandler;
+    
     BOOL _running;
     BOOL _paused;
 }
@@ -48,7 +57,7 @@ OSQueueHead Atari800UICommands = OS_ATOMIC_QUEUE_INIT;
 const NSInteger Atari800CommandNoIntParam = -1;
 const size_t Atari800UICommandMaximumParameterLength = 0x1000;
 
-void Atari800UICommandEnqueue(Atari800UICommandType command, Atari800UICommandParamType param, NSInteger intParam, NSArray<NSString *> *parameters)
+void Atari800UICommandEnqueue(Atari800UICommandType command, Atari800UICommandParamType param, NSInteger intParam, NSArray<NSString *> *parameters, Atari800CompletionHandler completion)
 {
     NSInteger numberOfParameters = [parameters count];
     char **parametersArray = (numberOfParameters == 0) ? NULL : calloc(numberOfParameters, sizeof(char *));
@@ -67,6 +76,7 @@ void Atari800UICommandEnqueue(Atari800UICommandType command, Atari800UICommandPa
     uiCommand->numberOfParameters = numberOfParameters;
     uiCommand->param = param;
     uiCommand->intParam = intParam;
+    uiCommand->handler = Block_copy(completion);
     
     OSAtomicEnqueue(&Atari800UICommands, uiCommand, offsetof(Atari800UICommand, nextCommand));
 }
@@ -90,6 +100,11 @@ void Atari800UICommandFree(Atari800UICommand *command)
         
         free(command->parameters);
         command->parameters = NULL;
+        
+        if (command->handler) {
+            Block_release(command->handler);
+            command->handler = nil;
+        }
     }
     
     free(command);
@@ -145,11 +160,42 @@ int VIDEOMODE_Set80Column(int value)
     return value;
 }
 
+NS_INLINE void Atari800CompleteCommand(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command, BOOL ok, NSError *error) {
+    
+    if (!command->handler) {
+        
+        return;
+    }
+    
+    Atari800CompletionHandler handlerCopy = Block_copy(command->handler);
+    
+    AlwaysAsync(^{
+        
+        handlerCopy(ok, error);
+        Block_release(handlerCopy);
+    });
+}
+
+NS_INLINE void Atari800MountDisk(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
+{
+    NSCAssert(command->numberOfParameters == 1, @"No parameters specified for disk mount");
+    const char *imageName = command->parameters[0];
+    SIO_Mount((int)command->intParam + 1, imageName, FALSE);
+    Atari800CompleteCommand(thread, command, YES, nil);
+}
+
+NS_INLINE void Atari800DismountDisk(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
+{
+    SIO_Dismount((int)command->intParam + 1);
+    Atari800CompleteCommand(thread, command, YES, nil);
+}
+
 NS_INLINE void Atari800BinaryLoad(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
 {
     NSCAssert(command->numberOfParameters == 1, @"No parameters specified for binary load");
     const char *exeName = command->parameters[0];
     BINLOAD_Loader(exeName);
+    Atari800CompleteCommand(thread, command, YES, nil);
 }
 
 NS_INLINE void Atari800InsertCartridge(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
@@ -161,18 +207,22 @@ NS_INLINE void Atari800InsertCartridge(__unsafe_unretained Atari800EmulationThre
     switch (r) {
         case CARTRIDGE_CANT_OPEN:
             NSLog(@"Can't open %s", CARTRIDGE_main.filename);
+            Atari800CompleteCommand(thread, command, NO, nil);
             break;
         case CARTRIDGE_BAD_FORMAT:
             NSLog(@"Unknown cartridge format");
+            Atari800CompleteCommand(thread, command, NO, nil);
             break;
         case CARTRIDGE_BAD_CHECKSUM:
             NSLog(@"Warning: bad CART checksum");
+            Atari800CompleteCommand(thread, command, NO, nil);
             break;
         case 0:
             /* ok */
         default:
             /* r > 0 */
             CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, (int)command->intParam);
+            Atari800CompleteCommand(thread, command, YES, nil);
             break;
     }
 }
@@ -180,11 +230,13 @@ NS_INLINE void Atari800InsertCartridge(__unsafe_unretained Atari800EmulationThre
 NS_INLINE void Atari800RemoveCartridge(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
 {
     CARTRIDGE_RemoveAutoReboot();
+    Atari800CompleteCommand(thread, command, YES, nil);
 }
 
 NS_INLINE void Atari800Reset(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
 {
     Atari800_Warmstart();
+    Atari800CompleteCommand(thread, command, YES, nil);
 }
 
 NS_INLINE void Atari800ProcessUICommand(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
@@ -199,8 +251,8 @@ NS_INLINE void Atari800ProcessUICommand(__unsafe_unretained Atari800EmulationThr
             Atari800InsertCartridge(thread, command);
             break;
             
-        case Atari800CommandInsertDisk:
-            
+        case Atari800CommandMountDisk:
+            Atari800MountDisk(thread, command);
             break;
             
         case Atari800CommandLoadCassette:
@@ -213,6 +265,10 @@ NS_INLINE void Atari800ProcessUICommand(__unsafe_unretained Atari800EmulationThr
             
         case Atari800CommandRemoveCartridge:
             Atari800RemoveCartridge(thread, command);
+            break;
+            
+        case Atari800CommandDismountDisk:
+            Atari800DismountDisk(thread, command);
             break;
             
         default:
@@ -267,20 +323,20 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     int argc = 1;
     const char **argv = {&bundlePath};
     
-    Screen_atari = (unsigned int *)atari800EmulationThread->_renderer.screen;
+    Screen_atari = (unsigned int *)thread->_renderer.screen;
     
     if (!Atari800_Initialise(&argc, (char **)argv)) {
         
         return;
     }
     
-    atari800EmulationThread->_running = YES;
+    thread->_running = YES;
     
-    while (atari800EmulationThread->_running) {
+    while (thread->_running) {
         
-        Atari800ProcessUICommands(atari800EmulationThread);
+        Atari800ProcessUICommands(thread);
         
-        Atari800ProcessKeyboardInput(atari800EmulationThread);
+        Atari800ProcessKeyboardInput(thread);
         
         Atari800_Frame();
     }
@@ -303,17 +359,17 @@ void Atari800StartEmulation(__unsafe_unretained Atari800EmulationThread *thread)
     return self;
 }
 
+- (void)dealloc
+{
+    [super dealloc];
+}
+
 - (void)main
 {
     @autoreleasepool {
         
         Atari800StartEmulation(self);
     }
-}
-
-- (void)pause
-{
-    _paused = YES;
 }
 
 - (void)cancel

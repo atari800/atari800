@@ -203,7 +203,7 @@ int Atar800ValidateCartridgeImage(NSString *path, CARTRIDGE_image_t *cart)
         
         if (sizeKb == 0) {
             
-            Atari800UICommandEnqueue(Atari800CommandInsertCartridge, Atari800CommandParamLeftCartridge, cartridge.type, @[path]);
+            Atari800UICommandEnqueue(Atari800CommandInsertCartridge, Atari800CommandParamLeftCartridge, cartridge.type, @[path], completion);
             return;
         }
         
@@ -211,7 +211,7 @@ int Atar800ValidateCartridgeImage(NSString *path, CARTRIDGE_image_t *cart)
             
             if (ok) {
                 
-                Atari800UICommandEnqueue(Atari800CommandInsertCartridge, Atari800CommandParamLeftCartridge, cartridgeType, @[path]);
+                Atari800UICommandEnqueue(Atari800CommandInsertCartridge, Atari800CommandParamLeftCartridge, cartridgeType, @[path], completion);
             }
             
             completion(ok, nil);

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		E22250B61FFD2384007994F8 /* Atari800EmulationCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E22250B31FFD22E4007994F8 /* Atari800EmulationCore.framework */; };
 		E22250B71FFD2384007994F8 /* Atari800EmulationCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E22250B31FFD22E4007994F8 /* Atari800EmulationCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E22395042002556B0096EEBD /* DrivesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22395032002556B0096EEBD /* DrivesViewController.swift */; };
 		E266678E1FF1A1FA00ECBD26 /* EmulationWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E266678D1FF1A1FA00ECBD26 /* EmulationWindowController.swift */; };
 		E2BAFC301FE9390500B93945 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */; };
 		E2BAFC321FE9390500B93945 /* EmulationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BAFC311FE9390500B93945 /* EmulationViewController.swift */; };
@@ -56,6 +57,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E22395032002556B0096EEBD /* DrivesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivesViewController.swift; sourceTree = "<group>"; };
 		E266678D1FF1A1FA00ECBD26 /* EmulationWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmulationWindowController.swift; sourceTree = "<group>"; };
 		E2BAFC2C1FE9390500B93945 /* Atari800macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atari800macOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -109,13 +111,14 @@
 			isa = PBXGroup;
 			children = (
 				E2BAFC2F1FE9390500B93945 /* AppDelegate.swift */,
-				E2BAFC311FE9390500B93945 /* EmulationViewController.swift */,
 				E2BAFC331FE9390500B93945 /* Assets.xcassets */,
 				E2BAFC351FE9390500B93945 /* Main.storyboard */,
 				E2BAFC381FE9390500B93945 /* Info.plist */,
 				E2BAFC391FE9390500B93945 /* Atari800macOS.entitlements */,
 				E266678D1FF1A1FA00ECBD26 /* EmulationWindowController.swift */,
+				E2BAFC311FE9390500B93945 /* EmulationViewController.swift */,
 				E2D411FF1FF6B481009294C5 /* CartridgeTypesViewController.swift */,
+				E22395032002556B0096EEBD /* DrivesViewController.swift */,
 			);
 			path = Atari800macOS;
 			sourceTree = "<group>";
@@ -211,6 +214,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E266678E1FF1A1FA00ECBD26 /* EmulationWindowController.swift in Sources */,
+				E22395042002556B0096EEBD /* DrivesViewController.swift in Sources */,
 				E2BAFC321FE9390500B93945 /* EmulationViewController.swift in Sources */,
 				E2D412001FF6B481009294C5 /* CartridgeTypesViewController.swift in Sources */,
 				E2BAFC301FE9390500B93945 /* AppDelegate.swift in Sources */,

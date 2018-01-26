@@ -71,7 +71,7 @@ static unsigned int sync_buffer_size;
 static unsigned int sync_write_pos;
 static unsigned int sync_read_pos;
 
-unsigned int Sound_latency = 20;
+unsigned int Sound_latency;
 /* Cumulative audio difference. */
 static double avg_fill;
 /* Estimated fill of sync_buffer */

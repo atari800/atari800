@@ -10,15 +10,27 @@ import Cocoa
 import MetalKit
 import Atari800EmulationCore
 
+struct CartridgeDetails {
+    let fileName: String
+    let types: [NSNumber: String]
+    let completion: Atari800CartridgeSelectionHandler
+    
+    init(fileName: String, types: [NSNumber: String], completion: @escaping Atari800CartridgeSelectionHandler) {
+        
+        self.fileName = fileName;
+        self.types = types
+        self.completion = completion
+    }
+}
+
 class EmulationViewController: NSViewController {
 
     @IBOutlet weak var metalView: MTKView?
     
     static let ShowCartridgeTypesSegue = NSStoryboardSegue.Identifier("Show Cartridge Types")
+    static let ShowDrivesSegue = NSStoryboardSegue.Identifier("Show Drives")
     
-    var cartridgeTypes: [NSNumber: String]?
-    var cartridgeFileName: String?
-    var cartridgeCompletion: Atari800CartridgeSelectionHandler? = nil
+    var cartridgeDetails: CartridgeDetails?
     
     let width = 384
     let height = 240
@@ -76,9 +88,7 @@ class EmulationViewController: NSViewController {
             
             if let cartridgeTypesController = segue.destinationController as? CartridgeTypesViewController {
                 
-                cartridgeTypesController.cartridgeFileName = self.cartridgeFileName
-                cartridgeTypesController.cartridgeCompletion = self.cartridgeCompletion
-                cartridgeTypesController.cartridgeTypes = self.cartridgeTypes
+                cartridgeTypesController.cartridgeDetails = self.cartridgeDetails
             }
         }
     }
@@ -116,7 +126,14 @@ class EmulationViewController: NSViewController {
         
         if let emulator = Atari800Emulator.shared() {
          
-            emulator.removeCartridge();
+            emulator.removeCartridge({ (ok, error) in
+            
+            });
         }
+    }
+    
+    @IBAction func showDrives(_ sender: Any?) {
+        
+        self.performSegue(withIdentifier: EmulationViewController.ShowDrivesSegue, sender: sender)
     }
 }

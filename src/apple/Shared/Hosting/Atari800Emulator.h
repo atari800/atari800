@@ -35,12 +35,14 @@ typedef void (^Atari800CartridgeSelectionHandler)(BOOL ok, NSInteger cartridgeTy
 
 - (void)startEmulation;
 - (void)stopEmulation;
-- (void)pauseEmulation;
 
-- (void)removeCartridge;
+- (void)removeCartridge:(Atari800CompletionHandler)completion;
 - (void)reset;
 
 - (void)loadFile:(NSURL *)url completion:(Atari800CompletionHandler)completion;
+
+- (void)mount:(NSURL *)url driveNumber:(NSInteger)driveNumber completion:(Atari800CompletionHandler)completion;
+- (void)dismount:(NSInteger)driveNumber completion:(Atari800CompletionHandler)completion;
 
 + (instancetype)shared;
 

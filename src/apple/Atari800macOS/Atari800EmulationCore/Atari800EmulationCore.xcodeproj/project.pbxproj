@@ -133,6 +133,8 @@
 		E21FDAD91FEA6A3400FB1796 /* Atari800ControlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E21FDAD71FEA6A3400FB1796 /* Atari800ControlManager.m */; };
 		E21FDAF21FEA72E200FB1796 /* Atari800Emulator.h in Headers */ = {isa = PBXBuildFile; fileRef = E21FDAF01FEA72E100FB1796 /* Atari800Emulator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E21FDAF31FEA72E200FB1796 /* Atari800Emulator.m in Sources */ = {isa = PBXBuildFile; fileRef = E21FDAF11FEA72E200FB1796 /* Atari800Emulator.m */; };
+		E22395072002B14A0096EEBD /* Atari800DriveController.h in Headers */ = {isa = PBXBuildFile; fileRef = E22395052002B14A0096EEBD /* Atari800DriveController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E22395082002B14A0096EEBD /* Atari800DriveController.m in Sources */ = {isa = PBXBuildFile; fileRef = E22395062002B14A0096EEBD /* Atari800DriveController.m */; };
 		E22C8D221FED5BC900FB4995 /* Atari800MetalRenderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D201FED5BC800FB4995 /* Atari800MetalRenderer.h */; };
 		E22C8D231FED5BC900FB4995 /* Atari800MetalRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = E22C8D211FED5BC900FB4995 /* Atari800MetalRenderer.m */; };
 		E22C8D251FED5C9100FB4995 /* Atari800Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E22C8D241FED5C9100FB4995 /* Atari800Renderer.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -148,7 +150,7 @@
 		E231F6731FE9469F004ED389 /* XFormer.act in Resources */ = {isa = PBXBuildFile; fileRef = E231F6671FE9469F004ED389 /* XFormer.act */; };
 		E251DAEB1FEA754900613C10 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DAEA1FEA754800613C10 /* config.h */; };
 		E251DAEE1FEA81C300613C10 /* Atari800EmulationThread.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DAEC1FEA81C300613C10 /* Atari800EmulationThread.h */; };
-		E251DAEF1FEA81C300613C10 /* Atari800EmulationThread.m in Sources */ = {isa = PBXBuildFile; fileRef = E251DAED1FEA81C300613C10 /* Atari800EmulationThread.m */; };
+		E251DAEF1FEA81C300613C10 /* Atari800EmulationThread.m in Sources */ = {isa = PBXBuildFile; fileRef = E251DAED1FEA81C300613C10 /* Atari800EmulationThread.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		E251DAF81FEA914100613C10 /* pal_blending.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAF51FEA914100613C10 /* pal_blending.c */; };
 		E251DAF91FEA914100613C10 /* sound.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAF61FEA914100613C10 /* sound.c */; };
 		E251DAFA1FEA914100613C10 /* ide.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAF71FEA914100613C10 /* ide.c */; };
@@ -304,6 +306,8 @@
 		E21FDAD71FEA6A3400FB1796 /* Atari800ControlManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800ControlManager.m; sourceTree = "<group>"; };
 		E21FDAF01FEA72E100FB1796 /* Atari800Emulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800Emulator.h; sourceTree = "<group>"; };
 		E21FDAF11FEA72E200FB1796 /* Atari800Emulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Emulator.m; sourceTree = "<group>"; };
+		E22395052002B14A0096EEBD /* Atari800DriveController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800DriveController.h; sourceTree = "<group>"; };
+		E22395062002B14A0096EEBD /* Atari800DriveController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800DriveController.m; sourceTree = "<group>"; };
 		E22C8D201FED5BC800FB4995 /* Atari800MetalRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atari800MetalRenderer.h; sourceTree = "<group>"; };
 		E22C8D211FED5BC900FB4995 /* Atari800MetalRenderer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800MetalRenderer.m; sourceTree = "<group>"; };
 		E22C8D241FED5C9100FB4995 /* Atari800Renderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800Renderer.h; sourceTree = "<group>"; };
@@ -525,6 +529,8 @@
 				E21FDAD71FEA6A3400FB1796 /* Atari800ControlManager.m */,
 				E251DAEC1FEA81C300613C10 /* Atari800EmulationThread.h */,
 				E251DAED1FEA81C300613C10 /* Atari800EmulationThread.m */,
+				E22395052002B14A0096EEBD /* Atari800DriveController.h */,
+				E22395062002B14A0096EEBD /* Atari800DriveController.m */,
 			);
 			path = Hosting;
 			sourceTree = "<group>";
@@ -707,6 +713,7 @@
 				E21FDACC1FE986F400FB1796 /* atari_ntsc_config.h in Headers */,
 				E21FDA511FE97E6B00FB1796 /* pbi_xld.h in Headers */,
 				E21FDAB21FE97E6B00FB1796 /* binload.h in Headers */,
+				E22395072002B14A0096EEBD /* Atari800DriveController.h in Headers */,
 				E21FDA6B1FE97E6B00FB1796 /* xep80.h in Headers */,
 				E21FDA831FE97E6B00FB1796 /* cpu.h in Headers */,
 				E21FDA421FE97E6B00FB1796 /* platform.h in Headers */,
@@ -855,6 +862,7 @@
 				E21FDAA31FE97E6B00FB1796 /* pbi_scsi.c in Sources */,
 				E21FDAB61FE97E6B00FB1796 /* pbi_bb.c in Sources */,
 				E21FDA871FE97E6B00FB1796 /* votraxsnd.c in Sources */,
+				E22395082002B14A0096EEBD /* Atari800DriveController.m in Sources */,
 				E2929BE11FFA8BE10072A66E /* Atari800Dispatch.m in Sources */,
 				E251DAF91FEA914100613C10 /* sound.c in Sources */,
 				E21FDA581FE97E6B00FB1796 /* votrax.c in Sources */,

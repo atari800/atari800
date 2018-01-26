@@ -10,7 +10,7 @@ extern void ControlManagerMessagePrint(char *);
 #undef HAVE_SYSTEM
 #define SOUND_THIN_API 1
 #undef SOUND_CALLBACK
-#undef SYNCHRONIZED_SOUND
+#define SYNCHRONIZED_SOUND
 #define STEREO
 #define STEREO_SOUND
 

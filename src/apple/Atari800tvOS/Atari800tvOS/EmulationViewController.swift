@@ -79,6 +79,14 @@ class EmulationViewController: UIViewController {
                 
                 emulator.delegate = self
                 emulator.startEmulation()
+                
+                DispatchQueue.main.async {
+                    
+                    let url = Bundle.main.url(forResource: "Dimension X", withExtension: "xex")
+                    emulator.loadFile(url, completion: { (ok, error) in
+                        
+                    })
+                }
             }
         }
     }
