@@ -2,7 +2,7 @@
 //  DrivesViewController.swift
 //  Atari800macOS
 //
-//  Created by Simon Lawrence on 07/01/2018.
+//  Created by Rod Münch on 07/01/2018.
 //  Copyright © 2018 Atari800 development team. All rights reserved.
 //
 
