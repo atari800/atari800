@@ -22,7 +22,7 @@
 		E21D089020010767005566E6 /* Atari800Renderer.h in Headers */ = {isa = PBXBuildFile; fileRef = E21D086A20010766005566E6 /* Atari800Renderer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E21D089120010767005566E6 /* Atari800ControlManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E21D086B20010766005566E6 /* Atari800ControlManager.m */; };
 		E21D089220010767005566E6 /* Atari800Emulator.m in Sources */ = {isa = PBXBuildFile; fileRef = E21D086C20010766005566E6 /* Atari800Emulator.m */; };
-		E21D089320010767005566E6 /* Atari800EmulationThread.m in Sources */ = {isa = PBXBuildFile; fileRef = E21D086D20010766005566E6 /* Atari800EmulationThread.m */; };
+		E21D089320010767005566E6 /* Atari800EmulationThread.m in Sources */ = {isa = PBXBuildFile; fileRef = E21D086D20010766005566E6 /* Atari800EmulationThread.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		E21D089420010767005566E6 /* Atari800Emulator+CartridgeHandling.h in Headers */ = {isa = PBXBuildFile; fileRef = E21D086E20010766005566E6 /* Atari800Emulator+CartridgeHandling.h */; };
 		E21D089520010767005566E6 /* Atari800AudioBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = E21D087020010766005566E6 /* Atari800AudioBuffer.h */; };
 		E21D089620010767005566E6 /* Atari800AudioDriver.m in Sources */ = {isa = PBXBuildFile; fileRef = E21D087120010766005566E6 /* Atari800AudioDriver.m */; };

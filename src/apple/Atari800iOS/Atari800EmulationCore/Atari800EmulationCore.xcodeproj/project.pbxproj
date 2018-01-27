@@ -155,7 +155,7 @@
 		E251DAE61FEA747800613C10 /* pokeysnd.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DA671FEA747800613C10 /* pokeysnd.h */; };
 		E251DAE71FEA747800613C10 /* sysrom.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DA681FEA747800613C10 /* sysrom.h */; };
 		E251DAE81FEA747800613C10 /* crc32.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DA691FEA747800613C10 /* crc32.c */; };
-		E251DAF21FEA8F2A00613C10 /* Atari800EmulationThread.m in Sources */ = {isa = PBXBuildFile; fileRef = E251DAF01FEA8F2900613C10 /* Atari800EmulationThread.m */; };
+		E251DAF21FEA8F2A00613C10 /* Atari800EmulationThread.m in Sources */ = {isa = PBXBuildFile; fileRef = E251DAF01FEA8F2900613C10 /* Atari800EmulationThread.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		E251DAF31FEA8F2A00613C10 /* Atari800EmulationThread.h in Headers */ = {isa = PBXBuildFile; fileRef = E251DAF11FEA8F2A00613C10 /* Atari800EmulationThread.h */; };
 		E251DAFF1FEA915600613C10 /* pal_blending.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAFC1FEA915500613C10 /* pal_blending.c */; };
 		E251DB001FEA915600613C10 /* sound.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAFD1FEA915500613C10 /* sound.c */; };

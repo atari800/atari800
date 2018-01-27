@@ -66,7 +66,7 @@ NS_INLINE int Atari800TranslateKeycode(unichar character, uint8_t *stick0, uint8
             result = AKEY_RETURN;
             break;
         
-            /*
+            /* TODO: Support switching off cursor joystick
         case NSUpArrowFunctionKey:
             result = AKEY_UP;
             break;
