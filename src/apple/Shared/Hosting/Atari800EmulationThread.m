@@ -227,6 +227,25 @@ NS_INLINE void Atari800InsertCartridge(__unsafe_unretained Atari800EmulationThre
     }
 }
 
+NS_INLINE void Atari800ChangeVideoSystem(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
+{
+    int tvMode = Atari800_tv_mode;
+    
+    switch (command->param) {
+        case Atari800CommandParamNTSCVideoSystem:
+            tvMode = Atari800_TV_NTSC;
+            break;
+          
+        case Atari800CommandParamPALVideoSystem:
+        default:
+            tvMode = Atari800_TV_PAL;
+            break;
+    }
+    
+    Atari800_SetTVMode(tvMode);
+    Atari800CompleteCommand(thread, command, YES, nil);
+}
+
 NS_INLINE void Atari800RemoveCartridge(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
 {
     CARTRIDGE_RemoveAutoReboot();
@@ -235,7 +254,7 @@ NS_INLINE void Atari800RemoveCartridge(__unsafe_unretained Atari800EmulationThre
 
 NS_INLINE void Atari800Reset(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
 {
-    Atari800_Warmstart();
+    Atari800_Coldstart();
     Atari800CompleteCommand(thread, command, YES, nil);
 }
 
@@ -269,6 +288,10 @@ NS_INLINE void Atari800ProcessUICommand(__unsafe_unretained Atari800EmulationThr
             
         case Atari800CommandDismountDisk:
             Atari800DismountDisk(thread, command);
+            break;
+          
+        case Atari800CommandChangeVideoSystem:
+            Atari800ChangeVideoSystem(thread, command);
             break;
             
         default:

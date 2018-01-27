@@ -14,6 +14,9 @@ const uint8_t AtariStickDown  = 0x02;
 const uint8_t AtariStickLeft  = 0x04;
 const uint8_t AtariStickRight = 0x08;
 
+const uint8_t AtariStickNone  = 0x0F;
+const uint8_t AtariTriggerNone  = 0x01;
+
 const uint8_t AtariConsoleStart  = 0x01;
 const uint8_t AtariConsoleSelect = 0x02;
 const uint8_t AtariConsoleOption = 0x04;
@@ -340,8 +343,9 @@ NS_INLINE int Atari800TranslateKeycode(unichar character, uint8_t *stick0, uint8
 - (void)awakeFromNib
 {
     [super awakeFromNib];
-    _stick0 = 0x0F;
-    _trig0 = 0x01;
+    
+    _stick0 = AtariStickNone;
+    _trig0 = AtariTriggerNone;
     _console = 0x0F;
 }
 
@@ -430,11 +434,13 @@ NS_INLINE int Atari800TranslateKeycode(unichar character, uint8_t *stick0, uint8
     Atari800PortHandler handler = ^(int port, int *stick, int *trig) {
         
         if (port == 0) {
-            *stick = (uSelf->_stick0 & 0xF);
+            
+            *stick = (uSelf->_stick0 & 0xF) | 0xF0;
             *trig = uSelf->_trig0;
         }
         else {
-            *stick = 0x0F;
+            
+            *stick = AtariStickNone;
             *trig = 0x01;
         }
     };

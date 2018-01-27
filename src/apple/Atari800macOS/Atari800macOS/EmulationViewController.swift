@@ -132,6 +132,30 @@ class EmulationViewController: NSViewController {
         }
     }
     
+    @IBAction func tvSystemChanged(_ sender: Any?) {
+        
+        let menuItem = sender as? NSMenuItem;
+        
+        if let emulator = Atari800Emulator.shared() {
+            
+            emulator.setIsNTSC(!emulator.isNTSC, completion: { (ok, error) in
+
+                if let menuItem = menuItem {
+                    
+                    for otherMenuItem in menuItem.menu?.items ?? [] {
+                
+                        if otherMenuItem != menuItem {
+                        
+                            otherMenuItem.state = NSControl.StateValue.off
+                        }
+                    }
+                    
+                    menuItem.state = NSControl.StateValue.on
+                }
+            })
+        }
+    }
+    
     @IBAction func showDrives(_ sender: Any?) {
         
         self.performSegue(withIdentifier: EmulationViewController.ShowDrivesSegue, sender: sender)

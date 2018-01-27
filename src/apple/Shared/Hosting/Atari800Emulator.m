@@ -122,6 +122,18 @@ static Atari800Emulator *shared = nil;
     _emulationThread = nil;
 }
 
+- (void)setIsNTSC:(BOOL)isNTSC completion:(Atari800CompletionHandler)completion
+{
+    if (_isNTSC != isNTSC) {
+
+        Atari800UICommandParamType param = isNTSC ? Atari800CommandParamNTSCVideoSystem : Atari800CommandParamPALVideoSystem;
+        
+        Atari800UICommandEnqueue(Atari800CommandChangeVideoSystem, param, 0, @[], completion);
+
+        _isNTSC = isNTSC;
+    }
+}
+
 + (instancetype)shared
 {
     static dispatch_once_t onceToken;

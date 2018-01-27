@@ -33,6 +33,8 @@ typedef void (^Atari800CartridgeSelectionHandler)(BOOL ok, NSInteger cartridgeTy
 
 @property (nonatomic, weak) id<Atari800EmulatorDelegate> delegate;
 
+@property (nonatomic, assign) BOOL isNTSC;
+
 - (void)startEmulation;
 - (void)stopEmulation;
 
@@ -40,6 +42,8 @@ typedef void (^Atari800CartridgeSelectionHandler)(BOOL ok, NSInteger cartridgeTy
 - (void)reset;
 
 - (void)loadFile:(NSURL *)url completion:(Atari800CompletionHandler)completion;
+
+- (void)setIsNTSC:(BOOL)isNTSC completion:(Atari800CompletionHandler)completion;
 
 - (void)mount:(NSURL *)url driveNumber:(NSInteger)driveNumber completion:(Atari800CompletionHandler)completion;
 - (void)dismount:(NSInteger)driveNumber completion:(Atari800CompletionHandler)completion;

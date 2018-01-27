@@ -11,13 +11,14 @@
 
 typedef NS_ENUM(NSInteger, Atari800UICommandType) {
     
-    Atari800CommandBinaryLoad      = 0,
-    Atari800CommandMountDisk       = 1,
-    Atari800CommandInsertCartridge = 2,
-    Atari800CommandLoadCassette    = 3,
-    Atari800CommandReset           = 4,
-    Atari800CommandRemoveCartridge = 5,
-    Atari800CommandDismountDisk    = 6,
+    Atari800CommandBinaryLoad        = 0,
+    Atari800CommandMountDisk         = 1,
+    Atari800CommandInsertCartridge   = 2,
+    Atari800CommandLoadCassette      = 3,
+    Atari800CommandReset             = 4,
+    Atari800CommandRemoveCartridge   = 5,
+    Atari800CommandDismountDisk      = 6,
+    Atari800CommandChangeVideoSystem = 7,
 };
 
 typedef NS_ENUM(NSInteger, Atari800UICommandParamType) {
@@ -25,6 +26,8 @@ typedef NS_ENUM(NSInteger, Atari800UICommandParamType) {
     Atari800CommandParamNotRequired = -1,
     Atari800CommandParamLeftCartridge,
     Atari800CommandParamRightCartridge,
+    Atari800CommandParamPALVideoSystem,
+    Atari800CommandParamNTSCVideoSystem
 };
 
 @class Atari800EmulationThread;

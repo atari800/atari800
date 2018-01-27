@@ -246,7 +246,7 @@ DQ
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="URk-tf-lcB">
-                                                                    <rect key="frame" x="34" y="-7" width="91" height="28"/>
+                                                                    <rect key="frame" x="34" y="0.0" width="91" height="32"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                                                     <buttonCell key="cell" type="push" title="Mount..." bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Edt-8b-Im2">
                                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -615,6 +615,25 @@ DQ
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Emulation" id="JRu-2p-yBa">
                                     <items>
+                                        <menuItem title="TV System" id="JiE-qb-Ro0">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <menu key="submenu" id="kz1-Gw-Exq">
+                                                <items>
+                                                    <menuItem title="NTSC" id="KxV-C3-Zlt">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="tvSystemChanged:" target="Ady-hI-5gd" id="LXf-sI-65I"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="PAL" state="on" id="8XN-ES-bET">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="tvSystemChanged:" target="Ady-hI-5gd" id="SEi-aO-4sm"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                </items>
+                                            </menu>
+                                        </menuItem>
                                         <menuItem title="Drives" keyEquivalent="d" id="qXu-kr-ygK">
                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
