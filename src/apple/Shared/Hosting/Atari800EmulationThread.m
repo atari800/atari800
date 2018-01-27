@@ -237,12 +237,17 @@ NS_INLINE void Atari800ChangeVideoSystem(__unsafe_unretained Atari800EmulationTh
             break;
           
         case Atari800CommandParamPALVideoSystem:
-        default:
             tvMode = Atari800_TV_PAL;
+            break;
+            
+        default:
             break;
     }
     
-    Atari800_SetTVMode(tvMode);
+    if (tvMode != Atari800_tv_mode) {
+    
+        Atari800_SetTVMode(tvMode);
+    }
     Atari800CompleteCommand(thread, command, YES, nil);
 }
 
