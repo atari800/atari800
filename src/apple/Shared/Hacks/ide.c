@@ -229,7 +229,7 @@ static int ide_init_drive(struct ide_device *s, char *filename) {
     s->nb_sectors = s->filesize / SECTOR_SIZE;
 
     /* use standard physical disk geometry */
-    s->cylinders = s->nb_sectors / (STD_HEADS * STD_SECTORS);
+    s->cylinders = (int)(s->nb_sectors / (STD_HEADS * STD_SECTORS));
 
     if (s->cylinders > 16383)
         s->cylinders = 16383;

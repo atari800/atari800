@@ -282,7 +282,7 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 		Log_print("Error loading ROM image: %s", filename);
 		return FALSE;
 	}
-	len = fread(buffer, 1, nbytes, f);
+	len = (int)fread(buffer, 1, nbytes, f);
 	fclose(f);
 	if (len != nbytes) {
 		Log_print("Error reading %s", filename);
@@ -310,7 +310,7 @@ static int load_roms(void)
 		int basic_ver, xegame_ver;
 		SYSROM_ChooseROMs(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode, &Atari800_os_version, &basic_ver, &xegame_ver);
 		if (Atari800_os_version == -1
-		    || !Atari800_LoadImage(SYSROM_roms[Atari800_os_version].filename, MEMORY_os, SYSROM_roms[Atari800_os_version].size)) {
+		    || !Atari800_LoadImage(SYSROM_roms[Atari800_os_version].filename, MEMORY_os, (int)SYSROM_roms[Atari800_os_version].size)) {
 			/* Missing OS ROM. */
 			Atari800_os_version = -1;
 			if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
@@ -321,7 +321,7 @@ static int load_roms(void)
 		}
 		else if (Atari800_machine_type != Atari800_MACHINE_5200) {
 			/* OS ROM found, try loading BASIC. */
-			MEMORY_have_basic = basic_ver != -1 && Atari800_LoadImage(SYSROM_roms[basic_ver].filename, MEMORY_basic, SYSROM_roms[basic_ver].size);
+			MEMORY_have_basic = basic_ver != -1 && Atari800_LoadImage(SYSROM_roms[basic_ver].filename, MEMORY_basic, (int)SYSROM_roms[basic_ver].size);
 			if (!MEMORY_have_basic)
 				/* Missing BASIC ROM. Don't fail when it happens. */
 				Atari800_builtin_basic = FALSE;
@@ -329,7 +329,7 @@ static int load_roms(void)
 			if (Atari800_builtin_game) {
 				/* Try loading built-in XEGS game. */
 				if (xegame_ver == -1
-				    || !Atari800_LoadImage(SYSROM_roms[xegame_ver].filename, MEMORY_xegame, SYSROM_roms[xegame_ver].size))
+				    || !Atari800_LoadImage(SYSROM_roms[xegame_ver].filename, MEMORY_xegame, (int)SYSROM_roms[xegame_ver].size))
 					/* Missing XEGS game ROM. */
 					Atari800_builtin_game = FALSE;
 			}
