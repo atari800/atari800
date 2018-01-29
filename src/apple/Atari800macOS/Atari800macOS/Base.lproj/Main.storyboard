@@ -5,10 +5,10 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--Select Cartridge Type-->
+        <!--Cartridges Type-->
         <scene sceneID="TQd-09-osy">
             <objects>
-                <viewController showSeguePresentationStyle="single" id="h5Q-kJ-fQa" userLabel="Select Cartridge Type" customClass="CartridgeTypesViewController" customModule="Atari800macOS" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Cartridge Types" showSeguePresentationStyle="single" id="h5Q-kJ-fQa" userLabel="Cartridges Type" customClass="CartridgeTypesViewController" customModule="Atari800macOS" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="hWk-Qa-c2u">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="237"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -115,10 +115,10 @@ Gw
             </objects>
             <point key="canvasLocation" x="717" y="680.5"/>
         </scene>
-        <!--Drives View Controller-->
+        <!--Drives-->
         <scene sceneID="TSe-Hn-9HC">
             <objects>
-                <viewController id="VVu-ea-Rhp" customClass="DrivesViewController" customModule="Atari800macOS" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Drives" id="VVu-ea-Rhp" customClass="DrivesViewController" customModule="Atari800macOS" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="44O-Fr-2aM">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="295"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -149,13 +149,13 @@ DQ
                                     <action selector="close:" target="VVu-ea-Rhp" id="VCG-hy-0dF"/>
                                 </connections>
                             </button>
-                            <scrollView autohidesScrollers="YES" horizontalLineScroll="26" horizontalPageScroll="10" verticalLineScroll="26" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lKS-O6-Zzm">
+                            <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lKS-O6-Zzm">
                                 <rect key="frame" x="20" y="61" width="410" height="214"/>
                                 <clipView key="contentView" id="18w-j9-8sT">
                                     <rect key="frame" x="1" y="0.0" width="408" height="213"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="sequential" alternatingRowBackgroundColors="YES" columnReordering="NO" columnSelection="YES" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="23" headerView="L1w-Tz-VEK" viewBased="YES" id="Aqi-Nw-I5Y">
+                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="sequential" alternatingRowBackgroundColors="YES" columnReordering="NO" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" headerView="L1w-Tz-VEK" id="Aqi-Nw-I5Y">
                                             <rect key="frame" x="0.0" y="0.0" width="408" height="190"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <size key="intercellSpacing" width="3" height="3"/>
@@ -634,6 +634,74 @@ DQ
                                                 </items>
                                             </menu>
                                         </menuItem>
+                                        <menuItem title="RAM" id="Yd6-2s-NCT" userLabel="RAM">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <menu key="submenu" id="0ZX-uM-R0h">
+                                                <items>
+                                                    <menuItem title="16" tag="16" id="SBY-Rh-Cjk">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="tu1-tc-qst"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="48" tag="48" id="nCL-CV-31J">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="oul-su-UVW"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="52" tag="52" id="iTf-iq-ZWi">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="eYB-8o-Tdf"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="64" state="on" tag="64" id="l4Y-e6-c9b">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="fEb-Ki-nZ7"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="128" tag="128" id="clC-GQ-kDp">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="vHP-tV-zQw"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="192" tag="192" id="pqJ-dk-vBZ">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="X5O-qs-xvQ"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="320 (RAMBO)" tag="320" id="HxD-AJ-47y">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="duW-PL-QY6"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="320 (Compy Shop)" tag="321" id="qpt-0i-AEu">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="e61-Nb-Qp4"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="576" tag="576" id="vsH-Mn-eda">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="fcI-58-mAo"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="1088" tag="1088" id="KDo-OI-BOh">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="ramSizeChanged:" target="Ady-hI-5gd" id="AqL-N5-Yz8"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                </items>
+                                            </menu>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="AG8-yP-XgD"/>
                                         <menuItem title="Drives" keyEquivalent="d" id="qXu-kr-ygK">
                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>

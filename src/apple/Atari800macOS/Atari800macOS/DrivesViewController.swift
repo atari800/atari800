@@ -69,35 +69,49 @@ extension DrivesViewController: NSTableViewDelegate {
     
     func cellIdentifier(for tableColumn: NSTableColumn?) -> NSUserInterfaceItemIdentifier? {
         
-        switch (tableColumn?.identifier) {
-        case NSUserInterfaceItemIdentifier("Drive Number")?:
-            return NSUserInterfaceItemIdentifier("Drive Number Cell")
-        case NSUserInterfaceItemIdentifier("File Name")?:
-            return NSUserInterfaceItemIdentifier("File Name Cell")
-        case NSUserInterfaceItemIdentifier("Action")?:
-            return NSUserInterfaceItemIdentifier("Action Cell")
-        default:
-            return nil
+        if let tableColumn = tableColumn {
+            
+            switch (tableColumn.identifier) {
+            case NSUserInterfaceItemIdentifier("Drive Number"):
+                return NSUserInterfaceItemIdentifier("Drive Number Cell")
+            case NSUserInterfaceItemIdentifier("File Name"):
+                return NSUserInterfaceItemIdentifier("File Name Cell")
+            case NSUserInterfaceItemIdentifier("Action"):
+                return NSUserInterfaceItemIdentifier("Action Cell")
+            case NSUserInterfaceItemIdentifier("Write Protect"):
+                return NSUserInterfaceItemIdentifier("Write Protect Cell")
+            default:
+                break
+            }
         }
+        
+        return nil
     }
     
     func setValue(for tableColumn: NSTableColumn?, view: NSTableCellView, drive: [AnyHashable: Any]) {
         
-        switch (tableColumn?.identifier) {
-        
-        case NSUserInterfaceItemIdentifier("Drive Number")?:
-            view.textField?.stringValue = String(describing: drive[Atari800DriveNumberKey]!)
-            break
-        
-        case NSUserInterfaceItemIdentifier("File Name")?:
-            view.textField?.stringValue = drive[Atari800DriveFileNameKey] as! String
-            break
-        
-        case NSUserInterfaceItemIdentifier("Action")?:
-            break
-        
-        default:
-            break
+        if let tableColumn = tableColumn {
+            
+            switch (tableColumn.identifier) {
+                
+            case NSUserInterfaceItemIdentifier("Drive Number"):
+                view.textField?.stringValue = String(describing: drive[Atari800DriveNumberKey]!)
+                break
+                
+            case NSUserInterfaceItemIdentifier("File Name"):
+                view.textField?.stringValue = drive[Atari800DriveFileNameKey] as! String
+                break
+                
+            case NSUserInterfaceItemIdentifier("Action"):
+                
+                break
+                
+            case NSUserInterfaceItemIdentifier("Write Protect"):
+                break
+                
+            default:
+                break
+            }
         }
     }
     

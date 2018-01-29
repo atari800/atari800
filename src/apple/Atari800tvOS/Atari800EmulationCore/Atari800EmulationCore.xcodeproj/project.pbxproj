@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		E203744D1FFEB5160027CCDE /* Atari800EmulationCore.h in Headers */ = {isa = PBXBuildFile; fileRef = E203744B1FFEB5160027CCDE /* Atari800EmulationCore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E21D085D20010745005566E6 /* ROM in Resources */ = {isa = PBXBuildFile; fileRef = E21D085A20010745005566E6 /* ROM */; };
-		E21D085E20010745005566E6 /* XEX in Resources */ = {isa = PBXBuildFile; fileRef = E21D085B20010745005566E6 /* XEX */; };
 		E21D085F20010745005566E6 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = E21D085C20010745005566E6 /* Fonts */; };
 		E21D088820010767005566E6 /* atari.c in Sources */ = {isa = PBXBuildFile; fileRef = E21D086120010766005566E6 /* atari.c */; };
 		E21D088920010767005566E6 /* pal_blending.c in Sources */ = {isa = PBXBuildFile; fileRef = E21D086220010766005566E6 /* pal_blending.c */; };
@@ -173,7 +172,6 @@
 		E203744B1FFEB5160027CCDE /* Atari800EmulationCore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800EmulationCore.h; sourceTree = "<group>"; };
 		E203744C1FFEB5160027CCDE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E21D085A20010745005566E6 /* ROM */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ROM; path = ../../../Shared/ROM; sourceTree = "<group>"; };
-		E21D085B20010745005566E6 /* XEX */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XEX; path = ../../../Shared/XEX; sourceTree = "<group>"; };
 		E21D085C20010745005566E6 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = ../../../Shared/Fonts; sourceTree = "<group>"; };
 		E21D086120010766005566E6 /* atari.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = atari.c; sourceTree = "<group>"; };
 		E21D086220010766005566E6 /* pal_blending.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pal_blending.c; sourceTree = "<group>"; };
@@ -381,7 +379,6 @@
 				E21D088220010766005566E6 /* Utils */,
 				E21D085C20010745005566E6 /* Fonts */,
 				E21D085A20010745005566E6 /* ROM */,
-				E21D085B20010745005566E6 /* XEX */,
 				E203744B1FFEB5160027CCDE /* Atari800EmulationCore.h */,
 				E203744C1FFEB5160027CCDE /* Info.plist */,
 			);
@@ -781,7 +778,6 @@
 				E21D08A420010767005566E6 /* XFormer.act in Resources */,
 				E21D089F20010767005566E6 /* jakub.act in Resources */,
 				E21D085F20010745005566E6 /* Fonts in Resources */,
-				E21D085E20010745005566E6 /* XEX in Resources */,
 				E21D08A020010767005566E6 /* gray.act in Resources */,
 				E21D08A220010767005566E6 /* fox.act in Resources */,
 				E21D08A320010767005566E6 /* default.act in Resources */,

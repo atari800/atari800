@@ -132,6 +132,32 @@ class EmulationViewController: NSViewController {
         }
     }
     
+    func deselectAll(except menuItem: NSMenuItem) {
+        
+        for otherMenuItem in menuItem.menu?.items ?? [] {
+            
+            if otherMenuItem != menuItem {
+                
+                otherMenuItem.state = NSControl.StateValue.off
+            }
+        }
+        
+        menuItem.state = NSControl.StateValue.on
+    }
+    
+    @IBAction func ramSizeChanged(_ sender: Any?) {
+        
+        if let emulator = Atari800Emulator.shared(), let menuItem = sender as? NSMenuItem {
+            
+            let ramSizeValue = menuItem.tag
+            
+            emulator.setRAMSize(ramSizeValue, completion: { (ok, error) in
+                
+                self.deselectAll(except: menuItem)
+            })
+        }
+    }
+    
     @IBAction func tvSystemChanged(_ sender: Any?) {
         
         let menuItem = sender as? NSMenuItem;
@@ -142,15 +168,7 @@ class EmulationViewController: NSViewController {
 
                 if let menuItem = menuItem {
                     
-                    for otherMenuItem in menuItem.menu?.items ?? [] {
-                
-                        if otherMenuItem != menuItem {
-                        
-                            otherMenuItem.state = NSControl.StateValue.off
-                        }
-                    }
-                    
-                    menuItem.state = NSControl.StateValue.on
+                    self.deselectAll(except: menuItem)
                 }
             })
         }

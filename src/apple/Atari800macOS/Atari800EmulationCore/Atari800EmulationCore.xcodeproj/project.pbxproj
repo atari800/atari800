@@ -156,7 +156,6 @@
 		E251DAFA1FEA914100613C10 /* ide.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DAF71FEA914100613C10 /* ide.c */; };
 		E251DB231FEA9AEE00613C10 /* ROM in Resources */ = {isa = PBXBuildFile; fileRef = E251DB221FEA9AEE00613C10 /* ROM */; };
 		E251DB291FEAA29900613C10 /* atari.c in Sources */ = {isa = PBXBuildFile; fileRef = E251DB281FEAA29900613C10 /* atari.c */; };
-		E251DB2B1FEAA30900613C10 /* XEX in Resources */ = {isa = PBXBuildFile; fileRef = E251DB2A1FEAA30900613C10 /* XEX */; };
 		E266678B1FF1894B00ECBD26 /* Atari800WindowController.h in Headers */ = {isa = PBXBuildFile; fileRef = E26667891FF1894B00ECBD26 /* Atari800WindowController.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E266678C1FF1894B00ECBD26 /* Atari800WindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = E266678A1FF1894B00ECBD26 /* Atari800WindowController.m */; };
 		E266678F1FF3BBC300ECBD26 /* ui_basic.c in Sources */ = {isa = PBXBuildFile; fileRef = E21FD9DD1FE97E5C00FB1796 /* ui_basic.c */; };
@@ -329,7 +328,6 @@
 		E251DAF71FEA914100613C10 /* ide.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ide.c; sourceTree = "<group>"; };
 		E251DB221FEA9AEE00613C10 /* ROM */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ROM; path = ../../../Shared/ROM; sourceTree = "<group>"; };
 		E251DB281FEAA29900613C10 /* atari.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = atari.c; sourceTree = "<group>"; };
-		E251DB2A1FEAA30900613C10 /* XEX */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XEX; path = ../../../Shared/XEX; sourceTree = "<group>"; };
 		E26667891FF1894B00ECBD26 /* Atari800WindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atari800WindowController.h; sourceTree = "<group>"; };
 		E266678A1FF1894B00ECBD26 /* Atari800WindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Atari800WindowController.m; sourceTree = "<group>"; };
 		E2929BDF1FFA8BE10072A66E /* Atari800Dispatch.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Atari800Dispatch.m; sourceTree = "<group>"; };
@@ -624,7 +622,6 @@
 		E2D98B981FE93A52005362D9 /* Atari800EmulationCore */ = {
 			isa = PBXGroup;
 			children = (
-				E251DB2A1FEAA30900613C10 /* XEX */,
 				E251DB221FEA9AEE00613C10 /* ROM */,
 				E251DAEA1FEA754800613C10 /* config.h */,
 				E21FD8C21FE97D5B00FB1796 /* Emulation */,
@@ -784,7 +781,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E251DB2B1FEAA30900613C10 /* XEX in Resources */,
 				E231F6701FE9469F004ED389 /* Real.act in Resources */,
 				E251DB231FEA9AEE00613C10 /* ROM in Resources */,
 				E231F66E1FE9469F004ED389 /* jakub.act in Resources */,

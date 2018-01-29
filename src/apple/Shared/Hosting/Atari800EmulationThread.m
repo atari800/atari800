@@ -24,6 +24,7 @@
 #import "platform.h"
 #import "cartridge.h"
 #import "sio.h"
+#import "memory.h"
 
 #if __has_feature(objc_arc)
     #error This file must be compiled without ARC. Use -fno-objc-arc flag
@@ -247,7 +248,21 @@ NS_INLINE void Atari800ChangeVideoSystem(__unsafe_unretained Atari800EmulationTh
     if (tvMode != Atari800_tv_mode) {
     
         Atari800_SetTVMode(tvMode);
+        Atari800_InitialiseMachine();
     }
+    Atari800CompleteCommand(thread, command, YES, nil);
+}
+
+NS_INLINE void Atari800ChangeRAMSize(__unsafe_unretained Atari800EmulationThread *thread, Atari800UICommand *command)
+{
+    int ramSize = (int)command->intParam;
+
+    if (MEMORY_ram_size != ramSize) {
+        
+        MEMORY_ram_size = ramSize;
+        Atari800_InitialiseMachine();
+    }
+    
     Atari800CompleteCommand(thread, command, YES, nil);
 }
 
@@ -297,6 +312,10 @@ NS_INLINE void Atari800ProcessUICommand(__unsafe_unretained Atari800EmulationThr
           
         case Atari800CommandChangeVideoSystem:
             Atari800ChangeVideoSystem(thread, command);
+            break;
+           
+        case Atari800CommandChangeRAMSize:
+            Atari800ChangeRAMSize(thread, command);
             break;
             
         default:

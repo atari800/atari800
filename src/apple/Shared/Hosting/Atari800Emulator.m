@@ -134,6 +134,11 @@ static Atari800Emulator *shared = nil;
     }
 }
 
+- (void)setRAMSize:(NSInteger)ramSize completion:(Atari800CompletionHandler)completion
+{
+    Atari800UICommandEnqueue(Atari800CommandChangeRAMSize, Atari800CommandParamNotRequired, ramSize, @[], completion);
+}
+
 + (instancetype)shared
 {
     static dispatch_once_t onceToken;
