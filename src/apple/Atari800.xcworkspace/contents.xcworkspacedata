@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:Atari800macOS/Atari800macOS.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Atari800iOS/Atari800iOS.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Atari800tvOS/Atari800tvOS.xcodeproj">
+   </FileRef>
+   <Group
+      location = "container:Shared"
+      name = "Shared">
+      <Group
+         location = "group:CoreAudio"
+         name = "CoreAudio">
+         <FileRef
+            location = "group:Atari800AudioBuffer.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800AudioBuffer.m">
+         </FileRef>
+         <FileRef
+            location = "group:/Users/simonl/Projects/atari800/src/apple/Shared/CoreAudio/Atari800AudioDriver.m">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800AudioDriver.h">
+         </FileRef>
+      </Group>
+      <Group
+         location = "container:Shared/Hacks"
+         name = "Hacks">
+         <FileRef
+            location = "group:atari.c">
+         </FileRef>
+         <FileRef
+            location = "group:ide.c">
+         </FileRef>
+         <FileRef
+            location = "group:pal_blending.c">
+         </FileRef>
+         <FileRef
+            location = "group:sound.c">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:Hosting"
+         name = "Hosting">
+         <FileRef
+            location = "group:Atari800EmulationThread.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800EmulationThread.m">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800Renderer.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800Emulator.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800Emulator.m">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800ControlManager.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800ControlManager.m">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800Emulator+CartridgeHandling.h">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800Emulator+CartridgeHandling.m">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:Preferences"
+         name = "Preferences">
+         <FileRef
+            location = "group:Atari800Preferences.m">
+         </FileRef>
+         <FileRef
+            location = "group:Atari800Preferences.h">
+         </FileRef>
+      </Group>
+      <Group
+         location = "container:.."
+         name = "Emulation">
+         <Group
+            location = "group:atari_ntsc"
+            name = "atari_ntsc">
+            <FileRef
+               location = "group:atari_ntsc.h">
+            </FileRef>
+            <FileRef
+               location = "group:atari_ntsc_config.h">
+            </FileRef>
+            <FileRef
+               location = "group:atari_ntsc.c">
+            </FileRef>
+            <FileRef
+               location = "group:atari_ntsc_impl.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:af80.c">
+         </FileRef>
+         <FileRef
+            location = "group:af80.h">
+         </FileRef>
+         <FileRef
+            location = "group:afile.c">
+         </FileRef>
+         <FileRef
+            location = "group:afile.h">
+         </FileRef>
+         <FileRef
+            location = "group:akey.h">
+         </FileRef>
+         <FileRef
+            location = "group:antic.c">
+         </FileRef>
+         <FileRef
+            location = "group:antic.h">
+         </FileRef>
+         <FileRef
+            location = "group:artifact.c">
+         </FileRef>
+         <FileRef
+            location = "group:artifact.h">
+         </FileRef>
+         <FileRef
+            location = "group:atari_curses.c">
+         </FileRef>
+         <FileRef
+            location = "group:atari.c">
+         </FileRef>
+         <FileRef
+            location = "group:atari.h">
+         </FileRef>
+         <FileRef
+            location = "group:binload.c">
+         </FileRef>
+         <FileRef
+            location = "group:binload.h">
+         </FileRef>
+         <FileRef
+            location = "group:bit3.c">
+         </FileRef>
+         <FileRef
+            location = "group:bit3.h">
+         </FileRef>
+         <FileRef
+            location = "group:cartridge.c">
+         </FileRef>
+         <FileRef
+            location = "group:cartridge.h">
+         </FileRef>
+         <FileRef
+            location = "group:cassette.c">
+         </FileRef>
+         <FileRef
+            location = "group:cassette.h">
+         </FileRef>
+         <FileRef
+            location = "group:cfg.c">
+         </FileRef>
+         <FileRef
+            location = "group:cfg.h">
+         </FileRef>
+         <FileRef
+            location = "group:colours_external.c">
+         </FileRef>
+         <FileRef
+            location = "group:colours_external.h">
+         </FileRef>
+         <FileRef
+            location = "group:colours_ntsc.c">
+         </FileRef>
+         <FileRef
+            location = "group:colours_ntsc.h">
+         </FileRef>
+         <FileRef
+            location = "group:colours_pal.c">
+         </FileRef>
+         <FileRef
+            location = "group:colours_pal.h">
+         </FileRef>
+         <FileRef
+            location = "group:colours.c">
+         </FileRef>
+         <FileRef
+            location = "group:colours.h">
+         </FileRef>
+         <FileRef
+            location = "group:compfile.c">
+         </FileRef>
+         <FileRef
+            location = "group:compfile.h">
+         </FileRef>
+         <FileRef
+            location = "group:cpu.c">
+         </FileRef>
+         <FileRef
+            location = "group:cpu.h">
+         </FileRef>
+         <FileRef
+            location = "group:crc32.c">
+         </FileRef>
+         <FileRef
+            location = "group:crc32.h">
+         </FileRef>
+         <FileRef
+            location = "group:cycle_map.c">
+         </FileRef>
+         <FileRef
+            location = "group:cycle_map.h">
+         </FileRef>
+         <FileRef
+            location = "group:devices.c">
+         </FileRef>
+         <FileRef
+            location = "group:devices.h">
+         </FileRef>
+         <FileRef
+            location = "group:emuos_altirra.c">
+         </FileRef>
+         <FileRef
+            location = "group:emuos.c">
+         </FileRef>
+         <FileRef
+            location = "group:emuos.h">
+         </FileRef>
+         <FileRef
+            location = "group:emuos.lis">
+         </FileRef>
+         <FileRef
+            location = "group:esc.c">
+         </FileRef>
+         <FileRef
+            location = "group:esc.h">
+         </FileRef>
+         <FileRef
+            location = "group:filter_ntsc.c">
+         </FileRef>
+         <FileRef
+            location = "group:filter_ntsc.h">
+         </FileRef>
+         <FileRef
+            location = "group:gtia.c">
+         </FileRef>
+         <FileRef
+            location = "group:gtia.h">
+         </FileRef>
+         <FileRef
+            location = "group:ide_internal.h">
+         </FileRef>
+         <FileRef
+            location = "group:ide.c">
+         </FileRef>
+         <FileRef
+            location = "group:ide.h">
+         </FileRef>
+         <FileRef
+            location = "group:img_tape.c">
+         </FileRef>
+         <FileRef
+            location = "group:img_tape.h">
+         </FileRef>
+         <FileRef
+            location = "group:input.c">
+         </FileRef>
+         <FileRef
+            location = "group:input.h">
+         </FileRef>
+         <FileRef
+            location = "group:joycfg.c">
+         </FileRef>
+         <FileRef
+            location = "group:log.c">
+         </FileRef>
+         <FileRef
+            location = "group:log.h">
+         </FileRef>
+         <FileRef
+            location = "group:memory.c">
+         </FileRef>
+         <FileRef
+            location = "group:memory.h">
+         </FileRef>
+         <FileRef
+            location = "group:mkimg.c">
+         </FileRef>
+         <FileRef
+            location = "group:monitor.c">
+         </FileRef>
+         <FileRef
+            location = "group:monitor.h">
+         </FileRef>
+         <FileRef
+            location = "group:mzpokeysnd.c">
+         </FileRef>
+         <FileRef
+            location = "group:mzpokeysnd.h">
+         </FileRef>
+         <FileRef
+            location = "group:pal_blending.c">
+         </FileRef>
+         <FileRef
+            location = "group:pal_blending.h">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_bb.c">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_bb.h">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_mio.c">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_mio.h">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_proto80.c">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_proto80.h">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_scsi.c">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_scsi.h">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_xld.c">
+         </FileRef>
+         <FileRef
+            location = "group:pbi_xld.h">
+         </FileRef>
+         <FileRef
+            location = "group:pbi.c">
+         </FileRef>
+         <FileRef
+            location = "group:pbi.h">
+         </FileRef>
+         <FileRef
+            location = "group:pcjoy.h">
+         </FileRef>
+         <FileRef
+            location = "group:pia.c">
+         </FileRef>
+         <FileRef
+            location = "group:pia.h">
+         </FileRef>
+         <FileRef
+            location = "group:platform.h">
+         </FileRef>
+         <FileRef
+            location = "group:pokey.c">
+         </FileRef>
+         <FileRef
+            location = "group:pokey.h">
+         </FileRef>
+         <FileRef
+            location = "group:pokeysnd.c">
+         </FileRef>
+         <FileRef
+            location = "group:pokeysnd.h">
+         </FileRef>
+         <FileRef
+            location = "group:rdevice.c">
+         </FileRef>
+         <FileRef
+            location = "group:rdevice.h">
+         </FileRef>
+         <FileRef
+            location = "group:remez.c">
+         </FileRef>
+         <FileRef
+            location = "group:remez.h">
+         </FileRef>
+         <FileRef
+            location = "group:rtime.c">
+         </FileRef>
+         <FileRef
+            location = "group:rtime.h">
+         </FileRef>
+         <FileRef
+            location = "group:screen.c">
+         </FileRef>
+         <FileRef
+            location = "group:screen.h">
+         </FileRef>
+         <FileRef
+            location = "group:sio.c">
+         </FileRef>
+         <FileRef
+            location = "group:sio.h">
+         </FileRef>
+         <FileRef
+            location = "group:sndsave.c">
+         </FileRef>
+         <FileRef
+            location = "group:sndsave.h">
+         </FileRef>
+         <FileRef
+            location = "group:sound.c">
+         </FileRef>
+         <FileRef
+            location = "group:sound.h">
+         </FileRef>
+         <FileRef
+            location = "group:statesav.c">
+         </FileRef>
+         <FileRef
+            location = "group:statesav.h">
+         </FileRef>
+         <FileRef
+            location = "group:sysrom.c">
+         </FileRef>
+         <FileRef
+            location = "group:sysrom.h">
+         </FileRef>
+         <FileRef
+            location = "group:ui_basic.c">
+         </FileRef>
+         <FileRef
+            location = "group:ui_basic.h">
+         </FileRef>
+         <FileRef
+            location = "group:ui.c">
+         </FileRef>
+         <FileRef
+            location = "group:ui.h">
+         </FileRef>
+         <FileRef
+            location = "group:util.c">
+         </FileRef>
+         <FileRef
+            location = "group:util.h">
+         </FileRef>
+         <FileRef
+            location = "group:videomode.c">
+         </FileRef>
+         <FileRef
+            location = "group:videomode.h">
+         </FileRef>
+         <FileRef
+            location = "group:voicebox.c">
+         </FileRef>
+         <FileRef
+            location = "group:voicebox.h">
+         </FileRef>
+         <FileRef
+            location = "group:votrax.c">
+         </FileRef>
+         <FileRef
+            location = "group:votrax.h">
+         </FileRef>
+         <FileRef
+            location = "group:votraxsnd.c">
+         </FileRef>
+         <FileRef
+            location = "group:votraxsnd.h">
+         </FileRef>
+         <FileRef
+            location = "group:vtxsmpls.inc"
+            assignedFileDataType = "public.c-header">
+         </FileRef>
+         <FileRef
+            location = "group:xep80_fonts.c">
+         </FileRef>
+         <FileRef
+            location = "group:xep80_fonts.h">
+         </FileRef>
+         <FileRef
+            location = "group:xep80.c">
+         </FileRef>
+         <FileRef
+            location = "group:xep80.h">
+         </FileRef>
+      </Group>
+      <Group
+         location = "container:"
+         name = "Metal">
+         <FileRef
+            location = "group:Shared/Metal/Atari800Palette.h">
+         </FileRef>
+         <FileRef
+            location = "group:Shared/Metal/Atari800Palette.m">
+         </FileRef>
+         <FileRef
+            location = "group:/Users/simonl/Projects/atari800/src/apple/Shared/Metal/Atari800MetalRenderer.h">
+         </FileRef>
+         <FileRef
+            location = "group:/Users/simonl/Projects/atari800/src/apple/Shared/Metal/Atari800MetalRenderer.m">
+         </FileRef>
+         <FileRef
+            location = "group:Shared/Metal/Atari800Shaders.metal">
+         </FileRef>
+         <FileRef
+            location = "group:Shared/Metal/Atari800ShaderTypes.h">
+         </FileRef>
+         <Group
+            location = "group:Shared/Metal/Palettes"
+            name = "Palettes">
+            <FileRef
+               location = "group:jakub.act">
+            </FileRef>
+            <FileRef
+               location = "group:gray.act">
+            </FileRef>
+            <FileRef
+               location = "group:Real.act">
+            </FileRef>
+            <FileRef
+               location = "group:fox.act">
+            </FileRef>
+            <FileRef
+               location = "group:default.act">
+            </FileRef>
+            <FileRef
+               location = "group:XFormer.act">
+            </FileRef>
+         </Group>
+      </Group>
+   </Group>
+</Workspace>
