@@ -145,8 +145,16 @@ int Sound_Initialise(int *argc, char *argv[])
 				a_i = (Sound_desired.freq = Util_sscandec(argv[++i])) == -1;
 			else a_m = TRUE;
 		}
-		else if (strcmp(argv[i], "-volume") == 0)
-			POKEYSND_SetVolume(Util_sscandec(argv[++i]));
+		else if (strcmp(argv[i], "-volume") == 0) {
+			if (i_a) {
+				int val = Util_sscandec(argv[++i]);
+				if (val == -1)
+					a_i = TRUE;
+				else
+					POKEYSND_SetVolume(val);
+			}
+			else a_m = TRUE;
+		}
 		else if (strcmp(argv[i], "-audio16") == 0)
 			Sound_desired.sample_size = 2;
 		else if (strcmp(argv[i], "-audio8") == 0)
