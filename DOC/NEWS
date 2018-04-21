@@ -1,6 +1,13 @@
-Version ?.?.? (????/??/??)
+Version 4.0.0 (2018/04/21) - release cooked at Atariada.cz
 
- This release contains changes in color handling. Users updating from
+ This release contains full four years of improvements and bugfixes.
+
+ Ports to Android, Raspberry Pi and Sega Dreamcast have been improved.
+ CPU, SIO, ANTIC, GTIA, POKEY and PIA emulation has been corrected.
+
+ For details please look at DOC/ChangeLog and commit history in git.
+
+ This release contains breaking changes in color handling. Users updating from
  an earlier version should reset their color settings, or else the display
  might be unreadable. To reset the color settings, do one of these:
   * Select one of the presets available in the menu option "Display settings"->

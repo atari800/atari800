@@ -1,8 +1,8 @@
 #!/bin/sh
 # This scripts helps with building the source .tar.gz file
 
-VER_MAJOR=3
-VER_MINOR=1
+VER_MAJOR=4
+VER_MINOR=0
 VER_MICRO=0
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO
@@ -12,10 +12,10 @@ TAG=`echo $TAG | tr [:lower:] [:upper:]`
 FOLDER="atari800-"$VERSION
 FNAME=$FOLDER".tar.gz"
 #
-echo "download from CVS? (y/N)"
+echo "download from GitHub? (y/N)"
 read key
 if [ "x"$key = "xy" ]; then
-	cvs -z9 -d:ext:joy@atari800.cvs.sourceforge.net:/cvsroot/atari800 export -r $TAG atari800
+	git clone https://github.com/atari800/atari800.git
 fi
 #
 grep Atari800_TITLE atari800/src/atari.h | grep $VERSION >/dev/null

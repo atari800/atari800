@@ -1,6 +1,6 @@
 # generic defines used by all distributions.
 #
-%define ver			3.1.0
+%define ver			4.0.0
 # When adding a target, add an $options_<target_name> variable to the %build
 # section, and add %{_bindir}/%{name}-<target_name> to the files list in the
 # %files section.
@@ -170,7 +170,7 @@ Name:			atari800
 Version:		%{ver}
 Summary:		An emulator of 8-bit Atari personal computers
 License:		GPLv2
-URL:			http://atari800.sourceforge.net/
+URL:			http://atari800.github.io/
 Source:			http://prdownloads.sourceforge.net/atari800/%{name}-%{version}.tar.gz
 Group:			%{group}
 Release:		%{rel}

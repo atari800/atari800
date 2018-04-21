@@ -379,7 +379,7 @@ Petr Stehlik <pstehlik@sophics.cz>
     - added sound, keyboard and joystick support for DOS version
     - snailmeter
     - various fixes in the SDL version
-    - Atari800 project web pages at http://atari800.sourceforge.net/
+    - Atari800 project web pages at http://atari800.github.io/
     - RT-Config fixes (per-user and system wide config, Y/N questions)
 
 Radek Sterba <raster@infos.cz>
