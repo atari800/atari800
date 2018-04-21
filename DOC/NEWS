@@ -1,11 +1,21 @@
 Version 4.0.0 (2018/04/21) - release cooked at Atariada.cz
 
- This release contains full four years of improvements and bugfixes.
+ This release brings four years of hard work of fellow Atari800 developers
+ on improvements and bugfixes of our favorite Atari emulator.
 
- Ports to Android, Raspberry Pi and Sega Dreamcast have been improved.
+ Ports to Atari ST/TT/Falcon, Android, Raspberry Pi and Sega Dreamcast
+ have been improved (some of them greatly).
+
  CPU, SIO, ANTIC, GTIA, POKEY and PIA emulation has been corrected.
 
- For details please look at DOC/ChangeLog and commit history in git.
+ Atari800 now includes Altirra BIOS so it is now possible to run *some*
+ programs even without installing the original ROM files.
+
+ The total number of changes is so huge that major version bump was necessary.
+
+ Contrary to usual NEWS entries here follows a very incomplete list. It might
+ be updated in later releases. In the meantime please read DOC/ChangeLog
+ and the commit history in git for complete list of changes.
 
  This release contains breaking changes in color handling. Users updating from
  an earlier version should reset their color settings, or else the display
@@ -32,10 +42,16 @@ Version 4.0.0 (2018/04/21) - release cooked at Atariada.cz
     - aDawliah 32 KB cartridge
     - aDawliah 64 KB cartridge
 
+  * new command line switch "-volume" (for 16bit sound output) that can set
+    the output volume of the Atari 800 emulator with value from 0 to 100.
+
  Changes:
  --------
   * The Sound Settings option "Fragment size" has been renamed to less cryptic
     "Hardware buffer size".
+  * Total emulator volume is lower now because the output has been shifted
+    in order to fix a possible annoying humming sound in silence on some
+    receivers (TV sets).
 
  Fixes:
  ------

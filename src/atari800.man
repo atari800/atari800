@@ -1113,6 +1113,9 @@ Use XEP80 on joystick port \fIn\fR
 .TP
 .B \-af80
 Emulate the Austin Franklin 80 column daughterboard for Atari 800.
+.TP
+.B \-volume 0..100
+Sets global volume of Atari 800.
 
 
 .SS X11 Options
