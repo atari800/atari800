@@ -192,7 +192,7 @@ void Util_trim(char *s)
 int Util_sscandec(const char *s)
 {
 	int result;
-	if (*s == '\0')
+	if (s == NULL || *s == '\0')
 		return -1;
 	result = 0;
 	for (;;) {
@@ -209,6 +209,9 @@ int Util_sscandec(const char *s)
 int Util_sscansdec(char const *s, int *dest)
 {
 	int minus = FALSE;
+
+	if (s == NULL || dest == NULL) return FALSE;
+
 	switch(*s) {
 	case '-':
 		minus = TRUE;
@@ -229,6 +232,8 @@ int Util_sscandouble(char const *s, double *dest)
 	char *endptr;
 	double result;
 
+	if (s == NULL || dest == NULL) return FALSE;
+
 	result = strtod(s, &endptr);
 	if (endptr[0] != '\0' || errno == ERANGE)
 		return FALSE;
@@ -240,7 +245,7 @@ int Util_sscandouble(char const *s, double *dest)
 int Util_sscanhex(const char *s)
 {
 	int result;
-	if (*s == '\0')
+	if (s == NULL || *s == '\0')
 		return -1;
 	result = 0;
 	for (;;) {
@@ -260,6 +265,7 @@ int Util_sscanhex(const char *s)
 
 int Util_sscanbool(const char *s)
 {
+	if (s == NULL) return -1;
 	if (*s == '0' && s[1] == '\0')
 		return 0;
 	if (*s == '1' && s[1] == '\0')
