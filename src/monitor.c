@@ -2946,11 +2946,11 @@ static void show_help(void)
 
 static void print_gr_color(UWORD addr) {
 	UBYTE b = MEMORY_SafeGetByte(addr);
-	printf(gr_color_chars[b >> 6]);
-	printf(gr_color_chars[(b >> 4) & 3]);
-	printf(gr_color_chars[(b >> 2) & 3]);
-	printf(gr_color_chars[b & 3]);
-	printf(gr_color_done);
+	printf("%s", gr_color_chars[b >> 6]);
+	printf("%s", gr_color_chars[(b >> 4) & 3]);
+	printf("%s", gr_color_chars[(b >> 2) & 3]);
+	printf("%s", gr_color_chars[b & 3]);
+	printf("%s", gr_color_done);
 }
 
 static void print_gr_mono(UWORD addr) {
@@ -2958,9 +2958,9 @@ static void print_gr_mono(UWORD addr) {
 	int i;
 
 	for(i = 0x80; i; i >>= 1)
-		printf(gr_color_chars[(b & i) ? 3 : 0]);
+		printf("%s", gr_color_chars[(b & i) ? 3 : 0]);
 
-	printf(gr_color_done);
+	printf("%s", gr_color_done);
 }
 
 
