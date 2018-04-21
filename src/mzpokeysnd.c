@@ -2349,16 +2349,16 @@ static void mzpokeysnd_process_8(void* sndbuffer, int sndn)
 #endif
 
 #ifdef VOL_ONLY_SOUND
-        buffer[0] = (UBYTE)floor((generate_sample(pokey_states) + POKEYSND_sampout - MAX_SAMPLE / 2.0)
-         * (255.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+        buffer[0] = (UBYTE)floor((generate_sample(pokey_states) + POKEYSND_sampout)
+         * (255.0 / 2 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
 #else
-        buffer[0] = (UBYTE)floor((generate_sample(pokey_states) - MAX_SAMPLE / 2.0)
-         * (255.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+        buffer[0] = (UBYTE)floor(generate_sample(pokey_states)
+         * (255.0 / 2 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
 #endif
         for(i=1; i<num_cur_pokeys; i++)
         {
-            buffer[i] = (UBYTE)floor((generate_sample(pokey_states + i) - MAX_SAMPLE / 2.0)
-             * (255.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+            buffer[i] = (UBYTE)floor(generate_sample(pokey_states + i)
+             * (255.0 / 2 / MAX_SAMPLE / 4 * M_PI * 0.95) + 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
         }
         buffer += num_cur_pokeys;
         nsam -= num_cur_pokeys;
@@ -2397,16 +2397,16 @@ static void mzpokeysnd_process_16(void* sndbuffer, int sndn)
             }
 #endif
 #ifdef VOL_ONLY_SOUND
-        buffer[0] = (SWORD)floor((generate_sample(pokey_states) + POKEYSND_sampout - MAX_SAMPLE / 2.0)
-         * (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+        buffer[0] = (SWORD)floor((generate_sample(pokey_states) + POKEYSND_sampout)
+         * (65535.0 / 2 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
 #else
-        buffer[0] = (SWORD)floor((generate_sample(pokey_states) - MAX_SAMPLE / 2.0)
-         * (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+        buffer[0] = (SWORD)floor(generate_sample(pokey_states)
+         * (65535.0 / 2 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
 #endif
         for(i=1; i<num_cur_pokeys; i++)
         {
-            buffer[i] = (SWORD)floor((generate_sample(pokey_states + i) - MAX_SAMPLE / 2.0)
-             * (65535.0 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
+            buffer[i] = (SWORD)floor(generate_sample(pokey_states + i)
+             * (65535.0 / 2 / MAX_SAMPLE / 4 * M_PI * 0.95) + 0.5 + 0.5 * rand() / RAND_MAX - 0.25);
         }
         buffer += num_cur_pokeys;
         nsam -= num_cur_pokeys;
@@ -2442,16 +2442,16 @@ static void generate_sync(unsigned int num_ticks)
 			advance_ticks(pokey_states + i, ticks);
 			if (POKEYSND_snd_flags & POKEYSND_BIT16) {
 				*((SWORD *)buffer) = (SWORD)floor(
-					(interp_read_resam_all(pokey_states + i, samp_pos) - MAX_SAMPLE / 2.0)
-					* (volume.s16 / MAX_SAMPLE / 4 * M_PI * 0.95)
+					interp_read_resam_all(pokey_states + i, samp_pos)
+					* (volume.s16 / 2 / MAX_SAMPLE / 4 * M_PI * 0.95)
 					+ 0.5 + 0.5 * rand() / RAND_MAX - 0.25
 				);
 				buffer += 2;
 			}
 			else
 				*buffer++ = (UBYTE)floor(
-					(interp_read_resam_all(pokey_states + i, samp_pos) - MAX_SAMPLE / 2.0)
-					* (volume.s8 / MAX_SAMPLE / 4 * M_PI * 0.95)
+					interp_read_resam_all(pokey_states + i, samp_pos)
+					* (volume.s8 / 2 / MAX_SAMPLE / 4 * M_PI * 0.95)
 					+ 128 + 0.5 + 0.5 * rand() / RAND_MAX - 0.25
 				);
 		}
