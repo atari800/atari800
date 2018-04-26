@@ -1,0 +1,31 @@
+matrix:
+  include:
+    - os: linux
+      language: c
+      dist: trusty
+      sudo: required
+
+branches:
+  only:
+    - master
+
+compiler:
+  - gcc
+
+env:
+  global:
+    - MAKEFLAGS="-j 2"
+
+before_install:
+  - .travis/install_prerequisities.sh
+
+before_script:
+  - . ./.travis/setup_env.sh
+
+script:
+  - . ./.travis/build.sh
+
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: .travis/deploy.sh
