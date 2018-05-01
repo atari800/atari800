@@ -94,6 +94,7 @@
 #if GUI_SDL
 #include "sdl/video.h"
 #include "sdl/video_sw.h"
+#include "sdl/input.h"
 #if HAVE_OPENGL
 #include "sdl/video_gl.h"
 #endif /* HAVE_OPENGL */
@@ -3455,6 +3456,58 @@ static void KeyboardJoystickConfiguration(int joystick)
 		if (++option2 > 4) option2 = 0;
 	}
 }
+
+static void RealJoystickConfiguration(void)
+{
+	char title[40];
+	int option = 0;
+	int i;
+	SDL_INPUT_RealJSConfig_t *js_config;
+
+	static UI_tMenuItem real_js_menu_array[] = {
+		UI_MENU_LABEL("Joystick 1"),
+		UI_MENU_CHECK(0, "Use hat/D-PAD:"),
+		UI_MENU_LABEL("Joystick 2"),
+		UI_MENU_CHECK(1, "Use hat/D-PAD:"),
+		UI_MENU_LABEL("Joystick 3"),
+		UI_MENU_CHECK(2, "Use hat/D-PAD:"),
+		UI_MENU_LABEL("Joystick 4"),
+		UI_MENU_CHECK(3, "Use hat/D-PAD:"),
+		UI_MENU_END
+	};
+
+	snprintf(title, sizeof (title), "Configuration of Real Joysticks");
+
+	for (;;) {
+		/*Set the CHECK items*/
+		for (i = 0; i < 4; i++) {
+			SetItemChecked(real_js_menu_array, i, SDL_INPUT_GetRealJSConfig(i)->use_hat);
+		}
+
+		option = UI_driver->fSelect(title, 0, option, real_js_menu_array, NULL);
+
+		if (option < 0) break;
+
+		switch (option) {
+			case 0:
+				js_config = SDL_INPUT_GetRealJSConfig(0);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+			case 1:
+				js_config = SDL_INPUT_GetRealJSConfig(1);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+			case 2:
+				js_config = SDL_INPUT_GetRealJSConfig(2);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+			case 3:
+				js_config = SDL_INPUT_GetRealJSConfig(3);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+		}
+	}
+}
 #endif
 
 #ifdef DIRECTX
@@ -3561,6 +3614,7 @@ static void ControllerConfiguration(void)
 		UI_MENU_SUBMENU(6, "Define layout of keyboard joystick 1"),
 		UI_MENU_CHECK(7, "Enable keyboard joystick 2:"),
 		UI_MENU_SUBMENU(8, "Define layout of keyboard joystick 2"),
+		UI_MENU_SUBMENU(9, "Configure real joysticks"),
 #endif
 #ifdef DIRECTX
 		UI_MENU_SUBMENU_SUFFIX(5, "Keyboard joystick mode: ", NULL),
@@ -3662,6 +3716,8 @@ static void ControllerConfiguration(void)
 			break;
 		case 8:
 			KeyboardJoystickConfiguration(1);
+			break;
+		case 9: RealJoystickConfiguration();
 			break;
 #endif
 #ifdef DIRECTX
