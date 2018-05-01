@@ -1,3 +1,27 @@
+2018-05-01  Petr Stehlik <pstehlik@sophics.cz>
+* implemented joyhat support for all four real joysticks (command line,
+  configuration file and also the F1 TUI configuration). Original patch
+  from Michal "Baktra" Kalous, with my fixes and clean up.
+
+* DOC/NEWS: updated with new platform specific bits for the 4.0.0 release
+
+
+2018-04-26  Petr Stehlik <pstehlik@sophics.cz>
+* TravisCI scripts from Thorsten Otto added
+
+
+** 4.0.0 released on 2018-04-21
+
+2018-04-21  Petr Stehlik <pstehlik@sophics.cz>
+* src/monitor.c: fixed printf() GCC warnings
+* src/mzpokeysnd.c: silence generates 0000 in the physical sound output
+  now. Originally it was generating a large negative value that was causing
+  an annoying humming sound in certain high-end sound systems.
+* DOC/*: updated for new project web: atari800.github.io
+* src/sound.c: "-volume" parsing fixed
+* src/atari800.man: "-volume" documented
+
+
 2017-06-25  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/NEWS, DOC/USAGE, android/jni/jni.c, atari800.man, cartridge.[ch], ui.c:
   Original Atrax cartridges have address and data lines intermixed. The

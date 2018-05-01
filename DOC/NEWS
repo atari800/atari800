@@ -27,6 +27,7 @@ Version 4.0.0 (2018/04/21) - release cooked at Atariada.cz
   * Delete the emulator's config file (.atari800.cfg). Caution: you'll lose
     all Atari800 settings!
 
+
  New features:
  -------------
   * Support for loading of CAS images with "fsk" chunks - images of
@@ -45,16 +46,37 @@ Version 4.0.0 (2018/04/21) - release cooked at Atariada.cz
   * new command line switch "-volume" (for 16bit sound output) that can set
     the output volume of the Atari 800 emulator with value from 0 to 100.
 
- Changes:
- --------
+
+ Notable Changes:
+ ----------------
   * The Sound Settings option "Fragment size" has been renamed to less cryptic
     "Hardware buffer size".
   * Total emulator volume is lower now because the output has been shifted
     in order to fix a possible annoying humming sound in silence on some
     receivers (TV sets).
 
- Fixes:
- ------
+
+ Port specific improvements:
+ ---------------------------
+ == Atari ST/TT/Falcon ==
+  * CPU emulation fixes for the assembly target (now synchronised with the
+    mainline code, incl. the cycle exact mode)
+  * Stereo POKEY support
+  * Video enhancements: flicker-less rendering & RGB monitors support
+  * SuperVidel support (that means much faster direct rendering using its
+    8-bit chunky mode)
+  * Many small fixes and optimisations
+
+ == Android ==
+  * Built-in Planetary Defense 2012 by Tom Hudson, an enhanced version of 
+    the classic game with emulated touchscreen controls.
+  * New feature: Native sound playback for post 2.3 devices, automatically 
+    enabled. Eliminates stuttering and inconsistent timing of previous 
+    implementation.
+
+
+ General Fixes:
+ --------------
   * Fixed computation of gamma adjustment - now it is applied to each of the
     three RGB channels separately.
   * On systems that support synchronized sound: Fixed the emulator crashing
