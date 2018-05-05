@@ -1,3 +1,9 @@
+atari800 (4.0.0-1) unstable; urgency=medium
+
+  * [26b9009] New upstream version 4.0.0
+
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Fri, 27 Apr 2018 09:42:31 +0200
+
 atari800 (3.1.0-2) unstable; urgency=medium
 
   * [8596bb2] update config.{sub, guess} (Closes: #762477)

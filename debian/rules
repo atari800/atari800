@@ -9,6 +9,7 @@ P=atari800
 
 ARCH := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 CFLAGS+=$(CPPFLAGS)
@@ -110,6 +111,11 @@ binary-arch:		checkroot build
 	install -s src/$(P) debian/tmp/usr/bin/$(P)
 
 	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P)
+
+	# Install lintian overrides
+
+	install -d debian/tmp/usr/share/lintian/overrides
+	install -m 644 debian/atari800.lintian-overrides debian/tmp/usr/share/lintian/overrides/atari800
 
 #	(if [ "$(ARCH)" = "i386" ]; then install debian/$(P) debian/tmp/usr/bin; \
 #	else install debian/$(P).alt debian/tmp/usr/bin/$(P); fi)
