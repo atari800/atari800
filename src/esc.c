@@ -168,7 +168,7 @@ void ESC_PatchOS(void)
 			check_s_1 = 0x03;
 			break;
 		default:
-			return;
+			if (emuos_mode != 2) return;
 		}
 		/* don't hurt non-standard OSes that may not support cassette at all  */
 		if (MEMORY_dGetByte(addr_l)     == 0xa9 && MEMORY_dGetByte(addr_l + 1) == 0x03

@@ -122,6 +122,12 @@ extern int Atari800_turbo;
 	main.c to implement this (initially only SDL supports it). */
 extern int Atari800_start_in_monitor;
 
+/* Two uses of this flag. At emulator start, it is a flag to choose EmuOS:
+   0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always
+   use EmuOS. After the OS is loaded, it will be set to 2 if EmuOS is
+   actually used */
+extern int emuos_mode;
+
 /* Initializes Atari800 emulation core. */
 int Atari800_Initialise(int *argc, char *argv[]);
 
