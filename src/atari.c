@@ -174,7 +174,7 @@ int Atari800_auto_frameskip = FALSE;
 static double benchmark_start_time;
 #endif
 
-int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
+int emuos_mode = 1;
 
 #ifdef HAVE_SIGNAL
 volatile sig_atomic_t sigint_flag = FALSE;
@@ -298,6 +298,7 @@ static void copy_emuos(int machine_type) {
 	padding = 0x10000 - rom_start_addr - sizeof(emuos_h);
 	memset(MEMORY_os, 0, padding);
 	memcpy(MEMORY_os + padding, emuos_h, sizeof(emuos_h));
+	emuos_mode = 2;  /* flag to show that we are using emuos */
 }
 
 static int load_roms(void)
