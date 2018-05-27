@@ -4,6 +4,7 @@
   platforms (e.g. Android) - added autodetection of such case.
 * DOC/NEWS, src/android/jni/Android.mk.in: Fixed building of Android port -
   emous is now an optional module.
+* .gitignore - Added files to ignore from the Android port.
 
 
 2018-05-01  Petr Stehlik <pstehlik@sophics.cz>

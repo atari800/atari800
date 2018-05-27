@@ -8,3 +8,10 @@ autom4te.cache/
 /src/config.log
 /src/config.status
 /src/configure
+/src/android/bin
+/src/android/gen
+/src/android/jni/Android.mk
+/src/android/libs
+/src/android/obj
+/src/android/local.properties
+/src/android/proguard-project.txt
