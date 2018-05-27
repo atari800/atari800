@@ -1,3 +1,7 @@
+2018-05-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* monitor.c: Fixed building with --disable-monitorhints.
+
+
 2018-05-01  Petr Stehlik <pstehlik@sophics.cz>
 * implemented joyhat support for all four real joysticks (command line,
   configuration file and also the F1 TUI configuration). Original patch

@@ -397,6 +397,8 @@ static int symtable_builtin_enable = TRUE;
 static symtable_rec *symtable_user = NULL;
 static int symtable_user_size = 0;
 
+#endif /* MONITOR_HINTS */
+
 #ifdef MONITOR_ANSI
 /* for color bitmaps: black, green, red, white for 00 01 10 11
 	for mono, black & white for 0 and 1. */
@@ -462,6 +464,8 @@ static void print_atascii_char(UWORD c) {
 	putchar((c >= ' ' && c <= 'z' && c != '\x60') ? c : '.');
 }
 #endif /* MONITOR_UTF8 */
+
+#ifdef MONITOR_HINTS
 
 static const char *find_label_name(UWORD addr, int is_write)
 {
