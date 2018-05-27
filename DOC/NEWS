@@ -1,3 +1,10 @@
+Version ?.?.? (????/??/??)
+
+ General Fixes:
+ --------------
+  * Fixed building of the Android target, broken in the previous release.
+
+
 Version 4.0.0 (2018/04/21) - release cooked at Atariada.cz
 
  This release brings four years of hard work of fellow Atari800 developers

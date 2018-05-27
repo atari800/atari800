@@ -2,6 +2,8 @@
 * monitor.c: Fixed building with --disable-monitorhints.
 * configure.ac, monitor.c: TIOCGWINSZ may require including termios.h on some
   platforms (e.g. Android) - added autodetection of such case.
+* DOC/NEWS, src/android/jni/Android.mk.in: Fixed building of Android port -
+  emous is now an optional module.
 
 
 2018-05-01  Petr Stehlik <pstehlik@sophics.cz>
