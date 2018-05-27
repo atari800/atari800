@@ -1,5 +1,7 @@
 2018-05-27  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * monitor.c: Fixed building with --disable-monitorhints.
+* configure.ac, monitor.c: TIOCGWINSZ may require including termios.h on some
+  platforms (e.g. Android) - added autodetection of such case.
 
 
 2018-05-01  Petr Stehlik <pstehlik@sophics.cz>

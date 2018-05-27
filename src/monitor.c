@@ -30,8 +30,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
+#ifdef HAVE_TERMIOS_H
+# include <termios.h>
+#endif
+#ifdef GWINSZ_IN_SYS_IOCTL
+# include <sys/ioctl.h>
 #endif
 
 #include "antic.h"
