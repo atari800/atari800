@@ -6,21 +6,82 @@ preferences mean etc. you should check out instead:
 
 http://pocketatari.atari.org/android
 
+
+I. Prerequisites
+----------------
+
 To compile the android port, you are going to need:
 
-* The Android SDK
-* The Android NDK
-* The Java JDK
-* A working autotools/make environment (i.e. Cygwin on Windows)
+1. A working autotools/make environment (i.e. Cygwin on Windows)
+
+2. The Java JDK.
+
+The latest Java 8 release at the time of this writing, ie. 8u172, is known to
+work correctly:
+
+http://www.oracle.com/technetwork/java/javase/downloads/index.html
+
+Note for Linux users: the OpenJDK 8 package, as available by default in e.g.
+Ubuntu, no longer supports Java source level 1.5, as used by Android SDK. You'll
+need the version provided by Oracle. For Ubuntu, the easiest way to obtain it is
+by means of the "oracle-java8-installer" package provided by the WebUpd8 PPA:
+
+https://launchpad.net/~webupd8team/+archive/ubuntu/java
+
+3. Apache Ant:
+
+https://ant.apache.org/bindownload.cgi
+
+4. The Android SDK.
+
+Atari800 requires tools that have since been removed from the newest version of
+the Android SDK (specifically, "android update project" is no longer available).
+Until Atari800 gets updated, you'll have to use an older version, which
+unfortunately is no longer downloadable from the Android Developers' website.
+The necessary parts of the SDK, though, can be obtained through direct download
+links. Here's how to get them:
+
+a) Get Android SDK Tools not newer that v. 25.2.5, through a direct
+download link. As of May 2018 the functioning links are in the form of:
+
+http://dl-ssl.google.com/android/repository/tools_r25.2.5-<host>.zip
+
+where <host> shall be replaced with one of:
+
+* windows - for Windows 32/64-bit
+* macosx - for MacOS X
+* linux - for Linux 64-bit
+
+b) Create a directory for the SDK, e.g. /android-sdk. Unzip the downloaded
+SDK there - it should create a subdirectory named tools/.
+
+c) Navigate to the tools directory. E.g.
+
+# cd /android-sdk/tools
+
+d) Run sdkmanager to install SDK Platform Tools, SDK Build Tools and platform
+version 20:
+
+# sdkmanager "platform-tools" "build-tools;27.0.3" "platforms;android-20"
+
+5. The Android NDK
+
+Again, Atari800 has not been adapted to the latest changes in the NDK, so you'll
+need to use version no later than r15c. Get it from:
+
+https://developer.android.com/ndk/downloads/older_releases
+
+II. Compiling
+-------------
 
 Setup the environment correctly: create an environment variable called
 ANDROID_NDK_ROOT which points to the root of the NDK
-(f.ex.:export ANDROID_NDK_ROOT='C:\cygwin\android-ndk\android-ndk-r10b\').
+(f.ex.:export ANDROID_NDK_ROOT='C:\cygwin\android-ndk-r15c\').
 Next, add the NDK root, gcc and android tools paths to PATH (f.ex. export PATH=
-"$ANDROID_NDK_ROOT:$ANDROID_NDK_ROOT//toolchains/arm-linux-androideabi-4.6/prebuilt/windows-x86_64/bin:
-/android-sdk-windows/tools/:/android-sdk-windows/platform-tools/:$PATH").
+"$ANDROID_NDK_ROOT:$ANDROID_NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin:
+/android-sdk/tools/:/android-sdk/platform-tools/:$PATH").
 Don't forget to also add the proper Java environment vars too (f.ex.
-export PATH="/ant/bin:$PATH"; export JAVA_HOME='c:\Java\jdk1.6.0_21\';).
+export PATH="/ant/bin:$PATH"; export JAVA_HOME='c:\Java\jdk1.8.0_172\';).
 
 Note: Since newer NDKs are built for Windows and not Cygwin, make sure the NDK
       is accessible by normal Windows methods (i.e. no symlinks in Cygwin).
