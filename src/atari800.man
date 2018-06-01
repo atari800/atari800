@@ -68,7 +68,7 @@ Use OS rev. A NTSC from early NTSC 400/800 units.
 .B a\-pal
 Use OS rev. A PAL from PAL 400/800 units.
 .TP
-.B a\-pal
+.B b\-ntsc
 Use OS rev. B NTSC from late NTSC 400/800 units.
 .TP
 .B custom
