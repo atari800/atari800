@@ -266,6 +266,7 @@ Rich Lawrence <rich@kesmai.com>
 
 Avery Lee <phaeron@virtualdub.org>
     - a fix for error codes in SIO patch handler
+    - ROM images for AltirraOS, Altirra BASIC and Altirra 5200 BIOS
 
 Marcin Lewandowski <jaskier@atari8.info>
     - Atari800Win PLus maintainer since version 4.0
