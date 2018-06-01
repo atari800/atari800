@@ -1,5 +1,15 @@
 2018-06-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari800.man: Fixed an error in description of -800-rev.
+* DOC/NEWS, DOC/USAGE, atari.[ch], atari800.man, configure.ac, emuos.h,
+  emuos_altirra.c, esc.c, memory.c, roms/altirra_5200_os.[ch],
+  roms/altirra_basic.[ch], roms/altirraos_800.[ch], roms/altirraos_xl.[ch],
+  sysrom.[ch], ui.c: Reverted support for Altirra OS and redid it from scratch -
+  the AltirraOS version added previously was the 400/800 variant, but it was
+  used in both 400/800 and XL/XE modes.
+  Added support for AltirraOS 400/800, AltirraOS XL, Altirra 5200 BIOS and
+  Altirra BASIC.
+  Added options for Altirra OSes and BASIC in the "System settings" menu.
+  SIO patches are not yet supported in Altirra OSes.
 
 
 2018-05-29  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

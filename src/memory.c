@@ -31,7 +31,11 @@
 #include "antic.h"
 #include "cpu.h"
 #include "cartridge.h"
-#include "emuos.h"
+#if EMUOS_ALTIRRA
+# include "roms/altirra_5200_os.h"
+#else
+# include "emuos.h"
+#endif
 #include "esc.h"
 #include "gtia.h"
 #include "log.h"
@@ -1054,9 +1058,15 @@ void MEMORY_CartA0bfEnable(void)
 void MEMORY_GetCharset(UBYTE *cs)
 {
 	/* copy font, but change screencode order to ATASCII order */
-	memcpy(cs, emuos_h + EMUOS_CHARSET_OFFSET + 0x200, 0x100); /* control chars */
-	memcpy(cs + 0x100, emuos_h + EMUOS_CHARSET_OFFSET, 0x200); /* !"#$..., uppercase letters */
-	memcpy(cs + 0x300, emuos_h + EMUOS_CHARSET_OFFSET + 0x300, 0x100); /* lowercase letters */
+#if EMUOS_ALTIRRA
+	memcpy(cs, ROM_altirra_5200_os + 0x200, 0x100); /* control chars */
+	memcpy(cs + 0x100, ROM_altirra_5200_os, 0x200); /* !"#$..., uppercase letters */
+	memcpy(cs + 0x300, ROM_altirra_5200_os + 0x300, 0x100); /* lowercase letters */
+#else /* !EMUOS_ALTIRRA */
+	memcpy(cs, emuos_h + 0x200, 0x100); /* control chars */
+	memcpy(cs + 0x100, emuos_h, 0x200); /* !"#$..., uppercase letters */
+	memcpy(cs + 0x300, emuos_h + 0x300, 0x100); /* lowercase letters */
+#endif /* !EMUOS_ALTIRRA */
 }
 
 #ifndef PAGED_MEM

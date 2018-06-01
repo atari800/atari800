@@ -52,7 +52,7 @@ Path to file containing Atari BASIC ROM.
 Used to override paths defined at compile time.
 
 .TP
-\fB\-800\-rev auto\fR|\fBa\-ntsc\fR|\fBa\-pal\fR|\fBb\-ntsc\fR|\fBcustom\fR
+\fB\-800\-rev auto\fR|\fBa\-ntsc\fR|\fBa\-pal\fR|\fBb\-ntsc\fR|\fBcustom\fR|\fBaltirra\fR
 Select operating system revision for Atari 800:
 .PP
 .RS
@@ -73,10 +73,13 @@ Use OS rev. B NTSC from late NTSC 400/800 units.
 .TP
 .B custom
 Use a custom OS.
+.TP
+.B altirra
+Use AltirraOS that is included in the emulator.
 .PD
 .RE
 .TP
-\fB\-xl\-rev auto\fR|\fB10\fR|\fB11\fR|\fB1\fR|\fB2\fR|\fB3a\fR|\fB3b\fR|\fB5\fR|\fB3\fR|\fB4\fR|\fB59\fR|\fB59a\fR|\fBcustom\fR
+\fB\-xl\-rev auto\fR|\fB10\fR|\fB11\fR|\fB1\fR|\fB2\fR|\fB3a\fR|\fB3b\fR|\fB5\fR|\fB3\fR|\fB4\fR|\fB59\fR|\fB59a\fR|\fBcustom\fR|\fBaltirra\fR
 Select operating system revision for Atari XL/XE:
 .PP
 .RS
@@ -122,10 +125,13 @@ Use OS BB000001 rev. 59 from Kevin Savetz' Arabic 65XE: <http://www.savetz.com/v
 .TP
 .B custom
 Use a custom OS.
+.TP
+.B altirra
+Use AltirraOS that is included in the emulator.
 .PD
 .RE
 .TP
-\fB\-5200\-rev auto\fR|\fBorig\fR|\fBa\fR|\fBcustom\fR
+\fB\-5200\-rev auto\fR|\fBorig\fR|\fBa\fR|\fBcustom\fR|\fBaltirra\fR
 Select BIOS revision for Atari 5200:
 .PP
 .RS
@@ -143,10 +149,13 @@ Use BIOS rev. A from late 2\-port 5200 units.
 .TP
 .B custom
 Use a custom BIOS.
+.TP
+.B altirra
+Use Altirra BIOS that is included in the emulator.
 .PD
 .RE
 .TP
-\fB\-basic\-rev auto\fR|\fBa\fR|\fBb\fR|\fBc\fR|\fBcustom\fR
+\fB\-basic\-rev auto\fR|\fBa\fR|\fBb\fR|\fBc\fR|\fBcustom\fR|\fBaltirra\fR
 Select BASIC revision:
 .PP
 .RS
@@ -167,6 +176,9 @@ Use BASIC rev. C from late 600XL/800XL and all XE units.
 .TP
 .B custom
 Use a custom BASIC.
+.TP
+.B altirra
+Use Altirra BASIC that is included in the emulator.
 .PD
 .RE
 .TP

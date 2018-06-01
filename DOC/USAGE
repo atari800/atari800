@@ -107,13 +107,13 @@ Command line options
 -5200_rom <filename>  Use specified 5200 OS ROM image
 -basic_rom <filename> Use specified Atari BASIC ROM image
 
--800-rev auto|a-ntsc|a-pal|b-ntsc|custom
+-800-rev auto|a-ntsc|a-pal|b-ntsc|custom|altirra
                       Select OS revision for Atari 400/800
--xl-rev auto|10|11|1|2|3a|3b|5|3|4|59|59a|custom
+-xl-rev auto|10|11|1|2|3a|3b|5|3|4|59|59a|custom|altirra
                       Select OS revision for Atari XL/XE
--5200-rev auto|orig|a|custom
+-5200-rev auto|orig|a|custom|altirra
                       Select OS revision for Atari 5200
--basic-rev auto|a|b|c|custom
+-basic-rev auto|a|b|c|custom|altirra
                       Select BASIC revision
 -xegame-rev auto|orig|custom
                       Select XEGS builtin game version

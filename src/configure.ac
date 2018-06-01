@@ -720,7 +720,7 @@ A8_OPTION(altirra_bios,yes,
      )
 
 if [[ "$WANT_EMUOS_ALTIRRA" = "yes" ]]; then
-    OBJS="$OBJS emuos_altirra.o"
+    OBJS="$OBJS roms/altirra_5200_os.o roms/altirraos_800.o roms/altirraos_xl.o roms/altirra_basic.o"
 else
     OBJS="$OBJS emuos.o"
 fi

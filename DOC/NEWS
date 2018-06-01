@@ -1,5 +1,15 @@
 Version ?.?.? (????/??/??)
 
+ New Features:
+ -------------
+  * Atari800 now includes Altirra BIOSes for all emulated systems: 400/800,
+    XL/XE, and 5200; as well as Altirra BASIC. It is now possible to use the
+    emulator without providing any ROM images.
+  * The Altirra OSes and Altitta BASIC can now be selected by user in the
+    "System settings", if he wants to use them. Previously Altirra OS was used
+    automatically only when no other OS ROMs were found.
+
+
  General Fixes:
  --------------
   * Fixed building of the Android target, broken in the previous release.
