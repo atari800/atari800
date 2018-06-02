@@ -49,6 +49,42 @@ int ESC_enable_sio_patch = TRUE;
 static UWORD esc_address[256];
 static ESC_FunctionType esc_function[256];
 
+/* Esc function that removes the wait loop when reading the tape leader. For
+   use with standard Atari OSes only. */
+static void CassetteLeaderLoad(void)
+{
+	CASSETTE_LeaderLoad();
+
+	/* registers for SETVBV: third system timer, ~0.1 sec */
+	CPU_regA = 3;
+	CPU_regX = 0;
+	CPU_regY = 5;
+}
+
+/* Esc function that removes the wait loop when writing the tape leader. For
+   use with standard Atari OSes only. */
+static void CassetteLeaderSave(void)
+{
+	CASSETTE_LeaderSave();
+
+	/* registers for SETVBV: third system timer, ~0.1 sec */
+	CPU_regA = 3;
+	CPU_regX = 0;
+	CPU_regY = 5;
+}
+
+/* Esc function that removes the wait loop in AltirraOS's "CassetteWait"
+   routine when reading or writing the tape leader. */
+static void CassetteLeaderAltirra(void)
+{
+	if (CPU_regX == 1)
+		CASSETTE_LeaderLoad();
+	else
+		CASSETTE_LeaderSave();
+	/* Routine expects Y = 1 on exit. */
+	CPU_regY = 1;
+}
+
 void ESC_ClearAll(void)
 {
 	int i;
@@ -124,6 +160,8 @@ void ESC_PatchOS(void)
 		UWORD addr_s;
 		UBYTE check_s_0;
 		UBYTE check_s_1;
+		int altirra = FALSE;
+
 		/* patch Open() of C: so we know when a leader is processed */
 		switch (Atari800_os_version) {
 		case SYSROM_A_NTSC:
@@ -167,19 +205,31 @@ void ESC_PatchOS(void)
 			check_s_0 = 0xa9;
 			check_s_1 = 0x03;
 			break;
+		case SYSROM_ALTIRRA_800:
+			altirra = TRUE;
+			addr_l = 0xef91; /* points to CassetteWait */
+			/* Fall through. */
+		case SYSROM_ALTIRRA_XL:
+			altirra = TRUE;
+			addr_l = 0xee4a; /* points to CassetteWait */
+			break;
 		default:
 			return;
 		}
-		/* don't hurt non-standard OSes that may not support cassette at all  */
-		if (MEMORY_dGetByte(addr_l)     == 0xa9 && MEMORY_dGetByte(addr_l + 1) == 0x03
-		 && MEMORY_dGetByte(addr_l + 2) == 0x8d && MEMORY_dGetByte(addr_l + 3) == 0x2a
-		 && MEMORY_dGetByte(addr_l + 4) == 0x02
-		 && MEMORY_dGetByte(addr_s)     == check_s_0
-		 && MEMORY_dGetByte(addr_s + 1) == check_s_1
-		 && MEMORY_dGetByte(addr_s + 2) == 0x20 && MEMORY_dGetByte(addr_s + 3) == 0x5c
-		 && MEMORY_dGetByte(addr_s + 4) == 0xe4) {
-			ESC_Add(addr_l, ESC_COPENLOAD, CASSETTE_LeaderLoad);
-			ESC_Add(addr_s, ESC_COPENSAVE, CASSETTE_LeaderSave);
+		if (altirra)
+			ESC_AddEscRts(addr_l, ESC_COPENLOAD, CassetteLeaderAltirra);
+		else {
+			/* don't hurt non-standard OSes that may not support cassette at all  */
+			if (MEMORY_dGetByte(addr_l)     == 0xa9 && MEMORY_dGetByte(addr_l + 1) == 0x03
+			 && MEMORY_dGetByte(addr_l + 2) == 0x8d && MEMORY_dGetByte(addr_l + 3) == 0x2a
+			 && MEMORY_dGetByte(addr_l + 4) == 0x02
+			 && MEMORY_dGetByte(addr_s)     == check_s_0
+			 && MEMORY_dGetByte(addr_s + 1) == check_s_1
+			 && MEMORY_dGetByte(addr_s + 2) == 0x20 && MEMORY_dGetByte(addr_s + 3) == 0x5c
+			 && MEMORY_dGetByte(addr_s + 4) == 0xe4) {
+				ESC_Add(addr_l, ESC_COPENLOAD, CassetteLeaderLoad);
+				ESC_Add(addr_s, ESC_COPENSAVE, CassetteLeaderSave);
+			}
 		}
 		ESC_AddEscRts(0xe459, ESC_SIOV, SIO_Handler);
 		patched = TRUE;

@@ -412,10 +412,6 @@ void CASSETTE_LeaderLoad(void)
 		CASSETTE_ToggleRecord();
 	CASSETTE_TapeMotor(TRUE);
 	cassette_gapdelay = 9600;
-	/* registers for SETVBV: third system timer, ~0.1 sec */
-	CPU_regA = 3;
-	CPU_regX = 0;
-	CPU_regY = 5;
 }
 
 /* indicates that a save leader is written by the OS */
@@ -425,10 +421,6 @@ void CASSETTE_LeaderSave(void)
 	CASSETTE_ToggleRecord();
 	CASSETTE_TapeMotor(TRUE);
 	cassette_gapdelay = 19200;
-	/* registers for SETVBV: third system timer, ~0.1 sec */
-	CPU_regA = 3;
-	CPU_regX = 0;
-	CPU_regY = 5;
 }
 
 int CASSETTE_ReadToMemory(UWORD dest_addr, int length)

@@ -1259,7 +1259,8 @@ void SIO_Handler(void)
 			else
 				result = 'E';
 			break;
-		case 0x57:	/* write */
+		case 0x50:	/* put (used by AltirraOS) */
+		case 0x57:	/* write (used by Atari OS) */
 			/* add pregap length */
 			CASSETTE_AddGap(gaps == 0 ? 3000 : 260);
 			/* write full record to storage medium */

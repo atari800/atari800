@@ -1,3 +1,8 @@
+2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* cassette.c, devices.c, esc.c, sio.c: Added support for SIO patches in
+  AltirraOS 800/XL.
+
+
 2018-06-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * atari800.man: Fixed an error in description of -800-rev.
 * DOC/NEWS, DOC/USAGE, atari.[ch], atari800.man, configure.ac, emuos.h,

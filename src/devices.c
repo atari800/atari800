@@ -2392,6 +2392,7 @@ int Devices_enable_b_patch = FALSE;
 */
 int Devices_PatchOS(void)
 {
+	/* addr points to the ROM table of handler vectors. */
 	UWORD addr;
 	int i;
 	int patched = FALSE;
@@ -2401,16 +2402,16 @@ int Devices_PatchOS(void)
 	case SYSROM_A_PAL:
 	case SYSROM_B_NTSC:
 	case SYSROM_800_CUSTOM:
-		addr = 0xf0e3;
+		addr = 0xf0e3; /* labeled TBLENT in OS sources */
 		break;
 	case SYSROM_AA00R10:
-		addr = 0xc4fa;
+		addr = 0xc4fa; /* labeled THAV in OS sources */
 		break;
 	case SYSROM_AA01R11:
-		addr = 0xc479;
+		addr = 0xc479; /* labeled THAV in OS sources */
 		break;
 	case SYSROM_BB00R1:
-		addr = 0xc43c;
+		addr = 0xc43c; /* labeled THAV in OS sources */
 		break;
 	case SYSROM_BB01R2:
 	case SYSROM_BB01R3:
@@ -2418,16 +2419,22 @@ int Devices_PatchOS(void)
 	case SYSROM_BB01R59:
 	case SYSROM_BB01R59A:
 	case SYSROM_XL_CUSTOM:
-		addr = 0xc42e;
+		addr = 0xc42e; /* labeled THAV in OS sources */
 		break;
 	case SYSROM_BB02R3:
-		addr = 0xc42c;
+		addr = 0xc42c; /* labeled THAV in OS sources */
 		break;
 	case SYSROM_BB02R3V4:
-		addr = 0xc43b;
+		addr = 0xc43b; /* labeled THAV in OS sources */
 		break;
 	case SYSROM_CC01R4:
-		addr = 0xc3eb;
+		addr = 0xc3eb; /* labeled THAV in OS sources */
+		break;
+	case SYSROM_ALTIRRA_800:
+		addr = 0xefd4; /* labeled InitHandlerTable in OS sources */
+		break;
+	case SYSROM_ALTIRRA_XL:
+		addr = 0xee90; /* labeled InitHandlerTable in OS sources */
 		break;
 	default:
 		return FALSE;
