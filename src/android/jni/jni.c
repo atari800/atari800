@@ -470,14 +470,13 @@ static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac,
 	MEMORY_ram_size = machine[nummac].ram;
 	/* Temporary hack to allow choosing OS rev. A/B and XL/XE features.
 	   Delete after adding proper support for choosing system settings. */
-	if (nummac < 3)
+	if (nummac < 3) /* all OS/A entries */
+		/* Force OS rev. A. */
 		SYSROM_os_versions[Atari800_MACHINE_800] = ntsc ? SYSROM_A_NTSC : SYSROM_A_PAL;
-	else if (nummac >= 3 && nummac < 6)
-		/* If no OSB NTSC ROM present, try the "custom" 400/800 ROM. */
-		SYSROM_os_versions[Atari800_MACHINE_800] =
-				SYSROM_roms[SYSROM_B_NTSC].filename[0] == '\0' ?
-						SYSROM_800_CUSTOM :
-						SYSROM_B_NTSC;
+	else if (nummac >= 3 && nummac < 6) /* all OS/B entries */
+		/* Don't force OS revision - might select rev. A if no rev. B ROM is
+		   available. */
+		SYSROM_os_versions[Atari800_MACHINE_800] = SYSROM_AUTO;
 	else if (Atari800_machine_type == Atari800_MACHINE_XLXE) {
 		Atari800_builtin_basic = TRUE;
 		Atari800_keyboard_leds = FALSE;
