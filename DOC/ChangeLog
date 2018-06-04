@@ -7,6 +7,7 @@
   -Wparentheses warnings.
 * android/jni/androidinput.c, android/jni/graphics.c: Fixed -Wswitch warnings.
 * android/jni/androidinput.c, android/jni/jni.c: Fixed -Wdangling-else warnings.
+* android/jni/jni.c: Fixed -Wpointer-sign warnings.
 
 
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

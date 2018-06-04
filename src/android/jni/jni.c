@@ -157,7 +157,7 @@ static void JNICALL NativeUnmountAll(JNIEnv *env, jobject this)
 
 static jboolean JNICALL NativeIsDisk(JNIEnv *env, jobject this, jstring img)
 {
-	const jbyte *img_utf = NULL;
+	const char *img_utf = NULL;
 	int type;
 
 	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
@@ -179,7 +179,7 @@ static jboolean JNICALL NativeIsDisk(JNIEnv *env, jobject this, jstring img)
 
 static jboolean JNICALL NativeSaveState(JNIEnv *env, jobject this, jstring fname)
 {
-	const jbyte *fname_utf = NULL;
+	const char *fname_utf = NULL;
 	int ret;
 
 	fname_utf = (*env)->GetStringUTFChars(env, fname, NULL);
@@ -266,7 +266,7 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 		CARTRIDGE_ADAWLIAH_64_DESC
 	};
 
-	const jbyte *img_utf = NULL;
+	const char *img_utf = NULL;
 	int ret = 0, r, kb, i, cnt = 0;
 	jclass cls, scls;
 	jfieldID fid;
@@ -391,7 +391,7 @@ static void JNICALL NativeSoundUpdate(JNIEnv *env, jobject this, jint offset, ji
 	if ( !(at = (struct audiothread *) pthread_getspecific(audiothread_data)) )
 		return;
 	SoundThread_Update(at->sndbuf, offset, length);
-	(*env)->SetByteArrayRegion(env, at->sndarray, offset, length, at->sndbuf + offset);
+	(*env)->SetByteArrayRegion(env, at->sndarray, offset, length, (jbyte *)at->sndbuf + offset);
 }
 
 static void JNICALL NativeSoundExit(JNIEnv *env, jobject this)
@@ -590,7 +590,7 @@ static void JNICALL NativePrefSound(JNIEnv *env, jobject this, int mixrate, int 
 
 static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path)
 {
-	const jbyte *utf = NULL;
+	const char *utf = NULL;
 	jboolean ret = JNI_FALSE;
 
 	utf = (*env)->GetStringUTFChars(env, path, NULL);
