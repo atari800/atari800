@@ -1,3 +1,9 @@
+2018-06-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* android/jni/androidinput.[ch], android/jni/graphics.c, android/jni/jni.c,
+  android/jni/platform.c, android/jni/sound.c: Fixed
+  -Wimplicit-function-declaration warnings.
+
+
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * cassette.c, devices.c, esc.c, sio.c: Added support for SIO patches in
   AltirraOS 800/XL.

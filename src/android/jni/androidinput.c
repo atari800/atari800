@@ -27,6 +27,7 @@
 
 #include "input.h"
 #include "akey.h"
+#include "log.h"
 #include "pokey.h"
 
 #include "graphics.h"

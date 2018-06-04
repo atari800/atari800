@@ -109,3 +109,4 @@ void Keyboard_Enqueue(int key);
 int  Keyboard_Dequeue(void);
 int  Keyboard_Peek(void);
 void Android_SplitCalc(void);
+void Joy_Reposition(void);

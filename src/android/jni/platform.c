@@ -26,6 +26,7 @@
 #include "cpu.h"
 #include "input.h"
 #include "devices.h"
+#include "log.h"
 
 #include "graphics.h"
 #include "androidinput.h"

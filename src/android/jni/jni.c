@@ -22,10 +22,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <stdlib.h>
 #include <stddef.h>
 #include <pthread.h>
 #include <jni.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "log.h"
 #include "atari.h"
@@ -40,6 +42,10 @@
 #include "akey.h"
 #include "devices.h"
 #include "cartridge.h"
+#include "platform.h"
+#include "sound.h"
+#include "statesav.h"
+#include "util.h"
 
 #include "graphics.h"
 #include "androidinput.h"
