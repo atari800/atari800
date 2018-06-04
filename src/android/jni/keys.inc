@@ -12,6 +12,9 @@
 #define KEY_ESCAPE    248
 #define KEY_BREAK     242
 
+/* Disable warnings caused by initializing some elements of skeyxlat twice. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winitializer-overrides"
 static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 	[0 ... (STATIC_MAXKEYS - 1)] = AKEY_NONE,
 
@@ -52,7 +55,7 @@ static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 	['x'] = AKEY_x,
 	['y'] = AKEY_y,
 	['z'] = AKEY_z,
-       
+
 	['A'] = AKEY_A,
 	['B'] = AKEY_B,
 	['C'] = AKEY_C,
@@ -137,3 +140,4 @@ static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 #define AKEY_CLRTAB 0xac
 */
 };
+#pragma GCC diagnostic pop
