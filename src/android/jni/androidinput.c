@@ -76,7 +76,7 @@ static int Android_Keyboard[KBD_MAXKEYS];
 static int key_head = 0, key_tail = 0;
 static int Android_key_control;
 static pthread_mutex_t key_mutex = PTHREAD_MUTEX_INITIALIZER;
-static key_last = AKEY_NONE;
+static int key_last = AKEY_NONE;
 
 static const int derot_lut[2][4] =
 {

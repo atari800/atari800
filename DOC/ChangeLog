@@ -2,6 +2,7 @@
 * android/jni/androidinput.[ch], android/jni/graphics.c, android/jni/jni.c,
   android/jni/platform.c, android/jni/sound.c: Fixed
   -Wimplicit-function-declaration warnings.
+* android/jni/androidinput.c: Fixed a -Wimplicit-int warning.
 
 
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
