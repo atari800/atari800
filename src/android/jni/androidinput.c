@@ -442,7 +442,7 @@ void Android_KeyEvent(int k, int s)
 			if (k == '+' || k == '<' || k == '>' || k == '*')
 				shft = 0;
 			else
-				shft == INPUT_key_shift;
+				shft = INPUT_key_shift;
 			Keyboard_Enqueue( (s) ? (skeyxlat[k] | Android_key_control | shft) : AKEY_NONE );
 		}
 	}
