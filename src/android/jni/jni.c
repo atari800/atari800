@@ -348,13 +348,14 @@ static jint JNICALL NativeRunFrame(JNIEnv *env, jobject this)
 		old_cim = CPU_cim_encountered;
 	} while (!Atari800_display_screen);
 
-	if (dev_b_status.ready && devb_url[0] == '\0')
+	if (dev_b_status.ready && devb_url[0] == '\0') {
 		if (strlen(dev_b_status.url)) {
 			strncpy(devb_url, dev_b_status.url, sizeof(devb_url));
 			Log_print("Received b: device URL: %s", devb_url);
 			ret |= 2;
 		} else
 			Log_print("Device b: signalled with zero-length url");
+	}
 
 	return ret;
 }

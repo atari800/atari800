@@ -5,6 +5,7 @@
 * android/jni/androidinput.[ch]: Fixed -Wimplicit-int and 
   -Wtautological-constant-out-of-range-compare warnings.
 * android/jni/androidinput.c, android/jni/graphics.c: Fixed -Wswitch warnings.
+* android/jni/androidinput.c, android/jni/jni.c: Fixed -Wdangling-else warnings.
 
 
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

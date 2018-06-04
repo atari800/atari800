@@ -211,7 +211,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		covl->ovl_visible = COVL_FADEIN;
 		conptr = PTRTRG;
 	}
-	if (conptr == PTRSTL)
+	if (conptr == PTRSTL) {
 		if (newtc[PTRJOY].s && 
 				( (!prevtc[PTRJOY].s && newtc[PTRJOY].y < covl->hotlen) ||	/* menu area */
 				  prevconptr != PTRSTL) &&								   /* still held */
@@ -229,6 +229,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			conptr = PTRTRG;
 			ret = 2;
 		}
+	}
 
 	/* joystick */
 	newjoy = INPUT_STICK_CENTRE;
