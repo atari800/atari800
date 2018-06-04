@@ -518,7 +518,7 @@ void Keyboard_Enqueue(int key)
 {
 	pthread_mutex_lock(&key_mutex);
 
-	if ((key_head + 1) & KBD_MASK == key_tail)
+	if (((key_head + 1) & KBD_MASK) == key_tail)
 		key_head = key_tail;		/* on overflow, discard previous keys */
 	Android_Keyboard[key_head++] = key;
 	key_head &= KBD_MASK;

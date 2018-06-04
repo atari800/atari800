@@ -3,8 +3,8 @@
   android/jni/platform.c, android/jni/sound.c: Fixed
   -Wimplicit-function-declaration warnings.
 * android/jni/androidinput.[ch]: Fixed -Wimplicit-int, -Wunused-comparison,
-  -Wbitwise-op-parentheses and -Wtautological-constant-out-of-range-compare
-  warnings.
+  -Wbitwise-op-parentheses, -Wtautological-constant-out-of-range-compare and
+  -Wparentheses warnings.
 * android/jni/androidinput.c, android/jni/graphics.c: Fixed -Wswitch warnings.
 * android/jni/androidinput.c, android/jni/jni.c: Fixed -Wdangling-else warnings.
 
