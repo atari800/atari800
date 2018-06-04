@@ -188,6 +188,8 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 				case CONK_HELP:
 					Keyboard_Enqueue(AKEY_HELP);
 					break;
+				default: /* CONK_NOKEY, CONK_RESET */
+					;
 				/* RESET is handled at the overlay update */
 				}
 			} else {

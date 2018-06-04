@@ -454,6 +454,8 @@ void Update_Overlays(void)
 			c->statecnt = COVL_HOLD_TIME;
 		}
 		break;
+	default: /* COVL_HIDDEN */
+		;
 	}
 	if (c->hitkey == CONK_RESET) {
 		if (c->resetcnt >= RESET_HARD) {
