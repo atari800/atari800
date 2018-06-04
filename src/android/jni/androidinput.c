@@ -412,7 +412,7 @@ void Android_KeyEvent(int k, int s)
 				return;
 			}
 		if (softjoymap[SOFTJOY_FIRE][0] == k) {
-			Android_TrigStatus = Android_TrigStatus & (~(s != 0)) | (s == 0);
+			Android_TrigStatus = (Android_TrigStatus & (~(s != 0))) | (s == 0);
 			return;
 		}
 		for (i = SOFTJOY_ACTIONBASE; i < SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS; i++)
@@ -433,7 +433,7 @@ void Android_KeyEvent(int k, int s)
 		Android_key_control = (s) ? AKEY_CTRL : 0;
 		break;
 	case KEY_FIRE:
-		Android_TrigStatus = Android_TrigStatus & (~(s != 0)) | (s == 0);
+		Android_TrigStatus = (Android_TrigStatus & (~(s != 0))) | (s == 0);
 		break;
 	default:
 		if (k >= STATIC_MAXKEYS)
