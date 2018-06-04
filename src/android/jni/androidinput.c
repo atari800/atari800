@@ -83,7 +83,7 @@ static const int derot_lut[2][4] =
 	{ KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN },	/* derot left */
 	{ KEY_LEFT, KEY_RIGHT, KEY_DOWN, KEY_UP }	/* derot right */
 };
-UBYTE softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2] =
+SWORD softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2] =
 {
 	{ KEY_LEFT,  	INPUT_STICK_LEFT    },
 	{ KEY_RIGHT, 	INPUT_STICK_RIGHT   },
