@@ -642,7 +642,7 @@ static jboolean JNICALL NativeOSLSound(JNIEnv *env, jobject this)
 	return Android_osl_sound;
 }
 
-static jboolean JNICALL NativeOSLSoundPause(JNIEnv *env, jobject this, jboolean pause)
+static void JNICALL NativeOSLSoundPause(JNIEnv *env, jobject this, jboolean pause)
 {
 	if (pause)
 		Sound_Pause();
