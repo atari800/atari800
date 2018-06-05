@@ -248,6 +248,7 @@ else
 fi
 AC_HEADER_STDC
 AC_HEADER_TIME
+AC_TYPE_UINTPTR_T
 AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
 AC_HEADER_TIOCGWINSZ
 SUPPORTS_SOUND_OSS=yes

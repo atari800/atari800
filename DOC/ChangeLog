@@ -14,6 +14,7 @@
 * monitor.c: Fixed a -Wformat warning.
 * dos/vga_gfx.c, img_tape.c: Fixed -Wstringop-truncation warnings.
 * ide.c: Fixed a -Wmultistatement-macros warning.
+* antic.c, configure.ac: Fixed -Wpointer-to-int-cast warnings.
 
 
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
