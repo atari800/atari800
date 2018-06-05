@@ -75,6 +75,12 @@ SDL_win32_main.o: SDL_win32_main.c
 win32/%.o: win32/%.c
 	$(CC) -c -o $@ $(DEFS) -I. $(patsubst -pedantic,,$(patsubst -ansi,,$(CFLAGS))) $<
 
+# dos/dos_sb.c includes dos_ints.h, that uses _go32_dpmi_lock_code, usage of
+# which forces conversion of a function pointer to object pointer type. This
+# causes a warning with -Wpedantic. _go32_dpmi_lock_code is beyond our
+# control, so we disable the warning.
+dos/dos_sb.o: CFLAGS += -Wno-pedantic
+
 ide.o: ide.c ide.h ide_internal.h
 	$(CC) -c -o $@ $(DEFS) -I. $(CFLAGS:-ansi=) $<
 

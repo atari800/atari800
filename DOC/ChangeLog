@@ -15,6 +15,7 @@
 * dos/vga_gfx.c, img_tape.c: Fixed -Wstringop-truncation warnings.
 * ide.c: Fixed a -Wmultistatement-macros warning.
 * antic.c, configure.ac: Fixed -Wpointer-to-int-cast warnings.
+* Makefile.in: Disable an unavoidable -Wpedantic warning in dos/dos_sb.c.
 
 
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
