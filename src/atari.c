@@ -1407,7 +1407,7 @@ void Atari800_StateRead(UBYTE version)
 		StateSav_ReadUBYTE(&temp, 1);
 		Atari800_SetTVMode(temp ? Atari800_TV_PAL : Atari800_TV_NTSC);
 		StateSav_ReadUBYTE(&temp, 1);
-		if (temp < 0 || temp >= Atari800_MACHINE_SIZE) {
+		if (temp >= Atari800_MACHINE_SIZE) {
 			temp = Atari800_MACHINE_XLXE;
 			Log_print("Warning: Bad machine type read in from state save, defaulting to XL/XE");
 		}
