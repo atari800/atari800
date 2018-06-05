@@ -10,6 +10,7 @@
 * android/jni/jni.c: Fixed -Wpointer-sign and -Wreturn-type warnings.
 * android/jni/keys.inc: Disabled many -Winitializer-overrides warnings.
 * atari.c: Fixed a -Wtautological-constant-out-of-range-compare warning.
+* ui.c: Fixed a -Wformat-truncation warning.
 
 
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
