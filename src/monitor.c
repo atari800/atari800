@@ -2273,8 +2273,9 @@ static void monitor_write_to_file(void)
 #endif
 			fclose(f);
 
+		/* TODO: when migrating to C99, instead of %lu and cast use %zu. */
 		printf("Wrote %lu bytes to %s file '%s'",
-				wbytes, xex ? "XEX" : "RAW", filename);
+				(unsigned long)wbytes, xex ? "XEX" : "RAW", filename);
 		if(xex) {
 			if(!have_runaddr)
 				printf(" (no run address)");
