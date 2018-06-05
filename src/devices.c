@@ -292,7 +292,10 @@ static int Devices_ReadDir(char *fullpath, char *filename, int *isdir,
 			struct tm *ft;
 			int hour;
 			char ampm = 'a';
-			ft = localtime(&status.st_mtime);
+			{
+				time_t tim = status.st_mtime;
+				ft = localtime(&tim);
+			}
 			hour = ft->tm_hour;
 			if (hour >= 12) {
 				hour -= 12;

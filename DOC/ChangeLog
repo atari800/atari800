@@ -16,6 +16,8 @@
 * ide.c: Fixed a -Wmultistatement-macros warning.
 * antic.c, configure.ac: Fixed -Wpointer-to-int-cast warnings.
 * Makefile.in: Disable an unavoidable -Wpedantic warning in dos/dos_sb.c.
+* devices.c: struct stat.st_time and time_t may have different size on some
+  platforms.
 
 
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
