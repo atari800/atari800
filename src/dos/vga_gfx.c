@@ -206,7 +206,7 @@ UBYTE VESA_getmode(int width,int height,UWORD *videomode,ULONG *memaddress,ULONG
     return FALSE;  /*transfer buffer too small*/
 
   memset(&vInfo,0,sizeof(vInfo));
-  strncpy(vInfo.sig,"VBE2",4);
+  memcpy(vInfo.sig,"VBE2",4);
   dosmemput(&vInfo,sizeof(vInfo),__tb&0xfffff);
   rg.x.ax=0x4f00;
   rg.x.di=__tb & 0xf;

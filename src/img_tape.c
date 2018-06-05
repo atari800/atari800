@@ -112,7 +112,7 @@ static int WriteRecord(IMG_TAPE_t *file)
 	if (fseek(file->file, file->block_offsets[file->num_blocks], SEEK_SET) != 0)
 		return FALSE;
 	/* write record header */
-	Util_strncpy(header.identifier, "data", 4);
+	memcpy(header.identifier, "data", 4);
 	header.length_lo = file->block_length & 0xFF;
 	header.length_hi = (file->block_length >> 8) & 0xFF;
 	header.aux_lo = file->save_gap & 0xff;
