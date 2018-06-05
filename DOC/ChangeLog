@@ -13,6 +13,7 @@
 * ui.c: Fixed a -Wformat-truncation warning.
 * monitor.c: Fixed a -Wformat warning.
 * dos/vga_gfx.c, img_tape.c: Fixed -Wstringop-truncation warnings.
+* ide.c: Fixed a -Wmultistatement-macros warning.
 
 
 2018-06-02  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
