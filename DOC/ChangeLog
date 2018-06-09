@@ -1,3 +1,8 @@
+2018-06-10  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/BUILD.windows, DOC/INSTALL: Extracted Windows-specific instructions
+  to a separate document. Added instructions on building with MSYS2.
+
+
 2018-06-05  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * android/jni/androidinput.[ch], android/jni/graphics.c, android/jni/jni.c,
   android/jni/platform.c, android/jni/sound.c: Fixed

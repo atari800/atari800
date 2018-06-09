@@ -125,54 +125,10 @@ open the DJGPP.ENV file in editor and change the LFN= line to LFN=y
 3. If everything went good you should have atari800.exe and joycfg.exe -
    copy them to destination directory.
 
-Building the Emulator for Windows using Cygwin
-----------------------------------------------
+Building the Emulator for Windows
+---------------------------------
 
-Atari800 for Windows can be built using Cygwin environment:
-http://cygwin.com/
-
-1. Get and install at least one of SDL or DirectX for MinGW.
-2. For SDL, get the file SDL_win32_main.c from the SDL source that matches
-   your version and copy it into the Atari800 src directory.
-3. Type "./configure --target=windx" for DirectX or "./configure
-   --with-video=sdl --with-sound=sdl" for SDL.
-4. Type "make".
-5. Copy atari800.exe to destination directory.
-6. Copy the needed DLLs: /bin/mgwz.dll and (for SDL) sdl.dll
-
-Building the Emulator for Windows using Microsoft 32-bit C/C++ Compiler
------------------------------------------------------------------------
-
-Atari800 for Windows can be built using command-line tools
-from Microsoft Visual C++ 2005.  Avoid older compilers such as VC++ 6
-because they are buggy (even with service packs) and unsupported.
-In addition to the compiler suite you need Windows Platform SDK (included
-in Visual C++ 2008 or newer) and DirectX SDK (not newer than the August 2007
-version, as it is the last one to contain the now-deprecated DirectInput
-libraries.) Set "Path", "INCLUDE" and "LIB" environment variables to point to
-the correct locations in VC++, PSDK and DXSDK.
-
-1. Install the ZLIB library:
-a. Download the source code from http://www.zlib.org
-b. Remove -MD from CFLAGS in win32\Makefile.msc
-c. Compile with "nmake /f win32\Makefile.msc zlib.lib".
-d. Copy zlib.h and zconf.h to the Include directory of VC++.
-e. Copy zlib.lib to the Lib directory of VC++.
-2. Install the LIBPNG library:
-a. Download the source code from http://www.libpng.org
-b. Remove -MD from CFLAGS in scripts\makefile.vcwin32
-c. Compile with "nmake /f scripts\makefile.vcwin32".
-d. Copy png.h and pngconf.h to the Include directory of VC++.
-e. Copy libpng.lib to the Lib directory of VC++.
-OR
-1&2. #undef HAVE_LIBPNG and HAVE_LIBZ in Atari800's src\win32\msc\config.h.
-     The compiled emulator won't handle zlib-compressed disk images
-     and state files and won't produce PNG screenshots.
-3. Navigate to the src directory of Atari800 sources.
-4. Type "nmake /f win32\msc\Makefile".
-5. If you are getting linking errors saying something about MSVCRT
-   then you probably ignored step 1b or 2b.
-6. Copy atari800.exe to destination directory.
+See DOC/BUILD.windows.
 
 Building the Emulator for Falcon
 --------------------------------
@@ -192,23 +148,22 @@ Building the Emulator for SDL
 -----------------------------
 
 1. Please install (and configure) SDL library (http://www.libsdl.org).
-2. If you are using MinGW or Cygwin, get the file SDL_win32_main.c from the SDL
-   source (in src/main/win32) and copy it to the atari800 src directory.
-3. If you want to build an OpenGL-capable version, you'll need OpenGL headers
-   installed. They should support OpenGL version 2.1 (support for the Pixel
-   Buffer Object extension). The result binary however will only need OpenGL
-   version 1.1 (PBOs simply won't be used). The same binary will work on
-   machines without OpenGL support - only software modes will be available.
-   For MinGW, get the OpenGL headers at
-   http://www.libsdl.org/extras/win32/common/opengl-devel.tar.gz
-   See also http://www.libsdl.org/extras/win32/mingw32/README.txt
-4. Follow the instructions in the "Building the Emulator on most platforms"
-   section above. NOTE: If required, force using SDL by adding
-   "--with-video-input=sdl --with-sound=sdl" when calling "./configure". When
-   building using MinGW, you might also need to add "--with-sdl-prefix=/mingw". 
+2. If you want to build an OpenGL-capable version, you'll need OpenGL headers
+   installed. They should support OpenGL version 2.1 or later, ie. with support
+   for the Pixel Buffer Object (PBO) extension. The result binary, however, will
+   not require an OpenGL 2.1-capable video card - it will also support OpenGL
+   1.1 video cards (PBOs simply won't be used), and machines without OpenGL
+   support aat all (only software modes will be available).
+3. Follow the instructions in the "Building the Emulator on most platforms"
+   section above. NOTE: To be sure, force using SDL by adding
+   "--with-video-input=sdl --with-sound=sdl" when calling "./configure".
+   Otherwise the configure script may autodetect and use other libraries for
+   video and audio.
+4. When building on Windows, see DOC/BUILD.windows for additional notes.
 
 Building the Emulator for Java using NestedVM
 ---------------------------------------------
+
 1. Get and build NestedVM (nestedvm.ibex.org). make env.sh and unix_runtime.jar
 2. source env.sh in the NestedVM directory.
 3. Follow steps 1-5 of the "Building the Emulator on most platforms" section
