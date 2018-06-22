@@ -8,5 +8,4 @@ config.cache
 configure
 Makefile
 SDL_win32_main.c
-emuos.img
 atari800

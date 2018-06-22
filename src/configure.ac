@@ -716,14 +716,12 @@ A8_OPTION(bufferedlog,no,
          )
 
 A8_OPTION(altirra_bios,yes,
-      [Use Altirra OS in place of bootstrap OS to allow operation when real ROMs are not available (default=ON)],
-      EMUOS_ALTIRRA,[Define to use Altirra emulated OS instead of bootstrap OS when real ROMs are not available.]
+      [Use Altirra OS to allow operation when real ROMs are not available (default=ON)],
+      EMUOS_ALTIRRA,[Define to use Altirra emulated OS when real ROMs are not available.]
      )
 
 if [[ "$WANT_EMUOS_ALTIRRA" = "yes" ]]; then
-    OBJS="$OBJS roms/altirra_5200_os.o roms/altirraos_800.o roms/altirraos_xl.o roms/altirra_basic.o"
-else
-    OBJS="$OBJS emuos.o"
+    OBJS="$OBJS roms/altirraos_800.o roms/altirraos_xl.o roms/altirra_basic.o"
 fi
 
 A8_OPTION(monitorasm,yes,
@@ -1197,7 +1195,7 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
 fi
 echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
 echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
-echo "Using Altirra BIOS ROM................: $WANT_EMUOS_ALTIRRA"
+echo "Using Altirra BIOS ROM?...............: $WANT_EMUOS_ALTIRRA"
 echo "Using the monitor assembler?..........: $WANT_MONITOR_ASSEMBLER"
 echo "Using code breakpoints and history?...: $WANT_MONITOR_BREAK"
 echo "Using user-defined breakpoints?.......: $WANT_MONITOR_BREAKPOINTS"

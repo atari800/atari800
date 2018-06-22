@@ -127,7 +127,6 @@ Command line options
 -xegs                 Emulate Atari XEGS
 -5200                 Emulate Atari 5200
 
--emuos                Use EmuOS
 -c                    Enable RAM between 0xc000 and 0xcfff in Atari 800
 
 -axlon <n>            Use Atari 800 Axlon memory expansion: <n> k total RAM

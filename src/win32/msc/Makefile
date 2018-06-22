@@ -36,7 +36,6 @@ OBJS = \
 	crc32.obj \
 	cycle_map.obj \
 	devices.obj \
-	emuos.obj \
 	esc.obj \
 	gtia.obj \
 	img_tape.obj \
@@ -51,6 +50,7 @@ OBJS = \
 	pokey.obj \
 	pokeysnd.obj \
 	remez.obj \
+	roms/altirra_5200_os.obj \
 	rtime.obj \
 	screen.obj \
 	sio.obj \

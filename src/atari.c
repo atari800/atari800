@@ -65,9 +65,6 @@
 #include "cfg.h"
 #include "cpu.h"
 #include "devices.h"
-#if !EMUOS_ALTIRRA
-# include "emuos.h"
-#endif
 #include "esc.h"
 #include "gtia.h"
 #include "input.h"
@@ -175,10 +172,6 @@ int Atari800_auto_frameskip = FALSE;
 #ifdef BENCHMARK
 static double benchmark_start_time;
 #endif
-
-#if !EMUOS_ALTIRRA
-int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
-#endif /* !EMUOS_ALTIRRA */
 
 #ifdef HAVE_SIGNAL
 volatile sig_atomic_t sigint_flag = FALSE;
@@ -295,51 +288,32 @@ int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
 	return TRUE;
 }
 
-#if !EMUOS_ALTIRRA
-#define COPY_EMUOS(padding) do { \
-		memset(MEMORY_os, 0, padding); \
-		memcpy(MEMORY_os + (padding), emuos_h, 0x2000); \
-	} while (0)
-#endif /* !EMUOS_ALTIRRA */
-
 static int load_roms(void)
 {
-#if !EMUOS_ALTIRRA
-	if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 2) {
-		COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x800 : 0x2000);
+	int basic_ver, xegame_ver;
+	SYSROM_ChooseROMs(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode, &Atari800_os_version, &basic_ver, &xegame_ver);
+	if (Atari800_os_version == -1
+		|| !SYSROM_LoadImage(Atari800_os_version, MEMORY_os)) {
+		/* Missing OS ROM. */
 		Atari800_os_version = -1;
+		/* Avoid MEMORY_os containing old OS when the user explicitly removed
+		   all system ROMs from settings. */
+		memset(MEMORY_os, 0, sizeof(MEMORY_os));
+		return FALSE;
 	}
-	else
-#endif /* !EMUOS_ALTIRRA */
-	{
-		int basic_ver, xegame_ver;
-		SYSROM_ChooseROMs(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode, &Atari800_os_version, &basic_ver, &xegame_ver);
-		if (Atari800_os_version == -1
-		    || !SYSROM_LoadImage(Atari800_os_version, MEMORY_os)) {
-			/* Missing OS ROM. */
-			Atari800_os_version = -1;
-#if !EMUOS_ALTIRRA
-			if (Atari800_machine_type != Atari800_MACHINE_5200 && emuos_mode == 1)
-				COPY_EMUOS(Atari800_machine_type == Atari800_MACHINE_800 ? 0x800 : 0x2000);
-			else
-#endif /* !EMUOS_ALTIRRA */
-				/* No OS ROM loaded. */
-				return FALSE;
-		}
-		else if (Atari800_machine_type != Atari800_MACHINE_5200) {
-			/* OS ROM found, try loading BASIC. */
-			MEMORY_have_basic = basic_ver != -1 && SYSROM_LoadImage(basic_ver, MEMORY_basic);
-			if (!MEMORY_have_basic)
-				/* Missing BASIC ROM. Don't fail when it happens. */
-				Atari800_builtin_basic = FALSE;
+	else if (Atari800_machine_type != Atari800_MACHINE_5200) {
+		/* OS ROM found, try loading BASIC. */
+		MEMORY_have_basic = basic_ver != -1 && SYSROM_LoadImage(basic_ver, MEMORY_basic);
+		if (!MEMORY_have_basic)
+			/* Missing BASIC ROM. Don't fail when it happens. */
+			Atari800_builtin_basic = FALSE;
 
-			if (Atari800_builtin_game) {
-				/* Try loading built-in XEGS game. */
-				if (xegame_ver == -1
-				    || !SYSROM_LoadImage(xegame_ver, MEMORY_xegame))
-					/* Missing XEGS game ROM. */
-					Atari800_builtin_game = FALSE;
-			}
+		if (Atari800_builtin_game) {
+			/* Try loading built-in XEGS game. */
+			if (xegame_ver == -1
+				|| !SYSROM_LoadImage(xegame_ver, MEMORY_xegame))
+				/* Missing XEGS game ROM. */
+				Atari800_builtin_game = FALSE;
 		}
 	}
 
@@ -349,14 +323,14 @@ static int load_roms(void)
 
 int Atari800_InitialiseMachine(void)
 {
+	int have_roms;
 	ESC_ClearAll();
-	if (!load_roms())
-		return FALSE;
+	have_roms = load_roms();
 	Atari800_UpdateKeyboardDetached();
 	Atari800_UpdateJumper();
 	MEMORY_InitialiseMachine();
 	Devices_UpdatePatches();
-	return TRUE;
+	return have_roms;
 }
 
 /* Initialise any modules before loading the config file. */
@@ -568,10 +542,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_tv_mode = Atari800_TV_PAL;
 		else if (strcmp(argv[i], "-ntsc") == 0)
 			Atari800_tv_mode = Atari800_TV_NTSC;
-#if !EMUOS_ALTIRRA
-		else if (strcmp(argv[i], "-emuos") == 0)
-			emuos_mode = 2;
-#endif /* !EMUOS_ALTIRRA */
 		else if (strcmp(argv[i], "-c") == 0) {
 			if (Atari800_machine_type == Atari800_MACHINE_800)
 				MEMORY_ram_size = 52;

@@ -2,10 +2,10 @@ Version ?.?.? (????/??/??)
 
  New Features:
  -------------
-  * Atari800 now includes Altirra BIOSes for all emulated systems: 400/800,
+  * Atari800 now includes Altirra BIOS-es for all emulated systems: 400/800,
     XL/XE, and 5200; as well as Altirra BASIC. It is now possible to use the
     emulator without providing any ROM images.
-  * The Altirra OSes and Altirra BASIC can now be selected by user in the
+  * The Altirra OS-es and Altirra BASIC can now be selected by user in the
     "System settings", if he wants to use them. Previously Altirra OS was used
     automatically only when no other OS ROMs were found.
 
@@ -16,6 +16,13 @@ Version ?.?.? (????/??/??)
     from DOC/INSTALL to a new file, DOC/BUILD.windows. This document
     has also been expanded with a new chapter covering building Atari800 using
     MSYS2.
+  * Ability to use the built-in EmuOS firmware has been removed. Users wishing
+    to run Atari800 without providing OS ROMs now have an option of using the
+    built-in Altirra OS-es, which are compatible with much more Atari software
+    than EmuOS.
+    At the same time, it is still possible to compile a version of Atari800
+    without any OS ROMs built in, by means of the --disable-altirra_bios
+    configure option.
 
 
  General Fixes:
