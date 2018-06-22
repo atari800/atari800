@@ -5,9 +5,17 @@ Version ?.?.? (????/??/??)
   * Atari800 now includes Altirra BIOSes for all emulated systems: 400/800,
     XL/XE, and 5200; as well as Altirra BASIC. It is now possible to use the
     emulator without providing any ROM images.
-  * The Altirra OSes and Altitta BASIC can now be selected by user in the
+  * The Altirra OSes and Altirra BASIC can now be selected by user in the
     "System settings", if he wants to use them. Previously Altirra OS was used
     automatically only when no other OS ROMs were found.
+
+
+ Notable changes:
+ ----------------
+  * All documentation specific to building Atari800 on Windows has been moved
+    from DOC/INSTALL to a new file, DOC/BUILD.windows. This document
+    has also been expanded with a new chapter covering building Atari800 using
+    MSYS2.
 
 
  General Fixes:

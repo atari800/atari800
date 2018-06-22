@@ -1,3 +1,7 @@
+2018-06-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* DOC/NEWS: Added an entry about addition of DOC/BUILD.windows.
+
+
 2018-06-10  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/BUILD.windows, DOC/INSTALL: Extracted Windows-specific instructions
   to a separate document. Added instructions on building with MSYS2.
