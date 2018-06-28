@@ -52,7 +52,6 @@ OBJ =	artifact.o \
 	cpu.o \
 	esc.o \
 	cfg.o \
-	emuos.o \
 	sio.o \
 	devices.o \
 	antic.o \
@@ -61,6 +60,7 @@ OBJ =	artifact.o \
 	pia.o \
 	cartridge.o \
 	crc32.o \
+	roms/altirra_5200_os.o \
 	rtime.o \
 	ui.o \
 	ui_basic.o \

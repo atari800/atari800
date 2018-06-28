@@ -83,10 +83,6 @@ Emulation core
 
 * CPU upgrades (65816, etc)
 
-* improve emuos so it can boot disks and executables
-
-* create emuos for 5200
-
 * emulate printer graphics (on screen or bitmap/PDF output): 1029, 1020, etc.
   The Mac OS X port of Atari800 has lots of printer emulation routines.
 

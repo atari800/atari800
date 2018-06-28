@@ -26,6 +26,7 @@ A800_CORE_OBJS  := \
 	pia.o \
 	pokey.o \
 	rtime.o \
+	roms/altirra_5200_os.o \
 	sio.o \
 	sysrom.o \
 	util.o \

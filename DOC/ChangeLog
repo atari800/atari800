@@ -1,5 +1,9 @@
 2018-06-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/NEWS: Added an entry about addition of DOC/BUILD.windows.
+* DOC/NEWS, DOC/TODO, DOC/USAGE, .cvsignore, Makefile.in,
+  android/jni/Android.mk.in, atari.[ch], atari800.man, configure.ac,
+  dc/Mahefile.dc, devices.c, emuos.*, esc.c, memory.c,
+  roms/altirra_5200_os.[ch], win32/msc/Makefile: Removed EmuOS.
 
 
 2018-06-10  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

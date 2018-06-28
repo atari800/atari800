@@ -2433,12 +2433,14 @@ int Devices_PatchOS(void)
 	case SYSROM_CC01R4:
 		addr = 0xc3eb; /* labeled THAV in OS sources */
 		break;
+#if EMUOS_ALTIRRA
 	case SYSROM_ALTIRRA_800:
 		addr = 0xefd4; /* labeled InitHandlerTable in OS sources */
 		break;
 	case SYSROM_ALTIRRA_XL:
 		addr = 0xee90; /* labeled InitHandlerTable in OS sources */
 		break;
+#endif /* EMUOS_ALTIRRA */
 	default:
 		return FALSE;
 	}
