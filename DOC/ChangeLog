@@ -2,6 +2,9 @@
 * android/jni/graphics.[ch]: Fixed an issue with labels of the console keys
   being unreadable on high-resolution displays. They are now scaled to screen
   resolution.
+* android/jni/androidinput.c: Fixed a bug in computing coordinates of console
+  key presses, which could result in a different key being pressed than
+  expected.
   
 
 2018-06-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
