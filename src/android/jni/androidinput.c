@@ -100,15 +100,12 @@ int Android_DerotateKeys = 0;
 int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 {
 	int joyptr;		/* will point to joystick touch of input set */
-	int tmpfire;	/* flag: both pointers on fire side */
 	int dx, dy, dx2, dy2;
 	struct touchstate newtc[MAXPOINTERS];
 	UBYTE newjoy, newtrig;
 	struct joy_overlay_state *jovl;
 	struct consolekey_overlay_state *covl;
 	int conptr;		/* will point to stolen ptr, PTRSTL otherwise */
-	int i;
-	float a, potx, poty;
 	int ret = 0;
 
 	jovl = &AndroidInput_JoyOvl;
@@ -121,14 +118,14 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 	if ((x1 >= Android_Split) ^ (x2 >= Android_Split)) {	  /* pointers on opposite sides */
 		joyptr = (x1 < Android_Split) ^ Android_Joyleft;
 	} else {							/* both pointers either on joystick or on fire side */
-		tmpfire = (x1 >= Android_Split) ^ (!Android_Joyleft); /* both pointers on fire side */
-		dx  = (x1 - prevtc[tmpfire].x);			  /* figure out which is closer to previous */
-		dx2 = (x2 - prevtc[tmpfire].x);
-		dy  = (y1 - prevtc[tmpfire].y);
-		dy2 = (y2 - prevtc[tmpfire].y);
-		joyptr = ((dx2*dx2 + dy2*dy2) > (dx*dx + dy*dy)) ^ !tmpfire;
-		s1 &= joyptr ^ (!tmpfire);								 /* unpress unrelated touch */
-		s2 &= !(joyptr ^ (!tmpfire));
+		int both_fire = (x1 >= Android_Split) ^ (!Android_Joyleft); /* both pointers on fire side */
+		dx  = (x1 - prevtc[both_fire].x);			  /* figure out which is closer to previous */
+		dx2 = (x2 - prevtc[both_fire].x);
+		dy  = (y1 - prevtc[both_fire].y);
+		dy2 = (y2 - prevtc[both_fire].y);
+		joyptr = ((dx2*dx2 + dy2*dy2) > (dx*dx + dy*dy)) ^ !both_fire;
+		s1 &= joyptr ^ (!both_fire);								/* unpress unrelated touch */
+		s2 &= !(joyptr ^ (!both_fire));
 	}
 	if (joyptr) {
 		newtc[PTRTRG].x = x1; newtc[PTRTRG].y = y1; newtc[PTRTRG].s = s1; 
@@ -158,9 +155,10 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 				 newtc[PTRTRG].y <  covl->bbox.b)
 					conptr = PTRTRG;
 		if (conptr != PTRSTL) {	  /* if bb is exact on top & bottom => check only horiz/lly */
+			int i;
 			dy = covl->keycoo[1] - newtc[conptr].y;
 			for (i = 0; i < CONK_VERT_MAX; i += 8) {
-				a = ((float) covl->keycoo[i + 6] - covl->keycoo[i    ]) /
+				float a = ((float) covl->keycoo[i + 6] - covl->keycoo[i    ]) /
 					((float) covl->keycoo[i + 1] - covl->keycoo[i + 7]);
 				dx = covl->keycoo[i] + a * dy;
 				if (newtc[conptr].x < dx)	continue;					   /* off left edge */
@@ -242,9 +240,9 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			dx2 = (jovl->joyarea.r - jovl->joyarea.l) * jovl->gracearea;
 		}
 		if (Android_Paddle) {
-			potx = ((float) (newtc[PTRJOY].x - jovl->joyarea.l)) /
-				   ((float) (jovl->joyarea.r - jovl->joyarea.l));
-			poty = (float) newtc[PTRJOY].y / (float) Android_ScreenH;
+			float potx = ((float) (newtc[PTRJOY].x - jovl->joyarea.l)) /
+			             ((float) (jovl->joyarea.r - jovl->joyarea.l));
+			float poty = (float) newtc[PTRJOY].y / (float) Android_ScreenH;
 			Android_POTX = POTLIMIT - (UBYTE) (potx * ((float) POTLIMIT) + 0.5f);
 			Android_POTY = POTLIMIT - (UBYTE) (poty * ((float) POTLIMIT) + 0.5f);
 			if (Android_ReversePddle & 1)

@@ -5,6 +5,7 @@
 * android/jni/androidinput.c: Fixed a bug in computing coordinates of console
   key presses, which could result in a different key being pressed than
   expected.
+  Moved variables to reduce their scope, for better readability.
   
 
 2018-06-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
