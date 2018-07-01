@@ -1,4 +1,5 @@
-#define CONK_VERT_MAX   (2 * 4 * 5)
+enum { CONK_NUM = 5 }; /* Number of console keys on screen overlay */
+#define CONK_VERT_MAX   (2 * 4 * CONK_NUM)
 #define COVL_SHADOW_OFF 10
 
 #define SCREEN_WIDTH   384

@@ -1,3 +1,9 @@
+2018-07-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* android/jni/graphics.[ch]: Fixed an issue with labels of the console keys
+  being unreadable on high-resolution displays. They are now scaled to screen
+  resolution.
+  
+
 2018-06-22  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * DOC/NEWS: Added an entry about addition of DOC/BUILD.windows.
 * DOC/NEWS, DOC/TODO, DOC/USAGE, .cvsignore, Makefile.in,
