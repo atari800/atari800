@@ -226,14 +226,6 @@ public final class MainActivity extends Activity
 			return;
 		}
 
-		String rompath = _settings.get(false, "rompath");
-		if (rompath == null || rompath.equals("false")) {
-			pauseEmulation(true);
-			_bootupconfig = true;
-			showDialog(DLG_PATHSETUP);
-			return;
-		}
-
 		if (Integer.parseInt(instver) != getPInfo().versionCode) {
 			_bootupconfig = true;
 			pauseEmulation(true);
@@ -312,8 +304,9 @@ public final class MainActivity extends Activity
 						.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface d, int i) {
+								_bootupconfig = false;
+								pauseEmulation(false);
 								dismissDialog(DLG_PATHSETUP);
-								finish();
 							}
 							})
 						.create();
@@ -483,7 +476,7 @@ public final class MainActivity extends Activity
 		if (pause) {
 			if (_audio != null)	_audio.pause(pause);
 			if (_view != null)	_view.pause(pause);
-		} else {
+		} else if (!_bootupconfig) {
 			if (_view != null)	_view.pause(pause);
 			if (_audio != null)	_audio.pause(pause);
 		}
@@ -499,7 +492,7 @@ public final class MainActivity extends Activity
 	@Override
 	public void onResume() {
 		_aBar.hide(this, true, true);
-		if (!_bootupconfig)	pauseEmulation(false);
+		pauseEmulation(false);
 		super.onResume();
 	}
 
@@ -568,18 +561,21 @@ public final class MainActivity extends Activity
 
 		switch (reqc) {
 		case ACTIVITY_FSEL:
-			if (resc != RESULT_OK) {
-				if (_bootupconfig)	finish();
-				break;
-			}
 			if (data.getAction().equals(ACTION_SET_ROMPATH)) {
-				String p = data.getData().getPath();
-				_settings.putString("rompath", p);
-				_settings.simulateChanged("rompath");
+				if (resc == RESULT_OK) {
+					String p = data.getData().getPath();
+					_settings.putString("rompath", p);
+					_settings.simulateChanged("rompath");
+				}
 				_bootupconfig = false;
 				pauseEmulation(false);
 				break;
 			}
+
+			if (resc != RESULT_OK) {
+				break;
+			}
+
 			_curDiskFname = data.getData().getPath();
 			if (data.getAction().equals(ACTION_INSERT_REBOOT)) {
 				int r = NativeRunAtariProgram(_curDiskFname, 1, 1);

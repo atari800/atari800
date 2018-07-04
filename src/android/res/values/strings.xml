@@ -49,10 +49,14 @@
 							   \nHave fun! </string>
     <string name="pathsetup">Atari ROM Path</string>
 	<string name="pathsetupmsg"><![CDATA[
-								The emulator requires the original Atari ROM images.<br><br>
-								Touch <b>OK</b> to use the file selector to point to the folder containing
-								the ROM images.<br>
-								Touch <b>Cancel</b> to quit to the OS.<br><br>
+								Due to copyright limitations, the emulator cannot be distributed with
+								original Atari system ROM images. It has free replacement system ROMs
+								built in, but some Atari programs might fail to run with them. For best
+								compatibility, configure the emulator to use original Atari ROMs.<br><br>
+								<p>Touch <b>OK</b> to use the file selector to point to the folder containing
+								the system ROMs.<br>
+								You can always set the folder later, by selecting <b>Atari ROM Path</b>
+								in Preferences.<br><br>
 								Try the
 								<a href="http://atari800.github.io/download.html">Atari800 site</a>
 								for the XL ROMs.<br>

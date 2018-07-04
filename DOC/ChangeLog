@@ -1,3 +1,10 @@
+2018-07-04  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* android/res/values/strings.xml, android/src/FileSelector.java,
+  android/src/MainActivity.java: Allow running the emulator without setting
+  system ROM path - Altirra ROMs are available. Updated the first-run message to
+  reflect that.
+
+
 2018-07-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * android/jni/graphics.[ch]: Fixed an issue with labels of the console keys
   being unreadable on high-resolution displays. They are now scaled to screen

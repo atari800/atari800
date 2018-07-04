@@ -219,7 +219,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 			finish();
 			break;
 		case R.id.fsel_cancel:
-			setResult(Activity.RESULT_CANCELED);
+			setResult(Activity.RESULT_CANCELED, new Intent(MainActivity.ACTION_SET_ROMPATH));
 			finish();
 			break;
 		}
