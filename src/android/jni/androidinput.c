@@ -115,7 +115,8 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 
 	/* establish joy ptr & fire ptr for new input */
 	/* note: looks complicated & uses boolean magick but gets rid of a labyrinth of ifs :-) */
-	if ((x1 >= Android_Split) ^ (x2 >= Android_Split)) {	  /* pointers on opposite sides */
+	if (s2 < 0 /* only one touch event */
+	    || (x1 >= Android_Split) ^ (x2 >= Android_Split)) {	  /* pointers on opposite sides */
 		joyptr = (x1 < Android_Split) ^ Android_Joyleft;
 	} else {							/* both pointers either on joystick or on fire side */
 		int both_fire = (x1 >= Android_Split) ^ (!Android_Joyleft); /* both pointers on fire side */
@@ -135,20 +136,20 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 		newtc[PTRTRG].x = x2; newtc[PTRTRG].y = y2; newtc[PTRTRG].s = s2; 
 	}
 
-	if (newtc[PTRJOY].s || newtc[PTRTRG].s)
+	if (newtc[PTRJOY].s > 0 || newtc[PTRTRG].s > 0)
 		ret = 1;
 
 	/* console keys */
 	conptr = PTRSTL;
 	covl->hitkey = CONK_NOKEY;
 	if (covl->ovl_visible >= COVL_READY) {				/* first a quick bounding box check */
-		if (newtc[PTRJOY].s                 &&
+		if (newtc[PTRJOY].s > 0             &&
 			newtc[PTRJOY].x >= covl->bbox.l &&
 			newtc[PTRJOY].x <  covl->bbox.r &&
 			newtc[PTRJOY].y >= covl->bbox.t &&
 			newtc[PTRJOY].y <  covl->bbox.b)
 					conptr = PTRJOY;				  /* implicit: mask fire by joy pointer */
-		else if (newtc[PTRTRG].s                 &&
+		else if (newtc[PTRTRG].s > 0             &&
 				 newtc[PTRTRG].x >= covl->bbox.l &&
 				 newtc[PTRTRG].x <  covl->bbox.r &&
 				 newtc[PTRTRG].y >= covl->bbox.t &&
@@ -200,26 +201,26 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			INPUT_key_consol = INPUT_CONSOL_NONE;
 			covl->resetcnt = 0;
 		}
-	} else if (newtc[PTRJOY].s && newtc[PTRJOY].x > Android_ScreenW - covl->hotlen
+	} else if (newtc[PTRJOY].s > 0 && newtc[PTRJOY].x > Android_ScreenW - covl->hotlen
 								 && newtc[PTRJOY].y < covl->hotlen) {
 		covl->ovl_visible = COVL_FADEIN;						  /* touched overlay hotspot */
 		conptr = PTRJOY;
-	} else if (newtc[PTRTRG].s && newtc[PTRTRG].x > Android_ScreenW - covl->hotlen
+	} else if (newtc[PTRTRG].s > 0 && newtc[PTRTRG].x > Android_ScreenW - covl->hotlen
 								 && newtc[PTRTRG].y < covl->hotlen) {
 		covl->ovl_visible = COVL_FADEIN;
 		conptr = PTRTRG;
 	}
 	if (conptr == PTRSTL) {
-		if (newtc[PTRJOY].s && 
-				( (!prevtc[PTRJOY].s && newtc[PTRJOY].y < covl->hotlen) ||	/* menu area */
+		if (newtc[PTRJOY].s > 0 && 
+				( (prevtc[PTRJOY].s <= 0 && newtc[PTRJOY].y < covl->hotlen) ||	/* menu area */
 				  prevconptr != PTRSTL) &&								   /* still held */
 				!(covl->ovl_visible != COVL_HIDDEN &&
 				  newtc[PTRJOY].x >= covl->bbox.l - COVL_SHADOW_OFF &&	 /* outside bbox */
 				  newtc[PTRJOY].y <= covl->bbox.b + COVL_SHADOW_OFF) ) {
 			conptr = PTRJOY;										/* touched menu area */
 			ret = 2;
-		} else if (newtc[PTRTRG].s &&
-					( (!prevtc[PTRTRG].s && newtc[PTRTRG].y < covl->hotlen) ||
+		} else if (newtc[PTRTRG].s > 0 &&
+					( (prevtc[PTRTRG].s <= 0 && newtc[PTRTRG].y < covl->hotlen) ||
 					  prevconptr != PTRSTL) &&
 					!(covl->ovl_visible != COVL_HIDDEN &&
 					  newtc[PTRTRG].x >= covl->bbox.l - COVL_SHADOW_OFF &&
@@ -231,7 +232,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 
 	/* joystick */
 	newjoy = INPUT_STICK_CENTRE;
-	if (newtc[PTRJOY].s && conptr != PTRJOY) {
+	if (newtc[PTRJOY].s > 0 && conptr != PTRJOY) {
 		if (!Android_Paddle) {
 			dx2 = (jovl->joyarea.r - jovl->joyarea.l) >> 1;
 			dy2 = (jovl->joyarea.b - jovl->joyarea.t) >> 1;
@@ -311,7 +312,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			jovl->areaopacitycur = jovl->areaopacityset;
 			jovl->areaopacityfrm = 0;
 		} else {
-			if (prevtc[PTRJOY].s) {			/* drag area along */
+			if (prevtc[PTRJOY].s > 0) {			/* drag area along */
 				if (newtc[PTRJOY].x > jovl->joyarea.r) {
 					dx = newtc[PTRJOY].x - jovl->joyarea.r;
 					jovl->joyarea.l += dx;
@@ -372,8 +373,8 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 
 	/* trigger */
 	newtrig = 1;
-	if ( (newtc[PTRTRG].s && conptr != PTRTRG) ||	/* normal trigger */
-		 (newtc[PTRJOY].s && conptr != PTRJOY && Android_PlanetaryDefense) ) {
+	if ( (newtc[PTRTRG].s > 0 && conptr != PTRTRG) ||	/* normal trigger */
+		 (newtc[PTRJOY].s > 0 && conptr != PTRJOY && Android_PlanetaryDefense) ) {
 		newtrig = 0;
 		jovl->fire.x = newtc[PTRTRG].x;
 		jovl->fire.y = newtc[PTRTRG].y;

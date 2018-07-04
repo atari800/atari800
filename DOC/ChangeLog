@@ -3,6 +3,9 @@
   android/src/MainActivity.java: Allow running the emulator without setting
   system ROM path - Altirra ROMs are available. Updated the first-run message to
   reflect that.
+* android/jni/androidinput.c, android/src/A800view.java: Fixed a bug when the
+  "Right-Handed Joystick" option is enabled: a one-finger touch on the screen's
+  left side did not register as a trigger press.
 
 
 2018-07-01  Tomasz Krasuski  <kr0tki@poczta.onet.pl>

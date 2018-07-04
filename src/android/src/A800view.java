@@ -141,7 +141,7 @@ public final class A800view extends GLSurfaceView
 			if (_actioncode == MotionEvent.ACTION_UP)
 				_s1 = 0;
 
-			return NativeTouch(_x1, _y1, _s1, -1000, -1000, 0);
+			return NativeTouch(_x1, _y1, _s1, 0, 0, -1);
 		}
 	}
 
@@ -162,17 +162,18 @@ public final class A800view extends GLSurfaceView
 				_y2 = (int) ev.getY(1);
 				_s2 = 1;
 			} else {
-				_x2 = -1000;
-				_y2 = -1000;
-				_s2 = 0;
+				_x2 = 0;
+				_y2 = 0;
+				_s2 = -1;
 			}
 			if (_actioncode == MotionEvent.ACTION_UP) {
-				_s1 = _s2 = 0;
+				_s1 = 0;
 			} else if (_actioncode == MotionEvent.ACTION_POINTER_UP) {
-				if ( (_action >> MotionEvent.ACTION_POINTER_ID_SHIFT) == 0)
-					_s1 = 0;
-				else
+				int index = (_action & MotionEvent.ACTION_POINTER_ID_MASK) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
+				if (index == 1)
 					_s2 = 0;
+				else if (index == 0)
+					_s1 = 0;
 			}
 
 			return NativeTouch(_x1, _y1, _s1, _x2, _y2, _s2);
