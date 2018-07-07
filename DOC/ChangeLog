@@ -1,3 +1,7 @@
+2018-07-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
+* monitor.c: Fixed building --without-video.
+
+
 2018-07-04  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * android/res/values/strings.xml, android/src/FileSelector.java,
   android/src/MainActivity.java: Allow running the emulator without setting

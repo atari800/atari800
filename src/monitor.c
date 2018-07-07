@@ -2681,6 +2681,7 @@ static void show_POKEY(void)
 #endif
 }
 
+#ifndef BASIC
 static void save_load_state(int save) {
 	int result;
 	char *filename;
@@ -2695,6 +2696,7 @@ static void save_load_state(int save) {
 
 	printf("%s: %s\n", filename, result ? "OK" : "Failed");
 }
+#endif /* BASIC */
 
 static char screen_to_asc(char c) {
 	char bit7 = c & 0x80;
@@ -3766,10 +3768,12 @@ int MONITOR_Run(void)
 			print_graphics(TRUE);
 		} else if (strcmp(t, "GRM") == 0) {
 			print_graphics(FALSE);
+#ifndef BASIC
 		} else if (strcmp(t, "SAVESTATE") == 0) {
 			save_load_state(TRUE);
 		} else if (strcmp(t, "LOADSTATE") == 0) {
 			save_load_state(FALSE);
+#endif /* BASIC */
 		} else if (strcmp(t, "SSTR") == 0) {
 			string_search(FALSE);
 		} else if (strcmp(t, "SSCR") == 0) {
