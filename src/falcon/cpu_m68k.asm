@@ -21,12 +21,26 @@
 ;  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ;
 
-P65C02          equ 0   ; set to 1 to emulate this version of processor (6502 has a bug in jump code,
+  ifnd P65C02
+P65C02 equ 0            ; set to 1 to emulate this version of processor (6502 has a bug in jump code,
                         ; you can emulate this bug by commenting out this line :)
-PROFILE         equ 0   ; set to 1 to fill the 'CPU_instruction_count' array for instruction profiling
-MONITOR_BREAK   equ 0   ; set to 1 to jump to monitor at break
-CRASH_MENU      equ 1   ; enable crash menu output
-NEW_CYCLE_EXACT equ 1   ; set to 1 to use the new cycle exact CPU emulation
+  endif
+
+  ifnd PROFILE
+PROFILE equ 0           ; set to 1 to fill the 'CPU_instruction_count' array for instruction profiling
+  endif
+
+  ifnd MONITOR_BREAK
+MONITOR_BREAK equ 0     ; set to 1 to jump to monitor at break
+  endif
+
+  ifnd CRASH_MENU
+CRASH_MENU equ 0        ; enable crash menu output
+  endif
+
+  ifnd NEW_CYCLE_EXACT
+NEW_CYCLE_EXACT equ 0   ; set to 1 to use the new cycle exact CPU emulation
+  endif
 
   opt    P=68040,L1,O+,W-
 

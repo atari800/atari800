@@ -1168,6 +1168,7 @@ if [[ "$a8_target" = "android" ]]; then
 	AC_CONFIG_FILES(android/jni/Android.mk)
 fi
 AC_OUTPUT
+AC_SUBST(ASFLAGS)
 
 
 dnl Print results of configure's work...
