@@ -1,13 +1,10 @@
 **/CVS
 *.o
 *.a
-/Makefile
-/Makefile.in
-/src/Makefile
-/src/Makefile.in
-/DOC/Makefile
-/DOC/Makefile.in
+Makefile
+Makefile.in
 /src/atari800
+/src/atari800.map
 /src/config.h
 /src/config.h.in
 /src/android/bin
