@@ -47,6 +47,14 @@
 #include "log.h"
 #define  log_printf  Log_print
 
+/*
+ * dos/dos_sb.c includes dos_ints.h, that uses _go32_dpmi_lock_code, usage of
+ * which forces conversion of a function pointer to object pointer type. This
+ * causes a warning with -Wpedantic. _go32_dpmi_lock_code is beyond our
+ * control, so we disable the warning.
+ */
+#pragma GCC diagnostic ignored "-Wno-pedantic"
+
 #include "dos_sb.h"
 #include "dos_ints.h"
 

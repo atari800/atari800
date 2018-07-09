@@ -22,8 +22,9 @@ dnl   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 
 
 AC_PREREQ(2.57)
 AC_INIT(Atari800, 4.0.0, pstehlik@sophics.cz)
-AC_CONFIG_SRCDIR(atari.c)
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_SRCDIR(src/atari.c)
+AC_CONFIG_HEADER(src/config.h)
+AC_CONFIG_MACRO_DIR([m4])
 
 
 dnl Set a8_target...
@@ -61,13 +62,19 @@ case "$target" in
         ;;
 esac
 
-AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AM_INIT_AUTOMAKE
+AM_MAINTAINER_MODE([enable])
+
+dnl Silent rules
+# Support silent build rules, requires at least automake-1.11. Disable
+# by either passing --disable-silent-rules to configure or passing V=1
+# to make
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 WANT_IDE="yes"
 
 dnl Set a8_host...
-
-AC_CANONICAL_HOST
 
 if [[ "$host_os" = "cygwin" ]]; then
     CC="gcc -mno-cygwin"
@@ -164,20 +171,26 @@ fi
 dnl Check for programs...
 
 AC_PROG_CC
+AC_PROG_CC_C_O
 AC_PROG_INSTALL
+AC_PROG_RANLIB
+AC_CHECK_TOOLS(WINDRES, [windres], :)
+
+AC_DEFUN([AM_PROG_AS], []) dnl dummy to make automake happy, since vasm is used instead
+CCAS=vasm
+CCASFLAGS="-quiet -devpac -opt-allbra -Faout"
 
 a8_use_sdl=no
 dnl Check if SDL library exists. If it's found, set a8_use_sdl to yes and AC_DEFINE the SDL symbol.
 dnl If called multiple times, it will check for the library only once.
 dnl Usage: TRY_USE_SDL()
-AC_DEFUN(TRY_USE_SDL,
+AC_DEFUN([TRY_USE_SDL],
 [
     if [[ "$a8_use_sdl" = no ]]; then
         dnl Check for SDL
         SDL_VERSION=1.2.0
         AM_PATH_SDL($SDL_VERSION,
         [
-            OBJS="$OBJS sdl/init.o"
             AC_DEFINE(SDL,1,[Target: SDL library.])
             AC_DEFINE(SUPPORTS_PLATFORM_TIME,1,[Platform-specific time function.])
             LIBS="$LIBS $SDL_LIBS"
@@ -189,7 +202,6 @@ dnl the autoconf tests don't work.
 dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
 dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
                 LIBS=${LIBS/-lSDLmain/}
-                OBJS="$OBJS SDL_win32_main.o"
                 CPPFLAGS="$CPPFLAGS -DNO_STDIO_REDIRECT"
 dnl Don't make this a windowed app, make it a console app.
                 LIBS=${LIBS/-mwindows/}
@@ -223,6 +235,7 @@ if [[ "$a8_target" != "android" ]]; then
         ]
     )
 fi
+
 
 dnl Check for header files...
 
@@ -263,7 +276,7 @@ fi
 
 dnl Check for libraries...
 
-AC_DEFUN(A8_NEED_LIB,AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
+AC_DEFUN([A8_NEED_LIB],AC_CHECK_LIB($1,main,,AC_MSG_ERROR("$1 library not found!")))
 if [[ "$a8_target" = "android" ]]; then
     echo "hardcoding libz"
     LIBS="-lz $LIBS"
@@ -278,9 +291,6 @@ fi
 
 dnl Set OBJS and libraries depending on host and target...
 
-dnl OBJS is not an AC "precious" variable but is used in the Makefile, so
-dnl it must be explicitly AC_SUBST'ed at the end of this file.
-OBJS=
 case "$a8_target" in
     default)
         if [[ "$a8_host" != "dos" ]]; then
@@ -298,7 +308,6 @@ dnl BeOS has a real issue with redundant-decls
         AC_DEFINE(SUPPORTS_PLATFORM_TIME,1,[Platform-specific time function.])
         AC_DEFINE(FALCON,1,[Target: Atari Falcon system.])
         AC_CHECK_LIB(gem, appl_init)
-        OBJS="falcon/main.o falcon/c2p_uni.o falcon/c2p_unid.o falcon/videl.o falcon/ikbd.o"
         ;;
     ps2)
         AC_DEFINE(PS2,1,[Target: Sony PlayStation 2.])
@@ -317,7 +326,6 @@ dnl BeOS has a real issue with redundant-decls
         A8_NEED_LIB(g)
         A8_NEED_LIB(z)
         A8_NEED_LIB(c)
-        OBJS="atari_ps2.o ps2kbd.s usbd.s audsrv.s"
         ;;
     rpi)
         AC_DEFINE(RPI,1,[Target: Raspberry Pi.])
@@ -330,14 +338,13 @@ dnl BeOS has a real issue with redundant-decls
         A8_NEED_LIB(brcmEGL)
         A8_NEED_LIB(SDL)
         A8_NEED_LIB(bcm_host)
-        OBJS="atari_rpi.o gles2/video.o sdl/main.o sdl/input.o"
         ;;
-	android)
+    android)
         AC_DEFINE(ANDROID,1,[Target: Android])
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(DIRTYRECT,1,[Define to use dirty screen partial repaints.])
         dnl AC_DEFINE(NODIRTYCOMPARE,1,[Define to skip memory comparisons - Requires DIRTYRECT.])
-		;;
+        ;;
     windx)
         AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])
         AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
@@ -353,7 +360,6 @@ dnl BeOS has a real issue with redundant-decls
         A8_NEED_LIB(stdc++)
         A8_NEED_LIB(ws2_32)
         A8_NEED_LIB(gdi32)
-        OBJS="win32/atari_win32.o win32/screen_win32.o win32/render_direct3d.o win32/render_directdraw.o win32/render_gdi.o win32/render_gdiplus.o win32/main.o win32/keyboard.o win32/joystick.o win32/atari.ro"
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         LDFLAGS="$LDFLAGS -mwindows"
         ;;
@@ -394,10 +400,19 @@ dnl BeOS has a real issue with redundant-decls
                 A8_NEED_LIB(Xm)
                 ;;
         esac
-        OBJS="atari_x11.o"
+        WANT_X11=yes
         ;;
 esac
-dnl All future references to OBJS should ADD to it, not (re)define it.
+
+AM_CONDITIONAL([CONFIGURE_HOST_JAVANVM], test "$a8_host" = javanvm)
+AM_CONDITIONAL([CONFIGURE_HOST_DOS], test "$a8_host" = dos)
+AM_CONDITIONAL([CONFIGURE_HOST_WIN], test "$a8_host" = win)
+AM_CONDITIONAL([CONFIGURE_TARGET_ANDROID], test "$a8_target" = android)
+AM_CONDITIONAL([CONFIGURE_TARGET_FALCON], test "$a8_target" = falcon)
+AM_CONDITIONAL([CONFIGURE_TARGET_PS2], test "$a8_target" = ps2)
+AM_CONDITIONAL([CONFIGURE_TARGET_RPI], test "$a8_target" = rpi)
+AM_CONDITIONAL([CONFIGURE_TARGET_WINDX], test "$a8_target" = windx)
+AM_CONDITIONAL([CONFIGURE_TARGET_X11], test "$WANT_X11" = yes)
 
 
 dnl Check for typedefs, structures, and compiler characteristics...
@@ -601,7 +616,6 @@ if [[ "$a8_target" = default ]]; then
         javanvm)
             AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
             AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
-            OBJS="javanvm/main.o javanvm/video.o javanvm/input.o"
             ;;
         sdl)
             AC_DEFINE(GUI_SDL,1,[Use SDL for graphics and input.])
@@ -614,28 +628,21 @@ if [[ "$a8_target" = default ]]; then
             WANT_XEP80_EMULATION=yes
             WANT_NTSC_FILTER=yes
             WANT_PAL_BLENDING=yes
-            OBJS="$OBJS videomode.o sdl/main.o sdl/video.o sdl/video_sw.o sdl/input.o sdl/palette.o"
             AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
-            OBJS="$OBJS pbi_proto80.o"
             AC_DEFINE(AF80,1,[The Austin Franklin 80 column card.])
-            OBJS="$OBJS af80.o"
             AC_DEFINE(BIT3,1,[The Bit3 Full View 80 column card.])
-            OBJS="$OBJS bit3.o"
             ;;
         dosvga)
             AC_DEFINE(DOSVGA,1,[Target: DOS VGA.])
             AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
             AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
-            OBJS="$OBJS dos/atari_vga.o dos/vga_gfx.o dos/vga_asm.o"
             ;;
         curses | ncurses | pdcurses)
             AC_DEFINE(USE_CURSES,1,[Target: Curses-compatible library.])
-            OBJS="$OBJS atari_curses.o"
             WANT_EVENT_RECORDING=no
             ;;
         no)
             AC_DEFINE(BASIC,1,[Target: standard I/O.])
-            OBJS="$OBJS atari_basic.o"
             WANT_EVENT_RECORDING=no
             ;;
         *)
@@ -643,6 +650,12 @@ if [[ "$a8_target" = default ]]; then
             ;;
     esac
 fi
+AM_CONDITIONAL(WITH_VIDEO_JAVANVM, test "$with_video" = javanvm)
+AM_CONDITIONAL(WITH_VIDEO_SDL, test "$with_video" = sdl)
+AM_CONDITIONAL(WITH_VIDEO_DOSVGA, test "$with_video" = dosvga)
+AM_CONDITIONAL(WITH_VIDEO_CURSES, test "$with_video" = curses -o "$with_video" = ncurses -o "$with_video" = pdcurses)
+AM_CONDITIONAL(WITH_VIDEO_NO, test "$with_video" = no)
+
 
 dnl Select optional Atari800 features...
 
@@ -663,9 +676,6 @@ AC_DEFUN([A8_OPTION],[
 
 if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
 
-    dnl These objects are not compiled when --with-video=no
-    OBJS="$OBJS input.o statesav.o ui_basic.o ui.o"
-
     case "$with_video" in
         *curses)
             A8_OPTION(cursesbasic,yes,
@@ -677,16 +687,12 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
 
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
 
-        dnl These objects are not compiled when --with-video=no or --enable-cursesbasic=no
-        OBJS="$OBJS artifact.o colours.o colours_ntsc.o colours_pal.o colours_external.o screen.o"
-
         A8_OPTION(newcycleexact,yes,
                   [Allow color changes inside a scanline (default=ON)],
                   NEW_CYCLE_EXACT,[Define to allow color changes inside a scanline.]
                  )
         if [[ "$WANT_NEW_CYCLE_EXACT" = "yes" ]]; then
-            OBJS="$OBJS cycle_map.o"
-            ASFLAGS="$ASFLAGS -DNEW_CYCLE_EXACT"
+            CCASFLAGS="$CCASFLAGS -DNEW_CYCLE_EXACT"
         fi
 
         A8_OPTION(veryslow,no,
@@ -701,9 +707,11 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
               CRASH_MENU,[Define to activate crash menu after CIM instruction.]
              )
     if [[ "$WANT_CRASH_MENU" = "yes" ]]; then
-        ASFLAGS="$ASFLAGS -DCRASH_MENU"
+        CCASFLAGS="$CCASFLAGS -DCRASH_MENU"
     fi
 fi
+AM_CONDITIONAL([WANT_CURSES_BASIC], test "$WANT_CURSES_BASIC" = "yes")
+AM_CONDITIONAL([WANT_NEW_CYCLE_EXACT], test "$WANT_NEW_CYCLE_EXACT" = "yes")
 
 A8_OPTION(pagedattrib,no,
           [Use page-based attribute array (default=OFF)],
@@ -720,9 +728,7 @@ A8_OPTION(altirra_bios,yes,
       EMUOS_ALTIRRA,[Define to use Altirra emulated OS when real ROMs are not available.]
      )
 
-if [[ "$WANT_EMUOS_ALTIRRA" = "yes" ]]; then
-    OBJS="$OBJS roms/altirraos_800.o roms/altirraos_xl.o roms/altirra_basic.o"
-fi
+AM_CONDITIONAL([WANT_EMUOS_ALTIRRA], test "$WANT_EMUOS_ALTIRRA" = "yes")
 
 A8_OPTION(monitorasm,yes,
           [Provide an assembler in the monitor (default=ON)],
@@ -734,7 +740,7 @@ A8_OPTION(monitorbreak,yes,
           MONITOR_BREAK,[Define to activate code breakpoints and execution history.]
          )
 if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
-    ASFLAGS="$ASFLAGS -DMONITOR_BREAK"
+    CCASFLAGS="$CCASFLAGS -DMONITOR_BREAK"
 fi
 
 A8_OPTION(monitorbreakpoints,no,
@@ -752,7 +758,7 @@ A8_OPTION(monitorprofile,no,
           MONITOR_PROFILE,[Define to activate 6502 opcode profiling.]
          )
 if [[ "$WANT_MONITOR_PROFILE" = "yes" ]]; then
-    ASFLAGS="$ASFLAGS -DMONITOR_PROFILE"
+    CCASFLAGS="$CCASFLAGS -DMONITOR_PROFILE"
 fi
 
 A8_OPTION(monitortrace,no,
@@ -785,23 +791,13 @@ A8_OPTION(pbi_mio,yes,
       [Emulate the MIO board (default=ON)],
       PBI_MIO,[Define to emulate the MIO board.]
      )
-
-if [[ "$WANT_PBI_MIO" = "yes" ]]; then
-    OBJS="$OBJS pbi_mio.o"
-fi
+AM_CONDITIONAL([WANT_PBI_MIO], test "$WANT_PBI_MIO" = "yes")
 
 A8_OPTION(pbi_bb,yes,
       [Emulate the Black Box (default=ON)],
       PBI_BB,[Define to emulate the Black Box.]
      )
-
-if [[ "$WANT_PBI_BB" = "yes" ]]; then
-    OBJS="$OBJS pbi_bb.o"
-fi
-
-if [[ "$WANT_PBI_BB" = "yes" -o "$WANT_PBI_MIO" = "yes" ]]; then
-    OBJS="$OBJS pbi_scsi.o"
-fi
+AM_CONDITIONAL([WANT_PBI_BB], test "$WANT_PBI_BB" = "yes")
 
 dnl Select/detect sound interface.
 
@@ -873,30 +869,24 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
     case "$with_sound" in
         javanvm)
             WANT_SOUND_THIN_API=yes
-            OBJS="$OBJS javanvm/sound.o"
             ;;
         sdl)
             WANT_SOUND_THIN_API=yes
             WANT_SOUND_CALLBACK=yes
-            OBJS="$OBJS sdl/sound.o"
             ;;
         win)
             AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
-            OBJS="$OBJS win32/sound.o"
             ;;
         falcon)
             AC_DEFINE(POKEYSND_SIGNED_SAMPLES,1,[Use 8-bit signed samples.])
             WANT_SOUND_THIN_API=yes
-            OBJS="$OBJS falcon/sound.o"
             ;;
         oss)
             WANT_SOUND_THIN_API=yes
-            OBJS="$OBJS sound_oss.o"
             ;;
         dossb)
             WANT_SOUND_THIN_API=yes
             WANT_SOUND_CALLBACK=yes
-            OBJS="$OBJS dos/sound_dos.o dos/dos_sb.o"
             ;;
         no)
             ;;
@@ -905,17 +895,23 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             ;;
     esac
 fi
+AM_CONDITIONAL([WITH_SOUND], test "$with_sound" != no)
+AM_CONDITIONAL([WITH_SOUND_JAVANVM], test "$with_sound" = javanvm)
+AM_CONDITIONAL([WITH_SOUND_FALCON], test "$with_sound" = falcono)
+AM_CONDITIONAL([WITH_SOUND_OSS], test "$with_sound" = oss)
+AM_CONDITIONAL([WITH_SOUND_SDL], test "$with_sound" = sdl)
+AM_CONDITIONAL([WITH_SOUND_WIN], test "$with_sound" = win)
+AM_CONDITIONAL([WITH_SOUND_DOSSB], test "$with_sound" = dossb)
+AM_CONDITIONAL([A8_USE_SDL], test "$a8_use_sdl" = yes)
 
 dnl Set sound support options...
 
 if [[ "$with_sound" != no ]]; then
 
     AC_DEFINE(SOUND, 1, [Define to activate sound support.])
-    OBJS="$OBJS pokeysnd.o mzpokeysnd.o remez.o sndsave.o"
 
     if [[ "$WANT_SOUND_THIN_API" = "yes" ]]; then
         AC_DEFINE(SOUND_THIN_API,1,[Use new sound API.])
-        OBJS="$OBJS sound.o"
         A8_OPTION(synchronized_sound,yes,
                   [Use synchronized sound (default=ON)],
                   SYNCHRONIZED_SOUND,[Define to use synchronized sound.]
@@ -974,15 +970,6 @@ if [[ "$with_sound" != no ]]; then
               [Emulate the Alien Group Voice Box (default=ON)],
               VOICEBOX,[Define to emulate the Alien Group Voice Box.]
              )
-    if [[ "$WANT_PBI_XLD" = "yes" ]]; then
-        OBJS="$OBJS pbi_xld.o"
-    fi
-    if [[ "$WANT_VOICEBOX" = "yes" ]]; then
-        OBJS="$OBJS voicebox.o"
-    fi
-    if [[ "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes" ]]; then
-        OBJS="$OBJS votrax.o votraxsnd.o"
-    fi
 else
     WANT_NONLINEAR_MIXING="no"
     WANT_SYNCHRONIZED_SOUND="no"
@@ -994,6 +981,10 @@ else
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
 fi
+AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
+AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
+AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes")
+AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
 
 A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],
@@ -1002,8 +993,8 @@ A8_OPTION(ide,$WANT_IDE,
 if [[ "$WANT_IDE" == "yes" ]]; then
     AC_SYS_LARGEFILE
     AC_FUNC_FSEEKO
-    OBJS="$OBJS ide.o"
 fi
+AM_CONDITIONAL([WANT_IDE], test "$WANT_IDE" = "yes")
 
 if [[ "$a8_use_sdl" = yes ]]; then
     A8_OPTION(onscreenkeyboard,no,
@@ -1083,8 +1074,9 @@ fi
 
 if [[ "$with_opengl" = "yes" ]]; then
     AC_DEFINE(HAVE_OPENGL, 1, [Support for OpenGL graphics acceleration.])
-    OBJS="$OBJS sdl/video_gl.o"
 fi
+AM_CONDITIONAL([WITH_OPENGL], test "$with_opengl" = "yes")
+
 
 dnl Select host/target specific features...
 
@@ -1093,10 +1085,8 @@ if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
               [Use m68k assembler CPU core for Falcon target (default=OFF)],
               FALCON_CPUASM,[Define to use m68k assembler CPU core for Falcon target.]
              )
-    if [[ "$WANT_FALCON_CPUASM" = "yes" ]]; then
-        OBJS="$OBJS falcon/cpu_m68k.o"
-    fi
 fi
+AM_CONDITIONAL([WANT_FALCON_CPUASM], test "$WANT_FALCON_CPUASM" = "yes")
 
 if [[ "$a8_host" = "linux" ]]; then
     case "$a8_target" in
@@ -1117,19 +1107,18 @@ fi
 
 if [[ "$WANT_XEP80_EMULATION" = "yes" ]]; then
     AC_DEFINE(XEP80_EMULATION,1,[Emulate the XEP80.])
-    OBJS="$OBJS xep80.o xep80_fonts.o"
 fi
+AM_CONDITIONAL([WANT_XEP80_EMULATION], test "$WANT_XEP80_EMULATION" = "yes")
 
 if [[ "$WANT_NTSC_FILTER" = "yes" ]]; then
-	AC_DEFINE(NTSC_FILTER,1,[Use NTSC video filter.])
-    OBJS="$OBJS filter_ntsc.o atari_ntsc/atari_ntsc.o"
+    AC_DEFINE(NTSC_FILTER,1,[Use NTSC video filter.])
 fi
+AM_CONDITIONAL([WANT_NTSC_FILTER], test "$WANT_NTSC_FILTER" = "yes")
 
 if [[ "$WANT_PAL_BLENDING" = "yes" ]]; then
     AC_DEFINE(PAL_BLENDING,1,[Use accurate PAL color blending.])
-    OBJS="$OBJS pal_blending.o"
-    
 fi
+AM_CONDITIONAL([WANT_PAL_BLENDING], test "$WANT_PAL_BLENDING" = "yes")
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     A8_OPTION(riodevice,no,
@@ -1137,7 +1126,6 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
               R_IO_DEVICE,[Define to use R: device.]
              )
     if [[ "$WANT_R_IO_DEVICE" = "yes" ]]; then
-        OBJS="$OBJS rdevice.o"
         A8_OPTION(rnetwork,yes,
                  [Use IP network connection with the R: networking device (Linux/Unix/Win32) (default=ON)],
                  R_NETWORK,[Define to use IP network connection with the R: device.]
@@ -1153,22 +1141,26 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
         fi
     fi
 fi
+AM_CONDITIONAL([WANT_R_IO_DEVICE], test "$WANT_R_IO_DEVICE" = "yes")
 
-dnl Wrapup: export OBJS and write Makefile...
+dnl Wrapup: export and write Makefile...
 
-AC_SUBST(OBJS)
 AC_SUBST(JAVAFLAGS)
 AC_SUBST(JAVACFLAGS)
-CONFIGURE_TARGET="$target"
-AC_SUBST(CONFIGURE_TARGET)
-CONFIGURE_HOST="$a8_host"
-AC_SUBST(CONFIGURE_HOST)
-AC_CONFIG_FILES(Makefile)
+AC_SUBST(CCAS)
+AC_SUBST(CCASFLAGS)
+CFLAGS_NOANSI=`echo $CFLAGS | sed -e 's/-ansi//' -e 's/-pedantic//'`
+AC_SUBST(CFLAGS_NOANSI)
+
+AC_CONFIG_FILES([
+Makefile
+DOC/Makefile
+src/Makefile
+])
 if [[ "$a8_target" = "android" ]]; then
-	AC_CONFIG_FILES(android/jni/Android.mk)
+	AC_CONFIG_FILES(src/android/jni/Android.mk)
 fi
 AC_OUTPUT
-AC_SUBST(ASFLAGS)
 
 
 dnl Print results of configure's work...
@@ -1254,11 +1246,10 @@ fi
 echo
 echo "Main build variables:"
 echo "    CC......: \"$CC\""
-echo "    ASFLAGS.: \"$ASFLAGS\""
+echo "    ASFLAGS.: \"$CCASFLAGS\""
 echo "    CFLAGS..: \"$CFLAGS\""
 echo "    CPPFLAGS: \"$CPPFLAGS\""
 echo "    LDFLAGS.: \"$LDFLAGS\""
-echo "    OBJS....: \"$OBJS\""
 echo "    LIBS....: \"$LIBS\""
 echo "-------------------------------------------------------"
 

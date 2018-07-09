@@ -36,8 +36,6 @@ case $tag in
 		;;
 esac
 
-pushd src
-
 NO_CONFIGURE=1 ./autogen.sh
 
 targets="sdl"
@@ -53,18 +51,20 @@ linux)
 	do
 		./configure $common_opts `eval echo \\\$options_${target}`
 		make
-		mv atari800 atari800-${target}
+		mv src/${P} src/${P}-${target}
 		make clean
 	done
 	touch atari800
 
 	make DESTDIR="${BUILDROOT}" install || exit 1
+	for target in $targets
+	do
+	   install -m 755 src/${P}-${target} "${BUILDROOT}${bindir}"
+	done
 	pushd "${BUILDROOT}${bindir}"
 	ln -sf ${P}-${maintarget} ${P}
 	popd
 
-	popd
-	
 	install debian/changelog "${BUILDROOT}$docdir/changelog.Debian"
 	install DOC/ChangeLog "${BUILDROOT}$docdir/ChangeLog"
 	install DOC/NEWS "${BUILDROOT}$docdir/NEWS"
@@ -100,14 +100,12 @@ osx)
 	DMG="${PROJECT_LOWER}-${VERSION}${archive_tag}.dmg"
 	ARCHIVE="${PROJECT_LOWER}-${ATAG}.dmg"
 
-	push src/macosx
+	pushd src/macosx
 	xcodebuild -derivedDataPath "$OUT" -project atari800.xcodeproj -configuration Release -scheme Packaging 
 	popd
 	
 	mv "$OUT/Build/Products/Release/$DMG" "$OUT/$ARCHIVE" || exit 1
 
-	popd
-	
 	;;
 
 esac

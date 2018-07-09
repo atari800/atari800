@@ -1,7 +1,13 @@
 #! /bin/sh
 
+rm -rf autom4te.cache
+
+aclocal -I m4
 autoheader
 autoconf
+automake --add-missing
+
+rm -rf autom4te.cache
 
 echo
 echo "Now you need to run the configure script.  The configure script may take the"

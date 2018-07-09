@@ -201,12 +201,11 @@ options_sdl="--with-video=sdl --with-sound=sdl"
 #options_ncurses="--with-video=ncurses --with-sound=oss"
 #options_x11="--target=x11 --with-sound=oss"
 
-cd src
 for target in %{targets}
 do
 	%configure `eval echo \\\$options_${target}`
 	%{__make} %{?jobs:-j%jobs}
-	mv atari800 atari800-${target}
+	mv src/%{name} src/%{name}-${target}
 	%{__make} clean
 done
 touch atari800
@@ -218,7 +217,7 @@ mkdir -p %{buildroot}/%{_bindir}
 mkdir -p %{buildroot}/%{_mandir}/man1
 for target in %{targets}
 do
-	install -m 755 atari800-$target %{buildroot}/%{_bindir}
+	install -m 755 %{name}-$target %{buildroot}/%{_bindir}
 done
 (
 	cd %{buildroot}/%{_bindir}
