@@ -190,7 +190,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_TOOLS(WINDRES, [windres], :)
 
-AC_DEFUN([AM_PROG_AS], []) dnl dummy to make automake happy, since vasm is used instead
+AM_PROG_AS
 CCAS=vasm
 CCASFLAGS="-quiet -devpac -opt-allbra -Faout"
 

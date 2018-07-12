@@ -74,6 +74,7 @@ atari800_SOURCES = \
 	sysrom.c sysrom.h \
 	util.c util.h
 atari800_LDADD =
+atari800_LDFLAGS = -Wl,-Map,atari800.map
 
 if A8_USE_SDL
 atari800_SOURCES += sdl/init.c sdl/init.h
@@ -112,8 +113,9 @@ endif
 
 if CONFIGURE_TARGET_FALCON
 atari800_SOURCES += \
-	falcon/main.c falcon/c2p_uni.asm falcon/c2p_unid.asm falcon/videl.asm falcon/ikbd.asm \
-	falcon/res.h falcon/xcb.h falcon/jclkcook.h
+	falcon/main.c falcon/c2p_uni.S falcon/c2p_unid.S falcon/videl.asm falcon/ikbd.asm \
+	falcon/res.h falcon/xcb.h falcon/jclkcook.h \
+	falcon/c2pmac.i
 endif
 
 if CONFIGURE_TARGET_PS2
@@ -277,6 +279,12 @@ win32/render_direct3d.o: win32/render_direct3d.c
 	$(CC) -x c++ -c -o $@ $(AM_CPPFLAGS) $(CFLAGS_NOANSI) $(DEFAULT_INCLUDES) $(CPPFLAGS) $(DEFS) -Wno-missing-declarations -Wno-missing-prototypes $<
 
 
+#
+# temporary rules for assembling gas assembler sources; once they are all converted,
+# this can go away again
+#
+.S.o:
+	$(AM_V_CCAS)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 .asm.o:
 	$(CCAS) $(CCASFLAGS) -o $@ $<
