@@ -74,7 +74,7 @@ atari800_SOURCES = \
 	sysrom.c sysrom.h \
 	util.c util.h
 atari800_LDADD =
-atari800_LDFLAGS = -Wl,-Map,atari800.map
+atari800_LDFLAGS = -Wl,-Map,atari800.map -Wl,-stack,256k
 
 if A8_USE_SDL
 atari800_SOURCES += sdl/init.c sdl/init.h
@@ -113,7 +113,7 @@ endif
 
 if CONFIGURE_TARGET_FALCON
 atari800_SOURCES += \
-	falcon/main.c falcon/c2p_uni.S falcon/c2p_unid.S falcon/videl.asm falcon/ikbd.asm \
+	falcon/main.c falcon/c2p_uni.S falcon/c2p_unid.S falcon/videl.asm falcon/ikbd.S \
 	falcon/res.h falcon/xcb.h falcon/jclkcook.h \
 	falcon/c2pmac.i
 endif
