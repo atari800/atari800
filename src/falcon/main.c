@@ -48,6 +48,7 @@
 #include "sound.h"
 #include "log.h"
 #include "util.h"
+#include "videl.h"
 
 #include "falcon/xcb.h"		/* for NOVA screensaver */
 
@@ -143,14 +144,14 @@ unsigned char keybuf[KEYBUF_SIZE];
 int kbhead = 0;
 
 static UBYTE *Original_Phys_base;
-static UWORD original_videl_settings[26];
-static UWORD mode336x240_vga[26]= {
-	0x0133, 0x0001, 0x3b00, 0x0150, 0x00f0, 0x0008, 0x0002, 0x0010, \
+static Videl_Registers original_videl_settings;
+static Videl_Registers mode336x240_vga = {
+	0x0133, 0x00013b00, 0x0150, 0x00f0, 0x0008, 0x00, 0x02, 0x0010, \
 	0x0000, 0x00a8, 0x0186, 0x0005, 0x00c6, 0x0095, 0x000d, 0x0292, 0x0083, \
 	0x0096, 0x0000, 0x0000, 0x0419, 0x03ff, 0x003f, 0x003f, 0x03ff, 0x0415
 };
-static UWORD mode336x240_vga50[26]= {
-	0x0133, 0x0001, 0x3b00, 0x0150, 0x00f0, 0x0008, 0x0002, 0x0010, \
+static Videl_Registers mode336x240_vga50 = {
+	0x0133, 0x00013b00, 0x0150, 0x00f0, 0x0008, 0x00, 0x02, 0x0010, \
 	0x0000, 0x00a8, 0x0186, 0x0005, 0x00c6, 0x008d, 0x0015, 0x0292, 0x0083, \
 	0x0097, 0x0000, 0x0000, 0x04eb, 0x0465, 0x00a5, 0x00a5, 0x0465, 0x04e7
 };
@@ -473,14 +474,14 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			Screen_atari = (ULONG*)new_videobase;
 			if (vga50) {
 				/* use the new chunky mode */
-				mode336x240_vga50[7] |= 0x1000;
+				mode336x240_vga50.patch_RSpShift |= 0x1000;
 				/* use virtual offset of 384 - 336 = 48 bytes = 24 words */
-				mode336x240_vga50[8] = (Screen_WIDTH - 336) / 2;
+				mode336x240_vga50.patch_ROffset = (Screen_WIDTH - 336) / 2;
 			} else {
 				/* use the new chunky mode */
-				mode336x240_vga[7] |= 0x1000;
+				mode336x240_vga.patch_RSpShift |= 0x1000;
 				/* use virtual offset of 384 - 336 = 48 bytes = 24 words */
-				mode336x240_vga[8] = (Screen_WIDTH - 336) / 2;
+				mode336x240_vga.patch_ROffset = (Screen_WIDTH - 336) / 2;
 			}
 			bitplanes = FALSE;
 		} else {

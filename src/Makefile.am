@@ -113,7 +113,9 @@ endif
 
 if CONFIGURE_TARGET_FALCON
 atari800_SOURCES += \
-	falcon/main.c falcon/c2p_uni.S falcon/c2p_unid.S falcon/videl.asm falcon/ikbd.S \
+	falcon/main.c falcon/c2p_uni.S falcon/c2p_unid.S \
+	falcon/videl.c falcon/videl.h \
+	falcon/ikbd.S \
 	falcon/res.h falcon/xcb.h falcon/jclkcook.h \
 	falcon/c2pmac.i
 endif
