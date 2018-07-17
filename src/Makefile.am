@@ -14,8 +14,6 @@ man1dir = $(mandir)/man1
 
 AM_CPPFLAGS = -I.
 
-SUFFIXES = .c .cpp .s .o .h .asm
-
 doc_DATA = 
 
 if CONFIGURE_TARGET_LIBATARI800
@@ -74,7 +72,10 @@ atari800_SOURCES = \
 	sysrom.c sysrom.h \
 	util.c util.h
 atari800_LDADD =
-atari800_LDFLAGS = -Wl,-Map,atari800.map -Wl,-stack,256k
+atari800_LDFLAGS =
+if CONFIGURE_TARGET_FALCON
+atari800_LDFLAGS += -Wl,-Map,atari800.map -Wl,-stack,256k
+endif
 
 if A8_USE_SDL
 atari800_SOURCES += sdl/init.c sdl/init.h
@@ -237,7 +238,7 @@ if WITH_OPENGL
 atari800_SOURCES += sdl/video_gl.c sdl/video_gl.h
 endif
 if WANT_FALCON_CPUASM
-atari800_SOURCES += falcon/cpu_m68k.asm
+atari800_SOURCES += falcon/cpu_m68k.S
 endif
 if WANT_XEP80_EMULATION
 atari800_SOURCES += xep80.c xep80.h xep80_fonts.c xep80_fonts.h
@@ -286,10 +287,7 @@ win32/render_direct3d.o: win32/render_direct3d.c
 # this can go away again
 #
 .S.o:
-	$(AM_V_CCAS)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
-
-.asm.o:
-	$(CCAS) $(CCASFLAGS) -o $@ $<
+	$(AM_V_CCAS)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS) $(CCASFLAGS) -c -o $@ $<
 
 if CONFIGURE_HOST_JAVANVM
 $(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class

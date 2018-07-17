@@ -189,10 +189,7 @@ AC_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_TOOLS(WINDRES, [windres], :)
-
 AM_PROG_AS
-CCAS=vasm
-CCASFLAGS="-quiet -devpac -opt-allbra -Faout"
 
 a8_use_sdl=no
 dnl Check if SDL library exists. If it's found, set a8_use_sdl to yes and AC_DEFINE the SDL symbol.
