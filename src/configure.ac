@@ -326,8 +326,8 @@ dnl BeOS has a real issue with redundant-decls
         AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
         AC_DEFINE(PLATFORM_MAP_PALETTE,1,[Platform-specific mapping of RGB palette to display surface.])
-        A8_NEED_LIB(GLESv2)
-        A8_NEED_LIB(EGL)
+        A8_NEED_LIB(brcmGLESv2)
+        A8_NEED_LIB(brcmEGL)
         A8_NEED_LIB(SDL)
         A8_NEED_LIB(bcm_host)
         OBJS="atari_rpi.o gles2/video.o sdl/main.o sdl/input.o"
