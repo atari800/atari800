@@ -79,7 +79,9 @@
 #include <signal.h>
 #include <time.h>
 #include <errno.h>
+#define HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <sys/stat.h>
 
 #ifdef DEBUG
