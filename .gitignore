@@ -29,3 +29,4 @@ autom4te.cache/
 .deps
 .dirstamp
 stamp-*
+*~
