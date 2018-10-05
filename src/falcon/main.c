@@ -188,9 +188,9 @@ static void SwapScreen()
 	size_t offset;
 
 	/* always wait at least one VBL before swapping the screen */
-	for (new_frclock = (ULONG)get_sysvar(_frclock);
+	for (new_frclock = (ULONG)get_sysvar((void*)_frclock);
 		 new_frclock == old_frclock;
-		 new_frclock = (ULONG)get_sysvar(_frclock));
+		 new_frclock = (ULONG)get_sysvar((void*)_frclock));
 	old_frclock = new_frclock;
 
 	if (delta_screen || SCREEN_BUFFERS < 2) {

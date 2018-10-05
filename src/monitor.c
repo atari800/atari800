@@ -941,6 +941,8 @@ static UWORD show_instruction(FILE *fp, UWORD pc)
 			return pc;
 		}
 	}
+#else
+	(void)nchars;
 #endif
 	fputc('\n', fp);
 	return pc;

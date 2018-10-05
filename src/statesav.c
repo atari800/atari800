@@ -474,7 +474,7 @@ int StateSav_ReadAtariState(const char *filename, const char *mode)
 #ifdef XEP80_EMULATION
 		XEP80_StateRead();
 #else
-		int local_xep80_enabled;
+		int local_xep80_enabled = FALSE;
 		StateSav_ReadINT(&local_xep80_enabled,1);
 		if (local_xep80_enabled) {
 			Log_print("Cannot read this state file because this version does not support XEP80.");

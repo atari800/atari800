@@ -897,7 +897,7 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
 fi
 AM_CONDITIONAL([WITH_SOUND], test "$with_sound" != no)
 AM_CONDITIONAL([WITH_SOUND_JAVANVM], test "$with_sound" = javanvm)
-AM_CONDITIONAL([WITH_SOUND_FALCON], test "$with_sound" = falcono)
+AM_CONDITIONAL([WITH_SOUND_FALCON], test "$with_sound" = falcon)
 AM_CONDITIONAL([WITH_SOUND_OSS], test "$with_sound" = oss)
 AM_CONDITIONAL([WITH_SOUND_SDL], test "$with_sound" = sdl)
 AM_CONDITIONAL([WITH_SOUND_WIN], test "$with_sound" = win)
