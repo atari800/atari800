@@ -718,6 +718,11 @@ A8_OPTION(pagedattrib,no,
           PAGED_ATTRIB,[Define to use page-based attribute array.]
          )
 
+A8_OPTION(cyclesperopcode,no,
+          [Update ANTIC counter in each opcode's emulation (default=OFF)],
+          CYCLES_PER_OPCODE,[Define to update ANTIC counter in each opcode's emulation.]
+         )
+
 A8_OPTION(bufferedlog,no,
           [Use buffered debug output (until the graphics mode switches back to text mode) (default=OFF)],
           BUFFERED_LOG,[Define to use buffered debug output.]
@@ -1187,6 +1192,7 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
     echo "Using the crash menu?.................: $WANT_CRASH_MENU"
 fi
 echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
+echo "Using per opcode cycles update?.......: $WANT_CYCLES_PER_OPCODE"
 echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
 echo "Using Altirra BIOS ROM?...............: $WANT_EMUOS_ALTIRRA"
 echo "Using the monitor assembler?..........: $WANT_MONITOR_ASSEMBLER"
@@ -1257,14 +1263,19 @@ if [[ "$WANT_VERY_SLOW" = "yes" ]]; then
 	echo
 	echo "IMPORTANT: --enable-veryslow provides a bit better performance"
 	echo "only when the compiled atari800 is run with the -refresh option."
-	if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
-		echo "It is better to use --disable-monitorbreak."
-	fi
-	if [[ "$with_sound" != "no" ]]; then
-		echo "Try --without-sound, too."
-	fi
-	if [[ "$WANT_PAGED_ATTRIB" != "yes" ]]; then
-		echo "Have you tried --enable-pagedattrib ?"
+	if [[ "$WANT_FALCON_CPUASM" != "yes" ]]; then
+		if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
+			echo "It is better to use --disable-monitorbreak."
+		fi
+		if [[ "$with_sound" != "no" ]]; then
+			echo "Try --without-sound, too."
+		fi
+		if [[ "$WANT_PAGED_ATTRIB" != "yes" ]]; then
+			echo "Have you tried --enable-pagedattrib ?"
+		fi
+		if [[ "$CYCLES_PER_OPCODE" != "yes" ]]; then
+			echo "Have you tried --enable-cyclesperopcode ?"
+		fi
 	fi
 fi
 

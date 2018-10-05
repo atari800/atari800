@@ -114,6 +114,10 @@ UBYTE CPU_IRQ;
 #error cpu_m68k.asm does not support disassembling the code while it is executed
 #endif
 
+#if defined(CYCLES_PER_OPCODE)
+#warning per opcode cycles update has no effect in cpu_m68k.asm
+#endif
+
 #else /* FALCON_CPUASM */
 
 /* Windows headers define it */
