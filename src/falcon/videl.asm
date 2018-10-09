@@ -21,6 +21,7 @@
 ;  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	xdef		_load_r,_save_r,_p_str_p
+	xdef		_store_palette,_restore_palette,_set_falcon_palette
 *-------------------------------------------------------*
 	section		text
 *-------------------------------------------------------*
@@ -318,6 +319,44 @@ videl_re_sync:
 .nsync:	move.l		(sp)+,d2
 	rts
 
+_store_palette:
+	movem.l		d2-d7/a2-a6,-(sp)
+
+	lea		$ffff9800.w,a0			; save falcon palette
+	lea		save_pal,a1			;
+	move.w		#256-1,d7			;
+.colloop:
+	move.l		(a0)+,(a1)+			;
+	dbra		d7,.colloop			;
+
+	movem.l		$ffff8240.w,d0-d7		; save st palette
+	movem.l		d0-d7,(a1)			;
+
+	movem.l		(sp)+,d2-d7/a2-a6
+	rts
+
+_restore_palette
+	movem.l		d2-d7/a2-a6,-(sp)
+
+	lea		$ffff9800.w,a0			; restore falcon palette
+	lea		save_pal,a1			;
+	move.w		#256-1,d7			;
+.loop:	move.l		(a1)+,(a0)+			;
+	dbra		d7,.loop			;
+
+	movem.l		(a1),d0-d7			; restore st palette
+	movem.l		d0-d7,$ffff8240.w		;
+
+	movem.l		(sp)+,d2-d7/a2-a6
+	rts
+
+_set_falcon_palette:
+	lea		$ffff9800.w,a0			; set falcon palette
+	move.l		_p_str_p,a1			;
+	move.w		#256-1,d0			;
+.loop:	move.l		(a1)+,(a0)+			;
+	dbra		d0,.loop			;
+	rts
 
 *-------------------------------------------------------*
 	section 	bss
@@ -325,6 +364,8 @@ videl_re_sync:
 
 _p_str_p:
 	ds.l	1
+save_pal:
+	ds.l	256+8					; old colours (falcon+st/e)
 
 *-------------------------------------------------------*
 	section		text
