@@ -177,7 +177,8 @@ AC_PROG_RANLIB
 AC_CHECK_TOOLS(WINDRES, [windres], :)
 
 AC_DEFUN([AM_PROG_AS], []) dnl dummy to make automake happy, since vasm is used instead
-CCAS=vasm
+dnl CCAS=vasm
+CCAS=/home/mikro/atari/compilers/vasm-2018-10-05/vasmm68k_mot
 CCASFLAGS="-quiet -devpac -opt-allbra -Faout"
 
 a8_use_sdl=no
