@@ -73,7 +73,7 @@ static void CassetteLeaderSave(void)
 	CPU_regY = 5;
 }
 
-#if EMOUS_ALTIRRA
+#if EMUOS_ALTIRRA
 /* Esc function that removes the wait loop in AltirraOS's "CassetteWait"
    routine when reading or writing the tape leader. */
 static void CassetteLeaderAltirra(void)
@@ -85,7 +85,7 @@ static void CassetteLeaderAltirra(void)
 	/* Routine expects Y = 1 on exit. */
 	CPU_regY = 1;
 }
-#endif /* EMOUS_ALTIRRA */
+#endif /* EMUOS_ALTIRRA */
 
 void ESC_ClearAll(void)
 {
@@ -162,9 +162,9 @@ void ESC_PatchOS(void)
 		UWORD addr_s;
 		UBYTE check_s_0;
 		UBYTE check_s_1;
-#if EMOUS_ALTIRRA
+#if EMUOS_ALTIRRA
 		int altirra = FALSE;
-#endif /* EMOUS_ALTIRRA */
+#endif /* EMUOS_ALTIRRA */
 
 		/* patch Open() of C: so we know when a leader is processed */
 		switch (Atari800_os_version) {
@@ -209,7 +209,7 @@ void ESC_PatchOS(void)
 			check_s_0 = 0xa9;
 			check_s_1 = 0x03;
 			break;
-#if EMOUS_ALTIRRA
+#if EMUOS_ALTIRRA
 		case SYSROM_ALTIRRA_800:
 			altirra = TRUE;
 			addr_l = 0xef91; /* points to CassetteWait */
@@ -218,15 +218,15 @@ void ESC_PatchOS(void)
 			altirra = TRUE;
 			addr_l = 0xee4a; /* points to CassetteWait */
 			break;
-#endif /* EMOUS_ALTIRRA */
+#endif /* EMUOS_ALTIRRA */
 		default:
 			return;
 		}
-#if EMOUS_ALTIRRA
+#if EMUOS_ALTIRRA
 		if (altirra)
 			ESC_AddEscRts(addr_l, ESC_COPENLOAD, CassetteLeaderAltirra);
 		else
-#endif /* EMOUS_ALTIRRA */
+#endif /* EMUOS_ALTIRRA */
 		{
 			/* don't hurt non-standard OSes that may not support cassette at all  */
 			if (MEMORY_dGetByte(addr_l)     == 0xa9 && MEMORY_dGetByte(addr_l + 1) == 0x03
