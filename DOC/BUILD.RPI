@@ -1,35 +1,36 @@
 RASPBERRY PI SYSTEM REQUIREMENTS
 ================================
-
 See README.RPI for system requirements.
 
 PRELIMINARY
 ===========
-Open a terminal on the src directory.
+Open a terminal on the directory containing your atari800 files.
 
-CHECK THE CONFIGURE FILE
-------------------------
-Check whether the "configure" file is present. If it is not, generate it by typing:
+CREATE THE CONFIGURE FILE
+-------------------------
+Ensure that you have autoconf installed:
+
+    sudo apt-get install autoconf
+
+Create the configure file:
 
     ./autogen.sh
 
 See INSTALL for further details.
 
-CLEANUP
--------
-If you have been using your machine to native compile atari800 and now wish to
-cross compile or vice versa, clear out the object files by typing:
-
-    make clean
-
 
 NATIVE COMPILE ON THE RASPBERRY PI
 ==================================
-Ensure the SDL development files are installed, then configure and make:
+Ensure the SDL development files are installed:
 
     sudo apt-get install libsdl1.2-dev
+
+Configure and make:
+
     ./configure --target=rpi
     make
+
+Make generates the executable file src/atari800.
 
 
 CROSS COMPILE FOR THE RASPBERRY PI
@@ -81,7 +82,7 @@ See COPY SDL FILES below for details.
 CONFIGURE AND COMPILE
 ---------------------
 Place the following commands in a bash script called compile_rpi or
-something similar.  Place this in the src directory .  You can then execute
+something similar, and place it in your atari800 directory .  You can then execute
 the script with ./compile_rpi.  Note you will have to substitute your own
 version of PATH (that is your normal PATH with the toolchain’s bin directory
 tagged on the end), also your own version of RPI_SDK.  The exported symbols
@@ -98,15 +99,17 @@ normal setup of your machine.
     ./configure --target=rpi --host=arm-linux -with-sdl-prefix=$RPI_SDK
     make
 
-Your system might not have all the required files in place at this stage, so
-may fail.  Configure or make will report any files that are missing.  Copy the
+Make generates the executable file src/atari800.
+
+Your system might not have all the required files in place at this stage, in which
+case configure or make will fail and report any files that are missing.  Copy the
 missing files from the Raspberry Pi into the toolchain (see MISSING FILES below
 for guidance).  Rerun the script until it completes without error.
 
 RUN
 ---
-Copy the generated atari800 file to the Raspberry Pi, relax its permissions to
-allow anybody to run it as an excutable, and run it.
+Copy the generated atari800 file to the Raspberry Pi, adjust its properties
+to give execution permission to anyone and run it.
 
 
 COMPILE WITH THE LINARO TOOLCHAIN FROM LINUX SOURCE
@@ -138,7 +141,7 @@ See COPY SDL FILES below for details.
 
 CONFIGURE AND COMPILE
 ---------------------
-Place the following commands in a bash script in the src directory called
+Place the following commands in a bash script in your atari800 directory called
 compile_rpi or something similar.  You can then execute the script with
 ./compile_rpi.  The exported symbol RPI_SDK applies only to the process
 executing the script and will not be retained on your machine.
@@ -147,30 +150,33 @@ executing the script and will not be retained on your machine.
     ./configure --target=rpi --host=arm-linux –with-sdl-prefix=$RPI_SDK
     make
 
-Your system might not have all the required files in place at this stage, so
-may fail. Configure or make will report any files that are missing.  Copy the
+Make generates the executable file src/atari800.
+
+Your system might not have all the required files in place at this stage, in which
+case configure or make will fail and report any files that are missing.  Copy the
 missing files from the Raspberry Pi into the toolchain (see MISSING FILES
 below for guidance).  Rerun the script until it completes without error.
 
 RUN
 ---
-Copy the generated atari800 file to the Raspberry Pi, relax its permissions to
-allow anybody to execute it, and run it.
+Copy the generated atari800 file to the Raspberry Pi, adjust its properties
+to give execution permission to anyone and run it.
 
 
 COPY SDL FILES
 ==============
 Copy the following from the rpi into the toolchain’s lib directory:
-    file    /usr/lib/arm-linux-gnueabihf/libSDL-1.2.so.0.11.4  (or later version)
-        Create a symbolic link called libSDL.so to the copied file in the lib
-        directory.
+    file    /usr/lib/arm-linux-gnueabihf/libSDL-1.2.so.0.11.4  (or later version).
+
+Create a symbolic link called libSDL.so to the copied file in the lib directory.
 
 Copy the the following from the rpi into the toolchain’s include directory:
     directory   /usr/include/SDL
 
 Copy the following from the rpi into the toolchain’s bin directory:
     file        /usr/bin/sdl-config
-        Ensure permissions are relaxed on this file to allow it to be executed.
+
+Ensure permissions are relaxed on sdl-config to allow it to be executed.
 
 
 MISSING FILES
@@ -186,11 +192,11 @@ Copy the following from the rpi into the toolchain’s lib directory:
     file        /opt/vc/lib/libbrcmGLESv2.so
 
 Copy the following from the rpi into the toolchain’s include directory:
-    file		/opt/vc/include/bcm_host.h
-    directory	/opt/vc/include/EGL
-    directory	/opt/vc/include/GLES2
-    directory	/opt/vc/include/interface
-    directory	/opt/vc/include/KHR
-    directory	/opt/vc/include/vcinclude
+    file        /opt/vc/include/bcm_host.h
+    directory   /opt/vc/include/EGL
+    directory   /opt/vc/include/GLES2
+    directory   /opt/vc/include/interface
+    directory   /opt/vc/include/KHR
+    directory   /opt/vc/include/vcinclude
 
 
