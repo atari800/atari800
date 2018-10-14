@@ -1,13 +1,10 @@
 SYSTEM SPECIFICATION
 ====================
-
 Atari800 version 4 requires a Pi2 or faster machine running Raspbian Stretch
 or later.
 
-
 VIDEO MODE
 ==========
-
 Note: you need to setup correct video mode for PAL/NTSC machines (proper
 video/audio sync and vsync).edit /boot/config.txt
 
@@ -33,3 +30,21 @@ These modes always improve synchronisation but the effect may not be
 immediately obvious depending on what you are using the emulator for.
 The benefit is most clearly seen on scrolling games like Boulderdash
 where the whole background moves with no hint of flicker.
+
+Best results are obtained with widescreen monitors.  A narrow monitor
+such as 1280x1024 will distort the aspect ratio and there are no emulator
+settings that can be adjusted to bring it back.
+
+VIDEO GROUP
+===========
+If you are not logged on as the default user (pi), atari800 may crash
+on startup and report: * failed to open vchiq instance.
+
+To fix this, add yourself to the video group:
+
+    sudo usermod -a -G video $(whoami)
+
+and reboot.
+
+
+
