@@ -61,12 +61,18 @@ makes the emulator capable of generating screenshots in the PNG format.
 Building the Emulator on most platforms
 ---------------------------------------
 
-1. Change your working dir to the atari800/src path
+1. Change your working dir to the atari800 path
 2. Check if "configure" script is there. If it is skip to step 4.
 3. Run "./autogen.sh" (make sure you have autoconf >= 2.5x installed).
 4. Type "./configure".
 5. Type "make".
-6. Install the emulator by typing "make install".
+6. Change directory to atari800/src
+7. Install the emulator by typing "make install".
+
+Please note it is also possible to build atari800 outside the source
+directory. Just follow steps 1-3 and then call `configure' from your build
+directory, i.e. ../atari800/configure if your build directory is located next
+to atari800 source directory.
 
 By default, the "configure" script attempts to auto-detect the best interfaces
 available to use for emulating video and sound. It is also possible to
@@ -133,8 +139,8 @@ See DOC/BUILD.windows.
 Building the Emulator for Falcon
 --------------------------------
 
-You need a recent GCC, for example 2.7.2, running on a filesystem with long
-file names (either minix-fs of MiNT, or VFAT of MagiC).
+You need a recent GCC, for example 4.6.4, running on a filesystem with long
+file names (either minixfs/ext2fs of MiNT, or VFAT of MagiC).
 
 1. Type "./configure --target=falcon".
 2. Type "make".

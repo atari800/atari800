@@ -605,10 +605,6 @@ void PLATFORM_DisplayScreen(void)
 	static int i = 0;
 	static ULONG Screen_ui[Screen_HEIGHT*Screen_WIDTH/sizeof(ULONG)];
 
-/*
-	if (! draw_display)
-		return;
-*/
 #ifdef SHOW_DISK_LED
 	if (LED_timeout)
 		if (--LED_timeout == 0)
