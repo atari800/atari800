@@ -27,17 +27,17 @@ build-stamp:
 
 bld-sdl:
 	cp /usr/share/misc/config.guess /usr/share/misc/config.sub src
-	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi
-	cd src ; ./configure \
+	if [ -e Makefile ]; then $(MAKE) clean; fi
+	./configure \
 		 --with-video=sdl --with-sound=sdl
-	cd src ; $(MAKE)
+	$(MAKE)
 
 # Clean up after a build and before building a source package
 #======================================================================
 clean:
 	$(checkdir)
 	-rm -f build-stamp
-	cd src ; if [ -e Makefile ]; then $(MAKE) clean; fi; \
+	if [ -e Makefile ]; then $(MAKE) clean; fi; \
 	 rm -f config.log config.status config.h Makefile
 	rm -f src/config.guess src/config.sub
 	mv ./atari800.spec ./tmp ; rm -f atari800 ; rm -f atari800.* ; mv ./tmp ./atari800.spec
