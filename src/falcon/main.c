@@ -518,8 +518,8 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			vramw = HOST_WIDTH;
 			vramh = HOST_HEIGHT;
 
-			if (vramw >= 352)
-				screenw = 352;
+			if (vramw >= 336)
+				screenw = 336;
 			else
 				screenw = 320;
 			screenh = Screen_HEIGHT;

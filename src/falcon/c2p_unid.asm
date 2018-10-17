@@ -86,6 +86,7 @@ _rplanes_delta:
 	sub.w		_screenw,d0
 	movea.w		d0,a4
 	lsr.w		#1,d0		; centering
+	and.b		#%11110000,d0	; make sure intial offset % 16 == 0
 	lea		(a1,d0),a1	; offset
 
 ; centering of screen in videoram in vertical axis
