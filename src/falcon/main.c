@@ -475,8 +475,12 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			return FALSE;
 		}
 
+		if (gl_app_id == -1) {
+			appl_exit();
+		}
+
 		memset(work_in, 0, sizeof(work_in));
-		work_in[0] = Getrez() + 2;
+		work_in[0] = 1;	/* current resolution */
 		for(i = 1; i < 10; work_in[i++] = 1);
 		work_in[10] = 2;
 
