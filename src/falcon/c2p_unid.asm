@@ -2,6 +2,7 @@
 ;
 ;  Copyright (c) 1997-1998 Petr Stehlik and Karel Rous
 ;  Copyright (c) 1998-2003 Atari800 development team (see DOC/CREDITS)
+;  Copyright (c) 2004 Mikael Kalms
 ;
 ;  This file is part of the Atari800 emulator project which emulates
 ;  the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -39,160 +40,173 @@
 *	General functions				*
 *-------------------------------------------------------*
 
-	xdef		_rplanes_delta_init
 	xdef		_rplanes_delta
 
-*-------------------------------------------------------*
-	include		c2pmac.asm
-*-------------------------------------------------------*
-
 pushall	macro
-	movem.l		d2-d7/a2-a5,-(sp)
+	movem.l		d2-d7/a2-a6,-(sp)
 	endm
 
 popall	macro
-	movem.l		(sp)+,d2-d7/a2-a5
+	movem.l		(sp)+,d2-d7/a2-a6
 	endm
 
-*-------------------------------------------------------*
-*	Initialise rendering display			*
-*-------------------------------------------------------*
-_rplanes_delta_init:
-*-------------------------------------------------------*
-	rts
-*-------------------------------------------------------*
-*-------------------------------------------------------*
-*	display	conversion				*
-*-------------------------------------------------------*
 _rplanes_delta:
 *-------------------------------------------------------*
 	pushall
 *-------------------------------------------------------*
-
 	move.l		_odkud,a0
 	move.l		_kam,a1
 	move.l		_oldscreen,a2
+	clr.l		d0
 
 ; centering of view at screen
 	move.w		#384,d0		; width of Atari800 emulated screen
-	sub.w		_screenw,d0	; width of displayed screen
-	movea.w		d0,a3
-	lsr.w		#1,d0		; centering
-	lea		(a0,d0),a0	; offset 24 or 32 pixels
-	lea		(a2,d0),a2	; offset 24 or 32 pixels
+	sub.w		_screenw,d0	; width  of active screen area
+	move.l		d0,a3
+	lsr.w		#1,d0
+	add.l		d0,a0
+	add.l		d0,a2
 
 ; centering of screen in videoram in horizontal axis
-	move.w		_vramw,d0
-	sub.w		_screenw,d0
-	movea.w		d0,a4
-	lsr.w		#1,d0		; centering
+	move.w		_vramw,d0	; width of screen area
+	sub.w		_screenw,d0	; width  of active screen area
+	move.l		d0,a4
+	lsr.w		#1,d0
 	and.b		#%11110000,d0	; make sure intial offset % 16 == 0
-	lea		(a1,d0),a1	; offset
+	add.l		d0,a1
 
 ; centering of screen in videoram in vertical axis
-	move.w		_vramh,d0
-	sub.w		_screenh,d0
-	lsr.w		#1,d0
-	move.w		_vramw,d1
-	mulu		d1,d0
-	lea		(a1,d0.l),a1
+	move.w		_vramh,d1	; height of screen area
+	sub.w		_screenh,d1	; height of active screen area
+	lsr.w		#1,d1
+	mulu.w		_vramw,d1	; width of screen area
+	add.l		d1,a1
 
-; precompute line width in long words
-	move.w		_screenw,d0
-	lsr.w		#4,d0
-	subq.w		#1,d0
-	movea.w		d0,a5
+; precompute end of line address
+	move.w		_screenw,d0	; width  of active screen area
+	lea		(a0,d0.l),a5
 
-*-------------------------------------------------------*
-	move.w		_screenh,d6
-	subq.w		#1,d6
-	move.w		a5,d5
-	nop			; for cache alignment
-*-------------------------------------------------------*
-.xlp:
-	move.l		(a0)+,d4
-	move.l		(a0)+,d3
-	move.l		(a0)+,d2
-	move.l		(a0)+,d1
-*-------------------------------------------------------*
-	moveq		#12,d0
-	cmp.l		(a2)+,d4
-	bne.s		.doit
-	moveq		#8,d0
-	cmp.l		(a2)+,d3
-	bne.s		.doit
-	moveq		#4,d0
-	cmp.l		(a2)+,d2
-	bne.s		.doit
-	cmp.l		(a2)+,d1
-	bne.s		.doit2
-	lea		16(a1),a1
-	dbra		d5,.xlp
-	adda.l		a3,a0
-	adda.l		a3,a2
-	adda.l		a4,a1
-	move.w		a5,d5
-	dbra		d6,.xlp
-	bra		.none
-.doit:
-	adda.l		d0,a2
-.doit2:
-*-------------------------------------------------------*
-	move.l		#$00FF00FF,d0	; 4
-	splice.8	d4,d2,d0,d7	; 18
-	splice.8	d3,d1,d0,d7	; 18
-*-------------------------------------------------------*
-	move.l		#$0F0F0F0F,d0	; 4
-	splice.4	d4,d3,d0,d7	; 18
-	splice.4	d2,d1,d0,d7	; 18
-*-------------------------------------------------------*
-	swap		d3		; 4(4:0)
-	swap		d1		; 4(4:0)
-	eor.w		d4,d3		; 2(2:0)
-	eor.w		d2,d1		; 2(2:0)
-	eor.w		d3,d4		; 2(2:0)
-	eor.w		d1,d2		; 2(2:0)
-	eor.w		d4,d3		; 2(2:0)
-	eor.w		d2,d1		; 2(2:0)
-	swap		d3		; 4(4:0)
-	swap		d1		; 4(4:0)
-*-------------------------------------------------------*
-	move.l		#$33333333,d0	; 4
-	splice.2	d4,d3,d0,d7	; 18
-	splice.2	d2,d1,d0,d7	; 18
-*-------------------------------------------------------*
-	move.l		#$55555555,d0	; 4
-	splice.1	d4,d2,d0,d7	; 18
-	splice.1	d3,d1,d0,d7	; 18
-*-------------------------------------------------------*
-*	32-bit destination				*
-*-------------------------------------------------------*
-	swap		d1		; 4(4:0)
-	eor.w		d3,d1		; 2(2:0)
-	eor.w		d1,d3		; 2(2:0)
-	eor.w		d3,d1		; 2(2:0)
-	swap		d3		; 4(4:0)
-	swap		d2		; 4(4:0)
-	eor.w		d4,d2		; 2(2:0)
-	eor.w		d2,d4		; 2(2:0)
-	eor.w		d4,d2		; 2(2:0)
-	swap		d4		; 4(4:0)
-*-------------------------------------------------------*
-	move.l		d1,(a1)+
- 	move.l		d2,(a1)+
-	move.l		d3,(a1)+
-	move.l		d4,(a1)+
-*-------------------------------------------------------*
-	dbra		d5,.xlp
-	adda.l		a3,a0
-	adda.l		a3,a2
-	adda.l		a4,a1
-	move.w		a5,d5
-	dbra		d6,.xlp
-*-------------------------------------------------------*
-.none:
+; precompute src end address
+	lea		(384*240.l,a0),a6
+
+	move.l	#$0f0f0f0f,d4
+	move.l	#$00ff00ff,d5
+	move.l	#$55555555,d6
+
+.pix16:	move.l	(a0)+,d0
+	cmp.l	(a2)+,d0
+	bne.b	.doit3
+	move.l	(a0)+,d1
+	cmp.l	(a2)+,d1
+	bne.b	.doit2
+	move.l	(a0)+,d2
+	cmp.l	(a2)+,d2
+	bne.b	.doit1
+	move.l	(a0)+,d3
+	cmp.l	(a2)+,d3
+	bne.b	.doit0
+
+	lea	(16,a1),a1
+	bra	.done
+
+.doit3:	move.l	(a0)+,d1
+	addq.l	#4,a2
+.doit2:	move.l	(a0)+,d2
+	addq.l	#4,a2
+.doit1:	move.l	(a0)+,d3
+	addq.l	#4,a2
+.doit0:
+	move.l	d1,d7
+	lsr.l	#4,d7
+	eor.l	d0,d7
+	and.l	d4,d7
+	eor.l	d7,d0
+	lsl.l	#4,d7
+	eor.l	d7,d1
+	move.l	d3,d7
+	lsr.l	#4,d7
+	eor.l	d2,d7
+	and.l	d4,d7
+	eor.l	d7,d2
+	lsl.l	#4,d7
+	eor.l	d7,d3
+
+	move.l	d2,d7
+	lsr.l	#8,d7
+	eor.l	d0,d7
+	and.l	d5,d7
+	eor.l	d7,d0
+	lsl.l	#8,d7
+	eor.l	d7,d2
+	move.l	d3,d7
+	lsr.l	#8,d7
+	eor.l	d1,d7
+	and.l	d5,d7
+	eor.l	d7,d1
+	lsl.l	#8,d7
+	eor.l	d7,d3
+
+	move.l	d2,d7
+	lsr.l	#1,d7
+	eor.l	d0,d7
+	and.l	d6,d7
+	eor.l	d7,d0
+	add.l	d7,d7
+	eor.l	d7,d2
+	move.l	d3,d7
+	lsr.l	#1,d7
+	eor.l	d1,d7
+	and.l	d6,d7
+	eor.l	d7,d1
+	add.l	d7,d7
+	eor.l	d7,d3
+
+	move.w	d2,d7
+	move.w	d0,d2
+	swap	d2
+	move.w	d2,d0
+	move.w	d7,d2
+	move.w	d3,d7
+	move.w	d1,d3
+	swap	d3
+	move.w	d3,d1
+	move.w	d7,d3
+
+	move.l	d2,d7
+	lsr.l	#2,d7
+	eor.l	d0,d7
+	and.l	#$33333333,d7
+	eor.l	d7,d0
+	lsl.l	#2,d7
+	eor.l	d7,d2
+	move.l	d3,d7
+	lsr.l	#2,d7
+	eor.l	d1,d7
+	and.l	#$33333333,d7
+	eor.l	d7,d1
+	lsl.l	#2,d7
+	eor.l	d7,d3
+
+	swap	d3
+	move.l	d3,(a1)+
+	swap	d1
+	move.l	d1,(a1)+
+	swap	d2
+	move.l	d2,(a1)+
+	swap	d0
+	move.l	d0,(a1)+
+
+.done:	cmp.l	a0,a5			; end of line?
+	bne	.pix16
+
+	add.l	a3,a0
+	add.l	a4,a1
+	add.l	a3,a2
+	lea	(384,a5),a5
+
+	cmp.l	a0,a6			; end of screen?
+	bne	.pix16
 *-------------------------------------------------------*
 	popall
 *-------------------------------------------------------*
 	rts
-*-------------------------------------------------------*
