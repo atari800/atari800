@@ -163,6 +163,8 @@ static UWORD mode336x240_rgb[26]= {
 static int reprogram_VIDEL;
 static int new_videl_mode_valid;
 static UBYTE *new_videoram_unaligned;
+static UBYTE *Screen_atari_unaligned;
+static UBYTE *Screen_atari_b_unaligned;
 
 extern void rplanes(void);
 extern void rplanes_delta(void);
@@ -421,6 +423,29 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	if (Getcookie(C_SupV, NULL) == C_FOUND && vga)
 		sv = TRUE;
 
+	if (!force_videl && !sv) {
+		if ((Screen_atari_unaligned = (UBYTE*)Mxalloc(Screen_HEIGHT*Screen_WIDTH+15, MX_PREFTTRAM)) == NULL) {
+			PrintError("Error allocating Screen_atari.");
+			return FALSE;
+		}
+		Screen_atari = (ULONG*)(((ULONG)Screen_atari_unaligned + 15) & ~15);
+		memset(Screen_atari, 0, Screen_HEIGHT * Screen_WIDTH);
+	}
+
+#ifdef BITPL_SCR
+	if (delta_screen) {
+		if ((Screen_atari_b_unaligned = (UBYTE*)Mxalloc(Screen_HEIGHT*Screen_WIDTH+15, MX_PREFTTRAM)) == NULL) {
+			PrintError("Error allocating Screen_atari.");
+			return FALSE;
+		}
+		Screen_atari_b = (ULONG*)(((ULONG)Screen_atari_b_unaligned + 15) & ~15);
+		memset(Screen_atari_b, 0, Screen_HEIGHT * Screen_WIDTH);
+
+		Screen_atari1 = Screen_atari;
+		Screen_atari2 = Screen_atari_b;
+	}
+#endif
+
 	if (force_videl && video_hw == F030) {	/* we may switch VIDEL directly */
 		int buffers = (delta_screen && !sv) ? 1 : SCREEN_BUFFERS;
 		vramw = screenw = sv ? Screen_WIDTH : 336;
@@ -591,6 +616,12 @@ int PLATFORM_Exit(int run_monitor)
 
 	if (new_videoram_unaligned)
 		Mfree(new_videoram_unaligned);
+	if (Screen_atari_unaligned)
+		Mfree(Screen_atari_unaligned);
+#ifdef BITPL_SCR
+	if (Screen_atari_b_unaligned)
+		Mfree(Screen_atari_b_unaligned);
+#endif
 
 	if (gl_app_id != -1) {
 		/* unlock GEM */

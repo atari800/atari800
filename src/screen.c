@@ -158,7 +158,7 @@ int Screen_Initialise(int *argc, char *argv[])
 	if (help_only)
 		return TRUE;
 
-	if (Screen_atari == NULL) { /* platform-specific code can initialize it in theory */
+	if (Screen_atari == NULL) { /* platform-specific code can initialize it */
 		Screen_atari = (ULONG *) Util_malloc(Screen_HEIGHT * Screen_WIDTH);
 		/* Clear the screen. */
 		memset(Screen_atari, 0, Screen_HEIGHT * Screen_WIDTH);
