@@ -61,8 +61,6 @@ NEW_CYCLE_EXACT equ 0   ; set to 1 to use the new cycle exact CPU emulation
   xref _exit
   xref _ANTIC_wsync_halt ;CPU is stopped
   ifne NEW_CYCLE_EXACT
-  xref _ANTIC_delayed_wsync
-  xref _ANTIC_antic2cpu_ptr
   xref _ANTIC_cpu2antic_ptr
   xref _ANTIC_cur_screen_pos
   endif
@@ -101,8 +99,7 @@ NEW_CYCLE_EXACT equ 0   ; set to 1 to use the new cycle exact CPU emulation
   xref _UI_Run
   endif
   xref _CPU_IRQ
-  xdef _CPU_NMI
-  xdef _CPU_GO
+  xdef _CPU_GO_m68k
   xdef _CPU_GetStatus
   xdef _CPU_PutStatus
   xref _CPU_cim_encountered
@@ -433,8 +430,6 @@ ZB68  equ 2
 OB68  equ 1
 CB68  equ 0
 
-WSYNC_C equ 106
-
 N_FLAG equ $80
 N_FLAGN equ $7f
 N_FLAGB equ 7
@@ -630,96 +625,13 @@ _CPU_PutStatus:
   ConvertRegP_STATUS d0
   rts
 
-NMI:
-_CPU_NMI:
-  lea    _MEMORY_mem,a0
-  moveq  #0,d1
-  move.w regS,d1
-  move.b _CPU_regPC,(a0,d1.l)
-  subq.b #1,d1
-  move.b _CPU_regPC+1,(a0,d1.l)
-  subq.b #1,d1
-  move.b _CPU_regP,d0
-  andi.b #B_FLAGN,d0
-  move.b d0,(a0,d1.l)
-  subq.b #1,d1
-  move.b d1,_CPU_regS
-  SetI
-  ;put regPC & Stack pointer adress on its place
-  move.w (a0,$fffa.l),d1
-  LoHi d1
-  move.w d1,_CPU_regPC
-  addq.l #7,_ANTIC_xpos
-  ifne   MONITOR_BREAK
-  addq.l #1,_MONITOR_ret_nesting
-  endif
-  rts
-
-_CPU_GO:
-  move.l  4(a7),d0       ; limit
-
-  tst.b  _ANTIC_wsync_halt
-  beq.s  NO_WS_HALT
-  ifne   NEW_CYCLE_EXACT
-  moveq  #WSYNC_C-1,d1  ; TEST : no -1 if bpl.s
-  cmp.l  #-999,_ANTIC_cur_screen_pos    ; ANTIC_NOT_DRAWING
-  beq.s  .now_cmp
-  move.l _ANTIC_antic2cpu_ptr,a0
-  move.l (a0,d1*4),d1
-.now_cmp:
-  add.l  _ANTIC_delayed_wsync,d1
-  cmp.l  d0,d1
-; bpl.s  TERM_GO        ; TEST
-  bge    TERM_GO        ; TEST
-  addq.l #1,d1          ; TEST : not necessary if bpl.s
-  move.l d1,_ANTIC_xpos
-  clr.b  _ANTIC_wsync_halt
-  clr.l  _ANTIC_delayed_wsync
-  else ; NEW_CYCLE_EXACT
-  moveq  #WSYNC_C-1,d1  ; TEST : no -1 if bpl.s
-  cmp.l  d0,d1
-; bpl.s  TERM_GO        ; TEST
-  bge    TERM_GO        ; TEST
-  addq.l #1,d1          ; TEST : not necessary if bpl.s
-  move.l d1,_ANTIC_xpos
-  endif
-  clr.b  _ANTIC_wsync_halt
-NO_WS_HALT:
-  move.l  d0,_ANTIC_xpos_limit ;  needed for WSYNC store inside ANTIC
+_CPU_GO_m68k:
   movem.l d2-d7/a2-a6,-(a7)
   move.l _ANTIC_xpos,CD
   lea    _MEMORY_mem,memory_pointer
   UPDATE_LOCAL_REGS
   ConvertRegP_STATUS d0
   lea    _MEMORY_attrib,attrib_pointer
-  tst.b  _CPU_IRQ          ; CPUCHECKIRQ
-  beq    NEXTCHANGE_WITHOUT
-  cmp.l  _ANTIC_xpos_limit,CD
-  bge    NEXTCHANGE_WITHOUT
-  move.b d0,d7
-; and.b  #I_FLAG,d0 ;is interrupt active
-  btst   #I_FLAG,d0
-  bne    NEXTCHANGE_WITHOUT ;yes, no other interrupt
-  moveq  #0,d0
-  move.w regS,d0  ; push PC and P to stack ( PHW + PHB ) start
-  move.b _CPU_regPC,(memory_pointer,d0.l)
-  subq.b #1,d0
-  move.b _CPU_regPC+1,(memory_pointer,d0.l)
-  subq.b #1,d0
-  andi.b #B_FLAGN,d7
-  move.b d7,(memory_pointer,d0.l)
-  subq.b #1,d0
-  move.b d0,_CPU_regS      ; push PC and P to stack ( PHW + PHB ) end
-  SetI
-  move.w (memory_pointer,$fffe.l),d0  ; d0 already cleared from before
-  LoHi d0
-  move.l d0,PC6502
-  add.l  memory_pointer,PC6502
-  addq.l #7,CD
-  clr.b  _CPU_IRQ ;clear interrupt.....
-  ifne   MONITOR_BREAK
-  addq.l  #1,_MONITOR_ret_nesting
-  endif
   bra    NEXTCHANGE_WITHOUT
 
 ;/*
@@ -3366,7 +3278,6 @@ END_OF_CYCLE:
   UPDATE_GLOBAL_REGS
   move.l CD,_ANTIC_xpos ;returned value
   movem.l (a7)+,d2-d7/a2-a6
-TERM_GO:
   rts
 
 go_monitor:

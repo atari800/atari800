@@ -100,26 +100,7 @@ unsigned int CPU_remember_jmp_curpos = 0;
 UBYTE CPU_cim_encountered = FALSE;
 UBYTE CPU_IRQ;
 
-#ifdef FALCON_CPUASM
-
-#if defined(PAGED_MEM) || defined(PAGED_ATTRIB)
-#error cpu_m68k.asm cannot work with paged memory/attributes
-#endif
-
-#if defined(MONITOR_BREAKPOINTS)
-#error cpu_m68k.asm does not support user-defined breakpoints
-#endif
-
-#if defined(MONITOR_TRACE)
-#error cpu_m68k.asm does not support disassembling the code while it is executed
-#endif
-
-#if defined(CYCLES_PER_OPCODE)
-#warning per opcode cycles update has no effect in cpu_m68k.asm
-#endif
-
-#else /* FALCON_CPUASM */
-
+#ifndef FALCON_CPUASM
 /* Windows headers define it */
 #undef ABSOLUTE
 
@@ -508,6 +489,53 @@ void CPU_GO(int limit)
 	UBYTE data;
 #define insn data
 
+#else /* FALCON_CPUASM */
+
+#if defined(PAGED_MEM) || defined(PAGED_ATTRIB)
+#error cpu_m68k.asm cannot work with paged memory/attributes
+#endif
+
+#if defined(MONITOR_BREAKPOINTS)
+#error cpu_m68k.asm does not support user-defined breakpoints
+#endif
+
+#if defined(MONITOR_TRACE)
+#error cpu_m68k.asm does not support disassembling the code while it is executed
+#endif
+
+#if defined(CYCLES_PER_OPCODE)
+#warning per opcode cycles update has no effect in cpu_m68k.asm
+#endif
+
+#define UPDATE_GLOBAL_REGS
+#define UPDATE_LOCAL_REGS
+
+#define PH(x)  MEMORY_dPutByte(0x0100 + S--, x)
+#define PHW(x) PH((x) >> 8); PH((x) & 0xff)
+#define INTERRUPT(address)  \
+	UBYTE S = CPU_regS;     \
+	PHW(CPU_regPC);         \
+	PH(CPU_regP & 0xef);	\
+	CPU_SetI;               \
+	CPU_regPC = MEMORY_dGetWordAligned(address); \
+	CPU_regS = S;           \
+	ANTIC_xpos += 7;        \
+	INC_RET_NESTING;
+
+void CPU_NMI(void)
+{
+	INTERRUPT(0xfffa);
+}
+
+#define CPUCHECKIRQ \
+	if (CPU_IRQ && !(CPU_regP & CPU_I_FLAG) && ANTIC_xpos < ANTIC_xpos_limit) { \
+		INTERRUPT(0xfffe); \
+	}
+
+void CPU_GO(int limit)
+{
+#endif /* FALCON_CPUASM */
+
 /*
    This used to be in the main loop but has been removed to improve
    execution speed. It does not seem to have any adverse effect on
@@ -556,6 +584,7 @@ void CPU_GO(int limit)
 
 	CPUCHECKIRQ;
 
+#ifndef FALCON_CPUASM
 	while (ANTIC_xpos < ANTIC_xpos_limit) {
 #ifdef MONITOR_PROFILE
 		int old_xpos = ANTIC_xpos;
@@ -2372,10 +2401,14 @@ void CPU_GO(int limit)
 		continue;
 	}
 
-	UPDATE_GLOBAL_REGS;
-}
+#else /* FALCON_CPUASM */
+
+	extern void CPU_GO_m68k(void);
+	CPU_GO_m68k();
 
 #endif /* FALCON_CPUASM */
+	UPDATE_GLOBAL_REGS;
+}
 
 void CPU_Reset(void)
 {
