@@ -423,7 +423,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	if (Getcookie(C_SupV, NULL) == C_FOUND && vga)
 		sv = TRUE;
 
-	if (!force_videl && !sv) {
+	if (!force_videl || !sv) {
 		if ((Screen_atari_unaligned = (UBYTE*)Mxalloc(Screen_HEIGHT*Screen_WIDTH+15, MX_PREFTTRAM)) == NULL) {
 			PrintError("Error allocating Screen_atari.");
 			return FALSE;
@@ -433,7 +433,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	}
 
 #ifdef BITPL_SCR
-	if (delta_screen) {
+	if (delta_screen && !sv) {
 		if ((Screen_atari_b_unaligned = (UBYTE*)Mxalloc(Screen_HEIGHT*Screen_WIDTH+15, MX_PREFTTRAM)) == NULL) {
 			PrintError("Error allocating Screen_atari.");
 			return FALSE;
