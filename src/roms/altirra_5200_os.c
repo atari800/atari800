@@ -1,7 +1,7 @@
 /*
  * altirra_5200_os.c - 5200 OS ROM replacement
  *
- * Compiled from Altirra-3.10-test28 source file
+ * Compiled from Altirra-3.20-test4 source file
  * src/Kernel/source/SuperKernel/main.asm
  *
  * Altirra - Atari 800/800XL/5200 emulator

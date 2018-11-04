@@ -1,11 +1,11 @@
 /*
  * atbasic.c - BASIC ROM replacement
  *
- * Compiled from Altirra-3.10-test28 source files
+ * Compiled from Altirra-3.20-test4 source files
  * src/ATBasic
  *
- * Altirra BASIC
- * Copyright (C) 2014-2016 Avery Lee, All Rights Reserved.
+ * Altirra BASIC, version 1.55
+ * Copyright (C) 2014-2018 Avery Lee, All Rights Reserved.
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
