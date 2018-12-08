@@ -56,7 +56,7 @@ static const char* fragment_shader =
 	"void main()																	\n"
 	"{																				\n"
 	"	vec4 p0 = texture2D(u_texture, v_texcoord);									\n" // use paletted texture
-	"	vec4 c0 = texture2D(u_palette, vec2(p0.r + 1.0/256.0*0.5, 0.5)); 		\n"
+	"	vec4 c0 = texture2D(u_palette, vec2((255.0/256.0)*p0.r + 1.0/256.0*0.1, 0.5)); 		\n"
 	"	gl_FragColor = c0;											 				\n"
 	"}																				\n";
 
@@ -70,10 +70,10 @@ static const char* fragment_shader_filtering =
 	"	vec4 p1 = texture2D(u_texture, v_texcoord + vec2(1.0/512.0, 0)); 			\n"
 	"	vec4 p2 = texture2D(u_texture, v_texcoord + vec2(0, 1.0/256.0)); 			\n"
 	"	vec4 p3 = texture2D(u_texture, v_texcoord + vec2(1.0/512.0, 1.0/256.0)); 	\n"
-	"	vec4 c0 = texture2D(u_palette, vec2(p0.r + 1.0/256.0*0.5, 0.5)); 			\n"
-	"	vec4 c1 = texture2D(u_palette, vec2(p1.r + 1.0/256.0*0.5, 0.5)); 			\n"
-	"	vec4 c2 = texture2D(u_palette, vec2(p2.r + 1.0/256.0*0.5, 0.5)); 			\n"
-	"	vec4 c3 = texture2D(u_palette, vec2(p3.r + 1.0/256.0*0.5, 0.5)); 			\n"
+	"	vec4 c0 = texture2D(u_palette, vec2((255.0/256.0)*p0.r + 1.0/256.0*0.1, 0.5)); 			\n"
+	"	vec4 c1 = texture2D(u_palette, vec2((255.0/256.0)*p1.r + 1.0/256.0*0.1, 0.5)); 			\n"
+	"	vec4 c2 = texture2D(u_palette, vec2((255.0/256.0)*p2.r + 1.0/256.0*0.1, 0.5)); 			\n"
+	"	vec4 c3 = texture2D(u_palette, vec2((255.0/256.0)*p3.r + 1.0/256.0*0.1, 0.5)); 			\n"
 	"	vec2 l = vec2(fract(512.0*v_texcoord.x), fract(256.0*v_texcoord.y)); 		\n"
 	"	gl_FragColor = mix(mix(c0, c1, l.x), mix(c2, c3, l.x), l.y); 				\n"
 	"}																				\n";
