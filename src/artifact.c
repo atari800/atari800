@@ -93,7 +93,7 @@ static void UpdateMode(ARTIFACT_t old_mode, int reinit)
 		ANTIC_artif_new = ARTIFACT_mode == ARTIFACT_NTSC_NEW;
 	}
 	ANTIC_UpdateArtifacting();
-#if SUPPORTS_CHANGE_VIDEOMODE
+#if NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE
 	if (need_reinit && reinit) {
 		if (!VIDEOMODE_Update()) {
 			ARTIFACT_t tmp = ARTIFACT_mode;
@@ -102,7 +102,7 @@ static void UpdateMode(ARTIFACT_t old_mode, int reinit)
 			UpdateMode(tmp, FALSE);
 		}
 	}
-#endif /* SUPPORTS_CHANGE_VIDEOMODE */
+#endif /* NTSC_FILTER && SUPPORTS_CHANGE_VIDEOMODE */
 }
 
 static void UpdateFromTVMode(int tv_mode)
