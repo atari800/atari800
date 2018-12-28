@@ -88,6 +88,10 @@ static SDL_Joystick *joystick[MAX_JOYSTICKS] = { NULL, NULL, NULL, NULL };
 static int joystick_nbuttons[MAX_JOYSTICKS];
 static SDL_INPUT_RealJSConfig_t real_js_configs[MAX_JOYSTICKS];
 static int joysticks_found = 0;
+static struct js_state {
+	unsigned int port;
+	unsigned int trig;
+} sdl_js_state[MAX_JOYSTICKS];
 
 #define minjoy 10000			/* real joystick tolerancy */
 
@@ -1235,6 +1239,11 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 	int no_joystick = FALSE;
 	int help_only = FALSE;
 
+	for(i = 0; i < MAX_JOYSTICKS; i++) {
+		sdl_js_state[i].port = INPUT_STICK_CENTRE;
+		sdl_js_state[i].trig = 0;
+	}
+
 	for (i = j = 1; i < *argc; i++) {
 #ifdef LPTJOY
 		int i_a = (i + 1 < *argc);		/* is argument available? */
@@ -1449,12 +1458,6 @@ static int get_LPT_joystick_state(int fd)
 	return 0;
 #endif /* LPTJOY */
 }
-
-
-static struct js_state {
-	unsigned int port;
-	unsigned int trig;
-} sdl_js_state[MAX_JOYSTICKS];
 
 static void update_SDL_joysticks(void)
 {
