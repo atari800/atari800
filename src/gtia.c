@@ -1203,6 +1203,7 @@ void GTIA_StateSave(void)
 {
 	int next_console_value = 7;
 
+	STATESAV_TAG(gtia);
 	StateSav_SaveUBYTE(&GTIA_HPOSP0, 1);
 	StateSav_SaveUBYTE(&GTIA_HPOSP1, 1);
 	StateSav_SaveUBYTE(&GTIA_HPOSP2, 1);

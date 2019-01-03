@@ -30,6 +30,7 @@ It can be configured to run in the following ways :-
 	11. JVM (Java applet)
 	12. Android
 	13. Raspberry Pi
+	14. libatari800 (platform independent) - the emulator core as a library
 
 The "simple" version is only useful for running programs such as MAC65,
 Atari BASIC etc. I have had this version running on Linux,
@@ -63,6 +64,12 @@ Includes support for joystick and mouse.
 All versions supporting bitmapped graphics have a User Interface implemented
 on the emulator's "screen". The User Interface is enter by pressing F1 at any
 time. ESC is used to return to the previous screen.
+
+The libatari800 target is designed for embedding in other programs, depends on
+no external libraries, and has no user interface. It allows the user to
+calculate successive video frames of emulation, and instead of displaying
+anything by itself, it provides the ability to access the raw graphics screen
+and main memory that the user can process as desired.
 
 ---------------------------------------------------------------------------
 

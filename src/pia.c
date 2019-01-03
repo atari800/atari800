@@ -334,6 +334,7 @@ void PIA_PutByte(UWORD addr, UBYTE byte)
 
 void PIA_StateSave(void)
 {
+	STATESAV_TAG(pia);
 	StateSav_SaveUBYTE( &PIA_PACTL, 1 );
 	StateSav_SaveUBYTE( &PIA_PBCTL, 1 );
 	StateSav_SaveUBYTE( &PIA_PORTA, 1 );
