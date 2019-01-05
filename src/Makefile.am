@@ -22,10 +22,13 @@ if CONFIGURE_TARGET_LIBATARI800
 lib_LIBRARIES = libatari800.a
 include_HEADERS = libatari800/libatari800.h
 libatari800_a_SOURCES = libatari800/main.c libatari800/main.h libatari800/init.c libatari800/exit.c libatari800/exit.h libatari800/input.c libatari800/input.h libatari800/video.c libatari800/video.h libatari800/statesav.c libatari800/statesav.h
-noinst_PROGRAMS += libatari800_test
+noinst_PROGRAMS += libatari800_test guess_settings
 libatari800_test_SOURCES = ../util/libatari800_test.c
 libatari800_test_CFLAGS = -Ilibatari800
 libatari800_test_LDADD = libatari800.a
+guess_settings_SOURCES = ../util/guess_settings.c
+guess_settings_CFLAGS = -Ilibatari800
+guess_settings_LDADD = libatari800.a
 else
 if CONFIGURE_HOST_JAVANVM
 all-local:: $(TARGET_BASE_NAME).jar

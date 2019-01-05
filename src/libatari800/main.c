@@ -170,6 +170,7 @@ int UI_n_saved_files_dir;
 /* User visible routines */
 
 int libatari800_init(int argc, char **argv) {
+	CPU_cim_encountered = 0;
 	return Atari800_Initialise(&argc, argv);
 }
 
@@ -187,7 +188,7 @@ int libatari800_next_frame(input_template_t *input)
 	LIBATARI800_Mouse();
 	LIBATARI800_Frame();
 	PLATFORM_DisplayScreen();
-	return 1;
+	return !CPU_cim_encountered;
 }
 
 int libatari800_mount_disk_image(int diskno, const char *filename, int readonly)
