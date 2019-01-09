@@ -181,12 +181,21 @@ void libatari800_clear_input_array(input_template_t *input)
 	INPUT_key_code = AKEY_NONE;
 }
 
+jmp_buf libatari800_cpu_crash;
+
 int libatari800_next_frame(input_template_t *input)
 {
 	LIBATARI800_Input_array = input;
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
-	LIBATARI800_Frame();
+	if (setjmp(libatari800_cpu_crash)) {
+		/* called from within CPU_GO to indicate crash */
+		printf("libatari800_next_frame: notified of CPU crash: %d\n", CPU_cim_encountered);
+	}
+	else {
+		/* normal operation */
+		LIBATARI800_Frame();
+	}
 	PLATFORM_DisplayScreen();
 	return !CPU_cim_encountered;
 }

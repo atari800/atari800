@@ -3,18 +3,32 @@
 
 #include "libatari800.h"
 
-char *machines[] = {
-	"-atari",
-	"-xl",
-	"-xe",
-	"-xegs",
-	NULL
-};
+typedef struct {
+	char *label;
+	int is_5200;
+	int min_frames;
+	char *args[20];
+} machine_config_t;
 
-char *tv_modes[] = {
-	"-pal",
-	"-ntsc",
-	NULL
+machine_config_t machine_config[] = {
+	"400/800   NTSC  OS/B", FALSE, 400, {"-atari", "-ntsc", NULL},
+	"400/800   PAL   OS/B", FALSE, 400, {"-atari", "-pal", NULL},
+	"400/800   NTSC  Altirra", FALSE, 400, {"-atari", "-ntsc", "-800-rev", "altirra", NULL},
+	"400/800   PAL   Altirra", FALSE, 400, {"-atari", "-pal", "-800-rev", "altirra", NULL},
+
+	"64k XL    NTSC  XL ROM", FALSE, 400, {"-xl", "-ntsc", NULL},
+	"64k XL    PAL   XL ROM", FALSE, 400, {"-xl", "-pal", NULL},
+	"64k XL    NTSC  Altirra", FALSE, 400, {"-xl", "-ntsc", "-xl-rev", "altirra", NULL},
+	"64k XL    PAL   Altirra", FALSE, 400, {"-xl", "-pal", "-xl-rev", "altirra", NULL},
+
+	"128k XE   NTSC  XL ROM", FALSE, 400, {"-xe", "-ntsc", NULL},
+	"128k XE   PAL   XL ROM", FALSE, 400, {"-xe", "-pal", NULL},
+	"128k XE   NTSC  Altirra", FALSE, 400, {"-xe", "-ntsc", "-xl-rev", "altirra", NULL},
+	"128k XE   PAL   Altirra", FALSE, 400, {"-xe", "-pal", "-xl-rev", "altirra", NULL},
+
+	"5200      NTSC  5200 ROM", TRUE, 400, {"-5200", "-ntsc", NULL},
+	"5200      NTSC  Altirra", TRUE, 6000, {"-5200", "-ntsc", "-5200-rev", "altirra", NULL},
+	NULL, FALSE, 400, {NULL},
 };
 
 typedef struct {
@@ -100,10 +114,6 @@ char *test_args[32];
 char *default_args[] = {
 	"atari800",
 	"-nobasic",
-	"-800-rev",
-	"altirra",
-	"-xl-rev",
-	"altirra",
 	// "-config",
 	// "/dev/null",
 };
@@ -155,28 +165,28 @@ int main(int argc, char **argv) {
 			}
 		}
 		else {
-			char **machine, **tv_mode;
-			tv_mode = tv_modes;
-			int tv_index, machine_index, success;
-			while (*tv_mode) {
-				machine = machines;
-				while (*machine) {
-					/* args array is modified by atari800, so need to recreate it each time */
-					int num_args = 0;
-					while (num_args < (sizeof(default_args) / sizeof(default_args[0]))) {
-						test_args[num_args] = default_args[num_args];
-						num_args++;
-					}
-					test_args[num_args++] = *tv_mode;
-					test_args[num_args++] = *machine;
-					test_args[num_args++] = argv[i];
-					success = run_emulator(num_args, num_frames, verbose);
-					printf("%s: %s %s  Emulation ", argv[i], *tv_mode, *machine);
-					if (success) printf("succeeded.\n");
-					else printf("failed.\n");
-					machine++;
+			char **machine_args;
+			int machine_index, success;
+			machine_config_t *machine = machine_config;
+			while (machine->label) {
+				/* args array is modified by atari800, so need to recreate it each time */
+				int num_args = 0;
+				while (num_args < (sizeof(default_args) / sizeof(default_args[0]))) {
+					test_args[num_args] = default_args[num_args];
+					// printf("default arg %d: %s\n", num_args, default_args[num_args]);
+					num_args++;
 				}
-				tv_mode++;
+				machine_args = machine->args;
+				while (*machine_args) {
+					// printf("arg %d: %s\n", num_args, *machine_args);
+					test_args[num_args++] = *machine_args++;
+				}
+				test_args[num_args++] = argv[i];
+				success = run_emulator(num_args, num_frames < machine->min_frames ? machine->min_frames : num_frames, verbose);
+				printf("%s: %s  Emulation ", argv[i], machine->label);
+				if (success) printf("succeeded.\n");
+				else printf("failed.\n");
+				machine++;
 			}
 		}
 	}

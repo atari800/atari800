@@ -290,6 +290,7 @@ if [[ "$a8_target" = "android" ]]; then
     dnl libm is automatically appended by the build system
 elif [[ "$a8_target" = "libatari800" ]]; then
     AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
+    AC_CHECK_FUNCS(setjmp)
 else
 	AC_CHECK_LIB(z,gzopen)
 	AC_CHECK_LIB(png,png_get_libpng_ver)
