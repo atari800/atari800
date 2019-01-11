@@ -61,6 +61,8 @@ typedef struct {
     ULONG pokey;
 } statesav_tags_t;
 
+extern int libatari800_unidentified_cart_type;
+
 int libatari800_init(int argc, char **argv);
 
 void libatari800_clear_input_array(input_template_t *input);

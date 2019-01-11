@@ -150,7 +150,10 @@ void LIBATARI800_Frame(void)
 
 /* Stub routines to replace text-based UI */
 
+int libatari800_unidentified_cart_type;
+
 int UI_SelectCartType(int k) {
+	libatari800_unidentified_cart_type = TRUE;
 	return CARTRIDGE_NONE;
 }
 
@@ -171,6 +174,7 @@ int UI_n_saved_files_dir;
 
 int libatari800_init(int argc, char **argv) {
 	CPU_cim_encountered = 0;
+	libatari800_unidentified_cart_type = FALSE;
 	return Atari800_Initialise(&argc, argv);
 }
 
@@ -185,6 +189,9 @@ jmp_buf libatari800_cpu_crash;
 
 int libatari800_next_frame(input_template_t *input)
 {
+	if (libatari800_unidentified_cart_type) {
+		return FALSE;
+	}
 	LIBATARI800_Input_array = input;
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();

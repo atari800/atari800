@@ -189,12 +189,17 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
 
 		success = run_emulator(num_args, num_frames, verbose);
 		printf("%s: %s", pathname, machine->label);
+		if (success > 0) printf(" boot: OK through %d frames", success);
+		else {
+			printf(" boot: FAIL");
+			if (libatari800_unidentified_cart_type) {
+				printf(" (unidentified cartridge)");
+			}
+		}
 		if (cart_desc) {
 			printf(" (cart=%d '%s')", cart_desc->type, cart_desc->label);
 		}
-		if (success > 0) printf(" boot: OK through %d frames\n", success);
-		else printf(" boot: FAIL\n");
-
+		printf("\n");
 		if (!cart_desc) break;
 		if (cart_desc) {
 			cart_desc++;
