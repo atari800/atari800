@@ -197,7 +197,7 @@ int libatari800_next_frame(input_template_t *input)
 	LIBATARI800_Mouse();
 	if (setjmp(libatari800_cpu_crash)) {
 		/* called from within CPU_GO to indicate crash */
-		printf("libatari800_next_frame: notified of CPU crash: %d\n", CPU_cim_encountered);
+		Log_print("libatari800_next_frame: notified of CPU crash: %d\n", CPU_cim_encountered);
 	}
 	else {
 		/* normal operation */

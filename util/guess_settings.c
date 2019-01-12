@@ -113,8 +113,6 @@ char *test_args[32];
 char *default_args[] = {
 	"atari800",
 	"-nobasic",
-	// "-config",
-	// "/dev/null",
 };
 
 int run_emulator(int num_args, int num_frames, int verbose) {
@@ -136,7 +134,7 @@ int run_emulator(int num_args, int num_frames, int verbose) {
 	while (frame < num_frames) {
 		// libatari800_get_current_state(state, &tags);
 		if (!libatari800_next_frame(&input)) {
-			printf("Crash encountered at frame %d\n", frame);
+			// if (verbose) printf("Crash encountered at frame %d\n", frame);
 			frame = -frame;
 			break;
 		}

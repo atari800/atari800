@@ -742,10 +742,15 @@ A8_OPTION(cyclesperopcode,no,
           CYCLES_PER_OPCODE,[Define to update ANTIC counter in each opcode's emulation.]
          )
 
-A8_OPTION(bufferedlog,no,
+if [[ "$a8_target" = libatari800 ]]; then
+    WANT_BUFFERED_LOG=yes
+    AC_DEFINE(BUFFERED_LOG,1,[Define to use buffered debug output.])
+else
+    A8_OPTION(bufferedlog,no,
           [Use buffered debug output (until the graphics mode switches back to text mode) (default=OFF)],
           BUFFERED_LOG,[Define to use buffered debug output.]
          )
+fi
 
 A8_OPTION(altirra_bios,yes,
       [Use Altirra OS to allow operation when real ROMs are not available (default=ON)],
