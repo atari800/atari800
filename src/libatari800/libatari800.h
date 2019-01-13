@@ -17,9 +17,6 @@
 #define TRUE   1
 #endif
 
-#include <setjmp.h>
-extern jmp_buf libatari800_cpu_crash;
-
 typedef struct {
     UBYTE keychar;
     UBYTE keycode;

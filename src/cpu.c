@@ -77,7 +77,7 @@
 #endif /* ASAP */
 
 #ifdef LIBATARI800
-#include <setjmp.h>
+#include "libatari800/main.h"
 #endif
 
 /* For Atari Basic loader */

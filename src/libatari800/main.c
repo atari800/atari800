@@ -45,6 +45,7 @@
 #include "sio.h"
 #include "cartridge.h"
 #include "ui.h"
+#include "libatari800/main.h"
 #include "libatari800/init.h"
 #include "libatari800/input.h"
 #include "libatari800/video.h"
@@ -195,11 +196,14 @@ int libatari800_next_frame(input_template_t *input)
 	LIBATARI800_Input_array = input;
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
+#ifdef HAVE_SETJMP
 	if (setjmp(libatari800_cpu_crash)) {
 		/* called from within CPU_GO to indicate crash */
 		Log_print("libatari800_next_frame: notified of CPU crash: %d\n", CPU_cim_encountered);
 	}
-	else {
+	else
+#endif /* HAVE_SETJMP */
+	{
 		/* normal operation */
 		LIBATARI800_Frame();
 	}
