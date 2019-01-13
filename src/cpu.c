@@ -76,6 +76,10 @@
 #endif /* BASIC */
 #endif /* ASAP */
 
+#ifdef LIBATARI800
+#include "libatari800/main.h"
+#endif
+
 /* For Atari Basic loader */
 void (*CPU_rts_handler)(void) = NULL;
 
@@ -2283,7 +2287,15 @@ void CPU_GO(int limit)
 		UI_Run();
 #else
 		CPU_cim_encountered = TRUE;
+#ifdef LIBATARI800
+#ifdef HAVE_SETJMP
+		longjmp(libatari800_cpu_crash, GET_PC());
+#else /* HAVE_SETJMP */
+		/* without setjmp, libatari800 must wait to the end of the frame */
+#endif /* HAVE_SETJMP */
+#else
 		ENTER_MONITOR;
+#endif /* LIBATARI800 */
 #endif /* CRASH_MENU */
 
 		CPU_PutStatus();

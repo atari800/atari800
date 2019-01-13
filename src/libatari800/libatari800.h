@@ -10,6 +10,13 @@
 #define ULONG uint32_t
 #endif
 
+#ifndef FALSE
+#define FALSE  0
+#endif
+#ifndef TRUE
+#define TRUE   1
+#endif
+
 typedef struct {
     UBYTE keychar;
     UBYTE keycode;
@@ -51,7 +58,15 @@ typedef struct {
     ULONG pokey;
 } statesav_tags_t;
 
+extern int libatari800_error_code;
+#define LIBATARI800_UNIDENTIFIED_CART_TYPE 1
+#define LIBATARI800_CPU_CRASH 2
+#define LIBATARI800_BRK_INSTRUCTION 3
+#define LIBATARI800_DLIST_ERROR 4
+
 int libatari800_init(int argc, char **argv);
+
+char *libatari800_error_message();
 
 void libatari800_clear_input_array(input_template_t *input);
 
