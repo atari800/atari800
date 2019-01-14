@@ -211,8 +211,16 @@ cart_types_t *get_first_cart(machine_config_t *machine, int cart_kb) {
 	if (cart_kb > 0) {
 		if (machine->is_5200) cart_desc = cart_list_5200;
 		else cart_desc = cart_list_a8;
-
 		while (cart_desc->size < cart_kb) cart_desc++;
+	}
+	else if (cart_kb < 0) {
+		/* cart_kb is the negative cart type */
+		if (machine->is_5200) cart_desc = cart_list_5200;
+		else cart_desc = cart_list_a8;
+		while (cart_desc->size && (cart_desc->type != -cart_kb)) cart_desc++;
+
+		/* if we go through the entire list, the cart must not work in this machine */
+		if (!cart_desc->size) cart_desc = NULL;
 	}
 	return cart_desc;
 }
@@ -227,6 +235,10 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
 	cart_types_t *cart_desc = get_first_cart(machine, cart_kb);
 	char cart_type_string[16];
 
+	if (cart_kb < 0 && !cart_desc) {
+		/* have an exact match for a cart type, but not compatible machine */
+		return;
+	}
 	num_frames = num_frames < machine->min_frames ? machine->min_frames : num_frames;
 	while (1) {
 		/* args array is modified by atari800, so need to recreate it each time */
@@ -241,7 +253,7 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
 			// printf("arg %d: %s\n", num_args, *machine_args);
 			test_args[num_args++] = *machine_args++;
 		}
-		if (cart_desc && cart_desc->size == cart_kb) {
+		if (cart_desc && (cart_desc->size == cart_kb) || (cart_kb < 0)) {
 			test_args[num_args++] = "-cart-type";
 			sprintf(cart_type_string, "%d", cart_desc->type);
 			test_args[num_args++] = cart_type_string;
@@ -262,7 +274,7 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
 			printf(" (cart=%d '%s')", cart_desc->type, cart_desc->label);
 		}
 		printf("\n");
-		if (!cart_desc) break;
+		if (!cart_desc || (cart_kb < 0)) break;
 		if (cart_desc) {
 			cart_desc++;
 			if (cart_desc->size != cart_kb) cart_desc = NULL;
@@ -273,24 +285,31 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
 #define CHUNK_SIZE 1024
 
 /* Scan the file pointed to by pathname as a candidate for a cartridge.
-   Return size in KB if a valid cart size, or -1 if unknown cart size.
+   Return size in KB if a valid cart size, 0 if invalid cart size, or <0 for
+   a cart type identified by the cart header.
 */
 int guess_cart_kb(char *pathname) {
 	char buf[CHUNK_SIZE];
+	char header[16];
 	FILE *fp = fopen(pathname, "rb");
 	size_t current_len, total_len = 0;
-	int kb;
+	int kb, cart_type;
 	cart_types_t *cart_desc;
 
+	if (!fp) {
+		return 0;
+	}
 	do {
 		current_len = fread(buf, 1, CHUNK_SIZE, fp);
+		if (total_len == 0) {
+			memcpy(header, buf, 16);
+		}
 		total_len += current_len;
 	} while (current_len == CHUNK_SIZE);
 
-	kb = (int)(total_len / 2048) * 2048; /* 2k smallest cart */
+	kb = (int)(total_len / 1024);
 	int found = FALSE;
-	if (total_len == kb) {
-		kb /= 1024;
+	if (total_len == kb * 1024) {
 		cart_desc = cart_list_a8;
 		while (cart_desc->size) {
 			if (kb == cart_desc->size) {
@@ -301,9 +320,18 @@ int guess_cart_kb(char *pathname) {
 		}
 		printf("%s: possible cartridge; size=%dkb\n", pathname, kb);
 	}
+	else if (total_len == (kb * 1024) + 16) {
+		/* possible .car file */
+		if (header[0] == 0x43 && header[1] == 0x41 && header[2] == 0x52 && header[3] == 0x54) {
+			cart_type = header[7];
+			printf("%s: cart type %d; size=%dkb\n", pathname, cart_type, kb);
+			kb = -cart_type;
+			found = TRUE;
+		}
+	}
 	if (!found) {
 		printf("%s: not cartridge; %d bytes\n", pathname, (int)total_len);
-		kb = -1;
+		kb = 0;
 	}
 	return kb;
 }
