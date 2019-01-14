@@ -129,14 +129,13 @@ int run_emulator(int num_args, int num_frames, int verbose) {
 	libatari800_init(num_args, test_args);
 	if (libatari800_error_code) return 0;
 
-	unsigned char state[STATESAV_MAX_SIZE];
-	statesav_tags_t tags;
+	emulator_state_t state;
 	input_template_t input;
 
 	int frame = 0;
 	while (frame < num_frames) {
-		libatari800_get_current_state(state, &tags);
 		libatari800_next_frame(&input);
+		libatari800_get_current_state(&state);
 		switch (libatari800_error_code) {
 			case 0:
 			break;

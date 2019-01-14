@@ -260,14 +260,14 @@ UBYTE *libatari800_get_screen_ptr()
 	return (UBYTE *)Screen_atari;
 }
 
-void libatari800_get_current_state(UBYTE *state, statesav_tags_t *tags)
+void libatari800_get_current_state(emulator_state_t *state)
 {
-	LIBATARI800_StateSave(state, tags);
+	LIBATARI800_StateSave(state->state, &state->tags);
 }
 
-void libatari800_restore_state(UBYTE *state)
+void libatari800_restore_state(emulator_state_t *state)
 {
-	LIBATARI800_StateLoad(state);
+	LIBATARI800_StateLoad(state->state);
 }
 
 /*

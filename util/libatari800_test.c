@@ -39,17 +39,16 @@ int main(int argc, char **argv) {
 
 	libatari800_clear_input_array(&input);
 
-	unsigned char state[STATESAV_MAX_SIZE];
-	statesav_tags_t tags;
-	unsigned char *cpu_regs;
+	emulator_state_t state;
+	cpu_state_t *cpu;
 	unsigned char *pc;
 
 	frame = 0;
 	while (frame < 200) {
-		libatari800_get_current_state(state, &tags);
-		cpu_regs = &state[tags.cpu];  /* order: A,SR,SP,X,Y */
-		pc = &state[tags.pc];
-		printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", frame, cpu_regs[0], cpu_regs[3], cpu_regs[4], cpu_regs[2], cpu_regs[1], pc[0] + 256 * pc[1]);
+		libatari800_get_current_state(&state);
+		cpu = (cpu_state_t *)&state.state[state.tags.cpu];  /* order: A,SR,SP,X,Y */
+		pc = &state.state[state.tags.pc];
+		printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", frame, cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
 		libatari800_next_frame(&input);
 		if (frame > 100) {
 		  debug_screen();
