@@ -178,6 +178,7 @@ int libatari800_init(int argc, char **argv) {
 	CPU_cim_encountered = 0;
 	libatari800_error_code = 0;
 	Atari800_nframes = 0;
+	MEMORY_selftest_enabled = 0;
 	return Atari800_Initialise(&argc, argv);
 }
 
@@ -187,6 +188,8 @@ char *error_messages[] = {
 	"CPU crash",
 	"BRK instruction",
 	"invalid display list",
+	"self test",
+	"memo pad",
 };
 char *unknown_error = "unknown error";
 
@@ -263,6 +266,7 @@ UBYTE *libatari800_get_screen_ptr()
 void libatari800_get_current_state(emulator_state_t *state)
 {
 	LIBATARI800_StateSave(state->state, &state->tags);
+	state->flags.selftest_enabled = MEMORY_selftest_enabled;
 }
 
 void libatari800_restore_state(emulator_state_t *state)

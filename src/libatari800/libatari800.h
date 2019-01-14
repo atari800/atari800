@@ -64,9 +64,17 @@ typedef struct {
 } statesav_tags_t;
 
 typedef struct {
+    UBYTE selftest_enabled;
+} statesav_flags_t;
+
+typedef struct {
     union {
         statesav_tags_t tags;
-        UBYTE tags_storage[256];
+        UBYTE tags_storage[128];
+    };
+    union {
+        statesav_flags_t flags;
+        UBYTE flags_storage[128];
     };
     UBYTE state[STATESAV_MAX_SIZE];
 } emulator_state_t;
@@ -173,6 +181,8 @@ extern int libatari800_error_code;
 #define LIBATARI800_CPU_CRASH 2
 #define LIBATARI800_BRK_INSTRUCTION 3
 #define LIBATARI800_DLIST_ERROR 4
+#define LIBATARI800_SELF_TEST 5
+#define LIBATARI800_MEMO_PAD 6
 
 int libatari800_init(int argc, char **argv);
 

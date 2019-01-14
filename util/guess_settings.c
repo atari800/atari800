@@ -115,6 +115,41 @@ char *default_args[] = {
 	"-nobasic",
 };
 
+
+char *memo_pad_text = "\x21\x34\x21\x32\x29\x00\x23\x2F\x2D\x30\x35\x34\x25\x32\x00\x0D\x00\x2D\x25\x2D\x2F\x00\x30\x21\x24"; /* ATARI COMPUTER - MEMO PAD */
+char *memo_pad_altirra = "\x21\x6C\x74\x69\x72\x72\x61\x2F\x33"; /* AltirraOS */
+
+int check_memo_pad(emulator_state_t *state) {
+	antic_state_t *antic = (antic_state_t *)&state->state[state->tags.antic];
+	UBYTE *memory = (UBYTE *)&state->state[state->tags.base_ram];
+	UWORD ramtop;
+	UWORD gr0;
+
+	/* The default graphics 0 display list and screen RAM are allocated by the OS as
+		fixed positions below RAMTOP. The display list is $3e0 bytes below,
+		and screen ram is $20 bytes above that. E.g. on a 48k machine with no
+		carts inserted, RAMTOP is $c000, the display list is at $bc20, and
+		screen ram is at $bc40. When a cart is inserted, RAMTOP moves down an
+		equivalent amount, so 8k cart moves RAMTOP to $a000, the DL to $9c20
+		and display RAM to $9c40.
+
+		Memo pad text is on the top line of the screen with the normal 2
+		character indent, so on a 48k machine with no carts inserted, it is at
+		$bc42.
+	 */
+	ramtop = memory[0x6a] << 8;
+	if (antic->dlist == ramtop - 0x3e0) {
+		gr0 = ramtop - 0x3c0;
+		if (memcmp(&memory[gr0 + 2], memo_pad_text, sizeof(memo_pad_text)) == 0) {
+			return TRUE;
+		}
+		else if (memcmp(&memory[gr0 + 2], memo_pad_altirra, sizeof(memo_pad_altirra)) == 0) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 #define BAD_DLIST_MIN_FRAMES 200
 
 int run_emulator(int num_args, int num_frames, int verbose) {
@@ -133,11 +168,25 @@ int run_emulator(int num_args, int num_frames, int verbose) {
 	input_template_t input;
 
 	int frame = 0;
+	int selftest_count = 0;
 	while (frame < num_frames) {
 		libatari800_next_frame(&input);
 		libatari800_get_current_state(&state);
+		if (state.flags.selftest_enabled) {
+			selftest_count++;
+			if (selftest_count > 10) {
+				frame = -frame;
+				libatari800_error_code = LIBATARI800_SELF_TEST;
+				goto exit;
+			}
+		}
 		switch (libatari800_error_code) {
 			case 0:
+			if (check_memo_pad(&state)) {
+				libatari800_error_code = LIBATARI800_MEMO_PAD;
+				frame = -frame;
+				goto exit;
+			}
 			break;
 
 			case LIBATARI800_DLIST_ERROR:
