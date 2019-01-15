@@ -183,6 +183,7 @@ extern int libatari800_error_code;
 #define LIBATARI800_DLIST_ERROR 4
 #define LIBATARI800_SELF_TEST 5
 #define LIBATARI800_MEMO_PAD 6
+#define LIBATARI800_INVALID_ESCAPE_OPCODE 7
 
 int libatari800_init(int argc, char **argv);
 

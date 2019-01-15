@@ -190,6 +190,7 @@ char *error_messages[] = {
 	"invalid display list",
 	"self test",
 	"memo pad",
+	"invalid escape opcode"
 };
 char *unknown_error = "unknown error";
 
@@ -217,7 +218,7 @@ int libatari800_next_frame(input_template_t *input)
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
 #ifdef HAVE_SETJMP
-	if (setjmp(libatari800_cpu_crash)) {
+	if (libatari800_error_code = setjmp(libatari800_cpu_crash)) {
 		/* called from within CPU_GO to indicate crash */
 		Log_print("libatari800_next_frame: notified of CPU crash: %d\n", CPU_cim_encountered);
 	}
@@ -226,12 +227,12 @@ int libatari800_next_frame(input_template_t *input)
 	{
 		/* normal operation */
 		LIBATARI800_Frame();
-	}
-	if (CPU_cim_encountered) {
-		libatari800_error_code = LIBATARI800_CPU_CRASH;
-	}
-	else if (ANTIC_dlist == 0) {
-		libatari800_error_code = LIBATARI800_DLIST_ERROR;
+		if (CPU_cim_encountered) {
+			libatari800_error_code = LIBATARI800_CPU_CRASH;
+		}
+		else if (ANTIC_dlist == 0) {
+			libatari800_error_code = LIBATARI800_DLIST_ERROR;
+		}
 	}
 	PLATFORM_DisplayScreen();
 	return !libatari800_error_code;

@@ -844,12 +844,18 @@ void CPU_GO(int limit)
 #endif
 
 	OPCODE(00)				/* BRK */
+#ifdef LIBATARI800
+#ifdef HAVE_SETJMP
+		longjmp(libatari800_cpu_crash, LIBATARI800_BRK_INSTRUCTION);
+#endif /* HAVE_SETJMP */
+#else /* LIBATARI800 */
 #ifdef MONITOR_BREAK
 		if (MONITOR_break_brk) {
 			DO_BREAK;
 		}
 		else
-#endif
+#endif /* MONITOR_BREAK */
+#endif /* LIBATARI800 */
 		{
 			PC++;
 			PHPC;
@@ -2289,9 +2295,7 @@ void CPU_GO(int limit)
 		CPU_cim_encountered = TRUE;
 #ifdef LIBATARI800
 #ifdef HAVE_SETJMP
-		longjmp(libatari800_cpu_crash, GET_PC());
-#else /* HAVE_SETJMP */
-		/* without setjmp, libatari800 must wait to the end of the frame */
+		longjmp(libatari800_cpu_crash, LIBATARI800_CPU_CRASH);
 #endif /* HAVE_SETJMP */
 #else
 		ENTER_MONITOR;

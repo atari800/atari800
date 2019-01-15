@@ -150,7 +150,7 @@ void ESC_Run(UBYTE esc_code)
 	CPU_cim_encountered = 1;
 	Log_print("Invalid ESC code %02x at address %04x", esc_code, CPU_regPC - 2);
 #if defined(LIBATARI800) && defined(HAVE_SETJMP)
-	longjmp(libatari800_cpu_crash, CPU_regPC - 2);
+	longjmp(libatari800_cpu_crash, LIBATARI800_INVALID_ESCAPE_OPCODE);
 #endif /* LIBATARI800 && HAVE_SETJMP */
 #ifndef __PLUS
 	if (!Atari800_Exit(TRUE))
