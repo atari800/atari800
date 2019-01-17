@@ -169,7 +169,7 @@ int check_memo_pad(emulator_state_t *state) {
 int run_emulator(int num_args, int num_frames, int verbose) {
 	int i;
 
-	if (verbose) {
+	if (verbose > 1) {
 		for (i=0; i<num_args; i++) {
 			printf("%s ", test_args[i]);
 		}
@@ -243,15 +243,16 @@ cart_types_t *get_first_cart(machine_config_t *machine, int cart_kb) {
    cartridge, run it multiple times trying the various cart types corresponding
    to its size.
 */
-void run_machine(machine_config_t *machine, char *pathname, int num_frames, int cart_kb, int verbose) {
+int run_machine(machine_config_t *machine, char *pathname, int num_frames, int cart_kb, int verbose) {
 	int success;
+	int any_success = 0;
 	char **machine_args;
 	cart_types_t *cart_desc = get_first_cart(machine, cart_kb);
 	char cart_type_string[16];
 
 	if (cart_kb < 0 && !cart_desc) {
 		/* have an exact match for a cart type, but not compatible machine */
-		return;
+		return 0;
 	}
 	num_frames = num_frames < machine->min_frames ? machine->min_frames : num_frames;
 	while (1) {
@@ -276,24 +277,43 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
 		test_args[num_args++] = pathname;
 
 		success = run_emulator(num_args, num_frames, verbose);
-		printf("%s: %s", pathname, machine->label);
-		if (success > 0) printf(" status: OK through %d frames", success);
-		else {
-			printf(" status: FAIL");
-			if (libatari800_error_code) {
-				printf(" (%s)", libatari800_error_message());
+		if (success) any_success++;
+		if (!verbose) {
+			if (success > 0) {
+				printf("%s: %s (", pathname, machine->label);
+				machine_args = machine->args;
+				while (*machine_args) {
+					printf("%s", *machine_args);
+					machine_args++;
+					if (*machine_args) printf(" ");
+				}
+				if (cart_desc) {
+					printf(" -cart-type %d", cart_desc->type);
+				}
+				printf(")\n");
 			}
 		}
-		if (cart_desc) {
-			printf(" (cart=%d '%s')", cart_desc->type, cart_desc->label);
+		else {
+			printf("%s: %s", pathname, machine->label);
+			if (success > 0) printf(" status: OK through %d frames", success);
+			else {
+				printf(" status: FAIL");
+				if (libatari800_error_code) {
+					printf(" (%s)", libatari800_error_message());
+				}
+			}
+			if (cart_desc) {
+				printf(" (cart=%d '%s')", cart_desc->type, cart_desc->label);
+			}
+			printf("\n");
 		}
-		printf("\n");
 		if (!cart_desc || (cart_kb < 0)) break;
 		if (cart_desc) {
 			cart_desc++;
 			if (cart_desc->size != cart_kb) cart_desc = NULL;
 		}
 	}
+	return any_success;
 }
 
 #define CHUNK_SIZE 1024
@@ -303,7 +323,7 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
    Return size in KB if a valid cart size, 0 if invalid cart size, or <0 for
    a cart type identified by the cart header.
 */
-int guess_cart_kb(char *pathname) {
+int guess_cart_kb(char *pathname, int verbose) {
 	char buf[CHUNK_SIZE];
 	char header[16];
 	FILE *fp = fopen(pathname, "rb");
@@ -336,19 +356,19 @@ int guess_cart_kb(char *pathname) {
 			}
 			cart_desc++;
 		}
-		printf("%s: possible cartridge; size=%dkb\n", pathname, kb);
+		if (verbose > 1) printf("%s: possible cartridge; size=%dkb\n", pathname, kb);
 	}
 	else if (total_len == (kb * 1024) + 16) {
 		/* possible .car file */
 		if (header[0] == 0x43 && header[1] == 0x41 && header[2] == 0x52 && header[3] == 0x54) {
 			cart_type = header[7];
-			printf("%s: cart type %d; size=%dkb\n", pathname, cart_type, kb);
+			if (verbose > 1) printf("%s: cart type %d; size=%dkb\n", pathname, cart_type, kb);
 			kb = -cart_type;
 			found = TRUE;
 		}
 	}
 	if (!found) {
-		printf("%s: not cartridge; %d bytes\n", pathname, (int)total_len);
+		if (verbose > 1) printf("%s: not cartridge; %d bytes\n", pathname, (int)total_len);
 		kb = 0;
 	}
 	return kb;
@@ -359,7 +379,7 @@ int main(int argc, char **argv) {
 	libatari800_clear_input_array(&input);
 
 	/* one time init stuff */
-	int verbose = 0;
+	int verbose = 1;
 	int machine_flag = MACHINE_TYPE_ALL;
 	int machine_flag_encountered = FALSE;
 	int os_flag = MACHINE_OS_ALL;
@@ -372,10 +392,16 @@ int main(int argc, char **argv) {
 	for (i=1; i<argc; i++) {
 		if (argv[i][0] == '-') {
 			if (strcmp(argv[i], "-v") == 0) {
-				verbose = 1;
+				verbose += 1;
 			}
 			else if (strcmp(argv[i], "-vv") == 0) {
-				verbose = 2;
+				verbose += 2;
+			}
+			else if (strcmp(argv[i], "-vvv") == 0) {
+				verbose += 3;
+			}
+			else if (strcmp(argv[i], "-s") == 0) {
+				verbose = 0;
 			}
 			else if (strcmp(argv[i], "-800") == 0) {
 				if (!machine_flag_encountered) machine_flag = 0;
@@ -422,21 +448,23 @@ int main(int argc, char **argv) {
 			}
 		}
 		else {
+			int successful_count = 0;
 			machine_config_t *machine = machine_config;
-			int cart_kb = guess_cart_kb(argv[i]);
+			int cart_kb = guess_cart_kb(argv[i], verbose);
 			if (cart_kb == INVALID_FILE_SIZE) continue;
 			while (machine->label) {
 				if (machine->type & machine_flag && machine->type & os_flag && machine->type & video_flag) {
 					if (verbose > 1) {
 						printf("trying %s\n", machine->label);
 					}
-					run_machine(machine, argv[i], num_frames, cart_kb, verbose);
+					if (run_machine(machine, argv[i], num_frames, cart_kb, verbose)) successful_count++;
 				}
 				else if (verbose > 1) {
 					printf("skipping %s\n", machine->label);
 				}
 				machine++;
 			}
+			if (!successful_count && !verbose) printf("%s: FAIL\n", argv[i]);
 		}
 	}
 }
