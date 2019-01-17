@@ -25,21 +25,21 @@ typedef struct {
 } machine_config_t;
 
 machine_config_t machine_config[] = {
-	"400/800 NTSC OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-atari", "-ntsc", NULL},
-	"400/800 PAL  OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-atari", "-pal", NULL},
-	"400/800 NTSC Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-atari", "-ntsc", "-800-rev", "altirra", NULL},
-	"400/800 PAL  Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-atari", "-pal", "-800-rev", "altirra", NULL},
-	"64k XL  NTSC XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-xl", "-ntsc", NULL},
-	"64k XL  PAL  XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-xl", "-pal", NULL},
-	"64k XL  NTSC Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-xl", "-ntsc", "-xl-rev", "altirra", NULL},
-	"64k XL  PAL  Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-xl", "-pal", "-xl-rev", "altirra", NULL},
-	"128k XE NTSC XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-xe", "-ntsc", NULL},
-	"128k XE PAL  XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-xe", "-pal", NULL},
-	"128k XE NTSC Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-xe", "-ntsc", "-xl-rev", "altirra", NULL},
-	"128k XE PAL  Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-xe", "-pal", "-xl-rev", "altirra", NULL},
-	"5200    NTSC Atari  ", MACHINE_TYPE_5200 | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-5200", "-ntsc", NULL},
-	"5200    NTSC Altirra", MACHINE_TYPE_5200 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-5200", "-ntsc", "-5200-rev", "altirra", NULL},
-	NULL, 0, 400, {NULL},
+	{"400/800 NTSC OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-atari", "-ntsc", NULL}},
+	{"400/800 PAL  OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-atari", "-pal", NULL}},
+	{"400/800 NTSC Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-atari", "-ntsc", "-800-rev", "altirra", NULL}},
+	{"400/800 PAL  Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-atari", "-pal", "-800-rev", "altirra", NULL}},
+	{"64k XL  NTSC XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-xl", "-ntsc", NULL}},
+	{"64k XL  PAL  XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-xl", "-pal", NULL}},
+	{"64k XL  NTSC Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-xl", "-ntsc", "-xl-rev", "altirra", NULL}},
+	{"64k XL  PAL  Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-xl", "-pal", "-xl-rev", "altirra", NULL}},
+	{"128k XE NTSC XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-xe", "-ntsc", NULL}},
+	{"128k XE PAL  XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-xe", "-pal", NULL}},
+	{"128k XE NTSC Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-xe", "-ntsc", "-xl-rev", "altirra", NULL}},
+	{"128k XE PAL  Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-xe", "-pal", "-xl-rev", "altirra", NULL}},
+	{"5200    NTSC Atari  ", MACHINE_TYPE_5200 | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-5200", "-ntsc", NULL}},
+	{"5200    NTSC Altirra", MACHINE_TYPE_5200 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-5200", "-ntsc", "-5200-rev", "altirra", NULL}},
+	{NULL, 0, 400, {NULL}},
 };
 
 typedef struct {
@@ -130,8 +130,8 @@ char *default_args[] = {
 };
 
 
-char *memo_pad_text = "\x21\x34\x21\x32\x29\x00\x23\x2F\x2D\x30\x35\x34\x25\x32\x00\x0D\x00\x2D\x25\x2D\x2F\x00\x30\x21\x24"; /* ATARI COMPUTER - MEMO PAD */
-char *memo_pad_altirra = "\x21\x6C\x74\x69\x72\x72\x61\x2F\x33"; /* AltirraOS */
+char memo_pad_text[] = "\x21\x34\x21\x32\x29\x00\x23\x2F\x2D\x30\x35\x34\x25\x32\x00\x0D\x00\x2D\x25\x2D\x2F\x00\x30\x21\x24"; /* ATARI COMPUTER - MEMO PAD */
+char memo_pad_altirra[] = "\x21\x6C\x74\x69\x72\x72\x61\x2F\x33"; /* AltirraOS */
 
 int check_memo_pad(emulator_state_t *state) {
 	antic_state_t *antic = (antic_state_t *)&state->state[state->tags.antic];
@@ -267,7 +267,7 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
 			// printf("arg %d: %s\n", num_args, *machine_args);
 			test_args[num_args++] = *machine_args++;
 		}
-		if (cart_desc && (cart_desc->size == cart_kb) || (cart_kb < 0)) {
+		if (cart_desc && ((cart_desc->size == cart_kb) || (cart_kb < 0))) {
 			test_args[num_args++] = "-cart-type";
 			sprintf(cart_type_string, "%d", cart_desc->type);
 			test_args[num_args++] = cart_type_string;
@@ -355,7 +355,6 @@ int guess_cart_kb(char *pathname) {
 }
 
 int main(int argc, char **argv) {
-	int frame;
 	input_template_t input;
 	libatari800_clear_input_array(&input);
 
@@ -423,7 +422,6 @@ int main(int argc, char **argv) {
 			}
 		}
 		else {
-			int machine_index, success;
 			machine_config_t *machine = machine_config;
 			int cart_kb = guess_cart_kb(argv[i]);
 			if (cart_kb == INVALID_FILE_SIZE) continue;
