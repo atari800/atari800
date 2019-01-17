@@ -297,6 +297,7 @@ void run_machine(machine_config_t *machine, char *pathname, int num_frames, int 
 }
 
 #define CHUNK_SIZE 1024
+#define INVALID_FILE_SIZE 999999
 
 /* Scan the file pointed to by pathname as a candidate for a cartridge.
    Return size in KB if a valid cart size, 0 if invalid cart size, or <0 for
@@ -311,7 +312,7 @@ int guess_cart_kb(char *pathname) {
 	cart_types_t *cart_desc;
 
 	if (!fp) {
-		return 0;
+		return INVALID_FILE_SIZE;
 	}
 	do {
 		current_len = fread(buf, 1, CHUNK_SIZE, fp);
@@ -320,6 +321,9 @@ int guess_cart_kb(char *pathname) {
 		}
 		total_len += current_len;
 	} while (current_len == CHUNK_SIZE);
+	if (total_len == 0) {
+		return INVALID_FILE_SIZE;
+	}
 
 	kb = (int)(total_len / 1024);
 	int found = FALSE;
@@ -422,6 +426,7 @@ int main(int argc, char **argv) {
 			int machine_index, success;
 			machine_config_t *machine = machine_config;
 			int cart_kb = guess_cart_kb(argv[i]);
+			if (cart_kb == INVALID_FILE_SIZE) continue;
 			while (machine->label) {
 				if (machine->type & machine_flag && machine->type & os_flag && machine->type & video_flag) {
 					if (verbose > 1) {
