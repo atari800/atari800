@@ -357,6 +357,7 @@ int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVe
 		return FALSE;
 	}
 
+	STATESAV_TAG(size);  /* initialize to 0, set to actual size if successful */
 	StateSav_SaveUBYTE(&StateVersion, 1);
 	StateSav_SaveUBYTE(&SaveVerbose, 1);
 	/* The order here is important. Atari800_StateSave must be first because it saves the machine type, and
@@ -406,6 +407,7 @@ int StateSav_SaveAtariState(const char *filename, const char *mode, UBYTE SaveVe
 	DCStateSave();
 #endif
 
+	STATESAV_TAG(size);
 	if (GZCLOSE(StateFile) != 0) {
 		StateFile = NULL;
 		return FALSE;

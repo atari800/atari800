@@ -4090,6 +4090,7 @@ case we have ANTIC_cpu2antic_ptr[ANTIC_WSYNC_C+1]-1 = 8 and in the 2nd =12  */
 
 void ANTIC_StateSave(void)
 {
+	STATESAV_TAG(antic);
 	StateSav_SaveUBYTE(&ANTIC_DMACTL, 1);
 	StateSav_SaveUBYTE(&ANTIC_CHACTL, 1);
 	StateSav_SaveUBYTE(&ANTIC_HSCROL, 1);

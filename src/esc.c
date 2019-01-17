@@ -36,6 +36,10 @@
 #include "ui.h"
 #include <stdlib.h>
 
+#ifdef LIBATARI800
+#include "libatari800/main.h"
+#endif
+
 int ESC_enable_sio_patch = TRUE;
 
 /* Now we check address of every escape code, to make sure that the patch
@@ -145,6 +149,9 @@ void ESC_Run(UBYTE esc_code)
 #else /* CRASH_MENU */
 	CPU_cim_encountered = 1;
 	Log_print("Invalid ESC code %02x at address %04x", esc_code, CPU_regPC - 2);
+#if defined(LIBATARI800) && defined(HAVE_SETJMP)
+	longjmp(libatari800_cpu_crash, LIBATARI800_INVALID_ESCAPE_OPCODE);
+#endif /* LIBATARI800 && HAVE_SETJMP */
 #ifndef __PLUS
 	if (!Atari800_Exit(TRUE))
 		exit(0);

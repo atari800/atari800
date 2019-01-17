@@ -185,6 +185,9 @@ int BINLOAD_Loader(const char *filename)
 	}
 	if (Atari800_machine_type == Atari800_MACHINE_5200) {
 		Log_print("binload: can't run Atari programs directly on the 5200");
+#ifdef LIBATARI800
+		CPU_cim_encountered = 1;
+#endif
 		return FALSE;
 	}
 	BINLOAD_bin_file = fopen(filename, "rb");

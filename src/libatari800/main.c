@@ -33,6 +33,7 @@
 #include "afile.h"
 #include "../input.h"
 #include "log.h"
+#include "antic.h"
 #include "cpu.h"
 #include "platform.h"
 #include "memory.h"
@@ -45,6 +46,7 @@
 #include "sio.h"
 #include "cartridge.h"
 #include "ui.h"
+#include "libatari800/main.h"
 #include "libatari800/init.h"
 #include "libatari800/input.h"
 #include "libatari800/video.h"
@@ -150,7 +152,10 @@ void LIBATARI800_Frame(void)
 
 /* Stub routines to replace text-based UI */
 
+int libatari800_error_code;
+
 int UI_SelectCartType(int k) {
+	libatari800_error_code = LIBATARI800_UNIDENTIFIED_CART_TYPE;
 	return CARTRIDGE_NONE;
 }
 
@@ -170,7 +175,30 @@ int UI_n_saved_files_dir;
 /* User visible routines */
 
 int libatari800_init(int argc, char **argv) {
+	CPU_cim_encountered = 0;
+	libatari800_error_code = 0;
+	Atari800_nframes = 0;
+	MEMORY_selftest_enabled = 0;
 	return Atari800_Initialise(&argc, argv);
+}
+
+char *error_messages[] = {
+	"no error",
+	"unidentified cartridge",
+	"CPU crash",
+	"BRK instruction",
+	"invalid display list",
+	"self test",
+	"memo pad",
+	"invalid escape opcode"
+};
+char *unknown_error = "unknown error";
+
+char *libatari800_error_message() {
+	if ((libatari800_error_code < 0) || (libatari800_error_code > (sizeof(error_messages)))) {
+		return unknown_error;
+	}
+	return error_messages[libatari800_error_code];
 }
 
 void libatari800_clear_input_array(input_template_t *input)
@@ -180,14 +208,34 @@ void libatari800_clear_input_array(input_template_t *input)
 	INPUT_key_code = AKEY_NONE;
 }
 
+#ifdef HAVE_SETJMP
+jmp_buf libatari800_cpu_crash;
+#endif
+
 int libatari800_next_frame(input_template_t *input)
 {
 	LIBATARI800_Input_array = input;
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
-	LIBATARI800_Frame();
+#ifdef HAVE_SETJMP
+	if (libatari800_error_code = setjmp(libatari800_cpu_crash)) {
+		/* called from within CPU_GO to indicate crash */
+		Log_print("libatari800_next_frame: notified of CPU crash: %d\n", CPU_cim_encountered);
+	}
+	else
+#endif /* HAVE_SETJMP */
+	{
+		/* normal operation */
+		LIBATARI800_Frame();
+		if (CPU_cim_encountered) {
+			libatari800_error_code = LIBATARI800_CPU_CRASH;
+		}
+		else if (ANTIC_dlist == 0) {
+			libatari800_error_code = LIBATARI800_DLIST_ERROR;
+		}
+	}
 	PLATFORM_DisplayScreen();
-	return 1;
+	return !libatari800_error_code;
 }
 
 int libatari800_mount_disk_image(int diskno, const char *filename, int readonly)
@@ -216,14 +264,15 @@ UBYTE *libatari800_get_screen_ptr()
 	return (UBYTE *)Screen_atari;
 }
 
-void libatari800_get_current_state(UBYTE *state, statesav_tags_t *tags)
+void libatari800_get_current_state(emulator_state_t *state)
 {
-	LIBATARI800_StateSave(state, tags);
+	LIBATARI800_StateSave(state->state, &state->tags);
+	state->flags.selftest_enabled = MEMORY_selftest_enabled;
 }
 
-void libatari800_restore_state(UBYTE *state)
+void libatari800_restore_state(emulator_state_t *state)
 {
-	LIBATARI800_StateLoad(state);
+	LIBATARI800_StateLoad(state->state);
 }
 
 /*
