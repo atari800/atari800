@@ -3,29 +3,39 @@
 
 #include "libatari800.h"
 
+#define MACHINE_TYPE_800 0x01
+#define MACHINE_TYPE_XL 0x02
+#define MACHINE_TYPE_XE 0x04
+#define MACHINE_TYPE_5200 0x08
+#define MACHINE_TYPE_ALL (MACHINE_TYPE_800 | MACHINE_TYPE_XL | MACHINE_TYPE_XE | MACHINE_TYPE_5200)
+
+#define MACHINE_OS_ATARI 0x100
+#define MACHINE_OS_ALTIRRA 0x200
+#define MACHINE_OS_ALL (MACHINE_OS_ATARI | MACHINE_OS_ALTIRRA)
+
 typedef struct {
 	char *label;
-	int is_5200;
+	int type;
 	int min_frames;
 	char *args[20];
 } machine_config_t;
 
 machine_config_t machine_config[] = {
-	"400/800 NTSC OS/B   ", FALSE, 400, {"-atari", "-ntsc", NULL},
-	"400/800 PAL  OS/B   ", FALSE, 400, {"-atari", "-pal", NULL},
-	"400/800 NTSC Altirra", FALSE, 400, {"-atari", "-ntsc", "-800-rev", "altirra", NULL},
-	"400/800 PAL  Altirra", FALSE, 400, {"-atari", "-pal", "-800-rev", "altirra", NULL},
-	"64k XL  NTSC XL ROM ", FALSE, 400, {"-xl", "-ntsc", NULL},
-	"64k XL  PAL  XL ROM ", FALSE, 400, {"-xl", "-pal", NULL},
-	"64k XL  NTSC Altirra", FALSE, 400, {"-xl", "-ntsc", "-xl-rev", "altirra", NULL},
-	"64k XL  PAL  Altirra", FALSE, 400, {"-xl", "-pal", "-xl-rev", "altirra", NULL},
-	"128k XE NTSC XL ROM ", FALSE, 400, {"-xe", "-ntsc", NULL},
-	"128k XE PAL  XL ROM ", FALSE, 400, {"-xe", "-pal", NULL},
-	"128k XE NTSC Altirra", FALSE, 400, {"-xe", "-ntsc", "-xl-rev", "altirra", NULL},
-	"128k XE PAL  Altirra", FALSE, 400, {"-xe", "-pal", "-xl-rev", "altirra", NULL},
-	"5200    NTSC Atari  ", TRUE, 400, {"-5200", "-ntsc", NULL},
-	"5200    NTSC Altirra", TRUE, 6000, {"-5200", "-ntsc", "-5200-rev", "altirra", NULL},
-	NULL, FALSE, 400, {NULL},
+	"400/800 NTSC OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI, 400, {"-atari", "-ntsc", NULL},
+	"400/800 PAL  OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI, 400, {"-atari", "-pal", NULL},
+	"400/800 NTSC Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA, 400, {"-atari", "-ntsc", "-800-rev", "altirra", NULL},
+	"400/800 PAL  Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA, 400, {"-atari", "-pal", "-800-rev", "altirra", NULL},
+	"64k XL  NTSC XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI, 400, {"-xl", "-ntsc", NULL},
+	"64k XL  PAL  XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI, 400, {"-xl", "-pal", NULL},
+	"64k XL  NTSC Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA, 400, {"-xl", "-ntsc", "-xl-rev", "altirra", NULL},
+	"64k XL  PAL  Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA, 400, {"-xl", "-pal", "-xl-rev", "altirra", NULL},
+	"128k XE NTSC XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI, 400, {"-xe", "-ntsc", NULL},
+	"128k XE PAL  XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI, 400, {"-xe", "-pal", NULL},
+	"128k XE NTSC Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA, 400, {"-xe", "-ntsc", "-xl-rev", "altirra", NULL},
+	"128k XE PAL  Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA, 400, {"-xe", "-pal", "-xl-rev", "altirra", NULL},
+	"5200    NTSC Atari  ", MACHINE_TYPE_5200 | MACHINE_OS_ATARI, 400, {"-5200", "-ntsc", NULL},
+	"5200    NTSC Altirra", MACHINE_TYPE_5200 | MACHINE_OS_ALTIRRA, 400, {"-5200", "-ntsc", "-5200-rev", "altirra", NULL},
+	NULL, 0, 400, {NULL},
 };
 
 typedef struct {
@@ -209,13 +219,13 @@ cart_types_t *get_first_cart(machine_config_t *machine, int cart_kb) {
 	cart_types_t *cart_desc = NULL;
 
 	if (cart_kb > 0) {
-		if (machine->is_5200) cart_desc = cart_list_5200;
+		if (machine->type & MACHINE_TYPE_5200) cart_desc = cart_list_5200;
 		else cart_desc = cart_list_a8;
 		while (cart_desc->size < cart_kb) cart_desc++;
 	}
 	else if (cart_kb < 0) {
 		/* cart_kb is the negative cart type */
-		if (machine->is_5200) cart_desc = cart_list_5200;
+		if (machine->type & MACHINE_TYPE_5200) cart_desc = cart_list_5200;
 		else cart_desc = cart_list_a8;
 		while (cart_desc->size && (cart_desc->type != -cart_kb)) cart_desc++;
 
@@ -343,6 +353,10 @@ int main(int argc, char **argv) {
 
 	/* one time init stuff */
 	int verbose = 0;
+	int machine_flag = MACHINE_TYPE_ALL;
+	int machine_flag_encountered = FALSE;
+	int os_flag = MACHINE_OS_ALL;
+	int os_flag_encountered = FALSE;
 	int num_frames = 1000;
 
 	int i;
@@ -351,13 +365,57 @@ int main(int argc, char **argv) {
 			if (strcmp(argv[i], "-v") == 0) {
 				verbose = 1;
 			}
+			else if (strcmp(argv[i], "-vv") == 0) {
+				verbose = 2;
+			}
+			else if (strcmp(argv[i], "-800") == 0) {
+				if (!machine_flag_encountered) machine_flag = 0;
+				machine_flag |= MACHINE_TYPE_800;
+				machine_flag_encountered = TRUE;
+			}
+			else if (strcmp(argv[i], "-xl") == 0) {
+				if (!machine_flag_encountered) machine_flag = 0;
+				machine_flag |= MACHINE_TYPE_XL;
+				machine_flag_encountered = TRUE;
+			}
+			else if (strcmp(argv[i], "-xe") == 0) {
+				if (!machine_flag_encountered) machine_flag = 0;
+				machine_flag |= MACHINE_TYPE_XE;
+				machine_flag_encountered = TRUE;
+			}
+			else if (strcmp(argv[i], "-5200") == 0) {
+				if (!machine_flag_encountered) machine_flag = 0;
+				machine_flag |= MACHINE_TYPE_5200;
+				machine_flag_encountered = TRUE;
+			}
+			else if (strcmp(argv[i], "-altirra") == 0) {
+				if (!os_flag_encountered) os_flag = 0;
+				os_flag |= MACHINE_OS_ALTIRRA;
+				os_flag_encountered = TRUE;
+			}
+			else if (strcmp(argv[i], "-atari") == 0) {
+				if (!os_flag_encountered) os_flag = 0;
+				os_flag |= MACHINE_OS_ATARI;
+				os_flag_encountered = TRUE;
+			}
+			else {
+				printf("WARNING: ignoring unknown argument %s\n", argv[i]);
+			}
 		}
 		else {
 			int machine_index, success;
 			machine_config_t *machine = machine_config;
 			int cart_kb = guess_cart_kb(argv[i]);
 			while (machine->label) {
-				run_machine(machine, argv[i], num_frames, cart_kb, verbose);
+				if (machine->type & machine_flag && machine->type & os_flag) {
+					if (verbose > 1) {
+						printf("trying %s\n", machine->label);
+					}
+					run_machine(machine, argv[i], num_frames, cart_kb, verbose);
+				}
+				else if (verbose > 1) {
+					printf("skipping %s\n", machine->label);
+				}
 				machine++;
 			}
 		}
