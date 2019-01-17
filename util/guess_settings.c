@@ -13,6 +13,10 @@
 #define MACHINE_OS_ALTIRRA 0x200
 #define MACHINE_OS_ALL (MACHINE_OS_ATARI | MACHINE_OS_ALTIRRA)
 
+#define MACHINE_VIDEO_NTSC 0x1000
+#define MACHINE_VIDEO_PAL 0x2000
+#define MACHINE_VIDEO_ALL (MACHINE_VIDEO_NTSC | MACHINE_VIDEO_PAL)
+
 typedef struct {
 	char *label;
 	int type;
@@ -21,20 +25,20 @@ typedef struct {
 } machine_config_t;
 
 machine_config_t machine_config[] = {
-	"400/800 NTSC OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI, 400, {"-atari", "-ntsc", NULL},
-	"400/800 PAL  OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI, 400, {"-atari", "-pal", NULL},
-	"400/800 NTSC Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA, 400, {"-atari", "-ntsc", "-800-rev", "altirra", NULL},
-	"400/800 PAL  Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA, 400, {"-atari", "-pal", "-800-rev", "altirra", NULL},
-	"64k XL  NTSC XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI, 400, {"-xl", "-ntsc", NULL},
-	"64k XL  PAL  XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI, 400, {"-xl", "-pal", NULL},
-	"64k XL  NTSC Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA, 400, {"-xl", "-ntsc", "-xl-rev", "altirra", NULL},
-	"64k XL  PAL  Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA, 400, {"-xl", "-pal", "-xl-rev", "altirra", NULL},
-	"128k XE NTSC XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI, 400, {"-xe", "-ntsc", NULL},
-	"128k XE PAL  XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI, 400, {"-xe", "-pal", NULL},
-	"128k XE NTSC Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA, 400, {"-xe", "-ntsc", "-xl-rev", "altirra", NULL},
-	"128k XE PAL  Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA, 400, {"-xe", "-pal", "-xl-rev", "altirra", NULL},
-	"5200    NTSC Atari  ", MACHINE_TYPE_5200 | MACHINE_OS_ATARI, 400, {"-5200", "-ntsc", NULL},
-	"5200    NTSC Altirra", MACHINE_TYPE_5200 | MACHINE_OS_ALTIRRA, 400, {"-5200", "-ntsc", "-5200-rev", "altirra", NULL},
+	"400/800 NTSC OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-atari", "-ntsc", NULL},
+	"400/800 PAL  OS/B   ", MACHINE_TYPE_800 | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-atari", "-pal", NULL},
+	"400/800 NTSC Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-atari", "-ntsc", "-800-rev", "altirra", NULL},
+	"400/800 PAL  Altirra", MACHINE_TYPE_800 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-atari", "-pal", "-800-rev", "altirra", NULL},
+	"64k XL  NTSC XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-xl", "-ntsc", NULL},
+	"64k XL  PAL  XL ROM ", MACHINE_TYPE_XL | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-xl", "-pal", NULL},
+	"64k XL  NTSC Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-xl", "-ntsc", "-xl-rev", "altirra", NULL},
+	"64k XL  PAL  Altirra", MACHINE_TYPE_XL | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-xl", "-pal", "-xl-rev", "altirra", NULL},
+	"128k XE NTSC XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-xe", "-ntsc", NULL},
+	"128k XE PAL  XL ROM ", MACHINE_TYPE_XE  | MACHINE_OS_ATARI | MACHINE_VIDEO_PAL, 400, {"-xe", "-pal", NULL},
+	"128k XE NTSC Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-xe", "-ntsc", "-xl-rev", "altirra", NULL},
+	"128k XE PAL  Altirra", MACHINE_TYPE_XE  | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_PAL, 400, {"-xe", "-pal", "-xl-rev", "altirra", NULL},
+	"5200    NTSC Atari  ", MACHINE_TYPE_5200 | MACHINE_OS_ATARI | MACHINE_VIDEO_NTSC, 400, {"-5200", "-ntsc", NULL},
+	"5200    NTSC Altirra", MACHINE_TYPE_5200 | MACHINE_OS_ALTIRRA | MACHINE_VIDEO_NTSC, 400, {"-5200", "-ntsc", "-5200-rev", "altirra", NULL},
 	NULL, 0, 400, {NULL},
 };
 
@@ -357,6 +361,8 @@ int main(int argc, char **argv) {
 	int machine_flag_encountered = FALSE;
 	int os_flag = MACHINE_OS_ALL;
 	int os_flag_encountered = FALSE;
+	int video_flag = MACHINE_VIDEO_ALL;
+	int video_flag_encountered = FALSE;
 	int num_frames = 1000;
 
 	int i;
@@ -398,6 +404,16 @@ int main(int argc, char **argv) {
 				os_flag |= MACHINE_OS_ATARI;
 				os_flag_encountered = TRUE;
 			}
+			else if (strcmp(argv[i], "-ntsc") == 0) {
+				if (!video_flag_encountered) video_flag = 0;
+				video_flag |= MACHINE_VIDEO_NTSC;
+				video_flag_encountered = TRUE;
+			}
+			else if (strcmp(argv[i], "-pal") == 0) {
+				if (!video_flag_encountered) video_flag = 0;
+				video_flag |= MACHINE_VIDEO_PAL;
+				video_flag_encountered = TRUE;
+			}
 			else {
 				printf("WARNING: ignoring unknown argument %s\n", argv[i]);
 			}
@@ -407,7 +423,7 @@ int main(int argc, char **argv) {
 			machine_config_t *machine = machine_config;
 			int cart_kb = guess_cart_kb(argv[i]);
 			while (machine->label) {
-				if (machine->type & machine_flag && machine->type & os_flag) {
+				if (machine->type & machine_flag && machine->type & os_flag && machine->type & video_flag) {
 					if (verbose > 1) {
 						printf("trying %s\n", machine->label);
 					}
