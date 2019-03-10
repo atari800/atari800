@@ -996,7 +996,7 @@ A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],
           IDE,[Define to add IDE harddisk emulation.]
          )
-if [[ "$WANT_IDE" == "yes" ]]; then
+if [[ "$WANT_IDE" = "yes" ]]; then
     AC_SYS_LARGEFILE
     AC_FUNC_FSEEKO
 fi
