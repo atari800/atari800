@@ -44,70 +44,6 @@ static size_t bufferSize;
 static int isLogicalBufferActive;
 static SndBufPtr soundBufferPtr;
 static size_t soundBufferWritten;
-static int audioSaved;
-static unsigned short saveAudioBuffer[9];
-#define HW_REG8(x) *((volatile unsigned char*)(x))
-#define HW_REG16(x) *((volatile unsigned short*)(x))
-
-static void saveAudio(void)
-{
-	unsigned char* pBuffer8;
-	unsigned short* pBuffer16;
-
-	if (!audioSaved) {
-		pBuffer16 = saveAudioBuffer;
-		*pBuffer16++ = HW_REG16(0xffff8930);
-		*pBuffer16++ = HW_REG16(0xffff8932);
-
-		pBuffer8 = (unsigned char*)pBuffer16;
-		*pBuffer8++ = HW_REG8(0xffff8934);
-		*pBuffer8++ = HW_REG8(0xffff8935);
-		*pBuffer8++ = HW_REG8(0xffff8936);
-		*pBuffer8++ = HW_REG8(0xffff8937);
-		*pBuffer8++ = HW_REG8(0xffff8938);
-		*pBuffer8++ = HW_REG8(0xffff8939);
-		/**pBuffer8++ = HW_REG8(0xffff893a);*/
-		*pBuffer8++ = HW_REG8(0xffff893c);
-		*pBuffer8++ = HW_REG8(0xffff8941);
-		*pBuffer8++ = HW_REG8(0xffff8943);
-		*pBuffer8++ = HW_REG8(0xffff8900);
-		*pBuffer8++ = HW_REG8(0xffff8901);
-		*pBuffer8++ = HW_REG8(0xffff8920);
-		*pBuffer8++ = HW_REG8(0xffff8921);
-
-		audioSaved = TRUE;
-	}
-}
-
-static void restoreAudio(void)
-{
-	unsigned char* pBuffer8;
-	unsigned short* pBuffer16;
-
-	if (audioSaved) {
-		pBuffer16 = saveAudioBuffer;
-		HW_REG16(0xffff8930) = *pBuffer16++;
-		HW_REG16(0xffff8932) = *pBuffer16++;
-
-		pBuffer8 = (unsigned char*)pBuffer16;
-		HW_REG8(0xffff8934) = *pBuffer8++;
-		HW_REG8(0xffff8935) = *pBuffer8++;
-		HW_REG8(0xffff8936) = *pBuffer8++;
-		HW_REG8(0xffff8937) = *pBuffer8++;
-		HW_REG8(0xffff8938) = *pBuffer8++;
-		HW_REG8(0xffff8939) = *pBuffer8++;
-		/*HW_REG8(0xffff893a) = *pBuffer8++;*/
-		HW_REG8(0xffff893c) = *pBuffer8++;
-		HW_REG8(0xffff8941) = *pBuffer8++;
-		HW_REG8(0xffff8943) = *pBuffer8++;
-		HW_REG8(0xffff8900) = *pBuffer8++;
-		HW_REG8(0xffff8901) = *pBuffer8++;
-		HW_REG8(0xffff8920) = *pBuffer8++;
-		HW_REG8(0xffff8921) = *pBuffer8++;
-
-		audioSaved = FALSE;
-	}
-}
 
 unsigned int PLATFORM_SoundAvailable(void)
 {
@@ -244,8 +180,6 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	pPhysical = pBuffer;
 	pLogical = pBuffer + bufferSize;
 
-	Supexec(saveAudio);
-
 	Sndstatus(SND_RESET);
 
 	if (Devconnect(DMAPLAY, DAC, CLK25M, clk, NO_SHAKE) != 0) {
@@ -266,8 +200,6 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	return TRUE;
 
 error:
-	Supexec(restoreAudio);
-
 	Mfree(pBuffer);
 	pBuffer = NULL;
 
@@ -277,8 +209,6 @@ error:
 void PLATFORM_SoundExit(void)
 {
 	Buffoper(0x00);
-
-	Supexec(restoreAudio);
 
 	if (pBuffer != NULL) {
 		Mfree(pBuffer);
