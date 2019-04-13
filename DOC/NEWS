@@ -13,8 +13,6 @@ Version 4.1.0 (2019/04/13) - release cooked at Atariada.cz (again :-)
 
   * joyhat support for all four real joysticks, configurable in CLI/cfg/TUI
 
-  * --enable-cyclesperopcode for best performance
-
 
  Notable changes:
  ----------------
@@ -35,10 +33,10 @@ Version 4.1.0 (2019/04/13) - release cooked at Atariada.cz (again :-)
  Port specific improvements:
  ---------------------------
  == Atari Falcon ==
-  * Fixed videl.asm xbios typo error
-  * no VsetRGB/VgetRGB
-  * AES-less env support
-  * replace C2P with MMU friendly and faster code
+  * More Videl/screen handling fixes
+  * Ability to run Atari800 in an AES-less environment
+  * Replaced C2P with MMU friendly and faster code
+  * Atari800 should run on all TOS clones with XBIOS Sound API
 
  == Android ==
   * Fixed building of the Android target, broken in the previous release.
@@ -58,6 +56,7 @@ Version 4.1.0 (2019/04/13) - release cooked at Atariada.cz (again :-)
  General Fixes:
  --------------
   * updated build documentation
+  * it is possible to build atari800 out of source tree
   * unconnected host joysticks initialized properly, fixes the MULE game
 
 
