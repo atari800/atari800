@@ -35,20 +35,32 @@ C counter part are available for the assembler core as well. That is also the
 reason why all executables (except the FireBee, naturally) have the fast
 assembler core included! No more dilemmas about speed vs. compatibility.
 
-ATARISDL.GTP    - XBIOS audio, SDL video, cycle exact 6502/ANTIC
-ATARI800.GTP    - XBIOS audio, GEM/Videl video, cycle exact 6502/ANTIC
-ATARIFST.GTP    - XBIOS audio, GEM/Videl video, inexact 6502/ANTIC (fastest)
+===========================================================================
+All m68k versions are built with following switches:
 
-ATARI_CF.GTP    - same as ATARISDL.GTP but for the FireBee (ColdFire build) and
-                  without the m68k optimized emulation core
+--host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --with-readline=no
 
-The following script might be used for rebuilding the fastest and smallest
-possible version (although they are not all used in the released binaries):
-============================== make.sh ====================================
-#!/bin/sh
-./configure --host=m68k-atari-mint --disable-newcycleexact --without-sound --enable-veryslow --disable-monitorbreak --target=falcon --enable-falconcpuasm --disable-monitorhints --disable-crashmenu --disable-monitorasm --with-readline=no --disable-eventrecording
-make clean
-time make
+Then specifically:
+
+ATARI800.GTP (XBIOS audio, GEM/Videl video, cycle exact 6502/ANTIC)
+CFLAGS='-m68020-60' --target=falcon --enable-falconcpuasm
+
+ATARIFST.GTP (XBIOS audio, GEM/Videl video, inexact 6502/ANTIC)
+CFLAGS='-m68020-60' --target=falcon --enable-falconcpuasm --disable-newcycleexact
+(fastest version, you can gain a few % by adding --without-sound)
+
+ATARISDL.GTP (XBIOS audio, SDL video, cycle exact 6502/ANTIC)
+# point to -m68020-60 aware `sdl-config`
+PATH=$HOME/gnu-tools/m68000/m68k-atari-mint/bin:$PATH
+CFLAGS='-m68020-60' --target=default --enable-falconcpuasm
+
+ATARI_CF.GTP (ATARISDL.GTP for the FireBee, without asm emulation core)
+# point to -mcpu=5475 aware `sdl-config`
+PATH=$HOME/gnu-tools/m68000/m68k-atari-mint/bin:$PATH
+CFLAGS='-mcpu=5475' --target=default --enable-pagedattrib --enable-cyclesperopcode
+
+Then for all versions:
+
 m68k-atari-mint-stack --fix=256k atari800
 ===========================================================================
 
