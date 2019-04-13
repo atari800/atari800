@@ -162,7 +162,7 @@ if [[ "$a8_target" = "android" ]]; then
 	WANT_EVENT_RECORDING=no
 	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
 fi
-if [[ "$a8_target" = "falcon" ]]; then
+if [[ "$a8_host" = "falcon" ]]; then
 	CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall"
 	LDFLAGS="-m68020-60"
 fi
@@ -1086,7 +1086,7 @@ AM_CONDITIONAL([WITH_OPENGL], test "$with_opengl" = "yes")
 
 dnl Select host/target specific features...
 
-if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
+if [[ "$a8_host" = "falcon" ]]; then
     A8_OPTION(falconcpuasm,no,
               [Use m68k assembler CPU core for Falcon target (default=OFF)],
               FALCON_CPUASM,[Define to use m68k assembler CPU core for Falcon target.]
@@ -1227,7 +1227,7 @@ if [[ "$with_sound" != no ]]; then
 else
     echo "    (Sound sub-options disabled)"
 fi
-if [[ "$a8_target" = "falcon" ]]; then
+if [[ "$a8_host" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
 fi
 if [[ "$a8_host" = "linux" ]]; then
