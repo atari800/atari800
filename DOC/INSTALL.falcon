@@ -1,4 +1,4 @@
-                                                                      Oct 2017
+                                                                      Apr 2019
 
     Hi all Atari users,
 
@@ -7,7 +7,8 @@ computers. It should run on any computer with 68030 or higher CPU and a graphics
 capable of resolution 320x240 (or higher) in 256 colors. Atari800 contains
 special routines for direct VIDEL programming (for achieving 336x240 resolution
 on RGB/VGA monitors) and also dedicated NOVA (ISA ATI Mach64) and SuperVidel
-graphics support.
+graphics support. For proper sound output on the TT it requires installation
+of an XBIOS sound emulator like STFA or X-Sound.
 
 Atari800 had originally been developed by David Firth though it's been a
 community project for more than 15 years already. The Falcon port was initially
