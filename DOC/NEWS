@@ -1,13 +1,19 @@
-Version ?.?.? (????/??/??)
+Version 4.1.0 (2019/04/13) - release cooked at Atariada.cz (again :-)
+==========================
 
  New Features:
  -------------
   * Atari800 now includes Altirra BIOS-es for all emulated systems: 400/800,
     XL/XE, and 5200; as well as Altirra BASIC. It is now possible to use the
     emulator without providing any ROM images.
-  * The Altirra OS-es and Altirra BASIC can now be selected by user in the
-    "System settings", if he wants to use them. Previously Altirra OS was used
+
+  * The Altirra OS-es and Altirra BASIC can now be selected by users in the
+    "System settings", if they want to use them. Previously Altirra OS was used
     automatically only when no other OS ROMs were found.
+
+  * joyhat support for all four real joysticks, configurable in CLI/cfg/TUI
+
+  * --enable-cyclesperopcode for best performance
 
 
  Notable changes:
@@ -16,6 +22,7 @@ Version ?.?.? (????/??/??)
     from DOC/INSTALL to a new file, DOC/BUILD.windows. This document
     has also been expanded with a new chapter covering building Atari800 using
     MSYS2.
+
   * Ability to use the built-in EmuOS firmware has been removed. Users wishing
     to run Atari800 without providing OS ROMs now have an option of using the
     built-in Altirra OS-es, which are compatible with much more Atari software
@@ -25,12 +32,37 @@ Version ?.?.? (????/??/??)
     configure option.
 
 
+ Port specific improvements:
+ ---------------------------
+ == Atari Falcon ==
+  * Fixed videl.asm xbios typo error
+  * no VsetRGB/VgetRGB
+  * AES-less env support
+  * replace C2P with MMU friendly and faster code
+
+ == Android ==
+  * Fixed building of the Android target, broken in the previous release.
+  * Fixed labels on console keys (unreadable on hi-res displays)
+  * Fixed console keys press detection
+  * Fixed "right-handed joystick" trigger press
+
+ == Raspberry Pi ==
+  * updated build documentation
+  * find proper Broadcom GLes libraries
+  * fixed bug in GRAPHICS 9 (shifted colors)
+
+ == MS Windows ==
+  * updated build documentation
+
+
  General Fixes:
  --------------
-  * Fixed building of the Android target, broken in the previous release.
+  * updated build documentation
+  * unconnected host joysticks initialized properly, fixes the MULE game
 
 
 Version 4.0.0 (2018/04/21) - release cooked at Atariada.cz
+==========================
 
  This release brings four years of hard work of fellow Atari800 developers
  on improvements and bugfixes of our favorite Atari emulator.
@@ -119,6 +151,7 @@ Version 4.0.0 (2018/04/21) - release cooked at Atariada.cz
 
 
 Version 3.1.0 (2014/04/12) - release cooked at Atariada.cz
+==========================
 
   Highlight of this release: Raspberry Pi port by Andrey Dj
 
@@ -155,6 +188,7 @@ Version 3.1.0 (2014/04/12) - release cooked at Atariada.cz
 
 
 Version 3.0.0 (2013/03/03)
+==========================
 
  New features:
  -------------
@@ -274,6 +308,7 @@ Version 3.0.0 (2013/03/03)
 
 
 Version 2.2.1 (2011/04/28)
+==========================
 
   Quick update fixing some annoying bugs from the previous release
   and adding some new host screen optimizations and improvements:
@@ -294,6 +329,7 @@ Version 2.2.1 (2011/04/28)
 
 
 Version 2.2.0 (2011/04/02)
+==========================
 
  Another update after two long years. A lot of changes and major improvements:
 
