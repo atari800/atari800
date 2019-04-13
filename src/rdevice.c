@@ -354,13 +354,13 @@ static void xio_34(void)
 ---------------------------------------------------------------------------*/
 static void xio_36(void)
 {
-  int aux1, aux2;
+  int aux1;
 #if defined(R_SERIAL) && !defined(DREAMCAST)
   struct termios options;
 #endif /* defined(R_SERIAL) && !defined(DREAMCAST) */
 
   aux1 = MEMORY_dGetByte(Devices_ICAX1Z);
-  aux2 = MEMORY_dGetByte(Devices_ICAX2Z);
+  /* aux2 = MEMORY_dGetByte(Devices_ICAX2Z); */
 
 #ifdef R_SERIAL
   if(RDevice_serial_enabled)
