@@ -10,7 +10,7 @@ TAG="ATARI800_"$VER_MAJOR"_"$VER_MINOR"_"$VER_MICRO
 #upper case the tag
 TAG=`echo $TAG | tr [:lower:] [:upper:]`
 FOLDER="atari800-"$VERSION
-FNAME=$FOLDER".tar.gz"
+FNAME=$FOLDER"-src.tgz"
 #
 echo "download from GitHub? (y/N)"
 read key
@@ -44,11 +44,11 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 #
-cd atari800/src
+cd atari800
 ./autogen.sh
 # remove leftovers from autogen process
 rm -f autogen.sh config.cache config.log
 rm -rf autom4te.cache
-cd ../..
+cd ..
 mv atari800 $FOLDER
 GZIP=--best tar chozvf $FNAME $FOLDER
