@@ -163,7 +163,7 @@ if [[ "$a8_target" = "android" ]]; then
 	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
 fi
 if [[ "$a8_host" = "falcon" ]]; then
-	CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall"
+	CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
 	LDFLAGS="-m68020-60"
 fi
 
@@ -177,8 +177,7 @@ AC_PROG_RANLIB
 AC_CHECK_TOOLS(WINDRES, [windres], :)
 
 AC_DEFUN([AM_PROG_AS], []) dnl dummy to make automake happy, since vasm is used instead
-dnl CCAS=vasm
-CCAS=/home/mikro/atari/compilers/vasm-2018-10-05/vasmm68k_mot
+CCAS=vasm
 CCASFLAGS="-quiet -devpac -opt-allbra -Faout"
 
 a8_use_sdl=no
