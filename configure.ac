@@ -30,7 +30,7 @@ AC_CONFIG_MACRO_DIR([m4])
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    default | falcon | firebee | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -49,6 +49,7 @@ case "$target" in
         echo "    default          (autodetect available graphics and sound libraries)"
         echo "    android          (Android devices)"
         echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint)"
+        echo "    firebee          (FireBee: set --host=m68k-atari-mint)"
         echo "    ps2              (Sony PlayStation 2)"
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
@@ -107,7 +108,12 @@ case $host_os in
         a8_host="linux"
         ;;
     mint)
-        a8_host="falcon"
+        if [[ "$a8_target" = "firebee" ]]; then
+            a8_host=firebee
+            a8_target=default
+        else
+            a8_host=falcon
+        fi
         AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
@@ -166,7 +172,10 @@ if [[ "$a8_host" = "falcon" ]]; then
 	CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
 	LDFLAGS="-m68020-60"
 fi
-
+if [[ "$a8_host" = "firebee" ]]; then
+	CFLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
+	LDFLAGS="-mcpu=5475"
+fi
 
 dnl Check for programs...
 
@@ -839,7 +848,7 @@ if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
                 ])
         fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = falcon ]]; then
-            if [[ "$a8_host" = falcon ]]; then
+            if [[ "$a8_host" = falcon -o "$a8_host" = firebee ]]; then
                 with_sound=falcon
             elif [[ "$with_sound" = falcon ]]; then
                 AC_MSG_ERROR([--with-sound=falcon was given, but host system is not Falcon!])
@@ -1273,7 +1282,7 @@ if [[ "$WANT_VERY_SLOW" = "yes" ]]; then
 		if [[ "$WANT_PAGED_ATTRIB" != "yes" ]]; then
 			echo "Have you tried --enable-pagedattrib ?"
 		fi
-		if [[ "$CYCLES_PER_OPCODE" != "yes" ]]; then
+		if [[ "$WANT_CYCLES_PER_OPCODE" != "yes" ]]; then
 			echo "Have you tried --enable-cyclesperopcode ?"
 		fi
 	fi
