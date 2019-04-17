@@ -51,12 +51,12 @@ ATARIFST.GTP (XBIOS audio, GEM/Videl video, inexact 6502/ANTIC)
 
 ATARISDL.GTP (XBIOS audio, SDL video, cycle exact 6502/ANTIC)
 # point to -m68020-60 aware `sdl-config`
-PATH=$HOME/gnu-tools/m68000/m68k-atari-mint/bin:$PATH
+PATH=$HOME/gnu-tools/m68k-atari-mint/bin/m68020-60:$PATH
 --target=default --enable-falconcpuasm
 
 ATARI_CF.GTP (ATARISDL.GTP for the FireBee, without asm emulation core)
 # point to -mcpu=5475 aware `sdl-config`
-PATH=$HOME/gnu-tools/m68000/m68k-atari-mint/bin:$PATH
+PATH=$HOME/gnu-tools/m68k-atari-mint/bin/m5475:$PATH
 --target=firebee --enable-pagedattrib --enable-cyclesperopcode
 
 Then for all versions:
