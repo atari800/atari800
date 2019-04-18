@@ -101,6 +101,7 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	int diff50, diff33, diff25, diff20, diff16, diff12, diff10, diff8;
 	int clk;
 	int xbiosApiPresent = FALSE;
+	int extendedXbiosApi = FALSE;
 	int compatiblePrescaler = FALSE;
 
 	if (Sound_enabled) {
@@ -123,13 +124,16 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 		}
 		/* virtually all APIs have bit #2 set */
 		xbiosApiPresent = (cookie & SND_16BIT) != 0 || (cookie & SND_EXT) != 0;
+		extendedXbiosApi = (cookie & SND_EXT) != 0;
 	} else {
 		/* Try XBIOS API emulators which do not set '_SND' */
 		if (Getcookie(C_STFA, &cookie) == C_FOUND) {	/* STFA (8-bit/16-bit) */
 			xbiosApiPresent = TRUE;
+			extendedXbiosApi = TRUE;
 			compatiblePrescaler = TRUE;
 		} else if (Getcookie(C_McSn, &cookie) == C_FOUND) {	/* X-SOUND (8-bit/16-bit) or MacSound (16-bit) */
 			xbiosApiPresent = TRUE;
+			extendedXbiosApi = TRUE;
 			/* Soundcmd(SETPRESCALE, ...) is actually ignored */
 		}
 	}
@@ -234,10 +238,10 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	pPhysical = pBuffer;
 	pLogical = pBuffer + bufferSize;
 
-	if (Devconnect(DMAPLAY, DAC, CLK25M, compatiblePrescaler ? CLKOLD : clk, NO_SHAKE) != 0) {
-		/* for some reason, Devconnect() returns error in memory protection mode... */
-		/*goto error;*/
-	} /*else*/ if (compatiblePrescaler) {
+	if (Devconnect(DMAPLAY, DAC, CLK25M, compatiblePrescaler ? CLKOLD : clk, NO_SHAKE) != 0 && extendedXbiosApi) {
+		/* Devconnect's return value on Falcon is broken! */
+		goto error;
+	} else if (compatiblePrescaler) {
 		Soundcmd(SETPRESCALE, clk);
 	}
 
