@@ -62,6 +62,11 @@ PATH=$HOME/gnu-tools/m68k-atari-mint/bin/m5475:$PATH
 Then for all versions:
 
 m68k-atari-mint-stack --fix=256k atari800
+m68k-atari-mint-flags -S atari800
+
+The `flags` command is needed to run properly on machines with memory protection
+enabled because atari800 hooks on the system keyboard vector and in case of the
+SDL version maybe also a few others.
 ===========================================================================
 
 Keyboard emulation works just like in other Atari800 flavors:
