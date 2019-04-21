@@ -108,6 +108,10 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 		PLATFORM_SoundExit();
 	}
 
+	if (Locksnd() < 0) {
+		return FALSE;
+	}
+
 	if (Getcookie(C__SND, &cookie) == C_FOUND) {
 		if (setup->sample_size == 1 && !(cookie & SND_8BIT)) {
 			if (cookie & SND_16BIT) {
@@ -268,6 +272,8 @@ void PLATFORM_SoundExit(void)
 		Mfree(pBuffer);
 		pBuffer = NULL;
 	}
+
+	Unlocksnd();
 }
 
 void PLATFORM_SoundPause(void)
