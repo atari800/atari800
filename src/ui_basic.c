@@ -733,13 +733,14 @@ static int BasicUIOpenDir(const char *dirname)
 	return TRUE;
 }
 
-static int BasicUIReadDir(char *filename, int *isdir)
+static int BasicUIReadDir(char *filename, int *isdir, int *ishidden)
 {
 	if (dh == INVALID_HANDLE_VALUE) {
 #ifdef _WIN32_WCE
 		if (parentdir[0] != '\0' && Util_direxists(parentdir)) {
 			strcpy(filename, "..");
 			*isdir = TRUE;
+			*ishidden = FALSE;
 			parentdir[0] = '\0';
 			return TRUE;
 		}
@@ -758,6 +759,7 @@ static int BasicUIReadDir(char *filename, int *isdir)
 		parentdir[0] = '\0';
 #endif
 	*isdir = (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
+	*ishidden = (wfd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) ? TRUE : FALSE;
 	if (!FindNextFile(dh, &wfd)) {
 		FindClose(dh);
 		dh = INVALID_HANDLE_VALUE;
@@ -779,7 +781,7 @@ static int BasicUIOpenDir(const char *dirname)
 	return dp != NULL;
 }
 
-static int BasicUIReadDir(char *filename, int *isdir)
+static int BasicUIReadDir(char *filename, int *isdir, int *ishidden)
 {
 	struct dirent *entry;
 	char fullfilename[FILENAME_MAX];
@@ -794,6 +796,7 @@ static int BasicUIReadDir(char *filename, int *isdir)
 	Util_catpath(fullfilename, dir_path, entry->d_name);
 	stat(fullfilename, &st);
 	*isdir = S_ISDIR(st.st_mode);
+	*ishidden = strlen(entry->d_name) > 1 && entry->d_name[0] == '.' && entry->d_name[1] != '.';
 	return TRUE;
 }
 
@@ -903,13 +906,14 @@ static void GetDirectory(const char *directory)
 
 	if (BasicUIOpenDir(directory)) {
 		char filename[FILENAME_MAX];
-		int isdir;
+		int isdir, ishidden;
 
-		while (BasicUIReadDir(filename, &isdir)) {
+		while (BasicUIReadDir(filename, &isdir, &ishidden)) {
 			char *filename2;
 
 			if (filename[0] == '\0' ||
-				(filename[0] == '.' && filename[1] == '\0'))
+				(filename[0] == '.' && filename[1] == '\0') ||
+				(ishidden && !UI_show_hidden_files))
 				continue;
 
 			if (isdir) {
