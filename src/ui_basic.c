@@ -813,10 +813,10 @@ static int BasicUIOpenDir(const char *dirname)
 	return Atari_OpenDir(filename);
 }
 
-int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
+int Atari_ReadDir(char *fullpath, char *filename, int *isdir, int *ishidden,
                   int *readonly, int *size, char *timetext);
 
-#define BasicUIReadDir(filename, isdir)  Atari_ReadDir(NULL, filename, isdir, NULL, NULL, NULL)
+#define BasicUIReadDir(filename, isdir, ishidden)  Atari_ReadDir(NULL, filename, isdir, ishidden, NULL, NULL, NULL)
 
 #define DO_DIR
 
