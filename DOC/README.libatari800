@@ -1,11 +1,86 @@
-Build instructions for using atari800 as a library
---------------------------------------------------
+ATARI800 AS A LIBRARY
+=====================
 
-This target requires no external libraries and is platform independent. It is also not useful by itself; instead it is designed for developers to embed the emulator into another program.
+Libatari800 is a build target of the atari800 emulator that produces a static
+library suitable for embedding in other programs. See the INSTALL file for
+complete build instructions, but in most cases it can be compiled from the top
+level source directory using:
 
-See the INSTALL file for compilation instructions. A test program is built
-automatically (but not installed) when the compile target is libatari800. It is
-built in the src directory and can be run from there with:
+    ./configure --target=libatari800
+    make
+
+This target requires no external libraries and is platform independent. It is
+also not useful by itself; instead it is designed for developers to embed the
+emulator into another program.
+
+Two sample programs are also compiled (but not installed) that demonstrate the
+usage of the library: guess_settings and libatari800_test.
+
+Using libatari800 to guess emulator settings
+--------------------------------------------
+
+The demo program guess_settings (source in util/guess_settings.c) attempts to
+guess the major emulator settings (parameters like machine type, operating
+system type, and PAL/NTSC) by running the emulator as fast as possible. If a
+failure is detected (like hitting a BRK instruction, crashing the computer, or
+entering the memo pad/self-test mode) the failure is noted and the next
+permutation is checked.
+
+If the source image is a cartridge and the cartridge type is unknown, all
+cartridge types that match the source size are checked in turn. This can
+greatly increase the number of permutations.
+
+A success is determined by the absence of failure conditions in a specified
+number of frames (default of 1000).
+
+The program is built automatically (but not installed) when the compile target
+is libatari800. It is built in the src directory and can be run from there
+with:
+
+    src/guess_settings [options] [name_of_image]
+
+For example:
+
+    $ src/guess_settings test.xex
+    test.xex: 400/800 NTSC OS/B    status: OK through 1000 frames
+    test.xex: 400/800 PAL  OS/B    status: OK through 1000 frames
+    test.xex: 400/800 NTSC Altirra status: FAIL (CPU crash)
+    test.xex: 400/800 PAL  Altirra status: FAIL (CPU crash)
+    test.xex: 64k XL  NTSC XL ROM  status: FAIL (CPU crash)
+    test.xex: 64k XL  PAL  XL ROM  status: FAIL (CPU crash)
+    test.xex: 64k XL  NTSC Altirra status: FAIL (CPU crash)
+    test.xex: 64k XL  PAL  Altirra status: FAIL (CPU crash)
+    test.xex: 128k XE NTSC XL ROM  status: FAIL (CPU crash)
+    test.xex: 128k XE PAL  XL ROM  status: FAIL (CPU crash)
+    test.xex: 128k XE NTSC Altirra status: FAIL (CPU crash)
+    test.xex: 128k XE PAL  Altirra status: FAIL (CPU crash)
+    test.xex: 5200    NTSC Atari   status: FAIL (CPU crash)
+    test.xex: 5200    NTSC Altirra status: FAIL (CPU crash)
+
+Here's an example with an 8k cartridge image, using additional command line
+arguments to limit the testing to only NTSC XL machines:
+
+     $ src/guess_settings -xl -ntsc test.rom
+    test.rom: 64k XL  NTSC XL ROM  status: OK through 1000 frames (cart=1 'Standard 8 KB')
+    test.rom: 64k XL  NTSC XL ROM  status: FAIL (self test) (cart=21 'Right slot 8 KB')
+    test.rom: 64k XL  NTSC XL ROM  status: OK through 1000 frames (cart=39 'Phoenix 8 KB')
+    test.rom: 64k XL  NTSC XL ROM  status: FAIL (self test) (cart=44 'OSS 8 KB')
+    test.rom: 64k XL  NTSC XL ROM  status: FAIL (BRK instruction) (cart=53 'Low bank 8 KB')
+    test.rom: 64k XL  NTSC XL ROM  status: FAIL (unidentified cartridge)
+    test.rom: 64k XL  NTSC Altirra status: OK through 1000 frames (cart=1 'Standard 8 KB')
+    test.rom: 64k XL  NTSC Altirra status: FAIL (self test) (cart=21 'Right slot 8 KB')
+    test.rom: 64k XL  NTSC Altirra status: OK through 1000 frames (cart=39 'Phoenix 8 KB')
+    test.rom: 64k XL  NTSC Altirra status: FAIL (self test) (cart=44 'OSS 8 KB')
+    test.rom: 64k XL  NTSC Altirra status: FAIL (self test) (cart=53 'Low bank 8 KB')
+    test.rom: 64k XL  NTSC Altirra status: FAIL (unidentified cartridge)
+
+
+Using libatari800 to generate video frames
+------------------------------------------
+
+The test program libatari800_test (source in util/libatari800_test.c) is also
+built but not installed with the libatari800 compile target. It can be run
+using:
 
     src/libatari800_test
 
@@ -14,13 +89,9 @@ frames of emulation, simulates the 'A' key being pressed and held down to print
 a bunch of "A" characters on the screen. A simple representation of the screen
 is displayed as text output from your terminal command line.
 
-See the source of this test file in:
 
-    util/libatari800_test.c
-
-
-Overview
---------
+LIBRARY OVERVIEW
+================
 
 The basic operation of the library is to generate one video frame of emulation,
 which is equivalent to about 30,000 machine cycles on a 60 Hz NTSC system. The
