@@ -50,6 +50,10 @@
 #include "input.h"
 #include "pbi.h"
 
+#ifdef POKEYREC
+#include "pokeyrec.h"
+#endif
+
 #ifdef VOICEBOX
 #include "voicebox.h"
 #include "votraxsnd.h"
@@ -447,6 +451,10 @@ void POKEY_Frame(void)
 
 void POKEY_Scanline(void)
 {
+#ifdef POKEYREC
+    POKEYREC_Recorder();
+#endif
+
 #ifdef POKEY_UPDATE
 	pokey_update();
 #endif

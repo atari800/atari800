@@ -75,6 +75,7 @@ dnl Silent rules
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 WANT_IDE="yes"
+WANT_POKEYREC="yes"
 
 dnl Set a8_host...
 
@@ -1060,6 +1061,15 @@ if [[ "$WANT_IDE" = "yes" ]]; then
 fi
 AM_CONDITIONAL([WANT_IDE], test "$WANT_IDE" = "yes")
 
+A8_OPTION(pokeyrec,$WANT_POKEYREC,
+          [Provide Pokey registers recording (default=ON)],
+          POKEYREC,[Define to add Pokey registers recording.]
+         )
+if [[ "$WANT_POKEYREC" == "yes" ]]; then
+    AC_SYS_LARGEFILE
+    OBJS="$OBJS pokeyrec.o"
+fi
+
 if [[ "$a8_use_sdl" = yes ]]; then
     A8_OPTION(onscreenkeyboard,no,
               [Enable on-screen keyboard (default=OFF)],
@@ -1267,6 +1277,7 @@ echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using IDE emulation?..................: $WANT_IDE"
+echo "Using Pokey registers recording?......: $WANT_POKEYREC"
 echo "Interface for sound...................: $with_sound"
 if [[ "$with_sound" != no ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
