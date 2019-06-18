@@ -170,7 +170,7 @@ char UI_atari_files_dir[UI_MAX_DIRECTORIES][FILENAME_MAX];
 char UI_saved_files_dir[UI_MAX_DIRECTORIES][FILENAME_MAX];
 int UI_n_atari_files_dir;
 int UI_n_saved_files_dir;
-
+int UI_show_hidden_files = FALSE;
 
 /* User visible routines */
 
