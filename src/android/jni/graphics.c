@@ -51,6 +51,8 @@ int Android_ScreenW = 0;
 int Android_ScreenH = 0;
 int Android_Aspect;
 int Android_CropScreen[] = {0, SCREEN_HEIGHT, SCANLINE_LEN, -SCREEN_HEIGHT};
+int Android_PortPad;
+int Android_CovlHold;
 static struct RECT screenrect;
 static int screenclear;
 int Android_Bilinear;
@@ -173,7 +175,7 @@ int Android_InitGraphics(void)
 	for (i = 0; i < CONK_VERT_MAX; i += 2) {
 		/* translate */
 		conkey_vrt[i    ] += tmp;
-		conkey_vrt[i + 1] += 4;
+		conkey_vrt[i + 1] += (4 + ((Android_ScreenW < Android_ScreenH) ? Android_PortPad : 0));
 	}
 
 	/* Determine location of console keys' labels. */
@@ -235,7 +237,7 @@ int Android_InitGraphics(void)
 		tmp = (h - screenrect.b + 1) / 2;
 		if (tmp < 0)
 			tmp = 0;
-		tmp = (Android_ScreenH - h) + tmp;
+		tmp = (Android_ScreenH - h) + tmp - ((Android_ScreenW < Android_ScreenH) ? Android_PortPad : 0);
 		screenrect.t += tmp;
 		screenclear = TRUE;
 	} else {
@@ -451,8 +453,11 @@ void Update_Overlays(void)
 	switch (c->ovl_visible) {
 	case COVL_READY:
 		if (c->hitkey == CONK_NOKEY)
-			if (!c->statecnt--)
+			c->statecnt -= Android_CovlHold;
+			if (c->statecnt <= 0) {
+				c->statecnt = 0;
 				c->ovl_visible = COVL_FADEOUT;
+			}
 		break;
 	case COVL_FADEOUT:
 		if (c->opacity > OPACITY_CUTOFF)
@@ -468,7 +473,7 @@ void Update_Overlays(void)
 		else {
 			c->ovl_visible = COVL_READY;
 			c->opacity = COVL_MAX_OPACITY;
-			c->statecnt = COVL_HOLD_TIME;
+			c->statecnt = COVL_HOLD_TIME << 1;
 		}
 		break;
 	default: /* COVL_HIDDEN */

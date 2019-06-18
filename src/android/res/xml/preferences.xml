@@ -56,6 +56,21 @@
 			jub:suffix=""
 			jub:min="192"
 			jub:max="240"/>
+		<name.nick.jubanka.colleen.SliderPreference
+			android:key="portpad"
+			android:title="@string/pref_portpad"
+			android:summary="@string/pref_portpad_sum"
+			android:defaultValue="0"
+			jub:suffix=" pixels"
+			jub:min="0"
+			jub:max="128"/>
+		<ListPreference
+			android:key="covlhold"
+			android:title="@string/pref_covlhold"
+			android:summary="@string/pref_covlhold_sum"
+			android:entries="@array/covlhold"
+			android:entryValues="@array/covlhold_values"
+			android:defaultValue="2"/>
 	</PreferenceCategory>
 
 	<PreferenceCategory android:title="@string/preftitle_emulation">

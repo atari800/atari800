@@ -105,6 +105,19 @@
 		<item>2</item>
 	</string-array>
 
+	<string-array name="covlhold">
+		<item>@string/disabled</item>
+		<item>@string/slower</item>
+		<item>@string/normal</item>
+		<item>@string/faster</item>
+	</string-array>
+	<string-array name="covlhold_values">
+		<item>0</item>
+		<item>1</item>
+		<item>2</item>
+		<item>3</item>
+	</string-array>
+
 	<string-array name="changes_strings">
 		<item>@string/changesv1_1a</item>
 		<item>@string/changesv1_2</item>
