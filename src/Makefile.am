@@ -21,7 +21,7 @@ doc_DATA =
 if CONFIGURE_TARGET_LIBATARI800
 lib_LIBRARIES = libatari800.a
 include_HEADERS = libatari800/libatari800.h
-libatari800_a_SOURCES = libatari800/main.c libatari800/main.h libatari800/init.c libatari800/exit.c libatari800/exit.h libatari800/input.c libatari800/input.h libatari800/video.c libatari800/video.h libatari800/statesav.c libatari800/statesav.h
+libatari800_a_SOURCES = libatari800/main.c libatari800/main.h libatari800/init.c libatari800/init.h libatari800/exit.c libatari800/input.c libatari800/input.h libatari800/video.c libatari800/video.h libatari800/statesav.c libatari800/statesav.h libatari800/sound.c libatari800/sound.h
 noinst_PROGRAMS += libatari800_test guess_settings
 libatari800_test_SOURCES = ../util/libatari800_test.c
 libatari800_test_CFLAGS = -Ilibatari800
@@ -337,7 +337,7 @@ doc: readme.html
 EXTRA_DIST = $(doc_DATA) atari800.man
 EXTRA_DIST += joycfg.c mkimg.c
 EXTRA_DIST += win32/atari.rc win32/atari1.ico
-EXTRA_DIST += falcon/c2pmac.asm vtxsmpls.inc
+EXTRA_DIST += vtxsmpls.inc
 EXTRA_DIST += javanvm/UnixRuntime.patch javanvm/atari800.java
 EXTRA_DIST += macosx
 EXTRA_DIST += wince
