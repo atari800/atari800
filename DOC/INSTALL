@@ -53,6 +53,7 @@ many others with a little work):-
 8. SDL (Linux/Unix, Windows, BeOS)
 9. WinCE
 10. Java (various platforms)
+11. Static library version: libatari800
 
 Installed zlib (compression library) enables building the emulator with
 compressed statesave images support. Additionally installed libpng
@@ -201,4 +202,18 @@ you are not providing.
 Legal distribution of Atari800 as an applet cannot include the OS and BASIC
 ROM Files.  You can run without BASIC by using -basic_rom none and Thomas
 Richter's Os++.
+
+Building the libatari800 static library
+---------------------------------------
+
+The libatari800 target requires no external libraries and is platform
+independent. It also has no user interface, as it's designed to be embedded
+into another program that controls the operation of the emulator.
+
+The build procedure is much the same as on most platforms, except for step 4:
+
+4. Type "./configure --target=libatari800".
+
+The resulting libatari800.a file can be linked with user programs to create an
+embedded atari800 emulator.
 

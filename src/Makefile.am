@@ -1,9 +1,14 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
+if CONFIGURE_TARGET_LIBATARI800
+TARGET_BASE_NAME = libatari800.a
+else
 TARGET_BASE_NAME = atari800
+endif
 TARGET = $(TARGET_BASE_NAME)
 
 bin_PROGRAMS = 
+noinst_PROGRAMS =
 
 man1dir = $(mandir)/man1
 
@@ -13,6 +18,18 @@ SUFFIXES = .c .cpp .s .o .h .asm
 
 doc_DATA = 
 
+if CONFIGURE_TARGET_LIBATARI800
+lib_LIBRARIES = libatari800.a
+include_HEADERS = libatari800/libatari800.h
+libatari800_a_SOURCES = libatari800/main.c libatari800/main.h libatari800/init.c libatari800/exit.c libatari800/exit.h libatari800/input.c libatari800/input.h libatari800/video.c libatari800/video.h libatari800/statesav.c libatari800/statesav.h
+noinst_PROGRAMS += libatari800_test guess_settings
+libatari800_test_SOURCES = ../util/libatari800_test.c
+libatari800_test_CFLAGS = -Ilibatari800
+libatari800_test_LDADD = libatari800.a
+guess_settings_SOURCES = ../util/guess_settings.c
+guess_settings_CFLAGS = -Ilibatari800
+guess_settings_LDADD = libatari800.a
+else
 if CONFIGURE_HOST_JAVANVM
 all-local:: $(TARGET_BASE_NAME).jar
 JAVA = java
@@ -22,6 +39,7 @@ if CONFIGURE_TARGET_ANDROID
 all-local:: android
 else
 bin_PROGRAMS += atari800
+endif
 endif
 endif
 
@@ -85,6 +103,9 @@ atari800_SOURCES += sound.c dos/sound_dos.c dos/dos_sb.c dos/dos_sb.h
 endif
 if WITH_SOUND_OSS
 atari800_SOURCES += sound.c sound_oss.c
+endif
+if WITH_SOUND_LIBATARI800
+atari800_SOURCES += sound.c libatari800/sound.c libatari800/sound.h
 endif
 
 
@@ -155,7 +176,10 @@ if WITH_VIDEO_NO
 atari800_SOURCES += atari_basic.c
 else
 # These objects are not compiled when --with-video=no
-atari800_SOURCES += input.c input.h statesav.c statesav.h ui_basic.c ui_basic.h ui.c ui.h
+atari800_SOURCES += input.c input.h statesav.c statesav.h
+if !WITH_VIDEO_LIBATARI800
+atari800_SOURCES += ui_basic.c ui_basic.h ui.c ui.h
+endif
 if !WANT_CURSES_BASIC
 # These objects are not compiled when --with-video=no or --enable-cursesbasic=no
 atari800_SOURCES += \
@@ -228,6 +252,11 @@ atari800_SOURCES += rdevice.c rdevice.h
 endif
 
 
+if CONFIGURE_TARGET_LIBATARI800
+libatari800_a_SOURCES += $(atari800_SOURCES)
+endif
+
+
 # A special rule for SDL_win32_main.c to suppress warnings since this file is
 # from SDL and should not have to be modified
 win32/SDL_win32_main.o: win32/SDL_win32_main.c
@@ -287,6 +316,7 @@ CLEANFILES += win32/*.o win32/*.ro win32/*.bak win32/*~
 CLEANFILES += javanvm/*.o javanvm/*.bak javanvm/*~
 CLEANFILES += atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
 CLEANFILES += android/libs android/obj android/bin android/gen
+CLEANFILES += libatari800/*.o libatari800/*.bak libatari800/*~
 
 DISTCLEANFILES = Makefile configure config.log config.status config.h android/jni/Android.mk
 DISTCLEANFILES += autom4te.cache
@@ -313,6 +343,7 @@ EXTRA_DIST += macosx
 EXTRA_DIST += wince
 EXTRA_DIST += win32/msc
 EXTRA_DIST += amiga
+EXTRA_DIST += libatari800
 EXTRA_DIST += \
 	android/AndroidManifest.xml \
 	android/build.xml \

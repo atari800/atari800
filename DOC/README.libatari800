@@ -1,0 +1,104 @@
+Build instructions for using atari800 as a library
+--------------------------------------------------
+
+This target requires no external libraries and is platform independent. It is also not useful by itself; instead it is designed for developers to embed the emulator into another program.
+
+See the INSTALL file for compilation instructions. A test program is built
+automatically (but not installed) when the compile target is libatari800. It is
+built in the src directory and can be run from there with:
+
+    src/libatari800_test
+
+It is a very simple example. It boots the emulator into Memo Pad, and after 100
+frames of emulation, simulates the 'A' key being pressed and held down to print
+a bunch of "A" characters on the screen. A simple representation of the screen
+is displayed as text output from your terminal command line.
+
+See the source of this test file in:
+
+    util/libatari800_test.c
+
+
+Overview
+--------
+
+The basic operation of the library is to generate one video frame of emulation,
+which is equivalent to about 30,000 machine cycles on a 60 Hz NTSC system. The
+library provides access to the raw screen buffer and other internals like the
+user memory, but produces no output itself. Any video display, sound output, or
+for that matter any user interface is left up to the calling program.
+
+The library will calculate each video frame as fast as it can, with no delay
+and no synchronization to any 50/60 Hz signal at all. It is up to the user
+program to delay the processing of the next frame if real-time operation is
+desired.
+
+This also means that each frame can be calculated much much faster than the
+real hardware, so for example: simulation tasks may be performed very quickly
+and the results can be displayed only after all the processing has been
+completed.
+
+
+Usage
+-----
+
+The call to libatari800_next_frame is the basic interface to the emulator. It
+accepts a pointer to a structure input_template_t, which describes user input
+like the keyboard and joystick state. It performs one full frame's worth of
+emulation, and returns control to the calling function.
+
+The screen array and the state of the current RAM are available at the end of
+every frame for the calling function to present to the user.
+
+NOTE: sound is currently not supported, but will be added as soon as possible.
+
+
+Advanced usage
+--------------
+
+In addition to the screen and memory, the entire internal state of the emulator
+can be examined and even changed between frames. The state save format is used
+to facilitate this, so it is even possible restore the state of the emulator
+from save files generated from another atari800 instance.
+
+State save files are difficult to parse as the size of the file (and indeed
+offsets to elements within the file) can change from frame to frame depending
+on the current state of the emulator or features currently being used. For
+example, changing the number of disk drives in use or even changing the disk
+image to point to a different file on the host file system will alter the size
+of the state save file.
+
+To simplify access and prevent the need for parsing the state save file, some
+offsets into the state save file are created and saved into the statesav_tags_t
+structure. Each entry in the structure points to the first byte in that section
+of the state save buffer. For instance, access to the current program counter
+can be found by:
+
+    unsigned char state[STATESAV_MAX_SIZE];
+    statesav_tags_t tags;
+    unsigned short pc;
+    
+    libatari800_get_current_state(state, &tags);
+    pc = state[tags.pc] + 256 * state[tags.pc + 1]);
+
+
+Overview of source code changes
+-------------------------------
+
+The port-specific code lives in the src/libatari800 directory, but some changes
+were needed in the main source code directory.
+
+The libatari800 port differences include:
+
+* the PNG and LIBZ libraries are deliberately excluded for maximal portability;
+  only the system math library is needed
+
+* the system monitor is excluded, so any ability stop the 6502 other than at
+  the end of a frame is not available.
+
+* the text-based UI to configure the emulator, select cartridges, debug with
+  the monitor, etc. is not included. Everything is left to the calling program.
+
+* the crash menu is excluded
+
+* some instrumentation of the state save file has been added

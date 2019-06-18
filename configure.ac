@@ -30,7 +30,7 @@ AC_CONFIG_MACRO_DIR([m4])
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | firebee | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm)
+    default | falcon | firebee | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | libatari800)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -53,6 +53,7 @@ case "$target" in
         echo "    ps2              (Sony PlayStation 2)"
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
+        echo "    libatari800      (Atari800 as a library (developers only))"
         echo "    x11              (Standard X11)"
         echo "    (x11-)motif      (Motif on X11)"
         echo "    (x11-)shm        (Standard X11 with shared memory extensions)"
@@ -176,6 +177,10 @@ if [[ "$a8_host" = "firebee" ]]; then
 	CFLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
 	LDFLAGS="-mcpu=5475"
 fi
+if [[ "$a8_target" = "libatari800" ]]; then
+    with_readline=no
+    WANT_EVENT_RECORDING=no
+fi
 
 dnl Check for programs...
 
@@ -291,6 +296,9 @@ if [[ "$a8_target" = "android" ]]; then
     LIBS="-lz $LIBS"
     AC_DEFINE(HAVE_LIBZ)
     dnl libm is automatically appended by the build system
+elif [[ "$a8_target" = "libatari800" ]]; then
+    AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
+    AC_CHECK_FUNCS(setjmp)
 else
 	AC_CHECK_LIB(z,gzopen)
 	AC_CHECK_LIB(png,png_get_libpng_ver)
@@ -372,6 +380,9 @@ dnl BeOS has a real issue with redundant-decls
         CFLAGS="$CFLAGS -ansi -pedantic -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
         LDFLAGS="$LDFLAGS -mwindows"
         ;;
+    libatari800)
+        AC_DEFINE(LIBATARI800,1,[Target: Atari800 as a library.])
+        ;;
     x11*)
         AC_DEFINE(X11,1,[Target: Standard X11.])
         AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
@@ -421,6 +432,7 @@ AM_CONDITIONAL([CONFIGURE_TARGET_FALCON], test "$a8_target" = falcon)
 AM_CONDITIONAL([CONFIGURE_TARGET_PS2], test "$a8_target" = ps2)
 AM_CONDITIONAL([CONFIGURE_TARGET_RPI], test "$a8_target" = rpi)
 AM_CONDITIONAL([CONFIGURE_TARGET_WINDX], test "$a8_target" = windx)
+AM_CONDITIONAL([CONFIGURE_TARGET_LIBATARI800], test "$a8_target" = libatari800)
 AM_CONDITIONAL([CONFIGURE_TARGET_X11], test "$WANT_X11" = yes)
 
 
@@ -663,6 +675,7 @@ AM_CONDITIONAL(WITH_VIDEO_JAVANVM, test "$with_video" = javanvm)
 AM_CONDITIONAL(WITH_VIDEO_SDL, test "$with_video" = sdl)
 AM_CONDITIONAL(WITH_VIDEO_DOSVGA, test "$with_video" = dosvga)
 AM_CONDITIONAL(WITH_VIDEO_CURSES, test "$with_video" = curses -o "$with_video" = ncurses -o "$with_video" = pdcurses)
+AM_CONDITIONAL(WITH_VIDEO_LIBATARI800, test "$a8_target" = libatari800)
 AM_CONDITIONAL(WITH_VIDEO_NO, test "$with_video" = no)
 
 
@@ -683,7 +696,12 @@ AC_DEFUN([A8_OPTION],[
     fi
 ])
 
-if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
+if [[ "$a8_target" == "libatari800" ]]; then
+    WANT_NEW_CYCLE_EXACT=yes
+    WANT_VERY_SLOW=no
+    WANT_CRASH_MENU=no
+    WANT_CURSES_BASIC=no
+elif [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
 
     case "$with_video" in
         *curses)
@@ -732,10 +750,15 @@ A8_OPTION(cyclesperopcode,no,
           CYCLES_PER_OPCODE,[Define to update ANTIC counter in each opcode's emulation.]
          )
 
-A8_OPTION(bufferedlog,no,
+if [[ "$a8_target" = libatari800 ]]; then
+    WANT_BUFFERED_LOG=yes
+    AC_DEFINE(BUFFERED_LOG,1,[Define to use buffered debug output.])
+else
+    A8_OPTION(bufferedlog,no,
           [Use buffered debug output (until the graphics mode switches back to text mode) (default=OFF)],
           BUFFERED_LOG,[Define to use buffered debug output.]
          )
+fi
 
 A8_OPTION(altirra_bios,yes,
       [Use Altirra OS to allow operation when real ROMs are not available (default=ON)],
@@ -744,51 +767,62 @@ A8_OPTION(altirra_bios,yes,
 
 AM_CONDITIONAL([WANT_EMUOS_ALTIRRA], test "$WANT_EMUOS_ALTIRRA" = "yes")
 
-A8_OPTION(monitorasm,yes,
-          [Provide an assembler in the monitor (default=ON)],
-          MONITOR_ASSEMBLER,[Define to activate assembler in monitor.]
-         )
+if [[ "$a8_target" = libatari800 ]]; then
+    WANT_MONITOR_ASSEMBLER=no
+    WANT_MONITOR_BREAK=no
+    WANT_MONITOR_BREAKPOINTS=no
+    WANT_MONITOR_HINTS=no
+    WANT_MONITOR_PROFILE=no
+    WANT_MONITOR_TRACE=no
+    WANT_MONITOR_ANSI=no
+    WANT_MONITOR_UTF8=no
+else
+    A8_OPTION(monitorasm,yes,
+              [Provide an assembler in the monitor (default=ON)],
+              MONITOR_ASSEMBLER,[Define to activate assembler in monitor.]
+             )
 
-A8_OPTION(monitorbreak,yes,
-          [Support code breakpoints and execution history (slower emulation) (default=ON)],
-          MONITOR_BREAK,[Define to activate code breakpoints and execution history.]
-         )
-if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
-    CCASFLAGS="$CCASFLAGS -DMONITOR_BREAK"
+    A8_OPTION(monitorbreak,yes,
+              [Support code breakpoints and execution history (slower emulation) (default=ON)],
+              MONITOR_BREAK,[Define to activate code breakpoints and execution history.]
+             )
+    if [[ "$WANT_MONITOR_BREAK" = "yes" ]]; then
+        CCASFLAGS="$CCASFLAGS -DMONITOR_BREAK"
+    fi
+
+    A8_OPTION(monitorbreakpoints,no,
+              [Support user-defined breakpoints (default=OFF)],
+              MONITOR_BREAKPOINTS,[Define to activate user-defined breakpoints.]
+             )
+
+    A8_OPTION(monitorhints,yes,
+              [Provide hints in the disassembler (human-readable address labels) (default=ON)],
+              MONITOR_HINTS,[Define to activate hints in disassembler.]
+             )
+
+    A8_OPTION(monitorprofile,no,
+              [6502 opcode profiling (default=OFF)],
+              MONITOR_PROFILE,[Define to activate 6502 opcode profiling.]
+             )
+    if [[ "$WANT_MONITOR_PROFILE" = "yes" ]]; then
+        CCASFLAGS="$CCASFLAGS -DMONITOR_PROFILE"
+    fi
+
+    A8_OPTION(monitortrace,no,
+              [Support TRACE command in the monitor (default=OFF)],
+              MONITOR_TRACE,[Define to activate TRACE command in monitor.]
+             )
+
+    A8_OPTION(monitoransi,yes,
+              [Support ANSI terminal control (default=ON)],
+              MONITOR_ANSI,[Define to use ANSI terminal control in the monitor.]
+             )
+
+    A8_OPTION(monitorutf8,yes,
+              [Support UTF-8 for printing ATASCII characters in the monitor (default=ON)],
+              MONITOR_UTF8,[Define to use UTF-8 in the monitor.]
+             )
 fi
-
-A8_OPTION(monitorbreakpoints,no,
-          [Support user-defined breakpoints (default=OFF)],
-          MONITOR_BREAKPOINTS,[Define to activate user-defined breakpoints.]
-         )
-
-A8_OPTION(monitorhints,yes,
-          [Provide hints in the disassembler (human-readable address labels) (default=ON)],
-          MONITOR_HINTS,[Define to activate hints in disassembler.]
-         )
-
-A8_OPTION(monitorprofile,no,
-          [6502 opcode profiling (default=OFF)],
-          MONITOR_PROFILE,[Define to activate 6502 opcode profiling.]
-         )
-if [[ "$WANT_MONITOR_PROFILE" = "yes" ]]; then
-    CCASFLAGS="$CCASFLAGS -DMONITOR_PROFILE"
-fi
-
-A8_OPTION(monitortrace,no,
-          [Support TRACE command in the monitor (default=OFF)],
-          MONITOR_TRACE,[Define to activate TRACE command in monitor.]
-         )
-
-A8_OPTION(monitoransi,yes,
-          [Support ANSI terminal control (default=ON)],
-          MONITOR_ANSI,[Define to use ANSI terminal control in the monitor.]
-         )
-
-A8_OPTION(monitorutf8,yes,
-          [Support UTF-8 for printing ATASCII characters in the monitor (default=ON)],
-          MONITOR_UTF8,[Define to use UTF-8 in the monitor.]
-         )
 
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
 dnl we already checked for libz and added it to LIBS
@@ -828,7 +862,14 @@ AC_ARG_WITH([sound],
     ],
     [with_sound=check])
 
-if [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
+if [[ "$a8_target" = libatari800 ]]; then
+    if [[ "$with_sound" = check -o "$with_sound" = yes ]]; then
+        with_sound=libatari800
+        WANT_SOUND_THIN_API=yes
+    else
+        AC_MSG_ERROR([--with-audio option not needed to build libatari800!])
+    fi
+elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
     if [[ "$with_sound" != no ]]; then
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = javanvm ]]; then
             if [[ "$a8_host" = javanvm ]]; then
@@ -916,6 +957,7 @@ AM_CONDITIONAL([WITH_SOUND_OSS], test "$with_sound" = oss)
 AM_CONDITIONAL([WITH_SOUND_SDL], test "$with_sound" = sdl)
 AM_CONDITIONAL([WITH_SOUND_WIN], test "$with_sound" = win)
 AM_CONDITIONAL([WITH_SOUND_DOSSB], test "$with_sound" = dossb)
+AM_CONDITIONAL([WITH_SOUND_LIBATARI800], test "$with_sound" = libatari800)
 AM_CONDITIONAL([A8_USE_SDL], test "$a8_use_sdl" = yes)
 
 dnl Set sound support options...
@@ -984,6 +1026,14 @@ if [[ "$with_sound" != no ]]; then
               [Emulate the Alien Group Voice Box (default=ON)],
               VOICEBOX,[Define to emulate the Alien Group Voice Box.]
              )
+
+    if [[ "$with_sound" == "libatari800" ]]; then
+        WANT_SOUND_CALLBACK=no
+        WANT_CONSOLE_SOUND=yes
+        WANT_SERIO_SOUND=yes
+        WANT_SYNCHRONIZED_SOUND=no
+        WANT_VOL_ONLY_SOUND="no"
+    fi
 else
     WANT_NONLINEAR_MIXING="no"
     WANT_SYNCHRONIZED_SOUND="no"

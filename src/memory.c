@@ -362,7 +362,9 @@ void MEMORY_StateSave(UBYTE SaveVerbose)
 	/* Save amount of base RAM in kilobytes. */
 	temp = MEMORY_ram_size > 64 ? 64 : MEMORY_ram_size;
 	StateSav_SaveINT(&temp, 1);
+	STATESAV_TAG(base_ram);
 	StateSav_SaveUBYTE(&MEMORY_mem[0], 65536);
+	STATESAV_TAG(base_ram_attrib);
 #ifndef PAGED_ATTRIB
 	StateSav_SaveUBYTE(&MEMORY_attrib[0], 65536);
 #else

@@ -76,6 +76,10 @@
 #endif /* BASIC */
 #endif /* ASAP */
 
+#ifdef LIBATARI800
+#include "libatari800/main.h"
+#endif
+
 /* For Atari Basic loader */
 void (*CPU_rts_handler)(void) = NULL;
 
@@ -840,12 +844,18 @@ void CPU_GO(int limit)
 #endif
 
 	OPCODE(00)				/* BRK */
+#ifdef LIBATARI800
+#ifdef HAVE_SETJMP
+		longjmp(libatari800_cpu_crash, LIBATARI800_BRK_INSTRUCTION);
+#endif /* HAVE_SETJMP */
+#else /* LIBATARI800 */
 #ifdef MONITOR_BREAK
 		if (MONITOR_break_brk) {
 			DO_BREAK;
 		}
 		else
-#endif
+#endif /* MONITOR_BREAK */
+#endif /* LIBATARI800 */
 		{
 			PC++;
 			PHPC;
@@ -2283,7 +2293,13 @@ void CPU_GO(int limit)
 		UI_Run();
 #else
 		CPU_cim_encountered = TRUE;
+#ifdef LIBATARI800
+#ifdef HAVE_SETJMP
+		longjmp(libatari800_cpu_crash, LIBATARI800_CPU_CRASH);
+#endif /* HAVE_SETJMP */
+#else
 		ENTER_MONITOR;
+#endif /* LIBATARI800 */
 #endif /* CRASH_MENU */
 
 		CPU_PutStatus();
@@ -2428,6 +2444,7 @@ void CPU_Reset(void)
 
 void CPU_StateSave(UBYTE SaveVerbose)
 {
+	STATESAV_TAG(cpu);
 	StateSav_SaveUBYTE(&CPU_regA, 1);
 
 	CPU_GetStatus();	/* Make sure flags are all updated */
@@ -2440,6 +2457,7 @@ void CPU_StateSave(UBYTE SaveVerbose)
 
 	MEMORY_StateSave(SaveVerbose);
 
+	STATESAV_TAG(pc);
 	StateSav_SaveUWORD(&CPU_regPC, 1);
 }
 
