@@ -163,7 +163,7 @@ UBYTE CPU_IRQ;
 #define RMW_GetByte(x, addr) \
 	if (MEMORY_attrib[addr] == MEMORY_HARDWARE) { \
 		x = MEMORY_HwGetByte(addr, FALSE); \
-		if ((addr & 0xef00) == 0xc000) { \
+		if ((addr & 0xed00) == 0xc000) { \
 			ANTIC_xpos--; \
 			MEMORY_HwPutByte(addr, x); \
 			ANTIC_xpos++; \
@@ -173,7 +173,7 @@ UBYTE CPU_IRQ;
 #else /* PAGED_ATTRIB */
 #define RMW_GetByte(x, addr) \
 	x = MEMORY_GetByte(addr); \
-	if ((addr & 0xef00) == 0xc000) { \
+	if ((addr & 0xed00) == 0xc000) { \
 		ANTIC_xpos--; \
 		MEMORY_PutByte(addr, x); \
 		ANTIC_xpos++; \

@@ -404,7 +404,7 @@ EXE_PUTBYTE macro
 RMW_GETBYTE macro
   ifne   NEW_CYCLE_EXACT
   move.w d7,d0
-  and.w  #$ef00,d0
+  and.w  #$ed00,d0
   cmp.w  #$c000,d0
   bne.s  .normal_get
   EXE_GETBYTE
