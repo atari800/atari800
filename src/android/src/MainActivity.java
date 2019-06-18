@@ -654,8 +654,8 @@ public final class MainActivity extends Activity
 			disk, sector, softjoy, up, down, left, right, fire, joyvisible, joysize,
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
 			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
-			crophoriz, cropvert, derotkeys, actiona, actionb, actionc, ntsc, paddle,
-			plandef, browser, forceAT
+			crophoriz, cropvert, portpad, covlhold, derotkeys, actiona, actionb, actionc, ntsc,
+			paddle, plandef, browser, forceAT
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -691,7 +691,9 @@ public final class MainActivity extends Activity
 						   Integer.parseInt(_newvalues.get(PreferenceName.frameskip)),
 						   Boolean.parseBoolean(_newvalues.get(PreferenceName.collisions)),
 						   Integer.parseInt(_newvalues.get(PreferenceName.crophoriz)),
-						   Integer.parseInt(_newvalues.get(PreferenceName.cropvert)) );
+						   Integer.parseInt(_newvalues.get(PreferenceName.cropvert)),
+						   Integer.parseInt(_newvalues.get(PreferenceName.portpad)),
+						   Integer.parseInt(_newvalues.get(PreferenceName.covlhold)) );
 
 			if ( changed(PreferenceName.machine) || changed(PreferenceName.ntsc) ) {
 				if ( !NativePrefMachine(Integer.parseInt(_newvalues.get(PreferenceName.machine)),
@@ -848,7 +850,7 @@ public final class MainActivity extends Activity
 		}
 	}
 	private static native void NativePrefGfx(int aspect, boolean bilinear, int artifact,
-											 int frameskip, boolean collisions, int crophoriz, int cropvert);
+											 int frameskip, boolean collisions, int crophoriz, int cropvert, int portpad, int covlhold);
 	private static native boolean NativePrefMachine(int machine, boolean ntsc);
 	private static native void NativePrefEmulation(boolean basic, boolean speed, boolean disk,
 												   boolean sector, boolean browser);

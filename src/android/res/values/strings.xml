@@ -26,6 +26,10 @@
     <string name="none">None</string>
     <string name="left">Left</string>
     <string name="right">Right</string>
+    <string name="disabled">Disabled</string>
+    <string name="slower">Slower</string>
+    <string name="normal">Normal</string>
+    <string name="faster">Faster</string>
 	<string name="menu_preferences">Preferences</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
@@ -270,6 +274,10 @@
 	<string name="pref_crophoriz_sum">Width in pixels of original screen to show</string>
 	<string name="pref_cropvert">Crop Vertically</string>
 	<string name="pref_cropvert_sum">Height in pixels of original screen to show</string>
+	<string name="pref_portpad">Portrait Padding</string>
+	<string name="pref_portpad_sum">Leave space below status bar when in portrait orientation</string>
+	<string name="pref_covlhold">Console Key Fade-out</string>
+	<string name="pref_covlhold_sum">Adjust rate at which the console key overlay fades out</string>
 	<string name="pref_derotkeys">Derotate Arrow Keys</string>
 	<string name="pref_derotkeys_sum">Fix external keyboard arrow keys when display is rotated</string>
 	<string name="pref_ntsc">NTSC TV Mode</string>

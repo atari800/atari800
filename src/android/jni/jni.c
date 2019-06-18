@@ -425,7 +425,7 @@ static int JNICALL NativeTouch(JNIEnv *env, jobject this, int x1, int y1, int s1
 
 static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolean bilinear,
 								  int artifact, int frameskip, jboolean collisions, int crophoriz,
-								  int cropvert)
+								  int cropvert, int portpad, int covlhold)
 {
 	Android_Aspect = aspect;
 	Android_Bilinear = bilinear;
@@ -447,6 +447,8 @@ static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolea
 	Screen_visible_x2 = Screen_visible_x1 + crophoriz;
 	Screen_visible_y1 = SCREEN_HEIGHT - Android_CropScreen[1];
 	Screen_visible_y2 = Screen_visible_y1 + cropvert;
+	Android_PortPad = portpad;
+	Android_CovlHold = covlhold;
 }
 
 static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac, jboolean ntsc)
@@ -666,7 +668,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	JNINativeMethod main_methods[] = {
 		{ "NativeExit",				"()V",								NativeExit			  },
 		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)I",			NativeRunAtariProgram },
-		{ "NativePrefGfx",			"(IZIIZII)V",						NativePrefGfx		  },
+		{ "NativePrefGfx",			"(IZIIZIIII)V",						NativePrefGfx		  },
 		{ "NativePrefMachine",		"(IZ)Z",							NativePrefMachine	  },
 		{ "NativePrefEmulation",	"(ZZZZZ)V",							NativePrefEmulation	  },
 		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },

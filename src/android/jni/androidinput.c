@@ -172,7 +172,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 			}
 			if (covl->hitkey != CONK_NOKEY) {
 				covl->opacity = COVL_MAX_OPACITY;
-				covl->statecnt = COVL_HOLD_TIME;
+				covl->statecnt = COVL_HOLD_TIME << 1;
 				covl->ovl_visible = COVL_READY;
 				switch (covl->hitkey) {
 				case CONK_START:
@@ -467,7 +467,7 @@ void Input_Initialize(void)
 	AndroidInput_ConOvl.hitkey = CONK_NOKEY;
 	AndroidInput_ConOvl.opacity = COVL_MAX_OPACITY;
 	AndroidInput_ConOvl.ovl_visible = COVL_READY;
-	AndroidInput_ConOvl.statecnt = COVL_HOLD_TIME >> 1;
+	AndroidInput_ConOvl.statecnt = COVL_HOLD_TIME;
 
 	Android_PortStatus = 0xFFFF;
 	Android_TrigStatus = 0xF;
