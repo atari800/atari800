@@ -218,7 +218,7 @@ int libatari800_next_frame(input_template_t *input)
 	INPUT_key_code = PLATFORM_Keyboard();
 	LIBATARI800_Mouse();
 #ifdef HAVE_SETJMP
-	if (libatari800_error_code = setjmp(libatari800_cpu_crash)) {
+	if ((libatari800_error_code = setjmp(libatari800_cpu_crash))) {
 		/* called from within CPU_GO to indicate crash */
 		Log_print("libatari800_next_frame: notified of CPU crash: %d\n", CPU_cim_encountered);
 	}
