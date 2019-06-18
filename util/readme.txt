@@ -19,3 +19,5 @@ keyboard.png: Atari XE keyboard picture drawn by Zdenek Eisenhammer
 pokeybench.c: tests POKEY sound emulation
 
 atari/t7.*: tests cycle-exact timing
+
+build_m68k.sh: builds all Atari Falcon/FireBee variants

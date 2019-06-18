@@ -21,7 +21,7 @@ dnl   along with Atari800; if not, write to the Free Software
 dnl   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 AC_PREREQ(2.57)
-AC_INIT(Atari800, 4.0.0, pstehlik@sophics.cz)
+AC_INIT(Atari800, 4.1.0, pstehlik@sophics.cz)
 AC_CONFIG_SRCDIR(src/atari.c)
 AC_CONFIG_HEADER(src/config.h)
 AC_CONFIG_MACRO_DIR([m4])
@@ -30,7 +30,7 @@ AC_CONFIG_MACRO_DIR([m4])
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | libatari800)
+    default | falcon | firebee | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | libatari800)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -49,6 +49,7 @@ case "$target" in
         echo "    default          (autodetect available graphics and sound libraries)"
         echo "    android          (Android devices)"
         echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint)"
+        echo "    firebee          (FireBee: set --host=m68k-atari-mint)"
         echo "    ps2              (Sony PlayStation 2)"
         echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
@@ -108,7 +109,12 @@ case $host_os in
         a8_host="linux"
         ;;
     mint)
-        a8_host="falcon"
+        if [[ "$a8_target" = "firebee" ]]; then
+            a8_host=firebee
+            a8_target=default
+        else
+            a8_host=falcon
+        fi
         AC_DEFINE(DIR_SEP_BACKSLASH,1,[Define to use back slash as directory separator.])
         AC_DEFINE(DEFAULT_CFG_NAME,"atari800.cfg",[Alternate config filename due to 8+3 fs limit.])
         AC_DEFINE(DOS_DRIVES,1,[Define to enable DOS style drives support.])
@@ -163,15 +169,18 @@ if [[ "$a8_target" = "android" ]]; then
 	WANT_EVENT_RECORDING=no
 	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
 fi
-if [[ "$a8_target" = "falcon" ]]; then
-	CFLAGS="-m68020-60 -O3 -fomit-frame-pointer -Wall"
+if [[ "$a8_host" = "falcon" ]]; then
+	CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
 	LDFLAGS="-m68020-60"
+fi
+if [[ "$a8_host" = "firebee" ]]; then
+	CFLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
+	LDFLAGS="-mcpu=5475"
 fi
 if [[ "$a8_target" = "libatari800" ]]; then
     with_readline=no
     WANT_EVENT_RECORDING=no
 fi
-
 
 dnl Check for programs...
 
@@ -182,8 +191,7 @@ AC_PROG_RANLIB
 AC_CHECK_TOOLS(WINDRES, [windres], :)
 
 AC_DEFUN([AM_PROG_AS], []) dnl dummy to make automake happy, since vasm is used instead
-dnl CCAS=vasm
-CCAS=/home/mikro/atari/compilers/vasm-2018-10-05/vasmm68k_mot
+CCAS=vasm
 CCASFLAGS="-quiet -devpac -opt-allbra -Faout"
 
 a8_use_sdl=no
@@ -881,7 +889,7 @@ elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
                 ])
         fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = falcon ]]; then
-            if [[ "$a8_host" = falcon ]]; then
+            if [[ "$a8_host" = falcon -o "$a8_host" = firebee ]]; then
                 with_sound=falcon
             elif [[ "$with_sound" = falcon ]]; then
                 AC_MSG_ERROR([--with-sound=falcon was given, but host system is not Falcon!])
@@ -1046,7 +1054,7 @@ A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],
           IDE,[Define to add IDE harddisk emulation.]
          )
-if [[ "$WANT_IDE" == "yes" ]]; then
+if [[ "$WANT_IDE" = "yes" ]]; then
     AC_SYS_LARGEFILE
     AC_FUNC_FSEEKO
 fi
@@ -1136,7 +1144,7 @@ AM_CONDITIONAL([WITH_OPENGL], test "$with_opengl" = "yes")
 
 dnl Select host/target specific features...
 
-if [[ "$a8_host" = "falcon" -a "$a8_target" = "falcon" ]]; then
+if [[ "$a8_host" = "falcon" ]]; then
     A8_OPTION(falconcpuasm,no,
               [Use m68k assembler CPU core for Falcon target (default=OFF)],
               FALCON_CPUASM,[Define to use m68k assembler CPU core for Falcon target.]
@@ -1277,7 +1285,7 @@ if [[ "$with_sound" != no ]]; then
 else
     echo "    (Sound sub-options disabled)"
 fi
-if [[ "$a8_target" = "falcon" ]]; then
+if [[ "$a8_host" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
 fi
 if [[ "$a8_host" = "linux" ]]; then
@@ -1324,7 +1332,7 @@ if [[ "$WANT_VERY_SLOW" = "yes" ]]; then
 		if [[ "$WANT_PAGED_ATTRIB" != "yes" ]]; then
 			echo "Have you tried --enable-pagedattrib ?"
 		fi
-		if [[ "$CYCLES_PER_OPCODE" != "yes" ]]; then
+		if [[ "$WANT_CYCLES_PER_OPCODE" != "yes" ]]; then
 			echo "Have you tried --enable-cyclesperopcode ?"
 		fi
 	fi

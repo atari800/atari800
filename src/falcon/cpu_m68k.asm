@@ -147,7 +147,6 @@ CD     equr a6 ; cycles counter up
 ZFLAG  equr d1 ; Bit 0..7
 NFLAG  equr d1 ; Bit 8..15
 VFLAG  equr d6 ; Bit 7
-DFLAG  equr d6 ; Bit 15
 CFLAG  equr d5 ; Bit 0..7, ( 1 = ff )
 A      equr d2
 X      equr d3
@@ -616,13 +615,11 @@ ClrCFLAG macro
   endm
 
 _CPU_GetStatus:
-  ConvertSTATUS_RegP d0
-  move.b d0,_CPU_regP
+  move.b regP,_CPU_regP           ; this is called before/after _CPU_GO_m68k()
   rts
 
 _CPU_PutStatus:
-  move.b _CPU_regP,d0
-  ConvertRegP_STATUS d0
+  move.b _CPU_regP,regP           ; this is called before/after _CPU_GO_m68k()
   rts
 
 _CPU_GO_m68k:

@@ -913,7 +913,7 @@ int Atari_OpenDir(const char *filename)
 	return TRUE;
 }
 
-int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
+int Atari_ReadDir(char *fullpath, char *filename, int *isdir, int *hidden,
                   int *readonly, int *size, char *timetext)
 {
 	const mcTable *p;
@@ -926,6 +926,8 @@ int Atari_ReadDir(char *fullpath, char *filename, int *isdir,
 		strcpy(filename, p->name);
 	if (isdir != NULL)
 		*isdir = (p->attrFile & MC_ATTR_SUBDIR) ? TRUE : FALSE;
+	if (ishidden != NULL)
+		*ishidden = (p->attrFile & MC_ATTR_HIDDEN) ? TRUE : FALSE;
 	if (readonly != NULL)
 		*readonly = (p->attrFile & MC_ATTR_WRITEABLE) ? FALSE : TRUE; // XXX: MC_ATTR_PROTECTED ?
 	if (size != NULL)

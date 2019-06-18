@@ -2,7 +2,7 @@
 # This scripts helps with building the source .tar.gz file
 
 VER_MAJOR=4
-VER_MINOR=0
+VER_MINOR=1
 VER_MICRO=0
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO
@@ -10,7 +10,7 @@ TAG="ATARI800_"$VER_MAJOR"_"$VER_MINOR"_"$VER_MICRO
 #upper case the tag
 TAG=`echo $TAG | tr [:lower:] [:upper:]`
 FOLDER="atari800-"$VERSION
-FNAME=$FOLDER".tar.gz"
+FNAME=$FOLDER"-src.tgz"
 #
 echo "download from GitHub? (y/N)"
 read key
@@ -18,11 +18,6 @@ if [ "x"$key = "xy" ]; then
 	git clone https://github.com/atari800/atari800.git
 fi
 #
-grep Atari800_TITLE atari800/src/atari.h | grep $VERSION >/dev/null
-if [ $? -ne 0 ]; then
-	echo "ERROR: increase version in src/atari.h"
-	exit 1
-fi
 grep "[Vv]ersion "$VERSION atari800/README.1ST >/dev/null
 if [ $? -ne 0 ]; then
 	echo "ERROR: increase version in README.1ST"
@@ -43,17 +38,17 @@ if [ $? -ne 0 ]; then
 	echo "ERROR: increase version in atari800.spec"
 	exit 1
 fi
-grep "AC_INIT(Atari800, "$VERSION atari800/src/configure.ac | grep $VERSION >/dev/null
+grep "AC_INIT(Atari800, "$VERSION atari800/configure.ac | grep $VERSION >/dev/null
 if [ $? -ne 0 ]; then
 	echo "ERROR: increase version in src/configure.ac"
 	exit 1
 fi
 #
-cd atari800/src
+cd atari800
 ./autogen.sh
 # remove leftovers from autogen process
 rm -f autogen.sh config.cache config.log
 rm -rf autom4te.cache
-cd ../..
+cd ..
 mv atari800 $FOLDER
 GZIP=--best tar chozvf $FNAME $FOLDER

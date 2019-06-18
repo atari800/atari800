@@ -1654,7 +1654,7 @@ static int SDL_controller_kb1(void)
 	static int repdelay_timeout = REPEAT_DELAY;
 	struct js_state *state = &sdl_js_state[0];
 
-	if (! joystick0) return(AKEY_NONE);  /* no controller present */
+	if (! joysticks_found) return(AKEY_NONE);  /* no controller present */
 
 	update_SDL_joysticks();
 

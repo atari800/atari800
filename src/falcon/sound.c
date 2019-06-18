@@ -44,70 +44,6 @@ static size_t bufferSize;
 static int isLogicalBufferActive;
 static SndBufPtr soundBufferPtr;
 static size_t soundBufferWritten;
-static int audioSaved;
-static unsigned short saveAudioBuffer[9];
-#define HW_REG8(x) *((volatile unsigned char*)(x))
-#define HW_REG16(x) *((volatile unsigned short*)(x))
-
-static void saveAudio(void)
-{
-	unsigned char* pBuffer8;
-	unsigned short* pBuffer16;
-
-	if (!audioSaved) {
-		pBuffer16 = saveAudioBuffer;
-		*pBuffer16++ = HW_REG16(0xffff8930);
-		*pBuffer16++ = HW_REG16(0xffff8932);
-
-		pBuffer8 = (unsigned char*)pBuffer16;
-		*pBuffer8++ = HW_REG8(0xffff8934);
-		*pBuffer8++ = HW_REG8(0xffff8935);
-		*pBuffer8++ = HW_REG8(0xffff8936);
-		*pBuffer8++ = HW_REG8(0xffff8937);
-		*pBuffer8++ = HW_REG8(0xffff8938);
-		*pBuffer8++ = HW_REG8(0xffff8939);
-		/**pBuffer8++ = HW_REG8(0xffff893a);*/
-		*pBuffer8++ = HW_REG8(0xffff893c);
-		*pBuffer8++ = HW_REG8(0xffff8941);
-		*pBuffer8++ = HW_REG8(0xffff8943);
-		*pBuffer8++ = HW_REG8(0xffff8900);
-		*pBuffer8++ = HW_REG8(0xffff8901);
-		*pBuffer8++ = HW_REG8(0xffff8920);
-		*pBuffer8++ = HW_REG8(0xffff8921);
-
-		audioSaved = TRUE;
-	}
-}
-
-static void restoreAudio(void)
-{
-	unsigned char* pBuffer8;
-	unsigned short* pBuffer16;
-
-	if (audioSaved) {
-		pBuffer16 = saveAudioBuffer;
-		HW_REG16(0xffff8930) = *pBuffer16++;
-		HW_REG16(0xffff8932) = *pBuffer16++;
-
-		pBuffer8 = (unsigned char*)pBuffer16;
-		HW_REG8(0xffff8934) = *pBuffer8++;
-		HW_REG8(0xffff8935) = *pBuffer8++;
-		HW_REG8(0xffff8936) = *pBuffer8++;
-		HW_REG8(0xffff8937) = *pBuffer8++;
-		HW_REG8(0xffff8938) = *pBuffer8++;
-		HW_REG8(0xffff8939) = *pBuffer8++;
-		/*HW_REG8(0xffff893a) = *pBuffer8++;*/
-		HW_REG8(0xffff893c) = *pBuffer8++;
-		HW_REG8(0xffff8941) = *pBuffer8++;
-		HW_REG8(0xffff8943) = *pBuffer8++;
-		HW_REG8(0xffff8900) = *pBuffer8++;
-		HW_REG8(0xffff8901) = *pBuffer8++;
-		HW_REG8(0xffff8920) = *pBuffer8++;
-		HW_REG8(0xffff8921) = *pBuffer8++;
-
-		audioSaved = FALSE;
-	}
-}
 
 unsigned int PLATFORM_SoundAvailable(void)
 {
@@ -164,56 +100,102 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	int mode;
 	int diff50, diff33, diff25, diff20, diff16, diff12, diff10, diff8;
 	int clk;
+	int xbiosApiPresent = FALSE;
+	int extendedXbiosApi = FALSE;
+	int compatiblePrescaler = FALSE;
 
 	if (Sound_enabled) {
 		PLATFORM_SoundExit();
 	}
 
-	if (Getcookie(C__SND, &cookie) != C_FOUND
-		|| (setup->sample_size == 1 && !(cookie & SND_8BIT))
-		|| (setup->sample_size == 2 && !(cookie & SND_16BIT))
-#ifndef __mcoldfire__
-		|| !(cookie & SND_MATRIX)) {
-#else
-		/* Firebee's FireTOS doesn't set SND_MATRIX even though Devconnect() works? */
-		) {
-#endif
+	if (Locksnd() < 0) {
 		return FALSE;
 	}
 
-	diff50 = abs(49170 - setup->freq);
-	diff33 = abs(32780 - setup->freq);
-	diff25 = abs(24585 - setup->freq);
-	diff20 = abs(19668 - setup->freq);
-	diff16 = abs(16390 - setup->freq);
-	diff12 = abs(12292 - setup->freq);
-	diff10 = abs(9834 - setup->freq);
-	diff8  = abs(8195 - setup->freq);
-
-	if (diff50 < diff33) {
-		setup->freq = 49170;
-		clk = CLK50K;
-	} else if (diff33 < diff25) {
-		setup->freq = 32780;
-		clk = CLK33K;
-	} else if (diff25 < diff20) {
-		setup->freq = 24585;
-		clk = CLK25K;
-	} else if (diff20 < diff16) {
-		setup->freq = 19668;
-		clk = CLK20K;
-	} else if (diff16 < diff12) {
-		setup->freq = 16390;
-		clk = CLK16K;
-	} else if (diff12 < diff10) {
-		setup->freq = 12292;
-		clk = CLK12K;
-	} else if (diff10 < diff8) {
-		setup->freq = 9834;
-		clk = CLK10K;
+	if (Getcookie(C__SND, &cookie) == C_FOUND) {
+		if (setup->sample_size == 1 && !(cookie & SND_8BIT)) {
+			if (cookie & SND_16BIT) {
+				setup->sample_size = 2;
+			} else {
+				return FALSE;
+			}
+		} else if (setup->sample_size == 2 && !(cookie & SND_16BIT)) {
+			if (cookie & SND_8BIT) {
+				setup->sample_size = 1;
+			} else {
+				return FALSE;
+			}
+		}
+		/* virtually all APIs have bit #2 set */
+		xbiosApiPresent = (cookie & SND_16BIT) != 0 || (cookie & SND_EXT) != 0;
+		extendedXbiosApi = (cookie & SND_EXT) != 0;
 	} else {
-		setup->freq = 8195;
-		clk = CLK8K;
+		/* Try XBIOS API emulators which do not set '_SND' */
+		if (Getcookie(C_STFA, &cookie) == C_FOUND) {	/* STFA (8-bit/16-bit) */
+			xbiosApiPresent = TRUE;
+			extendedXbiosApi = TRUE;
+			compatiblePrescaler = TRUE;
+		} else if (Getcookie(C_McSn, &cookie) == C_FOUND) {	/* X-SOUND (8-bit/16-bit) or MacSound (16-bit) */
+			xbiosApiPresent = TRUE;
+			extendedXbiosApi = TRUE;
+			/* Soundcmd(SETPRESCALE, ...) is actually ignored */
+		}
+	}
+
+	if (!xbiosApiPresent) {
+		return FALSE;
+	}
+
+	if (compatiblePrescaler) {
+		diff50 = abs(50066 - setup->freq);
+		diff25 = abs(25033 - setup->freq);
+		diff12 = abs(12517 - setup->freq);
+
+		if (diff50 < diff25) {
+			setup->freq = 50066;
+			clk = PRE160;
+		} else if (diff25 < diff12) {
+			setup->freq = 25033;
+			clk = PRE320;
+		} else {
+			setup->freq = 12517;
+			clk = PRE640;
+		}
+	} else {
+		diff50 = abs(49170 - setup->freq);
+		diff33 = abs(32780 - setup->freq);
+		diff25 = abs(24585 - setup->freq);
+		diff20 = abs(19668 - setup->freq);
+		diff16 = abs(16390 - setup->freq);
+		diff12 = abs(12292 - setup->freq);
+		diff10 = abs(9834 - setup->freq);
+		diff8  = abs(8195 - setup->freq);
+
+		if (diff50 < diff33) {
+			setup->freq = 49170;
+			clk = CLK50K;
+		} else if (diff33 < diff25) {
+			setup->freq = 32780;
+			clk = CLK33K;
+		} else if (diff25 < diff20) {
+			setup->freq = 24585;
+			clk = CLK25K;
+		} else if (diff20 < diff16) {
+			setup->freq = 19668;
+			clk = CLK20K;
+		} else if (diff16 < diff12) {
+			setup->freq = 16390;
+			clk = CLK16K;
+		} else if (diff12 < diff10) {
+			setup->freq = 12292;
+			clk = CLK12K;
+		} else if (diff10 < diff8) {
+			setup->freq = 9834;
+			clk = CLK10K;
+		} else {
+			setup->freq = 8195;
+			clk = CLK8K;
+		}
 	}
 
 	if (setup->buffer_frames == 0) {
@@ -232,6 +214,22 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 		setup->sample_size = 1;
 	}
 
+	Sndstatus(SND_RESET);
+
+	if (Setmode(mode) != 0) {
+		/* give it a chance ... */
+		if (mode == MODE_STEREO16 && Setmode(MODE_STEREO8) == 0) {
+			setup->sample_size = 1;
+		} else if (mode == MODE_STEREO8 && Setmode(MODE_STEREO16) == 0) {
+			setup->sample_size = 2;
+		} else if (mode == MODE_MONO && Setmode(MODE_STEREO16) == 0) {
+			setup->channels = 2;
+			setup->sample_size = 2;
+		} else {
+			return FALSE;
+		}
+	}
+
 	/* channels * 8/16 bit * freq in Hz * seconds */
 	bufferSize = setup->channels * setup->sample_size * setup->buffer_frames;
 
@@ -244,17 +242,11 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	pPhysical = pBuffer;
 	pLogical = pBuffer + bufferSize;
 
-	Supexec(saveAudio);
-
-	Sndstatus(SND_RESET);
-
-	if (Devconnect(DMAPLAY, DAC, CLK25M, clk, NO_SHAKE) != 0) {
-		/* for some reason, Devconnect() returns error in memory protection mode... */
-		/*goto error;*/
-	}
-
-	if (Setmode(mode) != 0) {
+	if (Devconnect(DMAPLAY, DAC, CLK25M, compatiblePrescaler ? CLKOLD : clk, NO_SHAKE) != 0 && extendedXbiosApi) {
+		/* Devconnect's return value on Falcon is broken! */
 		goto error;
+	} else if (compatiblePrescaler) {
+		Soundcmd(SETPRESCALE, clk);
 	}
 
 	Soundcmd(ADDERIN, MATIN);
@@ -266,8 +258,6 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	return TRUE;
 
 error:
-	Supexec(restoreAudio);
-
 	Mfree(pBuffer);
 	pBuffer = NULL;
 
@@ -278,12 +268,12 @@ void PLATFORM_SoundExit(void)
 {
 	Buffoper(0x00);
 
-	Supexec(restoreAudio);
-
 	if (pBuffer != NULL) {
 		Mfree(pBuffer);
 		pBuffer = NULL;
 	}
+
+	Unlocksnd();
 }
 
 void PLATFORM_SoundPause(void)
