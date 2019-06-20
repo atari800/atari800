@@ -75,6 +75,9 @@
 #ifdef IDE
 #  include "ide.h"
 #endif
+#ifdef POKEYREC
+#include "pokeyrec.h"
+#endif
 #include "pia.h"
 #include "platform.h"
 #include "pokey.h"
@@ -733,6 +736,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef IDE
 		|| !IDE_Initialise(argc, argv)
 #endif
+#ifdef POKEYREC
+		|| !POKEYREC_Initialise(argc, argv)
+#endif
 		|| !SIO_Initialise (argc, argv)
 		|| !CARTRIDGE_Initialise(argc, argv)
 		|| !CASSETTE_Initialise(argc, argv)
@@ -981,6 +987,9 @@ int Atari800_Exit(int run_monitor)
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
 #ifdef IDE
 		IDE_Exit();
+#endif
+#ifdef POKEYREC
+		POKEYREC_Exit();
 #endif
 		Devices_Exit();
 #ifdef R_IO_DEVICE
