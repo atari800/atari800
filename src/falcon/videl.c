@@ -245,3 +245,72 @@ void save_r(void)
 	/* Restore exceptions */
 	sti(sr);
 }
+
+
+static ULONG *f030coltable_p;
+
+static void _set_falcon_palette(void)
+{
+	int i = 256;
+	const ULONG *src = f030coltable_p;
+	ULONG *dst = (ULONG *)0xffff9800;
+	while (--i >= 0)
+		*dst++ = *src;
+}
+
+
+void set_falcon_palette(ULONG *f030coltable)
+{
+	f030coltable = f030coltable;
+	Supexec(_set_falcon_palette);
+}
+
+
+static ULONG save_pal_falcon[256];
+static ULONG save_pal_ste[8];
+
+static void _store_palette(void)
+{
+	int i;
+	ULONG *src;
+	ULONG *dst;
+
+	src = (ULONG *)0xffff9800;
+	dst = save_pal_falcon;
+	i = 256;
+	while (--i >= 0)
+		*dst++ = *src;
+	src = (ULONG *)0xffff8240;
+	dst = save_pal_ste;
+	i = 8;
+	while (--i >= 0)
+		*dst++ = *src;
+}
+
+void store_palette(void)
+{
+	Supexec(_store_palette);
+}
+
+static void _restore_palette(void)
+{
+	int i;
+	ULONG *src;
+	ULONG *dst;
+
+	src = save_pal_falcon;
+	dst = (ULONG *)0xffff9800;
+	i = 256;
+	while (--i >= 0)
+		*dst++ = *src;
+	src = save_pal_ste;
+	dst = (ULONG *)0xffff8240;
+	i = 8;
+	while (--i >= 0)
+		*dst++ = *src;
+}
+
+void restore_palette(void)
+{
+	Supexec(_restore_palette);
+}

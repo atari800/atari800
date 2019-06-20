@@ -101,8 +101,7 @@
   .globl _UI_Run
 #endif
   .globl _CPU_IRQ
-  .globl _CPU_NMI
-  .globl _CPU_GO
+  .globl _CPU_GO_m68k
   .globl _CPU_GetStatus
   .globl _CPU_PutStatus
   .globl _CPU_cim_encountered
@@ -646,7 +645,6 @@ _CPU_PutStatus:
   rts
 
 NMI:
-_CPU_NMI:
   lea    _MEMORY_mem,a0
   moveq  #0,d1
   move.w regS.l,d1
@@ -670,7 +668,7 @@ _CPU_NMI:
 #endif
   rts
 
-_CPU_GO:
+_CPU_GO_m68k:
   move.l  4(a7),d0       /* limit */
 
   tst.b  _ANTIC_wsync_halt

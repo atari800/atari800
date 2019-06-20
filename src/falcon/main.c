@@ -155,7 +155,7 @@ static Videl_Registers mode336x240_vga50 = {
 	0x0000, 0x00a8, 0x0186, 0x0005, 0x00c6, 0x008d, 0x0015, 0x0292, 0x0083, \
 	0x0097, 0x0000, 0x0000, 0x04eb, 0x0465, 0x00a5, 0x00a5, 0x0465, 0x04e7
 };
-static UWORD mode336x240_rgb[26]= {
+static Videl_Registers mode336x240_rgb = {
 	0x0133, 0x0001, 0x3b00, 0x0150, 0x00f0, 0x0008, 0x0002, 0x0010, \
 	0x0000, 0x00a8, 0x0185, 0x0000, 0x00c7, 0x00a0, 0x001f, 0x02b2, 0x0091, \
 	0x00ab, 0x0000, 0x0000, 0x0271, 0x0265, 0x002f, 0x0059, 0x0239, 0x026b
@@ -169,12 +169,7 @@ static UBYTE *Screen_atari_b_unaligned;
 
 extern void rplanes(void);
 extern void rplanes_delta(void);
-extern void load_r(void);
-extern void save_r(void);
-extern UWORD *p_str_p;
 extern void store_palette();
-extern void restore_palette();
-extern void set_falcon_palette();
 
 static ULONG f030coltable[256];
 static short int coltable[256][3], coltable_backup[256][3];
@@ -236,10 +231,9 @@ static void set_colors(int new)
 
 	if (reprogram_VIDEL) {
 		if (new) {
-			p_str_p = (UWORD*) f030coltable;
-			Supexec(set_falcon_palette);
+			set_falcon_palette(f030coltable);
 		} else {
-			Supexec(restore_palette);
+			restore_palette();
 		}
 	} else {
 		for(i=0; i<256; i++)
@@ -252,7 +246,7 @@ static void save_original_colors(void)
 	int i;
 
 	if (reprogram_VIDEL) {
-		Supexec(store_palette);
+		store_palette();
 	} else {
 		for(i=0; i<256; i++)
 			vq_color(gl_vdi_handle, i, 1, coltable_backup[i]);
@@ -272,13 +266,13 @@ static void SetupEmulatedEnvironment(void)
 		size_t offset;
 
 		/* save original VIDEL settings */
-		p_str_p = original_videl_settings;
+		p_str_p = &original_videl_settings;
 		Supexec(save_r);
 
 		/* set new video resolution by direct VIDEL programming */
 		offset = sv ? (Screen_WIDTH - 336) / 2 : 0;	/* in pixels */
 		(void)VsetScreen(SCR_NOCHANGE, new_videobases[delta_screen ? 0 : SCREEN_BUFFERS-1] + offset, SCR_NOCHANGE, SCR_NOCHANGE);
-		p_str_p = vga ? (vga50 ? mode336x240_vga50 : mode336x240_vga) : mode336x240_rgb;
+		p_str_p = vga ? (vga50 ? &mode336x240_vga50 : &mode336x240_vga) : &mode336x240_rgb;
 		Supexec(load_r);
 		new_videl_mode_valid = 1;
 	}
@@ -299,7 +293,7 @@ static void ShutdownEmulatedEnvironment(void)
 
 	if (new_videl_mode_valid) {
 		/* restore original VIDEL mode */
-		p_str_p = original_videl_settings;
+		p_str_p = &original_videl_settings;
 		Supexec(load_r);
 		new_videl_mode_valid = 0;
 		(void)VsetScreen(SCR_NOCHANGE, Original_Phys_base, SCR_NOCHANGE, SCR_NOCHANGE);

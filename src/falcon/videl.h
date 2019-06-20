@@ -61,3 +61,7 @@ extern Videl_Registers *p_str_p;
 
 void load_r(void);
 void save_r(void);
+
+void set_falcon_palette(ULONG *f030coltable);
+void restore_palette(void);
+void store_palette(void);
