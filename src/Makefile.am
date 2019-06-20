@@ -107,6 +107,9 @@ endif
 if WITH_SOUND_LIBATARI800
 atari800_SOURCES += sound.c libatari800/sound.c libatari800/sound.h
 endif
+if WANT_POKEYREC
+atari800_SOURCES += pokeyrec.c pokeyrec.h
+endif
 
 
 

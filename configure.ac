@@ -1067,8 +1067,8 @@ A8_OPTION(pokeyrec,$WANT_POKEYREC,
          )
 if [[ "$WANT_POKEYREC" == "yes" ]]; then
     AC_SYS_LARGEFILE
-    OBJS="$OBJS pokeyrec.o"
 fi
+AM_CONDITIONAL([WANT_POKEYREC], test "$WANT_POKEYREC" = "yes")
 
 if [[ "$a8_use_sdl" = yes ]]; then
     A8_OPTION(onscreenkeyboard,no,
