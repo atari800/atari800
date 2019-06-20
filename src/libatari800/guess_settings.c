@@ -334,6 +334,7 @@ int guess_cart_kb(char *pathname, int verbose) {
 	if (!fp) {
 		return INVALID_FILE_SIZE;
 	}
+	memset(header, 0, sizeof(header));
 	do {
 		current_len = fread(buf, 1, CHUNK_SIZE, fp);
 		if (total_len == 0) {
@@ -467,4 +468,5 @@ int main(int argc, char **argv) {
 			if (!successful_count && !verbose) printf("%s: FAIL\n", argv[i]);
 		}
 	}
+	return 0;
 }

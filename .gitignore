@@ -17,6 +17,8 @@
 /src/android/obj
 /src/android/local.properties
 /src/android/proguard-project.txt
+src/guess_settings
+src/libatari800_test
 /config.log
 /config.status
 /configure
