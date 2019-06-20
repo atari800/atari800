@@ -19,12 +19,20 @@ doc_DATA =
 if CONFIGURE_TARGET_LIBATARI800
 lib_LIBRARIES = libatari800.a
 include_HEADERS = libatari800/libatari800.h
-libatari800_a_SOURCES = libatari800/main.c libatari800/main.h libatari800/init.c libatari800/init.h libatari800/exit.c libatari800/input.c libatari800/input.h libatari800/video.c libatari800/video.h libatari800/statesav.c libatari800/statesav.h libatari800/sound.c libatari800/sound.h
+libatari800_a_SOURCES = \
+	libatari800/libatari800.h \
+	libatari800/main.c libatari800/main.h \
+	libatari800/init.c libatari800/init.h \
+	libatari800/exit.c \
+	libatari800/input.c libatari800/input.h \
+	libatari800/video.c libatari800/video.h \
+	libatari800/statesav.c libatari800/statesav.h \
+	libatari800/sound.c libatari800/sound.h
 noinst_PROGRAMS += libatari800_test guess_settings
-libatari800_test_SOURCES = ../util/libatari800_test.c
+libatari800_test_SOURCES = libatari800/libatari800_test.c
 libatari800_test_CFLAGS = -Ilibatari800
 libatari800_test_LDADD = libatari800.a
-guess_settings_SOURCES = ../util/guess_settings.c
+guess_settings_SOURCES = libatari800/guess_settings.c
 guess_settings_CFLAGS = -Ilibatari800
 guess_settings_LDADD = libatari800.a
 else
@@ -351,7 +359,6 @@ EXTRA_DIST += macosx
 EXTRA_DIST += wince
 EXTRA_DIST += win32/msc
 EXTRA_DIST += amiga
-EXTRA_DIST += libatari800
 EXTRA_DIST += \
 	android/AndroidManifest.xml \
 	android/build.xml \
