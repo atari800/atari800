@@ -380,8 +380,8 @@ int CFG_WriteConfig(void)
 		fprintf(fp, "ATARI_FILES_DIR=%s\n", UI_atari_files_dir[i]);
 	for (i = 0; i < UI_n_saved_files_dir; i++)
 		fprintf(fp, "SAVED_FILES_DIR=%s\n", UI_saved_files_dir[i]);
-#endif
 	fprintf(fp, "SHOW_HIDDEN_FILES=%d\n", UI_show_hidden_files);
+#endif
 	for (i = 0; i < 4; i++)
 		fprintf(fp, "H%c_DIR=%s\n", '1' + i, Devices_atari_h_dir[i]);
 	fprintf(fp, "HD_READ_ONLY=%d\n", Devices_h_read_only);

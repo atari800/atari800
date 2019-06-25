@@ -125,5 +125,5 @@ missing_argument:
 }
 
 void POKEYREC_Exit(void) {
-    fclose(fp);
+    if (fp) fclose(fp);
 }
