@@ -1195,8 +1195,8 @@ fi
 AM_CONDITIONAL([WANT_PAL_BLENDING], test "$WANT_PAL_BLENDING" = "yes")
 
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
-    A8_OPTION(riodevice,no,
-              [Use the R: networking device (Linux/Unix/Win32) (default=OFF)],
+    A8_OPTION(riodevice,yes,
+              [Use the R: networking device (Linux/Unix/Win32) (default=ON)],
               R_IO_DEVICE,[Define to use R: device.]
              )
     if [[ "$WANT_R_IO_DEVICE" = "yes" ]]; then
