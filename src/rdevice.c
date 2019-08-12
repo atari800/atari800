@@ -807,7 +807,10 @@ static void open_connection(char * address, int port)
 
     /* Telnet negotiation */
     snprintf(MESSAGE, sizeof(MESSAGE), "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
-    write(rdev_fd, MESSAGE, 9);
+    if(write(rdev_fd, MESSAGE, 9) != 9)
+    {
+      DBG_APRINT("R*: warning, 'write' did not write all bytes");
+    }
     DBG_APRINT("R*: Negotiating Terminal Options...");
   }
 }
@@ -1080,7 +1083,10 @@ void RDevice_WRIT(void)
         else
         {
 #ifndef DREAMCAST
-          write(rdev_fd, (char *)&out_char, 1); /* Write return */
+          if(write(rdev_fd, (char *)&out_char, 1) != 1) /* Write return */
+          {
+            DBG_APRINT("R*: warning, 'write' did not write all bytes");
+          }
 #else
           dc_write_serial(out_char);
 #endif
@@ -1285,7 +1291,10 @@ void RDevice_STAT(void)
 
         /* Telnet negotiation */
         snprintf(MESSAGE, sizeof(MESSAGE), "%c%c%c%c%c%c%c%c%c", 0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x0f3);
-        write(rdev_fd, MESSAGE, 9);
+        if(write(rdev_fd, MESSAGE, 9) != 9)
+        {
+          DBG_APRINT("R*: warning, 'write' did not write all bytes");
+        }
         DBG_APRINT("R*: Negotiating Terminal Options...");
 
         connected = 1;
@@ -1358,8 +1367,14 @@ void RDevice_STAT(void)
           }
           else
           {
-            write(rdev_fd, (char *)&one, 1);
-            write(rdev_fd, (char *)telnet_command, 2);
+            if(write(rdev_fd, (char *)&one, 1) != 1)
+            {
+              DBG_APRINT("R*: warning, 'write' did not write all bytes");
+            }
+            if(write(rdev_fd, (char *)telnet_command, 2) != 2)
+            {
+              DBG_APRINT("R*: warning, 'write' did not write all bytes");
+            }
           }
         }
         else
