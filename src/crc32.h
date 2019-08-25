@@ -9,7 +9,7 @@
    0xffffffff. */
 #ifdef HAVE_LIBZ
 #include <zlib.h>
-#define CRC32_Update(crc, buf, len) crc32((crc), (buf), (len))
+#define CRC32_Update(crc, buf, len) (crc32((crc) ^ 0xFFFFFFFF, (buf), (len)) ^ 0xFFFFFFFF)
 #else
 ULONG CRC32_Update(ULONG crc, UBYTE const *buf, unsigned int len);
 #endif
