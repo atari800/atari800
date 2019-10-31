@@ -32,6 +32,9 @@ Configure and make:
 
 Make generates the executable file src/atari800.
 
+IMPORTANT: Build for Raspberry will not work on RPi4: there was a major
+hardware/software change. Users of RPi4 should simply build Atari800 as
+default config, i.e. without the explicit '--target=rpi'.
 
 CROSS COMPILE FOR THE RASPBERRY PI
 ==================================
