@@ -770,6 +770,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		|| !Screen_Initialise(argc, argv)
+		|| !UI_Initialise(argc, argv)
 #endif
 		/* Initialise Custom Chips */
 		|| !ANTIC_Initialise(argc, argv)

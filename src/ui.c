@@ -4219,6 +4219,55 @@ static void HotKeyHelp(void)
 }
 #endif
 
+int UI_Initialise(int *argc, char *argv[])
+{
+	int i;
+	int j;
+
+	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc); /* is argument available? */
+		int a_m = FALSE; /* error, argument missing! */
+		int a_i = FALSE; /* error, argument invalid! */
+
+		if (strcmp(argv[i], "-atari_files") == 0) {
+			if (i_a) {
+				if (UI_n_atari_files_dir >= UI_MAX_DIRECTORIES)
+					Log_print("All ATARI_FILES_DIR slots used!");
+				else
+					Util_strlcpy(UI_atari_files_dir[UI_n_atari_files_dir++], argv[++i], FILENAME_MAX);
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-saved_files") == 0) {
+			if (i_a) {
+				if (UI_n_saved_files_dir >= UI_MAX_DIRECTORIES)
+					Log_print("All SAVED_FILES_DIR slots used!");
+				else
+					Util_strlcpy(UI_saved_files_dir[UI_n_saved_files_dir++], argv[++i], FILENAME_MAX);
+			}
+			else a_m = TRUE;
+		}
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				Log_print("\t-atari_files <path>  Set default path for Atari executables");
+				Log_print("\t-saved_files <path>  Set default path for saved files");
+			}
+			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		} else if (a_i) {
+			Log_print("Invalid argument for '%s'", argv[--i]);
+			return FALSE;
+		}
+	}
+	*argc = j;
+
+	return TRUE;
+}
+
 void UI_Run(void)
 {
 	static UI_tMenuItem menu_array[] = {
