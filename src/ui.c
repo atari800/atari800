@@ -1751,7 +1751,7 @@ static void ROMLocations(char const *title, UI_tMenuItem *menu_array)
 			else {
 				/* Use first non-empty ROM path as a starting filename for the dialog. */
 				int i;
-				for (i = 0; i < SYSROM_SIZE; ++i) {
+				for (i = 0; i < SYSROM_LOADABLE_SIZE; ++i) {
 					if (SYSROM_roms[i].filename[0] != '\0') {
 						strcpy(filename, SYSROM_roms[i].filename);
 						break;
