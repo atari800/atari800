@@ -1844,6 +1844,48 @@ static void ROMLocationsXEGame(void)
 	ROMLocations("XEGS Builtin Game ROM Locations", menu_array);
 }
 
+static SYSROM_t GetCurrentOS(void)
+{
+	SYSROM_t sysrom = { 0 };
+
+	int rom = SYSROM_os_versions[Atari800_machine_type];
+	if (rom == SYSROM_AUTO)
+		rom = SYSROM_AutoChooseOS(Atari800_machine_type, MEMORY_ram_size, Atari800_tv_mode);
+
+	if (rom != -1)
+		sysrom = SYSROM_roms[rom];
+
+	return sysrom;
+}
+
+static SYSROM_t GetCurrentBASIC(void)
+{
+	SYSROM_t sysrom = { 0 };
+
+	int rom = SYSROM_basic_version;
+	if (rom == SYSROM_AUTO)
+		rom = SYSROM_AutoChooseBASIC();
+
+	if (rom != -1)
+		sysrom = SYSROM_roms[rom];
+
+	return sysrom;
+}
+
+static SYSROM_t GetCurrentXEGame(void)
+{
+	SYSROM_t sysrom = { 0 };
+
+	int rom = SYSROM_xegame_version;
+	if (rom == SYSROM_AUTO)
+		rom = SYSROM_AutoChooseXEGame();
+
+	if (rom != -1)
+		sysrom = SYSROM_roms[rom];
+
+	return sysrom;
+}
+
 static void SystemROMSettings(void)
 {
 	static UI_tMenuItem menu_array[] = {
@@ -1857,6 +1899,8 @@ static void SystemROMSettings(void)
 	};
 
 	int option = 0;
+	int need_initialise = FALSE;
+	SYSROM_t old_sysrom, new_sysrom;
 
 	for (;;) {
 		int seltype;
@@ -1875,26 +1919,71 @@ static void SystemROMSettings(void)
 						break;
 					}
 				}
-				if (UI_driver->fGetDirectoryPath(rom_dir))
-					SYSROM_FindInDir(rom_dir, FALSE);
+				if (UI_driver->fGetDirectoryPath(rom_dir)
+						&& SYSROM_FindInDir(rom_dir, FALSE)) {
+					need_initialise = TRUE;
+				}
 			}
 			break;
+
 		case 1:
-			ROMLocations800();
-			break;
 		case 2:
-			ROMLocationsXL();
-			break;
 		case 3:
-			ROMLocations5200();
+			old_sysrom = GetCurrentOS();
+
+			switch (option) {
+			case 1:
+				ROMLocations800();
+				break;
+			case 2:
+				ROMLocationsXL();
+				break;
+			case 3:
+				ROMLocations5200();
+				break;
+			}
+
+			new_sysrom = GetCurrentOS();
+
+			if (old_sysrom.data != new_sysrom.data)
+				need_initialise = TRUE;
 			break;
+
 		case 4:
-			ROMLocationsBASIC();
+			if (Atari800_machine_type != Atari800_MACHINE_5200) {
+				old_sysrom = GetCurrentBASIC();
+
+				ROMLocationsBASIC();
+
+				new_sysrom = GetCurrentBASIC();
+
+				if (old_sysrom.data != new_sysrom.data)
+					need_initialise = TRUE;
+			} else {
+				/* ignore BASIC changes on 5200 */
+				ROMLocationsBASIC();
+			}
 			break;
+
 		case 5:
-			ROMLocationsXEGame();
+			if (Atari800_machine_type == Atari800_MACHINE_XLXE && Atari800_builtin_game) {
+				old_sysrom = GetCurrentXEGame();
+
+				ROMLocationsXEGame();
+
+				new_sysrom = GetCurrentXEGame();
+
+				if (old_sysrom.data != new_sysrom.data)
+					need_initialise = TRUE;
+			} else {
+				/* ignore XEGame changes on non-XE */
+				ROMLocationsXEGame();
+			}
 			break;
+
 		default:
+			if (need_initialise)
+				Atari800_InitialiseMachine();
 			return;
 		}
 	}
