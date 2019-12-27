@@ -1919,9 +1919,39 @@ static void SystemROMSettings(void)
 						break;
 					}
 				}
-				if (UI_driver->fGetDirectoryPath(rom_dir)
-						&& SYSROM_FindInDir(rom_dir, FALSE)) {
-					need_initialise = TRUE;
+				if (UI_driver->fGetDirectoryPath(rom_dir)) {
+					SYSROM_t old_basic, old_xegame;
+
+					old_sysrom = GetCurrentOS();
+					old_basic = GetCurrentBASIC();
+					old_xegame = GetCurrentXEGame();
+
+					if (SYSROM_FindInDir(rom_dir, FALSE)) {
+						new_sysrom = GetCurrentOS();
+
+						if (old_sysrom.data != new_sysrom.data) {
+							need_initialise = TRUE;
+							break;
+						}
+
+						if (Atari800_machine_type != Atari800_MACHINE_5200) {
+							new_sysrom = GetCurrentBASIC();
+
+							if (old_basic.data != new_sysrom.data) {
+								need_initialise = TRUE;
+								break;
+							}
+						}
+
+						if (Atari800_machine_type == Atari800_MACHINE_XLXE && Atari800_builtin_game) {
+							new_sysrom = GetCurrentXEGame();
+
+							if (old_xegame.data != new_sysrom.data) {
+								need_initialise = TRUE;
+								break;
+							}
+						}
+					}
 				}
 			}
 			break;
