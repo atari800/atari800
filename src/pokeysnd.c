@@ -165,7 +165,13 @@ static int mz_quality = 0;		/* default quality for mzpokeysnd */
 int mz_clear_regs = 0;
 #endif
 
+#ifndef __MINT__
 int POKEYSND_enable_new_pokey = TRUE;
+#else
+/* too slow on Falcon */
+int POKEYSND_enable_new_pokey = FALSE;
+#endif
+
 int POKEYSND_bienias_fix = TRUE;  /* when TRUE, high frequencies get emulated: better sound but slower */
 #if defined(__PLUS) && !defined(_WX_)
 #define BIENIAS_FIX (g_Sound.nBieniasFix)

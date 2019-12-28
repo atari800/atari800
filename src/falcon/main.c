@@ -1444,8 +1444,6 @@ double PLATFORM_Time(void)
 int main(int argc, char **argv)
 {
 #ifdef SOUND
-	/* disabled by default */
-	POKEYSND_enable_new_pokey = FALSE;
 	/* set default desired sound */
 	Sound_desired.freq = 24585;
 	Sound_desired.sample_size = 1;
