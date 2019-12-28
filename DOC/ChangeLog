@@ -1,3 +1,8 @@
+*** With Atari800 hosted by Github we rely on the git commit messages now
+*** so for detailed changelog please clone git repository and use git log
+*** or visit https://github.com/atari800/atari800/commits/master
+
+
 2018-07-07  Tomasz Krasuski  <kr0tki@poczta.onet.pl>
 * monitor.c: Fixed building --without-video.
 

@@ -1,3 +1,23 @@
+Version 4.2.0 (2019/12/28) - released at SILK
+==========================
+
+ New Features:
+ -------------
+  * raw Pokey registers recording by Ivo van Poorten
+  * new platform supported: FireBee
+  * optional hiding of hidden files/folders in the UI file selector
+  * libatari800 (Atari800 as a library) by Rob McMullen
+  * R: device (many years old feature) enabled by default
+ 
+ Fixes:
+ ------
+  * proper check if SDL joysticks are found (fixes #58)
+  * Portrait mode for Android (related to #41)
+  * RMW for Pokey
+  * ROM OS path changes handled better
+  * improved "Find ROM images"
+
+
 Version 4.1.0 (2019/04/13) - release cooked at Atariada.cz (again :-)
 ==========================
 

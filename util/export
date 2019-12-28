@@ -2,7 +2,7 @@
 # This scripts helps with building the source .tar.gz file
 
 VER_MAJOR=4
-VER_MINOR=1
+VER_MINOR=2
 VER_MICRO=0
 #
 VERSION=$VER_MAJOR"."$VER_MINOR"."$VER_MICRO
@@ -40,7 +40,7 @@ if [ $? -ne 0 ]; then
 fi
 grep "AC_INIT(Atari800, "$VERSION atari800/configure.ac | grep $VERSION >/dev/null
 if [ $? -ne 0 ]; then
-	echo "ERROR: increase version in src/configure.ac"
+	echo "ERROR: increase version in configure.ac"
 	exit 1
 fi
 #
