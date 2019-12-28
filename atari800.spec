@@ -235,7 +235,7 @@ install -m 644 %{name}.1 %{buildroot}/%{_mandir}/man1/
 %{_bindir}/%{name}-%{maintarget}
 %{_mandir}/man1/%{name}.1.*
 %doc COPYING
-%doc README.1ST
+%doc README.TXT
 %doc DOC/BUGS
 %doc DOC/ChangeLog
 %doc DOC/CREDITS

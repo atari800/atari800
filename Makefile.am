@@ -3,6 +3,6 @@ AUTOMAKE_OPTIONS = foreign
 
 SUBDIRS = DOC src
 
-doc_DATA = COPYING README.1ST
+doc_DATA = COPYING README.TXT
 
 EXTRA_DIST = $(doc_DATA) act data debian util

@@ -18,9 +18,9 @@ if [ "x"$key = "xy" ]; then
 	git clone https://github.com/atari800/atari800.git
 fi
 #
-grep "[Vv]ersion "$VERSION atari800/README.1ST >/dev/null
+grep "[Vv]ersion "$VERSION atari800/README.TXT >/dev/null
 if [ $? -ne 0 ]; then
-	echo "ERROR: increase version in README.1ST"
+	echo "ERROR: increase version in README.TXT"
 	exit 1
 fi
 grep "[Vv]ersion "$VERSION atari800/DOC/README >/dev/null
