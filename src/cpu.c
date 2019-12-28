@@ -2419,8 +2419,10 @@ void CPU_GO(int limit)
 
 #else /* FALCON_CPUASM */
 
-	extern void CPU_GO_m68k(void);
-	CPU_GO_m68k();
+	{
+		extern void CPU_GO_m68k(void);
+		CPU_GO_m68k();
+	}
 
 #endif /* FALCON_CPUASM */
 	UPDATE_GLOBAL_REGS;
