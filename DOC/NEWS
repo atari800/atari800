@@ -17,6 +17,15 @@ Version 4.2.0 (2019/12/28) - released at SILK
   * ROM OS path changes handled better
   * improved "Find ROM images"
 
+ New command line options:
+ -------------------------
+  * -pokeyrec and its children
+  * -atari_files
+  * -saved_files
+  * -kbdjoy0 -kbdjoy1 -nokbdjoy0 -nokbdjoy1
+
+ Plus many Atari Falcon specific fixes and improvements by Mikro.
+
 
 Version 4.1.0 (2019/04/13) - release cooked at Atariada.cz (again :-)
 ==========================
