@@ -25,8 +25,7 @@ extern int BINLOAD_pause_loading;
 #define BINLOAD_LOADING_BASIC_LISTED_CR          4
 #define BINLOAD_LOADING_BASIC_LISTED_LF          5
 #define BINLOAD_LOADING_BASIC_LISTED_CRLF        6
-#define BINLOAD_LOADING_BASIC_LISTED_CR_OR_CRLF  7
-#define BINLOAD_LOADING_BASIC_RUN                8
+#define BINLOAD_LOADING_BASIC_RUN                7
 int BINLOAD_LoaderStart(UBYTE *buffer);
 
 #endif /* BINLOAD_H_ */

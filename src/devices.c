@@ -2267,6 +2267,30 @@ static void Devices_GetBasicCommand(void)
 static void Devices_OpenBasicFile(void)
 {
 	if (BINLOAD_bin_file != NULL) {
+		if (BINLOAD_loading_basic == BINLOAD_LOADING_BASIC_LISTED) {
+			/* determine its type now rather than during the loading */
+			unsigned char buf[2];
+			size_t buf_read;
+
+			fseek(BINLOAD_bin_file, 0, SEEK_END);
+			fseek(BINLOAD_bin_file, -2, SEEK_CUR);
+
+			buf_read = fread(buf, sizeof(buf[0]), 2, BINLOAD_bin_file);
+			if (buf_read == 2) {
+				/* simple heuristics - look at the last and possibly one before last character */
+				if (buf[1] == 0x9b) {
+					BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_ATARI;
+				} else if (buf[1] == 0x0a) {
+					BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_LF;
+					if (buf[0] == 0x0d) {
+						BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CRLF;
+					}
+				} else if (buf[1] == 0x0d) {
+					BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CR;
+				}
+			}
+		}
+
 		fseek(BINLOAD_bin_file, 0, SEEK_SET);
 		ESC_AddEscRts(ehclos_addr, ESC_EHCLOS, Devices_CloseBasicFile);
 		ESC_AddEscRts(ehread_addr, ESC_EHREAD, Devices_ReadBasicFile);
@@ -2289,22 +2313,10 @@ static void Devices_ReadBasicFile(void)
 		}
 		switch (BINLOAD_loading_basic) {
 		case BINLOAD_LOADING_BASIC_LISTED:
-			switch (ch) {
-			case 0x9b:
-				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_ATARI;
-				break;
-			case 0x0a:
-				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_LF;
-				ch = 0x9b;
-				break;
-			case 0x0d:
-				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CR_OR_CRLF;
-				ch = 0x9b;
-				break;
-			default:
-				break;
-			}
-			break;
+			/* can't be just LISTED at this point */
+			CPU_regY = 136;
+			CPU_SetN;
+			return;
 		case BINLOAD_LOADING_BASIC_LISTED_CR:
 			if (ch == 0x0d)
 				ch = 0x9b;
@@ -2322,21 +2334,6 @@ static void Devices_ReadBasicFile(void)
 					return;
 				}
 			}
-			if (ch == 0x0d)
-				ch = 0x9b;
-			break;
-		case BINLOAD_LOADING_BASIC_LISTED_CR_OR_CRLF:
-			if (ch == 0x0a) {
-				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CRLF;
-				ch = fgetc(BINLOAD_bin_file);
-				if (ch == EOF) {
-					CPU_regY = 136;
-					CPU_SetN;
-					return;
-				}
-			}
-			else
-				BINLOAD_loading_basic = BINLOAD_LOADING_BASIC_LISTED_CR;
 			if (ch == 0x0d)
 				ch = 0x9b;
 			break;
