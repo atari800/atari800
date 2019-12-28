@@ -15,7 +15,8 @@ Version 4.2.0 (2019/12/28) - released at SILK
   * Portrait mode for Android (related to #41)
   * RMW for Pokey
   * ROM OS path changes handled better
-  * improved "Find ROM images"
+  * improved "Find ROM images" - now Atari800 reboots if necessary
+  * fixed an old bug which caused freezing in the UI on Falcon
 
  New command line options:
  -------------------------
