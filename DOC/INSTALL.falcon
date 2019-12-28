@@ -38,7 +38,7 @@ assembler core included! No more dilemmas about speed vs. compatibility.
 ===========================================================================
 All m68k versions are built with following switches:
 
---host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --with-readline=no
+--host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --disable-riodevice --with-readline=no
 
 Then specifically:
 
