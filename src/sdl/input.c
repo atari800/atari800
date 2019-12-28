@@ -1283,6 +1283,18 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 			else a_m = TRUE;
 		}
 #endif /* LPTJOY */
+		else if (strcmp(argv[i], "-kbdjoy0") == 0) {
+			PLATFORM_kbd_joy_0_enabled = TRUE;
+		}
+		else if (!strcmp(argv[i], "-kbdjoy1")) {
+			PLATFORM_kbd_joy_1_enabled = TRUE;
+		}
+		else if (strcmp(argv[i], "-no-kbdjoy0") == 0) {
+			PLATFORM_kbd_joy_0_enabled = FALSE;
+		}
+		else if (!strcmp(argv[i], "-no-kbdjoy1")) {
+			PLATFORM_kbd_joy_1_enabled = FALSE;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
@@ -1295,6 +1307,11 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 				Log_print("\t-joy0 <pathname> Select LPTjoy0 device");
 				Log_print("\t-joy1 <pathname> Select LPTjoy1 device");
 #endif /* LPTJOY */
+				Log_print("\t-kbdjoy0         enable joystick 0 keyboard emulation");
+				Log_print("\t-kbdjoy1         enable joystick 1 keyboard emulation");
+				Log_print("\t-no-kbdjoy0      disable joystick 0 keyboard emulation");
+				Log_print("\t-no-kbdjoy1      disable joystick 1 keyboard emulation");
+
 				Log_print("\t-grabmouse       Prevent mouse pointer from leaving window");
 			}
 			argv[j++] = argv[i];
