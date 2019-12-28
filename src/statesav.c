@@ -37,9 +37,6 @@
 #endif
 #ifdef HAVE_LIBZ
 #include <zlib.h>
-#else
-#define gzFile char *
-#define Z_OK 0
 #endif
 #ifdef LIBATARI800
 #include "libatari800/init.h"
