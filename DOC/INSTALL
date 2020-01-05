@@ -30,10 +30,10 @@ the following locations:-
    bit 6 to 0.
 5. Atari 5200 BIOS (2048 bytes between $f800 and $ffff)
 
-The first time you run the emulator you will be prompted for the
-location of the ROMs and various other defaults. If you want to
-change any of these in the future simply start the emulator with
-the "-configure" command line option.
+The first time you run the emulator it will scan the current directory for
+compatible ROMs and load them. At the same time, a new configuration file
+will be created, with the new paths stored so the next time you run the
+emulator the ROMs would be find automatically.
 
 Compiling the Emulator
 ----------------------

@@ -205,4 +205,7 @@ FILE *Util_uniqopen(char *filename, const char *mode);
 void Util_sleep(double s);
 double Util_time(void);
 
+/* Get current working directory. */
+char *Util_getcwd(char *buf, size_t size);
+
 #endif /* UTIL_H_ */

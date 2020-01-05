@@ -423,7 +423,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 	/* try to find ROM images if the configuration file is not found
 	   or it does not specify some ROM paths (blank paths count as specified) */
 #ifndef ANDROID
-	SYSROM_FindInDir(".", TRUE); /* current directory */
+	{
+		char current_dir[FILENAME_MAX];
+		SYSROM_FindInDir(Util_getcwd(current_dir, FILENAME_MAX), TRUE);
+	}
 #if defined(unix) || defined(__unix__) || defined(__linux__)
 	SYSROM_FindInDir("/usr/share/atari800", TRUE);
 #endif

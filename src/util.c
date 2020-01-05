@@ -50,6 +50,12 @@
 #  include <time.h>
 # endif
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* getcwd() */
+#endif
+#ifdef HAVE_DIRECT_H
+#include <direct.h> /* getcwd on MSVC*/
+#endif
 
 #include "atari.h"
 #include "platform.h"
@@ -531,4 +537,18 @@ void Util_sleep(double s)
 #endif
 	}
 #endif /* !SUPPORTS_PLATFORM_SLEEP */
+}
+
+char *Util_getcwd(char *buf, size_t size)
+{
+#ifdef HAVE_GETCWD
+	if (getcwd(buf, size) == NULL) {
+		buf[0] = '.';
+		buf[1] = '\0';
+	}
+#else
+	buf[0] = '.';
+	buf[1] = '\0';
+#endif
+	return buf;
 }
