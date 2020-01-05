@@ -28,12 +28,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* free() */
-#ifdef HAVE_UNISTD_H
-#include <unistd.h> /* getcwd() */
-#endif
-#ifdef HAVE_DIRECT_H
-#include <direct.h> /* getcwd on MSVC*/
-#endif
 /* XXX: <sys/dir.h>, <ndir.h>, <sys/ndir.h> */
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
@@ -984,21 +978,6 @@ static void strcatchr(char *s, char c)
 	s[1] = '\0';
 }
 
-/* Fills BUF with the path of the current working directory (or, if it fails,
-   with "." or "/"). */
-static void GetCurrentDir(char buf[FILENAME_MAX])
-{
-#ifdef HAVE_GETCWD
-	if (getcwd(buf, FILENAME_MAX) == NULL) {
-		buf[0] = '/';
-		buf[1] = '\0';
-	}
-#else
-	buf[0] = '.';
-	buf[1] = '\0';
-#endif
-}
-
 /* Select file or directory.
    The result is returned in path and path is where selection begins (i.e. it must be initialized).
    pDirectories are "favourite" directories (there are nDirectories of them). */
@@ -1024,7 +1003,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 #else
 	if (current_dir[0] == '\0')
 #endif
-		GetCurrentDir(current_dir);
+	Util_getcwd(current_dir, FILENAME_MAX);
 	for (;;) {
 		int index = 0;
 		int i;
@@ -1056,7 +1035,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 			if (current_dir[0] == '\0') {
 				/* Path couldn't be split further.
 				   Try the working directory as a last resort. */
-				GetCurrentDir(current_dir);
+				Util_getcwd(current_dir, FILENAME_MAX);
 				GetDirectory(current_dir);
 				if (n_filenames >= 0)
 					break;

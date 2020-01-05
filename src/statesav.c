@@ -29,12 +29,6 @@
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h> /* getcwd */
-#endif
-#ifdef HAVE_DIRECT_H
-#include <direct.h> /* getcwd on MSVC*/
-#endif
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
@@ -300,17 +294,15 @@ void StateSav_ReadINT(int *data, int num)
 void StateSav_SaveFNAME(const char *filename)
 {
 	UWORD namelen;
-#ifdef HAVE_GETCWD
 	char dirname[FILENAME_MAX]="";
 
 	/* Check to see if file is in application tree, if so, just save as
 	   relative path....*/
-	if (getcwd(dirname, FILENAME_MAX) != NULL) {
-		if (strncmp(filename, dirname, strlen(dirname)) == 0)
-			/* XXX: check if '/' or '\\' follows dirname in filename? */
-			filename += strlen(dirname) + 1;
+	Util_getcwd(dirname, FILENAME_MAX);
+	if (strncmp(filename, dirname, strlen(dirname)) == 0) {
+		/* XXX: check if '/' or '\\' follows dirname in filename? */
+		filename += strlen(dirname) + 1;
 	}
-#endif
 
 	namelen = strlen(filename);
 	/* Save the length of the filename, followed by the filename */
