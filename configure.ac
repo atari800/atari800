@@ -109,6 +109,9 @@ case $host_os in
     linux | linux-gnu)
         a8_host="linux"
         ;;
+    darwin*)
+        a8_host="macos"
+        ;;
     mint)
         if [[ "$a8_target" = "firebee" ]]; then
             a8_host=firebee
@@ -1204,13 +1207,15 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
                  [Use IP network connection with the R: networking device (Linux/Unix/Win32) (default=ON)],
                  R_NETWORK,[Define to use IP network connection with the R: device.]
                 )
-        if [[ "$a8_host" != "win" ]]; then
+        if [[ "$a8_host" != "win" -a "$a8_host" != "macos" ]]; then
             A8_OPTION(rserial,yes,
                      [Use the host serial port with the R: networking device (Linux/Unix only) (default=ON)],
                      R_SERIAL,[Define to use the host serial port with the R: device.]
                     )
-        else
-            A8_NEED_LIB(ws2_32)
+        else 
+            if [[ "$a8_host" != "macos" ]]; then
+                A8_NEED_LIB(ws2_32)
+            fi
             WANT_R_SERIAL="no"
         fi
     fi
@@ -1310,9 +1315,9 @@ if [[ "$a8_target" = "windx" ]]; then
 fi
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     echo "Using R: device?......................: $WANT_R_IO_DEVICE"
-        if [[ "$a8_host" != "win" -a "$WANT_R_IO_DEVICE" = "yes" ]]; then
-            echo "Using R: with the host serial port?...: $WANT_R_SERIAL"
-            echo "Using R: with IP network support......: $WANT_R_NETWORK"
+        if [[ "$a8_host" != "win" -a "$a8_host" != "macos" -a "$WANT_R_IO_DEVICE" = "yes" ]]; then
+            echo "    Using R: with the host serial port?...: $WANT_R_SERIAL"
+            echo "    Using R: with IP network support......: $WANT_R_NETWORK"
         fi
 fi
 if [[ "$a8_target" = default -a "$with_video" = sdl ]]; then
