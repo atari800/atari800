@@ -1213,7 +1213,7 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
                      R_SERIAL,[Define to use the host serial port with the R: device.]
                     )
         else 
-            if [[ "$a8_host" != "macos" ]]; then
+            if [[ "$a8_host" = "win" ]]; then
                 A8_NEED_LIB(ws2_32)
             fi
             WANT_R_SERIAL="no"
