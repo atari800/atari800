@@ -114,7 +114,6 @@
 static u_long ioctlsocket_non_block = 1; /* for ioctlsocket */
 #define perror(a) printf("%s:WSA error code:%d\n",a,WSAGetLastError())
 #define close(a) closesocket(a)
-typedef char *caddr_t;
 static void catch_disconnect(int sig);
 static int rdevice_win32_read(SOCKET s, char *buf, int len) {
   int r;
@@ -769,7 +768,7 @@ static void open_connection(char * address, int port)
         {
           snprintf(MESSAGE, sizeof(MESSAGE), "R*: Host = '%s'.",  host->h_name);
           DBG_APRINT(MESSAGE);
-          memcpy((caddr_t)&peer_in.sin_addr, host->h_addr_list[0], host->h_length);
+          memcpy(&peer_in.sin_addr, host->h_addr_list[0], host->h_length);
         }
         else
         {
