@@ -16,10 +16,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA */
 
 /* Atari change: removal and addition of structure fields.
    Values of resolution and sharpness adjusted to make NTSC artifacts look better. */
-atari_ntsc_setup_t const atari_ntsc_monochrome = { 0, -1, 0, 0, -.3,  .3,  .2, -.2, -.2, -1, 0, 0, 0, 0. };
-atari_ntsc_setup_t const atari_ntsc_composite  = { 0,  0, 0, 0, -.5,  .3, -.1,   0,   0,  0, 0, 0, 0, 0. };
-atari_ntsc_setup_t const atari_ntsc_svideo     = { 0,  0, 0, 0, -.3,  .3,  .2,  -1,  -1,  0, 0, 0, 0, 0. };
-atari_ntsc_setup_t const atari_ntsc_rgb        = { 0,  0, 0, 0, -.3,  .3,  .7,  -1,  -1, -1, 0, 0, 0, 0. };
+atari_ntsc_setup_t const atari_ntsc_monochrome = { 0, -1, 0, 0, -.3,  2.35,  .2, -.2, -.2, -1, 0, 0, 0, 0. };
+atari_ntsc_setup_t const atari_ntsc_composite  = { 0,  0, 0, 0, -.5,  2.35, -.1,   0,   0,  0, 0, 0, 0, 0. };
+atari_ntsc_setup_t const atari_ntsc_svideo     = { 0,  0, 0, 0, -.3,  2.35,  .2,  -1,  -1,  0, 0, 0, 0, 0. };
+atari_ntsc_setup_t const atari_ntsc_rgb        = { 0,  0, 0, 0, -.3,  2.35,  .7,  -1,  -1, -1, 0, 0, 0, 0. };
 
 #define alignment_count 4
 #define burst_count     1
