@@ -71,6 +71,11 @@
 #define SAVE_VERSION_NUMBER 8 /* Last changed after Atari800 3.1.0 */
 
 #if defined(MEMCOMPR) || defined(LIBATARI800)
+/* libatari800 pretends to care about libz but it doesn't */
+#ifdef LIBATARI800
+#define gzFile char *
+#define Z_OK 0
+#endif
 static gzFile mem_open(const char *name, const char *mode);
 static int mem_close(gzFile stream);
 static size_t mem_read(void *buf, size_t len, gzFile stream);
