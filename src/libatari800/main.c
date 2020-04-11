@@ -159,6 +159,10 @@ int UI_SelectCartType(int k) {
 	return CARTRIDGE_NONE;
 }
 
+int UI_Initialise(int *argc, char *argv[]) {
+	return TRUE;
+}
+
 void UI_Run(void) {
 	;
 }
