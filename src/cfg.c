@@ -126,6 +126,7 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 	while (fgets(string, sizeof(string), fp)) {
 		char *ptr;
 		Util_chomp(string);
+		Util_trim(string);
 		/* Check for comments */
 		if (string != NULL && string[0] == '#') {
 			continue;
