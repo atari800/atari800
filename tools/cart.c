@@ -12,40 +12,37 @@
 #include <stdint.h>
 #include <errno.h>
 #include <stdlib.h>
-
-#define MIN_CARTTYPE 1
-#define MAX_CARTTYPE 70
-#define URL "https://github.com/atari800/atari800/blob/master/DOC/cart.txt"
-
-uint32_t CARTRIDGE_Checksum(const uint8_t *image, int nbytes);
-long flen(FILE *fp);
-void convert(char *romfile, char *cartfile, int32_t type);
-
-typedef struct {
-  uint8_t cart[4];
-  uint8_t type[4];
-  uint8_t csum[4];
-  uint8_t zero[4];
-} header;
+#include "cart.h"
 
 /* Taken directly from atari800-4.1.0/src/cartridge.c */
 uint32_t CARTRIDGE_Checksum(const uint8_t *image, int nbytes)
 {
-	int checksum = 0;
-	while (nbytes > 0) {
-		checksum += *image++;
-		nbytes--;
-	}
-	return checksum;
+  int checksum = 0;
+  while (nbytes > 0) {
+    checksum += *image++;
+    nbytes--;
+  }
+  return checksum;
 }
 
-long flen(FILE *fp)
+long checklen(FILE *fp, int ctype)
 {
   long l;
   
   fseek(fp, 0, SEEK_END);
   l = ftell(fp);
   rewind(fp);
+  if (l < MIN_SIZE) {
+    fprintf(stderr, "Romfile size is too small (<%d bytes)\n", MIN_SIZE);
+    exit(1);
+  }
+  if (l > carts[ctype].size) {
+    fprintf(stderr,
+	    "Romfile size is too large for cartridge type %d - %s (>%d bytes)\n",
+	    ctype, carts[ctype].description, carts[ctype].size);
+    exit(1);
+  }    
+
   return l;
 }
 
@@ -55,25 +52,27 @@ void convert(char *romfile, char *cartfile, int32_t type)
   long len;
   uint8_t *rom;
   uint32_t csum;
-  header h;
+  header_t h;
 
-  printf("Converting %s to %s (type %d)\n", romfile, cartfile, type);
+  printf("Converting %s to %s (type %d - %s)\n", romfile, cartfile, type,
+	 carts[type].description);
 
   /* Read the original rom file */
   fp = fopen(romfile, "rb");
   if (fp == NULL) {
-    printf("Error opening rom file '%s': %s\n", romfile, strerror(errno));
+    fprintf(stderr, "Error opening rom file '%s': %s\n",
+	    romfile, strerror(errno));
     exit(1);
   }
-  len = flen(fp);
+  len = checklen(fp, type);
   rom = malloc(len);
   if (rom == NULL) {
-      printf("Allocation error: %s\n", strerror(errno));
-      exit(1);
+    fprintf(stderr, "Allocation error: %s\n", strerror(errno));
+    exit(1);
   }
   
   if (fread(rom, 1, len, fp) < len) {
-    printf("Read error: %s\n", strerror(errno));
+    fprintf(stderr, "Read error: %s\n", strerror(errno));
     exit(1);
   }
   fclose(fp);
@@ -99,25 +98,25 @@ void convert(char *romfile, char *cartfile, int32_t type)
   /* Create the new file, merge the header and rom data */
   fp = fopen(cartfile, "w");
   if (fp == NULL) {
-    printf("Error creating cartridge file '%s': %s\n",
+    fprintf(stderr, "Error creating cartridge file '%s': %s\n",
 	   cartfile, strerror(errno));
     exit(1);
   }
 
   if (fwrite(&h, sizeof(h), 1, fp) != 1) {
-    printf("Error writing CAR header: %s\n", strerror(errno));
+    fprintf(stderr, "Error writing CAR header: %s\n", strerror(errno));
     exit(1);
   }
   if (fwrite(rom, len, 1, fp) != 1) {
-    printf("Error writing ROM body: %s\n", strerror(errno));
+    fprintf(stderr, "Error writing ROM body: %s\n", strerror(errno));
     exit(1);
   }
 
   fclose(fp);
 }
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
   int32_t ctype;
   
   if (argc != 4) {
@@ -127,9 +126,9 @@ int main(int argc, char *argv[]) {
 
   ctype = atol(argv[3]);
   if (ctype < MIN_CARTTYPE || ctype > MAX_CARTTYPE) {
-    printf("Invalid cartridge type: %s\n", argv[3]);
-    printf("See valid cartridge types at:\n");
-    printf("%s\n", URL);
+    fprintf(stderr, "Invalid cartridge type: %s\n", argv[3]);
+    fprintf(stderr, "See valid cartridge types at:\n");
+    fprintf(stderr, "%s\n", URL);
     exit(1);
   }
      
