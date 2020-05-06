@@ -265,8 +265,8 @@ void SDL_INPUT_WriteConfig(FILE *fp)
 
 	fprintf(fp, "SDL_RESET_KEY=%d\n", KBD_RESET);
 	fprintf(fp, "SDL_OPTION_KEY=%d\n", KBD_OPTION);
-	fprintf(fp, "SDL_SELET_KEY=%d\n", KBD_SELECT);
-	fprintf(fp, "SDL_START_KEY=%d\n", KBD_SELECT);
+	fprintf(fp, "SDL_SELECT_KEY=%d\n", KBD_SELECT);
+	fprintf(fp, "SDL_START_KEY=%d\n", KBD_START);
 	fprintf(fp, "SDL_EXIT_KEY=%d\n", KBD_EXIT);
 	
 	write_real_js_configs(fp);
