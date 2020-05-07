@@ -31,7 +31,6 @@
 #include "cartridge.h"
 
 #define URL "https://github.com/atari800/atari800/blob/master/DOC/cart.txt"
-#define MIN_SIZE 2048		/* Minimum cartridge size */
 
 long checklen(FILE *fp, int carttype);
 void convert(char *romfile, char *cartfile, int32_t type);
@@ -52,8 +51,8 @@ long checklen(FILE *fp, int ctype)
 	fseek(fp, 0, SEEK_END);
 	l = ftell(fp);
 	rewind(fp);
-	if (l < MIN_SIZE) {
-		fprintf(stderr, "Romfile size is too small (<%d bytes)\n", MIN_SIZE);
+	if (l < CARTRIDGE_MIN_SIZE) {
+		fprintf(stderr, "Romfile size is too small (<%d bytes)\n", CARTRIDGE_MIN_SIZE);
 		exit(1);
 	}
 	if (l > CARTRIDGES[ctype].kb) {
@@ -98,7 +97,6 @@ void convert(char *romfile, char *cartfile, int32_t type)
 	fclose(fp);
 
 	/* Create the CART header */
-	csum = CARTRIDGE_Checksum(rom, len);
 	memset(&h, 0, sizeof(h));
 	h.cart[0] = 'C';
 	h.cart[1] = 'A';
@@ -110,6 +108,7 @@ void convert(char *romfile, char *cartfile, int32_t type)
 	h.type[2] = (type & 0xff00) >> 8;
 	h.type[3] = type & 0xff;
 
+	csum = CARTRIDGE_Checksum(rom, len);
 	h.csum[0] = (csum & 0xff000000) >> 24;
 	h.csum[1] = (csum & 0xff0000) >> 16;
 	h.csum[2] = (csum & 0xff00) >> 8;
@@ -142,7 +141,6 @@ void list_cartridges(void)
 	printf("Supported cartridge types:\n");
 	for (i = 1; i <= CARTRIDGE_LAST_SUPPORTED; i++)
 		printf("  Type %d: %s\n", i, CARTRIDGES[i].description);
-	
 }
 
 int main(int argc, char *argv[])
@@ -164,8 +162,13 @@ int main(int argc, char *argv[])
 	ctype = atol(argv[3]);
 	if (ctype <= CARTRIDGE_NONE || ctype > CARTRIDGE_LAST_SUPPORTED) {
 		fprintf(stderr, "Invalid cartridge type: %s\n", argv[3]);
-		fprintf(stderr, "See valid cartridge types at:\n");
+		fprintf(stderr, "Run '%s -l' to see valid cartridge or visit:\n", argv[0]);
 		fprintf(stderr, "%s\n", URL);
+		exit(1);
+	}
+
+	if (strcmp(argv[1], argv[2]) == 0) {
+		fprintf(stderr, "Error: Romfile and cartfile can't be the same\n");
 		exit(1);
 	}
      
