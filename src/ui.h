@@ -146,6 +146,20 @@ typedef struct
 #define UI_MENU_SUBMENU_SUFFIX(retval, item, suffix)           { UI_ITEM_SUBMENU, retval, NULL, item, suffix }
 #define UI_MENU_SUBMENU_ACCEL(retval, item, keystroke)         { UI_ITEM_SUBMENU, retval, NULL, item, UI_MENU_ACCEL(keystroke) }
 #define UI_MENU_END                                            { UI_ITEM_END, 0, NULL, NULL, NULL }
+#define UI_MAKE_MENU_ACTION(a, f, r, i) {	\
+    a.flags = f;				\
+    a.retval = r;				\
+    a.prefix = NULL;				\
+    a.item = i;					\
+    a.suffix = NULL;				\
+  }
+#define UI_MAKE_END(a) {			\
+    a.flags = UI_ITEM_END;			\
+    a.retval = 0;				\
+    a.prefix = NULL;				\
+    a.item = NULL;				\
+    a.suffix = NULL;				\
+  }
 
 /* UI driver entry prototypes */
 

@@ -50,80 +50,6 @@
 
 /* #define DEBUG 1 */
 
-int const CARTRIDGE_kb[CARTRIDGE_LAST_SUPPORTED + 1] = {
-	0,
-	8,        /* CARTRIDGE_STD_8 */
-	16,       /* CARTRIDGE_STD_16 */
-	16,       /* CARTRIDGE_OSS_034M_16 */
-	32,       /* CARTRIDGE_5200_32 */
-	32,       /* CARTRIDGE_DB_32 */
-	16,       /* CARTRIDGE_5200_EE_16 */
-	40,       /* CARTRIDGE_5200_40 */
-	64,       /* CARTRIDGE_WILL_64 */
-	64,       /* CARTRIDGE_EXP_64 */
-	64,       /* CARTRIDGE_DIAMOND_64 */
-	64,       /* CARTRIDGE_SDX_64 */
-	32,       /* CARTRIDGE_XEGS_32 */
-	64,       /* CARTRIDGE_XEGS_64_07 */
-	128,      /* CARTRIDGE_XEGS_128 */
-	16,       /* CARTRIDGE_OSS_M091_16 */
-	16,       /* CARTRIDGE_5200_NS_16 */
-	128,      /* CARTRIDGE_ATRAX_DEC_128 */
-	40,       /* CARTRIDGE_BBSB_40 */
-	8,        /* CARTRIDGE_5200_8 */
-	4,        /* CARTRIDGE_5200_4 */
-	8,        /* CARTRIDGE_RIGHT_8 */
-	32,       /* CARTRIDGE_WILL_32 */
-	256,      /* CARTRIDGE_XEGS_256 */
-	512,      /* CARTRIDGE_XEGS_512 */
-	1024,     /* CARTRIDGE_XEGS_1024 */
-	16,       /* CARTRIDGE_MEGA_16 */
-	32,       /* CARTRIDGE_MEGA_32 */
-	64,       /* CARTRIDGE_MEGA_64 */
-	128,      /* CARTRIDGE_MEGA_128 */
-	256,      /* CARTRIDGE_MEGA_256 */
-	512,      /* CARTRIDGE_MEGA_512 */
-	1024,     /* CARTRIDGE_MEGA_1024 */
-	32,       /* CARTRIDGE_SWXEGS_32 */
-	64,       /* CARTRIDGE_SWXEGS_64 */
-	128,      /* CARTRIDGE_SWXEGS_128 */
-	256,      /* CARTRIDGE_SWXEGS_256 */
-	512,      /* CARTRIDGE_SWXEGS_512 */
-	1024,     /* CARTRIDGE_SWXEGS_1024 */
-	8,        /* CARTRIDGE_PHOENIX_8 */
-	16,       /* CARTRIDGE_BLIZZARD_16 */
-	128,      /* CARTRIDGE_ATMAX_128 */
-	1024,     /* CARTRIDGE_ATMAX_1024 */
-	128,      /* CARTRIDGE_SDX_128 */
-	8,        /* CARTRIDGE_OSS_8 */
-	16,       /* CARTRIDGE_OSS_043M_16 */
-	4,        /* CARTRIDGE_BLIZZARD_4 */
-	32,       /* CARTRIDGE_AST_32 */
-	64,       /* CARTRIDGE_ATRAX_SDX_64 */
-	128,      /* CARTRIDGE_ATRAX_SDX_128 */
-	64,       /* CARTRIDGE_TURBOSOFT_64 */
-	128,      /* CARTRIDGE_TURBOSOFT_128 */
-	32,       /* CARTRIDGE_ULTRACART_32 */
-	8,        /* CARTRIDGE_LOW_BANK_8 */
-	128,      /* CARTRIDGE_SIC_128 */
-	256,      /* CARTRIDGE_SIC_256 */
-	512,      /* CARTRIDGE_SIC_512 */
-	2,        /* CARTRIDGE_STD_2 */
-	4,        /* CARTRIDGE_STD_4 */
-	4,        /* CARTRIDGE_RIGHT_4 */
-	32,       /* CARTRIDGE_TURBO_HIT_32 */
-	2048,     /* CARTRIDGE_MEGA_2048 */
-	128*1024, /* CARTRIDGE_THECART_128M */
-	4096,     /* CARTRIDGE_MEGA_4096 */
-	2048,     /* CARTRIDGE_MEGA_2048 */
-	32*1024,  /* CARTRIDGE_THECART_32M */
-	64*1024,  /* CARTRIDGE_THECART_64M */
-	64,       /* CARTRIDGE_XEGS_64_8F */
-	128,      /* CARTRIDGE_ATRAX_128 */
-	32,       /* CARTRIDGE_ADAWLIAH_32 */
-	64        /* CARTRIDGE_ADAWLIAH_64 */
-};
-
 int CARTRIDGE_autoreboot = TRUE;
 
 static int CartIsFor5200(int type)
@@ -1206,16 +1132,6 @@ void CARTRIDGE_BountyBob2PutByte(UWORD addr, UBYTE value)
 }
 #endif
 
-int CARTRIDGE_Checksum(const UBYTE *image, int nbytes)
-{
-	int checksum = 0;
-	while (nbytes > 0) {
-		checksum += *image++;
-		nbytes--;
-	}
-	return checksum;
-}
-
 static void ResetCartState(CARTRIDGE_image_t *cart)
 {
 	switch (cart->type) {
@@ -1471,7 +1387,7 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 		len >>= 10;	/* number of kilobytes */
 		cart->size = len;
 		for (type = 1; type <= CARTRIDGE_LAST_SUPPORTED; type++)
-			if (CARTRIDGE_kb[type] == len) {
+			if (CARTRIDGES[type].kb == len) {
 				if (cart->type == CARTRIDGE_NONE) {
 					cart->type = type;
 				} else {
@@ -1503,8 +1419,8 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 		if (type >= 1 && type <= CARTRIDGE_LAST_SUPPORTED) {
 			int checksum;
 			int result;
-			len = CARTRIDGE_kb[type] << 10;
-			cart->size = CARTRIDGE_kb[type];
+			len = CARTRIDGES[type].kb << 10;
+			cart->size = CARTRIDGES[type].kb;
 			/* alloc memory and read data */
 			cart->image = (UBYTE *) Util_malloc(len);
 			if (fread(cart->image, 1, len, fp) < len) {
@@ -1619,7 +1535,7 @@ static void InitInsert(CARTRIDGE_image_t *cart)
 			/* Assume r == CARTRIDGE_BAD_CHECKSUM */ "Bad checksum");
 			cart->type = CARTRIDGE_NONE;
 		}
-		if (cart->type == CARTRIDGE_UNKNOWN && CARTRIDGE_kb[tmp_type] == res)
+		if (cart->type == CARTRIDGE_UNKNOWN && CARTRIDGES[tmp_type].kb == res)
 			CARTRIDGE_SetType(cart, tmp_type);
 	}
 }
