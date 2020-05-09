@@ -25,7 +25,7 @@
 #ifndef CARTRIDGE_INFO_H_
 #define CARTRDIGE_INFO_H_
 
-/* Min and Max cartridge size in byte */
+/* Min and Max cartridge size in bytes */
 #define CARTRIDGE_MIN_SIZE        2048
 #define CARTRIDGE_MAX_SIZE	  (128 * 1024 * 1024)
 #define CARTRIDGE_LAST_SUPPORTED  70

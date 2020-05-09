@@ -1007,15 +1007,18 @@ static void DiskManagement(void)
 
 int UI_SelectCartType(int k)
 {
-	UI_tMenuItem menu_array[CARTRIDGE_LAST_SUPPORTED+1]; /* This list must be terminated with UI_MENU_END */
+	/* menu_array must be terminated with UI_MENU_END */
+	UI_tMenuItem menu_array[CARTRIDGE_LAST_SUPPORTED+1]; 
 	int cart_entry, menu_entry;
 	int option = 0;
 	UWORD flag;
 
 	UI_driver->fInit();
 
-	for (cart_entry = 1; cart_entry <= CARTRIDGE_LAST_SUPPORTED; cart_entry++) {
-		/* N.B.: CARTRIDGES[] is offset by 1 from menu_array[] due to CARTRIDGE_NONE entry. */
+	for (cart_entry = 1; cart_entry <= CARTRIDGE_LAST_SUPPORTED;
+	     cart_entry++) {
+		/* N.B.: CARTRIDGES[] is offset by 1 from menu_array[]
+		   due to CARTRIDGE_NONE entry. */
 		menu_entry = cart_entry - 1;
 
 		if (CARTRIDGES[cart_entry].kb == k) {
@@ -1026,8 +1029,10 @@ int UI_SelectCartType(int k)
 		else
 			flag = UI_ITEM_HIDDEN;
 
-		UI_MAKE_MENU_ACTION(menu_array[menu_entry], flag, cart_entry, CARTRIDGES[cart_entry].description);
+		UI_MAKE_MENU_ACTION(menu_array[menu_entry], flag, cart_entry,
+				    CARTRIDGES[cart_entry].description);
 	}
+	/* Terminate menu_array */
 	UI_MAKE_END(menu_array[CARTRIDGE_LAST_SUPPORTED]);
 	
 	if (option == 0)
