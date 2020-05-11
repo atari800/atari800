@@ -1007,38 +1007,32 @@ static void DiskManagement(void)
 
 int UI_SelectCartType(int k)
 {
-	/* menu_array must be terminated with UI_MENU_END */
-	UI_tMenuItem menu_array[CARTRIDGE_LAST_SUPPORTED+1]; 
-	int cart_entry, menu_entry;
+	UI_tMenuItem menu_array[CARTRIDGE_LAST_SUPPORTED+1] = { 0 };
+	int cart_entry;
+	int menu_entry = 0;
 	int option = 0;
-	UWORD flag;
 
 	UI_driver->fInit();
 
 	for (cart_entry = 1; cart_entry <= CARTRIDGE_LAST_SUPPORTED;
 	     cart_entry++) {
-		/* N.B.: CARTRIDGES[] is offset by 1 from menu_array[]
-		   due to CARTRIDGE_NONE entry. */
-		menu_entry = cart_entry - 1;
-
 		if (CARTRIDGES[cart_entry].kb == k) {
-			if (option == 0)
-				option = cart_entry;
-			flag = UI_ITEM_ACTION;
-		}
-		else
-			flag = UI_ITEM_HIDDEN;
-
-		UI_MAKE_MENU_ACTION(menu_array[menu_entry], flag, cart_entry,
-				    CARTRIDGES[cart_entry].description);
+			menu_array[menu_entry].flags = UI_ITEM_ACTION;
+			menu_array[menu_entry].retval = cart_entry;
+			menu_array[menu_entry].item =
+				CARTRIDGES[cart_entry].description;
+			menu_entry++;
+	    	}
 	}
-	/* Terminate menu_array */
-	UI_MAKE_END(menu_array[CARTRIDGE_LAST_SUPPORTED]);
-	
-	if (option == 0)
+		
+	if (menu_entry == 0)
 		return CARTRIDGE_NONE;
 
-	option = UI_driver->fSelect("Select Cartridge Type", 0, option, menu_array, NULL);
+	/* Terminate menu_array, but do it by hand */
+	menu_array[menu_entry].flags = UI_ITEM_END;
+
+	option = UI_driver->fSelect("Select Cartridge Type", 0, option,
+		menu_array, NULL);
 	if (option > 0)
 		return option;
 
