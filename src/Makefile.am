@@ -61,6 +61,7 @@ atari800_SOURCES = \
 	atari.c atari.h \
 	binload.c binload.h \
 	cartridge.c cartridge.h \
+	cartridge_info.c cartridge_info.h \
 	cassette.c cassette.h \
 	compfile.c compfile.h \
 	cfg.c cfg.h \

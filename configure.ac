@@ -1235,6 +1235,7 @@ AC_CONFIG_FILES([
 Makefile
 DOC/Makefile
 src/Makefile
+tools/Makefile
 ])
 if [[ "$a8_target" = "android" ]]; then
 	AC_CONFIG_FILES(src/android/jni/Android.mk)
