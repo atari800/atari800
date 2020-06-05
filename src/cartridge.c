@@ -61,6 +61,10 @@ static int CartIsFor5200(int type)
 	case CARTRIDGE_5200_NS_16:
 	case CARTRIDGE_5200_8:
 	case CARTRIDGE_5200_4:
+	case CARTRIDGE_SW5200_64:
+	case CARTRIDGE_SW5200_128:
+	case CARTRIDGE_SW5200_256:
+	case CARTRIDGE_SW5200_512:
 		return TRUE;
 	default:
 		break;
@@ -153,6 +157,11 @@ static void set_bank_80BF(void)
 		MEMORY_CartA0bfEnable();
 		MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image + (active_cart->state & 0x7f) * 0x4000);
 	}
+}
+
+static void set_bank_SW5200(void)
+{
+	MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image + (((active_cart->state & 0x0f) * 0x8000) & (active_cart->size * 1024 - 1)));
 }
 
 static void set_bank_SDX_128(void)
@@ -335,6 +344,18 @@ static void MapActiveCart(void)
 		MEMORY_SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
 		MEMORY_SetROM(0x5ff6, 0x5ff9);
 		switch (active_cart->type) {
+		case CARTRIDGE_SW5200_64:
+		case CARTRIDGE_SW5200_128:
+		case CARTRIDGE_SW5200_256:
+		case CARTRIDGE_SW5200_512:
+			set_bank_SW5200();
+#ifndef PAGED_ATTRIB
+			MEMORY_SetHARDWARE(0xbfc0, 0xbfff);
+#else
+			MEMORY_readmap[0xbf] = CARTRIDGE_Switchable5200GetByte;
+			MEMORY_writemap[0xbf] = CARTRIDGE_Switchable5200PutByte;
+#endif
+			break;
 		case CARTRIDGE_5200_32:
 			MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image);
 			break;
@@ -1068,6 +1089,31 @@ void CARTRIDGE_BountyBob2(UWORD addr)
 	}
 }
 
+void CARTRIDGE_Switchable5200(UWORD addr)
+{
+	int old_state = active_cart->state;
+	int new_state = old_state;
+
+	if ((addr & 0xBFC0) == 0xBFC0)
+		switch (addr & 0x30) {
+		case 0x00:
+			new_state = (new_state & ~(0x0C)) | (addr & 0x0C);
+			break;
+		case 0x10:
+			new_state = (new_state & ~(0x03)) | ((addr & 0x0C) >> 2);
+			break;
+		case 0x20:
+		case 0x30:
+			new_state = (new_state & ~(0x0F)) | 0x0F;
+			break;
+		}
+
+	if (old_state != new_state) {
+		active_cart->state = new_state;
+		set_bank_SW5200();
+	}
+}
+
 #ifdef PAGED_ATTRIB
 UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects)
 {
@@ -1105,6 +1151,16 @@ UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr, int no_side_effects)
 	return MEMORY_dGetByte(addr);
 }
 
+UBYTE CARTRIDGE_Switchable5200GetByte(UWORD addr, int no_side_effects)
+{
+	if (!no_side_effects) {
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
+			CARTRIDGE_Switchable5200(addr);
+		}
+	}
+	return MEMORY_dGetByte(addr);
+}
+
 void CARTRIDGE_BountyBob1PutByte(UWORD addr, UBYTE value)
 {
 	if (Atari800_machine_type == Atari800_MACHINE_5200) {
@@ -1128,6 +1184,13 @@ void CARTRIDGE_BountyBob2PutByte(UWORD addr, UBYTE value)
 		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
 			CARTRIDGE_BountyBob2(addr);
 		}
+	}
+}
+
+void CARTRIDGE_Switchable5200PutByte(UWORD addr, UBYTE value)
+{
+	if (Atari800_machine_type == Atari800_MACHINE_5200) {
+		CARTRIDGE_Switchable5200(addr);
 	}
 }
 #endif
