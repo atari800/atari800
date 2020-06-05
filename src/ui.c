@@ -1007,14 +1007,14 @@ static void DiskManagement(void)
 
 int UI_SelectCartType(int k)
 {
-	UI_tMenuItem menu_array[CARTRIDGE_LAST_SUPPORTED+1] = { 0 };
+	UI_tMenuItem menu_array[CARTRIDGE_TYPE_COUNT] = { 0 };
 	int cart_entry;
 	int menu_entry = 0;
 	int option = 0;
 
 	UI_driver->fInit();
 
-	for (cart_entry = 1; cart_entry <= CARTRIDGE_LAST_SUPPORTED;
+	for (cart_entry = 1; cart_entry < CARTRIDGE_TYPE_COUNT;
 	     cart_entry++) {
 		if (CARTRIDGES[cart_entry].kb == k) {
 			menu_array[menu_entry].flags = UI_ITEM_ACTION;

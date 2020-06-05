@@ -78,7 +78,7 @@ void list_cartridges(void)
 	int i;
 
 	printf("Supported cartridge types:\n");
-	for (i = 1; i <= CARTRIDGE_LAST_SUPPORTED; i++)
+	for (i = 1; i < CARTRIDGE_TYPE_COUNT; i++)
 		printf("  Type %d: %s\n", i, CARTRIDGES[i].description);
 }
 
@@ -91,7 +91,7 @@ void list_cartridges_size(long size)
 	minmaxcheck(size);
 	printf("Probable Cartridge types:\n");
 
-	for (i = 1; i <= CARTRIDGE_LAST_SUPPORTED; i++) {
+	for (i = 1; i < CARTRIDGE_TYPE_COUNT; i++) {
 		if (CARTRIDGES[i].kb == (size >> 10)) {
 			match = 1;
 			printf("  Type %d: %s\n", i, CARTRIDGES[i].description);
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 
 	/* Convert */
 	ctype = atol(argv[3]);
-	if (ctype <= CARTRIDGE_NONE || ctype > CARTRIDGE_LAST_SUPPORTED) {
+	if (ctype <= CARTRIDGE_NONE || ctype >= CARTRIDGE_TYPE_COUNT) {
 		fprintf(stderr, "Error: invalid cartridge type %s\n", argv[3]);
 		fprintf(stderr, "Run '%s -l' to see valid cartridge list or "
 			"visit:\n", argv[0]);
