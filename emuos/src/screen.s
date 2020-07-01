@@ -612,7 +612,13 @@ nofine:
 	pla
 	
 	;write mode lines and return
-no_lms_split = write_repeat
+no_lms_split:
+write_repeat:
+	sta		(rowac),y+
+	dex
+	bne		write_repeat
+no_clear:
+	rts
 
 .if _KERNEL_XLXE
 dofine:
@@ -647,12 +653,7 @@ write_with_zp_address:
 	sta		(rowac),y+
 	lda		1,x
 	ldx		#1
-write_repeat:
-	sta		(rowac),y+
-	dex
-	bne		write_repeat
-no_clear:
-	rts
+	bne		write_repeat		;!! - unconditional
 	
 try_clear:
 	bit		frmadr
@@ -665,7 +666,12 @@ standard_colors:
 	dta		$ca
 	dta		$94
 	dta		$46
-	dta		$00
+.def :ScreenBitposFlipTab
+	dta		$00			;!! - shared value between tables
+	dta		$01
+	dta		$03
+	dta		$07
+
 .endp
 
 ;==========================================================================
@@ -703,7 +709,7 @@ standard_colors:
 	lda		colcrs
 	ldx		dindex
 	ldy		ScreenEncodingTab,x
-	eor		bit_pos_flip_tab,y
+	eor		ScreenBitposFlipTab,y
 	tax
 	lda		colcrs+1
 	jsr		ScreenSetupPixelAddr.phase2
@@ -742,12 +748,6 @@ mode0:
 	ldy		#1
 xit:
 	rts
-	
-bit_pos_flip_tab:
-	dta		$00
-	dta		$01
-	dta		$03
-	dta		$07
 .endp
 
 ;==========================================================================
@@ -1393,7 +1393,6 @@ is_gr0:
 	adc		#0
 
 	tax
-	clc
 	adc		savmsc+1
 	sta		toadr+1
 	mva		savmsc toadr
