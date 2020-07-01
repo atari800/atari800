@@ -184,7 +184,7 @@ xit_pbi:
 	lda		#0
 	sta		critic
 
-	tya
+	cpy		#0			;!! - A=0 must be preserved for LiteDOS
 	sty		dstats
 	sty		status
 	rts
