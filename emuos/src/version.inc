@@ -8,9 +8,9 @@
 ;	without any warranty.
 
 .macro _KERNELSTR_VERSION
-		dta		'3.21'
+		dta		'3.22'
 .endm
 
 .macro _KERNELSTR_VERSION_INTERNAL
-		dta		"3.21"
+		dta		"3.22"
 .endm
