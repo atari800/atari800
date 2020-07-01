@@ -8,7 +8,13 @@
 ;	without any warranty.
 
 ;==========================================================================
-CassetteInit = CIOExitNotSupported
+.proc CassetteInit
+		;Set CBAUDL/CBAUDH to $05CC, the nominal POKEY divisor for 600
+		;baud. We don't care about this, but it's documented in the OS
+		;Manual.
+		mwa		#$05CC cbaudl
+		rts
+.endp
 
 ;==========================================================================
 ; Cassette open routine.
