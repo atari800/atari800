@@ -1,6 +1,6 @@
 ;	Altirra - Atari 800/800XL emulator
 ;	Kernel ROM replacement - Initialization
-;	Copyright (C) 2008-2016 Avery Lee
+;	Copyright (C) 2008-2019 Avery Lee
 ;
 ;	Copying and distribution of this file, with or without modification,
 ;	are permitted in any medium without royalty provided the copyright
@@ -33,21 +33,13 @@ run_diag:
 	ldx		#$ff
 	txs
 	
-	;wait for everything to stabilize (0.1s)
+.if _KERNEL_XLXE
+	;wait for everything to stabilize (0.1s) (XL/XE only)
 	ldy		#140
-	inx					;!! x=0
 stabilize_loop:
 	dex:rne
 	dey
 	bne		stabilize_loop
-	
-	.if _KERNEL_XLXE
-	;check if we successfully completed cold start
-	;
-	;!! This is required to work on Atari800WinPlus, which doesn't clear memory on
-	;   cold reset!
-	lda		coldst
-	bne		cold_boot
 	
 	;check for warmstart signature (XL/XE)
 	ldx		#2
@@ -59,7 +51,7 @@ warm_check:
 	bpl		warm_check
 	
 	jmp		InitWarmStart
-	.endif
+.endif
 
 .def :InitColdStart
 cold_boot:
@@ -185,9 +177,11 @@ clearloop:
 ;==============================================================================
 .proc InitWarmStart
 	; A. initialize CPU
+	;
 	; Undocumented: Check if cold start completed (COLDST=0); if not, force
 	; a cold start. ACTris 2.1 relies on this since its boot doesn't reset
-	; COLDST.
+	; COLDST. This is also required to work on Atari800WinPLus, which doesn't
+	; clear memory on a cold start.
 	;
 	sei								;!! FIRST TWO BYTES CHECKED BY ARCHON
 	lda		coldst
@@ -271,6 +265,7 @@ hwclear:
 	sta		pbctl		;switch to IORB
 .else
 	stx		pactl		;switch to DDRA
+	stx		pbctl		;switch to DDRB
 	sty		porta		;portA -> input
 	sty		portb		;portB -> input
 	sta		pactl		;switch to IORA
@@ -467,13 +462,17 @@ waitvbl:
 	cmp		rtclok+2
 	beq		waitvbl
 
-;-----------------------------------------------------------
+	;-------------------------------------------------------------------------
+	; Pre-boot hook (AltirraOS-specific)
+	;
 
 	.ifdef	_KERNEL_PRE_BOOT_HOOK
 	jsr		InitPreBootHook
 	.endif
 
-;-----------------------------------------------------------
+	;-------------------------------------------------------------------------
+	; Run cartridge/cassette/disk
+	;
 
 	; 17. do cassette boot, if it was requested
 	; F. if cassette boot was successful on cold boot, execute cassette init
@@ -481,6 +480,13 @@ waitvbl:
 	; The cold boot path must check the warm start flag and switch paths if
 	; necessary. SpartaDOS X relies on being able to set the warm start
 	; flag from its cart init handler.
+	;
+	; Disk boot must be attempted after cassette boot. Besides support for
+	; using DOS from tape-based software, this is also required by the tape
+	; version of Fun With Spelling (featuring Heathcliff), which depends on
+	; the SIO request causing the tape start vector to be invoked shortly
+	; after VBI so it can do an unsafe screen swap.
+	;
 	
 	lda		warmst
 	bne		reinitcas
@@ -497,39 +503,70 @@ reinitcas:
 	jsr		InitCassetteBoot
 postcasboot:
 
+	;-------------------------------------------------------------------------
 	; 18. do disk boot
 	; G. if disk boot was successful on cold boot, execute disk init
+	;
+	; For 800 mode, we must check if either cart A or cart B is present,
+	; doing a disk boot if either there are no carts or one of the carts
+	; requests disk boot. For the XL/XE case, cart B doesn't exist and we
+	; can simplify the logic.
+	;
+
 	lda		warmst
 	bne		reinitDisk
 	
-	;check for cart B requesting boot
+.if !_KERNEL_XLXE
+
+	;check if we have cart B
 	lda		tstdat
-	beq		noCartBBoot
-	lda		#$01
-	bit		$9ffd
-	bne		boot_disk
-	lda		tramsz
-	beq		postDiskBoot
-noCartBBoot:
+	bne		have_cart_b
+
+	;no cart B -- if no cart A either, do disk boot
+	ldx		tramsz			;cart A
+	beq		boot_disk
+	bne		have_cart_a
+
+have_cart_b:
+	;have cart B - grab boot disk flag (bit 0)
+	lda		$9ffd
+
+	;merge cart A's flags if it is present
+	ldx		tramsz
+	beq		no_cart_a
+
+have_cart_a:
+	ora		$bffd
+
+no_cart_a:
+	;skip disk boot if neither cart requested it
+	lsr
+	bcc		skip_disk_boot
+
+.else
 
 	;check for cart A requesting boot
 	lda		tramsz
-	beq		noCartABoot
-	lda		#$01
-	bit		$bffd
-	beq		postDiskBoot
-noCartABoot:
+	beq		boot_disk
+
+	;have cart A - boot disk if requested
+	lda		$bffd
+	lsr
+	bcc		skip_disk_boot
+
+.endif
+
 boot_disk:
 	jsr		BootDisk
-	jmp		postDiskBoot2
-	
+	jmp		post_disk_boot
+
 reinitDisk:
 	lda		boot?
 	lsr
-	bcc		postDiskBoot
+	bcc		skip_disk_boot
 	jsr		InitDiskBoot
 
-postDiskBoot2:
+post_disk_boot:
 .if _KERNEL_XLXE
 	; (XL/XE only) do type 3 poll or reinit handlers
 	; !! - must only do this if a disk boot occurs; Pole Position audio breaks if
@@ -542,31 +579,40 @@ reinit_handlers:
 	jsr		PHReinitHandlers
 post_reinit:
 .endif
-postDiskBoot:
 
+skip_disk_boot:
+
+	;-------------------------------------------------------------------------
 	; H. same as steps 19 and 20
 	; 19. reset coldstart flag
 	
 	ldx		#0
 	stx		coldst
 
+	;-------------------------------------------------------------------------
 	; 20. run cartridges or blackboard
+	;
+	; Weird quirk here: if the left cart is absent or doesn't request
+	; cart start, and the right cart is present and also doesn't request
+	; cart start, OS-B endlessly does disk boots instead of running (DOSVEC).
+	; We don't emulate this behavior for now since in practice it just seems
+	; useless, boot looping until DOS crashes. It is moot starting with the
+	; 1200XL DOS due to support for cart B being dropped.
+	;
 	
 	; try to boot cart A
-	lda		tramsz
-	beq		NoBootCartA
 	lda		#$04
-	bit		$bffd
+	ldx		tramsz
 	beq		NoBootCartA
-	jmp		($bffa)
+	bit		$bffd
+	seq:jmp	($bffa)
 NoBootCartA:
 
 	; try to boot cart B
-	lda		tstdat
+	ldx		tstdat
 	beq		NoBootCartB
 	bit		$9ffd
-	beq		NoBootCartB
-	jmp		($9ffa)
+	seq:jmp	($9ffa)
 NoBootCartB:
 
 	; run blackboard

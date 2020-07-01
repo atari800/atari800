@@ -54,12 +54,10 @@ attract_off:
 	lda		cdtmv1+1			;check high byte
 	beq		timer1_done			;if clear, timer's not running
 	dec		cdtmv1+1			;decrement high byte
-	dec		cdtmv1				;decrement low byte
-	bne		timer1_done			;we're done
 timer1_lobytezero:
 	dec		cdtmv1				;decrement low byte
-	bne		timer1_done
-	lda		cdtmv1+1			;check if high byte is zero
+	bne		timer1_done			;no underflow if non-zero
+	lda		cdtmv1+1			;low byte is zero... check if high byte is too
 	bne		timer1_done			;if it's not, we're not done yet ($xx00 > 0)
 	jsr		timer1_dispatch		;jump through timer vector
 timer1_done:
@@ -181,7 +179,7 @@ no_keydel:
 	tax
 	and		#$0f
 	sta		stick0
-	sta		stick2	
+	sta		stick2
 	txa
 	lsr						;shr1
 	lsr						;shr2
