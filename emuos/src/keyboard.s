@@ -172,7 +172,11 @@ KeyboardSpecial = CIOExitNotSupported
 ;
 .proc	KeyboardIRQ
 	;reset software repeat timer
+.if _KERNEL_XLXE
+	mva		krpdel	srtimr
+.else
 	mva		#$30	srtimr
+.endif
 	
 	;read new key
 	lda		kbcode

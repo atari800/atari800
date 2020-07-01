@@ -323,6 +323,9 @@ end:
 	dta		a(0)						;$0226 CDTMA1
 .endp
 
+krpdel_table:
+	dta		48,40
+
 ;==============================================================================
 .proc InitEnvironment
 	mva		tramsz ramsiz
@@ -342,10 +345,16 @@ end:
 	.if _KERNEL_XLXE
 	ldx		#0
 	lda		pal
+	ldy		#6
 	and		#$0e
+	bne		is_ntsc
 	sne:inx
+	dey
+is_ntsc:
 	stx		palnts
-	.endif
+	sty		keyrep
+	mva		krpdel_table,x krpdel
+.endif
 	
 	; 10. initialize RAM vectors
 
@@ -367,11 +376,6 @@ end:
 	stx		memlo
 	mva		tramsz memtop+1
 	mvx		#$07 memlo+1
-
-.if _KERNEL_XLXE
-	dex
-	stx		keyrep
-.endif
 	
 	jsr		DiskInit
 	jsr		ScreenInit
