@@ -305,6 +305,8 @@ dvstat	= $02ea			;DISK: Status request buffer area (4 bytes)
 		; $02eb
 		; $02ec
 		; $02ed
+cbaudl	= $02ee			;Cassette baud rate as POKEY divisor. Set to nominal ($05CC) by C: init.
+cbaudh	= $02ef			;
 crsinh	= $02f0			;Display/Editor: cursor inhibit flag
 keydel	= $02f1			;keyboard debounce delay (set to 3 vblanks per key)
 ch1		= $02f2			;last keyboard code read
