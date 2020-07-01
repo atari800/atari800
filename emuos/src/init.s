@@ -292,7 +292,13 @@ pageloop:
 	eor		#$ff
 	sta		(adress),y
 	inx
+
+.if _KERNEL_XLXE
 	cpx		#$c0
+.else
+	cpx		#$d0
+.endif
+
 	bne		pageloop
 notRAM:
 	stx		tramsz
