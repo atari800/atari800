@@ -154,12 +154,28 @@ KeyboardGetStatus = CIOExitSuccess
 KeyboardSpecial = CIOExitNotSupported
 
 ;==============================================================================
+; Keyboard IRQ
+;
+; HELP button ($11, $51, and $91):
+; - Affects SRTIMR, ATRACT, KEYDEL, and HELPFG
+; - Does NOT affect CH, CH1
+;
 .proc	KeyboardIRQ
 	;reset software repeat timer
 	mva		#$30	srtimr
 	
 	;read new key
 	lda		kbcode
+
+	;check for HELP
+	and		#$3f
+	cmp		#$11
+	bne		not_help
+	sta		helpfg
+	beq		xit2
+
+not_help:
+	lda		kbcode	
 	
 	;check if it is the same as the prev key
 	cmp		ch1

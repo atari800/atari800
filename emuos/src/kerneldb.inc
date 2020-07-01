@@ -295,6 +295,7 @@ zloada	= $02d3			;Relocating loader: Zero-page load address (XL/XE)
 		; $02d4
 dsctln	= $02d5			;Disk sector size (XL/XE)
 keyrep	= $02da			;Keyboard repeat rate (XL/XE)
+helpfg	= $02dc			;Help flag (XL/XE)
 pbpnt	= $02de			;Printer: Buffer index (XL/XE location)
 pbufsz	= $02df			;Printer: Record size (XL/XE location)
 ramsiz	= $02e4			;ram size in pages

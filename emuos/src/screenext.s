@@ -100,20 +100,6 @@ post_wrap:
 	rts
 .endp
 
-;==========================================================================
-; Convert an ATASCII character to displayable INTERNAL format.
-;
-; Entry:
-;	A = ATASCII char
-;
-; Exit:
-;	A = INTERNAL char
-;
-.proc	ScreenConvertATASCIIToInternal
-	jsr		ScreenConvertSetup
-	eor		ATASCIIToInternalTab,x
-	rts
-.endp
 
 ;==========================================================================
 ; Also returns with Y=1 for convenience.
