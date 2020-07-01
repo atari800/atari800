@@ -8,7 +8,10 @@
 ;	without any warranty.
 
 		opt		o-f-l-
+
 		org		$80
+
+canboot	dta		0
 
 chardt1	dta		0
 chardt2	dta		0
@@ -27,9 +30,6 @@ sprach	dta		0
 spricl	dta		0
 sprich	dta		0
 
-sysvbi	dta		a(0)
-sysirq	dta		a(0)
-
 rtcsav	dta		0,0,0
 rtctmp	dta		0,0,0
 
@@ -38,21 +38,44 @@ phase	dta		0
 
 		org		$5000,$d000
 		opt		o+f+
-		
+	
 .proc BootScreen
-		;hit COLDST to force a cold reboot if RESET is pressed
-		lda		#$ff
-		sta		coldst
+		clc
+		dta		{bit $00}
+boot_entry:
+		sec
+		php
 
-		jsr		clear_ram
+		jsr		BootClearRam
+
+		plp
+		ror		canboot
 		
-		;copy down display list
-		ldx		#dlistdata_end-dlistdata
-		mva:rne	dlistdata-1,x dlist-1,x-
-		
+		;relocate data down to RAM
+		mwa		#[.adr BootRamDataStart]+$5000-$D000 scrnad1
+		mwa		#BootRamDataStart scrnad2
+
+		.if		>[BootRamDataEnd-BootRamDataStart]
+		ldx		#>[BootRamDataEnd-BootRamDataStart]
+		ldy		#0
+page_copy:
+		mva:rne	(scrnad1),y (scrnad2),y+
+		inc		scrnad1+1
+		inc		scrnad2+1
+		dex
+		bne		page_copy
+		.endif
+
+		.if <[BootRamDataEnd-BootRamDataStart]
+byte_copy:
+		mva		(scrnad1),y (scrnad2),y+
+		cpy		#<[BootRamDataEnd-BootRamDataStart]
+		bne		byte_copy
+		.endif
+
 		;copy down bitmap graphics
 		mwa		#playfield3+19 scrnad2
-		mwa		#drivedat scrnad1
+		mwa		#BootDriveImage scrnad1
 		ldx		#40
 blit_loop:
 		ldy		#12
@@ -69,39 +92,18 @@ blit_loop:
 		scc:inc	scrnad1+1
 		dex
 		bne		blit_loop
-		
 
+		;set up display and interrupts
 		sei
-		mva		#$3d sdmctl
+		jsr		BootSwapVectors
 		mva		#0 nmien
-		mwa		vvblki sysvbi
-		mwa		#vbi vvblki
-		mwa		#dli vdslst
-		mwa		vimirq sysirq
-		mwa		#irq vimirq
-		ldx		#8
-		mva:rpl	color_table,x pcolr0,x-
-		mwa		#dlist sdlstl
 		mva		#$c0 nmien
 		mva		#>player0 pmbase
-		mva		#$40 hposp0
-		mva		#$60 hposp1
-		mva		#$a4 hposp2
-		mva		#$98 hposp3
-		mva		#$00 hposm3
-		mva		#$00 hposm2
-		mva		#$60 hposm1
-		mva		#$68 hposm0
+
+		ldx		#$0c
+		mva:rpl	gtia_data,x hposp0,x-
+
 		mva		#$03 gractl
-		mva		#$01 gprior
-		lda		#$03
-		sta		sizep0
-		sta		sizep1
-		sta		sizep3
-		lda		#$00
-		sta		sizep2
-		lda		#$0f
-		sta		sizem
 		cli
 		
 		;init sprites 0,1
@@ -120,26 +122,17 @@ sprinit:
 		lda		#0
 		sta		char_x
 		sta		char_y
-		jsr		Imprint
-		
-		;		  0123456789012345678901234567890123456789012345678901234567890123
-		dta		d"AltirraOS"
-		_KERNELSTR_BIOS_NAME_INTERNAL
-		dta		d" "
-		_KERNELSTR_VERSION_INTERNAL
-		
-		dta		$9b
 
-		.ifdef _KERNEL_816
-		dta		d"Copyright (C) 2018 Avery Lee",$9b
-		.else
-		dta		d"Copyright (C) 2012-2018 Avery Lee",$9b
-		.endif
-
-		dta		d"All Rights Reserved",$9b
-		dta		d"This is a substitute for the standard OS ROM. See the help file",$9b
-		dta		d"for how to use real Atari ROM images for higher compatibility."
-		dta		$ff
+		sta		msgadr
+imloop:
+		ldy		msgadr
+		inc		msgadr
+		lda		BootMessage,y
+		cmp		#$ff
+		beq		imdone
+		jsr		PlotChar
+		jmp		imloop
+imdone:
 		
 		lda		#0
 		sta		phase
@@ -168,7 +161,7 @@ sprclr:
 		mwa		#1 daux1
 		jsr		dskinv
 		bmi		loop2
-		jmp		do_boot
+		jmp		BootScreenExit
 loop2:
 		lda		rtclok+2
 		cmp:req	rtclok+2
@@ -239,49 +232,104 @@ phasetab:
 		:48 dta	$7a+[48-#]/3, a([$200+#*#*3]/3)
 phasetab_end:
 
+gtia_data:
+		dta		$40,$60,$a4,$98,$68,$60,$00,$00
+		dta		$03,$03,$00,$03,$0f
+.endp
+
 ;==========================================================================	
-do_boot:
+.proc BootScreenExit
 		sei
 		lda		#0
 		sta		nmien
-		sta		dmactl
 
-		;reset GTIA
+		;wait for vertical blank
+		ldx		#248/2
+		cpx:rne	vcount
+
+		;shut off display
+		sta		dmactl
+		sta		sdmctl
+
+		;reset GTIA (but not VBXE)
 		sta:rpl	$d000,x+
+
+		;check if we can continue the initial boot process
+		bit		canboot
+		bmi		continue_boot
 		
 		;invoke cold start
 		jmp		coldsv
 
+continue_boot:
+		;swap interrupt handler registers back
+		jsr		BootSwapVectors
+
+		;re-wipe RAM areas we used
+		jsr		BootClearRam
+
+		;re-enable IRQs (but VBI is still disabled)
+		cli
+
+		;print a clear screen character to clear any latent BOOT ERRORs
+		lda		#$7d
+		ldx		#0
+		stx		icbll
+		stx		icblh
+		ldy		#CIOCmdPutChars
+		sty		iccmd
+		jsr		ciov
+
+		;re-enable VBI and wait for VBI stage 2 to run once
+		mva		#$40 nmien
+
+		lda		#$ff
+		sta		ptrig7
+		bit:rmi	ptrig7
+
+		;all done, return to boot code with sector 1 loaded at $0400
+		rts
+.endp
+
 ;==========================================================================
-clear_ram:
-		lda		#$20
-		sta		charadr+1
+.proc BootClearRam
+		;clear $2000-$37FF
 		lda		#0
-		sta		charadr
 		tay
+		sta		charadr
 		ldx		#$20
+		stx		charadr+1
+		ldx		#$18
 clear_loop:
 		sta:rne	(charadr),y+
 		inc		charadr+1
 		dex
 		bne		clear_loop
+
+		;clear user page zero
+		sta:rpl	$80,x+
+
+		;all done
 		rts
+.endp
 
 ;==========================================================================
-vbi:
+.proc BootScreenVbi
 		lda		pfadr+1
 		eor		#$05
 		sta		pfadr+1
-		lda		color_table+5
+		lda		color1
 		sta		colpf1
-		lda		color_table+6
+		lda		color2
 		sta		colpf2
-		jmp		(sysvbi)
+		jmp		(BootVecVbi)
+.endp
 
-irq:
+;==========================================================================
+.proc BootScreenIrq
 		bit		nmist
 		bpl		do_irq
-dli:
+.def :BootScreenDli
 		pha
 		txa
 		pha
@@ -302,7 +350,7 @@ xit:
 		pla
 		rti
 do_irq:
-		jmp		(sysirq)
+		jmp		(BootVecIrq)
 split:
 		lda		#$50
 		ldx		#$5c
@@ -311,28 +359,29 @@ split:
 		stx		colpf1
 
 		jmp		xit
+.endp
 
 ;==========================================================================			
-imprint:
-		pla
-		sta		msgadr
-		pla
-		sta		msgadr+1
-imloop:
-		inw		msgadr
-		ldy		#0
-		lda		(msgadr),y
-		cmp		#$ff
-		beq		imdone
-		jsr		PlotChar
-		jmp		imloop
-imdone:
-		lda		msgadr+1
-		pha
-		lda		msgadr
-		pha
-		rts
-.endp
+.local BootMessage
+		;		  0123456789012345678901234567890123456789012345678901234567890123
+		dta		d"AltirraOS"
+		_KERNELSTR_BIOS_NAME_INTERNAL
+		dta		d" "
+		_KERNELSTR_VERSION_INTERNAL
+		
+		dta		$9b
+
+		.ifdef _KERNEL_816
+		dta		d"Copyright (C) 2018-2019 Avery Lee",$9b
+		.else
+		dta		d"Copyright (C) 2012-2019 Avery Lee",$9b
+		.endif
+
+		dta		d"All Rights Reserved",$9b
+		dta		d"This is a substitute for the standard OS ROM. See the help file",$9b
+		dta		d"for how to use real Atari ROM images for higher compatibility."
+		dta		$ff
+.endl
 
 ;==========================================================================	
 plotchar:
@@ -527,16 +576,6 @@ sprdat3:
 		dta		%11111111
 
 ;==========================================================================	
-color_table:
-		dta		$00
-		dta		$00
-		dta		$02
-		dta		$00
-		dta		$08
-		dta		$0C
-		dta		$02
-		dta		$14
-		dta		$50
 		
 ;==========================================================================	
 coltab:
@@ -556,14 +595,80 @@ coltab:
 		dta		$0E,$50
 
 ;==========================================================================	
-drivedat:
-		icl		'driveimage.inc'
-		
+.proc BootSwapVectors
+		ldx		#vec_offsets_end-vec_offsets-1
+loop:
+		ldy		vec_offsets,x
+		lda		$0200,y
+		pha
+		lda		BootVectors,x
+		sta		$0200,y
+		pla
+		sta		BootVectors,x
+		dex
+		bpl		loop
+		rts
+
+vec_offsets:
+		dta		vvblki-$0200
+		dta		vvblki-$0200+1
+		dta		vimirq-$0200
+		dta		vimirq-$0200+1
+		dta		vdslst-$0200
+		dta		vdslst-$0200+1
+		dta		sdlstl-$0200
+		dta		sdlsth-$0200
+		dta		pcolr0-$0200
+		dta		pcolr1-$0200
+		dta		pcolr2-$0200
+		dta		pcolr3-$0200
+		dta		color0-$0200
+		dta		color1-$0200
+		dta		color2-$0200
+		dta		color3-$0200
+		dta		color4-$0200
+		dta		sdmctl-$0200
+		dta		gprior-$0200
+		dta		coldst-$0200
+vec_offsets_end:
+.endp
+
 ;==========================================================================	
-		
-dlistdata:
+.proc BootDriveImage
+		icl		'driveimage.inc'
+.endp
+
+;==========================================================================	
+; Data relocated to RAM
+;
+		org		$3000,*-$5000+$d000
+
+BootRamDataStart = *
+
+BootVectors:
+BootVecVbi		dta		a(BootScreenVbi)
+BootVecIrq		dta		a(BootScreenIrq)
+BootVecDli		dta		a(BootScreenDli)
+BootVecDlist	dta		a(BootDlist)
+color_table:
+		dta		$00
+		dta		$00
+		dta		$02
+		dta		$00
+		dta		$08
+		dta		$0C
+		dta		$02
+		dta		$14
+		dta		$50
+		dta		$3d		;sdmctl
+		dta		$01		;gprior
+		dta		$ff		;coldst, to force cold reboot if RESET pressed
+
+BootDlist:
 		:4 dta	$70
 		:8 dta	$F0
+
+		;drive image (40 lines x 32 bytes = $500 bytes
 		dta		$4E,a(playfield3)
 		:6 dta	$0E
 		dta		$8E
@@ -572,18 +677,22 @@ dlistdata:
 		dta		$F0
 		dta		$70
 		
+		;80-col text screen (2x 40 rows)
 		dta		$4F,a(playfield)
-pfadr = dlist+(*-dlistdata)-2
+pfadr = *-2
 		:7 dta	$0F
 		:8 dta	$0F
 		:8 dta	$0F
 		dta		$70
 		:8 dta	$0F
 		:8 dta	$0F
-		dta		$41,a(dlist)
-dlistdata_end:
+		dta		$41,a(BootDlist)
 
-;version block for emulator
+BootRamDataEnd = *
+
+;==========================================================================	
+; Version block for emulator
+;
 		org		$d7f8
 		_KERNELSTR_VERSION
 		dta		0
@@ -609,11 +718,8 @@ player1:
 player2:
 		org		$2f00
 player3:
-
-		org		$3000
+		org		$3200
 playfield3:
-		org		$3f00
-dlist:
 
 		opt		l+
 		org		$d800

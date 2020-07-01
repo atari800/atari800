@@ -324,6 +324,29 @@ special_code_tab_end:
 	dta		$7c
 special_code_tab_end_2:
 
+;----------------
+
+special_dispatch_lo_tab:
+	dta		<(special_escape-1)
+	dta		<(special_up-1)
+	dta		<(special_down-1)
+	dta		<(special_left-1)
+	dta		<(special_right-1)
+	dta		<(special_clear-1)
+	dta		<(special_backspace-1)
+	dta		<(special_tab-1)
+	dta		<(special_delete_line-1)
+	dta		<(special_insert_line-1)
+	dta		<(special_clear_tab-1)
+	dta		<(special_set_tab-1)
+	dta		<(special_bell-1)
+	dta		<(special_delete_char-1)
+	dta		<(special_insert_char-1)
+	
+.if [((special_escape-1)^(special_insert_char-1))&$ff00]
+	.error 'Special character routines cross a page boundary: ',special_escape,'-',special_insert_char
+.endif
+
 ;---------------
 special_escape:
 	mva		#$80 escflg
@@ -726,28 +749,6 @@ delete_not_blank:
 	;re-show cursor and exit
 	rts
 
-;----------------
-
-special_dispatch_lo_tab:
-	dta		<(special_escape-1)
-	dta		<(special_up-1)
-	dta		<(special_down-1)
-	dta		<(special_left-1)
-	dta		<(special_right-1)
-	dta		<(special_clear-1)
-	dta		<(special_backspace-1)
-	dta		<(special_tab-1)
-	dta		<(special_delete_line-1)
-	dta		<(special_insert_line-1)
-	dta		<(special_clear_tab-1)
-	dta		<(special_set_tab-1)
-	dta		<(special_bell-1)
-	dta		<(special_delete_char-1)
-	dta		<(special_insert_char-1)
-	
-.if [((special_escape-1)^(special_insert_char-1))&$ff00]
-	.error 'Special character routines cross a page boundary: ',special_escape,'-',special_insert_char
-.endif
 .endp
 
 ;==========================================================================
@@ -760,24 +761,6 @@ special_binsearch:
 special_found:
 	rts
 .endp
-
-;==========================================================================
-
-;ATASCII	Internal
-;00-1F		40-5F
-;20-3F		00-1F
-;40-5F		20-3F
-;60-7F		60-7F
-;80-9F		C0-DF
-;A0-BF		80-9F
-;C0-DF		A0-BF
-;E0-FF		E0-FF
-
-ATASCIIToInternalTab:
-	dta		$40
-	dta		$20
-	dta		$60
-	dta		$00
 
 ;==========================================================================
 .proc	EditorRecomputeCursorAddr

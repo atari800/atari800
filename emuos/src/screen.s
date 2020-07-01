@@ -460,6 +460,14 @@ alloc_ok:
 	lda		#$70
 	ldx		#3
 	jsr		write_repeat
+
+	;override COLOR4 (background) to $06 for GR.11 so it isn't dark
+	lda		dindex
+	cmp		#11
+	bne		not_gr11
+	lda		#$06
+	sta		color4
+not_gr11:
 	
 	;add in the main screen
 	jsr		setup_display
@@ -1412,7 +1420,7 @@ loop:
 	;reset coordinates and cursor (we're going to wipe the cursor)
 	sta		colcrs+1
 	sta		rowcrs
-	sta		oldadr+1
+	sta		oldchr
 	
 	;always reset the logical line map
 	ldx		dindex
@@ -1516,18 +1524,12 @@ clear_loop:
 ; Preserved:
 ;	A
 ;
-.proc ScreenHideCursor
-	;check if we had a cursor (note that we CANNOT use CRSINH for this as
-	;it can be changed by app code!)
-	ldy		oldadr+1
-	beq		no_cursor
-	
+.proc ScreenHideCursor	
 	;erase the cursor
 	pha
 	ldy		#0
 	lda		oldchr
 	sta		(oldadr),y
-	sty		oldadr+1
 	pla
 no_cursor:
 	rts
@@ -1671,17 +1673,6 @@ already_there:
 	tax
 	lda		adress+1
 	adc		savmsc+1
-	rts
-.endp
-
-;==========================================================================
-ScreenComputeFromAddr = ScreenComputeFromAddrX0.with_x
-.proc	ScreenComputeFromAddrX0
-	ldx		#0
-with_x:
-	jsr		ScreenComputeAddr
-	stx		frmadr
-	sta		frmadr+1
 	rts
 .endp
 

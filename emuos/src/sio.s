@@ -1,6 +1,6 @@
 ;	Altirra - Atari 800/800XL/5200 emulator
-;	Modular Kernel ROM - Serial Input/Output Routines
-;	Copyright (C) 2008-2016 Avery Lee
+;	AltirraOS modular Kernel ROM - Serial Input/Output (SIO) routines
+;	Copyright (C) 2008-2019 Avery Lee
 ;
 ;	Copying and distribution of this file, with or without modification,
 ;	are permitted in any medium without royalty provided the copyright
@@ -306,6 +306,7 @@ init_hardware:
 	
 not_cassette:
 
+.def :SIOInitPOKEYWithRegOffsetX
 	;load POKEY audio registers
 	ldy		#8
 	mva:rpl	regdata_normal,x- audf1,y-
@@ -330,6 +331,7 @@ no_noise:
 	sta		skres
 	rts
 
+regdata:
 regdata_normal:
 	dta		$00		;audf1
 	dta		$a0		;audc1
@@ -341,7 +343,7 @@ regdata_normal:
 	dta		$a0		;audc4
 	dta		$28		;audctl
 	
-regdata_cassette:
+regdata_cassette_write:
 	dta		$05		;audf1
 	dta		$a0		;audc1
 	dta		$07		;audf2
@@ -352,6 +354,16 @@ regdata_cassette:
 	dta		$a0		;audc4
 	dta		$28		;audctl
 
+regdata_cassette_read:
+	dta		$00		;audf1
+	dta		$a0		;audc1
+	dta		$00		;audf2
+	dta		$a0		;audc2
+	dta		$cc		;audf3
+	dta		$a0		;audc3
+	dta		$05		;audf4
+	dta		$a0		;audc4
+	dta		$28		;audctl
 .endp
 
 ;==============================================================================
@@ -372,40 +384,38 @@ regdata_cassette:
 ;SIO send routine
 ;
 .proc SIOSend
-	dew		bufrlo				;must be -1 for (vseror)
-	
 	;configure serial port for synchronous transmission
 	;enable transmission IRQs
 	sei
 	jsr		SIOSendEnable
+	
+	ldy		#0
+	sty		xmtdon
+	sty		status
+	sty		chksnt
+	
+	;send first byte and set checksum (must be atomic)
+	lda		(bufrlo),y
+	sta		serout
+	sta		chksum
+
+	;unmask IRQs
 	cli
 	
-	lda		#0
-	sta		xmtdon
-	sta		status
-	sta		chksum
-	sta		chksnt
-	
-	;send first byte
-	lda		#>wait
-	pha
-	lda		#<wait
-	pha
-	php
-	sei
-	pha
-	jmp		(vseror)
-	
-	;wait for transmit to complete
+	;wait for transmit to complete or Break to be pressed
 wait:
-	ldy		status
-	bmi		error
+	lda		brkkey
+	beq		break_detected
 	lda		xmtdon
 	beq		wait
-	ldy		status
+	bne		send_completed
+
+break_detected:
+	ldy		#$80
+	sty		status
 	
+send_completed:
 	;shut off transmission IRQs
-error:
 	sei
 	lda		pokmsk
 	and		#$e7
@@ -713,16 +723,28 @@ isread:
 .endp
 
 ;==============================================================================
+; Read cassette frame
+;
+; Wait for long/short IRG, measure baud rate from sync mark, and read frame.
+;
+; When reading a cassette frame, the audio configuration is expected to be
+; as follows:
+;
+;	Channel 1: Inaudible (31.5KHz)
+;	Channel 2: Inaudible (31.5KHz)
+;	Channel 3: Silent
+;	Channel 4: Audible if enabled in SOUNDR (600Hz modulated by async read)
+;
+; This is necessary for proper tape loading sounds.
+;
 .proc SIOCassetteReadFrame
 	;wait for pre-record write tone or IRG read delay
 	ldx		#4
 	jsr		CassetteWaitLongShortCheck
 
 	;set to 600 baud, turn on async read to shut off annoying tone
-	mva		#$cc audf3
-	mva		#$05 audf4
-	lda		#0
-	sta		audc4
+	ldx		#SIOSendEnable.regdata_cassette_read-SIOSendEnable.regdata+8
+	jsr		SIOInitPOKEYWithRegOffsetX
 	
 	lda		sskctl
 	and		#$8f
@@ -788,7 +810,7 @@ waitdone:
 	; -or-
 	;
 	; pokey_divisor = counts * 2 * 114 / 19 / 2 - 7
-	;               = counts * 114 / 19 - 7
+	;               = counts * 6 - 7
 	;
 	;16 bits at 600 baud is nominally 209 scanline pairs. This means that we
 	;don't have to worry about more than two frames, which is at least 262
@@ -874,7 +896,7 @@ aaloop:
 	dex:bne	aaloop
 	
 	;reset checksum for two $55 bytes and receive frame
-	lda		#$aa
+	asl
 	sta		chksum
 	
 	jsr		SIOReceive.use_checksum

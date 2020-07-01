@@ -1,6 +1,6 @@
 ;	Altirra - Atari 800/800XL emulator
-;	Kernel ROM replacement - version inof
-;	Copyright (C) 2008-2018 Avery Lee
+;	Kernel ROM replacement - version info
+;	Copyright (C) 2008-2019 Avery Lee
 ;
 ;	Copying and distribution of this file, with or without modification,
 ;	are permitted in any medium without royalty provided the copyright
@@ -8,9 +8,9 @@
 ;	without any warranty.
 
 .macro _KERNELSTR_VERSION
-		dta		'3.17'
+		dta		'3.20'
 .endm
 
 .macro _KERNELSTR_VERSION_INTERNAL
-		dta		"3.17"
+		dta		"3.20"
 .endm
