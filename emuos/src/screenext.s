@@ -109,13 +109,16 @@ post_wrap:
 ; is hidden. This is required by SDX QUICKED.SYS, which always restores the
 ; cursor.
 ;
+; Success output must be exactly Y=1 and not another positive value, or
+; DARG breaks.
+;
 .proc ScreenShowCursorAndXitOK
 	;;##ASSERT dw(oldadr) >= dw(savmsc)
 	;check if the cursor is enabled
 	ldy		#0
 	lda		(oldadr),y
 	sta		oldchr
-	ldy		crsinh
+	ldx		crsinh
 	bne		cursor_inhibited
 	eor		#$80
 	sta		(oldadr),y
