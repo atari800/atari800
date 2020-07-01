@@ -149,13 +149,18 @@ sprclr:
 		lda:rne	vcount
 		ldx		#2
 		mva:rpl	rtclok,x rtcsav,x-
+
+		;clear the break key in case it was pressed to interrupt the last read
+		stx		brkkey
 		
-		;try to read sector #1 on D1:
-		ldx		#0
-		lda		#$31
-		sta		ddevic
+		;issue status request to D1:
 		lda		#1
 		sta		dunit
+		mva		#$53 dcomnd
+		jsr		dskinv
+		bmi		loop2
+
+		;try to read sector #1 on D1:
 		mva		#$52 dcomnd
 		mwa		#$0400 dbuflo
 		mwa		#1 daux1

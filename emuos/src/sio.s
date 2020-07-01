@@ -79,6 +79,15 @@ retry_command_2:
 	;assert command line
 	mva		#$34		pbctl
 
+	;wait ~600us to ensure 750us minimum delay (~1k cycles or ~10 scanlines)
+	ldx		#5
+	ldy		vcount
+cmddelay:
+	cpy:req	vcount
+	iny
+	dex
+	bne		cmddelay
+
 	;send command frame
 	mva		#0			nocksm
 	lda		#>cdevic

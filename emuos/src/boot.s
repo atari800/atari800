@@ -30,6 +30,7 @@
 	stx		daux1
 	dex
 	stx		dbuflo
+	stx		daux2
 	mva		#$52	dcomnd
 	mva		#$04	dbufhi
 	jsr		dskinv
