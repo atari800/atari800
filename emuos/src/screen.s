@@ -1376,7 +1376,7 @@ no_yinc:
 ;
 .proc ScreenClear
 	;first, set up for clearing the split-screen window (4*40 bytes main)
-	ldy		#0
+	ldy		#4
 	
 	;check if we are in the split screen text window
 	ldx		swpflg
