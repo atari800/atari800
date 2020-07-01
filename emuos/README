@@ -1,0 +1,8 @@
+This folder contains the sources for the Altirra Kernel ROM replacement, used
+to build the internal emulator OS.
+
+To rebuild the files, you need the MAD assembler in your path, download from
+here: https://github.com/tebe6502/Mad-Assembler/releases
+
+Just type make in this directory and the C files will be built.
+
