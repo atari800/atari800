@@ -306,9 +306,11 @@ cmdGetPutDone:
 	sec
 	lda		icbll,x
 	sbc		icbllz
+	sta		icbllz		;required by Lightspeed DOS
 	sta		icbll,x
 	lda		icblh,x
 	sbc		icblhz
+	sta		icblhz
 	sta		icblh,x
 
 	;NOMAM 2013 BASIC Ten-Liners disk requires ICBALZ to be untouched :P
