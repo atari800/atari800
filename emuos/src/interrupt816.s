@@ -65,8 +65,18 @@ dispatch_dli:
 		jmp		(vdslst)
 
 not_dli:
+		;swap to B
+		xba
+
+		;save B and load flags from stack to grab the I flag
+		pha
+		lda		3,s
+
+		;convert to 'emulation safe' flags
+		ora		#$30
+		and		#$04
+
 		;save X and Y
-		rep		#$10
 		phx
 		phy
 
@@ -75,16 +85,26 @@ not_dli:
 		pea		#0
 		pld
 
-		;switch to 8-bit registers
-		phk
-		pea		#xit
-		sep		#$30
+		;save flags, so we can restore X/Y
+		php
 
-		;re-save P/A/X/Y
+		;switch to emulation mode
+		sec
+		xce
+
+		;push fake interrupt frame, preserving original I flag
+		pea		#xit
 		pha
+
+		;Swap back to A and save A/X/Y.
+		;
+		;NOTE: SpartaDOS X 4.48 has dodgy code where if it is run on a 65C816 without linear RAM,
+		;it runs a BogoMIPS timing loop in native mode with a VBI handler that assumes that
+		;the A/X/Y pushed here are the original values from the mainline code! This is later
+		;used by the SIO code, which acts erratically if we push different register values here.
+
+		xba
 		pha
-		lda		13,s
-		sta		2,s
 		phx
 		phy
 
@@ -92,16 +112,31 @@ not_dli:
 		jmp		(vvblki)
 
 xit:
-		;restore registers and exit
+		;A/X/Y were restored by VBI handler, but IRQs may be turned back on -- that's OK.
+		;swap back from A to B
+		xba
+
+		;jump back to native mode
+		clc
+		xce
+
+		;restore native mode flags so we have X/Y size
+		plp
+
+		;restore D
 		pld
-		rep		#$10
+
+		;restore X and Y
 		ply
 		plx
+
+		;restore B
+		pla
+		xba
+
+		;restore DBR and exit
 		plb
 		rti
-
-		jsl		dispatch_vbi
-dispatch_vbi:
 .endp
 
 ;==========================================================================

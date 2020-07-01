@@ -1,6 +1,6 @@
 ;	Altirra - Atari 800/800XL/5200 emulator
 ;	Modular Kernel ROM - 65C816 @: system device routines
-;	Copyright (C) 2008-2018 Avery Lee
+;	Copyright (C) 2008-2020 Avery Lee
 ;
 ;	Copying and distribution of this file, with or without modification,
 ;	are permitted in any medium without royalty provided the copyright
@@ -29,14 +29,17 @@
 .proc SysDevGetByte
 		ldx		feof
 		bmi		at_eof
-		lda		SysDevData,x
+		lda		#0
+		cpx		#[.len SysDevData]
+		scs:lda	SysDevData,x
 		ldy		#1
-		inx
+		inc		feof
 		spl:ldy	#3
 		rts
 
 at_eof:
-		lda		#CIOStatEndOfFile
+		ldy		#CIOStatEndOfFile
+		rts
 .endp
 
 ;==========================================================================

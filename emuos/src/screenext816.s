@@ -101,24 +101,24 @@ post_wrap:
 .endp
 
 ;==========================================================================
-; Also returns with Y=1 for convenience.
+; Output:
+;	Y=1 for convenience
+;
+; (OLDADR) must point to the cursor location with OLDCHR even if the cursor
+; is hidden. This is required by SDX QUICKED.SYS, which always restores the
+; cursor.
+;
 .proc ScreenShowCursorAndXitOK
 	;;##ASSERT dw(oldadr) >= dw(savmsc)
 	;check if the cursor is enabled
+	lda		(oldadr)
+	sta		oldchr
 	ldy		crsinh
 	bne		cursor_inhibited
-	lda		(oldadr),y
-	sta		oldchr
 	eor		#$80
-	sta		(oldadr),y
-	iny
-	rts
-	
+	sta		(oldadr)
 cursor_inhibited:
-	;mark no cursor
-	stz		oldadr+1
-exit_success:
-	ldy		#1
+	iny
 	rts
 .endp
 
@@ -135,8 +135,12 @@ ScreenClose = CIOExitSuccess
 .else
 .proc ScreenClose
 	bit		fine
-	bpl		ScreenShowCursorAndXitOK.exit_success
+	bmi		disable_fine_scrolling
 	
+	ldy		#1
+	rts
+
+disable_fine_scrolling:	
 	;turn off DLI
 	mva		#$40 nmien
 	

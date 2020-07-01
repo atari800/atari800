@@ -186,8 +186,17 @@ xit:
 	stx		audc3
 	stx		audc4
 leave_cassette_audio_on:
+
+.ifdef _KERNEL_816
+	;we may be in native mode, so we can't f-up the high byte of the stack pointer
+	lda		#1
+	xba
+	lda		stackp
+	tcs
+.else
 	ldx		stackp
 	txs
+.endif
 
 xit_pbi:
 	lda		#0
