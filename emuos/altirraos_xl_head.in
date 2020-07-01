@@ -1,0 +1,19 @@
+/*
+ * altirraos_xl.c - XL/XE/XEGS OS ROM replacement
+ *
+ * Compiled from the sources in the emuos folder.
+ *
+ * Altirra - Atari 800/800XL emulator
+ * Kernel ROM replacement, version 3.11
+ * Copyright (C) 2008-2018 Avery Lee
+ *
+ * Copying and distribution of this file, with or without modification,
+ * are permitted in any medium without royalty provided the copyright
+ * notice and this notice are preserved.  This file is offered as-is,
+ * without any warranty.
+ */
+
+#include "atari.h"
+
+UBYTE const ROM_altirraos_xl[0x4000] =
+{

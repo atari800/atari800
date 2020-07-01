@@ -3,6 +3,7 @@
 *.a
 /Makefile
 /Makefile.in
+/emuos/build
 /src/Makefile
 /src/Makefile.in
 /DOC/Makefile
