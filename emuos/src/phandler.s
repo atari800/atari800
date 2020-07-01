@@ -398,6 +398,12 @@ poll_loop:
 exit:
 	rts
 poll_fail:
+	;!! - Black Box 2.16 firmware intercepts type 3 polls and forces
+	;a user abort error (Y=$80), which we must exit on to avoid an infinite
+	;loop.
+	cpy		#$80
+	beq		exit
+
 	;we had a failure -- issue a null poll before trying another device
 	ldx		#$4e
 	jsr		do_simple_poll
