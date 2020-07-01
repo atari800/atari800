@@ -611,9 +611,8 @@ nofine:
 	tax
 	pla
 	
-no_lms_split:
 	;write mode lines and return
-	jmp		write_repeat
+no_lms_split = write_repeat
 
 .if _KERNEL_XLXE
 dofine:
@@ -673,7 +672,12 @@ standard_colors:
 .proc	ScreenInit
 	mva		memtop+1 ramtop
 	
+	.ifdef _KERNEL_816
+	stz		colrsh
+	.else
 	mva		#0	colrsh
+	.endif
+
 	mva		#$FE	drkmsk
 	rts
 .endp
@@ -712,8 +716,17 @@ standard_colors:
 	jsr		ScreenAlignPixel
 
 	;convert from Internal to ATASCII - must be done before we mask
-	jsr		ScreenConvertSetup
-	eor		int_to_atascii_tab,x
+	;Internal	ATASCII
+	;00-1F		20-3F
+	;20-3F		40-5F
+	;40-5F		00-1F
+	;60-7F		60-7F
+	asl
+	php
+	spl:eor	#$40		;00>20, 20>40, 40>60, 60>40
+	adc		#$40		;00>20, 20>40, 40>00, 60>60
+	plp
+	ror
 
 	;mask using right-justified pixel mask for mode
 	ldx		dindex
@@ -730,12 +743,8 @@ mode0:
 xit:
 	rts
 	
-int_to_atascii_tab:
-	dta		$20
-	dta		$60
-	dta		$40
 bit_pos_flip_tab:
-	dta		$00		;shared between tables!
+	dta		$00
 	dta		$01
 	dta		$03
 	dta		$07
@@ -910,8 +919,15 @@ check_extend:
 	dex
 	txa
 	jsr		EditorPhysToLogicalRow
+
+.ifdef _KERNEL_816
+	inc
+	inc
+.else
 	clc
 	adc		#2
+.endif
+
 	cmp		rowcrs
 	scc:rts
 	pla
@@ -954,8 +970,32 @@ ScreenGetStatus = CIOExitSuccess
 fold_byte:
 	;convert byte from ATASCII to Internal -- this is required for gr.1
 	;and gr.2 to work correctly, and harmless for other modes
-	jmp		ScreenConvertATASCIIToInternal
+
+;==========================================================================
+; Convert an ATASCII character to displayable INTERNAL format.
+;
+; Entry:
+;	A = ATASCII char
+;
+; Exit:
+;	A = INTERNAL char
+;
+.def :ScreenConvertATASCIIToInternal
+		;ATASCII	Internal
+		;00-1F		40-5F
+		;20-3F		00-1F
+		;40-5F		20-3F
+		;60-7F		60-7F
+
+		asl
+		php
+		sbc		#$3f		;00>60, 20>00, 40>20, 60>40
+		spl:eor	#$40		;00>40, 20>00, 40>20, 60>60
+		plp
+		ror
+		rts
 .endp
+
 
 ;==========================================================================
 .proc ScreenSpecial
@@ -1695,19 +1735,6 @@ shift_loop:
 	rol		adress+1		;row*10,20,40
 	dey
 	bpl		shift_loop
-	rts
-.endp
-
-;==========================================================================
-.proc ScreenConvertSetup
-	pha
-	rol
-	rol
-	rol
-	rol
-	and		#$03
-	tax
-	pla
 	rts
 .endp
 
