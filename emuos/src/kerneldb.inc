@@ -26,6 +26,12 @@ rtclok	= $0012
 bufadr	= $0015			;indirect buffer address pointer (temp for disk buffer)
 		; $0016
 iccomt	= $0017			;CIO: command byte
+
+.if !_KERNEL_XLXE
+pbpnt	= $001d			;Printer: Buffer index (OS-A/B location)
+pbufsz	= $001e			;Printer: Record size (OS-A/B location)
+.endif
+
 ziocb	= $0020			;zero-page IOCB
 ichidz	= $0020			;Zero page IOCB: device index ($FF = not open)
 icdnoz	= $0021			;Zero page IOCB: device number
@@ -297,8 +303,12 @@ dsctln	= $02d5			;Disk sector size (XL/XE)
 krpdel	= $02d9			;Keyboard repeat delay (XL/XE)
 keyrep	= $02da			;Keyboard repeat rate (XL/XE)
 helpfg	= $02dc			;Help flag (XL/XE)
+
+.if _KERNEL_XLXE
 pbpnt	= $02de			;Printer: Buffer index (XL/XE location)
 pbufsz	= $02df			;Printer: Record size (XL/XE location)
+.endif
+
 ramsiz	= $02e4			;ram size in pages
 memtop	= $02e5			;highest location for programs and data
 memlo	= $02e7			;base of application memory

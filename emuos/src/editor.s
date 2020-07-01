@@ -300,6 +300,7 @@ not_special:
 	jsr		ScreenPutByte.not_clear
 xit2:
 	;swap back to main context and exit
+	lda		atachr				;required by Monkey Wrench II
 	jmp		EditorSwapToScreen
 
 ;---------------
