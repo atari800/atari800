@@ -14,78 +14,30 @@
 ;	being modified by FADD/FSUB.
 ;
 ;==========================================================================
+; Math pack memory usage constraints
+;                                                                            INBUFF          DEGFLG
+;                                                                  NSIGN  DIGRT          ZTEMP3
+;                                                                EEXP  FCHRFLG       ZTEMP4        FPTR2       FPSCR
+;                                                              FRX   ESIGN CIX   ZTEMP1        FLPTR     PLYARG      FPSCR1
+;              $D4     $D8     $DC     $E0     $E4     $E8     $EC     $F0     $F4     $F8     $FC     | $05E0 $05E6 $05EC
+;              . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . | ..................
+;              [-- FR0 --] [-- FRE --] [-- FR1 --] [-- FR2 --]               [-] [-] [-] [-]   [-] [-] |
+; FADD/FSUB    M M M M M M M . . . !!! M M M M M M . . . . . . . . . ! ! . . . . . . M M M . ! . . . . |
+; FMUL         M M M M M M M M M M M M M r r r r r M M M M M M M M M ! ! . . . . M M M . . . ! . . . . |
+; FDIV         M M M M M M M M M M M M M r r r r r M M M M M M M M M ! ! . . . . M . M . . . ! . . . . |
+; PLYEVL       M M M M M M M M M M M M M M M M M M M M M M M M M M M M ! . . . . M M M M M . ! M M M M | MMMMMM............
+; EXP/EXP10    M M M M M M M M M M M M M M M M M M M M M M M M M M M M M M . . . M M M M M . ! M M M M | MMMMMM............
+; LOG/LOG10    M M M M M M M M M M M M M M M M M M M M M M M M M M M M M M . . . M M M M M . ! M M M M | MMMMMMMMMMMM......
+; REDRNG       M M M M M M M M M M M M M M M M M M M M M M M M M M M . . . . . . M . M . . . ! M M M M | MMMMMMMMMMMM......
 ;
-;                                       Notes
+; AFP          M M M M M M M . . . . . . . . . . . . . . . . . M M M M M M M . . . . . . . . ! . . . . |
+; FASC         r r r r r r . . . . . . . . . . . . . . . . . . . M . . . . M M M . . M . . . ! . . . . |
+; IPF          M M M M M M . . . . !!! . . . . . . . . . . . . . . . . . . . . . . . . M M . ! . . . . |
+; FPI          M M M M M M . . . . . . !!!!!!!!!!! . . . . . . M . . . . . . . . M . M M M M ! . . . . |
 ;
-;                   AFP  FMUL
-;                   |FASC.FDIV
-;                   |.IPF.|PLYEVL
-;                   |.|FPI|.EXP
-;                   |.|.FADD|REDRNG
-;                   |.|.|.|.|.LOG
-;                   vvvvvvvvvvv
-; $D4 FR0             M MMM.
-; $D5  |              M MMM.
-; $D6  |              M MMM.
-; $D7  |              M MMM.
-; $D8  |              M MMM.
-; $D9  v              M MMM.
-; $DA FR2 {FRE}     TTTTTTT.
-; $DB  |            TT TTTT.
-; $DC  |            TT TTTT.
-; $DD  |            TT TTTT.
-; $DE  |            T   TTT.            [1,2]
-; $DF  v                TTT.            [1,2]
-; $E0 FR1               MM .            [3]
-; $E1  |                MM .            [3]
-; $E2  |                MM .            [3]
-; $E3  |                MM .            [3]
-; $E4  |                MM .            [3]
-; $E5  v                MM .            [3]
-; $E6 FR3 {FR2}            . .
-; $E7                      . .
-; $E8                      . .
-; $E9                      . .
-; $EA                      . .
-; $EB                      . .
-; $EC {FRX}                . .
-; $ED {EEXP}               . .
-; $EE {NSIGN}              . .
-; $EF {ESIGN}              . .
-; $F0 {FCHRFLG}            . .
-; $F1 {DIGRT}              . .
-; $F2 CIX                  . .
-; $F3 INBUFF               . .
-; $F4  v                   . .
-; $F5 {ZTEMP1}             . .
-; $F6  v                   . .
-; $F7 {ZTEMP4}             . .
-; $F8  v                   . .
-; $F9 {ZTEMP3}             . .
-; $FA  v                   . .
-; $FB DEGFLG/RADFLG        . .
-; $FC FLPTR                . .
-; $FD  v                   . .
-; $FE FPTR2                . .
-; $FF  v                   . .
-; $05E0  PLYARG            T T
-; $05E1   |                T T
-; $05E2   |                T T
-; $05E3   |                T T
-; $05E4   |                T T
-; $05E5   v                T T
-; $05E6  FPSCR               TT
-; $05E7   |                  TT
-; $05E8   |                  TT
-; $05E9   |                  TT
-; $05EA   |                  TT
-; $05EB   v                  TT
-; $05EC  FPSCR1
-; $05ED   |
-; $05EE   |
-; $05EF   |
-; $05F0   |
-; $05F1   v
+; M = modified by original math pack
+; r = read by original math pack
+; ! = program known to rely on not being modified
 ;
 ; Notes:
 ; [1] BASIC XE relies on $DE/DF not being touched by FADD, or FOR/NEXT
@@ -93,7 +45,13 @@
 ; [2] MAC/65 relies on $DE/DF not being touched by IPF.
 ; [3] DARG relies on FPI not touching FR1.
 ; [4] ACTris 1.2 relies on FASC not touching lower parts of FR2.
+; [5] Atari BASIC SQR() uses ESIGN ($EF).
+; [6] Atari BASIC SIN() uses FCHRFLG ($F0).
 ;
+
+_fpcocnt = $00ec			;FP: temporary storage - polynomial coefficient counter
+_fptemp0 = $00f8			;FP: temporary storage - transcendental temporary (officially ZTEMP4+1)
+_fptemp1 = $00f9			;FP: temporary storage - transcendental temporary (officially ZTEMP3)
 
 .macro	ckaddr
 .if * <> %%1
@@ -999,8 +957,8 @@ incloop:
 	sbc		_digit
 	ldx		_index
 downloop:
-	adc		fr2+7,x
-	sta		fr2+7,x
+	adc		fr2+8,x
+	sta		fr2+8,x
 	lda		#$99
 	dex
 	bcc		downloop
@@ -1089,29 +1047,19 @@ decloop:
 	lda		fdiv._digit
 	ldx		fdiv._index
 uploop:
-	adc		fr2+7,x
-	sta		fr2+7,x
+	adc		fr2+8,x
+	sta		fr2+8,x
 	lda		#0
 	dex
 	bcs		uploop
 
 	;subtract mantissas
 	sec
-	lda		fr0+5
-	sbc		fr1+5
-	sta		fr0+5
-	lda		fr0+4
-	sbc		fr1+4
-	sta		fr0+4
-	lda		fr0+3
-	sbc		fr1+3
-	sta		fr0+3
-	lda		fr0+2
-	sbc		fr1+2
-	sta		fr0+2
-	lda		fr0+1
-	sbc		fr1+1
-	sta		fr0+1
+	.rept 5
+		lda		fr0+(5-#)
+		sbc		fr1+(5-#)
+		sta		fr0+(5-#)
+	.endr
 	lda		fr0
 	sbc		#0
 	sta		fr0
@@ -1121,10 +1069,11 @@ uploop:
 	rts
 .endp
 
+;==========================================================================
 .proc fp_fdiv_complete
-	ldx		#fr2-1
+	ldx		#fr2
 	ldy		_fr3
-	lda		fr2
+	lda		fr2+1
 	bne		no_normstep
 	inx
 	dey
@@ -1193,10 +1142,11 @@ underflow:
 .proc fp_fdiv_init
 	sta		_fr3
 
-	ldx		#fr2
+	ldx		#fr2+1
 	jsr		zf1
 	lda		#$50
-	sta		fr2+6
+	sta		fr2+7		;rounding byte
+	sta		fr2			;sentinel byte to prevent carries into FR1
 	
 	ldx		#0
 	stx		fr0
