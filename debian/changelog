@@ -1,3 +1,20 @@
+atari800 (4.2.0-1) unstable; urgency=low
+
+  * New upstream version 4.2.0
+  * Stock SDL release                     - atari800_4.2.0-1_amd46.deb
+  * Raspberry Pi 0, 2 and 3 release       - atari800_4.2.0_rpi0+2+3_stretch+buster.deb
+  * Raspberry Pi 4 release                - atari800_4.2.0_rpi4_buster.deb
+
+ -- Cliff Hatch <Contact via atari800-users@lists.sourceforge.net>  Sun, 29 Dec 2019 20:59:21 +0100
+
+atari800 (4.1.0-1) unstable; urgency=low
+
+  * New upstream version 4.1.0
+  * Stock SDL release                     - atari800_4.1.0-1_amd64.deb
+  * Raspberry Pi release                  - atari800_4.1.0-1_rpi.deb
+
+ -- Cliff Hatch <Contact via atari800-users@lists.sourceforge.net>  Wed, 24 April 2019 20:36:30 +0100
+
 atari800 (4.0.0-1) unstable; urgency=medium
 
   * [26b9009] New upstream version 4.0.0
