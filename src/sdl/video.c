@@ -68,7 +68,7 @@ static VIDEOMODE_resolution_t desktop_resolution;
 
 #if HAVE_OPENGL
 int SDL_VIDEO_opengl_available;
-int SDL_VIDEO_opengl = FALSE;
+int SDL_VIDEO_opengl = TRUE;
 /* Was OpenGL active previously? */
 static int currently_opengl = FALSE;
 #endif
