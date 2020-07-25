@@ -1151,6 +1151,10 @@ fi
 
 if [[ "$with_opengl" = "yes" ]]; then
     AC_DEFINE(HAVE_OPENGL, 1, [Support for OpenGL graphics acceleration.])
+    A8_OPTION(accel,no,
+              [Option --enable-accel=yes turns on video acceleration in the default config file],
+              ACCEL_ON,[Define for targets that are too slow to run without acceleration.]
+             )
 fi
 AM_CONDITIONAL([WITH_OPENGL], test "$with_opengl" = "yes")
 

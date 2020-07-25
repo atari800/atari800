@@ -19,8 +19,8 @@ Create the configure file:
 See INSTALL for further details.
 
 
-NATIVE COMPILE ON THE RASPBERRY PI
-==================================
+NATIVE COMPILE ON THE RASPBERRY PI 0, 2 or 3
+============================================
 Ensure the SDL development files are installed:
 
     sudo apt-get install libsdl1.2-dev
@@ -32,12 +32,28 @@ Configure and make:
 
 Make generates the executable file src/atari800.
 
-IMPORTANT: Build for Raspberry will not work on RPi4: there was a major
-hardware/software change. Users of RPi4 should simply build Atari800 as
-default config, i.e. without the explicit '--target=rpi'.
+NATIVE COMPILE ON THE RASPBERRY PI 4
+====================================
+Ensure the SDL development files are installed:
 
-CROSS COMPILE FOR THE RASPBERRY PI
-==================================
+    sudo apt-get install libsdl1.2-dev
+
+Configure and make:
+
+    ./configure --enable-accel=yes
+    make
+
+The Pi 4 hardware is different to its predecessors.  It is capable of
+running the stock version, so the --target=rpi option is not required.
+
+Hardware acceleration is required to run the emulator properly.
+The --enable-accel=yes option specifies that acceleration should be turned
+on in the default configuration file that is created on the first run
+after installation.
+
+
+CROSS COMPILE FOR THE RASPBERRY PI 0, 2 or 3
+============================================
 
 Cross compilation is only useful for major development projects involving
 repeated compilation of large volumes of code.  For minor changes it is
