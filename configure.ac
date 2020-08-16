@@ -1126,7 +1126,7 @@ fi
 
 dnl Check for availability of the OpenGL header.
 AC_ARG_WITH(opengl,
-    AC_HELP_STRING(--with-opengl,[Use OpenGL for graphics - only in SDL target @<:@default=check@:>@]),
+    AC_HELP_STRING(--with-opengl,[Build support for OpenGL hardware video acceleration - only in SDL target @<:@default=check@:>@]),
     [],
     [with_opengl=check])
 
@@ -1151,9 +1151,9 @@ fi
 
 if [[ "$with_opengl" = "yes" ]]; then
     AC_DEFINE(HAVE_OPENGL, 1, [Support for OpenGL graphics acceleration.])
-    A8_OPTION(accel,no,
-              [Option --enable-accel=yes turns on video acceleration in the default config file],
-              ACCEL_ON,[Define for targets that are too slow to run without acceleration.]
+    A8_OPTION(opengl-by-default,no,
+              [Set VIDEO_ACCEL=1 in the config file created on first run after installation to enable OpenGL hardware acceleration (OpenGL-aware targets) (default set VIDEO_ACCEL=0)],
+              VIDEO_ACCEL_ON_BY_DEFAULT,[Define for targets too slow to run without OpenGL video acceleration, supported only with --with-opengl]
              )
 fi
 AM_CONDITIONAL([WITH_OPENGL], test "$with_opengl" = "yes")

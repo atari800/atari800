@@ -2,9 +2,9 @@ SYSTEM SPECIFICATION
 ====================
 Atari800 version 4 runs on the following systems:
 
-    Pi 0, 2 or 3, running Raspbian Stretch, Buster or Pi OS
+    Pi 0, 2 or 3, running Raspbian or Pi OS (Stretch or Buster).
 
-    Pi 4 running Raspbian Buster or Pi OS
+    Pi 4 running Raspbian or Pi OS (Buster).
 
 VIDEO MODE ON PI 2, 3 or 3
 ==========================

@@ -66,8 +66,8 @@ SDL_Surface *SDL_VIDEO_screen = NULL;
 /* Desktop screen resolution is stored here on initialisation. */
 static VIDEOMODE_resolution_t desktop_resolution;
 
-#if ACCEL_ON
-int SDL_VIDEO_opengl = TRUE; /* For targets that are too slow to run without video acceleration */
+#if VIDEO_ACCEL_ON_BY_DEFAULT
+int SDL_VIDEO_opengl = TRUE; /* Default for targets that are too slow to run without video acceleration */
 #elif HAVE_OPENGL
 int SDL_VIDEO_opengl = FALSE;
 #endif
