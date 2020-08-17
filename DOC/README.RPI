@@ -1,14 +1,19 @@
 SYSTEM SPECIFICATION
 ====================
-Atari800 version 4 requires a Pi2 or faster machine running Raspbian Stretch
-or later.
+Atari800 version 4 runs on the following systems:
 
-VIDEO MODE
-==========
-Note: you need to setup correct video mode for PAL/NTSC machines (proper
-video/audio sync and vsync).edit /boot/config.txt
+    Pi 0, 2 or 3, running Raspbian or Pi OS (Stretch or Buster).
 
-for PAL version (50 Hz) you can supply this values:
+    Pi 4 running Raspbian or Pi OS (Buster).
+
+VIDEO MODE ON PI 2, 3 or 3
+==========================
+You may obtain proper video/audio sync and vsync for PAL/NTSC machines by
+setting particular video modes.
+
+To do this, edit /boot/config.txt
+
+For PAL version (50 Hz) you can supply these values:
 720p mode:
 hdmi_group=1
 hdmi_mode=19
@@ -16,7 +21,7 @@ hdmi_mode=19
 hdmi_group=1
 hdmi_mode=31
 
-for NTSC version (60 Hz):
+For NTSC version (60 Hz):
 720p mode:
 hdmi_group=1
 hdmi_mode=4
@@ -27,7 +32,7 @@ hdmi_mode=16
 See http://elinux.org/RPiconfig for more info.
 
 These modes always improve synchronisation but the effect may not be
-immediately obvious depending on what you are using the emulator for.
+immediately obvious, depending on what you are using the emulator for.
 The benefit is most clearly seen on scrolling games like Boulderdash
 where the whole background moves with no hint of flicker.
 

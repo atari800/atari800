@@ -18,13 +18,14 @@ Create the configure file:
 
 See INSTALL for further details.
 
-
-NATIVE COMPILE ON THE RASPBERRY PI
-==================================
+INSTALL SDL DEVELOPMENT FILES
+------------------------------
 Ensure the SDL development files are installed:
 
     sudo apt-get install libsdl1.2-dev
 
+NATIVE COMPILE ON THE RASPBERRY PI 0, 2 or 3
+============================================
 Configure and make:
 
     ./configure --target=rpi
@@ -32,13 +33,26 @@ Configure and make:
 
 Make generates the executable file src/atari800.
 
-IMPORTANT: Build for Raspberry will not work on RPi4: there was a major
-hardware/software change. Users of RPi4 should simply build Atari800 as
-default config, i.e. without the explicit '--target=rpi'.
+NATIVE COMPILE ON THE RASPBERRY PI 4
+====================================
+Configure and make:
 
-CROSS COMPILE FOR THE RASPBERRY PI
-==================================
+    ./configure --enable-opengl-by-default
+    make
 
+The Pi 4 hardware is different to its predecessors.  It runs the stock
+version of atari800, not a special Raspberry Pi variation.  However,
+it is not fast enough to run the stock version without OpenGL hardware video
+acceleration, so the --enable-opengl-by-default option is required.  This
+sets VIDEO_ACCEL=1 in the configuration file that is created on the first
+run after installation, enabling acceleration by default.
+
+(Acceleration is generally disabled by default to permit the emulator to run
+on systems with broken OpenGL drivers, but this is not an issue with the
+Pi 4 because the drivers in Pi OS are good.)
+
+CROSS COMPILE FOR THE RASPBERRY PI 0, 2 or 3
+============================================
 Cross compilation is only useful for major development projects involving
 repeated compilation of large volumes of code.  For minor changes it is
 much quicker and easier to native compile.
