@@ -28,7 +28,6 @@
 /* Min and Max cartridge size in bytes */
 #define CARTRIDGE_MIN_SIZE        2048
 #define CARTRIDGE_MAX_SIZE	  (128 * 1024 * 1024)
-#define CARTRIDGE_LAST_SUPPORTED  70
 
 extern int CARTRIDGE_Checksum(const UBYTE *image, int nbytes);
 
@@ -37,8 +36,6 @@ typedef struct {
 	char *description;
 	int kb;
 } cart_t;
-
-extern cart_t CARTRIDGES[CARTRIDGE_LAST_SUPPORTED+1];
 
 /* Cartridge type numbers */
 enum {
@@ -113,7 +110,14 @@ enum {
 	CARTRIDGE_XEGS_8F_64     = 67,
 	CARTRIDGE_ATRAX_128      = 68,
 	CARTRIDGE_ADAWLIAH_32    = 69,
-	CARTRIDGE_ADAWLIAH_64    = 70
+	CARTRIDGE_ADAWLIAH_64    = 70,
+	CARTRIDGE_SW5200_64      = 71,
+	CARTRIDGE_SW5200_128     = 72,
+	CARTRIDGE_SW5200_256     = 73,
+	CARTRIDGE_SW5200_512     = 74,
+	CARTRIDGE_TYPE_COUNT     = 75
 };
+
+extern cart_t CARTRIDGES[CARTRIDGE_TYPE_COUNT];
 
 #endif	/* CARTRIDGE_INFO_H_ */

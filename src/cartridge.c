@@ -61,6 +61,10 @@ static int CartIsFor5200(int type)
 	case CARTRIDGE_5200_NS_16:
 	case CARTRIDGE_5200_8:
 	case CARTRIDGE_5200_4:
+	case CARTRIDGE_SW5200_64:
+	case CARTRIDGE_SW5200_128:
+	case CARTRIDGE_SW5200_256:
+	case CARTRIDGE_SW5200_512:
 		return TRUE;
 	default:
 		break;
@@ -153,6 +157,11 @@ static void set_bank_80BF(void)
 		MEMORY_CartA0bfEnable();
 		MEMORY_CopyROM(0x8000, 0xbfff, active_cart->image + (active_cart->state & 0x7f) * 0x4000);
 	}
+}
+
+static void set_bank_SW5200(void)
+{
+	MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image + (((active_cart->state & 0x0f) * 0x8000) & (active_cart->size * 1024 - 1)));
 }
 
 static void set_bank_SDX_128(void)
@@ -335,6 +344,18 @@ static void MapActiveCart(void)
 		MEMORY_SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
 		MEMORY_SetROM(0x5ff6, 0x5ff9);
 		switch (active_cart->type) {
+		case CARTRIDGE_SW5200_64:
+		case CARTRIDGE_SW5200_128:
+		case CARTRIDGE_SW5200_256:
+		case CARTRIDGE_SW5200_512:
+			set_bank_SW5200();
+#ifndef PAGED_ATTRIB
+			MEMORY_SetHARDWARE(0xbfc0, 0xbfff);
+#else
+			MEMORY_readmap[0xbf] = CARTRIDGE_Switchable5200GetByte;
+			MEMORY_writemap[0xbf] = CARTRIDGE_Switchable5200PutByte;
+#endif
+			break;
 		case CARTRIDGE_5200_32:
 			MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image);
 			break;
@@ -1068,6 +1089,31 @@ void CARTRIDGE_BountyBob2(UWORD addr)
 	}
 }
 
+void CARTRIDGE_Switchable5200(UWORD addr)
+{
+	int old_state = active_cart->state;
+	int new_state = old_state;
+
+	if ((addr & 0xBFC0) == 0xBFC0)
+		switch (addr & 0x30) {
+		case 0x00:
+			new_state = (new_state & ~(0x0C)) | (addr & 0x0C);
+			break;
+		case 0x10:
+			new_state = (new_state & ~(0x03)) | ((addr & 0x0C) >> 2);
+			break;
+		case 0x20:
+		case 0x30:
+			new_state = (new_state & ~(0x0F)) | 0x0F;
+			break;
+		}
+
+	if (old_state != new_state) {
+		active_cart->state = new_state;
+		set_bank_SW5200();
+	}
+}
+
 #ifdef PAGED_ATTRIB
 UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects)
 {
@@ -1105,6 +1151,16 @@ UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr, int no_side_effects)
 	return MEMORY_dGetByte(addr);
 }
 
+UBYTE CARTRIDGE_Switchable5200GetByte(UWORD addr, int no_side_effects)
+{
+	if (!no_side_effects) {
+		if (Atari800_machine_type == Atari800_MACHINE_5200) {
+			CARTRIDGE_Switchable5200(addr);
+		}
+	}
+	return MEMORY_dGetByte(addr);
+}
+
 void CARTRIDGE_BountyBob1PutByte(UWORD addr, UBYTE value)
 {
 	if (Atari800_machine_type == Atari800_MACHINE_5200) {
@@ -1128,6 +1184,13 @@ void CARTRIDGE_BountyBob2PutByte(UWORD addr, UBYTE value)
 		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
 			CARTRIDGE_BountyBob2(addr);
 		}
+	}
+}
+
+void CARTRIDGE_Switchable5200PutByte(UWORD addr, UBYTE value)
+{
+	if (Atari800_machine_type == Atari800_MACHINE_5200) {
+		CARTRIDGE_Switchable5200(addr);
 	}
 }
 #endif
@@ -1386,7 +1449,7 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 		cart->type = CARTRIDGE_NONE;
 		len >>= 10;	/* number of kilobytes */
 		cart->size = len;
-		for (type = 1; type <= CARTRIDGE_LAST_SUPPORTED; type++)
+		for (type = 1; type < CARTRIDGE_TYPE_COUNT; type++)
 			if (CARTRIDGES[type].kb == len) {
 				if (cart->type == CARTRIDGE_NONE) {
 					cart->type = type;
@@ -1416,7 +1479,7 @@ static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 			(header[5] << 16) |
 			(header[6] << 8) |
 			header[7];
-		if (type >= 1 && type <= CARTRIDGE_LAST_SUPPORTED) {
+		if (type >= 1 && type < CARTRIDGE_TYPE_COUNT) {
 			int checksum;
 			int result;
 			len = CARTRIDGES[type].kb << 10;
@@ -1489,7 +1552,7 @@ int CARTRIDGE_ReadConfig(char *string, char *ptr)
 	}
 	else if (strcmp(string, "CARTRIDGE_TYPE") == 0) {
 		int value = Util_sscandec(ptr);
-		if (value < 0 || value > CARTRIDGE_LAST_SUPPORTED)
+		if (value < 0 || value >= CARTRIDGE_TYPE_COUNT)
 			return FALSE;
 		CARTRIDGE_main.type = value;
 	}
@@ -1500,7 +1563,7 @@ int CARTRIDGE_ReadConfig(char *string, char *ptr)
 	}
 	else if (strcmp(string, "CARTRIDGE_PIGGYBACK_TYPE") == 0) {
 		int value = Util_sscandec(ptr);
-		if (value < 0 || value > CARTRIDGE_LAST_SUPPORTED)
+		if (value < 0 || value >= CARTRIDGE_TYPE_COUNT)
 			return FALSE;
 		CARTRIDGE_piggyback.type = value;
 	}
@@ -1568,7 +1631,7 @@ int CARTRIDGE_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-cart-type") == 0) {
 			if (i_a) {
 				Util_sscansdec(argv[++i], &CARTRIDGE_main.type);
-				if (CARTRIDGE_main.type < 0 ||  CARTRIDGE_main.type > CARTRIDGE_LAST_SUPPORTED)
+				if (CARTRIDGE_main.type < 0 ||  CARTRIDGE_main.type >= CARTRIDGE_TYPE_COUNT)
 					a_i = TRUE;
 				else
 					type_from_commandline = TRUE;
@@ -1586,7 +1649,7 @@ int CARTRIDGE_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-cart2-type") == 0) {
 			if (i_a) {
 				Util_sscansdec(argv[++i], &CARTRIDGE_piggyback.type);
-				if (CARTRIDGE_piggyback.type < 0 ||  CARTRIDGE_piggyback.type > CARTRIDGE_LAST_SUPPORTED)
+				if (CARTRIDGE_piggyback.type < 0 ||  CARTRIDGE_piggyback.type >= CARTRIDGE_TYPE_COUNT)
 					a_i = TRUE;
 				else
 					type2_from_commandline = TRUE;
@@ -1601,9 +1664,9 @@ int CARTRIDGE_Initialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				Log_print("\t-cart <file>         Install cartridge (raw or CART format)");
-				Log_print("\t-cart-type <num>     Set cartridge type (0..%i)", CARTRIDGE_LAST_SUPPORTED);
+				Log_print("\t-cart-type <num>     Set cartridge type (0..%i)", CARTRIDGE_TYPE_COUNT-1);
 				Log_print("\t-cart2 <file>        Install piggyback cartridge");
-				Log_print("\t-cart2-type <num>    Set piggyback cartridge type (0..%i)", CARTRIDGE_LAST_SUPPORTED);
+				Log_print("\t-cart2-type <num>    Set piggyback cartridge type (0..%i)", CARTRIDGE_TYPE_COUNT-1);
 				Log_print("\t-cart-autoreboot     Reboot when cartridge is inserted/removed");
 				Log_print("\t-no-cart-autoreboot  Don't reboot after changing cartridge");
 			}

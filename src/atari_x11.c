@@ -806,7 +806,7 @@ static int insert_rom(const char *filename)
 		return TRUE;
 	}
 	/* TODO: select cartridge type */
-	for (i = 1; i < CARTRIDGE_LAST_SUPPORTED; i++) {
+	for (i = 1; i < CARTRIDGE_TYPE_COUNT; i++) {
 		if (CARTRIDGE_kb[i] == r) {
 			CARTRIDGE_main.type = i;
 			Atari800_Coldstart();

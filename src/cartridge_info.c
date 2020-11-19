@@ -25,7 +25,7 @@
 #include "memory.h"
 #include "cartridge.h"
 
-cart_t CARTRIDGES[CARTRIDGE_LAST_SUPPORTED+1] = {
+cart_t CARTRIDGES[CARTRIDGE_TYPE_COUNT] = {
 	{ "NONE",                                      0 },
 	{ "Standard 8 KB cartridge",                   8 },
 	{ "Standard 16 KB cartridge",                 16 },
@@ -96,7 +96,11 @@ cart_t CARTRIDGES[CARTRIDGE_LAST_SUPPORTED+1] = {
 	{ "XEGS 64 KB cartridge (banks 8-15)",        64 },
 	{ "Atrax 128 KB cartridge",                  128 },
 	{ "aDawliah 32 KB cartridge",                 32 },
-	{ "aDawliah 64 KB cartridge",                 64 }, 
+	{ "aDawliah 64 KB cartridge",                 64 },
+	{ "Switchable 5200 64 KB cartridge",          64 },
+	{ "Switchable 5200 128 KB cartridge",        128 },
+	{ "Switchable 5200 256 KB cartridge",        256 },
+	{ "Switchable 5200 512 KB cartridge",        512 }
 };
 
 int CARTRIDGE_Checksum(const UBYTE *image, int nbytes)

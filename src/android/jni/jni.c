@@ -192,7 +192,7 @@ static jboolean JNICALL NativeSaveState(JNIEnv *env, jobject this, jstring fname
 static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 												  jstring img, jint drv, jint reboot)
 {
-	static char const * const cart_descriptions[CARTRIDGE_LAST_SUPPORTED + 1] = {
+	static char const * const cart_descriptions[CARTRIDGE_TYPE_COUNT] = {
 		NULL,
 		CARTRIDGE_STD_8_DESC,
 		CARTRIDGE_STD_16_DESC,
@@ -263,7 +263,11 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 		CARTRIDGE_XEGS_8F_64_DESC,
 		CARTRIDGE_ATRAX_128_DESC,
 		CARTRIDGE_ADAWLIAH_32_DESC,
-		CARTRIDGE_ADAWLIAH_64_DESC
+		CARTRIDGE_ADAWLIAH_64_DESC,
+		CARTRIDGE_SW5200_64_DESC,
+		CARTRIDGE_SW5200_128_DESC,
+		CARTRIDGE_SW5200_256_DESC,
+		CARTRIDGE_SW5200_512_DESC
 	};
 
 	const char *img_utf = NULL;
@@ -286,11 +290,11 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 		scls = (*env)->FindClass(env, "java/lang/String");
 		cls = (*env)->GetObjectClass(env, this);
 		fid = (*env)->GetFieldID(env, cls, "_cartTypes", "[[Ljava/lang/String;");
-		for (i = 1; i <= CARTRIDGE_LAST_SUPPORTED; i++)
+		for (i = 1; i < CARTRIDGE_TYPE_COUNT; i++)
 			if (CARTRIDGE_kb[i] == kb)	cnt++;
 		xarr = (*env)->NewObjectArray(env, 2, scls, NULL);
 		arr = (*env)->NewObjectArray(env, cnt, (*env)->GetObjectClass(env, xarr), NULL);
-		for (cnt = 0, i = 1; i <= CARTRIDGE_LAST_SUPPORTED; i++)
+		for (cnt = 0, i = 1; i < CARTRIDGE_TYPE_COUNT; i++)
 			if (CARTRIDGE_kb[i] == kb) {
 				sprintf(tmp, "%d", i);
 				str = (*env)->NewStringUTF(env, tmp);

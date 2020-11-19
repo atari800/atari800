@@ -102,6 +102,10 @@ Currently supported cartridge types:
 | 68 | 800/XL/XE |  128 | Atrax 128 KB cartridge                        |   |
 | 69 | 800/XL/XE |   32 | aDawliah 32 KB cartridge                      |   |
 | 70 | 800/XL/XE |   64 | aDawliah 64 KB cartridge                      |   |
+| 71 |   5200    |   64 | Switchable 5200 64 KB cartridge (32K banks)   |   |
+| 72 |   5200    |  128 | Switchable 5200 128 KB cartridge (32K banks)  |   |
+| 73 |   5200    |  256 | Switchable 5200 256 KB cartridge (32K banks)  |   |
+| 74 |   5200    |  512 | Switchable 5200 512 KB cartridge (32K banks)  |   |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -1088,3 +1092,33 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference:
  http://atarionline.pl/forum/comments.php?DiscussionID=4260&page=1#Item_13
+
+ +---------------------------------------------------------------------------+
+ | Type 71, 72, 73, 74: Switched 5200 cartridge (32K banks)                  |
+ +---------------------------------------------------------------------------+
+
+ A bank-switched cartridge for the Atari 5200 proposed by Bryan in 2005.
+
+ These types refer to the "32K banks" variant of the board. Up to 4 bits may
+ be used to control the currently exposed bank. Reads from the $BFC0-$BFFF
+ range control the currently exposed bank between $4000 and $BFFF as follows:
+
+ - Addresses $BFC0 to $BFCF control the high two bits:
+   - $BFC0 - $BFC3 set the high two bits to 00,
+   - $BFC4 - $BFC7 set the high two bits to 01,
+   - $BFC8 - $BFCB set the high two bits to 10,
+   - $BFCC - $BFCF set the high two bits to 11.
+ - Addresses $BFD0 to $BFDF control the low two bits in an analogous manner.
+ - Addresses $BFE0 to $BFFF set all bits to 1, forcing the topmost bank to be
+   visible. The 5200 BIOS is expected to read data from those areas, thus
+   ensuring a known boot state.
+
+ The respective types refer to different sizes:
+
+ - Type 71: 64 KB, 2 banks (1 bit)
+ - Type 72: 128 KB, 4 banks (2 bits)
+ - Type 73: 256 KB, 8 banks (3 bits)
+ - Type 74: 512 KB, 16 banks (4 bits)
+
+ Reference:
+ https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
