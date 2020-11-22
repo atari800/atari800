@@ -12,8 +12,6 @@ noinst_PROGRAMS =
 
 man1dir = $(mandir)/man1
 
-AM_CPPFLAGS = -I.
-
 SUFFIXES = .c .cpp .s .o .h .asm
 
 doc_DATA = 
