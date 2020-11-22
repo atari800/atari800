@@ -1,3 +1,16 @@
+Version ?.?.? (????/??/??)
+==========================
+
+ New features:
+ -------------
+  * New cartridge types supported:
+    - 71: Super Cart 64 KB 5200 cartridge (32K banks)
+    - 72: Super Cart 128 KB 5200 cartridge (32K banks)
+    - 73: Super Cart 256 KB 5200 cartridge (32K banks)
+    - 74: Super Cart 512 KB 5200 cartridge (32K banks)
+    See DOC/cart.txt for details.
+
+
 Version 4.2.0 (2019/12/28) - released at SILK
 ==========================
 
