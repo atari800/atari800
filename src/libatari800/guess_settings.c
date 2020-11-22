@@ -120,10 +120,10 @@ cart_types_t cart_list_5200[] = {
 	{16, 6,  "Two chip 16 KB 5200",},
 	{32, 4,  "Standard 32 KB 5200",},
 	{40, 7,  "Bounty Bob 40 KB 5200",},
-	{64, 71,  "Switching 64 KB 5200",},
-	{128, 72, "Switching 128 KB 5200",},
-	{256, 73, "Switching 256 KB 5200",},
-	{512, 74, "Switching 512 KB 5200",},
+	{64, 71,  "Super Cart 64 KB 5200",},
+	{128, 72, "Super Cart 128 KB 5200",},
+	{256, 73, "Super Cart 256 KB 5200",},
+	{512, 74, "Super Cart 512 KB 5200",},
 	{0, 0, NULL},
 };
 

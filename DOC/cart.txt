@@ -102,10 +102,10 @@ Currently supported cartridge types:
 | 68 | 800/XL/XE |  128 | Atrax 128 KB cartridge                        |   |
 | 69 | 800/XL/XE |   32 | aDawliah 32 KB cartridge                      |   |
 | 70 | 800/XL/XE |   64 | aDawliah 64 KB cartridge                      |   |
-| 71 |   5200    |   64 | Switchable 5200 64 KB cartridge (32K banks)   |   |
-| 72 |   5200    |  128 | Switchable 5200 128 KB cartridge (32K banks)  |   |
-| 73 |   5200    |  256 | Switchable 5200 256 KB cartridge (32K banks)  |   |
-| 74 |   5200    |  512 | Switchable 5200 512 KB cartridge (32K banks)  |   |
+| 71 |   5200    |   64 | Super Cart 64 KB 5200 cartridge (32K banks)   |   |
+| 72 |   5200    |  128 | Super Cart 128 KB 5200 cartridge (32K banks)  |   |
+| 73 |   5200    |  256 | Super Cart 256 KB 5200 cartridge (32K banks)  |   |
+| 74 |   5200    |  512 | Super Cart 512 KB 5200 cartridge (32K banks)  |   |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -1094,7 +1094,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atarionline.pl/forum/comments.php?DiscussionID=4260&page=1#Item_13
 
 +---------------------------------------------------------------------------+
-| Type 71: Switchable 5200 64 KB cartridge (32K banks)                      |
+| Type 71: Super Cart 64 KB 5200 cartridge (32K banks)                      |
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge built on the "512K Super Cart" board manufactured
@@ -1113,7 +1113,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?do=findComment&comment=856153
 
 +---------------------------------------------------------------------------+
-| Type 72: Switchable 5200 128 KB cartridge (32K banks)                     |
+| Type 72: Super Cart 128 KB 5200 cartridge (32K banks)                     |
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge built on the "512K Super Cart" board manufactured
@@ -1135,7 +1135,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  https://atariage.com/forums/topic/298850-bosconian-ultimate-for-atari-5200/
 
 +---------------------------------------------------------------------------+
-| Type 73: Switchable 5200 256 KB cartridge (32K banks)                     |
+| Type 73: Super Cart 256 KB 5200 cartridge (32K banks)                     |
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge built on the "512K Super Cart" board manufactured
@@ -1158,7 +1158,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?do=findComment&comment=856153
 
 +---------------------------------------------------------------------------+
-| Type 74: Switchable 5200 512 KB cartridge (32K banks)                     |
+| Type 74: Super Cart 512 KB 5200 cartridge (32K banks)                     |
 +---------------------------------------------------------------------------+
 
  A bank-switched cartridge built on the "512K Super Cart" board manufactured
