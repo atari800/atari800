@@ -130,10 +130,10 @@ static void set_bank_A0AF(int main, int old_state)
 	}
 }
 
-/* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_1024,
+/* WILL_64, EXP_64, DIAMOND_64, SDX_64, WILL_32, ATMAX_128, ATMAX_OLD_1024,
    ATRAX_DEC_128, ATRAX_SDX_64, TURBOSOFT_64, TURBOSOFT_128, ULTRACART_32,
    TURBO_HIT_32, THECART_128M, THECART_32M, THECART_64M, ATRAX_128, ADAWLIAH_32,
-   ADAWLIAH_64 */
+   ADAWLIAH_64, ATMAX_NEW_1024 */
 static void set_bank_A0BF(int disable_mask, int bank_mask)
 {
 	if (active_cart->state & disable_mask)
@@ -260,8 +260,9 @@ static void SwitchBank(int old_state)
 		set_bank_809F(0xfe000, old_state);
 		break;
 	case CARTRIDGE_ATRAX_DEC_128:
-	case CARTRIDGE_ATMAX_1024:
+	case CARTRIDGE_ATMAX_OLD_1024:
 	case CARTRIDGE_ATRAX_128:
+	case CARTRIDGE_ATMAX_NEW_1024:
 		set_bank_A0BF(0x80, 0x7f);
 		break;
 	case CARTRIDGE_ATMAX_128:
@@ -459,7 +460,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_ATRAX_DEC_128:
 		case CARTRIDGE_WILL_32:
 		case CARTRIDGE_ATMAX_128:
-		case CARTRIDGE_ATMAX_1024:
+		case CARTRIDGE_ATMAX_OLD_1024:
 		case CARTRIDGE_SDX_128:
 		case CARTRIDGE_ATRAX_SDX_64:
 		case CARTRIDGE_ATRAX_SDX_128:
@@ -473,6 +474,7 @@ static void MapActiveCart(void)
 		case CARTRIDGE_ATRAX_128:
 		case CARTRIDGE_ADAWLIAH_32:
 		case CARTRIDGE_ADAWLIAH_64:
+		case CARTRIDGE_ATMAX_NEW_1024:
 			MEMORY_Cart809fDisable();
 			break;
 		case CARTRIDGE_DB_32:
@@ -804,8 +806,9 @@ static int access_D5(CARTRIDGE_image_t *cart, UWORD addr, int *state)
 	case CARTRIDGE_TURBOSOFT_64:
 		new_state = addr & 0x17;
 		break;
-	case CARTRIDGE_ATMAX_1024:
+	case CARTRIDGE_ATMAX_OLD_1024:
 	case CARTRIDGE_MEGAMAX_2048:
+	case CARTRIDGE_ATMAX_NEW_1024:
 		new_state = addr;
 		break;
 	case CARTRIDGE_OSS_8:
@@ -1199,7 +1202,7 @@ static void ResetCartState(CARTRIDGE_image_t *cart)
 	case CARTRIDGE_OSS_034M_16:
 		cart->state = 1;
 		break;
-	case CARTRIDGE_ATMAX_1024:
+	case CARTRIDGE_ATMAX_OLD_1024:
 		cart->state = 0x7f;
 		break;
 	case CARTRIDGE_AST_32:

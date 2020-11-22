@@ -73,7 +73,7 @@ Currently supported cartridge types:
 | 39 | 800/XL/XE |    8 | Phoenix 8 KB cartridge                        |   |
 | 40 | 800/XL/XE |   16 | Blizzard 16 KB cartridge                      |   |
 | 41 | 800/XL/XE |  128 | Atarimax 128 KB Flash cartridge               | p |
-| 42 | 800/XL/XE | 1024 | Atarimax 1 MB Flash cartridge                 | p |
+| 42 | 800/XL/XE | 1024 | Atarimax 1 MB Flash cartridge (old)           | p |
 | 43 | 800/XL/XE |  128 | SpartaDOS X 128 KB cartridge                  |   |
 | 44 | 800/XL/XE |    8 | OSS 8 KB cartridge                            |   |
 | 45 | 800/XL/XE |   16 | OSS two chip 16 KB cartridge (043M)           |   |
@@ -106,6 +106,7 @@ Currently supported cartridge types:
 | 72 |   5200    |  128 | Super Cart 128 KB 5200 cartridge (32K banks)  |   |
 | 73 |   5200    |  256 | Super Cart 256 KB 5200 cartridge (32K banks)  |   |
 | 74 |   5200    |  512 | Super Cart 512 KB 5200 cartridge (32K banks)  |   |
+| 75 | 800/XL/XE | 1024 | Atarimax 1 MB Flash cartridge (new)           | p |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -593,13 +594,16 @@ are numbered in the order they appear in the image file, starting with 0.
  currently not emulated.
 
 +---------------------------------------------------------------------------+
-| Type 42: Atarimax 1 MB Flash cartridge                                    |
+| Type 42: Atarimax 1 MB Flash cartridge (old)                              |
 +---------------------------------------------------------------------------+
 
  This bank-switched cartridge occupies 8 KB of address space between $A000
  and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
  The seven lowest bits of the address written to $D500-$D57F select the bank
  mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank $7F is selected. There is also another version of the
+ Atarimax cartridge that selects bank 0 on power up; see Type 75 for details.
 
  The cartridge also supports programming of the Flash ROM - this feature is
  currently not emulated.
@@ -1181,3 +1185,22 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  References:
  https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?do=findComment&comment=856153
  https://atariage.com/forums/topic/298850-bosconian-ultimate-for-atari-5200/
+
++---------------------------------------------------------------------------+
+| Type 75: Atarimax 1 MB Flash cartridge (new)                              |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
+ The seven lowest bits of the address written to $D500-$D57F select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank 0 is selected. There is also another version of the
+ Atarimax cartridge that selected bank $7F on power up; see Type 42 for
+ details.
+
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
+ Reference:
+ https://atariage.com/forums/topic/184410-space-harrier-released/?do=findComment&comment=2331655

@@ -68,7 +68,7 @@ cart_t const CARTRIDGES[CARTRIDGE_TYPE_COUNT] = {
 	{ "Phoenix 8 KB cartridge",                    8 },
 	{ "Blizzard 16 KB cartridge",                 16 },
 	{ "Atarimax 128 KB Flash cartridge",         128 },
-	{ "Atarimax 1 MB Flash cartridge",          1024 },
+	{ "Atarimax 1 MB Flash cartridge (old)",    1024 },
 	{ "SpartaDOS X 128 KB cartridge",            128 },
 	{ "OSS 8 KB cartridge",                        8 },
 	{ "OSS two chip 16 KB cartridge (043M)",      16 },
@@ -100,7 +100,8 @@ cart_t const CARTRIDGES[CARTRIDGE_TYPE_COUNT] = {
 	{ "Super Cart 64 KB 5200 cartridge",          64 },
 	{ "Super Cart 128 KB 5200 cartridge",        128 },
 	{ "Super Cart 256 KB 5200 cartridge",        256 },
-	{ "Super Cart 512 KB 5200 cartridge",        512 }
+	{ "Super Cart 512 KB 5200 cartridge",        512 },
+	{ "Atarimax 1 MB Flash cartridge (new)",    1024 }
 };
 
 int CARTRIDGE_Checksum(const UBYTE *image, int nbytes)
