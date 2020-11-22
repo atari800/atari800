@@ -1110,7 +1110,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  5200 BIOS reads data from here on power up, thus ensuring a known boot state.
 
  Reference:
- https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
+ https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?do=findComment&comment=856153
 
 +---------------------------------------------------------------------------+
 | Type 72: Switchable 5200 128 KB cartridge (32K banks)                     |
@@ -1131,7 +1131,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  5200 BIOS reads data from here on power up, thus ensuring a known boot state.
 
  References:
- https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
+ https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?do=findComment&comment=856153
  https://atariage.com/forums/topic/298850-bosconian-ultimate-for-atari-5200/
 
 +---------------------------------------------------------------------------+
@@ -1155,7 +1155,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  5200 BIOS reads data from here on power up, thus ensuring a known boot state.
 
  Reference:
- https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
+ https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?do=findComment&comment=856153
 
 +---------------------------------------------------------------------------+
 | Type 74: Switchable 5200 512 KB cartridge (32K banks)                     |
@@ -1179,5 +1179,5 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  5200 BIOS reads data from here on power up, thus ensuring a known boot state.
 
  References:
- https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
+ https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?do=findComment&comment=856153
  https://atariage.com/forums/topic/298850-bosconian-ultimate-for-atari-5200/
