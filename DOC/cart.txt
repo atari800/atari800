@@ -1058,9 +1058,9 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  Reference:
  http://atarionline.pl/forum/comments.php?DiscussionID=2861&page=11#CommentBody_91383
 
- +---------------------------------------------------------------------------+
- | Type 69: aDawliah 32 KB cartridge                                         |
- +---------------------------------------------------------------------------+
++---------------------------------------------------------------------------+
+| Type 69: aDawliah 32 KB cartridge                                         |
++---------------------------------------------------------------------------+
 
  A bank-switched cartridge built on a board marked "A-NA0002". Two variants of
  this board are known: one that connects the EPROM's pin 1 to +5V, and another
@@ -1076,9 +1076,9 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  Reference:
  http://atarionline.pl/forum/comments.php?DiscussionID=4260&page=1#Item_13
 
- +---------------------------------------------------------------------------+
- | Type 70: aDawliah 64 KB cartridge                                         |
- +---------------------------------------------------------------------------+
++---------------------------------------------------------------------------+
+| Type 70: aDawliah 64 KB cartridge                                         |
++---------------------------------------------------------------------------+
 
  A bank-switched cartridge built on a board marked "A-NA0002", specifically the
  variant that connects the EPROM's pin 1 to an 74169 counter. The cartridge
@@ -1093,32 +1093,91 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  Reference:
  http://atarionline.pl/forum/comments.php?DiscussionID=4260&page=1#Item_13
 
- +---------------------------------------------------------------------------+
- | Type 71, 72, 73, 74: Switched 5200 cartridge (32K banks)                  |
- +---------------------------------------------------------------------------+
++---------------------------------------------------------------------------+
+| Type 71: Switchable 5200 64 KB cartridge (32K banks)                      |
++---------------------------------------------------------------------------+
 
- A bank-switched cartridge for the Atari 5200 proposed by Bryan in 2005.
+ A bank-switched cartridge built on the "512K Super Cart" board manufactured
+ by Bryan Edewaard in 2005. It was used in Bryan's 5200 conversion of M.U.L.E.
 
- These types refer to the "32K banks" variant of the board. Up to 4 bits may
- be used to control the currently exposed bank. Reads from the $BFC0-$BFFF
- range control the currently exposed bank between $4000 and $BFFF as follows:
-
- - Addresses $BFC0 to $BFCF control the high two bits:
-   - $BFC0 - $BFC3 set the high two bits to 00,
-   - $BFC4 - $BFC7 set the high two bits to 01,
-   - $BFC8 - $BFCB set the high two bits to 10,
-   - $BFCC - $BFCF set the high two bits to 11.
- - Addresses $BFD0 to $BFDF control the low two bits in an analogous manner.
- - Addresses $BFE0 to $BFFF set all bits to 1, forcing the topmost bank to be
-   visible. The 5200 BIOS is expected to read data from those areas, thus
-   ensuring a known boot state.
-
- The respective types refer to different sizes:
-
- - Type 71: 64 KB, 2 banks (1 bit)
- - Type 72: 128 KB, 4 banks (2 bits)
- - Type 73: 256 KB, 8 banks (3 bits)
- - Type 74: 512 KB, 16 banks (4 bits)
+ The cartridge has 2 32 KB banks mapped to $4000-$BFFF. The cartridge has a
+ 4-bit bank counter, whose bits 0-1 are modified by reading from $BFD0-$BFDF,
+ and bits 2-3 - by reading from $BFC0-$BFCF; but only bit 0 is significant.
+ Effectively, banks are selected as follows:
+ - a read from $BFD0-$BFD3 or $BFD8-$BFDB selects bank 0,
+ - a read from $BFD4-$BFD7 or $BFDC-$BFDF selects bank 1.
+ Additionally a read from $BFE0-$BFFF selects the topmost bank (i.e. 1). The
+ 5200 BIOS reads data from here on power up, thus ensuring a known boot state.
 
  Reference:
  https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
+
++---------------------------------------------------------------------------+
+| Type 72: Switchable 5200 128 KB cartridge (32K banks)                     |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge built on the "512K Super Cart" board manufactured
+ by Bryan Edewaard in 2005. It was used in the 5200 conversion of Bosconian.
+
+ The cartridge has 4 32 KB banks mapped to $4000-$BFFF. The cartridge has a
+ 4-bit bank counter, whose bits 0-1 are modified by reading from $BFD0-$BFDF,
+ and bits 2-3 - by reading from $BFC0-$BFCF; but only bits 0-1 are
+ significant. Effectively, banks are selected as follows:
+ - a read from $BFD0-$BFD3 selects bank 0,
+ - a read from $BFD4-$BFD7 selects bank 1,
+ - a read from $BFD8-$BFDB selects bank 2,
+ - a read from $BFDC-$BFDF selects bank 3.
+ Additionally a read from $BFE0-$BFFF selects the topmost bank (i.e. 3). The
+ 5200 BIOS reads data from here on power up, thus ensuring a known boot state.
+
+ References:
+ https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
+ https://atariage.com/forums/topic/298850-bosconian-ultimate-for-atari-5200/
+
++---------------------------------------------------------------------------+
+| Type 73: Switchable 5200 256 KB cartridge (32K banks)                     |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge built on the "512K Super Cart" board manufactured
+ by Bryan Edewaard in 2005.
+
+ The cartridge has 8 32 KB banks mapped to $4000-$BFFF. The cartridge has a
+ 4-bit bank counter, whose bits 0-1 are modified by reading from $BFD0-$BFDF,
+ and bits 2-3 - by reading from $BFC0-$BFCF; but only bits 0-2 are
+ significant. Effectively, banks are selected as follows:
+ - a read from $BFC0-$BFC3 or $BFC8-$BFCB sets bit 2 to 0,
+ - a read from $BFC4-$BFC7 or $BFCC-$BFCF sets bit 2 to 1,
+ - a read from $BFD0-$BFD3 sets bits 0-1 to 00,
+ - a read from $BFD4-$BFD7 sets bits 0-1 to 01,
+ - a read from $BFD8-$BFDB sets bits 0-1 to 10,
+ - a read from $BFDC-$BFDF sets bits 0-1 to 11,
+ Additionally a read from $BFE0-$BFFF selects the topmost bank (i.e. 7). The
+ 5200 BIOS reads data from here on power up, thus ensuring a known boot state.
+
+ Reference:
+ https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
+
++---------------------------------------------------------------------------+
+| Type 74: Switchable 5200 512 KB cartridge (32K banks)                     |
++---------------------------------------------------------------------------+
+
+ A bank-switched cartridge built on the "512K Super Cart" board manufactured
+ by Bryan Edewaard in 2005. It was used in the 5200 conversion of Bosconian.
+
+ The cartridge has 16 32 KB banks mapped to $4000-$BFFF. The cartridge has a
+ 4-bit bank counter, whose bits 0-1 are modified by reading from $BFD0-$BFDF,
+ and bits 2-3 - by reading from $BFC0-$BFCF. Banks are selected as follows:
+ - a read from $BFC0-$BFC3 sets bits 2-3 to 00,
+ - a read from $BFC4-$BFC7 sets bits 2-3 to 01,
+ - a read from $BFC8-$BFCB sets bits 2-3 to 10,
+ - a read from $BFCC-$BFCF sets bits 2-3 to 11,
+ - a read from $BFD0-$BFD3 sets bits 0-1 to 00,
+ - a read from $BFD4-$BFD7 sets bits 0-1 to 01,
+ - a read from $BFD8-$BFDB sets bits 0-1 to 10,
+ - a read from $BFDC-$BFDF sets bits 0-1 to 11,
+ Additionally a read from $BFE0-$BFFF selects the topmost bank (i.e. 15). The
+ 5200 BIOS reads data from here on power up, thus ensuring a known boot state.
+
+ References:
+ https://atariage.com/forums/topic/69649-5200-game-announcement-now-shipping/?tab=comments#comment-856153
+ https://atariage.com/forums/topic/298850-bosconian-ultimate-for-atari-5200/
