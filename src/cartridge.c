@@ -1094,17 +1094,17 @@ void CARTRIDGE_5200SuperCart(UWORD addr)
 	int old_state = active_cart->state;
 	int new_state = old_state;
 
-	if ((addr & 0xBFC0) == 0xBFC0)
+	if ((addr & 0xbfc0) == 0xbfc0)
 		switch (addr & 0x30) {
 		case 0x00:
-			new_state = (new_state & ~(0x0C)) | (addr & 0x0C);
+			new_state = (new_state & ~(0x0c)) | (addr & 0x0c);
 			break;
 		case 0x10:
-			new_state = (new_state & ~(0x03)) | ((addr & 0x0C) >> 2);
+			new_state = (new_state & ~(0x03)) | ((addr & 0x0c) >> 2);
 			break;
 		case 0x20:
 		case 0x30:
-			new_state = (new_state & ~(0x0F)) | 0x0F;
+			new_state = (new_state & ~(0x0f)) | 0x0f;
 			break;
 		}
 
