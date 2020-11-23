@@ -1,4 +1,3 @@
-**/CVS
 *.o
 *.a
 /Makefile
@@ -6,6 +5,8 @@
 /emuos/build
 /src/Makefile
 /src/Makefile.in
+/tools/Makefile
+/tools/Makefile.in
 /DOC/Makefile
 /DOC/Makefile.in
 /src/atari800
