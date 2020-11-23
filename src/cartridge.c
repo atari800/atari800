@@ -161,7 +161,7 @@ static void set_bank_80BF(void)
 
 static void set_bank_5200_SUPER(void)
 {
-	MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image + (((active_cart->state & 0x0f) * 0x8000) & (active_cart->size * 1024 - 1)));
+	MEMORY_CopyROM(0x4000, 0xbfff, active_cart->image + active_cart->state * 0x8000);
 }
 
 static void set_bank_SDX_128(void)
@@ -1095,19 +1095,20 @@ void CARTRIDGE_5200SuperCart(UWORD addr)
 	int old_state = active_cart->state;
 	int new_state = old_state;
 
-	if ((addr & 0xbfc0) == 0xbfc0)
+	if ((addr & 0xbfc0) == 0xbfc0) {
 		switch (addr & 0x30) {
-		case 0x00:
-			new_state = (new_state & ~(0x0c)) | (addr & 0x0c);
+		case 0x00: /* $BFCx */
+			new_state = (new_state & 0x03) | (addr & 0x0c);
 			break;
-		case 0x10:
-			new_state = (new_state & ~(0x03)) | ((addr & 0x0c) >> 2);
+		case 0x10: /* $BFDx */
+			new_state = (new_state & 0x0c) | ((addr & 0x0c) >> 2);
 			break;
-		case 0x20:
-		case 0x30:
-			new_state = (new_state & ~(0x0f)) | 0x0f;
+		default: /* 0x20 or 0x30, i.e. $BFEx or $BFFx */
+			new_state = 0x0f;
 			break;
 		}
+		new_state &= ((active_cart->size >> 5) - 1);
+	}
 
 	if (old_state != new_state) {
 		active_cart->state = new_state;
