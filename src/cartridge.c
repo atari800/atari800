@@ -341,8 +341,9 @@ static void SwitchBank(int old_state)
 static void MapActiveCart(void)
 {
 	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		MEMORY_SetROM(0x4ff6, 0x4ff9);		/* disable Bounty Bob bank switching */
+		MEMORY_SetROM(0x4ff6, 0x4ff9); /* disable Bounty Bob bank switching */
 		MEMORY_SetROM(0x5ff6, 0x5ff9);
+		MEMORY_SetROM(0xbfc0, 0xbfff); /* disable Super Cart bank switching */
 		switch (active_cart->type) {
 		case CARTRIDGE_5200_SUPER_64:
 		case CARTRIDGE_5200_SUPER_128:
