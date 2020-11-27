@@ -202,18 +202,8 @@ int AFILE_OpenFile(const char *filename, int reboot, int diskno, int readonly)
 				/* ok */
 				break;
 			default:
-#ifdef BASIC
-				Log_print("Raw cartridge images are not supported in BASIC version.");
-				return AFILE_ERROR;
-#else /* BASIC */
 				/* r > 0 */
-#ifndef ANDROID
-				CARTRIDGE_SetTypeAutoReboot(&CARTRIDGE_main, UI_SelectCartType(r));
-#else
 				return (r << 8) | AFILE_ROM;
-#endif /* ANDROID */
-				break;
-#endif /* BASIC */
 			}
 		}
 		break;
