@@ -1414,9 +1414,20 @@ void CARTRIDGE_ColdStart(void) {
 	MapActiveCart();
 }
 
-/* Loads a cartridge from FILENAME. Copies FILENAME to CART_FILENAME.
-   Allocates a buffer with cartridge image data and puts it in *CART_IMAGE.
-   Sets *CART_TYPE to the cartridge type. */
+/* Loads a cartridge from FILENAME. Copies FILENAME to CART->FILENAME.
+   If loading failed, sets CART->TYPE to CARTRIDGE_NONE and returns one of:
+   * CARTRIDGE_CANT_OPEN if there was an error when opening file,
+   * CARTRIDGE_BAD_FORMAT if the file is not a proper cartridge image.
+
+   If loading succeeded, allocates a buffer with cartridge image data and puts
+   it in CART->IMAGE. Then sets CART->TYPE if possible, and returns one of:
+   * 0 if cartridge type was recognized; CART->TYPE is then set correctly;
+   * CARTRIDGE_BAD_CHECKSUM if cartridge is a CART file but with invalid
+     checksum; CART->TYPE is then set correctly;
+   * a positive integer: size in KB if cartridge type was not guessed;
+     CART->TYPE is then set to CARTRIDGE_UNKNOWN. The caller is expected to
+     select a cartridge type according to the returned size, and call either
+     CARTRIDGE_SetType() or CARTRIDGE_SetTypeAutoReboot(). */
 static int InsertCartridge(const char *filename, CARTRIDGE_image_t *cart)
 {
 	FILE *fp;

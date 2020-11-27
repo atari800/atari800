@@ -44,7 +44,12 @@ int AFILE_DetectFileType(const char *filename);
 /* Auto-detects file type and mounts the file in the emulator.
    reboot: Atari800_Coldstart() for disks, cartridges and tapes
    diskno: drive number for disks (1-8)
-   readonly: mount disks as read-only */
+   readonly: mount disks as read-only
+   Returns:
+   * AFILE_ERROR if file failed to load or was invalid;
+   * AFILE_* - type of opened file if loading succeeded;
+   * AFILE_ROM | (rom_size << 8) if the file opened is a ROM image, but its
+     type could not be determined; rom_size is then cartridge's size in KB. */
 int AFILE_OpenFile(const char *filename, int reboot, int diskno, int readonly);
 
 #endif /* AFILE_H_ */
