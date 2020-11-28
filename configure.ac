@@ -225,8 +225,9 @@ AC_DEFUN([TRY_USE_SDL],
 dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c Otherwise
 dnl the autoconf tests don't work.
                 CPPFLAGS=${CPPFLAGS/-Dmain=SDL_main/}
-dnl Avoid making stdout.txt on Windows sdl target by compiling our own SDL_main
-dnl Get SDL_win32_main.c from the SDL source and copy it to the src directory.
+dnl Avoid making stdout.txt on Windows sdl target by discarding libSDLmain and
+dnl compiling our own src/sdl/SDL_win32_main.c (copied from libSDL dources),
+dnl with the NO_STDIO_REDIRECT macro defined.
                 LIBS=${LIBS/-lSDLmain/}
                 CPPFLAGS="$CPPFLAGS -DNO_STDIO_REDIRECT"
 dnl Don't make this a windowed app, make it a console app.

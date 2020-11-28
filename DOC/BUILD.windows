@@ -55,10 +55,6 @@ as it is the last one to contain the now-deprecated DirectInput libraries.
 I.2) Building the SDL version
 -----------------------------
 
-Before buildiong you have to extract the file src/main/win32/SDL_win32_main.c
-from the SDL 1.2 sources, and copy it to the Atari800 src/ directory. The SDL
-library is available at http://libsdl.org/ .
-
 The procedure for building the SDL version is described in DOC/INSTALL, section
 "Building the Emulator for SDL".
 
