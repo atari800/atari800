@@ -25,7 +25,7 @@
 #include "memory.h"
 #include "cartridge.h"
 
-cart_t CARTRIDGES[CARTRIDGE_TYPE_COUNT] = {
+cart_t const CARTRIDGES[CARTRIDGE_TYPE_COUNT] = {
 	{ "NONE",                                      0 },
 	{ "Standard 8 KB cartridge",                   8 },
 	{ "Standard 16 KB cartridge",                 16 },

@@ -118,6 +118,6 @@ enum {
 	CARTRIDGE_TYPE_COUNT     = 75
 };
 
-extern cart_t CARTRIDGES[CARTRIDGE_TYPE_COUNT];
+extern cart_t const CARTRIDGES[CARTRIDGE_TYPE_COUNT];
 
 #endif	/* CARTRIDGE_INFO_H_ */
