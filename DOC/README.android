@@ -1,0 +1,35 @@
+The Android port of Atari800 is called "Colleen". It is available on
+Google Play:
+
+https://play.google.com/store/apps/details?id=name.nick.jubanka.colleen
+
+Kostas Nakos, the principal maintainer of the Android port, has also set up
+a website with a user manual for Colleen:
+
+http://pocketatari.atari.org/android
+
+The version on Google Play, and the manual website, are unfortunately rarely
+updated. Because of that, the maintainers of Atari800 also provide a "debug"
+APK package of Colleen for Android. The APK package can be downloaded and
+installed on an Android device manually, after enabling the "Install unknown
+apps" setting in the device. Search for the APK at the Atari800 downloads page:
+
+https://atari800.github.io/download.html
+
+Note: If you had installed Colleen from Google Play and want to install the APK
+from the Atari800 website, you will need to uninstall the app first, otherwise
+it would not install successfully. Same if you have installed the APK from the
+Atari800 website and now want to switch to the Google Play version.
+
+CAUTION: The APK package provided by the Atari800 website is not signed, and
+therefore cannot be considered secure. (Also sideloading, i.e. installing apps
+from outside Google Play, should be generally considered insecure.) Install it
+on your device only if you really trust the Atari800 team not to put malware in
+the application. The Atari800 team disclaims any responsibility for any issues
+caused by Colleen. INSTALL IT ONLY ON YOUR OWN RISK.
+
+For instructions on how to build the Colleen APK yourself, see
+DOC/BUILD.android. 
+
+"Google", "Google Play" and "Android" are trademarks of Google, LLC, which is
+not affiliated in any way with this software and its developers.
