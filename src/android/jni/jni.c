@@ -42,6 +42,7 @@
 #include "akey.h"
 #include "devices.h"
 #include "cartridge.h"
+#include "cartridge_info.h"
 #include "platform.h"
 #include "sound.h"
 #include "statesav.h"
@@ -192,84 +193,6 @@ static jboolean JNICALL NativeSaveState(JNIEnv *env, jobject this, jstring fname
 static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 												  jstring img, jint drv, jint reboot)
 {
-	static char const * const cart_descriptions[CARTRIDGE_TYPE_COUNT] = {
-		NULL,
-		CARTRIDGE_STD_8_DESC,
-		CARTRIDGE_STD_16_DESC,
-		CARTRIDGE_OSS_034M_16_DESC,
-		CARTRIDGE_5200_32_DESC,
-		CARTRIDGE_DB_32_DESC,
-		CARTRIDGE_5200_EE_16_DESC,
-		CARTRIDGE_5200_40_DESC,
-		CARTRIDGE_WILL_64_DESC,
-		CARTRIDGE_EXP_64_DESC,
-		CARTRIDGE_DIAMOND_64_DESC,
-		CARTRIDGE_SDX_64_DESC,
-		CARTRIDGE_XEGS_32_DESC,
-		CARTRIDGE_XEGS_07_64_DESC,
-		CARTRIDGE_XEGS_128_DESC,
-		CARTRIDGE_OSS_M091_16_DESC,
-		CARTRIDGE_5200_NS_16_DESC,
-		CARTRIDGE_ATRAX_DEC_128_DESC,
-		CARTRIDGE_BBSB_40_DESC,
-		CARTRIDGE_5200_8_DESC,
-		CARTRIDGE_5200_4_DESC,
-		CARTRIDGE_RIGHT_8_DESC,
-		CARTRIDGE_WILL_32_DESC,
-		CARTRIDGE_XEGS_256_DESC,
-		CARTRIDGE_XEGS_512_DESC,
-		CARTRIDGE_XEGS_1024_DESC,
-		CARTRIDGE_MEGA_16_DESC,
-		CARTRIDGE_MEGA_32_DESC,
-		CARTRIDGE_MEGA_64_DESC,
-		CARTRIDGE_MEGA_128_DESC,
-		CARTRIDGE_MEGA_256_DESC,
-		CARTRIDGE_MEGA_512_DESC,
-		CARTRIDGE_MEGA_1024_DESC,
-		CARTRIDGE_SWXEGS_32_DESC,
-		CARTRIDGE_SWXEGS_64_DESC,
-		CARTRIDGE_SWXEGS_128_DESC,
-		CARTRIDGE_SWXEGS_256_DESC,
-		CARTRIDGE_SWXEGS_512_DESC,
-		CARTRIDGE_SWXEGS_1024_DESC,
-		CARTRIDGE_PHOENIX_8_DESC,
-		CARTRIDGE_BLIZZARD_16_DESC,
-		CARTRIDGE_ATMAX_128_DESC,
-		CARTRIDGE_ATMAX_1024_DESC,
-		CARTRIDGE_SDX_128_DESC,
-		CARTRIDGE_OSS_8_DESC,
-		CARTRIDGE_OSS_043M_16_DESC,
-		CARTRIDGE_BLIZZARD_4_DESC,
-		CARTRIDGE_AST_32_DESC,
-		CARTRIDGE_ATRAX_SDX_64_DESC,
-		CARTRIDGE_ATRAX_SDX_128_DESC,
-		CARTRIDGE_TURBOSOFT_64_DESC,
-		CARTRIDGE_TURBOSOFT_128_DESC,
-		CARTRIDGE_ULTRACART_32_DESC,
-		CARTRIDGE_LOW_BANK_8_DESC,
-		CARTRIDGE_SIC_128_DESC,
-		CARTRIDGE_SIC_256_DESC,
-		CARTRIDGE_SIC_512_DESC,
-		CARTRIDGE_STD_2_DESC,
-		CARTRIDGE_STD_4_DESC,
-		CARTRIDGE_RIGHT_4_DESC,
-		CARTRIDGE_BLIZZARD_32_DESC,
-		CARTRIDGE_MEGAMAX_2048_DESC,
-		CARTRIDGE_THECART_128M_DESC,
-		CARTRIDGE_MEGA_4096_DESC,
-		CARTRIDGE_MEGA_2048_DESC,
-		CARTRIDGE_THECART_32M_DESC,
-		CARTRIDGE_THECART_64M_DESC,
-		CARTRIDGE_XEGS_8F_64_DESC,
-		CARTRIDGE_ATRAX_128_DESC,
-		CARTRIDGE_ADAWLIAH_32_DESC,
-		CARTRIDGE_ADAWLIAH_64_DESC,
-		CARTRIDGE_SW5200_64_DESC,
-		CARTRIDGE_SW5200_128_DESC,
-		CARTRIDGE_SW5200_256_DESC,
-		CARTRIDGE_SW5200_512_DESC
-	};
-
 	const char *img_utf = NULL;
 	int ret = 0, r, kb, i, cnt = 0;
 	jclass cls, scls;
@@ -291,16 +214,16 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 		cls = (*env)->GetObjectClass(env, this);
 		fid = (*env)->GetFieldID(env, cls, "_cartTypes", "[[Ljava/lang/String;");
 		for (i = 1; i < CARTRIDGE_TYPE_COUNT; i++)
-			if (CARTRIDGE_kb[i] == kb)	cnt++;
+			if (CARTRIDGES[i].kb == kb)	cnt++;
 		xarr = (*env)->NewObjectArray(env, 2, scls, NULL);
 		arr = (*env)->NewObjectArray(env, cnt, (*env)->GetObjectClass(env, xarr), NULL);
 		for (cnt = 0, i = 1; i < CARTRIDGE_TYPE_COUNT; i++)
-			if (CARTRIDGE_kb[i] == kb) {
+			if (CARTRIDGES[i].kb == kb) {
 				sprintf(tmp, "%d", i);
 				str = (*env)->NewStringUTF(env, tmp);
 				(*env)->SetObjectArrayElement(env, xarr, 0, str);
 				(*env)->DeleteLocalRef(env, str);
-				str = (*env)->NewStringUTF(env, cart_descriptions[i]);
+				str = (*env)->NewStringUTF(env, CARTRIDGES[i].description);
 				(*env)->SetObjectArrayElement(env, xarr, 1, str);
 				(*env)->DeleteLocalRef(env, str);
 				(*env)->SetObjectArrayElement(env, arr, cnt++, xarr);
