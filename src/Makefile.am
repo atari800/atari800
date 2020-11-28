@@ -85,7 +85,7 @@ atari800_LDADD =
 if A8_USE_SDL
 atari800_SOURCES += sdl/init.c sdl/init.h
 if CONFIGURE_HOST_WIN
-atari800_SOURCES += win32/SDL_win32_main.c
+atari800_SOURCES += sdl/SDL_win32_main.c
 endif
 endif
 
@@ -269,7 +269,7 @@ endif
 
 # A special rule for SDL_win32_main.c to suppress warnings since this file is
 # from SDL and should not have to be modified
-win32/SDL_win32_main.o: win32/SDL_win32_main.c
+sdl/SDL_win32_main.o: sdl/SDL_win32_main.c
 	$(CC) -c -o $@ $(AM_CPPFLAGS) $(CFLAGS) $(DEFAULT_INCLUDES) $(CPPFLAGS) $(DEFS) -Wno-missing-declarations -Wno-missing-prototypes $<
 
 ide.o: ide.c ide.h ide_internal.h
