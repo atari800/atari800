@@ -172,6 +172,14 @@ if [[ "$a8_target" = "android" ]]; then
 	with_readline=no
 	WANT_EVENT_RECORDING=no
 	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
+
+	# Take care of the ndk-build script name difference on Windows version of Android NDK.
+	if [[ "$build_os" = "cygwin" -o "$build_os" = "mingw32" ]]; then
+		NDK_BUILD=ndk-build.cmd
+	else
+		NDK_BUILD=ndk-build
+	fi
+	AC_SUBST(NDK_BUILD)
 fi
 if [[ "$a8_host" = "falcon" ]]; then
 	CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"

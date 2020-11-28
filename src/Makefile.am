@@ -313,7 +313,7 @@ $(TARGET_BASE_NAME).jar: $(TARGET_BASE_NAME).class $(TARGET_BASE_NAME)$(RUNTIME)
 
 # Allow parallel execution in sub-make with '+'
 android:
-	+ ndk-build -C android
+	+ $(NDK_BUILD) -C android
 	ant -f android/build.xml debug
 .PHONY: android
 
