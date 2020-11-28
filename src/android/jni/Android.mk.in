@@ -13,12 +13,12 @@ A800_CORE_OBJS  := \
 	cartridge.o \
 	cartridge_info.o \
 	cassette.o \
+	cfg.o \
 	colours.o \
 	colours_external.o \
 	colours_pal.o \
 	colours_ntsc.o \
 	compfile.o \
-	cfg.o \
 	cpu.o \
 	crc32.o \
 	cycle_map.o \
@@ -41,11 +41,11 @@ A800_CORE_OBJS  := \
 	pokeyrec.o \
 	pokeysnd.o \
 	remez.o \
-	rtime.o \
 	roms/altirra_5200_os.o \
 	roms/altirra_basic.o \
 	roms/altirraos_800.o \
 	roms/altirraos_xl.o \
+	rtime.o \
 	screen.o \
 	sio.o \
 	sndsave.o \
@@ -59,11 +59,12 @@ A800_CORE_OBJS  := \
 	votraxsnd.o
 A800_CORE_LIBS   := @LIBS@
 
-ANDROID_SRCS     := platform.c \
-					sound.c \
-					graphics.c \
-					jni.c \
-					androidinput.c
+ANDROID_SRCS     := \
+	androidinput.c \
+	graphics.c \
+	jni.c \
+	platform.c \
+	sound.c
 ANDROID_LIBS     := -llog -lGLESv1_CM
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/../..
