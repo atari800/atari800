@@ -6,27 +6,32 @@ preferences mean etc. you should check out instead:
 
 http://pocketatari.atari.org/android
 
+See also DOC/README.android.
 
 I. Prerequisites
 ----------------
 
-To compile the android port, you are going to need:
+To compile the Android port, you are going to need:
 
-1. A working autotools/make environment (i.e. Cygwin on Windows)
+1. A working autotools/make environment (e.g. Cygwin or MinGW on Windows).
+
+Before trying to build the Android port, it is a good idea to first try building
+the desktop version, for instance the SDL port. It is a good way to verify that
+the necessary tools are installed and working correctly. See DOC/INSTALL to
+build Atari800 on Unix environments, or DOC/BUILD.windows to build under Cygwin
+and MinGW.
 
 2. The Java JDK.
 
-The latest Java 8 release at the time of this writing, ie. 8u172, is known to
+The latest Java 8 release at the time of this writing, ie. 8u271, is known to
 work correctly:
 
-http://www.oracle.com/technetwork/java/javase/downloads/index.html
+https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html
 
-Note for Linux users: the OpenJDK 8 package, as available by default in e.g.
-Ubuntu, no longer supports Java source level 1.5, as used by Android SDK. You'll
-need the version provided by Oracle. For Ubuntu, the easiest way to obtain it is
-by means of the "oracle-java8-installer" package provided by the WebUpd8 PPA:
+Java versions newer than 8 will not work.
 
-https://launchpad.net/~webupd8team/+archive/ubuntu/java
+Note for Linux users: the OpenJDK 8 package, as available in e.g.
+Ubuntu under the name "openjdk-8-jdk", is a good choice.
 
 3. Apache Ant:
 
@@ -36,7 +41,7 @@ https://ant.apache.org/bindownload.cgi
 
 Atari800 requires tools that have since been removed from the newest version of
 the Android SDK (specifically, "android update project" is no longer available).
-Until Atari800 gets updated, you'll have to use an older version, which
+Until Atari800 gets updated, you will have to use an older version, which
 unfortunately is no longer downloadable from the Android Developers' website.
 The necessary parts of the SDK, though, can be obtained through direct download
 links. Here's how to get them:
@@ -52,49 +57,100 @@ where <host> shall be replaced with one of:
 * macosx - for MacOS X
 * linux - for Linux 64-bit
 
-b) Create a directory for the SDK, e.g. /android-sdk. Unzip the downloaded
-SDK there - it should create a subdirectory named tools/.
+b) Create a directory for the SDK, e.g. /path/to/android-sdk. Unzip the
+downloaded SDK there - it should create a subdirectory named tools/.
 
-c) Navigate to the tools directory. E.g.
+c) Set the JAVA_HOME environment variable to point to the root directory of your
+JDK installation, e.g.:
 
-# cd /android-sdk/tools
+# export JAVA_HOME='C:\Java\jdk1.8.0_172'
 
-d) Run sdkmanager to install SDK Platform Tools, SDK Build Tools and platform
+d) Navigate to the SDK's tools/bin/ directory, e.g.:
+
+# cd /path/to/android-sdk/tools/bin
+
+e) Run sdkmanager to install SDK Platform Tools, SDK Build Tools and platform
 version 20:
 
-# sdkmanager "platform-tools" "build-tools;27.0.3" "platforms;android-20"
+# ./sdkmanager "platform-tools" "build-tools;27.0.3" "platforms;android-20"
+
+Note: On Windows the tool is called sdkmanager.bat isntead of sdkmanager.
 
 5. The Android NDK
 
-Again, Atari800 has not been adapted to the latest changes in the NDK, so you'll
-need to use version no later than r15c. Get it from:
+Again, Atari800 has not been adapted to the latest changes in the NDK, so you
+need to use a version not later than r15c. Get it from:
 
 https://developer.android.com/ndk/downloads/older_releases
 
-II. Compiling
--------------
+and unzip the archive to a directory, e.g. /path/to/android-ndk-r15c.
 
-Setup the environment correctly: create an environment variable called
-ANDROID_NDK_ROOT which points to the root of the NDK
-(f.ex.:export ANDROID_NDK_ROOT='C:\cygwin\android-ndk-r15c\').
-Next, add the NDK root, gcc and android tools paths to PATH (f.ex. export PATH=
-"$ANDROID_NDK_ROOT:$ANDROID_NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin:
-/android-sdk/tools/:/android-sdk/platform-tools/:$PATH").
-Don't forget to also add the proper Java environment vars too (f.ex.
-export PATH="/ant/bin:$PATH"; export JAVA_HOME='c:\Java\jdk1.8.0_172\';).
+6. Assorted libraries
 
-Note: Since newer NDKs are built for Windows and not Cygwin, make sure the NDK
-      is accessible by normal Windows methods (i.e. no symlinks in Cygwin).
-      Also, make sure the ANDROID_NDK_ROOT is set using Windows notation,
-      as shown above.
+The old Android NDK might require some old libraries that are no longer
+installed by default on modern Linux distributions. For example, it requires:
+libncurses5
 
-Unpack the source tarball or get the CVS module. Go to the src directory and
-update the project thusly:
-android.bat update project --path android/ --name colleen --target "android-20"
-Configure the build. I use this setup:
-autoheader && autoconf && ./configure --target=android --disable-monitorbreak --enable-pagedattrib --enable-seriosound --disable-crashmenu --disable-monitorasm --disable-monitorhints --without-readline --enable-clipsound
-Then just type make and your apk package should appear in:
-android/bin/colleen-debug.apk
+II. Setting up the environment
+------------------------------
+
+1. Set the ANDROID_NDK_ROOT environment variable to point to the root directory
+of the NDK that you unzipped earlier, e.g.:
+
+# export ANDROID_NDK_ROOT='/path/to/android-ndk-r15c'
+
+Note for Windows: Since the Windows NDK is built without Cygwin awareness, the
+path in ANDROID_NDK_ROOT should be set using windows notation, e.g.:
+
+# export ANDROID_NDK_ROOT='C:\path\to\android-ndk-r15c'
+
+Also, make sure the NDK is accessible by normal Windows methods (i.e. no
+symlinks in Cygwin).
+
+2. Set the JAVA_HOME environment variable to point to the root directory of your
+JDK installation, e.g.:
+
+# export JAVA_HOME='C:\Java\jdk1.8.0_172'
+
+3. Make sure that ant is accessible in PATH. If not, add it:
+
+# export PATH="/path/to/apache-ant-1.10.9/bin:$PATH"
+
+4. Add the NDK root, gcc and android tools paths to PATH, e.g.:
+
+# export PATH="/path/to/android-ndk-r15c:/path/to/android-ndk-r15c/toolchains/arm-linux-androideabi-4.9/prebuilt/<build-os>/bin:/path/to/android-sdk/tools:/path/to/android-sdk/platform-tools:$PATH"
+
+(Replace <build-os> above with the directory that matches your build environment, e.g. linux-x86_64, windows-x86_64, ...)
+
+III. Compiling
+--------------
+
+1. Unpack the source tarball of Atari800.
+
+2. Go to the atari800 directory and update the Android project files:
+
+# android update project --path src/android --name colleen --target "android-20"
+
+Note: On Windows the tool is called android.bat isntead of android.
+
+2. If the configure scrips is missing, create it:
+
+# ./autogen.sh
+
+3. Configure the build. Generally you should enable exactly the features listed
+below:
+
+# ./configure --target=android --disable-monitorbreak --enable-pagedattrib --enable-seriosound --disable-crashmenu --disable-monitorasm --disable-monitorhints --without-readline --enable-clipsound --disable-riodevice
+
+Enabling or disabling other reatures is not guaranteed to build correctly.
+
+4. Build the APK package:
+
+# make
+
+After a while, the APK package should appear in:
+
+src/android/bin/colleen-debug.apk
 
 Cheers,
 Kostas
