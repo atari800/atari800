@@ -43,6 +43,7 @@
 #include "platform.h"
 #ifdef SOUND
 #include "../sound.h"
+#include "sdl/sound.h"
 #endif
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 #include "akey.h"
@@ -113,7 +114,11 @@ int PLATFORM_Exit(int run_monitor)
 
 	if (run_monitor) {
 #ifdef SOUND
-		Sound_Pause();
+		/* Issue #97: On some Linux systems merely pausing SDL audio while SDL
+		   video is disabled, causes CPU usage to jump to 100% after a few
+		   minutes. Avoid the issue by closing SDL audio as well - call
+		   SDL_SOUND_HardPause instead of Sound_Pause. */
+		SDL_SOUND_HardPause();
 #endif
 		if (MONITOR_Run()) {
 			/* Reinitialise the SDL subsystem. */
@@ -126,9 +131,11 @@ int PLATFORM_Exit(int run_monitor)
 				/* This call reopens the SDL window. */
 				VIDEOMODE_Update();
 			}
-	#ifdef SOUND
-			Sound_Continue();
-	#endif
+#ifdef SOUND
+			/* Issue #97 (see above): Call SDL_SOUND_HardContinue instead of
+			   Sound_Continue. */
+			SDL_SOUND_HardContinue();
+#endif
 			return 1;
 		}
 	}
