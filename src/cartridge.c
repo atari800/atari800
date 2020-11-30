@@ -1121,12 +1121,10 @@ UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects)
 		if (Atari800_machine_type == Atari800_MACHINE_5200) {
 			if (addr >= 0x4ff6 && addr <= 0x4ff9) {
 				CARTRIDGE_BountyBob1(addr);
-				return 0;
 			}
 		} else {
 			if (addr >= 0x8ff6 && addr <= 0x8ff9) {
 				CARTRIDGE_BountyBob1(addr);
-				return 0;
 			}
 		}
 	}
@@ -1139,12 +1137,10 @@ UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr, int no_side_effects)
 		if (Atari800_machine_type == Atari800_MACHINE_5200) {
 			if (addr >= 0x5ff6 && addr <= 0x5ff9) {
 				CARTRIDGE_BountyBob2(addr);
-				return 0;
 			}
 		} else {
 			if (addr >= 0x9ff6 && addr <= 0x9ff9) {
 				CARTRIDGE_BountyBob2(addr);
-				return 0;
 			}
 		}
 	}

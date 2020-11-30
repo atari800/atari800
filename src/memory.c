@@ -1074,13 +1074,13 @@ UBYTE MEMORY_HwGetByte(UWORD addr, int no_side_effects)
 	case 0x8f00:
 		if (!no_side_effects)
 			CARTRIDGE_BountyBob1(addr);
-		byte = 0;
+		byte = MEMORY_dGetByte(addr);
 		break;
 	case 0x5f00:
 	case 0x9f00:
 		if (!no_side_effects)
 			CARTRIDGE_BountyBob2(addr);
-		byte = 0;
+		byte = MEMORY_dGetByte(addr);
 		break;
 	case 0xbf00:
 		if (!no_side_effects)
